@@ -1,0 +1,8 @@
+name: master-thesis
+channels:
+
+dependencies:
+  - python
+  - mamba
+  - pip
+  - poetry
