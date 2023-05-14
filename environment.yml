@@ -1,8 +1,12 @@
 name: master-thesis
 channels:
-
+ - conda-forge
+ - nodefaults
 dependencies:
   - python
   - mamba
   - pip
   - poetry
+
+platforms:
+  - linux-64
