@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "masterthesiscode"
+version = "0.1.0"
+description = "Improving the estimation of the Hubble constant by restricting possible host galaxies for EMRI events by the BH mass"
+authors = ["Jasper Seehofer"]
+license = "Universität Heidelberg"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+pandas = "^2.0.1"
+numpy = "^1.24.3"
+conda-lock = "^1.4.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
