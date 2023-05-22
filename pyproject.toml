@@ -11,6 +11,7 @@ python = "^3.10"
 pandas = "^2.0.1"
 numpy = "^1.24.3"
 conda-lock = "^1.4.0"
+sphinx = "^7.0.1"
 
 
 [build-system]
