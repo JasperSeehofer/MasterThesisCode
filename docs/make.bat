@@ -8,7 +8,9 @@ if "%SPHINXBUILD%" == "" (
 	set SPHINXBUILD=sphinx-build
 )
 set SOURCEDIR=source
-set BUILDDIR=build
+set BUILDDIR=build 
+set GENERATEDDIR=source/_generated
+set TEMPLATEDIR=source/_templates
 
 %SPHINXBUILD% >NUL 2>NUL
 if errorlevel 9009 (
@@ -24,6 +26,13 @@ if errorlevel 9009 (
 )
 
 if "%1" == "" goto help
+
+if "%1" == "clean" (
+	if exist %GENERATEDDIR% rmdir /Q /S %GENERATEDDIR%
+) else (
+	set SPHINX_APIDOC_OPTIONS=members,show-inheritance
+	sphinx-apidoc --force --private --module-first --no-toc --implicit-namespaces --output %GENERATEDDIR% ../master_thesis_code
+)
 
 %SPHINXBUILD% -M %1 %SOURCEDIR% %BUILDDIR% %SPHINXOPTS% %O%
 goto end
