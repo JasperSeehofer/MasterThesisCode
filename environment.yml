@@ -21,6 +21,8 @@ dependencies:
   - h5py
   - requests
   - matplotlib
+  - sphinx
+  - furo
 
 platforms:
   - linux-64
