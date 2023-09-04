@@ -7,6 +7,8 @@ dependencies:
   - pip
   - sphinx
   - furo
+  - cupy
+  - mpmath
 
 platforms:
   - linux-64
