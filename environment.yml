@@ -9,6 +9,7 @@ dependencies:
   - furo
   - cupy
   - mpmath
+  - dataclasses
 
 platforms:
   - linux-64
