@@ -1,16 +1,13 @@
 # Master Thesis
 
 ## Package Management (Anaconda)
-
-Using Anaconda it is very simple to install all required packages. 
-
-### Create a new Anaconda environment
-You can create an Anaconda environment with a name of your choice, then activate it and install all packages via poetry by executing the following commands:
+To create an Anaconda environment for this module one can run the bash script `install.sh`
 
 ```
-conda create --name my_project_env --file conda-linux-64.lock
-conda activate my_project_env
+bash install.sh
 ```
+
+this will ask you to enter an environment name and then install the [few package](https://bhptoolkit.org/FastEMRIWaveforms/html/index.html). For further information see [this chapter](#emri-waveform-python-package). 
 
 ### Update the environment
 Use the following commands to update the environment
