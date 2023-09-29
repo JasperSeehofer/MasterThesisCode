@@ -41,6 +41,7 @@ class SchwarzschildParameterEstimation():
     dt: float = 10.0
     T: float = 1.0
     M_derivative_steps: int = 2
+    M_steps: list[float] = []
 
 
     def __init__(self):
@@ -72,34 +73,42 @@ class SchwarzschildParameterEstimation():
 
         dM = (M_configuration.upper_limit - M_configuration.lower_limit)/self.M_derivative_steps
 
-        M_steps = np.arange(
+        self.M_steps = np.arange(
             start=M_configuration.lower_limit,
             stop=M_configuration.upper_limit,
             step=dM)
         
-        waveforms_M_real = pd.DataFrame()
-        waveforms_M_imag = pd.DataFrame()
-        for count, M in enumerate(M_steps, 1):
+        waveforms_M = pd.DataFrame()
+        for count, M in enumerate(self.M_steps, 1):
             self.parameter_space.M = M
             waveform = self.generate_waveform()
             logging.info(f"{count}/{self.M_derivative_steps} waveforms generated.")
-            waveforms_M_real[f"M_{count}"] = waveform.real
-            waveforms_M_imag[f"M_{count}"] = waveform.imag
+            waveforms_M[("real", f"M_{count}")] = waveform.real
+            waveforms_M[("imaginary", f"M_{count}")] = waveform.imag
 
-        return ( M_steps, np.diff(waveforms_M_real)/dM, np.diff(waveforms_M_imag)/dM)
+            if count == 1:
+                continue
+
+            waveforms_M[("real", f"M_{count-1}")] = waveforms_M[("real", f"M_{count}")]/dM - waveforms_M[("real", f"M_{count-1}")]/dM
+            waveforms_M[("imaginary", f"M_{count-1}")] = waveforms_M[("imaginary", f"M_{count}")]/dM - waveforms_M[("imaginary", f"M_{count-1}")]/dM
+
+        return waveforms_M.drop(columns=[("real", f"M_{self.M_derivative_steps}"), ("imaginary", f"M_{self.M_derivative_steps}")])
     
     
-    def _plot_M_derivative(self, M_steps: np.array, M_differences_real: np.array, M_differences_imag) -> None:
+    def _plot_M_derivative(self, waveform_derivative_M: pd.DataFrame) -> None:
         
         plt.figure(figsize = (12, 8))
-        plt.plot(M_steps, 
-                 M_differences_real, 
-                 '--',
-                 label = f"Re[dh(t)/dM] for {self.M_derivative_steps} steps")
-        plt.plot(M_steps, 
-                 M_differences_imag, 
-                 '--',
-                 label = f"Re[dh(t)/dM] for {self.M_derivative_steps} steps")
+        
+        for t_index in [0, list(waveform_derivative_M.index)[-1]]:
+
+            plt.plot(self.M_steps, 
+                    waveform_derivative_M.loc[t_index , "real"], 
+                    '--',
+                    label = f"Re[dh(t)/dM](M) for {self.M_derivative_steps} steps")
+            plt.plot(self.M_steps, 
+                    M_differences_imag, 
+                    '--',
+                    label = f"Re[dh(t)/dM] for {self.M_derivative_steps} steps")
 
         plt.legend()
         plt.savefig(f"M_derivative_{self.M_derivative_steps}_steps.png", dpi=300)

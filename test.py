@@ -1,4 +1,9 @@
-import numpy as np
+import pandas as pd
+df = pd.DataFrame()
+df[("A", "a")] = [1,2,3,4]
+df[("A", "b")] = [2,3,4,5]
+df[("B", "a")] = [1,2,3,4]
+df[("B", "b")] = [2,3,4,5]
 
-list1 = [5,1,3,2]
-print(np.diff(list1))
+print(df["A"])
+
