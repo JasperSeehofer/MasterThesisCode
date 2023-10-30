@@ -7,6 +7,7 @@ from matplotlib import cm
 import os
 import typing
 
+from decorators import timer_decorator
 from datamodels.parameter_space import ParameterSpace
 from constants import REAL_PART, IMAGINARY_PART, INFINITY, MAXIMAL_FREQUENCY, MINIMAL_FREQUENCY
 
@@ -189,16 +190,14 @@ class LISAConfiguration:
     def P_acc(f: float) -> float:
         return (3e-15)**2*(1.+(0.4e-3/f)**2)*(1.+(f/8e-3)**4)
     
-    def transform_to_solar_barycenter_frame(self, waveform: typing.Union[pd.DataFrame, np.ndarray[complex]]) -> typing.Union[pd.DataFrame, np.ndarray[float]]:
+    @timer_decorator
+    def transform_to_solar_barycenter_frame(self, waveform: np.ndarray[complex]) -> np.ndarray[float]:
         time_series = np.array([index*self.dt for index, _ in enumerate(waveform.real)])
-        if isinstance(waveform, pd.DataFrame):
-            return waveform.sort_index(axis=1, level=1, ascending=False).mul([self.F_plus(time_series), self.F_cross(time_series)], axis="columns", level=1)
-        elif np.iscomplexobj(waveform):
-            
-            measurement_1 = (waveform.real*self.F_plus(time_series) - waveform.imag*self.F_cross(time_series))*np.sqrt(3)/2
-            #self.is_LISA_second_measurement = True
-            #measurement_2 = (waveform.real*self.F_plus(time_series) - waveform.imag*self.F_cross(time_series))*np.sqrt(3)/2
-            return measurement_1
+    
+        measurement_1 = (waveform.real*self.F_plus(time_series) - waveform.imag*self.F_cross(time_series))*np.sqrt(3)/2
+        #self.is_LISA_second_measurement = True
+        #measurement_2 = (waveform.real*self.F_plus(time_series) - waveform.imag*self.F_cross(time_series))*np.sqrt(3)/2
+        return measurement_1
 
     def transform_to_solar_barycenter_frame_derivative_theta(self, waveform: np.ndarray[complex]) -> np.ndarray[float]:
         time_series = np.array([index*self.dt for index, _ in enumerate(waveform.real)])
@@ -208,6 +207,7 @@ class LISAConfiguration:
         time_series = np.array([index*self.dt for index, _ in enumerate(waveform.real)])
         return (waveform.real*self.F_plus_del_phi(time_series) - waveform.imag*self.F_cross_del_phi(time_series))*np.sqrt(3)/2
 
+    @timer_decorator
     def _visualize_lisa_configuration(self) -> None:
         figures_directory = f"saved_figures/LISA_configuration/"
 
