@@ -1,0 +1,7 @@
+# ignore ALL log files
+*.log
+.vscode/
+simulations/
+saved_figures/
+notebooks/
+test.py
