@@ -1,12 +1,21 @@
 import logging
 import time
+import matplotlib
 
 from parameter_estimation.parameter_estimation import ParameterEstimation
 from LISA_configuration import LISAConfiguration
 from constants import SNR_THRESHOLD
 
 # logging setup
-logging.basicConfig(filename='logfile.log', encoding='utf-8', level=logging.INFO)
+logging.basicConfig(filename='logfile.log', encoding='utf-8', level=logging.DEBUG)
+
+# disable matplotlib logger - it is very talkative in debug mode
+matplotlib.pyplot.set_loglevel (level = 'warning')
+# get the the logger with the name 'PIL'
+pil_logger = logging.getLogger('PIL')  
+# override the logger logging level to INFO
+pil_logger.setLevel(logging.INFO)
+
 
 def main() -> None:
     """
@@ -15,7 +24,7 @@ def main() -> None:
     logging.info("---------- STARTING MASTER THESIS CODE ----------")
     parameter_estimation = ParameterEstimation(wave_generation_type="FastSchwarzschildEccentricFlux")
     simulate = True
-    check_dependency = True
+    check_dependency = False
 
     if check_dependency:
         for parameter_symbol in ["qS", "phiS"]:
@@ -23,14 +32,11 @@ def main() -> None:
 
     counter = 0
     if simulate:
-        for i in range(15):
+        for i in range(50):
 
-            logging.info(f"{counter} steps done.")
+            logging.info(f"{counter} evaluations successful.")
             parameter_estimation.parameter_space.randomize_parameters()
-            start = time.time()
             snr = parameter_estimation.compute_signal_to_noise_ratio()
-            end = time.time()
-            logging.info(f"SNR computation took {end-start}s.")
             if snr < SNR_THRESHOLD:
                 logging.info(f"SNR threshold check failed: {snr} < {SNR_THRESHOLD}.")
                 continue
@@ -39,8 +45,6 @@ def main() -> None:
             cramer_rao_bounds = parameter_estimation.compute_Cramer_Rao_bounds(parameter_list=["M", "qS", "phiS"])
             parameter_estimation.save_cramer_rao_bound(cramer_rao_bound_dictionary=cramer_rao_bounds, snr=snr)
             counter += 1
-            end = time.time()
-            logging.info(f"Simulation iteration took {end-start}s.")
 
     parameter_estimation.lisa_configuration._visualize_lisa_configuration()
     parameter_estimation._visualize_cramer_rao_bounds()

@@ -11,7 +11,7 @@ DEFAULT_SIMULATION_PATH = "simulations/simulation"
 # Parameter configuration
 MINIMAL_FREQUENCY = 1e-5
 MAXIMAL_FREQUENCY = 1
-SNR_THRESHOLD = 10
+SNR_THRESHOLD = 1
 
 # saving Cramer-Rao bounds for marginalization.
 CRAMER_RAO_BOUNDS_PATH = "simulations/cramer_rao_bounds.csv"

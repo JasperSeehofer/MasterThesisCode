@@ -5,12 +5,13 @@ import typing
 import os
 import json
 from enum import Enum
-
+import time
 import matplotlib.pyplot as plt
 plt.style.use("seaborn-poster")
-
 import logging
 import sys
+
+from decorators import timer_decorator
 from constants import (
     REAL_PART, IMAGINARY_PART, SIMULATION_PATH, SIMULATION_CONFIGURATION_FILE, DEFAULT_SIMULATION_PATH, CRAMER_RAO_BOUNDS_PATH, MINIMAL_FREQUENCY, MAXIMAL_FREQUENCY)
 
@@ -59,18 +60,13 @@ class ParameterEstimation():
     T: float = 1
     M_derivative_steps: int = 1000
     M_steps: list[float] = []
+    waveform_generation_time = 0
 
     def __init__(self, wave_generation_type: WaveGeneratorType):
         self.parameter_space = ParameterSpace()
         if wave_generation_type == "FastSchwarzschildEccentricFlux":
             self.waveform_generator = GenerateEMRIWaveform(
-                waveform_class="FastSchwarzschildEccentricFlux",
-                inspiral_kwargs=inspiral_kwargs,
-                frame="detector",
-                amplitude_kwargs=amplitude_kwargs,
-                Ylm_kwargs=Ylm_kwargs,
-                sum_kwargs=sum_kwargs,
-                use_gpu=use_gpu,
+                waveform_class="FastSchwarzschildEccentricFlux"
             )
             logging.info("Parameter estimation is setup up with the 'FastSchwarzschildEccentricFlux' wave generator.")
         elif wave_generation_type == WaveGeneratorType.pn5:
@@ -86,7 +82,8 @@ class ParameterEstimation():
             logging.error("Wave generator class could not be matched to FastSchwarzschildEccentricFlux or PN5AAKwaveform, please check configuration in main.")
             sys.exit()
         self.lisa_configuration = LISAConfiguration(parameter_space=self.parameter_space, dt=self.dt)
-
+    
+    @timer_decorator
     def generate_waveform(self, use_antenna_pattern_functions: bool = True) -> np.ndarray[float]:
         waveform = self.waveform_generator(
             **self.parameter_space._parameters_to_dict(),
@@ -141,6 +138,7 @@ class ParameterEstimation():
 
         return waveforms_derivatives_M.dropna(axis=1 , how="all")
     
+    @timer_decorator
     def finite_difference(self,  waveform: np.ndarray[float], parameter_symbol: str) -> np.ndarray[float]:
         """Compute (numerically) partial derivative of the currently set parameters w.r.t. the provided parameter.
 
@@ -252,6 +250,7 @@ class ParameterEstimation():
         print(generated_waveform)
         generated_waveform.to_csv(f"{new_simulation_path}/waveform.csv")
     
+    @timer_decorator
     def _plot_waveform(
             self, 
             waveforms: list, 
@@ -335,11 +334,12 @@ class ParameterEstimation():
             plt.savefig(figures_directory + f"t_approx_{int(t_index*self.dt/3600/24)}days.png", dpi=300)
             plt.clf()
 
+    @timer_decorator
     def scalar_product_of_functions(self, a: np.ndarray[float], b: np.ndarray[float]) -> float:
 
         fs = rfftfreq(len(a), self.dt)
 
-        power_spectral_density = np.array([self.lisa_configuration.power_spectral_density(f) for f in fs])
+        power_spectral_density = np.array([self.lisa_configuration.power_spectral_density(f=f) for f in fs])
 
         a_fft = rfft(a)
         b_fft_cc = np.conjugate(rfft(b))
@@ -373,10 +373,16 @@ class ParameterEstimation():
             upper_limit_index = len(fs)
         return fs[lower_limit_index:upper_limit_index], integrant[lower_limit_index:upper_limit_index]
 
+    @timer_decorator
     def compute_fisher_information_matrix(self, parameter_list: list) -> np.matrix:
         # compute derivatives for fisher information matrix
         waveform_derivatives = {}
+
+        start = time.time()
         current_waveform = self.generate_waveform()
+        end = time.time()
+        self.waveform_generation_time = int(end-start)
+
         for parameter_symbol in parameter_list:
             waveform_derivative = self.finite_difference(waveform=current_waveform, parameter_symbol=parameter_symbol)
             waveform_derivatives[parameter_symbol] = waveform_derivative
@@ -395,7 +401,8 @@ class ParameterEstimation():
         logging.info("Fisher information matrix has been computed.")
 
         return np.matrix(fisher_information_array)
-
+    
+    @timer_decorator
     def compute_Cramer_Rao_bounds(self, parameter_list: list) -> dict:
 
         fisher_information_matrix = self.compute_fisher_information_matrix(parameter_list=parameter_list)
@@ -413,6 +420,7 @@ class ParameterEstimation():
         logging.info("Finished computing Cramer Rao bounds.")
         return mean_errors_dict
 
+    @timer_decorator
     def save_cramer_rao_bound(self, cramer_rao_bound_dictionary: dict, snr: float) -> None:
         try:
             cramer_rao_bounds = pd.read_csv(CRAMER_RAO_BOUNDS_PATH)
@@ -420,11 +428,11 @@ class ParameterEstimation():
         except FileNotFoundError:
             parameters_list = list(self.parameter_space._parameters_to_dict().keys())
             parameters_list.extend(list(cramer_rao_bound_dictionary.keys()))
-            parameters_list.extend(["T", "dt", "SNR"])
+            parameters_list.extend(["T", "dt", "SNR", "generation_time"])
             cramer_rao_bounds = pd.DataFrame(columns=parameters_list)
 
         new_cramer_rao_bounds_dict = self.parameter_space._parameters_to_dict() | cramer_rao_bound_dictionary
-        new_cramer_rao_bounds_dict = new_cramer_rao_bounds_dict | {"T": self.T, "dt": self.dt, "SNR": snr}
+        new_cramer_rao_bounds_dict = new_cramer_rao_bounds_dict | {"T": self.T, "dt": self.dt, "SNR": snr, "generation_time": self.waveform_generation_time}
 
         new_cramer_rao_bounds = pd.DataFrame([new_cramer_rao_bounds_dict])
 
@@ -490,10 +498,12 @@ class ParameterEstimation():
             plt.savefig(figures_directory + f"mean_error_{column_name}_correlation.png", dpi=300)
             plt.close()
 
+    @timer_decorator
     def compute_signal_to_noise_ratio(self) -> float:
         waveform = self.generate_waveform()
-        return np.sqrt(self.scalar_product_of_functions(waveform, waveform))
+        return np.sqrt(self.scalar_product_of_functions(a=waveform, b=waveform))
 
+    @timer_decorator
     def check_parameter_dependency(self, parameter_symbol: str, steps: int = 5):
         logging.info(f"Start parameter dependency check for {parameter_symbol}.")
         parameter_configuration = next((config for config in self.parameter_space.parameters_configuration if config.symbol == parameter_symbol), None)
