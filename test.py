@@ -1,9 +1,8 @@
-import pandas as pd
-df = pd.DataFrame()
-df[("A", "a")] = [1,2,3,4]
-df[("A", "b")] = [2,3,4,5]
-df[("B", "a")] = [1,2,3,4]
-df[("B", "b")] = [2,3,4,5]
+import numpy as np
 
-print(df["A"])
+xs = np.arange(-100, 100)
+ys = [1,2,3,4,5,6,7,8,9,0,134,2345,345,12]
 
+indices = np.round(np.linspace(0, len(xs) - 1, 10)).astype(int)
+
+print(xs[indices], ys[indices])

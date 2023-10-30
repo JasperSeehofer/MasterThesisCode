@@ -10,6 +10,7 @@ dependencies:
   - cupy
   - mpmath
   - dataclasses
+  - sympy
 
 platforms:
   - linux-64

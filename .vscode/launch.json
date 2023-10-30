@@ -6,7 +6,7 @@
             "request": "launch",
             "program": "${file}",
             "console": "integratedTerminal",
-            "env": {"PYTHONPATH":"${workspaceRoot}"},  // modify PYTHONPATH
+            "python": "${command:python.interpreterPath}", 
         }
     ]
 }
