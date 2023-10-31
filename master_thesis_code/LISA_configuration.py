@@ -7,9 +7,9 @@ from matplotlib import cm
 import os
 import typing
 
-from decorators import timer_decorator
-from datamodels.parameter_space import ParameterSpace
-from constants import REAL_PART, IMAGINARY_PART, INFINITY, MAXIMAL_FREQUENCY, MINIMAL_FREQUENCY
+from master_thesis_code.decorators import timer_decorator
+from master_thesis_code.datamodels.parameter_space import ParameterSpace
+from master_thesis_code.constants import MAXIMAL_FREQUENCY, MINIMAL_FREQUENCY
 
 
 @dataclass

@@ -10,5 +10,5 @@ def self() -> ParameterEstimation:
 def waveform() -> np.ndarray[float]:
     return []
 
-def finite_differences_test(self, waveform: np.ndarray[float]) -> None:
+def test_finite_differences(self, waveform: np.ndarray[float]) -> None:
     pass
