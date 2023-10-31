@@ -1,5 +1,8 @@
 {
     "cSpell.words": [
+        "cramer",
+        "datamodels",
+        "ndarray",
         "schwarzschild"
     ],
     "[python]": {
@@ -9,5 +12,8 @@
     "python.testing.pytestEnabled": true,
     "python.testing.cwd": "${workspaceFolder}/master_thesis_code",
     "python.terminal.activateEnvironment": true,
+    "python.testing.pytestArgs": [
+        "master_thesis_code_test"
+    ],
 
 }

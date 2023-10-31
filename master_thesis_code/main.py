@@ -1,10 +1,10 @@
 import logging
-import time
 import matplotlib
+import numpy as np
 
-from parameter_estimation.parameter_estimation import ParameterEstimation
-from LISA_configuration import LISAConfiguration
-from constants import SNR_THRESHOLD
+from master_thesis_code.parameter_estimation.parameter_estimation import ParameterEstimation
+from master_thesis_code.LISA_configuration import LISAConfiguration
+from master_thesis_code.constants import SNR_THRESHOLD
 
 # logging setup
 logging.basicConfig(filename='logfile.log', encoding='utf-8', level=logging.DEBUG)
@@ -33,20 +33,21 @@ def main() -> None:
     counter = 0
     if simulate:
         for i in range(50):
-
+            logging.debug(f"simulation step {i}.")
             logging.info(f"{counter} evaluations successful.")
             parameter_estimation.parameter_space.randomize_parameters()
             snr = parameter_estimation.compute_signal_to_noise_ratio()
             if snr < SNR_THRESHOLD:
-                logging.info(f"SNR threshold check failed: {snr} < {SNR_THRESHOLD}.")
+                logging.info(f"SNR threshold check failed: {np.round(snr, 3)} < {SNR_THRESHOLD}.")
                 continue
             else:
-                logging.info(f"SNR threshold check successful: {snr} >= {SNR_THRESHOLD}")
+                logging.info(f"SNR threshold check successful: {np.round(snr, 3)} >= {SNR_THRESHOLD}")
             cramer_rao_bounds = parameter_estimation.compute_Cramer_Rao_bounds(parameter_list=["M", "qS", "phiS"])
             parameter_estimation.save_cramer_rao_bound(cramer_rao_bound_dictionary=cramer_rao_bounds, snr=snr)
             counter += 1
 
     parameter_estimation.lisa_configuration._visualize_lisa_configuration()
     parameter_estimation._visualize_cramer_rao_bounds()
+
 if __name__ == "__main__":
     main()

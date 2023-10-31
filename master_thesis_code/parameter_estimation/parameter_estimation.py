@@ -1,23 +1,24 @@
 import numpy as np
 import pandas as pd
-from scipy.fft import rfft, rfftfreq
 import typing
 import os
 import json
-from enum import Enum
 import time
 import matplotlib.pyplot as plt
-plt.style.use("seaborn-poster")
 import logging
 import sys
 
-from decorators import timer_decorator
-from constants import (
+from scipy.fft import rfft, rfftfreq
+from enum import Enum
+from few.waveform import GenerateEMRIWaveform
+
+from master_thesis_code.decorators import timer_decorator
+from master_thesis_code.constants import (
     REAL_PART, IMAGINARY_PART, SIMULATION_PATH, SIMULATION_CONFIGURATION_FILE, DEFAULT_SIMULATION_PATH, CRAMER_RAO_BOUNDS_PATH, MINIMAL_FREQUENCY, MAXIMAL_FREQUENCY)
 
-from datamodels.parameter_space import ParameterSpace
-from few.waveform import GenerateEMRIWaveform
-from LISA_configuration import LISAConfiguration
+from master_thesis_code.datamodels.parameter_space import ParameterSpace
+
+from master_thesis_code.LISA_configuration import LISAConfiguration
 
 use_gpu = False
 
@@ -60,7 +61,8 @@ class ParameterEstimation():
     T: float = 1
     M_derivative_steps: int = 1000
     M_steps: list[float] = []
-    waveform_generation_time = 0
+    waveform_generation_time: int = 0
+    current_waveform: np.array = None
 
     def __init__(self, wave_generation_type: WaveGeneratorType):
         self.parameter_space = ParameterSpace()
@@ -378,10 +380,7 @@ class ParameterEstimation():
         # compute derivatives for fisher information matrix
         waveform_derivatives = {}
 
-        start = time.time()
-        current_waveform = self.generate_waveform()
-        end = time.time()
-        self.waveform_generation_time = int(end-start)
+        current_waveform = self.current_waveform
 
         for parameter_symbol in parameter_list:
             waveform_derivative = self.finite_difference(waveform=current_waveform, parameter_symbol=parameter_symbol)
@@ -473,7 +472,7 @@ class ParameterEstimation():
         plt.savefig(figures_directory + "coverage_parameter_space.png", dpi=300)
         plt.show()
 
-        # create plots
+        # create plots for error correlation
         for column_name in parameter_columns:
             fig, (ax1, ax2) = plt.subplots(1,2)
             ax1.plot(mean_errors_data[column_name], 
@@ -493,14 +492,38 @@ class ParameterEstimation():
                 '.',
                 label = f"bounds: phiS")
 
-            plt.xlabel(f"{column_name}")
-            plt.legend()
+            ax1.set_yscale("log")
+            ax1.set_xlabel(f"{column_name}")
+            ax2.set_yscale("log")
+            ax2.set_xlabel(f"{column_name}")
+            ax1.legend()
+            ax2.legend()
             plt.savefig(figures_directory + f"mean_error_{column_name}_correlation.png", dpi=300)
+            plt.close()
+
+        # create plots for computation time correlation
+        for column_name in parameter_columns:
+            fig = plt.figure(figsize=(16,9))
+            plt.plot(
+                mean_errors_data[column_name],
+                mean_errors_data["generation_time"],
+                ".",
+                label=f"simulation data")
+            plt.xlabel(f"{column_name}")
+            plt.ylabel("t [s]")
+            plt.legend()
+            plt.savefig(figures_directory +  f"waveform_generation_time_{column_name}_correlation.png", dpi=300)
             plt.close()
 
     @timer_decorator
     def compute_signal_to_noise_ratio(self) -> float:
+        
+        start = time.time()
         waveform = self.generate_waveform()
+        end = time.time()
+        self.waveform_generation_time = int(end-start)
+
+        self.current_waveform = waveform
         return np.sqrt(self.scalar_product_of_functions(a=waveform, b=waveform))
 
     @timer_decorator
@@ -534,9 +557,3 @@ class ParameterEstimation():
         # set parameter value back to original one.
         setattr(self.parameter_space, parameter_symbol, current_parameter_value)
         logging.info(f"Finished parameter dependency check for {parameter_symbol}.")
-
-        
-
-
-
-
