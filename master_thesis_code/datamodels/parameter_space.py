@@ -2,7 +2,7 @@ from dataclasses import dataclass, field
 from master_thesis_code.constants import INFINITY
 import numpy as np
 import random
-import typing
+
 
 @dataclass
 class Parameter():

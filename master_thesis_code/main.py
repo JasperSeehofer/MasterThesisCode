@@ -1,5 +1,5 @@
 import logging
-import matplotlib
+import matplotlib.pyplot as plt
 import numpy as np
 
 from master_thesis_code.parameter_estimation.parameter_estimation import ParameterEstimation
@@ -10,7 +10,7 @@ from master_thesis_code.constants import SNR_THRESHOLD
 logging.basicConfig(filename='logfile.log', encoding='utf-8', level=logging.DEBUG)
 
 # disable matplotlib logger - it is very talkative in debug mode
-matplotlib.pyplot.set_loglevel (level = 'warning')
+plt.set_loglevel (level = 'warning')
 # get the the logger with the name 'PIL'
 pil_logger = logging.getLogger('PIL')  
 # override the logger logging level to INFO
