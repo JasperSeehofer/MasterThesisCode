@@ -23,7 +23,7 @@ def main() -> None:
     """
     logging.info("---------- STARTING MASTER THESIS CODE ----------")
     parameter_estimation = ParameterEstimation(wave_generation_type="FastSchwarzschildEccentricFlux")
-    simulate = True
+    simulate = False
     check_dependency = False
 
     if check_dependency:
