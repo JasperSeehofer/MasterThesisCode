@@ -1,10 +1,13 @@
 #!/bin/bash
 
-echo "Installing master thesis code dependencies"
+current_dir=$PWD
+
+echo "Install dependencies..."
 echo "install FastEMRIWaveforms (few) module..."
 
 read -p "Enter Anaconda environment name: " env_name
 
+cd ..
 git clone https://github.com/BlackHolePerturbationToolkit/FastEMRIWaveforms.git
 
 cd FastEMRIWaveforms
@@ -15,5 +18,5 @@ echo  "few module installation was succesful"
 source ~/anaconda3/etc/profile.d/conda.sh
 conda activate $env_name
 
-cd ..
-conda env update --file environment.yml
+cd $current_dir
+conda env update --name $env_name --file environment.yml

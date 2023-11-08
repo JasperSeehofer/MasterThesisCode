@@ -1,4 +1,3 @@
-name: master-thesis-code
 channels:
  - conda-forge
  - nodefaults
@@ -15,6 +14,7 @@ dependencies:
   - numpy
   - matplotlib
   - pytest
+  - scipy
 
 platforms:
   - linux-64
