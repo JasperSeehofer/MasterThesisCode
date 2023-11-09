@@ -531,7 +531,7 @@ class ParameterEstimation():
         logging.info(f"Start parameter dependency check for {parameter_symbol}.")
         parameter_configuration = next((config for config in self.parameter_space.parameters_configuration if config.symbol == parameter_symbol), None)
 
-        self.parameter_space.a = 0. # TODO
+        self.parameter_space.a = 0. 
         self.parameter_space.x0 = 1.
         self.parameter_space.Phi_theta0 = 0.
 
@@ -542,6 +542,8 @@ class ParameterEstimation():
 
         parameter_steps = np.linspace(parameter_configuration.lower_limit, parameter_configuration.upper_limit, steps)
 
+        delta_parameter = parameter_steps[1] - parameter_steps[0]
+
         waveforms = []
 
         # save current parameter value
@@ -549,6 +551,14 @@ class ParameterEstimation():
 
         for i, parameter_step in enumerate(parameter_steps):
             setattr(self.parameter_space, parameter_symbol, parameter_step)
+
+            if parameter_symbol == "phiS" & i > 0:
+                new_phiK = (self.parameter_space.phiK + delta_parameter) % 2*np.pi
+                self.parameter_space.phiK = new_phiK
+            elif parameter_symbol =="qS" & i > 0:
+                new_qK = ((self.parameter_space.phiK + delta_parameter + np.pi/2) % np.pi) - np.pi/2
+                self.parameter_space.qK = new_qK
+
             waveforms.append(self.generate_waveform(use_antenna_pattern_functions=False))
             logging.info(f"Parameter dependency for {parameter_symbol}: {i+1}/{len(parameter_steps)} waveforms generated.")
 
