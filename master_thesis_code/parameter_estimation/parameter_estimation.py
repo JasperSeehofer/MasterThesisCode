@@ -552,10 +552,10 @@ class ParameterEstimation():
         for i, parameter_step in enumerate(parameter_steps):
             setattr(self.parameter_space, parameter_symbol, parameter_step)
 
-            if parameter_symbol == "phiS" & i > 0:
+            if parameter_symbol == "phiS" and i > 0:
                 new_phiK = (self.parameter_space.phiK + delta_parameter) % 2*np.pi
                 self.parameter_space.phiK = new_phiK
-            elif parameter_symbol =="qS" & i > 0:
+            elif parameter_symbol =="qS" and i > 0:
                 new_qK = ((self.parameter_space.phiK + delta_parameter + np.pi/2) % np.pi) - np.pi/2
                 self.parameter_space.qK = new_qK
 
