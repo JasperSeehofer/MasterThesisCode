@@ -2,10 +2,10 @@
 
 ## Package Management (Anaconda)
 
-To create an Anaconda environment for this module one can run the bash script `install.sh`
+To create an Anaconda environment for this module one can use `conda-lock`
 
 ```bash
-bash install.sh
+conda create --prefix ./env --file conda-linux-64.lock
 ```
 
 this will ask you to enter an environment name and then install the [few package](https://bhptoolkit.org/FastEMRIWaveforms/html/index.html). For further information see [this chapter](#emri-waveform-python-package).
