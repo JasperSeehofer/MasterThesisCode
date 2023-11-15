@@ -1,6 +1,5 @@
 *.log
 .vscode/
-simulations/
 saved_figures/
 notebooks/
 test.py
