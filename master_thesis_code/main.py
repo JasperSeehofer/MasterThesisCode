@@ -23,16 +23,16 @@ def main() -> None:
     """
     logging.info("---------- STARTING MASTER THESIS CODE ----------")
     parameter_estimation = ParameterEstimation(wave_generation_type="FastSchwarzschildEccentricFlux")
-    simulate = False
-    check_dependency = False
+    simulate = True
+    check_dependency = True
 
     if check_dependency:
         for parameter_symbol in ["qS", "phiS"]:
-            parameter_estimation.check_parameter_dependency(parameter_symbol=parameter_symbol, steps=3)
+            parameter_estimation.check_parameter_dependency(parameter_symbol=parameter_symbol, steps=5)
 
     counter = 0
     if simulate:
-        for i in range(50):
+        for i in range(10):
             logging.debug(f"simulation step {i}.")
             logging.info(f"{counter} evaluations successful.")
             parameter_estimation.parameter_space.randomize_parameters()

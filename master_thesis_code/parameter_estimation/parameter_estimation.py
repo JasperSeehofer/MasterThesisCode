@@ -470,7 +470,7 @@ class ParameterEstimation():
         axes.set_ylim(qS_configuration.lower_limit, qS_configuration.upper_limit)
         axes.set_zlim(phiS_configuration.lower_limit, phiS_configuration.upper_limit)
         plt.savefig(figures_directory + "coverage_parameter_space.png", dpi=300)
-        plt.show()
+        #plt.show()
 
         # create plots for error correlation
         for column_name in parameter_columns:
