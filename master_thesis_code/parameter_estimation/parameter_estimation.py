@@ -278,9 +278,9 @@ class ParameterEstimation():
 
 
         if use_log_scale:
-            indices = np.round(np.geomspace(1, xs.shape[0] - 1, 1000)).astype(int)
+            indices = np.round(np.geomspace(1, xs.shape[0] - 2, 1000)).astype(int)
         else:
-            indices = np.round(np.linspace(0, xs.shape[0] - 1, 1000)).astype(int)
+            indices = np.round(np.linspace(0, xs.shape[0] - 2, 1000)).astype(int)
 
         fig = plt.figure(figsize = (12, 8))
         for index, waveform in enumerate(waveforms):
@@ -542,6 +542,8 @@ class ParameterEstimation():
 
         parameter_steps = np.linspace(parameter_configuration.lower_limit, parameter_configuration.upper_limit, steps)
 
+        print(parameter_steps)
+
         delta_parameter = parameter_steps[1] - parameter_steps[0]
 
         waveforms = []
@@ -553,11 +555,11 @@ class ParameterEstimation():
             setattr(self.parameter_space, parameter_symbol, parameter_step)
 
             if parameter_symbol == "phiS" and i > 0:
-                new_phiK = (self.parameter_space.phiK + delta_parameter) % 2*np.pi
+                new_phiK = self.parameter_space.phiK + delta_parameter
                 self.parameter_space.phiK = new_phiK
-            elif parameter_symbol =="qS" and i > 0:
-                new_qK = ((self.parameter_space.phiK + delta_parameter + np.pi/2) % np.pi) - np.pi/2
-                self.parameter_space.qK = new_qK
+            elif parameter_symbol =="qS":
+                self.parameter_space.phiK = self.parameter_space.phiS
+                self.parameter_space.qK = self.parameter_space.qS
 
             waveforms.append(self.generate_waveform(use_antenna_pattern_functions=False))
             logging.info(f"Parameter dependency for {parameter_symbol}: {i+1}/{len(parameter_steps)} waveforms generated.")
