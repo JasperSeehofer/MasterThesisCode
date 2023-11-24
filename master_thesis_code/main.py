@@ -1,6 +1,7 @@
 import logging
 import matplotlib.pyplot as plt
 import numpy as np
+import resource
 
 from master_thesis_code.parameter_estimation.parameter_estimation import ParameterEstimation
 from master_thesis_code.LISA_configuration import LISAConfiguration
@@ -32,7 +33,7 @@ def main() -> None:
 
     counter = 0
     if simulate:
-        for i in range(10):
+        for i in range(50):
             logging.debug(f"simulation step {i}.")
             logging.info(f"{counter} evaluations successful.")
             parameter_estimation.parameter_space.randomize_parameters()
@@ -48,6 +49,8 @@ def main() -> None:
 
     parameter_estimation.lisa_configuration._visualize_lisa_configuration()
     parameter_estimation._visualize_cramer_rao_bounds()
+
+    logging.debug(f"Peak memory usage: {resource.getrusage(resource.RUSAGE_SELF).ru_maxrss *1e-6} in GB.")
 
 if __name__ == "__main__":
     main()
