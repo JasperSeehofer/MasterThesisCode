@@ -1,16 +1,16 @@
 import numpy as np
-import pandas as pd
 from dataclasses import dataclass
-import typing
 import matplotlib.pyplot as plt
-from matplotlib import cm
 import os
-import typing
+import logging
+
+
 
 from master_thesis_code.decorators import timer_decorator
 from master_thesis_code.datamodels.parameter_space import ParameterSpace
 from master_thesis_code.constants import MAXIMAL_FREQUENCY, MINIMAL_FREQUENCY
 
+_LOGGER = logging.getLogger()
 
 @dataclass
 class LISAConfiguration:

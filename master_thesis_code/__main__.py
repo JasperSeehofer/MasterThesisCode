@@ -1,3 +1,4 @@
-from master_thesis_code.main import main
+from master_thesis_code import main
 
-main()
+if __name__ == "__main__":
+    main.main()
