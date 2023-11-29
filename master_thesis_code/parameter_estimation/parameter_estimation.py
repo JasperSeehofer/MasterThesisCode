@@ -15,12 +15,10 @@ from few.waveform import GenerateEMRIWaveform
 from master_thesis_code.decorators import timer_decorator
 from master_thesis_code.constants import (
     REAL_PART, IMAGINARY_PART, SIMULATION_PATH, SIMULATION_CONFIGURATION_FILE, DEFAULT_SIMULATION_PATH, CRAMER_RAO_BOUNDS_PATH, MINIMAL_FREQUENCY, MAXIMAL_FREQUENCY)
-
 from master_thesis_code.datamodels.parameter_space import ParameterSpace
-
 from master_thesis_code.LISA_configuration import LISAConfiguration
 
-use_gpu = False
+_LOGGER = logging.getLogger()
 
 class WaveGeneratorType(Enum):
     schwarzschild_fully_relativistic = 1
@@ -37,7 +35,7 @@ inspiral_kwargs={
 # keyword arguments for inspiral generator (RomanAmplitude)
 amplitude_kwargs = {
     "max_init_len": int(1e3),  # all of the trajectories will be well under len = 1000
-    "use_gpu": use_gpu  # GPU is available in this class
+    "use_gpu": False  # GPU is available in this class
 }
 
 # keyword arguments for Ylm generator (GetYlms)
@@ -47,7 +45,7 @@ Ylm_kwargs = {
 
 # keyword arguments for summation generator (InterpolatedModeSum)
 sum_kwargs = {
-    "use_gpu": use_gpu,  # GPU is available for this type of summation
+    "use_gpu": False,  # GPU is available for this type of summation
     "pad_output": False,
 }
 
@@ -64,13 +62,14 @@ class ParameterEstimation():
     waveform_generation_time: int = 0
     current_waveform: np.array = None
 
-    def __init__(self, wave_generation_type: WaveGeneratorType):
+    def __init__(self, wave_generation_type: WaveGeneratorType, use_gpu: bool):
         self.parameter_space = ParameterSpace()
         if wave_generation_type == "FastSchwarzschildEccentricFlux":
             self.waveform_generator = GenerateEMRIWaveform(
-                waveform_class="FastSchwarzschildEccentricFlux"
+                waveform_class="FastSchwarzschildEccentricFlux",
+                use_gpu=use_gpu
             )
-            logging.info("Parameter estimation is setup up with the 'FastSchwarzschildEccentricFlux' wave generator.")
+            _LOGGER.info("Parameter estimation is setup up with the 'FastSchwarzschildEccentricFlux' wave generator.")
         elif wave_generation_type == WaveGeneratorType.pn5:
             self.waveform_generator = GenerateEMRIWaveform(
                 waveform_class="Pn5AAKWaveform",
@@ -79,9 +78,9 @@ class ParameterEstimation():
                 sum_kwargs=sum_kwargs,
                 use_gpu=use_gpu
             )
-            logging.info("Parameter estimation is setup up with the 'PN5AAKwaveform' wave generator.")
+            _LOGGER.info("Parameter estimation is setup up with the 'PN5AAKwaveform' wave generator.")
         else:
-            logging.error("Wave generator class could not be matched to FastSchwarzschildEccentricFlux or PN5AAKwaveform, please check configuration in main.")
+            _LOGGER.error("Wave generator class could not be matched to FastSchwarzschildEccentricFlux or PN5AAKwaveform, please check configuration in main.")
             sys.exit()
         self.lisa_configuration = LISAConfiguration(parameter_space=self.parameter_space, dt=self.dt)
     
@@ -105,7 +104,7 @@ class ParameterEstimation():
             None)
         
         if M_configuration is None:
-            logging.warning("Configuration of Black hole mass not given.")
+            _LOGGER.warning("Configuration of Black hole mass not given.")
             sys.exit()
 
         dM = (M_configuration.upper_limit - M_configuration.lower_limit)/self.M_derivative_steps
@@ -120,7 +119,7 @@ class ParameterEstimation():
         for count, M in enumerate(self.M_steps, 1):
             self.parameter_space.M = M
             waveform = self.generate_waveform()
-            logging.info(f"{count}/{self.M_derivative_steps} waveforms generated.")
+            _LOGGER.info(f"{count}/{self.M_derivative_steps} waveforms generated.")
 
             column_indices = pd.MultiIndex.from_tuples(
                     [(REAL_PART, f"M_{count}"),
@@ -154,7 +153,7 @@ class ParameterEstimation():
             (parameter for parameter in self.parameter_space.parameters_configuration if parameter.symbol == parameter_symbol), None)
         
         if derivative_parameter_configuration is None:
-            logging.error(f"The provided derivative parameter symbol {parameter_symbol} does not match any defined parameter in the parameter space.")
+            _LOGGER.error(f"The provided derivative parameter symbol {parameter_symbol} does not match any defined parameter in the parameter space.")
             sys.exit()
 
         # save current parameter value
@@ -175,7 +174,7 @@ class ParameterEstimation():
 
         waveform_derivative = (neighbouring_waveform - waveform)/derivative_epsilon
         self._plot_waveform(waveforms=[waveform_derivative], plot_name=f"{parameter_symbol}_derivative")
-        logging.info(f"Finished computing partial derivative of the waveform w.r.t. {parameter_symbol}.")
+        _LOGGER.info(f"Finished computing partial derivative of the waveform w.r.t. {parameter_symbol}.")
         return waveform_derivative
 
     @staticmethod
@@ -196,7 +195,7 @@ class ParameterEstimation():
             (parameter for parameter in self.parameter_space.parameters_configuration if parameter.symbol == parameter_symbol), None)
         
         if derivative_parameter_configuration is None:
-            logging.error(f"The provided derivative parameter symbol {parameter_symbol} does not match any defined parameter in the parameter space.")
+            _LOGGER.error(f"The provided derivative parameter symbol {parameter_symbol} does not match any defined parameter in the parameter space.")
             sys.exit()
 
         parameter_evaluated_at = getattr(self.parameter_space, parameter_symbol)
@@ -219,7 +218,7 @@ class ParameterEstimation():
 
         waveform_derivative = (-waveforms[3] + 8*waveforms[2] - 8*waveforms[1] + waveforms[0])/12/derivative_epsilon
         self._plot_waveform(waveforms=[waveform_derivative], plot_name=f"{parameter_symbol}_derivative")
-        logging.info(f"Finished computing partial derivative of the waveform w.r.t. {parameter_symbol}.")
+        _LOGGER.info(f"Finished computing partial derivative of the waveform w.r.t. {parameter_symbol}.")
         return waveform_derivative
 
     def save_waveform(self, generated_waveform: pd.DataFrame) -> None:
@@ -229,7 +228,7 @@ class ParameterEstimation():
                 simulation_path = simulation_configuration[SIMULATION_PATH]
 
         except FileNotFoundError:
-            logging.warning(f"No simulation_configuration.json file in root directory. Will use default directory name: {DEFAULT_SIMULATION_PATH}.")
+            _LOGGER.warning(f"No simulation_configuration.json file in root directory. Will use default directory name: {DEFAULT_SIMULATION_PATH}.")
             simulation_path = DEFAULT_SIMULATION_PATH
 
         new_simulation_path = simulation_path
@@ -366,7 +365,7 @@ class ParameterEstimation():
     @staticmethod
     def _crop_frequency_domain(fs: np.array, integrant: np.array) -> tuple:
         if len(fs) != len(integrant):
-            logging.warning("length of frequency domain and integrant are not equal.")
+            _LOGGER.warning("length of frequency domain and integrant are not equal.")
 
         # find lowest frequency
         lower_limit_index = np.argmax(fs >= MINIMAL_FREQUENCY)
@@ -397,7 +396,7 @@ class ParameterEstimation():
                 row.append(fisher_information_matrix_element)
             fisher_information_array.append(row)
         
-        logging.info("Fisher information matrix has been computed.")
+        _LOGGER.info("Fisher information matrix has been computed.")
 
         return np.matrix(fisher_information_array)
     
@@ -416,7 +415,7 @@ class ParameterEstimation():
             for col_parameter, mean_error in zip(reduced_parameter_list, reduced_error_row):
                 mean_errors_dict[f"delta_{row_parameter}_delta_{col_parameter}"] = mean_error
             row_index += 1
-        logging.info("Finished computing Cramer Rao bounds.")
+        _LOGGER.info("Finished computing Cramer Rao bounds.")
         return mean_errors_dict
 
     @timer_decorator
@@ -437,7 +436,7 @@ class ParameterEstimation():
 
         cramer_rao_bounds = pd.concat([cramer_rao_bounds, new_cramer_rao_bounds], ignore_index=True)
         cramer_rao_bounds.to_csv(CRAMER_RAO_BOUNDS_PATH, index=False)
-        logging.info(f"Saved current Cramer-Rao bound to {CRAMER_RAO_BOUNDS_PATH}")
+        _LOGGER.info(f"Saved current Cramer-Rao bound to {CRAMER_RAO_BOUNDS_PATH}")
 
     def _visualize_cramer_rao_bounds(self) -> None:
         mean_errors_data = pd.read_csv(CRAMER_RAO_BOUNDS_PATH)
@@ -528,7 +527,7 @@ class ParameterEstimation():
 
     @timer_decorator
     def check_parameter_dependency(self, parameter_symbol: str, steps: int = 5):
-        logging.info(f"Start parameter dependency check for {parameter_symbol}.")
+        _LOGGER.info(f"Start parameter dependency check for {parameter_symbol}.")
         parameter_configuration = next((config for config in self.parameter_space.parameters_configuration if config.symbol == parameter_symbol), None)
 
         self.parameter_space.a = 0. 
@@ -537,7 +536,7 @@ class ParameterEstimation():
 
 
         if parameter_configuration is None:
-            logging.warning("check_parameter_dependency couldn't match parameter symbol.")
+            _LOGGER.warning("check_parameter_dependency couldn't match parameter symbol.")
             sys.exit()
 
         parameter_steps = np.linspace(parameter_configuration.lower_limit, parameter_configuration.upper_limit, steps)
@@ -562,10 +561,10 @@ class ParameterEstimation():
                 self.parameter_space.qK = self.parameter_space.qS
 
             waveforms.append(self.generate_waveform(use_antenna_pattern_functions=False))
-            logging.info(f"Parameter dependency for {parameter_symbol}: {i+1}/{len(parameter_steps)} waveforms generated.")
+            _LOGGER.info(f"Parameter dependency for {parameter_symbol}: {i+1}/{len(parameter_steps)} waveforms generated.")
 
         self._plot_waveform(waveforms=waveforms, plot_name=f"dependency_{parameter_symbol}", use_log_scale=True)
 
         # set parameter value back to original one.
         setattr(self.parameter_space, parameter_symbol, current_parameter_value)
-        logging.info(f"Finished parameter dependency check for {parameter_symbol}.")
+        _LOGGER.info(f"Finished parameter dependency check for {parameter_symbol}.")
