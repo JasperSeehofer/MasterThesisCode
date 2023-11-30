@@ -7,6 +7,7 @@ import time
 import matplotlib.pyplot as plt
 import logging
 import sys
+import cupy as cp
 
 from scipy.fft import rfft, rfftfreq
 from enum import Enum
@@ -64,6 +65,7 @@ class ParameterEstimation():
 
     def __init__(self, wave_generation_type: WaveGeneratorType, use_gpu: bool):
         self.parameter_space = ParameterSpace()
+        self._use_gpu = use_gpu
         if wave_generation_type == "FastSchwarzschildEccentricFlux":
             self.waveform_generator = GenerateEMRIWaveform(
                 waveform_class="FastSchwarzschildEccentricFlux",
@@ -90,6 +92,9 @@ class ParameterEstimation():
             **self.parameter_space._parameters_to_dict(),
             dt=self.dt,
             T=self.T)
+        if self._use_gpu:
+            waveform = cp.asnumpy(waveform)
+
         if use_antenna_pattern_functions:
             return_waveform = self.lisa_configuration.transform_to_solar_barycenter_frame(waveform=waveform)
         else:
@@ -277,9 +282,9 @@ class ParameterEstimation():
 
 
         if use_log_scale:
-            indices = np.round(np.geomspace(1, xs.shape[0] - 2, 1000)).astype(int)
+            indices = np.round(np.geomspace(1, xs.shape[0], 1000)).astype(int)[:-1]
         else:
-            indices = np.round(np.linspace(0, xs.shape[0] - 2, 1000)).astype(int)
+            indices = np.round(np.linspace(0, xs.shape[0], 1000)).astype(int)[:-1]
 
         fig = plt.figure(figsize = (12, 8))
         for index, waveform in enumerate(waveforms):
