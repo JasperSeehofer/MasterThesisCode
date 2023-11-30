@@ -8,8 +8,9 @@ import matplotlib.pyplot as plt
 import logging
 import sys
 import cupy as cp
+import cupyx.scipy.fft as cufft
 
-from scipy.fft import rfft, rfftfreq
+from scipy.fft import rfft, rfftfreq, set_backend
 from enum import Enum
 from few.waveform import GenerateEMRIWaveform
 
@@ -343,12 +344,21 @@ class ParameterEstimation():
     @timer_decorator
     def scalar_product_of_functions(self, a: np.ndarray[float], b: np.ndarray[float]) -> float:
 
-        fs = rfftfreq(len(a), self.dt)
+        if self._use_gpu:
+            with set_backend(cufft):
+                fs = cp.asnumpy(rfftfreq(len(a), self.dt))
+        else:
+            fs = rfftfreq(len(a), self.dt)
 
         power_spectral_density = np.array([self.lisa_configuration.power_spectral_density(f=f) for f in fs])
 
-        a_fft = rfft(a)
-        b_fft_cc = np.conjugate(rfft(b))
+        if self._use_gpu:
+            with set_backend(cufft):
+                a_fft = cp.asnumpy(rfft(a))
+                b_fft_cc = cp.asnumpy(np.conjugate(rfft(b)))
+        else:
+            a_fft = rfft(a)
+            b_fft_cc = np.conjugate(rfft(b))
 
         # crop all arrays to shortest length
         reduced_length = min(a_fft.shape[0], b_fft_cc.shape[0], fs.shape[0])
