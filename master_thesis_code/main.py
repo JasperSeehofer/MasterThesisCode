@@ -22,7 +22,7 @@ def main() -> None:
     arguments.validate()
     _ROOT_LOGGER.info("---------- STARTING MASTER THESIS CODE ----------")
 
-    parameter_estimation = ParameterEstimation(wave_generation_type="FastSchwarzschildEccentricFlux", use_gpu=arguments.use_gpu)
+    parameter_estimation = ParameterEstimation(wave_generation_type="FastSchwarzschildEccentricFlux", use_gpu=True)
     check_dependency = False
 
     if check_dependency:

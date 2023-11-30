@@ -43,11 +43,6 @@ class Arguments:
         return self._log_level
     
     @property
-    def use_gpu(self) -> bool:
-        """Boolean that indicates whether to use gpu for waveform generation or not."""
-        return self._parsed_arguments.use_gpu
-    
-    @property
     def simulation_steps(self) -> int:
         """Number of waveforms generated in the simulation."""
         return self._parsed_arguments.simulation_steps
@@ -70,10 +65,7 @@ class Arguments:
             _LOGGER.warning(
                 f"The provided log level is not valid. Valid values are: {', '.join(_VALID_LOG_LEVELS)}."
                 f"The log level is set to {logging.getLevelName(self._log_level)}")
-        if self._parsed_arguments.use_gpu is True:
-            _LOGGER.info(
-                f"GPU acceleration for waveform generation is activated"
-            )
+        
         try:
             self._simulation_steps = int(self._parsed_arguments.simulation_steps)
         except ValueError as original_error:
@@ -92,11 +84,6 @@ def _parse_arguments(arguments: List[str]) -> argparse.Namespace:
         help="Number of waveforms that are generated for data evaluation. (default is 0)",
         default=0,
         type=int
-    )
-    parser.add_argument(
-        "--use_gpu",
-        action="store_true",
-        help="Flag to indicate that GPU should be used for waveform generation.",
     )
     parser.add_argument(
         "--log_level",
