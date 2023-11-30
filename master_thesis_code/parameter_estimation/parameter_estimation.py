@@ -9,8 +9,9 @@ import logging
 import sys
 import cupy as cp
 import cupyx.scipy.fft as cufft
+from scipy.fft import rfft, rfftfreq, set_global_backend
+set_global_backend(cufft)
 
-from scipy.fft import rfft, rfftfreq, set_backend
 from enum import Enum
 from few.waveform import GenerateEMRIWaveform
 
@@ -37,7 +38,7 @@ inspiral_kwargs={
 # keyword arguments for inspiral generator (RomanAmplitude)
 amplitude_kwargs = {
     "max_init_len": int(1e3),  # all of the trajectories will be well under len = 1000
-    "use_gpu": False  # GPU is available in this class
+    "use_gpu": True  # GPU is available in this class
 }
 
 # keyword arguments for Ylm generator (GetYlms)
@@ -47,7 +48,7 @@ Ylm_kwargs = {
 
 # keyword arguments for summation generator (InterpolatedModeSum)
 sum_kwargs = {
-    "use_gpu": False,  # GPU is available for this type of summation
+    "use_gpu": True,  # GPU is available for this type of summation
     "pad_output": False,
 }
 
@@ -62,7 +63,7 @@ class ParameterEstimation():
     M_derivative_steps: int = 1000
     M_steps: list[float] = []
     waveform_generation_time: int = 0
-    current_waveform: np.array = None
+    current_waveform: cp.array = None
 
     def __init__(self, wave_generation_type: WaveGeneratorType, use_gpu: bool):
         self.parameter_space = ParameterSpace()
@@ -88,16 +89,14 @@ class ParameterEstimation():
         self.lisa_configuration = LISAConfiguration(parameter_space=self.parameter_space, dt=self.dt)
     
     @timer_decorator
-    def generate_waveform(self, use_antenna_pattern_functions: bool = True) -> np.ndarray[float]:
+    def generate_waveform(self, use_antenna_pattern_functions: bool = True) -> cp.ndarray[float]:
         waveform = self.waveform_generator(
             **self.parameter_space._parameters_to_dict(),
             dt=self.dt,
             T=self.T)
-        if self._use_gpu:
-            waveform = cp.asnumpy(waveform)
 
         if use_antenna_pattern_functions:
-            return_waveform = self.lisa_configuration.transform_to_solar_barycenter_frame(waveform=waveform)
+            return_waveform = self.lisa_configuration.transform_from_ssb_to_lisa_frame(waveform=waveform)
         else:
             return_waveform = waveform.real**2 + waveform.imag**2
         return return_waveform
@@ -115,7 +114,7 @@ class ParameterEstimation():
 
         dM = (M_configuration.upper_limit - M_configuration.lower_limit)/self.M_derivative_steps
 
-        self.M_steps = list(np.arange(
+        self.M_steps = list(cp.arange(
             start=M_configuration.lower_limit,
             stop=M_configuration.upper_limit,
             step=dM))
@@ -132,7 +131,7 @@ class ParameterEstimation():
                     (IMAGINARY_PART, f"M_{count}")], 
                     names=["first", "second"])
 
-            additional_columns = pd.DataFrame(data=np.array([waveform.real, waveform.imag]).T, columns=column_indices)
+            additional_columns = pd.DataFrame(data=cp.array([waveform.real, waveform.imag]).T, columns=column_indices)
 
             if count == 1:
                 waveforms_M = additional_columns
@@ -146,14 +145,14 @@ class ParameterEstimation():
         return waveforms_derivatives_M.dropna(axis=1 , how="all")
     
     @timer_decorator
-    def finite_difference(self,  waveform: np.ndarray[float], parameter_symbol: str) -> np.ndarray[float]:
+    def finite_difference(self,  waveform: cp.ndarray[float], parameter_symbol: str) -> cp.ndarray[float]:
         """Compute (numerically) partial derivative of the currently set parameters w.r.t. the provided parameter.
 
         Args:
             parameter_symbol (str): parameter w.r.t. which the derivative is taken (Note: symbol string has to coincide with that in the ParameterSpace list!)
 
         Returns:
-            np.array[float]: data series of derivative
+            cp.array[float]: data series of derivative
         """
         derivative_parameter_configuration = next(
             (parameter for parameter in self.parameter_space.parameters_configuration if parameter.symbol == parameter_symbol), None)
@@ -184,18 +183,18 @@ class ParameterEstimation():
         return waveform_derivative
 
     @staticmethod
-    def _crop_to_same_length(signal_1: np.array, signal_2: np.array) -> tuple:
+    def _crop_to_same_length(signal_1: cp.array, signal_2: cp.array) -> tuple:
         minimal_length = min(len(signal_1), len(signal_2))
         return signal_1[:minimal_length], signal_2[:minimal_length]
 
-    def five_point_stencil_derivative(self, parameter_symbol: str) -> np.ndarray[float]:
+    def five_point_stencil_derivative(self, parameter_symbol: str) -> cp.ndarray[float]:
         """Compute (numerically) partial derivative of the currently set parameters w.r.t. the provided parameter.
 
         Args:
             parameter_symbol (str): parameter w.r.t. which the derivative is taken (Note: symbol string has to coincide with that in the ParameterSpace list!)
 
         Returns:
-            np.array[float]: data series of derivative
+            cp.array[float]: data series of derivative
         """
         derivative_parameter_configuration = next(
             (parameter for parameter in self.parameter_space.parameters_configuration if parameter.symbol == parameter_symbol), None)
@@ -264,7 +263,7 @@ class ParameterEstimation():
             parameter_symbol: str = None, 
             plot_name: str = "", 
             x_label: str = "t [s]", 
-            xs: np.array = None,
+            xs: cp.array = None,
             use_log_scale: bool = False) -> None:
         figures_directory = f"saved_figures/waveforms/"
 
@@ -274,18 +273,18 @@ class ParameterEstimation():
         parameter_value = ""
 
         if parameter_symbol is not None:
-            parameter_value = str(np.round(getattr(self.parameter_space, parameter_symbol),3))
+            parameter_value = str(cp.round(getattr(self.parameter_space, parameter_symbol),3))
 
         # create plots
         # plot power spectral density
         if xs is None:
-            xs = np.array([index*self.dt for index in range(len(waveforms[0]))])
+            xs = cp.array([index*self.dt for index in range(len(waveforms[0]))])
 
 
         if use_log_scale:
-            indices = np.round(np.geomspace(1, xs.shape[0], 1000)).astype(int)[:-1]
+            indices = cp.round(cp.geomspace(1, xs.shape[0], 1000)).astype(int)[:-1]
         else:
-            indices = np.round(np.linspace(0, xs.shape[0], 1000)).astype(int)[:-1]
+            indices = cp.round(cp.linspace(0, xs.shape[0], 1000)).astype(int)[:-1]
 
         fig = plt.figure(figsize = (12, 8))
         for index, waveform in enumerate(waveforms):
@@ -323,7 +322,7 @@ class ParameterEstimation():
 
         # create plots
         plt.figure(figsize = (12, 8))
-        t_indices =  np.round(np.linspace(0, len(waveform_derivative_M.index) - 1, 10)).astype(int)
+        t_indices =  cp.round(cp.linspace(0, len(waveform_derivative_M.index) - 1, 10)).astype(int)
 
         for t_index in t_indices:
 
@@ -342,23 +341,14 @@ class ParameterEstimation():
             plt.clf()
 
     @timer_decorator
-    def scalar_product_of_functions(self, a: np.ndarray[float], b: np.ndarray[float]) -> float:
+    def scalar_product_of_functions(self, a: cp.ndarray[float], b: cp.ndarray[float]) -> float:
 
-        if self._use_gpu:
-            with set_backend(cufft):
-                fs = cp.asnumpy(rfftfreq(len(a), self.dt))
-        else:
-            fs = rfftfreq(len(a), self.dt)
+        fs = cp.asnumpy(rfftfreq(len(a), self.dt))
 
-        power_spectral_density = np.array([self.lisa_configuration.power_spectral_density(f=f) for f in fs])
+        power_spectral_density = cp.array([self.lisa_configuration.power_spectral_density(f=f) for f in fs])
 
-        if self._use_gpu:
-            with set_backend(cufft):
-                a_fft = cp.asnumpy(rfft(a))
-                b_fft_cc = cp.asnumpy(np.conjugate(rfft(b)))
-        else:
-            a_fft = rfft(a)
-            b_fft_cc = np.conjugate(rfft(b))
+        a_fft = cp.asnumpy(rfft(a))
+        b_fft_cc = cp.asnumpy(cp.conjugate(rfft(b)))
 
         # crop all arrays to shortest length
         reduced_length = min(a_fft.shape[0], b_fft_cc.shape[0], fs.shape[0])
@@ -367,7 +357,7 @@ class ParameterEstimation():
         fs = fs[:reduced_length]
         power_spectral_density = power_spectral_density[:reduced_length]
 
-        integrant = np.divide(np.multiply(a_fft, b_fft_cc), power_spectral_density)
+        integrant = cp.divide(cp.multiply(a_fft, b_fft_cc), power_spectral_density)
 
         self._plot_waveform(waveforms=[integrant.real], xs=fs, plot_name="scalar_product_integrant_real", x_label="f [Hz]", use_log_scale=True)
 
@@ -375,22 +365,22 @@ class ParameterEstimation():
 
         self._plot_waveform(waveforms=[integrant.real], xs=fs, plot_name="scalar_product_integrant_real_cropped", x_label="f [Hz]", use_log_scale=True)
 
-        return 4*np.trapz(y=integrant, x=fs).real
+        return 4*cp.trapz(y=integrant, x=fs).real
 
     @staticmethod
-    def _crop_frequency_domain(fs: np.array, integrant: np.array) -> tuple:
+    def _crop_frequency_domain(fs: cp.array, integrant: cp.array) -> tuple:
         if len(fs) != len(integrant):
             _LOGGER.warning("length of frequency domain and integrant are not equal.")
 
         # find lowest frequency
-        lower_limit_index = np.argmax(fs >= MINIMAL_FREQUENCY)
-        upper_limit_index = np.argmax(fs >= MAXIMAL_FREQUENCY)
+        lower_limit_index = cp.argmax(fs >= MINIMAL_FREQUENCY)
+        upper_limit_index = cp.argmax(fs >= MAXIMAL_FREQUENCY)
         if upper_limit_index == 0:
             upper_limit_index = len(fs)
         return fs[lower_limit_index:upper_limit_index], integrant[lower_limit_index:upper_limit_index]
 
     @timer_decorator
-    def compute_fisher_information_matrix(self, parameter_list: list) -> np.matrix:
+    def compute_fisher_information_matrix(self, parameter_list: list) -> cp.matrix:
         # compute derivatives for fisher information matrix
         waveform_derivatives = {}
 
@@ -413,7 +403,7 @@ class ParameterEstimation():
         
         _LOGGER.info("Fisher information matrix has been computed.")
 
-        return np.matrix(fisher_information_array)
+        return cp.matrix(fisher_information_array)
     
     @timer_decorator
     def compute_Cramer_Rao_bounds(self, parameter_list: list) -> dict:
@@ -490,19 +480,19 @@ class ParameterEstimation():
         for column_name in parameter_columns:
             fig, (ax1, ax2) = plt.subplots(1,2)
             ax1.plot(mean_errors_data[column_name], 
-                    np.sqrt(mean_errors_data["delta_M_delta_M"]),
+                    cp.sqrt(mean_errors_data["delta_M_delta_M"]),
                     '.',
                     label = f"bounds: delta M")
 
             ax2.plot(
                 mean_errors_data[column_name], 
-                np.sqrt(mean_errors_data["delta_qS_delta_qS"]),
+                cp.sqrt(mean_errors_data["delta_qS_delta_qS"]),
                 '.',
                 label = f"bounds: qS")
             
             ax2.plot(
                 mean_errors_data[column_name], 
-                np.sqrt(mean_errors_data["delta_phiS_delta_phiS"]),
+                cp.sqrt(mean_errors_data["delta_phiS_delta_phiS"]),
                 '.',
                 label = f"bounds: phiS")
 
@@ -538,7 +528,7 @@ class ParameterEstimation():
         self.waveform_generation_time = int(end-start)
 
         self.current_waveform = waveform
-        return np.sqrt(self.scalar_product_of_functions(a=waveform, b=waveform))
+        return cp.sqrt(self.scalar_product_of_functions(a=waveform, b=waveform))
 
     @timer_decorator
     def check_parameter_dependency(self, parameter_symbol: str, steps: int = 5):
@@ -554,7 +544,7 @@ class ParameterEstimation():
             _LOGGER.warning("check_parameter_dependency couldn't match parameter symbol.")
             sys.exit()
 
-        parameter_steps = np.linspace(parameter_configuration.lower_limit, parameter_configuration.upper_limit, steps)
+        parameter_steps = cp.linspace(parameter_configuration.lower_limit, parameter_configuration.upper_limit, steps)
 
         print(parameter_steps)
 
