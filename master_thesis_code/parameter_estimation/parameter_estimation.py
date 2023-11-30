@@ -89,7 +89,7 @@ class ParameterEstimation():
         self.lisa_configuration = LISAConfiguration(parameter_space=self.parameter_space, dt=self.dt)
     
     @timer_decorator
-    def generate_waveform(self, use_antenna_pattern_functions: bool = True) -> cp.ndarray[float]:
+    def generate_waveform(self, use_antenna_pattern_functions: bool = True) -> cp.ndarray:
         waveform = self.waveform_generator(
             **self.parameter_space._parameters_to_dict(),
             dt=self.dt,
@@ -145,7 +145,7 @@ class ParameterEstimation():
         return waveforms_derivatives_M.dropna(axis=1 , how="all")
     
     @timer_decorator
-    def finite_difference(self,  waveform: cp.ndarray[float], parameter_symbol: str) -> cp.ndarray[float]:
+    def finite_difference(self,  waveform: cp.ndarray, parameter_symbol: str) -> cp.ndarray:
         """Compute (numerically) partial derivative of the currently set parameters w.r.t. the provided parameter.
 
         Args:
@@ -187,7 +187,7 @@ class ParameterEstimation():
         minimal_length = min(len(signal_1), len(signal_2))
         return signal_1[:minimal_length], signal_2[:minimal_length]
 
-    def five_point_stencil_derivative(self, parameter_symbol: str) -> cp.ndarray[float]:
+    def five_point_stencil_derivative(self, parameter_symbol: str) -> cp.ndarray:
         """Compute (numerically) partial derivative of the currently set parameters w.r.t. the provided parameter.
 
         Args:
@@ -341,7 +341,7 @@ class ParameterEstimation():
             plt.clf()
 
     @timer_decorator
-    def scalar_product_of_functions(self, a: cp.ndarray[float], b: cp.ndarray[float]) -> float:
+    def scalar_product_of_functions(self, a: cp.ndarray, b: cp.ndarray) -> float:
 
         fs = cp.asnumpy(rfftfreq(len(a), self.dt))
 
