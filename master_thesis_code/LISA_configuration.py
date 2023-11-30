@@ -192,7 +192,7 @@ class LISAConfiguration:
         return (3e-15)**2*(1.+(0.4e-3/f)**2)*(1.+(f/8e-3)**4)
     
     @timer_decorator
-    def transform_from_ssb_to_lisa_frame(self, waveform: cp.ndarray[complex]) -> cp.ndarray[float]:
+    def transform_from_ssb_to_lisa_frame(self, waveform: cp.ndarray) -> cp.ndarray:
         time_series = cp.array([index*self.dt for index, _ in enumerate(waveform.real)])
     
         measurement_1 = (waveform.real*self.F_plus(time_series) - waveform.imag*self.F_cross(time_series))*cp.sqrt(3)/2
@@ -200,11 +200,11 @@ class LISAConfiguration:
         #measurement_2 = (waveform.real*self.F_plus(time_series) - waveform.imag*self.F_cross(time_series))*cp.sqrt(3)/2
         return measurement_1
 
-    def transform_to_solar_barycenter_frame_derivative_theta(self, waveform: cp.ndarray[complex]) -> cp.ndarray[float]:
+    def transform_to_solar_barycenter_frame_derivative_theta(self, waveform: cp.ndarray) -> cp.ndarray:
         time_series = cp.array([index*self.dt for index, _ in enumerate(waveform.real)])
         return (waveform.real*self.F_plus_del_theta(time_series) - waveform.imag*self.F_cross_del_theta(time_series))*cp.sqrt(3)/2
     
-    def transform_to_solar_barycenter_frame_derivative_phi(self, waveform: cp.ndarray[complex]) -> cp.ndarray[float]:
+    def transform_to_solar_barycenter_frame_derivative_phi(self, waveform: cp.ndarray) -> cp.ndarray:
         time_series = cp.array([index*self.dt for index, _ in enumerate(waveform.real)])
         return (waveform.real*self.F_plus_del_phi(time_series) - waveform.imag*self.F_cross_del_phi(time_series))*cp.sqrt(3)/2
 
