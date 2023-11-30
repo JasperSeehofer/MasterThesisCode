@@ -380,48 +380,51 @@ class ParameterEstimation():
         return fs[lower_limit_index:upper_limit_index], integrant[lower_limit_index:upper_limit_index]
 
     @timer_decorator
-    def compute_fisher_information_matrix(self, parameter_list: list) -> cp.matrix:
+    def compute_fisher_information_matrix(self) -> cp.ndarray:
         # compute derivatives for fisher information matrix
         waveform_derivatives = {}
 
         current_waveform = self.current_waveform
 
-        for parameter_symbol in parameter_list:
+        parameter_symbol_list = [parameter.symbol for parameter in self.parameter_space.parameters_configuration]
+
+        for parameter_symbol in parameter_symbol_list:
             waveform_derivative = self.finite_difference(waveform=current_waveform, parameter_symbol=parameter_symbol)
             waveform_derivatives[parameter_symbol] = waveform_derivative
 
-        fisher_information_array = []
+        fisher_information_matrix: cp.empty(
+            shape=(len(parameter_symbol_list)-1, len(parameter_symbol_list)-1),
+            dtype=float)
 
-        for column_parameter_symbol in parameter_list:
-            row = []
-            for row_parameter_symbol in parameter_list:
+        for col, column_parameter_symbol in enumerate(parameter_symbol_list):
+            for row, row_parameter_symbol in enumerate(parameter_symbol_list):
                 fisher_information_matrix_element = self.scalar_product_of_functions(
                     waveform_derivatives[column_parameter_symbol], 
                     waveform_derivatives[row_parameter_symbol])
-                row.append(fisher_information_matrix_element)
-            fisher_information_array.append(row)
+                fisher_information_matrix[col][row] = fisher_information_matrix_element    
         
         _LOGGER.info("Fisher information matrix has been computed.")
-
-        return cp.matrix(fisher_information_array)
+        return fisher_information_matrix
     
     @timer_decorator
-    def compute_Cramer_Rao_bounds(self, parameter_list: list) -> dict:
+    def compute_Cramer_Rao_bounds(self) -> dict:
 
-        fisher_information_matrix = self.compute_fisher_information_matrix(parameter_list=parameter_list)
+        fisher_information_matrix = self.compute_fisher_information_matrix()
 
-        mean_errors = fisher_information_matrix.I
+        cramer_rao_bounds = cp.linalg.inv(fisher_information_matrix)
 
-        mean_errors_dict = {}
+        parameter_symbol_list = [parameter.symbol for parameter in self.parameter_space.parameters_configuration]
+
+        independent_cramer_rao_bounds = {}
         row_index = 0
-        for row_parameter, row_mean_error in zip(parameter_list, mean_errors.tolist()):
-            reduced_parameter_list = parameter_list[row_index:]
-            reduced_error_row = row_mean_error[row_index:]
-            for col_parameter, mean_error in zip(reduced_parameter_list, reduced_error_row):
-                mean_errors_dict[f"delta_{row_parameter}_delta_{col_parameter}"] = mean_error
+        for row_parameter, row_cramer_rao_bounds in zip(parameter_symbol_list, cramer_rao_bounds):
+            reduced_parameter_list = parameter_symbol_list[row_index:]
+            reduced_error_row = row_cramer_rao_bounds[row_index:]
+            for col_parameter, cramer_rao_bound in zip(reduced_parameter_list, reduced_error_row):
+                independent_cramer_rao_bounds[f"delta_{row_parameter}_delta_{col_parameter}"] = cramer_rao_bound
             row_index += 1
         _LOGGER.info("Finished computing Cramer Rao bounds.")
-        return mean_errors_dict
+        return independent_cramer_rao_bounds
 
     @timer_decorator
     def save_cramer_rao_bound(self, cramer_rao_bound_dictionary: dict, snr: float) -> None:
