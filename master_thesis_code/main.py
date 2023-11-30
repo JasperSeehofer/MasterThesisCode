@@ -63,6 +63,9 @@ def _configure_logger(working_directory: str, log_level: int) -> None:
     file_handler.setFormatter(formatter)
     _ROOT_LOGGER.addHandler(file_handler)
 
+    # set matplotlib logging to info, because it is very talkative
+    plt.set_loglevel("warning")
+
     _ROOT_LOGGER.info(f"Log file location: {log_file_path}")
 
 if __name__ == "__main__":
