@@ -192,14 +192,14 @@ class LISAConfiguration:
         return (3e-15)**2*(1.+(0.4e-3/f)**2)*(1.+(f/8e-3)**4)
     
     @timer_decorator
-    def transform_from_ssb_to_lisa_frame(self, waveform: cp.ndarray) -> cp.ndarray:
+    def transform_from_ssb_to_lisa_frame(self, waveform: cp.ndarray) -> cp.array:
         waveform = cp.asnumpy(waveform)
         time_series = np.array([index*self.dt for index, _ in enumerate(waveform.real)])
     
         measurement_1 = (waveform.real*self.F_plus(time_series) - waveform.imag*self.F_cross(time_series))*np.sqrt(3)/2
         #self.is_LISA_second_measurement = True
         #measurement_2 = (waveform.real*self.F_plus(time_series) - waveform.imag*self.F_cross(time_series))*np.sqrt(3)/2
-        return cp.ndarray(measurement_1)
+        return cp.array(measurement_1)
 
     def transform_to_solar_barycenter_frame_derivative_theta(self, waveform: np.ndarray) -> np.ndarray:
         time_series = np.array([index*self.dt for index, _ in enumerate(waveform.real)])
