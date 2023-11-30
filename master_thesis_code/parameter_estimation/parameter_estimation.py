@@ -374,13 +374,8 @@ class ParameterEstimation():
         fs, integrant = self._crop_frequency_domain(fs, integrant)
 
         self._plot_waveform(waveforms=[integrant.real], xs=fs, plot_name="scalar_product_integrant_real_cropped", x_label="f [Hz]", use_log_scale=True)
-        
-        if self._use_gpu:
-            xp = cp
-        else:
-            xp = np
 
-        return float(4*xp.trapz(y=integrant, x=fs).real)
+        return 4*np.trapz(y=integrant, x=fs).real
 
     @staticmethod
     def _crop_frequency_domain(fs: np.array, integrant: np.array) -> tuple:
