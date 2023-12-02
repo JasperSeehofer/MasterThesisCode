@@ -143,7 +143,7 @@ class LISAConfiguration:
         return np.multiply(t, 2*np.pi/T)
 
     def power_spectral_density(self, f: float) -> float:
-        return self.power_spectral_density_instrumental(f) + self.power_spectral_density_confusion_noise(f)
+        return cp.array(self.power_spectral_density_instrumental(f) + self.power_spectral_density_confusion_noise(f))
 
     def power_spectral_density_instrumental(self, f: float) -> float:
         """Noise spectral density from PDF (41550...)
