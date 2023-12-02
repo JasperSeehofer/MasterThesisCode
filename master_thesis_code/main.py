@@ -40,7 +40,7 @@ def main() -> None:
             continue
         else:
             _ROOT_LOGGER.info(f"SNR threshold check successful: {np.round(snr, 3)} >= {SNR_THRESHOLD}")
-        cramer_rao_bounds = parameter_estimation.compute_Cramer_Rao_bounds(parameter_list=["M", "qS", "phiS"])
+        cramer_rao_bounds = parameter_estimation.compute_Cramer_Rao_bounds()
         parameter_estimation.save_cramer_rao_bound(cramer_rao_bound_dictionary=cramer_rao_bounds, snr=snr)
         counter += 1
 
