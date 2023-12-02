@@ -7,6 +7,7 @@ IMAGINARY_PART: str = "imaginary"
 SIMULATION_CONFIGURATION_FILE = "simulation_configuration.json"
 SIMULATION_PATH = "simulation_path"
 DEFAULT_SIMULATION_PATH = "simulations/simulation"
+IS_PLOTTING_ACTIVATED = False
 
 # Parameter configuration
 MINIMAL_FREQUENCY = 1e-5

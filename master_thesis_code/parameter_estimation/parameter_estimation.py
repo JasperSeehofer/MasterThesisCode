@@ -9,13 +9,13 @@ import logging
 import sys
 import cupy as cp
 import cupyx.scipy.fft as cufft
-from scipy.fft import rfft, rfftfreq, set_global_backend
-set_global_backend(cufft)
+from scipy.fft import rfft, rfftfreq, set_backend
+from master_thesis_code.exceptions import ParameterEstimationError
 
 from enum import Enum
 from few.waveform import GenerateEMRIWaveform
 
-from master_thesis_code.decorators import timer_decorator
+from master_thesis_code.decorators import timer_decorator, if_plotting_activated
 from master_thesis_code.constants import (
     REAL_PART, IMAGINARY_PART, SIMULATION_PATH, SIMULATION_CONFIGURATION_FILE, DEFAULT_SIMULATION_PATH, CRAMER_RAO_BOUNDS_PATH, MINIMAL_FREQUENCY, MAXIMAL_FREQUENCY)
 from master_thesis_code.datamodels.parameter_space import ParameterSpace
@@ -84,8 +84,10 @@ class ParameterEstimation():
             )
             _LOGGER.info("Parameter estimation is setup up with the 'PN5AAKwaveform' wave generator.")
         else:
-            _LOGGER.error("Wave generator class could not be matched to FastSchwarzschildEccentricFlux or PN5AAKwaveform, please check configuration in main.")
-            sys.exit()
+            raise ParameterEstimationError(
+                "Wave generator class could not be matched to FastSchwarzschildEccentricFlux or PN5AAKwaveform." 
+                "please check configuration in main."
+                )
         self.lisa_configuration = LISAConfiguration(parameter_space=self.parameter_space, dt=self.dt)
     
     @timer_decorator
@@ -101,49 +103,6 @@ class ParameterEstimation():
             return_waveform = waveform.real**2 + waveform.imag**2
         return return_waveform
 
-    def multiple_numeric_M_derivative(self) -> typing.Tuple[any, pd.DataFrame, pd.DataFrame]:
-        M_configuration = next(
-            (parameter_configuration 
-            for parameter_configuration in self.parameter_space.parameters_configuration
-            if parameter_configuration.symbol == "M"), 
-            None)
-        
-        if M_configuration is None:
-            _LOGGER.warning("Configuration of Black hole mass not given.")
-            sys.exit()
-
-        dM = (M_configuration.upper_limit - M_configuration.lower_limit)/self.M_derivative_steps
-
-        self.M_steps = list(cp.arange(
-            start=M_configuration.lower_limit,
-            stop=M_configuration.upper_limit,
-            step=dM))
-        
-        waveforms_M = pd.DataFrame()
-
-        for count, M in enumerate(self.M_steps, 1):
-            self.parameter_space.M = M
-            waveform = self.generate_waveform()
-            _LOGGER.info(f"{count}/{self.M_derivative_steps} waveforms generated.")
-
-            column_indices = pd.MultiIndex.from_tuples(
-                    [(REAL_PART, f"M_{count}"),
-                    (IMAGINARY_PART, f"M_{count}")], 
-                    names=["first", "second"])
-
-            additional_columns = pd.DataFrame(data=cp.array([waveform.real, waveform.imag]).T, columns=column_indices)
-
-            if count == 1:
-                waveforms_M = additional_columns
-            else:    
-                waveforms_M = pd.concat([waveforms_M, additional_columns], axis=1)
-
-        self.save_waveform(generated_waveform=waveforms_M)
-
-        waveforms_derivatives_M = waveforms_M.diff(periods=-2, axis=1).div(dM)
-
-        return waveforms_derivatives_M.dropna(axis=1 , how="all")
-    
     @timer_decorator
     def finite_difference(self,  waveform: cp.ndarray, parameter_symbol: str) -> cp.ndarray:
         """Compute (numerically) partial derivative of the currently set parameters w.r.t. the provided parameter.
@@ -158,8 +117,9 @@ class ParameterEstimation():
             (parameter for parameter in self.parameter_space.parameters_configuration if parameter.symbol == parameter_symbol), None)
         
         if derivative_parameter_configuration is None:
-            _LOGGER.error(f"The provided derivative parameter symbol {parameter_symbol} does not match any defined parameter in the parameter space.")
-            sys.exit()
+            raise ParameterEstimationError(
+                f"The provided derivative parameter symbol {parameter_symbol} does not match any defined parameter in the parameter space."
+                )
 
         # save current parameter value
         parameter_evaluated_at = getattr(self.parameter_space, parameter_symbol)
@@ -183,7 +143,7 @@ class ParameterEstimation():
         return waveform_derivative
 
     @staticmethod
-    def _crop_to_same_length(signal_1: cp.array, signal_2: cp.array) -> tuple:
+    def _crop_to_same_length(signal_1: cp.array, signal_2: cp.ndarray) -> tuple:
         minimal_length = min(len(signal_1), len(signal_2))
         return signal_1[:minimal_length], signal_2[:minimal_length]
 
@@ -226,37 +186,7 @@ class ParameterEstimation():
         _LOGGER.info(f"Finished computing partial derivative of the waveform w.r.t. {parameter_symbol}.")
         return waveform_derivative
 
-    def save_waveform(self, generated_waveform: pd.DataFrame) -> None:
-        try:
-            with open(SIMULATION_CONFIGURATION_FILE, "r") as file:
-                simulation_configuration = json.load(file)
-                simulation_path = simulation_configuration[SIMULATION_PATH]
-
-        except FileNotFoundError:
-            _LOGGER.warning(f"No simulation_configuration.json file in root directory. Will use default directory name: {DEFAULT_SIMULATION_PATH}.")
-            simulation_path = DEFAULT_SIMULATION_PATH
-
-        new_simulation_path = simulation_path
-        counter = 1
-
-        while os.path.isdir(new_simulation_path):
-            new_simulation_path = f"{simulation_path}_{str(counter)}"
-            counter += 1
-
-        os.makedirs(new_simulation_path)
-
-        with open(f"{new_simulation_path}/parameters.json", "w") as file:
-            simulation_parameters = {
-                "dt": self.dt,
-                "T": self.T,
-                "M_derivative_steps": self.M_derivative_steps,
-                "M_steps": self.M_steps
-            }
-            json.dump(self.parameter_space._parameters_to_dict() | simulation_parameters, file)
-        print(generated_waveform)
-        generated_waveform.to_csv(f"{new_simulation_path}/waveform.csv")
-    
-    @timer_decorator
+    @if_plotting_activated
     def _plot_waveform(
             self, 
             waveforms: typing.List, 
@@ -305,55 +235,17 @@ class ParameterEstimation():
         plt.savefig(figures_directory + f"{plot_name}.png", dpi=300)
         plt.close()
 
-    def _plot_M_derivative(self, waveform_derivative_M: pd.DataFrame) -> None:
-        
-        # check directory and if it doesn't exit create it
-        figures_directory = f"saved_figures/M_derivative_{self.M_derivative_steps}_steps/"
-
-        if not os.path.isdir(figures_directory):
-            os.makedirs(figures_directory)
-
-        with open(f"{figures_directory}parameters.json", "w") as file:
-            simulation_parameters = {
-                "dt": self.dt,
-                "T": self.T,
-                "M_derivative_steps": self.M_derivative_steps,
-                "M_steps": self.M_steps
-            }
-            json.dump(self.parameter_space._parameters_to_dict() | simulation_parameters, file)
-
-        # create plots
-        plt.figure(figsize = (12, 8))
-        t_indices =  cp.round(cp.linspace(0, len(waveform_derivative_M.index) - 1, 10)).astype(int)
-
-        for t_index in t_indices:
-
-            plt.plot(self.M_steps[:-1], 
-                    waveform_derivative_M.loc[t_index , REAL_PART], 
-                    '-',
-                    label = f"Re[dh(t)/dM](M) for {self.M_derivative_steps} steps")
-            plt.plot(self.M_steps[:-1], 
-                    waveform_derivative_M.loc[t_index , IMAGINARY_PART], 
-                    '-',
-                    label = f"Im[dh(t)/dM] for {self.M_derivative_steps} steps")
-            
-            plt.xlabel("M in solar masses")
-            plt.legend()
-            plt.savefig(figures_directory + f"t_approx_{int(t_index*self.dt/3600/24)}days.png", dpi=300)
-            plt.clf()
-
     @timer_decorator
     def scalar_product_of_functions(self, a: cp.ndarray, b: cp.ndarray) -> float:
-
-        fs = rfftfreq(len(a), self.dt)
+        with set_backend(cufft):
+            fs = rfftfreq(len(a), self.dt)
+            a_fft = rfft(a)
+            b_fft_cc = cp.conjugate(rfft(b))
 
         power_spectral_density = cp.array([self.lisa_configuration.power_spectral_density(f=f) for f in fs])
 
-        a_fft = rfft(a)
-        b_fft_cc = cp.conjugate(rfft(b))
-
         # crop all arrays to shortest length
-        reduced_length = min(a_fft.shape[0], b_fft_cc.shape[0], fs.shape[0])
+        reduced_length = cp.min(a_fft.shape[0], b_fft_cc.shape[0], fs.shape[0])
         a_fft = a_fft[:reduced_length]
         b_fft_cc = b_fft_cc[:reduced_length]
         fs = fs[:reduced_length]
@@ -547,8 +439,7 @@ class ParameterEstimation():
 
 
         if parameter_configuration is None:
-            _LOGGER.warning("check_parameter_dependency couldn't match parameter symbol.")
-            sys.exit()
+            raise ParameterEstimationError("check_parameter_dependency couldn't match parameter symbol.")
 
         parameter_steps = cp.linspace(parameter_configuration.lower_limit, parameter_configuration.upper_limit, steps)
 

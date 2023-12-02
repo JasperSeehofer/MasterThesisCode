@@ -41,8 +41,8 @@ class LISAConfiguration:
             float: projection of + polarization into the detector frame.
         """
         return (
-            (1 + self.cos_theta_solar_barycenter(t)**2)/2*np.cos(2*self.phi_solar_barycenter(t))*np.cos(2*self.psi_solar_barycenter(t))
-            - self.cos_theta_solar_barycenter(t)*np.sin(2*self.phi_solar_barycenter(t))*np.sin(2*self.psi_solar_barycenter(t)))
+            (1 + self.cos_theta_solar_barycenter(t)**2)/2*cp.cos(2*self.phi_solar_barycenter(t))*cp.cos(2*self.psi_solar_barycenter(t))
+            - self.cos_theta_solar_barycenter(t)*cp.sin(2*self.phi_solar_barycenter(t))*cp.sin(2*self.psi_solar_barycenter(t)))
 
     def F_cross(self, t: float) -> float:
         """Antenna pattern function for + polarization of the gravitational wave. from PDF (41550...)
@@ -51,48 +51,9 @@ class LISAConfiguration:
             float: projection of + polarization into the detector frame evaluated at angles provided by the class.
         """
         return (
-            (1 + self.cos_theta_solar_barycenter(t)**2)/2*np.cos(2*self.phi_solar_barycenter(t))*np.cos(2*self.psi_solar_barycenter(t)) 
-            + self.cos_theta_solar_barycenter(t)*np.sin(2*self.phi_solar_barycenter(t))*np.sin(2*self.psi_solar_barycenter(t)))
+            (1 + self.cos_theta_solar_barycenter(t)**2)/2*cp.cos(2*self.phi_solar_barycenter(t))*cp.cos(2*self.psi_solar_barycenter(t)) 
+            + self.cos_theta_solar_barycenter(t)*cp.sin(2*self.phi_solar_barycenter(t))*cp.sin(2*self.psi_solar_barycenter(t)))
 
-    def F_plus_del_theta(self, t: float) -> float:
-        """Partial derivative of the + polarization antenna pattern function with respect to the sky localization angle theta.
-
-        Returns:
-            float: derivative evaluated at angles provided by the class.
-        """
-        return (
-            np.sin(2*self.phi_solar_barycenter(t))*np.sin(2*self.psi_solar_barycenter(t))*np.sin(self.theta_solar_barycenter(t)) 
-            - np.sin(self.theta_solar_barycenter(t))*np.cos(2*self.phi_solar_barycenter(t))*np.cos(2*self.psi_solar_barycenter(t))*self.cos_theta_solar_barycenter(t))
-
-    def F_plus_del_phi(self, t: float) -> float:
-        """Partial derivative of the + polarization antenna pattern function with respect to the sky localization angle phi.
-
-        Returns:
-            float: derivative evaluated at angles provided by the class.
-        """
-        return (
-            -2*(self.cos_theta_solar_barycenter(t)**2/2 + 1/2)*np.sin(2*self.phi_solar_barycenter(t))*np.cos(2*self.psi_solar_barycenter(t)) 
-            - 2*np.sin(2*self.psi_solar_barycenter(t))*np.cos(2*self.phi_solar_barycenter(t))*self.cos_theta_solar_barycenter(t))
-
-    def F_cross_del_theta(self, t: float) -> float:
-        """Partial derivative of the x polarization antenna pattern function with respect to the sky localization angle theta.
-
-        Returns:
-            float: derivative evaluated at angles provided by the class.
-        """
-        return (
-            np.sin(2*self.phi_solar_barycenter(t))*np.sin(2*self.psi_solar_barycenter(t))*np.sin(self.theta_solar_barycenter(t)) 
-            - np.sin(self.theta_solar_barycenter(t))*np.cos(2*self.phi_solar_barycenter(t))*np.cos(2*self.psi_solar_barycenter(t))*self.cos_theta_solar_barycenter(t))
-
-    def F_cross_del_phi(self, t: float) -> float:
-        """Partial derivative of the x polarization antenna pattern function with respect to the sky localization angle phi.
-
-        Returns:
-            float: derivative evaluated at angles provided by the class.
-        """
-        return (
-            -2*(self.cos_theta_solar_barycenter(t)**2/2 + 1/2)*np.sin(2*self.phi_solar_barycenter(t))*np.cos(2*self.psi_solar_barycenter(t)) 
-            - 2*np.sin(2*self.psi_solar_barycenter(t))*np.cos(2*self.phi_solar_barycenter(t))*self.cos_theta_solar_barycenter(t))
 
     def cos_theta_solar_barycenter(self, t):
         """Cosine of theta as a function of time and of the sky-localization in the solar system barycenter frame
@@ -103,30 +64,30 @@ class LISAConfiguration:
         Returns:
             _type_: value of cosine at given time
         """
-        return np.cos(self.qS)/2 - np.sqrt(3)/2*np.sin(self.qS)*np.cos(self.phi_t(t) - self.phiS)
+        return cp.cos(self.qS)/2 - cp.sqrt(3)/2*cp.sin(self.qS)*cp.cos(self.phi_t(t) - self.phiS)
     
     def phi_solar_barycenter(self, t):
-        phi =  self.phi_t(t) + np.arctan(
-            (np.sqrt(3)*np.cos(self.qS) + np.sin(self.qS)*np.cos(self.phi_t(t) - self.phiS))/(2*np.sin(self.qS)*np.sin(self.phi_t(t) - self.phiS)))
+        phi =  self.phi_t(t) + cp.arctan(
+            (cp.sqrt(3)*cp.cos(self.qS) + cp.sin(self.qS)*cp.cos(self.phi_t(t) - self.phiS))/(2*cp.sin(self.qS)*cp.sin(self.phi_t(t) - self.phiS)))
         if self.is_LISA_second_measurement:
-            phi += -np.pi/4
+            phi += -cp.pi/4
         return phi
 
     def psi_solar_barycenter(self, t):
-        Lz = np.cos(self.qK)/2 - np.sqrt(3)/2*np.sin(self.qK)*np.cos(self.phi_t(t) - self.phiK) # scalar product of L and z
-        LN = np.cos(self.qK)*np.cos(self.qS) + np.sin(self.qK)*np.sin(self.qS)*np.cos(self.phiK - self.phiS) # scalar product of L and N
+        Lz = cp.cos(self.qK)/2 - cp.sqrt(3)/2*cp.sin(self.qK)*cp.cos(self.phi_t(t) - self.phiK) # scalar product of L and z
+        LN = cp.cos(self.qK)*cp.cos(self.qS) + cp.sin(self.qK)*cp.sin(self.qS)*cp.cos(self.phiK - self.phiS) # scalar product of L and N
         zN = self.cos_theta_solar_barycenter(t) # scalar product of z and N
         NLxz = (
-            np.sin(self.qK)*np.sin(self.qS)*np.sin(self.phiK - self.phiS)
-            - np.sqrt(3)/2*np.cos(self.phi_t(t))*(
-                np.cos(self.qK)*np.sin(self.qS)*np.sin(self.phiS) 
-                - np.cos(self.qS*np.sin(self.qK)*np.sin(self.phiK))
+            cp.sin(self.qK)*cp.sin(self.qS)*cp.sin(self.phiK - self.phiS)
+            - cp.sqrt(3)/2*cp.cos(self.phi_t(t))*(
+                cp.cos(self.qK)*cp.sin(self.qS)*cp.sin(self.phiS) 
+                - cp.cos(self.qS*cp.sin(self.qK)*cp.sin(self.phiK))
                 )
-            - np.sqrt(3)/2*np.sin(self.phi_t(t))*(
-                np.cos(self.qS)*np.sin(self.qK)*np.cos(self.phiK)
-                - np.cos(self.qK)*np.sin(self.qS)*np.cos(self.phiS)
+            - cp.sqrt(3)/2*cp.sin(self.phi_t(t))*(
+                cp.cos(self.qS)*cp.sin(self.qK)*cp.cos(self.phiK)
+                - cp.cos(self.qK)*cp.sin(self.qS)*cp.cos(self.phiS)
             )) # scalar product of N and (cross product of L and z)
-        return np.arctan(
+        return cp.arctan(
             (Lz - LN*zN)/NLxz
         )
 
@@ -140,10 +101,10 @@ class LISAConfiguration:
             float: current orbital phase
         """
         T = 31557600 # in s (1 year)
-        return np.multiply(t, 2*np.pi/T)
+        return cp.multiply(t, 2*cp.pi/T)
 
     def power_spectral_density(self, f: float) -> float:
-        return cp.array(self.power_spectral_density_instrumental(f) + self.power_spectral_density_confusion_noise(f))
+        return self.power_spectral_density_instrumental(f) + self.power_spectral_density_confusion_noise(f)
 
     def power_spectral_density_instrumental(self, f: float) -> float:
         """Noise spectral density from PDF (41550...)
@@ -160,7 +121,7 @@ class LISAConfiguration:
         if f == 0:
             f = 1e-9
 
-        return A_1*(self.P_OMS(f) + 2.*(1. + np.cos(f/f_ast)**2) * self.P_acc(f) / (2.*np.pi*f)**4) * (1. + 6./10. * (f/f_ast)**2)
+        return A_1*(self.P_OMS(f) + 2.*(1. + cp.cos(f/f_ast)**2) * self.P_acc(f) / (2.*cp.pi*f)**4) * (1. + 6./10. * (f/f_ast)**2)
 
     def power_spectral_density_confusion_noise(self, f: float) -> float:
         """DEPENDS ON OBSERVATION TIME !! TODO
@@ -181,7 +142,7 @@ class LISAConfiguration:
         if f == 0:
             return 10**20
 
-        return A_2*f**(-7/3)*np.exp(-f**alpha + beta*f*np.sin(kappa*f))*(1 + np.tanh(gamma*(f_k-f)))
+        return A_2*f**(-7/3)*cp.exp(-f**alpha + beta*f*cp.sin(kappa*f))*(1 + cp.tanh(gamma*(f_k-f)))
 
     @staticmethod
     def P_OMS(f: float) -> float:
@@ -194,20 +155,12 @@ class LISAConfiguration:
     @timer_decorator
     def transform_from_ssb_to_lisa_frame(self, waveform: cp.ndarray) -> cp.array:
         waveform = cp.asnumpy(waveform)
-        time_series = np.array([index*self.dt for index, _ in enumerate(waveform.real)])
+        time_series = cp.array([index*self.dt for index, _ in enumerate(waveform.real)])
     
-        measurement_1 = (waveform.real*self.F_plus(time_series) - waveform.imag*self.F_cross(time_series))*np.sqrt(3)/2
+        measurement_1 = (waveform.real*self.F_plus(time_series) - waveform.imag*self.F_cross(time_series))*cp.sqrt(3)/2
         #self.is_LISA_second_measurement = True
-        #measurement_2 = (waveform.real*self.F_plus(time_series) - waveform.imag*self.F_cross(time_series))*np.sqrt(3)/2
+        #measurement_2 = (waveform.real*self.F_plus(time_series) - waveform.imag*self.F_cross(time_series))*cp.sqrt(3)/2
         return cp.array(measurement_1)
-
-    def transform_to_solar_barycenter_frame_derivative_theta(self, waveform: np.ndarray) -> np.ndarray:
-        time_series = np.array([index*self.dt for index, _ in enumerate(waveform.real)])
-        return (waveform.real*self.F_plus_del_theta(time_series) - waveform.imag*self.F_cross_del_theta(time_series))*np.sqrt(3)/2
-    
-    def transform_to_solar_barycenter_frame_derivative_phi(self, waveform: np.ndarray) -> np.ndarray:
-        time_series = np.array([index*self.dt for index, _ in enumerate(waveform.real)])
-        return (waveform.real*self.F_plus_del_phi(time_series) - waveform.imag*self.F_cross_del_phi(time_series))*np.sqrt(3)/2
 
     @timer_decorator
     def _visualize_lisa_configuration(self) -> None:
@@ -218,23 +171,23 @@ class LISAConfiguration:
 
         # create plots
         # plot power spectral density
-        fs = np.linspace(MINIMAL_FREQUENCY, MAXIMAL_FREQUENCY, 10000)
+        fs = cp.linspace(MINIMAL_FREQUENCY, MAXIMAL_FREQUENCY, 10000)
         fig = plt.figure(figsize = (12, 8))
         plt.plot(
             fs, 
-            [np.sqrt(self.power_spectral_density_confusion_noise(f)) for f in fs], 
+            [cp.sqrt(self.power_spectral_density_confusion_noise(f)) for f in fs], 
             '--',
             linewidth=1,
             label = "sqrt(S_WD(f))")
         plt.plot(
             fs, 
-            [np.sqrt(self.power_spectral_density_instrumental(f)) for f in fs], 
+            [cp.sqrt(self.power_spectral_density_instrumental(f)) for f in fs], 
             '--',
             linewidth=1,
             label = "sqrt(S_INS(f))")
         plt.plot(
             fs, 
-            [np.sqrt(self.power_spectral_density(f)) for f in fs], 
+            [cp.sqrt(self.power_spectral_density(f)) for f in fs], 
             '-',
             label = "sqrt(S_n(f))")
         plt.xlabel("f [Hz]")
