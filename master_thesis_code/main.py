@@ -6,8 +6,9 @@ import datetime
 import os
 
 from master_thesis_code.arguments import Arguments
-from master_thesis_code.parameter_estimation.parameter_estimation import ParameterEstimation
+from master_thesis_code.parameter_estimation.parameter_estimation import ParameterEstimation, WaveGeneratorType
 from master_thesis_code.constants import SNR_THRESHOLD
+
 
 # logging setup
 _ROOT_LOGGER = logging.getLogger()
@@ -22,7 +23,7 @@ def main() -> None:
     arguments.validate()
     _ROOT_LOGGER.info("---------- STARTING MASTER THESIS CODE ----------")
 
-    parameter_estimation = ParameterEstimation(wave_generation_type="FastSchwarzschildEccentricFlux", use_gpu=True)
+    parameter_estimation = ParameterEstimation(wave_generation_type=WaveGeneratorType.pn5, use_gpu=True)
     check_dependency = False
 
     if check_dependency:

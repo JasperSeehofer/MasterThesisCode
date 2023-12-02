@@ -19,12 +19,12 @@ parameters_configuration: list[Parameter] = [
         Parameter(symbol="mu", unit="solar masses", lower_limit=1, upper_limit=1e2),  # mass of the CO (compact object) in solar masses
         Parameter(symbol="a", unit="dimensionless", lower_limit=0., upper_limit=1),  # dimensionless spin of the MBH
         Parameter(symbol="p0", unit="meters", lower_limit=10., upper_limit=16.),  # Kepler-orbit parameter: separation
-        Parameter(symbol="e0", unit="dimensionless", lower_limit=0.2, upper_limit=0.7),  # Kepler-orbit parameter: eccentricity
-        Parameter(symbol="x0", unit="dimensionless", lower_limit=-1., upper_limit=1),  # Kepler-orbit parameter: x_I0=cosI (I is the inclination)
-        Parameter(symbol="dist", unit="Gpc", lower_limit=0.1, upper_limit=2),  # luminosity distance
-        Parameter(symbol="qS", unit="radian", lower_limit=-np.pi/2, upper_limit=np.pi/2),  # Sky location polar angle in ecliptic coordinates.
+        Parameter(symbol="e0", unit="dimensionless", lower_limit=0.0, upper_limit=1.0),  # Kepler-orbit parameter: eccentricity
+        Parameter(symbol="x0", unit="dimensionless", lower_limit=-1., upper_limit=1.),  # Kepler-orbit parameter: x_I0=cosI (I is the inclination)
+        Parameter(symbol="dist", unit="Gpc", lower_limit=0.1, upper_limit=5),  # luminosity distance
+        Parameter(symbol="qS", unit="radian", lower_limit=0.0, upper_limit=np.pi),  # Sky location polar angle in ecliptic coordinates.
         Parameter(symbol="phiS", unit="radian", lower_limit=0., upper_limit=2*np.pi),  # Sky location azimuthal angle in ecliptic coordinates.
-        Parameter(symbol="qK", unit="radian", lower_limit=-np.pi/2, upper_limit=np.pi/2),  # Initial BH spin polar angle in ecliptic coordinates.
+        Parameter(symbol="qK", unit="radian", lower_limit=0.0, upper_limit=np.pi),  # Initial BH spin polar angle in ecliptic coordinates.
         Parameter(symbol="phiK", unit="radian", lower_limit=0., upper_limit=2*np.pi),  # Initial BH spin azimuthal angle in ecliptic coordinates.
         Parameter(symbol="Phi_theta0", unit="radian", lower_limit=0., upper_limit=2*np.pi),  # initial polar phase
         Parameter(symbol="Phi_phi0", unit="radian", lower_limit=0., upper_limit=2*np.pi),  # initial azimuthal phase
