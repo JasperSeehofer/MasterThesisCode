@@ -243,7 +243,7 @@ class ParameterEstimation():
             b_fft_cc = cp.conjugate(rfft(b))[1:]
         _LOGGER.debug("FFT done.")
 
-        power_spectral_density = self.lisa_configuration.power_spectral_density(f=fs)
+        power_spectral_density = self.lisa_configuration.power_spectral_density(frequencies=fs)
         
         _LOGGER.debug("psd done.")
         # crop all arrays to shortest length
