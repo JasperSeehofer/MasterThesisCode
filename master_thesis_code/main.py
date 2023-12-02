@@ -1,9 +1,13 @@
 import logging
 import matplotlib.pyplot as plt
 import numpy as np
+import cupy as cp
 import resource
 import datetime
 import os
+from time import time
+import GPUtil
+from tabulate import tabulate
 
 from master_thesis_code.arguments import Arguments
 from master_thesis_code.parameter_estimation.parameter_estimation import ParameterEstimation, WaveGeneratorType
@@ -22,6 +26,10 @@ def main() -> None:
     _configure_logger(arguments.working_directory, arguments.log_level)
     arguments.validate()
     _ROOT_LOGGER.info("---------- STARTING MASTER THESIS CODE ----------")
+    
+    _ROOT_LOGGER.debug(f"CUDA version: 11.7")
+    _display_GPU_information()
+    mempool = cp.get_default_memory_pool()
 
     parameter_estimation = ParameterEstimation(wave_generation_type=WaveGeneratorType.pn5, use_gpu=True)
     check_dependency = False
@@ -31,9 +39,11 @@ def main() -> None:
             parameter_estimation.check_parameter_dependency(parameter_symbol=parameter_symbol, steps=5)
 
     counter = 0
-    for i in range(arguments.simulation_steps):
-        _ROOT_LOGGER.debug(f"simulation step {i}.")
-        _ROOT_LOGGER.info(f"{counter} evaluations successful.")
+    start_time = time()
+    while counter < arguments.simulation_steps:
+        mempool.free_all_blocks()
+        _ROOT_LOGGER.debug(f"currently used GPU memory: {int(mempool.total_bytes())/10**9} Gbytes")
+        _ROOT_LOGGER.info(f"{counter} evaluations successful. ({counter/(time()-start_time)*60}/min)")
         parameter_estimation.parameter_space.randomize_parameters()
         snr = parameter_estimation.compute_signal_to_noise_ratio()
         if snr < SNR_THRESHOLD:
@@ -42,6 +52,7 @@ def main() -> None:
         else:
             _ROOT_LOGGER.info(f"SNR threshold check successful: {np.round(snr, 3)} >= {SNR_THRESHOLD}")
         cramer_rao_bounds = parameter_estimation.compute_Cramer_Rao_bounds()
+        _display_GPU_information()
         parameter_estimation.save_cramer_rao_bound(cramer_rao_bound_dictionary=cramer_rao_bounds, snr=snr)
         counter += 1
 
@@ -68,6 +79,35 @@ def _configure_logger(working_directory: str, log_level: int) -> None:
     plt.set_loglevel("warning")
 
     _ROOT_LOGGER.info(f"Log file location: {log_file_path}")
+
+def _display_GPU_information() -> None:
+    _ROOT_LOGGER.info("="*40, "GPU Details", "="*40)
+    gpus = GPUtil.getGPUs()
+    list_gpus = []
+    for gpu in gpus:
+        # get the GPU id
+        gpu_id = gpu.id
+        # name of GPU
+        gpu_name = gpu.name
+        # get % percentage of GPU usage of that GPU
+        gpu_load = f"{gpu.load*100}%"
+        # get free memory in MB format
+        gpu_free_memory = f"{gpu.memoryFree}MB"
+        # get used memory
+        gpu_used_memory = f"{gpu.memoryUsed}MB"
+        # get total memory
+        gpu_total_memory = f"{gpu.memoryTotal}MB"
+        # get GPU temperature in Celsius
+        gpu_temperature = f"{gpu.temperature} °C"
+        gpu_uuid = gpu.uuid
+        list_gpus.append((
+            gpu_id, gpu_name, gpu_load, gpu_free_memory, gpu_used_memory,
+            gpu_total_memory, gpu_temperature, gpu_uuid
+        ))
+
+    _ROOT_LOGGER.info(tabulate(list_gpus, headers=("id", "name", "load", "free memory", "used memory", "total memory",
+                                   "temperature", "uuid")))
+
 
 if __name__ == "__main__":
     main()

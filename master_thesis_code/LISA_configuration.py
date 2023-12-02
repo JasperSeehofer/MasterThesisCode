@@ -217,6 +217,7 @@ class LISAConfiguration:
         )
         # self.is_LISA_second_measurement = True
         # measurement_2 = (waveform.real*self.F_plus(time_series) - waveform.imag*self.F_cross(time_series))*cp.sqrt(3)/2
+        del waveform
         return cp.array(measurement_1)
 
     @timer_decorator

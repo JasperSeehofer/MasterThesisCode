@@ -174,6 +174,7 @@ class ParameterEstimation():
             waveforms.append(waveform)
 
             maximal_shared_length = min(maximal_shared_length, waveform.shape[0])        
+            del waveform
 
         self._plot_waveform(waveforms=waveforms, plot_name="waveform_for_derivative")
 
@@ -184,6 +185,7 @@ class ParameterEstimation():
         waveform_derivative = (-waveforms[3][:maximal_shared_length] + 8*waveforms[2][:maximal_shared_length] - 8*waveforms[1][:maximal_shared_length] + waveforms[0][:maximal_shared_length])/12/derivative_epsilon
         self._plot_waveform(waveforms=[waveform_derivative], plot_name=f"{parameter_symbol}_derivative")
         _LOGGER.info(f"Finished computing partial derivative of the waveform w.r.t. {parameter_symbol}.")
+        del waveforms
         return waveform_derivative
 
     @if_plotting_activated
@@ -256,8 +258,13 @@ class ParameterEstimation():
         fs, integrant = self._crop_frequency_domain(fs, integrant)
 
         self._plot_waveform(waveforms=[integrant.real], xs=fs, plot_name="scalar_product_integrant_real_cropped", x_label="f [Hz]", use_log_scale=True)
-
-        return 4*cp.trapz(y=integrant, x=fs).real
+        
+        result = 4*cp.trapz(y=integrant, x=fs).real
+        del fs
+        del a_fft
+        del b_fft_cc
+        del power_spectral_density
+        return result
 
     @staticmethod
     def _crop_frequency_domain(fs: cp.array, integrant: cp.array) -> tuple:
@@ -296,31 +303,29 @@ class ParameterEstimation():
                 fisher_information_matrix[col][row] = fisher_information_matrix_element    
         
         _LOGGER.info("Fisher information matrix has been computed.")
+        del waveform_derivatives
         return fisher_information_matrix
     
     @timer_decorator
     def compute_Cramer_Rao_bounds(self) -> dict:
 
         fisher_information_matrix = self.compute_fisher_information_matrix()
-        
-        print(fisher_information_matrix)
 
         cramer_rao_bounds = cp.linalg.inv(fisher_information_matrix)
-
-        print(cramer_rao_bounds)
 
         parameter_symbol_list = [parameter.symbol for parameter in self.parameter_space.parameters_configuration]
 
         independent_cramer_rao_bounds = {}
         row_index = 0
         for row_parameter, row_cramer_rao_bounds in zip(parameter_symbol_list, cramer_rao_bounds):
-            print(row_cramer_rao_bounds)
             reduced_parameter_list = parameter_symbol_list[row_index:]
             reduced_error_row = row_cramer_rao_bounds[row_index:]
             for col_parameter, cramer_rao_bound in zip(reduced_parameter_list, reduced_error_row):
                 independent_cramer_rao_bounds[f"delta_{row_parameter}_delta_{col_parameter}"] = cramer_rao_bound
             row_index += 1
         _LOGGER.info("Finished computing Cramer Rao bounds.")
+        del fisher_information_matrix
+        del cramer_rao_bounds
         return independent_cramer_rao_bounds
 
     @timer_decorator
@@ -342,6 +347,7 @@ class ParameterEstimation():
         cramer_rao_bounds = pd.concat([cramer_rao_bounds, new_cramer_rao_bounds], ignore_index=True)
         cramer_rao_bounds.to_csv(CRAMER_RAO_BOUNDS_PATH, index=False)
         _LOGGER.info(f"Saved current Cramer-Rao bound to {CRAMER_RAO_BOUNDS_PATH}")
+        del cramer_rao_bound_dictionary
     
 
     def _visualize_cramer_rao_bounds(self) -> None:
