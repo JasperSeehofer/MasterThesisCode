@@ -118,10 +118,10 @@ class LISAConfiguration:
         L = 2.5e9 #m
         A_1 = 10./3./L**2 #1/m^2
         f_ast = 19.09e-3 #Hz
-        if f == 0:
-            f = 1e-9
 
-        return A_1*(self.P_OMS(f) + 2.*(1. + cp.cos(f/f_ast)**2) * self.P_acc(f) / (2.*cp.pi*f)**4) * (1. + 6./10. * (f/f_ast)**2)
+        result = A_1*(self.P_OMS(f) + 2.*(1. + cp.cos(f/f_ast)**2) * self.P_acc(f) / (2.*np.pi*f)**4) * (1. + 6./10. * (f/f_ast)**2)
+        _LOGGER.debug(f"{type(result)}")
+        return result
 
     def power_spectral_density_confusion_noise(self, f: float) -> float:
         """DEPENDS ON OBSERVATION TIME !! TODO
@@ -139,9 +139,6 @@ class LISAConfiguration:
         gamma = 1680.
         f_k = 0.00215
 
-        if f == 0:
-            return 10**20
-
         return A_2*f**(-7/3)*cp.exp(-f**alpha + beta*f*cp.sin(kappa*f))*(1 + cp.tanh(gamma*(f_k-f)))
 
     @staticmethod
@@ -153,14 +150,13 @@ class LISAConfiguration:
         return (3e-15)**2*(1.+(0.4e-3/f)**2)*(1.+(f/8e-3)**4)
     
     @timer_decorator
-    def transform_from_ssb_to_lisa_frame(self, waveform: cp.ndarray) -> cp.array:
-        waveform = cp.asnumpy(waveform)
+    def transform_from_ssb_to_lisa_frame(self, waveform: cp.ndarray) -> cp.ndarray:
         time_series = cp.array([index*self.dt for index, _ in enumerate(waveform.real)])
     
         measurement_1 = (waveform.real*self.F_plus(time_series) - waveform.imag*self.F_cross(time_series))*cp.sqrt(3)/2
         #self.is_LISA_second_measurement = True
         #measurement_2 = (waveform.real*self.F_plus(time_series) - waveform.imag*self.F_cross(time_series))*cp.sqrt(3)/2
-        return cp.array(measurement_1)
+        return measurement_1
 
     @timer_decorator
     def _visualize_lisa_configuration(self) -> None:

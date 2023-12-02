@@ -238,12 +238,14 @@ class ParameterEstimation():
     @timer_decorator
     def scalar_product_of_functions(self, a: cp.ndarray, b: cp.ndarray) -> float:
         with set_backend(cufft):
-            fs = rfftfreq(len(a), self.dt)
-            a_fft = rfft(a)
-            b_fft_cc = cp.conjugate(rfft(b))
+            fs = rfftfreq(a.__len__(), self.dt)[1:]
+            a_fft = rfft(a)[1:]
+            b_fft_cc = cp.conjugate(rfft(b))[1:]
+        _LOGGER.debug("FFT done.")
 
-        power_spectral_density = cp.array([self.lisa_configuration.power_spectral_density(f=f) for f in fs])
-
+        power_spectral_density = self.lisa_configuration.power_spectral_density(f=fs)
+        
+        _LOGGER.debug("psd done.")
         # crop all arrays to shortest length
         reduced_length = cp.min(a_fft.shape[0], b_fft_cc.shape[0], fs.shape[0])
         a_fft = a_fft[:reduced_length]
