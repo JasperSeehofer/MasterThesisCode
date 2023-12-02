@@ -31,12 +31,12 @@ class WaveGeneratorType(Enum):
 # keyword arguments for inspiral generator (RunSchwarzEccFluxInspiral)
 inspiral_kwargs={
     "DENSE_STEPPING": 0,  # we want a sparsely sampled trajectory
-    "max_init_len": int(1e3),  # all of the trajectories will be well under len = 1000
+    "max_init_len": int(1e5),  # all of the trajectories will be well under len = 1000
 }
 
 # keyword arguments for inspiral generator (RomanAmplitude)
 amplitude_kwargs = {
-    "max_init_len": int(1e3),  # all of the trajectories will be well under len = 1000
+    "max_init_len": int(1e5),  # all of the trajectories will be well under len = 1000
     "use_gpu": True  # GPU is available in this class
 }
 
@@ -75,8 +75,8 @@ class ParameterEstimation():
             self.waveform_generator = GenerateEMRIWaveform(
                 waveform_class="Pn5AAKWaveform",
                 inspiral_kwargs=inspiral_kwargs,
-                frame="detector",
                 sum_kwargs=sum_kwargs,
+                frame="detector",
                 use_gpu=use_gpu
             )
             _LOGGER.info("Parameter estimation is setup up with the 'PN5AAKwaveform' wave generator.")
@@ -167,10 +167,13 @@ class ParameterEstimation():
         five_stencil_points = [parameter_evaluated_at + step*derivative_epsilon for step in [-2., -1., 1., 2.]]
 
         waveforms = []
+        maximal_shared_length = np.inf
         for parameter_value in five_stencil_points:
             setattr(self.parameter_space, parameter_symbol, parameter_value)
             waveform = self.generate_waveform()
             waveforms.append(waveform)
+
+            maximal_shared_length = min(maximal_shared_length, waveform.shape[0])        
 
         self._plot_waveform(waveforms=waveforms, plot_name="waveform_for_derivative")
 
@@ -178,7 +181,7 @@ class ParameterEstimation():
         # set parameter back to evaluated value
         setattr(self.parameter_space, parameter_symbol, parameter_evaluated_at)
 
-        waveform_derivative = (-waveforms[3] + 8*waveforms[2] - 8*waveforms[1] + waveforms[0])/12/derivative_epsilon
+        waveform_derivative = (-waveforms[3][:maximal_shared_length] + 8*waveforms[2][:maximal_shared_length] - 8*waveforms[1][:maximal_shared_length] + waveforms[0][:maximal_shared_length])/12/derivative_epsilon
         self._plot_waveform(waveforms=[waveform_derivative], plot_name=f"{parameter_symbol}_derivative")
         _LOGGER.info(f"Finished computing partial derivative of the waveform w.r.t. {parameter_symbol}.")
         return waveform_derivative
@@ -278,7 +281,7 @@ class ParameterEstimation():
         parameter_symbol_list = [parameter.symbol for parameter in self.parameter_space.parameters_configuration]
 
         for parameter_symbol in parameter_symbol_list:
-            waveform_derivative = self.finite_difference(waveform=current_waveform, parameter_symbol=parameter_symbol)
+            waveform_derivative = self.five_point_stencil_derivative(parameter_symbol=parameter_symbol)
             waveform_derivatives[parameter_symbol] = waveform_derivative
 
         fisher_information_matrix = cp.zeros(
@@ -299,8 +302,12 @@ class ParameterEstimation():
     def compute_Cramer_Rao_bounds(self) -> dict:
 
         fisher_information_matrix = self.compute_fisher_information_matrix()
+        
+        print(fisher_information_matrix)
 
         cramer_rao_bounds = cp.linalg.inv(fisher_information_matrix)
+
+        print(cramer_rao_bounds)
 
         parameter_symbol_list = [parameter.symbol for parameter in self.parameter_space.parameters_configuration]
 
