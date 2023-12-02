@@ -9,7 +9,6 @@ import logging
 import sys
 import cupy as cp
 import cupyx.scipy.fft as cufft
-from scipy.fft import rfft, rfftfreq, set_backend
 from master_thesis_code.exceptions import ParameterEstimationError
 
 from enum import Enum
@@ -58,10 +57,8 @@ class ParameterEstimation():
     parameter_space: ParameterSpace
     waveform_generator: GenerateEMRIWaveform # generate waveform in SSB frame
     lisa_configuration: LISAConfiguration  # can be used to transform the waveform into the rotating detector frame
-    dt: float = 10
-    T: float = 1
-    M_derivative_steps: int = 1000
-    M_steps: list[float] = []
+    dt: float = 5
+    T: float = 3
     waveform_generation_time: int = 0
     current_waveform: cp.array = None
 
@@ -237,17 +234,13 @@ class ParameterEstimation():
 
     @timer_decorator
     def scalar_product_of_functions(self, a: cp.ndarray, b: cp.ndarray) -> float:
-        with set_backend(cufft):
-            fs = rfftfreq(a.__len__(), self.dt)[1:]
-            a_fft = rfft(a)[1:]
-            b_fft_cc = cp.conjugate(rfft(b))[1:]
-        _LOGGER.debug("FFT done.")
-
+        fs = cufft.rfftfreq(a.__len__(), self.dt)[1:]
+        a_fft = cufft.rfft(a)[1:]
+        b_fft_cc = cp.conjugate(cufft.rfft(b))[1:]
         power_spectral_density = self.lisa_configuration.power_spectral_density(frequencies=fs)
         
-        _LOGGER.debug("psd done.")
         # crop all arrays to shortest length
-        reduced_length = cp.min(a_fft.shape[0], b_fft_cc.shape[0], fs.shape[0])
+        reduced_length = min(a_fft.shape[0], b_fft_cc.shape[0], fs.shape[0])
         a_fft = a_fft[:reduced_length]
         b_fft_cc = b_fft_cc[:reduced_length]
         fs = fs[:reduced_length]
@@ -288,8 +281,8 @@ class ParameterEstimation():
             waveform_derivative = self.finite_difference(waveform=current_waveform, parameter_symbol=parameter_symbol)
             waveform_derivatives[parameter_symbol] = waveform_derivative
 
-        fisher_information_matrix: cp.empty(
-            shape=(len(parameter_symbol_list)-1, len(parameter_symbol_list)-1),
+        fisher_information_matrix = cp.zeros(
+            shape=(len(parameter_symbol_list), len(parameter_symbol_list)),
             dtype=float)
 
         for col, column_parameter_symbol in enumerate(parameter_symbol_list):
@@ -342,6 +335,7 @@ class ParameterEstimation():
         cramer_rao_bounds = pd.concat([cramer_rao_bounds, new_cramer_rao_bounds], ignore_index=True)
         cramer_rao_bounds.to_csv(CRAMER_RAO_BOUNDS_PATH, index=False)
         _LOGGER.info(f"Saved current Cramer-Rao bound to {CRAMER_RAO_BOUNDS_PATH}")
+    
 
     def _visualize_cramer_rao_bounds(self) -> None:
         mean_errors_data = pd.read_csv(CRAMER_RAO_BOUNDS_PATH)
@@ -380,19 +374,19 @@ class ParameterEstimation():
         for column_name in parameter_columns:
             fig, (ax1, ax2) = plt.subplots(1,2)
             ax1.plot(mean_errors_data[column_name], 
-                    cp.sqrt(mean_errors_data["delta_M_delta_M"]),
+                    np.sqrt(mean_errors_data["delta_M_delta_M"]),
                     '.',
                     label = f"bounds: delta M")
 
             ax2.plot(
                 mean_errors_data[column_name], 
-                cp.sqrt(mean_errors_data["delta_qS_delta_qS"]),
+                np.sqrt(mean_errors_data["delta_qS_delta_qS"]),
                 '.',
                 label = f"bounds: qS")
             
             ax2.plot(
                 mean_errors_data[column_name], 
-                cp.sqrt(mean_errors_data["delta_phiS_delta_phiS"]),
+                np.sqrt(mean_errors_data["delta_phiS_delta_phiS"]),
                 '.',
                 label = f"bounds: phiS")
 

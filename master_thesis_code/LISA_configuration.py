@@ -208,8 +208,8 @@ class LISAConfiguration:
         measurement_1 = (
             (
                 cp.subtract(
-                    cp.multiply(waveform.real,self.F_plus(time_series)),
-                    cp.multiply(waveform.imag * self.F_cross(time_series))
+                    cp.multiply(waveform.real, self.F_plus(time_series)),
+                    cp.multiply(waveform.imag, self.F_cross(time_series))
                 )
             )
             * cp.sqrt(3)
@@ -231,22 +231,22 @@ class LISAConfiguration:
         fs = cp.linspace(MINIMAL_FREQUENCY, MAXIMAL_FREQUENCY, 10000)
         fig = plt.figure(figsize=(12, 8))
         plt.plot(
-            fs,
-            [cp.sqrt(self.power_spectral_density_confusion_noise(f)) for f in fs],
+            cp.asnumpy(fs),
+            cp.asnumpy(cp.sqrt(self.power_spectral_density_confusion_noise(fs))),
             "--",
             linewidth=1,
             label="sqrt(S_WD(f))",
         )
         plt.plot(
-            fs,
-            [cp.sqrt(self.power_spectral_density_instrumental(f)) for f in fs],
+            cp.asnumpy(fs),
+            cp.asnumpy(cp.sqrt(self.power_spectral_density_instrumental(fs))),
             "--",
             linewidth=1,
             label="sqrt(S_INS(f))",
         )
         plt.plot(
-            fs,
-            [cp.sqrt(self.power_spectral_density(f)) for f in fs],
+            cp.asnumpy(fs),
+            cp.asnumpy(cp.sqrt(self.power_spectral_density(fs))),
             "-",
             label="sqrt(S_n(f))",
         )
@@ -263,16 +263,18 @@ class LISAConfiguration:
         steps = 100_000
         dt = year_in_sec / steps
 
-        time_series = [index * dt for index in range(steps)]
+        time_series = cp.arange(0, steps)*dt
 
         F_plus = self.F_plus(time_series)
         F_cross = self.F_cross(time_series)
         F = F_plus**2 + F_cross**2
 
+        time_series = cp.asnumpy(time_series)
+
         fig = plt.figure(figsize=(12, 8))
-        plt.plot(time_series, F_plus, "-", label="F_plus(t)")
-        plt.plot(time_series, F_cross, "-", label="F_cross(t)")
-        plt.plot(time_series, F, "-", label="F = F_plus^2 + F_cross^2")
+        plt.plot(time_series, cp.asnumpy(F_plus), "-", label="F_plus(t)")
+        plt.plot(time_series, cp.asnumpy(F_cross), "-", label="F_cross(t)")
+        plt.plot(time_series, cp.asnumpy(F), "-", label="F = F_plus^2 + F_cross^2")
 
         plt.xlabel("t [s]")
         plt.legend()
