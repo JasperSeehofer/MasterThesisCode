@@ -259,12 +259,14 @@ class ParameterEstimation():
     @timer_decorator
     def _plot_waveform(
             self, 
-            waveforms: list, 
+            waveforms: typing.List, 
             parameter_symbol: str = None, 
             plot_name: str = "", 
             x_label: str = "t [s]", 
             xs: cp.array = None,
             use_log_scale: bool = False) -> None:
+        waveforms = [cp.asnumpy(waveform) for waveform in waveforms]
+
         figures_directory = f"saved_figures/waveforms/"
 
         if not os.path.isdir(figures_directory):
@@ -273,18 +275,18 @@ class ParameterEstimation():
         parameter_value = ""
 
         if parameter_symbol is not None:
-            parameter_value = str(cp.round(getattr(self.parameter_space, parameter_symbol),3))
+            parameter_value = str(np.round(getattr(self.parameter_space, parameter_symbol),3))
 
         # create plots
         # plot power spectral density
         if xs is None:
-            xs = cp.array([index*self.dt for index in range(len(waveforms[0]))])
+            xs = np.array([index*self.dt for index in range(len(waveforms[0]))])
 
 
         if use_log_scale:
-            indices = cp.round(cp.geomspace(1, xs.shape[0], 1000)).astype(int)[:-1]
+            indices = np.round(np.geomspace(1, xs.shape[0], 1000)).astype(int)[:-1]
         else:
-            indices = cp.round(cp.linspace(0, xs.shape[0], 1000)).astype(int)[:-1]
+            indices = np.round(np.linspace(0, xs.shape[0], 1000)).astype(int)[:-1]
 
         fig = plt.figure(figsize = (12, 8))
         for index, waveform in enumerate(waveforms):
@@ -343,12 +345,12 @@ class ParameterEstimation():
     @timer_decorator
     def scalar_product_of_functions(self, a: cp.ndarray, b: cp.ndarray) -> float:
 
-        fs = cp.asnumpy(rfftfreq(len(a), self.dt))
+        fs = rfftfreq(len(a), self.dt)
 
         power_spectral_density = cp.array([self.lisa_configuration.power_spectral_density(f=f) for f in fs])
 
-        a_fft = cp.asnumpy(rfft(a))
-        b_fft_cc = cp.asnumpy(cp.conjugate(rfft(b)))
+        a_fft = rfft(a)
+        b_fft_cc = cp.conjugate(rfft(b))
 
         # crop all arrays to shortest length
         reduced_length = min(a_fft.shape[0], b_fft_cc.shape[0], fs.shape[0])
@@ -418,6 +420,7 @@ class ParameterEstimation():
         independent_cramer_rao_bounds = {}
         row_index = 0
         for row_parameter, row_cramer_rao_bounds in zip(parameter_symbol_list, cramer_rao_bounds):
+            print(row_cramer_rao_bounds)
             reduced_parameter_list = parameter_symbol_list[row_index:]
             reduced_error_row = row_cramer_rao_bounds[row_index:]
             for col_parameter, cramer_rao_bound in zip(reduced_parameter_list, reduced_error_row):
