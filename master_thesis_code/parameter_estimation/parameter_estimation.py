@@ -60,7 +60,6 @@ class ParameterEstimation():
     dt: float = 5
     T: float = 3
     waveform_generation_time: int = 0
-    current_waveform: cp.array = None
 
     def __init__(self, wave_generation_type: WaveGeneratorType, use_gpu: bool):
         self.parameter_space = ParameterSpace()
@@ -98,6 +97,7 @@ class ParameterEstimation():
             return_waveform = self.lisa_configuration.transform_from_ssb_to_lisa_frame(waveform=waveform)
         else:
             return_waveform = waveform.real**2 + waveform.imag**2
+        del waveform
         return return_waveform
 
     @timer_decorator
@@ -172,18 +172,17 @@ class ParameterEstimation():
             setattr(self.parameter_space, parameter_symbol, parameter_value)
             waveform = self.generate_waveform()
             waveforms.append(waveform)
-
             maximal_shared_length = min(maximal_shared_length, waveform.shape[0])        
             del waveform
 
-        self._plot_waveform(waveforms=waveforms, plot_name="waveform_for_derivative")
+        #self._plot_waveform(waveforms=waveforms, plot_name="waveform_for_derivative")
 
 
         # set parameter back to evaluated value
         setattr(self.parameter_space, parameter_symbol, parameter_evaluated_at)
 
         waveform_derivative = (-waveforms[3][:maximal_shared_length] + 8*waveforms[2][:maximal_shared_length] - 8*waveforms[1][:maximal_shared_length] + waveforms[0][:maximal_shared_length])/12/derivative_epsilon
-        self._plot_waveform(waveforms=[waveform_derivative], plot_name=f"{parameter_symbol}_derivative")
+        #self._plot_waveform(waveforms=[waveform_derivative], plot_name=f"{parameter_symbol}_derivative")
         _LOGGER.info(f"Finished computing partial derivative of the waveform w.r.t. {parameter_symbol}.")
         del waveforms
         return waveform_derivative
@@ -253,17 +252,18 @@ class ParameterEstimation():
 
         integrant = cp.divide(cp.multiply(a_fft, b_fft_cc), power_spectral_density)
 
-        self._plot_waveform(waveforms=[integrant.real], xs=fs, plot_name="scalar_product_integrant_real", x_label="f [Hz]", use_log_scale=True)
+        #self._plot_waveform(waveforms=[integrant.real], xs=fs, plot_name="scalar_product_integrant_real", x_label="f [Hz]", use_log_scale=True)
 
         fs, integrant = self._crop_frequency_domain(fs, integrant)
 
-        self._plot_waveform(waveforms=[integrant.real], xs=fs, plot_name="scalar_product_integrant_real_cropped", x_label="f [Hz]", use_log_scale=True)
+        #self._plot_waveform(waveforms=[integrant.real], xs=fs, plot_name="scalar_product_integrant_real_cropped", x_label="f [Hz]", use_log_scale=True)
         
         result = 4*cp.trapz(y=integrant, x=fs).real
         del fs
         del a_fft
         del b_fft_cc
         del power_spectral_density
+        del integrant
         return result
 
     @staticmethod
@@ -283,13 +283,12 @@ class ParameterEstimation():
         # compute derivatives for fisher information matrix
         waveform_derivatives = {}
 
-        current_waveform = self.current_waveform
-
         parameter_symbol_list = [parameter.symbol for parameter in self.parameter_space.parameters_configuration]
 
         for parameter_symbol in parameter_symbol_list:
             waveform_derivative = self.five_point_stencil_derivative(parameter_symbol=parameter_symbol)
             waveform_derivatives[parameter_symbol] = waveform_derivative
+            del waveform_derivative
 
         fisher_information_matrix = cp.zeros(
             shape=(len(parameter_symbol_list), len(parameter_symbol_list)),
@@ -348,6 +347,10 @@ class ParameterEstimation():
         cramer_rao_bounds.to_csv(CRAMER_RAO_BOUNDS_PATH, index=False)
         _LOGGER.info(f"Saved current Cramer-Rao bound to {CRAMER_RAO_BOUNDS_PATH}")
         del cramer_rao_bound_dictionary
+        del parameters_list
+        del cramer_rao_bounds
+        del new_cramer_rao_bounds
+        del new_cramer_rao_bounds_dict
     
 
     def _visualize_cramer_rao_bounds(self) -> None:
