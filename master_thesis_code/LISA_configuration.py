@@ -13,6 +13,17 @@ from master_thesis_code.constants import MAXIMAL_FREQUENCY, MINIMAL_FREQUENCY
 _LOGGER = logging.getLogger()
 
 
+# constants
+L = 2.5e9  # m
+A_1 = 10.0 / 3.0 / L**2  # 1/m^2
+f_ast = 19.09e-3  # Hz
+A_2 = 9e-45
+alpha = 0.171
+beta = 292.0
+kappa = 1020.0
+gamma = 1680.0
+f_k = 0.00215
+
 @dataclass
 class LISAConfiguration:
     # constants
@@ -126,7 +137,12 @@ class LISAConfiguration:
                 - cp.cos(self.qK) * cp.sin(self.qS) * cp.cos(self.phiS)
             )
         )  # scalar product of N and (cross product of L and z)
-        return cp.arctan((Lz - LN * zN) / NLxz)
+        result = cp.arctan((Lz - LN * zN) / NLxz)
+        del Lz
+        del zN
+        del NLxz
+        del LN
+        return result
 
     def phi_t(self, time_series: cp.array) -> cp.array:
         """Phase of LISA's rotation around the sun.
@@ -154,10 +170,6 @@ class LISAConfiguration:
         Returns:
             float: noise spectral density
         """
-        L = 2.5e9  # m
-        A_1 = 10.0 / 3.0 / L**2  # 1/m^2
-        f_ast = 19.09e-3  # Hz
-
         return (
             A_1
             * (
@@ -179,13 +191,6 @@ class LISAConfiguration:
         Returns:
             PSD: _description_
         """
-        A_2 = 9e-45
-        alpha = 0.171
-        beta = 292.0
-        kappa = 1020.0
-        gamma = 1680.0
-        f_k = 0.00215
-
         return (
             A_2
             * frequencies ** (-7 / 3)
@@ -218,6 +223,7 @@ class LISAConfiguration:
         # self.is_LISA_second_measurement = True
         # measurement_2 = (waveform.real*self.F_plus(time_series) - waveform.imag*self.F_cross(time_series))*cp.sqrt(3)/2
         del waveform
+        del time_series
         return cp.array(measurement_1)
 
     @timer_decorator
