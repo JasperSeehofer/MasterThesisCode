@@ -264,9 +264,12 @@ class ParameterEstimation():
         del b_fft_cc
         del power_spectral_density
         del integrant
+        del a
+        del b 
         return result
 
     @staticmethod
+    @timer_decorator
     def _crop_frequency_domain(fs: cp.array, integrant: cp.array) -> tuple:
         if len(fs) != len(integrant):
             _LOGGER.warning("length of frequency domain and integrant are not equal.")
@@ -347,7 +350,6 @@ class ParameterEstimation():
         cramer_rao_bounds.to_csv(CRAMER_RAO_BOUNDS_PATH, index=False)
         _LOGGER.info(f"Saved current Cramer-Rao bound to {CRAMER_RAO_BOUNDS_PATH}")
         del cramer_rao_bound_dictionary
-        del parameters_list
         del cramer_rao_bounds
         del new_cramer_rao_bounds
         del new_cramer_rao_bounds_dict
@@ -355,7 +357,6 @@ class ParameterEstimation():
 
     def _visualize_cramer_rao_bounds(self) -> None:
         mean_errors_data = pd.read_csv(CRAMER_RAO_BOUNDS_PATH)
-        error_column_list = [column_name for column_name in mean_errors_data.columns if "delta" in column_name]
         parameter_columns = [column_name for column_name in mean_errors_data.columns if "delta" not in column_name]
 
         # ensure directory is given
