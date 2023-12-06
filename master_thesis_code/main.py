@@ -30,6 +30,7 @@ def main() -> None:
     _ROOT_LOGGER.debug(f"CUDA version: 11.7")
     _display_GPU_information()
     mempool = cp.get_default_memory_pool()
+    fft_cache = cp.fft.config.get_plan_cache()
 
     parameter_estimation = ParameterEstimation(wave_generation_type=WaveGeneratorType.pn5, use_gpu=True)
     check_dependency = False
@@ -53,6 +54,7 @@ def main() -> None:
             _ROOT_LOGGER.info(f"SNR threshold check successful: {np.round(snr, 3)} >= {SNR_THRESHOLD}")
         cramer_rao_bounds = parameter_estimation.compute_Cramer_Rao_bounds()
         _display_GPU_information()
+        fft_cache.show_info()
         parameter_estimation.save_cramer_rao_bound(cramer_rao_bound_dictionary=cramer_rao_bounds, snr=snr)
         counter += 1
 
@@ -104,6 +106,7 @@ def _display_GPU_information() -> None:
             gpu_id, gpu_name, gpu_load, gpu_free_memory, gpu_used_memory,
             gpu_total_memory, gpu_temperature, gpu_uuid
         ))
+
 
     _ROOT_LOGGER.info(tabulate(list_gpus, headers=("id", "name", "load", "free memory", "used memory", "total memory",
                                    "temperature", "uuid")))
