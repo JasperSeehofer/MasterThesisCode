@@ -137,14 +137,18 @@ class ParameterEstimation():
         waveform_derivative = (neighbouring_waveform - waveform)/derivative_epsilon
         self._plot_waveform(waveforms=[waveform_derivative], plot_name=f"{parameter_symbol}_derivative")
         _LOGGER.info(f"Finished computing partial derivative of the waveform w.r.t. {parameter_symbol}.")
+        del neighbouring_waveform
+        del waveform
         return waveform_derivative
 
     @staticmethod
-    def _crop_to_same_length(signal_1: cp.array, signal_2: cp.ndarray) -> tuple:
+    def _crop_to_same_length(signal_1: cp.array, signal_2: cp.array) -> typing.List[cp.array]:
         minimal_length = min(len(signal_1), len(signal_2))
-        return signal_1[:minimal_length], signal_2[:minimal_length]
+        signal_1 = signal_1[:minimal_length]
+        signal_2 = signal_2[:minimal_length]
+        return [signal_1, signal_2]
 
-    def five_point_stencil_derivative(self, parameter_symbol: str) -> cp.ndarray:
+    def five_point_stencil_derivative(self, parameter_symbol: str) -> cp.array:
         """Compute (numerically) partial derivative of the currently set parameters w.r.t. the provided parameter.
 
         Args:
