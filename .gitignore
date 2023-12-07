@@ -1,6 +1,7 @@
 *.log
 .vscode/
-saved_figures/
+saved_figures/LISA_configuration
+saved_figures/parameter_estimation
 notebooks/
 test.py
 __pycache__/

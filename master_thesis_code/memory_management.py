@@ -1,6 +1,7 @@
 import GPUtil
 from tabulate import tabulate
 import cupy as cp
+import numpy as np
 import logging
 import os
 import matplotlib.pyplot as plt
@@ -72,10 +73,10 @@ class MemoryManagement:
             "-",
             label="Memory Pool",
         )
-        for gpu_index in range(len(self._gpu_usage[0]) - 1):
+        for gpu_index, gpu_usage in enumerate(np.array(self._gpu_usage).T):
             plt.plot(
             self._time_series,
-            self._gpu_usage[:][gpu_index],
+            gpu_usage,
             "-",
             label=f"GPU {gpu_index+1}",
         )

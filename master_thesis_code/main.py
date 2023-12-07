@@ -35,19 +35,20 @@ def main() -> None:
     parameter_estimation = ParameterEstimation(wave_generation_type=WaveGeneratorType.pn5, use_gpu=True)
 
     counter = 0
+    iteration = 0
     while counter < arguments.simulation_steps:
         memory_management.gpu_usage_stamp()
         memory_management.memory_pool.free_all_blocks()
         memory_management.gpu_usage_stamp()
 
-        _ROOT_LOGGER.info(f"{counter} evaluations successful. ({counter/(time()-memory_management._start_time)*60}/min)")
+        _ROOT_LOGGER.info(f"{counter} / {iteration} evaluations successful. ({counter/(time()-memory_management._start_time)*60}/min)")
+        iteration += 1
         parameter_estimation.parameter_space.randomize_parameters()
         snr = parameter_estimation.compute_signal_to_noise_ratio()
         if snr < SNR_THRESHOLD:
             _ROOT_LOGGER.info(f"SNR threshold check failed: {np.round(snr, 3)} < {SNR_THRESHOLD}.")
             continue
-        else:
-            _ROOT_LOGGER.info(f"SNR threshold check successful: {np.round(snr, 3)} >= {SNR_THRESHOLD}")
+        _ROOT_LOGGER.info(f"SNR threshold check successful: {np.round(snr, 3)} >= {SNR_THRESHOLD}")
         cramer_rao_bounds = parameter_estimation.compute_Cramer_Rao_bounds()
         parameter_estimation.save_cramer_rao_bound(cramer_rao_bound_dictionary=cramer_rao_bounds, snr=snr)
         counter += 1
