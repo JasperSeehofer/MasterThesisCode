@@ -23,19 +23,19 @@ class MemoryManagement:
             
     def gpu_usage_stamp(self) -> None:
         self._time_series.append(time() - self._start_time)
-        self.gpu_usage.append([gpu.memoryUsed/1000 for gpu in GPUtil.getGPUs()])
-        self.memory_pool_gpu_usage.append(int(self._memory_pool.total_bytes())/10**9)
+        self._gpu_usage.append([gpu.memoryUsed/1000 for gpu in GPUtil.getGPUs()])
+        self._memory_pool_gpu_usage.append(int(self.memory_pool.total_bytes())/10**9)
 
 
     def display_GPU_information(self) -> None:
-        _LOGGER.info("="*40, "GPU Details", "="*40)
+        _LOGGER.info(f"{'='*40} GPU Details {'='*40}")
         gpus = GPUtil.getGPUs()
         list_gpus = []
         for gpu in gpus:
             # get the GPU id
-            gpu_id = gpu.id
+            gpu_id = str(gpu.id)
             # name of GPU
-            gpu_name = gpu.name
+            gpu_name = str(gpu.name)
             # get % percentage of GPU usage of that GPU
             gpu_load = f"{gpu.load*100}%"
             # get free memory in MB format
@@ -46,7 +46,7 @@ class MemoryManagement:
             gpu_total_memory = f"{gpu.memoryTotal}MB"
             # get GPU temperature in Celsius
             gpu_temperature = f"{gpu.temperature} °C"
-            gpu_uuid = gpu.uuid
+            gpu_uuid = str(gpu.uuid)
             list_gpus.append((
                 gpu_id, gpu_name, gpu_load, gpu_free_memory, gpu_used_memory,
                 gpu_total_memory, gpu_temperature, gpu_uuid
