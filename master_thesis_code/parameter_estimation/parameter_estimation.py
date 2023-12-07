@@ -87,9 +87,9 @@ class ParameterEstimation():
         self.lisa_configuration = LISAConfiguration(parameter_space=self.parameter_space, dt=self.dt)
     
     @timer_decorator
-    def generate_waveform(self, use_antenna_pattern_functions: bool = True) -> cp.ndarray:
+    def generate_waveform(self, update_parameters: dict = {}, use_antenna_pattern_functions: bool = True) -> cp.ndarray:
         waveform = self.waveform_generator(
-            **self.parameter_space._parameters_to_dict(),
+            **(self.parameter_space._parameters_to_dict() | update_parameters),
             dt=self.dt,
             T=self.T)
 
@@ -132,7 +132,7 @@ class ParameterEstimation():
         # set parameter back to evaluated value
         setattr(self.parameter_space, parameter_symbol, parameter_evaluated_at)
 
-        waveform, neighbouring_waveform = self._crop_to_same_length(waveform, neighbouring_waveform)
+        waveform, neighbouring_waveform = self._crop_to_same_length([waveform, neighbouring_waveform])
 
         waveform_derivative = (neighbouring_waveform - waveform)/derivative_epsilon
         self._plot_waveform(waveforms=[waveform_derivative], plot_name=f"{parameter_symbol}_derivative")
@@ -142,11 +142,10 @@ class ParameterEstimation():
         return waveform_derivative
 
     @staticmethod
-    def _crop_to_same_length(signal_1: cp.array, signal_2: cp.array) -> typing.List[cp.array]:
-        minimal_length = min(len(signal_1), len(signal_2))
-        signal_1 = signal_1[:minimal_length]
-        signal_2 = signal_2[:minimal_length]
-        return [signal_1, signal_2]
+    def _crop_to_same_length(signals: typing.List[cp.array]) -> typing.List[cp.array]:
+        minimal_length = min([len(signal) for signal in signals])
+        signals = [signal[:minimal_length] for signal in signals]
+        return signals
 
     def five_point_stencil_derivative(self, parameter_symbol: str) -> cp.array:
         """Compute (numerically) partial derivative of the currently set parameters w.r.t. the provided parameter.
@@ -163,27 +162,14 @@ class ParameterEstimation():
         if derivative_parameter_configuration is None:
             _LOGGER.error(f"The provided derivative parameter symbol {parameter_symbol} does not match any defined parameter in the parameter space.")
             sys.exit()
-
         parameter_evaluated_at = getattr(self.parameter_space, parameter_symbol)
-
         derivative_epsilon = derivative_parameter_configuration.derivative_epsilon
+        five_stencil_points = [{parameter_symbol: parameter_evaluated_at + step*derivative_epsilon} for step in [-2., -1., 1., 2.]]
 
-        five_stencil_points = [parameter_evaluated_at + step*derivative_epsilon for step in [-2., -1., 1., 2.]]
-
-        waveforms = []
-        maximal_shared_length = np.inf
-        for parameter_value in five_stencil_points:
-            setattr(self.parameter_space, parameter_symbol, parameter_value)
-            waveform = self.generate_waveform()
-            waveforms.append(waveform)
-            maximal_shared_length = min(maximal_shared_length, waveform.shape[0])        
-            del waveform
+        waveforms = cp.vectorize(self.generate_waveform)(update_parameters=five_stencil_points)
+        waveforms = _crop_to_same_length(waveforms)
 
         #self._plot_waveform(waveforms=waveforms, plot_name="waveform_for_derivative")
-
-
-        # set parameter back to evaluated value
-        setattr(self.parameter_space, parameter_symbol, parameter_evaluated_at)
 
         waveform_derivative = (-waveforms[3][:maximal_shared_length] + 8*waveforms[2][:maximal_shared_length] - 8*waveforms[1][:maximal_shared_length] + waveforms[0][:maximal_shared_length])/12/derivative_epsilon
         #self._plot_waveform(waveforms=[waveform_derivative], plot_name=f"{parameter_symbol}_derivative")

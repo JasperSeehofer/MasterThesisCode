@@ -60,7 +60,7 @@ def main() -> None:
     parameter_estimation._visualize_cramer_rao_bounds()
     
     memory_management.plot_GPU_usage()
-    _ROOT_LOGGER.debug(f"Peak memory usage: {resource.getrusage(resource.RUSAGE_SELF).ru_maxrss *1e-6} in GB.")
+    _ROOT_LOGGER.debug(f"Peak CPU / GPU memory usage: {resource.getrusage(resource.RUSAGE_SELF).ru_maxrss *1e-6} / max(np.array(memory_management._gpu_usage).T[0]) in GB.")
 
 def _configure_logger(working_directory: str, log_level: int) -> None:
     _ROOT_LOGGER.setLevel(log_level)
