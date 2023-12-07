@@ -47,9 +47,11 @@ def main() -> None:
         try:
             snr = parameter_estimation.compute_signal_to_noise_ratio()
         except ValueError as e:
-            if "EclipticK" in e:
+            if "EllipticK" in str(e):
+                _ROOT_LOGGER.warning("Caught EllipticK error from waveform generator. Continue with new parameters...")
                 continue
-            raise ValueError(e)
+            else:
+                raise ValueError(e)
         if snr < SNR_THRESHOLD:
             _ROOT_LOGGER.info(f"SNR threshold check failed: {np.round(snr, 3)} < {SNR_THRESHOLD}.")
             continue
