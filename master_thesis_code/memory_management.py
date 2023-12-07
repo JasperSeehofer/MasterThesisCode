@@ -4,7 +4,6 @@ import cupy as cp
 import logging
 import os
 import matplotlib.pyplot as plt
-from typing import List
 from time import time
 
 _LOGGER = logging.getLogger()
@@ -13,7 +12,7 @@ class MemoryManagement:
     memory_pool: cp.cuda.MemoryPool
 
     def __init__(self):
-        self._gpu_monitor = GPUtil.getGPUS()
+        self._gpu_monitor = GPUtil.getGPUs()
         self.memory_pool = cp.get_default_memory_pool()
         self._fft_cache = cp.fft.config.get_plan_cache()
         self._start_time = time()
