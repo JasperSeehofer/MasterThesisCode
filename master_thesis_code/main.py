@@ -8,7 +8,9 @@ import os
 from time import time
 import GPUtil
 from tabulate import tabulate
+import multiprocessing
 
+from master_thesis_code.exceptions import TimeoutError
 from master_thesis_code.arguments import Arguments
 from master_thesis_code.memory_management import MemoryManagement
 from master_thesis_code.parameter_estimation.parameter_estimation import ParameterEstimation, WaveGeneratorType
@@ -45,7 +47,15 @@ def main() -> None:
         iteration += 1
         parameter_estimation.parameter_space.randomize_parameters()
         try:
-            snr = parameter_estimation.compute_signal_to_noise_ratio()
+            queue = multiprocessing.Queue()
+            process = multiprocessing.Process(target=snr_with_timeout, args=[queue, parameter_estimation])
+            process.start()
+            process.join(10)
+            if process.is_alive():
+                _ROOT_LOGGER.warning("Waveform generation took longer than 10 seconds and will be skipped. Continue with new parameters...")
+                process.terminate()
+                continue
+            snr = queue.get()
         except ValueError as e:
             if "EllipticK" in str(e):
                 _ROOT_LOGGER.warning("Caught EllipticK error from waveform generator. Continue with new parameters...")
@@ -69,6 +79,11 @@ def main() -> None:
     memory_management.plot_GPU_usage()
     _ROOT_LOGGER.debug(f"Peak CPU / GPU memory usage: {resource.getrusage(resource.RUSAGE_SELF).ru_maxrss *1e-6} / max(np.array(memory_management._gpu_usage).T[0]) in GB.")
 
+def snr_with_timeout(queue, parameter_estimation) -> None:
+    snr = parameter_estimation.compute_signal_to_noise_ratio()
+    queue.put(snr)
+    
+    
 def _configure_logger(working_directory: str, log_level: int) -> None:
     _ROOT_LOGGER.setLevel(log_level)
     stream_handler = logging.StreamHandler()

@@ -14,7 +14,7 @@ from master_thesis_code.exceptions import ParameterEstimationError
 from enum import Enum
 from few.waveform import GenerateEMRIWaveform
 
-from master_thesis_code.decorators import timer_decorator, if_plotting_activated
+from master_thesis_code.decorators import timer_decorator, if_plotting_activated, timeout
 from master_thesis_code.constants import (
     REAL_PART, IMAGINARY_PART, SIMULATION_PATH, SIMULATION_CONFIGURATION_FILE, DEFAULT_SIMULATION_PATH, CRAMER_RAO_BOUNDS_PATH, MINIMAL_FREQUENCY, MAXIMAL_FREQUENCY)
 from master_thesis_code.datamodels.parameter_space import ParameterSpace
@@ -86,7 +86,7 @@ class ParameterEstimation():
                 )
         self.lisa_configuration = LISAConfiguration(parameter_space=self.parameter_space, dt=self.dt)
     
-    @timer_decorator
+    @timeout()
     def generate_waveform(self, update_parameters: dict = {}, use_antenna_pattern_functions: bool = True) -> cp.ndarray:
         waveform = self.waveform_generator(
             **(self.parameter_space._parameters_to_dict() | update_parameters),
