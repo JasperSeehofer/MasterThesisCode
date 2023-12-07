@@ -166,12 +166,12 @@ class ParameterEstimation():
         derivative_epsilon = derivative_parameter_configuration.derivative_epsilon
         five_stencil_points = [{parameter_symbol: parameter_evaluated_at + step*derivative_epsilon} for step in [-2., -1., 1., 2.]]
 
-        waveforms = cp.vectorize(self.generate_waveform)(update_parameters=five_stencil_points)
-        waveforms = _crop_to_same_length(waveforms)
+        waveforms = [self.generate_waveform(update_parameters=params) for params in five_stencil_points]
+        waveforms = self._crop_to_same_length(waveforms)
 
         #self._plot_waveform(waveforms=waveforms, plot_name="waveform_for_derivative")
 
-        waveform_derivative = (-waveforms[3][:maximal_shared_length] + 8*waveforms[2][:maximal_shared_length] - 8*waveforms[1][:maximal_shared_length] + waveforms[0][:maximal_shared_length])/12/derivative_epsilon
+        waveform_derivative = (-waveforms[3] + 8*waveforms[2] - 8*waveforms[1] + waveforms[0])/12/derivative_epsilon
         #self._plot_waveform(waveforms=[waveform_derivative], plot_name=f"{parameter_symbol}_derivative")
         _LOGGER.info(f"Finished computing partial derivative of the waveform w.r.t. {parameter_symbol}.")
         del waveforms
@@ -303,18 +303,14 @@ class ParameterEstimation():
 
         fisher_information_matrix = self.compute_fisher_information_matrix()
 
-        cramer_rao_bounds = cp.linalg.inv(fisher_information_matrix)
-
+        cramer_rao_bounds = np.matrix(cp.asnumpy(fisher_information_matrix)).I
+        _LOGGER.debug("matrix inversion completed.")
         parameter_symbol_list = [parameter.symbol for parameter in self.parameter_space.parameters_configuration]
 
-        independent_cramer_rao_bounds = {}
-        row_index = 0
-        for row_parameter, row_cramer_rao_bounds in zip(parameter_symbol_list, cramer_rao_bounds):
-            reduced_parameter_list = parameter_symbol_list[row_index:]
-            reduced_error_row = row_cramer_rao_bounds[row_index:]
-            for col_parameter, cramer_rao_bound in zip(reduced_parameter_list, reduced_error_row):
-                independent_cramer_rao_bounds[f"delta_{row_parameter}_delta_{col_parameter}"] = cramer_rao_bound
-            row_index += 1
+        independent_cramer_rao_bounds = {
+            f"delta_{parameter_symbol_list[row]}_delta_{parameter_symbol_list[column]}": cramer_rao_bounds[row, column]
+            for row in range(len(parameter_symbol_list)) for column in range(row+1)}
+        
         _LOGGER.info("Finished computing Cramer Rao bounds.")
         del fisher_information_matrix
         del cramer_rao_bounds
