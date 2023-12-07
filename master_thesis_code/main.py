@@ -44,7 +44,12 @@ def main() -> None:
         _ROOT_LOGGER.info(f"{counter} / {iteration} evaluations successful. ({counter/(time()-memory_management._start_time)*60}/min)")
         iteration += 1
         parameter_estimation.parameter_space.randomize_parameters()
-        snr = parameter_estimation.compute_signal_to_noise_ratio()
+        try:
+            snr = parameter_estimation.compute_signal_to_noise_ratio()
+        except ValueError as e:
+            if "EclipticK" in e:
+                continue
+            raise ValueError(e)
         if snr < SNR_THRESHOLD:
             _ROOT_LOGGER.info(f"SNR threshold check failed: {np.round(snr, 3)} < {SNR_THRESHOLD}.")
             continue
