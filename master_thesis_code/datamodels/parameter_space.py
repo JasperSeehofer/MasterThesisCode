@@ -19,7 +19,7 @@ parameters_configuration: list[Parameter] = [
         Parameter(symbol="mu", unit="solar masses", lower_limit=1, upper_limit=1e2),  # mass of the CO (compact object) in solar masses
         Parameter(symbol="a", unit="dimensionless", lower_limit=0., upper_limit=1),  # dimensionless spin of the MBH
         Parameter(symbol="p0", unit="meters", lower_limit=10., upper_limit=16.),  # Kepler-orbit parameter: separation
-        Parameter(symbol="e0", unit="dimensionless", lower_limit=0.0, upper_limit=1.0),  # Kepler-orbit parameter: eccentricity
+        Parameter(symbol="e0", unit="dimensionless", lower_limit=0.0, upper_limit=0.7),  # Kepler-orbit parameter: eccentricity
         Parameter(symbol="x0", unit="dimensionless", lower_limit=-1., upper_limit=1.),  # Kepler-orbit parameter: x_I0=cosI (I is the inclination)
         Parameter(symbol="dist", unit="Gpc", lower_limit=0.1, upper_limit=3),  # luminosity distance
         Parameter(symbol="qS", unit="radian", lower_limit=0.0, upper_limit=np.pi),  # Sky location polar angle in ecliptic coordinates.

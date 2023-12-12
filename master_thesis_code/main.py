@@ -5,12 +5,12 @@ import cupy as cp
 import resource
 import datetime
 import os
+import warnings
 from time import time
 import GPUtil
 from tabulate import tabulate
 import multiprocessing
 
-from master_thesis_code.exceptions import TimeoutError
 from master_thesis_code.arguments import Arguments
 from master_thesis_code.memory_management import MemoryManagement
 from master_thesis_code.parameter_estimation.parameter_estimation import ParameterEstimation, WaveGeneratorType
@@ -47,18 +47,25 @@ def main() -> None:
         iteration += 1
         parameter_estimation.parameter_space.randomize_parameters()
         try:
-            queue = multiprocessing.Queue()
-            process = multiprocessing.Process(target=snr_with_timeout, args=[queue, parameter_estimation])
-            process.start()
-            process.join(10)
-            if process.is_alive():
-                _ROOT_LOGGER.warning("Waveform generation took longer than 10 seconds and will be skipped. Continue with new parameters...")
-                process.terminate()
+            warnings.filterwarnings("error")
+            snr = parameter_estimation.compute_signal_to_noise_ratio()
+            warnings.resetwarnings()
+        except Warning as e:
+            if "Mass ratio" in str(e):
+                _ROOT_LOGGER.warning("Caught warning that mass ratio is out of bounds. Continue with new parameters...")
                 continue
-            snr = queue.get()
+            else:
+                _ROOT_LOGGER.warning(f"{str(e)}. Continue with new parameters...")
+                continue
+        except RuntimeError as e:
+            _ROOT_LOGGER.warning(f"Caught RuntimeError during waveform generation : {str(e)} .\n Continue with new parameters...")
+            continue
         except ValueError as e:
             if "EllipticK" in str(e):
                 _ROOT_LOGGER.warning("Caught EllipticK error from waveform generator. Continue with new parameters...")
+                continue
+            elif "Brent root solver does not converge" in str(e):
+                _ROOT_LOGGER.warning("Caught brent root solver error because it did not converge. Continue with new parameters...")
                 continue
             else:
                 raise ValueError(e)
@@ -78,10 +85,6 @@ def main() -> None:
     
     memory_management.plot_GPU_usage()
     _ROOT_LOGGER.debug(f"Peak CPU / GPU memory usage: {resource.getrusage(resource.RUSAGE_SELF).ru_maxrss *1e-6} / max(np.array(memory_management._gpu_usage).T[0]) in GB.")
-
-def snr_with_timeout(queue, parameter_estimation) -> None:
-    snr = parameter_estimation.compute_signal_to_noise_ratio()
-    queue.put(snr)
     
     
 def _configure_logger(working_directory: str, log_level: int) -> None:
