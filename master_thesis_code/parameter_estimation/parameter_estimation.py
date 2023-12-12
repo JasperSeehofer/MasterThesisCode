@@ -14,7 +14,7 @@ from master_thesis_code.exceptions import ParameterEstimationError
 from enum import Enum
 from few.waveform import GenerateEMRIWaveform
 
-from master_thesis_code.decorators import timer_decorator, if_plotting_activated, timeout
+from master_thesis_code.decorators import timer_decorator, if_plotting_activated
 from master_thesis_code.constants import (
     REAL_PART, IMAGINARY_PART, SIMULATION_PATH, SIMULATION_CONFIGURATION_FILE, DEFAULT_SIMULATION_PATH, CRAMER_RAO_BOUNDS_PATH, MINIMAL_FREQUENCY, MAXIMAL_FREQUENCY)
 from master_thesis_code.datamodels.parameter_space import ParameterSpace
@@ -31,7 +31,7 @@ class WaveGeneratorType(Enum):
 # keyword arguments for inspiral generator (RunSchwarzEccFluxInspiral)
 inspiral_kwargs={
     "DENSE_STEPPING": 0,  # we want a sparsely sampled trajectory
-    "max_init_len": int(1e5),  # all of the trajectories will be well under len = 1000
+    "max_init_len": int(1e6),  # all of the trajectories will be well under len = 1000
 }
 
 # keyword arguments for inspiral generator (RomanAmplitude)
@@ -58,7 +58,7 @@ class ParameterEstimation():
     waveform_generator: GenerateEMRIWaveform # generate waveform in SSB frame
     lisa_configuration: LISAConfiguration  # can be used to transform the waveform into the rotating detector frame
     dt: float = 5
-    T: float = 3
+    T: float = 4
     waveform_generation_time: int = 0
 
     def __init__(self, wave_generation_type: WaveGeneratorType, use_gpu: bool):
@@ -86,7 +86,7 @@ class ParameterEstimation():
                 )
         self.lisa_configuration = LISAConfiguration(parameter_space=self.parameter_space, dt=self.dt)
     
-    @timeout()
+    @timer_decorator
     def generate_waveform(self, update_parameters: dict = {}, use_antenna_pattern_functions: bool = True) -> cp.ndarray:
         waveform = self.waveform_generator(
             **(self.parameter_space._parameters_to_dict() | update_parameters),
