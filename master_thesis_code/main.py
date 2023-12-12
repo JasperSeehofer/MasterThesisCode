@@ -1,19 +1,14 @@
 import logging
 import matplotlib.pyplot as plt
 import numpy as np
-import cupy as cp
 import resource
 import datetime
 import os
 import warnings
 from time import time
-import GPUtil
-from tabulate import tabulate
-import multiprocessing
 
+from master_thesis_code.parameter_estimation.evaluation import DataEvaluation
 from master_thesis_code.arguments import Arguments
-from master_thesis_code.memory_management import MemoryManagement
-from master_thesis_code.parameter_estimation.parameter_estimation import ParameterEstimation, WaveGeneratorType
 from master_thesis_code.constants import SNR_THRESHOLD
 
 
@@ -29,7 +24,42 @@ def main() -> None:
     _configure_logger(arguments.working_directory, arguments.log_level)
     arguments.validate()
     _ROOT_LOGGER.info("---------- STARTING MASTER THESIS CODE ----------")
+    start_time = time()
     
+    if arguments.simulation_steps > 0:
+        data_simulation(arguments.simulation_steps)
+
+    if arguments.evaluate:
+        evaluate()
+    
+    end_time = time()
+    _ROOT_LOGGER.debug(f"Finished in {end_time - start_time}s.")
+    
+    
+def _configure_logger(working_directory: str, log_level: int) -> None:
+    _ROOT_LOGGER.setLevel(log_level)
+    stream_handler = logging.StreamHandler()
+    stream_handler.setLevel(log_level)
+    _ROOT_LOGGER.addHandler(stream_handler)
+
+    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    log_file_path = os.path.join(working_directory, f"master_thesis_code_{timestamp}.log")
+    file_handler = logging.FileHandler(log_file_path)
+    file_handler.setLevel(log_level)
+    formatter = logging.Formatter("%(asctime)s [%(filename)s:%(lineno)s - %(funcName)s()] %(message)s")
+    file_handler.setFormatter(formatter)
+    _ROOT_LOGGER.addHandler(file_handler)
+
+    # set matplotlib logging to info, because it is very talkative
+    plt.set_loglevel("warning")
+
+    _ROOT_LOGGER.info(f"Log file location: {log_file_path}")
+
+def data_simulation(simulation_steps: int) -> None:
+    # conditional imports because they require GPU
+    from master_thesis_code.memory_management import MemoryManagement
+    from master_thesis_code.parameter_estimation.parameter_estimation import ParameterEstimation, WaveGeneratorType
+
     memory_management = MemoryManagement()
     memory_management.display_GPU_information()
     memory_management.display_fft_cache()
@@ -38,7 +68,7 @@ def main() -> None:
 
     counter = 0
     iteration = 0
-    while counter < arguments.simulation_steps:
+    while counter < simulation_steps:
         memory_management.gpu_usage_stamp()
         memory_management.memory_pool.free_all_blocks()
         memory_management.gpu_usage_stamp()
@@ -84,28 +114,10 @@ def main() -> None:
     parameter_estimation._visualize_cramer_rao_bounds()
     
     memory_management.plot_GPU_usage()
-    _ROOT_LOGGER.debug(f"Peak CPU / GPU memory usage: {resource.getrusage(resource.RUSAGE_SELF).ru_maxrss *1e-6} / max(np.array(memory_management._gpu_usage).T[0]) in GB.")
-    
-    
-def _configure_logger(working_directory: str, log_level: int) -> None:
-    _ROOT_LOGGER.setLevel(log_level)
-    stream_handler = logging.StreamHandler()
-    stream_handler.setLevel(log_level)
-    _ROOT_LOGGER.addHandler(stream_handler)
 
-    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-    log_file_path = os.path.join(working_directory, f"master_thesis_code_{timestamp}.log")
-    file_handler = logging.FileHandler(log_file_path)
-    file_handler.setLevel(log_level)
-    formatter = logging.Formatter("%(asctime)s [%(filename)s:%(lineno)s - %(funcName)s()] %(message)s")
-    file_handler.setFormatter(formatter)
-    _ROOT_LOGGER.addHandler(file_handler)
-
-    # set matplotlib logging to info, because it is very talkative
-    plt.set_loglevel("warning")
-
-    _ROOT_LOGGER.info(f"Log file location: {log_file_path}")
-
+def evaluate() -> None:
+    data_simulation = DataEvaluation()
+    data_simulation.visualize()
 
 if __name__ == "__main__":
     main()

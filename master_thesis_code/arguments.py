@@ -46,6 +46,11 @@ class Arguments:
     def simulation_steps(self) -> int:
         """Number of waveforms generated in the simulation."""
         return self._parsed_arguments.simulation_steps
+
+    @property
+    def evaluate(self) -> bool:
+        """Indicates whether the gathered Rao-Cramer-bounds are evaluated or not."""
+        return self._parsed_arguments.evaluate
     
     @staticmethod
     def create(sys_args: List[str] = sys.argv[1:]) -> Arguments:
@@ -84,6 +89,10 @@ def _parse_arguments(arguments: List[str]) -> argparse.Namespace:
         help="Number of waveforms that are generated for data evaluation. (default is 0)",
         default=0,
         type=int
+    )
+    parser.add_argument(
+        "--evaluate",
+        action="store_true"
     )
     parser.add_argument(
         "--log_level",
