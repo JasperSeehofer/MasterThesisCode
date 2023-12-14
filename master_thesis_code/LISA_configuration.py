@@ -8,7 +8,7 @@ import logging
 
 from master_thesis_code.decorators import timer_decorator
 from master_thesis_code.datamodels.parameter_space import ParameterSpace
-from master_thesis_code.constants import MAXIMAL_FREQUENCY, MINIMAL_FREQUENCY
+from master_thesis_code.constants import MAXIMAL_FREQUENCY, MINIMAL_FREQUENCY, G, C
 
 _LOGGER = logging.getLogger()
 
@@ -46,13 +46,27 @@ class LISAConfiguration:
         self.phiS = parameter_space.phiS
         self.qK = parameter_space.qK
         self.phiK = parameter_space.phiK
+        self.M = parameter_space.M
+        self.dist = parameter_space.dist
         self.dt = dt
+
+        self._snr_estimation_factor = 2/5*np.sqrt(5/6)/np.pi**(2/3)*C*(G/C**3)**(5/6)*self._compute_LISA_snr_frequency_factor()
 
     def update_parameters(self, parameter_space: ParameterSpace) -> None:
         self.qS = parameter_space.qS
         self.phiS = parameter_space.phiS
         self.qK = parameter_space.qK
         self.phiK = parameter_space.phiK
+        self.M = parameter_space.M
+        self.dist = parameter_space.dist
+
+    def _compute_LISA_snr_frequency_factor(self) -> float:
+        fs = cp.linspace(MINIMAL_FREQUENCY, MAXIMAL_FREQUENCY, 10000)
+        integrant = cp.divide( fs**(-7/3), self.power_spectral_density(fs))
+        return cp.sqrt(cp.trapz(integrant,fs))
+
+    def SNR_sanity_check(self) -> float:
+        return self._snr_estimation_factor*self.M**(5/6)/self.dist
 
     # antenna pattern functions 41550...PDF
     def F_plus(self, time_series: cp.array) -> cp.array:
@@ -162,7 +176,7 @@ class LISAConfiguration:
         T = 31557600  # in s (1 year)
         return cp.multiply(time_series, 2 * cp.pi / T)
 
-    def power_spectral_density(self, frequencies: cp.array) -> cp.array:
+    def power_spectral_density(self, frequencies: cp.ndarray) -> cp.array:
         return self.power_spectral_density_instrumental(
             frequencies
         ) + self.power_spectral_density_confusion_noise(frequencies)
