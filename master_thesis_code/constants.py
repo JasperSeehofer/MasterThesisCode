@@ -5,7 +5,9 @@ IMAGINARY_PART: str = "imaginary"
 
 # physical constants
 C = 299792458*3.2408e-26 #Gpc / s
+#C = 1.0
 G = 3.24077929**2*4.3009172706e-58 # Gpc^3 / (s^2 * solar masses)
+#G = 1.0
 
 # simulation configuration
 SIMULATION_CONFIGURATION_FILE = "simulation_configuration.json"

@@ -77,6 +77,12 @@ def data_simulation(simulation_steps: int) -> None:
         iteration += 1
         parameter_estimation.parameter_space.randomize_parameters()
         parameter_estimation.lisa_configuration.update_parameters(parameter_estimation.parameter_space)
+        snr_easy_check = parameter_estimation.lisa_configuration.SNR_sanity_check()
+        if snr_easy_check < SNR_THRESHOLD:
+            _ROOT_LOGGER.info(f"SNR threshold easy check failed: {np.round(snr_easy_check, 3)} < {SNR_THRESHOLD}.")
+            continue
+        else:
+            _ROOT_LOGGER.info(f"SNR threshold easy check successful: {np.round(snr_easy_check, 3)} >= {SNR_THRESHOLD}")
         try:
             warnings.filterwarnings("error")
             snr = parameter_estimation.compute_signal_to_noise_ratio()
