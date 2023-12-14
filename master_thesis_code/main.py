@@ -76,6 +76,7 @@ def data_simulation(simulation_steps: int) -> None:
         _ROOT_LOGGER.info(f"{counter} / {iteration} evaluations successful. ({counter/(time()-memory_management._start_time)*60}/min)")
         iteration += 1
         parameter_estimation.parameter_space.randomize_parameters()
+        parameter_estimation.lisa_configuration.update_parameters(parameter_estimation.parameter_space)
         try:
             warnings.filterwarnings("error")
             snr = parameter_estimation.compute_signal_to_noise_ratio()

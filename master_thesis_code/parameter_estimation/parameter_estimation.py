@@ -422,7 +422,7 @@ class ParameterEstimation():
         start = time.time()
         waveform = self.generate_waveform()
         end = time.time()
-        self.waveform_generation_time = int(end-start)
+        self.waveform_generation_time = round(end-start, 3)
 
         self.current_waveform = waveform
         return cp.sqrt(self.scalar_product_of_functions(a=waveform, b=waveform))

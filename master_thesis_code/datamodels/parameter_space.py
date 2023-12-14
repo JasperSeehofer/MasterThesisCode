@@ -31,6 +31,8 @@ parameters_configuration: list[Parameter] = [
         Parameter(symbol="Phi_r0", unit="radian", lower_limit=0., upper_limit=2*np.pi),  # initial radial phase
     ]
 
+def get_parameter_configuration(parameter_symbol: str) -> Parameter:
+    return next((parameter for parameter in parameters_configuration if parameter.symbol == parameter_symbol))
 
 @dataclass
 class ParameterSpace():
