@@ -48,6 +48,12 @@ class LISAConfiguration:
         self.phiK = parameter_space.phiK
         self.dt = dt
 
+    def update_parameters(self, parameter_space: ParameterSpace) -> None:
+        self.qS = parameter_space.qS
+        self.phiS = parameter_space.phiS
+        self.qK = parameter_space.qK
+        self.phiK = parameter_space.phiK
+
     # antenna pattern functions 41550...PDF
     def F_plus(self, time_series: cp.array) -> cp.array:
         """Antenna pattern function for + polarization of the gravitational wave. from PDF (41550...)
