@@ -47,6 +47,7 @@ class LISAConfiguration:
         self.qK = parameter_space.qK
         self.phiK = parameter_space.phiK
         self.M = parameter_space.M
+        self.mu = parameter_space.mu
         self.dist = parameter_space.dist
         self.dt = dt
 
@@ -58,15 +59,16 @@ class LISAConfiguration:
         self.qK = parameter_space.qK
         self.phiK = parameter_space.phiK
         self.M = parameter_space.M
+        self.mu = parameter_space.mu
         self.dist = parameter_space.dist
 
     def _compute_LISA_snr_frequency_factor(self) -> float:
         fs = cp.linspace(MINIMAL_FREQUENCY, MAXIMAL_FREQUENCY, 10000)
         integrant = cp.divide( fs**(-7/3), self.power_spectral_density(fs))
         return cp.sqrt(cp.trapz(integrant,fs))
-
+    
     def SNR_sanity_check(self) -> float:
-        return self._snr_estimation_factor*self.M**(5/6)/self.dist
+        return self._snr_estimation_factor*((self.M*self.mu)**(3/5)/(self.M + self.mu)**(1/5))**(5/6)/self.dist
 
     # antenna pattern functions 41550...PDF
     def F_plus(self, time_series: cp.array) -> cp.array:
