@@ -3,6 +3,10 @@ INFINITY: float = 1e12
 REAL_PART: str = "real"
 IMAGINARY_PART: str = "imaginary"
 
+# physical constants
+C = 299792458*3.2408e-26 #Gpc / s
+G = 3.24077929**2*4.3009172706e-58 # Gpc^3 / (s^2 * solar masses)
+
 # simulation configuration
 SIMULATION_CONFIGURATION_FILE = "simulation_configuration.json"
 SIMULATION_PATH = "simulation_path"
