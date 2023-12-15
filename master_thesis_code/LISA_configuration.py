@@ -23,6 +23,9 @@ beta = 292.0
 kappa = 1020.0
 gamma = 1680.0
 f_k = 0.00215
+YEAR_IN_SEC = int(365.5 * 24 * 60 * 60)
+STEPS = 100_000
+DT = YEAR_IN_SEC / STEPS
 
 @dataclass
 class LISAConfiguration:
@@ -51,7 +54,7 @@ class LISAConfiguration:
         self.dist = parameter_space.dist
         self.dt = dt
 
-        self._snr_estimation_factor = 2/5*np.sqrt(5/6)/np.pi**(2/3)*C*(G/C**3)**(5/6)*self._compute_LISA_snr_frequency_factor()
+        self._snr_estimation_factor = np.sqrt(5/6)/np.pi**(2/3)*C*(G/C**3)**(5/6)*self._compute_LISA_snr_frequency_factor()
 
     def update_parameters(self, parameter_space: ParameterSpace) -> None:
         self.qS = parameter_space.qS
@@ -67,8 +70,12 @@ class LISAConfiguration:
         integrant = cp.divide( fs**(-7/3), self.power_spectral_density(fs))
         return cp.sqrt(cp.trapz(integrant,fs))
     
+    def Q_snr_check(self) -> float:
+        time_series = cp.arange(0,STEPS)*DT
+        return cp.mean(cp.sqrt(self.F_plus(time_series)**2 + self.F_cross(time_series)**2))
+    
     def SNR_sanity_check(self) -> float:
-        return self._snr_estimation_factor*((self.M*self.mu)**(3/5)/(self.M + self.mu)**(1/5))**(5/6)/self.dist
+        return self.Q_snr_check()*self._snr_estimation_factor*((self.M*self.mu)**(3/5)/(self.M + self.mu)**(1/5))**(5/6)/self.dist
 
     # antenna pattern functions 41550...PDF
     def F_plus(self, time_series: cp.array) -> cp.array:
