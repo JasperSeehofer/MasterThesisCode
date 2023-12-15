@@ -84,7 +84,7 @@ class LISAConfiguration:
         Returns:
             float: projection of + polarization into the detector frame.
         """
-        return (1 + self.cos_theta_solar_barycenter(time_series) ** 2) / 2 * cp.cos(
+        return (1 + self.cos_theta_solar_barycenter(time_series)**2) / 2 * cp.cos(
             2 * self.phi_solar_barycenter(time_series)
         ) * cp.cos(
             2 * self.psi_solar_barycenter(time_series)
@@ -104,13 +104,13 @@ class LISAConfiguration:
         """
         return (1 + self.cos_theta_solar_barycenter(time_series) ** 2) / 2 * cp.cos(
             2 * self.phi_solar_barycenter(time_series)
-        ) * cp.cos(
+        ) * cp.sin(
             2 * self.psi_solar_barycenter(time_series)
         ) + self.cos_theta_solar_barycenter(
             time_series
         ) * cp.sin(
             2 * self.phi_solar_barycenter(time_series)
-        ) * cp.sin(
+        ) * cp.cos(
             2 * self.psi_solar_barycenter(time_series)
         )
 
@@ -150,13 +150,13 @@ class LISAConfiguration:
         )  # scalar product of L and N
         zN = self.cos_theta_solar_barycenter(time_series)  # scalar product of z and N
         NLxz = (
-            cp.sin(self.qK) * cp.sin(self.qS) * cp.sin(self.phiK - self.phiS)
+            cp.sin(self.qK) * cp.sin(self.qS) * cp.sin(self.phiK - self.phiS)/2
             - cp.sqrt(3)
             / 2
             * cp.cos(self.phi_t(time_series))
             * (
                 cp.cos(self.qK) * cp.sin(self.qS) * cp.sin(self.phiS)
-                - cp.cos(self.qS * cp.sin(self.qK) * cp.sin(self.phiK))
+                - cp.cos(self.qS) * cp.sin(self.qK) * cp.sin(self.phiK)
             )
             - cp.sqrt(3)
             / 2
