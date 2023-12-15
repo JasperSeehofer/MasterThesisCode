@@ -24,7 +24,7 @@ kappa = 1020.0
 gamma = 1680.0
 f_k = 0.00215
 YEAR_IN_SEC = int(365.5 * 24 * 60 * 60)
-STEPS = 100_000
+STEPS = 100_00
 DT = YEAR_IN_SEC / STEPS
 
 @dataclass
@@ -72,7 +72,9 @@ class LISAConfiguration:
     
     def Q_snr_check(self) -> float:
         time_series = cp.arange(0,STEPS)*DT
-        return cp.mean(cp.sqrt(self.F_plus(time_series)**2 + self.F_cross(time_series)**2))
+        F = cp.mean(cp.sqrt(self.F_plus(time_series)**2 + self.F_cross(time_series)**2))
+        _LOGGER.debug(f"In easy SNR check F={cp.round(F, 3)}.")
+        return F
     
     def SNR_sanity_check(self) -> float:
         return self.Q_snr_check()*self._snr_estimation_factor*((self.M*self.mu)**(3/5)/(self.M + self.mu)**(1/5))**(5/6)/self.dist
