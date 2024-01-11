@@ -87,9 +87,9 @@ class ParameterEstimation():
         self.lisa_configuration = LISAConfiguration(parameter_space=self.parameter_space, dt=self.dt)
     
     @timer_decorator
-    def generate_waveform(self, update_parameters: dict = {}, use_antenna_pattern_functions: bool = True) -> cp.ndarray:
+    def generate_waveform(self, use_antenna_pattern_functions: bool = True) -> cp.ndarray:
         waveform = self.waveform_generator(
-            **(self.parameter_space._parameters_to_dict() | update_parameters),
+            **self.parameter_space._parameters_to_dict(),
             dt=self.dt,
             T=self.T)
 
@@ -164,10 +164,15 @@ class ParameterEstimation():
             sys.exit()
         parameter_evaluated_at = getattr(self.parameter_space, parameter_symbol)
         derivative_epsilon = derivative_parameter_configuration.derivative_epsilon
-        five_stencil_points = [{parameter_symbol: parameter_evaluated_at + step*derivative_epsilon} for step in [-2., -1., 1., 2.]]
-
-        waveforms = [self.generate_waveform(update_parameters=params) for params in five_stencil_points]
+        
+        five_point_stencil_steps = [-2., -1., 1., 2.]
+        waveforms = []
+        for step in five_point_stencil_steps:
+            setattr(self.parameter_space, derivative_parameter_configuration.parameter_symbol, parameter_evaluated_at + step*derivative_epsilon)
+            self.lisa_configuration.update_parameters(self.parameter_space)
+            waveforms.append(self.generate_waveform())
         waveforms = self._crop_to_same_length(waveforms)
+        setattr(self.parameter_space, derivative_parameter_configuration.parameter_symbol, parameter_evaluated_at)
 
         #self._plot_waveform(waveforms=waveforms, plot_name="waveform_for_derivative")
 
