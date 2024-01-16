@@ -39,12 +39,13 @@ class LISAConfiguration:
         0  # direction of the binary's angular momentum in the ecliptic reference system
     )
     dt: float = 0
+    use_LISA_second_measurement: bool
     is_LISA_second_measurement: bool = False
     is_schwarzschild: bool = (
         False  # for Schwarzschild waveforms the inclination is not regarded ()
     )
 
-    def __init__(self, parameter_space: ParameterSpace, dt: float) -> None:
+    def __init__(self, parameter_space: ParameterSpace, dt: float, use_LISA_second_measurement: bool) -> None:
         self.qS = parameter_space.qS
         self.phiS = parameter_space.phiS
         self.qK = parameter_space.qK
@@ -54,6 +55,7 @@ class LISAConfiguration:
         self.dist = parameter_space.dist
         self.dt = dt
 
+        self.use_LISA_second_measurement = use_LISA_second_measurement
         self._snr_estimation_factor = np.sqrt(5/6)/np.pi**(2/3)*C*(G/C**3)**(5/6)*self._compute_LISA_snr_frequency_factor()
 
     def update_parameters(self, parameter_space: ParameterSpace) -> None:
@@ -137,7 +139,7 @@ class LISAConfiguration:
             )
             / (2 * cp.sin(self.qS) * cp.sin(self.phi_t(time_series) - self.phiS))
         )
-        if self.is_LISA_second_measurement:
+        if self.use_LISA_second_measurement:
             phi += -cp.pi / 4
         return phi
 
@@ -240,7 +242,7 @@ class LISAConfiguration:
     @timer_decorator
     def transform_from_ssb_to_lisa_frame(self, waveform: cp.ndarray) -> cp.array:
         time_series = cp.multiply(cp.arange(0, waveform.shape[0]), self.dt)
-
+        self.is_LISA_second_measurement = False
         measurement_1 = (
             (
                 cp.subtract(
@@ -251,8 +253,22 @@ class LISAConfiguration:
             * cp.sqrt(3)
             / 2
         )
-        # self.is_LISA_second_measurement = True
-        # measurement_2 = (waveform.real*self.F_plus(time_series) - waveform.imag*self.F_cross(time_series))*cp.sqrt(3)/2
+
+        if self.use_LISA_second_measurement:
+            self.is_LISA_second_measurement = True
+            measurement_2 = (
+                (
+                    cp.subtract(
+                        cp.multiply(waveform.real, self.F_plus(time_series)),
+                        cp.multiply(waveform.imag, self.F_cross(time_series))
+                    )
+                )
+                * cp.sqrt(3)
+                / 2
+            )
+            del waveform
+            del time_series
+            return cp.array([measurement_1, measurement_2])
         del waveform
         del time_series
         return cp.array(measurement_1)
