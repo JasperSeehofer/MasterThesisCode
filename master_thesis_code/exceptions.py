@@ -6,3 +6,6 @@ class ParameterEstimationError(Exception):
 
 class TimeoutError(Exception):
     """Error when time a given time limit is reached."""
+
+class ParameterOutOfBoundsError(Exception):
+    """Error when trying to set a parameter to a value that is out of its given limits."""

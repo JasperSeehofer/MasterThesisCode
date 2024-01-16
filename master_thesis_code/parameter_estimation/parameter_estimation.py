@@ -9,7 +9,7 @@ import logging
 import sys
 import cupy as cp
 import cupyx.scipy.fft as cufft
-from master_thesis_code.exceptions import ParameterEstimationError
+from master_thesis_code.exceptions import ParameterEstimationError, ParameterOutOfBoundsError
 
 from enum import Enum
 from few.waveform import GenerateEMRIWaveform
@@ -124,7 +124,7 @@ class ParameterEstimation():
         derivative_epsilon = derivative_parameter_configuration.derivative_epsilon
 
         setattr(self.parameter_space, parameter_symbol, parameter_evaluated_at + derivative_epsilon)
-
+        # WARNING LISA CONFIG NOT BEING UPDATED HERE!
         neighbouring_waveform = self.generate_waveform()
 
         self._plot_waveform(waveforms=[waveform, neighbouring_waveform], plot_name="waveform_for_derivative")
@@ -164,6 +164,13 @@ class ParameterEstimation():
             sys.exit()
         parameter_evaluated_at = getattr(self.parameter_space, parameter_symbol)
         derivative_epsilon = derivative_parameter_configuration.derivative_epsilon
+
+        # check that neighbouring points are in parameter range as well
+        if (
+            ((parameter_evaluated_at - 2*derivative_epsilon) < derivative_parameter_configuration.lower_limit) 
+            or ((parameter_evaluated_at + 2*derivative_epsilon) > derivative_parameter_configuration.upper_limit)
+            ):
+            raise ParameterOutOfBoundsError("Tried to set parameter to value out of bounds in derivative.")
         
         five_point_stencil_steps = [-2., -1., 1., 2.]
         waveforms = []

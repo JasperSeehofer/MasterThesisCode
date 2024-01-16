@@ -10,6 +10,7 @@ from time import time
 from master_thesis_code.parameter_estimation.evaluation import DataEvaluation
 from master_thesis_code.arguments import Arguments
 from master_thesis_code.constants import SNR_THRESHOLD
+from master_thesis_code.exceptions import ParameterOutOfBoundsError
 
 
 # logging setup
@@ -94,6 +95,10 @@ def data_simulation(simulation_steps: int) -> None:
             else:
                 _ROOT_LOGGER.warning(f"{str(e)}. Continue with new parameters...")
                 continue
+        except ParameterOutOfBoundsError as e:
+            _ROOT_LOGGER.warning(f"Caught ParameterOutOfBoundsError during parameter estimation: {str(e)}. Continue with new parameters...")
+            continue
+        
         except RuntimeError as e:
             _ROOT_LOGGER.warning(f"Caught RuntimeError during waveform generation : {str(e)} .\n Continue with new parameters...")
             continue
