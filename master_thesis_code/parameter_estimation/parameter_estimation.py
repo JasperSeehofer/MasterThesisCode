@@ -60,6 +60,7 @@ class ParameterEstimation():
     dt: float = 5
     T: float = 4
     waveform_generation_time: int = 0
+    use_LISA_second_measurement = True
 
     def __init__(self, wave_generation_type: WaveGeneratorType, use_gpu: bool):
         self.parameter_space = ParameterSpace()
@@ -84,7 +85,11 @@ class ParameterEstimation():
                 "Wave generator class could not be matched to FastSchwarzschildEccentricFlux or PN5AAKwaveform." 
                 "please check configuration in main."
                 )
-        self.lisa_configuration = LISAConfiguration(parameter_space=self.parameter_space, dt=self.dt)
+        self.lisa_configuration = LISAConfiguration(
+            parameter_space=self.parameter_space, 
+            dt=self.dt, 
+            use_LISA_second_measurement=self.use_LISA_second_measurement
+        )
     
     @timer_decorator
     def generate_waveform(self, use_antenna_pattern_functions: bool = True) -> cp.ndarray:
@@ -240,27 +245,29 @@ class ParameterEstimation():
 
     @timer_decorator
     def scalar_product_of_functions(self, a: cp.ndarray, b: cp.ndarray) -> float:
-        fs = cufft.rfftfreq(a.__len__(), self.dt)[1:]
-        a_fft = cufft.rfft(a)[1:]
-        b_fft_cc = cp.conjugate(cufft.rfft(b))[1:]
-        power_spectral_density = self.lisa_configuration.power_spectral_density(frequencies=fs)
-        
-        # crop all arrays to shortest length
-        reduced_length = min(a_fft.shape[0], b_fft_cc.shape[0], fs.shape[0])
-        a_fft = a_fft[:reduced_length]
-        b_fft_cc = b_fft_cc[:reduced_length]
-        fs = fs[:reduced_length]
-        power_spectral_density = power_spectral_density[:reduced_length]
+        result = 0
+        for measurement_index in [0,1]:
+            fs = cufft.rfftfreq(a[measurement_index].__len__(), self.dt)[1:]
+            a_fft = cufft.rfft(a[measurement_index])[1:]
+            b_fft_cc = cp.conjugate(cufft.rfft(b[measurement_index]))[1:]
+            power_spectral_density = self.lisa_configuration.power_spectral_density(frequencies=fs)
+            
+            # crop all arrays to shortest length
+            reduced_length = min(a_fft.shape[0], b_fft_cc.shape[0], fs.shape[0])
+            a_fft = a_fft[:reduced_length]
+            b_fft_cc = b_fft_cc[:reduced_length]
+            fs = fs[:reduced_length]
+            power_spectral_density = power_spectral_density[:reduced_length]
 
-        integrant = cp.divide(cp.multiply(a_fft, b_fft_cc), power_spectral_density)
+            integrant = cp.divide(cp.multiply(a_fft, b_fft_cc), power_spectral_density)
 
-        #self._plot_waveform(waveforms=[integrant.real], xs=fs, plot_name="scalar_product_integrant_real", x_label="f [Hz]", use_log_scale=True)
+            #self._plot_waveform(waveforms=[integrant.real], xs=fs, plot_name="scalar_product_integrant_real", x_label="f [Hz]", use_log_scale=True)
 
-        fs, integrant = self._crop_frequency_domain(fs, integrant)
+            fs, integrant = self._crop_frequency_domain(fs, integrant)
 
-        #self._plot_waveform(waveforms=[integrant.real], xs=fs, plot_name="scalar_product_integrant_real_cropped", x_label="f [Hz]", use_log_scale=True)
-        
-        result = 4*cp.trapz(y=integrant, x=fs).real
+            #self._plot_waveform(waveforms=[integrant.real], xs=fs, plot_name="scalar_product_integrant_real_cropped", x_label="f [Hz]", use_log_scale=True)
+            
+            result += 4*cp.trapz(y=integrant, x=fs).real
         del fs
         del a_fft
         del b_fft_cc
