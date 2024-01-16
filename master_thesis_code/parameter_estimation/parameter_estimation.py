@@ -168,11 +168,11 @@ class ParameterEstimation():
         five_point_stencil_steps = [-2., -1., 1., 2.]
         waveforms = []
         for step in five_point_stencil_steps:
-            setattr(self.parameter_space, derivative_parameter_configuration.parameter_symbol, parameter_evaluated_at + step*derivative_epsilon)
+            setattr(self.parameter_space, derivative_parameter_configuration.symbol, parameter_evaluated_at + step*derivative_epsilon)
             self.lisa_configuration.update_parameters(self.parameter_space)
             waveforms.append(self.generate_waveform())
         waveforms = self._crop_to_same_length(waveforms)
-        setattr(self.parameter_space, derivative_parameter_configuration.parameter_symbol, parameter_evaluated_at)
+        setattr(self.parameter_space, derivative_parameter_configuration.symbol, parameter_evaluated_at)
 
         #self._plot_waveform(waveforms=waveforms, plot_name="waveform_for_derivative")
 
