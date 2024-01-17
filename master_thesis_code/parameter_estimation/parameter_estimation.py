@@ -57,14 +57,15 @@ class ParameterEstimation():
     parameter_space: ParameterSpace
     waveform_generator: GenerateEMRIWaveform # generate waveform in SSB frame
     lisa_configuration: LISAConfiguration  # can be used to transform the waveform into the rotating detector frame
+    use_LISA_second_measurement: bool
     dt: float = 5
     T: float = 4
     waveform_generation_time: int = 0
-    use_LISA_second_measurement = True
 
-    def __init__(self, wave_generation_type: WaveGeneratorType, use_gpu: bool):
+    def __init__(self, wave_generation_type: WaveGeneratorType, use_gpu: bool, use_LISA_second_measurement: bool = True):
         self.parameter_space = ParameterSpace()
         self._use_gpu = use_gpu
+        self.use_LISA_second_measurement = use_LISA_second_measurement
         if wave_generation_type == "FastSchwarzschildEccentricFlux":
             self.waveform_generator = GenerateEMRIWaveform(
                 waveform_class="FastSchwarzschildEccentricFlux",
@@ -88,7 +89,7 @@ class ParameterEstimation():
         self.lisa_configuration = LISAConfiguration(
             parameter_space=self.parameter_space, 
             dt=self.dt, 
-            use_LISA_second_measurement=self.use_LISA_second_measurement
+            use_LISA_second_measurement=use_LISA_second_measurement
         )
     
     @timer_decorator
@@ -148,8 +149,8 @@ class ParameterEstimation():
 
     @staticmethod
     def _crop_to_same_length(signals: typing.List[cp.array]) -> typing.List[cp.array]:
-        minimal_length = min([len(signal) for signal in signals])
-        signals = [signal[:minimal_length] for signal in signals]
+        minimal_length = min([min(len(measurements[0]), len(measurements[1])) for measurements in signals])
+        signals = cp.array([[measurements[0][:minimal_length], measurements[1][:minimal_length]] for measurements in signals])
         return signals
 
     def five_point_stencil_derivative(self, parameter_symbol: str) -> cp.array:

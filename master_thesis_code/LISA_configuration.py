@@ -39,7 +39,7 @@ class LISAConfiguration:
         0  # direction of the binary's angular momentum in the ecliptic reference system
     )
     dt: float = 0
-    use_LISA_second_measurement: bool
+    use_LISA_second_measurement: bool = True
     is_LISA_second_measurement: bool = False
     is_schwarzschild: bool = (
         False  # for Schwarzschild waveforms the inclination is not regarded ()
