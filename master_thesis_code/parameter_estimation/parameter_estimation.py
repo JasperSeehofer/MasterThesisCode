@@ -49,11 +49,14 @@ class ParameterEstimation:
             waveform_generation_type
         )
         self.lisa_configuration = LISAConfiguration()
+        _LOGGER.info("parameter estimation initialized.")
 
+    @timer_decorator    
     def generate_lisa_response(self) -> List:
         return self.lisa_response_generator(
-            list(self.parameter_space._parameters_to_dict().values())
+            *self.parameter_space._parameters_to_dict().values()
         )
+        
 
     @timer_decorator
     def five_point_stencil_derivative(self, parameter_symbol: str) -> cp.array:

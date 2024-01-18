@@ -62,7 +62,7 @@ def create_lisa_response_generator(waveform_generator_type: WaveGeneratorType) -
         dt=DT,
         **tdi_kwargs_esa,
     )
-    _LOGGER.debug("Lisa response generator initialized.")
+    _LOGGER.info("Lisa response generator initialized.")
     return lisa_response_generator
 
 
