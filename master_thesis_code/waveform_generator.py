@@ -49,8 +49,8 @@ class WaveGeneratorType(Enum):
     PN5_AAK = 2
 
 
-def create_lisa_response_generator(waveform_generator_type: WaveGeneratorType) -> None:
-    return ResponseWrapper(
+def create_lisa_response_generator(waveform_generator_type: WaveGeneratorType) -> ResponseWrapper:
+    lisa_response_generator = ResponseWrapper(
         waveform_gen=_set_waveform_generator(waveform_generator_type),
         flip_hx=True,
         index_lambda=INDEX_LAMBDA,
@@ -62,6 +62,8 @@ def create_lisa_response_generator(waveform_generator_type: WaveGeneratorType) -
         dt=DT,
         **tdi_kwargs_esa,
     )
+    _LOGGER.debug("Lisa response generator initialized.")
+    return lisa_response_generator
 
 
 def _set_waveform_generator(
@@ -75,16 +77,17 @@ def _set_waveform_generator(
             waveform_class="FastSchwarzschildEccentricFlux", use_gpu=USE_GPU
         )
     elif waveform_generator_type == WaveGeneratorType.PN5_AAK:
-        _LOGGER.info(
-            "Parameter estimation is setup up with the 'PN5AAKwaveform' wave generator."
-        )
-        return GenerateEMRIWaveform(
+        waveform_generator =  GenerateEMRIWaveform(
             waveform_class="Pn5AAKWaveform",
             inspiral_kwargs=pn5_aak_configuration["inspiral_kwargs"],
             sum_kwargs=pn5_aak_configuration["sum_kwargs"],
             frame="detector",
             use_gpu=USE_GPU,
         )
+        _LOGGER.info(
+            "Parameter estimation is setup up with the 'PN5AAKwaveform' wave generator."
+        )
+        return waveform_generator
     else:
         raise WaveformGenerationError(
             "Wave generator class could not be matched to FastSchwarzschildEccentricFlux or PN5AAKwaveform."
