@@ -29,7 +29,19 @@ pn5_aak_configuration = {
     },
 }
 
-lisa_response_configuration = {}
+# FAST LISA RESPONSE configuration
+# order of the langrangian interpolation
+order = 25
+orbit_file_esa = "./lisa_files/esa-trailing-orbits.h5"
+orbit_kwargs_esa = dict(orbit_file=orbit_file_esa)
+# 1st or 2nd or custom (see docs for custom)
+tdi_gen = "2nd generation"
+tdi_kwargs_esa = dict(
+    orbit_kwargs=orbit_kwargs_esa,
+    order=order,
+    tdi=tdi_gen,
+    tdi_chan="AET",
+)
 
 
 class WaveGeneratorType(Enum):
@@ -48,6 +60,7 @@ def create_lisa_response_generator(waveform_generator_type: WaveGeneratorType) -
         use_gpu=USE_GPU,
         Tobs=T_OBSERVATION,
         dt=DT,
+        **tdi_kwargs_esa,
     )
 
 
