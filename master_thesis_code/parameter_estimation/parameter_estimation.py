@@ -39,14 +39,16 @@ _LOGGER = logging.getLogger()
 class ParameterEstimation:
     parameter_space: ParameterSpace
     lisa_response_generator: ResponseWrapper
-
+    dt = 10 # time sampling in sec
+    T = 4 # observation time in years
+    
     def __init__(
         self,
         waveform_generation_type: WaveGeneratorType,
     ):
         self.parameter_space = ParameterSpace()
         self.lisa_response_generator = create_lisa_response_generator(
-            waveform_generation_type
+            waveform_generation_type, self.dt, self.T,
         )
         self.lisa_configuration = LISAConfiguration()
         _LOGGER.info("parameter estimation initialized.")
@@ -264,8 +266,15 @@ class ParameterEstimation:
         end = time.time()
         self.waveform_generation_time = round(end - start, 3)
 
+        for i, channel in enumerate(waveform):
+            plt.plot(cp.asnumpy(channel), label=str(i))
+        plt.savefig("channels.png", dpi=300)
+            
+        
         self.current_waveform = waveform
-        return cp.sqrt(self.scalar_product_of_functions(a=waveform, b=waveform))
+        snr = cp.sqrt(self.scalar_product_of_functions(waveform, waveform))
+        del waveform
+        return snr
 
     @timer_decorator
     def save_cramer_rao_bound(

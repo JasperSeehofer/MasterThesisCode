@@ -9,8 +9,6 @@ from master_thesis_code.exceptions import WaveformGenerationError
 
 _LOGGER = logging.getLogger()
 USE_GPU = True
-T_OBSERVATION = 4
-DT = 10
 INDEX_LAMBDA = 8  # index in list of parameters from ParameterSpace for phiS
 INDEX_BETA = 7  # index in list of parameters from ParameterSpace for qS
 T0 = 10_000.0  #
@@ -51,6 +49,9 @@ class WaveGeneratorType(Enum):
 
 def create_lisa_response_generator(
     waveform_generator_type: WaveGeneratorType,
+    dt: float,
+    T_observation: float,
+    
 ) -> ResponseWrapper:
     lisa_response_generator = ResponseWrapper(
         waveform_gen=_set_waveform_generator(waveform_generator_type),
@@ -60,8 +61,8 @@ def create_lisa_response_generator(
         t0=T0,
         is_ecliptic_latitude=False,
         use_gpu=USE_GPU,
-        Tobs=T_OBSERVATION,
-        dt=DT,
+        Tobs=T_observation,
+        dt=dt,
         **tdi_kwargs_esa,
     )
     _LOGGER.info("Lisa response generator initialized.")
