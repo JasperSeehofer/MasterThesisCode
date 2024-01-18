@@ -43,7 +43,6 @@ class ParameterEstimation:
     def __init__(
         self,
         waveform_generation_type: WaveGeneratorType,
-        lisa_configuration: LISAConfiguration,
     ):
         self.parameter_space = ParameterSpace()
         self.lisa_response_generator = create_lisa_response_generator(
