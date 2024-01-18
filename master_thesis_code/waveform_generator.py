@@ -9,8 +9,8 @@ from master_thesis_code.exceptions import WaveformGenerationError
 
 _LOGGER = logging.getLogger()
 USE_GPU = True
-T_OBSERVATION = 5
-DT = 5
+T_OBSERVATION = 4
+DT = 10
 INDEX_LAMBDA = 8  # index in list of parameters from ParameterSpace for phiS
 INDEX_BETA = 7  # index in list of parameters from ParameterSpace for qS
 T0 = 10_000.0  #
@@ -49,7 +49,9 @@ class WaveGeneratorType(Enum):
     PN5_AAK = 2
 
 
-def create_lisa_response_generator(waveform_generator_type: WaveGeneratorType) -> ResponseWrapper:
+def create_lisa_response_generator(
+    waveform_generator_type: WaveGeneratorType,
+) -> ResponseWrapper:
     lisa_response_generator = ResponseWrapper(
         waveform_gen=_set_waveform_generator(waveform_generator_type),
         flip_hx=True,
@@ -77,7 +79,7 @@ def _set_waveform_generator(
             waveform_class="FastSchwarzschildEccentricFlux", use_gpu=USE_GPU
         )
     elif waveform_generator_type == WaveGeneratorType.PN5_AAK:
-        waveform_generator =  GenerateEMRIWaveform(
+        waveform_generator = GenerateEMRIWaveform(
             waveform_class="Pn5AAKWaveform",
             inspiral_kwargs=pn5_aak_configuration["inspiral_kwargs"],
             sum_kwargs=pn5_aak_configuration["sum_kwargs"],
