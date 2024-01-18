@@ -74,7 +74,7 @@ def data_simulation(simulation_steps: int) -> None:
     memory_management.display_fft_cache()
 
     parameter_estimation = ParameterEstimation(
-        waveform_generation_type=WaveGeneratorType.pn5, use_gpu=True
+        waveform_generation_type=WaveGeneratorType.PN5_AAK
     )
 
     counter = 0
