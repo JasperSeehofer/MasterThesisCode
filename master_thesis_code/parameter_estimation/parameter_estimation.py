@@ -183,6 +183,7 @@ class ParameterEstimation:
 
             result += 4 * cp.trapz(y=integrant, x=fs).real
             _LOGGER.debug(f"current scalar product result: {result}")
+        plt.xscale("log")    
         plt.savefig("scalar_produc_integrants.png", dpi=300)
         plt.close()
         del fs
