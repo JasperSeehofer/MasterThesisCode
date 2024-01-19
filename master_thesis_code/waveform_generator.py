@@ -62,6 +62,7 @@ def create_lisa_response_generator(
         is_ecliptic_latitude=False,
         use_gpu=USE_GPU,
         Tobs=T_observation,
+        remove_garbage="zero", # TODO: understand why to use this
         dt=dt,
         **tdi_kwargs_esa,
     )
