@@ -179,7 +179,7 @@ class ParameterEstimation:
             integrant = cp.divide(cp.multiply(a_fft, b_fft_cc), power_spectral_density)
             fs, integrant = self._crop_frequency_domain(fs, integrant)
 
-            plt.plot(fs, integrant)
+            plt.plot(cp.asnumpy(fs).real, cp.asnumpy(integrant).real)
 
             result += 4 * cp.trapz(y=integrant, x=fs).real
             _LOGGER.debug(f"current scalar product result: {result}")
