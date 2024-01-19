@@ -29,7 +29,7 @@ pn5_aak_configuration = {
 
 # FAST LISA RESPONSE configuration
 # order of the langrangian interpolation
-order = 25
+order = 35
 orbit_file_esa = "./lisa_files/esa-trailing-orbits.h5"
 orbit_kwargs_esa = dict(orbit_file=orbit_file_esa)
 # 1st or 2nd or custom (see docs for custom)
@@ -38,7 +38,7 @@ tdi_kwargs_esa = dict(
     orbit_kwargs=orbit_kwargs_esa,
     order=order,
     tdi=tdi_gen,
-    tdi_chan="XYZ",
+    tdi_chan="AET",
 )
 
 
@@ -62,7 +62,7 @@ def create_lisa_response_generator(
         is_ecliptic_latitude=False,
         use_gpu=USE_GPU,
         Tobs=T_observation,
-        remove_garbage="zero", # TODO: understand why to use this
+        remove_garbage=True, # TODO: understand why to use this
         dt=dt,
         **tdi_kwargs_esa,
     )
