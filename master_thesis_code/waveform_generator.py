@@ -38,7 +38,7 @@ tdi_kwargs_esa = dict(
     orbit_kwargs=orbit_kwargs_esa,
     order=order,
     tdi=tdi_gen,
-    tdi_chan="AET",
+    tdi_chan="XYZ",
 )
 
 

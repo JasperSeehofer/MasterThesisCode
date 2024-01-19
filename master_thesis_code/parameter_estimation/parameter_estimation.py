@@ -109,7 +109,8 @@ class ParameterEstimation:
             )
             lisa_responses.append(self.generate_lisa_response())
         lisa_responses = self._crop_to_same_length(lisa_responses)
-
+        _LOGGER.debug(f"lisa_responses in derivative function:\n {lisa_responses}")
+        
         # set parameter value back to value that the derivative was evaluated at.
         setattr(
             self.parameter_space,
@@ -158,6 +159,7 @@ class ParameterEstimation:
         self, tdi_channels_a: cp.ndarray, tdi_channels_b: cp.ndarray
     ) -> float:
         result = 0
+        _LOGGER.debug(f"check for 3 channels: {len(tdi_channels_a)}")
         for tdi_channel_a, tdi_channel_b in zip(tdi_channels_a, tdi_channels_b):
             fs = cufft.rfftfreq(len(tdi_channel_a), self.dt)[1:]
             a_fft = cufft.rfft(tdi_channel_a)[1:]
@@ -177,6 +179,7 @@ class ParameterEstimation:
             fs, integrant = self._crop_frequency_domain(fs, integrant)
 
             result += 4 * cp.trapz(y=integrant, x=fs).real
+            _LOGGER.debug(f"current scalar product result: {result}")
         del fs
         del a_fft
         del b_fft_cc
