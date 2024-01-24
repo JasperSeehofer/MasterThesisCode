@@ -77,6 +77,8 @@ def data_simulation(simulation_steps: int) -> None:
         waveform_generation_type=WaveGeneratorType.PN5_AAK
     )
 
+    parameter_estimation.lisa_configuration._visualize_lisa_configuration()
+    
     counter = 0
     iteration = 0
     while counter < simulation_steps:
