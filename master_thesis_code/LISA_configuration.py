@@ -26,6 +26,7 @@ f_k = 0.00215
 YEAR_IN_SEC = int(365.5 * 24 * 60 * 60)
 STEPS = 10_000
 DT = YEAR_IN_SEC / STEPS
+M_IN_GPC = 3.2407788498994e-26
 
 
 class LisaTdiConfiguration:
@@ -34,9 +35,10 @@ class LisaTdiConfiguration:
     ) -> cp.array:
         """PSD noise for AET channels from https://arxiv.org/pdf/2303.15929.pdf assuming equal arm length."""
         if channel.upper() in ["A", "E"]:
-           return self.power_spectral_density_a_channel(frequencies)
+            return self.power_spectral_density_a_channel(frequencies)
         elif channel.upper() == "T":
-           return self.power_spectral_density_t_channel(frequencies)
+            return self.power_spectral_density_t_channel(frequencies)
+
     def power_spectral_density_a_channel(self, frequencies: cp.array) -> cp.array:
         """from https://arxiv.org/pdf/2303.15929.pdf"""
 
@@ -77,6 +79,7 @@ class LisaTdiConfiguration:
             15**2e-24
             * (1 + (2e-3 / frequencies) ** 4)
             * (2 * cp.pi * frequencies / C) ** 2
+            * M_IN_GPC**2
         )
 
     @staticmethod
@@ -86,7 +89,36 @@ class LisaTdiConfiguration:
             * (1 + (0.4e-3 / frequencies) ** 2)
             * (1 + (frequencies / 8e-3) ** 4)
             * (1 / 2 / cp.pi / frequencies / C) ** 2
+            * M_IN_GPC**2
         )
+
+    @timer_decorator
+    def _visualize_lisa_configuration(self) -> None:
+        figures_directory = f"saved_figures/LISA_configuration/"
+
+        if not os.path.isdir(figures_directory):
+            os.makedirs(figures_directory)
+
+        # create plots
+        # plot power spectral density
+        fs = cp.linspace(MINIMAL_FREQUENCY, MAXIMAL_FREQUENCY, 10000)
+        fig = plt.figure(figsize=(12, 8))
+        for channel in ["A", "T"]:
+            plt.plot(
+                cp.asnumpy(fs),
+                cp.asnumpy(cp.sqrt(self.power_spectral_density(fs, channel=channel))),
+                "--",
+                linewidth=1,
+                label=f"sqrt(S_{channel}(f))",
+            )
+
+        plt.xlabel("f [Hz]")
+        plt.legend()
+        plt.xscale("log")
+        plt.yscale("log")
+        plt.ylim(1e-21, 1e-14)
+        plt.savefig(figures_directory + "LISA_PSD.png", dpi=300)
+        plt.clf()
 
 
 @dataclass
