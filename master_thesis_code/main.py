@@ -108,6 +108,11 @@ def data_simulation(simulation_steps: int) -> None:
                 f"Caught ParameterOutOfBoundsError during parameter estimation: {str(e)}. Continue with new parameters..."
             )
             continue
+        except AssertionError as e:
+            _ROOT_LOGGER.warning(
+                f"caught AssertionError: {str(e)}. Continue with new parameters..."
+            )
+            continue
         except RuntimeError as e:
             _ROOT_LOGGER.warning(
                 f"Caught RuntimeError during waveform generation : {str(e)} .\n Continue with new parameters..."

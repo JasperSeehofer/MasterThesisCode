@@ -88,7 +88,7 @@ class ParameterEstimation:
         parameter_evaluated_at = getattr(self.parameter_space, parameter_symbol)
         derivative_epsilon = derivative_parameter_configuration.derivative_epsilon
 
-        # check that neighbouring points are in parameter range as well
+        # check that neighboring points are in parameter range as well
         if (
             (parameter_evaluated_at - 2 * derivative_epsilon)
             < derivative_parameter_configuration.lower_limit
