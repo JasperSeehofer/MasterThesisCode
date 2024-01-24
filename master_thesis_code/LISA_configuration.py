@@ -107,7 +107,7 @@ class LisaTdiConfiguration:
             plt.plot(
                 cp.asnumpy(fs),
                 cp.asnumpy(cp.sqrt(self.power_spectral_density(fs, channel=channel))),
-                "--",
+                "-",
                 linewidth=1,
                 label=f"sqrt(S_{channel}(f))",
             )
