@@ -31,7 +31,7 @@ from master_thesis_code.constants import (
     MAXIMAL_FREQUENCY,
 )
 from master_thesis_code.datamodels.parameter_space import ParameterSpace
-from master_thesis_code.LISA_configuration import LISAConfiguration
+from master_thesis_code.LISA_configuration import LisaTdiConfiguration
 
 _LOGGER = logging.getLogger()
 
@@ -52,7 +52,7 @@ class ParameterEstimation:
             self.dt,
             self.T,
         )
-        self.lisa_configuration = LISAConfiguration()
+        self.lisa_configuration = LisaTdiConfiguration()
         _LOGGER.info("parameter estimation initialized.")
 
     @timer_decorator
@@ -161,12 +161,14 @@ class ParameterEstimation:
     ) -> float:
         result = 0
         _LOGGER.debug(f"check for 3 channels: {len(tdi_channels_a)}")
-        for tdi_channel_a, tdi_channel_b in zip(tdi_channels_a, tdi_channels_b):
+        for channel, tdi_channel_a, tdi_channel_b in zip(
+            "AET", tdi_channels_a, tdi_channels_b
+        ):
             fs = cufft.rfftfreq(len(tdi_channel_a), self.dt)[1:]
             a_fft = cufft.rfft(tdi_channel_a)[1:]
             b_fft_cc = cp.conjugate(cufft.rfft(tdi_channel_b))[1:]
             power_spectral_density = self.lisa_configuration.power_spectral_density(
-                frequencies=fs
+                frequencies=fs, channel=channel
             )
 
             # crop all arrays to shortest length
@@ -183,7 +185,7 @@ class ParameterEstimation:
 
             result += 4 * cp.trapz(y=integrant, x=fs).real
             _LOGGER.debug(f"current scalar product result: {result}")
-        plt.xscale("log")    
+        plt.xscale("log")
         plt.savefig("scalar_produc_integrants.png", dpi=300)
         plt.close()
         del fs
