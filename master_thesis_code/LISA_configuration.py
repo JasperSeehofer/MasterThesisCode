@@ -26,7 +26,6 @@ f_k = 0.00215
 YEAR_IN_SEC = int(365.5 * 24 * 60 * 60)
 STEPS = 10_000
 DT = YEAR_IN_SEC / STEPS
-M_IN_GPC = 3.24077e-26
 
 
 class LisaTdiConfiguration:
@@ -35,10 +34,9 @@ class LisaTdiConfiguration:
     ) -> cp.array:
         """PSD noise for AET channels from https://arxiv.org/pdf/2303.15929.pdf assuming equal arm length."""
         if channel.upper() in ["A", "E"]:
-            self.power_spectral_density_a_channel(frequencies)
+           return self.power_spectral_density_a_channel(frequencies)
         elif channel.upper() == "T":
-            self.power_spectral_density_t_channel(frequencies)
-
+           return self.power_spectral_density_t_channel(frequencies)
     def power_spectral_density_a_channel(self, frequencies: cp.array) -> cp.array:
         """from https://arxiv.org/pdf/2303.15929.pdf"""
 
@@ -73,21 +71,21 @@ class LisaTdiConfiguration:
             + 2 * (1 - cp.cos(2 * cp.pi * frequencies * L) * self.S_TM(frequencies))
         )
 
+    @staticmethod
     def S_OMS(frequencies: cp.array) -> cp.array:
         return (
             15**2e-24
             * (1 + (2e-3 / frequencies) ** 4)
             * (2 * cp.pi * frequencies / C) ** 2
-            * M_IN_GPC**2
         )
 
+    @staticmethod
     def S_TM(frequencies: cp.array) -> cp.array:
         return (
             9e-30
             * (1 + (0.4e-3 / frequencies) ** 2)
             * (1 + (frequencies / 8e-3) ** 4)
             * (1 / 2 / cp.pi / frequencies / C) ** 2
-            * M_IN_GPC**2
         )
 
 
