@@ -143,7 +143,7 @@ class ParameterEstimation:
         max_possible_length = min(
             [
                 min(
-                    [len(tdi_channel for tdi_channel in tdi_channels)]
+                    [len(tdi_channel) for tdi_channel in tdi_channels]
                     for tdi_channels in signal_collection
                 )
             ]
