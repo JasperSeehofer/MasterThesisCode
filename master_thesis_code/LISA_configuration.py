@@ -26,8 +26,9 @@ f_k = 0.00215
 YEAR_IN_SEC = int(365.5 * 24 * 60 * 60)
 STEPS = 10_000
 DT = YEAR_IN_SEC / STEPS
-M_IN_GPC = 3.2407788498994e-26
 
+M_IN_GPC = 3.2407788498994e-26
+L_IN_GPC = 2.5e9*M_IN_GPC
 
 class LisaTdiConfiguration:
     def power_spectral_density(
@@ -44,14 +45,14 @@ class LisaTdiConfiguration:
 
         return (
             8
-            * cp.sin(2 * cp.pi * frequencies * L) ** 2
+            * cp.sin(2 * cp.pi * frequencies * L_IN_GPC) ** 2
             * (
-                self.S_OMS(frequencies) * (cp.cos(2 * cp.pi * frequencies * L) + 2)
+                self.S_OMS(frequencies) * (cp.cos(2 * cp.pi * frequencies * L_IN_GPC) + 2)
                 + 2
                 * (
                     3
-                    + 2 * cp.cos(2 * cp.pi * frequencies * L)
-                    + cp.cos(4 * cp.pi * frequencies * L)
+                    + 2 * cp.cos(2 * cp.pi * frequencies * L_IN_GPC)
+                    + cp.cos(4 * cp.pi * frequencies * L_IN_GPC)
                 )
                 * self.S_TM(frequencies)
             )
@@ -62,15 +63,15 @@ class LisaTdiConfiguration:
         return (
             16
             / 3
-            * cp.sin(cp.pi * frequencies * L) ** 2
-            * cp.sin(2 * cp.pi * frequencies * L) ** 2
+            * cp.sin(cp.pi * frequencies * L_IN_GPC) ** 2
+            * cp.sin(2 * cp.pi * frequencies * L_IN_GPC) ** 2
             * self.S_zz(frequencies)
         )
 
     def S_zz(self, frequencies: cp.array) -> cp.array:
         return 6 * (
             self.S_OMS(frequencies)
-            + 2 * (1 - cp.cos(2 * cp.pi * frequencies * L) * self.S_TM(frequencies))
+            + 2 * (1 - cp.cos(2 * cp.pi * frequencies * L_IN_GPC) * self.S_TM(frequencies))
         )
 
     @staticmethod
@@ -101,22 +102,21 @@ class LisaTdiConfiguration:
 
         # create plots
         # plot power spectral density
-        fs = cp.linspace(MINIMAL_FREQUENCY, MAXIMAL_FREQUENCY, 10000)
+        fs = cp.logspace(MINIMAL_FREQUENCY, MAXIMAL_FREQUENCY, 10000)
         fig = plt.figure(figsize=(12, 8))
         for channel in ["A", "T"]:
             plt.plot(
                 cp.asnumpy(fs),
-                cp.asnumpy(cp.sqrt(self.power_spectral_density(fs, channel=channel))),
+                cp.asnumpy(self.power_spectral_density(fs, channel=channel)),
                 "-",
                 linewidth=1,
-                label=f"sqrt(S_{channel}(f))",
+                label=f"S_{channel}(f)",
             )
 
         plt.xlabel("f [Hz]")
         plt.legend()
         plt.xscale("log")
         plt.yscale("log")
-        plt.ylim(1e-21, 1e-14)
         plt.savefig(figures_directory + "LISA_PSD.png", dpi=300)
         plt.clf()
 
