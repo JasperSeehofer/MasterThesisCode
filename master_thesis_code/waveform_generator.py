@@ -11,7 +11,7 @@ _LOGGER = logging.getLogger()
 USE_GPU = True
 INDEX_LAMBDA = 8  # index in list of parameters from ParameterSpace for phiS
 INDEX_BETA = 7  # index in list of parameters from ParameterSpace for qS
-T0 = 10_000.0  #
+T0 = 20_000.0  #
 
 # Configuration of PN5 AAK waveform generator
 pn5_aak_configuration = {
@@ -33,7 +33,7 @@ order = 35
 orbit_file_esa = "./lisa_files/esa-trailing-orbits.h5"
 orbit_kwargs_esa = dict(orbit_file=orbit_file_esa)
 # 1st or 2nd or custom (see docs for custom)
-tdi_gen = "2nd generation"
+tdi_gen = "1st generation"
 tdi_kwargs_esa = dict(
     orbit_kwargs=orbit_kwargs_esa,
     order=order,
