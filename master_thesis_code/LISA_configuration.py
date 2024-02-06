@@ -112,7 +112,7 @@ class LisaTdiConfiguration:
 
         # create plots
         # plot power spectral density
-        fs = cp.logspace(MINIMAL_FREQUENCY, MAXIMAL_FREQUENCY, 10000)
+        fs = cp.logspace(-5, 1, 10000)
         fig = plt.figure(figsize=(12, 8))
 
         plt.plot(
