@@ -38,7 +38,7 @@ class LisaTdiConfiguration:
         if channel.upper() in ["A", "E"]:
             return self.power_spectral_density_a_channel(frequencies)
         elif channel.upper() == "T":
-            return self.power_spectral_density_t_channel(frequencies)
+            return cp.full(len(frequencies), 100.) # TODO: check T-channel expression. 
 
     def power_spectral_density_a_channel(self, frequencies: cp.array) -> cp.array:
         """from https://arxiv.org/pdf/2303.15929.pdf"""

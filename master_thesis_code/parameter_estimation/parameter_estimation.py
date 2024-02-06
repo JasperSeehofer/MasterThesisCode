@@ -39,8 +39,8 @@ _LOGGER = logging.getLogger()
 class ParameterEstimation:
     parameter_space: ParameterSpace
     lisa_response_generator: ResponseWrapper
-    dt = 10  # time sampling in sec
-    T = 4  # observation time in years
+    dt = 20  # time sampling in sec
+    T = 3  # observation time in years
 
     def __init__(
         self,
@@ -140,14 +140,18 @@ class ParameterEstimation:
     def _crop_to_same_length(
         signal_collection: List[List[cp.array]],
     ) -> List[List[cp.array]]:
+        print(signal_collection)
         max_possible_length = min(
+            min(
             [
                 min(
                     [len(tdi_channel) for tdi_channel in tdi_channels]
                     for tdi_channels in signal_collection
                 )
             ]
+            )
         )
+        print(max_possible_length)
         return cp.array(
             [
                 [tdi_channel[:max_possible_length] for tdi_channel in tdi_channels]
