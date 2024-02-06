@@ -1,6 +1,8 @@
 import numpy as np
 import cupy as cp
 from dataclasses import dataclass
+import matplotlib as mpl
+mpl.rcParams["agg.path.chunksize"] = 1000
 import matplotlib.pyplot as plt
 import os
 import logging
