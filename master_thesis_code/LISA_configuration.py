@@ -2,6 +2,7 @@ import numpy as np
 import cupy as cp
 from dataclasses import dataclass
 import matplotlib as mpl
+
 mpl.rcParams["agg.path.chunksize"] = 1000
 import matplotlib.pyplot as plt
 import os
@@ -30,7 +31,8 @@ STEPS = 10_000
 DT = YEAR_IN_SEC / STEPS
 
 M_IN_GPC = 3.2407788498994e-26
-L_IN_GPC = 2.5e9*M_IN_GPC
+L_IN_GPC = 2.5e9 * M_IN_GPC
+
 
 class LisaTdiConfiguration:
     def power_spectral_density(
@@ -40,21 +42,22 @@ class LisaTdiConfiguration:
         if channel.upper() in ["A", "E"]:
             return self.power_spectral_density_a_channel(frequencies)
         elif channel.upper() == "T":
-            return cp.full(len(frequencies), 100.) # TODO: check T-channel expression. 
+            return cp.full(len(frequencies), 100.0)  # TODO: check T-channel expression.
 
     def power_spectral_density_a_channel(self, frequencies: cp.array) -> cp.array:
         """from https://arxiv.org/pdf/2303.15929.pdf"""
 
         return (
             8
-            * cp.sin(2 * cp.pi * frequencies * L_IN_GPC) ** 2
+            * cp.sin(2 * cp.pi * frequencies * L_IN_GPC / C) ** 2
             * (
-                self.S_OMS(frequencies) * (cp.cos(2 * cp.pi * frequencies * L_IN_GPC) + 2)
+                self.S_OMS(frequencies)
+                * (cp.cos(2 * cp.pi * frequencies * L_IN_GPC / C) + 2)
                 + 2
                 * (
                     3
-                    + 2 * cp.cos(2 * cp.pi * frequencies * L_IN_GPC)
-                    + cp.cos(4 * cp.pi * frequencies * L_IN_GPC)
+                    + 2 * cp.cos(2 * cp.pi * frequencies * L_IN_GPC / C)
+                    + cp.cos(4 * cp.pi * frequencies * L_IN_GPC / C)
                 )
                 * self.S_TM(frequencies)
             )
@@ -65,15 +68,20 @@ class LisaTdiConfiguration:
         return (
             16
             / 3
-            * cp.sin(cp.pi * frequencies * L_IN_GPC) ** 2
-            * cp.sin(2 * cp.pi * frequencies * L_IN_GPC) ** 2
+            * cp.sin(cp.pi * frequencies * L_IN_GPC / C) ** 2
+            * cp.sin(2 * cp.pi * frequencies * L_IN_GPC / C) ** 2
             * self.S_zz(frequencies)
         )
 
     def S_zz(self, frequencies: cp.array) -> cp.array:
         return 6 * (
             self.S_OMS(frequencies)
-            + 2 * (1 - cp.cos(2 * cp.pi * frequencies * L_IN_GPC) * self.S_TM(frequencies))
+            + 2
+            * (
+                1
+                - cp.cos(2 * cp.pi * frequencies * L_IN_GPC / C)
+                * self.S_TM(frequencies)
+            )
         )
 
     @staticmethod
@@ -105,6 +113,31 @@ class LisaTdiConfiguration:
         # create plots
         # plot power spectral density
         fs = cp.logspace(MINIMAL_FREQUENCY, MAXIMAL_FREQUENCY, 10000)
+        fig = plt.figure(figsize=(12, 8))
+
+        plt.plot(
+            cp.asnumpy(fs),
+            cp.asnumpy(self.S_OMS(fs)),
+            "-",
+            linewidth=1,
+            label="S_OMS(f)",
+        )
+        plt.plot(
+            cp.asnumpy(fs),
+            cp.asnumpy(self.S_TM(fs)),
+            "-",
+            linewidth=1,
+            label="S_TM(f)",
+        )
+
+        plt.xlabel("f [Hz]")
+        plt.legend()
+        plt.xscale("log")
+        plt.yscale("log")
+        plt.savefig(figures_directory + "LISA_noise_functions.png", dpi=300)
+        plt.clf()
+
+        # check characteristic functions S_OMS S_ACC
         fig = plt.figure(figsize=(12, 8))
         for channel in ["A", "T"]:
             plt.plot(
