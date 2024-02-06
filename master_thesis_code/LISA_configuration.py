@@ -86,21 +86,12 @@ class LisaTdiConfiguration:
 
     @staticmethod
     def S_OMS(frequencies: cp.array) -> cp.array:
-        return (
-            15**2e-24
-            * (1 + (2e-3 / frequencies) ** 4)
-            * (2 * cp.pi * frequencies / C) ** 2
-            * M_IN_GPC**2
-        )
+        return 15**2 * 1e-24 * (1 + (2e-3 / frequencies) ** 4)
 
     @staticmethod
     def S_TM(frequencies: cp.array) -> cp.array:
         return (
-            9e-30
-            * (1 + (0.4e-3 / frequencies) ** 2)
-            * (1 + (frequencies / 8e-3) ** 4)
-            * (1 / 2 / cp.pi / frequencies / C) ** 2
-            * M_IN_GPC**2
+            9e-30 * (1 + (0.4e-3 / frequencies) ** 2) * (1 + (frequencies / 8e-3) ** 4)
         )
 
     @timer_decorator
