@@ -3,7 +3,10 @@ import pandas as pd
 from typing import List
 import os
 import time
+import matplotlib as mpl
+mpl.rcParams["agg.path.chunksize"] = 1000
 import matplotlib.pyplot as plt
+
 import logging
 import sys
 import cupy as cp
