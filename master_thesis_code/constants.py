@@ -4,7 +4,8 @@ REAL_PART: str = "real"
 IMAGINARY_PART: str = "imaginary"
 
 # physical constants
-C = 299792458 * 3.2408e-26  # Gpc / s
+M_IN_GPC = 3.2407788498994e-26
+C = 299792458.0  # m / s
 # C = 1.0
 G = 3.24077929**2 * 4.3009172706e-58  # Gpc^3 / (s^2 * solar masses)
 # G = 1.0
