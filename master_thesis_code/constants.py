@@ -10,6 +10,8 @@ C = 299792458.0  # m / s
 G = 3.24077929**2 * 4.3009172706e-58  # Gpc^3 / (s^2 * solar masses)
 # G = 1.0
 
+ESA_TDI_CHANNELS = "AE"
+
 # simulation configuration
 SIMULATION_CONFIGURATION_FILE = "simulation_configuration.json"
 SIMULATION_PATH = "simulation_path"

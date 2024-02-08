@@ -32,6 +32,7 @@ from master_thesis_code.constants import (
     CRAMER_RAO_BOUNDS_PATH,
     MINIMAL_FREQUENCY,
     MAXIMAL_FREQUENCY,
+    ESA_TDI_CHANNELS
 )
 from master_thesis_code.datamodels.parameter_space import ParameterSpace
 from master_thesis_code.LISA_configuration import LisaTdiConfiguration
@@ -44,7 +45,7 @@ class ParameterEstimation:
     lisa_response_generator: ResponseWrapper
     dt = 10  # time sampling in sec
     T = 5  # observation time in years
-
+    
     def __init__(
         self,
         waveform_generation_type: WaveGeneratorType,
@@ -164,9 +165,8 @@ class ParameterEstimation:
         self, tdi_channels_a: cp.ndarray, tdi_channels_b: cp.ndarray
     ) -> float:
         result = 0
-        _LOGGER.debug(f"check for 3 channels: {len(tdi_channels_a)}")
         for channel, tdi_channel_a, tdi_channel_b in zip(
-            "AET", tdi_channels_a, tdi_channels_b
+            ESA_TDI_CHANNELS, tdi_channels_a, tdi_channels_b
         ):
             fs = cufft.rfftfreq(len(tdi_channel_a), self.dt)[1:]
             a_fft = cufft.rfft(tdi_channel_a)[1:]
@@ -188,7 +188,7 @@ class ParameterEstimation:
             #plt.plot(cp.asnumpy(fs).real, cp.asnumpy(integrant).real)
 
             result += 4 * cp.trapz(y=integrant, x=fs).real
-            _LOGGER.debug(f"current scalar product result: {result}")
+            #_LOGGER.debug(f"current scalar product result: {result}")
         #plt.xscale("log")
         #plt.yscale("log")
         #plt.savefig("scalar_product_integrants.png", dpi=300)
