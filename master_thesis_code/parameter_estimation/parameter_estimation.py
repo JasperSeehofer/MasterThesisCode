@@ -42,8 +42,8 @@ _LOGGER = logging.getLogger()
 class ParameterEstimation:
     parameter_space: ParameterSpace
     lisa_response_generator: ResponseWrapper
-    dt = 20  # time sampling in sec
-    T = 3  # observation time in years
+    dt = 10  # time sampling in sec
+    T = 5  # observation time in years
 
     def __init__(
         self,
@@ -113,7 +113,6 @@ class ParameterEstimation:
             )
             lisa_responses.append(self.generate_lisa_response())
         lisa_responses = self._crop_to_same_length(lisa_responses)
-        _LOGGER.debug(f"lisa_responses in derivative function:\n {lisa_responses}")
 
         # set parameter value back to value that the derivative was evaluated at.
         setattr(
@@ -143,7 +142,6 @@ class ParameterEstimation:
     def _crop_to_same_length(
         signal_collection: List[List[cp.array]],
     ) -> List[List[cp.array]]:
-        print(signal_collection)
         max_possible_length = min(
             min(
             [
@@ -154,7 +152,6 @@ class ParameterEstimation:
             ]
             )
         )
-        print(max_possible_length)
         return cp.array(
             [
                 [tdi_channel[:max_possible_length] for tdi_channel in tdi_channels]
@@ -188,14 +185,14 @@ class ParameterEstimation:
             integrant = cp.divide(cp.multiply(a_fft, b_fft_cc), power_spectral_density)
             fs, integrant = self._crop_frequency_domain(fs, integrant)
 
-            plt.plot(cp.asnumpy(fs).real, cp.asnumpy(integrant).real)
+            #plt.plot(cp.asnumpy(fs).real, cp.asnumpy(integrant).real)
 
             result += 4 * cp.trapz(y=integrant, x=fs).real
             _LOGGER.debug(f"current scalar product result: {result}")
-        plt.xscale("log")
-        plt.yscale("log")
-        plt.savefig("scalar_product_integrants.png", dpi=300)
-        plt.close()
+        #plt.xscale("log")
+        #plt.yscale("log")
+        #plt.savefig("scalar_product_integrants.png", dpi=300)
+        #plt.close()
         del fs
         del a_fft
         del b_fft_cc
@@ -285,10 +282,12 @@ class ParameterEstimation:
         end = time.time()
         self.waveform_generation_time = round(end - start, 3)
 
+        """
         for i, channel in enumerate(waveform):
             plt.plot(cp.asnumpy(channel), label=str(i))
         plt.savefig("channels.png", dpi=300)
         plt.close()
+        """
 
         self.current_waveform = waveform
         snr = cp.sqrt(self.scalar_product_of_functions(waveform, waveform))

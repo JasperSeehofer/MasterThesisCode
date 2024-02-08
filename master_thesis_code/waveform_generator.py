@@ -11,7 +11,7 @@ _LOGGER = logging.getLogger()
 USE_GPU = True
 INDEX_LAMBDA = 8  # index in list of parameters from ParameterSpace for phiS
 INDEX_BETA = 7  # index in list of parameters from ParameterSpace for qS
-T0 = 20_000.0  #
+T0 = 10_000.0  #
 
 # Configuration of PN5 AAK waveform generator
 pn5_aak_configuration = {
