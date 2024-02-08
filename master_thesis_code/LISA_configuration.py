@@ -41,14 +41,14 @@ class LisaTdiConfiguration:
     def power_spectral_density(
         self, frequencies: cp.array, channel: str = "A"
     ) -> cp.array:
-        """PSD noise for AET channels from https://arxiv.org/pdf/2211.02539.pdf assuming equal arm length."""
+        """PSD noise for AET channels from https://arxiv.org/pdf/2303.15929.pdf assuming equal arm length."""
         if channel.upper() in ["A", "E"]:
             return self.power_spectral_density_a_channel(frequencies)
         elif channel.upper() == "T":
             return self.power_spectral_density_t_channel(frequencies)
 
     def power_spectral_density_a_channel(self, frequencies: cp.array) -> cp.array:
-        """from https://arxiv.org/pdf/2211.02539.pdf"""
+        """from https://arxiv.org/pdf/2303.15929.pdf"""
 
         return (
             8
@@ -83,12 +83,12 @@ class LisaTdiConfiguration:
 
     @staticmethod
     def S_OMS(frequencies: cp.array) -> cp.array:
-        return 15**2 * 1e-24 * (1 + (2e-3 / frequencies) ** 4)
+        return 15**2 * 1e-24 * (1 + (2e-3 / frequencies) ** 4)*(2*cp.pi*frequencies/C)**2
 
     @staticmethod
     def S_TM(frequencies: cp.array) -> cp.array:
         return (
-            9e-30 * (1 + (0.4e-3 / frequencies) ** 2) * (1 + (frequencies / 8e-3) ** 4)
+            9e-30 * (1 + (0.4e-3 / frequencies) ** 2) * (1 + (frequencies / 8e-3) ** 4)* (1/2/cp.pi/frequencies/C)**2
         )
 
     @timer_decorator
