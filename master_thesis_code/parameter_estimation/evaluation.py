@@ -14,7 +14,10 @@ class DataEvaluation:
         figures_directory = f"evaluation/"
         if not os.path.isdir(figures_directory):
             os.makedirs(figures_directory)
+        if not os.path.isdir(figures_directory + "plots/"):
+            os.makedirs(figures_directory + "plots/")
 
+            
         parameter_symbol_list = [parameter.symbol for parameter in parameters_configuration]
         parameter_combinations = combinations_with_replacement(parameter_symbol_list, 2)
         
