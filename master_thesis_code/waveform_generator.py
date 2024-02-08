@@ -6,6 +6,7 @@ import logging
 
 from master_thesis_code.datamodels.parameter_space import ParameterSpace
 from master_thesis_code.exceptions import WaveformGenerationError
+from master_thesis_code.constants import ESA_TDI_CHANNELS
 
 _LOGGER = logging.getLogger()
 USE_GPU = True
@@ -38,7 +39,7 @@ tdi_kwargs_esa = dict(
     orbit_kwargs=orbit_kwargs_esa,
     order=order,
     tdi=tdi_gen,
-    tdi_chan="AET",
+    tdi_chan= ESA_TDI_CHANNELS,
 )
 
 
