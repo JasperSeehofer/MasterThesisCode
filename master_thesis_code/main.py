@@ -9,9 +9,9 @@ from time import time
 
 from master_thesis_code.parameter_estimation.evaluation import DataEvaluation
 from master_thesis_code.arguments import Arguments
-from master_thesis_code.constants import SNR_THRESHOLD
 from master_thesis_code.exceptions import ParameterOutOfBoundsError
-
+from master_thesis_code.cosmological_model import Model1CrossCheck
+from master_thesis_code.galaxy_catalogue.handler import GalaxyCatalogueHandler
 
 # logging setup
 _ROOT_LOGGER = logging.getLogger()
@@ -27,11 +27,14 @@ def main() -> None:
     _ROOT_LOGGER.info("---------- STARTING MASTER THESIS CODE ----------")
     start_time = time()
 
+    cosmological_model = Model1CrossCheck()
+    galaxy_catalog = GalaxyCatalogueHandler()
+
     if arguments.simulation_steps > 0:
-        data_simulation(arguments.simulation_steps)
+        data_simulation(arguments.simulation_steps, cosmological_model, galaxy_catalog)
 
     if arguments.evaluate:
-        evaluate()
+        evaluate(cosmological_model, galaxy_catalog)
 
     end_time = time()
     _ROOT_LOGGER.debug(f"Finished in {end_time - start_time}s.")
@@ -61,7 +64,11 @@ def _configure_logger(working_directory: str, log_level: int) -> None:
     _ROOT_LOGGER.info(f"Log file location: {log_file_path}")
 
 
-def data_simulation(simulation_steps: int) -> None:
+def data_simulation(
+    simulation_steps: int,
+    cosmological_model: Model1CrossCheck,
+    galaxy_catalog: GalaxyCatalogueHandler,
+) -> None:
     # conditional imports because they require GPU
     from master_thesis_code.memory_management import MemoryManagement
     from master_thesis_code.parameter_estimation.parameter_estimation import (
@@ -74,11 +81,12 @@ def data_simulation(simulation_steps: int) -> None:
     memory_management.display_fft_cache()
 
     parameter_estimation = ParameterEstimation(
-        waveform_generation_type=WaveGeneratorType.PN5_AAK
+        waveform_generation_type=WaveGeneratorType.PN5_AAK,
+        parameter_space=cosmological_model.parameter_space,
     )
 
     parameter_estimation.lisa_configuration._visualize_lisa_configuration()
-    
+
     counter = 0
     iteration = 0
     while counter < simulation_steps:
@@ -90,7 +98,17 @@ def data_simulation(simulation_steps: int) -> None:
             f"{counter} / {iteration} evaluations successful. ({counter/(time()-memory_management._start_time)*60}/min)"
         )
         iteration += 1
+
         parameter_estimation.parameter_space.randomize_parameters()
+        host_galaxy = galaxy_catalog.get_random_host_in_mass_range(
+            parameter_estimation.parameter_space.M.lower_limit,
+            parameter_estimation.parameter_space.M.upper_limit,
+        )
+        parameter_estimation.parameter_space.set_host_galaxy_parameters(host_galaxy)
+
+        _ROOT_LOGGER.debug(
+            f"Parameters used: {parameter_estimation.parameter_space._parameters_to_dict()}, host galaxy: {host_galaxy}"
+        )
 
         try:
             warnings.filterwarnings("error")
@@ -134,14 +152,14 @@ def data_simulation(simulation_steps: int) -> None:
             else:
                 raise ValueError(e)
 
-        if snr < SNR_THRESHOLD:
+        if snr < cosmological_model.snr_threshold:
             _ROOT_LOGGER.info(
-                f"SNR threshold check failed: {np.round(snr, 3)} < {SNR_THRESHOLD}."
+                f"SNR threshold check failed: {np.round(snr, 3)} < {cosmological_model.snr_threshold}."
             )
             continue
 
         _ROOT_LOGGER.info(
-            f"SNR threshold check successful: {np.round(snr, 3)} >= {SNR_THRESHOLD}"
+            f"SNR threshold check successful: {np.round(snr, 3)} >= {cosmological_model.snr_threshold}"
         )
         cramer_rao_bounds = parameter_estimation.compute_Cramer_Rao_bounds()
         parameter_estimation.save_cramer_rao_bound(
@@ -158,7 +176,9 @@ def data_simulation(simulation_steps: int) -> None:
     memory_management.plot_GPU_usage()
 
 
-def evaluate() -> None:
+def evaluate(
+    cosmological_model: Model1CrossCheck, galaxy_catalog: GalaxyCatalogueHandler
+) -> None:
     data_simulation = DataEvaluation()
     data_simulation.visualize()
 

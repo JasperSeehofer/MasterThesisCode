@@ -2,12 +2,8 @@ import pandas as pd
 import os
 from itertools import combinations_with_replacement
 import numpy as np
-from master_thesis_code.datamodels.parameter_space import (
-    parameters_configuration,
-    get_parameter_configuration,
-)
 import matplotlib.pyplot as plt
-from matplotlib import cm
+from master_thesis_code.datamodels.parameter_space import ParameterSpace, Parameter
 
 from master_thesis_code.constants import RADIAN_TO_DEGREE
 
@@ -28,9 +24,9 @@ class DataEvaluation:
         if not os.path.isdir(figures_directory + "plots/"):
             os.makedirs(figures_directory + "plots/")
 
-        parameter_symbol_list = [
-            parameter.symbol for parameter in parameters_configuration
-        ]
+        parameter_space = ParameterSpace()
+
+        parameter_symbol_list = list(parameter_space._parameters_to_dict().keys())
         parameter_combinations = combinations_with_replacement(parameter_symbol_list, 2)
 
         mean_cramer_rao_bounds = pd.DataFrame(
@@ -45,33 +41,44 @@ class DataEvaluation:
 
         mean_cramer_rao_bounds.to_excel(f"{figures_directory}mean_bounds.xlsx")
 
-        # interesting plots
-        bounds_parameters = ["M", "qS", "phiS", "qK", "phiK"]
-        dependency_parameters = ["qS", "phiS", "qK", "phiK", "Phi_phi0"]
-
-        weird_ones = self._cramer_rao_bounds[
-            self._cramer_rao_bounds["delta_phiS_delta_phiS"] > 10**16
-        ]
-        weird_ones.to_excel(f"{figures_directory}weird_ones.xlsx")
-
-        for parameter_symbol in parameter_symbol_list:
+        for parameter in vars(parameter_space).values():
+            assert isinstance(parameter, Parameter)
             uncertainty_column_name = (
-                f"delta_{parameter_symbol}_delta_{parameter_symbol}"
+                f"delta_{parameter.symbol}_delta_{parameter.symbol}"
             )
-            parameter_config = get_parameter_configuration(parameter_symbol)
             plt.figure(figsize=(16, 9))
             plt.scatter(
-                self._cramer_rao_bounds[parameter_symbol],
+                self._cramer_rao_bounds[parameter.symbol],
                 self._cramer_rao_bounds[uncertainty_column_name] ** (1 / 2),
-                label=f"uncertainty of {parameter_symbol}",
+                label=f"relativ uncertainty of {parameter.symbol}",
             )
-            plt.xlabel(f"{parameter_symbol} [{parameter_config.unit}]")
+            plt.xlabel(f"{parameter.symbol} [{parameter.unit}]")
             plt.ylabel(
-                f"uncertainty bounds {parameter_symbol} [{parameter_config.unit}]"
+                f"relative uncertainty bounds {parameter.symbol} [{parameter.unit}]"
             )
             plt.legend()
             plt.yscale("log")
-            plt.savefig(f"{figures_directory}plots/error_{parameter_symbol}.png")
+            plt.savefig(f"{figures_directory}plots/error_{parameter.symbol}.png")
+            plt.close()
+
+        for parameter in vars(parameter_space).values():
+            assert isinstance(parameter, Parameter)
+            uncertainty_column_name = (
+                f"delta_{parameter.symbol}_delta_{parameter.symbol}"
+            )
+            plt.figure(figsize=(16, 9))
+            plt.scatter(
+                self._cramer_rao_bounds["SNR"],
+                self._cramer_rao_bounds[uncertainty_column_name] ** (1 / 2),
+                label=f"relativ uncertainty of {parameter.symbol}",
+            )
+            plt.xlabel(f"SNR")
+            plt.ylabel(
+                f"relative uncertainty bounds {parameter.symbol} [{parameter.unit}]"
+            )
+            plt.legend()
+            plt.yscale("log")
+            plt.savefig(f"{figures_directory}plots/error_{parameter.symbol}_SNR.png")
             plt.close()
 
         # plot skylocalization uncertainty
@@ -91,7 +98,10 @@ class DataEvaluation:
         ax.set_ylabel("Phi in deg")
         ax.set_xlabel("Theta in deg")
         ax.set_zlabel("d_Omega in deg^2")
-        plt.show()
+        plt.savefig(
+            f"{figures_directory}plots/sky_localization_uncertainty.png", dpi=300
+        )
+        plt.close()
 
         """for bounds_parameter in bounds_parameters:
             bounds_column_name = f"delta_{bounds_parameter}_delta_{bounds_parameter}"
