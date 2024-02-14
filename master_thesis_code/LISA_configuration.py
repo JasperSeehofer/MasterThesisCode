@@ -45,8 +45,9 @@ class LisaTdiConfiguration:
 
     def __init__(self, observation_time) -> None:
         self.observation_time = observation_time
-        self.f_1, self.f_k = _compute_galactic_confusion_noise_parameters(observation_time)
-
+        self.f_1, self.f_k = _compute_galactic_confusion_noise_parameters(
+            observation_time
+        )
 
     def power_spectral_density(
         self, frequencies: cp.array, channel: str = "A"
@@ -76,7 +77,7 @@ class LisaTdiConfiguration:
         ) + self._power_spectral_density_confusion_noise(frequencies)
 
     def power_spectral_density_t_channel(self, frequencies: cp.array) -> cp.array:
-        """from https://arxiv.org/pdf/2303.15929.pdf"""
+        """from https://arxiv.org/pdf/2303.15929.pdf NOT UPDATED"""
         return (
             16
             / 3
@@ -93,12 +94,20 @@ class LisaTdiConfiguration:
 
     @staticmethod
     def S_OMS(frequencies: cp.array) -> cp.array:
-        return 15**2 * 1e-24 * (1 + (2e-3 / frequencies) ** 4)*(2*cp.pi*frequencies/C)**2
+        return (
+            15**2
+            * 1e-24
+            * (1 + (2e-3 / frequencies) ** 4)
+            * (2 * cp.pi * frequencies / C) ** 2
+        )
 
     @staticmethod
     def S_TM(frequencies: cp.array) -> cp.array:
         return (
-            9e-30 * (1 + (0.4e-3 / frequencies) ** 2) * (1 + (frequencies / 8e-3) ** 4)* (1/2/cp.pi/frequencies/C)**2
+            9e-30
+            * (1 + (0.4e-3 / frequencies) ** 2)
+            * (1 + (frequencies / 8e-3) ** 4)
+            * (1 / 2 / cp.pi / frequencies / C) ** 2
         )
 
     def _power_spectral_density_confusion_noise(
@@ -113,12 +122,11 @@ class LisaTdiConfiguration:
             PSD: _description_
         """
         return (
-            A / 2
+            A
+            / 2
             * frequencies ** (-7 / 3)
-            * cp.exp(
-                -(frequencies/self.f_1)**alpha
-            )
-            * (1 + cp.tanh(-(frequencies - self.f_k)/f_2))
+            * cp.exp(-((frequencies / self.f_1) ** alpha))
+            * (1 + cp.tanh(-(frequencies - self.f_k) / f_2))
         )
 
     @timer_decorator
@@ -147,6 +155,12 @@ class LisaTdiConfiguration:
             linewidth=1,
             label="S_TM(f)",
         )
+        plt.plot(
+            cp.asnumpy(fs),
+            cp.asnumpy(self._power_spectral_density_confusion_noise(fs)),
+            linewidth=1,
+            label="S_gal(f)",
+        )
 
         plt.xlabel("f [Hz]")
         plt.legend()
@@ -174,7 +188,9 @@ class LisaTdiConfiguration:
         plt.clf()
 
 
-def _compute_galactic_confusion_noise_parameters(observation_time: float) -> Tuple[float, float]:
-    f_1 = 10**(a_1*cp.log10(observation_time)+b_1)
-    f_k = 10**(a_k*cp.log10(observation_time)+b_k)
+def _compute_galactic_confusion_noise_parameters(
+    observation_time: float,
+) -> Tuple[float, float]:
+    f_1 = 10 ** (a_1 * cp.log10(observation_time) + b_1)
+    f_k = 10 ** (a_k * cp.log10(observation_time) + b_k)
     return (f_1, f_k)

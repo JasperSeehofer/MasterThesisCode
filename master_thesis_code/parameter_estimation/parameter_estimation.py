@@ -4,6 +4,7 @@ from typing import List
 import os
 import time
 import matplotlib as mpl
+
 mpl.rcParams["agg.path.chunksize"] = 1000
 import matplotlib.pyplot as plt
 
@@ -32,7 +33,7 @@ from master_thesis_code.constants import (
     CRAMER_RAO_BOUNDS_PATH,
     MINIMAL_FREQUENCY,
     MAXIMAL_FREQUENCY,
-    ESA_TDI_CHANNELS
+    ESA_TDI_CHANNELS,
 )
 from master_thesis_code.datamodels.parameter_space import ParameterSpace
 from master_thesis_code.LISA_configuration import LisaTdiConfiguration
@@ -45,7 +46,7 @@ class ParameterEstimation:
     lisa_response_generator: ResponseWrapper
     dt = 10  # time sampling in sec
     T = 5  # observation time in years
-    
+
     def __init__(
         self,
         waveform_generation_type: WaveGeneratorType,
@@ -56,7 +57,7 @@ class ParameterEstimation:
             self.dt,
             self.T,
         )
-        self.lisa_configuration = LisaTdiConfiguration()
+        self.lisa_configuration = LisaTdiConfiguration(observation_time=self.T)
         _LOGGER.info("parameter estimation initialized.")
 
     @timer_decorator
@@ -145,12 +146,12 @@ class ParameterEstimation:
     ) -> List[List[cp.array]]:
         max_possible_length = min(
             min(
-            [
-                min(
-                    [len(tdi_channel) for tdi_channel in tdi_channels]
-                    for tdi_channels in signal_collection
-                )
-            ]
+                [
+                    min(
+                        [len(tdi_channel) for tdi_channel in tdi_channels]
+                        for tdi_channels in signal_collection
+                    )
+                ]
             )
         )
         return cp.array(
@@ -185,14 +186,14 @@ class ParameterEstimation:
             integrant = cp.divide(cp.multiply(a_fft, b_fft_cc), power_spectral_density)
             fs, integrant = self._crop_frequency_domain(fs, integrant)
 
-            #plt.plot(cp.asnumpy(fs).real, cp.asnumpy(integrant).real)
+            # plt.plot(cp.asnumpy(fs).real, cp.asnumpy(integrant).real)
 
             result += 4 * cp.trapz(y=integrant, x=fs).real
-            #_LOGGER.debug(f"current scalar product result: {result}")
-        #plt.xscale("log")
-        #plt.yscale("log")
-        #plt.savefig("scalar_product_integrants.png", dpi=300)
-        #plt.close()
+            # _LOGGER.debug(f"current scalar product result: {result}")
+        # plt.xscale("log")
+        # plt.yscale("log")
+        # plt.savefig("scalar_product_integrants.png", dpi=300)
+        # plt.close()
         del fs
         del a_fft
         del b_fft_cc
