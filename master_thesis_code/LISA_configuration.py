@@ -74,7 +74,7 @@ class LisaTdiConfiguration:
                 )
                 * self.S_TM(frequencies)
             )
-        ) + self._power_spectral_density_confusion_noise(frequencies)
+        )
 
     def power_spectral_density_t_channel(self, frequencies: cp.array) -> cp.array:
         """from https://arxiv.org/pdf/2303.15929.pdf NOT UPDATED"""
@@ -84,7 +84,7 @@ class LisaTdiConfiguration:
             * cp.sin(cp.pi * frequencies * L / C) ** 2
             * cp.sin(2 * cp.pi * frequencies * L / C) ** 2
             * self.S_zz(frequencies)
-        ) + self._power_spectral_density_confusion_noise(frequencies)
+        )
 
     def S_zz(self, frequencies: cp.array) -> cp.array:
         return 6 * (
@@ -108,25 +108,6 @@ class LisaTdiConfiguration:
             * (1 + (0.4e-3 / frequencies) ** 2)
             * (1 + (frequencies / 8e-3) ** 4)
             * (1 / 2 / cp.pi / frequencies / C) ** 2
-        )
-
-    def _power_spectral_density_confusion_noise(
-        self, frequencies: cp.array
-    ) -> cp.array:
-        """galactic confusion noise power spectral density (arxiv: 2108.01167)
-
-        Args:
-            frequencies: frequencies
-
-        Returns:
-            PSD: _description_
-        """
-        return (
-            A
-            / 2
-            * frequencies ** (-7 / 3)
-            * cp.exp(-((frequencies / self.f_1) ** alpha))
-            * (1 + cp.tanh(-(frequencies - self.f_k) / f_2))
         )
 
     @timer_decorator

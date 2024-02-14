@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from typing import List
 import pandas as pd
 import numpy as np
+from master_thesis_code.datamodels.parameter_space import ParameterSpace, Parameter
 
 
 @dataclass
@@ -23,6 +24,34 @@ class Detection:
     d_L: float
     d_L_uncertainty: float
     WL_uncertainty: float
+
+
+class Model1CrossCheck:
+    """cross check of Model M1 in PHYSICAL REVIEW D 95, 103012 (2017)"""
+
+    parameter_space: ParameterSpace
+    emri_rate: int = 294  # 1/yr
+    snr_threshold: int = 20
+
+    def __init__(self) -> None:
+        self.parameter_space = ParameterSpace()
+        self._apply_model_assumptions()
+
+    def _apply_model_assumptions(self) -> None:
+
+        self.parameter_space.M.lower_limit = 10**4
+        self.parameter_space.M.upper_limit = 10**7
+
+        self.parameter_space.a.value = 0.98
+        self.parameter_space.a.is_fixed = True
+
+        self.parameter_space.mu.value = 10
+        self.parameter_space.mu.is_fixed = True
+
+        self.parameter_space.dist.upper_limit = 4.5
+
+    def MBH_distribution(mass: float) -> float:
+        return 0.005 * (mass / 3e6) ** (-0.3)  # 1/ Mpc^-3
 
 
 class LamCDMScenario(CosmologicalParameter):

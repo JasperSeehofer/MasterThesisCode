@@ -35,7 +35,7 @@ from master_thesis_code.constants import (
     MAXIMAL_FREQUENCY,
     ESA_TDI_CHANNELS,
 )
-from master_thesis_code.datamodels.parameter_space import ParameterSpace
+from master_thesis_code.datamodels.parameter_space import ParameterSpace, Parameter
 from master_thesis_code.LISA_configuration import LisaTdiConfiguration
 
 _LOGGER = logging.getLogger()
@@ -50,8 +50,9 @@ class ParameterEstimation:
     def __init__(
         self,
         waveform_generation_type: WaveGeneratorType,
+        parameter_space: ParameterSpace,
     ):
-        self.parameter_space = ParameterSpace()
+        self.parameter_space = parameter_space
         self.lisa_response_generator = create_lisa_response_generator(
             waveform_generation_type,
             self.dt,
@@ -67,7 +68,7 @@ class ParameterEstimation:
         )
 
     @timer_decorator
-    def five_point_stencil_derivative(self, parameter_symbol: str) -> cp.array:
+    def five_point_stencil_derivative(self, parameter: Parameter) -> cp.array:
         """Compute (numerically) partial derivative of the currently set parameters w.r.t. the provided parameter.
 
         Args:
@@ -76,30 +77,15 @@ class ParameterEstimation:
         Returns:
             cp.array[float]: data series of derivative
         """
-        derivative_parameter_configuration = next(
-            (
-                parameter
-                for parameter in self.parameter_space.parameters_configuration
-                if parameter.symbol == parameter_symbol
-            ),
-            None,
-        )
 
-        if derivative_parameter_configuration is None:
-            _LOGGER.error(
-                f"The provided derivative parameter symbol {parameter_symbol} does not match any defined parameter in the parameter space."
-            )
-            sys.exit()
-        parameter_evaluated_at = getattr(self.parameter_space, parameter_symbol)
-        derivative_epsilon = derivative_parameter_configuration.derivative_epsilon
+        parameter_evaluated_at = parameter.value
+        derivative_epsilon = parameter.derivative_epsilon
 
         # check that neighboring points are in parameter range as well
         if (
-            (parameter_evaluated_at - 2 * derivative_epsilon)
-            < derivative_parameter_configuration.lower_limit
+            (parameter_evaluated_at - 2 * derivative_epsilon) < parameter.lower_limit
         ) or (
-            (parameter_evaluated_at + 2 * derivative_epsilon)
-            > derivative_parameter_configuration.upper_limit
+            (parameter_evaluated_at + 2 * derivative_epsilon) > parameter.upper_limit
         ):
             raise ParameterOutOfBoundsError(
                 "Tried to set parameter to value out of bounds in derivative."
@@ -110,7 +96,7 @@ class ParameterEstimation:
         for step in five_point_stencil_steps:
             setattr(
                 self.parameter_space,
-                derivative_parameter_configuration.symbol,
+                parameter.symbol,
                 parameter_evaluated_at + step * derivative_epsilon,
             )
             lisa_responses.append(self.generate_lisa_response())
@@ -119,7 +105,7 @@ class ParameterEstimation:
         # set parameter value back to value that the derivative was evaluated at.
         setattr(
             self.parameter_space,
-            derivative_parameter_configuration.symbol,
+            parameter.symbol,
             parameter_evaluated_at,
         )
 
@@ -135,7 +121,7 @@ class ParameterEstimation:
         )
 
         _LOGGER.info(
-            f"Finished computing partial derivative of the waveform w.r.t. {parameter_symbol}."
+            f"Finished computing partial derivative of the waveform w.r.t. {parameter.symbol}."
         )
         del lisa_responses
         return lisa_response_derivative
@@ -224,14 +210,11 @@ class ParameterEstimation:
         # compute derivatives for fisher information matrix
         lisa_response_derivatives = {}
 
-        parameter_symbol_list = [
-            parameter.symbol
-            for parameter in self.parameter_space.parameters_configuration
-        ]
+        parameter_symbol_list = list(self.parameter_space._parameters_to_dict().keys())
 
         for parameter_symbol in parameter_symbol_list:
             lisa_response_derivative = self.five_point_stencil_derivative(
-                parameter_symbol=parameter_symbol
+                parameter=getattr(self.parameter_space, parameter_symbol)
             )
             lisa_response_derivatives[parameter_symbol] = lisa_response_derivative
             del lisa_response_derivative
@@ -258,10 +241,7 @@ class ParameterEstimation:
 
         cramer_rao_bounds = np.matrix(cp.asnumpy(fisher_information_matrix)).I
         _LOGGER.debug("matrix inversion completed.")
-        parameter_symbol_list = [
-            parameter.symbol
-            for parameter in self.parameter_space.parameters_configuration
-        ]
+        parameter_symbol_list = list(self.parameter_space._parameters_to_dict().keys())
 
         independent_cramer_rao_bounds = {
             f"delta_{parameter_symbol_list[row]}_delta_{parameter_symbol_list[column]}": cramer_rao_bounds[
@@ -344,30 +324,9 @@ class ParameterEstimation:
             os.makedirs(figures_directory)
 
         # 3d plot of coverage in the configuration space of M, theta_S and phi_S
-        M_configuration = next(
-            (
-                config
-                for config in self.parameter_space.parameters_configuration
-                if config.symbol == "M"
-            ),
-            None,
-        )
-        qS_configuration = next(
-            (
-                config
-                for config in self.parameter_space.parameters_configuration
-                if config.symbol == "qS"
-            ),
-            None,
-        )
-        phiS_configuration = next(
-            (
-                config
-                for config in self.parameter_space.parameters_configuration
-                if config.symbol == "phiS"
-            ),
-            None,
-        )
+        M_configuration = self.parameter_space.M
+        qS_configuration = self.parameter_space.qS
+        phiS_configuration = self.parameter_space.phiS
 
         x1 = mean_errors_data["M"]
         y1 = mean_errors_data["qS"]
