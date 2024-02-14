@@ -8,3 +8,5 @@ __pycache__/
 notebooks/
 env/
 evaluation/
+GLADE+.txt
+reduced_galaxy_catalogue.csv

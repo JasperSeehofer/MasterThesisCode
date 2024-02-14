@@ -1,3 +1,5 @@
+import numpy as np
+
 # infinity
 INFINITY: float = 1e12
 REAL_PART: str = "real"
@@ -11,6 +13,10 @@ G = 3.24077929**2 * 4.3009172706e-58  # Gpc^3 / (s^2 * solar masses)
 # G = 1.0
 
 ESA_TDI_CHANNELS = "AE"
+
+# unit trafos
+RADIAN_TO_DEGREE = 360 / 2 / np.pi
+GPC_TO_MPC = 10**3
 
 # simulation configuration
 SIMULATION_CONFIGURATION_FILE = "simulation_configuration.json"
