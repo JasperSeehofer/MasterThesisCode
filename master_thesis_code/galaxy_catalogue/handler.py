@@ -251,10 +251,13 @@ class GalaxyCatalogueHandler:
             self, lower_limit: float, upper_limit: float, max_dist: float = 4.5
     ) -> Iterable:        
         host_galaxies = self.reduced_galaxy_catalog[
-            (self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS_COLUMN] + self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS_ERROR_COLUMN] >= lower_limit) and (
-            self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS_COLUMN] - self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS_ERROR_COLUMN] <= upper_limit) and (
-            self.reduced_galaxy_catalog[InternalCatalogColumns.LUMINOSITY_DISTANCE] <= max_dist*GPC_TO_MPC
-                )].sample(n=200)
+            (
+                self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS_COLUMN] + self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS_ERROR_COLUMN] >= lower_limit
+            ) & (
+                self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS_COLUMN] - self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS_ERROR_COLUMN] <= upper_limit
+            ) & (
+                self.reduced_galaxy_catalog[InternalCatalogColumns.LUMINOSITY_DISTANCE] <= max_dist*GPC_TO_MPC
+            )].sample(n=200)
         return_list = []
         for index, host in host_galaxies.iterrows():
             return_list.append(
