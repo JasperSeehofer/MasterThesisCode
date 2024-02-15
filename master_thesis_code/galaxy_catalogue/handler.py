@@ -255,7 +255,10 @@ class GalaxyCatalogueHandler:
             self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS_COLUMN] - self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS_ERROR_COLUMN] <= upper_limit) and (
             self.reduced_galaxy_catalog[InternalCatalogColumns.LUMINOSITY_DISTANCE] <= max_dist*GPC_TO_MPC
                 )].sample(n=200)
-        return iter([HostGalaxy(
+        return_list = []
+        for index, host in host_galaxies.iterrows():
+            return_list.append(
+                HostGalaxy(
                     phiS=host[InternalCatalogColumns.PHI_S],
                     qS=host[InternalCatalogColumns.THETA_S],
                     dist=host[InternalCatalogColumns.LUMINOSITY_DISTANCE]*1e-3,
@@ -265,7 +268,9 @@ class GalaxyCatalogueHandler:
                     M=host[InternalCatalogColumns.BH_MASS_COLUMN],
                     M_error=host[InternalCatalogColumns.BH_MASS_ERROR_COLUMN],
                     catalog_index=index,
-                ) for index, host in host_galaxies.iterrows()])
+                )
+            )
+        return iter(return_list)
             
 
 def _polar_angle_to_declination(polar_angle: float) -> float:
