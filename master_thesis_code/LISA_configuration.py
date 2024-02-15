@@ -39,16 +39,7 @@ b_k = -2.47
 
 @dataclass
 class LisaTdiConfiguration:
-    observation_time: float
-    f_1: float
-    f_k: float
-
-    def __init__(self, observation_time) -> None:
-        self.observation_time = observation_time
-        self.f_1, self.f_k = _compute_galactic_confusion_noise_parameters(
-            observation_time
-        )
-
+    
     def power_spectral_density(
         self, frequencies: cp.array, channel: str = "A"
     ) -> cp.array:
@@ -136,12 +127,6 @@ class LisaTdiConfiguration:
             linewidth=1,
             label="S_TM(f)",
         )
-        plt.plot(
-            cp.asnumpy(fs),
-            cp.asnumpy(self._power_spectral_density_confusion_noise(fs)),
-            linewidth=1,
-            label="S_gal(f)",
-        )
 
         plt.xlabel("f [Hz]")
         plt.legend()
@@ -168,10 +153,3 @@ class LisaTdiConfiguration:
         plt.savefig(figures_directory + "LISA_PSD.png", dpi=300)
         plt.clf()
 
-
-def _compute_galactic_confusion_noise_parameters(
-    observation_time: float,
-) -> Tuple[float, float]:
-    f_1 = 10 ** (a_1 * cp.log10(observation_time) + b_1)
-    f_k = 10 ** (a_k * cp.log10(observation_time) + b_k)
-    return (f_1, f_k)
