@@ -89,6 +89,7 @@ def data_simulation(
 
     counter = 0
     iteration = 0
+    host_galaxies = iter([])
     while counter < simulation_steps:
         memory_management.gpu_usage_stamp()
         memory_management.memory_pool.free_all_blocks()
@@ -98,12 +99,17 @@ def data_simulation(
             f"{counter} / {iteration} evaluations successful. ({counter/(time()-memory_management._start_time)*60}/min)"
         )
         iteration += 1
-
+        try:
+            host_galaxy = next(host_galaxies)
+        except StopIteration:
+            host_galaxies = galaxy_catalog.get_random_hosts_in_mass_range(
+                parameter_estimation.parameter_space.M.lower_limit,
+                parameter_estimation.parameter_space.M.upper_limit,
+                0.4,
+            ) # CAREFUL dist RESTRICTION ADDED BY HAND FOR FASTER DETECTION RESULTS
+            host_galaxy = next(host_galaxies)
         parameter_estimation.parameter_space.randomize_parameters()
-        host_galaxy = galaxy_catalog.get_random_host_in_mass_range(
-            parameter_estimation.parameter_space.M.lower_limit,
-            parameter_estimation.parameter_space.M.upper_limit,
-        )
+        
         parameter_estimation.parameter_space.set_host_galaxy_parameters(host_galaxy)
 
         _ROOT_LOGGER.debug(

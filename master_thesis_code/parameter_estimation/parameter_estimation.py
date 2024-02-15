@@ -58,7 +58,7 @@ class ParameterEstimation:
             self.dt,
             self.T,
         )
-        self.lisa_configuration = LisaTdiConfiguration(observation_time=self.T)
+        self.lisa_configuration = LisaTdiConfiguration()
         _LOGGER.info("parameter estimation initialized.")
 
     @timer_decorator
@@ -78,14 +78,14 @@ class ParameterEstimation:
             cp.array[float]: data series of derivative
         """
 
-        parameter_evaluated_at = parameter.value
+        parameter_evaluated_at = parameter
         derivative_epsilon = parameter.derivative_epsilon
 
         # check that neighboring points are in parameter range as well
         if (
-            (parameter_evaluated_at - 2 * derivative_epsilon) < parameter.lower_limit
+            (parameter_evaluated_at.value - 2 * derivative_epsilon) < parameter.lower_limit
         ) or (
-            (parameter_evaluated_at + 2 * derivative_epsilon) > parameter.upper_limit
+            (parameter_evaluated_at.value + 2 * derivative_epsilon) > parameter.upper_limit
         ):
             raise ParameterOutOfBoundsError(
                 "Tried to set parameter to value out of bounds in derivative."
@@ -94,10 +94,11 @@ class ParameterEstimation:
         five_point_stencil_steps = [-2.0, -1.0, 1.0, 2.0]
         lisa_responses = []
         for step in five_point_stencil_steps:
+            parameter.value = parameter_evaluated_at.value + step * derivative_epsilon
             setattr(
                 self.parameter_space,
                 parameter.symbol,
-                parameter_evaluated_at + step * derivative_epsilon,
+                parameter,
             )
             lisa_responses.append(self.generate_lisa_response())
         lisa_responses = self._crop_to_same_length(lisa_responses)

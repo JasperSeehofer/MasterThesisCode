@@ -1,9 +1,12 @@
 from enum import Enum
 import pandas as pd
 import numpy as np
+from collections.abc import Iterable
 from dataclasses import dataclass
 import logging
 from typing import Tuple
+
+from master_thesis_code.decorators import timer_decorator
 
 _LOGGER = logging.getLogger()
 
@@ -243,31 +246,27 @@ class GalaxyCatalogueHandler:
             - np.pi / 2
         ) * (-1)
 
-    def get_random_host_in_mass_range(
-        self, lower_limit: float, upper_limit: float
-    ) -> HostGalaxy:
-        max_iter = 10000
-        iter = 0
-        while True:
-            host = self.reduced_galaxy_catalog.sample().iloc[0]
-            if (host[InternalCatalogColumns.BH_MASS_COLUMN] >= lower_limit) and (
-                host[InternalCatalogColumns.BH_MASS_COLUMN] <= upper_limit
-            ):
-                return HostGalaxy(
+    @timer_decorator    
+    def get_random_hosts_in_mass_range(
+            self, lower_limit: float, upper_limit: float, max_dist: float = 4.5
+    ) -> Iterable:        
+        host_galaxies = self.reduced_galaxy_catalog[
+            (self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS_COLUMN] + self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS_ERROR_COLUMN] >= lower_limit) and (
+            self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS_COLUMN] - self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS_ERROR_COLUMN] <= upper_limit) and (
+            self.reduced_galaxy_catalog[InternalCatalogColumns.LUMINOSITY_DISTANCE] <= max_dist*GPC_TO_MPC
+                )].sample(n=200)
+        return iter([HostGalaxy(
                     phiS=host[InternalCatalogColumns.PHI_S],
                     qS=host[InternalCatalogColumns.THETA_S],
-                    dist=host[InternalCatalogColumns.LUMINOSITY_DISTANCE],
-                    dist_error=host[InternalCatalogColumns.LUMINOSITY_DISTANCE_ERROR],
+                    dist=host[InternalCatalogColumns.LUMINOSITY_DISTANCE]*1e-3,
+                    dist_error=host[InternalCatalogColumns.LUMINOSITY_DISTANCE_ERROR]*1e-3,
                     z=host[InternalCatalogColumns.REDSHIFT],
                     z_error=host[InternalCatalogColumns.REDSHIFT_ERROR],
                     M=host[InternalCatalogColumns.BH_MASS_COLUMN],
                     M_error=host[InternalCatalogColumns.BH_MASS_ERROR_COLUMN],
-                    catalog_index=int(host.name),
-                )
-            if max_iter <= iter:
-                raise Exception("maximum iterations reached in search for host galaxy.")
-            iter += 1
-
+                    catalog_index=index,
+                ) for index, host in host_galaxies.iterrows()])
+            
 
 def _polar_angle_to_declination(polar_angle: float) -> float:
     return np.pi / 2 - polar_angle

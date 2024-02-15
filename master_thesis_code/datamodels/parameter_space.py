@@ -13,7 +13,7 @@ class Parameter:
     unit: str
     lower_limit: float
     upper_limit: float
-    value: float = 0
+    value: float = 0.0
     derivative_epsilon: float = 1e-6
     is_fixed: bool = False
 
@@ -24,52 +24,50 @@ class ParameterSpace:
     Dataclass to manage the parameter space of a simulation.
     """
 
-    M = Parameter(
+    M: Parameter  = Parameter(
         symbol="M", unit="solar masses", lower_limit=1e4, upper_limit=1e7
     )  # mass of the MBH (massive black hole) in solar masses
 
-    mu = Parameter(
+    mu: Parameter = Parameter(
         symbol="mu", unit="solar masses", lower_limit=1, upper_limit=1e2
     )  # mass of the CO (compact object) in solar masses
-    a = Parameter(
+    a: Parameter = Parameter(
         symbol="a", unit="dimensionless", lower_limit=0.0, upper_limit=1
     )  # dimensionless spin of the MBH
-    p0 = Parameter(
+    p0: Parameter = Parameter(
         symbol="p0", unit="meters", lower_limit=10.0, upper_limit=16.0
     )  # Kepler-orbit parameter: separation
-    e0 = Parameter(
+    e0: Parameter = Parameter(
         symbol="e0", unit="dimensionless", lower_limit=0.0, upper_limit=0.7
     )  # Kepler-orbit parameter: eccentricity
-    x0 = Parameter(
+    x0: Parameter = Parameter(
         symbol="x0", unit="dimensionless", lower_limit=-1.0, upper_limit=1.0
     )  # Kepler-orbit parameter: x_I0=cosI (I is the inclination)
-    dist = Parameter(
+    dist: Parameter = Parameter(
         symbol="dist", unit="Gpc", lower_limit=0.1, upper_limit=3
     )  # luminosity distance
-    qS = Parameter(
+    qS: Parameter = Parameter(
         symbol="qS", unit="radian", lower_limit=0.0, upper_limit=np.pi
     )  # Sky location polar angle in ecliptic coordinates.
-    phiS = Parameter(
+    phiS: Parameter = Parameter(
         symbol="phiS", unit="radian", lower_limit=0.0, upper_limit=2 * np.pi
     )  # Sky location azimuthal angle in ecliptic coordinates.
-    qK = Parameter(
+    qK: Parameter = Parameter(
         symbol="qK", unit="radian", lower_limit=0.0, upper_limit=np.pi
     )  # Initial BH spin polar angle in ecliptic coordinates.
-    phiK = Parameter(
+    phiK: Parameter = Parameter(
         symbol="phiK", unit="radian", lower_limit=0.0, upper_limit=2 * np.pi
     )  # Initial BH spin azimuthal angle in ecliptic coordinates.
-    Phi_phi0 = Parameter(
+    Phi_phi0: Parameter = Parameter(
         symbol="Phi_phi0", unit="radian", lower_limit=0.0, upper_limit=2 * np.pi
     )  # initial azimuthal phase
-    Phi_theta0 = Parameter(
+    Phi_theta0: Parameter = Parameter(
         symbol="Phi_theta0", unit="radian", lower_limit=0.0, upper_limit=2 * np.pi
     )  # initial polar phase
-    Phi_r0 = Parameter(
+    Phi_r0: Parameter = Parameter(
         symbol="Phi_r0", unit="radian", lower_limit=0.0, upper_limit=2 * np.pi
     )  # initial radial phase
 
-    def __init__(self):
-        self.randomize_parameters()
 
     def randomize_parameter(self, parameter: Parameter) -> None:
         upper_limit = parameter.upper_limit
