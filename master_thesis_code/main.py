@@ -11,7 +11,10 @@ from master_thesis_code.parameter_estimation.evaluation import DataEvaluation
 from master_thesis_code.arguments import Arguments
 from master_thesis_code.exceptions import ParameterOutOfBoundsError
 from master_thesis_code.cosmological_model import Model1CrossCheck
-from master_thesis_code.galaxy_catalogue.handler import GalaxyCatalogueHandler
+from master_thesis_code.galaxy_catalogue.handler import (
+    GalaxyCatalogueHandler,
+    HostGalaxy,
+)
 
 # logging setup
 _ROOT_LOGGER = logging.getLogger()
@@ -106,10 +109,11 @@ def data_simulation(
                 parameter_estimation.parameter_space.M.lower_limit,
                 parameter_estimation.parameter_space.M.upper_limit,
                 0.4,
-            ) # CAREFUL dist RESTRICTION ADDED BY HAND FOR FASTER DETECTION RESULTS
+            )  # CAREFUL dist RESTRICTION ADDED BY HAND FOR FASTER DETECTION RESULTS
             host_galaxy = next(host_galaxies)
+        assert isinstance(host_galaxy, HostGalaxy)
         parameter_estimation.parameter_space.randomize_parameters()
-        
+
         parameter_estimation.parameter_space.set_host_galaxy_parameters(host_galaxy)
 
         _ROOT_LOGGER.debug(
@@ -169,7 +173,9 @@ def data_simulation(
         )
         cramer_rao_bounds = parameter_estimation.compute_Cramer_Rao_bounds()
         parameter_estimation.save_cramer_rao_bound(
-            cramer_rao_bound_dictionary=cramer_rao_bounds, snr=snr
+            cramer_rao_bound_dictionary=cramer_rao_bounds,
+            snr=snr,
+            host_galaxy_index=host_galaxy.catalog_index,
         )
         counter += 1
 
