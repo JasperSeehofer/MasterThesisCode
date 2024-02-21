@@ -38,7 +38,7 @@ class ParameterSpace:
         symbol="p0", unit="meters", lower_limit=10.0, upper_limit=16.0
     )  # Kepler-orbit parameter: separation
     e0: Parameter = Parameter(
-        symbol="e0", unit="dimensionless", lower_limit=0.0, upper_limit=0.7
+        symbol="e0", unit="dimensionless", lower_limit=0.05, upper_limit=0.7
     )  # Kepler-orbit parameter: eccentricity
     x0: Parameter = Parameter(
         symbol="x0", unit="dimensionless", lower_limit=-1.0, upper_limit=1.0
