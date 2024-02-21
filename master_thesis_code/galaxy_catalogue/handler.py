@@ -6,7 +6,6 @@ from dataclasses import dataclass
 import logging
 from typing import Tuple
 
-from master_thesis_code.decorators import timer_decorator
 
 _LOGGER = logging.getLogger()
 
@@ -246,26 +245,38 @@ class GalaxyCatalogueHandler:
             - np.pi / 2
         ) * (-1)
 
-    @timer_decorator    
     def get_random_hosts_in_mass_range(
-            self, lower_limit: float, upper_limit: float, max_dist: float = 4.5
-    ) -> Iterable:        
+        self, lower_limit: float, upper_limit: float, max_dist: float = 4.5
+    ) -> Iterable:
         host_galaxies = self.reduced_galaxy_catalog[
             (
-                self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS_COLUMN] + self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS_ERROR_COLUMN] >= lower_limit
-            ) & (
-                self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS_COLUMN] - self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS_ERROR_COLUMN] <= upper_limit
-            ) & (
-                self.reduced_galaxy_catalog[InternalCatalogColumns.LUMINOSITY_DISTANCE] <= max_dist*GPC_TO_MPC
-            )].sample(n=200)
+                self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS_COLUMN]
+                + self.reduced_galaxy_catalog[
+                    InternalCatalogColumns.BH_MASS_ERROR_COLUMN
+                ]
+                >= lower_limit
+            )
+            & (
+                self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS_COLUMN]
+                - self.reduced_galaxy_catalog[
+                    InternalCatalogColumns.BH_MASS_ERROR_COLUMN
+                ]
+                <= upper_limit
+            )
+            & (
+                self.reduced_galaxy_catalog[InternalCatalogColumns.LUMINOSITY_DISTANCE]
+                <= max_dist * GPC_TO_MPC
+            )
+        ].sample(n=200)
         return_list = []
         for index, host in host_galaxies.iterrows():
             return_list.append(
                 HostGalaxy(
                     phiS=host[InternalCatalogColumns.PHI_S],
                     qS=host[InternalCatalogColumns.THETA_S],
-                    dist=host[InternalCatalogColumns.LUMINOSITY_DISTANCE]*1e-3,
-                    dist_error=host[InternalCatalogColumns.LUMINOSITY_DISTANCE_ERROR]*1e-3,
+                    dist=host[InternalCatalogColumns.LUMINOSITY_DISTANCE] * 1e-3,
+                    dist_error=host[InternalCatalogColumns.LUMINOSITY_DISTANCE_ERROR]
+                    * 1e-3,
                     z=host[InternalCatalogColumns.REDSHIFT],
                     z_error=host[InternalCatalogColumns.REDSHIFT_ERROR],
                     M=host[InternalCatalogColumns.BH_MASS_COLUMN],
@@ -274,7 +285,7 @@ class GalaxyCatalogueHandler:
                 )
             )
         return iter(return_list)
-            
+
 
 def _polar_angle_to_declination(polar_angle: float) -> float:
     return np.pi / 2 - polar_angle
