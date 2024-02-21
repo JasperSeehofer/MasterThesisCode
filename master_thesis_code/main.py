@@ -171,7 +171,11 @@ def data_simulation(
         _ROOT_LOGGER.info(
             f"SNR threshold check successful: {np.round(snr, 3)} >= {cosmological_model.snr_threshold}"
         )
-        cramer_rao_bounds = parameter_estimation.compute_Cramer_Rao_bounds()
+        try:
+            cramer_rao_bounds = parameter_estimation.compute_Cramer_Rao_bounds()
+        except ParameterOutOfBoundsError as e:
+            _ROOT_LOGGER.warning("Caught ParameterOutOfBoundsError in dervative. Continue with new parameters...")
+            continue
         parameter_estimation.save_cramer_rao_bound(
             cramer_rao_bound_dictionary=cramer_rao_bounds,
             snr=snr,
