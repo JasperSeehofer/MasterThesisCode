@@ -83,9 +83,11 @@ class ParameterEstimation:
 
         # check that neighboring points are in parameter range as well
         if (
-            (parameter_evaluated_at.value - 2 * derivative_epsilon) < parameter.lower_limit
+            (parameter_evaluated_at.value - 2 * derivative_epsilon)
+            < parameter.lower_limit
         ) or (
-            (parameter_evaluated_at.value + 2 * derivative_epsilon) > parameter.upper_limit
+            (parameter_evaluated_at.value + 2 * derivative_epsilon)
+            > parameter.upper_limit
         ):
             raise ParameterOutOfBoundsError(
                 "Tried to set parameter to value out of bounds in derivative."
@@ -278,7 +280,7 @@ class ParameterEstimation:
 
     @timer_decorator
     def save_cramer_rao_bound(
-        self, cramer_rao_bound_dictionary: dict, snr: float
+        self, cramer_rao_bound_dictionary: dict, snr: float, host_galaxy_index: int
     ) -> None:
         try:
             cramer_rao_bounds = pd.read_csv(CRAMER_RAO_BOUNDS_PATH)
@@ -286,7 +288,9 @@ class ParameterEstimation:
         except FileNotFoundError:
             parameters_list = list(self.parameter_space._parameters_to_dict().keys())
             parameters_list.extend(list(cramer_rao_bound_dictionary.keys()))
-            parameters_list.extend(["T", "dt", "SNR", "generation_time"])
+            parameters_list.extend(
+                ["T", "dt", "SNR", "generation_time", "host_galaxy_index"]
+            )
             cramer_rao_bounds = pd.DataFrame(columns=parameters_list)
 
         new_cramer_rao_bounds_dict = (
@@ -297,6 +301,7 @@ class ParameterEstimation:
             "dt": self.dt,
             "SNR": snr,
             "generation_time": self.waveform_generation_time,
+            "host_galaxy_index": host_galaxy_index,
         }
 
         new_cramer_rao_bounds = pd.DataFrame([new_cramer_rao_bounds_dict])
