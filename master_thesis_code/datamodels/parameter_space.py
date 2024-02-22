@@ -5,6 +5,16 @@ import random
 from master_thesis_code.galaxy_catalogue.handler import HostGalaxy
 
 
+def uniform(random_value: float, lower_limit: float, upper_limit: float) -> float:
+    return lower_limit + (upper_limit - lower_limit) * random_value
+
+
+def polar_angle_distribution(
+    random_value: float, lower_limit: float, upper_limit: float
+) -> float:
+    return np.arccos(np.cos(random_value * 2 * np.pi))
+
+
 @dataclass
 class Parameter:
     """Main class for parameters."""
@@ -16,6 +26,7 @@ class Parameter:
     value: float = 0.0
     derivative_epsilon: float = 1e-6
     is_fixed: bool = False
+    randomize_by_distribution: callable = uniform
 
 
 @dataclass
@@ -24,7 +35,7 @@ class ParameterSpace:
     Dataclass to manage the parameter space of a simulation.
     """
 
-    M: Parameter  = Parameter(
+    M: Parameter = Parameter(
         symbol="M", unit="solar masses", lower_limit=1e4, upper_limit=1e7
     )  # mass of the MBH (massive black hole) in solar masses
 
@@ -47,13 +58,21 @@ class ParameterSpace:
         symbol="dist", unit="Gpc", lower_limit=0.1, upper_limit=3
     )  # luminosity distance
     qS: Parameter = Parameter(
-        symbol="qS", unit="radian", lower_limit=0.0, upper_limit=np.pi
+        symbol="qS",
+        unit="radian",
+        lower_limit=0.0,
+        upper_limit=np.pi,
+        randomize_by_distribution=polar_angle_distribution,
     )  # Sky location polar angle in ecliptic coordinates.
     phiS: Parameter = Parameter(
         symbol="phiS", unit="radian", lower_limit=0.0, upper_limit=2 * np.pi
     )  # Sky location azimuthal angle in ecliptic coordinates.
     qK: Parameter = Parameter(
-        symbol="qK", unit="radian", lower_limit=0.0, upper_limit=np.pi
+        symbol="qK",
+        unit="radian",
+        lower_limit=0.0,
+        upper_limit=np.pi,
+        randomize_by_distribution=polar_angle_distribution,
     )  # Initial BH spin polar angle in ecliptic coordinates.
     phiK: Parameter = Parameter(
         symbol="phiK", unit="radian", lower_limit=0.0, upper_limit=2 * np.pi
@@ -68,11 +87,10 @@ class ParameterSpace:
         symbol="Phi_r0", unit="radian", lower_limit=0.0, upper_limit=2 * np.pi
     )  # initial radial phase
 
-
     def randomize_parameter(self, parameter: Parameter) -> None:
-        upper_limit = parameter.upper_limit
-        lower_limit = parameter.lower_limit
-        parameter.value = lower_limit + (upper_limit - lower_limit) * random.random()
+        parameter.value = parameter.randomize_by_distribution(
+            random.random(), parameter.lower_limit, parameter.upper_limit
+        )
         setattr(self, parameter.symbol, parameter)
 
     def randomize_parameters(self) -> None:
