@@ -116,10 +116,6 @@ def data_simulation(
 
         parameter_estimation.parameter_space.set_host_galaxy_parameters(host_galaxy)
 
-        _ROOT_LOGGER.debug(
-            f"Parameters used: {parameter_estimation.parameter_space._parameters_to_dict()}, host galaxy: {host_galaxy}"
-        )
-
         try:
             warnings.filterwarnings("error")
             snr = parameter_estimation.compute_signal_to_noise_ratio()
