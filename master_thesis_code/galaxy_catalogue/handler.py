@@ -334,14 +334,3 @@ def _empiric_MBH_to_M_stellar_relation(MBH_mass: float, MBH_mass_error: float) -
         + ((np.log(MBH_mass) - alpha) / beta**2) ** 2 * d_beta**2
     )
     return [stellar_mass, stellar_mass_error]
-
-
-galaxy_catalogue = GalaxyCatalogueHandler()
-print(
-    len(
-        [
-            host
-            for host in galaxy_catalogue.get_random_hosts_in_mass_range(1e4, 1e7, 0.8)
-        ]
-    )
-)
