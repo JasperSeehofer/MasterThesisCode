@@ -5,12 +5,15 @@ from collections.abc import Iterable
 from dataclasses import dataclass
 import logging
 from typing import Tuple
+from matplotlib import pyplot as plt
+from mpl_toolkits.mplot3d import axes3d
 
 
 _LOGGER = logging.getLogger()
 
 
-GPC_TO_MPC, RADIAN_TO_DEGREE = 10**3, 360 / 2 / np.pi
+GPC_TO_MPC = 10**3
+RADIAN_TO_DEGREE = 360 / 2 / np.pi
 REDUCED_CATALOGUE_FILE_PATH = (
     "./master_thesis_code/galaxy_catalogue/reduced_galaxy_catalogue.csv"
 )
@@ -248,28 +251,48 @@ class GalaxyCatalogueHandler:
     def get_random_hosts_in_mass_range(
         self, lower_limit: float, upper_limit: float, max_dist: float = 4.5
     ) -> Iterable:
-        host_galaxies = self.reduced_galaxy_catalog[
+        NUMBER_OF_HOSTS = 500
+        thetas = np.arccos(np.random.uniform(-1.0, 1.0, NUMBER_OF_HOSTS))
+        phis = np.random.uniform(0.0, 2 * np.pi, NUMBER_OF_HOSTS)
+        distances = np.random.uniform(0.05, max_dist, NUMBER_OF_HOSTS) * GPC_TO_MPC
+
+        restricted_galaxy_catalogue = self.reduced_galaxy_catalog[
             (
                 self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS_COLUMN]
-                + self.reduced_galaxy_catalog[
-                    InternalCatalogColumns.BH_MASS_ERROR_COLUMN
-                ]
                 >= lower_limit
             )
             & (
                 self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS_COLUMN]
-                - self.reduced_galaxy_catalog[
-                    InternalCatalogColumns.BH_MASS_ERROR_COLUMN
-                ]
                 <= upper_limit
             )
             & (
                 self.reduced_galaxy_catalog[InternalCatalogColumns.LUMINOSITY_DISTANCE]
                 <= max_dist * GPC_TO_MPC
             )
-        ].sample(n=200)
+        ]
+
         return_list = []
-        for index, host in host_galaxies.iterrows():
+        for theta, phi, distance in zip(thetas, phis, distances):
+
+            closest_host_index = (
+                (restricted_galaxy_catalogue[InternalCatalogColumns.PHI_S] / phi - 1)
+                ** 2
+                + (
+                    restricted_galaxy_catalogue[InternalCatalogColumns.THETA_S] / theta
+                    - 1
+                )
+                ** 2
+                + (
+                    restricted_galaxy_catalogue[
+                        InternalCatalogColumns.LUMINOSITY_DISTANCE
+                    ]
+                    / distance
+                    - 1
+                )
+                ** 2
+            ).idxmin()
+            host: pd.Series = restricted_galaxy_catalogue.loc[closest_host_index]
+
             return_list.append(
                 HostGalaxy(
                     phiS=host[InternalCatalogColumns.PHI_S],
@@ -281,7 +304,7 @@ class GalaxyCatalogueHandler:
                     z_error=host[InternalCatalogColumns.REDSHIFT_ERROR],
                     M=host[InternalCatalogColumns.BH_MASS_COLUMN],
                     M_error=host[InternalCatalogColumns.BH_MASS_ERROR_COLUMN],
-                    catalog_index=index,
+                    catalog_index=host.name,
                 )
             )
         return iter(return_list)
@@ -311,3 +334,14 @@ def _empiric_MBH_to_M_stellar_relation(MBH_mass: float, MBH_mass_error: float) -
         + ((np.log(MBH_mass) - alpha) / beta**2) ** 2 * d_beta**2
     )
     return [stellar_mass, stellar_mass_error]
+
+
+galaxy_catalogue = GalaxyCatalogueHandler()
+print(
+    len(
+        [
+            host
+            for host in galaxy_catalogue.get_random_hosts_in_mass_range(1e4, 1e7, 0.8)
+        ]
+    )
+)
