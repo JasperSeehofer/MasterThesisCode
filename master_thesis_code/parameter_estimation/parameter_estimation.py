@@ -150,7 +150,6 @@ class ParameterEstimation:
             ]
         )
 
-    @timer_decorator
     def scalar_product_of_functions(
         self, tdi_channels_a: cp.ndarray, tdi_channels_b: cp.ndarray
     ) -> float:
@@ -193,7 +192,6 @@ class ParameterEstimation:
         return result
 
     @staticmethod
-    @timer_decorator
     def _crop_frequency_domain(fs: cp.array, integrant: cp.array) -> tuple:
         if len(fs) != len(integrant):
             _LOGGER.warning("length of frequency domain and integrant are not equal.")
@@ -208,7 +206,6 @@ class ParameterEstimation:
             integrant[lower_limit_index:upper_limit_index],
         )
 
-    @timer_decorator
     def compute_fisher_information_matrix(self) -> cp.ndarray:
         # compute derivatives for fisher information matrix
         lisa_response_derivatives = {}
@@ -259,7 +256,6 @@ class ParameterEstimation:
         del cramer_rao_bounds
         return independent_cramer_rao_bounds
 
-    @timer_decorator
     def compute_signal_to_noise_ratio(self) -> float:
         start = time.time()
         waveform = self.generate_lisa_response()
@@ -278,7 +274,6 @@ class ParameterEstimation:
         del waveform
         return snr
 
-    @timer_decorator
     def save_cramer_rao_bound(
         self, cramer_rao_bound_dictionary: dict, snr: float, host_galaxy_index: int
     ) -> None:
