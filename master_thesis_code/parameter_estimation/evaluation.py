@@ -141,5 +141,9 @@ def _compute_skylocalization_uncertainty(
     theta, var_theta, var_phi, cov_theta_phi
 ) -> float:
     return (
-        2 * np.pi * np.sin(theta) * np.sqrt(var_phi * var_theta - (cov_theta_phi) ** 2)
+        2
+        * np.pi
+        * np.sin(theta)
+        * np.sqrt(var_phi * var_theta - (cov_theta_phi) ** 2)
+        * RADIAN_TO_DEGREE**2
     )
