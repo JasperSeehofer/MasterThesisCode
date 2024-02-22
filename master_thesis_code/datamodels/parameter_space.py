@@ -5,14 +5,12 @@ import random
 from master_thesis_code.galaxy_catalogue.handler import HostGalaxy
 
 
-def uniform(random_value: float, lower_limit: float, upper_limit: float) -> float:
-    return lower_limit + (upper_limit - lower_limit) * random_value
+def uniform(lower_limit: float, upper_limit: float) -> float:
+    return np.random.uniform(lower_limit, upper_limit)
 
 
-def polar_angle_distribution(
-    random_value: float, lower_limit: float, upper_limit: float
-) -> float:
-    return np.arccos(np.cos(random_value * 2 * np.pi))
+def polar_angle_distribution(lower_limit: float, upper_limit: float) -> float:
+    return np.arccos(np.random.uniform(-1.0, 1.0))
 
 
 @dataclass
@@ -89,7 +87,7 @@ class ParameterSpace:
 
     def randomize_parameter(self, parameter: Parameter) -> None:
         parameter.value = parameter.randomize_by_distribution(
-            random.random(), parameter.lower_limit, parameter.upper_limit
+            parameter.lower_limit, parameter.upper_limit
         )
         setattr(self, parameter.symbol, parameter)
 
