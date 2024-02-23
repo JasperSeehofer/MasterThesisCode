@@ -98,6 +98,7 @@ class DataEvaluation:
         ax.set_ylabel("Phi in deg")
         ax.set_xlabel("Theta in deg")
         ax.set_zlabel("d_Omega in deg^2")
+        plt.show()
         plt.savefig(
             f"{figures_directory}plots/sky_localization_uncertainty.png", dpi=300
         )
