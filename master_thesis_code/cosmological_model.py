@@ -48,6 +48,8 @@ class Model1CrossCheck:
         self.parameter_space.mu.value = 10
         self.parameter_space.mu.is_fixed = True
 
+        self.parameter_space.e0.upper_limit = 0.2
+
         self.parameter_space.dist.upper_limit = 4.5
 
     def MBH_distribution(mass: float) -> float:
