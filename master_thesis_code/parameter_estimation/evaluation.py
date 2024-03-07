@@ -282,13 +282,30 @@ class DataEvaluation:
 
     def evaluate_snr_analysis(self) -> None:
         # easy check SNR vs observation time averaged
-        snr_data = self._snr_analysis_file["SNR"]
-        observation_time = self._snr_analysis_file["T"]
-        plt.figure(figsize=(16, 9))
-        plt.scatter(observation_time, snr_data)
-        plt.xlabel("observation time [s]")
-        plt.ylabel("SNR")
-        plt.show()
+        for name, parameter_set in self._snr_analysis_file.groupby(["M"]):
+            if len(parameter_set) != 5:
+                print("wrong data")
+                continue
+            final_SNR = parameter_set["SNR"].iloc[-1]
+            plt.plot(parameter_set["T"], parameter_set["SNR"] / final_SNR)
+
+        plt.xlabel("observation time T in years")
+        plt.ylabel("normalized SNR")
+        plt.savefig(f"evaluation/plots/SNR_observation_time.png")
+
+        for name, parameter_set in self._snr_analysis_file.groupby(["M"]):
+            if len(parameter_set) != 5:
+                print("wrong data")
+                continue
+            final_generation_time = parameter_set["generation_time"].iloc[-1]
+            plt.plot(
+                parameter_set["T"],
+                parameter_set["generation_time"] / final_generation_time,
+            )
+
+        plt.xlabel("observation time T in years")
+        plt.ylabel("normalized generation time")
+        plt.savefig(f"evaluation/plots/generation_time_observation_time.png")
 
 
 def _compute_skylocalization_uncertainty(

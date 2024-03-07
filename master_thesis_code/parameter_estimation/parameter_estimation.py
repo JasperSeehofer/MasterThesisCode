@@ -41,6 +41,7 @@ _LOGGER = logging.getLogger()
 class ParameterEstimation:
     parameter_space: ParameterSpace
     lisa_response_generator: ResponseWrapper
+    snr_check_generator: ResponseWrapper
     dt = 10  # time sampling in sec
     T = 5  # observation time in years
 
@@ -55,13 +56,22 @@ class ParameterEstimation:
             self.dt,
             self.T,
         )
+        self.snr_check_generator = create_lisa_response_generator(
+            waveform_generation_type,
+            self.dt,
+            1,
+        )
         self.lisa_configuration = LisaTdiConfiguration()
         _LOGGER.info("parameter estimation initialized.")
 
     @timer_decorator
-    def generate_lisa_response(self) -> List:
+    def generate_lisa_response(self, use_snr_check_generator: bool) -> List:
+        if use_snr_check_generator:
+            return self.snr_check_generator(
+                *self.parameter_space._parameters_to_dict().values()
+            )
         return self.lisa_response_generator(
-            *self.parameter_space._parameters_to_dict().values(), T=self.T
+            *self.parameter_space._parameters_to_dict().values()
         )
 
     @timer_decorator
@@ -253,9 +263,13 @@ class ParameterEstimation:
         del cramer_rao_bounds
         return independent_cramer_rao_bounds
 
-    def compute_signal_to_noise_ratio(self) -> float:
+    def compute_signal_to_noise_ratio(
+        self, use_snr_check_generator: bool = False
+    ) -> float:
         start = time.time()
-        waveform = self.generate_lisa_response()
+        waveform = self.generate_lisa_response(
+            use_snr_check_generator=use_snr_check_generator
+        )
         end = time.time()
         self.waveform_generation_time = round(end - start, 3)
 
