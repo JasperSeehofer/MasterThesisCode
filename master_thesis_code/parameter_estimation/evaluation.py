@@ -14,8 +14,10 @@ class DataEvaluation:
     def __init__(
         self,
         path_to_cramer_rao_bounds_file: str = "./simulations/cramer_rao_bounds.csv",
+        path_to_snr_analysis_file: str = "./simulations/snr_analysis.csv",
     ):
         self._cramer_rao_bounds = pd.read_csv(path_to_cramer_rao_bounds_file)
+        self._snr_analysis_file = pd.read_csv(path_to_snr_analysis_file)
 
     def visualize(self) -> None:
         # ensure directory is given
@@ -277,6 +279,16 @@ class DataEvaluation:
                     f"{figures_directory}plots/error_{bounds_parameter}_{dependency_parameter}.png"
                 )
                 plt.close()"""
+
+    def evaluate_snr_analysis(self) -> None:
+        # easy check SNR vs observation time averaged
+        snr_data = self._snr_analysis_file["SNR"]
+        observation_time = self._snr_analysis_file["T"]
+        plt.figure(figsize=(16, 9))
+        plt.scatter(observation_time, snr_data)
+        plt.xlabel("observation time [s]")
+        plt.ylabel("SNR")
+        plt.show()
 
 
 def _compute_skylocalization_uncertainty(

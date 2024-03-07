@@ -218,6 +218,7 @@ def evaluate(
 ) -> None:
     data_simulation = DataEvaluation()
     data_simulation.visualize()
+    data_simulation.evaluate_snr_analysis()
     Model1CrossCheck().visualize_emri_distribution()
 
 
