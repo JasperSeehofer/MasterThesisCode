@@ -407,12 +407,14 @@ class ParameterEstimation:
             3: create_lisa_response_generator(WaveGeneratorType.PN5_AAK, self.dt, 3),
             4: create_lisa_response_generator(WaveGeneratorType.PN5_AAK, self.dt, 5),
         }
+        parameter_set_index = 0
         for _ in range(200):
             self.parameter_space.randomize_parameters()
             for T, waveform_generator in zip(
                 [0.5, 1, 2, 3, 5], waveform_generators.values()
             ):
                 self.lisa_response_generator = waveform_generator
+                self.T = T
                 try:
                     warnings.filterwarnings("error")
                     snr = self.compute_signal_to_noise_ratio()
@@ -455,9 +457,10 @@ class ParameterEstimation:
                     else:
                         raise ValueError(e)
 
-                self.save_snr_analysis(snr)
+                self.save_snr_analysis(snr, parameter_set_index)
+            parameter_set_index += 1
 
-    def save_snr_analysis(self, snr: float) -> None:
+    def save_snr_analysis(self, snr: float, parameter_set_index: int) -> None:
         try:
             snr_analysis = pd.read_csv(SNR_ANALYSIS_PATH)
 
@@ -471,6 +474,7 @@ class ParameterEstimation:
             "dt": self.dt,
             "SNR": snr,
             "generation_time": self.waveform_generation_time,
+            "parameter_set_index": parameter_set_index,
         }
 
         new_snr_analysis = pd.DataFrame([new_snr_analysis_dict])
