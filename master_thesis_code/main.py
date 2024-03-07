@@ -170,7 +170,9 @@ def data_simulation(
         try:
             cramer_rao_bounds = parameter_estimation.compute_Cramer_Rao_bounds()
         except ParameterOutOfBoundsError as e:
-            _ROOT_LOGGER.warning("Caught ParameterOutOfBoundsError in dervative. Continue with new parameters...")
+            _ROOT_LOGGER.warning(
+                "Caught ParameterOutOfBoundsError in dervative. Continue with new parameters..."
+            )
             continue
         parameter_estimation.save_cramer_rao_bound(
             cramer_rao_bound_dictionary=cramer_rao_bounds,
@@ -193,6 +195,7 @@ def evaluate(
 ) -> None:
     data_simulation = DataEvaluation()
     data_simulation.visualize()
+    Model1CrossCheck().visualize_emri_distribution()
 
 
 if __name__ == "__main__":
