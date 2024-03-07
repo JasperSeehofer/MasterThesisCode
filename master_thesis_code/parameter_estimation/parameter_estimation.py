@@ -1,3 +1,4 @@
+import warnings
 import numpy as np
 import pandas as pd
 from typing import List
@@ -25,11 +26,7 @@ from master_thesis_code.waveform_generator import (
 )
 from master_thesis_code.decorators import timer_decorator, if_plotting_activated
 from master_thesis_code.constants import (
-    REAL_PART,
-    IMAGINARY_PART,
-    SIMULATION_PATH,
-    SIMULATION_CONFIGURATION_FILE,
-    DEFAULT_SIMULATION_PATH,
+    SNR_ANALYSIS_PATH,
     CRAMER_RAO_BOUNDS_PATH,
     MINIMAL_FREQUENCY,
     MAXIMAL_FREQUENCY,
@@ -64,7 +61,7 @@ class ParameterEstimation:
     @timer_decorator
     def generate_lisa_response(self) -> List:
         return self.lisa_response_generator(
-            *self.parameter_space._parameters_to_dict().values()
+            *self.parameter_space._parameters_to_dict().values(), T=self.T
         )
 
     @timer_decorator
@@ -400,3 +397,83 @@ class ParameterEstimation:
                 dpi=300,
             )
             plt.close()
+
+    def SNR_analysis(self) -> None:
+        # setup waveformgenerators for different observation times
+        waveform_generators = {
+            0: create_lisa_response_generator(WaveGeneratorType.PN5_AAK, self.dt, 0.5),
+            1: create_lisa_response_generator(WaveGeneratorType.PN5_AAK, self.dt, 1),
+            2: create_lisa_response_generator(WaveGeneratorType.PN5_AAK, self.dt, 2),
+            3: create_lisa_response_generator(WaveGeneratorType.PN5_AAK, self.dt, 3),
+            4: create_lisa_response_generator(WaveGeneratorType.PN5_AAK, self.dt, 5),
+        }
+        for _ in range(200):
+            self.parameter_space.randomize_parameters()
+            for T, waveform_generator in zip(
+                [0.5, 1, 2, 3, 5], waveform_generators.values()
+            ):
+                self.lisa_response_generator = waveform_generator
+                try:
+                    warnings.filterwarnings("error")
+                    snr = self.compute_signal_to_noise_ratio()
+                    warnings.resetwarnings()
+                except Warning as e:
+                    if "Mass ratio" in str(e):
+                        _LOGGER.warning(
+                            "Caught warning that mass ratio is out of bounds. Continue with new parameters..."
+                        )
+                        continue
+                    else:
+                        _LOGGER.warning(f"{str(e)}. Continue with new parameters...")
+                        continue
+                except ParameterOutOfBoundsError as e:
+                    _LOGGER.warning(
+                        f"Caught ParameterOutOfBoundsError during parameter estimation: {str(e)}. Continue with new parameters..."
+                    )
+                    continue
+                except AssertionError as e:
+                    _LOGGER.warning(
+                        f"caught AssertionError: {str(e)}. Continue with new parameters..."
+                    )
+                    continue
+                except RuntimeError as e:
+                    _LOGGER.warning(
+                        f"Caught RuntimeError during waveform generation : {str(e)} .\n Continue with new parameters..."
+                    )
+                    continue
+                except ValueError as e:
+                    if "EllipticK" in str(e):
+                        _LOGGER.warning(
+                            "Caught EllipticK error from waveform generator. Continue with new parameters..."
+                        )
+                        continue
+                    elif "Brent root solver does not converge" in str(e):
+                        _LOGGER.warning(
+                            "Caught brent root solver error because it did not converge. Continue with new parameters..."
+                        )
+                        continue
+                    else:
+                        raise ValueError(e)
+
+                self.save_snr_analysis(snr)
+
+    def save_snr_analysis(self, snr: float) -> None:
+        try:
+            snr_analysis = pd.read_csv(SNR_ANALYSIS_PATH)
+
+        except FileNotFoundError:
+            parameters_list = list(self.parameter_space._parameters_to_dict().keys())
+            parameters_list.extend(["T", "SNR", "generation_time"])
+            snr_analysis = pd.DataFrame(columns=parameters_list)
+
+        new_snr_analysis_dict = self.parameter_space._parameters_to_dict() | {
+            "T": self.T,
+            "dt": self.dt,
+            "SNR": snr,
+            "generation_time": self.waveform_generation_time,
+        }
+
+        new_snr_analysis = pd.DataFrame([new_snr_analysis_dict])
+
+        snr_analysis = pd.concat([snr_analysis, new_snr_analysis], ignore_index=True)
+        snr_analysis.to_csv(SNR_ANALYSIS_PATH, index=False)

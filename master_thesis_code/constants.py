@@ -32,3 +32,4 @@ SNR_THRESHOLD = 20
 
 # saving Cramer-Rao bounds for marginalization.
 CRAMER_RAO_BOUNDS_PATH = "simulations/cramer_rao_bounds.csv"
+SNR_ANALYSIS_PATH = "simulations/snr_analysis.csv"

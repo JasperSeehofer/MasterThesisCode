@@ -39,6 +39,9 @@ def main() -> None:
     if arguments.evaluate:
         evaluate(cosmological_model, galaxy_catalog)
 
+    if arguments.snr_analysis:
+        snr_analysis()
+
     end_time = time()
     _ROOT_LOGGER.debug(f"Finished in {end_time - start_time}s.")
 
@@ -65,6 +68,26 @@ def _configure_logger(working_directory: str, log_level: int) -> None:
     plt.set_loglevel("warning")
 
     _ROOT_LOGGER.info(f"Log file location: {log_file_path}")
+
+
+def snr_analysis():
+    from master_thesis_code.memory_management import MemoryManagement
+    from master_thesis_code.parameter_estimation.parameter_estimation import (
+        ParameterEstimation,
+        WaveGeneratorType,
+    )
+    from master_thesis_code.datamodels.parameter_space import ParameterSpace
+
+    memory_management = MemoryManagement()
+    memory_management.display_GPU_information()
+    memory_management.display_fft_cache()
+
+    parameter_estimation = ParameterEstimation(
+        waveform_generation_type=WaveGeneratorType.PN5_AAK,
+        parameter_space=ParameterSpace(),
+    )
+
+    parameter_estimation.SNR_analysis()
 
 
 def data_simulation(

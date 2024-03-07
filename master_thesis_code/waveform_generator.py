@@ -39,7 +39,7 @@ tdi_kwargs_esa = dict(
     orbit_kwargs=orbit_kwargs_esa,
     order=order,
     tdi=tdi_gen,
-    tdi_chan= ESA_TDI_CHANNELS,
+    tdi_chan=ESA_TDI_CHANNELS,
 )
 
 
@@ -52,7 +52,6 @@ def create_lisa_response_generator(
     waveform_generator_type: WaveGeneratorType,
     dt: float,
     T_observation: float,
-    
 ) -> ResponseWrapper:
     lisa_response_generator = ResponseWrapper(
         waveform_gen=_set_waveform_generator(waveform_generator_type),
@@ -63,7 +62,7 @@ def create_lisa_response_generator(
         is_ecliptic_latitude=False,
         use_gpu=USE_GPU,
         Tobs=T_observation,
-        remove_garbage=True, # TODO: understand why to use this
+        remove_garbage=True,  # TODO: understand why to use this
         dt=dt,
         **tdi_kwargs_esa,
     )

@@ -14,6 +14,7 @@ from master_thesis_code.exceptions import ArgumentsError
 _LOGGER = logging.getLogger()
 _VALID_LOG_LEVELS = ["INFO", "DEBUG", "WARNING", "ERROR", "CRITICAL"]
 
+
 class Arguments:
     """this class includes the parsed input arguments."""
 
@@ -36,12 +37,12 @@ class Arguments:
     def working_directory(self) -> str:
         """Path to the working directory, where temporary files are stored, default is the current working directory."""
         return self._working_directory
-    
+
     @property
     def log_level(self) -> int:
         """Log level of the stream and file logger, default is log level 'INFO'."""
         return self._log_level
-    
+
     @property
     def simulation_steps(self) -> int:
         """Number of waveforms generated in the simulation."""
@@ -51,14 +52,18 @@ class Arguments:
     def evaluate(self) -> bool:
         """Indicates whether the gathered Rao-Cramer-bounds are evaluated or not."""
         return self._parsed_arguments.evaluate
-    
+
+    @property
+    def snr_analysis(self) -> bool:
+        """Indicates whether the snr analysis should be run."""
+        return self._parsed_arguments.snr_analysis
+
     @staticmethod
     def create(sys_args: List[str] = sys.argv[1:]) -> Arguments:
 
-
         parsed_arguments = _parse_arguments(sys_args)
         return Arguments(parsed_arguments=parsed_arguments)
-    
+
     def validate(self) -> None:
         """Validate the parsed arguments."""
         if self._working_directory_replaced is True:
@@ -69,14 +74,17 @@ class Arguments:
         if self._log_level_replaced is True:
             _LOGGER.warning(
                 f"The provided log level is not valid. Valid values are: {', '.join(_VALID_LOG_LEVELS)}."
-                f"The log level is set to {logging.getLevelName(self._log_level)}")
-        
+                f"The log level is set to {logging.getLevelName(self._log_level)}"
+            )
+
         try:
             self._simulation_steps = int(self._parsed_arguments.simulation_steps)
         except ValueError as original_error:
             raise ArgumentsError(
                 f"{self._parsed_arguments.simulation_steps} could not be converted to integer."
-                "Please provide an integer value as follows '--simulation_steps <int>'.") from original_error
+                "Please provide an integer value as follows '--simulation_steps <int>'."
+            ) from original_error
+
 
 def _parse_arguments(arguments: List[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser()
@@ -88,17 +96,15 @@ def _parse_arguments(arguments: List[str]) -> argparse.Namespace:
         "--simulation_steps",
         help="Number of waveforms that are generated for data evaluation. (default is 0)",
         default=0,
-        type=int
+        type=int,
     )
-    parser.add_argument(
-        "--evaluate",
-        action="store_true"
-    )
+    parser.add_argument("--evaluate", action="store_true")
+    parser.add_argument("--snr_analysis", action="store_true")
     parser.add_argument(
         "--log_level",
         nargs="?",
         default="INFO",
-        help="Log level ('DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'). Default is 'INFO'."
+        help="Log level ('DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'). Default is 'INFO'.",
     )
     parsed_arguments: argparse.Namespace = parser.parse_args(arguments)
     return parsed_arguments
