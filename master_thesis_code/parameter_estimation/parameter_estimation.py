@@ -65,7 +65,7 @@ class ParameterEstimation:
         _LOGGER.info("parameter estimation initialized.")
 
     @timer_decorator
-    def generate_lisa_response(self, use_snr_check_generator: bool) -> List:
+    def generate_lisa_response(self, use_snr_check_generator: bool = False) -> List:
         if use_snr_check_generator:
             return self.snr_check_generator(
                 *self.parameter_space._parameters_to_dict().values()
