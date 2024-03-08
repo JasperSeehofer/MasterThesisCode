@@ -146,7 +146,7 @@ def data_simulation(
             )
             if quick_snr < cosmological_model.snr_threshold * 0.2:
                 _ROOT_LOGGER.info(
-                    f"Quick SNR threshold check failed: {np.round(snr, 3)} < {cosmological_model.snr_threshold * 0.2}."
+                    f"Quick SNR threshold check failed: {np.round(quick_snr, 3)} < {cosmological_model.snr_threshold * 0.2}."
                 )
                 continue
             snr = parameter_estimation.compute_signal_to_noise_ratio()
