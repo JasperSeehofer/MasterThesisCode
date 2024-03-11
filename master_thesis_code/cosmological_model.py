@@ -143,8 +143,8 @@ class Model1CrossCheck:
 
     def _apply_model_assumptions(self) -> None:
 
-        self.parameter_space.M.lower_limit = 10**4
-        self.parameter_space.M.upper_limit = 10**7
+        self.parameter_space.M.lower_limit = 10**(5)
+        self.parameter_space.M.upper_limit = 10**(6)
 
         self.parameter_space.a.value = 0.98
         self.parameter_space.a.is_fixed = True
@@ -154,7 +154,7 @@ class Model1CrossCheck:
 
         self.parameter_space.e0.upper_limit = 0.2
 
-        self.parameter_space.dist.upper_limit = 4.5
+        self.parameter_space.dist.upper_limit = 1.5
 
     def emri_sample_distribution(self, M: float, redshift: float) -> float:
         return self.dN_dz_of_mass(M, redshift) * self.R_emri(M)

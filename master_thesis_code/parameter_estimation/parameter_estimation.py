@@ -31,6 +31,7 @@ from master_thesis_code.constants import (
     MINIMAL_FREQUENCY,
     MAXIMAL_FREQUENCY,
     ESA_TDI_CHANNELS,
+    UNDETECTED_EVENTS_PATH,
 )
 from master_thesis_code.datamodels.parameter_space import ParameterSpace, Parameter
 from master_thesis_code.LISA_configuration import LisaTdiConfiguration
@@ -286,7 +287,7 @@ class ParameterEstimation:
         return snr
 
     def save_cramer_rao_bound(
-        self, cramer_rao_bound_dictionary: dict, snr: float, host_galaxy_index: int
+        self, cramer_rao_bound_dictionary: dict, snr: float, host_galaxy_index: int = -1
     ) -> None:
         try:
             cramer_rao_bounds = pd.read_csv(CRAMER_RAO_BOUNDS_PATH)
@@ -495,3 +496,24 @@ class ParameterEstimation:
 
         snr_analysis = pd.concat([snr_analysis, new_snr_analysis], ignore_index=True)
         snr_analysis.to_csv(SNR_ANALYSIS_PATH, index=False)
+
+    def save_not_detected(self, snr: float) -> None:
+        try:
+            snr_analysis = pd.read_csv(UNDETECTED_EVENTS_PATH)
+
+        except FileNotFoundError:
+            parameters_list = list(self.parameter_space._parameters_to_dict().keys())
+            parameters_list.extend(["T", "SNR", "generation_time"])
+            snr_analysis = pd.DataFrame(columns=parameters_list)
+
+        new_snr_analysis_dict = self.parameter_space._parameters_to_dict() | {
+            "T": self.T,
+            "dt": self.dt,
+            "SNR": snr,
+            "generation_time": self.waveform_generation_time,
+        }
+
+        new_snr_analysis = pd.DataFrame([new_snr_analysis_dict])
+
+        snr_analysis = pd.concat([snr_analysis, new_snr_analysis], ignore_index=True)
+        snr_analysis.to_csv(UNDETECTED_EVENTS_PATH, index=False)
