@@ -13,11 +13,13 @@ class DataEvaluation:
 
     def __init__(
         self,
-        path_to_cramer_rao_bounds_file: str = "./simulations/cramer_rao_bounds.csv",
+        path_to_cramer_rao_bounds_file: str = "./simulations/cramer_rao_bounds_unbiased.csv",
         path_to_snr_analysis_file: str = "./simulations/snr_analysis.csv",
+        path_to_undetected_events_file: str = "./simulations/undetected_events_unbiased.csv",
     ):
         self._cramer_rao_bounds = pd.read_csv(path_to_cramer_rao_bounds_file)
         self._snr_analysis_file = pd.read_csv(path_to_snr_analysis_file)
+        self._undetected_events = pd.read_csv(path_to_undetected_events_file)
 
     def visualize(self) -> None:
         # ensure directory is given
@@ -200,29 +202,34 @@ class DataEvaluation:
             redshifts, np.log10(source_masses), bins=[grid_x[:, 0], grid_y[0, :]]
         )
 
-        non_detections = np.array(
-            [
-                np.random.random_sample(10000) * 5,
-                np.random.random_sample(10000) * (6.5 - 4) + 4,
-            ]
-        ).transpose()
         hist_non_detections, _, _ = np.histogram2d(
-            non_detections[:, 0],
-            non_detections[:, 1],
+            self._undetected_events["dist"] * 10**3 / C * H0,
+            np.log10(
+                self._undetected_events["M"]
+                / (1 + self._undetected_events["dist"] * 10**3 / C * H0)
+            ),
             bins=[grid_x[:, 0], grid_y[0, :]],
         )
 
-        detection_fraction = hist_detections / (hist_detections + hist_non_detections)
+        # detection_fraction = hist_detections / (hist_detections + hist_non_detections)
 
         grid_x, grid_y = grid_x[:-1, :-1], grid_y[:-1, :-1]
         fig, ax = plt.subplots()
-        contour = ax.contourf(grid_x, grid_y, detection_fraction, cmap="viridis")
-        fig.colorbar(contour, label="detection fraction")
+        contour = ax.contourf(grid_x, grid_y, hist_detections, cmap="viridis")
+        fig.colorbar(contour, label="detections")
         plt.xlabel("redshift")
         plt.ylabel("log_10 source mass [solar masses]")
-        plt.savefig(
-            f"{figures_directory}plots/mass_redshift_detection_fraction.png", dpi=300
-        )
+        plt.savefig(f"{figures_directory}plots/mass_redshift_detections.png", dpi=300)
+        plt.close()
+
+        # plot non detected events
+        fig, ax = plt.subplots()
+        contour = ax.contourf(grid_x, grid_y, hist_non_detections, cmap="viridis")
+        fig.colorbar(contour, label="not detected")
+        plt.xlabel("redshift")
+        plt.ylabel("log_10 source mass [solar masses]")
+        plt.savefig(f"{figures_directory}plots/mass_redshift_not_detected.png", dpi=300)
+        plt.close()
 
         # plot skylocalization uncertainty
         fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
@@ -293,7 +300,6 @@ class DataEvaluation:
         # easy check SNR vs observation time averaged
         for name, parameter_set in self._snr_analysis_file.groupby(["M"]):
             if len(parameter_set) != 5:
-                print("wrong data")
                 continue
             final_SNR = parameter_set["SNR"].iloc[-1]
             plt.plot(parameter_set["T"], parameter_set["SNR"] / final_SNR)
@@ -304,7 +310,6 @@ class DataEvaluation:
 
         for name, parameter_set in self._snr_analysis_file.groupby(["M"]):
             if len(parameter_set) != 5:
-                print("wrong data")
                 continue
             final_generation_time = parameter_set["generation_time"].iloc[-1]
             plt.plot(

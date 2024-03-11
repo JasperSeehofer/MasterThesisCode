@@ -5,6 +5,7 @@ from typing import List
 import os
 import time
 import matplotlib as mpl
+import multiprocessing as mp
 
 mpl.rcParams["agg.path.chunksize"] = 1000
 import matplotlib.pyplot as plt
@@ -66,14 +67,13 @@ class ParameterEstimation:
         _LOGGER.info("parameter estimation initialized.")
 
     @timer_decorator
-    def generate_lisa_response(self, use_snr_check_generator: bool = False) -> List:
+    def generate_lisa_response(
+        self, update_parameter_dict: dict = {}, use_snr_check_generator: bool = False
+    ) -> List:
+        parameters = self.parameter_space._parameters_to_dict() | update_parameter_dict
         if use_snr_check_generator:
-            return self.snr_check_generator(
-                *self.parameter_space._parameters_to_dict().values()
-            )
-        return self.lisa_response_generator(
-            *self.parameter_space._parameters_to_dict().values()
-        )
+            return self.snr_check_generator(*parameters)
+        return self.lisa_response_generator(*parameters)
 
     @timer_decorator
     def five_point_stencil_derivative(self, parameter: Parameter) -> cp.array:
@@ -105,20 +105,12 @@ class ParameterEstimation:
         lisa_responses = []
         for step in five_point_stencil_steps:
             parameter.value = parameter_evaluated_at.value + step * derivative_epsilon
-            setattr(
-                self.parameter_space,
-                parameter.symbol,
-                parameter,
+            lisa_responses.append(
+                self.generate_lisa_response(
+                    update_parameter_dict={parameter.symbol: parameter.value}
+                )
             )
-            lisa_responses.append(self.generate_lisa_response())
         lisa_responses = self._crop_to_same_length(lisa_responses)
-
-        # set parameter value back to value that the derivative was evaluated at.
-        setattr(
-            self.parameter_space,
-            parameter.symbol,
-            parameter_evaluated_at,
-        )
 
         lisa_response_derivative = (
             (
@@ -216,16 +208,19 @@ class ParameterEstimation:
 
     def compute_fisher_information_matrix(self) -> cp.ndarray:
         # compute derivatives for fisher information matrix
-        lisa_response_derivatives = {}
-
         parameter_symbol_list = list(self.parameter_space._parameters_to_dict().keys())
+        parameter_list = [
+            getattr(self.parameter_space, symbol) for symbol in parameter_symbol_list
+        ]
 
-        for parameter_symbol in parameter_symbol_list:
-            lisa_response_derivative = self.five_point_stencil_derivative(
-                parameter=getattr(self.parameter_space, parameter_symbol)
-            )
-            lisa_response_derivatives[parameter_symbol] = lisa_response_derivative
-            del lisa_response_derivative
+        pool = mp.Pool(processes=len(parameter_list))
+        derivatives = pool.map(self.five_point_stencil_derivative, parameter_list)
+
+        lisa_response_derivatives = {
+            symbol: derivative
+            for symbol, derivative in zip(parameter_symbol_list, derivatives)
+        }
+        del derivatives
 
         fisher_information_matrix = cp.zeros(
             shape=(len(parameter_symbol_list), len(parameter_symbol_list)), dtype=float
