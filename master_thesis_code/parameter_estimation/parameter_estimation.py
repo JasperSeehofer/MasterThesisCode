@@ -72,8 +72,8 @@ class ParameterEstimation:
     ) -> List:
         parameters = self.parameter_space._parameters_to_dict() | update_parameter_dict
         if use_snr_check_generator:
-            return self.snr_check_generator(*parameters)
-        return self.lisa_response_generator(*parameters)
+            return self.snr_check_generator(*parameters.values())
+        return self.lisa_response_generator(*parameters.values())
 
     @timer_decorator
     def five_point_stencil_derivative(self, parameter: Parameter) -> cp.array:
