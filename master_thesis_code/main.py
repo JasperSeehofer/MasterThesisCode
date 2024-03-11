@@ -125,6 +125,8 @@ def data_simulation(
             f"{counter} / {iteration} evaluations successful. ({counter/(time()-memory_management._start_time)*60}/min)"
         )
         iteration += 1
+
+        """
         try:
             host_galaxy = next(host_galaxies)
         except StopIteration:
@@ -135,9 +137,10 @@ def data_simulation(
             )  # CAREFUL dist RESTRICTION ADDED BY HAND FOR FASTER DETECTION RESULTS
             host_galaxy = next(host_galaxies)
         assert isinstance(host_galaxy, HostGalaxy)
+        """
         parameter_estimation.parameter_space.randomize_parameters()
 
-        parameter_estimation.parameter_space.set_host_galaxy_parameters(host_galaxy)
+        # parameter_estimation.parameter_space.set_host_galaxy_parameters(host_galaxy)
 
         try:
             warnings.filterwarnings("error")
@@ -148,6 +151,7 @@ def data_simulation(
                 _ROOT_LOGGER.info(
                     f"Quick SNR threshold check failed: {np.round(quick_snr, 3)} < {cosmological_model.snr_threshold * 0.2}."
                 )
+                parameter_estimation.save_not_detected(quick_snr*8)
                 continue
             snr = parameter_estimation.compute_signal_to_noise_ratio()
             warnings.resetwarnings()
@@ -208,7 +212,7 @@ def data_simulation(
         parameter_estimation.save_cramer_rao_bound(
             cramer_rao_bound_dictionary=cramer_rao_bounds,
             snr=snr,
-            host_galaxy_index=host_galaxy.catalog_index,
+            #host_galaxy_index=host_galaxy.catalog_index,
         )
         counter += 1
 
