@@ -281,6 +281,15 @@ class DataEvaluation:
                 plt.close()"""
 
     def evaluate_snr_analysis(self) -> None:
+        # ensure directory is given
+        figures_directory = f"evaluation/"
+        if not os.path.isdir(figures_directory):
+            os.makedirs(figures_directory)
+        if not os.path.isdir(figures_directory + "snr_analysis/"):
+            os.makedirs(figures_directory + "snr_analysis/")
+
+        figures_directory = f"evaluation/snr_analysis/"
+
         # easy check SNR vs observation time averaged
         for name, parameter_set in self._snr_analysis_file.groupby(["M"]):
             if len(parameter_set) != 5:
