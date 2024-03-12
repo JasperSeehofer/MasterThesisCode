@@ -5,7 +5,7 @@ from typing import List
 import os
 import time
 import matplotlib as mpl
-import multiprocessing as mp
+import multiprocess as mp
 
 mpl.rcParams["agg.path.chunksize"] = 1000
 import matplotlib.pyplot as plt
@@ -213,8 +213,8 @@ class ParameterEstimation:
             getattr(self.parameter_space, symbol) for symbol in parameter_symbol_list
         ]
 
-        pool = mp.Pool(processes=len(parameter_list))
-        derivatives = pool.map(self.five_point_stencil_derivative, parameter_list)
+        with mp.Pool(processes=len(parameter_list)) as pool:
+            derivatives = pool.map(self.five_point_stencil_derivative, parameter_list)
 
         lisa_response_derivatives = {
             symbol: derivative
