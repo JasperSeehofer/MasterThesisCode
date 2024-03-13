@@ -5,6 +5,8 @@ import resource
 import datetime
 import os
 import warnings
+import multiprocessing as mp
+
 from time import time
 
 from master_thesis_code.parameter_estimation.evaluation import DataEvaluation

@@ -5,7 +5,7 @@ from typing import List
 import os
 import time
 import matplotlib as mpl
-import multiprocess as mp
+import multiprocessing as mp
 
 mpl.rcParams["agg.path.chunksize"] = 1000
 import matplotlib.pyplot as plt
@@ -75,7 +75,6 @@ class ParameterEstimation:
             return self.snr_check_generator(*parameters.values())
         return self.lisa_response_generator(*parameters.values())
 
-    @timer_decorator
     def five_point_stencil_derivative(self, parameter: Parameter) -> cp.array:
         """Compute (numerically) partial derivative of the currently set parameters w.r.t. the provided parameter.
 
@@ -85,7 +84,10 @@ class ParameterEstimation:
         Returns:
             cp.array[float]: data series of derivative
         """
-
+        _LOGGER = logging.getLogger()
+        _LOGGER.info(
+            f"Start computing partial derivative of the waveform w.r.t. {parameter.symbol}."
+        )
         parameter_evaluated_at = parameter
         derivative_epsilon = parameter.derivative_epsilon
 
@@ -105,6 +107,7 @@ class ParameterEstimation:
         lisa_responses = []
         for step in five_point_stencil_steps:
             parameter.value = parameter_evaluated_at.value + step * derivative_epsilon
+            
             lisa_responses.append(
                 self.generate_lisa_response(
                     update_parameter_dict={parameter.symbol: parameter.value}
@@ -205,17 +208,21 @@ class ParameterEstimation:
             fs[lower_limit_index:upper_limit_index],
             integrant[lower_limit_index:upper_limit_index],
         )
-
+    
     def compute_fisher_information_matrix(self) -> cp.ndarray:
         # compute derivatives for fisher information matrix
         parameter_symbol_list = list(self.parameter_space._parameters_to_dict().keys())
         parameter_list = [
             getattr(self.parameter_space, symbol) for symbol in parameter_symbol_list
         ]
-
-        with mp.Pool(processes=len(parameter_list)) as pool:
-            derivatives = pool.map(self.five_point_stencil_derivative, parameter_list)
-
+        print(mp.get_start_method())
+        cuda_context = mp.get_context("spawn")
+        print(cuda_context.get_start_method())
+        with cuda_context.Pool(processes=4) as pool:
+            _LOGGER.info("Start multiprocess for derivatives.")
+            derivatives = pool.map(self.five_point_stencil_derivative, parameter_list, 4)
+            _LOGGER.info("Finished multiprocess for derivatives.")
+            
         lisa_response_derivatives = {
             symbol: derivative
             for symbol, derivative in zip(parameter_symbol_list, derivatives)
