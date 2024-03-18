@@ -84,9 +84,9 @@ class ParameterEstimation:
         Returns:
             cp.array[float]: data series of derivative
         """
-        _LOGGER = logging.getLogger()
-        _LOGGER.info(
-            f"Start computing partial derivative of the waveform w.r.t. {parameter.symbol}."
+        
+        print(
+            f"[{time.ctime()}] Start computing partial derivative of the waveform w.r.t. {parameter.symbol}.", flush=True
         )
         parameter_evaluated_at = parameter
         derivative_epsilon = parameter.derivative_epsilon
@@ -113,6 +113,7 @@ class ParameterEstimation:
                     update_parameter_dict={parameter.symbol: parameter.value}
                 )
             )
+            print(f"[{time.ctime()}] {mp.current_process().name} lisa response computed", flush=True)
         lisa_responses = self._crop_to_same_length(lisa_responses)
 
         lisa_response_derivative = (
@@ -218,9 +219,11 @@ class ParameterEstimation:
         print(mp.get_start_method())
         cuda_context = mp.get_context("spawn")
         print(cuda_context.get_start_method())
+        print(f"{time.ctime()} before pool creation")
         with cuda_context.Pool(processes=4) as pool:
+            print(f"{time.ctime()} after pool creation")
             _LOGGER.info("Start multiprocess for derivatives.")
-            derivatives = pool.map(self.five_point_stencil_derivative, parameter_list, 4)
+            derivatives = pool.map(self.five_point_stencil_derivative, parameter_list)
             _LOGGER.info("Finished multiprocess for derivatives.")
             
         lisa_response_derivatives = {
