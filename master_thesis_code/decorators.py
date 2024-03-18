@@ -2,10 +2,12 @@ import logging
 import time
 import cupy as cp
 from master_thesis_code.constants import IS_PLOTTING_ACTIVATED
+from functools import wraps
 
 _LOGGER = logging.getLogger()
 
 def timer_decorator(func) -> callable: 
+    @wraps(func)
     def wrapper_function(*args, **kwargs): 
         start = time.time() 
         result = func(*args,  **kwargs) 
