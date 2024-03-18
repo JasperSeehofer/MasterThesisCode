@@ -1,7 +1,7 @@
 import warnings
 import numpy as np
 import pandas as pd
-from typing import List, Optional
+from typing import List, Optional, Dict
 import os
 import time
 import matplotlib as mpl
@@ -75,10 +75,60 @@ class ParameterEstimation:
             return self.snr_check_generator(*parameters.values())
         return self.lisa_response_generator(*parameters.values())
 
+    def finite_difference_derivative(self) -> Dict[str, cp.array]:
+        """Compute partial derivative of the currently set parameters w.r.t. the provided parameter.
+
+        Args:
+            parameter_symbol (str): parameter w.r.t. which the derivative is taken (Note: symbol string has to coincide with that in the ParameterSpace list!)
+
+        Returns:
+            cp.array[float]: data series of derivative
+        """
+        derivatives: dict = {}
+        parameter_list = list(self.parameter_space._parameters_to_dict().values())
+
+        waveform_evaluated_at = self.generate_lisa_response()
+
+        for parameter_symbol in parameter_list:
+            parameter: Parameter = getattr(self.parameter_space, parameter_symbol)
+
+            print(
+                f"[{time.ctime()}] Start computing partial derivative of the waveform w.r.t. {parameter.symbol}.",
+                flush=True,
+            )
+
+            parameter_evaluated_at = parameter
+            derivative_epsilon = parameter.derivative_epsilon
+
+            # check that neighboring points are in parameter range as well
+            if (
+                parameter_evaluated_at.value + derivative_epsilon
+            ) > parameter.upper_limit:
+                raise ParameterOutOfBoundsError(
+                    "Tried to set parameter to value out of bounds in derivative."
+                )
+
+            parameter.value = parameter_evaluated_at.value + derivative_epsilon
+            current_waveform = self.generate_lisa_response(
+                update_parameter_dict={parameter.symbol: parameter.value}
+            )
+
+            waveform_evaluated_at, current_waveform = self._crop_to_same_length(
+                [waveform_evaluated_at, current_waveform]
+            )
+
+            derivative = (current_waveform - waveform_evaluated_at) / derivative_epsilon
+
+            derivatives[parameter.symbol] = derivative
+
+        _LOGGER.info(f"Finished computing partial derivatives.")
+        del waveform_evaluated_at, current_waveform, derivative
+        return derivatives
+
     def five_point_stencil_derivative(
         self, parameter: Parameter, parameter_space: Optional[ParameterSpace] = None
     ) -> cp.array:
-        """Compute (numerically) partial derivative of the currently set parameters w.r.t. the provided parameter.
+        """Compute partial derivative of the currently set parameters w.r.t. the provided parameter.
 
         Args:
             parameter_symbol (str): parameter w.r.t. which the derivative is taken (Note: symbol string has to coincide with that in the ParameterSpace list!)
@@ -219,21 +269,18 @@ class ParameterEstimation:
             integrant[lower_limit_index:upper_limit_index],
         )
 
-    def compute_fisher_information_matrix(self) -> cp.ndarray:
+    def compute_fisher_information_matrix(self, pool: mp.Pool) -> cp.ndarray:
         # compute derivatives for fisher information matrix
         parameter_symbol_list = list(self.parameter_space._parameters_to_dict().keys())
         parameter_list = [
             getattr(self.parameter_space, symbol) for symbol in parameter_symbol_list
         ]
-        print(mp.get_start_method())
-        cuda_context = mp.get_context("spawn")
-        print(cuda_context.get_start_method())
-        print(f"{time.ctime()} before pool creation")
-        with cuda_context.Pool(processes=4) as pool:
-            print(f"{time.ctime()} after pool creation")
-            _LOGGER.info("Start multiprocess for derivatives.")
-            derivatives = pool.map(self.five_point_stencil_derivative, parameter_list)
-            _LOGGER.info("Finished multiprocess for derivatives.")
+        _LOGGER.info("Start multiprocess for derivatives.")
+        derivatives = pool.starmap(
+            self.five_point_stencil_derivative,
+            [(parameter, self.parameter_space) for parameter in parameter_list],
+        )
+        _LOGGER.info("Finished multiprocess for derivatives.")
 
         lisa_response_derivatives = {
             symbol: derivative
@@ -258,8 +305,8 @@ class ParameterEstimation:
         return fisher_information_matrix
 
     @timer_decorator
-    def compute_Cramer_Rao_bounds(self) -> dict:
-        fisher_information_matrix = self.compute_fisher_information_matrix()
+    def compute_Cramer_Rao_bounds(self, pool: mp.Pool) -> dict:
+        fisher_information_matrix = self.compute_fisher_information_matrix(pool)
 
         cramer_rao_bounds = np.matrix(cp.asnumpy(fisher_information_matrix)).I
         _LOGGER.debug("matrix inversion completed.")
