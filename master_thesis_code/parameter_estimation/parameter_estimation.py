@@ -275,6 +275,7 @@ class ParameterEstimation:
         parameter_list = [
             getattr(self.parameter_space, symbol) for symbol in parameter_symbol_list
         ]
+        """
         _LOGGER.info("Start multiprocess for derivatives.")
         derivatives = pool.starmap(
             self.five_point_stencil_derivative,
@@ -287,6 +288,9 @@ class ParameterEstimation:
             for symbol, derivative in zip(parameter_symbol_list, derivatives)
         }
         del derivatives
+        """
+
+        lisa_response_derivatives: Dict = self.finite_difference_derivative()
 
         fisher_information_matrix = cp.zeros(
             shape=(len(parameter_symbol_list), len(parameter_symbol_list)), dtype=float
