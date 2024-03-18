@@ -269,7 +269,7 @@ class ParameterEstimation:
             integrant[lower_limit_index:upper_limit_index],
         )
 
-    def compute_fisher_information_matrix(self, pool: mp.Pool) -> cp.ndarray:
+    def compute_fisher_information_matrix(self) -> cp.ndarray:
         # compute derivatives for fisher information matrix
         parameter_symbol_list = list(self.parameter_space._parameters_to_dict().keys())
         parameter_list = [
@@ -309,8 +309,8 @@ class ParameterEstimation:
         return fisher_information_matrix
 
     @timer_decorator
-    def compute_Cramer_Rao_bounds(self, pool: mp.Pool) -> dict:
-        fisher_information_matrix = self.compute_fisher_information_matrix(pool)
+    def compute_Cramer_Rao_bounds(self) -> dict:
+        fisher_information_matrix = self.compute_fisher_information_matrix()
 
         cramer_rao_bounds = np.matrix(cp.asnumpy(fisher_information_matrix)).I
         _LOGGER.debug("matrix inversion completed.")

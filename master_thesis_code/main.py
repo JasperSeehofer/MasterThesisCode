@@ -119,10 +119,12 @@ def data_simulation(
     iteration = 0
     host_galaxies = iter([])
 
+    """
     mp.set_start_method("spawn")
     _ROOT_LOGGER.info(f"Multiprocessing start method set to: {mp.get_start_method()}")
     pool = mp.Pool(3)
     _ROOT_LOGGER.info(f"Multiprocessing Pool created: {mp.active_children()}")
+    """
 
     while counter < simulation_steps:
         memory_management.gpu_usage_stamp()
@@ -211,7 +213,7 @@ def data_simulation(
             f"SNR threshold check successful: {np.round(snr, 3)} >= {cosmological_model.snr_threshold}"
         )
         try:
-            cramer_rao_bounds = parameter_estimation.compute_Cramer_Rao_bounds(pool)
+            cramer_rao_bounds = parameter_estimation.compute_Cramer_Rao_bounds()
         except ParameterOutOfBoundsError as e:
             _ROOT_LOGGER.warning(
                 "Caught ParameterOutOfBoundsError in dervative. Continue with new parameters..."
