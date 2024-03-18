@@ -1,7 +1,7 @@
 import warnings
 import numpy as np
 import pandas as pd
-from typing import List
+from typing import List, Optional
 import os
 import time
 import matplotlib as mpl
@@ -76,7 +76,9 @@ class ParameterEstimation:
         return self.lisa_response_generator(*parameters.values())
 
     @timer_decorator
-    def five_point_stencil_derivative(self, parameter: Parameter) -> cp.array:
+    def five_point_stencil_derivative(
+        self, parameter: Parameter, parameter_space: Optional[ParameterSpace] = None
+    ) -> cp.array:
         """Compute (numerically) partial derivative of the currently set parameters w.r.t. the provided parameter.
 
         Args:
@@ -85,6 +87,9 @@ class ParameterEstimation:
         Returns:
             cp.array[float]: data series of derivative
         """
+
+        if parameter_space is not None:
+            self.parameter_space = parameter_space
 
         parameter_evaluated_at = parameter
         derivative_epsilon = parameter.derivative_epsilon
