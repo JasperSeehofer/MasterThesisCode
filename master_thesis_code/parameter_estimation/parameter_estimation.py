@@ -5,7 +5,7 @@ from typing import List, Optional
 import os
 import time
 import matplotlib as mpl
-import multiprocess as mp
+import multiprocessing as mp
 
 mpl.rcParams["agg.path.chunksize"] = 1000
 import matplotlib.pyplot as plt
@@ -75,7 +75,6 @@ class ParameterEstimation:
             return self.snr_check_generator(*parameters.values())
         return self.lisa_response_generator(*parameters.values())
 
-    @timer_decorator
     def five_point_stencil_derivative(
         self, parameter: Parameter, parameter_space: Optional[ParameterSpace] = None
     ) -> cp.array:
@@ -88,6 +87,10 @@ class ParameterEstimation:
             cp.array[float]: data series of derivative
         """
 
+        print(
+            f"[{time.ctime()}] Start computing partial derivative of the waveform w.r.t. {parameter.symbol}.",
+            flush=True,
+        )
         if parameter_space is not None:
             self.parameter_space = parameter_space
 
@@ -110,10 +113,15 @@ class ParameterEstimation:
         lisa_responses = []
         for step in five_point_stencil_steps:
             parameter.value = parameter_evaluated_at.value + step * derivative_epsilon
+
             lisa_responses.append(
                 self.generate_lisa_response(
                     update_parameter_dict={parameter.symbol: parameter.value}
                 )
+            )
+            print(
+                f"[{time.ctime()}] {mp.current_process().name} lisa response computed",
+                flush=True,
             )
         lisa_responses = self._crop_to_same_length(lisa_responses)
 
@@ -217,9 +225,15 @@ class ParameterEstimation:
         parameter_list = [
             getattr(self.parameter_space, symbol) for symbol in parameter_symbol_list
         ]
-
-        with mp.Pool(processes=len(parameter_list)) as pool:
+        print(mp.get_start_method())
+        cuda_context = mp.get_context("spawn")
+        print(cuda_context.get_start_method())
+        print(f"{time.ctime()} before pool creation")
+        with cuda_context.Pool(processes=4) as pool:
+            print(f"{time.ctime()} after pool creation")
+            _LOGGER.info("Start multiprocess for derivatives.")
             derivatives = pool.map(self.five_point_stencil_derivative, parameter_list)
+            _LOGGER.info("Finished multiprocess for derivatives.")
 
         lisa_response_derivatives = {
             symbol: derivative
