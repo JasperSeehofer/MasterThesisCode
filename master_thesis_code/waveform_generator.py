@@ -20,7 +20,7 @@ pn5_aak_configuration = {
     "inspiral_kwargs": {
         "DENSE_STEPPING": 0,  # we want a sparsely sampled trajectory
         "max_init_len": int(
-            1e7
+            1e6
         ),  # all of the trajectories will be well under len = 1000
     },
     "sum_kwargs": {
