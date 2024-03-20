@@ -15,18 +15,20 @@ INDEX_BETA = 7  # index in list of parameters from ParameterSpace for qS
 T0 = 10_000.0  #
 
 # Configuration of PN5 AAK waveform generator
+
 pn5_aak_configuration = {
     "inspiral_kwargs": {
         "DENSE_STEPPING": 0,  # we want a sparsely sampled trajectory
         "max_init_len": int(
-            1e6
+            1e7
         ),  # all of the trajectories will be well under len = 1000
     },
     "sum_kwargs": {
         "use_gpu": True,  # GPU is available for this type of summation
-        "pad_output": False,
+        "pad_output": True,
     },
 }
+
 
 # FAST LISA RESPONSE configuration
 # order of the langrangian interpolation

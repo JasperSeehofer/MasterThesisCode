@@ -85,17 +85,12 @@ class ParameterEstimation:
             cp.array[float]: data series of derivative
         """
         derivatives: dict = {}
-        parameter_list = list(self.parameter_space._parameters_to_dict().values())
 
         waveform_evaluated_at = self.generate_lisa_response()
 
-        for parameter_symbol in parameter_list:
-            parameter: Parameter = getattr(self.parameter_space, parameter_symbol)
+        for parameter in vars(self.parameter_space).values():
 
-            print(
-                f"[{time.ctime()}] Start computing partial derivative of the waveform w.r.t. {parameter.symbol}.",
-                flush=True,
-            )
+            _LOGGER.info(f"Start computing partial derivative of the waveform w.r.t. {parameter.symbol}.")
 
             parameter_evaluated_at = parameter
             derivative_epsilon = parameter.derivative_epsilon
@@ -563,9 +558,11 @@ class ParameterEstimation:
         snr_analysis.to_csv(SNR_ANALYSIS_PATH, index=False)
 
     def save_not_detected(self, snr: float) -> None:
+        file_exists = False
         try:
             snr_analysis = pd.read_csv(UNDETECTED_EVENTS_PATH)
-
+            file_exists = True
+            
         except FileNotFoundError:
             parameters_list = list(self.parameter_space._parameters_to_dict().keys())
             parameters_list.extend(["T", "SNR", "generation_time"])
@@ -579,6 +576,8 @@ class ParameterEstimation:
         }
 
         new_snr_analysis = pd.DataFrame([new_snr_analysis_dict])
-
-        snr_analysis = pd.concat([snr_analysis, new_snr_analysis], ignore_index=True)
+        if not file_exists:
+            snr_analysis = new_snr_analysis
+        else:
+            snr_analysis = pd.concat([snr_analysis, new_snr_analysis], ignore_index=True)
         snr_analysis.to_csv(UNDETECTED_EVENTS_PATH, index=False)
