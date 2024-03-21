@@ -7,7 +7,7 @@ import logging
 from typing import Tuple
 from matplotlib import pyplot as plt
 from mpl_toolkits.mplot3d import axes3d
-
+from master_thesis_code.constants import H0, C
 
 _LOGGER = logging.getLogger()
 
@@ -57,8 +57,8 @@ class InternalCatalogColumns:
     REDSHIFT_ERROR = "REDSHIFT_ERROR"
     LUMINOSITY_DISTANCE = "LUMINOSITY_DISTANCE"
     LUMINOSITY_DISTANCE_ERROR = "LUMINOSITY_DISTANCE_ERROR"
-    BH_MASS_COLUMN = "STELLAR_MASS"
-    BH_MASS_ERROR_COLUMN = "STELLAR_MASS_ABSOULTE_ERROR"
+    BH_MASS = "STELLAR_MASS"
+    BH_MASS_ERROR = "STELLAR_MASS_ABSOULTE_ERROR"
 
 
 @dataclass
@@ -120,122 +120,69 @@ class GalaxyCatalogueHandler:
             names=[column.name for column in CatalogueColumns],
         )
 
-    def parse_possible_hosts(self, cramer_rao_bounds_file_path: str) -> None:
-        cramer_rao_bounds = pd.read_csv(cramer_rao_bounds_file_path)
-        galaxy_catalogue = self.read_reduced_galaxy_catalog()
+    def get_possible_hosts(self, M_z, M_z_error, dist, dist_error, phi, phi_error, theta, theta_error) -> None:
 
-        for index, event in cramer_rao_bounds.iterrows():
-            # true values
-            phi_true = event["phiS"]
-            theta_true = event["qS"]
-            d_true = event["dist"]
-            M_true = event["M"]
+        z = _convert_dist_to_redshift(dist*GPC_TO_MPC)
+        z_error = _convert_dist_to_redshift(dist_error * GPC_TO_MPC)
 
-            # errors
-            dphi = np.sqrt(event["delta_phiS_delta_phiS"])
-            dtheta = np.sqrt(event["delta_qS_delta_qS"])
-            dd = np.sqrt(event["delta_dist_delta_dist"])
-            d_M = np.sqrt(event["delta_M_delta_M"])
+        M, M_error = _convert_redshifted_mass_to_true_mass(M_z, M_z_error, z, z_error)
 
-            # transform to catalogue angles
-            right_ascension = phi_true * RADIAN_TO_DEGREE
-            declination = _polar_angle_to_declination(theta_true) * RADIAN_TO_DEGREE
-
-            declination_error = dtheta * RADIAN_TO_DEGREE
-            right_ascension_error = dphi * RADIAN_TO_DEGREE
-
-            d_in_mpc = d_true * GPC_TO_MPC
-            dd_in_mpc = dd * GPC_TO_MPC
-
-            stellar_mass_estimate, stellar_mass_error = (
-                _empiric_MBH_to_M_stellar_relation(M_true, d_M)
+        possible_host_galaxies = self.reduced_galaxy_catalog.loc[
+            (
+                theta - theta_error
+                <= self.reduced_galaxy_catalog[InternalCatalogColumns.THETA_S]
             )
-
-            possible_host_galaxies = galaxy_catalogue.loc[
-                (
-                    declination - declination_error
-                    <= galaxy_catalogue[CatalogueColumns.DECLINATION.name]
-                )
-                & (
-                    galaxy_catalogue[CatalogueColumns.DECLINATION.name]
-                    <= declination + declination_error
-                )
-                & (
-                    right_ascension - right_ascension_error
-                    <= galaxy_catalogue[CatalogueColumns.RIGHT_ASCENSION.name]
-                )
-                & (
-                    galaxy_catalogue[CatalogueColumns.RIGHT_ASCENSION.name]
-                    <= right_ascension + right_ascension_error
-                )
-                & (
-                    d_in_mpc - dd_in_mpc
-                    <= galaxy_catalogue[CatalogueColumns.LUMINOSITY_DISTANCE.name]
-                    + galaxy_catalogue[CatalogueColumns.LUMINOSITY_DISTANCE_ERROR.name]
-                )
-                & (
-                    galaxy_catalogue[CatalogueColumns.LUMINOSITY_DISTANCE.name]
-                    - galaxy_catalogue[CatalogueColumns.LUMINOSITY_DISTANCE_ERROR.name]
-                    <= d_in_mpc + dd_in_mpc
-                )
-            ]
-
-            possible_host_galaxies_with_BH_mass = galaxy_catalogue.loc[
-                (
-                    declination - declination_error
-                    <= galaxy_catalogue[CatalogueColumns.DECLINATION.name]
-                )
-                & (
-                    galaxy_catalogue[CatalogueColumns.DECLINATION.name]
-                    <= declination + declination_error
-                )
-                & (
-                    right_ascension - right_ascension_error
-                    <= galaxy_catalogue[CatalogueColumns.RIGHT_ASCENSION.name]
-                )
-                & (
-                    galaxy_catalogue[CatalogueColumns.RIGHT_ASCENSION.name]
-                    <= right_ascension + right_ascension_error
-                )
-                & (
-                    d_in_mpc - dd_in_mpc
-                    <= galaxy_catalogue[CatalogueColumns.LUMINOSITY_DISTANCE.name]
-                    + galaxy_catalogue[CatalogueColumns.LUMINOSITY_DISTANCE_ERROR.name]
-                )
-                & (
-                    galaxy_catalogue[CatalogueColumns.LUMINOSITY_DISTANCE.name]
-                    - galaxy_catalogue[CatalogueColumns.LUMINOSITY_DISTANCE_ERROR.name]
-                    <= d_in_mpc + dd_in_mpc
-                )
-                & (
-                    stellar_mass_estimate - stellar_mass_error
-                    <= galaxy_catalogue[CatalogueColumns.STELLAR_MASS.name]
-                    + galaxy_catalogue[
-                        CatalogueColumns.STELLAR_MASS_ABSOULTE_ERROR.name
-                    ]
-                )
-                & (
-                    galaxy_catalogue[CatalogueColumns.STELLAR_MASS.name]
-                    - galaxy_catalogue[
-                        CatalogueColumns.STELLAR_MASS_ABSOULTE_ERROR.name
-                    ]
-                    <= stellar_mass_estimate + stellar_mass_error
-                )
-            ]
-            print(
-                f"stellar_mass_estimation: {stellar_mass_estimate} +- {round(stellar_mass_error/stellar_mass_estimate*100, 2)}% in 10^10 solar masses."
+            & (
+                self.reduced_galaxy_catalog[InternalCatalogColumns.THETA_S]
+                <= theta + theta_error
             )
-            print(
-                f"found {len(possible_host_galaxies)} ({len(possible_host_galaxies_with_BH_mass)}) possible host galaxies (with BH mass)."
+            & (
+                phi - phi_error
+                <= self.reduced_galaxy_catalog[InternalCatalogColumns.PHI_S]
             )
+            & (
+                self.reduced_galaxy_catalog[InternalCatalogColumns.PHI_S]
+                <= phi + phi_error
+            )
+            & (
+                z - z_error
+                <= self.reduced_galaxy_catalog[InternalCatalogColumns.REDSHIFT]
+                + self.reduced_galaxy_catalog[InternalCatalogColumns.REDSHIFT_ERROR]
+            )
+            & (
+                self.reduced_galaxy_catalog[InternalCatalogColumns.REDSHIFT]
+                - self.reduced_galaxy_catalog[InternalCatalogColumns.REDSHIFT_ERROR]
+                <= z + z_error
+            )
+        ]
+
+        possible_host_galaxies_with_BH_mass =  possible_host_galaxies[((
+                M - M_error
+                <= possible_host_galaxies[InternalCatalogColumns.BH_MASS]
+                + possible_host_galaxies[
+                    CatalogueColumns.STELLAR_MASS_ABSOULTE_ERROR.name
+                ]
+            )
+            & (
+                possible_host_galaxies[CatalogueColumns.STELLAR_MASS.name]
+                - possible_host_galaxies[
+                    CatalogueColumns.STELLAR_MASS_ABSOULTE_ERROR.name
+                ]
+                <= M + M_error
+            ))
+            | (
+                possible_host_galaxies[InternalCatalogColumns.BH_MASS].isna()
+            )
+        ]
+        return possible_host_galaxies, possible_host_galaxies_with_BH_mass
 
     def _map_stellar_masses_to_BH_masses(self) -> None:
         BH_mass, BH_mass_error = _empiric_stellar_mass_to_BH_mass_relation(
-            self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS_COLUMN],
-            self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS_ERROR_COLUMN],
+            self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS],
+            self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS_ERROR],
         )
-        self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS_COLUMN] = BH_mass
-        self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS_ERROR_COLUMN] = (
+        self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS] = BH_mass
+        self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS_ERROR] = (
             BH_mass_error
         )
 
@@ -258,11 +205,11 @@ class GalaxyCatalogueHandler:
 
         restricted_galaxy_catalogue = self.reduced_galaxy_catalog[
             (
-                self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS_COLUMN]
+                self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS]
                 >= lower_limit
             )
             & (
-                self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS_COLUMN]
+                self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS]
                 <= upper_limit
             )
             & (
@@ -302,8 +249,8 @@ class GalaxyCatalogueHandler:
                     * 1e-3,
                     z=host[InternalCatalogColumns.REDSHIFT],
                     z_error=host[InternalCatalogColumns.REDSHIFT_ERROR],
-                    M=host[InternalCatalogColumns.BH_MASS_COLUMN],
-                    M_error=host[InternalCatalogColumns.BH_MASS_ERROR_COLUMN],
+                    M=host[InternalCatalogColumns.BH_MASS],
+                    M_error=host[InternalCatalogColumns.BH_MASS_ERROR],
                     catalog_index=host.name,
                 )
             )
@@ -334,3 +281,12 @@ def _empiric_MBH_to_M_stellar_relation(MBH_mass: float, MBH_mass_error: float) -
         + ((np.log(MBH_mass) - alpha) / beta**2) ** 2 * d_beta**2
     )
     return [stellar_mass, stellar_mass_error]
+
+
+def _convert_dist_to_redshift(dist: float) -> float:
+    return dist*H0/C
+
+def _convert_redshifted_mass_to_true_mass(M_z: float, M_z_error: float, z: float, z_error) -> float:
+    M = M_z/(1+z)
+    M_err = np.sqrt((M_z_error/(1+z))**2 + (M_z*z_error/(1+z)**2)**2)
+    return (M, M_err)
