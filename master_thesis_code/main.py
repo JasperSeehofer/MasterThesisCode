@@ -10,6 +10,7 @@ import multiprocessing as mp
 from time import time
 
 from master_thesis_code.parameter_estimation.evaluation import DataEvaluation
+from master_thesis_code.estimate_hubble_constant import HubbleConstantEstimation
 from master_thesis_code.arguments import Arguments
 from master_thesis_code.exceptions import ParameterOutOfBoundsError
 from master_thesis_code.cosmological_model import Model1CrossCheck
@@ -240,9 +241,11 @@ def evaluate(
     cosmological_model: Model1CrossCheck, galaxy_catalog: GalaxyCatalogueHandler
 ) -> None:
     data_simulation = DataEvaluation()
-    data_simulation.visualize()
-    data_simulation.evaluate_snr_analysis()
-    Model1CrossCheck().visualize_emri_distribution()
+    hubble_constant_evaluation = HubbleConstantEstimation()
+    #data_simulation.visualize()
+    #data_simulation.evaluate_snr_analysis()
+    #Model1CrossCheck().visualize_emri_distribution()
+    hubble_constant_evaluation.bayesian_evaluation(galaxy_catalog)
 
 
 if __name__ == "__main__":

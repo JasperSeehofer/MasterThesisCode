@@ -2,17 +2,16 @@ from dataclasses import dataclass
 from typing import List
 import os
 import numpy as np
-from master_thesis_code.datamodels.parameter_space import ParameterSpace, Parameter
+from master_thesis_code.datamodels.parameter_space import ParameterSpace, Parameter, uniform
 import matplotlib.pyplot as plt
 from scipy.stats import truncnorm
+from master_thesis_code.constants import C
+from master_thesis_code.galaxy_catalogue.handler import GalaxyCatalogueHandler
 
 
 @dataclass
-class CosmologicalParameter:
-    upper_limit: float
-    lower_limit: float
-    unit_info: str
-    prior_info: str
+class CosmologicalParameter(Parameter):
+    fiducial_value: float
 
 
 @dataclass
@@ -154,7 +153,7 @@ class Model1CrossCheck:
 
         self.parameter_space.e0.upper_limit = 0.2
 
-        self.parameter_space.dist.upper_limit = 4
+        self.parameter_space.dist.upper_limit = 6.8
 
     def emri_sample_distribution(self, M: float, redshift: float) -> float:
         return self.dN_dz_of_mass(M, redshift) * self.R_emri(M)
@@ -252,7 +251,7 @@ class Model1CrossCheck:
         plt.close()
 
 
-class LamCDMScenario(CosmologicalParameter):
+class LamCDMScenario:
     """https://arxiv.org/pdf/2102.01708.pdf"""
 
     h: CosmologicalParameter
@@ -260,21 +259,51 @@ class LamCDMScenario(CosmologicalParameter):
 
     def __init__(self) -> None:
         self.h = CosmologicalParameter(
-            upper_limit=0.86, lower_limit=0.6, unit_info="s*Mpc/km", prior="uniform"
+            upper_limit=0.86, lower_limit=0.6, unit="s*Mpc/km", randomize_by_distribution=uniform, fiducial_value=0.73
         )
         self.Omega_m = CosmologicalParameter(
-            upper_limit=0.04, lower_limit=0.5, unit_info="s*Mpc/km", prior="uniform"
+            upper_limit=0.04, lower_limit=0.5, unit="s*Mpc/km", randomize_by_distribution=uniform, fiducial_value=0.25
+        )
+
+    def Omega_DE(self) -> float:
+        return 1 - self.Omega_m
+
+
+class DarkEnergyScenario:
+    h: float
+    Omega_m: float
+    Omega_DE: float
+    w_0: CosmologicalParameter
+    w_a: CosmologicalParameter
+
+    def __init__(self) -> None:
+        self.w_0 = CosmologicalParameter(
+            symbol="w_0", unit="xxx", lower_limit=-3., upper_limit=-0.3, randomize_by_distribution=uniform, fiducial_value=-1.
+        )
+        self.w_a = CosmologicalParameter(
+            symbol="w_a", unit="xxx", lower_limit=-1., upper_limit=1., randomize_by_distribution=uniform, fiducial_value=0
         )
 
 
+    def de_equation(self, z) -> float:
+        return self.w_0 + z/(1+z)/self.w_a
+
 class BayesianStatistics:
+    cosmological_model: LamCDMScenario = LamCDMScenario()
+
+    def p_D(self, detections: List[Detection], galaxy_catalog: GalaxyCatalogueHandler) -> float:
+        result = 1
+        for detection in detections:
+            # get possible hosts
+            possible_hosts = galaxy_catalog.get_possible_hosts()
+            self.p_Di(detection=detection, possible_host_galaxies=possible_hosts)
 
     def p_Di(
         self,
-        z_gw: np.array,
         detection: Detection,
         possible_host_galaxies: List[PossibleHost],
     ):
+        z_gw = np.linspace(0, 100, 1000) # TODO
         integrant = 0.0
         for possible_host in possible_host_galaxies:
             integrant += (
@@ -298,7 +327,14 @@ class BayesianStatistics:
         return np.trapz(integrant, z_gw) / 2 / np.pi
 
     def d_zgw(self, z_gw: float) -> float:
-        return 1  # Eq. 2.5
+        zs = np.linspace(0, z_gw, 1000)
+        return C*(1+z_gw)/H_0*np.trapz(1/self.E(zs), zs)
+    
+    def E(self, z: float) -> float:
+        return np.sqrt(self.cosmological_model.Omega_m*(1+z)**3 + self.cosmological_model.Omega_DE*self.g(z))
+    
+    def g(self, z: float) -> float:
+        return(1+z)**(3*(1+self.cosmological_model.w_0+self.cosmological_model.w_a))*np.exp(-3.*self.cosmological_model.w_a*z/(1+z))
 
     def sum_in_p_Di(possible_host_galaxies: List[PossibleHost]) -> float:
         return 1
