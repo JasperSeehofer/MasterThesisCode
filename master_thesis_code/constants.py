@@ -11,13 +11,21 @@ C = 299792458.0  # m / s
 # C = 1.0
 G = 3.24077929**2 * 4.3009172706e-58  # Gpc^3 / (s^2 * solar masses)
 # G = 1.0
-H0 = float(70e3)  # m / (s * Mpc) TODO: check if this is correct
+H0 = float(73e3)  # m / (s * Mpc) TODO: check if this is correct
+H = 0.73  # Hubble constant
+
+# cosmological parameters fiducial values
+OMEGA_M = 0.25
+OMEGA_DE = 0.75
+W_0 = -1.0
+W_A = 0.0
 
 ESA_TDI_CHANNELS = "AE"
 
 # unit trafos
 RADIAN_TO_DEGREE = 360 / 2 / np.pi
 GPC_TO_MPC = float(1e3)
+KM_TO_M = float(1e3)
 
 # simulation configuration
 SIMULATION_CONFIGURATION_FILE = "simulation_configuration.json"

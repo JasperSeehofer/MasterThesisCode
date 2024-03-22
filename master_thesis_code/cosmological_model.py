@@ -16,6 +16,11 @@ from master_thesis_code.galaxy_catalogue.handler import (
     GalaxyCatalogueHandler,
     HostGalaxy,
 )
+from master_thesis_code.physical_relations import (
+    dist,
+    dist_to_redshift,
+    dist_to_redshift_error_proagation,
+)
 
 _LOGGER = logging.getLogger()
 
@@ -29,7 +34,23 @@ class CosmologicalParameter(Parameter):
 class Detection:
     d_L: float
     d_L_uncertainty: float
-    WL_uncertainty: float
+    phi: float
+    phi_error: float
+    theta: float
+    theta_error: float
+    M: float
+    M_uncertainty: float
+    WL_uncertainty: float = 0.0
+
+    def __init__(self, parameters: pd.Series) -> None:
+        self.d_L = parameters["dist"]
+        self.d_L_uncertainty = np.sqrt(parameters["delta_dist_delta_dist"])
+        self.phi = parameters["phiS"]
+        self.phi_error = np.sqrt(parameters["delta_phiS_delta_phiS"])
+        self.theta = parameters["qS"]
+        self.theta_error = np.sqrt(parameters["delta_qS_delta_qS"])
+        self.M = parameters["M"]
+        self.M_uncertainty = np.sqrt(parameters["delta_M_delta_M"])
 
 
 @dataclass
@@ -314,12 +335,24 @@ class DarkEnergyScenario:
 
 class BayesianStatistics:
     cramer_rao_bounds: pd.DataFrame
-    cosmological_model: LamCDMScenario = LamCDMScenario()
+    detection: Detection
+    cosmological_model: LamCDMScenario
+    h: float
+    Omega_m: float
+    Omega_DE: float
+    w_0: float
+    w_a: float
 
     def __init__(self) -> None:
         self.cramer_rao_bounds = pd.read_csv(
             "./simulations/cramer_rao_bounds_unbiased.csv"
         )
+        self.cosmological_model = LamCDMScenario()
+        self.h = self.cosmological_model.h.fiducial_value
+        self.Omega_m = self.cosmological_model.Omega_m.fiducial_value
+        self.Omega_DE = 1 - self.Omega_m
+        self.w_0 = self.cosmological_model.w_0
+        self.w_a = self.cosmological_model.w_a
 
     def evaluate(self, galaxy_catalog: GalaxyCatalogueHandler) -> None:
         _LOGGER.info("Evaluating Bayesian statistics...")
@@ -330,22 +363,22 @@ class BayesianStatistics:
             self.cosmological_model.h.upper_limit,
             20,
         )
-        Omega_m = self.cosmological_model.Omega_m.fiducial_value
-        Omega_DE = 1 - Omega_m
-        w_0 = self.cosmological_model.w_0
-        w_a = self.cosmological_model.w_a
+        _LOGGER.info(f"Computing posteriors for h = {h_samples}...")
+
         for h in h_samples:
+            self.h = h
             posterior, posterior_with_bh_mass = self.p_D(
-                h=h,
-                Omega_m=Omega_m,
-                Omega_DE=Omega_DE,
-                w_0=w_0,
-                w_a=w_a,
                 galaxy_catalog=galaxy_catalog,
             )
             _LOGGER.info(f"posterior comupted for h = {h}")
+            _LOGGER.info(
+                f"posterior: {posterior}, posterior_with_bh_mass: {posterior_with_bh_mass}"
+            )
             posteriors.append(posterior)
             posteriors_with_bh_mass.append(posterior_with_bh_mass)
+
+        posteriors = np.array(posteriors)
+        posteriors_with_bh_mass = np.array(posteriors_with_bh_mass)
 
         fig = plt.figure(figsize=(16, 9))
         plt.scatter(h_samples, posteriors, label="without BH mass")
@@ -358,16 +391,13 @@ class BayesianStatistics:
 
     def p_D(
         self,
-        h: float,
-        Omega_m: float,
-        Omega_DE: float,
-        w_0: float,
-        w_a: float,
         galaxy_catalog: GalaxyCatalogueHandler,
     ) -> tuple[float, float]:
         result = 1
         result_with_bh_mass = 1
         for index, detection in self.cramer_rao_bounds.iterrows():
+            self.detection = Detection(detection)
+            _LOGGER.info(f"Processing detection {self.detection}")
             parameters = {
                 "dist": detection["dist"],
                 "dist_error": np.sqrt(detection["delta_dist_delta_dist"]),
@@ -380,6 +410,7 @@ class BayesianStatistics:
             }
 
             if not self.use_detection():
+                _LOGGER.info("detection skipped...")
                 continue
 
             possible_hosts, possible_hosts_with_bh_mass = (
@@ -388,138 +419,123 @@ class BayesianStatistics:
             _LOGGER.info(
                 f"possible hosts found {len(possible_hosts)}/{len(possible_hosts_with_bh_mass)}..."
             )
-            result *= self.p_Di(
-                detection=detection,
-                possible_host_galaxies=possible_hosts,
-                h=h,
-                Omega_m=Omega_m,
-                Omega_DE=Omega_DE,
-                w_0=w_0,
-                w_a=w_a,
-            )
+            result *= self.p_Di(possible_host_galaxies=possible_hosts)
             _LOGGER.info("posterior computed for detection without bh mass...")
             result_with_bh_mass *= self.p_Di(
-                detection=detection,
                 possible_host_galaxies=possible_hosts_with_bh_mass,
                 evaluate_with_bh_mass=True,
-                h=h,
-                Omega_m=Omega_m,
-                Omega_DE=Omega_DE,
-                w_0=w_0,
-                w_a=w_a,
             )
             _LOGGER.info("posterior computed for detection...")
         return result, result_with_bh_mass
 
     def p_Di(
         self,
-        h: float,
-        Omega_m: float,
-        Omega_DE: float,
-        w_0: float,
-        w_a: float,
-        detection: pd.Series,
         possible_host_galaxies: List[HostGalaxy],
         evaluate_with_bh_mass: bool = False,
     ) -> float:
         z_gws = np.linspace(0, 10, 100)  # TODO
         integrant = np.zeros(len(z_gws))
-        d_L = detection["dist"]
-        d_L_uncertainty = detection["delta_dist_delta_dist"]
 
         weight: callable = self.weight
         if evaluate_with_bh_mass:
             weight: callable = self.weight_with_bh_mass
-
+        weight_sum = 0.0
         for possible_host in possible_host_galaxies:
+            if evaluate_with_bh_mass:
+                current_weight = self.weight_with_bh_mass(possible_host)
+            else:
+                current_weight = self.weight(possible_host)
+            _LOGGER.debug(f"weight: {current_weight}")
+            weight_sum += current_weight
 
             """WL_uncertainty = (
                 d_L * 0.066 * (1 - (1 + possible_host.z) ** (-0.25) / 0.25) ** (1.8)
             )"""  # TODO check if correct
-            integrant += [
-                (
-                    weight(possible_host)
-                    / possible_host.z_error
-                    / np.sqrt(d_L_uncertainty**2)
-                    * np.exp(
-                        -1
-                        / 2
-                        * (
-                            (possible_host.z - z_gw) ** 2 / possible_host.z_error**2
-                            + (
-                                d_L
-                                - self.d_zgw(
-                                    z_gw=z_gw,
-                                    h=h,
-                                    Omega_m=Omega_m,
-                                    Omega_DE=Omega_DE,
-                                    w_0=w_0,
-                                    w_a=w_a,
+            integrant += np.array(
+                [
+                    (
+                        current_weight
+                        / possible_host.z_error
+                        / np.sqrt(self.detection.d_L_uncertainty**2)
+                        * np.exp(
+                            -1
+                            / 2
+                            * (
+                                (possible_host.z - z_gw) ** 2 / possible_host.z_error**2
+                                + (
+                                    self.detection.d_L
+                                    - dist(
+                                        redshift=z_gw,
+                                        h=self.h,
+                                        Omega_m=self.Omega_m,
+                                        Omega_de=self.Omega_DE,
+                                        w_0=self.w_0,
+                                        w_a=self.w_a,
+                                    )
                                 )
+                                ** 2
+                                / (self.detection.d_L_uncertainty**2)
                             )
-                            ** 2
-                            / (d_L_uncertainty**2)
                         )
                     )
-                )
-                for z_gw in z_gws
-            ]
-
-        return np.trapz(integrant, z_gws) / 2 / np.pi
-
-    def d_zgw(
-        self,
-        z_gw: float,
-        h: float,
-        Omega_m: float,
-        Omega_DE: float,
-        w_0: float,
-        w_a: float,
-    ) -> float:
-        zs = np.linspace(0, z_gw, 100)
-        return (
-            C
-            * (1 + z_gw)
-            / h
-            * np.trapz(
-                1 / self.E(z=zs, Omega_m=Omega_m, Omega_DE=Omega_DE, w_0=w_0, w_a=w_a),
-                zs,
+                    for z_gw in z_gws
+                ]
             )
-        )
 
-    def E(
-        self, z: float, Omega_m: float, Omega_DE: float, w_0: float, w_a: float
-    ) -> float:
-        return np.sqrt(Omega_m * (1 + z) ** 3 + Omega_DE * self.g(z, w_0=w_0, w_a=w_a))
-
-    def g(self, z: float, w_0: float, w_a: float) -> float:
-        return (1 + z) ** (3 * (1 + w_0 + w_a)) * np.exp(-3.0 * w_a * z / (1 + z))
+        return np.trapz(integrant, z_gws) / 2 / np.pi / weight_sum
 
     def weight(self, possible_host: HostGalaxy) -> float:
-        return 1.0  # TBD
+        """Ignore covariance for now"""
+        z_gw = dist_to_redshift(
+            self.detection.d_L, self.h, self.Omega_m, self.Omega_DE, self.w_0, self.w_a
+        )
+        z_gw_error = dist_to_redshift_error_proagation(
+            self.detection.d_L,
+            self.detection.d_L_uncertainty,
+            self.h,
+            self.Omega_m,
+            self.Omega_DE,
+            self.w_0,
+            self.w_a,
+        )
+        weight_z = self.gaussian(possible_host.z, mu=z_gw, sigma=z_gw_error)
+        weight_phi = self.gaussian(
+            possible_host.phiS,
+            mu=self.detection.phi,
+            sigma=self.detection.phi_error,
+        )
+        weight_theta = self.gaussian(
+            possible_host.qS,
+            mu=self.detection.theta,
+            sigma=self.detection.theta_error,
+        )
+        return weight_z * weight_phi * weight_theta
 
     def weight_with_bh_mass(self, possible_host: HostGalaxy) -> float:
-        return 1.0  # TBD
-
-    def error_volume(self) -> float:
-        return 1.0
-
-    def use_detection(
-        self,
-        d_L: float,
-        d_L_error: float,
-        phi: float,
-        phi_error: float,
-        theta: float,
-        theta_error: float,
-    ) -> bool:
-        sky_localization_uncertainty = self._sky_localization_uncertainty(
-            phi_error=phi_error, theta=theta, theta_error=theta_error
+        weight = self.weight(possible_host)
+        weight_M = self.gaussian(
+            possible_host.M,
+            mu=self.detection.M,
+            sigma=self.detection.M_uncertainty,
         )
-        distance_relative_error = d_L_error / d_L
+        return weight * weight_M
+
+    def gaussian(self, x: float, mu: float, sigma: float) -> float:
+        return np.exp(-1 / 2 * ((x - mu) / sigma) ** 2) / np.sqrt(2 * np.pi * sigma**2)
+
+    def use_detection(self) -> bool:
+        sky_localization_uncertainty = self._sky_localization_uncertainty(
+            phi_error=self.detection.phi_error,
+            theta=self.detection.theta,
+            theta_error=self.detection.theta_error,
+        )
+        distance_relative_error = self.detection.d_L_uncertainty / self.detection.d_L
 
         if (distance_relative_error < 0.1) and (sky_localization_uncertainty < 0.2):
             return True
+        _LOGGER.info(
+            f"Detection skipped: distance_relative_error {distance_relative_error}, sky_localization_uncertainty {sky_localization_uncertainty}"
+        )
         return False
 
     @staticmethod
@@ -527,5 +543,8 @@ class BayesianStatistics:
         phi_error: float, theta: float, theta_error: float
     ) -> float:
         return (
-            2 * np.pi * np.abs(np.sin(theta)) * np.sqrt(phi_error**2 * theta_error**2)
+            2
+            * np.pi
+            * np.abs(np.sin(theta))
+            * np.sqrt(phi_error**2 * theta_error**2)  # TODO no covariance used
         )
