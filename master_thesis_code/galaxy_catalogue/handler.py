@@ -4,7 +4,7 @@ import numpy as np
 from collections.abc import Iterable
 from dataclasses import dataclass
 import logging
-from typing import Tuple
+from typing import Tuple, List
 from matplotlib import pyplot as plt
 from mpl_toolkits.mplot3d import axes3d
 from master_thesis_code.constants import H0, C
@@ -36,6 +36,19 @@ class HostGalaxy:
     M: float
     M_error: float
     catalog_index: int
+
+    def __init__(self, parameters: pd.Series) -> None:
+        self.phiS = parameters[InternalCatalogColumns.PHI_S]
+        self.qS = parameters[InternalCatalogColumns.THETA_S]
+        self.dist = parameters[InternalCatalogColumns.LUMINOSITY_DISTANCE]
+        self.dist_error = parameters[
+            InternalCatalogColumns.LUMINOSITY_DISTANCE_ERROR
+        ]  # in Mpc
+        self.z = parameters[InternalCatalogColumns.REDSHIFT]
+        self.z_error = parameters[InternalCatalogColumns.REDSHIFT_ERROR]
+        self.M = parameters[InternalCatalogColumns.BH_MASS]
+        self.M_error = parameters[InternalCatalogColumns.BH_MASS_ERROR]
+        self.catalog_index = parameters.name
 
 
 class CatalogueColumns(Enum):
@@ -120,59 +133,85 @@ class GalaxyCatalogueHandler:
             names=[column.name for column in CatalogueColumns],
         )
 
-    def get_possible_hosts(self, M_z, M_z_error, dist, dist_error, phi, phi_error, theta, theta_error) -> None:
+    def get_possible_hosts(
+        self,
+        M_z,
+        M_z_error,
+        dist,
+        dist_error,
+        phi,
+        phi_error,
+        theta,
+        theta_error,
+        cutoff_multiplier: float = 2,
+    ) -> tuple[List[HostGalaxy], List[HostGalaxy]]:
 
-        z = _convert_dist_to_redshift(dist*GPC_TO_MPC)
+        z = _convert_dist_to_redshift(dist * GPC_TO_MPC)
         z_error = _convert_dist_to_redshift(dist_error * GPC_TO_MPC)
 
         M, M_error = _convert_redshifted_mass_to_true_mass(M_z, M_z_error, z, z_error)
 
         possible_host_galaxies = self.reduced_galaxy_catalog.loc[
             (
-                theta - theta_error
+                theta - theta_error * cutoff_multiplier
                 <= self.reduced_galaxy_catalog[InternalCatalogColumns.THETA_S]
             )
             & (
                 self.reduced_galaxy_catalog[InternalCatalogColumns.THETA_S]
-                <= theta + theta_error
+                <= theta + theta_error * cutoff_multiplier
             )
             & (
-                phi - phi_error
+                phi - phi_error * cutoff_multiplier
                 <= self.reduced_galaxy_catalog[InternalCatalogColumns.PHI_S]
             )
             & (
                 self.reduced_galaxy_catalog[InternalCatalogColumns.PHI_S]
-                <= phi + phi_error
+                <= phi + phi_error * cutoff_multiplier
             )
             & (
-                z - z_error
+                z - z_error * cutoff_multiplier
                 <= self.reduced_galaxy_catalog[InternalCatalogColumns.REDSHIFT]
                 + self.reduced_galaxy_catalog[InternalCatalogColumns.REDSHIFT_ERROR]
             )
             & (
                 self.reduced_galaxy_catalog[InternalCatalogColumns.REDSHIFT]
                 - self.reduced_galaxy_catalog[InternalCatalogColumns.REDSHIFT_ERROR]
-                <= z + z_error
+                <= z + z_error * cutoff_multiplier
             )
         ]
 
-        possible_host_galaxies_with_BH_mass =  possible_host_galaxies[((
-                M - M_error
-                <= possible_host_galaxies[InternalCatalogColumns.BH_MASS]
-                + possible_host_galaxies[
-                    CatalogueColumns.STELLAR_MASS_ABSOULTE_ERROR.name
-                ]
+        if possible_host_galaxies.empty:
+            _LOGGER.warning("No possible hosts. Returning empty lists.")
+            return [], []
+
+        possible_host_galaxies_with_BH_mass = possible_host_galaxies[
+            (
+                (
+                    M - M_error * cutoff_multiplier
+                    <= possible_host_galaxies[InternalCatalogColumns.BH_MASS]
+                    + possible_host_galaxies[
+                        CatalogueColumns.STELLAR_MASS_ABSOULTE_ERROR.name
+                    ]
+                )
+                & (
+                    possible_host_galaxies[CatalogueColumns.STELLAR_MASS.name]
+                    - possible_host_galaxies[
+                        CatalogueColumns.STELLAR_MASS_ABSOULTE_ERROR.name
+                    ]
+                    <= M + M_error * cutoff_multiplier
+                )
             )
-            & (
-                possible_host_galaxies[CatalogueColumns.STELLAR_MASS.name]
-                - possible_host_galaxies[
-                    CatalogueColumns.STELLAR_MASS_ABSOULTE_ERROR.name
-                ]
-                <= M + M_error
-            ))
-            | (
-                possible_host_galaxies[InternalCatalogColumns.BH_MASS].isna()
-            )
+            | (possible_host_galaxies[InternalCatalogColumns.BH_MASS].isna())
+        ]
+
+        possible_host_galaxies = [
+            HostGalaxy(parameters)
+            for _, parameters in possible_host_galaxies.iterrows()
+        ]
+
+        possible_host_galaxies_with_BH_mass = [
+            HostGalaxy(parameters)
+            for _, parameters in possible_host_galaxies_with_BH_mass.iterrows()
         ]
         return possible_host_galaxies, possible_host_galaxies_with_BH_mass
 
@@ -204,10 +243,7 @@ class GalaxyCatalogueHandler:
         distances = np.random.uniform(0.05, max_dist, NUMBER_OF_HOSTS) * GPC_TO_MPC
 
         restricted_galaxy_catalogue = self.reduced_galaxy_catalog[
-            (
-                self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS]
-                >= lower_limit
-            )
+            (self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS] >= lower_limit)
             & (
                 self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS]
                 <= upper_limit
@@ -284,9 +320,12 @@ def _empiric_MBH_to_M_stellar_relation(MBH_mass: float, MBH_mass_error: float) -
 
 
 def _convert_dist_to_redshift(dist: float) -> float:
-    return dist*H0/C
+    return dist * H0 / C
 
-def _convert_redshifted_mass_to_true_mass(M_z: float, M_z_error: float, z: float, z_error) -> float:
-    M = M_z/(1+z)
-    M_err = np.sqrt((M_z_error/(1+z))**2 + (M_z*z_error/(1+z)**2)**2)
+
+def _convert_redshifted_mass_to_true_mass(
+    M_z: float, M_z_error: float, z: float, z_error
+) -> float:
+    M = M_z / (1 + z)
+    M_err = np.sqrt((M_z_error / (1 + z)) ** 2 + (M_z * z_error / (1 + z) ** 2) ** 2)
     return (M, M_err)

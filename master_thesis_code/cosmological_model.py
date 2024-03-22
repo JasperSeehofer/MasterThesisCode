@@ -1,23 +1,28 @@
 from dataclasses import dataclass
 from typing import List
+import pandas as pd
 import os
 import numpy as np
-from master_thesis_code.datamodels.parameter_space import ParameterSpace, Parameter, uniform
+import logging
+from master_thesis_code.datamodels.parameter_space import (
+    ParameterSpace,
+    Parameter,
+    uniform,
+)
 import matplotlib.pyplot as plt
 from scipy.stats import truncnorm
-from master_thesis_code.constants import C
-from master_thesis_code.galaxy_catalogue.handler import GalaxyCatalogueHandler
+from master_thesis_code.constants import C, H0
+from master_thesis_code.galaxy_catalogue.handler import (
+    GalaxyCatalogueHandler,
+    HostGalaxy,
+)
+
+_LOGGER = logging.getLogger()
 
 
 @dataclass
 class CosmologicalParameter(Parameter):
-    fiducial_value: float
-
-
-@dataclass
-class PossibleHost:
-    redshift: float
-    redshift_uncertainty: float
+    fiducial_value: float = 1.0
 
 
 @dataclass
@@ -142,8 +147,8 @@ class Model1CrossCheck:
 
     def _apply_model_assumptions(self) -> None:
 
-        self.parameter_space.M.lower_limit = 10**(4.5)
-        self.parameter_space.M.upper_limit = 10**(6.5)
+        self.parameter_space.M.lower_limit = 10 ** (4.5)
+        self.parameter_space.M.upper_limit = 10 ** (6.5)
 
         self.parameter_space.a.value = 0.98
         self.parameter_space.a.is_fixed = True
@@ -256,88 +261,271 @@ class LamCDMScenario:
 
     h: CosmologicalParameter
     Omega_m: CosmologicalParameter
+    w_0: float = -1.0
+    w_a: float = 0.0
 
     def __init__(self) -> None:
         self.h = CosmologicalParameter(
-            upper_limit=0.86, lower_limit=0.6, unit="s*Mpc/km", randomize_by_distribution=uniform, fiducial_value=0.73
+            symbol="h",
+            upper_limit=0.86,
+            lower_limit=0.6,
+            unit="s*Mpc/km",
+            randomize_by_distribution=uniform,
+            fiducial_value=0.73,
         )
         self.Omega_m = CosmologicalParameter(
-            upper_limit=0.04, lower_limit=0.5, unit="s*Mpc/km", randomize_by_distribution=uniform, fiducial_value=0.25
+            symbol="Omega_m",
+            upper_limit=0.04,
+            lower_limit=0.5,
+            unit="s*Mpc/km",
+            randomize_by_distribution=uniform,
+            fiducial_value=0.25,
         )
-
-    def Omega_DE(self) -> float:
-        return 1 - self.Omega_m
 
 
 class DarkEnergyScenario:
-    h: float
-    Omega_m: float
-    Omega_DE: float
     w_0: CosmologicalParameter
     w_a: CosmologicalParameter
+    h: float = 0.73
+    Omega_m: float = 0.25
+    Omega_DE: float = 0.75
 
     def __init__(self) -> None:
         self.w_0 = CosmologicalParameter(
-            symbol="w_0", unit="xxx", lower_limit=-3., upper_limit=-0.3, randomize_by_distribution=uniform, fiducial_value=-1.
+            symbol="w_0",
+            unit="xxx",
+            lower_limit=-3.0,
+            upper_limit=-0.3,
+            randomize_by_distribution=uniform,
+            fiducial_value=-1.0,
         )
         self.w_a = CosmologicalParameter(
-            symbol="w_a", unit="xxx", lower_limit=-1., upper_limit=1., randomize_by_distribution=uniform, fiducial_value=0
+            symbol="w_a",
+            unit="xxx",
+            lower_limit=-1.0,
+            upper_limit=1.0,
+            randomize_by_distribution=uniform,
+            fiducial_value=0.0,
         )
 
-
     def de_equation(self, z) -> float:
-        return self.w_0 + z/(1+z)/self.w_a
+        return self.w_0 + z / (1 + z) / self.w_a
+
 
 class BayesianStatistics:
+    cramer_rao_bounds: pd.DataFrame
     cosmological_model: LamCDMScenario = LamCDMScenario()
 
-    def p_D(self, detections: List[Detection], galaxy_catalog: GalaxyCatalogueHandler) -> float:
+    def __init__(self) -> None:
+        self.cramer_rao_bounds = pd.read_csv(
+            "./simulations/cramer_rao_bounds_unbiased.csv"
+        )
+
+    def evaluate(self, galaxy_catalog: GalaxyCatalogueHandler) -> None:
+        _LOGGER.info("Evaluating Bayesian statistics...")
+        posteriors = []
+        posteriors_with_bh_mass = []
+        h_samples = np.linspace(
+            self.cosmological_model.h.lower_limit,
+            self.cosmological_model.h.upper_limit,
+            20,
+        )
+        Omega_m = self.cosmological_model.Omega_m.fiducial_value
+        Omega_DE = 1 - Omega_m
+        w_0 = self.cosmological_model.w_0
+        w_a = self.cosmological_model.w_a
+        for h in h_samples:
+            posterior, posterior_with_bh_mass = self.p_D(
+                h=h,
+                Omega_m=Omega_m,
+                Omega_DE=Omega_DE,
+                w_0=w_0,
+                w_a=w_a,
+                galaxy_catalog=galaxy_catalog,
+            )
+            _LOGGER.info(f"posterior comupted for h = {h}")
+            posteriors.append(posterior)
+            posteriors_with_bh_mass.append(posterior_with_bh_mass)
+
+        fig = plt.figure(figsize=(16, 9))
+        plt.scatter(h_samples, posteriors, label="without BH mass")
+        plt.scatter(h_samples, posteriors_with_bh_mass, label="with BH mass")
+        plt.xlabel("Hubble constant h")
+        plt.ylabel("Posterior")
+        plt.legend()
+        plt.savefig("saved_figures/bayesian_statistics.png")
+        plt.close()
+
+    def p_D(
+        self,
+        h: float,
+        Omega_m: float,
+        Omega_DE: float,
+        w_0: float,
+        w_a: float,
+        galaxy_catalog: GalaxyCatalogueHandler,
+    ) -> tuple[float, float]:
         result = 1
-        for detection in detections:
-            # get possible hosts
-            possible_hosts = galaxy_catalog.get_possible_hosts()
-            self.p_Di(detection=detection, possible_host_galaxies=possible_hosts)
+        result_with_bh_mass = 1
+        for index, detection in self.cramer_rao_bounds.iterrows():
+            parameters = {
+                "dist": detection["dist"],
+                "dist_error": np.sqrt(detection["delta_dist_delta_dist"]),
+                "phi": detection["phiS"],
+                "phi_error": np.sqrt(detection["delta_phiS_delta_phiS"]),
+                "theta": detection["qS"],
+                "theta_error": np.sqrt(detection["delta_qS_delta_qS"]),
+                "M_z": detection["M"],
+                "M_z_error": np.sqrt(detection["delta_M_delta_M"]),
+            }
+
+            if not self.use_detection():
+                continue
+
+            possible_hosts, possible_hosts_with_bh_mass = (
+                galaxy_catalog.get_possible_hosts(**parameters)
+            )
+            _LOGGER.info(
+                f"possible hosts found {len(possible_hosts)}/{len(possible_hosts_with_bh_mass)}..."
+            )
+            result *= self.p_Di(
+                detection=detection,
+                possible_host_galaxies=possible_hosts,
+                h=h,
+                Omega_m=Omega_m,
+                Omega_DE=Omega_DE,
+                w_0=w_0,
+                w_a=w_a,
+            )
+            _LOGGER.info("posterior computed for detection without bh mass...")
+            result_with_bh_mass *= self.p_Di(
+                detection=detection,
+                possible_host_galaxies=possible_hosts_with_bh_mass,
+                evaluate_with_bh_mass=True,
+                h=h,
+                Omega_m=Omega_m,
+                Omega_DE=Omega_DE,
+                w_0=w_0,
+                w_a=w_a,
+            )
+            _LOGGER.info("posterior computed for detection...")
+        return result, result_with_bh_mass
 
     def p_Di(
         self,
-        detection: Detection,
-        possible_host_galaxies: List[PossibleHost],
-    ):
-        z_gw = np.linspace(0, 100, 1000) # TODO
-        integrant = 0.0
+        h: float,
+        Omega_m: float,
+        Omega_DE: float,
+        w_0: float,
+        w_a: float,
+        detection: pd.Series,
+        possible_host_galaxies: List[HostGalaxy],
+        evaluate_with_bh_mass: bool = False,
+    ) -> float:
+        z_gws = np.linspace(0, 10, 100)  # TODO
+        integrant = np.zeros(len(z_gws))
+        d_L = detection["dist"]
+        d_L_uncertainty = detection["delta_dist_delta_dist"]
+
+        weight: callable = self.weight
+        if evaluate_with_bh_mass:
+            weight: callable = self.weight_with_bh_mass
+
         for possible_host in possible_host_galaxies:
-            integrant += (
-                self.weight(possible_host)
-                / possible_host.redshift_uncertainty
-                / np.sqrt(
-                    detection.d_L_uncertainty**2 + possible_host.WL_uncertainty**2
-                )
-                * np.exp(
-                    -1
-                    / 2
-                    * (
-                        (possible_host.redshift - z_gw) ** 2
-                        / possible_host.redshift_uncertainty**2
-                        + (detection.d_L - self.d_zgw(z_gw)) ** 2
-                        / (detection.d_L_uncertainty**2 + detection.WL_uncertainty**2)
+
+            """WL_uncertainty = (
+                d_L * 0.066 * (1 - (1 + possible_host.z) ** (-0.25) / 0.25) ** (1.8)
+            )"""  # TODO check if correct
+            integrant += [
+                (
+                    weight(possible_host)
+                    / possible_host.z_error
+                    / np.sqrt(d_L_uncertainty**2)
+                    * np.exp(
+                        -1
+                        / 2
+                        * (
+                            (possible_host.z - z_gw) ** 2 / possible_host.z_error**2
+                            + (
+                                d_L
+                                - self.d_zgw(
+                                    z_gw=z_gw,
+                                    h=h,
+                                    Omega_m=Omega_m,
+                                    Omega_DE=Omega_DE,
+                                    w_0=w_0,
+                                    w_a=w_a,
+                                )
+                            )
+                            ** 2
+                            / (d_L_uncertainty**2)
+                        )
                     )
                 )
+                for z_gw in z_gws
+            ]
+
+        return np.trapz(integrant, z_gws) / 2 / np.pi
+
+    def d_zgw(
+        self,
+        z_gw: float,
+        h: float,
+        Omega_m: float,
+        Omega_DE: float,
+        w_0: float,
+        w_a: float,
+    ) -> float:
+        zs = np.linspace(0, z_gw, 100)
+        return (
+            C
+            * (1 + z_gw)
+            / h
+            * np.trapz(
+                1 / self.E(z=zs, Omega_m=Omega_m, Omega_DE=Omega_DE, w_0=w_0, w_a=w_a),
+                zs,
             )
+        )
 
-        return np.trapz(integrant, z_gw) / 2 / np.pi
+    def E(
+        self, z: float, Omega_m: float, Omega_DE: float, w_0: float, w_a: float
+    ) -> float:
+        return np.sqrt(Omega_m * (1 + z) ** 3 + Omega_DE * self.g(z, w_0=w_0, w_a=w_a))
 
-    def d_zgw(self, z_gw: float) -> float:
-        zs = np.linspace(0, z_gw, 1000)
-        return C*(1+z_gw)/H_0*np.trapz(1/self.E(zs), zs)
-    
-    def E(self, z: float) -> float:
-        return np.sqrt(self.cosmological_model.Omega_m*(1+z)**3 + self.cosmological_model.Omega_DE*self.g(z))
-    
-    def g(self, z: float) -> float:
-        return(1+z)**(3*(1+self.cosmological_model.w_0+self.cosmological_model.w_a))*np.exp(-3.*self.cosmological_model.w_a*z/(1+z))
+    def g(self, z: float, w_0: float, w_a: float) -> float:
+        return (1 + z) ** (3 * (1 + w_0 + w_a)) * np.exp(-3.0 * w_a * z / (1 + z))
 
-    def sum_in_p_Di(possible_host_galaxies: List[PossibleHost]) -> float:
-        return 1
-
-    def weight(possible_host: PossibleHost) -> float:
+    def weight(self, possible_host: HostGalaxy) -> float:
         return 1.0  # TBD
+
+    def weight_with_bh_mass(self, possible_host: HostGalaxy) -> float:
+        return 1.0  # TBD
+
+    def error_volume(self) -> float:
+        return 1.0
+
+    def use_detection(
+        self,
+        d_L: float,
+        d_L_error: float,
+        phi: float,
+        phi_error: float,
+        theta: float,
+        theta_error: float,
+    ) -> bool:
+        sky_localization_uncertainty = self._sky_localization_uncertainty(
+            phi_error=phi_error, theta=theta, theta_error=theta_error
+        )
+        distance_relative_error = d_L_error / d_L
+
+        if (distance_relative_error < 0.1) and (sky_localization_uncertainty < 0.2):
+            return True
+        return False
+
+    @staticmethod
+    def _sky_localization_uncertainty(
+        phi_error: float, theta: float, theta_error: float
+    ) -> float:
+        return (
+            2 * np.pi * np.abs(np.sin(theta)) * np.sqrt(phi_error**2 * theta_error**2)
+        )

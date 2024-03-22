@@ -10,10 +10,9 @@ import multiprocessing as mp
 from time import time
 
 from master_thesis_code.parameter_estimation.evaluation import DataEvaluation
-from master_thesis_code.estimate_hubble_constant import HubbleConstantEstimation
 from master_thesis_code.arguments import Arguments
 from master_thesis_code.exceptions import ParameterOutOfBoundsError
-from master_thesis_code.cosmological_model import Model1CrossCheck
+from master_thesis_code.cosmological_model import Model1CrossCheck, BayesianStatistics
 from master_thesis_code.galaxy_catalogue.handler import (
     GalaxyCatalogueHandler,
     HostGalaxy,
@@ -158,7 +157,7 @@ def data_simulation(
             quick_snr = parameter_estimation.compute_signal_to_noise_ratio(
                 use_snr_check_generator=True
             )
-            
+
             if quick_snr < cosmological_model.snr_threshold * 0.2:
                 _ROOT_LOGGER.info(
                     f"Quick SNR threshold check failed: {np.round(quick_snr, 3)} < {cosmological_model.snr_threshold * 0.2}."
@@ -240,12 +239,12 @@ def data_simulation(
 def evaluate(
     cosmological_model: Model1CrossCheck, galaxy_catalog: GalaxyCatalogueHandler
 ) -> None:
-    data_simulation = DataEvaluation()
-    hubble_constant_evaluation = HubbleConstantEstimation()
-    #data_simulation.visualize()
-    #data_simulation.evaluate_snr_analysis()
-    #Model1CrossCheck().visualize_emri_distribution()
-    hubble_constant_evaluation.bayesian_evaluation(galaxy_catalog)
+    # data_simulation = DataEvaluation()
+    hubble_constant_evaluation = BayesianStatistics()
+    # data_simulation.visualize()
+    # data_simulation.evaluate_snr_analysis()
+    # Model1CrossCheck().visualize_emri_distribution()
+    hubble_constant_evaluation.evaluate(galaxy_catalog)
 
 
 if __name__ == "__main__":
