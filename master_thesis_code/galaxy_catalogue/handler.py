@@ -4,10 +4,15 @@ import numpy as np
 from collections.abc import Iterable
 from dataclasses import dataclass
 import logging
-from typing import Tuple, List
+from typing import Tuple, List, Optional
 from matplotlib import pyplot as plt
 from mpl_toolkits.mplot3d import axes3d
 from master_thesis_code.constants import H0, C
+from master_thesis_code.physical_relations import (
+    dist_to_redshift,
+    dist_to_redshift_error_proagation,
+    convert_redshifted_mass_to_true_mass,
+)
 
 _LOGGER = logging.getLogger()
 
@@ -99,10 +104,11 @@ class GalaxyCatalogueHandler:
                 raise FileNotFoundError
 
         _LOGGER.info(
-            "Mapping catalog to spherical coordinates and using empirical relation to estimate BH mass."
+            "Mapping catalog to spherical coordinates and using empirical relation to estimate BH mass and convert to redshifted mass."
         )
         self._map_stellar_masses_to_BH_masses()
         self._map_angles_to_spherical_coordinates()
+        self._map_BH_masses_to_redshifted_masses()
 
     def parse_to_reduced_catalog(self, galaxy_catalogue_file_path: str) -> None:
         iterator = pd.read_csv(
@@ -137,19 +143,22 @@ class GalaxyCatalogueHandler:
         self,
         M_z,
         M_z_error,
-        dist,
-        dist_error,
+        z_min,
+        z_max,
         phi,
         phi_error,
         theta,
         theta_error,
         cutoff_multiplier: float = 2,
-    ) -> tuple[List[HostGalaxy], List[HostGalaxy]]:
+    ) -> Optional[Tuple[List[HostGalaxy], List[HostGalaxy]]]:
 
-        z = _convert_dist_to_redshift(dist * GPC_TO_MPC)
-        z_error = _convert_dist_to_redshift(dist_error * GPC_TO_MPC)
-
-        M, M_error = _convert_redshifted_mass_to_true_mass(M_z, M_z_error, z, z_error)
+        _LOGGER.info(
+            "Searching for possible hosts within:"
+            f"\nM = {M_z} +/+ {M_z_error*cutoff_multiplier}"
+            f"\n {z_min} <= z <= {z_max}"
+            f"\nphi = {phi} +/- {phi_error*cutoff_multiplier}"
+            f"\ntheta = {theta} +/- {theta_error*cutoff_multiplier}"
+        )
 
         possible_host_galaxies = self.reduced_galaxy_catalog.loc[
             (
@@ -169,25 +178,25 @@ class GalaxyCatalogueHandler:
                 <= phi + phi_error * cutoff_multiplier
             )
             & (
-                z - z_error * cutoff_multiplier
+                z_min
                 <= self.reduced_galaxy_catalog[InternalCatalogColumns.REDSHIFT]
                 + self.reduced_galaxy_catalog[InternalCatalogColumns.REDSHIFT_ERROR]
             )
             & (
-                self.reduced_galaxy_catalog[InternalCatalogColumns.REDSHIFT]
+                z_max
+                >= self.reduced_galaxy_catalog[InternalCatalogColumns.REDSHIFT]
                 - self.reduced_galaxy_catalog[InternalCatalogColumns.REDSHIFT_ERROR]
-                <= z + z_error * cutoff_multiplier
             )
         ]
 
         if possible_host_galaxies.empty:
-            _LOGGER.warning("No possible hosts. Returning empty lists.")
-            return [], []
+            _LOGGER.warning("No possible hosts. Returning None.")
+            return None
 
         possible_host_galaxies_with_BH_mass = possible_host_galaxies[
             (
                 (
-                    M - M_error * cutoff_multiplier
+                    M_z - M_z_error * cutoff_multiplier
                     <= possible_host_galaxies[InternalCatalogColumns.BH_MASS]
                     + possible_host_galaxies[
                         CatalogueColumns.STELLAR_MASS_ABSOULTE_ERROR.name
@@ -198,7 +207,7 @@ class GalaxyCatalogueHandler:
                     - possible_host_galaxies[
                         CatalogueColumns.STELLAR_MASS_ABSOULTE_ERROR.name
                     ]
-                    <= M + M_error * cutoff_multiplier
+                    <= M_z + M_z_error * cutoff_multiplier
                 )
             )
             | (possible_host_galaxies[InternalCatalogColumns.BH_MASS].isna())
@@ -213,7 +222,7 @@ class GalaxyCatalogueHandler:
             HostGalaxy(parameters)
             for _, parameters in possible_host_galaxies_with_BH_mass.iterrows()
         ]
-        return possible_host_galaxies, possible_host_galaxies_with_BH_mass
+        return (possible_host_galaxies, possible_host_galaxies_with_BH_mass)
 
     def _map_stellar_masses_to_BH_masses(self) -> None:
         BH_mass, BH_mass_error = _empiric_stellar_mass_to_BH_mass_relation(
@@ -233,6 +242,24 @@ class GalaxyCatalogueHandler:
             self.reduced_galaxy_catalog[InternalCatalogColumns.THETA_S] * np.pi / 180
             - np.pi / 2
         ) * (-1)
+
+    def _map_BH_masses_to_redshifted_masses(self) -> None:
+        self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS] = (
+            self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS]
+            * (1 + self.reduced_galaxy_catalog[InternalCatalogColumns.REDSHIFT])
+        )
+        self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS_ERROR] = np.sqrt(
+            (
+                self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS_ERROR]
+                * (1 + self.reduced_galaxy_catalog[InternalCatalogColumns.REDSHIFT])
+            )
+            ** 2
+            + (
+                self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS]
+                * self.reduced_galaxy_catalog[InternalCatalogColumns.REDSHIFT_ERROR]
+            )
+            ** 2
+        )
 
     def get_random_hosts_in_mass_range(
         self, lower_limit: float, upper_limit: float, max_dist: float = 4.5
@@ -317,15 +344,3 @@ def _empiric_MBH_to_M_stellar_relation(MBH_mass: float, MBH_mass_error: float) -
         + ((np.log(MBH_mass) - alpha) / beta**2) ** 2 * d_beta**2
     )
     return [stellar_mass, stellar_mass_error]
-
-
-def _convert_dist_to_redshift(dist: float) -> float:
-    return dist * H0 / C
-
-
-def _convert_redshifted_mass_to_true_mass(
-    M_z: float, M_z_error: float, z: float, z_error
-) -> float:
-    M = M_z / (1 + z)
-    M_err = np.sqrt((M_z_error / (1 + z)) ** 2 + (M_z * z_error / (1 + z) ** 2) ** 2)
-    return (M, M_err)

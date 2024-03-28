@@ -245,6 +245,7 @@ def evaluate(
     # data_simulation.evaluate_snr_analysis()
     # Model1CrossCheck().visualize_emri_distribution()
     hubble_constant_evaluation.evaluate(galaxy_catalog)
+    hubble_constant_evaluation.visualize()
 
 
 if __name__ == "__main__":
