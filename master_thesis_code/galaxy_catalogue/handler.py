@@ -109,6 +109,14 @@ class GalaxyCatalogueHandler:
         self._map_stellar_masses_to_BH_masses()
         self._map_angles_to_spherical_coordinates()
         self._map_BH_masses_to_redshifted_masses()
+        self._show_catalog_information()
+
+    def _show_catalog_information(self) -> None:
+        bh_mass_not_given = len(self.reduced_galaxy_catalog[self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS].isna()])
+        _LOGGER.info(f"Galaxies without stellar mass estimation: {bh_mass_not_given}")
+        bh_mass_given_statistics = self.reduced_galaxy_catalog[ ~self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS].isna()].describe()
+        _LOGGER.info(f"Galaxies with stellar mass estimation statistics\n: {bh_mass_given_statistics}")
+
 
     def parse_to_reduced_catalog(self, galaxy_catalogue_file_path: str) -> None:
         iterator = pd.read_csv(
@@ -199,18 +207,17 @@ class GalaxyCatalogueHandler:
                     M_z - M_z_error * cutoff_multiplier
                     <= possible_host_galaxies[InternalCatalogColumns.BH_MASS]
                     + possible_host_galaxies[
-                        CatalogueColumns.STELLAR_MASS_ABSOULTE_ERROR.name
+                        InternalCatalogColumns.BH_MASS_ERROR
                     ]
                 )
                 & (
-                    possible_host_galaxies[CatalogueColumns.STELLAR_MASS.name]
+                    possible_host_galaxies[InternalCatalogColumns.BH_MASS]
                     - possible_host_galaxies[
-                        CatalogueColumns.STELLAR_MASS_ABSOULTE_ERROR.name
+                        InternalCatalogColumns.BH_MASS_ERROR
                     ]
                     <= M_z + M_z_error * cutoff_multiplier
                 )
             )
-            | (possible_host_galaxies[InternalCatalogColumns.BH_MASS].isna())
         ]
 
         possible_host_galaxies = [

@@ -119,6 +119,10 @@ def convert_redshifted_mass_to_true_mass(
     M_err = np.sqrt((M_z_error / (1 + z)) ** 2 + (M_z * z_error / (1 + z) ** 2) ** 2)
     return (M, M_err)
 
+def convert_true_mass_to_redshifted_mass_with_distance(M: float, dist: float) -> float:
+    z = dist_to_redshift(dist)
+    return M*(1+z)
+
 
 def convert_true_mass_to_redshifted_mass(
     M: float, M_error: float, z: float, z_error

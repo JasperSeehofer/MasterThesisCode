@@ -20,9 +20,7 @@ from master_thesis_code.galaxy_catalogue.handler import (
 )
 from master_thesis_code.physical_relations import (
     dist,
-    dist_to_redshift,
-    dist_to_redshift_error_proagation,
-    convert_redshifted_mass_to_true_mass,
+    convert_true_mass_to_redshifted_mass_with_distance,
     get_redshift_outer_bounds,
 )
 
@@ -357,7 +355,7 @@ class BayesianStatistics:
         self.cramer_rao_bounds = pd.read_csv(
             "./simulations/cramer_rao_bounds_unbiased.csv"
         )
-        self.cramer_rao_bounds = self.cramer_rao_bounds.sample(5)
+        self.cramer_rao_bounds = self.cramer_rao_bounds.sample(3)
         _LOGGER.info(f"Loaded {len(self.cramer_rao_bounds)} detections...")
         self.cosmological_model = LamCDMScenario()
         self.h = self.cosmological_model.h.fiducial_value
@@ -464,7 +462,7 @@ class BayesianStatistics:
             except KeyError:
                 self.posterior_data[index] = []
                 self.posterior_data_with_bh_mass[index] = []
-
+            detection["M"] = convert_true_mass_to_redshifted_mass_with_distance(detection["M"], detection["dist"])
             self.detection = Detection(detection)
             z_min, z_max = get_redshift_outer_bounds(
                 distance=self.detection.d_L,
@@ -517,7 +515,7 @@ class BayesianStatistics:
 
         for possible_host in possible_host_galaxies:
             z_gws = np.sort(
-                np.random.normal(possible_host.z, 2 * possible_host.z_error, 1000)
+                np.random.normal(possible_host.z, 3 * possible_host.z_error, 1000)
             )
             if evaluate_with_bh_mass:
                 current_weight = self.weight_with_bh_mass(possible_host)
@@ -553,18 +551,18 @@ class BayesianStatistics:
             )
             _LOGGER.debug(
                 "gaussian computed with:\n"
-                f"zgw: {z_gws}\n"
+                f"zgw: [{z_gws[0]}, {z_gws[-1]}]\n"
                 f"host redshift: {possible_host.z}\n"
                 f"host redshift error: {possible_host.z_error}\n"
                 f"detection distance: {self.detection.d_L}\n"
                 f"distance error: {self.detection.d_L_uncertainty}\n"
-                f"distances: {distances}\n"
+                f"distances: [{distances[0]}, {distances[-1]} ]\n"
             )
             _LOGGER.debug(
-                f"integrating with: {normalization}, {current_weight}, {gaussian}"
+                f"integrating with:\n norm: {normalization}\nweight: {current_weight}\ngaussian: max={max(gaussian)} edges=[{gaussian[0]}, {gaussian[-1]}]"
             )
 
-            integral += np.trapz(normalization * current_weight * gaussian, z_gws)
+            integral += normalization * current_weight * np.trapz(gaussian, z_gws)
         if weight_sum == 0:
             return 0
 
