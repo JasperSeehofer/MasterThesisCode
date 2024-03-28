@@ -26,6 +26,8 @@ from master_thesis_code.physical_relations import (
 
 _LOGGER = logging.getLogger()
 
+DEFAULT_GALAXY_Z_ERROR = 0.0015
+
 
 @dataclass
 class CosmologicalParameter(Parameter):
@@ -355,7 +357,7 @@ class BayesianStatistics:
         self.cramer_rao_bounds = pd.read_csv(
             "./simulations/cramer_rao_bounds_unbiased.csv"
         )
-        self.cramer_rao_bounds = self.cramer_rao_bounds.sample(3)
+        self.cramer_rao_bounds = self.cramer_rao_bounds.sample(6)
         _LOGGER.info(f"Loaded {len(self.cramer_rao_bounds)} detections...")
         self.cosmological_model = LamCDMScenario()
         self.h = self.cosmological_model.h.fiducial_value
@@ -462,7 +464,9 @@ class BayesianStatistics:
             except KeyError:
                 self.posterior_data[index] = []
                 self.posterior_data_with_bh_mass[index] = []
-            detection["M"] = convert_true_mass_to_redshifted_mass_with_distance(detection["M"], detection["dist"])
+            detection["M"] = convert_true_mass_to_redshifted_mass_with_distance(
+                detection["M"], detection["dist"]
+            )
             self.detection = Detection(detection)
             z_min, z_max = get_redshift_outer_bounds(
                 distance=self.detection.d_L,
@@ -502,7 +506,9 @@ class BayesianStatistics:
             )
             self.posterior_data[index].append(event_posterior)
             self.posterior_data_with_bh_mass[index].append(event_posterior_with_bh_mass)
-            _LOGGER.debug(event_posterior, event_posterior_with_bh_mass)
+            _LOGGER.debug(
+                f"event likelihood: {event_posterior}\nevent likelihood with bh mass: {event_posterior_with_bh_mass}"
+            )
             _LOGGER.debug("posteriors computed for detection...")
 
     def p_Di(
@@ -515,7 +521,7 @@ class BayesianStatistics:
 
         for possible_host in possible_host_galaxies:
             z_gws = np.sort(
-                np.random.normal(possible_host.z, 3 * possible_host.z_error, 1000)
+                np.random.normal(possible_host.z, 4 * possible_host.z_error, 1000)
             )
             if evaluate_with_bh_mass:
                 current_weight = self.weight_with_bh_mass(possible_host)
