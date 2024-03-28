@@ -1,9 +1,11 @@
 from dataclasses import dataclass
-from typing import List
+from typing import List, Dict
+import json
 import pandas as pd
 import os
 import numpy as np
 import logging
+from scipy.stats import multivariate_normal
 from master_thesis_code.datamodels.parameter_space import (
     ParameterSpace,
     Parameter,
@@ -20,6 +22,8 @@ from master_thesis_code.physical_relations import (
     dist,
     dist_to_redshift,
     dist_to_redshift_error_proagation,
+    convert_redshifted_mass_to_true_mass,
+    get_redshift_outer_bounds,
 )
 
 _LOGGER = logging.getLogger()
@@ -51,6 +55,9 @@ class Detection:
         self.theta_error = np.sqrt(parameters["delta_qS_delta_qS"])
         self.M = parameters["M"]
         self.M_uncertainty = np.sqrt(parameters["delta_M_delta_M"])
+        self.theta_phi_covariance = parameters["delta_phiS_delta_qS"]
+        self.M_phi_covariance = parameters["delta_phiS_delta_M"]
+        self.M_theta_covariance = parameters["delta_qS_delta_M"]
 
 
 @dataclass
@@ -342,11 +349,16 @@ class BayesianStatistics:
     Omega_DE: float
     w_0: float
     w_a: float
+    h_values: List = []
+    posterior_data: Dict[int, List[float]] = {}
+    posterior_data_with_bh_mass: Dict[int, List[float]] = {}
 
     def __init__(self) -> None:
         self.cramer_rao_bounds = pd.read_csv(
             "./simulations/cramer_rao_bounds_unbiased.csv"
         )
+        self.cramer_rao_bounds = self.cramer_rao_bounds.sample(5)
+        _LOGGER.info(f"Loaded {len(self.cramer_rao_bounds)} detections...")
         self.cosmological_model = LamCDMScenario()
         self.h = self.cosmological_model.h.fiducial_value
         self.Omega_m = self.cosmological_model.Omega_m.fiducial_value
@@ -354,31 +366,54 @@ class BayesianStatistics:
         self.w_0 = self.cosmological_model.w_0
         self.w_a = self.cosmological_model.w_a
 
-    def evaluate(self, galaxy_catalog: GalaxyCatalogueHandler) -> None:
-        _LOGGER.info("Evaluating Bayesian statistics...")
-        posteriors = []
-        posteriors_with_bh_mass = []
+    def visualize(self) -> None:
+        with open("simulations/bayesian_statistics_posteriors.json", "r") as file:
+            self.posterior_data = json.load(file)
+        with open(
+            "simulations/bayesian_statistics_posteriors_with_bh_mass.json", "r"
+        ) as file:
+            self.posterior_data_with_bh_mass = json.load(file)
+
         h_samples = np.linspace(
             self.cosmological_model.h.lower_limit,
             self.cosmological_model.h.upper_limit,
             20,
         )
-        _LOGGER.info(f"Computing posteriors for h = {h_samples}...")
+        posteriors = np.ones(len(h_samples))
+        posteriors_with_bh_mass = np.ones(len(h_samples))
 
-        for h in h_samples:
-            self.h = h
-            posterior, posterior_with_bh_mass = self.p_D(
-                galaxy_catalog=galaxy_catalog,
-            )
-            _LOGGER.info(f"posterior comupted for h = {h}")
-            _LOGGER.info(
-                f"posterior: {posterior}, posterior_with_bh_mass: {posterior_with_bh_mass}"
-            )
-            posteriors.append(posterior)
-            posteriors_with_bh_mass.append(posterior_with_bh_mass)
+        plt.figure(figsize=(16, 9))
+        for detection_index, posterior in self.posterior_data.items():
+            if len(posterior) < len(h_samples):
+                continue
+            plt.scatter(h_samples, posterior, label="without BH mass")
+            plt.xlabel("Hubble constant h")
+            plt.ylabel("Posterior")
+            plt.legend()
+        plt.savefig(f"saved_figures/bayesian_statistics_event_posteriors.png")
+        plt.close()
 
-        posteriors = np.array(posteriors)
-        posteriors_with_bh_mass = np.array(posteriors_with_bh_mass)
+        plt.figure(figsize=(16, 9))
+        for detection_index, posterior in self.posterior_data_with_bh_mass.items():
+            if len(posterior) < len(h_samples):
+                continue
+            plt.scatter(h_samples, posterior, label="with BH mass")
+            plt.xlabel("Hubble constant h")
+            plt.ylabel("Posterior")
+            plt.legend()
+        plt.savefig(
+            f"saved_figures/bayesian_statistics_event_posteriors_with_bh_mass.png"
+        )
+        plt.close()
+
+        for index, posterior in self.posterior_data.items():
+            if len(posterior) < len(h_samples):
+                continue
+            posteriors *= np.array(posterior)
+        for index, posterior in self.posterior_data_with_bh_mass.items():
+            if len(posterior) < len(h_samples):
+                continue
+            posteriors_with_bh_mass *= np.array(posterior)
 
         fig = plt.figure(figsize=(16, 9))
         plt.scatter(h_samples, posteriors, label="without BH mass")
@@ -389,139 +424,199 @@ class BayesianStatistics:
         plt.savefig("saved_figures/bayesian_statistics.png")
         plt.close()
 
+    def evaluate(self, galaxy_catalog: GalaxyCatalogueHandler) -> None:
+        _LOGGER.info("Evaluating Bayesian statistics...")
+        h_samples = np.linspace(
+            self.cosmological_model.h.lower_limit,
+            self.cosmological_model.h.upper_limit,
+            20,
+        )
+        _LOGGER.info(f"Computing posteriors for h = {h_samples}...")
+        self.h_values = h_samples
+        for step, h in enumerate(h_samples):
+            self._step = step
+            self.h = h
+            self.p_D(
+                galaxy_catalog=galaxy_catalog,
+            )
+            _LOGGER.info(f"posteriors comupted for h = {h}")
+
+        with open("simulations/bayesian_statistics_posteriors.json", "w") as file:
+            json.dump(self.posterior_data, file)
+
+        with open(
+            "simulations/bayesian_statistics_posteriors_with_bh_mass.json", "w"
+        ) as file:
+            json.dump(self.posterior_data_with_bh_mass, file)
+
     def p_D(
         self,
         galaxy_catalog: GalaxyCatalogueHandler,
-    ) -> tuple[float, float]:
-        result = 1
-        result_with_bh_mass = 1
+    ) -> None:
+        count = 0
         for index, detection in self.cramer_rao_bounds.iterrows():
+            _LOGGER.info(
+                f"Progess: h: {self._step}/{len(self.h_values)}, detections: {count}/{len(self.cramer_rao_bounds)}"
+            )
+            count += 1
+            try:
+                self.posterior_data[index]
+            except KeyError:
+                self.posterior_data[index] = []
+                self.posterior_data_with_bh_mass[index] = []
+
             self.detection = Detection(detection)
-            _LOGGER.info(f"Processing detection {self.detection}")
-            parameters = {
-                "dist": detection["dist"],
-                "dist_error": np.sqrt(detection["delta_dist_delta_dist"]),
-                "phi": detection["phiS"],
-                "phi_error": np.sqrt(detection["delta_phiS_delta_phiS"]),
-                "theta": detection["qS"],
-                "theta_error": np.sqrt(detection["delta_qS_delta_qS"]),
-                "M_z": detection["M"],
-                "M_z_error": np.sqrt(detection["delta_M_delta_M"]),
-            }
+            z_min, z_max = get_redshift_outer_bounds(
+                distance=self.detection.d_L,
+                distance_error=self.detection.d_L_uncertainty,
+                h_min=self.cosmological_model.h.lower_limit,
+                h_max=self.cosmological_model.h.upper_limit,
+                Omega_m_min=self.cosmological_model.Omega_m.lower_limit,
+                Omega_m_max=self.cosmological_model.Omega_m.upper_limit,
+            )
 
             if not self.use_detection():
-                _LOGGER.info("detection skipped...")
+                _LOGGER.debug("detection skipped...")
                 continue
 
-            possible_hosts, possible_hosts_with_bh_mass = (
-                galaxy_catalog.get_possible_hosts(**parameters)
+            possible_hosts = galaxy_catalog.get_possible_hosts(
+                z_min=z_min,
+                z_max=z_max,
+                phi=self.detection.phi,
+                phi_error=self.detection.phi_error,
+                theta=self.detection.theta,
+                theta_error=self.detection.theta_error,
+                M_z=self.detection.M,
+                M_z_error=self.detection.M_uncertainty,
             )
+
+            if possible_hosts is None:
+                _LOGGER.debug("no possible hosts found...")
+                continue
+            possible_hosts, possible_hosts_with_bh_mass = possible_hosts
             _LOGGER.info(
                 f"possible hosts found {len(possible_hosts)}/{len(possible_hosts_with_bh_mass)}..."
             )
-            result *= self.p_Di(possible_host_galaxies=possible_hosts)
-            _LOGGER.info("posterior computed for detection without bh mass...")
-            result_with_bh_mass *= self.p_Di(
+            event_posterior = self.p_Di(possible_host_galaxies=possible_hosts)
+            event_posterior_with_bh_mass = self.p_Di(
                 possible_host_galaxies=possible_hosts_with_bh_mass,
                 evaluate_with_bh_mass=True,
             )
-            _LOGGER.info("posterior computed for detection...")
-        return result, result_with_bh_mass
+            self.posterior_data[index].append(event_posterior)
+            self.posterior_data_with_bh_mass[index].append(event_posterior_with_bh_mass)
+            _LOGGER.debug(event_posterior, event_posterior_with_bh_mass)
+            _LOGGER.debug("posteriors computed for detection...")
 
     def p_Di(
         self,
         possible_host_galaxies: List[HostGalaxy],
         evaluate_with_bh_mass: bool = False,
     ) -> float:
-        z_gws = np.linspace(0, 10, 100)  # TODO
-        integrant = np.zeros(len(z_gws))
-
-        weight: callable = self.weight
-        if evaluate_with_bh_mass:
-            weight: callable = self.weight_with_bh_mass
+        integral = 0.0
         weight_sum = 0.0
+
         for possible_host in possible_host_galaxies:
+            z_gws = np.sort(
+                np.random.normal(possible_host.z, 2 * possible_host.z_error, 1000)
+            )
             if evaluate_with_bh_mass:
                 current_weight = self.weight_with_bh_mass(possible_host)
             else:
                 current_weight = self.weight(possible_host)
-            _LOGGER.debug(f"weight: {current_weight}")
             weight_sum += current_weight
 
             """WL_uncertainty = (
                 d_L * 0.066 * (1 - (1 + possible_host.z) ** (-0.25) / 0.25) ** (1.8)
             )"""  # TODO check if correct
-            integrant += np.array(
-                [
-                    (
-                        current_weight
-                        / possible_host.z_error
-                        / np.sqrt(self.detection.d_L_uncertainty**2)
-                        * np.exp(
-                            -1
-                            / 2
-                            * (
-                                (possible_host.z - z_gw) ** 2 / possible_host.z_error**2
-                                + (
-                                    self.detection.d_L
-                                    - dist(
-                                        redshift=z_gw,
-                                        h=self.h,
-                                        Omega_m=self.Omega_m,
-                                        Omega_de=self.Omega_DE,
-                                        w_0=self.w_0,
-                                        w_a=self.w_a,
-                                    )
-                                )
-                                ** 2
-                                / (self.detection.d_L_uncertainty**2)
-                            )
-                        )
-                    )
-                    for z_gw in z_gws
-                ]
+
+            normalization = 1 / (
+                2 * np.pi * possible_host.z_error * self.detection.d_L_uncertainty
+            )
+            distances = np.vectorize(
+                dist, excluded=["h", "Omega_m", "Omega_de", "w_0", "w_a"]
+            )(
+                z_gws,
+                h=self.h,
+                Omega_m=self.Omega_m,
+                Omega_de=self.Omega_DE,
+                w_0=self.w_0,
+                w_a=self.w_a,
+            )
+            gaussian = np.exp(
+                -1
+                / 2
+                * (
+                    (possible_host.z - z_gws) ** 2 / possible_host.z_error**2
+                    + (self.detection.d_L - distances) ** 2
+                    / self.detection.d_L_uncertainty**2
+                )
+            )
+            _LOGGER.debug(
+                "gaussian computed with:\n"
+                f"zgw: {z_gws}\n"
+                f"host redshift: {possible_host.z}\n"
+                f"host redshift error: {possible_host.z_error}\n"
+                f"detection distance: {self.detection.d_L}\n"
+                f"distance error: {self.detection.d_L_uncertainty}\n"
+                f"distances: {distances}\n"
+            )
+            _LOGGER.debug(
+                f"integrating with: {normalization}, {current_weight}, {gaussian}"
             )
 
-        return np.trapz(integrant, z_gws) / 2 / np.pi / weight_sum
+            integral += np.trapz(normalization * current_weight * gaussian, z_gws)
+        if weight_sum == 0:
+            return 0
+
+        return integral / weight_sum
 
     def weight(self, possible_host: HostGalaxy) -> float:
         """Ignore covariance for now"""
-        z_gw = dist_to_redshift(
-            self.detection.d_L, self.h, self.Omega_m, self.Omega_DE, self.w_0, self.w_a
+        multivariate_normal_distribution = multivariate_normal(
+            mean=[self.detection.phi, self.detection.theta],
+            cov=[
+                [self.detection.phi_error**2, self.detection.theta_phi_covariance],
+                [self.detection.theta_phi_covariance, self.detection.theta_error**2],
+            ],
         )
-        z_gw_error = dist_to_redshift_error_proagation(
-            self.detection.d_L,
-            self.detection.d_L_uncertainty,
-            self.h,
-            self.Omega_m,
-            self.Omega_DE,
-            self.w_0,
-            self.w_a,
+        weight = multivariate_normal_distribution.pdf(
+            [possible_host.phiS, possible_host.qS]
         )
-        weight_z = self.gaussian(possible_host.z, mu=z_gw, sigma=z_gw_error)
-        weight_phi = self.gaussian(
-            possible_host.phiS,
-            mu=self.detection.phi,
-            sigma=self.detection.phi_error,
-        )
-        weight_theta = self.gaussian(
-            possible_host.qS,
-            mu=self.detection.theta,
-            sigma=self.detection.theta_error,
-        )
-        return weight_z * weight_phi * weight_theta
+        _LOGGER.debug(f"weight: {weight}")
+        return weight
 
     def weight_with_bh_mass(self, possible_host: HostGalaxy) -> float:
-        weight = self.weight(possible_host)
-        weight_M = self.gaussian(
-            possible_host.M,
-            mu=self.detection.M,
-            sigma=self.detection.M_uncertainty,
+        multivariate_normal_distribution = multivariate_normal(
+            mean=[self.detection.phi, self.detection.theta, self.detection.M],
+            cov=[
+                [
+                    self.detection.phi_error**2,
+                    self.detection.theta_phi_covariance,
+                    self.detection.M_phi_covariance,
+                ],
+                [
+                    self.detection.theta_phi_covariance,
+                    self.detection.theta_error**2,
+                    self.detection.M_theta_covariance,
+                ],
+                [
+                    self.detection.M_phi_covariance,
+                    self.detection.M_theta_covariance,
+                    self.detection.M_uncertainty**2,
+                ],
+            ],
         )
-        return weight * weight_M
-
-    def gaussian(self, x: float, mu: float, sigma: float) -> float:
-        return np.exp(-1 / 2 * ((x - mu) / sigma) ** 2) / np.sqrt(2 * np.pi * sigma**2)
+        weight = multivariate_normal_distribution.pdf(
+            [possible_host.phiS, possible_host.qS, possible_host.M]
+        )
+        _LOGGER.debug(
+            "compute weight with bh mass with:\n"
+            f"observed mass: {self.detection.M}\n"
+            f"observed mass error: {self.detection.M_uncertainty}\n"
+            f"host mass: {possible_host.M}\n"
+            f"weight_with_bh_mass: {weight}"
+        )
+        return weight
 
     def use_detection(self) -> bool:
         sky_localization_uncertainty = self._sky_localization_uncertainty(
