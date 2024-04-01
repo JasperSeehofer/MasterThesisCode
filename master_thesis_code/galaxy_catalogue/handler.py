@@ -284,10 +284,10 @@ class GalaxyCatalogueHandler:
     def get_random_hosts_in_mass_range(
         self, lower_limit: float, upper_limit: float, max_dist: float = 4.5
     ) -> Iterable:
-        NUMBER_OF_HOSTS = 500
+        NUMBER_OF_HOSTS = 200
         thetas = np.arccos(np.random.uniform(-1.0, 1.0, NUMBER_OF_HOSTS))
         phis = np.random.uniform(0.0, 2 * np.pi, NUMBER_OF_HOSTS)
-        redshifts = np.random.uniform(0.0, max_dist, NUMBER_OF_HOSTS)
+        redshifts = np.random.uniform(0.001, max_dist, NUMBER_OF_HOSTS)
 
         restricted_galaxy_catalogue = self.reduced_galaxy_catalog[
             (self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS] >= lower_limit)
@@ -300,6 +300,10 @@ class GalaxyCatalogueHandler:
                 <= max_dist
             )
         ]
+
+        _LOGGER.debug(
+            f"restricted_galaxy_catalogue: {restricted_galaxy_catalogue.shape[0]} galaxies."
+        )
 
 
         return_list = []
