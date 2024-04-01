@@ -558,14 +558,12 @@ class ParameterEstimation:
         snr_analysis.to_csv(SNR_ANALYSIS_PATH, index=False)
 
     def save_not_detected(self, snr: float) -> None:
-        file_exists = False
         try:
             snr_analysis = pd.read_csv(UNDETECTED_EVENTS_PATH)
-            file_exists = True
             
         except FileNotFoundError:
             parameters_list = list(self.parameter_space._parameters_to_dict().keys())
-            parameters_list.extend(["T", "SNR", "generation_time"])
+            parameters_list.extend(["T", "dt", "SNR", "generation_time"])
             snr_analysis = pd.DataFrame(columns=parameters_list)
 
         new_snr_analysis_dict = self.parameter_space._parameters_to_dict() | {
@@ -576,7 +574,7 @@ class ParameterEstimation:
         }
 
         new_snr_analysis = pd.DataFrame([new_snr_analysis_dict])
-        if not file_exists:
+        if snr_analysis.empty:
             snr_analysis = new_snr_analysis
         else:
             snr_analysis = pd.concat([snr_analysis, new_snr_analysis], ignore_index=True)
