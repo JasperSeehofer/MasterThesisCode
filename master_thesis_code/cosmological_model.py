@@ -31,7 +31,7 @@ from master_thesis_code.physical_relations import (
 _LOGGER = logging.getLogger()
 
 DEFAULT_GALAXY_Z_ERROR = 0.0015
-
+GALAXY_WEIGHTS = "galaxy_weights"
 
 @dataclass
 class CosmologicalParameter(Parameter):
@@ -461,6 +461,7 @@ class BayesianStatistics:
         galaxy_catalog: GalaxyCatalogueHandler,
     ) -> None:
         count = 0
+        self.posterior_data[GALAXY_WEIGHTS] = {}
         for index, detection in self.cramer_rao_bounds.iterrows():
             _LOGGER.info(
                 f"Progess: h: {self._step}/{len(self.h_values)}, detections: {count}/{len(self.cramer_rao_bounds)}"
@@ -571,10 +572,19 @@ class BayesianStatistics:
         integral_with_bh_mass = 0.0
         weight_sum_with_bh_mass = 0.0
 
+        weights = list(
+                    zip(
+                        [galaxy.catalog_index for galaxy in possible_host_galaxies_with_bh_mass],
+                        results_with_bh_mass
+                        
+                    )
+                )
 
-        self.posterior_data_with_bh_mass[detection_index]["contributions"] = results_with_bh_mass[0]
-        self.posterior_data_with_bh_mass[detection_index]["weights"] = results_with_bh_mass[1]
-        self.posterior_data_with_bh_mass[detection_index]["contributions_with_bh_mass"] = results_with_bh_mass[2]
+        try:
+            self.posterior_data_with_bh_mass[GALAXY_WEIGHTS][detection_index].append(weights)
+        except KeyError:
+            self.posterior_data_with_bh_mass[GALAXY_WEIGHTS][detection_index] = [weights]
+            
         for result in results_with_bh_mass: 
             self.posterior_data_with_bh_mass[detection_index]
             # for evaluation without mass

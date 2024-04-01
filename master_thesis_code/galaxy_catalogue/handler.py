@@ -290,16 +290,17 @@ class GalaxyCatalogueHandler:
         redshifts = np.random.uniform(0.0, max_dist, NUMBER_OF_HOSTS)
 
         restricted_galaxy_catalogue = self.reduced_galaxy_catalog[
-            (self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS] + self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS_ERROR] >= lower_limit)
+            (self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS] >= lower_limit)
             & (
-                self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS] - self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS_ERROR]
+                self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS]
                 <= upper_limit
             )
             & (
-                self.reduced_galaxy_catalog[InternalCatalogColumns.REDSHIFT] - self.reduced_galaxy_catalog[InternalCatalogColumns.REDSHIFT_ERROR]
+                self.reduced_galaxy_catalog[InternalCatalogColumns.REDSHIFT]
                 <= max_dist
             )
         ]
+
 
         return_list = []
         for theta, phi, redshift in zip(thetas, phis, redshifts):
