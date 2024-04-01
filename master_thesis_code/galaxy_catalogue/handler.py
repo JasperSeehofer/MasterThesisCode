@@ -287,7 +287,7 @@ class GalaxyCatalogueHandler:
         NUMBER_OF_HOSTS = 200
         thetas = np.arccos(np.random.uniform(-1.0, 1.0, NUMBER_OF_HOSTS))
         phis = np.random.uniform(0.0, 2 * np.pi, NUMBER_OF_HOSTS)
-        redshifts = np.random.uniform(0.001, max_dist, NUMBER_OF_HOSTS)
+        redshifts = np.random.uniform(0.0, max_dist, NUMBER_OF_HOSTS)
 
         restricted_galaxy_catalogue = self.reduced_galaxy_catalog[
             (self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS] >= lower_limit)
@@ -327,18 +327,7 @@ class GalaxyCatalogueHandler:
                 ** 2
             ).idxmin()
             host: pd.Series = restricted_galaxy_catalogue.loc[closest_host_index]
-
-            return_list.append(
-                HostGalaxy(
-                    phiS=host[InternalCatalogColumns.PHI_S],
-                    qS=host[InternalCatalogColumns.THETA_S],
-                    z=host[InternalCatalogColumns.REDSHIFT],
-                    z_error=host[InternalCatalogColumns.REDSHIFT_ERROR],
-                    M=host[InternalCatalogColumns.BH_MASS],
-                    M_error=host[InternalCatalogColumns.BH_MASS_ERROR],
-                    catalog_index=host.name,
-                )
-            )
+            return_list.append(HostGalaxy(host))
         return iter(return_list)
 
 
