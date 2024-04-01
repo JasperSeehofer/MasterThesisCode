@@ -141,16 +141,45 @@ def get_redshift_outer_bounds(
     Omega_m_max: float,
     w_0: float = W_0,
     w_a: float = W_A,
-) -> tuple[float, float, float, float]:
+) -> tuple[float, float]:
     """
     Calculate the outer bounds for the redshift for a given luminosity distance and error w.r.t LamCDM model.
     """
     Omega_de_min = 1 - Omega_m_min
     Omega_de_max = 1 - Omega_m_max
-    z_min = dist_to_redshift(
-        distance - 2 * distance_error, h_min, Omega_m_min, Omega_de_min, w_0, w_a
-    )
+    if distance - 2 * distance_error < 0:
+        z_min = 0
+    else:
+        z_min = dist_to_redshift(
+            distance - 2 * distance_error, h_min, Omega_m_min, Omega_de_min, w_0, w_a
+        )
     z_max = dist_to_redshift(
         distance + 2 * distance_error, h_max, Omega_m_max, Omega_de_max, w_0, w_a
     )
-    return z_min * h_min, z_max * h_max
+    return z_min, z_max
+
+def visualize():
+    import matplotlib.pyplot as plt
+    zs = np.linspace(0, 2, 1000)
+    distances = [dist(z) for z in zs]
+    plt.plot(zs, distances)
+    plt.xlabel("Redshift")
+    plt.ylabel("Distance [Gpc]")
+    plt.show()
+    redshifts = [dist_to_redshift(d) for d in distances]
+    plt.plot(distances, redshifts)
+    plt.xlabel("Distance [Gpc]")
+    plt.ylabel("Redshift")
+    plt.show()
+
+    # check lower and upper bound
+    distance = 0.5
+    distance_error = 0.05
+    for h in np.linspace(0.6, 0.83, 3):
+        for Omega_m in np.linspace(0.04, 0.5, 3):
+            z = dist_to_redshift(distance, h, h, Omega_m, Omega_m)
+            plt.scatter([z], [h], label=f"Omega_m={Omega_m}, h={h}")
+    plt.xlabel("Redshift")
+    plt.ylabel("Hubble constant")
+    plt.legend()
+    plt.show()

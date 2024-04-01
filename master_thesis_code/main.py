@@ -17,6 +17,7 @@ from master_thesis_code.galaxy_catalogue.handler import (
     GalaxyCatalogueHandler,
     HostGalaxy,
 )
+from master_thesis_code import physical_relations
 
 # logging setup
 _ROOT_LOGGER = logging.getLogger()
@@ -136,21 +137,20 @@ def data_simulation(
         )
         iteration += 1
 
-        """
         try:
             host_galaxy = next(host_galaxies)
         except StopIteration:
             host_galaxies = galaxy_catalog.get_random_hosts_in_mass_range(
                 parameter_estimation.parameter_space.M.lower_limit,
                 parameter_estimation.parameter_space.M.upper_limit,
-                0.4,
+                0.5,
             )  # CAREFUL dist RESTRICTION ADDED BY HAND FOR FASTER DETECTION RESULTS
             host_galaxy = next(host_galaxies)
         assert isinstance(host_galaxy, HostGalaxy)
-        """
+
         parameter_estimation.parameter_space.randomize_parameters()
 
-        # parameter_estimation.parameter_space.set_host_galaxy_parameters(host_galaxy)
+        parameter_estimation.parameter_space.set_host_galaxy_parameters(host_galaxy)
 
         try:
             warnings.filterwarnings("error")
@@ -223,7 +223,7 @@ def data_simulation(
         parameter_estimation.save_cramer_rao_bound(
             cramer_rao_bound_dictionary=cramer_rao_bounds,
             snr=snr,
-            # host_galaxy_index=host_galaxy.catalog_index,
+            host_galaxy_index=host_galaxy.catalog_index,
         )
         counter += 1
 
@@ -239,12 +239,13 @@ def data_simulation(
 def evaluate(
     cosmological_model: Model1CrossCheck, galaxy_catalog: GalaxyCatalogueHandler
 ) -> None:
-    data_simulation = DataEvaluation()
+    physical_relations.visualize()
+    #data_simulation = DataEvaluation()
     hubble_constant_evaluation = BayesianStatistics()
-    data_simulation.visualize()
+    #data_simulation.visualize()
     #data_simulation.evaluate_snr_analysis()
-    Model1CrossCheck().visualize_emri_distribution()
-    hubble_constant_evaluation.evaluate(galaxy_catalog)
+    #Model1CrossCheck().visualize_emri_distribution()
+    #hubble_constant_evaluation.evaluate(galaxy_catalog)
     hubble_constant_evaluation.visualize()
 
 

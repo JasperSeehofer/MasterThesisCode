@@ -3,6 +3,7 @@ from master_thesis_code.constants import INFINITY
 import numpy as np
 import random
 from master_thesis_code.galaxy_catalogue.handler import HostGalaxy
+from master_thesis_code.physical_relations import dist
 
 
 def uniform(lower_limit: float, upper_limit: float) -> float:
@@ -107,7 +108,7 @@ class ParameterSpace:
         self.M.value = host_galaxy.M
         self.phiS.value = host_galaxy.phiS
         self.qS.value = host_galaxy.qS
-        self.dist.value = host_galaxy.dist
+        self.dist.value = dist(host_galaxy.z)
 
     def _parameters_to_dict(self) -> dict:
         return {
