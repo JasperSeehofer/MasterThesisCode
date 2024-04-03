@@ -239,14 +239,14 @@ def data_simulation(
 def evaluate(
     cosmological_model: Model1CrossCheck, galaxy_catalog: GalaxyCatalogueHandler
 ) -> None:
-    physical_relations.visualize()
+    #physical_relations.visualize()
     #data_simulation = DataEvaluation()
     hubble_constant_evaluation = BayesianStatistics()
     #data_simulation.visualize()
     #data_simulation.evaluate_snr_analysis()
     #Model1CrossCheck().visualize_emri_distribution()
     #hubble_constant_evaluation.evaluate(galaxy_catalog)
-    hubble_constant_evaluation.visualize()
+    hubble_constant_evaluation.visualize(galaxy_catalog=galaxy_catalog)
 
 
 if __name__ == "__main__":

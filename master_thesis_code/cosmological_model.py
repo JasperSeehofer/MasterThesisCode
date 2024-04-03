@@ -358,10 +358,11 @@ class BayesianStatistics:
     posterior_data_with_bh_mass: Dict[int, List[float]] = {}
 
     def __init__(self) -> None:
-        self.cramer_rao_bounds = pd.read_csv(
+        self.full_cramer_rao_bounds = pd.read_csv(
             "./simulations/cramer_rao_bounds_unbiased.csv"
         )
-        self.cramer_rao_bounds = self.cramer_rao_bounds.sample(25)
+        _LOGGER.debug(f"cramer_bounds: {self.full_cramer_rao_bounds.describe()}")
+        self.cramer_rao_bounds = self.full_cramer_rao_bounds.sample(15)
         _LOGGER.info(f"Loaded {len(self.cramer_rao_bounds)} detections...")
         self.cosmological_model = LamCDMScenario()
         self.h = self.cosmological_model.h.fiducial_value
@@ -370,7 +371,7 @@ class BayesianStatistics:
         self.w_0 = self.cosmological_model.w_0
         self.w_a = self.cosmological_model.w_a
 
-    def visualize(self) -> None:
+    def visualize(self, galaxy_catalog: GalaxyCatalogueHandler) -> None:
         with open("simulations/bayesian_statistics_posteriors.json", "r") as file:
             self.posterior_data = json.load(file)
         with open(
@@ -431,6 +432,98 @@ class BayesianStatistics:
         plt.savefig("saved_figures/bayesian_statistics.png")
         plt.close()
 
+        # visualize galaxy weights
+        weight_data = self.posterior_data_with_bh_mass[GALAXY_WEIGHTS]
+
+        
+        for detection_index, host_galaxy_weights in weight_data.items():
+            # sort by weight and use first 1000 galaxies
+            detection = Detection(self.full_cramer_rao_bounds.iloc[int(detection_index)])
+            host_galaxy_weights = host_galaxy_weights[0]
+            host_galaxy_weights = sorted(
+                host_galaxy_weights, key=lambda x: x[1][1], reverse=True
+            )
+            if len(host_galaxy_weights) > 2000:
+                host_galaxy_weights = host_galaxy_weights[:2000]
+            # create 2D plot for phi and qS
+            fig, ax = plt.subplots(figsize=(16, 9))
+            ax.set_title(f"Galaxy weights for detection {detection_index}")
+            # plot lines for detection (true values)
+            ax.axvline(detection.phi, color="r", linestyle="--")
+            ax.axhline(detection.theta, color="r", linestyle="--")
+            ax.set_xlabel("phiS")
+            ax.set_ylabel("qS")
+            
+            for host_galaxy_index, weights in host_galaxy_weights:
+                likelihood = weights[0]
+                weight = weights[1]
+                weight_bh_mass = weights[2]
+                host_galaxy = galaxy_catalog.get_host_galaxy_by_index(int(host_galaxy_index))
+                scatter = ax.scatter(
+                    host_galaxy.phiS,
+                    host_galaxy.qS,
+                    c=weight,
+                    cmap="viridis",
+                )
+            cbar = plt.colorbar(scatter)
+            cbar.set_label("likelihood")
+            plt.savefig(
+                f"saved_figures/galaxy_weights_detection_{detection_index}_phi_theta.png", dpi=300
+            )
+            plt.close()
+
+            # create plot for M weights
+            fig= plt.figure(figsize=(16, 9))
+            ax = fig.add_subplot(111)
+            ax.set_title(f"Galaxy mass weights for detection {detection_index}")
+            # plot lines for detection (true values)
+            ax.axvline(detection.M, color="r", linestyle="--")
+            ax.set_xlabel("M")
+            ax.set_ylabel("mass weight")
+            for host_galaxy_index, weights in host_galaxy_weights:
+                likelihood = weights[0]
+                weight = weights[1]
+                weight_bh_mass = weights[2]
+                host_galaxy = galaxy_catalog.get_host_galaxy_by_index(int(host_galaxy_index))
+                ax.scatter(
+                    host_galaxy.M,
+                    weight_bh_mass,
+                )
+            plt.savefig(
+                f"saved_figures/galaxy_weights_detection_{detection_index}_mass.png", dpi=300
+            )
+            plt.close()
+
+            # create 3d plot for phi, qS, M with colormap for product of weight and mass weight
+            fig = plt.figure(figsize=(16, 9))
+            ax = fig.add_subplot(111, projection="3d")
+            ax.set_title(f"Galaxy likelihood for detection {detection_index}")
+            # plot lines for detection (true values)
+            ax.axvline(detection.phi, color="r", linestyle="--")
+            ax.axhline(detection.theta, color="r", linestyle="--")
+            ax.set_xlabel("phiS")
+            ax.set_ylabel("qS")
+            ax.set_zlabel("M")
+            for host_galaxy_index, weights in host_galaxy_weights:
+                likelihood = weights[0]
+                weight = weights[1]
+                weight_bh_mass = weights[2]
+                host_galaxy = galaxy_catalog.get_host_galaxy_by_index(int(host_galaxy_index))
+                scatter = ax.scatter(
+                    host_galaxy.phiS,
+                    host_galaxy.qS,
+                    host_galaxy.M,
+                    c=weight * weight_bh_mass,
+                    cmap="viridis",
+                )
+            cbar1 = plt.colorbar(scatter)
+            cbar1.set_label("weighted likelihood")
+            plt.savefig(
+                f"saved_figures/galaxy_weights_detection_{detection_index}_phi_theta_mass.png",
+                dpi=300,
+            )
+            plt.close()
+
     def evaluate(self, galaxy_catalog: GalaxyCatalogueHandler) -> None:
         _LOGGER.info("Evaluating Bayesian statistics...")
         h_samples = np.linspace(
@@ -461,7 +554,7 @@ class BayesianStatistics:
         galaxy_catalog: GalaxyCatalogueHandler,
     ) -> None:
         count = 0
-        self.posterior_data[GALAXY_WEIGHTS] = {}
+        self.posterior_data_with_bh_mass[GALAXY_WEIGHTS] = {}
         for index, detection in self.cramer_rao_bounds.iterrows():
             _LOGGER.info(
                 f"Progess: h: {self._step}/{len(self.h_values)}, detections: {count}/{len(self.cramer_rao_bounds)}"
@@ -584,7 +677,7 @@ class BayesianStatistics:
             self.posterior_data_with_bh_mass[GALAXY_WEIGHTS][detection_index].append(weights)
         except KeyError:
             self.posterior_data_with_bh_mass[GALAXY_WEIGHTS][detection_index] = [weights]
-            
+
         for result in results_with_bh_mass: 
             self.posterior_data_with_bh_mass[detection_index]
             # for evaluation without mass

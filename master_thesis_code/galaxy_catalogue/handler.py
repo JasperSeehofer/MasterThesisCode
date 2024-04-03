@@ -164,6 +164,9 @@ class GalaxyCatalogueHandler:
             names=[column.name for column in CatalogueColumns if column.value not in [30, 34]],
         )
 
+    def get_host_galaxy_by_index(self, index: int) -> HostGalaxy:
+        return HostGalaxy(self.reduced_galaxy_catalog.loc[index])
+
     def get_possible_hosts(
         self,
         M_z,
