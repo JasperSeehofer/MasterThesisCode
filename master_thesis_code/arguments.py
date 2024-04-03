@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from master_thesis_code.constants import H
+
 import sys
 import os
 import argparse
@@ -54,6 +56,11 @@ class Arguments:
         return self._parsed_arguments.evaluate
 
     @property
+    def h_value(self) -> float:
+        """Hubble constant value."""
+        return self._parsed_arguments.h_value
+
+    @property
     def snr_analysis(self) -> bool:
         """Indicates whether the snr analysis should be run."""
         return self._parsed_arguments.snr_analysis
@@ -99,6 +106,9 @@ def _parse_arguments(arguments: List[str]) -> argparse.Namespace:
         type=int,
     )
     parser.add_argument("--evaluate", action="store_true")
+    parser.add_argument(
+        "--h_value", help="Hubble constant value.", type=float, default=H
+    )
     parser.add_argument("--snr_analysis", action="store_true")
     parser.add_argument(
         "--log_level",
