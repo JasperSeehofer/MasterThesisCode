@@ -550,9 +550,11 @@ class BayesianStatistics:
             raise ValueError("Hubble constant out of bounds.")
 
         self.h = h_value
-        self.p_D(
-            galaxy_catalog=galaxy_catalog,
-        )
+        with mp.get_context("spawn").Pool() as pool:
+            self.p_D(
+                galaxy_catalog=galaxy_catalog,
+                pool=pool,
+            )
         _LOGGER.info(f"posteriors comupted for h = {self.h}")
 
         if not os.path.isdir("simulations/posteriors"):
@@ -571,12 +573,13 @@ class BayesianStatistics:
     def p_D(
         self,
         galaxy_catalog: GalaxyCatalogueHandler,
+        pool: mp.Pool,
     ) -> None:
         count = 0
         self.posterior_data_with_bh_mass[GALAXY_WEIGHTS] = {}
         for index, detection in self.cramer_rao_bounds.iterrows():
             _LOGGER.info(
-                f"Progess: h: {self._step}/{len(self.h_values)}, detections: {count}/{len(self.cramer_rao_bounds)}"
+                f"Progess: detections: {count}/{len(self.cramer_rao_bounds)}"
             )
             count += 1
             try:
@@ -623,6 +626,7 @@ class BayesianStatistics:
                 possible_host_galaxies=possible_hosts,
                 possible_host_galaxies_with_bh_mass=possible_hosts_with_bh_mass,
                 detection_index=index,
+                pool=pool,
             )
 
             self.posterior_data[index].append(event_likelihood)
@@ -639,45 +643,46 @@ class BayesianStatistics:
         possible_host_galaxies: List[HostGalaxy],
         possible_host_galaxies_with_bh_mass: List[HostGalaxy],
         detection_index: int,
+        pool: mp.Pool,
     ) -> float:
         # start parallel computation
         _LOGGER.info("create pool for parallel computing...")
         start = time.time()
-        with mp.get_context("spawn").Pool() as pool:
-            _LOGGER.info(f"start parallel computation with: {pool}")
-            results_with_bh_mass = pool.starmap(
-                single_host_likelihood,
-                [
-                    (
-                        possible_host,
-                        self.detection,
-                        self.h,
-                        self.Omega_m,
-                        self.Omega_DE,
-                        self.w_0,
-                        self.w_a,
-                        True,
-                    )
-                    for possible_host in possible_host_galaxies_with_bh_mass
-                ],
-            )
+    
+        _LOGGER.info(f"start parallel computation with: {pool}")
+        results_with_bh_mass = pool.starmap(
+            single_host_likelihood,
+            [
+                (
+                    possible_host,
+                    self.detection,
+                    self.h,
+                    self.Omega_m,
+                    self.Omega_DE,
+                    self.w_0,
+                    self.w_a,
+                    True,
+                )
+                for possible_host in possible_host_galaxies_with_bh_mass
+            ],
+        )
 
-            results = pool.starmap(
-                single_host_likelihood,
-                [
-                    (
-                        possible_host,
-                        self.detection,
-                        self.h,
-                        self.Omega_m,
-                        self.Omega_DE,
-                        self.w_0,
-                        self.w_a,
-                        False,
-                    )
-                    for possible_host in possible_host_galaxies
-                ],
-            )
+        results = pool.starmap(
+            single_host_likelihood,
+            [
+                (
+                    possible_host,
+                    self.detection,
+                    self.h,
+                    self.Omega_m,
+                    self.Omega_DE,
+                    self.w_0,
+                    self.w_a,
+                    False,
+                )
+                for possible_host in possible_host_galaxies
+            ],
+        )
         end = time.time()
         _LOGGER.info(f"parallel computing took: {end - start}s")
 
