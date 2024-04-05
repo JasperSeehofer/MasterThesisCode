@@ -363,7 +363,7 @@ class BayesianStatistics:
             "./simulations/cramer_rao_bounds_unbiased.csv"
         )
         _LOGGER.debug(f"cramer_bounds: {self.full_cramer_rao_bounds.describe()}")
-        self.cramer_rao_bounds = self.full_cramer_rao_bounds.sample(15)
+        self.cramer_rao_bounds = self.full_cramer_rao_bounds.sample(5)
         _LOGGER.info(f"Loaded {len(self.cramer_rao_bounds)} detections...")
         self.cosmological_model = LamCDMScenario()
         self.h = self.cosmological_model.h.fiducial_value
@@ -560,11 +560,11 @@ class BayesianStatistics:
         if not os.path.isdir("simulations/posteriors_with_bh_mass"):
             os.makedirs("simulations/posteriors_with_bh_mass")
 
-        with open(f"simulations/posteriors/h_{str(np.round(self.h,3)).replace(".", "_")}.json", "w") as file:
+        with open(f"simulations/posteriors/h_{str(np.round(self.h,3)).replace('.', '_')}.json", "w") as file:
             json.dump(self.posterior_data | {"h": self.h}, file)
 
         with open(
-            f"simulations/posteriors_with_bh_mass/h_{str(np.round(self.h,3)).replace(".", "_")}.json", "w"
+            f"simulations/posteriors_with_bh_mass/h_{str(np.round(self.h,3)).replace('.', '_')}.json", "w"
         ) as file:
             json.dump(self.posterior_data_with_bh_mass | {"h": self.h}, file)
 
@@ -576,7 +576,7 @@ class BayesianStatistics:
         self.posterior_data_with_bh_mass[GALAXY_WEIGHTS] = {}
         for index, detection in self.cramer_rao_bounds.iterrows():
             _LOGGER.info(
-                f"Progess: h: {self._step}/{len(self.h_values)}, detections: {count}/{len(self.cramer_rao_bounds)}"
+                f"Progess: detections: {count}/{len(self.cramer_rao_bounds)}"
             )
             count += 1
             try:
