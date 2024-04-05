@@ -57,7 +57,7 @@ def _configure_logger(working_directory: str, log_level: int, h_value: float) ->
 
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     log_file_path = os.path.join(
-        working_directory, f"master_thesis_code_h_{np.round(h_value,3)}_{timestamp}.log"
+        working_directory, f"master_thesis_code_h_{str(np.round(h_value,3)).replace('.', '_')}_{timestamp}.log"
     )
     file_handler = logging.FileHandler(log_file_path)
     file_handler.setLevel(log_level)
