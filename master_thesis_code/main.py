@@ -28,7 +28,7 @@ def main() -> None:
     Run main to start the program.
     """
     arguments = Arguments.create()
-    _configure_logger(arguments.working_directory, arguments.log_level)
+    _configure_logger(arguments.working_directory, arguments.log_level, arguments.h_value)
     arguments.validate()
     _ROOT_LOGGER.info("---------- STARTING MASTER THESIS CODE ----------")
     start_time = time()
@@ -49,7 +49,7 @@ def main() -> None:
     _ROOT_LOGGER.debug(f"Finished in {end_time - start_time}s.")
 
 
-def _configure_logger(working_directory: str, log_level: int) -> None:
+def _configure_logger(working_directory: str, log_level: int, h_value: float) -> None:
     _ROOT_LOGGER.setLevel(log_level)
     stream_handler = logging.StreamHandler()
     stream_handler.setLevel(log_level)
@@ -57,7 +57,7 @@ def _configure_logger(working_directory: str, log_level: int) -> None:
 
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     log_file_path = os.path.join(
-        working_directory, f"master_thesis_code_{timestamp}.log"
+        working_directory, f"master_thesis_code_h_{np.round(h_value,3)}_{timestamp}.log"
     )
     file_handler = logging.FileHandler(log_file_path)
     file_handler.setLevel(log_level)
