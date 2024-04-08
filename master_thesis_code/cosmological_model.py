@@ -34,6 +34,10 @@ _LOGGER = logging.getLogger()
 DEFAULT_GALAXY_Z_ERROR = 0.0015
 GALAXY_WEIGHTS = "galaxy_weights"
 
+# global variable
+distances = np.array([])
+z_gws = np.linspace(0, 1, 10000)  # TODO: Keep in mind
+
 
 @dataclass
 class CosmologicalParameter(Parameter):
@@ -595,6 +599,24 @@ class BayesianStatistics:
             raise ValueError("Hubble constant out of bounds.")
 
         self.h = h_value
+        _LOGGER.info("prepare global variable for multiprocessing")
+        global distances
+        global z_gws
+
+        distances = np.array(
+            [
+                dist(
+                    z,
+                    h=self.h,
+                    Omega_m=self.Omega_m,
+                    Omega_de=self.Omega_DE,
+                    w_0=self.w_0,
+                    w_a=self.w_a,
+                )
+                for z in z_gws
+            ]
+        )
+
         _LOGGER.debug(
             f"Found {len(os.sched_getaffinity(0))} / {os.cpu_count()} (available / system) cpus."
         )
@@ -627,7 +649,7 @@ class BayesianStatistics:
                 posteriors_existing_data = json.load(file)
             except json.decoder.JSONDecodeError:
                 posteriors_existing_data = {}
-            
+
         with open(
             f"simulations/posteriors/h_{str(np.round(self.h,3)).replace('.', '_')}.json",
             "w",
@@ -649,8 +671,10 @@ class BayesianStatistics:
             "w",
         ) as file:
             # update existing data
-            
-            data = posteriors_with_bh_mass_existing_data | self.posterior_data_with_bh_mass
+
+            data = (
+                posteriors_with_bh_mass_existing_data | self.posterior_data_with_bh_mass
+            )
             json.dump(data | {"h": self.h}, file)
 
     def p_D(
@@ -850,8 +874,9 @@ def single_host_likelihood(
     w_a: float,
     evaluate_with_bh_mass: bool,
 ) -> list[float]:
-    start = time.time()
-    z_gws = np.linspace(0, 1, 10000)
+    global distances
+    global z_gws
+
     if evaluate_with_bh_mass:
         # compute weight using the bh mass
         norm_dist_measurement = NormalDist(
@@ -876,14 +901,6 @@ def single_host_likelihood(
         d_L * 0.066 * (1 - (1 + possible_host.z) ** (-0.25) / 0.25) ** (1.8)
     )"""  # TODO check if correct
 
-    distances = np.vectorize(dist, excluded=["h", "Omega_m", "Omega_de", "w_0", "w_a"])(
-        z_gws,
-        h=h,
-        Omega_m=Omega_m,
-        Omega_de=Omega_de,
-        w_0=w_0,
-        w_a=w_a,
-    )
     gaussian = np.exp(
         -1
         / 2
@@ -892,23 +909,8 @@ def single_host_likelihood(
             + (detection.d_L - distances) ** 2 / detection.d_L_uncertainty**2
         )
     )
-    """
-    _LOGGER.debug(
-        "gaussian computed with:\n"
-        f"zgw: [{z_gws[0]}, {z_gws[-1]}]\n"
-        f"host redshift: {possible_host.z}\n"
-        f"host redshift error: {possible_host.z_error}\n"
-        f"detection distance: {detection.d_L}\n"
-        f"distance error: {detection.d_L_uncertainty}\n"
-        f"distances: [{distances[0]}, {distances[-1]} ]\n"
-    )
-    _LOGGER.debug(
-        f"integrating with:\ngaussian: max={max(gaussian)} edges=[{gaussian[0]}, {gaussian[-1]}]"
-    )
-    """
 
     result = np.trapz(gaussian, z_gws)
-    end = time.time()
     if evaluate_with_bh_mass:
         return [result, current_weight, current_mass_weight]
     return [result, current_weight]
