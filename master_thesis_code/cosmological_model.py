@@ -26,6 +26,7 @@ from master_thesis_code.physical_relations import (
     dist,
     convert_true_mass_to_redshifted_mass_with_distance,
     get_redshift_outer_bounds,
+    dist_to_redshift,
 )
 
 _LOGGER = logging.getLogger()
@@ -392,7 +393,11 @@ class BayesianStatistics:
         for detection_index, posterior in self.posterior_data.items():
             if len(posterior) < len(h_samples):
                 continue
-            plt.scatter(h_samples, posterior, label="without BH mass")
+            plt.plot(
+                h_samples,
+                posterior / np.max(posterior),
+                label=f"detection: {detection_index}",
+            )
             plt.xlabel("Hubble constant h")
             plt.ylabel("Posterior")
             plt.legend()
@@ -403,7 +408,11 @@ class BayesianStatistics:
         for detection_index, posterior in self.posterior_data_with_bh_mass.items():
             if len(posterior) < len(h_samples):
                 continue
-            plt.scatter(h_samples, posterior, label="with BH mass")
+            plt.plot(
+                h_samples,
+                posterior / np.max(posterior),
+                label=f"detection {detection_index}",
+            )
             plt.xlabel("Hubble constant h")
             plt.ylabel("Posterior")
             plt.legend()
@@ -435,52 +444,77 @@ class BayesianStatistics:
         plt.savefig("saved_figures/bayesian_statistics.png")
         plt.close()
 
+        self.visualize_galaxy_weights(galaxy_catalog)
+
+    def visualize_galaxy_weights(self, galaxy_catalog: GalaxyCatalogueHandler) -> None:
+        _LOGGER.info("Visualizing galaxy weights...")
         # visualize galaxy weights
         weight_data = self.posterior_data_with_bh_mass[GALAXY_WEIGHTS]
 
         for detection_index, host_galaxy_weights in weight_data.items():
+            _LOGGER.debug(f"Visualizing galaxy weights for detection {detection_index}")
             # sort by weight and use first 1000 galaxies
             detection = Detection(
                 self.full_cramer_rao_bounds.iloc[int(detection_index)]
             )
             host_galaxy_weights = host_galaxy_weights[0]
-            host_galaxy_weights = sorted(
-                host_galaxy_weights, key=lambda x: x[1][1], reverse=True
+            _LOGGER.debug(f"found {len(host_galaxy_weights)} host galaxies...")
+
+            host_galaxies = [
+                galaxy_catalog.get_host_galaxy_by_index(int(index))
+                for index, _ in host_galaxy_weights
+            ]
+            host_galaxies_phi = np.array([galaxy.phiS for galaxy in host_galaxies])
+            host_galaxies_theta = np.array([galaxy.qS for galaxy in host_galaxies])
+            unweighted_likelihoods = np.array(
+                [weights[0] for _, weights in host_galaxy_weights]
             )
-            if len(host_galaxy_weights) > 2000:
-                host_galaxy_weights = host_galaxy_weights[:2000]
+            weights = np.array([weights[1] for _, weights in host_galaxy_weights])
+            weights_bh_mass = np.array(
+                [weights[2] for _, weights in host_galaxy_weights]
+            )
+
             # create 2D plot for phi and qS
             fig, ax = plt.subplots(figsize=(16, 9))
-            ax.set_title(f"Galaxy weights for detection {detection_index}")
+            ax.set_title(
+                f"Galaxy skylocalization weight for detection {detection_index}"
+            )
             # plot lines for detection (true values)
             ax.axvline(detection.phi, color="r", linestyle="--")
             ax.axhline(detection.theta, color="r", linestyle="--")
-            ax.scatter(
-                detection.phi,
-                detection.theta,
-                c="r",
-                label="detection",
+            ax.set_xlabel("phiS")
+            ax.set_ylabel("qS")
+            scatter = ax.scatter(
+                host_galaxies_phi,
+                host_galaxies_theta,
+                c=weights,
+                cmap="viridis",
             )
+            plt.colorbar(scatter, label="weight")
+            plt.savefig(
+                f"saved_figures/galaxy_weights_detection_{detection_index}_phi_theta.png",
+                dpi=300,
+            )
+            plt.close()
+
+            # create 2D plot for phi and qS with colormap for mass weight
+            fig, ax = plt.subplots(figsize=(16, 9))
+            ax.set_title(f"Galaxy mass weight for detection {detection_index}")
+            # plot lines for detection (true values)
+            ax.axvline(detection.phi, color="r", linestyle="--")
+            ax.axhline(detection.theta, color="r", linestyle="--")
             ax.set_xlabel("phiS")
             ax.set_ylabel("qS")
 
-            for host_galaxy_index, weights in host_galaxy_weights:
-                likelihood = weights[0]
-                weight = weights[1]
-                weight_bh_mass = weights[2]
-                host_galaxy = galaxy_catalog.get_host_galaxy_by_index(
-                    int(host_galaxy_index)
-                )
-                scatter = ax.scatter(
-                    host_galaxy.phiS,
-                    host_galaxy.qS,
-                    c=weight,
-                    cmap="viridis",
-                )
-            cbar = plt.colorbar(scatter)
-            cbar.set_label("likelihood")
+            scatter = ax.scatter(
+                host_galaxies_phi,
+                host_galaxies_theta,
+                c=weights_bh_mass,
+                cmap="viridis",
+            )
+            plt.colorbar(scatter, label="mass weight")
             plt.savefig(
-                f"saved_figures/galaxy_weights_detection_{detection_index}_phi_theta.png",
+                f"saved_figures/galaxy_mass_weights_detection_{detection_index}_phi_theta.png",
                 dpi=300,
             )
             plt.close()
@@ -493,19 +527,37 @@ class BayesianStatistics:
             ax.axvline(detection.M, color="r", linestyle="--")
             ax.set_xlabel("M")
             ax.set_ylabel("mass weight")
-            for host_galaxy_index, weights in host_galaxy_weights:
-                likelihood = weights[0]
-                weight = weights[1]
-                weight_bh_mass = weights[2]
-                host_galaxy = galaxy_catalog.get_host_galaxy_by_index(
-                    int(host_galaxy_index)
-                )
-                ax.scatter(
-                    host_galaxy.M,
-                    weight_bh_mass,
-                )
+            ax.scatter(
+                [galaxy.M for galaxy in host_galaxies],
+                weights_bh_mass,
+            )
             plt.savefig(
-                f"saved_figures/galaxy_weights_detection_{detection_index}_mass.png",
+                f"saved_figures/galaxy_mass_weights_detection_{detection_index}_mass.png",
+                dpi=300,
+            )
+            plt.close()
+
+            # plot weighted likelihood
+            fig = plt.figure(figsize=(16, 9))
+            ax = fig.add_subplot(111)
+            ax.set_title(f"Galaxy weighted likelihood for detection {detection_index}")
+            # plot lines for detection (true values)
+            ax.vlines(
+                dist_to_redshift(detection.d_L),
+                0,
+                np.max(unweighted_likelihoods * weights),
+                color="r",
+                linestyle="--",
+            )
+            ax.set_xlabel("z")
+            ax.set_ylabel("likelihood")
+            ax.scatter(
+                [galaxy.z for galaxy in host_galaxies],
+                unweighted_likelihoods * weights,
+                label="likelihood",
+            )
+            plt.savefig(
+                f"saved_figures/galaxy_weighted_likelihood_detection_{detection_index}.png",
                 dpi=300,
             )
             plt.close()
@@ -515,27 +567,20 @@ class BayesianStatistics:
             ax = fig.add_subplot(111, projection="3d")
             ax.set_title(f"Galaxy likelihood for detection {detection_index}")
             # plot lines for detection (true values)
-            ax.axvline(detection.phi, color="r", linestyle="--")
-            ax.axhline(detection.theta, color="r", linestyle="--")
+
             ax.set_xlabel("phiS")
             ax.set_ylabel("qS")
             ax.set_zlabel("M")
-            for host_galaxy_index, weights in host_galaxy_weights:
-                likelihood = weights[0]
-                weight = weights[1]
-                weight_bh_mass = weights[2]
-                host_galaxy = galaxy_catalog.get_host_galaxy_by_index(
-                    int(host_galaxy_index)
-                )
-                scatter = ax.scatter(
-                    host_galaxy.phiS,
-                    host_galaxy.qS,
-                    host_galaxy.M,
-                    c=weight * weight_bh_mass,
-                    cmap="viridis",
-                )
-            cbar1 = plt.colorbar(scatter)
-            cbar1.set_label("weighted likelihood")
+
+            scatter = ax.scatter(
+                host_galaxies_phi,
+                host_galaxies_theta,
+                [galaxy.M for galaxy in host_galaxies],
+                c=weights * weights_bh_mass,
+                cmap="viridis",
+            )
+            ax.scatter(detection.phi, detection.theta, detection.M, color="r")
+            plt.colorbar(scatter, label="weighted likelihood")
             plt.savefig(
                 f"saved_figures/galaxy_weights_detection_{detection_index}_phi_theta_mass.png",
                 dpi=300,
@@ -560,11 +605,15 @@ class BayesianStatistics:
         if not os.path.isdir("simulations/posteriors_with_bh_mass"):
             os.makedirs("simulations/posteriors_with_bh_mass")
 
-        with open(f"simulations/posteriors/h_{str(np.round(self.h,3)).replace(".", "_")}.json", "w") as file:
+        with open(
+            f"simulations/posteriors/h_{str(np.round(self.h,3)).replace('.', '_')}.json",
+            "w",
+        ) as file:
             json.dump(self.posterior_data | {"h": self.h}, file)
 
         with open(
-            f"simulations/posteriors_with_bh_mass/h_{str(np.round(self.h,3)).replace(".", "_")}.json", "w"
+            f"simulations/posteriors_with_bh_mass/h_{str(np.round(self.h,3)).replace('.', '_')}.json",
+            "w",
         ) as file:
             json.dump(self.posterior_data_with_bh_mass | {"h": self.h}, file)
 
