@@ -621,20 +621,36 @@ class BayesianStatistics:
 
         with open(
             f"simulations/posteriors/h_{str(np.round(self.h,3)).replace('.', '_')}.json",
-            "rw",
+            "r",
+        ) as file:
+            try:
+                posteriors_existing_data = json.load(file)
+            except json.decoder.JSONDecodeError:
+                posteriors_existing_data = {}
+            
+        with open(
+            f"simulations/posteriors/h_{str(np.round(self.h,3)).replace('.', '_')}.json",
+            "w",
         ) as file:
             # update existing data
-            existing_data = json.load(file)
-            data = existing_data | self.posterior_data
+            data = posteriors_existing_data | self.posterior_data
             json.dump(data | {"h": self.h}, file)
 
         with open(
             f"simulations/posteriors_with_bh_mass/h_{str(np.round(self.h,3)).replace('.', '_')}.json",
-            "rw",
+            "r",
+        ) as file:
+            try:
+                posteriors_with_bh_mass_existing_data = json.load(file)
+            except json.decoder.JSONDecodeError:
+                posteriors_existing_data = {}
+        with open(
+            f"simulations/posteriors_with_bh_mass/h_{str(np.round(self.h,3)).replace('.', '_')}.json",
+            "w",
         ) as file:
             # update existing data
-            existing_data = json.load(file)
-            data = existing_data | self.posterior_data_with_bh_mass
+            
+            data = posteriors_with_bh_mass_existing_data | self.posterior_data_with_bh_mass
             json.dump(data | {"h": self.h}, file)
 
     def p_D(
@@ -886,10 +902,6 @@ def single_host_likelihood(
 
     result = np.trapz(gaussian, z_gws)
     end = time.time()
-    print(
-        f"Process: {mp.current_process().name} took {np.round(end - start, 3)} seconds.",
-        flush=True,
-    )
     if evaluate_with_bh_mass:
         return [result, current_weight, current_mass_weight]
     return [result, current_weight]
