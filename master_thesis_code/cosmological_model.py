@@ -713,6 +713,13 @@ class BayesianStatistics:
         # start parallel computation
         _LOGGER.info(f"start parallel computation with: {pool}")
         start = time.time()
+        # remove duplicates from possible_host_galaxies already covered in possible_host_galaxies_with_bh_mass
+        possible_host_galaxies = [
+            host
+            for host in possible_host_galaxies
+            if host not in possible_host_galaxies_with_bh_mass
+        ]
+
         chunksize = math.ceil(len(possible_host_galaxies) / pool._processes)
         chunksize_with_bh_mass = math.ceil(
             len(possible_host_galaxies_with_bh_mass) / pool._processes
