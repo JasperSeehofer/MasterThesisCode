@@ -241,14 +241,14 @@ def evaluate(
     galaxy_catalog: GalaxyCatalogueHandler,
     h_value: float,
 ) -> None:
-    physical_relations.visualize()
-    data_simulation = DataEvaluation()
+    #physical_relations.visualize()
+    #data_simulation = DataEvaluation()
     hubble_constant_evaluation = BayesianStatistics()
-    data_simulation.visualize()
+    #data_simulation.visualize()
     # data_simulation.evaluate_snr_analysis()
-    Model1CrossCheck().visualize_emri_distribution()
+    #Model1CrossCheck().visualize_emri_distribution()
     hubble_constant_evaluation.evaluate(galaxy_catalog, h_value)
-    hubble_constant_evaluation.visualize(galaxy_catalog=galaxy_catalog)
+    #hubble_constant_evaluation.visualize(galaxy_catalog=galaxy_catalog)
 
 
 if __name__ == "__main__":
