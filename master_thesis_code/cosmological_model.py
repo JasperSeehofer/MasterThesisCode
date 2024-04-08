@@ -3,6 +3,7 @@ from typing import List, Dict
 import json
 import pandas as pd
 import os
+import math
 import numpy as np
 import logging
 import matplotlib.pyplot as plt
@@ -712,6 +713,10 @@ class BayesianStatistics:
         # start parallel computation
         _LOGGER.info(f"start parallel computation with: {pool}")
         start = time.time()
+        chunksize = math.ceil(len(possible_host_galaxies) / pool._processes)
+        chunksize_with_bh_mass = math.ceil(
+            len(possible_host_galaxies_with_bh_mass) / pool._processes
+        )
         results_with_bh_mass = pool.starmap(
             single_host_likelihood,
             [
@@ -727,6 +732,7 @@ class BayesianStatistics:
                 )
                 for possible_host in possible_host_galaxies_with_bh_mass
             ],
+            chunksize=chunksize_with_bh_mass,
         )
 
         results = pool.starmap(
@@ -744,6 +750,7 @@ class BayesianStatistics:
                 )
                 for possible_host in possible_host_galaxies
             ],
+            chunksize=chunksize,
         )
         end = time.time()
         _LOGGER.info(f"parallel computing took: {end - start}s")
