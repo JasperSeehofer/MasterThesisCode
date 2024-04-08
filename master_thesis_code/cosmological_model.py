@@ -35,7 +35,6 @@ DEFAULT_GALAXY_Z_ERROR = 0.0015
 GALAXY_WEIGHTS = "galaxy_weights"
 
 # global variable
-distances = np.array([])
 z_gws = np.linspace(0, 1, 10000)  # TODO: Keep in mind
 
 
@@ -364,11 +363,9 @@ class BayesianStatistics:
     posterior_data_with_bh_mass: Dict[int, List[float]] = {}
 
     def __init__(self) -> None:
-        self.full_cramer_rao_bounds = pd.read_csv(
+        self.cramer_rao_bounds = pd.read_csv(
             "./simulations/cramer_rao_bounds_unbiased.csv"
         )
-        _LOGGER.debug(f"cramer_bounds: {self.full_cramer_rao_bounds.describe()}")
-        self.cramer_rao_bounds = self.full_cramer_rao_bounds.sample(5)
         _LOGGER.info(f"Loaded {len(self.cramer_rao_bounds)} detections...")
         self.cosmological_model = LamCDMScenario()
         self.h = self.cosmological_model.h.fiducial_value
@@ -600,10 +597,8 @@ class BayesianStatistics:
 
         self.h = h_value
         _LOGGER.info("prepare global variable for multiprocessing")
-        global distances
-        global z_gws
-
-        distances = np.array(
+        self._z_gws = np.linspace(0, 1, 10000)
+        self._distances = np.array(
             [
                 dist(
                     z,
@@ -613,7 +608,7 @@ class BayesianStatistics:
                     w_0=self.w_0,
                     w_a=self.w_a,
                 )
-                for z in z_gws
+                for z in self._z_gws
             ]
         )
 
@@ -629,7 +624,11 @@ class BayesianStatistics:
         _LOGGER.debug(
             f"After trying to set affinity available cpus: {len(os.sched_getaffinity(0))}"
         )
-        with mp.get_context("spawn").Pool(len(os.sched_getaffinity(0)) - 4) as pool:
+        with mp.get_context("spawn").Pool(
+                len(os.sched_getaffinity(0)) - 4,
+                initializer=child_process_init,
+                initargs=(self._distances, self._z_gws,)
+        ) as pool:
             self.p_D(
                 galaxy_catalog=galaxy_catalog,
                 pool=pool,
@@ -876,7 +875,6 @@ def single_host_likelihood(
 ) -> list[float]:
     global distances
     global z_gws
-
     if evaluate_with_bh_mass:
         # compute weight using the bh mass
         norm_dist_measurement = NormalDist(
@@ -916,5 +914,8 @@ def single_host_likelihood(
     return [result, current_weight]
 
 
-def child_process_init() -> None:
-    print(f"started child process: {mp.current_process().name}", flush=True)
+def child_process_init(current_distances: np.array, current_z_gws: np.array) -> None:
+    global distances
+    global z_gws
+    z_gws = current_z_gws
+    distances = current_distances
