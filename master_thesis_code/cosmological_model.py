@@ -10,7 +10,6 @@ import time
 from scipy.stats import multivariate_normal, truncnorm
 from statistics import NormalDist
 import multiprocessing as mp
-from concurrent.futures import ThreadPoolExecutor
 from master_thesis_code.datamodels.parameter_space import (
     ParameterSpace,
     Parameter,
@@ -550,7 +549,15 @@ class BayesianStatistics:
             raise ValueError("Hubble constant out of bounds.")
 
         self.h = h_value
-        with mp.get_context("spawn").Pool() as pool:
+        _LOGGER.debug(f"Found {len(os.sched_getaffinity(0))} / {os.cpu_count()} (available / system) cpus.")
+        cpu_count = os.cpu_count()
+        if len(os.sched_getaffinity(0)) < cpu_count:
+            try:
+                os.sched_setaffinity(0, range(cpu_count))
+            except OSError:
+                _LOGGER.info('Could not set affinity')
+        _LOGGER.debug(f"After trying to set affinity available cpus: {len(os.sched_getaffinity(0))}")
+        with mp.get_context("spawn").Pool(len(os.sched_getaffinity(0)) - 4) as pool:
             self.p_D(
                 galaxy_catalog=galaxy_catalog,
                 pool=pool,
@@ -645,11 +652,8 @@ class BayesianStatistics:
         detection_index: int,
         pool: mp.Pool,
     ) -> float:
-        # start parallel computation
-        _LOGGER.info("create pool for parallel computing...")
-        start = time.time()
-    
         _LOGGER.info(f"start parallel computation with: {pool}")
+        start = time.time()
         results_with_bh_mass = pool.starmap(
             single_host_likelihood,
             [
@@ -701,17 +705,10 @@ class BayesianStatistics:
             )
         )
 
-        try:
-            self.posterior_data_with_bh_mass[GALAXY_WEIGHTS][detection_index].append(
-                weights
-            )
-        except KeyError:
-            self.posterior_data_with_bh_mass[GALAXY_WEIGHTS][detection_index] = [
-                weights
-            ]
+        
+        self.posterior_data_with_bh_mass[GALAXY_WEIGHTS][detection_index] = weights
 
         for result in results_with_bh_mass:
-            self.posterior_data_with_bh_mass[detection_index]
             # for evaluation without mass
             integral += result[0] * result[1]
             weight_sum += result[1]
@@ -766,15 +763,8 @@ def single_host_likelihood(
     w_a: float,
     evaluate_with_bh_mass: bool,
 ) -> list[float]:
-    min_z, max_z = 0, 2
-    median_z = possible_host.z
-    mean_z = median_z
-    std_z = 2 * possible_host.z_error
-    z_distribution = truncnorm(
-        (min_z - mean_z) / std_z, (max_z - mean_z) / std_z, loc=mean_z, scale=std_z
-    )
-    z_gws = np.sort(z_distribution.rvs(1000))
-
+    start = time.time()
+    z_gws = np.linspace(0, 1, 10000)
     if evaluate_with_bh_mass:
         # compute weight using the bh mass
         norm_dist_measurement = NormalDist(
@@ -815,6 +805,7 @@ def single_host_likelihood(
             + (detection.d_L - distances) ** 2 / detection.d_L_uncertainty**2
         )
     )
+    """
     _LOGGER.debug(
         "gaussian computed with:\n"
         f"zgw: [{z_gws[0]}, {z_gws[-1]}]\n"
@@ -827,8 +818,15 @@ def single_host_likelihood(
     _LOGGER.debug(
         f"integrating with:\ngaussian: max={max(gaussian)} edges=[{gaussian[0]}, {gaussian[-1]}]"
     )
+    """
 
     result = np.trapz(gaussian, z_gws)
+    end = time.time()
+    print(f"Process: {mp.current_process().name} took {np.round(end - start, 3)} seconds.", flush=True)
     if evaluate_with_bh_mass:
         return [result, current_weight, current_mass_weight]
     return [result, current_weight]
+
+
+def child_process_init() -> None:
+    print(f"started child process: {mp.current_process().name}", flush=True)
