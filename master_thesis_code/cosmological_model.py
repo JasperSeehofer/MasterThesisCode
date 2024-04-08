@@ -10,7 +10,6 @@ import time
 from scipy.stats import multivariate_normal, truncnorm
 from statistics import NormalDist
 import multiprocessing as mp
-from concurrent.futures import ThreadPoolExecutor
 from master_thesis_code.datamodels.parameter_space import (
     ParameterSpace,
     Parameter,
@@ -364,7 +363,7 @@ class BayesianStatistics:
             "./simulations/cramer_rao_bounds_unbiased.csv"
         )
         _LOGGER.debug(f"cramer_bounds: {self.full_cramer_rao_bounds.describe()}")
-        self.cramer_rao_bounds = self.full_cramer_rao_bounds.sample(15)
+        self.cramer_rao_bounds = self.full_cramer_rao_bounds.sample(5)
         _LOGGER.info(f"Loaded {len(self.cramer_rao_bounds)} detections...")
         self.cosmological_model = LamCDMScenario()
         self.h = self.cosmological_model.h.fiducial_value
@@ -595,9 +594,23 @@ class BayesianStatistics:
             raise ValueError("Hubble constant out of bounds.")
 
         self.h = h_value
-        self.p_D(
-            galaxy_catalog=galaxy_catalog,
+        _LOGGER.debug(
+            f"Found {len(os.sched_getaffinity(0))} / {os.cpu_count()} (available / system) cpus."
         )
+        cpu_count = os.cpu_count()
+        if len(os.sched_getaffinity(0)) < cpu_count:
+            try:
+                os.sched_setaffinity(0, range(cpu_count))
+            except OSError:
+                _LOGGER.info("Could not set affinity")
+        _LOGGER.debug(
+            f"After trying to set affinity available cpus: {len(os.sched_getaffinity(0))}"
+        )
+        with mp.get_context("spawn").Pool(len(os.sched_getaffinity(0)) - 4) as pool:
+            self.p_D(
+                galaxy_catalog=galaxy_catalog,
+                pool=pool,
+            )
         _LOGGER.info(f"posteriors comupted for h = {self.h}")
 
         if not os.path.isdir("simulations/posteriors"):
@@ -607,26 +620,31 @@ class BayesianStatistics:
 
         with open(
             f"simulations/posteriors/h_{str(np.round(self.h,3)).replace('.', '_')}.json",
-            "w",
+            "rw",
         ) as file:
-            json.dump(self.posterior_data | {"h": self.h}, file)
+            # update existing data
+            existing_data = json.load(file)
+            data = existing_data | self.posterior_data
+            json.dump(data | {"h": self.h}, file)
 
         with open(
             f"simulations/posteriors_with_bh_mass/h_{str(np.round(self.h,3)).replace('.', '_')}.json",
-            "w",
+            "rw",
         ) as file:
-            json.dump(self.posterior_data_with_bh_mass | {"h": self.h}, file)
+            # update existing data
+            existing_data = json.load(file)
+            data = existing_data | self.posterior_data_with_bh_mass
+            json.dump(data | {"h": self.h}, file)
 
     def p_D(
         self,
         galaxy_catalog: GalaxyCatalogueHandler,
+        pool: mp.Pool,
     ) -> None:
         count = 0
         self.posterior_data_with_bh_mass[GALAXY_WEIGHTS] = {}
         for index, detection in self.cramer_rao_bounds.iterrows():
-            _LOGGER.info(
-                f"Progess: h: {self._step}/{len(self.h_values)}, detections: {count}/{len(self.cramer_rao_bounds)}"
-            )
+            _LOGGER.info(f"Progess: detections: {count}/{len(self.cramer_rao_bounds)}")
             count += 1
             try:
                 self.posterior_data[index]
@@ -672,6 +690,7 @@ class BayesianStatistics:
                 possible_host_galaxies=possible_hosts,
                 possible_host_galaxies_with_bh_mass=possible_hosts_with_bh_mass,
                 detection_index=index,
+                pool=pool,
             )
 
             self.posterior_data[index].append(event_likelihood)
@@ -688,45 +707,44 @@ class BayesianStatistics:
         possible_host_galaxies: List[HostGalaxy],
         possible_host_galaxies_with_bh_mass: List[HostGalaxy],
         detection_index: int,
+        pool: mp.Pool,
     ) -> float:
         # start parallel computation
-        _LOGGER.info("create pool for parallel computing...")
+        _LOGGER.info(f"start parallel computation with: {pool}")
         start = time.time()
-        with mp.get_context("spawn").Pool() as pool:
-            _LOGGER.info(f"start parallel computation with: {pool}")
-            results_with_bh_mass = pool.starmap(
-                single_host_likelihood,
-                [
-                    (
-                        possible_host,
-                        self.detection,
-                        self.h,
-                        self.Omega_m,
-                        self.Omega_DE,
-                        self.w_0,
-                        self.w_a,
-                        True,
-                    )
-                    for possible_host in possible_host_galaxies_with_bh_mass
-                ],
-            )
+        results_with_bh_mass = pool.starmap(
+            single_host_likelihood,
+            [
+                (
+                    possible_host,
+                    self.detection,
+                    self.h,
+                    self.Omega_m,
+                    self.Omega_DE,
+                    self.w_0,
+                    self.w_a,
+                    True,
+                )
+                for possible_host in possible_host_galaxies_with_bh_mass
+            ],
+        )
 
-            results = pool.starmap(
-                single_host_likelihood,
-                [
-                    (
-                        possible_host,
-                        self.detection,
-                        self.h,
-                        self.Omega_m,
-                        self.Omega_DE,
-                        self.w_0,
-                        self.w_a,
-                        False,
-                    )
-                    for possible_host in possible_host_galaxies
-                ],
-            )
+        results = pool.starmap(
+            single_host_likelihood,
+            [
+                (
+                    possible_host,
+                    self.detection,
+                    self.h,
+                    self.Omega_m,
+                    self.Omega_DE,
+                    self.w_0,
+                    self.w_a,
+                    False,
+                )
+                for possible_host in possible_host_galaxies
+            ],
+        )
         end = time.time()
         _LOGGER.info(f"parallel computing took: {end - start}s")
 
@@ -745,17 +763,9 @@ class BayesianStatistics:
             )
         )
 
-        try:
-            self.posterior_data_with_bh_mass[GALAXY_WEIGHTS][detection_index].append(
-                weights
-            )
-        except KeyError:
-            self.posterior_data_with_bh_mass[GALAXY_WEIGHTS][detection_index] = [
-                weights
-            ]
+        self.posterior_data_with_bh_mass[GALAXY_WEIGHTS][detection_index] = weights
 
         for result in results_with_bh_mass:
-            self.posterior_data_with_bh_mass[detection_index]
             # for evaluation without mass
             integral += result[0] * result[1]
             weight_sum += result[1]
@@ -810,15 +820,8 @@ def single_host_likelihood(
     w_a: float,
     evaluate_with_bh_mass: bool,
 ) -> list[float]:
-    min_z, max_z = 0, 2
-    median_z = possible_host.z
-    mean_z = median_z
-    std_z = 2 * possible_host.z_error
-    z_distribution = truncnorm(
-        (min_z - mean_z) / std_z, (max_z - mean_z) / std_z, loc=mean_z, scale=std_z
-    )
-    z_gws = np.sort(z_distribution.rvs(1000))
-
+    start = time.time()
+    z_gws = np.linspace(0, 1, 10000)
     if evaluate_with_bh_mass:
         # compute weight using the bh mass
         norm_dist_measurement = NormalDist(
@@ -859,6 +862,7 @@ def single_host_likelihood(
             + (detection.d_L - distances) ** 2 / detection.d_L_uncertainty**2
         )
     )
+    """
     _LOGGER.debug(
         "gaussian computed with:\n"
         f"zgw: [{z_gws[0]}, {z_gws[-1]}]\n"
@@ -871,8 +875,18 @@ def single_host_likelihood(
     _LOGGER.debug(
         f"integrating with:\ngaussian: max={max(gaussian)} edges=[{gaussian[0]}, {gaussian[-1]}]"
     )
+    """
 
     result = np.trapz(gaussian, z_gws)
+    end = time.time()
+    print(
+        f"Process: {mp.current_process().name} took {np.round(end - start, 3)} seconds.",
+        flush=True,
+    )
     if evaluate_with_bh_mass:
         return [result, current_weight, current_mass_weight]
     return [result, current_weight]
+
+
+def child_process_init() -> None:
+    print(f"started child process: {mp.current_process().name}", flush=True)
