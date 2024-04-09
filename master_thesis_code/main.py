@@ -28,7 +28,9 @@ def main() -> None:
     Run main to start the program.
     """
     arguments = Arguments.create()
-    _configure_logger(arguments.working_directory, arguments.log_level, arguments.h_value)
+    _configure_logger(
+        arguments.working_directory, arguments.log_level, arguments.h_value
+    )
     arguments.validate()
     _ROOT_LOGGER.info("---------- STARTING MASTER THESIS CODE ----------")
     start_time = time()
@@ -57,7 +59,8 @@ def _configure_logger(working_directory: str, log_level: int, h_value: float) ->
 
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     log_file_path = os.path.join(
-        working_directory, f"master_thesis_code_{timestamp}_h_{str(np.round(h_value,3)).replace('.', '_')}.log"
+        working_directory,
+        f"master_thesis_code_{timestamp}_h_{str(np.round(h_value,3)).replace('.', '_')}.log",
     )
     file_handler = logging.FileHandler(log_file_path)
     file_handler.setLevel(log_level)
@@ -241,14 +244,17 @@ def evaluate(
     galaxy_catalog: GalaxyCatalogueHandler,
     h_value: float,
 ) -> None:
-    #physical_relations.visualize()
-    #data_simulation = DataEvaluation()
-    hubble_constant_evaluation = BayesianStatistics()
-    #data_simulation.visualize()
+    data_simulation = DataEvaluation()
     # data_simulation.evaluate_snr_analysis()
-    #Model1CrossCheck().visualize_emri_distribution()
-    hubble_constant_evaluation.evaluate(galaxy_catalog, h_value)
-    #hubble_constant_evaluation.visualize(galaxy_catalog=galaxy_catalog)
+
+    # hubble_constant_evaluation = BayesianStatistics()
+    # hubble_constant_evaluation.evaluate(galaxy_catalog, h_value)
+    # hubble_constant_evaluation.visualize(galaxy_catalog=galaxy_catalog)
+
+    galaxy_catalog.visualize_galaxy_catalog()
+    Model1CrossCheck().visualize_emri_distribution()
+    # physical_relations.visualize()
+    data_simulation.visualize()
 
 
 if __name__ == "__main__":
