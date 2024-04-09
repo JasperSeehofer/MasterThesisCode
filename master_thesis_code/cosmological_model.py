@@ -807,9 +807,12 @@ class BayesianStatistics:
         pool: mp.Pool,
     ) -> None:
         count = 0
+        used_detections = 0
         self.posterior_data_with_bh_mass[GALAXY_WEIGHTS] = {}
         for index, detection in self.cramer_rao_bounds.iterrows():
-            _LOGGER.info(f"Progess: detections: {count}/{len(self.cramer_rao_bounds)}")
+            _LOGGER.info(
+                f"Progess: detections: {count}/{len(self.cramer_rao_bounds)}, used detections: {used_detections}..."
+            )
             count += 1
             try:
                 self.posterior_data[index]
@@ -833,6 +836,8 @@ class BayesianStatistics:
             if not self.use_detection():
                 _LOGGER.debug("detection skipped...")
                 continue
+
+            used_detections += 1
 
             possible_hosts = galaxy_catalog.get_possible_hosts(
                 z_min=z_min,
@@ -867,7 +872,9 @@ class BayesianStatistics:
             _LOGGER.debug(
                 f"event likelihood: {event_likelihood}\nevent likelihood with bh mass: {event_likelihood_with_bh_mass}"
             )
-            _LOGGER.debug("posteriors computed for detection...")
+            _LOGGER.debug(
+                f"posteriors computed for detection using {len(used_detections)} detections..."
+            )
 
     def p_Di(
         self,
@@ -963,10 +970,11 @@ class BayesianStatistics:
             phi_error=self.detection.phi_error,
             theta=self.detection.theta,
             theta_error=self.detection.theta_error,
+            cov_theta_phi=self.detection.theta_phi_covariance,
         )
         distance_relative_error = self.detection.d_L_uncertainty / self.detection.d_L
 
-        if (distance_relative_error < 0.1) and (sky_localization_uncertainty < 0.001):
+        if (distance_relative_error < 0.1) and (sky_localization_uncertainty < 0.01):
             return True
         _LOGGER.info(
             f"Detection skipped: distance_relative_error {distance_relative_error}, sky_localization_uncertainty {sky_localization_uncertainty}"
@@ -975,13 +983,13 @@ class BayesianStatistics:
 
     @staticmethod
     def _sky_localization_uncertainty(
-        phi_error: float, theta: float, theta_error: float
+        phi_error: float, theta: float, theta_error: float, cov_theta_phi: float
     ) -> float:
         return (
             2
             * np.pi
             * np.abs(np.sin(theta))
-            * np.sqrt(phi_error**2 * theta_error**2)  # TODO no covariance used
+            * np.sqrt(phi_error**2 * theta_error**2 - cov_theta_phi)
         )
 
 
@@ -999,10 +1007,6 @@ def single_host_likelihood(
         )
         norm_dist_galaxy = NormalDist(mu=possible_host.M, sigma=possible_host.M_error)
         current_mass_weight = norm_dist_measurement.overlap(norm_dist_galaxy)
-
-    # compute weight
-    if detection.theta_phi_covariance < 0:
-        print("covariance is negative", flush=True)
 
     multivariate_normal_distribution = multivariate_normal(
         mean=[detection.phi, detection.theta],
