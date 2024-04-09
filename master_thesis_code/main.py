@@ -143,7 +143,7 @@ def data_simulation(
             host_galaxies = galaxy_catalog.get_random_hosts_in_mass_range(
                 parameter_estimation.parameter_space.M.lower_limit,
                 parameter_estimation.parameter_space.M.upper_limit,
-                0.5,
+                0.7,
             )  # CAREFUL dist RESTRICTION ADDED BY HAND FOR FASTER DETECTION RESULTS
             host_galaxy = next(host_galaxies)
         assert isinstance(host_galaxy, HostGalaxy)
