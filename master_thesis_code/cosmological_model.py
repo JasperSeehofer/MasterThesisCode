@@ -801,16 +801,18 @@ class BayesianStatistics:
             os.makedirs("simulations/posteriors")
         if not os.path.isdir("simulations/posteriors_with_bh_mass"):
             os.makedirs("simulations/posteriors_with_bh_mass")
-
-        with open(
-            f"simulations/posteriors/h_{str(np.round(self.h,3)).replace('.', '_')}.json",
-            "r",
-        ) as file:
-            try:
-                posteriors_existing_data: dict = dict(json.load(file))
-            except json.decoder.JSONDecodeError:
-                posteriors_existing_data: dict = {}
-
+        try:
+            with open(
+                    f"simulations/posteriors/h_{str(np.round(self.h,3)).replace('.', '_')}.json",
+                    "r",
+            ) as file:
+                try:
+                    posteriors_existing_data: dict = dict(json.load(file))
+                except json.decoder.JSONDecodeError:
+                    posteriors_existing_data: dict = {}
+        except FileNotFoundError:
+            posteriors_existing_data: dict = {}
+                
         with open(
             f"simulations/posteriors/h_{str(np.round(self.h,3)).replace('.', '_')}.json",
             "w",
@@ -820,15 +822,18 @@ class BayesianStatistics:
                 str(key): value for key, value in self.posterior_data.items()
             }
             json.dump(data | {"h": self.h}, file)
+        try:
+            with open(
+                    f"simulations/posteriors_with_bh_mass/h_{str(np.round(self.h,3)).replace('.', '_')}.json",
+                    "r",
+            ) as file:
+                try:
+                    posteriors_with_bh_mass_existing_data: dict = dict(json.load(file))
+                except json.decoder.JSONDecodeError:
+                    posteriors_with_bh_mass_existing_data: dict = {}
+        except FileNotFoundError:
+            posteriors_with_bh_mass_existing_data: dict = {}
 
-        with open(
-            f"simulations/posteriors_with_bh_mass/h_{str(np.round(self.h,3)).replace('.', '_')}.json",
-            "r",
-        ) as file:
-            try:
-                posteriors_with_bh_mass_existing_data: dict = dict(json.load(file))
-            except json.decoder.JSONDecodeError:
-                posteriors_existing_data: dict = {}
         with open(
             f"simulations/posteriors_with_bh_mass/h_{str(np.round(self.h,3)).replace('.', '_')}.json",
             "w",
