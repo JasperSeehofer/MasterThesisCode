@@ -888,6 +888,7 @@ class BayesianStatistics:
                 theta_error=self.detection.theta_error,
                 M_z=self.detection.M,
                 M_z_error=self.detection.M_uncertainty,
+                cutoff_multiplier=3.,
             )
 
             if possible_hosts is None:
@@ -912,7 +913,7 @@ class BayesianStatistics:
                 f"event likelihood: {event_likelihood}\nevent likelihood with bh mass: {event_likelihood_with_bh_mass}"
             )
             _LOGGER.debug(
-                f"posteriors computed for detection using {len(used_detections)} detections..."
+                f"posteriors computed for detection using {used_detections} detections..."
             )
 
     def p_Di(
