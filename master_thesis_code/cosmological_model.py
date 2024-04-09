@@ -873,7 +873,7 @@ class BayesianStatistics:
                 f"event likelihood: {event_likelihood}\nevent likelihood with bh mass: {event_likelihood_with_bh_mass}"
             )
             _LOGGER.debug(
-                f"posteriors computed for detection using {len(used_detections)} detections..."
+                f"posteriors computed for detection using {used_detections} detections..."
             )
 
     def p_Di(
