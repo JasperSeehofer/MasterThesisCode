@@ -843,6 +843,7 @@ class BayesianStatistics:
                 theta_error=self.detection.theta_error,
                 M_z=self.detection.M,
                 M_z_error=self.detection.M_uncertainty,
+                cutoff_multiplier=3.,
             )
 
             if possible_hosts is None:
