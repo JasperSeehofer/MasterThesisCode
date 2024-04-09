@@ -46,6 +46,27 @@ class DataEvaluation:
 
         mean_cramer_rao_bounds.to_excel(f"{figures_directory}mean_bounds.xlsx")
 
+        # create 3d spherical coordinates plot of detections
+
+        fig = plt.figure(figsize=(16, 9))
+        ax = fig.add_subplot(111, projection="3d")
+
+        r = self._cramer_rao_bounds["dist"] * GPC_TO_MPC * H0 / C
+        theta = self._cramer_rao_bounds["phiS"]
+        phi = self._cramer_rao_bounds["qS"]
+        snr = self._cramer_rao_bounds["SNR"]
+
+        x = r * np.sin(theta) * np.cos(phi)
+        y = r * np.sin(theta) * np.sin(phi)
+        z = r * np.cos(theta)
+
+        ax.scatter(x, y, z, c=snr, cmap="viridis")
+        # show colorbar
+        cbar = plt.colorbar(ax.scatter(x, y, z, c=snr, cmap="viridis"))
+        cbar.set_label("SNR")
+        plt.savefig(f"{figures_directory}plots/detections_3d.png", dpi=300)
+        plt.close()
+
         for parameter in vars(parameter_space).values():
             assert isinstance(parameter, Parameter)
             uncertainty_column_name = (
@@ -248,7 +269,6 @@ class DataEvaluation:
         ax.set_ylabel("Phi in deg")
         ax.set_xlabel("Theta in deg")
         ax.set_zlabel("d_Omega in deg^2")
-        plt.show()
         plt.savefig(
             f"{figures_directory}plots/sky_localization_uncertainty.png", dpi=300
         )

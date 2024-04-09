@@ -4,6 +4,7 @@ import numpy as np
 from collections.abc import Iterable
 from dataclasses import dataclass
 import logging
+import os
 from typing import Tuple, List, Optional
 from matplotlib import pyplot as plt
 from mpl_toolkits.mplot3d import axes3d
@@ -109,13 +110,38 @@ class GalaxyCatalogueHandler:
                 self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS].isna()
             ]
         )
-        _LOGGER.info(f"Galaxies without stellar mass estimation {bh_mass_not_given/len(self.reduced_galaxy_catalog)*100}%")
+        _LOGGER.info(
+            f"Galaxies without stellar mass estimation {bh_mass_not_given/len(self.reduced_galaxy_catalog)*100}%"
+        )
         bh_mass_given_statistics = self.reduced_galaxy_catalog[
-            ~ self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS].isna()
+            ~self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS].isna()
         ].describe()
         _LOGGER.info(
             f"Galaxies with stellar mass estimation statistics\n: {bh_mass_given_statistics}"
         )
+
+    def visualize_galaxy_catalog(self) -> None:
+        figures_directory = "./saved_figures/galaxy_catalogue/"
+        if not os.path.exists(figures_directory):
+            os.makedirs(figures_directory)
+
+        # visualize mass distribution
+        fig, ax = plt.subplots()
+        ax.hist(self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS], bins=10000)
+        ax.set_xscale("log")
+        ax.set_yscale("log")
+        ax.set_xlabel("BH mass in solar masses")
+        ax.set_ylabel("Number of galaxies with BH mass")
+        plt.savefig(figures_directory + "estimated_BH_mass_distribution.png")
+        plt.close()
+
+        # visualize redshift distribution
+        fig, ax = plt.subplots()
+        ax.hist(self.reduced_galaxy_catalog[InternalCatalogColumns.REDSHIFT])
+        ax.set_xlabel("Redshift")
+        ax.set_ylabel("Number of galaxies with redshift")
+        plt.savefig(figures_directory + "redshift_distribution.png")
+        plt.close()
 
     def parse_to_reduced_catalog(self, galaxy_catalogue_file_path: str) -> None:
         iterator = pd.read_csv(
@@ -142,10 +168,14 @@ class GalaxyCatalogueHandler:
                 | (chunk[CatalogueColumns.REDSHIFT_FLAG.name] == 3)
             ]
 
-            chunk = chunk.fillna({CatalogueColumns.REDSHIFT_PECULIAR_VELOCITY_ERROR.name: 0.0})
+            chunk = chunk.fillna(
+                {CatalogueColumns.REDSHIFT_PECULIAR_VELOCITY_ERROR.name: 0.0}
+            )
 
             # adding errors of redshift
-            chunk[CatalogueColumns.REDSHIFT_MEASUREMENT_ERROR.name] += chunk[CatalogueColumns.REDSHIFT_PECULIAR_VELOCITY_ERROR.name]
+            chunk[CatalogueColumns.REDSHIFT_MEASUREMENT_ERROR.name] += chunk[
+                CatalogueColumns.REDSHIFT_PECULIAR_VELOCITY_ERROR.name
+            ]
 
             chunk = chunk.drop(
                 columns=[
@@ -161,7 +191,11 @@ class GalaxyCatalogueHandler:
     def read_reduced_galaxy_catalog(self) -> pd.DataFrame:
         return pd.read_csv(
             REDUCED_CATALOGUE_FILE_PATH,
-            names=[column.name for column in CatalogueColumns if column.value not in [30, 34]],
+            names=[
+                column.name
+                for column in CatalogueColumns
+                if column.value not in [30, 34]
+            ],
         )
 
     def get_host_galaxy_by_index(self, index: int) -> HostGalaxy:
@@ -298,16 +332,12 @@ class GalaxyCatalogueHandler:
                 self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS]
                 <= upper_limit
             )
-            & (
-                self.reduced_galaxy_catalog[InternalCatalogColumns.REDSHIFT]
-                <= max_dist
-            )
+            & (self.reduced_galaxy_catalog[InternalCatalogColumns.REDSHIFT] <= max_dist)
         ]
 
         _LOGGER.debug(
             f"restricted_galaxy_catalogue: {restricted_galaxy_catalogue.shape[0]} galaxies."
         )
-
 
         return_list = []
         for theta, phi, redshift in zip(thetas, phis, redshifts):
@@ -321,9 +351,7 @@ class GalaxyCatalogueHandler:
                 )
                 ** 2
                 + (
-                    restricted_galaxy_catalogue[
-                        InternalCatalogColumns.REDSHIFT
-                    ]
+                    restricted_galaxy_catalogue[InternalCatalogColumns.REDSHIFT]
                     / redshift
                     - 1
                 )

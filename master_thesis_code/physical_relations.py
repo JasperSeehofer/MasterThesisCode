@@ -13,7 +13,7 @@ from master_thesis_code.constants import (
 
 
 def dist(
-    redshift,
+    redshift: float,
     h: float = H,
     Omega_m: float = OMEGA_M,
     Omega_de: float = OMEGA_DE,
@@ -35,22 +35,20 @@ def dist(
         redshift = redshift[0]
     zs = np.linspace(0, redshift, 1000)
 
-    H_0 = h * 100.0 * KM_TO_M / GPC_TO_MPC ** (-1)
+    H_0 = h * 100.0
 
     # Hubble parameter
-    hubble = np.array(
-        np.sqrt(
-            Omega_m * (1 + zs) ** 3
-            + Omega_de
-            * (1 + zs) ** (3 * (1 + w_0 + w_a))
-            * np.exp(-3 * w_a * zs / (1 + zs))
-        )
+    hubble = np.sqrt(
+        Omega_m * (1 + zs) ** 3
+        + Omega_de
+        * (1 + zs) ** (3 * (1 + w_0 + w_a))
+        * np.exp(-3 * w_a * zs / (1 + zs))
     )
 
     # integral
     integral = np.trapz(1 / hubble, zs)
 
-    # luminosity distance
+    # luminosity distance in Gpc
     result = C / H_0 * (1 + redshift) * integral - offset_for_root_finding
 
     return result
@@ -119,9 +117,10 @@ def convert_redshifted_mass_to_true_mass(
     M_err = np.sqrt((M_z_error / (1 + z)) ** 2 + (M_z * z_error / (1 + z) ** 2) ** 2)
     return (M, M_err)
 
+
 def convert_true_mass_to_redshifted_mass_with_distance(M: float, dist: float) -> float:
     z = dist_to_redshift(dist)
-    return M*(1+z)
+    return M * (1 + z)
 
 
 def convert_true_mass_to_redshifted_mass(
@@ -158,8 +157,10 @@ def get_redshift_outer_bounds(
     )
     return z_min, z_max
 
+
 def visualize():
     import matplotlib.pyplot as plt
+
     zs = np.linspace(0, 2, 1000)
     distances = [dist(z) for z in zs]
     plt.plot(zs, distances)
