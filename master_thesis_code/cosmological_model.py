@@ -68,6 +68,11 @@ class Detection:
         self.M_phi_covariance = parameters["delta_phiS_delta_M"]
         self.M_theta_covariance = parameters["delta_qS_delta_M"]
 
+    def get_skylocalization_error(self) -> float:
+        return _sky_localization_uncertainty(
+            self.phi_error, self.theta, self.theta_error, self.theta_phi_covariance
+        )
+
 
 @dataclass
 class ParameterSample:
@@ -440,38 +445,73 @@ class BayesianStatistics:
             f"After filtering:\n h = {self.h_values}\n h_bh_mass = {self.h_values_with_bh_mass} #detections = {len(self.posterior_data)}\n #detections with bh mass = {len(self.posterior_data_with_bh_mass)}"
         )
 
-        plt.figure(figsize=(16, 9))
+        # define colormap for skylocalization coloring
+        detections = [
+            Detection(self.cramer_rao_bounds.iloc[int(index)])
+            for index in self.posterior_data.keys()
+        ]
+        sky_localization_error_min = min(
+            [detection.get_skylocalization_error() for detection in detections]
+        )
+        sky_localization_error_max = max(
+            [detection.get_skylocalization_error() for detection in detections]
+        )
+        cmap = plt.get_cmap("viridis")
+        norm = plt.Normalize(
+            vmin=sky_localization_error_min, vmax=sky_localization_error_max
+        )
+
+        fig, ax = plt.subplots(figsize=(16, 9))
         for detection_index, posterior in self.posterior_data.items():
+            detection = Detection(self.cramer_rao_bounds.iloc[int(detection_index)])
+            color = cmap(norm(detection.get_skylocalization_error()))
+
             # sort the posteriors by h value
             zipped = list(zip(self.h_values, posterior))
             zipped.sort(key=lambda x: x[0])
             h_samples, posterior = zip(*zipped)
-            plt.plot(
+            ax.plot(
                 h_samples,
                 posterior / np.max(posterior),
                 label=f"detection: {detection_index}",
+                color=color,
             )
-            plt.xlabel("Hubble constant h")
-            plt.ylabel("Posterior")
-        plt.savefig(f"saved_figures/bayesian_statistics_event_posteriors.png")
+        ax.set_xlabel("Hubble constant h")
+        ax.set_ylabel("Posterior")
+        fig.colorbar(
+            plt.cm.ScalarMappable(norm=norm, cmap=cmap),
+            ax=ax,
+            label="skylocalization error",
+        )
+        plt.savefig(f"saved_figures/bayesian_statistics_event_posteriors.png", dpi=300)
         plt.close()
 
-        plt.figure(figsize=(16, 9))
-        for detection_index, posterior in self.posterior_data_with_bh_mass.items():
-            zipped = list(zip(self.h_values_with_bh_mass, posterior))
+        fig, ax = plt.subplots(figsize=(16, 9))
 
+        for detection_index, posterior in self.posterior_data_with_bh_mass.items():
+            detection = Detection(self.cramer_rao_bounds.iloc[int(detection_index)])
+            color = cmap(norm(detection.get_skylocalization_error()))
+
+            zipped = list(zip(self.h_values_with_bh_mass, posterior))
             zipped.sort(key=lambda x: x[0])
             h_samples, posterior = zip(*zipped)
 
-            plt.plot(
+            ax.plot(
                 h_samples,
                 posterior / np.max(posterior),
                 label=f"detection {detection_index}",
+                color=color,
             )
-            plt.xlabel("Hubble constant h")
-            plt.ylabel("Posterior")
+        ax.set_xlabel("Hubble constant h")
+        ax.set_ylabel("Posterior")
+        fig.colorbar(
+            plt.cm.ScalarMappable(norm=norm, cmap=cmap),
+            ax=ax,
+            label="skylocalization error",
+        )
         plt.savefig(
-            f"saved_figures/bayesian_statistics_event_posteriors_with_bh_mass.png"
+            f"saved_figures/bayesian_statistics_event_posteriors_with_bh_mass.png",
+            dpi=300,
         )
         plt.close()
 
@@ -498,7 +538,7 @@ class BayesianStatistics:
         plt.savefig("saved_figures/bayesian_statistics.png")
         plt.close()
 
-        self.visualize_galaxy_weights(galaxy_catalog)
+        # self.visualize_galaxy_weights(galaxy_catalog)
 
     def visualize_galaxy_weights(self, galaxy_catalog: GalaxyCatalogueHandler) -> None:
         _LOGGER.info("Visualizing galaxy weights...")
@@ -965,7 +1005,7 @@ class BayesianStatistics:
         return integral / weight_sum, integral_with_bh_mass / weight_sum_with_bh_mass
 
     def use_detection(self) -> bool:
-        sky_localization_uncertainty = self._sky_localization_uncertainty(
+        sky_localization_uncertainty = _sky_localization_uncertainty(
             phi_error=self.detection.phi_error,
             theta=self.detection.theta,
             theta_error=self.detection.theta_error,
@@ -980,16 +1020,16 @@ class BayesianStatistics:
         )
         return False
 
-    @staticmethod
-    def _sky_localization_uncertainty(
-        phi_error: float, theta: float, theta_error: float, cov_theta_phi: float
-    ) -> float:
-        return (
-            2
-            * np.pi
-            * np.abs(np.sin(theta))
-            * np.sqrt(phi_error**2 * theta_error**2 - cov_theta_phi)
-        )
+
+def _sky_localization_uncertainty(
+    phi_error: float, theta: float, theta_error: float, cov_theta_phi: float
+) -> float:
+    return (
+        2
+        * np.pi
+        * np.abs(np.sin(theta))
+        * np.sqrt(phi_error**2 * theta_error**2 - cov_theta_phi**2)
+    )
 
 
 def single_host_likelihood(
