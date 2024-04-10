@@ -778,6 +778,8 @@ class BayesianStatistics:
             f"Found {len(os.sched_getaffinity(0))} / {os.cpu_count()} (available / system) cpus."
         )
         cpu_count = os.cpu_count()
+
+        """
         if len(os.sched_getaffinity(0)) < cpu_count:
             try:
                 os.sched_setaffinity(0, range(cpu_count))
@@ -786,6 +788,8 @@ class BayesianStatistics:
         _LOGGER.debug(
             f"After trying to set affinity available cpus: {len(os.sched_getaffinity(0))}"
         )
+        """
+        
         with mp.get_context("spawn").Pool(
             len(os.sched_getaffinity(0)) - 4,
             initializer=child_process_init,
