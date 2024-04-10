@@ -324,7 +324,6 @@ class GalaxyCatalogueHandler:
         NUMBER_OF_HOSTS = 200
         thetas = np.arccos(np.random.uniform(-1.0, 1.0, NUMBER_OF_HOSTS))
         phis = np.random.uniform(0.0, 2 * np.pi, NUMBER_OF_HOSTS)
-        redshifts = np.random.uniform(0.0, max_dist, NUMBER_OF_HOSTS)
 
         restricted_galaxy_catalogue = self.reduced_galaxy_catalog[
             (self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS] >= lower_limit)
@@ -340,19 +339,13 @@ class GalaxyCatalogueHandler:
         )
 
         return_list = []
-        for theta, phi, redshift in zip(thetas, phis, redshifts):
+        for theta, phi in zip(thetas, phis):
 
             closest_host_index = (
                 (restricted_galaxy_catalogue[InternalCatalogColumns.PHI_S] / phi - 1)
                 ** 2
                 + (
                     restricted_galaxy_catalogue[InternalCatalogColumns.THETA_S] / theta
-                    - 1
-                )
-                ** 2
-                + (
-                    restricted_galaxy_catalogue[InternalCatalogColumns.REDSHIFT]
-                    / redshift
                     - 1
                 )
                 ** 2
