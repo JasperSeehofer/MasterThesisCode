@@ -494,15 +494,15 @@ class BayesianStatistics:
         # sort h_values, posteriors and posteriors with bh mass by h value
         zipped = list(zip(self.h_values, self.posterior_data.items()))
         zipped.sort(key=lambda x: x[0])
-        self.h_values, self.posterior_data = zip(*zipped)
+        self.h_values, posterior_data_sorted = zip(*zipped)
 
         zipped_with_bh_mass = list(zip(self.h_values_with_bh_mass, self.posterior_data_with_bh_mass.items()))
         zipped_with_bh_mass.sort(key=lambda x: x[0])
-        self.h_values_with_bh_mass, self.posterior_data_with_bh_mass = zip(*zipped_with_bh_mass)
+        self.h_values_with_bh_mass, posterior_data_with_bh_mass_sorted = zip(*zipped_with_bh_mass)
 
 
         fig, ax = plt.subplots(figsize=(16, 9))
-        for detection_index, posterior in self.posterior_data.items():
+        for detection_index, posterior in posterior_data_sorted:
             detection = Detection(self.cramer_rao_bounds.iloc[int(detection_index)])
             color = cmap(norm(detection.get_skylocalization_error()))
 
@@ -524,7 +524,7 @@ class BayesianStatistics:
 
         fig, ax = plt.subplots(figsize=(16, 9))
 
-        for detection_index, posterior in self.posterior_data_with_bh_mass.items():
+        for detection_index, posterior in posterior_data_with_bh_mass_sorted:
             detection = Detection(self.cramer_rao_bounds.iloc[int(detection_index)])
             color = cmap(norm(detection.get_skylocalization_error()))
 
@@ -550,18 +550,18 @@ class BayesianStatistics:
         posteriors = np.ones(len(self.h_values))
         posteriors_with_bh_mass = np.ones(len(self.h_values_with_bh_mass))
         max_posterior = max(
-            [np.max(posterior) for posterior in self.posterior_data.values()]
+            [np.max(posterior) for posterior in [value[1] for value in posterior_data_sorted]]
         )
         max_posterior_with_bh_mass = max(
             [
                 np.max(posterior)
-                for posterior in self.posterior_data_with_bh_mass.values()
+                for posterior in [value[1] for value in posterior_data_with_bh_mass_sorted]
             ]
         )
 
-        for index, posterior in self.posterior_data.items():
+        for index, posterior in posterior_data_sorted:
             posteriors *= np.array(posterior) / max_posterior
-        for index, posterior in self.posterior_data_with_bh_mass.items():
+        for index, posterior in posterior_data_with_bh_mass_sorted:
             posteriors_with_bh_mass *= np.array(posterior) / max_posterior_with_bh_mass
         posteriors = posteriors / np.max(posteriors)
         posteriors_with_bh_mass = posteriors_with_bh_mass / np.max(
