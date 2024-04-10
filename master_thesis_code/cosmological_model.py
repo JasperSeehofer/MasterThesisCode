@@ -799,8 +799,16 @@ class BayesianStatistics:
             ),
             bins=np.linspace(0, 0.2, 21),
         )[0]
-
-        self._z_gws = np.linspace(0, 0.2, 21)[:-1]
+        # scale list such that it has the same length as the number of z_gws values
+        self._redshift_distribution = np.array([
+            value / np.sum(self._redshift_distribution) for value in self._redshift_distribution
+        ])
+        SCALING_FACTOR = 100
+        self._redshift_distribution = np.array(
+            [np.full(SCALING_FACTOR, value) for value in self._redshift_distribution]
+        ).flatten()
+        print(self._redshift_distribution)
+        self._z_gws = np.linspace(0, 0.3, len(self._redshift_distribution))
         self._distances = np.array(
             [
                 dist(
