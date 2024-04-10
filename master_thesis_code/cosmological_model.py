@@ -382,6 +382,7 @@ class BayesianStatistics:
         self.w_a = self.cosmological_model.w_a
 
     def visualize(self, galaxy_catalog: GalaxyCatalogueHandler) -> None:
+
         posteriors_directory = "simulations/posteriors"
         posteriors_with_bh_mass_directory = "simulations/posteriors_with_bh_mass"
 
@@ -396,16 +397,24 @@ class BayesianStatistics:
 
         posteriors_data = {}
         for file in posteriors_files:
+
             with open(f"{posteriors_directory}/{file}", "r") as file:
-                h_data = dict(json.load(file))
-                h = str(h_data.pop("h"))
-                posteriors_data[h] = h_data
+                try:
+                    h_data = dict(json.load(file))
+                    h = str(h_data.pop("h"))
+                    posteriors_data[h] = h_data
+                except json.JSONDecodeError as e:
+                    _LOGGER.error(f"Error reading file {file}: {e}")
+                    continue
 
         posteriors_with_bh_mass_data = {}
         for file in posteriors_with_bh_mass_files:
             with open(f"{posteriors_with_bh_mass_directory}/{file}", "r") as file:
-                h_data = dict(json.load(file))
-
+                try:
+                    h_data = dict(json.load(file))
+                except json.JSONDecodeError as e:
+                    _LOGGER.error(f"Error reading file {file}: {e}")
+                    continue
                 h = str(h_data.pop("h"))
                 self.galaxy_weights[h] = h_data.pop(GALAXY_WEIGHTS)
                 posteriors_with_bh_mass_data[h] = h_data
@@ -429,19 +438,37 @@ class BayesianStatistics:
                 except KeyError:
                     self.posterior_data_with_bh_mass[int(detection_index)] = posterior
 
-        # drop all posteriors with less samples than h_values
+        # drop all posteriors with less samples than h_values or if they are all zero
         self.posterior_data = {
             detection_index: posterior
             for detection_index, posterior in self.posterior_data.items()
-            if ((len(posterior) == len(self.h_values)) and (np.sum(posterior) > 0))
+            if ((len(posterior) == len(self.h_values)) and (np.max(posterior) > 0))
         }
         self.posterior_data_with_bh_mass = {
             detection_index: posterior
             for detection_index, posterior in self.posterior_data_with_bh_mass.items()
             if (
                 (len(posterior) == len(self.h_values_with_bh_mass))
-                and (np.sum(posterior) > 0)
+                and (np.max(posterior) > 0)
             )
+        }
+
+        # skylocalization error checkpoint (threshold < 0.001)
+        self.posterior_data = {
+            detection_index: posterior
+            for detection_index, posterior in self.posterior_data.items()
+            if Detection(
+                self.cramer_rao_bounds.iloc[int(detection_index)]
+            ).get_skylocalization_error()
+            < 0.0006
+        }
+        self.posterior_data_with_bh_mass = {
+            detection_index: posterior
+            for detection_index, posterior in self.posterior_data_with_bh_mass.items()
+            if Detection(
+                self.cramer_rao_bounds.iloc[int(detection_index)]
+            ).get_skylocalization_error()
+            < 0.0006
         }
 
         _LOGGER.info(
@@ -475,7 +502,7 @@ class BayesianStatistics:
             h_samples, posterior = zip(*zipped)
             ax.plot(
                 h_samples,
-                posterior / np.max(list(self.posterior_data.values())),
+                posterior / np.max(posterior),
                 label=f"detection: {detection_index}",
                 color=color,
             )
@@ -501,7 +528,7 @@ class BayesianStatistics:
 
             ax.plot(
                 h_samples,
-                posterior / np.max(list(self.posterior_data_with_bh_mass.values())),
+                posterior / np.max(posterior),
                 label=f"detection {detection_index}",
                 color=color,
             )
@@ -520,14 +547,23 @@ class BayesianStatistics:
 
         posteriors = np.ones(len(self.h_values))
         posteriors_with_bh_mass = np.ones(len(self.h_values_with_bh_mass))
-        for index, posterior in self.posterior_data.items():
-            posteriors *= np.array(posterior)
-        for index, posterior in self.posterior_data_with_bh_mass.items():
-            posteriors_with_bh_mass *= np.array(posterior)
+        max_posterior = max(
+            [np.max(posterior) for posterior in self.posterior_data.values()]
+        )
+        max_posterior_with_bh_mass = max(
+            [
+                np.max(posterior)
+                for posterior in self.posterior_data_with_bh_mass.values()
+            ]
+        )
 
-        posteriors = posteriors / np.max(list(self.posterior_data.values()))
+        for index, posterior in self.posterior_data.items():
+            posteriors *= np.array(posterior) / max_posterior
+        for index, posterior in self.posterior_data_with_bh_mass.items():
+            posteriors_with_bh_mass *= np.array(posterior) / max_posterior_with_bh_mass
+        posteriors = posteriors / np.max(posteriors)
         posteriors_with_bh_mass = posteriors_with_bh_mass / np.max(
-            list(self.posterior_data_with_bh_mass.values())
+            posteriors_with_bh_mass
         )
 
         fig = plt.figure(figsize=(16, 9))
@@ -541,7 +577,7 @@ class BayesianStatistics:
         plt.savefig("saved_figures/bayesian_statistics.png")
         plt.close()
 
-        self.visualize_galaxy_weights(galaxy_catalog)
+        # self.visualize_galaxy_weights(galaxy_catalog)
 
     def visualize_galaxy_weights(self, galaxy_catalog: GalaxyCatalogueHandler) -> None:
         _LOGGER.info("Visualizing galaxy weights...")
@@ -559,13 +595,11 @@ class BayesianStatistics:
                     weight_data[int(detection_index)] = [host_galaxy_weights]
 
         # remove weight_data with less samples than h_values
-        print(len(weight_data))
         weight_data = {
             detection_index: host_galaxy_weights
             for detection_index, host_galaxy_weights in weight_data.items()
             if len(host_galaxy_weights) == len(h_values)
         }
-        print(len(weight_data))
 
         for detection_index, host_galaxy_weights_by_h_value in weight_data.items():
             # setup subplots with 2 graphs
@@ -759,7 +793,14 @@ class BayesianStatistics:
 
         self.h = h_value
         _LOGGER.info("prepare global variable for multiprocessing")
-        self._z_gws = np.linspace(0, 1, 10000)
+        self._redshift_distribution = np.histogram(
+            distances=np.array(
+                [dist_to_redshift(dist) for dist in self.cramer_rao_bounds["dist"]],
+                bins=np.linspace(0, 0.2, 21),
+            )
+        )[0]
+
+        self._z_gws = np.linspace(0, 0.2, 21)[:-1]
         self._distances = np.array(
             [
                 dist(
@@ -789,14 +830,11 @@ class BayesianStatistics:
             f"After trying to set affinity available cpus: {len(os.sched_getaffinity(0))}"
         )
         """
-        
+
         with mp.get_context("spawn").Pool(
             len(os.sched_getaffinity(0)) - 4,
             initializer=child_process_init,
-            initargs=(
-                self._distances,
-                self._z_gws,
-            ),
+            initargs=(self._distances, self._z_gws, self._redshift_distribution),
         ) as pool:
             self.p_D(
                 galaxy_catalog=galaxy_catalog,
@@ -1052,6 +1090,8 @@ def single_host_likelihood(
 ) -> list[float]:
     global distances
     global z_gws
+    global redshift_distribution
+
     if evaluate_with_bh_mass:
         # compute weight using the bh mass
         norm_dist_measurement = NormalDist(
@@ -1084,14 +1124,20 @@ def single_host_likelihood(
         )
     )
 
-    result = np.trapz(gaussian, z_gws)
+    result = np.trapz(redshift_distribution * gaussian, z_gws)
     if evaluate_with_bh_mass:
         return [result, current_weight, current_mass_weight]
     return [result, current_weight]
 
 
-def child_process_init(current_distances: np.array, current_z_gws: np.array) -> None:
+def child_process_init(
+    current_distances: np.array,
+    current_z_gws: np.array,
+    current_redshift_distribution: np.array,
+) -> None:
     global distances
     global z_gws
+    global redshift_distribution
     z_gws = current_z_gws
     distances = current_distances
+    redshift_distribution = current_redshift_distribution
