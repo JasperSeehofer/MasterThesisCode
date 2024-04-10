@@ -491,17 +491,23 @@ class BayesianStatistics:
             vmin=sky_localization_error_min, vmax=sky_localization_error_max
         )
 
+        # sort h_values, posteriors and posteriors with bh mass by h value
+        zipped = list(zip(self.h_values, self.posterior_data.items()))
+        zipped.sort(key=lambda x: x[0])
+        self.h_values, self.posterior_data = zip(*zipped)
+
+        zipped_with_bh_mass = list(zip(self.h_values_with_bh_mass, self.posterior_data_with_bh_mass.items()))
+        zipped_with_bh_mass.sort(key=lambda x: x[0])
+        self.h_values_with_bh_mass, self.posterior_data_with_bh_mass = zip(*zipped_with_bh_mass)
+
+
         fig, ax = plt.subplots(figsize=(16, 9))
         for detection_index, posterior in self.posterior_data.items():
             detection = Detection(self.cramer_rao_bounds.iloc[int(detection_index)])
             color = cmap(norm(detection.get_skylocalization_error()))
 
-            # sort the posteriors by h value
-            zipped = list(zip(self.h_values, posterior))
-            zipped.sort(key=lambda x: x[0])
-            h_samples, posterior = zip(*zipped)
             ax.plot(
-                h_samples,
+                self.h_values,
                 posterior / np.max(posterior),
                 label=f"detection: {detection_index}",
                 color=color,
@@ -522,12 +528,8 @@ class BayesianStatistics:
             detection = Detection(self.cramer_rao_bounds.iloc[int(detection_index)])
             color = cmap(norm(detection.get_skylocalization_error()))
 
-            zipped = list(zip(self.h_values_with_bh_mass, posterior))
-            zipped.sort(key=lambda x: x[0])
-            h_samples, posterior = zip(*zipped)
-
             ax.plot(
-                h_samples,
+                self.h_values_with_bh_mass,
                 posterior / np.max(posterior),
                 label=f"detection {detection_index}",
                 color=color,
@@ -566,10 +568,28 @@ class BayesianStatistics:
             posteriors_with_bh_mass
         )
 
+        # fit normal distribution to posteriors
+        normal_dist = NormalDist.from_samples(posteriors)
+        normal_dist_with_bh_mass = NormalDist.from_samples(posteriors_with_bh_mass)
+
         fig = plt.figure(figsize=(16, 9))
-        plt.scatter(self.h_values, posteriors, label="without BH mass")
+        plt.scatter(self.h_values, posteriors, label="without BH mass", color="b")
         plt.scatter(
-            self.h_values_with_bh_mass, posteriors_with_bh_mass, label="with BH mass"
+            self.h_values_with_bh_mass, posteriors_with_bh_mass, label="with BH mass", color="r"
+        )
+        plt.plot(
+            self.h_values,
+            [normal_dist.pdf(h) for h in self.h_values],
+            label="fit without BH mass",
+            color="b",
+            linestyle="--",
+        )
+        plt.plot(
+            self.h_values_with_bh_mass,
+            [normal_dist_with_bh_mass.pdf(h) for h in self.h_values_with_bh_mass],
+            label="fit with BH mass",
+            color="r",
+            linestyle="--",
         )
         plt.xlabel("Hubble constant h")
         plt.ylabel("Posterior")
