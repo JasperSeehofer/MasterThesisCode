@@ -433,12 +433,15 @@ class BayesianStatistics:
         self.posterior_data = {
             detection_index: posterior
             for detection_index, posterior in self.posterior_data.items()
-            if len(posterior) == len(self.h_values)
+            if ((len(posterior) == len(self.h_values)) and (np.sum(posterior) > 0))
         }
         self.posterior_data_with_bh_mass = {
             detection_index: posterior
             for detection_index, posterior in self.posterior_data_with_bh_mass.items()
-            if len(posterior) == len(self.h_values_with_bh_mass)
+            if (
+                (len(posterior) == len(self.h_values_with_bh_mass))
+                and (np.sum(posterior) > 0)
+            )
         }
 
         _LOGGER.info(
@@ -472,7 +475,7 @@ class BayesianStatistics:
             h_samples, posterior = zip(*zipped)
             ax.plot(
                 h_samples,
-                posterior / np.max(posterior),
+                posterior / np.max(list(self.posterior_data.values())),
                 label=f"detection: {detection_index}",
                 color=color,
             )
@@ -498,7 +501,7 @@ class BayesianStatistics:
 
             ax.plot(
                 h_samples,
-                posterior / np.max(posterior),
+                posterior / np.max(list(self.posterior_data_with_bh_mass.values())),
                 label=f"detection {detection_index}",
                 color=color,
             )
@@ -522,9 +525,9 @@ class BayesianStatistics:
         for index, posterior in self.posterior_data_with_bh_mass.items():
             posteriors_with_bh_mass *= np.array(posterior)
 
-        posteriors = posteriors / np.max(posteriors)
+        posteriors = posteriors / np.max(list(self.posterior_data.values()))
         posteriors_with_bh_mass = posteriors_with_bh_mass / np.max(
-            posteriors_with_bh_mass
+            list(self.posterior_data_with_bh_mass.values())
         )
 
         fig = plt.figure(figsize=(16, 9))
@@ -538,7 +541,7 @@ class BayesianStatistics:
         plt.savefig("saved_figures/bayesian_statistics.png")
         plt.close()
 
-        # self.visualize_galaxy_weights(galaxy_catalog)
+        self.visualize_galaxy_weights(galaxy_catalog)
 
     def visualize_galaxy_weights(self, galaxy_catalog: GalaxyCatalogueHandler) -> None:
         _LOGGER.info("Visualizing galaxy weights...")
@@ -803,8 +806,8 @@ class BayesianStatistics:
             os.makedirs("simulations/posteriors_with_bh_mass")
         try:
             with open(
-                    f"simulations/posteriors/h_{str(np.round(self.h,3)).replace('.', '_')}.json",
-                    "r",
+                f"simulations/posteriors/h_{str(np.round(self.h,3)).replace('.', '_')}.json",
+                "r",
             ) as file:
                 try:
                     posteriors_existing_data: dict = dict(json.load(file))
@@ -812,7 +815,7 @@ class BayesianStatistics:
                     posteriors_existing_data: dict = {}
         except FileNotFoundError:
             posteriors_existing_data: dict = {}
-                
+
         with open(
             f"simulations/posteriors/h_{str(np.round(self.h,3)).replace('.', '_')}.json",
             "w",
@@ -824,8 +827,8 @@ class BayesianStatistics:
             json.dump(data | {"h": self.h}, file)
         try:
             with open(
-                    f"simulations/posteriors_with_bh_mass/h_{str(np.round(self.h,3)).replace('.', '_')}.json",
-                    "r",
+                f"simulations/posteriors_with_bh_mass/h_{str(np.round(self.h,3)).replace('.', '_')}.json",
+                "r",
             ) as file:
                 try:
                     posteriors_with_bh_mass_existing_data: dict = dict(json.load(file))
@@ -893,7 +896,7 @@ class BayesianStatistics:
                 theta_error=self.detection.theta_error,
                 M_z=self.detection.M,
                 M_z_error=self.detection.M_uncertainty,
-                cutoff_multiplier=3.,
+                cutoff_multiplier=3.0,
             )
 
             if possible_hosts is None:

@@ -35,7 +35,7 @@ def dist(
         redshift = redshift[0]
     zs = np.linspace(0, redshift, 1000)
 
-    H_0 = h * 100.0
+    H_0 = h * 100.0 * KM_TO_M / GPC_TO_MPC ** (-1)  # Hubble constant in m/s*Gpc
 
     # Hubble parameter
     hubble = np.sqrt(
