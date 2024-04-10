@@ -794,10 +794,10 @@ class BayesianStatistics:
         self.h = h_value
         _LOGGER.info("prepare global variable for multiprocessing")
         self._redshift_distribution = np.histogram(
-            distances=np.array(
-                [dist_to_redshift(dist) for dist in self.cramer_rao_bounds["dist"]],
-                bins=np.linspace(0, 0.2, 21),
-            )
+            np.array(
+                [dist_to_redshift(dist) for dist in self.cramer_rao_bounds["dist"]]
+            ),
+            bins=np.linspace(0, 0.2, 21),
         )[0]
 
         self._z_gws = np.linspace(0, 0.2, 21)[:-1]
@@ -938,7 +938,7 @@ class BayesianStatistics:
                 theta_error=self.detection.theta_error,
                 M_z=self.detection.M,
                 M_z_error=self.detection.M_uncertainty,
-                cutoff_multiplier=3.0,
+                cutoff_multiplier=2.0,
             )
 
             if possible_hosts is None:
