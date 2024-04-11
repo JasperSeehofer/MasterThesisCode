@@ -16,9 +16,12 @@ if __name__ == "__main__":
     # get directory of the script
     directory = os.path.dirname(os.path.realpath(CRAMER_RAO_BOUNDS_OUTPUT_PATH))
     files = os.listdir(directory)
+    print(files)
     used_files = []
+    common_file_name = CRAMER_RAO_BOUNDS_PATH.split(".")[0].replace("$index", "").split("/")[1]
+    print(common_file_name)
     cramer_rao_bounds_files = [
-        file for file in files if CRAMER_RAO_BOUNDS_PATH.split(".")[0].replace("$index", "") in file
+        file for file in files if common_file_name in file
     ]
 
     # check if there are any files to merge
