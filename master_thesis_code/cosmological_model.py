@@ -855,12 +855,12 @@ class BayesianStatistics:
         self._redshift_distribution = np.array([
             value / np.sum(self._redshift_distribution) for value in self._redshift_distribution
         ])
-        SCALING_FACTOR = 100
+        SCALING_FACTOR = 1000
         self._redshift_distribution = np.array(
             [np.full(SCALING_FACTOR, value) for value in self._redshift_distribution]
         ).flatten()
         print(self._redshift_distribution)
-        self._z_gws = np.linspace(0, 0.3, len(self._redshift_distribution))
+        self._z_gws = np.linspace(0, 0.2, len(self._redshift_distribution))
         self._distances = np.array(
             [
                 dist(
