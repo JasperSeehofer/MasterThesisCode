@@ -69,6 +69,12 @@ class Detection:
         return _sky_localization_uncertainty(
             self.phi_error, self.theta, self.theta_error, self.theta_phi_covariance
         )
+    
+    def convert_to_best_guess_parameters(self) -> None:
+        self.phi = np.random.normal(self.phi, self.phi_error)
+        self.theta = np.random.normal(self.theta, self.theta_error)
+        self.M = np.random.normal(self.M, self.M_uncertainty)
+        self.d_L = np.random.normal(self.d_L, self.d_L_uncertainty)
 
 
 @dataclass
@@ -842,6 +848,14 @@ class BayesianStatistics:
         self.h = h_value
         _LOGGER.info("prepare global variable for multiprocessing")
         distances = [dist_to_redshift(dist) for dist in self.cramer_rao_bounds["dist"]]
+        # plot distances
+        fig, ax = plt.subplots(figsize=(16, 9))
+        ax.hist(distances, bins=np.linspace(0, max(distances), max(distances)*100))
+        ax.set_xlabel("redshift")
+        ax.set_ylabel("count")
+        plt.savefig("saved_figures/distance_histogram.png", dpi=300)
+        plt.close()
+
         self._redshift_distribution = np.histogram(
             np.array(
                 distances,
@@ -858,7 +872,7 @@ class BayesianStatistics:
             [np.full(SCALING_FACTOR, value) for value in self._redshift_distribution]
         ).flatten()
         print(self._redshift_distribution)
-        
+
         self._z_gws = np.linspace(0, max(distances), len(self._redshift_distribution))
         self._distances = np.array(
             [
@@ -973,6 +987,8 @@ class BayesianStatistics:
                 detection["M"], detection["dist"]
             )
             self.detection = Detection(detection)
+            self.detection.convert_to_best_guess_parameters()
+
             z_min, z_max = get_redshift_outer_bounds(
                 distance=self.detection.d_L,
                 distance_error=self.detection.d_L_uncertainty,
