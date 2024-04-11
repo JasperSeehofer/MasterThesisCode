@@ -478,11 +478,29 @@ class BayesianStatistics:
             f"After filtering:\n h = {self.h_values}\n h_bh_mass = {self.h_values_with_bh_mass} #detections = {len(self.posterior_data)}\n #detections with bh mass = {len(self.posterior_data_with_bh_mass)}"
         )
 
-        # define colormap for skylocalization coloring
+        # create detection objects
         detections = [
             Detection(self.cramer_rao_bounds.iloc[int(index)])
             for index in self.posterior_data.keys()
         ]
+
+        distances = [dist_to_redshift(detection.d_L) for detection in detections]
+
+        # plot redshift distribution of detections
+        fig, ax = plt.subplots(figsize=(16, 9))
+        ax.hist(
+            distances,
+            bins=np.linspace(0, max(distances), int(max(distances) * 100)),
+            histtype="step",
+            color="b",
+            label="detections",
+        )
+        ax.set_xlabel("redshift")
+        ax.set_ylabel("count")
+        plt.savefig("saved_figures/detection_redshift_distribution.png", dpi=300)
+        plt.close()
+
+        # define colormap for skylocalization coloring
         sky_localization_error_min = min(
             [detection.get_skylocalization_error() for detection in detections]
         )
@@ -848,19 +866,12 @@ class BayesianStatistics:
         self.h = h_value
         _LOGGER.info("prepare global variable for multiprocessing")
         distances = [dist_to_redshift(dist) for dist in self.cramer_rao_bounds["dist"]]
-        # plot distances
-        fig, ax = plt.subplots(figsize=(16, 9))
-        ax.hist(distances, bins=np.linspace(0, max(distances), max(distances)*100))
-        ax.set_xlabel("redshift")
-        ax.set_ylabel("count")
-        plt.savefig("saved_figures/distance_histogram.png", dpi=300)
-        plt.close()
 
         self._redshift_distribution = np.histogram(
             np.array(
                 distances,
             ),
-            bins=np.linspace(0, max(distances), max(distances)*100),
+            bins=np.linspace(0, max(distances), int(max(distances)*100)),
         )[0]
 
         # scale list such that it has the same length as the number of z_gws values
