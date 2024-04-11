@@ -39,6 +39,6 @@ MAXIMAL_FREQUENCY = 1
 SNR_THRESHOLD = 20
 
 # saving Cramer-Rao bounds for marginalization.
-CRAMER_RAO_BOUNDS_PATH = "simulations/cramer_rao_bounds_unbiased.csv"
+CRAMER_RAO_BOUNDS_PATH = "simulations/cramer_rao_bounds_unbiased_$index.csv"
 SNR_ANALYSIS_PATH = "simulations/snr_analysis.csv"
 UNDETECTED_EVENTS_PATH = "simulations/undetected_events_unbiased_$index.csv"
