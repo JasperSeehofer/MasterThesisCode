@@ -146,7 +146,7 @@ def data_simulation(
             host_galaxies = galaxy_catalog.get_random_hosts_in_mass_range(
                 parameter_estimation.parameter_space.M.lower_limit,
                 parameter_estimation.parameter_space.M.upper_limit,
-                0.7,
+                1,
             )  # CAREFUL dist RESTRICTION ADDED BY HAND FOR FASTER DETECTION RESULTS
             host_galaxy = next(host_galaxies)
         assert isinstance(host_galaxy, HostGalaxy)
@@ -248,8 +248,8 @@ def evaluate(
     # data_simulation.evaluate_snr_analysis()
 
     hubble_constant_evaluation = BayesianStatistics()
-    hubble_constant_evaluation.evaluate(galaxy_catalog, h_value)
-    # hubble_constant_evaluation.visualize(galaxy_catalog=galaxy_catalog)
+    # hubble_constant_evaluation.evaluate(galaxy_catalog, h_value)
+    hubble_constant_evaluation.visualize(galaxy_catalog=galaxy_catalog)
 
     # galaxy_catalog.visualize_galaxy_catalog()
     # Model1CrossCheck().visualize_emri_distribution()

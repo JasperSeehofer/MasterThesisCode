@@ -321,7 +321,7 @@ class GalaxyCatalogueHandler:
     def get_random_hosts_in_mass_range(
         self, lower_limit: float, upper_limit: float, max_dist: float = 4.5
     ) -> Iterable:
-        NUMBER_OF_HOSTS = 200
+        NUMBER_OF_HOSTS = 400
         thetas = np.arccos(np.random.uniform(-1.0, 1.0, NUMBER_OF_HOSTS))
         phis = np.random.uniform(0.0, 2 * np.pi, NUMBER_OF_HOSTS)
 
@@ -337,7 +337,7 @@ class GalaxyCatalogueHandler:
         _LOGGER.debug(
             f"restricted_galaxy_catalogue: {restricted_galaxy_catalogue.shape[0]} galaxies."
         )
-
+        restricted_galaxy_catalogue = restricted_galaxy_catalogue.sample(frac=1)
         return_list = []
         for theta, phi in zip(thetas, phis):
 

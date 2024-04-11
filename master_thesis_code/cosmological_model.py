@@ -35,10 +35,6 @@ _LOGGER = logging.getLogger()
 DEFAULT_GALAXY_Z_ERROR = 0.0015
 GALAXY_WEIGHTS = "galaxy_weights"
 
-# global variable
-z_gws = np.linspace(0, 1, 10000)  # TODO: Keep in mind
-
-
 @dataclass
 class CosmologicalParameter(Parameter):
     fiducial_value: float = 1.0
@@ -516,7 +512,7 @@ class BayesianStatistics:
 
             ax.plot(
                 h_values,
-                posterior / np.max(posterior),
+                posterior,
                 label=f"detection: {detection_index}",
                 color=color,
             )
@@ -542,7 +538,7 @@ class BayesianStatistics:
 
             ax.plot(
                 h_values_with_bh_mass,
-                posterior / np.max(posterior),
+                posterior,
                 label=f"detection {detection_index}",
                 color=color,
             )
