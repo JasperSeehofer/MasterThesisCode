@@ -863,12 +863,14 @@ class BayesianStatistics:
         ):
             raise ValueError("Hubble constant out of bounds.")
 
+        
         _LOGGER.debug(f"Loaded {len(self.cramer_rao_bounds)} detections...")
-        # filter detections with skylocalization error > 0.0006
+        # filter detections with skylocalization error > 0.01
         for index, detection in self.cramer_rao_bounds.iterrows():
-            if Detection(detection).get_skylocalization_error() > 0.0006:
+            if Detection(detection).get_skylocalization_error() > 0.01:
                 self.cramer_rao_bounds.drop(index, inplace=True)
         _LOGGER.debug(f"After filtering {len(self.cramer_rao_bounds)} detections with skylocalization error < 0.0006")
+        
 
         self.h = h_value
         _LOGGER.info("prepare global variable for multiprocessing")
