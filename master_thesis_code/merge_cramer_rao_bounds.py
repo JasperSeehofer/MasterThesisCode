@@ -16,13 +16,12 @@ if __name__ == "__main__":
     # get directory of the script
     directory = os.path.dirname(os.path.realpath(CRAMER_RAO_BOUNDS_OUTPUT_PATH))
     files = os.listdir(directory)
-    print(files)
     used_files = []
     common_file_name = CRAMER_RAO_BOUNDS_PATH.split(".")[0].replace("$index", "").split("/")[1]
-    print(common_file_name)
     cramer_rao_bounds_files = [
         file for file in files if common_file_name in file
     ]
+    cramer_rao_bounds_files = [directory + "/" + file for file in cramer_rao_bounds_files]
 
     # check if there are any files to merge
     if len(cramer_rao_bounds_files) == 0:
@@ -31,7 +30,7 @@ if __name__ == "__main__":
     # check for existing output file
     try:
         with open(CRAMER_RAO_BOUNDS_OUTPUT_PATH, "r") as f:
-            pd.read_csv(f)
+            cramer_rao_bounds = pd.read_csv(f)
     except FileNotFoundError:
         # use first file as base
         first_file = cramer_rao_bounds_files.pop(0)

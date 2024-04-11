@@ -991,11 +991,10 @@ class BayesianStatistics:
         pool: mp.Pool,
     ) -> None:
         count = 0
-        used_detections = 0
         self.posterior_data_with_bh_mass[GALAXY_WEIGHTS] = {}
         for index, detection in self.cramer_rao_bounds.iterrows():
             _LOGGER.info(
-                f"Progess: detections: {count}/{len(self.cramer_rao_bounds)}, used detections: {used_detections}..."
+                f"Progess: detections: {count}/{len(self.cramer_rao_bounds)}..."
             )
             count += 1
             try:
@@ -1018,12 +1017,6 @@ class BayesianStatistics:
                 Omega_m_min=self.cosmological_model.Omega_m.lower_limit,
                 Omega_m_max=self.cosmological_model.Omega_m.upper_limit,
             )
-
-            if not self.use_detection():
-                _LOGGER.debug("detection skipped...")
-                continue
-
-            used_detections += 1
 
             possible_hosts = galaxy_catalog.get_possible_hosts(
                 z_min=z_min,
@@ -1057,9 +1050,6 @@ class BayesianStatistics:
             )
             _LOGGER.debug(
                 f"event likelihood: {event_likelihood}\nevent likelihood with bh mass: {event_likelihood_with_bh_mass}"
-            )
-            _LOGGER.debug(
-                f"posteriors computed for detection using {used_detections} detections..."
             )
 
     def p_Di(
