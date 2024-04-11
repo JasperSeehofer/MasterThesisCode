@@ -841,22 +841,25 @@ class BayesianStatistics:
 
         self.h = h_value
         _LOGGER.info("prepare global variable for multiprocessing")
+        distances = [dist_to_redshift(dist) for dist in self.cramer_rao_bounds["dist"]]
         self._redshift_distribution = np.histogram(
             np.array(
-                [dist_to_redshift(dist) for dist in self.cramer_rao_bounds["dist"]]
+                distances,
             ),
-            bins=np.linspace(0, 0.2, 21),
+            bins=np.linspace(0, max(distances), max(distances)*100),
         )[0]
+
         # scale list such that it has the same length as the number of z_gws values
         self._redshift_distribution = np.array([
             value / np.sum(self._redshift_distribution) for value in self._redshift_distribution
         ])
-        SCALING_FACTOR = 1000
+        SCALING_FACTOR = 100
         self._redshift_distribution = np.array(
             [np.full(SCALING_FACTOR, value) for value in self._redshift_distribution]
         ).flatten()
         print(self._redshift_distribution)
-        self._z_gws = np.linspace(0, 0.2, len(self._redshift_distribution))
+        
+        self._z_gws = np.linspace(0, max(distances), len(self._redshift_distribution))
         self._distances = np.array(
             [
                 dist(
