@@ -9,6 +9,7 @@ import logging
 import matplotlib.pyplot as plt
 import time
 from scipy.stats import multivariate_normal, truncnorm
+from scipy.optimize import curve_fit
 from statistics import NormalDist
 import multiprocessing as mp
 from master_thesis_code.datamodels.parameter_space import (
@@ -491,6 +492,7 @@ class BayesianStatistics:
             vmin=sky_localization_error_min, vmax=sky_localization_error_max
         )
 
+        """
         # sort h_values, posteriors and posteriors with bh mass by h value
         zipped = list(zip(self.h_values, self.posterior_data.items()))
         zipped.sort(key=lambda x: x[0])
@@ -499,15 +501,21 @@ class BayesianStatistics:
         zipped_with_bh_mass = list(zip(self.h_values_with_bh_mass, self.posterior_data_with_bh_mass.items()))
         zipped_with_bh_mass.sort(key=lambda x: x[0])
         self.h_values_with_bh_mass, posterior_data_with_bh_mass_sorted = zip(*zipped_with_bh_mass)
-
+        """
+        posterior_data_sorted = self.posterior_data.items()
+        posterior_data_with_bh_mass_sorted = self.posterior_data_with_bh_mass.items()
 
         fig, ax = plt.subplots(figsize=(16, 9))
         for detection_index, posterior in posterior_data_sorted:
             detection = Detection(self.cramer_rao_bounds.iloc[int(detection_index)])
             color = cmap(norm(detection.get_skylocalization_error()))
 
+            zipped = list(zip(self.h_values, posterior))
+            zipped.sort(key=lambda x: x[0])
+            h_values, posterior = zip(*zipped)
+
             ax.plot(
-                self.h_values,
+                h_values,
                 posterior / np.max(posterior),
                 label=f"detection: {detection_index}",
                 color=color,
@@ -528,8 +536,12 @@ class BayesianStatistics:
             detection = Detection(self.cramer_rao_bounds.iloc[int(detection_index)])
             color = cmap(norm(detection.get_skylocalization_error()))
 
+            zipped = list(zip(self.h_values_with_bh_mass, posterior))
+            zipped.sort(key=lambda x: x[0])
+            h_values_with_bh_mass, posterior = zip(*zipped)
+
             ax.plot(
-                self.h_values_with_bh_mass,
+                h_values_with_bh_mass,
                 posterior / np.max(posterior),
                 label=f"detection {detection_index}",
                 color=color,
@@ -568,26 +580,46 @@ class BayesianStatistics:
             posteriors_with_bh_mass
         )
 
-        # fit normal distribution to posteriors
-        normal_dist = NormalDist.from_samples(posteriors)
-        normal_dist_with_bh_mass = NormalDist.from_samples(posteriors_with_bh_mass)
+        zipped = list(zip(self.h_values, posteriors))
+        zipped.sort(key=lambda x: x[0])
+        self.h_values, posteriors = zip(*zipped)
 
+        zipped_with_bh_mass = list(zip(self.h_values_with_bh_mass, posteriors_with_bh_mass))
+        zipped_with_bh_mass.sort(key=lambda x: x[0])
+        self.h_values_with_bh_mass, posteriors_with_bh_mass = zip(*zipped_with_bh_mass)
+
+        # fit normal distribution to posteriors with h values
+        popt, perr = curve_fit(
+            gaussian,
+            self.h_values,
+            posteriors,
+            p0=[H, 0.1, 1],
+        )
+
+        popt_with_bh_mass, perr_with_bh_mass = curve_fit(
+            gaussian,
+            self.h_values_with_bh_mass,
+            posteriors_with_bh_mass,
+            p0=[H, 0.1, 1],
+        )
+
+        h_fine = np.linspace(0.6, 0.86, 1000)
         fig = plt.figure(figsize=(16, 9))
         plt.scatter(self.h_values, posteriors, label="without BH mass", color="b")
         plt.scatter(
             self.h_values_with_bh_mass, posteriors_with_bh_mass, label="with BH mass", color="r"
         )
         plt.plot(
-            self.h_values,
-            [normal_dist.pdf(h) for h in self.h_values],
-            label="fit without BH mass",
+            h_fine,
+            gaussian(h_fine, *popt),
+            label=f"std: {np.round(popt[1], 3)}, mean: {np.round(popt[0], 3)}",
             color="b",
             linestyle="--",
         )
         plt.plot(
-            self.h_values_with_bh_mass,
-            [normal_dist_with_bh_mass.pdf(h) for h in self.h_values_with_bh_mass],
-            label="fit with BH mass",
+            h_fine,
+            gaussian(h_fine, *popt_with_bh_mass),
+            label=f"std: {np.round(popt_with_bh_mass[1], 3)}, mean: {np.round(popt_with_bh_mass[0], 3)}",
             color="r",
             linestyle="--",
         )
@@ -1099,6 +1131,9 @@ class BayesianStatistics:
         )
         return False
 
+
+def gaussian(x: float, mu: float, sigma: float, a: float) -> float:
+    return 1 / a * np.exp(-0.5 * ((x - mu) / sigma)**2)
 
 def _sky_localization_uncertainty(
     phi_error: float, theta: float, theta_error: float, cov_theta_phi: float
