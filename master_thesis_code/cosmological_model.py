@@ -18,7 +18,7 @@ from master_thesis_code.datamodels.parameter_space import (
     uniform,
 )
 
-from master_thesis_code.constants import C, H0, H
+from master_thesis_code.constants import C, H0, H, CRAMER_RAO_BOUNDS_OUTPUT_PATH
 from master_thesis_code.galaxy_catalogue.handler import (
     GalaxyCatalogueHandler,
     HostGalaxy,
@@ -374,7 +374,7 @@ class BayesianStatistics:
 
     def __init__(self) -> None:
         self.cramer_rao_bounds = pd.read_csv(
-            "./simulations/cramer_rao_bounds_unbiased.csv"
+            CRAMER_RAO_BOUNDS_OUTPUT_PATH
         )
         _LOGGER.info(f"Loaded {len(self.cramer_rao_bounds)} detections...")
         self.cosmological_model = LamCDMScenario()
@@ -889,7 +889,6 @@ class BayesianStatistics:
         self._redshift_distribution = np.array(
             [np.full(SCALING_FACTOR, value) for value in self._redshift_distribution]
         ).flatten()
-        print(self._redshift_distribution)
 
         self._z_gws = np.linspace(0, max(distances), len(self._redshift_distribution))
         self._distances = np.array(
