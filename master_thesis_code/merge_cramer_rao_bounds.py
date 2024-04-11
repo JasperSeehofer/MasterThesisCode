@@ -10,8 +10,8 @@ from master_thesis_code.constants import CRAMER_RAO_BOUNDS_PATH, CRAMER_RAO_BOUN
 
 if __name__ == "__main__":
     # get directory of the script
-    script_directory = os.path.dirname(os.path.realpath(CRAMER_RAO_BOUNDS_OUTPUT_PATH))
-    files = os.listdir(script_directory)
+    directory = os.path.dirname(os.path.realpath(CRAMER_RAO_BOUNDS_OUTPUT_PATH))
+    files = os.listdir(directory)
     cramer_rao_bounds_files = [
         file for file in files if CRAMER_RAO_BOUNDS_PATH.split(".")[0].replace("$index", "") in file
     ]
