@@ -1007,7 +1007,7 @@ class BayesianStatistics:
                 detection["M"], detection["dist"]
             )
             self.detection = Detection(detection)
-            self.detection.convert_to_best_guess_parameters()
+            #self.detection.convert_to_best_guess_parameters()
 
             z_min, z_max = get_redshift_outer_bounds(
                 distance=self.detection.d_L,
