@@ -867,7 +867,8 @@ class BayesianStatistics:
         _LOGGER.debug(f"Loaded {len(self.cramer_rao_bounds)} detections...")
         # filter detections with skylocalization error > 0.01
         for index, detection in self.cramer_rao_bounds.iterrows():
-            if Detection(detection).get_skylocalization_error() > 0.01:
+            detection = Detection(detection)
+            if use_detection(detection) is False:
                 self.cramer_rao_bounds.drop(index, inplace=True)
         _LOGGER.debug(f"After filtering {len(self.cramer_rao_bounds)} detections with skylocalization error < 0.0006")
         
@@ -1150,21 +1151,21 @@ class BayesianStatistics:
             return integral / weight_sum, 0
         return integral / weight_sum, integral_with_bh_mass / weight_sum_with_bh_mass
 
-    def use_detection(self) -> bool:
-        sky_localization_uncertainty = _sky_localization_uncertainty(
-            phi_error=self.detection.phi_error,
-            theta=self.detection.theta,
-            theta_error=self.detection.theta_error,
-            cov_theta_phi=self.detection.theta_phi_covariance,
-        )
-        distance_relative_error = self.detection.d_L_uncertainty / self.detection.d_L
+def use_detection(detection: Detection) -> bool:
+    sky_localization_uncertainty = _sky_localization_uncertainty(
+        phi_error=detection.phi_error,
+        theta=detection.theta,
+        theta_error=detection.theta_error,
+        cov_theta_phi=detection.theta_phi_covariance,
+    )
+    distance_relative_error = detection.d_L_uncertainty / detection.d_L
 
-        if (distance_relative_error < 0.1) and (sky_localization_uncertainty < 0.01):
-            return True
-        _LOGGER.info(
-            f"Detection skipped: distance_relative_error {distance_relative_error}, sky_localization_uncertainty {sky_localization_uncertainty}"
-        )
-        return False
+    if (distance_relative_error < 0.1) and (sky_localization_uncertainty < 0.01):
+        return True
+    _LOGGER.info(
+        f"Detection skipped: distance_relative_error {distance_relative_error}, sky_localization_uncertainty {sky_localization_uncertainty}"
+    )
+    return False
 
 
 def gaussian(x: float, mu: float, sigma: float, a: float) -> float:
