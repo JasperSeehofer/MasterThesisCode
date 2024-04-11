@@ -875,6 +875,7 @@ class BayesianStatistics:
         self.h = h_value
         _LOGGER.info("prepare global variable for multiprocessing")
         distances = [dist_to_redshift(dist) for dist in self.cramer_rao_bounds["dist"]]
+        _LOGGER.debug(f"distances: {distances}.")
 
         self._redshift_distribution = np.histogram(
             np.array(
