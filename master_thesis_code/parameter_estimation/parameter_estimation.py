@@ -347,10 +347,11 @@ class ParameterEstimation:
         return snr
 
     def save_cramer_rao_bound(
-        self, cramer_rao_bound_dictionary: dict, snr: float, host_galaxy_index: int = -1
+        self, cramer_rao_bound_dictionary: dict, snr: float, simulation_index: int, host_galaxy_index: int = -1, 
     ) -> None:
+        file_path = CRAMER_RAO_BOUNDS_PATH.replace("$index", str(simulation_index))
         try:
-            cramer_rao_bounds = pd.read_csv(CRAMER_RAO_BOUNDS_PATH)
+            cramer_rao_bounds = pd.read_csv(file_path)
 
         except FileNotFoundError:
             parameters_list = list(self.parameter_space._parameters_to_dict().keys())
@@ -376,7 +377,7 @@ class ParameterEstimation:
         cramer_rao_bounds = pd.concat(
             [cramer_rao_bounds, new_cramer_rao_bounds], ignore_index=True
         )
-        cramer_rao_bounds.to_csv(CRAMER_RAO_BOUNDS_PATH, index=False)
+        cramer_rao_bounds.to_csv(file_path, index=False)
         _LOGGER.info(f"Saved current Cramer-Rao bound to {CRAMER_RAO_BOUNDS_PATH}")
         del cramer_rao_bound_dictionary
         del cramer_rao_bounds
@@ -557,9 +558,10 @@ class ParameterEstimation:
         snr_analysis = pd.concat([snr_analysis, new_snr_analysis], ignore_index=True)
         snr_analysis.to_csv(SNR_ANALYSIS_PATH, index=False)
 
-    def save_not_detected(self, snr: float) -> None:
+    def save_not_detected(self, snr: float, simulation_index: int) -> None:
+        file_path = UNDETECTED_EVENTS_PATH.replace("$index", str(simulation_index))
         try:
-            snr_analysis = pd.read_csv(UNDETECTED_EVENTS_PATH)
+            snr_analysis = pd.read_csv(file_path)
             
         except FileNotFoundError:
             parameters_list = list(self.parameter_space._parameters_to_dict().keys())
@@ -578,4 +580,4 @@ class ParameterEstimation:
             snr_analysis = new_snr_analysis
         else:
             snr_analysis = pd.concat([snr_analysis, new_snr_analysis], ignore_index=True)
-        snr_analysis.to_csv(UNDETECTED_EVENTS_PATH, index=False)
+        snr_analysis.to_csv(file_path, index=False)

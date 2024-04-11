@@ -49,6 +49,11 @@ class Arguments:
     def simulation_steps(self) -> int:
         """Number of waveforms generated in the simulation."""
         return self._parsed_arguments.simulation_steps
+    
+    @property
+    def simulation_index(self) -> int:
+        """Index for unique file name where cramer rao bounds are saved."""
+        return self._parsed_arguments.simulation_index
 
     @property
     def evaluate(self) -> bool:
@@ -102,6 +107,12 @@ def _parse_arguments(arguments: List[str]) -> argparse.Namespace:
     parser.add_argument(
         "--simulation_steps",
         help="Number of waveforms that are generated for data evaluation. (default is 0)",
+        default=0,
+        type=int,
+    )
+    parser.add_argument(
+        "--simulation_index",
+        help="Index for unique file name where cramer rao bounds are saved. (default is 0)",
         default=0,
         type=int,
     )

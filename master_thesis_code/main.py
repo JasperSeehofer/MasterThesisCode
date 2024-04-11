@@ -39,7 +39,7 @@ def main() -> None:
     galaxy_catalog = GalaxyCatalogueHandler()
 
     if arguments.simulation_steps > 0:
-        data_simulation(arguments.simulation_steps, cosmological_model, galaxy_catalog)
+        data_simulation(arguments.simulation_steps, cosmological_model, galaxy_catalog, arguments.simulation_index)
 
     if arguments.evaluate:
         evaluate(cosmological_model, galaxy_catalog, arguments.h_value)
@@ -100,6 +100,7 @@ def data_simulation(
     simulation_steps: int,
     cosmological_model: Model1CrossCheck,
     galaxy_catalog: GalaxyCatalogueHandler,
+    simulation_index: int,
 ) -> None:
     # conditional imports because they require GPU
     from master_thesis_code.memory_management import MemoryManagement
@@ -165,7 +166,7 @@ def data_simulation(
                 _ROOT_LOGGER.info(
                     f"Quick SNR threshold check failed: {np.round(quick_snr, 3)} < {cosmological_model.snr_threshold * 0.2}."
                 )
-                parameter_estimation.save_not_detected(quick_snr * 5)
+                parameter_estimation.save_not_detected(quick_snr * 5, simulation_index)
                 continue
             snr = parameter_estimation.compute_signal_to_noise_ratio()
             warnings.resetwarnings()
@@ -227,6 +228,7 @@ def data_simulation(
             cramer_rao_bound_dictionary=cramer_rao_bounds,
             snr=snr,
             host_galaxy_index=host_galaxy.catalog_index,
+            simulation_index=simulation_index,
         )
         counter += 1
 
