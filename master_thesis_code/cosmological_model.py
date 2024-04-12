@@ -18,7 +18,7 @@ from master_thesis_code.datamodels.parameter_space import (
     uniform,
 )
 
-from master_thesis_code.constants import C, H0, H, CRAMER_RAO_BOUNDS_OUTPUT_PATH
+from master_thesis_code.constants import C, H0, H, CRAMER_RAO_BOUNDS_OUTPUT_PATH, PREPARED_CRAMER_RAO_BOUNDS_PATH
 from master_thesis_code.galaxy_catalogue.handler import (
     GalaxyCatalogueHandler,
     HostGalaxy,
@@ -71,10 +71,22 @@ class Detection:
         )
     
     def convert_to_best_guess_parameters(self) -> None:
-        self.phi = np.random.normal(self.phi, self.phi_error)
-        self.theta = np.random.normal(self.theta, self.theta_error)
-        self.M = np.random.normal(self.M, self.M_uncertainty)
-        self.d_L = np.random.normal(self.d_L, self.d_L_uncertainty)
+        while True:
+            self.phi = (np.random.normal(self.phi, self.phi_error) + ( 2*np.pi )) % (2 * np.pi)
+            if 0 <= self.phi <= 2 * np.pi:
+                break
+        while True:
+            self.theta = np.random.normal(self.theta, self.theta_error)
+            if 0 <= self.theta <= np.pi:
+                break
+        while True:
+            self.M = np.random.normal(self.M, self.M_uncertainty)
+            if 1e4 <= self.M <= 1e7:
+                break
+        while True:
+            self.d_L = np.random.normal(self.d_L, self.d_L_uncertainty)
+            if 0 <= self.d_L <= 6.8:
+                break
 
 
 @dataclass
@@ -374,6 +386,9 @@ class BayesianStatistics:
 
     def __init__(self) -> None:
         self.cramer_rao_bounds = pd.read_csv(
+            PREPARED_CRAMER_RAO_BOUNDS_PATH
+        )
+        self.true_cramer_rao_bounds = pd.read_csv(
             CRAMER_RAO_BOUNDS_OUTPUT_PATH
         )
         _LOGGER.info(f"Loaded {len(self.cramer_rao_bounds)} detections...")
@@ -455,7 +470,7 @@ class BayesianStatistics:
                 and (np.max(posterior) > 0)
             )
         }
-
+        """
         # skylocalization error checkpoint (threshold < 0.001)
         self.posterior_data = {
             detection_index: posterior
@@ -473,7 +488,7 @@ class BayesianStatistics:
             ).get_skylocalization_error()
             < 0.0006
         }
-
+        """
         _LOGGER.info(
             f"After filtering:\n h = {self.h_values}\n h_bh_mass = {self.h_values_with_bh_mass} #detections = {len(self.posterior_data)}\n #detections with bh mass = {len(self.posterior_data_with_bh_mass)}"
         )
@@ -526,6 +541,8 @@ class BayesianStatistics:
         posterior_data_with_bh_mass_sorted = self.posterior_data_with_bh_mass.items()
 
         fig, ax = plt.subplots(figsize=(16, 9))
+        # plot line for true value
+        ax.axvline(H, color="b", linestyle="--")
         for detection_index, posterior in posterior_data_sorted:
             detection = Detection(self.cramer_rao_bounds.iloc[int(detection_index)])
             color = cmap(norm(detection.get_skylocalization_error()))
@@ -551,7 +568,8 @@ class BayesianStatistics:
         plt.close()
 
         fig, ax = plt.subplots(figsize=(16, 9))
-
+        # plot line for true value
+        ax.axvline(H, color="b", linestyle="--")
         for detection_index, posterior in posterior_data_with_bh_mass_sorted:
             detection = Detection(self.cramer_rao_bounds.iloc[int(detection_index)])
             color = cmap(norm(detection.get_skylocalization_error()))
@@ -649,7 +667,7 @@ class BayesianStatistics:
         plt.savefig("saved_figures/bayesian_statistics.png")
         plt.close()
 
-        # self.visualize_galaxy_weights(galaxy_catalog)
+        self.visualize_galaxy_weights(galaxy_catalog)
 
     def visualize_galaxy_weights(self, galaxy_catalog: GalaxyCatalogueHandler) -> None:
         _LOGGER.info("Visualizing galaxy weights...")
