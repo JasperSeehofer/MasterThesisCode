@@ -18,7 +18,13 @@ from master_thesis_code.datamodels.parameter_space import (
     uniform,
 )
 
-from master_thesis_code.constants import C, H0, H, CRAMER_RAO_BOUNDS_OUTPUT_PATH, PREPARED_CRAMER_RAO_BOUNDS_PATH
+from master_thesis_code.constants import (
+    C,
+    H0,
+    H,
+    CRAMER_RAO_BOUNDS_OUTPUT_PATH,
+    PREPARED_CRAMER_RAO_BOUNDS_PATH,
+)
 from master_thesis_code.galaxy_catalogue.handler import (
     GalaxyCatalogueHandler,
     HostGalaxy,
@@ -34,6 +40,7 @@ _LOGGER = logging.getLogger()
 
 DEFAULT_GALAXY_Z_ERROR = 0.0015
 GALAXY_WEIGHTS = "galaxy_weights"
+
 
 @dataclass
 class CosmologicalParameter(Parameter):
@@ -69,10 +76,12 @@ class Detection:
         return _sky_localization_uncertainty(
             self.phi_error, self.theta, self.theta_error, self.theta_phi_covariance
         )
-    
+
     def convert_to_best_guess_parameters(self) -> None:
         while True:
-            self.phi = (np.random.normal(self.phi, self.phi_error) + ( 2*np.pi )) % (2 * np.pi)
+            self.phi = (np.random.normal(self.phi, self.phi_error) + (2 * np.pi)) % (
+                2 * np.pi
+            )
             if 0 <= self.phi <= 2 * np.pi:
                 break
         while True:
@@ -217,7 +226,7 @@ class Model1CrossCheck:
 
         self.parameter_space.dist.upper_limit = 6.8
 
-    def emri_sample_distribution(self, M: float, redshift: float) -> float:
+    def emri_distribution(self, M: float, redshift: float) -> float:
         return self.dN_dz_of_mass(M, redshift) * self.R_emri(M)
 
     @staticmethod
@@ -255,9 +264,6 @@ class Model1CrossCheck:
             return 10 ** ((0.4689) * np.log10(M / 2.5e5) + np.log10(46.7))
         else:
             return 10 ** ((-0.2475) * np.log10(M / 2.9e7) + np.log10(14.4))
-
-    def get_parameter_samples(self, n_samples: int) -> List[ParameterSample]:
-        pass  # TBD
 
     def visualize_emri_distribution(self) -> None:
         # ensure directory is given
@@ -385,12 +391,8 @@ class BayesianStatistics:
     posterior_data_with_bh_mass: Dict[int, List[float]] = {}
 
     def __init__(self) -> None:
-        self.cramer_rao_bounds = pd.read_csv(
-            PREPARED_CRAMER_RAO_BOUNDS_PATH
-        )
-        self.true_cramer_rao_bounds = pd.read_csv(
-            CRAMER_RAO_BOUNDS_OUTPUT_PATH
-        )
+        self.cramer_rao_bounds = pd.read_csv(PREPARED_CRAMER_RAO_BOUNDS_PATH)
+        self.true_cramer_rao_bounds = pd.read_csv(CRAMER_RAO_BOUNDS_OUTPUT_PATH)
         _LOGGER.info(f"Loaded {len(self.cramer_rao_bounds)} detections...")
         self.cosmological_model = LamCDMScenario()
         self.h = self.cosmological_model.h.fiducial_value
@@ -474,7 +476,7 @@ class BayesianStatistics:
                 and (detection_index in list(self.posterior_data_with_bh_mass.keys()))
             )
         }
-        
+
         """
         # skylocalization error checkpoint (threshold < 0.001)
         self.posterior_data = {
@@ -523,7 +525,7 @@ class BayesianStatistics:
         fig, ax = plt.subplots(figsize=(16, 9))
         fig.suptitle("Redshift distribution of subsets of detections")
         # look for bias in distances of detections by taking subsets of the data
-        for count in range(10):
+        for count in range(30):
             distances_subset = np.random.choice(distances, 50, replace=False)
             # get hist as points for better visualization
             hist, bins = np.histogram(
@@ -541,7 +543,6 @@ class BayesianStatistics:
             dpi=300,
         )
         plt.close()
-
 
         # define colormap for skylocalization coloring
         sky_localization_error_min = min(
@@ -626,12 +627,16 @@ class BayesianStatistics:
         plt.close()
 
         # look at random subset of detections and their posterior
-        fig, ax = plt.subplots(1,2,figsize=(16, 9))
-        fig.suptitle("Posterior distribution of Hubble constant h using several subsets of 50 detections")
+        fig, ax = plt.subplots(1, 2, figsize=(16, 9))
+        fig.suptitle(
+            "Posterior distribution of Hubble constant h using several subsets of 50 detections"
+        )
         # create color list with 10 different colors
         NUMBER_OF_SUBSETS = 30
         # create a colormap
-        cmap = plt.cm.get_cmap('viridis', NUMBER_OF_SUBSETS)  # 'viridis' is the colormap name, 10 is the number of colors
+        cmap = plt.cm.get_cmap(
+            "viridis", NUMBER_OF_SUBSETS
+        )  # 'viridis' is the colormap name, 10 is the number of colors
 
         # create a list of 10 colors from the colormap
         colors = [cmap(i) for i in range(cmap.N)]
@@ -654,18 +659,25 @@ class BayesianStatistics:
             sub_posteriors = np.ones(len(self.h_values))
             sub_posteriors_with_bh_mass = np.ones(len(self.h_values_with_bh_mass))
             sub_posterior_max = max(
-                [np.max(posterior) for posterior in [value[1] for value in posteriors_data_subset]]
+                [
+                    np.max(posterior)
+                    for posterior in [value[1] for value in posteriors_data_subset]
+                ]
             )
             sub_posterior_max_with_bh_mass = max(
                 [
                     np.max(posterior)
-                    for posterior in [value[1] for value in posteriors_data_with_bh_mass_subset]
+                    for posterior in [
+                        value[1] for value in posteriors_data_with_bh_mass_subset
+                    ]
                 ]
             )
             for index, posterior in posteriors_data_subset:
                 sub_posteriors *= np.array(posterior) / sub_posterior_max
             for index, posterior in posteriors_data_with_bh_mass_subset:
-                sub_posteriors_with_bh_mass *= np.array(posterior) / sub_posterior_max_with_bh_mass
+                sub_posteriors_with_bh_mass *= (
+                    np.array(posterior) / sub_posterior_max_with_bh_mass
+                )
             sub_posteriors = sub_posteriors / np.max(sub_posteriors)
             sub_posteriors_with_bh_mass = sub_posteriors_with_bh_mass / np.max(
                 sub_posteriors_with_bh_mass
@@ -674,9 +686,13 @@ class BayesianStatistics:
             sub_zipped.sort(key=lambda x: x[0])
             temp_h_values, sub_posteriors = zip(*sub_zipped)
 
-            sub_zipped_with_bh_mass = list(zip(self.h_values_with_bh_mass, sub_posteriors_with_bh_mass))
+            sub_zipped_with_bh_mass = list(
+                zip(self.h_values_with_bh_mass, sub_posteriors_with_bh_mass)
+            )
             sub_zipped_with_bh_mass.sort(key=lambda x: x[0])
-            temp_h_values_with_bh_mass, sub_posteriors_with_bh_mass = zip(*sub_zipped_with_bh_mass)
+            temp_h_values_with_bh_mass, sub_posteriors_with_bh_mass = zip(
+                *sub_zipped_with_bh_mass
+            )
 
             # fit normal distribution to posteriors with h values
             popt, perr = curve_fit(
@@ -708,8 +724,14 @@ class BayesianStatistics:
                 color=colors[count],
                 linestyle="--",
             )
-            
-            ax[0].scatter(temp_h_values, sub_posteriors, label="without BH mass", color=colors[count], s=2)
+
+            ax[0].scatter(
+                temp_h_values,
+                sub_posteriors,
+                label="without BH mass",
+                color=colors[count],
+                s=2,
+            )
             ax[1].scatter(
                 temp_h_values_with_bh_mass,
                 sub_posteriors_with_bh_mass,
@@ -735,12 +757,17 @@ class BayesianStatistics:
         posteriors = np.ones(len(self.h_values))
         posteriors_with_bh_mass = np.ones(len(self.h_values_with_bh_mass))
         max_posterior = max(
-            [np.max(posterior) for posterior in [value[1] for value in posterior_data_sorted]]
+            [
+                np.max(posterior)
+                for posterior in [value[1] for value in posterior_data_sorted]
+            ]
         )
         max_posterior_with_bh_mass = max(
             [
                 np.max(posterior)
-                for posterior in [value[1] for value in posterior_data_with_bh_mass_sorted]
+                for posterior in [
+                    value[1] for value in posterior_data_with_bh_mass_sorted
+                ]
             ]
         )
 
@@ -757,7 +784,9 @@ class BayesianStatistics:
         zipped.sort(key=lambda x: x[0])
         self.h_values, posteriors = zip(*zipped)
 
-        zipped_with_bh_mass = list(zip(self.h_values_with_bh_mass, posteriors_with_bh_mass))
+        zipped_with_bh_mass = list(
+            zip(self.h_values_with_bh_mass, posteriors_with_bh_mass)
+        )
         zipped_with_bh_mass.sort(key=lambda x: x[0])
         self.h_values_with_bh_mass, posteriors_with_bh_mass = zip(*zipped_with_bh_mass)
 
@@ -778,13 +807,18 @@ class BayesianStatistics:
 
         h_fine = np.linspace(0.6, 0.86, 1000)
         fig = plt.figure(figsize=(16, 9))
-        #set title
-        plt.title(f"Posterior distribution of Hubble constant h using {len(detections)} detections")
+        # set title
+        plt.title(
+            f"Posterior distribution of Hubble constant h using {len(detections)} detections"
+        )
         # add true value as line
         plt.axvline(H, color="g", linestyle="--")
         plt.scatter(self.h_values, posteriors, label="without BH mass", color="b")
         plt.scatter(
-            self.h_values_with_bh_mass, posteriors_with_bh_mass, label="with BH mass", color="r"
+            self.h_values_with_bh_mass,
+            posteriors_with_bh_mass,
+            label="with BH mass",
+            color="r",
         )
         plt.plot(
             h_fine,
@@ -806,7 +840,7 @@ class BayesianStatistics:
         plt.savefig("saved_figures/bayesian_statistics.png")
         plt.close()
 
-        # self.visualize_galaxy_weights(galaxy_catalog)
+        self.visualize_galaxy_weights(galaxy_catalog)
 
     def visualize_galaxy_weights(self, galaxy_catalog: GalaxyCatalogueHandler) -> None:
         _LOGGER.info("Visualizing galaxy weights...")
@@ -830,27 +864,27 @@ class BayesianStatistics:
             if len(host_galaxy_weights) == len(h_values)
         }
 
-
-
         for detection_index, host_galaxy_weights_by_h_value in weight_data.items():
             _LOGGER.info(f"Visualizing galaxy weights for detection {detection_index}")
             detection = Detection(self.cramer_rao_bounds.iloc[int(detection_index)])
-            true_galaxy = Detection(self.true_cramer_rao_bounds.iloc[int(detection_index)])
-            true_galaxy_index = self.true_cramer_rao_bounds.iloc[int(detection_index)]["host_galaxy_index"]
+            true_galaxy = Detection(
+                self.true_cramer_rao_bounds.iloc[int(detection_index)]
+            )
+            true_galaxy_index = int(
+                self.true_cramer_rao_bounds.iloc[int(detection_index)][
+                    "host_galaxy_index"
+                ]
+            )
 
             # plot h values on x axis and weights on y axis and the sum of weights
             fig, axs = plt.subplots(2, 3, figsize=(16, 9))
             # figure title
-            fig.suptitle(f"Galaxy weight relations for detection {detection_index} at h=0.73")
+            fig.suptitle(f"Galaxy weight visualization for detection {detection_index}")
 
             for h_index, host_galaxy_weights in enumerate(
                 host_galaxy_weights_by_h_value
             ):
-                
                 h_value = h_values[h_index]
-                if h_value != 0.73:
-                    continue
-
                 host_galaxies = [
                     galaxy_catalog.get_host_galaxy_by_index(int(index))
                     for index, _ in host_galaxy_weights
@@ -865,82 +899,137 @@ class BayesianStatistics:
                     [weights[2] for _, weights in host_galaxy_weights]
                 )
 
-                # rescale weights to interval [0,1]
-                weights = weights / np.max(weights)
-                weights_bh_mass = weights_bh_mass / np.max(weights_bh_mass)
+                detection_likelihood = np.sum(
+                    unweighted_likelihoods * weights
+                ) / np.sum(weights)
+                detection_likelihood_bh_mass = np.sum(
+                    unweighted_likelihoods * weights_bh_mass * weights
+                ) / np.sum(weights * weights_bh_mass)
 
-                related_weights = []
-                weight_relations = np.linspace(0, 1, 6)
-                for weight_relation in weight_relations:
-                    related_weights.append(
-                        weights * weight_relation + weights_bh_mass * (1 - weight_relation)
+                if np.round(h_value, 2) == H:
+                    # plot resulting sum of weights
+                    axs[0, 0].scatter(
+                        host_galaxies_phi,
+                        host_galaxies_theta,
+                        s=weights / max(weights) * 100,
+                        c=weights,
+                        cmap="viridis",
                     )
-                
-                # plot resulting sum of weights
-                axs[0, 0].scatter(
-                    host_galaxies_phi,
-                    host_galaxies_theta,
-                    s=related_weights[0] * 100,
-                    c=related_weights[0],
-                    cmap="viridis",
-                )
-                axs[0 , 0].set_title(f"mass weight {weight_relations[0]*100}%")
-                axs[0, 1].scatter(
-                    host_galaxies_phi,
-                    host_galaxies_theta,
-                    s=related_weights[1] * 100,
-                    c=related_weights[1],
-                    cmap="viridis",
-                )
-                axs[0, 1].set_title(f"mass weight {weight_relations[1]*100}%")
-                axs[0, 2].scatter(
-                    host_galaxies_phi,
-                    host_galaxies_theta,
-                    s=related_weights[2] * 100,
-                    c=related_weights[2],
-                    cmap="viridis",
-                )
-                axs[0, 2].set_title(f"mass weight {weight_relations[2]*100}%")
+                    axs[0, 0].set_title(f"Weights for h = {H}")
+                    axs[0, 1].scatter(
+                        host_galaxies_phi,
+                        host_galaxies_theta,
+                        s=weights_bh_mass / max(weights_bh_mass) * 100,
+                        c=weights_bh_mass,
+                        cmap="viridis",
+                    )
+                    axs[0, 1].set_title(f"BH mass weight for h = {H}")
+                    axs[0, 2].scatter(
+                        host_galaxies_phi,
+                        host_galaxies_theta,
+                        s=weights
+                        * weights_bh_mass
+                        / max(weights * weights_bh_mass)
+                        * 100,
+                        c=weights * weights_bh_mass,
+                        cmap="viridis",
+                    )
+                    axs[0, 2].set_title(
+                        f"Combined weights (product of weights) for h = {H}"
+                    )
+
                 axs[1, 0].scatter(
-                    host_galaxies_phi,
-                    host_galaxies_theta,
-                    s=related_weights[3] * 100,
-                    c=related_weights[3],
-                    cmap="viridis",
+                    [h_value],
+                    detection_likelihood,
+                    c="b",
+                    label="without BH mass",
                 )
-                axs[1, 0].set_title(f"mass weight {weight_relations[3]*100}%")
+                axs[1, 0].scatter(
+                    [h_value],
+                    detection_likelihood_bh_mass,
+                    c="r",
+                    label="with BH mass",
+                )
+
+                # plot weights of true galaxy in detection
+                true_galaxy_weights = [
+                    weights
+                    for index, weights in host_galaxy_weights
+                    if int(index) == true_galaxy_index
+                ]
+                try:
+                    true_galaxy_weights = true_galaxy_weights[0]
+                    true_galaxy_likelihood = true_galaxy_weights[0]
+                    true_galaxy_weight = true_galaxy_weights[1]
+                    true_galaxy_weight_bh_mass = true_galaxy_weights[2]
+                except IndexError:
+                    true_galaxy_likelihood = 0
+                    true_galaxy_weight = 0
+                    true_galaxy_weight_bh_mass = 0
+
+                host_galaxy_indices = [int(index) for index, _ in host_galaxy_weights]
+                zipped_likelihood = list(
+                    zip(host_galaxy_indices, unweighted_likelihoods * weights)
+                )
+                zipped_likelihood.sort(key=lambda x: x[1], reverse=True)
+                ranked_indices, ranked_likelihood = zip(*zipped_likelihood)
+                # find index of true galaxy
+                try:
+                    true_galaxy_ranking_index = ranked_indices.index(
+                        true_galaxy_index, -1
+                    )
+                except ValueError:
+                    true_galaxy_ranking_index = -1
+
                 axs[1, 1].scatter(
-                    host_galaxies_phi,
-                    host_galaxies_theta,
-                    s=related_weights[4] * 100,
-                    c=related_weights[4],
-                    cmap="viridis",
+                    [h_value],
+                    true_galaxy_likelihood * true_galaxy_weight,
+                    c="b",
+                    label=f"true galaxy rank {true_galaxy_ranking_index + 1}.",
                 )
-                axs[1, 1].set_title(f"mass weight {weight_relations[4]*100}%")
+
+                zipped_likelihood_bh_mass = list(
+                    zip(
+                        host_galaxy_indices,
+                        unweighted_likelihoods * weights_bh_mass * weights,
+                    )
+                )
+                zipped_likelihood_bh_mass.sort(key=lambda x: x[1], reverse=True)
+                ranked_indices_bh_mass, ranked_likelihood_bh_mass = zip(
+                    *zipped_likelihood_bh_mass
+                )
+                try:
+                    true_galaxy_ranking_index_bh_mass = ranked_indices_bh_mass.index(
+                        true_galaxy_index,
+                    )
+                except ValueError:
+                    true_galaxy_ranking_index_bh_mass = -1
                 axs[1, 2].scatter(
-                    host_galaxies_phi,
-                    host_galaxies_theta,
-                    s=related_weights[5] * 100,
-                    c=related_weights[5],
-                    cmap="viridis",
+                    [h_value],
+                    true_galaxy_likelihood * true_galaxy_weight_bh_mass,
+                    c="r",
+                    label=f"true galaxy rank {true_galaxy_ranking_index_bh_mass + 1}.",
                 )
-                axs[1, 2].set_title(f"mass weight {weight_relations[5]*100}%")
+
                 # plot detection lines and true lines
                 for column in range(3):
-                    axs[0, column].axvline(detection.phi, color="r", linestyle="--", label="detection")
+                    axs[0, column].axvline(
+                        detection.phi, color="black", linestyle="-.", label="detection"
+                    )
                     axs[0, column].axhline(detection.theta, color="r", linestyle="--")
-                    axs[0, column].axvline(true_galaxy.phi, color="g", linestyle="--", label="true")
+                    axs[0, column].axvline(
+                        true_galaxy.phi, color="g", linestyle="--", label="true"
+                    )
                     axs[0, column].axhline(true_galaxy.theta, color="g", linestyle="--")
-                    axs[1, column].axvline(detection.phi, color="r", linestyle="--")
-                    axs[1, column].axhline(detection.theta, color="r", linestyle="--")
-                    axs[1, column].axvline(true_galaxy.phi, color="g", linestyle="--")
-                    axs[1, column].axhline(true_galaxy.theta, color="g", linestyle="--")
                     axs[0, column].set_xlabel("phi in rad")
                     axs[0, column].set_ylabel("theta in rad")
-                    axs[1, column].set_xlabel("phi in rad")
-                    axs[1, column].set_ylabel("theta in rad")
-
-
+            axs[1, 0].set_title(f"detection likelihood")
+            # plot detection lines and true lines for plot 1, 0
+            axs[1, 0].axvline(H, color="g", linestyle="--")
+            axs[1, 1].set_title(f"true galaxy weighted likelihood without BH mass")
+            axs[1, 1].axvline(H, color="g", linestyle="--")
+            axs[1, 2].set_title(f"true galaxy weighted likelihood with BH mass")
+            axs[1, 2].axvline(H, color="g", linestyle="--")
             plt.savefig(
                 f"saved_figures/galaxy_weights/detection_weight_relations_{detection_index}.png",
                 dpi=300,
@@ -1144,15 +1233,15 @@ class BayesianStatistics:
         ):
             raise ValueError("Hubble constant out of bounds.")
 
-        
         _LOGGER.debug(f"Loaded {len(self.cramer_rao_bounds)} detections...")
         # filter detections with skylocalization error > 0.01
         for index, detection in self.cramer_rao_bounds.iterrows():
             detection = Detection(detection)
             if use_detection(detection) is False:
                 self.cramer_rao_bounds.drop(index, inplace=True)
-        _LOGGER.debug(f"After filtering {len(self.cramer_rao_bounds)} detections with skylocalization error < 0.0006")
-        
+        _LOGGER.debug(
+            f"After filtering {len(self.cramer_rao_bounds)} detections with skylocalization error < 0.0006"
+        )
 
         self.h = h_value
         _LOGGER.info("prepare global variable for multiprocessing")
@@ -1163,13 +1252,16 @@ class BayesianStatistics:
             np.array(
                 distances,
             ),
-            bins=np.linspace(0, max(distances), int(max(distances)*100)),
+            bins=np.linspace(0, max(distances), int(max(distances) * 100)),
         )[0]
 
         # scale list such that it has the same length as the number of z_gws values
-        self._redshift_distribution = np.array([
-            value / np.sum(self._redshift_distribution) for value in self._redshift_distribution
-        ])
+        self._redshift_distribution = np.array(
+            [
+                value / np.sum(self._redshift_distribution)
+                for value in self._redshift_distribution
+            ]
+        )
         SCALING_FACTOR = 100
         self._redshift_distribution = np.array(
             [np.full(SCALING_FACTOR, value) for value in self._redshift_distribution]
@@ -1288,7 +1380,7 @@ class BayesianStatistics:
                 detection["M"], detection["dist"]
             )
             self.detection = Detection(detection)
-            #self.detection.convert_to_best_guess_parameters()
+            # self.detection.convert_to_best_guess_parameters()
 
             z_min, z_max = get_redshift_outer_bounds(
                 distance=self.detection.d_L,
@@ -1422,6 +1514,7 @@ class BayesianStatistics:
             return integral / weight_sum, 0
         return integral / weight_sum, integral_with_bh_mass / weight_sum_with_bh_mass
 
+
 def use_detection(detection: Detection) -> bool:
     sky_localization_uncertainty = _sky_localization_uncertainty(
         phi_error=detection.phi_error,
@@ -1440,7 +1533,8 @@ def use_detection(detection: Detection) -> bool:
 
 
 def gaussian(x: float, mu: float, sigma: float, a: float) -> float:
-    return 1 / a * np.exp(-0.5 * ((x - mu) / sigma)**2)
+    return 1 / a * np.exp(-0.5 * ((x - mu) / sigma) ** 2)
+
 
 def _sky_localization_uncertainty(
     phi_error: float, theta: float, theta_error: float, cov_theta_phi: float

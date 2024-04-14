@@ -13,7 +13,7 @@ class DataEvaluation:
 
     def __init__(
         self,
-        path_to_cramer_rao_bounds_file: str = "./simulations/cramer_rao_bounds_unbiased.csv",
+        path_to_cramer_rao_bounds_file: str = "./simulations/cramer_rao_bounds.csv",
         path_to_snr_analysis_file: str = "./simulations/snr_analysis.csv",
         path_to_undetected_events_file: str = "./simulations/undetected_events_unbiased.csv",
     ):

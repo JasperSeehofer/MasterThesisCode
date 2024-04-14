@@ -127,7 +127,7 @@ class GalaxyCatalogueHandler:
 
         # visualize mass distribution
         fig, ax = plt.subplots()
-        ax.hist(self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS], bins=10000)
+        ax.hist(self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS], bins=200)
         ax.set_xscale("log")
         ax.set_yscale("log")
         ax.set_xlabel("BH mass in solar masses")
@@ -137,9 +137,10 @@ class GalaxyCatalogueHandler:
 
         # visualize redshift distribution
         fig, ax = plt.subplots()
-        ax.hist(self.reduced_galaxy_catalog[InternalCatalogColumns.REDSHIFT])
+        ax.hist(self.reduced_galaxy_catalog[InternalCatalogColumns.REDSHIFT], bins=200)
         ax.set_xlabel("Redshift")
         ax.set_ylabel("Number of galaxies with redshift")
+        ax.set_yscale("log")
         plt.savefig(figures_directory + "redshift_distribution.png")
         plt.close()
 
