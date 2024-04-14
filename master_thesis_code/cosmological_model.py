@@ -457,11 +457,6 @@ class BayesianStatistics:
                     self.posterior_data_with_bh_mass[int(detection_index)] = posterior
 
         # drop all posteriors with less samples than h_values or if they are all zero
-        self.posterior_data = {
-            detection_index: posterior
-            for detection_index, posterior in self.posterior_data.items()
-            if ((len(posterior) == len(self.h_values)) and (np.max(posterior) > 0))
-        }
         self.posterior_data_with_bh_mass = {
             detection_index: posterior
             for detection_index, posterior in self.posterior_data_with_bh_mass.items()
@@ -470,6 +465,16 @@ class BayesianStatistics:
                 and (np.max(posterior) > 0)
             )
         }
+        self.posterior_data = {
+            detection_index: posterior
+            for detection_index, posterior in self.posterior_data.items()
+            if (
+                (len(posterior) == len(self.h_values))
+                and (np.max(posterior) > 0)
+                and (detection_index in list(self.posterior_data_with_bh_mass.keys()))
+            )
+        }
+        
         """
         # skylocalization error checkpoint (threshold < 0.001)
         self.posterior_data = {
@@ -514,6 +519,29 @@ class BayesianStatistics:
         ax.set_ylabel("count")
         plt.savefig("saved_figures/detection_redshift_distribution.png", dpi=300)
         plt.close()
+
+        fig, ax = plt.subplots(figsize=(16, 9))
+        fig.suptitle("Redshift distribution of subsets of detections")
+        # look for bias in distances of detections by taking subsets of the data
+        for count in range(10):
+            distances_subset = np.random.choice(distances, 50, replace=False)
+            # get hist as points for better visualization
+            hist, bins = np.histogram(
+                distances_subset,
+                bins=np.linspace(0, max(distances), int(max(distances) * 100)),
+            )
+            ax.plot(
+                bins[:-1],
+                hist,
+            )
+        ax.set_xlabel("redshift")
+        ax.set_ylabel("count")
+        plt.savefig(
+            f"saved_figures/detection_redshift_distribution_subset.png",
+            dpi=300,
+        )
+        plt.close()
+
 
         # define colormap for skylocalization coloring
         sky_localization_error_min = min(
@@ -597,6 +625,113 @@ class BayesianStatistics:
         )
         plt.close()
 
+        # look at random subset of detections and their posterior
+        fig, ax = plt.subplots(1,2,figsize=(16, 9))
+        fig.suptitle("Posterior distribution of Hubble constant h using several subsets of 50 detections")
+        # create color list with 10 different colors
+        NUMBER_OF_SUBSETS = 30
+        # create a colormap
+        cmap = plt.cm.get_cmap('viridis', NUMBER_OF_SUBSETS)  # 'viridis' is the colormap name, 10 is the number of colors
+
+        # create a list of 10 colors from the colormap
+        colors = [cmap(i) for i in range(cmap.N)]
+
+        for count in range(NUMBER_OF_SUBSETS):
+            _LOGGER.info(f"Creating subset {count}")
+            posteriors_data_subset_indices = np.random.choice(
+                list(self.posterior_data.keys()), 100, replace=False
+            )
+            posteriors_data_subset = [
+                (index, self.posterior_data[index])
+                for index in posteriors_data_subset_indices
+            ]
+            # find same subset in posteriors with bh mass
+            posteriors_data_with_bh_mass_subset = [
+                value
+                for value in posterior_data_with_bh_mass_sorted
+                if value[0] in posteriors_data_subset_indices
+            ]
+            sub_posteriors = np.ones(len(self.h_values))
+            sub_posteriors_with_bh_mass = np.ones(len(self.h_values_with_bh_mass))
+            sub_posterior_max = max(
+                [np.max(posterior) for posterior in [value[1] for value in posteriors_data_subset]]
+            )
+            sub_posterior_max_with_bh_mass = max(
+                [
+                    np.max(posterior)
+                    for posterior in [value[1] for value in posteriors_data_with_bh_mass_subset]
+                ]
+            )
+            for index, posterior in posteriors_data_subset:
+                sub_posteriors *= np.array(posterior) / sub_posterior_max
+            for index, posterior in posteriors_data_with_bh_mass_subset:
+                sub_posteriors_with_bh_mass *= np.array(posterior) / sub_posterior_max_with_bh_mass
+            sub_posteriors = sub_posteriors / np.max(sub_posteriors)
+            sub_posteriors_with_bh_mass = sub_posteriors_with_bh_mass / np.max(
+                sub_posteriors_with_bh_mass
+            )
+            sub_zipped = list(zip(self.h_values, sub_posteriors))
+            sub_zipped.sort(key=lambda x: x[0])
+            temp_h_values, sub_posteriors = zip(*sub_zipped)
+
+            sub_zipped_with_bh_mass = list(zip(self.h_values_with_bh_mass, sub_posteriors_with_bh_mass))
+            sub_zipped_with_bh_mass.sort(key=lambda x: x[0])
+            temp_h_values_with_bh_mass, sub_posteriors_with_bh_mass = zip(*sub_zipped_with_bh_mass)
+
+            # fit normal distribution to posteriors with h values
+            popt, perr = curve_fit(
+                gaussian,
+                temp_h_values,
+                sub_posteriors,
+                p0=[H, 0.1, 1],
+            )
+
+            popt_with_bh_mass, perr_with_bh_mass = curve_fit(
+                gaussian,
+                temp_h_values_with_bh_mass,
+                sub_posteriors_with_bh_mass,
+                p0=[H, 0.1, 1],
+            )
+            h_values_fine = np.linspace(0.6, 0.86, 1000)
+            # plot fit
+            ax[0].plot(
+                h_values_fine,
+                gaussian(h_values_fine, *popt),
+                label=f"std: {np.round(popt[1], 3)}, mean: {np.round(popt[0], 3)}",
+                color=colors[count],
+                linestyle="--",
+            )
+            ax[1].plot(
+                h_values_fine,
+                gaussian(h_values_fine, *popt_with_bh_mass),
+                label=f"std: {np.round(popt_with_bh_mass[1], 3)}, mean: {np.round(popt_with_bh_mass[0], 3)}",
+                color=colors[count],
+                linestyle="--",
+            )
+            
+            ax[0].scatter(temp_h_values, sub_posteriors, label="without BH mass", color=colors[count], s=2)
+            ax[1].scatter(
+                temp_h_values_with_bh_mass,
+                sub_posteriors_with_bh_mass,
+                label="with BH mass",
+                color=colors[count],
+                s=2,
+            )
+        # print true value
+        ax[0].axvline(H, color="g", linestyle="--")
+        ax[0].set_xlabel("Hubble constant h")
+        ax[0].set_ylabel("Posterior")
+        ax[0].set_title(f"without BH mass")
+        ax[1].axvline(H, color="g", linestyle="--")
+        ax[1].set_xlabel("Hubble constant h")
+        ax[1].set_ylabel("Posterior")
+        ax[1].set_title(f"with BH mass")
+        plt.savefig(
+            f"saved_figures/bayesian_statistics_event_posteriors_subsets.png",
+            dpi=300,
+        )
+        plt.close()
+
         posteriors = np.ones(len(self.h_values))
         posteriors_with_bh_mass = np.ones(len(self.h_values_with_bh_mass))
         max_posterior = max(
@@ -643,6 +778,10 @@ class BayesianStatistics:
 
         h_fine = np.linspace(0.6, 0.86, 1000)
         fig = plt.figure(figsize=(16, 9))
+        #set title
+        plt.title(f"Posterior distribution of Hubble constant h using {len(detections)} detections")
+        # add true value as line
+        plt.axvline(H, color="g", linestyle="--")
         plt.scatter(self.h_values, posteriors, label="without BH mass", color="b")
         plt.scatter(
             self.h_values_with_bh_mass, posteriors_with_bh_mass, label="with BH mass", color="r"
@@ -667,7 +806,7 @@ class BayesianStatistics:
         plt.savefig("saved_figures/bayesian_statistics.png")
         plt.close()
 
-        self.visualize_galaxy_weights(galaxy_catalog)
+        # self.visualize_galaxy_weights(galaxy_catalog)
 
     def visualize_galaxy_weights(self, galaxy_catalog: GalaxyCatalogueHandler) -> None:
         _LOGGER.info("Visualizing galaxy weights...")
@@ -691,12 +830,128 @@ class BayesianStatistics:
             if len(host_galaxy_weights) == len(h_values)
         }
 
+
+
         for detection_index, host_galaxy_weights_by_h_value in weight_data.items():
+            _LOGGER.info(f"Visualizing galaxy weights for detection {detection_index}")
+            detection = Detection(self.cramer_rao_bounds.iloc[int(detection_index)])
+            true_galaxy = Detection(self.true_cramer_rao_bounds.iloc[int(detection_index)])
+            true_galaxy_index = self.true_cramer_rao_bounds.iloc[int(detection_index)]["host_galaxy_index"]
+
+            # plot h values on x axis and weights on y axis and the sum of weights
+            fig, axs = plt.subplots(2, 3, figsize=(16, 9))
+            # figure title
+            fig.suptitle(f"Galaxy weight relations for detection {detection_index} at h=0.73")
+
+            for h_index, host_galaxy_weights in enumerate(
+                host_galaxy_weights_by_h_value
+            ):
+                
+                h_value = h_values[h_index]
+                if h_value != 0.73:
+                    continue
+
+                host_galaxies = [
+                    galaxy_catalog.get_host_galaxy_by_index(int(index))
+                    for index, _ in host_galaxy_weights
+                ]
+                host_galaxies_phi = np.array([galaxy.phiS for galaxy in host_galaxies])
+                host_galaxies_theta = np.array([galaxy.qS for galaxy in host_galaxies])
+                unweighted_likelihoods = np.array(
+                    [weights[0] for _, weights in host_galaxy_weights]
+                )
+                weights = np.array([weights[1] for _, weights in host_galaxy_weights])
+                weights_bh_mass = np.array(
+                    [weights[2] for _, weights in host_galaxy_weights]
+                )
+
+                # rescale weights to interval [0,1]
+                weights = weights / np.max(weights)
+                weights_bh_mass = weights_bh_mass / np.max(weights_bh_mass)
+
+                related_weights = []
+                weight_relations = np.linspace(0, 1, 6)
+                for weight_relation in weight_relations:
+                    related_weights.append(
+                        weights * weight_relation + weights_bh_mass * (1 - weight_relation)
+                    )
+                
+                # plot resulting sum of weights
+                axs[0, 0].scatter(
+                    host_galaxies_phi,
+                    host_galaxies_theta,
+                    s=related_weights[0] * 100,
+                    c=related_weights[0],
+                    cmap="viridis",
+                )
+                axs[0 , 0].set_title(f"mass weight {weight_relations[0]*100}%")
+                axs[0, 1].scatter(
+                    host_galaxies_phi,
+                    host_galaxies_theta,
+                    s=related_weights[1] * 100,
+                    c=related_weights[1],
+                    cmap="viridis",
+                )
+                axs[0, 1].set_title(f"mass weight {weight_relations[1]*100}%")
+                axs[0, 2].scatter(
+                    host_galaxies_phi,
+                    host_galaxies_theta,
+                    s=related_weights[2] * 100,
+                    c=related_weights[2],
+                    cmap="viridis",
+                )
+                axs[0, 2].set_title(f"mass weight {weight_relations[2]*100}%")
+                axs[1, 0].scatter(
+                    host_galaxies_phi,
+                    host_galaxies_theta,
+                    s=related_weights[3] * 100,
+                    c=related_weights[3],
+                    cmap="viridis",
+                )
+                axs[1, 0].set_title(f"mass weight {weight_relations[3]*100}%")
+                axs[1, 1].scatter(
+                    host_galaxies_phi,
+                    host_galaxies_theta,
+                    s=related_weights[4] * 100,
+                    c=related_weights[4],
+                    cmap="viridis",
+                )
+                axs[1, 1].set_title(f"mass weight {weight_relations[4]*100}%")
+                axs[1, 2].scatter(
+                    host_galaxies_phi,
+                    host_galaxies_theta,
+                    s=related_weights[5] * 100,
+                    c=related_weights[5],
+                    cmap="viridis",
+                )
+                axs[1, 2].set_title(f"mass weight {weight_relations[5]*100}%")
+                # plot detection lines and true lines
+                for column in range(3):
+                    axs[0, column].axvline(detection.phi, color="r", linestyle="--", label="detection")
+                    axs[0, column].axhline(detection.theta, color="r", linestyle="--")
+                    axs[0, column].axvline(true_galaxy.phi, color="g", linestyle="--", label="true")
+                    axs[0, column].axhline(true_galaxy.theta, color="g", linestyle="--")
+                    axs[1, column].axvline(detection.phi, color="r", linestyle="--")
+                    axs[1, column].axhline(detection.theta, color="r", linestyle="--")
+                    axs[1, column].axvline(true_galaxy.phi, color="g", linestyle="--")
+                    axs[1, column].axhline(true_galaxy.theta, color="g", linestyle="--")
+                    axs[0, column].set_xlabel("phi in rad")
+                    axs[0, column].set_ylabel("theta in rad")
+                    axs[1, column].set_xlabel("phi in rad")
+                    axs[1, column].set_ylabel("theta in rad")
+
+
+            plt.savefig(
+                f"saved_figures/galaxy_weights/detection_weight_relations_{detection_index}.png",
+                dpi=300,
+            )
+            plt.close()
+
+            """
             # setup subplots with 2 graphs
             fig, axs = plt.subplots(1, 2, figsize=(16, 9))
             _LOGGER.debug(f"Visualizing galaxy weights for detection {detection_index}")
             _LOGGER.debug(f"found {len(host_galaxy_weights)} host galaxies...")
-            detection = Detection(self.cramer_rao_bounds.iloc[int(detection_index)])
             for h_index, host_galaxy_weights in enumerate(
                 host_galaxy_weights_by_h_value
             ):
@@ -745,9 +1000,13 @@ class BayesianStatistics:
                 f"Galaxy mass weighted likelihood for detection {detection_index}"
             )
             # plot lines for detection (true values)
-            expected_redshift = dist_to_redshift(detection.d_L)
-            axs[0].axvline(expected_redshift, color="r", linestyle="--")
-            axs[1].axvline(expected_redshift, color="r", linestyle="--")
+            detection_redshift = dist_to_redshift(detection.d_L)
+            axs[0].axvline(detection_redshift, color="r", linestyle="--", label="detection")
+            axs[1].axvline(detection_redshift, color="r", linestyle="--")
+            # plot lines for true values
+            true_redshift = dist_to_redshift(true_galaxy.d_L)
+            axs[0].axvline(true_redshift, color="g", linestyle="--", label="true")
+            axs[1].axvline(true_redshift, color="g", linestyle="--")
             axs[0].axhline(H, color="r", linestyle="--")
             axs[1].axhline(H, color="r", linestyle="--")
             axs[0].set_xlabel("z")
@@ -777,12 +1036,16 @@ class BayesianStatistics:
                 ax=axs[1],
                 label="mass weight",
             )
+            plt.legend()
             plt.tight_layout()
             plt.savefig(
                 f"saved_figures/galaxy_weights/galaxy_weighted_likelihood_detection_{detection_index}.png",
                 dpi=300,
             )
             plt.close()
+            """
+
+            # BELOW IS THE OLD CODE FOR VISUALIZING GALAXY WEIGHTS
 
             """
             # create 2D plot for phi and qS
