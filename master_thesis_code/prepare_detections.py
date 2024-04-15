@@ -14,6 +14,9 @@ if __name__ == '__main__':
     print("Converting detection parameters to best guess parameters")
     for detection_index, detection in cramer_rao_bounds.iterrows():
         print(f"progess: {detection_index}/{len(cramer_rao_bounds)}")
+        if detection["delta_phiS_delta_phiS"] < 0:
+            cramer_rao_bounds.drop(detection_index)
+            continue
         detection = Detection(detection)
         detection.convert_to_best_guess_parameters()
         cramer_rao_bounds.at[detection_index, 'M'] = detection.M
