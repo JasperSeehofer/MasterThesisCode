@@ -39,7 +39,12 @@ def main() -> None:
     galaxy_catalog = GalaxyCatalogueHandler()
 
     if arguments.simulation_steps > 0:
-        data_simulation(arguments.simulation_steps, cosmological_model, galaxy_catalog, arguments.simulation_index)
+        data_simulation(
+            arguments.simulation_steps,
+            cosmological_model,
+            galaxy_catalog,
+            arguments.simulation_index,
+        )
 
     if arguments.evaluate:
         evaluate(cosmological_model, galaxy_catalog, arguments.h_value)

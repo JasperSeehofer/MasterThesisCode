@@ -39,7 +39,7 @@ from master_thesis_code.physical_relations import (
 _LOGGER = logging.getLogger()
 
 DEFAULT_GALAXY_Z_ERROR = 0.0015
-GALAXY_WEIGHTS = "galaxy_weights"
+GALAXY_LIKELIHOODS = "galaxy_likelihoods"
 
 
 @dataclass
@@ -57,6 +57,12 @@ class Detection:
     theta_error: float
     M: float
     M_uncertainty: float
+    theta_phi_covariance: float
+    M_phi_covariance: float
+    M_theta_covariance: float
+    d_L_M_covariance: float
+    d_L_theta_covariance: float
+    d_L_phi_covariance: float
     WL_uncertainty: float = 0.0
 
     def __init__(self, parameters: pd.Series) -> None:
@@ -71,6 +77,9 @@ class Detection:
         self.theta_phi_covariance = parameters["delta_phiS_delta_qS"]
         self.M_phi_covariance = parameters["delta_phiS_delta_M"]
         self.M_theta_covariance = parameters["delta_qS_delta_M"]
+        self.d_L_M_covariance = parameters["delta_dist_delta_M"]
+        self.d_L_theta_covariance = parameters["delta_qS_delta_dist"]
+        self.d_L_phi_covariance = parameters["delta_phiS_delta_dist"]
 
     def get_skylocalization_error(self) -> float:
         return _sky_localization_uncertainty(
@@ -436,7 +445,7 @@ class BayesianStatistics:
                     _LOGGER.error(f"Error reading file {file}: {e}")
                     continue
                 h = str(h_data.pop("h"))
-                self.galaxy_weights[h] = h_data.pop(GALAXY_WEIGHTS)
+                self.galaxy_weights[h] = h_data.pop(GALAXY_LIKELIHOODS)
                 posteriors_with_bh_mass_data[h] = h_data
 
         # extract h_values and posteriors for each detection
@@ -1364,7 +1373,7 @@ class BayesianStatistics:
         pool: mp.Pool,
     ) -> None:
         count = 0
-        self.posterior_data_with_bh_mass[GALAXY_WEIGHTS] = {}
+        self.posterior_data_with_bh_mass[GALAXY_LIKELIHOODS] = {}
         for index, detection in self.cramer_rao_bounds.iterrows():
             _LOGGER.info(
                 f"Progess: detections: {count}/{len(self.cramer_rao_bounds)}..."
@@ -1479,12 +1488,7 @@ class BayesianStatistics:
         end = time.time()
         _LOGGER.info(f"parallel computing took: {end - start}s")
 
-        integral = 0.0
-        weight_sum = 0.0
-        integral_with_bh_mass = 0.0
-        weight_sum_with_bh_mass = 0.0
-
-        weights = list(
+        galaxy_likelihoods = list(
             zip(
                 [
                     galaxy.catalog_index
@@ -1494,25 +1498,32 @@ class BayesianStatistics:
             )
         )
 
-        self.posterior_data_with_bh_mass[GALAXY_WEIGHTS][detection_index] = weights
+        self.posterior_data_with_bh_mass[GALAXY_LIKELIHOODS][
+            detection_index
+        ] = galaxy_likelihoods
 
-        for result in results_with_bh_mass:
-            # for evaluation without mass
-            integral += result[0] * result[1]
-            weight_sum += result[1]
-            # for evaluation with miss
-            integral_with_bh_mass += result[0] * result[2] * result[1]
-            weight_sum_with_bh_mass += result[2] * result[1]
+        if len(results) == 0:
+            return 0.0, 0.0
 
-        for result in results:
-            integral += result[0] * result[1]
-            weight_sum += result[1]
+        print(results)
+        print(results_with_bh_mass)
 
-        if weight_sum == 0:
-            return 0, 0
-        elif weight_sum_with_bh_mass == 0:
-            return integral / weight_sum, 0
-        return integral / weight_sum, integral_with_bh_mass / weight_sum_with_bh_mass
+        results.extend([result[0] for result in results_with_bh_mass])
+
+        print(results)
+
+        likelihood_without_bh_mass = np.sum(results) / float(
+            len(results) + len(results_with_bh_mass)
+        )
+
+        if len(results_with_bh_mass) == 0:
+            return likelihood_without_bh_mass, 0.0
+
+        likelihood_with_bh_mass = np.sum(
+            [result[1] for result in results_with_bh_mass]
+        ) / float(len(results_with_bh_mass))
+
+        return likelihood_without_bh_mass, likelihood_with_bh_mass
 
 
 def use_detection(detection: Detection) -> bool:
@@ -1555,43 +1566,155 @@ def single_host_likelihood(
     global distances
     global z_gws
     global redshift_distribution
-
-    if evaluate_with_bh_mass:
-        # compute weight using the bh mass
-        norm_dist_measurement = NormalDist(
-            mu=detection.M, sigma=detection.M_uncertainty
-        )
-        norm_dist_galaxy = NormalDist(mu=possible_host.M, sigma=possible_host.M_error)
-        current_mass_weight = norm_dist_measurement.overlap(norm_dist_galaxy)
-
-    multivariate_normal_distribution = multivariate_normal(
-        mean=[detection.phi, detection.theta],
-        cov=[
-            [detection.phi_error**2, detection.theta_phi_covariance],
-            [detection.theta_phi_covariance, detection.theta_error**2],
-        ],
-    )
-    current_weight = multivariate_normal_distribution.pdf(
-        [possible_host.phiS, possible_host.qS]
-    )
-
+    start = time.time()
     """WL_uncertainty = (
         d_L * 0.066 * (1 - (1 + possible_host.z) ** (-0.25) / 0.25) ** (1.8)
     )"""  # TODO check if correct
 
-    gaussian = np.exp(
-        -1
-        / 2
-        * (
-            (possible_host.z - z_gws) ** 2 / possible_host.z_error**2
-            + (detection.d_L - distances) ** 2 / detection.d_L_uncertainty**2
-        )
+    # multivariate normal distribution for sky localization and distance
+    multivariate_normal_distribution = multivariate_normal(
+        mean=[detection.phi, detection.theta, detection.d_L, possible_host.z],
+        cov=[
+            [
+                detection.phi_error**2,
+                detection.theta_phi_covariance,
+                detection.d_L_phi_covariance,
+                0,
+            ],
+            [
+                detection.theta_phi_covariance,
+                detection.theta_error**2,
+                detection.d_L_theta_covariance,
+                0,
+            ],
+            [
+                detection.d_L_phi_covariance,
+                detection.d_L_theta_covariance,
+                detection.d_L_uncertainty**2,
+                0,
+            ],
+            [0, 0, 0, possible_host.z_error**2],
+        ],
     )
 
-    result = np.trapz(redshift_distribution * gaussian, z_gws)
+    # prepare positions for multivariate normal distribution
+    positions = np.vstack(
+        [
+            np.ones(z_gws.shape) * possible_host.phiS,
+            np.ones(z_gws.shape) * possible_host.qS,
+            distances,
+            z_gws,
+        ]
+    ).T
+
+    # evaluate multivariate normal distribution
+    likelihood_without_bh_mass = multivariate_normal_distribution.pdf(positions)
+
+    # weight with redshift distribution
+    likelihood_without_bh_mass = likelihood_without_bh_mass * redshift_distribution
+
+    # integrate over redshift
+    likelihood_without_bh_mass = np.trapz(likelihood_without_bh_mass, distances)
+
     if evaluate_with_bh_mass:
-        return [result, current_weight, current_mass_weight]
-    return [result, current_weight]
+        M_gs = np.linspace(
+            possible_host.M - 2 * possible_host.M_error,
+            possible_host.M + 2 * possible_host.M_error,
+            1000,
+        )
+        # remove negative masses
+        M_gs = [M for M in M_gs if M > 0]
+        M_g, z_gw_grid = np.meshgrid(M_gs, z_gws)
+        _, distances_grid = np.meshgrid(M_gs, distances)
+        _, redshift_distribution_grid = np.meshgrid(M_gs, redshift_distribution)
+
+        redshifted_masses_grid = M_g * (1 + z_gw_grid)
+
+        # prepare positions for multivariate normal distribution for all parameters including the mass
+        positions = np.vstack(
+            [
+                np.ones(M_g.ravel().shape) * possible_host.phiS,
+                np.ones(M_g.ravel().shape) * possible_host.qS,
+                distances_grid.ravel(),
+                redshifted_masses_grid.ravel(),
+                z_gw_grid.ravel(),
+                M_g.ravel(),
+            ]
+        ).T
+
+        # multivariate normal distribution for all parameters including the mass
+        covariance = [
+            [
+                detection.phi_error**2,
+                detection.theta_phi_covariance,
+                detection.d_L_phi_covariance,
+                detection.M_phi_covariance,
+                0,
+                0,
+            ],
+            [
+                detection.theta_phi_covariance,
+                detection.theta_error**2,
+                detection.d_L_theta_covariance,
+                detection.M_theta_covariance,
+                0,
+                0,
+            ],
+            [
+                detection.d_L_phi_covariance,
+                detection.d_L_theta_covariance,
+                detection.d_L_uncertainty**2,
+                detection.d_L_M_covariance,
+                0,
+                0,
+            ],
+            [
+                detection.M_phi_covariance,
+                detection.M_theta_covariance,
+                detection.d_L_M_covariance,
+                detection.M_uncertainty**2,
+                0,
+                0,
+            ],
+            [0, 0, 0, 0, possible_host.z_error**2, 0],
+            [0, 0, 0, 0, 0, possible_host.M_error**2],
+        ]
+        # compute deteerminant of covariance matrix
+        covariance = np.array(covariance)
+
+        normal_distribution_with_mass = multivariate_normal(
+            mean=[
+                detection.phi,
+                detection.theta,
+                detection.d_L,
+                detection.M,
+                possible_host.z,
+                possible_host.M,
+            ],
+            cov=covariance,
+            allow_singular=True,
+        )
+
+        likelihood_with_bh_mass_grid = normal_distribution_with_mass.pdf(positions)
+        # reshape likelihoods to grid
+        likelihood_with_bh_mass_grid = likelihood_with_bh_mass_grid.reshape(M_g.shape)
+
+        # weight with redshift distribution
+        likelihood_with_bh_mass_grid = (
+            likelihood_with_bh_mass_grid * redshift_distribution_grid
+        )
+
+        # integrate over mass and redshift
+        likelihood_with_bh_mass = np.trapz(
+            np.trapz(likelihood_with_bh_mass_grid, M_gs), distances
+        )
+
+    if evaluate_with_bh_mass:
+        print(
+            f"likelihood: {likelihood_without_bh_mass}, likelihood with bh mass: {likelihood_with_bh_mass}"
+        )
+        return [likelihood_without_bh_mass, likelihood_with_bh_mass]
+    return likelihood_without_bh_mass
 
 
 def child_process_init(

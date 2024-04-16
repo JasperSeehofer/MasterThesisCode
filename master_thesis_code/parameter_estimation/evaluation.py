@@ -4,6 +4,7 @@ from itertools import combinations_with_replacement
 import numpy as np
 import matplotlib.pyplot as plt
 from master_thesis_code.datamodels.parameter_space import ParameterSpace, Parameter
+from master_thesis_code.cosmological_model import Detection
 from scipy.interpolate import griddata
 
 from master_thesis_code.constants import RADIAN_TO_DEGREE, C, H0, GPC_TO_MPC
