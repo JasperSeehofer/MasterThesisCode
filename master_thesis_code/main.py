@@ -250,8 +250,8 @@ def evaluate(
     # data_simulation.evaluate_snr_analysis()
 
     hubble_constant_evaluation = BayesianStatistics()
-    # hubble_constant_evaluation.evaluate(galaxy_catalog, h_value)
-    hubble_constant_evaluation.visualize(galaxy_catalog=galaxy_catalog)
+    hubble_constant_evaluation.evaluate(galaxy_catalog, h_value)
+    # hubble_constant_evaluation.visualize(galaxy_catalog=galaxy_catalog)
 
     # galaxy_catalog.visualize_galaxy_catalog()
     # Model1CrossCheck().visualize_emri_distribution()
