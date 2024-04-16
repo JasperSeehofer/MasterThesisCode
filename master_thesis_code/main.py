@@ -39,7 +39,12 @@ def main() -> None:
     galaxy_catalog = GalaxyCatalogueHandler()
 
     if arguments.simulation_steps > 0:
-        data_simulation(arguments.simulation_steps, cosmological_model, galaxy_catalog, arguments.simulation_index)
+        data_simulation(
+            arguments.simulation_steps,
+            cosmological_model,
+            galaxy_catalog,
+            arguments.simulation_index,
+        )
 
     if arguments.evaluate:
         evaluate(cosmological_model, galaxy_catalog, arguments.h_value)
@@ -250,8 +255,8 @@ def evaluate(
     # data_simulation.evaluate_snr_analysis()
 
     hubble_constant_evaluation = BayesianStatistics()
-    # hubble_constant_evaluation.evaluate(galaxy_catalog, h_value)
-    hubble_constant_evaluation.visualize(galaxy_catalog=galaxy_catalog)
+    hubble_constant_evaluation.evaluate(galaxy_catalog, h_value)
+    # hubble_constant_evaluation.visualize(galaxy_catalog=galaxy_catalog)
 
     # galaxy_catalog.visualize_galaxy_catalog()
     # Model1CrossCheck().visualize_emri_distribution()
