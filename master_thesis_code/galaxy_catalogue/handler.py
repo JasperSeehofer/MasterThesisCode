@@ -101,7 +101,7 @@ class GalaxyCatalogueHandler:
         )
         self._map_stellar_masses_to_BH_masses()
         self._map_angles_to_spherical_coordinates()
-        self._map_BH_masses_to_redshifted_masses()
+        # self._map_BH_masses_to_redshifted_masses()
         self._show_catalog_information()
 
     def _show_catalog_information(self) -> None:
@@ -259,14 +259,14 @@ class GalaxyCatalogueHandler:
         possible_host_galaxies_with_BH_mass = possible_host_galaxies[
             (
                 (
-                    M_z - M_z_error * cutoff_multiplier
+                    (M_z - M_z_error * cutoff_multiplier)/(1 + z_max)
                     <= possible_host_galaxies[InternalCatalogColumns.BH_MASS]
                     + possible_host_galaxies[InternalCatalogColumns.BH_MASS_ERROR]
                 )
                 & (
                     possible_host_galaxies[InternalCatalogColumns.BH_MASS]
                     - possible_host_galaxies[InternalCatalogColumns.BH_MASS_ERROR]
-                    <= M_z + M_z_error * cutoff_multiplier
+                    <= (M_z + M_z_error * cutoff_multiplier)/(1+z_min)
                 )
             )
         ]

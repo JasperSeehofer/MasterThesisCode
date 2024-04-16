@@ -1505,12 +1505,7 @@ class BayesianStatistics:
         if len(results) == 0:
             return 0.0, 0.0
 
-        print(results)
-        print(results_with_bh_mass)
-
         results.extend([result[0] for result in results_with_bh_mass])
-
-        print(results)
 
         likelihood_without_bh_mass = np.sum(results) / float(
             len(results) + len(results_with_bh_mass)
@@ -1566,7 +1561,6 @@ def single_host_likelihood(
     global distances
     global z_gws
     global redshift_distribution
-    start = time.time()
     """WL_uncertainty = (
         d_L * 0.066 * (1 - (1 + possible_host.z) ** (-0.25) / 0.25) ** (1.8)
     )"""  # TODO check if correct
@@ -1710,9 +1704,6 @@ def single_host_likelihood(
         )
 
     if evaluate_with_bh_mass:
-        print(
-            f"likelihood: {likelihood_without_bh_mass}, likelihood with bh mass: {likelihood_with_bh_mass}"
-        )
         return [likelihood_without_bh_mass, likelihood_with_bh_mass]
     return likelihood_without_bh_mass
 
