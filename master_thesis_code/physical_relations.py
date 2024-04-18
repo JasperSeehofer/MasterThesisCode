@@ -134,10 +134,10 @@ def convert_true_mass_to_redshifted_mass(
 def get_redshift_outer_bounds(
     distance: float,
     distance_error: float,
-    h_min: float,
-    h_max: float,
-    Omega_m_min: float,
-    Omega_m_max: float,
+    h_min: float = 0.6,
+    h_max: float = 0.86,
+    Omega_m_min: float = 0.04,
+    Omega_m_max: float = 0.5,
     w_0: float = W_0,
     w_a: float = W_A,
 ) -> tuple[float, float]:

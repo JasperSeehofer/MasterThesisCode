@@ -641,7 +641,7 @@ class BayesianStatistics:
             "Posterior distribution of Hubble constant h using several subsets of 50 detections"
         )
         # create color list with 10 different colors
-        NUMBER_OF_SUBSETS = 30
+        NUMBER_OF_SUBSETS = 10
         # create a colormap
         cmap = plt.cm.get_cmap(
             "viridis", NUMBER_OF_SUBSETS
@@ -653,7 +653,7 @@ class BayesianStatistics:
         for count in range(NUMBER_OF_SUBSETS):
             _LOGGER.info(f"Creating subset {count}")
             posteriors_data_subset_indices = np.random.choice(
-                list(self.posterior_data.keys()), 100, replace=False
+                list(self.posterior_data.keys()), 50, replace=False
             )
             posteriors_data_subset = [
                 (index, self.posterior_data[index])
@@ -849,7 +849,7 @@ class BayesianStatistics:
         plt.savefig("saved_figures/bayesian_statistics.png")
         plt.close()
 
-        self.visualize_galaxy_weights(galaxy_catalog)
+        # self.visualize_galaxy_weights(galaxy_catalog)
 
     def visualize_galaxy_weights(self, galaxy_catalog: GalaxyCatalogueHandler) -> None:
         _LOGGER.info("Visualizing galaxy weights...")

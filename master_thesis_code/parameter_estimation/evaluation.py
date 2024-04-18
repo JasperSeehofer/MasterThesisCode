@@ -6,6 +6,12 @@ import matplotlib.pyplot as plt
 from master_thesis_code.datamodels.parameter_space import ParameterSpace, Parameter
 from master_thesis_code.cosmological_model import Detection
 from scipy.interpolate import griddata
+from scipy.stats import multivariate_normal
+from master_thesis_code.physical_relations import (
+    get_redshift_outer_bounds,
+    dist_to_redshift,
+    dist
+)
 
 from master_thesis_code.constants import RADIAN_TO_DEGREE, C, H0, GPC_TO_MPC
 
@@ -20,7 +26,7 @@ class DataEvaluation:
     ):
         self._cramer_rao_bounds = pd.read_csv(path_to_cramer_rao_bounds_file)
         self._snr_analysis_file = pd.read_csv(path_to_snr_analysis_file)
-        self._undetected_events = pd.read_csv(path_to_undetected_events_file)
+        #self._undetected_events = pd.read_csv(path_to_undetected_events_file)
 
     def visualize(self) -> None:
         # ensure directory is given
@@ -108,6 +114,89 @@ class DataEvaluation:
             plt.yscale("log")
             plt.savefig(f"{figures_directory}plots/error_{parameter.symbol}_SNR.png")
             plt.close()
+
+        # plot gaussian for bh mass uncertainty
+        for index, detection in self._cramer_rao_bounds.sample(20).iterrows():
+            detection = Detection(detection)
+            #create full covariance matrix for all parameters
+            covariance_matrix = np.array(
+                [
+                    [
+                        2*detection.M_uncertainty ** 2,
+                        detection.d_L_M_covariance,
+                        detection.M_phi_covariance,
+                        detection.M_theta_covariance,
+                    ],
+                    [
+                        detection.d_L_M_covariance,
+                        detection.d_L_uncertainty ** 2,
+                        detection.d_L_phi_covariance,
+                        detection.d_L_theta_covariance,
+                    ],
+                    [
+                        detection.M_phi_covariance,
+                        detection.d_L_phi_covariance,
+                        detection.phi_error ** 2,
+                        detection.theta_phi_covariance,
+                    ],
+                    [
+                        detection.M_theta_covariance,
+                        detection.d_L_theta_covariance,
+                        detection.theta_phi_covariance,
+                        detection.theta_error ** 2,
+                    ],
+                ]
+            )
+            gaussian_mass = multivariate_normal(
+                mean=[detection.M, detection.d_L, detection.phi, detection.theta],
+                cov=covariance_matrix,
+            )
+            phi = detection.phi
+            theta = detection.theta
+            z_min, z_max = get_redshift_outer_bounds(
+                detection.d_L, detection.d_L_uncertainty
+            )
+            redshifts = np.linspace(dist_to_redshift(detection.d_L - 0.001*detection.d_L_uncertainty), dist_to_redshift(detection.d_L + 0.001*detection.d_L_uncertainty), 1000)
+            distances = np.array([dist(redshift) for redshift in redshifts])
+            masses = np.linspace(
+                detection.M/(1+dist_to_redshift(detection.d_L)) - detection.M_uncertainty,
+                detection.M/(1+dist_to_redshift(detection.d_L)) + detection.M_uncertainty,
+                1000,
+            )
+            mass, redshift = np.meshgrid(masses, redshifts)
+            mass = mass * (1 + redshift)
+            _, distance = np.meshgrid(masses, distances)
+
+            positions = np.array(
+                [
+                    mass.flatten(),
+                    distance.flatten(),
+                    np.ones_like(mass.flatten()) * phi,
+                    np.ones_like(mass.flatten()) * theta,
+                ]
+            ).T
+            print(positions)
+
+            probabilities = gaussian_mass.pdf(positions)
+
+            # reshape to grid
+            probabilities = probabilities.reshape(mass.shape)
+            print(probabilities.shape)
+            # create 2d plot
+            plt.figure(figsize=(16, 9))
+            # plot true mass and redshift line
+            plt.axvline(detection.M, color="red", label="true mass", linestyle="--")
+            plt.axhline(dist_to_redshift(detection.d_L), color="red", label="true distance", linestyle="--")
+            plt.contourf(mass, redshift, probabilities, cmap="viridis")
+            #plt.scatter(detection.M/(1+redshifts), redshifts, c="red", label="mean")
+            plt.xlabel("mass [solar masses]")
+            plt.ylabel("redshift")
+            plt.colorbar()
+            plt.savefig(
+                f"{figures_directory}plots/gaussian_mass_redshift_{index}.png", dpi=300
+            )
+            plt.close()
+            
 
         # plt SNR and waveform generation time vs parameters
         for column in ["SNR", "generation_time"]:
