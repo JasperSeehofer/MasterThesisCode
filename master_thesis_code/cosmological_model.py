@@ -1565,30 +1565,55 @@ def single_host_likelihood(
         d_L * 0.066 * (1 - (1 + possible_host.z) ** (-0.25) / 0.25) ** (1.8)
     )"""  # TODO check if correct
 
-    # multivariate normal distribution for sky localization and distance
-    multivariate_normal_distribution = multivariate_normal(
-        mean=[detection.phi, detection.theta, detection.d_L, possible_host.z],
-        cov=[
-            [
-                detection.phi_error**2,
-                detection.theta_phi_covariance,
-                detection.d_L_phi_covariance,
-                0,
-            ],
-            [
-                detection.theta_phi_covariance,
-                detection.theta_error**2,
-                detection.d_L_theta_covariance,
-                0,
-            ],
-            [
-                detection.d_L_phi_covariance,
-                detection.d_L_theta_covariance,
-                detection.d_L_uncertainty**2,
-                0,
-            ],
-            [0, 0, 0, possible_host.z_error**2],
+    # multivariate normal distribution for all parameters including the mass
+    covariance = [
+        [
+            detection.phi_error**2,
+            detection.theta_phi_covariance,
+            detection.d_L_phi_covariance,
+            detection.M_phi_covariance,
+            0,
+            0,
         ],
+        [
+            detection.theta_phi_covariance,
+            detection.theta_error**2,
+            detection.d_L_theta_covariance,
+            detection.M_theta_covariance,
+            0,
+            0,
+        ],
+        [
+            detection.d_L_phi_covariance,
+            detection.d_L_theta_covariance,
+            detection.d_L_uncertainty**2,
+            detection.d_L_M_covariance,
+            0,
+            0,
+        ],
+        [
+            detection.M_phi_covariance,
+            detection.M_theta_covariance,
+            detection.d_L_M_covariance,
+            detection.M_uncertainty**2,
+            0,
+            0,
+        ],
+        [0, 0, 0, 0, possible_host.z_error**2, 0],
+        [0, 0, 0, 0, 0, possible_host.M_error**2],
+    ]
+
+    normal_distribution_with_mass = multivariate_normal(
+        mean=[
+            detection.phi,
+            detection.theta,
+            detection.d_L,
+            detection.M,
+            possible_host.z,
+            possible_host.M,
+        ],
+        cov=covariance,
+        allow_singular=True,
     )
 
     # prepare positions for multivariate normal distribution
@@ -1597,12 +1622,14 @@ def single_host_likelihood(
             np.ones(z_gws.shape) * possible_host.phiS,
             np.ones(z_gws.shape) * possible_host.qS,
             distances,
+            np.ones(z_gws.shape) * detection.M,
             z_gws,
+            np.ones(z_gws.shape) * possible_host.M,
         ]
     ).T
 
     # evaluate multivariate normal distribution
-    likelihood_without_bh_mass = multivariate_normal_distribution.pdf(positions)
+    likelihood_without_bh_mass = normal_distribution_with_mass.pdf(positions)
 
     # weight with redshift distribution
     likelihood_without_bh_mass = likelihood_without_bh_mass * redshift_distribution
@@ -1611,18 +1638,17 @@ def single_host_likelihood(
     likelihood_without_bh_mass = np.trapz(likelihood_without_bh_mass, distances)
 
     if evaluate_with_bh_mass:
-        M_gs = np.linspace(
-            possible_host.M - 2 * possible_host.M_error,
-            possible_host.M + 2 * possible_host.M_error,
-            1000,
-        )
-        # remove negative masses
-        M_gs = [M for M in M_gs if M > 0]
-        M_g, z_gw_grid = np.meshgrid(M_gs, z_gws)
-        _, distances_grid = np.meshgrid(M_gs, distances)
-        _, redshift_distribution_grid = np.meshgrid(M_gs, redshift_distribution)
+        SAMPLING_POINTS = 20
+        SIGMA_RANGE = 6
+        M_gs_z = np.ones(shape=(2*SAMPLING_POINTS + 1,len(z_gws))) * detection.M
+        for i, factor in enumerate(range(-SAMPLING_POINTS, SAMPLING_POINTS, 1)):
+            M_gs_z[i] = M_gs_z[i] + factor * detection.M_uncertainty * SIGMA_RANGE / SAMPLING_POINTS
 
-        redshifted_masses_grid = M_g * (1 + z_gw_grid)
+        z_gw_grid = np.array([z_gws for _ in range(2*SAMPLING_POINTS + 1)])
+        distances_grid = np.array([distances for _ in range(2*SAMPLING_POINTS + 1)])
+        redshift_distribution_grid = np.array([redshift_distribution for _ in range(2*SAMPLING_POINTS + 1)])
+
+        M_g = M_gs_z / (1 + z_gw_grid)
 
         # prepare positions for multivariate normal distribution for all parameters including the mass
         positions = np.vstack(
@@ -1630,64 +1656,11 @@ def single_host_likelihood(
                 np.ones(M_g.ravel().shape) * possible_host.phiS,
                 np.ones(M_g.ravel().shape) * possible_host.qS,
                 distances_grid.ravel(),
-                redshifted_masses_grid.ravel(),
+                M_gs_z.ravel(),
                 z_gw_grid.ravel(),
                 M_g.ravel(),
             ]
         ).T
-
-        # multivariate normal distribution for all parameters including the mass
-        covariance = [
-            [
-                detection.phi_error**2,
-                detection.theta_phi_covariance,
-                detection.d_L_phi_covariance,
-                detection.M_phi_covariance,
-                0,
-                0,
-            ],
-            [
-                detection.theta_phi_covariance,
-                detection.theta_error**2,
-                detection.d_L_theta_covariance,
-                detection.M_theta_covariance,
-                0,
-                0,
-            ],
-            [
-                detection.d_L_phi_covariance,
-                detection.d_L_theta_covariance,
-                detection.d_L_uncertainty**2,
-                detection.d_L_M_covariance,
-                0,
-                0,
-            ],
-            [
-                detection.M_phi_covariance,
-                detection.M_theta_covariance,
-                detection.d_L_M_covariance,
-                detection.M_uncertainty**2,
-                0,
-                0,
-            ],
-            [0, 0, 0, 0, possible_host.z_error**2, 0],
-            [0, 0, 0, 0, 0, possible_host.M_error**2],
-        ]
-        # compute deteerminant of covariance matrix
-        covariance = np.array(covariance)
-
-        normal_distribution_with_mass = multivariate_normal(
-            mean=[
-                detection.phi,
-                detection.theta,
-                detection.d_L,
-                detection.M,
-                possible_host.z,
-                possible_host.M,
-            ],
-            cov=covariance,
-            allow_singular=True,
-        )
 
         likelihood_with_bh_mass_grid = normal_distribution_with_mass.pdf(positions)
         # reshape likelihoods to grid
@@ -1698,9 +1671,15 @@ def single_host_likelihood(
             likelihood_with_bh_mass_grid * redshift_distribution_grid
         )
 
+        likelihood_with_bh_mass_mass_integrated = []
+        for i, M_gi in enumerate(M_g.T):
+            likelihood_with_bh_mass_mass_integrated.append(
+                np.trapz(likelihood_with_bh_mass_grid.T[i], M_gi)
+            )
+
         # integrate over mass and redshift
         likelihood_with_bh_mass = np.trapz(
-            np.trapz(likelihood_with_bh_mass_grid, M_gs), distances
+            likelihood_with_bh_mass_mass_integrated, distances
         )
 
     if evaluate_with_bh_mass:
