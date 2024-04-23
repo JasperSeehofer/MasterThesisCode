@@ -98,14 +98,15 @@ class Detection:
             if 0 <= self.theta <= np.pi:
                 break
         while True:
+            self.d_L = np.random.normal(self.d_L, self.d_L_uncertainty)
+            if 0 <= self.d_L <= 6.8:
+                break
+
+        while True:
             self.M = np.random.normal(
                 self.M * (1 + dist_to_redshift(self.d_L)), self.M_uncertainty
             )
             if 1e4 <= self.M <= 1e7:
-                break
-        while True:
-            self.d_L = np.random.normal(self.d_L, self.d_L_uncertainty)
-            if 0 <= self.d_L <= 6.8:
                 break
 
 
@@ -593,7 +594,7 @@ class BayesianStatistics:
 
             ax.plot(
                 h_values,
-                posterior,
+                posterior / np.max(posterior),
                 label=f"detection: {detection_index}",
                 color=color,
             )
@@ -620,7 +621,7 @@ class BayesianStatistics:
 
             ax.plot(
                 h_values_with_bh_mass,
-                posterior,
+                posterior / np.max(posterior),
                 label=f"detection {detection_index}",
                 color=color,
             )
@@ -1638,7 +1639,7 @@ def single_host_likelihood(
     likelihood_without_bh_mass = normal_distribution_with_mass.pdf(positions)
 
     # weight with redshift distribution
-    likelihood_without_bh_mass = likelihood_without_bh_mass * redshift_distribution
+    # likelihood_without_bh_mass = likelihood_without_bh_mass * redshift_distribution
 
     # integrate over redshift
     likelihood_without_bh_mass = np.trapz(likelihood_without_bh_mass, distances)
@@ -1678,9 +1679,11 @@ def single_host_likelihood(
         likelihood_with_bh_mass_grid = likelihood_with_bh_mass_grid.reshape(M_g.shape)
 
         # weight with redshift distribution
+        """
         likelihood_with_bh_mass_grid = (
             likelihood_with_bh_mass_grid * redshift_distribution_grid
         )
+        """
 
         likelihood_with_bh_mass_mass_integrated = []
         for i, M_gi in enumerate(M_g.T):
