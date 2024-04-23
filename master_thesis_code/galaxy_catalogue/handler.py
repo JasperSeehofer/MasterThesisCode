@@ -101,6 +101,7 @@ class GalaxyCatalogueHandler:
         )
         self._map_stellar_masses_to_BH_masses()
         self._map_angles_to_spherical_coordinates()
+        self._remove_galaxies_without_mass_information()
         # self._map_BH_masses_to_redshifted_masses()
         self._show_catalog_information()
 
@@ -259,14 +260,14 @@ class GalaxyCatalogueHandler:
         possible_host_galaxies_with_BH_mass = possible_host_galaxies[
             (
                 (
-                    (M_z - M_z_error * cutoff_multiplier)/(1 + z_max)
+                    (M_z - M_z_error * cutoff_multiplier) / (1 + z_max)
                     <= possible_host_galaxies[InternalCatalogColumns.BH_MASS]
                     + possible_host_galaxies[InternalCatalogColumns.BH_MASS_ERROR]
                 )
                 & (
                     possible_host_galaxies[InternalCatalogColumns.BH_MASS]
                     - possible_host_galaxies[InternalCatalogColumns.BH_MASS_ERROR]
-                    <= (M_z + M_z_error * cutoff_multiplier)/(1+z_min)
+                    <= (M_z + M_z_error * cutoff_multiplier) / (1 + z_min)
                 )
             )
         ]
@@ -281,6 +282,11 @@ class GalaxyCatalogueHandler:
             for _, parameters in possible_host_galaxies_with_BH_mass.iterrows()
         ]
         return (possible_host_galaxies, possible_host_galaxies_with_BH_mass)
+
+    def _remove_galaxies_without_mass_information(self) -> None:
+        self.reduced_galaxy_catalog = self.reduced_galaxy_catalog[
+            ~self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS].isna()
+        ]
 
     def _map_stellar_masses_to_BH_masses(self) -> None:
         BH_mass, BH_mass_error = _empiric_stellar_mass_to_BH_mass_relation(

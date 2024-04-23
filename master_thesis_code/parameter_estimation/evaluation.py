@@ -10,7 +10,7 @@ from scipy.stats import multivariate_normal
 from master_thesis_code.physical_relations import (
     get_redshift_outer_bounds,
     dist_to_redshift,
-    dist
+    dist,
 )
 
 from master_thesis_code.constants import RADIAN_TO_DEGREE, C, H0, GPC_TO_MPC
@@ -26,7 +26,7 @@ class DataEvaluation:
     ):
         self._cramer_rao_bounds = pd.read_csv(path_to_cramer_rao_bounds_file)
         self._snr_analysis_file = pd.read_csv(path_to_snr_analysis_file)
-        #self._undetected_events = pd.read_csv(path_to_undetected_events_file)
+        # self._undetected_events = pd.read_csv(path_to_undetected_events_file)
 
     def visualize(self) -> None:
         # ensure directory is given
@@ -118,32 +118,32 @@ class DataEvaluation:
         # plot gaussian for bh mass uncertainty
         for index, detection in self._cramer_rao_bounds.sample(20).iterrows():
             detection = Detection(detection)
-            #create full covariance matrix for all parameters
+            # create full covariance matrix for all parameters
             covariance_matrix = np.array(
                 [
                     [
-                        2*detection.M_uncertainty ** 2,
+                        detection.M_uncertainty**2,
                         detection.d_L_M_covariance,
                         detection.M_phi_covariance,
                         detection.M_theta_covariance,
                     ],
                     [
                         detection.d_L_M_covariance,
-                        detection.d_L_uncertainty ** 2,
+                        detection.d_L_uncertainty**2,
                         detection.d_L_phi_covariance,
                         detection.d_L_theta_covariance,
                     ],
                     [
                         detection.M_phi_covariance,
                         detection.d_L_phi_covariance,
-                        detection.phi_error ** 2,
+                        detection.phi_error**2,
                         detection.theta_phi_covariance,
                     ],
                     [
                         detection.M_theta_covariance,
                         detection.d_L_theta_covariance,
                         detection.theta_phi_covariance,
-                        detection.theta_error ** 2,
+                        detection.theta_error**2,
                     ],
                 ]
             )
@@ -156,11 +156,17 @@ class DataEvaluation:
             z_min, z_max = get_redshift_outer_bounds(
                 detection.d_L, detection.d_L_uncertainty
             )
-            redshifts = np.linspace(dist_to_redshift(detection.d_L - 0.001*detection.d_L_uncertainty), dist_to_redshift(detection.d_L + 0.001*detection.d_L_uncertainty), 1000)
+            redshifts = np.linspace(
+                dist_to_redshift(detection.d_L - 0.0001 * detection.d_L_uncertainty),
+                dist_to_redshift(detection.d_L + 0.0001 * detection.d_L_uncertainty),
+                1000,
+            )
             distances = np.array([dist(redshift) for redshift in redshifts])
             masses = np.linspace(
-                detection.M/(1+dist_to_redshift(detection.d_L)) - detection.M_uncertainty,
-                detection.M/(1+dist_to_redshift(detection.d_L)) + detection.M_uncertainty,
+                detection.M / (1 + dist_to_redshift(detection.d_L))
+                - detection.M_uncertainty,
+                detection.M / (1 + dist_to_redshift(detection.d_L))
+                + detection.M_uncertainty,
                 1000,
             )
             mass, redshift = np.meshgrid(masses, redshifts)
@@ -175,20 +181,132 @@ class DataEvaluation:
                     np.ones_like(mass.flatten()) * theta,
                 ]
             ).T
-            print(positions)
 
             probabilities = gaussian_mass.pdf(positions)
 
             # reshape to grid
             probabilities = probabilities.reshape(mass.shape)
-            print(probabilities.shape)
+
+            # integrate over redshift and mass
+            integrated_probabilities = np.trapz(probabilities, x=mass, axis=0)
+            integrated_probabilities = np.trapz(
+                integrated_probabilities, x=redshifts, axis=0
+            )
+
+            # compare to approximation of gaussian
+            approximated_positions = np.array(
+                [
+                    np.ones_like(distances) * detection.M,
+                    distances,
+                    np.ones_like(distances) * phi,
+                    np.ones_like(distances) * theta,
+                ]
+            ).T
+            approximated_probabilities = gaussian_mass.pdf(approximated_positions)
+            approximated_integral = np.trapz(approximated_probabilities, x=redshifts)
+
+            # try better approximation
+            five_point_mass_approximation = (
+                np.ones(shape=(2001, len(redshifts))) * detection.M
+            )
+            for index, step in enumerate(range(-1000, 1001, 1)):
+                five_point_mass_approximation[index] = five_point_mass_approximation[
+                    index
+                ] + step / int(
+                    len(five_point_mass_approximation) / 20
+                ) * detection.M_uncertainty / (
+                    1 + redshifts
+                )
+
+            # make distances same dimension as masses
+            new_distances = np.array([distances for _ in range(2001)])
+
+            five_point_mass_positions = np.array(
+                [
+                    five_point_mass_approximation.flatten(),
+                    new_distances.flatten(),
+                    np.ones_like(new_distances.flatten()) * phi,
+                    np.ones_like(new_distances.flatten()) * theta,
+                ]
+            ).T
+            better_approximation_probabilities = gaussian_mass.pdf(
+                five_point_mass_positions
+            )
+            # reshape
+            better_approximation_probabilities = (
+                better_approximation_probabilities.reshape(
+                    five_point_mass_approximation.shape
+                )
+            )
+
+            better_approximation_z_probabilities = []
+            for index, fixed_z in enumerate(better_approximation_probabilities.T):
+                better_approximation_z_probabilities.append(
+                    np.trapz(fixed_z, x=five_point_mass_approximation.T[index])
+                )
+            better_approximated_integral = np.trapz(
+                better_approximation_z_probabilities, x=redshifts, axis=0
+            )
+
+            # try better approximation
+            ten_point_mass_approximation = (
+                np.ones(shape=(41, len(redshifts))) * detection.M
+            )
+            for index, step in enumerate(range(-20, 21, 1)):
+                ten_point_mass_approximation[index] = ten_point_mass_approximation[
+                    index
+                ] + step / int(
+                    len(ten_point_mass_approximation) / 10
+                ) * detection.M_uncertainty / (
+                    1 + redshifts
+                )
+
+            # make distances same dimension as masses
+            new_distances = np.array([distances for _ in range(41)])
+
+            ten_point_mass_positions = np.array(
+                [
+                    ten_point_mass_approximation.flatten(),
+                    new_distances.flatten(),
+                    np.ones_like(new_distances.flatten()) * phi,
+                    np.ones_like(new_distances.flatten()) * theta,
+                ]
+            ).T
+            better_approximation_probabilities = gaussian_mass.pdf(
+                ten_point_mass_positions
+            )
+            # reshape
+            better_approximation_probabilities = (
+                better_approximation_probabilities.reshape(
+                    ten_point_mass_approximation.shape
+                )
+            )
+
+            better_approximation_z_probabilities = []
+            for index, fixed_z in enumerate(better_approximation_probabilities.T):
+                better_approximation_z_probabilities.append(
+                    np.trapz(fixed_z, x=ten_point_mass_approximation.T[index])
+                )
+            better_approximated_ten_integral = np.trapz(
+                better_approximation_z_probabilities, x=redshifts, axis=0
+            )
+
+            print(
+                f"better approximated integral (101 steps): {better_approximated_integral}, 10 steps (deviation): {better_approximated_integral - better_approximated_ten_integral}"
+            )
+
             # create 2d plot
             plt.figure(figsize=(16, 9))
             # plot true mass and redshift line
             plt.axvline(detection.M, color="red", label="true mass", linestyle="--")
-            plt.axhline(dist_to_redshift(detection.d_L), color="red", label="true distance", linestyle="--")
+            plt.axhline(
+                dist_to_redshift(detection.d_L),
+                color="red",
+                label="true distance",
+                linestyle="--",
+            )
             plt.contourf(mass, redshift, probabilities, cmap="viridis")
-            #plt.scatter(detection.M/(1+redshifts), redshifts, c="red", label="mean")
+            # plt.scatter(detection.M/(1+redshifts), redshifts, c="red", label="mean")
             plt.xlabel("mass [solar masses]")
             plt.ylabel("redshift")
             plt.colorbar()
@@ -196,7 +314,6 @@ class DataEvaluation:
                 f"{figures_directory}plots/gaussian_mass_redshift_{index}.png", dpi=300
             )
             plt.close()
-            
 
         # plt SNR and waveform generation time vs parameters
         for column in ["SNR", "generation_time"]:

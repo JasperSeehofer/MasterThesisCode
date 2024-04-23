@@ -98,7 +98,9 @@ class Detection:
             if 0 <= self.theta <= np.pi:
                 break
         while True:
-            self.M = np.random.normal(self.M, self.M_uncertainty)
+            self.M = np.random.normal(
+                self.M * (1 + dist_to_redshift(self.d_L)), self.M_uncertainty
+            )
             if 1e4 <= self.M <= 1e7:
                 break
         while True:
@@ -1566,6 +1568,10 @@ def single_host_likelihood(
     )"""  # TODO check if correct
 
     # multivariate normal distribution for all parameters including the mass
+    if np.isnan(possible_host.M):
+        print(f"possible host has no mass information: {possible_host}", flush=True)
+        possible_host.M = 0.0
+        possible_host.M_error = 1.0
     covariance = [
         [
             detection.phi_error**2,
@@ -1640,13 +1646,18 @@ def single_host_likelihood(
     if evaluate_with_bh_mass:
         SAMPLING_POINTS = 20
         SIGMA_RANGE = 6
-        M_gs_z = np.ones(shape=(2*SAMPLING_POINTS + 1,len(z_gws))) * detection.M
+        M_gs_z = np.ones(shape=(2 * SAMPLING_POINTS + 1, len(z_gws))) * detection.M
         for i, factor in enumerate(range(-SAMPLING_POINTS, SAMPLING_POINTS, 1)):
-            M_gs_z[i] = M_gs_z[i] + factor * detection.M_uncertainty * SIGMA_RANGE / SAMPLING_POINTS
+            M_gs_z[i] = (
+                M_gs_z[i]
+                + factor * detection.M_uncertainty * SIGMA_RANGE / SAMPLING_POINTS
+            )
 
-        z_gw_grid = np.array([z_gws for _ in range(2*SAMPLING_POINTS + 1)])
-        distances_grid = np.array([distances for _ in range(2*SAMPLING_POINTS + 1)])
-        redshift_distribution_grid = np.array([redshift_distribution for _ in range(2*SAMPLING_POINTS + 1)])
+        z_gw_grid = np.array([z_gws for _ in range(2 * SAMPLING_POINTS + 1)])
+        distances_grid = np.array([distances for _ in range(2 * SAMPLING_POINTS + 1)])
+        redshift_distribution_grid = np.array(
+            [redshift_distribution for _ in range(2 * SAMPLING_POINTS + 1)]
+        )
 
         M_g = M_gs_z / (1 + z_gw_grid)
 
