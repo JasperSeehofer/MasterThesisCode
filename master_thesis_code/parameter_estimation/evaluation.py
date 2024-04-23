@@ -22,10 +22,14 @@ class DataEvaluation:
         self,
         path_to_cramer_rao_bounds_file: str = "./simulations/cramer_rao_bounds.csv",
         path_to_snr_analysis_file: str = "./simulations/snr_analysis.csv",
+        path_to_prepared_cramer_rao_bounds="./simulations/prepared_cramer_rao_bounds.csv",
         path_to_undetected_events_file: str = "./simulations/undetected_events_unbiased.csv",
     ):
         self._cramer_rao_bounds = pd.read_csv(path_to_cramer_rao_bounds_file)
         self._snr_analysis_file = pd.read_csv(path_to_snr_analysis_file)
+        self._prepared_cramer_rao_bounds = pd.read_csv(
+            path_to_prepared_cramer_rao_bounds
+        )
         # self._undetected_events = pd.read_csv(path_to_undetected_events_file)
 
     def visualize(self) -> None:
@@ -47,11 +51,36 @@ class DataEvaluation:
 
         for a, b in parameter_combinations:
             column_name = f"delta_{b}_delta_{a}"
-            mean_cramer_rao_bounds.at[a, b] = self._cramer_rao_bounds[
-                column_name
-            ].mean()
+            mean = self._cramer_rao_bounds[column_name].mean()
+            mean_cramer_rao_bounds.at[a, b] = mean
+            mean_cramer_rao_bounds.at[b, a] = mean
 
-        mean_cramer_rao_bounds.to_excel(f"{figures_directory}mean_bounds.xlsx")
+        # mean_cramer_rao_bounds.to_excel(f"{figures_directory}mean_bounds.xlsx")
+        print(mean_cramer_rao_bounds.values.astype(float))
+
+        # create 2d plot of matrix
+        plt.figure(figsize=(16, 9))
+        plt.matshow(
+            mean_cramer_rao_bounds.values.astype(float),
+            cmap="viridis",
+            vmin=-1e-4,
+            vmax=1e-4,
+        )
+        plt.colorbar()
+        plt.xticks(
+            range(len(parameter_symbol_list)),
+            parameter_symbol_list,
+            rotation=-45,
+            ha="right",
+        )
+        plt.yticks(
+            range(len(parameter_symbol_list)),
+            parameter_symbol_list,
+            rotation=45,
+            ha="right",
+        )
+        plt.savefig(f"{figures_directory}plots/mean_bounds.png", dpi=300)
+        plt.close()
 
         # create 3d spherical coordinates plot of detections
 
@@ -116,7 +145,9 @@ class DataEvaluation:
             plt.close()
 
         # plot gaussian for bh mass uncertainty
-        for index, detection in self._cramer_rao_bounds.sample(20).iterrows():
+        for detection_index, detection in self._prepared_cramer_rao_bounds.sample(
+            1
+        ).iterrows():
             detection = Detection(detection)
             # create full covariance matrix for all parameters
             covariance_matrix = np.array(
@@ -157,8 +188,8 @@ class DataEvaluation:
                 detection.d_L, detection.d_L_uncertainty
             )
             redshifts = np.linspace(
-                dist_to_redshift(detection.d_L - 0.0001 * detection.d_L_uncertainty),
-                dist_to_redshift(detection.d_L + 0.0001 * detection.d_L_uncertainty),
+                dist_to_redshift(detection.d_L - 3 * detection.d_L_uncertainty),
+                dist_to_redshift(detection.d_L + 3 * detection.d_L_uncertainty),
                 1000,
             )
             distances = np.array([dist(redshift) for redshift in redshifts])
@@ -209,9 +240,9 @@ class DataEvaluation:
             five_point_mass_approximation = (
                 np.ones(shape=(2001, len(redshifts))) * detection.M
             )
-            for index, step in enumerate(range(-1000, 1001, 1)):
-                five_point_mass_approximation[index] = five_point_mass_approximation[
-                    index
+            for index_1, step in enumerate(range(-1000, 1001, 1)):
+                five_point_mass_approximation[index_1] = five_point_mass_approximation[
+                    index_1
                 ] + step / int(
                     len(five_point_mass_approximation) / 20
                 ) * detection.M_uncertainty / (
@@ -240,9 +271,9 @@ class DataEvaluation:
             )
 
             better_approximation_z_probabilities = []
-            for index, fixed_z in enumerate(better_approximation_probabilities.T):
+            for index_2, fixed_z in enumerate(better_approximation_probabilities.T):
                 better_approximation_z_probabilities.append(
-                    np.trapz(fixed_z, x=five_point_mass_approximation.T[index])
+                    np.trapz(fixed_z, x=five_point_mass_approximation.T[index_2])
                 )
             better_approximated_integral = np.trapz(
                 better_approximation_z_probabilities, x=redshifts, axis=0
@@ -252,14 +283,10 @@ class DataEvaluation:
             ten_point_mass_approximation = (
                 np.ones(shape=(41, len(redshifts))) * detection.M
             )
-            for index, step in enumerate(range(-20, 21, 1)):
-                ten_point_mass_approximation[index] = ten_point_mass_approximation[
-                    index
-                ] + step / int(
-                    len(ten_point_mass_approximation) / 10
-                ) * detection.M_uncertainty / (
-                    1 + redshifts
-                )
+            for index_3, step in enumerate(range(-20, 21, 1)):
+                ten_point_mass_approximation[index_3] = ten_point_mass_approximation[
+                    index_3
+                ] + (step / 20 * 10) * detection.M_uncertainty / (1 + redshifts)
 
             # make distances same dimension as masses
             new_distances = np.array([distances for _ in range(41)])
@@ -272,46 +299,57 @@ class DataEvaluation:
                     np.ones_like(new_distances.flatten()) * theta,
                 ]
             ).T
-            better_approximation_probabilities = gaussian_mass.pdf(
+            ten_point_approximation_probabilities = gaussian_mass.pdf(
                 ten_point_mass_positions
             )
             # reshape
-            better_approximation_probabilities = (
-                better_approximation_probabilities.reshape(
+            ten_point_approximation_probabilities = (
+                ten_point_approximation_probabilities.reshape(
                     ten_point_mass_approximation.shape
                 )
             )
 
-            better_approximation_z_probabilities = []
-            for index, fixed_z in enumerate(better_approximation_probabilities.T):
-                better_approximation_z_probabilities.append(
-                    np.trapz(fixed_z, x=ten_point_mass_approximation.T[index])
+            ten_point_approximation_z_probabilities = []
+            for index_4, fixed_z in enumerate(ten_point_approximation_probabilities.T):
+                ten_point_approximation_z_probabilities.append(
+                    np.trapz(fixed_z, x=ten_point_mass_approximation.T[index_4])
                 )
             better_approximated_ten_integral = np.trapz(
-                better_approximation_z_probabilities, x=redshifts, axis=0
+                ten_point_approximation_z_probabilities, x=redshifts, axis=0
             )
 
             print(
                 f"better approximated integral (101 steps): {better_approximated_integral}, 10 steps (deviation): {better_approximated_integral - better_approximated_ten_integral}"
             )
 
+            redshifts = np.array([redshifts for _ in range(41)])
+            print(redshifts)
+            print(ten_point_mass_approximation)
             # create 2d plot
             plt.figure(figsize=(16, 9))
             # plot true mass and redshift line
+            """
+
             plt.axvline(detection.M, color="red", label="true mass", linestyle="--")
             plt.axhline(
                 dist_to_redshift(detection.d_L),
                 color="red",
                 label="true distance",
                 linestyle="--",
+            )"""
+            plt.contourf(
+                redshifts,
+                ten_point_mass_approximation,
+                ten_point_approximation_probabilities,
+                cmap="viridis",
             )
-            plt.contourf(mass, redshift, probabilities, cmap="viridis")
             # plt.scatter(detection.M/(1+redshifts), redshifts, c="red", label="mean")
-            plt.xlabel("mass [solar masses]")
-            plt.ylabel("redshift")
+            plt.xlabel("redshift")
+            plt.ylabel(" mass in solar masses")
             plt.colorbar()
             plt.savefig(
-                f"{figures_directory}plots/gaussian_mass_redshift_{index}.png", dpi=300
+                f"{figures_directory}plots/gaussian_mass_redshift_{detection_index}.png",
+                dpi=300,
             )
             plt.close()
 
@@ -333,7 +371,7 @@ class DataEvaluation:
                 plt.close()
 
         # boxplot of cramer rao bounds
-        use_relative_uncertainty = ["M", "dist", "mu"]
+        use_relative_uncertainty = []  # "M", "dist", "mu"
         uncertainies_list = []
         for parameter in vars(parameter_space).values():
             assert isinstance(parameter, Parameter)
@@ -361,12 +399,71 @@ class DataEvaluation:
         uncertainies_list.append(sky_uncertainty)
 
         fig, ax = plt.subplots()
-        ax.violinplot(uncertainies_list, showmeans=True)
+
+        violin_parts = ax.violinplot(
+            uncertainies_list, showmeans=True, showextrema=False
+        )
+        for partname in ["cmeans"]:
+            vp = violin_parts[partname]
+            vp.set_edgecolor("seagreen")
+            vp.set_linewidth(1)
+        for pc in violin_parts["bodies"]:
+            pc.set_color("seagreen")
+            pc.set_alpha(0.6)
         ax.set_xticks(np.arange(1, len(parameter_symbol_list) + 2))
-        ax.set_xticklabels(parameter_symbol_list + ["skylocalization"])
+        ax.set_xticklabels(
+            parameter_symbol_list + ["skylocalization"],
+            rotation=45,
+            ha="right",
+            fontsize=8,
+        )
         plt.yscale("log")
+        # make sure ticks are not cut off
+        plt.tight_layout()
         plt.savefig(f"{figures_directory}plots/boxplot_uncertainties.png", dpi=300)
         plt.close()
+
+        # violin plot of cramer rao bounds covariance
+        parameters_of_interest = ["M", "dist", "phiS", "qS"]
+        for parameter in parameters_of_interest:
+            covariance_list = []
+            for parameter_2 in parameter_symbol_list:
+                covariance_column_name = f"delta_{parameter}_delta_{parameter_2}"
+                try:
+                    covariances = self._cramer_rao_bounds[covariance_column_name]
+                except KeyError:
+                    covariance_column_name = f"delta_{parameter_2}_delta_{parameter}"
+                    covariances = self._cramer_rao_bounds[covariance_column_name]
+
+                covariance_list.append(covariances)
+
+            fig, ax = plt.subplots()
+            # set title
+            ax.set_title(f"covariances of {parameter}")
+            violin_parts = ax.violinplot(
+                covariance_list, showmeans=True, showextrema=False
+            )
+            for partname in ["cmeans"]:
+                vp = violin_parts[partname]
+                vp.set_edgecolor("seagreen")
+                vp.set_linewidth(1)
+
+            for pc in violin_parts["bodies"]:
+                pc.set_color("seagreen")
+                pc.set_alpha(0.6)
+
+            ax.set_xticks(np.arange(1, len(parameter_symbol_list) + 1))
+            ax.set_xticklabels(
+                parameter_symbol_list,
+                rotation=45,
+                ha="right",
+                fontsize=8,
+            )
+            plt.tight_layout()
+            plt.savefig(
+                f"{figures_directory}plots/boxplot_covariances_{parameter}.png", dpi=300
+            )
+            plt.close()
 
         # plot redshift detections distribution
         # convert distance to redshift
@@ -430,6 +527,7 @@ class DataEvaluation:
             redshifts, np.log10(source_masses), bins=[grid_x[:, 0], grid_y[0, :]]
         )
 
+        """
         hist_non_detections, _, _ = np.histogram2d(
             self._undetected_events["dist"] * 10**3 / C * H0,
             np.log10(
@@ -438,6 +536,7 @@ class DataEvaluation:
             ),
             bins=[grid_x[:, 0], grid_y[0, :]],
         )
+        """
 
         # detection_fraction = hist_detections / (hist_detections + hist_non_detections)
 
@@ -450,6 +549,7 @@ class DataEvaluation:
         plt.savefig(f"{figures_directory}plots/mass_redshift_detections.png", dpi=300)
         plt.close()
 
+        """
         # plot non detected events
         fig, ax = plt.subplots()
         contour = ax.contourf(grid_x, grid_y, hist_non_detections, cmap="viridis")
@@ -458,6 +558,7 @@ class DataEvaluation:
         plt.ylabel("log_10 source mass [solar masses]")
         plt.savefig(f"{figures_directory}plots/mass_redshift_not_detected.png", dpi=300)
         plt.close()
+        """
 
         # plot skylocalization uncertainty
         fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
