@@ -1,5 +1,6 @@
 import numpy as np
 from scipy.optimize import fsolve
+from scipy.special import hyp2f1
 from master_thesis_code.constants import (
     C,
     H,
@@ -33,11 +34,12 @@ def dist(
     """
     if not isinstance(redshift, float):
         redshift = redshift[0]
-    zs = np.linspace(0, redshift, 1000)
 
     H_0 = h * 100.0 * KM_TO_M / GPC_TO_MPC ** (-1)  # Hubble constant in m/s*Gpc
 
     # Hubble parameter
+    """
+    zs = np.linspace(0, redshift, 1000)
     hubble = np.sqrt(
         Omega_m * (1 + zs) ** 3
         + Omega_de
@@ -47,11 +49,29 @@ def dist(
 
     # integral
     integral = np.trapz(1 / hubble, zs)
+    """
+    # use analytic version of the integral
+    integral = lambda_cdm_analytic_distance(redshift, Omega_m, Omega_de)
 
     # luminosity distance in Gpc
     result = C / H_0 * (1 + redshift) * integral - offset_for_root_finding
 
     return result
+
+
+def lambda_cdm_analytic_distance(
+    redshift: float, Omega_m: float = OMEGA_M, Omega_de: float = OMEGA_DE
+) -> float:
+    return (
+        (1 + redshift)
+        * np.sqrt(1 + (Omega_m * (1 + redshift) ** 3) / Omega_de)
+        * hyp2f1(1 / 3, 1 / 2, 4 / 3, -((Omega_m * (1 + redshift) ** 3) / Omega_de))
+    ) / np.sqrt(Omega_de + Omega_m * (1 + redshift) ** 3) - (
+        np.sqrt((Omega_m + Omega_de) / Omega_de)
+        * hyp2f1(1 / 3, 1 / 2, 4 / 3, -(Omega_m / Omega_de))
+    ) / np.sqrt(
+        Omega_m + Omega_de
+    )
 
 
 def dist_to_redshift(
