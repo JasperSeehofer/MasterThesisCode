@@ -1707,10 +1707,6 @@ def single_host_likelihood(
         # integrate over mass and redshift
         likelihood_with_bh_mass = np.trapz(likelihood_with_bh_mass, z_gws)
 
-    print(f"likelihood without bh mass: {likelihood_without_bh_mass}", flush=True)
-    if evaluate_with_bh_mass:
-        print(f"likelihood with bh mass: {likelihood_with_bh_mass}", flush=True)
-
     if evaluate_with_bh_mass:
         return [likelihood_without_bh_mass, likelihood_with_bh_mass]
     return likelihood_without_bh_mass
