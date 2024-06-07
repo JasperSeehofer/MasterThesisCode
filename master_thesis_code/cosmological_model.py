@@ -1288,21 +1288,6 @@ class BayesianStatistics:
             [np.full(SCALING_FACTOR, value) for value in self._redshift_distribution]
         ).flatten()
 
-        self._z_gws = np.linspace(0, max(distances), len(self._redshift_distribution))
-        self._distances = np.array(
-            [
-                dist(
-                    z,
-                    h=self.h,
-                    Omega_m=self.Omega_m,
-                    Omega_de=self.Omega_DE,
-                    w_0=self.w_0,
-                    w_a=self.w_a,
-                )
-                for z in self._z_gws
-            ]
-        )
-
         _LOGGER.debug(
             f"Found {len(os.sched_getaffinity(0))} / {os.cpu_count()} (available / system) cpus."
         )
@@ -1321,8 +1306,6 @@ class BayesianStatistics:
 
         with mp.get_context("spawn").Pool(
             len(os.sched_getaffinity(0)) - 4,
-            initializer=child_process_init,
-            initargs=(self._distances, self._z_gws, self._redshift_distribution),
         ) as pool:
             self.p_D(
                 galaxy_catalog=galaxy_catalog,
@@ -1570,12 +1553,18 @@ def single_host_likelihood(
     detection: Detection,
     evaluate_with_bh_mass: bool,
 ) -> list[float]:
-    global distances
-    global z_gws
     global redshift_distribution
     """WL_uncertainty = (
         d_L * 0.066 * (1 - (1 + possible_host.z) ** (-0.25) / 0.25) ** (1.8)
     )"""  # TODO check if correct
+
+    # redshift samples around peak
+    z_gws = np.linspace(
+        possible_host.z - 5 * possible_host.z_error,
+        possible_host.z + 5 * possible_host.z_error,
+        1000,
+    )
+    distances = [dist(redshift) for redshift in z_gws]
 
     # multivariate normal distribution for all parameters including the mass
     if np.isnan(possible_host.M):
@@ -1587,49 +1576,33 @@ def single_host_likelihood(
             detection.phi_error**2,
             detection.theta_phi_covariance,
             detection.d_L_phi_covariance,
-            detection.M_phi_covariance,
-            0,
-            0,
         ],
         [
             detection.theta_phi_covariance,
             detection.theta_error**2,
             detection.d_L_theta_covariance,
-            detection.M_theta_covariance,
-            0,
-            0,
         ],
         [
             detection.d_L_phi_covariance,
             detection.d_L_theta_covariance,
             detection.d_L_uncertainty**2,
-            detection.d_L_M_covariance,
-            0,
-            0,
         ],
-        [
-            detection.M_phi_covariance,
-            detection.M_theta_covariance,
-            detection.d_L_M_covariance,
-            detection.M_uncertainty**2,
-            0,
-            0,
-        ],
-        [0, 0, 0, 0, possible_host.z_error**2, 0],
-        [0, 0, 0, 0, 0, possible_host.M_error**2],
     ]
+
+    redshift_normal_distribution = NormalDist(
+        mu=possible_host.z, sigma=possible_host.z_error
+    )
+    redshift_normal_distribution = np.array(
+        [redshift_normal_distribution.pdf(redshift) for redshift in z_gws]
+    )
 
     normal_distribution_with_mass = multivariate_normal(
         mean=[
             detection.phi,
             detection.theta,
             detection.d_L,
-            detection.M,
-            possible_host.z,
-            possible_host.M,
         ],
         cov=covariance,
-        allow_singular=True,
     )
 
     # prepare positions for multivariate normal distribution
@@ -1638,22 +1611,22 @@ def single_host_likelihood(
             np.ones(z_gws.shape) * possible_host.phiS,
             np.ones(z_gws.shape) * possible_host.qS,
             distances,
-            np.ones(z_gws.shape) * detection.M,
-            z_gws,
-            np.ones(z_gws.shape) * possible_host.M,
         ]
     ).T
 
     # evaluate multivariate normal distribution
-    likelihood_without_bh_mass = normal_distribution_with_mass.pdf(positions)
+    likelihood_without_bh_mass = (
+        normal_distribution_with_mass.pdf(positions) * redshift_normal_distribution
+    )
 
     # weight with redshift distribution
     # likelihood_without_bh_mass = likelihood_without_bh_mass * redshift_distribution
 
     # integrate over redshift
-    likelihood_without_bh_mass = np.trapz(likelihood_without_bh_mass, distances)
+    likelihood_without_bh_mass = np.trapz(likelihood_without_bh_mass, z_gws)
 
     if evaluate_with_bh_mass:
+        """
         SAMPLING_POINTS = 20
         SIGMA_RANGE = 6
         M_gs_z = np.ones(shape=(2 * SAMPLING_POINTS + 1, len(z_gws))) * detection.M
@@ -1670,22 +1643,68 @@ def single_host_likelihood(
         )
 
         M_g = M_gs_z / (1 + z_gw_grid)
+        """
+        covariance = [
+            [
+                detection.phi_error**2,
+                detection.theta_phi_covariance,
+                detection.d_L_phi_covariance,
+                detection.M_phi_covariance,
+            ],
+            [
+                detection.theta_phi_covariance,
+                detection.theta_error**2,
+                detection.d_L_theta_covariance,
+                detection.M_theta_covariance,
+            ],
+            [
+                detection.d_L_phi_covariance,
+                detection.d_L_theta_covariance,
+                detection.d_L_uncertainty**2,
+                detection.d_L_M_covariance,
+            ],
+            [
+                detection.M_phi_covariance,
+                detection.M_theta_covariance,
+                detection.d_L_M_covariance,
+                detection.M_uncertainty**2,
+            ],
+        ]
+        normal_distribution_with_mass = multivariate_normal(
+            mean=[
+                detection.phi,
+                detection.theta,
+                detection.d_L,
+                detection.M,
+            ],
+            cov=covariance,
+        )
+        # treat redshifted mass peak as delta function
+        M_g = detection.M / (1 + z_gws)
+
+        mass_normal_distribution = NormalDist(
+            mu=possible_host.M, sigma=possible_host.M_error
+        )
+
+        mass_normal_distribution = np.array(
+            [mass_normal_distribution.pdf(mass) for mass in M_g]
+        )
 
         # prepare positions for multivariate normal distribution for all parameters including the mass
         positions = np.vstack(
             [
-                np.ones(M_g.ravel().shape) * possible_host.phiS,
-                np.ones(M_g.ravel().shape) * possible_host.qS,
-                distances_grid.ravel(),
-                M_gs_z.ravel(),
-                z_gw_grid.ravel(),
-                M_g.ravel(),
+                np.ones(z_gws.shape) * possible_host.phiS,
+                np.ones(z_gws.shape) * possible_host.qS,
+                distances,
+                M_g * (1 + z_gws),
             ]
         ).T
 
-        likelihood_with_bh_mass_grid = normal_distribution_with_mass.pdf(positions)
-        # reshape likelihoods to grid
-        likelihood_with_bh_mass_grid = likelihood_with_bh_mass_grid.reshape(M_g.shape)
+        likelihood_with_bh_mass = (
+            normal_distribution_with_mass.pdf(positions)
+            * mass_normal_distribution
+            * redshift_normal_distribution
+        )
 
         # weight with redshift distribution
         
@@ -1693,16 +1712,8 @@ def single_host_likelihood(
             likelihood_with_bh_mass_grid * redshift_distribution_grid
         )
 
-        likelihood_with_bh_mass_mass_integrated = []
-        for i, M_gi in enumerate(M_g.T):
-            likelihood_with_bh_mass_mass_integrated.append(
-                np.trapz(likelihood_with_bh_mass_grid.T[i], M_gi)
-            )
-
         # integrate over mass and redshift
-        likelihood_with_bh_mass = np.trapz(
-            likelihood_with_bh_mass_mass_integrated, distances
-        )
+        likelihood_with_bh_mass = np.trapz(likelihood_with_bh_mass, z_gws)
 
     if evaluate_with_bh_mass:
         return [likelihood_without_bh_mass, likelihood_with_bh_mass]
@@ -1710,13 +1721,7 @@ def single_host_likelihood(
 
 
 def child_process_init(
-    current_distances: np.array,
-    current_z_gws: np.array,
     current_redshift_distribution: np.array,
 ) -> None:
-    global distances
-    global z_gws
     global redshift_distribution
-    z_gws = current_z_gws
-    distances = current_distances
     redshift_distribution = current_redshift_distribution
