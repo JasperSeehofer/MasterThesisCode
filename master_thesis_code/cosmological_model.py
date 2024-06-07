@@ -39,7 +39,7 @@ from master_thesis_code.physical_relations import (
 _LOGGER = logging.getLogger()
 
 DEFAULT_GALAXY_Z_ERROR = 0.0015
-GALAXY_LIKELIHOODS = "galaxy_likelihoods"
+GALAXY_LIKELIHOODS = "galaxy_weights"
 
 
 @dataclass
@@ -63,6 +63,7 @@ class Detection:
     d_L_M_covariance: float
     d_L_theta_covariance: float
     d_L_phi_covariance: float
+    host_galaxy_index: int
     WL_uncertainty: float = 0.0
 
     def __init__(self, parameters: pd.Series) -> None:
@@ -80,6 +81,7 @@ class Detection:
         self.d_L_M_covariance = parameters["delta_dist_delta_M"]
         self.d_L_theta_covariance = parameters["delta_qS_delta_dist"]
         self.d_L_phi_covariance = parameters["delta_phiS_delta_dist"]
+        self.host_galaxy_index = parameters["host_galaxy_index"]
 
     def get_skylocalization_error(self) -> float:
         return _sky_localization_uncertainty(
@@ -415,8 +417,8 @@ class BayesianStatistics:
 
     def visualize(self, galaxy_catalog: GalaxyCatalogueHandler) -> None:
 
-        posteriors_directory = "simulations/posteriors"
-        posteriors_with_bh_mass_directory = "simulations/posteriors_with_bh_mass"
+        posteriors_directory = "simulations/posteriors_1"
+        posteriors_with_bh_mass_directory = "simulations/posteriors_with_bh_mass_1"
 
         posteriors_files = [
             file for file in os.listdir(posteriors_directory) if file.endswith(".json")
@@ -594,7 +596,7 @@ class BayesianStatistics:
 
             ax.plot(
                 h_values,
-                posterior / np.max(posterior),
+                posterior,
                 label=f"detection: {detection_index}",
                 color=color,
             )
@@ -621,7 +623,7 @@ class BayesianStatistics:
 
             ax.plot(
                 h_values_with_bh_mass,
-                posterior / np.max(posterior),
+                posterior,
                 label=f"detection {detection_index}",
                 color=color,
             )
@@ -707,36 +709,40 @@ class BayesianStatistics:
             )
 
             # fit normal distribution to posteriors with h values
-            popt, perr = curve_fit(
-                gaussian,
-                temp_h_values,
-                sub_posteriors,
-                p0=[H, 0.1, 1],
-            )
-
-            popt_with_bh_mass, perr_with_bh_mass = curve_fit(
-                gaussian,
-                temp_h_values_with_bh_mass,
-                sub_posteriors_with_bh_mass,
-                p0=[H, 0.1, 1],
-            )
             h_values_fine = np.linspace(0.6, 0.86, 1000)
-            # plot fit
-            ax[0].plot(
+            try:
+                print(sub_posteriors)
+                print(sub_posteriors_with_bh_mass)
+                popt, perr = curve_fit(
+                    gaussian,
+                    temp_h_values,
+                    sub_posteriors,
+                    p0=[H, 0.1, 1],
+                )
+
+                popt_with_bh_mass, perr_with_bh_mass = curve_fit(
+                    gaussian,
+                    temp_h_values_with_bh_mass,
+                    sub_posteriors_with_bh_mass,
+                    p0=[H, 0.1, 1],
+                )
+                ax[0].plot(
                 h_values_fine,
                 gaussian(h_values_fine, *popt),
                 label=f"std: {np.round(popt[1], 3)}, mean: {np.round(popt[0], 3)}",
                 color=colors[count],
                 linestyle="--",
-            )
-            ax[1].plot(
-                h_values_fine,
-                gaussian(h_values_fine, *popt_with_bh_mass),
-                label=f"std: {np.round(popt_with_bh_mass[1], 3)}, mean: {np.round(popt_with_bh_mass[0], 3)}",
-                color=colors[count],
-                linestyle="--",
-            )
-
+                )
+                ax[1].plot(
+                    h_values_fine,
+                    gaussian(h_values_fine, *popt_with_bh_mass),
+                    label=f"std: {np.round(popt_with_bh_mass[1], 3)}, mean: {np.round(popt_with_bh_mass[0], 3)}",
+                    color=colors[count],
+                    linestyle="--",
+                )
+            except RuntimeError:
+                pass
+            
             ax[0].scatter(
                 temp_h_values,
                 sub_posteriors,
@@ -803,26 +809,43 @@ class BayesianStatistics:
         self.h_values_with_bh_mass, posteriors_with_bh_mass = zip(*zipped_with_bh_mass)
 
         # fit normal distribution to posteriors with h values
-        popt, perr = curve_fit(
-            gaussian,
-            self.h_values,
-            posteriors,
-            p0=[H, 0.1, 1],
-        )
-
-        popt_with_bh_mass, perr_with_bh_mass = curve_fit(
-            gaussian,
-            self.h_values_with_bh_mass,
-            posteriors_with_bh_mass,
-            p0=[H, 0.1, 1],
-        )
-
-        h_fine = np.linspace(0.6, 0.86, 1000)
         fig = plt.figure(figsize=(16, 9))
-        # set title
         plt.title(
             f"Posterior distribution of Hubble constant h using {len(detections)} detections"
         )
+        h_fine = np.linspace(0.6, 0.86, 1000)
+        try:
+            popt, perr = curve_fit(
+                gaussian,
+                self.h_values,
+                posteriors,
+                p0=[H, 0.1, 1],
+            )
+
+            popt_with_bh_mass, perr_with_bh_mass = curve_fit(
+                gaussian,
+                self.h_values_with_bh_mass,
+                posteriors_with_bh_mass,
+                p0=[H, 0.1, 1],
+            )
+            plt.plot(
+            h_fine,
+            gaussian(h_fine, *popt),
+            label=f"std: {np.round(popt[1], 3)}, mean: {np.round(popt[0], 3)}",
+            color="b",
+            linestyle="--",
+            )
+            plt.plot(
+                h_fine,
+                gaussian(h_fine, *popt_with_bh_mass),
+                label=f"std: {np.round(popt_with_bh_mass[1], 3)}, mean: {np.round(popt_with_bh_mass[0], 3)}",
+                color="r",
+                linestyle="--",
+            )
+        except RuntimeError:
+            pass
+        
+
         # add true value as line
         plt.axvline(H, color="g", linestyle="--")
         plt.scatter(self.h_values, posteriors, label="without BH mass", color="b")
@@ -831,20 +854,6 @@ class BayesianStatistics:
             posteriors_with_bh_mass,
             label="with BH mass",
             color="r",
-        )
-        plt.plot(
-            h_fine,
-            gaussian(h_fine, *popt),
-            label=f"std: {np.round(popt[1], 3)}, mean: {np.round(popt[0], 3)}",
-            color="b",
-            linestyle="--",
-        )
-        plt.plot(
-            h_fine,
-            gaussian(h_fine, *popt_with_bh_mass),
-            label=f"std: {np.round(popt_with_bh_mass[1], 3)}, mean: {np.round(popt_with_bh_mass[0], 3)}",
-            color="r",
-            linestyle="--",
         )
         plt.xlabel("Hubble constant h")
         plt.ylabel("Posterior")
@@ -1679,11 +1688,10 @@ def single_host_likelihood(
         likelihood_with_bh_mass_grid = likelihood_with_bh_mass_grid.reshape(M_g.shape)
 
         # weight with redshift distribution
-        """
+        
         likelihood_with_bh_mass_grid = (
             likelihood_with_bh_mass_grid * redshift_distribution_grid
         )
-        """
 
         likelihood_with_bh_mass_mass_integrated = []
         for i, M_gi in enumerate(M_g.T):

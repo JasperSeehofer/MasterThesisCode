@@ -174,10 +174,10 @@ class GalaxyCatalogueHandler:
                 {CatalogueColumns.REDSHIFT_PECULIAR_VELOCITY_ERROR.name: 0.0}
             )
 
-            # adding errors of redshift
-            chunk[CatalogueColumns.REDSHIFT_MEASUREMENT_ERROR.name] += chunk[
+            # propagating errors of redshift
+            chunk[CatalogueColumns.REDSHIFT_MEASUREMENT_ERROR.name] = np.sqrt(chunk[CatalogueColumns.REDSHIFT_MEASUREMENT_ERROR.name]**2 + chunk[
                 CatalogueColumns.REDSHIFT_PECULIAR_VELOCITY_ERROR.name
-            ]
+            ]**2) 
 
             chunk = chunk.drop(
                 columns=[

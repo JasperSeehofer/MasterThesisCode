@@ -7,11 +7,13 @@ from master_thesis_code.datamodels.parameter_space import ParameterSpace, Parame
 from master_thesis_code.cosmological_model import Detection
 from scipy.interpolate import griddata
 from scipy.stats import multivariate_normal
+from statistics import NormalDist
 from master_thesis_code.physical_relations import (
     get_redshift_outer_bounds,
     dist_to_redshift,
     dist,
 )
+from master_thesis_code.galaxy_catalogue.handler import GalaxyCatalogueHandler
 
 from master_thesis_code.constants import RADIAN_TO_DEGREE, C, H0, GPC_TO_MPC
 
@@ -32,7 +34,7 @@ class DataEvaluation:
         )
         # self._undetected_events = pd.read_csv(path_to_undetected_events_file)
 
-    def visualize(self) -> None:
+    def visualize(self, galaxy_catalog: GalaxyCatalogueHandler) -> None:
         # ensure directory is given
         figures_directory = f"evaluation/"
         if not os.path.isdir(figures_directory):
@@ -146,9 +148,13 @@ class DataEvaluation:
 
         # plot gaussian for bh mass uncertainty
         for detection_index, detection in self._prepared_cramer_rao_bounds.sample(
-            1
+            20
         ).iterrows():
             detection = Detection(detection)
+            possible_host = galaxy_catalog.get_host_galaxy_by_index(
+                detection.host_galaxy_index
+            )
+            print(possible_host)
             # create full covariance matrix for all parameters
             covariance_matrix = np.array(
                 [
@@ -178,76 +184,63 @@ class DataEvaluation:
                     ],
                 ]
             )
+            print(detection.M_uncertainty/detection.M)
+            print(detection.d_L_uncertainty/detection.d_L)
+            print(detection.phi_error)
+            print(detection.theta_error)
+            print(possible_host.M_error/possible_host.M)
+            print(possible_host.z_error/possible_host.z)
             gaussian_mass = multivariate_normal(
                 mean=[detection.M, detection.d_L, detection.phi, detection.theta],
                 cov=covariance_matrix,
             )
+            normal_bh_mass = NormalDist(possible_host.M, possible_host.M_error)
+            normal_z = NormalDist(possible_host.z, possible_host.z_error)
             phi = detection.phi
             theta = detection.theta
             z_min, z_max = get_redshift_outer_bounds(
                 detection.d_L, detection.d_L_uncertainty
             )
-            redshifts = np.linspace(
-                dist_to_redshift(detection.d_L - 3 * detection.d_L_uncertainty),
-                dist_to_redshift(detection.d_L + 3 * detection.d_L_uncertainty),
-                1000,
-            )
+            redshifts = np.linspace(possible_host.z - 3*possible_host.z_error, possible_host.z + 3*possible_host.z_error, 10000)
             distances = np.array([dist(redshift) for redshift in redshifts])
-            masses = np.linspace(
-                detection.M / (1 + dist_to_redshift(detection.d_L))
-                - detection.M_uncertainty,
-                detection.M / (1 + dist_to_redshift(detection.d_L))
-                + detection.M_uncertainty,
-                1000,
-            )
-            mass, redshift = np.meshgrid(masses, redshifts)
-            mass = mass * (1 + redshift)
-            _, distance = np.meshgrid(masses, distances)
+            masses = detection.M / (1 + redshifts)
+            redshifted_masses = np.ones_like(masses) * detection.M
 
             positions = np.array(
                 [
-                    mass.flatten(),
-                    distance.flatten(),
-                    np.ones_like(mass.flatten()) * phi,
-                    np.ones_like(mass.flatten()) * theta,
+                    redshifted_masses,
+                    distances,
+                    np.ones_like(masses) * phi,
+                    np.ones_like(masses) * theta,
                 ]
             ).T
 
             probabilities = gaussian_mass.pdf(positions)
+            mass_weight = np.array([normal_bh_mass.pdf(m) for m in masses])
+            approximated_mass_weight = normal_bh_mass.pdf(detection.M/(1 + possible_host.z))
+            z_weight = np.array([normal_z.pdf(z) for z in redshifts])
 
-            # reshape to grid
-            probabilities = probabilities.reshape(mass.shape)
+            approximated_probabilities = probabilities*approximated_mass_weight*z_weight
+            probabilities = probabilities*mass_weight*z_weight
+
 
             # integrate over redshift and mass
-            integrated_probabilities = np.trapz(probabilities, x=mass, axis=0)
             integrated_probabilities = np.trapz(
-                integrated_probabilities, x=redshifts, axis=0
+                probabilities, redshifts
+            )
+            approximated_integral = np.trapz(
+                approximated_probabilities, redshifts
             )
 
-            # compare to approximation of gaussian
-            approximated_positions = np.array(
-                [
-                    np.ones_like(distances) * detection.M,
-                    distances,
-                    np.ones_like(distances) * phi,
-                    np.ones_like(distances) * theta,
-                ]
-            ).T
-            approximated_probabilities = gaussian_mass.pdf(approximated_positions)
-            approximated_integral = np.trapz(approximated_probabilities, x=redshifts)
-
+            """
             # try better approximation
             five_point_mass_approximation = (
-                np.ones(shape=(2001, len(redshifts))) * detection.M
+                np.ones(shape=(2001, len(redshifts))) * possible_host.M
             )
             for index_1, step in enumerate(range(-1000, 1001, 1)):
                 five_point_mass_approximation[index_1] = five_point_mass_approximation[
                     index_1
-                ] + step / int(
-                    len(five_point_mass_approximation) / 20
-                ) * detection.M_uncertainty / (
-                    1 + redshifts
-                )
+                ] + step / 1000 * 20 * detection.M_uncertainty
 
             # make distances same dimension as masses
             new_distances = np.array([distances for _ in range(2001)])
@@ -325,34 +318,20 @@ class DataEvaluation:
             redshifts = np.array([redshifts for _ in range(41)])
             print(redshifts)
             print(ten_point_mass_approximation)
-            # create 2d plot
-            plt.figure(figsize=(16, 9))
-            # plot true mass and redshift line
             """
-
-            plt.axvline(detection.M, color="red", label="true mass", linestyle="--")
-            plt.axhline(
-                dist_to_redshift(detection.d_L),
-                color="red",
-                label="true distance",
-                linestyle="--",
-            )"""
-            plt.contourf(
-                redshifts,
-                ten_point_mass_approximation,
-                ten_point_approximation_probabilities,
-                cmap="viridis",
-            )
-            # plt.scatter(detection.M/(1+redshifts), redshifts, c="red", label="mean")
+            # plot likelihood over redshift
+            plt.figure(figsize=(16, 9))
+            plt.plot(redshifts, probabilities, label=f"integral: {integrated_probabilities}")
+            plt.plot(redshifts, approximated_probabilities, label=f"approximated integral: {approximated_integral}", linestyle="--")
             plt.xlabel("redshift")
-            plt.ylabel(" mass in solar masses")
-            plt.colorbar()
+            plt.ylabel("likelihood")
+            plt.yscale("log")
+            plt.legend()
             plt.savefig(
-                f"{figures_directory}plots/gaussian_mass_redshift_{detection_index}.png",
-                dpi=300,
+                f"{figures_directory}plots/likelihood_over_redshift_{detection_index}.png"
             )
             plt.close()
-
+            
         # plt SNR and waveform generation time vs parameters
         for column in ["SNR", "generation_time"]:
             for parameter in vars(parameter_space).values():
