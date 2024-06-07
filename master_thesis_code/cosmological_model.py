@@ -39,7 +39,7 @@ from master_thesis_code.physical_relations import (
 _LOGGER = logging.getLogger()
 
 DEFAULT_GALAXY_Z_ERROR = 0.0015
-GALAXY_LIKELIHOODS = "galaxy_weights"
+GALAXY_LIKELIHOODS = "galaxy_likelihoods"
 
 
 @dataclass
@@ -417,8 +417,8 @@ class BayesianStatistics:
 
     def visualize(self, galaxy_catalog: GalaxyCatalogueHandler) -> None:
 
-        posteriors_directory = "simulations/posteriors_1"
-        posteriors_with_bh_mass_directory = "simulations/posteriors_with_bh_mass_1"
+        posteriors_directory = "simulations/posteriors"
+        posteriors_with_bh_mass_directory = "simulations/posteriors_with_bh_mass"
 
         posteriors_files = [
             file for file in os.listdir(posteriors_directory) if file.endswith(".json")
@@ -686,12 +686,14 @@ class BayesianStatistics:
                     ]
                 ]
             )
+            print(f"Maxima: {sub_posterior_max}, {sub_posterior_max_with_bh_mass}")
             for index, posterior in posteriors_data_subset:
-                sub_posteriors *= np.array(posterior) / sub_posterior_max
+                sub_posteriors *= np.array(posterior)
+                print(sub_posteriors)
             for index, posterior in posteriors_data_with_bh_mass_subset:
-                sub_posteriors_with_bh_mass *= (
-                    np.array(posterior) / sub_posterior_max_with_bh_mass
-                )
+                sub_posteriors_with_bh_mass *= np.array(posterior)
+                print(sub_posteriors_with_bh_mass)
+                
             sub_posteriors = sub_posteriors / np.max(sub_posteriors)
             sub_posteriors_with_bh_mass = sub_posteriors_with_bh_mass / np.max(
                 sub_posteriors_with_bh_mass
@@ -788,6 +790,8 @@ class BayesianStatistics:
                 ]
             ]
         )
+
+        print(max_posterior, max_posterior_with_bh_mass)
 
         for index, posterior in posterior_data_sorted:
             posteriors *= np.array(posterior) / max_posterior
@@ -1461,6 +1465,7 @@ class BayesianStatistics:
                 (
                     possible_host,
                     self.detection,
+                    self.h,
                     True,
                 )
                 for possible_host in possible_host_galaxies_with_bh_mass
@@ -1474,6 +1479,7 @@ class BayesianStatistics:
                 (
                     possible_host,
                     self.detection,
+                    self.h,
                     False,
                 )
                 for possible_host in possible_host_galaxies_reduced
@@ -1551,6 +1557,7 @@ def _sky_localization_uncertainty(
 def single_host_likelihood(
     possible_host: HostGalaxy,
     detection: Detection,
+    h: float,
     evaluate_with_bh_mass: bool,
 ) -> list[float]:
     global redshift_distribution
@@ -1564,7 +1571,7 @@ def single_host_likelihood(
         possible_host.z + 5 * possible_host.z_error,
         1000,
     )
-    distances = [dist(redshift) for redshift in z_gws]
+    distances = [dist(redshift, h=h) for redshift in z_gws]
 
     # multivariate normal distribution for all parameters including the mass
     if np.isnan(possible_host.M):
@@ -1707,10 +1714,11 @@ def single_host_likelihood(
         )
 
         # weight with redshift distribution
-        
+        """
         likelihood_with_bh_mass_grid = (
             likelihood_with_bh_mass_grid * redshift_distribution_grid
         )
+        """
 
         # integrate over mass and redshift
         likelihood_with_bh_mass = np.trapz(likelihood_with_bh_mass, z_gws)
