@@ -693,7 +693,7 @@ class BayesianStatistics:
             for index, posterior in posteriors_data_with_bh_mass_subset:
                 sub_posteriors_with_bh_mass *= np.array(posterior)
                 print(sub_posteriors_with_bh_mass)
-                
+
             sub_posteriors = sub_posteriors / np.max(sub_posteriors)
             sub_posteriors_with_bh_mass = sub_posteriors_with_bh_mass / np.max(
                 sub_posteriors_with_bh_mass
@@ -729,11 +729,11 @@ class BayesianStatistics:
                     p0=[H, 0.1, 1],
                 )
                 ax[0].plot(
-                h_values_fine,
-                gaussian(h_values_fine, *popt),
-                label=f"std: {np.round(popt[1], 3)}, mean: {np.round(popt[0], 3)}",
-                color=colors[count],
-                linestyle="--",
+                    h_values_fine,
+                    gaussian(h_values_fine, *popt),
+                    label=f"std: {np.round(popt[1], 3)}, mean: {np.round(popt[0], 3)}",
+                    color=colors[count],
+                    linestyle="--",
                 )
                 ax[1].plot(
                     h_values_fine,
@@ -744,7 +744,7 @@ class BayesianStatistics:
                 )
             except RuntimeError:
                 pass
-            
+
             ax[0].scatter(
                 temp_h_values,
                 sub_posteriors,
@@ -833,11 +833,11 @@ class BayesianStatistics:
                 p0=[H, 0.1, 1],
             )
             plt.plot(
-            h_fine,
-            gaussian(h_fine, *popt),
-            label=f"std: {np.round(popt[1], 3)}, mean: {np.round(popt[0], 3)}",
-            color="b",
-            linestyle="--",
+                h_fine,
+                gaussian(h_fine, *popt),
+                label=f"std: {np.round(popt[1], 3)}, mean: {np.round(popt[0], 3)}",
+                color="b",
+                linestyle="--",
             )
             plt.plot(
                 h_fine,
@@ -848,7 +848,6 @@ class BayesianStatistics:
             )
         except RuntimeError:
             pass
-        
 
         # add true value as line
         plt.axvline(H, color="g", linestyle="--")
@@ -1566,8 +1565,11 @@ def single_host_likelihood(
     )"""  # TODO check if correct
 
     # redshift samples around peak
+    z_lower_bound = possible_host.z - 5 * possible_host.z_error
+    if z_lower_bound < 0:
+        z_lower_bound = 0.0
     z_gws = np.linspace(
-        possible_host.z - 5 * possible_host.z_error,
+        z_lower_bound,
         possible_host.z + 5 * possible_host.z_error,
         1000,
     )
@@ -1603,7 +1605,7 @@ def single_host_likelihood(
         [redshift_normal_distribution.pdf(redshift) for redshift in z_gws]
     )
 
-    normal_distribution_with_mass = multivariate_normal(
+    normal_distribution = multivariate_normal(
         mean=[
             detection.phi,
             detection.theta,
@@ -1623,7 +1625,7 @@ def single_host_likelihood(
 
     # evaluate multivariate normal distribution
     likelihood_without_bh_mass = (
-        normal_distribution_with_mass.pdf(positions) * redshift_normal_distribution
+        normal_distribution.pdf(positions) * redshift_normal_distribution
     )
 
     # weight with redshift distribution
@@ -1723,7 +1725,6 @@ def single_host_likelihood(
         # integrate over mass and redshift
         likelihood_with_bh_mass = np.trapz(likelihood_with_bh_mass, z_gws)
 
-    if evaluate_with_bh_mass:
         return [likelihood_without_bh_mass, likelihood_with_bh_mass]
     return likelihood_without_bh_mass
 
