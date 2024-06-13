@@ -596,7 +596,7 @@ class BayesianStatistics:
 
             ax.plot(
                 h_values,
-                posterior,
+                posterior / np.max(posterior),
                 label=f"detection: {detection_index}",
                 color=color,
             )
@@ -623,7 +623,7 @@ class BayesianStatistics:
 
             ax.plot(
                 h_values_with_bh_mass,
-                posterior,
+                posterior / np.max(posterior),
                 label=f"detection {detection_index}",
                 color=color,
             )
@@ -672,27 +672,19 @@ class BayesianStatistics:
             ]
             sub_posteriors = np.ones(len(self.h_values))
             sub_posteriors_with_bh_mass = np.ones(len(self.h_values_with_bh_mass))
-            sub_posterior_max = max(
-                [
-                    np.max(posterior)
-                    for posterior in [value[1] for value in posteriors_data_subset]
-                ]
-            )
-            sub_posterior_max_with_bh_mass = max(
-                [
-                    np.max(posterior)
-                    for posterior in [
-                        value[1] for value in posteriors_data_with_bh_mass_subset
-                    ]
-                ]
-            )
-            print(f"Maxima: {sub_posterior_max}, {sub_posterior_max_with_bh_mass}")
+
             for index, posterior in posteriors_data_subset:
+                if check_overflow(sub_posteriors * np.array(posterior)):
+                    print("Overflow detected")
+                    sub_posteriors = sub_posteriors / np.max(sub_posteriors)
                 sub_posteriors *= np.array(posterior)
-                print(sub_posteriors)
             for index, posterior in posteriors_data_with_bh_mass_subset:
+                if check_overflow(sub_posteriors_with_bh_mass * np.array(posterior)):
+                    print("Overflow detected")
+                    sub_posteriors_with_bh_mass = sub_posteriors_with_bh_mass / np.max(
+                        sub_posteriors_with_bh_mass
+                    )
                 sub_posteriors_with_bh_mass *= np.array(posterior)
-                print(sub_posteriors_with_bh_mass)
 
             sub_posteriors = sub_posteriors / np.max(sub_posteriors)
             sub_posteriors_with_bh_mass = sub_posteriors_with_bh_mass / np.max(
@@ -713,8 +705,6 @@ class BayesianStatistics:
             # fit normal distribution to posteriors with h values
             h_values_fine = np.linspace(0.6, 0.86, 1000)
             try:
-                print(sub_posteriors)
-                print(sub_posteriors_with_bh_mass)
                 popt, perr = curve_fit(
                     gaussian,
                     temp_h_values,
@@ -776,27 +766,21 @@ class BayesianStatistics:
 
         posteriors = np.ones(len(self.h_values))
         posteriors_with_bh_mass = np.ones(len(self.h_values_with_bh_mass))
-        max_posterior = max(
-            [
-                np.max(posterior)
-                for posterior in [value[1] for value in posterior_data_sorted]
-            ]
-        )
-        max_posterior_with_bh_mass = max(
-            [
-                np.max(posterior)
-                for posterior in [
-                    value[1] for value in posterior_data_with_bh_mass_sorted
-                ]
-            ]
-        )
-
-        print(max_posterior, max_posterior_with_bh_mass)
 
         for index, posterior in posterior_data_sorted:
-            posteriors *= np.array(posterior) / max_posterior
+            if check_overflow(posteriors * np.array(posterior)):
+                print("Overflow detected")
+                posteriors = posteriors / np.max(posteriors)
+            posteriors *= np.array(posterior)
         for index, posterior in posterior_data_with_bh_mass_sorted:
-            posteriors_with_bh_mass *= np.array(posterior) / max_posterior_with_bh_mass
+            if check_overflow(posteriors_with_bh_mass * np.array(posterior)):
+                print("Overflow detected")
+                posteriors_with_bh_mass = posteriors_with_bh_mass / np.max(
+                    posteriors_with_bh_mass
+                )
+            posteriors_with_bh_mass *= np.array(posterior)
+
+        print(posteriors, posteriors_with_bh_mass)
         posteriors = posteriors / np.max(posteriors)
         posteriors_with_bh_mass = posteriors_with_bh_mass / np.max(
             posteriors_with_bh_mass
@@ -1272,6 +1256,8 @@ class BayesianStatistics:
         distances = [dist_to_redshift(dist) for dist in self.cramer_rao_bounds["dist"]]
         _LOGGER.debug(f"distances: {distances}.")
 
+        self._max_redshift = np.max(distances)
+
         self._redshift_distribution = np.histogram(
             np.array(
                 distances,
@@ -1309,6 +1295,8 @@ class BayesianStatistics:
 
         with mp.get_context("spawn").Pool(
             len(os.sched_getaffinity(0)) - 4,
+            initializer=child_process_init,
+            initargs=(self._max_redshift,),
         ) as pool:
             self.p_D(
                 galaxy_catalog=galaxy_catalog,
@@ -1559,7 +1547,7 @@ def single_host_likelihood(
     h: float,
     evaluate_with_bh_mass: bool,
 ) -> list[float]:
-    global redshift_distribution
+    global max_redshift
     """WL_uncertainty = (
         d_L * 0.066 * (1 - (1 + possible_host.z) ** (-0.25) / 0.25) ** (1.8)
     )"""  # TODO check if correct
@@ -1730,7 +1718,11 @@ def single_host_likelihood(
 
 
 def child_process_init(
-    current_redshift_distribution: np.array,
+    current_max_redshift: float,
 ) -> None:
-    global redshift_distribution
-    redshift_distribution = current_redshift_distribution
+    global max_redshift
+    max_redshift = current_max_redshift
+
+
+def check_overflow(arr: np.array) -> bool:
+    return np.any(np.isinf(arr))
