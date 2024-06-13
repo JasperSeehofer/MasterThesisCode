@@ -1386,6 +1386,9 @@ class BayesianStatistics:
                 Omega_m_max=self.cosmological_model.Omega_m.upper_limit,
             )
 
+            if z_max > self._max_redshift:
+                z_max = self._max_redshift
+
             possible_hosts = galaxy_catalog.get_possible_hosts(
                 z_min=z_min,
                 z_max=z_max,
@@ -1555,10 +1558,15 @@ def single_host_likelihood(
     # redshift samples around peak
     z_lower_bound = possible_host.z - 5 * possible_host.z_error
     if z_lower_bound < 0:
+        print(f"lower bound is less than 0: {z_lower_bound}", flush=True)
         z_lower_bound = 0.0
+    z_upper_bound = possible_host.z + 5 * possible_host.z_error
+    if z_upper_bound > max_redshift:
+        print(f"upper bound is greater than max redshift: {z_upper_bound}", flush=True)
+        z_upper_bound = max_redshift
     z_gws = np.linspace(
         z_lower_bound,
-        possible_host.z + 5 * possible_host.z_error,
+        z_upper_bound,
         1000,
     )
     distances = [dist(redshift, h=h) for redshift in z_gws]
