@@ -17,6 +17,7 @@ from master_thesis_code.datamodels.parameter_space import (
     Parameter,
     uniform,
 )
+import emcee
 
 from master_thesis_code.constants import (
     C,
@@ -279,6 +280,30 @@ class Model1CrossCheck:
         else:
             return 10 ** ((-0.2475) * np.log10(M / 2.9e7) + np.log10(14.4))
 
+    def _log_probability(self, M: float, redshift: float) -> float:
+        if not self.parameter_space.M.lower_limit < M < self.parameter_space.M.upper_limit:
+            return -np.inf
+        if not 0 < redshift < 6:
+            return -np.inf
+        return np.log(self.emri_distribution(M, redshift))
+    
+    def sample_emri_events(self, number_of_samples: int) -> List[ParameterSample]:
+        # use emcee to sample the distribution
+        ndim = 2
+        nwalkers = 50
+        p0 = np.random.rand(nwalkers, ndim)
+        sampler = emcee.EnsembleSampler(
+            nwalkers,
+            ndim,
+            self._log_probability,
+        )
+        sampler.run_mcmc(p0, number_of_samples)
+        samples = sampler.get_chain(flat=True)
+        return [
+            ParameterSample(M=sample[0], dist=sample[1], a=MBH_spin_distribution(0, 1))
+            for sample in samples
+        ]
+    
     def visualize_emri_distribution(self) -> None:
         # ensure directory is given
         figures_directory = f"saved_figures/cosmological_model/"
