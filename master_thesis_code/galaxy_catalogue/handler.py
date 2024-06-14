@@ -382,6 +382,9 @@ class GalaxyCatalogueHandler:
         _LOGGER.info(
             f"Searching for closest host galaxies for {len(parameter_samples)} parameter samples."
         )
+        if len(parameter_samples) > 500:
+            _LOGGER.debug("number of samples larger than 500, reducing to 1000.")
+            parameter_samples = parameter_samples[-1000:]
         for parameter_sample in parameter_samples:
             closest_host = self._get_closest_host_galaxy(parameter_sample)
             if closest_host.z > max_redshift:

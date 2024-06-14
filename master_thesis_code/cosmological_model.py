@@ -315,12 +315,13 @@ class Model1CrossCheck:
         samples = self._emri_event_sampler.get_chain(flat=True)
         self._sample_positions = pos
         self._emri_event_sampler.reset()
-        _LOGGER.info("Sampling complete.")
-
-        return [
+        return_samples = [
             ParameterSample(M=10**sample[0], redshift=sample[1], a=MBH_spin_distribution(0, 1))
             for sample in samples
         ]
+        _LOGGER.info(f"Sampling complete (number of samples ({len(return_samples)})).")
+
+        return return_samples
     
     def visualize_emri_distribution_sampling(self, number_of_samples: int) -> None:
         samples = self.sample_emri_events(number_of_samples)
@@ -736,12 +737,12 @@ class BayesianStatistics:
 
             for index, posterior in posteriors_data_subset:
                 if check_overflow(sub_posteriors * np.array(posterior)):
-                    print("Overflow detected")
+                    #print("Overflow detected")
                     sub_posteriors = sub_posteriors / np.max(sub_posteriors)
                 sub_posteriors *= np.array(posterior)
             for index, posterior in posteriors_data_with_bh_mass_subset:
                 if check_overflow(sub_posteriors_with_bh_mass * np.array(posterior)):
-                    print("Overflow detected")
+                    #print("Overflow detected")
                     sub_posteriors_with_bh_mass = sub_posteriors_with_bh_mass / np.max(
                         sub_posteriors_with_bh_mass
                     )
@@ -830,18 +831,18 @@ class BayesianStatistics:
 
         for index, posterior in posterior_data_sorted:
             if check_overflow(posteriors * np.array(posterior)):
-                print("Overflow detected")
+                #print("Overflow detected")
                 posteriors = posteriors / np.max(posteriors)
             posteriors *= np.array(posterior)
         for index, posterior in posterior_data_with_bh_mass_sorted:
             if check_overflow(posteriors_with_bh_mass * np.array(posterior)):
-                print("Overflow detected")
+                #print("Overflow detected")
                 posteriors_with_bh_mass = posteriors_with_bh_mass / np.max(
                     posteriors_with_bh_mass
                 )
             posteriors_with_bh_mass *= np.array(posterior)
 
-        print(posteriors, posteriors_with_bh_mass)
+        #print(posteriors, posteriors_with_bh_mass)
         posteriors = posteriors / np.max(posteriors)
         posteriors_with_bh_mass = posteriors_with_bh_mass / np.max(
             posteriors_with_bh_mass
@@ -1619,11 +1620,11 @@ def single_host_likelihood(
     # redshift samples around peak
     z_lower_bound = possible_host.z - 5 * possible_host.z_error
     if z_lower_bound < 0:
-        print(f"lower bound is less than 0: {z_lower_bound}", flush=True)
+        #print(f"lower bound is less than 0: {z_lower_bound}", flush=True)
         z_lower_bound = 0.0
     z_upper_bound = possible_host.z + 5 * possible_host.z_error
     if z_upper_bound > max_redshift:
-        print(f"upper bound is greater than max redshift: {z_upper_bound}", flush=True)
+        #print(f"upper bound is greater than max redshift: {z_upper_bound}", flush=True)
         z_upper_bound = max_redshift
     z_gws = np.linspace(
         z_lower_bound,
@@ -1634,7 +1635,7 @@ def single_host_likelihood(
 
     # multivariate normal distribution for all parameters including the mass
     if np.isnan(possible_host.M):
-        print(f"possible host has no mass information: {possible_host}", flush=True)
+        #print(f"possible host has no mass information: {possible_host}", flush=True)
         possible_host.M = 0.0
         possible_host.M_error = 1.0
     covariance = [
