@@ -379,15 +379,26 @@ class GalaxyCatalogueHandler:
         self, parameter_samples: List[ParameterSample], max_redshift: float = 3
     ) -> Iterable:
         host_galaxies = []
+        _LOGGER.info(
+            f"Searching for closest host galaxies for {len(parameter_samples)} parameter samples."
+        )
         for parameter_sample in parameter_samples:
             closest_host = self._get_closest_host_galaxy(parameter_sample)
             if closest_host.z > max_redshift:
                 continue
             host_galaxies.append(closest_host)
+
+        _LOGGER.info(
+            f"Found {len(host_galaxies)} host galaxies below maximal redshift {max_redshift}."
+        )
+
         return iter(host_galaxies)
 
 
     def _get_closest_host_galaxy(self, parameter_sample: ParameterSample) -> HostGalaxy:
+        _LOGGER.debug(
+            f"Searching for closest host galaxy for parameter sample: {parameter_sample}"
+        )
         closest_host_index = (
             (self.reduced_galaxy_catalog[InternalCatalogColumns.PHI_S] / parameter_sample.phi_S - 1)
             ** 2
