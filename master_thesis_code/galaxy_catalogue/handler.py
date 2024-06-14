@@ -10,6 +10,7 @@ from matplotlib import pyplot as plt
 from mpl_toolkits.mplot3d import axes3d
 from master_thesis_code.constants import H0, C
 from master_thesis_code.physical_relations import (
+    dist,
     dist_to_redshift,
     dist_to_redshift_error_proagation,
     convert_redshifted_mass_to_true_mass,
@@ -30,6 +31,18 @@ beta = 1.05
 d_alpha = 0.08 * np.log(10)
 d_beta = 0.11
 
+
+@dataclass
+class ParameterSample:
+    M: float
+    a: float
+    redshift: float
+    mu: float = 10
+    phi_S: float = np.random.uniform(0.0, 2 * np.pi)
+    theta_S: float = np.arccos(np.random.uniform(-1.0, 1.0))
+
+    def get_distance(self) -> float:
+        return dist(self.redshift)
 
 @dataclass
 class HostGalaxy:
@@ -361,6 +374,37 @@ class GalaxyCatalogueHandler:
             return_list.append(HostGalaxy(host))
         return iter(return_list)
 
+
+    def get_hosts_from_parameter_samples(
+        self, parameter_samples: List[ParameterSample], max_redshift: float = 3
+    ) -> Iterable:
+        host_galaxies = []
+        for parameter_sample in parameter_samples:
+            host_galaxies.append(self._get_closest_host_galaxy(parameter_sample))
+        return iter(host_galaxies)
+
+
+    def _get_closest_host_galaxy(self, parameter_sample: ParameterSample) -> HostGalaxy:
+        closest_host_index = (
+            (self.reduced_galaxy_catalog[InternalCatalogColumns.PHI_S] / parameter_sample.phi_S - 1)
+            ** 2
+            + (
+                self.reduced_galaxy_catalog[InternalCatalogColumns.THETA_S] / parameter_sample.theta_S
+                - 1
+            )
+            ** 2
+            + (
+                self.reduced_galaxy_catalog[InternalCatalogColumns.REDSHIFT] / parameter_sample.redshift
+                - 1
+            )
+            ** 2
+            + (
+                self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS] / parameter_sample.M
+                - 1
+            )
+            ** 2
+        ).idxmin()
+        return HostGalaxy(self.reduced_galaxy_catalog.loc[closest_host_index])
 
 def _polar_angle_to_declination(polar_angle: float) -> float:
     return np.pi / 2 - polar_angle

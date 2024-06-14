@@ -149,11 +149,8 @@ def data_simulation(
         try:
             host_galaxy = next(host_galaxies)
         except StopIteration:
-            host_galaxies = galaxy_catalog.get_random_hosts_in_mass_range(
-                parameter_estimation.parameter_space.M.lower_limit,
-                parameter_estimation.parameter_space.M.upper_limit,
-                1,
-            )  # CAREFUL dist RESTRICTION ADDED BY HAND FOR FASTER DETECTION RESULTS
+            parameter_samples = cosmological_model.sample_emri_events(1000)
+            host_galaxies = galaxy_catalog.sample_host_galaxies(parameter_samples)
             host_galaxy = next(host_galaxies)
         assert isinstance(host_galaxy, HostGalaxy)
 
@@ -251,17 +248,17 @@ def evaluate(
     galaxy_catalog: GalaxyCatalogueHandler,
     h_value: float,
 ) -> None:
-    # data_simulation = DataEvaluation()
-    # data_simulation.evaluate_snr_analysis()
+    #data_simulation = DataEvaluation()
+    #data_simulation.evaluate_snr_analysis()
 
     hubble_constant_evaluation = BayesianStatistics()
-    hubble_constant_evaluation.evaluate(galaxy_catalog, h_value)
+    # hubble_constant_evaluation.evaluate(galaxy_catalog, h_value)
     # hubble_constant_evaluation.visualize(galaxy_catalog=galaxy_catalog)
 
     # galaxy_catalog.visualize_galaxy_catalog()
-    # Model1CrossCheck().visualize_emri_distribution()
+    Model1CrossCheck().visualize_emri_distribution_sampling(2000)
     # physical_relations.visualize()
-    # data_simulation.visualize()
+    #data_simulation.visualize(galaxy_catalog)
 
 
 if __name__ == "__main__":

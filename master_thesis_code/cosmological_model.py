@@ -29,6 +29,7 @@ from master_thesis_code.constants import (
 from master_thesis_code.galaxy_catalogue.handler import (
     GalaxyCatalogueHandler,
     HostGalaxy,
+    ParameterSample
 )
 from master_thesis_code.physical_relations import (
     dist,
@@ -113,12 +114,7 @@ class Detection:
                 break
 
 
-@dataclass
-class ParameterSample:
-    M: float
-    a: float
-    dist: float
-    mu: float = 10
+
 
 
 # setup distribution of MBH spin
@@ -225,10 +221,11 @@ class Model1CrossCheck:
     def __init__(self) -> None:
         self.parameter_space = ParameterSpace()
         self._apply_model_assumptions()
+        self.setup_emri_events_sampler()
 
     def _apply_model_assumptions(self) -> None:
 
-        self.parameter_space.M.lower_limit = 10 ** (4.5)
+        self.parameter_space.M.lower_limit = 10 ** (4.0)
         self.parameter_space.M.upper_limit = 10 ** (6.5)
 
         self.parameter_space.a.value = 0.98
@@ -239,7 +236,7 @@ class Model1CrossCheck:
 
         self.parameter_space.e0.upper_limit = 0.2
 
-        self.parameter_space.dist.upper_limit = 6.8
+        self.parameter_space.dist.upper_limit = dist(redshift=3.0)
 
     def emri_distribution(self, M: float, redshift: float) -> float:
         return self.dN_dz_of_mass(M, redshift) * self.R_emri(M)
@@ -283,27 +280,66 @@ class Model1CrossCheck:
     def _log_probability(self, M: float, redshift: float) -> float:
         if not self.parameter_space.M.lower_limit < M < self.parameter_space.M.upper_limit:
             return -np.inf
-        if not 0 < redshift < 6:
+        if not 0 < redshift < dist_to_redshift(self.parameter_space.dist.upper_limit):
             return -np.inf
         return np.log(self.emri_distribution(M, redshift))
     
-    def sample_emri_events(self, number_of_samples: int) -> List[ParameterSample]:
+    def setup_emri_events_sampler(self) -> None:
         # use emcee to sample the distribution
+
+        log_probability = lambda x: self._log_probability(10**x[0], x[1])
+
         ndim = 2
-        nwalkers = 50
-        p0 = np.random.rand(nwalkers, ndim)
-        sampler = emcee.EnsembleSampler(
+        nwalkers = 100
+        burn_in_steps = 1000
+        p0_mass = (np.random.rand(nwalkers, 1) * (np.log10(self.parameter_space.M.upper_limit) - np.log10(self.parameter_space.M.lower_limit)) + np.log10(self.parameter_space.M.lower_limit))
+        p0_redshift = np.random.rand(nwalkers, 1) * dist_to_redshift(self.parameter_space.dist.upper_limit)
+        p0 = np.column_stack((p0_mass, p0_redshift))
+        _LOGGER.info(f"Setup emcee MCMC with {nwalkers} walkers and {burn_in_steps} burn in steps...")
+        self._emri_event_sampler = emcee.EnsembleSampler(
             nwalkers,
             ndim,
-            self._log_probability,
+            log_probability,
         )
-        sampler.run_mcmc(p0, number_of_samples)
-        samples = sampler.get_chain(flat=True)
+
+        # let the walkers burn in
+        pos, prob, state = self._emri_event_sampler.run_mcmc(p0, burn_in_steps)
+        self._sample_positions = pos
+        self._emri_event_sampler.reset()
+
+        _LOGGER.info("Burn in complete...")
+
+    def sample_emri_events(self, number_of_samples: int) -> List[ParameterSample]:
+        _LOGGER.info("Sampling EMRI events...")
+        pos, prob, state = self._emri_event_sampler.run_mcmc(initial_state=self._sample_positions, nsteps=number_of_samples)
+        samples = self._emri_event_sampler.get_chain(flat=True)
+        self._sample_positions = pos
+        self._emri_event_sampler.reset()
+        _LOGGER.info("Sampling complete.")
+
         return [
-            ParameterSample(M=sample[0], dist=sample[1], a=MBH_spin_distribution(0, 1))
+            ParameterSample(M=10**sample[0], redshift=sample[1], a=MBH_spin_distribution(0, 1))
             for sample in samples
         ]
     
+    def visualize_emri_distribution_sampling(self, number_of_samples: int) -> None:
+        samples = self.sample_emri_events(number_of_samples)
+        masses = [sample.M for sample in samples]
+        redshifts = [sample.redshift for sample in samples]
+
+        # make a 2d contour plot of the distribution
+        mass_bins = np.geomspace(self.parameter_space.M.lower_limit, self.parameter_space.M.upper_limit, 40)
+        redshift_bins = np.linspace(0, dist_to_redshift(self.parameter_space.dist.upper_limit), 40)
+        plt.figure(figsize=(10, 6))
+        plt.hist2d(redshifts, masses, bins=[redshift_bins, mass_bins], cmap="viridis")
+        plt.colorbar()
+        plt.yscale("log")
+        plt.xlabel("redshift")
+        plt.ylabel("mass")
+        plt.savefig("saved_figures/cosmological_model/emri_distribution_sampling.png")
+        plt.close()
+
+
     def visualize_emri_distribution(self) -> None:
         # ensure directory is given
         figures_directory = f"saved_figures/cosmological_model/"
