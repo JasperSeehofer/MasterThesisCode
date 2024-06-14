@@ -380,7 +380,10 @@ class GalaxyCatalogueHandler:
     ) -> Iterable:
         host_galaxies = []
         for parameter_sample in parameter_samples:
-            host_galaxies.append(self._get_closest_host_galaxy(parameter_sample))
+            closest_host = self._get_closest_host_galaxy(parameter_sample)
+            if closest_host.z > max_redshift:
+                continue
+            host_galaxies.append(closest_host)
         return iter(host_galaxies)
 
 
