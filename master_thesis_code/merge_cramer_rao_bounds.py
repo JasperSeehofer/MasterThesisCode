@@ -5,14 +5,18 @@ import sys
 import numpy as np
 import pandas as pd
 from typing import List
-from master_thesis_code.constants import CRAMER_RAO_BOUNDS_PATH, CRAMER_RAO_BOUNDS_OUTPUT_PATH
+from master_thesis_code.constants import CRAMER_RAO_BOUNDS_PATH, CRAMER_RAO_BOUNDS_OUTPUT_PATH, UNDETECTED_EVENTS_PATH, UNDETECTED_EVENTS_OUTPUT_PATH
 
 def delete_files(used_files: List[str]) -> None:
     for file in used_files:
         os.remove(file)
         print(f"Deleted {file}.")
 
-if __name__ == "__main__":
+def main() -> None:
+    merge_cramer_rao_bounds()
+    merge_undetected_events()
+
+def merge_cramer_rao_bounds() -> None:
     # get directory of the script
     directory = os.path.dirname(os.path.realpath(CRAMER_RAO_BOUNDS_OUTPUT_PATH))
     files = os.listdir(directory)
@@ -59,4 +63,55 @@ if __name__ == "__main__":
     to_be_deleted = input("Do you want to delete the used files? [y/n] ")
     if to_be_deleted == "y":
         delete_files(used_files)
+
+def merge_undetected_events() -> None:
+    # get directory of the script
+    directory = os.path.dirname(os.path.realpath(UNDETECTED_EVENTS_OUTPUT_PATH))
+    files = os.listdir(directory)
+    used_files = []
+    common_file_name = UNDETECTED_EVENTS_PATH.split(".")[0].replace("$index", "").split("/")[1]
+    undetected_events_files = [
+        file for file in files if common_file_name in file
+    ]
+    undetected_events_files = [directory + "/" + file for file in undetected_events_files]
+
+    # check if there are any files to merge
+    if len(undetected_events_files) == 0:
+        sys.exit("No undetected events files found.")
+    
+    # check for existing output file
+    try:
+        with open(UNDETECTED_EVENTS_OUTPUT_PATH, "r") as f:
+            undetected_events = pd.read_csv(f)
+    except FileNotFoundError:
+        # use first file as base
+        first_file = undetected_events_files.pop(0)
+        undetected_events = pd.read_csv(first_file)
+        used_files.append(first_file)
+    
+    if len(undetected_events_files) == 0:
+        # save the file
+        undetected_events.to_csv(UNDETECTED_EVENTS_OUTPUT_PATH, index=False)
+        print(f"Only one undetected events file found. Saved as {UNDETECTED_EVENTS_OUTPUT_PATH}.")
+        to_be_deleted = input("Do you want to delete the used files? [y/n] ")
+        if to_be_deleted == "y":
+            delete_files(used_files)
+        sys.exit()
+    else:
+        print(f"Merging {len(undetected_events_files)} undetected events files.")
+
+    # merge all files
+    for file in undetected_events_files:
+        undetected_events = pd.concat([undetected_events, pd.read_csv(file)])
+        used_files.append(file)
+    
+    # save the file
+    undetected_events.to_csv(UNDETECTED_EVENTS_OUTPUT_PATH, index=False)
+    print(f"Saved merged undetected events as {UNDETECTED_EVENTS_OUTPUT_PATH}.")
+    to_be_deleted = input("Do you want to delete the used files? [y/n] ")
+    if to_be_deleted == "y":
+        delete_files(used_files)
+
+if __name__ == "__main__":
+    
     sys.exit()

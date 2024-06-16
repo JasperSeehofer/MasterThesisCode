@@ -405,34 +405,25 @@ class GalaxyCatalogueHandler:
             f"Searching for closest host galaxy for parameter sample: {parameter_sample}"
         )
         # sort by distance to redshift and mass
-        REDSHIFT_MASS_MAX_DEVIATION = 0.01
-        restricted_to_redshift_mass = self._get_redshift_mass_subset(
-            parameter_sample, REDSHIFT_MASS_MAX_DEVIATION
+        redshift_mass_subset = self._get_redshift_mass_subset(
+            parameter_sample
         )
 
-        if len(restricted_to_redshift_mass) == 0:
-            # increase max deviation to 0.05
-            restricted_to_redshift_mass = self._get_redshift_mass_subset(
-                parameter_sample, 0.05
-            )
-        
-        if len(restricted_to_redshift_mass) == 0:
-            _LOGGER.warning("No host galaxy found. Returning None.")
-            return None
-
-
         closest_host_index = (
-            (restricted_to_redshift_mass[InternalCatalogColumns.PHI_S] - parameter_sample.phi_S)
+            (redshift_mass_subset[InternalCatalogColumns.PHI_S] - parameter_sample.phi_S)
             ** 2
             + (
-                restricted_to_redshift_mass[InternalCatalogColumns.THETA_S]
+                redshift_mass_subset[InternalCatalogColumns.THETA_S]
                 - parameter_sample.theta_S
             )
             ** 2
         ).idxmin()
-        return HostGalaxy(restricted_to_redshift_mass.loc[closest_host_index])
 
-    def _get_redshift_mass_subset(self, parameter_sample: ParameterSample, max_deviation: float = 0.05) -> pd.DataFrame:
+        host_galaxy = HostGalaxy(redshift_mass_subset.loc[closest_host_index])
+        _LOGGER.debug(f"Found closest host galaxy: {host_galaxy}. Sky position deviation: {np.sqrt((host_galaxy.phiS - parameter_sample.phi_S)**2 + (host_galaxy.qS - parameter_sample.theta_S)**2)}")
+        return HostGalaxy(redshift_mass_subset.loc[closest_host_index])
+
+    def _get_redshift_mass_subset(self, parameter_sample: ParameterSample) -> pd.DataFrame:
         REDSHIFT_MASS_DISTANCE = "redshift_mass_distance"
         self.reduced_galaxy_catalog[REDSHIFT_MASS_DISTANCE] = (
             self.reduced_galaxy_catalog[InternalCatalogColumns.REDSHIFT] / parameter_sample.redshift
@@ -442,11 +433,10 @@ class GalaxyCatalogueHandler:
             - 1
         ) ** 2
 
-        # drop all rows with relative redshift mass error > 0.1
-        return self.reduced_galaxy_catalog[
-            self.reduced_galaxy_catalog[REDSHIFT_MASS_DISTANCE] < max_deviation
-        ]
-
+        # get 100 closest galaxies
+        return self.reduced_galaxy_catalog.sort_values(
+            REDSHIFT_MASS_DISTANCE
+        ).head(25)
 
 def _polar_angle_to_declination(polar_angle: float) -> float:
     return np.pi / 2 - polar_angle
