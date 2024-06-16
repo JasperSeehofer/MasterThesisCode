@@ -184,12 +184,6 @@ class DataEvaluation:
                     ],
                 ]
             )
-            print(detection.M_uncertainty/detection.M)
-            print(detection.d_L_uncertainty/detection.d_L)
-            print(detection.phi_error)
-            print(detection.theta_error)
-            print(possible_host.M_error/possible_host.M)
-            print(possible_host.z_error/possible_host.z)
             gaussian_mass = multivariate_normal(
                 mean=[detection.M, detection.d_L, detection.phi, detection.theta],
                 cov=covariance_matrix,
