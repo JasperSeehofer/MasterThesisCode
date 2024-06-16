@@ -383,8 +383,8 @@ class GalaxyCatalogueHandler:
             f"Searching for closest host galaxies for {len(parameter_samples)} parameter samples."
         )
         if len(parameter_samples) > 500:
-            _LOGGER.debug("number of samples larger than 500, reducing to 1000.")
-            parameter_samples = parameter_samples[-1000:]
+            _LOGGER.debug("number of samples larger than 500, reducing to 500.")
+            parameter_samples = parameter_samples[-500:]
         for parameter_sample in parameter_samples:
             closest_host = self._get_closest_host_galaxy(parameter_sample)
             if closest_host is None:
@@ -421,7 +421,7 @@ class GalaxyCatalogueHandler:
 
         host_galaxy = HostGalaxy(redshift_mass_subset.loc[closest_host_index])
         _LOGGER.debug(f"Found closest host galaxy: {host_galaxy}. Sky position deviation: {np.sqrt((host_galaxy.phiS - parameter_sample.phi_S)**2 + (host_galaxy.qS - parameter_sample.theta_S)**2)}")
-        return HostGalaxy(redshift_mass_subset.loc[closest_host_index])
+        return host_galaxy
 
     def _get_redshift_mass_subset(self, parameter_sample: ParameterSample) -> pd.DataFrame:
         REDSHIFT_MASS_DISTANCE = "redshift_mass_distance"
@@ -433,7 +433,7 @@ class GalaxyCatalogueHandler:
             - 1
         ) ** 2
 
-        # get 100 closest galaxies
+        # get 25 closest galaxies
         return self.reduced_galaxy_catalog.sort_values(
             REDSHIFT_MASS_DISTANCE
         ).head(25)

@@ -538,8 +538,8 @@ class DataEvaluation:
 
         d_Omega = _compute_skylocalization_uncertainty(
             self._cramer_rao_bounds["qS"],
-            self._cramer_rao_bounds["delta_qS_delta_qS"] ** (1 / 2),
-            self._cramer_rao_bounds["delta_phiS_delta_phiS"] ** (1 / 2),
+            self._cramer_rao_bounds["delta_qS_delta_qS"],
+            self._cramer_rao_bounds["delta_phiS_delta_phiS"],
             self._cramer_rao_bounds["delta_phiS_delta_qS"],
         )
         ax.scatter(
@@ -549,9 +549,24 @@ class DataEvaluation:
         )
         ax.set_ylabel("Phi in deg")
         ax.set_xlabel("Theta in deg")
-        ax.set_zlabel("d_Omega in deg^2")
+        ax.set_zlabel("d_Omega in rad^2")
         plt.savefig(
             f"{figures_directory}plots/sky_localization_uncertainty.png", dpi=300
+        )
+        plt.close()
+
+        # plot skylocalization uncertainty vs distance
+        plt.figure(figsize=(16, 9))
+        plt.scatter(
+            self._cramer_rao_bounds["dist"],
+            d_Omega*(RADIAN_TO_DEGREE)**2,
+        )
+        
+        plt.xlabel("distance in Gpc")
+        plt.ylabel("d_Omega in deg^2")
+        plt.yscale("log")
+        plt.savefig(
+            f"{figures_directory}plots/sky_localization_uncertainty_distance.png", dpi=300
         )
         plt.close()
 
