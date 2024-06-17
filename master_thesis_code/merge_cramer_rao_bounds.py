@@ -118,4 +118,5 @@ def merge_undetected_events() -> None:
 if __name__ == "__main__":
     merge_cramer_rao_bounds()
     merge_undetected_events()
+    main()
     sys.exit()
