@@ -113,5 +113,5 @@ def merge_undetected_events() -> None:
         delete_files(used_files)
 
 if __name__ == "__main__":
-    
+    main()
     sys.exit()
