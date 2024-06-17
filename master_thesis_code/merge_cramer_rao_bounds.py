@@ -29,7 +29,8 @@ def merge_cramer_rao_bounds() -> None:
 
     # check if there are any files to merge
     if len(cramer_rao_bounds_files) == 0:
-        sys.exit("No cramer rao bounds files found.")
+        print("No cramer rao bounds files found.")
+        return None
     
     # check for existing output file
     try:
@@ -77,7 +78,8 @@ def merge_undetected_events() -> None:
 
     # check if there are any files to merge
     if len(undetected_events_files) == 0:
-        sys.exit("No undetected events files found.")
+        print("No undetected events files found.")
+        return None
     
     # check for existing output file
     try:
@@ -111,7 +113,9 @@ def merge_undetected_events() -> None:
     to_be_deleted = input("Do you want to delete the used files? [y/n] ")
     if to_be_deleted == "y":
         delete_files(used_files)
+    
 
 if __name__ == "__main__":
-    
+    merge_cramer_rao_bounds()
+    merge_undetected_events()
     sys.exit()
