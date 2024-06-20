@@ -158,6 +158,9 @@ class GalaxyCatalogueHandler:
         _LOGGER.info(
             f"Galaxies with stellar mass estimation statistics\n: {bh_mass_given_statistics}"
         )
+        _LOGGER.info(
+            f"Pruned galaxy catalog contains {len(self._pruned_galaxy_catalog)} galaxies."
+        )
 
     def visualize_galaxy_catalog(self) -> None:
         figures_directory = "./saved_figures/galaxy_catalogue/"
