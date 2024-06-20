@@ -443,8 +443,8 @@ class GalaxyCatalogueHandler:
             )
             ** 2
             + (
-                self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS]
-                / parameter_sample.M
+                np.log10(self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS])
+                / np.log10(parameter_sample.M)
                 - 1
             )
             ** 2
