@@ -448,112 +448,6 @@ class DataEvaluation:
             )
             plt.close()
 
-        # plot redshift detections distribution
-        # convert distance to redshift
-        redshifts = (
-            self._cramer_rao_bounds["dist"] * GPC_TO_MPC / C * H0
-        )  # converting to Mpc and to m
-
-        bin_edges = np.arange(0, max(redshifts), int(max(redshifts) * 100))
-
-        plt.figure(figsize=(16, 9))
-        plt.hist(redshifts, bins=bin_edges, histtype="step")
-        plt.xlabel("redshift")
-        plt.ylabel("detections")
-        plt.yscale("log")
-        plt.ylim(1e-1, 1e3)
-        plt.xlim(0, 7)
-        plt.savefig(f"{figures_directory}plots/redshift_detections.png")
-        plt.close()
-
-        # plot mass detections distribution
-        # convert distance to redshift
-        redshifts = (
-            self._cramer_rao_bounds["dist"] * 10**3 / C * H0
-        )  # converting to Mpc
-
-        source_masses = self._cramer_rao_bounds["M"] / (1 + redshifts)
-
-        bin_edges = np.arange(3.5, 7.5, 0.5)
-
-        plt.figure(figsize=(16, 9))
-        plt.hist(np.log10(source_masses), bins=bin_edges, histtype="step")
-        plt.xlabel("log_10 source mass [solar masses]")
-        plt.ylabel("detections")
-        plt.yscale("log")
-        plt.ylim(1, 1e4)
-        plt.xlim(3.5, 7.5)
-        plt.savefig(f"{figures_directory}plots/source_masses_detections.png")
-        plt.close()
-
-        # plot SNR detections distribution
-        # convert distance to redshift
-
-        bin_edges = np.arange(1, 4, 0.25)
-
-        plt.figure(figsize=(16, 9))
-        plt.hist(
-            np.log10(self._cramer_rao_bounds["SNR"]), bins=bin_edges, histtype="step"
-        )
-        plt.xlabel("log_10 SNR")
-        plt.ylabel("detections")
-        plt.yscale("log")
-        plt.ylim(1e-2, 1e4)
-        plt.xlim(1, 4)
-        plt.savefig(f"{figures_directory}plots/SNR_detections.png")
-        plt.close()
-
-        # plot mass redshift detection fraction
-        grid_x, grid_y = np.mgrid[0:5:20j, 4:6.5:20j]
-
-        hist_detections, _, _ = np.histogram2d(
-            redshifts, np.log10(source_masses), bins=[grid_x[:, 0], grid_y[0, :]]
-        )
-
-        hist_non_detections, _, _ = np.histogram2d(
-            self._undetected_events["dist"] * 10**3 / C * H0,
-            np.log10(
-                self._undetected_events["M"]
-                / (1 + self._undetected_events["dist"] * 10**3 / C * H0)
-            ),
-            bins=[grid_x[:, 0], grid_y[0, :]],
-        )
-
-        total_number_of_events = _remove_zeros_from_grid(
-            hist_non_detections + hist_detections
-        )
-
-        detection_fraction = hist_detections / total_number_of_events
-
-        grid_x, grid_y = grid_x[:-1, :-1], grid_y[:-1, :-1]
-        fig, ax = plt.subplots()
-        contour = ax.contourf(grid_x, grid_y, hist_detections, cmap="viridis")
-        fig.colorbar(contour, label="detections")
-        plt.xlabel("redshift")
-        plt.ylabel("log_10 source mass [solar masses]")
-        plt.savefig(f"{figures_directory}plots/mass_redshift_detections.png", dpi=300)
-        plt.close()
-
-        # plot non detected events
-        fig, ax = plt.subplots()
-        contour = ax.contourf(grid_x, grid_y, hist_non_detections, cmap="viridis")
-        fig.colorbar(contour, label="not detected")
-        plt.xlabel("redshift")
-        plt.ylabel("log_10 source mass [solar masses]")
-        plt.savefig(f"{figures_directory}plots/mass_redshift_not_detected.png", dpi=300)
-        plt.close()
-
-        # plt detection fraction
-        fig, ax = plt.subplots()
-        contour = ax.contourf(grid_x, grid_y, detection_fraction, cmap="viridis")
-        fig.colorbar(contour, label="detection fraction")
-        plt.xlabel("redshift")
-        plt.ylabel("log_10 source mass [solar masses]")
-        plt.savefig(
-            f"{figures_directory}plots/mass_redshift_detection_fraction.png", dpi=300
-        )
-        plt.close()
-
         # plot skylocalization uncertainty
         fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
 
@@ -624,6 +518,134 @@ class DataEvaluation:
                     f"{figures_directory}plots/error_{bounds_parameter}_{dependency_parameter}.png"
                 )
                 plt.close()"""
+
+    def visualize_detection_distribution(self) -> None:
+        # ensure directory is given
+        figures_directory = f"evaluation/"
+        if not os.path.isdir(figures_directory):
+            os.makedirs(figures_directory)
+        if not os.path.isdir(figures_directory + "plots/"):
+            os.makedirs(figures_directory + "plots/")
+        # plot redshift detections distribution
+        # convert distance to redshift
+        redshifts = np.array(
+            [dist_to_redshift(redshift) for redshift in self._cramer_rao_bounds["dist"]]
+        )
+        print(f"redshifts: {redshifts}")
+
+        bin_edges = np.arange(0, max(redshifts), int(max(redshifts) * 100))
+
+        plt.figure(figsize=(16, 9))
+        plt.hist(redshifts, bins=bin_edges, histtype="step")
+        plt.xlabel("redshift")
+        plt.ylabel("detections")
+        plt.savefig(f"{figures_directory}plots/redshift_detections.png")
+        plt.close()
+
+        # plot mass detections distribution
+
+        source_masses = self._cramer_rao_bounds["M"] / (1 + redshifts)
+        print(f"source_masses: {source_masses}")
+
+        bin_edges = np.arange(4.5, 6.5, 0.5)
+
+        plt.figure(figsize=(16, 9))
+        plt.hist(np.log10(source_masses), bins=bin_edges, histtype="step")
+        plt.xlabel("log_10 source mass [solar masses]")
+        plt.ylabel("detections")
+        plt.ylim(1, 1e4)
+        plt.xlim(3.5, 7.5)
+        plt.savefig(f"{figures_directory}plots/source_masses_detections.png")
+        plt.close()
+
+        # plot SNR detections distribution
+        # convert distance to redshift
+
+        bin_edges = np.arange(1, 4, 0.25)
+
+        plt.figure(figsize=(16, 9))
+        plt.hist(
+            np.log10(self._cramer_rao_bounds["SNR"]), bins=bin_edges, histtype="step"
+        )
+        plt.xlabel("log_10 SNR")
+        plt.ylabel("detections")
+        plt.ylim(1e-2, 1e4)
+        plt.xlim(1, 4)
+        plt.savefig(f"{figures_directory}plots/SNR_detections.png")
+        plt.close()
+
+        # plot mass redshift detection fraction
+        grid_x, grid_y = np.mgrid[0:3:20j, 4:6.5:20j]
+
+        hist_detections, _, _ = np.histogram2d(
+            redshifts, np.log10(source_masses), bins=[grid_x[:, 0], grid_y[0, :]]
+        )
+
+        undetected_redshifts = np.array(
+            [dist_to_redshift(distance) for distance in self._undetected_events["dist"]]
+        )
+        undetected_source_masses = self._undetected_events["M"] / (
+            1 + undetected_redshifts
+        )
+
+        hist_non_detections, _, _ = np.histogram2d(
+            undetected_redshifts,
+            np.log10(undetected_source_masses),
+            bins=[grid_x[:, 0], grid_y[0, :]],
+        )
+
+        total_number_of_events = hist_non_detections + hist_detections
+        total_number_of_events_without_zeros = _remove_zeros_from_grid(
+            total_number_of_events
+        )
+
+        detection_fraction = hist_detections / total_number_of_events_without_zeros
+
+        grid_x, grid_y = grid_x[:-1, :-1], grid_y[:-1, :-1]
+        fig, ax = plt.subplots()
+        contour = ax.contourf(grid_x, grid_y, hist_detections, cmap="viridis")
+        fig.colorbar(contour, label="detections")
+        plt.xlabel("redshift")
+        plt.ylabel("log_10 source mass [solar masses]")
+        plt.savefig(f"{figures_directory}plots/mass_redshift_detections.png", dpi=300)
+        plt.close()
+
+        # plot non detected events
+        fig, ax = plt.subplots()
+        contour = ax.contourf(grid_x, grid_y, hist_non_detections, cmap="viridis")
+        fig.colorbar(contour, label="not detected")
+        plt.xlabel("redshift")
+        plt.ylabel("log_10 source mass [solar masses]")
+        plt.savefig(f"{figures_directory}plots/mass_redshift_not_detected.png", dpi=300)
+        plt.close()
+
+        # plt detection fraction
+        fig, ax = plt.subplots()
+        contour = ax.contourf(grid_x, grid_y, detection_fraction, cmap="viridis")
+        fig.colorbar(contour, label="detection fraction")
+        plt.xlabel("redshift")
+        plt.ylabel("log_10 source mass [solar masses]")
+        plt.savefig(
+            f"{figures_directory}plots/mass_redshift_detection_fraction.png", dpi=300
+        )
+        plt.close()
+
+        # plot total number of events
+        fig, ax = plt.subplots()
+        contour = ax.contourf(
+            grid_x,
+            grid_y,
+            np.log10(total_number_of_events_without_zeros),
+            cmap="viridis",
+        )
+        fig.colorbar(contour, label="log of total number of events")
+        plt.xlabel("redshift")
+        plt.ylabel("log_10 source mass [solar masses]")
+        plt.savefig(
+            f"{figures_directory}plots/mass_redshift_total_number_of_events.png",
+            dpi=300,
+        )
+        plt.close()
 
     def evaluate_snr_analysis(self) -> None:
         # ensure directory is given
