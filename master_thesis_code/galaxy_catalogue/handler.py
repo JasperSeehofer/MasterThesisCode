@@ -386,7 +386,11 @@ class GalaxyCatalogueHandler:
         if len(parameter_samples) > 500:
             _LOGGER.debug("number of samples larger than 500, reducing to 500.")
             parameter_samples = parameter_samples[-500:]
+        counter = 0
         for parameter_sample in parameter_samples:
+            _LOGGER.debug(
+                f"closest host searches progess: {counter/len(parameter_samples)*100}%"
+            )
             closest_host = self._get_closest_host_galaxy(parameter_sample)
             if closest_host is None:
                 continue
