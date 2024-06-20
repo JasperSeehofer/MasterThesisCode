@@ -408,9 +408,6 @@ class GalaxyCatalogueHandler:
     def _get_closest_host_galaxy(
         self, parameter_sample: ParameterSample
     ) -> HostGalaxy | None:
-        _LOGGER.debug(
-            f"Searching for closest host galaxy for parameter sample: {parameter_sample}"
-        )
         # sort by distance to redshift and mass
         closest_host_index = self._get_closest_redshift_mass_host_index(
             parameter_sample
@@ -431,7 +428,7 @@ class GalaxyCatalogueHandler:
 
         host_galaxy = HostGalaxy(self.reduced_galaxy_catalog.loc[closest_host_index])
         _LOGGER.debug(
-            f"Found closest host galaxy: {host_galaxy}. Sky position deviation: {np.sqrt((host_galaxy.phiS - parameter_sample.phi_S)**2 + (host_galaxy.qS - parameter_sample.theta_S)**2)}"
+            f"Found closest host galaxy: z deviation: {np.abs(host_galaxy.z - parameter_sample.redshift)}, M deviation: {np.abs(host_galaxy.M - parameter_sample.M)}"
         )
         return host_galaxy
 
