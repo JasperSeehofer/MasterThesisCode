@@ -25,14 +25,14 @@ class DataEvaluation:
         path_to_cramer_rao_bounds_file: str = "./simulations/cramer_rao_bounds.csv",
         path_to_snr_analysis_file: str = "./simulations/snr_analysis.csv",
         path_to_prepared_cramer_rao_bounds="./simulations/prepared_cramer_rao_bounds.csv",
-        path_to_undetected_events_file: str = "./simulations/undetected_events_unbiased.csv",
+        path_to_undetected_events_file: str = "./simulations/undetected_events.csv",
     ):
         self._cramer_rao_bounds = pd.read_csv(path_to_cramer_rao_bounds_file)
         self._snr_analysis_file = pd.read_csv(path_to_snr_analysis_file)
         self._prepared_cramer_rao_bounds = pd.read_csv(
             path_to_prepared_cramer_rao_bounds
         )
-        # self._undetected_events = pd.read_csv(path_to_undetected_events_file)
+        self._undetected_events = pd.read_csv(path_to_undetected_events_file)
 
     def visualize(self, galaxy_catalog: GalaxyCatalogueHandler) -> None:
         # ensure directory is given
@@ -195,7 +195,11 @@ class DataEvaluation:
             z_min, z_max = get_redshift_outer_bounds(
                 detection.d_L, detection.d_L_uncertainty
             )
-            redshifts = np.linspace(possible_host.z - 3*possible_host.z_error, possible_host.z + 3*possible_host.z_error, 10000)
+            redshifts = np.linspace(
+                possible_host.z - 3 * possible_host.z_error,
+                possible_host.z + 3 * possible_host.z_error,
+                10000,
+            )
             distances = np.array([dist(redshift) for redshift in redshifts])
             masses = detection.M / (1 + redshifts)
             redshifted_masses = np.ones_like(masses) * detection.M
@@ -211,20 +215,19 @@ class DataEvaluation:
 
             probabilities = gaussian_mass.pdf(positions)
             mass_weight = np.array([normal_bh_mass.pdf(m) for m in masses])
-            approximated_mass_weight = normal_bh_mass.pdf(detection.M/(1 + possible_host.z))
+            approximated_mass_weight = normal_bh_mass.pdf(
+                detection.M / (1 + possible_host.z)
+            )
             z_weight = np.array([normal_z.pdf(z) for z in redshifts])
 
-            approximated_probabilities = probabilities*approximated_mass_weight*z_weight
-            probabilities = probabilities*mass_weight*z_weight
-
+            approximated_probabilities = (
+                probabilities * approximated_mass_weight * z_weight
+            )
+            probabilities = probabilities * mass_weight * z_weight
 
             # integrate over redshift and mass
-            integrated_probabilities = np.trapz(
-                probabilities, redshifts
-            )
-            approximated_integral = np.trapz(
-                approximated_probabilities, redshifts
-            )
+            integrated_probabilities = np.trapz(probabilities, redshifts)
+            approximated_integral = np.trapz(approximated_probabilities, redshifts)
 
             """
             # try better approximation
@@ -315,8 +318,15 @@ class DataEvaluation:
             """
             # plot likelihood over redshift
             plt.figure(figsize=(16, 9))
-            plt.plot(redshifts, probabilities, label=f"integral: {integrated_probabilities}")
-            plt.plot(redshifts, approximated_probabilities, label=f"approximated integral: {approximated_integral}", linestyle="--")
+            plt.plot(
+                redshifts, probabilities, label=f"integral: {integrated_probabilities}"
+            )
+            plt.plot(
+                redshifts,
+                approximated_probabilities,
+                label=f"approximated integral: {approximated_integral}",
+                linestyle="--",
+            )
             plt.xlabel("redshift")
             plt.ylabel("likelihood")
             plt.yscale("log")
@@ -325,7 +335,7 @@ class DataEvaluation:
                 f"{figures_directory}plots/likelihood_over_redshift_{detection_index}.png"
             )
             plt.close()
-            
+
         # plt SNR and waveform generation time vs parameters
         for column in ["SNR", "generation_time"]:
             for parameter in vars(parameter_space).values():
@@ -500,7 +510,6 @@ class DataEvaluation:
             redshifts, np.log10(source_masses), bins=[grid_x[:, 0], grid_y[0, :]]
         )
 
-        """
         hist_non_detections, _, _ = np.histogram2d(
             self._undetected_events["dist"] * 10**3 / C * H0,
             np.log10(
@@ -509,9 +518,12 @@ class DataEvaluation:
             ),
             bins=[grid_x[:, 0], grid_y[0, :]],
         )
-        """
 
-        # detection_fraction = hist_detections / (hist_detections + hist_non_detections)
+        total_number_of_events = _remove_zeros_from_grid(
+            hist_non_detections + hist_detections
+        )
+
+        detection_fraction = hist_detections / total_number_of_events
 
         grid_x, grid_y = grid_x[:-1, :-1], grid_y[:-1, :-1]
         fig, ax = plt.subplots()
@@ -522,7 +534,6 @@ class DataEvaluation:
         plt.savefig(f"{figures_directory}plots/mass_redshift_detections.png", dpi=300)
         plt.close()
 
-        """
         # plot non detected events
         fig, ax = plt.subplots()
         contour = ax.contourf(grid_x, grid_y, hist_non_detections, cmap="viridis")
@@ -531,7 +542,17 @@ class DataEvaluation:
         plt.ylabel("log_10 source mass [solar masses]")
         plt.savefig(f"{figures_directory}plots/mass_redshift_not_detected.png", dpi=300)
         plt.close()
-        """
+
+        # plt detection fraction
+        fig, ax = plt.subplots()
+        contour = ax.contourf(grid_x, grid_y, detection_fraction, cmap="viridis")
+        fig.colorbar(contour, label="detection fraction")
+        plt.xlabel("redshift")
+        plt.ylabel("log_10 source mass [solar masses]")
+        plt.savefig(
+            f"{figures_directory}plots/mass_redshift_detection_fraction.png", dpi=300
+        )
+        plt.close()
 
         # plot skylocalization uncertainty
         fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
@@ -559,14 +580,15 @@ class DataEvaluation:
         plt.figure(figsize=(16, 9))
         plt.scatter(
             self._cramer_rao_bounds["dist"],
-            d_Omega*(RADIAN_TO_DEGREE)**2,
+            d_Omega * (RADIAN_TO_DEGREE) ** 2,
         )
-        
+
         plt.xlabel("distance in Gpc")
         plt.ylabel("d_Omega in deg^2")
         plt.yscale("log")
         plt.savefig(
-            f"{figures_directory}plots/sky_localization_uncertainty_distance.png", dpi=300
+            f"{figures_directory}plots/sky_localization_uncertainty_distance.png",
+            dpi=300,
         )
         plt.close()
 
@@ -647,3 +669,10 @@ def _compute_skylocalization_uncertainty(
         * np.abs(np.sin(theta))
         * np.sqrt(var_phi * var_theta - (cov_theta_phi) ** 2)
     )
+
+
+@np.vectorize
+def _remove_zeros_from_grid(x) -> float:
+    if x == 0:
+        return 1.0
+    return x

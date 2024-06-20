@@ -42,7 +42,11 @@ class ParameterSpace:
     """
 
     M: Parameter = Parameter(
-        symbol="M", unit="solar masses", lower_limit=1e4, upper_limit=1e7, randomize_by_distribution=log_uniform
+        symbol="M",
+        unit="solar masses",
+        lower_limit=1e4,
+        upper_limit=1e7,
+        randomize_by_distribution=log_uniform,
     )  # mass of the MBH (massive black hole) in solar masses
 
     mu: Parameter = Parameter(
@@ -61,7 +65,7 @@ class ParameterSpace:
         symbol="x0", unit="dimensionless", lower_limit=-1.0, upper_limit=1.0
     )  # Kepler-orbit parameter: x_I0=cosI (I is the inclination)
     dist: Parameter = Parameter(
-        symbol="dist", unit="Gpc", lower_limit=0.1, upper_limit=7
+        symbol="dist", unit="Gpc", lower_limit=0.0, upper_limit=7
     )  # luminosity distance
     qS: Parameter = Parameter(
         symbol="qS",

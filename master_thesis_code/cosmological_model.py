@@ -29,7 +29,7 @@ from master_thesis_code.constants import (
 from master_thesis_code.galaxy_catalogue.handler import (
     GalaxyCatalogueHandler,
     HostGalaxy,
-    ParameterSample
+    ParameterSample,
 )
 from master_thesis_code.physical_relations import (
     dist,
@@ -112,9 +112,6 @@ class Detection:
             )
             if 1e4 <= self.M <= 1e7:
                 break
-
-
-
 
 
 # setup distribution of MBH spin
@@ -278,24 +275,35 @@ class Model1CrossCheck:
             return 10 ** ((-0.2475) * np.log10(M / 2.9e7) + np.log10(14.4))
 
     def _log_probability(self, M: float, redshift: float) -> float:
-        if not self.parameter_space.M.lower_limit < M < self.parameter_space.M.upper_limit:
+        if (
+            not self.parameter_space.M.lower_limit
+            < M
+            < self.parameter_space.M.upper_limit
+        ):
             return -np.inf
         if not 0 < redshift < dist_to_redshift(self.parameter_space.dist.upper_limit):
             return -np.inf
         return np.log(self.emri_distribution(M, redshift))
-    
+
     def setup_emri_events_sampler(self) -> None:
         # use emcee to sample the distribution
 
-        log_probability = lambda x: self._log_probability(10**x[0], x[1])
+        log_probability = lambda x: self._log_probability(10 ** x[0], x[1])
 
         ndim = 2
         nwalkers = 100
         burn_in_steps = 1000
-        p0_mass = (np.random.rand(nwalkers, 1) * (np.log10(self.parameter_space.M.upper_limit) - np.log10(self.parameter_space.M.lower_limit)) + np.log10(self.parameter_space.M.lower_limit))
-        p0_redshift = np.random.rand(nwalkers, 1) * dist_to_redshift(self.parameter_space.dist.upper_limit)
+        p0_mass = np.random.rand(nwalkers, 1) * (
+            np.log10(self.parameter_space.M.upper_limit)
+            - np.log10(self.parameter_space.M.lower_limit)
+        ) + np.log10(self.parameter_space.M.lower_limit)
+        p0_redshift = np.random.rand(nwalkers, 1) * dist_to_redshift(
+            self.parameter_space.dist.upper_limit
+        )
         p0 = np.column_stack((p0_mass, p0_redshift))
-        _LOGGER.info(f"Setup emcee MCMC with {nwalkers} walkers and {burn_in_steps} burn in steps...")
+        _LOGGER.info(
+            f"Setup emcee MCMC with {nwalkers} walkers and {burn_in_steps} burn in steps..."
+        )
         self._emri_event_sampler = emcee.EnsembleSampler(
             nwalkers,
             ndim,
@@ -311,26 +319,34 @@ class Model1CrossCheck:
 
     def sample_emri_events(self, number_of_samples: int) -> List[ParameterSample]:
         _LOGGER.info("Sampling EMRI events...")
-        pos, prob, state = self._emri_event_sampler.run_mcmc(initial_state=self._sample_positions, nsteps=number_of_samples)
+        pos, prob, state = self._emri_event_sampler.run_mcmc(
+            initial_state=self._sample_positions, nsteps=number_of_samples
+        )
         samples = self._emri_event_sampler.get_chain(flat=True)
         self._sample_positions = pos
         self._emri_event_sampler.reset()
         return_samples = [
-            ParameterSample(M=10**sample[0], redshift=sample[1], a=MBH_spin_distribution(0, 1))
+            ParameterSample(
+                M=10 ** sample[0], redshift=sample[1], a=MBH_spin_distribution(0, 1)
+            )
             for sample in samples
         ]
         _LOGGER.info(f"Sampling complete (number of samples ({len(return_samples)})).")
 
         return return_samples
-    
+
     def visualize_emri_distribution_sampling(self, number_of_samples: int) -> None:
         samples = self.sample_emri_events(number_of_samples)
         masses = [sample.M for sample in samples]
         redshifts = [sample.redshift for sample in samples]
 
         # make a 2d contour plot of the distribution
-        mass_bins = np.geomspace(self.parameter_space.M.lower_limit, self.parameter_space.M.upper_limit, 40)
-        redshift_bins = np.linspace(0, dist_to_redshift(self.parameter_space.dist.upper_limit), 40)
+        mass_bins = np.geomspace(
+            self.parameter_space.M.lower_limit, self.parameter_space.M.upper_limit, 40
+        )
+        redshift_bins = np.linspace(
+            0, dist_to_redshift(self.parameter_space.dist.upper_limit), 40
+        )
         plt.figure(figsize=(10, 6))
         plt.hist2d(redshifts, masses, bins=[redshift_bins, mass_bins], cmap="viridis")
         plt.colorbar()
@@ -339,7 +355,6 @@ class Model1CrossCheck:
         plt.ylabel("mass")
         plt.savefig("saved_figures/cosmological_model/emri_distribution_sampling.png")
         plt.close()
-
 
     def visualize_emri_distribution(self) -> None:
         # ensure directory is given
@@ -375,7 +390,7 @@ class Model1CrossCheck:
         # plot EMRI distribution
         redshifts, masses = np.meshgrid(redshifts, masses)
         dN_dz_distribution = np.vectorize(self.dN_dz_of_mass)(masses, redshifts)
-        distribution = np.vectorize(self.emri_sample_distribution)(masses, redshifts)
+        distribution = np.vectorize(self.emri_distribution)(masses, redshifts)
 
         plt.contourf(redshifts, masses, dN_dz_distribution, cmap="viridis")
         plt.colorbar()
@@ -737,12 +752,12 @@ class BayesianStatistics:
 
             for index, posterior in posteriors_data_subset:
                 if check_overflow(sub_posteriors * np.array(posterior)):
-                    #print("Overflow detected")
+                    # print("Overflow detected")
                     sub_posteriors = sub_posteriors / np.max(sub_posteriors)
                 sub_posteriors *= np.array(posterior)
             for index, posterior in posteriors_data_with_bh_mass_subset:
                 if check_overflow(sub_posteriors_with_bh_mass * np.array(posterior)):
-                    #print("Overflow detected")
+                    # print("Overflow detected")
                     sub_posteriors_with_bh_mass = sub_posteriors_with_bh_mass / np.max(
                         sub_posteriors_with_bh_mass
                     )
@@ -831,18 +846,18 @@ class BayesianStatistics:
 
         for index, posterior in posterior_data_sorted:
             if check_overflow(posteriors * np.array(posterior)):
-                #print("Overflow detected")
+                # print("Overflow detected")
                 posteriors = posteriors / np.max(posteriors)
             posteriors *= np.array(posterior)
         for index, posterior in posterior_data_with_bh_mass_sorted:
             if check_overflow(posteriors_with_bh_mass * np.array(posterior)):
-                #print("Overflow detected")
+                # print("Overflow detected")
                 posteriors_with_bh_mass = posteriors_with_bh_mass / np.max(
                     posteriors_with_bh_mass
                 )
             posteriors_with_bh_mass *= np.array(posterior)
 
-        #print(posteriors, posteriors_with_bh_mass)
+        # print(posteriors, posteriors_with_bh_mass)
         posteriors = posteriors / np.max(posteriors)
         posteriors_with_bh_mass = posteriors_with_bh_mass / np.max(
             posteriors_with_bh_mass
@@ -1620,11 +1635,11 @@ def single_host_likelihood(
     # redshift samples around peak
     z_lower_bound = possible_host.z - 5 * possible_host.z_error
     if z_lower_bound < 0:
-        #print(f"lower bound is less than 0: {z_lower_bound}", flush=True)
+        # print(f"lower bound is less than 0: {z_lower_bound}", flush=True)
         z_lower_bound = 0.0
     z_upper_bound = possible_host.z + 5 * possible_host.z_error
     if z_upper_bound > max_redshift:
-        #print(f"upper bound is greater than max redshift: {z_upper_bound}", flush=True)
+        # print(f"upper bound is greater than max redshift: {z_upper_bound}", flush=True)
         z_upper_bound = max_redshift
     z_gws = np.linspace(
         z_lower_bound,
@@ -1635,7 +1650,7 @@ def single_host_likelihood(
 
     # multivariate normal distribution for all parameters including the mass
     if np.isnan(possible_host.M):
-        #print(f"possible host has no mass information: {possible_host}", flush=True)
+        # print(f"possible host has no mass information: {possible_host}", flush=True)
         possible_host.M = 0.0
         possible_host.M_error = 1.0
     covariance = [
