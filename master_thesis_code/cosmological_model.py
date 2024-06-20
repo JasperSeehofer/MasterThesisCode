@@ -1339,20 +1339,9 @@ class BayesianStatistics:
             np.array(
                 distances,
             ),
-            bins=np.linspace(0, max(distances), int(max(distances) * 100)),
-        )[0]
-
-        # scale list such that it has the same length as the number of z_gws values
-        self._redshift_distribution = np.array(
-            [
-                value / np.sum(self._redshift_distribution)
-                for value in self._redshift_distribution
-            ]
+            bins=np.arange(0, max(distances), int(max(distances) * 100)),
+            density=True,
         )
-        SCALING_FACTOR = 100
-        self._redshift_distribution = np.array(
-            [np.full(SCALING_FACTOR, value) for value in self._redshift_distribution]
-        ).flatten()
 
         _LOGGER.debug(
             f"Found {len(os.sched_getaffinity(0))} / {os.cpu_count()} (available / system) cpus."
@@ -1373,7 +1362,7 @@ class BayesianStatistics:
         with mp.get_context("spawn").Pool(
             len(os.sched_getaffinity(0)) - 4,
             initializer=child_process_init,
-            initargs=(self._max_redshift,),
+            initargs=(self._max_redshift, self._redshift_distribution),
         ) as pool:
             self.p_D(
                 galaxy_catalog=galaxy_catalog,
@@ -1628,6 +1617,7 @@ def single_host_likelihood(
     evaluate_with_bh_mass: bool,
 ) -> list[float]:
     global max_redshift
+    global redshift_distribution
     """WL_uncertainty = (
         d_L * 0.066 * (1 - (1 + possible_host.z) ** (-0.25) / 0.25) ** (1.8)
     )"""  # TODO check if correct
@@ -1645,6 +1635,20 @@ def single_host_likelihood(
         z_lower_bound,
         z_upper_bound,
         1000,
+    )
+    redshift_detection_distribution_weights = np.array(
+        [
+            redshift_distribution[0][
+                next(
+                    (
+                        i
+                        for i, bin_edge in enumerate(redshift_distribution[1])
+                        if bin_edge <= redshift
+                    )
+                )
+            ]
+            for redshift in z_gws
+        ]
     )
     distances = [dist(redshift, h=h) for redshift in z_gws]
 
@@ -1701,11 +1705,15 @@ def single_host_likelihood(
         normal_distribution.pdf(positions) * redshift_normal_distribution
     )
 
-    # weight with redshift distribution
-    # likelihood_without_bh_mass = likelihood_without_bh_mass * redshift_distribution
+    # weight with redshift detection distribution
+    likelihood_without_bh_mass_weighted = (
+        likelihood_without_bh_mass * redshift_detection_distribution_weights
+    )
 
     # integrate over redshift
-    likelihood_without_bh_mass = np.trapz(likelihood_without_bh_mass, z_gws)
+    likelihood_without_bh_mass_weighted = np.trapz(
+        likelihood_without_bh_mass_weighted, z_gws
+    )
 
     if evaluate_with_bh_mass:
         """
@@ -1788,25 +1796,29 @@ def single_host_likelihood(
             * redshift_normal_distribution
         )
 
-        # weight with redshift distribution
-        """
-        likelihood_with_bh_mass_grid = (
-            likelihood_with_bh_mass_grid * redshift_distribution_grid
+        # weight with redshift detection distribution
+
+        likelihood_with_bh_mass_weighted = (
+            likelihood_with_bh_mass * redshift_detection_distribution_weights
         )
-        """
 
         # integrate over mass and redshift
-        likelihood_with_bh_mass = np.trapz(likelihood_with_bh_mass, z_gws)
+        likelihood_with_bh_mass_weighted = np.trapz(
+            likelihood_with_bh_mass_weighted, z_gws
+        )
 
-        return [likelihood_without_bh_mass, likelihood_with_bh_mass]
+        return [likelihood_without_bh_mass, likelihood_with_bh_mass_weighted]
     return likelihood_without_bh_mass
 
 
 def child_process_init(
     current_max_redshift: float,
+    current_redshift_distribution: tuple[np.array, np.array],
 ) -> None:
     global max_redshift
+    global redshift_distribution
     max_redshift = current_max_redshift
+    redshift_distribution = current_redshift_distribution
 
 
 def check_overflow(arr: np.array) -> bool:

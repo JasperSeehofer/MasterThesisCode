@@ -454,7 +454,7 @@ class DataEvaluation:
             self._cramer_rao_bounds["dist"] * GPC_TO_MPC / C * H0
         )  # converting to Mpc and to m
 
-        bin_edges = np.arange(0, 7, 0.5)
+        bin_edges = np.arange(0, max(redshifts), int(max(redshifts) * 100))
 
         plt.figure(figsize=(16, 9))
         plt.hist(redshifts, bins=bin_edges, histtype="step")

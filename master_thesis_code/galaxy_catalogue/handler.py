@@ -90,7 +90,7 @@ class InternalCatalogColumns:
 class GalaxyCatalogueHandler:
     reduced_galaxy_catalog: pd.DataFrame
 
-    def __init__(self):
+    def __init__(self, M_min: float, M_max: float, z_max: float) -> None:
         try:
             self.reduced_galaxy_catalog = self.read_reduced_galaxy_catalog()
             _LOGGER.info("Successfully loaded reduced galaxy catalog.")
@@ -116,8 +116,32 @@ class GalaxyCatalogueHandler:
         self._map_stellar_masses_to_BH_masses()
         self._map_angles_to_spherical_coordinates()
         self._remove_galaxies_without_mass_information()
-        # self._map_BH_masses_to_redshifted_masses()
+        self._pruned_galaxy_catalog = self._get_pruned_galaxy_catalog(
+            M_min, M_max, z_max
+        )
         self._show_catalog_information()
+
+    def _get_pruned_galaxy_catalog(
+        self, M_min: float, M_max: float, z_max: float
+    ) -> pd.DataFrame:
+        pruned_galaxy_catalog = self.reduced_galaxy_catalog[
+            (
+                self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS]
+                + self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS_ERROR]
+                >= M_min
+            )
+            & (
+                self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS]
+                - self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS_ERROR]
+                <= M_max
+            )
+            & (
+                self.reduced_galaxy_catalog[InternalCatalogColumns.REDSHIFT]
+                - self.reduced_galaxy_catalog[InternalCatalogColumns.REDSHIFT_ERROR]
+                <= z_max
+            )
+        ]
+        return pruned_galaxy_catalog
 
     def _show_catalog_information(self) -> None:
         bh_mass_not_given = len(
@@ -239,32 +263,32 @@ class GalaxyCatalogueHandler:
             f"\ntheta = {theta} +/- {theta_error*cutoff_multiplier}"
         )
 
-        possible_host_galaxies = self.reduced_galaxy_catalog.loc[
+        possible_host_galaxies = self._pruned_galaxy_catalog.loc[
             (
                 theta - theta_error * cutoff_multiplier
-                <= self.reduced_galaxy_catalog[InternalCatalogColumns.THETA_S]
+                <= self._pruned_galaxy_catalog[InternalCatalogColumns.THETA_S]
             )
             & (
-                self.reduced_galaxy_catalog[InternalCatalogColumns.THETA_S]
+                self._pruned_galaxy_catalog[InternalCatalogColumns.THETA_S]
                 <= theta + theta_error * cutoff_multiplier
             )
             & (
                 phi - phi_error * cutoff_multiplier
-                <= self.reduced_galaxy_catalog[InternalCatalogColumns.PHI_S]
+                <= self._pruned_galaxy_catalog[InternalCatalogColumns.PHI_S]
             )
             & (
-                self.reduced_galaxy_catalog[InternalCatalogColumns.PHI_S]
+                self._pruned_galaxy_catalog[InternalCatalogColumns.PHI_S]
                 <= phi + phi_error * cutoff_multiplier
             )
             & (
                 z_min
-                <= self.reduced_galaxy_catalog[InternalCatalogColumns.REDSHIFT]
-                + self.reduced_galaxy_catalog[InternalCatalogColumns.REDSHIFT_ERROR]
+                <= self._pruned_galaxy_catalog[InternalCatalogColumns.REDSHIFT]
+                + self._pruned_galaxy_catalog[InternalCatalogColumns.REDSHIFT_ERROR]
             )
             & (
                 z_max
-                >= self.reduced_galaxy_catalog[InternalCatalogColumns.REDSHIFT]
-                - self.reduced_galaxy_catalog[InternalCatalogColumns.REDSHIFT_ERROR]
+                >= self._pruned_galaxy_catalog[InternalCatalogColumns.REDSHIFT]
+                - self._pruned_galaxy_catalog[InternalCatalogColumns.REDSHIFT_ERROR]
             )
         ]
 
@@ -426,7 +450,7 @@ class GalaxyCatalogueHandler:
         ).idxmin()
         """
 
-        host_galaxy = HostGalaxy(self.reduced_galaxy_catalog.loc[closest_host_index])
+        host_galaxy = HostGalaxy(self._pruned_galaxy_catalog.loc[closest_host_index])
         _LOGGER.debug(
             f"Found closest host galaxy: z deviation: {np.abs(host_galaxy.z - parameter_sample.redshift)/parameter_sample.redshift}%, M deviation: {np.abs(host_galaxy.M - parameter_sample.M)/parameter_sample.M}%"
         )
@@ -437,13 +461,13 @@ class GalaxyCatalogueHandler:
     ) -> int:
         return (
             (
-                self.reduced_galaxy_catalog[InternalCatalogColumns.REDSHIFT]
+                self._pruned_galaxy_catalog[InternalCatalogColumns.REDSHIFT]
                 / parameter_sample.redshift
                 - 1
             )
             ** 2
             + (
-                np.log10(self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS])
+                np.log10(self._pruned_galaxy_catalog[InternalCatalogColumns.BH_MASS])
                 / np.log10(parameter_sample.M)
                 - 1
             )
