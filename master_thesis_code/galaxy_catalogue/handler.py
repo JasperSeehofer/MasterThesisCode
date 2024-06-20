@@ -428,7 +428,7 @@ class GalaxyCatalogueHandler:
 
         host_galaxy = HostGalaxy(self.reduced_galaxy_catalog.loc[closest_host_index])
         _LOGGER.debug(
-            f"Found closest host galaxy: z deviation: {np.abs(host_galaxy.z - parameter_sample.redshift)}, M deviation: {np.abs(host_galaxy.M - parameter_sample.M)}"
+            f"Found closest host galaxy: z deviation: {np.abs(host_galaxy.z - parameter_sample.redshift)/parameter_sample.redshift}%, M deviation: {np.abs(host_galaxy.M - parameter_sample.M)/parameter_sample.M}%"
         )
         return host_galaxy
 
