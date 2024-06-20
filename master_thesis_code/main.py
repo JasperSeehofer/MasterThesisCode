@@ -36,7 +36,11 @@ def main() -> None:
     start_time = time()
 
     cosmological_model = Model1CrossCheck()
-    galaxy_catalog = GalaxyCatalogueHandler()
+    galaxy_catalog = GalaxyCatalogueHandler(
+        M_min=cosmological_model.parameter_space.M.lower_limit,
+        M_max=cosmological_model.parameter_space.M.upper_limit,
+        z_max=cosmological_model.max_redshift,
+    )
 
     if arguments.simulation_steps > 0:
         data_simulation(
@@ -150,7 +154,9 @@ def data_simulation(
             host_galaxy = next(host_galaxies)
         except StopIteration:
             parameter_samples = cosmological_model.sample_emri_events(200)
-            host_galaxies = galaxy_catalog.get_hosts_from_parameter_samples(parameter_samples)
+            host_galaxies = galaxy_catalog.get_hosts_from_parameter_samples(
+                parameter_samples
+            )
             host_galaxy = next(host_galaxies)
         assert isinstance(host_galaxy, HostGalaxy)
 
@@ -248,17 +254,17 @@ def evaluate(
     galaxy_catalog: GalaxyCatalogueHandler,
     h_value: float,
 ) -> None:
-    #data_simulation = DataEvaluation()
-    #data_simulation.evaluate_snr_analysis()
+    # data_simulation = DataEvaluation()
+    # data_simulation.evaluate_snr_analysis()
 
     hubble_constant_evaluation = BayesianStatistics()
-    hubble_constant_evaluation.evaluate(galaxy_catalog, h_value)
-    # hubble_constant_evaluation.visualize(galaxy_catalog=galaxy_catalog)
+    # hubble_constant_evaluation.evaluate(galaxy_catalog, h_value)
+    hubble_constant_evaluation.visualize(galaxy_catalog=galaxy_catalog)
 
     # galaxy_catalog.visualize_galaxy_catalog()
     # Model1CrossCheck().visualize_emri_distribution_sampling(2000)
     # physical_relations.visualize()
-    #data_simulation.visualize(galaxy_catalog)
+    # data_simulation.visualize(galaxy_catalog)
 
 
 if __name__ == "__main__":

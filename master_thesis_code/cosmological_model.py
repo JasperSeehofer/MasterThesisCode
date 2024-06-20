@@ -233,7 +233,8 @@ class Model1CrossCheck:
 
         self.parameter_space.e0.upper_limit = 0.2
 
-        self.parameter_space.dist.upper_limit = dist(redshift=3.0)
+        self.max_redshift = 3.0
+        self.parameter_space.dist.upper_limit = dist(redshift=self.max_redshift)
 
     def emri_distribution(self, M: float, redshift: float) -> float:
         return self.dN_dz_of_mass(M, redshift) * self.R_emri(M)
