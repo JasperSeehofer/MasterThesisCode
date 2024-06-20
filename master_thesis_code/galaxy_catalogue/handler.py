@@ -391,6 +391,7 @@ class GalaxyCatalogueHandler:
             _LOGGER.debug(
                 f"closest host searches progess: {counter/len(parameter_samples)*100}%"
             )
+            counter += 1
             closest_host = self._get_closest_host_galaxy(parameter_sample)
             if closest_host is None:
                 continue
