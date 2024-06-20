@@ -411,8 +411,9 @@ class GalaxyCatalogueHandler:
             f"Searching for closest host galaxy for parameter sample: {parameter_sample}"
         )
         # sort by distance to redshift and mass
-        redshift_mass_subset = self._get_redshift_mass_subset(parameter_sample)
-        closest_host_index = redshift_mass_subset.index[0]
+        closest_host_index = self._get_closest_redshift_mass_host_index(
+            parameter_sample
+        )
 
         # for now ignore phi, theta
         """
@@ -427,28 +428,29 @@ class GalaxyCatalogueHandler:
         ).idxmin()
         """
 
-        host_galaxy = HostGalaxy(redshift_mass_subset.loc[closest_host_index])
+        host_galaxy = HostGalaxy(self.reduced_galaxy_catalog.loc[closest_host_index])
         _LOGGER.debug(
             f"Found closest host galaxy: {host_galaxy}. Sky position deviation: {np.sqrt((host_galaxy.phiS - parameter_sample.phi_S)**2 + (host_galaxy.qS - parameter_sample.theta_S)**2)}"
         )
         return host_galaxy
 
-    def _get_redshift_mass_subset(
+    def _get_closest_redshift_mass_host_index(
         self, parameter_sample: ParameterSample
-    ) -> pd.DataFrame:
-        REDSHIFT_MASS_DISTANCE = "redshift_mass_distance"
-        self.reduced_galaxy_catalog[REDSHIFT_MASS_DISTANCE] = (
-            self.reduced_galaxy_catalog[InternalCatalogColumns.REDSHIFT]
-            / parameter_sample.redshift
-            - 1
-        ) ** 2 + (
-            self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS]
-            / parameter_sample.M
-            - 1
-        ) ** 2
-
-        # get 25 closest galaxies
-        return self.reduced_galaxy_catalog.sort_values(REDSHIFT_MASS_DISTANCE).head(25)
+    ) -> int:
+        return (
+            (
+                self.reduced_galaxy_catalog[InternalCatalogColumns.REDSHIFT]
+                / parameter_sample.redshift
+                - 1
+            )
+            ** 2
+            + (
+                self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS]
+                / parameter_sample.M
+                - 1
+            )
+            ** 2
+        ).idxmin()
 
 
 def _polar_angle_to_declination(polar_angle: float) -> float:
