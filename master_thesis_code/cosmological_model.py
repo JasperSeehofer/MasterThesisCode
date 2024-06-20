@@ -233,7 +233,7 @@ class Model1CrossCheck:
 
         self.parameter_space.e0.upper_limit = 0.2
 
-        self.max_redshift = 3.0
+        self.max_redshift = 2.0
         self.parameter_space.dist.upper_limit = dist(redshift=self.max_redshift)
 
     def emri_distribution(self, M: float, redshift: float) -> float:
@@ -282,7 +282,7 @@ class Model1CrossCheck:
             < self.parameter_space.M.upper_limit
         ):
             return -np.inf
-        if not 0 < redshift < dist_to_redshift(self.parameter_space.dist.upper_limit):
+        if not 0 < redshift < self.max_redshift:
             return -np.inf
         return np.log(self.emri_distribution(M, redshift))
 
@@ -298,9 +298,7 @@ class Model1CrossCheck:
             np.log10(self.parameter_space.M.upper_limit)
             - np.log10(self.parameter_space.M.lower_limit)
         ) + np.log10(self.parameter_space.M.lower_limit)
-        p0_redshift = np.random.rand(nwalkers, 1) * dist_to_redshift(
-            self.parameter_space.dist.upper_limit
-        )
+        p0_redshift = np.random.rand(nwalkers, 1) * self.max_redshift
         p0 = np.column_stack((p0_mass, p0_redshift))
         _LOGGER.info(
             f"Setup emcee MCMC with {nwalkers} walkers and {burn_in_steps} burn in steps..."
