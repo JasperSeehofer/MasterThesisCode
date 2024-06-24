@@ -122,6 +122,7 @@ class GalaxyCatalogueHandler:
         self._pruned_galaxy_catalog = self._get_pruned_galaxy_catalog(
             M_min, M_max, z_max
         )
+        self.set_max_relative_errors()
         self._show_catalog_information()
 
     def _get_pruned_galaxy_catalog(
@@ -145,6 +146,16 @@ class GalaxyCatalogueHandler:
             )
         ]
         return pruned_galaxy_catalog
+
+    def set_max_relative_errors(self) -> None:
+        self._max_relative_redshift_error = (
+            self._pruned_galaxy_catalog[InternalCatalogColumns.REDSHIFT_ERROR]
+            / self._pruned_galaxy_catalog[InternalCatalogColumns.REDSHIFT]
+        ).max()
+        self._max_relative_mass_error = (
+            self._pruned_galaxy_catalog[InternalCatalogColumns.BH_MASS_ERROR]
+            / self._pruned_galaxy_catalog[InternalCatalogColumns.BH_MASS]
+        ).max()
 
     def _show_catalog_information(self) -> None:
         bh_mass_not_given = len(
@@ -525,6 +536,17 @@ class GalaxyCatalogueHandler:
         """
 
         host_galaxy = HostGalaxy(self._pruned_galaxy_catalog.loc[closest_host_index])
+        # check if host galaxy is within error bounds
+        if (
+            np.abs(host_galaxy.z - parameter_sample.redshift)
+            / parameter_sample.redshift
+            > self._max_relative_redshift_error
+        ) or (
+            np.abs(host_galaxy.M - parameter_sample.M) / parameter_sample.M
+            > self._max_relative_mass_error
+        ):
+            _LOGGER.debug("Host galaxy not within error bounds. Returning None.")
+            return None
         _LOGGER.debug(
             f"Found closest host galaxy: z deviation: {np.abs(host_galaxy.z - parameter_sample.redshift)/parameter_sample.redshift}%, M deviation: {np.abs(host_galaxy.M - parameter_sample.M)/parameter_sample.M}%"
         )
