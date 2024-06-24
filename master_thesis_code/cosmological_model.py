@@ -1338,9 +1338,10 @@ class BayesianStatistics:
             np.array(
                 distances,
             ),
-            bins=np.arange(0, max(distances), int(max(distances) * 100)),
+            bins=np.linspace(0, max(distances), int(max(distances) * 100)),
             density=True,
         )
+        print(self._redshift_distribution)
 
         _LOGGER.debug(
             f"Found {len(os.sched_getaffinity(0))} / {os.cpu_count()} (available / system) cpus."
