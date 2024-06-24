@@ -1807,8 +1807,8 @@ def single_host_likelihood(
             likelihood_with_bh_mass_weighted, z_gws
         )
 
-        return [likelihood_without_bh_mass, likelihood_with_bh_mass_weighted]
-    return likelihood_without_bh_mass
+        return [likelihood_without_bh_mass_weighted, likelihood_with_bh_mass_weighted]
+    return likelihood_without_bh_mass_weighted
 
 
 def child_process_init(
