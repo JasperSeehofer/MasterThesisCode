@@ -122,6 +122,7 @@ class GalaxyCatalogueHandler:
         self._pruned_galaxy_catalog = self._get_pruned_galaxy_catalog(
             M_min, M_max, z_max
         )
+        self.set_max_relative_errors()
         self._show_catalog_information()
 
     def _get_pruned_galaxy_catalog(
