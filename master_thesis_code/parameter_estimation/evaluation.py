@@ -603,8 +603,8 @@ class DataEvaluation:
 
         grid_x, grid_y = grid_x[:-1, :-1], grid_y[:-1, :-1]
         fig, ax = plt.subplots()
-        contour = ax.contourf(grid_x, grid_y, hist_detections, cmap="viridis")
-        fig.colorbar(contour, label="detections")
+        contour = ax.contourf(grid_x, grid_y, np.log10(_remove_zeros_from_grid(hist_detections)), cmap="viridis")
+        fig.colorbar(contour, label="log 10 detections")
         plt.xlabel("redshift")
         plt.ylabel("log_10 source mass [solar masses]")
         plt.savefig(f"{figures_directory}plots/mass_redshift_detections.png", dpi=300)
@@ -612,8 +612,8 @@ class DataEvaluation:
 
         # plot non detected events
         fig, ax = plt.subplots()
-        contour = ax.contourf(grid_x, grid_y, hist_non_detections, cmap="viridis")
-        fig.colorbar(contour, label="not detected")
+        contour = ax.contourf(grid_x, grid_y, np.log10(_remove_zeros_from_grid(hist_non_detections)), cmap="viridis")
+        fig.colorbar(contour, label="log 10 not detected")
         plt.xlabel("redshift")
         plt.ylabel("log_10 source mass [solar masses]")
         plt.savefig(f"{figures_directory}plots/mass_redshift_not_detected.png", dpi=300)
