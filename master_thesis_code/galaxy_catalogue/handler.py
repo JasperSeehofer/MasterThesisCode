@@ -450,7 +450,11 @@ class GalaxyCatalogueHandler:
         )
 
     def get_random_hosts_in_mass_range(
-        self, lower_limit: float, upper_limit: float, max_dist: float = 4.5
+        self,
+        lower_limit: float,
+        upper_limit: float,
+        max_dist: float = 4.5,
+        impose_isotropic: bool = False,
     ) -> Iterable:
         NUMBER_OF_HOSTS = 400
         thetas = np.arccos(np.random.uniform(-1.0, 1.0, NUMBER_OF_HOSTS))
@@ -468,22 +472,32 @@ class GalaxyCatalogueHandler:
         _LOGGER.debug(
             f"restricted_galaxy_catalogue: {restricted_galaxy_catalogue.shape[0]} galaxies."
         )
-        restricted_galaxy_catalogue = restricted_galaxy_catalogue.sample(frac=1)
-        return_list = []
-        for theta, phi in zip(thetas, phis):
+        if impose_isotropic:
+            restricted_galaxy_catalogue = restricted_galaxy_catalogue.sample(frac=1)
+            return_list = []
+            for theta, phi in zip(thetas, phis):
 
-            closest_host_index = (
-                (restricted_galaxy_catalogue[InternalCatalogColumns.PHI_S] / phi - 1)
-                ** 2
-                + (
-                    restricted_galaxy_catalogue[InternalCatalogColumns.THETA_S] / theta
-                    - 1
-                )
-                ** 2
-            ).idxmin()
-            host: pd.Series = restricted_galaxy_catalogue.loc[closest_host_index]
-            return_list.append(HostGalaxy(host))
-        return iter(return_list)
+                closest_host_index = (
+                    (
+                        restricted_galaxy_catalogue[InternalCatalogColumns.PHI_S] / phi
+                        - 1
+                    )
+                    ** 2
+                    + (
+                        restricted_galaxy_catalogue[InternalCatalogColumns.THETA_S]
+                        / theta
+                        - 1
+                    )
+                    ** 2
+                ).idxmin()
+                host: pd.Series = restricted_galaxy_catalogue.loc[closest_host_index]
+                return_list.append(HostGalaxy(host))
+            return iter(return_list)
+        else:
+            random_hosts = restricted_galaxy_catalogue.sample(NUMBER_OF_HOSTS)
+            return iter(
+                [HostGalaxy(parameters) for _, parameters in random_hosts.iterrows()]
+            )
 
     def get_hosts_from_parameter_samples(
         self, parameter_samples: List[ParameterSample], max_redshift: float = 3
