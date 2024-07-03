@@ -9,7 +9,7 @@ import logging
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 import time
-from scipy.stats import multivariate_normal, truncnorm
+from scipy.stats import multivariate_normal, truncnorm, gaussian_kde
 from scipy.optimize import curve_fit
 from statistics import NormalDist
 import multiprocessing as mp
@@ -1358,9 +1358,15 @@ class BayesianStatistics:
         self.h = h_value
         _LOGGER.info("prepare global variable for multiprocessing")
         distances = [dist_to_redshift(dist) for dist in self.cramer_rao_bounds["dist"]]
-        _LOGGER.debug(f"distances: {distances}.")
-
+        phis = self.cramer_rao_bounds["phiS"]
+        thetas = self.cramer_rao_bounds["qS"]
         self._max_redshift = np.max(distances)
+
+        # make 3d gaussian kde for redshift, phi and theta
+        self.detections_kde = gaussian_kde(
+            np.vstack((distances, phis, thetas)), 
+            bw_method="scott"
+        )
 
         self._redshift_distribution = np.histogram(
             np.array(
@@ -1390,7 +1396,7 @@ class BayesianStatistics:
         with mp.get_context("spawn").Pool(
             len(os.sched_getaffinity(0)) - 4,
             initializer=child_process_init,
-            initargs=(self._max_redshift, self._redshift_distribution),
+            initargs=(self._max_redshift, self.detections_kde),
         ) as pool:
             self.p_D(
                 galaxy_catalog=galaxy_catalog,
@@ -1643,7 +1649,7 @@ def single_host_likelihood(
     evaluate_with_bh_mass: bool,
 ) -> list[float]:
     global max_redshift
-    global redshift_distribution
+    global detection_kde
     """WL_uncertainty = (
         d_L * 0.066 * (1 - (1 + possible_host.z) ** (-0.25) / 0.25) ** (1.8)
     )"""  # TODO check if correct
@@ -1662,19 +1668,14 @@ def single_host_likelihood(
         z_upper_bound,
         1000,
     )
-    redshift_detection_distribution_weights = np.array(
-        [
-            redshift_distribution[0][
-                next(
-                    (
-                        i
-                        for i, bin_edge in enumerate(redshift_distribution[1])
-                        if bin_edge <= redshift
-                    )
-                )
+    redshift_detection_distribution_weights = detection_kde(
+        np.vstack(
+            [
+                z_gws,
+                np.ones(z_gws.shape) * possible_host.phiS,
+                np.ones(z_gws.shape) * possible_host.qS,
             ]
-            for redshift in z_gws
-        ]
+        )
     )
     distances = [dist(redshift, h=h) for redshift in z_gws]
 
@@ -1839,12 +1840,12 @@ def single_host_likelihood(
 
 def child_process_init(
     current_max_redshift: float,
-    current_redshift_distribution: tuple[np.array, np.array],
+    current_detection_kde: gaussian_kde,
 ) -> None:
     global max_redshift
-    global redshift_distribution
+    global detection_kde
     max_redshift = current_max_redshift
-    redshift_distribution = current_redshift_distribution
+    detection_kde = current_detection_kde
 
 
 def check_overflow(arr: np.array) -> bool:
