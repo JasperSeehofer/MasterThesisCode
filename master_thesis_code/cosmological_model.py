@@ -1791,17 +1791,9 @@ class BayesianStatistics:
             galaxy_weights_with_bh_mass.index(max(galaxy_weights_with_bh_mass))
         ]
 
-        self.detection = Detection(
-            phi=best_guess_galaxy.phiS,
-            phi_error=self.detection.phi_error,
-            theta=best_guess_galaxy.qS,
-            theta_error=self.detection.theta_error,
-            d_L=dist(best_guess_galaxy.z, h=self.h),
-            d_L_uncertainty=self.detection.d_L_uncertainty,
-            theta_phi_covariance=self.detection.theta_phi_covariance,
-            d_L_phi_covariance=self.detection.d_L_phi_covariance,
-            d_L_theta_covariance=self.detection.d_L_theta_covariance,
-        )
+        self.detection.d_L = dist(best_guess_galaxy.z, h=self.h)
+        self.detection.phi = best_guess_galaxy.phiS
+        self.detection.theta = best_guess_galaxy.qS
 
         results_with_bh_mass = pool.starmap(
             single_host_likelihood,
