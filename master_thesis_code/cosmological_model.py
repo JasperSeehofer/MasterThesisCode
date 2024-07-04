@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 import time
 from scipy.stats import multivariate_normal, truncnorm, gaussian_kde
+from scipy.stats import multivariate_normal, truncnorm, gaussian_kde
 from scipy.optimize import curve_fit
 from statistics import NormalDist
 import multiprocessing as mp
@@ -235,7 +236,7 @@ class Model1CrossCheck:
 
         self.parameter_space.e0.upper_limit = 0.2
 
-        self.max_redshift = 0.5
+        self.max_redshift = 2.0
         self.parameter_space.dist.upper_limit = dist(redshift=self.max_redshift)
 
     def emri_distribution(self, M: float, redshift: float) -> float:

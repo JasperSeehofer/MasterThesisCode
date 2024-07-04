@@ -32,7 +32,7 @@ def dist(
     :param w_a: dark energy equation of state parameter
     :return: luminosity distance in Gpc
     """
-    if not isinstance(redshift, float):
+    if not (isinstance(redshift, float) or isinstance(redshift, int)):
         redshift = redshift[0]
 
     H_0 = h * 100.0 * KM_TO_M / GPC_TO_MPC ** (-1)  # Hubble constant in m/s*Gpc
