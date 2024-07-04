@@ -1787,27 +1787,29 @@ class BayesianStatistics:
         # second iteration with best guess detection centered around highsted weighted galaxy
         galaxy_weights_with_bh_mass = [result[1] for result in results_with_bh_mass]
 
-        best_guess_galaxy = possible_host_galaxies_with_bh_mass[
-            galaxy_weights_with_bh_mass.index(max(galaxy_weights_with_bh_mass))
-        ]
+        if len(galaxy_weights_with_bh_mass) > 0:
+            best_guess_galaxy = possible_host_galaxies_with_bh_mass[
+                galaxy_weights_with_bh_mass.index(max(galaxy_weights_with_bh_mass))
+            ]
 
-        self.detection.d_L = dist(best_guess_galaxy.z, h=self.h)
-        self.detection.phi = best_guess_galaxy.phiS
-        self.detection.theta = best_guess_galaxy.qS
+            self.detection.d_L = dist(best_guess_galaxy.z, h=self.h)
+            self.detection.phi = best_guess_galaxy.phiS
+            self.detection.theta = best_guess_galaxy.qS
 
-        results_with_bh_mass = pool.starmap(
-            single_host_likelihood,
-            [
-                (
-                    possible_host,
-                    self.detection,
-                    self.h,
-                    True,
-                )
-                for possible_host in possible_host_galaxies_with_bh_mass
-            ],
-            chunksize=chunksize_with_bh_mass,
-        )
+            results_with_bh_mass = pool.starmap(
+                single_host_likelihood,
+                [
+                    (
+                        possible_host,
+                        self.detection,
+                        self.h,
+                        True,
+                    )
+                    for possible_host in possible_host_galaxies_with_bh_mass
+                ],
+                chunksize=chunksize_with_bh_mass,
+            )
+            
         results = pool.starmap(
             single_host_likelihood,
             [
