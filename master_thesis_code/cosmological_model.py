@@ -1416,68 +1416,84 @@ class BayesianStatistics:
 
         self.h = h_value
         _LOGGER.info("prepare global variable for multiprocessing")
-        distances = [dist_to_redshift(dist) for dist in self.cramer_rao_bounds["dist"]]
+        distances = [
+            dist_to_redshift(distance=dist, h=h_value)
+            for dist in self.cramer_rao_bounds["dist"]
+        ]
         phis = self.cramer_rao_bounds["phiS"]
         thetas = self.cramer_rao_bounds["qS"]
         self._max_redshift = np.max(distances)
-
         # get 3d gaussian kde for redshift and skylocalization
         self._redshift_skylocalization_kde = gaussian_kde(
             np.array([distances, phis, thetas])
         )
+        PLOT_KDE = False
+        if PLOT_KDE:
+            distance_range = np.linspace(0, self._max_redshift, 100)
+            phi_range = np.linspace(0, 2 * np.pi, 100)
+            theta_range = np.linspace(0, np.pi, 100)
 
-        # 3d plot of kde
-        fig = plt.figure(figsize=(16, 9))
-        ax = fig.add_subplot(111, projection="3d")
-        ax.set_title("3D KDE of redshift, phi and theta")
-        distance_range = np.linspace(0, self._max_redshift, 100)
-        phi_range = np.linspace(0, 2 * np.pi, 100)
-        theta_range = np.linspace(0, np.pi, 100)
-        distance_mesh, phi_mesh, theta_mesh = np.meshgrid(
-            distance_range, phi_range, theta_range
-        )
-        positions = np.vstack(
-            [distance_mesh.ravel(), phi_mesh.ravel(), theta_mesh.ravel()]
-        )
-        density = self._redshift_skylocalization_kde(positions)
-        density_normalized = (density - np.min(density)) / (
-            np.max(density) - np.min(density)
-        )
-        alpha_values = (np.cos(density_normalized * np.pi + np.pi) + 1) / 2
-        ax.scatter(
-            distance_mesh,
-            phi_mesh,
-            theta_mesh,
-            c=density,
-            cmap="viridis",
-            alpha=alpha_values,
-            s=alpha_values * 50,
-        )
-        ax.set_xlabel("redshift")
-        ax.set_ylabel("phi")
-        ax.set_zlabel("theta")
-        # plot colormap
-        norm = plt.Normalize(vmin=np.min(density), vmax=np.max(density))
-        fig.colorbar(
-            plt.cm.ScalarMappable(norm=norm, cmap="viridis"), ax=ax, label="density"
-        )
-        plt.savefig("saved_figures/3d_kde.png", dpi=300)
-        plt.close()
+            redshift_mesh, phi_mesh, theta_mesh = np.meshgrid(
+                distance_range, phi_range, theta_range
+            )
 
-        # 2d plots for theta pi/4, pi/2, 3pi/4
-        fig, axs = plt.subplots(1, 3, figsize=(16, 9))
-        for index, theta in enumerate([np.pi / 4, np.pi / 2, 3 * np.pi / 4]):
-            ax = axs[index]
-            ax.set_title(f"2D KDE of redshift and phi for theta = {theta}")
+            densities = self._redshift_skylocalization_kde(
+                np.vstack(
+                    [
+                        redshift_mesh.ravel(),
+                        phi_mesh.ravel(),
+                        theta_mesh.ravel(),
+                    ]
+                )
+            )
+            densities = densities.reshape(
+                (len(distance_range), len(phi_range), len(theta_range))
+            )
+
+            # reduce to redshift kde by integration
+            redshift_kde = np.trapz(
+                np.trapz(
+                    densities,
+                    phi_range,
+                    axis=1,
+                ),
+                theta_range,
+                axis=1,
+            )
+            only_redshift_kde = gaussian_kde(distances)
+            # compare kde with histogram
+            fig, ax = plt.subplots(1, 2, figsize=(16, 9))
+            ax[0].plot(distance_range, redshift_kde, label="3d kde")
+            ax[0].plot(
+                distance_range, only_redshift_kde(distance_range), label="redshift kde"
+            )
+            ax[1].hist(
+                distances,
+                bins=20,
+                range=(0, self._max_redshift),
+                density=True,
+                label="histogram",
+            )
+            fig.suptitle("Redshift kde vs histogram")
+            ax[0].set_xlabel("redshift")
+            ax[0].set_ylabel("density")
+            ax[0].legend()
+            ax[1].set_xlabel("redshift")
+            ax[1].set_ylabel("density")
+            ax[1].legend()
+            plt.savefig("saved_figures/redshift_kde_vs_histogram.png", dpi=300)
+            plt.close()
+
+            """
+            # 3d plot of kde
+            fig = plt.figure(figsize=(16, 9))
+            ax = fig.add_subplot(111, projection="3d")
+            ax.set_title("3D KDE of redshift, phi and theta")
             distance_mesh, phi_mesh, theta_mesh = np.meshgrid(
-                distance_range, phi_range, np.ones_like(phi_range) * theta
+                distance_range, phi_range, theta_range
             )
             positions = np.vstack(
-                [
-                    distance_mesh.ravel(),
-                    phi_mesh.ravel(),
-                    theta_mesh.ravel(),
-                ]
+                [distance_mesh.ravel(), phi_mesh.ravel(), theta_mesh.ravel()]
             )
             density = self._redshift_skylocalization_kde(positions)
             density_normalized = (density - np.min(density)) / (
@@ -1487,6 +1503,7 @@ class BayesianStatistics:
             ax.scatter(
                 distance_mesh,
                 phi_mesh,
+                theta_mesh,
                 c=density,
                 cmap="viridis",
                 alpha=alpha_values,
@@ -1494,13 +1511,60 @@ class BayesianStatistics:
             )
             ax.set_xlabel("redshift")
             ax.set_ylabel("phi")
+            ax.set_zlabel("theta")
             # plot colormap
             norm = plt.Normalize(vmin=np.min(density), vmax=np.max(density))
             fig.colorbar(
                 plt.cm.ScalarMappable(norm=norm, cmap="viridis"), ax=ax, label="density"
             )
-        plt.savefig("saved_figures/2d_kde_theta.png", dpi=300)
-        plt.close()
+            plt.savefig("saved_figures/3d_kde.png", dpi=300)
+            plt.close()
+            """
+
+            # 2d plots for fixed thetas
+            fig, axs = plt.subplots(1, 6, figsize=(16, 9))
+            theta_range = np.linspace(0, np.pi, 6)
+            min_density = np.inf
+            max_density = -np.inf
+            for index, theta in enumerate(theta_range):
+                ax = axs[index]
+                ax.set_title(f"qS = {np.round(theta/np.pi, 2)}pi")
+                distance_mesh, phi_mesh, theta_mesh = np.meshgrid(
+                    distance_range, phi_range, np.ones_like(phi_range) * theta
+                )
+                positions = np.vstack(
+                    [
+                        distance_mesh.ravel(),
+                        phi_mesh.ravel(),
+                        theta_mesh.ravel(),
+                    ]
+                )
+                density = self._redshift_skylocalization_kde(positions)
+                density_normalized = (density - np.min(density)) / (
+                    np.max(density) - np.min(density)
+                )
+                alpha_values = (np.cos(density_normalized * np.pi + np.pi) + 1) / 2
+                ax.scatter(
+                    distance_mesh,
+                    phi_mesh,
+                    c=density,
+                    cmap="viridis",
+                    alpha=alpha_values,
+                    s=alpha_values * 50,
+                )
+                ax.set_xlabel("redshift")
+                ax.set_ylabel("phi")
+                min_density = min(min_density, np.min(density))
+                max_density = max(max_density, np.max(density))
+
+            norm = plt.Normalize(vmin=min_density, vmax=max_density)
+            fig.colorbar(
+                plt.cm.ScalarMappable(norm=norm, cmap="viridis"),
+                ax=axs.ravel().tolist(),
+                label="density",
+            )
+            plt.savefig("saved_figures/2d_kde_theta.png", dpi=300)
+            plt.close()
 
         _LOGGER.debug(
             f"Found {len(os.sched_getaffinity(0))} / {os.cpu_count()} (available / system) cpus."
