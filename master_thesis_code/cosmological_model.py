@@ -1806,7 +1806,7 @@ def use_detection(detection: Detection) -> bool:
     )
     distance_relative_error = detection.d_L_uncertainty / detection.d_L
 
-    if (distance_relative_error < 0.1) and (sky_localization_uncertainty < 0.001):
+    if (distance_relative_error < 0.1) and (sky_localization_uncertainty < 0.0006):
         return True
     _LOGGER.info(
         f"Detection skipped: distance_relative_error {distance_relative_error}, sky_localization_uncertainty {sky_localization_uncertainty}"
