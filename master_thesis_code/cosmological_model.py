@@ -9,7 +9,7 @@ import logging
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 import time
-from scipy.stats import multivariate_normal, truncnorm
+from scipy.stats import multivariate_normal, truncnorm, gaussian_kde
 from scipy.optimize import curve_fit
 from statistics import NormalDist
 import multiprocessing as mp
@@ -67,7 +67,7 @@ class Detection:
     d_L_theta_covariance: float
     d_L_phi_covariance: float
     host_galaxy_index: int
-    snr: float 
+    snr: float
     WL_uncertainty: float = 0.0
 
     def __init__(self, parameters: pd.Series) -> None:
@@ -948,16 +948,25 @@ class BayesianStatistics:
             if len(host_galaxy_weights.keys()) == len(self.h_values_with_bh_mass)
         }
 
-    
         max_likelihood_without_bh_mass = max(
             [
-                np.max([np.max([likelihood[0] for _, likelihood in value]) for value in host_galaxy_weights.values()])
+                np.max(
+                    [
+                        np.max([likelihood[0] for _, likelihood in value])
+                        for value in host_galaxy_weights.values()
+                    ]
+                )
                 for host_galaxy_weights in weight_data.values()
             ]
         )
         max_likelihood_with_bh_mass = max(
             [
-                np.max([np.max([likelihood[1] for _, likelihood in value]) for value in host_galaxy_weights.values()])
+                np.max(
+                    [
+                        np.max([likelihood[1] for _, likelihood in value])
+                        for value in host_galaxy_weights.values()
+                    ]
+                )
                 for host_galaxy_weights in weight_data.values()
             ]
         )
@@ -976,7 +985,9 @@ class BayesianStatistics:
             # plot h values on x axis and weights on y axis and the sum of weights
             fig, axs = plt.subplots(2, 3, figsize=(16, 9))
             # figure title
-            fig.suptitle(f"Galaxy likelihood visualization for detection {detection_index} (Skyloc error: {np.round(detection.get_skylocalization_error(), 4)})")
+            fig.suptitle(
+                f"Galaxy likelihood visualization for detection {detection_index} (Skyloc error: {np.round(detection.get_skylocalization_error(), 4)})"
+            )
             for h_value, host_galaxy_weights in host_galaxy_weights_by_h_value.items():
                 h_value = float(h_value)
                 host_galaxies = [
@@ -985,14 +996,20 @@ class BayesianStatistics:
                 ]
                 host_galaxies_phi = np.array([galaxy.phiS for galaxy in host_galaxies])
                 host_galaxies_theta = np.array([galaxy.qS for galaxy in host_galaxies])
-                host_galaxies_redshift = np.array([galaxy.z for galaxy in host_galaxies])
+                host_galaxies_redshift = np.array(
+                    [galaxy.z for galaxy in host_galaxies]
+                )
                 host_galaxies_mean_redshift = np.mean(host_galaxies_redshift)
 
                 host_galaxies_mass = np.array([galaxy.M for galaxy in host_galaxies])
-                likelihoods_without_bh_mass = np.array(
-                    [weights[0] for _, weights in host_galaxy_weights]
-                ) / max_likelihood_without_bh_mass
-                likelihoods_with_bh_mass = np.array([weights[1] for _, weights in host_galaxy_weights]) / max_likelihood_with_bh_mass
+                likelihoods_without_bh_mass = (
+                    np.array([weights[0] for _, weights in host_galaxy_weights])
+                    / max_likelihood_without_bh_mass
+                )
+                likelihoods_with_bh_mass = (
+                    np.array([weights[1] for _, weights in host_galaxy_weights])
+                    / max_likelihood_with_bh_mass
+                )
 
                 detection_likelihood_without_bh_mass = np.sum(
                     likelihoods_without_bh_mass
@@ -1008,7 +1025,6 @@ class BayesianStatistics:
                 axs[0, 0].axvline(H, color="g", linestyle="--")
                 axs[0, 0].set_title(f"detection likelihood without bh mass")
 
-                
                 axs[1, 0].scatter(
                     [h_value],
                     detection_likelihood_with_bh_mass,
@@ -1019,25 +1035,48 @@ class BayesianStatistics:
                 axs[1, 0].set_title(f"detection likelihood with bh mass")
 
                 # plot likelihood contribution by redshift bins
-                redshift_bins = np.linspace(min(host_galaxies_redshift), max(host_galaxies_redshift), num=21)
+                redshift_bins = np.linspace(
+                    min(host_galaxies_redshift), max(host_galaxies_redshift), num=21
+                )
                 likelihood_bin_contribution = []
                 for bin_number in range(20):
                     redshift_min = redshift_bins[bin_number]
                     redshift_max = redshift_bins[bin_number + 1]
-                    bin_galaxies = np.where(np.logical_and(host_galaxies_redshift >= redshift_min, host_galaxies_redshift < redshift_max))[0]
-                    contribution = np.sum([likelihood for likelihood in likelihoods_without_bh_mass[bin_galaxies]])
+                    bin_galaxies = np.where(
+                        np.logical_and(
+                            host_galaxies_redshift >= redshift_min,
+                            host_galaxies_redshift < redshift_max,
+                        )
+                    )[0]
+                    contribution = np.sum(
+                        [
+                            likelihood
+                            for likelihood in likelihoods_without_bh_mass[bin_galaxies]
+                        ]
+                    )
                     likelihood_bin_contribution.append(contribution)
 
-
-
-                cmap = cm.get_cmap('viridis')
-                axs[0,1].plot(redshift_bins[:-1], likelihood_bin_contribution, c=cmap(h_value))
-                axs[0,1].axvline(dist_to_redshift(true_galaxy.d_L), color="g", linestyle="--")
-                axs[0,1].set_xlabel("redshift")
-                axs[0,1].axvline(host_galaxies_mean_redshift, color="r", linestyle="--", label="mean redshift")
-                axs[0,1].axvline(dist_to_redshift(detection.d_L), color="black", linestyle="-.", label="detection redshift")
-                axs[0,1].set_title("redshift distribution")
-
+                cmap = cm.get_cmap("viridis")
+                axs[0, 1].plot(
+                    redshift_bins[:-1], likelihood_bin_contribution, c=cmap(h_value)
+                )
+                axs[0, 1].axvline(
+                    dist_to_redshift(true_galaxy.d_L), color="g", linestyle="--"
+                )
+                axs[0, 1].set_xlabel("redshift")
+                axs[0, 1].axvline(
+                    host_galaxies_mean_redshift,
+                    color="r",
+                    linestyle="--",
+                    label="mean redshift",
+                )
+                axs[0, 1].axvline(
+                    dist_to_redshift(detection.d_L),
+                    color="black",
+                    linestyle="-.",
+                    label="detection redshift",
+                )
+                axs[0, 1].set_title("redshift distribution")
 
                 """
                 # plot weights of true galaxy in detection
@@ -1102,45 +1141,64 @@ class BayesianStatistics:
 
                 if h_value == H:
                     # plot redshift mass distribution
-                    axs[1,1].scatter(
+                    axs[1, 1].scatter(
                         host_galaxies_redshift,
                         np.log10(host_galaxies_mass),
-                        s=likelihoods_with_bh_mass/max(likelihoods_with_bh_mass) * 100,
+                        s=likelihoods_with_bh_mass
+                        / max(likelihoods_with_bh_mass)
+                        * 100,
                         c=likelihoods_with_bh_mass,
-                        cmap="viridis"
+                        cmap="viridis",
                     )
-                    axs[1,1].axvline(dist_to_redshift(true_galaxy.d_L), color="g", linestyle="--")
-                    axs[1,1].axhline(np.log10(true_galaxy.M), color="g", linestyle="--")
-                    axs[1,1].axvline(dist_to_redshift(detection.d_L), color="black", linestyle="-.")
-                    axs[1,1].axhline(np.log10(detection.M), color="black", linestyle="-.")
-                    axs[1,1].set_xlabel("redshift")
-                    axs[1,1].set_ylabel("log 10 mass in solar masses")
-                    axs[1,1].set_title("redshift mass distribution")
+                    axs[1, 1].axvline(
+                        dist_to_redshift(true_galaxy.d_L), color="g", linestyle="--"
+                    )
+                    axs[1, 1].axhline(
+                        np.log10(true_galaxy.M), color="g", linestyle="--"
+                    )
+                    axs[1, 1].axvline(
+                        dist_to_redshift(detection.d_L), color="black", linestyle="-."
+                    )
+                    axs[1, 1].axhline(
+                        np.log10(detection.M), color="black", linestyle="-."
+                    )
+                    axs[1, 1].set_xlabel("redshift")
+                    axs[1, 1].set_ylabel("log 10 mass in solar masses")
+                    axs[1, 1].set_title("redshift mass distribution")
 
-                    axs[0,2].scatter(
+                    axs[0, 2].scatter(
                         host_galaxies_phi,
                         host_galaxies_theta,
                         c=likelihoods_without_bh_mass,
                         cmap="viridis",
                     )
-                    axs[1,2].scatter(
+                    axs[1, 2].scatter(
                         host_galaxies_phi,
                         host_galaxies_theta,
                         c=likelihoods_with_bh_mass,
                         cmap="viridis",
                     )
-                    for index in [0,1]: 
+                    for index in [0, 1]:
                         axs[index, 2].axvline(
-                            detection.phi, color="black", linestyle="-.", label="detection"
+                            detection.phi,
+                            color="black",
+                            linestyle="-.",
+                            label="detection",
                         )
-                        axs[index, 2].axhline(detection.theta, color="black", linestyle="-.")
+                        axs[index, 2].axhline(
+                            detection.theta, color="black", linestyle="-."
+                        )
                         axs[index, 2].axvline(
                             true_galaxy.phi, color="g", linestyle="--", label="true"
                         )
-                        axs[index, 2].axhline(true_galaxy.theta, color="g", linestyle="--")
+                        axs[index, 2].axhline(
+                            true_galaxy.theta, color="g", linestyle="--"
+                        )
                         axs[index, 2].set_xlabel("phi in rad")
                         axs[index, 2].set_ylabel("theta in rad")
-                        axs[index, 2].set_title(f"Galaxy skylocalization weight for h = {h_value}")
+                        axs[index, 2].set_title(
+                            f"Galaxy skylocalization weight for h = {h_value}"
+                        )
 
             plt.savefig(
                 f"saved_figures/galaxy_weights/detection_weight_relations_{detection_index}.png",
@@ -1358,18 +1416,90 @@ class BayesianStatistics:
         self.h = h_value
         _LOGGER.info("prepare global variable for multiprocessing")
         distances = [dist_to_redshift(dist) for dist in self.cramer_rao_bounds["dist"]]
-        _LOGGER.debug(f"distances: {distances}.")
-
+        phis = self.cramer_rao_bounds["phiS"]
+        thetas = self.cramer_rao_bounds["qS"]
         self._max_redshift = np.max(distances)
 
-        self._redshift_distribution = np.histogram(
-            np.array(
-                distances,
-            ),
-            bins=np.linspace(0, max(distances), int(max(distances) * 100)),
-            density=True,
+        # get 3d gaussian kde for redshift and skylocalization
+        self._redshift_skylocalization_kde = gaussian_kde(
+            np.array([distances, phis, thetas])
         )
-        print(self._redshift_distribution)
+
+        # 3d plot of kde
+        fig = plt.figure(figsize=(16, 9))
+        ax = fig.add_subplot(111, projection="3d")
+        ax.set_title("3D KDE of redshift, phi and theta")
+        distance_range = np.linspace(0, self._max_redshift, 100)
+        phi_range = np.linspace(0, 2 * np.pi, 100)
+        theta_range = np.linspace(0, np.pi, 100)
+        distance_mesh, phi_mesh, theta_mesh = np.meshgrid(
+            distance_range, phi_range, theta_range
+        )
+        positions = np.vstack(
+            [distance_mesh.ravel(), phi_mesh.ravel(), theta_mesh.ravel()]
+        )
+        density = self._redshift_skylocalization_kde(positions)
+        density_normalized = (density - np.min(density)) / (
+            np.max(density) - np.min(density)
+        )
+        alpha_values = (np.cos(density_normalized * np.pi + np.pi) + 1) / 2
+        ax.scatter(
+            distance_mesh,
+            phi_mesh,
+            theta_mesh,
+            c=density,
+            cmap="viridis",
+            alpha=alpha_values,
+            s=alpha_values * 50,
+        )
+        ax.set_xlabel("redshift")
+        ax.set_ylabel("phi")
+        ax.set_zlabel("theta")
+        # plot colormap
+        norm = plt.Normalize(vmin=np.min(density), vmax=np.max(density))
+        fig.colorbar(
+            plt.cm.ScalarMappable(norm=norm, cmap="viridis"), ax=ax, label="density"
+        )
+        plt.savefig("saved_figures/3d_kde.png", dpi=300)
+        plt.close()
+
+        # 2d plots for theta pi/4, pi/2, 3pi/4
+        fig, axs = plt.subplots(1, 3, figsize=(16, 9))
+        for index, theta in enumerate([np.pi / 4, np.pi / 2, 3 * np.pi / 4]):
+            ax = axs[index]
+            ax.set_title(f"2D KDE of redshift and phi for theta = {theta}")
+            distance_mesh, phi_mesh, theta_mesh = np.meshgrid(
+                distance_range, phi_range, np.ones_like(phi_range) * theta
+            )
+            positions = np.vstack(
+                [
+                    distance_mesh.ravel(),
+                    phi_mesh.ravel(),
+                    theta_mesh.ravel(),
+                ]
+            )
+            density = self._redshift_skylocalization_kde(positions)
+            density_normalized = (density - np.min(density)) / (
+                np.max(density) - np.min(density)
+            )
+            alpha_values = (np.cos(density_normalized * np.pi + np.pi) + 1) / 2
+            ax.scatter(
+                distance_mesh,
+                phi_mesh,
+                c=density,
+                cmap="viridis",
+                alpha=alpha_values,
+                s=alpha_values * 50,
+            )
+            ax.set_xlabel("redshift")
+            ax.set_ylabel("phi")
+            # plot colormap
+            norm = plt.Normalize(vmin=np.min(density), vmax=np.max(density))
+            fig.colorbar(
+                plt.cm.ScalarMappable(norm=norm, cmap="viridis"), ax=ax, label="density"
+            )
+        plt.savefig("saved_figures/2d_kde_theta.png", dpi=300)
+        plt.close()
 
         _LOGGER.debug(
             f"Found {len(os.sched_getaffinity(0))} / {os.cpu_count()} (available / system) cpus."
@@ -1390,7 +1520,7 @@ class BayesianStatistics:
         with mp.get_context("spawn").Pool(
             len(os.sched_getaffinity(0)) - 4,
             initializer=child_process_init,
-            initargs=(self._max_redshift, self._redshift_distribution),
+            initargs=(self._max_redshift, self._redshift_skylocalization_kde),
         ) as pool:
             self.p_D(
                 galaxy_catalog=galaxy_catalog,
@@ -1592,14 +1722,12 @@ class BayesianStatistics:
 
         results.extend([result[0] for result in results_with_bh_mass])
 
-        likelihood_without_bh_mass = np.sum(results) 
+        likelihood_without_bh_mass = np.sum(results)
 
         if len(results_with_bh_mass) == 0:
             return likelihood_without_bh_mass, 0.0
 
-        likelihood_with_bh_mass = np.sum(
-            [result[1] for result in results_with_bh_mass]
-        ) 
+        likelihood_with_bh_mass = np.sum([result[1] for result in results_with_bh_mass])
 
         return likelihood_without_bh_mass, likelihood_with_bh_mass
 
@@ -1643,7 +1771,7 @@ def single_host_likelihood(
     evaluate_with_bh_mass: bool,
 ) -> list[float]:
     global max_redshift
-    global redshift_distribution
+    global redshift_skylocalization_kde
     """WL_uncertainty = (
         d_L * 0.066 * (1 - (1 + possible_host.z) ** (-0.25) / 0.25) ** (1.8)
     )"""  # TODO check if correct
@@ -1662,20 +1790,12 @@ def single_host_likelihood(
         z_upper_bound,
         1000,
     )
-    redshift_detection_distribution_weights = np.array(
-        [
-            redshift_distribution[0][
-                next(
-                    (
-                        i
-                        for i, bin_edge in enumerate(redshift_distribution[1])
-                        if bin_edge <= redshift
-                    )
-                )
-            ]
-            for redshift in z_gws
-        ]
+    phis = np.ones(z_gws.shape) * possible_host.phiS
+    thetas = np.ones(z_gws.shape) * possible_host.qS
+    redshift_detection_distribution_weights = redshift_skylocalization_kde(
+        np.array([z_gws, phis, thetas])
     )
+
     distances = [dist(redshift, h=h) for redshift in z_gws]
 
     # multivariate normal distribution for all parameters including the mass
@@ -1839,12 +1959,12 @@ def single_host_likelihood(
 
 def child_process_init(
     current_max_redshift: float,
-    current_redshift_distribution: tuple[np.array, np.array],
+    current_redshift_skylocalization_kde: gaussian_kde,
 ) -> None:
     global max_redshift
-    global redshift_distribution
+    global redshift_skylocalization_kde
     max_redshift = current_max_redshift
-    redshift_distribution = current_redshift_distribution
+    redshift_skylocalization_kde = current_redshift_skylocalization_kde
 
 
 def check_overflow(arr: np.array) -> bool:
