@@ -902,12 +902,47 @@ class BayesianStatistics:
                 color="b",
                 linestyle="--",
             )
+            sigma_deviation = np.abs(popt[0] - H) / popt[1]
+            plt.vlines(
+                popt[0],
+                0,
+                1,
+                color="black",
+                linestyle=":",
+            )
+            plt.hlines(
+                [0.5],
+                min(H, popt[0]),
+                max(H, popt[0]),
+                color="b",
+                linestyle=":",
+                label=f"sigma deviation: {np.round(sigma_deviation, 3)}",
+            )
+
             plt.plot(
                 h_fine,
                 gaussian(h_fine, *popt_with_bh_mass),
                 label=f"std: {np.round(popt_with_bh_mass[1], 3)}, mean: {np.round(popt_with_bh_mass[0], 3)}",
                 color="r",
                 linestyle="--",
+            )
+            sigma_deviation_with_bh_mass = (
+                np.abs(popt_with_bh_mass[0] - H) / popt_with_bh_mass[1]
+            )
+            plt.vlines(
+                popt_with_bh_mass[0],
+                0,
+                1,
+                color="black",
+                linestyle=":",
+            )
+            plt.hlines(
+                [0.4],
+                min(H, popt_with_bh_mass[0]),
+                max(H, popt_with_bh_mass[0]),
+                color="r",
+                linestyle=":",
+                label=f"sigma deviation: {np.round(sigma_deviation_with_bh_mass, 3)}",
             )
         except RuntimeError:
             pass
@@ -1427,7 +1462,7 @@ class BayesianStatistics:
         self._redshift_skylocalization_kde = gaussian_kde(
             np.array([distances, phis, thetas])
         )
-        PLOT_KDE = False
+        PLOT_KDE = True
         if PLOT_KDE:
             distance_range = np.linspace(0, self._max_redshift, 100)
             phi_range = np.linspace(0, 2 * np.pi, 100)
@@ -1449,17 +1484,15 @@ class BayesianStatistics:
             densities = densities.reshape(
                 (len(distance_range), len(phi_range), len(theta_range))
             )
+            densities_phi_integrated = np.trapz(densities, phi_range, axis=1)
 
-            # reduce to redshift kde by integration
-            redshift_kde = np.trapz(
-                np.trapz(
-                    densities,
-                    phi_range,
-                    axis=1,
-                ),
-                theta_range,
-                axis=1,
+            densities_theta_volume_adjusted = np.array(
+                [fixed_z * np.sin(theta_range) for fixed_z in densities_phi_integrated]
             )
+            redshift_kde = np.trapz(
+                densities_theta_volume_adjusted, theta_range, axis=1
+            )
+
             only_redshift_kde = gaussian_kde(distances)
             # compare kde with histogram
             fig, ax = plt.subplots(1, 2, figsize=(16, 9))
@@ -1522,7 +1555,7 @@ class BayesianStatistics:
             """
 
             # 2d plots for fixed thetas
-            fig, axs = plt.subplots(1, 6, figsize=(16, 9))
+            fig, axs = plt.subplots(1, 6, figsize=(16, 9), sharey=True)
             theta_range = np.linspace(0, np.pi, 6)
             min_density = np.inf
             max_density = -np.inf
@@ -1553,10 +1586,9 @@ class BayesianStatistics:
                     s=alpha_values * 50,
                 )
                 ax.set_xlabel("redshift")
-                ax.set_ylabel("phi")
                 min_density = min(min_density, np.min(density))
                 max_density = max(max_density, np.max(density))
-
+            axs[0].set_ylabel("phi")
             norm = plt.Normalize(vmin=min_density, vmax=max_density)
             fig.colorbar(
                 plt.cm.ScalarMappable(norm=norm, cmap="viridis"),
@@ -1752,6 +1784,38 @@ class BayesianStatistics:
             chunksize=chunksize_with_bh_mass,
         )
 
+        # second iteration with best guess detection centered around highsted weighted galaxy
+        galaxy_weights_with_bh_mass = [result[1] for result in results_with_bh_mass]
+
+        best_guess_galaxy = possible_host_galaxies_with_bh_mass[
+            galaxy_weights_with_bh_mass.index(max(galaxy_weights_with_bh_mass))
+        ]
+
+        self.detection = Detection(
+            phi=best_guess_galaxy.phiS,
+            phi_error=self.detection.phi_error,
+            theta=best_guess_galaxy.qS,
+            theta_error=self.detection.theta_error,
+            d_L=dist(best_guess_galaxy.z, h=self.h),
+            d_L_uncertainty=self.detection.d_L_uncertainty,
+            theta_phi_covariance=self.detection.theta_phi_covariance,
+            d_L_phi_covariance=self.detection.d_L_phi_covariance,
+            d_L_theta_covariance=self.detection.d_L_theta_covariance,
+        )
+
+        results_with_bh_mass = pool.starmap(
+            single_host_likelihood,
+            [
+                (
+                    possible_host,
+                    self.detection,
+                    self.h,
+                    True,
+                )
+                for possible_host in possible_host_galaxies_with_bh_mass
+            ],
+            chunksize=chunksize_with_bh_mass,
+        )
         results = pool.starmap(
             single_host_likelihood,
             [
