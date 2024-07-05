@@ -1457,12 +1457,18 @@ class BayesianStatistics:
         ]
         phis = self.cramer_rao_bounds["phiS"]
         thetas = self.cramer_rao_bounds["qS"]
+        masses = self.cramer_rao_bounds["M"]
         self._max_redshift = np.max(distances)
+
         # get 3d gaussian kde for redshift and skylocalization
         self._redshift_skylocalization_kde = gaussian_kde(
             np.array([distances, phis, thetas])
         )
-        PLOT_KDE = True
+        self._redshift_skylocalization_mass_kde = gaussian_kde(
+            np.array([distances, phis, thetas, masses])
+        )
+
+        PLOT_KDE = False
         if PLOT_KDE:
             distance_range = np.linspace(0, self._max_redshift, 100)
             phi_range = np.linspace(0, 2 * np.pi, 100)
@@ -1617,7 +1623,11 @@ class BayesianStatistics:
         with mp.get_context("spawn").Pool(
             len(os.sched_getaffinity(0)) - 4,
             initializer=child_process_init,
-            initargs=(self._max_redshift, self._redshift_skylocalization_kde),
+            initargs=(
+                self._max_redshift,
+                self._redshift_skylocalization_kde,
+                self._redshift_skylocalization_mass_kde,
+            ),
         ) as pool:
             self.p_D(
                 galaxy_catalog=galaxy_catalog,
@@ -1737,7 +1747,7 @@ class BayesianStatistics:
                 detection_galaxy = _get_closest_possible_host(
                     self.detection, possible_hosts_with_bh_mass
                 )
-            
+
             self.detection.phi = detection_galaxy.phiS
             self.detection.theta = detection_galaxy.qS
 
@@ -1901,8 +1911,12 @@ def single_host_likelihood(
     )
     phis = np.ones(z_gws.shape) * possible_host.phiS
     thetas = np.ones(z_gws.shape) * possible_host.qS
+    masses = np.ones(z_gws.shape) * possible_host.M
     redshift_detection_distribution_weights = redshift_skylocalization_kde(
         np.array([z_gws, phis, thetas])
+    )
+    redshift_mass_detection_distribution_weights = redshift_skylocalization_mass_kde(
+        np.array([z_gws, phis, thetas, masses])
     )
 
     distances = [dist(redshift, h=h) for redshift in z_gws]
@@ -1971,24 +1985,6 @@ def single_host_likelihood(
     )
 
     if evaluate_with_bh_mass:
-        """
-        SAMPLING_POINTS = 20
-        SIGMA_RANGE = 6
-        M_gs_z = np.ones(shape=(2 * SAMPLING_POINTS + 1, len(z_gws))) * detection.M
-        for i, factor in enumerate(range(-SAMPLING_POINTS, SAMPLING_POINTS, 1)):
-            M_gs_z[i] = (
-                M_gs_z[i]
-                + factor * detection.M_uncertainty * SIGMA_RANGE / SAMPLING_POINTS
-            )
-
-        z_gw_grid = np.array([z_gws for _ in range(2 * SAMPLING_POINTS + 1)])
-        distances_grid = np.array([distances for _ in range(2 * SAMPLING_POINTS + 1)])
-        redshift_distribution_grid = np.array(
-            [redshift_distribution for _ in range(2 * SAMPLING_POINTS + 1)]
-        )
-
-        M_g = M_gs_z / (1 + z_gw_grid)
-        """
         covariance = [
             [
                 detection.phi_error**2,
@@ -2054,7 +2050,7 @@ def single_host_likelihood(
         # weight with redshift detection distribution
 
         likelihood_with_bh_mass_weighted = (
-            likelihood_with_bh_mass * redshift_detection_distribution_weights
+            likelihood_with_bh_mass * redshift_mass_detection_distribution_weights
         )
 
         # integrate over mass and redshift
@@ -2069,11 +2065,14 @@ def single_host_likelihood(
 def child_process_init(
     current_max_redshift: float,
     current_redshift_skylocalization_kde: gaussian_kde,
+    current_redshift_skylocalization_mass_kde: gaussian_kde,
 ) -> None:
     global max_redshift
     global redshift_skylocalization_kde
+    global redshift_skylocalization_mass_kde
     max_redshift = current_max_redshift
     redshift_skylocalization_kde = current_redshift_skylocalization_kde
+    redshift_skylocalization_mass_kde = current_redshift_skylocalization_mass_kde
 
 
 def check_overflow(arr: np.array) -> bool:
