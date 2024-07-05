@@ -1731,14 +1731,13 @@ class BayesianStatistics:
             )
             if len(possible_hosts_with_bh_mass) == 0:
                 detection_galaxy = _get_closest_possible_host(
-                    self.detection, possible_hosts, self.h
+                    self.detection, possible_hosts
                 )
             else:
                 detection_galaxy = _get_closest_possible_host(
-                    self.detection, possible_hosts_with_bh_mass, self.h
+                    self.detection, possible_hosts_with_bh_mass
                 )
             
-            self.detection.d_L = dist(detection_galaxy.z, h=self.h)
             self.detection.phi = detection_galaxy.phiS
             self.detection.theta = detection_galaxy.qS
 
@@ -2082,12 +2081,10 @@ def check_overflow(arr: np.array) -> bool:
 
 
 def _get_closest_possible_host(
-    detection: Detection, possible_hosts: List[HostGalaxy], h: float
+    detection: Detection, possible_hosts: List[HostGalaxy]
 ) -> HostGalaxy:
     distances = [
         _distance_spherical_coordinates(
-            z1=detection.d_L,
-            z2=dist(host.z, h),
             phi1=detection.phi,
             theta1=detection.theta,
             phi2=host.phiS,
@@ -2099,16 +2096,9 @@ def _get_closest_possible_host(
 
 
 def _distance_spherical_coordinates(
-    z1: float, z2: float, phi1: float, theta1: float, phi2: float, theta2: float
+    phi1: float, theta1: float, phi2: float, theta2: float
 ) -> float:
-    return np.sqrt(
-        z1**2
-        + z2**2
-        - 2
-        * z1
-        * z2
-        * (
-            np.sin(theta1) * np.sin(theta2) * np.cos(phi1 - phi2)
-            + np.cos(theta1) * np.cos(theta2)
-        )
+    return np.arccos(
+        np.sin(theta1) * np.sin(theta2)
+        + np.cos(theta1) * np.cos(theta2) * np.cos(phi1 - phi2)
     )
