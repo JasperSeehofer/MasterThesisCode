@@ -1729,6 +1729,19 @@ class BayesianStatistics:
             _LOGGER.info(
                 f"possible hosts found {len(possible_hosts)}/{len(possible_hosts_with_bh_mass)}..."
             )
+            if len(possible_hosts_with_bh_mass) == 0:
+                detection_galaxy = _get_closest_possible_host(
+                    self.detection, possible_hosts, self.h
+                )
+            else:
+                detection_galaxy = _get_closest_possible_host(
+                    self.detection, possible_hosts_with_bh_mass, self.h
+                )
+            
+            self.detection.d_L = dist(detection_galaxy.z, h=self.h)
+            self.detection.phi = detection_galaxy.phiS
+            self.detection.theta = detection_galaxy.qS
+
             event_likelihood, event_likelihood_with_bh_mass = self.p_Di(
                 possible_host_galaxies=possible_hosts,
                 possible_host_galaxies_with_bh_mass=possible_hosts_with_bh_mass,
@@ -1784,32 +1797,6 @@ class BayesianStatistics:
             chunksize=chunksize_with_bh_mass,
         )
 
-        # second iteration with best guess detection centered around highsted weighted galaxy
-        galaxy_weights_with_bh_mass = [result[1] for result in results_with_bh_mass]
-
-        if len(galaxy_weights_with_bh_mass) > 0:
-            best_guess_galaxy = possible_host_galaxies_with_bh_mass[
-                galaxy_weights_with_bh_mass.index(max(galaxy_weights_with_bh_mass))
-            ]
-
-            self.detection.d_L = dist(best_guess_galaxy.z, h=self.h)
-            self.detection.phi = best_guess_galaxy.phiS
-            self.detection.theta = best_guess_galaxy.qS
-
-            results_with_bh_mass = pool.starmap(
-                single_host_likelihood,
-                [
-                    (
-                        possible_host,
-                        self.detection,
-                        self.h,
-                        True,
-                    )
-                    for possible_host in possible_host_galaxies_with_bh_mass
-                ],
-                chunksize=chunksize_with_bh_mass,
-            )
-            
         results = pool.starmap(
             single_host_likelihood,
             [
@@ -2092,3 +2079,36 @@ def child_process_init(
 
 def check_overflow(arr: np.array) -> bool:
     return np.any(np.isinf(arr))
+
+
+def _get_closest_possible_host(
+    detection: Detection, possible_hosts: List[HostGalaxy], h: float
+) -> HostGalaxy:
+    distances = [
+        _distance_spherical_coordinates(
+            z1=detection.d_L,
+            z2=dist(host.z, h),
+            phi1=detection.phi,
+            theta1=detection.theta,
+            phi2=host.phiS,
+            theta2=host.qS,
+        )
+        for host in possible_hosts
+    ]
+    return possible_hosts[np.argmin(distances)]
+
+
+def _distance_spherical_coordinates(
+    z1: float, z2: float, phi1: float, theta1: float, phi2: float, theta2: float
+) -> float:
+    return np.sqrt(
+        z1**2
+        + z2**2
+        - 2
+        * z1
+        * z2
+        * (
+            np.sin(theta1) * np.sin(theta2) * np.cos(phi1 - phi2)
+            + np.cos(theta1) * np.cos(theta2)
+        )
+    )
