@@ -1468,11 +1468,11 @@ class BayesianStatistics:
             np.array([distances, phis, thetas, masses])
         )
 
-        PLOT_KDE = False
+        PLOT_KDE = True
         if PLOT_KDE:
-            distance_range = np.linspace(0, self._max_redshift, 100)
-            phi_range = np.linspace(0, 2 * np.pi, 100)
-            theta_range = np.linspace(0, np.pi, 100)
+            distance_range = np.linspace(0, self._max_redshift, 50)
+            phi_range = np.linspace(0, 2 * np.pi, 50)
+            theta_range = np.linspace(0, np.pi, 50)
 
             redshift_mesh, phi_mesh, theta_mesh = np.meshgrid(
                 distance_range, phi_range, theta_range
@@ -1561,13 +1561,12 @@ class BayesianStatistics:
             """
 
             # 2d plots for fixed thetas
-            fig, axs = plt.subplots(1, 6, figsize=(16, 9), sharey=True)
             theta_range = np.linspace(0, np.pi, 6)
             min_density = np.inf
             max_density = -np.inf
+            densities_dict = {}
             for index, theta in enumerate(theta_range):
-                ax = axs[index]
-                ax.set_title(f"qS = {np.round(theta/np.pi, 2)}pi")
+                theta_densities_dict = {}
                 distance_mesh, phi_mesh, theta_mesh = np.meshgrid(
                     distance_range, phi_range, np.ones_like(phi_range) * theta
                 )
@@ -1583,24 +1582,43 @@ class BayesianStatistics:
                     np.max(density) - np.min(density)
                 )
                 alpha_values = (np.cos(density_normalized * np.pi + np.pi) + 1) / 2
+                # store in dictionary
+                theta_densities_dict["density"] = density
+                theta_densities_dict["alpha"] = alpha_values
+                theta_densities_dict["distance_mesh"] = distance_mesh
+                theta_densities_dict["phi_mesh"] = phi_mesh
+                theta_densities_dict["theta_mesh"] = theta_mesh
+
+                densities_dict[theta] = theta_densities_dict
+                min_density = min(min_density, np.min(density))
+                max_density = max(max_density, np.max(density))
+
+            # create density colormap
+            color_map = cm.ScalarMappable(
+                norm=plt.Normalize(vmin=min_density, vmax=max_density), cmap="viridis"
+            )
+
+            fig, axs = plt.subplots(1, 6, figsize=(16, 9), sharey=True)
+            for index, theta in enumerate(theta_range):
+                density = densities_dict[theta]["density"]
+                alpha_values = densities_dict[theta]["alpha"]
+                distance_mesh = densities_dict[theta]["distance_mesh"]
+                phi_mesh = densities_dict[theta]["phi_mesh"]
+
+                colors = color_map.to_rgba(density)
+
+                ax = axs[index]
+                ax.set_title(f"qS = {np.round(theta/np.pi, 2)}pi")
                 ax.scatter(
                     distance_mesh,
                     phi_mesh,
-                    c=density,
-                    cmap="viridis",
+                    c=colors,
                     alpha=alpha_values,
                     s=alpha_values * 50,
                 )
                 ax.set_xlabel("redshift")
-                min_density = min(min_density, np.min(density))
-                max_density = max(max_density, np.max(density))
             axs[0].set_ylabel("phi")
-            norm = plt.Normalize(vmin=min_density, vmax=max_density)
-            fig.colorbar(
-                plt.cm.ScalarMappable(norm=norm, cmap="viridis"),
-                ax=axs.ravel().tolist(),
-                label="density",
-            )
+            fig.colorbar(color_map, ax=axs, orientation="vertical", label="density")
             plt.savefig("saved_figures/2d_kde_theta.png", dpi=300)
             plt.close()
 
