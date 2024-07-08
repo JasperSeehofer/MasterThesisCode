@@ -95,10 +95,8 @@ class Detection:
 
     def convert_to_best_guess_parameters(self) -> None:
         while True:
-            self.phi = (np.random.normal(self.phi, self.phi_error) + (2 * np.pi)) % (
-                2 * np.pi
-            )
-            if 0 <= self.phi <= 2 * np.pi:
+            self.phi = np.random.normal(self.phi, self.phi_error)
+            if 0 <= self.phi < 2 * np.pi:
                 break
         while True:
             self.theta = np.random.normal(self.theta, self.theta_error)
@@ -106,7 +104,7 @@ class Detection:
                 break
         while True:
             self.d_L = np.random.normal(self.d_L, self.d_L_uncertainty)
-            if 0 <= self.d_L <= 6.8:
+            if 0 <= self.d_L:
                 break
 
         while True:
@@ -1457,7 +1455,7 @@ class BayesianStatistics:
         ]
         phis = self.cramer_rao_bounds["phiS"]
         thetas = self.cramer_rao_bounds["qS"]
-        masses = self.cramer_rao_bounds["M"]
+        log_10_masses = np.log10(self.cramer_rao_bounds["M"])
         self._max_redshift = np.max(distances)
 
         # get 3d gaussian kde for redshift and skylocalization
@@ -1465,7 +1463,7 @@ class BayesianStatistics:
             np.array([distances, phis, thetas])
         )
         self._redshift_skylocalization_mass_kde = gaussian_kde(
-            np.array([distances, phis, thetas, masses])
+            np.array([distances, phis, thetas, log_10_masses])
         )
 
         PLOT_KDE = True
@@ -1929,12 +1927,12 @@ def single_host_likelihood(
     )
     phis = np.ones(z_gws.shape) * possible_host.phiS
     thetas = np.ones(z_gws.shape) * possible_host.qS
-    masses = np.ones(z_gws.shape) * possible_host.M
+    log_10_masses = np.log10(possible_host.M * (1 + z_gws))
     redshift_detection_distribution_weights = redshift_skylocalization_kde(
         np.array([z_gws, phis, thetas])
     )
     redshift_mass_detection_distribution_weights = redshift_skylocalization_mass_kde(
-        np.array([z_gws, phis, thetas, masses])
+        np.array([z_gws, phis, thetas, log_10_masses])
     )
 
     distances = [dist(redshift, h=h) for redshift in z_gws]
