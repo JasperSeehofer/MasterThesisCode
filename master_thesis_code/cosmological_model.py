@@ -720,7 +720,7 @@ class BayesianStatistics:
         # look at random subset of detections and their posterior
         fig, ax = plt.subplots(1, 2, figsize=(16, 9))
         fig.suptitle(
-            "Posterior distribution of Hubble constant h using several subsets of 50 detections"
+            "Posterior distribution of Hubble constant h using several subsets of 100 detections"
         )
         # create color list with 10 different colors
         NUMBER_OF_SUBSETS = 10
@@ -735,7 +735,7 @@ class BayesianStatistics:
         for count in range(NUMBER_OF_SUBSETS):
             _LOGGER.info(f"Creating subset {count}")
             posteriors_data_subset_indices = np.random.choice(
-                list(self.posterior_data.keys()), 50, replace=False
+                list(self.posterior_data.keys()), 100, replace=False
             )
             posteriors_data_subset = [
                 (index, self.posterior_data[index])
@@ -880,23 +880,37 @@ class BayesianStatistics:
         )
         h_fine = np.linspace(0.6, 0.86, 1000)
         try:
-            popt, perr = curve_fit(
+            popt, pcov = curve_fit(
                 gaussian,
                 self.h_values,
                 posteriors,
                 p0=[H, 0.1, 1],
             )
+            perr = np.sqrt(np.diag(pcov))
 
-            popt_with_bh_mass, perr_with_bh_mass = curve_fit(
+            popt_with_bh_mass, pcov_with_bh_mass = curve_fit(
                 gaussian,
                 self.h_values_with_bh_mass,
                 posteriors_with_bh_mass,
                 p0=[H, 0.1, 1],
             )
+            perr_with_bh_mass = np.sqrt(np.diag(pcov_with_bh_mass))
+
+            # prepare confidence bands
+            upper_limit = [
+                gaussian(x, popt[0], popt[1] + perr[1], popt[2] + perr[2])
+                for x in h_fine
+            ]
+            lower_limit = [
+                gaussian(x, popt[0], popt[1] - perr[1], popt[2] - perr[2])
+                for x in h_fine
+            ]
+            plt.fill_between(h_fine, lower_limit, upper_limit, alpha=0.5, color="b")
+
             plt.plot(
                 h_fine,
                 gaussian(h_fine, *popt),
-                label=f"std: {np.round(popt[1], 3)}, mean: {np.round(popt[0], 3)}",
+                label=f"std: {np.round(popt[1], 3)} +/- {np.round(perr[1], 3)},\nmean: {np.round(popt[0], 3)} +/- {np.round(perr[0], 3)}",
                 color="b",
                 linestyle="--",
             )
@@ -917,10 +931,36 @@ class BayesianStatistics:
                 label=f"sigma deviation: {np.round(sigma_deviation, 3)}",
             )
 
+            upper_limit_with_bh_mass = [
+                gaussian(
+                    x,
+                    popt_with_bh_mass[0],
+                    popt_with_bh_mass[1] + perr_with_bh_mass[1],
+                    popt_with_bh_mass[2] + perr_with_bh_mass[2],
+                )
+                for x in h_fine
+            ]
+            lower_limit_with_bh_mass = [
+                gaussian(
+                    x,
+                    popt_with_bh_mass[0],
+                    popt_with_bh_mass[1] - perr_with_bh_mass[1],
+                    popt_with_bh_mass[2] - perr_with_bh_mass[2],
+                )
+                for x in h_fine
+            ]
+            plt.fill_between(
+                h_fine,
+                lower_limit_with_bh_mass,
+                upper_limit_with_bh_mass,
+                alpha=0.5,
+                color="r",
+            )
+
             plt.plot(
                 h_fine,
                 gaussian(h_fine, *popt_with_bh_mass),
-                label=f"std: {np.round(popt_with_bh_mass[1], 3)}, mean: {np.round(popt_with_bh_mass[0], 3)}",
+                label=f"std: {np.round(popt_with_bh_mass[1], 3)} +/- {np.round(perr_with_bh_mass[1], 3)},\nmean: {np.round(popt_with_bh_mass[0], 3)} +/- {np.round(perr_with_bh_mass[0], 3)}",
                 color="r",
                 linestyle="--",
             )
@@ -957,7 +997,7 @@ class BayesianStatistics:
         plt.xlabel("Hubble constant h")
         plt.ylabel("Posterior")
         plt.legend()
-        plt.savefig("saved_figures/bayesian_statistics.png")
+        plt.savefig("saved_figures/bayesian_statistics.png", dpi=300)
         plt.close()
 
     def visualize_galaxy_weights(self, galaxy_catalog: GalaxyCatalogueHandler) -> None:
@@ -1469,11 +1509,21 @@ class BayesianStatistics:
         PLOT_KDE = True
         if PLOT_KDE:
             distance_range = np.linspace(0, self._max_redshift, 50)
-            phi_range = np.linspace(0, 2 * np.pi, 50)
-            theta_range = np.linspace(0, np.pi, 50)
+            phi_range = np.linspace(0, 2 * np.pi, 30)
+            theta_range = np.linspace(0, np.pi, 20)
+            log_10_mass_range = np.linspace(min(log_10_masses), max(log_10_masses), 40)
 
             redshift_mesh, phi_mesh, theta_mesh = np.meshgrid(
-                distance_range, phi_range, theta_range
+                distance_range, phi_range, theta_range, indexing="ij"
+            )
+
+            (
+                redshift_mesh_with_mass,
+                phi_mesh_with_mass,
+                theta_mesh_with_mass,
+                log_10_mass_mesh,
+            ) = np.meshgrid(
+                distance_range, phi_range, theta_range, log_10_mass_range, indexing="ij"
             )
 
             densities = self._redshift_skylocalization_kde(
@@ -1485,24 +1535,87 @@ class BayesianStatistics:
                     ]
                 )
             )
+            densities_with_mass = self._redshift_skylocalization_mass_kde(
+                np.vstack(
+                    [
+                        redshift_mesh_with_mass.ravel(),
+                        phi_mesh_with_mass.ravel(),
+                        theta_mesh_with_mass.ravel(),
+                        log_10_mass_mesh.ravel(),
+                    ]
+                )
+            )
+
             densities = densities.reshape(
                 (len(distance_range), len(phi_range), len(theta_range))
             )
+
+            densities_with_mass = densities_with_mass.reshape(
+                (
+                    len(distance_range),
+                    len(phi_range),
+                    len(theta_range),
+                    len(log_10_mass_range),
+                )
+            )
+
             densities_phi_integrated = np.trapz(densities, phi_range, axis=1)
 
-            densities_theta_volume_adjusted = np.array(
-                [fixed_z * np.sin(theta_range) for fixed_z in densities_phi_integrated]
-            )
+            # TODO: do I need to use sin(theta) or not?
             redshift_kde = np.trapz(
-                densities_theta_volume_adjusted, theta_range, axis=1
+                densities_phi_integrated,
+                theta_range,
+                axis=1,
+            )
+
+            densities_phi_integrated_with_mass = np.trapz(
+                densities_with_mass, phi_range, axis=1
+            )
+
+            densities_theta_integrated_with_mass = np.trapz(
+                densities_phi_integrated_with_mass,
+                theta_range,
+                axis=1,
+            )
+            densities_mass_integrated_with_mass = np.trapz(
+                densities_theta_integrated_with_mass,
+                log_10_mass_range,
+                axis=1,
             )
 
             only_redshift_kde = gaussian_kde(distances)
+
+            only_redshift_mass_kde = gaussian_kde(np.array([distances, log_10_masses]))
+            redshift_redshift_mass_meshgrid, mass_redshift_mass_meshgrid = np.meshgrid(
+                distance_range, log_10_mass_range, indexing="ij"
+            )
+
             # compare kde with histogram
             fig, ax = plt.subplots(1, 2, figsize=(16, 9))
             ax[0].plot(distance_range, redshift_kde, label="3d kde")
             ax[0].plot(
                 distance_range, only_redshift_kde(distance_range), label="redshift kde"
+            )
+            ax[0].plot(
+                distance_range,
+                np.trapz(
+                    only_redshift_mass_kde(
+                        np.array(
+                            [
+                                redshift_redshift_mass_meshgrid.ravel(),
+                                mass_redshift_mass_meshgrid.ravel(),
+                            ]
+                        )
+                    ).reshape((len(distance_range), len(log_10_mass_range))),
+                    log_10_mass_range,
+                    axis=1,
+                ),
+                label="redshift mass kde integrated",
+            )
+            ax[0].plot(
+                distance_range,
+                densities_mass_integrated_with_mass,
+                label="4d kde integrated",
             )
             ax[1].hist(
                 distances,
@@ -1519,6 +1632,63 @@ class BayesianStatistics:
             ax[1].set_ylabel("density")
             ax[1].legend()
             plt.savefig("saved_figures/redshift_kde_vs_histogram.png", dpi=300)
+            plt.close()
+
+            # compare 2d kde with histogram with mass
+            fig, ax = plt.subplots(1, 3, figsize=(16, 9))
+            ax[0].contourf(
+                distance_range,
+                log_10_mass_range,
+                densities_theta_integrated_with_mass.T,
+                levels=10,
+            )
+            ax[0].set_xlabel("redshift")
+            ax[0].set_ylabel("log 10 mass")
+            ax[0].set_title("4d kde")
+            ax[1].contourf(
+                distance_range,
+                log_10_mass_range,
+                only_redshift_mass_kde(
+                    np.array(
+                        [
+                            redshift_redshift_mass_meshgrid.ravel(),
+                            mass_redshift_mass_meshgrid.ravel(),
+                        ]
+                    )
+                )
+                .reshape((len(distance_range), len(log_10_mass_range)))
+                .T,
+                levels=10,
+            )
+
+            ax[1].set_xlabel("redshift")
+            ax[1].set_ylabel("log 10 mass")
+            ax[1].set_title("redshift mass kde")
+
+            # choose galaxy position from normal distribution
+            distances_errors = [
+                dist_to_redshift(dist)
+                for dist in self.cramer_rao_bounds["delta_dist_delta_dist"] ** (1 / 2)
+            ]
+
+            distances_sampled = [
+                np.random.normal(loc=distance, scale=distance_error)
+                for distance, distance_error in zip(distances, distances_errors)
+            ]
+
+            ax[2].hist2d(
+                distances_sampled,
+                log_10_masses,
+                bins=40,
+                range=[
+                    [0, self._max_redshift],
+                    [min(log_10_masses), max(log_10_masses)],
+                ],
+            )
+            ax[2].set_xlabel("redshift")
+            ax[2].set_ylabel("log 10 mass")
+            ax[2].set_title("histogram")
+            plt.savefig("saved_figures/redshift_mass_kde_vs_histogram.png", dpi=300)
             plt.close()
 
             """
@@ -1566,7 +1736,10 @@ class BayesianStatistics:
             for index, theta in enumerate(theta_range):
                 theta_densities_dict = {}
                 distance_mesh, phi_mesh, theta_mesh = np.meshgrid(
-                    distance_range, phi_range, np.ones_like(phi_range) * theta
+                    distance_range,
+                    phi_range,
+                    np.ones_like(phi_range) * theta,
+                    indexing="ij",
                 )
                 positions = np.vstack(
                     [
@@ -1745,7 +1918,7 @@ class BayesianStatistics:
                 theta_error=self.detection.theta_error,
                 M_z=self.detection.M,
                 M_z_error=self.detection.M_uncertainty,
-                cutoff_multiplier=2.0,
+                cutoff_multiplier=4.0,
             )
 
             if possible_hosts is None:
@@ -1755,6 +1928,8 @@ class BayesianStatistics:
             _LOGGER.info(
                 f"possible hosts found {len(possible_hosts)}/{len(possible_hosts_with_bh_mass)}..."
             )
+
+            """
             if len(possible_hosts_with_bh_mass) == 0:
                 detection_galaxy = _get_closest_possible_host(
                     self.detection, possible_hosts
@@ -1766,6 +1941,7 @@ class BayesianStatistics:
 
             self.detection.phi = detection_galaxy.phiS
             self.detection.theta = detection_galaxy.qS
+            """
 
             event_likelihood, event_likelihood_with_bh_mass = self.p_Di(
                 possible_host_galaxies=possible_hosts,
@@ -1876,7 +2052,7 @@ def use_detection(detection: Detection) -> bool:
     )
     distance_relative_error = detection.d_L_uncertainty / detection.d_L
 
-    if (distance_relative_error < 0.1) and (sky_localization_uncertainty < 0.001):
+    if distance_relative_error < 0.05:
         return True
     _LOGGER.info(
         f"Detection skipped: distance_relative_error {distance_relative_error}, sky_localization_uncertainty {sky_localization_uncertainty}"

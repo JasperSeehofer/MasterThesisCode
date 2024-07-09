@@ -114,7 +114,7 @@ class GalaxyCatalogueHandler:
                 raise FileNotFoundError
 
         _LOGGER.info(
-            "Mapping catalog to spherical coordinates and using empirical relation to estimate BH mass and convert to redshifted mass."
+            "Mapping catalog to spherical coordinates and using empirical relation to estimate BH mass."
         )
         self._map_stellar_masses_to_BH_masses()
         self._map_angles_to_spherical_coordinates()

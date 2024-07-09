@@ -154,7 +154,6 @@ class DataEvaluation:
             possible_host = galaxy_catalog.get_host_galaxy_by_index(
                 detection.host_galaxy_index
             )
-            print(possible_host)
             # create full covariance matrix for all parameters
             covariance_matrix = np.array(
                 [
@@ -486,6 +485,54 @@ class DataEvaluation:
         )
         plt.close()
 
+        # plot skylocalization uncertainty vs distance error
+        plt.figure(figsize=(16, 9))
+        plt.scatter(
+            self._cramer_rao_bounds["delta_dist_delta_dist"] ** 0.5
+            / self._cramer_rao_bounds["dist"],
+            self._cramer_rao_bounds["delta_phiS_delta_phiS"] ** 0.5,
+            label="phiS error",
+        )
+        plt.scatter(
+            self._cramer_rao_bounds["delta_dist_delta_dist"] ** 0.5
+            / self._cramer_rao_bounds["dist"],
+            self._cramer_rao_bounds["delta_qS_delta_qS"] ** 0.5,
+            label="qS error",
+        )
+        plt.scatter(
+            self._cramer_rao_bounds["delta_dist_delta_dist"] ** 0.5
+            / self._cramer_rao_bounds["dist"],
+            self._cramer_rao_bounds["delta_phiS_delta_qS"],
+            label="phiS qS covariance",
+        )
+        plt.scatter(
+            self._cramer_rao_bounds["delta_dist_delta_dist"] ** 0.5
+            / self._cramer_rao_bounds["dist"],
+            d_Omega,
+            label="d_Omega",
+        )
+        plt.xlabel("relative distance error")
+        plt.ylabel("uncertainty in rad")
+        plt.vlines(
+            [0.1, 0.05],
+            0,
+            1,
+            color="black",
+            linestyles="-.",
+            label="distance error threshold",
+        )
+        plt.hlines(
+            0.0006, 0, 5, color="black", linestyles="--", label="uncertainty threshold"
+        )
+        plt.legend()
+        plt.yscale("log")
+        plt.xscale("log")
+        plt.savefig(
+            f"{figures_directory}plots/sky_localization_uncertainty_distance_error.png",
+            dpi=300,
+        )
+        plt.close()
+
         """for bounds_parameter in bounds_parameters:
             bounds_column_name = f"delta_{bounds_parameter}_delta_{bounds_parameter}"
             for dependency_parameter in parameter_symbol_list:
@@ -603,7 +650,12 @@ class DataEvaluation:
 
         grid_x, grid_y = grid_x[:-1, :-1], grid_y[:-1, :-1]
         fig, ax = plt.subplots()
-        contour = ax.contourf(grid_x, grid_y, np.log10(_remove_zeros_from_grid(hist_detections)), cmap="viridis")
+        contour = ax.contourf(
+            grid_x,
+            grid_y,
+            np.log10(_remove_zeros_from_grid(hist_detections)),
+            cmap="viridis",
+        )
         fig.colorbar(contour, label="log 10 detections")
         plt.xlabel("redshift")
         plt.ylabel("log_10 source mass [solar masses]")
@@ -612,7 +664,12 @@ class DataEvaluation:
 
         # plot non detected events
         fig, ax = plt.subplots()
-        contour = ax.contourf(grid_x, grid_y, np.log10(_remove_zeros_from_grid(hist_non_detections)), cmap="viridis")
+        contour = ax.contourf(
+            grid_x,
+            grid_y,
+            np.log10(_remove_zeros_from_grid(hist_non_detections)),
+            cmap="viridis",
+        )
         fig.colorbar(contour, label="log 10 not detected")
         plt.xlabel("redshift")
         plt.ylabel("log_10 source mass [solar masses]")
