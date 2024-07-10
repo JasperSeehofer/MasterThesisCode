@@ -722,8 +722,8 @@ class BayesianStatistics:
         fig, ax = plt.subplots(3, 2, figsize=(16, 9), height_ratios=[3, 1, 1])
 
         # create color list with 10 different colors
-        NUMBER_OF_SUBSETS = 20
-        NUMBER_OF_DETECTIONS = 50
+        NUMBER_OF_SUBSETS = 10
+        NUMBER_OF_DETECTIONS = 25
         fig.suptitle(
             f"Posterior distribution of Hubble constant h using {NUMBER_OF_SUBSETS} subsets of {NUMBER_OF_DETECTIONS} detections"
         )
@@ -762,10 +762,22 @@ class BayesianStatistics:
                 if check_overflow(sub_posteriors * np.array(posterior)):
                     # print("Overflow detected")
                     sub_posteriors = sub_posteriors / np.max(sub_posteriors)
+                elif np.max(sub_posteriors * posterior) == 0.0:
+                    print("All zeros detected")
+                    sub_posteriors = sub_posteriors / np.max(sub_posteriors)
                 sub_posteriors *= np.array(posterior)
             for index, posterior in posteriors_data_with_bh_mass_subset:
+                print(max(posterior))
+                posterior = np.array(posterior) / np.min([value for value in posterior if value > 0])
+                print(posterior)
+                print(sub_posteriors_with_bh_mass)
                 if check_overflow(sub_posteriors_with_bh_mass * np.array(posterior)):
                     # print("Overflow detected")
+                    sub_posteriors_with_bh_mass = sub_posteriors_with_bh_mass / np.max(
+                        sub_posteriors_with_bh_mass
+                    )
+                elif np.max(sub_posteriors_with_bh_mass * posterior) == 0.0:
+                    print("All zeros detected")
                     sub_posteriors_with_bh_mass = sub_posteriors_with_bh_mass / np.max(
                         sub_posteriors_with_bh_mass
                     )
