@@ -11,7 +11,7 @@ import matplotlib.cm as cm
 import time
 from scipy.stats import multivariate_normal, truncnorm, gaussian_kde
 from scipy.optimize import curve_fit
-import statsmodels.api as sm
+# import statsmodels.api as sm
 from statistics import NormalDist
 import multiprocessing as mp
 from master_thesis_code.datamodels.parameter_space import (
@@ -1654,6 +1654,16 @@ class BayesianStatistics:
             np.array([distances, phis, thetas])
         )
 
+        self._redshift_skylocalization_histogramm = np.histogramdd(
+            np.array([distances, phis, thetas]).T,
+            bins=(20, 30, 20),
+            range=(
+                (0, self._max_redshift),
+                (0, 2 * np.pi),
+                (0, np.pi),
+            ),
+        )
+
         self._redshift_skylocalization_mass_kde = gaussian_kde(
             np.array([distances, phis, thetas, log_10_masses])
         )
@@ -1683,7 +1693,7 @@ class BayesianStatistics:
             bw="normal_reference",
         )"""
 
-        PLOT_KDE = True
+        PLOT_KDE = False
         if PLOT_KDE:
             distance_range = np.linspace(0, self._max_redshift, 50)
             phi_range = np.linspace(0, 2 * np.pi, 30)
@@ -2019,8 +2029,8 @@ class BayesianStatistics:
             initializer=child_process_init,
             initargs=(
                 self._max_redshift,
-                self._redshift_skylocalization_kde,
-                self._redshift_skylocalization_mass_kde,
+                self._redshift_skylocalization_histogramm,
+                self._redshift_skylocalization_mass_histogramm,
             ),
         ) as pool:
             self.p_D(
@@ -2287,7 +2297,8 @@ def single_host_likelihood(
     evaluate_with_bh_mass: bool,
 ) -> list[float]:
     global max_redshift
-    global redshift_skylocalization_kde
+    global redshift_skylocalization_histogram
+    global redshift_skylocalization_mass_histogram
     """WL_uncertainty = (
         d_L * 0.066 * (1 - (1 + possible_host.z) ** (-0.25) / 0.25) ** (1.8)
     )"""  # TODO check if correct
@@ -2309,12 +2320,22 @@ def single_host_likelihood(
     phis = np.ones(z_gws.shape) * possible_host.phiS
     thetas = np.ones(z_gws.shape) * possible_host.qS
     log_10_masses = np.log10(possible_host.M * (1 + z_gws))
-    redshift_detection_distribution_weights = redshift_skylocalization_kde(
-        np.array([z_gws, phis, thetas])
+    # find histogram values for parameters
+    parameters = np.array([z_gws, phis, thetas])
+    parameters_with_bh_mass = np.array([z_gws, phis, thetas, log_10_masses])
+
+    # get histogram values
+    bin_indices = np.array(
+        [
+            np.digitize(parameter, bins)
+            for parameter, bins in zip(
+                parameters,
+                redshift_skylocalization_histogram[1],
+            )
+        ]
     )
-    redshift_mass_detection_distribution_weights = redshift_skylocalization_mass_kde(
-        np.array([z_gws, phis, thetas, log_10_masses])
-    )
+
+
 
     distances = [dist(redshift, h=h) for redshift in z_gws]
 
@@ -2461,15 +2482,15 @@ def single_host_likelihood(
 
 def child_process_init(
     current_max_redshift: float,
-    current_redshift_skylocalization_kde: gaussian_kde,
-    current_redshift_skylocalization_mass_kde: gaussian_kde,
+    current_redshift_skylocalization_histogram: tuple[np.array, np.array],
+    current_redshift_skylocalization_mass_histogram: tuple[np.array, np.array]
 ) -> None:
     global max_redshift
-    global redshift_skylocalization_kde
-    global redshift_skylocalization_mass_kde
+    global redshift_skylocalization_histogram
+    global redshift_skylocalization_mass_histogram
     max_redshift = current_max_redshift
-    redshift_skylocalization_kde = current_redshift_skylocalization_kde
-    redshift_skylocalization_mass_kde = current_redshift_skylocalization_mass_kde
+    redshift_skylocalization_histogram = current_redshift_skylocalization_histogram
+    redshift_skylocalization_mass_histogram = current_redshift_skylocalization_mass_histogram
 
 
 def check_overflow(arr: np.array) -> bool:
