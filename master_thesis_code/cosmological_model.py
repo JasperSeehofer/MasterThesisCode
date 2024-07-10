@@ -11,6 +11,7 @@ import matplotlib.cm as cm
 import time
 from scipy.stats import multivariate_normal, truncnorm, gaussian_kde
 from scipy.optimize import curve_fit
+
 # import statsmodels.api as sm
 from statistics import NormalDist
 import multiprocessing as mp
@@ -1663,6 +1664,12 @@ class BayesianStatistics:
                 (0, np.pi),
             ),
         )
+        # renormalize histogramm
+        self._redshift_skylocalization_histogramm = (
+            self._redshift_skylocalization_histogramm[0]
+            / np.sum(self._redshift_skylocalization_histogramm[0]),
+            self._redshift_skylocalization_histogramm[1],
+        )
 
         self._redshift_skylocalization_mass_kde = gaussian_kde(
             np.array([distances, phis, thetas, log_10_masses])
@@ -1677,6 +1684,12 @@ class BayesianStatistics:
                 (0, np.pi),
                 (min(log_10_masses), max(log_10_masses)),
             ),
+        )
+        # renormalize histogramm
+        self._redshift_skylocalization_mass_histogramm = (
+            self._redshift_skylocalization_mass_histogramm[0]
+            / np.sum(self._redshift_skylocalization_mass_histogramm[0]),
+            self._redshift_skylocalization_mass_histogramm[1],
         )
 
         redshift_distribution_from_4d_histogramm = np.sum(
@@ -1902,7 +1915,9 @@ class BayesianStatistics:
             )
             ax[2].set_xlabel("redshift")
             ax[2].set_ylabel("log 10 mass")
-            ax[2].set_title(f"2d histogram #detections={np.sum(redshift_mass_histogram[0])}")
+            ax[2].set_title(
+                f"2d histogram #detections={np.sum(redshift_mass_histogram[0])}"
+            )
             plt.savefig("saved_figures/redshift_mass_kde_vs_histogram.png", dpi=300)
             plt.close()
 
@@ -2333,9 +2348,52 @@ def single_host_likelihood(
                 redshift_skylocalization_histogram[1],
             )
         ]
+    ).T
+    bin_indices_with_bh_mass = np.array(
+        [
+            np.digitize(parameter, bins)
+            for parameter, bins in zip(
+                parameters_with_bh_mass,
+                redshift_skylocalization_mass_histogram[1],
+            )
+        ]
+    ).T
+
+    # append zero to histogram values at the beginning and end
+    redshift_detection_distribution_weights = []
+
+    # need to check for each parameter if it is at the edge of the histogram
+
+    for bin_index in bin_indices:
+        if any(bin_index == 0):
+            redshift_detection_distribution_weights.append(0.0)
+        else:
+            try:
+                redshift_detection_distribution_weights.append(
+                    redshift_skylocalization_histogram[0][tuple(bin_index - 1)]
+                )
+            except IndexError:
+                redshift_detection_distribution_weights.append(0.0)
+
+    redshift_detection_distribution_weights = np.array(
+        redshift_detection_distribution_weights
     )
 
+    redshift_mass_detection_distribution_weights = []
+    for bin_index in bin_indices_with_bh_mass:
+        if any(bin_index == 0):
+            redshift_mass_detection_distribution_weights.append(0.0)
+        else:
+            try:
+                redshift_mass_detection_distribution_weights.append(
+                    redshift_skylocalization_mass_histogram[0][tuple(bin_index - 1)]
+                )
+            except IndexError:
+                redshift_mass_detection_distribution_weights.append(0.0)
 
+    redshift_mass_detection_distribution_weights = np.array(
+        redshift_mass_detection_distribution_weights
+    )
 
     distances = [dist(redshift, h=h) for redshift in z_gws]
 
@@ -2483,14 +2541,16 @@ def single_host_likelihood(
 def child_process_init(
     current_max_redshift: float,
     current_redshift_skylocalization_histogram: tuple[np.array, np.array],
-    current_redshift_skylocalization_mass_histogram: tuple[np.array, np.array]
+    current_redshift_skylocalization_mass_histogram: tuple[np.array, np.array],
 ) -> None:
     global max_redshift
     global redshift_skylocalization_histogram
     global redshift_skylocalization_mass_histogram
     max_redshift = current_max_redshift
     redshift_skylocalization_histogram = current_redshift_skylocalization_histogram
-    redshift_skylocalization_mass_histogram = current_redshift_skylocalization_mass_histogram
+    redshift_skylocalization_mass_histogram = (
+        current_redshift_skylocalization_mass_histogram
+    )
 
 
 def check_overflow(arr: np.array) -> bool:
