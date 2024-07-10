@@ -10,8 +10,8 @@ import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 import time
 from scipy.stats import multivariate_normal, truncnorm, gaussian_kde
-from scipy.stats import multivariate_normal, truncnorm, gaussian_kde
 from scipy.optimize import curve_fit
+import statsmodels.api as sm
 from statistics import NormalDist
 import multiprocessing as mp
 from master_thesis_code.datamodels.parameter_space import (
@@ -718,12 +718,15 @@ class BayesianStatistics:
         plt.close()
 
         # look at random subset of detections and their posterior
-        fig, ax = plt.subplots(1, 2, figsize=(16, 9))
-        fig.suptitle(
-            "Posterior distribution of Hubble constant h using several subsets of 100 detections"
-        )
+        fig, ax = plt.subplots(3, 2, figsize=(16, 9), height_ratios=[3, 1, 1])
+
         # create color list with 10 different colors
-        NUMBER_OF_SUBSETS = 10
+        NUMBER_OF_SUBSETS = 20
+        NUMBER_OF_DETECTIONS = 50
+        fig.suptitle(
+            f"Posterior distribution of Hubble constant h using {NUMBER_OF_SUBSETS} subsets of {NUMBER_OF_DETECTIONS} detections"
+        )
+        subset_y_positions = np.linspace(0.3, 1.3, NUMBER_OF_SUBSETS)
         # create a colormap
         cmap = plt.cm.get_cmap(
             "viridis", NUMBER_OF_SUBSETS
@@ -731,11 +734,15 @@ class BayesianStatistics:
 
         # create a list of 10 colors from the colormap
         colors = [cmap(i) for i in range(cmap.N)]
+        overall_sigma_dev, overall_sigma_dev_error = [], []
+        overall_sigma_dev_with_bh_mass, overall_sigma_dev_error_with_bh_mass = [], []
+        overall_h_mean, overall_h_error = [], []
+        overall_h_mean_with_bh_mass, overall_h_error_with_bh_mass = [], []
 
         for count in range(NUMBER_OF_SUBSETS):
             _LOGGER.info(f"Creating subset {count}")
             posteriors_data_subset_indices = np.random.choice(
-                list(self.posterior_data.keys()), 100, replace=False
+                list(self.posterior_data.keys()), NUMBER_OF_DETECTIONS, replace=False
             )
             posteriors_data_subset = [
                 (index, self.posterior_data[index])
@@ -782,59 +789,203 @@ class BayesianStatistics:
             # fit normal distribution to posteriors with h values
             h_values_fine = np.linspace(0.6, 0.86, 1000)
             try:
-                popt, perr = curve_fit(
+                popt, pcov = curve_fit(
                     gaussian,
                     temp_h_values,
                     sub_posteriors,
                     p0=[H, 0.1, 1],
                 )
+                perr = np.sqrt(np.diag(pcov))
 
-                popt_with_bh_mass, perr_with_bh_mass = curve_fit(
+                popt_with_bh_mass, pcov_with_bh_mass = curve_fit(
                     gaussian,
                     temp_h_values_with_bh_mass,
                     sub_posteriors_with_bh_mass,
                     p0=[H, 0.1, 1],
                 )
-                ax[0].plot(
+                perr_with_bh_mass = np.sqrt(np.diag(pcov_with_bh_mass))
+
+                sigma_dev, sigma_dev_error = compute_sigma_deviation(
+                    popt[1], perr[1], popt[0], perr[0]
+                )
+
+                sigma_dev_with_bh_mass, sigma_dev_error_with_bh_mass = (
+                    compute_sigma_deviation(
+                        popt_with_bh_mass[1],
+                        perr_with_bh_mass[1],
+                        popt_with_bh_mass[0],
+                        perr_with_bh_mass[0],
+                    )
+                )
+
+                overall_sigma_dev.append(sigma_dev)
+                overall_sigma_dev_error.append(sigma_dev_error)
+                overall_sigma_dev_with_bh_mass.append(sigma_dev_with_bh_mass)
+                overall_sigma_dev_error_with_bh_mass.append(
+                    sigma_dev_error_with_bh_mass
+                )
+                overall_h_mean.append(popt[0])
+                overall_h_error.append(popt[1])
+                overall_h_mean_with_bh_mass.append(popt_with_bh_mass[0])
+                overall_h_error_with_bh_mass.append(popt_with_bh_mass[1])
+
+                ax[0, 0].plot(
                     h_values_fine,
                     gaussian(h_values_fine, *popt),
                     label=f"std: {np.round(popt[1], 3)}, mean: {np.round(popt[0], 3)}",
                     color=colors[count],
                     linestyle="--",
                 )
-                ax[1].plot(
+                ax[1, 0].errorbar(
+                    popt[0],
+                    subset_y_positions[count],
+                    capsize=5,
+                    xerr=popt[1],
+                    color=colors[count],
+                )
+                ax[2, 0].errorbar(
+                    sigma_dev,
+                    subset_y_positions[count],
+                    capsize=5,
+                    xerr=sigma_dev_error,
+                    color=colors[count],
+                )
+
+                ax[0, 1].plot(
                     h_values_fine,
                     gaussian(h_values_fine, *popt_with_bh_mass),
                     label=f"std: {np.round(popt_with_bh_mass[1], 3)}, mean: {np.round(popt_with_bh_mass[0], 3)}",
                     color=colors[count],
                     linestyle="--",
                 )
+                ax[1, 1].errorbar(
+                    popt_with_bh_mass[0],
+                    subset_y_positions[count],
+                    capsize=5,
+                    xerr=popt_with_bh_mass[1],
+                    color=colors[count],
+                )
+                ax[2, 1].errorbar(
+                    sigma_dev_with_bh_mass,
+                    subset_y_positions[count],
+                    capsize=5,
+                    xerr=sigma_dev_error_with_bh_mass,
+                    color=colors[count],
+                )
+
             except RuntimeError:
                 pass
 
-            ax[0].scatter(
+            ax[0, 0].scatter(
                 temp_h_values,
                 sub_posteriors,
                 label="without BH mass",
                 color=colors[count],
                 s=2,
             )
-            ax[1].scatter(
+            ax[0, 1].scatter(
                 temp_h_values_with_bh_mass,
                 sub_posteriors_with_bh_mass,
                 label="with BH mass",
                 color=colors[count],
                 s=2,
             )
-        # print true value
-        ax[0].axvline(H, color="g", linestyle="--")
-        ax[0].set_xlabel("Hubble constant h")
-        ax[0].set_ylabel("Posterior")
-        ax[0].set_title(f"without BH mass")
-        ax[1].axvline(H, color="g", linestyle="--")
-        ax[1].set_xlabel("Hubble constant h")
-        ax[1].set_ylabel("Posterior")
-        ax[1].set_title(f"with BH mass")
+        # plot overall sigma deviation
+        mean_sigma_dev = np.mean(overall_sigma_dev)
+        mean_sigma_dev_error = np.mean(overall_sigma_dev_error)
+        mean_sigma_dev_with_bh_mass = np.mean(overall_sigma_dev_with_bh_mass)
+        mean_sigma_dev_error_with_bh_mass = np.mean(
+            overall_sigma_dev_error_with_bh_mass
+        )
+
+        mean_h = np.mean(overall_h_mean)
+        mean_h_error = np.mean(overall_h_error)
+        mean_h_with_bh_mass = np.mean(overall_h_mean_with_bh_mass)
+        mean_h_error_with_bh_mass = np.mean(overall_h_error_with_bh_mass)
+
+        ax[2, 0].errorbar(
+            mean_sigma_dev,
+            0,
+            fmt="|",
+            xerr=mean_sigma_dev_error,
+            color="red",
+            lw=2,
+            capthick=2,
+            capsize=10,
+            label=f"mean sigma deviation: {np.round(mean_sigma_dev, 3)} +/- {np.round(mean_sigma_dev_error, 3)}",
+        )
+        ax[1, 0].errorbar(
+            mean_h,
+            0,
+            xerr=mean_h_error,
+            lw=2,
+            capthick=2,
+            fmt="|",
+            color="red",
+            capsize=10,
+            label=f"mean h: {np.round(mean_h, 3)} +/- {np.round(mean_h_error, 3)}",
+        )
+
+        ax[2, 1].errorbar(
+            mean_sigma_dev_with_bh_mass,
+            0,
+            fmt="|",
+            xerr=mean_sigma_dev_error_with_bh_mass,
+            color="red",
+            capsize=10,
+            lw=2,
+            capthick=2,
+            label=f"mean sigma deviation: {np.round(mean_sigma_dev_with_bh_mass, 3)} +/- {np.round(mean_sigma_dev_error_with_bh_mass, 3)}",
+        )
+
+        ax[1, 1].errorbar(
+            mean_h_with_bh_mass,
+            0,
+            fmt="|",
+            xerr=mean_h_error_with_bh_mass,
+            color="red",
+            capsize=10,
+            lw=2,
+            capthick=2,
+            label=f"mean h: {np.round(mean_h_with_bh_mass, 3)} +/- {np.round(mean_h_error_with_bh_mass, 3)}",
+        )
+
+        ax[0, 0].axvline(H, color="g", linestyle="--")
+        ax[0, 0].set_xlabel("Hubble constant h")
+        ax[0, 0].set_ylabel("Posterior")
+        ax[0, 0].set_title(f"without BH mass")
+        ax[0, 0].set_xlim(0.6, 0.86)
+
+        ax[1, 0].axvline(H, color="g", linestyle="--")
+        ax[1, 0].set_yticks([0, 1], ["mean", "subsets"])
+        ax[1, 0].set_ylim(-0.2, 1.5)
+        ax[1, 0].set_xlabel("predicted h")
+        ax[1, 0].set_xlim(0.6, 0.86)
+        ax[1, 0].legend()
+
+        ax[2, 0].set_yticks([0, 1], ["mean", "subsets"])
+        ax[2, 0].set_ylim(-0.2, 1.5)
+        ax[2, 0].set_xlabel("sigma deviation")
+        ax[2, 0].legend()
+
+        ax[0, 1].axvline(H, color="g", linestyle="--")
+        ax[0, 1].set_xlabel("Hubble constant h")
+        ax[0, 1].set_ylabel("Posterior")
+        ax[0, 1].set_title(f"with BH mass")
+        ax[0, 1].set_xlim(0.6, 0.86)
+
+        ax[1, 1].axvline(H, color="g", linestyle="--")
+        ax[1, 1].set_yticks([0, 1], ["mean", "subsets"])
+        ax[1, 1].set_ylim(-0.2, 1.5)
+        ax[1, 1].set_xlabel("predicted h")
+        ax[1, 1].set_xlim(0.6, 0.86)
+        ax[1, 1].legend()
+
+        ax[2, 1].set_yticks([0, 1], ["mean", "subsets"])
+        ax[2, 1].set_ylim(-0.2, 1.5)
+        ax[2, 1].set_xlabel("sigma deviation")
+        ax[2, 1].legend()
+        plt.tight_layout()
         plt.savefig(
             f"saved_figures/bayesian_statistics_event_posteriors_subsets.png",
             dpi=300,
@@ -1502,9 +1653,35 @@ class BayesianStatistics:
         self._redshift_skylocalization_kde = gaussian_kde(
             np.array([distances, phis, thetas])
         )
+
         self._redshift_skylocalization_mass_kde = gaussian_kde(
             np.array([distances, phis, thetas, log_10_masses])
         )
+
+        self._redshift_skylocalization_mass_histogramm = np.histogramdd(
+            np.array([distances, phis, thetas, log_10_masses]).T,
+            bins=(20, 30, 20, 40),
+            range=(
+                (0, self._max_redshift),
+                (0, 2 * np.pi),
+                (0, np.pi),
+                (min(log_10_masses), max(log_10_masses)),
+            ),
+        )
+
+        redshift_distribution_from_4d_histogramm = np.sum(
+            self._redshift_skylocalization_mass_histogramm[0], axis=(1, 2, 3)
+        )
+
+        redshift_mass_distribution_from_4d_histogramm = np.sum(
+            self._redshift_skylocalization_mass_histogramm[0], axis=(1, 2)
+        )
+
+        """self._redshift_skylocalization_mass_kde = sm.nonparametric.KDEMultivariate(
+            data=np.array([distances, phis, thetas, log_10_masses]).T,
+            var_type="uuuu",
+            bw="normal_reference",
+        )"""
 
         PLOT_KDE = True
         if PLOT_KDE:
@@ -1617,12 +1794,24 @@ class BayesianStatistics:
                 densities_mass_integrated_with_mass,
                 label="4d kde integrated",
             )
-            ax[1].hist(
+            # plot reduced histogramm
+            ax[0].bar(
+                self._redshift_skylocalization_mass_histogramm[1][0][:-1],
+                redshift_distribution_from_4d_histogramm,
+                width=np.diff(self._redshift_skylocalization_mass_histogramm[1][0]),
+                label=f"histogram total #detection={np.sum(redshift_distribution_from_4d_histogramm)}",
+                alpha=0.5,
+            )
+            redshift_histogram = np.histogram(
                 distances,
                 bins=20,
                 range=(0, self._max_redshift),
-                density=True,
-                label="histogram",
+            )
+            ax[1].bar(
+                redshift_histogram[1][:-1],
+                redshift_histogram[0],
+                width=np.diff(redshift_histogram[1]),
+                label=f"histogram total #detection={np.sum(redshift_histogram[0])}",
             )
             fig.suptitle("Redshift kde vs histogram")
             ax[0].set_xlabel("redshift")
@@ -1634,7 +1823,7 @@ class BayesianStatistics:
             plt.savefig("saved_figures/redshift_kde_vs_histogram.png", dpi=300)
             plt.close()
 
-            # compare 2d kde with histogram with mass
+            # compare 4d histogramm with 4d kde and 2d histogramm
             fig, ax = plt.subplots(1, 3, figsize=(16, 9))
             ax[0].contourf(
                 distance_range,
@@ -1645,25 +1834,26 @@ class BayesianStatistics:
             ax[0].set_xlabel("redshift")
             ax[0].set_ylabel("log 10 mass")
             ax[0].set_title("4d kde")
-            ax[1].contourf(
-                distance_range,
-                log_10_mass_range,
-                only_redshift_mass_kde(
-                    np.array(
-                        [
-                            redshift_redshift_mass_meshgrid.ravel(),
-                            mass_redshift_mass_meshgrid.ravel(),
-                        ]
-                    )
-                )
-                .reshape((len(distance_range), len(log_10_mass_range)))
-                .T,
-                levels=10,
+
+            extent = [
+                self._redshift_skylocalization_mass_histogramm[1][0][0],  # min x
+                self._redshift_skylocalization_mass_histogramm[1][0][-2],  # max x
+                self._redshift_skylocalization_mass_histogramm[1][3][0],  # min y
+                self._redshift_skylocalization_mass_histogramm[1][3][-2],  # max y
+            ]
+            ax[1].imshow(
+                redshift_mass_distribution_from_4d_histogramm.T,
+                aspect="auto",
+                origin="lower",
+                extent=extent,
+                interpolation="nearest",
             )
 
             ax[1].set_xlabel("redshift")
             ax[1].set_ylabel("log 10 mass")
-            ax[1].set_title("redshift mass kde")
+            ax[1].set_title(
+                f"4d hist #detections={np.sum(redshift_mass_distribution_from_4d_histogramm)}"
+            )
 
             # choose galaxy position from normal distribution
             distances_errors = [
@@ -1676,18 +1866,33 @@ class BayesianStatistics:
                 for distance, distance_error in zip(distances, distances_errors)
             ]
 
-            ax[2].hist2d(
+            redshift_mass_histogram = np.histogram2d(
                 distances_sampled,
                 log_10_masses,
-                bins=40,
+                bins=100,
                 range=[
                     [0, self._max_redshift],
                     [min(log_10_masses), max(log_10_masses)],
                 ],
             )
+
+            extent = [
+                redshift_mass_histogram[1][0],
+                redshift_mass_histogram[1][-1],
+                redshift_mass_histogram[2][0],
+                redshift_mass_histogram[2][-1],
+            ]
+
+            ax[2].imshow(
+                redshift_mass_histogram[0].T,
+                aspect="auto",
+                origin="lower",
+                extent=extent,
+                interpolation="nearest",
+            )
             ax[2].set_xlabel("redshift")
             ax[2].set_ylabel("log 10 mass")
-            ax[2].set_title("histogram")
+            ax[2].set_title(f"2d histogram #detections={np.sum(redshift_mass_histogram[0])}")
             plt.savefig("saved_figures/redshift_mass_kde_vs_histogram.png", dpi=300)
             plt.close()
 
@@ -2293,3 +2498,13 @@ def _distance_spherical_coordinates(
         np.sin(theta1) * np.sin(theta2)
         + np.cos(theta1) * np.cos(theta2) * np.cos(phi1 - phi2)
     )
+
+
+def compute_sigma_deviation(
+    sigma: float, sigma_error: float, h_mean: float, h_mean_error: float
+) -> float:
+    sigma_dev = np.abs(H - h_mean) / sigma
+    sigma_dev_error = (
+        np.sqrt((sigma_error * sigma_dev) ** 2 + (h_mean_error) ** 2) / sigma
+    )
+    return sigma_dev, sigma_dev_error
