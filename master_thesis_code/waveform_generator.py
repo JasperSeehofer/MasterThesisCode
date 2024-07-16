@@ -33,7 +33,9 @@ pn5_aak_configuration = {
 # FAST LISA RESPONSE configuration
 # order of the langrangian interpolation
 order = 35
-orbit_file_esa = "./lisa_files/esa-trailing-orbits.h5"
+orbit_file_esa = (
+    "./lisa_files/esa-trailing-orbits.h5"  # TODO: check if this is still correct
+)
 orbit_kwargs_esa = dict(orbit_file=orbit_file_esa)
 # 1st or 2nd or custom (see docs for custom)
 tdi_gen = "1st generation"

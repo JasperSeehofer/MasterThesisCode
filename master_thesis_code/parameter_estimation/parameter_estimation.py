@@ -90,7 +90,9 @@ class ParameterEstimation:
 
         for parameter in vars(self.parameter_space).values():
 
-            _LOGGER.info(f"Start computing partial derivative of the waveform w.r.t. {parameter.symbol}.")
+            _LOGGER.info(
+                f"Start computing partial derivative of the waveform w.r.t. {parameter.symbol}."
+            )
 
             parameter_evaluated_at = parameter
             derivative_epsilon = parameter.derivative_epsilon
@@ -215,7 +217,9 @@ class ParameterEstimation:
         for channel, tdi_channel_a, tdi_channel_b in zip(
             ESA_TDI_CHANNELS, tdi_channels_a, tdi_channels_b
         ):
-            fs = cufft.rfftfreq(len(tdi_channel_a), self.dt)[1:]
+            fs = cufft.rfftfreq(len(tdi_channel_a), self.dt)[
+                1:
+            ]  # TODO: still needed to avoid zero frequency?
             a_fft = cufft.rfft(tdi_channel_a)[1:]
             b_fft_cc = cp.conjugate(cufft.rfft(tdi_channel_b))[1:]
             power_spectral_density = self.lisa_configuration.power_spectral_density(
@@ -347,7 +351,11 @@ class ParameterEstimation:
         return snr
 
     def save_cramer_rao_bound(
-        self, cramer_rao_bound_dictionary: dict, snr: float, simulation_index: int, host_galaxy_index: int = -1, 
+        self,
+        cramer_rao_bound_dictionary: dict,
+        snr: float,
+        simulation_index: int,
+        host_galaxy_index: int = -1,
     ) -> None:
         file_path = CRAMER_RAO_BOUNDS_PATH.replace("$index", str(simulation_index))
         try:
@@ -562,7 +570,7 @@ class ParameterEstimation:
         file_path = UNDETECTED_EVENTS_PATH.replace("$index", str(simulation_index))
         try:
             snr_analysis = pd.read_csv(file_path)
-            
+
         except FileNotFoundError:
             parameters_list = list(self.parameter_space._parameters_to_dict().keys())
             parameters_list.extend(["T", "dt", "SNR", "generation_time"])
@@ -579,5 +587,7 @@ class ParameterEstimation:
         if snr_analysis.empty:
             snr_analysis = new_snr_analysis
         else:
-            snr_analysis = pd.concat([snr_analysis, new_snr_analysis], ignore_index=True)
+            snr_analysis = pd.concat(
+                [snr_analysis, new_snr_analysis], ignore_index=True
+            )
         snr_analysis.to_csv(file_path, index=False)

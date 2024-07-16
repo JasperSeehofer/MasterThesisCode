@@ -2177,9 +2177,6 @@ class BayesianStatistics:
                 Omega_m_max=self.cosmological_model.Omega_m.upper_limit,
             )
 
-            if z_max > self._max_redshift:
-                z_max = self._max_redshift
-
             possible_hosts = galaxy_catalog.get_possible_hosts(
                 z_min=z_min,
                 z_max=z_max,
