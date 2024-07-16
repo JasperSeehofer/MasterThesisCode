@@ -722,8 +722,8 @@ class BayesianStatistics:
         fig, ax = plt.subplots(3, 2, figsize=(16, 9), height_ratios=[3, 1, 1])
 
         # create color list with 10 different colors
-        NUMBER_OF_SUBSETS = 10
-        NUMBER_OF_DETECTIONS = 25
+        NUMBER_OF_SUBSETS = 20
+        NUMBER_OF_DETECTIONS = 50
         fig.suptitle(
             f"Posterior distribution of Hubble constant h using {NUMBER_OF_SUBSETS} subsets of {NUMBER_OF_DETECTIONS} detections"
         )
@@ -767,10 +767,6 @@ class BayesianStatistics:
                     sub_posteriors = sub_posteriors / np.max(sub_posteriors)
                 sub_posteriors *= np.array(posterior)
             for index, posterior in posteriors_data_with_bh_mass_subset:
-                print(max(posterior))
-                posterior = np.array(posterior) / np.min([value for value in posterior if value > 0])
-                print(posterior)
-                print(sub_posteriors_with_bh_mass)
                 if check_overflow(sub_posteriors_with_bh_mass * np.array(posterior)):
                     # print("Overflow detected")
                     sub_posteriors_with_bh_mass = sub_posteriors_with_bh_mass / np.max(
@@ -1160,6 +1156,7 @@ class BayesianStatistics:
         )
         plt.xlabel("Hubble constant h")
         plt.ylabel("Posterior")
+        plt.xlim(0.6, 0.86)
         plt.legend()
         plt.savefig("saved_figures/bayesian_statistics.png", dpi=300)
         plt.close()
@@ -1377,7 +1374,7 @@ class BayesianStatistics:
                     label=f"true galaxy rank {true_galaxy_ranking_index_bh_mass + 1}.",
                 )"""
 
-                if h_value == H:
+                if np.round(h_value, 2) == H:
                     # plot redshift mass distribution
                     axs[1, 1].scatter(
                         host_galaxies_redshift,
@@ -1662,7 +1659,6 @@ class BayesianStatistics:
         log_10_masses = np.log10(self.cramer_rao_bounds["M"])
         self._max_redshift = np.max(distances)
 
-
         self._redshift_skylocalization_histogramm = np.histogramdd(
             np.array([distances, phis, thetas]).T,
             bins=(20, 30, 20),
@@ -1673,9 +1669,13 @@ class BayesianStatistics:
             ),
         )
         # renormalize histogramm
+        self._redshift_skylocalization_histogram_detection_count = np.sum(
+            self._redshift_skylocalization_histogramm[0]
+        )
+
         self._redshift_skylocalization_histogramm = (
             self._redshift_skylocalization_histogramm[0]
-            / np.sum(self._redshift_skylocalization_histogramm[0]),
+            / self._redshift_skylocalization_histogram_detection_count,
             self._redshift_skylocalization_histogramm[1],
         )
 
@@ -1690,13 +1690,16 @@ class BayesianStatistics:
             ),
         )
         # renormalize histogramm
+        self._redshift_skylocalization_mass_histogram_detection_count = np.sum(
+            self._redshift_skylocalization_mass_histogramm[0]
+        )
         self._redshift_skylocalization_mass_histogramm = (
             self._redshift_skylocalization_mass_histogramm[0]
-            / np.sum(self._redshift_skylocalization_mass_histogramm[0]),
+            / self._redshift_skylocalization_mass_histogram_detection_count,
             self._redshift_skylocalization_mass_histogramm[1],
         )
 
-        PLOT_KDE = False
+        PLOT_KDE = True
         if PLOT_KDE:
             # get 3d gaussian kde for redshift and skylocalization
             self._redshift_skylocalization_kde = gaussian_kde(
@@ -1707,6 +1710,10 @@ class BayesianStatistics:
             )
             redshift_distribution_from_4d_histogramm = np.sum(
                 self._redshift_skylocalization_mass_histogramm[0], axis=(1, 2, 3)
+            )
+
+            redshift_distribution_from_3d_histogramm = np.sum(
+                self._redshift_skylocalization_histogramm[0], axis=(1, 2)
             )
 
             redshift_mass_distribution_from_4d_histogramm = np.sum(
@@ -1801,12 +1808,20 @@ class BayesianStatistics:
             )
 
             # compare kde with histogram
-            fig, ax = plt.subplots(1, 2, figsize=(16, 9))
-            ax[0].plot(distance_range, redshift_kde, label="3d kde")
-            ax[0].plot(
-                distance_range, only_redshift_kde(distance_range), label="redshift kde"
+            fig, ax = plt.subplots(2, 2, figsize=(16, 9), height_ratios=[3, 1])
+            ax[0, 0].plot(
+                distance_range,
+                redshift_kde
+                / self._redshift_skylocalization_mass_histogram_detection_count,
+                label="3d kde",
             )
-            ax[0].plot(
+            ax[0, 0].plot(
+                distance_range,
+                only_redshift_kde(distance_range)
+                / self._redshift_skylocalization_mass_histogram_detection_count,
+                label="redshift kde",
+            )
+            ax[0, 0].plot(
                 distance_range,
                 np.trapz(
                     only_redshift_mass_kde(
@@ -1819,20 +1834,29 @@ class BayesianStatistics:
                     ).reshape((len(distance_range), len(log_10_mass_range))),
                     log_10_mass_range,
                     axis=1,
-                ),
+                )
+                / self._redshift_skylocalization_mass_histogram_detection_count,
                 label="redshift mass kde integrated",
             )
-            ax[0].plot(
+            ax[0, 0].plot(
                 distance_range,
-                densities_mass_integrated_with_mass,
+                densities_mass_integrated_with_mass
+                / self._redshift_skylocalization_mass_histogram_detection_count,
                 label="4d kde integrated",
             )
             # plot reduced histogramm
-            ax[0].bar(
+            ax[0, 0].bar(
                 self._redshift_skylocalization_mass_histogramm[1][0][:-1],
                 redshift_distribution_from_4d_histogramm,
                 width=np.diff(self._redshift_skylocalization_mass_histogramm[1][0]),
-                label=f"histogram total #detection={np.sum(redshift_distribution_from_4d_histogramm)}",
+                label=f"4d histogram total #detection={np.round(np.sum(redshift_distribution_from_4d_histogramm), 2)}",
+                alpha=0.5,
+            )
+            ax[0, 0].bar(
+                self._redshift_skylocalization_histogramm[1][0][:-1],
+                redshift_distribution_from_3d_histogramm,
+                width=np.diff(self._redshift_skylocalization_histogramm[1][0]),
+                label=f"3d histogram total #detection={np.round(np.sum(redshift_distribution_from_3d_histogramm), 2)}",
                 alpha=0.5,
             )
             redshift_histogram = np.histogram(
@@ -1840,19 +1864,30 @@ class BayesianStatistics:
                 bins=20,
                 range=(0, self._max_redshift),
             )
-            ax[1].bar(
+            ax[0, 1].bar(
                 redshift_histogram[1][:-1],
-                redshift_histogram[0],
+                redshift_histogram[0]
+                / np.sum(self._redshift_skylocalization_mass_histogram_detection_count),
                 width=np.diff(redshift_histogram[1]),
-                label=f"histogram total #detection={np.sum(redshift_histogram[0])}",
+                label=f"histogram total #detection={np.sum(redshift_histogram[0])/self._redshift_skylocalization_mass_histogram_detection_count}",
+            )
+            # plot 1,0 show difference between histograms
+            ax[1, 0].plot(
+                self._redshift_skylocalization_histogramm[1][0][:-1],
+                redshift_distribution_from_3d_histogramm
+                - redshift_distribution_from_4d_histogramm,
+                label="3d - 4d histogram",
             )
             fig.suptitle("Redshift kde vs histogram")
-            ax[0].set_xlabel("redshift")
-            ax[0].set_ylabel("density")
-            ax[0].legend()
-            ax[1].set_xlabel("redshift")
-            ax[1].set_ylabel("density")
-            ax[1].legend()
+            ax[0, 0].set_xlabel("redshift")
+            ax[0, 0].set_ylabel("density")
+            ax[0, 0].legend()
+            ax[0, 1].set_xlabel("redshift")
+            ax[0, 1].set_ylabel("density")
+            ax[0, 1].legend()
+            ax[1, 0].set_xlabel("redshift")
+            ax[1, 0].set_ylabel("difference")
+            ax[1, 0].legend()
             plt.savefig("saved_figures/redshift_kde_vs_histogram.png", dpi=300)
             plt.close()
 
