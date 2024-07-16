@@ -449,16 +449,22 @@ class GalaxyCatalogueHandler:
             ** 2
         )
 
+    def get_random_hosts(self, number_of_hosts: int) -> Iterable:
+        random_hosts = self._pruned_galaxy_catalog.sample(number_of_hosts)
+        return iter(
+            [HostGalaxy(parameters) for _, parameters in random_hosts.iterrows()]
+        )
+
     def get_random_hosts_in_mass_range(
         self,
         lower_limit: float,
         upper_limit: float,
         max_dist: float = 4.5,
+        number_of_hosts: int = 500,
         impose_isotropic: bool = False,
     ) -> Iterable:
-        NUMBER_OF_HOSTS = 400
-        thetas = np.arccos(np.random.uniform(-1.0, 1.0, NUMBER_OF_HOSTS))
-        phis = np.random.uniform(0.0, 2 * np.pi, NUMBER_OF_HOSTS)
+        thetas = np.arccos(np.random.uniform(-1.0, 1.0, number_of_hosts))
+        phis = np.random.uniform(0.0, 2 * np.pi, number_of_hosts)
 
         restricted_galaxy_catalogue = self.reduced_galaxy_catalog[
             (self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS] >= lower_limit)
@@ -494,7 +500,7 @@ class GalaxyCatalogueHandler:
                 return_list.append(HostGalaxy(host))
             return iter(return_list)
         else:
-            random_hosts = restricted_galaxy_catalogue.sample(NUMBER_OF_HOSTS)
+            random_hosts = restricted_galaxy_catalogue.sample(number_of_hosts)
             return iter(
                 [HostGalaxy(parameters) for _, parameters in random_hosts.iterrows()]
             )

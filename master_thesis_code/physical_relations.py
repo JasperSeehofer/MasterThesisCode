@@ -164,17 +164,14 @@ def get_redshift_outer_bounds(
     """
     Calculate the outer bounds for the redshift for a given luminosity distance and error w.r.t LamCDM model.
     """
+    # FOR NOW IGNORE UNCERTAINTIES IN OMEGA_DE AND W
     Omega_de_min = 1 - Omega_m_min
     Omega_de_max = 1 - Omega_m_max
     if distance - 2 * distance_error < 0:
         z_min = 0
     else:
-        z_min = dist_to_redshift(
-            distance - 2 * distance_error, h_min, Omega_m_min, Omega_de_min, w_0, w_a
-        )
-    z_max = dist_to_redshift(
-        distance + 2 * distance_error, h_max, Omega_m_max, Omega_de_max, w_0, w_a
-    )
+        z_min = dist_to_redshift(distance - 2 * distance_error, h_min)
+    z_max = dist_to_redshift(distance + 2 * distance_error, h_max)
     return z_min, z_max
 
 

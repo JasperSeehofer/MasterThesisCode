@@ -2165,12 +2165,8 @@ class BayesianStatistics:
             except KeyError:
                 self.posterior_data[index] = []
                 self.posterior_data_with_bh_mass[index] = []
-            # convert true mass to redshifted mass because that is the observed mass
-            detection["M"] = convert_true_mass_to_redshifted_mass_with_distance(
-                detection["M"], detection["dist"]
-            )
+
             self.detection = Detection(detection)
-            # self.detection.convert_to_best_guess_parameters()
 
             z_min, z_max = get_redshift_outer_bounds(
                 distance=self.detection.d_L,
@@ -2193,7 +2189,7 @@ class BayesianStatistics:
                 theta_error=self.detection.theta_error,
                 M_z=self.detection.M,
                 M_z_error=self.detection.M_uncertainty,
-                cutoff_multiplier=3.0,
+                cutoff_multiplier=4.0,
             )
 
             if possible_hosts is None:
@@ -2304,6 +2300,7 @@ class BayesianStatistics:
         ] = galaxy_likelihoods
 
         if len(results) == 0:
+            print("no results found")
             return 0.0, 0.0
 
         results.extend([result[0] for result in results_with_bh_mass])
