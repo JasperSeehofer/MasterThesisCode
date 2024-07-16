@@ -1662,10 +1662,6 @@ class BayesianStatistics:
         log_10_masses = np.log10(self.cramer_rao_bounds["M"])
         self._max_redshift = np.max(distances)
 
-        # get 3d gaussian kde for redshift and skylocalization
-        self._redshift_skylocalization_kde = gaussian_kde(
-            np.array([distances, phis, thetas])
-        )
 
         self._redshift_skylocalization_histogramm = np.histogramdd(
             np.array([distances, phis, thetas]).T,
@@ -1681,10 +1677,6 @@ class BayesianStatistics:
             self._redshift_skylocalization_histogramm[0]
             / np.sum(self._redshift_skylocalization_histogramm[0]),
             self._redshift_skylocalization_histogramm[1],
-        )
-
-        self._redshift_skylocalization_mass_kde = gaussian_kde(
-            np.array([distances, phis, thetas, log_10_masses])
         )
 
         self._redshift_skylocalization_mass_histogramm = np.histogramdd(
@@ -1704,22 +1696,28 @@ class BayesianStatistics:
             self._redshift_skylocalization_mass_histogramm[1],
         )
 
-        redshift_distribution_from_4d_histogramm = np.sum(
-            self._redshift_skylocalization_mass_histogramm[0], axis=(1, 2, 3)
-        )
+        PLOT_KDE = False
+        if PLOT_KDE:
+            # get 3d gaussian kde for redshift and skylocalization
+            self._redshift_skylocalization_kde = gaussian_kde(
+                np.array([distances, phis, thetas])
+            )
+            self._redshift_skylocalization_mass_kde = gaussian_kde(
+                np.array([distances, phis, thetas, log_10_masses])
+            )
+            redshift_distribution_from_4d_histogramm = np.sum(
+                self._redshift_skylocalization_mass_histogramm[0], axis=(1, 2, 3)
+            )
 
-        redshift_mass_distribution_from_4d_histogramm = np.sum(
-            self._redshift_skylocalization_mass_histogramm[0], axis=(1, 2)
-        )
+            redshift_mass_distribution_from_4d_histogramm = np.sum(
+                self._redshift_skylocalization_mass_histogramm[0], axis=(1, 2)
+            )
 
-        """self._redshift_skylocalization_mass_kde = sm.nonparametric.KDEMultivariate(
+            """self._redshift_skylocalization_mass_kde = sm.nonparametric.KDEMultivariate(
             data=np.array([distances, phis, thetas, log_10_masses]).T,
             var_type="uuuu",
             bw="normal_reference",
-        )"""
-
-        PLOT_KDE = False
-        if PLOT_KDE:
+            )"""
             distance_range = np.linspace(0, self._max_redshift, 50)
             phi_range = np.linspace(0, 2 * np.pi, 30)
             theta_range = np.linspace(0, np.pi, 20)
