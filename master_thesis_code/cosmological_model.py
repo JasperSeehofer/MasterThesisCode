@@ -1699,7 +1699,7 @@ class BayesianStatistics:
             self._redshift_skylocalization_mass_histogramm[1],
         )
 
-        PLOT_KDE = True
+        PLOT_KDE = False
         if PLOT_KDE:
             # get 3d gaussian kde for redshift and skylocalization
             self._redshift_skylocalization_kde = gaussian_kde(
