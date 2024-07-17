@@ -618,7 +618,9 @@ class BayesianStatistics:
         fig.suptitle("Redshift distribution of subsets of detections")
         # look for bias in distances of detections by taking subsets of the data
         for count in range(30):
-            distances_subset = np.random.choice(distances, 50, replace=False)
+            distances_subset = np.random.choice(
+                distances, int(len(distances) / 2), replace=False
+            )
             # get hist as points for better visualization
             hist, bins = np.histogram(
                 distances_subset,
@@ -803,6 +805,7 @@ class BayesianStatistics:
                     temp_h_values,
                     sub_posteriors,
                     p0=[H, 0.1, 1],
+                    bounds=([0.6, 0, 0], [0.86, 10, 10]),
                 )
                 perr = np.sqrt(np.diag(pcov))
 
@@ -811,6 +814,7 @@ class BayesianStatistics:
                     temp_h_values_with_bh_mass,
                     sub_posteriors_with_bh_mass,
                     p0=[H, 0.1, 1],
+                    bounds=([0.6, 0, 0], [0.86, 10, 10]),
                 )
                 perr_with_bh_mass = np.sqrt(np.diag(pcov_with_bh_mass))
 
@@ -1045,6 +1049,7 @@ class BayesianStatistics:
                 self.h_values,
                 posteriors,
                 p0=[H, 0.1, 1],
+                bounds=([0.6, 0, 0], [0.86, 10, 2]),
             )
             perr = np.sqrt(np.diag(pcov))
 
@@ -1053,6 +1058,7 @@ class BayesianStatistics:
                 self.h_values_with_bh_mass,
                 posteriors_with_bh_mass,
                 p0=[H, 0.1, 1],
+                bounds=([0.6, 0, 0], [0.86, 10, 10]),
             )
             perr_with_bh_mass = np.sqrt(np.diag(pcov_with_bh_mass))
 
@@ -1143,7 +1149,7 @@ class BayesianStatistics:
                 label=f"sigma deviation: {np.round(sigma_deviation_with_bh_mass, 3)}",
             )
         except RuntimeError:
-            pass
+            logging.warning("Could not fit gaussian to data")
 
         # add true value as line
         plt.axvline(H, color="g", linestyle="--")
@@ -1157,6 +1163,7 @@ class BayesianStatistics:
         plt.xlabel("Hubble constant h")
         plt.ylabel("Posterior")
         plt.xlim(0.6, 0.86)
+        plt.ylim(0, 1)
         plt.legend()
         plt.savefig("saved_figures/bayesian_statistics.png", dpi=300)
         plt.close()
@@ -1183,34 +1190,37 @@ class BayesianStatistics:
             if len(host_galaxy_weights.keys()) == len(self.h_values_with_bh_mass)
         }
 
-        max_likelihood_without_bh_mass = max(
-            [
-                np.max(
-                    [
-                        np.max([likelihood[0] for _, likelihood in value])
-                        for value in host_galaxy_weights.values()
-                    ]
-                )
-                for host_galaxy_weights in weight_data.values()
-            ]
-        )
-        max_likelihood_with_bh_mass = max(
-            [
-                np.max(
-                    [
-                        np.max([likelihood[1] for _, likelihood in value])
-                        for value in host_galaxy_weights.values()
-                    ]
-                )
-                for host_galaxy_weights in weight_data.values()
-            ]
-        )
+        max_likelihood_without_bh_mass_by_detection = {
+            detection_index: np.max(
+                [
+                    np.sum([likelihood[0] for _, likelihood in value])
+                    for value in host_galaxy_weights.values()
+                ]
+            )
+            for detection_index, host_galaxy_weights in weight_data.items()
+        }
+
+        max_likelihood_with_bh_mass_by_detection = {
+            detection_index: np.max(
+                [
+                    np.sum([likelihood[1] for _, likelihood in value])
+                    for value in host_galaxy_weights.values()
+                ]
+            )
+            for detection_index, host_galaxy_weights in weight_data.items()
+        }
         for detection_index, host_galaxy_weights_by_h_value in weight_data.items():
             _LOGGER.info(f"Visualizing galaxy weights for detection {detection_index}")
             detection = Detection(self.cramer_rao_bounds.iloc[int(detection_index)])
             true_galaxy = Detection(
                 self.true_cramer_rao_bounds.iloc[int(detection_index)]
             )
+            max_likelihood_without_bh_mass = (
+                max_likelihood_without_bh_mass_by_detection[detection_index]
+            )
+            max_likelihood_with_bh_mass = max_likelihood_with_bh_mass_by_detection[
+                detection_index
+            ]
             true_galaxy_index = int(
                 self.true_cramer_rao_bounds.iloc[int(detection_index)][
                     "host_galaxy_index"
@@ -1237,43 +1247,27 @@ class BayesianStatistics:
                 host_galaxies_mean_redshift = np.mean(host_galaxies_redshift)
 
                 host_galaxies_mass = np.array([galaxy.M for galaxy in host_galaxies])
-                likelihoods_without_bh_mass = (
-                    np.array([weights[0] for _, weights in host_galaxy_weights])
-                    / max_likelihood_without_bh_mass
+                likelihoods_without_bh_mass = np.array(
+                    [weights[0] for _, weights in host_galaxy_weights]
                 )
-                likelihoods_with_bh_mass = (
-                    np.array([weights[1] for _, weights in host_galaxy_weights])
-                    / max_likelihood_with_bh_mass
+                likelihoods_with_bh_mass = np.array(
+                    [weights[1] for _, weights in host_galaxy_weights]
                 )
 
-                detection_likelihood_without_bh_mass = np.sum(
-                    likelihoods_without_bh_mass
+                detection_likelihood_without_bh_mass = (
+                    np.sum(likelihoods_without_bh_mass) / max_likelihood_without_bh_mass
                 )
-                detection_likelihood_with_bh_mass = np.sum(likelihoods_with_bh_mass)
-
-                axs[0, 0].scatter(
-                    [h_value],
-                    detection_likelihood_without_bh_mass,
-                    c="b",
-                    label="without BH mass",
+                detection_likelihood_with_bh_mass = (
+                    np.sum(likelihoods_with_bh_mass) / max_likelihood_with_bh_mass
                 )
-                axs[0, 0].axvline(H, color="g", linestyle="--")
-                axs[0, 0].set_title(f"detection likelihood without bh mass")
-
-                axs[1, 0].scatter(
-                    [h_value],
-                    detection_likelihood_with_bh_mass,
-                    c="r",
-                    label="with BH mass",
-                )
-                axs[1, 0].axvline(H, color="g", linestyle="--")
-                axs[1, 0].set_title(f"detection likelihood with bh mass")
 
                 # plot likelihood contribution by redshift bins
                 redshift_bins = np.linspace(
                     min(host_galaxies_redshift), max(host_galaxies_redshift), num=21
                 )
                 likelihood_bin_contribution = []
+                likelihood_with_bh_mass_bin_contribution = []
+                galaxies_per_bin = []
                 for bin_number in range(20):
                     redshift_min = redshift_bins[bin_number]
                     redshift_max = redshift_bins[bin_number + 1]
@@ -1283,6 +1277,7 @@ class BayesianStatistics:
                             host_galaxies_redshift < redshift_max,
                         )
                     )[0]
+                    galaxies_per_bin.append(len(bin_galaxies))
                     contribution = np.sum(
                         [
                             likelihood
@@ -1290,9 +1285,26 @@ class BayesianStatistics:
                         ]
                     )
                     likelihood_bin_contribution.append(contribution)
+                    contribution_with_bh_mass = np.sum(
+                        [
+                            likelihood
+                            for likelihood in likelihoods_with_bh_mass[bin_galaxies]
+                        ]
+                    )
+                    likelihood_with_bh_mass_bin_contribution.append(
+                        contribution_with_bh_mass
+                    )
+                # plt galaxy number per bin in plot 0,0
 
                 cmap = cm.get_cmap("viridis")
-                axs[0, 1].plot(
+
+                axs[0, 0].scatter(
+                    redshift_bins[:-1],
+                    np.array(likelihood_bin_contribution) / np.array(galaxies_per_bin),
+                    color=cmap(h_value),
+                )
+
+                axs[0, 1].scatter(
                     redshift_bins[:-1], likelihood_bin_contribution, c=cmap(h_value)
                 )
                 axs[0, 1].axvline(
@@ -1312,6 +1324,33 @@ class BayesianStatistics:
                     label="detection redshift",
                 )
                 axs[0, 1].set_title("redshift distribution")
+
+                # plot likelihoods
+                # try the weighting by the number of galaxies in the bin
+                detection_likelihood_without_bh_mass = np.sum(
+                    np.array(likelihood_bin_contribution) / np.array(galaxies_per_bin)
+                )
+                detection_likelihood_with_bh_mass = np.sum(
+                    np.array(likelihood_with_bh_mass_bin_contribution)
+                    / np.array(galaxies_per_bin)
+                )
+                axs[1, 0].scatter(
+                    [h_value],
+                    detection_likelihood_without_bh_mass,
+                    c="b",
+                    label="without BH mass",
+                )
+
+                axs[1, 1].scatter(
+                    [h_value],
+                    detection_likelihood_with_bh_mass,
+                    c="r",
+                    label="with BH mass",
+                )
+                axs[1, 0].axvline(H, color="g", linestyle="--")
+                axs[1, 0].set_title(f"likelihood without BH mass")
+                axs[1, 1].axvline(H, color="g", linestyle="--")
+                axs[1, 1].set_title(f"likelihood with BH mass")
 
                 """
                 # plot weights of true galaxy in detection
@@ -1372,9 +1411,10 @@ class BayesianStatistics:
                     true_galaxy_likelihood_with_bh_mass,
                     c="r",
                     label=f"true galaxy rank {true_galaxy_ranking_index_bh_mass + 1}.",
-                )"""
-
-                if np.round(h_value, 2) == H:
+                )
+                """
+                PLOT_GALAXIES = False
+                if (np.round(h_value, 2) == H) and PLOT_GALAXIES:
                     # plot redshift mass distribution
                     axs[1, 1].scatter(
                         host_galaxies_redshift,
@@ -1657,7 +1697,9 @@ class BayesianStatistics:
         phis = self.cramer_rao_bounds["phiS"]
         thetas = self.cramer_rao_bounds["qS"]
         log_10_masses = np.log10(self.cramer_rao_bounds["M"])
-        self._max_redshift = np.max(distances)
+        self._max_redshift = dist_to_redshift(
+            max(self.cramer_rao_bounds["dist"]), self.cosmological_model.h.upper_limit
+        )
 
         self._redshift_skylocalization_histogramm = np.histogramdd(
             np.array([distances, phis, thetas]).T,
@@ -2361,11 +2403,11 @@ def single_host_likelihood(
     )"""  # TODO check if correct
 
     # redshift samples around peak
-    z_lower_bound = possible_host.z - 5 * possible_host.z_error
+    z_lower_bound = possible_host.z - 4 * possible_host.z_error
     if z_lower_bound < 0:
         # print(f"lower bound is less than 0: {z_lower_bound}", flush=True)
         z_lower_bound = 0.0
-    z_upper_bound = possible_host.z + 5 * possible_host.z_error
+    z_upper_bound = possible_host.z + 4 * possible_host.z_error
     if z_upper_bound > max_redshift:
         # print(f"upper bound is greater than max redshift: {z_upper_bound}", flush=True)
         z_upper_bound = max_redshift
@@ -2626,7 +2668,7 @@ def _distance_spherical_coordinates(
 def compute_sigma_deviation(
     sigma: float, sigma_error: float, h_mean: float, h_mean_error: float
 ) -> float:
-    sigma_dev = np.abs(H - h_mean) / sigma
+    sigma_dev = (h_mean - H) / sigma
     sigma_dev_error = (
         np.sqrt((sigma_error * sigma_dev) ** 2 + (h_mean_error) ** 2) / sigma
     )
