@@ -1695,7 +1695,8 @@ class BayesianStatistics:
 
         self.h = h_value
         _LOGGER.info("prepare global variable for multiprocessing")
-        distances = [
+        distances = self.cramer_rao_bounds["dist"]
+        redshifts = [
             dist_to_redshift(distance=dist, h=h_value)
             for dist in self.cramer_rao_bounds["dist"]
         ]
@@ -1773,7 +1774,7 @@ class BayesianStatistics:
         PLOT_KDE = False
         if PLOT_KDE:
             self._redshift_skylocalization_histogramm = np.histogramdd(
-                np.array([distances, phis, thetas]).T,
+                np.array([redshifts, phis, thetas]).T,
                 bins=(20, 30, 20),
                 range=(
                     (0, self._max_redshift),
@@ -1793,7 +1794,7 @@ class BayesianStatistics:
             )
 
             self._redshift_skylocalization_mass_histogramm = np.histogramdd(
-                np.array([distances, phis, thetas, log_10_masses]).T,
+                np.array([redshifts, phis, thetas, log_10_masses]).T,
                 bins=(20, 30, 20, 40),
                 range=(
                     (0, self._max_redshift),
@@ -1925,9 +1926,9 @@ class BayesianStatistics:
                 axis=1,
             )
 
-            only_redshift_kde = gaussian_kde(distances)
+            only_redshift_kde = gaussian_kde(redshifts)
 
-            only_redshift_mass_kde = gaussian_kde(np.array([distances, log_10_masses]))
+            only_redshift_mass_kde = gaussian_kde(np.array([redshifts, log_10_masses]))
             redshift_redshift_mass_meshgrid, mass_redshift_mass_meshgrid = np.meshgrid(
                 distance_range, log_10_mass_range, indexing="ij"
             )
@@ -1983,7 +1984,7 @@ class BayesianStatistics:
                 alpha=0.5,
             )
             redshift_histogram = np.histogram(
-                distances,
+                redshifts,
                 bins=20,
                 range=(0, self._max_redshift),
             )
@@ -2055,7 +2056,7 @@ class BayesianStatistics:
 
             distances_sampled = [
                 np.random.normal(loc=distance, scale=distance_error)
-                for distance, distance_error in zip(distances, distances_errors)
+                for distance, distance_error in zip(redshifts, distances_errors)
             ]
 
             redshift_mass_histogram = np.histogram2d(
