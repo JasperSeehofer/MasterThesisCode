@@ -1710,7 +1710,6 @@ class BayesianStatistics:
         phi_mass_covs = self.cramer_rao_bounds["delta_phiS_delta_M"]
         theta_mass_covs = self.cramer_rao_bounds["delta_qS_delta_M"]
 
-
         self._max_redshift = dist_to_redshift(
             max(self.cramer_rao_bounds["dist"]), self.cosmological_model.h.upper_limit
         )
@@ -1724,7 +1723,6 @@ class BayesianStatistics:
                     [dist_phi_cov, phi_var, phi_theta_cov],
                     [dist_theta_cov, phi_theta_cov, theta_var],
                 ],
-
             )
             for dist, phi, theta, dist_var, phi_var, theta_var, dist_phi_cov, dist_theta_cov, phi_theta_cov in zip(
                 distances,
@@ -1767,50 +1765,48 @@ class BayesianStatistics:
             )
         ]
 
-        
-        self._redshift_skylocalization_histogramm = np.histogramdd(
-            np.array([distances, phis, thetas]).T,
-            bins=(20, 30, 20),
-            range=(
-                (0, self._max_redshift),
-                (0, 2 * np.pi),
-                (0, np.pi),
-            ),
-        )
-        # renormalize histogramm
-        self._redshift_skylocalization_histogram_detection_count = np.sum(
-            self._redshift_skylocalization_histogramm[0]
-        )
-
-        self._redshift_skylocalization_histogramm = (
-            self._redshift_skylocalization_histogramm[0]
-            / self._redshift_skylocalization_histogram_detection_count,
-            self._redshift_skylocalization_histogramm[1],
-        )
-
-        self._redshift_skylocalization_mass_histogramm = np.histogramdd(
-            np.array([distances, phis, thetas, log_10_masses]).T,
-            bins=(20, 30, 20, 40),
-            range=(
-                (0, self._max_redshift),
-                (0, 2 * np.pi),
-                (0, np.pi),
-                (min(log_10_masses), max(log_10_masses)),
-            ),
-        )
-        # renormalize histogramm
-        self._redshift_skylocalization_mass_histogram_detection_count = np.sum(
-            self._redshift_skylocalization_mass_histogramm[0]
-        )
-        self._redshift_skylocalization_mass_histogramm = (
-            self._redshift_skylocalization_mass_histogramm[0]
-            / self._redshift_skylocalization_mass_histogram_detection_count,
-            self._redshift_skylocalization_mass_histogramm[1],
-        )
-        
-
         PLOT_KDE = False
         if PLOT_KDE:
+            self._redshift_skylocalization_histogramm = np.histogramdd(
+                np.array([distances, phis, thetas]).T,
+                bins=(20, 30, 20),
+                range=(
+                    (0, self._max_redshift),
+                    (0, 2 * np.pi),
+                    (0, np.pi),
+                ),
+            )
+            # renormalize histogramm
+            self._redshift_skylocalization_histogram_detection_count = np.sum(
+                self._redshift_skylocalization_histogramm[0]
+            )
+
+            self._redshift_skylocalization_histogramm = (
+                self._redshift_skylocalization_histogramm[0]
+                / self._redshift_skylocalization_histogram_detection_count,
+                self._redshift_skylocalization_histogramm[1],
+            )
+
+            self._redshift_skylocalization_mass_histogramm = np.histogramdd(
+                np.array([distances, phis, thetas, log_10_masses]).T,
+                bins=(20, 30, 20, 40),
+                range=(
+                    (0, self._max_redshift),
+                    (0, 2 * np.pi),
+                    (0, np.pi),
+                    (min(log_10_masses), max(log_10_masses)),
+                ),
+            )
+            # renormalize histogramm
+            self._redshift_skylocalization_mass_histogram_detection_count = np.sum(
+                self._redshift_skylocalization_mass_histogramm[0]
+            )
+            self._redshift_skylocalization_mass_histogramm = (
+                self._redshift_skylocalization_mass_histogramm[0]
+                / self._redshift_skylocalization_mass_histogram_detection_count,
+                self._redshift_skylocalization_mass_histogramm[1],
+            )
+
             # get 3d gaussian kde for redshift and skylocalization
             redshift_distribution_from_4d_histogramm = np.sum(
                 self._redshift_skylocalization_mass_histogramm[0], axis=(1, 2, 3)
@@ -1833,7 +1829,7 @@ class BayesianStatistics:
             phi_range = np.linspace(0, 2 * np.pi, 30)
             theta_range = np.linspace(0, np.pi, 20)
             log_10_mass_range = np.linspace(min(log_10_masses), max(log_10_masses), 40)
-            mass_range = 10 ** log_10_mass_range
+            mass_range = 10**log_10_mass_range
 
             redshift_mesh, phi_mesh, theta_mesh = np.meshgrid(
                 distance_range, phi_range, theta_range, indexing="ij"
@@ -1850,32 +1846,42 @@ class BayesianStatistics:
 
             values = np.array(
                 [
-                    dist(redshift_mesh.ravel(), h_value),
+                    [dist(redshift, h_value) for redshift in redshift_mesh.ravel()],
                     phi_mesh.ravel(),
                     theta_mesh.ravel(),
                 ]
             ).T
-            densities = np.array([
+
+            densities = np.array(
                 np.sum(
-                    [gaussian.pdf(value) for gaussian in detection_distribution_gaussians]
+                    [
+                        gaussian.pdf(values)
+                        for gaussian in detection_distribution_gaussians
+                    ],
+                    axis=0,
                 )
-                for value in values
-            ])
-                
+            )
+
             values_with_mass = np.array(
                 [
-                    dist(redshift_mesh_with_mass.ravel(), h_value),
+                    [
+                        dist(redshift, h_value)
+                        for redshift in redshift_mesh_with_mass.ravel()
+                    ],
                     phi_mesh_with_mass.ravel(),
                     theta_mesh_with_mass.ravel(),
                     mass_mesh.ravel(),
                 ]
             ).T
-            densities_with_mass = np.array([
+            densities_with_mass = np.array(
                 np.sum(
-                    [gaussian.pdf(value) for gaussian in detection_distribution_with_mass_gaussians]
+                    [
+                        gaussian.pdf(values_with_mass)
+                        for gaussian in detection_distribution_with_mass_gaussians
+                    ],
+                    axis=0,
                 )
-                for value in values_with_mass
-            ])
+            )
 
             densities = densities.reshape(
                 (len(distance_range), len(phi_range), len(theta_range))
@@ -1923,12 +1929,11 @@ class BayesianStatistics:
 
             # compare kde with histogram
             fig, ax = plt.subplots(2, 2, figsize=(16, 9), height_ratios=[3, 1])
-            ax[0, 0].plot(
+            """ax[0, 0].plot(
                 distance_range,
-                redshift_kde
-                / self._redshift_skylocalization_mass_histogram_detection_count,
+                redshift_kde / len(self.cramer_rao_bounds),
                 label="3d gaussian sum",
-            )
+            )"""
             ax[0, 0].plot(
                 distance_range,
                 only_redshift_kde(distance_range)
@@ -1954,8 +1959,7 @@ class BayesianStatistics:
             )
             ax[0, 0].plot(
                 distance_range,
-                densities_mass_integrated_with_mass
-                / self._redshift_skylocalization_mass_histogram_detection_count,
+                densities_mass_integrated_with_mass / len(self.cramer_rao_bounds),
                 label="4d kde integrated",
             )
             # plot reduced histogramm
@@ -2009,12 +2013,13 @@ class BayesianStatistics:
             fig, ax = plt.subplots(1, 3, figsize=(16, 9))
             ax[0].contourf(
                 distance_range,
-                log_10_mass_range,
+                mass_range,
                 densities_theta_integrated_with_mass.T,
                 levels=10,
             )
             ax[0].set_xlabel("redshift")
             ax[0].set_ylabel("log 10 mass")
+            ax[0].set_yscale("log")
             ax[0].set_title("4d kde")
 
             extent = [
@@ -2130,14 +2135,27 @@ class BayesianStatistics:
                     np.ones_like(phi_range) * theta,
                     indexing="ij",
                 )
-                positions = np.vstack(
+                positions = np.array(
                     [
                         distance_mesh.ravel(),
                         phi_mesh.ravel(),
                         theta_mesh.ravel(),
                     ]
+                ).T
+
+                density = np.array(
+                    np.sum(
+                        [
+                            gaussian.pdf(positions)
+                            for gaussian in detection_distribution_gaussians
+                        ],
+                        axis=0,
+                    )
                 )
-                density = self._redshift_skylocalization_kde(positions)
+                density = density.reshape(
+                    (len(distance_range), len(phi_range), len(phi_range))
+                )
+
                 density_normalized = (density - np.min(density)) / (
                     np.max(density) - np.min(density)
                 )
@@ -2447,7 +2465,7 @@ def use_detection(detection: Detection) -> bool:
 
 
 def gaussian(x: float, mu: float, sigma: float, a: float) -> float:
-    return  a * np.exp(-0.5 * ((x - mu) / sigma) ** 2)
+    return a * np.exp(-0.5 * ((x - mu) / sigma) ** 2)
 
 
 def _sky_localization_uncertainty(
@@ -2497,19 +2515,29 @@ def single_host_likelihood(
     parameters_with_bh_mass = np.array([distances, phis, thetas, masses]).T
 
     # get distribution values
-    redshift_detection_distribution_weights = np.array([
-        np.sum(
-            [gaussian.pdf(parameters) for gaussian in redshift_skylocalization_distribution],
-            axis=0
-        )
-    ])
+    redshift_detection_distribution_weights = np.array(
+        [
+            np.sum(
+                [
+                    gaussian.pdf(parameters)
+                    for gaussian in redshift_skylocalization_distribution
+                ],
+                axis=0,
+            )
+        ]
+    )
 
-    redshift_mass_detection_distribution_weights = np.array([
-        np.sum(
-            [gaussian.pdf(parameters_with_bh_mass) for gaussian in redshift_skylocalization_mass_distribution],
-            axis=0
-        )
-    ])
+    redshift_mass_detection_distribution_weights = np.array(
+        [
+            np.sum(
+                [
+                    gaussian.pdf(parameters_with_bh_mass)
+                    for gaussian in redshift_skylocalization_mass_distribution
+                ],
+                axis=0,
+            )
+        ]
+    )
 
     # multivariate normal distribution for all parameters including the mass
     if np.isnan(possible_host.M):
@@ -2660,7 +2688,9 @@ def child_process_init(
     global redshift_skylocalization_distribution
     global redshift_skylocalization_mass_distribution
     max_redshift = current_max_redshift
-    redshift_skylocalization_distribution = current_redshift_skylocalization_distribution
+    redshift_skylocalization_distribution = (
+        current_redshift_skylocalization_distribution
+    )
     redshift_skylocalization_mass_distribution = (
         current_redshift_skylocalization_mass_distribution
     )
@@ -2702,4 +2732,3 @@ def compute_sigma_deviation(
         np.sqrt((sigma_error * sigma_dev) ** 2 + (h_mean_error) ** 2) / sigma
     )
     return sigma_dev, sigma_dev_error
-
