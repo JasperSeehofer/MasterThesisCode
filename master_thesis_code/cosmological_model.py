@@ -2521,7 +2521,6 @@ def single_host_likelihood(
 
     # get distribution values
     redshift_detection_distribution_weights = np.array(
-        [
             np.sum(
                 [
                     gaussian.pdf(parameters)
@@ -2529,11 +2528,9 @@ def single_host_likelihood(
                 ],
                 axis=0,
             )
-        ]
     )
 
     redshift_mass_detection_distribution_weights = np.array(
-        [
             np.sum(
                 [
                     gaussian.pdf(parameters_with_bh_mass)
@@ -2541,9 +2538,8 @@ def single_host_likelihood(
                 ],
                 axis=0,
             )
-        ]
     )
-
+    
     # multivariate normal distribution for all parameters including the mass
     if np.isnan(possible_host.M):
         # print(f"possible host has no mass information: {possible_host}", flush=True)
