@@ -2499,19 +2499,17 @@ def single_host_likelihood(
     # get distribution values
     redshift_detection_distribution_weights = np.array([
         np.sum(
-            gaussian.pdf(parameter) for gaussian in redshift_skylocalization_distribution
+            [gaussian.pdf(parameters) for gaussian in redshift_skylocalization_distribution],
+            axis=0
         )
-        for parameter in parameters
     ])
 
     redshift_mass_detection_distribution_weights = np.array([
         np.sum(
-            gaussian.pdf(parameter) for gaussian in redshift_skylocalization_mass_distribution
+            [gaussian.pdf(parameters_with_bh_mass) for gaussian in redshift_skylocalization_mass_distribution],
+            axis=0
         )
-        for parameter in parameters_with_bh_mass
     ])
-
-    print(f"redshift_detection_distribution_weights obtained {np.round(time.time() - start, 3)}s", flush=True)
 
     # multivariate normal distribution for all parameters including the mass
     if np.isnan(possible_host.M):
@@ -2649,7 +2647,6 @@ def single_host_likelihood(
         likelihood_with_bh_mass_weighted = np.trapz(
             likelihood_with_bh_mass_weighted, z_gws
         )
-        print(f"likelihood_with_bh_mass_weighted obtained {np.round(time.time() - start, 3)}s", flush=True)
         return [likelihood_without_bh_mass_weighted, likelihood_with_bh_mass_weighted]
     return likelihood_without_bh_mass_weighted
 
