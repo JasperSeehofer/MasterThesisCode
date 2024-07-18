@@ -1688,6 +1688,11 @@ class BayesianStatistics:
             f"After filtering {len(self.cramer_rao_bounds)} detections with skylocalization error < 0.0006"
         )
 
+        # JUST FOR DEBUGGING THE BIAS
+        self.cramer_rao_bounds["M"] = self.cramer_rao_bounds["M"] * (1 + np.array(
+            [dist_to_redshift(d) for d in self.cramer_rao_bounds["dist"]]
+        ))
+
         self.h = h_value
         _LOGGER.info("prepare global variable for multiprocessing")
         distances = [
