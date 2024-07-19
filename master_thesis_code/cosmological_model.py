@@ -28,6 +28,7 @@ from master_thesis_code.constants import (
     H,
     CRAMER_RAO_BOUNDS_OUTPUT_PATH,
     PREPARED_CRAMER_RAO_BOUNDS_PATH,
+    RADIAN_TO_DEGREE,
 )
 from master_thesis_code.galaxy_catalogue.handler import (
     GalaxyCatalogueHandler,
@@ -1689,9 +1690,9 @@ class BayesianStatistics:
         )
 
         # JUST FOR DEBUGGING THE BIAS
-        self.cramer_rao_bounds["M"] = self.cramer_rao_bounds["M"] * (1 + np.array(
-            [dist_to_redshift(d) for d in self.cramer_rao_bounds["dist"]]
-        ))
+        self.cramer_rao_bounds["M"] = self.cramer_rao_bounds["M"] * (
+            1 + np.array([dist_to_redshift(d) for d in self.cramer_rao_bounds["dist"]])
+        )
 
         self.h = h_value
         _LOGGER.info("prepare global variable for multiprocessing")
@@ -1704,11 +1705,13 @@ class BayesianStatistics:
         thetas = self.cramer_rao_bounds["qS"]
         masses = self.cramer_rao_bounds["M"]
         log_10_masses = np.log10(masses)
-        # got covariances
+        # get covariances
         distance_vars = self.cramer_rao_bounds["delta_dist_delta_dist"]
         phi_vars = self.cramer_rao_bounds["delta_phiS_delta_phiS"]
         theta_vars = self.cramer_rao_bounds["delta_qS_delta_qS"]
-        mass_vars = self.cramer_rao_bounds["delta_M_delta_M"] * 20
+        mass_vars = (
+            self.cramer_rao_bounds["delta_M_delta_M"] * 20
+        )  # TODO remove debug factor
         dist_phi_covs = self.cramer_rao_bounds["delta_phiS_delta_dist"]
         dist_theta_covs = self.cramer_rao_bounds["delta_qS_delta_dist"]
         dist_mass_covs = self.cramer_rao_bounds["delta_dist_delta_M"]
@@ -1770,8 +1773,183 @@ class BayesianStatistics:
                 theta_mass_covs,
             )
         ]
+        PLOT_GAUSSIANS = True
+        if PLOT_GAUSSIANS:
+            distance_range = np.linspace(0, self._max_redshift, 100)
+            luminosity_distance_range = [dist(z, h_value) for z in distance_range]
+            phi_range = np.linspace(0, 2 * np.pi, 40)
+            theta_range = np.linspace(0, np.pi, 30)
+            log_10_mass_range = np.linspace(min(log_10_masses), max(log_10_masses), 100)
+            mass_range = 10**log_10_mass_range
 
-        PLOT_KDE = True
+            redshift_mesh, phi_mesh, theta_mesh = np.meshgrid(
+                distance_range, phi_range, theta_range, indexing="ij"
+            )
+
+            (
+                redshift_mesh_with_mass,
+                phi_mesh_with_mass,
+                theta_mesh_with_mass,
+                mass_mesh,
+            ) = np.meshgrid(
+                distance_range, phi_range, theta_range, mass_range, indexing="ij"
+            )
+
+            values = np.array(
+                [
+                    [dist(redshift, h_value) for redshift in redshift_mesh.ravel()],
+                    phi_mesh.ravel(),
+                    theta_mesh.ravel(),
+                ]
+            ).T
+
+            densities = np.array(
+                np.sum(
+                    [
+                        gaussian.pdf(values)
+                        for gaussian in detection_distribution_gaussians
+                    ],
+                    axis=0,
+                )
+            )
+
+            values_with_mass = np.array(
+                [
+                    [
+                        dist(redshift, h_value)
+                        for redshift in redshift_mesh_with_mass.ravel()
+                    ],
+                    phi_mesh_with_mass.ravel(),
+                    theta_mesh_with_mass.ravel(),
+                    mass_mesh.ravel(),
+                ]
+            ).T
+            densities_with_mass = np.array(
+                np.sum(
+                    [
+                        gaussian.pdf(values_with_mass)
+                        for gaussian in detection_distribution_with_mass_gaussians
+                    ],
+                    axis=0,
+                )
+            )
+
+            densities = densities.reshape(
+                (len(distance_range), len(phi_range), len(theta_range))
+            )
+
+            densities_with_mass = densities_with_mass.reshape(
+                (
+                    len(distance_range),
+                    len(phi_range),
+                    len(theta_range),
+                    len(mass_range),
+                )
+            )
+
+            densities_phi_integrated = np.trapz(densities, phi_range, axis=1)
+
+            # TODO: do I need to use sin(theta) or not?
+            redshift_kde = np.trapz(
+                densities_phi_integrated,
+                theta_range,
+                axis=1,
+            )
+
+            densities_phi_integrated_with_mass = np.trapz(
+                densities_with_mass, phi_range, axis=1
+            )
+
+            densities_theta_integrated_with_mass = np.trapz(
+                densities_phi_integrated_with_mass,
+                theta_range,
+                axis=1,
+            )
+            densities_mass_integrated_with_mass = np.trapz(
+                densities_theta_integrated_with_mass,
+                mass_range,
+                axis=1,
+            )
+
+            # for galactic north and south plots
+            galactic_densities = np.trapz(densities, luminosity_distance_range, axis=0)
+            densities_redshift_integrated_with_mass = np.trapz(
+                densities_with_mass, luminosity_distance_range, axis=0
+            )
+            galactic_densities_with_mass = np.trapz(
+                densities_redshift_integrated_with_mass, mass_range, axis=2
+            )
+
+            # plot integrated densities
+            fig, axs = plt.subplots(1, 2, figsize=(16, 9))
+            # plot 0,0 redshift distribution with and without mass
+            axs[0].plot(distance_range, redshift_kde, label="without mass")
+            axs[0].plot(
+                distance_range, densities_mass_integrated_with_mass, label="with mass"
+            )
+            axs[0].set_title("redshift distribution")
+            axs[0].set_xlabel("redshift")
+            axs[0].set_ylabel("density")
+            axs[0].legend()
+
+            # 2d redshift mass distribution with bh mass
+            extent = [
+                distance_range.min(),
+                distance_range.max(),
+                mass_range.min(),
+                mass_range.max(),
+            ]
+            axs[1].imshow(
+                densities_theta_integrated_with_mass,
+                extent=extent,
+                aspect="auto",  # Adjust as necessary to maintain aspect ratio
+                cmap="viridis",
+            )
+            axs[1].set_title("redshift mass distribution with BH mass")
+            axs[1].set_xlabel("redshift")
+            axs[1].set_ylabel("log 10 mass")
+            plt.savefig(
+                "saved_figures/redshift_mass_distribution_with_bh_mass.png", dpi=300
+            )
+            plt.close()
+
+            # create phi theta mesh
+            phi_mesh, theta_mesh = np.meshgrid(phi_range, theta_range, indexing="ij")
+
+            # plot sky distribution of detections of 3d gaussians
+            fig = plt.figure(figsize=(16, 9))
+            ax = fig.add_subplot(111, projection="mollweide")
+            plt.title("Sky distribution of detections without BH mass")
+            ax.scatter(
+                phi_mesh.ravel() - np.pi,
+                theta_mesh.ravel() - np.pi / 2,
+                c=np.log10(galactic_densities.ravel() + 1e-10),
+                cmap="viridis",
+            )
+            plt.grid(True)
+            plt.colorbar(label="log10 density", orientation="horizontal")
+            plt.savefig(
+                "saved_figures/sky_detection_distribution_without_bh_mass.png", dpi=300
+            )
+            plt.close()
+
+            fig = plt.figure(figsize=(16, 9))
+            ax = fig.add_subplot(111, projection="mollweide")
+            plt.title("Sky distribution of detections with BH mass")
+            ax.scatter(
+                phi_mesh.ravel() - np.pi,
+                theta_mesh.ravel() - np.pi / 2,
+                c=np.log10(galactic_densities_with_mass.ravel() + 1e-10),
+                cmap="viridis",
+            )
+            plt.grid(True)
+            plt.colorbar(label="log10 density", orientation="horizontal")
+            plt.savefig(
+                "saved_figures/sky_detection_distribution_with_bh_mass.png", dpi=300
+            )
+            plt.close()
+
+        PLOT_KDE = False
         if PLOT_KDE:
             self._redshift_skylocalization_histogramm = np.histogramdd(
                 np.array([redshifts, phis, thetas]).T,
@@ -1929,6 +2107,7 @@ class BayesianStatistics:
             only_redshift_kde = gaussian_kde(redshifts)
 
             only_redshift_mass_kde = gaussian_kde(np.array([redshifts, log_10_masses]))
+
             redshift_redshift_mass_meshgrid, mass_redshift_mass_meshgrid = np.meshgrid(
                 distance_range, log_10_mass_range, indexing="ij"
             )
@@ -1937,13 +2116,12 @@ class BayesianStatistics:
             fig, ax = plt.subplots(2, 2, figsize=(16, 9), height_ratios=[3, 1])
             ax[0, 0].plot(
                 distance_range,
-                redshift_kde / len(self.cramer_rao_bounds),
+                redshift_kde,
                 label="3d gaussian sum",
             )
             ax[0, 0].plot(
                 distance_range,
-                only_redshift_kde(distance_range)
-                / self._redshift_skylocalization_mass_histogram_detection_count,
+                only_redshift_kde(distance_range),
                 label="redshift kde",
             )
             ax[0, 0].plot(
@@ -1959,14 +2137,13 @@ class BayesianStatistics:
                     ).reshape((len(distance_range), len(log_10_mass_range))),
                     log_10_mass_range,
                     axis=1,
-                )
-                / self._redshift_skylocalization_mass_histogram_detection_count,
+                ),
                 label="redshift mass kde integrated",
             )
             ax[0, 0].plot(
                 distance_range,
-                densities_mass_integrated_with_mass / len(self.cramer_rao_bounds),
-                label="4d kde integrated",
+                densities_mass_integrated_with_mass,
+                label="4d gaussian sum integrated",
             )
             # plot reduced histogramm
             ax[0, 0].bar(
@@ -2537,7 +2714,7 @@ def single_host_likelihood(
             axis=0,
         )
     )
-    
+
     # multivariate normal distribution for all parameters including the mass
     if np.isnan(possible_host.M):
         # print(f"possible host has no mass information: {possible_host}", flush=True)
