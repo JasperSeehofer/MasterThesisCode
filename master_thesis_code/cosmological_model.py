@@ -1708,7 +1708,7 @@ class BayesianStatistics:
         distance_vars = self.cramer_rao_bounds["delta_dist_delta_dist"]
         phi_vars = self.cramer_rao_bounds["delta_phiS_delta_phiS"]
         theta_vars = self.cramer_rao_bounds["delta_qS_delta_qS"]
-        mass_vars = self.cramer_rao_bounds["delta_M_delta_M"]
+        mass_vars = self.cramer_rao_bounds["delta_M_delta_M"] * 20
         dist_phi_covs = self.cramer_rao_bounds["delta_phiS_delta_dist"]
         dist_theta_covs = self.cramer_rao_bounds["delta_qS_delta_dist"]
         dist_mass_covs = self.cramer_rao_bounds["delta_dist_delta_M"]
@@ -1771,7 +1771,7 @@ class BayesianStatistics:
             )
         ]
 
-        PLOT_KDE = False
+        PLOT_KDE = True
         if PLOT_KDE:
             self._redshift_skylocalization_histogramm = np.histogramdd(
                 np.array([redshifts, phis, thetas]).T,
@@ -1935,11 +1935,11 @@ class BayesianStatistics:
 
             # compare kde with histogram
             fig, ax = plt.subplots(2, 2, figsize=(16, 9), height_ratios=[3, 1])
-            """ax[0, 0].plot(
+            ax[0, 0].plot(
                 distance_range,
                 redshift_kde / len(self.cramer_rao_bounds),
                 label="3d gaussian sum",
-            )"""
+            )
             ax[0, 0].plot(
                 distance_range,
                 only_redshift_kde(distance_range)
@@ -2157,9 +2157,6 @@ class BayesianStatistics:
                         ],
                         axis=0,
                     )
-                )
-                density = density.reshape(
-                    (len(distance_range), len(phi_range), len(phi_range))
                 )
 
                 density_normalized = (density - np.min(density)) / (
@@ -2517,28 +2514,28 @@ def single_host_likelihood(
     thetas = np.ones(z_gws.shape) * possible_host.qS
     masses = possible_host.M * (1 + z_gws)
     # get distribution values for parameters
-    parameters = np.array([z_gws, phis, thetas]).T
+    parameters = np.array([distances, phis, thetas]).T
     parameters_with_bh_mass = np.array([distances, phis, thetas, masses]).T
 
     # get distribution values
     redshift_detection_distribution_weights = np.array(
-            np.sum(
-                [
-                    gaussian.pdf(parameters)
-                    for gaussian in redshift_skylocalization_distribution
-                ],
-                axis=0,
-            )
+        np.sum(
+            [
+                gaussian.pdf(parameters)
+                for gaussian in redshift_skylocalization_distribution
+            ],
+            axis=0,
+        )
     )
 
     redshift_mass_detection_distribution_weights = np.array(
-            np.sum(
-                [
-                    gaussian.pdf(parameters_with_bh_mass)
-                    for gaussian in redshift_skylocalization_mass_distribution
-                ],
-                axis=0,
-            )
+        np.sum(
+            [
+                gaussian.pdf(parameters_with_bh_mass)
+                for gaussian in redshift_skylocalization_mass_distribution
+            ],
+            axis=0,
+        )
     )
     
     # multivariate normal distribution for all parameters including the mass
