@@ -50,6 +50,7 @@ _LOGGER = logging.getLogger()
 
 DEFAULT_GALAXY_Z_ERROR = 0.0015
 GALAXY_LIKELIHOODS = "galaxy_likelihoods"
+ADDITIONAL_GALAXIES_WITHOUT_BH_MASS = "additional_galaxies_without_bh_mass"
 
 
 @dataclass
@@ -1259,11 +1260,35 @@ class BayesianStatistics:
                     [weights[1] for _, weights in host_galaxy_weights]
                 )
 
+                # compute bias correction
+                detection_redshift = dist_to_redshift(detection.d_L, h=h_value)
+                distance_relation_derivative_at_detection_redshift = dist_derivative(
+                    detection_redshift, h=h_value
+                )
+                p_gal_at_detection_redshift = np.sum(
+                    [
+                        NormalDist(
+                            mu=galaxy.z,
+                            sigma=galaxy.z_error,
+                        ).pdf(detection_redshift)
+                        for galaxy in host_galaxies
+                    ]
+                ) / len(host_galaxies)
+
+                alpha_without_bh_mass = (
+                    p_gal_at_detection_redshift
+                    / distance_relation_derivative_at_detection_redshift
+                )
+
                 detection_likelihood_without_bh_mass = (
-                    np.sum(likelihoods_without_bh_mass) / max_likelihood_without_bh_mass
+                    np.sum(likelihoods_without_bh_mass)
+                    / max_likelihood_without_bh_mass
+                    / alpha_without_bh_mass
                 )
                 detection_likelihood_with_bh_mass = (
-                    np.sum(likelihoods_with_bh_mass) / max_likelihood_with_bh_mass
+                    np.sum(likelihoods_with_bh_mass)
+                    / max_likelihood_with_bh_mass
+                    / alpha_without_bh_mass
                 )
 
                 # plot likelihood contribution by redshift bins
@@ -2626,6 +2651,7 @@ class BayesianStatistics:
     ) -> None:
         count = 0
         self.posterior_data_with_bh_mass[GALAXY_LIKELIHOODS] = {}
+        self.posterior_data_with_bh_mass[ADDITIONAL_GALAXIES_WITHOUT_BH_MASS] = {}
         for index, detection in self.cramer_rao_bounds.iterrows():
             _LOGGER.info(
                 f"Progess: detections: {count}/{len(self.cramer_rao_bounds)}..."
@@ -2660,7 +2686,7 @@ class BayesianStatistics:
                 theta_error=self.detection.theta_error,
                 M_z=self.detection.M,
                 M_z_error=self.detection.M_uncertainty,
-                cutoff_multiplier=2.0,
+                cutoff_multiplier=3.0,
             )
 
             if possible_hosts is None:
@@ -2770,6 +2796,10 @@ class BayesianStatistics:
             detection_index
         ] = galaxy_likelihoods
 
+        self.posterior_data_with_bh_mass[ADDITIONAL_GALAXIES_WITHOUT_BH_MASS][detection_index] = [
+            galaxy.catalog_index for galaxy in possible_host_galaxies_reduced
+        ]
+
         if len(results) == 0:
             print("no results found")
             return 0.0, 0.0
@@ -2797,7 +2827,7 @@ class BayesianStatistics:
                 ).pdf(detection_redshift)
                 for galaxy in possible_host_galaxies
             ]
-        )
+        ) / len(possible_host_galaxies)
 
         # with bh mass
         p_gal_with_bh_mass_at_detection_redshift = np.sum(
@@ -2808,17 +2838,21 @@ class BayesianStatistics:
                 ).pdf(detection_redshift)
                 for galaxy in possible_host_galaxies_with_bh_mass
             ]
-        )
+        ) / len(possible_host_galaxies_with_bh_mass)
 
         alpha_without_bh_mass = (
-            p_gal_at_detection_redshift / distance_relation_derivative_at_detection_redshift
+            p_gal_at_detection_redshift
+            / distance_relation_derivative_at_detection_redshift
         )
         alpha_with_bh_mass = (
             p_gal_with_bh_mass_at_detection_redshift
             / distance_relation_derivative_at_detection_redshift
         )
 
-        return likelihood_without_bh_mass / alpha_with_bh_mass, likelihood_with_bh_mass / alpha_without_bh_mass
+        return (
+            likelihood_without_bh_mass / alpha_with_bh_mass,
+            likelihood_with_bh_mass / alpha_without_bh_mass,
+        )
 
 
 def use_detection(detection: Detection) -> bool:
@@ -2868,11 +2902,11 @@ def single_host_likelihood(
         d_L * 0.066 * (1 - (1 + possible_host.z) ** (-0.25) / 0.25) ** (1.8)
     )"""  # TODO check if correct
     # redshift samples around peak
-    z_lower_bound = possible_host.z - 4 * possible_host.z_error
+    z_lower_bound = possible_host.z - 5 * possible_host.z_error
     if z_lower_bound < 0:
         # print(f"lower bound is less than 0: {z_lower_bound}", flush=True)
         z_lower_bound = 0.0
-    z_upper_bound = possible_host.z + 4 * possible_host.z_error
+    z_upper_bound = possible_host.z + 5 * possible_host.z_error
     if z_upper_bound > max_redshift:
         # print(f"upper bound is greater than max redshift: {z_upper_bound}", flush=True)
         z_upper_bound = max_redshift
