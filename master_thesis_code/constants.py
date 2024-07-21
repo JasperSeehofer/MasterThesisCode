@@ -11,7 +11,9 @@ C = 299792458.0  # m / s
 # C = 1.0
 G = 3.24077929**2 * 4.3009172706e-58  # Gpc^3 / (s^2 * solar masses)
 # G = 1.0
-H0 = float(73e3)  # m / (s * Mpc) TODO: check if this is correct
+H0 = float(73e3)  # km / (s * Mpc) TODO: check if this is correct
+H_MIN = 60.0  # lower limit for Hubble constant
+H_MAX = 86.0  # upper limit for Hubble constant
 H = 0.73  # Hubble constant
 
 # cosmological parameters fiducial values
