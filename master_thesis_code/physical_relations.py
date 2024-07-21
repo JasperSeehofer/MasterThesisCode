@@ -59,6 +59,43 @@ def dist(
     return result
 
 
+def dist_derivative(
+    redshift: float,
+    h: float = H,
+    Omega_m: float = OMEGA_M,
+    Omega_de: float = OMEGA_DE,
+    w_0: float = W_0,
+    w_a: float = W_A,
+) -> float:
+    H_0 = h * 100.0 * KM_TO_M / GPC_TO_MPC ** (-1)  # Hubble constant in m/s*Gpc
+
+    first_term = C / H_0 * (1 + redshift) / hubble_function(redshift)
+
+    zs = np.linspace(0, redshift, 1000)
+    hubble_function_values = hubble_function(zs)
+
+    # integral
+    second_term = C / H_0 * np.trapz(1 / hubble_function_values, zs)
+
+    return first_term + second_term
+
+
+def hubble_function(
+    redshift: float,
+    h: float = H,
+    Omega_m: float = OMEGA_M,
+    Omega_de: float = OMEGA_DE,
+    w_0: float = W_0,
+    w_a: float = W_A,
+) -> float:
+    return np.sqrt(
+        Omega_m * (1 + redshift) ** 3
+        + Omega_de
+        * (1 + redshift) ** (3 * (1 + w_0 + w_a))
+        * np.exp(-3 * w_a * redshift / (1 + redshift))
+    )
+
+
 def lambda_cdm_analytic_distance(
     redshift: float, Omega_m: float = OMEGA_M, Omega_de: float = OMEGA_DE
 ) -> float:

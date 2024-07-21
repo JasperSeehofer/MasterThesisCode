@@ -40,6 +40,7 @@ from master_thesis_code.galaxy_catalogue.handler import (
 )
 from master_thesis_code.physical_relations import (
     dist,
+    dist_derivative,
     convert_true_mass_to_redshifted_mass_with_distance,
     get_redshift_outer_bounds,
     dist_to_redshift,
@@ -1281,7 +1282,10 @@ class BayesianStatistics:
                             host_galaxies_redshift < redshift_max,
                         )
                     )[0]
-                    galaxies_per_bin.append(len(bin_galaxies))
+                    number_of_galaxies_in_bin = len(bin_galaxies)
+                    if number_of_galaxies_in_bin == 0:
+                        number_of_galaxies_in_bin = 1
+                    galaxies_per_bin.append(number_of_galaxies_in_bin)
                     contribution = np.sum(
                         [
                             likelihood
@@ -1301,15 +1305,37 @@ class BayesianStatistics:
                 # plt galaxy number per bin in plot 0,0
 
                 cmap = cm.get_cmap("viridis")
+                h_normalized = (h_value - min(self.h_values)) / (
+                    max(self.h_values) - min(self.h_values)
+                )
 
                 axs[0, 0].scatter(
                     redshift_bins[:-1],
-                    np.array(likelihood_bin_contribution) / np.array(galaxies_per_bin),
-                    color=cmap(h_value),
+                    likelihood_bin_contribution,
+                    c=cmap(h_normalized),
                 )
+                axs[0, 0].axvline(
+                    dist_to_redshift(true_galaxy.d_L), color="g", linestyle="--"
+                )
+                axs[0, 0].set_xlabel("redshift")
+                axs[0, 0].axvline(
+                    host_galaxies_mean_redshift,
+                    color="r",
+                    linestyle="--",
+                    label="mean redshift",
+                )
+                axs[0, 0].axvline(
+                    dist_to_redshift(detection.d_L),
+                    color="black",
+                    linestyle="-.",
+                    label="detection redshift",
+                )
+                axs[0, 0].set_title("likelihood contribution without BH mass")
 
                 axs[0, 1].scatter(
-                    redshift_bins[:-1], likelihood_bin_contribution, c=cmap(h_value)
+                    redshift_bins[:-1],
+                    likelihood_with_bh_mass_bin_contribution,
+                    c=cmap(h_normalized),
                 )
                 axs[0, 1].axvline(
                     dist_to_redshift(true_galaxy.d_L), color="g", linestyle="--"
@@ -1327,17 +1353,17 @@ class BayesianStatistics:
                     linestyle="-.",
                     label="detection redshift",
                 )
-                axs[0, 1].set_title("redshift distribution")
+                axs[0, 1].set_title("likelihood contributions with BH mass")
 
                 # plot likelihoods
                 # try the weighting by the number of galaxies in the bin
-                detection_likelihood_without_bh_mass = np.sum(
+                """detection_likelihood_without_bh_mass = np.sum(
                     np.array(likelihood_bin_contribution) / np.array(galaxies_per_bin)
                 )
                 detection_likelihood_with_bh_mass = np.sum(
                     np.array(likelihood_with_bh_mass_bin_contribution)
                     / np.array(galaxies_per_bin)
-                )
+                )"""
                 axs[1, 0].scatter(
                     [h_value],
                     detection_likelihood_without_bh_mass,
@@ -1345,16 +1371,14 @@ class BayesianStatistics:
                     label="without BH mass",
                 )
 
-                axs[1, 1].scatter(
+                axs[1, 0].scatter(
                     [h_value],
                     detection_likelihood_with_bh_mass,
                     c="r",
                     label="with BH mass",
                 )
                 axs[1, 0].axvline(H, color="g", linestyle="--")
-                axs[1, 0].set_title(f"likelihood without BH mass")
-                axs[1, 1].axvline(H, color="g", linestyle="--")
-                axs[1, 1].set_title(f"likelihood with BH mass")
+                axs[1, 0].set_title(f"likelihood")
 
                 """
                 # plot weights of true galaxy in detection
@@ -1417,7 +1441,7 @@ class BayesianStatistics:
                     label=f"true galaxy rank {true_galaxy_ranking_index_bh_mass + 1}.",
                 )
                 """
-                PLOT_GALAXIES = False
+                PLOT_GALAXIES = True
                 if (np.round(h_value, 2) == H) and PLOT_GALAXIES:
                     # plot redshift mass distribution
                     axs[1, 1].scatter(
@@ -1476,9 +1500,12 @@ class BayesianStatistics:
                         axs[index, 2].set_xlabel("phi in rad")
                         axs[index, 2].set_ylabel("theta in rad")
                         axs[index, 2].set_title(
-                            f"Galaxy skylocalization weight for h = {h_value}"
+                            f"Galaxy skylocalization weight for h = {np.round(h_value,2)}"
                         )
-
+            sm = plt.cm.ScalarMappable(
+                cmap=cmap, norm=plt.Normalize(vmin=0.6, vmax=0.86)
+            )
+            plt.colorbar(sm, ax=axs[0, 1], ticks=[0.6, 0.73, 0.86])
             plt.savefig(
                 f"saved_figures/galaxy_weights/detection_weight_relations_{detection_index}.png",
                 dpi=300,
@@ -1697,7 +1724,6 @@ class BayesianStatistics:
             1 + np.array([dist_to_redshift(d) for d in self.cramer_rao_bounds["dist"]])
         )
 
-
         self.h = h_value
         _LOGGER.info("prepare global variable for multiprocessing")
         distances = self.cramer_rao_bounds["dist"]
@@ -1711,11 +1737,9 @@ class BayesianStatistics:
         log_10_masses = np.log10(masses)
         # get covariances
         distance_vars = self.cramer_rao_bounds["delta_dist_delta_dist"]
-        phi_vars = self.cramer_rao_bounds["delta_phiS_delta_phiS"] 
+        phi_vars = self.cramer_rao_bounds["delta_phiS_delta_phiS"]
         theta_vars = self.cramer_rao_bounds["delta_qS_delta_qS"]
-        mass_vars = (
-            self.cramer_rao_bounds["delta_M_delta_M"] 
-        )  
+        mass_vars = self.cramer_rao_bounds["delta_M_delta_M"]
         dist_phi_covs = self.cramer_rao_bounds["delta_phiS_delta_dist"]
         dist_theta_covs = self.cramer_rao_bounds["delta_qS_delta_dist"]
         dist_mass_covs = self.cramer_rao_bounds["delta_dist_delta_M"]
@@ -1742,7 +1766,9 @@ class BayesianStatistics:
         theta_mass_covs = theta_mass_covs / self._max_mass
 
         # compare resolution with variance and chose the larger one
-        luminosity_distance_resolution_limit = C / H_MIN / KM_TO_M / GPC_TO_MPC * self._delta_redshift / 2
+        luminosity_distance_resolution_limit = (
+            C / H_MIN / KM_TO_M / GPC_TO_MPC * self._delta_redshift / 2
+        )
         mass_resolution_limit = masses * self._delta_redshift / 2
 
         _LOGGER.warning(
@@ -1759,9 +1785,7 @@ class BayesianStatistics:
             f"max resolution limit variance: {max(mass_resolution_limit**2)}, min mass variance: {min(mass_vars)}"
         )
 
-        mass_vars = np.maximum(
-            mass_resolution_limit**2, mass_vars
-        )
+        mass_vars = np.maximum(mass_resolution_limit**2, mass_vars)
 
         detection_distribution_gaussians = [
             multivariate_normal(
@@ -1812,44 +1836,50 @@ class BayesianStatistics:
                 theta_mass_covs,
             )
         ]
-        
+
         PLOT_GAUSSIANS = False
         if PLOT_GAUSSIANS:
-            luminosity_distance_range = np.linspace(
-                0, max(distances), 50
-            )
-            redshift_range = [dist_to_redshift(d, h_value) for d in luminosity_distance_range]
+            luminosity_distance_range = np.linspace(0, max(distances), 50)
+            redshift_range = [
+                dist_to_redshift(d, h_value) for d in luminosity_distance_range
+            ]
 
             phi_range = np.linspace(0, 2 * np.pi, 10)
             theta_range = np.linspace(0.0001, np.pi - 0.0001, 10)
             log_10_mass_range = np.linspace(
                 np.min(log_10_masses), np.max(log_10_masses), 100
             )
-            mass_range = np.geomspace(
-                np.min(masses), np.max(masses), 100
-            )
+            mass_range = np.geomspace(np.min(masses), np.max(masses), 100)
 
-            luminosity_distance_resolution = np.ones_like(len(self.cramer_rao_bounds)) * (luminosity_distance_range[1] - luminosity_distance_range[0] / 2 )
-            phi_resolution = np.ones_like(len(self.cramer_rao_bounds)) * (phi_range[1] - phi_range[0] / 2)
-            theta_resolution = np.ones_like(len(self.cramer_rao_bounds)) * (theta_range[1] - theta_range[0] / 2)
+            luminosity_distance_resolution = np.ones_like(
+                len(self.cramer_rao_bounds)
+            ) * (luminosity_distance_range[1] - luminosity_distance_range[0] / 2)
+            phi_resolution = np.ones_like(len(self.cramer_rao_bounds)) * (
+                phi_range[1] - phi_range[0] / 2
+            )
+            theta_resolution = np.ones_like(len(self.cramer_rao_bounds)) * (
+                theta_range[1] - theta_range[0] / 2
+            )
             mass_resolution = np.diff(mass_range) / 2
             mass_resolution = np.concatenate((mass_resolution, [mass_resolution[-1]]))
 
             # compare resolution with variance and chose the larger one
-            distance_resolution = np.array(np.maximum(
-                luminosity_distance_resolution**2, distance_vars
-            ))
+            distance_resolution = np.array(
+                np.maximum(luminosity_distance_resolution**2, distance_vars)
+            )
             phi_resolution = np.array(np.maximum(phi_resolution**2, phi_vars))
             theta_resolution = np.array(np.maximum(theta_resolution**2, theta_vars))
-            mass_resolution = np.array([
-                max((mass_resolution[index - 1 ])**2, var) 
-                for index, var in zip(np.digitize(masses, mass_range), mass_vars)])
-            
+            mass_resolution = np.array(
+                [
+                    max((mass_resolution[index - 1]) ** 2, var)
+                    for index, var in zip(np.digitize(masses, mass_range), mass_vars)
+                ]
+            )
+
             print(f"distance min resolution: {min(distance_resolution)}")
             print(f"phi min resolution: {min(phi_resolution)}")
             print(f"theta min resolution: {min(theta_resolution)}")
             print(f"mass min resolution: {min(mass_resolution)}")
-
 
             # detection distribution as the sum of gaussians with parameter standard deviation
             detection_distribution_gaussians = [
@@ -1910,8 +1940,6 @@ class BayesianStatistics:
             plt.savefig("saved_figures/masses_of_detections.png", dpi=300)
             plt.close()
 
-
-
             distance_mesh, phi_mesh, theta_mesh = np.meshgrid(
                 luminosity_distance_range, phi_range, theta_range, indexing="ij"
             )
@@ -1922,7 +1950,11 @@ class BayesianStatistics:
                 theta_mesh_with_mass,
                 mass_mesh,
             ) = np.meshgrid(
-                luminosity_distance_range, phi_range, theta_range, mass_range, indexing="ij"
+                luminosity_distance_range,
+                phi_range,
+                theta_range,
+                mass_range,
+                indexing="ij",
             )
 
             values = np.array(
@@ -2020,7 +2052,9 @@ class BayesianStatistics:
             axs[0].legend()
 
             # 2d redshift mass distribution with bh mass
-            distance_mesh, mass_mesh = np.meshgrid(redshift_range, mass_range, indexing="ij")
+            distance_mesh, mass_mesh = np.meshgrid(
+                redshift_range, mass_range, indexing="ij"
+            )
             axs[1].contourf(
                 distance_mesh,
                 mass_mesh,
@@ -2749,7 +2783,42 @@ class BayesianStatistics:
 
         likelihood_with_bh_mass = np.sum([result[1] for result in results_with_bh_mass])
 
-        return likelihood_without_bh_mass, likelihood_with_bh_mass
+        # compute bias correction with galaxy distribution arxiv 2201.12526
+        # without bh mass
+        detection_redshift = dist_to_redshift(self.detection.d_L, h=self.h)
+        distance_relation_derivative_at_detection_redshift = dist_derivative(
+            detection_redshift, h=self.h
+        )
+        p_gal_at_detection_redshift = np.sum(
+            [
+                NormalDist(
+                    mu=galaxy.z,
+                    sigma=galaxy.z_error,
+                ).pdf(detection_redshift)
+                for galaxy in possible_host_galaxies
+            ]
+        )
+
+        # with bh mass
+        p_gal_with_bh_mass_at_detection_redshift = np.sum(
+            [
+                NormalDist(
+                    mu=galaxy.z,
+                    sigma=galaxy.z_error,
+                ).pdf(detection_redshift)
+                for galaxy in possible_host_galaxies_with_bh_mass
+            ]
+        )
+
+        alpha_without_bh_mass = (
+            p_gal_at_detection_redshift / distance_relation_derivative_at_detection_redshift
+        )
+        alpha_with_bh_mass = (
+            p_gal_with_bh_mass_at_detection_redshift
+            / distance_relation_derivative_at_detection_redshift
+        )
+
+        return likelihood_without_bh_mass / alpha_with_bh_mass, likelihood_with_bh_mass / alpha_without_bh_mass
 
 
 def use_detection(detection: Detection) -> bool:
@@ -2798,7 +2867,6 @@ def single_host_likelihood(
     """WL_uncertainty = (
         d_L * 0.066 * (1 - (1 + possible_host.z) ** (-0.25) / 0.25) ** (1.8)
     )"""  # TODO check if correct
-    start = time.time()
     # redshift samples around peak
     z_lower_bound = possible_host.z - 4 * possible_host.z_error
     if z_lower_bound < 0:
@@ -2819,7 +2887,7 @@ def single_host_likelihood(
 
     # get distribution values for parameters
     parameters = np.array([distances, phis, thetas]).T
-    parameters_with_bh_mass = np.array([distances, phis, thetas, masses/max_mass]).T
+    parameters_with_bh_mass = np.array([distances, phis, thetas, masses / max_mass]).T
 
     # get distribution values
     redshift_detection_distribution_weights = np.array(
@@ -2843,22 +2911,32 @@ def single_host_likelihood(
     ) / len(redshift_skylocalization_mass_distribution)
 
     # checking numerical limits due to delta_redshift for gaussian variances
-    luminosity_distance_resolution_limit = C / H_MIN / KM_TO_M / GPC_TO_MPC * delta_redshift / 2
+    luminosity_distance_resolution_limit = (
+        C / H_MIN / KM_TO_M / GPC_TO_MPC * delta_redshift / 2
+    )
     redshift_resoultion_limit = delta_redshift / 2
     mass_resolution_limit = detection.M * delta_redshift / ((1 + delta_redshift)) / 2
 
     if detection.d_L_uncertainty < luminosity_distance_resolution_limit:
-        print(f"numeric luminosity distance resolution limit reached: {detection.d_L_uncertainty} < {luminosity_distance_resolution_limit}", flush=True)
+        print(
+            f"numeric luminosity distance resolution limit reached: {detection.d_L_uncertainty} < {luminosity_distance_resolution_limit}",
+            flush=True,
+        )
         detection.d_L_uncertainty = luminosity_distance_resolution_limit
 
     if possible_host.z_error < redshift_resoultion_limit:
-        print(f"numeric redshift resolution limit reached: {possible_host.z_error} < {redshift_resoultion_limit}", flush=True)
+        print(
+            f"numeric redshift resolution limit reached: {possible_host.z_error} < {redshift_resoultion_limit}",
+            flush=True,
+        )
         possible_host.z_error = redshift_resoultion_limit
-    
-    if possible_host.M_error < mass_resolution_limit:
-        print(f"numeric mass resolution limit reached: {possible_host.M_error} < {mass_resolution_limit}", flush=True)
-        possible_host.M_error = mass_resolution_limit
 
+    if possible_host.M_error < mass_resolution_limit:
+        print(
+            f"numeric mass resolution limit reached: {possible_host.M_error} < {mass_resolution_limit}",
+            flush=True,
+        )
+        possible_host.M_error = mass_resolution_limit
 
     # multivariate normal distribution for all parameters including the mass
     if np.isnan(possible_host.M):
