@@ -1194,6 +1194,10 @@ class BayesianStatistics:
                     weight_data[int(detection_index)] = {}
                     weight_data[int(detection_index)][h] = host_galaxy_weights
 
+        additional_galaxies_by_detection_index = list(
+            self.additional_galaxies_without_bh_mass.values()
+        )[0]
+
         # remove weight_data with less samples than h_values
         weight_data = {
             detection_index: host_galaxy_weights
@@ -1238,26 +1242,218 @@ class BayesianStatistics:
                 ]
             )
 
+            additional_galaxies = [
+                galaxy_catalog.get_host_galaxy_by_index(int(galaxy_index))
+                for galaxy_index in additional_galaxies_by_detection_index[
+                    str(detection_index)
+                ]
+            ]
+
             # plot h values on x axis and weights on y axis and the sum of weights
             fig, axs = plt.subplots(2, 3, figsize=(16, 9))
             # figure title
             fig.suptitle(
                 f"Galaxy likelihood visualization for detection {detection_index} (Skyloc error: {np.round(detection.get_skylocalization_error(), 4)})"
             )
+
+            host_galaxies = [
+                galaxy_catalog.get_host_galaxy_by_index(int(index))
+                for index, _ in host_galaxy_weights_by_h_value.values()
+                .__iter__()
+                .__next__()
+            ]
+            host_galaxies_without_bh_mass = host_galaxies.copy()
+            host_galaxies_without_bh_mass.extend(additional_galaxies)
+
+            host_galaxies_phi = np.array([galaxy.phiS for galaxy in host_galaxies])
+            host_galaxies_theta = np.array([galaxy.qS for galaxy in host_galaxies])
+            host_galaxies_redshift = np.array([galaxy.z for galaxy in host_galaxies])
+            host_galaxies_mean_redshift = np.mean(host_galaxies_redshift)
+            host_galaxies_mass = np.array([galaxy.M for galaxy in host_galaxies])
+
+            host_galaxies_phi_without_bh_mass = np.array(
+                [galaxy.phiS for galaxy in host_galaxies_without_bh_mass]
+            )
+            host_galaxies_theta_without_bh_mass = np.array(
+                [galaxy.qS for galaxy in host_galaxies_without_bh_mass]
+            )
+            host_galaxies_redshift_without_bh_mass = np.array(
+                [galaxy.z for galaxy in host_galaxies_without_bh_mass]
+            )
+            host_galaxies_mass_without_bh_mass = np.array(
+                [galaxy.M for galaxy in host_galaxies_without_bh_mass]
+            )
+            host_galaxies_mean_redshift_without_bh_mass = np.mean(
+                host_galaxies_redshift_without_bh_mass
+            )
+
+            # redshift distribution of galaxies
+            gaussians_with_bh_mass = [
+                NormalDist(mu=galaxy.z, sigma=galaxy.z_error / 5)
+                for galaxy in host_galaxies
+            ]
+
+            gaussians_without_bh_mass = [
+                NormalDist(mu=galaxy.z, sigma=galaxy.z_error / 5)
+                for galaxy in host_galaxies_without_bh_mass
+            ]
+
+            # plotting independent of h
+            cmap = cm.get_cmap("viridis")
+            mean_gaussian_std = np.mean(
+                [distribution.stdev for distribution in gaussians_without_bh_mass]
+            )
+
+            redshift_range = np.linspace(
+                min(host_galaxies_redshift_without_bh_mass) - 2 * mean_gaussian_std,
+                max(host_galaxies_redshift_without_bh_mass) + 2 * mean_gaussian_std,
+                50,
+            )
+            redshift_distribution_by_gaussian = np.array(
+                [
+                    [normal.pdf(redshift) for normal in gaussians_without_bh_mass]
+                    for redshift in redshift_range
+                ]
+            ) / len(host_galaxies_without_bh_mass)
+
+            redshift_distribution = np.sum(redshift_distribution_by_gaussian, axis=1)
+
+            axs[0, 0].plot(
+                redshift_range,
+                redshift_distribution,
+                c="black",
+            )
+
+            axs[0, 0].axvline(
+                redshift_range[0] + 3 * mean_gaussian_std,
+                color="grey",
+                linestyle="--",
+            )
+
+            axs[0, 0].axvline(
+                redshift_range[-1] - 3 * mean_gaussian_std,
+                color="grey",
+                linestyle="--",
+            )
+
+            normal_dist_samples = min(50, len(gaussians_without_bh_mass))
+            gaussian_indices = np.random.choice(
+                len(gaussians_without_bh_mass),
+                normal_dist_samples,
+                replace=False,
+            )
+            for index in gaussian_indices:
+                normal_dist = redshift_distribution_by_gaussian.T[index]
+                axs[0, 0].plot(
+                    redshift_range,
+                    normal_dist / max(normal_dist) * max(redshift_distribution) / 2,
+                    c="grey",
+                    linestyle="--",
+                    linewidth=0.1,
+                )
+            axs[0, 0].axvline(
+                dist_to_redshift(true_galaxy.d_L), color="g", linestyle="--"
+            )
+            axs[0, 0].set_xlabel("redshift")
+            axs[0, 0].set_ylabel("density")
+            axs[0, 0].axvline(
+                host_galaxies_mean_redshift_without_bh_mass,
+                color="r",
+                linestyle="--",
+                label="mean redshift",
+            )
+            axs[0, 0].axvline(
+                dist_to_redshift(detection.d_L),
+                color="black",
+                linestyle="-.",
+                label="detection redshift",
+            )
+            axs[0, 0].set_title("redshift distribution")
+
+            # plot 0, 1
+            mean_gaussian_std = np.mean(
+                [distribution.stdev for distribution in gaussians_with_bh_mass]
+            )
+            redshift_range_with_bh_mass = np.linspace(
+                min(host_galaxies_redshift) - 2 * mean_gaussian_std,
+                max(host_galaxies_redshift) + 2 * mean_gaussian_std,
+                50,
+            )
+            redshift_distribution_with_bh_mass_by_gaussian = np.array(
+                [
+                    [normal.pdf(redshift) for normal in gaussians_with_bh_mass]
+                    for redshift in redshift_range_with_bh_mass
+                ]
+            ) / len(host_galaxies)
+
+            redshift_distribution_with_bh_mass = np.sum(
+                redshift_distribution_with_bh_mass_by_gaussian, axis=1
+            )
+
+            axs[0, 1].plot(
+                redshift_range_with_bh_mass,
+                redshift_distribution_with_bh_mass,
+                c="black",
+            )
+
+            axs[0, 1].axvline(
+                redshift_range_with_bh_mass[0] + 3 * mean_gaussian_std,
+                color="grey",
+                linestyle="--",
+            )
+            axs[0, 1].axvline(
+                redshift_range_with_bh_mass[-1] - 3 * mean_gaussian_std,
+                color="grey",
+                linestyle="--",
+            )
+
+            normal_dist_samples = min(50, len(gaussians_with_bh_mass))
+            gaussian_indices = np.random.choice(
+                len(gaussians_with_bh_mass),
+                normal_dist_samples,
+                replace=False,
+            )
+            for index in gaussian_indices:
+                normal_dist = redshift_distribution_with_bh_mass_by_gaussian.T[index]
+                axs[0, 1].plot(
+                    redshift_range_with_bh_mass,
+                    normal_dist
+                    / max(normal_dist)
+                    * max(redshift_distribution_with_bh_mass)
+                    / 2,
+                    c="grey",
+                    linestyle="--",
+                    linewidth=0.1,
+                )
+            axs[0, 1].axvline(
+                dist_to_redshift(true_galaxy.d_L), color="g", linestyle="--"
+            )
+            axs[0, 1].set_xlabel("redshift")
+            axs[0, 1].axvline(
+                host_galaxies_mean_redshift,
+                color="r",
+                linestyle="--",
+                label="mean redshift",
+            )
+            axs[0, 1].axvline(
+                dist_to_redshift(detection.d_L),
+                color="black",
+                linestyle="-.",
+                label="detection redshift",
+            )
+            axs[0, 1].set_title("redshift_distribution with BH mass")
+
+            # plot 1,0
+            axs[1, 0].axvline(H, color="g", linestyle="--")
+            axs[1, 0].set_title(f"likelihood")
+
+            axs[1, 1].set_title("bias correction factor")
+            axs[1, 1].set_xlabel("h value")
+
             for h_value, host_galaxy_weights in host_galaxy_weights_by_h_value.items():
                 h_value = float(h_value)
-                host_galaxies = [
-                    galaxy_catalog.get_host_galaxy_by_index(int(index))
-                    for index, _ in host_galaxy_weights
-                ]
-                host_galaxies_phi = np.array([galaxy.phiS for galaxy in host_galaxies])
-                host_galaxies_theta = np.array([galaxy.qS for galaxy in host_galaxies])
-                host_galaxies_redshift = np.array(
-                    [galaxy.z for galaxy in host_galaxies]
-                )
-                host_galaxies_mean_redshift = np.mean(host_galaxies_redshift)
 
-                host_galaxies_mass = np.array([galaxy.M for galaxy in host_galaxies])
+                # TODO: change with next evaluation
                 likelihoods_without_bh_mass = np.array(
                     [weights[0] for _, weights in host_galaxy_weights]
                 )
@@ -1270,18 +1466,28 @@ class BayesianStatistics:
                 distance_relation_derivative_at_detection_redshift = dist_derivative(
                     detection_redshift, h=h_value
                 )
+
                 p_gal_at_detection_redshift = np.sum(
                     [
-                        NormalDist(
-                            mu=galaxy.z,
-                            sigma=galaxy.z_error,
-                        ).pdf(detection_redshift)
-                        for galaxy in host_galaxies
+                        normal.pdf(detection_redshift)
+                        for normal in gaussians_without_bh_mass
+                    ]
+                ) / len(host_galaxies_without_bh_mass)
+
+                p_gal_at_detection_redshift_with_bh_mass = np.sum(
+                    [
+                        normal.pdf(detection_redshift)
+                        for normal in gaussians_with_bh_mass
                     ]
                 ) / len(host_galaxies)
 
                 alpha_without_bh_mass = (
                     p_gal_at_detection_redshift
+                    / distance_relation_derivative_at_detection_redshift
+                )
+
+                alpha_with_bh_mass = (
+                    p_gal_at_detection_redshift_with_bh_mass
                     / distance_relation_derivative_at_detection_redshift
                 )
 
@@ -1293,97 +1499,30 @@ class BayesianStatistics:
                 detection_likelihood_with_bh_mass = (
                     np.sum(likelihoods_with_bh_mass)
                     / max_likelihood_with_bh_mass
-                    / alpha_without_bh_mass
+                    / alpha_with_bh_mass
                 )
 
                 # plot likelihood contribution by redshift bins
-                redshift_bins = np.linspace(
-                    min(host_galaxies_redshift), max(host_galaxies_redshift), num=21
-                )
-                likelihood_bin_contribution = []
-                likelihood_with_bh_mass_bin_contribution = []
-                galaxies_per_bin = []
-                for bin_number in range(20):
-                    redshift_min = redshift_bins[bin_number]
-                    redshift_max = redshift_bins[bin_number + 1]
-                    bin_galaxies = np.where(
-                        np.logical_and(
-                            host_galaxies_redshift >= redshift_min,
-                            host_galaxies_redshift < redshift_max,
-                        )
-                    )[0]
-                    number_of_galaxies_in_bin = len(bin_galaxies)
-                    if number_of_galaxies_in_bin == 0:
-                        number_of_galaxies_in_bin = 1
-                    galaxies_per_bin.append(number_of_galaxies_in_bin)
-                    contribution = np.sum(
-                        [
-                            likelihood
-                            for likelihood in likelihoods_without_bh_mass[bin_galaxies]
-                        ]
-                    )
-                    likelihood_bin_contribution.append(contribution)
-                    contribution_with_bh_mass = np.sum(
-                        [
-                            likelihood
-                            for likelihood in likelihoods_with_bh_mass[bin_galaxies]
-                        ]
-                    )
-                    likelihood_with_bh_mass_bin_contribution.append(
-                        contribution_with_bh_mass
-                    )
+
                 # plt galaxy number per bin in plot 0,0
 
-                cmap = cm.get_cmap("viridis")
                 h_normalized = (h_value - min(self.h_values)) / (
                     max(self.h_values) - min(self.h_values)
                 )
 
                 axs[0, 0].scatter(
-                    redshift_bins[:-1],
-                    likelihood_bin_contribution,
+                    detection_redshift,
+                    p_gal_at_detection_redshift,
                     c=cmap(h_normalized),
                 )
-                axs[0, 0].axvline(
-                    dist_to_redshift(true_galaxy.d_L), color="g", linestyle="--"
-                )
-                axs[0, 0].set_xlabel("redshift")
-                axs[0, 0].axvline(
-                    host_galaxies_mean_redshift,
-                    color="r",
-                    linestyle="--",
-                    label="mean redshift",
-                )
-                axs[0, 0].axvline(
-                    dist_to_redshift(detection.d_L),
-                    color="black",
-                    linestyle="-.",
-                    label="detection redshift",
-                )
-                axs[0, 0].set_title("likelihood contribution without BH mass")
+
+                # plot 0, 1
 
                 axs[0, 1].scatter(
-                    redshift_bins[:-1],
-                    likelihood_with_bh_mass_bin_contribution,
+                    detection_redshift,
+                    p_gal_at_detection_redshift_with_bh_mass,
                     c=cmap(h_normalized),
                 )
-                axs[0, 1].axvline(
-                    dist_to_redshift(true_galaxy.d_L), color="g", linestyle="--"
-                )
-                axs[0, 1].set_xlabel("redshift")
-                axs[0, 1].axvline(
-                    host_galaxies_mean_redshift,
-                    color="r",
-                    linestyle="--",
-                    label="mean redshift",
-                )
-                axs[0, 1].axvline(
-                    dist_to_redshift(detection.d_L),
-                    color="black",
-                    linestyle="-.",
-                    label="detection redshift",
-                )
-                axs[0, 1].set_title("likelihood contributions with BH mass")
 
                 # plot likelihoods
                 # try the weighting by the number of galaxies in the bin
@@ -1407,8 +1546,20 @@ class BayesianStatistics:
                     c="r",
                     label="with BH mass",
                 )
-                axs[1, 0].axvline(H, color="g", linestyle="--")
-                axs[1, 0].set_title(f"likelihood")
+
+                # plt 1,1 plot bias correction factor
+                axs[1, 1].scatter(
+                    [h_value],
+                    alpha_without_bh_mass,
+                    c="b",
+                    label="without BH mass",
+                )
+                axs[1, 1].scatter(
+                    [h_value],
+                    alpha_with_bh_mass,
+                    c="r",
+                    label="with BH mass",
+                )
 
                 """
                 # plot weights of true galaxy in detection
@@ -1474,7 +1625,7 @@ class BayesianStatistics:
                 PLOT_GALAXIES = True
                 if (np.round(h_value, 2) == H) and PLOT_GALAXIES:
                     # plot redshift mass distribution
-                    axs[1, 1].scatter(
+                    """axs[1, 1].scatter(
                         host_galaxies_redshift,
                         np.log10(host_galaxies_mass),
                         s=likelihoods_with_bh_mass
@@ -1497,7 +1648,7 @@ class BayesianStatistics:
                     )
                     axs[1, 1].set_xlabel("redshift")
                     axs[1, 1].set_ylabel("log 10 mass in solar masses")
-                    axs[1, 1].set_title("redshift mass distribution")
+                    axs[1, 1].set_title("redshift mass distribution")"""
 
                     axs[0, 2].scatter(
                         host_galaxies_phi,
@@ -2801,9 +2952,16 @@ class BayesianStatistics:
             detection_index
         ] = galaxy_likelihoods
 
-        self.posterior_data_with_bh_mass[ADDITIONAL_GALAXIES_WITHOUT_BH_MASS][detection_index] = [
-            galaxy.catalog_index for galaxy in possible_host_galaxies_reduced
-        ]
+        additional_likelihoods = list(
+            zip(
+                [galaxy.catalog_index for galaxy in possible_host_galaxies_reduced],
+                results,
+            )
+        )
+
+        self.posterior_data_with_bh_mass[ADDITIONAL_GALAXIES_WITHOUT_BH_MASS][
+            detection_index
+        ] = additional_likelihoods
 
         if len(results) == 0:
             print("no results found")
