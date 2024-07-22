@@ -485,6 +485,7 @@ class BayesianStatistics:
     h_values: List = []
     h_values_with_bh_mass: List = []
     galaxy_weights = {}
+    additional_galaxies_without_bh_mass = {}
     posterior_data: Dict[int, List[float]] = {}
     posterior_data_with_bh_mass: Dict[int, List[float]] = {}
 
@@ -535,6 +536,10 @@ class BayesianStatistics:
                     continue
                 h = str(h_data.pop("h"))
                 self.galaxy_weights[h] = h_data.pop(GALAXY_LIKELIHOODS)
+                self.additional_galaxies_without_bh_mass[h] = h_data.pop(
+                    ADDITIONAL_GALAXIES_WITHOUT_BH_MASS
+                )
+
                 posteriors_with_bh_mass_data[h] = h_data
 
         # extract h_values and posteriors for each detection
