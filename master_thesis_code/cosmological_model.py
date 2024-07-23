@@ -1320,12 +1320,12 @@ class BayesianStatistics:
 
             # redshift distribution of galaxies
             gaussians_with_bh_mass = [
-                NormalDist(mu=galaxy.z, sigma=galaxy.z_error / 10)
+                NormalDist(mu=galaxy.z, sigma=galaxy.z_error )
                 for galaxy in host_galaxies
             ]
 
             gaussians_without_bh_mass = [
-                NormalDist(mu=galaxy.z, sigma=galaxy.z_error / 10)
+                NormalDist(mu=galaxy.z, sigma=galaxy.z_error )
                 for galaxy in host_galaxies_without_bh_mass
             ]
 
@@ -1562,7 +1562,7 @@ class BayesianStatistics:
 
                 # detection accuracy
                 detection_accuracy_gaussian = NormalDist(
-                    mu=detection.d_L, sigma=detection.d_L_uncertainty / 2
+                    mu=detection.d_L, sigma=detection.d_L_uncertainty 
                 )
 
                 d_L_range = np.linspace(
@@ -1575,7 +1575,7 @@ class BayesianStatistics:
                     [detection_accuracy_gaussian.pdf(d_L) for d_L in d_L_range]
                 )
 
-                infered_z_range = np.array([dist_to_redshift(d_L) for d_L in d_L_range])
+                infered_z_range = np.array([dist_to_redshift(d_L, h=h_value) for d_L in d_L_range])
                 distance_relation_derivative_at_detection_redshift = np.array(
                     [dist_derivative(z, h=h_value) for z in infered_z_range]
                 )
@@ -1611,6 +1611,9 @@ class BayesianStatistics:
                 )
 
                 detection_redshift = dist_to_redshift(detection.d_L, h=h_value)
+                distance_relation_derivative_at_detection_redshift = dist_derivative(
+                    detection_redshift, h=h_value
+                )
 
                 p_gal_at_detection_redshift = np.sum(
                     [
@@ -1625,6 +1628,17 @@ class BayesianStatistics:
                         for normal in gaussians_with_bh_mass
                     ]
                 ) / len(host_galaxies)
+
+                alpha_without_bh_mass = (
+                    p_gal_at_detection_redshift
+                    / distance_relation_derivative_at_detection_redshift
+                )
+
+                alpha_with_bh_mass = (
+                    p_gal_at_detection_redshift_with_bh_mass
+                    / distance_relation_derivative_at_detection_redshift
+                )
+
 
                 detection_likelihood_without_bh_mass = (
                     (np.sum(likelihoods_without_bh_mass))
@@ -3115,17 +3129,17 @@ class BayesianStatistics:
         # without bh mass
         # detection accuracy
         gaussians_without_bh_mass = [
-            NormalDist(mu=galaxy.z, sigma=galaxy.z_error / 10) for galaxy in possible_host_galaxies
+            NormalDist(mu=galaxy.z, sigma=galaxy.z_error) for galaxy in possible_host_galaxies
         ]
 
         # with bh mass
         gaussians_with_bh_mass = [
-            NormalDist(mu=galaxy.z, sigma=galaxy.z_error / 10)
+            NormalDist(mu=galaxy.z, sigma=galaxy.z_error)
             for galaxy in possible_host_galaxies_with_bh_mass
         ]
         detection = self.detection
 
-        detection_accuracy_gaussian = NormalDist(
+        """detection_accuracy_gaussian = NormalDist(
             mu=detection.d_L, sigma=detection.d_L_uncertainty / 2
         )
 
@@ -3172,11 +3186,31 @@ class BayesianStatistics:
             * detection_accuracy_gaussian_values
             / distance_relation_derivative_at_detection_redshift,
             d_L_range,
+        )"""
+
+        detection_redshift = dist_to_redshift(detection.d_L, h=self.h)
+
+        distance_relation_derivative_at_detection_redshift = dist_derivative(
+            detection_redshift, h=self.h
         )
 
+        p_gal_at_detection_redshift = np.sum(
+            [normal.pdf(detection_redshift) for normal in gaussians_without_bh_mass]
+        ) 
+
+        p_gal_at_detection_redshift_with_bh_mass = np.sum(
+            [normal.pdf(detection_redshift) for normal in gaussians_with_bh_mass]
+        )
+
+        alpha_without_bh_mass = p_gal_at_detection_redshift / distance_relation_derivative_at_detection_redshift
+
+        alpha_with_bh_mass = p_gal_at_detection_redshift_with_bh_mass / distance_relation_derivative_at_detection_redshift
+
+
+
         return (
-            likelihood_without_bh_mass / alpha_with_bh_mass,
-            likelihood_with_bh_mass / alpha_without_bh_mass,
+            likelihood_without_bh_mass / alpha_without_bh_mass,
+            likelihood_with_bh_mass / alpha_with_bh_mass,
         )
 
 
