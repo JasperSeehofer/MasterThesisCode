@@ -736,7 +736,7 @@ class BayesianStatistics:
 
         # create color list with 10 different colors
         NUMBER_OF_SUBSETS = 20
-        NUMBER_OF_DETECTIONS = 50
+        NUMBER_OF_DETECTIONS = 75
         fig.suptitle(
             f"Posterior distribution of Hubble constant h using {NUMBER_OF_SUBSETS} subsets of {NUMBER_OF_DETECTIONS} detections"
         )
@@ -1194,15 +1194,28 @@ class BayesianStatistics:
                     weight_data[int(detection_index)] = {}
                     weight_data[int(detection_index)][h] = host_galaxy_weights
 
-        additional_galaxies_by_detection_index = list(
-            self.additional_galaxies_without_bh_mass.values()
-        )[0]
+        additional_galaxy_likelihoods_by_detection = {}
+        for h, data in self.additional_galaxies_without_bh_mass.items():
+            for detection_index, host_galaxy_weights in data.items():
+                try:
+                    additional_galaxy_likelihoods_by_detection[int(detection_index)][h] = host_galaxy_weights
+                except KeyError:
+                    if len(host_galaxy_weights) == 0:
+                        continue
+                    additional_galaxy_likelihoods_by_detection[int(detection_index)] = {}
+                    additional_galaxy_likelihoods_by_detection[int(detection_index)][h] = host_galaxy_weights
 
         # remove weight_data with less samples than h_values
         weight_data = {
             detection_index: host_galaxy_weights
             for detection_index, host_galaxy_weights in weight_data.items()
             if len(host_galaxy_weights.keys()) == len(self.h_values_with_bh_mass)
+        }
+
+        additional_galaxy_likelihoods_by_detection = {
+            detection_index: host_galaxy_weights
+            for detection_index, host_galaxy_weights in additional_galaxy_likelihoods_by_detection.items()
+            if len(host_galaxy_weights.keys()) == len(self.h_values)
         }
 
         max_likelihood_without_bh_mass_by_detection = {
@@ -1224,6 +1237,17 @@ class BayesianStatistics:
             )
             for detection_index, host_galaxy_weights in weight_data.items()
         }
+
+        max_likelihood_additional_galaxies_by_detection = {
+            detection_index: np.max(
+                [
+                    np.sum([likelihood for _, likelihood in value])
+                    for value in host_galaxy_weights.values()
+                ]
+            )
+            for detection_index, host_galaxy_weights in additional_galaxy_likelihoods_by_detection.items()
+        }
+
         for detection_index, host_galaxy_weights_by_h_value in weight_data.items():
             _LOGGER.info(f"Visualizing galaxy weights for detection {detection_index}")
             detection = Detection(self.cramer_rao_bounds.iloc[int(detection_index)])
@@ -1232,21 +1256,23 @@ class BayesianStatistics:
             )
             max_likelihood_without_bh_mass = (
                 max_likelihood_without_bh_mass_by_detection[detection_index]
-            )
-            max_likelihood_with_bh_mass = max_likelihood_with_bh_mass_by_detection[
-                detection_index
-            ]
-            true_galaxy_index = int(
-                self.true_cramer_rao_bounds.iloc[int(detection_index)][
-                    "host_galaxy_index"
+                + max_likelihood_additional_galaxies_by_detection[
+                    detection_index
                 ]
             )
 
+            max_likelihood_with_bh_mass = max_likelihood_with_bh_mass_by_detection[
+                detection_index
+            ]
+
+        
+            additional_galaxy_likelihoods_by_h = additional_galaxy_likelihoods_by_detection[
+                detection_index
+            ]
+
             additional_galaxies = [
                 galaxy_catalog.get_host_galaxy_by_index(int(galaxy_index))
-                for galaxy_index in additional_galaxies_by_detection_index[
-                    str(detection_index)
-                ]
+                for galaxy_index, _ in additional_galaxy_likelihoods_by_h.values().__iter__().__next__()
             ]
 
             # plot h values on x axis and weights on y axis and the sum of weights
@@ -1289,12 +1315,12 @@ class BayesianStatistics:
 
             # redshift distribution of galaxies
             gaussians_with_bh_mass = [
-                NormalDist(mu=galaxy.z, sigma=galaxy.z_error / 5)
+                NormalDist(mu=galaxy.z, sigma=galaxy.z_error)
                 for galaxy in host_galaxies
             ]
 
             gaussians_without_bh_mass = [
-                NormalDist(mu=galaxy.z, sigma=galaxy.z_error / 5)
+                NormalDist(mu=galaxy.z, sigma=galaxy.z_error)
                 for galaxy in host_galaxies_without_bh_mass
             ]
 
@@ -1307,7 +1333,7 @@ class BayesianStatistics:
             redshift_range = np.linspace(
                 min(host_galaxies_redshift_without_bh_mass) - 2 * mean_gaussian_std,
                 max(host_galaxies_redshift_without_bh_mass) + 2 * mean_gaussian_std,
-                50,
+                100,
             )
             redshift_distribution_by_gaussian = np.array(
                 [
@@ -1377,7 +1403,7 @@ class BayesianStatistics:
             redshift_range_with_bh_mass = np.linspace(
                 min(host_galaxies_redshift) - 2 * mean_gaussian_std,
                 max(host_galaxies_redshift) + 2 * mean_gaussian_std,
-                50,
+                100,
             )
             redshift_distribution_with_bh_mass_by_gaussian = np.array(
                 [
@@ -1451,12 +1477,17 @@ class BayesianStatistics:
             axs[1, 1].set_xlabel("h value")
 
             for h_value, host_galaxy_weights in host_galaxy_weights_by_h_value.items():
+                additional_galaxy_likelihoods = np.array([
+                    likelihood
+                    for _, likelihood in additional_galaxy_likelihoods_by_h[h_value]
+                ])
                 h_value = float(h_value)
-
+              
                 # TODO: change with next evaluation
-                likelihoods_without_bh_mass = np.array(
+                likelihoods_without_bh_mass = np.concatenate([np.array(
                     [weights[0] for _, weights in host_galaxy_weights]
-                )
+                ), additional_galaxy_likelihoods], axis=None)
+
                 likelihoods_with_bh_mass = np.array(
                     [weights[1] for _, weights in host_galaxy_weights]
                 )
@@ -1492,7 +1523,9 @@ class BayesianStatistics:
                 )
 
                 detection_likelihood_without_bh_mass = (
-                    np.sum(likelihoods_without_bh_mass)
+                    (
+                        np.sum(likelihoods_without_bh_mass)
+                    )
                     / max_likelihood_without_bh_mass
                     / alpha_without_bh_mass
                 )
@@ -1651,8 +1684,8 @@ class BayesianStatistics:
                     axs[1, 1].set_title("redshift mass distribution")"""
 
                     axs[0, 2].scatter(
-                        host_galaxies_phi,
-                        host_galaxies_theta,
+                        host_galaxies_phi_without_bh_mass,
+                        host_galaxies_theta_without_bh_mass,
                         c=likelihoods_without_bh_mass,
                         cmap="viridis",
                     )
