@@ -1320,27 +1320,55 @@ class BayesianStatistics:
 
             # redshift distribution of galaxies
             gaussians_with_bh_mass = [
-                NormalDist(mu=galaxy.z, sigma=galaxy.z_error)
+                truncnorm((0 - galaxy.z) / galaxy.z_error, 10, galaxy.z, galaxy.z_error)
                 for galaxy in host_galaxies
             ]
 
             gaussians_without_bh_mass = [
-                NormalDist(mu=galaxy.z, sigma=galaxy.z_error)
-                for galaxy in host_galaxies_without_bh_mass
+                truncnorm(
+                    (0 - galaxy.z) / galaxy.z_error,
+                    10,
+                    galaxy.z,
+                    galaxy.z_error,
+                )
+                for galaxy in additional_galaxies
             ]
 
             # detection accuracy
-            detection_z_uncertainty = detection.d_L_uncertainty / dist_derivative(
-                dist_to_redshift(detection.d_L)
-            )
-            detection_accuracy_gaussian = NormalDist(
-                mu=dist_to_redshift(detection.d_L), sigma=detection_z_uncertainty
+
+            detection_accuracy_gaussian = truncnorm(
+                (0 - detection.d_L) / detection.d_L_uncertainty,
+                10,
+                detection.d_L,
+                detection.d_L_uncertainty,
             )
 
-            # plotting independent of h
-            cmap = cm.get_cmap("viridis")
-            mean_gaussian_std = np.mean(
-                [distribution.stdev for distribution in gaussians_without_bh_mass]
+            d_L_range = np.linspace(
+                max(0.0, detection.d_L - 2 * detection.d_L_uncertainty),
+                detection.d_L + 2 * detection.d_L_uncertainty,
+                100,
+            )
+
+            detection_redshift_accuracy_gaussian = truncnorm(
+                (0 - dist_to_redshift(detection.d_L))
+                / dist_to_redshift(detection.d_L_uncertainty),
+                10,
+                dist_to_redshift(detection.d_L),
+                dist_to_redshift(detection.d_L_uncertainty),
+            )
+
+            mean_gaussian_std_with_bh_mass = np.mean(
+                [distribution.std() for distribution in gaussians_with_bh_mass]
+            )
+
+            stds = [distribution.std() for distribution in gaussians_without_bh_mass]
+            stds.extend([distribution.std() for distribution in gaussians_with_bh_mass])
+            mean_gaussian_std = np.mean(stds)
+
+            redshift_range_with_bh_mass = np.linspace(
+                min(host_galaxies_redshift) - 2 * mean_gaussian_std,
+                max(host_galaxies_redshift) + 2 * mean_gaussian_std,
+                100,
             )
 
             redshift_range = np.linspace(
@@ -1348,14 +1376,33 @@ class BayesianStatistics:
                 max(host_galaxies_redshift_without_bh_mass) + 2 * mean_gaussian_std,
                 100,
             )
-            redshift_distribution_by_gaussian = np.array(
+
+            redshift_distribution_with_bh_mass_by_gaussian = np.array(
                 [
-                    [normal.pdf(redshift) for normal in gaussians_without_bh_mass]
-                    for redshift in redshift_range
+                    normal.pdf(redshift_range_with_bh_mass)
+                    for normal in gaussians_with_bh_mass
                 ]
+            )
+
+            redshift_distribution_with_bh_mass = np.sum(
+                redshift_distribution_with_bh_mass_by_gaussian, axis=0
+            )
+
+            redshift_distribution_by_gaussian = np.array(
+                [normal.pdf(redshift_range) for normal in gaussians_without_bh_mass]
+            )
+
+            redshift_distribution = (
+                np.sum(redshift_distribution_by_gaussian, axis=0)
+                + redshift_distribution_with_bh_mass
             ) / len(host_galaxies_without_bh_mass)
 
-            redshift_distribution = np.sum(redshift_distribution_by_gaussian, axis=1)
+            redshift_distribution_with_bh_mass = (
+                redshift_distribution_with_bh_mass / len(host_galaxies)
+            )
+
+            # plotting independent of h
+            cmap = cm.get_cmap("viridis")
 
             axs[0, 0].plot(
                 redshift_range,
@@ -1383,7 +1430,7 @@ class BayesianStatistics:
             )"""
             gaussian_indices = np.arange(len(gaussians_without_bh_mass))
             for index in gaussian_indices:
-                normal_dist = redshift_distribution_by_gaussian.T[index]
+                normal_dist = redshift_distribution_by_gaussian[index]
                 axs[0, 0].plot(
                     redshift_range,
                     normal_dist / max(normal_dist) * max(redshift_distribution) / 2,
@@ -1392,12 +1439,10 @@ class BayesianStatistics:
                     linewidth=0.1,
                 )
 
-            detection_gaussian_values = np.array(
-                [
-                    detection_accuracy_gaussian.pdf(redshift)
-                    for redshift in redshift_range
-                ]
+            detection_gaussian_values = detection_redshift_accuracy_gaussian.pdf(
+                redshift_range
             )
+
             detection_gaussian_values = (
                 detection_gaussian_values
                 / max(detection_gaussian_values)
@@ -1432,25 +1477,6 @@ class BayesianStatistics:
             axs[0, 0].set_title("redshift distribution")
 
             # plot 0, 1
-            mean_gaussian_std = np.mean(
-                [distribution.stdev for distribution in gaussians_with_bh_mass]
-            )
-            redshift_range_with_bh_mass = np.linspace(
-                min(host_galaxies_redshift) - 2 * mean_gaussian_std,
-                max(host_galaxies_redshift) + 2 * mean_gaussian_std,
-                100,
-            )
-            redshift_distribution_with_bh_mass_by_gaussian = np.array(
-                [
-                    [normal.pdf(redshift) for normal in gaussians_with_bh_mass]
-                    for redshift in redshift_range_with_bh_mass
-                ]
-            ) / len(host_galaxies)
-
-            redshift_distribution_with_bh_mass = np.sum(
-                redshift_distribution_with_bh_mass_by_gaussian, axis=1
-            )
-
             axs[0, 1].plot(
                 redshift_range_with_bh_mass,
                 redshift_distribution_with_bh_mass,
@@ -1458,12 +1484,12 @@ class BayesianStatistics:
             )
 
             axs[0, 1].axvline(
-                redshift_range_with_bh_mass[0] + 3 * mean_gaussian_std,
+                redshift_range_with_bh_mass[0] + 3 * mean_gaussian_std_with_bh_mass,
                 color="grey",
                 linestyle="--",
             )
             axs[0, 1].axvline(
-                redshift_range_with_bh_mass[-1] - 3 * mean_gaussian_std,
+                redshift_range_with_bh_mass[-1] - 3 * mean_gaussian_std_with_bh_mass,
                 color="grey",
                 linestyle="--",
             )
@@ -1476,7 +1502,7 @@ class BayesianStatistics:
             )"""
             gaussian_indices = np.arange(len(gaussians_with_bh_mass))
             for index in gaussian_indices:
-                normal_dist = redshift_distribution_with_bh_mass_by_gaussian.T[index]
+                normal_dist = redshift_distribution_with_bh_mass_by_gaussian[index]
                 axs[0, 1].plot(
                     redshift_range_with_bh_mass,
                     normal_dist
@@ -1488,12 +1514,10 @@ class BayesianStatistics:
                     linewidth=0.1,
                 )
 
-            detection_gaussian_values = np.array(
-                [
-                    detection_accuracy_gaussian.pdf(redshift)
-                    for redshift in redshift_range_with_bh_mass
-                ]
+            detection_gaussian_values = detection_redshift_accuracy_gaussian.pdf(
+                redshift_range_with_bh_mass
             )
+
             detection_gaussian_values = (
                 detection_gaussian_values
                 / max(detection_gaussian_values)
@@ -1557,21 +1581,10 @@ class BayesianStatistics:
                     [weights[1] for _, weights in host_galaxy_weights]
                 )
 
-                # compute bias correction
+                # compute bias correction factor
 
-                # detection accuracy
-                detection_accuracy_gaussian = NormalDist(
-                    mu=detection.d_L, sigma=detection.d_L_uncertainty
-                )
-
-                d_L_range = np.linspace(
-                    detection.d_L - 2 * detection.d_L_uncertainty,
-                    detection.d_L + 2 * detection.d_L_uncertainty,
-                    100,
-                )
-
-                detection_accuracy_gaussian_values = np.array(
-                    [detection_accuracy_gaussian.pdf(d_L) for d_L in d_L_range]
+                detection_accuracy_gaussian_values = detection_accuracy_gaussian.pdf(
+                    d_L_range
                 )
 
                 infered_z_range = np.array(
@@ -1581,63 +1594,63 @@ class BayesianStatistics:
                     [dist_derivative(z, h=h_value) for z in infered_z_range]
                 )
 
-                p_gal_at_detection_redshift = np.array(
-                    [
-                        np.sum([normal.pdf(z) for normal in gaussians_without_bh_mass])
-                        / len(host_galaxies_without_bh_mass)
-                        for z in infered_z_range
-                    ]
+                p_gal_range_with_bh_mass = np.sum(
+                    [normal.pdf(infered_z_range) for normal in gaussians_with_bh_mass],
+                    axis=0,
                 )
 
-                p_gal_at_detection_redshift_with_bh_mass = np.array(
-                    [
-                        np.sum([normal.pdf(z) for normal in gaussians_with_bh_mass])
-                        / len(host_galaxies)
-                        for z in infered_z_range
-                    ]
-                )
+                p_gal_range = (
+                    np.sum(
+                        [
+                            normal.pdf(infered_z_range)
+                            for normal in gaussians_without_bh_mass
+                        ],
+                        axis=0,
+                    )
+                    + p_gal_range_with_bh_mass
+                ) / len(host_galaxies_without_bh_mass)
+
+                p_gal_range_with_bh_mass = p_gal_range_with_bh_mass / len(host_galaxies)
 
                 alpha_without_bh_mass = np.trapz(
-                    p_gal_at_detection_redshift
+                    p_gal_range
                     * detection_accuracy_gaussian_values
                     / distance_relation_derivative_at_detection_redshift,
                     d_L_range,
                 )
 
                 alpha_with_bh_mass = np.trapz(
-                    p_gal_at_detection_redshift_with_bh_mass
+                    p_gal_range_with_bh_mass
                     * detection_accuracy_gaussian_values
                     / distance_relation_derivative_at_detection_redshift,
                     d_L_range,
                 )
 
                 detection_redshift = dist_to_redshift(detection.d_L, h=h_value)
+
                 distance_relation_derivative_at_detection_redshift = dist_derivative(
                     detection_redshift, h=h_value
                 )
-
-                p_gal_at_detection_redshift = np.sum(
-                    [
-                        normal.pdf(detection_redshift)
-                        for normal in gaussians_without_bh_mass
-                    ]
-                ) / len(host_galaxies_without_bh_mass)
 
                 p_gal_at_detection_redshift_with_bh_mass = np.sum(
                     [
                         normal.pdf(detection_redshift)
                         for normal in gaussians_with_bh_mass
                     ]
-                ) / len(host_galaxies)
-
-                alpha_without_bh_mass = (
-                    p_gal_at_detection_redshift
-                    / distance_relation_derivative_at_detection_redshift
                 )
 
-                alpha_with_bh_mass = (
-                    p_gal_at_detection_redshift_with_bh_mass
-                    / distance_relation_derivative_at_detection_redshift
+                p_gal_at_detection_redshift = (
+                    np.sum(
+                        [
+                            normal.pdf(detection_redshift)
+                            for normal in gaussians_without_bh_mass
+                        ]
+                    )
+                    + p_gal_at_detection_redshift_with_bh_mass
+                ) / len(host_galaxies_without_bh_mass)
+
+                p_gal_at_detection_redshift_with_bh_mass = (
+                    p_gal_at_detection_redshift_with_bh_mass / len(host_galaxies)
                 )
 
                 detection_likelihood_without_bh_mass = (
@@ -3124,50 +3137,52 @@ class BayesianStatistics:
         # without bh mass
         # detection accuracy
         gaussians_without_bh_mass = [
-            NormalDist(mu=galaxy.z, sigma=galaxy.z_error)
-            for galaxy in possible_host_galaxies
+            truncnorm((0.0 - galaxy.z) / galaxy.z_error, 10, galaxy.z, galaxy.z_error)
+            for galaxy in possible_host_galaxies_reduced
         ]
 
         # with bh mass
         gaussians_with_bh_mass = [
-            NormalDist(mu=galaxy.z, sigma=galaxy.z_error)
+            truncnorm((0.0 - galaxy.z) / galaxy.z_error, 10, galaxy.z, galaxy.z_error)
             for galaxy in possible_host_galaxies_with_bh_mass
         ]
-        detection = self.detection
 
-        detection_accuracy_gaussian = NormalDist(
-            mu=detection.d_L, sigma=detection.d_L_uncertainty
+        detection_accuracy_gaussian = truncnorm(
+            (0.0 - self.detection.d_L) / self.detection.d_L_uncertainty,
+            10,
+            self.detection.d_L,
+            self.detection.d_L_uncertainty,
         )
 
         d_L_range = np.linspace(
-            detection.d_L - 4 * detection.d_L_uncertainty,
-            detection.d_L + 4 * detection.d_L_uncertainty,
+            max(0.0, self.detection.d_L - 3 * self.detection.d_L_uncertainty),
+            self.detection.d_L + 3 * self.detection.d_L_uncertainty,
             100,
         )
 
-        detection_accuracy_gaussian_values = np.array(
-            [detection_accuracy_gaussian.pdf(d_L) for d_L in d_L_range]
-        )
+        detection_accuracy_gaussian_values = detection_accuracy_gaussian.pdf(d_L_range)
 
         infered_z_range = np.array([dist_to_redshift(d_L) for d_L in d_L_range])
+        
         distance_relation_derivative_at_detection_redshift = np.array(
             [dist_derivative(z, h=self.h) for z in infered_z_range]
         )
 
-        p_gal_at_detection_redshift = np.array(
-            [
-                np.sum([normal.pdf(z) for normal in gaussians_without_bh_mass])
-                / len(possible_host_galaxies)
-                for z in infered_z_range
-            ]
+        p_gal_at_detection_redshift_with_bh_mass = np.sum(
+            [normal.pdf(infered_z_range) for normal in gaussians_with_bh_mass], axis=0
         )
 
-        p_gal_at_detection_redshift_with_bh_mass = np.array(
-            [
-                np.sum([normal.pdf(z) for normal in gaussians_with_bh_mass])
-                / len(possible_host_galaxies_with_bh_mass)
-                for z in infered_z_range
-            ]
+        p_gal_at_detection_redshift = (
+            np.sum(
+                [normal.pdf(infered_z_range) for normal in gaussians_without_bh_mass],
+                axis=0,
+            )
+            + p_gal_at_detection_redshift_with_bh_mass
+        ) / len(possible_host_galaxies)
+
+        p_gal_at_detection_redshift_with_bh_mass = (
+            p_gal_at_detection_redshift_with_bh_mass
+            / len(possible_host_galaxies_with_bh_mass)
         )
 
         alpha_without_bh_mass = np.trapz(
@@ -3333,7 +3348,7 @@ def single_host_likelihood(
 
     # multivariate normal distribution for all parameters including the mass
     if np.isnan(possible_host.M):
-        # print(f"possible host has no mass information: {possible_host}", flush=True)
+        print(f"possible host has no mass information: {possible_host}", flush=True)
         possible_host.M = 0.0
         possible_host.M_error = 1.0
     covariance = [
@@ -3354,12 +3369,13 @@ def single_host_likelihood(
         ],
     ]
 
-    redshift_normal_distribution = NormalDist(
-        mu=possible_host.z, sigma=possible_host.z_error
+    redshift_normal_distribution = truncnorm(
+        (0 - possible_host.z) / possible_host.z_error,
+        10,
+        possible_host.z,
+        possible_host.z_error,
     )
-    redshift_normal_distribution = np.array(
-        [redshift_normal_distribution.pdf(redshift) for redshift in z_gws]
-    )
+    redshift_normal_distribution = redshift_normal_distribution.pdf(z_gws)
 
     normal_distribution = multivariate_normal(
         mean=[
@@ -3434,13 +3450,14 @@ def single_host_likelihood(
         # treat redshifted mass peak as delta function # TODO: check if correct
         M_g = detection.M / (1 + z_gws)
 
-        mass_normal_distribution = NormalDist(
-            mu=possible_host.M, sigma=possible_host.M_error
+        mass_normal_distribution = truncnorm(
+            (0 - possible_host.M) / possible_host.M_error,
+            10,
+            possible_host.M,
+            possible_host.M_error,
         )
 
-        mass_normal_distribution = np.array(
-            [mass_normal_distribution.pdf(mass) for mass in M_g]
-        )
+        mass_normal_distribution = mass_normal_distribution.pdf(M_g)
 
         # prepare positions for multivariate normal distribution for all parameters including the mass
         positions = np.vstack(

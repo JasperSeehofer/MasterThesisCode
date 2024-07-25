@@ -271,12 +271,14 @@ class GalaxyCatalogueHandler:
         # plot redshift errors
         fig, ax = plt.subplots()
         ax.hist(
-            self.reduced_galaxy_catalog[InternalCatalogColumns.REDSHIFT_ERROR], bins=200
+            self.reduced_galaxy_catalog[InternalCatalogColumns.REDSHIFT_ERROR]
+            / self.reduced_galaxy_catalog[InternalCatalogColumns.REDSHIFT],
+            bins=200,
         )
-        ax.set_xlabel("Redshift error")
+        ax.set_xlabel("relative redshift error")
         ax.set_ylabel("Number of galaxies with redshift error")
         ax.set_yscale("log")
-        plt.savefig(figures_directory + "redshift_error_distribution.png")
+        plt.savefig(figures_directory + "relative_redshift_error_distribution.png")
         plt.close()
 
     def parse_to_reduced_catalog(self, galaxy_catalogue_file_path: str) -> None:
