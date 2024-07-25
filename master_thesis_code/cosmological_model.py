@@ -3163,7 +3163,7 @@ class BayesianStatistics:
         detection_accuracy_gaussian_values = detection_accuracy_gaussian.pdf(d_L_range)
 
         infered_z_range = np.array([dist_to_redshift(d_L) for d_L in d_L_range])
-        
+
         distance_relation_derivative_at_detection_redshift = np.array(
             [dist_derivative(z, h=self.h) for z in infered_z_range]
         )
@@ -3178,11 +3178,10 @@ class BayesianStatistics:
                 axis=0,
             )
             + p_gal_at_detection_redshift_with_bh_mass
-        ) / len(possible_host_galaxies)
+        )
 
         p_gal_at_detection_redshift_with_bh_mass = (
             p_gal_at_detection_redshift_with_bh_mass
-            / len(possible_host_galaxies_with_bh_mass)
         )
 
         alpha_without_bh_mass = np.trapz(
