@@ -1545,7 +1545,6 @@ class BayesianStatistics:
                 )
                 h_value = float(h_value)
 
-                # TODO: change with next evaluation
                 likelihoods_without_bh_mass = np.concatenate(
                     [
                         np.array([weights[0] for _, weights in host_galaxy_weights]),
@@ -2047,11 +2046,6 @@ class BayesianStatistics:
                 self.cramer_rao_bounds.drop(index, inplace=True)
         _LOGGER.debug(
             f"After filtering {len(self.cramer_rao_bounds)} detections with skylocalization error < 0.0006"
-        )
-
-        # JUST FOR DEBUGGING THE BIAS
-        self.cramer_rao_bounds["M"] = self.cramer_rao_bounds["M"] * (
-            1 + np.array([dist_to_redshift(d) for d in self.cramer_rao_bounds["dist"]])
         )
 
         self.h = h_value
