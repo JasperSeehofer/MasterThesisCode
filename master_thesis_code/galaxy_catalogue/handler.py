@@ -268,6 +268,17 @@ class GalaxyCatalogueHandler:
         plt.savefig(figures_directory + "prunded_redshift_mass_contour_plot.png")
         plt.close()
 
+        # plot redshift errors
+        fig, ax = plt.subplots()
+        ax.hist(
+            self.reduced_galaxy_catalog[InternalCatalogColumns.REDSHIFT_ERROR], bins=200
+        )
+        ax.set_xlabel("Redshift error")
+        ax.set_ylabel("Number of galaxies with redshift error")
+        ax.set_yscale("log")
+        plt.savefig(figures_directory + "redshift_error_distribution.png")
+        plt.close()
+
     def parse_to_reduced_catalog(self, galaxy_catalogue_file_path: str) -> None:
         iterator = pd.read_csv(
             filepath_or_buffer=galaxy_catalogue_file_path,
