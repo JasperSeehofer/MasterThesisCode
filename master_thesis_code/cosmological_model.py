@@ -736,7 +736,7 @@ class BayesianStatistics:
 
         # create color list with 10 different colors
         NUMBER_OF_SUBSETS = 20
-        NUMBER_OF_DETECTIONS = 75
+        NUMBER_OF_DETECTIONS = 50
         fig.suptitle(
             f"Posterior distribution of Hubble constant h using {NUMBER_OF_SUBSETS} subsets of {NUMBER_OF_DETECTIONS} detections"
         )
@@ -1365,21 +1365,16 @@ class BayesianStatistics:
             stds.extend([distribution.std() for distribution in gaussians_with_bh_mass])
             mean_gaussian_std = np.mean(stds)
 
-            redshift_range_with_bh_mass = np.linspace(
-                min(host_galaxies_redshift) - 2 * mean_gaussian_std,
-                max(host_galaxies_redshift) + 2 * mean_gaussian_std,
-                100,
-            )
 
             redshift_range = np.linspace(
-                min(host_galaxies_redshift_without_bh_mass) - 2 * mean_gaussian_std,
+                max(-0.002, min(host_galaxies_redshift_without_bh_mass) - 2 * mean_gaussian_std),
                 max(host_galaxies_redshift_without_bh_mass) + 2 * mean_gaussian_std,
                 100,
             )
 
             redshift_distribution_with_bh_mass_by_gaussian = np.array(
                 [
-                    normal.pdf(redshift_range_with_bh_mass)
+                    normal.pdf(redshift_range)
                     for normal in gaussians_with_bh_mass
                 ]
             )
@@ -1478,18 +1473,18 @@ class BayesianStatistics:
 
             # plot 0, 1
             axs[0, 1].plot(
-                redshift_range_with_bh_mass,
+                redshift_range,
                 redshift_distribution_with_bh_mass,
                 c="black",
             )
 
             axs[0, 1].axvline(
-                redshift_range_with_bh_mass[0] + 3 * mean_gaussian_std_with_bh_mass,
+                redshift_range[0] + 3 * mean_gaussian_std_with_bh_mass,
                 color="grey",
                 linestyle="--",
             )
             axs[0, 1].axvline(
-                redshift_range_with_bh_mass[-1] - 3 * mean_gaussian_std_with_bh_mass,
+                redshift_range[-1] - 3 * mean_gaussian_std_with_bh_mass,
                 color="grey",
                 linestyle="--",
             )
@@ -1504,7 +1499,7 @@ class BayesianStatistics:
             for index in gaussian_indices:
                 normal_dist = redshift_distribution_with_bh_mass_by_gaussian[index]
                 axs[0, 1].plot(
-                    redshift_range_with_bh_mass,
+                    redshift_range,
                     normal_dist
                     / max(normal_dist)
                     * max(redshift_distribution_with_bh_mass)
@@ -1515,7 +1510,7 @@ class BayesianStatistics:
                 )
 
             detection_gaussian_values = detection_redshift_accuracy_gaussian.pdf(
-                redshift_range_with_bh_mass
+                redshift_range
             )
 
             detection_gaussian_values = (
@@ -1525,7 +1520,7 @@ class BayesianStatistics:
                 / 2
             )
             axs[0, 1].plot(
-                redshift_range_with_bh_mass,
+                redshift_range,
                 detection_gaussian_values,
                 c="orange",
                 linestyle="dotted",
@@ -2061,6 +2056,12 @@ class BayesianStatistics:
         _LOGGER.debug(
             f"After filtering {len(self.cramer_rao_bounds)} detections with skylocalization error < 0.0006"
         )
+
+        # for debugging redshift the masses
+        self.cramer_rao_bounds["M"] = self.cramer_rao_bounds["M"] * (1 + np.array([
+            dist_to_redshift(d_L)
+            for d_L in self.cramer_rao_bounds["dist"]
+        ]))
 
         self.h = h_value
         _LOGGER.info("prepare global variable for multiprocessing")
