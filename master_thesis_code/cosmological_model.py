@@ -2057,12 +2057,6 @@ class BayesianStatistics:
             f"After filtering {len(self.cramer_rao_bounds)} detections with skylocalization error < 0.0006"
         )
 
-        # for debugging redshift the masses
-        self.cramer_rao_bounds["M"] = self.cramer_rao_bounds["M"] * (1 + np.array([
-            dist_to_redshift(d_L)
-            for d_L in self.cramer_rao_bounds["dist"]
-        ]))
-
         self.h = h_value
         _LOGGER.info("prepare global variable for multiprocessing")
         distances = self.cramer_rao_bounds["dist"]
@@ -3238,7 +3232,7 @@ def use_detection(detection: Detection) -> bool:
     )
     distance_relative_error = detection.d_L_uncertainty / detection.d_L
 
-    if distance_relative_error < 0.04:
+    if distance_relative_error < 0.05:
         return True
     _LOGGER.info(
         f"Detection skipped: distance_relative_error {distance_relative_error}, sky_localization_uncertainty {sky_localization_uncertainty}"
