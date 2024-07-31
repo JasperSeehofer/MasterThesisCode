@@ -100,6 +100,9 @@ class Detection:
             self.phi_error, self.theta, self.theta_error, self.theta_phi_covariance
         )
 
+    def get_relative_distance_error(self) -> float:
+        return self.d_L_uncertainty / self.d_L
+
     def convert_to_best_guess_parameters(self) -> None:
         while True:
             self.phi = np.random.normal(self.phi, self.phi_error)
@@ -649,6 +652,56 @@ class BayesianStatistics:
         )
         plt.close()
 
+        # plot number of possible hosts histogram with and without bh mass
+        fig, ax = plt.subplots(figsize=(16, 9))
+        galaxy_numbers_with_bh_mass = np.array(
+            [
+                len(galaxy_weights)
+                for galaxy_weights in self.galaxy_weights[
+                    str(self.h_values[0])
+                ].values()
+            ]
+        )
+        galaxy_numbers_without_bh_mass = (
+            np.array(
+                [
+                    len(galaxy_weights)
+                    for galaxy_weights in self.additional_galaxies_without_bh_mass[
+                        str(self.h_values[0])
+                    ].values()
+                ]
+            )
+            + galaxy_numbers_with_bh_mass
+        )
+        print(len(galaxy_numbers_without_bh_mass))
+        bins = np.logspace(
+            np.log10(min(galaxy_numbers_without_bh_mass)),
+            np.log10(max(galaxy_numbers_without_bh_mass)),
+            30,
+        )
+
+        plt.hist(
+            galaxy_numbers_without_bh_mass,
+            bins=bins,
+            histtype="step",
+            color="b",
+            label="without bh mass",
+        )
+        plt.hist(
+            galaxy_numbers_with_bh_mass,
+            bins=bins,
+            histtype="step",
+            color="r",
+            label="with bh mass",
+            linestyle="dotted",
+        )
+        plt.xlabel("number of possible hosts")
+        plt.ylabel("number of detections")
+        plt.xscale("log")
+        plt.legend()
+        plt.savefig("saved_figures/number_of_possible_hosts.png", dpi=300)
+        plt.close()
+
         # define colormap for skylocalization coloring
         sky_localization_error_min = min(
             [detection.get_skylocalization_error() for detection in detections]
@@ -656,9 +709,20 @@ class BayesianStatistics:
         sky_localization_error_max = max(
             [detection.get_skylocalization_error() for detection in detections]
         )
+        relativ_distance_error_min = min(
+            [detection.d_L_uncertainty / detection.d_L for detection in detections]
+        )
+        relativ_distance_error_max = max(
+            [
+                detection.d_L_uncertainty / detection.d_L
+                for detection in detections
+                if detection.d_L_uncertainty != 0
+            ]
+        )
+
         cmap = plt.get_cmap("viridis")
         norm = plt.Normalize(
-            vmin=sky_localization_error_min, vmax=sky_localization_error_max
+            vmin=relativ_distance_error_min, vmax=relativ_distance_error_max
         )
 
         """
@@ -679,7 +743,7 @@ class BayesianStatistics:
         ax.axvline(H, color="b", linestyle="--")
         for detection_index, posterior in posterior_data_sorted:
             detection = Detection(self.cramer_rao_bounds.iloc[int(detection_index)])
-            color = cmap(norm(detection.get_skylocalization_error()))
+            color = cmap(norm(detection.get_relative_distance_error()))
 
             zipped = list(zip(self.h_values, posterior))
             zipped.sort(key=lambda x: x[0])
@@ -706,7 +770,7 @@ class BayesianStatistics:
         ax.axvline(H, color="b", linestyle="--")
         for detection_index, posterior in posterior_data_with_bh_mass_sorted:
             detection = Detection(self.cramer_rao_bounds.iloc[int(detection_index)])
-            color = cmap(norm(detection.get_skylocalization_error()))
+            color = cmap(norm(detection.get_relative_distance_error()))
 
             zipped = list(zip(self.h_values_with_bh_mass, posterior))
             zipped.sort(key=lambda x: x[0])
@@ -723,7 +787,7 @@ class BayesianStatistics:
         fig.colorbar(
             plt.cm.ScalarMappable(norm=norm, cmap=cmap),
             ax=ax,
-            label="skylocalization error",
+            label="relative d_L error",
         )
         plt.savefig(
             f"saved_figures/bayesian_statistics_event_posteriors_with_bh_mass.png",
@@ -736,7 +800,7 @@ class BayesianStatistics:
 
         # create color list with 10 different colors
         NUMBER_OF_SUBSETS = 20
-        NUMBER_OF_DETECTIONS = 50
+        NUMBER_OF_DETECTIONS = 25
         fig.suptitle(
             f"Posterior distribution of Hubble constant h using {NUMBER_OF_SUBSETS} subsets of {NUMBER_OF_DETECTIONS} detections"
         )
@@ -1087,7 +1151,7 @@ class BayesianStatistics:
             plt.plot(
                 h_fine,
                 gaussian(h_fine, *popt),
-                label=f"std: {np.round(popt[1], 3)} +/- {np.round(perr[1], 3)},\nmean: {np.round(popt[0], 3)} +/- {np.round(perr[0], 3)}",
+                label=f"std: {np.round(popt[1], 4)} +/- {np.round(perr[1], 4)},\nmean: {np.round(popt[0], 4)} +/- {np.round(perr[0], 4)}",
                 color="b",
                 linestyle="--",
             )
@@ -1137,7 +1201,7 @@ class BayesianStatistics:
             plt.plot(
                 h_fine,
                 gaussian(h_fine, *popt_with_bh_mass),
-                label=f"std: {np.round(popt_with_bh_mass[1], 3)} +/- {np.round(perr_with_bh_mass[1], 3)},\nmean: {np.round(popt_with_bh_mass[0], 3)} +/- {np.round(perr_with_bh_mass[0], 3)}",
+                label=f"std: {np.round(popt_with_bh_mass[1], 4)} +/- {np.round(perr_with_bh_mass[1], 4)},\nmean: {np.round(popt_with_bh_mass[0], 4)} +/- {np.round(perr_with_bh_mass[0], 4)}",
                 color="r",
                 linestyle="--",
             )
@@ -1365,18 +1429,17 @@ class BayesianStatistics:
             stds.extend([distribution.std() for distribution in gaussians_with_bh_mass])
             mean_gaussian_std = np.mean(stds)
 
-
             redshift_range = np.linspace(
-                max(-0.002, min(host_galaxies_redshift_without_bh_mass) - 2 * mean_gaussian_std),
+                max(
+                    -0.002,
+                    min(host_galaxies_redshift_without_bh_mass) - 2 * mean_gaussian_std,
+                ),
                 max(host_galaxies_redshift_without_bh_mass) + 2 * mean_gaussian_std,
                 100,
             )
 
             redshift_distribution_with_bh_mass_by_gaussian = np.array(
-                [
-                    normal.pdf(redshift_range)
-                    for normal in gaussians_with_bh_mass
-                ]
+                [normal.pdf(redshift_range) for normal in gaussians_with_bh_mass]
             )
 
             redshift_distribution_with_bh_mass = np.sum(

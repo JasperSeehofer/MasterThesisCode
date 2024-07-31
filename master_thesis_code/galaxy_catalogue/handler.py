@@ -191,6 +191,52 @@ class GalaxyCatalogueHandler:
         plt.savefig(figures_directory + "estimated_BH_mass_distribution.png")
         plt.close()
 
+        # plot relative mass error histogram
+        fig, ax = plt.subplots(figsize=(16, 9))
+        bins = np.geomspace(
+            min(
+                self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS_ERROR]
+                / self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS]
+            ),
+            max(
+                self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS_ERROR]
+                / self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS]
+            ),
+            40,
+        )
+        ax.hist(
+            self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS_ERROR]
+            / self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS],
+            bins=bins,
+            color="teal",
+            histtype="step",
+        )
+        mean_relative_mass_error = np.mean(
+            self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS_ERROR]
+            / self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS]
+        )
+        ax.vlines(
+            mean_relative_mass_error,
+            0,
+            max(
+                np.histogram(
+                    self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS_ERROR]
+                    / self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS],
+                    bins=bins,
+                )[0]
+            ),
+            color="black",
+            label=f"mean: {mean_relative_mass_error:.3e}",
+            linestyle="--",
+        )
+        ax.set_xlabel("relative BH mass error")
+        ax.set_xscale("log")
+        ax.set_ylabel("Number of galaxies")
+        ax.set_yscale("log")
+        ax.legend()
+        plt.savefig(figures_directory + "relative_BH_mass_error_distribution.png")
+        plt.close()
+
         # visualize redshift distribution
         fig, ax = plt.subplots()
         ax.hist(self.reduced_galaxy_catalog[InternalCatalogColumns.REDSHIFT], bins=200)

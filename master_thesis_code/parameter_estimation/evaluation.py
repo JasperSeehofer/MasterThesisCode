@@ -3,6 +3,7 @@ import os
 from itertools import combinations_with_replacement
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.colors import SymLogNorm
 from master_thesis_code.datamodels.parameter_space import ParameterSpace, Parameter
 from master_thesis_code.cosmological_model import Detection
 from scipy.interpolate import griddata
@@ -64,11 +65,15 @@ class DataEvaluation:
         plt.figure(figsize=(16, 9))
         plt.matshow(
             mean_cramer_rao_bounds.values.astype(float),
-            cmap="viridis",
-            vmin=-1e-4,
-            vmax=1e-4,
+            cmap="coolwarm",
+            norm=SymLogNorm(
+                linthresh=1e-7,
+                linscale=2,
+                vmin=np.min(mean_cramer_rao_bounds.values),
+                vmax=np.max(mean_cramer_rao_bounds.values),
+            ),
         )
-        plt.colorbar()
+        plt.colorbar(label="averaged covariance")
         plt.xticks(
             range(len(parameter_symbol_list)),
             parameter_symbol_list,
@@ -83,6 +88,76 @@ class DataEvaluation:
         )
         plt.savefig(f"{figures_directory}plots/mean_bounds.png", dpi=300)
         plt.close()
+
+        # plot generation time histogram
+        plt.figure(figsize=(16, 9))
+        plt.hist(
+            self._cramer_rao_bounds["generation_time"],
+            bins=30,
+            histtype="step",
+            color="teal",
+        )
+        plt.vlines(
+            np.mean(self._cramer_rao_bounds["generation_time"]),
+            0,
+            max(np.histogram(self._cramer_rao_bounds["generation_time"], bins=20)[0]),
+            color="black",
+            linestyles="--",
+            label=f"mean: {np.round(np.mean(self._cramer_rao_bounds['generation_time']), 3)}s",
+        )
+        plt.xlabel("generation time in s")
+        plt.ylabel("detections")
+        plt.yscale("log")
+        plt.legend()
+        plt.savefig(f"{figures_directory}plots/generation_time.png", dpi=300)
+        plt.close()
+
+        # plot relative mass error histogram
+        plt.figure(figsize=(16, 9))
+        bins = np.geomspace(
+            min(
+                self._cramer_rao_bounds["delta_M_delta_M"] ** (1 / 2)
+                / self._cramer_rao_bounds["M"]
+            ),
+            max(
+                self._cramer_rao_bounds["delta_M_delta_M"] ** (1 / 2)
+                / self._cramer_rao_bounds["M"]
+            ),
+            30,
+        )
+        plt.hist(
+            self._cramer_rao_bounds["delta_M_delta_M"] ** (1 / 2)
+            / self._cramer_rao_bounds["M"],
+            bins=bins,
+            histtype="step",
+            color="teal",
+        )
+        plt.vlines(
+            np.mean(
+                self._cramer_rao_bounds["delta_M_delta_M"] ** (1 / 2)
+                / self._cramer_rao_bounds["M"]
+            ),
+            0,
+            max(
+                np.histogram(
+                    self._cramer_rao_bounds["delta_M_delta_M"] ** (1 / 2)
+                    / self._cramer_rao_bounds["M"],
+                    bins=20,
+                )[0]
+            ),
+            color="black",
+            linestyles="--",
+            label=f"mean: {np.mean(self._cramer_rao_bounds['delta_M_delta_M']** (1 / 2) / self._cramer_rao_bounds['M']):.3e}",
+        )
+        plt.xlabel("relative mass error")
+        plt.xscale("log")
+        plt.ylabel("detections")
+        plt.yscale("log")
+        plt.legend()
+        plt.savefig(f"{figures_directory}plots/relative_mass_error.png", dpi=300)
+        plt.close()
+
+        # example plot gaussian for bh mass integral
 
         # create 3d spherical coordinates plot of detections
 
@@ -580,7 +655,7 @@ class DataEvaluation:
         )
         print(f"redshifts: {redshifts}")
 
-        bin_edges = np.arange(0, max(redshifts), int(max(redshifts) * 100))
+        bin_edges = np.arange(0, max(redshifts), 20)
 
         plt.figure(figsize=(16, 9))
         plt.hist(redshifts, bins=bin_edges, histtype="step")
@@ -600,8 +675,6 @@ class DataEvaluation:
         plt.hist(np.log10(source_masses), bins=bin_edges, histtype="step")
         plt.xlabel("log_10 source mass [solar masses]")
         plt.ylabel("detections")
-        plt.ylim(1, 1e4)
-        plt.xlim(3.5, 7.5)
         plt.savefig(f"{figures_directory}plots/source_masses_detections.png")
         plt.close()
 
@@ -616,13 +689,11 @@ class DataEvaluation:
         )
         plt.xlabel("log_10 SNR")
         plt.ylabel("detections")
-        plt.ylim(1e-2, 1e4)
-        plt.xlim(1, 4)
         plt.savefig(f"{figures_directory}plots/SNR_detections.png")
         plt.close()
 
         # plot mass redshift detection fraction
-        grid_x, grid_y = np.mgrid[0:3:20j, 4:6.5:20j]
+        grid_x, grid_y = np.mgrid[0:0.2:50j, 4.5:6:40j]
 
         hist_detections, _, _ = np.histogram2d(
             redshifts, np.log10(source_masses), bins=[grid_x[:, 0], grid_y[0, :]]
