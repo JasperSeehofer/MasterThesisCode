@@ -316,7 +316,7 @@ class Model1CrossCheck:
     def _apply_model_assumptions(self) -> None:
 
         self.parameter_space.M.lower_limit = 10 ** (4.5)
-        self.parameter_space.M.upper_limit = 10 ** (6.5)
+        self.parameter_space.M.upper_limit = 10 ** (6.0)
 
         self.parameter_space.a.value = 0.98
         self.parameter_space.a.is_fixed = True
@@ -3304,29 +3304,6 @@ class BayesianStatistics:
             for galaxy in possible_host_galaxies_with_bh_mass
         ]
 
-        redshift_range = np.linspace(z_min, z_max, 2000)
-        normalization_with_bh_mass = np.trapz(
-            np.sum(
-                [normal.pdf(redshift_range) for normal in gaussians_with_bh_mass],
-                axis=0,
-            ),
-            redshift_range,
-        )
-
-        normalization_without_bh_mass = (
-            np.trapz(
-                np.sum(
-                    [
-                        normal.pdf(redshift_range)
-                        for normal in gaussians_without_bh_mass
-                    ],
-                    axis=0,
-                ),
-                redshift_range,
-            )
-            + normalization_with_bh_mass
-        )
-
         """
         detection_accuracy_gaussian = truncnorm(
             (0.0 - self.detection.d_L) / self.detection.d_L_uncertainty,
@@ -3379,19 +3356,19 @@ class BayesianStatistics:
             d_L_range,
         )"""
 
-        """detection_redshift = dist_to_redshift(detection.d_L, h=self.h)
+        detection_redshift = dist_to_redshift(self.detection.d_L, h=self.h)
 
         distance_relation_derivative_at_detection_redshift = dist_derivative(
             detection_redshift, h=self.h
         )
 
-        p_gal_at_detection_redshift = np.sum(
-            [normal.pdf(detection_redshift) for normal in gaussians_without_bh_mass]
-        )
-
         p_gal_at_detection_redshift_with_bh_mass = np.sum(
             [normal.pdf(detection_redshift) for normal in gaussians_with_bh_mass]
         )
+
+        p_gal_at_detection_redshift = np.sum(
+            [normal.pdf(detection_redshift) for normal in gaussians_without_bh_mass]
+        ) + p_gal_at_detection_redshift_with_bh_mass
 
         alpha_without_bh_mass = (
             p_gal_at_detection_redshift
@@ -3401,11 +3378,11 @@ class BayesianStatistics:
         alpha_with_bh_mass = (
             p_gal_at_detection_redshift_with_bh_mass
             / distance_relation_derivative_at_detection_redshift
-        )"""
-        # ALPHAS REMOVED
+        )
+        
         return (
-            likelihood_without_bh_mass / normalization_without_bh_mass,
-            likelihood_with_bh_mass / normalization_with_bh_mass,
+            likelihood_without_bh_mass / alpha_without_bh_mass,
+            likelihood_with_bh_mass / alpha_with_bh_mass,
         )
 
 
