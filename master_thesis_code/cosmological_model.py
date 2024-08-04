@@ -3293,7 +3293,7 @@ class BayesianStatistics:
         # without bh mass
         # detection accuracy
         # TESTING WITHOUT LOCAL BIAS CORRECTION
-        """gaussians_without_bh_mass = [
+        gaussians_without_bh_mass = [
             truncnorm((0.0 - galaxy.z) / galaxy.z_error, 10, galaxy.z, galaxy.z_error)
             for galaxy in possible_host_galaxies_reduced
         ]
@@ -3304,6 +3304,30 @@ class BayesianStatistics:
             for galaxy in possible_host_galaxies_with_bh_mass
         ]
 
+        redshift_range = np.linspace(z_min, z_max, 2000)
+        normalization_with_bh_mass = np.trapz(
+            np.sum(
+                [normal.pdf(redshift_range) for normal in gaussians_with_bh_mass],
+                axis=0,
+            ),
+            redshift_range,
+        )
+
+        normalization_without_bh_mass = (
+            np.trapz(
+                np.sum(
+                    [
+                        normal.pdf(redshift_range)
+                        for normal in gaussians_without_bh_mass
+                    ],
+                    axis=0,
+                ),
+                redshift_range,
+            )
+            + normalization_with_bh_mass
+        )
+
+        """
         detection_accuracy_gaussian = truncnorm(
             (0.0 - self.detection.d_L) / self.detection.d_L_uncertainty,
             10,
@@ -3380,8 +3404,8 @@ class BayesianStatistics:
         )"""
         # ALPHAS REMOVED
         return (
-            likelihood_without_bh_mass,
-            likelihood_with_bh_mass,
+            likelihood_without_bh_mass / normalization_without_bh_mass,
+            likelihood_with_bh_mass / normalization_with_bh_mass,
         )
 
 
