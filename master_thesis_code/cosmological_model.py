@@ -11,6 +11,8 @@ import matplotlib.cm as cm
 import time
 from scipy.stats import multivariate_normal, truncnorm, gaussian_kde
 from scipy.optimize import curve_fit
+import emcee
+
 
 # import statsmodels.api as sm
 from statistics import NormalDist
@@ -20,7 +22,10 @@ from master_thesis_code.datamodels.parameter_space import (
     Parameter,
     uniform,
 )
-import emcee
+from master_thesis_code.M1_model_extracted_data.detection_fraction import (
+    DetectionFraction,
+)
+
 
 from master_thesis_code.constants import (
     C,
@@ -51,6 +56,9 @@ _LOGGER = logging.getLogger()
 DEFAULT_GALAXY_Z_ERROR = 0.0015
 GALAXY_LIKELIHOODS = "galaxy_likelihoods"
 ADDITIONAL_GALAXIES_WITHOUT_BH_MASS = "additional_galaxies_without_bh_mass"
+
+
+# detection fraction LISA M1 model
 
 
 @dataclass
@@ -225,16 +233,90 @@ class Model1CrossCheck:
     parameter_space: ParameterSpace
     emri_rate: int = 294  # 1/yr
     snr_threshold: int = 20
+    detection_fraction = DetectionFraction()
 
     def __init__(self) -> None:
         self.parameter_space = ParameterSpace()
         self._apply_model_assumptions()
         self.setup_emri_events_sampler()
 
+    def plot_expected_detection_distribution(self) -> None:
+        redshift_range = np.linspace(0, self.max_redshift, 80)
+        mass_range = np.logspace(4.5, 7, 100)
+
+        emri_distribution = np.array(
+            [
+                [self.emri_distribution(mass, redshift) for mass in mass_range]
+                for redshift in redshift_range
+            ]
+        )
+        detection_fraction = np.array(
+            [
+                [
+                    self.detection_fraction.get_detection_fraction(redshift, mass)
+                    for mass in mass_range
+                ]
+                for redshift in redshift_range
+            ]
+        )
+        print(detection_fraction.shape)
+        product = np.multiply(emri_distribution, detection_fraction)
+        print(product.shape)
+
+        normalization = np.trapz(
+            np.trapz(product, redshift_range, axis=0),
+            mass_range,
+            axis=0,
+        )
+
+        # integrate over galaxy covered volume
+        max_redshift = 0.1
+        max_redshift_index = np.argmin(np.abs(redshift_range - max_redshift))
+        reduced_detection_distribution = (
+            emri_distribution[:max_redshift_index]
+            * detection_fraction[:max_redshift_index]
+        )
+        print(reduced_detection_distribution.shape)
+
+        integral = (
+            np.trapz(
+                np.trapz(
+                    reduced_detection_distribution, redshift_range[:max_redshift_index]
+                ),
+                mass_range,
+            )
+            * 100
+        )
+
+        fig, ax = plt.subplots(figsize=(10, 6))
+        plt.contourf(
+            redshift_range,
+            mass_range,
+            emri_distribution * detection_fraction / normalization,
+            cmap="viridis",
+            levels=50,
+        )
+        # show integrated area and volume
+        ax.text(
+            0.5,
+            1e5,
+            f"integrated area: {integral:.2f}%",
+            horizontalalignment="center",
+            verticalalignment="center",
+        )
+
+        plt.colorbar()
+        plt.yscale("log")
+        plt.xlabel("redshift")
+        plt.ylabel("mass")
+        plt.savefig(
+            "saved_figures/cosmological_model/expected_detection_distribution.png"
+        )
+
     def _apply_model_assumptions(self) -> None:
 
         self.parameter_space.M.lower_limit = 10 ** (4.5)
-        self.parameter_space.M.upper_limit = 10 ** (6.0)
+        self.parameter_space.M.upper_limit = 10 ** (7.0)
 
         self.parameter_space.a.value = 0.98
         self.parameter_space.a.is_fixed = True
@@ -244,7 +326,7 @@ class Model1CrossCheck:
 
         self.parameter_space.e0.upper_limit = 0.2
 
-        self.max_redshift = 2.0
+        self.max_redshift = 0.2
         self.parameter_space.dist.upper_limit = dist(redshift=self.max_redshift)
 
     def emri_distribution(self, M: float, redshift: float) -> float:
@@ -271,7 +353,7 @@ class Model1CrossCheck:
                 redshift, *merger_distribution_coefficients[2]
             ) + fraction * polynomial(redshift, *merger_distribution_coefficients[3])
         else:  # mass_bin >= 6.25
-            fraction = (mass_bin - 4.5) / 0.5
+            fraction = (mass_bin - 6.0) / 0.5
             fraction = min(fraction, 1.0)
             return (1 - fraction) * polynomial(
                 redshift, *merger_distribution_coefficients[3]
@@ -303,7 +385,7 @@ class Model1CrossCheck:
         log_probability = lambda x: self._log_probability(10 ** x[0], x[1])
 
         ndim = 2
-        nwalkers = 100
+        nwalkers = 20
         burn_in_steps = 1000
         p0_mass = np.random.rand(nwalkers, 1) * (
             np.log10(self.parameter_space.M.upper_limit)
@@ -372,8 +454,10 @@ class Model1CrossCheck:
         if not os.path.isdir(figures_directory):
             os.makedirs(figures_directory)
 
+        self.plot_expected_detection_distribution()
+
         masses = np.logspace(4, 7, 100)
-        redshifts = np.linspace(0, 5, 1000)
+        redshifts = np.linspace(0, self.max_redshift, 1000)
         # EMRI rate
         plt.figure(figsize=(10, 6))
         plt.plot(masses, [self.R_emri(mass) for mass in masses])
@@ -402,7 +486,7 @@ class Model1CrossCheck:
         dN_dz_distribution = np.vectorize(self.dN_dz_of_mass)(masses, redshifts)
         distribution = np.vectorize(self.emri_distribution)(masses, redshifts)
 
-        plt.contourf(redshifts, masses, dN_dz_distribution, cmap="viridis")
+        plt.contourf(redshifts, masses, dN_dz_distribution, cmap="viridis", levels=30)
         plt.colorbar()
         plt.yscale("log")
         plt.xlabel("redshift")
@@ -418,6 +502,12 @@ class Model1CrossCheck:
         plt.ylabel("mass")
         plt.savefig(f"{figures_directory}emri_distribution.png")
         plt.close()
+
+    def simplified_event_mass_dependency(self, mass: float) -> float:
+        pass
+
+    def setup_simplified_event_sampler(self) -> None:
+        pass
 
 
 class LamCDMScenario:
@@ -3087,6 +3177,8 @@ class BayesianStatistics:
                 possible_host_galaxies_with_bh_mass=possible_hosts_with_bh_mass,
                 detection_index=index,
                 pool=pool,
+                z_min=z_min,
+                z_max=z_max,
             )
 
             self.posterior_data[index].append(event_likelihood)
@@ -3103,6 +3195,8 @@ class BayesianStatistics:
         possible_host_galaxies_with_bh_mass: List[HostGalaxy],
         detection_index: int,
         pool: mp.Pool,
+        z_min: float,
+        z_max: float,
     ) -> float:
         # start parallel computation
         _LOGGER.info(f"start parallel computation with: {pool}")
@@ -3130,6 +3224,8 @@ class BayesianStatistics:
                     possible_host,
                     self.detection,
                     self.h,
+                    z_min,
+                    z_max,
                     True,
                 )
                 for possible_host in possible_host_galaxies_with_bh_mass
@@ -3144,6 +3240,8 @@ class BayesianStatistics:
                     possible_host,
                     self.detection,
                     self.h,
+                    z_min,
+                    z_max,
                     False,
                 )
                 for possible_host in possible_host_galaxies_reduced
@@ -3322,6 +3420,8 @@ def single_host_likelihood(
     possible_host: HostGalaxy,
     detection: Detection,
     h: float,
+    z_min: float,
+    z_max: float,
     evaluate_with_bh_mass: bool,
 ) -> list[float]:
     global max_redshift
@@ -3333,15 +3433,7 @@ def single_host_likelihood(
         d_L * 0.066 * (1 - (1 + possible_host.z) ** (-0.25) / 0.25) ** (1.8)
     )"""  # TODO check if correct
     # redshift samples around peak
-    z_lower_bound = possible_host.z - 5 * possible_host.z_error
-    if z_lower_bound < 0:
-        # print(f"lower bound is less than 0: {z_lower_bound}", flush=True)
-        z_lower_bound = 0.0
-    z_upper_bound = possible_host.z + 5 * possible_host.z_error
-    if z_upper_bound > max_redshift:
-        # print(f"upper bound is greater than max redshift: {z_upper_bound}", flush=True)
-        z_upper_bound = max_redshift
-    z_gws = np.arange(z_lower_bound, z_upper_bound, delta_redshift)
+    z_gws = np.arange(z_min, z_max, delta_redshift)
     distances = [dist(redshift, h=h) for redshift in z_gws]
     phis = np.ones(z_gws.shape) * possible_host.phiS
     thetas = np.ones(z_gws.shape) * possible_host.qS
@@ -3528,6 +3620,7 @@ def single_host_likelihood(
 
         likelihood_with_bh_mass = (
             normal_distribution_with_mass.pdf(positions)
+            / (1 + z_gws)
             * mass_normal_distribution
             * redshift_normal_distribution
         )

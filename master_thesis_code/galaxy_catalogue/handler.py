@@ -18,6 +18,7 @@ from master_thesis_code.physical_relations import (
 
 # import normal distribution
 from statistics import NormalDist
+from scipy.stats import truncnorm
 
 _LOGGER = logging.getLogger()
 
@@ -247,43 +248,46 @@ class GalaxyCatalogueHandler:
         plt.close()
 
         # visualize meshgrid contour plot of mass and redshift of galaxy catalog
-        redshifts = np.array(
-            [
-                NormalDist(mu=redshift, sigma=redshift_error).samples(1)[0]
-                for redshift, redshift_error in zip(
-                    self.reduced_galaxy_catalog[InternalCatalogColumns.REDSHIFT],
-                    self.reduced_galaxy_catalog[InternalCatalogColumns.REDSHIFT_ERROR],
-                )
-            ]
-        )
-        masses = np.array(
-            [
-                NormalDist(mu=mass, sigma=mass_error).samples(1)[0]
-                for mass, mass_error in zip(
-                    self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS],
-                    self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS_ERROR],
-                )
-            ]
-        )
-        # all negative values are set to 0
-        masses[masses < 0.1] = 0.1
-        redshifts[redshifts < 0] = 0
+        if False:
+            redshifts = np.array(
+                [
+                    truncnorm((0 - redshift) / redshift_error, np.inf).rvs()
+                    for redshift, redshift_error in zip(
+                        self.reduced_galaxy_catalog[InternalCatalogColumns.REDSHIFT],
+                        self.reduced_galaxy_catalog[
+                            InternalCatalogColumns.REDSHIFT_ERROR
+                        ],
+                    )
+                ]
+            )
 
-        # make mass bins logarithmic
-        masses = np.log10(masses)
+            masses = np.array(
+                [
+                    truncnorm((0 - mass) / mass_error, np.inf).rvs()
+                    for mass, mass_error in zip(
+                        self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS],
+                        self.reduced_galaxy_catalog[
+                            InternalCatalogColumns.BH_MASS_ERROR
+                        ],
+                    )
+                ]
+            )
 
-        fig = plt.figure()
-        plt.hist2d(redshifts, masses, bins=(60, 60), norm="log")
-        plt.colorbar()
-        plt.xlabel("Redshift")
-        plt.ylabel("log10 BH mass in solar masses")
-        plt.savefig(figures_directory + "redshift_mass_contour_plot.png")
-        plt.close()
+            # make mass bins logarithmic
+            masses = np.log10(masses)
+
+            fig = plt.figure()
+            plt.hist2d(redshifts, masses, bins=(60, 60), norm="log")
+            plt.colorbar()
+            plt.xlabel("Redshift")
+            plt.ylabel("log10 BH mass in solar masses")
+            plt.savefig(figures_directory + "redshift_mass_contour_plot.png")
+            plt.close()
 
         # visualize meshgrid contour plot of mass and redshift of pruned galaxy catalog
         redshifts = np.array(
             [
-                NormalDist(mu=redshift, sigma=redshift_error).samples(1)[0]
+                truncnorm((0 - redshift) / redshift_error, np.inf).rvs()
                 for redshift, redshift_error in zip(
                     self._pruned_galaxy_catalog[InternalCatalogColumns.REDSHIFT],
                     self._pruned_galaxy_catalog[InternalCatalogColumns.REDSHIFT_ERROR],
@@ -292,22 +296,19 @@ class GalaxyCatalogueHandler:
         )
         masses = np.array(
             [
-                NormalDist(mu=mass, sigma=mass_error).samples(1)[0]
+                truncnorm((0 - mass) / mass_error, np.inf).rvs()
                 for mass, mass_error in zip(
                     self._pruned_galaxy_catalog[InternalCatalogColumns.BH_MASS],
                     self._pruned_galaxy_catalog[InternalCatalogColumns.BH_MASS_ERROR],
                 )
             ]
         )
-        # all negative values are set to 0
-        masses[masses < 0.1] = 0.1
-        redshifts[redshifts < 0] = 0
 
         # make mass bins logarithmic
         masses = np.log10(masses)
 
         fig = plt.figure()
-        plt.hist2d(redshifts, masses, bins=(60, 60), norm="log")
+        plt.hist2d(redshifts, masses, bins=(100, 100), norm="log")
         plt.colorbar()
         plt.xlabel("Redshift")
         plt.ylabel("log10 BH mass in solar masses")
@@ -353,7 +354,7 @@ class GalaxyCatalogueHandler:
             ]
 
             chunk = chunk.fillna(
-                {CatalogueColumns.REDSHIFT_PECULIAR_VELOCITY_ERROR.name: 0.0}
+                {CatalogueColumns.REDSHIFT_PECULIAR_VELOCITY_ERROR.name: 0.0015}
             )
 
             # propagating errors of redshift
