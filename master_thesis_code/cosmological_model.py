@@ -316,7 +316,7 @@ class Model1CrossCheck:
     def _apply_model_assumptions(self) -> None:
 
         self.parameter_space.M.lower_limit = 10 ** (4.5)
-        self.parameter_space.M.upper_limit = 10 ** (7.0)
+        self.parameter_space.M.upper_limit = 10 ** (6.5)
 
         self.parameter_space.a.value = 0.98
         self.parameter_space.a.is_fixed = True
