@@ -3356,28 +3356,34 @@ class BayesianStatistics:
             d_L_range,
         )"""
 
-        detection_redshift = dist_to_redshift(self.detection.d_L, h=self.h)
+        redshift_range = np.linspace(dist_to_redshift(self.detection.d_L - self.detection.d_L_uncertainty, self.h), dist_to_redshift(self.detection.d_L + self.detection.d_L_uncertainty, self.h), 100)
 
-        distance_relation_derivative_at_detection_redshift = dist_derivative(
-            detection_redshift, h=self.h
+        distance_relation_derivative_at_detection_redshift = np.array(
+            [dist_derivative(
+            z, h=self.h
+        ) for z in redshift_range]
         )
 
         p_gal_at_detection_redshift_with_bh_mass = np.sum(
-            [normal.pdf(detection_redshift) for normal in gaussians_with_bh_mass]
+            [normal.pdf(redshift_range) for normal in gaussians_with_bh_mass],
+            axis=0,
         )
 
         p_gal_at_detection_redshift = np.sum(
-            [normal.pdf(detection_redshift) for normal in gaussians_without_bh_mass]
+            [normal.pdf(redshift_range) for normal in gaussians_without_bh_mass],
+            axis=0,
         ) + p_gal_at_detection_redshift_with_bh_mass
 
-        alpha_without_bh_mass = (
+        alpha_without_bh_mass = np.trapz(
             p_gal_at_detection_redshift
-            / distance_relation_derivative_at_detection_redshift
+            / distance_relation_derivative_at_detection_redshift,
+            redshift_range,
         )
 
-        alpha_with_bh_mass = (
+        alpha_with_bh_mass = np.trapz(
             p_gal_at_detection_redshift_with_bh_mass
-            / distance_relation_derivative_at_detection_redshift
+            / distance_relation_derivative_at_detection_redshift,
+            redshift_range,
         )
         
         return (
@@ -3447,6 +3453,17 @@ def single_host_likelihood(
     # get distribution values for parameters
     parameters = np.array([distances, phis, thetas]).T
     parameters_with_bh_mass = np.array([distances, phis, thetas, masses / max_mass]).T
+
+    detection_fraction = DetectionFraction()
+    detection_fraction_weights_with_mass = np.array(
+        [detection_fraction.get_detection_fraction(z, m) for z, m in zip(z_gws, masses/(1+z_gws))]
+    )
+    detection_fraction_weights = np.array(
+        [detection_fraction.get_detection_fraction_z_reduced(z) for z in z_gws]
+    )
+
+
+
 
     # TESTING TO IGNORE THAT
     """
@@ -3555,7 +3572,7 @@ def single_host_likelihood(
     )
 
     # weight with redshift detection distribution
-    likelihood_without_bh_mass_weighted = likelihood_without_bh_mass
+    likelihood_without_bh_mass_weighted = likelihood_without_bh_mass * detection_fraction_weights
     # removed * redshift_detection_distribution_weights
 
     # integrate over redshift
@@ -3631,7 +3648,7 @@ def single_host_likelihood(
 
         # weight with redshift detection distribution
 
-        likelihood_with_bh_mass_weighted = likelihood_with_bh_mass
+        likelihood_with_bh_mass_weighted = likelihood_with_bh_mass * detection_fraction_weights_with_mass
         # removed * redshift_mass_detection_distribution_weights
 
         # integrate over mass and redshift

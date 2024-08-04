@@ -67,6 +67,10 @@ class HostGalaxy:
         self.M = parameters[InternalCatalogColumns.BH_MASS]
         self.M_error = parameters[InternalCatalogColumns.BH_MASS_ERROR]
         self.catalog_index = parameters.name
+    
+    def draw_z_and_mass_from_gaussian(self) -> None:
+        self.z = NormalDist(mu=self.z, sigma=self.z_error).samples(1)[0]
+        self.M = NormalDist(mu=self.M, sigma=self.M_error).samples(1)[0]
 
 
 class CatalogueColumns(Enum):

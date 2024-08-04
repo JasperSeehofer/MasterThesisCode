@@ -7051,6 +7051,7 @@ class DetectionFraction:
             ],
         ]
     )
+    detection_fraction_z_reduced: np.array
 
     def __init__(self) -> None:
         self.detection_fraction_grid = np.flip(self.detection_fraction_grid, axis=0)
@@ -7081,3 +7082,7 @@ class DetectionFraction:
         z_index = np.argmin(np.abs(self.z_values - z))
         M_index = np.argmin(np.abs(self.M_values - M))
         return self.detection_fraction_grid[M_index, z_index]
+
+    def get_detection_fraction_z_reduced(self, z: float) -> float:
+        z_index = np.argmin(np.abs(self.z_values - z))
+        return np.mean(self.detection_fraction_grid[:, z_index])
