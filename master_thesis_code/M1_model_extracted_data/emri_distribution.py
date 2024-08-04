@@ -9502,9 +9502,7 @@ class EMRIDistribution:
 
     def __init__(self) -> None:
         self.emri_distribution = np.flip(self.emri_distribution, axis=0)
-        self.emri_distribution = gaussian_filter(
-            self.emri_distribution, sigma=2
-        )
+        self.emri_distribution = gaussian_filter(self.emri_distribution, sigma=2)
         self.plot_emri_distribution()
 
     def plot_emri_distribution(self) -> None:
@@ -9529,6 +9527,3 @@ class EMRIDistribution:
         z_index = np.argmin(np.abs(self.z_values - z))
         M_index = np.argmin(np.abs(self.M_values - M))
         return self.emri_distribution[M_index, z_index]
-
-
-asdf = EMRIDistribution()

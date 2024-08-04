@@ -326,7 +326,7 @@ class Model1CrossCheck:
 
         self.parameter_space.e0.upper_limit = 0.2
 
-        self.max_redshift = 0.2
+        self.max_redshift = 1.5
         self.parameter_space.dist.upper_limit = dist(redshift=self.max_redshift)
 
     def emri_distribution(self, M: float, redshift: float) -> float:
@@ -3292,7 +3292,8 @@ class BayesianStatistics:
         # compute bias correction with galaxy distribution arxiv 2201.12526
         # without bh mass
         # detection accuracy
-        gaussians_without_bh_mass = [
+        # TESTING WITHOUT LOCAL BIAS CORRECTION
+        """gaussians_without_bh_mass = [
             truncnorm((0.0 - galaxy.z) / galaxy.z_error, 10, galaxy.z, galaxy.z_error)
             for galaxy in possible_host_galaxies_reduced
         ]
@@ -3352,7 +3353,7 @@ class BayesianStatistics:
             * detection_accuracy_gaussian_values
             / distance_relation_derivative_at_detection_redshift,
             d_L_range,
-        )
+        )"""
 
         """detection_redshift = dist_to_redshift(detection.d_L, h=self.h)
 
@@ -3377,10 +3378,10 @@ class BayesianStatistics:
             p_gal_at_detection_redshift_with_bh_mass
             / distance_relation_derivative_at_detection_redshift
         )"""
-
+        # ALPHAS REMOVED
         return (
-            likelihood_without_bh_mass / alpha_without_bh_mass,
-            likelihood_with_bh_mass / alpha_with_bh_mass,
+            likelihood_without_bh_mass,
+            likelihood_with_bh_mass,
         )
 
 
@@ -3446,6 +3447,8 @@ def single_host_likelihood(
     parameters = np.array([distances, phis, thetas]).T
     parameters_with_bh_mass = np.array([distances, phis, thetas, masses / max_mass]).T
 
+    # TESTING TO IGNORE THAT
+    """
     # get distribution values
     redshift_detection_distribution_weights = np.array(
         np.sum(
@@ -3466,6 +3469,7 @@ def single_host_likelihood(
             axis=0,
         )
     ) / len(redshift_skylocalization_mass_distribution)
+    """
 
     # checking numerical limits due to delta_redshift for gaussian variances
     luminosity_distance_resolution_limit = (
@@ -3550,9 +3554,8 @@ def single_host_likelihood(
     )
 
     # weight with redshift detection distribution
-    likelihood_without_bh_mass_weighted = (
-        likelihood_without_bh_mass * redshift_detection_distribution_weights
-    )
+    likelihood_without_bh_mass_weighted = likelihood_without_bh_mass
+    # removed * redshift_detection_distribution_weights
 
     # integrate over redshift
     likelihood_without_bh_mass_weighted = np.trapz(
@@ -3627,9 +3630,8 @@ def single_host_likelihood(
 
         # weight with redshift detection distribution
 
-        likelihood_with_bh_mass_weighted = (
-            likelihood_with_bh_mass * redshift_mass_detection_distribution_weights
-        )
+        likelihood_with_bh_mass_weighted = likelihood_with_bh_mass
+        # removed * redshift_mass_detection_distribution_weights
 
         # integrate over mass and redshift
         likelihood_with_bh_mass_weighted = np.trapz(

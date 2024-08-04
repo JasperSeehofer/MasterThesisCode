@@ -78,6 +78,3 @@ class SimpleDetectionDistribution:
         M_index = np.digitize(M, self.M_bins) - 1
 
         return self.detection_distribution[M_index, z_index]
-
-
-asdf = SimpleDetectionDistribution()
