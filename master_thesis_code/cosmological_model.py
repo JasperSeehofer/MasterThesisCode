@@ -115,7 +115,7 @@ class Detection:
         return self.d_L_uncertainty / self.d_L
 
     def convert_to_best_guess_parameters(self) -> None:
-        
+
         self.phi = truncnorm(
             (0 - self.phi) / self.phi_error,
             (2 * np.pi - self.phi) / self.phi_error,
@@ -606,11 +606,10 @@ class BayesianStatistics:
         self.Omega_DE = 1 - self.Omega_m
         self.w_0 = self.cosmological_model.w_0
         self.w_a = self.cosmological_model.w_a
-        self.create_detection_fraction()
 
     def create_detection_fraction(self):
         self._hist_bins_M = np.logspace(4.5, 6, 30)
-        self._hist_bins_redshift = np.linspace(0, 1.5, 30)
+        self._hist_bins_redshift = np.linspace(0, 1.5, 40)
         self._hist_bins_theta = np.linspace(0, np.pi, 20)
         self._hist_bins_phi = np.linspace(0, 2 * np.pi, 20)
 
@@ -664,19 +663,67 @@ class BayesianStatistics:
         self.detection_fraction = self.detection_fraction / np.sum(
             self.detection_fraction
         )
+        self.plot_detection_fraction()
 
-        # plot detection fraction
+    def plot_detection_fraction(self) -> None:
+        # plot detection fraction with poly mesh grid
         fig, ax = plt.subplots(figsize=(16, 9))
-        ax.contourf(
-            self._hist_bins_redshift[:-1],
-            self._hist_bins_M[:-1],
-            self.detection_fraction.sum(axis=(2, 3)),
-            levels=50,
+        cax = ax.pcolormesh(
+            self._hist_bins_redshift,
+            self._hist_bins_M,
+            self.detection_fraction.sum(axis=(2, 3)).T,
+            cmap="viridis",
         )
         ax.set_yscale("log")
-        ax.set_xlabel("redshift")
+        ax.set_xlabel("d_L in Gpc")
         ax.set_ylabel("mass")
+        plt.colorbar(cax)
         plt.savefig("saved_figures/detection_fraction_hist_mass_redshift.png", dpi=300)
+        plt.close()
+
+        # plot detections
+        fig, ax = plt.subplots(figsize=(16, 9))
+        cax = ax.pcolormesh(
+            self._hist_bins_redshift,
+            self._hist_bins_M,
+            self._detection_hist.sum(axis=(2, 3)).T,
+            cmap="viridis",
+        )
+        ax.set_yscale("log")
+        ax.set_xlabel("d_L in Gpc")
+        ax.set_ylabel("mass")
+        plt.colorbar(cax)
+        plt.savefig("saved_figures/detection_hist_mass_redshift.png", dpi=300)
+        plt.close()
+
+        # plot undetected
+        fig, ax = plt.subplots(figsize=(16, 9))
+        cax = ax.pcolormesh(
+            self._hist_bins_redshift,
+            self._hist_bins_M,
+            self._undetected_hist.sum(axis=(2, 3)).T,
+            cmap="viridis",
+        )
+        ax.set_yscale("log")
+        ax.set_xlabel("d_L in Gpc")
+        ax.set_ylabel("mass")
+        plt.colorbar(cax)
+        plt.savefig("saved_figures/undetected_hist_mass_redshift.png", dpi=300)
+        plt.close()
+
+        # plot sky detection fraction
+        fig, ax = plt.subplots(figsize=(16, 9))
+        cax = ax.pcolormesh(
+            self._hist_bins_phi,
+            self._hist_bins_theta,
+            self.detection_fraction.sum(axis=(0, 1)).T,
+            cmap="viridis",
+        )
+        ax.set_xlabel("phi")
+        ax.set_ylabel("theta")
+        plt.colorbar(cax)
+        plt.savefig("saved_figures/detection_fraction_hist_sky.png", dpi=300)
+        plt.close()
 
     def visualize(self, galaxy_catalog: GalaxyCatalogueHandler) -> None:
 
@@ -2303,6 +2350,8 @@ class BayesianStatistics:
             f"After filtering {len(self.cramer_rao_bounds)} detections with relative luminosity distance error < 0.05"
         )
 
+        self.create_detection_fraction()
+
         self.h = h_value
         _LOGGER.info("prepare global variable for multiprocessing")
         distances = self.cramer_rao_bounds["dist"]
@@ -2327,6 +2376,9 @@ class BayesianStatistics:
         theta_mass_covs = self.cramer_rao_bounds["delta_qS_delta_M"]
 
         self._z_draw = 1.5
+        self.d_L_threshold = max(self.cramer_rao_bounds["dist"]) + 0.15 * max(
+            self.cramer_rao_bounds["dist"]
+        )
         self._max_redshift = dist_to_redshift(
             max(self.cramer_rao_bounds["dist"]), self.cosmological_model.h.upper_limit
         )
@@ -3411,7 +3463,7 @@ class BayesianStatistics:
             1000,
         )
         distances = np.array([dist(z, h=self.h) for z in redshift_range])
-        dl_threshold = 1.55
+        dl_threshold = self.d_L_threshold
         p_det = [
             1
             / 2
