@@ -2297,6 +2297,7 @@ class BayesianStatistics:
                 phi_theta_covs,
             )
         ]
+        self.detection_distribution_gaussians = detection_distribution_gaussians
 
         detection_distribution_with_mass_gaussians = [
             multivariate_normal(
@@ -2325,6 +2326,9 @@ class BayesianStatistics:
                 theta_mass_covs,
             )
         ]
+        self.detection_distribution_with_mass_gaussians = (
+            detection_distribution_with_mass_gaussians
+        )
 
         PLOT_GAUSSIANS = False
         if PLOT_GAUSSIANS:
@@ -3049,6 +3053,8 @@ class BayesianStatistics:
                 self._max_redshift,
                 self._max_mass,
                 self._delta_redshift,
+                detection_distribution_gaussians,
+                detection_distribution_with_mass_gaussians,
             ),
         ) as pool:
             self.p_D(
@@ -3340,7 +3346,8 @@ class BayesianStatistics:
             np.sum(
                 [normal.pdf(redshift_range) for normal in gaussians_without_bh_mass],
                 axis=0,
-            ) / len(gaussians_without_bh_mass)
+            )
+            / len(gaussians_without_bh_mass)
             + p_gal_with_bh_mass
         )
 
@@ -3349,6 +3356,32 @@ class BayesianStatistics:
         )
         normalization_with_bh_mass = np.trapz(
             p_gal_with_bh_mass * p_det, redshift_range
+        )
+
+        # compute alpha
+        detection_redshift = dist_to_redshift(self.detection.d_L, h=self.h)
+        distance_relation_derivative_at_detection_redshift = dist_derivative(
+            detection_redshift, h=self.h
+        )
+        p_gal_with_bh_mass_at_detection_redshift = np.sum(
+            [normal.pdf(detection_redshift) for normal in gaussians_with_bh_mass]
+        ) / len(gaussians_with_bh_mass)
+        p_gal_without_bh_mass_at_detection_redshift = (
+            np.sum(
+                [normal.pdf(detection_redshift) for normal in gaussians_without_bh_mass]
+            )
+            / len(gaussians_without_bh_mass)
+            + p_gal_with_bh_mass_at_detection_redshift
+        )
+
+        alpha_without_bh_mass = (
+            p_gal_without_bh_mass_at_detection_redshift
+            / distance_relation_derivative_at_detection_redshift
+        )
+
+        alpha_with_bh_mass = (
+            p_gal_with_bh_mass_at_detection_redshift
+            / distance_relation_derivative_at_detection_redshift
         )
 
         """
@@ -3459,8 +3492,10 @@ class BayesianStatistics:
         )"""
 
         return (
-            likelihood_without_bh_mass / normalization_without_bh_mass,
-            likelihood_with_bh_mass / normalization_with_bh_mass,
+            likelihood_without_bh_mass
+            / normalization_without_bh_mass
+            / alpha_without_bh_mass,
+            likelihood_with_bh_mass / normalization_with_bh_mass / alpha_with_bh_mass,
         )
 
 
@@ -3516,6 +3551,7 @@ def single_host_likelihood(
     phis = np.ones(z_gws.shape) * possible_host.phiS
     thetas = np.ones(z_gws.shape) * possible_host.qS
     source_masses = detection.M / (1 + z_gws)
+    redshifted_masses = np.ones(z_gws.shape) * detection.M
 
     # TODO: use delta_redshift to regard limits on the errors of redshift and distance in gaussians
     # TODO: also adjust delta redshift usage in evaluation
@@ -3539,8 +3575,12 @@ def single_host_likelihood(
     if 0.0 in p_emri_with_bh_mass:
         print("p_emri_with_bh_mass is zero for some values", flush=True)
 
-    """
-    # TESTING TO IGNORE THAT
+    # parameters for multivariate normal distribution
+    parameters = np.vstack([distances, phis, thetas]).T
+    parameters_with_bh_mass = np.vstack(
+        [distances, phis, thetas, redshifted_masses / max_mass]
+    ).T
+
     # get distribution values
     redshift_detection_distribution_weights = np.array(
         np.sum(
@@ -3560,7 +3600,7 @@ def single_host_likelihood(
             ],
             axis=0,
         )
-    ) / len(redshift_skylocalization_mass_distribution)"""
+    ) / len(redshift_skylocalization_mass_distribution)
 
     # checking numerical limits due to delta_redshift for gaussian variances
     luminosity_distance_resolution_limit = (
@@ -3647,7 +3687,9 @@ def single_host_likelihood(
     )
 
     # weight with redshift detection distribution
-    likelihood_without_bh_mass_weighted = likelihood_without_bh_mass * p_emri
+    likelihood_without_bh_mass_weighted = (
+        likelihood_without_bh_mass * p_emri * redshift_detection_distribution_weights
+    )
 
     # integrate over redshift
     likelihood_without_bh_mass_weighted = np.trapz(
@@ -3720,6 +3762,7 @@ def single_host_likelihood(
             / detection.M
             * mass_normal_distribution
             * redshift_normal_distribution
+            * redshift_mass_detection_distribution_weights
         )
 
         # weight with redshift detection distribution
@@ -3737,14 +3780,22 @@ def child_process_init(
     current_max_redshift: float,
     current_max_mass: float,
     current_delta_redshift: float,
+    detection_distribution_gaussians: list,
+    detection_distribution_with_mass_gaussians: list,
 ) -> None:
     global max_redshift
     global max_mass
     global delta_redshift
+    global redshift_skylocalization_distribution
+    global redshift_skylocalization_mass_distribution
 
     max_redshift = current_max_redshift
     max_mass = current_max_mass
     delta_redshift = current_delta_redshift
+    redshift_skylocalization_distribution = detection_distribution_gaussians
+    redshift_skylocalization_mass_distribution = (
+        detection_distribution_with_mass_gaussians
+    )
 
 
 def check_overflow(arr: np.array) -> bool:
