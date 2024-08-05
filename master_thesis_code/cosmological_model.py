@@ -2376,7 +2376,7 @@ class BayesianStatistics:
         theta_mass_covs = self.cramer_rao_bounds["delta_qS_delta_M"]
 
         self._z_draw = 1.5
-        self.d_L_threshold = max(self.cramer_rao_bounds["dist"]) + 0.15 * max(
+        self.d_L_threshold = max(self.cramer_rao_bounds["dist"]) + 0.2 * max(
             self.cramer_rao_bounds["dist"]
         )
         self._max_redshift = dist_to_redshift(
