@@ -892,7 +892,7 @@ class BayesianStatistics:
 
         # create color list with 10 different colors
         NUMBER_OF_SUBSETS = 20
-        NUMBER_OF_DETECTIONS = 25
+        NUMBER_OF_DETECTIONS = 200
         fig.suptitle(
             f"Posterior distribution of Hubble constant h using {NUMBER_OF_SUBSETS} subsets of {NUMBER_OF_DETECTIONS} detections"
         )
@@ -1179,10 +1179,18 @@ class BayesianStatistics:
             if check_overflow(posteriors * np.array(posterior)):
                 # print("Overflow detected")
                 posteriors = posteriors / np.max(posteriors)
+            elif np.max(posteriors * posterior) == 0.0:
+                print("All zeros detected")
+                posteriors = posteriors / np.max(posteriors)
             posteriors *= np.array(posterior)
         for index, posterior in posterior_data_with_bh_mass_sorted:
             if check_overflow(posteriors_with_bh_mass * np.array(posterior)):
                 # print("Overflow detected")
+                posteriors_with_bh_mass = posteriors_with_bh_mass / np.max(
+                    posteriors_with_bh_mass
+                )
+            elif np.max(posteriors_with_bh_mass * posterior) == 0.0:
+                print("All zeros detected")
                 posteriors_with_bh_mass = posteriors_with_bh_mass / np.max(
                     posteriors_with_bh_mass
                 )
@@ -3358,7 +3366,7 @@ class BayesianStatistics:
             p_gal_with_bh_mass * p_det, redshift_range
         )
 
-        # compute alpha
+        """# compute alpha
         detection_redshift = dist_to_redshift(self.detection.d_L, h=self.h)
         distance_relation_derivative_at_detection_redshift = dist_derivative(
             detection_redshift, h=self.h
@@ -3382,24 +3390,9 @@ class BayesianStatistics:
         alpha_with_bh_mass = (
             p_gal_with_bh_mass_at_detection_redshift
             / distance_relation_derivative_at_detection_redshift
-        )
+        )"""
 
         """
-        detection_accuracy_gaussian = truncnorm(
-            (0.0 - self.detection.d_L) / self.detection.d_L_uncertainty,
-            10,
-            self.detection.d_L,
-            self.detection.d_L_uncertainty,
-        )
-
-        d_L_range = np.linspace(
-            max(0.0, self.detection.d_L - 3 * self.detection.d_L_uncertainty),
-            self.detection.d_L + 3 * self.detection.d_L_uncertainty,
-            100,
-        )
-
-        detection_accuracy_gaussian_values = detection_accuracy_gaussian.pdf(d_L_range)
-
         infered_z_range = np.array([dist_to_redshift(d_L) for d_L in d_L_range])
 
         distance_relation_derivative_at_detection_redshift = np.array(
@@ -3433,7 +3426,9 @@ class BayesianStatistics:
 
         normalization_without_bh_mass = np.trapz(p_gal_without_bh_mass * p_det, redshift_range)
         normalization_with_bh_mass = np.trapz(p_gal_with_bh_mass * p_det, redshift_range)
-
+        """
+        
+        """
         p_gal_at_detection_redshift_with_bh_mass = (
             p_gal_at_detection_redshift_with_bh_mass
         )
@@ -3490,6 +3485,50 @@ class BayesianStatistics:
             / distance_relation_derivative_at_detection_redshift,
             redshift_range,
         )"""
+        detection_accuracy_gaussian = truncnorm(
+            (0.0 - self.detection.d_L) / self.detection.d_L_uncertainty,
+            10,
+            self.detection.d_L,
+            self.detection.d_L_uncertainty,
+        )
+
+        d_L_range = np.linspace(
+            max(0.0, self.detection.d_L - 3 * self.detection.d_L_uncertainty),
+            self.detection.d_L + 3 * self.detection.d_L_uncertainty,
+            100,
+        )
+
+        detection_accuracy_gaussian_values = detection_accuracy_gaussian.pdf(d_L_range)
+        infered_z_range = np.array([dist_to_redshift(d_L) for d_L in d_L_range])
+        distance_relation_derivative_at_detection_redshift = np.array(
+            [dist_derivative(z, h=self.h) for z in infered_z_range]
+        )
+
+        p_gal_at_detection_redshift_with_bh_mass = np.sum(
+            [normal.pdf(infered_z_range) for normal in gaussians_with_bh_mass], axis=0
+        ) / len(gaussians_with_bh_mass)
+
+        p_gal_at_detection_redshift = (
+            np.sum(
+                [normal.pdf(infered_z_range) for normal in gaussians_without_bh_mass],
+                axis=0,
+            ) / len(gaussians_without_bh_mass)
+            + p_gal_at_detection_redshift_with_bh_mass
+        ) 
+
+        alpha_without_bh_mass = np.trapz(
+            p_gal_at_detection_redshift
+            * detection_accuracy_gaussian_values
+            / distance_relation_derivative_at_detection_redshift,
+            d_L_range,
+        )
+
+        alpha_with_bh_mass = np.trapz(
+            p_gal_at_detection_redshift_with_bh_mass
+            * detection_accuracy_gaussian_values
+            / distance_relation_derivative_at_detection_redshift,
+            d_L_range,
+        )
 
         return (
             likelihood_without_bh_mass
