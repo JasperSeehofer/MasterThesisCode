@@ -28,6 +28,9 @@ RADIAN_TO_DEGREE = 360 / 2 / np.pi
 REDUCED_CATALOGUE_FILE_PATH = (
     "./master_thesis_code/galaxy_catalogue/reduced_galaxy_catalogue.csv"
 )
+M_min = 10**4
+M_max = 10**6
+Z_draw = 1.5
 
 
 alpha = 7.45 * np.log(10)
@@ -67,10 +70,16 @@ class HostGalaxy:
         self.M = parameters[InternalCatalogColumns.BH_MASS]
         self.M_error = parameters[InternalCatalogColumns.BH_MASS_ERROR]
         self.catalog_index = parameters.name
-    
+
     def draw_z_and_mass_from_gaussian(self) -> None:
-        self.z = NormalDist(mu=self.z, sigma=self.z_error).samples(1)[0]
-        self.M = NormalDist(mu=self.M, sigma=self.M_error).samples(1)[0]
+        while True:
+            self.z = NormalDist(mu=self.z, sigma=self.z_error).samples(1)[0]
+            if (self.z >= 0) and (self.z <= Z_draw):
+                break
+        while True:
+            self.M = NormalDist(mu=self.M, sigma=self.M_error).samples(1)[0]
+            if (self.M >= M_min) and (self.M <= M_max):
+                break
 
 
 class CatalogueColumns(Enum):

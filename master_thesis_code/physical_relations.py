@@ -205,7 +205,7 @@ def get_redshift_outer_bounds(
     Omega_de_min = 1 - Omega_m_min
     Omega_de_max = 1 - Omega_m_max
     z_min = dist_to_redshift(distance - 3 * distance_error, h_min)
-    if distance - 2 * distance_error < 0:
+    if distance - 3 * distance_error < 0:
         z_min = 0.0
     z_max = dist_to_redshift(distance + 3 * distance_error, h_max)
     return z_min, z_max
