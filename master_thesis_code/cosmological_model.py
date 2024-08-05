@@ -35,6 +35,7 @@ from master_thesis_code.constants import (
     H_MIN,
     CRAMER_RAO_BOUNDS_OUTPUT_PATH,
     PREPARED_CRAMER_RAO_BOUNDS_PATH,
+    UNDETECTED_EVENTS_OUTPUT_PATH,
     RADIAN_TO_DEGREE,
     KM_TO_M,
     GPC_TO_MPC,
@@ -587,6 +588,7 @@ class BayesianStatistics:
     def __init__(self) -> None:
         self.cramer_rao_bounds = pd.read_csv(PREPARED_CRAMER_RAO_BOUNDS_PATH)
         self.true_cramer_rao_bounds = pd.read_csv(CRAMER_RAO_BOUNDS_OUTPUT_PATH)
+        self.undetected_events = pd.read_csv(UNDETECTED_EVENTS_OUTPUT_PATH)
         _LOGGER.info(f"Loaded {len(self.cramer_rao_bounds)} detections...")
         self.cosmological_model = LamCDMScenario()
         self.h = self.cosmological_model.h.fiducial_value
@@ -594,6 +596,77 @@ class BayesianStatistics:
         self.Omega_DE = 1 - self.Omega_m
         self.w_0 = self.cosmological_model.w_0
         self.w_a = self.cosmological_model.w_a
+        self.create_detection_fraction()
+
+    def create_detection_fraction(self):
+        self._hist_bins_M = np.logspace(4.5, 6, 30)
+        self._hist_bins_redshift = np.linspace(0, 1.5, 30)
+        self._hist_bins_theta = np.linspace(0, np.pi, 20)
+        self._hist_bins_phi = np.linspace(0, 2 * np.pi, 20)
+
+        self._undetected_hist, _ = np.histogramdd(
+            np.array(
+                [
+                    self.undetected_events["dist"],
+                    self.undetected_events["M"],
+                    self.undetected_events["phiS"],
+                    self.undetected_events["qS"],
+                ]
+            ).T,
+            bins=[
+                self._hist_bins_redshift,
+                self._hist_bins_M,
+                self._hist_bins_phi,
+                self._hist_bins_theta,
+            ],
+        )
+
+        self._undetected_hist = self._undetected_hist / np.sum(self._undetected_hist)
+
+        self._detection_hist, _ = np.histogramdd(
+            np.array(
+                [
+                    self.cramer_rao_bounds["dist"],
+                    self.cramer_rao_bounds["M"],
+                    self.cramer_rao_bounds["phiS"],
+                    self.cramer_rao_bounds["qS"],
+                ]
+            ).T,
+            bins=[
+                self._hist_bins_redshift,
+                self._hist_bins_M,
+                self._hist_bins_phi,
+                self._hist_bins_theta,
+            ],
+        )
+
+        self._detection_hist = self._detection_hist / np.sum(self._detection_hist)
+
+        detection_sum = self._detection_hist + self._undetected_hist
+
+        # if detection_sum is zero, set to 1 to avoid division by zero
+        detection_sum[detection_sum == 0] = 1
+
+        self.detection_fraction = self._detection_hist / (detection_sum)
+
+        # normalize detection fraction
+
+        self.detection_fraction = self.detection_fraction / np.sum(
+            self.detection_fraction
+        )
+
+        # plot detection fraction
+        fig, ax = plt.subplots(figsize=(16, 9))
+        ax.contourf(
+            self._hist_bins_redshift[:-1],
+            self._hist_bins_M[:-1],
+            self.detection_fraction.sum(axis=(2, 3)),
+            levels=50,
+        )
+        ax.set_yscale("log")
+        ax.set_xlabel("redshift")
+        ax.set_ylabel("mass")
+        plt.savefig("saved_figures/detection_fraction_hist_mass_redshift.png", dpi=300)
 
     def visualize(self, galaxy_catalog: GalaxyCatalogueHandler) -> None:
 
@@ -3427,7 +3500,7 @@ class BayesianStatistics:
         normalization_without_bh_mass = np.trapz(p_gal_without_bh_mass * p_det, redshift_range)
         normalization_with_bh_mass = np.trapz(p_gal_with_bh_mass * p_det, redshift_range)
         """
-        
+
         """
         p_gal_at_detection_redshift_with_bh_mass = (
             p_gal_at_detection_redshift_with_bh_mass
@@ -3512,9 +3585,10 @@ class BayesianStatistics:
             np.sum(
                 [normal.pdf(infered_z_range) for normal in gaussians_without_bh_mass],
                 axis=0,
-            ) / len(gaussians_without_bh_mass)
+            )
+            / len(gaussians_without_bh_mass)
             + p_gal_at_detection_redshift_with_bh_mass
-        ) 
+        )
 
         alpha_without_bh_mass = np.trapz(
             p_gal_at_detection_redshift

@@ -24,6 +24,7 @@ if __name__ == "__main__":
             unusable_detections.append(detection_index)
             continue
         detection = Detection(detection)
+        print(f"Detection {detection_index}: {detection}")
         detection.convert_to_best_guess_parameters()
         prepared_cramer_rao_bounds.at[detection_index, "M"] = detection.M
         prepared_cramer_rao_bounds.at[detection_index, "dist"] = detection.d_L
