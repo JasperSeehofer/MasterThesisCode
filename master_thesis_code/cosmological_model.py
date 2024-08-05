@@ -103,6 +103,7 @@ class Detection:
         self.d_L_M_covariance = parameters["delta_dist_delta_M"]
         self.d_L_theta_covariance = parameters["delta_qS_delta_dist"]
         self.d_L_phi_covariance = parameters["delta_phiS_delta_dist"]
+        self.snr = parameters["SNR"]
         self.host_galaxy_index = parameters["host_galaxy_index"]
 
     def get_skylocalization_error(self) -> float:
