@@ -129,9 +129,9 @@ class Detection:
                 break
 
         while True:
-            self.M = np.random.normal(
-                self.M * (1 + dist_to_redshift(self.d_L)), self.M_uncertainty
-            )
+            self.M = NormalDist(
+                self.M * (1 + dist_to_redshift(self.d_L)), self.M_uncertainty ** (1 / 2)
+            ).samples(1)[0]
             if 1e4 <= self.M <= 1e6:
                 break
 
