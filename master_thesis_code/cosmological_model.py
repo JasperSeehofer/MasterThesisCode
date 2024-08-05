@@ -115,25 +115,34 @@ class Detection:
         return self.d_L_uncertainty / self.d_L
 
     def convert_to_best_guess_parameters(self) -> None:
-        while True:
-            self.phi = np.random.normal(self.phi, self.phi_error)
-            if 0 <= self.phi < 2 * np.pi:
-                break
-        while True:
-            self.theta = np.random.normal(self.theta, self.theta_error)
-            if 0 <= self.theta <= np.pi:
-                break
-        while True:
-            self.d_L = np.random.normal(self.d_L, self.d_L_uncertainty)
-            if 0 <= self.d_L:
-                break
+        
+        self.phi = truncnorm(
+            (0 - self.phi) / self.phi_error,
+            (2 * np.pi - self.phi) / self.phi_error,
+            loc=self.phi,
+            scale=self.phi_error,
+        ).rvs(1)[0]
 
-        while True:
-            self.M = NormalDist(
-                self.M * (1 + dist_to_redshift(self.d_L)), self.M_uncertainty ** (1 / 2)
-            ).samples(1)[0]
-            if 1e4 <= self.M <= 1e6:
-                break
+        self.theta = truncnorm(
+            (0 - self.theta) / self.theta_error,
+            (np.pi - self.theta) / self.theta_error,
+            loc=self.theta,
+            scale=self.theta_error,
+        ).rvs(1)[0]
+
+        self.d_L = truncnorm(
+            (0 - self.d_L) / self.d_L_uncertainty,
+            (dist(1.5) - self.d_L) / self.d_L_uncertainty,
+            loc=self.d_L,
+            scale=self.d_L_uncertainty,
+        ).rvs(1)[0]
+
+        self.M = truncnorm(
+            (1e4 - self.M) / self.M_uncertainty,
+            (1e6 - self.M) / self.M_uncertainty,
+            loc=self.M,
+            scale=self.M_uncertainty,
+        ).rvs(1)[0]
 
 
 # setup distribution of MBH spin
