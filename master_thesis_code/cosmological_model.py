@@ -3430,30 +3430,37 @@ class BayesianStatistics:
             print("no results found")
             return 0.0, 0.0
 
+        normalization_without_bh_mass = np.sum([result[1] for result in results])
+        results = [result[0] for result in results]
         results.extend([result[0] for result in results_with_bh_mass])
 
-        likelihood_without_bh_mass = np.sum(results) / len(results)
+        likelihood_without_bh_mass = np.sum(results)
+
+        normalization_without_bh_mass += np.sum(
+            [result[2] for result in results_with_bh_mass]
+        )
+        normalization_with_bh_mass = np.sum(
+            [result[3] for result in results_with_bh_mass]
+        )
 
         if len(results_with_bh_mass) == 0:
             return likelihood_without_bh_mass, 0.0
 
-        likelihood_with_bh_mass = np.sum(
-            [result[1] for result in results_with_bh_mass]
-        ) / len(results_with_bh_mass)
+        likelihood_with_bh_mass = np.sum([result[1] for result in results_with_bh_mass])
 
         # compute bias correction with galaxy distribution arxiv 2201.12526
         # without bh mass
         # detection accuracy
         # TESTING WITHOUT LOCAL BIAS CORRECTION
-        FIXED_GALAXY_REDSHIFT_ERROR = 0.015
-        gaussians_without_bh_mass = [
-            truncnorm((0.0 - galaxy.z) / FIXED_GALAXY_REDSHIFT_ERROR, 10, galaxy.z, FIXED_GALAXY_REDSHIFT_ERROR)
+
+        """gaussians_without_bh_mass = [
+            truncnorm((0.0 - galaxy.z) / galaxy.z_error, 10, galaxy.z, galaxy.z_error)
             for galaxy in possible_host_galaxies_reduced
         ]
 
         # with bh mass
         gaussians_with_bh_mass = [
-            truncnorm((0.0 - galaxy.z) / FIXED_GALAXY_REDSHIFT_ERROR, 10, galaxy.z, FIXED_GALAXY_REDSHIFT_ERROR)
+            truncnorm((0.0 - galaxy.z) / galaxy.z_error, 10, galaxy.z, galaxy.z_error)
             for galaxy in possible_host_galaxies_with_bh_mass
         ]
 
@@ -3464,7 +3471,7 @@ class BayesianStatistics:
             1000,
         )
         distances = np.array([dist(z, h=self.h) for z in redshift_range])
-        dl_threshold = 1.55 # Gpc
+        dl_threshold = 1.55  # Gpc
         p_det = [
             1
             / 2
@@ -3500,7 +3507,7 @@ class BayesianStatistics:
         )
         normalization_with_bh_mass = np.trapz(
             p_gal_with_bh_mass * p_det, redshift_range
-        )
+        )"""
 
         """# compute alpha
         detection_redshift = dist_to_redshift(self.detection.d_L, h=self.h)
@@ -3621,7 +3628,7 @@ class BayesianStatistics:
             / distance_relation_derivative_at_detection_redshift,
             redshift_range,
         )"""
-        detection_accuracy_gaussian = truncnorm(
+        """detection_accuracy_gaussian = truncnorm(
             (0.0 - self.detection.d_L) / self.detection.d_L_uncertainty,
             10,
             self.detection.d_L,
@@ -3665,13 +3672,11 @@ class BayesianStatistics:
             * detection_accuracy_gaussian_values
             / distance_relation_derivative_at_detection_redshift,
             d_L_range,
-        )
+        )"""
 
         return (
-            likelihood_without_bh_mass
-            / normalization_without_bh_mass
-            / alpha_without_bh_mass,
-            likelihood_with_bh_mass / normalization_with_bh_mass / alpha_with_bh_mass,
+            likelihood_without_bh_mass / normalization_without_bh_mass,
+            likelihood_with_bh_mass / normalization_with_bh_mass,
         )
 
 
@@ -3832,10 +3837,10 @@ def single_host_likelihood(
     ]
 
     redshift_normal_distribution = truncnorm(
-        (0 - possible_host.z) / FIXED_GALAXY_REDSHIFT_ERROR,
+        (0 - possible_host.z) / possible_host.z_error,
         np.inf,
         possible_host.z,
-        FIXED_GALAXY_REDSHIFT_ERROR,
+        possible_host.z_error,
     )
     redshift_normal_distribution = redshift_normal_distribution.pdf(z_gws)
 
@@ -3866,6 +3871,16 @@ def single_host_likelihood(
     # weight with redshift detection distribution
     likelihood_without_bh_mass_weighted = (
         likelihood_without_bh_mass * p_emri * redshift_detection_distribution_weights
+    )
+
+    distance_relation_derivatives = np.array([dist_derivative(z, h) for z in z_gws])
+
+    normalization_without_bh_mass = np.trapz(
+        p_emri
+        * redshift_detection_distribution_weights
+        * redshift_normal_distribution
+        / distance_relation_derivatives,
+        z_gws,
     )
 
     # integrate over redshift
@@ -3918,7 +3933,7 @@ def single_host_likelihood(
             (0 - possible_host.M) / possible_host.M_error,
             np.inf,
             possible_host.M,
-            0.2*possible_host.M,
+            0.2 * possible_host.M,
         )
 
         mass_normal_distribution = mass_normal_distribution.pdf(M_g)
@@ -3945,12 +3960,27 @@ def single_host_likelihood(
         # weight with redshift detection distribution
         likelihood_with_bh_mass_weighted = likelihood_with_bh_mass * p_emri_with_bh_mass
 
+        normalization_with_bh_mass = np.trapz(
+            p_emri_with_bh_mass
+            * redshift_mass_detection_distribution_weights
+            * redshift_normal_distribution
+            * mass_normal_distribution
+            / distance_relation_derivatives,
+            z_gws,
+        )
+
         # integrate over mass and redshift
         likelihood_with_bh_mass_weighted = np.trapz(
             likelihood_with_bh_mass_weighted, z_gws
         )
-        return [likelihood_without_bh_mass_weighted, likelihood_with_bh_mass_weighted]
-    return likelihood_without_bh_mass_weighted
+
+        return [
+            likelihood_without_bh_mass_weighted,
+            likelihood_with_bh_mass_weighted,
+            normalization_without_bh_mass,
+            normalization_with_bh_mass,
+        ]
+    return [likelihood_without_bh_mass_weighted, normalization_without_bh_mass]
 
 
 def child_process_init(
