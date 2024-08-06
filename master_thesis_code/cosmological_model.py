@@ -1022,7 +1022,7 @@ class BayesianStatistics:
 
         # create color list with 10 different colors
         NUMBER_OF_SUBSETS = 20
-        NUMBER_OF_DETECTIONS = 200
+        NUMBER_OF_DETECTIONS = 50
         fig.suptitle(
             f"Posterior distribution of Hubble constant h using {NUMBER_OF_SUBSETS} subsets of {NUMBER_OF_DETECTIONS} detections"
         )
@@ -3445,14 +3445,15 @@ class BayesianStatistics:
         # without bh mass
         # detection accuracy
         # TESTING WITHOUT LOCAL BIAS CORRECTION
+        FIXED_GALAXY_REDSHIFT_ERROR = 0.015
         gaussians_without_bh_mass = [
-            truncnorm((0.0 - galaxy.z) / galaxy.z_error, 10, galaxy.z, galaxy.z_error)
+            truncnorm((0.0 - galaxy.z) / FIXED_GALAXY_REDSHIFT_ERROR, 10, galaxy.z, FIXED_GALAXY_REDSHIFT_ERROR)
             for galaxy in possible_host_galaxies_reduced
         ]
 
         # with bh mass
         gaussians_with_bh_mass = [
-            truncnorm((0.0 - galaxy.z) / galaxy.z_error, 10, galaxy.z, galaxy.z_error)
+            truncnorm((0.0 - galaxy.z) / FIXED_GALAXY_REDSHIFT_ERROR, 10, galaxy.z, FIXED_GALAXY_REDSHIFT_ERROR)
             for galaxy in possible_host_galaxies_with_bh_mass
         ]
 
@@ -3463,7 +3464,7 @@ class BayesianStatistics:
             1000,
         )
         distances = np.array([dist(z, h=self.h) for z in redshift_range])
-        dl_threshold = self.d_L_threshold
+        dl_threshold = 1.55 # Gpc
         p_det = [
             1
             / 2
@@ -3730,6 +3731,7 @@ def single_host_likelihood(
 
     # TODO: use delta_redshift to regard limits on the errors of redshift and distance in gaussians
     # TODO: also adjust delta redshift usage in evaluation
+    FIXED_GALAXY_REDSHIFT_ERROR = 0.015
 
     # p_EMRI used to set EMRI rates to zero outside simulation range
     M_max = 10**6
@@ -3830,10 +3832,10 @@ def single_host_likelihood(
     ]
 
     redshift_normal_distribution = truncnorm(
-        (0 - possible_host.z) / possible_host.z_error,
+        (0 - possible_host.z) / FIXED_GALAXY_REDSHIFT_ERROR,
         np.inf,
         possible_host.z,
-        possible_host.z_error,
+        FIXED_GALAXY_REDSHIFT_ERROR,
     )
     redshift_normal_distribution = redshift_normal_distribution.pdf(z_gws)
 
@@ -3916,7 +3918,7 @@ def single_host_likelihood(
             (0 - possible_host.M) / possible_host.M_error,
             np.inf,
             possible_host.M,
-            possible_host.M_error,
+            0.2*possible_host.M,
         )
 
         mass_normal_distribution = mass_normal_distribution.pdf(M_g)

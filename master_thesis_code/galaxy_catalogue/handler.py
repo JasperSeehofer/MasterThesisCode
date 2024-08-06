@@ -387,6 +387,25 @@ class GalaxyCatalogueHandler:
                 REDUCED_CATALOGUE_FILE_PATH, header=False, mode="a", index=False
             )
 
+    def parse_to_reduced_catalog_with_reduced_errors(self) -> None:
+        catalog = pd.read_csv(
+            REDUCED_CATALOGUE_FILE_PATH,
+            names=[
+                column.name
+                for column in CatalogueColumns
+                if column.value not in [30, 34]
+            ],
+        )
+        for index, row in catalog.iterrows():
+            redshift = row[CatalogueColumns.REDSHIFT.name]
+            redshift_error = row[CatalogueColumns.REDSHIFT_MEASUREMENT_ERROR.name]
+            new_redshift_error = dist_to_redshift_error_proagation(
+                redshift, redshift_error
+            )
+            catalog.at[index, CatalogueColumns.REDSHIFT_MEASUREMENT_ERROR.name] = (
+                new_redshift_error
+            )
+
     def read_reduced_galaxy_catalog(self) -> pd.DataFrame:
         return pd.read_csv(
             REDUCED_CATALOGUE_FILE_PATH,
