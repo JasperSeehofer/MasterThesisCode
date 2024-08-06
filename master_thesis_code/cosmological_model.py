@@ -3742,6 +3742,21 @@ def single_host_likelihood(
     M_max = 10**6
     M_min = 10**4
     z_draw = 1.5
+    dl_threshold = 1.55  # Gpc
+    p_det = np.array(
+        [
+            1
+            / 2
+            * (
+                1
+                + erf(
+                    (dl_threshold - dl)
+                    / (np.sqrt(2) * detection.d_L_uncertainty / detection.d_L * dl)
+                )
+            )
+            for dl in distances
+        ]
+    )
 
     # integrate along redshift and if mass or redshift is outside of simulation range set p_emri to zero
     p_emri = np.array([1.0 if (z < z_draw) else 0.0 for z in z_gws])
@@ -3870,18 +3885,17 @@ def single_host_likelihood(
 
     # weight with redshift detection distribution
     likelihood_without_bh_mass_weighted = (
-        likelihood_without_bh_mass * p_emri * redshift_detection_distribution_weights
+        likelihood_without_bh_mass * p_emri 
     )
+    #* redshift_detection_distribution_weights
 
     distance_relation_derivatives = np.array([dist_derivative(z, h) for z in z_gws])
 
     normalization_without_bh_mass = np.trapz(
-        p_emri
-        * redshift_detection_distribution_weights
-        * redshift_normal_distribution
-        / distance_relation_derivatives,
+        p_det * p_emri * redshift_normal_distribution,
         z_gws,
     )
+    # removed * redshift_detection_distribution_weights / distance_relation_derivatives
 
     # integrate over redshift
     likelihood_without_bh_mass_weighted = np.trapz(
@@ -3954,20 +3968,19 @@ def single_host_likelihood(
             / detection.M
             * mass_normal_distribution
             * redshift_normal_distribution
-            * redshift_mass_detection_distribution_weights
         )
+        # * redshift_mass_detection_distribution_weights
 
         # weight with redshift detection distribution
         likelihood_with_bh_mass_weighted = likelihood_with_bh_mass * p_emri_with_bh_mass
 
         normalization_with_bh_mass = np.trapz(
-            p_emri_with_bh_mass
-            * redshift_mass_detection_distribution_weights
+            p_det
+            * p_emri_with_bh_mass
             * redshift_normal_distribution
-            * mass_normal_distribution
-            / distance_relation_derivatives,
+            * mass_normal_distribution,
             z_gws,
-        )
+        )  # * redshift_mass_detection_distribution_weights / distance_relation_derivatives
 
         # integrate over mass and redshift
         likelihood_with_bh_mass_weighted = np.trapz(
