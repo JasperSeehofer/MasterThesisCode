@@ -3891,11 +3891,13 @@ def single_host_likelihood(
 
     distance_relation_derivatives = np.array([dist_derivative(z, h) for z in z_gws])
 
-    normalization_without_bh_mass = np.trapz(
-        p_det * p_emri * redshift_normal_distribution,
-        z_gws,
+    z_dl_detection = np.argmin(np.abs(z_gws - dist_to_redshift(detection.d_L, h)))
+    normalization_without_bh_mass = (
+        p_emri[z_dl_detection]
+        * redshift_normal_distribution[z_dl_detection]
+        / distance_relation_derivatives[z_dl_detection]
     )
-    # removed * redshift_detection_distribution_weights / distance_relation_derivatives
+    # removed * redshift_detection_distribution_weights p_det
 
     # integrate over redshift
     likelihood_without_bh_mass_weighted = np.trapz(
@@ -3974,13 +3976,24 @@ def single_host_likelihood(
         # weight with redshift detection distribution
         likelihood_with_bh_mass_weighted = likelihood_with_bh_mass * p_emri_with_bh_mass
 
-        normalization_with_bh_mass = np.trapz(
-            p_det
-            * p_emri_with_bh_mass
-            * redshift_normal_distribution
-            * mass_normal_distribution,
-            z_gws,
-        )  # * redshift_mass_detection_distribution_weights / distance_relation_derivatives
+        # get z_gws which correspond to 1 sigma around d_L detection
+        d_L_lower_limit = detection.d_L - detection.d_L_uncertainty
+        d_L_upper_limit = detection.d_L + detection.d_L_uncertainty
+        z_lower_limit = dist_to_redshift(d_L_lower_limit, h)
+        z_upper_limit = dist_to_redshift(d_L_upper_limit, h)
+        # find indices
+        z_lower_index = np.argmin(np.abs(z_gws - z_lower_limit))
+        z_upper_index = np.argmin(np.abs(z_gws - z_upper_limit))
+
+        # compute normalization
+        
+
+        normalization_with_bh_mass = (
+            p_emri_with_bh_mass[z_dl_detection]
+            * redshift_normal_distribution[z_dl_detection]
+            * mass_normal_distribution[z_dl_detection]
+            / distance_relation_derivatives[z_dl_detection]
+        )  # * redshift_mass_detection_distribution_weights 
 
         # integrate over mass and redshift
         likelihood_with_bh_mass_weighted = np.trapz(
