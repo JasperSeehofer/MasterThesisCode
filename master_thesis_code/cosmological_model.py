@@ -1022,7 +1022,7 @@ class BayesianStatistics:
 
         # create color list with 10 different colors
         NUMBER_OF_SUBSETS = 20
-        NUMBER_OF_DETECTIONS = 50
+        NUMBER_OF_DETECTIONS = 75
         fig.suptitle(
             f"Posterior distribution of Hubble constant h using {NUMBER_OF_SUBSETS} subsets of {NUMBER_OF_DETECTIONS} detections"
         )
@@ -3857,7 +3857,7 @@ def single_host_likelihood(
         possible_host.z,
         possible_host.z_error,
     )
-    redshift_normal_distribution = redshift_normal_distribution.pdf(z_gws)
+    redshift_normal_distribution_values = redshift_normal_distribution.pdf(z_gws)
 
     normal_distribution = multivariate_normal(
         mean=[
@@ -3880,7 +3880,7 @@ def single_host_likelihood(
 
     # evaluate multivariate normal distribution
     likelihood_without_bh_mass = (
-        normal_distribution.pdf(positions) * redshift_normal_distribution / distances
+        normal_distribution.pdf(positions) * redshift_normal_distribution_values / distances
     )
 
     # weight with redshift detection distribution
@@ -3888,14 +3888,25 @@ def single_host_likelihood(
         likelihood_without_bh_mass * p_emri 
     )
     #* redshift_detection_distribution_weights
+    detection_accuracy_gaussian = truncnorm(
+        (0.0 - detection.d_L) / detection.d_L_uncertainty,
+        10,
+        detection.d_L,
+        detection.d_L_uncertainty,
+    )
 
-    distance_relation_derivatives = np.array([dist_derivative(z, h) for z in z_gws])
+    z_dl_detection = dist_to_redshift(detection.d_L, h)
+    distance_relation_derivatives_at_detection_redshift = dist_derivative(z_dl_detection, h)
+    galaxy_redshift_distribution_at_detection_redshift = redshift_normal_distribution.pdf(
+        z_dl_detection
+    )
+    p_emri_at_detection_redshift = 1 if z_dl_detection < z_draw else 0
 
-    z_dl_detection = np.argmin(np.abs(z_gws - dist_to_redshift(detection.d_L, h)))
+
     normalization_without_bh_mass = (
-        p_emri[z_dl_detection]
-        * redshift_normal_distribution[z_dl_detection]
-        / distance_relation_derivatives[z_dl_detection]
+        p_emri_at_detection_redshift
+        * galaxy_redshift_distribution_at_detection_redshift
+        / distance_relation_derivatives_at_detection_redshift
     )
     # removed * redshift_detection_distribution_weights p_det
 
@@ -3952,7 +3963,7 @@ def single_host_likelihood(
             0.2 * possible_host.M,
         )
 
-        mass_normal_distribution = mass_normal_distribution.pdf(M_g)
+        mass_normal_distribution_values = mass_normal_distribution.pdf(M_g)
 
         # prepare positions for multivariate normal distribution for all parameters including the mass
         positions = np.vstack(
@@ -3968,8 +3979,8 @@ def single_host_likelihood(
             normal_distribution_with_mass.pdf(positions)
             / distances
             / detection.M
-            * mass_normal_distribution
-            * redshift_normal_distribution
+            * mass_normal_distribution_values
+            * redshift_normal_distribution_values
         )
         # * redshift_mass_detection_distribution_weights
 
@@ -3977,22 +3988,18 @@ def single_host_likelihood(
         likelihood_with_bh_mass_weighted = likelihood_with_bh_mass * p_emri_with_bh_mass
 
         # get z_gws which correspond to 1 sigma around d_L detection
-        d_L_lower_limit = detection.d_L - detection.d_L_uncertainty
-        d_L_upper_limit = detection.d_L + detection.d_L_uncertainty
-        z_lower_limit = dist_to_redshift(d_L_lower_limit, h)
-        z_upper_limit = dist_to_redshift(d_L_upper_limit, h)
-        # find indices
-        z_lower_index = np.argmin(np.abs(z_gws - z_lower_limit))
-        z_upper_index = np.argmin(np.abs(z_gws - z_upper_limit))
 
         # compute normalization
-        
+        galaxy_mass_distribution_at_detection_redshift = mass_normal_distribution.pdf(
+            detection.M
+        )
+        p_emri_with_bh_mass_at_detection_redshift = 1 if ((z_dl_detection < z_draw) and (M_min <= detection.M/(1+z_dl_detection <= M_max))) else 0
 
         normalization_with_bh_mass = (
-            p_emri_with_bh_mass[z_dl_detection]
-            * redshift_normal_distribution[z_dl_detection]
-            * mass_normal_distribution[z_dl_detection]
-            / distance_relation_derivatives[z_dl_detection]
+            p_emri_with_bh_mass_at_detection_redshift
+            * galaxy_redshift_distribution_at_detection_redshift
+            * galaxy_mass_distribution_at_detection_redshift
+            / distance_relation_derivatives_at_detection_redshift   
         )  # * redshift_mass_detection_distribution_weights 
 
         # integrate over mass and redshift
