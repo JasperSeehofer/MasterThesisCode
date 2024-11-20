@@ -1087,7 +1087,7 @@ class BayesianStatistics:
             plt.plot(
                 h_fine,
                 gaussian(h_fine, *popt),
-                label=f"std: {np.round(popt[1], 3)} +/- {np.round(perr[1], 3)},\nmean: {np.round(popt[0], 3)} +/- {np.round(perr[0], 3)}",
+                label=f"std: {np.round(popt[1], 4)} +/- {np.round(perr[1], 4)},\nmean: {np.round(popt[0], 4)} +/- {np.round(perr[0], 4)}",
                 color="b",
                 linestyle="--",
             )
@@ -1137,7 +1137,7 @@ class BayesianStatistics:
             plt.plot(
                 h_fine,
                 gaussian(h_fine, *popt_with_bh_mass),
-                label=f"std: {np.round(popt_with_bh_mass[1], 3)} +/- {np.round(perr_with_bh_mass[1], 3)},\nmean: {np.round(popt_with_bh_mass[0], 3)} +/- {np.round(perr_with_bh_mass[0], 3)}",
+                label=f"std: {np.round(popt_with_bh_mass[1], 4)} +/- {np.round(perr_with_bh_mass[1], 4)},\nmean: {np.round(popt_with_bh_mass[0], 4)} +/- {np.round(perr_with_bh_mass[0], 4)}",
                 color="r",
                 linestyle="--",
             )
