@@ -13,11 +13,11 @@ class ScientificPlotter:
         norm = plt.Normalize(*range)
         self.color_map = cm.ScalarMappable(norm=norm, cmap=cmap)
 
-    def plot(self, x: float, y: float, label: str = None) -> None:
-        self.axis.plot(x, y, label=label)
+    def plot(self, x: float, y: float, label: str = None, kwargs: dict = {}) -> None:
+        self.axis.plot(x, y, label=label, **kwargs)
 
-    def plot_colored(self, x: float, y: float, color: float, label: str = None) -> None:
-        self.axis.plot(x, y, color=self.color_map.to_rgba(color), label=label)
+    def plot_colored(self, x: float, y: float, color: float, label: str = None, line_style: str = None, kwargs: dict = {}) -> None:
+        self.axis.plot(x, y, color=self.color_map.to_rgba(color), label=label, linestyle=line_style, **kwargs)
 
     def show_colorbar(self, label: str = None) -> None:
         self.color_map.set_array([])
