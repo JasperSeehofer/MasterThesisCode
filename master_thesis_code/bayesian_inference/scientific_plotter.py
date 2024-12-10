@@ -23,8 +23,23 @@ class ScientificPlotter:
     def plot(self, x: float, y: float, label: str = None, kwargs: dict = {}) -> None:
         self.axis.plot(x, y, label=label, **kwargs)
 
-    def plot_colored(self, x: float, y: float, color: float, label: str = None, line_style: str = None, kwargs: dict = {}) -> None:
-        self.axis.plot(x, y, color=self.color_map.to_rgba(color), label=label, linestyle=line_style, **kwargs)
+    def plot_colored(
+        self,
+        x: float,
+        y: float,
+        color: float,
+        label: str = None,
+        line_style: str = None,
+        kwargs: dict = {},
+    ) -> None:
+        self.axis.plot(
+            x,
+            y,
+            color=self.color_map.to_rgba(color),
+            label=label,
+            linestyle=line_style,
+            **kwargs,
+        )
 
     def show_colorbar(self, label: str = None) -> None:
         self.color_map.set_array([])
@@ -33,12 +48,12 @@ class ScientificPlotter:
     def show_and_close(self) -> None:
         self.axis.legend()
         plt.show()
-        plt.close()
+        plt.close(self.figure)
 
     def save_as_svg(self, file_path: str, dpi: int) -> None:
         self.axis.legend()
         self.figure.savefig(file_path, format="svg", dpi=dpi)
-        plt.close()
+        plt.close(self.figure)
 
     def plot_example(self) -> None:
         x = np.linspace(0, 5, 1000)
