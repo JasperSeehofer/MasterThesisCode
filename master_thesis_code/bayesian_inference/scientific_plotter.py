@@ -20,8 +20,12 @@ class ScientificPlotter:
         norm = plt.Normalize(*range)
         self.color_map = cm.ScalarMappable(norm=norm, cmap=cmap)
 
+    def scatter(self, x: float, y: float, label: str = None, kwargs: dict = {}) -> None:
+        self.axis.scatter(x, y, label=label, **kwargs)
+    
     def plot(self, x: float, y: float, label: str = None, kwargs: dict = {}) -> None:
         self.axis.plot(x, y, label=label, **kwargs)
+
 
     def plot_colored(
         self,
