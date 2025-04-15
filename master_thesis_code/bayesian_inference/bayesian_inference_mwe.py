@@ -17,7 +17,7 @@ from scipy.optimize import fsolve
 from scipy.special import hyp2f1
 import emcee
 
-from scientific_plotter import ScientificPlotter
+from master_thesis_code.bayesian_inference.scientific_plotter import ScientificPlotter
 
 FRACTIONAL_LUMINOSITY_ERROR = 0.1
 FRACTIONAL_BLACK_HOLE_MASS_CATALOG_ERROR = 0.1
@@ -144,6 +144,10 @@ class Galaxy:
     @property
     def redshift_uncertainty(self) -> float:
         return min(0.013 * (1 + self.redshift) ** 3, 0.015)
+    
+    @property
+    def central_black_hole_mass_uncertainty(self) -> float:
+        return FRACTIONAL_BLACK_HOLE_MASS_CATALOG_ERROR * self.central_black_hole_mass
 
 
 class GalaxyCatalog:
@@ -160,6 +164,8 @@ class GalaxyCatalog:
     def __init__(self, use_truncnorm: bool = True, use_comoving_volume: bool = True):
         self._use_truncnorm = use_truncnorm
         self._use_comoving_volume = use_comoving_volume
+
+    
 
     @property
     def mean_redshift(self) -> float:
@@ -255,7 +261,7 @@ class GalaxyCatalog:
         self.galaxy_mass_distribution = []
 
     def add_random_galaxy(self) -> None:
-        galaxy = Galaxy(
+        galaxy = Galaxy.with_random_skylocalization(
             redshift=np.random.uniform(
                 self.redshift_lower_limit, self.redshift_upper_limit
             ),
@@ -265,9 +271,10 @@ class GalaxyCatalog:
         )
         self.catalog.append(galaxy)
         self.append_galaxy_to_galaxy_distribution(galaxy)
+        self.append_galaxy_to_galaxy_mass_distribution(galaxy)
 
     def add_host_galaxy(self) -> Galaxy:
-        galaxy = Galaxy(
+        galaxy = Galaxy.with_random_skylocalization(
             redshift=np.random.uniform(
                 self.redshift_lower_limit, self.redshift_upper_limit
             ),
@@ -277,15 +284,46 @@ class GalaxyCatalog:
         )
         self.catalog.append(galaxy)
         self.append_galaxy_to_galaxy_distribution(galaxy)
+        self.append_galaxy_to_galaxy_mass_distribution(galaxy)
 
     def setup_galaxy_distribution(self) -> None:
-        self.galaxy_distribution = [
-            NormalDist(mu=galaxy.redshift, sigma=galaxy.redshift_uncertainty)
-            for galaxy in self.catalog
-        ]
+        if not self._use_truncnorm:
+            self.galaxy_distribution = [
+                NormalDist(mu=galaxy.redshift, sigma=galaxy.redshift_uncertainty)
+                for galaxy in self.catalog
+            ]
+        else:
+            self.galaxy_distribution = [
+                truncnorm(
+                    a=(self.redshift_lower_limit - galaxy.redshift)
+                    / galaxy.redshift_uncertainty,
+                    b=(self.redshift_upper_limit - galaxy.redshift)
+                    / galaxy.redshift_uncertainty,
+                )
+                for galaxy in self.catalog
+            ]
+
+
+    def append_galaxy_to_galaxy_mass_distribution(self, galaxy: Galaxy) -> None:
+        if not self._use_truncnorm:
+            self.galaxy_mass_distribution.append(
+                NormalDist(
+                mu=galaxy.central_black_hole_mass,
+                sigma=FRACTIONAL_BLACK_HOLE_MASS_CATALOG_ERROR * galaxy.central_black_hole_mass,
+                )
+            )
+            
+        else:
+            self.galaxy_distribution.append(
+                truncnorm(
+                    a=(self.lower_mass_limit - galaxy.central_black_hole_mass)
+                    / galaxy.central_black_hole_mass_uncertainty,
+                    b=(self.upper_mass_limit - galaxy.central_black_hole_mass)
+                    / galaxy.central_black_hole_mass_uncertainty,
+                )
+            )
 
     def append_galaxy_to_galaxy_distribution(self, galaxy: Galaxy) -> None:
-        # TODO: also add to mass distribution
         if not self._use_truncnorm:
             self.galaxy_distribution.append(
                 NormalDist(galaxy.redshift, galaxy.redshift_uncertainty)
@@ -710,10 +748,10 @@ class BayesianInference:
 
 
 if __name__ == "__main__":
-    galaxy_catalog = GalaxyCatalog(use_truncnorm=False, use_comoving_volume=True)
-    NUMBER_OF_GALAXIES = 500
-    STEPS = 30
-    NUMBER_OF_NEW_DETECTIONS_PER_STEP = 1
+    galaxy_catalog = GalaxyCatalog(use_truncnorm=False, use_comoving_volume=False)
+    NUMBER_OF_GALAXIES = 70
+    STEPS = 10
+    NUMBER_OF_NEW_DETECTIONS_PER_STEP = 2
     compare_with_truncnorm = False
 
     plotter = ScientificPlotter(figure_size=(16, 9))
