@@ -42,11 +42,20 @@ def test_galaxy_catalog_init():
 
     assert galaxy_catalog is not None
     assert isinstance(galaxy_catalog, GalaxyCatalog)
-    assert galaxy_catalog.catalog.__len__() == 0
+    assert len(galaxy_catalog.catalog) == 0
     assert galaxy_catalog._use_truncnorm == True
     assert galaxy_catalog._use_comoving_volume == True
 
 # test comoving volume TODO
+def test_get_samples_from_comoving_volume():
+    galaxy_catalog = GalaxyCatalog()
+
+    redshifts = galaxy_catalog.get_samples_from_comoving_volume(100)
+
+    assert redshifts is not None
+    assert isinstance(redshifts, np.ndarray)
+    assert redshifts.__len__() == 100
+    assert all(isinstance(sample, float) for sample in redshifts)
 
 def test_create_random_catalog_without_comoving_volume():
     galaxy_catalog = GalaxyCatalog(use_comoving_volume=False)
@@ -56,7 +65,7 @@ def test_create_random_catalog_without_comoving_volume():
     galaxy_catalog.create_random_catalog(number_of_galaxies=number_of_galaxies)
 
     assert galaxy_catalog.catalog is not None
-    assert galaxy_catalog.catalog.__len__() == 10
+    assert len(galaxy_catalog.catalog) == 10
     assert all(
         galaxy_catalog.redshift_lower_limit <= galaxy.redshift <= galaxy_catalog.redshift_upper_limit 
         for galaxy in galaxy_catalog.catalog
@@ -131,6 +140,151 @@ def test_setup_galaxy_distribution_without_truncnorm():
     assert galaxy_catalog.galaxy_distribution is not None
     assert galaxy_catalog.galaxy_distribution.__len__() == 2
     assert all(isinstance(distribution, NormalDist) for distribution in galaxy_catalog.galaxy_distribution)
+
+def test_setup_galaxy_mass_distribution():
+    galaxy_catalog = GalaxyCatalog(use_truncnorm=False)
+    galaxy_catalog.catalog.extend([
+        Galaxy.with_random_skylocalization(
+            redshift=1.0,
+            central_black_hole_mass=1e5,
+        ),
+        Galaxy.with_random_skylocalization(
+            redshift=2.0,
+            central_black_hole_mass=1e6,
+        )
+    ])
+
+    galaxy_catalog.setup_galaxy_mass_distribution()
+
+    assert galaxy_catalog.galaxy_mass_distribution is not None
+    assert len(galaxy_catalog.galaxy_mass_distribution) == 2
+    assert all(isinstance(distribution, NormalDist) for distribution in galaxy_catalog.galaxy_mass_distribution)
+
+def test_evaluate_galaxy_distribution():
+    galaxy_catalog = GalaxyCatalog(use_truncnorm=False)
+    galaxy_catalog.catalog.extend([
+        Galaxy.with_random_skylocalization(
+            redshift=1.0,
+            central_black_hole_mass=1e5,
+        ),
+        Galaxy.with_random_skylocalization(
+            redshift=2.0,
+            central_black_hole_mass=1e6,
+        )
+    ])
+
+    probabilities = galaxy_catalog.evaluate_galaxy_distribution(1.5)
+
+    assert probabilities is not None
+    assert isinstance(probabilities, np.ndarray)
+    assert len(probabilities) == 2
+    assert all(prob >= 0 for prob in probabilities)
+
+def test_evaluate_galaxy_mass_distribution():
+    galaxy_catalog = GalaxyCatalog(use_truncnorm=False)
+    galaxy_catalog.catalog.extend([
+        Galaxy.with_random_skylocalization(
+            redshift=1.0,
+            central_black_hole_mass=1e5,
+        ),
+        Galaxy.with_random_skylocalization(
+            redshift=2.0,
+            central_black_hole_mass=1e6,
+        )
+    ])
+    galaxy_catalog.setup_galaxy_mass_distribution()
+
+    probabilities = galaxy_catalog.evaluate_galaxy_mass_distribution(1e5)
+
+    assert probabilities is not None
+    assert isinstance(probabilities, np.ndarray)
+    assert len(probabilities) == 2
+    assert all(prob >= 0 for prob in probabilities)
+
+def test_get_possible_host_galaxies():
+    galaxy_catalog = GalaxyCatalog()
+    galaxy_catalog.catalog.extend([
+        Galaxy.with_random_skylocalization(
+            redshift=0.1,
+            central_black_hole_mass=1e5,
+        ),
+        Galaxy.with_random_skylocalization(
+            redshift=2.0,
+            central_black_hole_mass=1e6,
+        )
+    ])
+
+    possible_hosts = galaxy_catalog.get_possible_host_galaxies()
+
+    assert possible_hosts is not None
+    assert isinstance(possible_hosts, list)
+    assert all(isinstance(galaxy, Galaxy) for galaxy in possible_hosts)
+    assert all(
+        dist(galaxy.redshift, TRUE_HUBBLE_CONSTANT) <= BayesianInference.luminosity_distance_threshold
+        for galaxy in possible_hosts
+    )
+
+def test_gw_detection_probability():
+    galaxy_catalog = GalaxyCatalog()
+    emri_detections = []
+    bayesian_inference = BayesianInference(galaxy_catalog, emri_detections)
+
+    probability = bayesian_inference.gw_detection_probability(0.1, TRUE_HUBBLE_CONSTANT)
+
+    assert probability is not None
+    assert isinstance(probability, float)
+    assert 0 <= probability <= 1
+
+def test_gw_likelihood():
+    galaxy_catalog = GalaxyCatalog()
+    emri_detections = []
+    bayesian_inference = BayesianInference(galaxy_catalog, emri_detections)
+
+    likelihood = bayesian_inference.gw_likelihood(
+        measured_luminosity_distance=1000.0,
+        redshift=0.1,
+        hubble_constant=TRUE_HUBBLE_CONSTANT
+    )
+
+    assert likelihood is not None
+    assert isinstance(likelihood, float)
+    assert likelihood >= 0
+
+def test_posterior():
+    galaxy_catalog = GalaxyCatalog()
+    galaxy_catalog.create_random_catalog(10)
+    emri_detections = [
+        EMRIDetection.from_host_galaxy(galaxy)
+        for galaxy in galaxy_catalog.catalog[:2]
+    ]
+    bayesian_inference = BayesianInference(galaxy_catalog, emri_detections)
+
+    posterior = bayesian_inference.posterior(TRUE_HUBBLE_CONSTANT)
+
+    assert posterior is not None
+    assert isinstance(posterior, list)
+    assert len(posterior) == len(emri_detections)
+    assert all(prob >= 0 for prob in posterior)
+
+def test_add_unique_host_galaxies_from_catalog():
+    galaxy_catalog = GalaxyCatalog()
+    galaxy_catalog.create_random_catalog(20)
+    number_of_possible_host_galaxies = len(galaxy_catalog.get_possible_host_galaxies())
+    used_host_galaxies = galaxy_catalog.get_possible_host_galaxies()[:int(number_of_possible_host_galaxies / 2)]
+
+    new_hosts = galaxy_catalog.add_unique_host_galaxies_from_catalog(
+        number_of_host_galaxies_to_add=int(number_of_possible_host_galaxies / 2),
+        used_host_galaxies=used_host_galaxies
+    )
+
+    assert new_hosts is not None
+    assert isinstance(new_hosts, list)
+    assert len(new_hosts) == number_of_possible_host_galaxies
+    assert all(isinstance(galaxy, Galaxy) for galaxy in new_hosts)
+    assert len(set(new_hosts)) == len(new_hosts)  # Ensure uniqueness
+
+
+
 
 
 

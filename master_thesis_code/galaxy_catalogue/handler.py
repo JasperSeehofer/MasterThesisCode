@@ -19,6 +19,7 @@ from master_thesis_code.physical_relations import (
 # import normal distribution
 from statistics import NormalDist
 from scipy.stats import truncnorm
+from sklearn.neighbors import BallTree
 
 _LOGGER = logging.getLogger()
 
@@ -106,8 +107,17 @@ class InternalCatalogColumns:
 @dataclass
 class GalaxyCatalogueHandler:
     reduced_galaxy_catalog: pd.DataFrame
+    catalog_ball_tree: BallTree
+    catalog_4d_ball_tree: BallTree
+    M_min: float
+    M_max: float
+    z_max: float
+
 
     def __init__(self, M_min: float, M_max: float, z_max: float) -> None:
+        self.M_min = M_min
+        self.M_max = M_max
+        self.z_max = z_max
         try:
             self.reduced_galaxy_catalog = self.read_reduced_galaxy_catalog()
             _LOGGER.info("Successfully loaded reduced galaxy catalog.")
@@ -133,42 +143,35 @@ class GalaxyCatalogueHandler:
         self._map_stellar_masses_to_BH_masses()
         self._map_angles_to_spherical_coordinates()
         self._remove_galaxies_without_mass_information()
-        self._pruned_galaxy_catalog = self._get_pruned_galaxy_catalog(
+        self.reduced_galaxy_catalog = self._get_pruned_galaxy_catalog(
             M_min, M_max, z_max
         )
         self.set_max_relative_errors()
         self._show_catalog_information()
+        self.setup_galaxy_catalog_balltree()
+        self.setup_4d_galaxy_catalog_balltree()
 
     def _get_pruned_galaxy_catalog(
         self, M_min: float, M_max: float, z_max: float
     ) -> pd.DataFrame:
-        pruned_galaxy_catalog = self.reduced_galaxy_catalog[
-            (
-                self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS]
-                + self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS_ERROR]
-                >= M_min
-            )
-            & (
-                self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS]
-                - self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS_ERROR]
-                <= M_max
-            )
-            & (
-                self.reduced_galaxy_catalog[InternalCatalogColumns.REDSHIFT]
-                - self.reduced_galaxy_catalog[InternalCatalogColumns.REDSHIFT_ERROR]
-                <= z_max
-            )
-        ]
-        return pruned_galaxy_catalog
+        mask = (
+            (self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS] +
+             self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS_ERROR] >= M_min)
+            & (self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS] -
+               self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS_ERROR] <= M_max)
+            & (self.reduced_galaxy_catalog[InternalCatalogColumns.REDSHIFT] -
+               self.reduced_galaxy_catalog[InternalCatalogColumns.REDSHIFT_ERROR] <= z_max)
+        )
+        return self.reduced_galaxy_catalog[mask]
 
     def set_max_relative_errors(self) -> None:
         self._max_relative_redshift_error = (
-            self._pruned_galaxy_catalog[InternalCatalogColumns.REDSHIFT_ERROR]
-            / self._pruned_galaxy_catalog[InternalCatalogColumns.REDSHIFT]
+            self.reduced_galaxy_catalog[InternalCatalogColumns.REDSHIFT_ERROR]
+            / self.reduced_galaxy_catalog[InternalCatalogColumns.REDSHIFT]
         ).max()
         self._max_relative_mass_error = (
-            self._pruned_galaxy_catalog[InternalCatalogColumns.BH_MASS_ERROR]
-            / self._pruned_galaxy_catalog[InternalCatalogColumns.BH_MASS]
+            self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS_ERROR]
+            / self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS]
         ).max()
 
     def _show_catalog_information(self) -> None:
@@ -187,7 +190,7 @@ class GalaxyCatalogueHandler:
             f"Galaxies with stellar mass estimation statistics\n: {bh_mass_given_statistics}"
         )
         _LOGGER.info(
-            f"Pruned galaxy catalog contains {len(self._pruned_galaxy_catalog)} galaxies."
+            f"Pruned galaxy catalog contains {len(self.reduced_galaxy_catalog)} galaxies."
         )
 
     def visualize_galaxy_catalog(self) -> None:
@@ -302,8 +305,8 @@ class GalaxyCatalogueHandler:
             [
                 truncnorm((0 - redshift) / redshift_error, np.inf).rvs()
                 for redshift, redshift_error in zip(
-                    self._pruned_galaxy_catalog[InternalCatalogColumns.REDSHIFT],
-                    self._pruned_galaxy_catalog[InternalCatalogColumns.REDSHIFT_ERROR],
+                    self.reduced_galaxy_catalog[InternalCatalogColumns.REDSHIFT],
+                    self.reduced_galaxy_catalog[InternalCatalogColumns.REDSHIFT_ERROR],
                 )
             ]
         )
@@ -311,8 +314,8 @@ class GalaxyCatalogueHandler:
             [
                 truncnorm((0 - mass) / mass_error, np.inf).rvs()
                 for mass, mass_error in zip(
-                    self._pruned_galaxy_catalog[InternalCatalogColumns.BH_MASS],
-                    self._pruned_galaxy_catalog[InternalCatalogColumns.BH_MASS_ERROR],
+                    self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS],
+                    self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS_ERROR],
                 )
             ]
         )
@@ -416,6 +419,115 @@ class GalaxyCatalogueHandler:
             ],
         )
 
+    def setup_galaxy_catalog_balltree(self) -> None:
+        # expects the reduced galaxy catalog to be setup already
+        ra = self.reduced_galaxy_catalog[InternalCatalogColumns.PHI_S].values
+        dec = self.reduced_galaxy_catalog[InternalCatalogColumns.THETA_S].values
+
+        x = np.cos(dec) * np.cos(ra)
+        y = np.cos(dec) * np.sin(ra)
+        z = np.sin(dec)
+        data = np.vstack((x, y, z)).T
+
+        self.catalog_ball_tree = BallTree(data, metric="euclidean")
+        self.reduced_galaxy_catalog = self.reduced_galaxy_catalog.reset_index()
+        _LOGGER.debug(
+            f"BallTree setup with {self.reduced_galaxy_catalog.shape[0]} galaxies."
+        )
+    
+    def get_possible_hosts_from_ball_tree(
+        self,
+        phi: float,
+        phi_sigma: float,
+        theta: float,
+        theta_sigma: float,
+        M_z: float,
+        M_z_sigma: float,
+        z_min: float,
+        z_max: float,
+        sigma_multiplier: int = 2,
+    ) -> Optional[Tuple[List[HostGalaxy], List[HostGalaxy]]]:
+
+        x = np.cos(theta) * np.cos(phi)
+        y = np.cos(theta) * np.sin(phi)
+        z = np.sin(theta)
+
+        query_point = np.array([[x, y, z]])
+
+        radius = max(phi_sigma, theta_sigma) * sigma_multiplier
+
+        indices = self.catalog_ball_tree.query_radius(query_point, r=radius)[0]
+
+        candidate_hosts = self.reduced_galaxy_catalog.iloc[indices]
+
+        redshift_filter_mask = (
+            (z_min <= candidate_hosts[InternalCatalogColumns.REDSHIFT] + candidate_hosts[InternalCatalogColumns.REDSHIFT_ERROR])
+            & (z_max >= candidate_hosts[InternalCatalogColumns.REDSHIFT] - candidate_hosts[InternalCatalogColumns.REDSHIFT_ERROR])
+        )
+        candidate_hosts_without_bh_mass = candidate_hosts[redshift_filter_mask]
+
+        mass_filter_mask = (
+            (M_z - M_z_sigma * sigma_multiplier) / (1 + z_max)
+            <= candidate_hosts[InternalCatalogColumns.BH_MASS]
+            + candidate_hosts[InternalCatalogColumns.BH_MASS_ERROR]
+        ) & (
+            candidate_hosts[InternalCatalogColumns.BH_MASS]
+            - candidate_hosts[InternalCatalogColumns.BH_MASS_ERROR]
+            <= (M_z + M_z_sigma * sigma_multiplier) / (1 + z_min)
+        )
+
+        candidate_hosts_with_bh_mass = candidate_hosts_without_bh_mass[mass_filter_mask]
+        possible_hosts_without_bh_mass = [
+            HostGalaxy(parameters) for _, parameters in candidate_hosts_without_bh_mass.iterrows()
+        ]
+        possible_hosts_with_bh_mass = [
+            HostGalaxy(parameters) for _, parameters in candidate_hosts_with_bh_mass.iterrows()
+        ]
+        if (len(possible_hosts_without_bh_mass) == 0) and (len(possible_hosts_with_bh_mass) == 0):
+            _LOGGER.warning("No possible hosts. Returning None.")
+            return None
+        
+        _LOGGER.info(
+            f"Found {len(possible_hosts_without_bh_mass)} possible hosts without BH mass and {len(possible_hosts_with_bh_mass)} possible hosts with BH mass."
+        )
+        return (possible_hosts_without_bh_mass, possible_hosts_with_bh_mass)
+
+    def setup_4d_galaxy_catalog_balltree(self) -> None:
+        # Normalize parameters
+        phi_norm = self.reduced_galaxy_catalog[InternalCatalogColumns.PHI_S] / (2 * np.pi)
+        theta_norm = self.reduced_galaxy_catalog[InternalCatalogColumns.THETA_S] / np.pi
+        redshift_norm = self.reduced_galaxy_catalog[InternalCatalogColumns.REDSHIFT] / self.z_max
+        log_mass = np.log10(self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS])
+        log_mass_min = np.log10(self.M_min)
+        log_mass_max = np.log10(self.M_max)
+        mass_norm = (log_mass - log_mass_min) / (log_mass_max - log_mass_min)
+
+        # Combine normalized parameters into a single array
+        data = np.vstack((phi_norm, theta_norm, redshift_norm, mass_norm)).T
+
+        # Build the BallTree
+        self.catalog_4d_ball_tree = BallTree(data, metric="euclidean")
+        _LOGGER.info("BallTree with all parameters has been built successfully.")
+
+    def find_closest_galaxy_to_coordinates(
+        self, phi: float, theta: float, redshift: float, mass: float
+    ) -> HostGalaxy:
+        phi_norm = phi / 2 / np.pi
+        theta_norm = theta / np.pi
+        redshift_norm = redshift / self.z_max
+        log_mass_norm = np.log10(mass)
+        mass_norm = (log_mass_norm - np.log10(self.M_min)) / (
+            np.log10(self.M_max) - np.log10(self.M_min)
+        )
+
+        query_point = np.array([[phi_norm, theta_norm, redshift_norm, mass_norm]])
+
+        # Query the BallTree
+        distance, index = self.catalog_4d_ball_tree.query(query_point, k=1)
+        closest_galaxy = self.reduced_galaxy_catalog.iloc[index[0][0]]
+
+        return HostGalaxy(closest_galaxy)
+
     def get_host_galaxy_by_index(self, index: int) -> HostGalaxy:
         return HostGalaxy(self.reduced_galaxy_catalog.loc[index])
 
@@ -440,32 +552,32 @@ class GalaxyCatalogueHandler:
             f"\ntheta = {theta} +/- {theta_error*cutoff_multiplier}"
         )
 
-        possible_host_galaxies = self._pruned_galaxy_catalog.loc[
+        possible_host_galaxies = self.reduced_galaxy_catalog.loc[
             (
                 theta - theta_error * cutoff_multiplier
-                <= self._pruned_galaxy_catalog[InternalCatalogColumns.THETA_S]
+                <= self.reduced_galaxy_catalog[InternalCatalogColumns.THETA_S]
             )
             & (
-                self._pruned_galaxy_catalog[InternalCatalogColumns.THETA_S]
+                self.reduced_galaxy_catalog[InternalCatalogColumns.THETA_S]
                 <= theta + theta_error * cutoff_multiplier
             )
             & (
                 phi - phi_error * cutoff_multiplier
-                <= self._pruned_galaxy_catalog[InternalCatalogColumns.PHI_S]
+                <= self.reduced_galaxy_catalog[InternalCatalogColumns.PHI_S]
             )
             & (
-                self._pruned_galaxy_catalog[InternalCatalogColumns.PHI_S]
+                self.reduced_galaxy_catalog[InternalCatalogColumns.PHI_S]
                 <= phi + phi_error * cutoff_multiplier
             )
             & (
                 z_min
-                <= self._pruned_galaxy_catalog[InternalCatalogColumns.REDSHIFT]
-                + self._pruned_galaxy_catalog[InternalCatalogColumns.REDSHIFT_ERROR]
+                <= self.reduced_galaxy_catalog[InternalCatalogColumns.REDSHIFT]
+                + self.reduced_galaxy_catalog[InternalCatalogColumns.REDSHIFT_ERROR]
             )
             & (
                 z_max
-                >= self._pruned_galaxy_catalog[InternalCatalogColumns.REDSHIFT]
-                - self._pruned_galaxy_catalog[InternalCatalogColumns.REDSHIFT_ERROR]
+                >= self.reduced_galaxy_catalog[InternalCatalogColumns.REDSHIFT]
+                - self.reduced_galaxy_catalog[InternalCatalogColumns.REDSHIFT_ERROR]
             )
         ]
 
@@ -542,7 +654,7 @@ class GalaxyCatalogueHandler:
         )
 
     def get_random_hosts(self, number_of_hosts: int) -> Iterable:
-        random_hosts = self._pruned_galaxy_catalog.sample(number_of_hosts)
+        random_hosts = self.reduced_galaxy_catalog.sample(number_of_hosts)
         return iter(
             [HostGalaxy(parameters) for _, parameters in random_hosts.iterrows()]
         )
@@ -598,7 +710,7 @@ class GalaxyCatalogueHandler:
             )
 
     def get_hosts_from_parameter_samples(
-        self, parameter_samples: List[ParameterSample], max_redshift: float = 3
+        self, parameter_samples: List[ParameterSample]
     ) -> Iterable:
         host_galaxies = []
         _LOGGER.info(
@@ -613,15 +725,29 @@ class GalaxyCatalogueHandler:
                 f"closest host searches progess: {counter/len(parameter_samples)*100}%"
             )
             counter += 1
-            closest_host = self._get_closest_host_galaxy(parameter_sample)
-            if closest_host is None:
+
+            # check if redshift and mass are within bounds
+            if (
+                parameter_sample.redshift > self.z_max
+                or parameter_sample.redshift < 0
+                or parameter_sample.M < self.M_min
+                or parameter_sample.M > self.M_max
+            ):
+                _LOGGER.debug(
+                    f"Parameter sample out of bounds: {parameter_sample}. Skipping."
+                )
                 continue
-            if closest_host.z > max_redshift:
-                continue
+
+            closest_host = self.find_closest_galaxy_to_coordinates(
+                parameter_sample.phi_S,
+                parameter_sample.theta_S,
+                parameter_sample.redshift,
+                parameter_sample.M,
+            )
             host_galaxies.append(closest_host)
 
         _LOGGER.info(
-            f"Found {len(host_galaxies)} host galaxies below maximal redshift {max_redshift}."
+            f"Found {len(host_galaxies)} host galaxies below maximal redshift {self.z_max} and within mass bounds [{self.M_min}, {self.M_max}]."
         )
 
         return iter(host_galaxies)
@@ -647,7 +773,7 @@ class GalaxyCatalogueHandler:
         ).idxmin()
         """
 
-        host_galaxy = HostGalaxy(self._pruned_galaxy_catalog.loc[closest_host_index])
+        host_galaxy = HostGalaxy(self.reduced_galaxy_catalog.loc[closest_host_index])
         # check if host galaxy is within error bounds
         if (
             np.abs(host_galaxy.z - parameter_sample.redshift)
@@ -669,23 +795,21 @@ class GalaxyCatalogueHandler:
     ) -> int:
         return (
             (
-                self._pruned_galaxy_catalog[InternalCatalogColumns.REDSHIFT]
+                self.reduced_galaxy_catalog[InternalCatalogColumns.REDSHIFT]
                 / parameter_sample.redshift
                 - 1
             )
             ** 2
             + (
-                np.log10(self._pruned_galaxy_catalog[InternalCatalogColumns.BH_MASS])
+                np.log10(self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS])
                 / np.log10(parameter_sample.M)
                 - 1
             )
             ** 2
         ).idxmin()
 
-
 def _polar_angle_to_declination(polar_angle: float) -> float:
     return np.pi / 2 - polar_angle
-
 
 def _empiric_stellar_mass_to_BH_mass_relation(
     stellar_mass: float, stellar_mass_error
@@ -697,7 +821,6 @@ def _empiric_stellar_mass_to_BH_mass_relation(
         + (beta / stellar_mass / 10 * stellar_mass_error) ** 2
     )
     return (BH_mass, BH_mass_error)
-
 
 def _empiric_MBH_to_M_stellar_relation(MBH_mass: float, MBH_mass_error: float) -> list:
     stellar_mass = 10 * np.exp((np.log(MBH_mass) - alpha) / beta)

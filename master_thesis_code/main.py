@@ -1,11 +1,9 @@
 import logging
 import matplotlib.pyplot as plt
 import numpy as np
-import resource
 import datetime
 import os
 import warnings
-import multiprocessing as mp
 
 from time import time
 
@@ -17,7 +15,6 @@ from master_thesis_code.galaxy_catalogue.handler import (
     GalaxyCatalogueHandler,
     HostGalaxy,
 )
-from master_thesis_code import physical_relations
 
 # logging setup
 _ROOT_LOGGER = logging.getLogger()
@@ -258,8 +255,8 @@ def evaluate(
     # data_simulation.evaluate_snr_analysis()
 
     hubble_constant_evaluation = BayesianStatistics()
-    # hubble_constant_evaluation.evaluate(galaxy_catalog, h_value)
-    hubble_constant_evaluation.visualize(galaxy_catalog=galaxy_catalog)
+    hubble_constant_evaluation.evaluate(galaxy_catalog, cosmological_model, h_value)
+    # hubble_constant_evaluation.visualize(galaxy_catalog=galaxy_catalog)
 
     # galaxy_catalog.visualize_galaxy_catalog()
     # Model1CrossCheck().visualize_emri_distribution_sampling(2000)

@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import List
+import os
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.ndimage import gaussian_filter
@@ -7061,6 +7061,10 @@ class DetectionFraction:
         self.plot_detection_fraction()
 
     def plot_detection_fraction(self) -> None:
+        #check if the directory exists, if not create it
+        if not os.path.exists("saved_figures/cosmological_model"):
+            os.makedirs("saved_figures/cosmological_model")
+
         fig, ax = plt.subplots()
         cax = ax.contourf(
             self.z_values,
