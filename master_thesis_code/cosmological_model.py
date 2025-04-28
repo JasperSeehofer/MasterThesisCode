@@ -653,11 +653,12 @@ class DetectionProbability:
                     d_L > self.luminosity_distance_upper_limit,
                     M_z < self.mass_lower_limit,
                     M_z > self.mass_upper_limit,
-                    phi >= 0,
-                    phi > 2 * np.pi,
+                    phi < 0,
+                    phi >= 2 * np.pi,
                     theta < 0,
                     theta > np.pi,
                 ]):
+                
                 return 0.0
             # normalize the input values to the range [0, 1]
             d_L = (d_L - self.luminosity_distance_lower_limit) / (
@@ -669,8 +670,8 @@ class DetectionProbability:
             phi = phi / (2 * np.pi)
             theta = theta / np.pi
 
-            detected_evaluated = self.kde_detected_with_bh_mass.evaluate([d_L, M_z, phi, theta])
-            undetected_evaluated = self.kde_undetected_with_bh_mass.evaluate([d_L, M_z, phi, theta])
+            detected_evaluated = self.kde_detected_with_bh_mass.evaluate([d_L, M_z, phi, theta])[0]
+            undetected_evaluated = self.kde_undetected_with_bh_mass.evaluate([d_L, M_z, phi, theta])[0]
             if undetected_evaluated + detected_evaluated == 0:
                 return 0.0
             return detected_evaluated / (undetected_evaluated + detected_evaluated)
@@ -686,7 +687,7 @@ class DetectionProbability:
             [
                 d_L < self.luminosity_distance_lower_limit,
                 d_L > self.luminosity_distance_upper_limit,
-                phi >= 0,
+                phi < 0,
                 phi > 2 * np.pi,
                 theta < 0,
                 theta > np.pi,
@@ -699,13 +700,75 @@ class DetectionProbability:
         phi = phi / (2 * np.pi)
         theta = theta / np.pi
 
-        detected_evaluated = self.kde_detected_without_bh_mass.evaluate([d_L, phi, theta])
-        undetected_evaluated = self.kde_undetected_without_bh_mass.evaluate([d_L, phi, theta])
+        detected_evaluated = self.kde_detected_without_bh_mass.evaluate([d_L, phi, theta])[0]
+        undetected_evaluated = self.kde_undetected_without_bh_mass.evaluate([d_L, phi, theta])[0]
         if undetected_evaluated + detected_evaluated == 0:
             return 0.0
         return detected_evaluated / (undetected_evaluated + detected_evaluated)
 
-
+    def plot_detection_probability(self) -> None:
+        fig, ax = plt.subplots(nrows=1, ncols=2, figsize=(16, 9))
+        fig.suptitle("Detection probability")
+        fig.subplots_adjust(hspace=0.4, wspace=0.4)
+        # plot detection probability for d_L and M
+        d_L_range = np.linspace(
+            self.luminosity_distance_lower_limit,
+            self.luminosity_distance_upper_limit,
+            100,
+        )
+        M_range = np.geomspace(
+            self.mass_lower_limit, self.mass_upper_limit, 100
+        )
+        detection_probability_with_bh_mass = np.array(
+            [
+                [self.evaluate_with_bh_mass(d_L, M, 3*np.pi/2, np.pi/2) for M in M_range]
+                for d_L in d_L_range
+            ]
+        )
+        # evaluate for 10 different random phi and theta values
+        phi_values = np.linspace(0, 2 * np.pi, 10)
+        theta_values = np.linspace(0, np.pi, 10)
+        for phi, theta in zip(phi_values,theta_values):
+            detection_probability_without_bh_mass = np.array(
+                [
+                    self.evaluate_without_bh_mass(d_L, phi, theta) for d_L in d_L_range
+                ]
+            )
+            ax[1].plot(
+            d_L_range,
+            detection_probability_without_bh_mass,
+        )
+        # plot detection probability for d_L and M
+        ax[0].contourf(
+            d_L_range,
+            M_range,
+            detection_probability_with_bh_mass,
+            cmap="viridis",
+            levels=50,
+        )
+        ax[0].set_xlabel("Luminosity distance")
+        ax[0].set_ylabel("Mass")
+        ax[0].set_title("Detection probability with BH mass")
+        ax[0].set_yscale("log")
+        ax[0].set_xlim(
+            self.luminosity_distance_lower_limit,
+            self.luminosity_distance_upper_limit,
+        )
+        ax[0].set_ylim(self.mass_lower_limit, self.mass_upper_limit)
+        # plot detection probability for d_L and M
+        
+        ax[1].set_xlabel("Luminosity distance")
+        ax[1].set_ylabel("Detection probability")
+        ax[1].set_title("Detection probability without BH mass")
+        ax[1].set_xlim(
+            self.luminosity_distance_lower_limit,
+            self.luminosity_distance_upper_limit,
+        )
+        ax[1].legend()
+        plt.savefig("saved_figures/cosmological_model/detection_probability.png")
+        plt.show()
+        plt.close()
+        _LOGGER.info("Detection probability plot saved.")
 class BayesianStatistics:
     cramer_rao_bounds: pd.DataFrame
     detection: Detection
