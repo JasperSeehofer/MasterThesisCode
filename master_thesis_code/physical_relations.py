@@ -1,6 +1,8 @@
 import numpy as np
+from typing import Union
 from scipy.optimize import fsolve
 from scipy.special import hyp2f1
+from functools import lru_cache
 from master_thesis_code.constants import (
     C,
     H,
@@ -32,9 +34,91 @@ def dist(
     :param w_a: dark energy equation of state parameter
     :return: luminosity distance in Gpc
     """
-    if not (isinstance(redshift, float) or isinstance(redshift, int)):
-        redshift = redshift[0]
+    H_0 = h * 100.0 * KM_TO_M / GPC_TO_MPC ** (-1)  # Hubble constant in m/s*Gpc
 
+    # Hubble parameter
+    """
+    zs = np.linspace(0, redshift, 1000)
+    hubble = np.sqrt(
+        Omega_m * (1 + zs) ** 3
+        + Omega_de
+        * (1 + zs) ** (3 * (1 + w_0 + w_a))
+        * np.exp(-3 * w_a * zs / (1 + zs))
+    )
+
+    # integral
+    integral = np.trapz(1 / hubble, zs)
+    """
+    # use analytic version of the integral
+    integral = lambda_cdm_analytic_distance(redshift, Omega_m, Omega_de)
+
+    # luminosity distance in Gpc
+    result = C / H_0 * (1 + redshift) * integral - offset_for_root_finding
+
+    return result
+
+@lru_cache(maxsize=1000)
+def cached_dist(
+    redshift: float,
+    h: float = H,
+    Omega_m: float = OMEGA_M,
+    Omega_de: float = OMEGA_DE,
+    w_0: float = W_0,
+    w_a: float = W_A,
+    offset_for_root_finding: float = 0.0,
+) -> float:
+    """
+    Calculate the luminosity distance in Gpc.
+
+    :param redshift: redshift
+    :param Omega_m: matter density parameter
+    :param Omega_de: dark energy density parameter
+    :param w_0: dark energy equation of state parameter
+    :param w_a: dark energy equation of state parameter
+    :return: luminosity distance in Gpc
+    """
+    H_0 = h * 100.0 * KM_TO_M / GPC_TO_MPC ** (-1)  # Hubble constant in m/s*Gpc
+
+    # Hubble parameter
+    """
+    zs = np.linspace(0, redshift, 1000)
+    hubble = np.sqrt(
+        Omega_m * (1 + zs) ** 3
+        + Omega_de
+        * (1 + zs) ** (3 * (1 + w_0 + w_a))
+        * np.exp(-3 * w_a * zs / (1 + zs))
+    )
+
+    # integral
+    integral = np.trapz(1 / hubble, zs)
+    """
+    # use analytic version of the integral
+    integral = lambda_cdm_analytic_distance(redshift, Omega_m, Omega_de)
+
+    # luminosity distance in Gpc
+    result = C / H_0 * (1 + redshift) * integral - offset_for_root_finding
+
+    return result
+
+def dist_vectorized(
+    redshift: np.ndarray[float],
+    h: float = H,
+    Omega_m: float = OMEGA_M,
+    Omega_de: float = OMEGA_DE,
+    w_0: float = W_0,
+    w_a: float = W_A,
+    offset_for_root_finding: float = 0.0,
+) -> float:
+    """
+    Calculate the luminosity distance in Gpc.
+
+    :param redshift: redshift
+    :param Omega_m: matter density parameter
+    :param Omega_de: dark energy density parameter
+    :param w_0: dark energy equation of state parameter
+    :param w_a: dark energy equation of state parameter
+    :return: luminosity distance in Gpc
+    """
     H_0 = h * 100.0 * KM_TO_M / GPC_TO_MPC ** (-1)  # Hubble constant in m/s*Gpc
 
     # Hubble parameter
@@ -197,6 +281,7 @@ def get_redshift_outer_bounds(
     Omega_m_max: float = 0.5,
     w_0: float = W_0,
     w_a: float = W_A,
+    sigma_multiplier: float = 3.0,
 ) -> tuple[float, float]:
     """
     Calculate the outer bounds for the redshift for a given luminosity distance and error w.r.t LamCDM model.

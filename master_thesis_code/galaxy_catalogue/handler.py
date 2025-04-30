@@ -1,3 +1,5 @@
+from  __future__ import annotations
+
 from enum import Enum
 import pandas as pd
 import numpy as np
@@ -71,6 +73,36 @@ class HostGalaxy:
         self.M = parameters[InternalCatalogColumns.BH_MASS]
         self.M_error = parameters[InternalCatalogColumns.BH_MASS_ERROR]
         self.catalog_index = parameters.name
+
+    def __eq__(self, other):
+        if not isinstance(other, HostGalaxy):
+            return False
+        return self.catalog_index == other.catalog_index  # Compare based on a unique identifier
+    
+    def __hash__(self):
+        return hash(self.catalog_index)  # Use the unique identifier for hashing
+
+    @classmethod
+    def from_attributes(
+        self,
+        phiS: float,
+        qS: float,
+        z: float,
+        z_error: float,
+        M: float,
+        M_error: float,
+    ) -> HostGalaxy:
+        parameters = pd.Series(
+            {
+                InternalCatalogColumns.PHI_S: phiS,
+                InternalCatalogColumns.THETA_S: qS,
+                InternalCatalogColumns.REDSHIFT: z,
+                InternalCatalogColumns.REDSHIFT_ERROR: z_error,
+                InternalCatalogColumns.BH_MASS: M,
+                InternalCatalogColumns.BH_MASS_ERROR: M_error,
+            }
+        )
+        return HostGalaxy(parameters)
 
     def draw_z_and_mass_from_gaussian(self) -> None:
         while True:

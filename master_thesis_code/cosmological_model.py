@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import List, Dict, Tuple
+from typing import List, Dict, Tuple, Optional, Union
 import json
 import pandas as pd
 import os
@@ -13,7 +13,9 @@ from scipy.stats import multivariate_normal, truncnorm, gaussian_kde, _multivari
 from scipy.optimize import curve_fit
 import emcee
 from scipy.special import erf
-from scipy.integrate import dblquad, quad
+from scipy.integrate import dblquad, quad, fixed_quad
+from scipy.interpolate import RegularGridInterpolator
+
 
 
 # import statsmodels.api as sm
@@ -48,6 +50,8 @@ from master_thesis_code.galaxy_catalogue.handler import (
 )
 from master_thesis_code.physical_relations import (
     dist,
+    dist_vectorized,
+    cached_dist,
     dist_derivative,
     convert_true_mass_to_redshifted_mass_with_distance,
     get_redshift_outer_bounds,
@@ -60,8 +64,7 @@ DEFAULT_GALAXY_Z_ERROR = 0.0015
 GALAXY_LIKELIHOODS = "galaxy_likelihoods"
 ADDITIONAL_GALAXIES_WITHOUT_BH_MASS = "additional_galaxies_without_bh_mass"
 
-FRACTIONAL_LUMINOSITY_DISTANCE_ERROR_THRESHOLD = 0.1  # 10% error
-
+FRACTIONAL_LUMINOSITY_DISTANCE_ERROR_THRESHOLD = 0.05
 
 # detection fraction LISA M1 model
 
@@ -604,8 +607,8 @@ class DetectionProbability:
                 (undetected_events["dist"] - luminosity_distance_lower_limit) / (
                     luminosity_distance_upper_limit - luminosity_distance_lower_limit
                 ),
-                (np.log10(undetected_events["M"]) - mass_lower_limit) / (
-                    mass_upper_limit - mass_lower_limit
+                (np.log10(undetected_events["M"]) - np.log10(mass_lower_limit)) / (
+                    np.log10(mass_upper_limit) - np.log10(mass_lower_limit)
                 ),
                 undetected_events["phiS"] / (2 * np.pi),
                 undetected_events["qS"] / np.pi,
@@ -617,8 +620,8 @@ class DetectionProbability:
                 (detected_events["dist"] - luminosity_distance_lower_limit) / (
                     luminosity_distance_upper_limit - luminosity_distance_lower_limit
                 ),
-                (np.log10(detected_events["M"]) - mass_lower_limit) / (
-                    mass_upper_limit - mass_lower_limit
+                (np.log10(detected_events["M"]) - np.log10(mass_lower_limit)) / (
+                    np.log10(mass_upper_limit) - np.log10(mass_lower_limit)
                 ),
                 detected_events["phiS"] / (2 * np.pi),
                 detected_events["qS"] / np.pi,
@@ -638,6 +641,8 @@ class DetectionProbability:
 
         self.kde_detected_without_bh_mass = gaussian_kde(detected_events_points_without_bh_mass, bw_method=bandwidth)
         self.kde_undetected_without_bh_mass = gaussian_kde(undetected_events_points_without_bh_mass, bw_method=bandwidth)
+
+        self._setup_interpolator(d_L_steps=20, M_z_steps=30, phi_steps=20, theta_steps=20)
 
     def evaluate_with_bh_mass(
             self,
@@ -661,21 +666,70 @@ class DetectionProbability:
                 
                 return 0.0
             # normalize the input values to the range [0, 1]
-            d_L = (d_L - self.luminosity_distance_lower_limit) / (
-                self.luminosity_distance_upper_limit - self.luminosity_distance_lower_limit
+            d_L, M_z, phi, theta = self._normalize_parameters(
+                d_L, phi, theta, M_z
             )
-            M_z = (np.log10(M_z) - self.mass_lower_limit) / (
-                self.mass_upper_limit - self.mass_lower_limit
-            )
-            phi = phi / (2 * np.pi)
-            theta = theta / np.pi
 
             detected_evaluated = self.kde_detected_with_bh_mass.evaluate([d_L, M_z, phi, theta])[0]
             undetected_evaluated = self.kde_undetected_with_bh_mass.evaluate([d_L, M_z, phi, theta])[0]
-            if undetected_evaluated + detected_evaluated == 0:
+            if undetected_evaluated + detected_evaluated == 0.0:
                 return 0.0
             return detected_evaluated / (undetected_evaluated + detected_evaluated)
     
+    def evaluate_with_bh_mass_vectorized(
+            self,
+            d_L: np.ndarray[float],
+            M_z: np.ndarray[float],
+            phi: np.ndarray[float],
+            theta: np.ndarray[float],
+        ) -> np.ndarray[float]:
+            # check if the input values are within the limits
+        valid_mask = (
+            (d_L >= self.luminosity_distance_lower_limit)
+            & (d_L <= self.luminosity_distance_upper_limit)
+            & (M_z >= self.mass_lower_limit)
+            & (M_z <= self.mass_upper_limit)
+            & (phi >= 0)
+            & (phi < 2 * np.pi)
+            & (theta >= 0)
+            & (theta <= np.pi)
+        )
+            
+        # Initialize result array with zeros (or another default value)
+        probabilities = np.zeros_like(d_L, dtype=float)
+        
+        # Apply the mask to filter valid values
+        d_L_valid = d_L[valid_mask]
+        M_z_valid = M_z[valid_mask]
+        phi_valid = phi[valid_mask]
+        theta_valid = theta[valid_mask]
+        
+        # Normalize the valid parameters
+        d_L_norm, M_z_norm, phi_norm, theta_norm = self._normalize_parameters(
+        d_L_valid, phi_valid, theta_valid, M_z_valid
+        )
+
+        # Evaluate KDEs for valid values
+        detected_evaluated = self.kde_detected_with_bh_mass.evaluate(
+            np.vstack((d_L_norm, M_z_norm, phi_norm, theta_norm))
+        )
+        undetected_evaluated = self.kde_undetected_with_bh_mass.evaluate(
+            np.vstack((d_L_norm, M_z_norm, phi_norm, theta_norm))
+        )
+
+        # Compute probabilities for valid values
+        probabilities_valid = np.divide(
+            detected_evaluated,
+            detected_evaluated + undetected_evaluated,
+            out=np.zeros_like(detected_evaluated),
+            where=(detected_evaluated + undetected_evaluated) != 0,
+        )
+
+        # Assign probabilities back to the result array
+        probabilities[valid_mask] = probabilities_valid
+
+        return probabilities
+                    
     def evaluate_without_bh_mass(
             self,
             d_L: float,
@@ -694,22 +748,38 @@ class DetectionProbability:
             ]):
             return 0.0
         # normalize the input values to the range [0, 1]
-        d_L = (d_L - self.luminosity_distance_lower_limit) / (
-            self.luminosity_distance_upper_limit - self.luminosity_distance_lower_limit
+        d_L, phi, theta = self._normalize_parameters(
+            d_L, phi, theta
         )
-        phi = phi / (2 * np.pi)
-        theta = theta / np.pi
-
         detected_evaluated = self.kde_detected_without_bh_mass.evaluate([d_L, phi, theta])[0]
         undetected_evaluated = self.kde_undetected_without_bh_mass.evaluate([d_L, phi, theta])[0]
         if undetected_evaluated + detected_evaluated == 0:
             return 0.0
         return detected_evaluated / (undetected_evaluated + detected_evaluated)
 
+    def _normalize_parameters(
+            self,
+            d_L: float,
+            phi: float,
+            theta: float,
+            M_z: Optional[float] = None,
+        ) -> Union[Tuple[float, float, float, float], Tuple[float, float, float]]:
+        # normalize the input values to the range [0, 1]
+        d_L = (d_L - self.luminosity_distance_lower_limit) / (
+            self.luminosity_distance_upper_limit - self.luminosity_distance_lower_limit
+        )
+        phi = phi / (2 * np.pi)
+        theta = theta / np.pi
+        if M_z is not None:
+            M_z = (np.log10(M_z) - np.log10(self.mass_lower_limit)) / (
+                np.log10(self.mass_upper_limit) - np.log10(self.mass_lower_limit)
+            )
+            return d_L, M_z, phi, theta
+        return d_L, phi, theta
+
     def plot_detection_probability(self) -> None:
-        fig, ax = plt.subplots(nrows=1, ncols=2, figsize=(16, 9))
+        fig, ax = plt.subplots(nrows=2, ncols=2, figsize=(16, 9))
         fig.suptitle("Detection probability")
-        fig.subplots_adjust(hspace=0.4, wspace=0.4)
         # plot detection probability for d_L and M
         d_L_range = np.linspace(
             self.luminosity_distance_lower_limit,
@@ -717,14 +787,85 @@ class DetectionProbability:
             100,
         )
         M_range = np.geomspace(
-            self.mass_lower_limit, self.mass_upper_limit, 100
+            self.mass_lower_limit, self.mass_upper_limit, 150
         )
-        detection_probability_with_bh_mass = np.array(
+        fixed_phi = 3 * np.pi / 2
+        fixed_theta = np.pi / 2
+
+        detected_events_with_bh_mass = np.array(
             [
-                [self.evaluate_with_bh_mass(d_L, M, 3*np.pi/2, np.pi/2) for M in M_range]
+                [self.kde_detected_with_bh_mass.evaluate(list(self._normalize_parameters(d_L, fixed_phi, fixed_theta, M)))[0] for M in M_range]
                 for d_L in d_L_range
             ]
         )
+
+        ax[0,0].contourf(
+            d_L_range,
+            M_range,
+            detected_events_with_bh_mass.T,
+            cmap="viridis",
+            levels=50,
+        )
+        ax[0,0].set_xlabel("Luminosity distance [Gpc]")
+        ax[0,0].set_ylabel("Mass  [M_solar]")
+        ax[0,0].set_title("Detected events with BH mass")
+        ax[0,0].set_yscale("log")
+        ax[0,0].set_xlim(
+            self.luminosity_distance_lower_limit,
+            self.luminosity_distance_upper_limit,
+        )
+        ax[0,0].set_ylim(self.mass_lower_limit, self.mass_upper_limit)
+
+        # plot undetected events with BH mass
+        undetected_events_with_bh_mass = np.array(
+            [
+                [self.kde_undetected_with_bh_mass.evaluate(list(self._normalize_parameters(d_L, fixed_phi, fixed_theta, M)))[0] for M in M_range]
+                for d_L in d_L_range
+            ]
+        )
+        ax[0,1].contourf(
+            d_L_range,
+            M_range,
+            undetected_events_with_bh_mass.T,
+            cmap="viridis",
+            levels=50,
+        )
+        ax[0,1].set_xlabel("Luminosity distance [Gpc]")
+        ax[0,1].set_ylabel("Mass  [M_solar]")
+        ax[0,1].set_title("Undetected events with BH mass")
+        ax[0,1].set_yscale("log")
+        ax[0,1].set_xlim(
+            self.luminosity_distance_lower_limit,
+            self.luminosity_distance_upper_limit,
+        )
+        ax[0,1].set_ylim(self.mass_lower_limit, self.mass_upper_limit)
+
+        detection_probability_with_bh_mass = np.array(
+            [
+                [self.evaluate_with_bh_mass(d_L, M, fixed_phi, fixed_theta) for M in M_range]
+                for d_L in d_L_range
+            ]
+        )
+        
+        # plot detection probability for d_L and M
+        ax[1,0].contourf(
+            d_L_range,
+            M_range,
+            detection_probability_with_bh_mass.T,
+            cmap="viridis",
+            levels=50,
+        )
+        ax[1,0].set_xlabel("Luminosity distance [Gpc]")
+        ax[1,0].set_ylabel("Mass  []")
+        ax[1,0].set_title("Detection probability with BH mass")
+        ax[1,0].set_yscale("log")
+        ax[1,0].set_xlim(
+            self.luminosity_distance_lower_limit,
+            self.luminosity_distance_upper_limit,
+        )
+        ax[1,0].set_ylim(self.mass_lower_limit, self.mass_upper_limit)
+        
+        # plot detection probability for d_L and M
         # evaluate for 10 different random phi and theta values
         phi_values = np.linspace(0, 2 * np.pi, 10)
         theta_values = np.linspace(0, np.pi, 10)
@@ -734,41 +875,137 @@ class DetectionProbability:
                     self.evaluate_without_bh_mass(d_L, phi, theta) for d_L in d_L_range
                 ]
             )
-            ax[1].plot(
+            
+            ax[1,1].plot(
             d_L_range,
             detection_probability_without_bh_mass,
         )
-        # plot detection probability for d_L and M
-        ax[0].contourf(
-            d_L_range,
-            M_range,
-            detection_probability_with_bh_mass,
-            cmap="viridis",
-            levels=50,
-        )
-        ax[0].set_xlabel("Luminosity distance")
-        ax[0].set_ylabel("Mass")
-        ax[0].set_title("Detection probability with BH mass")
-        ax[0].set_yscale("log")
-        ax[0].set_xlim(
+        ax[1,1].set_xlabel("Luminosity distance")
+        ax[1,1].set_ylabel("Detection probability")
+        ax[1,1].set_title("Detection probability without BH mass")
+        ax[1,1].set_xlim(
             self.luminosity_distance_lower_limit,
             self.luminosity_distance_upper_limit,
         )
-        ax[0].set_ylim(self.mass_lower_limit, self.mass_upper_limit)
-        # plot detection probability for d_L and M
-        
-        ax[1].set_xlabel("Luminosity distance")
-        ax[1].set_ylabel("Detection probability")
-        ax[1].set_title("Detection probability without BH mass")
-        ax[1].set_xlim(
-            self.luminosity_distance_lower_limit,
-            self.luminosity_distance_upper_limit,
-        )
-        ax[1].legend()
+        ax[1,1].legend()
         plt.savefig("saved_figures/cosmological_model/detection_probability.png")
         plt.show()
         plt.close()
         _LOGGER.info("Detection probability plot saved.")
+
+    def _setup_interpolator(self, d_L_steps: int, M_z_steps: int, phi_steps: int, theta_steps: int) -> None:
+        # setup grid
+        d_L_range = np.linspace(
+            self.luminosity_distance_lower_limit,
+            self.luminosity_distance_upper_limit,
+            d_L_steps,
+        )
+        M_z_range = np.geomspace(
+            self.mass_lower_limit, self.mass_upper_limit, M_z_steps
+        )
+        phi_range = np.linspace(0, 2 * np.pi, phi_steps)
+        theta_range = np.linspace(0, np.pi, theta_steps)
+
+        # normalize the ranges to [0, 1]
+        d_L_range_norm, M_z_range_norm, phi_range_norm, theta_range_norm = self._normalize_parameters(
+            d_L_range, phi_range, theta_range, M_z_range
+        )
+
+        # create meshgrid
+        d_L_grid, phi_grid, theta_grid = np.meshgrid(
+            d_L_range_norm, phi_range_norm, theta_range_norm, indexing="ij"
+        )
+
+        # flatten the grid
+        d_L_flat = d_L_grid.flatten()
+        phi_flat = phi_grid.flatten()
+        theta_flat = theta_grid.flatten()
+
+        # evaluate the kde for the grid points without bh mass
+        kde_values_without_bh_mass = self.kde_detected_without_bh_mass.evaluate(
+            np.vstack((d_L_flat, phi_flat, theta_flat))
+        )
+        kde_values_undetected_without_bh_mass = self.kde_undetected_without_bh_mass.evaluate(
+            np.vstack((d_L_flat, phi_flat, theta_flat))
+        )
+
+        detection_probabilities_without_bh_mass = np.divide(
+            kde_values_without_bh_mass,
+            kde_values_without_bh_mass + kde_values_undetected_without_bh_mass,
+            out=np.zeros_like(kde_values_without_bh_mass),
+            where=(kde_values_without_bh_mass + kde_values_undetected_without_bh_mass) != 0,
+        )
+
+        # reshape to grid
+        detection_probabilities_without_bh_mass = detection_probabilities_without_bh_mass.reshape(
+            d_L_steps, phi_steps, theta_steps
+        )
+
+        self.detection_probability_without_bh_mass_interpolator = RegularGridInterpolator(
+            (d_L_range, phi_range, theta_range),
+            detection_probabilities_without_bh_mass,
+            method="linear",
+            bounds_error=False,
+            fill_value=0.0,
+        )
+
+        # evaluate the kde for the grid points with bh mass
+        d_L_grid, M_z_grid, phi_grid, theta_grid = np.meshgrid(
+            d_L_range_norm, M_z_range_norm, phi_range_norm, theta_range_norm, indexing="ij"
+        )
+        d_L_flat = d_L_grid.flatten()
+        M_z_flat = M_z_grid.flatten()
+        phi_flat = phi_grid.flatten()
+        theta_flat = theta_grid.flatten()
+
+        kde_values_with_bh_mass = self.kde_detected_with_bh_mass.evaluate(
+            np.vstack((d_L_flat, M_z_flat, phi_flat, theta_flat))
+        )
+        kde_values_undetected_with_bh_mass = self.kde_undetected_with_bh_mass.evaluate(
+            np.vstack((d_L_flat, M_z_flat, phi_flat, theta_flat))
+        )
+        detection_probabilities_with_bh_mass = np.divide(
+            kde_values_with_bh_mass,
+            kde_values_with_bh_mass + kde_values_undetected_with_bh_mass,
+            out=np.zeros_like(kde_values_with_bh_mass),
+            where=(kde_values_with_bh_mass + kde_values_undetected_with_bh_mass) != 0,
+        )
+        # reshape to grid
+        detection_probabilities_with_bh_mass = detection_probabilities_with_bh_mass.reshape(
+            d_L_steps, M_z_steps, phi_steps, theta_steps
+        )
+
+        self.detection_probability_with_bh_mass_interpolator = RegularGridInterpolator(
+            (d_L_range, M_z_range, phi_range, theta_range),
+            detection_probabilities_with_bh_mass,
+            method="linear",
+            bounds_error=False,
+            fill_value=0.0,
+        )
+
+    def detection_probability_with_bh_mass_interpolated(
+            self,
+            d_L: float,
+            M_z: float,
+            phi: float,
+            theta: float,
+        ) -> float:       
+        # check if the input values are within the limits
+        return self.detection_probability_with_bh_mass_interpolator(
+            (d_L, M_z, phi, theta)
+        )[0]
+    
+    def detection_probability_without_bh_mass_interpolated(
+            self,
+            d_L: float,
+            phi: float,
+            theta: float,
+        ) -> float:
+        return self.detection_probability_without_bh_mass_interpolator(
+            (d_L, phi, theta)
+        )[0]
+
+
 class BayesianStatistics:
     cramer_rao_bounds: pd.DataFrame
     detection: Detection
@@ -870,6 +1107,7 @@ class BayesianStatistics:
             if (
                 (len(posterior) == len(self.h_values_with_bh_mass))
                 and (np.max(posterior) > 0)
+                and (np.max(posterior) != np.inf)
             )
         }
         self.posterior_data = {
@@ -878,6 +1116,7 @@ class BayesianStatistics:
             if (
                 (len(posterior) == len(self.h_values))
                 and (np.max(posterior) > 0)
+                and (np.max(posterior) != np.inf)
                 and (detection_index in list(self.posterior_data_with_bh_mass.keys()))
             )
         }
@@ -2453,7 +2692,7 @@ class BayesianStatistics:
         )
         _LOGGER.debug("Detection probability functions created.")
 
-        _LOGGER.debug("Creating detection likelihood gaussien functions...")
+        _LOGGER.debug("Creating detection likelihood gaussian functions...")
         detection_likelihood_multivariate_gaussian_by_detection_index: Dict[int, Tuple[_multivariate.multivariate_normal_frozen, _multivariate.multivariate_normal_frozen]] = {}
         for index, detection in self.cramer_rao_bounds.iterrows():
             detection = Detection(detection)
@@ -2617,6 +2856,7 @@ class BayesianStatistics:
                 h_max=self.cosmological_model.h.upper_limit,
                 Omega_m_min=self.cosmological_model.Omega_m.lower_limit,
                 Omega_m_max=self.cosmological_model.Omega_m.upper_limit,
+                sigma_multiplier=2.0,
             )
 
             z_max = min(z_max, redshift_upper_limit)
@@ -2630,7 +2870,7 @@ class BayesianStatistics:
                 z_max=z_max,
                 M_z=self.detection.M,
                 M_z_sigma=self.detection.M_uncertainty,
-                sigma_multiplier=1.0,
+                sigma_multiplier=1.5,
             )
 
             if possible_hosts is None:
@@ -2681,11 +2921,13 @@ class BayesianStatistics:
         _LOGGER.info(f"start parallel computation with: {pool}")
         start = time.time()
         # remove duplicates from possible_host_galaxies already covered in possible_host_galaxies_with_bh_mass
+        
+        hosts_with_bh_mass_set = set(possible_host_galaxies_with_bh_mass)
 
         possible_host_galaxies_reduced = [
             host
             for host in possible_host_galaxies
-            if host not in possible_host_galaxies_with_bh_mass
+            if host not in hosts_with_bh_mass_set
         ]
 
         _LOGGER.debug(
@@ -2814,6 +3056,24 @@ def _sky_localization_uncertainty(
     )
 
 
+def single_host_likelihood_grid(
+    possible_host: HostGalaxy,
+    detection: Detection,
+    detection_index: int,
+    h: float,
+    evaluate_with_bh_mass: bool,
+) -> list[float]:
+    global redshift_upper_integration_limit 
+    global redshift_lower_integration_limit
+    global bh_mass_upper_integration_limit
+    global bh_mass_lower_integration_limit
+    global detection_probability
+    global detection_likelihood_gaussians_by_detection_index
+
+    # find sharpest peak 
+    print(possible_host.z, possible_host.z_error)
+    print(detection.d_L, detection.d_L_uncertainty)
+
 def single_host_likelihood(
     possible_host: HostGalaxy,
     detection: Detection,
@@ -2828,7 +3088,142 @@ def single_host_likelihood(
     global detection_probability
     global detection_likelihood_gaussians_by_detection_index
 
-    ABS_ERROR = 1e-100
+    ABS_ERROR = 1e-10
+    FIXED_QUAD_N = 50
+
+    integration_limit_sigma_multiplier = 4.0
+
+    numerator_integration_upper_redshift_limit = dist_to_redshift(
+        detection.d_L + integration_limit_sigma_multiplier * detection.d_L_uncertainty, h=h
+    )
+    numerator_integration_lower_redshift_limit = dist_to_redshift(
+        detection.d_L - integration_limit_sigma_multiplier * detection.d_L_uncertainty, h=h
+    )
+    denominator_integration_upper_redshift_limit = possible_host.z + integration_limit_sigma_multiplier * possible_host.z_error
+    denominator_integration_lower_redshift_limit = possible_host.z - integration_limit_sigma_multiplier * possible_host.z_error
+
+    # construct normal distribution for redshift and mass for host galaxy
+    galaxy_redshift_normal_distribution = norm(
+        loc=possible_host.z, scale=possible_host.z_error
+    )
+    # TODO: KEEP IN MIND SKYLOCALIZATION WEIGHT IS IN THE GW LIKELIHOOD ATM. possible source of error
+    def numerator_integrant_without_bh_mass(z: np.ndarray[float]) -> np.ndarray[float]:
+        d_L = dist(z, h=h)
+        luminosity_distance_fraction = d_L / detection.d_L
+        phi = np.full_like(z, possible_host.phiS)
+        theta = np.full_like(z, possible_host.qS)
+
+        return (
+            detection_probability.detection_probability_without_bh_mass_interpolated(d_L, phi, theta)
+            * detection_likelihood_gaussians_by_detection_index[
+                detection_index
+            ][0].pdf(np.vstack([phi, theta, luminosity_distance_fraction]).T)
+            * galaxy_redshift_normal_distribution.pdf(z)
+            / detection.d_L
+        )
+
+    def denominator_integrant_without_bh_mass(z: np.ndarray[float]) -> np.ndarray[float]:
+        d_L = dist(z, h=h)
+        phi = np.full_like(z, possible_host.phiS)
+        theta = np.full_like(z, possible_host.qS)
+        return (
+            detection_probability.detection_probability_without_bh_mass_interpolated(d_L, phi, theta)
+            * galaxy_redshift_normal_distribution.pdf(z)
+        )
+    
+    single_host_likelihood_numerator_without_bh_mass, single_host_likelihood_numerator_without_bh_mass_error = fixed_quad(
+        numerator_integrant_without_bh_mass, 
+        numerator_integration_lower_redshift_limit, 
+        numerator_integration_upper_redshift_limit, 
+        n=FIXED_QUAD_N,
+    )
+    single_host_likelihood_denominator_without_bh_mass, single_host_likelihood_denominator_without_bh_mass_error = fixed_quad(
+        denominator_integrant_without_bh_mass, 
+        denominator_integration_lower_redshift_limit, 
+        denominator_integration_upper_redshift_limit, 
+        n=FIXED_QUAD_N,
+    )
+
+    if evaluate_with_bh_mass:
+        galaxy_mass_normal_distribution = norm(
+        loc=possible_host.M, scale=possible_host.M_error
+        )
+        def numerator_integrant_with_bh_mass(z: np.ndarray[float]) -> np.ndarray[float]:
+            d_L = dist(z, h=h)
+            luminosity_distance_fraction = d_L / detection.d_L
+            M_z = np.full_like(z, detection.M)
+            phi = np.full_like(z, possible_host.phiS)
+            theta = np.full_like(z, possible_host.qS)
+            return (
+                detection_probability.detection_probability_with_bh_mass_interpolated(
+                    d_L,
+                    M_z, 
+                    phi, 
+                    theta
+                )
+                * detection_likelihood_gaussians_by_detection_index[
+                    detection_index
+                ][0].pdf(
+                    np.vstack([
+                        phi, 
+                        theta, 
+                        luminosity_distance_fraction
+                    ]).T
+                )
+                * galaxy_redshift_normal_distribution.pdf(z)
+                * galaxy_mass_normal_distribution.pdf(detection.M / (1+z))
+                / (detection.d_L * (1 + z)) # TODO: check if this is correct
+            )
+
+        
+        single_host_likelihood_numerator_with_bh_mass = fixed_quad(
+            numerator_integrant_with_bh_mass, 
+            numerator_integration_lower_redshift_limit, 
+            numerator_integration_upper_redshift_limit, 
+            n=FIXED_QUAD_N,
+        )[0]
+
+        def denominator_integrant_with_bh_mass_vectorized(M: np.ndarray[float], z: np.ndarray[float]) -> np.ndarray[float]:
+            d_L = dist_vectorized(z, h=h)
+            M_z = M * (1 + z)
+            phi = np.full_like(M, possible_host.phiS)
+            theta = np.full_like(M, possible_host.qS)
+            return (
+                detection_probability.detection_probability_with_bh_mass_interpolated(d_L, M_z, phi, theta)
+                * galaxy_redshift_normal_distribution.pdf(z)
+                * galaxy_mass_normal_distribution.pdf(M)
+            )
+        
+        N_SAMPLES = 10_000
+        z_samples = galaxy_redshift_normal_distribution.rvs(size=N_SAMPLES)
+        M_samples = galaxy_mass_normal_distribution.rvs(size=N_SAMPLES)
+
+        numerator_integrant_from_samples = denominator_integrant_with_bh_mass_vectorized(M_samples, z_samples)
+
+        sampling_pdf = galaxy_redshift_normal_distribution.pdf(z_samples) * galaxy_mass_normal_distribution.pdf(M_samples) 
+        weights = numerator_integrant_from_samples / sampling_pdf
+
+        single_host_likelihood_denominator_with_bh_mass = np.mean(weights)
+
+        return [single_host_likelihood_numerator_without_bh_mass, single_host_likelihood_denominator_without_bh_mass, single_host_likelihood_numerator_with_bh_mass, single_host_likelihood_denominator_with_bh_mass]
+    return [single_host_likelihood_numerator_without_bh_mass, single_host_likelihood_denominator_without_bh_mass]
+            
+    
+def single_host_likelihood_integration_testing(
+    possible_host: HostGalaxy,
+    detection: Detection,
+    detection_index: int,
+    h: float,
+    evaluate_with_bh_mass: bool,
+) -> list[float]:
+    global redshift_upper_integration_limit
+    global redshift_lower_integration_limit
+    global bh_mass_upper_integration_limit
+    global bh_mass_lower_integration_limit
+    global detection_probability
+    global detection_likelihood_gaussians_by_detection_index
+
+    ABS_ERROR = 1e-20
 
     # construct normal distribution for redshift and mass for host galaxy
     galaxy_redshift_normal_distribution = norm(
@@ -2853,34 +3248,36 @@ def single_host_likelihood(
             * galaxy_redshift_normal_distribution.pdf(z)
         )
     
-    single_host_likelihood_numerator_without_bh_mass = quad(numerator_integrant_without_bh_mass, redshift_lower_integration_limit, redshift_upper_integration_limit, epsabs=ABS_ERROR)[0]
-    single_host_likelihood_denominator_without_bh_mass = quad(denominator_integrant_without_bh_mass, redshift_lower_integration_limit, redshift_upper_integration_limit, epsabs=ABS_ERROR)[0]
+    single_host_likelihood_numerator_without_bh_mass, single_host_likelihood_numerator_without_bh_mass_error = quad(numerator_integrant_without_bh_mass, redshift_lower_integration_limit, redshift_upper_integration_limit, epsabs=ABS_ERROR)
+    single_host_likelihood_denominator_without_bh_mass, single_host_likelihood_denominator_without_bh_mass_error = quad(denominator_integrant_without_bh_mass, redshift_lower_integration_limit, redshift_upper_integration_limit, epsabs=ABS_ERROR)
 
-    print(f"Numerator without bh m:{single_host_likelihood_numerator_without_bh_mass}", flush=True)
-    print(f"Denominator without bh m:{single_host_likelihood_denominator_without_bh_mass}", flush=True)
-
+    print(f"Numerator without bh m:{single_host_likelihood_numerator_without_bh_mass}, error estimation: {single_host_likelihood_numerator_without_bh_mass_error}", flush=True)
+    print(f"Denominator without bh m:{single_host_likelihood_denominator_without_bh_mass}, error estimation {single_host_likelihood_denominator_without_bh_mass_error}", flush=True
+    )
 
     if evaluate_with_bh_mass:
         galaxy_mass_normal_distribution = norm(
         loc=possible_host.M, scale=possible_host.M_error
         )
-
-        def numerator_integrant_with_bh_mass(z: float, M: float) -> float:
+        """
+        # double integral version
+        def numerator_integrant_with_bh_mass(M: float, z: float) -> float:
             d_L = dist(z, h=h)
             M_z = M * (1 + z)
             luminosity_distance_fraction = d_L / detection.d_L
+            redshifted_mass_fraction = M_z / detection.M
             return (
                 detection_probability.evaluate_with_bh_mass(d_L, M_z, possible_host.phiS, possible_host.qS)
                 * detection_likelihood_gaussians_by_detection_index[
                     detection_index
                 ][1].pdf(
-                    [possible_host.phiS, possible_host.qS, luminosity_distance_fraction, 1]
+                    [possible_host.phiS, possible_host.qS, luminosity_distance_fraction, redshifted_mass_fraction]
                 )
                 * galaxy_redshift_normal_distribution.pdf(z)
                 * galaxy_mass_normal_distribution.pdf(M)
             )
         
-        def denominator_integrant_with_bh_mass(z: float, M: float) -> float:
+        def denominator_integrant_with_bh_mass(M: float, z: float) -> float:
             d_L = dist(z, h=h)
             M_z = M * (1 + z)
             return (
@@ -2888,13 +3285,13 @@ def single_host_likelihood(
                 * galaxy_redshift_normal_distribution.pdf(z)
                 * galaxy_mass_normal_distribution.pdf(M)
             )
-        
+        start = time.time()
         single_host_likelihood_numerator_with_bh_mass, single_host_likelihood_numerator_without_bh_mass_error = dblquad(
             numerator_integrant_with_bh_mass,
             redshift_lower_integration_limit,
             redshift_upper_integration_limit,
-            lambda m: bh_mass_lower_integration_limit,
-            lambda m: bh_mass_upper_integration_limit,
+            lambda z: bh_mass_lower_integration_limit,
+            lambda z: bh_mass_upper_integration_limit,
             epsabs=ABS_ERROR
         )
         single_host_likelihood_denominator_with_bh_mass, single_host_likelihood_denominator_with_bh_mass_error = dblquad(
@@ -2905,9 +3302,88 @@ def single_host_likelihood(
             lambda m: bh_mass_upper_integration_limit,
             epsabs=ABS_ERROR
         )
+        end = time.time()
+        print(f"Time taken for double integral: {end - start}", flush=True)
         
         print(f"Numerator with bh m:{single_host_likelihood_numerator_with_bh_mass}, error estimation: {single_host_likelihood_numerator_without_bh_mass_error}", flush=True)
         print(f"Denominator with bh m:{single_host_likelihood_denominator_with_bh_mass}, error estimation {single_host_likelihood_denominator_with_bh_mass_error}", flush=True)
+        """
+
+        # treat M_z gaussian as delta function
+        def numerator_integrant_with_bh_mass(z: float) -> float:
+            d_L = dist(z, h=h)
+            M_z = detection.M
+            M = M_z / (1 + z)
+            luminosity_distance_fraction = d_L / detection.d_L
+
+            return (
+                detection_probability.evaluate_with_bh_mass(d_L, M_z, possible_host.phiS, possible_host.qS)
+                * detection_likelihood_gaussians_by_detection_index[
+                    detection_index
+                ][0].pdf(
+                    [possible_host.phiS, possible_host.qS, luminosity_distance_fraction]
+                )
+                * galaxy_redshift_normal_distribution.pdf(z)
+                * galaxy_mass_normal_distribution.pdf(M)
+                / (1 + z) # delta function derivative
+            )
+        
+        def denominator_integrant_with_bh_mass(M: float, z: float) -> float:
+            d_L = dist(z, h=h)
+            M_z = M * (1 + z)
+            return (
+                detection_probability.evaluate_with_bh_mass(d_L, M_z, possible_host.phiS, possible_host.qS)
+                * galaxy_redshift_normal_distribution.pdf(z)
+                * galaxy_mass_normal_distribution.pdf(M)
+            )
+        start = time.time()
+        single_host_likelihood_numerator_with_bh_mass, single_host_likelihood_numerator_with_bh_mass_error = quad(numerator_integrant_with_bh_mass, redshift_lower_integration_limit, redshift_upper_integration_limit, epsabs=ABS_ERROR)
+
+        single_host_likelihood_denominator_with_bh_mass, single_host_likelihood_denominator_with_bh_mass_error = dblquad(
+            denominator_integrant_with_bh_mass,
+            galaxy_redshift_normal_distribution.mean() - 5 * galaxy_redshift_normal_distribution.std(),
+            galaxy_redshift_normal_distribution.mean() + 5 * galaxy_redshift_normal_distribution.std(),
+            lambda m: galaxy_mass_normal_distribution.mean() - 5 * galaxy_mass_normal_distribution.std(),
+            lambda m: galaxy_mass_normal_distribution.mean() + 5 * galaxy_mass_normal_distribution.std(),
+            epsabs=ABS_ERROR
+        )
+        end = time.time()
+        print(f"Time taken for delta function approximation: {end - start}s", flush=True)
+
+        print(f"Numerator with bh m:{single_host_likelihood_numerator_with_bh_mass}, error estimation: {single_host_likelihood_numerator_with_bh_mass_error}", flush=True)
+        print(f"Denominator with bh m:{single_host_likelihood_denominator_with_bh_mass}, error estimation {single_host_likelihood_denominator_with_bh_mass_error}", flush=True)
+
+        # monte carlo integration denominator 2D
+        start = time.time()
+        def denominator_integrant_with_bh_mass_vectorized(M: np.ndarray[float], z: np.ndarray[float]) -> np.ndarray[float]:
+            d_L = dist_vectorized(z, h=h)
+            M_z = M * (1 + z)
+            phi = np.ones_like(M) * possible_host.phiS
+            theta = np.ones_like(M) * possible_host.qS
+            return (
+                detection_probability.evaluate_with_bh_mass_vectorized(d_L, M_z, phi, theta)
+                * galaxy_redshift_normal_distribution.pdf(z)
+                * galaxy_mass_normal_distribution.pdf(M)
+            )
+        
+        N_SAMPLES = 100_00
+        z_samples = galaxy_redshift_normal_distribution.rvs(size=N_SAMPLES)
+        M_samples = galaxy_mass_normal_distribution.rvs(size=N_SAMPLES)
+
+        numerator_integrant_from_samples = denominator_integrant_with_bh_mass_vectorized(M_samples, z_samples)
+
+        sampling_pdf = galaxy_redshift_normal_distribution.pdf(z_samples) * galaxy_mass_normal_distribution.pdf(M_samples) 
+        weights = numerator_integrant_from_samples / sampling_pdf
+
+        integral = np.mean(weights)
+        integral_error = np.std(weights) / np.sqrt(N_SAMPLES)
+        end = time.time()
+        print(f"Time taken for monte carlo integration: {end - start}s", flush=True)
+        print(f"Monte Carlo denominator integral with bh mass: {integral}, error estimation: {integral_error}", flush=True)
+        print(f"Integration difference: {abs(single_host_likelihood_denominator_with_bh_mass - integral)}", flush=True)
+
+
+
 
         return [single_host_likelihood_numerator_without_bh_mass, single_host_likelihood_denominator_without_bh_mass, single_host_likelihood_numerator_with_bh_mass, single_host_likelihood_denominator_with_bh_mass]
     return [single_host_likelihood_numerator_without_bh_mass, single_host_likelihood_denominator_without_bh_mass]
