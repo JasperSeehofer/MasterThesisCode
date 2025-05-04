@@ -778,7 +778,7 @@ class DetectionProbability:
         return d_L, phi, theta
 
     def plot_detection_probability(self) -> None:
-        fig, ax = plt.subplots(nrows=2, ncols=2, figsize=(16, 9))
+        fig, ax = plt.subplots(nrows=3, ncols=2, figsize=(16, 16))
         fig.suptitle("Detection probability")
         # plot detection probability for d_L and M
         d_L_range = np.linspace(
@@ -887,7 +887,55 @@ class DetectionProbability:
             self.luminosity_distance_lower_limit,
             self.luminosity_distance_upper_limit,
         )
-        ax[1,1].legend()
+
+        # plot from interpolated detection probability
+        # create grid from d_L and M range with fixed phi and theta
+        d_L_grid, M_grid = np.meshgrid(d_L_range, M_range)
+
+        d_L_grid_points = d_L_grid.flatten()
+        M_grid_points = M_grid.flatten()
+        phi_grid_points = np.full_like(d_L_grid_points, fixed_phi)
+        theta_grid_points = np.full_like(d_L_grid_points, fixed_theta)
+
+        detection_probability_with_bh_mass_interpolated = self.detection_probability_with_bh_mass_interpolated(
+            d_L_grid_points, M_grid_points, phi_grid_points, theta_grid_points
+        )
+
+        detection_probability_with_bh_mass_interpolated = detection_probability_with_bh_mass_interpolated.reshape(
+            d_L_grid.shape
+        )
+
+        ax[2,0].contourf(
+            d_L_range,
+            M_range,
+            detection_probability_with_bh_mass_interpolated,
+            cmap="viridis",
+            levels=50,
+        )
+        ax[2,0].set_xlabel("Luminosity distance [Gpc]")
+        ax[2,0].set_ylabel("Mass  [M_solar]")
+        ax[2,0].set_title("Detection probability with BH mass")
+        ax[2,0].set_yscale("log")
+        ax[2,0].set_xlim(
+            self.luminosity_distance_lower_limit,
+            self.luminosity_distance_upper_limit,
+        )
+        ax[2,0].set_ylim(self.mass_lower_limit, self.mass_upper_limit)
+        for phi, theta in zip(phi_values,theta_values):
+            detection_probability_without_bh_mass_interpolated = self.detection_probability_without_bh_mass_interpolated(
+                d_L_range, np.full_like(d_L_range, phi), np.full_like(d_L_range, theta)
+            )
+            ax[2,1].plot(
+                d_L_range,
+                detection_probability_without_bh_mass_interpolated,
+            )
+        ax[2,1].set_xlabel("Luminosity distance [Gpc]")
+        ax[2,1].set_ylabel("Detection probability")
+        ax[2,1].set_title("Detection probability without BH mass")
+        ax[2,1].set_xlim(
+            self.luminosity_distance_lower_limit,
+            self.luminosity_distance_upper_limit,
+        )
         plt.savefig("saved_figures/cosmological_model/detection_probability.png")
         plt.show()
         plt.close()
@@ -985,15 +1033,21 @@ class DetectionProbability:
 
     def detection_probability_with_bh_mass_interpolated(
             self,
-            d_L: float,
-            M_z: float,
-            phi: float,
-            theta: float,
-        ) -> float:       
-        # check if the input values are within the limits
+            d_L: Union[float, np.ndarray[float]],
+            M_z: Union[float, np.ndarray[float]],
+            phi: Union[float, np.ndarray[float]],
+            theta: Union[float, np.ndarray[float]],
+        ) -> Union[float, np.ndarray[float]]:       
+        # check if the input values are floats
+        if all([isinstance(attribute, float) for attribute in [d_L, M_z, phi, theta]]):
+            # if all attributes are float, convert them to 1D arrays
+            d_L = np.array([d_L])
+            M_z = np.array([M_z])
+            phi = np.array([phi])
+            theta = np.array([theta])
         return self.detection_probability_with_bh_mass_interpolator(
-            (d_L, M_z, phi, theta)
-        )[0]
+            np.array([d_L, M_z, phi, theta]).T
+        )
     
     def detection_probability_without_bh_mass_interpolated(
             self,
@@ -1001,9 +1055,15 @@ class DetectionProbability:
             phi: float,
             theta: float,
         ) -> float:
+        # check if the input values are floats
+        if all([isinstance(attribute, float) for attribute in [d_L, phi, theta]]):
+            # if all attributes are float, convert them to 1D arrays
+            d_L = np.array([d_L])
+            phi = np.array([phi])
+            theta = np.array([theta])
         return self.detection_probability_without_bh_mass_interpolator(
-            (d_L, phi, theta)
-        )[0]
+            np.array([d_L, phi, theta]).T
+        )
 
 
 class BayesianStatistics:
@@ -3113,6 +3173,8 @@ def single_host_likelihood(
         phi = np.full_like(z, possible_host.phiS)
         theta = np.full_like(z, possible_host.qS)
 
+        print(f"Detection probability w/o bh mass: {detection_probability.detection_probability_without_bh_mass_interpolated(d_L, phi, theta)}")
+
         return (
             detection_probability.detection_probability_without_bh_mass_interpolated(d_L, phi, theta)
             * detection_likelihood_gaussians_by_detection_index[
@@ -3154,6 +3216,9 @@ def single_host_likelihood(
             M_z = np.full_like(z, detection.M)
             phi = np.full_like(z, possible_host.phiS)
             theta = np.full_like(z, possible_host.qS)
+
+            print(f"Detection probability w/ bh mass: {detection_probability.detection_probability_with_bh_mass_interpolated(d_L, M_z, phi, theta)}")
+
             return (
                 detection_probability.detection_probability_with_bh_mass_interpolated(
                     d_L,
