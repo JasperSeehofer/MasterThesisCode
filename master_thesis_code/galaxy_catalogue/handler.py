@@ -500,11 +500,11 @@ class GalaxyCatalogueHandler:
 
         mass_filter_mask = (
             (M_z - M_z_sigma * sigma_multiplier) / (1 + z_max)
-            <= candidate_hosts[InternalCatalogColumns.BH_MASS]
-            + candidate_hosts[InternalCatalogColumns.BH_MASS_ERROR]
+            <= candidate_hosts_without_bh_mass[InternalCatalogColumns.BH_MASS]
+            + candidate_hosts_without_bh_mass[InternalCatalogColumns.BH_MASS_ERROR]
         ) & (
-            candidate_hosts[InternalCatalogColumns.BH_MASS]
-            - candidate_hosts[InternalCatalogColumns.BH_MASS_ERROR]
+            candidate_hosts_without_bh_mass[InternalCatalogColumns.BH_MASS]
+            - candidate_hosts_without_bh_mass[InternalCatalogColumns.BH_MASS_ERROR]
             <= (M_z + M_z_sigma * sigma_multiplier) / (1 + z_min)
         )
 

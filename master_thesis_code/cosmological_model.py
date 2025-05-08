@@ -642,7 +642,7 @@ class DetectionProbability:
         self.kde_detected_without_bh_mass = gaussian_kde(detected_events_points_without_bh_mass, bw_method=bandwidth)
         self.kde_undetected_without_bh_mass = gaussian_kde(undetected_events_points_without_bh_mass, bw_method=bandwidth)
 
-        self._setup_interpolator(d_L_steps=20, M_z_steps=30, phi_steps=20, theta_steps=20)
+        self._setup_interpolator(d_L_steps=40, M_z_steps=50, phi_steps=20, theta_steps=20)
 
     def evaluate_with_bh_mass(
             self,
@@ -1166,7 +1166,8 @@ class BayesianStatistics:
             for detection_index, posterior in self.posterior_data_with_bh_mass.items()
             if (
                 (len(posterior) == len(self.h_values_with_bh_mass))
-                and (np.max(posterior) > 0)
+                and (np.max(posterior) > 0.0)
+                and (np.min(posterior) > 0.0)
                 and (np.max(posterior) != np.inf)
             )
         }
@@ -1175,7 +1176,8 @@ class BayesianStatistics:
             for detection_index, posterior in self.posterior_data.items()
             if (
                 (len(posterior) == len(self.h_values))
-                and (np.max(posterior) > 0)
+                and (np.max(posterior) > 0.0)
+                and (np.min(posterior) > 0.0)
                 and (np.max(posterior) != np.inf)
                 and (detection_index in list(self.posterior_data_with_bh_mass.keys()))
             )
@@ -1271,7 +1273,6 @@ class BayesianStatistics:
             )
             + galaxy_numbers_with_bh_mass
         )
-        print(len(galaxy_numbers_without_bh_mass))
         bins = np.logspace(
             np.log10(min(galaxy_numbers_without_bh_mass)),
             np.log10(max(galaxy_numbers_without_bh_mass)),
@@ -1301,7 +1302,7 @@ class BayesianStatistics:
         plt.close()
 
         # define colormap for skylocalization coloring
-        sky_localization_error_min = min(
+        """sky_localization_error_min = min(
             [detection.get_skylocalization_error() for detection in detections]
         )
         sky_localization_error_max = max(
@@ -1321,18 +1322,31 @@ class BayesianStatistics:
         cmap = plt.get_cmap("viridis")
         norm = plt.Normalize(
             vmin=relativ_distance_error_min, vmax=relativ_distance_error_max
+        )"""
+
+        # get the number of possible hosts for each detection
+        galaxy_numbers_with_bh_mass_by_detection = self.galaxy_weights[str(self.h_values[int(len(self.h_values) / 2)])]
+        galaxy_numbers_without_bh_mass_by_detection = galaxy_numbers_with_bh_mass_by_detection | self.additional_galaxies_without_bh_mass[
+            str(self.h_values[int(len(self.h_values) / 2)])
+        ]
+
+        print(
+            f"galaxy numbers keys with bh mass: {galaxy_numbers_with_bh_mass_by_detection.keys()}"
+        )
+        print(
+            f"galaxy numbers keys without bh mass: {galaxy_numbers_without_bh_mass_by_detection.keys()}"
         )
 
-        """
-        # sort h_values, posteriors and posteriors with bh mass by h value
-        zipped = list(zip(self.h_values, self.posterior_data.items()))
-        zipped.sort(key=lambda x: x[0])
-        self.h_values, posterior_data_sorted = zip(*zipped)
+        min_galaxy_number = min(
+            [np.log(len(galaxy_weights)) for galaxy_weights in galaxy_numbers_without_bh_mass_by_detection.values() if len(galaxy_weights) > 0] 
+        )
+        max_galaxy_number = max(
+            [np.log(len(galaxy_weights)) for galaxy_weights in galaxy_numbers_without_bh_mass_by_detection.values() if len(galaxy_weights) > 0]
+        )
 
-        zipped_with_bh_mass = list(zip(self.h_values_with_bh_mass, self.posterior_data_with_bh_mass.items()))
-        zipped_with_bh_mass.sort(key=lambda x: x[0])
-        self.h_values_with_bh_mass, posterior_data_with_bh_mass_sorted = zip(*zipped_with_bh_mass)
-        """
+        cmap = plt.get_cmap("viridis")
+        norm = plt.Normalize(vmin=min_galaxy_number, vmax=max_galaxy_number)
+
         posterior_data_sorted = self.posterior_data.items()
         posterior_data_with_bh_mass_sorted = self.posterior_data_with_bh_mass.items()
 
@@ -1341,7 +1355,11 @@ class BayesianStatistics:
         ax.axvline(H, color="b", linestyle="--")
         for detection_index, posterior in posterior_data_sorted:
             detection = Detection(self.cramer_rao_bounds.iloc[int(detection_index)])
-            color = cmap(norm(detection.get_relative_distance_error()))
+            number_of_possible_hosts = np.log(
+                len(galaxy_numbers_without_bh_mass_by_detection[str(detection_index)]) if len(galaxy_numbers_without_bh_mass_by_detection[str(detection_index)]) > 0 else min_galaxy_number
+            )
+            color = cmap(norm(number_of_possible_hosts))
+            # color = cmap(norm(detection.get_relative_distance_error()))
 
             zipped = list(zip(self.h_values, posterior))
             zipped.sort(key=lambda x: x[0])
@@ -1355,20 +1373,36 @@ class BayesianStatistics:
             )
         ax.set_xlabel("Hubble constant h")
         ax.set_ylabel("Posterior")
+        # colorbar with logarithmic scale
         fig.colorbar(
             plt.cm.ScalarMappable(norm=norm, cmap=cmap),
             ax=ax,
-            label="skylocalization error",
+            label="log[#possible hosts]",
         )
         plt.savefig(f"saved_figures/bayesian_statistics_event_posteriors.png", dpi=300)
         plt.close()
+
+        # plot posteriors with bh mass
+        min_galaxy_number = min(
+            [np.log(len(galaxy_weights)) for galaxy_weights in galaxy_numbers_with_bh_mass_by_detection.values() if len(galaxy_weights) > 0]
+        )
+        max_galaxy_number = max(
+            [np.log(len(galaxy_weights)) for galaxy_weights in galaxy_numbers_with_bh_mass_by_detection.values() if len(galaxy_weights) > 0]
+        )
+
+        cmap = plt.get_cmap("viridis")
+        norm = plt.Normalize(vmin=min_galaxy_number, vmax=max_galaxy_number)
 
         fig, ax = plt.subplots(figsize=(16, 9))
         # plot line for true value
         ax.axvline(H, color="b", linestyle="--")
         for detection_index, posterior in posterior_data_with_bh_mass_sorted:
             detection = Detection(self.cramer_rao_bounds.iloc[int(detection_index)])
-            color = cmap(norm(detection.get_relative_distance_error()))
+            number_of_possible_hosts = np.log(
+                len(galaxy_numbers_without_bh_mass_by_detection[str(detection_index)]) if len(galaxy_numbers_without_bh_mass_by_detection[str(detection_index)]) > 0 else min_galaxy_number
+            )
+            color = cmap(norm(number_of_possible_hosts))
+            # color = cmap(norm(detection.get_relative_distance_error()))
 
             zipped = list(zip(self.h_values_with_bh_mass, posterior))
             zipped.sort(key=lambda x: x[0])
@@ -1385,7 +1419,7 @@ class BayesianStatistics:
         fig.colorbar(
             plt.cm.ScalarMappable(norm=norm, cmap=cmap),
             ax=ax,
-            label="relative d_L error",
+            label="log[#possible hosts]",
         )
         plt.savefig(
             f"saved_figures/bayesian_statistics_event_posteriors_with_bh_mass.png",
@@ -1398,7 +1432,7 @@ class BayesianStatistics:
 
         # create color list with 10 different colors
         NUMBER_OF_SUBSETS = 20
-        NUMBER_OF_DETECTIONS = 75
+        NUMBER_OF_DETECTIONS = 50
         fig.suptitle(
             f"Posterior distribution of Hubble constant h using {NUMBER_OF_SUBSETS} subsets of {NUMBER_OF_DETECTIONS} detections"
         )
@@ -1434,21 +1468,27 @@ class BayesianStatistics:
             sub_posteriors_with_bh_mass = np.ones(len(self.h_values_with_bh_mass))
 
             for index, posterior in posteriors_data_subset:
-                if check_overflow(sub_posteriors * np.array(posterior)):
-                    # print("Overflow detected")
+                if check_overflow(sub_posteriors, np.array(posterior)):
                     sub_posteriors = sub_posteriors / np.max(sub_posteriors)
                 elif np.max(sub_posteriors * posterior) == 0.0:
                     print("All zeros detected")
                     sub_posteriors = sub_posteriors / np.max(sub_posteriors)
+                elif np.min(sub_posteriors * posterior) == 0.0:
+                    print("Zeros detected")
+                    sub_posteriors = sub_posteriors / np.max(sub_posteriors)
                 sub_posteriors *= np.array(posterior)
             for index, posterior in posteriors_data_with_bh_mass_subset:
-                if check_overflow(sub_posteriors_with_bh_mass * np.array(posterior)):
-                    # print("Overflow detected")
+                if check_overflow(sub_posteriors_with_bh_mass, np.array(posterior)):
                     sub_posteriors_with_bh_mass = sub_posteriors_with_bh_mass / np.max(
                         sub_posteriors_with_bh_mass
                     )
                 elif np.max(sub_posteriors_with_bh_mass * posterior) == 0.0:
                     print("All zeros detected")
+                    sub_posteriors_with_bh_mass = sub_posteriors_with_bh_mass / np.max(
+                        sub_posteriors_with_bh_mass
+                    )
+                elif np.min(sub_posteriors_with_bh_mass * posterior) == 0.0:
+                    print("Zeros detected")
                     sub_posteriors_with_bh_mass = sub_posteriors_with_bh_mass / np.max(
                         sub_posteriors_with_bh_mass
                     )
@@ -1682,21 +1722,29 @@ class BayesianStatistics:
         posteriors_with_bh_mass = np.ones(len(self.h_values_with_bh_mass))
 
         for index, posterior in posterior_data_sorted:
-            if check_overflow(posteriors * np.array(posterior)):
+            if check_overflow(posteriors, np.array(posterior)):
                 # print("Overflow detected")
                 posteriors = posteriors / np.max(posteriors)
             elif np.max(posteriors * posterior) == 0.0:
                 print("All zeros detected")
                 posteriors = posteriors / np.max(posteriors)
+            elif np.min(posteriors * posterior) == 0.0:
+                print("Zeros detected")
+                posteriors = posteriors / np.max(posteriors)
             posteriors *= np.array(posterior)
         for index, posterior in posterior_data_with_bh_mass_sorted:
-            if check_overflow(posteriors_with_bh_mass * np.array(posterior)):
+            if check_overflow(posteriors_with_bh_mass, np.array(posterior)):
                 # print("Overflow detected")
                 posteriors_with_bh_mass = posteriors_with_bh_mass / np.max(
                     posteriors_with_bh_mass
                 )
             elif np.max(posteriors_with_bh_mass * posterior) == 0.0:
                 print("All zeros detected")
+                posteriors_with_bh_mass = posteriors_with_bh_mass / np.max(
+                    posteriors_with_bh_mass
+                )
+            elif np.min(posteriors_with_bh_mass * posterior) == 0.0:
+                print("Zeros detected")
                 posteriors_with_bh_mass = posteriors_with_bh_mass / np.max(
                     posteriors_with_bh_mass
                 )
@@ -3169,11 +3217,9 @@ def single_host_likelihood(
     # TODO: KEEP IN MIND SKYLOCALIZATION WEIGHT IS IN THE GW LIKELIHOOD ATM. possible source of error
     def numerator_integrant_without_bh_mass(z: np.ndarray[float]) -> np.ndarray[float]:
         d_L = dist(z, h=h)
-        luminosity_distance_fraction = d_L / detection.d_L
+        luminosity_distance_fraction = detection.d_L / d_L
         phi = np.full_like(z, possible_host.phiS)
         theta = np.full_like(z, possible_host.qS)
-
-        print(f"Detection probability w/o bh mass: {detection_probability.detection_probability_without_bh_mass_interpolated(d_L, phi, theta)}")
 
         return (
             detection_probability.detection_probability_without_bh_mass_interpolated(d_L, phi, theta)
@@ -3181,7 +3227,7 @@ def single_host_likelihood(
                 detection_index
             ][0].pdf(np.vstack([phi, theta, luminosity_distance_fraction]).T)
             * galaxy_redshift_normal_distribution.pdf(z)
-            / detection.d_L
+            / d_L
         )
 
     def denominator_integrant_without_bh_mass(z: np.ndarray[float]) -> np.ndarray[float]:
@@ -3212,12 +3258,10 @@ def single_host_likelihood(
         )
         def numerator_integrant_with_bh_mass(z: np.ndarray[float]) -> np.ndarray[float]:
             d_L = dist(z, h=h)
-            luminosity_distance_fraction = d_L / detection.d_L
+            luminosity_distance_fraction = detection.d_L / d_L
             M_z = np.full_like(z, detection.M)
             phi = np.full_like(z, possible_host.phiS)
             theta = np.full_like(z, possible_host.qS)
-
-            print(f"Detection probability w/ bh mass: {detection_probability.detection_probability_with_bh_mass_interpolated(d_L, M_z, phi, theta)}")
 
             return (
                 detection_probability.detection_probability_with_bh_mass_interpolated(
@@ -3237,7 +3281,7 @@ def single_host_likelihood(
                 )
                 * galaxy_redshift_normal_distribution.pdf(z)
                 * galaxy_mass_normal_distribution.pdf(detection.M / (1+z))
-                / (detection.d_L * (1 + z)) # TODO: check if this is correct
+                / (d_L * (1 + z)) # TODO: check if this is correct
             )
 
         
@@ -3478,7 +3522,12 @@ def child_process_init(
         current_detection_likelihood_gaussians_by_detection_index
     )
 
-def check_overflow(arr: np.array) -> bool:
+def check_overflow(arr_1: np.ndarray, arr_2: np.ndarray) -> bool:
+    try:
+        arr = arr_1 * arr_2
+    except RuntimeWarning:
+        _LOGGER.warning("Overflow detected in multiplication")
+        return True
     return np.any(np.isinf(arr))
 
 
