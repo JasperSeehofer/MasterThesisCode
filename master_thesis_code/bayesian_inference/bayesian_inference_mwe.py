@@ -1,21 +1,18 @@
-from __future__ import annotations
+import multiprocessing as mp
+from dataclasses import dataclass, field
+from statistics import NormalDist
+from time import time
+from typing import Any
 
-from typing import List, Union
+import emcee
+import matplotlib.pyplot as plt
 import numpy as np
 import numpy.typing as npt
-import multiprocessing as mp
+from scipy.optimize import fsolve
 
 # import error funciton
-from scipy.special import erf
-from statistics import NormalDist
+from scipy.special import erf, hyp2f1
 from scipy.stats import truncnorm
-from scipy.stats.distributions import truncnorm_gen
-from dataclasses import dataclass, field
-import matplotlib.pyplot as plt
-from time import time
-from scipy.optimize import fsolve
-from scipy.special import hyp2f1
-import emcee
 
 from master_thesis_code.bayesian_inference.scientific_plotter import ScientificPlotter
 
@@ -29,8 +26,8 @@ OMEGA_M = 0.25
 OMEGA_LAMBDA = 0.75
 W_0 = -1.0
 W_A = 0.0
-GPC_TO_MPC = float(1e3)
-KM_TO_M = float(1e3)
+GPC_TO_MPC = 1e3
+KM_TO_M = 1e3
 
 
 def dist(
@@ -66,21 +63,24 @@ def dist(
     # luminosity distance in Gpc
     result = SPEED_OF_LIGHT / H_0 * (1 + redshift) * integral - offset_for_root_finding
 
-    return result
+    return float(np.asarray(result).flat[0])
 
 
 def lambda_cdm_analytic_distance(
     redshift: float, Omega_m: float = OMEGA_M, Omega_de: float = OMEGA_LAMBDA
 ) -> float:
-    return (
-        (1 + redshift)
-        * np.sqrt(1 + (Omega_m * (1 + redshift) ** 3) / Omega_de)
-        * hyp2f1(1 / 3, 1 / 2, 4 / 3, -((Omega_m * (1 + redshift) ** 3) / Omega_de))
-    ) / np.sqrt(Omega_de + Omega_m * (1 + redshift) ** 3) - (
-        np.sqrt((Omega_m + Omega_de) / Omega_de)
-        * hyp2f1(1 / 3, 1 / 2, 4 / 3, -(Omega_m / Omega_de))
-    ) / np.sqrt(
-        Omega_m + Omega_de
+    return (  # type: ignore[no-any-return]
+        (
+            (1 + redshift)
+            * np.sqrt(1 + (Omega_m * (1 + redshift) ** 3) / Omega_de)
+            * hyp2f1(1 / 3, 1 / 2, 4 / 3, -((Omega_m * (1 + redshift) ** 3) / Omega_de))
+        )
+        / np.sqrt(Omega_de + Omega_m * (1 + redshift) ** 3)
+        - (
+            np.sqrt((Omega_m + Omega_de) / Omega_de)
+            * hyp2f1(1 / 3, 1 / 2, 4 / 3, -(Omega_m / Omega_de))
+        )
+        / np.sqrt(Omega_m + Omega_de)
     )
 
 
@@ -95,18 +95,20 @@ def dist_to_redshift(
     """
     Calculate the redshift for a given luminosity distance.
     """
-    return fsolve(
-        dist,
-        1,
-        args=(
-            h,
-            Omega_m,
-            Omega_de,
-            w_0,
-            w_a,
-            distance,
-        ),
-    )[0]
+    return float(
+        fsolve(
+            dist,
+            1,
+            args=(
+                h,
+                Omega_m,
+                Omega_de,
+                w_0,
+                w_a,
+                distance,
+            ),
+        )[0]
+    )
 
 
 def redshifted_mass(mass: float, redshift: float) -> float:
@@ -127,7 +129,7 @@ class Galaxy:
     @classmethod
     def with_random_skylocalization(
         cls, redshift: float, central_black_hole_mass: float
-    ) -> Galaxy:
+    ) -> "Galaxy":
         # get spherically uniform distributed sky localization
         right_ascension = np.random.uniform(0, 2 * np.pi)
         declination = np.arccos(np.random.uniform(-1, 1))
@@ -141,10 +143,11 @@ class Galaxy:
     @property
     def redshift_uncertainty(self) -> float:
         return min(0.013 * (1 + self.redshift) ** 3, 0.015)
-    
+
     @property
     def central_black_hole_mass_uncertainty(self) -> float:
         return FRACTIONAL_BLACK_HOLE_MASS_CATALOG_ERROR * self.central_black_hole_mass
+
 
 @dataclass
 class GalaxyCatalog:
@@ -155,9 +158,9 @@ class GalaxyCatalog:
     upper_mass_limit: float = 10 ** (7)
     redshift_lower_limit: float = 0.00001
     redshift_upper_limit: float = 0.55
-    catalog: List[Galaxy] = field(default_factory=list)
-    galaxy_distribution: List[NormalDist] = field(default_factory=list)
-    galaxy_mass_distribution: List[NormalDist] = field(default_factory=list)
+    catalog: list[Galaxy] = field(default_factory=list)
+    galaxy_distribution: list[NormalDist] = field(default_factory=list)
+    galaxy_mass_distribution: list[NormalDist] = field(default_factory=list)
 
     def __init__(self, use_truncnorm: bool = True, use_comoving_volume: bool = True):
         self._use_truncnorm = use_truncnorm
@@ -166,7 +169,6 @@ class GalaxyCatalog:
         self.galaxy_distribution = []
         self.galaxy_mass_distribution = []
 
-
     def comoving_volume(self, redshift: float) -> float:
         redshifts = np.linspace(0, redshift, 100)
         integral = np.trapezoid(
@@ -174,16 +176,16 @@ class GalaxyCatalog:
             redshifts,
         )
         res = 4 * np.pi * (SPEED_OF_LIGHT / TRUE_HUBBLE_CONSTANT) ** 3 * integral**2
-        return res
+        return float(res)
 
     def log_comoving_volume(self, redshift: float) -> float:
         try:
-            redshift = redshift[0]
+            redshift = redshift[0]  # type: ignore[index]
         except TypeError:
             pass
         if redshift < self.redshift_lower_limit or redshift > self.redshift_upper_limit:
-            return -np.inf
-        return np.log(self.comoving_volume(redshift))
+            return float(-np.inf)
+        return float(np.log(self.comoving_volume(redshift)))
 
     def get_samples_from_comoving_volume(self, number_of_samples: int) -> np.ndarray:
         # use emcee to sample the comoving volume distribution
@@ -205,7 +207,7 @@ class GalaxyCatalog:
 
     @staticmethod
     def save_comoving_volume_sampling_plot(samples: np.ndarray) -> None:
-        # plot and save the sampling distribution for an explicit figure 
+        # plot and save the sampling distribution for an explicit figure
         sample_fig, sample_ax = plt.subplots(figsize=(16, 9))
         sample_ax.set_title("Comoving Volume Sampling")
         sample_ax.set_xlabel("Redshift")
@@ -216,21 +218,19 @@ class GalaxyCatalog:
         plt.close(sample_fig)
 
     def plot_comoving_volume(self) -> None:
-        redshifts = np.linspace(
-            self.redshift_lower_limit, self.redshift_upper_limit, 100
-        )
+        redshifts = np.linspace(self.redshift_lower_limit, self.redshift_upper_limit, 100)
         comoving_volumes = [self.comoving_volume(redshift) for redshift in redshifts]
         _plotter = ScientificPlotter(figure_size=(16, 9))
-        _plotter.plot(redshifts, comoving_volumes, label="Comoving volume")
+        _plotter.plot(redshifts, np.array(comoving_volumes), label="Comoving volume")
         _plotter.show_and_close()
 
     def create_random_catalog(self, number_of_galaxies: int) -> None:
         # draw mass from uniform in log space
-        print(f"Creating random galaxy catalog with {number_of_galaxies} galaxies in the redshift range ({self.redshift_lower_limit}, {self.redshift_upper_limit}) / ({dist(self.redshift_lower_limit)}, {dist(self.redshift_upper_limit)}) Mpc.")
+        print(
+            f"Creating random galaxy catalog with {number_of_galaxies} galaxies in the redshift range ({self.redshift_lower_limit}, {self.redshift_upper_limit}) / ({dist(self.redshift_lower_limit)}, {dist(self.redshift_upper_limit)}) Mpc."
+        )
         if self._use_comoving_volume:
-            redshift_samples = self.get_samples_from_comoving_volume(
-                number_of_galaxies
-            )
+            redshift_samples = self.get_samples_from_comoving_volume(number_of_galaxies)
             assert len(redshift_samples) == number_of_galaxies
             for redshift in redshift_samples:
                 self.catalog.append(
@@ -267,12 +267,8 @@ class GalaxyCatalog:
 
     def add_random_galaxy(self) -> None:
         galaxy = Galaxy.with_random_skylocalization(
-            redshift=np.random.uniform(
-                self.redshift_lower_limit, self.redshift_upper_limit
-            ),
-            central_black_hole_mass=np.random.uniform(
-                self.lower_mass_limit, self.upper_mass_limit
-            ),
+            redshift=np.random.uniform(self.redshift_lower_limit, self.redshift_upper_limit),
+            central_black_hole_mass=np.random.uniform(self.lower_mass_limit, self.upper_mass_limit),
         )
         self.catalog.append(galaxy)
         self.append_galaxy_to_galaxy_distribution(galaxy)
@@ -280,16 +276,13 @@ class GalaxyCatalog:
 
     def add_host_galaxy(self) -> Galaxy:
         galaxy = Galaxy.with_random_skylocalization(
-            redshift=np.random.uniform(
-                self.redshift_lower_limit, self.redshift_upper_limit
-            ),
-            central_black_hole_mass=np.random.uniform(
-                self.lower_mass_limit, self.upper_mass_limit
-            ),
+            redshift=np.random.uniform(self.redshift_lower_limit, self.redshift_upper_limit),
+            central_black_hole_mass=np.random.uniform(self.lower_mass_limit, self.upper_mass_limit),
         )
         self.catalog.append(galaxy)
         self.append_galaxy_to_galaxy_distribution(galaxy)
         self.append_galaxy_to_galaxy_mass_distribution(galaxy)
+        return galaxy
 
     def setup_galaxy_distribution(self) -> None:
         if not self._use_truncnorm:
@@ -300,24 +293,21 @@ class GalaxyCatalog:
         else:
             self.galaxy_distribution = [
                 truncnorm(
-                    a=(self.redshift_lower_limit - galaxy.redshift)
-                    / galaxy.redshift_uncertainty,
-                    b=(self.redshift_upper_limit - galaxy.redshift)
-                    / galaxy.redshift_uncertainty,
+                    a=(self.redshift_lower_limit - galaxy.redshift) / galaxy.redshift_uncertainty,
+                    b=(self.redshift_upper_limit - galaxy.redshift) / galaxy.redshift_uncertainty,
                 )
                 for galaxy in self.catalog
             ]
-
 
     def append_galaxy_to_galaxy_mass_distribution(self, galaxy: Galaxy) -> None:
         if not self._use_truncnorm:
             self.galaxy_mass_distribution.append(
                 NormalDist(
-                mu=galaxy.central_black_hole_mass,
-                sigma=FRACTIONAL_BLACK_HOLE_MASS_CATALOG_ERROR * galaxy.central_black_hole_mass,
+                    mu=galaxy.central_black_hole_mass,
+                    sigma=FRACTIONAL_BLACK_HOLE_MASS_CATALOG_ERROR * galaxy.central_black_hole_mass,
                 )
             )
-            
+
         else:
             self.galaxy_mass_distribution.append(
                 truncnorm(
@@ -336,17 +326,14 @@ class GalaxyCatalog:
         else:
             self.galaxy_distribution.append(
                 truncnorm(
-                    a=(self.redshift_lower_limit - galaxy.redshift)
-                    / galaxy.redshift_uncertainty,
-                    b=(self.redshift_upper_limit - galaxy.redshift)
-                    / galaxy.redshift_uncertainty,
+                    a=(self.redshift_lower_limit - galaxy.redshift) / galaxy.redshift_uncertainty,
+                    b=(self.redshift_upper_limit - galaxy.redshift) / galaxy.redshift_uncertainty,
                 )
             )
 
-    def evaluate_galaxy_distribution(self, redshift: float) -> float:
-
+    def evaluate_galaxy_distribution(self, redshift: float) -> npt.NDArray[np.float64]:
         redshift_uncertainty = min(0.013 * (1 + redshift) ** 3, 0.015)
-        p_background = 1
+        p_background: float = 1.0
 
         if self._use_comoving_volume:
             p_background = self.comoving_volume(redshift)
@@ -393,7 +380,7 @@ class GalaxyCatalog:
             for galaxy in self.catalog
         ]
 
-    def evaluate_galaxy_mass_distribution(self, mass: float) -> float:
+    def evaluate_galaxy_mass_distribution(self, mass: float) -> npt.NDArray[np.float64]:
         # use truncated normal distribution
 
         if self._use_truncnorm:
@@ -414,7 +401,7 @@ class GalaxyCatalog:
             [distribution.pdf(mass) for distribution in self.galaxy_mass_distribution]
         ) / len(self.catalog)
 
-    def get_possible_host_galaxies(self) -> List[Galaxy]:
+    def get_possible_host_galaxies(self) -> list[Galaxy]:
         return [
             galaxy
             for galaxy in self.catalog
@@ -422,48 +409,40 @@ class GalaxyCatalog:
             <= BayesianInference.luminosity_distance_threshold
         ]
 
-    def get_unique_host_galaxies_from_catalog(
-        self, number_of_host_galaxies: int
-    ) -> List[Galaxy]:
-
+    def get_unique_host_galaxies_from_catalog(self, number_of_host_galaxies: int) -> list[Galaxy]:
         if len(self.get_possible_host_galaxies()) < number_of_host_galaxies:
             print("Not enough possible host galaxies in catalog.")
             return []
-        return np.random.choice(
-            self.get_possible_host_galaxies(), number_of_host_galaxies, replace=False
-        )
+        possible: list[Any] = self.get_possible_host_galaxies()
+        return list(np.random.choice(possible, number_of_host_galaxies, replace=False))
 
     def add_unique_host_galaxies_from_catalog(
-        self, number_of_host_galaxies_to_add: int, used_host_galaxies: List[Galaxy]
-    ) -> List[Galaxy]:
+        self, number_of_host_galaxies_to_add: int, used_host_galaxies: list[Galaxy]
+    ) -> list[Galaxy]:
         if (
             len(self.get_possible_host_galaxies()) - len(used_host_galaxies)
             < number_of_host_galaxies_to_add
         ):
             print("Not enough possible host galaxies in catalog.")
             return used_host_galaxies
+        filtered: list[Any] = [
+            galaxy
+            for galaxy in self.get_possible_host_galaxies()
+            if galaxy not in used_host_galaxies
+        ]
         new_host_galaxies = np.random.choice(
-            [
-                galaxy
-                for galaxy in self.get_possible_host_galaxies()
-                if galaxy not in used_host_galaxies
-            ],
-            number_of_host_galaxies_to_add,
-            replace=False, 
+            filtered, number_of_host_galaxies_to_add, replace=False
         )
         used_host_galaxies.extend(new_host_galaxies)
         return used_host_galaxies
 
     def plot_galaxy_catalog(self) -> None:
-        redshifts = np.linspace(
-            self.redshift_lower_limit, self.redshift_upper_limit, 100
-        )
+        redshifts = np.linspace(self.redshift_lower_limit, self.redshift_upper_limit, 100)
         galaxy_distribution = [
-            np.sum(self.evaluate_galaxy_distribution(redshift))
-            for redshift in redshifts
+            np.sum(self.evaluate_galaxy_distribution(redshift)) for redshift in redshifts
         ]
         _plotter = ScientificPlotter(figure_size=(16, 9))
-        _plotter.plot(redshifts, galaxy_distribution, label="Galaxy distribution")
+        _plotter.plot(redshifts, np.array(galaxy_distribution), label="Galaxy distribution")
         _plotter.show_and_close()
 
     def plot_galaxy_catalog_mass_distribution(self) -> None:
@@ -472,9 +451,7 @@ class GalaxyCatalog:
             np.sum(self.evaluate_galaxy_mass_distribution(mass)) for mass in masses
         ]
         _plotter = ScientificPlotter(figure_size=(16, 9))
-        _plotter.plot(
-            masses, galaxy_mass_distribution, label="Galaxy mass distribution"
-        )
+        _plotter.plot(masses, np.array(galaxy_mass_distribution), label="Galaxy mass distribution")
         _plotter.axis.set_xscale("log")
         _plotter.show_and_close()
 
@@ -487,88 +464,87 @@ class EMRIDetection:
     measured_declination: float
 
     @classmethod
-    def from_host_galaxy(cls, host_galaxy: Galaxy, use_measurement_noise: bool = True) -> EMRIDetection:
+    def from_host_galaxy(
+        cls, host_galaxy: Galaxy, use_measurement_noise: bool = True
+    ) -> "EMRIDetection":
         if not use_measurement_noise:
-            measured_luminosity_distance=dist(
-                host_galaxy.redshift, TRUE_HUBBLE_CONSTANT
-            ),
-            measured_redshifted_mass=redshifted_mass(
+            measured_luminosity_distance = dist(host_galaxy.redshift, TRUE_HUBBLE_CONSTANT)
+            measured_redshifted_mass = redshifted_mass(
                 mass=host_galaxy.central_black_hole_mass,
                 redshift=host_galaxy.redshift,
-            ),
-        else:
-            measured_luminosity_distance=np.random.normal(
-                loc=dist(host_galaxy.redshift, TRUE_HUBBLE_CONSTANT),
-                scale=FRACTIONAL_LUMINOSITY_ERROR * dist(
-                    host_galaxy.redshift, TRUE_HUBBLE_CONSTANT,
-
-                )
             )
-            measured_redshifted_mass=np.random.normal(
+        else:
+            measured_luminosity_distance = np.random.normal(
+                loc=dist(host_galaxy.redshift, TRUE_HUBBLE_CONSTANT),
+                scale=FRACTIONAL_LUMINOSITY_ERROR
+                * dist(
+                    host_galaxy.redshift,
+                    TRUE_HUBBLE_CONSTANT,
+                ),
+            )
+            measured_redshifted_mass = np.random.normal(
                 loc=redshifted_mass(
                     mass=host_galaxy.central_black_hole_mass,
                     redshift=host_galaxy.redshift,
                 ),
-                scale=FRACTIONAL_MEASURED_MASS_ERROR * redshifted_mass(
+                scale=FRACTIONAL_MEASURED_MASS_ERROR
+                * redshifted_mass(
                     mass=host_galaxy.central_black_hole_mass,
                     redshift=host_galaxy.redshift,
-                )
+                ),
             )
 
-        
         return cls(
             measured_luminosity_distance=measured_luminosity_distance,
             measured_redshifted_mass=measured_redshifted_mass,
             measured_right_ascension=host_galaxy.right_ascension,
-            measured_declination=host_galaxy.declination,     
+            measured_declination=host_galaxy.declination,
         )
 
     @classmethod
-    def plot_detection_distribution(cls, host_galaxies: List[Galaxy]) -> None:
+    def plot_detection_distribution(cls, host_galaxies: list[Galaxy]) -> None:
         detection_distribution = [
-            NormalDist(
-                mu=galaxy.redshift, sigma=FRACTIONAL_LUMINOSITY_ERROR * galaxy.redshift
-            )
+            NormalDist(mu=galaxy.redshift, sigma=FRACTIONAL_LUMINOSITY_ERROR * galaxy.redshift)
             for galaxy in host_galaxies
         ]
         redshifts = np.linspace(
             GalaxyCatalog.redshift_lower_limit, GalaxyCatalog.redshift_upper_limit, 1000
         )
         detection_probabilities = [
-            np.sum(
-                [distribution.pdf(redshift) for distribution in detection_distribution]
-            )
+            np.sum([distribution.pdf(redshift) for distribution in detection_distribution])
             for redshift in redshifts
         ]
         _plotter = ScientificPlotter(figure_size=(16, 9))
-        _plotter.plot(redshifts, detection_probabilities)
+        _plotter.plot(redshifts, np.array(detection_probabilities))
         _plotter.show_and_close()
 
     @classmethod
-    def plot_detection_sky_distribution(cls, host_galaxies: List[Galaxy]) -> None:
+    def plot_detection_sky_distribution(cls, host_galaxies: list[Galaxy]) -> None:
         right_ascensions = [galaxy.right_ascension for galaxy in host_galaxies]
         declinations = [galaxy.declination for galaxy in host_galaxies]
 
         _plotter = ScientificPlotter(figure_size=(16, 9))
-        _plotter.scatter(right_ascensions, declinations, "o")
+        _plotter.scatter(np.array(right_ascensions), np.array(declinations), "o")
         _plotter.show_and_close()
 
 
 @dataclass
 class BayesianInference:
     galaxy_catalog: GalaxyCatalog
-    emri_detections: List[EMRIDetection]
+    emri_detections: list[EMRIDetection]
 
     luminosity_distance_threshold = 1550.0  # Mpc
     number_of_redshift_steps = 1000
-    redshift_values: npt.ArrayLike = field(default_factory=lambda: np.array([]))
-    galaxy_distribution_at_redshifts: npt.ArrayLike = field(default_factory=lambda: np.array([]))
+    redshift_values: npt.NDArray[np.float64] = field(default_factory=lambda: np.array([]))
+    galaxy_distribution_at_redshifts: npt.NDArray[np.float64] = field(
+        default_factory=lambda: np.array([])
+    )
     galaxy_detection_mass_distribution_at_redshifts: list = field(default_factory=list)
     detection_skylocalization_weight_by_galaxy: list = field(default_factory=list)
     use_bh_mass = False
     use_selection_effects_correction = True
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         self.redshift_values = np.linspace(
             self.galaxy_catalog.redshift_lower_limit,
             self.galaxy_catalog.redshift_upper_limit,
@@ -581,10 +557,7 @@ class BayesianInference:
             ]
         )
         self.comoving_volume_at_redshifts = np.array(
-            [
-                self.galaxy_catalog.comoving_volume(redshift)
-                for redshift in self.redshift_values
-            ]
+            [self.galaxy_catalog.comoving_volume(redshift) for redshift in self.redshift_values]
         )
         self.galaxy_detection_mass_distribution_at_redshifts = [
             np.array(
@@ -618,18 +591,19 @@ class BayesianInference:
             for emri_detection in self.emri_detections
         ]
 
-    def gw_detection_probability(
-        self, redshift: float, hubble_constant: float
-    ) -> float:
-        return (
-            1
-            + erf(
-                (self.luminosity_distance_threshold - dist(redshift, hubble_constant))
-                / np.sqrt(2)
-                / FRACTIONAL_LUMINOSITY_ERROR
-                / dist(redshift, hubble_constant)
+    def gw_detection_probability(self, redshift: float, hubble_constant: float) -> float:
+        return float(
+            (
+                1
+                + erf(
+                    (self.luminosity_distance_threshold - dist(redshift, hubble_constant))
+                    / np.sqrt(2)
+                    / FRACTIONAL_LUMINOSITY_ERROR
+                    / dist(redshift, hubble_constant)
+                )
             )
-        ) / 2
+            / 2
+        )
 
     def gw_likelihood(
         self,
@@ -641,17 +615,11 @@ class BayesianInference:
         mu_luminosity_distance = dist(redshift, hubble_constant)
         sigma_luminosity_distance = FRACTIONAL_LUMINOSITY_ERROR * mu_luminosity_distance
 
-        distribution = NormalDist(
-            mu=mu_luminosity_distance, sigma=sigma_luminosity_distance
-        )
+        distribution = NormalDist(mu=mu_luminosity_distance, sigma=sigma_luminosity_distance)
 
-        luminosity_distance_lower_limit = dist(
-            GalaxyCatalog.redshift_lower_limit, hubble_constant
-        )
-        luminosity_distance_upper_limit = dist(
-            GalaxyCatalog.redshift_upper_limit, hubble_constant
-        )
- 
+        luminosity_distance_lower_limit = dist(GalaxyCatalog.redshift_lower_limit, hubble_constant)
+        luminosity_distance_upper_limit = dist(GalaxyCatalog.redshift_upper_limit, hubble_constant)
+
         """return (
             distribution.pdf(measured_luminosity_distance)
             / distribution.stdev
@@ -682,20 +650,18 @@ class BayesianInference:
                     ]
                 )
                 * np.array(
-                [
-                    self.gw_detection_probability(
-                        hubble_constant=hubble_constant, redshift=redshift
-                    )
-                    for redshift in self.redshift_values
-                ]
+                    [
+                        self.gw_detection_probability(
+                            hubble_constant=hubble_constant, redshift=redshift
+                        )
+                        for redshift in self.redshift_values
+                    ]
                 )
                 * np.array(
                     [
                         np.sum(
                             const_redshift
-                            * self.detection_skylocalization_weight_by_galaxy[
-                                detection_index
-                            ]
+                            * self.detection_skylocalization_weight_by_galaxy[detection_index]
                         )
                         for const_redshift in self.galaxy_distribution_at_redshifts
                     ]
@@ -716,12 +682,12 @@ class BayesianInference:
                     ]
                 )
                 * np.array(
-                [
-                    self.gw_detection_probability(
-                        hubble_constant=hubble_constant, redshift=redshift
-                    )
-                    for redshift in self.redshift_values
-                ]
+                    [
+                        self.gw_detection_probability(
+                            hubble_constant=hubble_constant, redshift=redshift
+                        )
+                        for redshift in self.redshift_values
+                    ]
                 )
                 * NormalDist(
                     mu=measured_redshifted_mass,
@@ -732,15 +698,11 @@ class BayesianInference:
                         np.sum(
                             const_redshift_distribution
                             * const_redshift_mass_distribution
-                            * self.detection_skylocalization_weight_by_galaxy[
-                                detection_index
-                            ]
+                            * self.detection_skylocalization_weight_by_galaxy[detection_index]
                         )
                         for const_redshift_distribution, const_redshift_mass_distribution in zip(
                             self.galaxy_distribution_at_redshifts,
-                            self.galaxy_detection_mass_distribution_at_redshifts[
-                                detection_index
-                            ],
+                            self.galaxy_detection_mass_distribution_at_redshifts[detection_index],
                         )
                     ]
                 ),
@@ -759,9 +721,7 @@ class BayesianInference:
                 [
                     np.sum(
                         const_redshift
-                        * self.detection_skylocalization_weight_by_galaxy[
-                            detection_index
-                        ]
+                        * self.detection_skylocalization_weight_by_galaxy[detection_index]
                     )
                     for const_redshift in self.galaxy_distribution_at_redshifts
                 ]
@@ -770,9 +730,9 @@ class BayesianInference:
         )
         if not self.use_selection_effects_correction:
             denominator = 1.0
-        return nominator / denominator
+        return float(nominator / denominator)
 
-    def posterior(self, hubble_constant: float) -> List[float]:
+    def posterior(self, hubble_constant: float) -> list[float]:
         return [
             self.likelihood(
                 hubble_constant=hubble_constant,
@@ -789,7 +749,7 @@ class BayesianInference:
             for redshift in self.redshift_values
         ]
         _plotter = ScientificPlotter(figure_size=(16, 9))
-        _plotter.plot(self.redshift_values, gw_detection_probabilities)
+        _plotter.plot(self.redshift_values, np.array(gw_detection_probabilities))
         _plotter.show_and_close()
 
 
@@ -802,7 +762,7 @@ if __name__ == "__main__":
 
     plotter = ScientificPlotter(figure_size=(16, 9))
     plotter.figure.suptitle(
-        f"Galaxy Catalog: {NUMBER_OF_GALAXIES}, Detections: {NUMBER_OF_NEW_DETECTIONS_PER_STEP*STEPS}"
+        f"Galaxy Catalog: {NUMBER_OF_GALAXIES}, Detections: {NUMBER_OF_NEW_DETECTIONS_PER_STEP * STEPS}"
     )
     plotter.set_colormap_from_range((0, STEPS * NUMBER_OF_NEW_DETECTIONS_PER_STEP - 1))
 
@@ -840,9 +800,7 @@ if __name__ == "__main__":
         # Inference
         hubble_values = np.linspace(0.6, 0.8, 60)
         with mp.Pool() as pool:
-            posterior_distribution = pool.map(
-                bayesian_inference.posterior, hubble_values
-            )
+            posterior_distribution = pool.map(bayesian_inference.posterior, hubble_values)
 
         likelihoods = np.array(posterior_distribution).T
         # plot new individual likelihood
@@ -872,13 +830,10 @@ if __name__ == "__main__":
         # evaluate with bh mass information
         bayesian_inference.use_bh_mass = True
         with mp.Pool() as pool:
-            posterior_distribution = pool.map(
-                bayesian_inference.posterior, hubble_values
-            )
+            posterior_distribution = pool.map(bayesian_inference.posterior, hubble_values)
 
         likelihoods = np.array(posterior_distribution).T
         likelihoods = likelihoods / np.max(likelihoods)
-
 
         # plot combined posterior
         combined_posterior = np.prod(likelihoods, axis=0)
@@ -903,20 +858,15 @@ if __name__ == "__main__":
                 posterior_distribution_with_truncnorm = pool.map(
                     bayesian_inference_with_truncnorm.posterior, hubble_values
                 )
-            likelihoods_with_truncnorm = np.array(
-                posterior_distribution_with_truncnorm
-            ).T
-            combined_posterior_with_truncnorm = np.prod(
-                likelihoods_with_truncnorm, axis=0
-            )
+            likelihoods_with_truncnorm = np.array(posterior_distribution_with_truncnorm).T
+            combined_posterior_with_truncnorm = np.prod(likelihoods_with_truncnorm, axis=0)
             plotter.plot_colored(
                 hubble_values,
-                combined_posterior_with_truncnorm
-                / max(combined_posterior_with_truncnorm),
+                combined_posterior_with_truncnorm / max(combined_posterior_with_truncnorm),
                 color=i * NUMBER_OF_NEW_DETECTIONS_PER_STEP,
                 line_style="dashdot",
             )
-        print(f"Finished iteration {i+1} of {STEPS} in {time()-start_time:.2f}s.")
+        print(f"Finished iteration {i + 1} of {STEPS} in {time() - start_time:.2f}s.")
 
     plt.vlines(
         TRUE_HUBBLE_CONSTANT,

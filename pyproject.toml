@@ -26,10 +26,12 @@ dev = [
     "pytest",
     "mypy",
     "jupyterlab",
+    "ruff",
+    "pre-commit",
 ]
 
 [tool.mypy]
-python_version = "3.10"
+python_version = "3.13"
 warn_return_any = true
 warn_unused_ignores = true
 disallow_untyped_defs = true
@@ -39,8 +41,52 @@ no_implicit_optional = true
 strict_equality = true
 
 [[tool.mypy.overrides]]
-module = ["cupy.*", "cupyx.*", "fastlisaresponse.*", "few.*", "GPUtil.*"]
+module = [
+    "cupy.*",
+    "cupyx.*",
+    "fastlisaresponse.*",
+    "few.*",
+    "GPUtil.*",
+    "pandas.*",
+    "scipy.*",
+    "sklearn.*",
+    "mpl_toolkits.*",
+    "emcee.*",
+    "tabulate.*",
+]
 ignore_missing_imports = true
+
+[tool.ruff]
+target-version = "py313"
+line-length = 100
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "F",   # pyflakes (unused imports, undefined names)
+    "I",   # isort (import ordering)
+    "UP",  # pyupgrade — flags List/Dict/Optional from typing (enforces CLAUDE.md)
+    "B",   # flake8-bugbear (mutable defaults, common bugs)
+    "N",   # pep8 naming
+]
+ignore = [
+    "E501",  # line length — handled by ruff format
+    "E402",  # module-level import not at top — needed for mpl.rcParams before imports
+    "B006",  # mutable default arguments — existing code uses these intentionally
+    "B905",  # zip() without strict= — existing code pattern
+    "N802",  # function name should be lowercase — physics names use uppercase
+    "N803",  # argument name should be lowercase — physics names use uppercase
+    "N806",  # variable in function should be lowercase — physics names use uppercase
+    "N815",  # class variable mixed case — physics names
+    "N816",  # class variable mixed case — physics names
+    "N999",  # invalid module name — LISA_configuration.py cannot be renamed
+    "B007",  # loop variable not used — common pattern
+    "B904",  # raise in except without from — existing code pattern
+    "F841",  # local variable assigned but never used — existing dead code patterns
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["master_thesis_code"]
 
 [tool.pytest.ini_options]
 testpaths = ["master_thesis_code_test"]

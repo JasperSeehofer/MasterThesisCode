@@ -1,0 +1,32 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Set up Python
+        run: uv python install
+
+      - name: Install dependencies
+        run: uv sync --extra cpu --extra dev
+
+      - name: Ruff lint
+        run: uv run ruff check master_thesis_code/
+
+      - name: Ruff format check
+        run: uv run ruff format --check master_thesis_code/
+
+      - name: mypy
+        run: uv run mypy master_thesis_code/
+
+      - name: pytest (CPU only)
+        run: uv run pytest -m "not gpu"

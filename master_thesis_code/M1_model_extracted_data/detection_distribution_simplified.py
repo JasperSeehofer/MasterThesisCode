@@ -1,8 +1,7 @@
 from dataclasses import dataclass
-from typing import List
-import numpy as np
+
 import matplotlib.pyplot as plt
-from scipy.ndimage import gaussian_filter
+import numpy as np
 
 
 @dataclass
@@ -32,10 +31,7 @@ class SimpleDetectionDistribution:
 
         # evaluate the detection distribution
         detection_distribution = np.array(
-            [
-                [self.get_emri_probability(z, m) for z in redshift_range]
-                for m in mass_range
-            ]
+            [[self.get_emri_probability(z, m) for z in redshift_range] for m in mass_range]
         )
 
         reduced_redshift_range = np.linspace(0, 0.499, 100)
@@ -66,9 +62,7 @@ class SimpleDetectionDistribution:
         ax[0].set_yscale("log")
         ax[0].set_xlabel("z")
         ax[1].set_xlabel("z")
-        plt.savefig(
-            "saved_figures/cosmological_model/detection_distribution_m1.png", dpi=300
-        )
+        plt.savefig("saved_figures/cosmological_model/detection_distribution_m1.png", dpi=300)
         plt.close()
 
     def get_emri_probability(self, z: float, M: float) -> float:
@@ -77,4 +71,4 @@ class SimpleDetectionDistribution:
         z_index = np.digitize(z, self.z_bins) - 1
         M_index = np.digitize(M, self.M_bins) - 1
 
-        return self.detection_distribution[M_index, z_index]
+        return float(self.detection_distribution[M_index, z_index])

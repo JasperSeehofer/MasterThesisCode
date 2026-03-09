@@ -1,16 +1,9 @@
-# -*- coding: utf-8 -*-
-
-from __future__ import annotations
-
-from master_thesis_code.constants import H
-
-import sys
-import os
 import argparse
 import logging
-from typing import List
+import os
+import sys
 
-
+from master_thesis_code.constants import H
 from master_thesis_code.exceptions import ArgumentsError
 
 _LOGGER = logging.getLogger()
@@ -48,31 +41,30 @@ class Arguments:
     @property
     def simulation_steps(self) -> int:
         """Number of waveforms generated in the simulation."""
-        return self._parsed_arguments.simulation_steps
-    
+        return int(self._parsed_arguments.simulation_steps)
+
     @property
     def simulation_index(self) -> int:
         """Index for unique file name where cramer rao bounds are saved."""
-        return self._parsed_arguments.simulation_index
+        return int(self._parsed_arguments.simulation_index)
 
     @property
     def evaluate(self) -> bool:
         """Indicates whether the gathered Rao-Cramer-bounds are evaluated or not."""
-        return self._parsed_arguments.evaluate
+        return bool(self._parsed_arguments.evaluate)
 
     @property
     def h_value(self) -> float:
         """Hubble constant value."""
-        return self._parsed_arguments.h_value
+        return float(self._parsed_arguments.h_value)
 
     @property
     def snr_analysis(self) -> bool:
         """Indicates whether the snr analysis should be run."""
-        return self._parsed_arguments.snr_analysis
+        return bool(self._parsed_arguments.snr_analysis)
 
     @staticmethod
-    def create(sys_args: List[str] = sys.argv[1:]) -> Arguments:
-
+    def create(sys_args: list[str] = sys.argv[1:]) -> "Arguments":
         parsed_arguments = _parse_arguments(sys_args)
         return Arguments(parsed_arguments=parsed_arguments)
 
@@ -98,7 +90,7 @@ class Arguments:
             ) from original_error
 
 
-def _parse_arguments(arguments: List[str]) -> argparse.Namespace:
+def _parse_arguments(arguments: list[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "working_directory",
@@ -117,9 +109,7 @@ def _parse_arguments(arguments: List[str]) -> argparse.Namespace:
         type=int,
     )
     parser.add_argument("--evaluate", action="store_true")
-    parser.add_argument(
-        "--h_value", help="Hubble constant value.", type=float, default=H
-    )
+    parser.add_argument("--h_value", help="Hubble constant value.", type=float, default=H)
     parser.add_argument("--snr_analysis", action="store_true")
     parser.add_argument(
         "--log_level",

@@ -5,6 +5,7 @@ import pytest
 
 try:
     import cupy as cp
+
     _CUPY_AVAILABLE = True
 except ImportError:
     _CUPY_AVAILABLE = False
@@ -25,5 +26,5 @@ def xp(request: pytest.FixtureRequest) -> types.ModuleType:
             ...
     """
     if request.param == "cupy":
-        return cp  # type: ignore[return-value]
-    return np  # type: ignore[return-value]
+        return cp  # type: ignore[no-any-return]
+    return np

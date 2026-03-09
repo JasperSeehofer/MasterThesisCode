@@ -48,6 +48,22 @@ uv run mypy master_thesis_code/
 
 Note: `fastemriwaveforms` installs as the `few` Python package — `import few`, not `import fastemriwaveforms`.
 
+## Dev Workflow
+
+### Linting and formatting (run manually or triggered automatically on commit)
+
+```bash
+uv run ruff check --fix master_thesis_code/   # lint and auto-fix
+uv run ruff format master_thesis_code/        # format
+uv run mypy master_thesis_code/               # type check
+```
+
+Pre-commit hooks run ruff and mypy automatically on every `git commit`.
+To run all hooks on all files manually:
+```bash
+uv run pre-commit run --all-files
+```
+
 Alternatively, activate the virtual environment once for a session:
 
 ```bash

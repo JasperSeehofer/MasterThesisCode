@@ -1,41 +1,49 @@
-import warnings
-import numpy as np
-import pandas as pd
-from typing import List, Optional, Dict
+import multiprocessing as mp
 import os
 import time
+import warnings
+from typing import Any
+
 import matplotlib as mpl
-import multiprocessing as mp
+import numpy as np
+import numpy.typing as npt
+import pandas as pd
 
 mpl.rcParams["agg.path.chunksize"] = 1000
+import logging
+
 import matplotlib.pyplot as plt
 
-import logging
-import sys
-import cupy as cp
-import cupyx.scipy.fft as cufft
+try:
+    import cupy as cp
+    import cupyx.scipy.fft as cufft
+
+    _CUPY_AVAILABLE = True
+except ImportError:
+    cp = None
+    cufft = None
+    _CUPY_AVAILABLE = False
 
 from fastlisaresponse import ResponseWrapper
 
-from master_thesis_code.exceptions import (
-    ParameterEstimationError,
-    ParameterOutOfBoundsError,
-)
-from master_thesis_code.waveform_generator import (
-    create_lisa_response_generator,
-    WaveGeneratorType,
-)
-from master_thesis_code.decorators import timer_decorator, if_plotting_activated
 from master_thesis_code.constants import (
-    SNR_ANALYSIS_PATH,
     CRAMER_RAO_BOUNDS_PATH,
-    MINIMAL_FREQUENCY,
-    MAXIMAL_FREQUENCY,
     ESA_TDI_CHANNELS,
+    MAXIMAL_FREQUENCY,
+    MINIMAL_FREQUENCY,
+    SNR_ANALYSIS_PATH,
     UNDETECTED_EVENTS_PATH,
 )
-from master_thesis_code.datamodels.parameter_space import ParameterSpace, Parameter
+from master_thesis_code.datamodels.parameter_space import Parameter, ParameterSpace
+from master_thesis_code.decorators import timer_decorator
+from master_thesis_code.exceptions import (
+    ParameterOutOfBoundsError,
+)
 from master_thesis_code.LISA_configuration import LisaTdiConfiguration
+from master_thesis_code.waveform_generator import (
+    WaveGeneratorType,
+    create_lisa_response_generator,
+)
 
 _LOGGER = logging.getLogger()
 
@@ -44,8 +52,8 @@ class ParameterEstimation:
     parameter_space: ParameterSpace
     lisa_response_generator: ResponseWrapper
     snr_check_generator: ResponseWrapper
-    dt = 10  # time sampling in sec
-    T = 5  # observation time in years
+    dt: int = 10  # time sampling in sec
+    T: float = 5  # observation time in years
 
     def __init__(
         self,
@@ -68,14 +76,14 @@ class ParameterEstimation:
 
     @timer_decorator
     def generate_lisa_response(
-        self, update_parameter_dict: dict = {}, use_snr_check_generator: bool = False
-    ) -> List:
+        self, update_parameter_dict: dict[str, Any] = {}, use_snr_check_generator: bool = False
+    ) -> Any:
         parameters = self.parameter_space._parameters_to_dict() | update_parameter_dict
         if use_snr_check_generator:
             return self.snr_check_generator(*parameters.values())
         return self.lisa_response_generator(*parameters.values())
 
-    def finite_difference_derivative(self) -> Dict[str, cp.array]:
+    def finite_difference_derivative(self) -> dict[str, Any]:
         """Compute partial derivative of the currently set parameters w.r.t. the provided parameter.
 
         Args:
@@ -89,7 +97,6 @@ class ParameterEstimation:
         waveform_evaluated_at = self.generate_lisa_response()
 
         for parameter in vars(self.parameter_space).values():
-
             _LOGGER.info(
                 f"Start computing partial derivative of the waveform w.r.t. {parameter.symbol}."
             )
@@ -98,9 +105,7 @@ class ParameterEstimation:
             derivative_epsilon = parameter.derivative_epsilon
 
             # check that neighboring points are in parameter range as well
-            if (
-                parameter_evaluated_at.value + derivative_epsilon
-            ) > parameter.upper_limit:
+            if (parameter_evaluated_at.value + derivative_epsilon) > parameter.upper_limit:
                 raise ParameterOutOfBoundsError(
                     "Tried to set parameter to value out of bounds in derivative."
                 )
@@ -118,13 +123,13 @@ class ParameterEstimation:
 
             derivatives[parameter.symbol] = derivative
 
-        _LOGGER.info(f"Finished computing partial derivatives.")
+        _LOGGER.info("Finished computing partial derivatives.")
         del waveform_evaluated_at, current_waveform, derivative
         return derivatives
 
     def five_point_stencil_derivative(
-        self, parameter: Parameter, parameter_space: Optional[ParameterSpace] = None
-    ) -> cp.array:
+        self, parameter: Parameter, parameter_space: ParameterSpace | None = None
+    ) -> Any:
         """Compute partial derivative of the currently set parameters w.r.t. the provided parameter.
 
         Args:
@@ -145,12 +150,8 @@ class ParameterEstimation:
         derivative_epsilon = parameter.derivative_epsilon
 
         # check that neighboring points are in parameter range as well
-        if (
-            (parameter_evaluated_at.value - 2 * derivative_epsilon)
-            < parameter.lower_limit
-        ) or (
-            (parameter_evaluated_at.value + 2 * derivative_epsilon)
-            > parameter.upper_limit
+        if ((parameter_evaluated_at.value - 2 * derivative_epsilon) < parameter.lower_limit) or (
+            (parameter_evaluated_at.value + 2 * derivative_epsilon) > parameter.upper_limit
         ):
             raise ParameterOutOfBoundsError(
                 "Tried to set parameter to value out of bounds in derivative."
@@ -173,12 +174,7 @@ class ParameterEstimation:
         lisa_responses = self._crop_to_same_length(lisa_responses)
 
         lisa_response_derivative = (
-            (
-                -lisa_responses[3]
-                + 8 * lisa_responses[2]
-                - 8 * lisa_responses[1]
-                + lisa_responses[0]
-            )
+            (-lisa_responses[3] + 8 * lisa_responses[2] - 8 * lisa_responses[1] + lisa_responses[0])
             / 12
             / derivative_epsilon
         )
@@ -191,8 +187,8 @@ class ParameterEstimation:
 
     @staticmethod
     def _crop_to_same_length(
-        signal_collection: List[List[cp.array]],
-    ) -> List[List[cp.array]]:
+        signal_collection: list[list[Any]],
+    ) -> Any:
         max_possible_length = min(
             min(
                 [
@@ -211,7 +207,7 @@ class ParameterEstimation:
         )
 
     def scalar_product_of_functions(
-        self, tdi_channels_a: cp.ndarray, tdi_channels_b: cp.ndarray
+        self, tdi_channels_a: npt.NDArray[np.float64], tdi_channels_b: npt.NDArray[np.float64]
     ) -> float:
         result = 0
         for channel, tdi_channel_a, tdi_channel_b in zip(
@@ -254,7 +250,7 @@ class ParameterEstimation:
         return result
 
     @staticmethod
-    def _crop_frequency_domain(fs: cp.array, integrant: cp.array) -> tuple:
+    def _crop_frequency_domain(fs: Any, integrant: Any) -> tuple[Any, Any]:
         if len(fs) != len(integrant):
             _LOGGER.warning("length of frequency domain and integrant are not equal.")
 
@@ -268,12 +264,10 @@ class ParameterEstimation:
             integrant[lower_limit_index:upper_limit_index],
         )
 
-    def compute_fisher_information_matrix(self) -> cp.ndarray:
+    def compute_fisher_information_matrix(self) -> Any:
         # compute derivatives for fisher information matrix
         parameter_symbol_list = list(self.parameter_space._parameters_to_dict().keys())
-        parameter_list = [
-            getattr(self.parameter_space, symbol) for symbol in parameter_symbol_list
-        ]
+        parameter_list = [getattr(self.parameter_space, symbol) for symbol in parameter_symbol_list]
         """
         _LOGGER.info("Start multiprocess for derivatives.")
         derivatives = pool.starmap(
@@ -289,7 +283,7 @@ class ParameterEstimation:
         del derivatives
         """
 
-        lisa_response_derivatives: Dict = self.finite_difference_derivative()
+        lisa_response_derivatives: dict[str, Any] = self.finite_difference_derivative()
 
         fisher_information_matrix = cp.zeros(
             shape=(len(parameter_symbol_list), len(parameter_symbol_list)), dtype=float
@@ -328,13 +322,9 @@ class ParameterEstimation:
         del cramer_rao_bounds
         return independent_cramer_rao_bounds
 
-    def compute_signal_to_noise_ratio(
-        self, use_snr_check_generator: bool = False
-    ) -> float:
+    def compute_signal_to_noise_ratio(self, use_snr_check_generator: bool = False) -> float:
         start = time.time()
-        waveform = self.generate_lisa_response(
-            use_snr_check_generator=use_snr_check_generator
-        )
+        waveform = self.generate_lisa_response(use_snr_check_generator=use_snr_check_generator)
         end = time.time()
         self.waveform_generation_time = round(end - start, 3)
 
@@ -348,7 +338,7 @@ class ParameterEstimation:
         self.current_waveform = waveform
         snr = cp.sqrt(self.scalar_product_of_functions(waveform, waveform))
         del waveform
-        return snr
+        return float(snr)
 
     def save_cramer_rao_bound(
         self,
@@ -364,9 +354,7 @@ class ParameterEstimation:
         except FileNotFoundError:
             parameters_list = list(self.parameter_space._parameters_to_dict().keys())
             parameters_list.extend(list(cramer_rao_bound_dictionary.keys()))
-            parameters_list.extend(
-                ["T", "dt", "SNR", "generation_time", "host_galaxy_index"]
-            )
+            parameters_list.extend(["T", "dt", "SNR", "generation_time", "host_galaxy_index"])
             cramer_rao_bounds = pd.DataFrame(columns=parameters_list)
 
         new_cramer_rao_bounds_dict = (
@@ -382,9 +370,7 @@ class ParameterEstimation:
 
         new_cramer_rao_bounds = pd.DataFrame([new_cramer_rao_bounds_dict])
 
-        cramer_rao_bounds = pd.concat(
-            [cramer_rao_bounds, new_cramer_rao_bounds], ignore_index=True
-        )
+        cramer_rao_bounds = pd.concat([cramer_rao_bounds, new_cramer_rao_bounds], ignore_index=True)
         cramer_rao_bounds.to_csv(file_path, index=False)
         _LOGGER.info(f"Saved current Cramer-Rao bound to {CRAMER_RAO_BOUNDS_PATH}")
         del cramer_rao_bound_dictionary
@@ -395,13 +381,11 @@ class ParameterEstimation:
     def _visualize_cramer_rao_bounds(self) -> None:
         mean_errors_data = pd.read_csv(CRAMER_RAO_BOUNDS_PATH)
         parameter_columns = [
-            column_name
-            for column_name in mean_errors_data.columns
-            if "delta" not in column_name
+            column_name for column_name in mean_errors_data.columns if "delta" not in column_name
         ]
 
         # ensure directory is given
-        figures_directory = f"saved_figures/parameter_estimation/"
+        figures_directory = "saved_figures/parameter_estimation/"
         if not os.path.isdir(figures_directory):
             os.makedirs(figures_directory)
 
@@ -416,15 +400,15 @@ class ParameterEstimation:
 
         plt.figure(figsize=(16, 9))
         axes = plt.axes(projection="3d")
-        axes.scatter3D(x1, y1, z1)
+        axes.scatter3D(x1, y1, z1)  # type: ignore[attr-defined]
 
         axes.set_xlabel("M")
         axes.set_ylabel("qS")
-        axes.set_zlabel("phiS")
+        axes.set_zlabel("phiS")  # type: ignore[attr-defined]
 
         axes.set_xlim(M_configuration.lower_limit, M_configuration.upper_limit)
         axes.set_ylim(qS_configuration.lower_limit, qS_configuration.upper_limit)
-        axes.set_zlim(phiS_configuration.lower_limit, phiS_configuration.upper_limit)
+        axes.set_zlim(phiS_configuration.lower_limit, phiS_configuration.upper_limit)  # type: ignore[attr-defined]
         plt.savefig(figures_directory + "coverage_parameter_space.png", dpi=300)
         # plt.show()
 
@@ -435,21 +419,21 @@ class ParameterEstimation:
                 mean_errors_data[column_name],
                 np.sqrt(mean_errors_data["delta_M_delta_M"]),
                 ".",
-                label=f"bounds: delta M",
+                label="bounds: delta M",
             )
 
             ax2.plot(
                 mean_errors_data[column_name],
                 np.sqrt(mean_errors_data["delta_qS_delta_qS"]),
                 ".",
-                label=f"bounds: qS",
+                label="bounds: qS",
             )
 
             ax2.plot(
                 mean_errors_data[column_name],
                 np.sqrt(mean_errors_data["delta_phiS_delta_phiS"]),
                 ".",
-                label=f"bounds: phiS",
+                label="bounds: phiS",
             )
 
             ax1.set_yscale("log")
@@ -458,9 +442,7 @@ class ParameterEstimation:
             ax2.set_xlabel(f"{column_name}")
             ax1.legend()
             ax2.legend()
-            plt.savefig(
-                figures_directory + f"mean_error_{column_name}_correlation.png", dpi=300
-            )
+            plt.savefig(figures_directory + f"mean_error_{column_name}_correlation.png", dpi=300)
             plt.close()
 
         # create plots for computation time correlation
@@ -470,14 +452,13 @@ class ParameterEstimation:
                 mean_errors_data[column_name],
                 mean_errors_data["generation_time"],
                 ".",
-                label=f"simulation data",
+                label="simulation data",
             )
             plt.xlabel(f"{column_name}")
             plt.ylabel("t [s]")
             plt.legend()
             plt.savefig(
-                figures_directory
-                + f"waveform_generation_time_{column_name}_correlation.png",
+                figures_directory + f"waveform_generation_time_{column_name}_correlation.png",
                 dpi=300,
             )
             plt.close()
@@ -494,9 +475,7 @@ class ParameterEstimation:
         parameter_set_index = 0
         for _ in range(200):
             self.parameter_space.randomize_parameters()
-            for T, waveform_generator in zip(
-                [0.5, 1, 2, 3, 5], waveform_generators.values()
-            ):
+            for T, waveform_generator in zip([0.5, 1, 2, 3, 5], waveform_generators.values()):
                 self.lisa_response_generator = waveform_generator
                 self.T = T
                 try:
@@ -587,7 +566,5 @@ class ParameterEstimation:
         if snr_analysis.empty:
             snr_analysis = new_snr_analysis
         else:
-            snr_analysis = pd.concat(
-                [snr_analysis, new_snr_analysis], ignore_index=True
-            )
+            snr_analysis = pd.concat([snr_analysis, new_snr_analysis], ignore_index=True)
         snr_analysis.to_csv(file_path, index=False)

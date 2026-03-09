@@ -1,17 +1,20 @@
+from functools import lru_cache
+from typing import Any
+
 import numpy as np
-from typing import Union
+import numpy.typing as npt
 from scipy.optimize import fsolve
 from scipy.special import hyp2f1
-from functools import lru_cache
+
 from master_thesis_code.constants import (
-    C,
-    H,
-    OMEGA_M,
-    OMEGA_DE,
-    W_0,
-    W_A,
     GPC_TO_MPC,
     KM_TO_M,
+    OMEGA_DE,
+    OMEGA_M,
+    W_0,
+    W_A,
+    C,
+    H,
 )
 
 
@@ -36,26 +39,14 @@ def dist(
     """
     H_0 = h * 100.0 * KM_TO_M / GPC_TO_MPC ** (-1)  # Hubble constant in m/s*Gpc
 
-    # Hubble parameter
-    """
-    zs = np.linspace(0, redshift, 1000)
-    hubble = np.sqrt(
-        Omega_m * (1 + zs) ** 3
-        + Omega_de
-        * (1 + zs) ** (3 * (1 + w_0 + w_a))
-        * np.exp(-3 * w_a * zs / (1 + zs))
-    )
-
-    # integral
-    integral = np.trapz(1 / hubble, zs)
-    """
     # use analytic version of the integral
     integral = lambda_cdm_analytic_distance(redshift, Omega_m, Omega_de)
 
     # luminosity distance in Gpc
     result = C / H_0 * (1 + redshift) * integral - offset_for_root_finding
 
-    return result
+    return float(np.asarray(result).flat[0])
+
 
 @lru_cache(maxsize=1000)
 def cached_dist(
@@ -79,63 +70,38 @@ def cached_dist(
     """
     H_0 = h * 100.0 * KM_TO_M / GPC_TO_MPC ** (-1)  # Hubble constant in m/s*Gpc
 
-    # Hubble parameter
-    """
-    zs = np.linspace(0, redshift, 1000)
-    hubble = np.sqrt(
-        Omega_m * (1 + zs) ** 3
-        + Omega_de
-        * (1 + zs) ** (3 * (1 + w_0 + w_a))
-        * np.exp(-3 * w_a * zs / (1 + zs))
-    )
-
-    # integral
-    integral = np.trapz(1 / hubble, zs)
-    """
     # use analytic version of the integral
     integral = lambda_cdm_analytic_distance(redshift, Omega_m, Omega_de)
 
     # luminosity distance in Gpc
     result = C / H_0 * (1 + redshift) * integral - offset_for_root_finding
 
-    return result
+    return float(np.asarray(result).flat[0])
+
 
 def dist_vectorized(
-    redshift: np.ndarray[float],
+    redshift: npt.NDArray[np.floating[Any]],
     h: float = H,
     Omega_m: float = OMEGA_M,
     Omega_de: float = OMEGA_DE,
     w_0: float = W_0,
     w_a: float = W_A,
     offset_for_root_finding: float = 0.0,
-) -> float:
+) -> npt.NDArray[np.floating[Any]]:
     """
-    Calculate the luminosity distance in Gpc.
+    Calculate the luminosity distance in Gpc (vectorized over redshift array).
 
-    :param redshift: redshift
+    :param redshift: redshift array
     :param Omega_m: matter density parameter
     :param Omega_de: dark energy density parameter
     :param w_0: dark energy equation of state parameter
     :param w_a: dark energy equation of state parameter
-    :return: luminosity distance in Gpc
+    :return: luminosity distance array in Gpc
     """
     H_0 = h * 100.0 * KM_TO_M / GPC_TO_MPC ** (-1)  # Hubble constant in m/s*Gpc
 
-    # Hubble parameter
-    """
-    zs = np.linspace(0, redshift, 1000)
-    hubble = np.sqrt(
-        Omega_m * (1 + zs) ** 3
-        + Omega_de
-        * (1 + zs) ** (3 * (1 + w_0 + w_a))
-        * np.exp(-3 * w_a * zs / (1 + zs))
-    )
-
-    # integral
-    integral = np.trapz(1 / hubble, zs)
-    """
     # use analytic version of the integral
-    integral = lambda_cdm_analytic_distance(redshift, Omega_m, Omega_de)
+    integral = lambda_cdm_analytic_distance(redshift, Omega_m, Omega_de)  # type: ignore[arg-type]
 
     # luminosity distance in Gpc
     result = C / H_0 * (1 + redshift) * integral - offset_for_root_finding
@@ -156,12 +122,12 @@ def dist_derivative(
     first_term = C / H_0 * (1 + redshift) / hubble_function(redshift)
 
     zs = np.linspace(0, redshift, 1000)
-    hubble_function_values = hubble_function(zs)
+    hubble_function_values = hubble_function(zs)  # type: ignore[arg-type]
 
     # integral
-    second_term = C / H_0 * np.trapz(1 / hubble_function_values, zs)
+    second_term = C / H_0 * float(np.trapezoid(1 / hubble_function_values, zs))
 
-    return first_term + second_term
+    return float(first_term + second_term)
 
 
 def hubble_function(
@@ -172,26 +138,31 @@ def hubble_function(
     w_0: float = W_0,
     w_a: float = W_A,
 ) -> float:
-    return np.sqrt(
-        Omega_m * (1 + redshift) ** 3
-        + Omega_de
-        * (1 + redshift) ** (3 * (1 + w_0 + w_a))
-        * np.exp(-3 * w_a * redshift / (1 + redshift))
+    return float(
+        np.sqrt(
+            Omega_m * (1 + redshift) ** 3
+            + Omega_de
+            * (1 + redshift) ** (3 * (1 + w_0 + w_a))
+            * np.exp(-3 * w_a * redshift / (1 + redshift))
+        )
     )
 
 
 def lambda_cdm_analytic_distance(
     redshift: float, Omega_m: float = OMEGA_M, Omega_de: float = OMEGA_DE
 ) -> float:
-    return (
-        (1 + redshift)
-        * np.sqrt(1 + (Omega_m * (1 + redshift) ** 3) / Omega_de)
-        * hyp2f1(1 / 3, 1 / 2, 4 / 3, -((Omega_m * (1 + redshift) ** 3) / Omega_de))
-    ) / np.sqrt(Omega_de + Omega_m * (1 + redshift) ** 3) - (
-        np.sqrt((Omega_m + Omega_de) / Omega_de)
-        * hyp2f1(1 / 3, 1 / 2, 4 / 3, -(Omega_m / Omega_de))
-    ) / np.sqrt(
-        Omega_m + Omega_de
+    return (  # type: ignore[no-any-return]
+        (
+            (1 + redshift)
+            * np.sqrt(1 + (Omega_m * (1 + redshift) ** 3) / Omega_de)
+            * hyp2f1(1 / 3, 1 / 2, 4 / 3, -((Omega_m * (1 + redshift) ** 3) / Omega_de))
+        )
+        / np.sqrt(Omega_de + Omega_m * (1 + redshift) ** 3)
+        - (
+            np.sqrt((Omega_m + Omega_de) / Omega_de)
+            * hyp2f1(1 / 3, 1 / 2, 4 / 3, -(Omega_m / Omega_de))
+        )
+        / np.sqrt(Omega_m + Omega_de)
     )
 
 
@@ -211,23 +182,22 @@ def dist_to_redshift(
     :param Omega_de: dark energy density parameter
     :param w_0: dark energy equation of state parameter
     :param w_a: dark energy equation of state parameter
-    :param redshift_min: minimum redshift
-    :param redshift_max: maximum redshift
-    :param redshift_steps: number of steps
     :return: redshift
     """
-    return fsolve(
-        dist,
-        1,
-        args=(
-            h,
-            Omega_m,
-            Omega_de,
-            w_0,
-            w_a,
-            distance,
-        ),
-    )[0]
+    return float(
+        fsolve(
+            dist,
+            1,
+            args=(
+                h,
+                Omega_m,
+                Omega_de,
+                w_0,
+                w_a,
+                distance,
+            ),
+        )[0]
+    )
 
 
 def dist_to_redshift_error_proagation(
@@ -244,31 +214,29 @@ def dist_to_redshift_error_proagation(
     Calculate the redshift error for a given luminosity distance error.
     """
     z_0 = dist_to_redshift(distance, h, Omega_m, Omega_de, w_0, w_a)
-    z_1 = dist_to_redshift(
-        distance + derivative_epsilon, h, Omega_m, Omega_de, w_0, w_a
-    )
+    z_1 = dist_to_redshift(distance + derivative_epsilon, h, Omega_m, Omega_de, w_0, w_a)
     derivative = (z_1 - z_0) / derivative_epsilon
-    return np.sqrt((derivative * distance_error) ** 2)
+    return float(np.sqrt((derivative * distance_error) ** 2))
 
 
 def convert_redshifted_mass_to_true_mass(
-    M_z: float, M_z_error: float, z: float, z_error
-) -> float:
+    M_z: float, M_z_error: float, z: float, z_error: float
+) -> tuple[float, float]:
     M = M_z / (1 + z)
-    M_err = np.sqrt((M_z_error / (1 + z)) ** 2 + (M_z * z_error / (1 + z) ** 2) ** 2)
+    M_err = float(np.sqrt((M_z_error / (1 + z)) ** 2 + (M_z * z_error / (1 + z) ** 2) ** 2))
     return (M, M_err)
 
 
 def convert_true_mass_to_redshifted_mass_with_distance(M: float, dist: float) -> float:
     z = dist_to_redshift(dist)
-    return M * (1 + z)
+    return float(M * (1 + z))
 
 
 def convert_true_mass_to_redshifted_mass(
-    M: float, M_error: float, z: float, z_error
-) -> float:
+    M: float, M_error: float, z: float, z_error: float
+) -> tuple[float, float]:
     M_z = M * (1 + z)
-    M_z_err = np.sqrt((M_error * (1 + z)) ** 2 + (M * z_error) ** 2)
+    M_z_err = float(np.sqrt((M_error * (1 + z)) ** 2 + (M * z_error) ** 2))
     return (M_z, M_z_err)
 
 
@@ -296,7 +264,7 @@ def get_redshift_outer_bounds(
     return z_min, z_max
 
 
-def visualize():
+def visualize() -> None:
     import matplotlib.pyplot as plt
 
     zs = np.linspace(0, 2, 1000)

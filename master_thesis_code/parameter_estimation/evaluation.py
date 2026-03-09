@@ -1,43 +1,40 @@
-import pandas as pd
 import os
 from itertools import combinations_with_replacement
-import numpy as np
-import matplotlib.pyplot as plt
-from matplotlib.colors import SymLogNorm
-from master_thesis_code.datamodels.parameter_space import ParameterSpace, Parameter
-from master_thesis_code.cosmological_model import Detection
-from scipy.interpolate import griddata
-from scipy.stats import multivariate_normal
 from statistics import NormalDist
-from master_thesis_code.physical_relations import (
-    get_redshift_outer_bounds,
-    dist_to_redshift,
-    dist,
-)
-from master_thesis_code.galaxy_catalogue.handler import GalaxyCatalogueHandler
 
-from master_thesis_code.constants import RADIAN_TO_DEGREE, C, H0, GPC_TO_MPC
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+from matplotlib.colors import SymLogNorm
+from scipy.stats import multivariate_normal
+
+from master_thesis_code.constants import GPC_TO_MPC, H0, RADIAN_TO_DEGREE, C
+from master_thesis_code.cosmological_model import Detection
+from master_thesis_code.datamodels.parameter_space import Parameter, ParameterSpace
+from master_thesis_code.galaxy_catalogue.handler import GalaxyCatalogueHandler
+from master_thesis_code.physical_relations import (
+    dist,
+    dist_to_redshift,
+    get_redshift_outer_bounds,
+)
 
 
 class DataEvaluation:
-
     def __init__(
         self,
         path_to_cramer_rao_bounds_file: str = "./simulations/cramer_rao_bounds.csv",
         path_to_snr_analysis_file: str = "./simulations/snr_analysis.csv",
-        path_to_prepared_cramer_rao_bounds="./simulations/prepared_cramer_rao_bounds.csv",
+        path_to_prepared_cramer_rao_bounds: str = "./simulations/prepared_cramer_rao_bounds.csv",
         path_to_undetected_events_file: str = "./simulations/undetected_events.csv",
     ):
         self._cramer_rao_bounds = pd.read_csv(path_to_cramer_rao_bounds_file)
         self._snr_analysis_file = pd.read_csv(path_to_snr_analysis_file)
-        self._prepared_cramer_rao_bounds = pd.read_csv(
-            path_to_prepared_cramer_rao_bounds
-        )
+        self._prepared_cramer_rao_bounds = pd.read_csv(path_to_prepared_cramer_rao_bounds)
         self._undetected_events = pd.read_csv(path_to_undetected_events_file)
 
     def visualize(self, galaxy_catalog: GalaxyCatalogueHandler) -> None:
         # ensure directory is given
-        figures_directory = f"evaluation/"
+        figures_directory = "evaluation/"
         if not os.path.isdir(figures_directory):
             os.makedirs(figures_directory)
         if not os.path.isdir(figures_directory + "plots/"):
@@ -116,26 +113,22 @@ class DataEvaluation:
         plt.figure(figsize=(16, 9))
         bins = np.geomspace(
             min(
-                self._cramer_rao_bounds["delta_M_delta_M"] ** (1 / 2)
-                / self._cramer_rao_bounds["M"]
+                self._cramer_rao_bounds["delta_M_delta_M"] ** (1 / 2) / self._cramer_rao_bounds["M"]
             ),
             max(
-                self._cramer_rao_bounds["delta_M_delta_M"] ** (1 / 2)
-                / self._cramer_rao_bounds["M"]
+                self._cramer_rao_bounds["delta_M_delta_M"] ** (1 / 2) / self._cramer_rao_bounds["M"]
             ),
             30,
         )
         plt.hist(
-            self._cramer_rao_bounds["delta_M_delta_M"] ** (1 / 2)
-            / self._cramer_rao_bounds["M"],
-            bins=bins,
+            self._cramer_rao_bounds["delta_M_delta_M"] ** (1 / 2) / self._cramer_rao_bounds["M"],
+            bins=list(bins),
             histtype="step",
             color="teal",
         )
         plt.vlines(
             np.mean(
-                self._cramer_rao_bounds["delta_M_delta_M"] ** (1 / 2)
-                / self._cramer_rao_bounds["M"]
+                self._cramer_rao_bounds["delta_M_delta_M"] ** (1 / 2) / self._cramer_rao_bounds["M"]
             ),
             0,
             max(
@@ -147,7 +140,7 @@ class DataEvaluation:
             ),
             color="black",
             linestyles="--",
-            label=f"mean: {np.mean(self._cramer_rao_bounds['delta_M_delta_M']** (1 / 2) / self._cramer_rao_bounds['M']):.3e}",
+            label=f"mean: {np.mean(self._cramer_rao_bounds['delta_M_delta_M'] ** (1 / 2) / self._cramer_rao_bounds['M']):.3e}",
         )
         plt.xlabel("relative mass error")
         plt.xscale("log")
@@ -182,9 +175,7 @@ class DataEvaluation:
 
         for parameter in vars(parameter_space).values():
             assert isinstance(parameter, Parameter)
-            uncertainty_column_name = (
-                f"delta_{parameter.symbol}_delta_{parameter.symbol}"
-            )
+            uncertainty_column_name = f"delta_{parameter.symbol}_delta_{parameter.symbol}"
             plt.figure(figsize=(16, 9))
             plt.scatter(
                 self._cramer_rao_bounds[parameter.symbol],
@@ -192,9 +183,7 @@ class DataEvaluation:
                 label=f"relativ uncertainty of {parameter.symbol}",
             )
             plt.xlabel(f"{parameter.symbol} [{parameter.unit}]")
-            plt.ylabel(
-                f"relative uncertainty bounds {parameter.symbol} [{parameter.unit}]"
-            )
+            plt.ylabel(f"relative uncertainty bounds {parameter.symbol} [{parameter.unit}]")
             plt.legend()
             plt.yscale("log")
             plt.savefig(f"{figures_directory}plots/error_{parameter.symbol}.png")
@@ -203,32 +192,24 @@ class DataEvaluation:
         # plot SNR vs uncertainty
         for parameter in vars(parameter_space).values():
             assert isinstance(parameter, Parameter)
-            uncertainty_column_name = (
-                f"delta_{parameter.symbol}_delta_{parameter.symbol}"
-            )
+            uncertainty_column_name = f"delta_{parameter.symbol}_delta_{parameter.symbol}"
             plt.figure(figsize=(16, 9))
             plt.scatter(
                 self._cramer_rao_bounds["SNR"],
                 self._cramer_rao_bounds[uncertainty_column_name] ** (1 / 2),
                 label=f"relativ uncertainty of {parameter.symbol}",
             )
-            plt.xlabel(f"SNR")
-            plt.ylabel(
-                f"relative uncertainty bounds {parameter.symbol} [{parameter.unit}]"
-            )
+            plt.xlabel("SNR")
+            plt.ylabel(f"relative uncertainty bounds {parameter.symbol} [{parameter.unit}]")
             plt.legend()
             plt.yscale("log")
             plt.savefig(f"{figures_directory}plots/error_{parameter.symbol}_SNR.png")
             plt.close()
 
         # plot gaussian for bh mass uncertainty
-        for detection_index, detection in self._prepared_cramer_rao_bounds.sample(
-            20
-        ).iterrows():
+        for detection_index, detection in self._prepared_cramer_rao_bounds.sample(20).iterrows():
             detection = Detection(detection)
-            possible_host = galaxy_catalog.get_host_galaxy_by_index(
-                detection.host_galaxy_index
-            )
+            possible_host = galaxy_catalog.get_host_galaxy_by_index(detection.host_galaxy_index)
             # create full covariance matrix for all parameters
             covariance_matrix = np.array(
                 [
@@ -266,9 +247,7 @@ class DataEvaluation:
             normal_z = NormalDist(possible_host.z, possible_host.z_error)
             phi = detection.phi
             theta = detection.theta
-            z_min, z_max = get_redshift_outer_bounds(
-                detection.d_L, detection.d_L_uncertainty
-            )
+            z_min, z_max = get_redshift_outer_bounds(detection.d_L, detection.d_L_uncertainty)
             redshifts = np.linspace(
                 possible_host.z - 3 * possible_host.z_error,
                 possible_host.z + 3 * possible_host.z_error,
@@ -289,19 +268,15 @@ class DataEvaluation:
 
             probabilities = gaussian_mass.pdf(positions)
             mass_weight = np.array([normal_bh_mass.pdf(m) for m in masses])
-            approximated_mass_weight = normal_bh_mass.pdf(
-                detection.M / (1 + possible_host.z)
-            )
+            approximated_mass_weight = normal_bh_mass.pdf(detection.M / (1 + possible_host.z))
             z_weight = np.array([normal_z.pdf(z) for z in redshifts])
 
-            approximated_probabilities = (
-                probabilities * approximated_mass_weight * z_weight
-            )
+            approximated_probabilities = probabilities * approximated_mass_weight * z_weight
             probabilities = probabilities * mass_weight * z_weight
 
             # integrate over redshift and mass
-            integrated_probabilities = np.trapz(probabilities, redshifts)
-            approximated_integral = np.trapz(approximated_probabilities, redshifts)
+            integrated_probabilities = np.trapezoid(probabilities, redshifts)
+            approximated_integral = np.trapezoid(approximated_probabilities, redshifts)
 
             """
             # try better approximation
@@ -392,9 +367,7 @@ class DataEvaluation:
             """
             # plot likelihood over redshift
             plt.figure(figsize=(16, 9))
-            plt.plot(
-                redshifts, probabilities, label=f"integral: {integrated_probabilities}"
-            )
+            plt.plot(redshifts, probabilities, label=f"integral: {integrated_probabilities}")
             plt.plot(
                 redshifts,
                 approximated_probabilities,
@@ -405,9 +378,7 @@ class DataEvaluation:
             plt.ylabel("likelihood")
             plt.yscale("log")
             plt.legend()
-            plt.savefig(
-                f"{figures_directory}plots/likelihood_over_redshift_{detection_index}.png"
-            )
+            plt.savefig(f"{figures_directory}plots/likelihood_over_redshift_{detection_index}.png")
             plt.close()
 
         # plt SNR and waveform generation time vs parameters
@@ -428,19 +399,15 @@ class DataEvaluation:
                 plt.close()
 
         # boxplot of cramer rao bounds
-        use_relative_uncertainty = []  # "M", "dist", "mu"
+        use_relative_uncertainty: list[str] = []  # "M", "dist", "mu"
         uncertainies_list = []
         for parameter in vars(parameter_space).values():
             assert isinstance(parameter, Parameter)
-            uncertainty_column_name = (
-                f"delta_{parameter.symbol}_delta_{parameter.symbol}"
-            )
+            uncertainty_column_name = f"delta_{parameter.symbol}_delta_{parameter.symbol}"
             uncertainties = self._cramer_rao_bounds[uncertainty_column_name] ** (1 / 2)
 
             if parameter.symbol in use_relative_uncertainty:
-                uncertainties = (
-                    uncertainties / self._cramer_rao_bounds[parameter.symbol]
-                )
+                uncertainties = uncertainties / self._cramer_rao_bounds[parameter.symbol]
             uncertainies_list.append(uncertainties)
 
         sky_uncertainty = [
@@ -457,14 +424,12 @@ class DataEvaluation:
 
         fig, ax = plt.subplots()
 
-        violin_parts = ax.violinplot(
-            uncertainies_list, showmeans=True, showextrema=False
-        )
+        violin_parts = ax.violinplot(uncertainies_list, showmeans=True, showextrema=False)
         for partname in ["cmeans"]:
             vp = violin_parts[partname]
             vp.set_edgecolor("seagreen")
             vp.set_linewidth(1)
-        for pc in violin_parts["bodies"]:
+        for pc in violin_parts["bodies"]:  # type: ignore[attr-defined]
             pc.set_color("seagreen")
             pc.set_alpha(0.6)
         ax.set_xticks(np.arange(1, len(parameter_symbol_list) + 2))
@@ -497,15 +462,13 @@ class DataEvaluation:
             fig, ax = plt.subplots()
             # set title
             ax.set_title(f"covariances of {parameter}")
-            violin_parts = ax.violinplot(
-                covariance_list, showmeans=True, showextrema=False
-            )
+            violin_parts = ax.violinplot(covariance_list, showmeans=True, showextrema=False)
             for partname in ["cmeans"]:
                 vp = violin_parts[partname]
                 vp.set_edgecolor("seagreen")
                 vp.set_linewidth(1)
 
-            for pc in violin_parts["bodies"]:
+            for pc in violin_parts["bodies"]:  # type: ignore[attr-defined]
                 pc.set_color("seagreen")
                 pc.set_alpha(0.6)
 
@@ -517,9 +480,7 @@ class DataEvaluation:
                 fontsize=8,
             )
             plt.tight_layout()
-            plt.savefig(
-                f"{figures_directory}plots/boxplot_covariances_{parameter}.png", dpi=300
-            )
+            plt.savefig(f"{figures_directory}plots/boxplot_covariances_{parameter}.png", dpi=300)
             plt.close()
 
         # plot skylocalization uncertainty
@@ -538,10 +499,8 @@ class DataEvaluation:
         )
         ax.set_ylabel("Phi in deg")
         ax.set_xlabel("Theta in deg")
-        ax.set_zlabel("d_Omega in rad^2")
-        plt.savefig(
-            f"{figures_directory}plots/sky_localization_uncertainty.png", dpi=300
-        )
+        ax.set_zlabel("d_Omega in rad^2")  # type: ignore[attr-defined]
+        plt.savefig(f"{figures_directory}plots/sky_localization_uncertainty.png", dpi=300)
         plt.close()
 
         # plot skylocalization uncertainty vs distance
@@ -596,9 +555,7 @@ class DataEvaluation:
             linestyles="-.",
             label="distance error threshold",
         )
-        plt.hlines(
-            0.0006, 0, 5, color="black", linestyles="--", label="uncertainty threshold"
-        )
+        plt.hlines(0.0006, 0, 5, color="black", linestyles="--", label="uncertainty threshold")
         plt.legend()
         plt.yscale("log")
         plt.xscale("log")
@@ -643,7 +600,7 @@ class DataEvaluation:
 
     def visualize_detection_distribution(self) -> None:
         # ensure directory is given
-        figures_directory = f"evaluation/"
+        figures_directory = "evaluation/"
         if not os.path.isdir(figures_directory):
             os.makedirs(figures_directory)
         if not os.path.isdir(figures_directory + "plots/"):
@@ -658,7 +615,7 @@ class DataEvaluation:
         bin_edges = np.arange(0, max(redshifts), 20)
 
         plt.figure(figsize=(16, 9))
-        plt.hist(redshifts, bins=bin_edges, histtype="step")
+        plt.hist(redshifts, bins=list(bin_edges), histtype="step")
         plt.xlabel("redshift")
         plt.ylabel("detections")
         plt.savefig(f"{figures_directory}plots/redshift_detections.png")
@@ -672,7 +629,7 @@ class DataEvaluation:
         bin_edges = np.arange(4.5, 6.5, 0.5)
 
         plt.figure(figsize=(16, 9))
-        plt.hist(np.log10(source_masses), bins=bin_edges, histtype="step")
+        plt.hist(np.log10(source_masses), bins=list(bin_edges), histtype="step")
         plt.xlabel("log_10 source mass [solar masses]")
         plt.ylabel("detections")
         plt.savefig(f"{figures_directory}plots/source_masses_detections.png")
@@ -684,16 +641,14 @@ class DataEvaluation:
         bin_edges = np.arange(1, 4, 0.25)
 
         plt.figure(figsize=(16, 9))
-        plt.hist(
-            np.log10(self._cramer_rao_bounds["SNR"]), bins=bin_edges, histtype="step"
-        )
+        plt.hist(np.log10(self._cramer_rao_bounds["SNR"]), bins=list(bin_edges), histtype="step")
         plt.xlabel("log_10 SNR")
         plt.ylabel("detections")
         plt.savefig(f"{figures_directory}plots/SNR_detections.png")
         plt.close()
 
         # plot mass redshift detection fraction
-        grid_x, grid_y = np.mgrid[0:0.2:50j, 4.5:6:40j]
+        grid_x, grid_y = np.mgrid[0:0.2:50j, 4.5:6:40j]  # type: ignore[misc]
 
         hist_detections, _, _ = np.histogram2d(
             redshifts, np.log10(source_masses), bins=[grid_x[:, 0], grid_y[0, :]]
@@ -702,9 +657,7 @@ class DataEvaluation:
         undetected_redshifts = np.array(
             [dist_to_redshift(distance) for distance in self._undetected_events["dist"]]
         )
-        undetected_source_masses = self._undetected_events["M"] / (
-            1 + undetected_redshifts
-        )
+        undetected_source_masses = self._undetected_events["M"] / (1 + undetected_redshifts)
 
         hist_non_detections, _, _ = np.histogram2d(
             undetected_redshifts,
@@ -713,9 +666,7 @@ class DataEvaluation:
         )
 
         total_number_of_events = hist_non_detections + hist_detections
-        total_number_of_events_without_zeros = _remove_zeros_from_grid(
-            total_number_of_events
-        )
+        total_number_of_events_without_zeros = _remove_zeros_from_grid(total_number_of_events)
 
         detection_fraction = hist_detections / total_number_of_events_without_zeros
 
@@ -753,9 +704,7 @@ class DataEvaluation:
         fig.colorbar(contour, label="detection fraction")
         plt.xlabel("redshift")
         plt.ylabel("log_10 source mass [solar masses]")
-        plt.savefig(
-            f"{figures_directory}plots/mass_redshift_detection_fraction.png", dpi=300
-        )
+        plt.savefig(f"{figures_directory}plots/mass_redshift_detection_fraction.png", dpi=300)
         plt.close()
 
         # plot total number of events
@@ -777,13 +726,13 @@ class DataEvaluation:
 
     def evaluate_snr_analysis(self) -> None:
         # ensure directory is given
-        figures_directory = f"evaluation/"
+        figures_directory = "evaluation/"
         if not os.path.isdir(figures_directory):
             os.makedirs(figures_directory)
         if not os.path.isdir(figures_directory + "snr_analysis/"):
             os.makedirs(figures_directory + "snr_analysis/")
 
-        figures_directory = f"evaluation/snr_analysis/"
+        figures_directory = "evaluation/snr_analysis/"
 
         # easy check SNR vs observation time averaged
         for name, parameter_set in self._snr_analysis_file.groupby(["M"]):
@@ -794,7 +743,7 @@ class DataEvaluation:
 
         plt.xlabel("observation time T in years")
         plt.ylabel("normalized SNR")
-        plt.savefig(f"evaluation/plots/SNR_observation_time.png")
+        plt.savefig("evaluation/plots/SNR_observation_time.png")
 
         for name, parameter_set in self._snr_analysis_file.groupby(["M"]):
             if len(parameter_set) != 5:
@@ -807,22 +756,22 @@ class DataEvaluation:
 
         plt.xlabel("observation time T in years")
         plt.ylabel("normalized generation time")
-        plt.savefig(f"evaluation/plots/generation_time_observation_time.png")
+        plt.savefig("evaluation/plots/generation_time_observation_time.png")
 
 
 def _compute_skylocalization_uncertainty(
-    theta, var_theta, var_phi, cov_theta_phi
+    theta: float,
+    var_theta: float,
+    var_phi: float,
+    cov_theta_phi: float,
 ) -> float:
-    return (
-        2
-        * np.pi
-        * np.abs(np.sin(theta))
-        * np.sqrt(var_phi * var_theta - (cov_theta_phi) ** 2)
+    return (  # type: ignore[no-any-return]
+        2 * np.pi * np.abs(np.sin(theta)) * np.sqrt(var_phi * var_theta - (cov_theta_phi) ** 2)
     )
 
 
 @np.vectorize
-def _remove_zeros_from_grid(x) -> float:
+def _remove_zeros_from_grid(x: float) -> float:
     if x == 0:
         return 1.0
     return x

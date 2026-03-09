@@ -1,16 +1,16 @@
-import logging
-import matplotlib.pyplot as plt
-import numpy as np
 import datetime
+import logging
 import os
 import warnings
-
+from collections.abc import Iterator
 from time import time
 
-from master_thesis_code.parameter_estimation.evaluation import DataEvaluation
+import matplotlib.pyplot as plt
+import numpy as np
+
 from master_thesis_code.arguments import Arguments
+from master_thesis_code.cosmological_model import BayesianStatistics, Model1CrossCheck
 from master_thesis_code.exceptions import ParameterOutOfBoundsError
-from master_thesis_code.cosmological_model import Model1CrossCheck, BayesianStatistics
 from master_thesis_code.galaxy_catalogue.handler import (
     GalaxyCatalogueHandler,
     HostGalaxy,
@@ -25,9 +25,7 @@ def main() -> None:
     Run main to start the program.
     """
     arguments = Arguments.create()
-    _configure_logger(
-        arguments.working_directory, arguments.log_level, arguments.h_value
-    )
+    _configure_logger(arguments.working_directory, arguments.log_level, arguments.h_value)
     arguments.validate()
     _ROOT_LOGGER.info("---------- STARTING MASTER THESIS CODE ----------")
     start_time = time()
@@ -66,7 +64,7 @@ def _configure_logger(working_directory: str, log_level: int, h_value: float) ->
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     log_file_path = os.path.join(
         working_directory,
-        f"master_thesis_code_{timestamp}_h_{str(np.round(h_value,3)).replace('.', '_')}.log",
+        f"master_thesis_code_{timestamp}_h_{str(np.round(h_value, 3)).replace('.', '_')}.log",
     )
     file_handler = logging.FileHandler(log_file_path)
     file_handler.setLevel(log_level)
@@ -82,13 +80,13 @@ def _configure_logger(working_directory: str, log_level: int, h_value: float) ->
     _ROOT_LOGGER.info(f"Log file location: {log_file_path}")
 
 
-def snr_analysis():
+def snr_analysis() -> None:
+    from master_thesis_code.datamodels.parameter_space import ParameterSpace
     from master_thesis_code.memory_management import MemoryManagement
     from master_thesis_code.parameter_estimation.parameter_estimation import (
         ParameterEstimation,
         WaveGeneratorType,
     )
-    from master_thesis_code.datamodels.parameter_space import ParameterSpace
 
     memory_management = MemoryManagement()
     memory_management.display_GPU_information()
@@ -128,7 +126,7 @@ def data_simulation(
 
     counter = 0
     iteration = 0
-    host_galaxies = iter([])
+    host_galaxies: Iterator[HostGalaxy] = iter([])
 
     """
     mp.set_start_method("spawn")
@@ -143,7 +141,7 @@ def data_simulation(
         memory_management.gpu_usage_stamp()
 
         _ROOT_LOGGER.info(
-            f"{counter} / {iteration} evaluations successful. ({counter/(time()-memory_management._start_time)*60}/min)"
+            f"{counter} / {iteration} evaluations successful. ({counter / (time() - memory_management._start_time) * 60}/min)"
         )
         iteration += 1
 
@@ -151,9 +149,7 @@ def data_simulation(
             host_galaxy = next(host_galaxies)
         except StopIteration:
             parameter_samples = cosmological_model.sample_emri_events(200)
-            host_galaxies = galaxy_catalog.get_hosts_from_parameter_samples(
-                parameter_samples
-            )
+            host_galaxies = iter(galaxy_catalog.get_hosts_from_parameter_samples(parameter_samples))
             host_galaxy = next(host_galaxies)
         assert isinstance(host_galaxy, HostGalaxy)
 
@@ -224,7 +220,7 @@ def data_simulation(
         )
         try:
             cramer_rao_bounds = parameter_estimation.compute_Cramer_Rao_bounds()
-        except ParameterOutOfBoundsError as e:
+        except ParameterOutOfBoundsError:
             _ROOT_LOGGER.warning(
                 "Caught ParameterOutOfBoundsError in dervative. Continue with new parameters..."
             )

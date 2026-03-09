@@ -1,15 +1,14 @@
-import pandas as pd
-import numpy as np
 import sys
 
-from master_thesis_code.cosmological_model import Detection
+import pandas as pd
+
 from master_thesis_code.constants import (
     CRAMER_RAO_BOUNDS_OUTPUT_PATH,
 )
-
+from master_thesis_code.cosmological_model import Detection
 
 if __name__ == "__main__":
-    with open(CRAMER_RAO_BOUNDS_OUTPUT_PATH, "r") as f:
+    with open(CRAMER_RAO_BOUNDS_OUTPUT_PATH) as f:
         print(
             f"Reading cramer rao bounds and detection parameters from {CRAMER_RAO_BOUNDS_OUTPUT_PATH}"
         )

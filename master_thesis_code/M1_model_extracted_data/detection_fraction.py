@@ -1,7 +1,8 @@
-from dataclasses import dataclass
 import os
-import numpy as np
+from dataclasses import dataclass
+
 import matplotlib.pyplot as plt
+import numpy as np
 from scipy.ndimage import gaussian_filter
 
 
@@ -7051,17 +7052,15 @@ class DetectionFraction:
             ],
         ]
     )
-    detection_fraction_z_reduced: np.array
+    detection_fraction_z_reduced: np.ndarray
 
     def __init__(self) -> None:
         self.detection_fraction_grid = np.flip(self.detection_fraction_grid, axis=0)
-        self.detection_fraction_grid = gaussian_filter(
-            self.detection_fraction_grid, sigma=1
-        )
+        self.detection_fraction_grid = gaussian_filter(self.detection_fraction_grid, sigma=1)
         self.plot_detection_fraction()
 
     def plot_detection_fraction(self) -> None:
-        #check if the directory exists, if not create it
+        # check if the directory exists, if not create it
         if not os.path.exists("saved_figures/cosmological_model"):
             os.makedirs("saved_figures/cosmological_model")
 
@@ -7076,17 +7075,15 @@ class DetectionFraction:
         fig.colorbar(cax)
         plt.ylabel("log_10 (M/M_sol)")
         plt.xlabel("z")
-        plt.savefig(
-            "saved_figures/cosmological_model/detection_fraction_m1.png", dpi=300
-        )
+        plt.savefig("saved_figures/cosmological_model/detection_fraction_m1.png", dpi=300)
         plt.close()
 
     def get_detection_fraction(self, z: float, M: float) -> float:
         M = np.log10(M)
         z_index = np.argmin(np.abs(self.z_values - z))
         M_index = np.argmin(np.abs(self.M_values - M))
-        return self.detection_fraction_grid[M_index, z_index]
+        return float(self.detection_fraction_grid[M_index, z_index])
 
     def get_detection_fraction_z_reduced(self, z: float) -> float:
         z_index = np.argmin(np.abs(self.z_values - z))
-        return np.mean(self.detection_fraction_grid[:, z_index])
+        return float(np.mean(self.detection_fraction_grid[:, z_index]))

@@ -1,23 +1,17 @@
-from typing import Tuple
-import cupy as cp
+import logging
+import os
 from dataclasses import dataclass
+
+import cupy as cp
 import matplotlib as mpl
+import matplotlib.pyplot as plt
 
 mpl.rcParams["agg.path.chunksize"] = 1000
-import matplotlib.pyplot as plt
-import os
-import logging
 
-
-from master_thesis_code.decorators import timer_decorator
-from master_thesis_code.datamodels.parameter_space import ParameterSpace
 from master_thesis_code.constants import (
-    MAXIMAL_FREQUENCY,
-    MINIMAL_FREQUENCY,
-    G,
     C,
-    M_IN_GPC,
 )
+from master_thesis_code.decorators import timer_decorator
 
 _LOGGER = logging.getLogger()
 
@@ -39,10 +33,7 @@ b_k = -2.47
 
 @dataclass
 class LisaTdiConfiguration:
-    
-    def power_spectral_density(
-        self, frequencies: cp.array, channel: str = "A"
-    ) -> cp.array:
+    def power_spectral_density(self, frequencies: cp.array, channel: str = "A") -> cp.array:
         """PSD noise for AET channels from https://arxiv.org/pdf/2303.15929.pdf assuming equal arm length."""
         if channel.upper() in ["A", "E"]:
             return self.power_spectral_density_a_channel(frequencies)
@@ -85,12 +76,7 @@ class LisaTdiConfiguration:
 
     @staticmethod
     def S_OMS(frequencies: cp.array) -> cp.array:
-        return (
-            15**2
-            * 1e-24
-            * (1 + (2e-3 / frequencies) ** 4)
-            * (2 * cp.pi * frequencies / C) ** 2
-        )
+        return 15**2 * 1e-24 * (1 + (2e-3 / frequencies) ** 4) * (2 * cp.pi * frequencies / C) ** 2
 
     @staticmethod
     def S_TM(frequencies: cp.array) -> cp.array:
@@ -103,7 +89,7 @@ class LisaTdiConfiguration:
 
     @timer_decorator
     def _visualize_lisa_configuration(self) -> None:
-        figures_directory = f"saved_figures/LISA_configuration/"
+        figures_directory = "saved_figures/LISA_configuration/"
 
         if not os.path.isdir(figures_directory):
             os.makedirs(figures_directory)
@@ -152,4 +138,3 @@ class LisaTdiConfiguration:
         plt.yscale("log")
         plt.savefig(figures_directory + "LISA_PSD.png", dpi=300)
         plt.clf()
-

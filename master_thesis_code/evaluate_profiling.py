@@ -1,5 +1,4 @@
-from master_thesis_code.cosmological_model import BayesianStatistics
-from master_thesis_code.cosmological_model import Model1CrossCheck
+from master_thesis_code.cosmological_model import BayesianStatistics, Model1CrossCheck
 from master_thesis_code.galaxy_catalogue.handler import GalaxyCatalogueHandler
 
 if __name__ == "__main__":
@@ -13,7 +12,5 @@ if __name__ == "__main__":
 
     bayesian_statistics = BayesianStatistics()
     bayesian_statistics.evaluate(
-        cosmological_model=cosmological_model, 
-        galaxy_catalog=galaxy_catalog, 
-        h_value=h_value
+        cosmological_model=cosmological_model, galaxy_catalog=galaxy_catalog, h_value=h_value
     )

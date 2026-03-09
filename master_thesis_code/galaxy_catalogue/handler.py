@@ -1,36 +1,29 @@
-from  __future__ import annotations
-
-from enum import Enum
-import pandas as pd
-import numpy as np
-from collections.abc import Iterable
-from dataclasses import dataclass
 import logging
 import os
-from typing import Tuple, List, Optional
-from matplotlib import pyplot as plt
-from mpl_toolkits.mplot3d import axes3d
-from master_thesis_code.constants import H0, C
-from master_thesis_code.physical_relations import (
-    dist,
-    dist_to_redshift,
-    dist_to_redshift_error_proagation,
-    convert_redshifted_mass_to_true_mass,
-)
+from collections.abc import Iterable
+from dataclasses import dataclass
+from enum import Enum
 
 # import normal distribution
 from statistics import NormalDist
+
+import numpy as np
+import pandas as pd
+from matplotlib import pyplot as plt
 from scipy.stats import truncnorm
 from sklearn.neighbors import BallTree
+
+from master_thesis_code.physical_relations import (
+    dist,
+    dist_to_redshift_error_proagation,
+)
 
 _LOGGER = logging.getLogger()
 
 
 GPC_TO_MPC = 10**3
 RADIAN_TO_DEGREE = 360 / 2 / np.pi
-REDUCED_CATALOGUE_FILE_PATH = (
-    "./master_thesis_code/galaxy_catalogue/reduced_galaxy_catalogue.csv"
-)
+REDUCED_CATALOGUE_FILE_PATH = "./master_thesis_code/galaxy_catalogue/reduced_galaxy_catalogue.csv"
 M_min = 10**4
 M_max = 10**6
 Z_draw = 1.5
@@ -74,24 +67,26 @@ class HostGalaxy:
         self.M_error = parameters[InternalCatalogColumns.BH_MASS_ERROR]
         self.catalog_index = parameters.name
 
-    def __eq__(self, other):
+    def __eq__(self, other: object) -> bool:
         if not isinstance(other, HostGalaxy):
             return False
-        return self.catalog_index == other.catalog_index  # Compare based on a unique identifier
-    
-    def __hash__(self):
+        return bool(
+            self.catalog_index == other.catalog_index
+        )  # Compare based on a unique identifier
+
+    def __hash__(self) -> int:
         return hash(self.catalog_index)  # Use the unique identifier for hashing
 
     @classmethod
     def from_attributes(
-        self,
+        cls,
         phiS: float,
         qS: float,
         z: float,
         z_error: float,
         M: float,
         M_error: float,
-    ) -> HostGalaxy:
+    ) -> "HostGalaxy":
         parameters = pd.Series(
             {
                 InternalCatalogColumns.PHI_S: phiS,
@@ -145,7 +140,6 @@ class GalaxyCatalogueHandler:
     M_max: float
     z_max: float
 
-
     def __init__(self, M_min: float, M_max: float, z_max: float) -> None:
         self.M_min = M_min
         self.M_max = M_max
@@ -163,7 +157,7 @@ class GalaxyCatalogueHandler:
                 )
                 self.reduced_galaxy_catalog = self.read_reduced_galaxy_catalog()
                 _LOGGER.info("Successfully reduced and loaded galaxy catalog.")
-            except FileNotFoundError as e:
+            except FileNotFoundError:
                 _LOGGER.error(
                     "No reduced galaxy catalog or GLADE+.txt export was found. Please provide galaxy catalog and restart."
                 )
@@ -175,24 +169,29 @@ class GalaxyCatalogueHandler:
         self._map_stellar_masses_to_BH_masses()
         self._map_angles_to_spherical_coordinates()
         self._remove_galaxies_without_mass_information()
-        self.reduced_galaxy_catalog = self._get_pruned_galaxy_catalog(
-            M_min, M_max, z_max
-        )
+        self.reduced_galaxy_catalog = self._get_pruned_galaxy_catalog(M_min, M_max, z_max)
         self.set_max_relative_errors()
         self._show_catalog_information()
         self.setup_galaxy_catalog_balltree()
         self.setup_4d_galaxy_catalog_balltree()
 
-    def _get_pruned_galaxy_catalog(
-        self, M_min: float, M_max: float, z_max: float
-    ) -> pd.DataFrame:
+    def _get_pruned_galaxy_catalog(self, M_min: float, M_max: float, z_max: float) -> pd.DataFrame:
         mask = (
-            (self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS] +
-             self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS_ERROR] >= M_min)
-            & (self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS] -
-               self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS_ERROR] <= M_max)
-            & (self.reduced_galaxy_catalog[InternalCatalogColumns.REDSHIFT] -
-               self.reduced_galaxy_catalog[InternalCatalogColumns.REDSHIFT_ERROR] <= z_max)
+            (
+                self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS]
+                + self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS_ERROR]
+                >= M_min
+            )
+            & (
+                self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS]
+                - self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS_ERROR]
+                <= M_max
+            )
+            & (
+                self.reduced_galaxy_catalog[InternalCatalogColumns.REDSHIFT]
+                - self.reduced_galaxy_catalog[InternalCatalogColumns.REDSHIFT_ERROR]
+                <= z_max
+            )
         )
         return self.reduced_galaxy_catalog[mask]
 
@@ -213,7 +212,7 @@ class GalaxyCatalogueHandler:
             ]
         )
         _LOGGER.info(
-            f"Galaxies without stellar mass estimation {bh_mass_not_given/len(self.reduced_galaxy_catalog)*100}%"
+            f"Galaxies without stellar mass estimation {bh_mass_not_given / len(self.reduced_galaxy_catalog) * 100}%"
         )
         bh_mass_given_statistics = self.reduced_galaxy_catalog[
             ~self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS].isna()
@@ -221,9 +220,7 @@ class GalaxyCatalogueHandler:
         _LOGGER.info(
             f"Galaxies with stellar mass estimation statistics\n: {bh_mass_given_statistics}"
         )
-        _LOGGER.info(
-            f"Pruned galaxy catalog contains {len(self.reduced_galaxy_catalog)} galaxies."
-        )
+        _LOGGER.info(f"Pruned galaxy catalog contains {len(self.reduced_galaxy_catalog)} galaxies.")
 
     def visualize_galaxy_catalog(self) -> None:
         figures_directory = "./saved_figures/galaxy_catalogue/"
@@ -256,7 +253,7 @@ class GalaxyCatalogueHandler:
         ax.hist(
             self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS_ERROR]
             / self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS],
-            bins=bins,
+            bins=list(bins),
             color="teal",
             histtype="step",
         )
@@ -302,9 +299,7 @@ class GalaxyCatalogueHandler:
                     truncnorm((0 - redshift) / redshift_error, np.inf).rvs()
                     for redshift, redshift_error in zip(
                         self.reduced_galaxy_catalog[InternalCatalogColumns.REDSHIFT],
-                        self.reduced_galaxy_catalog[
-                            InternalCatalogColumns.REDSHIFT_ERROR
-                        ],
+                        self.reduced_galaxy_catalog[InternalCatalogColumns.REDSHIFT_ERROR],
                     )
                 ]
             )
@@ -314,9 +309,7 @@ class GalaxyCatalogueHandler:
                     truncnorm((0 - mass) / mass_error, np.inf).rvs()
                     for mass, mass_error in zip(
                         self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS],
-                        self.reduced_galaxy_catalog[
-                            InternalCatalogColumns.BH_MASS_ERROR
-                        ],
+                        self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS_ERROR],
                     )
                 ]
             )
@@ -386,7 +379,7 @@ class GalaxyCatalogueHandler:
             chunksize=10_000,
         )
 
-        _LOGGER.info(f"Start reducing galaxy catalog.")
+        _LOGGER.info("Start reducing galaxy catalog.")
         next_progress_threshold = 5
         for count, chunk in enumerate(iterator):
             progress = int(count * 10_000 / 230_000)
@@ -401,9 +394,7 @@ class GalaxyCatalogueHandler:
                 | (chunk[CatalogueColumns.REDSHIFT_FLAG.name] == 3)
             ]
 
-            chunk = chunk.fillna(
-                {CatalogueColumns.REDSHIFT_PECULIAR_VELOCITY_ERROR.name: 0.0015}
-            )
+            chunk = chunk.fillna({CatalogueColumns.REDSHIFT_PECULIAR_VELOCITY_ERROR.name: 0.0015})
 
             # propagating errors of redshift
             chunk[CatalogueColumns.REDSHIFT_MEASUREMENT_ERROR.name] = np.sqrt(
@@ -418,37 +409,23 @@ class GalaxyCatalogueHandler:
                 ]
             )
 
-            chunk.to_csv(
-                REDUCED_CATALOGUE_FILE_PATH, header=False, mode="a", index=False
-            )
+            chunk.to_csv(REDUCED_CATALOGUE_FILE_PATH, header=False, mode="a", index=False)
 
     def parse_to_reduced_catalog_with_reduced_errors(self) -> None:
         catalog = pd.read_csv(
             REDUCED_CATALOGUE_FILE_PATH,
-            names=[
-                column.name
-                for column in CatalogueColumns
-                if column.value not in [30, 34]
-            ],
+            names=[column.name for column in CatalogueColumns if column.value not in [30, 34]],
         )
         for index, row in catalog.iterrows():
             redshift = row[CatalogueColumns.REDSHIFT.name]
             redshift_error = row[CatalogueColumns.REDSHIFT_MEASUREMENT_ERROR.name]
-            new_redshift_error = dist_to_redshift_error_proagation(
-                redshift, redshift_error
-            )
-            catalog.at[index, CatalogueColumns.REDSHIFT_MEASUREMENT_ERROR.name] = (
-                new_redshift_error
-            )
+            new_redshift_error = dist_to_redshift_error_proagation(redshift, redshift_error)
+            catalog.at[index, CatalogueColumns.REDSHIFT_MEASUREMENT_ERROR.name] = new_redshift_error
 
     def read_reduced_galaxy_catalog(self) -> pd.DataFrame:
         return pd.read_csv(
             REDUCED_CATALOGUE_FILE_PATH,
-            names=[
-                column.name
-                for column in CatalogueColumns
-                if column.value not in [30, 34]
-            ],
+            names=[column.name for column in CatalogueColumns if column.value not in [30, 34]],
         )
 
     def setup_galaxy_catalog_balltree(self) -> None:
@@ -463,10 +440,8 @@ class GalaxyCatalogueHandler:
 
         self.catalog_ball_tree = BallTree(data, metric="euclidean")
         self.reduced_galaxy_catalog = self.reduced_galaxy_catalog.reset_index()
-        _LOGGER.debug(
-            f"BallTree setup with {self.reduced_galaxy_catalog.shape[0]} galaxies."
-        )
-    
+        _LOGGER.debug(f"BallTree setup with {self.reduced_galaxy_catalog.shape[0]} galaxies.")
+
     def get_possible_hosts_from_ball_tree(
         self,
         phi: float,
@@ -478,8 +453,7 @@ class GalaxyCatalogueHandler:
         z_min: float,
         z_max: float,
         sigma_multiplier: int = 2,
-    ) -> Optional[Tuple[List[HostGalaxy], List[HostGalaxy]]]:
-
+    ) -> tuple[list[HostGalaxy], list[HostGalaxy]] | None:
         x = np.cos(theta) * np.cos(phi)
         y = np.cos(theta) * np.sin(phi)
         z = np.sin(theta)
@@ -493,8 +467,13 @@ class GalaxyCatalogueHandler:
         candidate_hosts = self.reduced_galaxy_catalog.iloc[indices]
 
         redshift_filter_mask = (
-            (z_min <= candidate_hosts[InternalCatalogColumns.REDSHIFT] + candidate_hosts[InternalCatalogColumns.REDSHIFT_ERROR])
-            & (z_max >= candidate_hosts[InternalCatalogColumns.REDSHIFT] - candidate_hosts[InternalCatalogColumns.REDSHIFT_ERROR])
+            z_min
+            <= candidate_hosts[InternalCatalogColumns.REDSHIFT]
+            + candidate_hosts[InternalCatalogColumns.REDSHIFT_ERROR]
+        ) & (
+            z_max
+            >= candidate_hosts[InternalCatalogColumns.REDSHIFT]
+            - candidate_hosts[InternalCatalogColumns.REDSHIFT_ERROR]
         )
         candidate_hosts_without_bh_mass = candidate_hosts[redshift_filter_mask]
 
@@ -518,7 +497,7 @@ class GalaxyCatalogueHandler:
         if (len(possible_hosts_without_bh_mass) == 0) and (len(possible_hosts_with_bh_mass) == 0):
             _LOGGER.warning("No possible hosts. Returning None.")
             return None
-        
+
         _LOGGER.info(
             f"Found {len(possible_hosts_without_bh_mass)} possible hosts without BH mass and {len(possible_hosts_with_bh_mass)} possible hosts with BH mass."
         )
@@ -565,23 +544,22 @@ class GalaxyCatalogueHandler:
 
     def get_possible_hosts(
         self,
-        M_z,
-        M_z_error,
-        z_min,
-        z_max,
-        phi,
-        phi_error,
-        theta,
-        theta_error,
+        M_z: float,
+        M_z_error: float,
+        z_min: float,
+        z_max: float,
+        phi: float,
+        phi_error: float,
+        theta: float,
+        theta_error: float,
         cutoff_multiplier: float = 2,
-    ) -> Optional[Tuple[List[HostGalaxy], List[HostGalaxy]]]:
-
+    ) -> tuple[list[HostGalaxy], list[HostGalaxy]] | None:
         _LOGGER.info(
             "Searching for possible hosts within:"
-            f"\nM = {M_z} +/+ {M_z_error*cutoff_multiplier}"
+            f"\nM = {M_z} +/+ {M_z_error * cutoff_multiplier}"
             f"\n {z_min} <= z <= {z_max}"
-            f"\nphi = {phi} +/- {phi_error*cutoff_multiplier}"
-            f"\ntheta = {theta} +/- {theta_error*cutoff_multiplier}"
+            f"\nphi = {phi} +/- {phi_error * cutoff_multiplier}"
+            f"\ntheta = {theta} +/- {theta_error * cutoff_multiplier}"
         )
 
         possible_host_galaxies = self.reduced_galaxy_catalog.loc[
@@ -633,8 +611,7 @@ class GalaxyCatalogueHandler:
         ]
 
         possible_host_galaxies = [
-            HostGalaxy(parameters)
-            for _, parameters in possible_host_galaxies.iterrows()
+            HostGalaxy(parameters) for _, parameters in possible_host_galaxies.iterrows()
         ]
 
         possible_host_galaxies_with_BH_mass = [
@@ -654,24 +631,20 @@ class GalaxyCatalogueHandler:
             self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS_ERROR],
         )
         self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS] = BH_mass
-        self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS_ERROR] = (
-            BH_mass_error
-        )
+        self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS_ERROR] = BH_mass_error
 
     def _map_angles_to_spherical_coordinates(self) -> None:
         self.reduced_galaxy_catalog[InternalCatalogColumns.PHI_S] = (
             self.reduced_galaxy_catalog[InternalCatalogColumns.PHI_S] * np.pi / 180
         )
         self.reduced_galaxy_catalog[InternalCatalogColumns.THETA_S] = (
-            self.reduced_galaxy_catalog[InternalCatalogColumns.THETA_S] * np.pi / 180
-            - np.pi / 2
+            self.reduced_galaxy_catalog[InternalCatalogColumns.THETA_S] * np.pi / 180 - np.pi / 2
         ) * (-1)
 
     def _map_BH_masses_to_redshifted_masses(self) -> None:
-        self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS] = (
-            self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS]
-            * (1 + self.reduced_galaxy_catalog[InternalCatalogColumns.REDSHIFT])
-        )
+        self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS] = self.reduced_galaxy_catalog[
+            InternalCatalogColumns.BH_MASS
+        ] * (1 + self.reduced_galaxy_catalog[InternalCatalogColumns.REDSHIFT])
         self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS_ERROR] = np.sqrt(
             (
                 self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS_ERROR]
@@ -687,9 +660,7 @@ class GalaxyCatalogueHandler:
 
     def get_random_hosts(self, number_of_hosts: int) -> Iterable:
         random_hosts = self.reduced_galaxy_catalog.sample(number_of_hosts)
-        return iter(
-            [HostGalaxy(parameters) for _, parameters in random_hosts.iterrows()]
-        )
+        return iter([HostGalaxy(parameters) for _, parameters in random_hosts.iterrows()])
 
     def get_random_hosts_in_mass_range(
         self,
@@ -704,10 +675,7 @@ class GalaxyCatalogueHandler:
 
         restricted_galaxy_catalogue = self.reduced_galaxy_catalog[
             (self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS] >= lower_limit)
-            & (
-                self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS]
-                <= upper_limit
-            )
+            & (self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS] <= upper_limit)
             & (self.reduced_galaxy_catalog[InternalCatalogColumns.REDSHIFT] <= max_dist)
         ]
 
@@ -718,32 +686,20 @@ class GalaxyCatalogueHandler:
             restricted_galaxy_catalogue = restricted_galaxy_catalogue.sample(frac=1)
             return_list = []
             for theta, phi in zip(thetas, phis):
-
                 closest_host_index = (
-                    (
-                        restricted_galaxy_catalogue[InternalCatalogColumns.PHI_S] / phi
-                        - 1
-                    )
-                    ** 2
-                    + (
-                        restricted_galaxy_catalogue[InternalCatalogColumns.THETA_S]
-                        / theta
-                        - 1
-                    )
-                    ** 2
+                    (restricted_galaxy_catalogue[InternalCatalogColumns.PHI_S] / phi - 1) ** 2
+                    + (restricted_galaxy_catalogue[InternalCatalogColumns.THETA_S] / theta - 1) ** 2
                 ).idxmin()
                 host: pd.Series = restricted_galaxy_catalogue.loc[closest_host_index]
                 return_list.append(HostGalaxy(host))
             return iter(return_list)
         else:
             random_hosts = restricted_galaxy_catalogue.sample(number_of_hosts)
-            return iter(
-                [HostGalaxy(parameters) for _, parameters in random_hosts.iterrows()]
-            )
+            return iter([HostGalaxy(parameters) for _, parameters in random_hosts.iterrows()])
 
     def get_hosts_from_parameter_samples(
-        self, parameter_samples: List[ParameterSample]
-    ) -> Iterable:
+        self, parameter_samples: list[ParameterSample]
+    ) -> Iterable[HostGalaxy]:
         host_galaxies = []
         _LOGGER.info(
             f"Searching for closest host galaxies for {len(parameter_samples)} parameter samples."
@@ -754,7 +710,7 @@ class GalaxyCatalogueHandler:
         counter = 0
         for parameter_sample in parameter_samples:
             _LOGGER.debug(
-                f"closest host searches progess: {counter/len(parameter_samples)*100}%"
+                f"closest host searches progess: {counter / len(parameter_samples) * 100}%"
             )
             counter += 1
 
@@ -765,9 +721,7 @@ class GalaxyCatalogueHandler:
                 or parameter_sample.M < self.M_min
                 or parameter_sample.M > self.M_max
             ):
-                _LOGGER.debug(
-                    f"Parameter sample out of bounds: {parameter_sample}. Skipping."
-                )
+                _LOGGER.debug(f"Parameter sample out of bounds: {parameter_sample}. Skipping.")
                 continue
 
             closest_host = self.find_closest_galaxy_to_coordinates(
@@ -784,13 +738,9 @@ class GalaxyCatalogueHandler:
 
         return iter(host_galaxies)
 
-    def _get_closest_host_galaxy(
-        self, parameter_sample: ParameterSample
-    ) -> HostGalaxy | None:
+    def _get_closest_host_galaxy(self, parameter_sample: ParameterSample) -> HostGalaxy | None:
         # sort by distance to redshift and mass
-        closest_host_index = self._get_closest_redshift_mass_host_index(
-            parameter_sample
-        )
+        closest_host_index = self._get_closest_redshift_mass_host_index(parameter_sample)
 
         # for now ignore phi, theta
         """
@@ -808,8 +758,7 @@ class GalaxyCatalogueHandler:
         host_galaxy = HostGalaxy(self.reduced_galaxy_catalog.loc[closest_host_index])
         # check if host galaxy is within error bounds
         if (
-            np.abs(host_galaxy.z - parameter_sample.redshift)
-            / parameter_sample.redshift
+            np.abs(host_galaxy.z - parameter_sample.redshift) / parameter_sample.redshift
             > self._max_relative_redshift_error
         ) or (
             np.abs(host_galaxy.M - parameter_sample.M) / parameter_sample.M
@@ -818,34 +767,36 @@ class GalaxyCatalogueHandler:
             _LOGGER.debug("Host galaxy not within error bounds. Returning None.")
             return None
         _LOGGER.debug(
-            f"Found closest host galaxy: z deviation: {np.abs(host_galaxy.z - parameter_sample.redshift)/parameter_sample.redshift}%, M deviation: {np.abs(host_galaxy.M - parameter_sample.M)/parameter_sample.M}%"
+            f"Found closest host galaxy: z deviation: {np.abs(host_galaxy.z - parameter_sample.redshift) / parameter_sample.redshift}%, M deviation: {np.abs(host_galaxy.M - parameter_sample.M) / parameter_sample.M}%"
         )
         return host_galaxy
 
-    def _get_closest_redshift_mass_host_index(
-        self, parameter_sample: ParameterSample
-    ) -> int:
-        return (
+    def _get_closest_redshift_mass_host_index(self, parameter_sample: ParameterSample) -> int:
+        return int(
             (
-                self.reduced_galaxy_catalog[InternalCatalogColumns.REDSHIFT]
-                / parameter_sample.redshift
-                - 1
-            )
-            ** 2
-            + (
-                np.log10(self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS])
-                / np.log10(parameter_sample.M)
-                - 1
-            )
-            ** 2
-        ).idxmin()
+                (
+                    self.reduced_galaxy_catalog[InternalCatalogColumns.REDSHIFT]
+                    / parameter_sample.redshift
+                    - 1
+                )
+                ** 2
+                + (
+                    np.log10(self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS])
+                    / np.log10(parameter_sample.M)
+                    - 1
+                )
+                ** 2
+            ).idxmin()
+        )
+
 
 def _polar_angle_to_declination(polar_angle: float) -> float:
     return np.pi / 2 - polar_angle
 
+
 def _empiric_stellar_mass_to_BH_mass_relation(
-    stellar_mass: float, stellar_mass_error
-) -> Tuple:
+    stellar_mass: float, stellar_mass_error: float
+) -> tuple[float, float]:
     BH_mass = np.exp(alpha + beta * np.log(stellar_mass / 10))
     BH_mass_error = BH_mass * np.sqrt(
         d_alpha**2
@@ -853,6 +804,7 @@ def _empiric_stellar_mass_to_BH_mass_relation(
         + (beta / stellar_mass / 10 * stellar_mass_error) ** 2
     )
     return (BH_mass, BH_mass_error)
+
 
 def _empiric_MBH_to_M_stellar_relation(MBH_mass: float, MBH_mass_error: float) -> list:
     stellar_mass = 10 * np.exp((np.log(MBH_mass) - alpha) / beta)

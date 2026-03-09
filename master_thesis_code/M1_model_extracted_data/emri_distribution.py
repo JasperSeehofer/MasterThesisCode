@@ -1,7 +1,7 @@
 from dataclasses import dataclass
-from typing import List
-import numpy as np
+
 import matplotlib.pyplot as plt
+import numpy as np
 from scipy.ndimage import gaussian_filter
 
 
@@ -9517,13 +9517,11 @@ class EMRIDistribution:
         fig.colorbar(cax)
         plt.ylabel("log_10 (M/M_sol)")
         plt.xlabel("z")
-        plt.savefig(
-            "saved_figures/cosmological_model/emri_distribution_m1.png", dpi=300
-        )
+        plt.savefig("saved_figures/cosmological_model/emri_distribution_m1.png", dpi=300)
         plt.close()
 
     def get_emri_probability(self, z: float, M: float) -> float:
         M = np.log10(M)
         z_index = np.argmin(np.abs(self.z_values - z))
         M_index = np.argmin(np.abs(self.M_values - M))
-        return self.emri_distribution[M_index, z_index]
+        return float(self.emri_distribution[M_index, z_index])

@@ -1,24 +1,25 @@
-from dataclasses import dataclass, field
-from master_thesis_code.constants import INFINITY
+from collections.abc import Callable
+from dataclasses import dataclass
+
 import numpy as np
-import random
+
 from master_thesis_code.galaxy_catalogue.handler import HostGalaxy
 from master_thesis_code.physical_relations import dist
 
 
 def uniform(lower_limit: float, upper_limit: float) -> float:
-    return np.random.uniform(lower_limit, upper_limit)
+    return float(np.random.uniform(lower_limit, upper_limit))
 
 
 def log_uniform(lower_limit: float, upper_limit: float) -> float:
     lower_limit = np.log10(lower_limit)
     upper_limit = np.log10(upper_limit)
     uniform_log = uniform(lower_limit, upper_limit)
-    return 10**uniform_log
+    return float(10**uniform_log)
 
 
 def polar_angle_distribution(lower_limit: float, upper_limit: float) -> float:
-    return np.arccos(np.random.uniform(-1.0, 1.0))
+    return float(np.arccos(np.random.uniform(-1.0, 1.0)))
 
 
 @dataclass
@@ -32,7 +33,7 @@ class Parameter:
     value: float = 0.0
     derivative_epsilon: float = 1e-6
     is_fixed: bool = False
-    randomize_by_distribution: callable = uniform
+    randomize_by_distribution: Callable[[float, float], float] = uniform
 
 
 @dataclass

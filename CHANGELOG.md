@@ -9,6 +9,51 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [2026-03-10] — modern dev tooling: ruff, pre-commit, CI, mypy clean
+
+### Added
+- `ruff` and `pre-commit` added to `dev` dependency group in `pyproject.toml`.
+- `[tool.ruff]` and `[tool.ruff.lint]` configuration in `pyproject.toml`: selects
+  `E`, `F`, `I`, `UP`, `B`, `N` rules; line length 100; `target-version = "py313"`.
+- `.pre-commit-config.yaml`: ruff (lint + format) and mypy run automatically on
+  every `git commit`. mypy uses the project's local environment to avoid false positives.
+- `.github/workflows/ci.yml`: CI pipeline runs ruff check, ruff format check, mypy,
+  and pytest (CPU only, `not gpu`) on every push and pull request.
+- `CLAUDE.md`: added "Dev Workflow" section documenting the linting commands and
+  pre-commit usage.
+
+### Changed
+- `pyproject.toml`: `[tool.mypy]` `python_version` updated `"3.10"` → `"3.13"`;
+  extended `ignore_missing_imports` overrides to cover `pandas`, `scipy`, `sklearn`,
+  `mpl_toolkits`, `emcee`, and `tabulate`.
+- All 39 source files and 10 test files brought to 0 mypy errors under strict settings
+  (`disallow_untyped_defs`, `disallow_incomplete_defs`, `warn_return_any`).
+  Key changes across the codebase:
+  - Removed all `from typing import List, Dict, Optional, Union`; replaced with
+    native Python 3.10 syntax (`list[X]`, `dict[K,V]`, `X | None`, `X | Y`).
+  - Removed `from __future__ import annotations` from `arguments.py` and
+    `bayesian_inference_mwe.py` (per CLAUDE.md convention).
+  - All public and private functions annotated with complete return types and
+    parameter types.
+  - `np.ndarray` → `npt.NDArray[np.float64]` / `npt.NDArray[np.floating[Any]]`
+    throughout.
+  - `np.trapz` → `np.trapezoid` (numpy 2.x rename).
+  - Guarded `import cupy as cp` in `decorators.py`, `memory_management.py`,
+    `LISA_configuration.py`, and `parameter_estimation.py` with
+    `try/except ImportError` + `_CUPY_AVAILABLE` sentinel.
+  - `decorators.py`: converted `TypeVar`-based generics to Python 3.12 type
+    parameter syntax (`def f[F: Callable[..., Any]](func: F) -> F:`).
+  - `lambda_cdm_analytic_distance` in `physical_relations.py` and
+    `bayesian_inference_mwe.py`: removed `float()` cast (broke numpy 2.x when
+    called with 1-D array from `fsolve`); `dist()` uses `np.asarray(...).flat[0]`
+    for safe scalar extraction.
+  - Fixed trailing-comma bug in `EMRIDetection.from_host_galaxy` that made
+    `measured_luminosity_distance` and `measured_redshifted_mass` tuples instead
+    of floats when `use_measurement_noise=False`.
+  - Ruff-formatted all files to 100-character line length with isort ordering.
+
+---
+
 ## [2026-03-09] — uv migration & Python 3.13 compatibility
 
 ### Added
