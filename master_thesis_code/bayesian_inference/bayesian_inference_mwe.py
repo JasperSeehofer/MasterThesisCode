@@ -561,8 +561,8 @@ class BayesianInference:
 
     luminosity_distance_threshold = 1550.0  # Mpc
     number_of_redshift_steps = 1000
-    redshift_values: npt.ArrayLike = np.array([])
-    galaxy_distribution_at_redshifts: npt.ArrayLike = np.array([])
+    redshift_values: npt.ArrayLike = field(default_factory=lambda: np.array([]))
+    galaxy_distribution_at_redshifts: npt.ArrayLike = field(default_factory=lambda: np.array([]))
     galaxy_detection_mass_distribution_at_redshifts: list = field(default_factory=list)
     detection_skylocalization_weight_by_galaxy: list = field(default_factory=list)
     use_bh_mass = False

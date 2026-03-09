@@ -1,4 +1,5 @@
 *.log
+.venv/
 .vscode/
 saved_figures/LISA_configuration
 saved_figures/parameter_estimation

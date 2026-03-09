@@ -1,0 +1,51 @@
+[project]
+name = "master-thesis-code"
+version = "0.1.0"
+requires-python = ">=3.10,<3.14"
+dependencies = [
+    "numpy",
+    "scipy",
+    "pandas",
+    "matplotlib",
+    "scikit-learn",
+    "emcee",
+    "tabulate",
+    "fastlisaresponse==1.1.9",
+]
+
+[project.optional-dependencies]
+cpu = [
+    "fastemriwaveforms==2.0.0rc1",
+]
+gpu = [
+    "fastemriwaveforms-cuda12x",
+    "cupy-cuda12x",
+    "GPUtil",
+]
+dev = [
+    "pytest",
+    "mypy",
+    "jupyterlab",
+]
+
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = true
+warn_unused_ignores = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+no_implicit_optional = true
+strict_equality = true
+
+[[tool.mypy.overrides]]
+module = ["cupy.*", "cupyx.*", "fastlisaresponse.*", "few.*", "GPUtil.*"]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["master_thesis_code_test"]
+addopts = "-v --tb=short"
+markers = [
+    "gpu: requires CUDA GPU and cupy — skip with '-m not gpu'",
+    "slow: long-running test (>10s)",
+]
