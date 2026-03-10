@@ -122,7 +122,7 @@ def dist_derivative(
     first_term = C / H_0 * (1 + redshift) / hubble_function(redshift)
 
     zs = np.linspace(0, redshift, 1000)
-    hubble_function_values = hubble_function(zs)  # type: ignore[arg-type]
+    hubble_function_values = hubble_function(zs)
 
     # integral
     second_term = C / H_0 * float(np.trapezoid(1 / hubble_function_values, zs))
@@ -131,21 +131,22 @@ def dist_derivative(
 
 
 def hubble_function(
-    redshift: float,
+    redshift: float | npt.NDArray[np.floating[Any]],
     h: float = H,
     Omega_m: float = OMEGA_M,
     Omega_de: float = OMEGA_DE,
     w_0: float = W_0,
     w_a: float = W_A,
-) -> float:
-    return float(
-        np.sqrt(
-            Omega_m * (1 + redshift) ** 3
-            + Omega_de
-            * (1 + redshift) ** (3 * (1 + w_0 + w_a))
-            * np.exp(-3 * w_a * redshift / (1 + redshift))
-        )
+) -> float | npt.NDArray[np.floating[Any]]:
+    result = np.sqrt(
+        Omega_m * (1 + redshift) ** 3
+        + Omega_de
+        * (1 + redshift) ** (3 * (1 + w_0 + w_a))
+        * np.exp(-3 * w_a * redshift / (1 + redshift))
     )
+    if np.ndim(result) == 0:
+        return float(result)
+    return result
 
 
 def lambda_cdm_analytic_distance(

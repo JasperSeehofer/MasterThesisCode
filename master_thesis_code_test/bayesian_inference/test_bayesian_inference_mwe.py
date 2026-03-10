@@ -486,33 +486,20 @@ def test_posterior_length_matches_detections() -> None:
 # ── Known-bug regression: comoving_volume ignores cosmology ───────────────────
 
 
-@pytest.mark.xfail(
-    reason=(
-        "Known bug: GalaxyCatalog.comoving_volume() uses the hardcoded module-level "
-        "TRUE_HUBBLE_CONSTANT (0.7) and therefore returns the same value regardless of "
-        "the Hubble constant passed in.  This test documents the expected correct behaviour: "
-        "a higher H₀ should produce a smaller comoving volume at the same redshift."
-    )
-)
 def test_comoving_volume_varies_with_hubble_constant() -> None:
-    """comoving_volume should return different values for different H₀ (currently it doesn't).
+    """comoving_volume should return different values for different H₀.
 
     The comoving volume element dV/dz ∝ (c/H₀)³, so at fixed redshift a higher H₀ should
-    give a smaller comoving volume.  The method currently ignores any cosmology argument
-    and uses the hardcoded TRUE_HUBBLE_CONSTANT = 0.7.
+    give a smaller comoving volume.
     """
-    catalog = GalaxyCatalog(use_truncnorm=False, use_comoving_volume=False)
+    catalog_low_h = GalaxyCatalog(use_truncnorm=False, use_comoving_volume=False, h0=0.70)
+    catalog_high_h = GalaxyCatalog(use_truncnorm=False, use_comoving_volume=False, h0=0.73)
 
-    # If the bug is present both calls return the same value because TRUE_HUBBLE_CONSTANT
-    # is hardcoded.  This test will xfail until comoving_volume accepts an h parameter.
-    v_low_h = catalog.comoving_volume(0.5)  # would use h=0.70
-    v_high_h = catalog.comoving_volume(0.5)  # would use h=0.73 — currently same as above
+    v_low_h = catalog_low_h.comoving_volume(0.5)
+    v_high_h = catalog_high_h.comoving_volume(0.5)
 
     # comoving volume ∝ (c/H₀)³ → higher H₀ means smaller volume
-    # This assertion is expected to fail (hence xfail) as long as the bug exists.
-    assert v_low_h != v_high_h, (
-        "comoving_volume returned the same value for different H₀ — bug still present"
-    )
+    assert v_low_h > v_high_h, f"Expected v(h=0.70)={v_low_h} > v(h=0.73)={v_high_h}"
 
 
 # ── dist_array regression tests ───────────────────────────────────────────────

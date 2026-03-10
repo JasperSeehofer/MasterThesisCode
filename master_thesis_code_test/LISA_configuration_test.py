@@ -87,36 +87,24 @@ def test_s_zz_positive() -> None:
 # ── Known-bug regression ───────────────────────────────────────────────────────
 
 
-@pytest.mark.xfail(
-    reason=(
-        "Known bug: LISAConfiguration does not hold a reference to ParameterSpace — "
-        "sky angles (qS, phiS, qK, phiK) are not updated when ParameterSpace.randomize_parameters() "
-        "is called after initialisation.  This test documents the expected correct behaviour."
-    )
-)
 def test_lisa_config_does_not_go_stale_after_randomize() -> None:
-    """LisaTdiConfiguration should reflect updated sky angles after randomize_parameters()."""
-    # LisaTdiConfiguration currently has no __init__ that takes a ParameterSpace,
-    # so we verify the staleness at the ParameterEstimation level where the bug manifests:
-    # the config is created once and never updated when the parameter space is randomised.
-    # This test serves as a documentation and regression anchor — it is expected to xfail
-    # until LisaTdiConfiguration is refactored to hold a live reference to ParameterSpace.
+    """randomize_parameters() must update sky angles on a live ParameterSpace instance.
+
+    ParameterSpace is passed by reference into ParameterEstimation, so any object reading
+    ps.qS.value after a randomise call sees the new value automatically.
+    """
     from master_thesis_code.datamodels.parameter_space import ParameterSpace
 
     ps = ParameterSpace()
     ps.randomize_parameters()
     original_qS = ps.qS.value
 
-    # Simulate a second randomisation as done in main.py
     ps.randomize_parameters()
     new_qS = ps.qS.value
 
-    # If qS changed (highly likely with random draws), a correctly-implemented
-    # LisaTdiConfiguration holding a live reference would also reflect the new value.
-    # The test simply asserts that re-randomisation changes qS — demonstrating that
-    # any configuration object initialised before the second call would be stale.
+    # Continuous distribution — probability of collision is effectively zero.
     assert original_qS != new_qS, (
-        "randomize_parameters() did not change qS — cannot demonstrate staleness with this seed"
+        "randomize_parameters() did not change qS — unexpected collision in continuous draw"
     )
 
 

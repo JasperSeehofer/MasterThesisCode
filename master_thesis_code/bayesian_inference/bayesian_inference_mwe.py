@@ -10,10 +10,9 @@ import numpy as np
 import numpy.typing as npt
 from scipy.integrate import cumulative_trapezoid
 from scipy.interpolate import CubicSpline
-from scipy.optimize import fsolve
 
-# import error funciton
-from scipy.special import erf, hyp2f1
+# import error function
+from scipy.special import erf
 from scipy.stats import truncnorm
 
 from master_thesis_code.bayesian_inference.scientific_plotter import ScientificPlotter
@@ -21,14 +20,25 @@ from master_thesis_code.constants import (
     GALAXY_REDSHIFT_ERROR_COEFFICIENT,
     OMEGA_M,
     TRUE_HUBBLE_CONSTANT,
-    W_0,
-    W_A,
+    H,
 )
 from master_thesis_code.constants import (
     OMEGA_DE as OMEGA_LAMBDA,
 )
 from master_thesis_code.constants import (
     SPEED_OF_LIGHT_KM_S as SPEED_OF_LIGHT,
+)
+from master_thesis_code.physical_relations import (
+    dist,
+)
+from master_thesis_code.physical_relations import (
+    dist_to_redshift as dist_to_redshift,  # re-exported: test_bayesian_inference_mwe imports it
+)
+from master_thesis_code.physical_relations import (
+    dist_vectorized as _dist_vectorized,
+)
+from master_thesis_code.physical_relations import (
+    lambda_cdm_analytic_distance as lambda_cdm_analytic_distance,  # re-exported
 )
 
 FRACTIONAL_LUMINOSITY_ERROR: float = 0.1
@@ -37,104 +47,18 @@ FRACTIONAL_MEASURED_MASS_ERROR: float = 1e-8  # TODO: Check with parameter estim
 SKY_LOCALIZATION_ERROR: float = 2 / 180 * np.pi  # radians
 
 
-def dist(
-    redshift: float,
-    h: float = TRUE_HUBBLE_CONSTANT,
-    Omega_m: float = OMEGA_M,
-    Omega_de: float = OMEGA_LAMBDA,
-    w_0: float = W_0,
-    w_a: float = W_A,
-    offset_for_root_finding: float = 0.0,
-) -> float:
-    """
-    Calculate the luminosity distance in Mpc.
-    """
-    H_0 = h * 100.0  # Hubble constant in km/s*Mpc
-
-    # Hubble parameter
-    """
-    zs = np.linspace(0, redshift, 1000)
-    hubble = np.sqrt(
-        Omega_m * (1 + zs) ** 3
-        + Omega_de
-        * (1 + zs) ** (3 * (1 + w_0 + w_a))
-        * np.exp(-3 * w_a * zs / (1 + zs))
-    )
-
-    # integral
-    integral = np.trapzoid(1 / hubble, zs)
-    """
-    # use analytic version of the integral
-    integral = lambda_cdm_analytic_distance(redshift, Omega_m, Omega_de)
-
-    # luminosity distance in Gpc
-    result = SPEED_OF_LIGHT / H_0 * (1 + redshift) * integral - offset_for_root_finding
-
-    return float(np.asarray(result).flat[0])
-
-
 def dist_array(
     redshifts: npt.NDArray[np.float64],
-    h: float = TRUE_HUBBLE_CONSTANT,
+    h: float = H,
     Omega_m: float = OMEGA_M,
     Omega_de: float = OMEGA_LAMBDA,
 ) -> npt.NDArray[np.float64]:
-    """Vectorized luminosity distance in Mpc over an array of redshifts.
+    """Vectorized luminosity distance in Gpc over an array of redshifts.
 
-    Equivalent to calling dist(z, h) for every z in redshifts but avoids
-    the scalar wrapping overhead — hyp2f1 and all numpy operations broadcast
-    over the full array in one call.
+    Delegates to physical_relations.dist_vectorized for a canonical, unit-consistent
+    implementation.  Returns Gpc (same unit as the scalar dist()).
     """
-    H_0 = h * 100.0
-    integral = lambda_cdm_analytic_distance(redshifts, Omega_m, Omega_de)
-    return np.asarray(SPEED_OF_LIGHT / H_0 * (1 + redshifts) * integral)
-
-
-def lambda_cdm_analytic_distance(
-    redshift: float | npt.NDArray[np.float64],
-    Omega_m: float = OMEGA_M,
-    Omega_de: float = OMEGA_LAMBDA,
-) -> float | npt.NDArray[np.float64]:
-    return (  # type: ignore[no-any-return]
-        (
-            (1 + redshift)
-            * np.sqrt(1 + (Omega_m * (1 + redshift) ** 3) / Omega_de)
-            * hyp2f1(1 / 3, 1 / 2, 4 / 3, -((Omega_m * (1 + redshift) ** 3) / Omega_de))
-        )
-        / np.sqrt(Omega_de + Omega_m * (1 + redshift) ** 3)
-        - (
-            np.sqrt((Omega_m + Omega_de) / Omega_de)
-            * hyp2f1(1 / 3, 1 / 2, 4 / 3, -(Omega_m / Omega_de))
-        )
-        / np.sqrt(Omega_m + Omega_de)
-    )
-
-
-def dist_to_redshift(
-    distance: float,
-    h: float = TRUE_HUBBLE_CONSTANT,
-    Omega_m: float = OMEGA_M,
-    Omega_de: float = OMEGA_LAMBDA,
-    w_0: float = W_0,
-    w_a: float = W_A,
-) -> float:
-    """
-    Calculate the redshift for a given luminosity distance.
-    """
-    return float(
-        fsolve(
-            dist,
-            1,
-            args=(
-                h,
-                Omega_m,
-                Omega_de,
-                w_0,
-                w_a,
-                distance,
-            ),
-        )[0]
-    )
+    return np.asarray(_dist_vectorized(redshifts, h=h, Omega_m=Omega_m, Omega_de=Omega_de))
 
 
 def redshifted_mass(mass: float, redshift: float) -> float:
@@ -188,16 +112,22 @@ class GalaxyCatalog:
     galaxy_distribution: list[NormalDist] = field(default_factory=list)
     galaxy_mass_distribution: list[NormalDist] = field(default_factory=list)
 
-    def __init__(self, use_truncnorm: bool = True, use_comoving_volume: bool = True):
+    def __init__(
+        self,
+        use_truncnorm: bool = True,
+        use_comoving_volume: bool = True,
+        h0: float = TRUE_HUBBLE_CONSTANT,
+    ):
         self._use_truncnorm = use_truncnorm
         self._use_comoving_volume = use_comoving_volume
+        self._h0 = h0
         self.catalog = []
         self.galaxy_distribution = []
         self.galaxy_mass_distribution = []
-        self._comoving_volume_spline = self._build_comoving_volume_spline()
+        self._comoving_volume_spline = self._build_comoving_volume_spline(h0)
 
     @staticmethod
-    def _build_comoving_volume_spline() -> CubicSpline:
+    def _build_comoving_volume_spline(h0: float = TRUE_HUBBLE_CONSTANT) -> CubicSpline:
         """Precompute the comoving volume on a fine redshift grid and return a spline.
 
         The integral ∫₀ᶻ dz'/E(z') is computed once via cumulative_trapezoid so subsequent
@@ -206,7 +136,7 @@ class GalaxyCatalog:
         _z_grid = np.linspace(0, 10.0, 4000)
         integrand = 1.0 / np.sqrt(OMEGA_M * (1 + _z_grid) ** 3 + OMEGA_LAMBDA)
         cumulative_integral = np.concatenate([[0.0], cumulative_trapezoid(integrand, _z_grid)])
-        cv_grid = 4 * np.pi * (SPEED_OF_LIGHT / TRUE_HUBBLE_CONSTANT) ** 3 * cumulative_integral**2
+        cv_grid = 4 * np.pi * (SPEED_OF_LIGHT / h0) ** 3 * cumulative_integral**2
         return CubicSpline(_z_grid, cv_grid)
 
     def comoving_volume(self, redshift: float) -> float:
@@ -261,7 +191,7 @@ class GalaxyCatalog:
     def create_random_catalog(self, number_of_galaxies: int) -> None:
         # draw mass from uniform in log space
         print(
-            f"Creating random galaxy catalog with {number_of_galaxies} galaxies in the redshift range ({self.redshift_lower_limit}, {self.redshift_upper_limit}) / ({dist(self.redshift_lower_limit)}, {dist(self.redshift_upper_limit)}) Mpc."
+            f"Creating random galaxy catalog with {number_of_galaxies} galaxies in the redshift range ({self.redshift_lower_limit}, {self.redshift_upper_limit}) / ({dist(self.redshift_lower_limit)}, {dist(self.redshift_upper_limit)}) Gpc."
         )
         if self._use_comoving_volume:
             redshift_samples = self.get_samples_from_comoving_volume(number_of_galaxies)
@@ -567,7 +497,7 @@ class BayesianInference:
     galaxy_catalog: GalaxyCatalog
     emri_detections: list[EMRIDetection]
 
-    luminosity_distance_threshold = 1550.0  # Mpc
+    luminosity_distance_threshold = 1.55  # Gpc
     number_of_redshift_steps = 1000
     redshift_values: npt.NDArray[np.float64] = field(default_factory=lambda: np.array([]))
     galaxy_distribution_at_redshifts: npt.NDArray[np.float64] = field(

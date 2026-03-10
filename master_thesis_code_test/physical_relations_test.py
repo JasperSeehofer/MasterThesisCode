@@ -67,12 +67,15 @@ def test_dist_returns_float() -> None:
 def test_hubble_function_at_zero() -> None:
     """Normalization: hubble_function(0) == 1.0 for flat LCDM with Omega_m + Omega_de = 1."""
     result = hubble_function(0)
+    assert isinstance(result, float)
     assert abs(result - 1.0) < 1e-10
 
 
 def test_hubble_function_positive() -> None:
     for z in [0.5, 1.0, 2.0]:
-        assert hubble_function(z) > 0
+        result = hubble_function(z)
+        assert isinstance(result, float)
+        assert result > 0
 
 
 def test_dist_to_redshift_at_zero() -> None:
@@ -104,16 +107,7 @@ def test_dist_vectorized_matches_scalar() -> None:
 
 @pytest.mark.parametrize("z", [0.5, 1.0])
 def test_dist_derivative_positive(z: float) -> None:
-    """The luminosity distance is monotonically increasing, so its derivative must be positive.
-
-    Note: hubble_function() currently wraps float() around an array return value, which raises
-    TypeError in NumPy >= 2.0 when called with an array argument inside dist_derivative.
-    This test documents the expected behaviour; it will pass once that bug is fixed.
-    """
-    pytest.xfail(
-        "hubble_function() cannot handle array input (float() on ndarray); "
-        "see known bug in physical_relations.py"
-    )
+    """The luminosity distance is monotonically increasing, so its derivative must be positive."""
     assert dist_derivative(z) > 0
 
 
