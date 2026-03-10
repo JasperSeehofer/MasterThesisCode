@@ -1,3 +1,12 @@
+"""EMRI parameter estimation: waveform generation, Fisher matrix, SNR, and Cramér-Rao bounds.
+
+:class:`ParameterEstimation` drives the core computational pipeline: it generates
+LISA TDI waveforms using the ``few`` package, computes the signal-to-noise ratio,
+and — for detections above the SNR threshold — evaluates the full Fisher information
+matrix via a 5-point finite-difference stencil to obtain Cramér-Rao lower bounds on
+all 14 EMRI parameters.
+"""
+
 import multiprocessing as mp
 import os
 import time
@@ -24,8 +33,6 @@ except ImportError:
     cufft = None
     _CUPY_AVAILABLE = False
 
-from fastlisaresponse import ResponseWrapper
-
 from master_thesis_code.constants import (
     CRAMER_RAO_BOUNDS_PATH,
     ESA_TDI_CHANNELS,
@@ -49,9 +56,24 @@ _LOGGER = logging.getLogger()
 
 
 class ParameterEstimation:
+    """EMRI waveform-based parameter estimation using the LISA Fisher information matrix.
+
+    Generates LISA TDI waveforms via the ``few`` package, computes the noise-weighted
+    signal-to-noise ratio, and — for detections above the SNR threshold — evaluates the
+    full :math:`14 \\times 14` Fisher matrix using a 5-point finite-difference stencil to
+    obtain Cramér-Rao lower bounds on all EMRI parameters.
+
+    Attributes:
+        parameter_space: 14-parameter EMRI configuration space.
+        lisa_response_generator: LISA TDI response generator for the full 5-year observation.
+        snr_check_generator: LISA TDI response generator for the 1-year SNR pre-check.
+        dt: Time sampling interval in seconds.
+        T: Observation time in years.
+    """
+
     parameter_space: ParameterSpace
-    lisa_response_generator: ResponseWrapper
-    snr_check_generator: ResponseWrapper
+    lisa_response_generator: Any  # ResponseWrapper at runtime; lazy-imported to avoid SIGILL on CPU
+    snr_check_generator: Any  # ResponseWrapper at runtime; lazy-imported to avoid SIGILL on CPU
     dt: int = 10  # time sampling in sec
     T: float = 5  # observation time in years
 
@@ -239,6 +261,30 @@ class ParameterEstimation:
     def scalar_product_of_functions(
         self, tdi_channels_a: npt.NDArray[np.float64], tdi_channels_b: npt.NDArray[np.float64]
     ) -> float:
+        """LISA noise-weighted inner product between two TDI waveforms.
+
+        Implements the standard gravitational-wave inner product:
+
+        .. math::
+
+            \\langle h_1 \\mid h_2 \\rangle = 4 \\,\\mathrm{Re}
+            \\sum_{\\alpha \\in \\{A, E\\}} \\int_{f_\\min}^{f_\\max}
+            \\frac{\\tilde{h}_1^\\alpha(f)\\, \\tilde{h}_2^{\\alpha *}(f)}{S_n^\\alpha(f)}
+            \\, df
+
+        summed over TDI channels, where :math:`S_n^\\alpha(f)` is the one-sided
+        noise PSD from :meth:`~master_thesis_code.LISA_configuration.LisaTdiConfiguration.power_spectral_density`.
+
+        This is the computational hot path: it is called :math:`O(N_\\theta^2)` times
+        per Fisher matrix (105 calls for 14 parameters using the 5-point stencil).
+
+        Args:
+            tdi_channels_a: TDI waveform array of shape ``(n_channels, n_samples)``.
+            tdi_channels_b: TDI waveform array of shape ``(n_channels, n_samples)``.
+
+        Returns:
+            Real-valued inner product :math:`\\langle h_1 \\mid h_2 \\rangle`.
+        """
         n_a = tdi_channels_a.shape[-1]
         n_b = tdi_channels_b.shape[-1]
         n_min = min(n_a, n_b)

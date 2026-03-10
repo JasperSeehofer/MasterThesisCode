@@ -1,8 +1,6 @@
 import logging
 from enum import Enum
-
-from fastlisaresponse import ResponseWrapper
-from few.waveform import GenerateEMRIWaveform
+from typing import Any
 
 from master_thesis_code.constants import ESA_TDI_CHANNELS
 from master_thesis_code.exceptions import WaveformGenerationError
@@ -51,7 +49,13 @@ def create_lisa_response_generator(
     waveform_generator_type: WaveGeneratorType,
     dt: float,
     T_observation: float,
-) -> ResponseWrapper:
+) -> Any:
+    # fastlisaresponse is imported lazily: its compiled C extension crashes (SIGILL)
+    # on CPUs without AVX support (e.g. GitHub Actions runners). Importing it here
+    # rather than at module level keeps waveform_generator importable on any machine;
+    # this function is only called in GPU-enabled environments.
+    from fastlisaresponse import ResponseWrapper  # noqa: PLC0415
+
     lisa_response_generator = ResponseWrapper(
         waveform_gen=_set_waveform_generator(waveform_generator_type),
         flip_hx=True,
@@ -71,7 +75,9 @@ def create_lisa_response_generator(
 
 def _set_waveform_generator(
     waveform_generator_type: WaveGeneratorType,
-) -> GenerateEMRIWaveform:
+) -> Any:
+    from few.waveform import GenerateEMRIWaveform  # noqa: PLC0415
+
     if waveform_generator_type == WaveGeneratorType.SCHWARZSCHILD_FULLY_RELATIVISTIC:
         _LOGGER.info(
             "Parameter estimation is setup up with the 'FastSchwarzschildEccentricFlux' wave generator."

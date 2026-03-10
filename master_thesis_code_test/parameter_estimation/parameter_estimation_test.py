@@ -5,15 +5,16 @@ from unittest.mock import MagicMock
 import pandas as pd
 import pytest
 
-import master_thesis_code.parameter_estimation.parameter_estimation as pe_module
-from master_thesis_code.datamodels.parameter_space import ParameterSpace
-
 try:
+    import master_thesis_code.parameter_estimation.parameter_estimation as pe_module
     from master_thesis_code.parameter_estimation.parameter_estimation import ParameterEstimation
 
     _PE_AVAILABLE = True
-except ImportError:
+except Exception:  # noqa: BLE001 — catches SIGILL-induced ImportError and other load failures
+    pe_module = None  # type: ignore[assignment]
     _PE_AVAILABLE = False
+
+from master_thesis_code.datamodels.parameter_space import ParameterSpace
 
 pytestmark = pytest.mark.skipif(
     not _PE_AVAILABLE,

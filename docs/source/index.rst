@@ -1,16 +1,24 @@
-.. Master Thesis documentation master file, created by
-   sphinx-quickstart on Mon May 22 14:44:06 2023.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
+EMRI Bayesian H₀ Inference — Documentation
+===========================================
 
-Welcome to Master Thesis's documentation!
-=========================================
+.. toctree::
+   :maxdepth: 1
+   :caption: Getting Started
+
+   quickstart
+   architecture
 
 .. toctree::
    :maxdepth: 2
-   :caption: Contents:
+   :caption: API Reference
 
-   _generated/master_thesis_code.rst
+   api/physical_relations
+   api/constants
+   api/datamodels
+   api/bayesian_inference
+   api/parameter_estimation
+   api/lisa_configuration
+   api/cosmological_model
 
 Indices and tables
 ==================
