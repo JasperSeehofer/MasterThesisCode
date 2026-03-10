@@ -236,6 +236,7 @@ def data_simulation(
         memory_management.display_GPU_information()
         memory_management.display_fft_cache()
 
+    parameter_estimation.flush_pending_results()
     parameter_estimation.lisa_configuration._visualize_lisa_configuration()
     parameter_estimation._visualize_cramer_rao_bounds()
 

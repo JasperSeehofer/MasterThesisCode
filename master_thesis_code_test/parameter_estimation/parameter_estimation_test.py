@@ -5,7 +5,7 @@ from unittest.mock import MagicMock
 import pandas as pd
 import pytest
 
-import master_thesis_code.constants as constants
+import master_thesis_code.parameter_estimation.parameter_estimation as pe_module
 from master_thesis_code.datamodels.parameter_space import ParameterSpace
 
 try:
@@ -13,13 +13,11 @@ try:
 
     _PE_AVAILABLE = True
 except ImportError:
-    # parameter_estimation imports LISA_configuration which imports cupy unconditionally;
-    # skip on CPU-only machines.
     _PE_AVAILABLE = False
 
 pytestmark = pytest.mark.skipif(
     not _PE_AVAILABLE,
-    reason="parameter_estimation unavailable (LISA_configuration requires cupy)",
+    reason="parameter_estimation unavailable",
 )
 
 
@@ -35,6 +33,8 @@ def _make_minimal_pe(tmp_path: pathlib.Path) -> Any:
     pe.lisa_response_generator = MagicMock()
     pe.snr_check_generator = MagicMock()
     pe.lisa_configuration = MagicMock()
+    pe._crb_buffer = []
+    pe._crb_flush_interval = 1  # flush immediately so tests can assert on file contents
     return pe
 
 
@@ -43,7 +43,7 @@ def test_save_cramer_rao_bound_creates_csv(
 ) -> None:
     """Calling save_cramer_rao_bound once should create a CSV with exactly one data row."""
     csv_path = str(tmp_path / "crb_simulation_$index.csv")
-    monkeypatch.setattr(constants, "CRAMER_RAO_BOUNDS_PATH", csv_path)
+    monkeypatch.setattr(pe_module, "CRAMER_RAO_BOUNDS_PATH", csv_path)
 
     pe = _make_minimal_pe(tmp_path)
     crb_dict: dict = {}  # empty CRB dictionary (no Fisher matrix entries)
@@ -65,7 +65,7 @@ def test_save_cramer_rao_bound_appends(
 ) -> None:
     """Calling save_cramer_rao_bound twice should result in a CSV with two data rows."""
     csv_path = str(tmp_path / "crb_simulation_$index.csv")
-    monkeypatch.setattr(constants, "CRAMER_RAO_BOUNDS_PATH", csv_path)
+    monkeypatch.setattr(pe_module, "CRAMER_RAO_BOUNDS_PATH", csv_path)
 
     pe = _make_minimal_pe(tmp_path)
     crb_dict: dict = {}
@@ -197,3 +197,165 @@ def test_crop_to_same_length_equal_length_inputs() -> None:
 
     # Shape: (2 signals, 2 channels, n)
     assert result.shape[2] == n
+
+
+# ── flush_pending_results ─────────────────────────────────────────────────────
+
+
+def test_flush_pending_results_empty_buffer_is_no_op(
+    tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """flush_pending_results() on an empty buffer must not raise or create files."""
+    csv_path = str(tmp_path / "crb_simulation_$index.csv")
+    monkeypatch.setattr(pe_module, "CRAMER_RAO_BOUNDS_PATH", csv_path)
+
+    pe = _make_minimal_pe(tmp_path)
+    pe._crb_buffer = []
+    pe.flush_pending_results()
+
+    assert not pathlib.Path(csv_path.replace("$index", "0")).exists()
+    assert pe._crb_buffer == []
+
+
+def test_flush_pending_results_writes_all_buffered_rows(
+    tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Explicit flush must write all buffered rows to CSV regardless of interval."""
+    csv_path = str(tmp_path / "crb_simulation_$index.csv")
+    monkeypatch.setattr(pe_module, "CRAMER_RAO_BOUNDS_PATH", csv_path)
+
+    pe = _make_minimal_pe(tmp_path)
+    pe._crb_flush_interval = 100  # disable auto-flush
+    crb_dict: dict = {}
+
+    pe.save_cramer_rao_bound(crb_dict, snr=10.0, simulation_index=0)
+    pe.save_cramer_rao_bound(crb_dict, snr=11.0, simulation_index=0)
+    pe.save_cramer_rao_bound(crb_dict, snr=12.0, simulation_index=0)
+
+    result_path = csv_path.replace("$index", "0")
+    assert not pathlib.Path(result_path).exists(), "File should not exist before explicit flush"
+
+    pe.flush_pending_results()
+
+    assert pathlib.Path(result_path).exists()
+    df = pd.read_csv(result_path)
+    assert len(df) == 3
+
+
+def test_crb_buffer_auto_flushes_at_interval(
+    tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Buffer must auto-flush once it reaches _crb_flush_interval rows."""
+    csv_path = str(tmp_path / "crb_simulation_$index.csv")
+    monkeypatch.setattr(pe_module, "CRAMER_RAO_BOUNDS_PATH", csv_path)
+
+    pe = _make_minimal_pe(tmp_path)
+    pe._crb_flush_interval = 2
+    result_path = csv_path.replace("$index", "0")
+
+    # 1st call: buffer has 1 row — no auto-flush yet
+    pe.save_cramer_rao_bound({}, snr=10.0, simulation_index=0)
+    assert not pathlib.Path(result_path).exists()
+
+    # 2nd call: buffer reaches 2 → auto-flush → file created with 2 rows
+    pe.save_cramer_rao_bound({}, snr=11.0, simulation_index=0)
+    assert pathlib.Path(result_path).exists()
+    df = pd.read_csv(result_path)
+    assert len(df) == 2
+
+    # 3rd call: buffer has 1 pending row, file still has only 2 rows
+    pe.save_cramer_rao_bound({}, snr=12.0, simulation_index=0)
+    df = pd.read_csv(result_path)
+    assert len(df) == 2
+
+    # explicit flush writes the remaining row
+    pe.flush_pending_results()
+    df = pd.read_csv(result_path)
+    assert len(df) == 3
+
+
+# ── PSD cache (GPU) ───────────────────────────────────────────────────────────
+
+
+@pytest.mark.gpu
+def test_psd_cache_returns_same_array_for_same_n() -> None:
+    """_get_cached_psd(n) called twice must return the same psd_stack object."""
+
+    from master_thesis_code.constants import ESA_TDI_CHANNELS
+    from master_thesis_code.LISA_configuration import LisaTdiConfiguration
+
+    pe = ParameterEstimation.__new__(ParameterEstimation)
+    pe.dt = 10
+    pe.parameter_space = ParameterSpace()
+    pe.parameter_space.randomize_parameters()
+    pe.lisa_configuration = LisaTdiConfiguration()
+    pe.lisa_response_generator = MagicMock()
+    pe.snr_check_generator = MagicMock()
+    pe._psd_cache = {}
+
+    result1 = pe._get_cached_psd(10000)
+    result2 = pe._get_cached_psd(10000)
+
+    # Same psd_stack object — second call hits the cache
+    assert result1[1] is result2[1]
+    assert result1[1].shape[0] == len(ESA_TDI_CHANNELS)
+
+
+@pytest.mark.gpu
+def test_psd_cache_shape_is_n_channels_by_n_freqs() -> None:
+    """psd_stack returned by _get_cached_psd must have shape (n_channels, n_freqs_cropped)."""
+    from master_thesis_code.constants import ESA_TDI_CHANNELS
+    from master_thesis_code.LISA_configuration import LisaTdiConfiguration
+
+    pe = ParameterEstimation.__new__(ParameterEstimation)
+    pe.dt = 10
+    pe.parameter_space = ParameterSpace()
+    pe.parameter_space.randomize_parameters()
+    pe.lisa_configuration = LisaTdiConfiguration()
+    pe.lisa_response_generator = MagicMock()
+    pe.snr_check_generator = MagicMock()
+    pe._psd_cache = {}
+
+    n = 8192
+    fs, psd_stack, lower_idx, upper_idx = pe._get_cached_psd(n)
+    n_freqs = upper_idx - lower_idx
+    assert psd_stack.shape == (len(ESA_TDI_CHANNELS), n_freqs)
+
+
+# ── Fisher matrix symmetry (GPU) ─────────────────────────────────────────────
+
+
+@pytest.mark.gpu
+def test_fisher_matrix_is_symmetric() -> None:
+    """Fisher information matrix must be symmetric (upper triangle is mirrored to lower)."""
+    from unittest.mock import patch
+
+    import cupy as cp
+    import numpy as np
+
+    from master_thesis_code.LISA_configuration import LisaTdiConfiguration
+
+    pe = ParameterEstimation.__new__(ParameterEstimation)
+    pe.dt = 10
+    pe.parameter_space = ParameterSpace()
+    pe.parameter_space.randomize_parameters()
+    pe.lisa_configuration = LisaTdiConfiguration()
+    pe.lisa_response_generator = MagicMock()
+    pe.snr_check_generator = MagicMock()
+    pe._psd_cache = {}
+    pe._crb_buffer = []
+    pe._crb_flush_interval = 1
+    pe.waveform_generation_time = 0.0
+
+    # Provide synthetic derivatives so no real waveform generation is needed
+    n = 10000
+    param_names = list(pe.parameter_space._parameters_to_dict().keys())
+    mock_derivatives = {name: cp.random.randn(2, n) for name in param_names}
+
+    with patch.object(pe, "finite_difference_derivative", return_value=mock_derivatives):
+        F = pe.compute_fisher_information_matrix()
+
+    F_np = cp.asnumpy(F)
+    n_params = len(param_names)
+    assert F_np.shape == (n_params, n_params)
+    assert np.allclose(F_np, F_np.T), "Fisher matrix must be symmetric"

@@ -72,7 +72,34 @@ class ParameterEstimation:
             1,
         )
         self.lisa_configuration = LisaTdiConfiguration()
+        self._psd_cache: dict[int, tuple[Any, Any, int, int]] = {}
+        self._crb_buffer: list[dict] = []
+        self._crb_flush_interval: int = 10
         _LOGGER.info("parameter estimation initialized.")
+
+    def _get_cached_psd(self, n: int) -> tuple[Any, Any, int, int]:
+        """Compute and cache (fs_cropped, psd_stack, lower_idx, upper_idx) for waveform length n.
+
+        The PSD depends only on the frequency axis, which is fully determined by n and self.dt.
+        Caching eliminates repeated rfftfreq + power_spectral_density calls across Fisher matrix
+        inner products — all 105 calls in one Fisher matrix share the same n in practice.
+        """
+        if n not in self._psd_cache:
+            fs_full = cufft.rfftfreq(n, self.dt)[1:]
+            lower_idx = int(cp.argmax(fs_full >= MINIMAL_FREQUENCY))
+            upper_idx = int(cp.argmax(fs_full >= MAXIMAL_FREQUENCY))
+            if upper_idx == 0:
+                upper_idx = int(len(fs_full))
+            fs = fs_full[lower_idx:upper_idx]
+            # A and E channels share the same PSD formula; stack to (n_channels, n_freqs)
+            psd_stack = cp.stack(
+                [
+                    self.lisa_configuration.power_spectral_density(fs, channel=ch)
+                    for ch in ESA_TDI_CHANNELS
+                ]
+            )
+            self._psd_cache[n] = (fs, psd_stack, lower_idx, upper_idx)
+        return self._psd_cache[n]
 
     @timer_decorator
     def generate_lisa_response(
@@ -94,7 +121,10 @@ class ParameterEstimation:
         """
         derivatives: dict = {}
 
-        waveform_evaluated_at = self.generate_lisa_response()
+        # Compute the base waveform once and keep it immutable across iterations.
+        # Without this, _crop_to_same_length would progressively shorten the base
+        # waveform on each iteration, producing incorrect derivatives for later parameters.
+        base_waveform = self.generate_lisa_response()
 
         for parameter in vars(self.parameter_space).values():
             _LOGGER.info(
@@ -115,16 +145,16 @@ class ParameterEstimation:
                 update_parameter_dict={parameter.symbol: parameter.value}
             )
 
-            waveform_evaluated_at, current_waveform = self._crop_to_same_length(
-                [waveform_evaluated_at, current_waveform]
+            base_cropped, current_waveform = self._crop_to_same_length(
+                [base_waveform, current_waveform]
             )
 
-            derivative = (current_waveform - waveform_evaluated_at) / derivative_epsilon
+            derivative = (current_waveform - base_cropped) / derivative_epsilon
 
             derivatives[parameter.symbol] = derivative
 
         _LOGGER.info("Finished computing partial derivatives.")
-        del waveform_evaluated_at, current_waveform, derivative
+        del base_waveform, current_waveform, base_cropped, derivative
         return derivatives
 
     def five_point_stencil_derivative(
@@ -209,44 +239,31 @@ class ParameterEstimation:
     def scalar_product_of_functions(
         self, tdi_channels_a: npt.NDArray[np.float64], tdi_channels_b: npt.NDArray[np.float64]
     ) -> float:
-        result = 0
-        for channel, tdi_channel_a, tdi_channel_b in zip(
-            ESA_TDI_CHANNELS, tdi_channels_a, tdi_channels_b
-        ):
-            fs = cufft.rfftfreq(len(tdi_channel_a), self.dt)[
-                1:
-            ]  # TODO: still needed to avoid zero frequency?
-            a_fft = cufft.rfft(tdi_channel_a)[1:]
-            b_fft_cc = cp.conjugate(cufft.rfft(tdi_channel_b))[1:]
-            power_spectral_density = self.lisa_configuration.power_spectral_density(
-                frequencies=fs, channel=channel
-            )
+        n_a = tdi_channels_a.shape[-1]
+        n_b = tdi_channels_b.shape[-1]
+        n_min = min(n_a, n_b)
 
-            # crop all arrays to shortest length
-            reduced_length = min(a_fft.shape[0], b_fft_cc.shape[0], fs.shape[0])
-            a_fft = a_fft[:reduced_length]
-            b_fft_cc = b_fft_cc[:reduced_length]
-            fs = fs[:reduced_length]
-            power_spectral_density = power_spectral_density[:reduced_length]
+        # Retrieve cached frequency axis and PSD for this waveform length.
+        # fs shape: (n_freqs,); psd_stack shape: (n_channels, n_freqs)
+        fs, psd_stack, lower_idx, upper_idx = self._get_cached_psd(n_min)
 
-            integrant = cp.divide(cp.multiply(a_fft, b_fft_cc), power_spectral_density)
-            fs, integrant = self._crop_frequency_domain(fs, integrant)
+        # Batch FFT all channels at once: rfft shape (n_channels, n_min//2+1).
+        # Slice [1:] skips DC; [lower_idx:upper_idx] restricts to the analysis band.
+        a_ffts = cufft.rfft(tdi_channels_a[:, :n_min], axis=-1)[:, 1 + lower_idx : 1 + upper_idx]
+        b_ffts_cc = cp.conjugate(cufft.rfft(tdi_channels_b[:, :n_min], axis=-1))[
+            :, 1 + lower_idx : 1 + upper_idx
+        ]
 
-            # plt.plot(cp.asnumpy(fs).real, cp.asnumpy(integrant).real)
+        # Guard against off-by-one from any rounding in rfft output length.
+        n_freq = min(a_ffts.shape[-1], b_ffts_cc.shape[-1], psd_stack.shape[-1])
+        a_ffts = a_ffts[:, :n_freq]
+        b_ffts_cc = b_ffts_cc[:, :n_freq]
+        fs_crop = fs[:n_freq]
+        psd_crop = psd_stack[:, :n_freq]
 
-            result += 4 * cp.trapz(y=integrant, x=fs).real
-            # _LOGGER.debug(f"current scalar product result: {result}")
-        # plt.xscale("log")
-        # plt.yscale("log")
-        # plt.savefig("scalar_product_integrants.png", dpi=300)
-        # plt.close()
-        del fs
-        del a_fft
-        del b_fft_cc
-        del power_spectral_density
-        del integrant
-        del tdi_channels_a
-        del tdi_channels_b
+        # Integrand (n_channels, n_freqs); sum over channels then integrate over frequency.
+        integrant = (a_ffts * b_ffts_cc) / psd_crop
+        result = 4.0 * float(cp.trapz(integrant.sum(axis=0).real, x=fs_crop))
         return result
 
     @staticmethod
@@ -289,13 +306,17 @@ class ParameterEstimation:
             shape=(len(parameter_symbol_list), len(parameter_symbol_list)), dtype=float
         )
 
+        # Fisher matrix is symmetric: Γᵢⱼ = Γⱼᵢ. Compute upper triangle only and mirror,
+        # halving the number of expensive scalar_product_of_functions GPU calls (105 vs 196).
         for col, column_parameter_symbol in enumerate(parameter_symbol_list):
-            for row, row_parameter_symbol in enumerate(parameter_symbol_list):
-                fisher_information_matrix_element = self.scalar_product_of_functions(
+            for row in range(col, len(parameter_symbol_list)):
+                row_parameter_symbol = parameter_symbol_list[row]
+                val = self.scalar_product_of_functions(
                     lisa_response_derivatives[column_parameter_symbol],
                     lisa_response_derivatives[row_parameter_symbol],
                 )
-                fisher_information_matrix[col][row] = fisher_information_matrix_element
+                fisher_information_matrix[col][row] = val
+                fisher_information_matrix[row][col] = val
 
         _LOGGER.info("Fisher information matrix has been computed.")
         del lisa_response_derivatives
@@ -347,36 +368,46 @@ class ParameterEstimation:
         simulation_index: int,
         host_galaxy_index: int = -1,
     ) -> None:
-        file_path = CRAMER_RAO_BOUNDS_PATH.replace("$index", str(simulation_index))
-        try:
-            cramer_rao_bounds = pd.read_csv(file_path)
-
-        except FileNotFoundError:
-            parameters_list = list(self.parameter_space._parameters_to_dict().keys())
-            parameters_list.extend(list(cramer_rao_bound_dictionary.keys()))
-            parameters_list.extend(["T", "dt", "SNR", "generation_time", "host_galaxy_index"])
-            cramer_rao_bounds = pd.DataFrame(columns=parameters_list)
-
-        new_cramer_rao_bounds_dict = (
-            self.parameter_space._parameters_to_dict() | cramer_rao_bound_dictionary
+        row = (
+            self.parameter_space._parameters_to_dict()
+            | cramer_rao_bound_dictionary
+            | {
+                "T": self.T,
+                "dt": self.dt,
+                "SNR": snr,
+                "generation_time": self.waveform_generation_time,
+                "host_galaxy_index": host_galaxy_index,
+                "_simulation_index": simulation_index,
+            }
         )
-        new_cramer_rao_bounds_dict = new_cramer_rao_bounds_dict | {
-            "T": self.T,
-            "dt": self.dt,
-            "SNR": snr,
-            "generation_time": self.waveform_generation_time,
-            "host_galaxy_index": host_galaxy_index,
-        }
+        self._crb_buffer.append(row)
+        if len(self._crb_buffer) >= self._crb_flush_interval:
+            self.flush_pending_results()
 
-        new_cramer_rao_bounds = pd.DataFrame([new_cramer_rao_bounds_dict])
+    def flush_pending_results(self) -> None:
+        """Write all buffered Cramér-Rao bound rows to disk and clear the buffer.
 
-        cramer_rao_bounds = pd.concat([cramer_rao_bounds, new_cramer_rao_bounds], ignore_index=True)
-        cramer_rao_bounds.to_csv(file_path, index=False)
-        _LOGGER.info(f"Saved current Cramer-Rao bound to {CRAMER_RAO_BOUNDS_PATH}")
-        del cramer_rao_bound_dictionary
-        del cramer_rao_bounds
-        del new_cramer_rao_bounds
-        del new_cramer_rao_bounds_dict
+        Call this at the end of a simulation run to ensure no results are lost.
+        Rows are grouped by simulation index so a single read/write per file replaces
+        one read/write per detection (the previous behaviour).
+        """
+        if not self._crb_buffer:
+            return
+        # Group rows by simulation index (in practice always the same within a job).
+        by_index: dict[int, list[dict]] = {}
+        for row in self._crb_buffer:
+            idx = row.pop("_simulation_index")
+            by_index.setdefault(idx, []).append(row)
+        for sim_idx, rows in by_index.items():
+            file_path = CRAMER_RAO_BOUNDS_PATH.replace("$index", str(sim_idx))
+            try:
+                existing = pd.read_csv(file_path)
+            except FileNotFoundError:
+                existing = pd.DataFrame(columns=list(rows[0].keys()))
+            combined = pd.concat([existing, pd.DataFrame(rows)], ignore_index=True)
+            combined.to_csv(file_path, index=False)
+            _LOGGER.info(f"Flushed {len(rows)} Cramér-Rao bounds to {file_path}")
+        self._crb_buffer.clear()
 
     def _visualize_cramer_rao_bounds(self) -> None:
         mean_errors_data = pd.read_csv(CRAMER_RAO_BOUNDS_PATH)

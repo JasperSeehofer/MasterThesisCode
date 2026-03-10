@@ -1,6 +1,9 @@
 import pytest
 
 from master_thesis_code.bayesian_inference.bayesian_inference_mwe import (
+    OMEGA_LAMBDA,
+    OMEGA_M,
+    SPEED_OF_LIGHT,
     TRUE_HUBBLE_CONSTANT,
     BayesianInference,
     EMRIDetection,
@@ -8,6 +11,7 @@ from master_thesis_code.bayesian_inference.bayesian_inference_mwe import (
     GalaxyCatalog,
     NormalDist,
     dist,
+    dist_array,
     dist_to_redshift,
     np,
     redshifted_mass,
@@ -329,12 +333,12 @@ def test_add_unique_host_galaxies_from_catalog() -> None:
     galaxy_catalog = GalaxyCatalog()
     galaxy_catalog.create_random_catalog(20)
     number_of_possible_host_galaxies = len(galaxy_catalog.get_possible_host_galaxies())
-    used_host_galaxies = galaxy_catalog.get_possible_host_galaxies()[
-        : int(number_of_possible_host_galaxies / 2)
-    ]
+    number_to_take = int(number_of_possible_host_galaxies / 2)
+    number_to_add = number_of_possible_host_galaxies - number_to_take
+    used_host_galaxies = galaxy_catalog.get_possible_host_galaxies()[:number_to_take]
 
     new_hosts = galaxy_catalog.add_unique_host_galaxies_from_catalog(
-        number_of_host_galaxies_to_add=int(number_of_possible_host_galaxies / 2),
+        number_of_host_galaxies_to_add=number_to_add,
         used_host_galaxies=used_host_galaxies,
     )
 
@@ -509,3 +513,82 @@ def test_comoving_volume_varies_with_hubble_constant() -> None:
     assert v_low_h != v_high_h, (
         "comoving_volume returned the same value for different H₀ — bug still present"
     )
+
+
+# ── dist_array regression tests ───────────────────────────────────────────────
+
+
+def test_dist_array_shape_matches_input() -> None:
+    """dist_array must return a 1-D array with the same length as the input."""
+    redshifts = np.linspace(0.01, 0.5, 50)
+    result = dist_array(redshifts)
+    assert result.shape == (50,)
+    assert np.issubdtype(result.dtype, np.floating)
+
+
+def test_dist_array_matches_scalar_dist() -> None:
+    """Every element of dist_array(zs) must equal dist(z) for the same z."""
+    test_redshifts = np.array([0.01, 0.05, 0.1, 0.2, 0.5])
+    result = dist_array(test_redshifts)
+    for i, z in enumerate(test_redshifts):
+        assert abs(result[i] - dist(z)) < 1e-10, (
+            f"dist_array mismatch at z={z}: {result[i]} vs {dist(z)}"
+        )
+
+
+def test_dist_array_monotonically_increasing() -> None:
+    """Luminosity distance must be strictly increasing with redshift."""
+    redshifts = np.linspace(0.001, 1.0, 100)
+    result = dist_array(redshifts)
+    diffs = np.diff(result)
+    assert np.all(diffs > 0), "dist_array is not strictly monotonically increasing"
+
+
+def test_dist_array_at_zero_redshift() -> None:
+    """Luminosity distance at z=0 is 0 Mpc."""
+    result = dist_array(np.array([0.0]))
+    assert abs(float(result[0])) < 1e-10
+
+
+# ── comoving_volume spline accuracy ───────────────────────────────────────────
+
+
+def test_comoving_volume_spline_matches_integration() -> None:
+    """GalaxyCatalog.comoving_volume (spline) must agree with direct quadrature to 0.1%."""
+    catalog = GalaxyCatalog(use_truncnorm=False, use_comoving_volume=False)
+    test_redshifts = np.linspace(0.01, 0.55, 20)
+    for z in test_redshifts:
+        zs = np.linspace(0.0, z, 500)
+        integrand = 1.0 / np.sqrt(OMEGA_M * (1 + zs) ** 3 + OMEGA_LAMBDA)
+        integral = np.trapezoid(integrand, zs)
+        expected = float(4 * np.pi * (SPEED_OF_LIGHT / TRUE_HUBBLE_CONSTANT) ** 3 * integral**2)
+        actual = catalog.comoving_volume(z)
+        assert abs(actual - expected) / expected < 1e-3, (
+            f"Spline deviates >0.1% at z={z}: spline={actual:.6g}, quad={expected:.6g}"
+        )
+
+
+def test_comoving_volume_is_zero_at_z_zero() -> None:
+    """Comoving volume at z=0 should be essentially 0."""
+    catalog = GalaxyCatalog()
+    assert abs(catalog.comoving_volume(0.0)) < 1e-10
+
+
+# ── likelihood vectorized path ────────────────────────────────────────────────
+
+
+def test_likelihood_output_is_finite_and_positive() -> None:
+    """BayesianInference.likelihood() must return a finite positive float."""
+    catalog = GalaxyCatalog(use_truncnorm=False, use_comoving_volume=False)
+    catalog.create_random_catalog(10)
+    detection = EMRIDetection.from_host_galaxy(catalog.catalog[0], use_measurement_noise=False)
+    bi = BayesianInference(catalog, [detection])
+    result = bi.likelihood(
+        hubble_constant=TRUE_HUBBLE_CONSTANT,
+        measured_luminosity_distance=detection.measured_luminosity_distance,
+        measured_redshifted_mass=detection.measured_redshifted_mass,
+        detection_index=0,
+    )
+    assert isinstance(result, float)
+    assert np.isfinite(result)
+    assert result > 0

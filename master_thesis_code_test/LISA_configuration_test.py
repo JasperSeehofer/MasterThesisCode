@@ -1,11 +1,18 @@
+import numpy as np
 import pytest
 
-# LisaTdiConfiguration imports cupy unconditionally at module level, so the
-# import itself fails on a CPU-only machine.  We collect the module but skip
-# every test when cupy is unavailable.
-cupy = pytest.importorskip("cupy", reason="cupy not available — skipping LISA configuration tests")
+# LisaTdiConfiguration guards its cupy import with try/except, so the module
+# is importable on CPU-only machines.  GPU-specific tests are marked @pytest.mark.gpu
+# and excluded on dev machines via `pytest -m "not gpu"`.
+try:
+    import cupy as cp
 
-from master_thesis_code.LISA_configuration import LisaTdiConfiguration  # noqa: E402
+    _CUPY_AVAILABLE = True
+except ImportError:
+    cp = None
+    _CUPY_AVAILABLE = False
+
+from master_thesis_code.LISA_configuration import LisaTdiConfiguration
 
 
 def test_instantiation() -> None:
@@ -111,3 +118,45 @@ def test_lisa_config_does_not_go_stale_after_randomize() -> None:
     assert original_qS != new_qS, (
         "randomize_parameters() did not change qS — cannot demonstrate staleness with this seed"
     )
+
+
+# ── CPU tests — numpy input (no GPU required) ─────────────────────────────────
+
+
+def test_psd_a_channel_positive_with_numpy_input() -> None:
+    """power_spectral_density('A') with a plain numpy array must return all-positive values."""
+    config = LisaTdiConfiguration()
+    fs = np.logspace(-4, 0, 100)
+    psd = config.power_spectral_density(fs, channel="A")
+    assert np.all(psd > 0)
+
+
+def test_psd_t_channel_positive_with_numpy_input() -> None:
+    """power_spectral_density('T') with a plain numpy array must return all-positive values."""
+    config = LisaTdiConfiguration()
+    fs = np.logspace(-4, 0, 100)
+    psd = config.power_spectral_density(fs, channel="T")
+    assert np.all(psd > 0)
+
+
+def test_s_oms_positive_with_numpy_input() -> None:
+    """S_OMS with a plain numpy frequency array must be strictly positive."""
+    fs = np.logspace(-4, 0, 100)
+    s_oms = LisaTdiConfiguration.S_OMS(fs)
+    assert np.all(s_oms > 0)
+
+
+def test_s_tm_positive_with_numpy_input() -> None:
+    """S_TM with a plain numpy frequency array must be strictly positive."""
+    fs = np.logspace(-4, 0, 100)
+    s_tm = LisaTdiConfiguration.S_TM(fs)
+    assert np.all(s_tm > 0)
+
+
+def test_power_spectral_density_channels_ae_equal() -> None:
+    """Channels 'A' and 'E' share the same PSD formula — results must be identical."""
+    config = LisaTdiConfiguration()
+    fs = np.logspace(-4, 0, 100)
+    psd_a = config.power_spectral_density(fs, channel="A")
+    psd_e = config.power_spectral_density(fs, channel="E")
+    assert np.allclose(psd_a, psd_e)

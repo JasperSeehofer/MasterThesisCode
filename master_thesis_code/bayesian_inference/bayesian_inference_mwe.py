@@ -8,6 +8,8 @@ import emcee
 import matplotlib.pyplot as plt
 import numpy as np
 import numpy.typing as npt
+from scipy.integrate import cumulative_trapezoid
+from scipy.interpolate import CubicSpline
 from scipy.optimize import fsolve
 
 # import error funciton
@@ -66,9 +68,28 @@ def dist(
     return float(np.asarray(result).flat[0])
 
 
+def dist_array(
+    redshifts: npt.NDArray[np.float64],
+    h: float = TRUE_HUBBLE_CONSTANT,
+    Omega_m: float = OMEGA_M,
+    Omega_de: float = OMEGA_LAMBDA,
+) -> npt.NDArray[np.float64]:
+    """Vectorized luminosity distance in Mpc over an array of redshifts.
+
+    Equivalent to calling dist(z, h) for every z in redshifts but avoids
+    the scalar wrapping overhead — hyp2f1 and all numpy operations broadcast
+    over the full array in one call.
+    """
+    H_0 = h * 100.0
+    integral = lambda_cdm_analytic_distance(redshifts, Omega_m, Omega_de)
+    return np.asarray(SPEED_OF_LIGHT / H_0 * (1 + redshifts) * integral)
+
+
 def lambda_cdm_analytic_distance(
-    redshift: float, Omega_m: float = OMEGA_M, Omega_de: float = OMEGA_LAMBDA
-) -> float:
+    redshift: float | npt.NDArray[np.float64],
+    Omega_m: float = OMEGA_M,
+    Omega_de: float = OMEGA_LAMBDA,
+) -> float | npt.NDArray[np.float64]:
     return (  # type: ignore[no-any-return]
         (
             (1 + redshift)
@@ -168,15 +189,23 @@ class GalaxyCatalog:
         self.catalog = []
         self.galaxy_distribution = []
         self.galaxy_mass_distribution = []
+        self._comoving_volume_spline = self._build_comoving_volume_spline()
+
+    @staticmethod
+    def _build_comoving_volume_spline() -> CubicSpline:
+        """Precompute the comoving volume on a fine redshift grid and return a spline.
+
+        The integral ∫₀ᶻ dz'/E(z') is computed once via cumulative_trapezoid so subsequent
+        calls to comoving_volume() are O(log n) interpolation instead of O(100) integration.
+        """
+        _z_grid = np.linspace(0, 10.0, 4000)
+        integrand = 1.0 / np.sqrt(OMEGA_M * (1 + _z_grid) ** 3 + OMEGA_LAMBDA)
+        cumulative_integral = np.concatenate([[0.0], cumulative_trapezoid(integrand, _z_grid)])
+        cv_grid = 4 * np.pi * (SPEED_OF_LIGHT / TRUE_HUBBLE_CONSTANT) ** 3 * cumulative_integral**2
+        return CubicSpline(_z_grid, cv_grid)
 
     def comoving_volume(self, redshift: float) -> float:
-        redshifts = np.linspace(0, redshift, 100)
-        integral = np.trapezoid(
-            [(1 / np.sqrt(OMEGA_M * (1 + z) ** 3 + OMEGA_LAMBDA)) for z in redshifts],
-            redshifts,
-        )
-        res = 4 * np.pi * (SPEED_OF_LIGHT / TRUE_HUBBLE_CONSTANT) ** 3 * integral**2
-        return float(res)
+        return float(self._comoving_volume_spline(redshift))
 
     def log_comoving_volume(self, redshift: float) -> float:
         try:
@@ -637,58 +666,41 @@ class BayesianInference:
         measured_redshifted_mass: float,
         detection_index: int,
     ) -> float:
+        # Compute all luminosity distances at once — replaces 2000+ scalar dist() calls.
+        mu_d = dist_array(self.redshift_values, hubble_constant)
+
+        # GW detection probability: P_det(z) = (1 + erf(x)) / 2
+        # where x = (D_threshold - mu_d) / (sqrt(2) * sigma_d)
+        p_det_array = (
+            1.0
+            + erf(
+                (self.luminosity_distance_threshold - mu_d)
+                / (np.sqrt(2.0) * FRACTIONAL_LUMINOSITY_ERROR * mu_d)
+            )
+        ) / 2.0
+
+        # GW likelihood: Gaussian PDF with mu=mu_d, sigma=sigma_d
+        sigma_d = FRACTIONAL_LUMINOSITY_ERROR * mu_d
+        gw_likelihood_array = np.exp(
+            -0.5 * ((measured_luminosity_distance - mu_d) / sigma_d) ** 2
+        ) / (sigma_d * np.sqrt(2.0 * np.pi))
+
+        # Galaxy sky-localisation weight per redshift bin: matrix-vector product
+        # galaxy_distribution_at_redshifts: (n_z, n_galaxies); weights: (n_galaxies,)
+        galaxy_skylocalization_weights = (
+            self.galaxy_distribution_at_redshifts
+            @ self.detection_skylocalization_weight_by_galaxy[detection_index]
+        )
+
         if not self.use_bh_mass:
             nominator = np.trapezoid(
-                np.array(
-                    [
-                        self.gw_likelihood(
-                            hubble_constant=hubble_constant,
-                            measured_luminosity_distance=measured_luminosity_distance,
-                            redshift=redshift,
-                        )
-                        for redshift in self.redshift_values
-                    ]
-                )
-                * np.array(
-                    [
-                        self.gw_detection_probability(
-                            hubble_constant=hubble_constant, redshift=redshift
-                        )
-                        for redshift in self.redshift_values
-                    ]
-                )
-                * np.array(
-                    [
-                        np.sum(
-                            const_redshift
-                            * self.detection_skylocalization_weight_by_galaxy[detection_index]
-                        )
-                        for const_redshift in self.galaxy_distribution_at_redshifts
-                    ]
-                ),
+                gw_likelihood_array * p_det_array * galaxy_skylocalization_weights,
                 self.redshift_values,
             )
-
         else:
             nominator = np.trapezoid(
-                np.array(
-                    [
-                        self.gw_likelihood(
-                            hubble_constant=hubble_constant,
-                            measured_luminosity_distance=measured_luminosity_distance,
-                            redshift=redshift,
-                        )
-                        for redshift in self.redshift_values
-                    ]
-                )
-                * np.array(
-                    [
-                        self.gw_detection_probability(
-                            hubble_constant=hubble_constant, redshift=redshift
-                        )
-                        for redshift in self.redshift_values
-                    ]
-                )
+                gw_likelihood_array
+                * p_det_array
                 * NormalDist(
                     mu=measured_redshifted_mass,
                     sigma=FRACTIONAL_MEASURED_MASS_ERROR * measured_redshifted_mass,
@@ -708,24 +720,9 @@ class BayesianInference:
                 ),
                 self.redshift_values,
             )
+
         denominator = np.trapezoid(
-            np.array(
-                [
-                    self.gw_detection_probability(
-                        hubble_constant=hubble_constant, redshift=redshift
-                    )
-                    for redshift in self.redshift_values
-                ]
-            )
-            * np.array(
-                [
-                    np.sum(
-                        const_redshift
-                        * self.detection_skylocalization_weight_by_galaxy[detection_index]
-                    )
-                    for const_redshift in self.galaxy_distribution_at_redshifts
-                ]
-            ),
+            p_det_array * galaxy_skylocalization_weights,
             self.redshift_values,
         )
         if not self.use_selection_effects_correction:

@@ -9,6 +9,31 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [2026-03-10] — tests for HPC performance refactoring
+
+### Added
+- `master_thesis_code_test/bayesian_inference/test_bayesian_inference_mwe.py`: 7 new regression
+  and correctness tests for the vectorized hot paths introduced in the HPC refactor —
+  `dist_array` shape/dtype, element-wise agreement with scalar `dist()` to `1e-10`,
+  strict monotonicity, zero-distance at z=0, comoving-volume spline accuracy vs direct
+  trapezoid quadrature (<0.1% relative error at 20 redshifts), spline returns 0 at z=0, and
+  `BayesianInference.likelihood()` returning a finite positive float (exercises the full
+  vectorized numerator/denominator path).
+- `master_thesis_code_test/parameter_estimation/parameter_estimation_test.py`: 3 CPU tests for
+  the new buffered-CSV flush mechanism — empty buffer is a no-op (no file, no exception),
+  explicit `flush_pending_results()` writes all 3 buffered rows to CSV, and
+  `_crb_flush_interval=2` auto-flushes at the threshold with the remainder written on explicit
+  flush. Plus 3 `@pytest.mark.gpu` tests: PSD cache identity (second call returns the same
+  object), PSD cache shape `(n_channels, n_freqs_cropped)`, and Fisher matrix symmetry
+  (mocked derivatives, asserts `np.allclose(F, F.T)`).
+- `master_thesis_code_test/LISA_configuration_test.py`: 5 CPU tests (no GPU required) for
+  the new `_get_xp()` numpy path — `power_spectral_density('A')`, `power_spectral_density('T')`,
+  `S_OMS`, `S_TM` all positive with plain `np.logspace` input; channels A and E return
+  identical PSD via `np.allclose`. Module-level `pytest.importorskip("cupy")` replaced with a
+  `try/except` guard so the file is collected on CPU-only machines.
+
+---
+
 ## [2026-03-10] — comprehensive test coverage & Python 3.13 fix
 
 ### Added
