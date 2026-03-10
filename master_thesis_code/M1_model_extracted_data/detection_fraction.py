@@ -7052,7 +7052,6 @@ class DetectionFraction:
             ],
         ]
     )
-    detection_fraction_z_reduced: np.ndarray
 
     def __init__(self) -> None:
         self.detection_fraction_grid = np.flip(self.detection_fraction_grid, axis=0)

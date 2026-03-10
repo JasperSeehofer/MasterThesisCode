@@ -1,3 +1,10 @@
+"""Physical constants, cosmological parameters, and simulation configuration.
+
+All numeric values are module-level constants.  Physical constants are derived
+from astropy for traceability; cosmological parameters are the fiducial ΛCDM
+values used in the simulation.
+"""
+
 import numpy as np
 from astropy import constants as ac
 from astropy import units as u

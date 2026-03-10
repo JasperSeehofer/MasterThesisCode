@@ -1,3 +1,10 @@
+"""LISA TDI noise configuration: PSD, antenna patterns, and frame transformations.
+
+Provides :class:`LisaTdiConfiguration` with the noise power spectral density for
+the A/E/T TDI channels, the one-sided optical metrology and test-mass noise
+components, and the sky-averaged F+/F× antenna pattern functions.
+"""
+
 import logging
 import os
 import types
@@ -39,6 +46,16 @@ def _get_xp(arr: Any) -> types.ModuleType:
 
 @dataclass
 class LisaTdiConfiguration:
+    """LISA TDI noise model and antenna pattern functions.
+
+    Implements the noise power spectral density for the A, E, and T TDI channels
+    and the sky-averaged F+/F× antenna pattern functions for the LISA constellation,
+    following the equal-arm-length approximation.
+
+    References:
+        Babak et al. (2023), arXiv:2303.15929
+    """
+
     def power_spectral_density(
         self,
         # xp may be numpy or cupy at runtime; annotation reflects the numpy-compatible interface

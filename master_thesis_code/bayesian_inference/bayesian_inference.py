@@ -45,6 +45,27 @@ def dist_array(
 
 @dataclass
 class BayesianInference:
+    """Bayesian estimator for the Hubble constant H₀ from EMRI detections.
+
+    Evaluates :math:`p(H_0 \\mid \\{d_i\\})` by marginalizing each detection over
+    the galaxy-catalog redshift distribution, weighted by the GW likelihood and
+    sky-localization overlap.
+
+    Attributes:
+        galaxy_catalog: Galaxy catalog providing redshift and mass distributions
+            :math:`p(z)` and :math:`p(M)`.
+        emri_detections: List of EMRI detections with measured luminosity distances
+            and sky positions.
+        luminosity_distance_threshold: LISA detection horizon in Gpc.
+        number_of_redshift_steps: Number of quadrature points for redshift integrals.
+        redshift_values: Redshift grid used for all integrals, set in ``__post_init__``.
+        galaxy_distribution_at_redshifts: Pre-computed :math:`p(z_i \\mid \\mathrm{catalog})`
+            evaluated on ``redshift_values``.
+        use_bh_mass: If ``True``, include BH mass information in the likelihood.
+        use_selection_effects_correction: If ``True``, divide likelihood by the
+            selection-function denominator :math:`\\int p_\\mathrm{det}(z) p(z) dz`.
+    """
+
     galaxy_catalog: GalaxyCatalog
     emri_detections: list[EMRIDetection]
 
@@ -107,6 +128,25 @@ class BayesianInference:
         ]
 
     def gw_detection_probability(self, redshift: float, hubble_constant: float) -> float:
+        """Probability that a source at *redshift* is detected by LISA.
+
+        Models the detector selection function as a cumulative normal:
+
+        .. math::
+
+            p_\\mathrm{det}(z) = \\frac{1}{2}\\left[1 + \\mathrm{erf}\\!
+            \\left(\\frac{D_\\mathrm{thr} - d_L(z)}{\\sqrt{2}\\,\\sigma_{d_L}(z)}\\right)\\right]
+
+        where :math:`\\sigma_{d_L} = f_\\sigma \\cdot d_L(z)` and
+        :math:`f_\\sigma` is ``FRACTIONAL_LUMINOSITY_ERROR``.
+
+        Args:
+            redshift: Source redshift.
+            hubble_constant: Dimensionless Hubble parameter :math:`h`.
+
+        Returns:
+            Detection probability in :math:`[0, 1]`.
+        """
         return float(
             (
                 1
@@ -126,6 +166,24 @@ class BayesianInference:
         redshift: float,
         hubble_constant: float,
     ) -> float:
+        """GW likelihood: probability of measuring *measured_luminosity_distance* given *redshift*.
+
+        Assumes Gaussian measurement noise:
+
+        .. math::
+
+            \\mathcal{L}(\\hat{d}_L \\mid z, h) =
+            \\mathcal{N}\\!\\left(\\hat{d}_L;\\, d_L(z, h),\\,
+            f_\\sigma \\cdot d_L(z, h)\\right)
+
+        Args:
+            measured_luminosity_distance: Measured luminosity distance :math:`\\hat{d}_L` in Gpc.
+            redshift: True source redshift.
+            hubble_constant: Dimensionless Hubble parameter :math:`h`.
+
+        Returns:
+            Likelihood value (probability density).
+        """
         mu_luminosity_distance = dist(redshift, hubble_constant)
         sigma_luminosity_distance = FRACTIONAL_LUMINOSITY_ERROR * mu_luminosity_distance
 
@@ -140,6 +198,28 @@ class BayesianInference:
         measured_redshifted_mass: float,
         detection_index: int,
     ) -> float:
+        """Marginalized likelihood :math:`p(\\hat{d}_L \\mid H_0)` for one EMRI detection.
+
+        Integrates the GW likelihood over the galaxy-catalog redshift distribution,
+        weighted by sky-localization overlap and — optionally — BH mass information.
+        A selection-effects correction divides by the denominator integral when
+        ``use_selection_effects_correction`` is ``True``:
+
+        .. math::
+
+            \\mathcal{L}(H_0) = \\frac{\\int p_\\mathrm{GW}(\\hat{d}_L \\mid z, H_0)\\,
+            p_\\mathrm{det}(z, H_0)\\, p(z \\mid \\mathrm{catalog})\\, dz}
+            {\\int p_\\mathrm{det}(z, H_0)\\, p(z \\mid \\mathrm{catalog})\\, dz}
+
+        Args:
+            hubble_constant: Dimensionless Hubble parameter :math:`h` being evaluated.
+            measured_luminosity_distance: Measured :math:`\\hat{d}_L` in Gpc.
+            measured_redshifted_mass: Measured redshifted BH mass :math:`M_z` in solar masses.
+            detection_index: Index into ``emri_detections`` and pre-computed weight arrays.
+
+        Returns:
+            Likelihood value (positive real number; not normalized over :math:`H_0`).
+        """
         # Compute all luminosity distances at once — replaces 2000+ scalar dist() calls.
         mu_d = dist_array(self.redshift_values, hubble_constant)
 

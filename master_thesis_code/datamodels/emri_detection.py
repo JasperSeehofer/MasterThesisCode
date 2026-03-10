@@ -17,6 +17,20 @@ from master_thesis_code.physical_relations import dist, redshifted_mass
 
 @dataclass
 class EMRIDetection:
+    """A simulated EMRI detection with noisy measured observables.
+
+    Holds the LISA-measured quantities that enter the Bayesian H₀ likelihood.
+    All angular quantities use ecliptic coordinates.
+
+    Attributes:
+        measured_luminosity_distance: Measured luminosity distance :math:`\\hat{d}_L`
+            in Gpc.
+        measured_redshifted_mass: Measured redshifted central BH mass
+            :math:`\\hat{M}_z = M(1+z)` in solar masses.
+        measured_right_ascension: Measured sky azimuthal angle in radians.
+        measured_declination: Measured sky polar angle in radians.
+    """
+
     measured_luminosity_distance: float  # Gpc
     measured_redshifted_mass: float  # solar masses
     measured_right_ascension: float  # radians

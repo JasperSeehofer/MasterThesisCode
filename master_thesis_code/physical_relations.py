@@ -1,3 +1,9 @@
+"""Cosmological distance functions for a flat wCDM universe.
+
+Provides luminosity distance, redshift inversion, and derived quantities used
+throughout the EMRI simulation and Bayesian H₀ inference pipelines.
+"""
+
 from functools import lru_cache
 from typing import Any
 
@@ -27,15 +33,38 @@ def dist(
     w_a: float = W_A,
     offset_for_root_finding: float = 0.0,
 ) -> float:
-    """
-    Calculate the luminosity distance in Gpc.
+    """Luminosity distance in Gpc for a flat wCDM cosmology.
 
-    :param redshift: redshift
-    :param Omega_m: matter density parameter
-    :param Omega_de: dark energy density parameter
-    :param w_0: dark energy equation of state parameter
-    :param w_a: dark energy equation of state parameter
-    :return: luminosity distance in Gpc
+    Uses the analytic hypergeometric form of the comoving distance integral:
+
+    .. math::
+
+        d_L(z) = \\frac{c\\,(1+z)}{H_0} \\int_0^z \\frac{dz'}{E(z')}
+
+    where :math:`E(z) = \\sqrt{\\Omega_m(1+z)^3 + \\Omega_\\Lambda}` for
+    :math:`w_0 = -1,\\, w_a = 0`.
+
+    Args:
+        redshift: Source redshift :math:`z \\geq 0`.
+        h: Dimensionless Hubble parameter
+            :math:`h = H_0 / (100\\,\\mathrm{km\\,s^{-1}\\,Mpc^{-1}})`.
+        Omega_m: Matter density parameter :math:`\\Omega_m`.
+        Omega_de: Dark energy density parameter :math:`\\Omega_\\Lambda`.
+        w_0: Dark energy equation-of-state parameter :math:`w_0`.
+        w_a: Dark energy equation-of-state evolution :math:`w_a`.
+        offset_for_root_finding: Subtracted from the result; set to the target
+            distance when calling this function via ``scipy.optimize.fsolve``
+            for redshift inversion.
+
+    Returns:
+        Luminosity distance in Gpc.
+
+    References:
+        Hogg (1999), *Distance measures in cosmology*, arXiv:astro-ph/9905116, Eq. (16).
+
+    Examples:
+        >>> dist(0.0)
+        0.0
     """
     H_0 = h * 100.0 * KM_TO_M / GPC_TO_MPC ** (-1)  # Hubble constant in m/s*Gpc
 
@@ -58,15 +87,23 @@ def cached_dist(
     w_a: float = W_A,
     offset_for_root_finding: float = 0.0,
 ) -> float:
-    """
-    Calculate the luminosity distance in Gpc.
+    """LRU-cached version of :func:`dist`.
 
-    :param redshift: redshift
-    :param Omega_m: matter density parameter
-    :param Omega_de: dark energy density parameter
-    :param w_0: dark energy equation of state parameter
-    :param w_a: dark energy equation of state parameter
-    :return: luminosity distance in Gpc
+    Identical semantics; results are memoized up to 1000 unique argument
+    combinations, which eliminates redundant integration in hot paths.
+
+    Args:
+        redshift: Source redshift :math:`z \\geq 0`.
+        h: Dimensionless Hubble parameter.
+        Omega_m: Matter density parameter.
+        Omega_de: Dark energy density parameter.
+        w_0: Dark energy equation-of-state parameter.
+        w_a: Dark energy equation-of-state evolution.
+        offset_for_root_finding: Subtracted from the result; used for inversion
+            via ``scipy.optimize.fsolve``.
+
+    Returns:
+        Luminosity distance in Gpc.
     """
     H_0 = h * 100.0 * KM_TO_M / GPC_TO_MPC ** (-1)  # Hubble constant in m/s*Gpc
 
@@ -88,15 +125,22 @@ def dist_vectorized(
     w_a: float = W_A,
     offset_for_root_finding: float = 0.0,
 ) -> npt.NDArray[np.floating[Any]]:
-    """
-    Calculate the luminosity distance in Gpc (vectorized over redshift array).
+    """Vectorized luminosity distance in Gpc over a redshift array.
 
-    :param redshift: redshift array
-    :param Omega_m: matter density parameter
-    :param Omega_de: dark energy density parameter
-    :param w_0: dark energy equation of state parameter
-    :param w_a: dark energy equation of state parameter
-    :return: luminosity distance array in Gpc
+    Applies the same formula as :func:`dist` element-wise without Python loops,
+    using NumPy broadcasting via :func:`lambda_cdm_analytic_distance`.
+
+    Args:
+        redshift: Array of source redshifts :math:`z \\geq 0`.
+        h: Dimensionless Hubble parameter.
+        Omega_m: Matter density parameter.
+        Omega_de: Dark energy density parameter.
+        w_0: Dark energy equation-of-state parameter.
+        w_a: Dark energy equation-of-state evolution.
+        offset_for_root_finding: Subtracted from every element of the result.
+
+    Returns:
+        Array of luminosity distances in Gpc, same shape as *redshift*.
     """
     H_0 = h * 100.0 * KM_TO_M / GPC_TO_MPC ** (-1)  # Hubble constant in m/s*Gpc
 
@@ -117,6 +161,27 @@ def dist_derivative(
     w_0: float = W_0,
     w_a: float = W_A,
 ) -> float:
+    """Derivative of luminosity distance with respect to redshift, :math:`dd_L/dz` in Gpc.
+
+    Uses the analytic expression:
+
+    .. math::
+
+        \\frac{dd_L}{dz} = \\frac{c}{H_0} \\left[
+            \\frac{1+z}{E(z)} + \\int_0^z \\frac{dz'}{E(z')}
+        \\right]
+
+    Args:
+        redshift: Source redshift :math:`z \\geq 0`.
+        h: Dimensionless Hubble parameter.
+        Omega_m: Matter density parameter.
+        Omega_de: Dark energy density parameter.
+        w_0: Dark energy equation-of-state parameter.
+        w_a: Dark energy equation-of-state evolution.
+
+    Returns:
+        :math:`dd_L/dz` in Gpc.
+    """
     H_0 = h * 100.0 * KM_TO_M / GPC_TO_MPC ** (-1)  # Hubble constant in m/s*Gpc
 
     first_term = C / H_0 * (1 + redshift) / hubble_function(redshift)
@@ -138,6 +203,29 @@ def hubble_function(
     w_0: float = W_0,
     w_a: float = W_A,
 ) -> float | npt.NDArray[np.floating[Any]]:
+    """Dimensionless Hubble function :math:`E(z) = H(z) / H_0` for a flat wCDM cosmology.
+
+    .. math::
+
+        E(z) = \\sqrt{\\Omega_m (1+z)^3 + \\Omega_\\Lambda (1+z)^{3(1+w_0+w_a)}
+               \\exp\\!\\left(\\frac{-3 w_a z}{1+z}\\right)}
+
+    For the fiducial ΛCDM case (:math:`w_0 = -1,\\, w_a = 0`) this reduces to
+    :math:`E(z) = \\sqrt{\\Omega_m (1+z)^3 + \\Omega_\\Lambda}`.
+
+    Args:
+        redshift: Source redshift or array of redshifts.
+        h: Dimensionless Hubble parameter (unused — :math:`E(z)` is independent of
+            :math:`h` by definition).
+        Omega_m: Matter density parameter :math:`\\Omega_m`.
+        Omega_de: Dark energy density parameter :math:`\\Omega_\\Lambda`.
+        w_0: Dark energy equation-of-state parameter :math:`w_0`.
+        w_a: Dark energy equation-of-state evolution :math:`w_a`.
+
+    Returns:
+        :math:`E(z)` as a float when *redshift* is a scalar, or as an ndarray
+        when *redshift* is an array.
+    """
     result = np.sqrt(
         Omega_m * (1 + redshift) ** 3
         + Omega_de
@@ -152,6 +240,19 @@ def hubble_function(
 def lambda_cdm_analytic_distance(
     redshift: float, Omega_m: float = OMEGA_M, Omega_de: float = OMEGA_DE
 ) -> float:
+    """Analytic ΛCDM comoving distance integral :math:`\\int_0^z dz'/E(z')` in units of :math:`c/H_0`.
+
+    Evaluates the integral in closed form using the Gauss hypergeometric function
+    :math:`{}_2F_1`, valid for a flat ΛCDM cosmology (:math:`w_0=-1,\\, w_a=0`).
+
+    Args:
+        redshift: Source redshift.
+        Omega_m: Matter density parameter.
+        Omega_de: Dark energy density parameter.
+
+    Returns:
+        Dimensionless comoving distance integral :math:`\\int_0^z dz'/E(z')`.
+    """
     return (  # type: ignore[no-any-return]
         (
             (1 + redshift)
@@ -175,15 +276,21 @@ def dist_to_redshift(
     w_0: float = W_0,
     w_a: float = W_A,
 ) -> float:
-    """
-    Calculate the redshift for a given luminosity distance.
+    """Redshift corresponding to a given luminosity distance (inverse of :func:`dist`).
 
-    :param distance: luminosity distance in Gpc
-    :param Omega_m: matter density parameter
-    :param Omega_de: dark energy density parameter
-    :param w_0: dark energy equation of state parameter
-    :param w_a: dark energy equation of state parameter
-    :return: redshift
+    Solves :math:`d_L(z) = \\mathrm{distance}` via ``scipy.optimize.fsolve`` with
+    initial guess :math:`z = 1`.
+
+    Args:
+        distance: Luminosity distance in Gpc.
+        h: Dimensionless Hubble parameter.
+        Omega_m: Matter density parameter.
+        Omega_de: Dark energy density parameter.
+        w_0: Dark energy equation-of-state parameter.
+        w_a: Dark energy equation-of-state evolution.
+
+    Returns:
+        Redshift :math:`z` such that :math:`d_L(z) = \\mathrm{distance}`.
     """
     return float(
         fsolve(
