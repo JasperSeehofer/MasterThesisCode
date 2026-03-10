@@ -40,6 +40,12 @@ from master_thesis_code.physical_relations import (
 from master_thesis_code.physical_relations import (
     lambda_cdm_analytic_distance as lambda_cdm_analytic_distance,  # re-exported
 )
+from master_thesis_code.physical_relations import (
+    redshifted_mass as redshifted_mass,  # re-exported: test_bayesian_inference_mwe imports it
+)
+from master_thesis_code.physical_relations import (
+    redshifted_mass_inverse as redshifted_mass_inverse,  # re-exported
+)
 
 FRACTIONAL_LUMINOSITY_ERROR: float = 0.1
 FRACTIONAL_BLACK_HOLE_MASS_CATALOG_ERROR: float = 0.1
@@ -59,14 +65,6 @@ def dist_array(
     implementation.  Returns Gpc (same unit as the scalar dist()).
     """
     return np.asarray(_dist_vectorized(redshifts, h=h, Omega_m=Omega_m, Omega_de=Omega_de))
-
-
-def redshifted_mass(mass: float, redshift: float) -> float:
-    return mass * (1 + redshift)
-
-
-def redshifted_mass_inverse(redshifted_mass: float, redshift: float) -> float:
-    return redshifted_mass / (1 + redshift)
 
 
 @dataclass(unsafe_hash=True)

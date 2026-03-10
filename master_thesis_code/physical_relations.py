@@ -220,6 +220,16 @@ def dist_to_redshift_error_proagation(
     return float(np.sqrt((derivative * distance_error) ** 2))
 
 
+def redshifted_mass(mass: float, redshift: float) -> float:
+    """Return the redshifted mass M_z = M * (1 + z)."""
+    return mass * (1 + redshift)
+
+
+def redshifted_mass_inverse(redshifted_mass: float, redshift: float) -> float:
+    """Return the true mass M = M_z / (1 + z)."""
+    return redshifted_mass / (1 + redshift)
+
+
 def convert_redshifted_mass_to_true_mass(
     M_z: float, M_z_error: float, z: float, z_error: float
 ) -> tuple[float, float]:
