@@ -1,5 +1,5 @@
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 import numpy as np
 
@@ -42,60 +42,86 @@ class ParameterSpace:
     Dataclass to manage the parameter space of a simulation.
     """
 
-    M: Parameter = Parameter(
-        symbol="M",
-        unit="solar masses",
-        lower_limit=1e4,
-        upper_limit=1e7,
-        randomize_by_distribution=log_uniform,
+    M: Parameter = field(
+        default_factory=lambda: Parameter(
+            symbol="M",
+            unit="solar masses",
+            lower_limit=1e4,
+            upper_limit=1e7,
+            randomize_by_distribution=log_uniform,
+        )
     )  # mass of the MBH (massive black hole) in solar masses
 
-    mu: Parameter = Parameter(
-        symbol="mu", unit="solar masses", lower_limit=1, upper_limit=1e2
+    mu: Parameter = field(
+        default_factory=lambda: Parameter(
+            symbol="mu", unit="solar masses", lower_limit=1, upper_limit=1e2
+        )
     )  # mass of the CO (compact object) in solar masses
-    a: Parameter = Parameter(
-        symbol="a", unit="dimensionless", lower_limit=0.0, upper_limit=1
+    a: Parameter = field(
+        default_factory=lambda: Parameter(
+            symbol="a", unit="dimensionless", lower_limit=0.0, upper_limit=1
+        )
     )  # dimensionless spin of the MBH
-    p0: Parameter = Parameter(
-        symbol="p0", unit="meters", lower_limit=10.0, upper_limit=16.0
+    p0: Parameter = field(
+        default_factory=lambda: Parameter(
+            symbol="p0", unit="meters", lower_limit=10.0, upper_limit=16.0
+        )
     )  # Kepler-orbit parameter: separation
-    e0: Parameter = Parameter(
-        symbol="e0", unit="dimensionless", lower_limit=0.05, upper_limit=0.7
+    e0: Parameter = field(
+        default_factory=lambda: Parameter(
+            symbol="e0", unit="dimensionless", lower_limit=0.05, upper_limit=0.7
+        )
     )  # Kepler-orbit parameter: eccentricity
-    x0: Parameter = Parameter(
-        symbol="x0", unit="dimensionless", lower_limit=-1.0, upper_limit=1.0
+    x0: Parameter = field(
+        default_factory=lambda: Parameter(
+            symbol="x0", unit="dimensionless", lower_limit=-1.0, upper_limit=1.0
+        )
     )  # Kepler-orbit parameter: x_I0=cosI (I is the inclination)
-    dist: Parameter = Parameter(
-        symbol="dist", unit="Gpc", lower_limit=0.0, upper_limit=7
+    dist: Parameter = field(
+        default_factory=lambda: Parameter(symbol="dist", unit="Gpc", lower_limit=0.0, upper_limit=7)
     )  # luminosity distance
-    qS: Parameter = Parameter(
-        symbol="qS",
-        unit="radian",
-        lower_limit=0.0,
-        upper_limit=np.pi,
-        randomize_by_distribution=polar_angle_distribution,
+    qS: Parameter = field(
+        default_factory=lambda: Parameter(
+            symbol="qS",
+            unit="radian",
+            lower_limit=0.0,
+            upper_limit=np.pi,
+            randomize_by_distribution=polar_angle_distribution,
+        )
     )  # Sky location polar angle in ecliptic coordinates.
-    phiS: Parameter = Parameter(
-        symbol="phiS", unit="radian", lower_limit=0.0, upper_limit=2 * np.pi
+    phiS: Parameter = field(
+        default_factory=lambda: Parameter(
+            symbol="phiS", unit="radian", lower_limit=0.0, upper_limit=2 * np.pi
+        )
     )  # Sky location azimuthal angle in ecliptic coordinates.
-    qK: Parameter = Parameter(
-        symbol="qK",
-        unit="radian",
-        lower_limit=0.0,
-        upper_limit=np.pi,
-        randomize_by_distribution=polar_angle_distribution,
+    qK: Parameter = field(
+        default_factory=lambda: Parameter(
+            symbol="qK",
+            unit="radian",
+            lower_limit=0.0,
+            upper_limit=np.pi,
+            randomize_by_distribution=polar_angle_distribution,
+        )
     )  # Initial BH spin polar angle in ecliptic coordinates.
-    phiK: Parameter = Parameter(
-        symbol="phiK", unit="radian", lower_limit=0.0, upper_limit=2 * np.pi
+    phiK: Parameter = field(
+        default_factory=lambda: Parameter(
+            symbol="phiK", unit="radian", lower_limit=0.0, upper_limit=2 * np.pi
+        )
     )  # Initial BH spin azimuthal angle in ecliptic coordinates.
-    Phi_phi0: Parameter = Parameter(
-        symbol="Phi_phi0", unit="radian", lower_limit=0.0, upper_limit=2 * np.pi
+    Phi_phi0: Parameter = field(
+        default_factory=lambda: Parameter(
+            symbol="Phi_phi0", unit="radian", lower_limit=0.0, upper_limit=2 * np.pi
+        )
     )  # initial azimuthal phase
-    Phi_theta0: Parameter = Parameter(
-        symbol="Phi_theta0", unit="radian", lower_limit=0.0, upper_limit=2 * np.pi
+    Phi_theta0: Parameter = field(
+        default_factory=lambda: Parameter(
+            symbol="Phi_theta0", unit="radian", lower_limit=0.0, upper_limit=2 * np.pi
+        )
     )  # initial polar phase
-    Phi_r0: Parameter = Parameter(
-        symbol="Phi_r0", unit="radian", lower_limit=0.0, upper_limit=2 * np.pi
+    Phi_r0: Parameter = field(
+        default_factory=lambda: Parameter(
+            symbol="Phi_r0", unit="radian", lower_limit=0.0, upper_limit=2 * np.pi
+        )
     )  # initial radial phase
 
     def randomize_parameter(self, parameter: Parameter) -> None:

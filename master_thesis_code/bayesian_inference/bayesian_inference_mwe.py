@@ -119,7 +119,7 @@ def redshifted_mass_inverse(redshifted_mass: float, redshift: float) -> float:
     return redshifted_mass / (1 + redshift)
 
 
-@dataclass
+@dataclass(unsafe_hash=True)
 class Galaxy:
     redshift: float
     central_black_hole_mass: float  # same as massive black hole

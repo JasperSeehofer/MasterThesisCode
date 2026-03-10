@@ -9,6 +9,52 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [2026-03-10] — comprehensive test coverage & Python 3.13 fix
+
+### Added
+- `master_thesis_code_test/decorators_test.py`: 5 new tests for `if_plotting_activated`
+  (disabled → returns `None`, enabled → passes return value through) and `timer_decorator`
+  (return value, `__name__` preservation, function is actually called).
+- `master_thesis_code_test/physical_relations_test.py`: 16 new tests covering `dist(0)==0`,
+  monotonicity, float return type, `hubble_function` normalisation and positivity,
+  `dist_to_redshift` at zero and round-trip (parametrised over z=0.5/1.0/2.0), vectorised
+  shape/value consistency, `dist()` varying with `h` and approximate 1/H₀ scaling,
+  mass-conversion algebra (both directions and round-trip), and error-propagation positivity.
+  Two `dist_derivative` tests are `xfail` (known bug: `hubble_function` cannot accept ndarray).
+- `master_thesis_code_test/datamodels/parameter_space_test.py`: 12 tests for `uniform`,
+  `log_uniform`, `polar_angle_distribution`, `ParameterSpace` construction, per-parameter and
+  bulk randomisation bounds, `_parameters_to_dict` keys/count/types/NaN safety, and
+  `set_host_galaxy_parameters()` updating `dist`, `qS`, `phiS`, `M`.
+- `master_thesis_code_test/LISA_configuration_test.py`: 7 tests — 1 CPU (instantiation), 6
+  `@pytest.mark.gpu` (PSD positivity for A/E/T channels, A==E identity, S_OMS/S_TM/S_zz
+  positivity). Plus `xfail` regression for Known Bug #1 (LISAConfiguration staleness).
+- `master_thesis_code_test/parameter_estimation/parameter_estimation_test.py`: 2 CPU tests
+  (CSV create/append via monkeypatched path) and 5 `@pytest.mark.gpu` tests (`scalar_product`
+  positive-definiteness/symmetry, `_crop_frequency_domain` bounds and length, `_crop_to_same_length`).
+- `master_thesis_code_test/bayesian_inference/test_bayesian_inference_mwe.py`: 15 new tests —
+  `Galaxy` hashability (set deduplication, hash consistency, inequality), `redshifted_mass`/
+  `redshifted_mass_inverse` algebra and round-trip, `dist`/`dist_to_redshift` in mwe module,
+  `comoving_volume` positivity and monotonicity, `EMRIDetection.from_host_galaxy` tuple-comma
+  regression (`use_measurement_noise=False` → float not tuple), truncnorm distribution type,
+  `gw_detection_probability` near-zero and large-redshift bounds, posterior length matching.
+  Plus `xfail` regression for Known Bug #3 (comoving_volume hardcoded H₀).
+- `master_thesis_code_test/cosmological_model_test.py`: 12 tests — `gaussian` (peak, symmetry,
+  positivity), `polynomial` (constant/linear/quadratic), `MBH_spin_distribution` range [0,1],
+  and `Detection` dataclass (construction, field values, `get_relative_distance_error`,
+  `get_skylocalization_error`, `convert_to_best_guess_parameters`).
+
+### Fixed
+- `master_thesis_code/bayesian_inference/bayesian_inference_mwe.py`: `Galaxy` dataclass
+  changed to `@dataclass(unsafe_hash=True)` so `Galaxy` instances can be used in sets and as
+  dict keys. Fixes `test_add_unique_host_galaxies_from_catalog` (was the one failing test).
+- `master_thesis_code/datamodels/parameter_space.py`: all 14 `Parameter` field defaults
+  changed from bare mutable instances to `field(default_factory=lambda: Parameter(...))`.
+  This is required by Python 3.13 (`dataclasses` now rejects mutable defaults that are not
+  wrapped in `field()`). Removes 20 previously-skipped tests and makes `ParameterSpace`
+  importable on Python 3.13 without error.
+
+---
+
 ## [2026-03-10] — modern dev tooling: ruff, pre-commit, CI, mypy clean
 
 ### Added

@@ -148,6 +148,32 @@ The codebase has two distinct pipelines:
 
 ---
 
+## Dataclass Conventions
+
+### Mutable field defaults
+
+Never use a mutable object (e.g. a `Parameter` instance, a list, a dict) as a bare default
+value in a `@dataclass`. Python 3.13 raises `ValueError` at class-definition time. Always wrap
+with `field(default_factory=...)`:
+
+```python
+# Wrong — crashes on Python 3.13
+@dataclass
+class Foo:
+    bar: MyMutableClass = MyMutableClass()
+
+# Correct
+from dataclasses import dataclass, field
+
+@dataclass
+class Foo:
+    bar: MyMutableClass = field(default_factory=MyMutableClass)
+    # or with arguments:
+    bar: MyMutableClass = field(default_factory=lambda: MyMutableClass(x=1))
+```
+
+---
+
 ## Typing Conventions
 
 All public and private functions/methods must have complete type annotations on every parameter and on the return type. The only exception is `__init__` where the return type is always `None` and may be omitted.
@@ -341,6 +367,25 @@ Write new tests in this order:
 1. **Physical correctness** — functions with known analytical limits: `dist(z=0) == 0.0`, `power_spectral_density(f) > 0` for all valid `f`, `gw_detection_probability` in `[0, 1]`, `scalar_product(h, h) > 0`
 2. **Bounds** — `ParameterSpace` randomized values stay within declared limits; `_parameters_to_dict` returns the correct 14 keys
 3. **Regression** — before changing any formula, add a test asserting the old numerical result so the change is verifiable
+
+### Guarding imports that require cupy
+
+`LISA_configuration.py` imports cupy unconditionally at module level. Any test file that
+imports a module which transitively depends on `LISA_configuration` (e.g. `ParameterEstimation`)
+must guard the import and skip when cupy is absent:
+
+```python
+try:
+    from master_thesis_code.parameter_estimation.parameter_estimation import ParameterEstimation
+    _PE_AVAILABLE = True
+except ImportError:
+    _PE_AVAILABLE = False
+
+pytestmark = pytest.mark.skipif(not _PE_AVAILABLE, reason="requires cupy")
+```
+
+Direct imports of `LisaTdiConfiguration` use `pytest.importorskip("cupy")` at module level
+to skip the whole file cleanly.
 
 ---
 

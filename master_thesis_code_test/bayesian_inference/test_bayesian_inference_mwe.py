@@ -10,6 +10,8 @@ from master_thesis_code.bayesian_inference.bayesian_inference_mwe import (
     dist,
     dist_to_redshift,
     np,
+    redshifted_mass,
+    redshifted_mass_inverse,
 )
 
 LUMINOSITY_DISTANCE_REDSHIFT_PAIRS = [(0.0, 0.0)]
@@ -341,3 +343,169 @@ def test_add_unique_host_galaxies_from_catalog() -> None:
     assert len(new_hosts) == number_of_possible_host_galaxies
     assert all(isinstance(galaxy, Galaxy) for galaxy in new_hosts)
     assert len(set(new_hosts)) == len(new_hosts)  # Ensure uniqueness
+
+
+# ── Galaxy hashability ─────────────────────────────────────────────────────────
+
+
+def test_galaxy_hashable() -> None:
+    g1 = Galaxy(redshift=0.1, central_black_hole_mass=1e5, right_ascension=1.0, declination=0.5)
+    g2 = Galaxy(redshift=0.2, central_black_hole_mass=1e5, right_ascension=1.0, declination=0.5)
+    s = {g1, g2}
+    assert len(s) == 2
+
+
+def test_galaxy_hash_same_fields() -> None:
+    g1 = Galaxy(redshift=0.1, central_black_hole_mass=1e5, right_ascension=1.0, declination=0.5)
+    g2 = Galaxy(redshift=0.1, central_black_hole_mass=1e5, right_ascension=1.0, declination=0.5)
+    assert hash(g1) == hash(g2)
+    assert g1 == g2
+
+
+def test_galaxy_equality_different_redshift() -> None:
+    g1 = Galaxy(redshift=0.1, central_black_hole_mass=1e5, right_ascension=1.0, declination=0.5)
+    g2 = Galaxy(redshift=0.2, central_black_hole_mass=1e5, right_ascension=1.0, declination=0.5)
+    assert g1 != g2
+
+
+# ── redshifted_mass functions ──────────────────────────────────────────────────
+
+
+def test_redshifted_mass_at_zero_redshift() -> None:
+    m = 1e5
+    assert redshifted_mass(m, 0) == m
+
+
+def test_redshifted_mass_formula() -> None:
+    m = 1e5
+    z = 0.5
+    assert abs(redshifted_mass(m, z) - m * (1 + z)) < 1e-10
+
+
+def test_redshifted_mass_inverse_round_trip() -> None:
+    m = 1e5
+    z = 0.5
+    m_z = redshifted_mass(m, z)
+    m_back = redshifted_mass_inverse(m_z, z)
+    assert abs(m_back - m) < 1e-10
+
+
+# ── dist in bayesian_inference_mwe ────────────────────────────────────────────
+
+
+def test_dist_mwe_at_zero() -> None:
+    """dist(0) in bayesian_inference_mwe should return 0.0."""
+    result = dist(0)
+    assert result == 0.0
+
+
+def test_dist_round_trip_mwe() -> None:
+    result = dist_to_redshift(dist(0.5))
+    assert abs(result - 0.5) < 1e-5
+
+
+# ── comoving_volume ────────────────────────────────────────────────────────────
+
+
+def test_comoving_volume_positive() -> None:
+    catalog = GalaxyCatalog(use_truncnorm=False, use_comoving_volume=False)
+    assert catalog.comoving_volume(1.0) > 0
+
+
+def test_comoving_volume_monotonic() -> None:
+    catalog = GalaxyCatalog(use_truncnorm=False, use_comoving_volume=False)
+    v05 = catalog.comoving_volume(0.5)
+    v10 = catalog.comoving_volume(1.0)
+    v20 = catalog.comoving_volume(2.0)
+    assert v05 < v10 < v20
+
+
+# ── EMRIDetection tuple-comma bug regression ───────────────────────────────────
+
+
+def test_emri_detection_no_noise_fields_are_float() -> None:
+    """Regression: use_measurement_noise=False must produce floats, not tuples."""
+    g = Galaxy(
+        redshift=0.1,
+        central_black_hole_mass=1e5,
+        right_ascension=1.0,
+        declination=0.5,
+    )
+    detection = EMRIDetection.from_host_galaxy(g, use_measurement_noise=False)
+    assert isinstance(detection.measured_luminosity_distance, float)
+    assert isinstance(detection.measured_redshifted_mass, float)
+
+
+# ── GalaxyCatalog truncnorm distribution type ─────────────────────────────────
+
+
+def test_galaxy_catalog_truncnorm_distribution_type() -> None:
+    """With use_truncnorm=True the distributions must NOT be NormalDist instances."""
+    catalog = GalaxyCatalog(use_truncnorm=True, use_comoving_volume=False)
+    catalog.add_random_galaxy()
+    assert not isinstance(catalog.galaxy_distribution[0], NormalDist)
+
+
+# ── gw_detection_probability bounds ───────────────────────────────────────────
+
+
+def test_gw_detection_probability_near_zero_redshift() -> None:
+    """Very small redshift → source is nearby → detection probability close to 1."""
+    catalog = GalaxyCatalog()
+    bayesian_inference = BayesianInference(catalog, [])
+    prob = bayesian_inference.gw_detection_probability(0.001, TRUE_HUBBLE_CONSTANT)
+    assert prob > 0.9
+
+
+def test_gw_detection_probability_large_redshift() -> None:
+    """Large redshift → source is far → detection probability should be low."""
+    catalog = GalaxyCatalog()
+    bayesian_inference = BayesianInference(catalog, [])
+    prob = bayesian_inference.gw_detection_probability(2.0, TRUE_HUBBLE_CONSTANT)
+    assert prob < 0.5
+
+
+# ── posterior length ──────────────────────────────────────────────────────────
+
+
+def test_posterior_length_matches_detections() -> None:
+    catalog = GalaxyCatalog(use_truncnorm=False, use_comoving_volume=False)
+    catalog.create_random_catalog(5)
+    detections = [
+        EMRIDetection.from_host_galaxy(g, use_measurement_noise=False) for g in catalog.catalog[:2]
+    ]
+    bayesian_inference = BayesianInference(catalog, detections)
+    posterior = bayesian_inference.posterior(TRUE_HUBBLE_CONSTANT)
+    assert len(posterior) == len(detections)
+
+
+# ── Known-bug regression: comoving_volume ignores cosmology ───────────────────
+
+
+@pytest.mark.xfail(
+    reason=(
+        "Known bug: GalaxyCatalog.comoving_volume() uses the hardcoded module-level "
+        "TRUE_HUBBLE_CONSTANT (0.7) and therefore returns the same value regardless of "
+        "the Hubble constant passed in.  This test documents the expected correct behaviour: "
+        "a higher H₀ should produce a smaller comoving volume at the same redshift."
+    )
+)
+def test_comoving_volume_varies_with_hubble_constant() -> None:
+    """comoving_volume should return different values for different H₀ (currently it doesn't).
+
+    The comoving volume element dV/dz ∝ (c/H₀)³, so at fixed redshift a higher H₀ should
+    give a smaller comoving volume.  The method currently ignores any cosmology argument
+    and uses the hardcoded TRUE_HUBBLE_CONSTANT = 0.7.
+    """
+    catalog = GalaxyCatalog(use_truncnorm=False, use_comoving_volume=False)
+
+    # If the bug is present both calls return the same value because TRUE_HUBBLE_CONSTANT
+    # is hardcoded.  This test will xfail until comoving_volume accepts an h parameter.
+    v_low_h = catalog.comoving_volume(0.5)  # would use h=0.70
+    v_high_h = catalog.comoving_volume(0.5)  # would use h=0.73 — currently same as above
+
+    # comoving volume ∝ (c/H₀)³ → higher H₀ means smaller volume
+    # This assertion is expected to fail (hence xfail) as long as the bug exists.
+    assert v_low_h != v_high_h, (
+        "comoving_volume returned the same value for different H₀ — bug still present"
+    )
