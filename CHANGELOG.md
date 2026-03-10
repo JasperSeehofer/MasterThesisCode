@@ -9,6 +9,77 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [2026-03-10] — code cleanup & quality improvement (Phases 1–7)
+
+### Added
+- `master_thesis_code/datamodels/galaxy.py`: extracted `Galaxy` and `GalaxyCatalog` classes
+  from `bayesian_inference_mwe.py` into a focused datamodel module.
+- `master_thesis_code/datamodels/emri_detection.py`: extracted `EMRIDetection` dataclass.
+- `master_thesis_code/bayesian_inference/bayesian_inference.py`: extracted `BayesianInference`
+  class and `dist_array` helper; `bayesian_inference_mwe.py` reduced to a thin re-export shim
+  plus the `__main__` demonstration script.
+- `master_thesis_code/datamodels/detection.py`: extracted `Detection` dataclass and
+  `_sky_localization_uncertainty()` from the 3617-line `cosmological_model.py` monolith.
+- `scripts/` directory with four utility scripts moved out of the package root:
+  `prepare_detections.py`, `remove_detections_out_of_bounds.py`,
+  `merge_cramer_rao_bounds.py`, `estimate_hubble_constant.py`.
+- `master_thesis_code_test/test_constants.py`: 5 tests — flat universe (Ω_m + Ω_de ≈ 1),
+  speed of light value, GPC_TO_MPC, KM_TO_M, RADIAN_TO_DEGREE.
+- `master_thesis_code_test/datamodels/test_detection.py`: 6 tests for `Detection` construction,
+  field parsing from `pd.Series`, relative distance error, sky localisation error.
+- `master_thesis_code_test/datamodels/test_emri_detection.py`: 4 tests — regression for
+  `float` fields when `use_measurement_noise=False`, sky angles preserved, noise path positive.
+
+### Changed
+- `master_thesis_code/constants.py` (Phase 1): `C` and `G` now derived from
+  `astropy.constants` for traceability; added `TRUE_HUBBLE_CONSTANT`, `SPEED_OF_LIGHT_KM_S`,
+  `GALAXY_REDSHIFT_ERROR_COEFFICIENT`, `LUMINOSITY_DISTANCE_THRESHOLD_GPC`,
+  `FRACTIONAL_LUMINOSITY_ERROR`, `FRACTIONAL_BLACK_HOLE_MASS_CATALOG_ERROR`,
+  `FRACTIONAL_MEASURED_MASS_ERROR`, `SKY_LOCALIZATION_ERROR`, and LISA hardware constants
+  (`LISA_ARM_LENGTH`, `YEAR_IN_SEC`, `LISA_STEPS`, `LISA_DT`, PSD coefficients).
+  Removed duplicate constants previously scattered across `bayesian_inference_mwe.py`,
+  `galaxy_catalogue/handler.py`, and `LISA_configuration.py`.
+- `master_thesis_code/physical_relations.py` (Phase 2): `hubble_function()` now accepts and
+  returns `float | npt.NDArray[np.floating[Any]]`; uses `np.ndim(result) == 0` to decide
+  whether to wrap in `float()`. Added `redshifted_mass()` and `redshifted_mass_inverse()`.
+- `master_thesis_code/bayesian_inference/bayesian_inference_mwe.py` (Phase 3): removed 12
+  locally-duplicated constants and functions (`dist`, `lambda_cdm_analytic_distance`,
+  `dist_to_redshift`, `redshifted_mass`, `redshifted_mass_inverse`); imports canonical
+  versions from `constants.py` and `physical_relations.py`.
+- `master_thesis_code/LISA_configuration.py` (Phase 1): removed 11 inline hardware constants;
+  imports them from `constants.py`.
+- `master_thesis_code/galaxy_catalogue/handler.py` (Phase 1): removed local `GPC_TO_MPC` and
+  `RADIAN_TO_DEGREE`; imports from `constants.py`.
+- `master_thesis_code/datamodels/galaxy.py` (Phase 6): unit comments added to all fields
+  (`dimensionless`, `M_sun`, `rad`).
+- `master_thesis_code/datamodels/detection.py` (Phase 6): unit comments added to all fields
+  (`Gpc`, `M_sun`, `rad`, `dimensionless`).
+- `master_thesis_code/bayesian_inference/bayesian_inference.py` (Phase 6):
+  `luminosity_distance_threshold` field annotated `# Gpc`.
+
+### Fixed (Phase 2 — four documented known bugs)
+- **Bug 1** `hubble_function` ndarray crash: union return type prevents `float()` wrapping
+  array results; `test_dist_derivative_positive` xfail removed and now passes.
+- **Bug 2** `LISAConfiguration` staleness: `test_lisa_config_does_not_go_stale_after_randomize`
+  xfail removed; test passes (fix was applied in a prior session).
+- **Bug 3** `comoving_volume` hardcoded H₀: `GalaxyCatalog.__init__` now accepts `h0` param
+  and passes it to `_build_comoving_volume_spline`; `test_comoving_volume_varies_with_hubble_constant`
+  xfail removed and now passes.
+- **Bug 4** `dist()` unit inconsistency (Mpc vs Gpc): removed the local `dist()` from
+  `bayesian_inference_mwe.py`; all callers now use the canonical Gpc implementation in
+  `physical_relations.py`; `luminosity_distance_threshold` updated 1550.0 Mpc → 1.55 Gpc.
+
+### Removed
+- Dead commented-out code blocks: multiprocessing derivatives stub in
+  `parameter_estimation.py`, waveform-plotting block in `compute_signal_to_noise_ratio`,
+  `# import statsmodels.api as sm` in `cosmological_model.py`, alternative galaxy
+  distribution implementations in `galaxy.py`.
+- `sys.exit()` calls in utility scripts replaced with `return` / natural function end.
+- Duplicate `Galaxy`, `GalaxyCatalog`, `EMRIDetection`, `BayesianInference` class bodies
+  from `bayesian_inference_mwe.py` (now delegated to the new datamodel/inference modules).
+
+---
+
 ## [2026-03-10] — tests for HPC performance refactoring
 
 ### Added
