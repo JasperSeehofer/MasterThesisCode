@@ -42,8 +42,15 @@ MINIMAL_FREQUENCY: float = 1e-5
 MAXIMAL_FREQUENCY: float = 1
 SNR_THRESHOLD: float = 20
 
-# galaxy catalog
+# galaxy catalog and EMRI detection
 GALAXY_REDSHIFT_ERROR_COEFFICIENT: float = 0.013  # Galaxy.redshift_uncertainty ∝ 0.013*(1+z)^3
+FRACTIONAL_LUMINOSITY_ERROR: float = 0.1  # fractional error on measured luminosity distance
+FRACTIONAL_BLACK_HOLE_MASS_CATALOG_ERROR: float = 0.1  # fractional BH mass catalog uncertainty
+FRACTIONAL_MEASURED_MASS_ERROR: float = 1e-8  # fractional error on measured redshifted mass
+SKY_LOCALIZATION_ERROR: float = 2 / 180 * np.pi  # rad, EMRI sky localization error (2 degrees)
+GALAXY_CATALOG_REDSHIFT_LOWER_LIMIT: float = 0.00001  # minimum redshift for galaxy catalog
+GALAXY_CATALOG_REDSHIFT_UPPER_LIMIT: float = 0.55  # maximum redshift for galaxy catalog
+LUMINOSITY_DISTANCE_THRESHOLD_GPC: float = 1.55  # Gpc, LISA detection horizon for EMRIs
 
 # saving Cramer-Rao bounds for marginalization.
 CRAMER_RAO_BOUNDS_PATH: str = "simulations/cramer_rao_bounds_simulation_$index.csv"
