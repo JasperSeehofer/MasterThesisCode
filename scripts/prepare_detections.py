@@ -1,5 +1,3 @@
-import sys
-
 import pandas as pd
 
 from master_thesis_code.constants import (
@@ -38,4 +36,3 @@ if __name__ == "__main__":
 
     prepared_cramer_rao_bounds.to_csv(PREPARED_CRAMER_RAO_BOUNDS_PATH, index=False)
     print(f"Saved prepared cramer rao bounds to {PREPARED_CRAMER_RAO_BOUNDS_PATH}")
-    sys.exit("Finished.")

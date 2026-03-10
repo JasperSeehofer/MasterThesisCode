@@ -285,21 +285,6 @@ class ParameterEstimation:
         # compute derivatives for fisher information matrix
         parameter_symbol_list = list(self.parameter_space._parameters_to_dict().keys())
         parameter_list = [getattr(self.parameter_space, symbol) for symbol in parameter_symbol_list]
-        """
-        _LOGGER.info("Start multiprocess for derivatives.")
-        derivatives = pool.starmap(
-            self.five_point_stencil_derivative,
-            [(parameter, self.parameter_space) for parameter in parameter_list],
-        )
-        _LOGGER.info("Finished multiprocess for derivatives.")
-
-        lisa_response_derivatives = {
-            symbol: derivative
-            for symbol, derivative in zip(parameter_symbol_list, derivatives)
-        }
-        del derivatives
-        """
-
         lisa_response_derivatives: dict[str, Any] = self.finite_difference_derivative()
 
         fisher_information_matrix = cp.zeros(
@@ -348,13 +333,6 @@ class ParameterEstimation:
         waveform = self.generate_lisa_response(use_snr_check_generator=use_snr_check_generator)
         end = time.time()
         self.waveform_generation_time = round(end - start, 3)
-
-        """
-        for i, channel in enumerate(waveform):
-            plt.plot(cp.asnumpy(channel), label=str(i))
-        plt.savefig("channels.png", dpi=300)
-        plt.close()
-        """
 
         self.current_waveform = waveform
         snr = cp.sqrt(self.scalar_product_of_functions(waveform, waveform))

@@ -5,8 +5,6 @@ import multiprocessing as mp
 import os
 import time
 from dataclasses import dataclass
-
-# import statsmodels.api as sm
 from typing import Any
 
 import emcee

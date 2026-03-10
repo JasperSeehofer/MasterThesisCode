@@ -285,16 +285,6 @@ class GalaxyCatalog:
             ]
         ) / len(self.catalog)
 
-        """
-        return np.array([
-                    distribution.pdf(redshift)
-                    / (1 - distribution.cdf(self.redshift_lower_limit))
-                    / distribution.stdev
-                    for distribution in self.galaxy_distribution
-                ]) / len(self.catalog)
-        return np.array([distribution.pdf(redshift) for distribution in self.galaxy_distribution]) / len(self.catalog)
-        """
-
     def setup_galaxy_mass_distribution(self) -> None:
         self.galaxy_mass_distribution = [
             NormalDist(

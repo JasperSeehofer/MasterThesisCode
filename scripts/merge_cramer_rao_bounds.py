@@ -1,7 +1,6 @@
 # script to merge the cramer rao bounds for the different simulations
 
 import os
-import sys
 
 import pandas as pd
 
@@ -55,7 +54,7 @@ def merge_cramer_rao_bounds() -> None:
         to_be_deleted = input("Do you want to delete the used files? [y/n] ")
         if to_be_deleted == "y":
             delete_files(used_files)
-        sys.exit()
+        return
     else:
         print(f"Merging {len(cramer_rao_bounds_files)} cramer rao bounds files.")
 
@@ -103,7 +102,7 @@ def merge_undetected_events() -> None:
         to_be_deleted = input("Do you want to delete the used files? [y/n] ")
         if to_be_deleted == "y":
             delete_files(used_files)
-        sys.exit()
+        return
     else:
         print(f"Merging {len(undetected_events_files)} undetected events files.")
 
@@ -122,4 +121,3 @@ def merge_undetected_events() -> None:
 
 if __name__ == "__main__":
     main()
-    sys.exit()
