@@ -31,6 +31,15 @@ from master_thesis_code.physical_relations import dist
 
 @dataclass(unsafe_hash=True)
 class Galaxy:
+    """A galaxy in the catalog with a central massive black hole.
+
+    Attributes:
+        redshift: Spectroscopic redshift :math:`z` (dimensionless).
+        central_black_hole_mass: Central MBH mass in solar masses :math:`M_\\odot`.
+        right_ascension: Ecliptic azimuthal angle in radians :math:`[0, 2\\pi)`.
+        declination: Ecliptic polar angle in radians :math:`[0, \\pi]`.
+    """
+
     redshift: float  # dimensionless
     central_black_hole_mass: float  # M_sun (massive black hole mass)
     right_ascension: float  # rad, ecliptic azimuthal angle
@@ -61,6 +70,19 @@ class Galaxy:
 
 @dataclass
 class GalaxyCatalog:
+    """Synthetic galaxy catalog for Bayesian H₀ inference.
+
+    Holds a list of :class:`Galaxy` objects and provides redshift/mass probability
+    distributions used by :class:`~master_thesis_code.bayesian_inference.bayesian_inference.BayesianInference`.
+
+    Attributes:
+        lower_mass_limit: Minimum central BH mass in :math:`M_\\odot`.
+        upper_mass_limit: Maximum central BH mass in :math:`M_\\odot`.
+        redshift_lower_limit: Minimum redshift in the catalog.
+        redshift_upper_limit: Maximum redshift in the catalog.
+        catalog: List of :class:`Galaxy` instances.
+    """
+
     _use_truncnorm: bool
     _use_comoving_volume: bool
 
@@ -111,7 +133,9 @@ class GalaxyCatalog:
             return float(-np.inf)
         return float(np.log(self.comoving_volume(redshift)))
 
-    def get_samples_from_comoving_volume(self, number_of_samples: int) -> np.ndarray:
+    def get_samples_from_comoving_volume(
+        self, number_of_samples: int, save_plot: bool = False
+    ) -> np.ndarray:
         # use emcee to sample the comoving volume distribution
         ndim = 1
         nwalkers = 5
@@ -126,7 +150,8 @@ class GalaxyCatalog:
         samples = np.array(sampler.get_chain(flat=True)).flatten()
         # return required number of samples by using the last n samples
         reduced_samples = samples[-number_of_samples:]
-        self.save_comoving_volume_sampling_plot(reduced_samples)
+        if save_plot:
+            self.save_comoving_volume_sampling_plot(reduced_samples)
         return reduced_samples
 
     @staticmethod

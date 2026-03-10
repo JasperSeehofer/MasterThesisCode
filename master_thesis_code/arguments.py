@@ -1,6 +1,7 @@
 import argparse
 import logging
 import os
+import random
 import sys
 
 from master_thesis_code.constants import H
@@ -63,6 +64,14 @@ class Arguments:
         """Indicates whether the snr analysis should be run."""
         return bool(self._parsed_arguments.snr_analysis)
 
+    @property
+    def seed(self) -> int:
+        """Random seed for reproducibility. A random seed is chosen if not provided."""
+        raw = self._parsed_arguments.seed
+        if raw is None:
+            return random.randint(0, 2**31 - 1)
+        return int(raw)
+
     @staticmethod
     def create(sys_args: list[str] = sys.argv[1:]) -> "Arguments":
         parsed_arguments = _parse_arguments(sys_args)
@@ -111,6 +120,12 @@ def _parse_arguments(arguments: list[str]) -> argparse.Namespace:
     parser.add_argument("--evaluate", action="store_true")
     parser.add_argument("--h_value", help="Hubble constant value.", type=float, default=H)
     parser.add_argument("--snr_analysis", action="store_true")
+    parser.add_argument(
+        "--seed",
+        help="Random seed for reproducibility. If omitted, a random seed is chosen and logged.",
+        type=int,
+        default=None,
+    )
     parser.add_argument(
         "--log_level",
         nargs="?",

@@ -25,10 +25,16 @@ gpu = [
 ]
 dev = [
     "pytest",
+    "pytest-cov",
+    "pytest-benchmark",
+    "pip-audit",
     "mypy",
     "jupyterlab",
     "ruff",
     "pre-commit",
+    "sphinx>=8.1.3",
+    "furo>=2025.12.19",
+    "sphinx-copybutton>=0.5.2",
 ]
 
 [tool.mypy]
@@ -93,8 +99,23 @@ known-first-party = ["master_thesis_code"]
 
 [tool.pytest.ini_options]
 testpaths = ["master_thesis_code_test"]
-addopts = "-v --tb=short"
+addopts = "-v --tb=short --cov=master_thesis_code --cov-report=term-missing --cov-report=xml"
 markers = [
     "gpu: requires CUDA GPU and cupy — skip with '-m not gpu'",
     "slow: long-running test (>10s)",
+]
+
+[tool.coverage.run]
+source = ["master_thesis_code"]
+omit = [
+    "master_thesis_code_test/*",
+    "master_thesis_code/*/_generated/*",
+]
+
+[tool.coverage.report]
+fail_under = 25
+exclude_lines = [
+    "pragma: no cover",
+    "if TYPE_CHECKING:",
+    "raise NotImplementedError",
 ]

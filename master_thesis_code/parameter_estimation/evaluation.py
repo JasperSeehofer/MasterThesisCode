@@ -157,7 +157,7 @@ class DataEvaluation:
         fig = plt.figure(figsize=(16, 9))
         ax = fig.add_subplot(111, projection="3d")
 
-        r = self._cramer_rao_bounds["dist"] * GPC_TO_MPC * H0 / C
+        r = self._cramer_rao_bounds["luminosity_distance"] * GPC_TO_MPC * H0 / C
         theta = self._cramer_rao_bounds["phiS"]
         phi = self._cramer_rao_bounds["qS"]
         snr = self._cramer_rao_bounds["SNR"]
@@ -399,7 +399,7 @@ class DataEvaluation:
                 plt.close()
 
         # boxplot of cramer rao bounds
-        use_relative_uncertainty: list[str] = []  # "M", "dist", "mu"
+        use_relative_uncertainty: list[str] = []  # "M", "luminosity_distance", "mu"
         uncertainies_list = []
         for parameter in vars(parameter_space).values():
             assert isinstance(parameter, Parameter)
@@ -446,7 +446,7 @@ class DataEvaluation:
         plt.close()
 
         # violin plot of cramer rao bounds covariance
-        parameters_of_interest = ["M", "dist", "phiS", "qS"]
+        parameters_of_interest = ["M", "luminosity_distance", "phiS", "qS"]
         for parameter in parameters_of_interest:
             covariance_list = []
             for parameter_2 in parameter_symbol_list:
@@ -506,7 +506,7 @@ class DataEvaluation:
         # plot skylocalization uncertainty vs distance
         plt.figure(figsize=(16, 9))
         plt.scatter(
-            self._cramer_rao_bounds["dist"],
+            self._cramer_rao_bounds["luminosity_distance"],
             d_Omega * (RADIAN_TO_DEGREE) ** 2,
         )
 
@@ -522,26 +522,26 @@ class DataEvaluation:
         # plot skylocalization uncertainty vs distance error
         plt.figure(figsize=(16, 9))
         plt.scatter(
-            self._cramer_rao_bounds["delta_dist_delta_dist"] ** 0.5
-            / self._cramer_rao_bounds["dist"],
+            self._cramer_rao_bounds["delta_luminosity_distance_delta_luminosity_distance"] ** 0.5
+            / self._cramer_rao_bounds["luminosity_distance"],
             self._cramer_rao_bounds["delta_phiS_delta_phiS"] ** 0.5,
             label="phiS error",
         )
         plt.scatter(
-            self._cramer_rao_bounds["delta_dist_delta_dist"] ** 0.5
-            / self._cramer_rao_bounds["dist"],
+            self._cramer_rao_bounds["delta_luminosity_distance_delta_luminosity_distance"] ** 0.5
+            / self._cramer_rao_bounds["luminosity_distance"],
             self._cramer_rao_bounds["delta_qS_delta_qS"] ** 0.5,
             label="qS error",
         )
         plt.scatter(
-            self._cramer_rao_bounds["delta_dist_delta_dist"] ** 0.5
-            / self._cramer_rao_bounds["dist"],
+            self._cramer_rao_bounds["delta_luminosity_distance_delta_luminosity_distance"] ** 0.5
+            / self._cramer_rao_bounds["luminosity_distance"],
             self._cramer_rao_bounds["delta_phiS_delta_qS"],
             label="phiS qS covariance",
         )
         plt.scatter(
-            self._cramer_rao_bounds["delta_dist_delta_dist"] ** 0.5
-            / self._cramer_rao_bounds["dist"],
+            self._cramer_rao_bounds["delta_luminosity_distance_delta_luminosity_distance"] ** 0.5
+            / self._cramer_rao_bounds["luminosity_distance"],
             d_Omega,
             label="d_Omega",
         )
@@ -608,7 +608,10 @@ class DataEvaluation:
         # plot redshift detections distribution
         # convert distance to redshift
         redshifts = np.array(
-            [dist_to_redshift(redshift) for redshift in self._cramer_rao_bounds["dist"]]
+            [
+                dist_to_redshift(redshift)
+                for redshift in self._cramer_rao_bounds["luminosity_distance"]
+            ]
         )
         print(f"redshifts: {redshifts}")
 
@@ -655,7 +658,10 @@ class DataEvaluation:
         )
 
         undetected_redshifts = np.array(
-            [dist_to_redshift(distance) for distance in self._undetected_events["dist"]]
+            [
+                dist_to_redshift(distance)
+                for distance in self._undetected_events["luminosity_distance"]
+            ]
         )
         undetected_source_masses = self._undetected_events["M"] / (1 + undetected_redshifts)
 

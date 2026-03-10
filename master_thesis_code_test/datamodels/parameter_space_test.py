@@ -18,7 +18,7 @@ EXPECTED_PARAMETER_KEYS = {
     "p0",
     "e0",
     "x0",
-    "dist",
+    "luminosity_distance",
     "qS",
     "phiS",
     "qK",
@@ -71,7 +71,7 @@ def test_parameter_space_default_construction() -> None:
     assert isinstance(ps.M, Parameter)
     assert isinstance(ps.mu, Parameter)
     assert isinstance(ps.a, Parameter)
-    assert isinstance(ps.dist, Parameter)
+    assert isinstance(ps.luminosity_distance, Parameter)
 
 
 def test_randomize_parameter_stays_in_bounds() -> None:
@@ -144,7 +144,7 @@ def test_set_host_galaxy_parameters_updates_fields() -> None:
     assert ps.qS.value == q_s
     assert ps.M.value == M
     expected_dist = dist(z)
-    assert abs(ps.dist.value - expected_dist) < 1e-10
+    assert abs(ps.luminosity_distance.value - expected_dist) < 1e-10
 
 
 def test_set_host_galaxy_parameters_overwrites_previous_values() -> None:

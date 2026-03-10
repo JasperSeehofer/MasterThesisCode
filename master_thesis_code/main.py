@@ -1,6 +1,8 @@
 import datetime
+import json
 import logging
 import os
+import subprocess
 import warnings
 from collections.abc import Iterator
 from time import time
@@ -30,6 +32,11 @@ def main() -> None:
     _ROOT_LOGGER.info("---------- STARTING MASTER THESIS CODE ----------")
     start_time = time()
 
+    seed = arguments.seed
+    np.random.seed(seed)
+    _ROOT_LOGGER.info(f"Random seed: {seed}")
+    _write_run_metadata(arguments.working_directory, seed, arguments)
+
     cosmological_model = Model1CrossCheck()
     galaxy_catalog = GalaxyCatalogueHandler(
         M_min=cosmological_model.parameter_space.M.lower_limit,
@@ -53,6 +60,36 @@ def main() -> None:
 
     end_time = time()
     _ROOT_LOGGER.debug(f"Finished in {end_time - start_time}s.")
+
+
+def _get_git_commit() -> str:
+    try:
+        return (
+            subprocess.check_output(["git", "rev-parse", "HEAD"], stderr=subprocess.DEVNULL)
+            .decode()
+            .strip()
+        )
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        return "unknown"
+
+
+def _write_run_metadata(working_directory: str, seed: int, arguments: Arguments) -> None:
+    metadata = {
+        "git_commit": _get_git_commit(),
+        "timestamp": datetime.datetime.now().isoformat(),
+        "random_seed": seed,
+        "cli_args": {
+            "simulation_steps": arguments.simulation_steps,
+            "simulation_index": arguments.simulation_index,
+            "evaluate": arguments.evaluate,
+            "h_value": arguments.h_value,
+            "snr_analysis": arguments.snr_analysis,
+        },
+    }
+    metadata_path = os.path.join(working_directory, "run_metadata.json")
+    with open(metadata_path, "w") as f:
+        json.dump(metadata, f, indent=2)
+    _ROOT_LOGGER.info(f"Run metadata written to: {metadata_path}")
 
 
 def _configure_logger(working_directory: str, log_level: int, h_value: float) -> None:

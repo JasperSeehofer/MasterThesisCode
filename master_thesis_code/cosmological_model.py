@@ -1,3 +1,10 @@
+"""EMRI event-rate cosmological model and H₀ evaluation orchestration.
+
+:class:`Model1CrossCheck` samples EMRI events from a cosmological rate model.
+:class:`BayesianStatistics` loads saved Cramér-Rao bounds and orchestrates the
+full Hubble-constant posterior evaluation via :class:`~master_thesis_code.bayesian_inference.bayesian_inference.BayesianInference`.
+"""
+
 import json
 import logging
 import math
@@ -275,7 +282,7 @@ class Model1CrossCheck:
         self.parameter_space.e0.upper_limit = 0.2
 
         self.max_redshift = 1.5
-        self.parameter_space.dist.upper_limit = dist(redshift=self.max_redshift)
+        self.parameter_space.luminosity_distance.upper_limit = dist(redshift=self.max_redshift)
         self.luminostity_detection_threshold = 1.55  # as in Hitchikers Guide
 
     def emri_distribution(self, M: float, redshift: float) -> float:
@@ -384,7 +391,9 @@ class Model1CrossCheck:
         mass_bins = np.geomspace(
             self.parameter_space.M.lower_limit, self.parameter_space.M.upper_limit, 40
         )
-        redshift_bins = np.linspace(0, dist_to_redshift(self.parameter_space.dist.upper_limit), 40)
+        redshift_bins = np.linspace(
+            0, dist_to_redshift(self.parameter_space.luminosity_distance.upper_limit), 40
+        )
         plt.figure(figsize=(10, 6))
         plt.hist2d(redshifts, masses, bins=[redshift_bins, mass_bins], cmap="viridis")
         plt.colorbar()
@@ -530,7 +539,7 @@ class DetectionProbability:
 
         undetected_events_points = np.array(
             [
-                (undetected_events["dist"] - luminosity_distance_lower_limit)
+                (undetected_events["luminosity_distance"] - luminosity_distance_lower_limit)
                 / (luminosity_distance_upper_limit - luminosity_distance_lower_limit),
                 (np.log10(undetected_events["M"]) - np.log10(mass_lower_limit))
                 / (np.log10(mass_upper_limit) - np.log10(mass_lower_limit)),
@@ -541,7 +550,7 @@ class DetectionProbability:
 
         detected_events_points = np.array(
             [
-                (detected_events["dist"] - luminosity_distance_lower_limit)
+                (detected_events["luminosity_distance"] - luminosity_distance_lower_limit)
                 / (luminosity_distance_upper_limit - luminosity_distance_lower_limit),
                 (np.log10(detected_events["M"]) - np.log10(mass_lower_limit))
                 / (np.log10(mass_upper_limit) - np.log10(mass_lower_limit)),
@@ -2686,7 +2695,7 @@ class BayesianStatistics:
         # find parameter space limits for detections
         PARAMETERSPACE_MARGIN = 0.2
         luminosity_distance_lower_limit = 0.0
-        luminosity_distance_upper_limit = max(self.cramer_rao_bounds["dist"]) * (
+        luminosity_distance_upper_limit = max(self.cramer_rao_bounds["luminosity_distance"]) * (
             1 + PARAMETERSPACE_MARGIN
         )
         mass_lower_limit = min(self.cramer_rao_bounds["M"]) * (1 - PARAMETERSPACE_MARGIN)

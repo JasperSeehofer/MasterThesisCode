@@ -26,8 +26,8 @@ def _make_series(
 ) -> pd.Series:
     return pd.Series(
         {
-            "dist": dist,
-            "delta_dist_delta_dist": delta_dist**2,
+            "luminosity_distance": dist,
+            "delta_luminosity_distance_delta_luminosity_distance": delta_dist**2,
             "phiS": phiS,
             "delta_phiS_delta_phiS": delta_phiS**2,
             "qS": qS,
@@ -37,9 +37,9 @@ def _make_series(
             "delta_phiS_delta_qS": cov_phiS_qS,
             "delta_phiS_delta_M": cov_phiS_M,
             "delta_qS_delta_M": cov_qS_M,
-            "delta_dist_delta_M": cov_dist_M,
-            "delta_qS_delta_dist": cov_qS_dist,
-            "delta_phiS_delta_dist": cov_phiS_dist,
+            "delta_luminosity_distance_delta_M": cov_dist_M,
+            "delta_qS_delta_luminosity_distance": cov_qS_dist,
+            "delta_phiS_delta_luminosity_distance": cov_phiS_dist,
             "SNR": snr,
             "host_galaxy_index": host_galaxy_index,
         }

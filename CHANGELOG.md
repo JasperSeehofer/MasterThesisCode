@@ -9,6 +9,59 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [2026-03-10] — dev infrastructure & code health (Phase 8)
+
+### Added
+- `LICENSE`: MIT licence added so the project can legally be shared, forked, and cited.
+- `CONTRIBUTING.md`: human-readable contribution guide covering env setup, branching,
+  pre-commit, test commands, and the physics-change protocol.
+- `.editorconfig`: enforces LF line endings, 4-space Python indent, UTF-8, and
+  trailing-whitespace trimming across all editors.
+- `.github/dependabot.yml`: weekly automated dependency-update PRs for both the `pip`
+  ecosystem (uv lock file) and GitHub Actions.
+- `pytest-cov` and `pytest-benchmark` added to `dev` extras in `pyproject.toml`.
+- `[tool.coverage.run]` and `[tool.coverage.report]` sections in `pyproject.toml`:
+  source is `master_thesis_code/`, test files omitted, gate at 25% (current: 28.83%).
+- `addopts` in `[tool.pytest.ini_options]` now includes `--cov` and `--cov-report`
+  so every `pytest` invocation reports coverage automatically.
+- `pip-audit` added to `dev` extras; new CI step `pip-audit (security)` runs on every
+  push to surface known CVEs in installed packages.
+- CI step `Upload coverage report` uploads `coverage.xml` as a GitHub Actions artifact
+  after the test run.
+- `--seed` CLI argument in `arguments.py` (optional `int`; random value chosen and
+  logged when omitted).
+- `_write_run_metadata()` in `main.py`: writes `run_metadata.json` into the working
+  directory at startup, recording `git_commit`, `timestamp`, `random_seed`, and all
+  CLI arguments for simulation reproducibility.
+- `master_thesis_code_test/test_benchmarks.py`: two `@pytest.mark.slow` benchmark
+  tests — `BayesianInference.likelihood` for N=50 detections and
+  `GalaxyCatalog.evaluate_galaxy_distribution` for a 500-galaxy catalog.
+
+### Changed
+- `main.py`: `main()` now seeds `numpy.random` from `arguments.seed` before any
+  sampling begins, and calls `_write_run_metadata()`.
+- `master_thesis_code/datamodels/galaxy.py`:
+  `GalaxyCatalog.get_samples_from_comoving_volume` gains `save_plot: bool = False`
+  parameter; the PNG side-effect is suppressed by default and only fires when the
+  caller explicitly passes `save_plot=True`.
+- `master_thesis_code/datamodels/parameter_space.py`:
+  `ParameterSpace.dist` field and its `Parameter.symbol` both renamed to
+  `luminosity_distance`. `_parameters_to_dict` key updated accordingly.
+  This removes the Python name-shadowing of the imported `dist()` function.
+- All CSV column names derived from the renamed field updated throughout the codebase:
+  `"dist"` → `"luminosity_distance"`,
+  `"delta_dist_delta_dist"` → `"delta_luminosity_distance_delta_luminosity_distance"`,
+  and the four mixed cross-covariance column names in `datamodels/detection.py`,
+  `cosmological_model.py`, `parameter_estimation/evaluation.py`.
+- `master_thesis_code_test/datamodels/parameter_space_test.py`,
+  `master_thesis_code_test/datamodels/test_detection.py`,
+  `master_thesis_code_test/cosmological_model_test.py`: all test fixtures updated
+  to use the new `luminosity_distance` column names.
+- CI `pytest` step now runs `not gpu and not slow` (slow benchmarks excluded from
+  the fast CI path).
+
+---
+
 ## [2026-03-10] — code cleanup & quality improvement (Phases 1–7)
 
 ### Added

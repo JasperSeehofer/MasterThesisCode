@@ -77,8 +77,10 @@ class ParameterSpace:
             symbol="x0", unit="dimensionless", lower_limit=-1.0, upper_limit=1.0
         )
     )  # Kepler-orbit parameter: x_I0=cosI (I is the inclination)
-    dist: Parameter = field(
-        default_factory=lambda: Parameter(symbol="dist", unit="Gpc", lower_limit=0.0, upper_limit=7)
+    luminosity_distance: Parameter = field(
+        default_factory=lambda: Parameter(
+            symbol="luminosity_distance", unit="Gpc", lower_limit=0.0, upper_limit=7
+        )
     )  # luminosity distance
     qS: Parameter = field(
         default_factory=lambda: Parameter(
@@ -139,7 +141,7 @@ class ParameterSpace:
         self.M.value = host_galaxy.M
         self.phiS.value = host_galaxy.phiS
         self.qS.value = host_galaxy.qS
-        self.dist.value = dist(host_galaxy.z)
+        self.luminosity_distance.value = dist(host_galaxy.z)
 
     def _parameters_to_dict(self) -> dict:
         return {
@@ -149,7 +151,7 @@ class ParameterSpace:
             "p0": self.p0.value,
             "e0": self.e0.value,
             "x0": self.x0.value,
-            "dist": self.dist.value,
+            "luminosity_distance": self.luminosity_distance.value,
             "qS": self.qS.value,
             "phiS": self.phiS.value,
             "qK": self.qK.value,

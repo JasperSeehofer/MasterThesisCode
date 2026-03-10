@@ -39,14 +39,30 @@ The lock file is committed to git, so every machine gets the same versions.
 # Run the package
 uv run python -m master_thesis_code <working_dir> --simulation_steps N
 
-# Run tests (dev machine)
-uv run pytest -m "not gpu"
+# Run tests (dev machine) — also prints coverage summary
+uv run pytest -m "not gpu and not slow"
+
+# Run benchmarks
+uv run pytest -m "slow" --benchmark-only
 
 # Run mypy
 uv run mypy master_thesis_code/
 ```
 
 Note: `fastemriwaveforms` installs as the `few` Python package — `import few`, not `import fastemriwaveforms`.
+
+### Reproducible simulation runs
+
+Pass `--seed <int>` to fix the random state. When omitted, a random seed is chosen,
+logged, and recorded in `run_metadata.json` in the working directory.
+
+```bash
+uv run python -m master_thesis_code <working_dir> --simulation_steps 100 --seed 42
+```
+
+`run_metadata.json` records `git_commit`, `timestamp`, `random_seed`, and all CLI
+arguments alongside every simulation output so results can always be tied back to
+the exact code and parameters that produced them.
 
 ## Dev Workflow
 
@@ -142,9 +158,12 @@ The codebase has two distinct pipelines:
 
 ### Known Bugs to Be Aware Of
 
-1. **`LISAConfiguration` goes stale**: copies sky angles from `ParameterSpace` at init only — every waveform uses the first parameter set's sky angles.
-2. **`EMRIDetection.from_host_galaxy` with `use_measurement_noise=False`**: trailing commas make `measured_luminosity_distance` and `measured_redshifted_mass` tuples instead of floats.
-3. **`comoving_volume`** uses hardcoded `TRUE_HUBBLE_CONSTANT` — cannot evaluate under different cosmologies.
+All four originally-listed bugs are resolved. Remaining known issues:
+
+1. **`LISA_configuration.py` unconditional `import cupy`**: still at module top level — any
+   module that imports `LisaTdiConfiguration` is un-importable on CPU-only machines without
+   the guarded `try/except`. Fix when that file is next touched.
+2. **`cosmological_model.py` size**: ~3530 lines; `BayesianStatistics` not yet extracted.
 
 ---
 

@@ -24,8 +24,8 @@ def _make_detection_series(
     """Build a pd.Series with the column names expected by Detection.__init__."""
     return pd.Series(
         {
-            "dist": dist,
-            "delta_dist_delta_dist": delta_dist**2,
+            "luminosity_distance": dist,
+            "delta_luminosity_distance_delta_luminosity_distance": delta_dist**2,
             "phiS": phiS,
             "delta_phiS_delta_phiS": delta_phiS**2,
             "qS": qS,
@@ -35,9 +35,9 @@ def _make_detection_series(
             "delta_phiS_delta_qS": 0.0,
             "delta_phiS_delta_M": 0.0,
             "delta_qS_delta_M": 0.0,
-            "delta_dist_delta_M": 0.0,
-            "delta_qS_delta_dist": 0.0,
-            "delta_phiS_delta_dist": 0.0,
+            "delta_luminosity_distance_delta_M": 0.0,
+            "delta_qS_delta_luminosity_distance": 0.0,
+            "delta_phiS_delta_luminosity_distance": 0.0,
             "SNR": snr,
             "host_galaxy_index": host_galaxy_index,
         }
