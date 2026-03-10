@@ -20,26 +20,14 @@ except ImportError:
     _CUPY_AVAILABLE = False
 
 from master_thesis_code.constants import (
+    LISA_ARM_LENGTH as L,
+)
+from master_thesis_code.constants import (
     C,
 )
 from master_thesis_code.decorators import timer_decorator
 
 _LOGGER = logging.getLogger()
-
-
-# constants
-L = 2.5e9  # m
-YEAR_IN_SEC = int(365.5 * 24 * 60 * 60)
-STEPS = 10_000
-DT = YEAR_IN_SEC / STEPS
-
-A = 1.14e-44
-alpha = 1.8
-f_2 = 0.31e-3
-a_1 = -0.25
-b_1 = -2.7
-a_k = -0.27
-b_k = -2.47
 
 
 def _get_xp(arr: Any) -> types.ModuleType:

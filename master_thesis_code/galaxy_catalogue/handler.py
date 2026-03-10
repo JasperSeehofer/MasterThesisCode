@@ -19,10 +19,6 @@ from master_thesis_code.physical_relations import (
 )
 
 _LOGGER = logging.getLogger()
-
-
-GPC_TO_MPC = 10**3
-RADIAN_TO_DEGREE = 360 / 2 / np.pi
 REDUCED_CATALOGUE_FILE_PATH = "./master_thesis_code/galaxy_catalogue/reduced_galaxy_catalogue.csv"
 M_min = 10**4
 M_max = 10**6

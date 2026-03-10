@@ -17,19 +17,24 @@ from scipy.special import erf, hyp2f1
 from scipy.stats import truncnorm
 
 from master_thesis_code.bayesian_inference.scientific_plotter import ScientificPlotter
+from master_thesis_code.constants import (
+    GALAXY_REDSHIFT_ERROR_COEFFICIENT,
+    OMEGA_M,
+    TRUE_HUBBLE_CONSTANT,
+    W_0,
+    W_A,
+)
+from master_thesis_code.constants import (
+    OMEGA_DE as OMEGA_LAMBDA,
+)
+from master_thesis_code.constants import (
+    SPEED_OF_LIGHT_KM_S as SPEED_OF_LIGHT,
+)
 
-FRACTIONAL_LUMINOSITY_ERROR = 0.1
-FRACTIONAL_BLACK_HOLE_MASS_CATALOG_ERROR = 0.1
-FRACTIONAL_MEASURED_MASS_ERROR = 1e-8  # TODO: Check with parameter estimation
-SKY_LOCALIZATION_ERROR = 2 / 180 * np.pi  # in radians
-TRUE_HUBBLE_CONSTANT = 0.7  # km/s/Mpc/100
-SPEED_OF_LIGHT = 300000.0  # km/s
-OMEGA_M = 0.25
-OMEGA_LAMBDA = 0.75
-W_0 = -1.0
-W_A = 0.0
-GPC_TO_MPC = 1e3
-KM_TO_M = 1e3
+FRACTIONAL_LUMINOSITY_ERROR: float = 0.1
+FRACTIONAL_BLACK_HOLE_MASS_CATALOG_ERROR: float = 0.1
+FRACTIONAL_MEASURED_MASS_ERROR: float = 1e-8  # TODO: Check with parameter estimation
+SKY_LOCALIZATION_ERROR: float = 2 / 180 * np.pi  # radians
 
 
 def dist(
@@ -163,7 +168,7 @@ class Galaxy:
 
     @property
     def redshift_uncertainty(self) -> float:
-        return min(0.013 * (1 + self.redshift) ** 3, 0.015)
+        return min(GALAXY_REDSHIFT_ERROR_COEFFICIENT * (1 + self.redshift) ** 3, 0.015)
 
     @property
     def central_black_hole_mass_uncertainty(self) -> float:
@@ -361,7 +366,7 @@ class GalaxyCatalog:
             )
 
     def evaluate_galaxy_distribution(self, redshift: float) -> npt.NDArray[np.float64]:
-        redshift_uncertainty = min(0.013 * (1 + redshift) ** 3, 0.015)
+        redshift_uncertainty = min(GALAXY_REDSHIFT_ERROR_COEFFICIENT * (1 + redshift) ** 3, 0.015)
         p_background: float = 1.0
 
         if self._use_comoving_volume:
