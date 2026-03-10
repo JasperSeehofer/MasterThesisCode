@@ -31,10 +31,10 @@ from master_thesis_code.physical_relations import dist
 
 @dataclass(unsafe_hash=True)
 class Galaxy:
-    redshift: float
-    central_black_hole_mass: float  # same as massive black hole
-    right_ascension: float
-    declination: float
+    redshift: float  # dimensionless
+    central_black_hole_mass: float  # M_sun (massive black hole mass)
+    right_ascension: float  # rad, ecliptic azimuthal angle
+    declination: float  # rad, ecliptic polar angle
 
     @classmethod
     def with_random_skylocalization(

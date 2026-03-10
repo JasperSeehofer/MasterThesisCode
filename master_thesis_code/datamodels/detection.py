@@ -22,23 +22,23 @@ def _sky_localization_uncertainty(
 
 @dataclass
 class Detection:
-    d_L: float
-    d_L_uncertainty: float
-    phi: float
-    phi_error: float
-    theta: float
-    theta_error: float
-    M: float
-    M_uncertainty: float
-    theta_phi_covariance: float
-    M_phi_covariance: float
-    M_theta_covariance: float
-    d_L_M_covariance: float
-    d_L_theta_covariance: float
-    d_L_phi_covariance: float
-    host_galaxy_index: int
-    snr: float
-    WL_uncertainty: float = 0.0
+    d_L: float  # Gpc, luminosity distance
+    d_L_uncertainty: float  # Gpc, 1-σ error on d_L (= √Γ⁻¹_{d_L d_L})
+    phi: float  # rad, sky azimuthal angle (phiS)
+    phi_error: float  # rad, 1-σ error on phi
+    theta: float  # rad, sky polar angle (qS)
+    theta_error: float  # rad, 1-σ error on theta
+    M: float  # M_sun, central black hole mass (redshifted)
+    M_uncertainty: float  # M_sun, 1-σ error on M
+    theta_phi_covariance: float  # rad², off-diagonal Cramér-Rao element
+    M_phi_covariance: float  # M_sun·rad, off-diagonal Cramér-Rao element
+    M_theta_covariance: float  # M_sun·rad, off-diagonal Cramér-Rao element
+    d_L_M_covariance: float  # Gpc·M_sun, off-diagonal Cramér-Rao element
+    d_L_theta_covariance: float  # Gpc·rad, off-diagonal Cramér-Rao element
+    d_L_phi_covariance: float  # Gpc·rad, off-diagonal Cramér-Rao element
+    host_galaxy_index: int  # index in the galaxy catalog
+    snr: float  # dimensionless, signal-to-noise ratio
+    WL_uncertainty: float = 0.0  # Gpc, weak-lensing contribution to d_L uncertainty
 
     def __init__(self, parameters: pd.Series) -> None:
         self.d_L = parameters["dist"]

@@ -48,7 +48,7 @@ class BayesianInference:
     galaxy_catalog: GalaxyCatalog
     emri_detections: list[EMRIDetection]
 
-    luminosity_distance_threshold: float = LUMINOSITY_DISTANCE_THRESHOLD_GPC
+    luminosity_distance_threshold: float = LUMINOSITY_DISTANCE_THRESHOLD_GPC  # Gpc
     number_of_redshift_steps: int = 1000
     redshift_values: npt.NDArray[np.float64] = field(default_factory=lambda: np.array([]))
     galaxy_distribution_at_redshifts: npt.NDArray[np.float64] = field(
