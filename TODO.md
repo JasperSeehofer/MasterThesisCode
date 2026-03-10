@@ -1,6 +1,46 @@
 # TODO's
 
-## Physics / Science
+## Physics Fixes (confirmed bugs — Physics Change Protocol required before each)
+
+These all require presenting old formula / new formula / reference / dimensional analysis /
+limiting case to the user for approval before any code is written (see CLAUDE.md).
+
+- [ ] **[CRITICAL]** Fix comoving volume formula in `datamodels/galaxy.py:121`
+      Exponent 2 → 3, prefactor 4π → 4π/3. Ref: Hogg (1999) arXiv:astro-ph/9905116 Eq. (28).
+      `cv_grid = (4/3) * np.pi * (SPEED_OF_LIGHT / h0) ** 3 * cumulative_integral**3`
+
+- [ ] **[HIGH]** Switch Fisher matrix to five-point stencil in `parameter_estimation.py:336`
+      Replace `finite_difference_derivative()` call with `five_point_stencil_derivative()`.
+      Ref: Vallisneri (2008) arXiv:gr-qc/0703086; Cutler & Flanagan (1994) PRD 49, 2658.
+
+- [ ] **[MEDIUM]** Add galactic confusion noise to LISA PSD in `LISA_configuration.py`
+      Implement `galactic_confusion_noise(frequencies, T_obs)` and add to
+      `power_spectral_density_a_channel()`. Constants already defined in `constants.py:77–83`.
+      Ref: Babak et al. (2023) arXiv:2303.15929 Eq. (17) and Table 1.
+
+- [ ] **[MEDIUM]** Fix silent wCDM fallback in `physical_relations.py:72`
+      Either (a) remove `w_0`, `w_a` args from `dist()` and document the ΛCDM assumption, or
+      (b) fall back to numerical integration via `hubble_function()` when `w_0 ≠ -1` or `w_a ≠ 0`.
+      Ref: Hogg (1999) arXiv:astro-ph/9905116 Eq. (14–16).
+
+- [ ] **[MEDIUM]** Use per-source Fisher-matrix σ(d_L) in `bayesian_inference/bayesian_inference.py`
+      Replace hardcoded `FRACTIONAL_LUMINOSITY_ERROR * d_L` with
+      `delta_luminosity_distance_delta_luminosity_distance` from the `Detection` dataclass.
+
+- [ ] **[LOW]** Update fiducial cosmological parameters in `constants.py:29–30` to Planck 2018:
+      `OMEGA_M = 0.3153`, `OMEGA_DE = 0.6847`, `H = 0.6736`.
+      Ref: Planck Collaboration (2020) arXiv:1807.06209 Table 2.
+
+- [ ] **[LOW]** Document or fix galaxy redshift uncertainty scaling in `datamodels/galaxy.py:64`
+      Current `(1+z)³` formula has no reference; add citation or switch to standard
+      photometric `σ_z = 0.05(1+z)` or spectroscopic `σ_z = 0.001(1+z)`.
+
+- [ ] **[IMPORTANT]** Designate and document the production Bayesian pipeline
+      Document that Pipeline B (`BayesianStatistics` in `cosmological_model.py`) is the
+      science-grade implementation and Pipeline A (`BayesianInference`) is a dev cross-check.
+      Add a module-level docstring and a note in README.
+
+## Physics / Science (pre-existing)
 
 - [ ] coordinate transformation to orbital motion around sun
 - [ ] check _s parameters. Barycenter same as orientation of binary wrt fixed frame
@@ -20,6 +60,12 @@
       tests are added; target ≥ 50% by thesis submission
 - [ ] Tag git release `v0.1.0` once current branch is merged: `git tag v0.1.0`
 - [ ] Add Codecov integration to CI for a coverage badge in README
+
+## Done (Phase 9 — 2026-03-10)
+
+- [x] Physics & mathematics review: README "Scientific Background and Known Limitations" section
+- [x] All eight confirmed issues documented in README, TODO, CHANGELOG, and CLAUDE.md
+- [x] GitHub issues filed for all confirmed bugs
 
 ## Done (Phase 8 — 2026-03-10)
 

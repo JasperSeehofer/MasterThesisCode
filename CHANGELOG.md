@@ -9,6 +9,28 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [2026-03-10] — physics & mathematics review (Phase 9)
+
+### Added
+- `README.md`: new top-level section "Scientific Background and Known Limitations" containing:
+  - Two-paragraph project narrative (EMRIs as GW standard sirens, dark-siren H₀ method)
+  - Key equations with references: Hubble function, luminosity distance, LISA inner product,
+    Fisher matrix, SNR, and marginalised H₀ likelihood with selection-effects denominator
+  - Model assumptions table (flat ΛCDM, Gaussian noise, SNR threshold, uniform H₀ prior,
+    synthetic galaxy catalog, 5-year LISA mission)
+  - Eight documented known limitations, each with file:line reference, impact description,
+    and status tag (bug / design choice)
+  - "What is mathematically correct" verification checklist for six core components
+  - Bibliography with six key references (Hogg 1999, Babak 2023, Cutler & Flanagan 1994,
+    Vallisneri 2008, Chen 2018, Planck 2018)
+- `TODO.md`: physics fix items for all confirmed bugs (Issues 1–8), ordered by severity
+
+### Changed
+- `CLAUDE.md`: "Known Bugs to Be Aware Of" section updated with all eight confirmed issues
+  from the physics review, with file:line references and fix descriptions
+
+---
+
 ## [2026-03-10] — dev infrastructure & code health (Phase 8)
 
 ### Added

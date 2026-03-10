@@ -148,7 +148,7 @@ The codebase has two distinct pipelines:
 
 ### Key Module Responsibilities
 
-- **`parameter_estimation/parameter_estimation.py`** — waveform generation via `few`, Fisher matrix computation (5-point stencil derivatives), SNR and Cramér-Rao bounds. The `scalar_product_of_functions` inner product is the computational bottleneck (PSD loop).
+- **`parameter_estimation/parameter_estimation.py`** — waveform generation via `few`, Fisher matrix computation (forward-difference derivatives; 5-point stencil method exists but is not yet called — see Known Bug 4), SNR and Cramér-Rao bounds. The `scalar_product_of_functions` inner product is the computational bottleneck (PSD loop).
 - **`LISA_configuration.py`** — LISA antenna patterns (F+, F×), PSD, SSB↔detector frame transformations
 - **`datamodels/parameter_space.py`** — 14-parameter EMRI space with randomization and bounds
 - **`bayesian_inference/bayesian_inference_mwe.py`** — monolithic 931-line module containing `Galaxy`, `GalaxyCatalog`, `EMRIDetection`, `BayesianInference` classes; also `dist()`, `dist_to_redshift()`, and cosmological integrals
@@ -158,12 +158,34 @@ The codebase has two distinct pipelines:
 
 ### Known Bugs to Be Aware Of
 
-All four originally-listed bugs are resolved. Remaining known issues:
+All four originally-listed bugs are resolved. Remaining known issues (also tracked in TODO.md):
 
+#### Code health
 1. **`LISA_configuration.py` unconditional `import cupy`**: still at module top level — any
    module that imports `LisaTdiConfiguration` is un-importable on CPU-only machines without
    the guarded `try/except`. Fix when that file is next touched.
 2. **`cosmological_model.py` size**: ~3530 lines; `BayesianStatistics` not yet extracted.
+
+#### Physics / mathematics (confirmed by Phase 9 review — Physics Change Protocol required)
+3. **`datamodels/galaxy.py:121` comoving volume formula wrong** [CRITICAL]:
+   exponent is 2 instead of 3, prefactor is 4π instead of 4π/3.
+   Fix: `cv_grid = (4/3) * np.pi * (SPEED_OF_LIGHT / h0) ** 3 * cumulative_integral**3`.
+   Ref: Hogg (1999) arXiv:astro-ph/9905116 Eq. (28).
+4. **`parameter_estimation.py:336` Fisher matrix uses O(ε) forward difference** [HIGH]:
+   `compute_fisher_information_matrix()` calls `finite_difference_derivative()` instead of
+   `five_point_stencil_derivative()`. The O(ε⁴) method already exists but is never called.
+   Ref: Vallisneri (2008) arXiv:gr-qc/0703086.
+5. **`LISA_configuration.py` galactic confusion noise absent from PSD** [MEDIUM]:
+   constants defined in `constants.py:77–83` but never used; dominates sensitivity 0.1–3 mHz.
+   Ref: Babak et al. (2023) arXiv:2303.15929 Eq. (17).
+6. **`physical_relations.py:72` wCDM params w₀, wₐ silently ignored** [MEDIUM]:
+   `dist()` accepts them but passes to a hardcoded-ΛCDM hypergeometric function.
+7. **`bayesian_inference/bayesian_inference.py` hardcoded 10% distance error** [MEDIUM]:
+   uses `FRACTIONAL_LUMINOSITY_ERROR` instead of per-source Cramér–Rao bound from CSV.
+8. **`constants.py:29–30` outdated WMAP-era cosmology** [LOW]:
+   Ω_m = 0.25, H = 0.73; Planck 2018 best-fit is Ω_m = 0.3153, H = 0.6736.
+9. **`datamodels/galaxy.py:64` galaxy redshift uncertainty non-standard scaling** [LOW]:
+   `0.013 * (1+z)³` has no reference; caps at z ≈ 0.14; standard forms scale as (1+z).
 
 ---
 
