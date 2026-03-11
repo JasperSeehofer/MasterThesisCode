@@ -77,3 +77,5 @@ limiting case to the user for approval before any code is written (see CLAUDE.md
 - [x] Add `--seed` CLI arg; seed numpy in main(); write run_metadata.json per run
 - [x] Fix `get_samples_from_comoving_volume` PNG side-effect (`save_plot=False`)
 - [x] Rename `ParameterSpace.dist` → `luminosity_distance` (field, symbol, CSV cols)
+- [x] Fix missed `"dist"` column references in `scripts/prepare_detections.py` and
+      `scripts/estimate_hubble_constant.py`; patch existing simulation CSVs

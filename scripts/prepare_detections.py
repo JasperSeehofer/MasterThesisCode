@@ -24,7 +24,7 @@ if __name__ == "__main__":
         print(f"Detection {detection_index}: {detection}")
         detection.convert_to_best_guess_parameters()
         prepared_cramer_rao_bounds.at[detection_index, "M"] = detection.M
-        prepared_cramer_rao_bounds.at[detection_index, "dist"] = detection.d_L
+        prepared_cramer_rao_bounds.at[detection_index, "luminosity_distance"] = detection.d_L
         prepared_cramer_rao_bounds.at[detection_index, "phiS"] = detection.phi
         prepared_cramer_rao_bounds.at[detection_index, "qS"] = detection.theta
 

@@ -9,6 +9,22 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [2026-03-11] — fix incomplete dist → luminosity_distance rename in scripts
+
+### Fixed
+- `scripts/prepare_detections.py`: column write `"dist"` → `"luminosity_distance"` so
+  prepared CSVs produced by this script match the column name expected by the evaluation
+  pipeline.
+- `scripts/estimate_hubble_constant.py`: updated all column reads (`"dist"`,
+  `"delta_dist_delta_dist"`) and dict keys (`"dist"`, `"dist_error"`) to use
+  `"luminosity_distance"` / `"luminosity_distance_error"` /
+  `"delta_luminosity_distance_delta_luminosity_distance"`.
+- Patched existing simulation CSVs (`cramer_rao_bounds.csv`,
+  `prepared_cramer_rao_bounds.csv`, `undetected_events.csv`) to rename the `dist` column
+  to `luminosity_distance` so the evaluation pipeline can load them without error.
+
+---
+
 ## [2026-03-11] — remove redundant binary data files from repo
 
 ### Changed

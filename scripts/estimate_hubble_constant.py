@@ -24,8 +24,10 @@ class HubbleConstantEstimation:
 
         for index, cramer_rao_bound in self.cramer_rao_bounds.iterrows():
             parameters = {
-                "dist": cramer_rao_bound["dist"],
-                "dist_error": cramer_rao_bound["delta_dist_delta_dist"],
+                "luminosity_distance": cramer_rao_bound["luminosity_distance"],
+                "luminosity_distance_error": cramer_rao_bound[
+                    "delta_luminosity_distance_delta_luminosity_distance"
+                ],
                 "phi": cramer_rao_bound["phiS"],
                 "phi_error": cramer_rao_bound["delta_phiS_delta_phiS"],
                 "theta": cramer_rao_bound["qS"],
@@ -47,7 +49,9 @@ class HubbleConstantEstimation:
                 continue
 
             H, H_error = self.get_hubble_constants(
-                possible_hosts, parameters["dist"], parameters["dist_error"]
+                possible_hosts,
+                parameters["luminosity_distance"],
+                parameters["luminosity_distance_error"],
             )
             hubble_estimation.append([H, H_error])
 
@@ -56,7 +60,9 @@ class HubbleConstantEstimation:
                 continue
 
             HBH, HBH_error = self.get_hubble_constants(
-                possible_hosts_with_BH_mass, parameters["dist"], parameters["dist_error"]
+                possible_hosts_with_BH_mass,
+                parameters["luminosity_distance"],
+                parameters["luminosity_distance_error"],
             )
             hubble_estimation_with_bh_mass.append([HBH, HBH_error])
 
