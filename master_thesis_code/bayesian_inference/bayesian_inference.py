@@ -7,7 +7,6 @@ import numpy as np
 import numpy.typing as npt
 from scipy.special import erf
 
-from master_thesis_code.bayesian_inference.scientific_plotter import ScientificPlotter
 from master_thesis_code.constants import (
     FRACTIONAL_LUMINOSITY_ERROR,
     FRACTIONAL_MEASURED_MASS_ERROR,
@@ -15,7 +14,6 @@ from master_thesis_code.constants import (
     OMEGA_DE,
     OMEGA_M,
     SKY_LOCALIZATION_ERROR,
-    TRUE_HUBBLE_CONSTANT,
     H,
 )
 from master_thesis_code.datamodels.emri_detection import EMRIDetection
@@ -293,12 +291,3 @@ class BayesianInference:
             )
             for index, emri_detection in enumerate(self.emri_detections)
         ]
-
-    def plot_gw_detection_probability(self) -> None:
-        gw_detection_probabilities = [
-            self.gw_detection_probability(redshift, TRUE_HUBBLE_CONSTANT)
-            for redshift in self.redshift_values
-        ]
-        _plotter = ScientificPlotter(figure_size=(16, 9))
-        _plotter.plot(self.redshift_values, np.array(gw_detection_probabilities))
-        _plotter.show_and_close()

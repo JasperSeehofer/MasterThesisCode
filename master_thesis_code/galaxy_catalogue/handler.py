@@ -1,5 +1,4 @@
 import logging
-import os
 from collections.abc import Iterable
 from dataclasses import dataclass
 from enum import Enum
@@ -9,8 +8,6 @@ from statistics import NormalDist
 
 import numpy as np
 import pandas as pd
-from matplotlib import pyplot as plt
-from scipy.stats import truncnorm
 from sklearn.neighbors import BallTree
 
 from master_thesis_code.physical_relations import (
@@ -217,153 +214,6 @@ class GalaxyCatalogueHandler:
             f"Galaxies with stellar mass estimation statistics\n: {bh_mass_given_statistics}"
         )
         _LOGGER.info(f"Pruned galaxy catalog contains {len(self.reduced_galaxy_catalog)} galaxies.")
-
-    def visualize_galaxy_catalog(self) -> None:
-        figures_directory = "./saved_figures/galaxy_catalogue/"
-        if not os.path.exists(figures_directory):
-            os.makedirs(figures_directory)
-
-        # visualize mass distribution
-        fig, ax = plt.subplots()
-        ax.hist(self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS], bins=200)
-        ax.set_xscale("log")
-        ax.set_yscale("log")
-        ax.set_xlabel("BH mass in solar masses")
-        ax.set_ylabel("Number of galaxies with BH mass")
-        plt.savefig(figures_directory + "estimated_BH_mass_distribution.png")
-        plt.close()
-
-        # plot relative mass error histogram
-        fig, ax = plt.subplots(figsize=(16, 9))
-        bins = np.geomspace(
-            min(
-                self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS_ERROR]
-                / self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS]
-            ),
-            max(
-                self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS_ERROR]
-                / self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS]
-            ),
-            40,
-        )
-        ax.hist(
-            self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS_ERROR]
-            / self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS],
-            bins=list(bins),
-            color="teal",
-            histtype="step",
-        )
-        mean_relative_mass_error = np.mean(
-            self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS_ERROR]
-            / self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS]
-        )
-        ax.vlines(
-            mean_relative_mass_error,
-            0,
-            max(
-                np.histogram(
-                    self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS_ERROR]
-                    / self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS],
-                    bins=bins,
-                )[0]
-            ),
-            color="black",
-            label=f"mean: {mean_relative_mass_error:.3e}",
-            linestyle="--",
-        )
-        ax.set_xlabel("relative BH mass error")
-        ax.set_xscale("log")
-        ax.set_ylabel("Number of galaxies")
-        ax.set_yscale("log")
-        ax.legend()
-        plt.savefig(figures_directory + "relative_BH_mass_error_distribution.png")
-        plt.close()
-
-        # visualize redshift distribution
-        fig, ax = plt.subplots()
-        ax.hist(self.reduced_galaxy_catalog[InternalCatalogColumns.REDSHIFT], bins=200)
-        ax.set_xlabel("Redshift")
-        ax.set_ylabel("Number of galaxies with redshift")
-        ax.set_yscale("log")
-        plt.savefig(figures_directory + "redshift_distribution.png")
-        plt.close()
-
-        # visualize meshgrid contour plot of mass and redshift of galaxy catalog
-        if False:
-            redshifts = np.array(
-                [
-                    truncnorm((0 - redshift) / redshift_error, np.inf).rvs()
-                    for redshift, redshift_error in zip(
-                        self.reduced_galaxy_catalog[InternalCatalogColumns.REDSHIFT],
-                        self.reduced_galaxy_catalog[InternalCatalogColumns.REDSHIFT_ERROR],
-                    )
-                ]
-            )
-
-            masses = np.array(
-                [
-                    truncnorm((0 - mass) / mass_error, np.inf).rvs()
-                    for mass, mass_error in zip(
-                        self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS],
-                        self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS_ERROR],
-                    )
-                ]
-            )
-
-            # make mass bins logarithmic
-            masses = np.log10(masses)
-
-            fig = plt.figure()
-            plt.hist2d(redshifts, masses, bins=(60, 60), norm="log")
-            plt.colorbar()
-            plt.xlabel("Redshift")
-            plt.ylabel("log10 BH mass in solar masses")
-            plt.savefig(figures_directory + "redshift_mass_contour_plot.png")
-            plt.close()
-
-        # visualize meshgrid contour plot of mass and redshift of pruned galaxy catalog
-        redshifts = np.array(
-            [
-                truncnorm((0 - redshift) / redshift_error, np.inf).rvs()
-                for redshift, redshift_error in zip(
-                    self.reduced_galaxy_catalog[InternalCatalogColumns.REDSHIFT],
-                    self.reduced_galaxy_catalog[InternalCatalogColumns.REDSHIFT_ERROR],
-                )
-            ]
-        )
-        masses = np.array(
-            [
-                truncnorm((0 - mass) / mass_error, np.inf).rvs()
-                for mass, mass_error in zip(
-                    self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS],
-                    self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS_ERROR],
-                )
-            ]
-        )
-
-        # make mass bins logarithmic
-        masses = np.log10(masses)
-
-        fig = plt.figure()
-        plt.hist2d(redshifts, masses, bins=(100, 100), norm="log")
-        plt.colorbar()
-        plt.xlabel("Redshift")
-        plt.ylabel("log10 BH mass in solar masses")
-        plt.savefig(figures_directory + "prunded_redshift_mass_contour_plot.png")
-        plt.close()
-
-        # plot redshift errors
-        fig, ax = plt.subplots()
-        ax.hist(
-            self.reduced_galaxy_catalog[InternalCatalogColumns.REDSHIFT_ERROR]
-            / self.reduced_galaxy_catalog[InternalCatalogColumns.REDSHIFT],
-            bins=200,
-        )
-        ax.set_xlabel("relative redshift error")
-        ax.set_ylabel("Number of galaxies with redshift error")
-        ax.set_yscale("log")
-        plt.savefig(figures_directory + "relative_redshift_error_distribution.png")
-        plt.close()
 
     def parse_to_reduced_catalog(self, galaxy_catalogue_file_path: str) -> None:
         iterator = pd.read_csv(

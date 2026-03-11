@@ -7,21 +7,15 @@ matrix via a 5-point finite-difference stencil to obtain Cramér-Rao lower bound
 all 14 EMRI parameters.
 """
 
+import logging
 import multiprocessing as mp
-import os
 import time
 import warnings
 from typing import Any
 
-import matplotlib as mpl
 import numpy as np
 import numpy.typing as npt
 import pandas as pd
-
-mpl.rcParams["agg.path.chunksize"] = 1000
-import logging
-
-import matplotlib.pyplot as plt
 
 try:
     import cupy as cp
@@ -432,91 +426,6 @@ class ParameterEstimation:
             combined.to_csv(file_path, index=False)
             _LOGGER.info(f"Flushed {len(rows)} Cramér-Rao bounds to {file_path}")
         self._crb_buffer.clear()
-
-    def _visualize_cramer_rao_bounds(self) -> None:
-        mean_errors_data = pd.read_csv(CRAMER_RAO_BOUNDS_PATH)
-        parameter_columns = [
-            column_name for column_name in mean_errors_data.columns if "delta" not in column_name
-        ]
-
-        # ensure directory is given
-        figures_directory = "saved_figures/parameter_estimation/"
-        if not os.path.isdir(figures_directory):
-            os.makedirs(figures_directory)
-
-        # 3d plot of coverage in the configuration space of M, theta_S and phi_S
-        M_configuration = self.parameter_space.M
-        qS_configuration = self.parameter_space.qS
-        phiS_configuration = self.parameter_space.phiS
-
-        x1 = mean_errors_data["M"]
-        y1 = mean_errors_data["qS"]
-        z1 = mean_errors_data["phiS"]
-
-        plt.figure(figsize=(16, 9))
-        axes = plt.axes(projection="3d")
-        axes.scatter3D(x1, y1, z1)  # type: ignore[attr-defined]
-
-        axes.set_xlabel("M")
-        axes.set_ylabel("qS")
-        axes.set_zlabel("phiS")  # type: ignore[attr-defined]
-
-        axes.set_xlim(M_configuration.lower_limit, M_configuration.upper_limit)
-        axes.set_ylim(qS_configuration.lower_limit, qS_configuration.upper_limit)
-        axes.set_zlim(phiS_configuration.lower_limit, phiS_configuration.upper_limit)  # type: ignore[attr-defined]
-        plt.savefig(figures_directory + "coverage_parameter_space.png", dpi=300)
-        # plt.show()
-
-        # create plots for error correlation
-        for column_name in parameter_columns:
-            fig, (ax1, ax2) = plt.subplots(1, 2)
-            ax1.plot(
-                mean_errors_data[column_name],
-                np.sqrt(mean_errors_data["delta_M_delta_M"]),
-                ".",
-                label="bounds: delta M",
-            )
-
-            ax2.plot(
-                mean_errors_data[column_name],
-                np.sqrt(mean_errors_data["delta_qS_delta_qS"]),
-                ".",
-                label="bounds: qS",
-            )
-
-            ax2.plot(
-                mean_errors_data[column_name],
-                np.sqrt(mean_errors_data["delta_phiS_delta_phiS"]),
-                ".",
-                label="bounds: phiS",
-            )
-
-            ax1.set_yscale("log")
-            ax1.set_xlabel(f"{column_name}")
-            ax2.set_yscale("log")
-            ax2.set_xlabel(f"{column_name}")
-            ax1.legend()
-            ax2.legend()
-            plt.savefig(figures_directory + f"mean_error_{column_name}_correlation.png", dpi=300)
-            plt.close()
-
-        # create plots for computation time correlation
-        for column_name in parameter_columns:
-            fig = plt.figure(figsize=(16, 9))
-            plt.plot(
-                mean_errors_data[column_name],
-                mean_errors_data["generation_time"],
-                ".",
-                label="simulation data",
-            )
-            plt.xlabel(f"{column_name}")
-            plt.ylabel("t [s]")
-            plt.legend()
-            plt.savefig(
-                figures_directory + f"waveform_generation_time_{column_name}_correlation.png",
-                dpi=300,
-            )
-            plt.close()
 
     def SNR_analysis(self) -> None:
         # setup waveformgenerators for different observation times

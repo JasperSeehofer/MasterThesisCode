@@ -52,7 +52,7 @@ limiting case to the user for approval before any code is written (see CLAUDE.md
 
 ## Code Health (remaining)
 
-- [ ] Extract `BayesianStatistics` from `cosmological_model.py` (~3530 lines) to
+- [ ] Extract `BayesianStatistics` from `cosmological_model.py` (~1611 lines) to
       `master_thesis_code/bayesian_inference/bayesian_statistics.py`
 - [ ] Fix unconditional `import cupy` at module level in `LISA_configuration.py`
       (blocks import on CPU machines without `try/except` guard)
@@ -60,6 +60,25 @@ limiting case to the user for approval before any code is written (see CLAUDE.md
       tests are added; target ≥ 50% by thesis submission
 - [ ] Tag git release `v0.1.0` once current branch is merged: `git tag v0.1.0`
 - [ ] Add Codecov integration to CI for a coverage badge in README
+
+## Done (Phase 10 — 2026-03-11, Plotting Refactor)
+
+- [x] Create `master_thesis_code/plotting/` subpackage with factory functions
+      (`_style.py`, `_helpers.py`, `emri_thesis.mplstyle`, `simulation_plots.py`,
+      `bayesian_plots.py`, `evaluation_plots.py`, `model_plots.py`, `catalog_plots.py`,
+      `physical_relations_plots.py`)
+- [x] Create `callbacks.py` with `SimulationCallback` Protocol; wire into `data_simulation()`
+- [x] Delete `ScientificPlotter`, `IS_PLOTTING_ACTIVATED`, `if_plotting_activated` decorator
+- [x] Remove all matplotlib imports from computation modules (only in `plotting/` now)
+- [x] Remove `__init__` plot side effects from `glade_completeness.py`, `detection_horizon.py`,
+      `detection_distribution_simplified.py`, `emri_distribution.py`, `detection_fraction.py`
+- [x] Extract ~1900 lines of plotting from `cosmological_model.py` (shrunk to ~1611 lines)
+- [x] Extract plotting from `evaluation.py`, `handler.py`, `physical_relations.py`,
+      `galaxy.py`, `emri_detection.py`, `bayesian_inference.py`, `memory_management.py`,
+      `LISA_configuration.py`, `parameter_estimation.py`
+- [x] Add `--generate_figures` CLI argument (stub handler)
+- [x] Add `master_thesis_code_test/plotting/test_style.py` (9 tests)
+- [x] Coverage increased from 28.83% to 36.19%
 
 ## Done (Phase 9 — 2026-03-10)
 

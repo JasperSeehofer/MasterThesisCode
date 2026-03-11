@@ -65,6 +65,12 @@ class Arguments:
         return bool(self._parsed_arguments.snr_analysis)
 
     @property
+    def generate_figures(self) -> str | None:
+        """Output directory for figure generation. None means do not generate figures."""
+        val: str | None = self._parsed_arguments.generate_figures
+        return val
+
+    @property
     def seed(self) -> int:
         """Random seed for reproducibility. A random seed is chosen if not provided."""
         raw = self._parsed_arguments.seed
@@ -124,6 +130,12 @@ def _parse_arguments(arguments: list[str]) -> argparse.Namespace:
         "--seed",
         help="Random seed for reproducibility. If omitted, a random seed is chosen and logged.",
         type=int,
+        default=None,
+    )
+    parser.add_argument(
+        "--generate_figures",
+        help="Output directory for generating all thesis figures from saved data.",
+        type=str,
         default=None,
     )
     parser.add_argument(

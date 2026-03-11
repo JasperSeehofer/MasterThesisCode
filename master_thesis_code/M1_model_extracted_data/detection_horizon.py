@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 
-import matplotlib.pyplot as plt
 import numpy as np
 
 
@@ -113,20 +112,5 @@ class DetectionHorizon:
         0.7192429022082019,
     ]
 
-    def __init__(self) -> None:
-        self.plot_horizon()
-
     def redshift_horizon(self, M: float) -> float:
-        return np.interp(M, self.M_coordinates, self.z_coordinates)
-
-    def plot_horizon(self) -> None:
-        plt.plot(
-            self.M_coordinates,
-            self.z_coordinates,
-            label=f"Horizon: SNR={self.threshold}, CO mass={self.mu} M_sol",
-        )
-        plt.xlabel("M [M_sol] ")
-        plt.ylabel("z")
-        plt.xscale("log")
-        plt.savefig("saved_figures/cosmological_model/detection_horizon.png", dpi=300)
-        plt.close()
+        return float(np.interp(M, self.M_coordinates, self.z_coordinates))

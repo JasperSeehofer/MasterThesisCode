@@ -6,13 +6,16 @@ import subprocess
 import warnings
 from collections.abc import Iterator
 from time import time
+from typing import TYPE_CHECKING
 
-import matplotlib.pyplot as plt
 import numpy as np
 
 from master_thesis_code.arguments import Arguments
 from master_thesis_code.cosmological_model import BayesianStatistics, Model1CrossCheck
 from master_thesis_code.exceptions import ParameterOutOfBoundsError
+
+if TYPE_CHECKING:
+    from master_thesis_code.callbacks import SimulationCallback
 from master_thesis_code.galaxy_catalogue.handler import (
     GalaxyCatalogueHandler,
     HostGalaxy,
@@ -26,6 +29,10 @@ def main() -> None:
     """
     Run main to start the program.
     """
+    from master_thesis_code.plotting import apply_style
+
+    apply_style()
+
     arguments = Arguments.create()
     _configure_logger(arguments.working_directory, arguments.log_level, arguments.h_value)
     arguments.validate()
@@ -57,6 +64,9 @@ def main() -> None:
 
     if arguments.snr_analysis:
         snr_analysis()
+
+    if arguments.generate_figures is not None:
+        generate_figures(arguments.generate_figures)
 
     end_time = time()
     _ROOT_LOGGER.debug(f"Finished in {end_time - start_time}s.")
@@ -111,8 +121,8 @@ def _configure_logger(working_directory: str, log_level: int, h_value: float) ->
     file_handler.setFormatter(formatter)
     _ROOT_LOGGER.addHandler(file_handler)
 
-    # set matplotlib logging to info, because it is very talkative
-    plt.set_loglevel("warning")
+    # set matplotlib logging to warning, because it is very talkative
+    logging.getLogger("matplotlib").setLevel(logging.WARNING)
 
     _ROOT_LOGGER.info(f"Log file location: {log_file_path}")
 
@@ -142,6 +152,7 @@ def data_simulation(
     cosmological_model: Model1CrossCheck,
     galaxy_catalog: GalaxyCatalogueHandler,
     simulation_index: int,
+    callbacks: list["SimulationCallback"] | None = None,
 ) -> None:
     # conditional imports because they require GPU
     from master_thesis_code.memory_management import MemoryManagement
@@ -149,6 +160,8 @@ def data_simulation(
         ParameterEstimation,
         WaveGeneratorType,
     )
+
+    _callbacks: list[SimulationCallback] = callbacks or []
 
     memory_management = MemoryManagement()
     memory_management.display_GPU_information()
@@ -159,18 +172,12 @@ def data_simulation(
         parameter_space=cosmological_model.parameter_space,
     )
 
-    parameter_estimation.lisa_configuration._visualize_lisa_configuration()
+    for cb in _callbacks:
+        cb.on_simulation_start(simulation_steps)
 
     counter = 0
     iteration = 0
     host_galaxies: Iterator[HostGalaxy] = iter([])
-
-    """
-    mp.set_start_method("spawn")
-    _ROOT_LOGGER.info(f"Multiprocessing start method set to: {mp.get_start_method()}")
-    pool = mp.Pool(3)
-    _ROOT_LOGGER.info(f"Multiprocessing Pool created: {mp.active_children()}")
-    """
 
     while counter < simulation_steps:
         memory_management.gpu_usage_stamp()
@@ -205,6 +212,8 @@ def data_simulation(
                     f"Quick SNR threshold check failed: {np.round(quick_snr, 3)} < {cosmological_model.snr_threshold * 0.2}."
                 )
                 parameter_estimation.save_not_detected(quick_snr * 5, simulation_index)
+                for cb in _callbacks:
+                    cb.on_snr_computed(counter, quick_snr * 5, False)
                 continue
             snr = parameter_estimation.compute_signal_to_noise_ratio()
             warnings.resetwarnings()
@@ -246,7 +255,11 @@ def data_simulation(
             else:
                 raise ValueError(e)
 
-        if snr < cosmological_model.snr_threshold:
+        passed = snr >= cosmological_model.snr_threshold
+        for cb in _callbacks:
+            cb.on_snr_computed(counter, snr, passed)
+
+        if not passed:
             _ROOT_LOGGER.info(
                 f"SNR threshold check failed: {np.round(snr, 3)} < {cosmological_model.snr_threshold}."
             )
@@ -270,14 +283,19 @@ def data_simulation(
         )
         counter += 1
 
+        for cb in _callbacks:
+            cb.on_detection(counter, snr, cramer_rao_bounds, host_galaxy.catalog_index)
+
         memory_management.display_GPU_information()
         memory_management.display_fft_cache()
 
-    parameter_estimation.flush_pending_results()
-    parameter_estimation.lisa_configuration._visualize_lisa_configuration()
-    parameter_estimation._visualize_cramer_rao_bounds()
+        for cb in _callbacks:
+            cb.on_step_end(counter, iteration)
 
-    memory_management.plot_GPU_usage()
+    parameter_estimation.flush_pending_results()
+
+    for cb in _callbacks:
+        cb.on_simulation_end(counter, iteration)
 
 
 def evaluate(
@@ -290,12 +308,20 @@ def evaluate(
 
     hubble_constant_evaluation = BayesianStatistics()
     hubble_constant_evaluation.evaluate(galaxy_catalog, cosmological_model, h_value)
-    # hubble_constant_evaluation.visualize(galaxy_catalog=galaxy_catalog)
 
-    # galaxy_catalog.visualize_galaxy_catalog()
-    # Model1CrossCheck().visualize_emri_distribution_sampling(2000)
-    # physical_relations.visualize()
-    # data_simulation.visualize(galaxy_catalog)
+
+def generate_figures(output_dir: str) -> None:
+    """Load saved simulation data and produce all thesis figures.
+
+    Called by ``--generate_figures <dir>``.  Factory functions from the
+    ``plotting`` subpackage are used; each returns ``(fig, ax)`` and the
+    figures are saved to *output_dir*.
+    """
+    _ROOT_LOGGER.info(f"Generating figures to {output_dir}")
+    _ROOT_LOGGER.info(
+        "Figure generation is a stub — implement per-figure calls "
+        "using plotting.* factory functions as data becomes available."
+    )
 
 
 if __name__ == "__main__":

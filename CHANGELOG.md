@@ -9,6 +9,70 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [2026-03-11] — plotting architecture refactor (Phases 1–4)
+
+### Added
+- `master_thesis_code/plotting/` subpackage: all visualization code now lives here.
+  - `_style.py`: `apply_style()` sets Agg backend and loads the project style sheet.
+  - `_helpers.py`: `get_figure()`, `save_figure()`, `make_colorbar()` utilities.
+  - `emri_thesis.mplstyle`: single source of truth for all matplotlib rcParams
+    (figure size, DPI, constrained layout, chunksize).
+  - `simulation_plots.py`: factory functions for GPU usage, LISA PSD, noise components,
+    and Cramér-Rao coverage plots. Also contains `PlottingCallback`.
+  - `bayesian_plots.py`: factory functions for combined/event/subset posteriors,
+    detection redshift distribution, and host galaxy count plots.
+  - `evaluation_plots.py`: factory functions for Cramér-Rao heatmap, uncertainty violins,
+    sky localization 3D scatter, detection contour, and generation time histogram.
+  - `model_plots.py`: factory functions for EMRI distribution, rate, sampling, and
+    detection probability grid plots.
+  - `catalog_plots.py`: factory functions for BH mass distribution, redshift distribution,
+    GLADE completeness, and comoving volume sampling plots.
+  - `physical_relations_plots.py`: factory function for distance-redshift relation plot.
+- `master_thesis_code/callbacks.py`: `SimulationCallback` Protocol class with five hooks
+  (`on_simulation_start`, `on_snr_computed`, `on_detection`, `on_step_end`,
+  `on_simulation_end`) and a `NullCallback` no-op implementation.
+- `data_simulation()` now accepts an optional `callbacks: list[SimulationCallback]`
+  parameter; hook calls inserted throughout the simulation loop.
+- `--generate_figures <dir>` CLI argument in `arguments.py` (stub handler in `main.py`).
+- `master_thesis_code_test/plotting/test_style.py`: 9 tests covering `apply_style`,
+  `get_figure`, `save_figure`, and style sheet rcParams.
+
+### Changed
+- `main.py`: backend setup moved from inline `matplotlib.use("Agg")` to
+  `from master_thesis_code.plotting import apply_style; apply_style()`.
+- `memory_management.py`: removed `plot_GPU_usage()` method; added `time_series`,
+  `memory_pool_gpu_usage`, `gpu_usage` properties for callback-based data access.
+- `cosmological_model.py`: shrunk from ~3530 to ~1611 lines by extracting 7 plotting
+  methods (~1900 lines): `plot_expected_detection_distribution`,
+  `visualize_emri_distribution_sampling`, `visualize_emri_distribution`,
+  `plot_detection_probability`, `plot_detection_fraction`, `visualize`,
+  `visualize_galaxy_weights`.
+- `parameter_estimation/evaluation.py`: removed `visualize()`,
+  `visualize_detection_distribution()`, `evaluate_snr_analysis()` methods.
+- `galaxy_catalogue/handler.py`: removed `visualize_galaxy_catalog()` method.
+- `physical_relations.py`: removed `visualize()` function.
+- Test coverage increased from 28.83% to 36.19%.
+
+### Removed
+- `master_thesis_code/bayesian_inference/scientific_plotter.py`: deleted entirely
+  (dead `ScientificPlotter` wrapper class).
+- `IS_PLOTTING_ACTIVATED` constant from `constants.py`.
+- `if_plotting_activated` decorator from `decorators.py`.
+- `__init__` plot side effects from `glade_completeness.py` (including module-level
+  `asdf = GladeCatalogCompleteness()` instantiation), `detection_horizon.py`,
+  `detection_distribution_simplified.py`, `emri_distribution.py`, `detection_fraction.py`.
+- All `import matplotlib` statements from computation modules: `LISA_configuration.py`,
+  `parameter_estimation.py`, `memory_management.py`, `galaxy.py`, `emri_detection.py`,
+  `bayesian_inference.py`, `glade_completeness.py`, `handler.py`.
+- Plotting methods removed from: `LISA_configuration.py` (`_visualize_lisa_configuration`),
+  `parameter_estimation.py` (`_visualize_cramer_rao_bounds`),
+  `galaxy.py` (`save_comoving_volume_sampling_plot`, `plot_comoving_volume`,
+  `plot_galaxy_catalog`, `plot_galaxy_catalog_mass_distribution`),
+  `emri_detection.py` (`plot_detection_distribution`, `plot_detection_sky_distribution`),
+  `bayesian_inference.py` (`plot_gw_detection_probability`).
+
+---
+
 ## [2026-03-11] — fix incomplete dist → luminosity_distance rename in scripts
 
 ### Fixed
@@ -78,7 +142,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   ecosystem (uv lock file) and GitHub Actions.
 - `pytest-cov` and `pytest-benchmark` added to `dev` extras in `pyproject.toml`.
 - `[tool.coverage.run]` and `[tool.coverage.report]` sections in `pyproject.toml`:
-  source is `master_thesis_code/`, test files omitted, gate at 25% (current: 28.83%).
+  source is `master_thesis_code/`, test files omitted, gate at 25% (current: 36.19%).
 - `addopts` in `[tool.pytest.ini_options]` now includes `--cov` and `--cov-report`
   so every `pytest` invocation reports coverage automatically.
 - `pip-audit` added to `dev` extras; new CI step `pip-audit (security)` runs on every

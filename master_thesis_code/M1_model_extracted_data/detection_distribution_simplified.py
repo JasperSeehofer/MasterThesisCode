@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 
-import matplotlib.pyplot as plt
 import numpy as np
 
 
@@ -20,50 +19,6 @@ class SimpleDetectionDistribution:
         self.detection_distribution = self.detection_distribution / np.sum(
             self.detection_distribution
         )
-        """self.detection_distribution = gaussian_filter(
-            self.detection_distribution, sigma=1
-        )"""
-        self.plot_emri_distribution()
-
-    def plot_emri_distribution(self) -> None:
-        redshift_range = np.linspace(0, 4, 100)
-        mass_range = np.geomspace(1e4, 1e7, 100)
-
-        # evaluate the detection distribution
-        detection_distribution = np.array(
-            [[self.get_emri_probability(z, m) for z in redshift_range] for m in mass_range]
-        )
-
-        reduced_redshift_range = np.linspace(0, 0.499, 100)
-        reduced_mass_range = np.geomspace(1e4, 1e7 - 1e-3, 100)
-        reduced_detection_distribution = np.array(
-            [
-                [self.get_emri_probability(z, m) for z in reduced_redshift_range]
-                for m in reduced_mass_range
-            ]
-        )
-
-        fig, ax = plt.subplots(1, 2, sharey=True)
-        cax = ax[0].pcolormesh(
-            redshift_range,
-            mass_range,
-            detection_distribution,
-            cmap="viridis",
-        )
-        cax1 = ax[1].pcolormesh(
-            reduced_redshift_range,
-            reduced_mass_range,
-            reduced_detection_distribution,
-            cmap="viridis",
-        )
-        fig.colorbar(cax1, orientation="horizontal", ax=ax[1])
-        fig.colorbar(cax, orientation="horizontal", ax=ax[0])
-        ax[0].set_ylabel("M [M_sol]")
-        ax[0].set_yscale("log")
-        ax[0].set_xlabel("z")
-        ax[1].set_xlabel("z")
-        plt.savefig("saved_figures/cosmological_model/detection_distribution_m1.png", dpi=300)
-        plt.close()
 
     def get_emri_probability(self, z: float, M: float) -> float:
         M = np.log10(M)

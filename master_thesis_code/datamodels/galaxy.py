@@ -5,14 +5,12 @@ from statistics import NormalDist
 from typing import Any
 
 import emcee
-import matplotlib.pyplot as plt
 import numpy as np
 import numpy.typing as npt
 from scipy.integrate import cumulative_trapezoid
 from scipy.interpolate import CubicSpline
 from scipy.stats import truncnorm
 
-from master_thesis_code.bayesian_inference.scientific_plotter import ScientificPlotter
 from master_thesis_code.constants import (
     FRACTIONAL_BLACK_HOLE_MASS_CATALOG_ERROR,
     GALAXY_REDSHIFT_ERROR_COEFFICIENT,
@@ -133,9 +131,7 @@ class GalaxyCatalog:
             return float(-np.inf)
         return float(np.log(self.comoving_volume(redshift)))
 
-    def get_samples_from_comoving_volume(
-        self, number_of_samples: int, save_plot: bool = False
-    ) -> np.ndarray:
+    def get_samples_from_comoving_volume(self, number_of_samples: int) -> np.ndarray:
         # use emcee to sample the comoving volume distribution
         ndim = 1
         nwalkers = 5
@@ -149,29 +145,7 @@ class GalaxyCatalog:
         sampler.run_mcmc(p0, int(number_of_samples / nwalkers) + 1)
         samples = np.array(sampler.get_chain(flat=True)).flatten()
         # return required number of samples by using the last n samples
-        reduced_samples = samples[-number_of_samples:]
-        if save_plot:
-            self.save_comoving_volume_sampling_plot(reduced_samples)
-        return reduced_samples
-
-    @staticmethod
-    def save_comoving_volume_sampling_plot(samples: np.ndarray) -> None:
-        # plot and save the sampling distribution for an explicit figure
-        sample_fig, sample_ax = plt.subplots(figsize=(16, 9))
-        sample_ax.set_title("Comoving Volume Sampling")
-        sample_ax.set_xlabel("Redshift")
-        sample_ax.set_ylabel("Density")
-        sample_ax.hist(samples, bins=20, density=True)
-
-        sample_fig.savefig("comoving_volume_sampling.png")
-        plt.close(sample_fig)
-
-    def plot_comoving_volume(self) -> None:
-        redshifts = np.linspace(self.redshift_lower_limit, self.redshift_upper_limit, 100)
-        comoving_volumes = [self.comoving_volume(redshift) for redshift in redshifts]
-        _plotter = ScientificPlotter(figure_size=(16, 9))
-        _plotter.plot(redshifts, np.array(comoving_volumes), label="Comoving volume")
-        _plotter.show_and_close()
+        return samples[-number_of_samples:]
 
     def create_random_catalog(self, number_of_galaxies: int) -> None:
         # draw mass from uniform in log space
@@ -373,22 +347,3 @@ class GalaxyCatalog:
         )
         used_host_galaxies.extend(new_host_galaxies)
         return used_host_galaxies
-
-    def plot_galaxy_catalog(self) -> None:
-        redshifts = np.linspace(self.redshift_lower_limit, self.redshift_upper_limit, 100)
-        galaxy_distribution = [
-            np.sum(self.evaluate_galaxy_distribution(redshift)) for redshift in redshifts
-        ]
-        _plotter = ScientificPlotter(figure_size=(16, 9))
-        _plotter.plot(redshifts, np.array(galaxy_distribution), label="Galaxy distribution")
-        _plotter.show_and_close()
-
-    def plot_galaxy_catalog_mass_distribution(self) -> None:
-        masses = np.geomspace(self.lower_mass_limit, self.upper_mass_limit, 10000)
-        galaxy_mass_distribution = [
-            np.sum(self.evaluate_galaxy_mass_distribution(mass)) for mass in masses
-        ]
-        _plotter = ScientificPlotter(figure_size=(16, 9))
-        _plotter.plot(masses, np.array(galaxy_mass_distribution), label="Galaxy mass distribution")
-        _plotter.axis.set_xscale("log")
-        _plotter.show_and_close()

@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 
-import matplotlib.pyplot as plt
 import numpy as np
 
 
@@ -131,23 +130,5 @@ class GladeCatalogCompleteness:
         21.34433962264151,
     ]
 
-    def __init__(self) -> None:
-        self.plot_completeness()
-
-    def plot_completeness(self) -> None:
-        distance_range = np.linspace(0, 1000, 1000)
-        fig, ax = plt.subplots()
-        interpolated_completeness = np.array(
-            [self.get_completeness(distance) for distance in distance_range]
-        )
-        ax.plot(distance_range, interpolated_completeness)
-        plt.ylabel("Completeness [%]")
-        plt.xlabel("Distance [Mpc]")
-        plt.savefig("saved_figures/galaxy_catalogue/glade_completeness.png", dpi=300)
-        plt.close()
-
     def get_completeness(self, distance: float) -> float:
-        return np.interp(distance, self.distance, self.completeness, right=0.0)
-
-
-asdf = GladeCatalogCompleteness()
+        return float(np.interp(distance, self.distance, self.completeness, right=0.0))

@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 
-import matplotlib.pyplot as plt
 import numpy as np
 from scipy.ndimage import gaussian_filter
 
@@ -9503,22 +9502,6 @@ class EMRIDistribution:
     def __init__(self) -> None:
         self.emri_distribution = np.flip(self.emri_distribution, axis=0)
         self.emri_distribution = gaussian_filter(self.emri_distribution, sigma=2)
-        self.plot_emri_distribution()
-
-    def plot_emri_distribution(self) -> None:
-        fig, ax = plt.subplots()
-        cax = ax.contourf(
-            self.z_values,
-            self.M_values,
-            self.emri_distribution,
-            levels=30,
-            cmap="viridis",
-        )
-        fig.colorbar(cax)
-        plt.ylabel("log_10 (M/M_sol)")
-        plt.xlabel("z")
-        plt.savefig("saved_figures/cosmological_model/emri_distribution_m1.png", dpi=300)
-        plt.close()
 
     def get_emri_probability(self, z: float, M: float) -> float:
         M = np.log10(M)

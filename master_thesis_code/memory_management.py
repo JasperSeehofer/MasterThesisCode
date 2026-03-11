@@ -1,10 +1,7 @@
 import logging
-import os
 from time import time
 
 import GPUtil
-import matplotlib.pyplot as plt
-import numpy as np
 from tabulate import tabulate
 
 try:
@@ -86,27 +83,17 @@ class MemoryManagement:
         if self._fft_cache is not None:
             self._fft_cache.show_info()
 
-    def plot_GPU_usage(self) -> None:
-        figures_directory = "saved_figures/monitoring/"
+    @property
+    def time_series(self) -> list[float]:
+        """Wall-clock seconds since start for each GPU usage stamp."""
+        return self._time_series
 
-        if not os.path.isdir(figures_directory):
-            os.makedirs(figures_directory)
+    @property
+    def memory_pool_gpu_usage(self) -> list[float]:
+        """CuPy memory pool total bytes (GB) at each stamp."""
+        return self._memory_pool_gpu_usage
 
-        plt.figure(figsize=(12, 9))
-        plt.plot(
-            self._time_series,
-            self._memory_pool_gpu_usage,
-            "-",
-            label="Memory Pool",
-        )
-        for gpu_index, gpu_usage in enumerate(np.array(self._gpu_usage).T):
-            plt.plot(
-                self._time_series,
-                gpu_usage,
-                "-",
-                label=f"GPU {gpu_index + 1}",
-            )
-        plt.xlabel("t in sec")
-        plt.legend()
-        plt.savefig(figures_directory + "GPU_usage.png", dpi=300)
-        plt.clf()
+    @property
+    def gpu_usage(self) -> list[list[float]]:
+        """Per-GPU memory usage (GB) at each stamp."""
+        return self._gpu_usage

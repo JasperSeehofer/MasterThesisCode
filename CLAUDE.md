@@ -154,7 +154,9 @@ The codebase has two distinct pipelines:
 - **`bayesian_inference/bayesian_inference_mwe.py`** — monolithic 931-line module containing `Galaxy`, `GalaxyCatalog`, `EMRIDetection`, `BayesianInference` classes; also `dist()`, `dist_to_redshift()`, and cosmological integrals
 - **`cosmological_model.py`** — `Model1CrossCheck` wraps the EMRI event rate model; `BayesianStatistics` orchestrates the H₀ evaluation
 - **`galaxy_catalogue/handler.py`** — interfaces with the GLADE galaxy catalog (BallTree-based lookups)
-- **`constants.py`** — all physical constants and simulation configuration. Key: `H=0.73`, `SNR_THRESHOLD=20`, `IS_PLOTTING_ACTIVATED=False`
+- **`constants.py`** — all physical constants and simulation configuration. Key: `H=0.73`, `SNR_THRESHOLD=20`
+- **`plotting/`** — all visualization code lives here. Factory functions (`data in, (fig, ax) out`) in topic modules (`bayesian_plots.py`, `evaluation_plots.py`, `model_plots.py`, `catalog_plots.py`, etc.). `_style.py` sets Agg backend + loads `emri_thesis.mplstyle`. `_helpers.py` provides `save_figure()` and `get_figure()`.
+- **`callbacks.py`** — `SimulationCallback` Protocol for decoupling the simulation loop from visualization; `PlottingCallback` in `plotting/simulation_plots.py` collects data and produces plots in `on_simulation_end`
 
 ### Known Bugs to Be Aware Of
 
@@ -164,7 +166,7 @@ All four originally-listed bugs are resolved. Remaining known issues (also track
 1. **`LISA_configuration.py` unconditional `import cupy`**: still at module top level — any
    module that imports `LisaTdiConfiguration` is un-importable on CPU-only machines without
    the guarded `try/except`. Fix when that file is next touched.
-2. **`cosmological_model.py` size**: ~3530 lines; `BayesianStatistics` not yet extracted.
+2. **`cosmological_model.py` size**: ~1611 lines (down from ~3530 after plotting extraction); `BayesianStatistics` not yet extracted into its own module.
 
 #### Physics / mathematics (confirmed by Phase 9 review — Physics Change Protocol required)
 3. **`datamodels/galaxy.py:121` comoving volume formula wrong** [CRITICAL]:

@@ -42,8 +42,6 @@ KM_TO_M: float = 1e3  # 1 km = 1000 m
 SIMULATION_CONFIGURATION_FILE: str = "simulation_configuration.json"
 SIMULATION_PATH: str = "simulation_path"
 DEFAULT_SIMULATION_PATH: str = "simulations/simulation"
-IS_PLOTTING_ACTIVATED: bool = False
-
 # Parameter configuration
 MINIMAL_FREQUENCY: float = 1e-5
 MAXIMAL_FREQUENCY: float = 1

@@ -380,31 +380,3 @@ def get_redshift_outer_bounds(
         z_min = 0.0
     z_max = dist_to_redshift(distance + 3 * distance_error, h_max)
     return z_min, z_max
-
-
-def visualize() -> None:
-    import matplotlib.pyplot as plt
-
-    zs = np.linspace(0, 2, 1000)
-    distances = [dist(z) for z in zs]
-    plt.plot(zs, distances)
-    plt.xlabel("Redshift")
-    plt.ylabel("Distance [Gpc]")
-    plt.show()
-    redshifts = [dist_to_redshift(d) for d in distances]
-    plt.plot(distances, redshifts)
-    plt.xlabel("Distance [Gpc]")
-    plt.ylabel("Redshift")
-    plt.show()
-
-    # check lower and upper bound
-    distance = 0.5
-    distance_error = 0.05
-    for h in np.linspace(0.6, 0.83, 3):
-        for Omega_m in np.linspace(0.04, 0.5, 3):
-            z = dist_to_redshift(distance, h, h, Omega_m, Omega_m)
-            plt.scatter([z], [h], label=f"Omega_m={Omega_m}, h={h}")
-    plt.xlabel("Redshift")
-    plt.ylabel("Hubble constant")
-    plt.legend()
-    plt.show()

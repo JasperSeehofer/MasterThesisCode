@@ -6,17 +6,12 @@ components, and the sky-averaged F+/F× antenna pattern functions.
 """
 
 import logging
-import os
 import types
 from dataclasses import dataclass
 from typing import Any
 
-import matplotlib as mpl
-import matplotlib.pyplot as plt
 import numpy as np
 import numpy.typing as npt
-
-mpl.rcParams["agg.path.chunksize"] = 1000
 
 try:
     import cupy as cp
@@ -32,7 +27,6 @@ from master_thesis_code.constants import (
 from master_thesis_code.constants import (
     C,
 )
-from master_thesis_code.decorators import timer_decorator
 
 _LOGGER = logging.getLogger()
 
@@ -123,55 +117,3 @@ class LisaTdiConfiguration:
             * (1 + (frequencies / 8e-3) ** 4)
             * (1 / 2 / xp.pi / frequencies / C) ** 2
         )
-
-    @timer_decorator
-    def _visualize_lisa_configuration(self) -> None:
-        figures_directory = "saved_figures/LISA_configuration/"
-
-        if not os.path.isdir(figures_directory):
-            os.makedirs(figures_directory)
-
-        # create plots
-        # plot power spectral density
-        fs = cp.logspace(-4, 0, 10000)
-        fig = plt.figure(figsize=(12, 8))
-
-        plt.plot(
-            cp.asnumpy(fs),
-            cp.asnumpy(self.S_OMS(fs)),
-            "-",
-            linewidth=1,
-            label="S_OMS(f)",
-        )
-        plt.plot(
-            cp.asnumpy(fs),
-            cp.asnumpy(self.S_TM(fs)),
-            "-",
-            linewidth=1,
-            label="S_TM(f)",
-        )
-
-        plt.xlabel("f [Hz]")
-        plt.legend()
-        plt.xscale("log")
-        plt.yscale("log")
-        plt.savefig(figures_directory + "LISA_noise_functions.png", dpi=300)
-        plt.clf()
-
-        # check characteristic functions S_OMS S_ACC
-        fig = plt.figure(figsize=(12, 8))
-        for channel in ["A"]:
-            plt.plot(
-                cp.asnumpy(fs),
-                cp.asnumpy(self.power_spectral_density(fs, channel=channel)),
-                "-",
-                linewidth=1,
-                label=f"S_{channel}(f)",
-            )
-
-        plt.xlabel("f [Hz]")
-        plt.legend()
-        plt.xscale("log")
-        plt.yscale("log")
-        plt.savefig(figures_directory + "LISA_PSD.png", dpi=300)
-        plt.clf()

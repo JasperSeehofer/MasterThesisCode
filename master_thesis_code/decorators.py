@@ -4,8 +4,6 @@ import time
 from collections.abc import Callable
 from typing import Any
 
-from master_thesis_code.constants import IS_PLOTTING_ACTIVATED
-
 try:
     import cupy as cp
 
@@ -31,15 +29,5 @@ def timer_decorator[F: Callable[..., Any]](func: F) -> F:
         else:
             _LOGGER.debug(f"Function {func.__name__!r} executed in {(end - start):.4f}s.")
         return result
-
-    return wrapper_function  # type: ignore[return-value]
-
-
-def if_plotting_activated[F: Callable[..., Any]](func: F) -> F:
-    @functools.wraps(func)
-    def wrapper_function(*args: Any, **kwargs: Any) -> Any:
-        if IS_PLOTTING_ACTIVATED:
-            return func(*args, **kwargs)
-        return None
 
     return wrapper_function  # type: ignore[return-value]

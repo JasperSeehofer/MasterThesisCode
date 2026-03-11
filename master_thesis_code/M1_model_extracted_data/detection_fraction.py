@@ -1,7 +1,5 @@
-import os
 from dataclasses import dataclass
 
-import matplotlib.pyplot as plt
 import numpy as np
 from scipy.ndimage import gaussian_filter
 
@@ -7056,26 +7054,6 @@ class DetectionFraction:
     def __init__(self) -> None:
         self.detection_fraction_grid = np.flip(self.detection_fraction_grid, axis=0)
         self.detection_fraction_grid = gaussian_filter(self.detection_fraction_grid, sigma=1)
-        self.plot_detection_fraction()
-
-    def plot_detection_fraction(self) -> None:
-        # check if the directory exists, if not create it
-        if not os.path.exists("saved_figures/cosmological_model"):
-            os.makedirs("saved_figures/cosmological_model")
-
-        fig, ax = plt.subplots()
-        cax = ax.contourf(
-            self.z_values,
-            self.M_values,
-            self.detection_fraction_grid,
-            levels=30,
-            cmap="viridis",
-        )
-        fig.colorbar(cax)
-        plt.ylabel("log_10 (M/M_sol)")
-        plt.xlabel("z")
-        plt.savefig("saved_figures/cosmological_model/detection_fraction_m1.png", dpi=300)
-        plt.close()
 
     def get_detection_fraction(self, z: float, M: float) -> float:
         M = np.log10(M)

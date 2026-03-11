@@ -13,7 +13,6 @@ import multiprocessing as mp
 from statistics import NormalDist as NormalDist
 from time import time
 
-import matplotlib.pyplot as plt
 import numpy as np
 
 from master_thesis_code.bayesian_inference.bayesian_inference import (
@@ -22,7 +21,6 @@ from master_thesis_code.bayesian_inference.bayesian_inference import (
 from master_thesis_code.bayesian_inference.bayesian_inference import (
     dist_array as dist_array,
 )
-from master_thesis_code.bayesian_inference.scientific_plotter import ScientificPlotter
 from master_thesis_code.constants import (
     OMEGA_DE as OMEGA_LAMBDA,  # noqa: F401  re-exported
 )
@@ -55,17 +53,25 @@ from master_thesis_code.physical_relations import (
 )
 
 if __name__ == "__main__":
+    import matplotlib.cm as cm
+    import matplotlib.pyplot as plt
+
+    from master_thesis_code.plotting import apply_style
+
+    apply_style()
+
     galaxy_catalog = GalaxyCatalog(use_truncnorm=False, use_comoving_volume=True)
     NUMBER_OF_GALAXIES = 1000
     STEPS = 20
     NUMBER_OF_NEW_DETECTIONS_PER_STEP = 3
     compare_with_truncnorm = False
 
-    plotter = ScientificPlotter(figure_size=(16, 9))
-    plotter.figure.suptitle(
+    fig, ax = plt.subplots(figsize=(16, 9))
+    fig.suptitle(
         f"Galaxy Catalog: {NUMBER_OF_GALAXIES}, Detections: {NUMBER_OF_NEW_DETECTIONS_PER_STEP * STEPS}"
     )
-    plotter.set_colormap_from_range((0, STEPS * NUMBER_OF_NEW_DETECTIONS_PER_STEP - 1))
+    norm = plt.Normalize(0, STEPS * NUMBER_OF_NEW_DETECTIONS_PER_STEP - 1)
+    color_map = cm.ScalarMappable(norm=norm, cmap="viridis")
 
     for i in range(STEPS):
         start_time = time()
@@ -102,12 +108,12 @@ if __name__ == "__main__":
 
         # plot combined likelihood
         combined_posterior = np.prod(likelihoods, axis=0)
-        plotter.plot_colored(
+        ax.plot(
             hubble_values,
             combined_posterior / max(combined_posterior),
-            color=i * NUMBER_OF_NEW_DETECTIONS_PER_STEP,
-            line_style="solid",
-            kwargs={"linewidth": 1},
+            color=color_map.to_rgba(i * NUMBER_OF_NEW_DETECTIONS_PER_STEP),  # type: ignore[arg-type]
+            linestyle="solid",
+            linewidth=1,
         )
 
         # evaluate with bh mass information
@@ -121,13 +127,13 @@ if __name__ == "__main__":
         # plot combined posterior
         combined_posterior = np.prod(likelihoods, axis=0)
 
-        plotter.plot_colored(
+        ax.plot(
             hubble_values,
             combined_posterior / np.max(combined_posterior),
-            color=i * NUMBER_OF_NEW_DETECTIONS_PER_STEP,
-            line_style="dotted",
+            color=color_map.to_rgba(i * NUMBER_OF_NEW_DETECTIONS_PER_STEP),  # type: ignore[arg-type]
+            linestyle="dotted",
             label=rf"iteration ${i}$",
-            kwargs={"linewidth": 1.5},
+            linewidth=1.5,
         )
 
         if compare_with_truncnorm:
@@ -143,15 +149,15 @@ if __name__ == "__main__":
                 )
             likelihoods_with_truncnorm = np.array(posterior_distribution_with_truncnorm).T
             combined_posterior_with_truncnorm = np.prod(likelihoods_with_truncnorm, axis=0)
-            plotter.plot_colored(
+            ax.plot(
                 hubble_values,
                 combined_posterior_with_truncnorm / max(combined_posterior_with_truncnorm),
-                color=i * NUMBER_OF_NEW_DETECTIONS_PER_STEP,
-                line_style="dashdot",
+                color=color_map.to_rgba(i * NUMBER_OF_NEW_DETECTIONS_PER_STEP),  # type: ignore[arg-type]
+                linestyle="dashdot",
             )
         print(f"Finished iteration {i + 1} of {STEPS} in {time() - start_time:.2f}s.")
 
-    plt.vlines(
+    ax.vlines(
         TRUE_HUBBLE_CONSTANT,
         0,
         1,
@@ -159,5 +165,8 @@ if __name__ == "__main__":
         linestyles="dashed",
         label="True Hubble Constant",
     )
-    plotter.show_colorbar(label="Number of detections")
-    plotter.show_and_close()
+    color_map.set_array([])
+    fig.colorbar(color_map, ax=ax, label="Number of detections")
+    ax.legend()
+    plt.show()
+    plt.close(fig)
