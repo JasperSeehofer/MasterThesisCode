@@ -9,6 +9,25 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [2026-03-11] — remove redundant binary data files from repo
+
+### Changed
+- `master_thesis_code/waveform_generator.py`: orbit file path changed from
+  `"./lisa_files/esa-trailing-orbits.h5"` to bare `"esa-trailing-orbits.h5"`.
+  `lisatools` resolves bare filenames against its own bundled `orbit_files/` directory,
+  so the repo-local copy is no longer needed.
+- `.gitignore`: added `few_data/` and `lisa_files/` to prevent accidental re-addition.
+
+### Removed
+- `few_data/` (~105 MB): 4 FEW waveform model binary files removed from git tracking.
+  FEW auto-downloads its data to `~/.local/share/few/` on first use via its built-in
+  `FileManager`; the repo-local copies were never registered as a search path.
+- `lisa_files/` (~2.4 MB): 2 LISA orbit HDF5 files removed from git tracking.
+  `lisatools` bundles all three orbit files inside the installed package; the
+  relative-path workaround in `waveform_generator.py` is no longer needed.
+
+---
+
 ## [2026-03-10] — physics & mathematics review (Phase 9)
 
 ### Added
