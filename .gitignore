@@ -9,7 +9,7 @@ saved_figures/LISA_configuration
 saved_figures/parameter_estimation
 notebooks/
 test.py
-__pycache__/
+**/__pycache__/
 notebooks/
 env/
 evaluation/
