@@ -1,65 +1,316 @@
 # TODO's
 
-## Physics Fixes (confirmed bugs — Physics Change Protocol required before each)
+## Execution Order
 
-These all require presenting old formula / new formula / reference / dimensional analysis /
-limiting case to the user for approval before any code is written (see CLAUDE.md).
+### Phase 1: Foundation (do first — prerequisites for everything)
+1. STAT-1 — Document which pipeline is production
+2. TEST-1 + TEST-2 — Add regression guards before fixing bugs
+3. ARCH-1 — Extract BayesianStatistics (makes all subsequent work cleaner)
 
-- [ ] **[CRITICAL]** Fix comoving volume formula in `datamodels/galaxy.py:121`
-      Exponent 2 → 3, prefactor 4π → 4π/3. Ref: Hogg (1999) arXiv:astro-ph/9905116 Eq. (28).
-      `cv_grid = (4/3) * np.pi * (SPEED_OF_LIGHT / h0) ** 3 * cumulative_integral**3`
+### Phase 2: Critical Physics Fixes (after Phase 1)
+4. ~~PHYS-1 — Comoving volume element formula~~ (RESOLVED)
+5. PHYS-2 — Mass distribution sigma bug
+6. STAT-3 — Mass distribution normalization review
+7. STAT-4 — d_L fraction direction audit
 
-- [ ] **[HIGH]** Switch Fisher matrix to five-point stencil in `parameter_estimation.py:336`
+### Phase 3: Testing Expansion (parallel with Phase 2)
+8. TEST-3 — BayesianInference correctness tests
+9. TEST-4 through TEST-7 — Expand coverage to untested modules
+
+### Phase 4: Important Physics + Performance (after Phase 2)
+10. PHYS-3 — Five-point stencil
+11. PHYS-4 — Confusion noise
+12. PERF-1 + PERF-2 — GPU portability fixes
+13. REPRO-1 — RNG refactor
+
+### Phase 5: Polish (after Phases 3-4)
+14. All P2 items
+15. Coverage gate increases (TEST-9)
+16. PHYS-9 — Document remaining physics TODOs as thesis scope or future work
+
+### Verification (after each phase)
+- `uv run pytest -m "not gpu and not slow"` — all CPU tests pass
+- `uv run mypy master_thesis_code/` — clean
+- `uv run ruff check master_thesis_code/` — clean
+- Coverage check: `uv run pytest --cov` reports above current gate
+- After physics fixes (PHYS-1 through PHYS-5): re-run simulation with `--seed 42`, compare outputs
+- After ARCH-1: verify `cosmological_model.py` shrunk, evaluation pipeline still works
+
+---
+
+## Workstream 1: Physics Correctness
+
+All items require the `/physics-change` skill (5-step protocol: old formula, new formula,
+reference, dimensional analysis, limiting case).
+
+- [x] **PHYS-1 [P0, S]** Fix comoving volume element formula in `datamodels/galaxy.py`
+      The formula computes dV_c/dz (volume element), not V_c (total volume). The exponent 2
+      and 4π prefactor were correct, but the formula was missing the 1/E(z) factor.
+      Fix: `cv_grid = 4π · (c/H₀)³ · I(z)² / E(z)`. Ref: Hogg (1999) arXiv:astro-ph/9905116 Eq. (27).
+      Also renamed all methods from `comoving_volume` → `comoving_volume_element` for clarity.
+
+- [ ] **PHYS-2 [P0, S]** Fix `setup_galaxy_mass_distribution` NormalDist branch in `datamodels/galaxy.py:292`
+      Sigma uses hardcoded `10**5.5` instead of `galaxy.central_black_hole_mass`.
+      `append_galaxy_to_galaxy_mass_distribution` (line 230) already uses the correct value.
+      The truncnorm branch also doesn't pass `loc`/`scale` to scipy (inherits defaults
+      `loc=0, scale=1`), making it inconsistent with the `append_*` method.
+      **Depends on:** TEST-2 (regression guard must come first)
+
+- [ ] **PHYS-3 [P1, M]** Switch Fisher matrix to five-point stencil in `parameter_estimation.py:328`
       Replace `finite_difference_derivative()` call with `five_point_stencil_derivative()`.
+      The O(ε⁴) method already exists but is never called. Requires 4× more waveform
+      evaluations per parameter (56 total vs 14).
       Ref: Vallisneri (2008) arXiv:gr-qc/0703086; Cutler & Flanagan (1994) PRD 49, 2658.
 
-- [ ] **[MEDIUM]** Add galactic confusion noise to LISA PSD in `LISA_configuration.py`
+- [ ] **PHYS-4 [P1, M]** Add galactic confusion noise to LISA PSD in `LISA_configuration.py`
       Implement `galactic_confusion_noise(frequencies, T_obs)` and add to
       `power_spectral_density_a_channel()`. Constants already defined in `constants.py:77–83`.
+      Dominates LISA sensitivity at 0.1–3 mHz; will change SNR values significantly.
+      Must invalidate and re-run all existing Cramér-Rao CSV data afterward.
       Ref: Babak et al. (2023) arXiv:2303.15929 Eq. (17) and Table 1.
 
-- [ ] **[MEDIUM]** Fix silent wCDM fallback in `physical_relations.py:72`
-      Either (a) remove `w_0`, `w_a` args from `dist()` and document the ΛCDM assumption, or
+- [ ] **PHYS-5 [P1, M]** Use per-source Fisher-matrix σ(d_L) in `bayesian_inference/bayesian_inference.py`
+      Replace hardcoded `FRACTIONAL_LUMINOSITY_ERROR * d_L` (constant 10%) at lines 154, 186, 235
+      with `delta_luminosity_distance_delta_luminosity_distance` from the `Detection` dataclass.
+      Requires threading per-detection error information from `EMRIDetection` into `BayesianInference`.
+
+- [ ] **PHYS-6 [P2, S]** Fix or document silent wCDM fallback in `physical_relations.py:72`
+      `w_0`, `w_a` params are accepted but `lambda_cdm_analytic_distance` ignores them entirely.
+      Either (a) remove args and document ΛCDM assumption, or
       (b) fall back to numerical integration via `hubble_function()` when `w_0 ≠ -1` or `w_a ≠ 0`.
       Ref: Hogg (1999) arXiv:astro-ph/9905116 Eq. (14–16).
 
-- [ ] **[MEDIUM]** Use per-source Fisher-matrix σ(d_L) in `bayesian_inference/bayesian_inference.py`
-      Replace hardcoded `FRACTIONAL_LUMINOSITY_ERROR * d_L` with
-      `delta_luminosity_distance_delta_luminosity_distance` from the `Detection` dataclass.
+- [ ] **PHYS-7 [P2, S]** Document or fix galaxy redshift uncertainty in `datamodels/galaxy.py:64`
+      Current `0.013 * (1+z)³` caps at z ≈ 0.048, meaning almost all galaxies (z up to 0.55)
+      use the capped value of 0.015. Standard forms: photometric `σ_z = 0.05(1+z)`,
+      spectroscopic `σ_z = 0.001(1+z)`. Add citation or switch to standard form.
 
-- [ ] **[LOW]** Update fiducial cosmological parameters in `constants.py:29–30` to Planck 2018:
-      `OMEGA_M = 0.3153`, `OMEGA_DE = 0.6847`, `H = 0.6736`.
+- [ ] **PHYS-8 [P2, S]** Update fiducial cosmological parameters in `constants.py:29–30`
+      Currently WMAP-era: `Ω_m = 0.25`, `H = 0.73`.
+      Planck 2018: `Ω_m = 0.3153`, `Ω_de = 0.6847`, `H = 0.6736`.
+      Changes all distances and volumes; must re-run full simulation pipeline afterward.
+      Consider making configurable rather than hardcoded.
       Ref: Planck Collaboration (2020) arXiv:1807.06209 Table 2.
 
-- [ ] **[LOW]** Document or fix galaxy redshift uncertainty scaling in `datamodels/galaxy.py:64`
-      Current `(1+z)³` formula has no reference; add citation or switch to standard
-      photometric `σ_z = 0.05(1+z)` or spectroscopic `σ_z = 0.001(1+z)`.
+- [ ] **PHYS-9 [P2, L]** Address 7 pre-existing physics TODOs — document which are thesis scope vs future work:
+      - [ ] Coordinate transformation to orbital motion around sun
+      - [ ] Check `_s` parameters: barycenter same as orientation of binary wrt fixed frame
+      - [ ] Check spin limits for parameter `a`
+      - [ ] Inclination for Schwarzschild waveforms (defined w.r.t. MBH angular momentum)
+      - [ ] Compute derivative w.r.t. sky localization in SSB again
+      - [ ] Use second detector from LISA
+      - [ ] Function integration: reduced to positive integral because negative frequency == complex
+            conjugate, but `fs` currently contains negative frequencies (wrong)
 
-- [ ] **[IMPORTANT]** Designate and document the production Bayesian pipeline
-      Document that Pipeline B (`BayesianStatistics` in `cosmological_model.py`) is the
-      science-grade implementation and Pipeline A (`BayesianInference`) is a dev cross-check.
-      Add a module-level docstring and a note in README.
+---
 
-## Physics / Science (pre-existing)
+## Workstream 2: Statistical Methodology
 
-- [ ] coordinate transformation to orbital motion around sun
-- [ ] check _s parameters. Barycenter same as orientation of binary wrt fixed frame
-- [ ] check spin limits for parameter a
-- [ ] What happens with the inclination for the Schwarzschild waveforms, because it is defined w.r.t. the angular momentum of the MBH.
-- [ ] compute derivative w.r.t. sky localization in ssb again.
-- [ ] use second detector from LISA
-- [ ] function integration: has been reduced to positive integral because of negative frequency == complex conjugate. atm fs contains negative frequencies which is wrong
+- [x] **STAT-1 [P0, S]** Document which Bayesian pipeline is production
+      Pipeline A (`BayesianInference` in `bayesian_inference/bayesian_inference.py`): simpler,
+      synthetic galaxy catalog, erf-based detection probability.
+      Pipeline B (`BayesianStatistics` in `cosmological_model.py`): real GLADE catalog,
+      KDE-based detection probability, multiprocessing.
+      Add module-level docstrings clarifying roles. Note in README.
 
-## Code Health (remaining)
+- [ ] **STAT-2 [P1, S]** Validate emcee MCMC convergence for comoving volume sampling
+      `galaxy.py:137` uses 5 walkers × 1000 burn-in for 1D sampling.
+      emcee authors recommend at least 10 walkers. Add autocorrelation time check
+      (`emcee.autocorr.integrated_time`) to verify convergence.
 
-- [ ] Extract `BayesianStatistics` from `cosmological_model.py` (~1611 lines) to
-      `master_thesis_code/bayesian_inference/bayesian_statistics.py`
+- [ ] **STAT-3 [P1, M]** Review `evaluate_galaxy_mass_distribution` normalization in `galaxy.py:310-321`
+      The truncnorm branch divides by `distribution.std()` AND by the CDF range, but
+      `scipy.stats.truncnorm.pdf()` is already correctly normalized over the truncation range.
+      This double normalization is non-standard and likely over-normalizes.
+      Needs careful derivation to confirm the correct normalization.
+
+- [ ] **STAT-4 [P1, M]** Audit d_L fraction direction in `cosmological_model.py`
+      `single_host_likelihood` (line ~1190): `detection.d_L / d_L`
+      `single_host_likelihood_integration_testing` (line ~1326): `d_L / detection.d_L`
+      These compute `luminosity_distance_fraction` in opposite directions. The fraction
+      feeds into a multivariate normal PDF, so the direction matters.
+      Determine which is correct and add a regression test.
+
+- [ ] **STAT-5 [P1, S]** Document `Model1CrossCheck` polynomial coefficients in `cosmological_model.py:91-147`
+      5 sets of 9th-degree polynomial fits for dN/dz with no reference citation.
+      Presumably fits to Babak et al. (2017) PRD 95, 103012 — must be documented.
+      Add reference comment and ideally the data source files.
+
+- [ ] **STAT-6 [P2, S]** Review emcee walkers for 2D EMRI event sampling
+      `cosmological_model.py:277`: 20 walkers for 2D (mass, redshift) — fine (>= 2×ndim).
+      1000 burn-in steps — verify with autocorrelation time. Sampler is never reset between
+      calls to `sample_emri_events()` (intentional warm start but undocumented).
+
+- [ ] **STAT-7 [P2, S]** Verify Monte Carlo integration sample size convergence
+      `cosmological_model.py:1276`: `N_SAMPLES = 10_000` for the production path.
+      Add convergence check: compare result with 2× samples and verify relative change < threshold.
+      The importance sampling approach (sampling from prior, reweighting) is correct but
+      should be documented.
+
+---
+
+## Workstream 3: Testing and Verification
+
+Current: 133 tests, 36% coverage (gate 25%), target 50%.
+
+- [x] **TEST-1 [P0, S]** Regression test for comoving volume element
+      `test_comoving_volume_element_spline_matches_integration` now asserts the correct
+      formula (including 1/E(z) factor). Resolved alongside PHYS-1.
+
+- [x] **TEST-2 [P0, S]** Regression test for mass distribution sigma
+      Create galaxies at different masses and verify the distribution sigma scales with
+      galaxy mass (not with hardcoded `10**5.5`). This test should FAIL before PHYS-2.
+      **Must precede PHYS-2.**
+
+- [ ] **TEST-3 [P0, M]** Correctness tests for `BayesianInference.likelihood`
+      Currently only a benchmark exists (`test_benchmark_likelihood`).
+      Need: likelihood peaks near true redshift (inject known source, verify argmax),
+      posterior peaks near true H₀ with perfect measurements,
+      monotonicity (closer sources → higher likelihood for correct H₀).
+
+- [ ] **TEST-4 [P1, L]** Tests for `cosmological_model.py` core classes
+      `Model1CrossCheck`: `sample_emri_events()` returns samples within declared bounds,
+      `emri_distribution` is positive, `R_emri` continuity.
+      `DetectionProbability`: `evaluate_with_bh_mass` and `evaluate_without_bh_mass` return [0,1].
+      `LamCDMScenario`, `DarkEnergyScenario`: parameter bounds are consistent.
+      Currently 0 tests on core classes (only helpers like `gaussian`, `polynomial` tested).
+
+- [ ] **TEST-5 [P1, M]** Tests for `galaxy_catalogue/handler.py`
+      `HostGalaxy.from_attributes` round-trips correctly, `_get_pruned_galaxy_catalog` filters
+      correctly, `setup_galaxy_catalog_balltree` produces a valid BallTree.
+      Needs a mock `reduced_galaxy_catalogue.csv` fixture (real one is ~2.3M galaxies).
+      Currently 0 tests.
+
+- [ ] **TEST-6 [P1, M]** Tests for `arguments.py` + `main.py`
+      `Arguments.create()` with mock `sys.argv`, `Arguments.validate()` edge cases,
+      `main()` with `simulation_steps=0` (starts and stops), `_write_run_metadata` writes
+      expected keys. Currently 0 tests.
+
+- [ ] **TEST-7 [P1, S]** Expand `LISA_configuration_test.py` CPU tests
+      PSD positivity across full valid frequency range, A==E channel symmetry.
+      Some tests already exist — verify completeness and fill gaps.
+
+- [ ] **TEST-8 [P2, M]** Plotting smoke tests
+      Call each factory function in `plotting/` with minimal synthetic data and verify
+      `(fig, ax)` is returned without errors. Do not test visual correctness.
+      Currently 0% coverage on 6 out of 9 plotting modules.
+
+- [ ] **TEST-9 [P2, S]** Raise coverage gate incrementally
+      `pyproject.toml` `fail_under`: 25% → 40% (after TEST-2 through TEST-6) → 50%.
+
+---
+
+## Workstream 4: Performance and HPC
+
+- [ ] **PERF-1 [P0, S]** Fix `USE_GPU = True` hardcoded in `waveform_generator.py:9`
+      Also hardcoded in `pn5_aak_configuration` (line 22) and multiple `GenerateEMRIWaveform` calls.
+      Should accept `use_gpu` parameter from CLI `--use_gpu` argument.
+      Currently crashes on CPU machines when `main.py` tries to call `create_lisa_response_generator`.
+
+- [ ] **PERF-2 [P1, S]** Guard remaining unconditional `cp.*` calls in `parameter_estimation.py`
+      `_crop_to_same_length` (line 248): `cp.array()` unconditionally.
+      `compute_fisher_information_matrix` (line 330): `cp.zeros()` unconditionally.
+      `compute_signal_to_noise_ratio` (line 378): `cp.sqrt()` unconditionally.
+      All need the `xp = _get_xp(use_gpu)` pattern.
+
+- [ ] **PERF-3 [P1, M]** Vectorize Bayesian inference pre-computation loops
+      `bayesian_inference.py:87-126`: `__post_init__` loops over 1000 redshift values × N galaxies
+      in Python loops. `galaxy_distribution_at_redshifts` and
+      `galaxy_detection_mass_distribution_at_redshifts` can be vectorized.
+      `detection_skylocalization_weight_by_galaxy` uses `NormalDist` in Python loop; can use
+      `scipy.stats.norm` vectorized.
+
+- [ ] **PERF-4 [P1, L]** Parallelize 14 Fisher matrix derivative evaluations
+      `parameter_estimation.py:324-348`: currently sequential, but each derivative is independent.
+      With five-point stencil (PHYS-3): 56 total waveform evaluations, all parallelizable.
+      Important for thesis-scale runs on multi-GPU systems.
+
+- [ ] **PERF-5 [P2, S]** Replace `.iterrows()` with `.itertuples()` or vectorized ops
+      `cosmological_model.py:755,796`: `.iterrows()` is the slowest way to iterate a DataFrame.
+      The filtering loop `use_detection()` at line 755-758 can be fully vectorized.
+
+- [ ] **PERF-6 [P2, S]** Add `--use_gpu` CLI argument + `CUDA_VISIBLE_DEVICES` selection
+      `arguments.py`: currently missing entirely. Thread through `main.py` →
+      `ParameterEstimation` → `waveform_generator.py`.
+
+---
+
+## Workstream 5: Code Architecture
+
+- [x] **ARCH-1 [P0, L]** Extract `BayesianStatistics` + `DetectionProbability` from `cosmological_model.py`
+      Currently 1616 lines with 24 `global` statements, multiprocessing workers, and helper
+      functions all in one file. Extract into:
+      - `bayesian_inference/bayesian_statistics.py` — `BayesianStatistics`, `single_host_likelihood`
+      - `bayesian_inference/detection_probability.py` — `DetectionProbability`
+      - Keep `Model1CrossCheck`, `LamCDMScenario`, `DarkEnergyScenario` in `cosmological_model.py`
+      **Biggest refactor; makes all subsequent changes cleaner.**
+
+- [ ] **ARCH-2 [P1, M]** Eliminate 24 `global` variables in multiprocessing workers
+      `cosmological_model.py`: `child_process_init` sets 6 globals that `single_host_likelihood`
+      reads. Refactor to frozen dataclass or `functools.partial`.
+      Makes the code testable without multiprocessing.
+
+- [ ] **ARCH-3 [P1, S]** Replace 22 `print()` calls with `_LOGGER.info/debug`
+      Mostly in `cosmological_model.py` (14 calls). Some are debug prints left from development
+      (e.g., `print(possible_host.z, possible_host.z_error)` at line 1147).
+
+- [ ] **ARCH-4 [P1, S]** Remove 243-line `single_host_likelihood_integration_testing` dead code
+      `cosmological_model.py:1303-1546`: testing variant of `single_host_likelihood` with
+      inline print statements and commented-out code. Either promote to a proper test or delete.
+      (Also relevant to STAT-4 — audit d_L fraction direction first.)
+
+- [ ] **ARCH-5 [P2, S]** Fix `ParameterSample` mutable defaults in `galaxy_catalogue/handler.py:37-38`
+      `phi_S: float = np.random.random() * 2 * np.pi` and
+      `theta_S: float = np.arccos(np.random.random() * 2 - 1)` are evaluated once at class
+      definition time, not per instance. All instances share the same default values.
+      Per CLAUDE.md conventions: must use `field(default_factory=...)`.
+
+- [ ] **ARCH-6 [P2, S]** Unify distance/detection threshold constants
+      `LUMINOSITY_DISTANCE_THRESHOLD_GPC = 1.55` in `constants.py`.
+      `luminostity_detection_threshold = 1.55` in `Model1CrossCheck._apply_model_assumptions()`.
+      `dist(redshift=1.5)` is the actual threshold calculation.
+      Should be a single source of truth.
+
+---
+
+## Workstream 6: Reproducibility
+
+- [ ] **REPRO-1 [P0, M]** Replace 21 bare `np.random.*` calls with `np.random.default_rng(seed)`
+      Generator instances, threaded through all functions that need randomness.
+      `np.random.seed()` in `main.py` sets global state but is fragile.
+      Ensures reproducibility even under parallelism.
+
+- [ ] **REPRO-2 [P1, S]** Expand `run_metadata.json` in `main.py:86-102`
+      Currently records: `git_commit`, `timestamp`, `random_seed`, `cli_args`.
+      Add: Python version, numpy/scipy/few versions, GPU info (if available), uv.lock hash.
+      Critical for thesis reproducibility claims.
+
+- [ ] **REPRO-3 [P1, M]** Implement `--generate_figures` stub in `main.py:313-321`
+      Currently logs "not implemented". All plotting factory functions exist in `plotting/`.
+      Implement: load saved CSV/JSON data, call each factory function, save to output directory.
+      Allows regenerating all thesis figures from saved data.
+
+- [ ] **REPRO-4 [P2, S]** Add data provenance to CSV outputs
+      Cramér-Rao bounds CSVs do not record which git commit, seed, or configuration produced them.
+      Add a metadata header row or a companion JSON file per CSV.
+
+---
+
+## Code Health (remaining, not in workstreams above)
+
 - [ ] Fix unconditional `import cupy` at module level in `LISA_configuration.py`
       (blocks import on CPU machines without `try/except` guard)
-- [ ] Raise test coverage gate in `pyproject.toml` (`fail_under`) above 25% as more
-      tests are added; target ≥ 50% by thesis submission
 - [ ] Tag git release `v0.1.0` once current branch is merged: `git tag v0.1.0`
 - [ ] Add Codecov integration to CI for a coverage badge in README
+
+---
+
+## Done (Phase 11 — 2026-03-12, CI & bugfix)
+
+- [x] Upgrade GitHub Actions to Node.js 24 compatible versions
+      (`checkout@v6`, `upload-artifact@v7`, `upload-pages-artifact@v4`, `setup-uv@v7`)
+- [x] Fix `setup_galaxy_mass_distribution` to respect `_use_truncnorm` flag
+- [x] Fix `.stdev` → `.std()` for scipy truncnorm frozen distributions
 
 ## Done (Phase 10 — 2026-03-11, Plotting Refactor)
 

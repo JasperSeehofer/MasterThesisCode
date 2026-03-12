@@ -11,7 +11,8 @@ from typing import TYPE_CHECKING
 import numpy as np
 
 from master_thesis_code.arguments import Arguments
-from master_thesis_code.cosmological_model import BayesianStatistics, Model1CrossCheck
+from master_thesis_code.bayesian_inference.bayesian_statistics import BayesianStatistics
+from master_thesis_code.cosmological_model import Model1CrossCheck
 from master_thesis_code.exceptions import ParameterOutOfBoundsError
 
 if TYPE_CHECKING:

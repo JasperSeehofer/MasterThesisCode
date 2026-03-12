@@ -151,8 +151,11 @@ The codebase has two distinct pipelines:
 - **`parameter_estimation/parameter_estimation.py`** — waveform generation via `few`, Fisher matrix computation (forward-difference derivatives; 5-point stencil method exists but is not yet called — see Known Bug 4), SNR and Cramér-Rao bounds. The `scalar_product_of_functions` inner product is the computational bottleneck (PSD loop).
 - **`LISA_configuration.py`** — LISA antenna patterns (F+, F×), PSD, SSB↔detector frame transformations
 - **`datamodels/parameter_space.py`** — 14-parameter EMRI space with randomization and bounds
-- **`bayesian_inference/bayesian_inference_mwe.py`** — monolithic 931-line module containing `Galaxy`, `GalaxyCatalog`, `EMRIDetection`, `BayesianInference` classes; also `dist()`, `dist_to_redshift()`, and cosmological integrals
-- **`cosmological_model.py`** — `Model1CrossCheck` wraps the EMRI event rate model; `BayesianStatistics` orchestrates the H₀ evaluation
+- **`bayesian_inference/bayesian_inference.py`** — Pipeline A (dev cross-check): `BayesianInference`, erf-based detection probability, hardcoded 10% σ(d_L), synthetic `GalaxyCatalog`. Not used by `--evaluate`.
+- **`bayesian_inference/bayesian_inference_mwe.py`** — thin re-export shim; `__main__` block runs Pipeline A standalone
+- **`bayesian_inference/bayesian_statistics.py`** — Pipeline B (production): `BayesianStatistics`, `single_host_likelihood`, multiprocessing workers, helper functions. Invoked by `--evaluate`.
+- **`bayesian_inference/detection_probability.py`** — `DetectionProbability` class: KDE-based detection probability with `RegularGridInterpolator` look-ups. Used by Pipeline B.
+- **`cosmological_model.py`** — `Model1CrossCheck` wraps the EMRI event rate model; `LamCDMScenario`, `DarkEnergyScenario` parameter spaces. Backward-compat re-exports of `BayesianStatistics` and `DetectionProbability`.
 - **`galaxy_catalogue/handler.py`** — interfaces with the GLADE galaxy catalog (BallTree-based lookups)
 - **`constants.py`** — all physical constants and simulation configuration. Key: `H=0.73`, `SNR_THRESHOLD=20`
 - **`plotting/`** — all visualization code lives here. Factory functions (`data in, (fig, ax) out`) in topic modules (`bayesian_plots.py`, `evaluation_plots.py`, `model_plots.py`, `catalog_plots.py`, etc.). `_style.py` sets Agg backend + loads `emri_thesis.mplstyle`. `_helpers.py` provides `save_figure()` and `get_figure()`.
@@ -166,13 +169,14 @@ All four originally-listed bugs are resolved. Remaining known issues (also track
 1. **`LISA_configuration.py` unconditional `import cupy`**: still at module top level — any
    module that imports `LisaTdiConfiguration` is un-importable on CPU-only machines without
    the guarded `try/except`. Fix when that file is next touched.
-2. **`cosmological_model.py` size**: ~1611 lines (down from ~3530 after plotting extraction); `BayesianStatistics` not yet extracted into its own module.
+2. ~~**`cosmological_model.py` size**~~ [RESOLVED]: extracted `BayesianStatistics` → `bayesian_inference/bayesian_statistics.py` (~986 lines) and `DetectionProbability` → `bayesian_inference/detection_probability.py` (~344 lines). `cosmological_model.py` now ~383 lines.
 
 #### Physics / mathematics (confirmed by Phase 9 review — Physics Change Protocol required)
-3. **`datamodels/galaxy.py:121` comoving volume formula wrong** [CRITICAL]:
-   exponent is 2 instead of 3, prefactor is 4π instead of 4π/3.
-   Fix: `cv_grid = (4/3) * np.pi * (SPEED_OF_LIGHT / h0) ** 3 * cumulative_integral**3`.
-   Ref: Hogg (1999) arXiv:astro-ph/9905116 Eq. (28).
+3. ~~**`datamodels/galaxy.py` comoving volume element missing 1/E(z)**~~ [RESOLVED]:
+   The formula computes dV_c/dz (volume element), not V_c(z). The exponent 2 and 4π
+   prefactor were correct, but the 1/E(z) denominator was missing.
+   Fix: `cv_grid = 4π · (c/H₀)³ · I(z)² / E(z)`. Methods renamed `comoving_volume` → `comoving_volume_element`.
+   Ref: Hogg (1999) arXiv:astro-ph/9905116 Eq. (27).
 4. **`parameter_estimation.py:336` Fisher matrix uses O(ε) forward difference** [HIGH]:
    `compute_fisher_information_matrix()` calls `finite_difference_derivative()` instead of
    `five_point_stencil_derivative()`. The O(ε⁴) method already exists but is never called.

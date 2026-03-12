@@ -7,6 +7,12 @@ All logic has been extracted to:
 
 This module re-exports every symbol that external code imports from this path so that
 existing imports continue to work without changes.
+
+The ``__main__`` block at the bottom runs **Pipeline A** (the dev cross-check
+pipeline), NOT the production evaluation pipeline.  For the production path, use
+``python -m master_thesis_code <working_dir> --evaluate`` which invokes
+:class:`~master_thesis_code.bayesian_inference.bayesian_statistics.BayesianStatistics`
+(Pipeline B).
 """
 
 import multiprocessing as mp

@@ -153,21 +153,21 @@ def test_evaluation_pipeline_produces_valid_posterior(
         sim_dir / "undetected_events.csv",
     )
 
-    # ── 2. Monkeypatch CSV paths in cosmological_model module ───────────
-    import master_thesis_code.cosmological_model as cm
+    # ── 2. Monkeypatch CSV paths in bayesian_statistics module ──────────
+    import master_thesis_code.bayesian_inference.bayesian_statistics as bs
 
     monkeypatch.setattr(
-        cm,
+        bs,
         "PREPARED_CRAMER_RAO_BOUNDS_PATH",
         str(sim_dir / "prepared_cramer_rao_bounds.csv"),
     )
     monkeypatch.setattr(
-        cm,
+        bs,
         "CRAMER_RAO_BOUNDS_OUTPUT_PATH",
         str(sim_dir / "cramer_rao_bounds.csv"),
     )
     monkeypatch.setattr(
-        cm,
+        bs,
         "UNDETECTED_EVENTS_OUTPUT_PATH",
         str(sim_dir / "undetected_events.csv"),
     )
@@ -300,13 +300,13 @@ def test_posterior_narrows_with_more_detections(
         sim_dir / "undetected_events.csv",
     )
 
-    import master_thesis_code.cosmological_model as cm
+    import master_thesis_code.bayesian_inference.bayesian_statistics as bs
 
     monkeypatch.setattr(
-        cm, "PREPARED_CRAMER_RAO_BOUNDS_PATH", str(sim_dir / "prepared_cramer_rao_bounds.csv")
+        bs, "PREPARED_CRAMER_RAO_BOUNDS_PATH", str(sim_dir / "prepared_cramer_rao_bounds.csv")
     )
-    monkeypatch.setattr(cm, "CRAMER_RAO_BOUNDS_OUTPUT_PATH", str(sim_dir / "cramer_rao_bounds.csv"))
-    monkeypatch.setattr(cm, "UNDETECTED_EVENTS_OUTPUT_PATH", str(sim_dir / "undetected_events.csv"))
+    monkeypatch.setattr(bs, "CRAMER_RAO_BOUNDS_OUTPUT_PATH", str(sim_dir / "cramer_rao_bounds.csv"))
+    monkeypatch.setattr(bs, "UNDETECTED_EVENTS_OUTPUT_PATH", str(sim_dir / "undetected_events.csv"))
     monkeypatch.chdir(tmp_path)
 
     # ── Build catalog and run full h-sweep with all 5 detections ────────

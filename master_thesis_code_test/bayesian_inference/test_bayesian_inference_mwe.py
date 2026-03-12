@@ -17,6 +17,7 @@ from master_thesis_code.bayesian_inference.bayesian_inference_mwe import (
     redshifted_mass,
     redshifted_mass_inverse,
 )
+from master_thesis_code.constants import FRACTIONAL_BLACK_HOLE_MASS_CATALOG_ERROR
 
 LUMINOSITY_DISTANCE_REDSHIFT_PAIRS = [(0.0, 0.0)]
 
@@ -75,10 +76,10 @@ def test_galaxy_catalog_init() -> None:
 
 
 # test comoving volume TODO
-def test_get_samples_from_comoving_volume() -> None:
+def test_get_samples_from_comoving_volume_element() -> None:
     galaxy_catalog = GalaxyCatalog()
 
-    redshifts = galaxy_catalog.get_samples_from_comoving_volume(100)
+    redshifts = galaxy_catalog.get_samples_from_comoving_volume_element(100)
 
     assert redshifts is not None
     assert isinstance(redshifts, np.ndarray)
@@ -408,19 +409,19 @@ def test_dist_round_trip_mwe() -> None:
     assert abs(result - 0.5) < 1e-5
 
 
-# ── comoving_volume ────────────────────────────────────────────────────────────
+# ── comoving_volume_element ────────────────────────────────────────────────────
 
 
-def test_comoving_volume_positive() -> None:
+def test_comoving_volume_element_positive() -> None:
     catalog = GalaxyCatalog(use_truncnorm=False, use_comoving_volume=False)
-    assert catalog.comoving_volume(1.0) > 0
+    assert catalog.comoving_volume_element(1.0) > 0
 
 
-def test_comoving_volume_monotonic() -> None:
+def test_comoving_volume_element_monotonic() -> None:
     catalog = GalaxyCatalog(use_truncnorm=False, use_comoving_volume=False)
-    v05 = catalog.comoving_volume(0.5)
-    v10 = catalog.comoving_volume(1.0)
-    v20 = catalog.comoving_volume(2.0)
+    v05 = catalog.comoving_volume_element(0.5)
+    v10 = catalog.comoving_volume_element(1.0)
+    v20 = catalog.comoving_volume_element(2.0)
     assert v05 < v10 < v20
 
 
@@ -483,22 +484,22 @@ def test_posterior_length_matches_detections() -> None:
     assert len(posterior) == len(detections)
 
 
-# ── Known-bug regression: comoving_volume ignores cosmology ───────────────────
+# ── Known-bug regression: comoving_volume_element ignores cosmology ───────────
 
 
-def test_comoving_volume_varies_with_hubble_constant() -> None:
-    """comoving_volume should return different values for different H₀.
+def test_comoving_volume_element_varies_with_hubble_constant() -> None:
+    """comoving_volume_element should return different values for different H₀.
 
-    The comoving volume element dV/dz ∝ (c/H₀)³, so at fixed redshift a higher H₀ should
-    give a smaller comoving volume.
+    The comoving volume element dV_c/dz ∝ (c/H₀)³, so at fixed redshift a higher H₀ should
+    give a smaller comoving volume element.
     """
     catalog_low_h = GalaxyCatalog(use_truncnorm=False, use_comoving_volume=False, h0=0.70)
     catalog_high_h = GalaxyCatalog(use_truncnorm=False, use_comoving_volume=False, h0=0.73)
 
-    v_low_h = catalog_low_h.comoving_volume(0.5)
-    v_high_h = catalog_high_h.comoving_volume(0.5)
+    v_low_h = catalog_low_h.comoving_volume_element(0.5)
+    v_high_h = catalog_high_h.comoving_volume_element(0.5)
 
-    # comoving volume ∝ (c/H₀)³ → higher H₀ means smaller volume
+    # comoving volume element ∝ (c/H₀)³ → higher H₀ means smaller value
     assert v_low_h > v_high_h, f"Expected v(h=0.70)={v_low_h} > v(h=0.73)={v_high_h}"
 
 
@@ -537,28 +538,93 @@ def test_dist_array_at_zero_redshift() -> None:
     assert abs(float(result[0])) < 1e-10
 
 
-# ── comoving_volume spline accuracy ───────────────────────────────────────────
+# ── comoving_volume_element spline accuracy ──────────────────────────────────
 
 
-def test_comoving_volume_spline_matches_integration() -> None:
-    """GalaxyCatalog.comoving_volume (spline) must agree with direct quadrature to 0.1%."""
+def test_comoving_volume_element_spline_matches_integration() -> None:
+    """GalaxyCatalog.comoving_volume_element (spline) must agree with direct quadrature to 0.1%."""
     catalog = GalaxyCatalog(use_truncnorm=False, use_comoving_volume=False)
     test_redshifts = np.linspace(0.01, 0.55, 20)
     for z in test_redshifts:
         zs = np.linspace(0.0, z, 500)
+        e_z_val = np.sqrt(OMEGA_M * (1 + z) ** 3 + OMEGA_LAMBDA)
         integrand = 1.0 / np.sqrt(OMEGA_M * (1 + zs) ** 3 + OMEGA_LAMBDA)
         integral = np.trapezoid(integrand, zs)
-        expected = float(4 * np.pi * (SPEED_OF_LIGHT / TRUE_HUBBLE_CONSTANT) ** 3 * integral**2)
-        actual = catalog.comoving_volume(z)
+        # Eq. 27 in Hogg (1999), arXiv:astro-ph/9905116
+        expected = float(
+            4 * np.pi * (SPEED_OF_LIGHT / TRUE_HUBBLE_CONSTANT) ** 3 * integral**2 / e_z_val
+        )
+        actual = catalog.comoving_volume_element(z)
         assert abs(actual - expected) / expected < 1e-3, (
             f"Spline deviates >0.1% at z={z}: spline={actual:.6g}, quad={expected:.6g}"
         )
 
 
-def test_comoving_volume_is_zero_at_z_zero() -> None:
-    """Comoving volume at z=0 should be essentially 0."""
+def test_comoving_volume_element_is_zero_at_z_zero() -> None:
+    """Comoving volume element dV_c/dz at z=0 should be essentially 0."""
     catalog = GalaxyCatalog()
-    assert abs(catalog.comoving_volume(0.0)) < 1e-10
+    assert abs(catalog.comoving_volume_element(0.0)) < 1e-10
+
+
+# ── likelihood vectorized path ────────────────────────────────────────────────
+
+
+# ── Mass distribution sigma regression (TEST-2) ─────────────────────────────
+
+
+@pytest.mark.xfail(
+    strict=True, reason="PHYS-2: setup_galaxy_mass_distribution uses hardcoded 10**5.5"
+)
+def test_setup_galaxy_mass_distribution_sigma_scales_with_mass() -> None:
+    """setup_galaxy_mass_distribution sigma must scale with each galaxy's mass, not 10**5.5."""
+    catalog = GalaxyCatalog(use_truncnorm=False, use_comoving_volume=False)
+    g1 = Galaxy(redshift=0.1, central_black_hole_mass=1e4, right_ascension=1.0, declination=0.5)
+    g2 = Galaxy(redshift=0.2, central_black_hole_mass=1e7, right_ascension=2.0, declination=1.0)
+    catalog.catalog.extend([g1, g2])
+    catalog.setup_galaxy_mass_distribution()
+
+    assert isinstance(catalog.galaxy_mass_distribution[0], NormalDist)
+    assert isinstance(catalog.galaxy_mass_distribution[1], NormalDist)
+    assert (
+        abs(
+            catalog.galaxy_mass_distribution[0].stdev
+            - FRACTIONAL_BLACK_HOLE_MASS_CATALOG_ERROR * 1e4
+        )
+        < 1e-6
+    )
+    assert (
+        abs(
+            catalog.galaxy_mass_distribution[1].stdev
+            - FRACTIONAL_BLACK_HOLE_MASS_CATALOG_ERROR * 1e7
+        )
+        < 1e-1
+    )
+
+
+def test_append_galaxy_mass_distribution_sigma_scales_with_mass() -> None:
+    """append_galaxy_to_galaxy_mass_distribution sigma must scale with each galaxy's mass."""
+    catalog = GalaxyCatalog(use_truncnorm=False, use_comoving_volume=False)
+    g1 = Galaxy(redshift=0.1, central_black_hole_mass=1e4, right_ascension=1.0, declination=0.5)
+    g2 = Galaxy(redshift=0.2, central_black_hole_mass=1e7, right_ascension=2.0, declination=1.0)
+    catalog.append_galaxy_to_galaxy_mass_distribution(g1)
+    catalog.append_galaxy_to_galaxy_mass_distribution(g2)
+
+    assert isinstance(catalog.galaxy_mass_distribution[0], NormalDist)
+    assert isinstance(catalog.galaxy_mass_distribution[1], NormalDist)
+    assert (
+        abs(
+            catalog.galaxy_mass_distribution[0].stdev
+            - FRACTIONAL_BLACK_HOLE_MASS_CATALOG_ERROR * 1e4
+        )
+        < 1e-6
+    )
+    assert (
+        abs(
+            catalog.galaxy_mass_distribution[1].stdev
+            - FRACTIONAL_BLACK_HOLE_MASS_CATALOG_ERROR * 1e7
+        )
+        < 1e-1
+    )
 
 
 # ── likelihood vectorized path ────────────────────────────────────────────────

@@ -104,41 +104,44 @@ class GalaxyCatalog:
         self.catalog = []
         self.galaxy_distribution = []
         self.galaxy_mass_distribution = []
-        self._comoving_volume_spline = self._build_comoving_volume_spline(h0)
+        self._comoving_volume_element_spline = self._build_comoving_volume_element_spline(h0)
 
     @staticmethod
-    def _build_comoving_volume_spline(h0: float = TRUE_HUBBLE_CONSTANT) -> CubicSpline:
-        """Precompute the comoving volume on a fine redshift grid and return a spline.
+    def _build_comoving_volume_element_spline(h0: float = TRUE_HUBBLE_CONSTANT) -> CubicSpline:
+        """Precompute the comoving volume element dV_c/dz on a fine redshift grid.
 
-        The integral ∫₀ᶻ dz'/E(z') is computed once via cumulative_trapezoid so subsequent
-        calls to comoving_volume() are O(log n) interpolation instead of O(100) integration.
+        The integral I(z) = ∫₀ᶻ dz'/E(z') is computed once via cumulative_trapezoid so
+        subsequent calls to comoving_volume_element() are O(log n) spline interpolation.
         """
         _z_grid = np.linspace(0, 10.0, 4000)
-        integrand = 1.0 / np.sqrt(OMEGA_M * (1 + _z_grid) ** 3 + OMEGA_LAMBDA)
+        e_z = np.sqrt(OMEGA_M * (1 + _z_grid) ** 3 + OMEGA_LAMBDA)
+        integrand = 1.0 / e_z
         cumulative_integral = np.concatenate([[0.0], cumulative_trapezoid(integrand, _z_grid)])
-        cv_grid = 4 * np.pi * (SPEED_OF_LIGHT / h0) ** 3 * cumulative_integral**2
+        # Eq. 27 in Hogg (1999), arXiv:astro-ph/9905116
+        cv_grid = 4 * np.pi * (SPEED_OF_LIGHT / h0) ** 3 * cumulative_integral**2 / e_z
         return CubicSpline(_z_grid, cv_grid)
 
-    def comoving_volume(self, redshift: float) -> float:
-        return float(self._comoving_volume_spline(redshift))
+    def comoving_volume_element(self, redshift: float) -> float:
+        """Comoving volume element dV_c/dz at the given redshift."""
+        return float(self._comoving_volume_element_spline(redshift))
 
-    def log_comoving_volume(self, redshift: float) -> float:
+    def log_comoving_volume_element(self, redshift: float) -> float:
         try:
             redshift = redshift[0]  # type: ignore[index]
         except TypeError:
             pass
         if redshift < self.redshift_lower_limit or redshift > self.redshift_upper_limit:
             return float(-np.inf)
-        return float(np.log(self.comoving_volume(redshift)))
+        return float(np.log(self.comoving_volume_element(redshift)))
 
-    def get_samples_from_comoving_volume(self, number_of_samples: int) -> np.ndarray:
+    def get_samples_from_comoving_volume_element(self, number_of_samples: int) -> np.ndarray:
         # use emcee to sample the comoving volume distribution
         ndim = 1
         nwalkers = 5
         p0 = np.random.uniform(
             self.redshift_lower_limit, self.redshift_upper_limit, (nwalkers, ndim)
         )
-        sampler = emcee.EnsembleSampler(nwalkers, ndim, self.log_comoving_volume)
+        sampler = emcee.EnsembleSampler(nwalkers, ndim, self.log_comoving_volume_element)
         # burn-in
         p0, _, _ = sampler.run_mcmc(p0, 1000)
         sampler.reset()
@@ -153,7 +156,7 @@ class GalaxyCatalog:
             f"Creating random galaxy catalog with {number_of_galaxies} galaxies in the redshift range ({self.redshift_lower_limit}, {self.redshift_upper_limit}) / ({dist(self.redshift_lower_limit)}, {dist(self.redshift_upper_limit)}) Gpc."
         )
         if self._use_comoving_volume:
-            redshift_samples = self.get_samples_from_comoving_volume(number_of_galaxies)
+            redshift_samples = self.get_samples_from_comoving_volume_element(number_of_galaxies)
             assert len(redshift_samples) == number_of_galaxies
             for redshift in redshift_samples:
                 self.catalog.append(
@@ -259,7 +262,7 @@ class GalaxyCatalog:
         p_background: float = 1.0
 
         if self._use_comoving_volume:
-            p_background = self.comoving_volume(redshift)
+            p_background = self.comoving_volume_element(redshift)
 
         normal_dist = NormalDist(mu=redshift, sigma=redshift_uncertainty)
 
