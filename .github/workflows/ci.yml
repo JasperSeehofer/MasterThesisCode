@@ -40,6 +40,45 @@ jobs:
       - name: pip-audit (security)
         run: uv run pip-audit
 
+  integration:
+    runs-on: ubuntu-latest
+    needs: check
+    permissions:
+      pages: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Set up Python
+        run: uv python install
+
+      - name: Install dependencies
+        run: uv sync --extra cpu --extra dev
+
+      - name: Run integration tests
+        run: uv run pytest -m slow --save-test-plots -v
+
+      - name: Upload test plots artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-test-plots
+          path: test-artifacts/
+          if-no-files-found: ignore
+
+      - name: Upload Pages artifact
+        if: always()
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: test-artifacts/
+
+      - name: Deploy to GitHub Pages
+        if: always()
+        uses: actions/deploy-pages@v4
+
   docs:
     runs-on: ubuntu-latest
     steps:

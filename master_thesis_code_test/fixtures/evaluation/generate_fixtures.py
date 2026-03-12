@@ -140,7 +140,11 @@ def _make_undetected_row(rng: np.random.Generator, index: int) -> dict:
 
 
 def generate_fixtures(output_dir: Path | None = None) -> None:
-    """Generate and write the three synthetic fixture CSVs."""
+    """Generate and write the synthetic fixture CSVs.
+
+    Produces the full 5-detection set plus 1-detection and 3-detection
+    subsets used by the posterior-narrowing integration test.
+    """
     if output_dir is None:
         output_dir = Path(__file__).parent
 
@@ -151,6 +155,12 @@ def generate_fixtures(output_dir: Path | None = None) -> None:
     df_detected.to_csv(output_dir / "synthetic_cramer_rao_bounds.csv", index=False)
     df_detected.to_csv(output_dir / "synthetic_prepared_cramer_rao_bounds.csv", index=False)
 
+    # Write 1-detection and 3-detection subsets
+    for n in (1, 3):
+        subset = df_detected.iloc[:n]
+        subset.to_csv(output_dir / f"synthetic_cramer_rao_bounds_{n}det.csv", index=False)
+        subset.to_csv(output_dir / f"synthetic_prepared_cramer_rao_bounds_{n}det.csv", index=False)
+
     # Undetected events
     rng = np.random.default_rng(seed=42)
     undetected_rows = [_make_undetected_row(rng, i) for i in range(20)]
@@ -159,6 +169,7 @@ def generate_fixtures(output_dir: Path | None = None) -> None:
 
     print(f"Fixtures written to {output_dir}")
     print(f"  detected:   {len(df_detected)} rows x {len(df_detected.columns)} cols")
+    print("  subsets:    1det, 3det")
     print(f"  undetected: {len(df_undetected)} rows x {len(df_undetected.columns)} cols")
 
 

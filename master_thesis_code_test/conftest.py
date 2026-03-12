@@ -1,4 +1,5 @@
 import types
+from pathlib import Path
 
 import numpy as np
 import pytest
@@ -11,6 +12,34 @@ try:
     _CUPY_AVAILABLE = True
 except ImportError:
     _CUPY_AVAILABLE = False
+
+_REPO_ROOT = Path(__file__).resolve().parent.parent
+
+
+def pytest_addoption(parser: pytest.Parser) -> None:
+    parser.addoption(
+        "--save-test-plots",
+        action="store_true",
+        default=False,
+        help="Save integration test plots to test-artifacts/ instead of a tmp dir",
+    )
+
+
+@pytest.fixture(scope="session")
+def plot_output_dir(
+    request: pytest.FixtureRequest,
+    tmp_path_factory: pytest.TempPathFactory,
+) -> Path:
+    """Directory where integration tests write plot PNGs.
+
+    With ``--save-test-plots`` the plots land in ``<repo>/test-artifacts/evaluation/``
+    so CI can publish them. Otherwise a throwaway tmpdir is used.
+    """
+    if request.config.getoption("--save-test-plots"):
+        out = _REPO_ROOT / "test-artifacts" / "evaluation"
+        out.mkdir(parents=True, exist_ok=True)
+        return out
+    return tmp_path_factory.mktemp("plots")
 
 
 @pytest.fixture(autouse=True, scope="session")

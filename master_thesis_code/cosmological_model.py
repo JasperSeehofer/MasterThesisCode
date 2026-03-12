@@ -713,14 +713,20 @@ class BayesianStatistics:
     Omega_DE: float
     w_0: float
     w_a: float
-    h_values: list[float] = []
-    h_values_with_bh_mass: list[float] = []
-    galaxy_weights: dict[str, dict[str, list[float]]] = {}
-    additional_galaxies_without_bh_mass: dict[str, dict[str, list[float]]] = {}
-    posterior_data: dict[int, list[float]] = {}
-    posterior_data_with_bh_mass: dict[int | str, Any] = {}
+    h_values: list[float]
+    h_values_with_bh_mass: list[float]
+    galaxy_weights: dict[str, dict[str, list[float]]]
+    additional_galaxies_without_bh_mass: dict[str, dict[str, list[float]]]
+    posterior_data: dict[int, list[float]]
+    posterior_data_with_bh_mass: dict[int | str, Any]
 
     def __init__(self) -> None:
+        self.h_values = []
+        self.h_values_with_bh_mass = []
+        self.galaxy_weights = {}
+        self.additional_galaxies_without_bh_mass = {}
+        self.posterior_data = {}
+        self.posterior_data_with_bh_mass = {}
         self.cramer_rao_bounds = pd.read_csv(PREPARED_CRAMER_RAO_BOUNDS_PATH)
         self.true_cramer_rao_bounds = pd.read_csv(CRAMER_RAO_BOUNDS_OUTPUT_PATH)
         self.undetected_events = pd.read_csv(UNDETECTED_EVENTS_OUTPUT_PATH)
