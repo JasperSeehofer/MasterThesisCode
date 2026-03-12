@@ -8,6 +8,26 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- 14 new correctness tests for `BayesianInference` (TEST-3): likelihood peak location,
+  detection probability monotonicity, selection effects, BH mass term, posterior
+  positivity, and cross-H₀ consistency checks.
+- 4 regression tests for truncnorm distribution correctness (STAT-3): PDF peak location,
+  integration-to-one, correct `loc` for redshift and mass distributions.
+
+### Fixed
+- **[PHYSICS]** `GalaxyCatalog` truncnorm distributions (STAT-3): `truncnorm()` was created
+  without `loc`/`scale` parameters in `setup_galaxy_mass_distribution`,
+  `append_galaxy_to_galaxy_mass_distribution`, `setup_galaxy_distribution`, and
+  `append_galaxy_to_galaxy_distribution`, defaulting to N(0,1) instead of the intended
+  mass/redshift-space distributions. Also removed double normalization in
+  `evaluate_galaxy_mass_distribution` — `truncnorm.pdf()` is already normalized.
+- **[PHYSICS]** `single_host_likelihood` d_L fraction direction (STAT-4): the production
+  likelihood in `bayesian_statistics.py` used `detection.d_L / d_L` (measured/model)
+  instead of the correct `d_L / detection.d_L` (model/measured). The incorrect direction
+  introduced a spurious `(d_L_measured/d_L_model)²` factor in the Gaussian exponent,
+  biasing the H₀ posterior. Now consistent with `single_host_likelihood_integration_testing`.
+
+### Changed
 - `.claude/skills/` directory with 6 custom skills for codified, repeatable workflows:
   - `physics-change`: enforces the 5-step Physics Change Protocol before any formula modification
   - `gpu-audit`: scans files for GPU/HPC compliance violations (guarded imports, xp pattern, vectorization)

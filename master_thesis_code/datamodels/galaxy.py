@@ -221,6 +221,8 @@ class GalaxyCatalog:
                 truncnorm(
                     a=(self.redshift_lower_limit - galaxy.redshift) / galaxy.redshift_uncertainty,
                     b=(self.redshift_upper_limit - galaxy.redshift) / galaxy.redshift_uncertainty,
+                    loc=galaxy.redshift,
+                    scale=galaxy.redshift_uncertainty,
                 )
                 for galaxy in self.catalog
             ]
@@ -241,6 +243,8 @@ class GalaxyCatalog:
                     / galaxy.central_black_hole_mass_uncertainty,
                     b=(self.upper_mass_limit - galaxy.central_black_hole_mass)
                     / galaxy.central_black_hole_mass_uncertainty,
+                    loc=galaxy.central_black_hole_mass,
+                    scale=galaxy.central_black_hole_mass_uncertainty,
                 )
             )
 
@@ -254,6 +258,8 @@ class GalaxyCatalog:
                 truncnorm(
                     a=(self.redshift_lower_limit - galaxy.redshift) / galaxy.redshift_uncertainty,
                     b=(self.redshift_upper_limit - galaxy.redshift) / galaxy.redshift_uncertainty,
+                    loc=galaxy.redshift,
+                    scale=galaxy.redshift_uncertainty,
                 )
             )
 
@@ -304,6 +310,8 @@ class GalaxyCatalog:
                     / galaxy.central_black_hole_mass_uncertainty,
                     b=(self.upper_mass_limit - galaxy.central_black_hole_mass)
                     / galaxy.central_black_hole_mass_uncertainty,
+                    loc=galaxy.central_black_hole_mass,
+                    scale=galaxy.central_black_hole_mass_uncertainty,
                 )
                 for galaxy in self.catalog
             ]
@@ -312,16 +320,9 @@ class GalaxyCatalog:
         # use truncated normal distribution
 
         if self._use_truncnorm:
+            # scipy.stats.truncnorm.pdf() is already normalized over its support
             return np.array(
-                [
-                    distribution.pdf(mass)
-                    / distribution.std()  # type: ignore[union-attr]
-                    / (
-                        distribution.cdf(self.upper_mass_limit)
-                        - distribution.cdf(self.lower_mass_limit)
-                    )
-                    for distribution in self.galaxy_mass_distribution
-                ]
+                [distribution.pdf(mass) for distribution in self.galaxy_mass_distribution]
             ) / len(self.catalog)
 
         # without truncnorm

@@ -7,11 +7,11 @@
 2. TEST-1 + TEST-2 — Add regression guards before fixing bugs
 3. ARCH-1 — Extract BayesianStatistics (makes all subsequent work cleaner)
 
-### Phase 2: Critical Physics Fixes (after Phase 1)
+### Phase 2: Critical Physics Fixes (after Phase 1) ✅
 4. ~~PHYS-1 — Comoving volume element formula~~ (RESOLVED)
-5. PHYS-2 — Mass distribution sigma bug
-6. STAT-3 — Mass distribution normalization review
-7. STAT-4 — d_L fraction direction audit
+5. ~~PHYS-2 — Mass distribution sigma bug~~ (RESOLVED)
+6. ~~STAT-3 — Mass distribution normalization review~~ (RESOLVED)
+7. ~~STAT-4 — d_L fraction direction audit~~ (RESOLVED)
 
 ### Phase 3: Testing Expansion (parallel with Phase 2)
 8. TEST-3 — BayesianInference correctness tests
@@ -118,18 +118,20 @@ reference, dimensional analysis, limiting case).
       emcee authors recommend at least 10 walkers. Add autocorrelation time check
       (`emcee.autocorr.integrated_time`) to verify convergence.
 
-- [ ] **STAT-3 [P1, M]** Review `evaluate_galaxy_mass_distribution` normalization in `galaxy.py:310-321`
-      The truncnorm branch divides by `distribution.std()` AND by the CDF range, but
-      `scipy.stats.truncnorm.pdf()` is already correctly normalized over the truncation range.
-      This double normalization is non-standard and likely over-normalizes.
-      Needs careful derivation to confirm the correct normalization.
+- [x] **STAT-3 [P1, M]** Review `evaluate_galaxy_mass_distribution` normalization in `galaxy.py:310-321`
+      Two bugs found and fixed: (1) `truncnorm()` missing `loc`/`scale` params in
+      `setup_galaxy_mass_distribution`, `append_galaxy_to_galaxy_mass_distribution`,
+      `setup_galaxy_distribution`, and `append_galaxy_to_galaxy_distribution` — defaulted
+      to N(0,1) instead of mass/redshift-space distributions. (2) `evaluate_galaxy_mass_distribution`
+      divided by `std()` and CDF range, but `truncnorm.pdf()` is already normalized — removed
+      double normalization. 4 regression tests added.
 
-- [ ] **STAT-4 [P1, M]** Audit d_L fraction direction in `cosmological_model.py`
-      `single_host_likelihood` (line ~1190): `detection.d_L / d_L`
-      `single_host_likelihood_integration_testing` (line ~1326): `d_L / detection.d_L`
-      These compute `luminosity_distance_fraction` in opposite directions. The fraction
-      feeds into a multivariate normal PDF, so the direction matters.
-      Determine which is correct and add a regression test.
+- [x] **STAT-4 [P1, M]** Audit d_L fraction direction in `bayesian_statistics.py`
+      `single_host_likelihood` (lines 560, 607) used `detection.d_L / d_L` (measured/model).
+      Correct direction is `d_L / detection.d_L` (model/measured), matching the covariance
+      structure `σ²/d_L_measured²` and the `single_host_likelihood_integration_testing` function.
+      The old formula introduced a spurious `(d_L_measured/d_L_model)²` factor in the exponent.
+      Fixed both occurrences.
 
 - [ ] **STAT-5 [P1, S]** Document `Model1CrossCheck` polynomial coefficients in `cosmological_model.py:91-147`
       5 sets of 9th-degree polynomial fits for dN/dz with no reference citation.
@@ -151,7 +153,7 @@ reference, dimensional analysis, limiting case).
 
 ## Workstream 3: Testing and Verification
 
-Current: 133 tests, 36% coverage (gate 25%), target 50%.
+Current: 149 tests, 37% coverage (gate 25%), target 50%.
 
 - [x] **TEST-1 [P0, S]** Regression test for comoving volume element
       `test_comoving_volume_element_spline_matches_integration` now asserts the correct
@@ -162,11 +164,11 @@ Current: 133 tests, 36% coverage (gate 25%), target 50%.
       galaxy mass (not with hardcoded `10**5.5`). This test should FAIL before PHYS-2.
       **Must precede PHYS-2.**
 
-- [ ] **TEST-3 [P0, M]** Correctness tests for `BayesianInference.likelihood`
-      Currently only a benchmark exists (`test_benchmark_likelihood`).
-      Need: likelihood peaks near true redshift (inject known source, verify argmax),
-      posterior peaks near true H₀ with perfect measurements,
-      monotonicity (closer sources → higher likelihood for correct H₀).
+- [x] **TEST-3 [P0, M]** Correctness tests for `BayesianInference.likelihood`
+      Added 10 tests: detection probability monotonicity, gw_likelihood peaks at true z,
+      gw_likelihood symmetry, likelihood peaks near TRUE_HUBBLE_CONSTANT, all-positive
+      across H₀ grid, selection effects changes likelihood, BH mass changes likelihood,
+      posterior all positive, closer source → higher likelihood, wrong H₀ → lower likelihood.
 
 - [ ] **TEST-4 [P1, L]** Tests for `cosmological_model.py` core classes
       `Model1CrossCheck`: `sample_emri_events()` returns samples within declared bounds,

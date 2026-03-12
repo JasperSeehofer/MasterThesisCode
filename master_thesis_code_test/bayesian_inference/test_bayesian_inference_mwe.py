@@ -624,6 +624,60 @@ def test_append_galaxy_mass_distribution_sigma_scales_with_mass() -> None:
     )
 
 
+# ── STAT-3: truncnorm mass distribution correctness ─────────────────────────
+
+
+def test_truncnorm_mass_distribution_pdf_peaks_at_galaxy_mass() -> None:
+    """With use_truncnorm=True, mass distribution PDF should peak near the galaxy's true mass."""
+    catalog = GalaxyCatalog(use_truncnorm=True, use_comoving_volume=False)
+    g = Galaxy(redshift=0.1, central_black_hole_mass=1e5, right_ascension=1.0, declination=0.5)
+    catalog.catalog.append(g)
+    catalog.setup_galaxy_mass_distribution()
+
+    # PDF at the galaxy's true mass should be much larger than at distant masses
+    pdf_at_true = catalog.evaluate_galaxy_mass_distribution(1e5)
+    pdf_at_far = catalog.evaluate_galaxy_mass_distribution(1e6)
+    assert pdf_at_true[0] > 0, f"PDF at true mass should be positive, got {pdf_at_true[0]}"
+    assert pdf_at_true[0] > pdf_at_far[0], (
+        f"PDF at true mass ({pdf_at_true[0]}) should exceed PDF at 10× mass ({pdf_at_far[0]})"
+    )
+
+
+def test_truncnorm_mass_distribution_integrates_to_one() -> None:
+    """The truncnorm mass PDF (for a single galaxy) should integrate to ~1/N over the support."""
+    catalog = GalaxyCatalog(use_truncnorm=True, use_comoving_volume=False)
+    g = Galaxy(redshift=0.1, central_black_hole_mass=1e5, right_ascension=1.0, declination=0.5)
+    catalog.catalog.append(g)
+    catalog.setup_galaxy_mass_distribution()
+
+    masses = np.linspace(catalog.lower_mass_limit, catalog.upper_mass_limit, 5000)
+    pdfs = np.array([catalog.evaluate_galaxy_mass_distribution(m)[0] for m in masses])
+    integral = np.trapezoid(pdfs, masses)
+    # With 1 galaxy, evaluate divides by len(catalog)=1, so integral ≈ 1.0
+    assert abs(integral - 1.0) < 0.05, f"Truncnorm PDF integral = {integral}, expected ~1.0"
+
+
+def test_truncnorm_redshift_distribution_has_correct_loc() -> None:
+    """With use_truncnorm=True, the redshift distribution should be centered on the galaxy's z."""
+    catalog = GalaxyCatalog(use_truncnorm=True, use_comoving_volume=False)
+    g = Galaxy(redshift=0.2, central_black_hole_mass=1e5, right_ascension=1.0, declination=0.5)
+    catalog.catalog.append(g)
+    catalog.setup_galaxy_distribution()
+    dist_obj = catalog.galaxy_distribution[0]
+    mean = dist_obj.mean()  # type: ignore[operator]
+    assert abs(mean - 0.2) < 0.01, f"Truncnorm mean={mean}, expected ~0.2"
+
+
+def test_append_galaxy_truncnorm_mass_has_correct_loc() -> None:
+    """append_galaxy_to_galaxy_mass_distribution with truncnorm should center on galaxy mass."""
+    catalog = GalaxyCatalog(use_truncnorm=True, use_comoving_volume=False)
+    g = Galaxy(redshift=0.1, central_black_hole_mass=5e5, right_ascension=1.0, declination=0.5)
+    catalog.append_galaxy_to_galaxy_mass_distribution(g)
+    dist_obj = catalog.galaxy_mass_distribution[0]
+    mean = dist_obj.mean()  # type: ignore[operator]
+    assert abs(mean - 5e5) < 1e4, f"Truncnorm mean={mean}, expected ~5e5"
+
+
 # ── likelihood vectorized path ────────────────────────────────────────────────
 
 
@@ -642,3 +696,229 @@ def test_likelihood_output_is_finite_and_positive() -> None:
     assert isinstance(result, float)
     assert np.isfinite(result)
     assert result > 0
+
+
+# ── TEST-3: BayesianInference correctness tests ─────────────────────────────
+
+
+def test_gw_detection_probability_monotonically_decreasing() -> None:
+    """Detection probability must decrease with increasing redshift."""
+    bi = BayesianInference(GalaxyCatalog(), [])
+    redshifts = [0.01, 0.05, 0.1, 0.2, 0.5, 1.0]
+    probs = [bi.gw_detection_probability(z, TRUE_HUBBLE_CONSTANT) for z in redshifts]
+    for i in range(len(probs) - 1):
+        assert probs[i] >= probs[i + 1], (
+            f"P_det(z={redshifts[i]})={probs[i]} < P_det(z={redshifts[i + 1]})={probs[i + 1]}"
+        )
+
+
+def test_gw_likelihood_peaks_at_true_redshift() -> None:
+    """For a noiseless detection, gw_likelihood should peak at the true redshift."""
+    g = Galaxy(redshift=0.1, central_black_hole_mass=1e5, right_ascension=1.0, declination=0.5)
+    detection = EMRIDetection.from_host_galaxy(g, use_measurement_noise=False)
+    bi = BayesianInference(GalaxyCatalog(), [])
+
+    z_grid = np.linspace(0.02, 0.3, 100)
+    likelihoods = [
+        bi.gw_likelihood(detection.measured_luminosity_distance, z, TRUE_HUBBLE_CONSTANT)
+        for z in z_grid
+    ]
+    peak_z = z_grid[np.argmax(likelihoods)]
+    assert abs(peak_z - 0.1) < 0.02, f"Likelihood peaked at z={peak_z}, expected ~0.1"
+
+
+def test_gw_likelihood_symmetric_around_peak() -> None:
+    """GW likelihood (Gaussian) should be approximately symmetric around the true redshift."""
+    g = Galaxy(redshift=0.2, central_black_hole_mass=1e5, right_ascension=1.0, declination=0.5)
+    detection = EMRIDetection.from_host_galaxy(g, use_measurement_noise=False)
+    bi = BayesianInference(GalaxyCatalog(), [])
+
+    lik_low = bi.gw_likelihood(detection.measured_luminosity_distance, 0.18, TRUE_HUBBLE_CONSTANT)
+    lik_high = bi.gw_likelihood(detection.measured_luminosity_distance, 0.22, TRUE_HUBBLE_CONSTANT)
+    # Not exactly symmetric because d_L(z) is nonlinear, but both should be comparable
+    assert lik_low > 0 and lik_high > 0
+    ratio = lik_low / lik_high if lik_high > 0 else float("inf")
+    assert 0.1 < ratio < 10, f"Likelihood ratio {ratio} too asymmetric"
+
+
+def test_likelihood_peaks_near_true_hubble_constant() -> None:
+    """With a noiseless detection from a catalog galaxy, likelihood should peak near TRUE_HUBBLE_CONSTANT.
+
+    EMRIDetection.from_host_galaxy uses TRUE_HUBBLE_CONSTANT=0.7 for the fiducial
+    distance, so the marginalized likelihood should peak there.
+    """
+    catalog = GalaxyCatalog(use_truncnorm=False, use_comoving_volume=False)
+    g = Galaxy(redshift=0.15, central_black_hole_mass=1e5, right_ascension=1.0, declination=0.5)
+    catalog.catalog.append(g)
+    catalog.setup_galaxy_distribution()
+    catalog.setup_galaxy_mass_distribution()
+    detection = EMRIDetection.from_host_galaxy(g, use_measurement_noise=False)
+    bi = BayesianInference(catalog, [detection])
+
+    h_grid = np.linspace(0.60, 0.80, 40)
+    likelihoods = [
+        bi.likelihood(
+            hubble_constant=h,
+            measured_luminosity_distance=detection.measured_luminosity_distance,
+            measured_redshifted_mass=detection.measured_redshifted_mass,
+            detection_index=0,
+        )
+        for h in h_grid
+    ]
+    peak_h = h_grid[np.argmax(likelihoods)]
+    assert abs(peak_h - TRUE_HUBBLE_CONSTANT) < 0.05, (
+        f"Likelihood peaked at h={peak_h}, expected ~{TRUE_HUBBLE_CONSTANT}"
+    )
+
+
+def test_likelihood_all_positive_across_h_grid() -> None:
+    """Likelihood must be positive for all physically reasonable H₀ values."""
+    catalog = GalaxyCatalog(use_truncnorm=False, use_comoving_volume=False)
+    catalog.create_random_catalog(5)
+    detection = EMRIDetection.from_host_galaxy(catalog.catalog[0], use_measurement_noise=False)
+    bi = BayesianInference(catalog, [detection])
+
+    h_grid = np.linspace(0.60, 0.86, 20)
+    for h in h_grid:
+        lik = bi.likelihood(
+            hubble_constant=h,
+            measured_luminosity_distance=detection.measured_luminosity_distance,
+            measured_redshifted_mass=detection.measured_redshifted_mass,
+            detection_index=0,
+        )
+        assert lik > 0, f"Likelihood non-positive at h={h}: {lik}"
+        assert np.isfinite(lik), f"Likelihood not finite at h={h}: {lik}"
+
+
+def test_selection_effects_correction_changes_likelihood() -> None:
+    """Likelihood with vs without selection effects correction should differ."""
+    catalog = GalaxyCatalog(use_truncnorm=False, use_comoving_volume=False)
+    catalog.create_random_catalog(5)
+    detection = EMRIDetection.from_host_galaxy(catalog.catalog[0], use_measurement_noise=False)
+
+    bi_with = BayesianInference(catalog, [detection], use_selection_effects_correction=True)
+    bi_without = BayesianInference(catalog, [detection], use_selection_effects_correction=False)
+
+    lik_with = bi_with.likelihood(
+        hubble_constant=TRUE_HUBBLE_CONSTANT,
+        measured_luminosity_distance=detection.measured_luminosity_distance,
+        measured_redshifted_mass=detection.measured_redshifted_mass,
+        detection_index=0,
+    )
+    lik_without = bi_without.likelihood(
+        hubble_constant=TRUE_HUBBLE_CONSTANT,
+        measured_luminosity_distance=detection.measured_luminosity_distance,
+        measured_redshifted_mass=detection.measured_redshifted_mass,
+        detection_index=0,
+    )
+
+    assert lik_with > 0 and lik_without > 0
+    assert lik_with != lik_without, "Selection effects correction should change the likelihood"
+
+
+def test_bh_mass_changes_likelihood() -> None:
+    """Including BH mass information should change the marginalized likelihood."""
+    catalog = GalaxyCatalog(use_truncnorm=False, use_comoving_volume=False)
+    catalog.create_random_catalog(5)
+    detection = EMRIDetection.from_host_galaxy(catalog.catalog[0], use_measurement_noise=False)
+
+    bi = BayesianInference(catalog, [detection], use_bh_mass=False)
+    lik_no_mass = bi.likelihood(
+        hubble_constant=TRUE_HUBBLE_CONSTANT,
+        measured_luminosity_distance=detection.measured_luminosity_distance,
+        measured_redshifted_mass=detection.measured_redshifted_mass,
+        detection_index=0,
+    )
+    bi.use_bh_mass = True
+    lik_with_mass = bi.likelihood(
+        hubble_constant=TRUE_HUBBLE_CONSTANT,
+        measured_luminosity_distance=detection.measured_luminosity_distance,
+        measured_redshifted_mass=detection.measured_redshifted_mass,
+        detection_index=0,
+    )
+
+    assert lik_no_mass > 0 and np.isfinite(lik_no_mass)
+    assert lik_with_mass > 0 and np.isfinite(lik_with_mass)
+    assert lik_no_mass != lik_with_mass, "BH mass should change the likelihood"
+
+
+def test_posterior_all_elements_positive() -> None:
+    """Every element returned by posterior() must be positive and finite."""
+    catalog = GalaxyCatalog(use_truncnorm=False, use_comoving_volume=False)
+    catalog.create_random_catalog(10)
+    detections = [
+        EMRIDetection.from_host_galaxy(g, use_measurement_noise=False) for g in catalog.catalog[:3]
+    ]
+    bi = BayesianInference(catalog, detections)
+    posterior = bi.posterior(TRUE_HUBBLE_CONSTANT)
+    assert len(posterior) == 3
+    for i, val in enumerate(posterior):
+        assert val > 0, f"posterior[{i}] = {val}, expected > 0"
+        assert np.isfinite(val), f"posterior[{i}] = {val}, not finite"
+
+
+def test_closer_source_higher_likelihood_at_true_h() -> None:
+    """A closer source should yield a higher likelihood at the true H₀.
+
+    Closer sources have smaller measurement uncertainty (σ = f·d_L), so the
+    Gaussian peak is sharper and higher.
+    """
+    catalog = GalaxyCatalog(use_truncnorm=False, use_comoving_volume=False)
+    g_close = Galaxy(
+        redshift=0.05, central_black_hole_mass=1e5, right_ascension=1.0, declination=0.5
+    )
+    g_far = Galaxy(redshift=0.4, central_black_hole_mass=1e5, right_ascension=1.0, declination=0.5)
+    catalog.catalog.extend([g_close, g_far])
+    catalog.setup_galaxy_distribution()
+    catalog.setup_galaxy_mass_distribution()
+
+    det_close = EMRIDetection.from_host_galaxy(g_close, use_measurement_noise=False)
+    det_far = EMRIDetection.from_host_galaxy(g_far, use_measurement_noise=False)
+
+    bi = BayesianInference(catalog, [det_close, det_far])
+    lik_close = bi.likelihood(
+        hubble_constant=TRUE_HUBBLE_CONSTANT,
+        measured_luminosity_distance=det_close.measured_luminosity_distance,
+        measured_redshifted_mass=det_close.measured_redshifted_mass,
+        detection_index=0,
+    )
+    lik_far = bi.likelihood(
+        hubble_constant=TRUE_HUBBLE_CONSTANT,
+        measured_luminosity_distance=det_far.measured_luminosity_distance,
+        measured_redshifted_mass=det_far.measured_redshifted_mass,
+        detection_index=1,
+    )
+    assert lik_close > lik_far, (
+        f"Closer source should have higher likelihood: {lik_close} vs {lik_far}"
+    )
+
+
+def test_likelihood_with_wrong_h_is_lower() -> None:
+    """Likelihood at the true H₀ should exceed likelihood at a wrong H₀.
+
+    With a noiseless detection generated at TRUE_HUBBLE_CONSTANT, the
+    marginalized likelihood should be highest near that value.
+    """
+    catalog = GalaxyCatalog(use_truncnorm=False, use_comoving_volume=False)
+    g = Galaxy(redshift=0.15, central_black_hole_mass=1e5, right_ascension=1.0, declination=0.5)
+    catalog.catalog.append(g)
+    catalog.setup_galaxy_distribution()
+    catalog.setup_galaxy_mass_distribution()
+    detection = EMRIDetection.from_host_galaxy(g, use_measurement_noise=False)
+    bi = BayesianInference(catalog, [detection])
+
+    lik_true = bi.likelihood(
+        hubble_constant=TRUE_HUBBLE_CONSTANT,
+        measured_luminosity_distance=detection.measured_luminosity_distance,
+        measured_redshifted_mass=detection.measured_redshifted_mass,
+        detection_index=0,
+    )
+    lik_wrong = bi.likelihood(
+        hubble_constant=0.80,
+        measured_luminosity_distance=detection.measured_luminosity_distance,
+        measured_redshifted_mass=detection.measured_redshifted_mass,
+        detection_index=0,
+    )
+    assert lik_true > lik_wrong, (
+        f"True H₀ should give higher likelihood: L(h=0.7)={lik_true} vs L(h=0.8)={lik_wrong}"
+    )

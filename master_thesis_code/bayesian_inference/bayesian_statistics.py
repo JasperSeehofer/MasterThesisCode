@@ -557,7 +557,8 @@ def single_host_likelihood(
     # TODO: KEEP IN MIND SKYLOCALIZATION WEIGHT IS IN THE GW LIKELIHOOD ATM. possible source of error
     def numerator_integrant_without_bh_mass(z: npt.NDArray[np.float64]) -> Any:
         d_L = dist_vectorized(z, h=h)
-        luminosity_distance_fraction = detection.d_L / d_L
+        # fraction = d_L_model / d_L_measured; matches covariance σ²/d_L_measured²
+        luminosity_distance_fraction = d_L / detection.d_L
         phi = np.full_like(z, possible_host.phiS)
         theta = np.full_like(z, possible_host.qS)
 
@@ -604,7 +605,8 @@ def single_host_likelihood(
 
         def numerator_integrant_with_bh_mass(z: npt.NDArray[np.float64]) -> Any:
             d_L = dist_vectorized(z, h=h)
-            luminosity_distance_fraction = detection.d_L / d_L
+            # fraction = d_L_model / d_L_measured; matches covariance σ²/d_L_measured²
+            luminosity_distance_fraction = d_L / detection.d_L
             M_z = np.full_like(z, detection.M)
             phi = np.full_like(z, possible_host.phiS)
             theta = np.full_like(z, possible_host.qS)
