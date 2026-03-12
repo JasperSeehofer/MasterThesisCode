@@ -191,6 +191,38 @@ All four originally-listed bugs are resolved. Remaining known issues (also track
 
 ---
 
+## Skill-Driven Workflows
+
+Custom skills in `.claude/skills/` encode repeatable, multi-step workflows. Claude must
+use them at the appropriate trigger points — not as optional suggestions, but as mandatory
+workflow gates.
+
+### Trigger rules
+
+| Trigger condition | Skill | Behavior |
+|---|---|---|
+| About to edit a physics file (see list below) with a formula or constant change | `/physics-change` | **Hard gate.** Must invoke before writing any code. Do not skip. |
+| After modifying array/GPU computation code | `/gpu-audit` | Suggest running on changed files. |
+| Before any `git commit` | `/check` | Run full quality gate (ruff + mypy + pytest). |
+| Before any `git commit` (after `/check` passes) | `/pre-commit-docs` | Verify CHANGELOG, TODO, CLAUDE.md, README are consistent with staged changes. |
+| User asks "what should I work on?" or "what bugs remain?" | `/known-bugs` | Show current bug status with priorities. |
+| User wants to run the simulation or evaluation pipeline | `/run-pipeline` | Use instead of ad-hoc bash commands. |
+
+### Physics-change trigger files
+
+Any edit to these files that modifies a computed value (not just refactoring/types/comments)
+**requires** `/physics-change`:
+
+- `physical_relations.py`
+- `constants.py`
+- `LISA_configuration.py`
+- `parameter_estimation/parameter_estimation.py`
+- `datamodels/galaxy.py`
+- `bayesian_inference/bayesian_inference.py`
+- `cosmological_model.py`
+
+---
+
 ## Dataclass Conventions
 
 ### Mutable field defaults

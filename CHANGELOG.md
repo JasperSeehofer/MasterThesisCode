@@ -7,6 +7,20 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+- `.claude/skills/` directory with 6 custom skills for codified, repeatable workflows:
+  - `physics-change`: enforces the 5-step Physics Change Protocol before any formula modification
+  - `gpu-audit`: scans files for GPU/HPC compliance violations (guarded imports, xp pattern, vectorization)
+  - `run-pipeline`: runs simulation/evaluation/SNR pipelines with correct flags and validates output
+  - `check`: full quality gate (ruff lint + format + mypy + pytest) in one invocation
+  - `known-bugs`: shows current status of all known physics/code bugs with priorities
+  - `pre-commit-docs`: verifies CHANGELOG, TODO, CLAUDE.md, README consistency with staged changes
+- Excalidraw MCP server configured (HTTP transport) for architecture diagram generation.
+
+### Changed
+- `CLAUDE.md`: new "Skill-Driven Workflows" section with trigger rules table and
+  physics-change trigger file list. Skills are mandatory workflow gates, not optional.
+
 ---
 
 ## [2026-03-11] — plotting architecture refactor (Phases 1–4)
