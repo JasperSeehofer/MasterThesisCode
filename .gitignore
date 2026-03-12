@@ -13,6 +13,7 @@ __pycache__/
 notebooks/
 env/
 evaluation/
+!master_thesis_code_test/fixtures/evaluation/
 GLADE+.txt
 reduced_galaxy_catalogue.csv
 few_data/

@@ -3,12 +3,25 @@ import types
 import numpy as np
 import pytest
 
+from master_thesis_code.plotting import apply_style
+
 try:
     import cupy as cp
 
     _CUPY_AVAILABLE = True
 except ImportError:
     _CUPY_AVAILABLE = False
+
+
+@pytest.fixture(autouse=True, scope="session")
+def _plotting_style() -> None:
+    """Apply the project matplotlib style once per test session.
+
+    This ensures every test that produces a plot uses the
+    ``emri_thesis.mplstyle`` settings (font sizes, DPI, constrained
+    layout, etc.) rather than matplotlib defaults.
+    """
+    apply_style()
 
 
 @pytest.fixture(params=["numpy"] + (["cupy"] if _CUPY_AVAILABLE else []))
