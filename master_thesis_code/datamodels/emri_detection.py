@@ -36,7 +36,10 @@ class EMRIDetection:
 
     @classmethod
     def from_host_galaxy(
-        cls, host_galaxy: Galaxy, use_measurement_noise: bool = True
+        cls,
+        host_galaxy: Galaxy,
+        use_measurement_noise: bool = True,
+        rng: np.random.Generator | None = None,
     ) -> "EMRIDetection":
         if not use_measurement_noise:
             measured_luminosity_distance = dist(host_galaxy.redshift, TRUE_HUBBLE_CONSTANT)
@@ -45,24 +48,30 @@ class EMRIDetection:
                 redshift=host_galaxy.redshift,
             )
         else:
-            measured_luminosity_distance = np.random.normal(
-                loc=dist(host_galaxy.redshift, TRUE_HUBBLE_CONSTANT),
-                scale=FRACTIONAL_LUMINOSITY_ERROR
-                * dist(
-                    host_galaxy.redshift,
-                    TRUE_HUBBLE_CONSTANT,
-                ),
+            if rng is None:
+                rng = np.random.default_rng()
+            measured_luminosity_distance = float(
+                rng.normal(
+                    loc=dist(host_galaxy.redshift, TRUE_HUBBLE_CONSTANT),
+                    scale=FRACTIONAL_LUMINOSITY_ERROR
+                    * dist(
+                        host_galaxy.redshift,
+                        TRUE_HUBBLE_CONSTANT,
+                    ),
+                )
             )
-            measured_redshifted_mass = np.random.normal(
-                loc=redshifted_mass(
-                    mass=host_galaxy.central_black_hole_mass,
-                    redshift=host_galaxy.redshift,
-                ),
-                scale=FRACTIONAL_MEASURED_MASS_ERROR
-                * redshifted_mass(
-                    mass=host_galaxy.central_black_hole_mass,
-                    redshift=host_galaxy.redshift,
-                ),
+            measured_redshifted_mass = float(
+                rng.normal(
+                    loc=redshifted_mass(
+                        mass=host_galaxy.central_black_hole_mass,
+                        redshift=host_galaxy.redshift,
+                    ),
+                    scale=FRACTIONAL_MEASURED_MASS_ERROR
+                    * redshifted_mass(
+                        mass=host_galaxy.central_black_hole_mass,
+                        redshift=host_galaxy.redshift,
+                    ),
+                )
             )
 
         return cls(

@@ -136,5 +136,4 @@ def cosmological_model() -> "Model1CrossCheck":
     """Session-scoped Model1CrossCheck (slow ~3s MCMC burn-in, never mutated)."""
     from master_thesis_code.cosmological_model import Model1CrossCheck
 
-    np.random.seed(42)
-    return Model1CrossCheck()
+    return Model1CrossCheck(rng=np.random.default_rng(42))

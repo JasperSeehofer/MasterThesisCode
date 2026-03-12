@@ -41,11 +41,11 @@ def main() -> None:
     start_time = time()
 
     seed = arguments.seed
-    np.random.seed(seed)
+    rng = np.random.default_rng(seed)
     _ROOT_LOGGER.info(f"Random seed: {seed}")
     _write_run_metadata(arguments.working_directory, seed, arguments)
 
-    cosmological_model = Model1CrossCheck()
+    cosmological_model = Model1CrossCheck(rng=rng)
     galaxy_catalog = GalaxyCatalogueHandler(
         M_min=cosmological_model.parameter_space.M.lower_limit,
         M_max=cosmological_model.parameter_space.M.upper_limit,
@@ -58,6 +58,7 @@ def main() -> None:
             cosmological_model,
             galaxy_catalog,
             arguments.simulation_index,
+            rng=rng,
         )
 
     if arguments.evaluate:
@@ -154,6 +155,7 @@ def data_simulation(
     galaxy_catalog: GalaxyCatalogueHandler,
     simulation_index: int,
     callbacks: list["SimulationCallback"] | None = None,
+    rng: np.random.Generator | None = None,
 ) -> None:
     # conditional imports because they require GPU
     from master_thesis_code.memory_management import MemoryManagement
@@ -198,7 +200,7 @@ def data_simulation(
             host_galaxy = next(host_galaxies)
         assert isinstance(host_galaxy, HostGalaxy)
 
-        parameter_estimation.parameter_space.randomize_parameters()
+        parameter_estimation.parameter_space.randomize_parameters(rng=rng)
 
         parameter_estimation.parameter_space.set_host_galaxy_parameters(host_galaxy)
 

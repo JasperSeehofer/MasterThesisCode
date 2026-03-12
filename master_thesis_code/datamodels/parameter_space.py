@@ -7,19 +7,21 @@ from master_thesis_code.galaxy_catalogue.handler import HostGalaxy
 from master_thesis_code.physical_relations import dist
 
 
-def uniform(lower_limit: float, upper_limit: float) -> float:
-    return float(np.random.uniform(lower_limit, upper_limit))
+def uniform(lower_limit: float, upper_limit: float, rng: np.random.Generator) -> float:
+    return float(rng.uniform(lower_limit, upper_limit))
 
 
-def log_uniform(lower_limit: float, upper_limit: float) -> float:
+def log_uniform(lower_limit: float, upper_limit: float, rng: np.random.Generator) -> float:
     lower_limit = np.log10(lower_limit)
     upper_limit = np.log10(upper_limit)
-    uniform_log = uniform(lower_limit, upper_limit)
+    uniform_log = uniform(lower_limit, upper_limit, rng)
     return float(10**uniform_log)
 
 
-def polar_angle_distribution(lower_limit: float, upper_limit: float) -> float:
-    return float(np.arccos(np.random.uniform(-1.0, 1.0)))
+def polar_angle_distribution(
+    lower_limit: float, upper_limit: float, rng: np.random.Generator
+) -> float:
+    return float(np.arccos(rng.uniform(-1.0, 1.0)))
 
 
 @dataclass
@@ -33,7 +35,7 @@ class Parameter:
     value: float = 0.0
     derivative_epsilon: float = 1e-6
     is_fixed: bool = False
-    randomize_by_distribution: Callable[[float, float], float] = uniform
+    randomize_by_distribution: Callable[[float, float, np.random.Generator], float] = uniform
 
 
 @dataclass
@@ -126,16 +128,18 @@ class ParameterSpace:
         )
     )  # initial radial phase
 
-    def randomize_parameter(self, parameter: Parameter) -> None:
+    def randomize_parameter(self, parameter: Parameter, rng: np.random.Generator) -> None:
         parameter.value = parameter.randomize_by_distribution(
-            parameter.lower_limit, parameter.upper_limit
+            parameter.lower_limit, parameter.upper_limit, rng
         )
         setattr(self, parameter.symbol, parameter)
 
-    def randomize_parameters(self) -> None:
+    def randomize_parameters(self, rng: np.random.Generator | None = None) -> None:
+        if rng is None:
+            rng = np.random.default_rng()
         for parameter in vars(self).values():
             if isinstance(parameter, Parameter) and not parameter.is_fixed:
-                self.randomize_parameter(parameter=parameter)
+                self.randomize_parameter(parameter=parameter, rng=rng)
 
     def set_host_galaxy_parameters(self, host_galaxy: HostGalaxy) -> None:
         self.M.value = host_galaxy.M

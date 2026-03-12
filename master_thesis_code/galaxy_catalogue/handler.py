@@ -1,6 +1,6 @@
 import logging
 from collections.abc import Iterable
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
 
 # import normal distribution
@@ -34,8 +34,12 @@ class ParameterSample:
     a: float
     redshift: float
     mu: float = 10
-    phi_S: float = np.random.random() * 2 * np.pi
-    theta_S: float = np.arccos(np.random.random() * 2 - 1)
+    phi_S: float = field(
+        default_factory=lambda: float(np.random.default_rng().uniform(0, 2 * np.pi))
+    )
+    theta_S: float = field(
+        default_factory=lambda: float(np.arccos(np.random.default_rng().uniform(-1, 1)))
+    )
 
     def get_distance(self) -> float:
         return dist(self.redshift)
@@ -515,9 +519,12 @@ class GalaxyCatalogueHandler:
         max_dist: float = 4.5,
         number_of_hosts: int = 500,
         impose_isotropic: bool = False,
+        rng: np.random.Generator | None = None,
     ) -> Iterable:
-        thetas = np.arccos(np.random.uniform(-1.0, 1.0, number_of_hosts))
-        phis = np.random.uniform(0.0, 2 * np.pi, number_of_hosts)
+        if rng is None:
+            rng = np.random.default_rng()
+        thetas = np.arccos(rng.uniform(-1.0, 1.0, number_of_hosts))
+        phis = rng.uniform(0.0, 2 * np.pi, number_of_hosts)
 
         restricted_galaxy_catalogue = self.reduced_galaxy_catalog[
             (self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS] >= lower_limit)

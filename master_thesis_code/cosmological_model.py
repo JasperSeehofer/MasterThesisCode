@@ -171,7 +171,10 @@ class Model1CrossCheck:
     snr_threshold: int = 20
     detection_fraction = DetectionFraction()
 
-    def __init__(self) -> None:
+    def __init__(self, rng: np.random.Generator | None = None) -> None:
+        if rng is None:
+            rng = np.random.default_rng()
+        self._rng = rng
         self.parameter_space = ParameterSpace()
         self._apply_model_assumptions()
         self.setup_emri_events_sampler()
@@ -251,11 +254,11 @@ class Model1CrossCheck:
         ndim = 2
         nwalkers = 20
         burn_in_steps = 1000
-        p0_mass = np.random.rand(nwalkers, 1) * (
+        p0_mass = self._rng.random((nwalkers, 1)) * (
             np.log10(self.parameter_space.M.upper_limit)
             - np.log10(self.parameter_space.M.lower_limit)
         ) + np.log10(self.parameter_space.M.lower_limit)
-        p0_redshift = np.random.rand(nwalkers, 1) * self.max_redshift
+        p0_redshift = self._rng.random((nwalkers, 1)) * self.max_redshift
         p0 = np.column_stack((p0_mass, p0_redshift))
         _LOGGER.info(
             f"Setup emcee MCMC with {nwalkers} walkers and {burn_in_steps} burn in steps..."

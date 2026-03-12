@@ -45,11 +45,16 @@ class Galaxy:
 
     @classmethod
     def with_random_skylocalization(
-        cls, redshift: float, central_black_hole_mass: float
+        cls,
+        redshift: float,
+        central_black_hole_mass: float,
+        rng: np.random.Generator | None = None,
     ) -> "Galaxy":
+        if rng is None:
+            rng = np.random.default_rng()
         # get spherically uniform distributed sky localization
-        right_ascension = np.random.uniform(0, 2 * np.pi)
-        declination = np.arccos(np.random.uniform(-1, 1))
+        right_ascension = float(rng.uniform(0, 2 * np.pi))
+        declination = float(np.arccos(rng.uniform(-1, 1)))
         return cls(
             redshift=redshift,
             central_black_hole_mass=central_black_hole_mass,
@@ -110,7 +115,7 @@ class GalaxyCatalog:
     def _build_comoving_volume_element_spline(h0: float = TRUE_HUBBLE_CONSTANT) -> CubicSpline:
         """Precompute the comoving volume element dV_c/dz on a fine redshift grid.
 
-        The integral I(z) = ∫₀ᶻ dz'/E(z') is computed once via cumulative_trapezoid so
+        The integral I(z) = integral_0^z dz'/E(z') is computed once via cumulative_trapezoid so
         subsequent calls to comoving_volume_element() are O(log n) spline interpolation.
         """
         _z_grid = np.linspace(0, 10.0, 4000)
@@ -134,13 +139,15 @@ class GalaxyCatalog:
             return float(-np.inf)
         return float(np.log(self.comoving_volume_element(redshift)))
 
-    def get_samples_from_comoving_volume_element(self, number_of_samples: int) -> np.ndarray:
+    def get_samples_from_comoving_volume_element(
+        self, number_of_samples: int, rng: np.random.Generator | None = None
+    ) -> np.ndarray:
+        if rng is None:
+            rng = np.random.default_rng()
         # use emcee to sample the comoving volume distribution
         ndim = 1
         nwalkers = 5
-        p0 = np.random.uniform(
-            self.redshift_lower_limit, self.redshift_upper_limit, (nwalkers, ndim)
-        )
+        p0 = rng.uniform(self.redshift_lower_limit, self.redshift_upper_limit, (nwalkers, ndim))
         sampler = emcee.EnsembleSampler(nwalkers, ndim, self.log_comoving_volume_element)
         # burn-in
         p0, _, _ = sampler.run_mcmc(p0, 1000)
@@ -150,37 +157,49 @@ class GalaxyCatalog:
         # return required number of samples by using the last n samples
         return samples[-number_of_samples:]
 
-    def create_random_catalog(self, number_of_galaxies: int) -> None:
+    def create_random_catalog(
+        self, number_of_galaxies: int, rng: np.random.Generator | None = None
+    ) -> None:
+        if rng is None:
+            rng = np.random.default_rng()
         # draw mass from uniform in log space
         print(
             f"Creating random galaxy catalog with {number_of_galaxies} galaxies in the redshift range ({self.redshift_lower_limit}, {self.redshift_upper_limit}) / ({dist(self.redshift_lower_limit)}, {dist(self.redshift_upper_limit)}) Gpc."
         )
         if self._use_comoving_volume:
-            redshift_samples = self.get_samples_from_comoving_volume_element(number_of_galaxies)
+            redshift_samples = self.get_samples_from_comoving_volume_element(
+                number_of_galaxies, rng=rng
+            )
             assert len(redshift_samples) == number_of_galaxies
             for redshift in redshift_samples:
                 self.catalog.append(
                     Galaxy.with_random_skylocalization(
                         redshift=redshift,
                         central_black_hole_mass=10
-                        ** np.random.uniform(
-                            np.log10(self.lower_mass_limit),
-                            np.log10(self.upper_mass_limit),
+                        ** float(
+                            rng.uniform(
+                                np.log10(self.lower_mass_limit),
+                                np.log10(self.upper_mass_limit),
+                            )
                         ),
+                        rng=rng,
                     )
                 )
         else:
             for i in range(number_of_galaxies):
                 self.catalog.append(
                     Galaxy.with_random_skylocalization(
-                        redshift=np.random.uniform(
-                            self.redshift_lower_limit, self.redshift_upper_limit
+                        redshift=float(
+                            rng.uniform(self.redshift_lower_limit, self.redshift_upper_limit)
                         ),
                         central_black_hole_mass=10
-                        ** np.random.uniform(
-                            np.log10(self.lower_mass_limit),
-                            np.log10(self.upper_mass_limit),
+                        ** float(
+                            rng.uniform(
+                                np.log10(self.lower_mass_limit),
+                                np.log10(self.upper_mass_limit),
+                            )
                         ),
+                        rng=rng,
                     )
                 )
         self.setup_galaxy_distribution()
@@ -191,19 +210,29 @@ class GalaxyCatalog:
         self.galaxy_distribution = []
         self.galaxy_mass_distribution = []
 
-    def add_random_galaxy(self) -> None:
+    def add_random_galaxy(self, rng: np.random.Generator | None = None) -> None:
+        if rng is None:
+            rng = np.random.default_rng()
         galaxy = Galaxy.with_random_skylocalization(
-            redshift=np.random.uniform(self.redshift_lower_limit, self.redshift_upper_limit),
-            central_black_hole_mass=np.random.uniform(self.lower_mass_limit, self.upper_mass_limit),
+            redshift=float(rng.uniform(self.redshift_lower_limit, self.redshift_upper_limit)),
+            central_black_hole_mass=float(
+                rng.uniform(self.lower_mass_limit, self.upper_mass_limit)
+            ),
+            rng=rng,
         )
         self.catalog.append(galaxy)
         self.append_galaxy_to_galaxy_distribution(galaxy)
         self.append_galaxy_to_galaxy_mass_distribution(galaxy)
 
-    def add_host_galaxy(self) -> Galaxy:
+    def add_host_galaxy(self, rng: np.random.Generator | None = None) -> Galaxy:
+        if rng is None:
+            rng = np.random.default_rng()
         galaxy = Galaxy.with_random_skylocalization(
-            redshift=np.random.uniform(self.redshift_lower_limit, self.redshift_upper_limit),
-            central_black_hole_mass=np.random.uniform(self.lower_mass_limit, self.upper_mass_limit),
+            redshift=float(rng.uniform(self.redshift_lower_limit, self.redshift_upper_limit)),
+            central_black_hole_mass=float(
+                rng.uniform(self.lower_mass_limit, self.upper_mass_limit)
+            ),
+            rng=rng,
         )
         self.catalog.append(galaxy)
         self.append_galaxy_to_galaxy_distribution(galaxy)
@@ -298,7 +327,7 @@ class GalaxyCatalog:
             self.galaxy_mass_distribution = [
                 NormalDist(
                     mu=galaxy.central_black_hole_mass,
-                    # σ(M) = f × M — fractional uncertainty, consistent with append_galaxy_to_galaxy_mass_distribution
+                    # sigma(M) = f * M -- fractional uncertainty, consistent with append_galaxy_to_galaxy_mass_distribution
                     sigma=FRACTIONAL_BLACK_HOLE_MASS_CATALOG_ERROR * galaxy.central_black_hole_mass,
                 )
                 for galaxy in self.catalog
@@ -337,16 +366,26 @@ class GalaxyCatalog:
             if dist(galaxy.redshift, TRUE_HUBBLE_CONSTANT) <= LUMINOSITY_DISTANCE_THRESHOLD_GPC
         ]
 
-    def get_unique_host_galaxies_from_catalog(self, number_of_host_galaxies: int) -> list[Galaxy]:
+    def get_unique_host_galaxies_from_catalog(
+        self, number_of_host_galaxies: int, rng: np.random.Generator | None = None
+    ) -> list[Galaxy]:
+        if rng is None:
+            rng = np.random.default_rng()
         if len(self.get_possible_host_galaxies()) < number_of_host_galaxies:
             print("Not enough possible host galaxies in catalog.")
             return []
         possible: list[Any] = self.get_possible_host_galaxies()
-        return list(np.random.choice(possible, number_of_host_galaxies, replace=False))
+        indices = rng.choice(len(possible), number_of_host_galaxies, replace=False)
+        return [possible[i] for i in indices]
 
     def add_unique_host_galaxies_from_catalog(
-        self, number_of_host_galaxies_to_add: int, used_host_galaxies: list[Galaxy]
+        self,
+        number_of_host_galaxies_to_add: int,
+        used_host_galaxies: list[Galaxy],
+        rng: np.random.Generator | None = None,
     ) -> list[Galaxy]:
+        if rng is None:
+            rng = np.random.default_rng()
         if (
             len(self.get_possible_host_galaxies()) - len(used_host_galaxies)
             < number_of_host_galaxies_to_add
@@ -358,8 +397,7 @@ class GalaxyCatalog:
             for galaxy in self.get_possible_host_galaxies()
             if galaxy not in used_host_galaxies
         ]
-        new_host_galaxies = np.random.choice(
-            filtered, number_of_host_galaxies_to_add, replace=False
-        )
+        indices = rng.choice(len(filtered), number_of_host_galaxies_to_add, replace=False)
+        new_host_galaxies = [filtered[i] for i in indices]
         used_host_galaxies.extend(new_host_galaxies)
         return used_host_galaxies

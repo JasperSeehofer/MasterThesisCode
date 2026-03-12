@@ -40,8 +40,9 @@ EXPECTED_PARAMETER_KEYS = {
     ],
 )
 def test_uniform_in_bounds(lower: float, upper: float) -> None:
+    rng = np.random.default_rng(42)
     for _ in range(100):
-        value = uniform(lower, upper)
+        value = uniform(lower, upper, rng)
         assert lower <= value <= upper
 
 
@@ -54,14 +55,16 @@ def test_uniform_in_bounds(lower: float, upper: float) -> None:
     ],
 )
 def test_log_uniform_in_bounds(lower: float, upper: float) -> None:
+    rng = np.random.default_rng(42)
     for _ in range(100):
-        value = log_uniform(lower, upper)
+        value = log_uniform(lower, upper, rng)
         assert lower <= value <= upper
 
 
 def test_polar_angle_distribution_in_range() -> None:
+    rng = np.random.default_rng(42)
     for _ in range(100):
-        value = polar_angle_distribution(0.0, np.pi)
+        value = polar_angle_distribution(0.0, np.pi, rng)
         assert 0.0 <= value <= np.pi
 
 
@@ -76,15 +79,17 @@ def test_parameter_space_default_construction() -> None:
 
 def test_randomize_parameter_stays_in_bounds() -> None:
     ps = ParameterSpace()
+    rng = np.random.default_rng(42)
     for _ in range(50):
-        ps.randomize_parameter(ps.M)
+        ps.randomize_parameter(ps.M, rng)
         assert ps.M.lower_limit <= ps.M.value <= ps.M.upper_limit
 
 
 def test_randomize_parameters_all_within_bounds() -> None:
     ps = ParameterSpace()
+    rng = np.random.default_rng(42)
     for _ in range(10):
-        ps.randomize_parameters()
+        ps.randomize_parameters(rng)
         for symbol, value in ps._parameters_to_dict().items():
             param = getattr(ps, symbol)
             assert param.lower_limit <= value <= param.upper_limit, (
@@ -106,14 +111,16 @@ def test_parameters_to_dict_has_correct_keys() -> None:
 
 def test_parameters_to_dict_values_are_floats() -> None:
     ps = ParameterSpace()
-    ps.randomize_parameters()
+    rng = np.random.default_rng(42)
+    ps.randomize_parameters(rng)
     for key, value in ps._parameters_to_dict().items():
         assert isinstance(value, float), f"Parameter '{key}' value {value!r} is not a float"
 
 
 def test_no_nan_after_randomize() -> None:
     ps = ParameterSpace()
-    ps.randomize_parameters()
+    rng = np.random.default_rng(42)
+    ps.randomize_parameters(rng)
     for key, value in ps._parameters_to_dict().items():
         assert not math.isnan(value), f"Parameter '{key}' is NaN after randomization"
 
@@ -161,3 +168,34 @@ def test_set_host_galaxy_parameters_overwrites_previous_values() -> None:
     assert ps.phiS.value == 2.5
     assert ps.qS.value == 1.0
     assert ps.M.value == 9e5
+
+
+def test_randomize_parameters_deterministic_with_same_seed() -> None:
+    """Same seed must produce identical randomize_parameters output."""
+    ps1 = ParameterSpace()
+    ps1.randomize_parameters(np.random.default_rng(42))
+    result1 = ps1._parameters_to_dict()
+
+    ps2 = ParameterSpace()
+    ps2.randomize_parameters(np.random.default_rng(42))
+    result2 = ps2._parameters_to_dict()
+
+    for key in result1:
+        assert result1[key] == result2[key], (
+            f"Parameter '{key}' differs between runs with same seed"
+        )
+
+
+def test_randomize_parameters_different_with_different_seed() -> None:
+    """Different seeds must produce different output (with overwhelming probability)."""
+    ps1 = ParameterSpace()
+    ps1.randomize_parameters(np.random.default_rng(42))
+    result1 = ps1._parameters_to_dict()
+
+    ps2 = ParameterSpace()
+    ps2.randomize_parameters(np.random.default_rng(99))
+    result2 = ps2._parameters_to_dict()
+
+    # At least one non-fixed parameter should differ
+    differs = any(result1[k] != result2[k] for k in result1)
+    assert differs, "Different seeds produced identical output"

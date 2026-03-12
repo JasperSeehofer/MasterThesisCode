@@ -39,8 +39,8 @@ def test_from_host_galaxy_with_noise_positive() -> None:
     """With noise, distance and mass should still be positive (high SNR scenario)."""
     import numpy as np
 
-    np.random.seed(42)
+    rng = np.random.default_rng(42)
     galaxy = _make_galaxy(redshift=0.1, mass=1e5)
-    detection = EMRIDetection.from_host_galaxy(galaxy, use_measurement_noise=True)
+    detection = EMRIDetection.from_host_galaxy(galaxy, use_measurement_noise=True, rng=rng)
     assert detection.measured_luminosity_distance > 0
     assert detection.measured_redshifted_mass > 0

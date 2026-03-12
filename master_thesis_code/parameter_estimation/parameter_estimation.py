@@ -75,17 +75,22 @@ class ParameterEstimation:
         self,
         waveform_generation_type: WaveGeneratorType,
         parameter_space: ParameterSpace,
+        *,
+        use_gpu: bool = True,
     ):
         self.parameter_space = parameter_space
+        self._use_gpu = use_gpu
         self.lisa_response_generator = create_lisa_response_generator(
             waveform_generation_type,
             self.dt,
             self.T,
+            use_gpu=use_gpu,
         )
         self.snr_check_generator = create_lisa_response_generator(
             waveform_generation_type,
             self.dt,
             1,
+            use_gpu=use_gpu,
         )
         self.lisa_configuration = LisaTdiConfiguration()
         self._psd_cache: dict[int, tuple[Any, Any, int, int]] = {}
@@ -430,11 +435,21 @@ class ParameterEstimation:
     def SNR_analysis(self) -> None:
         # setup waveformgenerators for different observation times
         waveform_generators = {
-            0: create_lisa_response_generator(WaveGeneratorType.PN5_AAK, self.dt, 0.5),
-            1: create_lisa_response_generator(WaveGeneratorType.PN5_AAK, self.dt, 1),
-            2: create_lisa_response_generator(WaveGeneratorType.PN5_AAK, self.dt, 2),
-            3: create_lisa_response_generator(WaveGeneratorType.PN5_AAK, self.dt, 3),
-            4: create_lisa_response_generator(WaveGeneratorType.PN5_AAK, self.dt, 5),
+            0: create_lisa_response_generator(
+                WaveGeneratorType.PN5_AAK, self.dt, 0.5, use_gpu=self._use_gpu
+            ),
+            1: create_lisa_response_generator(
+                WaveGeneratorType.PN5_AAK, self.dt, 1, use_gpu=self._use_gpu
+            ),
+            2: create_lisa_response_generator(
+                WaveGeneratorType.PN5_AAK, self.dt, 2, use_gpu=self._use_gpu
+            ),
+            3: create_lisa_response_generator(
+                WaveGeneratorType.PN5_AAK, self.dt, 3, use_gpu=self._use_gpu
+            ),
+            4: create_lisa_response_generator(
+                WaveGeneratorType.PN5_AAK, self.dt, 5, use_gpu=self._use_gpu
+            ),
         }
         parameter_set_index = 0
         for _ in range(200):

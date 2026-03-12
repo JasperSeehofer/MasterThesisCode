@@ -6,22 +6,15 @@ from master_thesis_code.constants import ESA_TDI_CHANNELS
 from master_thesis_code.exceptions import WaveformGenerationError
 
 _LOGGER = logging.getLogger()
-USE_GPU = True
 INDEX_LAMBDA = 8  # index in list of parameters from ParameterSpace for phiS
 INDEX_BETA = 7  # index in list of parameters from ParameterSpace for qS
 T0 = 10_000.0  #
 
 # Configuration of PN5 AAK waveform generator
 
-pn5_aak_configuration = {
-    "inspiral_kwargs": {
-        "DENSE_STEPPING": 0,  # we want a sparsely sampled trajectory
-        "max_init_len": int(1e6),  # all of the trajectories will be well under len = 1000
-    },
-    "sum_kwargs": {
-        "use_gpu": True,  # GPU is available for this type of summation
-        "pad_output": True,
-    },
+_pn5_aak_inspiral_kwargs = {
+    "DENSE_STEPPING": 0,  # we want a sparsely sampled trajectory
+    "max_init_len": int(1e6),  # all of the trajectories will be well under len = 1000
 }
 
 
@@ -49,6 +42,8 @@ def create_lisa_response_generator(
     waveform_generator_type: WaveGeneratorType,
     dt: float,
     T_observation: float,
+    *,
+    use_gpu: bool = True,
 ) -> Any:
     # fastlisaresponse is imported lazily: its compiled C extension crashes (SIGILL)
     # on CPUs without AVX support (e.g. GitHub Actions runners). Importing it here
@@ -57,13 +52,13 @@ def create_lisa_response_generator(
     from fastlisaresponse import ResponseWrapper  # noqa: PLC0415
 
     lisa_response_generator = ResponseWrapper(
-        waveform_gen=_set_waveform_generator(waveform_generator_type),
+        waveform_gen=_set_waveform_generator(waveform_generator_type, use_gpu=use_gpu),
         flip_hx=True,
         index_lambda=INDEX_LAMBDA,
         index_beta=INDEX_BETA,
         t0=T0,
         is_ecliptic_latitude=False,
-        use_gpu=USE_GPU,
+        use_gpu=use_gpu,
         Tobs=T_observation,
         remove_garbage=True,  # TODO: understand why to use this
         dt=dt,
@@ -75,6 +70,8 @@ def create_lisa_response_generator(
 
 def _set_waveform_generator(
     waveform_generator_type: WaveGeneratorType,
+    *,
+    use_gpu: bool = True,
 ) -> Any:
     from few.waveform import GenerateEMRIWaveform  # noqa: PLC0415
 
@@ -83,15 +80,19 @@ def _set_waveform_generator(
             "Parameter estimation is setup up with the 'FastSchwarzschildEccentricFlux' wave generator."
         )
         return GenerateEMRIWaveform(
-            waveform_class="FastSchwarzschildEccentricFlux", use_gpu=USE_GPU
+            waveform_class="FastSchwarzschildEccentricFlux", use_gpu=use_gpu
         )
     elif waveform_generator_type == WaveGeneratorType.PN5_AAK:
+        sum_kwargs = {
+            "use_gpu": use_gpu,
+            "pad_output": True,
+        }
         waveform_generator = GenerateEMRIWaveform(
             waveform_class="Pn5AAKWaveform",
-            inspiral_kwargs=pn5_aak_configuration["inspiral_kwargs"],
-            sum_kwargs=pn5_aak_configuration["sum_kwargs"],
+            inspiral_kwargs=_pn5_aak_inspiral_kwargs,
+            sum_kwargs=sum_kwargs,
             frame="detector",
-            use_gpu=USE_GPU,
+            use_gpu=use_gpu,
         )
         _LOGGER.info("Parameter estimation is setup up with the 'PN5AAKwaveform' wave generator.")
         return waveform_generator
