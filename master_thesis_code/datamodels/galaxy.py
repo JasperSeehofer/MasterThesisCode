@@ -292,7 +292,8 @@ class GalaxyCatalog:
             self.galaxy_mass_distribution = [
                 NormalDist(
                     mu=galaxy.central_black_hole_mass,
-                    sigma=FRACTIONAL_BLACK_HOLE_MASS_CATALOG_ERROR * 10**5.5,
+                    # σ(M) = f × M — fractional uncertainty, consistent with append_galaxy_to_galaxy_mass_distribution
+                    sigma=FRACTIONAL_BLACK_HOLE_MASS_CATALOG_ERROR * galaxy.central_black_hole_mass,
                 )
                 for galaxy in self.catalog
             ]

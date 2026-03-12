@@ -572,9 +572,6 @@ def test_comoving_volume_element_is_zero_at_z_zero() -> None:
 # ── Mass distribution sigma regression (TEST-2) ─────────────────────────────
 
 
-@pytest.mark.xfail(
-    strict=True, reason="PHYS-2: setup_galaxy_mass_distribution uses hardcoded 10**5.5"
-)
 def test_setup_galaxy_mass_distribution_sigma_scales_with_mass() -> None:
     """setup_galaxy_mass_distribution sigma must scale with each galaxy's mass, not 10**5.5."""
     catalog = GalaxyCatalog(use_truncnorm=False, use_comoving_volume=False)
