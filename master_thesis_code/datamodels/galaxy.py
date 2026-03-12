@@ -285,13 +285,24 @@ class GalaxyCatalog:
         ) / len(self.catalog)
 
     def setup_galaxy_mass_distribution(self) -> None:
-        self.galaxy_mass_distribution = [
-            NormalDist(
-                mu=galaxy.central_black_hole_mass,
-                sigma=FRACTIONAL_BLACK_HOLE_MASS_CATALOG_ERROR * 10**5.5,
-            )
-            for galaxy in self.catalog
-        ]
+        if not self._use_truncnorm:
+            self.galaxy_mass_distribution = [
+                NormalDist(
+                    mu=galaxy.central_black_hole_mass,
+                    sigma=FRACTIONAL_BLACK_HOLE_MASS_CATALOG_ERROR * 10**5.5,
+                )
+                for galaxy in self.catalog
+            ]
+        else:
+            self.galaxy_mass_distribution = [
+                truncnorm(
+                    a=(self.lower_mass_limit - galaxy.central_black_hole_mass)
+                    / galaxy.central_black_hole_mass_uncertainty,
+                    b=(self.upper_mass_limit - galaxy.central_black_hole_mass)
+                    / galaxy.central_black_hole_mass_uncertainty,
+                )
+                for galaxy in self.catalog
+            ]
 
     def evaluate_galaxy_mass_distribution(self, mass: float) -> npt.NDArray[np.float64]:
         # use truncated normal distribution
