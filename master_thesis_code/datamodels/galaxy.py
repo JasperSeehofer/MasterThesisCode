@@ -9,7 +9,7 @@ import numpy as np
 import numpy.typing as npt
 from scipy.integrate import cumulative_trapezoid
 from scipy.interpolate import CubicSpline
-from scipy.stats import truncnorm
+from scipy.stats import rv_continuous, truncnorm
 
 from master_thesis_code.constants import (
     FRACTIONAL_BLACK_HOLE_MASS_CATALOG_ERROR,
@@ -89,8 +89,8 @@ class GalaxyCatalog:
     redshift_lower_limit: float = 0.00001
     redshift_upper_limit: float = 0.55
     catalog: list[Galaxy] = field(default_factory=list)
-    galaxy_distribution: list[NormalDist] = field(default_factory=list)
-    galaxy_mass_distribution: list[NormalDist] = field(default_factory=list)
+    galaxy_distribution: list[NormalDist | rv_continuous] = field(default_factory=list)
+    galaxy_mass_distribution: list[NormalDist | rv_continuous] = field(default_factory=list)
 
     def __init__(
         self,
@@ -300,7 +300,7 @@ class GalaxyCatalog:
             return np.array(
                 [
                     distribution.pdf(mass)
-                    / distribution.stdev
+                    / distribution.std()  # type: ignore[union-attr]
                     / (
                         distribution.cdf(self.upper_mass_limit)
                         - distribution.cdf(self.lower_mass_limit)
