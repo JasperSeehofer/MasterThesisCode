@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: executing
-stopped_at: Phase 2 context gathered
-last_updated: "2026-03-26T10:59:28.217Z"
+status: verifying
+stopped_at: Completed 02-01-PLAN.md
+last_updated: "2026-03-26T12:24:14.787Z"
 last_activity: 2026-03-26
 progress:
   total_phases: 5
-  completed_phases: 1
-  total_plans: 2
-  completed_plans: 2
+  completed_phases: 2
+  total_plans: 3
+  completed_plans: 3
   percent: 10
 ---
 
@@ -21,13 +21,13 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-25)
 
 **Core value:** The simulation pipeline runs reliably on the GPU cluster as SLURM array jobs, producing enough Cramer-Rao bounds for statistically meaningful Hubble constant posteriors.
-**Current focus:** Phase 01 — code-hardening
+**Current focus:** Phase 02 — batch-compatibility
 
 ## Current Position
 
-Phase: 2 of 5 (batch compatibility)
-Plan: Not started
-Status: Ready to execute
+Phase: 02 (batch-compatibility) — EXECUTING
+Plan: 1 of 1
+Status: Phase complete — ready for verification
 Last activity: 2026-03-26
 
 Progress: [█░░░░░░░░░] 10%
@@ -53,6 +53,7 @@ Progress: [█░░░░░░░░░] 10%
 
 *Updated after each plan completion*
 | Phase 01 P02 | 3 min | 3 tasks | 4 files |
+| Phase 02 P01 | 4 min | 2 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -67,6 +68,8 @@ Recent decisions affecting current work:
 - [01-01]: Lazy BayesianStatistics import in evaluate() to break circular import chain
 - [Phase 01]: num_workers default uses os.sched_getaffinity(0) - 2 with AttributeError fallback
 - [Phase 01]: Removed affinity-expansion hack entirely from bayesian_statistics.py
+- [Phase 02]: Console entry points (emri-merge, emri-prepare) registered in pyproject.toml [project.scripts]
+- [Phase 02]: parse_args(argv) + main(argv) pattern for testable batch scripts
 
 ### Pending Todos
 
@@ -79,6 +82,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-26T10:59:28.216Z
-Stopped at: Phase 2 context gathered
-Resume file: .planning/phases/02-batch-compatibility/02-CONTEXT.md
+Last session: 2026-03-26T12:24:14.786Z
+Stopped at: Completed 02-01-PLAN.md
+Resume file: None

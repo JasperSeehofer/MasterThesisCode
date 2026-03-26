@@ -15,8 +15,8 @@ Requirements for initial cluster deployment. Each maps to roadmap phases.
 
 ### Batch Compatibility
 
-- [ ] **BATCH-01**: `merge_cramer_rao_bounds.py` accepts `--delete-sources` flag and runs without interactive `input()` prompts in batch jobs
-- [ ] **BATCH-02**: `prepare_detections.py` has a proper `main()` function callable from batch scripts
+- [x] **BATCH-01**: `merge_cramer_rao_bounds.py` accepts `--delete-sources` flag and runs without interactive `input()` prompts in batch jobs
+- [x] **BATCH-02**: `prepare_detections.py` has a proper `main()` function callable from batch scripts
 
 ### Traceability
 
@@ -75,8 +75,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CODE-01 | Phase 1 | Complete |
 | CODE-02 | Phase 1 | Complete (01-01) |
 | CODE-03 | Phase 1 | Complete |
-| BATCH-01 | Phase 2 | Pending |
-| BATCH-02 | Phase 2 | Pending |
+| BATCH-01 | Phase 2 | Complete |
+| BATCH-02 | Phase 2 | Complete |
 | TRACE-01 | Phase 4 | Pending |
 | TRACE-02 | Phase 4 | Pending |
 | ENV-01 | Phase 3 | Pending |
