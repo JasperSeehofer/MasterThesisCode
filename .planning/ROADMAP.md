@@ -42,7 +42,10 @@ Plans:
 **Success Criteria** (what must be TRUE):
   1. `merge_cramer_rao_bounds.py --delete-sources` merges CSVs and deletes source files without any interactive prompt
   2. `prepare_detections.py` can be invoked via `python -m scripts.prepare_detections` or equivalent CLI entry point from a batch script
-**Plans**: TBD
+**Plans:** 1 plan
+
+Plans:
+- [ ] 02-01-PLAN.md — Refactor merge and prepare scripts with argparse CLIs, register emri-merge/emri-prepare entry points
 
 ### Phase 3: Cluster Environment
 **Goal**: A verified, repeatable environment setup exists for bwUniCluster 3.0 that produces a working virtualenv
@@ -85,7 +88,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Code Hardening | 1/2 | Executing | - |
-| 2. Batch Compatibility | 0/? | Not started | - |
+| 2. Batch Compatibility | 0/1 | Not started | - |
 | 3. Cluster Environment | 0/? | Not started | - |
 | 4. SLURM Job Infrastructure | 0/? | Not started | - |
 | 5. Documentation | 0/? | Not started | - |
