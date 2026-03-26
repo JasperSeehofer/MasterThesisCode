@@ -4,8 +4,6 @@ import subprocess
 import sys
 from unittest.mock import patch
 
-import pytest
-
 from master_thesis_code.arguments import Arguments
 
 
