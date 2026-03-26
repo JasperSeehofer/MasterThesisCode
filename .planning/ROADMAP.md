@@ -84,7 +84,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Code Hardening | 0/2 | Planning complete | - |
+| 1. Code Hardening | 1/2 | Executing | - |
 | 2. Batch Compatibility | 0/? | Not started | - |
 | 3. Cluster Environment | 0/? | Not started | - |
 | 4. SLURM Job Infrastructure | 0/? | Not started | - |
