@@ -119,6 +119,7 @@ class BayesianStatistics:
         galaxy_catalog: GalaxyCatalogueHandler,
         cosmological_model: Model1CrossCheck,
         h_value: float,
+        num_workers: int | None = None,
     ) -> None:
         _LOGGER.info(f"Computing posteriors for h = {h_value}...")
         if (h_value < self.cosmological_model.h.lower_limit) or (
@@ -233,27 +234,16 @@ class BayesianStatistics:
 
         self.h = h_value
 
-        try:
-            available_cpus = len(os.sched_getaffinity(0))
-        except AttributeError:
-            available_cpus = os.cpu_count() or 1
-
-        _LOGGER.debug(f"Found {available_cpus} / {os.cpu_count()} (available / system) cpus.")
-        cpu_count = os.cpu_count()
-
-        """
-        if len(os.sched_getaffinity(0)) < cpu_count:
+        if num_workers is None:
             try:
-                os.sched_setaffinity(0, range(cpu_count))
-            except OSError:
-                _LOGGER.info("Could not set affinity")
-        _LOGGER.debug(
-            f"After trying to set affinity available cpus: {len(os.sched_getaffinity(0))}"
-        )
-        """
+                available_cpus = len(os.sched_getaffinity(0))
+            except AttributeError:
+                available_cpus = os.cpu_count() or 1
+            num_workers = max(1, available_cpus - 2)
+        _LOGGER.debug(f"Using {num_workers} worker(s) for multiprocessing pool.")
 
         with mp.get_context("spawn").Pool(
-            available_cpus - 2,
+            num_workers,
             initializer=child_process_init,
             initargs=(
                 REDSHIFT_LOWER_LIMIT,
