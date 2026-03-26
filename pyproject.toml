@@ -37,6 +37,10 @@ dev = [
     "sphinx-copybutton>=0.5.2",
 ]
 
+[project.scripts]
+emri-merge = "scripts.merge_cramer_rao_bounds:main"
+emri-prepare = "scripts.prepare_detections:main"
+
 [tool.mypy]
 python_version = "3.13"
 warn_return_any = true
