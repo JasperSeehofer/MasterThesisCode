@@ -55,7 +55,10 @@ Plans:
   1. `source cluster/modules.sh` loads all required modules (CUDA, Python, GSL, compiler) without errors on bwUniCluster 3.0
   2. `cluster/setup.sh` completes on a fresh bwUniCluster account and produces a working `.venv` with `uv sync --extra gpu`
   3. Simulation output is written to a bwHPC workspace path (resolved via `ws_find`), not to `$HOME`
-**Plans**: TBD
+**Plans:** 1 plan
+
+Plans:
+- [ ] 03-01-PLAN.md — Create cluster/modules.sh and cluster/setup.sh for bwUniCluster 3.0 environment setup
 
 ### Phase 4: SLURM Job Infrastructure
 **Goal**: A single command submits the full simulate-merge-evaluate pipeline on the cluster with full traceability
@@ -89,6 +92,6 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
 |-------|----------------|--------|-----------|
 | 1. Code Hardening | 1/2 | Executing | - |
 | 2. Batch Compatibility | 1/1 | Complete   | 2026-03-26 |
-| 3. Cluster Environment | 0/? | Not started | - |
+| 3. Cluster Environment | 0/1 | Planning complete | - |
 | 4. SLURM Job Infrastructure | 0/? | Not started | - |
 | 5. Documentation | 0/? | Not started | - |
