@@ -29,7 +29,7 @@ The simulation pipeline runs reliably on the GPU cluster as SLURM array jobs, pr
 - [x] `--num_workers` CLI flag for Bayesian inference pool size — Validated in Phase 1: Code Hardening
 - [x] CPU-safe `MemoryManagement` (guard GPUtil, no-op on CPU nodes) — Validated in Phase 1: Code Hardening
 - [ ] SLURM metadata in `run_metadata.json` (job ID, array task ID, node, GPU info)
-- [ ] Non-interactive merge script (`--delete-sources` flag)
+- [x] Non-interactive merge script (`--delete-sources` flag) — Validated in Phase 2: Batch Compatibility
 - [ ] SLURM job scripts for simulation (GPU array), merge, and evaluation (CPU)
 - [ ] Workflow orchestrator chaining jobs via `--dependency=afterok`
 - [ ] Environment module loader (`modules.sh`) for bwUniCluster 3.0
@@ -50,7 +50,7 @@ The simulation pipeline runs reliably on the GPU cluster as SLURM array jobs, pr
 
 - **Cluster:** bwUniCluster 3.0 at KIT Karlsruhe (bwHPC federation), SLURM scheduler, GPU nodes with NVIDIA GPUs (CUDA 12), `module load` environment system, workspace mechanism (`ws_allocate`)
 - **Architecture fit:** `--simulation_index` already maps naturally to `SLURM_ARRAY_TASK_ID`. Each EMRI event is independent, making array jobs the ideal parallelization strategy.
-- **Known code issues:** `USE_GPU` hardcoded True in `ParameterEstimation`, `MemoryManagement` crashes without GPU, merge script has interactive `input()` calls — all must be fixed before cluster deployment.
+- **Known code issues:** ~~`USE_GPU` hardcoded True~~ (fixed Phase 1), ~~`MemoryManagement` crashes without GPU~~ (fixed Phase 1), ~~merge script has interactive `input()` calls~~ (fixed Phase 2) — all blockers resolved.
 - **Prior work:** Codebase has been through extensive refactoring (plotting extraction, bayesian_statistics extraction, physics bug fixes, test coverage improvements). The code is structurally ready for cluster deployment.
 
 ## Constraints
