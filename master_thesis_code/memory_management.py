@@ -8,7 +8,7 @@ try:
 
     _GPUTIL_AVAILABLE = True
 except ImportError:
-    GPUtil = None  # type: ignore[assignment]
+    GPUtil = None  # type: ignore[assignment,unused-ignore]
     _GPUTIL_AVAILABLE = False
 
 try:
