@@ -9,9 +9,9 @@ Requirements for initial cluster deployment. Each maps to roadmap phases.
 
 ### Code Hardening
 
-- [ ] **CODE-01**: `--use_gpu` CLI flag added to `arguments.py` and threaded through `data_simulation()`, `snr_analysis()`, `ParameterEstimation`, and `MemoryManagement`
+- [x] **CODE-01**: `--use_gpu` CLI flag added to `arguments.py` and threaded through `data_simulation()`, `snr_analysis()`, `ParameterEstimation`, and `MemoryManagement`
 - [x] **CODE-02**: `MemoryManagement` is CPU-safe — guards `GPUtil` import, provides no-op methods when GPU unavailable, does not crash on CPU-only nodes
-- [ ] **CODE-03**: `--num_workers` CLI flag controls multiprocessing pool size in `BayesianStatistics.evaluate()`, defaulting to `os.sched_getaffinity() - 2` when omitted
+- [x] **CODE-03**: `--num_workers` CLI flag controls multiprocessing pool size in `BayesianStatistics.evaluate()`, defaulting to `os.sched_getaffinity() - 2` when omitted
 
 ### Batch Compatibility
 
@@ -72,9 +72,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| CODE-01 | Phase 1 | Pending |
+| CODE-01 | Phase 1 | Complete |
 | CODE-02 | Phase 1 | Complete (01-01) |
-| CODE-03 | Phase 1 | Pending |
+| CODE-03 | Phase 1 | Complete |
 | BATCH-01 | Phase 2 | Pending |
 | BATCH-02 | Phase 2 | Pending |
 | TRACE-01 | Phase 4 | Pending |

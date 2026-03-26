@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 01-01-PLAN.md
-last_updated: "2026-03-26T10:24:33Z"
-last_activity: 2026-03-26 — Plan 01-01 complete (CPU-safe MemoryManagement)
+stopped_at: Completed 01-02-PLAN.md
+last_updated: "2026-03-26T10:32:36.498Z"
+last_activity: 2026-03-26
 progress:
   total_phases: 5
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 2
-  completed_plans: 1
+  completed_plans: 2
   percent: 10
 ---
 
@@ -26,9 +26,9 @@ See: .planning/PROJECT.md (updated 2026-03-25)
 ## Current Position
 
 Phase: 1 of 5 (Code Hardening)
-Plan: 1 of 2 in current phase
-Status: Executing
-Last activity: 2026-03-26 — Plan 01-01 complete (CPU-safe MemoryManagement)
+Plan: 2 of 2 in current phase
+Status: Ready to execute
+Last activity: 2026-03-26
 
 Progress: [█░░░░░░░░░] 10%
 
@@ -52,6 +52,7 @@ Progress: [█░░░░░░░░░] 10%
 - Trend: -
 
 *Updated after each plan completion*
+| Phase 01 P02 | 3 min | 3 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -64,6 +65,8 @@ Recent decisions affecting current work:
 - [Roadmap]: TRACE requirements grouped into Phase 4 (SLURM infrastructure) since they require SLURM context
 - [01-01]: Guarded GPUtil import with try/except pattern matching existing CuPy guard
 - [01-01]: Lazy BayesianStatistics import in evaluate() to break circular import chain
+- [Phase 01]: num_workers default uses os.sched_getaffinity(0) - 2 with AttributeError fallback
+- [Phase 01]: Removed affinity-expansion hack entirely from bayesian_statistics.py
 
 ### Pending Todos
 
@@ -76,6 +79,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-26T10:24:33Z
-Stopped at: Completed 01-01-PLAN.md
-Resume file: .planning/phases/01-code-hardening/01-01-SUMMARY.md
+Last session: 2026-03-26T10:32:36.496Z
+Stopped at: Completed 01-02-PLAN.md
+Resume file: None

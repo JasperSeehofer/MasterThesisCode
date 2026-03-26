@@ -32,8 +32,8 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Plans:** 2 plans
 
 Plans:
-- [ ] 01-01-PLAN.md — Make MemoryManagement CPU-safe, fix circular import, add tests
-- [ ] 01-02-PLAN.md — Add --use_gpu and --num_workers CLI flags, thread through call chain, add tests
+- [x] 01-01-PLAN.md — Make MemoryManagement CPU-safe, fix circular import, add tests
+- [x] 01-02-PLAN.md — Add --use_gpu and --num_workers CLI flags, thread through call chain, add tests
 
 ### Phase 2: Batch Compatibility
 **Goal**: Post-simulation scripts run unattended in SLURM batch jobs without human interaction
