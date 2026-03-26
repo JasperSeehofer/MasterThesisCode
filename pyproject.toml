@@ -41,6 +41,13 @@ dev = [
 emri-merge = "scripts.merge_cramer_rao_bounds:main"
 emri-prepare = "scripts.prepare_detections:main"
 
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.uv]
+package = true
+
 [tool.mypy]
 python_version = "3.13"
 warn_return_any = true
