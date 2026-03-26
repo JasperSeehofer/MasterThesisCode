@@ -1,8 +1,15 @@
 import logging
 from time import time
 
-import GPUtil
 from tabulate import tabulate
+
+try:
+    import GPUtil
+
+    _GPUTIL_AVAILABLE = True
+except ImportError:
+    GPUtil = None  # type: ignore[assignment]
+    _GPUTIL_AVAILABLE = False
 
 try:
     import cupy as cp
@@ -16,8 +23,12 @@ _LOGGER = logging.getLogger()
 
 
 class MemoryManagement:
-    def __init__(self) -> None:
-        self._gpu_monitor = GPUtil.getGPUs()
+    def __init__(self, use_gpu: bool = False) -> None:
+        self._use_gpu = use_gpu
+        if _GPUTIL_AVAILABLE:
+            self._gpu_monitor = GPUtil.getGPUs()
+        else:
+            self._gpu_monitor = []
         if _CUPY_AVAILABLE and cp is not None:
             self.memory_pool = cp.get_default_memory_pool()
             self._fft_cache = cp.fft.config.get_plan_cache()
@@ -29,15 +40,28 @@ class MemoryManagement:
         self._gpu_usage: list[list[float]] = []
         self._time_series: list[float] = []
 
+    def free_gpu_memory(self) -> None:
+        """Free GPU memory pool blocks and clear FFT plan cache. No-op on CPU."""
+        if self.memory_pool is not None:
+            self.memory_pool.free_all_blocks()
+        if self._fft_cache is not None:
+            self._fft_cache.clear()
+
     def gpu_usage_stamp(self) -> None:
         self._time_series.append(time() - self._start_time)
-        self._gpu_usage.append([gpu.memoryUsed / 1000 for gpu in GPUtil.getGPUs()])
+        if _GPUTIL_AVAILABLE:
+            self._gpu_usage.append([gpu.memoryUsed / 1000 for gpu in GPUtil.getGPUs()])
+        else:
+            self._gpu_usage.append([])
         if self.memory_pool is not None:
             self._memory_pool_gpu_usage.append(int(self.memory_pool.total_bytes()) / 10**9)
         else:
             self._memory_pool_gpu_usage.append(0.0)
 
     def display_GPU_information(self) -> None:
+        if not _GPUTIL_AVAILABLE or not self._gpu_monitor:
+            _LOGGER.info("No GPU available.")
+            return
         _LOGGER.info(f"{'=' * 40} GPU Details {'=' * 40}")
         gpus = GPUtil.getGPUs()
         list_gpus = []
