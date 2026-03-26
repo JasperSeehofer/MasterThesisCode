@@ -58,13 +58,19 @@ def main() -> None:
             galaxy_catalog,
             arguments.simulation_index,
             rng=rng,
+            use_gpu=arguments.use_gpu,
         )
 
     if arguments.evaluate:
-        evaluate(cosmological_model, galaxy_catalog, arguments.h_value)
+        evaluate(
+            cosmological_model,
+            galaxy_catalog,
+            arguments.h_value,
+            num_workers=arguments.num_workers,
+        )
 
     if arguments.snr_analysis:
-        snr_analysis()
+        snr_analysis(use_gpu=arguments.use_gpu)
 
     if arguments.generate_figures is not None:
         generate_figures(arguments.generate_figures)
@@ -95,6 +101,8 @@ def _write_run_metadata(working_directory: str, seed: int, arguments: Arguments)
             "evaluate": arguments.evaluate,
             "h_value": arguments.h_value,
             "snr_analysis": arguments.snr_analysis,
+            "use_gpu": arguments.use_gpu,
+            "num_workers": arguments.num_workers,
         },
     }
     metadata_path = os.path.join(working_directory, "run_metadata.json")
@@ -128,7 +136,7 @@ def _configure_logger(working_directory: str, log_level: int, h_value: float) ->
     _ROOT_LOGGER.info(f"Log file location: {log_file_path}")
 
 
-def snr_analysis() -> None:
+def snr_analysis(*, use_gpu: bool = False) -> None:
     from master_thesis_code.datamodels.parameter_space import ParameterSpace
     from master_thesis_code.memory_management import MemoryManagement
     from master_thesis_code.parameter_estimation.parameter_estimation import (
@@ -136,13 +144,14 @@ def snr_analysis() -> None:
         WaveGeneratorType,
     )
 
-    memory_management = MemoryManagement()
+    memory_management = MemoryManagement(use_gpu=use_gpu)
     memory_management.display_GPU_information()
     memory_management.display_fft_cache()
 
     parameter_estimation = ParameterEstimation(
         waveform_generation_type=WaveGeneratorType.PN5_AAK,
         parameter_space=ParameterSpace(),
+        use_gpu=use_gpu,
     )
 
     parameter_estimation.SNR_analysis()
@@ -155,6 +164,8 @@ def data_simulation(
     simulation_index: int,
     callbacks: list["SimulationCallback"] | None = None,
     rng: np.random.Generator | None = None,
+    *,
+    use_gpu: bool = False,
 ) -> None:
     # conditional imports because they require GPU
     from master_thesis_code.memory_management import MemoryManagement
@@ -165,13 +176,14 @@ def data_simulation(
 
     _callbacks: list[SimulationCallback] = callbacks or []
 
-    memory_management = MemoryManagement()
+    memory_management = MemoryManagement(use_gpu=use_gpu)
     memory_management.display_GPU_information()
     memory_management.display_fft_cache()
 
     parameter_estimation = ParameterEstimation(
         waveform_generation_type=WaveGeneratorType.PN5_AAK,
         parameter_space=cosmological_model.parameter_space,
+        use_gpu=use_gpu,
     )
 
     for cb in _callbacks:
@@ -304,14 +316,15 @@ def evaluate(
     cosmological_model: Model1CrossCheck,
     galaxy_catalog: GalaxyCatalogueHandler,
     h_value: float,
+    *,
+    num_workers: int | None = None,
 ) -> None:
-    # data_simulation = DataEvaluation()
-    # data_simulation.evaluate_snr_analysis()
-
     from master_thesis_code.bayesian_inference.bayesian_statistics import BayesianStatistics
 
     hubble_constant_evaluation = BayesianStatistics()
-    hubble_constant_evaluation.evaluate(galaxy_catalog, cosmological_model, h_value)
+    hubble_constant_evaluation.evaluate(
+        galaxy_catalog, cosmological_model, h_value, num_workers=num_workers
+    )
 
 
 def generate_figures(output_dir: str) -> None:

@@ -71,6 +71,23 @@ class Arguments:
         return val
 
     @property
+    def use_gpu(self) -> bool:
+        """Whether to use GPU acceleration."""
+        return bool(self._parsed_arguments.use_gpu)
+
+    @property
+    def num_workers(self) -> int:
+        """Number of multiprocessing workers for Bayesian inference."""
+        raw = self._parsed_arguments.num_workers
+        if raw is not None:
+            return max(1, raw)
+        try:
+            available = len(os.sched_getaffinity(0))
+        except AttributeError:
+            available = os.cpu_count() or 1
+        return max(1, available - 2)
+
+    @property
     def seed(self) -> int:
         """Random seed for reproducibility. A random seed is chosen if not provided."""
         raw = self._parsed_arguments.seed
@@ -137,6 +154,19 @@ def _parse_arguments(arguments: list[str]) -> argparse.Namespace:
         help="Output directory for generating all thesis figures from saved data.",
         type=str,
         default=None,
+    )
+    parser.add_argument(
+        "--use_gpu",
+        action="store_true",
+        default=False,
+        help="Use GPU acceleration (requires CUDA and cupy). Default: CPU only.",
+    )
+    parser.add_argument(
+        "--num_workers",
+        type=int,
+        default=None,
+        help="Number of multiprocessing workers for Bayesian inference. "
+        "Default: available CPUs - 2 (minimum 1).",
     )
     parser.add_argument(
         "--log_level",
