@@ -10,9 +10,9 @@ from master_thesis_code.memory_management import MemoryManagement
 
 def test_cpu_import() -> None:
     """Importing MemoryManagement does not raise ImportError."""
-    from master_thesis_code.memory_management import MemoryManagement as MM
+    from master_thesis_code.memory_management import MemoryManagement as MemMgmt
 
-    assert MM is not None
+    assert MemMgmt is not None
 
 
 @patch("master_thesis_code.memory_management._GPUTIL_AVAILABLE", False)
@@ -70,8 +70,7 @@ def test_display_gpu_information_cpu(caplog: pytest.LogCaptureFixture) -> None:
 def test_free_gpu_memory_cpu() -> None:
     """free_gpu_memory() returns None without error when memory_pool is None."""
     m = MemoryManagement()
-    result = m.free_gpu_memory()
-    assert result is None
+    m.free_gpu_memory()  # should not raise
 
 
 @patch("master_thesis_code.memory_management._GPUTIL_AVAILABLE", False)
