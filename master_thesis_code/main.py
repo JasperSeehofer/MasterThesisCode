@@ -11,7 +11,6 @@ from typing import TYPE_CHECKING
 import numpy as np
 
 from master_thesis_code.arguments import Arguments
-from master_thesis_code.bayesian_inference.bayesian_statistics import BayesianStatistics
 from master_thesis_code.cosmological_model import Model1CrossCheck
 from master_thesis_code.exceptions import ParameterOutOfBoundsError
 
@@ -184,7 +183,7 @@ def data_simulation(
 
     while counter < simulation_steps:
         memory_management.gpu_usage_stamp()
-        memory_management.memory_pool.free_all_blocks()
+        memory_management.free_gpu_memory()
         memory_management.gpu_usage_stamp()
 
         _ROOT_LOGGER.info(
@@ -308,6 +307,8 @@ def evaluate(
 ) -> None:
     # data_simulation = DataEvaluation()
     # data_simulation.evaluate_snr_analysis()
+
+    from master_thesis_code.bayesian_inference.bayesian_statistics import BayesianStatistics
 
     hubble_constant_evaluation = BayesianStatistics()
     hubble_constant_evaluation.evaluate(galaxy_catalog, cosmological_model, h_value)
