@@ -29,7 +29,11 @@ Decimal phases appear between their surrounding integers in numeric order.
   2. Running `python -m master_thesis_code --help` works without GPU and shows `--use_gpu` and `--num_workers` flags
   3. `MemoryManagement` can be instantiated on a CPU-only machine without raising ImportError
   4. Existing CPU test suite (`pytest -m "not gpu and not slow"`) still passes with no regressions
-**Plans**: TBD
+**Plans:** 2 plans
+
+Plans:
+- [ ] 01-01-PLAN.md — Make MemoryManagement CPU-safe, fix circular import, add tests
+- [ ] 01-02-PLAN.md — Add --use_gpu and --num_workers CLI flags, thread through call chain, add tests
 
 ### Phase 2: Batch Compatibility
 **Goal**: Post-simulation scripts run unattended in SLURM batch jobs without human interaction
@@ -80,7 +84,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Code Hardening | 0/? | Not started | - |
+| 1. Code Hardening | 0/2 | Planning complete | - |
 | 2. Batch Compatibility | 0/? | Not started | - |
 | 3. Cluster Environment | 0/? | Not started | - |
 | 4. SLURM Job Infrastructure | 0/? | Not started | - |
