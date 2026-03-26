@@ -66,7 +66,7 @@ def main(argv: list[str] | None = None) -> None:
     for detection_index, detection_row in cramer_rao_bounds.iterrows():
         print(f"progress: {detection_index}/{len(cramer_rao_bounds)}")
         if detection_row["delta_phiS_delta_phiS"] < 0:
-            unusable_detections.append(int(detection_index))  # type: ignore[arg-type]
+            unusable_detections.append(int(detection_index))
             continue
         detection = Detection(detection_row)
         print(f"Detection {detection_index}: {detection}")

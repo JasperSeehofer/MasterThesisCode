@@ -70,9 +70,7 @@ def merge_cramer_rao_bounds(workdir: Path, delete_sources: bool) -> None:
 
     common_file_name = CRAMER_RAO_BOUNDS_PATH.split(".")[0].replace("$index", "").split("/")[1]
     files = os.listdir(directory)
-    cramer_rao_bounds_files = [
-        str(directory / file) for file in files if common_file_name in file
-    ]
+    cramer_rao_bounds_files = [str(directory / file) for file in files if common_file_name in file]
 
     used_files: list[str] = []
 
@@ -122,9 +120,7 @@ def merge_undetected_events(workdir: Path, delete_sources: bool) -> None:
 
     common_file_name = UNDETECTED_EVENTS_PATH.split(".")[0].replace("$index", "").split("/")[1]
     files = os.listdir(directory)
-    undetected_events_files = [
-        str(directory / file) for file in files if common_file_name in file
-    ]
+    undetected_events_files = [str(directory / file) for file in files if common_file_name in file]
 
     used_files: list[str] = []
 

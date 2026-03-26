@@ -1,10 +1,8 @@
 """Tests for batch-compatible merge_cramer_rao_bounds script."""
 
-import os
 from pathlib import Path
 
 import pandas as pd
-import pytest
 
 from scripts.merge_cramer_rao_bounds import main
 
