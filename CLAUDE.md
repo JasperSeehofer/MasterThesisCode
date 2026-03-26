@@ -510,3 +510,265 @@ Prefix the commit subject line with `[PHYSICS]`:
 ```
 [PHYSICS] fix luminosity distance prefactor in dist()
 ```
+
+<!-- GSD:project-start source:PROJECT.md -->
+## Project
+
+**EMRI Parameter Estimation — HPC Integration**
+
+A gravitational wave parameter estimation pipeline for LISA Extreme Mass Ratio Inspirals (EMRIs). Two pipelines: (1) GPU-accelerated EMRI simulation that computes SNR and Cramér-Rao bounds, and (2) CPU-based Bayesian inference that evaluates the Hubble constant posterior. This milestone adds production-ready HPC/cluster support so both pipelines run on bwUniCluster 3.0 at KIT with proper job management, environment setup, and best-practices documentation.
+
+**Core Value:** The simulation pipeline runs reliably on the GPU cluster as SLURM array jobs, producing enough Cramér-Rao bounds for statistically meaningful Hubble constant posteriors.
+
+### Constraints
+
+- **GPU:** CUDA 12 required for `cupy-cuda12x` and `fastemriwaveforms-cuda12x` — must use GPU partition on cluster
+- **GSL:** Build-time requirement for `fastemriwaveforms` — must be available via module or container
+- **uv:** Primary package manager; must be installable on login nodes (may need local install to `~/.local/bin`)
+- **Workspace:** bwHPC workspaces expire (default 30 days, extendable) — final results must be copied to persistent storage
+- **Network:** Compute nodes may have restricted outbound access — all dependency installation must happen on login nodes
+<!-- GSD:project-end -->
+
+<!-- GSD:stack-start source:codebase/STACK.md -->
+## Technology Stack
+
+## Languages
+- Python 3.13 - All source code (`.python-version` pins 3.13; `pyproject.toml` allows `>=3.10,<3.14`)
+- None (pure Python project; compiled extensions come from third-party wheels)
+## Runtime
+- Python 3.13 (pinned in `.python-version`)
+- CUDA 12 toolkit - required on GPU cluster for `cupy-cuda12x` and `fastemriwaveforms-cuda12x`
+- GSL (GNU Scientific Library) - build-time requirement for `fastemriwaveforms`
+- [uv](https://docs.astral.sh/uv/) (Astral)
+- Lockfile: `uv.lock` (committed, 4220 lines)
+- Virtual environment created at `.venv/` by `uv sync`
+## Frameworks
+- NumPy - array computation, FFT, linear algebra (used everywhere)
+- SciPy - integration (`quad`, `dblquad`, `fixed_quad`, `cumulative_trapezoid`), interpolation (`CubicSpline`, `RegularGridInterpolator`), statistics (`truncnorm`, `norm`, `gaussian_kde`, `erf`), optimization (`fsolve`)
+- Pandas - CSV I/O for Cramer-Rao bounds, SNR analysis, galaxy catalog
+- Astropy >=6.1.7 - physical constants (`astropy.constants`) and unit conversions (`astropy.units`)
+- Matplotlib - all plotting (factory-function pattern in `master_thesis_code/plotting/`)
+- pytest - test runner, configured in `pyproject.toml [tool.pytest.ini_options]`
+- pytest-cov - coverage reporting (fail_under = 25%)
+- pytest-benchmark - performance benchmarks (`-m slow`)
+- Ruff - linting and formatting (target `py313`, line-length 100)
+- mypy - static type checking (`disallow_untyped_defs = true`)
+- pre-commit - hooks for ruff lint, ruff format, mypy
+- pip-audit - dependency security scanning
+- Sphinx + Furo theme - documentation (`docs/`)
+## Key Dependencies
+- `numpy` - array computation backbone; used in every module
+- `scipy` - numerical integration, interpolation, statistics, optimization
+- `pandas` - CSV read/write for simulation results and galaxy catalog
+- `matplotlib` - all visualization
+- `scikit-learn` - `BallTree` for galaxy catalog spatial lookups (`master_thesis_code/galaxy_catalogue/handler.py`)
+- `emcee` - MCMC ensemble sampler for comoving volume sampling (`master_thesis_code/datamodels/galaxy.py`, `master_thesis_code/cosmological_model.py`)
+- `tabulate` - formatted table output
+- `fastlisaresponse==1.1.9` - LISA time-delay interferometry response wrapper
+- `astropy>=6.1.7` - physical constants and units
+- `fastemriwaveforms==2.0.0rc1` - EMRI waveform generation (imports as `few`)
+- `fastemriwaveforms-cuda12x` - GPU-accelerated EMRI waveforms
+- `cupy-cuda12x` - GPU array library (NumPy-compatible API on CUDA)
+- `GPUtil` - GPU utilization monitoring
+- `pytest`, `pytest-cov`, `pytest-benchmark` - testing
+- `pip-audit` - security audit
+- `mypy` - type checking
+- `ruff` - linting/formatting
+- `pre-commit` - git hook management
+- `jupyterlab` - interactive exploration
+- `sphinx>=8.1.3`, `furo>=2025.12.19`, `sphinx-copybutton>=0.5.2` - documentation
+## Configuration
+- No `.env` files detected; configuration is via CLI arguments and `master_thesis_code/constants.py`
+- Physical constants derived from `astropy` at import time (`master_thesis_code/constants.py`)
+- Simulation paths are relative strings in `constants.py` (e.g., `simulations/cramer_rao_bounds.csv`)
+- `pyproject.toml` - single source of truth for project metadata, dependencies, and tool config
+- `uv.lock` - exact dependency versions (committed)
+- `.python-version` - pins Python 3.13
+- `[tool.ruff]` - target-version `py313`, line-length 100
+- `[tool.ruff.lint]` - enables E, F, I, UP, B, N rule sets; ignores physics-naming violations (N802, N803, N806, N815, N816)
+- `[tool.ruff.lint.isort]` - `known-first-party = ["master_thesis_code"]`
+- `[tool.mypy]` - python_version 3.13, `disallow_untyped_defs = true`, `disallow_incomplete_defs = true`
+- Missing import overrides for: astropy, cupy, cupyx, fastlisaresponse, few, GPUtil, pandas, scipy, sklearn, mpl_toolkits, emcee, tabulate
+- `[tool.pytest.ini_options]` - testpaths `master_thesis_code_test/`, markers: `gpu`, `slow`
+- `[tool.coverage.run]` - source `master_thesis_code/`, omits test dir
+- `[tool.coverage.report]` - fail_under 25%
+- `.editorconfig` - 4-space indent, UTF-8, LF line endings, trailing whitespace trimmed
+- `ruff-pre-commit` v0.11.0 - ruff lint (`--fix`) + ruff format
+- Local hook - `uv run mypy master_thesis_code/ master_thesis_code_test/`
+## Platform Requirements
+- Python 3.13
+- GSL (for building `fastemriwaveforms` CPU variant)
+- Install: `uv sync --extra cpu --extra dev`
+- Run tests: `uv run pytest -m "not gpu and not slow"`
+- Python 3.13
+- CUDA 12 toolkit
+- GSL
+- Install: `uv sync --extra gpu`
+- Run: `uv run python -m master_thesis_code <working_dir> --simulation_steps N --use_gpu`
+## CI/CD
+- **check** job: ruff lint, ruff format check, mypy, pytest (CPU, not slow), coverage upload, pip-audit
+- **integration** job (needs check): runs slow tests, uploads test plot artifacts, deploys to GitHub Pages
+- **docs** job: builds Sphinx docs (`uv run make -C docs html SPHINXOPTS="-W"`)
+- Runner: `ubuntu-latest`
+- Dependabot: `.github/dependabot.yml` for pip + github-actions weekly
+<!-- GSD:stack-end -->
+
+<!-- GSD:conventions-start source:CONVENTIONS.md -->
+## Conventions
+
+## Naming Patterns
+- Source modules: `snake_case.py` (e.g., `physical_relations.py`, `parameter_space.py`)
+- Exception: `LISA_configuration.py` uses UPPERCASE prefix (physics convention, ruff N999 ignored)
+- Test files: two patterns coexist — `test_<module>.py` (newer) and `<module>_test.py` (older). Both are valid. New tests use the `test_` prefix.
+- Private modules: `_style.py`, `_helpers.py` (underscore prefix in `plotting/`)
+- `snake_case` for all functions: `dist_to_redshift()`, `compute_fisher_information_matrix()`
+- Physics symbols preserved in names: `S_OMS()`, `S_TM()`, `S_zz()` in `LISA_configuration.py`
+- Ruff rules N802/N803/N806/N815/N816 are ignored to allow uppercase physics names
+- Physics variables use standard notation: `M`, `H`, `Omega_m`, `W_0`, `M_z`, `d_L`
+- Prefixes `delta_` for uncertainties: `delta_dist`, `delta_phiS`
+- Constants: `SCREAMING_SNAKE_CASE` (e.g., `SNR_THRESHOLD`, `OMEGA_M`, `SPEED_OF_LIGHT_KM_S`)
+- `PascalCase`: `ParameterSpace`, `BayesianInference`, `GalaxyCatalog`, `EMRIDetection`
+- Exception classes: `PascalCase` + `Error` suffix: `ParameterEstimationError`, `WaveformGenerationError`
+- Physics symbols used directly as field names: `M`, `mu`, `a`, `p0`, `e0`, `x0`, `qS`, `phiS`, `qK`, `phiK`
+## Code Style
+- Tool: `ruff format` (via `pyproject.toml` and pre-commit)
+- Line length: 100 characters (`[tool.ruff] line-length = 100`)
+- Target version: Python 3.13 (`target-version = "py313"`)
+- Tool: `ruff check`
+- Rule sets enabled: `E` (pycodestyle), `F` (pyflakes), `I` (isort), `UP` (pyupgrade), `B` (bugbear), `N` (pep8-naming)
+- Key ignores: `E501` (line length — formatter handles), `E402` (imports after mpl.rcParams), `N802`/`N803`/`N806`/`N815`/`N816` (physics uppercase), `N999` (LISA_configuration.py)
+- Config: `pyproject.toml` `[tool.ruff]` and `[tool.ruff.lint]`
+- 4-space indentation, LF line endings, UTF-8, trailing whitespace trimmed
+- YAML: 2-space indent
+## Type Annotations
+- Use `list[float]` not `List[float]`, `dict[str, int]` not `Dict[str, int]`
+- Use `X | None` not `Optional[X]`
+- Enforced by ruff `UP` rule set (pyupgrade)
+- Do NOT add `from __future__ import annotations`
+## Dataclass Patterns
+## Import Organization
+- `master_thesis_code/__init__.py`: empty
+- `master_thesis_code/plotting/__init__.py`: re-exports public API (`apply_style`, `get_figure`, `save_figure`, `make_colorbar`)
+- Most subpackage `__init__.py` files are empty
+## Error Handling
+- `ArgumentsError`, `ParameterEstimationError`, `TimeoutError`, `ParameterOutOfBoundsError`, `WaveformGenerationError`
+## Logging
+## Comments and Docstrings
+- Newer/refactored code: NumPy-style with `Args:` / `Returns:` / `References:` / `Examples:` sections (see `physical_relations.py`)
+- Some functions use Sphinx-style `Parameters`/`Returns` with dashes (see `_helpers.py:save_figure`)
+- Older code: brief one-liners or no docstring
+## Git Conventions
+## GPU/CPU Portability Pattern
+## Protocol Pattern
+<!-- GSD:conventions-end -->
+
+<!-- GSD:architecture-start source:ARCHITECTURE.md -->
+## Architecture
+
+## Pattern Overview
+- Two distinct pipelines sharing a common physical model layer
+- GPU/CPU portability via guarded CuPy imports and `_get_xp()` helper
+- CLI-driven entry point dispatching to pipeline functions
+- Callback protocol for decoupling side effects (plotting, monitoring) from computation
+- Multiprocessing in the Bayesian inference pipeline for parallelizing likelihood evaluation
+- Heavy use of dataclasses for domain objects (parameters, detections, galaxies)
+## Pipelines
+### Pipeline 1: EMRI Simulation (data generation)
+### Pipeline 2: Bayesian Inference (H0 posterior evaluation)
+### Pipeline A (dev cross-check, not production)
+- Synthetic `GalaxyCatalog` (from `datamodels/galaxy.py`) instead of GLADE
+- erf-based analytic detection probability instead of KDE
+- Hardcoded 10% fractional sigma(d_L) instead of per-source Cramer-Rao bounds
+- `EMRIDetection` dataclass (from `datamodels/emri_detection.py`) instead of `Detection`
+## Layers
+- Purpose: Parse arguments, configure logging, dispatch to pipelines
+- Location: `master_thesis_code/__main__.py`, `master_thesis_code/main.py`, `master_thesis_code/arguments.py`
+- Contains: `main()`, `data_simulation()`, `evaluate()`, `snr_analysis()`, `generate_figures()`
+- Purpose: EMRI event rate model, MCMC sampling of (M, z) pairs
+- Location: `master_thesis_code/cosmological_model.py`
+- Contains: `Model1CrossCheck`, `LamCDMScenario`, `DarkEnergyScenario`, polynomial merger rate fits
+- Depends on: `emcee`, `datamodels/parameter_space.py`, `physical_relations.py`, `M1_model_extracted_data/`
+- Purpose: Waveform generation, SNR computation, Fisher matrix, Cramer-Rao bounds
+- Location: `master_thesis_code/parameter_estimation/parameter_estimation.py`
+- Contains: `ParameterEstimation` class (549 lines)
+- Depends on: `few` (waveform), `fastlisaresponse` (LISA response), `cupy` (GPU arrays), `LISA_configuration.py` (PSD), `datamodels/parameter_space.py`
+- Purpose: H0 posterior evaluation from saved Cramer-Rao bounds
+- Location: `master_thesis_code/bayesian_inference/bayesian_statistics.py` (988 lines), `master_thesis_code/bayesian_inference/detection_probability.py` (344 lines)
+- Contains: `BayesianStatistics`, `DetectionProbability`, `single_host_likelihood()`, multiprocessing workers
+- Depends on: `scipy.integrate`, `scipy.stats`, `datamodels/detection.py`, `galaxy_catalogue/handler.py`, `physical_relations.py`
+- Purpose: Cosmological distance functions (luminosity distance, redshift inversion, Hubble function)
+- Location: `master_thesis_code/physical_relations.py`
+- Contains: `dist()`, `dist_vectorized()`, `dist_derivative()`, `hubble_function()`, `lambda_cdm_analytic_distance()`, mass conversion utilities
+- Depends on: `constants.py`, `scipy.special.hyp2f1`, `scipy.optimize.fsolve`
+- Purpose: LISA detector noise model (PSD for A/E/T channels), antenna patterns
+- Location: `master_thesis_code/LISA_configuration.py`
+- Contains: `LisaTdiConfiguration` dataclass with `power_spectral_density()`, `_get_xp()` helper
+- Depends on: `constants.py`, `cupy` (guarded import)
+- Purpose: Domain objects as dataclasses
+- Location: `master_thesis_code/datamodels/`
+- Contains:
+- Purpose: Interface to GLADE galaxy catalog, BallTree spatial lookups
+- Location: `master_thesis_code/galaxy_catalogue/handler.py` (669 lines)
+- Contains: `GalaxyCatalogueHandler`, `HostGalaxy`, `ParameterSample`, `InternalCatalogColumns`
+- Depends on: `sklearn.neighbors.BallTree`, `pandas`, `physical_relations.py`
+- Purpose: All visualization, fully separated from computation
+- Location: `master_thesis_code/plotting/`
+- Contains: Factory functions `(data in, (fig, ax) out)` organized by topic
+- Depends on: `matplotlib` only
+- Purpose: All physical constants, cosmological parameters, simulation config, file paths
+- Location: `master_thesis_code/constants.py`
+- Contains: Module-level constants (H, OMEGA_M, SNR_THRESHOLD, LISA hardware, file paths)
+## Key Abstractions
+- Purpose: Represents a single EMRI parameter with bounds, epsilon, distribution function, and current value
+- Examples: `master_thesis_code/datamodels/parameter_space.py`
+- Pattern: `@dataclass` with 14 `Parameter` fields, each wrapped in `field(default_factory=...)`. `randomize_parameters()` iterates all non-fixed parameters.
+- Purpose: Decouple side effects (plotting, monitoring) from the simulation loop
+- Examples: `master_thesis_code/callbacks.py`, `master_thesis_code/plotting/simulation_plots.py` (`PlottingCallback`)
+- Pattern: `typing.Protocol` with 5 hook methods. `data_simulation()` accepts `list[SimulationCallback]`.
+- Purpose: Represent a detected EMRI event with measured parameters and uncertainties
+- Examples: `master_thesis_code/datamodels/detection.py` (Pipeline B, from CSV), `master_thesis_code/datamodels/emri_detection.py` (Pipeline A, synthetic)
+- Pattern: `@dataclass` initialized from `pd.Series` row of Cramer-Rao CSV
+- Two parallel galaxy representations:
+## Entry Points
+- Location: `master_thesis_code/__main__.py` -> `main.py:main()`
+- Invocation: `python -m master_thesis_code <working_dir> [options]`
+- Dispatches to: `data_simulation()`, `evaluate()`, `snr_analysis()`, `generate_figures()`
+- Location: `master_thesis_code/bayesian_inference/bayesian_inference_mwe.py` (has `__main__` block)
+- Invocation: `python -m master_thesis_code.bayesian_inference.bayesian_inference_mwe`
+- Location: `scripts/` directory
+- `prepare_detections.py`: Post-process Cramer-Rao CSV for evaluation
+- `merge_cramer_rao_bounds.py`: Merge per-index simulation CSVs
+- `remove_detections_out_of_bounds.py`: Filter detections
+- `estimate_hubble_constant.py`: Standalone H0 estimation
+## Error Handling
+- `ParameterOutOfBoundsError`: Raised during derivative computation when perturbed parameter exceeds bounds; caught in `data_simulation()` loop, iteration skipped
+- `WaveformGenerationError`: Raised for invalid waveform generator configuration
+- `Warning` catch: `warnings.filterwarnings("error")` converts waveform warnings (mass ratio out of bounds) to exceptions, caught and logged
+- `RuntimeError`, `ValueError`, `AssertionError`: Caught from `few`/`fastlisaresponse` waveform generation failures; iteration skipped with logging
+- No retry logic -- failed iterations are simply skipped and the loop continues
+## GPU/CPU Portability
+```python
+```
+## Cross-Cutting Concerns
+## Backward Compatibility
+<!-- GSD:architecture-end -->
+
+<!-- GSD:workflow-start source:GSD defaults -->
+## GSD Workflow Enforcement
+
+Before using Edit, Write, or other file-changing tools, start work through a GSD command so planning artifacts and execution context stay in sync.
+
+Use these entry points:
+- `/gsd:quick` for small fixes, doc updates, and ad-hoc tasks
+- `/gsd:debug` for investigation and bug fixing
+- `/gsd:execute-phase` for planned phase work
+
+Do not make direct repo edits outside a GSD workflow unless the user explicitly asks to bypass it.
+<!-- GSD:workflow-end -->
+
+<!-- GSD:profile-start -->
+## Developer Profile
+
+> Profile not yet configured. Run `/gsd:profile-user` to generate your developer profile.
+> This section is managed by `generate-claude-profile` -- do not edit manually.
+<!-- GSD:profile-end -->

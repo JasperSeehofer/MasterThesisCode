@@ -34,7 +34,7 @@ Requirements for initial cluster deployment. Each maps to roadmap phases.
 - [ ] **SLURM-01**: `cluster/simulate.sbatch` submits GPU array jobs where each task runs `--simulation_steps N` with `--simulation_index` mapped to `SLURM_ARRAY_TASK_ID`
 - [ ] **SLURM-02**: `cluster/merge.sbatch` runs the non-interactive merge and prepare scripts as a CPU batch job
 - [ ] **SLURM-03**: `cluster/evaluate.sbatch` runs Bayesian inference as a CPU multiprocessing job with `--num_workers` matching allocated cores
-- [ ] **SLURM-04**: `cluster/submit_pipeline.sh` chains simulate → merge → evaluate using `sbatch --parsable --dependency=afterok` and prints all job IDs
+- [ ] **SLURM-04**: `cluster/submit_pipeline.sh` chains simulate -> merge -> evaluate using `sbatch --parsable --dependency=afterok` and prints all job IDs
 
 ### Documentation
 
@@ -72,29 +72,29 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| CODE-01 | TBD | Pending |
-| CODE-02 | TBD | Pending |
-| CODE-03 | TBD | Pending |
-| BATCH-01 | TBD | Pending |
-| BATCH-02 | TBD | Pending |
-| TRACE-01 | TBD | Pending |
-| TRACE-02 | TBD | Pending |
-| ENV-01 | TBD | Pending |
-| ENV-02 | TBD | Pending |
-| ENV-03 | TBD | Pending |
-| SLURM-01 | TBD | Pending |
-| SLURM-02 | TBD | Pending |
-| SLURM-03 | TBD | Pending |
-| SLURM-04 | TBD | Pending |
-| DOCS-01 | TBD | Pending |
-| DOCS-02 | TBD | Pending |
-| DOCS-03 | TBD | Pending |
+| CODE-01 | Phase 1 | Pending |
+| CODE-02 | Phase 1 | Pending |
+| CODE-03 | Phase 1 | Pending |
+| BATCH-01 | Phase 2 | Pending |
+| BATCH-02 | Phase 2 | Pending |
+| TRACE-01 | Phase 4 | Pending |
+| TRACE-02 | Phase 4 | Pending |
+| ENV-01 | Phase 3 | Pending |
+| ENV-02 | Phase 3 | Pending |
+| ENV-03 | Phase 3 | Pending |
+| SLURM-01 | Phase 4 | Pending |
+| SLURM-02 | Phase 4 | Pending |
+| SLURM-03 | Phase 4 | Pending |
+| SLURM-04 | Phase 4 | Pending |
+| DOCS-01 | Phase 5 | Pending |
+| DOCS-02 | Phase 5 | Pending |
+| DOCS-03 | Phase 5 | Pending |
 
 **Coverage:**
 - v1 requirements: 17 total
-- Mapped to phases: 0
-- Unmapped: 17
+- Mapped to phases: 17
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-26*
-*Last updated: 2026-03-26 after initial definition*
+*Last updated: 2026-03-26 after roadmap creation*
