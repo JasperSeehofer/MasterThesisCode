@@ -78,7 +78,7 @@ class Arguments:
     @property
     def num_workers(self) -> int:
         """Number of multiprocessing workers for Bayesian inference."""
-        raw = self._parsed_arguments.num_workers
+        raw: int | None = self._parsed_arguments.num_workers
         if raw is not None:
             return max(1, raw)
         try:
