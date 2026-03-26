@@ -21,7 +21,7 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-25)
 
 **Core value:** The simulation pipeline runs reliably on the GPU cluster as SLURM array jobs, producing enough Cramer-Rao bounds for statistically meaningful Hubble constant posteriors.
-**Current focus:** Phase 1: Code Hardening
+**Current focus:** Phase 01 — code-hardening
 
 ## Current Position
 
