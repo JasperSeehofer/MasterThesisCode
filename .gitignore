@@ -5,18 +5,25 @@ coverage.xml
 docs/build/
 docs/source/_generated/
 .vscode/
-saved_figures/LISA_configuration
-saved_figures/parameter_estimation
-notebooks/
-test.py
 **/__pycache__/
-notebooks/
 env/
 evaluation/
 !master_thesis_code_test/fixtures/evaluation/
-GLADE+.txt
-reduced_galaxy_catalogue.csv
+test-artifacts/
+
+# Data files (regenerable, live on $WORKSPACE on cluster)
+simulations/
 few_data/
 lisa_files/
-test-artifacts/
+GLADE+.txt
+reduced_galaxy_catalogue.csv
+
+# Figures (regenerable)
+saved_figures/
+*.png
+
+# Run metadata (per-run)
+run_metadata.json
+
+# Credentials
 cluster/vpn.sh
