@@ -111,6 +111,45 @@ python -m master_thesis_code <working_dir> --evaluate [--h_value 0.73]
 python -m master_thesis_code <working_dir> --snr_analysis
 ```
 
+## Cluster Deployment
+
+The `cluster/` directory contains everything needed to run EMRI simulations on bwUniCluster 3.0 (KIT). See `cluster/README.md` for the full quickstart guide.
+
+### Key CLI Flags
+
+| Flag | Where | Purpose |
+|------|-------|---------|
+| `--use_gpu` | `arguments.py` | Enable GPU acceleration (always used on cluster) |
+| `--num_workers N` | `arguments.py` | Multiprocessing pool size for Bayesian inference; defaults to `os.sched_getaffinity(0) - 2` |
+| `--simulation_index I` | `arguments.py` | Maps to `SLURM_ARRAY_TASK_ID`; indexes per-task output files |
+| `--seed S` | `arguments.py` | Random seed; on cluster, per-task seed = `BASE_SEED + SLURM_ARRAY_TASK_ID` |
+
+### Script Inventory
+
+| Script | Purpose |
+|--------|---------|
+| `cluster/modules.sh` | Loads environment modules; exports `$WORKSPACE`, `$PROJECT_ROOT`, `$VENV_PATH` |
+| `cluster/setup.sh` | First-time setup: installs uv, allocates workspace, creates venv |
+| `cluster/simulate.sbatch` | GPU array job -- one EMRI simulation per task (`gpu_h100`, 1 GPU, 2h) |
+| `cluster/merge.sbatch` | CPU job -- merges per-task CSVs via `emri-merge`, prepares detections via `emri-prepare` |
+| `cluster/evaluate.sbatch` | CPU job -- Bayesian inference for H0 posterior (16 CPUs, auto-detected workers) |
+| `cluster/submit_pipeline.sh` | Pipeline orchestrator -- chains simulate -> merge -> evaluate via `--dependency=afterok` |
+| `cluster/resubmit_failed.sh` | Resubmits only failed/timed-out array tasks; cleans up partial output first |
+| `cluster/vpn.sh` | University VPN connection via openconnect |
+
+### Quick Reference
+
+```bash
+# First-time setup (run once)
+bash cluster/setup.sh
+
+# Submit a full campaign
+bash cluster/submit_pipeline.sh --tasks 100 --steps 50 --seed 42
+
+# Resubmit failed tasks
+bash cluster/resubmit_failed.sh JOB_ID $RUN_DIR BASE_SEED SIM_STEPS
+```
+
 ## Running Tests
 
 Tests use pytest. All tests live in `master_thesis_code_test/`, mirroring the source layout.

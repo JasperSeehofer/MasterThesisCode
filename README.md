@@ -57,6 +57,17 @@ uv run python -m master_thesis_code <working_dir> --evaluate [--h_value 0.73]
 uv run python -m master_thesis_code <working_dir> --snr_analysis
 ```
 
+## Running on HPC
+
+This project runs on bwUniCluster 3.0 (KIT) as SLURM array jobs. The `cluster/` directory
+contains all scripts for environment setup, job submission, and failure recovery.
+
+See [`cluster/README.md`](cluster/README.md) for the complete guide covering:
+- First-time cluster setup
+- Submitting simulation campaigns
+- Monitoring and retrieving results
+- Troubleshooting common failures
+
 ## Running Tests
 
 ```bash
