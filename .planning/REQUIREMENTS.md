@@ -21,7 +21,7 @@ Requirements for initial cluster deployment. Each maps to roadmap phases.
 ### Traceability
 
 - [ ] **TRACE-01**: `run_metadata.json` includes SLURM environment variables (`SLURM_JOB_ID`, `SLURM_ARRAY_TASK_ID`, `SLURM_NODELIST`, `SLURM_CPUS_PER_TASK`, `CUDA_VISIBLE_DEVICES`, `HOSTNAME`) when running on a cluster
-- [ ] **TRACE-02**: Each SLURM array task uses a deterministic seed derived from a base seed plus `SLURM_ARRAY_TASK_ID`, documented in job scripts
+- [x] **TRACE-02**: Each SLURM array task uses a deterministic seed derived from a base seed plus `SLURM_ARRAY_TASK_ID`, documented in job scripts
 
 ### Cluster Environment
 
@@ -31,9 +31,9 @@ Requirements for initial cluster deployment. Each maps to roadmap phases.
 
 ### SLURM Infrastructure
 
-- [ ] **SLURM-01**: `cluster/simulate.sbatch` submits GPU array jobs where each task runs `--simulation_steps N` with `--simulation_index` mapped to `SLURM_ARRAY_TASK_ID`
-- [ ] **SLURM-02**: `cluster/merge.sbatch` runs the non-interactive merge and prepare scripts as a CPU batch job
-- [ ] **SLURM-03**: `cluster/evaluate.sbatch` runs Bayesian inference as a CPU multiprocessing job with `--num_workers` matching allocated cores
+- [x] **SLURM-01**: `cluster/simulate.sbatch` submits GPU array jobs where each task runs `--simulation_steps N` with `--simulation_index` mapped to `SLURM_ARRAY_TASK_ID`
+- [x] **SLURM-02**: `cluster/merge.sbatch` runs the non-interactive merge and prepare scripts as a CPU batch job
+- [x] **SLURM-03**: `cluster/evaluate.sbatch` runs Bayesian inference as a CPU multiprocessing job with `--num_workers` matching allocated cores
 - [ ] **SLURM-04**: `cluster/submit_pipeline.sh` chains simulate -> merge -> evaluate using `sbatch --parsable --dependency=afterok` and prints all job IDs
 
 ### Documentation
@@ -78,13 +78,13 @@ Which phases cover which requirements. Updated during roadmap creation.
 | BATCH-01 | Phase 2 | Complete |
 | BATCH-02 | Phase 2 | Complete |
 | TRACE-01 | Phase 4 | Pending |
-| TRACE-02 | Phase 4 | Pending |
+| TRACE-02 | Phase 4 | Complete |
 | ENV-01 | Phase 3 | Pending |
 | ENV-02 | Phase 3 | Pending |
 | ENV-03 | Phase 3 | Pending |
-| SLURM-01 | Phase 4 | Pending |
-| SLURM-02 | Phase 4 | Pending |
-| SLURM-03 | Phase 4 | Pending |
+| SLURM-01 | Phase 4 | Complete |
+| SLURM-02 | Phase 4 | Complete |
+| SLURM-03 | Phase 4 | Complete |
 | SLURM-04 | Phase 4 | Pending |
 | DOCS-01 | Phase 5 | Pending |
 | DOCS-02 | Phase 5 | Pending |

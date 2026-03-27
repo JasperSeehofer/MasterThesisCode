@@ -74,7 +74,7 @@ Plans:
 
 Plans:
 - [ ] 04-01-PLAN.md — Extend _write_run_metadata() with SLURM env vars and indexed filenames
-- [ ] 04-02-PLAN.md — Create simulate.sbatch, merge.sbatch, evaluate.sbatch job scripts
+- [x] 04-02-PLAN.md — Create simulate.sbatch, merge.sbatch, evaluate.sbatch job scripts
 - [ ] 04-03-PLAN.md — Create submit_pipeline.sh orchestrator and resubmit_failed.sh recovery helper
 
 ### Phase 5: Documentation
