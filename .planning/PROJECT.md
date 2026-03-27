@@ -2,11 +2,19 @@
 
 ## What This Is
 
-A gravitational wave parameter estimation pipeline for LISA Extreme Mass Ratio Inspirals (EMRIs). Two pipelines: (1) GPU-accelerated EMRI simulation that computes SNR and Cramér-Rao bounds, and (2) CPU-based Bayesian inference that evaluates the Hubble constant posterior. This milestone adds production-ready HPC/cluster support so both pipelines run on bwUniCluster 3.0 at KIT with proper job management, environment setup, and best-practices documentation.
+A gravitational wave parameter estimation pipeline for LISA Extreme Mass Ratio Inspirals (EMRIs). Two pipelines: (1) GPU-accelerated EMRI simulation that computes SNR and Cramér-Rao bounds, and (2) CPU-based Bayesian inference that evaluates the Hubble constant posterior. The v1.0 milestone delivered production-ready HPC/cluster support: both pipelines now run on bwUniCluster 3.0 at KIT as SLURM array jobs with a single-command submission, reproducible seeding, failure recovery, and complete documentation.
 
 ## Core Value
 
 The simulation pipeline runs reliably on the GPU cluster as SLURM array jobs, producing enough Cramér-Rao bounds for statistically meaningful Hubble constant posteriors.
+
+## Current State (v1.0 shipped 2026-03-27)
+
+- **Cluster pipeline operational:** `submit_pipeline.sh --tasks N --steps M --seed S` submits the full simulate→merge→evaluate chain
+- **186 CPU tests passing**, 43% coverage (gate at 25%)
+- **~24,400 LOC** (Python + Shell), 9 cluster scripts in `cluster/`
+- **Documentation complete:** `cluster/README.md` quickstart, `CLAUDE.md` cluster section, `README.md` HPC pointer
+- **Known physics bugs remain** (Fisher stencil, confusion noise, wCDM silent, etc.) — tracked in CLAUDE.md
 
 ## Requirements
 
@@ -21,22 +29,22 @@ The simulation pipeline runs reliably on the GPU cluster as SLURM array jobs, pr
 - ✓ CuPy/CUDA GPU acceleration with guarded imports — existing
 - ✓ Multiprocessing pool for Bayesian likelihood evaluation — existing
 - ✓ Scientific plotting subpackage with callback-based simulation monitoring — existing
-- ✓ Pre-commit hooks (ruff, mypy), CI pipeline, test suite (149 CPU tests) — existing
+- ✓ Pre-commit hooks (ruff, mypy), CI pipeline, test suite — existing
+- ✓ `--use_gpu` CLI flag threaded through all pipelines — v1.0 Phase 1
+- ✓ `--num_workers` CLI flag for Bayesian inference pool size — v1.0 Phase 1
+- ✓ CPU-safe `MemoryManagement` (guard GPUtil, no-op on CPU nodes) — v1.0 Phase 1
+- ✓ Non-interactive merge script (`--delete-sources` flag) — v1.0 Phase 2
+- ✓ Environment module loader (`modules.sh`) for bwUniCluster 3.0 — v1.0 Phase 3
+- ✓ One-time cluster setup script (uv, workspace allocation) — v1.0 Phase 3
+- ✓ SLURM metadata in `run_metadata.json` (job ID, array task ID, node, GPU info) — v1.0 Phase 4
+- ✓ SLURM job scripts for simulation (GPU array), merge, and evaluation (CPU) — v1.0 Phase 4
+- ✓ Workflow orchestrator chaining jobs via `--dependency=afterok` — v1.0 Phase 4
+- ✓ Cluster documentation (quickstart, monitoring, troubleshooting) — v1.0 Phase 5
+- ✓ CLAUDE.md and README.md updates for cluster deployment — v1.0 Phase 5
 
 ### Active
 
-- [x] `--use_gpu` CLI flag threaded through all pipelines — Validated in Phase 1: Code Hardening
-- [x] `--num_workers` CLI flag for Bayesian inference pool size — Validated in Phase 1: Code Hardening
-- [x] CPU-safe `MemoryManagement` (guard GPUtil, no-op on CPU nodes) — Validated in Phase 1: Code Hardening
-- [x] SLURM metadata in `run_metadata.json` (job ID, array task ID, node, GPU info) — Validated in Phase 4: SLURM Job Infrastructure
-- [x] Non-interactive merge script (`--delete-sources` flag) — Validated in Phase 2: Batch Compatibility
-- [x] SLURM job scripts for simulation (GPU array), merge, and evaluation (CPU) — Validated in Phase 4: SLURM Job Infrastructure
-- [x] Workflow orchestrator chaining jobs via `--dependency=afterok` — Validated in Phase 4: SLURM Job Infrastructure
-- [x] Environment module loader (`modules.sh`) for bwUniCluster 3.0 — Validated in Phase 3: Cluster Environment
-- [x] One-time cluster setup script (uv, workspace allocation) — Validated in Phase 3: Cluster Environment
-- [ ] Apptainer container definition as alternative to module-based approach
-- [x] Cluster documentation (quickstart, monitoring, troubleshooting) — Validated in Phase 5: Documentation
-- [x] CLAUDE.md and README.md updates for cluster deployment — Validated in Phase 5: Documentation
+(None — next milestone not yet planned)
 
 ### Out of Scope
 
@@ -45,47 +53,50 @@ The simulation pipeline runs reliably on the GPU cluster as SLURM array jobs, pr
 - GPU CI runners — cluster testing is manual; GitHub Actions stays CPU-only
 - Checkpointing/resume — each array task is short enough; failed tasks can be re-submitted
 - Self-hosted runners on cluster — security and maintenance overhead not justified for a thesis
+- Apptainer container definition — module-based approach works well; container deferred as not needed for thesis
 
 ## Context
 
-- **Cluster:** bwUniCluster 3.0 at KIT Karlsruhe (bwHPC federation), SLURM scheduler, GPU nodes with NVIDIA GPUs (CUDA 12), `module load` environment system, workspace mechanism (`ws_allocate`)
-- **Architecture fit:** `--simulation_index` already maps naturally to `SLURM_ARRAY_TASK_ID`. Each EMRI event is independent, making array jobs the ideal parallelization strategy.
-- **Known code issues:** ~~`USE_GPU` hardcoded True~~ (fixed Phase 1), ~~`MemoryManagement` crashes without GPU~~ (fixed Phase 1), ~~merge script has interactive `input()` calls~~ (fixed Phase 2) — all blockers resolved.
-- **Prior work:** Codebase has been through extensive refactoring (plotting extraction, bayesian_statistics extraction, physics bug fixes, test coverage improvements). The code is structurally ready for cluster deployment.
+- **Cluster:** bwUniCluster 3.0 at KIT Karlsruhe (bwHPC federation), SLURM scheduler, GPU nodes with NVIDIA H100 GPUs (CUDA 12), `module load` environment system, workspace mechanism (`ws_allocate`)
+- **Architecture fit:** `--simulation_index` maps to `SLURM_ARRAY_TASK_ID`. Each EMRI event is independent, making array jobs the ideal parallelization strategy.
+- **All v1.0 code blockers resolved:** CPU-safe imports, batch-compatible scripts, environment setup, job infrastructure, documentation.
+- **Known physics bugs:** Fisher stencil (forward-diff instead of 5-point), confusion noise absent from PSD, wCDM params silently ignored, hardcoded 10% σ(d_L), WMAP-era cosmology, galaxy redshift uncertainty scaling. All tracked in CLAUDE.md.
 
 ## Constraints
 
 - **GPU:** CUDA 12 required for `cupy-cuda12x` and `fastemriwaveforms-cuda12x` — must use GPU partition on cluster
 - **GSL:** Build-time requirement for `fastemriwaveforms` — must be available via module or container
-- **uv:** Primary package manager; must be installable on login nodes (may need local install to `~/.local/bin`)
-- **Workspace:** bwHPC workspaces expire (default 30 days, extendable) — final results must be copied to persistent storage
-- **Network:** Compute nodes may have restricted outbound access — all dependency installation must happen on login nodes
+- **uv:** Primary package manager; installed to `~/.local/bin` on login nodes
+- **Workspace:** bwHPC workspaces expire (default 60 days, extendable) — results must be copied to persistent storage
+- **Network:** Compute nodes may have restricted outbound access — all dependency installation happens on login nodes
 
 ## Key Decisions
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| SLURM array jobs over single long job | Per-task time limits, automatic retry, better queue scheduling, natural fit with `--simulation_index` | — Pending |
-| Module-based primary, Apptainer alternative | Simpler debugging and cluster storage integration for a thesis; container for reproducibility | — Pending |
-| Seed = base + array task ID | Deterministic, reproducible, different per task | — Pending |
-| `cluster/` directory in repo | Job scripts version-controlled alongside code they run | — Pending |
+| SLURM array jobs over single long job | Per-task time limits, automatic retry, better queue scheduling, natural fit with `--simulation_index` | ✓ Good — clean mapping, easy failure recovery |
+| Module-based primary, Apptainer deferred | Simpler debugging and cluster storage integration for a thesis | ✓ Good — modules work well, container not needed |
+| Seed = base + array task ID | Deterministic, reproducible, different per task | ✓ Good — exact reproducibility confirmed |
+| `cluster/` directory in repo | Job scripts version-controlled alongside code they run | ✓ Good — single git pull deploys everything |
+| `emri-merge`/`emri-prepare` entry points | Console scripts avoid fragile `python -m scripts.*` in sbatch | ✓ Good — clean CLI interface |
+| afterok dependency chaining | Pipeline runs unattended after single submission | ✓ Good — three stages chain automatically |
 
 ## Evolution
 
 This document evolves at phase transitions and milestone boundaries.
 
-**After each phase transition** (via `/gsd:transition`):
+**After each phase transition:**
 1. Requirements invalidated? → Move to Out of Scope with reason
 2. Requirements validated? → Move to Validated with phase reference
 3. New requirements emerged? → Add to Active
 4. Decisions to log? → Add to Key Decisions
 5. "What This Is" still accurate? → Update if drifted
 
-**After each milestone** (via `/gsd:complete-milestone`):
+**After each milestone:**
 1. Full review of all sections
 2. Core Value check — still the right priority?
 3. Audit Out of Scope — reasons still valid?
 4. Update Context with current state
 
 ---
-*Last updated: 2026-03-27 after Phase 5 (Documentation) completion — final phase of v1.0 milestone*
+*Last updated: 2026-03-27 after v1.0 milestone completion*
