@@ -8,6 +8,18 @@ A gravitational wave parameter estimation pipeline for LISA Extreme Mass Ratio I
 
 The simulation pipeline runs reliably on the GPU cluster as SLURM array jobs, producing enough Cramér-Rao bounds for statistically meaningful Hubble constant posteriors.
 
+## Current Milestone: v1.1 Clean Simulation Campaign
+
+**Goal:** Run the full EMRI simulation pipeline on bwUniCluster from a clean slate, validate results, and evaluate the Hubble constant posterior.
+
+**Target features:**
+- Clean data reset (delete stale outputs, ensure no leftover simulation artifacts)
+- SSH key-based cluster access (register key via bwUniCluster portal, configure for direct CLI use)
+- Test simulation run (5 tasks, 50-100 steps) with timing analysis
+- Production simulation run (scale up based on test results and GPU availability)
+- Evaluation pipeline run (Bayesian inference on fresh Cramér-Rao bounds)
+- Result validation (SNR distributions, detection rates, posterior sanity checks)
+
 ## Current State (v1.0 shipped 2026-03-27)
 
 - **Cluster pipeline operational:** `submit_pipeline.sh --tasks N --steps M --seed S` submits the full simulate→merge→evaluate chain
@@ -44,7 +56,12 @@ The simulation pipeline runs reliably on the GPU cluster as SLURM array jobs, pr
 
 ### Active
 
-(None — next milestone not yet planned)
+- Data reset: delete stale simulation outputs and evaluation artifacts
+- SSH key-based cluster access for direct CLI interaction
+- Test simulation run with timing analysis (5 tasks, 50-100 steps)
+- Production simulation run scaled to GPU availability
+- Bayesian inference evaluation on fresh Cramér-Rao bounds
+- Result validation (SNR distributions, detection rates, posterior checks)
 
 ### Out of Scope
 
@@ -99,4 +116,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-03-27 after v1.0 milestone completion*
+*Last updated: 2026-03-27 after v1.1 milestone start*

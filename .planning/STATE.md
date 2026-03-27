@@ -1,33 +1,34 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.0
-milestone_name: milestone
-status: v1.0 milestone complete
-stopped_at: Phase 5 context gathered
-last_updated: "2026-03-27T15:54:20.336Z"
+milestone: v1.1
+milestone_name: Clean Simulation Campaign
+status: Defining requirements
+stopped_at: null
+last_updated: "2026-03-27T18:00:00.000Z"
 last_activity: 2026-03-27
 progress:
-  total_phases: 5
-  completed_phases: 5
-  total_plans: 9
-  completed_plans: 9
-  percent: 71
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-03-25)
+See: .planning/PROJECT.md (updated 2026-03-27)
 
 **Core value:** The simulation pipeline runs reliably on the GPU cluster as SLURM array jobs, producing enough Cramer-Rao bounds for statistically meaningful Hubble constant posteriors.
-**Current focus:** Phase 05 — documentation
+**Current focus:** v1.1 Clean Simulation Campaign — defining requirements
 
 ## Current Position
 
-Phase: 05
-Plan: Not started
-Last activity: 2026-03-27
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-03-27 — Milestone v1.1 started
 
 Progress: [███████░░░] 71%
 
