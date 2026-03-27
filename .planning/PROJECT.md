@@ -53,10 +53,10 @@ The simulation pipeline runs reliably on the GPU cluster as SLURM array jobs, pr
 - ✓ Workflow orchestrator chaining jobs via `--dependency=afterok` — v1.0 Phase 4
 - ✓ Cluster documentation (quickstart, monitoring, troubleshooting) — v1.0 Phase 5
 - ✓ CLAUDE.md and README.md updates for cluster deployment — v1.0 Phase 5
+- ✓ Data reset: stale simulation outputs removed from tracking, .gitignore verified — v1.1 Phase 6
 
 ### Active
 
-- Data reset: delete stale simulation outputs and evaluation artifacts
 - SSH key-based cluster access for direct CLI interaction
 - Test simulation run with timing analysis (5 tasks, 50-100 steps)
 - Production simulation run scaled to GPU availability
@@ -116,4 +116,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-03-27 after v1.1 milestone start*
+*Last updated: 2026-03-27 after Phase 6 completion*
