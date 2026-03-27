@@ -60,11 +60,16 @@ Plans:
 **Goal**: A complete test simulation campaign produces validated Cramer-Rao bounds and a physically reasonable H0 posterior
 **Depends on**: Phase 7
 **Requirements**: SIM-01, SIM-02, SIM-03
+**Plans:** 2 plans
+
+Plans:
+- [ ] 08-01-PLAN.md — Fix CWD in sbatch scripts, push to cluster, submit smoke-test pipeline (3 tasks, 25 steps, seed 42)
+- [ ] 08-02-PLAN.md — Monitor pipeline completion, validate results (SNR, detection rate, H0 posterior), rsync to local
+
 **Success Criteria** (what must be TRUE):
-  1. A test simulation run (5 tasks, 50-100 steps) completes successfully with timing data recorded in `run_metadata.json`
+  1. A test simulation run (3 tasks, 25 steps, seed 42) completes successfully with timing data recorded in `run_metadata.json`
   2. The evaluation pipeline runs on the fresh Cramer-Rao bounds and produces an H0 posterior distribution
   3. Results pass sanity checks: SNR distribution is physical (peaked above threshold), detection rate is reasonable, and the H0 posterior peaks near the true value (0.73)
-**Plans**: TBD
 
 ## Progress
 
@@ -77,4 +82,4 @@ Plans:
 | 5. Documentation | v1.0 | 2/2 | Complete | 2026-03-27 |
 | 6. Data Cleanup | v1.1 | 0/1 | Not started | - |
 | 7. Cluster Access | v1.1 | 0/1 | Not started | - |
-| 8. Simulation Campaign | v1.1 | 0/? | Not started | - |
+| 8. Simulation Campaign | v1.1 | 0/2 | Not started | - |
