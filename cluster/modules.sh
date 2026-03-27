@@ -3,7 +3,8 @@
 # Loads required environment modules for bwUniCluster 3.0 and exports
 # $WORKSPACE, $PROJECT_ROOT, $VENV_PATH.
 
-set -euo pipefail
+# NOTE: Do NOT use "set -euo pipefail" here — this file is sourced into the
+# user's login shell, and set -e would kill the session on any failure.
 
 # ---------------------------------------------------------------------------
 # Module loading with early failure
@@ -23,8 +24,8 @@ _load_or_die() {
 echo "Loading bwUniCluster modules..."
 _load_or_die compiler/gnu/14.2
 _load_or_die devel/cuda/12.8
-_load_or_die numlib/gsl
 _load_or_die devel/python/3.13.3-gnu-14.2
+# GSL 2.6 is installed system-wide — no module needed (verified 2026-03-27).
 # If a module fails to load, verify with: module spider <category>/
 
 # ---------------------------------------------------------------------------
