@@ -32,11 +32,15 @@ Full details: `.planning/milestones/v1.0-ROADMAP.md`
 **Goal**: Repository is free of stale simulation artifacts and configured to keep generated outputs out of version control
 **Depends on**: Nothing (first phase of v1.1)
 **Requirements**: DATA-01, DATA-02
+**Plans:** 1 plan
+
+Plans:
+- [ ] 06-01-PLAN.md — Remove stale evaluation/mean_bounds.xlsx from git tracking and verify .gitignore coverage
+
 **Success Criteria** (what must be TRUE):
   1. No stale simulation outputs exist in the repository (`evaluation/mean_bounds.xlsx`, `run_metadata.json` removed from tracking)
   2. `git status` shows a clean working tree after deletion (no untracked evaluation artifacts)
   3. The `evaluation/` directory is listed in `.gitignore` so future simulation outputs are never accidentally committed
-**Plans**: TBD
 
 ### Phase 7: Cluster Access
 **Goal**: User can reach bwUniCluster from their local machine and Claude can execute cluster commands, with the environment verified ready for simulation
@@ -67,6 +71,6 @@ Full details: `.planning/milestones/v1.0-ROADMAP.md`
 | 3. Cluster Environment | v1.0 | 1/1 | Complete | 2026-03-27 |
 | 4. SLURM Job Infrastructure | v1.0 | 3/3 | Complete | 2026-03-27 |
 | 5. Documentation | v1.0 | 2/2 | Complete | 2026-03-27 |
-| 6. Data Cleanup | v1.1 | 0/? | Not started | - |
+| 6. Data Cleanup | v1.1 | 0/1 | Not started | - |
 | 7. Cluster Access | v1.1 | 0/? | Not started | - |
 | 8. Simulation Campaign | v1.1 | 0/? | Not started | - |
