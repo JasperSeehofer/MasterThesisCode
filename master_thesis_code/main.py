@@ -105,7 +105,24 @@ def _write_run_metadata(working_directory: str, seed: int, arguments: Arguments)
             "num_workers": arguments.num_workers,
         },
     }
-    metadata_path = os.path.join(working_directory, "run_metadata.json")
+    slurm_vars = [
+        "SLURM_JOB_ID",
+        "SLURM_ARRAY_TASK_ID",
+        "SLURM_NODELIST",
+        "SLURM_CPUS_PER_TASK",
+        "CUDA_VISIBLE_DEVICES",
+        "HOSTNAME",
+    ]
+    slurm_info = {var: os.environ[var] for var in slurm_vars if var in os.environ}
+    if slurm_info:
+        metadata["slurm"] = slurm_info
+
+    index = arguments.simulation_index
+    if index > 0 or "SLURM_ARRAY_TASK_ID" in os.environ:
+        filename = f"run_metadata_{index}.json"
+    else:
+        filename = "run_metadata.json"
+    metadata_path = os.path.join(working_directory, filename)
     with open(metadata_path, "w") as f:
         json.dump(metadata, f, indent=2)
     _ROOT_LOGGER.info(f"Run metadata written to: {metadata_path}")
