@@ -49,7 +49,7 @@ Plans:
 **Plans:** 1 plan
 
 Plans:
-- [ ] 07-01-PLAN.md — SSH config setup, key registration (human), and cluster environment preflight verification
+- [x] 07-01-PLAN.md — SSH config setup, key registration (human), and cluster environment preflight verification
 
 **Success Criteria** (what must be TRUE):
   1. `ssh bwunicluster` connects without password prompt (SSH key registered and config entry working) -- human-verify: ACCESS-01, ACCESS-02 are manual user actions via bwUniCluster portal and local SSH config

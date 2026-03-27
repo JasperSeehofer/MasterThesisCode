@@ -4,13 +4,13 @@ milestone: v1.1
 milestone_name: Clean Simulation Campaign
 status: executing
 stopped_at: Phase 7 context gathered
-last_updated: "2026-03-27T22:24:54.499Z"
+last_updated: "2026-03-27T23:03:02.434Z"
 last_activity: 2026-03-27
 progress:
   total_phases: 3
-  completed_phases: 1
-  total_plans: 1
-  completed_plans: 1
+  completed_phases: 2
+  total_plans: 2
+  completed_plans: 2
   percent: 63
 ---
 
@@ -21,13 +21,13 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-27)
 
 **Core value:** The simulation pipeline runs reliably on the GPU cluster as SLURM array jobs, producing enough Cramer-Rao bounds for statistically meaningful Hubble constant posteriors.
-**Current focus:** Phase 06 — data-cleanup
+**Current focus:** Phase 07 — cluster-access
 
 ## Current Position
 
-Phase: 7
+Phase: 8
 Plan: Not started
-Status: Executing Phase 06
+Status: Executing Phase 07
 Last activity: 2026-03-27
 
 Progress: [██████░░░░] 63% (v1.0 complete, v1.1 Phase 6 next)
