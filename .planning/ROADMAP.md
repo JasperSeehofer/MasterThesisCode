@@ -88,8 +88,8 @@ Plans:
 **Plans:** 2 plans
 
 Plans:
-- [ ] 05-01-PLAN.md — Create cluster/README.md quickstart and reference guide
-- [ ] 05-02-PLAN.md — Add Cluster Deployment section to CLAUDE.md and Running on HPC section to README.md
+- [x] 05-01-PLAN.md — Create cluster/README.md quickstart and reference guide
+- [x] 05-02-PLAN.md — Add Cluster Deployment section to CLAUDE.md and Running on HPC section to README.md
 
 ## Progress
 
