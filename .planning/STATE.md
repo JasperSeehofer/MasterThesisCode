@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Phase 3 context gathered
-last_updated: "2026-03-26T14:47:00.190Z"
-last_activity: 2026-03-26 -- Phase 03 execution started
+stopped_at: Phase 3 complete
+last_updated: "2026-03-27T00:00:00.000Z"
+last_activity: 2026-03-27 -- Phase 03 verified on cluster and completed
 progress:
   total_phases: 5
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 4
-  completed_plans: 3
-  percent: 10
+  completed_plans: 4
+  percent: 60
 ---
 
 # Project State
@@ -21,30 +21,31 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-25)
 
 **Core value:** The simulation pipeline runs reliably on the GPU cluster as SLURM array jobs, producing enough Cramer-Rao bounds for statistically meaningful Hubble constant posteriors.
-**Current focus:** Phase 03 — cluster-environment
+**Current focus:** Phase 04 — SLURM Job Infrastructure (next)
 
 ## Current Position
 
-Phase: 03 (cluster-environment) — EXECUTING
-Plan: 1 of 1
-Status: Executing Phase 03
-Last activity: 2026-03-26 -- Phase 03 execution started
+Phase: 03 (cluster-environment) — COMPLETE
+Next: Phase 04 (slurm-job-infrastructure)
+Last activity: 2026-03-27 -- Phase 03 verified on cluster and completed
 
-Progress: [█░░░░░░░░░] 10%
+Progress: [██████░░░░] 60%
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 1
-- Average duration: 2 min
-- Total execution time: 0.03 hours
+- Total plans completed: 4
+- Average duration: ~5 min
+- Total execution time: ~0.3 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 01-code-hardening | 1/2 | 2 min | 2 min |
+| 01-code-hardening | 2/2 | 5 min | 2.5 min |
+| 02-batch-compatibility | 1/1 | 4 min | 4 min |
+| 03-cluster-environment | 1/1 | 20 min | 20 min |
 
 **Recent Trend:**
 
@@ -54,6 +55,7 @@ Progress: [█░░░░░░░░░] 10%
 *Updated after each plan completion*
 | Phase 01 P02 | 3 min | 3 tasks | 4 files |
 | Phase 02 P01 | 4 min | 2 tasks | 7 files |
+| Phase 03 P01 | 20 min | 3 tasks (incl. human verify) | 2 files |
 
 ## Accumulated Context
 
@@ -70,6 +72,10 @@ Recent decisions affecting current work:
 - [Phase 01]: Removed affinity-expansion hack entirely from bayesian_statistics.py
 - [Phase 02]: Console entry points (emri-merge, emri-prepare) registered in pyproject.toml [project.scripts]
 - [Phase 02]: parse_args(argv) + main(argv) pattern for testable batch scripts
+- [Phase 03]: GSL 2.6 is system-wide on bwUniCluster 3.0 — no module needed
+- [Phase 03]: No set -euo pipefail in sourced scripts (kills login shell on failure)
+- [Phase 03]: Repo layout: code in $HOME, simulation output to $WORKSPACE
+- [Phase 03]: SSH deploy key (no passphrase) for git access on cluster
 
 ### Pending Todos
 
@@ -77,11 +83,10 @@ None yet.
 
 ### Blockers/Concerns
 
-- Phase 3 requires interactive cluster access to verify module names (GSL module name unconfirmed)
 - Workspace expiration (60 days) is an operational risk — must be addressed in Phase 5 docs
 
 ## Session Continuity
 
-Last session: 2026-03-26T14:24:13.881Z
-Stopped at: Phase 3 context gathered
-Resume file: .planning/phases/03-cluster-environment/03-CONTEXT.md
+Last session: 2026-03-27
+Stopped at: Phase 3 complete, ready for Phase 4
+Resume file: .planning/phases/03-cluster-environment/03-01-SUMMARY.md
