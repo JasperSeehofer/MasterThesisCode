@@ -71,6 +71,11 @@ echo "  Node:          $(hostname)"
 echo "  GPU:           ${CUDA_VISIBLE_DEVICES:-not set}"
 echo ""
 
+# Change to run directory so relative paths in constants.py resolve correctly.
+# Without this, simulation CSVs land in the SLURM submission directory instead
+# of $RUN_DIR/simulations/ and the merge step finds nothing.
+cd "$RUN_DIR"
+
 python -m master_thesis_code "$RUN_DIR" \
     --simulation_steps "$SIM_STEPS" \
     --simulation_index "$SLURM_ARRAY_TASK_ID" \

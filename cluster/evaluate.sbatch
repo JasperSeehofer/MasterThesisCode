@@ -52,6 +52,10 @@ echo "  CPUs alloc: ${SLURM_CPUS_PER_TASK:-unknown}"
 echo "  Workers:    auto-detected from cgroup (SLURM_CPUS_PER_TASK - 2)"
 echo ""
 
+# Change to run directory so BayesianStatistics reads prepared_cramer_rao_bounds.csv
+# from $RUN_DIR/simulations/ (relative path in constants.py).
+cd "$RUN_DIR"
+
 python -m master_thesis_code "$RUN_DIR" \
     --evaluate \
     --log_level INFO
