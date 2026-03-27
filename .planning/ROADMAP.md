@@ -70,10 +70,10 @@ Plans:
   3. Each simulation array task uses a deterministic seed derived from base seed plus array task ID, producing reproducible results
   4. The evaluate job runs Bayesian inference with `--num_workers` matching the allocated CPU cores
   5. Failed array tasks can be resubmitted individually without rerunning the entire array
-**Plans:** 3 plans
+**Plans:** 1/3 plans executed
 
 Plans:
-- [ ] 04-01-PLAN.md — Extend _write_run_metadata() with SLURM env vars and indexed filenames
+- [x] 04-01-PLAN.md — Extend _write_run_metadata() with SLURM env vars and indexed filenames
 - [ ] 04-02-PLAN.md — Create simulate.sbatch, merge.sbatch, evaluate.sbatch job scripts
 - [ ] 04-03-PLAN.md — Create submit_pipeline.sh orchestrator and resubmit_failed.sh recovery helper
 
@@ -98,5 +98,5 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
 | 1. Code Hardening | 1/2 | Executing | - |
 | 2. Batch Compatibility | 1/1 | Complete   | 2026-03-26 |
 | 3. Cluster Environment | 1/1 | Complete | 2026-03-27 |
-| 4. SLURM Job Infrastructure | 0/3 | Planned | - |
+| 4. SLURM Job Infrastructure | 1/3 | In Progress|  |
 | 5. Documentation | 0/? | Not started | - |

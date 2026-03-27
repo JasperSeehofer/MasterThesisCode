@@ -20,7 +20,7 @@ Requirements for initial cluster deployment. Each maps to roadmap phases.
 
 ### Traceability
 
-- [ ] **TRACE-01**: `run_metadata.json` includes SLURM environment variables (`SLURM_JOB_ID`, `SLURM_ARRAY_TASK_ID`, `SLURM_NODELIST`, `SLURM_CPUS_PER_TASK`, `CUDA_VISIBLE_DEVICES`, `HOSTNAME`) when running on a cluster
+- [x] **TRACE-01**: `run_metadata.json` includes SLURM environment variables (`SLURM_JOB_ID`, `SLURM_ARRAY_TASK_ID`, `SLURM_NODELIST`, `SLURM_CPUS_PER_TASK`, `CUDA_VISIBLE_DEVICES`, `HOSTNAME`) when running on a cluster
 - [ ] **TRACE-02**: Each SLURM array task uses a deterministic seed derived from a base seed plus `SLURM_ARRAY_TASK_ID`, documented in job scripts
 
 ### Cluster Environment
@@ -77,7 +77,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CODE-03 | Phase 1 | Complete |
 | BATCH-01 | Phase 2 | Complete |
 | BATCH-02 | Phase 2 | Complete |
-| TRACE-01 | Phase 4 | Pending |
+| TRACE-01 | Phase 4 | Complete |
 | TRACE-02 | Phase 4 | Pending |
 | ENV-01 | Phase 3 | Pending |
 | ENV-02 | Phase 3 | Pending |
