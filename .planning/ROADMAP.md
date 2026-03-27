@@ -46,11 +46,15 @@ Plans:
 **Goal**: User can reach bwUniCluster from their local machine and Claude can execute cluster commands, with the environment verified ready for simulation
 **Depends on**: Phase 6
 **Requirements**: ACCESS-01, ACCESS-02, ACCESS-03, ACCESS-04
+**Plans:** 1 plan
+
+Plans:
+- [ ] 07-01-PLAN.md — SSH config setup, key registration (human), and cluster environment preflight verification
+
 **Success Criteria** (what must be TRUE):
   1. `ssh bwunicluster` connects without password prompt (SSH key registered and config entry working) -- human-verify: ACCESS-01, ACCESS-02 are manual user actions via bwUniCluster portal and local SSH config
   2. On the cluster: required modules load, the Python venv exists and activates, and `sinfo -p gpu_h100` confirms GPU partition is accessible
   3. Claude can execute commands on the cluster (via MCP server, SSH-based tool, or Bash) and receive output
-**Plans**: TBD
 
 ### Phase 8: Simulation Campaign
 **Goal**: A complete test simulation campaign produces validated Cramer-Rao bounds and a physically reasonable H0 posterior
@@ -72,5 +76,5 @@ Plans:
 | 4. SLURM Job Infrastructure | v1.0 | 3/3 | Complete | 2026-03-27 |
 | 5. Documentation | v1.0 | 2/2 | Complete | 2026-03-27 |
 | 6. Data Cleanup | v1.1 | 0/1 | Not started | - |
-| 7. Cluster Access | v1.1 | 0/? | Not started | - |
+| 7. Cluster Access | v1.1 | 0/1 | Not started | - |
 | 8. Simulation Campaign | v1.1 | 0/? | Not started | - |
