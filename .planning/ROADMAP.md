@@ -85,7 +85,11 @@ Plans:
   1. `cluster/README.md` contains a complete quickstart covering setup, running, monitoring, results retrieval, and workspace expiration warnings
   2. `CLAUDE.md` documents the `--use_gpu`, `--num_workers` flags and the `cluster/` directory
   3. `README.md` has a "Running on HPC" section that points to `cluster/README.md`
-**Plans**: TBD
+**Plans:** 2 plans
+
+Plans:
+- [ ] 05-01-PLAN.md — Create cluster/README.md quickstart and reference guide
+- [ ] 05-02-PLAN.md — Add Cluster Deployment section to CLAUDE.md and Running on HPC section to README.md
 
 ## Progress
 
@@ -99,4 +103,4 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
 | 2. Batch Compatibility | 1/1 | Complete   | 2026-03-26 |
 | 3. Cluster Environment | 1/1 | Complete | 2026-03-27 |
 | 4. SLURM Job Infrastructure | 0/3 | Planned | - |
-| 5. Documentation | 0/? | Not started | - |
+| 5. Documentation | 0/2 | Planned | - |
