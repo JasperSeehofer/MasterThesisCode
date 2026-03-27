@@ -54,10 +54,12 @@ The simulation pipeline runs reliably on the GPU cluster as SLURM array jobs, pr
 - ✓ Cluster documentation (quickstart, monitoring, troubleshooting) — v1.0 Phase 5
 - ✓ CLAUDE.md and README.md updates for cluster deployment — v1.0 Phase 5
 - ✓ Data reset: stale simulation outputs removed from tracking, .gitignore verified — v1.1 Phase 6
+- ✓ SSH key-based cluster access with ControlMaster 2FA session reuse — v1.1 Phase 7
+- ✓ Cluster environment preflight verified (modules, GPU partition, workspace, venv+imports) — v1.1 Phase 7
+- ✓ Claude SSH integration via `ssh bwunicluster '<cmd>'` for direct cluster command execution — v1.1 Phase 7
 
 ### Active
 
-- SSH key-based cluster access for direct CLI interaction
 - Test simulation run with timing analysis (5 tasks, 50-100 steps)
 - Production simulation run scaled to GPU availability
 - Bayesian inference evaluation on fresh Cramér-Rao bounds
@@ -116,4 +118,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-03-27 after Phase 6 completion*
+*Last updated: 2026-03-28 after Phase 7 completion*
