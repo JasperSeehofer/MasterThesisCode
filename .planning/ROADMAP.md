@@ -35,7 +35,7 @@ Full details: `.planning/milestones/v1.0-ROADMAP.md`
 **Plans:** 1 plan
 
 Plans:
-- [ ] 06-01-PLAN.md — Remove stale evaluation/mean_bounds.xlsx from git tracking and verify .gitignore coverage
+- [x] 06-01-PLAN.md — Remove stale evaluation/mean_bounds.xlsx from git tracking and verify .gitignore coverage
 
 **Success Criteria** (what must be TRUE):
   1. No stale simulation outputs exist in the repository (`evaluation/mean_bounds.xlsx`, `run_metadata.json` removed from tracking)
