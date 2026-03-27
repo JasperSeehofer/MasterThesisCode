@@ -58,21 +58,21 @@ Deferred to subsequent milestones.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| DATA-01 | — | Pending |
-| DATA-02 | — | Pending |
-| ACCESS-01 | — | Pending |
-| ACCESS-02 | — | Pending |
-| ACCESS-03 | — | Pending |
-| ACCESS-04 | — | Pending |
-| SIM-01 | — | Pending |
-| SIM-02 | — | Pending |
-| SIM-03 | — | Pending |
+| DATA-01 | Phase 6 | Pending |
+| DATA-02 | Phase 6 | Pending |
+| ACCESS-01 | Phase 7 | Pending |
+| ACCESS-02 | Phase 7 | Pending |
+| ACCESS-03 | Phase 7 | Pending |
+| ACCESS-04 | Phase 7 | Pending |
+| SIM-01 | Phase 8 | Pending |
+| SIM-02 | Phase 8 | Pending |
+| SIM-03 | Phase 8 | Pending |
 
 **Coverage:**
 - v1.1 requirements: 9 total
-- Mapped to phases: 0
-- Unmapped: 9 (will be mapped during roadmap creation)
+- Mapped to phases: 9
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-27*
-*Last updated: 2026-03-27 after initial definition*
+*Last updated: 2026-03-27 after roadmap creation*
