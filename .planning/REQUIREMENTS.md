@@ -34,7 +34,7 @@ Requirements for initial cluster deployment. Each maps to roadmap phases.
 - [x] **SLURM-01**: `cluster/simulate.sbatch` submits GPU array jobs where each task runs `--simulation_steps N` with `--simulation_index` mapped to `SLURM_ARRAY_TASK_ID`
 - [x] **SLURM-02**: `cluster/merge.sbatch` runs the non-interactive merge and prepare scripts as a CPU batch job
 - [x] **SLURM-03**: `cluster/evaluate.sbatch` runs Bayesian inference as a CPU multiprocessing job with `--num_workers` matching allocated cores
-- [ ] **SLURM-04**: `cluster/submit_pipeline.sh` chains simulate -> merge -> evaluate using `sbatch --parsable --dependency=afterok` and prints all job IDs
+- [x] **SLURM-04**: `cluster/submit_pipeline.sh` chains simulate -> merge -> evaluate using `sbatch --parsable --dependency=afterok` and prints all job IDs
 
 ### Documentation
 
@@ -85,7 +85,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SLURM-01 | Phase 4 | Complete |
 | SLURM-02 | Phase 4 | Complete |
 | SLURM-03 | Phase 4 | Complete |
-| SLURM-04 | Phase 4 | Pending |
+| SLURM-04 | Phase 4 | Complete |
 | DOCS-01 | Phase 5 | Pending |
 | DOCS-02 | Phase 5 | Pending |
 | DOCS-03 | Phase 5 | Pending |

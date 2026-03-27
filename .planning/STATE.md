@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: Executing Phase 04
-stopped_at: Completed 04-02-PLAN.md
-last_updated: "2026-03-27T12:23:22Z"
-last_activity: 2026-03-27 -- Phase 04 Plan 02 (sbatch job scripts) complete
+status: Ready to execute
+stopped_at: Completed 04-03-PLAN.md
+last_updated: "2026-03-27T12:31:07.413Z"
+last_activity: 2026-03-27
 progress:
   total_phases: 5
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 7
-  completed_plans: 5
+  completed_plans: 7
   percent: 71
 ---
 
@@ -26,8 +26,8 @@ See: .planning/PROJECT.md (updated 2026-03-25)
 ## Current Position
 
 Phase: 04 (slurm-job-infrastructure) — EXECUTING
-Plan: 2 of 3 complete
-Last activity: 2026-03-27 -- Phase 04 Plan 02 (sbatch job scripts) complete
+Plan: 3 of 3 complete
+Last activity: 2026-03-27
 
 Progress: [███████░░░] 71%
 
@@ -57,6 +57,7 @@ Progress: [███████░░░] 71%
 | Phase 02 P01 | 4 min | 2 tasks | 7 files |
 | Phase 03 P01 | 20 min | 3 tasks (incl. human verify) | 2 files |
 | Phase 04 P02 | 2 min | 3 tasks | 3 files |
+| Phase 04 P03 | 2 min | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -80,6 +81,8 @@ Recent decisions affecting current work:
 - [04-02]: No --output/--error in SBATCH headers; submit_pipeline.sh sets them via CLI
 - [04-02]: num_workers auto-detected from SLURM cgroup rather than hardcoded
 - [04-02]: Per-task seed = BASE_SEED + SLURM_ARRAY_TASK_ID for reproducible parallelism
+- [Phase 04]: All three CLI flags (--tasks, --steps, --seed) required with no defaults for safety
+- [Phase 04]: resubmit_failed.sh takes 4 positional args rather than extracting seed/steps from metadata
 
 ### Pending Todos
 
@@ -91,6 +94,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-27T12:23:22Z
-Stopped at: Completed 04-02-PLAN.md
-Resume file: .planning/phases/04-slurm-job-infrastructure/04-02-SUMMARY.md
+Last session: 2026-03-27T12:31:07.411Z
+Stopped at: Completed 04-03-PLAN.md
+Resume file: None
