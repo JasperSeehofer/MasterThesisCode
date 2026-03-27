@@ -28,15 +28,15 @@ The simulation pipeline runs reliably on the GPU cluster as SLURM array jobs, pr
 - [x] `--use_gpu` CLI flag threaded through all pipelines — Validated in Phase 1: Code Hardening
 - [x] `--num_workers` CLI flag for Bayesian inference pool size — Validated in Phase 1: Code Hardening
 - [x] CPU-safe `MemoryManagement` (guard GPUtil, no-op on CPU nodes) — Validated in Phase 1: Code Hardening
-- [ ] SLURM metadata in `run_metadata.json` (job ID, array task ID, node, GPU info)
+- [x] SLURM metadata in `run_metadata.json` (job ID, array task ID, node, GPU info) — Validated in Phase 4: SLURM Job Infrastructure
 - [x] Non-interactive merge script (`--delete-sources` flag) — Validated in Phase 2: Batch Compatibility
-- [ ] SLURM job scripts for simulation (GPU array), merge, and evaluation (CPU)
-- [ ] Workflow orchestrator chaining jobs via `--dependency=afterok`
-- [ ] Environment module loader (`modules.sh`) for bwUniCluster 3.0
-- [ ] One-time cluster setup script (uv, workspace allocation)
+- [x] SLURM job scripts for simulation (GPU array), merge, and evaluation (CPU) — Validated in Phase 4: SLURM Job Infrastructure
+- [x] Workflow orchestrator chaining jobs via `--dependency=afterok` — Validated in Phase 4: SLURM Job Infrastructure
+- [x] Environment module loader (`modules.sh`) for bwUniCluster 3.0 — Validated in Phase 3: Cluster Environment
+- [x] One-time cluster setup script (uv, workspace allocation) — Validated in Phase 3: Cluster Environment
 - [ ] Apptainer container definition as alternative to module-based approach
-- [ ] Cluster documentation (quickstart, monitoring, troubleshooting)
-- [ ] CLAUDE.md and README.md updates for cluster deployment
+- [x] Cluster documentation (quickstart, monitoring, troubleshooting) — Validated in Phase 5: Documentation
+- [x] CLAUDE.md and README.md updates for cluster deployment — Validated in Phase 5: Documentation
 
 ### Out of Scope
 
@@ -88,4 +88,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-03-27 after Phase 4 (SLURM Job Infrastructure) completion*
+*Last updated: 2026-03-27 after Phase 5 (Documentation) completion — final phase of v1.0 milestone*
