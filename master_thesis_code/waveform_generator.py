@@ -58,7 +58,6 @@ def create_lisa_response_generator(
         index_beta=INDEX_BETA,
         t0=T0,
         is_ecliptic_latitude=False,
-        use_gpu=use_gpu,
         Tobs=T_observation,
         remove_garbage=True,  # TODO: understand why to use this
         dt=dt,
@@ -80,11 +79,10 @@ def _set_waveform_generator(
             "Parameter estimation is setup up with the 'FastSchwarzschildEccentricFlux' wave generator."
         )
         return GenerateEMRIWaveform(
-            waveform_class="FastSchwarzschildEccentricFlux", use_gpu=use_gpu
+            waveform_class="FastSchwarzschildEccentricFlux",
         )
     elif waveform_generator_type == WaveGeneratorType.PN5_AAK:
         sum_kwargs = {
-            "use_gpu": use_gpu,
             "pad_output": True,
         }
         waveform_generator = GenerateEMRIWaveform(
@@ -92,7 +90,6 @@ def _set_waveform_generator(
             inspiral_kwargs=_pn5_aak_inspiral_kwargs,
             sum_kwargs=sum_kwargs,
             frame="detector",
-            use_gpu=use_gpu,
         )
         _LOGGER.info("Parameter estimation is setup up with the 'PN5AAKwaveform' wave generator.")
         return waveform_generator

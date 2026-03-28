@@ -5,6 +5,7 @@ from pathlib import Path
 
 import pytest
 
+from master_thesis_code.arguments import Arguments
 from master_thesis_code.main import _write_run_metadata
 
 # All 6 SLURM-related env vars that should be captured
@@ -22,7 +23,7 @@ def _make_arguments(
     tmp_path: Path,
     *,
     simulation_index: int = 0,
-) -> object:
+) -> "Arguments":
     """Create a minimal Arguments-like namespace for testing."""
     import argparse
 
@@ -39,8 +40,6 @@ def _make_arguments(
         log_level="INFO",
         generate_figures=None,
     )
-    from master_thesis_code.arguments import Arguments
-
     return Arguments(ns)
 
 
