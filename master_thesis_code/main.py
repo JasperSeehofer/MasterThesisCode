@@ -195,7 +195,7 @@ def data_simulation(
     _callbacks: list[SimulationCallback] = callbacks or []
 
     def _alarm_handler(signum: int, frame: object) -> None:
-        raise TimeoutError("Computation exceeded 60s timeout")
+        raise TimeoutError("Computation exceeded 30s timeout")
 
     signal.signal(signal.SIGALRM, _alarm_handler)
 
@@ -252,7 +252,7 @@ def data_simulation(
 
         try:
             warnings.filterwarnings("error")
-            signal.alarm(60)
+            signal.alarm(30)
             quick_snr = parameter_estimation.compute_signal_to_noise_ratio(
                 use_snr_check_generator=True
             )
@@ -312,7 +312,7 @@ def data_simulation(
             )
             continue
         except TimeoutError:
-            _ROOT_LOGGER.warning("Waveform/SNR computation timed out (>60s). Skipping event...")
+            _ROOT_LOGGER.warning("Waveform/SNR computation timed out (>30s). Skipping event...")
             continue
 
         passed = snr >= cosmological_model.snr_threshold
@@ -329,7 +329,7 @@ def data_simulation(
             f"SNR threshold check successful: {np.round(snr, 3)} >= {cosmological_model.snr_threshold}"
         )
         try:
-            signal.alarm(60)
+            signal.alarm(30)
             cramer_rao_bounds = parameter_estimation.compute_Cramer_Rao_bounds()
             signal.alarm(0)
         except ParameterOutOfBoundsError:
