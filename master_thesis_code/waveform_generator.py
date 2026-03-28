@@ -63,7 +63,7 @@ def create_lisa_response_generator(
         Tobs=T_observation,
         remove_garbage=True,  # TODO: understand why to use this
         dt=dt,
-        orbits=ESAOrbits(),
+        orbits=ESAOrbits(force_backend=force_backend),
         force_backend=force_backend,
         **tdi_kwargs_esa,
     )
