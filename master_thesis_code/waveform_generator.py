@@ -51,7 +51,7 @@ def create_lisa_response_generator(
 
     # fastlisaresponse defaults to CPU backend even when GPU is available.
     # Force CUDA 12 backend when use_gpu is requested.
-    force_backend = "fastlisaresponse_cuda12x" if use_gpu else None
+    force_backend = "cuda12x" if use_gpu else None
 
     lisa_response_generator = ResponseWrapper(
         waveform_gen=_set_waveform_generator(waveform_generator_type, use_gpu=use_gpu),
