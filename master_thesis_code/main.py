@@ -2,6 +2,7 @@ import datetime
 import json
 import logging
 import os
+import signal
 import subprocess
 import warnings
 from collections.abc import Iterator
@@ -16,6 +17,7 @@ from master_thesis_code.exceptions import ParameterOutOfBoundsError
 
 if TYPE_CHECKING:
     from master_thesis_code.callbacks import SimulationCallback
+    from master_thesis_code.parameter_estimation.parameter_estimation import ParameterEstimation
 from master_thesis_code.galaxy_catalogue.handler import (
     GalaxyCatalogueHandler,
     HostGalaxy,
@@ -174,6 +176,24 @@ def snr_analysis(*, use_gpu: bool = False) -> None:
     parameter_estimation.SNR_analysis()
 
 
+def _compute_crb_with_timeout(
+    parameter_estimation: "ParameterEstimation", timeout: int = 60
+) -> dict:
+    """Run compute_Cramer_Rao_bounds with a SIGALRM timeout (Unix only)."""
+
+    def _alarm_handler(signum: int, frame: object) -> None:
+        raise TimeoutError(f"Cramér-Rao computation exceeded {timeout}s")
+
+    old_handler = signal.signal(signal.SIGALRM, _alarm_handler)
+    signal.alarm(timeout)
+    try:
+        result = parameter_estimation.compute_Cramer_Rao_bounds()
+    finally:
+        signal.alarm(0)
+        signal.signal(signal.SIGALRM, old_handler)
+    return result
+
+
 def data_simulation(
     simulation_steps: int,
     cosmological_model: Model1CrossCheck,
@@ -305,11 +325,14 @@ def data_simulation(
             f"SNR threshold check successful: {np.round(snr, 3)} >= {cosmological_model.snr_threshold}"
         )
         try:
-            cramer_rao_bounds = parameter_estimation.compute_Cramer_Rao_bounds()
+            cramer_rao_bounds = _compute_crb_with_timeout(parameter_estimation, timeout=60)
         except ParameterOutOfBoundsError:
             _ROOT_LOGGER.warning(
                 "Caught ParameterOutOfBoundsError in dervative. Continue with new parameters..."
             )
+            continue
+        except TimeoutError:
+            _ROOT_LOGGER.warning("Cramér-Rao bound computation timed out (>60s). Skipping event...")
             continue
         parameter_estimation.save_cramer_rao_bound(
             cramer_rao_bound_dictionary=cramer_rao_bounds,
