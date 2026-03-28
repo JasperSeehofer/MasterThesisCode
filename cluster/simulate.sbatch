@@ -74,10 +74,12 @@ echo "  Node:          $(hostname)"
 echo "  GPU:           ${CUDA_VISIBLE_DEVICES:-not set}"
 echo ""
 
-# Change to run directory so relative paths in constants.py resolve correctly.
-# Without this, simulation CSVs land in the SLURM submission directory instead
-# of $RUN_DIR/simulations/ and the merge step finds nothing.
-cd "$RUN_DIR"
+# Simulation code uses relative paths (e.g. simulations/cramer_rao_bounds_*.csv)
+# from CWD, but also expects the galaxy catalog at ./master_thesis_code/galaxy_catalogue/.
+# Solution: run from the project root and symlink simulations/ → $RUN_DIR/simulations/
+# so output lands in the run directory.
+cd "$PROJECT_ROOT"
+ln -sfn "$RUN_DIR/simulations" "$PROJECT_ROOT/simulations"
 
 python -m master_thesis_code "$RUN_DIR" \
     --simulation_steps "$SIM_STEPS" \

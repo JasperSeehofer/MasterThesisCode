@@ -55,9 +55,10 @@ echo "  CPUs alloc: ${SLURM_CPUS_PER_TASK:-unknown}"
 echo "  Workers:    auto-detected from cgroup (SLURM_CPUS_PER_TASK - 2)"
 echo ""
 
-# Change to run directory so BayesianStatistics reads prepared_cramer_rao_bounds.csv
-# from $RUN_DIR/simulations/ (relative path in constants.py).
-cd "$RUN_DIR"
+# Evaluation code reads simulations/prepared_cramer_rao_bounds.csv relative to CWD.
+# Symlink simulations/ → $RUN_DIR/simulations/ so paths resolve correctly.
+cd "$PROJECT_ROOT"
+ln -sfn "$RUN_DIR/simulations" "$PROJECT_ROOT/simulations"
 
 python -m master_thesis_code "$RUN_DIR" \
     --evaluate \
