@@ -29,8 +29,11 @@ set -euo pipefail
 # Environment setup
 # ---------------------------------------------------------------------------
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-source "$SCRIPT_DIR/modules.sh"
+# SLURM copies sbatch scripts to /var/spool/slurmd/ before execution, so
+# BASH_SOURCE[0] points to the spool copy. Use PROJECT_ROOT (exported by
+# submit_pipeline.sh via --export=ALL) or fall back to ~/MasterThesisCode.
+PROJECT_ROOT="${PROJECT_ROOT:-$HOME/MasterThesisCode}"
+source "$PROJECT_ROOT/cluster/modules.sh"
 source "$VENV_PATH/bin/activate"
 
 # ---------------------------------------------------------------------------
