@@ -17,7 +17,6 @@ from master_thesis_code.exceptions import ParameterOutOfBoundsError
 
 if TYPE_CHECKING:
     from master_thesis_code.callbacks import SimulationCallback
-    from master_thesis_code.parameter_estimation.parameter_estimation import ParameterEstimation
 from master_thesis_code.galaxy_catalogue.handler import (
     GalaxyCatalogueHandler,
     HostGalaxy,
@@ -176,24 +175,6 @@ def snr_analysis(*, use_gpu: bool = False) -> None:
     parameter_estimation.SNR_analysis()
 
 
-def _compute_crb_with_timeout(
-    parameter_estimation: "ParameterEstimation", timeout: int = 60
-) -> dict:
-    """Run compute_Cramer_Rao_bounds with a SIGALRM timeout (Unix only)."""
-
-    def _alarm_handler(signum: int, frame: object) -> None:
-        raise TimeoutError(f"Cramér-Rao computation exceeded {timeout}s")
-
-    old_handler = signal.signal(signal.SIGALRM, _alarm_handler)
-    signal.alarm(timeout)
-    try:
-        result = parameter_estimation.compute_Cramer_Rao_bounds()
-    finally:
-        signal.alarm(0)
-        signal.signal(signal.SIGALRM, old_handler)
-    return result
-
-
 def data_simulation(
     simulation_steps: int,
     cosmological_model: Model1CrossCheck,
@@ -212,6 +193,11 @@ def data_simulation(
     )
 
     _callbacks: list[SimulationCallback] = callbacks or []
+
+    def _alarm_handler(signum: int, frame: object) -> None:
+        raise TimeoutError("Computation exceeded 60s timeout")
+
+    signal.signal(signal.SIGALRM, _alarm_handler)
 
     memory_management = MemoryManagement(use_gpu=use_gpu)
     memory_management.display_GPU_information()
@@ -254,11 +240,13 @@ def data_simulation(
 
         try:
             warnings.filterwarnings("error")
+            signal.alarm(60)
             quick_snr = parameter_estimation.compute_signal_to_noise_ratio(
                 use_snr_check_generator=True
             )
 
             if quick_snr < cosmological_model.snr_threshold * 0.2:
+                signal.alarm(0)
                 _ROOT_LOGGER.info(
                     f"Quick SNR threshold check failed: {np.round(quick_snr, 3)} < {cosmological_model.snr_threshold * 0.2}."
                 )
@@ -267,6 +255,7 @@ def data_simulation(
                     cb.on_snr_computed(counter, quick_snr * 5, False)
                 continue
             snr = parameter_estimation.compute_signal_to_noise_ratio()
+            signal.alarm(0)
             warnings.resetwarnings()
         except Warning as e:
             if "Mass ratio" in str(e):
@@ -310,6 +299,9 @@ def data_simulation(
                 "Caught ZeroDivisionError during trajectory integration. Continue with new parameters..."
             )
             continue
+        except TimeoutError:
+            _ROOT_LOGGER.warning("Waveform/SNR computation timed out (>60s). Skipping event...")
+            continue
 
         passed = snr >= cosmological_model.snr_threshold
         for cb in _callbacks:
@@ -325,7 +317,9 @@ def data_simulation(
             f"SNR threshold check successful: {np.round(snr, 3)} >= {cosmological_model.snr_threshold}"
         )
         try:
-            cramer_rao_bounds = _compute_crb_with_timeout(parameter_estimation, timeout=60)
+            signal.alarm(60)
+            cramer_rao_bounds = parameter_estimation.compute_Cramer_Rao_bounds()
+            signal.alarm(0)
         except ParameterOutOfBoundsError:
             _ROOT_LOGGER.warning(
                 "Caught ParameterOutOfBoundsError in dervative. Continue with new parameters..."
