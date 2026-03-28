@@ -21,12 +21,9 @@ _pn5_aak_inspiral_kwargs = {
 # FAST LISA RESPONSE configuration
 # order of the langrangian interpolation
 order = 35
-orbit_file_esa = "esa-trailing-orbits.h5"
-orbit_kwargs_esa = dict(orbit_file=orbit_file_esa)
 # 1st or 2nd or custom (see docs for custom)
 tdi_gen = "1st generation"
 tdi_kwargs_esa = dict(
-    orbit_kwargs=orbit_kwargs_esa,
     order=order,
     tdi=tdi_gen,
     tdi_chan=ESA_TDI_CHANNELS,
@@ -50,6 +47,7 @@ def create_lisa_response_generator(
     # rather than at module level keeps waveform_generator importable on any machine;
     # this function is only called in GPU-enabled environments.
     from fastlisaresponse import ResponseWrapper  # noqa: PLC0415
+    from lisatools.detector import ESAOrbits  # type: ignore[import-untyped]  # noqa: PLC0415
 
     lisa_response_generator = ResponseWrapper(
         waveform_gen=_set_waveform_generator(waveform_generator_type, use_gpu=use_gpu),
@@ -61,6 +59,7 @@ def create_lisa_response_generator(
         Tobs=T_observation,
         remove_garbage=True,  # TODO: understand why to use this
         dt=dt,
+        orbits=ESAOrbits(),
         **tdi_kwargs_esa,
     )
     _LOGGER.info("Lisa response generator initialized.")
