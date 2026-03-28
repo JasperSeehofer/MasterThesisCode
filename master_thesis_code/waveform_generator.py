@@ -78,12 +78,16 @@ def _set_waveform_generator(
 ) -> Any:
     from few.waveform import GenerateEMRIWaveform  # noqa: PLC0415
 
+    # few auto-detection can fail on cluster nodes; force backend explicitly.
+    force_backend = "cuda12x" if use_gpu else None
+
     if waveform_generator_type == WaveGeneratorType.SCHWARZSCHILD_FULLY_RELATIVISTIC:
         _LOGGER.info(
             "Parameter estimation is setup up with the 'FastSchwarzschildEccentricFlux' wave generator."
         )
         return GenerateEMRIWaveform(
             waveform_class="FastSchwarzschildEccentricFlux",
+            force_backend=force_backend,
         )
     elif waveform_generator_type == WaveGeneratorType.PN5_AAK:
         sum_kwargs = {
@@ -94,6 +98,7 @@ def _set_waveform_generator(
             inspiral_kwargs=_pn5_aak_inspiral_kwargs,
             sum_kwargs=sum_kwargs,
             frame="detector",
+            force_backend=force_backend,
         )
         _LOGGER.info("Parameter estimation is setup up with the 'PN5AAKwaveform' wave generator.")
         return waveform_generator
