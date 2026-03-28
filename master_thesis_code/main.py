@@ -285,6 +285,11 @@ def data_simulation(
                 continue
             else:
                 raise ValueError(e)
+        except ZeroDivisionError:
+            _ROOT_LOGGER.warning(
+                "Caught ZeroDivisionError during trajectory integration. Continue with new parameters..."
+            )
+            continue
 
         passed = snr >= cosmological_model.snr_threshold
         for cb in _callbacks:
