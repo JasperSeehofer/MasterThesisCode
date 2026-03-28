@@ -49,8 +49,8 @@ def create_lisa_response_generator(
     from fastlisaresponse import ResponseWrapper  # noqa: PLC0415
     from lisatools.detector import ESAOrbits  # type: ignore[import-untyped]  # noqa: PLC0415
 
-    # fastlisaresponse defaults to CPU backend even when GPU is available.
-    # Force CUDA 12 backend when use_gpu is requested.
+    # All LISA tools must use the same backend. On GPU: force cuda12x for
+    # ResponseWrapper, ESAOrbits, and few (auto-detects). On CPU: let all default.
     force_backend = "cuda12x" if use_gpu else None
 
     lisa_response_generator = ResponseWrapper(
