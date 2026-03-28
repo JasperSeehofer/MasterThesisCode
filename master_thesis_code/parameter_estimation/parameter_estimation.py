@@ -128,8 +128,14 @@ class ParameterEstimation:
     ) -> Any:
         parameters = self.parameter_space._parameters_to_dict() | update_parameter_dict
         if use_snr_check_generator:
-            return self.snr_check_generator(*parameters.values())
-        return self.lisa_response_generator(*parameters.values())
+            result = self.snr_check_generator(*parameters.values())
+        else:
+            result = self.lisa_response_generator(*parameters.values())
+        # fastlisaresponse >=1.1.17 returns a list of per-channel arrays instead of
+        # a single stacked array. Convert to (n_channels, n_samples) for downstream code.
+        if isinstance(result, list):
+            result = cp.stack(result)
+        return result
 
     def finite_difference_derivative(self) -> dict[str, Any]:
         """Compute partial derivative of the currently set parameters w.r.t. the provided parameter.
