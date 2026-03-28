@@ -95,7 +95,7 @@ class ParameterEstimation:
         self.lisa_configuration = LisaTdiConfiguration()
         self._psd_cache: dict[int, tuple[Any, Any, int, int]] = {}
         self._crb_buffer: list[dict] = []
-        self._crb_flush_interval: int = 10
+        self._crb_flush_interval: int = 1
         _LOGGER.info("parameter estimation initialized.")
 
     def _get_cached_psd(self, n: int) -> tuple[Any, Any, int, int]:

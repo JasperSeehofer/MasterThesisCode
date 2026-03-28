@@ -199,6 +199,17 @@ def data_simulation(
 
     signal.signal(signal.SIGALRM, _alarm_handler)
 
+    # Flush buffered results on SLURM timeout (SIGTERM) before the process is killed.
+    _pe_ref: list[ParameterEstimation] = []
+
+    def _sigterm_handler(signum: int, frame: object) -> None:
+        if _pe_ref:
+            _ROOT_LOGGER.warning("SIGTERM received — flushing buffered Cramér-Rao bounds...")
+            _pe_ref[0].flush_pending_results()
+        raise SystemExit(0)
+
+    signal.signal(signal.SIGTERM, _sigterm_handler)
+
     memory_management = MemoryManagement(use_gpu=use_gpu)
     memory_management.display_GPU_information()
     memory_management.display_fft_cache()
@@ -208,6 +219,7 @@ def data_simulation(
         parameter_space=cosmological_model.parameter_space,
         use_gpu=use_gpu,
     )
+    _pe_ref.append(parameter_estimation)
 
     for cb in _callbacks:
         cb.on_simulation_start(simulation_steps)
