@@ -338,7 +338,12 @@ def data_simulation(
             )
             continue
         except TimeoutError:
-            _ROOT_LOGGER.warning("Cramér-Rao bound computation timed out (>60s). Skipping event...")
+            _ROOT_LOGGER.warning("Cramér-Rao bound computation timed out (>30s). Skipping event...")
+            continue
+        except (ZeroDivisionError, RuntimeError, ValueError) as e:
+            _ROOT_LOGGER.warning(
+                f"Caught {type(e).__name__} during CRB computation: {e}. Skipping event..."
+            )
             continue
         parameter_estimation.save_cramer_rao_bound(
             cramer_rao_bound_dictionary=cramer_rao_bounds,
