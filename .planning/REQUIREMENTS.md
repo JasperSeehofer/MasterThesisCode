@@ -58,20 +58,20 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| PHYS-01 | — | Pending |
-| PHYS-02 | — | Pending |
-| PHYS-03 | — | Pending |
-| SIM-01 | — | Pending |
-| SIM-02 | — | Pending |
-| SIM-03 | — | Pending |
-| H0-01 | — | Pending |
-| H0-02 | — | Pending |
+| PHYS-01 | Phase 10 | Pending |
+| PHYS-02 | Phase 9 | Pending |
+| PHYS-03 | Phase 10 | Pending |
+| SIM-01 | Phase 11 | Pending |
+| SIM-02 | Phase 12 | Pending |
+| SIM-03 | Phase 11 | Pending |
+| H0-01 | Phase 13 | Pending |
+| H0-02 | Phase 13 | Pending |
 
 **Coverage:**
 - v1.2 requirements: 8 total
-- Mapped to phases: 0
-- Unmapped: 8
+- Mapped to phases: 8
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-29*
-*Last updated: 2026-03-29 after initial definition*
+*Last updated: 2026-03-29 after roadmap creation*

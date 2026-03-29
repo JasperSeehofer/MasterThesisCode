@@ -3,11 +3,11 @@ gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Production Campaign & Physics Corrections
 status: active
-stopped_at: Defining requirements
+stopped_at: Roadmap created, ready to plan Phase 9
 last_updated: "2026-03-29"
 last_activity: 2026-03-29
 progress:
-  total_phases: 0
+  total_phases: 5
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-29)
 
 **Core value:** The simulation pipeline runs reliably on the GPU cluster as SLURM array jobs, producing enough Cramer-Rao bounds for statistically meaningful Hubble constant posteriors.
-**Current focus:** Defining requirements for v1.2
+**Current focus:** Phase 9 - Galactic Confusion Noise
 
 ## Current Position
 
-Phase: Not started (defining requirements)
-Plan: —
-Status: Defining requirements
-Last activity: 2026-03-29 — Milestone v1.2 started
+Phase: 9 of 13 (Galactic Confusion Noise) -- first phase of v1.2
+Plan: 0 of 0 in current phase (not yet planned)
+Status: Ready to plan
+Last activity: 2026-03-29 — Roadmap created for v1.2
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [░░░░░░░░░░] 0% (v1.2: 0/5 phases)
 
 ## Performance Metrics
 
@@ -45,6 +45,11 @@ Progress: [░░░░░░░░░░] 0%
 ### Decisions
 
 Decisions are logged in PROJECT.md Key Decisions table.
+Recent decisions affecting current work:
+
+- [v1.1]: 10% d_L threshold was workaround for forward-diff -- revisit after stencil upgrade
+- [v1.1]: 30s waveform timeout -- must increase for 5-point stencil
+- [v1.2 Roadmap]: Confusion noise before stencil -- lower risk, enables independent validation
 
 ### Pending Todos
 
@@ -52,11 +57,12 @@ None.
 
 ### Blockers/Concerns
 
-- Workspace expiration (60 days) — operational risk, documented in cluster/README.md
-- Waveform hangs on certain parameter combinations — mitigated with 30s timeout, root cause TBD
-- Forward-diff Fisher matrix limits d_L accuracy to ~10% — 5-point stencil upgrade is a v1.2 target
+- CRB timeout (30s) will fire on nearly every event after stencil upgrade -- must increase in Phase 10
+- Confusion noise will reduce detection yield -- campaign size must be calibrated in Phase 11
+- Fisher matrix ill-conditioning may emerge with better derivatives -- condition number monitoring needed
 
 ## Session Continuity
 
 Last session: 2026-03-29
-Stopped at: Defining requirements for v1.2
+Stopped at: v1.2 roadmap created, ready to plan Phase 9
+Resume file: None
