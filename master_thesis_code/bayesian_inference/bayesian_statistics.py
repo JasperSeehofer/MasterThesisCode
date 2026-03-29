@@ -55,7 +55,7 @@ DEFAULT_GALAXY_Z_ERROR = 0.0015
 GALAXY_LIKELIHOODS = "galaxy_likelihoods"
 ADDITIONAL_GALAXIES_WITHOUT_BH_MASS = "additional_galaxies_without_bh_mass"
 
-FRACTIONAL_LUMINOSITY_DISTANCE_ERROR_THRESHOLD = 0.05
+FRACTIONAL_LUMINOSITY_DISTANCE_ERROR_THRESHOLD = 0.10
 
 # Module-level globals used by child_process_init for multiprocessing worker state
 redshift_upper_integration_limit: float = 0.0
