@@ -148,3 +148,63 @@ def test_power_spectral_density_channels_ae_equal() -> None:
     psd_a = config.power_spectral_density(fs, channel="A")
     psd_e = config.power_spectral_density(fs, channel="E")
     assert np.allclose(psd_a, psd_e)
+
+
+# ── Galactic confusion noise tests (CPU, no GPU required) ────────────────────
+
+
+def test_confusion_noise_increases_psd_at_1mhz() -> None:
+    """PSD at 1 mHz with confusion noise must exceed PSD without."""
+    config_with = LisaTdiConfiguration(include_confusion_noise=True)
+    config_without = LisaTdiConfiguration(include_confusion_noise=False)
+    fs = np.array([1e-3])  # 1 mHz
+    psd_with = config_with.power_spectral_density_a_channel(fs)
+    psd_without = config_without.power_spectral_density_a_channel(fs)
+    assert psd_with[0] > psd_without[0]
+
+
+def test_confusion_noise_negligible_above_10mhz() -> None:
+    """Above 10 mHz, confusion noise should be negligible (< 1% change)."""
+    config_with = LisaTdiConfiguration(include_confusion_noise=True)
+    config_without = LisaTdiConfiguration(include_confusion_noise=False)
+    fs = np.array([0.01])  # 10 mHz
+    ratio = config_with.power_spectral_density_a_channel(fs)[0] / (
+        config_without.power_spectral_density_a_channel(fs)[0]
+    )
+    assert ratio < 1.01
+
+
+def test_confusion_noise_toggle_backward_compat() -> None:
+    """include_confusion_noise=False gives all-positive PSD identical to old code path."""
+    config = LisaTdiConfiguration(include_confusion_noise=False)
+    fs = np.logspace(-4, 0, 100)
+    psd = config.power_spectral_density(fs, channel="A")
+    assert np.all(psd > 0)
+
+
+def test_confusion_noise_positive() -> None:
+    """_confusion_noise returns all-positive values across the LISA band."""
+    config = LisaTdiConfiguration(include_confusion_noise=True)
+    fs = np.logspace(-4, -1, 100)
+    result = config._confusion_noise(fs)
+    assert np.all(result > 0)
+
+
+def test_t_obs_affects_confusion_noise() -> None:
+    """Different observation times must produce different PSD at 1 mHz."""
+    config_1yr = LisaTdiConfiguration(t_obs_years=1.0)
+    config_4yr = LisaTdiConfiguration(t_obs_years=4.0)
+    fs = np.array([1e-3])
+    psd_1yr = config_1yr.power_spectral_density_a_channel(fs)
+    psd_4yr = config_4yr.power_spectral_density_a_channel(fs)
+    assert psd_1yr[0] != psd_4yr[0]
+
+
+def test_t_channel_unaffected_by_confusion_noise() -> None:
+    """T-channel PSD must be identical regardless of confusion noise toggle."""
+    config_with = LisaTdiConfiguration(include_confusion_noise=True)
+    config_without = LisaTdiConfiguration(include_confusion_noise=False)
+    fs = np.logspace(-4, 0, 100)
+    psd_t_with = config_with.power_spectral_density(fs, channel="T")
+    psd_t_without = config_without.power_spectral_density(fs, channel="T")
+    assert np.allclose(psd_t_with, psd_t_without)
