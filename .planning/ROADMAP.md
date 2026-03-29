@@ -53,7 +53,9 @@ Full details: `.planning/milestones/v1.1-ROADMAP.md`
   2. PSD at 1 mHz with confusion noise is measurably larger than PSD without confusion noise
   3. Existing CPU tests pass with the updated PSD (no regression)
   4. A reference comment citing Babak et al. (2023) arXiv:2303.15929 appears above the confusion noise implementation
-**Plans**: TBD
+**Plans:** 1 plan
+Plans:
+- [ ] 09-01-PLAN.md — Add confusion noise S_c(f) to A/E-channel PSD with TDD tests
 
 ### Phase 10: Five-Point Stencil Derivatives
 **Goal**: Fisher matrix uses O(epsilon^4) five-point stencil derivatives, producing accurate Cramer-Rao bounds
@@ -112,7 +114,7 @@ Phases execute in numeric order: 9 -> 10 -> 11 -> 12 -> 13
 | 6. Data Cleanup | v1.1 | 1/1 | Complete | 2026-03-27 |
 | 7. Cluster Access | v1.1 | 1/1 | Complete | 2026-03-28 |
 | 8. Simulation Campaign | v1.1 | 2/2 | Complete | 2026-03-29 |
-| 9. Galactic Confusion Noise | v1.2 | 0/0 | Not started | - |
+| 9. Galactic Confusion Noise | v1.2 | 0/1 | Planning | - |
 | 10. Five-Point Stencil Derivatives | v1.2 | 0/0 | Not started | - |
 | 11. Validation Campaign | v1.2 | 0/0 | Not started | - |
 | 12. Production Campaign | v1.2 | 0/0 | Not started | - |
