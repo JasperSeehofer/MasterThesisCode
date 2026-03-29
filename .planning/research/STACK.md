@@ -1,367 +1,171 @@
-# Technology Stack: HPC/Cluster Deployment
+# Technology Stack
 
-**Project:** EMRI Parameter Estimation -- bwUniCluster 3.0 Deployment
-**Researched:** 2026-03-25
+**Project:** v1.2 Production Campaign & Physics Corrections
+**Researched:** 2026-03-29
 
-## Recommended Stack
+## Key Finding: No New Dependencies Required
 
-### Cluster Environment (bwUniCluster 3.0)
+All four target features (5-point stencil, confusion noise, production campaign, H0 sweep) are implementable with the existing stack. No new Python packages, no version bumps, no infrastructure additions.
 
-| Technology | Version | Purpose | Why | Confidence |
-|------------|---------|---------|-----|------------|
-| SLURM | (cluster-provided) | Job scheduler | Only option on bwUniCluster 3.0; array jobs are the natural fit for independent EMRI simulations | HIGH |
-| Lmod modules | (cluster-provided) | Environment management | `module load` is the standard bwHPC mechanism; EasyBuild toolchains provide tested CUDA+compiler combos | HIGH |
-| `devel/cuda/12.8` | 12.8 | CUDA toolkit | Confirmed available on bwUniCluster 3.0 via module system; compatible with `cupy-cuda12x` and `fastemriwaveforms-cuda12x` | HIGH |
-| `devel/python/3.13.3-gnu-14.2` | 3.13.3 | Python interpreter | Confirmed available; matches project's `.python-version` pin of 3.13 | MEDIUM |
-| `compiler/gnu/14.2` | 14.2 | GCC compiler | Default compiler on bwUniCluster 3.0; needed for building native extensions | HIGH |
-| GSL | (via module or EasyBuild) | GNU Scientific Library | Build-time requirement for `fastemriwaveforms`; use `module spider gsl` to find exact module name | MEDIUM |
-| uv | latest | Python package manager | Install to `~/.local/bin` on login node; `uv sync` reproduces exact lockfile deps without conda | HIGH |
+This is the correct outcome for a physics-correction milestone on an established codebase.
 
-### GPU Partitions
+## Recommended Stack Changes
 
-| Partition | GPUs | Max Walltime | Max Nodes | CPUs/Node | When to Use | Confidence |
-|-----------|------|-------------|-----------|-----------|-------------|------------|
-| `gpu_h100` | 4x H100 (94 GiB each) | 72h | 12 | 96 | **Primary partition** -- newest GPUs, longest walltime, most nodes | HIGH |
-| `gpu_a100_il` | 4x A100 (80 GiB each) | 48h | 9 | 64 | Fallback if H100 queue is full | HIGH |
-| `gpu_h100_il` | 4x H100 (94 GiB each) | 48h | 5 | 64 | Alternative H100 access | HIGH |
-| `dev_gpu_h100` | 4x H100 | 30min | 1 | 40 | **Testing/debugging only** -- 1 job at a time, max 3 queued | HIGH |
-| `dev_gpu_a100_il` | 4x A100 | 30min | 1 | 64 | Testing fallback | HIGH |
+### New Dependencies
 
-### Container Runtime (Alternative Path)
+None.
 
-| Technology | Version | Purpose | Why | Confidence |
-|------------|---------|---------|-----|------------|
-| Enroot | (cluster-provided) | Container runtime | **Recommended by bwUniCluster docs** over Apptainer; native GPU passthrough without `--nv` flag; Pyxis SLURM integration | HIGH |
-| Apptainer | (cluster-provided) | Container runtime (fallback) | Available without module load; `.sif` files are portable; use `--nv` for GPU passthrough | HIGH |
+### Version Changes
 
-### Filesystem Layout
+None required. The existing pinned versions are sufficient:
+- `numpy` -- array math for stencil and PSD, already used everywhere
+- `scipy` -- integration/interpolation for Bayesian inference, already used
+- `cupy-cuda12x` -- GPU arrays, already used for Fisher matrix computation
+- `pandas` -- CSV I/O, already used for Cramer-Rao bounds
 
-| Location | Quota | Backup | Use For | Confidence |
-|----------|-------|--------|---------|------------|
-| `$HOME` | 500 GiB, 5M inodes | Yes (tape) | Git repo, uv install, `.venv/`, small configs | HIGH |
-| Workspace (`ws_allocate`) | 40 TiB, 20M inodes | No | Simulation output CSVs, posteriors, large intermediate data | HIGH |
-| `$TMPDIR` | Node-local SSD | Deleted at job end | Copy input data here for fast single-node I/O during job | HIGH |
+### Configuration Changes
+
+| Change | File | Purpose | Why |
+|--------|------|---------|-----|
+| Add `--h_range` CLI arg | `arguments.py` | Accept H0 sweep bounds (e.g. `0.6 0.9`) | Current `--h_value` takes a single float; sweep needs a range |
+| Add `--h_steps` CLI arg | `arguments.py` | Number of H0 grid points (e.g. 31) | Controls resolution of posterior sweep |
+| Confusion noise observation time | `LISA_configuration.py` | T_obs parameter for time-dependent confusion noise | Babak et al. (2023) Eq. 17 coefficients depend on mission duration |
+
+## What Exists and Why It's Sufficient
+
+### 5-Point Stencil Fisher Matrix
+
+**Already implemented** at `parameter_estimation.py:187-243` (`five_point_stencil_derivative()`). The method exists but is never called -- `compute_fisher_information_matrix()` at line 339 calls `finite_difference_derivative()` instead.
+
+**Fix is a targeted refactor** (line 339): replace `self.finite_difference_derivative()` with a loop calling `self.five_point_stencil_derivative()` per parameter, collecting derivatives into the same dict format.
+
+**No new math libraries needed.** The 5-point stencil formula `(-f(x+2h) + 8f(x+h) - 8f(x-h) + f(x-2h)) / 12h` is already correctly implemented using CuPy array arithmetic.
+
+**Performance note:** The stencil requires 4 waveform evaluations per parameter (vs 1 for forward-diff), so derivative computation goes from 14 waveform calls to 56. The inner product count stays at 105 (symmetric matrix). GPU time per simulation step will roughly 4x for the derivative phase, but the inner product phase (the actual bottleneck) is unchanged. On H100 GPUs with the existing 30s waveform timeout, this adds ~2-3 minutes per Fisher matrix.
+
+**Integration concern:** The existing `five_point_stencil_derivative()` has a different signature than `finite_difference_derivative()` -- it takes a single `Parameter` and returns one derivative, while the forward-diff version loops internally and returns a dict. The refactor must bridge this gap, either by adapting the 5-point method to loop, or by calling it per-parameter and assembling the dict.
+
+### Galactic Confusion Noise PSD
+
+**Constants already defined** in `constants.py:74-82` (`LISA_PSD_A`, `LISA_PSD_ALPHA`, `LISA_PSD_F2`, `LISA_PSD_A1`, `LISA_PSD_B1`, `LISA_PSD_AK`, `LISA_PSD_BK`) citing arXiv:2303.15929 Eq. 17.
+
+**Implementation location:** Add `S_conf(f, T_obs)` method to `LisaTdiConfiguration` and sum it into `power_spectral_density_a_channel()`. The confusion noise formula is:
+
+```
+S_conf(f) = A * f^(-7/3) * exp(-f^alpha + beta * f * sin(kappa * f)) * [1 + tanh(gamma * (f_k - f))]
+```
+
+where `alpha`, `beta`, `gamma`, `f_k` are functions of observation time T_obs. This uses only `xp.exp`, `xp.sin`, `xp.tanh`, `xp.power` -- all available in both NumPy and CuPy.
+
+**No new dependencies.** Pure array math with existing `_get_xp()` pattern.
+
+**Reference chain:** The standard LISA sensitivity curve with confusion noise follows Robson, Cornish & Liu (2019), arXiv:1803.01944. The constants in `constants.py` cite Babak et al. (2023), arXiv:2303.15929, which uses a compatible parameterization. The codebase has already chosen the Babak parameterization -- use it consistently.
+
+**PSD cache impact:** `ParameterEstimation._psd_cache` caches PSD per waveform length `n`. Adding confusion noise changes PSD values but cache keys (based on `n`) remain valid. The cache just stores different (larger) PSD values. No invalidation needed.
+
+### Production Campaign (100+ tasks)
+
+**Infrastructure already exists.** `submit_pipeline.sh --tasks 100 --steps 50 --seed 42` works today. The v1.1 smoke test validated the full pipeline with 3 tasks.
+
+**Scaling considerations (no stack changes needed):**
+- SLURM array jobs scale linearly -- 100 tasks is just `--array=0-99`
+- Each task is independent (no MPI, no shared state)
+- Merge script handles arbitrary numbers of per-task CSVs
+- Workspace storage: ~100KB per task (CSV rows) = ~10MB total, well within limits
+
+**Potential cluster-side adjustment:** If the GPU partition limits concurrent array tasks (common on shared clusters), SLURM's `%throttle` syntax handles this: `--array=0-99%20` runs 20 at a time. This is a submission flag, not a code change.
+
+**Timing estimate (from v1.1 smoke test):** Each task with 10 steps took ~15-20 minutes. With the 5-point stencil adding ~4x to the derivative phase, expect ~25-35 minutes per 10-step task. For 50 steps per task, budget ~2-3 hours per task within the 72h `gpu_h100` walltime limit.
+
+### H0 Posterior Sweep
+
+**Current state:** `--evaluate --h_value 0.73` evaluates at a single H0 point. The `BayesianStatistics.evaluate()` method processes one h-value per invocation.
+
+**Sweep strategy -- two options, recommend Option A:**
+
+**Option A: SLURM array over h-values (recommended)**
+Submit evaluate as an array job where each task evaluates one h-value. No code changes to `BayesianStatistics` needed. A new sweep sbatch script generates h-values from the array task ID:
+
+```bash
+# evaluate_sweep.sbatch
+H_MIN=0.60
+H_MAX=0.90
+H_STEPS=31
+H=$(python3 -c "print(round($H_MIN + $SLURM_ARRAY_TASK_ID * ($H_MAX - $H_MIN) / ($H_STEPS - 1), 4))")
+python -m master_thesis_code "$RUN_DIR" --evaluate --h_value $H
+```
+
+This parallelizes trivially. Each evaluation takes ~minutes on 16 CPUs. A 31-point grid (0.60 to 0.90, step 0.01) runs in the time of one evaluation.
+
+**Option B: In-process loop**
+Add `--h_range 0.6 0.9 --h_steps 31` to iterate inside `evaluate()`. Simpler submission but sequential -- 31x slower wall-clock time.
+
+**Recommended: Option A.** It requires only a new sbatch script (`cluster/evaluate_sweep.sbatch`) and a post-processing script to combine per-h posteriors. No changes to the core Python evaluation code. The SLURM dependency chain becomes: simulate -> merge -> evaluate_sweep (array).
+
+**Post-processing:** Combine per-h JSON posteriors into a single posterior curve. This is a simple script reading JSON files and assembling `{h: likelihood}` pairs. Uses only `json`, `numpy`, `pathlib` -- all already available.
 
 ## Alternatives Considered
 
 | Category | Recommended | Alternative | Why Not |
 |----------|-------------|-------------|---------|
-| Package manager | uv (local install) | conda/mamba | uv respects `uv.lock` exactly; conda would require maintaining a separate `environment.yml`; uv is already the project standard |
-| Package manager | uv (local install) | system pip + venv | No lockfile support; dependency resolution is slower and less reliable |
-| Container runtime | Enroot (primary), Apptainer (fallback) | Docker | Not available on HPC clusters (requires root daemon) |
-| Container strategy | Module-based primary | Container-only | Module approach is simpler to debug, easier to iterate during thesis; container is for reproducibility archive |
-| GPU partition | `gpu_h100` | `gpu_a100_il` | H100 has 72h walltime vs 48h, more nodes (12 vs 9), newer architecture; A100 is a good fallback |
-| Python env | uv + system module Python | EasyBuild Python | EasyBuild Python also works; but uv can manage its own Python if needed via `uv python install` |
+| Stencil method | 5-point (O(h^4)) | Automatic differentiation (JAX) | Overkill; 5-point stencil already implemented; AD would require rewriting waveform pipeline |
+| Stencil method | 5-point (O(h^4)) | Complex-step derivative | Would require complex-valued waveform generator support, which `few` does not provide |
+| Confusion noise | Analytic fit (Babak 2023) | Numerical foreground subtraction | Out of thesis scope; analytic fit is standard practice in EMRI Fisher matrix literature |
+| H0 sweep | SLURM array per h-value | Dask/multiprocessing sweep | Array jobs are simpler, already proven infrastructure |
+| H0 sweep | SLURM array per h-value | In-process `--h_range` loop | Sequential; wastes cluster CPU allocation |
+| Production scale | 100 tasks x 50 steps | Fewer tasks with more steps | More tasks = better fault tolerance (one timeout loses fewer events) |
 
-## Detailed Recommendations
+## What NOT to Add
 
-### 1. Environment Modules (`modules.sh`)
+| Library | Why Tempting | Why Wrong |
+|---------|-------------|-----------|
+| JAX / autograd | "Better derivatives" | Would require rewriting `few`/`fastlisaresponse` interface; 5-point stencil is standard for Fisher matrices in GW literature (Vallisneri 2008) |
+| h5py / HDF5 | "Better data format" | CSV works fine at this scale (~10MB total); adding format complexity for a thesis is not justified |
+| Dask | "Parallel H0 sweep" | SLURM array jobs are simpler and already work |
+| tqdm | "Progress bars" | Logging is sufficient; adds unnecessary dependency |
+| corner / chainconsumer | "Posterior plotting" | matplotlib already handles 1D posterior plots; no MCMC chains to visualize for H0 grid evaluation |
+| numdifftools | "Validated numerical derivatives" | 5-point stencil is already implemented correctly; adding a dependency for one formula is not justified |
 
-Create a `cluster/modules.sh` script that loads the exact module stack. This is sourced by every SLURM job script.
+## Integration Points
+
+### 5-Point Stencil Integration
+- **Touches:** `parameter_estimation.py` (line 339: swap derivative call; refactor `five_point_stencil_derivative` to match dict return format)
+- **Bounds check:** 5-point stencil needs `value +/- 2*epsilon` in bounds (already checked in existing method at line 210-215)
+- **GPU memory:** 4x more waveforms generated (56 vs 14), but each is immediately processed and can be freed. The existing `del` pattern in `five_point_stencil_derivative` handles this.
+- **Debug prints:** Existing method uses `print()` (lines 199, 230) instead of `_LOGGER`. Clean up during integration.
+- **Test strategy:** Compare forward-diff vs 5-point Fisher matrix on a known parameter set; verify 5-point has smaller numerical error and CRB values change only modestly (same order of magnitude).
+
+### Confusion Noise Integration
+- **Touches:** `LISA_configuration.py` (add `S_conf()` method, modify `power_spectral_density_a_channel()` to sum `S_conf` into existing PSD)
+- **Touches:** `constants.py` only if T_obs needs to be added (may already be sufficient with `ParameterEstimation.T`)
+- **PSD cache:** Valid -- same n maps to same (now larger) PSD values. No cache invalidation needed.
+- **Test strategy:** PSD with confusion noise > PSD without, especially at 0.1-3 mHz. SNR should decrease (more noise). Verify confusion noise is negligible above ~5 mHz.
+
+### H0 Sweep Integration
+- **New files:** `cluster/evaluate_sweep.sbatch`, `scripts/combine_posteriors.py`
+- **Touches:** `cluster/submit_pipeline.sh` (add sweep stage after merge, replacing single-point evaluate)
+- **Does NOT touch:** `bayesian_statistics.py` (each h-value evaluation is independent)
+- **Output structure:** Each array task writes to `simulations/posteriors/posterior_h_0.XX.json`. Combine script reads all and produces `simulations/posteriors/h0_posterior_combined.json`.
+
+## Installation
+
+No changes to installation commands:
 
 ```bash
-#!/bin/bash
-# cluster/modules.sh -- bwUniCluster 3.0 module environment
-# Source this in every SLURM job script: source cluster/modules.sh
+# Dev machine (no GPU)
+uv sync --extra cpu --extra dev
 
-module purge
-module load compiler/gnu/14.2
-module load devel/cuda/12.8
-module load devel/python/3.13.3-gnu-14.2
-# GSL: verify exact name with `module spider gsl` on cluster
-# module load numlib/gsl/2.7-gnu-14.2  # PLACEHOLDER -- verify
-```
-
-**Confidence:** MEDIUM -- Module names `devel/cuda/12.8` and `devel/python/3.13.3-gnu-14.2` are from bwUniCluster 3.0 wiki examples (September 2025 vintage). The GSL module name is a guess based on bwHPC naming conventions. **Must verify all names with `module spider` on first login.**
-
-### 2. uv on the Cluster
-
-uv is a single static binary. Install it to `$HOME/.local/bin` on the login node:
-
-```bash
-curl -LsSf https://astral.sh/uv/install.sh | sh
-# Adds ~/.local/bin to PATH via ~/.bashrc
-exec $SHELL
-```
-
-Then sync the project:
-
-```bash
-cd ~/emri-project  # or wherever the repo lives
-module load devel/python/3.13.3-gnu-14.2
-module load devel/cuda/12.8
-# GSL must be loaded for fastemriwaveforms build
+# Cluster (GPU, CUDA 12)
 uv sync --extra gpu
 ```
-
-**Critical:** Run `uv sync` on the login node (which has internet access). Compute nodes typically have no outbound network. The `.venv/` directory stays in `$HOME` alongside the repo.
-
-**Confidence:** HIGH -- uv installs as a standalone binary; GWDG HPC and ETH Zurich HPC both document this approach. The lockfile ensures exact reproducibility.
-
-### 3. SLURM Job Configuration
-
-#### Array Jobs for EMRI Simulation (GPU)
-
-```bash
-#!/bin/bash
-#SBATCH --job-name=emri-sim
-#SBATCH --partition=gpu_h100
-#SBATCH --gres=gpu:1
-#SBATCH --ntasks=1
-#SBATCH --cpus-per-task=16
-#SBATCH --mem=32G
-#SBATCH --time=04:00:00
-#SBATCH --array=0-99
-#SBATCH --output=logs/sim_%A_%a.out
-#SBATCH --error=logs/sim_%A_%a.err
-
-source cluster/modules.sh
-source .venv/bin/activate
-
-SEED=$((42 + SLURM_ARRAY_TASK_ID))
-WORKSPACE=$(ws_find emri-data)
-
-python -m master_thesis_code "${WORKSPACE}/simulations" \
-    --simulation_steps 100 \
-    --simulation_index ${SLURM_ARRAY_TASK_ID} \
-    --seed ${SEED} \
-    --use_gpu
-```
-
-**Key decisions:**
-- `--gres=gpu:1` -- one GPU per task (each EMRI simulation is single-GPU). Requesting 1 of 4 lets SLURM pack 4 jobs per node.
-- `--cpus-per-task=16` -- each H100 node has 96 CPUs / 4 GPUs = 24 CPUs per GPU; request 16 to leave headroom.
-- `--mem=32G` -- conservative; EMRI waveforms are not memory-bound. Adjust based on profiling.
-- `--time=04:00:00` -- start conservative; reduce after benchmarking. Max is 72h on `gpu_h100`.
-- `--array=0-99` -- 100 independent tasks. Can use `%20` throttle (`--array=0-99%20`) to limit concurrent jobs.
-- Seed formula `42 + SLURM_ARRAY_TASK_ID` -- deterministic, reproducible, different per task.
-
-**Confidence:** HIGH for SLURM syntax. MEDIUM for resource values (cpus, mem, time) -- these need profiling on the actual cluster.
-
-#### Merge Job (CPU, depends on simulation)
-
-```bash
-#!/bin/bash
-#SBATCH --job-name=emri-merge
-#SBATCH --partition=cpu
-#SBATCH --ntasks=1
-#SBATCH --cpus-per-task=4
-#SBATCH --mem=16G
-#SBATCH --time=00:30:00
-#SBATCH --output=logs/merge_%j.out
-
-source cluster/modules.sh
-source .venv/bin/activate
-
-WORKSPACE=$(ws_find emri-data)
-python scripts/merge_cramer_rao_bounds.py "${WORKSPACE}/simulations" --delete-sources
-```
-
-#### Evaluation Job (CPU, depends on merge)
-
-```bash
-#!/bin/bash
-#SBATCH --job-name=emri-eval
-#SBATCH --partition=cpu
-#SBATCH --ntasks=1
-#SBATCH --cpus-per-task=48
-#SBATCH --mem=64G
-#SBATCH --time=08:00:00
-#SBATCH --output=logs/eval_%j.out
-
-source cluster/modules.sh
-source .venv/bin/activate
-
-WORKSPACE=$(ws_find emri-data)
-python -m master_thesis_code "${WORKSPACE}/simulations" \
-    --evaluate \
-    --num_workers 48
-```
-
-**Note:** `--cpus-per-task=48` for multiprocessing Bayesian inference. The `--num_workers` flag (to be implemented) should default to `SLURM_CPUS_PER_TASK`.
-
-#### Dependency Chain (Orchestrator Script)
-
-```bash
-#!/bin/bash
-# cluster/submit_pipeline.sh -- Submit full EMRI pipeline
-
-SIM_JOB=$(sbatch --parsable cluster/simulate.sbatch)
-echo "Submitted simulation array: ${SIM_JOB}"
-
-MERGE_JOB=$(sbatch --parsable --dependency=afterok:${SIM_JOB} cluster/merge.sbatch)
-echo "Submitted merge (depends on ${SIM_JOB}): ${MERGE_JOB}"
-
-EVAL_JOB=$(sbatch --parsable --dependency=afterok:${MERGE_JOB} cluster/evaluate.sbatch)
-echo "Submitted evaluation (depends on ${MERGE_JOB}): ${EVAL_JOB}"
-```
-
-**Confidence:** HIGH -- `--dependency=afterok` is standard SLURM. The `--parsable` flag outputs just the job ID for chaining.
-
-### 4. Workspace Management
-
-```bash
-# One-time setup: allocate workspace for simulation data (60 days, max)
-ws_allocate emri-data 60
-
-# Find workspace path (use in scripts)
-WORKSPACE=$(ws_find emri-data)
-
-# Extend before expiration (3 extensions allowed, 240 days cumulative max)
-ws_extend emri-data 60
-
-# List all workspaces
-ws_list
-```
-
-**Storage strategy:**
-- `$HOME`: Git repo + `.venv/` + uv binary (< 10 GiB)
-- Workspace: All simulation output, Cramer-Rao CSVs, posteriors, plots
-- `$TMPDIR`: Not needed unless I/O profiling reveals a bottleneck
-
-**Critical:** Workspace expires. Set a calendar reminder. Final results (posteriors, figures for thesis) must be copied to `$HOME` or downloaded before expiration.
-
-**Confidence:** HIGH -- workspace semantics are well-documented on bwHPC wiki.
-
-### 5. Apptainer Container (Reproducibility Archive)
-
-Use as a secondary approach for reproducibility, not as the primary development path.
-
-```singularity
-Bootstrap: docker
-From: nvidia/cuda:12.8.0-runtime-ubuntu22.04
-
-%post
-    apt-get update && apt-get install -y python3.13 python3.13-venv libgsl-dev curl
-    curl -LsSf https://astral.sh/uv/install.sh | sh
-    export PATH="$HOME/.local/bin:$PATH"
-
-%environment
-    export PATH="/root/.local/bin:$PATH"
-
-%runscript
-    exec python3.13 -m master_thesis_code "$@"
-```
-
-Build locally (not on cluster -- no root):
-```bash
-apptainer build emri.sif emri.def
-```
-
-Run on cluster:
-```bash
-apptainer exec --nv emri.sif python3.13 -m master_thesis_code ...
-```
-
-**Confidence:** MEDIUM -- Apptainer `.sif` approach works on bwUniCluster. Enroot is the cluster-recommended runtime, but Apptainer is simpler for a thesis project's reproducibility needs.
-
-### 6. Enroot (Cluster-Recommended Container Runtime)
-
-Enroot is the officially recommended container runtime on bwUniCluster 3.0. It has native GPU passthrough (no `--nv` flag needed) and integrates with SLURM via the Pyxis plugin.
-
-```bash
-# Import NVIDIA CUDA base image
-enroot import docker://nvidia/cuda:12.8.0-runtime-ubuntu22.04
-
-# Create container
-enroot create --name emri nvidia+cuda+12.8.0-runtime-ubuntu22.04.sqsh
-
-# Run interactively
-enroot start --rw emri bash
-```
-
-For SLURM integration with Pyxis, container names must start with `pyxis_`.
-
-**Recommendation:** Use Enroot only if the module-based approach fails (e.g., missing GSL, Python version conflicts). For a thesis, module-based is simpler.
-
-**Confidence:** HIGH for Enroot availability and GPU passthrough. LOW for Pyxis integration details (would need hands-on testing).
-
-## Installation Sequence (First-Time Cluster Setup)
-
-```bash
-# 1. Install uv
-curl -LsSf https://astral.sh/uv/install.sh | sh
-exec $SHELL
-
-# 2. Allocate workspace
-ws_allocate emri-data 60
-echo "Workspace: $(ws_find emri-data)"
-
-# 3. Clone repo
-cd ~
-git clone <repo-url> emri-project
-cd emri-project
-
-# 4. Load modules (verify names first!)
-module spider python    # find exact Python module name
-module spider cuda      # find exact CUDA module name
-module spider gsl       # find exact GSL module name
-
-module load compiler/gnu/14.2
-module load devel/cuda/12.8
-module load devel/python/3.13.3-gnu-14.2
-# module load numlib/gsl/X.X-gnu-14.2  # use discovered name
-
-# 5. Install Python environment
-uv sync --extra gpu
-
-# 6. Verify
-uv run python -c "import cupy; print(cupy.cuda.runtime.getDeviceCount())"
-# This will fail on login node (no GPU) -- that's expected
-uv run python -c "import few; print('FEW OK')"
-uv run python -c "import numpy; print('NumPy OK')"
-
-# 7. Create log directory
-mkdir -p logs
-
-# 8. Test with dev queue
-sbatch cluster/simulate.sbatch  # modify to use dev_gpu_h100, --array=0-0, --time=00:10:00
-```
-
-## Version Compatibility Matrix
-
-| Component | Version | Constraint Source | Notes |
-|-----------|---------|-------------------|-------|
-| Python | 3.13.x | `.python-version`, `pyproject.toml` | Cluster has 3.13.3 |
-| CUDA Toolkit | 12.x | `cupy-cuda12x`, `fastemriwaveforms-cuda12x` | Cluster has 12.8 |
-| CuPy | latest (14.x+) | `cupy-cuda12x` wheel | Supports CUDA 12.8; wheel install, no build needed |
-| fastemriwaveforms | cuda12x | `pyproject.toml` GPU extras | Needs GSL at build time if building from source; wheel may be available |
-| fastlisaresponse | 1.1.9 | `pyproject.toml` pinned | May need CUDA at build time |
-| GCC | 14.2 | Cluster default | Needed for any native extension builds |
-| GSL | 2.7+ | fastemriwaveforms build dep | **Must verify availability via module system** |
-
-**Confidence:** HIGH for CUDA/CuPy compatibility. MEDIUM for fastemriwaveforms build -- if no pre-built wheel exists for the cluster's platform, GSL headers must be available at `uv sync` time.
-
-## What NOT to Do (Common bwHPC Mistakes)
-
-| Mistake | Why It's Bad | What to Do Instead |
-|---------|-------------|-------------------|
-| Run computation on login nodes | Login nodes are shared; jobs get killed; account may be suspended | Always use `sbatch` or `srun` for any computation |
-| Install packages on compute nodes | No internet access on compute nodes | Run `uv sync` on login node before submitting jobs |
-| Use `conda` alongside `uv` | Environment conflicts, double Python installs, wasted `$HOME` quota | Stick with uv exclusively |
-| Request all 4 GPUs when you need 1 | Wastes resources, longer queue time, lowers scheduling priority | `--gres=gpu:1` per array task |
-| Forget workspace expiration | Data permanently deleted after grace period | Set calendar reminders; copy final results to `$HOME` |
-| Store large output in `$HOME` | 500 GiB quota fills fast with simulation CSVs | Use workspace for all simulation output |
-| Use `--mem=0` (all memory) | Blocks other jobs from the node | Request only what you need; start with 32G, profile, adjust |
-| Hardcode paths | Breaks between users and across workspace reallocations | Use `ws_find`, `$HOME`, `$TMPDIR`, `SLURM_*` env vars |
-| Skip `--seed` | Non-reproducible results | Always pass `--seed` derived from `SLURM_ARRAY_TASK_ID` |
-| Use `pip install` directly | Bypasses lockfile; version drift between machines | Always use `uv sync` or `uv pip install` |
 
 ## Sources
 
-- [bwUniCluster 3.0 Batch Queues](https://wiki.bwhpc.de/e/BwUniCluster3.0/Batch_Queues) -- partition details, walltime limits, GPU counts
-- [bwUniCluster 3.0 SLURM Guide](https://wiki.bwhpc.de/e/BwUniCluster3.0/Running_Jobs/Slurm) -- sbatch syntax, array jobs, dependencies, environment variables
-- [bwUniCluster 3.0 Hardware Architecture](https://wiki.bwhpc.de/e/BwUniCluster3.0/Hardware_and_Architecture) -- GPU node specs, CPU counts, memory
-- [bwUniCluster 3.0 Filesystem Details](https://wiki.bwhpc.de/e/BwUniCluster3.0/Hardware_and_Architecture/Filesystem_Details) -- $HOME quota, workspace quota, $TMPDIR
-- [bwUniCluster 3.0 Software Modules](https://wiki.bwhpc.de/e/BwUniCluster3.0/Software_Modules) -- module commands, CUDA/Python module names
-- [bwUniCluster 3.0 Containers](https://wiki.bwhpc.de/e/BwUniCluster3.0/Containers) -- Enroot and Apptainer support
-- [bwHPC Workspace Documentation](https://wiki.bwhpc.de/e/Workspace) -- ws_allocate, ws_extend, ws_find, expiration
-- [CuPy Installation](https://docs.cupy.dev/en/stable/install.html) -- CUDA 12.x wheel compatibility
-- [uv on HPC (UZH)](https://docs.s3it.uzh.ch/general/uv/) -- uv installation on HPC clusters
-- [uv on HPC (GWDG)](https://docs.hpc.gwdg.de/software_stacks/compilers_interpreters/python/index.html) -- module-based uv on HPC
-- [FastEMRIWaveforms](https://bhptoolkit.org/FastEMRIWaveforms/) -- build requirements, GSL dependency
-- [SLURM GRES Scheduling](https://slurm.schedmd.com/gres.html) -- GPU resource request syntax
+- [Robson, Cornish & Liu (2019), arXiv:1803.01944](https://arxiv.org/abs/1803.01944) -- LISA sensitivity curves and confusion noise parameterization
+- [Babak et al. (2023), arXiv:2303.15929](https://arxiv.org/abs/2303.15929) -- PSD parameterization used in constants.py
+- [Vallisneri (2008), arXiv:gr-qc/0703086](https://arxiv.org/abs/gr-qc/0703086) -- Fisher matrix numerical derivatives, 5-point stencil recommendation
+- Existing codebase: `parameter_estimation.py`, `LISA_configuration.py`, `constants.py`, `bayesian_statistics.py`, `submit_pipeline.sh`, `evaluate.sbatch`
 
 ---
 
-*Stack analysis: 2026-03-25*
+*Stack analysis: 2026-03-29 -- v1.2 milestone (physics corrections + production campaign)*

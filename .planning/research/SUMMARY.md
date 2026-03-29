@@ -1,177 +1,177 @@
 # Project Research Summary
 
-**Project:** EMRI Parameter Estimation — bwUniCluster 3.0 Deployment
-**Domain:** GPU-accelerated scientific computing on SLURM HPC
-**Researched:** 2026-03-25
+**Project:** v1.2 Production Campaign & Physics Corrections
+**Domain:** EMRI gravitational wave parameter estimation — physics corrections and production HPC campaign
+**Researched:** 2026-03-29
 **Confidence:** HIGH
 
 ## Executive Summary
 
-This project deploys an existing GPU-accelerated EMRI (Extreme Mass Ratio Inspiral) gravitational wave simulation codebase to bwUniCluster 3.0 for large-scale parallel execution. The workload is embarrassingly parallel: each EMRI simulation is independent, single-GPU, and produces a Cramér-Rao bounds CSV that feeds a downstream Bayesian inference step. The recommended approach is SLURM array jobs on the `gpu_h100` partition, with a three-stage dependency chain (simulate → merge → evaluate), managed through a small `cluster/` directory of scripts committed to the repository. This is a well-understood HPC deployment pattern with no exotic requirements.
+This milestone corrects two known physics errors in the EMRI simulation pipeline — an O(epsilon) forward-difference Fisher matrix derivative and a missing galactic confusion noise term in the LISA PSD — then runs a production-scale simulation campaign (100+ tasks) and evaluates the full H0 posterior over [0.6, 0.9]. All four deliverables are implementable with the existing stack and infrastructure: no new Python packages are needed, and the cluster scripts established in v1.1 scale directly. The primary constraint is sequencing: physics corrections must precede the production campaign, or the campaign wastes GPU hours producing scientifically invalid Cramér-Rao bounds.
 
-The primary obstacle before any cluster work can proceed is a code-level blocker: the codebase has unconditional `import cupy` statements at module top level and a hardcoded `USE_GPU=True` in at least one path. These make the package unimportable on CPU-only nodes, which includes the login node where `uv sync` and job submission must run. Fixing this is the mandatory first step. Once the code is importable everywhere, the cluster infrastructure (modules, job scripts, workspace layout) follows a highly standard bwHPC pattern with excellent official documentation.
+The recommended approach is strictly sequential: (1) add galactic confusion noise to the PSD (self-contained additive term, lower risk), (2) wire the existing `five_point_stencil_derivative()` method into `compute_fisher_information_matrix()` (method already exists at lines 187-243, needs integration and cleanup), (3) run a small validation campaign to calibrate timeouts and check detection rates, (4) run the full 100-task production campaign, (5) evaluate the H0 posterior sweep using a new SLURM array job over h-values in [0.6, 0.9]. The H0 sweep requires no changes to `BayesianStatistics` — only a new `cluster/sweep_h0.sbatch` and `scripts/combine_posteriors.py`.
 
-The main operational risk is workspace expiration: bwHPC workspaces have a 60-day default lifetime and are permanently deleted after the grace period. All simulation output (CSVs, posteriors, figures) must live in the workspace during active work but final results must be copied to `$HOME` before expiration. This is a thesis-ending failure mode if neglected and must be mitigated with calendar reminders and an explicit "copy finals to `$HOME`" step after evaluation.
+The key risks are: the 30-second CRB timeout in `main.py` will fire on nearly every event after the 4x waveform increase from the 5-point stencil (must be raised to 120-300s before any campaign run); the improved stencil may expose Fisher matrix ill-conditioning that forward-difference was inadvertently smoothing (condition number monitoring needed); confusion noise will reduce detection yield significantly (campaign size must be calibrated after physics corrections are validated, not before). Running the production campaign before completing both physics fixes is the single most costly mistake to avoid.
 
 ## Key Findings
 
 ### Recommended Stack
 
-The cluster environment is bwUniCluster 3.0 running SLURM as its job scheduler. The confirmed available software stack is: CUDA 12.8 (`devel/cuda/12.8`), Python 3.13.3 (`devel/python/3.13.3-gnu-14.2`), and GCC 14.2 (`compiler/gnu/14.2`). These match the project's existing constraints exactly (Python 3.13 pin, `cupy-cuda12x`, `fastemriwaveforms-cuda12x`). The GSL module name must be verified on first login with `module spider gsl` — it is a build-time dependency of `fastemriwaveforms` and the exact module name is not confirmed.
-
-The package manager is `uv`, installed as a standalone binary to `~/.local/bin` on the login node. The `uv.lock` file already committed to the repo guarantees exact reproducibility. `uv sync --extra gpu` runs on the login node (internet access) and the resulting `.venv/` lives in `$HOME` (Lustre, visible to all compute nodes). No conda, no pip-only installs.
+No new dependencies are required for v1.2. The existing stack — NumPy/CuPy for array math, SciPy for integration, pandas for CSV I/O, the `few` waveform generator, and the bwUniCluster SLURM infrastructure — handles all four features. The `five_point_stencil_derivative()` method (parameter_estimation.py:187-243) already implements the correct O(epsilon^4) formula using CuPy array arithmetic. The galactic confusion noise constants (constants.py:74-81) already cite Babak et al. (2023) arXiv:2303.15929 Eq. 17 and need only to be imported and used in `LISA_configuration.py`. The H0 sweep requires only a new shell script and a ~50-line Python combiner.
 
 **Core technologies:**
-- SLURM: job scheduling — only option on bwHPC; array jobs are the natural fit for independent EMRI tasks
-- `gpu_h100` partition: primary GPU partition — 4x H100 per node, 72h walltime, 12 nodes; best option for throughput
-- `devel/cuda/12.8`: CUDA toolkit — confirmed on cluster; compatible with `cupy-cuda12x`
-- uv: package manager — already project standard; lockfile ensures reproducibility on cluster without extra tooling
-- bwHPC workspaces (`ws_allocate`): large temporary storage — 40 TiB quota; mandatory for simulation output
-- Enroot/Apptainer: containers — module-based approach is primary; containers are a reproducibility archive artifact
+- `numpy` / `cupy-cuda12x`: array computation for stencil derivatives and PSD — already used everywhere, no changes to imports needed
+- `few` (fastemriwaveforms): EMRI waveform generation — 4x more calls per Fisher matrix with 5-point stencil; GPU acceleration absorbs the increase within SLURM walltime limits
+- SLURM array jobs: parallelism for both the simulation campaign and the H0 sweep — pattern already proven in v1.1
+- `scipy.stats` / `scipy.integrate`: unchanged; H0 sweep evaluates the same posterior code per h-value
+
+**Configuration changes required (not new dependencies):**
+- `main.py` line 332: `signal.alarm(30)` must increase to at least 120s for the CRB phase — without this, the stencil upgrade produces near-zero CRB detections due to timeout
+- `LISA_configuration.py`: `power_spectral_density_a_channel()` gains `T_obs=5.0` parameter; PSD cache key becomes `(n, T_obs)` to correctly handle the 1-year SNR pre-check vs 5-year full computation
 
 ### Expected Features
 
-The feature set divides cleanly into blockers (must fix before cluster use), infrastructure (must build), enhancements (add value), and deliberate deferrals.
+**Must have (table stakes — blocks thesis without these):**
+- 5-point stencil Fisher derivatives — O(epsilon) forward-diff produces inaccurate CRBs; Vallisneri (2008) explicitly warns against it; the 10% d_L threshold was already raised from 5% as a workaround; method already exists at lines 187-243 and needs wiring
+- Galactic confusion noise in PSD — dominates LISA sensitivity at 0.1-3 mHz where EMRIs live; omitting it systematically overestimates SNR; constants already defined in constants.py:74-81
+- Production simulation campaign (100 tasks, 50 steps each) — the v1.1 smoke test (3 tasks, 20 detections) is statistically insufficient for H0 inference; need O(1000+) detections
+- Full H0 posterior sweep [0.6, 0.9] — current code evaluates at single h-value (0.73); a posterior requires likelihood over a grid
 
-**Must have (table stakes):**
-- `--use_gpu` flag properly threaded — currently broken; blocks all non-GPU execution including login node imports
-- CPU-safe `MemoryManagement` — unconditional `GPUtil` import crashes on CPU nodes
-- `modules.sh` — single source of truth for module versions; sourced by every job script
-- Non-interactive `merge_cramer_rao_bounds.py` — current `input()` calls hang in batch jobs; needs `--delete-sources` flag
-- SLURM job scripts (simulate.sbatch, merge.sbatch, evaluate.sbatch) — cannot run anything without these
-- Workspace-aware output paths — all simulation data goes to workspace, not `$HOME`
-- SLURM metadata in `run_metadata.json` — traceability (job ID, array task ID, node) for every simulation result
-- Deterministic seed from array task ID — reproducibility per task
+**Should have (improves thesis quality):**
+- Tighten d_L error threshold from 10% to 5% — the 10% threshold was a forward-diff workaround; evaluate after stencil is validated and campaign data analyzed
+- Campaign diagnostic plots — SNR distribution, d_L error distribution, detection rate vs redshift using existing `plotting/` infrastructure
+- Posterior combination script with credible intervals — automate assembling per-h JSONs into normalized H0 posterior
 
-**Should have (competitive):**
-- Dependency chain orchestrator (`submit_pipeline.sh`) — one command submits the full pipeline
-- `--num_workers` CLI flag for Bayesian evaluation — match worker count to `SLURM_CPUS_PER_TASK`
-- First-time setup script (`cluster/setup.sh`) — reduces onboarding friction
-- Cluster quickstart documentation — in-repo, not just wiki links
-
-**Defer (after module-based approach works):**
-- Apptainer container definition — reproducibility archive for thesis submission; not needed for active development
-- Enroot/Pyxis integration — only if module-based approach fails due to missing GSL or Python version issues
+**Defer to future work:**
+- wCDM dark energy model fix — changes the physics model substantially; invalidates comparisons with prior results
+- Planck 2018 cosmology update (Omega_m=0.3153, H=0.6736) — would invalidate all prior validation
+- Galaxy redshift uncertainty fix — LOW priority, affects z > 0.14 near detection horizon only
+- Pipeline A (BayesianInference) hardcoded 10% sigma — dev cross-check only; Pipeline B is production
 
 ### Architecture Approach
 
-The deployment architecture is a linear three-stage pipeline: GPU array simulation → CPU merge → CPU multiprocessing evaluation. All scripts live in a `cluster/` subdirectory committed to the repository. The workspace (allocated via `ws_allocate`) is the only component that lives outside the repo, and its path is always resolved dynamically via `ws_find emri-data`. This keeps the repository self-contained and path-independent.
+All v1.2 work is in-place modification of existing components — no new architectural layers, no new data pipelines, no new module boundaries. The two physics changes are localized: the stencil swap is entirely within `compute_fisher_information_matrix()` (one call site replaced with a loop); the confusion noise is entirely within `LISA_configuration.py` (one new method, one modified method). The H0 sweep adds two small files to existing directories. The existing boundary between `parameter_estimation.py` (computation) and `LISA_configuration.py` (noise model) is correct and must not be crossed.
 
-**Major components:**
-1. `cluster/modules.sh` — single source of truth for module versions; sourced by every `.sbatch` script
-2. `cluster/simulate.sbatch` — SLURM array job; one GPU task per array index; writes per-task CSV to workspace
-3. `cluster/merge.sbatch` — CPU job dependent on simulation completion; merges per-task CSVs; invokes `scripts/merge_cramer_rao_bounds.py --delete-sources`
-4. `cluster/evaluate.sbatch` — CPU job dependent on merge; 48-core multiprocessing Bayesian inference; writes posteriors and figures
-5. `cluster/submit_pipeline.sh` — orchestrator; chains all three with `sbatch --parsable --dependency=afterok`
-6. `cluster/setup.sh` — one-time setup; installs uv, allocates workspace, runs `uv sync --extra gpu`
+**Modified components:**
+1. `parameter_estimation.py:compute_fisher_information_matrix()` — replace single `finite_difference_derivative()` call with per-parameter loop over `five_point_stencil_derivative()`; update `_get_cached_psd` cache key to `(n, T_obs)`
+2. `LISA_configuration.py:power_spectral_density_a_channel()` — add `S_conf(f, T_obs)` static method and sum it into PSD; thread `T_obs` through the call chain
+3. `main.py` line 332 — increase `signal.alarm(30)` to 120-300s for CRB phase
+
+**New files:**
+1. `cluster/sweep_h0.sbatch` — SLURM array job mapping task IDs to h-values in [0.6, 0.9]
+2. `scripts/combine_posteriors.py` — read per-h JSON results, normalize, compute credible intervals
 
 ### Critical Pitfalls
 
-1. **Unconditional CuPy import crashes** — guard all `import cupy` with `try/except ImportError`; use the `_get_xp(use_gpu)` pattern from CLAUDE.md; this is a blocker that prevents any non-GPU work
-2. **Running computation on login nodes** — all Python computation goes through `sbatch` or `srun`; detect by checking for `SLURM_JOB_ID` env var
-3. **Workspace expiration data loss** — set calendar reminders; copy final results (posteriors, thesis figures) to `$HOME` immediately after evaluation; run `ws_list` periodically
-4. **Installing packages on compute nodes** — compute nodes have no internet; always `uv sync` on login node before submitting jobs
-5. **Requesting all 4 GPUs when only 1 is needed** — use `--gres=gpu:1` per array task; each EMRI simulation is single-GPU; 4x waste otherwise
+1. **30-second CRB timeout fires on every event after stencil upgrade** — forward-diff needs ~15 waveforms (7-30s on H100); 5-point needs ~56 (28-112s). Increase `signal.alarm(30)` to at least 120s before running any campaign. Failure to do this causes near-total loss of CRB detections with no error message — events are silently skipped.
+
+2. **Physics corrections must precede the production campaign** — running 100+ tasks with the broken forward-diff Fisher matrix wastes 100+ GPU-hours on scientifically invalid CRBs that must be regenerated. There is no shortcut: validate both fixes first with a 3-5 task verification run.
+
+3. **`afterok` SLURM dependency kills the entire pipeline on any single task failure** — at 100 tasks with ~5% per-task failure rate, P(at least one failure) > 99%. Change `submit_pipeline.sh` merge dependency to `afterany` so merge runs even if some tasks fail.
+
+4. **Confusion noise reduces detection yield; campaign size must be calibrated after PSD fix** — confusion noise dominates 0.1-3 mHz and will decrease SNR across the EMRI band. Run a 5-task test with confusion noise before committing to 100-task campaign parameters.
+
+5. **Better derivatives may expose Fisher matrix ill-conditioning** — the forward-difference implicitly smoothed near-degeneracies between phase parameters (Phi_phi0, Phi_theta0, Phi_r0). After switching to 5-point, log condition numbers; if `cond(F) > 1e12`, flag the event. Replace deprecated `np.matrix(...).I` with `np.linalg.inv()`.
 
 ## Implications for Roadmap
 
-Based on research, suggested phase structure:
+The dependency chain is strictly linear: physics corrections -> validation -> production campaign -> H0 sweep. Parallelizing any of these risks producing invalid data or wasting cluster resources.
 
-### Phase 1: Code Hardening for Cluster Compatibility
-**Rationale:** The unconditional CuPy import and hardcoded GPU flag make the package unimportable on CPU nodes. Nothing else can proceed until this is fixed — not `uv sync` verification, not login-node testing, not any cluster workflow. This is the single hardest blocker and must be resolved first.
-**Delivers:** A codebase that is importable and testable on CPU-only machines (login nodes, dev machines) while still running correctly on GPU compute nodes
-**Addresses:** FEATURES table stakes items: `--use_gpu` flag threading, CPU-safe MemoryManagement
-**Avoids:** Pitfall 4 (unconditional CuPy import crashes), Pitfall 1 (login node computation)
+### Phase 1: Galactic Confusion Noise in PSD
+**Rationale:** Lower-risk physics fix; self-contained additive term; constants already defined in codebase. Implement first to establish the corrected noise floor before any further numerical work. Independent of the stencil change, enabling sequential validation of each physics fix.
+**Delivers:** Corrected LISA PSD including galactic confusion foreground for T_obs=5yr; PSD cache keyed on `(n, T_obs)`; regression test confirming PSD with confusion > PSD without at 1 mHz.
+**Addresses:** Table-stakes feature "Galactic confusion noise in PSD"; Babak et al. (2023) Eq. 17.
+**Avoids:** Pitfall 5 (SNR drop not quantified before campaign sizing), Pitfall 6 (T_obs dependence in cache), Pitfall 13 (cache not invalidated).
+**Research flag:** Standard pattern — additive noise term with documented formula. No additional research needed during planning.
 
-### Phase 2: Non-Interactive Script Fixes
-**Rationale:** The merge script's `input()` calls are a second blocker for batch execution. This is a small, low-risk change but must happen before any job script can use it. Grouped separately from Phase 1 because it touches different files with no overlap.
-**Delivers:** A merge script usable in non-interactive batch context
-**Addresses:** FEATURES table stakes: non-interactive merge script
-**Avoids:** Pitfall 8 (interactive script calls in batch jobs)
+### Phase 2: Five-Point Stencil Fisher Derivatives
+**Rationale:** Higher-complexity physics fix that must follow confusion noise so the two changes can be independently validated. The method already exists; this phase wires it in, handles the signature mismatch, increases the CRB timeout, and replaces `print()` with logging.
+**Delivers:** O(epsilon^4) Fisher matrix derivatives replacing O(epsilon) forward-diff; CRB timeout increased to 120-300s; condition number logging; `print()` replaced with `_LOGGER`; regression test comparing forward-diff vs stencil derivatives on identical parameter set.
+**Addresses:** Known Bug 4 (Fisher matrix uses forward-diff); Vallisneri (2008) recommendation.
+**Avoids:** Pitfall 3 (timeout kills events), Pitfall 4 (ill-conditioning), Pitfall 2 (sign convention drift), Pitfall 12 (np.matrix deprecation).
+**Research flag:** Standard pattern — method already correct; wiring and cleanup only. Physics Change Protocol required.
 
-### Phase 3: Cluster Environment Setup
-**Rationale:** With code fixed, the next step is verifying the actual cluster environment. Module names in the research are from wiki documentation (September 2025) and may be stale — they must be verified interactively on the cluster with `module spider`. This phase is exploratory: it cannot be fully scripted in advance.
-**Delivers:** Verified `modules.sh` with confirmed module names; `uv sync --extra gpu` succeeds; baseline cluster environment works
-**Uses:** SLURM, Lmod, CUDA 12.8, Python 3.13.3, GSL module (name TBD)
-**Avoids:** Pitfall 6 (module version mismatch), Pitfall 14 (GSL not found), Pitfall 15 (Python 3.13 availability)
+### Phase 3: Validation Campaign (3-5 Tasks)
+**Rationale:** Before committing 100+ GPU-hours to a production campaign, verify that physics corrections produce valid results: detection rates are not catastrophically reduced, Fisher matrices are well-conditioned, d_L error distributions are as expected, and per-task wall time fits within SLURM limits.
+**Delivers:** Empirical detection rate with corrected physics; condition number distribution; baseline comparison against v1.1 smoke test; calibrated `--time` limit for Phase 4.
+**Addresses:** Campaign sizing risk; Pitfall 1 (stencil bounds check yield reduction), Pitfall 11 (d_L threshold recalibration timing).
+**Avoids:** Anti-Pattern 2 (production campaign before physics validation).
+**Research flag:** No research needed — operational validation run.
 
-### Phase 4: SLURM Job Scripts and Workspace Layout
-**Rationale:** With a working environment, build the actual execution infrastructure. The three job scripts (simulate, merge, evaluate) plus the orchestrator are the core deliverable of this project. The workspace layout and metadata capture complete the reproducibility story.
-**Delivers:** Full `cluster/` directory; one-command pipeline submission; SLURM metadata in `run_metadata.json`; `--num_workers` CLI flag for Bayesian evaluation
-**Uses:** `gpu_h100` partition, SLURM array jobs, `ws_allocate`/`ws_find`, `sbatch --dependency=afterok`
-**Implements:** All architecture components; all FEATURES table stakes
-**Avoids:** Pitfall 2 (packages on compute nodes), Pitfall 5 (all 4 GPUs), Pitfall 9 (CUDA_VISIBLE_DEVICES), Pitfall 10 (missing `--parsable`), Pitfall 11 (array output naming), Pitfall 12 (missing logs dir)
+### Phase 4: Production Simulation Campaign (100+ Tasks)
+**Rationale:** With corrected physics validated and timeouts calibrated, run the campaign needed for statistically meaningful H0 inference. Parameters: 100 tasks, 50 steps each, seed distinct from smoke test.
+**Delivers:** O(1000-2000) usable CRB detections in `simulations/cramer_rao_bounds.csv`; `run_metadata.json` with git commit and seed; per-task CSVs merged by `emri-merge`.
+**Addresses:** Table-stakes feature "Production simulation campaign"; expected 2000-3000 detections above SNR>20 with 40-60% detection rate (lower with confusion noise — calibrated in Phase 3).
+**Avoids:** Pitfall 9 (symlink collision — no simultaneous campaigns), Pitfall 10 (change `afterok` to `afterany`), Pitfall 15 (workspace expiration — copy results immediately after merge).
+**Research flag:** No research needed — operational scaling of proven infrastructure.
 
-### Phase 5: Setup Script and Documentation
-**Rationale:** With the infrastructure working, reduce onboarding friction. A setup script and quickstart document protect against the operational risks (workspace expiration, uv PATH issues) and make the workflow reproducible by a supervisor or future researcher.
-**Delivers:** `cluster/setup.sh` (idempotent first-time setup); in-repo cluster quickstart documentation including workspace expiration warnings
-**Addresses:** FEATURES differentiators: setup script, quickstart docs
-**Avoids:** Pitfall 3 (workspace expiration), Pitfall 13 (uv not in PATH)
+### Phase 5: H0 Posterior Sweep [0.6, 0.9]
+**Rationale:** After the production campaign provides sufficient CRBs, evaluate the Bayesian posterior over a grid of H0 values. SLURM array approach (one task per h-value) is strictly superior to an in-process loop: parallel execution, no changes to BayesianStatistics, proven infrastructure pattern.
+**Delivers:** `cluster/sweep_h0.sbatch` array job; `scripts/combine_posteriors.py`; normalized H0 posterior JSON with MAP estimate and 68%/95% credible intervals; posterior plot.
+**Addresses:** Table-stakes feature "Full H0 posterior sweep [0.6, 0.9]"; recommended Option A from STACK.md and ARCHITECTURE.md.
+**Avoids:** Pitfall 8 (redundant setup per h-value via SLURM parallelism), Pitfall 14 (filename collision — use 4+ decimal places in h-value filenames), Anti-Pattern 3 (in-process H0 loop).
+**Research flag:** The `combine_posteriors.py` normalization and credible interval computation is straightforward (standard numpy/scipy operations), but a quick review of Bayesian posterior combination patterns is recommended.
 
-### Phase 6: Apptainer Container (Optional, Deferred)
-**Rationale:** Build this only after the module-based approach is proven working. It is a reproducibility artifact for thesis submission, not a development tool. The container definition documents the full dependency stack for archival purposes.
-**Delivers:** `emri.def` Apptainer definition; built `.sif` file; instructions for running on cluster with `--nv`
-**Uses:** Apptainer (or Enroot if preferred)
+### Phase 6: d_L Threshold Recalibration (Optional)
+**Rationale:** After Phase 4 results are available, analyze the distribution of `d_L_uncertainty / d_L`. If the median drops well below 10% with the stencil upgrade, tighten `FRACTIONAL_LUMINOSITY_DISTANCE_ERROR_THRESHOLD` from 0.10 to 0.05 to improve H0 posterior quality.
+**Delivers:** Updated threshold in `bayesian_statistics.py:58` with justified value from empirical data; re-run of Phase 5 if threshold changes materially.
+**Addresses:** FEATURES.md "Should have" — tightened d_L threshold.
+**Avoids:** Pitfall 11 (premature tightening before empirical validation).
+**Research flag:** No research needed — data-driven decision from Phase 4 outputs.
 
 ### Phase Ordering Rationale
 
-- Phase 1 before everything: nothing is importable on CPU without fixing the CuPy guard; this blocks login node testing, uv verification, and all downstream work
-- Phase 2 before job scripts: the merge job script depends on the non-interactive merge script; fixing it first keeps Phase 4 clean
-- Phase 3 before Phase 4: job scripts reference specific module names; those names must be verified before committing them to scripts
-- Phase 5 after Phase 4: documentation describes a working system; write it last to avoid documenting something that changes
-- Phase 6 last and optional: container is an archive artifact, not a workflow requirement
+- **Confusion noise before stencil:** Lower risk, self-contained, enables independent validation. Bundling both physics changes in one commit makes it impossible to attribute result changes to either fix.
+- **Both physics fixes before production campaign:** The dependency chain is explicit; campaign results are scientifically invalid with the known-wrong physics. This is the single most important sequencing constraint.
+- **Validation campaign before production:** Calibrates timeout, detection rate, storage requirements. Prevents discovering configuration problems after wasting 100+ GPU-hours.
+- **H0 sweep after campaign:** Sweep operates on the campaign's CSV output; no other dependency.
+- **d_L threshold last:** Data-driven decision requiring campaign results.
 
 ### Research Flags
 
-Phases likely needing deeper research during planning:
-- **Phase 3:** Module names from wiki are September 2025 vintage and may be stale; must verify interactively on cluster. GSL module name is explicitly unconfirmed. Python 3.13 availability is MEDIUM confidence. This phase is inherently exploratory.
-- **Phase 4:** Resource sizing (CPUs, memory, walltime per job) requires profiling on the actual cluster — the values in STACK.md are starting points, not validated numbers. The `--num_workers` default behavior needs design decisions around `SLURM_CPUS_PER_TASK` fallback.
+Phases needing deeper research during planning:
+- **Phase 5 (H0 sweep):** Confirm that combining per-h log-likelihoods and computing credible intervals is correct — standard Bayesian combination but worth a 15-minute review before implementation.
 
-Phases with standard patterns (skip research-phase):
-- **Phase 1:** The `_get_xp(use_gpu)` pattern and `try/except ImportError` guard are already documented in CLAUDE.md with exact code. No new research needed.
-- **Phase 2:** Adding a `--delete-sources` argparse flag to a Python script is entirely standard.
-- **Phase 5:** bwHPC workspace management commands are well-documented with HIGH confidence.
-- **Phase 6:** Apptainer `.def` file syntax and `--nv` flag are well-documented.
+Phases with standard patterns (no research-phase needed):
+- **Phase 1 (confusion noise):** Formula documented in Babak (2023) Eq. 17; constants already in codebase; additive implementation.
+- **Phase 2 (5-point stencil):** Method already exists and is correct; wiring and cleanup only.
+- **Phase 3 (validation campaign):** Operational run; no new patterns.
+- **Phase 4 (production campaign):** Proven infrastructure; scaling only.
+- **Phase 6 (d_L threshold):** Single-line change based on data analysis.
 
 ## Confidence Assessment
 
 | Area | Confidence | Notes |
 |------|------------|-------|
-| Stack | HIGH | bwUniCluster 3.0 wiki directly documents CUDA 12.8, Python 3.13.3, GCC 14.2 module names; uv HPC usage documented by GWDG and UZH |
-| Features | HIGH | Features derived directly from known code bugs (CLAUDE.md) and bwHPC operational requirements; no speculation |
-| Architecture | HIGH | Standard SLURM array job + dependency chain pattern; well-documented by bwHPC wiki; no novel architectural choices |
-| Pitfalls | HIGH | Most pitfalls come from known code bugs (CLAUDE.md) or bwHPC operational documentation; GSL module name is the main uncertain item |
+| Stack | HIGH | Direct codebase inspection confirms all needed components exist; zero new dependencies required |
+| Features | HIGH | All four table-stakes features are defined with specific file/line references; implementation paths clear |
+| Architecture | HIGH | Changes are localized; component boundaries correct; no new architectural layers needed |
+| Pitfalls | HIGH | Based on direct codebase inspection + Vallisneri (2008) + Babak (2023); critical pitfalls include specific line numbers |
 
-**Overall confidence:** HIGH
+**Overall confidence: HIGH**
 
 ### Gaps to Address
 
-- **GSL module name on bwUniCluster 3.0**: Research guesses `numlib/gsl/2.7-gnu-14.2` based on naming conventions but this is not confirmed. Handle by running `module spider gsl` as the first action on cluster login. If absent, fallback is Apptainer container.
-- **fastemriwaveforms wheel availability**: If no pre-built wheel exists for the cluster's platform, `uv sync` will attempt to build from source and GSL headers must be present at build time. Confidence is MEDIUM — likely fine, but verify during Phase 3.
-- **Bayesian evaluation walltime**: The 8-hour estimate in STACK.md for the evaluation job is a rough guess. Actual time depends on detection count and number of workers. Profile after first simulation run.
-- **`--num_workers` CLI argument**: This flag is listed as needed in STACK.md but does not yet exist in `arguments.py`. Design decision needed: should it default to `os.cpu_count()`, `SLURM_CPUS_PER_TASK`, or require explicit specification?
+- **Confusion noise formula source ambiguity:** constants.py cites arXiv:2303.15929 but PITFALLS.md notes the canonical parameterization may be Babak et al. (2021) arXiv:2108.01167. Verify formula against both sources during Phase 1 before writing any code. The physics is the same; the citation must be correct.
+- **Validation campaign detection rate:** Actual yield with corrected physics is unknown until Phase 3 runs. FEATURES.md estimates 40-60% above SNR>20, but confusion noise may reduce this further. The 100-task campaign size is a starting point, not a firm number.
+- **Fisher matrix ill-conditioning prevalence:** The risk (Pitfall 4) is real but its frequency on actual EMRI parameter draws is unknown. Phase 3 must explicitly log condition numbers to determine whether Tikhonov regularization is needed for Phase 4.
+- **H0 sweep per-task wall time at production scale:** Estimated at 2-5 minutes with 16 CPUs, but this comes from single-h tests on smaller detection catalogs. Run a test evaluation on Phase 4 output before submitting the 31-task sweep.
 
 ## Sources
 
 ### Primary (HIGH confidence)
-- [bwUniCluster 3.0 Batch Queues](https://wiki.bwhpc.de/e/BwUniCluster3.0/Batch_Queues) — partition details, walltime limits, GPU counts
-- [bwUniCluster 3.0 SLURM Guide](https://wiki.bwhpc.de/e/BwUniCluster3.0/Running_Jobs/Slurm) — sbatch syntax, array jobs, dependencies
-- [bwUniCluster 3.0 Hardware Architecture](https://wiki.bwhpc.de/e/BwUniCluster3.0/Hardware_and_Architecture) — GPU node specs, CPU counts, memory
-- [bwUniCluster 3.0 Filesystem Details](https://wiki.bwhpc.de/e/BwUniCluster3.0/Hardware_and_Architecture/Filesystem_Details) — $HOME quota, workspace quota
-- [bwUniCluster 3.0 Software Modules](https://wiki.bwhpc.de/e/BwUniCluster3.0/Software_Modules) — module commands, CUDA/Python module names
-- [bwUniCluster 3.0 Containers](https://wiki.bwhpc.de/e/BwUniCluster3.0/Containers) — Enroot and Apptainer support
-- [bwHPC Workspace Documentation](https://wiki.bwhpc.de/e/Workspace) — ws_allocate, ws_extend, ws_find, expiration
-- Project CLAUDE.md — known bugs (unconditional CuPy imports, USE_GPU hardcode), `_get_xp` pattern
+- [Vallisneri (2008), arXiv:gr-qc/0703086](https://arxiv.org/abs/gr-qc/0703086) — Fisher matrix numerical derivatives, 5-point stencil recommendation, ill-conditioning warnings
+- [Babak et al. (2023), arXiv:2303.15929](https://arxiv.org/abs/2303.15929) — LISA PSD with galactic confusion noise, Eq. 17; parameterization used in constants.py
+- Direct codebase inspection — `parameter_estimation.py` (lines 140-243, 335-365), `LISA_configuration.py`, `constants.py:74-81`, `bayesian_statistics.py:58`, `main.py:332`, `cluster/submit_pipeline.sh`
 
 ### Secondary (MEDIUM confidence)
-- [uv on HPC (UZH)](https://docs.s3it.uzh.ch/general/uv/) — uv installation on HPC clusters
-- [uv on HPC (GWDG)](https://docs.hpc.gwdg.de/software_stacks/compilers_interpreters/python/index.html) — module-based uv on HPC
-- [CuPy Installation](https://docs.cupy.dev/en/stable/install.html) — CUDA 12.x wheel compatibility
-- [FastEMRIWaveforms](https://bhptoolkit.org/FastEMRIWaveforms/) — build requirements, GSL dependency
+- [Babak et al. (2021), arXiv:2108.01167](https://arxiv.org/abs/2108.01167) — alternative canonical reference for LISA confusion noise parameterization; may be the actual source for constants.py coefficients
+- [Robson, Cornish & Liu (2019), arXiv:1803.01944](https://arxiv.org/abs/1803.01944) — LISA sensitivity curves and confusion noise background parameterization
+- v1.1 smoke test results (PROJECT.md) — 20 detections from 30 events, 18 passed d_L filter; ~15-20 min per 10-step task on H100
 
 ### Tertiary (LOW confidence)
-- GSL module name `numlib/gsl/2.7-gnu-14.2` — inferred from bwHPC naming conventions; must verify with `module spider gsl`
+- SLURM per-task failure rate estimate (~5%) — heuristic from general HPC experience; actual rate on bwUniCluster depends on node stability and GPU partition availability
 
 ---
-*Research completed: 2026-03-25*
+*Research completed: 2026-03-29*
 *Ready for roadmap: yes*
