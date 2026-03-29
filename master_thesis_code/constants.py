@@ -72,6 +72,9 @@ LISA_STEPS: int = 10_000  # number of time steps per observation year
 LISA_DT: float = YEAR_IN_SEC / LISA_STEPS  # s, time step size
 
 # LISA galactic confusion noise PSD coefficients (arXiv:2303.15929, Eq. 17)
+# NOTE: arXiv:2303.15929 does not contain this formula; actual source is
+# Cornish & Robson (2017) arXiv:1703.09858 Eq. (3) / Robson et al. (2019)
+# arXiv:1803.01944 Eq. (14). Keeping original citation for literature traceability.
 LISA_PSD_A: float = 1.14e-44  # overall amplitude
 LISA_PSD_ALPHA: float = 1.8  # low-frequency spectral slope
 LISA_PSD_F2: float = 0.31e-3  # Hz, knee frequency
