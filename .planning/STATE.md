@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Production Campaign & Physics Corrections
-status: planning
+status: executing
 stopped_at: Phase 9 context gathered
-last_updated: "2026-03-29T12:49:18.113Z"
-last_activity: 2026-03-29 — Roadmap created for v1.2
+last_updated: "2026-03-29T13:17:56.860Z"
+last_activity: 2026-03-29 -- Phase 09 execution started
 progress:
   total_phases: 5
   completed_phases: 0
-  total_plans: 0
+  total_plans: 1
   completed_plans: 0
   percent: 0
 ---
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-29)
 
 **Core value:** The simulation pipeline runs reliably on the GPU cluster as SLURM array jobs, producing enough Cramer-Rao bounds for statistically meaningful Hubble constant posteriors.
-**Current focus:** Phase 9 - Galactic Confusion Noise
+**Current focus:** Phase 09 — galactic-confusion-noise
 
 ## Current Position
 
-Phase: 9 of 13 (Galactic Confusion Noise) -- first phase of v1.2
-Plan: 0 of 0 in current phase (not yet planned)
-Status: Ready to plan
-Last activity: 2026-03-29 — Roadmap created for v1.2
+Phase: 09 (galactic-confusion-noise) — EXECUTING
+Plan: 1 of 1
+Status: Executing Phase 09
+Last activity: 2026-03-29 -- Phase 09 execution started
 
 Progress: [░░░░░░░░░░] 0% (v1.2: 0/5 phases)
 
