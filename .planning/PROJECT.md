@@ -8,11 +8,19 @@ A gravitational wave parameter estimation pipeline for LISA Extreme Mass Ratio I
 
 The simulation pipeline runs reliably on the GPU cluster as SLURM array jobs, producing enough Cramér-Rao bounds for statistically meaningful Hubble constant posteriors.
 
+## Current Milestone: v1.2 Production Campaign & Physics Corrections
+
+**Goal:** Fix known physics bugs in the Fisher matrix and PSD, then run a production-scale simulation campaign with full H0 posterior sweep.
+
+**Target features:**
+- Fisher matrix upgrade from forward-difference to 5-point stencil derivative
+- Galactic confusion noise added to LISA PSD
+- Production simulation run (100+ tasks) on bwUniCluster
+- Full H0 posterior sweep over [0.6, 0.9] range
+
 ## Current State (v1.1 shipped 2026-03-29)
 
 Pipeline validated end-to-end on bwUniCluster 3.0. Smoke-test campaign (3 tasks, 10 steps, seed 100) produced 20 detections, 18 passed the 10% d_L error filter, and the evaluation pipeline generated an H0 posterior at h=0.73. All quantitative checks passed.
-
-**Next milestone:** Not yet defined. Candidates: production-scale campaign, physics corrections, or full H0 sweep.
 
 ## Current State (v1.0 shipped 2026-03-27)
 
@@ -121,4 +129,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-03-29 after v1.1 milestone*
+*Last updated: 2026-03-29 after v1.2 milestone start*
