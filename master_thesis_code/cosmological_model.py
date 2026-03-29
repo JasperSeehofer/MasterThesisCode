@@ -361,52 +361,9 @@ def gaussian(
     return a * np.exp(-0.5 * ((x - mu) / sigma) ** 2)
 
 
-# ── Backward-compatibility re-exports ─────────────────────────────────────────
-# These symbols were extracted to bayesian_inference/ subpackage modules but are
-# re-exported here so that existing imports continue to work.
-
-from master_thesis_code.bayesian_inference.bayesian_statistics import (  # noqa: E402, F401
-    ADDITIONAL_GALAXIES_WITHOUT_BH_MASS as ADDITIONAL_GALAXIES_WITHOUT_BH_MASS,
-)
-from master_thesis_code.bayesian_inference.bayesian_statistics import (
-    DEFAULT_GALAXY_Z_ERROR as DEFAULT_GALAXY_Z_ERROR,
-)
-from master_thesis_code.bayesian_inference.bayesian_statistics import (
-    FRACTIONAL_LUMINOSITY_DISTANCE_ERROR_THRESHOLD as FRACTIONAL_LUMINOSITY_DISTANCE_ERROR_THRESHOLD,
-)
-from master_thesis_code.bayesian_inference.bayesian_statistics import (
-    GALAXY_LIKELIHOODS as GALAXY_LIKELIHOODS,
-)
-from master_thesis_code.bayesian_inference.bayesian_statistics import (
-    BayesianStatistics as BayesianStatistics,
-)
-from master_thesis_code.bayesian_inference.bayesian_statistics import (
-    _distance_spherical_coordinates as _distance_spherical_coordinates,
-)
-from master_thesis_code.bayesian_inference.bayesian_statistics import (
-    _get_closest_possible_host as _get_closest_possible_host,
-)
-from master_thesis_code.bayesian_inference.bayesian_statistics import (
-    check_overflow as check_overflow,
-)
-from master_thesis_code.bayesian_inference.bayesian_statistics import (
-    child_process_init as child_process_init,
-)
-from master_thesis_code.bayesian_inference.bayesian_statistics import (
-    compute_sigma_deviation as compute_sigma_deviation,
-)
-from master_thesis_code.bayesian_inference.bayesian_statistics import (
-    single_host_likelihood as single_host_likelihood,
-)
-from master_thesis_code.bayesian_inference.bayesian_statistics import (
-    single_host_likelihood_grid as single_host_likelihood_grid,
-)
-from master_thesis_code.bayesian_inference.bayesian_statistics import (
-    single_host_likelihood_integration_testing as single_host_likelihood_integration_testing,
-)
-from master_thesis_code.bayesian_inference.bayesian_statistics import (
-    use_detection as use_detection,
-)
-from master_thesis_code.bayesian_inference.detection_probability import (  # noqa: E402, F401
-    DetectionProbability as DetectionProbability,
-)
+# ── Backward-compatibility re-exports (REMOVED) ──────────────────────────────
+# These symbols were extracted to bayesian_inference/ subpackage modules.
+# The re-exports caused a circular import that crashed multiprocessing workers
+# in the evaluation pipeline. Import directly from:
+#   master_thesis_code.bayesian_inference.bayesian_statistics
+#   master_thesis_code.bayesian_inference.detection_probability

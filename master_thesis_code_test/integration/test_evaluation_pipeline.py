@@ -179,7 +179,8 @@ def test_evaluation_pipeline_produces_valid_posterior(
     monkeypatch.setattr(os, "sched_getaffinity", lambda _pid: set(range(4)))
 
     # ── 5. Create real Model1CrossCheck (needs MCMC burn-in) ────────────
-    from master_thesis_code.cosmological_model import BayesianStatistics, Model1CrossCheck
+    from master_thesis_code.bayesian_inference.bayesian_statistics import BayesianStatistics
+    from master_thesis_code.cosmological_model import Model1CrossCheck
 
     cosmological_model = Model1CrossCheck()
 
@@ -310,7 +311,7 @@ def test_posterior_narrows_with_more_detections(
     monkeypatch.chdir(tmp_path)
 
     # ── Build catalog and run full h-sweep with all 5 detections ────────
-    from master_thesis_code.cosmological_model import BayesianStatistics
+    from master_thesis_code.bayesian_inference.bayesian_statistics import BayesianStatistics
     from master_thesis_code_test.integration.conftest import (
         build_galaxy_catalog_for_n_detections,
     )
