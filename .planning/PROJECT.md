@@ -18,6 +18,10 @@ The simulation pipeline runs reliably on the GPU cluster as SLURM array jobs, pr
 - Production simulation run (100+ tasks) on bwUniCluster
 - Full H0 posterior sweep over [0.6, 0.9] range
 
+## Current State (v1.2 Phase 10 complete 2026-03-29)
+
+Fisher matrix now uses O(epsilon^4) five-point stencil derivatives by default (PHYS-01 resolved). Condition number logging and CRB safety checks added. CRB timeout increased to 90s. 198 CPU tests pass at 40.8% coverage. Galactic confusion noise (Phase 9) and stencil derivatives (Phase 10) are both wired — ready for validation campaign on cluster.
+
 ## Current State (v1.1 shipped 2026-03-29)
 
 Pipeline validated end-to-end on bwUniCluster 3.0. Smoke-test campaign (3 tasks, 10 steps, seed 100) produced 20 detections, 18 passed the 10% d_L error filter, and the evaluation pipeline generated an H0 posterior at h=0.73. All quantitative checks passed.
@@ -67,8 +71,8 @@ Pipeline validated end-to-end on bwUniCluster 3.0. Smoke-test campaign (3 tasks,
 
 - Production simulation run scaled to GPU availability (100+ tasks)
 - Full H₀ posterior sweep over [0.6, 0.9] range
-- Fisher matrix upgrade to 5-point stencil derivative
-- Galactic confusion noise added to PSD
+- ✓ Fisher matrix upgrade to 5-point stencil derivative — Validated in Phase 10
+- ✓ Galactic confusion noise added to PSD — Validated in Phase 9
 
 ### Out of Scope
 
