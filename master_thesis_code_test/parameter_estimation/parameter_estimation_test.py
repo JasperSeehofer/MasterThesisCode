@@ -36,6 +36,8 @@ def _make_minimal_pe(tmp_path: pathlib.Path) -> Any:
     pe.lisa_response_generator = MagicMock()
     pe.snr_check_generator = MagicMock()
     pe.lisa_configuration = MagicMock()
+    pe._use_gpu = False
+    pe._use_five_point_stencil = True  # default after Phase 10 Task 2
     pe._crb_buffer = []
     pe._crb_flush_interval = 1  # flush immediately so tests can assert on file contents
     return pe
