@@ -79,9 +79,9 @@ Plans:
   2. Detection rates and d_L error distributions are compared against v1.1 smoke test results to confirm physics changes behave as expected
   3. d_L fractional error threshold is recalibrated based on observed stencil accuracy (tightened from 10% if data supports it)
   4. Per-task wall time fits within SLURM limits, confirming timeout and job parameters are ready for production scale
-**Plans:** 2 plans
+**Plans:** 1/2 plans executed
 Plans:
-- [ ] 11-01-PLAN.md — Merge Phase 10 branch, write comparison analysis script
+- [x] 11-01-PLAN.md — Merge Phase 10 branch, write comparison analysis script
 - [ ] 11-02-PLAN.md — Submit cluster campaign, rsync results, produce comparison report, apply D-08/D-09 fixes
 
 ### Phase 12: Production Campaign
@@ -121,6 +121,6 @@ Phases execute in numeric order: 9 -> 10 -> 11 -> 12 -> 13
 | 8. Simulation Campaign | v1.1 | 2/2 | Complete | 2026-03-29 |
 | 9. Galactic Confusion Noise | v1.2 | 0/1 | Planning | - |
 | 10. Five-Point Stencil Derivatives | v1.2 | 0/1 | Planning | - |
-| 11. Validation Campaign | v1.2 | 0/2 | Planning | - |
+| 11. Validation Campaign | v1.2 | 1/2 | In Progress|  |
 | 12. Production Campaign | v1.2 | 0/0 | Not started | - |
 | 13. H0 Posterior Sweep | v1.2 | 0/0 | Not started | - |

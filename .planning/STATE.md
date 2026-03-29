@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Production Campaign & Physics Corrections
 status: executing
-stopped_at: Phase 11 context gathered
-last_updated: "2026-03-29T17:30:52.004Z"
-last_activity: 2026-03-29 -- Phase 10 execution started
+stopped_at: Completed 11-01-PLAN.md
+last_updated: "2026-03-29T17:49:54.280Z"
+last_activity: 2026-03-29
 progress:
   total_phases: 5
   completed_phases: 2
-  total_plans: 2
-  completed_plans: 2
+  total_plans: 4
+  completed_plans: 3
   percent: 0
 ---
 
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-29)
 
 **Core value:** The simulation pipeline runs reliably on the GPU cluster as SLURM array jobs, producing enough Cramer-Rao bounds for statistically meaningful Hubble constant posteriors.
-**Current focus:** Phase 10 — five-point-stencil-derivatives
+**Current focus:** Phase 11 — validation-campaign
 
 ## Current Position
 
-Phase: 10 (five-point-stencil-derivatives) — EXECUTING
-Plan: 1 of 1
-Status: Executing Phase 10
-Last activity: 2026-03-29 -- Phase 10 execution started
+Phase: 11 (validation-campaign) — EXECUTING
+Plan: 2 of 2
+Status: Ready to execute
+Last activity: 2026-03-29
 
 Progress: [░░░░░░░░░░] 0% (v1.2: 0/5 phases)
 
@@ -50,6 +50,7 @@ Recent decisions affecting current work:
 - [v1.1]: 10% d_L threshold was workaround for forward-diff -- revisit after stencil upgrade
 - [v1.1]: 30s waveform timeout -- must increase for 5-point stencil
 - [v1.2 Roadmap]: Confusion noise before stencil -- lower risk, enables independent validation
+- [Phase 11]: Phase 10 merged with --no-ff; comparison script uses P90 d_L threshold recommendation
 
 ### Pending Todos
 
@@ -63,6 +64,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-03-29T17:30:52.003Z
-Stopped at: Phase 11 context gathered
-Resume file: .planning/phases/11-validation-campaign/11-CONTEXT.md
+Last session: 2026-03-29T17:49:54.278Z
+Stopped at: Completed 11-01-PLAN.md
+Resume file: None

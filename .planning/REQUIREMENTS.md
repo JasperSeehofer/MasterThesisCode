@@ -15,9 +15,9 @@ Requirements for production campaign and physics corrections. Each maps to roadm
 
 ### Simulation Campaign
 
-- [ ] **SIM-01**: Validation campaign (3-5 tasks) confirms detection rates and timing with corrected physics
+- [x] **SIM-01**: Validation campaign (3-5 tasks) confirms detection rates and timing with corrected physics
 - [ ] **SIM-02**: Production simulation campaign runs 100+ tasks on bwUniCluster with corrected physics
-- [ ] **SIM-03**: d_L fractional error threshold recalibrated based on 5-point stencil accuracy
+- [x] **SIM-03**: d_L fractional error threshold recalibrated based on 5-point stencil accuracy
 
 ### H0 Analysis
 
@@ -61,9 +61,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | PHYS-01 | Phase 10 | Pending |
 | PHYS-02 | Phase 9 | Pending |
 | PHYS-03 | Phase 10 | Pending |
-| SIM-01 | Phase 11 | Pending |
+| SIM-01 | Phase 11 | Complete |
 | SIM-02 | Phase 12 | Pending |
-| SIM-03 | Phase 11 | Pending |
+| SIM-03 | Phase 11 | Complete |
 | H0-01 | Phase 13 | Pending |
 | H0-02 | Phase 13 | Pending |
 
