@@ -66,7 +66,9 @@ Plans:
   2. CRB computation timeout is increased to at least 120 seconds to accommodate the ~4x increase in waveform evaluations
   3. Fisher matrix condition numbers are logged for each event, enabling detection of ill-conditioned matrices
   4. A reference comment citing Vallisneri (2008) arXiv:gr-qc/0703086 appears at the call site
-**Plans**: TBD
+**Plans:** 1 plan
+Plans:
+- [ ] 10-01-PLAN.md — Refactor 5-point stencil API, wire into Fisher matrix with toggle, add condition number logging, update timeout to 90s
 
 ### Phase 11: Validation Campaign
 **Goal**: Corrected physics produces valid results at small scale, with calibrated timeouts and thresholds for the production run
@@ -115,7 +117,7 @@ Phases execute in numeric order: 9 -> 10 -> 11 -> 12 -> 13
 | 7. Cluster Access | v1.1 | 1/1 | Complete | 2026-03-28 |
 | 8. Simulation Campaign | v1.1 | 2/2 | Complete | 2026-03-29 |
 | 9. Galactic Confusion Noise | v1.2 | 0/1 | Planning | - |
-| 10. Five-Point Stencil Derivatives | v1.2 | 0/0 | Not started | - |
+| 10. Five-Point Stencil Derivatives | v1.2 | 0/1 | Planning | - |
 | 11. Validation Campaign | v1.2 | 0/0 | Not started | - |
 | 12. Production Campaign | v1.2 | 0/0 | Not started | - |
 | 13. H0 Posterior Sweep | v1.2 | 0/0 | Not started | - |
