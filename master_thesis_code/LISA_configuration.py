@@ -25,6 +25,13 @@ from master_thesis_code.constants import (
     LISA_ARM_LENGTH as L,
 )
 from master_thesis_code.constants import (
+    LISA_PSD_A,
+    LISA_PSD_A1,
+    LISA_PSD_AK,
+    LISA_PSD_ALPHA,
+    LISA_PSD_B1,
+    LISA_PSD_BK,
+    LISA_PSD_F2,
     C,
 )
 
@@ -46,9 +53,19 @@ class LisaTdiConfiguration:
     and the sky-averaged F+/F× antenna pattern functions for the LISA constellation,
     following the equal-arm-length approximation.
 
+    The A/E-channel PSD includes an optional galactic confusion noise foreground
+    S_c(f) from unresolved white dwarf binaries, controlled by
+    ``include_confusion_noise`` (default True).  The observation time
+    ``t_obs_years`` sets the level of foreground subtraction.
+
     References:
         Babak et al. (2023), arXiv:2303.15929
+        Cornish & Robson (2017), arXiv:1703.09858
+        Robson, Cornish & Liu (2019), arXiv:1803.01944
     """
+
+    t_obs_years: float = 4.0
+    include_confusion_noise: bool = True
 
     def power_spectral_density(
         self,
@@ -63,12 +80,47 @@ class LisaTdiConfiguration:
             return self.power_spectral_density_t_channel(frequencies)
         return np.zeros_like(frequencies)
 
+    # Eq. (3) in Cornish & Robson (2017), arXiv:1703.09858
+    # LDC parameterization with continuous T_obs dependence
+    # See also Robson, Cornish & Liu (2019), arXiv:1803.01944, Eq. (14)
+    def _confusion_noise(
+        self, frequencies: npt.NDArray[np.float64]
+    ) -> npt.NDArray[np.float64]:
+        """Galactic foreground confusion noise S_c(f).
+
+        Computes the residual foreground from unresolved white dwarf binaries
+        using the LDC parameterization with continuous observation-time
+        dependence.  Dominates the LISA sensitivity in the 0.1--3 mHz band.
+
+        Args:
+            frequencies: Positive frequency array in Hz.
+
+        Returns:
+            S_c(f) in Hz^{-1} (one-sided strain PSD contribution).
+        """
+        xp = _get_xp(frequencies)
+        # Power-law coefficients (a1, b1, ak, bk) were fitted with T_obs in years.
+        f1 = 10.0 ** (LISA_PSD_A1 * xp.log10(self.t_obs_years) + LISA_PSD_B1)
+        fk = 10.0 ** (LISA_PSD_AK * xp.log10(self.t_obs_years) + LISA_PSD_BK)
+        return (  # type: ignore[no-any-return]
+            LISA_PSD_A
+            * frequencies ** (-7.0 / 3.0)
+            * xp.exp(-(frequencies / f1) ** LISA_PSD_ALPHA)
+            * 0.5
+            * (1.0 + xp.tanh(-(frequencies - fk) / LISA_PSD_F2))
+        )
+
     def power_spectral_density_a_channel(
         self, frequencies: npt.NDArray[np.float64]
     ) -> npt.NDArray[np.float64]:
-        """from https://arxiv.org/pdf/2303.15929.pdf"""
+        """A/E-channel PSD including optional galactic confusion noise.
+
+        References:
+            Instrumental noise: Babak et al. (2023), arXiv:2303.15929
+            Confusion noise: Cornish & Robson (2017), arXiv:1703.09858
+        """
         xp = _get_xp(frequencies)
-        return (  # type: ignore[no-any-return]
+        instrumental = (
             8
             * xp.sin(2 * xp.pi * frequencies * L / C) ** 2
             * (
@@ -82,6 +134,9 @@ class LisaTdiConfiguration:
                 * self.S_TM(frequencies)
             )
         )
+        if self.include_confusion_noise:
+            instrumental = instrumental + self._confusion_noise(frequencies)
+        return instrumental  # type: ignore[no-any-return]
 
     def power_spectral_density_t_channel(
         self, frequencies: npt.NDArray[np.float64]

@@ -183,9 +183,11 @@ def test_confusion_noise_toggle_backward_compat() -> None:
 
 
 def test_confusion_noise_positive() -> None:
-    """_confusion_noise returns all-positive values across the LISA band."""
+    """_confusion_noise returns all-positive values in the 0.1--3 mHz band where it dominates."""
     config = LisaTdiConfiguration(include_confusion_noise=True)
-    fs = np.logspace(-4, -1, 100)
+    # Confusion noise is physically relevant in the 0.1--3 mHz band;
+    # at higher frequencies the exponential suppression underflows to 0.
+    fs = np.logspace(-4, np.log10(3e-3), 50)
     result = config._confusion_noise(fs)
     assert np.all(result > 0)
 
