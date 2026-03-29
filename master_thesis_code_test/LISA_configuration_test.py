@@ -168,8 +168,9 @@ def test_confusion_noise_negligible_above_10mhz() -> None:
     config_with = LisaTdiConfiguration(include_confusion_noise=True)
     config_without = LisaTdiConfiguration(include_confusion_noise=False)
     fs = np.array([0.01])  # 10 mHz
-    ratio = config_with.power_spectral_density_a_channel(fs)[0] / (
-        config_without.power_spectral_density_a_channel(fs)[0]
+    ratio = (
+        config_with.power_spectral_density_a_channel(fs)[0]
+        / (config_without.power_spectral_density_a_channel(fs)[0])
     )
     assert ratio < 1.01
 

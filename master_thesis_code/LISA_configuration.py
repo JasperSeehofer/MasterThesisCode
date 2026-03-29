@@ -83,9 +83,7 @@ class LisaTdiConfiguration:
     # Eq. (3) in Cornish & Robson (2017), arXiv:1703.09858
     # LDC parameterization with continuous T_obs dependence
     # See also Robson, Cornish & Liu (2019), arXiv:1803.01944, Eq. (14)
-    def _confusion_noise(
-        self, frequencies: npt.NDArray[np.float64]
-    ) -> npt.NDArray[np.float64]:
+    def _confusion_noise(self, frequencies: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
         """Galactic foreground confusion noise S_c(f).
 
         Computes the residual foreground from unresolved white dwarf binaries
@@ -105,7 +103,7 @@ class LisaTdiConfiguration:
         return (  # type: ignore[no-any-return]
             LISA_PSD_A
             * frequencies ** (-7.0 / 3.0)
-            * xp.exp(-(frequencies / f1) ** LISA_PSD_ALPHA)
+            * xp.exp(-((frequencies / f1) ** LISA_PSD_ALPHA))
             * 0.5
             * (1.0 + xp.tanh(-(frequencies - fk) / LISA_PSD_F2))
         )
