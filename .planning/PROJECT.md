@@ -8,17 +8,11 @@ A gravitational wave parameter estimation pipeline for LISA Extreme Mass Ratio I
 
 The simulation pipeline runs reliably on the GPU cluster as SLURM array jobs, producing enough Cramér-Rao bounds for statistically meaningful Hubble constant posteriors.
 
-## Current Milestone: v1.1 Clean Simulation Campaign
+## Current State (v1.1 shipped 2026-03-29)
 
-**Goal:** Run the full EMRI simulation pipeline on bwUniCluster from a clean slate, validate results, and evaluate the Hubble constant posterior.
+Pipeline validated end-to-end on bwUniCluster 3.0. Smoke-test campaign (3 tasks, 10 steps, seed 100) produced 20 detections, 18 passed the 10% d_L error filter, and the evaluation pipeline generated an H0 posterior at h=0.73. All quantitative checks passed.
 
-**Target features:**
-- Clean data reset (delete stale outputs, ensure no leftover simulation artifacts)
-- SSH key-based cluster access (register key via bwUniCluster portal, configure for direct CLI use)
-- Test simulation run (5 tasks, 50-100 steps) with timing analysis
-- Production simulation run (scale up based on test results and GPU availability)
-- Evaluation pipeline run (Bayesian inference on fresh Cramér-Rao bounds)
-- Result validation (SNR distributions, detection rates, posterior sanity checks)
+**Next milestone:** Not yet defined. Candidates: production-scale campaign, physics corrections, or full H0 sweep.
 
 ## Current State (v1.0 shipped 2026-03-27)
 
@@ -57,13 +51,16 @@ The simulation pipeline runs reliably on the GPU cluster as SLURM array jobs, pr
 - ✓ SSH key-based cluster access with ControlMaster 2FA session reuse — v1.1 Phase 7
 - ✓ Cluster environment preflight verified (modules, GPU partition, workspace, venv+imports) — v1.1 Phase 7
 - ✓ Claude SSH integration via `ssh bwunicluster '<cmd>'` for direct cluster command execution — v1.1 Phase 7
+- ✓ Test simulation run completed (3 tasks, 10 steps, seed 100) with timing data — v1.1 Phase 8
+- ✓ Evaluation pipeline produces H₀ posterior from fresh Cramér-Rao bounds — v1.1 Phase 8
+- ✓ Results validated (SNR physical, seeds correct, detection rates reasonable) — v1.1 Phase 8
 
 ### Active
 
-- Test simulation run with timing analysis (5 tasks, 50-100 steps)
-- Production simulation run scaled to GPU availability
-- Bayesian inference evaluation on fresh Cramér-Rao bounds
-- Result validation (SNR distributions, detection rates, posterior checks)
+- Production simulation run scaled to GPU availability (100+ tasks)
+- Full H₀ posterior sweep over [0.6, 0.9] range
+- Fisher matrix upgrade to 5-point stencil derivative
+- Galactic confusion noise added to PSD
 
 ### Out of Scope
 
@@ -79,6 +76,8 @@ The simulation pipeline runs reliably on the GPU cluster as SLURM array jobs, pr
 - **Cluster:** bwUniCluster 3.0 at KIT Karlsruhe (bwHPC federation), SLURM scheduler, GPU nodes with NVIDIA H100 GPUs (CUDA 12), `module load` environment system, workspace mechanism (`ws_allocate`)
 - **Architecture fit:** `--simulation_index` maps to `SLURM_ARRAY_TASK_ID`. Each EMRI event is independent, making array jobs the ideal parallelization strategy.
 - **All v1.0 code blockers resolved:** CPU-safe imports, batch-compatible scripts, environment setup, job infrastructure, documentation.
+- **v1.1 cluster integration fixes:** `few` v2.0.0rc1 API updates (`force_backend="cuda12x"`, `ESAOrbits`), sbatch path resolution, SIGTERM flush handler, 30s waveform timeout.
+- **Smoke-test results:** 20 detections from 30 EMRI events (3 tasks × 10 steps), 18 passed 10% d_L filter, H₀ posterior generated at h=0.73.
 - **Known physics bugs:** Fisher stencil (forward-diff instead of 5-point), confusion noise absent from PSD, wCDM params silently ignored, hardcoded 10% σ(d_L), WMAP-era cosmology, galaxy redshift uncertainty scaling. All tracked in CLAUDE.md.
 
 ## Constraints
@@ -99,6 +98,10 @@ The simulation pipeline runs reliably on the GPU cluster as SLURM array jobs, pr
 | `cluster/` directory in repo | Job scripts version-controlled alongside code they run | ✓ Good — single git pull deploys everything |
 | `emri-merge`/`emri-prepare` entry points | Console scripts avoid fragile `python -m scripts.*` in sbatch | ✓ Good — clean CLI interface |
 | afterok dependency chaining | Pipeline runs unattended after single submission | ✓ Good — three stages chain automatically |
+| afterany for merge step | Merge runs even if some simulate tasks timeout | ✓ Good — collects partial results from timed-out tasks |
+| `force_backend="cuda12x"` | few auto-detection fell back to CPU on GPU nodes | ✓ Good — explicit backend selection is reliable |
+| 30s waveform timeout | Some EMRI parameter combinations hang indefinitely | ⚠️ Revisit — root cause TBD, mitigated not fixed |
+| 10% d_L error threshold | Forward-diff Fisher matrix too imprecise for 5% | ⚠️ Revisit — will improve with 5-point stencil |
 
 ## Evolution
 
@@ -118,4 +121,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-03-28 after Phase 7 completion*
+*Last updated: 2026-03-29 after v1.1 milestone*
