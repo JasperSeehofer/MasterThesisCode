@@ -1,7 +1,9 @@
+import logging
 import pathlib
 from typing import Any
 from unittest.mock import MagicMock
 
+import numpy as np
 import pandas as pd
 import pytest
 
@@ -34,6 +36,8 @@ def _make_minimal_pe(tmp_path: pathlib.Path) -> Any:
     pe.lisa_response_generator = MagicMock()
     pe.snr_check_generator = MagicMock()
     pe.lisa_configuration = MagicMock()
+    pe._use_gpu = False
+    pe._use_five_point_stencil = True  # default after Phase 10 Task 2
     pe._crb_buffer = []
     pe._crb_flush_interval = 1  # flush immediately so tests can assert on file contents
     return pe
@@ -321,6 +325,140 @@ def test_psd_cache_shape_is_n_channels_by_n_freqs() -> None:
     fs, psd_stack, lower_idx, upper_idx = pe._get_cached_psd(n)
     n_freqs = upper_idx - lower_idx
     assert psd_stack.shape == (len(ESA_TDI_CHANNELS), n_freqs)
+
+
+# ── Fisher matrix symmetry (GPU) ─────────────────────────────────────────────
+
+
+# ---------------------------------------------------------------------------
+# Toggle dispatch tests (CPU-only — uses mocks, no GPU)
+# ---------------------------------------------------------------------------
+
+
+class TestDerivativeToggle:
+    """Tests that compute_fisher_information_matrix dispatches on _use_five_point_stencil."""
+
+    def test_derivative_toggle_dispatches_five_point_by_default(
+        self, tmp_path: pathlib.Path
+    ) -> None:
+        pe = _make_minimal_pe(tmp_path)
+        pe._use_five_point_stencil = True
+
+        param_symbols = list(pe.parameter_space._parameters_to_dict().keys())
+
+        five_point_mock = MagicMock(
+            return_value={s: np.zeros((2, 100)) for s in param_symbols}
+        )
+        forward_diff_mock = MagicMock()
+
+        pe.five_point_stencil_derivative = five_point_mock  # type: ignore[attr-defined]
+        pe.finite_difference_derivative = forward_diff_mock  # type: ignore[attr-defined]
+        pe.scalar_product_of_functions = MagicMock(return_value=1.0)  # type: ignore[attr-defined]
+
+        pe.compute_fisher_information_matrix()
+
+        five_point_mock.assert_called_once()
+        forward_diff_mock.assert_not_called()
+
+    def test_derivative_toggle_dispatches_forward_diff_when_disabled(
+        self, tmp_path: pathlib.Path
+    ) -> None:
+        pe = _make_minimal_pe(tmp_path)
+        pe._use_five_point_stencil = False
+
+        param_symbols = list(pe.parameter_space._parameters_to_dict().keys())
+
+        five_point_mock = MagicMock()
+        forward_diff_mock = MagicMock(
+            return_value={s: np.zeros((2, 100)) for s in param_symbols}
+        )
+
+        pe.five_point_stencil_derivative = five_point_mock  # type: ignore[attr-defined]
+        pe.finite_difference_derivative = forward_diff_mock  # type: ignore[attr-defined]
+        pe.scalar_product_of_functions = MagicMock(return_value=1.0)  # type: ignore[attr-defined]
+
+        pe.compute_fisher_information_matrix()
+
+        forward_diff_mock.assert_called_once()
+        five_point_mock.assert_not_called()
+
+
+# ---------------------------------------------------------------------------
+# CRB safety tests (CPU-only — uses mocks, no GPU)
+# ---------------------------------------------------------------------------
+
+
+class TestCRBSafety:
+    """Tests for condition number logging, singular matrix, and negative diagonal handling."""
+
+    def test_condition_number_logged_before_inversion(
+        self, tmp_path: pathlib.Path, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        pe = _make_minimal_pe(tmp_path)
+
+        pe.compute_fisher_information_matrix = MagicMock(  # type: ignore[attr-defined]
+            return_value=np.eye(14)
+        )
+
+        import logging
+
+        with caplog.at_level(logging.INFO):
+            pe.compute_Cramer_Rao_bounds()
+
+        assert "Fisher matrix condition number: kappa =" in caplog.text
+
+    def test_negative_crb_diagonal_raises_parameter_estimation_error(
+        self, tmp_path: pathlib.Path
+    ) -> None:
+        from master_thesis_code.exceptions import ParameterEstimationError
+
+        pe = _make_minimal_pe(tmp_path)
+
+        pe.compute_fisher_information_matrix = MagicMock(  # type: ignore[attr-defined]
+            return_value=np.eye(14)
+        )
+
+        # Monkeypatch np.linalg.inv in the pe_module namespace
+        bad_inverse = np.eye(14)
+        bad_inverse[0, 0] = -1.0
+
+        original_inv = np.linalg.inv
+
+        def patched_inv(m: np.ndarray) -> np.ndarray:  # type: ignore[type-arg]
+            return bad_inverse
+
+        pe_module.np.linalg.inv = patched_inv  # type: ignore[attr-defined]
+        try:
+            with pytest.raises(ParameterEstimationError, match="Negative CRB diagonal"):
+                pe.compute_Cramer_Rao_bounds()
+        finally:
+            pe_module.np.linalg.inv = original_inv  # type: ignore[attr-defined]
+
+    def test_singular_matrix_raises_linalg_error(self, tmp_path: pathlib.Path) -> None:
+        pe = _make_minimal_pe(tmp_path)
+
+        pe.compute_fisher_information_matrix = MagicMock(  # type: ignore[attr-defined]
+            return_value=np.zeros((14, 14))
+        )
+
+        with pytest.raises(np.linalg.LinAlgError):
+            pe.compute_Cramer_Rao_bounds()
+
+
+# ---------------------------------------------------------------------------
+# Timeout test (CPU-only — reads source file)
+# ---------------------------------------------------------------------------
+
+
+def test_alarm_timeout_is_90_seconds() -> None:
+    """Verify that main.py uses signal.alarm(90), not signal.alarm(30)."""
+    source = pathlib.Path("master_thesis_code/main.py").read_text()
+    assert source.count("signal.alarm(90)") >= 2, (
+        f"Expected >= 2 signal.alarm(90), found {source.count('signal.alarm(90)')}"
+    )
+    assert source.count("signal.alarm(30)") == 0, (
+        f"Found signal.alarm(30) — should be 90s: {source.count('signal.alarm(30)')} occurrences"
+    )
 
 
 # ── Fisher matrix symmetry (GPU) ─────────────────────────────────────────────

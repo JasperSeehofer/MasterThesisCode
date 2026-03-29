@@ -13,7 +13,7 @@ import numpy as np
 
 from master_thesis_code.arguments import Arguments
 from master_thesis_code.cosmological_model import Model1CrossCheck
-from master_thesis_code.exceptions import ParameterOutOfBoundsError
+from master_thesis_code.exceptions import ParameterEstimationError, ParameterOutOfBoundsError
 
 if TYPE_CHECKING:
     from master_thesis_code.callbacks import SimulationCallback
@@ -195,7 +195,7 @@ def data_simulation(
     _callbacks: list[SimulationCallback] = callbacks or []
 
     def _alarm_handler(signum: int, frame: object) -> None:
-        raise TimeoutError("Computation exceeded 30s timeout")
+        raise TimeoutError("Computation exceeded 90s timeout")
 
     signal.signal(signal.SIGALRM, _alarm_handler)
 
@@ -252,7 +252,7 @@ def data_simulation(
 
         try:
             warnings.filterwarnings("error")
-            signal.alarm(30)
+            signal.alarm(90)
             quick_snr = parameter_estimation.compute_signal_to_noise_ratio(
                 use_snr_check_generator=True
             )
@@ -312,7 +312,7 @@ def data_simulation(
             )
             continue
         except TimeoutError:
-            _ROOT_LOGGER.warning("Waveform/SNR computation timed out (>30s). Skipping event...")
+            _ROOT_LOGGER.warning("Waveform/SNR computation timed out (>90s). Skipping event...")
             continue
 
         passed = snr >= cosmological_model.snr_threshold
@@ -329,7 +329,7 @@ def data_simulation(
             f"SNR threshold check successful: {np.round(snr, 3)} >= {cosmological_model.snr_threshold}"
         )
         try:
-            signal.alarm(30)
+            signal.alarm(90)
             cramer_rao_bounds = parameter_estimation.compute_Cramer_Rao_bounds()
             signal.alarm(0)
         except ParameterOutOfBoundsError:
@@ -337,8 +337,14 @@ def data_simulation(
                 "Caught ParameterOutOfBoundsError in dervative. Continue with new parameters..."
             )
             continue
+        except np.linalg.LinAlgError:
+            _ROOT_LOGGER.warning("Fisher matrix is singular (LinAlgError). Skipping event...")
+            continue
+        except ParameterEstimationError as e:
+            _ROOT_LOGGER.warning(f"CRB computation failed: {e}. Skipping event...")
+            continue
         except TimeoutError:
-            _ROOT_LOGGER.warning("Cramér-Rao bound computation timed out (>30s). Skipping event...")
+            _ROOT_LOGGER.warning("Cramér-Rao bound computation timed out (>90s). Skipping event...")
             continue
         except (ZeroDivisionError, RuntimeError, ValueError) as e:
             _ROOT_LOGGER.warning(

@@ -8,7 +8,6 @@ all 14 EMRI parameters.
 """
 
 import logging
-import multiprocessing as mp
 import time
 import warnings
 from typing import Any
@@ -35,9 +34,10 @@ from master_thesis_code.constants import (
     SNR_ANALYSIS_PATH,
     UNDETECTED_EVENTS_PATH,
 )
-from master_thesis_code.datamodels.parameter_space import Parameter, ParameterSpace
+from master_thesis_code.datamodels.parameter_space import ParameterSpace
 from master_thesis_code.decorators import timer_decorator
 from master_thesis_code.exceptions import (
+    ParameterEstimationError,
     ParameterOutOfBoundsError,
 )
 from master_thesis_code.LISA_configuration import LisaTdiConfiguration
@@ -77,9 +77,11 @@ class ParameterEstimation:
         parameter_space: ParameterSpace,
         *,
         use_gpu: bool = True,
+        use_five_point_stencil: bool = True,
     ):
         self.parameter_space = parameter_space
         self._use_gpu = use_gpu
+        self._use_five_point_stencil = use_five_point_stencil
         self.lisa_response_generator = create_lisa_response_generator(
             waveform_generation_type,
             self.dt,
@@ -184,63 +186,76 @@ class ParameterEstimation:
         del base_waveform, current_waveform, base_cropped, derivative
         return derivatives
 
-    def five_point_stencil_derivative(
-        self, parameter: Parameter, parameter_space: ParameterSpace | None = None
-    ) -> Any:
-        """Compute partial derivative of the currently set parameters w.r.t. the provided parameter.
+    def five_point_stencil_derivative(self) -> dict[str, Any]:
+        """Compute partial derivatives for all parameters using the 5-point stencil method.
 
-        Args:
-            parameter_symbol (str): parameter w.r.t. which the derivative is taken (Note: symbol string has to coincide with that in the ParameterSpace list!)
+        Uses the O(epsilon^4) central-difference stencil for each of the 14 EMRI parameters,
+        matching the API of :meth:`finite_difference_derivative` so the two methods are
+        interchangeable in :meth:`compute_fisher_information_matrix`.
 
         Returns:
-            cp.array[float]: data series of derivative
+            Dictionary mapping parameter symbol to its derivative array.
+
+        Raises:
+            ParameterOutOfBoundsError: If the stencil would evaluate outside parameter bounds.
+
+        References:
+            Vallisneri (2008), arXiv:gr-qc/0703086 — derivative accuracy for Fisher matrices.
         """
+        derivatives: dict[str, Any] = {}
 
-        print(
-            f"[{time.ctime()}] Start computing partial derivative of the waveform w.r.t. {parameter.symbol}.",
-            flush=True,
-        )
-        if parameter_space is not None:
-            self.parameter_space = parameter_space
+        if _CUPY_AVAILABLE and cp is not None:
+            pool = cp.get_default_memory_pool()
+            _LOGGER.info(f"GPU memory before derivatives: {pool.total_bytes() / 1e9:.2f} GB")
 
-        parameter_evaluated_at = parameter
-        derivative_epsilon = parameter.derivative_epsilon
+        for parameter in vars(self.parameter_space).values():
+            _LOGGER.info(f"Computing 5-point stencil derivative w.r.t. {parameter.symbol}.")
 
-        # check that neighboring points are in parameter range as well
-        if ((parameter_evaluated_at.value - 2 * derivative_epsilon) < parameter.lower_limit) or (
-            (parameter_evaluated_at.value + 2 * derivative_epsilon) > parameter.upper_limit
-        ):
-            raise ParameterOutOfBoundsError(
-                "Tried to set parameter to value out of bounds in derivative."
-            )
+            derivative_epsilon = parameter.derivative_epsilon
 
-        five_point_stencil_steps = [-2.0, -1.0, 1.0, 2.0]
-        lisa_responses = []
-        for step in five_point_stencil_steps:
-            parameter.value = parameter_evaluated_at.value + step * derivative_epsilon
-
-            lisa_responses.append(
-                self.generate_lisa_response(
-                    update_parameter_dict={parameter.symbol: parameter.value}
+            # check that neighboring points are in parameter range as well
+            if ((parameter.value - 2 * derivative_epsilon) < parameter.lower_limit) or (
+                (parameter.value + 2 * derivative_epsilon) > parameter.upper_limit
+            ):
+                raise ParameterOutOfBoundsError(
+                    "Tried to set parameter to value out of bounds in derivative."
                 )
-            )
-            print(
-                f"[{time.ctime()}] {mp.current_process().name} lisa response computed",
-                flush=True,
-            )
-        lisa_responses = self._crop_to_same_length(lisa_responses)
 
-        lisa_response_derivative = (
-            (-lisa_responses[3] + 8 * lisa_responses[2] - 8 * lisa_responses[1] + lisa_responses[0])
-            / 12
-            / derivative_epsilon
-        )
+            saved_value = parameter.value
 
-        _LOGGER.info(
-            f"Finished computing partial derivative of the waveform w.r.t. {parameter.symbol}."
-        )
-        del lisa_responses
-        return lisa_response_derivative
+            five_point_stencil_steps = [-2.0, -1.0, 1.0, 2.0]
+            lisa_responses = []
+            for step in five_point_stencil_steps:
+                parameter.value = saved_value + step * derivative_epsilon
+                lisa_responses.append(
+                    self.generate_lisa_response(
+                        update_parameter_dict={parameter.symbol: parameter.value}
+                    )
+                )
+
+            # Restore parameter value (critical — prevents mutation across parameters)
+            parameter.value = saved_value
+
+            lisa_responses = self._crop_to_same_length(lisa_responses)
+
+            # 5-point stencil: (-f(+2h) + 8f(+h) - 8f(-h) + f(-2h)) / 12h
+            # Vallisneri (2008), arXiv:gr-qc/0703086
+            derivative = (
+                -lisa_responses[3]
+                + 8 * lisa_responses[2]
+                - 8 * lisa_responses[1]
+                + lisa_responses[0]
+            ) / (12 * derivative_epsilon)
+
+            derivatives[parameter.symbol] = derivative
+            del lisa_responses
+
+        if _CUPY_AVAILABLE and cp is not None:
+            pool = cp.get_default_memory_pool()
+            _LOGGER.info(f"GPU memory after derivatives: {pool.total_bytes() / 1e9:.2f} GB")
+
+        _LOGGER.info("Finished computing 5-point stencil partial derivatives.")
+        return derivatives
 
     @staticmethod
     def _crop_to_same_length(
@@ -336,9 +351,14 @@ class ParameterEstimation:
         # compute derivatives for fisher information matrix
         parameter_symbol_list = list(self.parameter_space._parameters_to_dict().keys())
         parameter_list = [getattr(self.parameter_space, symbol) for symbol in parameter_symbol_list]
-        lisa_response_derivatives: dict[str, Any] = self.finite_difference_derivative()
+        # Vallisneri (2008), arXiv:gr-qc/0703086 — O(epsilon^4) stencil for accurate Fisher matrices
+        if self._use_five_point_stencil:
+            lisa_response_derivatives: dict[str, Any] = self.five_point_stencil_derivative()
+        else:
+            lisa_response_derivatives = self.finite_difference_derivative()
 
-        fisher_information_matrix = cp.zeros(
+        xp = cp if (_CUPY_AVAILABLE and cp is not None) else np
+        fisher_information_matrix = xp.zeros(
             shape=(len(parameter_symbol_list), len(parameter_symbol_list)), dtype=float
         )
 
@@ -362,7 +382,31 @@ class ParameterEstimation:
     def compute_Cramer_Rao_bounds(self) -> dict:
         fisher_information_matrix = self.compute_fisher_information_matrix()
 
-        cramer_rao_bounds = np.matrix(cp.asnumpy(fisher_information_matrix)).I
+        # Convert to numpy for linear algebra (GPU arrays not needed for 14x14 matrix)
+        if _CUPY_AVAILABLE and cp is not None:
+            fisher_np = cp.asnumpy(fisher_information_matrix)
+        else:
+            fisher_np = np.asarray(fisher_information_matrix)
+
+        # D-03: Log condition number before inversion
+        condition_number = np.linalg.cond(fisher_np)
+        _LOGGER.info(f"Fisher matrix condition number: kappa = {condition_number:.2e}")
+
+        # D-04a: np.linalg.inv raises LinAlgError for singular matrices
+        cramer_rao_bounds = np.linalg.inv(fisher_np)
+
+        # D-04b: Check for negative diagonal entries (physically impossible — numerical instability)
+        diagonal = np.diag(cramer_rao_bounds)
+        if np.any(diagonal < 0):
+            neg_indices = np.where(diagonal < 0)[0]
+            param_symbols = list(self.parameter_space._parameters_to_dict().keys())
+            neg_params = [param_symbols[i] for i in neg_indices]
+            _LOGGER.warning(
+                f"Negative CRB diagonal entries for {neg_params}. "
+                "Indicates numerical instability. Skipping event."
+            )
+            raise ParameterEstimationError(f"Negative CRB diagonal entries: {neg_params}")
+
         _LOGGER.debug("matrix inversion completed.")
         parameter_symbol_list = list(self.parameter_space._parameters_to_dict().keys())
 
