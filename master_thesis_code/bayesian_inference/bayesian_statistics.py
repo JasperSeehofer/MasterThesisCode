@@ -616,6 +616,8 @@ def single_host_likelihood(
             # fraction = d_L_model / d_L_measured; matches covariance σ²/d_L_measured²
             luminosity_distance_fraction = d_L / detection.d_L
             M_z = np.full_like(z, detection.M)
+            # Delta-function approx: M_z is fixed at detection.M, so M_z/detection.M = 1
+            redshifted_mass_fraction = np.ones_like(z)
             phi = np.full_like(z, possible_host.phiS)
             theta = np.full_like(z, possible_host.qS)
 
@@ -628,8 +630,11 @@ def single_host_likelihood(
             )
             return (
                 p_det
-                * detection_likelihood_gaussians_by_detection_index[detection_index][0].pdf(
-                    np.vstack([phi, theta, luminosity_distance_fraction]).T
+                # Use 4D Gaussian [1] (with BH mass), not 3D [0] (without BH mass)
+                * detection_likelihood_gaussians_by_detection_index[detection_index][1].pdf(
+                    np.vstack(
+                        [phi, theta, luminosity_distance_fraction, redshifted_mass_fraction]
+                    ).T
                 )
                 * galaxy_redshift_normal_distribution.pdf(z)
                 * galaxy_mass_normal_distribution.pdf(detection.M / (1 + z))
@@ -818,13 +823,21 @@ def single_host_likelihood_integration_testing(
             M_z = detection.M
             M = M_z / (1 + z)
             luminosity_distance_fraction = d_L / detection.d_L
+            # Delta-function approx: M_z is fixed at detection.M, so M_z/detection.M = 1
+            redshifted_mass_fraction = 1.0
 
             return float(
                 detection_probability.evaluate_with_bh_mass(
                     d_L, M_z, possible_host.phiS, possible_host.qS
                 )
-                * detection_likelihood_gaussians_by_detection_index[detection_index][0].pdf(
-                    [possible_host.phiS, possible_host.qS, luminosity_distance_fraction]
+                # Use 4D Gaussian [1] (with BH mass), not 3D [0] (without BH mass)
+                * detection_likelihood_gaussians_by_detection_index[detection_index][1].pdf(
+                    [
+                        possible_host.phiS,
+                        possible_host.qS,
+                        luminosity_distance_fraction,
+                        redshifted_mass_fraction,
+                    ]
                 )
                 * galaxy_redshift_normal_distribution.pdf(z)
                 * galaxy_mass_normal_distribution.pdf(M)
