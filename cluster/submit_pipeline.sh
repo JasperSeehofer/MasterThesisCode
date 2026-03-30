@@ -104,11 +104,13 @@ MERGE_JOB=$(sbatch --parsable \
     --export=ALL,RUN_DIR="$RUN_DIR" \
     "$CLUSTER_DIR/merge.sbatch")
 
-# 3. Evaluate job (CPU, after merge completes)
+# 3. Evaluate array job (CPU, after merge completes)
+#    Array tasks map to h values defined in evaluate.sbatch (11 values: 0.6–0.86)
 EVAL_JOB=$(sbatch --parsable \
+    --array="0-10" \
     --dependency="afterok:$MERGE_JOB" \
-    --output="$RUN_DIR/logs/evaluate_%j.out" \
-    --error="$RUN_DIR/logs/evaluate_%j.err" \
+    --output="$RUN_DIR/logs/evaluate_%A_%a.out" \
+    --error="$RUN_DIR/logs/evaluate_%A_%a.err" \
     --export=ALL,RUN_DIR="$RUN_DIR" \
     "$CLUSTER_DIR/evaluate.sbatch")
 
@@ -120,6 +122,6 @@ echo "Pipeline submitted:"
 echo "  Run directory: $RUN_DIR"
 echo "  Simulate:  $SIM_JOB (array 0-$((TASKS - 1)))"
 echo "  Merge:     $MERGE_JOB (after simulate)"
-echo "  Evaluate:  $EVAL_JOB (after merge)"
+echo "  Evaluate:  $EVAL_JOB (array 0-10, h sweep 0.6–0.86)"
 echo ""
 echo "Monitor: sacct -j $SIM_JOB,$MERGE_JOB,$EVAL_JOB"
