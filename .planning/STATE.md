@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-03-29)
 Phase: 11 (validation-campaign) — EXECUTING
 Plan: 2 of 2
 Status: Ready to execute
-Last activity: 2026-03-30 - Completed quick task 260330-oaf: Diagnostic bias fix
+Last activity: 2026-03-30 - Completed quick task 260330-otu: Condense CLAUDE.md
 
 Progress: [░░░░░░░░░░] 0% (v1.2: 0/5 phases)
 
