@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-03-29)
 Phase: 11 (validation-campaign) — EXECUTING
 Plan: 2 of 2
 Status: Ready to execute
-Last activity: 2026-03-29
+Last activity: 2026-03-30 - Completed quick task 260330-oaf: Diagnostic bias fix
 
 Progress: [░░░░░░░░░░] 0% (v1.2: 0/5 phases)
 
@@ -61,9 +61,16 @@ None.
 - CRB timeout (30s) will fire on nearly every event after stencil upgrade -- must increase in Phase 10
 - Confusion noise will reduce detection yield -- campaign size must be calibrated in Phase 11
 - Fisher matrix ill-conditioning may emerge with better derivatives -- condition number monitoring needed
+- **H0 posterior bias** — v12 validation shows posterior peaking at h=0.60 instead of h_true=0.73. Diagnostic changes applied (quick task 260330-oaf). Awaiting re-run to confirm root cause.
+
+### Quick Tasks Completed
+
+| # | Description | Date | Commit | Directory |
+|---|-------------|------|--------|-----------|
+| 260330-oaf | Diagnostic bias fix: remove /d_L factor and disable P_det in Pipeline B likelihood | 2026-03-30 | ae118d4 | [260330-oaf-diagnostic-bias-fix-remove-d-l-factor-an](./quick/260330-oaf-diagnostic-bias-fix-remove-d-l-factor-an/) |
 
 ## Session Continuity
 
-Last session: 2026-03-29T17:49:54.278Z
-Stopped at: Completed 11-01-PLAN.md
+Last session: 2026-03-30
+Stopped at: Completed quick task 260330-oaf (bias diagnostic)
 Resume file: None
