@@ -71,20 +71,20 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| DERV-01 | — | Pending |
-| DERV-02 | — | Pending |
-| AUDT-01 | — | Pending |
-| AUDT-02 | — | Pending |
-| AUDT-03 | — | Pending |
-| FIX-01 | — | Pending |
-| VALD-01 | — | Pending |
-| VALD-02 | — | Pending |
+| DERV-01 | Phase 14 | Pending |
+| DERV-02 | Phase 14 | Pending |
+| AUDT-01 | Phase 15 | Pending |
+| AUDT-02 | Phase 15 | Pending |
+| AUDT-03 | Phase 15 | Pending |
+| FIX-01 | Phase 15 | Pending |
+| VALD-01 | Phase 16 | Pending |
+| VALD-02 | Phase 16 | Pending |
 
 **Coverage:**
 - Primary requirements: 8 total
-- Mapped to phases: 0 (pending roadmap)
-- Unmapped: 8
+- Mapped to phases: 8/8
+- Unmapped: 0
 
 ---
 _Requirements defined: 2026-03-30_
-_Last updated: 2026-03-30 after initial definition_
+_Last updated: 2026-03-30 after roadmap creation_
