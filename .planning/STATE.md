@@ -61,7 +61,7 @@ None.
 - CRB timeout (30s) will fire on nearly every event after stencil upgrade -- must increase in Phase 10
 - Confusion noise will reduce detection yield -- campaign size must be calibrated in Phase 11
 - Fisher matrix ill-conditioning may emerge with better derivatives -- condition number monitoring needed
-- **H0 posterior bias** — v12 validation shows posterior peaking at h=0.60 instead of h_true=0.73. Diagnostic changes applied (quick task 260330-oaf). Awaiting re-run to confirm root cause.
+- **H0 posterior bias** — Diagnostic re-run (quick task 260330-ojq) shifted peak from h=0.600 to h=0.678 (60% bias reduction). Residual offset of 0.052 from h_true=0.73 means additional bias sources exist beyond /d_L and P_det.
 
 ### Quick Tasks Completed
 
@@ -69,9 +69,10 @@ None.
 |---|-------------|------|--------|-----------|
 | 260330-oaf | Diagnostic bias fix: remove /d_L factor and disable P_det in Pipeline B likelihood | 2026-03-30 | ae118d4 | [260330-oaf-diagnostic-bias-fix-remove-d-l-factor-an](./quick/260330-oaf-diagnostic-bias-fix-remove-d-l-factor-an/) |
 | 260330-otu | Condense CLAUDE.md from ~846 to ~426 lines | 2026-03-30 | b47b46e | [260330-otu-condense-claude-md-remove-redundancy-tri](./quick/260330-otu-condense-claude-md-remove-redundancy-tri/) |
+| 260330-ojq | Re-run evaluation with diagnostic fix: peak shifted h=0.600->0.678, 60% bias reduction | 2026-03-30 | 8013749 | [260330-ojq-re-run-evaluation-pipeline-with-h-value-](./quick/260330-ojq-re-run-evaluation-pipeline-with-h-value-/) |
 
 ## Session Continuity
 
 Last session: 2026-03-30
-Stopped at: Completed quick task 260330-otu (condense CLAUDE.md)
+Stopped at: Completed quick task 260330-ojq (diagnostic evaluation re-run)
 Resume file: None
