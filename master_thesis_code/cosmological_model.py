@@ -168,7 +168,7 @@ class Model1CrossCheck:
 
     parameter_space: ParameterSpace
     emri_rate: int = 294  # 1/yr
-    snr_threshold: int = 20
+    snr_threshold: int = 15
     detection_fraction = DetectionFraction()
 
     def __init__(self, rng: np.random.Generator | None = None) -> None:

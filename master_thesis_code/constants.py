@@ -45,7 +45,7 @@ DEFAULT_SIMULATION_PATH: str = "simulations/simulation"
 # Parameter configuration
 MINIMAL_FREQUENCY: float = 1e-5
 MAXIMAL_FREQUENCY: float = 1
-SNR_THRESHOLD: float = 20
+SNR_THRESHOLD: float = 15
 
 # galaxy catalog and EMRI detection
 GALAXY_REDSHIFT_ERROR_COEFFICIENT: float = 0.013  # Galaxy.redshift_uncertainty ∝ 0.013*(1+z)^3
