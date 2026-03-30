@@ -611,13 +611,37 @@ def single_host_likelihood(
     if evaluate_with_bh_mass:
         galaxy_mass_normal_distribution = norm(loc=possible_host.M, scale=possible_host.M_error)
 
+        # --- Precompute conditional distribution for analytic M_z marginalization ---
+        # Partition 4D covariance [phi, theta, d_L_frac, M_z_frac] into
+        # observed (indices 0-2) and M_z_frac (index 3).
+        # Ref: Bishop (2006) PRML Eq. 2.81-2.82 (multivariate normal conditioning)
+        gaussian_4d = detection_likelihood_gaussians_by_detection_index[detection_index][1]
+        cov_4d = np.asarray(gaussian_4d.cov)
+        mu_obs_4d = np.asarray(gaussian_4d.mean)
+
+        cov_obs = cov_4d[:3, :3]  # 3x3: phi, theta, d_L_frac
+        cov_cross = cov_4d[3, :3]  # (3,): cross-covariance M_z_frac with obs
+        cov_mz = cov_4d[3, 3]  # scalar: M_z_frac variance
+
+        # Use pseudoinverse for robustness against near-singular Fisher matrices
+        cov_obs_inv = np.linalg.pinv(cov_obs)
+
+        # Conditional variance of M_z_frac given (phi, theta, d_L_frac)
+        sigma2_cond = float(cov_mz - cov_cross @ cov_obs_inv @ cov_cross)
+        sigma2_cond = max(sigma2_cond, 1e-30)  # floor to avoid numerical issues
+
+        # Projection vector for conditional mean: μ_cond = μ_Mz + proj · (x_obs - μ_obs)
+        proj = cov_cross @ cov_obs_inv  # (3,) vector
+
+        # 3D marginal Gaussian for observed variables (marginalized over M_z_frac)
+        # Marginal covariance is just the 3x3 submatrix of the 4D covariance
+        gaussian_3d_marginal = multivariate_normal(
+            mean=mu_obs_4d[:3], cov=cov_obs, allow_singular=True
+        )
+
         def numerator_integrant_with_bh_mass(z: npt.NDArray[np.float64]) -> Any:
             d_L = dist_vectorized(z, h=h)
-            # fraction = d_L_model / d_L_measured; matches covariance σ²/d_L_measured²
             luminosity_distance_fraction = d_L / detection.d_L
-            M_z = np.full_like(z, detection.M)
-            # Delta-function approx: M_z is fixed at detection.M, so M_z/detection.M = 1
-            redshifted_mass_fraction = np.ones_like(z)
             phi = np.full_like(z, possible_host.phiS)
             theta = np.full_like(z, possible_host.qS)
 
@@ -625,20 +649,34 @@ def single_host_likelihood(
                 1.0
                 if _DEBUG_DISABLE_DETECTION_PROBABILITY
                 else detection_probability.detection_probability_with_bh_mass_interpolated(
-                    d_L, M_z, phi, theta
+                    d_L, np.full_like(z, detection.M), phi, theta
                 )
             )
+
+            # 3D marginal Gaussian: p(phi, theta, d_L_frac)
+            gw_3d = gaussian_3d_marginal.pdf(
+                np.vstack([phi, theta, luminosity_distance_fraction]).T
+            )
+
+            # Conditional mean of M_z_frac given (phi_gal, theta_gal, d_L_frac)
+            x_obs = np.vstack([phi, theta, luminosity_distance_fraction]).T  # (N, 3)
+            mu_cond = mu_obs_4d[3] + (x_obs - mu_obs_4d[:3]) @ proj  # (N,)
+
+            # Galaxy mass in M_z_frac coordinates: M_z_frac = M_gal * (1+z) / M_z_det
+            mu_gal_frac = possible_host.M * (1 + z) / detection.M
+            sigma_gal_frac = possible_host.M_error * (1 + z) / detection.M
+
+            # Analytic Gaussian product integral:
+            # ∫ N(x; μ_cond, σ²_cond) · N(x; μ_gal, σ²_gal) dx
+            #   = N(μ_cond; μ_gal, σ²_cond + σ²_gal)
+            # Ref: standard Gaussian product identity
+            sigma2_sum = sigma2_cond + sigma_gal_frac**2
+            mz_integral = np.exp(-0.5 * (mu_cond - mu_gal_frac) ** 2 / sigma2_sum) / np.sqrt(
+                2 * np.pi * sigma2_sum
+            )
+
             return (
-                p_det
-                # Use 4D Gaussian [1] (with BH mass), not 3D [0] (without BH mass)
-                * detection_likelihood_gaussians_by_detection_index[detection_index][1].pdf(
-                    np.vstack(
-                        [phi, theta, luminosity_distance_fraction, redshifted_mass_fraction]
-                    ).T
-                )
-                * galaxy_redshift_normal_distribution.pdf(z)
-                * galaxy_mass_normal_distribution.pdf(detection.M / (1 + z))
-                / (1 + z)
+                p_det * gw_3d * mz_integral * galaxy_redshift_normal_distribution.pdf(z) / (1 + z)
             )
 
         single_host_likelihood_numerator_with_bh_mass = fixed_quad(
@@ -817,31 +855,48 @@ def single_host_likelihood_integration_testing(
         print(f"Denominator with bh m:{single_host_likelihood_denominator_with_bh_mass}, error estimation {single_host_likelihood_denominator_with_bh_mass_error}", flush=True)
         """
 
-        # treat M_z gaussian as delta function
+        # Analytic marginalization over M_z_frac (same as production path)
+        # Ref: Bishop (2006) PRML Eq. 2.81-2.82
+        gaussian_4d_test = detection_likelihood_gaussians_by_detection_index[detection_index][1]
+        cov_4d_test = np.asarray(gaussian_4d_test.cov)
+        mu_obs_4d_test = np.asarray(gaussian_4d_test.mean)
+        cov_obs_test = cov_4d_test[:3, :3]
+        cov_cross_test = cov_4d_test[3, :3]
+        cov_mz_test = cov_4d_test[3, 3]
+        cov_obs_inv_test = np.linalg.pinv(cov_obs_test)
+        sigma2_cond_test = float(cov_mz_test - cov_cross_test @ cov_obs_inv_test @ cov_cross_test)
+        sigma2_cond_test = max(sigma2_cond_test, 1e-30)
+        proj_test = cov_cross_test @ cov_obs_inv_test
+        gaussian_3d_marginal_test = multivariate_normal(
+            mean=mu_obs_4d_test[:3], cov=cov_obs_test, allow_singular=True
+        )
+
         def numerator_integrant_with_bh_mass(z: float) -> float:
             d_L = dist(z, h=h)
-            M_z = detection.M
-            M = M_z / (1 + z)
             luminosity_distance_fraction = d_L / detection.d_L
-            # Delta-function approx: M_z is fixed at detection.M, so M_z/detection.M = 1
-            redshifted_mass_fraction = 1.0
+
+            x_obs_test = np.array(
+                [possible_host.phiS, possible_host.qS, luminosity_distance_fraction]
+            )
+            gw_3d = float(gaussian_3d_marginal_test.pdf(x_obs_test))
+
+            mu_cond = float(mu_obs_4d_test[3] + proj_test @ (x_obs_test - mu_obs_4d_test[:3]))
+            mu_gal_frac = possible_host.M * (1 + z) / detection.M
+            sigma_gal_frac = possible_host.M_error * (1 + z) / detection.M
+            sigma2_sum = sigma2_cond_test + sigma_gal_frac**2
+            mz_integral = float(
+                np.exp(-0.5 * (mu_cond - mu_gal_frac) ** 2 / sigma2_sum)
+                / np.sqrt(2 * np.pi * sigma2_sum)
+            )
 
             return float(
                 detection_probability.evaluate_with_bh_mass(
-                    d_L, M_z, possible_host.phiS, possible_host.qS
+                    d_L, detection.M, possible_host.phiS, possible_host.qS
                 )
-                # Use 4D Gaussian [1] (with BH mass), not 3D [0] (without BH mass)
-                * detection_likelihood_gaussians_by_detection_index[detection_index][1].pdf(
-                    [
-                        possible_host.phiS,
-                        possible_host.qS,
-                        luminosity_distance_fraction,
-                        redshifted_mass_fraction,
-                    ]
-                )
+                * gw_3d
+                * mz_integral
                 * galaxy_redshift_normal_distribution.pdf(z)
-                * galaxy_mass_normal_distribution.pdf(M)
-                / (1 + z)  # delta function derivative
+                / (1 + z)
             )
 
         def denominator_integrant_with_bh_mass(M: float, z: float) -> float:
