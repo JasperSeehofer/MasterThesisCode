@@ -57,6 +57,15 @@ ADDITIONAL_GALAXIES_WITHOUT_BH_MASS = "additional_galaxies_without_bh_mass"
 
 FRACTIONAL_LUMINOSITY_DISTANCE_ERROR_THRESHOLD = 0.10
 
+_DEBUG_DISABLE_DETECTION_PROBABILITY = True
+# TODO(bias-audit): Restore detection probability after diagnostic confirms bias source
+
+if _DEBUG_DISABLE_DETECTION_PROBABILITY:
+    _LOGGER.warning(
+        "DIAGNOSTIC MODE: Detection probability disabled "
+        "(_DEBUG_DISABLE_DETECTION_PROBABILITY=True)"
+    )
+
 # Module-level globals used by child_process_init for multiprocessing worker state
 redshift_upper_integration_limit: float = 0.0
 redshift_lower_integration_limit: float = 0.0
@@ -552,24 +561,33 @@ def single_host_likelihood(
         phi = np.full_like(z, possible_host.phiS)
         theta = np.full_like(z, possible_host.qS)
 
-        return (
-            detection_probability.detection_probability_without_bh_mass_interpolated(
+        p_det = (
+            1.0
+            if _DEBUG_DISABLE_DETECTION_PROBABILITY
+            else detection_probability.detection_probability_without_bh_mass_interpolated(
                 d_L, phi, theta
             )
+        )
+        return (
+            p_det
             * detection_likelihood_gaussians_by_detection_index[detection_index][0].pdf(
                 np.vstack([phi, theta, luminosity_distance_fraction]).T
             )
             * galaxy_redshift_normal_distribution.pdf(z)
-            / d_L
         )
 
     def denominator_integrant_without_bh_mass(z: npt.NDArray[np.float64]) -> Any:
         d_L = dist_vectorized(z, h=h)
         phi = np.full_like(z, possible_host.phiS)
         theta = np.full_like(z, possible_host.qS)
-        return detection_probability.detection_probability_without_bh_mass_interpolated(
-            d_L, phi, theta
-        ) * galaxy_redshift_normal_distribution.pdf(z)
+        p_det = (
+            1.0
+            if _DEBUG_DISABLE_DETECTION_PROBABILITY
+            else detection_probability.detection_probability_without_bh_mass_interpolated(
+                d_L, phi, theta
+            )
+        )
+        return p_det * galaxy_redshift_normal_distribution.pdf(z)
 
     (
         single_host_likelihood_numerator_without_bh_mass,
@@ -601,16 +619,21 @@ def single_host_likelihood(
             phi = np.full_like(z, possible_host.phiS)
             theta = np.full_like(z, possible_host.qS)
 
-            return (
-                detection_probability.detection_probability_with_bh_mass_interpolated(
+            p_det = (
+                1.0
+                if _DEBUG_DISABLE_DETECTION_PROBABILITY
+                else detection_probability.detection_probability_with_bh_mass_interpolated(
                     d_L, M_z, phi, theta
                 )
+            )
+            return (
+                p_det
                 * detection_likelihood_gaussians_by_detection_index[detection_index][0].pdf(
                     np.vstack([phi, theta, luminosity_distance_fraction]).T
                 )
                 * galaxy_redshift_normal_distribution.pdf(z)
                 * galaxy_mass_normal_distribution.pdf(detection.M / (1 + z))
-                / (d_L * (1 + z))  # TODO: check if this is correct
+                / (1 + z)
             )
 
         single_host_likelihood_numerator_with_bh_mass = fixed_quad(
@@ -627,10 +650,15 @@ def single_host_likelihood(
             M_z = M * (1 + z)
             phi = np.full_like(M, possible_host.phiS)
             theta = np.full_like(M, possible_host.qS)
-            return (
-                detection_probability.detection_probability_with_bh_mass_interpolated(
+            p_det = (
+                1.0
+                if _DEBUG_DISABLE_DETECTION_PROBABILITY
+                else detection_probability.detection_probability_with_bh_mass_interpolated(
                     d_L, M_z, phi, theta
                 )
+            )
+            return (
+                p_det
                 * galaxy_redshift_normal_distribution.pdf(z)
                 * galaxy_mass_normal_distribution.pdf(M)
             )
