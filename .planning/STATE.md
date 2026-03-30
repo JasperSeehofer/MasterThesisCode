@@ -68,9 +68,10 @@ None.
 | # | Description | Date | Commit | Directory |
 |---|-------------|------|--------|-----------|
 | 260330-oaf | Diagnostic bias fix: remove /d_L factor and disable P_det in Pipeline B likelihood | 2026-03-30 | ae118d4 | [260330-oaf-diagnostic-bias-fix-remove-d-l-factor-an](./quick/260330-oaf-diagnostic-bias-fix-remove-d-l-factor-an/) |
+| 260330-otu | Condense CLAUDE.md from ~846 to ~426 lines | 2026-03-30 | b47b46e | [260330-otu-condense-claude-md-remove-redundancy-tri](./quick/260330-otu-condense-claude-md-remove-redundancy-tri/) |
 
 ## Session Continuity
 
 Last session: 2026-03-30
-Stopped at: Completed quick task 260330-oaf (bias diagnostic)
+Stopped at: Completed quick task 260330-otu (condense CLAUDE.md)
 Resume file: None
