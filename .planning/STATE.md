@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Production Campaign & Physics Corrections
 status: executing
-stopped_at: Phase 11.1 context gathered
-last_updated: "2026-03-30T21:04:38.474Z"
-last_activity: 2026-03-30 -- Phase 11 execution started
+stopped_at: Completed 11.1-01-PLAN.md
+last_updated: "2026-03-30T21:40:26.788Z"
+last_activity: 2026-03-30
 progress:
   total_phases: 6
   completed_phases: 2
-  total_plans: 4
-  completed_plans: 3
+  total_plans: 9
+  completed_plans: 4
   percent: 0
 ---
 
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-29)
 
 **Core value:** The simulation pipeline runs reliably on the GPU cluster as SLURM array jobs, producing enough Cramer-Rao bounds for statistically meaningful Hubble constant posteriors.
-**Current focus:** Phase 11 — validation-campaign
+**Current focus:** Phase 11.1 — simulation-based-detection-probability
 
 ## Current Position
 
-Phase: 11 (validation-campaign) — EXECUTING
-Plan: 1 of 2
-Status: Executing Phase 11
-Last activity: 2026-03-30 -- Phase 11 execution started
+Phase: 11.1 (simulation-based-detection-probability) — EXECUTING
+Plan: 2 of 5
+Status: Ready to execute
+Last activity: 2026-03-30
 
 Progress: [░░░░░░░░░░] 0% (v1.2: 0/5 phases)
 
@@ -51,6 +51,7 @@ Recent decisions affecting current work:
 - [v1.1]: 30s waveform timeout -- must increase for 5-point stencil
 - [v1.2 Roadmap]: Confusion noise before stencil -- lower risk, enables independent validation
 - [Phase 11]: Phase 10 merged with --no-ff; comparison script uses P90 d_L threshold recommendation
+- [Phase 11.1]: Injection campaign uses dist(z, h=h_value) for h-dependent d_L, bypassing set_host_galaxy_parameters
 
 ### Roadmap Evolution
 
@@ -75,9 +76,10 @@ None.
 | 260330-otu | Condense CLAUDE.md from ~846 to ~426 lines | 2026-03-30 | b47b46e | [260330-otu-condense-claude-md-remove-redundancy-tri](./quick/260330-otu-condense-claude-md-remove-redundancy-tri/) |
 | 260330-ojq | Re-run evaluation with diagnostic fix: peak shifted h=0.600->0.678, 60% bias reduction | 2026-03-30 | 8013749 | [260330-ojq-re-run-evaluation-pipeline-with-h-value-](./quick/260330-ojq-re-run-evaluation-pipeline-with-h-value-/) |
 | 260330-twe | Re-run evaluation with BH mass Gaussian index fix: no change (delta-function approx nullifies fix) | 2026-03-30 | ab77e70 | [260330-twe-re-run-h-value-sweep-evaluation-with-bh-](./quick/260330-twe-re-run-h-value-sweep-evaluation-with-bh-/) |
+| Phase 11.1 P01 | 2min | 2 tasks | 3 files |
 
 ## Session Continuity
 
-Last session: 2026-03-30T21:04:38.473Z
-Stopped at: Phase 11.1 context gathered
-Resume file: .planning/phases/11.1-simulation-based-detection-probability/11.1-CONTEXT.md
+Last session: 2026-03-30T21:40:26.787Z
+Stopped at: Completed 11.1-01-PLAN.md
+Resume file: None
