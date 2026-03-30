@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-03-29)
 Phase: 11 (validation-campaign) — EXECUTING
 Plan: 2 of 2
 Status: Ready to execute
-Last activity: 2026-03-30 - Completed quick task 260330-otu: Condense CLAUDE.md
+Last activity: 2026-03-30 - Completed quick task 260330-twe: BH mass fix eval (no effect)
 
 Progress: [░░░░░░░░░░] 0% (v1.2: 0/5 phases)
 
@@ -70,9 +70,10 @@ None.
 | 260330-oaf | Diagnostic bias fix: remove /d_L factor and disable P_det in Pipeline B likelihood | 2026-03-30 | ae118d4 | [260330-oaf-diagnostic-bias-fix-remove-d-l-factor-an](./quick/260330-oaf-diagnostic-bias-fix-remove-d-l-factor-an/) |
 | 260330-otu | Condense CLAUDE.md from ~846 to ~426 lines | 2026-03-30 | b47b46e | [260330-otu-condense-claude-md-remove-redundancy-tri](./quick/260330-otu-condense-claude-md-remove-redundancy-tri/) |
 | 260330-ojq | Re-run evaluation with diagnostic fix: peak shifted h=0.600->0.678, 60% bias reduction | 2026-03-30 | 8013749 | [260330-ojq-re-run-evaluation-pipeline-with-h-value-](./quick/260330-ojq-re-run-evaluation-pipeline-with-h-value-/) |
+| 260330-twe | Re-run evaluation with BH mass Gaussian index fix: no change (delta-function approx nullifies fix) | 2026-03-30 | ab77e70 | [260330-twe-re-run-h-value-sweep-evaluation-with-bh-](./quick/260330-twe-re-run-h-value-sweep-evaluation-with-bh-/) |
 
 ## Session Continuity
 
 Last session: 2026-03-30
-Stopped at: Completed quick task 260330-ojq (diagnostic evaluation re-run)
+Stopped at: Completed quick task 260330-twe (BH mass fix evaluation — no effect due to delta-function approx)
 Resume file: None
