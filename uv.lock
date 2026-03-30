@@ -939,7 +939,7 @@ wheels = [
 
 [[package]]
 name = "fastlisaresponse"
-version = "1.1.9"
+version = "1.1.17"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "exceptiongroup", marker = "python_full_version < '3.11'" },
@@ -965,22 +965,58 @@ dependencies = [
     { name = "wrapt" },
 ]
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/0b/e2/da34f4ca7c71adfff8e3345346b15448c9859e1c1db332b9fc7a1e1a8e92/fastlisaresponse-1.1.9-cp310-cp310-macosx_13_0_x86_64.whl", hash = "sha256:0f9f3cc58340ce2b8172493ede6d4bc65d3b0ed74d48fe08c4a9b738865a77f7", size = 1187800, upload-time = "2025-09-24T19:07:25.13Z" },
-    { url = "https://files.pythonhosted.org/packages/ff/b6/798249dc90edfdfed19d48770d4896816e27d3bcf3b30615b7ba4fd4b63f/fastlisaresponse-1.1.9-cp310-cp310-macosx_14_0_arm64.whl", hash = "sha256:8f4e4dbae889790868172dd6eb9fd3949dff8408c6c93aab1eec22483bc86024", size = 1093753, upload-time = "2025-09-24T19:07:30.231Z" },
-    { url = "https://files.pythonhosted.org/packages/6d/cd/e820f883ae681b5dc092a49b62f3371eea3114dc1db37f2ab78f22d0bd51/fastlisaresponse-1.1.9-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:ae6641b88edad104ef2f7a42f19aeccac7a3b73b86a6a460583f1edb992aa336", size = 86689, upload-time = "2025-09-24T19:07:32.368Z" },
-    { url = "https://files.pythonhosted.org/packages/96/d8/d4d00db1687a51bd784159cb0d397ac44c334ae08cde7e2b43ebd33c94b8/fastlisaresponse-1.1.9-cp310-cp310-manylinux_2_24_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:cb8e80dbb65c6e991c646f76a1f99889ee20d1cc5a5d4a94f3f08df13c6fc910", size = 63564, upload-time = "2025-09-24T19:07:33.109Z" },
-    { url = "https://files.pythonhosted.org/packages/58/f8/7501318061c9e9be76d249b301a0c33aca557211b43da43f5b82818b1af2/fastlisaresponse-1.1.9-cp311-cp311-macosx_13_0_x86_64.whl", hash = "sha256:dd8c8855e989add850fcc596a8552040619c9a5a1dda53a0326a69b902a80431", size = 1188101, upload-time = "2025-09-24T19:07:33.938Z" },
-    { url = "https://files.pythonhosted.org/packages/02/51/8057eaddc701d00faec78c6e9dbc1ff0e4e84b706b874f03ca5b8ba3ffaf/fastlisaresponse-1.1.9-cp311-cp311-macosx_14_0_arm64.whl", hash = "sha256:3f5f47d2609165c3a48e77840d648293cb899809eb3c446d6bd0a763998e87e3", size = 1093825, upload-time = "2025-09-24T19:07:35.259Z" },
-    { url = "https://files.pythonhosted.org/packages/a6/30/f023923ae2d35475a4789c7553678f6f2ec49d58d57636b3e2bb76b39521/fastlisaresponse-1.1.9-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:d0ca643a0cd8761ed2eeb7579f94461719ecba2ae1a472dce5672c46b9ff532f", size = 87139, upload-time = "2025-09-24T19:07:36.486Z" },
-    { url = "https://files.pythonhosted.org/packages/24/9e/3eaeb2441ac5fad9b44f713590491a378de85bb9eae1979494807eea6cdb/fastlisaresponse-1.1.9-cp311-cp311-manylinux_2_24_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:50f1b7f479e3dde6e4d9075991f020cc337661398dbe483d9fb3d7314f209fb5", size = 63747, upload-time = "2025-09-24T19:07:37.616Z" },
-    { url = "https://files.pythonhosted.org/packages/0c/9f/b9a0a436e36d38cfe839a1d0d7835fc75338e333099ad7b8e3b1cefc9499/fastlisaresponse-1.1.9-cp312-cp312-macosx_13_0_x86_64.whl", hash = "sha256:8387df0830eb1728a0837ed11f5c3eaa33142b35778d5a7073c19d11f51009c8", size = 1187591, upload-time = "2025-09-24T19:07:38.478Z" },
-    { url = "https://files.pythonhosted.org/packages/e3/dd/ccbc847366afb2605598d8d9f7485388d9706abe8f27dad4d0f41e49abe9/fastlisaresponse-1.1.9-cp312-cp312-macosx_14_0_arm64.whl", hash = "sha256:3c7a579157e287d7754de7cdb1d8a236915eab4eb149604b1374f9591bffe510", size = 1093069, upload-time = "2025-09-24T19:07:39.776Z" },
-    { url = "https://files.pythonhosted.org/packages/ed/fb/c2843a517822f5d760c7434995b7360ad5b41b8ba279eaf0bb1163b9b7d1/fastlisaresponse-1.1.9-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:d9226e17eec358014a24ec947d5e473f0c1e673c805ef7dd52892481d31fc1d9", size = 87954, upload-time = "2025-09-24T19:07:41.188Z" },
-    { url = "https://files.pythonhosted.org/packages/9d/0f/a66121e53e5c1c424dcded2c645d370474df1d6fafbf4169903410ab4d8f/fastlisaresponse-1.1.9-cp312-cp312-manylinux_2_24_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:34101cedaa00584f8351e60246bec3ecc764134e822199ea96fc8478bddb0fde", size = 63341, upload-time = "2025-09-24T19:07:41.95Z" },
-    { url = "https://files.pythonhosted.org/packages/05/37/3fbd6ef01dc79c9eb4f71aff4f1449ab357cab4cb462a57406b54c82d184/fastlisaresponse-1.1.9-cp313-cp313-macosx_13_0_x86_64.whl", hash = "sha256:f7201c8e962e5bfb6eb969cd31e8bccb71e502bb5986f34249ba88cc8d494a7d", size = 1187056, upload-time = "2025-09-24T19:07:43.135Z" },
-    { url = "https://files.pythonhosted.org/packages/f6/11/938b9526b73339510686fc0c666fbe06b3d9d7aa93d2cdf9bae99cdabd9a/fastlisaresponse-1.1.9-cp313-cp313-macosx_14_0_arm64.whl", hash = "sha256:16fa2f085479b587a2c05a0f2a93607a7578552e09a8b5007772195e851f7a78", size = 1092659, upload-time = "2025-09-24T19:07:44.227Z" },
-    { url = "https://files.pythonhosted.org/packages/c4/52/28df5c1ba478c1b311055ce72ea84357b24866e08fc0f95cc585ce19d39f/fastlisaresponse-1.1.9-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:70a569abb70abf5c9f77d9b4d12257748cfb6405cf0452499f22c150b85aa80d", size = 87350, upload-time = "2025-09-24T19:07:45.612Z" },
-    { url = "https://files.pythonhosted.org/packages/2a/c9/cc6edc05b3fd0be7b84e1c3d3873056990c69dd54d08acdd1fc5deac43ee/fastlisaresponse-1.1.9-cp313-cp313-manylinux_2_24_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:ac80afcd98cbcbfdbf251c5654a180d1b7b5c634066ab2320d3399bce30fb96f", size = 62754, upload-time = "2025-09-24T19:07:46.407Z" },
+    { url = "https://files.pythonhosted.org/packages/c1/04/a109b5964d3aa3e336bef8b314a0b4023f4fc69f9cdbef3181528ec6fdbc/fastlisaresponse-1.1.17-cp310-cp310-macosx_14_0_arm64.whl", hash = "sha256:7cabf09b28765ee488230b4363d67ee777f6e5d89c46bf6383313ff1a8d2b7ec", size = 1107381, upload-time = "2025-12-17T10:37:25.957Z" },
+    { url = "https://files.pythonhosted.org/packages/14/98/7385642e3434ca815d458f2264cb6cdcc92c96b0446240e57ec0a8e5f0a7/fastlisaresponse-1.1.17-cp310-cp310-macosx_15_0_arm64.whl", hash = "sha256:384a362b0063ef06a77389d85362793290acc55b920fbae1cd2689006e2c3b10", size = 1107614, upload-time = "2025-12-17T10:37:27.233Z" },
+    { url = "https://files.pythonhosted.org/packages/6f/38/e540b1e373154098b34891cbc1822d52c60fe29fa6475395bd375a0d7fbb/fastlisaresponse-1.1.17-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:9caf3caebecac58449328b6747d3e50e85cc788057b52dd4c956fae2259b87bb", size = 100598, upload-time = "2025-12-17T10:37:28.6Z" },
+    { url = "https://files.pythonhosted.org/packages/ac/4d/46781b34880ae6f856998befcdb77c4ac992778229b60372ad9c2ae298e4/fastlisaresponse-1.1.17-cp310-cp310-manylinux_2_24_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:c857913cc49f32f0efa0e32cbb5055c2fb5d54d3e3853b2c3402e43f20ed6602", size = 76532, upload-time = "2025-12-17T10:37:29.695Z" },
+    { url = "https://files.pythonhosted.org/packages/06/c4/9be70c36c488266af781e2e1fb4fc21a2688c32764f2877615573d2867a6/fastlisaresponse-1.1.17-cp311-cp311-macosx_14_0_arm64.whl", hash = "sha256:033b3c3e81fdee508cae413f850ce36288f5f8fa25588771ecd683ff46860d99", size = 1107483, upload-time = "2025-12-17T10:37:30.801Z" },
+    { url = "https://files.pythonhosted.org/packages/06/d3/945a152ca40d17d6e6028e360f06db679328d1bdeeefecd94afd375577eb/fastlisaresponse-1.1.17-cp311-cp311-macosx_15_0_arm64.whl", hash = "sha256:3c8d8b0b6664f38d6416d4992a61da6559faa94681989c08a436a79f24df1895", size = 1107672, upload-time = "2025-12-17T10:37:31.764Z" },
+    { url = "https://files.pythonhosted.org/packages/83/e3/923b5b1df74b8ed9bafed67a416820621ed1629151794cb0efb1c5d0c442/fastlisaresponse-1.1.17-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:6a48045094e630982a520d939754066bf35923d4659fe1ea76567ce4fb1fa6a9", size = 100037, upload-time = "2025-12-17T10:37:32.835Z" },
+    { url = "https://files.pythonhosted.org/packages/9d/04/bef93951cc173ae17f963017e3ddc2f7d126be99681be38e9023764f4ef5/fastlisaresponse-1.1.17-cp311-cp311-manylinux_2_24_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:40b2aa55dda0586931fabf1fe90c7147ba8413ba1495eec5d06d23645fb6ce58", size = 76451, upload-time = "2025-12-17T10:37:33.908Z" },
+    { url = "https://files.pythonhosted.org/packages/a4/d3/80337044967aebd94809c133b998115a33d712dfff233542b118a7226b05/fastlisaresponse-1.1.17-cp312-cp312-macosx_14_0_arm64.whl", hash = "sha256:9bfa5b415e2e1e26f34e1aa6901a2833f3e5d8fa44684cdc06429d95fb8aa8c3", size = 1106246, upload-time = "2025-12-17T10:37:37.235Z" },
+    { url = "https://files.pythonhosted.org/packages/80/50/f2333ac88ef46a30efbfbfc97dc074fad6aeccc61a8275c3a2d581ed2b9f/fastlisaresponse-1.1.17-cp312-cp312-macosx_15_0_arm64.whl", hash = "sha256:45680569e4321e32ef3392a3d3ffd688f7e27210ca7f9d0de806fb0ebda7cabc", size = 1106445, upload-time = "2025-12-17T10:37:38.366Z" },
+    { url = "https://files.pythonhosted.org/packages/bb/9b/dd066415f619395bec9e3f8f21db48e4830332bcdebe62d31fe97fae0fbc/fastlisaresponse-1.1.17-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:30b579ee113756f61290e19dfe59e640b0d3f70d8b96223135b5102b269810ce", size = 101491, upload-time = "2025-12-17T10:37:39.664Z" },
+    { url = "https://files.pythonhosted.org/packages/63/99/41e9eadb65bcaa5a28950d442cee755f40b3fb839d3a2c05fd6f3c2f92ba/fastlisaresponse-1.1.17-cp312-cp312-manylinux_2_24_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:8fdf5e07e89429793ca68db13c68d2af244cc22f98fc5c9217e6ba295014c160", size = 75711, upload-time = "2025-12-17T10:37:40.436Z" },
+    { url = "https://files.pythonhosted.org/packages/1c/8c/6b380afeff895daaf71ee8f48b7e11316e2e166b36e8b25714fc95a05ea4/fastlisaresponse-1.1.17-cp313-cp313-macosx_14_0_arm64.whl", hash = "sha256:37bcc740a111861b08356237d5c358f720a0d558c78b712873b23a6c2e9e1575", size = 1105836, upload-time = "2025-12-17T10:37:41.224Z" },
+    { url = "https://files.pythonhosted.org/packages/b7/f1/ee96a00180a6c9d605412e9e130c1e1047725509c8188f45339cfd803ec0/fastlisaresponse-1.1.17-cp313-cp313-macosx_15_0_arm64.whl", hash = "sha256:0b97420281c610c121d818fe026cbe46bbb80abfab56c980de9bf9e7d083af09", size = 1106035, upload-time = "2025-12-17T10:37:42.226Z" },
+    { url = "https://files.pythonhosted.org/packages/00/35/67b09ae2ebf6317c06443a2c6e8c7645e9912b417befd4cd8eab566e2295/fastlisaresponse-1.1.17-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:2742e954d48fa8b1c4ac9468102330a0a1c4dfb1eefea185e8f6481e590c1f50", size = 100426, upload-time = "2025-12-17T10:37:43.514Z" },
+    { url = "https://files.pythonhosted.org/packages/ed/b4/7de226ecd6a844a868629d294c504f5cf63ba809a52b00942a0123f689be/fastlisaresponse-1.1.17-cp313-cp313-manylinux_2_24_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:b78579316ba56951be1869bd6c22bf3948eabc6ea59efdb6946dd5d7e814bfa7", size = 75312, upload-time = "2025-12-17T10:37:44.285Z" },
+]
+
+[[package]]
+name = "fastlisaresponse-cuda12x"
+version = "1.1.17"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "cupy-cuda12x" },
+    { name = "exceptiongroup", marker = "python_full_version < '3.11'" },
+    { name = "fastlisaresponse" },
+    { name = "gpubackendtools" },
+    { name = "h5py" },
+    { name = "jsonschema" },
+    { name = "lisaanalysistools" },
+    { name = "lisaconstants" },
+    { name = "matplotlib" },
+    { name = "multispline" },
+    { name = "numba" },
+    { name = "numpy", version = "2.2.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
+    { name = "numpy", version = "2.4.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
+    { name = "nvidia-ml-py" },
+    { name = "platformdirs" },
+    { name = "pydantic" },
+    { name = "pyyaml" },
+    { name = "requests" },
+    { name = "rich" },
+    { name = "scipy", version = "1.15.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
+    { name = "scipy", version = "1.17.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
+    { name = "tqdm" },
+    { name = "wrapt" },
+]
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/16/94/8c7e725aaf9acbf97edfab7f067949ff1c3ef2410c6910e572196efad788/fastlisaresponse_cuda12x-1.1.17-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:19b1a95e82affab06e68f2760f2abc99c0e367935fd09ca7542c18ddde280a73", size = 1089407, upload-time = "2025-12-17T10:37:56.969Z" },
+    { url = "https://files.pythonhosted.org/packages/81/7d/0c01f3d4480d2ea757e0dfbc834245d26648df69df07928461f32b701f3d/fastlisaresponse_cuda12x-1.1.17-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:8ecba6efddf11c3d0c5083e92f9138c6491d41b190e16a856ffff4dab215e801", size = 1088193, upload-time = "2025-12-17T10:37:58.05Z" },
+    { url = "https://files.pythonhosted.org/packages/1c/75/8bc48b6a744c7ef915fa71a0bced5dd77372bd50d57ab309eabacefa02ab/fastlisaresponse_cuda12x-1.1.17-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:d5835352631e20d2b4f835e67a5ca343fd44ac8a2427c82c65a68ec80cea19b0", size = 1090395, upload-time = "2025-12-17T10:37:59.118Z" },
+    { url = "https://files.pythonhosted.org/packages/c2/d8/8672f9c417020a787f1f7dafce1f2a6b44183a28171a6461c4d3c9a0eeb9/fastlisaresponse_cuda12x-1.1.17-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:d9039d4e4d8434477e32bf85648a4828e84b390776dc163d72591322fae010a6", size = 1088785, upload-time = "2025-12-17T10:38:00.063Z" },
 ]
 
 [[package]]
@@ -1826,6 +1862,40 @@ wheels = [
 ]
 
 [[package]]
+name = "lisaanalysistools-cuda12x"
+version = "1.2.8"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "cupy-cuda12x" },
+    { name = "exceptiongroup", marker = "python_full_version < '3.11'" },
+    { name = "h5py" },
+    { name = "jsonschema" },
+    { name = "lisaanalysistools" },
+    { name = "lisaconstants" },
+    { name = "matplotlib" },
+    { name = "multispline" },
+    { name = "numba" },
+    { name = "numpy", version = "2.2.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
+    { name = "numpy", version = "2.4.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
+    { name = "nvidia-ml-py" },
+    { name = "platformdirs" },
+    { name = "pydantic" },
+    { name = "pyyaml" },
+    { name = "requests" },
+    { name = "rich" },
+    { name = "scipy", version = "1.15.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
+    { name = "scipy", version = "1.17.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
+    { name = "tqdm" },
+    { name = "wrapt" },
+]
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/b0/ca/05222b6eb751d087792b7dddf8f0c3af69c0ee8a5a749c15e9d00911d3ab/lisaanalysistools_cuda12x-1.2.8-cp310-cp310-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:d69d3ec71e4b0e44d08929ea59df7f3e151ec73db8d80486f3717f3de4d30771", size = 2714415, upload-time = "2026-02-10T05:07:23.815Z" },
+    { url = "https://files.pythonhosted.org/packages/85/0f/cdc5741c0fa06f7428d038ad534d31c9e321dcd62594336d8632978d3a1c/lisaanalysistools_cuda12x-1.2.8-cp311-cp311-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:5f5d87159b5128ff4094ee315702dd460ef96c9b5f03a5fb43cc850e4b9cfc2b", size = 2715607, upload-time = "2026-02-10T05:07:25.261Z" },
+    { url = "https://files.pythonhosted.org/packages/15/03/4bc558f9d11f850345421c358d6a30533815530f5bfc7f352460a640a881/lisaanalysistools_cuda12x-1.2.8-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:a18f73cdb9e311958d106efa89bb00b237bbefe0389c12fe76a80a9c0a826188", size = 2716754, upload-time = "2026-02-10T05:07:26.377Z" },
+    { url = "https://files.pythonhosted.org/packages/1e/2d/c7ab243a40721261321088695f58bd64a60b9e3397818e8a496a848130bc/lisaanalysistools_cuda12x-1.2.8-cp313-cp313-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:e5b121078121844a94a125fc9643206d7b2ceef43bc944d4b9defa45c44bc91a", size = 2716621, upload-time = "2026-02-10T05:07:27.52Z" },
+]
+
+[[package]]
 name = "lisaconstants"
 version = "1.3.6"
 source = { registry = "https://pypi.org/simple" }
@@ -1976,7 +2046,9 @@ dev = [
 gpu = [
     { name = "cupy-cuda12x" },
     { name = "fastemriwaveforms-cuda12x" },
+    { name = "fastlisaresponse-cuda12x" },
     { name = "gputil" },
+    { name = "lisaanalysistools-cuda12x" },
 ]
 
 [package.metadata]
@@ -1986,10 +2058,12 @@ requires-dist = [
     { name = "emcee" },
     { name = "fastemriwaveforms", marker = "extra == 'cpu'", specifier = "==2.0.0rc1" },
     { name = "fastemriwaveforms-cuda12x", marker = "extra == 'gpu'" },
-    { name = "fastlisaresponse", specifier = "==1.1.9" },
+    { name = "fastlisaresponse" },
+    { name = "fastlisaresponse-cuda12x", marker = "extra == 'gpu'" },
     { name = "furo", marker = "extra == 'dev'", specifier = ">=2025.12.19" },
     { name = "gputil", marker = "extra == 'gpu'" },
     { name = "jupyterlab", marker = "extra == 'dev'" },
+    { name = "lisaanalysistools-cuda12x", marker = "extra == 'gpu'" },
     { name = "matplotlib" },
     { name = "mypy", marker = "extra == 'dev'" },
     { name = "numpy" },

@@ -4,6 +4,7 @@ from typing import Any
 from unittest.mock import MagicMock
 
 import numpy as np
+import numpy.typing as npt
 import pandas as pd
 import pytest
 
@@ -346,14 +347,12 @@ class TestDerivativeToggle:
 
         param_symbols = list(pe.parameter_space._parameters_to_dict().keys())
 
-        five_point_mock = MagicMock(
-            return_value={s: np.zeros((2, 100)) for s in param_symbols}
-        )
+        five_point_mock = MagicMock(return_value={s: np.zeros((2, 100)) for s in param_symbols})
         forward_diff_mock = MagicMock()
 
-        pe.five_point_stencil_derivative = five_point_mock  # type: ignore[attr-defined]
-        pe.finite_difference_derivative = forward_diff_mock  # type: ignore[attr-defined]
-        pe.scalar_product_of_functions = MagicMock(return_value=1.0)  # type: ignore[attr-defined]
+        pe.five_point_stencil_derivative = five_point_mock
+        pe.finite_difference_derivative = forward_diff_mock
+        pe.scalar_product_of_functions = MagicMock(return_value=1.0)
 
         pe.compute_fisher_information_matrix()
 
@@ -369,13 +368,11 @@ class TestDerivativeToggle:
         param_symbols = list(pe.parameter_space._parameters_to_dict().keys())
 
         five_point_mock = MagicMock()
-        forward_diff_mock = MagicMock(
-            return_value={s: np.zeros((2, 100)) for s in param_symbols}
-        )
+        forward_diff_mock = MagicMock(return_value={s: np.zeros((2, 100)) for s in param_symbols})
 
-        pe.five_point_stencil_derivative = five_point_mock  # type: ignore[attr-defined]
-        pe.finite_difference_derivative = forward_diff_mock  # type: ignore[attr-defined]
-        pe.scalar_product_of_functions = MagicMock(return_value=1.0)  # type: ignore[attr-defined]
+        pe.five_point_stencil_derivative = five_point_mock
+        pe.finite_difference_derivative = forward_diff_mock
+        pe.scalar_product_of_functions = MagicMock(return_value=1.0)
 
         pe.compute_fisher_information_matrix()
 
@@ -396,11 +393,7 @@ class TestCRBSafety:
     ) -> None:
         pe = _make_minimal_pe(tmp_path)
 
-        pe.compute_fisher_information_matrix = MagicMock(  # type: ignore[attr-defined]
-            return_value=np.eye(14)
-        )
-
-        import logging
+        pe.compute_fisher_information_matrix = MagicMock(return_value=np.eye(14))
 
         with caplog.at_level(logging.INFO):
             pe.compute_Cramer_Rao_bounds()
@@ -414,9 +407,7 @@ class TestCRBSafety:
 
         pe = _make_minimal_pe(tmp_path)
 
-        pe.compute_fisher_information_matrix = MagicMock(  # type: ignore[attr-defined]
-            return_value=np.eye(14)
-        )
+        pe.compute_fisher_information_matrix = MagicMock(return_value=np.eye(14))
 
         # Monkeypatch np.linalg.inv in the pe_module namespace
         bad_inverse = np.eye(14)
@@ -424,22 +415,20 @@ class TestCRBSafety:
 
         original_inv = np.linalg.inv
 
-        def patched_inv(m: np.ndarray) -> np.ndarray:  # type: ignore[type-arg]
+        def patched_inv(m: npt.NDArray[np.floating[Any]]) -> npt.NDArray[np.floating[Any]]:
             return bad_inverse
 
-        pe_module.np.linalg.inv = patched_inv  # type: ignore[attr-defined]
+        pe_module.np.linalg.inv = patched_inv  # type: ignore[assignment]
         try:
             with pytest.raises(ParameterEstimationError, match="Negative CRB diagonal"):
                 pe.compute_Cramer_Rao_bounds()
         finally:
-            pe_module.np.linalg.inv = original_inv  # type: ignore[attr-defined]
+            pe_module.np.linalg.inv = original_inv
 
     def test_singular_matrix_raises_linalg_error(self, tmp_path: pathlib.Path) -> None:
         pe = _make_minimal_pe(tmp_path)
 
-        pe.compute_fisher_information_matrix = MagicMock(  # type: ignore[attr-defined]
-            return_value=np.zeros((14, 14))
-        )
+        pe.compute_fisher_information_matrix = MagicMock(return_value=np.zeros((14, 14)))
 
         with pytest.raises(np.linalg.LinAlgError):
             pe.compute_Cramer_Rao_bounds()
