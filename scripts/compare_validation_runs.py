@@ -54,6 +54,12 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         required=True,
         help="Path to write the markdown comparison report",
     )
+    parser.add_argument(
+        "--snr_threshold",
+        type=float,
+        default=20.0,
+        help="SNR threshold for detection filtering (default: 20.0)",
+    )
     return parser.parse_args(argv)
 
 
@@ -62,7 +68,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 # ---------------------------------------------------------------------------
 
 CRB_CSV_SUBPATH = "simulations/cramer_rao_bounds.csv"
-SNR_THRESHOLD = 20.0
+SNR_THRESHOLD = 20.0  # default, overridden by --snr_threshold CLI arg
 
 # CRB diagonal column names (parameter self-covariance entries)
 CRB_DIAGONAL_COLUMNS = [
@@ -574,6 +580,9 @@ def main(argv: list[str] | None = None) -> None:
     baseline_dir = Path(args.baseline)
     new_dir = Path(args.new)
     output_path = Path(args.output)
+
+    global SNR_THRESHOLD  # noqa: PLW0603
+    SNR_THRESHOLD = args.snr_threshold
 
     report = generate_report(baseline_dir, new_dir)
 
