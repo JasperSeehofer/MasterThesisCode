@@ -96,9 +96,9 @@ SIM_JOB=$(sbatch --parsable \
     --export=ALL,RUN_DIR="$RUN_DIR",BASE_SEED="$SEED",SIM_STEPS="$STEPS" \
     "$CLUSTER_DIR/simulate.sbatch")
 
-# 2. Merge job (CPU, after all simulate tasks complete)
+# 2. Merge job (CPU, after all simulate tasks finish — afterany tolerates timeouts)
 MERGE_JOB=$(sbatch --parsable \
-    --dependency="afterok:$SIM_JOB" \
+    --dependency="afterany:$SIM_JOB" \
     --output="$RUN_DIR/logs/merge_%j.out" \
     --error="$RUN_DIR/logs/merge_%j.err" \
     --export=ALL,RUN_DIR="$RUN_DIR" \
