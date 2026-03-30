@@ -10,7 +10,7 @@ dependencies = [
     "scikit-learn",
     "emcee",
     "tabulate",
-    "fastlisaresponse==1.1.9",
+    "fastlisaresponse",
     "astropy>=6.1.7",
 ]
 
@@ -20,6 +20,7 @@ cpu = [
 ]
 gpu = [
     "fastemriwaveforms-cuda12x",
+    "fastlisaresponse-cuda12x",
     "lisaanalysistools-cuda12x",
     "cupy-cuda12x",
     "GPUtil",
