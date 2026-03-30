@@ -3,11 +3,11 @@ gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Production Campaign & Physics Corrections
 status: executing
-stopped_at: Completed 11-01-PLAN.md
-last_updated: "2026-03-29T17:49:54.280Z"
-last_activity: 2026-03-29
+stopped_at: Phase 11.1 context gathered
+last_updated: "2026-03-30T21:04:38.474Z"
+last_activity: 2026-03-30 -- Phase 11 execution started
 progress:
-  total_phases: 5
+  total_phases: 6
   completed_phases: 2
   total_plans: 4
   completed_plans: 3
@@ -26,9 +26,9 @@ See: .planning/PROJECT.md (updated 2026-03-29)
 ## Current Position
 
 Phase: 11 (validation-campaign) — EXECUTING
-Plan: 2 of 2
-Status: Ready to execute
-Last activity: 2026-03-30 - Completed quick task 260330-twe: BH mass fix eval (no effect)
+Plan: 1 of 2
+Status: Executing Phase 11
+Last activity: 2026-03-30 -- Phase 11 execution started
 
 Progress: [░░░░░░░░░░] 0% (v1.2: 0/5 phases)
 
@@ -52,6 +52,10 @@ Recent decisions affecting current work:
 - [v1.2 Roadmap]: Confusion noise before stencil -- lower risk, enables independent validation
 - [Phase 11]: Phase 10 merged with --no-ff; comparison script uses P90 d_L threshold recommendation
 
+### Roadmap Evolution
+
+- Phase 11.1 inserted after Phase 11: Simulation-Based Detection Probability (URGENT) — large-scale SNR-only campaign to build P_det(z,h) grid, replacing KDE-based DetectionProbability
+
 ### Pending Todos
 
 None.
@@ -61,7 +65,7 @@ None.
 - CRB timeout (30s) will fire on nearly every event after stencil upgrade -- must increase in Phase 10
 - Confusion noise will reduce detection yield -- campaign size must be calibrated in Phase 11
 - Fisher matrix ill-conditioning may emerge with better derivatives -- condition number monitoring needed
-- **H0 posterior bias** — Diagnostic re-run (quick task 260330-ojq) shifted peak from h=0.600 to h=0.678 (60% bias reduction). Residual offset of 0.052 from h_true=0.73 means additional bias sources exist beyond /d_L and P_det.
+- **H0 posterior bias** — Debug session confirmed formula is correct; residual bias is from P_det=1 (disabled). Phase 11.1 will build simulation-based P_det to resolve this.
 
 ### Quick Tasks Completed
 
@@ -74,6 +78,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-03-30
-Stopped at: Completed quick task 260330-twe (BH mass fix evaluation — no effect due to delta-function approx)
-Resume file: None
+Last session: 2026-03-30T21:04:38.473Z
+Stopped at: Phase 11.1 context gathered
+Resume file: .planning/phases/11.1-simulation-based-detection-probability/11.1-CONTEXT.md
