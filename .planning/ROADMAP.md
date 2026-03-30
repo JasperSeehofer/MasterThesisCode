@@ -84,6 +84,25 @@ Plans:
 - [x] 11-01-PLAN.md — Merge Phase 10 branch, write comparison analysis script
 - [ ] 11-02-PLAN.md — Submit cluster campaign, rsync results, produce comparison report, apply D-08/D-09 fixes
 
+### Phase 11.1: Simulation-Based Detection Probability (INSERTED)
+
+**Goal:** Replace KDE-based DetectionProbability with simulation-based P_det built from a dedicated SNR-only injection campaign, resolving the H0 posterior bias
+**Requirements**: D-01, D-02, D-03, D-04, D-05, D-06, D-07, D-08, D-09, D-10, D-11, D-12, D-13, D-14, D-15
+**Depends on:** Phase 11
+**Success Criteria** (what must be TRUE):
+  1. An injection campaign produces ~10,000 SNR-only events per h value for 7 h values (0.60-0.90)
+  2. SimulationDetectionProbability class loads injection CSVs, applies SNR threshold at evaluation time, builds P_det(z,M|h) interpolation grids
+  3. Pipeline B uses SimulationDetectionProbability exclusively (old KDE class deleted, debug flag removed)
+  4. H0 posterior with simulation-based P_det has h=0.73 within 90% credible interval
+**Plans:** 5 plans
+
+Plans:
+- [ ] 11.1-01-PLAN.md — Add injection campaign CLI mode and event loop
+- [ ] 11.1-02-PLAN.md — Create SimulationDetectionProbability class with tests
+- [ ] 11.1-03-PLAN.md — Replace old P_det in Pipeline B, delete KDE class
+- [ ] 11.1-04-PLAN.md — Create cluster scripts for injection campaign
+- [ ] 11.1-05-PLAN.md — Run injection campaign, evaluate H0 posterior, validate
+
 ### Phase 12: Production Campaign
 **Goal**: A statistically sufficient catalog of Cramer-Rao bounds exists for meaningful H0 inference
 **Depends on**: Phase 11
@@ -107,7 +126,7 @@ Plans:
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 9 -> 10 -> 11 -> 12 -> 13
+Phases execute in numeric order: 9 -> 10 -> 11 -> 11.1 -> 12 -> 13
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -122,5 +141,6 @@ Phases execute in numeric order: 9 -> 10 -> 11 -> 12 -> 13
 | 9. Galactic Confusion Noise | v1.2 | 0/1 | Planning | - |
 | 10. Five-Point Stencil Derivatives | v1.2 | 0/1 | Planning | - |
 | 11. Validation Campaign | v1.2 | 1/2 | In Progress|  |
+| 11.1 Simulation-Based P_det | v1.2 | 0/5 | Planning | - |
 | 12. Production Campaign | v1.2 | 0/0 | Not started | - |
 | 13. H0 Posterior Sweep | v1.2 | 0/0 | Not started | - |
