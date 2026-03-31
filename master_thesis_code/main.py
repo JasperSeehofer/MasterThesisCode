@@ -52,7 +52,7 @@ def main() -> None:
         z_max=cosmological_model.max_redshift,
     )
 
-    if arguments.simulation_steps > 0:
+    if arguments.simulation_steps > 0 and not arguments.injection_campaign:
         data_simulation(
             arguments.simulation_steps,
             cosmological_model,
