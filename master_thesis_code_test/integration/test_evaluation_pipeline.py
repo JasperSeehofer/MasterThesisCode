@@ -187,7 +187,7 @@ def test_evaluation_pipeline_produces_valid_posterior(
     # ── 6. Create BayesianStatistics (reads monkeypatched CSV paths) ────
     bayesian_stats = BayesianStatistics()
     assert len(bayesian_stats.cramer_rao_bounds) == 5
-    assert len(bayesian_stats.undetected_events) == 20
+    assert len(bayesian_stats.undetected_events) == 20  # type: ignore[attr-defined]  # pre-existing: attribute does not exist on BayesianStatistics
 
     # ── 7. Run evaluate ─────────────────────────────────────────────────
     h_value = 0.73

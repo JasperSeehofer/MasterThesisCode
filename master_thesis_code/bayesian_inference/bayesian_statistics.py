@@ -532,7 +532,9 @@ def single_host_likelihood(
     # construct normal distribution for redshift and mass for host galaxy
     galaxy_redshift_normal_distribution = norm(loc=possible_host.z, scale=possible_host.z_error)
 
-    # TODO: KEEP IN MIND SKYLOCALIZATION WEIGHT IS IN THE GW LIKELIHOOD ATM. possible source of error
+    # Sky localization weight (phi, theta) is inside the GW likelihood Gaussian.
+    # Verified correct by Phase 14 derivation (Sec. 2.7): the 3D/4D GW Gaussian
+    # naturally encodes the sky position weight -- this is NOT a source of error.
     def numerator_integrant_without_bh_mass(z: npt.NDArray[np.float64]) -> Any:
         d_L = dist_vectorized(z, h=h)
         # fraction = d_L_model / d_L_measured; matches covariance σ²/d_L_measured²
@@ -585,6 +587,7 @@ def single_host_likelihood(
         # --- Precompute conditional distribution for analytic M_z marginalization ---
         # Partition 4D covariance [phi, theta, d_L_frac, M_z_frac] into
         # observed (indices 0-2) and M_z_frac (index 3).
+        # Eqs. (14.23)-(14.28) in derivations/dark_siren_likelihood.md
         # Ref: Bishop (2006) PRML Eq. 2.81-2.82 (multivariate normal conditioning)
         gaussian_4d = detection_likelihood_gaussians_by_detection_index[detection_index][1]
         cov_4d = np.asarray(gaussian_4d.cov)
@@ -616,6 +619,9 @@ def single_host_likelihood(
             phi = np.full_like(z, possible_host.phiS)
             theta = np.full_like(z, possible_host.qS)
 
+            # NOTE: p_det uses the ML mass estimate (detection.M) rather than
+            # M_gal*(1+z) at trial z. This is a known approximation, not a bug,
+            # per Phase 14 analysis. The denominator uses M_gal*(1+z) correctly.
             p_det = detection_probability.detection_probability_with_bh_mass_interpolated(
                 d_L, np.full_like(z, detection.M), phi, theta, h=h
             )
@@ -630,21 +636,23 @@ def single_host_likelihood(
             mu_cond = mu_obs_4d[3] + (x_obs - mu_obs_4d[:3]) @ proj  # (N,)
 
             # Galaxy mass in M_z_frac coordinates: M_z_frac = M_gal * (1+z) / M_z_det
+            # Eq. (14.22) in derivations/dark_siren_likelihood.md
+            # NOTE: (1+z) here is CORRECT -- it is the coordinate transform, not a Jacobian
             mu_gal_frac = possible_host.M * (1 + z) / detection.M
             sigma_gal_frac = possible_host.M_error * (1 + z) / detection.M
 
             # Analytic Gaussian product integral:
             # ∫ N(x; μ_cond, σ²_cond) · N(x; μ_gal, σ²_gal) dx
             #   = N(μ_cond; μ_gal, σ²_cond + σ²_gal)
-            # Ref: standard Gaussian product identity
+            # Eq. (14.31) in derivations/dark_siren_likelihood.md
             sigma2_sum = sigma2_cond + sigma_gal_frac**2
             mz_integral = np.exp(-0.5 * (mu_cond - mu_gal_frac) ** 2 / sigma2_sum) / np.sqrt(
                 2 * np.pi * sigma2_sum
             )
 
-            return (
-                p_det * gw_3d * mz_integral * galaxy_redshift_normal_distribution.pdf(z) / (1 + z)
-            )
+            # Eq. (14.32) in derivations/dark_siren_likelihood.md
+            # No /(1+z) factor: Jacobian absorbed by Gaussian rescaling (Eq. 14.21)
+            return p_det * gw_3d * mz_integral * galaxy_redshift_normal_distribution.pdf(z)
 
         single_host_likelihood_numerator_with_bh_mass = fixed_quad(
             numerator_integrant_with_bh_mass,
@@ -715,7 +723,8 @@ def single_host_likelihood_integration_testing(
     # construct normal distribution for redshift and mass for host galaxy
     galaxy_redshift_normal_distribution = norm(loc=possible_host.z, scale=possible_host.z_error)
 
-    # TODO: KEEP IN MIND SKYLOCALIZATION WEIGHT IS IN THE GW LIKELIHOOD ATM. possible source of error
+    # Sky localization weight (phi, theta) is inside the GW likelihood Gaussian.
+    # Verified correct by Phase 14 derivation (Sec. 2.7) -- not a source of error.
     def numerator_integrant_without_bh_mass(z: float) -> float:
         d_L = dist(z, h=h)
         luminosity_distance_fraction = d_L / detection.d_L
@@ -856,6 +865,8 @@ def single_host_likelihood_integration_testing(
                 / np.sqrt(2 * np.pi * sigma2_sum)
             )
 
+            # Eq. (14.32) in derivations/dark_siren_likelihood.md
+            # No /(1+z) factor: Jacobian absorbed by Gaussian rescaling (Eq. 14.21)
             return float(
                 detection_probability.detection_probability_with_bh_mass_interpolated(
                     d_L, detection.M, possible_host.phiS, possible_host.qS, h=h
@@ -863,7 +874,6 @@ def single_host_likelihood_integration_testing(
                 * gw_3d
                 * mz_integral
                 * galaxy_redshift_normal_distribution.pdf(z)
-                / (1 + z)
             )
 
         def denominator_integrant_with_bh_mass(M: float, z: float) -> float:
@@ -928,7 +938,9 @@ def single_host_likelihood_integration_testing(
             phi = np.ones_like(M) * possible_host.phiS
             theta = np.ones_like(M) * possible_host.qS
             return (
-                detection_probability.detection_probability_with_bh_mass_interpolated(d_L, M_z, phi, theta, h=h)
+                detection_probability.detection_probability_with_bh_mass_interpolated(
+                    d_L, M_z, phi, theta, h=h
+                )
                 * galaxy_redshift_normal_distribution.pdf(z)
                 * galaxy_mass_normal_distribution.pdf(M)
             )
