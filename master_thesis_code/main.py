@@ -383,6 +383,16 @@ def data_simulation(
         cb.on_simulation_end(counter, iteration)
 
 
+_INJECTION_COLUMNS = ["z", "M", "phiS", "qS", "SNR", "h_inj", "luminosity_distance"]
+
+
+def _flush_injection_results(results: list[dict[str, float]], csv_path: str) -> None:
+    """Write injection results to CSV (overwrites previous flush)."""
+    import pandas as pd
+
+    pd.DataFrame(results, columns=_INJECTION_COLUMNS).to_csv(csv_path, index=False)
+
+
 def injection_campaign(
     simulation_steps: int,
     cosmological_model: Model1CrossCheck,
@@ -405,8 +415,6 @@ def injection_campaign(
         rng: Random number generator for reproducibility.
         use_gpu: Whether to use GPU acceleration.
     """
-    import pandas as pd
-
     from master_thesis_code.constants import INJECTION_CSV_PATH
     from master_thesis_code.galaxy_catalogue.handler import ParameterSample
     from master_thesis_code.memory_management import MemoryManagement
@@ -554,11 +562,13 @@ def injection_campaign(
         )
         counter += 1
 
-    # Write results to CSV
-    df = pd.DataFrame(
-        results, columns=["z", "M", "phiS", "qS", "SNR", "h_inj", "luminosity_distance"]
-    )
-    df.to_csv(csv_path, index=False)
+        # Flush to disk every 500 events so SLURM timeouts don't lose all work
+        if counter % 500 == 0:
+            _flush_injection_results(results, csv_path)
+            _ROOT_LOGGER.info(f"Flushed {len(results)} events to {csv_path}")
+
+    # Final write
+    _flush_injection_results(results, csv_path)
     _ROOT_LOGGER.info(f"Injection campaign complete: {len(results)} events stored to {csv_path}")
 
 
