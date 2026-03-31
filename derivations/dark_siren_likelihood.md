@@ -352,4 +352,29 @@ where:
 - Matches the code at `bayesian_statistics.py` lines 557--609 (Section 3).
 - Consistent with Gray et al. (2020) framework (Section 5).
 
-**Starting point for Plan 02:** The "with BH mass" extension adds a fourth parameter $M_{z,\text{frac}}$ to the GW likelihood Gaussian (making it 4D) and introduces an additional galaxy mass prior $p_\text{mass}(M)$ with a corresponding integral or analytic marginalization. The key question for Plan 02 is how the $M_z \to M$ Jacobian $(1+z)$ enters and whether the denominator is consistent.
+**Starting point for Plan 02:** The "with BH mass" extension adds a fourth parameter $M_{z,\text{frac}}$ to the GW likelihood Gaussian (making it 4D) and introduces an additional galaxy mass prior $p_\text{mass}(M)$ with a corresponding integral or analytic marginalization. The key questions for Plan 02 are:
+
+1. **Jacobian question:** When converting from the GW-measured $M_z$ (redshifted mass) to the galaxy catalog's $M$ (source-frame mass) via $M_z = M(1+z)$, does a Jacobian $\partial M_z / \partial M = (1+z)$ or $\partial M_z / \partial z = M$ appear in the integrand? The code at line 679 has a `/(1+z)` factor -- is this correct, double-counted, or misplaced?
+
+2. **Denominator consistency:** The "without BH mass" denominator (Eq. 14.11) integrates $p_\text{det} \cdot p_\text{gal}$ over $z$ only. The "with BH mass" denominator (code lines 689-707) integrates over both $z$ and $M$. Are these denominators computing the same selection correction in their respective parameter spaces?
+
+3. **Analytic marginalization:** The code uses an analytic Gaussian product identity to marginalize over $M_{z,\text{frac}}$ (lines 669-676). Does this correctly replace the 4D numerical integral, and does it introduce or absorb any Jacobian factors?
+
+These questions are deferred to Plan 02 and cannot be answered from the d_L-only derivation alone.
+
+---
+
+## Appendix A: Dimensional Verification Cross-Check
+
+As an independent verification, we confirm dimensions by tracking units through the code execution path:
+
+1. `dist_vectorized(z, h=h)` returns $d_L$ in **Gpc** (see `physical_relations.py` line 75).
+2. `d_L / detection.d_L` gives $d_{L,\text{frac}}$ in **[Gpc/Gpc] = [1]** -- dimensionless.
+3. `possible_host.phiS`, `possible_host.qS` are in **radians** -- dimensionless.
+4. `multivariate_normal.pdf([phi, theta, d_L_frac])` takes a dimensionless 3-vector, returns **[1]**.
+5. `norm(loc=z_gal, scale=z_err).pdf(z)` takes dimensionless $z$, returns **[1]**.
+6. `detection_probability_without_bh_mass_interpolated(d_L, phi, theta)` returns **[1]** (probability).
+7. `fixed_quad(..., n=50)` integrates over $z \in [z_\text{lo}, z_\text{hi}]$ with measure $dz$ **[1]**.
+8. The ratio `numerator / denominator` is **[1] / [1] = [1]** -- dimensionless likelihood.
+
+All consistent. No dimensional anomaly in the d_L-only channel.
