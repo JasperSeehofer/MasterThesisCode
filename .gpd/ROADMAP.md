@@ -84,7 +84,11 @@
 4. Waveform failure modes are categorized (timeout, parameter bounds, solver divergence) and their correlation with (z, M) regions is assessed from SLURM logs or injection CSV status columns
 5. The z > 0.5 importance sampling cutoff is evaluated: confirmed safe for h in [0.60, 0.90] by SNR scaling argument (SNR ~ M^{5/6}/d_L, and d_L(z=0.5, h=0.60) is documented)
 
-**Plans:** TBD
+**Plans:** 2 plans
+
+Plans:
+- [ ] 17-01-PLAN.md -- Parameter distribution comparison (AUDT-01) + cosmological model consistency and d_L round-trip test (AUDT-02)
+- [ ] 17-02-PLAN.md -- Waveform failure characterization by exception type and parameter region (AUDT-03)
 
 ### Phase 18: Detection Yield & Grid Quality
 
