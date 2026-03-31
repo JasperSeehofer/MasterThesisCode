@@ -8,21 +8,21 @@ This milestone audits the "with BH mass" dark siren likelihood channel that show
 
 | Contract Item | Advanced By Phase(s) | Status |
 | --- | --- | --- |
-| First-principles derivation of "with BH mass" likelihood | Phase 14 | Planned |
-| Code audit showing term-by-term match | Phase 15 | Planned |
+| First-principles derivation of "with BH mass" likelihood | Phase 14 | Complete |
+| Code audit showing term-by-term match | Phase 15 | Complete |
 | Posterior convergence between channels (within ~0.01) | Phase 16 | Planned |
-| Verdict on /(1+z) Jacobian (line 679) | Phase 15 | Planned |
-| Sky localization weight placement audit | Phase 15 | Planned |
-| Numerator/denominator consistency audit | Phase 15 | Planned |
-| Quadrature-vs-MC methodology audit | Phase 15 | Planned |
-| Quick-validation directional check | Phase 15 | Planned |
+| Verdict on /(1+z) Jacobian (line 679) | Phase 15 | Complete (spurious, removed) |
+| Sky localization weight placement audit | Phase 15 | Complete (correct) |
+| Numerator/denominator consistency audit | Phase 15 | Complete (correct) |
+| Quadrature-vs-MC methodology audit | Phase 15 | Complete (acceptable) |
+| Quick-validation directional check | Phase 15 | Complete (FAIL — bias persists) |
 
 ## Phases
 
 **Phase Numbering:** Continues from v1.2 (GSD-tracked, Phases 9-13). v1.2.1 starts at Phase 14.
 
 - [x] **Phase 14: First-Principles Derivation** - Derive correct d_L-only and "with BH mass" dark siren likelihoods from literature
-- [ ] **Phase 15: Code Audit & Fix** - Audit bayesian_statistics.py against derivation, implement all corrections
+- [x] **Phase 15: Code Audit & Fix** - Audit bayesian_statistics.py against derivation, implement all corrections
 - [ ] **Phase 16: Validation** - Re-run evaluation on 22-detection dataset, confirm channel convergence
 
 ## Phase Dependencies
@@ -86,8 +86,8 @@ Plans:
 **Plans:** 2 plans
 
 Plans:
-- [ ] 15-01-PLAN.md -- Term-by-term code audit, remove spurious /(1+z), add reference comments, denominator/MC convergence audit
-- [ ] 15-02-PLAN.md -- Quick-validation evaluation run at 4 h-values to confirm posterior shift
+- [x] 15-01-PLAN.md -- Term-by-term code audit, remove spurious /(1+z), add reference comments, denominator/MC convergence audit
+- [x] 15-02-PLAN.md -- Quick-validation evaluation run at 4 h-values (RESULT: posterior shape unchanged, bias persists)
 
 ### Phase 16: Validation
 
@@ -129,5 +129,5 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 | --- | --- | --- | --- |
 | 14. First-Principles Derivation | 2/2 | Complete | 2026-03-31 |
-| 15. Code Audit & Fix | TBD | Not started | - |
+| 15. Code Audit & Fix | 2/2 | Complete | 2026-03-31 |
 | 16. Validation | TBD | Not started | - |
