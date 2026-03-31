@@ -2,7 +2,7 @@
 
 :class:`BayesianStatistics` loads saved Cramér-Rao bounds and orchestrates the
 full Hubble-constant posterior evaluation using the real GLADE galaxy catalog,
-KDE-based :class:`~master_thesis_code.bayesian_inference.detection_probability.DetectionProbability`,
+simulation-based :class:`~master_thesis_code.bayesian_inference.simulation_detection_probability.SimulationDetectionProbability`,
 full Fisher-matrix covariance, and multiprocessing.
 
 Invoked via ``main.py:evaluate()`` / ``--evaluate`` CLI flag.
@@ -26,11 +26,14 @@ import pandas as pd
 from scipy.integrate import dblquad, fixed_quad, quad
 from scipy.stats import _multivariate, multivariate_normal, norm
 
-from master_thesis_code.bayesian_inference.detection_probability import DetectionProbability
+from master_thesis_code.bayesian_inference.simulation_detection_probability import (
+    SimulationDetectionProbability,
+)
 from master_thesis_code.constants import (
     CRAMER_RAO_BOUNDS_OUTPUT_PATH,
+    INJECTION_DATA_DIR,
     PREPARED_CRAMER_RAO_BOUNDS_PATH,
-    UNDETECTED_EVENTS_OUTPUT_PATH,
+    SNR_THRESHOLD,
     H,
 )
 from master_thesis_code.cosmological_model import LamCDMScenario, Model1CrossCheck
@@ -57,15 +60,6 @@ ADDITIONAL_GALAXIES_WITHOUT_BH_MASS = "additional_galaxies_without_bh_mass"
 
 FRACTIONAL_LUMINOSITY_DISTANCE_ERROR_THRESHOLD = 0.10
 
-_DEBUG_DISABLE_DETECTION_PROBABILITY = True
-# TODO(bias-audit): Restore detection probability after diagnostic confirms bias source
-
-if _DEBUG_DISABLE_DETECTION_PROBABILITY:
-    _LOGGER.warning(
-        "DIAGNOSTIC MODE: Detection probability disabled "
-        "(_DEBUG_DISABLE_DETECTION_PROBABILITY=True)"
-    )
-
 # Module-level globals used by child_process_init for multiprocessing worker state
 redshift_upper_integration_limit: float = 0.0
 redshift_lower_integration_limit: float = 0.0
@@ -78,10 +72,10 @@ detection_likelihood_gaussians_by_detection_index: Any = None
 class BayesianStatistics:
     """Pipeline B — science-grade Hubble constant posterior evaluation.
 
-    Loads saved Cramér-Rao bounds from CSV, constructs a KDE-based
-    :class:`DetectionProbability`, builds multivariate-normal GW likelihoods
-    from the full Fisher-matrix covariance, and evaluates per-detection
-    posteriors over an H₀ grid using a multiprocessing pool.
+    Loads saved Cramér-Rao bounds from CSV, constructs a simulation-based
+    :class:`SimulationDetectionProbability`, builds multivariate-normal GW
+    likelihoods from the full Fisher-matrix covariance, and evaluates
+    per-detection posteriors over an H₀ grid using a multiprocessing pool.
 
     Invoked via ``main.py:evaluate()`` (``--evaluate`` CLI flag).
     Output is written to ``simulations/posteriors/`` as JSON.
@@ -114,7 +108,6 @@ class BayesianStatistics:
         self.posterior_data_with_bh_mass = {}
         self.cramer_rao_bounds = pd.read_csv(PREPARED_CRAMER_RAO_BOUNDS_PATH)
         self.true_cramer_rao_bounds = pd.read_csv(CRAMER_RAO_BOUNDS_OUTPUT_PATH)
-        self.undetected_events = pd.read_csv(UNDETECTED_EVENTS_OUTPUT_PATH)
         _LOGGER.info(f"Loaded {len(self.cramer_rao_bounds)} detections...")
         self.cosmological_model = LamCDMScenario()
         self.h = self.cosmological_model.h.fiducial_value
@@ -151,24 +144,10 @@ class BayesianStatistics:
         BH_MASS_LOWER_LIMIT = cosmological_model.parameter_space.M.lower_limit
         BH_MASS_UPPER_LIMIT = cosmological_model.parameter_space.M.upper_limit
 
-        # find parameter space limits for detections
-        PARAMETERSPACE_MARGIN = 0.2
-        luminosity_distance_lower_limit = 0.0
-        luminosity_distance_upper_limit = max(self.cramer_rao_bounds["luminosity_distance"]) * (
-            1 + PARAMETERSPACE_MARGIN
-        )
-        mass_lower_limit = min(self.cramer_rao_bounds["M"]) * (1 - PARAMETERSPACE_MARGIN)
-        mass_upper_limit = max(self.cramer_rao_bounds["M"]) * (1 + PARAMETERSPACE_MARGIN)
-
         _LOGGER.debug("Creating detection probability functions...")
-        detection_probability = DetectionProbability(
-            luminosity_distance_lower_limit=luminosity_distance_lower_limit,
-            luminosity_distance_upper_limit=luminosity_distance_upper_limit,
-            mass_lower_limit=mass_lower_limit,
-            mass_upper_limit=mass_upper_limit,
-            detected_events=self.cramer_rao_bounds,
-            undetected_events=self.undetected_events,
-            bandwidth=None,
+        detection_probability = SimulationDetectionProbability(
+            injection_data_dir=INJECTION_DATA_DIR,
+            snr_threshold=SNR_THRESHOLD,
         )
         _LOGGER.debug("Detection probability functions created.")
 
@@ -561,12 +540,8 @@ def single_host_likelihood(
         phi = np.full_like(z, possible_host.phiS)
         theta = np.full_like(z, possible_host.qS)
 
-        p_det = (
-            1.0
-            if _DEBUG_DISABLE_DETECTION_PROBABILITY
-            else detection_probability.detection_probability_without_bh_mass_interpolated(
-                d_L, phi, theta
-            )
+        p_det = detection_probability.detection_probability_without_bh_mass_interpolated(
+            d_L, phi, theta, h=h
         )
         return (
             p_det
@@ -580,12 +555,8 @@ def single_host_likelihood(
         d_L = dist_vectorized(z, h=h)
         phi = np.full_like(z, possible_host.phiS)
         theta = np.full_like(z, possible_host.qS)
-        p_det = (
-            1.0
-            if _DEBUG_DISABLE_DETECTION_PROBABILITY
-            else detection_probability.detection_probability_without_bh_mass_interpolated(
-                d_L, phi, theta
-            )
+        p_det = detection_probability.detection_probability_without_bh_mass_interpolated(
+            d_L, phi, theta, h=h
         )
         return p_det * galaxy_redshift_normal_distribution.pdf(z)
 
@@ -645,12 +616,8 @@ def single_host_likelihood(
             phi = np.full_like(z, possible_host.phiS)
             theta = np.full_like(z, possible_host.qS)
 
-            p_det = (
-                1.0
-                if _DEBUG_DISABLE_DETECTION_PROBABILITY
-                else detection_probability.detection_probability_with_bh_mass_interpolated(
-                    d_L, np.full_like(z, detection.M), phi, theta
-                )
+            p_det = detection_probability.detection_probability_with_bh_mass_interpolated(
+                d_L, np.full_like(z, detection.M), phi, theta, h=h
             )
 
             # 3D marginal Gaussian: p(phi, theta, d_L_frac)
@@ -693,12 +660,8 @@ def single_host_likelihood(
             M_z = M * (1 + z)
             phi = np.full_like(M, possible_host.phiS)
             theta = np.full_like(M, possible_host.qS)
-            p_det = (
-                1.0
-                if _DEBUG_DISABLE_DETECTION_PROBABILITY
-                else detection_probability.detection_probability_with_bh_mass_interpolated(
-                    d_L, M_z, phi, theta
-                )
+            p_det = detection_probability.detection_probability_with_bh_mass_interpolated(
+                d_L, M_z, phi, theta, h=h
             )
             return (
                 p_det
@@ -757,8 +720,8 @@ def single_host_likelihood_integration_testing(
         d_L = dist(z, h=h)
         luminosity_distance_fraction = d_L / detection.d_L
         return float(
-            detection_probability.evaluate_without_bh_mass(
-                d_L, possible_host.phiS, possible_host.qS
+            detection_probability.detection_probability_without_bh_mass_interpolated(
+                d_L, possible_host.phiS, possible_host.qS, h=h
             )
             * detection_likelihood_gaussians_by_detection_index[detection_index][0].pdf(
                 [possible_host.phiS, possible_host.qS, luminosity_distance_fraction]
@@ -769,8 +732,8 @@ def single_host_likelihood_integration_testing(
     def denominator_integrant_without_bh_mass(z: float) -> float:
         d_L = dist(z, h=h)
         return float(
-            detection_probability.evaluate_without_bh_mass(
-                d_L, possible_host.phiS, possible_host.qS
+            detection_probability.detection_probability_without_bh_mass_interpolated(
+                d_L, possible_host.phiS, possible_host.qS, h=h
             )
             * galaxy_redshift_normal_distribution.pdf(z)
         )
@@ -813,7 +776,9 @@ def single_host_likelihood_integration_testing(
             luminosity_distance_fraction = d_L / detection.d_L
             redshifted_mass_fraction = M_z / detection.M
             return (
-                detection_probability.evaluate_with_bh_mass(d_L, M_z, possible_host.phiS, possible_host.qS)
+                detection_probability.detection_probability_with_bh_mass_interpolated(
+                    d_L, M_z, possible_host.phiS, possible_host.qS, h=h
+                )
                 * detection_likelihood_gaussians_by_detection_index[
                     detection_index
                 ][1].pdf(
@@ -827,7 +792,9 @@ def single_host_likelihood_integration_testing(
             d_L = dist(z, h=h)
             M_z = M * (1 + z)
             return (
-                detection_probability.evaluate_with_bh_mass(d_L, M_z, possible_host.phiS, possible_host.qS)
+                detection_probability.detection_probability_with_bh_mass_interpolated(
+                    d_L, M_z, possible_host.phiS, possible_host.qS, h=h
+                )
                 * galaxy_redshift_normal_distribution.pdf(z)
                 * galaxy_mass_normal_distribution.pdf(M)
             )
@@ -890,8 +857,8 @@ def single_host_likelihood_integration_testing(
             )
 
             return float(
-                detection_probability.evaluate_with_bh_mass(
-                    d_L, detection.M, possible_host.phiS, possible_host.qS
+                detection_probability.detection_probability_with_bh_mass_interpolated(
+                    d_L, detection.M, possible_host.phiS, possible_host.qS, h=h
                 )
                 * gw_3d
                 * mz_integral
@@ -903,8 +870,8 @@ def single_host_likelihood_integration_testing(
             d_L = dist(z, h=h)
             M_z = M * (1 + z)
             return float(
-                detection_probability.evaluate_with_bh_mass(
-                    d_L, M_z, possible_host.phiS, possible_host.qS
+                detection_probability.detection_probability_with_bh_mass_interpolated(
+                    d_L, M_z, possible_host.phiS, possible_host.qS, h=h
                 )
                 * galaxy_redshift_normal_distribution.pdf(z)
                 * galaxy_mass_normal_distribution.pdf(M)
@@ -961,7 +928,7 @@ def single_host_likelihood_integration_testing(
             phi = np.ones_like(M) * possible_host.phiS
             theta = np.ones_like(M) * possible_host.qS
             return (
-                detection_probability.evaluate_with_bh_mass_vectorized(d_L, M_z, phi, theta)
+                detection_probability.detection_probability_with_bh_mass_interpolated(d_L, M_z, phi, theta, h=h)
                 * galaxy_redshift_normal_distribution.pdf(z)
                 * galaxy_mass_normal_distribution.pdf(M)
             )
@@ -1009,7 +976,7 @@ def child_process_init(
     redshift_upper_limit: float,
     bh_mass_lower_limit: float,
     bh_mass_upper_limit: float,
-    current_detection_probability: DetectionProbability,
+    current_detection_probability: SimulationDetectionProbability,
     current_detection_likelihood_gaussians_by_detection_index: dict[
         int,
         tuple[_multivariate.multivariate_normal_frozen, _multivariate.multivariate_normal_frozen],
