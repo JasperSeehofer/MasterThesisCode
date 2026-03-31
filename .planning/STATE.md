@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Production Campaign & Physics Corrections
 status: executing
-stopped_at: Completed 11.1-01-PLAN.md
-last_updated: "2026-03-30T21:40:26.788Z"
-last_activity: 2026-03-30
+stopped_at: Completed 11.1-03-PLAN.md
+last_updated: "2026-03-31T09:30:17.912Z"
+last_activity: 2026-03-31
 progress:
   total_phases: 6
   completed_phases: 2
   total_plans: 9
-  completed_plans: 4
+  completed_plans: 5
   percent: 0
 ---
 
@@ -26,9 +26,9 @@ See: .planning/PROJECT.md (updated 2026-03-29)
 ## Current Position
 
 Phase: 11.1 (simulation-based-detection-probability) — EXECUTING
-Plan: 2 of 5
+Plan: 4 of 5
 Status: Ready to execute
-Last activity: 2026-03-30
+Last activity: 2026-03-31
 
 Progress: [░░░░░░░░░░] 0% (v1.2: 0/5 phases)
 
@@ -52,6 +52,8 @@ Recent decisions affecting current work:
 - [v1.2 Roadmap]: Confusion noise before stencil -- lower risk, enables independent validation
 - [Phase 11]: Phase 10 merged with --no-ff; comparison script uses P90 d_L threshold recommendation
 - [Phase 11.1]: Injection campaign uses dist(z, h=h_value) for h-dependent d_L, bypassing set_host_galaxy_parameters
+- [Phase 11.1]: Seed isolation between h values uses h_index * 10000 offset for non-overlapping ranges
+- [Phase 11.1]: Kept detection_probability global as Any to avoid mypy issues in multiprocessing workers
 
 ### Roadmap Evolution
 
@@ -77,9 +79,11 @@ None.
 | 260330-ojq | Re-run evaluation with diagnostic fix: peak shifted h=0.600->0.678, 60% bias reduction | 2026-03-30 | 8013749 | [260330-ojq-re-run-evaluation-pipeline-with-h-value-](./quick/260330-ojq-re-run-evaluation-pipeline-with-h-value-/) |
 | 260330-twe | Re-run evaluation with BH mass Gaussian index fix: no change (delta-function approx nullifies fix) | 2026-03-30 | ab77e70 | [260330-twe-re-run-h-value-sweep-evaluation-with-bh-](./quick/260330-twe-re-run-h-value-sweep-evaluation-with-bh-/) |
 | Phase 11.1 P01 | 2min | 2 tasks | 3 files |
+| Phase 11.1 P04 | 2min | 2 tasks | 2 files |
+| Phase 11.1 P03 | 13min | 2 tasks | 7 files |
 
 ## Session Continuity
 
-Last session: 2026-03-30T21:40:26.787Z
-Stopped at: Completed 11.1-01-PLAN.md
+Last session: 2026-03-31T09:30:17.911Z
+Stopped at: Completed 11.1-03-PLAN.md
 Resume file: None
