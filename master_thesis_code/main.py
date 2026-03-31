@@ -455,34 +455,39 @@ def injection_campaign(
 
     z_cut = 0.5  # generous margin above max observed detection z ≈ 0.18
     skipped_high_z = 0
+    _EMCEE_BATCH = 1000  # large batch to amortize MCMC overhead (93.5% z-rejected)
+    _LOG_INTERVAL = 100  # log every N successful events
+    _GPU_FREE_INTERVAL = 50  # free GPU memory every N waveform computations
+    _FLUSH_INTERVAL = 2000  # flush to disk every N events
+    _TIMEOUT_S = 30  # SNR-only is fast; 30s is generous
 
     while counter < simulation_steps:
-        # Sample events from population model (batch of 200)
+        # Sample events from population model
         try:
             sample = next(parameter_samples_iter)
         except StopIteration:
-            samples_list = cosmological_model.sample_emri_events(200)
+            samples_list = cosmological_model.sample_emri_events(_EMCEE_BATCH)
             parameter_samples_iter = iter(samples_list)
             sample = next(parameter_samples_iter)
 
         # Importance sampling: skip events beyond the detection horizon.
         # All 24/69500 detections in the initial campaign were at z < 0.18.
         # Events at z > z_cut have P_det ≈ 0 and waste GPU time on waveforms
-        # that will never produce detectable SNR.  Truncating here does not
-        # bias P_det because the numerator (detected) and denominator (total)
-        # are both zero in the truncated region.
+        # that will never produce detectable SNR.
         if sample.redshift > z_cut:
             skipped_high_z += 1
             continue
 
-        memory_management.gpu_usage_stamp()
-        memory_management.free_gpu_memory()
+        if iteration % _GPU_FREE_INTERVAL == 0:
+            memory_management.gpu_usage_stamp()
+            memory_management.free_gpu_memory()
         iteration += 1
 
-        _ROOT_LOGGER.info(
-            f"Injection campaign: {counter} / {iteration} successful SNR computations "
-            f"({skipped_high_z} high-z skipped)."
-        )
+        if counter % _LOG_INTERVAL == 0:
+            _ROOT_LOGGER.info(
+                f"Injection campaign: {counter} / {iteration} successful SNR computations "
+                f"({skipped_high_z} high-z skipped)."
+            )
 
         # Randomize extrinsic parameters (sky angles, orbital phases, etc.)
         parameter_estimation.parameter_space.randomize_parameters(rng=rng)
@@ -498,7 +503,7 @@ def injection_campaign(
         # Compute SNR only (no Fisher matrix, no CRB)
         try:
             warnings.filterwarnings("error")
-            signal.alarm(90)
+            signal.alarm(_TIMEOUT_S)
             snr = parameter_estimation.compute_signal_to_noise_ratio()
             signal.alarm(0)
             warnings.resetwarnings()
@@ -562,8 +567,8 @@ def injection_campaign(
         )
         counter += 1
 
-        # Flush to disk every 500 events so SLURM timeouts don't lose all work
-        if counter % 500 == 0:
+        # Flush to disk periodically so SLURM timeouts don't lose all work
+        if counter % _FLUSH_INTERVAL == 0:
             _flush_injection_results(results, csv_path)
             _ROOT_LOGGER.info(f"Flushed {len(results)} events to {csv_path}")
 
