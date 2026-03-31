@@ -32,7 +32,6 @@ from master_thesis_code.constants import (
     MAXIMAL_FREQUENCY,
     MINIMAL_FREQUENCY,
     SNR_ANALYSIS_PATH,
-    UNDETECTED_EVENTS_PATH,
 )
 from master_thesis_code.datamodels.parameter_space import ParameterSpace
 from master_thesis_code.decorators import timer_decorator
@@ -574,26 +573,3 @@ class ParameterEstimation:
         snr_analysis = pd.concat([snr_analysis, new_snr_analysis], ignore_index=True)
         snr_analysis.to_csv(SNR_ANALYSIS_PATH, index=False)
 
-    def save_not_detected(self, snr: float, simulation_index: int) -> None:
-        file_path = UNDETECTED_EVENTS_PATH.replace("$index", str(simulation_index))
-        try:
-            snr_analysis = pd.read_csv(file_path)
-
-        except FileNotFoundError:
-            parameters_list = list(self.parameter_space._parameters_to_dict().keys())
-            parameters_list.extend(["T", "dt", "SNR", "generation_time"])
-            snr_analysis = pd.DataFrame(columns=parameters_list)
-
-        new_snr_analysis_dict = self.parameter_space._parameters_to_dict() | {
-            "T": self.T,
-            "dt": self.dt,
-            "SNR": snr,
-            "generation_time": self.waveform_generation_time,
-        }
-
-        new_snr_analysis = pd.DataFrame([new_snr_analysis_dict])
-        if snr_analysis.empty:
-            snr_analysis = new_snr_analysis
-        else:
-            snr_analysis = pd.concat([snr_analysis, new_snr_analysis], ignore_index=True)
-        snr_analysis.to_csv(file_path, index=False)

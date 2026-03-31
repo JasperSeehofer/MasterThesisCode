@@ -30,17 +30,6 @@ def _make_source_csvs(
     return paths
 
 
-def _make_undetected_csvs(
-    tmp_path: Path,
-    count: int = 2,
-) -> list[Path]:
-    """Create per-index undetected events CSV files."""
-    return _make_source_csvs(
-        tmp_path,
-        prefix="undetected_events_simulation_",
-        count=count,
-    )
-
 
 class TestMergeNoDelete:
     """main(["--workdir", tmpdir]) merges CSVs and keeps source files."""
@@ -100,14 +89,3 @@ class TestNoInputCalls:
         assert "input(" not in content, "merge_cramer_rao_bounds.py must not contain input() calls"
 
 
-class TestUndetectedEventsMerge:
-    """Undetected events CSVs are merged alongside cramer rao bounds."""
-
-    def test_undetected_events_merged(self, tmp_path: Path) -> None:
-        _make_source_csvs(tmp_path)
-        _make_undetected_csvs(tmp_path, count=2)
-        main(["--workdir", str(tmp_path)])
-        output = tmp_path / "simulations" / "undetected_events.csv"
-        assert output.exists()
-        df = pd.read_csv(output)
-        assert len(df) == 2

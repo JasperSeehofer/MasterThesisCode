@@ -272,7 +272,6 @@ def data_simulation(
                 _ROOT_LOGGER.info(
                     f"Quick SNR threshold check failed: {np.round(quick_snr, 3)} < {cosmological_model.snr_threshold * 0.2}."
                 )
-                parameter_estimation.save_not_detected(quick_snr * 5, simulation_index)
                 for cb in _callbacks:
                     cb.on_snr_computed(counter, quick_snr * 5, False)
                 continue
@@ -409,12 +408,12 @@ def injection_campaign(
     import pandas as pd
 
     from master_thesis_code.constants import INJECTION_CSV_PATH
+    from master_thesis_code.galaxy_catalogue.handler import ParameterSample
     from master_thesis_code.memory_management import MemoryManagement
     from master_thesis_code.parameter_estimation.parameter_estimation import (
         ParameterEstimation,
         WaveGeneratorType,
     )
-    from master_thesis_code.galaxy_catalogue.handler import ParameterSample
     from master_thesis_code.physical_relations import dist
 
     def _alarm_handler(signum: int, frame: object) -> None:

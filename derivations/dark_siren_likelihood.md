@@ -696,3 +696,311 @@ The spurious $/(1+z)$ multiplies the numerator integrand by $1/(1+z)$, which:
 2. FACTOR CHECK: The only unaccounted factor is the /(1+z) in the code. Derivation shows it should not be there. All other factors (2pi, M_z_det) are correctly absorbed.
 3. CONVENTION CHECK: M_z_frac = M*(1+z)/M_z_det matches code. Conditional decomposition matches Bishop (2006).
 4. DIMENSION CHECK: Eq. (14.32) integrand is [1]*[1]*[1]*[1] = [1]. With /(1+z) it would also be [1] (dimensionless), so dimensional analysis cannot distinguish. The verdict rests on the Jacobian algebra.
+
+---
+
+## Section 11: "With BH Mass" Denominator
+
+### 11.1 Denominator from First Principles
+
+The denominator accounts for the selection effect: the probability that a source from this galaxy would be detected, integrated over all possible source parameters. For the "with BH mass" channel, the detection probability depends on the redshifted mass $M_z$ as well as on $d_L$, $\phi$, $\theta$.
+
+Starting from the same Bayesian framework as the numerator:
+
+$$
+\text{Den}_j^{(\text{mass})}(H_0) = \int dz \int dM \; p_\text{det}(d_L(z,H_0), M(1+z), \phi_j, \theta_j) \; p_\text{gal}(z) \; p_\text{gal}(M)
+\tag{14.33}
+$$
+
+**Why no GW likelihood:** As in the d_L-only case (Section 2.6), the denominator marginalizes over all possible data realizations. The GW likelihood $p(d_\text{GW} \mid \text{params})$ integrates to 1 over the data space and drops out.
+
+**Why no mz_integral:** The `mz_integral` (Eq. 14.31) arose from analytically marginalizing the conditional GW likelihood over $M_{z,\text{frac}}$. Since the GW likelihood is absent from the denominator, there is no conditional to marginalize.
+
+### 11.2 Integration Variables in the Denominator
+
+The natural integration variables in the denominator are $(z, M)$ --- the source-frame quantities that the galaxy catalog provides. There is **no need to change variables to $M_{z,\text{frac}}$** because:
+- $p_\text{gal}(M) = \mathcal{N}(M; M_\text{gal}, \sigma_{M,\text{gal}}^2)$ is already in source-frame coordinates,
+- $p_\text{det}$ is evaluated at $M_z = M(1+z)$, which is a functional evaluation (like $d_L(z, H_0)$ in the numerator), not a change of integration variable,
+- No Gaussian product identity is needed (there is no GW Gaussian to match against).
+
+**Therefore, no Jacobian factor $1/(1+z)$ appears in the denominator.** The $(1+z)$ enters only through the argument $M_z = M(1+z)$ of $p_\text{det}$.
+
+### 11.3 Denominator Term Comparison
+
+| Term | In Numerator? | In Denominator? | Reason |
+|------|:---:|:---:|--------|
+| $p_\text{det}$ | Yes | Yes | Selection correction |
+| $p_\text{GW}^{(3D)}$ | Yes | **No** | GW likelihood integrates to 1 over data space |
+| $\text{mz\_integral}$ | Yes | **No** | Arises from marginalizing GW conditional; no GW likelihood in denominator |
+| $p_\text{gal}(z)$ | Yes | Yes | Galaxy redshift prior |
+| $p_\text{gal}(M)$ | Yes (absorbed into mz_integral) | Yes (explicit) | Galaxy mass prior |
+| $/(1+z)$ | **No** (Jacobian absorbed) | **No** (no coordinate change needed) | --- |
+
+### 11.4 Code Check: Denominator Implementation
+
+The code (lines 656--685) implements the denominator via Monte Carlo sampling:
+
+```python
+def denominator_integrant_with_bh_mass_vectorized(M, z):
+    d_L = dist_vectorized(z, h=h)
+    M_z = M * (1 + z)
+    p_det = detection_probability_with_bh_mass_interpolated(d_L, M_z, phi, theta, h=h)
+    return p_det * galaxy_redshift_normal_distribution.pdf(z) * galaxy_mass_normal_distribution.pdf(M)
+```
+
+This matches Eq. (14.33): $p_\text{det}(d_L, M_z, \phi, \theta) \cdot p_\text{gal}(z) \cdot p_\text{gal}(M)$.
+
+The MC integration uses importance sampling from $p_\text{gal}(z) \cdot p_\text{gal}(M)$:
+```python
+z_samples = galaxy_redshift_normal_distribution.rvs(size=N_SAMPLES)
+M_samples = galaxy_mass_normal_distribution.rvs(size=N_SAMPLES)
+weights = integrand(M_samples, z_samples) / (p_gal(z) * p_gal(M))
+denominator = mean(weights)
+```
+
+After importance sampling, `weights = p_det`, so the MC estimate is:
+
+$$
+\text{Den}_j^{(\text{mass})} \approx \frac{1}{N} \sum_{i=1}^{N} p_\text{det}(d_L(z_i, H_0), M_i(1+z_i), \phi_j, \theta_j)
+\tag{14.34}
+$$
+
+where $(z_i, M_i)$ are drawn from $p_\text{gal}(z) \cdot p_\text{gal}(M)$.
+
+**The denominator implementation is correct.** It contains no $/(1+z)$ factor and correctly integrates $p_\text{det}$ over the galaxy priors.
+
+**Note on methodology asymmetry:** The numerator uses `fixed_quad` (Gaussian quadrature) while the denominator uses MC sampling. This is a numerical methodology choice, not a physics error --- both approximate the same integral. However, MC with $N = 10{,}000$ samples may introduce noise that quadrature does not. This is a Phase 15 concern, not a Phase 14 derivation issue.
+
+---
+
+## Section 12: Limiting Case --- $\sigma_{M_z} \to \infty$
+
+### 12.1 Setup
+
+We verify that when the GW measurement gives no information about $M_z$ (infinite mass uncertainty), the "with BH mass" likelihood reduces to the d_L-only likelihood from Plan 01.
+
+In the 4D covariance, $\sigma_{M_z} \to \infty$ means $\Sigma_{4\times4}[3,3] = \sigma_{M_z}^2 \to \infty$.
+
+### 12.2 Behavior of the Conditional Variance
+
+From Eq. (14.28):
+
+$$
+\sigma_\text{cond}^2 = \sigma_{M_z}^2 - \boldsymbol{c}^T \Sigma_\text{obs}^{-1} \boldsymbol{c}
+$$
+
+The second term $\boldsymbol{c}^T \Sigma_\text{obs}^{-1} \boldsymbol{c}$ is finite (it depends on the cross-covariance and the 3D observed covariance, neither of which diverges). Therefore:
+
+$$
+\sigma_\text{cond}^2 \to \infty \quad \text{as} \quad \sigma_{M_z}^2 \to \infty
+\tag{14.35}
+$$
+
+### 12.3 Behavior of the 3D Marginal
+
+The 3D marginal covariance $\Sigma_\text{obs} = \Sigma_{4\times4}[0:3, 0:3]$ does **not** depend on $\sigma_{M_z}^2$. It is the upper-left $3\times3$ block, which is fixed. Therefore:
+
+$$
+p_\text{GW}^{(3D)}(\phi, \theta, d_{L,\text{frac}}) \text{ is unchanged as } \sigma_{M_z} \to \infty
+\tag{14.36}
+$$
+
+### 12.4 Behavior of the mz_integral
+
+From Eq. (14.31):
+
+$$
+\text{mz\_integral} = \mathcal{N}(\mu_\text{cond};\; \mu_\text{gal,frac},\; \sigma_\text{cond}^2 + \sigma_\text{gal,frac}^2)
+$$
+
+$$
+= \frac{1}{\sqrt{2\pi(\sigma_\text{cond}^2 + \sigma_\text{gal,frac}^2)}} \exp\!\left(-\frac{(\mu_\text{cond} - \mu_\text{gal,frac})^2}{2(\sigma_\text{cond}^2 + \sigma_\text{gal,frac}^2)}\right)
+$$
+
+As $\sigma_\text{cond}^2 \to \infty$:
+- The exponential $\to \exp(0) = 1$ (the argument of the exponential goes to 0),
+- The prefactor $\to 1/\sqrt{2\pi \sigma_\text{cond}^2}$.
+
+Therefore:
+
+$$
+\text{mz\_integral} \to \frac{1}{\sqrt{2\pi \sigma_\text{cond}^2}} \quad \text{as} \quad \sigma_\text{cond}^2 \to \infty
+\tag{14.37}
+$$
+
+This is independent of $z$ (and of $\mu_\text{gal,frac}$, $\sigma_\text{gal,frac}$) --- the mass measurement has become uninformative, so the mass integral gives the same result regardless of the galaxy's mass.
+
+### 12.5 Behavior of the Conditional Mean
+
+From Eq. (14.27):
+
+$$
+\mu_\text{cond} = \mu_{M_z}^{(4D)} + \boldsymbol{c}^T \Sigma_\text{obs}^{-1} (\mathbf{x}_\text{obs} - \boldsymbol{\mu}_\text{obs})
+$$
+
+**Subtlety:** As $\sigma_{M_z}^2 \to \infty$, the cross-covariance $\boldsymbol{c}$ may also change. In the Fisher matrix framework, $\Sigma = F^{-1}$. If the Fisher information for $M_{z,\text{frac}}$ goes to zero ($F_{33} \to 0$), then $\sigma_{M_z}^2 \to \infty$. The off-diagonal Fisher elements $F_{3,\alpha}$ may also go to zero, which would make $\boldsymbol{c}$ go to zero as well. In that regime, $\mu_\text{cond} \to \mu_{M_z}^{(4D)}$ and the projection term vanishes.
+
+However, this subtlety does not affect the limiting-case argument: regardless of what $\mu_\text{cond}$ does, the mz_integral becomes $z$-independent in the limit (Eq. 14.37).
+
+### 12.6 Limiting Numerator
+
+The numerator in the limit becomes:
+
+$$
+\text{Num}_j^{(\text{mass})}(H_0) \to \int dz \; p_\text{det}(z, M_z) \; p_\text{GW}^{(3D)}(\phi_j, \theta_j, d_{L,\text{frac}}) \; \frac{1}{\sqrt{2\pi\sigma_\text{cond}^2}} \; p_\text{gal}(z)
+$$
+
+The $z$-independent factor $1/\sqrt{2\pi\sigma_\text{cond}^2}$ can be pulled out of the integral:
+
+$$
+= \frac{1}{\sqrt{2\pi\sigma_\text{cond}^2}} \int dz \; p_\text{det}(z, M_z) \; p_\text{GW}^{(3D)}(\phi_j, \theta_j, d_{L,\text{frac}}) \; p_\text{gal}(z)
+\tag{14.38}
+$$
+
+### 12.7 Limiting Denominator
+
+The denominator (Eq. 14.33) becomes, in the limit where $p_\text{det}$ no longer depends meaningfully on $M_z$ (because the mass uncertainty is infinite, all masses are equally likely, and $p_\text{det}$ is averaged over the mass distribution):
+
+$$
+\text{Den}_j^{(\text{mass})}(H_0) \to \int dz \; \overline{p_\text{det}}(z) \; p_\text{gal}(z)
+\tag{14.39}
+$$
+
+where $\overline{p_\text{det}}(z) = \int dM \; p_\text{det}(d_L, M(1+z), \phi, \theta) \; p_\text{gal}(M)$ is the mass-averaged detection probability. When the mass distribution is broad (as implied by $\sigma_{M_z} \to \infty$), this converges to the d_L-only detection probability $p_\text{det}(d_L, \phi, \theta)$.
+
+### 12.8 The Likelihood Ratio
+
+The single-host likelihood ratio is:
+
+$$
+\mathcal{L}_j^{(\text{mass})}(H_0) = \frac{\text{Num}_j^{(\text{mass})}}{\text{Den}_j^{(\text{mass})}} \to \frac{\frac{1}{\sqrt{2\pi\sigma_\text{cond}^2}} \displaystyle\int dz \; p_\text{det} \; p_\text{GW}^{(3D)} \; p_\text{gal}(z)}{\displaystyle\int dz \; \overline{p_\text{det}} \; p_\text{gal}(z)}
+$$
+
+The $1/\sqrt{2\pi\sigma_\text{cond}^2}$ prefactor is **$H_0$-independent** (it depends only on the Fisher matrix properties, not on the cosmological parameter). Therefore, it is a constant multiplicative factor that cancels in the posterior:
+
+$$
+p(H_0 \mid d_\text{GW}) \propto \prod_i \mathcal{L}_i(H_0) \implies \text{constant prefactors cancel in normalization}
+$$
+
+What remains is:
+
+$$
+\mathcal{L}_j^{(\text{mass})}(H_0) \propto \frac{\displaystyle\int dz \; p_\text{det}(z) \; p_\text{GW}^{(3D)}(\phi_j, \theta_j, d_{L,\text{frac}}) \; p_\text{gal}(z)}{\displaystyle\int dz \; p_\text{det}(z) \; p_\text{gal}(z)}
+$$
+
+This is exactly Eq. (14.3), the d_L-only single-host likelihood from Plan 01.
+
+$$
+\boxed{\lim_{\sigma_{M_z} \to \infty} \mathcal{L}_j^{(\text{mass})}(H_0) \propto \mathcal{L}_j^{(d_L\text{-only})}(H_0)}
+\tag{14.40}
+$$
+
+**The limiting case is verified.** When the GW measurement gives no mass information, the "with BH mass" likelihood reduces to the d_L-only likelihood (up to an $H_0$-independent normalization constant that cancels in the posterior). $\checkmark$
+
+**SELF-CRITIQUE CHECKPOINT (step 4, post-limiting-case):**
+1. SIGN CHECK: No sign changes. Correct.
+2. FACTOR CHECK: $1/\sqrt{2\pi\sigma_\text{cond}^2}$ is $H_0$-independent; cancels in posterior normalization. No stray factors.
+3. CONVENTION CHECK: Using same Gaussian decomposition and fractional parameterization throughout.
+4. DIMENSION CHECK: Eq. (14.40) ratio is [1]/[1] = [1]. Consistent.
+
+---
+
+## Section 13: Dimensional Analysis for "With BH Mass" Terms
+
+Extending the Plan 01 dimensional analysis table (Section 4):
+
+| Factor | Expression | Dimensions | Notes |
+|--------|-----------|------------|-------|
+| $M_{z,\text{frac}}$ | $M(1+z)/M_{z,\text{det}}$ | $[1]$ | dimensionless fractional mass |
+| $\mu_\text{gal,frac}$ | $M_\text{gal}(1+z)/M_{z,\text{det}}$ | $[1]$ | transformed galaxy mass mean |
+| $\sigma_\text{gal,frac}$ | $\sigma_{M,\text{gal}}(1+z)/M_{z,\text{det}}$ | $[1]$ | transformed galaxy mass std |
+| $p_\text{GW}^{(3D)}(\phi, \theta, d_{L,\text{frac}})$ | marginal of 4D Gaussian | $[1]$ | same as d_L-only GW likelihood |
+| $p(M_{z,\text{frac}} \mid \mathbf{x}_\text{obs})$ | conditional Gaussian | $[1]$ | Gaussian of dimensionless arg |
+| $\text{mz\_integral}$ | $\mathcal{N}(\mu_\text{cond}; \mu_\text{gal,frac}, \sigma_\text{cond}^2 + \sigma_\text{gal,frac}^2)$ | $[1]$ | Gaussian of dimensionless args |
+| $p_\text{gal}(M)$ | $\mathcal{N}(M; M_\text{gal}, \sigma_M^2)$ | $[1/M_\odot]$ | Gaussian in mass |
+| $dM$ | integration measure | $[M_\odot]$ | source-frame mass |
+| $p_\text{gal}(M) \, dM$ | probability element | $[1]$ | dimensionless |
+| $d(M_{z,\text{frac}})$ | integration measure | $[1]$ | dimensionless |
+| Numerator integrand (derived) | $p_\text{det} \cdot p_\text{GW}^{(3D)} \cdot \text{mz\_integral} \cdot p_\text{gal}(z)$ | $[1]$ | correct: dimensionless |
+| Numerator integrand (code, line 646) | $\ldots \cdot /(1+z)$ | $[1]$ | also dimensionless, but WRONG |
+| Denominator integrand | $p_\text{det} \cdot p_\text{gal}(z) \cdot p_\text{gal}(M)$ | $[1/M_\odot]$ | integrates over $dM \,[M_\odot]$ to give $[1]$ |
+
+**Key observation:** The $/(1+z)$ is dimensionless, so dimensional analysis CANNOT detect the error. The verdict rests entirely on the Jacobian algebra in Section 8. This is why first-principles derivation was necessary --- the bug is dimensionally invisible.
+
+---
+
+## Section 14: Code Mapping and Summary
+
+### 14.1 Term-by-Term Code Mapping
+
+| Derived Term | Code Variable / Expression | Code Line(s) | Status |
+|-------------|---------------------------|-------------|--------|
+| $p_\text{GW}^{(3D)}(\phi, \theta, d_{L,\text{frac}})$ | `gaussian_3d_marginal.pdf(...)` | 624--626 | CORRECT |
+| $\Sigma_\text{obs}$ | `cov_obs = cov_4d[:3, :3]` | 593 | CORRECT |
+| $\boldsymbol{c}$ | `cov_cross = cov_4d[3, :3]` | 594 | CORRECT |
+| $\sigma_{M_z}^2$ | `cov_mz = cov_4d[3, 3]` | 595 | CORRECT |
+| $\sigma_\text{cond}^2$ | `sigma2_cond = cov_mz - cov_cross @ cov_obs_inv @ cov_cross` | 601 | CORRECT |
+| $\text{proj} = \boldsymbol{c}^T \Sigma_\text{obs}^{-1}$ | `proj = cov_cross @ cov_obs_inv` | 605 | CORRECT |
+| $\mu_\text{cond}$ | `mu_obs_4d[3] + (x_obs - mu_obs_4d[:3]) @ proj` | 630 | CORRECT |
+| $\mu_\text{gal,frac}$ | `possible_host.M * (1 + z) / detection.M` | 633 | CORRECT |
+| $\sigma_\text{gal,frac}$ | `possible_host.M_error * (1 + z) / detection.M` | 634 | CORRECT |
+| $\sigma_\text{cond}^2 + \sigma_\text{gal,frac}^2$ | `sigma2_sum = sigma2_cond + sigma_gal_frac**2` | 640 | CORRECT |
+| $\text{mz\_integral}$ | `exp(-0.5*(...)**2/sigma2_sum) / sqrt(2*pi*sigma2_sum)` | 641--643 | CORRECT |
+| **$/(1+z)$** | **`/ (1 + z)`** | **646** | **SPURIOUS** |
+| $p_\text{det} \cdot p_\text{gal}(z) \cdot p_\text{gal}(M)$ (denom) | `p_det * p_gal(z) * p_gal(M)` | 666--669 | CORRECT |
+
+### 14.2 Discrepancies Between Derivation and Code
+
+**Discrepancy 1 (CRITICAL): Spurious $/(1+z)$ in numerator**
+- **Location:** `bayesian_statistics.py` line 646
+- **Derivation says:** No $/(1+z)$ factor (Eq. 14.32)
+- **Code has:** `/ (1 + z)` multiplying the entire numerator integrand
+- **Root cause:** Double-counted Jacobian from $M \to M_z$ transformation, which was already absorbed by the Gaussian rescaling when transforming the galaxy mass prior to $M_{z,\text{frac}}$ coordinates
+- **Fix:** Remove `/ (1 + z)` from line 646
+- **Expected impact:** Eliminates the $h = 0.600$ bias in the "with BH mass" posterior
+
+**Discrepancy 2 (OBSERVATION): Methodology asymmetry in integration**
+- **Numerator:** `fixed_quad` (Gaussian quadrature) --- deterministic, high precision
+- **Denominator:** MC sampling with $N = 10{,}000$ --- stochastic, potential noise
+- **Impact:** May introduce variance in the likelihood ratio. Not a physics error, but a numerical concern for Phase 15.
+
+**No other discrepancies found.** The conditional decomposition, analytic marginalization, and denominator are all correctly implemented.
+
+### 14.3 Complete "With BH Mass" Likelihood (Boxed Summary)
+
+For Phase 15 reference, the complete derived expression:
+
+$$
+\boxed{
+\mathcal{L}_j^{(\text{mass})}(H_0) = \frac{\displaystyle\int dz \; p_\text{det}(z, M_z) \; p_\text{GW}^{(3D)}(\phi_j, \theta_j, d_{L,\text{frac}}) \; \text{mz\_integral}(z) \; p_\text{gal}(z)}{\displaystyle\int dz \int dM \; p_\text{det}(d_L, M(1+z), \phi_j, \theta_j) \; p_\text{gal}(z) \; p_\text{gal}(M)}
+}
+\tag{14.41}
+$$
+
+where:
+
+| Symbol | Definition | Eq. |
+|--------|-----------|-----|
+| $p_\text{GW}^{(3D)}$ | 3D marginal of 4D Fisher-matrix Gaussian | (14.25) |
+| $\text{mz\_integral}(z)$ | $\mathcal{N}(\mu_\text{cond}; \mu_\text{gal,frac}(z), \sigma_\text{cond}^2 + \sigma_\text{gal,frac}^2(z))$ | (14.31) |
+| $\mu_\text{cond}$ | $\mu_{M_z}^{(4D)} + \boldsymbol{c}^T \Sigma_\text{obs}^{-1}(\mathbf{x}_\text{obs} - \boldsymbol{\mu}_\text{obs})$ | (14.27) |
+| $\sigma_\text{cond}^2$ | $\sigma_{M_z}^2 - \boldsymbol{c}^T \Sigma_\text{obs}^{-1} \boldsymbol{c}$ | (14.28) |
+| $\mu_\text{gal,frac}(z)$ | $M_\text{gal}(1+z)/M_{z,\text{det}}$ | (14.22) |
+| $\sigma_\text{gal,frac}(z)$ | $\sigma_{M,\text{gal}}(1+z)/M_{z,\text{det}}$ | (14.22) |
+| $p_\text{gal}(z)$ | $\mathcal{N}(z; z_j, \sigma_{z,j})$ | (14.5) |
+| $p_\text{gal}(M)$ | $\mathcal{N}(M; M_\text{gal}, \sigma_{M,\text{gal}}^2)$ | Sec. 8.1 |
+| $p_\text{det}$ | Detection probability (depends on $d_L$, $M_z$, $\phi$, $\theta$) | KDE |
+
+**Properties:**
+- No $/(1+z)$ Jacobian factor in the numerator (Section 8.4, 10.2)
+- Denominator integrates over $(z, M)$ in source-frame coordinates (Section 11)
+- Reduces to d_L-only (Eq. 14.12) when $\sigma_{M_z} \to \infty$ (Section 12)
+- Integrand is dimensionless (Section 13)
+
+### 14.4 Summary of Findings for Phase 15
+
+1. **Remove `/(1+z)` at line 646** --- this is the primary bug causing the $h = 0.600$ bias
+2. **Denominator is correct** --- no changes needed to lines 656--685
+3. **Analytic marginalization is correct** --- the Bishop (2006) conditional decomposition and Gaussian product identity are correctly implemented at lines 586--643
+4. **All transformed coordinates match** --- $\mu_\text{gal,frac}$, $\sigma_\text{gal,frac}$, $\mu_\text{cond}$, $\sigma_\text{cond}^2$ are all correctly computed
+5. **Methodology asymmetry** (quadrature vs MC) is a numerical concern, not a physics error

@@ -61,8 +61,6 @@ LUMINOSITY_DISTANCE_THRESHOLD_GPC: float = 1.55  # Gpc, LISA detection horizon f
 CRAMER_RAO_BOUNDS_PATH: str = "simulations/cramer_rao_bounds_simulation_$index.csv"
 CRAMER_RAO_BOUNDS_OUTPUT_PATH: str = "simulations/cramer_rao_bounds.csv"
 SNR_ANALYSIS_PATH: str = "simulations/snr_analysis.csv"
-UNDETECTED_EVENTS_PATH: str = "simulations/undetected_events_simulation_$index.csv"
-UNDETECTED_EVENTS_OUTPUT_PATH: str = "simulations/undetected_events.csv"
 PREPARED_CRAMER_RAO_BOUNDS_PATH: str = "simulations/prepared_cramer_rao_bounds.csv"
 
 # Injection campaign paths (for simulation-based detection probability)
