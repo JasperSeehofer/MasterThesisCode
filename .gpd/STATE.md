@@ -4,21 +4,21 @@
 
 See: .gpd/PROJECT.md (updated 2026-03-30)
 
-**Core research question:** Why does the "with BH mass" likelihood channel produce an H0 posterior biased to h=0.600, nearly 3x worse than the "without BH mass" channel?
-**Current focus:** Phase 15 complete — /(1+z) fix applied but insufficient for bias; ready for Phase 16 (Validation)
+**Core research question:** Can we improve injection campaign detection yield and P_det grid resolution through enhanced sampling?
+**Current focus:** v1.2.2 Injection Campaign Physics Analysis — defining objectives
 
 ## Current Position
 
-**Current Phase:** 16
-**Current Phase Name:** Validation
-**Total Phases:** 3 (14, 15, 16)
+**Current Phase:** TBD
+**Current Phase Name:** TBD
+**Total Phases:** TBD
 **Current Plan:** --
 **Total Plans in Phase:** TBD
-**Status:** Ready to plan
+**Status:** Defining objectives
 **Last Activity:** 2026-03-31
-**Last Activity Description:** Phase 15 complete — /(1+z) removed, all terms verified, but posterior still biased low
+**Last Activity Description:** Started milestone v1.2.2 — Injection Campaign Physics Analysis
 
-**Progress:** [██████░░░░] 67%
+**Progress:** [░░░░░░░░░░] 0%
 
 ## Active Calculations
 
@@ -105,5 +105,5 @@ None.
 ## Session Continuity
 
 **Last session:** 2026-03-31
-**Stopped at:** Phase 15 complete — ready for Phase 16 planning
+**Stopped at:** v1.2.2 milestone initialization — literature survey next
 **Resume file:** —

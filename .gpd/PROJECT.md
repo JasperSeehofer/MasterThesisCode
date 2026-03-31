@@ -2,95 +2,119 @@
 
 ## What This Is
 
-A gravitational wave parameter estimation pipeline for LISA Extreme Mass Ratio Inspirals (EMRIs). The Bayesian inference pipeline evaluates the Hubble constant posterior using a dark siren method: summing over candidate host galaxies weighted by GW measurement likelihood. Two likelihood channels exist: "without BH mass" (3D: sky + distance) and "with BH mass" (4D: sky + distance + redshifted mass). This milestone audits the "with BH mass" channel, which shows a systematic bias.
+A gravitational wave parameter estimation pipeline for LISA Extreme Mass Ratio Inspirals (EMRIs). The Bayesian inference pipeline evaluates the Hubble constant posterior using a dark siren method: summing over candidate host galaxies weighted by GW measurement likelihood. This milestone analyzes the injection campaign (used to build simulation-based P_det grids) from a physics perspective, auditing parameter consistency and designing enhanced sampling strategies to improve detection yield and P_det grid quality.
 
 ## Core Research Question
 
-Why does the "with BH mass" likelihood channel produce an H0 posterior biased to h=0.600 (offset -0.130 from true h=0.73), nearly 3x worse than the "without BH mass" channel (h=0.678, offset -0.052)?
+Can we improve the injection campaign's detection yield and P_det grid resolution through importance sampling or enhanced sampling strategies, given that the current uniform approach wastes significant GPU time on undetectable events?
+
+## Current Milestone: v1.2.2 Injection Campaign Physics Analysis
+
+**Goal:** Audit the injection campaign physics, analyze detection yield, and design enhanced sampling strategies.
+
+**Target results:**
+
+- Physics consistency audit between injection and simulation pipelines
+- Detection yield analysis with quantified waste fraction
+- Enhanced/importance sampling design that concentrates injections in detectable parameter regions
 
 ## Scoping Contract Summary
 
 ### Contract Coverage
 
-- **Decisive output:** First-principles derivation of the "with BH mass" likelihood, code audit showing term-by-term match, and posterior convergence between channels
-- **Acceptance signal:** "With BH mass" and "without BH mass" posterior peaks agree within ~0.01 (both still biased by P_det=1, but consistently)
-- **False progress to reject:** Ad-hoc numerical fix without derivation; posterior shift that doesn't trace to a specific term
+- **Decisive output:** Detection yield report quantifying current waste; enhanced sampling proposal with expected improvement factor
+- **Acceptance signal:** Enhanced sampling design that provably reduces GPU time by >2x for equivalent P_det grid quality
+- **False progress to reject:** Sampling strategy that introduces bias in P_det estimates; detection yield analysis without quantified improvement path
 
 ### User Guidance To Preserve
 
-- **User-stated observables:** "With BH mass" posterior peak location relative to "without BH mass"
-- **User-stated deliverables:** First-principles derivation extending d_L-only literature to include M_z
-- **Must-have references:** Gray et al. (2020), Schutz (1986), Chen et al. (2018) for baseline d_L-only formulation
-- **Stop / rethink conditions:** If the derivation shows the current code structure is fundamentally wrong (not just a Jacobian fix)
+- **User-stated observables:** Fraction of injections detected vs wasted; P_det grid resolution in regions that matter for H0 posterior
+- **User-stated deliverables:** (1) Injection physics audit, (2) detection yield analysis, (3) enhanced sampling strategy
+- **Must-have references:** Phase 11.1 design decisions (D-01 through D-09), injection_campaign() in main.py
+- **Stop / rethink conditions:** If the injection physics has fundamental inconsistencies with the simulation pipeline that invalidate existing P_det grids
 
 ### Scope Boundaries
 
 **In scope**
 
-- Derive correct "with BH mass" dark siren likelihood from first principles
-- Fix spurious `/(1+z)` Jacobian (line 679 in `bayesian_statistics.py`)
-- Audit sky localization weight placement (TODO flags at lines 556, 755)
-- Audit numerator/denominator consistency for "with BH mass" channel
-- Re-run evaluation to validate both channels converge
+- Audit injection parameter distributions vs simulation pipeline (Model1CrossCheck, ParameterSpace)
+- Audit cosmological model consistency (dist() function, h-dependent d_L)
+- Analyze detection yield from existing/incoming injection data
+- Design importance sampling or stratified sampling for injection campaign
+- Analyze P_det grid quality (bin counts, empty bins, interpolation accuracy)
 
 **Out of scope**
 
-- Detection probability fix (P_det) — handled separately in Phase 11.1
-- Production simulation campaign
-- Full H0 posterior sweep over [0.6, 0.9]
-- wCDM dark energy model
-- Planck 2018 cosmology update
+- "With BH mass" likelihood bias (v1.2.1 Phase 16)
+- Production simulation campaign (v1.2 Phase 12)
+- Full H0 posterior evaluation (v1.2 Phase 13)
+- Waveform generation improvements (few/fastlisaresponse)
+- Fisher matrix computation changes
 
 ### Active Anchor Registry
 
-- **Gray et al. (2020):** Standard dark siren formulation with galaxy catalog
-  - Why it matters: Baseline d_L-only likelihood that must be correctly extended
-  - Carry forward: derivation | execution | verification
-  - Required action: read | derive from
+- **Phase 11.1 design decisions (D-01 to D-09):** Injection campaign architecture
+  - Why it matters: Defines current sampling approach that we're analyzing/improving
+  - Carry forward: planning | execution
+  - Required action: read | audit | extend
 
-- **Debug session (2026-03-30):** `.planning/debug/h0-posterior-residual-bias.md`
-  - Why it matters: Established that single-galaxy test peaks at h=0.73, bias is from multi-galaxy summation
+- **injection_campaign() in main.py:396-572:** Current implementation
+  - Why it matters: Source of truth for what the injection actually does
+  - Carry forward: execution
+  - Required action: read | audit
+
+- **SimulationDetectionProbability class:** P_det grid construction
+  - Why it matters: Downstream consumer of injection data; grid quality determines P_det accuracy
   - Carry forward: execution | verification
-  - Required action: use as baseline
+  - Required action: read | analyze
 
 ### Carry-Forward Inputs
 
-- `simulations/cramer_rao_bounds.csv` — 22-detection validation dataset
-- `.planning/debug/h0-posterior-residual-bias.md` — root cause analysis
-- `.planning/phases/11.1-simulation-based-detection-probability/11.1-CONTEXT.md` — P_det context (out of scope but related)
+- `master_thesis_code/main.py` — injection_campaign() function
+- `master_thesis_code/bayesian_inference/simulation_detection_probability.py` — P_det grid builder
+- `master_thesis_code/cosmological_model.py` — Model1CrossCheck EMRI sampling
+- `.planning/phases/11.1-simulation-based-detection-probability/11.1-CONTEXT.md` — design decisions
+- Injection CSVs from cluster (when available) — raw injection results
 
 ### Skeptical Review
 
-- **Weakest anchor:** The `/(1+z)` being the sole source of extra "with BH mass" bias — sky localization weight may also contribute
-- **Unvalidated assumptions:** That the 3D ("without BH mass") channel is correct — it's used as the reference but hasn't been derived from first principles either
-- **Competing explanation:** Sky localization weight double-counting could be the real issue; `/(1+z)` may be secondary
-- **Disconfirming observation:** If removing `/(1+z)` doesn't move the "with BH mass" peak closer to "without BH mass"
-- **False progress to reject:** Channels converging by accident (e.g., two errors cancelling)
+- **Weakest anchor:** Actual detection yield numbers (injection data may not be rsynced yet)
+- **Unvalidated assumptions:** That the uniform sampling is actually uniform in the relevant coordinates (Model1CrossCheck uses MCMC)
+- **Competing explanation:** Low detection yield may be dominated by waveform generation failures, not parameter space coverage
+- **Disconfirming observation:** If detection yield is already >50%, enhanced sampling provides diminishing returns
+- **False progress to reject:** Sampling strategy that biases P_det estimates (importance weights must be correctly accounted for)
 
 ### Open Contract Questions
 
-- Is the sky localization weight (phi, theta) correctly placed in exactly one factor of the likelihood?
-- Does the MC-sampled "with BH mass" denominator (lines 689-722) have the correct weighting?
+- What is the actual detection fraction from the existing injection campaign?
+- What fraction of GPU time is wasted on waveform failures vs undetectable events?
+- Can importance sampling be applied without modifying the P_det grid construction math?
 
 ## Research Questions
 
-### Answered
+### Answered (v1.2.1)
 
 - [x] Single-galaxy likelihood peaks at h=0.73 (formula is correct in isolation) — debug session 2026-03-30
 - [x] Both channels biased by P_det=1 (galaxy catalog density dominates) — debug session 2026-03-30
 - [x] BH mass Gaussian index [0] vs [1] has no effect under delta-function approximation — quick task 260330-twe
+- [x] `/(1+z)` at line 679 is a double-counted Jacobian — Phase 14 derivation, removed Phase 15
+- [x] Sky localization weight correctly inside 3D GW Gaussian — Phase 14
+- [x] "With BH mass" denominator consistent with numerator — Phase 14, Phase 15
+- [x] /(1+z) fix alone insufficient to resolve bias — Phase 15 quick validation
 
-### Active
+### Active (v1.2.2)
 
-- [ ] Is the `/(1+z)` at line 679 a double-counted Jacobian after the analytic marginalization refactor?
-- [ ] Is the sky localization weight placed correctly (in exactly one likelihood factor)?
-- [ ] Is the "with BH mass" denominator consistent with the numerator?
-- [ ] Does the analytic M_z marginalization (commit 15b49a3) introduce any other issues?
+- [ ] Are injection parameter distributions consistent with the simulation pipeline?
+- [ ] What is the detection yield (detected / total injections)?
+- [ ] What fraction of compute is wasted on waveform failures vs undetectable events?
+- [ ] Can importance sampling improve P_det grid quality with fewer injections?
+- [ ] Does the z > 0.5 cutoff introduce any bias in P_det estimates?
 
 ### Out of Scope
 
-- P_det implementation — separate Phase 11.1
-- "Without BH mass" channel correctness — used as reference only
+- "With BH mass" bias root cause (deferred to v1.2.1 Phase 16)
+- Waveform generation reliability improvements
+- Production campaign execution
 
 ## Research Context
 
@@ -114,13 +138,15 @@ Bayesian hierarchical inference: H0 posterior from GW dark sirens with galaxy ca
 ### Known Results
 
 - "Without BH mass" peaks at h=0.678 (P_det=1 baseline)
-- "With BH mass" peaks at h=0.600 (P_det=1 baseline)
-- Analytic M_z marginalization (commit 15b49a3) didn't change peak location
-- Debug session eliminated: covariance construction, integration limits, core formula, d_L nonlinearity
+- "With BH mass" peaks at h=0.600 (P_det=1 baseline, still biased after /(1+z) fix)
+- Injection campaign uses z > 0.5 cutoff for efficiency (all detections at z < 0.18)
+- SimulationDetectionProbability builds 2D P_det(z, M | h) grids with 30 z-bins × 20 M-bins
+- Waveform generation has ~30-50% failure rate (timeouts, parameter bounds, convergence)
+- Design decisions D-01 through D-09 govern injection architecture
 
 ### What Is New
 
-First-principles derivation of the "with BH mass" dark siren likelihood, extending the standard d_L-only formulation to include redshifted mass as a fourth observable, with all Jacobians made explicit.
+Physics analysis of the injection campaign: consistency audit, detection yield quantification, and enhanced sampling design to improve P_det grid quality with fewer GPU hours.
 
 ### Computational Environment
 
@@ -159,10 +185,11 @@ See `.gpd/REQUIREMENTS.md` for the detailed requirements specification.
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| Keep analytic M_z marginalization (15b49a3) | Correct physics, replaces delta-function approximation | Confirmed by user |
-| Derive from d_L-only literature + extend | User built "with BH mass" as natural extension; needs first-principles validation | — Pending |
-| P_det out of scope | Already handled in Phase 11.1 | Confirmed by user |
+| Keep analytic M_z marginalization (15b49a3) | Correct physics, replaces delta-function approximation | Confirmed (v1.2.1) |
+| /(1+z) spurious, removed | Phase 14 derivation proved Jacobian absorbed | Confirmed, insufficient for bias (v1.2.1) |
+| v1.2.1 on hold pending P_det data | Need injection-based P_det before further bias investigation | User decision |
+| Analyze injection physics before next campaign | GPU time is expensive; improve yield first | v1.2.2 scope |
 
 ---
 
-_Last updated: 2026-03-30 after milestone v1.2.1 initialization_
+_Last updated: 2026-03-31 after milestone v1.2.2 initialization_
