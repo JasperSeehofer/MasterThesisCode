@@ -5,20 +5,20 @@
 See: .gpd/PROJECT.md (updated 2026-03-31)
 
 **Core research question:** Can we improve injection campaign detection yield and P_det grid resolution through enhanced sampling?
-**Current focus:** v1.2.2 Injection Campaign Physics Analysis -- Phase 17 ready to plan
+**Current focus:** v1.2.2 Injection Campaign Physics Analysis -- Phase 17 complete, Phase 18 next
 
 ## Current Position
 
 **Current Phase:** 17
 **Current Phase Name:** Injection Physics Audit
 **Total Phases:** 4 (Phases 17-20)
-**Current Plan:** --
-**Total Plans in Phase:** TBD
-**Status:** Ready to plan
+**Current Plan:** 2/2 complete
+**Total Plans in Phase:** 2
+**Status:** Complete (verified 2026-03-31)
 **Last Activity:** 2026-03-31
-**Last Activity Description:** Roadmap created with 4 phases (Audit -> Yield & Grid -> Enhanced Sampling -> Validation)
+**Last Activity Description:** Phase 17 verified (7/7 contract targets passed) -- injection physics consistent with simulation pipeline
 
-**Progress:** [░░░░░░░░░░] 0%
+**Progress:** [██████████] 100%
 
 ## Active Calculations
 
@@ -58,6 +58,8 @@ None.
 | ----- | -------- | ----- | ----- |
 | 14-01 | ~13min   | 2     | 2     |
 | 14-02 | ~11min   | 2     | 2     |
+| 17-01 | ~4min    | 2     | 3     |
+| 17-02 | ~5min    | 2     | 2     |
 
 ## Accumulated Context
 
@@ -77,6 +79,16 @@ None.
 - [v1.2.1]: Derive from d_L-only literature + extend to M_z
 - [v1.2.1]: Use "without BH mass" channel (h=0.678) as reference baseline
 - [v1.2.2]: Analyze injection physics before next campaign -- GPU time is expensive
+- [Phase 17-01]: All 14 EMRI parameters consistent between injection and simulation (4 intentional differences per D-01/D-04)
+- [Phase 17-01]: dist() defaults identical across pipelines; only h varies intentionally per D-04
+- [Phase 17-01]: d_L round-trip max relative error 2.18e-13 (threshold 1e-4) -- numerically exact
+- [Phase 17-01]: z_cut=0.5 safe for all h in [0.60, 0.90] -- SNR ~ 3.2 at z=0.5 for heaviest EMRI
+- [Phase 17-01]: get_distance() is dead code, never called anywhere in codebase
+- [Phase 17-02]: 8 exception types in injection_campaign() traced to few library, fastlisaresponse, SIGALRM timeout
+- [Phase 17-02]: CSV records only successes -- failed events hit continue without recording
+- [Phase 17-02]: injection_campaign() missing AssertionError catch present in data_simulation()
+- [Phase 17-02]: Timeout message says 90s but actual is 30s (_TIMEOUT_S=30)
+- [Phase 17-02]: Detection rate 0.22% -- all detections at z < 0.2, M ~ 10^5.5-10^6
 
 ### Active Approximations
 
