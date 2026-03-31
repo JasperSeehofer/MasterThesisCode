@@ -54,7 +54,11 @@ This milestone audits the "with BH mass" dark siren likelihood channel that show
 4. The derivation reduces to the d_L-only case when M_z measurement uncertainty -> infinity (no mass information limit)
 5. The sky localization weight placement is unambiguous: it appears in exactly one factor of the likelihood decomposition
 
-**Plans:** TBD
+**Plans:** 2 plans
+
+Plans:
+- [ ] 14-01-PLAN.md — Derive d_L-only dark siren likelihood (Bayesian framework, dimensional analysis, Gray et al. comparison)
+- [ ] 14-02-PLAN.md — Extend to "with BH mass" (Jacobian chain, conditional decomposition, /(1+z) verdict, denominator, limiting case)
 
 ### Phase 15: Code Audit & Fix
 
@@ -116,6 +120,6 @@ This milestone audits the "with BH mass" dark siren likelihood channel that show
 
 | Phase | Plans Complete | Status | Completed |
 | --- | --- | --- | --- |
-| 14. First-Principles Derivation | TBD | Not started | - |
+| 14. First-Principles Derivation | 0/2 | Planned | - |
 | 15. Code Audit & Fix | TBD | Not started | - |
 | 16. Validation | TBD | Not started | - |
