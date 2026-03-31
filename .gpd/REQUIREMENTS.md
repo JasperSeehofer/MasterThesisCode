@@ -1,90 +1,102 @@
-# Requirements: "With BH Mass" Likelihood Bias Audit
+# Requirements: Injection Campaign Physics Analysis
 
-**Defined:** 2026-03-30
-**Core Research Question:** Why does the "with BH mass" likelihood channel produce an H0 posterior biased to h=0.600, nearly 3x worse than the "without BH mass" channel?
+**Defined:** 2026-03-31
+**Core Research Question:** Can we improve injection campaign detection yield and P_det grid resolution through enhanced sampling?
 
 ## Primary Requirements
 
-### Derivations
+### Audit
 
-- [ ] **DERV-01**: Derive the standard d_L-only dark siren likelihood from literature (Gray et al. 2020 / Schutz 1986), explicitly showing all terms: GW likelihood, galaxy prior, detection probability, volume element, and sky localization weight placement
-- [ ] **DERV-02**: Extend the derivation to include M_z as a 4th observable — derive the Jacobian from source-frame M to M_z_frac = M*(1+z)/M_z_det, the conditional Gaussian decomposition (Bishop 2006 Eq. 2.81-2.82), and the analytic mass marginalization via Gaussian product identity
+- [ ] **AUDT-01**: Verify injection parameter distributions (M, z, spin, sky angles) match the simulation pipeline's Model1CrossCheck + ParameterSpace
+- [ ] **AUDT-02**: Verify cosmological model consistency (dist() function, h-dependent d_L) between injection and evaluation pipelines
+- [ ] **AUDT-03**: Quantify waveform failure rate by parameter region (z, M) from existing injection data or SLURM logs
 
-### Audits
+### Yield Analysis
 
-- [ ] **AUDT-01**: Audit the `/(1+z)` factor at `bayesian_statistics.py` line 679 against the DERV-02 derivation — determine whether it is a double-counted Jacobian after the analytic marginalization refactor (commit 15b49a3)
-- [ ] **AUDT-02**: Audit sky localization weight placement (phi, theta) in the GW likelihood (TODO flags at lines 556, 755) — verify the weight appears in exactly one factor of the likelihood decomposition, not double-counted between GW likelihood and galaxy catalog term
-- [ ] **AUDT-03**: Audit the "with BH mass" denominator (MC-sampled, lines 689-722) for consistency with the numerator formula — verify the same Jacobians, weights, and mass terms appear in both
+- [ ] **YELD-01**: Compute detection fraction (SNR >= threshold / total injections) per h-value from existing injection data
+- [ ] **YELD-02**: Quantify compute waste breakdown: fraction of GPU time on (a) waveform failures, (b) undetectable events (SNR < threshold), (c) detected events
+- [ ] **YELD-03**: Validate z>0.5 cutoff — confirm zero detections above z=0.5 for all 7 h-values, especially h=0.60
 
-### Fixes
+### Grid Quality
 
-- [ ] **FIX-01**: Implement all corrections identified by DERV-01/02 and AUDT-01/02/03 in `bayesian_statistics.py`, with reference comments linking each term to the derivation
+- [ ] **GRID-01**: Compute per-bin injection counts and Wilson score confidence intervals for current 30x20 grid
+- [ ] **GRID-02**: Compare grid quality at 30x20 vs 15x10 resolution (bin occupancy, CI widths, interpolation error)
+- [ ] **GRID-03**: Implement quality flags (unreliable bins with <10 injections) in SimulationDetectionProbability
 
-### Validations
+### Enhanced Sampling
 
-- [ ] **VALD-01**: Re-run H0 evaluation on 22-detection dataset; "with BH mass" posterior peak must shift toward "without BH mass" peak (currently h=0.600 vs h=0.678)
-- [ ] **VALD-02**: Both channels must agree within ~0.01 in peak location (both still biased by P_det=1, but consistently so)
+- [ ] **SMPL-01**: Design importance-weighted histogram estimator compatible with non-uniform proposal distributions
+- [ ] **SMPL-02**: Design stratified sampling with Neyman allocation to concentrate injections on detection boundary bins
+- [ ] **SMPL-03**: Design two-stage pilot approach (30% uniform pilot + 70% targeted) with combined importance weights
+
+### Validation
+
+- [ ] **VALD-01**: Verify enhanced P_det grid produces unbiased estimates (comparison with uniform baseline, round-trip consistency checks)
 
 ## Follow-up Requirements
 
-### Detection Probability
+### Production Deployment
 
-- **PDET-01**: Build simulation-based P_det to replace KDE-based DetectionProbability (Phase 11.1, GSD-tracked)
-- **PDET-02**: Re-enable P_det in both likelihood channels and validate h=0.73 within 90% CI
+- **PROD-01**: Run enhanced injection campaign on cluster with new sampling strategy
+- **PROD-02**: Build production P_det grids from enhanced injection data
+- **PROD-03**: Re-evaluate H0 posterior with improved P_det (feeds back to v1.2.1 Phase 16)
 
 ## Out of Scope
 
 | Topic | Reason |
 |-------|--------|
-| Detection probability (P_det) | Handled separately in Phase 11.1 under GSD |
-| Production simulation campaign | v1.2 Phase 12 |
-| Full H0 posterior sweep | v1.2 Phase 13 |
-| "Without BH mass" channel derivation correctness | Used as reference baseline only |
-| wCDM dark energy model | Separate milestone |
+| Waveform generator improvements | few/fastlisaresponse reliability is upstream; we work around failures |
+| "With BH mass" bias root cause | Deferred to v1.2.1 Phase 16, blocked on P_det data |
+| Production simulation campaign | v1.2 Phase 12; this milestone provides the P_det infrastructure |
+| Fisher matrix computation | Injection campaign uses SNR-only (D-07); Fisher is separate |
 
 ## Accuracy and Validation Criteria
 
 | Requirement | Accuracy Target | Validation Method |
-|-------------|-----------------|-------------------|
-| DERV-01 | Exact analytic derivation | Term-by-term match with literature |
-| DERV-02 | Exact analytic derivation | Jacobian dimensional analysis + limiting cases |
-| AUDT-01 | Binary (correct/incorrect) | Derivation comparison |
-| AUDT-02 | Binary (single/double-counted) | Factor-by-factor audit |
-| AUDT-03 | Consistent numerator/denominator | Same terms in both |
-| FIX-01 | Code matches derivation | Line-by-line correspondence |
-| VALD-01 | Peak shift > 0.01 toward h=0.678 | Comparison script on 22-detection dataset |
-| VALD-02 | Peak agreement within 0.01 | Both channels evaluated at same h grid |
+|-------------|----------------|-------------------|
+| AUDT-01 | Exact match of parameter ranges and distributions | Code comparison, side-by-side parameter range check |
+| AUDT-03 | Failure rate quantified to within 5% | Count from injection CSVs or SLURM logs |
+| YELD-01 | Detection fraction per h to 3 significant figures | Direct computation from injection CSV data |
+| GRID-01 | Wilson 95% CI per bin | astropy.stats.binom_conf_interval |
+| GRID-02 | Interpolation error < 5% at grid cell centers | Leave-one-out cross-validation |
+| SMPL-01 | Unbiased to O(1/N) | Comparison with uniform baseline |
+| VALD-01 | P_det agreement within 2-sigma Wilson CI | Statistical test on per-bin P_det differences |
 
 ## Contract Coverage
 
-| Requirement | Decisive Output / Deliverable | Anchor / Benchmark / Reference | Prior Inputs / Baselines | False Progress To Reject |
-|-------------|-------------------------------|-------------------------------|--------------------------|--------------------------|
-| DERV-01 | Written derivation with all terms | Gray et al. (2020), Schutz (1986) | Existing "without BH mass" code | Derivation that skips Jacobians |
-| DERV-02 | Written derivation extending to M_z | Bishop (2006) for conditioning | DERV-01 result | Handwaving the M → M_z_frac change |
-| AUDT-01 | Verdict on /(1+z) with proof | DERV-02 derivation | Commit 15b49a3 diff | "Looks wrong, remove it" without derivation |
-| AUDT-02 | Sky weight placement audit | Standard likelihood decomposition | TODO comments at lines 556, 755 | Ignoring the TODOs |
-| FIX-01 | Corrected code with ref comments | DERV-01/02 derivations | Current bayesian_statistics.py | Ad-hoc fix without derivation backing |
-| VALD-01 | Posterior comparison plot/data | h=0.600 baseline (current) | 22-detection dataset | Peak moves but doesn't match derivation |
-| VALD-02 | Channel convergence measurement | h=0.678 ("without BH mass" baseline) | Both channel outputs | Channels "agree" but neither matches derivation |
+| Requirement | Decisive Output | Anchor / Benchmark | Prior Inputs | False Progress To Reject |
+|-------------|----------------|-------------------|--------------|--------------------------|
+| AUDT-01 | Parameter consistency report | injection_campaign() vs data_simulation() code | main.py, cosmological_model.py | "Looks similar" without line-by-line comparison |
+| YELD-01 | Detection yield table per h | Injection CSV data | Cluster injection results | Estimated yield without actual data |
+| GRID-01 | Per-bin CI heatmap | Wilson score intervals | SimulationDetectionProbability grids | Average CI without per-bin breakdown |
+| SMPL-01 | Weighted estimator formula + code | Tiwari (2018) IS estimator | Current histogram code | Proposal that biases P_det |
+| VALD-01 | Comparison test results | Uniform baseline P_det | Both uniform and enhanced grids | Qualitative "looks right" without statistical test |
 
 ## Traceability
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| DERV-01 | Phase 14 | Pending |
-| DERV-02 | Phase 14 | Pending |
-| AUDT-01 | Phase 15 | Pending |
-| AUDT-02 | Phase 15 | Pending |
-| AUDT-03 | Phase 15 | Pending |
-| FIX-01 | Phase 15 | Pending |
-| VALD-01 | Phase 16 | Pending |
-| VALD-02 | Phase 16 | Pending |
+| AUDT-01 | TBD | Pending |
+| AUDT-02 | TBD | Pending |
+| AUDT-03 | TBD | Pending |
+| YELD-01 | TBD | Pending |
+| YELD-02 | TBD | Pending |
+| YELD-03 | TBD | Pending |
+| GRID-01 | TBD | Pending |
+| GRID-02 | TBD | Pending |
+| GRID-03 | TBD | Pending |
+| SMPL-01 | TBD | Pending |
+| SMPL-02 | TBD | Pending |
+| SMPL-03 | TBD | Pending |
+| VALD-01 | TBD | Pending |
 
 **Coverage:**
-- Primary requirements: 8 total
-- Mapped to phases: 8/8
-- Unmapped: 0
+
+- Primary requirements: 13 total
+- Mapped to phases: 0 (pending roadmap)
+- Unmapped: 13
 
 ---
-_Requirements defined: 2026-03-30_
-_Last updated: 2026-03-30 after roadmap creation_
+
+_Requirements defined: 2026-03-31_
+_Last updated: 2026-03-31 after initial definition_
