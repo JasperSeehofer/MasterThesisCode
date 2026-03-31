@@ -10,7 +10,7 @@
 
 - **v1.2.1** "With BH Mass" Likelihood Bias Audit (On Hold: 2026-03-31) — Phases 14-16, last completed: Phase 15
   - /(1+z) fix applied but insufficient; awaiting injection P_det data for Phase 16
-- **v1.2.2** Injection Campaign Physics Analysis (Started: 2026-03-31) — Phases TBD
+- **v1.2.2** Injection Campaign Physics Analysis (Started: 2026-03-31) — Phases 17-20
   - Audit injection physics, analyze detection yield, design enhanced sampling
 
 See `.planning/MILESTONES.md` for full history.

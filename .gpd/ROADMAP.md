@@ -1,133 +1,175 @@
-# Roadmap: "With BH Mass" Likelihood Bias Audit (v1.2.1)
+# Roadmap: EMRI Parameter Estimation -- Dark Siren H0 Inference
 
-## Overview
+## Milestones
 
-This milestone audits the "with BH mass" dark siren likelihood channel that shows a systematic H0 posterior bias (h=0.600 vs h=0.678 for the "without BH mass" channel). The work proceeds from first-principles derivation of the correct likelihood, through code audit and correction, to numerical validation that both channels converge.
+- Done: **v1.0** EMRI HPC Integration (Shipped: 2026-03-27) -- 5 phases (GSD-tracked)
+- Done: **v1.1** Clean Simulation Campaign (Shipped: 2026-03-29) -- 3 phases (GSD-tracked)
+- Active: **v1.2** Production Campaign & Physics Corrections -- Phases 9-13 (GSD-tracked, last completed: Phase 10)
+- On Hold: **v1.2.1** "With BH Mass" Likelihood Bias Audit -- Phases 14-16 (last completed: Phase 15, awaiting P_det data for Phase 16)
+- Active: **v1.2.2** Injection Campaign Physics Analysis -- Phases 17-20
+
+## Phases
+
+<details>
+<summary>On Hold: v1.2.1 "With BH Mass" Likelihood Bias Audit (Phases 14-16)</summary>
+
+### Phase 14: First-Principles Derivation
+
+**Goal:** The correct "with BH mass" dark siren likelihood is derived from first principles
+**Status:** Complete (2026-03-31)
+**Plans:** 2/2 complete
+
+### Phase 15: Code Audit & Fix
+
+**Goal:** Every term in bayesian_statistics.py matches the Phase 14 derivation
+**Status:** Complete (2026-03-31)
+**Plans:** 2/2 complete
+**Result:** /(1+z) fix applied but insufficient -- posterior still monotonically decreasing
+
+### Phase 16: Validation
+
+**Goal:** Numerical evidence confirms both likelihood channels produce consistent H0 posteriors
+**Status:** Not started (blocked on injection P_det data)
+
+</details>
+
+### Active: v1.2.2 Injection Campaign Physics Analysis (Phases 17-20)
+
+**Milestone Goal:** Audit injection campaign physics, analyze detection yield, and design enhanced sampling strategies to improve P_det grid quality with fewer GPU hours.
 
 ## Contract Overview
 
 | Contract Item | Advanced By Phase(s) | Status |
 | --- | --- | --- |
-| First-principles derivation of "with BH mass" likelihood | Phase 14 | Complete |
-| Code audit showing term-by-term match | Phase 15 | Complete |
-| Posterior convergence between channels (within ~0.01) | Phase 16 | Planned |
-| Verdict on /(1+z) Jacobian (line 679) | Phase 15 | Complete (spurious, removed) |
-| Sky localization weight placement audit | Phase 15 | Complete (correct) |
-| Numerator/denominator consistency audit | Phase 15 | Complete (correct) |
-| Quadrature-vs-MC methodology audit | Phase 15 | Complete (acceptable) |
-| Quick-validation directional check | Phase 15 | Complete (FAIL — bias persists) |
-
-## Phases
-
-**Phase Numbering:** Continues from v1.2 (GSD-tracked, Phases 9-13). v1.2.1 starts at Phase 14.
-
-- [x] **Phase 14: First-Principles Derivation** - Derive correct d_L-only and "with BH mass" dark siren likelihoods from literature
-- [x] **Phase 15: Code Audit & Fix** - Audit bayesian_statistics.py against derivation, implement all corrections
-- [ ] **Phase 16: Validation** - Re-run evaluation on 22-detection dataset, confirm channel convergence
+| Injection physics consistency audit | Phase 17 | Planned |
+| Detection yield report with quantified waste | Phase 18 | Planned |
+| P_det grid quality assessment with per-bin CIs | Phase 18 | Planned |
+| Enhanced sampling design with expected improvement factor | Phase 19 | Planned |
+| Validation: enhanced sampling produces unbiased P_det | Phase 20 | Planned |
+| Acceptance signal: >2x GPU time reduction for equivalent grid quality | Phase 19, 20 | Planned |
 
 ## Phase Dependencies
 
 | Phase | Depends On | Enables | Critical Path? |
 |-------|-----------|---------|:-:|
-| 14 - First-Principles Derivation | -- | 15 | Yes |
-| 15 - Code Audit & Fix | 14 | 16 | Yes |
-| 16 - Validation | 15 | -- | Yes |
+| 17 - Injection Physics Audit | -- | 18 | Yes |
+| 18 - Detection Yield & Grid Quality | 17 | 19 | Yes |
+| 19 - Enhanced Sampling Design | 18 | 20 | Yes |
+| 20 - Validation | 19 | -- | Yes |
 
-**Critical path:** 14 -> 15 -> 16 (strictly sequential, no parallelism)
+**Critical path:** 17 -> 18 -> 19 -> 20 (strictly sequential)
+
+**Data dependency note:** Phase 17 is primarily code-audit and can proceed without injection CSVs. Phase 18 requires the rsynced injection data from bwUniCluster. If data is unavailable, Phase 17 completes fully while Phase 18 blocks on data arrival.
 
 ## Phase Details
 
-### Phase 14: First-Principles Derivation
+### Phase 17: Injection Physics Audit
 
-**Goal:** The correct "with BH mass" dark siren likelihood is derived from first principles, with all terms, Jacobians, and volume elements made explicit
-**Depends on:** Nothing (entry point)
-**Requirements:** DERV-01, DERV-02
+**Goal:** The injection campaign parameter distributions and cosmological model are verified consistent with the simulation pipeline, and waveform failure patterns are characterized
+**Depends on:** Nothing (entry point; primarily code-reading, minimal data dependency)
+**Requirements:** AUDT-01, AUDT-02, AUDT-03
 **Contract Coverage:**
-- Advances: First-principles derivation of "with BH mass" likelihood
-- Deliverables: Written derivation document covering both d_L-only and M_z-extended formulations
-- Anchor coverage: Gray et al. (2020) for d_L-only baseline; Schutz (1986) for dark siren framework; Bishop (2006) Eq. 2.81-2.82 for Gaussian conditioning; Chen et al. (2018) for galaxy catalog method
-- Forbidden proxies: Derivation that skips Jacobians or hand-waves the M -> M_z_frac transformation
+- Advances: Injection physics consistency audit
+- Deliverables: Parameter consistency report (injection_campaign() vs data_simulation()); cosmological model consistency check (dist() usage in both pipelines); waveform failure characterization by parameter region
+- Anchor coverage: Phase 11.1 design decisions D-01 through D-09; injection_campaign() in main.py:396-572; Model1CrossCheck EMRI sampling; ParameterSpace parameter bounds
+- Forbidden proxies: "Looks similar" without line-by-line code comparison; failure rate estimate without parameter-region breakdown
 
 **Success Criteria** (what must be TRUE when this phase completes):
 
-1. The d_L-only dark siren likelihood is written down term-by-term (GW likelihood, galaxy prior, detection probability, volume element, sky localization weight), matching Gray et al. (2020) notation
-2. The extension to include M_z as 4th observable is derived with explicit Jacobian |dM/dM_z| = 1/(1+z), the conditional Gaussian decomposition (Bishop 2006 Eq. 2.81-2.82), and the analytic mass marginalization via Gaussian product identity
-3. Every term has documented dimensions (the likelihood integrand is dimensionless after proper normalization)
-4. The derivation reduces to the d_L-only case when M_z measurement uncertainty -> infinity (no mass information limit)
-5. The sky localization weight placement is unambiguous: it appears in exactly one factor of the likelihood decomposition
+1. injection_campaign() and data_simulation() draw from identical parameter distributions (M, z, spin, sky angles, eccentricity) -- verified by line-by-line comparison of Model1CrossCheck and ParameterSpace usage in both code paths
+2. The cosmological model (dist() function) is called with identical parameters (Omega_m, h) in both injection and evaluation pipelines -- any discrepancy documented with impact assessment
+3. The d_L-to-z round-trip inversion is consistent to within 1e-4 relative error across the z range [0, 0.5] for all 7 h-values
+4. Waveform failure modes are categorized (timeout, parameter bounds, solver divergence) and their correlation with (z, M) regions is assessed from SLURM logs or injection CSV status columns
+5. The z > 0.5 importance sampling cutoff is evaluated: confirmed safe for h in [0.60, 0.90] by SNR scaling argument (SNR ~ M^{5/6}/d_L, and d_L(z=0.5, h=0.60) is documented)
 
-**Plans:** 2 plans
+**Plans:** TBD
 
-Plans:
-- [ ] 14-01-PLAN.md — Derive d_L-only dark siren likelihood (Bayesian framework, dimensional analysis, Gray et al. comparison)
-- [ ] 14-02-PLAN.md — Extend to "with BH mass" (Jacobian chain, conditional decomposition, /(1+z) verdict, denominator, limiting case)
+### Phase 18: Detection Yield & Grid Quality
 
-### Phase 15: Code Audit & Fix
-
-**Goal:** Every term in bayesian_statistics.py matches the Phase 14 derivation, with all identified discrepancies corrected
-**Depends on:** Phase 14 (derivation provides the reference formula)
-**Requirements:** AUDT-01, AUDT-02, AUDT-03, AUDT-04, FIX-01, FIX-02
+**Goal:** The detection yield is quantified per h-value, compute waste is broken down by cause, and the P_det grid quality is assessed with per-bin confidence intervals
+**Depends on:** Phase 17 (parameter consistency verified before analyzing data)
+**Requirements:** YELD-01, YELD-02, YELD-03, GRID-01, GRID-02, GRID-03
 **Contract Coverage:**
-- Advances: Code audit showing term-by-term match; verdict on /(1+z) Jacobian; sky weight placement audit; numerator/denominator consistency; quadrature-vs-MC methodology audit
-- Deliverables: Corrected bayesian_statistics.py with reference comments linking each term to the derivation; quick-validation evaluation run showing bias direction shift
-- Anchor coverage: Phase 14 derivation document; commit 15b49a3 (analytic M_z marginalization); TODO flags at lines 556, 755; current /(1+z) at line 679; h=0.600 pre-fix baseline
-- Forbidden proxies: "Looks wrong, remove it" without derivation backing; ad-hoc numerical fix without term-by-term justification; declaring the fix correct without re-running evaluation
+- Advances: Detection yield report with quantified waste; P_det grid quality assessment with per-bin CIs
+- Deliverables: Detection fraction table per h-value (3 significant figures); compute waste breakdown pie chart (failures / undetectable / detected); per-bin Wilson CI heatmap for 30x20 grid; 30x20 vs 15x10 grid comparison; quality flag implementation in SimulationDetectionProbability
+- Anchor coverage: Injection CSV data from cluster; SimulationDetectionProbability class; Farr (2019) N_eff > 4*N_det criterion; Brown, Cai, DasGupta (2001) for Wilson CI recommendation
+- Forbidden proxies: Estimated yield without actual data; average CI without per-bin breakdown; grid comparison without interpolation error metric
 
 **Success Criteria** (what must be TRUE when this phase completes):
 
-1. The /(1+z) factor at line 679 has a definitive verdict (correct, spurious, or needs modification) backed by the Phase 14 derivation, with the corresponding code change (or explicit retention) documented
-2. Sky localization weight (phi, theta) is verified to appear in exactly one factor of the likelihood -- the TODO flags at lines 556 and 755 are resolved
-3. The "with BH mass" denominator (MC-sampled, lines 689-722) uses the same Jacobians, weights, and mass terms as the numerator
-4. The quadrature-vs-MC methodology asymmetry (quadrature numerator, MC denominator) is audited: either shown to be numerically harmless (N=10000 MC samples sufficient) or aligned to use the same integration method
-5. Every formula change follows physics change protocol: old formula, new formula, reference, dimensional analysis, limiting case
-6. Reference comments are added above every modified line linking to the derivation
-7. A quick-validation evaluation run confirms the "with BH mass" posterior peak shifts away from h=0.600 toward h=0.678 (directional confirmation before full Phase 16 validation)
+1. Detection fraction (N_det / N_total) is computed per h-value to 3 significant figures, and the overall waste fraction (undetectable + failed) is quantified
+2. GPU compute waste is decomposed into three categories with percentages: (a) waveform generation failures, (b) sub-threshold events (SNR < 20), (c) successful detections
+3. The z > 0.5 cutoff is validated: zero detections above z = 0.5 confirmed for all 7 h-values, or exceptions documented with their (z, M, h) coordinates
+4. Per-bin Wilson 95% confidence intervals are computed for the 30x20 grid, with bins having fewer than 10 injections flagged as unreliable
+5. The 30x20 vs 15x10 grid comparison shows whether the coarser grid achieves CI half-widths below 0.15 in the detection boundary region (where 0.05 < P_det < 0.95)
 
-**Plans:** 2 plans
+**Plans:** TBD
 
-Plans:
-- [x] 15-01-PLAN.md -- Term-by-term code audit, remove spurious /(1+z), add reference comments, denominator/MC convergence audit
-- [x] 15-02-PLAN.md -- Quick-validation evaluation run at 4 h-values (RESULT: posterior shape unchanged, bias persists)
+### Phase 19: Enhanced Sampling Design
 
-### Phase 16: Validation
-
-**Goal:** Numerical evidence confirms both likelihood channels produce consistent H0 posteriors on the 22-detection dataset
-**Depends on:** Phase 15 (corrected code)
-**Requirements:** VALD-01, VALD-02
+**Goal:** An importance-weighted histogram estimator and stratified sampling strategy are designed that provably reduce GPU time by >2x for equivalent P_det grid quality
+**Depends on:** Phase 18 (grid quality diagnostics identify where improvements are needed)
+**Requirements:** SMPL-01, SMPL-02, SMPL-03
 **Contract Coverage:**
-- Advances: Posterior convergence between channels
-- Deliverables: Evaluation output showing both channel posterior peaks and their difference
-- Anchor coverage: h=0.600 baseline ("with BH mass" pre-fix); h=0.678 baseline ("without BH mass"); 22-detection dataset (simulations/cramer_rao_bounds.csv)
-- Forbidden proxies: Channels "agree" but neither traces to the derivation; peak moves but in wrong direction; two errors cancelling to produce false agreement
-- Stop/rethink: If channels still disagree by > 0.03 after fix, re-audit (may indicate structural issue per PROJECT.md stop condition)
+- Advances: Enhanced sampling design with expected improvement factor; acceptance signal (>2x GPU time reduction)
+- Deliverables: Self-normalized IS estimator implementation compatible with SimulationDetectionProbability; stratified sampling allocation algorithm with Neyman-optimal bin budgets; two-stage pilot design (30% uniform + 70% targeted) with combined importance weights
+- Anchor coverage: Tiwari (2018) arXiv:1712.00482 for IS estimator; Owen (2013) for stratified sampling theory; Phase 18 boundary identification and quality metrics; Kish (1965) for effective sample size
+- Forbidden proxies: Sampling strategy that introduces bias in P_det estimates; proposal distribution without importance weight correction; improvement factor claimed without variance reduction calculation
 
 **Success Criteria** (what must be TRUE when this phase completes):
 
-1. "With BH mass" posterior peak shifts from h=0.600 toward h=0.678 by at least 0.01 (directional confirmation that the fix addresses the bias)
-2. Both channel posterior peaks agree within ~0.01 (acceptance signal from contract)
-3. Both channels remain biased relative to true h=0.73 (expected, since P_det=1 is still disabled -- this confirms we haven't introduced a compensating error)
-4. The posterior shape is physically reasonable: unimodal, smooth, with width consistent with 22-detection statistical power
+1. The self-normalized IS estimator is implemented and recovers the standard histogram estimator when importance weights are uniform (w_i = 1 for all i) -- verified numerically to machine precision
+2. The stratified allocation algorithm concentrates injections on detection boundary bins (0.05 < P_det < 0.95) using Neyman-optimal allocation based on Phase 18 pilot variance estimates
+3. The two-stage design (30% pilot + 70% targeted) is specified with: (a) pilot sample size per h-value, (b) boundary identification algorithm, (c) targeted proposal distribution, (d) combined weight formula
+4. Expected variance reduction factor is computed from Phase 18 data: the boundary-region CI half-width reduction is >2x compared to uniform allocation with the same total injection count
+5. The proposal distribution q(theta) has full support over the prior p(theta) -- no region has q = 0 where p > 0 (guaranteed by the defensive mixture: alpha*uniform + (1-alpha)*targeted)
+
+**Plans:** TBD
+
+### Phase 20: Validation
+
+**Goal:** The enhanced sampling design is verified to produce unbiased P_det estimates consistent with the uniform baseline
+**Depends on:** Phase 19 (enhanced sampling implemented)
+**Requirements:** VALD-01
+**Contract Coverage:**
+- Advances: Validation that enhanced sampling produces unbiased P_det
+- Deliverables: Side-by-side comparison of uniform vs enhanced P_det grids; per-bin statistical test results; P_det monotonicity verification; round-trip consistency check
+- Anchor coverage: Uniform baseline P_det grid (Phase 18); enhanced P_det grid (Phase 19); Farr (2019) N_eff criterion; physical boundary conditions (P_det -> 1 at low z, P_det -> 0 at high z)
+- Forbidden proxies: Qualitative "looks right" without statistical test; comparison on globally-averaged P_det without per-bin breakdown
+
+**Success Criteria** (what must be TRUE when this phase completes):
+
+1. Per-bin P_det from enhanced sampling agrees with uniform baseline within 2-sigma Wilson CIs for all bins with sufficient statistics (N_total >= 10 in both methods)
+2. P_det is monotonically non-increasing in z at fixed M (within statistical noise) -- any non-monotonic structure flagged as potential waveform failure artifact
+3. Physical boundary conditions satisfied: P_det -> 1 at (low z, high M) and P_det -> 0 at (high z, low M) for all h-values
+4. The Farr (2019) criterion N_eff > 4 * N_det is satisfied globally for the enhanced sampling, with per-bin N_eff reported
+
+**Plans:** TBD
 
 ## Risk Register
 
 | Phase | Top Risk | Probability | Impact | Mitigation |
 |-------|---------|:-:|:-:|-----------|
-| 14 | Derivation reveals current code structure is fundamentally wrong (not just Jacobian) | LOW | HIGH | Stop/rethink trigger: escalate to user before proceeding to Phase 15 |
-| 15 | Multiple interacting bugs (/(1+z) + sky weight + denominator) make isolated testing hard | MEDIUM | MEDIUM | Fix one term at a time, re-run evaluation after each to isolate effect |
-| 16 | Channels converge but by accident (two errors cancelling) | LOW | HIGH | Check each fix independently against derivation; verify limiting cases |
+| 17 | Parameter distribution mismatch between injection and simulation | LOW | HIGH | Line-by-line code comparison; any mismatch immediately documented and escalated |
+| 18 | Injection data not yet rsynced from cluster | HIGH | HIGH | Phase 17 (code audit) proceeds independently; Phase 18 blocks cleanly on data |
+| 18 | Waveform failures dominate compute waste (>60%) | MEDIUM | MEDIUM | Separate failure analysis from sampling design; enhanced sampling cannot fix failures |
+| 19 | Importance weights have high variance (low N_eff) | MEDIUM | HIGH | Defensive mixture proposal caps weight ratio; Kish N_eff diagnostic catches this |
+| 20 | Enhanced and uniform grids disagree beyond 2-sigma | LOW | MEDIUM | Debug: check weight normalization, proposal support, bin boundary alignment |
 
 ## Backtracking Triggers
 
-- Phase 15: If the derivation (Phase 14) shows the code structure is fundamentally wrong (not a localized fix), escalate to user -- may need architectural changes beyond this milestone's scope
-- Phase 16: If "with BH mass" peak moves away from "without BH mass" after fix, return to Phase 15 and re-audit
-- Phase 16: If channels still disagree by > 0.03, re-audit numerator/denominator consistency (Phase 15 AUDT-03 may have missed something)
+- Phase 17: If injection and simulation pipelines use DIFFERENT cosmological parameters or parameter distributions, STOP and escalate -- existing P_det grids may be invalid
+- Phase 18: If detection yield is >50%, enhanced sampling provides diminishing returns -- reassess Phase 19 scope (contract stop condition)
+- Phase 19: If the defensive mixture proposal yields N_eff < 10 in boundary bins, increase the uniform fraction alpha or increase total injection count
+- Phase 20: If per-bin disagreement exceeds 2-sigma in >10% of bins, return to Phase 19 and debug importance weight computation
 
 ## Progress
 
-**Execution Order:** 14 -> 15 -> 16
+**Execution Order:** 17 -> 18 -> 19 -> 20
 
 | Phase | Plans Complete | Status | Completed |
 | --- | --- | --- | --- |
-| 14. First-Principles Derivation | 2/2 | Complete | 2026-03-31 |
-| 15. Code Audit & Fix | 2/2 | Complete | 2026-03-31 |
-| 16. Validation | TBD | Not started | - |
+| 17. Injection Physics Audit | TBD | Not started | - |
+| 18. Detection Yield & Grid Quality | TBD | Not started | - |
+| 19. Enhanced Sampling Design | TBD | Not started | - |
+| 20. Validation | TBD | Not started | - |

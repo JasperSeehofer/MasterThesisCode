@@ -76,25 +76,25 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| AUDT-01 | TBD | Pending |
-| AUDT-02 | TBD | Pending |
-| AUDT-03 | TBD | Pending |
-| YELD-01 | TBD | Pending |
-| YELD-02 | TBD | Pending |
-| YELD-03 | TBD | Pending |
-| GRID-01 | TBD | Pending |
-| GRID-02 | TBD | Pending |
-| GRID-03 | TBD | Pending |
-| SMPL-01 | TBD | Pending |
-| SMPL-02 | TBD | Pending |
-| SMPL-03 | TBD | Pending |
-| VALD-01 | TBD | Pending |
+| AUDT-01 | Phase 17 | Pending |
+| AUDT-02 | Phase 17 | Pending |
+| AUDT-03 | Phase 17 | Pending |
+| YELD-01 | Phase 18 | Pending |
+| YELD-02 | Phase 18 | Pending |
+| YELD-03 | Phase 18 | Pending |
+| GRID-01 | Phase 18 | Pending |
+| GRID-02 | Phase 18 | Pending |
+| GRID-03 | Phase 18 | Pending |
+| SMPL-01 | Phase 19 | Pending |
+| SMPL-02 | Phase 19 | Pending |
+| SMPL-03 | Phase 19 | Pending |
+| VALD-01 | Phase 20 | Pending |
 
 **Coverage:**
 
 - Primary requirements: 13 total
-- Mapped to phases: 0 (pending roadmap)
-- Unmapped: 13
+- Mapped to phases: 13/13
+- Unmapped: 0
 
 ---
 
