@@ -19,7 +19,7 @@ This milestone audits the "with BH mass" dark siren likelihood channel that show
 
 **Phase Numbering:** Continues from v1.2 (GSD-tracked, Phases 9-13). v1.2.1 starts at Phase 14.
 
-- [ ] **Phase 14: First-Principles Derivation** - Derive correct d_L-only and "with BH mass" dark siren likelihoods from literature
+- [x] **Phase 14: First-Principles Derivation** - Derive correct d_L-only and "with BH mass" dark siren likelihoods from literature
 - [ ] **Phase 15: Code Audit & Fix** - Audit bayesian_statistics.py against derivation, implement all corrections
 - [ ] **Phase 16: Validation** - Re-run evaluation on 22-detection dataset, confirm channel convergence
 
@@ -120,6 +120,6 @@ Plans:
 
 | Phase | Plans Complete | Status | Completed |
 | --- | --- | --- | --- |
-| 14. First-Principles Derivation | 0/2 | Planned | - |
+| 14. First-Principles Derivation | 2/2 | Complete | 2026-03-31 |
 | 15. Code Audit & Fix | TBD | Not started | - |
 | 16. Validation | TBD | Not started | - |
