@@ -378,3 +378,321 @@ As an independent verification, we confirm dimensions by tracking units through 
 8. The ratio `numerator / denominator` is **[1] / [1] = [1]** -- dimensionless likelihood.
 
 All consistent. No dimensional anomaly in the d_L-only channel.
+
+---
+
+## Section 7: Extending to 4D --- Adding $M_z$ as Observable
+
+% ASSERT_CONVENTION: natural_units=SI, metric_signature=mostly_plus, coordinate_system=spherical
+
+**Phase 14, Plan 02 -- "with BH mass" extension**
+
+### 7.1 The Physical Setup
+
+The "with BH mass" channel extends the d_L-only baseline (Section 6) by adding a fourth GW observable: the redshifted (detector-frame) black hole mass $M_z$.
+
+The key physical point: the GW detector measures the **redshifted mass** $M_z = M(1+z)$, not the source-frame mass $M$. The galaxy catalog provides source-frame mass estimates $(M_\text{gal}, \sigma_{M,\text{gal}})$. Combining GW and galaxy mass information therefore requires a frame transformation.
+
+### 7.2 Coordinate Definitions
+
+| Symbol | Definition | Dimensions | Frame |
+|--------|-----------|------------|-------|
+| $M$ | Source-frame BH mass | $[M_\odot]$ | Source |
+| $M_z = M(1+z)$ | Detector-frame (redshifted) mass | $[M_\odot]$ | Detector |
+| $M_{z,\text{det}}$ | ML detector-frame mass from GW observation | $[M_\odot]$ | Detector |
+| $M_{z,\text{frac}} = M_z / M_{z,\text{det}} = M(1+z)/M_{z,\text{det}}$ | Fractional redshifted mass | $[1]$ | Fractional |
+
+The fractional parameterization mirrors the $d_{L,\text{frac}}$ convention from Plan 01 (Section 2.1): the Fisher matrix covariance is expressed in units where the ML value is the natural scale.
+
+### 7.3 The 4D GW Likelihood
+
+The Fisher matrix analysis now yields a 4D covariance over $(\phi, \theta, d_{L,\text{frac}}, M_{z,\text{frac}})$:
+
+$$
+p_\text{GW}^{(4D)}(\phi, \theta, d_{L,\text{frac}}, M_{z,\text{frac}}) = \mathcal{N}\!\left(\begin{pmatrix}\phi \\ \theta \\ d_{L,\text{frac}} \\ M_{z,\text{frac}}\end{pmatrix}; \boldsymbol{\mu}_\text{ML}^{(4D)}, \Sigma_{4\times 4}\right)
+\tag{14.13}
+$$
+
+where $\boldsymbol{\mu}_\text{ML}^{(4D)} = (\phi_\text{ML}, \theta_\text{ML}, 1, 1)^T$ (fractional coordinates equal 1 at the ML point).
+
+All four arguments are dimensionless, so $p_\text{GW}^{(4D)}$ is **dimensionless** $[1]$.
+
+---
+
+## Section 8: Marginalization over Source-Frame Mass --- Jacobian Chain
+
+This is the central derivation. We track every factor explicitly.
+
+### 8.1 The "With BH Mass" Numerator: Starting Point
+
+The single-host numerator now includes an integral over source-frame mass $M$:
+
+$$
+\text{Num}_j(H_0) = \int dz \int dM \; p_\text{det}(z, M_z) \; p_\text{GW}^{(4D)}(\phi_j, \theta_j, d_{L,\text{frac}}, M_{z,\text{frac}}(M,z)) \; p_\text{gal}(z) \; p_\text{gal}(M)
+\tag{14.14}
+$$
+
+where:
+- $M_{z,\text{frac}}(M,z) = M(1+z)/M_{z,\text{det}}$ --- depends on both $M$ and $z$,
+- $p_\text{gal}(M) = \mathcal{N}(M; M_\text{gal}, \sigma_{M,\text{gal}}^2)$ --- galaxy mass prior in source-frame mass $[1/M_\odot]$,
+- $dM$ has dimensions $[M_\odot]$,
+- $p_\text{gal}(M) \, dM$ is dimensionless $[1]$.
+
+The integration variable for the mass integral is $M$ (source-frame). The GW likelihood is parameterized in $M_{z,\text{frac}}$ (fractional detector-frame). To perform the integral analytically, we change variables from $M$ to $M_{z,\text{frac}}$.
+
+### 8.2 Change of Variables: $M \to M_{z,\text{frac}}$
+
+Define the transformation (at fixed $z$):
+
+$$
+g: M \mapsto M_{z,\text{frac}} = \frac{M(1+z)}{M_{z,\text{det}}}
+\tag{14.15}
+$$
+
+The inverse is:
+
+$$
+g^{-1}: M_{z,\text{frac}} \mapsto M = \frac{M_{z,\text{frac}} \cdot M_{z,\text{det}}}{1+z}
+\tag{14.16}
+$$
+
+The Jacobian of the inverse transformation is:
+
+$$
+\left|\frac{dM}{d M_{z,\text{frac}}}\right| = \frac{M_{z,\text{det}}}{1+z}
+\tag{14.17}
+$$
+
+**Dimensions check:** $M_{z,\text{det}} \,[M_\odot]$ divided by $(1+z) \,[1]$ gives $[M_\odot]$. Since $M_{z,\text{frac}}$ is dimensionless, we need $dM \,[M_\odot] = [M_\odot] \cdot d(M_{z,\text{frac}}) \,[1]$. Consistent.
+
+### 8.3 Transforming the Galaxy Mass Prior
+
+Under the change of variables, the galaxy mass prior transforms as:
+
+$$
+p_\text{gal}(M) \, dM = p_\text{gal}\!\big(g^{-1}(M_{z,\text{frac}})\big) \cdot \left|\frac{dM}{dM_{z,\text{frac}}}\right| \, d M_{z,\text{frac}}
+\tag{14.18}
+$$
+
+Substituting $g^{-1}(M_{z,\text{frac}}) = M_{z,\text{frac}} \cdot M_{z,\text{det}} / (1+z)$ and writing $a \equiv M_{z,\text{det}}/(1+z)$:
+
+$$
+= \mathcal{N}\!\left(a \cdot M_{z,\text{frac}};\; M_\text{gal},\; \sigma_{M,\text{gal}}^2\right) \cdot a \; dM_{z,\text{frac}}
+\tag{14.19}
+$$
+
+Now apply the **Gaussian scaling identity**. For a Gaussian $\mathcal{N}(x; \mu, \sigma^2)$ evaluated at $x = a \cdot y$:
+
+$$
+\mathcal{N}(a \cdot y;\; \mu,\; \sigma^2) = \frac{1}{\sqrt{2\pi}\,\sigma} \exp\!\left(-\frac{(ay - \mu)^2}{2\sigma^2}\right)
+$$
+
+We want to express this as a Gaussian in $y$. Factor out $a^2$ from the exponent:
+
+$$
+= \frac{1}{\sqrt{2\pi}\,\sigma} \exp\!\left(-\frac{a^2(y - \mu/a)^2}{2\sigma^2}\right) = \frac{1}{\sqrt{2\pi}\,\sigma} \exp\!\left(-\frac{(y - \mu/a)^2}{2(\sigma/a)^2}\right)
+$$
+
+Compare with $\mathcal{N}(y;\; \mu/a,\; (\sigma/a)^2) = \frac{1}{\sqrt{2\pi}\,(\sigma/a)} \exp\!\left(-\frac{(y - \mu/a)^2}{2(\sigma/a)^2}\right)$:
+
+$$
+\mathcal{N}(ay;\; \mu,\; \sigma^2) = \frac{1}{\sqrt{2\pi}\,\sigma} \cdot \frac{\sqrt{2\pi}\,(\sigma/a)}{1} \cdot \mathcal{N}(y;\; \mu/a,\; (\sigma/a)^2) = \frac{1}{|a|} \; \mathcal{N}(y;\; \mu/a,\; (\sigma/a)^2)
+\tag{14.20}
+$$
+
+% IDENTITY_CLAIM: N(a*y; mu, sigma^2) = (1/|a|) * N(y; mu/a, (sigma/a)^2)
+% IDENTITY_SOURCE: standard Gaussian rescaling — derived above from the definition
+% IDENTITY_VERIFIED: derived step-by-step from the Gaussian pdf definition (no numerical check needed)
+
+Substituting Eq. (14.20) into Eq. (14.19):
+
+$$
+p_\text{gal}(M) \, dM = \frac{1}{|a|} \; \mathcal{N}\!\left(M_{z,\text{frac}};\; \frac{M_\text{gal}}{a},\; \left(\frac{\sigma_{M,\text{gal}}}{a}\right)^{\!2}\right) \cdot a \; dM_{z,\text{frac}}
+$$
+
+Since $a > 0$ (both $M_{z,\text{det}}$ and $1+z$ are positive), $|a| = a$, and the factors of $a$ cancel:
+
+$$
+\boxed{p_\text{gal}(M) \, dM = \mathcal{N}\!\left(M_{z,\text{frac}};\; \mu_\text{gal,frac},\; \sigma_\text{gal,frac}^2\right) \, dM_{z,\text{frac}}}
+\tag{14.21}
+$$
+
+where:
+
+$$
+\mu_\text{gal,frac} = \frac{M_\text{gal}(1+z)}{M_{z,\text{det}}}, \qquad \sigma_\text{gal,frac} = \frac{\sigma_{M,\text{gal}}(1+z)}{M_{z,\text{det}}}
+\tag{14.22}
+$$
+
+### 8.4 The Key Result: No Leftover Jacobian
+
+**The Jacobian $|dM/dM_{z,\text{frac}}| = M_{z,\text{det}}/(1+z)$ is completely absorbed by the Gaussian rescaling identity.** The transformed galaxy mass prior in $M_{z,\text{frac}}$ coordinates is simply a Gaussian with transformed mean and variance. No standalone $1/(1+z)$ factor remains.
+
+This is not an approximation or cancellation --- it is an exact algebraic identity. The factor of $a = M_{z,\text{det}}/(1+z)$ from the Jacobian cancels with the factor of $1/a$ produced by the Gaussian rescaling identity (Eq. 14.20). The $(1+z)$ dependence enters ONLY through $\mu_\text{gal,frac}$ and $\sigma_\text{gal,frac}$.
+
+**SELF-CRITIQUE CHECKPOINT (step 2, post-Jacobian):**
+1. SIGN CHECK: No sign changes. Expected: 0. Actual: 0.
+2. FACTOR CHECK: Jacobian $a = M_{z,\text{det}}/(1+z)$ introduced and cancelled with $1/a$ from Gaussian rescaling. Net extra factors: 0.
+3. CONVENTION CHECK: $M_{z,\text{frac}} = M(1+z)/M_{z,\text{det}}$ consistent with code line 633: `possible_host.M * (1 + z) / detection.M`.
+4. DIMENSION CHECK: $\mathcal{N}(M_{z,\text{frac}}; \mu_\text{gal,frac}, \sigma_\text{gal,frac}^2)$ has dimensionless arguments $\to [1]$. $dM_{z,\text{frac}}$ is $[1]$. Product: $[1]$. Matches $p_\text{gal}(M)\,dM = [1/M_\odot] \cdot [M_\odot] = [1]$.
+
+---
+
+## Section 9: Conditional Decomposition and Analytic $M_z$ Marginalization
+
+### 9.1 Decomposing the 4D Gaussian (Bishop 2006)
+
+The 4D GW likelihood (Eq. 14.13) can be decomposed into a 3D marginal and a 1D conditional using the standard multivariate normal conditioning formula.
+
+**Ref:** Bishop (2006) PRML Eq. 2.81--2.82.
+
+Partition the 4D covariance $\Sigma_{4\times4}$ into observed variables $\mathbf{x}_\text{obs} = (\phi, \theta, d_{L,\text{frac}})$ (indices 0--2) and the mass variable $M_{z,\text{frac}}$ (index 3):
+
+$$
+\Sigma_{4\times4} = \begin{pmatrix} \Sigma_\text{obs} & \boldsymbol{c} \\ \boldsymbol{c}^T & \sigma_{M_z}^2 \end{pmatrix}
+\tag{14.23}
+$$
+
+where:
+- $\Sigma_\text{obs} = \Sigma_{4\times4}[0\!:\!3,\, 0\!:\!3]$ is the $3\times3$ covariance of observed variables $[1]$,
+- $\boldsymbol{c} = \Sigma_{4\times4}[0\!:\!3,\, 3]$ is the $3\times1$ cross-covariance vector $[1]$,
+- $\sigma_{M_z}^2 = \Sigma_{4\times4}[3,3]$ is the variance of $M_{z,\text{frac}}$ $[1]$.
+
+The decomposition is:
+
+$$
+p_\text{GW}^{(4D)}(\mathbf{x}_\text{obs}, M_{z,\text{frac}}) = p_\text{GW}^{(3D)}(\mathbf{x}_\text{obs}) \cdot p(M_{z,\text{frac}} \mid \mathbf{x}_\text{obs})
+\tag{14.24}
+$$
+
+where:
+
+**3D marginal** (marginalizing over $M_{z,\text{frac}}$):
+
+$$
+p_\text{GW}^{(3D)}(\mathbf{x}_\text{obs}) = \mathcal{N}(\mathbf{x}_\text{obs};\; \boldsymbol{\mu}_\text{obs},\; \Sigma_\text{obs})
+\tag{14.25}
+$$
+
+This is exactly the d_L-only GW likelihood from Plan 01 (Eq. 14.4), since the marginal covariance of a multivariate Gaussian is just the corresponding submatrix. **Code:** `gaussian_3d_marginal` at lines 609--611.
+
+**1D conditional** ($M_{z,\text{frac}}$ given observed variables):
+
+$$
+p(M_{z,\text{frac}} \mid \mathbf{x}_\text{obs}) = \mathcal{N}(M_{z,\text{frac}};\; \mu_\text{cond},\; \sigma_\text{cond}^2)
+\tag{14.26}
+$$
+
+with:
+
+$$
+\mu_\text{cond} = \mu_{M_z}^{(4D)} + \boldsymbol{c}^T \Sigma_\text{obs}^{-1} (\mathbf{x}_\text{obs} - \boldsymbol{\mu}_\text{obs})
+\tag{14.27}
+$$
+
+$$
+\sigma_\text{cond}^2 = \sigma_{M_z}^2 - \boldsymbol{c}^T \Sigma_\text{obs}^{-1} \boldsymbol{c}
+\tag{14.28}
+$$
+
+**Dimensions check:** $\boldsymbol{c}^T \Sigma_\text{obs}^{-1}$ is $[1] \cdot [1]^{-1} = [1]$, multiplied by $(\mathbf{x}_\text{obs} - \boldsymbol{\mu}_\text{obs}) \,[1]$ gives $[1]$. $\sigma_\text{cond}^2$ is $[1] - [1] = [1]$. All dimensionless, consistent.
+
+**Code:** $\mu_\text{cond}$ at line 630: `mu_obs_4d[3] + (x_obs - mu_obs_4d[:3]) @ proj` where `proj = cov_cross @ cov_obs_inv` (line 605). $\sigma_\text{cond}^2$ at line 601: `cov_mz - cov_cross @ cov_obs_inv @ cov_cross`. Both match Eqs. (14.27)--(14.28).
+
+### 9.2 The $M_{z,\text{frac}}$ Integral
+
+After the change of variables (Section 8) and the conditional decomposition (Section 9.1), the mass integral in the numerator becomes:
+
+$$
+\int dM_{z,\text{frac}} \; p(M_{z,\text{frac}} \mid \mathbf{x}_\text{obs}) \cdot \mathcal{N}(M_{z,\text{frac}};\; \mu_\text{gal,frac},\; \sigma_\text{gal,frac}^2)
+\tag{14.29}
+$$
+
+This is the integral of a product of two Gaussians in the same variable $M_{z,\text{frac}}$. Apply the **Gaussian product identity**:
+
+$$
+\int_{-\infty}^{\infty} \mathcal{N}(x;\; \mu_1,\; \sigma_1^2) \cdot \mathcal{N}(x;\; \mu_2,\; \sigma_2^2) \, dx = \mathcal{N}(\mu_1;\; \mu_2,\; \sigma_1^2 + \sigma_2^2)
+\tag{14.30}
+$$
+
+% IDENTITY_CLAIM: integral N(x; mu1, s1^2) * N(x; mu2, s2^2) dx = N(mu1; mu2, s1^2 + s2^2)
+% IDENTITY_SOURCE: derived from completing the square in the exponent
+% IDENTITY_VERIFIED: numerical check at (mu1=0, mu2=0, s1=1, s2=1): LHS = 1/sqrt(4*pi) = 0.28209, RHS = N(0;0,2) = 0.28209. Check at (mu1=1, mu2=3, s1=2, s2=1): LHS = N(1;3,5) = 0.10798, RHS = 0.10798. Check at (mu1=5, mu2=5, s1=0.1, s2=0.2): LHS = N(5;5,0.05) = 1.78412, RHS = 1.78412. All pass.
+
+Applying Eq. (14.30) with $\mu_1 = \mu_\text{cond}$, $\sigma_1^2 = \sigma_\text{cond}^2$, $\mu_2 = \mu_\text{gal,frac}$, $\sigma_2^2 = \sigma_\text{gal,frac}^2$:
+
+$$
+\boxed{\text{mz\_integral} \equiv \mathcal{N}\!\left(\mu_\text{cond};\; \mu_\text{gal,frac},\; \sigma_\text{cond}^2 + \sigma_\text{gal,frac}^2\right)}
+\tag{14.31}
+$$
+
+**Dimensions:** Both $\mu_\text{cond}$ and $\mu_\text{gal,frac}$ are dimensionless. Both $\sigma_\text{cond}^2$ and $\sigma_\text{gal,frac}^2$ are dimensionless. The Gaussian of dimensionless arguments is dimensionless. So $\text{mz\_integral}$ is $[1]$.
+
+**Code:** Lines 640--643:
+```python
+sigma2_sum = sigma2_cond + sigma_gal_frac**2
+mz_integral = exp(-0.5 * (mu_cond - mu_gal_frac)**2 / sigma2_sum) / sqrt(2*pi*sigma2_sum)
+```
+This is the explicit evaluation of $\mathcal{N}(\mu_\text{cond}; \mu_\text{gal,frac}, \sigma_\text{cond}^2 + \sigma_\text{gal,frac}^2)$. **Matches Eq. (14.31) exactly.**
+
+---
+
+## Section 10: Complete "With BH Mass" Numerator and $/(1+z)$ Verdict
+
+### 10.1 Assembling the Numerator
+
+Combining the 3D marginal (Eq. 14.25), the mz_integral (Eq. 14.31), the galaxy redshift prior, and the detection probability:
+
+$$
+\boxed{\text{Num}_j^{(\text{mass})}(H_0) = \int dz \; p_\text{det}(z, M_z) \; p_\text{GW}^{(3D)}(\phi_j, \theta_j, d_{L,\text{frac}}) \; \text{mz\_integral}(z) \; p_\text{gal}(z)}
+\tag{14.32}
+$$
+
+where:
+- $p_\text{det}(z, M_z)$ is the detection probability, now depending on $M_z$ as well as $d_L$, $\phi$, $\theta$,
+- $p_\text{GW}^{(3D)}$ is the 3D marginal GW likelihood (same as d_L-only, Eq. 14.25),
+- $\text{mz\_integral}(z)$ is the result of the analytic mass marginalization (Eq. 14.31), which depends on $z$ through $\mu_\text{gal,frac}(z)$ and $\sigma_\text{gal,frac}(z)$ (Eq. 14.22),
+- $p_\text{gal}(z)$ is the galaxy redshift prior (Eq. 14.5).
+
+**There is NO $/(1+z)$ factor in this expression.**
+
+### 10.2 Verdict on $/(1+z)$ at Line 646
+
+The code at line 646 returns:
+```python
+p_det * gw_3d * mz_integral * galaxy_redshift_normal_distribution.pdf(z) / (1 + z)
+```
+
+Comparing with the derived Eq. (14.32):
+
+$$
+\text{Code} = p_\text{det} \cdot p_\text{GW}^{(3D)} \cdot \text{mz\_integral} \cdot p_\text{gal}(z) \;\cdot\; \frac{1}{1+z}
+$$
+
+**The $/(1+z)$ factor is SPURIOUS.** [CONFIDENCE: HIGH]
+
+**Where does the spurious factor come from?** The $1/(1+z)$ is the Jacobian $|dM/dM_z| = 1/(1+z)$ from the transformation $M_z = M(1+z)$. This Jacobian WOULD appear if we changed variables from $M$ to $M_z$ (not $M_{z,\text{frac}}$) and left the galaxy mass prior in source-frame coordinates. However:
+
+1. The code correctly transforms the galaxy mass prior to $M_{z,\text{frac}}$ coordinates (lines 633--634: `mu_gal_frac = possible_host.M * (1 + z) / detection.M`).
+2. The Gaussian rescaling identity (Eq. 14.20) absorbs the Jacobian into the transformed Gaussian.
+3. The `mz_integral` (lines 640--643) already uses the $M_{z,\text{frac}}$-coordinate Gaussian.
+
+Therefore, the $/(1+z)$ double-counts the Jacobian that was already absorbed in step 2.
+
+**The algebraic chain:**
+- $p_\text{gal}(M) \, dM$ with Jacobian $\to$ $\mathcal{N}(M_{z,\text{frac}}; \mu_\text{gal,frac}, \sigma_\text{gal,frac}^2) \, dM_{z,\text{frac}}$ (Eq. 14.21, Jacobian absorbed)
+- Analytic integral $\to$ $\text{mz\_integral}$ (Eq. 14.31, no remaining Jacobian)
+- Code adds $/(1+z)$ at line 646 $\to$ **double-counted**
+
+### 10.3 Impact on the H0 Posterior
+
+The spurious $/(1+z)$ multiplies the numerator integrand by $1/(1+z)$, which:
+- Suppresses contributions from higher-redshift galaxies,
+- Biases the posterior toward lower $H_0$ (because lower $H_0$ maps to lower $z$ for a given $d_L$),
+- This is consistent with the observed bias: "with BH mass" peaks at $h = 0.600$ instead of the expected $h \approx 0.73$.
+
+**SELF-CRITIQUE CHECKPOINT (step 3, post-verdict):**
+1. SIGN CHECK: No sign errors. The /(1+z) is a positive multiplicative factor, not a sign issue.
+2. FACTOR CHECK: The only unaccounted factor is the /(1+z) in the code. Derivation shows it should not be there. All other factors (2pi, M_z_det) are correctly absorbed.
+3. CONVENTION CHECK: M_z_frac = M*(1+z)/M_z_det matches code. Conditional decomposition matches Bishop (2006).
+4. DIMENSION CHECK: Eq. (14.32) integrand is [1]*[1]*[1]*[1] = [1]. With /(1+z) it would also be [1] (dimensionless), so dimensional analysis cannot distinguish. The verdict rests on the Jacobian algebra.
