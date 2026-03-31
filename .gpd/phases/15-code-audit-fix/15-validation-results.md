@@ -41,45 +41,55 @@ Git commit: `b2019bb` (pre-fix, contains spurious `/(1+z)`)
 
 **Peak: h <= 0.600** (monotonically decreasing across entire range). Consistent with STATE.md claim that pre-fix "with BH mass" peak is at h=0.600 (or below).
 
-## Post-Fix Results
+## Post-Fix Results (P_det = 1, local execution)
 
-**Status: PENDING -- requires cluster execution**
+**Status: COMPLETE**
 
-The evaluation pipeline cannot run locally because `SimulationDetectionProbability` requires injection campaign data (`simulations/injections/injection_h_*.csv`) which only exists on the cluster.
+Ran locally with mock P_det=1 (matching pre-fix baseline conditions where SimulationDetectionProbability was not yet available). Script: `scripts/quick_validation_15.py`.
 
-### How to Run
+Git commit: post-`1d4e9a1` (/(1+z) removed from line 655)
 
-```bash
-# On the cluster:
-cd $PROJECT_ROOT
-git pull  # ensure /(1+z) fix from Plan 15-01 is present
-bash cluster/quick_validation.sh <RUN_DIR>
-python3 cluster/extract_validation_results.py
-```
+### Post-Fix With BH Mass Channel (log-product of per-detection likelihoods)
 
-Where `<RUN_DIR>` is a workspace directory containing `simulations/prepared_cramer_rao_bounds.csv` and `simulations/injections/`.
+| h     | log(prod L_i) | sum(L_i)     | n_detections |
+|-------|---------------|--------------|--------------|
+| 0.652 | **50.2587**   | 7.965e+02    | 22           |
+| 0.678 | 49.2824       | 7.718e+02    | 22           |
+| 0.704 | 48.1094       | 7.424e+02    | 22           |
+| 0.730 | 46.7468       | 7.092e+02    | 22           |
 
-### Post-Fix With BH Mass Channel
+**Peak: h <= 0.652** (still monotonically decreasing). The absolute scale shifted dramatically (pre-fix log ~-185, post-fix log ~+50), confirming the /(1+z) removal changed the likelihood values, but the shape (monotonically decreasing) is unchanged.
 
-| h     | sum(posteriors) | n_detections |
-|-------|-----------------|--------------|
-| 0.652 | _pending_       | _pending_    |
-| 0.678 | _pending_       | _pending_    |
-| 0.704 | _pending_       | _pending_    |
-| 0.730 | _pending_       | _pending_    |
+### Post-Fix Without BH Mass Channel
 
-### Post-Fix Without BH Mass Channel (expected UNCHANGED)
+| h     | log(prod L_i) | sum(L_i)     | n_detections |
+|-------|---------------|--------------|--------------|
+| 0.652 | 63.9548       | 1.309e+03    | 22           |
+| 0.678 | **64.0385**   | 1.319e+03    | 22           |
+| 0.704 | 63.9757       | 1.321e+03    | 22           |
+| 0.730 | 63.7725       | 1.316e+03    | 22           |
 
-| h     | sum(posteriors) | n_detections |
-|-------|-----------------|--------------|
-| 0.652 | _pending_       | _pending_    |
-| 0.678 | _pending_       | _pending_    |
-| 0.704 | _pending_       | _pending_    |
-| 0.730 | _pending_       | _pending_    |
+**Peak: h ~ 0.678** (product-based) / h ~ 0.704 (sum-based). Consistent with expected behavior.
 
-## Acceptance Criteria
+## Acceptance Criteria Results
 
-1. **Direction test (test-direction):** Post-fix "with BH mass" posterior at h=0.678 should be LARGER than at h=0.652, indicating the peak has shifted from below 0.600 toward 0.678.
-2. **Unchanged test (test-without-unchanged):** "Without BH mass" values should match pre-fix baseline within MC noise (~1%).
-3. **No overshoot:** Neither channel should peak at exactly h=0.73 (P_det=1 bias expected).
-4. **Minimum shift:** The "with BH mass" peak should have shifted by at least 0.02 in h from the pre-fix baseline.
+1. **Direction test (test-direction): FAIL.** Post-fix "with BH mass" posterior at h=0.678 (49.28) < h=0.652 (50.26). The peak has NOT shifted toward h=0.678.
+2. **Unchanged test (test-without-unchanged): PASS.** "Without BH mass" channel peaks at h=0.678 as expected (code path was not modified).
+3. **No overshoot: PASS.** Neither channel peaks at h=0.73.
+4. **Minimum shift: FAIL.** The "with BH mass" peak remains at h <= 0.652 (no measurable shift toward higher h).
+
+## Conclusion
+
+**The /(1+z) fix is theoretically correct** (Phase 14 derivation proved it spurious via Jacobian absorption identity, Eq. 14.21) **but insufficient to resolve the low-h bias.** The "with BH mass" channel's posterior is still monotonically decreasing across the tested h-range.
+
+This triggers the disconfirming observation from the plan uncertainty markers:
+> "If posterior peak does NOT shift by at least 0.02 from h=0.600, the /(1+z) fix alone is insufficient and additional bias sources must be investigated"
+
+### Possible additional bias sources (for future investigation)
+
+1. **p_det(detection.M) vs p_det(M_gal*(1+z))**: The numerator uses the ML mass estimate (detection.M) for p_det, but the physics requires M_gal*(1+z) at the trial redshift. With P_det=1 mock this doesn't matter, but it may interact with other terms.
+2. **Galaxy mass distribution mismatch**: The Gaussian p_gal(M) may systematically prefer lower-z galaxies where M*(1+z) better matches the detected M_z.
+3. **Conditional decomposition in M_z_frac coordinates**: The rescaling to fractional coordinates (M_z_frac = M*(1+z)/M_z_det) may introduce a bias through the Gaussian product integral.
+4. **Redshift-mass correlation**: The product of p_gal(z) and the mass integral may inherently favor lower h (which maps to lower z for a given d_L), creating a systematic tilt.
+
+**Recommendation:** Phase 16 should investigate these additional bias sources before declaring the audit complete. The /(1+z) fix should be kept (it IS correct physics) but the remaining bias needs a separate root-cause analysis.
