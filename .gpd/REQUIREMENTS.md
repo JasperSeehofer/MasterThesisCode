@@ -32,6 +32,7 @@
 ### Validation
 
 - [ ] **VALD-01**: Verify enhanced P_det grid produces unbiased estimates (comparison with uniform baseline, round-trip consistency checks)
+- [ ] **VALD-02**: Compare grid-based P_det vs direct MC selection integral alpha(h) — LVK standard uses direct MC sum over all injections without gridding (Mandel, Farr & Gair 2019)
 
 ## Follow-up Requirements
 
@@ -92,9 +93,9 @@
 
 **Coverage:**
 
-- Primary requirements: 13 total
-- Mapped to phases: 13/13
-- Unmapped: 0
+- Primary requirements: 14 total
+- Mapped to phases: 13/14
+- Unmapped: 1 (VALD-02 — assign to Phase 18 or 20)
 
 ---
 

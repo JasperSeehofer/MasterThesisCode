@@ -61,6 +61,8 @@
 
 **Data dependency note:** Phase 17 is primarily code-audit and can proceed without injection CSVs. Phase 18 requires the rsynced injection data from bwUniCluster. If data is unavailable, Phase 17 completes fully while Phase 18 blocks on data arrival.
 
+**Late research finding:** LVK does NOT grid P_det — they compute the selection integral alpha(h) as a direct MC sum over all injections (Mandel, Farr & Gair 2019). The grid-based approach works but is non-standard. Phase 18 should compare grid-based vs direct MC alpha(h). Phase 19 should consider whether the direct MC integral makes grid improvements unnecessary.
+
 ## Phase Details
 
 ### Phase 17: Injection Physics Audit
