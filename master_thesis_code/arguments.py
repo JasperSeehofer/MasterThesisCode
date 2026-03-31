@@ -65,6 +65,11 @@ class Arguments:
         return bool(self._parsed_arguments.snr_analysis)
 
     @property
+    def injection_campaign(self) -> bool:
+        """Indicates whether to run SNR-only injection campaign for detection probability estimation."""
+        return bool(self._parsed_arguments.injection_campaign)
+
+    @property
     def generate_figures(self) -> str | None:
         """Output directory for figure generation. None means do not generate figures."""
         val: str | None = self._parsed_arguments.generate_figures
@@ -143,6 +148,12 @@ def _parse_arguments(arguments: list[str]) -> argparse.Namespace:
     parser.add_argument("--evaluate", action="store_true")
     parser.add_argument("--h_value", help="Hubble constant value.", type=float, default=H)
     parser.add_argument("--snr_analysis", action="store_true")
+    parser.add_argument(
+        "--injection_campaign",
+        action="store_true",
+        default=False,
+        help="Run SNR-only injection campaign for detection probability estimation.",
+    )
     parser.add_argument(
         "--seed",
         help="Random seed for reproducibility. If omitted, a random seed is chosen and logged.",

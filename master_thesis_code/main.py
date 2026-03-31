@@ -73,6 +73,16 @@ def main() -> None:
     if arguments.snr_analysis:
         snr_analysis(use_gpu=arguments.use_gpu)
 
+    if arguments.injection_campaign:
+        injection_campaign(
+            simulation_steps=arguments.simulation_steps,
+            cosmological_model=cosmological_model,
+            h_value=arguments.h_value,
+            simulation_index=arguments.simulation_index,
+            rng=rng,
+            use_gpu=arguments.use_gpu,
+        )
+
     if arguments.generate_figures is not None:
         generate_figures(arguments.generate_figures)
 
@@ -372,6 +382,171 @@ def data_simulation(
 
     for cb in _callbacks:
         cb.on_simulation_end(counter, iteration)
+
+
+def injection_campaign(
+    simulation_steps: int,
+    cosmological_model: Model1CrossCheck,
+    h_value: float,
+    simulation_index: int,
+    rng: np.random.Generator | None = None,
+    *,
+    use_gpu: bool = False,
+) -> None:
+    """Run SNR-only injection campaign for detection probability estimation.
+
+    Draws EMRI events from the population model, computes SNR (no Fisher matrix),
+    and stores ALL events (detected and undetected) to a per-task CSV file.
+
+    Args:
+        simulation_steps: Number of successful SNR computations to accumulate.
+        cosmological_model: Model1CrossCheck instance for event sampling.
+        h_value: Hubble constant value used for luminosity distance computation.
+        simulation_index: Task index for unique CSV file naming (SLURM array compatibility).
+        rng: Random number generator for reproducibility.
+        use_gpu: Whether to use GPU acceleration.
+    """
+    import pandas as pd
+
+    from master_thesis_code.constants import INJECTION_CSV_PATH
+    from master_thesis_code.memory_management import MemoryManagement
+    from master_thesis_code.parameter_estimation.parameter_estimation import (
+        ParameterEstimation,
+        WaveGeneratorType,
+    )
+    from master_thesis_code.galaxy_catalogue.handler import ParameterSample
+    from master_thesis_code.physical_relations import dist
+
+    def _alarm_handler(signum: int, frame: object) -> None:
+        raise TimeoutError("Computation exceeded 90s timeout")
+
+    signal.signal(signal.SIGALRM, _alarm_handler)
+
+    memory_management = MemoryManagement(use_gpu=use_gpu)
+    memory_management.display_GPU_information()
+
+    parameter_estimation = ParameterEstimation(
+        waveform_generation_type=WaveGeneratorType.PN5_AAK,
+        parameter_space=cosmological_model.parameter_space,
+        use_gpu=use_gpu,
+    )
+
+    # Resolve CSV path: replace {h_label} and {index} placeholders
+    h_label = str(round(h_value, 3)).replace(".", "p")
+    csv_path = INJECTION_CSV_PATH.format(h_label=h_label, index=simulation_index)
+    os.makedirs(os.path.dirname(csv_path), exist_ok=True)
+
+    _ROOT_LOGGER.info(
+        f"Starting injection campaign: h={h_value}, steps={simulation_steps}, "
+        f"index={simulation_index}, output={csv_path}"
+    )
+
+    results: list[dict[str, float]] = []
+    counter = 0
+    iteration = 0
+    parameter_samples_iter: Iterator[ParameterSample] = iter([])
+
+    while counter < simulation_steps:
+        memory_management.gpu_usage_stamp()
+        memory_management.free_gpu_memory()
+
+        _ROOT_LOGGER.info(
+            f"Injection campaign: {counter} / {iteration} successful SNR computations."
+        )
+        iteration += 1
+
+        # Sample events from population model (batch of 200)
+        try:
+            sample = next(parameter_samples_iter)
+        except StopIteration:
+            samples_list = cosmological_model.sample_emri_events(200)
+            parameter_samples_iter = iter(samples_list)
+            sample = next(parameter_samples_iter)
+
+        # Randomize extrinsic parameters (sky angles, orbital phases, etc.)
+        parameter_estimation.parameter_space.randomize_parameters(rng=rng)
+
+        # Set M from population model sample
+        parameter_estimation.parameter_space.M.value = sample.M
+
+        # CRITICAL per D-04: Set luminosity distance with candidate h value
+        # (NOT set_host_galaxy_parameters which hardcodes h=0.73)
+        luminosity_distance = dist(sample.redshift, h=h_value)
+        parameter_estimation.parameter_space.luminosity_distance.value = luminosity_distance
+
+        # Compute SNR only (no Fisher matrix, no CRB)
+        try:
+            warnings.filterwarnings("error")
+            signal.alarm(90)
+            snr = parameter_estimation.compute_signal_to_noise_ratio()
+            signal.alarm(0)
+            warnings.resetwarnings()
+        except Warning as e:
+            signal.alarm(0)
+            if "Mass ratio" in str(e):
+                _ROOT_LOGGER.warning(
+                    "Caught warning that mass ratio is out of bounds. Continue with new parameters..."
+                )
+                continue
+            else:
+                _ROOT_LOGGER.warning(f"{str(e)}. Continue with new parameters...")
+                continue
+        except ParameterOutOfBoundsError as e:
+            signal.alarm(0)
+            _ROOT_LOGGER.warning(
+                f"Caught ParameterOutOfBoundsError: {str(e)}. Continue with new parameters..."
+            )
+            continue
+        except RuntimeError as e:
+            signal.alarm(0)
+            _ROOT_LOGGER.warning(
+                f"Caught RuntimeError during waveform generation: {str(e)}. Continue..."
+            )
+            continue
+        except ValueError as e:
+            signal.alarm(0)
+            if "EllipticK" in str(e):
+                _ROOT_LOGGER.warning(
+                    "Caught EllipticK error from waveform generator. Continue..."
+                )
+                continue
+            elif "Brent root solver does not converge" in str(e):
+                _ROOT_LOGGER.warning(
+                    "Caught Brent root solver error. Continue with new parameters..."
+                )
+                continue
+            else:
+                raise
+        except ZeroDivisionError:
+            signal.alarm(0)
+            _ROOT_LOGGER.warning(
+                "Caught ZeroDivisionError during trajectory integration. Continue..."
+            )
+            continue
+        except TimeoutError:
+            _ROOT_LOGGER.warning("Waveform/SNR computation timed out (>90s). Skipping event...")
+            continue
+
+        # Store ALL events regardless of SNR (per D-03: do NOT threshold)
+        results.append(
+            {
+                "z": sample.redshift,
+                "M": sample.M,
+                "phiS": parameter_estimation.parameter_space.phiS.value,
+                "qS": parameter_estimation.parameter_space.qS.value,
+                "SNR": float(snr),
+                "h_inj": h_value,
+                "luminosity_distance": luminosity_distance,
+            }
+        )
+        counter += 1
+
+    # Write results to CSV
+    df = pd.DataFrame(
+        results, columns=["z", "M", "phiS", "qS", "SNR", "h_inj", "luminosity_distance"]
+    )
+    df.to_csv(csv_path, index=False)
+    _ROOT_LOGGER.info(f"Injection campaign complete: {len(results)} events stored to {csv_path}")
 
 
 def evaluate(

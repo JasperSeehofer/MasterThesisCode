@@ -65,6 +65,10 @@ UNDETECTED_EVENTS_PATH: str = "simulations/undetected_events_simulation_$index.c
 UNDETECTED_EVENTS_OUTPUT_PATH: str = "simulations/undetected_events.csv"
 PREPARED_CRAMER_RAO_BOUNDS_PATH: str = "simulations/prepared_cramer_rao_bounds.csv"
 
+# Injection campaign paths (for simulation-based detection probability)
+INJECTION_DATA_DIR: str = "simulations/injections"
+INJECTION_CSV_PATH: str = "simulations/injections/injection_h_{h_label}_task_{index}.csv"
+
 # ── LISA hardware constants ──────────────────────────────────────────────────
 LISA_ARM_LENGTH: float = 2.5e9  # m, interferometer arm length
 YEAR_IN_SEC: int = int(365.5 * 24 * 60 * 60)  # s, seconds per year
