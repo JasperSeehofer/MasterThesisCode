@@ -661,6 +661,9 @@ def single_host_likelihood(
             n=FIXED_QUAD_N,
         )[0]
 
+        # Eq. (14.33) in derivations/dark_siren_likelihood.md
+        # Denominator: p_det(d_L, M_z, phi, theta) * p_gal(z) * p_gal(M)
+        # No GW likelihood, no mz_integral, no /(1+z) -- confirmed correct by Phase 14
         def denominator_integrant_with_bh_mass_vectorized(
             M: npt.NDArray[np.float64], z: npt.NDArray[np.float64]
         ) -> Any:
@@ -677,6 +680,12 @@ def single_host_likelihood(
                 * galaxy_mass_normal_distribution.pdf(M)
             )
 
+        # MC importance sampling for 2D denominator integral over (z, M).
+        # Proposal distribution: q(z, M) = p_gal(z) * p_gal(M).
+        # After cancellation, weights = p_det (each in [0, 1]).
+        # Relative MC error ~ std(p_det) / (sqrt(N) * mean(p_det)) ~ 1% for N=10000.
+        # Numerator uses fixed_quad (1D over z, mass analytically marginalized) --
+        # the quadrature-vs-MC asymmetry is a numerical choice, not a physics error.
         N_SAMPLES = 10_000
         z_samples = galaxy_redshift_normal_distribution.rvs(size=N_SAMPLES)
         M_samples = galaxy_mass_normal_distribution.rvs(size=N_SAMPLES)
