@@ -22,7 +22,7 @@
 #SBATCH --job-name=emri-evaluate
 #SBATCH --partition=cpu
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task=16
+#SBATCH --cpus-per-task=96
 #SBATCH --time=01:00:00
 
 set -euo pipefail
