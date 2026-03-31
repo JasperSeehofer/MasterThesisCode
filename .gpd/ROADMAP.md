@@ -14,6 +14,8 @@ This milestone audits the "with BH mass" dark siren likelihood channel that show
 | Verdict on /(1+z) Jacobian (line 679) | Phase 15 | Planned |
 | Sky localization weight placement audit | Phase 15 | Planned |
 | Numerator/denominator consistency audit | Phase 15 | Planned |
+| Quadrature-vs-MC methodology audit | Phase 15 | Planned |
+| Quick-validation directional check | Phase 15 | Planned |
 
 ## Phases
 
@@ -64,22 +66,28 @@ Plans:
 
 **Goal:** Every term in bayesian_statistics.py matches the Phase 14 derivation, with all identified discrepancies corrected
 **Depends on:** Phase 14 (derivation provides the reference formula)
-**Requirements:** AUDT-01, AUDT-02, AUDT-03, FIX-01
+**Requirements:** AUDT-01, AUDT-02, AUDT-03, AUDT-04, FIX-01, FIX-02
 **Contract Coverage:**
-- Advances: Code audit showing term-by-term match; verdict on /(1+z) Jacobian; sky weight placement audit; numerator/denominator consistency
-- Deliverables: Corrected bayesian_statistics.py with reference comments linking each term to the derivation
-- Anchor coverage: Phase 14 derivation document; commit 15b49a3 (analytic M_z marginalization); TODO flags at lines 556, 755; current /(1+z) at line 679
-- Forbidden proxies: "Looks wrong, remove it" without derivation backing; ad-hoc numerical fix without term-by-term justification
+- Advances: Code audit showing term-by-term match; verdict on /(1+z) Jacobian; sky weight placement audit; numerator/denominator consistency; quadrature-vs-MC methodology audit
+- Deliverables: Corrected bayesian_statistics.py with reference comments linking each term to the derivation; quick-validation evaluation run showing bias direction shift
+- Anchor coverage: Phase 14 derivation document; commit 15b49a3 (analytic M_z marginalization); TODO flags at lines 556, 755; current /(1+z) at line 679; h=0.600 pre-fix baseline
+- Forbidden proxies: "Looks wrong, remove it" without derivation backing; ad-hoc numerical fix without term-by-term justification; declaring the fix correct without re-running evaluation
 
 **Success Criteria** (what must be TRUE when this phase completes):
 
 1. The /(1+z) factor at line 679 has a definitive verdict (correct, spurious, or needs modification) backed by the Phase 14 derivation, with the corresponding code change (or explicit retention) documented
 2. Sky localization weight (phi, theta) is verified to appear in exactly one factor of the likelihood -- the TODO flags at lines 556 and 755 are resolved
 3. The "with BH mass" denominator (MC-sampled, lines 689-722) uses the same Jacobians, weights, and mass terms as the numerator
-4. Every formula change follows physics change protocol: old formula, new formula, reference, dimensional analysis, limiting case
-5. Reference comments are added above every modified line linking to the derivation
+4. The quadrature-vs-MC methodology asymmetry (quadrature numerator, MC denominator) is audited: either shown to be numerically harmless (N=10000 MC samples sufficient) or aligned to use the same integration method
+5. Every formula change follows physics change protocol: old formula, new formula, reference, dimensional analysis, limiting case
+6. Reference comments are added above every modified line linking to the derivation
+7. A quick-validation evaluation run confirms the "with BH mass" posterior peak shifts away from h=0.600 toward h=0.678 (directional confirmation before full Phase 16 validation)
 
-**Plans:** TBD
+**Plans:** 2 plans
+
+Plans:
+- [ ] 15-01-PLAN.md -- Term-by-term code audit, remove spurious /(1+z), add reference comments, denominator/MC convergence audit
+- [ ] 15-02-PLAN.md -- Quick-validation evaluation run at 4 h-values to confirm posterior shift
 
 ### Phase 16: Validation
 
