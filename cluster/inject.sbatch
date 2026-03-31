@@ -14,9 +14,9 @@
 # via command line so that shell variables (e.g. %A, %a) are expanded correctly.
 
 #SBATCH --job-name=emri-inject
-#SBATCH --partition=dev_gpu_h100
+#SBATCH --partition=gpu_h100
 #SBATCH --gres=gpu:1
-#SBATCH --time=00:30:00
+#SBATCH --time=02:00:00
 #SBATCH --ntasks=1
 
 set -euo pipefail
