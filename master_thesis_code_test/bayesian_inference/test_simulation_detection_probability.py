@@ -136,12 +136,14 @@ class TestSNRThresholdAppliedAtEvaluation:
             h_grid=[0.70],
         )
 
-        # Query at region A center (z=0.2, M=2.5e5) -- should have P_det > 0
-        p_a = pdet._interpolators[0.70](np.array([[0.2, 2.5e5]]))[0]
+        # Query at region A center (d_L=0.8 Gpc, M=2.5e5) -- should have P_det > 0
+        # Region A: z=0.1-0.3, d_L = z*4.0, so d_L = 0.4-1.2, center ~ 0.8
+        p_a = pdet._interpolators[0.70](np.array([[0.8, 2.5e5]]))[0]
         assert p_a > 0.0, f"Expected P_det > 0 in detected region, got {p_a}"
 
-        # Query at region B center (z=0.8, M=2.5e5) -- should have P_det == 0
-        p_b = pdet._interpolators[0.70](np.array([[0.8, 2.5e5]]))[0]
+        # Query at region B center (d_L=3.2 Gpc, M=2.5e5) -- should have P_det == 0
+        # Region B: z=0.7-0.9, d_L = z*4.0, so d_L = 2.8-3.6, center ~ 3.2
+        p_b = pdet._interpolators[0.70](np.array([[3.2, 2.5e5]]))[0]
         assert p_b == 0.0, f"Expected P_det == 0 in undetected region, got {p_b}"
 
 
