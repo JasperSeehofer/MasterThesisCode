@@ -11,8 +11,7 @@ import warnings
 import numpy as np
 
 from master_thesis_code.cosmological_model import Model1CrossCheck
-from master_thesis_code.datamodels.host_galaxy import HostGalaxy
-from master_thesis_code.galaxy_catalogue.handler import GalaxyCatalogueHandler
+from master_thesis_code.galaxy_catalogue.handler import GalaxyCatalogueHandler, HostGalaxy
 from master_thesis_code.parameter_estimation.parameter_estimation import ParameterEstimation
 from master_thesis_code.waveform_generation import WaveGeneratorType
 
