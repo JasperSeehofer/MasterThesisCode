@@ -118,6 +118,7 @@ None.
 - [Phase 20-01]: Farr per-bin WARN for h >= 0.73 is expected (high-P_det bins); not a failure
 - [Phase 20-02]: alpha_grid = alpha_MC exactly (algebraic identity for unweighted estimator) -- round-trip grid pipeline verified
 - [Phase 20-02]: h=0.70 non-monotonicity in alpha(h) within 1-sigma Poisson noise (WARN, not FAIL)
+- [Phase quick-1]: Quick task 1: Investigate quick SNR check scaling in main.py — Ad-hoc investigation — callback *5 is wrong (should be √5), threshold *0.2 is conservative but defensible for chirping EMRIs
 
 ### Active Approximations
 
