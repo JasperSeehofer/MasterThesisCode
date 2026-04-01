@@ -1,16 +1,16 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.2
-milestone_name: Production Campaign & Physics Corrections
-status: executing
-stopped_at: Phase 12 context gathered
-last_updated: "2026-04-01T10:52:49.106Z"
-last_activity: 2026-04-01
+milestone: v1.3
+milestone_name: Visualization Overhaul
+status: planning
+stopped_at: null
+last_updated: "2026-04-01"
+last_activity: 2026-04-01 -- Milestone v1.3 started
 progress:
-  total_phases: 6
-  completed_phases: 3
-  total_plans: 9
-  completed_plans: 8
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
   percent: 0
 ---
 
@@ -18,19 +18,19 @@ progress:
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-03-29)
+See: .planning/PROJECT.md (updated 2026-04-01)
 
 **Core value:** The simulation pipeline runs reliably on the GPU cluster as SLURM array jobs, producing enough Cramer-Rao bounds for statistically meaningful Hubble constant posteriors.
-**Current focus:** Phase 11.1 — simulation-based-detection-probability
+**Current focus:** Defining requirements for v1.3 Visualization Overhaul
 
 ## Current Position
 
-Phase: 12
-Plan: Not started
-Status: Ready to execute
-Last activity: 2026-04-01
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-04-01 — Milestone v1.3 started
 
-Progress: [░░░░░░░░░░] 0% (v1.2: 0/5 phases)
+Progress: [░░░░░░░░░░] 0% (v1.3: 0/0 phases)
 
 ## Performance Metrics
 

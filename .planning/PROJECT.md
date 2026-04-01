@@ -8,15 +8,15 @@ A gravitational wave parameter estimation pipeline for LISA Extreme Mass Ratio I
 
 The simulation pipeline runs reliably on the GPU cluster as SLURM array jobs, producing enough Cramér-Rao bounds for statistically meaningful Hubble constant posteriors.
 
-## Current Milestone: v1.2 Production Campaign & Physics Corrections
+## Current Milestone: v1.3 Visualization Overhaul
 
-**Goal:** Fix known physics bugs in the Fisher matrix and PSD, then run a production-scale simulation campaign with full H0 posterior sweep.
+**Goal:** Modernize the visualization stack and produce publication-quality plots informed by gravitational wave research standards, replacing ad-hoc matplotlib code with a systematic, modern approach.
 
 **Target features:**
-- Fisher matrix upgrade from forward-difference to 5-point stencil derivative
-- Galactic confusion noise added to LISA PSD
-- Production simulation run (100+ tasks) on bwUniCluster
-- Full H0 posterior sweep over [0.6, 0.9] range
+- Physics-informed visualization audit: identify standard plots for EMRI/LISA parameter estimation literature
+- Modern visualization stack research: evaluate tools beyond base matplotlib for this physics domain
+- Critical assessment of existing `plotting/` module against research standards and modern best practices
+- Rebuilt visualization pipeline with consistent style, proper uncertainty visualization, and thesis-ready output
 
 ## Current State (v1.2 Phase 10 complete 2026-03-29)
 
@@ -133,4 +133,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-03-29 after v1.2 milestone start*
+*Last updated: 2026-04-01 after v1.3 milestone start*
