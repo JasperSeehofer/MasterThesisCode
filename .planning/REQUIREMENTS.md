@@ -10,7 +10,7 @@ Requirements for visualization overhaul. Each maps to roadmap phases.
 ### Test Infrastructure
 
 - [x] **TEST-01**: Every existing plot factory function has a smoke test that verifies it returns (Figure, Axes) without error
-- [ ] **TEST-02**: rcParams snapshot regression test detects unintended style mutations after `apply_style()`
+- [x] **TEST-02**: rcParams snapshot regression test detects unintended style mutations after `apply_style()`
 
 ### Style Infrastructure
 
@@ -99,7 +99,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | Requirement | Phase | Status |
 |-------------|-------|--------|
 | TEST-01 | Phase 14 | Complete |
-| TEST-02 | Phase 14 | Pending |
+| TEST-02 | Phase 14 | Complete |
 | STYLE-01 | Phase 15 | Pending |
 | STYLE-02 | Phase 15 | Pending |
 | STYLE-03 | Phase 15 | Pending |
