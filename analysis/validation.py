@@ -526,6 +526,216 @@ def run_validation(
     }
 
 
+# ---------------------------------------------------------------------------
+# 6. Direct MC alpha (VALD-02)
+# ---------------------------------------------------------------------------
+def direct_mc_alpha(n_detected: int, n_total: int) -> float:
+    """Compute the direct MC selection integral alpha(h) = N_det / N_total.
+
+    This is the gridless estimator of the fraction of injected events that
+    are detected, i.e. the integrated detection probability over the
+    population-weighted parameter space.
+
+    Args:
+        n_detected: Number of detected events (SNR >= threshold).
+        n_total: Total number of injected events (successful waveform evaluations).
+
+    Returns:
+        alpha in [0, 1].
+
+    Raises:
+        ValueError: If n_total <= 0 or n_detected < 0 or n_detected > n_total.
+
+    References:
+        Eq. (8) of Mandel, Farr & Gair (2019), arXiv:1809.02063.
+    """
+    if n_total <= 0:
+        msg = f"n_total must be positive, got {n_total}"
+        raise ValueError(msg)
+    if n_detected < 0 or n_detected > n_total:
+        msg = f"n_detected must be in [0, n_total], got {n_detected} (n_total={n_total})"
+        raise ValueError(msg)
+    return n_detected / n_total
+
+
+# ---------------------------------------------------------------------------
+# 7. Grid-integrated alpha (VALD-02)
+# ---------------------------------------------------------------------------
+def grid_integrated_alpha(grid: GridResult) -> float:
+    """Compute the grid-based approximation to the selection integral alpha(h).
+
+    alpha_grid = sum_B [ P_det(B) * N_total(B) ] / N_total_global
+
+    For the standard (unweighted) estimator P_det(B) = N_det(B)/N_total(B),
+    this reduces to:
+
+        alpha_grid = sum_B N_det(B) / N_total_global = alpha_MC
+
+    Any difference from the direct MC count indicates events lost or
+    double-counted in the binning process.
+
+    Args:
+        grid: GridResult from build_grid_with_ci.
+
+    Returns:
+        alpha_grid in [0, 1].
+
+    References:
+        Grid-integrated selection integral, cf. Mandel, Farr & Gair (2019),
+        arXiv:1809.02063.
+    """
+    # N_total_global is recorded as grid.n_events_total
+    n_total_global = grid.n_events_total
+    if n_total_global <= 0:
+        return 0.0
+
+    # sum_B [ P_det(B) * N_total(B) ]
+    # Use the raw grid arrays (p_hat already = n_detected/n_total per bin)
+    weighted_sum = float(np.sum(grid.p_hat * grid.n_total))
+    return weighted_sum / n_total_global
+
+
+# ---------------------------------------------------------------------------
+# 8. Grid vs MC comparison (VALD-02)
+# ---------------------------------------------------------------------------
+def grid_vs_mc_comparison(
+    data_dir: str | Path,
+    h_values: list[float] | None = None,
+    dl_bins: int = COARSE_DL_BINS,
+    m_bins: int = COARSE_M_BINS,
+    snr_threshold: float = 15.0,
+) -> dict[str, Any]:
+    """Compare grid-integrated alpha(h) against direct MC alpha(h).
+
+    For each h-value:
+      1. Load injection data
+      2. Compute alpha_MC = N_det / N_total (direct count)
+      3. Build 15x10 grid
+      4. Compute alpha_grid from grid
+      5. Compute absolute difference and MC uncertainty
+
+    For the standard (unweighted) estimator, alpha_grid = alpha_MC is an
+    algebraic identity. Any nonzero difference indicates a binning bug
+    (events outside bin edges, double-counting, etc.).
+
+    The comparison becomes non-trivial when IS weights are applied
+    (future work) or when the grid is used for interpolation at
+    non-bin-center points.
+
+    Args:
+        data_dir: Directory containing injection CSV files.
+        h_values: Specific h-values to compare (None = all available).
+        dl_bins: Number of d_L bins (default 15).
+        m_bins: Number of M bins (default 10).
+        snr_threshold: SNR detection threshold.
+
+    Returns:
+        Dict with 'per_h' results and 'summary' verdict.
+
+    References:
+        Mandel, Farr & Gair (2019), arXiv:1809.02063, Eq. (8).
+    """
+    data_dir = Path(data_dir)
+    all_data = load_injection_data(data_dir)
+    if h_values is not None:
+        all_data = {h: df for h, df in all_data.items() if h in h_values}
+
+    per_h: dict[float, dict[str, Any]] = {}
+    all_pass = True
+
+    print(f"\n{'=' * 70}")
+    print("VALD-02: Grid vs Direct MC Selection Integral Comparison")
+    print(f"{'=' * 70}")
+    print(f"Grid: {dl_bins}x{m_bins}, SNR threshold: {snr_threshold}")
+    print("Reference: Mandel, Farr & Gair (2019), arXiv:1809.02063, Eq. (8)\n")
+
+    print(
+        f"{'h':>6s}  {'N_total':>8s}  {'N_det':>6s}  {'alpha_MC':>10s}  "
+        f"{'alpha_grid':>10s}  {'|diff|':>10s}  {'sigma_MC':>10s}  "
+        f"{'|diff|/sigma':>12s}  {'Pass':>4s}"
+    )
+    print("-" * 90)
+
+    for h_val in sorted(all_data.keys()):
+        df = all_data[h_val]
+
+        # Direct MC count
+        snr_vals = df["SNR"].values.astype(np.float64)
+        n_total = len(df)
+        n_detected = int(np.sum(snr_vals >= snr_threshold))
+
+        # alpha_MC: direct MC selection integral
+        # Eq. (8) of Mandel, Farr & Gair (2019), arXiv:1809.02063
+        alpha_mc = direct_mc_alpha(n_detected, n_total)
+
+        # Build grid
+        grid = build_grid_with_ci(df, h_val, dl_bins, m_bins, snr_threshold=snr_threshold)
+
+        # alpha_grid: grid-integrated selection integral
+        # cf. Mandel, Farr & Gair (2019), arXiv:1809.02063
+        alpha_grid = grid_integrated_alpha(grid)
+
+        # Absolute difference
+        abs_diff = abs(alpha_grid - alpha_mc)
+
+        # MC uncertainty: sigma_MC = sqrt(alpha*(1-alpha)/N)
+        # Standard binomial standard error
+        sigma_mc = float(np.sqrt(alpha_mc * (1.0 - alpha_mc) / n_total))
+
+        # Relative difference in units of sigma
+        diff_over_sigma = abs_diff / sigma_mc if sigma_mc > 0 else 0.0
+
+        # Pass criterion: |diff| < 3*sigma (or exact zero for unweighted)
+        this_pass = abs_diff < 3.0 * sigma_mc if sigma_mc > 0 else abs_diff == 0.0
+
+        if not this_pass:
+            all_pass = False
+
+        per_h[h_val] = {
+            "n_total": n_total,
+            "n_detected": n_detected,
+            "alpha_mc": alpha_mc,
+            "alpha_grid": alpha_grid,
+            "abs_diff": abs_diff,
+            "sigma_mc": sigma_mc,
+            "diff_over_sigma": diff_over_sigma,
+            "pass": this_pass,
+        }
+
+        print(
+            f"{h_val:6.2f}  {n_total:8d}  {n_detected:6d}  {alpha_mc:10.6f}  "
+            f"{alpha_grid:10.6f}  {abs_diff:10.2e}  {sigma_mc:10.6f}  "
+            f"{diff_over_sigma:12.2e}  {'PASS' if this_pass else 'FAIL':>4s}"
+        )
+
+    # Check alpha(h) is weakly non-decreasing in h
+    h_sorted = sorted(per_h.keys())
+    alphas = [per_h[h]["alpha_mc"] for h in h_sorted]
+    monotone = all(alphas[i] <= alphas[i + 1] for i in range(len(alphas) - 1))
+
+    # Check bounds: 0 < alpha(h) < 1
+    bounds_ok = all(0 < per_h[h]["alpha_mc"] < 1 for h in per_h)
+
+    print(f"\n{'=' * 70}")
+    print("VALD-02 SUMMARY")
+    print(f"{'=' * 70}")
+    print(f"  All |diff| within 3*sigma:  {'PASS' if all_pass else 'FAIL'}")
+    print(f"  alpha(h) in (0, 1):          {'PASS' if bounds_ok else 'FAIL'}")
+    print(f"  alpha(h) non-decreasing:     {'PASS' if monotone else 'WARN'}")
+    vald02_pass = all_pass and bounds_ok
+    print(f"\n  VALD-02: {'PASS' if vald02_pass else 'FAIL'}")
+
+    return {
+        "per_h": per_h,
+        "summary": {
+            "all_within_3sigma": all_pass,
+            "bounds_ok": bounds_ok,
+            "monotone": monotone,
+            "verdict": "PASS" if vald02_pass else "FAIL",
+        },
+    }
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run P_det validation suite on injection data")
     parser.add_argument(
@@ -545,6 +755,14 @@ if __name__ == "__main__":
         default=COARSE_M_BINS,
         help="Number of M bins",
     )
+    parser.add_argument(
+        "--vald02",
+        action="store_true",
+        help="Run VALD-02 (grid vs MC comparison) instead of VALD-01",
+    )
     args = parser.parse_args()
 
-    results = run_validation(args.csv_dir, dl_bins=args.dl_bins, m_bins=args.m_bins)
+    if args.vald02:
+        results = grid_vs_mc_comparison(args.csv_dir, dl_bins=args.dl_bins, m_bins=args.m_bins)
+    else:
+        results = run_validation(args.csv_dir, dl_bins=args.dl_bins, m_bins=args.m_bins)
