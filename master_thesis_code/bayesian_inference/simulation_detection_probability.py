@@ -52,6 +52,9 @@ class SimulationDetectionProbability:
             SNR >= snr_threshold are considered detected.
         h_grid: Explicit list of h values to use. If None, auto-detected
             from filenames.
+        _force_unit_weights: Internal flag for testing. When True, passes
+            explicit ``weights=np.ones(N)`` to ``_build_grid_2d`` to verify
+            IS estimator backward compatibility.
     """
 
     def __init__(
@@ -59,6 +62,8 @@ class SimulationDetectionProbability:
         injection_data_dir: str,
         snr_threshold: float,
         h_grid: list[float] | None = None,
+        *,
+        _force_unit_weights: bool = False,
     ) -> None:
         self._snr_threshold = snr_threshold
 
@@ -127,7 +132,13 @@ class SimulationDetectionProbability:
                 len(files),
             )
 
-            self._interpolators[h_val] = self._build_grid_2d(df, snr_threshold, h_val)
+            weights = np.ones(len(df)) if _force_unit_weights else None
+            self._interpolators[h_val] = self._build_grid_2d(
+                df,
+                snr_threshold,
+                h_val,
+                weights=weights,
+            )
             self._interpolators_1d[h_val] = self._build_grid_1d(df, snr_threshold)
 
     def _build_grid_2d(
@@ -135,30 +146,54 @@ class SimulationDetectionProbability:
         df: pd.DataFrame,
         snr_threshold: float,
         h_val: float | None = None,
+        *,
+        weights: npt.NDArray[np.float64] | None = None,
     ) -> RegularGridInterpolator:
         """Build a 2D P_det(d_L, M) grid by marginalizing over sky angles.
 
         Uses the ``luminosity_distance`` column directly -- no z-to-d_L
         conversion needed.
 
+        When ``weights`` is provided, uses the self-normalized importance
+        sampling estimator P_hat(B) = sum(w_det) / sum(w_total) per bin
+        instead of N_det / N_total.  When weights is None (default), falls
+        back to the standard unweighted estimator.
+
         If ``h_val`` is provided, per-bin quality metadata (total counts,
-        detected counts, reliable mask) is stored in ``self._quality_flags``
-        for diagnostic use.  This metadata does **not** affect the
-        interpolation result.
+        detected counts, reliable mask, effective sample size) is stored in
+        ``self._quality_flags`` for diagnostic use.  This metadata does
+        **not** affect the interpolation result.
 
         Args:
             df: DataFrame with columns luminosity_distance, M, SNR.
             snr_threshold: SNR detection threshold.
             h_val: Hubble parameter value for quality flag storage (optional).
+            weights: Per-injection importance weights, shape (N,).  If None,
+                all weights are implicitly 1 (standard histogram estimator).
 
         Returns:
             RegularGridInterpolator for P_det(d_L, M).
+
+        References:
+            Self-normalized IS estimator: Tiwari (2018), arXiv:1712.00482, Eq. 5-8.
+            Effective sample size: Kish (1965), Survey Sampling.
         """
         dl_vals = df["luminosity_distance"].values
         M_vals = df["M"].values  # noqa: N806
         snr_vals = df["SNR"].values
+        n_events = len(df)
 
-        # Define bin edges in d_L space
+        # Set up weights -- default to None (unweighted path)
+        use_weights = weights is not None
+        if use_weights:
+            w = np.asarray(weights, dtype=np.float64)
+            if len(w) != n_events:
+                msg = f"weights length {len(w)} != DataFrame length {n_events}"
+                raise ValueError(msg)
+        else:
+            w = np.ones(n_events, dtype=np.float64)
+
+        # Define bin edges in d_L space (IDENTICAL to previous implementation)
         dl_max = float(np.max(dl_vals)) * 1.1
         dl_edges = np.linspace(0, dl_max, _DL_BINS + 1)
 
@@ -166,24 +201,76 @@ class SimulationDetectionProbability:
         M_max = float(np.max(M_vals)) * 1.1  # noqa: N806
         M_edges = np.geomspace(M_min, M_max, _M_BINS + 1)  # noqa: N806
 
-        # Total events histogram
-        total_counts, _, _ = np.histogram2d(dl_vals, M_vals, bins=[dl_edges, M_edges])
-
-        # Detected events histogram
         detected_mask = snr_vals >= snr_threshold
-        detected_counts, _, _ = np.histogram2d(
-            dl_vals[detected_mask],
-            M_vals[detected_mask],
-            bins=[dl_edges, M_edges],
-        )
 
-        # P_det = detected / total, with 0/0 -> 0.0 (conservative)
-        p_det_grid = np.divide(
-            detected_counts,
-            total_counts,
-            out=np.zeros_like(detected_counts, dtype=np.float64),
-            where=total_counts > 0,
-        )
+        if not use_weights:
+            # Original unweighted path -- preserves exact bit-for-bit output
+            total_counts, _, _ = np.histogram2d(
+                dl_vals,
+                M_vals,
+                bins=[dl_edges, M_edges],
+            )
+            detected_counts, _, _ = np.histogram2d(
+                dl_vals[detected_mask],
+                M_vals[detected_mask],
+                bins=[dl_edges, M_edges],
+            )
+            p_det_grid = np.divide(
+                detected_counts,
+                total_counts,
+                out=np.zeros_like(detected_counts, dtype=np.float64),
+                where=total_counts > 0,
+            )
+            # N_eff = n_total for unweighted case (identity)
+            n_eff_grid = total_counts.astype(np.float64)
+        else:
+            # Weighted IS estimator path
+            # Assign each injection to a bin using np.digitize
+            dl_bin_idx = np.digitize(dl_vals, dl_edges) - 1  # 0-based
+            M_bin_idx = np.digitize(M_vals, M_edges) - 1  # noqa: N806
+
+            # Clip to valid range (digitize can return out-of-range)
+            dl_bin_idx = np.clip(dl_bin_idx, 0, _DL_BINS - 1)
+            M_bin_idx = np.clip(M_bin_idx, 0, _M_BINS - 1)
+
+            # Accumulate weighted sums per bin using np.add.at
+            total_weights = np.zeros((_DL_BINS, _M_BINS), dtype=np.float64)
+            detected_weights = np.zeros((_DL_BINS, _M_BINS), dtype=np.float64)
+            n_eff_grid = np.zeros((_DL_BINS, _M_BINS), dtype=np.float64)
+
+            # Also track integer counts for quality flags
+            total_counts = np.zeros((_DL_BINS, _M_BINS), dtype=np.float64)
+            detected_counts = np.zeros((_DL_BINS, _M_BINS), dtype=np.float64)
+
+            np.add.at(total_weights, (dl_bin_idx, M_bin_idx), w)
+            np.add.at(total_counts, (dl_bin_idx, M_bin_idx), 1.0)
+
+            det_dl = dl_bin_idx[detected_mask]
+            det_M = M_bin_idx[detected_mask]
+            det_w = w[detected_mask]
+
+            np.add.at(detected_weights, (det_dl, det_M), det_w)
+            np.add.at(detected_counts, (det_dl, det_M), 1.0)
+
+            # P_det = sum(w_det) / sum(w_total), 0 where total=0
+            # Self-normalized IS estimator, Tiwari (2018) Eq. 5-8
+            p_det_grid = np.divide(
+                detected_weights,
+                total_weights,
+                out=np.zeros((_DL_BINS, _M_BINS), dtype=np.float64),
+                where=total_weights > 0,
+            )
+
+            # Kish N_eff per bin: (sum w)^2 / sum(w^2)
+            # Kish (1965), Survey Sampling
+            sum_w2_grid = np.zeros((_DL_BINS, _M_BINS), dtype=np.float64)
+            np.add.at(sum_w2_grid, (dl_bin_idx, M_bin_idx), w**2)
+            n_eff_grid = np.divide(
+                total_weights**2,
+                sum_w2_grid,
+                out=np.zeros((_DL_BINS, _M_BINS), dtype=np.float64),
+                where=sum_w2_grid > 0,
+            )
 
         # Store quality flags (metadata only -- does not affect interpolation)
         if h_val is not None:
@@ -193,6 +280,7 @@ class SimulationDetectionProbability:
                 "reliable": (total_counts >= 10),
                 "dl_edges": dl_edges.copy(),
                 "M_edges": M_edges.copy(),
+                "n_eff": n_eff_grid.copy(),
             }
 
         # Use bin centers as grid coordinates
@@ -259,6 +347,8 @@ class SimulationDetectionProbability:
         - ``reliable``: bool array (dl_bins, M_bins) -- True where n_total >= 10
         - ``dl_edges``: float array (dl_bins+1,) -- d_L bin edges in Gpc
         - ``M_edges``: float array (M_bins+1,) -- mass bin edges in solar masses
+        - ``n_eff``: float array (dl_bins, M_bins) -- Kish effective sample
+          size per bin (equals n_total when weights are uniform)
 
         Args:
             h: Hubble parameter value.  The flags for the nearest h grid
