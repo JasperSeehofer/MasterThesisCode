@@ -4,13 +4,13 @@ milestone: v1.2
 milestone_name: Production Campaign & Physics Corrections
 status: executing
 stopped_at: Completed 11.1-03-PLAN.md
-last_updated: "2026-03-31T09:30:17.912Z"
-last_activity: 2026-03-31
+last_updated: "2026-04-01T10:20:23.275Z"
+last_activity: 2026-04-01
 progress:
   total_phases: 6
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 9
-  completed_plans: 5
+  completed_plans: 8
   percent: 0
 ---
 
@@ -25,10 +25,10 @@ See: .planning/PROJECT.md (updated 2026-03-29)
 
 ## Current Position
 
-Phase: 11.1 (simulation-based-detection-probability) — EXECUTING
-Plan: 4 of 5
+Phase: 12
+Plan: Not started
 Status: Ready to execute
-Last activity: 2026-03-31
+Last activity: 2026-04-01
 
 Progress: [░░░░░░░░░░] 0% (v1.2: 0/5 phases)
 

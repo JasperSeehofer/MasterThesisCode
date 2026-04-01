@@ -94,7 +94,7 @@ Plans:
   2. SimulationDetectionProbability class loads injection CSVs, applies SNR threshold at evaluation time, builds P_det(z,M|h) interpolation grids
   3. Pipeline B uses SimulationDetectionProbability exclusively (old KDE class deleted, debug flag removed)
   4. H0 posterior with simulation-based P_det has h=0.73 within 90% credible interval
-**Plans:** 2/5 plans executed
+**Plans:** 5/5 plans complete
 
 Plans:
 - [x] 11.1-01-PLAN.md — Add injection campaign CLI mode and event loop
@@ -141,6 +141,6 @@ Phases execute in numeric order: 9 -> 10 -> 11 -> 11.1 -> 12 -> 13
 | 9. Galactic Confusion Noise | v1.2 | 0/1 | Planning | - |
 | 10. Five-Point Stencil Derivatives | v1.2 | 0/1 | Planning | - |
 | 11. Validation Campaign | v1.2 | 1/2 | In Progress|  |
-| 11.1 Simulation-Based P_det | v1.2 | 2/5 | In Progress|  |
+| 11.1 Simulation-Based P_det | v1.2 | 2/5 | Complete    | 2026-04-01 |
 | 12. Production Campaign | v1.2 | 0/0 | Not started | - |
 | 13. H0 Posterior Sweep | v1.2 | 0/0 | Not started | - |
