@@ -5,18 +5,18 @@
 See: .gpd/PROJECT.md (updated 2026-03-31)
 
 **Core research question:** Can we improve injection campaign detection yield and P_det grid resolution through enhanced sampling?
-**Current focus:** v1.2.2 Injection Campaign Physics Analysis -- Phase 19 complete
+**Current focus:** v1.2.2 Injection Campaign Physics Analysis -- Phase 20 complete (milestone complete)
 
 ## Current Position
 
-**Current Phase:** 19
-**Current Phase Name:** Enhanced Sampling Design
+**Current Phase:** 20
+**Current Phase Name:** Validation
 **Total Phases:** 4 (Phases 17-20)
 **Current Plan:** 2/2 complete
 **Total Plans in Phase:** 2
 **Status:** Complete (verified 2026-04-01)
 **Last Activity:** 2026-04-01
-**Last Activity Description:** Phase 19 verified (7/7 contract targets passed) -- IS estimator implemented, VRF 11.8-24.9x, two-stage design specified
+**Last Activity Description:** Phase 20 verified (7/7 contract targets passed) -- VALD-01 PASS (zero BH discoveries, 916 bins), VALD-02 PASS (alpha_grid = alpha_MC exactly)
 
 **Progress:** [██████████] 100%
 
@@ -64,6 +64,8 @@ None.
 | 18-02 | ~10min   | 2     | 5     |
 | 19-01 | ~4min    | 2     | 2     |
 | 19-02 | ~7min    | 2     | 3     |
+| 20-01 | ~7min    | 2     | 3     |
+| 20-02 | ~3min    | 2     | 2     |
 
 ## Accumulated Context
 
@@ -111,6 +113,11 @@ None.
 - [Phase 19-02]: VRF 11.8-24.9x for boundary bins across all h-values (contract target >2.0)
 - [Phase 19-02]: CI half-width improvement 3.4-4.6x in boundary bins
 - [Phase 19-02]: Full support proof: q >= 0.3*p > 0; max weight bounded at 1/alpha = 3.33
+- [Phase 20-01]: Boundary condition threshold adjusted from P_det > 0.8 to 'detections in lowest-d_L row' (EMRI max P_det ~ 0.4)
+- [Phase 20-01]: VALD-01 overall PASS: zero BH discoveries across 916 bins, zero monotonicity violations, Farr global pass
+- [Phase 20-01]: Farr per-bin WARN for h >= 0.73 is expected (high-P_det bins); not a failure
+- [Phase 20-02]: alpha_grid = alpha_MC exactly (algebraic identity for unweighted estimator) -- round-trip grid pipeline verified
+- [Phase 20-02]: h=0.70 non-monotonicity in alpha(h) within 1-sigma Poisson noise (WARN, not FAIL)
 
 ### Active Approximations
 

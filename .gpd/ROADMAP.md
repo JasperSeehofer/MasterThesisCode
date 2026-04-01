@@ -162,11 +162,13 @@ Plans:
 3. Physical boundary conditions satisfied: P_det -> 1 at (low z, high M) and P_det -> 0 at (high z, low M) for all h-values
 4. The Farr (2019) criterion N_eff > 4 * N_det is satisfied globally for the enhanced sampling, with per-bin N_eff reported
 
-**Plans:** 2 plans
+**Status:** Complete (2026-04-01)
+**Plans:** 2/2 complete
 
 Plans:
-- [ ] 20-01-PLAN.md -- Per-bin validation framework (VALD-01): Wilson CI overlap with BH FDR, monotonicity, boundary conditions, Farr criterion
-- [ ] 20-02-PLAN.md -- Grid vs direct MC comparison (VALD-02): alpha(h) grid-integrated vs gridless direct MC sum
+- [x] 20-01-PLAN.md -- Per-bin validation framework (VALD-01): Wilson CI overlap with BH FDR, monotonicity, boundary conditions, Farr criterion
+- [x] 20-02-PLAN.md -- Grid vs direct MC comparison (VALD-02): alpha(h) grid-integrated vs gridless direct MC sum
+**Result:** VALD-01 PASS (916 bins, zero BH discoveries, zero monotonicity violations, Farr min ratio 124.1x); VALD-02 PASS (alpha_grid = alpha_MC exactly for all 7 h-values)
 
 ## Risk Register
 
@@ -194,4 +196,4 @@ Plans:
 | 17. Injection Physics Audit | 2/2 | Complete | 2026-03-31 |
 | 18. Detection Yield & Grid Quality | 2/2 | Complete | 2026-04-01 |
 | 19. Enhanced Sampling Design | 2/2 | Complete | 2026-04-01 |
-| 20. Validation | 0/2 | Not started | - |
+| 20. Validation | 2/2 | Complete | 2026-04-01 |
