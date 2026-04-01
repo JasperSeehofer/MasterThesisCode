@@ -83,8 +83,9 @@ Plans:
   3. `apply_style(use_latex=True)` enables full LaTeX rendering; `apply_style()` (default) uses mathtext fallback and works on headless CI
   4. A `_colors.py` module provides a named color palette used by all plot modules, with no ad-hoc color strings remaining in production code
   5. `_fig_from_ax` is importable from `_helpers.py` and the old location in `simulation_plots.py` is removed or re-exports from helpers
-**Plans**: TBD
-**UI hint**: yes
+**Plans:** 1 plan
+Plans:
+- [ ] 15-01-PLAN.md — Move _fig_from_ax, create _colors.py + _labels.py, add preset/latex params, tests
 
 ### Phase 16: Data Layer & Fisher Visualizations
 **Goal**: CRB CSV data can be loaded and reconstructed into covariance matrices, and Fisher-based visualizations (error ellipses, characteristic strain) are available as factory functions
@@ -159,7 +160,7 @@ Phases execute in numeric order: 14 -> 15 -> 16 -> 17 -> 18 -> 19
 | 12. Production Campaign | v1.2 | 1/1 | Complete | - |
 | 13. H0 Posterior Sweep | v1.2 | 1/1 | Complete | - |
 | 14. Test Infrastructure | v1.3 | 1/2 | Complete    | 2026-04-01 |
-| 15. Style Infrastructure | v1.3 | 0/0 | Not started | - |
+| 15. Style Infrastructure | v1.3 | 0/1 | Planned | - |
 | 16. Data Layer & Fisher | v1.3 | 0/0 | Not started | - |
 | 17. Enhanced Existing Plots | v1.3 | 0/0 | Not started | - |
 | 18. New Plot Modules | v1.3 | 0/0 | Not started | - |
