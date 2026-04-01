@@ -267,13 +267,16 @@ def data_simulation(
                 use_snr_check_generator=True
             )
 
-            if quick_snr < cosmological_model.snr_threshold * 0.2:
+            # SNR scales as √T for stationary sources; EMRIs chirp so the
+            # 1-yr / 5-yr ratio can be even lower.  Factor 0.3 is a conservative
+            # compromise between the √T bound (0.447) and chirp margin.
+            if quick_snr < cosmological_model.snr_threshold * 0.3:
                 signal.alarm(0)
                 _ROOT_LOGGER.info(
-                    f"Quick SNR threshold check failed: {np.round(quick_snr, 3)} < {cosmological_model.snr_threshold * 0.2}."
+                    f"Quick SNR threshold check failed: {np.round(quick_snr, 3)} < {cosmological_model.snr_threshold * 0.3}."
                 )
                 for cb in _callbacks:
-                    cb.on_snr_computed(counter, quick_snr * 5, False)
+                    cb.on_snr_computed(counter, quick_snr * np.sqrt(5), False)
                 continue
             snr = parameter_estimation.compute_signal_to_noise_ratio()
             signal.alarm(0)
@@ -532,9 +535,7 @@ def injection_campaign(
         except ValueError as e:
             signal.alarm(0)
             if "EllipticK" in str(e):
-                _ROOT_LOGGER.warning(
-                    "Caught EllipticK error from waveform generator. Continue..."
-                )
+                _ROOT_LOGGER.warning("Caught EllipticK error from waveform generator. Continue...")
                 continue
             elif "Brent root solver does not converge" in str(e):
                 _ROOT_LOGGER.warning(
