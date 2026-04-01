@@ -5,7 +5,7 @@ Run on GPU cluster:
 """
 
 import argparse
-import signal
+import sys
 import warnings
 
 import numpy as np
@@ -16,7 +16,19 @@ from master_thesis_code.parameter_estimation.parameter_estimation import Paramet
 from master_thesis_code.waveform_generator import WaveGeneratorType
 
 
+class _Timeout(Exception):
+    pass
+
+
+def _alarm_handler(signum: int, frame: object) -> None:
+    raise _Timeout()
+
+
 def main() -> None:
+    import signal
+
+    signal.signal(signal.SIGALRM, _alarm_handler)
+
     parser = argparse.ArgumentParser(description="Quick SNR calibration test")
     parser.add_argument("--steps", type=int, default=200)
     parser.add_argument("--seed", type=int, default=42)
@@ -40,12 +52,16 @@ def main() -> None:
     parameter_samples = cosmological_model.sample_emri_events(200)
     host_galaxies = iter(galaxy_catalog.get_hosts_from_parameter_samples(parameter_samples))
 
-    print("quick_snr,full_snr,ratio")
+    print("quick_snr,full_snr,ratio", flush=True)
 
     pairs = 0
     iteration = 0
     while pairs < args.steps:
         iteration += 1
+        if iteration > args.steps * 50:
+            print(f"\n# Gave up after {iteration} attempts", file=sys.stderr)
+            break
+
         try:
             host_galaxy = next(host_galaxies)
         except StopIteration:
@@ -60,28 +76,36 @@ def main() -> None:
         parameter_estimation.parameter_space.set_host_galaxy_parameters(host_galaxy)
 
         try:
-            warnings.filterwarnings("error")
-            signal.alarm(30)
+            warnings.filterwarnings("ignore")
 
+            # Quick SNR (1yr) — 90s timeout
+            signal.alarm(90)
             quick_snr = parameter_estimation.compute_signal_to_noise_ratio(
                 use_snr_check_generator=True
             )
+            signal.alarm(0)
 
             # Skip events with negligible quick SNR to save time
             if quick_snr < 1.0:
-                signal.alarm(0)
-                warnings.resetwarnings()
                 continue
 
+            # Full SNR (5yr) — 90s timeout
+            signal.alarm(90)
             full_snr = parameter_estimation.compute_signal_to_noise_ratio()
             signal.alarm(0)
+
             warnings.resetwarnings()
 
             ratio = quick_snr / full_snr if full_snr > 0 else 0.0
-            print(f"{quick_snr:.4f},{full_snr:.4f},{ratio:.4f}")
+            print(f"{quick_snr:.4f},{full_snr:.4f},{ratio:.4f}", flush=True)
             pairs += 1
 
-        except (Warning, Exception):
+        except _Timeout:
+            signal.alarm(0)
+            warnings.resetwarnings()
+            print(f"# timeout at iteration {iteration}", file=sys.stderr)
+            continue
+        except Exception as e:
             signal.alarm(0)
             warnings.resetwarnings()
             continue
