@@ -1,171 +1,211 @@
-# Technology Stack
+# Technology Stack: Visualization Overhaul
 
-**Project:** v1.2 Production Campaign & Physics Corrections
-**Researched:** 2026-03-29
+**Project:** EMRI Parameter Estimation -- v1.3 Visualization Overhaul
+**Researched:** 2026-04-01
 
-## Key Finding: No New Dependencies Required
+## Executive Assessment
 
-All four target features (5-point stencil, confusion noise, production campaign, H0 sweep) are implementable with the existing stack. No new Python packages, no version bumps, no infrastructure additions.
+The existing matplotlib-only stack is **sufficient as the rendering engine** but needs one targeted addition: `corner` for the multi-parameter posterior plots that every GW paper includes. Beyond that, the existing matplotlib + scipy + numpy stack handles all other visualization needs (sky maps via built-in Mollweide projection, Fisher ellipses via eigendecomposition, uncertainty bands via `fill_between`).
 
-This is the correct outcome for a physics-correction milestone on an established codebase.
+**Verdict:** Keep matplotlib as the sole rendering backend. Add `corner` (one lightweight library) for corner plots. Enhance the existing `emri_thesis.mplstyle` for publication quality. That is the entire stack change.
 
-## Recommended Stack Changes
+## Recommended Stack
 
-### New Dependencies
+### Keep (Already Present)
 
-None.
+| Technology | Version | Purpose | Status |
+|------------|---------|---------|--------|
+| matplotlib | (current in lockfile) | Core rendering engine, Mollweide projections, all plot types | Keep as sole backend |
+| numpy | (current in lockfile) | Array operations for plot data | Already a dependency |
+| scipy | (current in lockfile) | Eigendecomposition for Fisher ellipses, KDE, interpolation | Already a dependency |
+| astropy | >=6.1.7 | Coordinate transforms (if needed for sky positions) | Already a dependency |
 
-### Version Changes
+### Add: Corner Plots
 
-None required. The existing pinned versions are sufficient:
-- `numpy` -- array math for stencil and PSD, already used everywhere
-- `scipy` -- integration/interpolation for Bayesian inference, already used
-- `cupy-cuda12x` -- GPU arrays, already used for Fisher matrix computation
-- `pandas` -- CSV I/O, already used for Cramer-Rao bounds
+| Technology | Version | Purpose | Why |
+|------------|---------|---------|-----|
+| corner | >=2.2.3 | Multi-parameter posterior visualization | De facto standard in GW community. Used in virtually every EMRI/LISA parameter estimation paper. Dan Foreman-Mackey's library, built on matplotlib, returns `(fig, ax)` -- drops directly into existing factory function pattern. Requires only matplotlib+numpy. Python >=3.9 so 3.13-safe. |
 
-### Configuration Changes
+**Why corner over alternatives:**
+- **ChainConsumer:** Appears discontinued (no PyPI release in 12+ months). Was popular in cosmology but corner has broader adoption in GW specifically.
+- **ArviZ 1.0:** Requires Python >=3.12 (fine), but it is a large dependency designed for full Bayesian workflow visualization (diagnostics, trace plots, model comparison). Overkill -- this project uses Fisher matrix / Cramer-Rao bounds, not MCMC chains. ArviZ shines when you have emcee/PyMC/Stan chains with convergence diagnostics to check.
+- **getdist:** Alternative from cosmology (Planck team). Good but less standard in EMRI/LISA literature than corner.
+
+**Integration:** `corner.corner(samples, labels=param_names, fig=fig)` accepts and returns matplotlib figures. Works with `emri_thesis.mplstyle` automatically since it uses matplotlib's rcParams.
+
+### Sky Maps: Use matplotlib Built-In Mollweide (No New Dependency)
+
+For ~20-100 EMRI detections, matplotlib's built-in `projection='mollweide'` is sufficient. healpy is designed for full-sky HEALPix maps with millions of pixels (CMB, LIGO/Virgo alerts) -- overkill for plotting ~100 scatter points with localization ellipses.
+
+**Approach:**
+```python
+fig = plt.figure()
+ax = fig.add_subplot(111, projection='mollweide')
+ax.scatter(phi, theta, c=values, ...)  # scatter detections
+# Add localization ellipses from Fisher matrix sky-position submatrix
+```
+
+**Why NOT healpy:**
+- healpy's `mollview()` expects a full HEALPix map array (pixels covering the whole sky). Our data is ~100 scattered sky positions with error ellipses, not a pixelized probability map.
+- healpy has a C extension build requirement (cfitsio). Adds build complexity for marginal benefit.
+- healpy's `mollview()` uses `plt.gcf()` internally -- less clean than the project's OO API pattern.
+- For the actual thesis use case (scatter + ellipses on Mollweide), matplotlib's built-in projection plus scipy eigendecomposition for ellipse geometry is simpler and dependency-free.
+
+**If healpy is needed later:** If the thesis requires a true HEALPix density map (e.g., from a very large detection catalog), healpy v1.19.0 has Python 3.13 wheels on PyPI and can be added then. But start without it.
+
+### Upgrade: Style System (No New Dependency)
 
 | Change | File | Purpose | Why |
 |--------|------|---------|-----|
-| Add `--h_range` CLI arg | `arguments.py` | Accept H0 sweep bounds (e.g. `0.6 0.9`) | Current `--h_value` takes a single float; sweep needs a range |
-| Add `--h_steps` CLI arg | `arguments.py` | Number of H0 grid points (e.g. 31) | Controls resolution of posterior sweep |
-| Confusion noise observation time | `LISA_configuration.py` | T_obs parameter for time-dependent confusion noise | Babak et al. (2023) Eq. 17 coefficients depend on mission duration |
+| LaTeX toggle in apply_style() | `_style.py` | Optional `use_latex=True` for final thesis figures | Axis labels match thesis font when TeX is available |
+| Set serif font family | `emri_thesis.mplstyle` | Match LaTeX document body | `font.family: serif` with Computer Modern |
+| Match thesis textwidth | `_helpers.py` | Named figure size constants matching LaTeX column width | Avoid scaling artifacts in `\includegraphics` |
+| Improve tick/legend styling | `emri_thesis.mplstyle` | Inward ticks, better legend frame | Standard physics publication style |
+| Graceful usetex fallback | `_style.py` | CI and cluster without TeX | Auto-detect TeX availability, fall back to mathtext |
 
-## What Exists and Why It's Sufficient
+**Do NOT add SciencePlots.** The project already has `emri_thesis.mplstyle` with appropriate settings. SciencePlots provides generic journal styles (IEEE, Nature) -- not useful for a thesis with its own custom style. Enhance the existing stylesheet instead.
 
-### 5-Point Stencil Fisher Matrix
-
-**Already implemented** at `parameter_estimation.py:187-243` (`five_point_stencil_derivative()`). The method exists but is never called -- `compute_fisher_information_matrix()` at line 339 calls `finite_difference_derivative()` instead.
-
-**Fix is a targeted refactor** (line 339): replace `self.finite_difference_derivative()` with a loop calling `self.five_point_stencil_derivative()` per parameter, collecting derivatives into the same dict format.
-
-**No new math libraries needed.** The 5-point stencil formula `(-f(x+2h) + 8f(x+h) - 8f(x-h) + f(x-2h)) / 12h` is already correctly implemented using CuPy array arithmetic.
-
-**Performance note:** The stencil requires 4 waveform evaluations per parameter (vs 1 for forward-diff), so derivative computation goes from 14 waveform calls to 56. The inner product count stays at 105 (symmetric matrix). GPU time per simulation step will roughly 4x for the derivative phase, but the inner product phase (the actual bottleneck) is unchanged. On H100 GPUs with the existing 30s waveform timeout, this adds ~2-3 minutes per Fisher matrix.
-
-**Integration concern:** The existing `five_point_stencil_derivative()` has a different signature than `finite_difference_derivative()` -- it takes a single `Parameter` and returns one derivative, while the forward-diff version loops internally and returns a dict. The refactor must bridge this gap, either by adapting the 5-point method to loop, or by calling it per-parameter and assembling the dict.
-
-### Galactic Confusion Noise PSD
-
-**Constants already defined** in `constants.py:74-82` (`LISA_PSD_A`, `LISA_PSD_ALPHA`, `LISA_PSD_F2`, `LISA_PSD_A1`, `LISA_PSD_B1`, `LISA_PSD_AK`, `LISA_PSD_BK`) citing arXiv:2303.15929 Eq. 17.
-
-**Implementation location:** Add `S_conf(f, T_obs)` method to `LisaTdiConfiguration` and sum it into `power_spectral_density_a_channel()`. The confusion noise formula is:
-
-```
-S_conf(f) = A * f^(-7/3) * exp(-f^alpha + beta * f * sin(kappa * f)) * [1 + tanh(gamma * (f_k - f))]
-```
-
-where `alpha`, `beta`, `gamma`, `f_k` are functions of observation time T_obs. This uses only `xp.exp`, `xp.sin`, `xp.tanh`, `xp.power` -- all available in both NumPy and CuPy.
-
-**No new dependencies.** Pure array math with existing `_get_xp()` pattern.
-
-**Reference chain:** The standard LISA sensitivity curve with confusion noise follows Robson, Cornish & Liu (2019), arXiv:1803.01944. The constants in `constants.py` cite Babak et al. (2023), arXiv:2303.15929, which uses a compatible parameterization. The codebase has already chosen the Babak parameterization -- use it consistently.
-
-**PSD cache impact:** `ParameterEstimation._psd_cache` caches PSD per waveform length `n`. Adding confusion noise changes PSD values but cache keys (based on `n`) remain valid. The cache just stores different (larger) PSD values. No invalidation needed.
-
-### Production Campaign (100+ tasks)
-
-**Infrastructure already exists.** `submit_pipeline.sh --tasks 100 --steps 50 --seed 42` works today. The v1.1 smoke test validated the full pipeline with 3 tasks.
-
-**Scaling considerations (no stack changes needed):**
-- SLURM array jobs scale linearly -- 100 tasks is just `--array=0-99`
-- Each task is independent (no MPI, no shared state)
-- Merge script handles arbitrary numbers of per-task CSVs
-- Workspace storage: ~100KB per task (CSV rows) = ~10MB total, well within limits
-
-**Potential cluster-side adjustment:** If the GPU partition limits concurrent array tasks (common on shared clusters), SLURM's `%throttle` syntax handles this: `--array=0-99%20` runs 20 at a time. This is a submission flag, not a code change.
-
-**Timing estimate (from v1.1 smoke test):** Each task with 10 steps took ~15-20 minutes. With the 5-point stencil adding ~4x to the derivative phase, expect ~25-35 minutes per 10-step task. For 50 steps per task, budget ~2-3 hours per task within the 72h `gpu_h100` walltime limit.
-
-### H0 Posterior Sweep
-
-**Current state:** `--evaluate --h_value 0.73` evaluates at a single H0 point. The `BayesianStatistics.evaluate()` method processes one h-value per invocation.
-
-**Sweep strategy -- two options, recommend Option A:**
-
-**Option A: SLURM array over h-values (recommended)**
-Submit evaluate as an array job where each task evaluates one h-value. No code changes to `BayesianStatistics` needed. A new sweep sbatch script generates h-values from the array task ID:
-
-```bash
-# evaluate_sweep.sbatch
-H_MIN=0.60
-H_MAX=0.90
-H_STEPS=31
-H=$(python3 -c "print(round($H_MIN + $SLURM_ARRAY_TASK_ID * ($H_MAX - $H_MIN) / ($H_STEPS - 1), 4))")
-python -m master_thesis_code "$RUN_DIR" --evaluate --h_value $H
-```
-
-This parallelizes trivially. Each evaluation takes ~minutes on 16 CPUs. A 31-point grid (0.60 to 0.90, step 0.01) runs in the time of one evaluation.
-
-**Option B: In-process loop**
-Add `--h_range 0.6 0.9 --h_steps 31` to iterate inside `evaluate()`. Simpler submission but sequential -- 31x slower wall-clock time.
-
-**Recommended: Option A.** It requires only a new sbatch script (`cluster/evaluate_sweep.sbatch`) and a post-processing script to combine per-h posteriors. No changes to the core Python evaluation code. The SLURM dependency chain becomes: simulate -> merge -> evaluate_sweep (array).
-
-**Post-processing:** Combine per-h JSON posteriors into a single posterior curve. This is a simple script reading JSON files and assembling `{h: likelihood}` pairs. Uses only `json`, `numpy`, `pathlib` -- all already available.
-
-## Alternatives Considered
-
-| Category | Recommended | Alternative | Why Not |
-|----------|-------------|-------------|---------|
-| Stencil method | 5-point (O(h^4)) | Automatic differentiation (JAX) | Overkill; 5-point stencil already implemented; AD would require rewriting waveform pipeline |
-| Stencil method | 5-point (O(h^4)) | Complex-step derivative | Would require complex-valued waveform generator support, which `few` does not provide |
-| Confusion noise | Analytic fit (Babak 2023) | Numerical foreground subtraction | Out of thesis scope; analytic fit is standard practice in EMRI Fisher matrix literature |
-| H0 sweep | SLURM array per h-value | Dask/multiprocessing sweep | Array jobs are simpler, already proven infrastructure |
-| H0 sweep | SLURM array per h-value | In-process `--h_range` loop | Sequential; wastes cluster CPU allocation |
-| Production scale | 100 tasks x 50 steps | Fewer tasks with more steps | More tasks = better fault tolerance (one timeout loses fewer events) |
-
-## What NOT to Add
+## Explicitly Rejected (Do NOT Add)
 
 | Library | Why Tempting | Why Wrong |
 |---------|-------------|-----------|
-| JAX / autograd | "Better derivatives" | Would require rewriting `few`/`fastlisaresponse` interface; 5-point stencil is standard for Fisher matrices in GW literature (Vallisneri 2008) |
-| h5py / HDF5 | "Better data format" | CSV works fine at this scale (~10MB total); adding format complexity for a thesis is not justified |
-| Dask | "Parallel H0 sweep" | SLURM array jobs are simpler and already work |
-| tqdm | "Progress bars" | Logging is sufficient; adds unnecessary dependency |
-| corner / chainconsumer | "Posterior plotting" | matplotlib already handles 1D posterior plots; no MCMC chains to visualize for H0 grid evaluation |
-| numdifftools | "Validated numerical derivatives" | 5-point stencil is already implemented correctly; adding a dependency for one formula is not justified |
+| **healpy** | "GW community standard for sky maps" | Designed for full-sky HEALPix maps (millions of pixels). This project has ~100 sky positions. matplotlib's built-in Mollweide projection + scipy for ellipses suffices. C extension adds build complexity. Can be added later if truly needed. |
+| **plotly / bokeh** | "Interactive exploration" | Thesis output is PDF/LaTeX. JupyterLab (already a dev dep) handles interactive dev exploration with inline matplotlib. |
+| **seaborn** | "Better statistical plots" | Physics-specific plots, not statistical distributions. Adds style conflicts with `emri_thesis.mplstyle`. Violin plots and histograms work fine in raw matplotlib. |
+| **arviz** | "Bayesian visualization" | Designed for MCMC diagnostics (trace plots, R-hat, ESS). This pipeline is Fisher-matrix-based. ArviZ 1.0 pulls ~20 transitive dependencies for unused features. |
+| **SciencePlots** | "Publication styles" | Custom mplstyle already exists. Adding SciencePlots creates competing style definitions. |
+| **chainconsumer** | "Corner plots + LaTeX tables" | Appears unmaintained. corner covers the plotting use case; LaTeX tables via pandas + tabulate (already deps). |
+| **ligo.skymap** | "GW sky map standard" | Heavy LIGO-specific dependency chain. Designed for CBC real-time alerts, not EMRI Fisher-matrix localization. |
+| **getdist** | "Planck-style triangle plots" | Less standard in EMRI/LISA literature than corner. Heavier API. |
 
-## Integration Points
+## Alternatives Considered (Summary)
 
-### 5-Point Stencil Integration
-- **Touches:** `parameter_estimation.py` (line 339: swap derivative call; refactor `five_point_stencil_derivative` to match dict return format)
-- **Bounds check:** 5-point stencil needs `value +/- 2*epsilon` in bounds (already checked in existing method at line 210-215)
-- **GPU memory:** 4x more waveforms generated (56 vs 14), but each is immediately processed and can be freed. The existing `del` pattern in `five_point_stencil_derivative` handles this.
-- **Debug prints:** Existing method uses `print()` (lines 199, 230) instead of `_LOGGER`. Clean up during integration.
-- **Test strategy:** Compare forward-diff vs 5-point Fisher matrix on a known parameter set; verify 5-point has smaller numerical error and CRB values change only modestly (same order of magnitude).
-
-### Confusion Noise Integration
-- **Touches:** `LISA_configuration.py` (add `S_conf()` method, modify `power_spectral_density_a_channel()` to sum `S_conf` into existing PSD)
-- **Touches:** `constants.py` only if T_obs needs to be added (may already be sufficient with `ParameterEstimation.T`)
-- **PSD cache:** Valid -- same n maps to same (now larger) PSD values. No cache invalidation needed.
-- **Test strategy:** PSD with confusion noise > PSD without, especially at 0.1-3 mHz. SNR should decrease (more noise). Verify confusion noise is negligible above ~5 mHz.
-
-### H0 Sweep Integration
-- **New files:** `cluster/evaluate_sweep.sbatch`, `scripts/combine_posteriors.py`
-- **Touches:** `cluster/submit_pipeline.sh` (add sweep stage after merge, replacing single-point evaluate)
-- **Does NOT touch:** `bayesian_statistics.py` (each h-value evaluation is independent)
-- **Output structure:** Each array task writes to `simulations/posteriors/posterior_h_0.XX.json`. Combine script reads all and produces `simulations/posteriors/h0_posterior_combined.json`.
+| Category | Recommended | Alternative | Why Not Alternative |
+|----------|-------------|-------------|---------------------|
+| Corner plots | corner | ChainConsumer | Discontinued; corner is GW community standard |
+| Corner plots | corner | ArviZ | Overkill for Fisher-matrix pipeline; large dep |
+| Corner plots | corner | getdist | Less standard in EMRI/LISA; heavier API |
+| Sky maps | matplotlib Mollweide | healpy | HEALPix overkill for ~100 points; C extension complexity |
+| Sky maps | matplotlib Mollweide | ligo.skymap | Heavy deps; LIGO-specific |
+| Style | enhance existing mplstyle | SciencePlots | Competing styles; custom sheet already exists |
+| Interactive | JupyterLab (already present) | plotly/bokeh | Thesis output is PDF, not HTML |
+| Fisher ellipses | scipy eigendecomposition | dedicated library | scipy already a dep; ellipses are 10 lines of code |
 
 ## Installation
 
-No changes to installation commands:
-
 ```bash
-# Dev machine (no GPU)
-uv sync --extra cpu --extra dev
-
-# Cluster (GPU, CUDA 12)
-uv sync --extra gpu
+# One new dependency
+uv add corner
 ```
+
+One dependency. That is the entire stack change.
+
+## Integration Points with Existing Code
+
+### How corner fits in
+
+The existing `plotting/` module uses factory functions returning `(fig, ax)`. Corner plots follow the same pattern:
+
+```python
+# In a new plotting/corner_plots.py
+def plot_parameter_corner(
+    samples: npt.NDArray[np.float64],
+    labels: list[str],
+    truths: list[float] | None = None,
+) -> tuple[Figure, Any]:
+    """Corner plot of EMRI parameter posterior samples."""
+    import corner
+    fig = corner.corner(
+        samples, labels=labels, truths=truths,
+        quantiles=[0.16, 0.5, 0.84], show_titles=True,
+        title_kwargs={"fontsize": mpl.rcParams["axes.titlesize"]},
+    )
+    return fig, fig.get_axes()
+```
+
+Returns a matplotlib Figure -- works with `save_figure()` unchanged. Import inside function to avoid forcing dependency on all plotting module users.
+
+### How sky maps work (no new dependency)
+
+Mollweide projections use matplotlib's built-in support. Fisher ellipses use scipy:
+
+```python
+# In a new plotting/sky_plots.py
+def plot_sky_localization_mollweide(
+    theta: npt.NDArray[np.float64],  # colatitude
+    phi: npt.NDArray[np.float64],    # longitude
+    values: npt.NDArray[np.float64], # e.g. sky localization area
+) -> tuple[Figure, Axes]:
+    """Mollweide projection sky map of EMRI detections."""
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='mollweide')
+    sc = ax.scatter(phi, theta, c=values, cmap='viridis', ...)
+    fig.colorbar(sc, ax=ax)
+    return fig, ax
+```
+
+Replaces the existing `plot_sky_localization_3d()` (non-standard 3D scatter).
+
+### Style sheet enhancement
+
+Keep `text.usetex: False` as default in the mplstyle (safe for CI and cluster). Add a `use_latex` parameter to `apply_style()`:
+
+```python
+def apply_style(*, use_latex: bool = False) -> None:
+    matplotlib.use("Agg")
+    style_path = os.path.join(os.path.dirname(__file__), "emri_thesis.mplstyle")
+    matplotlib.style.use(style_path)
+    if use_latex:
+        matplotlib.rcParams.update({
+            "text.usetex": True,
+            "font.family": "serif",
+            "font.serif": ["Computer Modern Roman"],
+        })
+```
+
+This keeps CI/cluster safe while allowing `apply_style(use_latex=True)` for final thesis figure generation on the dev machine where TeX is installed.
+
+### mypy overrides
+
+`corner` lacks type stubs. Add to `[[tool.mypy.overrides]]`:
+
+```toml
+[[tool.mypy.overrides]]
+module = [
+    # ... existing entries ...
+    "corner.*",
+]
+ignore_missing_imports = true
+```
+
+Matches the existing pattern for cupy, few, scipy, etc.
+
+## Confidence Assessment
+
+| Decision | Confidence | Basis |
+|----------|------------|-------|
+| corner is the right choice | HIGH | Universal in GW literature; PyPI confirms 3.13 compat; matplotlib-native |
+| matplotlib Mollweide over healpy | HIGH | ~100 detections = scatter plot, not HEALPix map. Built-in projection sufficient. Avoids C extension build dependency. |
+| No ArviZ needed | HIGH | Fisher-matrix pipeline, not MCMC chains. ~20 transitive deps for unused features. |
+| No interactive libs needed | HIGH | Thesis output is PDF. JupyterLab already available for dev exploration. |
+| LaTeX as optional toggle | HIGH | Standard for physics theses. Must not break CI/cluster (where TeX may be absent). |
+| No SciencePlots | HIGH | Custom mplstyle already exists. Competing style definitions. |
+| No seaborn | HIGH | Physics-specific plots. Style pollution risk. |
 
 ## Sources
 
-- [Robson, Cornish & Liu (2019), arXiv:1803.01944](https://arxiv.org/abs/1803.01944) -- LISA sensitivity curves and confusion noise parameterization
-- [Babak et al. (2023), arXiv:2303.15929](https://arxiv.org/abs/2303.15929) -- PSD parameterization used in constants.py
-- [Vallisneri (2008), arXiv:gr-qc/0703086](https://arxiv.org/abs/gr-qc/0703086) -- Fisher matrix numerical derivatives, 5-point stencil recommendation
-- Existing codebase: `parameter_estimation.py`, `LISA_configuration.py`, `constants.py`, `bayesian_statistics.py`, `submit_pipeline.sh`, `evaluate.sbatch`
+- [corner.py documentation](https://corner.readthedocs.io/en/latest/) -- v2.2.3, Python >=3.9
+- [corner on PyPI](https://pypi.org/project/corner/)
+- [healpy on PyPI](https://pypi.org/project/healpy/) -- v1.19.0, Python 3.13 wheels (evaluated, not recommended for this use case)
+- [ArviZ on PyPI](https://pypi.org/project/arviz/) -- v1.0.0, requires Python >=3.12
+- [ChainConsumer on PyPI](https://pypi.org/project/chainconsumer/) -- appears unmaintained
+- [SciencePlots on PyPI](https://pypi.org/project/SciencePlots/) -- v2.2.1
+- [IGWN sky map tutorial](https://emfollow.docs.ligo.org/userguide/tutorial/skymaps.html) -- healpy/Mollweide in GW context
+- [gwnrtools corner plot tutorial](https://gwnrtools.github.io/gwnrtools/tutorials/MakingUsefulCornerPlots.html) -- corner.py in GW
+- [Publication-quality matplotlib for LaTeX](https://jwalton.info/Embed-Publication-Matplotlib-Latex/)
+- [matplotlib for papers](https://github.com/jbmouret/matplotlib_for_papers) -- figure sizing for LaTeX
+- [matplotlib Mollweide projection](https://matplotlib.org/stable/gallery/subplots_axes_and_figures/geo_demo.html) -- built-in support
 
 ---
 
-*Stack analysis: 2026-03-29 -- v1.2 milestone (physics corrections + production campaign)*
+*Stack analysis: 2026-04-01 -- v1.3 milestone (visualization overhaul)*

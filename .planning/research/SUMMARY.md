@@ -1,177 +1,193 @@
 # Project Research Summary
 
-**Project:** v1.2 Production Campaign & Physics Corrections
-**Domain:** EMRI gravitational wave parameter estimation — physics corrections and production HPC campaign
-**Researched:** 2026-03-29
+**Project:** EMRI Parameter Estimation — v1.3 Visualization Overhaul
+**Domain:** Scientific Python visualization for gravitational wave parameter estimation thesis
+**Researched:** 2026-04-01
 **Confidence:** HIGH
 
 ## Executive Summary
 
-This milestone corrects two known physics errors in the EMRI simulation pipeline — an O(epsilon) forward-difference Fisher matrix derivative and a missing galactic confusion noise term in the LISA PSD — then runs a production-scale simulation campaign (100+ tasks) and evaluates the full H0 posterior over [0.6, 0.9]. All four deliverables are implementable with the existing stack and infrastructure: no new Python packages are needed, and the cluster scripts established in v1.1 scale directly. The primary constraint is sequencing: physics corrections must precede the production campaign, or the campaign wastes GPU hours producing scientifically invalid Cramér-Rao bounds.
+The v1.3 milestone is a focused visualization overhaul for a physics master thesis: produce publication-quality, static PDF-embeddable matplotlib figures from an existing EMRI parameter estimation pipeline. The existing `plotting/` subpackage already has a sound architecture — 23 factory functions across 6 topic modules returning `(Figure, Axes)` tuples with a centralized mplstyle. The research confirms this architecture is correct and should be extended, not replaced. The only new dependency warranted is `corner` (one lightweight, matplotlib-native library), which is the de-facto standard for multi-parameter posterior visualization in the gravitational-wave community.
 
-The recommended approach is strictly sequential: (1) add galactic confusion noise to the PSD (self-contained additive term, lower risk), (2) wire the existing `five_point_stencil_derivative()` method into `compute_fisher_information_matrix()` (method already exists at lines 187-243, needs integration and cleanup), (3) run a small validation campaign to calibrate timeouts and check detection rates, (4) run the full 100-task production campaign, (5) evaluate the H0 posterior sweep using a new SLURM array job over h-values in [0.6, 0.9]. The H0 sweep requires no changes to `BayesianStatistics` — only a new `cluster/sweep_h0.sbatch` and `scripts/combine_posteriors.py`.
+The recommended approach is to work in five layers: (1) style infrastructure first, because everything downstream depends on consistent rcParams, figure sizes, and LaTeX handling; (2) shared data utilities for covariance matrix reconstruction from existing CRB CSV columns; (3) new plot types critical for thesis results (Fisher ellipses, enhanced posteriors, Mollweide sky maps, improved PSD plots); (4) the `corner` dependency integration; (5) composite campaign dashboards and convergence plots. This order is dictated by hard dependencies in the code and minimizes the risk of cross-module regressions during refactoring.
 
-The key risks are: the 30-second CRB timeout in `main.py` will fire on nearly every event after the 4x waveform increase from the 5-point stencil (must be raised to 120-300s before any campaign run); the improved stencil may expose Fisher matrix ill-conditioning that forward-difference was inadvertently smoothing (condition number monitoring needed); confusion noise will reduce detection yield significantly (campaign size must be calibrated after physics corrections are validated, not before). Running the production campaign before completing both physics fixes is the single most costly mistake to avoid.
+The dominant risk is silent regression: existing plot functions have no content-level tests, so style and infrastructure changes can break thesis-critical figures (H0 posterior, CRB heatmap) without any test failure. The mitigation is to establish smoke tests and rcParams regression checks before touching any existing function. A secondary risk is LaTeX rendering: `text.usetex` must remain `False` by default to keep CI and the cluster working; LaTeX should be an opt-in toggle for final figure generation on the dev machine only. The project correctly avoids interactive visualization libraries (plotly, bokeh) and heavy specialized dependencies (healpy, ArviZ, seaborn) that would add build complexity without benefiting a static PDF thesis.
 
 ## Key Findings
 
 ### Recommended Stack
 
-No new dependencies are required for v1.2. The existing stack — NumPy/CuPy for array math, SciPy for integration, pandas for CSV I/O, the `few` waveform generator, and the bwUniCluster SLURM infrastructure — handles all four features. The `five_point_stencil_derivative()` method (parameter_estimation.py:187-243) already implements the correct O(epsilon^4) formula using CuPy array arithmetic. The galactic confusion noise constants (constants.py:74-81) already cite Babak et al. (2023) arXiv:2303.15929 Eq. 17 and need only to be imported and used in `LISA_configuration.py`. The H0 sweep requires only a new shell script and a ~50-line Python combiner.
+The existing matplotlib + scipy + numpy stack handles all visualization requirements. The only warranted addition is `corner >= 2.2.3`, which is universal in EMRI/LISA parameter estimation papers, is pure Python built on matplotlib, accepts and returns matplotlib figures, and respects rcParams automatically. All seven alternatives evaluated (ChainConsumer, ArviZ, getdist, healpy, ligo.skymap, SciencePlots, seaborn) were rejected on clear technical grounds.
 
 **Core technologies:**
-- `numpy` / `cupy-cuda12x`: array computation for stencil derivatives and PSD — already used everywhere, no changes to imports needed
-- `few` (fastemriwaveforms): EMRI waveform generation — 4x more calls per Fisher matrix with 5-point stencil; GPU acceleration absorbs the increase within SLURM walltime limits
-- SLURM array jobs: parallelism for both the simulation campaign and the H0 sweep — pattern already proven in v1.1
-- `scipy.stats` / `scipy.integrate`: unchanged; H0 sweep evaluates the same posterior code per h-value
+- **matplotlib** (existing): Core rendering engine, Mollweide projections, all plot types — keep as sole backend; no replacements warranted
+- **scipy** (existing): Eigendecomposition for Fisher ellipses, KDE — sufficient without any dedicated geometry library
+- **corner >= 2.2.3** (new): Multi-parameter posterior corner plots — GW community standard, matplotlib-native, Python 3.13-safe
+- **numpy / pandas** (existing): Array operations and CSV loading for plot data — already present, no changes needed
 
-**Configuration changes required (not new dependencies):**
-- `main.py` line 332: `signal.alarm(30)` must increase to at least 120s for the CRB phase — without this, the stencil upgrade produces near-zero CRB detections due to timeout
-- `LISA_configuration.py`: `power_spectral_density_a_channel()` gains `T_obs=5.0` parameter; PSD cache key becomes `(n, T_obs)` to correctly handle the 1-year SNR pre-check vs 5-year full computation
+**Explicitly rejected:**
+- `healpy`: Designed for full-sky HEALPix maps with millions of pixels; ~100 sky positions need only matplotlib's built-in `projection='mollweide'` plus scipy ellipse geometry
+- `ArviZ`: MCMC diagnostics library; this pipeline uses Fisher matrices, not MCMC chains; ~20 transitive dependencies for unused features
+- `seaborn`: Style pollution risk via `set_theme()`; physics plots do not need its statistical defaults
 
 ### Expected Features
 
-**Must have (table stakes — blocks thesis without these):**
-- 5-point stencil Fisher derivatives — O(epsilon) forward-diff produces inaccurate CRBs; Vallisneri (2008) explicitly warns against it; the 10% d_L threshold was already raised from 5% as a workaround; method already exists at lines 187-243 and needs wiring
-- Galactic confusion noise in PSD — dominates LISA sensitivity at 0.1-3 mHz where EMRIs live; omitting it systematically overestimates SNR; constants already defined in constants.py:74-81
-- Production simulation campaign (100 tasks, 50 steps each) — the v1.1 smoke test (3 tasks, 20 detections) is statistically insufficient for H0 inference; need O(1000+) detections
-- Full H0 posterior sweep [0.6, 0.9] — current code evaluates at single h-value (0.73); a posterior requires likelihood over a grid
+The research identifies a clear three-tier feature set based on what thesis examiners and GW community reviewers expect.
 
-**Should have (improves thesis quality):**
-- Tighten d_L error threshold from 10% to 5% — the 10% threshold was a forward-diff workaround; evaluate after stencil is validated and campaign data analyzed
-- Campaign diagnostic plots — SNR distribution, d_L error distribution, detection rate vs redshift using existing `plotting/` infrastructure
-- Posterior combination script with credible intervals — automate assembling per-h JSONs into normalized H0 posterior
+**Must have (table stakes):**
+- LISA sensitivity curve with all noise components including confusion noise overlay (every LISA paper)
+- Characteristic strain plot with EMRI signal track overlaid on sensitivity curve
+- SNR distribution histogram with cumulative overlay and threshold annotation
+- Detection yield vs redshift with injected vs detected population overlay
+- Detection probability heatmap P_det(d_L, M) with Wilson CI contours
+- H0 posterior with shaded 68%/95% credible intervals and Planck/SH0ES reference bands
+- Individual event posteriors (spaghetti plot) color-coded by SNR or redshift
+- Parameter uncertainty distributions with intrinsic/extrinsic grouping and LaTeX labels
+- Detection contour in (z, M) space with injected population overlay
+- LaTeX mathematical notation in all axis labels ($M_\bullet$, $d_L$, $\sigma$)
+- Consistent figure sizes matching thesis column widths (single: ~3.5 in, double: ~7.0 in)
 
-**Defer to future work:**
-- wCDM dark energy model fix — changes the physics model substantially; invalidates comparisons with prior results
-- Planck 2018 cosmology update (Omega_m=0.3153, H=0.6736) — would invalidate all prior validation
-- Galaxy redshift uncertainty fix — LOW priority, affects z > 0.14 near detection horizon only
-- Pipeline A (BayesianInference) hardcoded 10% sigma — dev cross-check only; Pipeline B is production
+**Should have (differentiators):**
+- Fisher matrix error ellipses for key parameter pairs (M-mu, d_L-inclination, sky angles)
+- Corner plot of EMRI parameter subset from Fisher-derived Gaussian approximation
+- Mollweide sky localization map replacing the existing non-standard 3D scatter
+- Injected vs recovered scatter showing measurement quality across parameter space
+- H0 convergence plot showing posterior narrowing as N_events increases
+- Detection efficiency curve (1D slice through P_det grid with Wilson CIs)
+- Waveform strain time series for the introduction chapter
+
+**Defer to v2+:**
+- Multi-panel summary composite figure — build after individual plots are finalized
+- Fisher condition number scatter — only if condition number becomes a dedicated thesis section
+- Interactive exploration tooling — thesis output is PDF; JupyterLab already present for dev use
 
 ### Architecture Approach
 
-All v1.2 work is in-place modification of existing components — no new architectural layers, no new data pipelines, no new module boundaries. The two physics changes are localized: the stencil swap is entirely within `compute_fisher_information_matrix()` (one call site replaced with a loop); the confusion noise is entirely within `LISA_configuration.py` (one new method, one modified method). The H0 sweep adds two small files to existing directories. The existing boundary between `parameter_estimation.py` (computation) and `LISA_configuration.py` (noise model) is correct and must not be crossed.
+The existing factory pattern (`data in, (Figure, Axes) out`, no side effects, optional `ax` for compositing) is architecturally sound and must be preserved across all 23 existing functions and all new additions. The overhaul adds 8 new modules (`_colors.py`, `_data.py`, `fisher_plots.py`, `corner_plots.py`, `sky_plots.py`, `psd_plots.py`, `convergence_plots.py`, `campaign_plots.py`) and modifies 8 existing files (style, helpers, 5 topic modules, `__init__.py`). The key architectural addition is a `_data.py` layer that reconstructs the 14x14 covariance matrix from the lower-triangle `delta_X_delta_Y` CSV columns — this is shared by Fisher ellipses, corner plots, and sky localization plots.
 
-**Modified components:**
-1. `parameter_estimation.py:compute_fisher_information_matrix()` — replace single `finite_difference_derivative()` call with per-parameter loop over `five_point_stencil_derivative()`; update `_get_cached_psd` cache key to `(n, T_obs)`
-2. `LISA_configuration.py:power_spectral_density_a_channel()` — add `S_conf(f, T_obs)` static method and sum it into PSD; thread `T_obs` through the call chain
-3. `main.py` line 332 — increase `signal.alarm(30)` to 120-300s for CRB phase
-
-**New files:**
-1. `cluster/sweep_h0.sbatch` — SLURM array job mapping task IDs to h-values in [0.6, 0.9]
-2. `scripts/combine_posteriors.py` — read per-h JSON results, normalize, compute credible intervals
+**Major components:**
+1. `_colors.py` — Centralized color palette and parameter-to-color mapping; eliminates ad-hoc "green"/"red" scattered through modules
+2. `_data.py` — Covariance matrix reconstruction from CRB CSV; shared utility for all Fisher-based visualizations
+3. `fisher_plots.py` — 2D Fisher ellipses via scipy eigendecomposition, correlation heatmap, condition number history
+4. `corner_plots.py` — Thin `corner.py` wrapper applying thesis styling, returning `(Figure, Axes)` consistently
+5. `sky_plots.py` — Mollweide projection using matplotlib's built-in support, sky localization ellipses
+6. `psd_plots.py` — Enhanced PSD with characteristic strain h_c(f) and noise budget components
+7. `convergence_plots.py` — H0 posterior width vs N_events statistical convergence
+8. `campaign_plots.py` — Multi-panel summaries compositing earlier factory functions via the `ax` compositing parameter
 
 ### Critical Pitfalls
 
-1. **30-second CRB timeout fires on every event after stencil upgrade** — forward-diff needs ~15 waveforms (7-30s on H100); 5-point needs ~56 (28-112s). Increase `signal.alarm(30)` to at least 120s before running any campaign. Failure to do this causes near-total loss of CRB detections with no error message — events are silently skipped.
+1. **rcParams global state pollution** — Any library calling `set_theme()` (seaborn) or mutating `rcParams` at import time will silently override `emri_thesis.mplstyle`. Prevent by never adding seaborn globally; add a rcParams snapshot regression test before any refactoring begins.
 
-2. **Physics corrections must precede the production campaign** — running 100+ tasks with the broken forward-diff Fisher matrix wastes 100+ GPU-hours on scientifically invalid CRBs that must be regenerated. There is no shortcut: validate both fixes first with a 3-5 task verification run.
+2. **Silent regression of existing plot functions** — No content-level tests exist for the 23 current factory functions. Style and infrastructure changes can break thesis-critical figures with no test failure. Prevent by adding smoke tests for every existing function and `pytest-mpl` baselines for the 3-5 most critical figures before touching any existing code.
 
-3. **`afterok` SLURM dependency kills the entire pipeline on any single task failure** — at 100 tasks with ~5% per-task failure rate, P(at least one failure) > 99%. Change `submit_pipeline.sh` merge dependency to `afterany` so merge runs even if some tasks fail.
+3. **LaTeX usetex breaks CI and cluster** — `text.usetex: True` requires a LaTeX installation absent on CI runners and cluster compute nodes. Prevent by keeping `False` as default in the mplstyle; expose `use_latex=True` as an opt-in parameter to `apply_style()` for final thesis figure generation on the dev machine only.
 
-4. **Confusion noise reduces detection yield; campaign size must be calibrated after PSD fix** — confusion noise dominates 0.1-3 mHz and will decrease SNR across the EMRI band. Run a 5-task test with confusion noise before committing to 100-task campaign parameters.
+4. **matplotlib backend lock from eager pyplot imports** — `apply_style()` must call `matplotlib.use("Agg")` before any `import matplotlib.pyplot`. New libraries that import pyplot at module level in their `__init__.py` will lock the backend to TkAgg/Qt5Agg. Prevent by verifying headless compatibility of any new library; CI will catch this immediately on headless runners.
 
-5. **Better derivatives may expose Fisher matrix ill-conditioning** — the forward-difference implicitly smoothed near-degeneracies between phase parameters (Phi_phi0, Phi_theta0, Phi_r0). After switching to 5-point, log condition numbers; if `cond(F) > 1e12`, flag the event. Replace deprecated `np.matrix(...).I` with `np.linalg.inv()`.
+5. **PDF vector bloat from dense scatter plots** — Scatter plots with >1000 points produce multi-megabyte PDFs because each point is a separate vector object. Prevent by using `rasterized=True` on scatter layers while keeping axes/labels as vectors; use `hexbin`/`hist2d` for high-density data following the existing `plot_detection_contour` pattern.
 
 ## Implications for Roadmap
 
-The dependency chain is strictly linear: physics corrections -> validation -> production campaign -> H0 sweep. Parallelizing any of these risks producing invalid data or wasting cluster resources.
+Based on combined research, the suggested phase structure follows strict dependency order: style infrastructure must precede all plots; data utilities must precede Fisher-based visualizations; existing plot improvements come before new modules that depend on them; the `corner` dependency is deferred until base infrastructure is stable.
 
-### Phase 1: Galactic Confusion Noise in PSD
-**Rationale:** Lower-risk physics fix; self-contained additive term; constants already defined in codebase. Implement first to establish the corrected noise floor before any further numerical work. Independent of the stencil change, enabling sequential validation of each physics fix.
-**Delivers:** Corrected LISA PSD including galactic confusion foreground for T_obs=5yr; PSD cache keyed on `(n, T_obs)`; regression test confirming PSD with confusion > PSD without at 1 mHz.
-**Addresses:** Table-stakes feature "Galactic confusion noise in PSD"; Babak et al. (2023) Eq. 17.
-**Avoids:** Pitfall 5 (SNR drop not quantified before campaign sizing), Pitfall 6 (T_obs dependence in cache), Pitfall 13 (cache not invalidated).
-**Research flag:** Standard pattern — additive noise term with documented formula. No additional research needed during planning.
+### Phase 1: Test Infrastructure and Safety Net
+**Rationale:** The PITFALLS research is unanimous — the project has no content-level tests for existing plot functions, making any refactoring hazardous. The safety net must exist before anything moves. This phase has zero visual risk and maximum leverage over all subsequent phases.
+**Delivers:** Smoke tests for all 23 existing factory functions; rcParams snapshot regression test; `pytest-mpl` baselines for 5 critical figures; CI check banning `plt.show()` from production source.
+**Addresses:** Pitfalls 1, 4, 9 (rcParams pollution, silent regression, rogue plt.show in `bayesian_inference_mwe.py`)
+**Avoids:** Discovering broken thesis figures after the overhaul instead of before
 
-### Phase 2: Five-Point Stencil Fisher Derivatives
-**Rationale:** Higher-complexity physics fix that must follow confusion noise so the two changes can be independently validated. The method already exists; this phase wires it in, handles the signature mismatch, increases the CRB timeout, and replaces `print()` with logging.
-**Delivers:** O(epsilon^4) Fisher matrix derivatives replacing O(epsilon) forward-diff; CRB timeout increased to 120-300s; condition number logging; `print()` replaced with `_LOGGER`; regression test comparing forward-diff vs stencil derivatives on identical parameter set.
-**Addresses:** Known Bug 4 (Fisher matrix uses forward-diff); Vallisneri (2008) recommendation.
-**Avoids:** Pitfall 3 (timeout kills events), Pitfall 4 (ill-conditioning), Pitfall 2 (sign convention drift), Pitfall 12 (np.matrix deprecation).
-**Research flag:** Standard pattern — method already correct; wiring and cleanup only. Physics Change Protocol required.
+### Phase 2: Style Infrastructure Upgrade
+**Rationale:** Every downstream plot depends on consistent rcParams, figure sizes, and LaTeX handling. Infrastructure changes here are the highest-leverage, lowest-risk changes in the milestone. Must complete before any plot function changes.
+**Delivers:** `_colors.py` centralized palette; upgraded `emri_thesis.mplstyle` (tick direction, color cycle, mathtext fonts); `apply_style(*, use_latex: bool = False)` with opt-in LaTeX toggle; thesis column width constants (`THESIS_SINGLE_COLUMN`, `THESIS_DOUBLE_COLUMN`) in `_helpers.py`; `_fig_from_ax` moved from `simulation_plots.py` to `_helpers.py`.
+**Addresses:** Figure size inconsistency (HIGH severity), LaTeX rendering safety (Pitfalls 2, 10, 11, 12), cross-module coupling (Pitfall 13)
+**Avoids:** rcParams pollution, constrained layout failures, DPI mismatches
 
-### Phase 3: Validation Campaign (3-5 Tasks)
-**Rationale:** Before committing 100+ GPU-hours to a production campaign, verify that physics corrections produce valid results: detection rates are not catastrophically reduced, Fisher matrices are well-conditioned, d_L error distributions are as expected, and per-task wall time fits within SLURM limits.
-**Delivers:** Empirical detection rate with corrected physics; condition number distribution; baseline comparison against v1.1 smoke test; calibrated `--time` limit for Phase 4.
-**Addresses:** Campaign sizing risk; Pitfall 1 (stencil bounds check yield reduction), Pitfall 11 (d_L threshold recalibration timing).
-**Avoids:** Anti-Pattern 2 (production campaign before physics validation).
-**Research flag:** No research needed — operational validation run.
+### Phase 3: Data Layer and Fisher Visualizations
+**Rationale:** `_data.py` is a shared dependency for three new modules (Fisher ellipses, corner plots, sky maps). Fisher ellipses are the most thesis-critical new plot type — standard in every EMRI PE paper (Barack & Cutler 2004, Babak et al. 2017). Building this before corner plots validates covariance reconstruction with simpler 2D ellipses first.
+**Delivers:** `_data.py` with `reconstruct_covariance_matrix()` and `extract_submatrix()`; `fisher_plots.py` with 2D ellipses for key parameter pairs and correlation heatmap; `psd_plots.py` with characteristic strain h_c(f) and noise budget breakdown (S_OMS, S_TM, S_conf components).
+**Uses:** scipy eigendecomposition (existing dep); existing CRB CSV covariance columns
+**Implements:** `_data.py` and `fisher_plots.py` architecture components
+**Avoids:** Pitfall 15 (signature inconsistency) by following the factory pattern from the start
 
-### Phase 4: Production Simulation Campaign (100+ Tasks)
-**Rationale:** With corrected physics validated and timeouts calibrated, run the campaign needed for statistically meaningful H0 inference. Parameters: 100 tasks, 50 steps each, seed distinct from smoke test.
-**Delivers:** O(1000-2000) usable CRB detections in `simulations/cramer_rao_bounds.csv`; `run_metadata.json` with git commit and seed; per-task CSVs merged by `emri-merge`.
-**Addresses:** Table-stakes feature "Production simulation campaign"; expected 2000-3000 detections above SNR>20 with 40-60% detection rate (lower with confusion noise — calibrated in Phase 3).
-**Avoids:** Pitfall 9 (symlink collision — no simultaneous campaigns), Pitfall 10 (change `afterok` to `afterany`), Pitfall 15 (workspace expiration — copy results immediately after merge).
-**Research flag:** No research needed — operational scaling of proven infrastructure.
+### Phase 4: Enhanced Existing Plots
+**Rationale:** Improvements to the 5 existing topic modules are low-risk additive changes producing immediate thesis-quality improvements without new dependencies. Each change is independently testable against the smoke tests from Phase 1. Modifying existing modules is higher risk than creating new ones; safer to do this after the data layer is proven in Phase 3.
+**Delivers:** `bayesian_plots.py` — shaded 68%/95% credible intervals on H0 posterior; `evaluation_plots.py` — 2D sky localization delegating to `sky_plots.py` (replacing non-standard 3D scatter), improved violin colors; `simulation_plots.py` — confusion noise overlay parameter on PSD plot; `physical_relations_plots.py` — cosmology comparison overlay on d_L(z); consistent LaTeX axis labels across all modules.
+**Addresses:** Missing credible intervals on H0 (HIGH severity), 3D plots non-standard (MEDIUM), missing confusion noise in PSD plot (MEDIUM), ad-hoc color usage (MEDIUM)
 
-### Phase 5: H0 Posterior Sweep [0.6, 0.9]
-**Rationale:** After the production campaign provides sufficient CRBs, evaluate the Bayesian posterior over a grid of H0 values. SLURM array approach (one task per h-value) is strictly superior to an in-process loop: parallel execution, no changes to BayesianStatistics, proven infrastructure pattern.
-**Delivers:** `cluster/sweep_h0.sbatch` array job; `scripts/combine_posteriors.py`; normalized H0 posterior JSON with MAP estimate and 68%/95% credible intervals; posterior plot.
-**Addresses:** Table-stakes feature "Full H0 posterior sweep [0.6, 0.9]"; recommended Option A from STACK.md and ARCHITECTURE.md.
-**Avoids:** Pitfall 8 (redundant setup per h-value via SLURM parallelism), Pitfall 14 (filename collision — use 4+ decimal places in h-value filenames), Anti-Pattern 3 (in-process H0 loop).
-**Research flag:** The `combine_posteriors.py` normalization and credible interval computation is straightforward (standard numpy/scipy operations), but a quick review of Bayesian posterior combination patterns is recommended.
+### Phase 5: New Plot Modules (Sky, Corner, Convergence)
+**Rationale:** These depend on Phases 2-4 being complete. `sky_plots.py` and `corner_plots.py` depend on `_data.py` from Phase 3 and the style system from Phase 2. The `corner` dependency is deferred to this phase so the rest of the visualization stack works even if the new library has an installation issue.
+**Delivers:** `sky_plots.py` Mollweide sky localization map; `corner_plots.py` thin wrapper with explicit thesis style kwargs; `convergence_plots.py` H0 posterior width vs N_events; `corner` added to `pyproject.toml`; mypy override for `corner.*` added to `pyproject.toml`.
+**Uses:** corner >= 2.2.3 (new dependency); matplotlib built-in `projection='mollweide'`
+**Addresses:** Pitfall 7 (corner style conflicts) via explicit `label_kwargs`/`title_kwargs` in wrapper function
+**Avoids:** Pitfall 14 (mypy type stubs) by updating overrides immediately on dependency addition
 
-### Phase 6: d_L Threshold Recalibration (Optional)
-**Rationale:** After Phase 4 results are available, analyze the distribution of `d_L_uncertainty / d_L`. If the median drops well below 10% with the stencil upgrade, tighten `FRACTIONAL_LUMINOSITY_DISTANCE_ERROR_THRESHOLD` from 0.10 to 0.05 to improve H0 posterior quality.
-**Delivers:** Updated threshold in `bayesian_statistics.py:58` with justified value from empirical data; re-run of Phase 5 if threshold changes materially.
-**Addresses:** FEATURES.md "Should have" — tightened d_L threshold.
-**Avoids:** Pitfall 11 (premature tightening before empirical validation).
-**Research flag:** No research needed — data-driven decision from Phase 4 outputs.
+### Phase 6: Campaign Dashboards and Batch Generation
+**Rationale:** Multi-panel composite figures depend on all individual plot types from Phases 3-5 being finalized. Batch generation with production data stress-tests memory management and PDF output quality.
+**Delivers:** `campaign_plots.py` multi-panel summaries compositing earlier factory functions; batch figure generation script for all thesis figures; PDF size audit with `rasterized=True` fixes for any single-figure PDF over 2 MB; full `__init__.py` re-export update.
+**Addresses:** Pitfall 6 (memory leaks in batch generation), Pitfall 8 (PDF vector bloat)
 
 ### Phase Ordering Rationale
 
-- **Confusion noise before stencil:** Lower risk, self-contained, enables independent validation. Bundling both physics changes in one commit makes it impossible to attribute result changes to either fix.
-- **Both physics fixes before production campaign:** The dependency chain is explicit; campaign results are scientifically invalid with the known-wrong physics. This is the single most important sequencing constraint.
-- **Validation campaign before production:** Calibrates timeout, detection rate, storage requirements. Prevents discovering configuration problems after wasting 100+ GPU-hours.
-- **H0 sweep after campaign:** Sweep operates on the campaign's CSV output; no other dependency.
-- **d_L threshold last:** Data-driven decision requiring campaign results.
+- **Phase 1 unconditionally first:** No content-level plot tests means any change could silently break thesis-critical figures; the safety net must precede all work.
+- **Phase 2 before all plot work:** rcParams, figure sizes, and the color palette are global state shared by every factory function; downstream phases depend on this foundation.
+- **Phase 3 before Phase 5:** `_data.py` covariance reconstruction is shared by Fisher ellipses, corner plots, and sky maps; validates the data layer with simpler 2D ellipses before the multi-panel corner plot.
+- **Phase 4 after Phase 3:** Modifying existing modules is higher-risk than new modules; smoke tests from Phase 1 catch regressions, and the proven data layer from Phase 3 reduces uncertainty.
+- **Phase 5 defers `corner` dependency:** If the library has any Python 3.13 compatibility issue at the exact installed version, it does not block the rest of the visualization stack.
+- **Phase 6 last:** Composite figures require all component plots to be finalized; batch generation reveals memory and PDF size issues at scale that only manifest with production data.
 
 ### Research Flags
 
-Phases needing deeper research during planning:
-- **Phase 5 (H0 sweep):** Confirm that combining per-h log-likelihoods and computing credible intervals is correct — standard Bayesian combination but worth a 15-minute review before implementation.
+Phases likely needing deeper research during planning:
+- **Phase 3 (Fisher ellipses):** The ellipse geometry from covariance matrices has several conventions (1-sigma vs 2-sigma, chi-squared contours for 2 DOF). The exact `scipy.linalg.eigh` approach should reference arXiv:0906.4123 for the correct chi-squared threshold before coding.
+- **Phase 5 (corner):** Confirm Python 3.13 wheel availability at the exact version selected; verify that `label_kwargs` and `title_kwargs` kwargs are sufficient to match thesis font sizes without triggering rcParams-mutating methods.
 
-Phases with standard patterns (no research-phase needed):
-- **Phase 1 (confusion noise):** Formula documented in Babak (2023) Eq. 17; constants already in codebase; additive implementation.
-- **Phase 2 (5-point stencil):** Method already exists and is correct; wiring and cleanup only.
-- **Phase 3 (validation campaign):** Operational run; no new patterns.
-- **Phase 4 (production campaign):** Proven infrastructure; scaling only.
-- **Phase 6 (d_L threshold):** Single-line change based on data analysis.
+Phases with standard patterns (skip research-phase):
+- **Phase 1:** Standard pytest + pytest-mpl patterns; well-documented.
+- **Phase 2:** matplotlib rcParams and mplstyle extension is well-documented; `apply_style()` extension is a straightforward additive change.
+- **Phase 4:** Additive parameter additions to existing functions; well-understood risk profile.
+- **Phase 6:** `plt.close(fig)` and `rasterized=True` are documented matplotlib patterns with no ambiguity.
 
 ## Confidence Assessment
 
 | Area | Confidence | Notes |
 |------|------------|-------|
-| Stack | HIGH | Direct codebase inspection confirms all needed components exist; zero new dependencies required |
-| Features | HIGH | All four table-stakes features are defined with specific file/line references; implementation paths clear |
-| Architecture | HIGH | Changes are localized; component boundaries correct; no new architectural layers needed |
-| Pitfalls | HIGH | Based on direct codebase inspection + Vallisneri (2008) + Babak (2023); critical pitfalls include specific line numbers |
+| Stack | HIGH | Official PyPI and docs verified; Python 3.13 compatibility confirmed for all recommended libraries; `corner` well-established in GW community with clear adoption in EMRI/LISA literature |
+| Features | MEDIUM-HIGH | Based on survey of published EMRI/LISA papers (Barack & Cutler 2004, Babak et al. 2017, Gray et al. 2020, arXiv:2505.17814); community standards are clear for core figures; differentiator features are less strictly standardized |
+| Architecture | HIGH | Based on direct codebase inspection of all 6 plotting modules, conftest.py, and existing factory functions; patterns are already established and consistent; new module boundaries are clear |
+| Pitfalls | HIGH | Based on direct codebase inspection (confirmed rogue `plt.show()` in `bayesian_inference_mwe.py:177`, confirmed zero content-level plot tests, confirmed `_fig_from_ax` cross-module coupling); also cross-validated against matplotlib documentation |
 
-**Overall confidence: HIGH**
+**Overall confidence:** HIGH
 
 ### Gaps to Address
 
-- **Confusion noise formula source ambiguity:** constants.py cites arXiv:2303.15929 but PITFALLS.md notes the canonical parameterization may be Babak et al. (2021) arXiv:2108.01167. Verify formula against both sources during Phase 1 before writing any code. The physics is the same; the citation must be correct.
-- **Validation campaign detection rate:** Actual yield with corrected physics is unknown until Phase 3 runs. FEATURES.md estimates 40-60% above SNR>20, but confusion noise may reduce this further. The 100-task campaign size is a starting point, not a firm number.
-- **Fisher matrix ill-conditioning prevalence:** The risk (Pitfall 4) is real but its frequency on actual EMRI parameter draws is unknown. Phase 3 must explicitly log condition numbers to determine whether Tikhonov regularization is needed for Phase 4.
-- **H0 sweep per-task wall time at production scale:** Estimated at 2-5 minutes with 16 CPUs, but this comes from single-h tests on smaller detection catalogs. Run a test evaluation on Phase 4 output before submitting the 31-task sweep.
+- **Full covariance matrix column names:** The research confirms that `delta_X_delta_Y` lower-triangle columns exist in the CRB CSV and can reconstruct a 14x14 matrix. The exact column naming convention for all 105 lower-triangle entries should be verified against an actual output CSV before coding `_data.py`. This is a one-minute check, not a research gap.
+- **LaTeX availability on bwUniCluster:** The cluster compute nodes may or may not have a TeX distribution in the module system. The `use_latex=True` code path should include a preflight check using `matplotlib.checkdep_usetex(True)`. This is low-risk because `use_latex=False` is the default and CI/cluster never need `True`.
+- **Production data scale:** All scalability estimates assume ~20-100 EMRI detections. If the Phase 12 production campaign produced significantly more, corner plot render times and PDF vector bloat thresholds need re-evaluation. The `rasterized=True` mitigation should be applied preemptively for all scatter plots as a defensive default.
 
 ## Sources
 
 ### Primary (HIGH confidence)
-- [Vallisneri (2008), arXiv:gr-qc/0703086](https://arxiv.org/abs/gr-qc/0703086) — Fisher matrix numerical derivatives, 5-point stencil recommendation, ill-conditioning warnings
-- [Babak et al. (2023), arXiv:2303.15929](https://arxiv.org/abs/2303.15929) — LISA PSD with galactic confusion noise, Eq. 17; parameterization used in constants.py
-- Direct codebase inspection — `parameter_estimation.py` (lines 140-243, 335-365), `LISA_configuration.py`, `constants.py:74-81`, `bayesian_statistics.py:58`, `main.py:332`, `cluster/submit_pipeline.sh`
+- [corner.readthedocs.io](https://corner.readthedocs.io/en/latest/) — v2.2.3 API, Python 3.13 compatibility, matplotlib integration
+- [pypi.org/project/corner/](https://pypi.org/project/corner/) — version history, dependency requirements
+- [matplotlib.org/stable/users/explain/text/usetex.html](https://matplotlib.org/stable/users/explain/text/usetex.html) — LaTeX rendering requirements and fallback behavior
+- [arXiv:1803.01944 (Robson, Cornish & Liu 2019)](https://arxiv.org/abs/1803.01944) — LISA sensitivity curve convention (characteristic strain)
+- [arXiv:1703.09722 (Babak et al. 2017)](https://arxiv.org/abs/1703.09722) — EMRI visualization standards (detection contours, sky maps, uncertainty distributions)
+- [arXiv:0906.4123](https://arxiv.org/pdf/0906.4123) — Fisher matrix confidence ellipse geometry (chi-squared contours from covariance)
+- [arXiv:2505.17814](https://arxiv.org/html/2505.17814) — Recent EMRI PE paper: Fisher ellipses, corner plots, sky maps as current community standard
+- Direct codebase inspection: all 6 `plotting/` modules, `_style.py`, `_helpers.py`, `conftest.py`, `pyproject.toml`, `emri_thesis.mplstyle`, `bayesian_inference_mwe.py`
 
 ### Secondary (MEDIUM confidence)
-- [Babak et al. (2021), arXiv:2108.01167](https://arxiv.org/abs/2108.01167) — alternative canonical reference for LISA confusion noise parameterization; may be the actual source for constants.py coefficients
-- [Robson, Cornish & Liu (2019), arXiv:1803.01944](https://arxiv.org/abs/1803.01944) — LISA sensitivity curves and confusion noise background parameterization
-- v1.1 smoke test results (PROJECT.md) — 20 detections from 30 events, 18 passed d_L filter; ~15-20 min per 10-step task on H100
+- [arXiv:gr-qc/0310125 (Barack & Cutler 2004)](https://arxiv.org/abs/gr-qc/0310125) — Parameter uncertainty distribution conventions for EMRI PE
+- [arXiv:1908.06050 (Gray et al. 2020)](https://arxiv.org/abs/1908.06050) — Dark siren H0 posterior visualization (credible intervals, spaghetti plots)
+- [arXiv:2404.16092 (LIGO/Virgo/KAGRA O4a)](https://arxiv.org/abs/2404.16092) — Individual event posterior (spaghetti) plot conventions
+- [jwalton.info/Embed-Publication-Matplotlib-Latex/](https://jwalton.info/Embed-Publication-Matplotlib-Latex/) — Thesis figure sizing in LaTeX (textwidth constants)
+- [github.com/matplotlib/pytest-mpl](https://github.com/matplotlib/pytest-mpl) — Image comparison test infrastructure
 
 ### Tertiary (LOW confidence)
-- SLURM per-task failure rate estimate (~5%) — heuristic from general HPC experience; actual rate on bwUniCluster depends on node stability and GPU partition availability
+- [pypi.org/project/chainconsumer/](https://pypi.org/project/chainconsumer/) — Evaluated and rejected as apparently unmaintained; corner preferred
+- [pypi.org/project/healpy/](https://pypi.org/project/healpy/) — Evaluated and rejected; built-in Mollweide projection sufficient for ~100 sky positions
 
 ---
-*Research completed: 2026-03-29*
+*Research completed: 2026-04-01*
 *Ready for roadmap: yes*

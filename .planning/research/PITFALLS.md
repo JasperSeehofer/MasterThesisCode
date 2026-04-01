@@ -1,234 +1,235 @@
-# Domain Pitfalls: v1.2 Physics Corrections & Production Campaign
+# Domain Pitfalls: v1.3 Visualization Overhaul
 
-**Domain:** Numerical derivative methods, LISA noise modeling, production-scale GW simulations, H0 posterior sweeps
-**Researched:** 2026-03-29
-**Overall confidence:** HIGH (based on direct codebase inspection + Vallisneri 2008 + Babak et al. 2021)
+**Domain:** Scientific Python visualization for gravitational wave parameter estimation thesis
+**Researched:** 2026-04-01
+**Overall confidence:** HIGH (based on direct codebase inspection, matplotlib documentation, community best practices)
 
 ## Critical Pitfalls
 
-Mistakes that cause rewrites, corrupted results, or wasted cluster hours.
+Mistakes that cause broken plots, wasted time, or thesis-quality regressions.
 
-### Pitfall 1: 5-Point Stencil Bounds Check Rejects More Events
+### Pitfall 1: Style System Global State Pollution
 
-**What goes wrong:** The 5-point stencil requires evaluating waveforms at `p +/- 2*epsilon`, while the current forward-difference only needs `p + epsilon`. Switching stencils doubles the bounds-checking range. Parameters near their limits (especially `p0` with range [10, 16] and `e0` with range [0.05, 0.7]) will trigger `ParameterOutOfBoundsError` far more often, silently reducing the detection yield.
+**What goes wrong:** Adding a library like seaborn that calls `sns.set_theme()` or `sns.set_context()` mutates matplotlib's global `rcParams`, overwriting the carefully tuned `emri_thesis.mplstyle` settings. Existing plots silently change appearance -- font sizes shift, grid lines appear or disappear, line widths change, constrained layout may be disabled. The thesis advisor sees different-looking plots in different chapters with no code change.
 
-**Why it happens:** The existing `five_point_stencil_derivative()` method (line 210) already checks `p - 2*epsilon` and `p + 2*epsilon`, but the calling code (`compute_fisher_information_matrix()` at line 339) calls `finite_difference_derivative()` which only checks `p + epsilon`. Switching the call target changes the rejection rate.
+**Why it happens:** The project uses `apply_style()` which calls `matplotlib.style.use()` to load `emri_thesis.mplstyle` once at program entry. Seaborn's `set_theme()` writes directly to `matplotlib.rcParams`, overriding all previously set values. Even `import seaborn` in some versions runs `set_theme()` automatically. The session-scoped `_plotting_style` fixture in `conftest.py` calls `apply_style()` once, so any test that imports seaborn after that fixture runs will see polluted rcParams for all subsequent tests in the session.
 
-**Consequences:** A production campaign may produce significantly fewer detections than the smoke-test predicted. With 100 tasks x 50 steps, if rejection rate doubles from 30% to 60%, you get half the detections expected. The H0 posterior becomes statistically weaker than planned.
-
-**Prevention:**
-1. Before switching, run a dry-run counting how many events pass bounds checks with forward-diff vs. 5-point stencil on the same seed.
-2. Consider reducing `derivative_epsilon` for parameters with narrow ranges (currently all use 1e-6, which is likely fine for most, but verify `p0` and `e0` specifically).
-3. Add logging that counts bounds rejections per parameter symbol so you can diagnose which parameters cause the most rejections.
-
-**Detection:** Compare detection counts between forward-diff and 5-point runs on identical seeds and parameters. A drop greater than 20% warrants investigation.
-
-### Pitfall 2: 5-Point Stencil Has Wrong Sign Convention in Existing Code
-
-**What goes wrong:** The existing `five_point_stencil_derivative()` at line 233 computes:
-```python
-(-lisa_responses[3] + 8*lisa_responses[2] - 8*lisa_responses[1] + lisa_responses[0]) / 12 / epsilon
-```
-The stencil steps are `[-2, -1, +1, +2]` (indices 0-3), so `responses[0]` = f(x-2h), `responses[1]` = f(x-h), `responses[2]` = f(x+h), `responses[3]` = f(x+2h). The standard 5-point formula is:
-```
-f'(x) = (-f(x+2h) + 8*f(x+h) - 8*f(x-h) + f(x-2h)) / (12h)
-```
-This matches: `(-responses[3] + 8*responses[2] - 8*responses[1] + responses[0])`. The sign convention is **correct**.
-
-**Why this matters:** The formula is correct, but the lack of a base waveform (f(x)) in the 5-point formula may confuse reviewers. Additionally, the method currently accepts an optional `parameter_space` argument and mutates `self.parameter_space` (line 204), which is a side effect that the forward-difference method avoids by computing a local `base_waveform`. This asymmetry is a maintenance hazard.
-
-**Consequences:** If someone "fixes" the signs thinking they are wrong, the Fisher matrix becomes garbage. If someone passes a `parameter_space` argument, it silently replaces the instance state.
+**Consequences:** Visual inconsistency across thesis figures. Debugging is difficult because the pollution depends on import order and which plotting function runs first. Test results become non-deterministic based on test execution order.
 
 **Prevention:**
-1. Add a reference comment above the formula: `# Eq. (8) in Vallisneri (2008), arXiv:gr-qc/0703086`
-2. Remove the `parameter_space` mutation side effect when integrating.
-3. Add a regression test that computes the derivative of a known analytic function (e.g., sin) and verifies the result matches to O(h^4) accuracy.
+1. Never call `sns.set_theme()` globally. Use seaborn only through its functional API with explicit `ax` parameters, letting the custom mplstyle control aesthetics.
+2. If seaborn styling is needed for specific plots, use `plt.style.context()` as a context manager to temporarily override and then restore rcParams.
+3. Add a regression test that asserts key rcParams (font.size=11, axes.titlesize=13, figure.constrained_layout.use=True) remain unchanged after importing and calling any new visualization function.
+4. Re-call `apply_style()` defensively after any seaborn operation in production code.
 
-**Detection:** Unit test comparing 5-point derivative of `sin(x)` against `cos(x)` should match to ~1e-20 for h=1e-6 (since error is O(h^4) = O(1e-24)).
+**Detection:** Add a pytest fixture that snapshots `matplotlib.rcParams` before and after each test module, failing if any project-defined keys changed unexpectedly.
 
-### Pitfall 3: Switching to 5-Point Stencil Doubles Waveform Generation Count Per Fisher Matrix
+### Pitfall 2: LaTeX Font Rendering Breaks PDF Output
 
-**What goes wrong:** Forward-difference computes 14 derivatives using 14+1 = 15 waveform evaluations (1 base + 1 per parameter). The 5-point stencil needs 4 evaluations per parameter = 56 waveforms total. The 30-second timeout (`signal.alarm(30)` at line 332 of `main.py`) was calibrated for the forward-diff workload. With 4x more waveform calls, the timeout will fire on events that would have succeeded.
+**What goes wrong:** Enabling `text.usetex: True` in the mplstyle (currently `False`) for publication-quality math labels requires a working LaTeX installation with specific packages (amsmath, type1cm, etc.) on every machine that generates plots. The dev machine, CI runner, and cluster all need identical LaTeX setups. Missing fonts produce blank text, fallback bitmaps, or `RuntimeError` crashes. Even with usetex=True working, mixing LaTeX-rendered and non-LaTeX text (e.g., legend entries vs axis labels) produces visually jarring font mismatches.
 
-**Why it happens:** Each waveform generation call takes 0.5-2 seconds on H100 GPUs. Forward-diff: ~15 calls = 7-30s. Five-point: ~56 calls = 28-112s. The 30s timeout kills events that need >30s total for all derivatives.
+**Why it happens:** matplotlib shells out to `latex`, `dvipng`, and `ghostscript` when `text.usetex=True`. CI runners (GitHub Actions) and the bwUniCluster compute nodes may not have these installed. The current mplstyle has `text.usetex: False`, so switching it on is a cross-environment breaking change.
 
-**Consequences:** Massive increase in timeout-skipped events. Production campaign yields far fewer CRB detections. Some parameter combinations that produced valid Fisher matrices with forward-diff will now timeout.
-
-**Prevention:**
-1. Increase the timeout from 30s to 120s for the CRB computation phase (the SNR phase can keep 30s since it only generates 2 waveforms).
-2. Separate the timeout for SNR computation and CRB computation.
-3. Monitor `generation_time` in the CSV output to calibrate the timeout.
-4. Consider batching: the current loop in `five_point_stencil_derivative` generates waveforms one-at-a-time. If `few` supports batch evaluation, that would cut wall time.
-
-**Detection:** Log the wall time of each `compute_Cramer_Rao_bounds()` call. If median time exceeds 50% of the timeout, the timeout is too aggressive.
-
-### Pitfall 4: Fisher Matrix Ill-Conditioning Worsens with Better Derivatives
-
-**What goes wrong:** The 5-point stencil is more accurate (O(h^4) vs O(h)), which paradoxically can make the Fisher matrix more ill-conditioned. The forward-difference smooths over numerical noise from the waveform generator, acting as implicit regularization. The 5-point stencil resolves finer structure, exposing near-degeneracies between parameters (especially the three phase parameters Phi_phi0, Phi_theta0, Phi_r0).
-
-**Why it happens:** Vallisneri (2008) warns that Fisher matrices for multi-parameter waveforms are "often nearly singular" and "the inverse (covariance matrix) is plagued by numerical instabilities." Better derivatives make this worse, not better.
-
-**Consequences:** `np.matrix(...).I` (line 365 of parameter_estimation.py) will produce covariance matrices with negative diagonal elements or astronomically large uncertainties. The `d_L_uncertainty` may become negative or exceed the luminosity distance itself, producing nonsensical `Detection` objects.
+**Consequences:** CI fails on plot-generation tests. Cluster evaluation jobs crash when trying to save figures. Or worse: plots render with bitmap fonts that look terrible at any zoom level in the PDF thesis.
 
 **Prevention:**
-1. After inversion, check that all diagonal elements of the covariance matrix are positive. If not, flag the event.
-2. Compute the condition number of the Fisher matrix before inversion. If `cond(F) > 1e12`, skip or regularize.
-3. Use `np.linalg.inv()` instead of `np.matrix(...).I` -- the matrix class is deprecated and provides no numerical advantage.
-4. Consider adding Tikhonov regularization: `F_reg = F + lambda * I` with a small lambda.
+1. Keep `text.usetex: False` in the mplstyle for robustness. Instead, use matplotlib's built-in mathtext renderer (the default) which handles `$H_0$`, `$d_L$`, `$\sigma$` without any LaTeX dependency.
+2. If true LaTeX rendering is required for specific publication figures, create a separate `emri_thesis_publication.mplstyle` that sets `text.usetex: True` and is only used in a dedicated publication-plot script, never in CI or cluster pipelines.
+3. If enabling usetex, add `latex` and `dvipng` to the CI setup step, and verify availability on the cluster with a preflight check.
+4. Use `matplotlib.checkdep_usetex(True)` programmatically to detect missing TeX before attempting to render.
 
-**Detection:** Log the condition number alongside each CRB row. A condition number > 1e10 is a warning sign.
+**Detection:** A CI test that generates one figure with every text element type (title, xlabel, ylabel, legend, annotation, colorbar label) and verifies the PDF file is valid and non-empty.
 
-### Pitfall 5: Confusion Noise Changes SNR Threshold Pass Rate
+### Pitfall 3: Over-Engineering Interactive Features for a Static PDF Thesis
 
-**What goes wrong:** Adding galactic confusion noise to the PSD increases the noise floor in the 0.1-3 mHz band. EMRIs in this frequency range (which is most of them -- EMRI signals typically span 0.1-10 mHz) will have reduced SNR. Events that previously passed the SNR >= 20 threshold may now fail, dramatically reducing the detection count.
+**What goes wrong:** Developer adds plotly, bokeh, or holoviews for "interactive exploration" of parameter spaces and posteriors. These libraries add 50-200 MB of dependencies, require a running JavaScript runtime for output, produce HTML files instead of PDF-embeddable figures, and their static export (orca/kaleido) is fragile and version-sensitive. The thesis ultimately needs static PDFs. Six weeks of development produces beautiful dashboards that cannot be `\includegraphics{}`'d into LaTeX.
 
-**Why it happens:** The confusion noise PSD is additive: `S_total(f) = S_instrument(f) + S_confusion(f)`. The confusion noise dominates below ~3 mHz for the first few years of observation. Since `scalar_product_of_functions` divides by PSD, a larger denominator means smaller SNR.
+**Why it happens:** Interactive visualization is genuinely useful during development and exploration. The temptation is to build the exploration tool AND the thesis figure generator as one thing. But interactive and static visualization have fundamentally different output requirements.
 
-**Consequences:** The production campaign may need more tasks to achieve the same number of detections. If calibrated on the old (no-confusion) PSD, the 100-task budget may be insufficient.
-
-**Prevention:**
-1. Implement confusion noise first, THEN calibrate the production campaign size.
-2. Run a small test (5 tasks, same seed as smoke test) with confusion noise and compare detection counts to the no-confusion smoke test.
-3. The constants in `constants.py` (lines 75-82) reference arXiv:2303.15929 Eq. 17 but actually the canonical reference is Babak et al. (2021) arXiv:2108.01167. Verify the formula against the correct source.
-4. The confusion noise depends on observation time T -- use `self.T = 5` years consistently.
-
-**Detection:** Compare SNR distributions (median, mean, fraction above threshold) with and without confusion noise on the same parameter sets.
-
-### Pitfall 6: Confusion Noise Formula Has Observation-Time Dependence
-
-**What goes wrong:** The galactic confusion noise PSD from Babak et al. depends on the observation duration T_obs through time-dependent exponents (the `A1`, `B1`, `AK`, `BK` coefficients in constants.py). The current PSD cache in `_get_cached_psd()` keys on waveform length `n`, not on observation time. If the 1-year SNR check generator and the 5-year full generator produce different-length waveforms that happen to hash to the same `n`, the wrong confusion noise would be used.
-
-**Why it happens:** The knee frequency and slope of the confusion noise change with observation time because more galactic binaries are resolved and subtracted over longer observation periods. The PSD method currently receives only `frequencies` and `channel`, with no `T_obs` parameter.
-
-**Consequences:** Using the wrong T_obs in the confusion noise formula produces incorrect SNRs. A 5-year confusion noise applied to a 1-year SNR pre-check would underestimate noise (fewer sources subtracted at 1 year), inflating the quick SNR.
+**Consequences:** Dependency bloat (kaleido alone is 80+ MB). Build complexity. Two rendering paths to maintain. The interactive features are abandoned after the defense because the thesis PDF is all that persists.
 
 **Prevention:**
-1. Pass `T_obs` as a parameter to `power_spectral_density()` and to the confusion noise function.
-2. Clear the PSD cache when switching between the SNR check generator (T=1 year) and the full generator (T=5 years), or key the cache on `(n, T_obs)`.
-3. For a first implementation, hardcode T_obs=5 years and document that the 1-year quick check does not include confusion noise (it only needs to be a rough filter anyway).
+1. Commit to matplotlib as the sole output renderer for all thesis figures. Period.
+2. If interactive exploration is needed during development, use Jupyter notebooks with matplotlib's `%matplotlib widget` backend -- this provides pan/zoom/hover without adding any new library.
+3. If a corner-plot or specific statistical visualization is needed, use libraries that build ON matplotlib (corner, arviz, chainconsumer) rather than libraries that replace it.
+4. Any library added must support `fig.savefig("output.pdf")` natively. If it cannot produce a vector PDF, it does not belong in the thesis plotting stack.
 
-**Detection:** Compare PSD values at 1 mHz for T=1yr vs T=5yr; they should differ significantly (factor ~2-5).
+**Detection:** Review `pyproject.toml` before any dependency addition. If the library's documentation mentions "interactive" more than "publication," it is the wrong tool for this project.
+
+### Pitfall 4: Existing Plot Functions Break Silently During Refactoring
+
+**What goes wrong:** The existing plotting module has 15+ factory functions across 6 files, all returning `(fig, ax)` tuples. During the visualization overhaul, someone refactors the style, changes default figsize, modifies colormap, or restructures the module. An existing function that worked correctly now produces subtly different output -- the log-scale axis on `plot_uncertainty_violins` clips data, the `plot_detection_contour` colorbar range changes, or `plot_combined_posterior` normalization produces a flat line because the y-axis range shifted.
+
+**Why it happens:** There are no regression tests that verify plot content. The existing `test_style.py` tests verify that `save_figure` produces a file and that `apply_style` sets the backend, but no test checks that `plot_combined_posterior` actually draws a line at the correct position or that `plot_mean_cramer_rao_bounds` heatmap has the right value range. Changes to shared infrastructure (helpers, style) propagate silently.
+
+**Consequences:** Thesis contains incorrect figures. The H0 posterior plot might show a flat line due to normalization error. The CRB heatmap might use a wrong colorscale. These are the most important figures in the thesis and they are untested.
+
+**Prevention:**
+1. Before any refactoring, add smoke tests for every existing plot function: call with known synthetic data, verify the function completes without error, and check basic properties (number of lines on axes, axis limits, colorbar exists).
+2. Use `pytest-mpl` for image comparison tests on the 3-5 most critical thesis figures (posterior, CRB heatmap, detection distribution). Generate baselines before the overhaul begins.
+3. Refactor in layers: style changes in one commit, function signatures in another, never both at once.
+4. The `_fig_from_ax` helper is used cross-module (evaluation_plots imports it from simulation_plots). Moving or renaming it breaks two modules silently.
+
+**Detection:** Run the full test suite after every plotting change. A missing import or broken function signature will be caught by mypy if type annotations are maintained on the `(Figure, Axes)` return types.
 
 ## Moderate Pitfalls
 
-### Pitfall 7: `five_point_stencil_derivative` Uses `print()` Not `logging`
+### Pitfall 5: Matplotlib Backend Must Be Set Before Any pyplot Import
 
-**What goes wrong:** The existing method at lines 199-202 uses `print(..., flush=True)` with `time.ctime()` for progress reporting, unlike the rest of the codebase which uses `_LOGGER`. In a production SLURM job, print output goes to stdout which may be buffered differently from the log file. Worse, the `mp.current_process().name` reference (line 230) suggests this method was designed for multiprocessing, but the Fisher matrix computation is currently single-process per GPU task.
+**What goes wrong:** `apply_style()` calls `matplotlib.use("Agg")` to set the non-interactive backend. But if ANY module imports `matplotlib.pyplot` before `apply_style()` is called, the backend is locked to whatever the system default is (often TkAgg or Qt5Agg on dev machines). On the cluster or CI (no display), this crashes with `_tkinter.TclError: no display name`. The project currently handles this correctly (main.py imports apply_style before pyplot), but adding a new visualization library that eagerly imports pyplot at module level will break this.
 
-**Prevention:** Replace `print()` calls with `_LOGGER.info()` when integrating the method. Remove the `mp.current_process().name` reference.
+**Why it happens:** matplotlib's backend selection is a one-shot operation. The first `import matplotlib.pyplot` or `plt.figure()` call locks it. New libraries (e.g., corner, chainconsumer) may import pyplot at the module level in their `__init__.py`.
 
-### Pitfall 8: H0 Sweep Runs Evaluate Once Per h-Value but Reloads Everything Each Time
-
-**What goes wrong:** The current `evaluate()` in main.py creates a new `BayesianStatistics()` instance per call, which reads CSVs, creates `DetectionProbability` KDEs, builds multivariate Gaussians, and spawns a multiprocessing pool. For a sweep over 30+ h-values in [0.6, 0.9], this redundant setup dominates wall time.
-
-**Why it happens:** `BayesianStatistics.__init__()` (line 106) reads all CSVs. `evaluate()` (line 117) rebuilds detection probability and Gaussian objects. The detection-independent setup is identical for every h-value.
-
-**Consequences:** An H0 sweep that should take 30 minutes takes 10+ hours because setup is repeated 30 times. On a cluster with 1-hour time limits, the job times out.
+**Consequences:** Crash on headless systems (CI, cluster). Works on dev machine with a display, fails everywhere else. The failure mode is an opaque Tcl/Tk error with no indication that the fix is import ordering.
 
 **Prevention:**
-1. Refactor `BayesianStatistics.evaluate()` to separate setup from h-dependent computation.
-2. Create a `sweep(h_values: list[float])` method that does setup once, then loops over h-values.
-3. Alternatively, submit each h-value as a separate SLURM array task (parallelize across h-values).
-4. The simplest cluster-friendly approach: modify `evaluate.sbatch` to accept an `--array` parameter where each task evaluates one h-value from a pre-defined grid.
+1. Keep `apply_style()` as the very first call after entry point detection, before any other imports from the plotting module or third-party viz libraries.
+2. In test conftest.py, the session-scoped `_plotting_style` fixture already handles this. Verify it runs before any test that imports a new visualization library.
+3. Add `matplotlib.use("Agg")` as a safety fallback in `__init__.py` of the plotting module (guarded by `if not os.environ.get("DISPLAY")`), though the explicit `apply_style()` call is preferred.
+4. When evaluating new libraries, check whether their top-level `__init__.py` imports pyplot.
 
-**Detection:** Time the setup phase vs. the per-h computation phase. If setup > 50% of total time, refactoring pays off.
+**Detection:** CI will catch this immediately -- headless runners have no display server. But the crash will be in a test file that seems unrelated to the new library.
 
-### Pitfall 9: Production Campaign Symlink Collision
+### Pitfall 6: Figure Memory Leaks in Batch Plot Generation
 
-**What goes wrong:** `simulate.sbatch` (line 83) creates a symlink `$PROJECT_ROOT/simulations -> $RUN_DIR/simulations`. If two campaigns run simultaneously (different seeds, same project root), the symlink is overwritten by the second job, and the first job's output goes to the wrong directory.
+**What goes wrong:** The thesis needs 20-40 figures generated from campaign data. Each `plt.subplots()` or `plt.figure()` creates a figure object tracked by pyplot's global state. If figures are not closed after saving, memory grows linearly with figure count. With high-resolution data (thousands of posterior samples, full parameter space scatter), each figure can consume 50-200 MB. A batch script generating all thesis figures runs out of memory or slows to a crawl.
 
-**Why it happens:** The symlink is a workspace-level shared resource, but array tasks from different campaigns share the same `$PROJECT_ROOT`.
+**Why it happens:** The existing `save_figure()` helper defaults to `close=True`, which is correct. But new plot functions added during the overhaul may use `plt.subplots()` directly (bypassing `get_figure()`), forget to close, or create intermediate figures for multi-panel layouts that are never closed.
 
-**Consequences:** Data from campaign A ends up in campaign B's run directory. Results are silently mixed.
-
-**Prevention:**
-1. Never run two campaigns simultaneously from the same `$PROJECT_ROOT`.
-2. Add a lockfile check: if `$PROJECT_ROOT/simulations` already points to a different run directory, abort with an error.
-3. Long-term: make the simulation code accept an absolute output directory instead of using relative paths from CWD.
-
-**Detection:** Check that `readlink $PROJECT_ROOT/simulations` matches the expected `$RUN_DIR/simulations` in each sbatch script before running.
-
-### Pitfall 10: `afterok` Dependency Kills Entire Pipeline on Single Task Failure
-
-**What goes wrong:** `submit_pipeline.sh` (line 101) uses `--dependency="afterok:$SIM_JOB"` for the merge step. With 100+ array tasks, if even ONE task fails (timeout, OOM, node failure), the merge job is never scheduled. The entire pipeline stalls silently.
-
-**Why it happens:** `afterok` requires ALL tasks to complete successfully. At scale, the probability of at least one failure is high. With 100 tasks and a 5% per-task failure rate, P(at least one failure) = 1 - 0.95^100 = 99.4%.
-
-**Consequences:** Pipeline hangs indefinitely. No merge, no evaluate, no results. The user must manually check `sacct`, identify failures, resubmit, and re-chain.
+**Consequences:** OOM on the dev machine or cluster evaluation node. Matplotlib emits "More than 20 figures have been opened" warnings that are easy to ignore.
 
 **Prevention:**
-1. Change merge dependency from `afterok` to `afterany` so merge runs even if some tasks fail. The merge script already handles missing files gracefully.
-2. Add a monitoring step or `scontrol show job` check that alerts when tasks fail.
-3. Document the `resubmit_failed.sh` workflow prominently -- it exists but users may not know to use it.
+1. Enforce that all new plot functions use `get_figure()` from `_helpers.py`, never raw `plt.subplots()`. This provides a single choke point for figure lifecycle management.
+2. Add a pytest fixture that counts open figures before and after each test, warning if the count increases.
+3. For batch generation scripts, wrap each figure in a `try/finally` that calls `plt.close(fig)`.
+4. Set `matplotlib.rcParams["figure.max_open_warning"]` to a low number (5) during development to catch leaks early.
 
-**Detection:** After submission, periodically run `sacct -j $SIM_JOB --format=JobID,State,ExitCode` to catch failures early.
+**Detection:** Monitor RSS memory during batch figure generation. A monotonically increasing memory profile indicates unclosed figures.
 
-### Pitfall 11: d_L Error Threshold Must Be Recalibrated After Stencil Upgrade
+### Pitfall 7: Corner Plot Libraries Fight With Custom Styles
 
-**What goes wrong:** The current 10% threshold (`FRACTIONAL_LUMINOSITY_DISTANCE_ERROR_THRESHOLD = 0.10` in bayesian_statistics.py line 58) was set because the forward-difference Fisher matrix was too imprecise for tighter thresholds. After upgrading to the 5-point stencil, d_L uncertainties should decrease, making 5% feasible. But if the threshold is tightened prematurely (before verifying the stencil works correctly), valid detections are discarded. If not tightened at all, the improved Fisher matrix is wasted.
+**What goes wrong:** Libraries like `corner` (for posterior corner plots) and `chainconsumer` (for chain visualization) apply their own styling to axes, overriding the project's mplstyle. Corner plots are a standard visualization in GW parameter estimation papers, so they will likely be needed. But `corner.corner()` sets its own tick parameters, label sizes, and spacing that conflict with `emri_thesis.mplstyle`.
 
-**Why it happens:** The threshold is a downstream parameter that depends on the upstream physics change. The two changes (stencil + threshold) must be sequenced correctly.
+**Why it happens:** These libraries are designed to produce self-contained, visually consistent multi-panel plots. They override rcParams locally to ensure their output looks correct regardless of the user's global style. This is good library design but bad for style consistency in a thesis.
 
-**Consequences:** Tightening too early: fewer detections than needed for the H0 posterior. Not tightening: the 5-point stencil upgrade provides no practical benefit to the science output.
+**Consequences:** Corner plots look different from all other figures in the thesis -- different font sizes, different tick formatting, different line widths.
 
 **Prevention:**
-1. Run the production campaign with the 10% threshold first.
-2. Analyze the distribution of `d_L_uncertainty / d_L` in the results.
-3. If the median drops well below 10%, tighten to 5% in a separate step.
-4. Never change the physics (stencil) and the filter (threshold) in the same phase.
+1. When using corner or similar libraries, pass explicit style overrides to match the thesis style: `corner.corner(..., label_kwargs={"fontsize": 12}, title_kwargs={"fontsize": 13})`.
+2. Wrap corner plot calls in a function that applies the project style before and after the call.
+3. Prefer libraries that accept `fig` and `axes` arguments so you can pre-create them with the project's style settings.
+4. Test that the corner plot font sizes match the rest of the thesis by inspecting the returned axes objects.
 
-**Detection:** Plot the histogram of `d_L_uncertainty / d_L` for both forward-diff and 5-point results on the same parameter sets.
+**Detection:** Visual inspection of the compiled thesis PDF -- corner plots should not look "different" from other figures.
+
+### Pitfall 8: PDF Vector Output Bloat From Dense Scatter Plots
+
+**What goes wrong:** Parameter space scatter plots with 10,000+ points produce multi-megabyte PDF files because each point is a separate vector object. The thesis PDF becomes 100+ MB, LaTeX compilation slows down, and the PDF viewer struggles to render the page. The `plot_cramer_rao_coverage` function already creates 3D scatter plots that will scale poorly.
+
+**Why it happens:** Vector formats (PDF, SVG) store each graphical element individually. A scatter plot with 50,000 points creates 50,000 path objects. The existing `plot_sky_localization_3d` and `plot_cramer_rao_coverage` functions will produce enormous PDFs with production-scale data.
+
+**Consequences:** Thesis PDF exceeds university submission size limits. LaTeX crashes with "TeX capacity exceeded" on pages with dense plots. Reviewers cannot open the PDF.
+
+**Prevention:**
+1. For scatter plots with >1000 points, rasterize the scatter layer while keeping axes/labels as vectors: `ax.scatter(..., rasterized=True)` with `fig.savefig(..., dpi=300)`.
+2. Alternatively, use `hexbin` or `hist2d` (density plots) instead of scatter for large datasets. The existing `plot_detection_contour` already uses `hist2d` -- follow this pattern.
+3. Set `savefig.dpi: 300` (already in the mplstyle) so rasterized elements look sharp.
+4. Add a `rasterized=True` default to `get_figure()` or to the style configuration for scatter-type plots.
+
+**Detection:** Check the file size of each generated PDF. Any single-figure PDF over 2 MB is suspect and should be rasterized.
+
+### Pitfall 9: The `bayesian_inference_mwe.py` Contains a Rogue `plt.show()`
+
+**What goes wrong:** Line 177 of `bayesian_inference_mwe.py` calls `plt.show()`, which blocks on the Agg backend and does nothing useful, or on an interactive backend opens a window that blocks the script. This is the only `plt.show()` call in the codebase. During the visualization overhaul, if this module is imported or its code is reused, the `plt.show()` will cause hangs on the cluster or in CI.
+
+**Why it happens:** This is legacy code from the MWE (minimum working example) that was designed for interactive Jupyter use. It was never cleaned up because the MWE is not part of the main pipeline.
+
+**Consequences:** Script hangs if accidentally triggered in batch mode. On CI, the test either hangs indefinitely or crashes depending on the backend.
+
+**Prevention:**
+1. Remove the `plt.show()` call during the visualization overhaul. Replace with `save_figure()` if the output is needed, or delete if it is dead code.
+2. Add a grep-based CI check that fails if `plt.show()` appears anywhere in the source tree (excluding test files and notebooks).
+
+**Detection:** `grep -r "plt.show()" master_thesis_code/` -- this should return zero results after cleanup.
+
+### Pitfall 10: Constrained Layout Incompatible With Some Multi-Panel Configurations
+
+**What goes wrong:** The mplstyle sets `figure.constrained_layout.use: True`, which is generally superior to `tight_layout`. But constrained layout can fail with certain subplot configurations: colorbars on specific axes in grid layouts, axes with `projection="3d"`, or figures using `GridSpec` manually. When it fails, matplotlib emits a warning and falls back to overlapping elements. The existing `plot_cramer_rao_coverage` and `plot_sky_localization_3d` use `projection="3d"` which has known constrained layout issues.
+
+**Why it happens:** Constrained layout's solver cannot always satisfy all constraints simultaneously, especially with 3D axes, inset axes, or complex GridSpec layouts. New multi-panel thesis figures (e.g., a 2x3 grid of posterior plots with shared colorbars) are likely to hit edge cases.
+
+**Consequences:** Labels overlap, colorbars extend beyond figure bounds, or subplot spacing is wildly uneven. The figure looks broken but no error is raised -- only a UserWarning that is easy to miss.
+
+**Prevention:**
+1. For complex multi-panel figures, explicitly pass `constrained_layout=False` to `plt.subplots()` and use `fig.tight_layout()` or manual `subplots_adjust()` instead.
+2. For 3D projection plots, always disable constrained layout.
+3. Capture matplotlib warnings in tests: `with warnings.catch_warnings(record=True) as w:` and fail if constrained layout warnings appear.
+4. Test every multi-panel figure configuration with the production data dimensions.
+
+**Detection:** Matplotlib emits `UserWarning: constrained_layout not applied` -- configure the test suite to treat this warning as an error for plotting tests.
 
 ## Minor Pitfalls
 
-### Pitfall 12: `np.matrix` Is Deprecated
+### Pitfall 11: Colormap Accessibility (Colorblind Safety)
 
-**What goes wrong:** Line 365 of parameter_estimation.py uses `np.matrix(cp.asnumpy(...)).I` for matrix inversion. `np.matrix` is deprecated since NumPy 1.15 and may be removed in a future version.
+**What goes wrong:** The mplstyle uses `image.cmap: viridis` (colorblind-safe), but individual plot functions may override with non-accessible colormaps. Physics tradition sometimes uses jet or rainbow colormaps that are inaccessible to ~8% of male readers.
 
-**Prevention:** Replace with `np.linalg.inv(cp.asnumpy(fisher_information_matrix))`. This is a one-line change with identical semantics for square matrices.
+**Prevention:** Only use perceptually uniform colormaps: viridis, cividis, inferno. Never use jet, rainbow, or spectral. Add a lint check or code review guideline.
 
-### Pitfall 13: PSD Cache Not Invalidated When Confusion Noise Is Added
+### Pitfall 12: DPI Mismatch Between Screen and Print
 
-**What goes wrong:** `_psd_cache` in `ParameterEstimation` caches PSD arrays keyed by waveform length `n`. Adding confusion noise changes the PSD values, but the cache does not know this. If any code path populates the cache before confusion noise is configured, stale values persist.
+**What goes wrong:** The mplstyle sets `figure.dpi: 150` for screen display but `savefig.dpi: 300` for file output. If a figure's layout is tuned visually (in a notebook at 150 DPI), text sizes and line widths may look different in the saved 300 DPI PDF due to the DPI difference affecting relative sizing of rasterized vs vector elements.
 
-**Prevention:** Clear the cache when the PSD configuration changes, or compute the PSD lazily with all noise components always included.
+**Prevention:** Always evaluate figure quality from the saved PDF, not from the notebook or screen rendering. Use a consistent DPI for both display and save when doing layout work.
 
-### Pitfall 14: H0 Sweep Output File Naming Collision
+### Pitfall 13: `_fig_from_ax` Helper Is Not Exported But Used Cross-Module
 
-**What goes wrong:** The posterior output path (bayesian_statistics.py line 270) uses `np.round(self.h, 3)` to generate filenames like `h_0_73.json`. For h-values like 0.725 and 0.7249, rounding to 3 decimals produces the same filename. The second write overwrites the first.
+**What goes wrong:** `evaluation_plots.py` and `bayesian_plots.py` both import `_fig_from_ax` from `simulation_plots.py`. This underscore-prefixed "private" function is a cross-module dependency. Refactoring `simulation_plots.py` will break two other modules.
 
-**Prevention:** Use more decimal places in the filename (4-5), or use the exact h-value string without rounding.
+**Prevention:** Move `_fig_from_ax` to `_helpers.py` where it belongs alongside `get_figure` and `save_figure`. Export it from `__init__.py` if needed by external callers.
 
-### Pitfall 15: Workspace Expiration During Long Campaigns
+### Pitfall 14: No Type Stubs for Visualization Libraries
 
-**What goes wrong:** bwHPC workspaces expire after 60 days. A production campaign submitted near the end of a workspace lifetime may lose results before analysis is complete.
+**What goes wrong:** mypy is configured with `disallow_untyped_defs = true`. Libraries like corner, seaborn, and chainconsumer have incomplete or no type stubs. Adding calls to these libraries produces mypy errors unless their modules are added to `ignore_missing_imports` in pyproject.toml.
 
-**Prevention:** Check workspace expiration date before submitting. Copy results to persistent storage (`$HOME` or project storage) immediately after the pipeline completes.
+**Prevention:** Add any new visualization library to the `[[tool.mypy.overrides]]` ignore list immediately when adding the dependency. Do not let mypy errors accumulate.
+
+### Pitfall 15: Plot Function Signatures Inconsistent With New Pattern
+
+**What goes wrong:** Existing plot functions use two patterns: some accept `ax: Axes | None = None` (and create a figure internally if None), others always create their own figure (like `plot_cramer_rao_coverage`). During the overhaul, if a third pattern is introduced (e.g., returning only `Figure` without `Axes`), the calling code becomes inconsistent and confusing.
+
+**Prevention:** Standardize all plot functions on the `ax: Axes | None = None` pattern with `(Figure, Axes)` return type. Functions that need special projections (3D) should still follow this pattern but accept `Any` for the axes type.
 
 ## Phase-Specific Warnings
 
 | Phase Topic | Likely Pitfall | Mitigation |
 |-------------|---------------|------------|
-| Fisher stencil upgrade | Timeout too short (Pitfall 3), more bounds rejections (Pitfall 1), ill-conditioning (Pitfall 4) | Increase timeout to 120s, log condition numbers, validate on test set first |
-| Confusion noise in PSD | SNR drop reduces detections (Pitfall 5), T_obs dependence (Pitfall 6), cache invalidation (Pitfall 13) | Implement before campaign sizing, pass T_obs, clear PSD cache |
-| Production campaign (100+ tasks) | afterok stalls pipeline (Pitfall 10), symlink collision (Pitfall 9) | Switch to afterany, document single-campaign constraint |
-| H0 sweep [0.6, 0.9] | Redundant setup per h-value (Pitfall 8), filename collisions (Pitfall 14) | Refactor or parallelize sweep, increase filename precision |
-| d_L threshold adjustment | Premature tightening (Pitfall 11) | Sequence after stencil validation, analyze distribution first |
+| Style system audit/rebuild | rcParams pollution (Pitfall 1), constrained layout failures (Pitfall 10) | Snapshot rcParams in tests, test 3D + multi-panel layouts explicitly |
+| Adding new visualization deps | Backend import order (Pitfall 5), over-engineering interactive (Pitfall 3), type stubs (Pitfall 14) | Verify headless compatibility, matplotlib-only output, update mypy config |
+| Refactoring existing plots | Silent breakage (Pitfall 4), _fig_from_ax coupling (Pitfall 13), pattern inconsistency (Pitfall 15) | Add smoke tests BEFORE refactoring, move shared helpers first |
+| LaTeX/publication quality | Font rendering (Pitfall 2), PDF bloat (Pitfall 8), DPI mismatch (Pitfall 12) | Keep usetex=False, rasterize dense scatters, evaluate from saved PDF |
+| Corner plots / posteriors | Style conflicts (Pitfall 7), memory leaks (Pitfall 6) | Pass explicit style kwargs, close figures after save |
+| Batch figure generation | Memory leaks (Pitfall 6), rogue plt.show (Pitfall 9) | Use get_figure() exclusively, remove plt.show(), close all figures |
 
 ## Ordering Recommendations
 
-Based on pitfall dependencies, the recommended phase ordering is:
+Based on pitfall dependencies, the recommended approach for the visualization overhaul is:
 
-1. **Physics corrections first** (stencil + confusion noise) -- because the production campaign results depend on these being correct. Running 100+ tasks with wrong physics wastes cluster hours.
-2. **Small validation campaign** -- verify detection rates, d_L error distributions, and condition numbers before committing to 100+ tasks.
-3. **Production campaign** -- with calibrated timeouts, afterany dependencies, and confusion noise.
-4. **H0 sweep** -- after the campaign completes and results are validated.
+1. **Test infrastructure first** -- Add smoke tests for all existing plot functions and a rcParams regression test BEFORE changing anything. This is the safety net. (Addresses Pitfalls 1, 4)
+2. **Refactor shared infrastructure** -- Move `_fig_from_ax` to helpers, clean up `plt.show()`, standardize function signatures. No visual changes. (Addresses Pitfalls 9, 13, 15)
+3. **Style system improvements** -- Modify the mplstyle file, evaluate usetex decision, add publication-quality settings. The test infrastructure from step 1 catches regressions. (Addresses Pitfalls 2, 10, 11, 12)
+4. **Add new visualization capabilities** -- Corner plots, improved posterior visualization, etc. Each new library is evaluated for headless compatibility and style integration. (Addresses Pitfalls 3, 5, 7, 8, 14)
+5. **Batch generation and thesis integration** -- Generate all figures with production data, verify PDF quality and size. (Addresses Pitfalls 6, 8)
 
-Running the production campaign before fixing the physics (as a "baseline") is tempting but wasteful: the results are not scientifically usable and the cluster allocation is limited.
+The key principle: build the safety net before swinging on the trapeze.
 
 ## Sources
 
-- [Vallisneri (2008), "Use and abuse of the Fisher information matrix"](https://arxiv.org/abs/gr-qc/0703086) -- Fisher matrix numerical pitfalls, ill-conditioning, parameter degeneracies
-- [Babak et al. (2021), "LISA Sensitivity and SNR Calculations"](https://arxiv.org/abs/2108.01167) -- canonical LISA PSD including galactic confusion noise
-- [SLURM Job Array Support](https://slurm.schedmd.com/job_array.html) -- afterok vs afterany semantics, array task limits
-- Direct codebase inspection of `parameter_estimation.py`, `LISA_configuration.py`, `bayesian_statistics.py`, `main.py`, `constants.py`, cluster scripts
+- [matplotlib Text rendering with LaTeX](https://matplotlib.org/stable/users/explain/text/usetex.html) -- LaTeX dependency requirements, font matching issues, PDF quality
+- [matplotlib Fonts documentation](https://matplotlib.org/stable/users/explain/text/fonts.html) -- mathtext vs usetex, font configuration
+- [Leo Stein: Fonts/sizes in matplotlib figures for LaTeX publications](https://duetosymmetry.com/code/latex-mpl-fig-tips/) -- practical tips for thesis-quality figures
+- [pytest-mpl: image comparison plugin](https://github.com/matplotlib/pytest-mpl) -- regression testing for plot output
+- [seaborn set_theme documentation](https://seaborn.pydata.org/generated/seaborn.set_theme.html) -- global rcParams mutation behavior
+- [seaborn FAQ](https://seaborn.pydata.org/faq.html) -- relationship with matplotlib, style system
+- [matplotlib Testing documentation](https://matplotlib.org/stable/devel/testing.html) -- image comparison decorators, check_figures_equal
+- Direct codebase inspection of `plotting/` module, `conftest.py`, `pyproject.toml`, `emri_thesis.mplstyle`, all plot factory functions
