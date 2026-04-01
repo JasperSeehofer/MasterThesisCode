@@ -89,3 +89,44 @@ def test_save_figure_keep_open(tmp_path: object) -> None:
 def test_style_sheet_sets_chunksize() -> None:
     apply_style()
     assert matplotlib.rcParams["agg.path.chunksize"] == 10000
+
+
+def test_rcparams_snapshot() -> None:
+    """Regression test: pin all 18 emri_thesis.mplstyle rcParams.
+
+    If any value changes, this test fails — forcing an intentional update
+    to both the .mplstyle file and this test.
+    """
+    apply_style()
+
+    expected: dict[str, object] = {
+        "figure.figsize": [6.4, 4.0],
+        "figure.dpi": 150.0,
+        "savefig.dpi": 300.0,
+        "font.size": 11.0,
+        "axes.titlesize": 13.0,
+        "axes.labelsize": 12.0,
+        "xtick.labelsize": 10.0,
+        "ytick.labelsize": 10.0,
+        "legend.fontsize": 10.0,
+        "text.usetex": False,
+        "lines.linewidth": 1.5,
+        "axes.grid": False,
+        "axes.linewidth": 0.8,
+        "legend.framealpha": 0.8,
+        "legend.edgecolor": "0.8",
+        "agg.path.chunksize": 10000,
+        "image.cmap": "viridis",
+        "figure.constrained_layout.use": True,
+    }
+
+    for key, expected_value in expected.items():
+        actual = matplotlib.rcParams[key]
+        if isinstance(expected_value, list):
+            assert list(actual) == expected_value, (
+                f"rcParam '{key}' drifted: expected {expected_value}, got {list(actual)}"
+            )
+        else:
+            assert actual == expected_value, (
+                f"rcParam '{key}' drifted: expected {expected_value}, got {actual}"
+            )
