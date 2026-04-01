@@ -2,7 +2,7 @@
 
 import os
 from collections.abc import Sequence
-from typing import Any
+from typing import Any, Literal
 
 import matplotlib.pyplot as plt
 from matplotlib.axes import Axes
@@ -10,17 +10,45 @@ from matplotlib.colorbar import Colorbar
 from matplotlib.figure import Figure
 from matplotlib.image import AxesImage
 
+# REVTeX two-column figure width presets (inches)
+_PRESETS: dict[str, tuple[float, float]] = {
+    "single": (3.375, 3.375 / 1.618),  # ~3.375 x 2.086
+    "double": (7.0, 7.0 / 1.618),  # ~7.0 x 4.327
+}
+
+
+def _fig_from_ax(ax: Axes) -> Figure:
+    """Extract Figure from an Axes, asserting it is not None."""
+    fig = ax.get_figure()
+    assert isinstance(fig, Figure)
+    return fig
+
 
 def get_figure(
     nrows: int = 1,
     ncols: int = 1,
     figsize: tuple[float, float] | None = None,
+    preset: Literal["single", "double"] | None = None,
     **kwargs: Any,
 ) -> tuple[Figure, Any]:
     """Create a figure and axes using the OO API.
 
-    When *figsize* is ``None`` the default from the active style sheet is used.
+    Parameters
+    ----------
+    nrows, ncols:
+        Subplot grid dimensions.
+    figsize:
+        Explicit (width, height) in inches.  Overrides *preset*.
+    preset:
+        Named size preset: ``"single"`` (~3.375in, REVTeX single column)
+        or ``"double"`` (~7.0in, REVTeX double column).  Ignored when
+        *figsize* is given.  When neither is given, the active style
+        sheet default is used.
+    **kwargs:
+        Forwarded to :func:`matplotlib.pyplot.subplots`.
     """
+    if figsize is None and preset is not None:
+        figsize = _PRESETS[preset]
     fig, ax = plt.subplots(nrows, ncols, figsize=figsize, **kwargs)
     return fig, ax
 

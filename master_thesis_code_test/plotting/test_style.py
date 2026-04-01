@@ -91,6 +91,28 @@ def test_style_sheet_sets_chunksize() -> None:
     assert matplotlib.rcParams["agg.path.chunksize"] == 10000
 
 
+def test_apply_style_latex_mode() -> None:
+    """apply_style(use_latex=True) enables usetex and serif fonts."""
+    apply_style(use_latex=True)
+    assert matplotlib.rcParams["text.usetex"] is True
+    assert "serif" in matplotlib.rcParams["font.family"]
+    # Reset to default and verify usetex is back to False
+    apply_style()
+    assert matplotlib.rcParams["text.usetex"] is False
+
+
+def test_apply_style_default_unchanged() -> None:
+    """apply_style() with no args matches the mplstyle defaults exactly."""
+    apply_style()
+    assert matplotlib.rcParams["text.usetex"] is False
+    assert matplotlib.rcParams["font.size"] == 11.0
+    assert matplotlib.rcParams["axes.titlesize"] == 13.0
+    assert matplotlib.rcParams["axes.labelsize"] == 12.0
+    assert matplotlib.rcParams["xtick.labelsize"] == 10.0
+    assert matplotlib.rcParams["ytick.labelsize"] == 10.0
+    assert matplotlib.rcParams["legend.fontsize"] == 10.0
+
+
 def test_rcparams_snapshot() -> None:
     """Regression test: pin all 18 emri_thesis.mplstyle rcParams.
 

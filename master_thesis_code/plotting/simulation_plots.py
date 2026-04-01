@@ -14,14 +14,7 @@ import numpy.typing as npt
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 
-from master_thesis_code.plotting._helpers import save_figure
-
-
-def _fig_from_ax(ax: Axes) -> Figure:
-    """Extract Figure from an Axes, asserting it is not None."""
-    fig = ax.get_figure()
-    assert isinstance(fig, Figure)
-    return fig
+from master_thesis_code.plotting._helpers import _fig_from_ax, save_figure
 
 
 def plot_gpu_usage(
