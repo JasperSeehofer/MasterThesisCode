@@ -136,7 +136,11 @@ Plans:
 4. Expected variance reduction factor is computed from Phase 18 data: the boundary-region CI half-width reduction is >2x compared to uniform allocation with the same total injection count
 5. The proposal distribution q(theta) has full support over the prior p(theta) -- no region has q = 0 where p > 0 (guaranteed by the defensive mixture: alpha*uniform + (1-alpha)*targeted)
 
-**Plans:** TBD
+**Plans:** 2 plans
+
+Plans:
+- [ ] 19-01-PLAN.md -- IS-weighted histogram estimator implementation with uniform-weight recovery test (SMPL-01)
+- [ ] 19-02-PLAN.md -- Neyman-optimal allocation, VRF computation, two-stage design with defensive mixture (SMPL-02, SMPL-03)
 
 ### Phase 20: Validation
 
@@ -183,5 +187,5 @@ Plans:
 | --- | --- | --- | --- |
 | 17. Injection Physics Audit | 2/2 | Complete | 2026-03-31 |
 | 18. Detection Yield & Grid Quality | 2/2 | Complete | 2026-04-01 |
-| 19. Enhanced Sampling Design | TBD | Not started | - |
+| 19. Enhanced Sampling Design | 0/2 | In progress | - |
 | 20. Validation | TBD | Not started | - |
