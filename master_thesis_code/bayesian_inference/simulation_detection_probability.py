@@ -107,13 +107,14 @@ class SimulationDetectionProbability:
         # Load data and build interpolators per h value
         self._interpolators: dict[float, RegularGridInterpolator] = {}
         self._interpolators_1d: dict[float, RegularGridInterpolator] = {}
+        self._quality_flags: dict[
+            float, dict[str, npt.NDArray[np.float64] | npt.NDArray[np.bool_]]
+        ] = {}
 
         for h_val in self._h_grid:
             files = h_file_map.get(h_val, [])
             if not files:
-                logger.warning(
-                    "No injection files found for h=%.4f, skipping.", h_val
-                )
+                logger.warning("No injection files found for h=%.4f, skipping.", h_val)
                 continue
 
             dfs = [pd.read_csv(f) for f in files]
@@ -126,20 +127,29 @@ class SimulationDetectionProbability:
                 len(files),
             )
 
-            self._interpolators[h_val] = self._build_grid_2d(df, snr_threshold)
+            self._interpolators[h_val] = self._build_grid_2d(df, snr_threshold, h_val)
             self._interpolators_1d[h_val] = self._build_grid_1d(df, snr_threshold)
 
     def _build_grid_2d(
-        self, df: pd.DataFrame, snr_threshold: float
+        self,
+        df: pd.DataFrame,
+        snr_threshold: float,
+        h_val: float | None = None,
     ) -> RegularGridInterpolator:
         """Build a 2D P_det(d_L, M) grid by marginalizing over sky angles.
 
         Uses the ``luminosity_distance`` column directly -- no z-to-d_L
         conversion needed.
 
+        If ``h_val`` is provided, per-bin quality metadata (total counts,
+        detected counts, reliable mask) is stored in ``self._quality_flags``
+        for diagnostic use.  This metadata does **not** affect the
+        interpolation result.
+
         Args:
             df: DataFrame with columns luminosity_distance, M, SNR.
             snr_threshold: SNR detection threshold.
+            h_val: Hubble parameter value for quality flag storage (optional).
 
         Returns:
             RegularGridInterpolator for P_det(d_L, M).
@@ -157,9 +167,7 @@ class SimulationDetectionProbability:
         M_edges = np.geomspace(M_min, M_max, _M_BINS + 1)  # noqa: N806
 
         # Total events histogram
-        total_counts, _, _ = np.histogram2d(
-            dl_vals, M_vals, bins=[dl_edges, M_edges]
-        )
+        total_counts, _, _ = np.histogram2d(dl_vals, M_vals, bins=[dl_edges, M_edges])
 
         # Detected events histogram
         detected_mask = snr_vals >= snr_threshold
@@ -177,9 +185,21 @@ class SimulationDetectionProbability:
             where=total_counts > 0,
         )
 
+        # Store quality flags (metadata only -- does not affect interpolation)
+        if h_val is not None:
+            self._quality_flags[h_val] = {
+                "n_total": total_counts.copy(),
+                "n_detected": detected_counts.copy(),
+                "reliable": (total_counts >= 10),
+                "dl_edges": dl_edges.copy(),
+                "M_edges": M_edges.copy(),
+            }
+
         # Use bin centers as grid coordinates
         dl_centers = 0.5 * (dl_edges[:-1] + dl_edges[1:])
-        M_centers = np.sqrt(M_edges[:-1] * M_edges[1:])  # geometric mean for log-spaced  # noqa: N806
+        M_centers = np.sqrt(
+            M_edges[:-1] * M_edges[1:]
+        )  # geometric mean for log-spaced  # noqa: N806
 
         return RegularGridInterpolator(
             (dl_centers, M_centers),
@@ -189,9 +209,7 @@ class SimulationDetectionProbability:
             fill_value=0.0,
         )
 
-    def _build_grid_1d(
-        self, df: pd.DataFrame, snr_threshold: float
-    ) -> RegularGridInterpolator:
+    def _build_grid_1d(self, df: pd.DataFrame, snr_threshold: float) -> RegularGridInterpolator:
         """Build a 1D P_det(d_L) grid by marginalizing over M and sky angles.
 
         Args:
@@ -209,9 +227,7 @@ class SimulationDetectionProbability:
 
         total_counts, _ = np.histogram(dl_vals, bins=dl_edges)
         detected_mask = snr_vals >= snr_threshold
-        detected_counts, _ = np.histogram(
-            dl_vals[detected_mask], bins=dl_edges
-        )
+        detected_counts, _ = np.histogram(dl_vals[detected_mask], bins=dl_edges)
 
         p_det_1d = np.divide(
             detected_counts,
@@ -229,6 +245,42 @@ class SimulationDetectionProbability:
             bounds_error=False,
             fill_value=0.0,
         )
+
+    def quality_flags(self, h: float) -> dict[str, npt.NDArray[np.float64] | npt.NDArray[np.bool_]]:
+        """Return per-bin quality metadata for the nearest h grid point.
+
+        Quality flags are diagnostic metadata stored during grid construction.
+        They do **not** affect the P_det interpolation result.
+
+        The returned dict contains:
+
+        - ``n_total``: int array (dl_bins, M_bins) -- total injections per bin
+        - ``n_detected``: int array (dl_bins, M_bins) -- detected injections
+        - ``reliable``: bool array (dl_bins, M_bins) -- True where n_total >= 10
+        - ``dl_edges``: float array (dl_bins+1,) -- d_L bin edges in Gpc
+        - ``M_edges``: float array (M_bins+1,) -- mass bin edges in solar masses
+
+        Args:
+            h: Hubble parameter value.  The flags for the nearest h grid
+                point are returned.
+
+        Returns:
+            Dict of quality flag arrays.
+
+        Raises:
+            ValueError: If no quality flags are available (empty grid).
+        """
+        if not self._quality_flags:
+            msg = "No quality flags available. Were grids built successfully?"
+            raise ValueError(msg)
+
+        # Find nearest h in grid
+        idx = int(np.argmin([abs(h_g - h) for h_g in self._h_grid]))
+        h_nearest = self._h_grid[idx]
+        if h_nearest not in self._quality_flags:
+            msg = f"No quality flags for h={h_nearest:.4f}."
+            raise ValueError(msg)
+        return self._quality_flags[h_nearest]
 
     def _interpolate_at_h(
         self,
