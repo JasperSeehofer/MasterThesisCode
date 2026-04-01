@@ -11,6 +11,13 @@ from matplotlib.figure import Figure
 from matplotlib.image import AxesImage
 
 
+def _fig_from_ax(ax: Axes) -> Figure:
+    """Extract Figure from an Axes, asserting it is not None."""
+    fig = ax.get_figure()
+    assert isinstance(fig, Figure)
+    return fig
+
+
 def get_figure(
     nrows: int = 1,
     ncols: int = 1,

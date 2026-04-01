@@ -13,7 +13,7 @@ import numpy.typing as npt
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 
-from master_thesis_code.plotting.simulation_plots import _fig_from_ax
+from master_thesis_code.plotting._helpers import _fig_from_ax
 
 
 def plot_mean_cramer_rao_bounds(
