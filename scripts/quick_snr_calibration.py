@@ -24,8 +24,12 @@ def main() -> None:
 
     rng = np.random.default_rng(args.seed)
 
-    cosmological_model = Model1CrossCheck()
-    galaxy_catalog = GalaxyCatalogueHandler()
+    cosmological_model = Model1CrossCheck(rng=rng)
+    galaxy_catalog = GalaxyCatalogueHandler(
+        M_min=cosmological_model.parameter_space.M.lower_limit,
+        M_max=cosmological_model.parameter_space.M.upper_limit,
+        z_max=cosmological_model.max_redshift,
+    )
     parameter_estimation = ParameterEstimation(
         WaveGeneratorType.PN5_AAK,
         cosmological_model.parameter_space,
