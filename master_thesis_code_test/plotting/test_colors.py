@@ -3,7 +3,6 @@
 from master_thesis_code.plotting._colors import CMAP, CYCLE, EDGE, MEAN, REFERENCE, TRUTH
 from master_thesis_code.plotting._labels import LABELS
 
-
 # --- _colors.py tests ---
 
 

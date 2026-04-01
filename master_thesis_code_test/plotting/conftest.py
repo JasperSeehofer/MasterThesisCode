@@ -15,7 +15,7 @@ import pytest
 
 
 @pytest.fixture(autouse=True)
-def _close_figures() -> Generator[None, None, None]:
+def _close_figures() -> Generator[None]:
     """Close all matplotlib figures after each test to prevent memory leaks."""
     yield
     plt.close("all")
