@@ -1,4 +1,4 @@
-# Validation Report: IS-Weighted P_det Estimator (VALD-01)
+# Validation Report: IS-Weighted P_det Estimator (VALD-01 + VALD-02)
 
 ## Summary Verdict
 
@@ -6,6 +6,14 @@
 results identical to the standard estimator to machine precision (max |diff| = 0.0).
 Zero BH-adjusted discoveries across 916 tested bins. Monotonicity satisfied. Boundary
 conditions met. Farr criterion passes globally for all 7 h-values.
+
+**VALD-02: PASS** -- Grid-integrated selection integral alpha_grid agrees with the direct
+MC selection integral alpha_MC to machine precision (|diff| = 0.0 for all 7 h-values).
+This confirms the grid construction pipeline (load -> bin -> sum) introduces no binning
+artifacts (no events lost or double-counted). All alpha(h) in (0, 1). MC uncertainty
+sigma_MC ranges from 3.1e-4 to 6.9e-4.
+
+**Combined verdict: PASS** -- Both VALD-01 and VALD-02 pass.
 
 ---
 
@@ -149,6 +157,79 @@ Reference: Farr (2019), arXiv:1904.10879.
 
 ---
 
+## Grid vs Direct MC Comparison (VALD-02)
+
+The LVK standard approach for estimating the integrated detection probability uses
+the direct MC sum without gridding: alpha(h) = N_det / N_total. This comparison
+verifies that our grid-based P_det, when integrated back over the empirical injection
+distribution, recovers the same value.
+
+**Reference:** Mandel, Farr & Gair (2019), arXiv:1809.02063, Eq. (8).
+
+### Mathematical Identity
+
+For the standard (unweighted) estimator P_det(B) = N_det(B) / N_total(B):
+
+    alpha_grid = sum_B [ P_det(B) * N_total(B) ] / N_total_global
+              = sum_B [ N_det(B) ] / N_total_global
+              = N_det_global / N_total_global
+              = alpha_MC
+
+This is an algebraic identity -- any nonzero difference indicates a bug in the grid
+construction pipeline (events falling outside bin edges, double-counting, etc.).
+
+### Per-h Comparison Table
+
+| h    | N_total | N_det | alpha_MC   | alpha_grid | |diff|    | sigma_MC   | |diff|/sigma |
+|------|---------|-------|------------|------------|----------|------------|-------------|
+| 0.60 | 22,500  | 50    | 2.222e-3   | 2.222e-3   | 0.00e+00 | 3.14e-4    | 0.00e+00    |
+| 0.65 | 26,000  | 78    | 3.000e-3   | 3.000e-3   | 0.00e+00 | 3.39e-4    | 0.00e+00    |
+| 0.70 | 23,500  | 68    | 2.894e-3   | 2.894e-3   | 0.00e+00 | 3.50e-4    | 0.00e+00    |
+| 0.73 | 25,500  | 95    | 3.725e-3   | 3.725e-3   | 0.00e+00 | 3.82e-4    | 0.00e+00    |
+| 0.80 | 25,000  | 97    | 3.880e-3   | 3.880e-3   | 0.00e+00 | 3.93e-4    | 0.00e+00    |
+| 0.85 | 25,500  | 138   | 5.412e-3   | 5.412e-3   | 0.00e+00 | 4.59e-4    | 0.00e+00    |
+| 0.90 | 17,000  | 137   | 8.059e-3   | 8.059e-3   | 0.00e+00 | 6.86e-4    | 0.00e+00    |
+
+### Consistency Checks
+
+- **alpha(h) bounds:** All alpha(h) in (0, 1) -- PASS
+- **alpha(h) monotonicity:** Weakly non-decreasing overall (3.6x increase from h=0.60 to h=0.90).
+  Minor non-monotonicity at h=0.70 (2.894e-3 < 3.000e-3 at h=0.65) is within 1-sigma Poisson
+  noise (difference 1.1e-4 vs sigma ~3.5e-4) -- WARN (not a failure)
+- **sigma_MC magnitude:** Ranges from 3.1e-4 to 6.9e-4, consistent with the order-of-magnitude
+  estimate sqrt(alpha/N) ~ 0.003-0.007 stated in the plan
+- **Phase 18 consistency:** alpha_MC values match the yield report f_det column exactly
+
+### Interpretation
+
+The zero difference for all 7 h-values confirms:
+
+1. **No events are lost in binning:** Every injection event in the CSV falls within the
+   histogram2d bin edges. This is guaranteed by the edge construction (dl_edges from 0 to
+   1.1*max(d_L), M_edges from 0.9*min(M) to 1.1*max(M)).
+
+2. **No events are double-counted:** Each event contributes to exactly one bin in the 2D
+   histogram (numpy.histogram2d assigns each value to exactly one bin).
+
+3. **The grid construction pipeline is correct** as a round-trip: load_injection_data ->
+   build_grid_with_ci -> grid_integrated_alpha recovers the raw count ratio.
+
+### When This Comparison Becomes Non-Trivial
+
+The comparison is trivially exact for the unweighted estimator. It becomes a meaningful
+test when:
+
+- **IS weights are applied:** The weighted estimator P_det_IS(B) = sum(w_i * I_det,i) / sum(w_i)
+  will generally differ from the unweighted N_det/N_total, and the grid-integrated alpha will
+  differ from the direct weighted sum due to binning effects
+- **Interpolation is used:** If the grid is used to estimate P_det at non-bin-center points
+  (e.g., via RegularGridInterpolator), the interpolated integral may differ from both alpha_MC
+  and alpha_grid due to interpolation error
+
+**VALD-02 verdict: PASS**
+
+---
+
 ## Limitations
 
 1. **IS tested only with w=1 (no enhanced injection data yet):** The validation
@@ -192,7 +273,10 @@ Reference: Farr (2019), arXiv:1904.10879.
 - `bh_fdr_correction(non_overlap_flags, q=0.05)` -- Benjamini-Hochberg procedure
 - `monotonicity_check(grid, min_n=10)` -- isotonic regression per M-column
 - `boundary_condition_check(grid)` -- corner P_det verification
-- `run_validation(data_dir, h_values, dl_bins, m_bins)` -- main entry point
+- `run_validation(data_dir, h_values, dl_bins, m_bins)` -- VALD-01 entry point
+- `direct_mc_alpha(n_detected, n_total)` -- direct MC selection integral (VALD-02)
+- `grid_integrated_alpha(grid)` -- grid-integrated selection integral (VALD-02)
+- `grid_vs_mc_comparison(data_dir, h_values, dl_bins, m_bins)` -- VALD-02 entry point
 
 **Mypy:** Clean (no errors).
 **Existing tests:** 203 pass, 18 deselected.
@@ -200,4 +284,4 @@ Reference: Farr (2019), arXiv:1904.10879.
 ---
 
 _Generated: 2026-04-01_
-_Phase: 20-validation, Plan: 01_
+_Phase: 20-validation, Plans: 01 + 02_
