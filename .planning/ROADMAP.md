@@ -4,7 +4,8 @@
 
 - ✅ **v1.0 EMRI HPC Integration** — Phases 1-5 (shipped 2026-03-27)
 - ✅ **v1.1 Clean Simulation Campaign** — Phases 6-8 (shipped 2026-03-29)
-- 🚧 **v1.2 Production Campaign & Physics Corrections** — Phases 9-13 (in progress)
+- ✅ **v1.2 Production Campaign & Physics Corrections** — Phases 9-13 (shipped 2026-04-01)
+- 🚧 **v1.3 Visualization Overhaul** — Phases 14-19 (in progress)
 
 ## Phases
 
@@ -32,101 +33,111 @@ Full details: `.planning/milestones/v1.1-ROADMAP.md`
 
 </details>
 
-### 🚧 v1.2 Production Campaign & Physics Corrections (In Progress)
+<details>
+<summary>✅ v1.2 Production Campaign & Physics Corrections (Phases 9-13) — SHIPPED 2026-04-01</summary>
 
-**Milestone Goal:** Fix known physics bugs in the Fisher matrix and PSD, then run a production-scale simulation campaign with full H0 posterior sweep.
+- [x] Phase 9: Galactic Confusion Noise (1/1 plan) — Added galactic foreground to LISA PSD
+- [x] Phase 10: Five-Point Stencil Derivatives (1/1 plan) — O(epsilon^4) Fisher matrix derivatives
+- [x] Phase 11: Validation Campaign (2/2 plans) — Corrected physics validated at small scale
+- [x] Phase 11.1: Simulation-Based Detection Probability (5/5 plans) — Replaced KDE P_det with simulation-based
+- [x] Phase 12: Production Campaign (1/1 plan) — 100+ task campaign on bwUniCluster
+- [x] Phase 13: H0 Posterior Sweep (1/1 plan) — Full H0 posterior over [0.6, 0.9]
 
-- [ ] **Phase 9: Galactic Confusion Noise** - Add galactic foreground confusion noise to LISA PSD
-- [ ] **Phase 10: Five-Point Stencil Derivatives** - Upgrade Fisher matrix from forward-difference to O(epsilon^4) stencil
-- [ ] **Phase 11: Validation Campaign** - Verify corrected physics with small test run and calibrate thresholds
-- [ ] **Phase 12: Production Campaign** - Run 100+ task simulation on bwUniCluster with corrected physics
-- [ ] **Phase 13: H0 Posterior Sweep** - Evaluate full Hubble constant posterior over [0.6, 0.9]
+Full details: `.planning/milestones/v1.2-ROADMAP.md`
+
+</details>
+
+### 🚧 v1.3 Visualization Overhaul (In Progress)
+
+**Milestone Goal:** Modernize the visualization stack to produce publication-quality, thesis-ready matplotlib figures with consistent styling, proper uncertainty visualization, and standard EMRI/LISA community plot types.
+
+- [ ] **Phase 14: Test Infrastructure & Safety Net** - Smoke tests and rcParams regression checks before any refactoring
+- [ ] **Phase 15: Style Infrastructure** - Centralized colors, figure sizes, LaTeX toggle, and shared helpers
+- [ ] **Phase 16: Data Layer & Fisher Visualizations** - Covariance reconstruction and Fisher ellipse/strain plots
+- [ ] **Phase 17: Enhanced Existing Plots** - Upgrade all existing plot modules to thesis quality
+- [ ] **Phase 18: New Plot Modules** - Sky localization, corner plots, and convergence diagnostics
+- [ ] **Phase 19: Campaign Dashboards & Batch Generation** - Multi-panel composites and automated figure pipeline
 
 ## Phase Details
 
-### Phase 9: Galactic Confusion Noise
-**Goal**: LISA PSD includes the galactic confusion foreground, producing physically correct SNR estimates
-**Depends on**: Phase 8 (v1.1 cluster pipeline operational)
-**Requirements**: PHYS-02
+### Phase 14: Test Infrastructure & Safety Net
+**Goal**: A safety net of plot smoke tests exists so that style and infrastructure changes in later phases cannot silently break existing thesis-critical figures
+**Depends on**: Phase 13 (v1.2 complete)
+**Requirements**: TEST-01, TEST-02
 **Success Criteria** (what must be TRUE):
-  1. `power_spectral_density_a_channel()` returns a PSD that includes the galactic confusion noise term from Babak et al. (2023) Eq. 17
-  2. PSD at 1 mHz with confusion noise is measurably larger than PSD without confusion noise
-  3. Existing CPU tests pass with the updated PSD (no regression)
-  4. A reference comment citing Babak et al. (2023) arXiv:2303.15929 appears above the confusion noise implementation
-**Plans:** 1 plan
-Plans:
-- [ ] 09-01-PLAN.md — Add confusion noise S_c(f) to A/E-channel PSD with TDD tests
-
-### Phase 10: Five-Point Stencil Derivatives
-**Goal**: Fisher matrix uses O(epsilon^4) five-point stencil derivatives, producing accurate Cramer-Rao bounds
-**Depends on**: Phase 9
-**Requirements**: PHYS-01, PHYS-03
-**Success Criteria** (what must be TRUE):
-  1. `compute_fisher_information_matrix()` calls `five_point_stencil_derivative()` instead of `finite_difference_derivative()`
-  2. CRB computation timeout is increased to at least 120 seconds to accommodate the ~4x increase in waveform evaluations
-  3. Fisher matrix condition numbers are logged for each event, enabling detection of ill-conditioned matrices
-  4. A reference comment citing Vallisneri (2008) arXiv:gr-qc/0703086 appears at the call site
-**Plans:** 1 plan
-Plans:
-- [ ] 10-01-PLAN.md — Refactor 5-point stencil API, wire into Fisher matrix with toggle, add condition number logging, update timeout to 90s
-
-### Phase 11: Validation Campaign
-**Goal**: Corrected physics produces valid results at small scale, with calibrated timeouts and thresholds for the production run
-**Depends on**: Phase 10
-**Requirements**: SIM-01, SIM-03
-**Success Criteria** (what must be TRUE):
-  1. A 3-5 task validation campaign completes on bwUniCluster with the corrected PSD and Fisher derivatives
-  2. Detection rates and d_L error distributions are compared against v1.1 smoke test results to confirm physics changes behave as expected
-  3. d_L fractional error threshold is recalibrated based on observed stencil accuracy (tightened from 10% if data supports it)
-  4. Per-task wall time fits within SLURM limits, confirming timeout and job parameters are ready for production scale
-**Plans:** 1/2 plans executed
-Plans:
-- [x] 11-01-PLAN.md — Merge Phase 10 branch, write comparison analysis script
-- [ ] 11-02-PLAN.md — Submit cluster campaign, rsync results, produce comparison report, apply D-08/D-09 fixes
-
-### Phase 11.1: Simulation-Based Detection Probability (INSERTED)
-
-**Goal:** Replace KDE-based DetectionProbability with simulation-based P_det built from a dedicated SNR-only injection campaign, resolving the H0 posterior bias
-**Requirements**: D-01, D-02, D-03, D-04, D-05, D-06, D-07, D-08, D-09, D-10, D-11, D-12, D-13, D-14, D-15
-**Depends on:** Phase 11
-**Success Criteria** (what must be TRUE):
-  1. An injection campaign produces ~10,000 SNR-only events per h value for 7 h values (0.60-0.90)
-  2. SimulationDetectionProbability class loads injection CSVs, applies SNR threshold at evaluation time, builds P_det(z,M|h) interpolation grids
-  3. Pipeline B uses SimulationDetectionProbability exclusively (old KDE class deleted, debug flag removed)
-  4. H0 posterior with simulation-based P_det has h=0.73 within 90% credible interval
-**Plans:** 5/5 plans complete
-
-Plans:
-- [x] 11.1-01-PLAN.md — Add injection campaign CLI mode and event loop
-- [ ] 11.1-02-PLAN.md — Create SimulationDetectionProbability class with tests
-- [x] 11.1-03-PLAN.md — Replace old P_det in Pipeline B, delete KDE class
-- [ ] 11.1-04-PLAN.md — Create cluster scripts for injection campaign
-- [ ] 11.1-05-PLAN.md — Run injection campaign, evaluate H0 posterior, validate
-
-### Phase 12: Production Campaign
-**Goal**: A statistically sufficient catalog of Cramer-Rao bounds exists for meaningful H0 inference
-**Depends on**: Phase 11
-**Requirements**: SIM-02
-**Success Criteria** (what must be TRUE):
-  1. A 100+ task simulation campaign completes on bwUniCluster, producing merged Cramer-Rao bounds CSV
-  2. The detection catalog contains enough events (order 1000+) for statistically meaningful Bayesian inference
-  3. `run_metadata.json` records the git commit, seed, and SLURM job IDs for full reproducibility
+  1. Every existing plot factory function has a smoke test that calls it with minimal valid data and asserts a (Figure, Axes) return without error
+  2. An rcParams snapshot test calls `apply_style()` and verifies that key rcParams (font size, tick direction, figure DPI, color cycle) match expected values, failing if the mplstyle drifts
+  3. Running `uv run pytest -m "not gpu and not slow"` passes with all new plot smoke tests green
 **Plans**: TBD
 
-### Phase 13: H0 Posterior Sweep
-**Goal**: A full Hubble constant posterior with credible intervals is computed from the production detection catalog
-**Depends on**: Phase 12
-**Requirements**: H0-01, H0-02
+### Phase 15: Style Infrastructure
+**Goal**: All downstream plot work builds on a consistent, centralized style system with proper figure sizing, LaTeX support, and shared color palette
+**Depends on**: Phase 14
+**Requirements**: STYLE-01, STYLE-02, STYLE-03, STYLE-04, STYLE-05
 **Success Criteria** (what must be TRUE):
-  1. The evaluation pipeline runs over a grid of h-values spanning [0.6, 0.9], producing per-h likelihood values
-  2. A combined posterior plot shows the normalized H0 posterior with MAP estimate and 68%/95% credible intervals
-  3. All posterior results are saved to files for inclusion in the thesis
+  1. Figures created via helpers use standardized thesis column widths (single ~3.5in, double ~7.0in) and existing tests still pass
+  2. All axis labels in existing plot modules use LaTeX mathematical notation via mathtext (no raw ASCII for physics symbols)
+  3. `apply_style(use_latex=True)` enables full LaTeX rendering; `apply_style()` (default) uses mathtext fallback and works on headless CI
+  4. A `_colors.py` module provides a named color palette used by all plot modules, with no ad-hoc color strings remaining in production code
+  5. `_fig_from_ax` is importable from `_helpers.py` and the old location in `simulation_plots.py` is removed or re-exports from helpers
 **Plans**: TBD
+**UI hint**: yes
+
+### Phase 16: Data Layer & Fisher Visualizations
+**Goal**: CRB CSV data can be loaded and reconstructed into covariance matrices, and Fisher-based visualizations (error ellipses, characteristic strain) are available as factory functions
+**Depends on**: Phase 15
+**Requirements**: FISH-01, FISH-02, FISH-04, FISH-05
+**Success Criteria** (what must be TRUE):
+  1. `_data.py` reconstructs a symmetric 14x14 covariance matrix from the `delta_X_delta_Y` columns in any CRB CSV file produced by the simulation pipeline
+  2. 2D Fisher error ellipses (1-sigma, 2-sigma contours) render for at least three key EMRI parameter pairs (e.g., M-mu, d_L-inclination, sky angles)
+  3. A characteristic strain h_c(f) plot shows an example EMRI signal track overlaid on the LISA sensitivity curve with noise components
+  4. Parameter uncertainty distributions display with intrinsic/extrinsic grouping and LaTeX-formatted parameter labels
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 17: Enhanced Existing Plots
+**Goal**: All existing plot modules produce thesis-quality figures with proper uncertainty visualization, reference annotations, and consistent styling
+**Depends on**: Phase 16
+**Requirements**: CORE-01, CORE-02, CORE-03, CORE-04, CORE-05, CORE-06, CORE-07, FISH-06, FISH-07
+**Success Criteria** (what must be TRUE):
+  1. H0 posterior plot shows shaded 68%/95% credible intervals with vertical reference lines for Planck and SH0ES values
+  2. Individual event posteriors are distinguishable by SNR or redshift via color mapping, with the combined posterior visually prominent
+  3. SNR distribution histogram includes a cumulative distribution overlay and a vertical threshold annotation line
+  4. Detection yield vs redshift shows both injected and detected populations with a detection fraction curve
+  5. Detection probability heatmap has a clean colorbar spanning [0,1] and detection contours in (z, M) space overlay the injected population
+  6. LISA PSD plot shows the galactic confusion noise component as a separate curve alongside the instrument noise
+  7. Luminosity distance d_L(z) plot includes comparison curves for different H0 values
+  8. Injected vs recovered parameter scatter plots show measurement quality with identity lines and residual annotations
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 18: New Plot Modules
+**Goal**: Sky localization, multi-parameter corner plots, and convergence diagnostics are available as standard factory functions following the project's (Figure, Axes) pattern
+**Depends on**: Phase 16, Phase 17
+**Requirements**: SKY-01, FISH-03, CONV-01, CONV-02
+**Success Criteria** (what must be TRUE):
+  1. A Mollweide projection sky map displays EMRI sky positions with localization ellipses, replacing the non-standard 3D scatter plot
+  2. A corner plot of an EMRI parameter subset renders from Fisher-derived Gaussian approximation using the `corner` library with thesis styling
+  3. H0 convergence plot shows how the posterior width narrows as the number of detected events increases
+  4. Detection efficiency curve shows a 1D P_det slice with confidence intervals
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 19: Campaign Dashboards & Batch Generation
+**Goal**: A single command produces all thesis figures from campaign data, with composite summary panels and size-optimized PDF output
+**Depends on**: Phase 17, Phase 18
+**Requirements**: CAMP-01, CAMP-02, CAMP-03
+**Success Criteria** (what must be TRUE):
+  1. A multi-panel composite figure combines key result plots (H0 posterior, SNR distribution, detection yield, sky map) into a single summary dashboard
+  2. A batch generation script produces all thesis figures from a campaign working directory without manual intervention
+  3. No single-figure PDF exceeds 2 MB; scatter plots with >1000 points use `rasterized=True` for vector/raster hybrid output
+**Plans**: TBD
+**UI hint**: yes
 
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 9 -> 10 -> 11 -> 11.1 -> 12 -> 13
+Phases execute in numeric order: 14 -> 15 -> 16 -> 17 -> 18 -> 19
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -138,9 +149,15 @@ Phases execute in numeric order: 9 -> 10 -> 11 -> 11.1 -> 12 -> 13
 | 6. Data Cleanup | v1.1 | 1/1 | Complete | 2026-03-27 |
 | 7. Cluster Access | v1.1 | 1/1 | Complete | 2026-03-28 |
 | 8. Simulation Campaign | v1.1 | 2/2 | Complete | 2026-03-29 |
-| 9. Galactic Confusion Noise | v1.2 | 0/1 | Planning | - |
-| 10. Five-Point Stencil Derivatives | v1.2 | 0/1 | Planning | - |
-| 11. Validation Campaign | v1.2 | 1/2 | In Progress|  |
-| 11.1 Simulation-Based P_det | v1.2 | 2/5 | Complete    | 2026-04-01 |
-| 12. Production Campaign | v1.2 | 0/0 | Not started | - |
-| 13. H0 Posterior Sweep | v1.2 | 0/0 | Not started | - |
+| 9. Galactic Confusion Noise | v1.2 | 1/1 | Complete | - |
+| 10. Five-Point Stencil | v1.2 | 1/1 | Complete | - |
+| 11. Validation Campaign | v1.2 | 2/2 | Complete | - |
+| 11.1 Simulation-Based P_det | v1.2 | 5/5 | Complete | 2026-04-01 |
+| 12. Production Campaign | v1.2 | 1/1 | Complete | - |
+| 13. H0 Posterior Sweep | v1.2 | 1/1 | Complete | - |
+| 14. Test Infrastructure | v1.3 | 0/0 | Not started | - |
+| 15. Style Infrastructure | v1.3 | 0/0 | Not started | - |
+| 16. Data Layer & Fisher | v1.3 | 0/0 | Not started | - |
+| 17. Enhanced Existing Plots | v1.3 | 0/0 | Not started | - |
+| 18. New Plot Modules | v1.3 | 0/0 | Not started | - |
+| 19. Campaign Dashboards | v1.3 | 0/0 | Not started | - |

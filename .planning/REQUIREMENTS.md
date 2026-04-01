@@ -98,13 +98,39 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| — | — | (populated by roadmapper) |
+| TEST-01 | Phase 14 | Pending |
+| TEST-02 | Phase 14 | Pending |
+| STYLE-01 | Phase 15 | Pending |
+| STYLE-02 | Phase 15 | Pending |
+| STYLE-03 | Phase 15 | Pending |
+| STYLE-04 | Phase 15 | Pending |
+| STYLE-05 | Phase 15 | Pending |
+| FISH-01 | Phase 16 | Pending |
+| FISH-02 | Phase 16 | Pending |
+| FISH-04 | Phase 16 | Pending |
+| FISH-05 | Phase 16 | Pending |
+| CORE-01 | Phase 17 | Pending |
+| CORE-02 | Phase 17 | Pending |
+| CORE-03 | Phase 17 | Pending |
+| CORE-04 | Phase 17 | Pending |
+| CORE-05 | Phase 17 | Pending |
+| CORE-06 | Phase 17 | Pending |
+| CORE-07 | Phase 17 | Pending |
+| FISH-06 | Phase 17 | Pending |
+| FISH-07 | Phase 17 | Pending |
+| SKY-01 | Phase 18 | Pending |
+| FISH-03 | Phase 18 | Pending |
+| CONV-01 | Phase 18 | Pending |
+| CONV-02 | Phase 18 | Pending |
+| CAMP-01 | Phase 19 | Pending |
+| CAMP-02 | Phase 19 | Pending |
+| CAMP-03 | Phase 19 | Pending |
 
 **Coverage:**
-- v1.3 requirements: 24 total
-- Mapped to phases: 0
-- Unmapped: 24
+- v1.3 requirements: 27 total
+- Mapped to phases: 27
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-04-01*
-*Last updated: 2026-04-01 after initial definition*
+*Last updated: 2026-04-01 after roadmap creation*

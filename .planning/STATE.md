@@ -5,9 +5,9 @@ milestone_name: Visualization Overhaul
 status: planning
 stopped_at: null
 last_updated: "2026-04-01"
-last_activity: 2026-04-01 -- Milestone v1.3 started
+last_activity: 2026-04-01 -- Roadmap created for v1.3 Visualization Overhaul
 progress:
-  total_phases: 0
+  total_phases: 6
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -20,44 +20,36 @@ progress:
 
 See: .planning/PROJECT.md (updated 2026-04-01)
 
-**Core value:** The simulation pipeline runs reliably on the GPU cluster as SLURM array jobs, producing enough Cramer-Rao bounds for statistically meaningful Hubble constant posteriors.
-**Current focus:** Defining requirements for v1.3 Visualization Overhaul
+**Core value:** Modernize visualization stack to produce publication-quality, thesis-ready matplotlib figures for EMRI parameter estimation results
+**Current focus:** Phase 14 - Test Infrastructure & Safety Net
 
 ## Current Position
 
-Phase: Not started (defining requirements)
-Plan: —
-Status: Defining requirements
-Last activity: 2026-04-01 — Milestone v1.3 started
+Phase: 14 of 19 (Test Infrastructure & Safety Net)
+Plan: 0 of 0 in current phase (plans TBD)
+Status: Ready to plan
+Last activity: 2026-04-01 — Roadmap created for v1.3 Visualization Overhaul
 
-Progress: [░░░░░░░░░░] 0% (v1.3: 0/0 phases)
+Progress: [░░░░░░░░░░] 0% (v1.3: 0/6 phases)
 
 ## Performance Metrics
 
 **Velocity:**
-
-- Total plans completed: 13 (v1.0: 9, v1.1: 4)
+- Total plans completed: 22 (v1.0: 9, v1.1: 4, v1.2: ~9)
 - Average duration: ~5 min
-- Total execution time: ~1 hour
+- Total execution time: ~2 hours
+
+**Recent Trend:**
+- v1.2 phases executed rapidly
+- Trend: Stable
 
 ## Accumulated Context
 
 ### Decisions
 
-Decisions are logged in PROJECT.md Key Decisions table.
-Recent decisions affecting current work:
-
-- [v1.1]: 10% d_L threshold was workaround for forward-diff -- revisit after stencil upgrade
-- [v1.1]: 30s waveform timeout -- must increase for 5-point stencil
-- [v1.2 Roadmap]: Confusion noise before stencil -- lower risk, enables independent validation
-- [Phase 11]: Phase 10 merged with --no-ff; comparison script uses P90 d_L threshold recommendation
-- [Phase 11.1]: Injection campaign uses dist(z, h=h_value) for h-dependent d_L, bypassing set_host_galaxy_parameters
-- [Phase 11.1]: Seed isolation between h values uses h_index * 10000 offset for non-overlapping ranges
-- [Phase 11.1]: Kept detection_probability global as Any to avoid mypy issues in multiprocessing workers
-
-### Roadmap Evolution
-
-- Phase 11.1 inserted after Phase 11: Simulation-Based Detection Probability (URGENT) — large-scale SNR-only campaign to build P_det(z,h) grid, replacing KDE-based DetectionProbability
+- [v1.3]: matplotlib-only stack; sole new dependency is `corner` for parameter posteriors (Phase 18)
+- [v1.3]: `text.usetex=False` default; opt-in LaTeX toggle for final thesis figures only
+- [v1.3]: Safety-net tests must precede all refactoring (pitfall mitigation)
 
 ### Pending Todos
 
@@ -65,25 +57,11 @@ None.
 
 ### Blockers/Concerns
 
-- CRB timeout (30s) will fire on nearly every event after stencil upgrade -- must increase in Phase 10
-- Confusion noise will reduce detection yield -- campaign size must be calibrated in Phase 11
-- Fisher matrix ill-conditioning may emerge with better derivatives -- condition number monitoring needed
-- **H0 posterior bias** — Debug session confirmed formula is correct; residual bias is from P_det=1 (disabled). Phase 11.1 will build simulation-based P_det to resolve this.
-
-### Quick Tasks Completed
-
-| # | Description | Date | Commit | Directory |
-|---|-------------|------|--------|-----------|
-| 260330-oaf | Diagnostic bias fix: remove /d_L factor and disable P_det in Pipeline B likelihood | 2026-03-30 | ae118d4 | [260330-oaf-diagnostic-bias-fix-remove-d-l-factor-an](./quick/260330-oaf-diagnostic-bias-fix-remove-d-l-factor-an/) |
-| 260330-otu | Condense CLAUDE.md from ~846 to ~426 lines | 2026-03-30 | b47b46e | [260330-otu-condense-claude-md-remove-redundancy-tri](./quick/260330-otu-condense-claude-md-remove-redundancy-tri/) |
-| 260330-ojq | Re-run evaluation with diagnostic fix: peak shifted h=0.600->0.678, 60% bias reduction | 2026-03-30 | 8013749 | [260330-ojq-re-run-evaluation-pipeline-with-h-value-](./quick/260330-ojq-re-run-evaluation-pipeline-with-h-value-/) |
-| 260330-twe | Re-run evaluation with BH mass Gaussian index fix: no change (delta-function approx nullifies fix) | 2026-03-30 | ab77e70 | [260330-twe-re-run-h-value-sweep-evaluation-with-bh-](./quick/260330-twe-re-run-h-value-sweep-evaluation-with-bh-/) |
-| Phase 11.1 P01 | 2min | 2 tasks | 3 files |
-| Phase 11.1 P04 | 2min | 2 tasks | 2 files |
-| Phase 11.1 P03 | 13min | 2 tasks | 7 files |
+- Verify exact `delta_X_delta_Y` column naming in CRB CSV before coding `_data.py` (Phase 16)
+- Confirm `corner` Python 3.13 wheel availability before Phase 18
 
 ## Session Continuity
 
-Last session: 2026-04-01T10:52:49.105Z
-Stopped at: Phase 12 context gathered
-Resume file: .planning/phases/12-production-campaign/12-CONTEXT.md
+Last session: 2026-04-01
+Stopped at: Roadmap created for v1.3 milestone
+Resume file: None
