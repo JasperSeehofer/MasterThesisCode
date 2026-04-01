@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Production Campaign & Physics Corrections
 status: executing
-stopped_at: Completed 11.1-03-PLAN.md
-last_updated: "2026-04-01T10:20:23.275Z"
+stopped_at: Phase 12 context gathered
+last_updated: "2026-04-01T10:52:49.106Z"
 last_activity: 2026-04-01
 progress:
   total_phases: 6
@@ -84,6 +84,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-03-31T09:30:17.911Z
-Stopped at: Completed 11.1-03-PLAN.md
-Resume file: None
+Last session: 2026-04-01T10:52:49.105Z
+Stopped at: Phase 12 context gathered
+Resume file: .planning/phases/12-production-campaign/12-CONTEXT.md
