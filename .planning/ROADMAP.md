@@ -47,7 +47,7 @@ Full details: `.planning/milestones/v1.2-ROADMAP.md`
 
 </details>
 
-### 🚧 v1.3 Visualization Overhaul (In Progress)
+### v1.3 Visualization Overhaul (In Progress)
 
 **Milestone Goal:** Modernize the visualization stack to produce publication-quality, thesis-ready matplotlib figures with consistent styling, proper uncertainty visualization, and standard EMRI/LISA community plot types.
 
@@ -68,7 +68,10 @@ Full details: `.planning/milestones/v1.2-ROADMAP.md`
   1. Every existing plot factory function has a smoke test that calls it with minimal valid data and asserts a (Figure, Axes) return without error
   2. An rcParams snapshot test calls `apply_style()` and verifies that key rcParams (font size, tick direction, figure DPI, color cycle) match expected values, failing if the mplstyle drifts
   3. Running `uv run pytest -m "not gpu and not slow"` passes with all new plot smoke tests green
-**Plans**: TBD
+**Plans:** 2 plans
+Plans:
+- [ ] 14-01-PLAN.md — Shared conftest fixtures + smoke tests for bayesian, catalog, evaluation plots (14 tests)
+- [ ] 14-02-PLAN.md — Smoke tests for model, physical_relations, simulation plots (9 tests) + rcParams regression
 
 ### Phase 15: Style Infrastructure
 **Goal**: All downstream plot work builds on a consistent, centralized style system with proper figure sizing, LaTeX support, and shared color palette
@@ -155,7 +158,7 @@ Phases execute in numeric order: 14 -> 15 -> 16 -> 17 -> 18 -> 19
 | 11.1 Simulation-Based P_det | v1.2 | 5/5 | Complete | 2026-04-01 |
 | 12. Production Campaign | v1.2 | 1/1 | Complete | - |
 | 13. H0 Posterior Sweep | v1.2 | 1/1 | Complete | - |
-| 14. Test Infrastructure | v1.3 | 0/0 | Not started | - |
+| 14. Test Infrastructure | v1.3 | 0/2 | Not started | - |
 | 15. Style Infrastructure | v1.3 | 0/0 | Not started | - |
 | 16. Data Layer & Fisher | v1.3 | 0/0 | Not started | - |
 | 17. Enhanced Existing Plots | v1.3 | 0/0 | Not started | - |
