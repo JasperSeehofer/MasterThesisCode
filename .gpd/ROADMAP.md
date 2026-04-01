@@ -148,11 +148,11 @@ Plans:
 
 **Goal:** The enhanced sampling design is verified to produce unbiased P_det estimates consistent with the uniform baseline
 **Depends on:** Phase 19 (enhanced sampling implemented)
-**Requirements:** VALD-01
+**Requirements:** VALD-01, VALD-02
 **Contract Coverage:**
 - Advances: Validation that enhanced sampling produces unbiased P_det
-- Deliverables: Side-by-side comparison of uniform vs enhanced P_det grids; per-bin statistical test results; P_det monotonicity verification; round-trip consistency check
-- Anchor coverage: Uniform baseline P_det grid (Phase 18); enhanced P_det grid (Phase 19); Farr (2019) N_eff criterion; physical boundary conditions (P_det -> 1 at low z, P_det -> 0 at high z)
+- Deliverables: Side-by-side comparison of uniform vs enhanced P_det grids; per-bin statistical test results; P_det monotonicity verification; round-trip consistency check; grid vs direct MC alpha(h) comparison
+- Anchor coverage: Uniform baseline P_det grid (Phase 18); enhanced P_det grid (Phase 19); Farr (2019) N_eff criterion; physical boundary conditions (P_det -> 1 at low z, P_det -> 0 at high z); Mandel, Farr & Gair (2019) direct MC integral
 - Forbidden proxies: Qualitative "looks right" without statistical test; comparison on globally-averaged P_det without per-bin breakdown
 
 **Success Criteria** (what must be TRUE when this phase completes):
@@ -162,7 +162,11 @@ Plans:
 3. Physical boundary conditions satisfied: P_det -> 1 at (low z, high M) and P_det -> 0 at (high z, low M) for all h-values
 4. The Farr (2019) criterion N_eff > 4 * N_det is satisfied globally for the enhanced sampling, with per-bin N_eff reported
 
-**Plans:** TBD
+**Plans:** 2 plans
+
+Plans:
+- [ ] 20-01-PLAN.md -- Per-bin validation framework (VALD-01): Wilson CI overlap with BH FDR, monotonicity, boundary conditions, Farr criterion
+- [ ] 20-02-PLAN.md -- Grid vs direct MC comparison (VALD-02): alpha(h) grid-integrated vs gridless direct MC sum
 
 ## Risk Register
 
@@ -190,4 +194,4 @@ Plans:
 | 17. Injection Physics Audit | 2/2 | Complete | 2026-03-31 |
 | 18. Detection Yield & Grid Quality | 2/2 | Complete | 2026-04-01 |
 | 19. Enhanced Sampling Design | 2/2 | Complete | 2026-04-01 |
-| 20. Validation | TBD | Not started | - |
+| 20. Validation | 0/2 | Not started | - |
