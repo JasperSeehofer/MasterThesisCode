@@ -13,7 +13,7 @@ import numpy as np
 from master_thesis_code.cosmological_model import Model1CrossCheck
 from master_thesis_code.galaxy_catalogue.handler import GalaxyCatalogueHandler, HostGalaxy
 from master_thesis_code.parameter_estimation.parameter_estimation import ParameterEstimation
-from master_thesis_code.waveform_generation import WaveGeneratorType
+from master_thesis_code.waveform_generator import WaveGeneratorType
 
 
 def main() -> None:
@@ -27,7 +27,7 @@ def main() -> None:
     cosmological_model = Model1CrossCheck()
     galaxy_catalog = GalaxyCatalogueHandler()
     parameter_estimation = ParameterEstimation(
-        WaveGeneratorType.FastSchwarzschildEccentricFlux,
+        WaveGeneratorType.PN5_AAK,
         cosmological_model.parameter_space,
         use_gpu=True,
         use_five_point_stencil=True,
