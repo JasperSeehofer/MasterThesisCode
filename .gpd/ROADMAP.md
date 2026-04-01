@@ -109,7 +109,11 @@ Plans:
 4. Per-bin Wilson 95% confidence intervals are computed for the 30x20 grid, with bins having fewer than 10 injections flagged as unreliable
 5. The 30x20 vs 15x10 grid comparison shows whether the coarser grid achieves CI half-widths below 0.15 in the detection boundary region (where 0.05 < P_det < 0.95)
 
-**Plans:** TBD
+**Plans:** 2 plans
+
+Plans:
+- [ ] 18-01-PLAN.md -- Detection yield per h-value, compute waste breakdown, z>0.5 cutoff validation
+- [ ] 18-02-PLAN.md -- Per-bin Wilson CIs for 30x20 grid, 30x20 vs 15x10 comparison, quality flag implementation
 
 ### Phase 19: Enhanced Sampling Design
 
@@ -176,6 +180,6 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 | --- | --- | --- | --- |
 | 17. Injection Physics Audit | 2/2 | Complete | 2026-03-31 |
-| 18. Detection Yield & Grid Quality | TBD | Not started | - |
+| 18. Detection Yield & Grid Quality | 0/2 | Planned | - |
 | 19. Enhanced Sampling Design | TBD | Not started | - |
 | 20. Validation | TBD | Not started | - |
