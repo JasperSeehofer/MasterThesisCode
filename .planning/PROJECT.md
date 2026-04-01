@@ -18,6 +18,10 @@ The simulation pipeline runs reliably on the GPU cluster as SLURM array jobs, pr
 - Critical assessment of existing `plotting/` module against research standards and modern best practices
 - Rebuilt visualization pipeline with consistent style, proper uncertainty visualization, and thesis-ready output
 
+## Current State (v1.3 Phase 15 complete 2026-04-02)
+
+Style infrastructure in place: centralized figure presets (single/double column), LaTeX toggle, semantic color palette, shared label constants, consolidated helpers. All 6 plot modules wired to shared imports. 246 tests pass. Foundation ready for Phases 16-19.
+
 ## Current State (v1.2 Phase 10 complete 2026-03-29)
 
 Fisher matrix now uses O(epsilon^4) five-point stencil derivatives by default (PHYS-01 resolved). Condition number logging and CRB safety checks added. CRB timeout increased to 90s. 198 CPU tests pass at 40.8% coverage. Galactic confusion noise (Phase 9) and stencil derivatives (Phase 10) are both wired — ready for validation campaign on cluster.
