@@ -5,18 +5,18 @@
 See: .gpd/PROJECT.md (updated 2026-03-31)
 
 **Core research question:** Can we improve injection campaign detection yield and P_det grid resolution through enhanced sampling?
-**Current focus:** v1.2.2 Injection Campaign Physics Analysis -- Phase 18 executing
+**Current focus:** v1.2.2 Injection Campaign Physics Analysis -- Phase 19 complete
 
 ## Current Position
 
-**Current Phase:** 18
-**Current Phase Name:** Detection Yield & Grid Quality
+**Current Phase:** 19
+**Current Phase Name:** Enhanced Sampling Design
 **Total Phases:** 4 (Phases 17-20)
 **Current Plan:** 2/2 complete
 **Total Plans in Phase:** 2
 **Status:** Complete (verified 2026-04-01)
 **Last Activity:** 2026-04-01
-**Last Activity Description:** Phase 18 verified (6/6 contract targets passed) -- 663 detections, 15x10 grid recommended, quality flags added
+**Last Activity Description:** Phase 19 verified (7/7 contract targets passed) -- IS estimator implemented, VRF 11.8-24.9x, two-stage design specified
 
 **Progress:** [██████████] 100%
 
@@ -62,6 +62,8 @@ None.
 | 17-02 | ~5min    | 2     | 2     |
 | 18-01 | ~5min    | 2     | 4     |
 | 18-02 | ~10min   | 2     | 5     |
+| 19-01 | ~4min    | 2     | 2     |
+| 19-02 | ~7min    | 2     | 3     |
 
 ## Accumulated Context
 
@@ -100,6 +102,15 @@ None.
 - [Phase 18-02]: h=0.90 needs more injections (47% unreliable bins even in 15x10)
 - [Phase 18-02]: Detection boundary confined to d_L < 1 Gpc, M > 2e5 Msun -- target for importance sampling
 - [Phase 18-02]: Quality flags added as metadata to SimulationDetectionProbability (no interpolation change)
+- [Phase 19-01]: Preserved original np.histogram2d code path when weights=None for bit-for-bit backward compatibility
+- [Phase 19-01]: Used np.digitize + np.add.at for weighted IS accumulation (single pass)
+- [Phase 19-01]: 'reliable' mask stays based on integer n_total >= 10, not N_eff
+- [Phase 19-01]: IS estimator backward compatible: max |diff| = 0.0 for all 7 h-values (decisive test)
+- [Phase 19-02]: VRF computed from actual Phase 18 per-bin counts (not generic formulas)
+- [Phase 19-02]: Targeted budget = 70% of pilot per h-value; alpha=0.3 for defensive mixture
+- [Phase 19-02]: VRF 11.8-24.9x for boundary bins across all h-values (contract target >2.0)
+- [Phase 19-02]: CI half-width improvement 3.4-4.6x in boundary bins
+- [Phase 19-02]: Full support proof: q >= 0.3*p > 0; max weight bounded at 1/alpha = 3.33
 
 ### Active Approximations
 
