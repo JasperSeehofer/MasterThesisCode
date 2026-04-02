@@ -5,12 +5,12 @@
 
 ## Analysis
 
-- [ ] **ANAL-01**: Diagnostic report documenting zero-likelihood origins per h-bin (which events produce zeros, why no hosts found, catalog coverage gaps)
-- [ ] **ANAL-02**: Comparison table of all combination methods (naive, Option 1 exclude-zeros, Option 2 per-event-floor, Option 3 physics-floor) with MAP estimates for both with/without BH mass variants
+- [x] **ANAL-01**: Diagnostic report documenting zero-likelihood origins per h-bin (which events produce zeros, why no hosts found, catalog coverage gaps)
+- [x] **ANAL-02**: Comparison table of all combination methods (naive, Option 1 exclude-zeros, Option 2 per-event-floor, Option 3 physics-floor) with MAP estimates for both with/without BH mass variants
 
 ## Numerical Fix
 
-- [ ] **NFIX-01**: Log-space posterior accumulation in post-processing combination script — replace `np.prod(likelihoods, axis=0)` with `np.sum(np.log(likelihoods), axis=0)` with shift-before-exp for numerical stability
+- [x] **NFIX-01**: Log-space posterior accumulation in post-processing combination script — replace `np.prod(likelihoods, axis=0)` with `np.sum(np.log(likelihoods), axis=0)` with shift-before-exp for numerical stability
 - [ ] **NFIX-02**: Physically motivated likelihood floor (Option 3) in `single_host_likelihood` in `bayesian_statistics.py` — when no host galaxy produces nonzero likelihood, assign a floor based on the faintest catalog galaxy at the error volume boundary. Requires `/physics-change` protocol.
 - [ ] **NFIX-03**: Replace `check_overflow` with proper underflow detection that catches product-to-zero (not just overflow-to-inf)
 
@@ -21,7 +21,7 @@
 
 ## Post-Processing
 
-- [ ] **POST-01**: Standalone combination script that loads per-event posterior JSONs and produces the joint H0 posterior with log-space accumulation + configurable zero-handling (Option 1/2/3)
+- [x] **POST-01**: Standalone combination script that loads per-event posterior JSONs and produces the joint H0 posterior with log-space accumulation + configurable zero-handling (Option 1/2/3)
 
 ## Future Requirements (deferred)
 

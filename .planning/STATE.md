@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.3
 milestone_name: Visualization Overhaul
-status: planning
-stopped_at: Phase 21 context gathered
-last_updated: "2026-04-02T15:41:14.754Z"
-last_activity: 2026-04-02 — Roadmap created for v1.4
+status: executing
+stopped_at: Completed 21-01-PLAN.md
+last_updated: "2026-04-02T16:22:05.169Z"
+last_activity: 2026-04-02
 progress:
   total_phases: 3
   completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
+  total_plans: 2
+  completed_plans: 1
   percent: 0
 ---
 
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-02)
 
 **Core value:** Fix posterior combination numerical instability and deploy before pending cluster evaluation jobs run
-**Current focus:** Phase 21 — Analysis & Post-Processing
+**Current focus:** Phase 21 — analysis-post-processing
 
 ## Current Position
 
-Phase: 21 of 23 (Analysis & Post-Processing)
-Plan: Not started
-Status: Ready to plan
-Last activity: 2026-04-02 — Roadmap created for v1.4
+Phase: 21 (analysis-post-processing) — EXECUTING
+Plan: 2 of 2
+Status: Ready to execute
+Last activity: 2026-04-02
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -48,6 +48,9 @@ Progress: [░░░░░░░░░░] 0%
 - [v1.4]: Option 2 (per-event floor) overcorrects — both variants peak at h=0.60
 - [v1.4]: Option 1 (exclude zero events) gives MAP=0.66/0.68 — clean but loses 3-21% of events
 - [v1.4]: Analysis largely done in conversation — Phase 21 formalizes it
+- [Phase 21]: Used StrEnum for CombinationStrategy (Python 3.13 ruff compliance)
+- [Phase 21]: Physics-floor strategy falls back to exclude with logged warning (Phase 22 placeholder)
+- [Phase 21]: NaN distinguishes missing events from zero-likelihood events in the array
 
 ### Pending Todos
 
@@ -61,6 +64,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-04-02T15:41:14.750Z
-Stopped at: Phase 21 context gathered
-Resume file: .planning/phases/21-analysis-post-processing/21-CONTEXT.md
+Last session: 2026-04-02T16:22:05.150Z
+Stopped at: Completed 21-01-PLAN.md
+Resume file: None
