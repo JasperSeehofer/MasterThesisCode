@@ -23,9 +23,9 @@ The simulation pipeline runs reliably on the GPU cluster as SLURM array jobs, pr
 
 **Goal:** Modernize the visualization stack and produce publication-quality plots informed by gravitational wave research standards, replacing ad-hoc matplotlib code with a systematic, modern approach.
 
-## Current State (v1.4 Phase 22 complete 2026-04-02)
+## Current State (v1.4 Phase 23 complete 2026-04-02)
 
-Physics-floor strategy fully implemented: per-event minimum nonzero likelihood as floor value replaces the previous stub/fallback. All-zero events excluded with logged diagnostics. Dead `check_overflow` removed. 304 tests pass at 58% coverage. Ready for cluster deployment and validation.
+v1.4 milestone complete. Physics-floor strategy deployed to bwUniCluster (5793f70). Validated locally: physics-floor MAP=0.66 matches exclude MAP=0.66 (|Δ|=0.00 < 0.05 acceptance criterion — PASS). Cluster confirmed at correct commit; evaluate SLURM jobs were pending at deploy time and will run with the numerical stability fixes. Report at `results/v1.4-validation.md`.
 
 ## Current State (v1.3 Phase 21 complete 2026-04-02)
 
