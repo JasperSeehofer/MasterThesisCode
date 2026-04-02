@@ -21,7 +21,7 @@
 
 ## Post-Processing
 
-- [ ] **POST-01**: Standalone combination script that loads per-event posterior JSONs and produces the joint H₀ posterior with log-space accumulation + configurable zero-handling (Option 1/2/3)
+- [ ] **POST-01**: Standalone combination script that loads per-event posterior JSONs and produces the joint H0 posterior with log-space accumulation + configurable zero-handling (Option 1/2/3)
 
 ## Future Requirements (deferred)
 
@@ -38,11 +38,11 @@
 
 | REQ-ID | Phase | Plan | Status |
 |--------|-------|------|--------|
-| ANAL-01 | — | — | Pending |
-| ANAL-02 | — | — | Pending |
-| NFIX-01 | — | — | Pending |
-| NFIX-02 | — | — | Pending |
-| NFIX-03 | — | — | Pending |
-| DEPL-01 | — | — | Pending |
-| DEPL-02 | — | — | Pending |
-| POST-01 | — | — | Pending |
+| ANAL-01 | Phase 21 | — | Pending |
+| ANAL-02 | Phase 21 | — | Pending |
+| NFIX-01 | Phase 21 | — | Pending |
+| NFIX-02 | Phase 22 | — | Pending |
+| NFIX-03 | Phase 22 | — | Pending |
+| DEPL-01 | Phase 23 | — | Pending |
+| DEPL-02 | Phase 23 | — | Pending |
+| POST-01 | Phase 21 | — | Pending |

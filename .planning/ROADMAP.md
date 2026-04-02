@@ -5,7 +5,8 @@
 - ✅ **v1.0 EMRI HPC Integration** — Phases 1-5 (shipped 2026-03-27)
 - ✅ **v1.1 Clean Simulation Campaign** — Phases 6-8 (shipped 2026-03-29)
 - ✅ **v1.2 Production Campaign & Physics Corrections** — Phases 9-13 (shipped 2026-04-01)
-- 🚧 **v1.3 Visualization Overhaul** — Phases 14-19 (in progress)
+- 🚧 **v1.3 Visualization Overhaul** — Phases 14-19 (paused)
+- 🚧 **v1.4 Posterior Numerical Stability** — Phases 21-23 (in progress)
 
 ## Phases
 
@@ -47,9 +48,8 @@ Full details: `.planning/milestones/v1.2-ROADMAP.md`
 
 </details>
 
-### v1.3 Visualization Overhaul (In Progress)
-
-**Milestone Goal:** Modernize the visualization stack to produce publication-quality, thesis-ready matplotlib figures with consistent styling, proper uncertainty visualization, and standard EMRI/LISA community plot types.
+<details>
+<summary>🚧 v1.3 Visualization Overhaul (Phases 14-19) — PAUSED</summary>
 
 - [x] **Phase 14: Test Infrastructure & Safety Net** - Smoke tests and rcParams regression checks before any refactoring (completed 2026-04-01)
 - [x] **Phase 15: Style Infrastructure** - Centralized colors, figure sizes, LaTeX toggle, and shared helpers (completed 2026-04-01)
@@ -58,7 +58,22 @@ Full details: `.planning/milestones/v1.2-ROADMAP.md`
 - [ ] **Phase 18: New Plot Modules** - Sky localization, corner plots, and convergence diagnostics
 - [ ] **Phase 19: Campaign Dashboards & Batch Generation** - Multi-panel composites and automated figure pipeline
 
+Full details: Phase details preserved below.
+
+</details>
+
+### v1.4 Posterior Numerical Stability (In Progress)
+
+**Milestone Goal:** Fix posterior combination numerical instability (input zeros + multiplication underflow) in the Bayesian inference pipeline and deploy to cluster before pending evaluation jobs run.
+
+- [ ] **Phase 21: Analysis & Post-Processing** - Formalize zero-likelihood analysis, build combination script with log-space accumulation
+- [ ] **Phase 22: Likelihood Floor & Overflow Fix** - Physics-motivated floor in single_host_likelihood, fix underflow detection
+- [ ] **Phase 23: Deploy & Validate** - Push to cluster and validate against existing baselines
+
 ## Phase Details
+
+<details>
+<summary>v1.3 Phase Details (paused)</summary>
 
 ### Phase 14: Test Infrastructure & Safety Net
 **Goal**: A safety net of plot smoke tests exists so that style and infrastructure changes in later phases cannot silently break existing thesis-critical figures
@@ -140,10 +155,41 @@ Plans:
 **Plans**: TBD
 **UI hint**: yes
 
+</details>
+
+### Phase 21: Analysis & Post-Processing
+**Goal**: The zero-likelihood problem is fully documented, all combination methods are compared quantitatively, and a robust post-processing script combines per-event posteriors in log-space
+**Depends on**: Phase 13 (v1.2 campaign data exists)
+**Requirements**: ANAL-01, ANAL-02, POST-01, NFIX-01
+**Success Criteria** (what must be TRUE):
+  1. A diagnostic report identifies which events produce zero likelihoods at which h-bins, with root causes documented (no hosts in error volume, catalog coverage gaps, redshift mismatch)
+  2. A comparison table shows MAP estimates and posterior shapes for all four combination methods (naive, Option 1 exclude-zeros, Option 2 per-event-floor, Option 3 physics-floor) across both BH mass variants
+  3. A standalone combination script loads per-event posterior JSONs and produces the joint H0 posterior using `np.sum(np.log(...))` with a log-shift-exp trick to avoid underflow
+  4. The combination script accepts a CLI flag or config option to select zero-handling strategy (Option 1, 2, or 3)
+  5. Running the combination script on existing campaign data reproduces the known naive MAP values (0.72 with BH mass, 0.86 without) as a sanity check
+
+### Phase 22: Likelihood Floor & Overflow Fix
+**Goal**: The evaluate pipeline computes physically grounded likelihoods for all events (no zeros from catalog gaps) and detects numerical underflow correctly
+**Depends on**: Phase 21
+**Requirements**: NFIX-02, NFIX-03
+**Success Criteria** (what must be TRUE):
+  1. `single_host_likelihood` in `bayesian_statistics.py` returns a physically motivated floor value (not zero) when no host galaxy produces nonzero likelihood, following `/physics-change` protocol with documented derivation
+  2. `check_overflow` (or its replacement) detects product-to-zero underflow in addition to overflow-to-inf, logging a warning when the posterior product would collapse to zero
+  3. Running the evaluate pipeline on a subset of campaign data produces no zero-valued posterior bins (all h-bins have nonzero likelihood for every event)
+
+### Phase 23: Deploy & Validate
+**Goal**: Updated code is running on the cluster and validated against existing baselines before the pending evaluate jobs execute
+**Depends on**: Phase 22
+**Requirements**: DEPL-01, DEPL-02
+**Success Criteria** (what must be TRUE):
+  1. The updated codebase (with log-space accumulation, physics floor, and overflow fix) is deployed to `~/MasterThesisCode` on bwUniCluster before the evaluate SLURM jobs start
+  2. A validation run produces H0 posteriors that are compared against existing baselines: naive (MAP=0.72/0.86), Option 1 (MAP=0.68/0.66), confirming the new method produces physically reasonable results
+  3. The validation results and baseline comparison are documented (saved to working directory or committed)
+
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 14 -> 15 -> 16 -> 17 -> 18 -> 19
+Phases execute in numeric order: 21 -> 22 -> 23
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -161,9 +207,12 @@ Phases execute in numeric order: 14 -> 15 -> 16 -> 17 -> 18 -> 19
 | 11.1 Simulation-Based P_det | v1.2 | 5/5 | Complete | 2026-04-01 |
 | 12. Production Campaign | v1.2 | 1/1 | Complete | - |
 | 13. H0 Posterior Sweep | v1.2 | 1/1 | Complete | - |
-| 14. Test Infrastructure | v1.3 | 1/2 | Complete    | 2026-04-01 |
-| 15. Style Infrastructure | v1.3 | 0/1 | Complete    | 2026-04-01 |
-| 16. Data Layer & Fisher | v1.3 | 2/2 | Complete    | 2026-04-02 |
+| 14. Test Infrastructure | v1.3 | 1/2 | Complete | 2026-04-01 |
+| 15. Style Infrastructure | v1.3 | 0/1 | Complete | 2026-04-01 |
+| 16. Data Layer & Fisher | v1.3 | 2/2 | Complete | 2026-04-02 |
 | 17. Enhanced Existing Plots | v1.3 | 0/0 | Not started | - |
 | 18. New Plot Modules | v1.3 | 0/0 | Not started | - |
 | 19. Campaign Dashboards | v1.3 | 0/0 | Not started | - |
+| 21. Analysis & Post-Processing | v1.4 | 0/0 | Not started | - |
+| 22. Likelihood Floor & Overflow Fix | v1.4 | 0/0 | Not started | - |
+| 23. Deploy & Validate | v1.4 | 0/0 | Not started | - |
