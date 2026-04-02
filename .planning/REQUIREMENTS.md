@@ -1,136 +1,48 @@
-# Requirements: EMRI Parameter Estimation v1.3
+# Requirements: EMRI Parameter Estimation v1.4
 
-**Defined:** 2026-04-01
-**Core Value:** The simulation pipeline runs reliably on the GPU cluster as SLURM array jobs, producing enough Cramer-Rao bounds for statistically meaningful Hubble constant posteriors.
+**Defined:** 2026-04-02
+**Core Value:** Fix posterior combination numerical instability and deploy before pending cluster evaluation jobs run.
 
-## v1.3 Requirements
+## Analysis
 
-Requirements for visualization overhaul. Each maps to roadmap phases.
+- [ ] **ANAL-01**: Diagnostic report documenting zero-likelihood origins per h-bin (which events produce zeros, why no hosts found, catalog coverage gaps)
+- [ ] **ANAL-02**: Comparison table of all combination methods (naive, Option 1 exclude-zeros, Option 2 per-event-floor, Option 3 physics-floor) with MAP estimates for both with/without BH mass variants
 
-### Test Infrastructure
+## Numerical Fix
 
-- [x] **TEST-01**: Every existing plot factory function has a smoke test that verifies it returns (Figure, Axes) without error
-- [x] **TEST-02**: rcParams snapshot regression test detects unintended style mutations after `apply_style()`
+- [ ] **NFIX-01**: Log-space posterior accumulation in post-processing combination script — replace `np.prod(likelihoods, axis=0)` with `np.sum(np.log(likelihoods), axis=0)` with shift-before-exp for numerical stability
+- [ ] **NFIX-02**: Physically motivated likelihood floor (Option 3) in `single_host_likelihood` in `bayesian_statistics.py` — when no host galaxy produces nonzero likelihood, assign a floor based on the faintest catalog galaxy at the error volume boundary. Requires `/physics-change` protocol.
+- [ ] **NFIX-03**: Replace `check_overflow` with proper underflow detection that catches product-to-zero (not just overflow-to-inf)
 
-### Style Infrastructure
+## Deployment
 
-- [ ] **STYLE-01**: All figures use standardized sizes matching thesis column widths (single ~3.5in, double ~7.0in)
-- [ ] **STYLE-02**: All axis labels use LaTeX mathematical notation ($M_\bullet$, $d_L$, $\sigma$) via mathtext or optional `text.usetex`
-- [ ] **STYLE-03**: `apply_style()` accepts `use_latex` toggle for opt-in LaTeX rendering with graceful fallback
-- [ ] **STYLE-04**: Centralized color palette (`_colors.py`) replaces ad-hoc color strings across all plot modules
-- [ ] **STYLE-05**: `_fig_from_ax` helper moved from `simulation_plots.py` to `_helpers.py` for shared use
+- [ ] **DEPL-01**: Updated code pushed to cluster `~/MasterThesisCode` before evaluate jobs start (22 simulate tasks + merge remaining)
+- [ ] **DEPL-02**: Validation run comparing new posteriors against existing baselines (naive MAP=0.72/0.86, Option 1 MAP=0.68/0.66)
 
-### Core Result Figures (Existing Plot Upgrades)
+## Post-Processing
 
-- [ ] **CORE-01**: H0 posterior plot shows shaded 68%/95% credible intervals with Planck/SH0ES reference bands
-- [ ] **CORE-02**: Individual event posteriors are color-coded by SNR or redshift with combined posterior highlighted
-- [ ] **CORE-03**: SNR distribution includes cumulative overlay and threshold annotation line
-- [ ] **CORE-04**: Detection yield vs redshift overlays injected vs detected populations with detection fraction curve
-- [ ] **CORE-05**: Detection probability heatmap P_det(d_L, M) has clean colorbar with [0,1] probability range
-- [ ] **CORE-06**: LISA PSD plot overlays galactic confusion noise component alongside instrument noise
-- [ ] **CORE-07**: d_L(z) relation plot includes comparison curves for different H0 values
+- [ ] **POST-01**: Standalone combination script that loads per-event posterior JSONs and produces the joint H₀ posterior with log-space accumulation + configurable zero-handling (Option 1/2/3)
 
-### Fisher & Parameter Estimation Plots (New)
+## Future Requirements (deferred)
 
-- [x] **FISH-01**: `_data.py` module reconstructs 14x14 covariance matrices from CRB CSV `delta_X_delta_Y` columns
-- [ ] **FISH-02**: 2D Fisher error ellipses (1-sigma, 2-sigma) for key EMRI parameter pairs
-- [ ] **FISH-03**: Corner plot of EMRI parameter subset using Fisher-derived Gaussian approximation (via `corner` library)
-- [ ] **FISH-04**: Characteristic strain h_c(f) plot with example EMRI track overlaid on LISA sensitivity curve
-- [ ] **FISH-05**: Parameter uncertainty distributions with intrinsic/extrinsic grouping and LaTeX labels
-- [ ] **FISH-06**: Detection contour in (z, M) space with injected population overlay
-- [ ] **FISH-07**: Injected vs recovered scatter showing measurement quality across parameter space
-
-### Sky Localization (New)
-
-- [ ] **SKY-01**: Mollweide projection sky localization map replaces existing non-standard 3D scatter plot
-
-### Convergence & Diagnostics (New)
-
-- [ ] **CONV-01**: H0 convergence plot showing posterior narrowing as N_events increases
-- [ ] **CONV-02**: Detection efficiency curve (1D P_det slice with confidence intervals)
-
-### Campaign & Batch (New)
-
-- [ ] **CAMP-01**: Multi-panel summary composite figure combining key result plots
-- [ ] **CAMP-02**: Batch figure generation script producing all thesis figures from campaign data
-- [ ] **CAMP-03**: PDF size audit with `rasterized=True` fixes for scatter plots exceeding 2MB
-
-## v2 Requirements
-
-Deferred to future release. Tracked but not in current roadmap.
-
-### Dark Energy Model
-
-- **wCDM-01**: w0, wa parameters used in distance calculations (currently silently ignored)
-
-### Cosmological Parameters
-
-- **COSMO-01**: Planck 2018 cosmological parameters replace WMAP-era values
-
-### Observational Uncertainty
-
-- **UNCERT-01**: Galaxy redshift uncertainty scaling corrected to standard (1+z) form
-
-### Visualization Extras
-
-- **VIZ-01**: Waveform strain time series plot for introduction chapter
-- **VIZ-02**: Fisher condition number scatter for numerical stability analysis
-- **VIZ-03**: Interactive Jupyter exploration notebooks (thesis output is PDF)
+- Catalog completeness model for systematic bias correction at high redshift
+- Full log-space accumulation inside the evaluate pipeline itself (not just post-processing)
 
 ## Out of Scope
 
-Explicitly excluded. Documented to prevent scope creep.
-
-| Feature | Reason |
-|---------|--------|
-| Interactive dashboards (Plotly, Bokeh) | Thesis output is PDF; interactive plots cannot be embedded |
-| Full MCMC corner plots | Pipeline uses Fisher matrix, not MCMC; fake chains would be misleading |
-| Animated waveform visualizations | Cannot embed in thesis PDF |
-| 3D surface plots | Non-standard in EMRI/LISA literature; hard to read in print |
-| Seaborn/Altair wrappers | Style pollution risk; matplotlib is GW community standard |
-| healpy sky maps | Overkill for ~100 detections; built-in Mollweide sufficient |
-| ArviZ integration | Designed for MCMC diagnostics; Fisher pipeline doesn't need it |
-| Time-frequency spectrograms | Relevant to EMRI detection, not Fisher-matrix PE |
+- Changing the h-value sweep grid (currently 15 points from 0.6 to 0.86)
+- Re-running the simulation pipeline (only the evaluate jobs are in scope)
+- Modifications to Pipeline A (`bayesian_inference.py`) — only Pipeline B (`bayesian_statistics.py`) is production
 
 ## Traceability
 
-Which phases cover which requirements. Updated during roadmap creation.
-
-| Requirement | Phase | Status |
-|-------------|-------|--------|
-| TEST-01 | Phase 14 | Complete |
-| TEST-02 | Phase 14 | Complete |
-| STYLE-01 | Phase 15 | Pending |
-| STYLE-02 | Phase 15 | Pending |
-| STYLE-03 | Phase 15 | Pending |
-| STYLE-04 | Phase 15 | Pending |
-| STYLE-05 | Phase 15 | Pending |
-| FISH-01 | Phase 16 | Complete |
-| FISH-02 | Phase 16 | Pending |
-| FISH-04 | Phase 16 | Pending |
-| FISH-05 | Phase 16 | Pending |
-| CORE-01 | Phase 17 | Pending |
-| CORE-02 | Phase 17 | Pending |
-| CORE-03 | Phase 17 | Pending |
-| CORE-04 | Phase 17 | Pending |
-| CORE-05 | Phase 17 | Pending |
-| CORE-06 | Phase 17 | Pending |
-| CORE-07 | Phase 17 | Pending |
-| FISH-06 | Phase 17 | Pending |
-| FISH-07 | Phase 17 | Pending |
-| SKY-01 | Phase 18 | Pending |
-| FISH-03 | Phase 18 | Pending |
-| CONV-01 | Phase 18 | Pending |
-| CONV-02 | Phase 18 | Pending |
-| CAMP-01 | Phase 19 | Pending |
-| CAMP-02 | Phase 19 | Pending |
-| CAMP-03 | Phase 19 | Pending |
-
-**Coverage:**
-- v1.3 requirements: 27 total
-- Mapped to phases: 27
-- Unmapped: 0
-
----
-*Requirements defined: 2026-04-01*
-*Last updated: 2026-04-01 after roadmap creation*
+| REQ-ID | Phase | Plan | Status |
+|--------|-------|------|--------|
+| ANAL-01 | — | — | Pending |
+| ANAL-02 | — | — | Pending |
+| NFIX-01 | — | — | Pending |
+| NFIX-02 | — | — | Pending |
+| NFIX-03 | — | — | Pending |
+| DEPL-01 | — | — | Pending |
+| DEPL-02 | — | — | Pending |
+| POST-01 | — | — | Pending |
