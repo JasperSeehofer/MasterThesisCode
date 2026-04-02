@@ -76,7 +76,10 @@ def load_posterior_jsons(
         for key, value in data.items():
             if key == "h":
                 continue
-            detection_idx = int(key)
+            try:
+                detection_idx = int(key)
+            except ValueError:
+                continue  # skip non-integer keys (e.g. "galaxy_likelihoods")
             # Empty list means missing event — skip
             if not isinstance(value, list) or len(value) == 0:
                 continue
