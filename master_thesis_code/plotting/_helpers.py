@@ -6,10 +6,9 @@ from typing import Any, Literal
 
 import matplotlib.pyplot as plt
 from matplotlib.axes import Axes
+from matplotlib.cm import ScalarMappable
 from matplotlib.colorbar import Colorbar
 from matplotlib.figure import Figure
-from matplotlib.cm import ScalarMappable
-from matplotlib.image import AxesImage
 
 # REVTeX two-column figure width presets (inches)
 _PRESETS: dict[str, tuple[float, float]] = {

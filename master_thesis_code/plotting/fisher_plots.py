@@ -5,11 +5,11 @@ uncertainty distributions.  All functions follow the project convention:
 data in, ``(fig, ax)`` out.  None call ``plt.show()`` or ``plt.savefig()``.
 """
 
+import corner
 import matplotlib
 import numpy as np
 import numpy.typing as npt
 import pandas as pd
-import corner
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 from matplotlib.patches import Ellipse
@@ -418,9 +418,7 @@ def plot_fisher_corner(
     labels = [LABELS[label_key(p)] for p in params]
 
     rng = np.random.default_rng(seed)
-    samples = rng.multivariate_normal(
-        sub_mean, sub_cov, size=n_samples, check_valid="warn"
-    )
+    samples = rng.multivariate_normal(sub_mean, sub_cov, size=n_samples, check_valid="warn")
 
     n = len(params)
 

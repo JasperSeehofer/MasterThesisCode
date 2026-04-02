@@ -53,9 +53,7 @@ def plot_sky_localization_mollweide(
         Figure and Axes with the sky map.
     """
     if ax is None:
-        fig, ax = get_figure(
-            preset="double", subplot_kw={"projection": "mollweide"}
-        )
+        fig, ax = get_figure(preset="double", subplot_kw={"projection": "mollweide"})
     else:
         fig = _fig_from_ax(ax)
 

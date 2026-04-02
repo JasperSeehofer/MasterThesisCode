@@ -76,6 +76,8 @@ module = [
     "mpl_toolkits.*",
     "emcee.*",
     "tabulate.*",
+    "corner",
+    "corner.*",
 ]
 ignore_missing_imports = true
 
