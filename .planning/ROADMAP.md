@@ -196,10 +196,10 @@ Plans:
   1. The updated codebase (with log-space accumulation, physics floor, and overflow fix) is deployed to `~/MasterThesisCode` on bwUniCluster before the evaluate SLURM jobs start
   2. A validation run produces H0 posteriors that are compared against existing baselines: naive (MAP=0.72/0.86), Option 1 (MAP=0.68/0.66), confirming the new method produces physically reasonable results
   3. The validation results and baseline comparison are documented (saved to working directory or committed)
-**Plans:** 1/2 plans executed
+**Plans:** 2/2 plans complete
 Plans:
 - [x] 23-01-PLAN.md — Local validation: three-strategy comparison + v1.4-validation.md
-- [ ] 23-02-PLAN.md — Deploy to bwUniCluster via git merge/push/pull
+- [x] 23-02-PLAN.md — Deploy to bwUniCluster via git merge/push/pull
 
 ## Progress
 
@@ -230,4 +230,4 @@ Phases execute in numeric order: 21 -> 22 -> 23
 | 19. Campaign Dashboards | v1.3 | 0/0 | Not started | - |
 | 21. Analysis & Post-Processing | v1.4 | 2/2 | Complete    | 2026-04-02 |
 | 22. Likelihood Floor & Overflow Fix | v1.4 | 1/1 | Complete    | 2026-04-02 |
-| 23. Deploy & Validate | v1.4 | 1/2 | In Progress|  |
+| 23. Deploy & Validate | v1.4 | 2/2 | Complete   | 2026-04-02 |
