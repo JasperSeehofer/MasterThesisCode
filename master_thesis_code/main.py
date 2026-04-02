@@ -605,17 +605,348 @@ def evaluate(
     )
 
 
+_TWO_MB = 2 * 1024 * 1024
+
+
+def _check_file_size(path: str, name: str) -> None:
+    """Log a warning if *path* exceeds 2 MB.
+
+    Parameters
+    ----------
+    path : str
+        File system path to check.
+    name : str
+        Human-readable name for the log message.
+    """
+    try:
+        size = os.path.getsize(path)
+        if size > _TWO_MB:
+            _ROOT_LOGGER.warning(
+                "%s exceeds 2 MB (%d bytes) -- consider rasterizing dense elements",
+                name,
+                size,
+            )
+    except OSError:
+        pass
+
+
 def generate_figures(output_dir: str) -> None:
     """Load saved simulation data and produce all thesis figures.
 
-    Called by ``--generate_figures <dir>``.  Factory functions from the
-    ``plotting`` subpackage are used; each returns ``(fig, ax)`` and the
-    figures are saved to *output_dir*.
+    Called by ``--generate_figures <dir>``.  Iterates a manifest of
+    ``(name, generator)`` tuples.  Each generator returns ``(fig, ax)``
+    or ``None`` (when required data is missing).  Figures are saved as
+    PDF to ``<output_dir>/figures/``.
     """
-    _ROOT_LOGGER.info(f"Generating figures to {output_dir}")
+    import glob
+    from collections.abc import Callable
+    from pathlib import Path
+
+    import pandas as pd
+
+    from master_thesis_code.plotting._data import PARAMETER_NAMES, reconstruct_covariance
+    from master_thesis_code.plotting._helpers import save_figure
+    from master_thesis_code.plotting._style import apply_style
+
+    apply_style()
+    figures_dir = os.path.join(output_dir, "figures")
+    _ROOT_LOGGER.info("Generating figures to %s", figures_dir)
+
+    # ------------------------------------------------------------------
+    # Data loading helpers (return None when data is missing)
+    # ------------------------------------------------------------------
+
+    def _load_crb_data() -> pd.DataFrame | None:
+        """Load and concatenate all CRB CSV files."""
+        csv_files = sorted(glob.glob(os.path.join(output_dir, "cramer_rao_bounds_*.csv")))
+        if not csv_files:
+            return None
+        frames = [pd.read_csv(f) for f in csv_files]
+        return pd.concat(frames, ignore_index=True)
+
+    def _load_posteriors(
+        subdir: str,
+    ) -> tuple[np.ndarray, list[np.ndarray]] | None:
+        """Load posterior JSONs from *subdir*, return (h_values, event_posteriors)."""
+        from master_thesis_code.bayesian_inference.posterior_combination import (
+            load_posterior_jsons,
+        )
+
+        posteriors_dir = Path(output_dir) / subdir
+        if not posteriors_dir.is_dir():
+            return None
+        try:
+            h_values_list, event_likelihoods = load_posterior_jsons(posteriors_dir)
+            h_values = np.array(h_values_list, dtype=np.float64)
+            event_posteriors: list[np.ndarray] = []
+            for event_idx in sorted(event_likelihoods.keys()):
+                lh = event_likelihoods[event_idx]
+                event_posteriors.append(
+                    np.array([lh.get(h, 0.0) for h in h_values_list], dtype=np.float64)
+                )
+            return h_values, event_posteriors
+        except (FileNotFoundError, ValueError):
+            return None
+
+    # ------------------------------------------------------------------
+    # Save helper with size check
+    # ------------------------------------------------------------------
+
+    def _save(fig: object, name: str) -> None:
+        """Save figure as PDF and check size."""
+        path = os.path.join(figures_dir, name)
+        save_figure(fig, path, formats=("pdf",))  # type: ignore[arg-type]
+        _check_file_size(f"{path}.pdf", name)
+
+    # ------------------------------------------------------------------
+    # Pre-load shared data
+    # ------------------------------------------------------------------
+
+    crb_df = _load_crb_data()
+    post_data = _load_posteriors("posteriors_without_bh_mass")
+
+    # ------------------------------------------------------------------
+    # Manifest: list of (output_name, generator_callable)
+    # Per D-06: Python list of tuples, not YAML config.
+    # Per D-11: Full set of thesis-relevant figures (15 entries).
+    # ------------------------------------------------------------------
+
+    manifest: list[tuple[str, Callable[[], tuple[object, object] | None]]] = []
+
+    # 1. H0 posterior (combined) -- needs posterior data
+    def _gen_h0_posterior_combined() -> tuple[object, object] | None:
+        if post_data is None:
+            return None
+        from master_thesis_code.plotting.bayesian_plots import plot_combined_posterior
+
+        h_vals, event_posts = post_data
+        log_posts = [np.log(np.maximum(p, 1e-300)) for p in event_posts]
+        log_combined = np.sum(log_posts, axis=0)
+        log_combined -= log_combined.max()
+        combined = np.exp(log_combined)
+        return plot_combined_posterior(h_vals, combined, 0.73)
+
+    manifest.append(("fig01_h0_posterior_combined", _gen_h0_posterior_combined))
+
+    # 2. Individual event posteriors
+    def _gen_event_posteriors() -> tuple[object, object] | None:
+        if post_data is None:
+            return None
+        from master_thesis_code.plotting.bayesian_plots import plot_event_posteriors
+
+        h_vals, event_posts = post_data
+        log_posts = [np.log(np.maximum(p, 1e-300)) for p in event_posts]
+        log_combined = np.sum(log_posts, axis=0)
+        log_combined -= log_combined.max()
+        combined = np.exp(log_combined)
+        return plot_event_posteriors(h_vals, event_posts, 0.73, combined_posterior=combined)
+
+    manifest.append(("fig02_event_posteriors", _gen_event_posteriors))
+
+    # 3. SNR distribution -- needs CRB data with SNR column
+    def _gen_snr_distribution() -> tuple[object, object] | None:
+        if crb_df is None or "SNR" not in crb_df.columns:
+            return None
+        from master_thesis_code.plotting.bayesian_plots import plot_snr_distribution
+
+        return plot_snr_distribution(crb_df["SNR"].to_numpy(dtype=np.float64))
+
+    manifest.append(("fig03_snr_distribution", _gen_snr_distribution))
+
+    # 4. Detection yield -- needs redshift column in CRB
+    def _gen_detection_yield() -> tuple[object, object] | None:
+        if crb_df is None or "redshift" not in crb_df.columns:
+            return None
+        from master_thesis_code.plotting.simulation_plots import plot_detection_yield
+
+        detected_z = crb_df["redshift"].to_numpy(dtype=np.float64)
+        return plot_detection_yield(detected_z, detected_z)
+
+    manifest.append(("fig04_detection_yield", _gen_detection_yield))
+
+    # 5. Sky localization (Mollweide)
+    def _gen_sky_localization() -> tuple[object, object] | None:
+        if crb_df is None or not {"qS", "phiS", "SNR"}.issubset(crb_df.columns):
+            return None
+        from master_thesis_code.plotting.sky_plots import plot_sky_localization_mollweide
+
+        theta_s = crb_df["qS"].to_numpy(dtype=np.float64)
+        phi_s = crb_df["phiS"].to_numpy(dtype=np.float64)
+        snr = crb_df["SNR"].to_numpy(dtype=np.float64)
+        return plot_sky_localization_mollweide(theta_s, phi_s, snr)
+
+    manifest.append(("fig05_sky_localization", _gen_sky_localization))
+
+    # 6. Fisher ellipses (3 parameter pairs)
+    def _gen_fisher_ellipses() -> tuple[object, object] | None:
+        if crb_df is None or len(crb_df) < 1:
+            return None
+        from master_thesis_code.plotting.fisher_plots import plot_fisher_ellipses
+
+        row = crb_df.iloc[0]
+        cov = reconstruct_covariance(row)
+        param_vals = np.array([float(row.get(p, 0.0)) for p in PARAMETER_NAMES], dtype=np.float64)
+        return plot_fisher_ellipses(cov, param_vals)
+
+    manifest.append(("fig06_fisher_ellipses", _gen_fisher_ellipses))
+
+    # 7. Corner plot
+    def _gen_corner_plot() -> tuple[object, object] | None:
+        if crb_df is None or len(crb_df) < 1:
+            return None
+        from master_thesis_code.plotting.fisher_plots import plot_fisher_corner
+
+        row = crb_df.iloc[0]
+        cov = reconstruct_covariance(row)
+        param_vals = np.array([float(row.get(p, 0.0)) for p in PARAMETER_NAMES], dtype=np.float64)
+        return plot_fisher_corner(cov, param_vals)
+
+    manifest.append(("fig07_corner_plot", _gen_corner_plot))
+
+    # 8. H0 convergence
+    def _gen_h0_convergence() -> tuple[object, object] | None:
+        if post_data is None:
+            return None
+        from master_thesis_code.plotting.convergence_plots import plot_h0_convergence
+
+        h_vals, event_posts = post_data
+        return plot_h0_convergence(h_vals, event_posts, true_h=0.73)
+
+    manifest.append(("fig08_h0_convergence", _gen_h0_convergence))
+
+    # 9. Detection efficiency
+    def _gen_detection_efficiency() -> tuple[object, object] | None:
+        if crb_df is None or "redshift" not in crb_df.columns or "SNR" not in crb_df.columns:
+            return None
+        from master_thesis_code.plotting.convergence_plots import plot_detection_efficiency
+
+        z = crb_df["redshift"].to_numpy(dtype=np.float64)
+        snr = crb_df["SNR"].to_numpy(dtype=np.float64)
+        detected = snr >= 20.0
+        return plot_detection_efficiency(z, detected)
+
+    manifest.append(("fig09_detection_efficiency", _gen_detection_efficiency))
+
+    # 10. LISA PSD with noise decomposition
+    def _gen_lisa_psd() -> tuple[object, object] | None:
+        from master_thesis_code.plotting.simulation_plots import plot_lisa_psd
+
+        freqs = np.geomspace(1e-5, 1.0, 1000)
+        return plot_lisa_psd(freqs, decompose=True)
+
+    manifest.append(("fig10_lisa_psd", _gen_lisa_psd))
+
+    # 11. Luminosity distance d_L(z) with multi-H0
+    def _gen_distance_redshift() -> tuple[object, object] | None:
+        from master_thesis_code.physical_relations import dist_vectorized
+        from master_thesis_code.plotting.physical_relations_plots import (
+            plot_distance_redshift,
+        )
+
+        z = np.linspace(0.01, 3.0, 200)
+        d = dist_vectorized(z, 0.73)
+        return plot_distance_redshift(
+            z,
+            d,  # type: ignore[arg-type]  # np.floating[Any] <: np.float64 at runtime
+            h0_values=[0.67, 0.70, 0.73, 0.76],
+            distance_fn=dist_vectorized,  # type: ignore[arg-type]  # same floating variance
+        )
+
+    manifest.append(("fig11_distance_redshift", _gen_distance_redshift))
+
+    # 12. Parameter uncertainty violins
+    def _gen_uncertainty_violins() -> tuple[object, object] | None:
+        if crb_df is None or len(crb_df) < 10:
+            return None
+        from master_thesis_code.plotting.fisher_plots import plot_parameter_uncertainties
+
+        param_cols = [p for p in PARAMETER_NAMES if p in crb_df.columns]
+        if not param_cols:
+            return None
+        return plot_parameter_uncertainties(crb_df, crb_df[param_cols])
+
+    manifest.append(("fig12_uncertainty_violins", _gen_uncertainty_violins))
+
+    # 13. Characteristic strain
+    def _gen_characteristic_strain() -> tuple[object, object] | None:
+        from master_thesis_code.plotting.fisher_plots import plot_characteristic_strain
+
+        return plot_characteristic_strain()
+
+    manifest.append(("fig13_characteristic_strain", _gen_characteristic_strain))
+
+    # 14. CRB coverage (3D parameter-space scatter per D-11)
+    def _gen_crb_coverage() -> tuple[object, object] | None:
+        if crb_df is None or not {"M", "qS", "phiS"}.issubset(crb_df.columns):
+            return None
+        from master_thesis_code.plotting.simulation_plots import plot_cramer_rao_coverage
+
+        M = crb_df["M"].to_numpy(dtype=np.float64)
+        qS = crb_df["qS"].to_numpy(dtype=np.float64)
+        phiS = crb_df["phiS"].to_numpy(dtype=np.float64)
+        return plot_cramer_rao_coverage(
+            M,
+            qS,
+            phiS,
+            M_limits=(float(M.min()), float(M.max())),
+            qS_limits=(float(qS.min()), float(qS.max())),
+            phiS_limits=(float(phiS.min()), float(phiS.max())),
+        )
+
+    manifest.append(("fig14_crb_coverage", _gen_crb_coverage))
+
+    # 15. Campaign dashboard (composite)
+    def _gen_dashboard() -> tuple[object, object] | None:
+        if crb_df is None or post_data is None:
+            return None
+        if not {"qS", "phiS", "SNR", "redshift"}.issubset(crb_df.columns):
+            return None
+        from master_thesis_code.plotting.dashboard_plots import plot_campaign_dashboard
+
+        h_vals, event_posts = post_data
+        log_posts = [np.log(np.maximum(p, 1e-300)) for p in event_posts]
+        log_combined = np.sum(log_posts, axis=0)
+        log_combined -= log_combined.max()
+        combined = np.exp(log_combined)
+        return plot_campaign_dashboard(
+            h_values=h_vals,
+            posterior=combined,
+            true_h=0.73,
+            snr_values=crb_df["SNR"].to_numpy(dtype=np.float64),
+            injected_redshifts=crb_df["redshift"].to_numpy(dtype=np.float64),
+            detected_redshifts=crb_df["redshift"].to_numpy(dtype=np.float64),
+            theta_s=crb_df["qS"].to_numpy(dtype=np.float64),
+            phi_s=crb_df["phiS"].to_numpy(dtype=np.float64),
+            sky_snr=crb_df["SNR"].to_numpy(dtype=np.float64),
+        )
+
+    manifest.append(("fig15_campaign_dashboard", _gen_dashboard))
+
+    # ------------------------------------------------------------------
+    # Execute manifest
+    # ------------------------------------------------------------------
+    generated = 0
+    skipped = 0
+    failed = 0
+    for name, generator in manifest:
+        try:
+            result = generator()
+            if result is None:
+                _ROOT_LOGGER.warning("Skipping %s: required data not found", name)
+                skipped += 1
+                continue
+            fig = result[0]  # (fig, ax) or (fig, dict)
+            _save(fig, name)
+            generated += 1
+        except Exception:
+            _ROOT_LOGGER.warning("Failed to generate %s", name, exc_info=True)
+            failed += 1
+
     _ROOT_LOGGER.info(
-        "Figure generation is a stub — implement per-figure calls "
-        "using plotting.* factory functions as data becomes available."
+        "Figure generation complete: %d generated, %d skipped, %d failed",
+        generated,
+        skipped,
+        failed,
     )
 
 
