@@ -5,7 +5,7 @@
 See: .gpd/PROJECT.md (updated 2026-04-01)
 
 **Core research question:** What is the Hubble constant H0 as measured by dark siren inference from LISA EMRI detections?
-**Current focus:** v1.2.2 complete -- planning next milestone
+**Current focus:** v1.3 planning -- bias evolution analysis complete (quick-2)
 
 ## Current Position
 
@@ -13,8 +13,8 @@ See: .gpd/PROJECT.md (updated 2026-04-01)
 **Current Phase Name:** --
 **Total Phases:** 7 (Phases 14-20, across v1.2.1 + v1.2.2)
 **Status:** Between milestones
-**Last Activity:** 2026-04-01
-**Last Activity Description:** v1.2.2 milestone archived (Injection Campaign Physics Analysis)
+**Last Activity:** 2026-04-02
+**Last Activity Description:** Quick task 2 complete — bias evolution analysis (quick-2/bias-evolution-analysis.md)
 
 **Progress:** [██████████] 100%
 
@@ -25,15 +25,16 @@ None.
 ## Intermediate Results
 
 - "Without BH mass" posterior peak: h=0.678 (P_det=1 baseline)
-- "With BH mass" posterior peak: h=0.600 (P_det=1 baseline, post-fix, still biased)
+- "With BH mass" posterior peak: h=0.652 (P_det=1 baseline, post-all-fixes, still biased)
 - Detection yield: 0.22-0.81% per h at SNR>=15 (v1.2.2)
 - IS estimator VRF: 11.8-24.9x in boundary bins (v1.2.2)
 - Validation: VALD-01 + VALD-02 PASS (v1.2.2)
 
 ## Open Questions
 
-- [v1.2.1] What causes the remaining "with BH mass" low-h bias after /(1+z) fix? -- Phase 16 scope, blocked on P_det data
-- [v1.2.1] p_det in numerator uses detection.M rather than galaxy M*(1+z) at trial z -- known approximation
+- [v1.2.1] What causes the remaining "with BH mass" low-h bias after /(1+z) fix? -- Diagnosis in quick-2: Sources A (p_det mismatch) + F (zero-likelihood clustering) are primary candidates. Fix requires: (1) P_det=1 production run, (2) zero-likelihood logging, (3) Physics Change Protocol for Source A fix.
+- [v1.2.1] "Without BH mass" h=0.86 overshoot with real P_det -- Diagnosis in quick-2: Source E (P_det normalization). Confirmed by P_det=1 cross-check (h=0.678). Action: P_det=1 production run.
+- [v1.2.1] p_det in numerator uses detection.M rather than galaxy M*(1+z) at trial z -- Source A in quick-2 analysis. Physics Change Protocol required before fix.
 
 ## Accumulated Context
 
@@ -70,11 +71,12 @@ None.
 
 ### Blockers/Concerns
 
-- **"With BH mass" posterior still biased low** -- Phase 16 blocked on P_det data
-- p_det in numerator uses detection.M (known approximation, Phase 15)
+- **"With BH mass" posterior still biased low** -- Dominant mechanisms: Source A (p_det(M_det) mismatch) + Source F (21% zero-likelihood events, h-bin-correlated). Phase 16 blocked until diagnosis confirmed via P_det=1 production run and zero-likelihood logging.
+- **"Without BH mass" h=0.86 overshoot with real P_det** -- Source E (P_det normalization). Fix path: P_det=1 production run to confirm, then investigate IS estimator h-dependent coverage at high d_L.
+- p_det in numerator uses detection.M (Source A, Physics Change Protocol required for fix)
 
 ## Session Continuity
 
-**Last session:** 2026-04-01
-**Stopped at:** v1.2.2 milestone completed and archived
-**Resume file:** --
+**Last session:** 2026-04-02
+**Stopped at:** Quick task 2 complete — bias evolution analysis written and committed (7e6731c)
+**Resume file:** .gpd/quick/2-analyze-evolution-of-residual-bias-ac/bias-evolution-analysis.md
