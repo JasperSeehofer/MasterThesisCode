@@ -184,9 +184,9 @@ Plans:
   1. `single_host_likelihood` in `bayesian_statistics.py` returns a physically motivated floor value (not zero) when no host galaxy produces nonzero likelihood, following `/physics-change` protocol with documented derivation
   2. `check_overflow` (or its replacement) detects product-to-zero underflow in addition to overflow-to-inf, logging a warning when the posterior product would collapse to zero
   3. Running the evaluate pipeline on a subset of campaign data produces no zero-valued posterior bins (all h-bins have nonzero likelihood for every event)
-**Plans:** 1 plan
+**Plans:** 1/1 plans complete
 Plans:
-- [ ] 22-01-PLAN.md — Implement per-event-min physics floor in posterior_combination.py + remove check_overflow dead code
+- [x] 22-01-PLAN.md — Implement per-event-min physics floor in posterior_combination.py + remove check_overflow dead code
 
 ### Phase 23: Deploy & Validate
 **Goal**: Updated code is running on the cluster and validated against existing baselines before the pending evaluate jobs execute
@@ -225,5 +225,5 @@ Phases execute in numeric order: 21 -> 22 -> 23
 | 18. New Plot Modules | v1.3 | 0/0 | Not started | - |
 | 19. Campaign Dashboards | v1.3 | 0/0 | Not started | - |
 | 21. Analysis & Post-Processing | v1.4 | 2/2 | Complete    | 2026-04-02 |
-| 22. Likelihood Floor & Overflow Fix | v1.4 | 0/1 | Planned | - |
+| 22. Likelihood Floor & Overflow Fix | v1.4 | 1/1 | Complete   | 2026-04-02 |
 | 23. Deploy & Validate | v1.4 | 0/0 | Not started | - |

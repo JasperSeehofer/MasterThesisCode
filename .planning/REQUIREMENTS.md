@@ -11,8 +11,8 @@
 ## Numerical Fix
 
 - [x] **NFIX-01**: Log-space posterior accumulation in post-processing combination script — replace `np.prod(likelihoods, axis=0)` with `np.sum(np.log(likelihoods), axis=0)` with shift-before-exp for numerical stability
-- [ ] **NFIX-02**: Physically motivated likelihood floor (Option 3) in `single_host_likelihood` in `bayesian_statistics.py` — when no host galaxy produces nonzero likelihood, assign a floor based on the faintest catalog galaxy at the error volume boundary. Requires `/physics-change` protocol.
-- [ ] **NFIX-03**: Replace `check_overflow` with proper underflow detection that catches product-to-zero (not just overflow-to-inf)
+- [x] **NFIX-02**: Physically motivated likelihood floor (Option 3) in `single_host_likelihood` in `bayesian_statistics.py` — when no host galaxy produces nonzero likelihood, assign a floor based on the faintest catalog galaxy at the error volume boundary. Requires `/physics-change` protocol.
+- [x] **NFIX-03**: Replace `check_overflow` with proper underflow detection that catches product-to-zero (not just overflow-to-inf)
 
 ## Deployment
 
