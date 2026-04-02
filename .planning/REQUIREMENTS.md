@@ -16,7 +16,7 @@
 
 ## Deployment
 
-- [ ] **DEPL-01**: Updated code pushed to cluster `~/MasterThesisCode` before evaluate jobs start (22 simulate tasks + merge remaining)
+- [x] **DEPL-01**: Updated code pushed to cluster `~/MasterThesisCode` before evaluate jobs start (22 simulate tasks + merge remaining)
 - [x] **DEPL-02**: Validation run comparing new posteriors against existing baselines (naive MAP=0.72/0.86, Option 1 MAP=0.68/0.66)
 
 ## Post-Processing
