@@ -1020,15 +1020,6 @@ def child_process_init(
     )
 
 
-def check_overflow(arr_1: np.ndarray, arr_2: np.ndarray) -> bool:
-    try:
-        arr = arr_1 * arr_2
-    except RuntimeWarning:
-        _LOGGER.warning("Overflow detected in multiplication")
-        return True
-    return bool(np.any(np.isinf(arr)))
-
-
 def _get_closest_possible_host(
     detection: Detection, possible_hosts: list[HostGalaxy]
 ) -> HostGalaxy:
