@@ -163,7 +163,7 @@ Phases execute in numeric order: 14 -> 15 -> 16 -> 17 -> 18 -> 19
 | 13. H0 Posterior Sweep | v1.2 | 1/1 | Complete | - |
 | 14. Test Infrastructure | v1.3 | 1/2 | Complete    | 2026-04-01 |
 | 15. Style Infrastructure | v1.3 | 0/1 | Complete    | 2026-04-01 |
-| 16. Data Layer & Fisher | v1.3 | 2/2 | Complete   | 2026-04-02 |
+| 16. Data Layer & Fisher | v1.3 | 2/2 | Complete    | 2026-04-02 |
 | 17. Enhanced Existing Plots | v1.3 | 0/0 | Not started | - |
 | 18. New Plot Modules | v1.3 | 0/0 | Not started | - |
 | 19. Campaign Dashboards | v1.3 | 0/0 | Not started | - |
