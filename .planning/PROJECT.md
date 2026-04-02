@@ -17,9 +17,13 @@ The simulation pipeline runs reliably on the GPU cluster as SLURM array jobs, pr
 
 **Goal:** Modernize the visualization stack and produce publication-quality plots informed by gravitational wave research standards, replacing ad-hoc matplotlib code with a systematic, modern approach.
 
+## Current State (v1.3 Phase 19 complete 2026-04-02)
+
+v1.3 Visualization Overhaul milestone complete. Phase 19 adds campaign dashboard composite (2x2 mosaic: H0 posterior, SNR, detection yield, sky map) and batch figure generation pipeline (`generate_figures()` with 15-entry manifest). PDF size optimization via `rasterized=True` on scatter calls and 2MB warning check. 342 tests pass at 63% coverage. All 6 phases (14-19) shipped.
+
 ## Current State (v1.3 Phase 18 complete 2026-04-02)
 
-Phase 18 complete. Four new plot factory functions: Mollweide sky localization map, Fisher corner plots (via `corner` library), H0 convergence diagnostics (two-panel posterior narrowing + CI width), and detection efficiency curves with Wilson score CI. All follow (Figure, Axes) convention with smoke tests. 334 tests pass at 62% coverage. One phase remaining in v1.3 (Phase 19: Campaign Dashboards).
+Phase 18 complete. Four new plot factory functions: Mollweide sky localization map, Fisher corner plots (via `corner` library), H0 convergence diagnostics (two-panel posterior narrowing + CI width), and detection efficiency curves with Wilson score CI. All follow (Figure, Axes) convention with smoke tests. 334 tests pass at 62% coverage.
 
 ## Current State (v1.4 Phase 23 complete 2026-04-02)
 
@@ -158,4 +162,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-02 after Phase 18 completion*
+*Last updated: 2026-04-02 after Phase 19 completion*
