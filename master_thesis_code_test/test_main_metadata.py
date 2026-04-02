@@ -39,6 +39,8 @@ def _make_arguments(
         seed=42,
         log_level="INFO",
         generate_figures=None,
+        combine=False,
+        strategy="physics-floor",
     )
     return Arguments(ns)
 

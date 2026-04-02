@@ -20,7 +20,6 @@ from master_thesis_code.bayesian_inference.posterior_combination import (
     load_posterior_jsons,
 )
 
-
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
@@ -310,3 +309,104 @@ class TestCombinePosteriors:
         )
         # Should have fallen back to exclude
         assert result["strategy"] == "exclude"
+
+
+# ---------------------------------------------------------------------------
+# Integration tests against real campaign data
+# ---------------------------------------------------------------------------
+
+# Campaign data may live in the main worktree (not copied to git worktrees).
+# Try both relative and absolute paths.
+_CAMPAIGN_CANDIDATES = [
+    Path("results/h_sweep_20260401/posteriors"),
+    Path("/home/jasper/Repositories/MasterThesisCode/results/h_sweep_20260401/posteriors"),
+]
+CAMPAIGN_DIR: Path | None = next(
+    (p for p in _CAMPAIGN_CANDIDATES if p.exists()), None
+)
+
+
+@pytest.mark.skipif(
+    CAMPAIGN_DIR is None, reason="Campaign data not available"
+)
+class TestCampaignIntegration:
+    """Integration tests against the real h_sweep_20260401 campaign data."""
+
+    def _campaign_dir(self) -> Path:
+        assert CAMPAIGN_DIR is not None
+        return CAMPAIGN_DIR
+
+    def test_load_real_posteriors(self) -> None:
+        """Verify loading all 15 h-value JSON files."""
+        h_values, event_likelihoods = load_posterior_jsons(self._campaign_dir())
+        assert len(h_values) == 15
+        assert h_values[0] == pytest.approx(0.6)
+        assert h_values[-1] == pytest.approx(0.86)
+        assert len(event_likelihoods) >= 530  # ~538 events minus some empties
+
+    def test_naive_strategy_all_zeros(self) -> None:
+        """Naive strategy should produce valid normalized posterior."""
+        h_values, event_likelihoods = load_posterior_jsons(self._campaign_dir())
+        likelihoods, _det_indices = build_likelihood_array(h_values, event_likelihoods)
+        processed, excluded = apply_strategy(likelihoods, CombinationStrategy.NAIVE)
+        assert excluded == 0
+        posterior = combine_log_space(processed)
+        assert np.isfinite(posterior).all()
+        assert pytest.approx(np.sum(posterior), abs=0.01) == 1.0
+
+    def test_exclude_strategy_map(self) -> None:
+        """Exclude strategy should give MAP within expected range."""
+        h_values, event_likelihoods = load_posterior_jsons(self._campaign_dir())
+        likelihoods, _det_indices = build_likelihood_array(h_values, event_likelihoods)
+        processed, excluded = apply_strategy(likelihoods, CombinationStrategy.EXCLUDE)
+        assert excluded >= 17  # At least 17 zero-events excluded
+        posterior = combine_log_space(processed)
+        h_arr = np.array(h_values)
+        map_h = h_arr[np.argmax(posterior)]
+        # Known baseline: MAP in [0.60, 0.86] range for "without BH mass" with exclude
+        assert 0.60 <= map_h <= 0.86, f"MAP {map_h} outside expected range"
+
+    def test_diagnostic_report_on_real_data(self) -> None:
+        """Diagnostic report should identify the known all-zero events."""
+        h_values, event_likelihoods = load_posterior_jsons(self._campaign_dir())
+        likelihoods, det_indices = build_likelihood_array(h_values, event_likelihoods)
+        report = generate_diagnostic_report(h_values, likelihoods, det_indices)
+        assert "163" in report  # Known all-zeros event
+        assert "223" in report  # Known all-zeros event
+        assert "507" in report  # Known all-zeros event
+        assert "## Zero-Event Detail" in report
+
+    def test_comparison_table_on_real_data(self) -> None:
+        """Comparison table should have rows for all 4 strategies."""
+        h_values, event_likelihoods = load_posterior_jsons(self._campaign_dir())
+        h_arr = np.array(h_values)
+        likelihoods, det_indices = build_likelihood_array(h_values, event_likelihoods)
+        table = generate_comparison_table(h_arr, likelihoods, det_indices, "without_bh_mass")
+        assert "naive" in table.lower()
+        assert "exclude" in table.lower()
+        assert "per-event-floor" in table.lower()
+        assert "physics-floor" in table.lower()
+
+    def test_full_combine_posteriors_output(self, tmp_path: Path) -> None:
+        """End-to-end: combine_posteriors writes all output files."""
+        result = combine_posteriors(
+            posteriors_dir=str(self._campaign_dir()),
+            strategy="exclude",
+            output_dir=str(tmp_path),
+        )
+        # Check output files
+        assert (tmp_path / "combined_posterior.json").exists()
+        assert (tmp_path / "diagnostic_report.md").exists()
+        assert (tmp_path / "comparison_table.md").exists()
+        # Check JSON schema
+        import json
+
+        with open(tmp_path / "combined_posterior.json") as f:
+            data = json.load(f)
+        assert "h_values" in data
+        assert "posterior" in data
+        assert "strategy" in data
+        assert data["strategy"] == "exclude"
+        assert len(data["h_values"]) == 15
+        assert len(data["posterior"]) == 15
+        assert data["n_events_excluded"] >= 17
