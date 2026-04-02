@@ -16,7 +16,7 @@ dependencies = [
 
 [project.optional-dependencies]
 cpu = [
-    "fastemriwaveforms==2.0.0rc1",
+    "fastemriwaveforms==2.0.0",
 ]
 gpu = [
     "fastemriwaveforms-cuda12x",
