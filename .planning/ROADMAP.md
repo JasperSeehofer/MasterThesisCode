@@ -148,7 +148,10 @@ Plans:
   2. A corner plot of an EMRI parameter subset renders from Fisher-derived Gaussian approximation using the `corner` library with thesis styling
   3. H0 convergence plot shows how the posterior width narrows as the number of detected events increases
   4. Detection efficiency curve shows a 1D P_det slice with confidence intervals
-**Plans**: TBD
+**Plans:** 2 plans
+Plans:
+- [ ] 18-01-PLAN.md — Mollweide sky localization map + Fisher corner plot
+- [ ] 18-02-PLAN.md — H0 convergence plot + detection efficiency curve
 **UI hint**: yes
 
 ### Phase 19: Campaign Dashboards & Batch Generation
@@ -229,7 +232,7 @@ Phases execute in numeric order: 21 -> 22 -> 23
 | 15. Style Infrastructure | v1.3 | 0/1 | Complete | 2026-04-01 |
 | 16. Data Layer & Fisher | v1.3 | 2/2 | Complete | 2026-04-02 |
 | 17. Enhanced Existing Plots | v1.3 | 3/3 | Complete   | 2026-04-02 |
-| 18. New Plot Modules | v1.3 | 0/0 | Not started | - |
+| 18. New Plot Modules | v1.3 | 0/2 | Not started | - |
 | 19. Campaign Dashboards | v1.3 | 0/0 | Not started | - |
 | 21. Analysis & Post-Processing | v1.4 | 2/2 | Complete    | 2026-04-02 |
 | 22. Likelihood Floor & Overflow Fix | v1.4 | 1/1 | Complete    | 2026-04-02 |
