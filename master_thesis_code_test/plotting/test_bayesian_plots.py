@@ -24,18 +24,95 @@ def test_plot_combined_posterior(
     assert isinstance(ax, Axes)
 
 
+def test_plot_combined_posterior_credible_intervals(
+    sample_h_values: npt.NDArray[np.float64],
+    sample_posterior: npt.NDArray[np.float64],
+) -> None:
+    """Credible intervals produce fill regions (PolyCollections)."""
+    fig, ax = plot_combined_posterior(
+        sample_h_values, sample_posterior, true_h=0.73, show_credible=True
+    )
+    assert isinstance(fig, Figure)
+    assert isinstance(ax, Axes)
+    # fill_between creates PolyCollection objects in ax.collections
+    assert len(ax.collections) >= 2
+
+
+def test_plot_combined_posterior_density_normalization(
+    sample_h_values: npt.NDArray[np.float64],
+    sample_posterior: npt.NDArray[np.float64],
+) -> None:
+    """Density normalization mode returns valid figure."""
+    fig, ax = plot_combined_posterior(
+        sample_h_values, sample_posterior, true_h=0.73, normalize="density"
+    )
+    assert isinstance(fig, Figure)
+    assert isinstance(ax, Axes)
+
+
+def test_plot_combined_posterior_references(
+    sample_h_values: npt.NDArray[np.float64],
+    sample_posterior: npt.NDArray[np.float64],
+) -> None:
+    """Reference bands add vertical lines for Planck and SH0ES."""
+    fig, ax = plot_combined_posterior(
+        sample_h_values, sample_posterior, true_h=0.73, show_references=True
+    )
+    assert isinstance(fig, Figure)
+    assert isinstance(ax, Axes)
+    # At minimum: truth line + Planck center + SH0ES center + 4 credible edges = 7 vlines
+    assert len(ax.get_lines()) > 0
+
+
 def test_plot_event_posteriors(
     sample_h_values: npt.NDArray[np.float64],
 ) -> None:
-    """Smoke test: plot_event_posteriors returns (Figure, Axes)."""
+    """Smoke test: backward-compat dict input still works."""
     rng = np.random.default_rng(42)
-    posterior_data = {
+    posterior_data: dict[int, list[float]] = {
         0: list(rng.random(50)),
         1: list(rng.random(50)),
     }
     fig, ax = plot_event_posteriors(sample_h_values, posterior_data, true_h=0.73)
     assert isinstance(fig, Figure)
     assert isinstance(ax, Axes)
+
+
+def test_plot_event_posteriors_color_by_snr(
+    sample_h_values: npt.NDArray[np.float64],
+) -> None:
+    """Color-by-SNR mode renders colorbar."""
+    rng = np.random.default_rng(42)
+    posteriors = [rng.random(50) for _ in range(5)]
+    color_values = np.array([15.0, 20.0, 25.0, 30.0, 35.0])
+    fig, ax = plot_event_posteriors(
+        sample_h_values,
+        posteriors,
+        true_h=0.73,
+        color_by="snr",
+        color_values=color_values,
+    )
+    assert isinstance(fig, Figure)
+    assert isinstance(ax, Axes)
+
+
+def test_plot_event_posteriors_combined(
+    sample_h_values: npt.NDArray[np.float64],
+    sample_posterior: npt.NDArray[np.float64],
+) -> None:
+    """Combined posterior overlay renders as an additional line."""
+    rng = np.random.default_rng(42)
+    posteriors = [rng.random(50) for _ in range(3)]
+    fig, ax = plot_event_posteriors(
+        sample_h_values,
+        posteriors,
+        true_h=0.73,
+        combined_posterior=sample_posterior,
+    )
+    assert isinstance(fig, Figure)
+    assert isinstance(ax, Axes)
+    # 3 individual + 1 combined + 1 truth vline = 5 lines
+    assert len(ax.get_lines()) >= 5
 
 
 def test_plot_subset_posteriors(
