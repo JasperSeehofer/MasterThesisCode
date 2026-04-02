@@ -61,7 +61,7 @@ def plot_sky_localization_mollweide(
     lat = np.pi / 2.0 - theta_s
     lon = ((phi_s - np.pi + np.pi) % (2.0 * np.pi)) - np.pi
 
-    sc = ax.scatter(lon, lat, c=snr, cmap=CMAP, s=12, alpha=0.8, zorder=5)
+    sc = ax.scatter(lon, lat, c=snr, cmap=CMAP, s=12, alpha=0.8, zorder=5, rasterized=True)
     make_colorbar(sc, fig, ax, label=LABELS["SNR"])
 
     if covariances is not None:

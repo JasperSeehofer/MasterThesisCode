@@ -205,7 +205,7 @@ def plot_injected_vs_recovered(
                 alpha=0.7,
             )
         else:
-            ax_main.scatter(inj, rec, s=9, color=CYCLE[0], alpha=0.7)
+            ax_main.scatter(inj, rec, s=9, color=CYCLE[0], alpha=0.7, rasterized=True)
 
         # y-axis label on leftmost column only
         if col == 0:
@@ -229,7 +229,7 @@ def plot_injected_vs_recovered(
                 alpha=0.7,
             )
         else:
-            ax_resid.scatter(inj, residual, s=9, color=CYCLE[0], alpha=0.7)
+            ax_resid.scatter(inj, residual, s=9, color=CYCLE[0], alpha=0.7, rasterized=True)
 
         ax_resid.axhline(0, color=REFERENCE, linestyle="--", linewidth=1)
 
