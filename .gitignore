@@ -25,5 +25,8 @@ saved_figures/
 # Run metadata (per-run)
 run_metadata.json
 
+# Claude Code worktrees (embedded git repos)
+.claude/worktrees/
+
 # Credentials
 cluster/vpn.sh
