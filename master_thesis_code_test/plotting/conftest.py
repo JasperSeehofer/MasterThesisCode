@@ -95,6 +95,27 @@ def sample_uncertainties() -> dict[str, npt.NDArray[np.float64]]:
 
 
 @pytest.fixture()
+def sample_sky_data() -> (
+    tuple[
+        npt.NDArray[np.float64],
+        npt.NDArray[np.float64],
+        npt.NDArray[np.float64],
+        list[npt.NDArray[np.float64]],
+    ]
+):
+    """Sky data: (theta_s, phi_s, snr, covariances) for 10 sources."""
+    rng = np.random.default_rng(42)
+    theta_s = rng.uniform(0.1, np.pi - 0.1, 10)
+    phi_s = rng.uniform(0, 2 * np.pi, 10)
+    snr = rng.uniform(20, 100, 10)
+    covariances: list[npt.NDArray[np.float64]] = []
+    for _ in range(10):
+        A = rng.random((2, 2)) * 0.01
+        covariances.append(A @ A.T)
+    return theta_s, phi_s, snr, covariances
+
+
+@pytest.fixture()
 def sample_crb_row() -> pd.Series:
     """Single CRB CSV row with 14 param values + 105 delta columns + metadata."""
     from master_thesis_code.plotting._data import PARAMETER_NAMES

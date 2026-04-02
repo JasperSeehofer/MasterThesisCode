@@ -10,6 +10,7 @@ from matplotlib.figure import Figure
 from master_thesis_code.plotting._data import PARAMETER_NAMES, reconstruct_covariance
 from master_thesis_code.plotting.fisher_plots import (
     plot_characteristic_strain,
+    plot_fisher_corner,
     plot_fisher_ellipses,
     plot_parameter_uncertainties,
 )
@@ -106,3 +107,54 @@ def test_plot_uncertainties_bar(sample_crb_row: pd.Series) -> None:
     assert isinstance(fig, Figure)
     assert isinstance(ax, Axes)
     plt.close(fig)
+
+
+# ---------------------------------------------------------------------------
+# Corner Plot (FISH-03)
+# ---------------------------------------------------------------------------
+
+
+def test_plot_fisher_corner_basic(
+    sample_covariance_matrix: np.ndarray,
+) -> None:
+    """Smoke test: corner plot with default 6 params returns (Figure, ndarray)."""
+    fig, axes = plot_fisher_corner(sample_covariance_matrix, _SAMPLE_PARAM_VALUES)
+    assert isinstance(fig, Figure)
+    assert isinstance(axes, np.ndarray)
+    assert axes.shape == (6, 6)
+    plt.close(fig)
+
+
+def test_plot_fisher_corner_custom_params(
+    sample_covariance_matrix: np.ndarray,
+) -> None:
+    """Smoke test: corner plot with custom 3 params returns correct shape."""
+    fig, axes = plot_fisher_corner(
+        sample_covariance_matrix, _SAMPLE_PARAM_VALUES, params=["M", "mu", "a"]
+    )
+    assert isinstance(fig, Figure)
+    assert axes.shape == (3, 3)
+    plt.close(fig)
+
+
+def test_plot_fisher_corner_multi_event(
+    sample_covariance_matrix: np.ndarray,
+) -> None:
+    """Smoke test: multi-event corner overlay has more artists than single."""
+    fig_single, _ = plot_fisher_corner(
+        sample_covariance_matrix, _SAMPLE_PARAM_VALUES, params=["M", "mu"]
+    )
+    n_artists_single = len(fig_single.get_children())
+    plt.close(fig_single)
+
+    fig_multi, _ = plot_fisher_corner(
+        sample_covariance_matrix,
+        _SAMPLE_PARAM_VALUES,
+        params=["M", "mu"],
+        overlay_events=[
+            (sample_covariance_matrix, _SAMPLE_PARAM_VALUES * 1.1),
+        ],
+    )
+    n_artists_multi = len(fig_multi.get_children())
+    assert n_artists_multi >= n_artists_single
+    plt.close(fig_multi)
