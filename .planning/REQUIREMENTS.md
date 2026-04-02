@@ -32,7 +32,7 @@ Requirements for visualization overhaul. Each maps to roadmap phases.
 
 ### Fisher & Parameter Estimation Plots (New)
 
-- [ ] **FISH-01**: `_data.py` module reconstructs 14x14 covariance matrices from CRB CSV `delta_X_delta_Y` columns
+- [x] **FISH-01**: `_data.py` module reconstructs 14x14 covariance matrices from CRB CSV `delta_X_delta_Y` columns
 - [ ] **FISH-02**: 2D Fisher error ellipses (1-sigma, 2-sigma) for key EMRI parameter pairs
 - [ ] **FISH-03**: Corner plot of EMRI parameter subset using Fisher-derived Gaussian approximation (via `corner` library)
 - [ ] **FISH-04**: Characteristic strain h_c(f) plot with example EMRI track overlaid on LISA sensitivity curve
@@ -105,7 +105,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | STYLE-03 | Phase 15 | Pending |
 | STYLE-04 | Phase 15 | Pending |
 | STYLE-05 | Phase 15 | Pending |
-| FISH-01 | Phase 16 | Pending |
+| FISH-01 | Phase 16 | Complete |
 | FISH-02 | Phase 16 | Pending |
 | FISH-04 | Phase 16 | Pending |
 | FISH-05 | Phase 16 | Pending |
