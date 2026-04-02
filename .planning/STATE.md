@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v1.3
 milestone_name: Visualization Overhaul
 status: executing
-stopped_at: Completed 18-01-PLAN.md
+stopped_at: Completed 18-02-PLAN.md
 last_updated: "2026-04-02T19:01:20.073Z"
 last_activity: 2026-04-02
 progress:
@@ -21,13 +21,13 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-02)
 
 **Core value:** Publication-quality thesis visualizations with consistent style and comprehensive uncertainty display
-**Current focus:** Phase 17 — enhanced existing plots
+**Current focus:** Phase 18 — new plot modules
 
 ## Current Position
 
 Phase: 18 (new-plot-modules) — EXECUTING
-Plan: 1 of 2 complete
-Status: Executing wave 1
+Plan: 2 of 2 complete
+Status: All plans complete — ready for verification
 Last activity: 2026-04-02
 
 Progress: [███░░░░░░░] 33%
@@ -65,6 +65,8 @@ Progress: [███░░░░░░░] 33%
 - [Phase 17]: LisaTdiConfiguration works on CPU (guarded cupy import) so decompose test runs without GPU marker
 - [Phase 18]: Widened make_colorbar mappable type from AxesImage to ScalarMappable for scatter/contourf support
 - [Phase 18]: Added corner to mypy ignore_missing_imports (no py.typed marker)
+- [Phase 18]: astropy.stats type stubs available -- no type: ignore needed for binom_conf_interval
+- [Phase 18]: Log-sum-exp used for numerical stability in posterior combination
 
 ### Pending Todos
 
@@ -79,5 +81,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-04-02T19:01:20.066Z
-Stopped at: Completed 18-01-PLAN.md
+Stopped at: Completed 18-02-PLAN.md
 Resume file: None
