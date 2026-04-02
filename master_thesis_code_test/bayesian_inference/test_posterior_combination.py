@@ -167,16 +167,65 @@ class TestApplyStrategy:
         assert result[0, 0] == pytest.approx(np.finfo(float).tiny)
         assert result[0, 1] == pytest.approx(np.finfo(float).tiny)
 
-    def test_strategy_physics_floor_fallback(self, caplog: pytest.LogCaptureFixture) -> None:
-        likelihoods = np.array([[1.0, 2.0], [0.0, 3.0]])
-        with caplog.at_level(logging.WARNING):
-            result, excluded = apply_strategy(
-                likelihoods, CombinationStrategy.PHYSICS_FLOOR
-            )
-        assert "not yet implemented" in caplog.text.lower() or "not yet implemented" in caplog.text
-        # Falls back to exclude
+    def test_strategy_physics_floor_basic(self) -> None:
+        """Physics floor: zeros replaced with min(nonzero) per event."""
+        likelihoods = np.array([[5.0, 0.0, 10.0]])
+        result, excluded = apply_strategy(
+            likelihoods, CombinationStrategy.PHYSICS_FLOOR
+        )
+        assert excluded == 0
+        # Floor = min nonzero = 5.0 (NOT divided by 100)
+        np.testing.assert_array_equal(result[0], [5.0, 5.0, 10.0])
+
+    def test_strategy_physics_floor_per_event(self) -> None:
+        """Physics floor is independent per event (D-03)."""
+        likelihoods = np.array([[5.0, 0.0, 10.0], [1.0, 2.0, 0.0]])
+        result, excluded = apply_strategy(
+            likelihoods, CombinationStrategy.PHYSICS_FLOOR
+        )
+        assert excluded == 0
+        # Row 0: floor = 5.0
+        np.testing.assert_array_equal(result[0], [5.0, 5.0, 10.0])
+        # Row 1: floor = 1.0
+        np.testing.assert_array_equal(result[1], [1.0, 2.0, 1.0])
+
+    def test_strategy_physics_floor_all_zero_excluded(self) -> None:
+        """All-zero event is excluded (no nonzero value for floor)."""
+        likelihoods = np.array([[0.0, 0.0], [1.0, 2.0]])
+        result, excluded = apply_strategy(
+            likelihoods, CombinationStrategy.PHYSICS_FLOOR
+        )
         assert excluded == 1
         assert result.shape == (1, 2)
+        np.testing.assert_array_equal(result[0], [1.0, 2.0])
+
+    def test_strategy_physics_floor_no_zeros(self) -> None:
+        """No zeros: array unchanged, excluded_count=0."""
+        likelihoods = np.array([[1.0, 2.0]])
+        result, excluded = apply_strategy(
+            likelihoods, CombinationStrategy.PHYSICS_FLOOR
+        )
+        assert excluded == 0
+        np.testing.assert_array_equal(result[0], [1.0, 2.0])
+
+    def test_strategy_physics_floor_logs_floor_info(
+        self, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        """Floor application is logged with event index and floor value."""
+        likelihoods = np.array([[5.0, 0.0, 10.0]])
+        with caplog.at_level(logging.INFO):
+            apply_strategy(likelihoods, CombinationStrategy.PHYSICS_FLOOR)
+        assert "physics floor" in caplog.text.lower()
+        assert "5.000000e+00" in caplog.text or "5.0" in caplog.text
+
+    def test_strategy_physics_floor_all_zero_logs_warning(
+        self, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        """All-zero event exclusion is logged as warning."""
+        likelihoods = np.array([[0.0, 0.0], [1.0, 2.0]])
+        with caplog.at_level(logging.WARNING):
+            apply_strategy(likelihoods, CombinationStrategy.PHYSICS_FLOOR)
+        assert "all-zero" in caplog.text.lower() or "excluding" in caplog.text.lower()
 
 
 # ---------------------------------------------------------------------------
@@ -297,7 +346,7 @@ class TestCombinePosteriors:
         posterior = np.array(result["posterior"])
         assert posterior.sum() == pytest.approx(1.0, abs=1e-6)
 
-    def test_physics_floor_falls_back(
+    def test_physics_floor_works(
         self, posteriors_dir: Path, tmp_path: Path
     ) -> None:
         output_dir = tmp_path / "output"
@@ -307,8 +356,14 @@ class TestCombinePosteriors:
             strategy="physics-floor",
             output_dir=str(output_dir),
         )
-        # Should have fallen back to exclude
-        assert result["strategy"] == "exclude"
+        # Should use physics-floor directly (no fallback)
+        assert result["strategy"] == "physics-floor"
+        # Output files created
+        assert (output_dir / "combined_posterior.json").exists()
+        assert (output_dir / "diagnostic_report.md").exists()
+        # Posterior sums to ~1.0
+        posterior = np.array(result["posterior"])
+        assert posterior.sum() == pytest.approx(1.0, abs=1e-6)
 
 
 # ---------------------------------------------------------------------------
