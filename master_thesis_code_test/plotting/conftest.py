@@ -138,3 +138,25 @@ def sample_crb_dataframe(sample_crb_row: pd.Series) -> pd.DataFrame:
                 row[key] *= rng.uniform(0.8, 1.2)
         rows.append(row)
     return pd.DataFrame(rows)
+
+
+@pytest.fixture()
+def sample_event_posteriors() -> tuple[npt.NDArray[np.float64], list[npt.NDArray[np.float64]]]:
+    """H-values grid and 20 per-event posterior arrays for convergence tests."""
+    h_values = np.linspace(0.5, 1.0, 50)
+    rng = np.random.default_rng(42)
+    event_posteriors: list[npt.NDArray[np.float64]] = []
+    for _ in range(20):
+        center = 0.73 + rng.normal(0, 0.02)
+        posterior = np.exp(-0.5 * ((h_values - center) / 0.05) ** 2)
+        event_posteriors.append(posterior)
+    return h_values, event_posteriors
+
+
+@pytest.fixture()
+def sample_injection_campaign() -> tuple[npt.NDArray[np.float64], npt.NDArray[np.bool_]]:
+    """Variable array and detected boolean array for detection efficiency tests."""
+    rng = np.random.default_rng(42)
+    variable = rng.uniform(0.1, 3.0, 200)
+    detected = rng.random(200) < 0.7 * np.exp(-variable)
+    return variable, detected
