@@ -13,9 +13,9 @@ The simulation pipeline runs reliably on the GPU cluster as SLURM array jobs, pr
 - **v1.4 Posterior Numerical Stability** — shipped 2026-04-02 (Phases 21-23). Log-space accumulation, physics-motivated likelihood floor, underflow detection. Deployed to bwUniCluster at `5793f70`. Full details: `.planning/milestones/v1.4-ROADMAP.md`
 - **v1.2 Production Campaign & Physics Corrections** — shipped 2026-04-01 (Phases 9-13, 11.1). Confusion noise + five-point stencil physics fixes, simulation-based P_det, 1000+ detection production campaign, H0 sweep baselines. Full details: `.planning/milestones/v1.2-ROADMAP.md`
 
-## Active Milestone: v1.3 Visualization Overhaul (paused at Phase 17)
+## Shipped Milestones (continued)
 
-**Goal:** Modernize the visualization stack and produce publication-quality plots informed by gravitational wave research standards, replacing ad-hoc matplotlib code with a systematic, modern approach.
+- **v1.3 Visualization Overhaul** — shipped 2026-04-02 (Phases 14-19). Full publication-quality visualization stack: centralized style, Fisher data layer, enhanced existing plots, sky maps + corner plots + convergence diagnostics, 15-figure batch pipeline. Full details: `.planning/milestones/v1.3-ROADMAP.md`
 
 ## Current State (v1.3 Phase 19 complete 2026-04-02)
 
@@ -88,9 +88,9 @@ Pipeline validated end-to-end on bwUniCluster 3.0. Smoke-test campaign (3 tasks,
 
 ### Active
 
-- Publication-quality thesis visualizations (v1.3, Phase 17 in progress)
+- (No active milestone — all planned milestones shipped; run `/gsd:new-milestone` for next milestone)
 
-### Recently Validated (v1.2 / v1.4)
+### Recently Validated (v1.2 / v1.3 / v1.4)
 
 - ✓ Fisher matrix upgrade to 5-point stencil derivative — v1.2 Phase 10
 - ✓ Galactic confusion noise added to PSD — v1.2 Phase 9
@@ -101,6 +101,12 @@ Pipeline validated end-to-end on bwUniCluster 3.0. Smoke-test campaign (3 tasks,
 - ✓ Physics-motivated likelihood floor in single_host_likelihood — v1.4 Phase 22
 - ✓ Underflow detection replacing dead check_overflow — v1.4 Phase 22
 - ✓ Updated code deployed to cluster at 5793f70, validation PASS — v1.4 Phase 23
+- ✓ 23 smoke tests covering all plot factory functions + rcParams regression test — v1.3 Phase 14
+- ✓ Centralized style system (_colors.py, _labels.py, REVTeX presets, LaTeX/mathtext toggle) — v1.3 Phase 15
+- ✓ CRB data layer + Fisher plot factories (error ellipses, characteristic strain, uncertainty violins) — v1.3 Phase 16
+- ✓ All existing plots upgraded: credible intervals, heatmap contours, injected-vs-recovered scatter — v1.3 Phase 17
+- ✓ New plot types: Mollweide sky map, Fisher corner plots, H0 convergence diagnostics, efficiency curve — v1.3 Phase 18
+- ✓ 15-figure batch pipeline (generate_figures() manifest) + 2×2 campaign dashboard — v1.3 Phase 19
 
 ### Out of Scope
 
@@ -162,4 +168,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-02 after Phase 19 completion*
+*Last updated: 2026-04-02 after v1.3 milestone completion*

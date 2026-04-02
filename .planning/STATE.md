@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.3
 milestone_name: Visualization Overhaul
-status: executing
-stopped_at: Completed 19-02-PLAN.md
-last_updated: "2026-04-02T20:08:14.717Z"
+status: complete
+stopped_at: v1.3 milestone archived
+last_updated: "2026-04-02T20:14:19.406Z"
 last_activity: 2026-04-02
 progress:
-  total_phases: 3
-  completed_phases: 3
-  total_plans: 5
-  completed_plans: 5
-  percent: 88
+  total_phases: 6
+  completed_phases: 6
+  total_plans: 11
+  completed_plans: 11
+  percent: 100
 ---
 
 # Project State
@@ -20,17 +20,17 @@ progress:
 
 See: .planning/PROJECT.md (updated 2026-04-02)
 
-**Core value:** Publication-quality thesis visualizations with consistent style and comprehensive uncertainty display
-**Current focus:** Phase 19 — campaign dashboards & batch generation
+**Core value:** The simulation pipeline runs reliably on the GPU cluster, producing enough Cramér-Rao bounds for statistically meaningful Hubble constant posteriors, with publication-quality visualization.
+**Current focus:** v1.3 complete — all milestones shipped; ready for `/gsd:new-milestone`
 
 ## Current Position
 
-Phase: 21
-Plan: Not started
-Status: Ready to execute
+Phase: v1.3 complete (all 6 phases, 11 plans done)
+Plan: N/A
+Status: Milestone archived
 Last activity: 2026-04-02
 
-Progress: [█████████░] 88%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
@@ -79,9 +79,7 @@ None.
 
 ### Blockers/Concerns
 
-- **Time-sensitive:** 22 simulation tasks remain on cluster, then merge, then evaluate — must deploy before evaluate starts
-- **Physics code change:** NFIX-02 (`bayesian_statistics.py` floor) requires `/physics-change` protocol
-- **"With BH mass" has 111 zero-events (21%)** — more than "without BH mass" (17 events, 3%)
+None — all milestones shipped.
 
 ## Session Continuity
 

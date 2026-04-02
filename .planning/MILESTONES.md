@@ -1,5 +1,20 @@
 # Milestones
 
+## v1.3 Visualization Overhaul (Shipped: 2026-04-02)
+
+**Phases completed:** 6 phases (14–19), 11 plans, 342 tests passing
+
+**Key accomplishments:**
+
+- 23 smoke tests covering all plot factory functions + 18-key rcParams regression test pinning emri_thesis.mplstyle against unintentional drift (Phase 14)
+- Centralized style infrastructure: _colors.py semantic palette, _labels.py with 21 LaTeX constants, figure presets (3.375in/7.0in REVTeX widths), LaTeX/mathtext toggle (Phase 15)
+- CRB data layer (_data.py) reconstructing 14×14 covariance matrices + Fisher plot factories: error ellipses, characteristic strain h_c(f) overlay on LISA PSD, parameter uncertainty violins/bars (Phase 16)
+- Enhanced all existing plot modules: H0 posterior with 68%/95% credible intervals + Planck/SH0ES bands, SNR CDF overlay, detection yield with efficiency curve, P_det heatmaps with contours, injected-vs-recovered scatter with residuals (Phase 17)
+- Four new plot factory functions: Mollweide sky localization map with localization ellipses, Fisher corner plots via `corner` library, H0 convergence two-panel (posterior narrowing + CI width vs N), detection efficiency with Wilson score CI (Phase 18)
+- Campaign dashboard composite (2×2 mosaic: H0 posterior, SNR, detection yield, sky map) + manifest-driven generate_figures() producing 15 thesis PDFs with graceful degradation and 2 MB size checks (Phase 19)
+
+---
+
 ## v1.1 Clean Simulation Campaign (Shipped: 2026-03-29)
 
 **Phases completed:** 3 phases, 4 plans, 5 tasks
