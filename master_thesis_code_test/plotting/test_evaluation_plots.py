@@ -7,6 +7,7 @@ from matplotlib.figure import Figure
 from master_thesis_code.plotting.evaluation_plots import (
     plot_detection_contour,
     plot_generation_time_histogram,
+    plot_injected_vs_recovered,
     plot_mean_cramer_rao_bounds,
     plot_sky_localization_3d,
     plot_uncertainty_violins,
@@ -69,3 +70,45 @@ def test_plot_generation_time_histogram(
     fig, ax = plot_generation_time_histogram(sample_times)
     assert isinstance(fig, Figure)
     assert isinstance(ax, Axes)
+
+
+def test_plot_injected_vs_recovered(
+    sample_injected_recovered: tuple[
+        dict[str, npt.NDArray[np.float64]],
+        dict[str, npt.NDArray[np.float64]],
+        dict[str, npt.NDArray[np.float64]],
+    ],
+) -> None:
+    """Smoke test: multi-panel scatter with error bars."""
+    injected, recovered, uncertainties = sample_injected_recovered
+    fig, axes = plot_injected_vs_recovered(injected, recovered, uncertainties=uncertainties)
+    assert isinstance(fig, Figure)
+    assert isinstance(axes, np.ndarray)
+
+
+def test_plot_injected_vs_recovered_no_errors(
+    sample_injected_recovered: tuple[
+        dict[str, npt.NDArray[np.float64]],
+        dict[str, npt.NDArray[np.float64]],
+        dict[str, npt.NDArray[np.float64]],
+    ],
+) -> None:
+    """Smoke test: multi-panel scatter without error bars."""
+    injected, recovered, _uncertainties = sample_injected_recovered
+    fig, axes = plot_injected_vs_recovered(injected, recovered)
+    assert isinstance(fig, Figure)
+    assert isinstance(axes, np.ndarray)
+
+
+def test_plot_injected_vs_recovered_custom_params(
+    sample_injected_recovered: tuple[
+        dict[str, npt.NDArray[np.float64]],
+        dict[str, npt.NDArray[np.float64]],
+        dict[str, npt.NDArray[np.float64]],
+    ],
+) -> None:
+    """Smoke test: multi-panel scatter with custom parameter subset."""
+    injected, recovered, _uncertainties = sample_injected_recovered
+    fig, axes = plot_injected_vs_recovered(injected, recovered, parameters=["M", "a"])
+    assert isinstance(fig, Figure)
+    assert isinstance(axes, np.ndarray)

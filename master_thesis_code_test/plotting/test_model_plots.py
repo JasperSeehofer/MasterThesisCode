@@ -6,6 +6,7 @@ from matplotlib.figure import Figure
 
 from master_thesis_code.plotting.model_plots import (
     plot_detection_probability_grid,
+    plot_detection_probability_zM,
     plot_emri_distribution,
     plot_emri_rate,
     plot_emri_sampling,
@@ -46,5 +47,41 @@ def test_plot_detection_probability_grid() -> None:
     D, MG = np.meshgrid(d_L, M)
     prob = np.random.default_rng(42).random((8, 12))
     fig, ax = plot_detection_probability_grid(D, MG, prob)
+    assert isinstance(fig, Figure)
+    assert isinstance(ax, Axes)
+
+
+def test_plot_detection_probability_grid_with_contours() -> None:
+    d_L = np.linspace(0.1, 10.0, 12)
+    M = np.geomspace(1e4, 1e7, 8)
+    D, MG = np.meshgrid(d_L, M)
+    prob = np.random.default_rng(42).random((8, 12))
+    fig, ax = plot_detection_probability_grid(D, MG, prob, contour_levels=[0.5, 0.9])
+    assert isinstance(fig, Figure)
+    assert isinstance(ax, Axes)
+
+
+def test_plot_detection_probability_grid_with_scatter() -> None:
+    rng = np.random.default_rng(42)
+    d_L = np.linspace(0.1, 10.0, 12)
+    M = np.geomspace(1e4, 1e7, 8)
+    D, MG = np.meshgrid(d_L, M)
+    prob = rng.random((8, 12))
+    inj_dl = rng.uniform(0.1, 10.0, 30)
+    inj_M = 10 ** rng.uniform(4, 7, 30)
+    det_mask = rng.random(30) > 0.3
+    fig, ax = plot_detection_probability_grid(
+        D, MG, prob, injected_coords=(inj_dl, inj_M), detected_mask=det_mask
+    )
+    assert isinstance(fig, Figure)
+    assert isinstance(ax, Axes)
+
+
+def test_plot_detection_probability_zM() -> None:
+    z = np.linspace(0.1, 2.0, 12)
+    M = np.geomspace(1e4, 1e7, 8)
+    Z, MG = np.meshgrid(z, M)
+    prob = np.random.default_rng(42).random((8, 12))
+    fig, ax = plot_detection_probability_zM(Z, MG, prob)
     assert isinstance(fig, Figure)
     assert isinstance(ax, Axes)

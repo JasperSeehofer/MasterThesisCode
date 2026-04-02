@@ -95,6 +95,31 @@ def sample_uncertainties() -> dict[str, npt.NDArray[np.float64]]:
 
 
 @pytest.fixture()
+def sample_injected_recovered() -> (
+    tuple[
+        dict[str, npt.NDArray[np.float64]],
+        dict[str, npt.NDArray[np.float64]],
+        dict[str, npt.NDArray[np.float64]],
+    ]
+):
+    """Fake injected, recovered, and uncertainty data for 6 parameters."""
+    rng = np.random.default_rng(42)
+    params = ["M", "mu", "luminosity_distance", "a", "e0", "qS"]
+    n_events = 20
+    injected: dict[str, npt.NDArray[np.float64]] = {}
+    recovered: dict[str, npt.NDArray[np.float64]] = {}
+    uncertainties: dict[str, npt.NDArray[np.float64]] = {}
+    scales = {"M": 1e6, "mu": 10.0, "luminosity_distance": 1000.0, "a": 0.6, "e0": 0.2, "qS": 1.0}
+    for p in params:
+        s = scales[p]
+        inj = rng.uniform(0.5 * s, 1.5 * s, n_events)
+        injected[p] = inj
+        recovered[p] = inj + rng.normal(0, 0.05 * s, n_events)
+        uncertainties[p] = np.full(n_events, 0.05 * s)
+    return injected, recovered, uncertainties
+
+
+@pytest.fixture()
 def sample_crb_row() -> pd.Series:
     """Single CRB CSV row with 14 param values + 105 delta columns + metadata."""
     from master_thesis_code.plotting._data import PARAMETER_NAMES
