@@ -75,7 +75,7 @@ Progress: [██████████] 100%
 
 ### Pending Todos
 
-None.
+- Fix galaxy catalog unconditional init blocking generate-figures (`main.py:49`)
 
 ### Blockers/Concerns
 
