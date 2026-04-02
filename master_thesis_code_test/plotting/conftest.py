@@ -11,6 +11,7 @@ from collections.abc import Generator
 import matplotlib.pyplot as plt
 import numpy as np
 import numpy.typing as npt
+import pandas as pd
 import pytest
 
 
@@ -91,3 +92,41 @@ def sample_uncertainties() -> dict[str, npt.NDArray[np.float64]]:
     """Dictionary of parameter uncertainties for violin plots."""
     rng = np.random.default_rng(42)
     return {"M": rng.random(20), "mu": rng.random(20), "d_L": rng.random(20)}
+
+
+@pytest.fixture()
+def sample_crb_row() -> pd.Series:
+    """Single CRB CSV row with 14 param values + 105 delta columns + metadata."""
+    from master_thesis_code.plotting._data import PARAMETER_NAMES
+
+    rng = np.random.default_rng(42)
+    n = len(PARAMETER_NAMES)
+    # Build a positive-definite matrix
+    A = rng.random((n, n))
+    cov = A @ A.T
+    data: dict[str, float] = {}
+    # Parameter values
+    param_values = [
+        1e6, 10.0, 0.6, 10.0, 0.2, 1.0, 1000.0,
+        1.0, 2.0, 0.5, 3.0, 0.1, 0.2, 0.3,
+    ]
+    for name, val in zip(PARAMETER_NAMES, param_values):
+        data[name] = val
+    # Lower-triangle delta columns (row >= col)
+    for i in range(n):
+        for j in range(i + 1):
+            data[f"delta_{PARAMETER_NAMES[i]}_delta_{PARAMETER_NAMES[j]}"] = cov[i, j]
+    # Metadata
+    data["T"] = 1.0
+    data["dt"] = 10.0
+    data["SNR"] = 25.0
+    data["generation_time"] = 5.0
+    data["host_galaxy_index"] = 0.0
+    return pd.Series(data)
+
+
+@pytest.fixture()
+def sample_crb_dataframe(sample_crb_row: pd.Series) -> pd.DataFrame:
+    """DataFrame with 5 CRB rows (same data, different noise)."""
+    rows = [sample_crb_row.copy() for _ in range(5)]
+    return pd.DataFrame(rows)
