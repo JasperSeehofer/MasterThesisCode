@@ -171,10 +171,10 @@ Plans:
   3. A standalone combination script loads per-event posterior JSONs and produces the joint H0 posterior using `np.sum(np.log(...))` with a log-shift-exp trick to avoid underflow
   4. The combination script accepts a CLI flag or config option to select zero-handling strategy (Option 1, 2, or 3)
   5. Running the combination script on existing campaign data reproduces the known naive MAP values (0.72 with BH mass, 0.86 without) as a sanity check
-**Plans:** 1/2 plans executed
+**Plans:** 2/2 plans complete
 Plans:
 - [x] 21-01-PLAN.md — Core posterior combination module with all strategies, log-space accumulation, diagnostics, comparison table + unit tests
-- [ ] 21-02-PLAN.md — CLI wiring (--combine, --strategy flags) + integration tests against real campaign data
+- [x] 21-02-PLAN.md — CLI wiring (--combine, --strategy flags) + integration tests against real campaign data
 
 ### Phase 22: Likelihood Floor & Overflow Fix
 **Goal**: The evaluate pipeline computes physically grounded likelihoods for all events (no zeros from catalog gaps) and detects numerical underflow correctly
@@ -221,6 +221,6 @@ Phases execute in numeric order: 21 -> 22 -> 23
 | 17. Enhanced Existing Plots | v1.3 | 0/3 | Planned | - |
 | 18. New Plot Modules | v1.3 | 0/0 | Not started | - |
 | 19. Campaign Dashboards | v1.3 | 0/0 | Not started | - |
-| 21. Analysis & Post-Processing | v1.4 | 1/2 | In Progress|  |
+| 21. Analysis & Post-Processing | v1.4 | 2/2 | Complete   | 2026-04-02 |
 | 22. Likelihood Floor & Overflow Fix | v1.4 | 0/0 | Not started | - |
 | 23. Deploy & Validate | v1.4 | 0/0 | Not started | - |
