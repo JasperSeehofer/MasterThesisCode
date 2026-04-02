@@ -6,7 +6,7 @@
 - ✅ **v1.1 Clean Simulation Campaign** — Phases 6-8 (shipped 2026-03-29)
 - ✅ **v1.2 Production Campaign & Physics Corrections** — Phases 9-13 (shipped 2026-04-01)
 - 🚧 **v1.3 Visualization Overhaul** — Phases 14-19 (paused)
-- 🚧 **v1.4 Posterior Numerical Stability** — Phases 21-23 (in progress)
+- ✅ **v1.4 Posterior Numerical Stability** — Phases 21-23 (shipped 2026-04-02)
 
 ## Phases
 
@@ -62,13 +62,16 @@ Full details: Phase details preserved below.
 
 </details>
 
-### v1.4 Posterior Numerical Stability (In Progress)
+<details>
+<summary>✅ v1.4 Posterior Numerical Stability (Phases 21-23) — SHIPPED 2026-04-02</summary>
 
-**Milestone Goal:** Fix posterior combination numerical instability (input zeros + multiplication underflow) in the Bayesian inference pipeline and deploy to cluster before pending evaluation jobs run.
+- [x] Phase 21: Analysis & Post-Processing (2/2 plans) — Log-space combination script, 4 strategies, diagnostics, comparison table
+- [x] Phase 22: Likelihood Floor & Overflow Fix (1/1 plan) — Physics-motivated floor in single_host_likelihood, underflow detection
+- [x] Phase 23: Deploy & Validate (2/2 plans) — Deployed to cluster at 5793f70, validation PASS (|Δ MAP|=0.00 < 0.05)
 
-- [ ] **Phase 21: Analysis & Post-Processing** - Formalize zero-likelihood analysis, build combination script with log-space accumulation
-- [ ] **Phase 22: Likelihood Floor & Overflow Fix** - Physics-motivated floor in single_host_likelihood, fix underflow detection
-- [ ] **Phase 23: Deploy & Validate** - Push to cluster and validate against existing baselines
+Full details: `.planning/milestones/v1.4-ROADMAP.md`
+
+</details>
 
 ## Phase Details
 

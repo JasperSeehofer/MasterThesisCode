@@ -8,18 +8,12 @@ A gravitational wave parameter estimation pipeline for LISA Extreme Mass Ratio I
 
 The simulation pipeline runs reliably on the GPU cluster as SLURM array jobs, producing enough Cramér-Rao bounds for statistically meaningful Hubble constant posteriors.
 
-## Current Milestone: v1.4 Posterior Numerical Stability
+## Shipped Milestones
 
-**Goal:** Fix the posterior combination numerical instability (input zeros + multiplication underflow) in the Bayesian inference pipeline and deploy to cluster before pending evaluation jobs run.
+- **v1.4 Posterior Numerical Stability** — shipped 2026-04-02 (Phases 21-23). Log-space accumulation, physics-motivated likelihood floor, underflow detection. Deployed to bwUniCluster at `5793f70`. Full details: `.planning/milestones/v1.4-ROADMAP.md`
+- **v1.2 Production Campaign & Physics Corrections** — shipped 2026-04-01 (Phases 9-13, 11.1). Confusion noise + five-point stencil physics fixes, simulation-based P_det, 1000+ detection production campaign, H0 sweep baselines. Full details: `.planning/milestones/v1.2-ROADMAP.md`
 
-**Target features:**
-- Analysis of zero-likelihood origins in `single_host_likelihood` — understand why events produce 0.0 at certain h-bins
-- Option 3: physically motivated likelihood floor in evaluation code (prevent zeros at computation time)
-- Log-space posterior accumulation in post-processing (replace `np.prod` with `np.sum(np.log)`)
-- Deploy updated code to cluster; validate against existing baselines (naive, Option 1, Option 2)
-- Post-processing combination script with robust numerical handling
-
-## Parallel Milestone: v1.3 Visualization Overhaul (paused at Phase 16)
+## Active Milestone: v1.3 Visualization Overhaul (paused at Phase 17)
 
 **Goal:** Modernize the visualization stack and produce publication-quality plots informed by gravitational wave research standards, replacing ad-hoc matplotlib code with a systematic, modern approach.
 
@@ -86,10 +80,19 @@ Pipeline validated end-to-end on bwUniCluster 3.0. Smoke-test campaign (3 tasks,
 
 ### Active
 
-- Production simulation run scaled to GPU availability (100+ tasks)
-- Full H₀ posterior sweep over [0.6, 0.9] range
-- ✓ Fisher matrix upgrade to 5-point stencil derivative — Validated in Phase 10
-- ✓ Galactic confusion noise added to PSD — Validated in Phase 9
+- Publication-quality thesis visualizations (v1.3, Phase 17 in progress)
+
+### Recently Validated (v1.2 / v1.4)
+
+- ✓ Fisher matrix upgrade to 5-point stencil derivative — v1.2 Phase 10
+- ✓ Galactic confusion noise added to PSD — v1.2 Phase 9
+- ✓ KDE detection probability replaced by simulation-based P_det — v1.2 Phase 11.1
+- ✓ Production CRB catalog (1000+ detections, seed 200) — v1.2 Phase 12
+- ✓ H₀ posterior sweep [0.6, 0.9], baselines documented — v1.2 Phase 13
+- ✓ Log-space posterior accumulation (replace np.prod with log-sum-exp) — v1.4 Phase 21
+- ✓ Physics-motivated likelihood floor in single_host_likelihood — v1.4 Phase 22
+- ✓ Underflow detection replacing dead check_overflow — v1.4 Phase 22
+- ✓ Updated code deployed to cluster at 5793f70, validation PASS — v1.4 Phase 23
 
 ### Out of Scope
 
@@ -107,7 +110,8 @@ Pipeline validated end-to-end on bwUniCluster 3.0. Smoke-test campaign (3 tasks,
 - **All v1.0 code blockers resolved:** CPU-safe imports, batch-compatible scripts, environment setup, job infrastructure, documentation.
 - **v1.1 cluster integration fixes:** `few` v2.0.0rc1 API updates (`force_backend="cuda12x"`, `ESAOrbits`), sbatch path resolution, SIGTERM flush handler, 30s waveform timeout.
 - **Smoke-test results:** 20 detections from 30 EMRI events (3 tasks × 10 steps), 18 passed 10% d_L filter, H₀ posterior generated at h=0.73.
-- **Known physics bugs:** Fisher stencil (forward-diff instead of 5-point), confusion noise absent from PSD, wCDM params silently ignored, hardcoded 10% σ(d_L), WMAP-era cosmology, galaxy redshift uncertainty scaling. All tracked in CLAUDE.md.
+- **Resolved physics bugs:** Fisher stencil (fixed v1.2 Phase 10), confusion noise (fixed v1.2 Phase 9), posterior underflow/zeros (fixed v1.4).
+- **Remaining physics bugs:** wCDM params silently ignored, hardcoded 10% σ(d_L), WMAP-era cosmology (Omega_m=0.25/H=0.73), galaxy redshift uncertainty scaling. All tracked in CLAUDE.md.
 
 ## Constraints
 
