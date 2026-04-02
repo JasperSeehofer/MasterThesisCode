@@ -127,6 +127,14 @@ def sample_crb_row() -> pd.Series:
 
 @pytest.fixture()
 def sample_crb_dataframe(sample_crb_row: pd.Series) -> pd.DataFrame:
-    """DataFrame with 5 CRB rows (same data, different noise)."""
-    rows = [sample_crb_row.copy() for _ in range(5)]
+    """DataFrame with 12 CRB rows (varied data for violin plots)."""
+    rng = np.random.default_rng(99)
+    rows: list[pd.Series] = []
+    for _ in range(12):
+        row = sample_crb_row.copy()
+        # Add small multiplicative noise to delta columns so violins have width
+        for key in row.index:
+            if str(key).startswith("delta_"):
+                row[key] *= rng.uniform(0.8, 1.2)
+        rows.append(row)
     return pd.DataFrame(rows)

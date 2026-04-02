@@ -181,7 +181,7 @@ def plot_characteristic_strain(
     from master_thesis_code.LISA_configuration import LisaTdiConfiguration
 
     if ax is None:
-        fig, ax = get_figure(preset="single")
+        fig, ax = get_figure(preset="double")
     else:
         fig = _fig_from_ax(ax)
 
@@ -212,7 +212,7 @@ def plot_characteristic_strain(
 
     ax.set_xlabel(LABELS["f"])
     ax.set_ylabel(r"$h_c(f)$")
-    ax.legend()
+    ax.legend(fontsize="small", loc="upper right")
 
     return fig, ax
 
@@ -245,7 +245,7 @@ def plot_parameter_uncertainties(
 
     is_multi = isinstance(data, pd.DataFrame)
 
-    if is_multi and len(data) >= 5:
+    if is_multi and len(data) >= 10:
         return _plot_violin(data, param_values, ax=ax)
     else:
         # Single event or too few rows for violin
@@ -312,6 +312,7 @@ def _plot_violin(
     sep_x = len(INTRINSIC) - 0.5
     ax.axvline(sep_x, color=REFERENCE, linestyle="--", linewidth=0.8)
 
+    ax.set_yscale("log")
     ax.set_xticks(range(len(ordered_params)))
     ax.set_xticklabels([LABELS[label_key(p)] for p in ordered_params], rotation=45, ha="right")
     ax.set_ylabel(r"$\sigma_i / |x_i|$")
@@ -329,7 +330,8 @@ def _plot_bar(
     from master_thesis_code.plotting._data import reconstruct_covariance
 
     if ax is None:
-        fig, ax = get_figure(preset="single")
+        # Taller figure to prevent label overlap with 14 parameters
+        fig, ax = get_figure(figsize=(7.0, 6.0))
     else:
         fig = _fig_from_ax(ax)
 
@@ -347,8 +349,9 @@ def _plot_bar(
     y_pos = np.arange(len(ordered_params))
 
     ax.barh(y_pos, ordered_frac, color=colors, edgecolor=EDGE, linewidth=0.5)
+    ax.set_xscale("log")
     ax.set_yticks(y_pos)
-    ax.set_yticklabels([LABELS[label_key(p)] for p in ordered_params])
+    ax.set_yticklabels([LABELS[label_key(p)] for p in ordered_params], fontsize="small")
     ax.set_xlabel(r"$\sigma_i / |x_i|$")
 
     return fig, ax
