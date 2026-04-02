@@ -6,6 +6,7 @@ from matplotlib.figure import Figure
 
 from master_thesis_code.plotting.simulation_plots import (
     plot_cramer_rao_coverage,
+    plot_detection_yield,
     plot_gpu_usage,
     plot_lisa_noise_components,
     plot_lisa_psd,
@@ -37,6 +38,25 @@ def test_plot_lisa_noise_components() -> None:
     fig, ax = plot_lisa_noise_components(frequencies, rng.random(100), rng.random(100))
     assert isinstance(fig, Figure)
     assert isinstance(ax, Axes)
+
+
+def test_plot_detection_yield() -> None:
+    """Smoke test: plot_detection_yield returns (Figure, Axes)."""
+    rng = np.random.default_rng(42)
+    injected = rng.uniform(0.1, 3.0, 200).astype(np.float64)
+    detected = injected[injected < 1.5].copy()
+    fig, ax = plot_detection_yield(injected, detected)
+    assert isinstance(fig, Figure)
+    assert isinstance(ax, Axes)
+
+
+def test_plot_lisa_psd_decompose() -> None:
+    """Decompose mode plots three PSD curves."""
+    frequencies = np.geomspace(1e-5, 1e-1, 100)
+    fig, ax = plot_lisa_psd(frequencies, decompose=True)
+    assert isinstance(fig, Figure)
+    assert isinstance(ax, Axes)
+    assert len(ax.get_lines()) >= 3
 
 
 def test_plot_cramer_rao_coverage() -> None:
