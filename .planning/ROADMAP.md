@@ -165,7 +165,7 @@ Plans:
 **Plans:** 2 plans
 Plans:
 - [x] 19-01-PLAN.md — Dashboard composite factory (subplot_mosaic 2x2) + rasterized scatter + smoke tests
-- [ ] 19-02-PLAN.md — Batch generation manifest (14 figures) + file size checks + integration tests
+- [x] 19-02-PLAN.md — Batch generation manifest (14 figures) + file size checks + integration tests
 **UI hint**: yes
 
 </details>
@@ -236,7 +236,7 @@ Phases execute in numeric order: 21 -> 22 -> 23
 | 16. Data Layer & Fisher | v1.3 | 2/2 | Complete | 2026-04-02 |
 | 17. Enhanced Existing Plots | v1.3 | 3/3 | Complete   | 2026-04-02 |
 | 18. New Plot Modules | v1.3 | 0/2 | Complete    | 2026-04-02 |
-| 19. Campaign Dashboards | v1.3 | 1/2 | In Progress|  |
+| 19. Campaign Dashboards | v1.3 | 2/2 | Complete   | 2026-04-02 |
 | 21. Analysis & Post-Processing | v1.4 | 2/2 | Complete    | 2026-04-02 |
 | 22. Likelihood Floor & Overflow Fix | v1.4 | 1/1 | Complete    | 2026-04-02 |
 | 23. Deploy & Validate | v1.4 | 2/2 | Complete    | 2026-04-02 |
