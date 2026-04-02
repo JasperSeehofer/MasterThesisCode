@@ -11,7 +11,7 @@ Factory functions for two key thesis diagnostic plots:
 
 import numpy as np
 import numpy.typing as npt
-from astropy.stats import binom_conf_interval  # type: ignore[attr-defined]
+from astropy.stats import binom_conf_interval
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 
@@ -97,7 +97,9 @@ def plot_h0_convergence(
         Figure and array of two Axes ``[ax_posterior, ax_ci_width]``.
     """
     posteriors_list: list[npt.NDArray[np.float64]] = (
-        list(event_posteriors) if isinstance(event_posteriors, np.ndarray) else list(event_posteriors)
+        list(event_posteriors)
+        if isinstance(event_posteriors, np.ndarray)
+        else list(event_posteriors)
     )
     n_events = len(posteriors_list)
 
@@ -117,9 +119,7 @@ def plot_h0_convergence(
     for idx, n in enumerate(sizes):
         indices = rng.choice(n_events, size=n, replace=False)
         # Log-sum-exp for numerical stability
-        log_posteriors = [
-            np.log(np.maximum(posteriors_list[i], 1e-300)) for i in indices
-        ]
+        log_posteriors = [np.log(np.maximum(posteriors_list[i], 1e-300)) for i in indices]
         log_combined = np.sum(log_posteriors, axis=0)
         log_combined -= log_combined.max()
         combined = np.exp(log_combined)
@@ -204,7 +204,9 @@ def plot_detection_efficiency(
     centers = 0.5 * (edges[:-1] + edges[1:])
 
     n_inj: npt.NDArray[np.float64] = np.histogram(variable, bins=edges)[0].astype(np.float64)
-    n_det: npt.NDArray[np.float64] = np.histogram(variable[detected], bins=edges)[0].astype(np.float64)
+    n_det: npt.NDArray[np.float64] = np.histogram(variable[detected], bins=edges)[0].astype(
+        np.float64
+    )
 
     mask = n_inj > 0
     efficiency = np.where(mask, n_det / n_inj, np.nan)
