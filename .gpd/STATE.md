@@ -46,6 +46,7 @@ Key carry-forward decisions:
 - 15x10 grid recommended over 30x20 for current injection counts
 - IS estimator backward-compatible; Neyman allocation ready for production
 - alpha=0.3 defensive mixture bounds max weight at 3.33
+- [Phase quick-2]: Quick task 2: analyze evolution of residual bias across milestones: what bias sources were eliminated and what remains to be investigated — Ad-hoc task completed outside planned phases
 
 ### Active Approximations
 
