@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.3
 milestone_name: Visualization Overhaul
 status: executing
-stopped_at: Completed 17-01-PLAN.md
-last_updated: "2026-04-02T18:13:56.348Z"
+stopped_at: Completed 17-03-PLAN.md
+last_updated: "2026-04-02T18:14:48.666Z"
 last_activity: 2026-04-02
 progress:
   total_phases: 3
@@ -59,6 +59,8 @@ Progress: [███░░░░░░░] 33%
 - [Phase 23-deploy-validate]: Deferred with-BH-mass validation: posteriors_with_bh_mass/ not present in h_sweep_20260401 campaign
 - [Phase 23-deploy-validate]: Fast-forward merge of claudes_sidequests into main preserved linear history; cluster at 5793f70 with phases 21+22 fixes before evaluate jobs ran
 - [Phase 17]: Used np.trapezoid instead of deprecated np.trapz for NumPy 2.x compatibility
+- [Phase 17]: Extracted _plot_detection_heatmap private helper to share logic between P_det coordinate variants
+- [Phase 17]: Widened make_colorbar type from AxesImage to ScalarMappable for contourf support
 
 ### Pending Todos
 
@@ -72,6 +74,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-04-02T18:13:56.344Z
-Stopped at: Completed 17-01-PLAN.md
+Last session: 2026-04-02T18:14:48.662Z
+Stopped at: Completed 17-03-PLAN.md
 Resume file: None

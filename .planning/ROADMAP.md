@@ -133,7 +133,7 @@ Plans:
 Plans:
 - [x] 17-01-PLAN.md — H0 posteriors (credible intervals, Planck/SH0ES bands, color mapping) + d_L(z) multi-H0
 - [ ] 17-02-PLAN.md — SNR distribution, detection yield, LISA PSD decomposition, catalog style migration
-- [ ] 17-03-PLAN.md — Detection probability heatmaps with contours + injected-vs-recovered scatter with residuals
+- [x] 17-03-PLAN.md — Detection probability heatmaps with contours + injected-vs-recovered scatter with residuals
 **UI hint**: yes
 
 ### Phase 18: New Plot Modules
@@ -225,7 +225,7 @@ Phases execute in numeric order: 21 -> 22 -> 23
 | 14. Test Infrastructure | v1.3 | 1/2 | Complete | 2026-04-01 |
 | 15. Style Infrastructure | v1.3 | 0/1 | Complete | 2026-04-01 |
 | 16. Data Layer & Fisher | v1.3 | 2/2 | Complete | 2026-04-02 |
-| 17. Enhanced Existing Plots | v1.3 | 1/3 | In Progress|  |
+| 17. Enhanced Existing Plots | v1.3 | 2/3 | In Progress|  |
 | 18. New Plot Modules | v1.3 | 0/0 | Not started | - |
 | 19. Campaign Dashboards | v1.3 | 0/0 | Not started | - |
 | 21. Analysis & Post-Processing | v1.4 | 2/2 | Complete    | 2026-04-02 |
