@@ -13,6 +13,7 @@ test-artifacts/
 
 # Data files (regenerable, live on $WORKSPACE on cluster)
 simulations/
+results/h_sweep_*/
 few_data/
 lisa_files/
 GLADE+.txt

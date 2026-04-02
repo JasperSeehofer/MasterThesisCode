@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.3
 milestone_name: Visualization Overhaul
-status: verifying
-stopped_at: Completed 22-01-PLAN.md
-last_updated: "2026-04-02T17:22:15.145Z"
+status: executing
+stopped_at: Completed 23-01-PLAN.md
+last_updated: "2026-04-02T17:47:55.600Z"
 last_activity: 2026-04-02
 progress:
   total_phases: 3
   completed_phases: 2
-  total_plans: 3
-  completed_plans: 3
+  total_plans: 5
+  completed_plans: 4
   percent: 0
 ---
 
@@ -21,13 +21,13 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-02)
 
 **Core value:** Fix posterior combination numerical instability and deploy before pending cluster evaluation jobs run
-**Current focus:** Phase 22 — likelihood-floor-overflow-fix
+**Current focus:** Phase 23 — deploy-validate
 
 ## Current Position
 
-Phase: 23
-Plan: Not started
-Status: Phase complete — ready for verification
+Phase: 23 (deploy-validate) — EXECUTING
+Plan: 2 of 2
+Status: Ready to execute
 Last activity: 2026-04-02
 
 Progress: [░░░░░░░░░░] 0%
@@ -55,6 +55,8 @@ Progress: [░░░░░░░░░░] 0%
 - [Phase 21]: Integration tests use absolute path fallback for campaign data access from worktrees
 - [Phase 22]: Physics floor uses min(nonzero) directly per event (not /100); all-zero events excluded
 - [Phase 22]: check_overflow removed entirely (dead code); log-space accumulation handles stability
+- [Phase 23-deploy-validate]: Physics-floor MAP=0.66 equals exclude MAP=0.66 (diff=0.00 < 0.05 threshold) on h_sweep_20260401 campaign — PASS
+- [Phase 23-deploy-validate]: Deferred with-BH-mass validation: posteriors_with_bh_mass/ not present in h_sweep_20260401 campaign
 
 ### Pending Todos
 
@@ -68,6 +70,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-04-02T17:18:28.617Z
-Stopped at: Completed 22-01-PLAN.md
+Last session: 2026-04-02T17:47:55.591Z
+Stopped at: Completed 23-01-PLAN.md
 Resume file: None
