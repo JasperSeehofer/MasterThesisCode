@@ -6,9 +6,9 @@ from typing import Any, Literal
 
 import matplotlib.pyplot as plt
 from matplotlib.axes import Axes
+from matplotlib.cm import ScalarMappable
 from matplotlib.colorbar import Colorbar
 from matplotlib.figure import Figure
-from matplotlib.image import AxesImage
 
 # REVTeX two-column figure width presets (inches)
 _PRESETS: dict[str, tuple[float, float]] = {
@@ -85,7 +85,7 @@ def save_figure(
 
 
 def make_colorbar(
-    mappable: AxesImage,
+    mappable: ScalarMappable,
     fig: Figure,
     ax: Axes,
     label: str | None = None,
