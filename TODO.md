@@ -149,6 +149,19 @@ reference, dimensional analysis, limiting case).
       The importance sampling approach (sampling from prior, reweighting) is correct but
       should be documented.
 
+- [ ] **STAT-8 [P1, M]** Fix posterior combination numerical stability in `bayesian_statistics.py`
+      Two issues when combining per-event likelihoods into the joint H₀ posterior:
+      (a) **Input zeros:** Some events have `p(dᵢ|h) = 0.0` at certain h-bins (no catalog host
+      found). A single zero kills that h-bin in the product. Fix: replace zeros with a
+      physically motivated floor (Option 3: minimum likelihood from the faintest catalog
+      galaxy at the error volume boundary), or at minimum the per-event nonzero minimum.
+      (b) **Multiplication underflow:** Multiplying 500+ small likelihoods in float64 underflows
+      to 0.0 even with no input zeros. Fix: accumulate in log-space (`Σ log p` instead of
+      `∏ p`), only exponentiate at the final normalization step.
+      Current `check_overflow()` only catches infinity, not underflow-to-zero.
+      Evidence: "without BH mass" MAP=0.86 (wrong) vs "with BH mass" MAP=0.72 (correct);
+      the bias is entirely explained by the zero-count gradient across h-bins.
+
 ---
 
 ## Workstream 3: Testing and Verification

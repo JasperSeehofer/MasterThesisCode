@@ -16,7 +16,7 @@ See: .gpd/PROJECT.md (updated 2026-04-01)
 **Last Activity:** 2026-04-01
 **Last Activity Description:** v1.2.2 milestone archived (Injection Campaign Physics Analysis)
 
-**Progress:** v1.2.2 complete; v1.2.1 on hold (Phase 16 blocked on P_det data)
+**Progress:** [██████████] 100%
 
 ## Active Calculations
 
