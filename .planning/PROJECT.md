@@ -23,6 +23,10 @@ The simulation pipeline runs reliably on the GPU cluster as SLURM array jobs, pr
 
 **Goal:** Modernize the visualization stack and produce publication-quality plots informed by gravitational wave research standards, replacing ad-hoc matplotlib code with a systematic, modern approach.
 
+## Current State (v1.3 Phase 21 complete 2026-04-02)
+
+Posterior combination pipeline complete: log-space accumulation with 4 zero-handling strategies (naive, exclude, per-event-floor, physics-floor fallback), diagnostic reports identifying zero-event root causes, comparison tables with MAP estimates. CLI wiring via `--combine --strategy`. Validated against campaign data (naive MAP=0.86 reproduced). 299 tests pass at 58% coverage.
+
 ## Current State (v1.3 Phase 15 complete 2026-04-02)
 
 Style infrastructure in place: centralized figure presets (single/double column), LaTeX toggle, semantic color palette, shared label constants, consolidated helpers. All 6 plot modules wired to shared imports. 246 tests pass. Foundation ready for Phases 16-19.
@@ -142,4 +146,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-01 after v1.3 milestone start*
+*Last updated: 2026-04-02 after Phase 21 completion*
