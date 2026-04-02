@@ -27,7 +27,9 @@ def _create_synthetic_injection_csv(
     phiS = rng.uniform(0, 2 * np.pi, size=n_rows)  # noqa: N806
     qS = rng.uniform(0, np.pi, size=n_rows)  # noqa: N806
     # Mix of SNR values: half above threshold, half below
-    snr = np.where(rng.random(n_rows) > 0.5, rng.uniform(25, 50, n_rows), rng.uniform(5, 15, n_rows))
+    snr = np.where(
+        rng.random(n_rows) > 0.5, rng.uniform(25, 50, n_rows), rng.uniform(5, 15, n_rows)
+    )
     # Compute approximate luminosity distance (just for CSV columns; not used by grid builder)
     luminosity_distance = z * 4.0  # rough approximation in Gpc
 
@@ -161,10 +163,8 @@ class TestDetectionProbabilityWithoutBHMass:
         )
         # Use a luminosity distance that maps to a redshift within the grid
         # dist(z=0.3, h=0.70) ~ 1.5 Gpc approximately
-        result = pdet.detection_probability_without_bh_mass_interpolated(
-            1.5, 1.0, 0.5, h=0.70
-        )
-        assert isinstance(result, (float, np.floating))
+        result = pdet.detection_probability_without_bh_mass_interpolated(1.5, 1.0, 0.5, h=0.70)
+        assert isinstance(result, float | np.floating)
         assert 0.0 <= float(result) <= 1.0
 
 
@@ -181,10 +181,8 @@ class TestDetectionProbabilityWithBHMass:
             snr_threshold=20.0,
         )
         # h=0.75 is between 0.70 and 0.80, should interpolate
-        result = pdet.detection_probability_with_bh_mass_interpolated(
-            1.5, 3e5, 1.0, 0.5, h=0.75
-        )
-        assert isinstance(result, (float, np.floating))
+        result = pdet.detection_probability_with_bh_mass_interpolated(1.5, 3e5, 1.0, 0.5, h=0.75)
+        assert isinstance(result, float | np.floating)
         assert 0.0 <= float(result) <= 1.0
 
 

@@ -30,7 +30,6 @@ def _make_source_csvs(
     return paths
 
 
-
 class TestMergeNoDelete:
     """main(["--workdir", tmpdir]) merges CSVs and keeps source files."""
 
@@ -87,5 +86,3 @@ class TestNoInputCalls:
         source_file = Path(__file__).resolve().parents[2] / "scripts" / "merge_cramer_rao_bounds.py"
         content = source_file.read_text()
         assert "input(" not in content, "merge_cramer_rao_bounds.py must not contain input() calls"
-
-

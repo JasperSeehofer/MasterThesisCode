@@ -572,4 +572,3 @@ class ParameterEstimation:
 
         snr_analysis = pd.concat([snr_analysis, new_snr_analysis], ignore_index=True)
         snr_analysis.to_csv(SNR_ANALYSIS_PATH, index=False)
-
