@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.3
 milestone_name: Visualization Overhaul
 status: executing
-stopped_at: Completed 17-03-PLAN.md
-last_updated: "2026-04-02T18:14:48.666Z"
+stopped_at: Completed 17-02-PLAN.md
+last_updated: "2026-04-02T18:21:20.548Z"
 last_activity: 2026-04-02
 progress:
   total_phases: 3
@@ -61,6 +61,8 @@ Progress: [███░░░░░░░] 33%
 - [Phase 17]: Used np.trapezoid instead of deprecated np.trapz for NumPy 2.x compatibility
 - [Phase 17]: Extracted _plot_detection_heatmap private helper to share logic between P_det coordinate variants
 - [Phase 17]: Widened make_colorbar type from AxesImage to ScalarMappable for contourf support
+- [Phase 17]: Used list[float] for bin_edges to satisfy mypy Axes.hist type expectations
+- [Phase 17]: LisaTdiConfiguration works on CPU (guarded cupy import) so decompose test runs without GPU marker
 
 ### Pending Todos
 
@@ -74,6 +76,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-04-02T18:14:48.662Z
-Stopped at: Completed 17-03-PLAN.md
+Last session: 2026-04-02T18:21:20.544Z
+Stopped at: Completed 17-02-PLAN.md
 Resume file: None
