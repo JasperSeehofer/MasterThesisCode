@@ -12,6 +12,7 @@ dependencies = [
     "tabulate",
     "fastlisaresponse",
     "astropy>=6.1.7",
+    "corner>=2.2.3",
 ]
 
 [project.optional-dependencies]
