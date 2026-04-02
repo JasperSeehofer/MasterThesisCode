@@ -8,7 +8,7 @@ Four zero-handling strategies:
 - **naive**: Replace 0.0 with ``np.finfo(float).tiny`` before log.
 - **exclude**: Remove events that have any zero likelihood.
 - **per-event-floor**: Replace 0.0 with ``min(nonzero) / 100`` per event.
-- **physics-floor**: Placeholder (Phase 22); falls back to *exclude*.
+- **physics-floor**: Per-event minimum nonzero likelihood as floor value; all-zero events excluded.
 """
 
 from __future__ import annotations
@@ -177,11 +177,7 @@ def apply_strategy(
         return _per_event_floor(result)
 
     if strategy == CombinationStrategy.PHYSICS_FLOOR:
-        logger.warning(
-            "Physics floor (Option 3) not yet implemented (Phase 22). "
-            "Falling back to 'exclude' strategy."
-        )
-        return _exclude_zero_events(result)
+        return _physics_floor(result)
 
     msg = f"Unknown strategy: {strategy}"
     raise ValueError(msg)
@@ -216,6 +212,69 @@ def _per_event_floor(
             floor = float(np.min(nonzero_vals)) / 100.0
             result[i, zero_mask] = floor
     return result, 0
+
+
+def _physics_floor(
+    likelihoods: npt.NDArray[np.float64],
+) -> tuple[npt.NDArray[np.float64], int]:
+    """Replace zeros with the per-event minimum nonzero likelihood.
+
+    For each event (row), zeros are replaced with the smallest nonzero
+    likelihood value in that row.  Events that are entirely zero have no
+    nonzero value to use as a floor and are excluded instead.
+
+    Parameters
+    ----------
+    likelihoods : ndarray of shape ``(n_events, n_h_values)``
+        Likelihood array (may contain 0.0 entries).
+
+    Returns
+    -------
+    processed : ndarray
+        Likelihood array with zeros replaced by per-event min-nonzero floor.
+    excluded_count : int
+        Number of all-zero events that were excluded.
+    """
+    result = likelihoods.copy()
+    exclude_mask = np.zeros(result.shape[0], dtype=bool)
+
+    for i in range(result.shape[0]):
+        row = result[i]
+        zero_mask = row == 0.0
+        if not np.any(zero_mask):
+            continue
+
+        nonzero_vals = row[~zero_mask & ~np.isnan(row)]
+        n_zeros = int(np.sum(zero_mask))
+        n_bins = len(row)
+
+        if len(nonzero_vals) == 0:
+            # All-zero event: no nonzero value to derive floor from
+            logger.warning(
+                "Physics floor: event row %d has all-zero likelihoods, "
+                "excluding (no nonzero value for floor)",
+                i,
+            )
+            exclude_mask[i] = True
+        else:
+            floor_value = float(np.min(nonzero_vals))
+            result[i, zero_mask] = floor_value
+            logger.info(
+                "Physics floor: event row %d: floored %d of %d bins "
+                "with value %.6e",
+                i,
+                n_zeros,
+                n_bins,
+                floor_value,
+            )
+
+    excluded = int(np.sum(exclude_mask))
+    kept = result[~exclude_mask]
+    if excluded > 0:
+        logger.info(
+            "Physics floor: excluded %d all-zero events", excluded
+        )
+    return kept, excluded
 
 
 # ---------------------------------------------------------------------------
@@ -458,13 +517,6 @@ def combine_posteriors(
     # Parse strategy
     strat = CombinationStrategy(strategy)
     effective_strategy = strat
-
-    if strat == CombinationStrategy.PHYSICS_FLOOR:
-        logger.warning(
-            "Physics floor (Option 3) not yet implemented (Phase 22). "
-            "Falling back to 'exclude' strategy."
-        )
-        effective_strategy = CombinationStrategy.EXCLUDE
 
     # Load and build array
     h_values, event_likelihoods = load_posterior_jsons(posteriors_path)
