@@ -53,7 +53,7 @@ Full details: `.planning/milestones/v1.2-ROADMAP.md`
 
 - [x] **Phase 14: Test Infrastructure & Safety Net** - Smoke tests and rcParams regression checks before any refactoring (completed 2026-04-01)
 - [x] **Phase 15: Style Infrastructure** - Centralized colors, figure sizes, LaTeX toggle, and shared helpers (completed 2026-04-01)
-- [ ] **Phase 16: Data Layer & Fisher Visualizations** - Covariance reconstruction and Fisher ellipse/strain plots
+- [x] **Phase 16: Data Layer & Fisher Visualizations** - Covariance reconstruction and Fisher ellipse/strain plots (completed 2026-04-02)
 - [ ] **Phase 17: Enhanced Existing Plots** - Upgrade all existing plot modules to thesis quality
 - [ ] **Phase 18: New Plot Modules** - Sky localization, corner plots, and convergence diagnostics
 - [ ] **Phase 19: Campaign Dashboards & Batch Generation** - Multi-panel composites and automated figure pipeline
@@ -96,10 +96,10 @@ Plans:
   2. 2D Fisher error ellipses (1-sigma, 2-sigma contours) render for at least three key EMRI parameter pairs (e.g., M-mu, d_L-inclination, sky angles)
   3. A characteristic strain h_c(f) plot shows an example EMRI signal track overlaid on the LISA sensitivity curve with noise components
   4. Parameter uncertainty distributions display with intrinsic/extrinsic grouping and LaTeX-formatted parameter labels
-**Plans:** 1/2 plans executed
+**Plans:** 2/2 plans complete
 Plans:
 - [x] 16-01-PLAN.md — CRB data layer (_data.py): constants, covariance reconstruction, label mapping + unit tests
-- [ ] 16-02-PLAN.md — Fisher plot factories (error ellipses, characteristic strain, uncertainty distributions) + smoke tests + visual verification
+- [x] 16-02-PLAN.md — Fisher plot factories (error ellipses, characteristic strain, uncertainty distributions) + smoke tests + visual verification
 
 ### Phase 17: Enhanced Existing Plots
 **Goal**: All existing plot modules produce thesis-quality figures with proper uncertainty visualization, reference annotations, and consistent styling
@@ -163,7 +163,7 @@ Phases execute in numeric order: 14 -> 15 -> 16 -> 17 -> 18 -> 19
 | 13. H0 Posterior Sweep | v1.2 | 1/1 | Complete | - |
 | 14. Test Infrastructure | v1.3 | 1/2 | Complete    | 2026-04-01 |
 | 15. Style Infrastructure | v1.3 | 0/1 | Complete    | 2026-04-01 |
-| 16. Data Layer & Fisher | v1.3 | 1/2 | In Progress|  |
+| 16. Data Layer & Fisher | v1.3 | 2/2 | Complete   | 2026-04-02 |
 | 17. Enhanced Existing Plots | v1.3 | 0/0 | Not started | - |
 | 18. New Plot Modules | v1.3 | 0/0 | Not started | - |
 | 19. Campaign Dashboards | v1.3 | 0/0 | Not started | - |
