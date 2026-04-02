@@ -5,6 +5,8 @@ uncertainty distributions.  All functions follow the project convention:
 data in, ``(fig, ax)`` out.  None call ``plt.show()`` or ``plt.savefig()``.
 """
 
+import corner
+import matplotlib
 import numpy as np
 import numpy.typing as npt
 import pandas as pd
@@ -12,7 +14,7 @@ from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 from matplotlib.patches import Ellipse
 
-from master_thesis_code.plotting._colors import CYCLE, EDGE, REFERENCE
+from master_thesis_code.plotting._colors import CYCLE, EDGE, REFERENCE, TRUTH
 from master_thesis_code.plotting._data import (
     EXTRINSIC,
     INTRINSIC,
@@ -355,3 +357,99 @@ def _plot_bar(
     ax.set_xlabel(r"$\sigma_i / |x_i|$")
 
     return fig, ax
+
+
+# ---------------------------------------------------------------------------
+# Corner plot
+# ---------------------------------------------------------------------------
+
+_DEFAULT_CORNER_PARAMS: list[str] = ["M", "mu", "a", "luminosity_distance", "qS", "phiS"]
+
+
+def plot_fisher_corner(
+    covariance: npt.NDArray[np.float64],
+    param_values: npt.NDArray[np.float64],
+    params: list[str] | None = None,
+    *,
+    overlay_events: list[tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]] | None = None,
+    n_samples: int = 5000,
+    seed: int = 42,
+    ax: None = None,
+) -> tuple[Figure, npt.NDArray[np.object_]]:
+    """Plot a corner (triangle) plot from Fisher-matrix covariance.
+
+    Generates multivariate Gaussian samples from the covariance matrix
+    and delegates to :func:`corner.corner` for the triangle plot.
+
+    Parameters
+    ----------
+    covariance : npt.NDArray[np.float64]
+        14x14 covariance matrix.
+    param_values : npt.NDArray[np.float64]
+        14-element array of parameter best-fit values.
+    params : list[str] | None
+        Subset of parameter names to show.  Defaults to
+        ``["M", "mu", "a", "luminosity_distance", "qS", "phiS"]``.
+    overlay_events : list[tuple[npt.NDArray, npt.NDArray]] | None
+        Additional events to overlay, each ``(covariance, param_values)``.
+        At most 4 events are shown, each in a distinct color.
+    n_samples : int
+        Number of samples to draw from the Gaussian.
+    seed : int
+        Random seed for reproducibility.
+    ax : None
+        Ignored.  ``corner.corner`` creates its own figure.
+
+    Returns
+    -------
+    tuple[Figure, npt.NDArray[np.object_]]
+        Figure and 2-D array of axes with shape ``(n, n)`` where
+        ``n = len(params)``.
+    """
+    if params is None:
+        params = _DEFAULT_CORNER_PARAMS
+
+    # Map param names to indices in the 14-element arrays
+    indices = [PARAMETER_NAMES.index(p) for p in params]
+    sub_cov = covariance[np.ix_(indices, indices)]
+    sub_mean = param_values[indices]
+
+    # Build labels from the label mapping
+    labels = [LABELS[label_key(p)] for p in params]
+
+    rng = np.random.default_rng(seed)
+    samples = rng.multivariate_normal(sub_mean, sub_cov, size=n_samples, check_valid="warn")
+
+    n = len(params)
+
+    # corner.corner uses tight_layout internally which conflicts with
+    # constrained_layout; disable it explicitly
+    with matplotlib.rc_context({"figure.constrained_layout.use": False}):
+        fig = corner.corner(
+            samples,
+            labels=labels,
+            truths=list(sub_mean),
+            truth_color=TRUTH,
+            color=CYCLE[0],
+            quantiles=[0.16, 0.5, 0.84],
+            show_titles=True,
+            title_fmt=".3f",
+            hist_kwargs={"edgecolor": EDGE},
+        )
+
+        if overlay_events is not None:
+            for ev_idx, (ev_cov, ev_vals) in enumerate(overlay_events[:4]):
+                ev_sub_cov = ev_cov[np.ix_(indices, indices)]
+                ev_sub_mean = ev_vals[indices]
+                overlay_samples = rng.multivariate_normal(
+                    ev_sub_mean, ev_sub_cov, size=n_samples, check_valid="warn"
+                )
+                corner.corner(
+                    overlay_samples,
+                    fig=fig,
+                    color=CYCLE[(ev_idx + 1) % len(CYCLE)],
+                    hist_kwargs={"edgecolor": EDGE},
+                )
+
+    axes: npt.NDArray[np.object_] = np.array(fig.axes, dtype=object).reshape(n, n)
+    return fig, axes
