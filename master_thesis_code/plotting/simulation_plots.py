@@ -14,7 +14,9 @@ import numpy.typing as npt
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 
-from master_thesis_code.plotting._helpers import _fig_from_ax, save_figure
+from master_thesis_code.plotting._colors import CYCLE, EDGE, MEAN, REFERENCE
+from master_thesis_code.plotting._helpers import _fig_from_ax, get_figure, save_figure
+from master_thesis_code.plotting._labels import LABELS
 
 
 def plot_gpu_usage(
@@ -36,14 +38,14 @@ def plot_gpu_usage(
         Per-GPU memory usage (GB) at each stamp.  Shape: ``(n_stamps, n_gpus)``.
     """
     if ax is None:
-        fig, ax = plt.subplots(figsize=(12, 9))
+        fig, ax = get_figure(preset="double")
     else:
         fig = _fig_from_ax(ax)
 
     ax.plot(time_series, memory_pool_usage, "-", label="Memory Pool")
     for gpu_index, per_gpu in enumerate(np.array(gpu_usage).T):
         ax.plot(time_series, per_gpu, "-", label=f"GPU {gpu_index + 1}")
-    ax.set_xlabel("t [s]")
+    ax.set_xlabel(LABELS["t"])
     ax.set_ylabel("Memory [GB]")
     ax.legend()
     return fig, ax
@@ -51,8 +53,9 @@ def plot_gpu_usage(
 
 def plot_lisa_psd(
     frequencies: npt.NDArray[np.float64],
-    psd_values: dict[str, npt.NDArray[np.float64]],
+    psd_values: dict[str, npt.NDArray[np.float64]] | None = None,
     *,
+    decompose: bool = False,
     ax: Axes | None = None,
 ) -> tuple[Figure, Axes]:
     """Plot LISA power spectral density curve(s).
@@ -63,15 +66,48 @@ def plot_lisa_psd(
         Frequency array in Hz.
     psd_values:
         Mapping from channel name (e.g. ``"A"``) to PSD array.
+        Used for backward-compatible mode.
+    decompose:
+        If ``True``, compute and plot three PSD curves: total, instrument-only,
+        and galactic confusion noise.  Requires ``LisaTdiConfiguration``.
     """
     if ax is None:
-        fig, ax = plt.subplots(figsize=(12, 8))
+        fig, ax = get_figure(preset="single")
     else:
         fig = _fig_from_ax(ax)
 
-    for label, psd in psd_values.items():
-        ax.plot(frequencies, psd, "-", linewidth=1, label=f"S_{label}(f)")
-    ax.set_xlabel("f [Hz]")
+    if decompose:
+        # Deferred import to avoid CPU import issues with LISA_configuration
+        from master_thesis_code.LISA_configuration import LisaTdiConfiguration
+
+        lisa_total = LisaTdiConfiguration(include_confusion_noise=True)
+        lisa_inst = LisaTdiConfiguration(include_confusion_noise=False)
+
+        psd_total = lisa_total.power_spectral_density_a_channel(frequencies)
+        psd_inst = lisa_inst.power_spectral_density_a_channel(frequencies)
+        psd_confusion = np.maximum(psd_total - psd_inst, 0.0)
+
+        ax.plot(
+            frequencies, psd_total,
+            color=EDGE, linestyle="-", linewidth=2,
+            label=r"$S_n(f)$ total",
+        )
+        ax.plot(
+            frequencies, psd_inst,
+            color=REFERENCE, linestyle="--", linewidth=1.5,
+            label=r"$S_\mathrm{inst}(f)$",
+        )
+        ax.plot(
+            frequencies, psd_confusion,
+            color=CYCLE[1], linestyle="-.", linewidth=1.5,
+            label=r"$S_\mathrm{gal}(f)$",
+        )
+    elif psd_values is not None:
+        for label, psd in psd_values.items():
+            ax.plot(frequencies, psd, "-", linewidth=1, label=f"S_{label}(f)")
+
+    ax.set_xlabel(LABELS["f"])
+    ax.set_ylabel(LABELS["PSD"])
     ax.set_xscale("log")
     ax.set_yscale("log")
     ax.legend()
@@ -87,16 +123,84 @@ def plot_lisa_noise_components(
 ) -> tuple[Figure, Axes]:
     """Plot individual LISA noise components (S_OMS and S_TM)."""
     if ax is None:
-        fig, ax = plt.subplots(figsize=(12, 8))
+        fig, ax = get_figure(preset="single")
     else:
         fig = _fig_from_ax(ax)
 
     ax.plot(frequencies, s_oms, "-", linewidth=1, label="S_OMS(f)")
     ax.plot(frequencies, s_tm, "-", linewidth=1, label="S_TM(f)")
-    ax.set_xlabel("f [Hz]")
+    ax.set_xlabel(LABELS["f"])
+    ax.set_ylabel(LABELS["PSD"])
     ax.set_xscale("log")
     ax.set_yscale("log")
     ax.legend()
+    return fig, ax
+
+
+def plot_detection_yield(
+    injected_redshifts: npt.NDArray[np.float64],
+    detected_redshifts: npt.NDArray[np.float64],
+    *,
+    bins: int = 30,
+    ax: Axes | None = None,
+) -> tuple[Figure, Axes]:
+    """Injected vs detected redshift histograms with detection fraction curve.
+
+    Parameters
+    ----------
+    injected_redshifts:
+        Redshifts of all injected events.
+    detected_redshifts:
+        Redshifts of events that passed the SNR threshold.
+    bins:
+        Number of histogram bins.
+    ax:
+        Optional pre-existing Axes to draw on.
+
+    Returns
+    -------
+    tuple[Figure, Axes]
+        Figure and the primary (left) Axes.
+    """
+    if ax is None:
+        fig, ax = get_figure(preset="single")
+    else:
+        fig = _fig_from_ax(ax)
+
+    # Shared bin edges
+    lo = min(float(injected_redshifts.min()), float(detected_redshifts.min()))
+    hi = max(float(injected_redshifts.max()), float(detected_redshifts.max()))
+    bin_edges_arr = np.linspace(lo, hi, bins + 1)
+    bin_edges: list[float] = bin_edges_arr.tolist()
+    bin_centers = 0.5 * (bin_edges_arr[:-1] + bin_edges_arr[1:])
+
+    # Left y-axis: injected (outline) + detected (filled)
+    ax.hist(
+        injected_redshifts, bins=bin_edges,
+        histtype="step", color=CYCLE[0], linewidth=1.5, label="Injected",
+    )
+    ax.hist(
+        detected_redshifts, bins=bin_edges,
+        alpha=0.6, color=CYCLE[0], label="Detected",
+    )
+
+    # Right y-axis: detection fraction
+    counts_inj, _ = np.histogram(injected_redshifts, bins=bin_edges_arr)
+    counts_det, _ = np.histogram(detected_redshifts, bins=bin_edges_arr)
+    fraction = np.where(counts_inj > 0, counts_det / counts_inj, 0.0)
+
+    ax2 = ax.twinx()
+    ax2.plot(bin_centers, fraction, color=MEAN, linewidth=1.5, label="Detection fraction")
+    ax2.set_ylabel("Detection fraction")
+    ax2.set_ylim(0, 1)
+
+    # Combined legend
+    lines1, labels1 = ax.get_legend_handles_labels()
+    lines2, labels2 = ax2.get_legend_handles_labels()
+    ax.legend(lines1 + lines2, labels1 + labels2)
+
+    ax.set_xlabel(LABELS["z"])
+    ax.set_ylabel("Count")
     return fig, ax
 
 

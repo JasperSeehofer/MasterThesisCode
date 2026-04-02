@@ -15,7 +15,7 @@ from matplotlib.cm import ScalarMappable
 from matplotlib.colors import Normalize
 from matplotlib.figure import Figure
 
-from master_thesis_code.plotting._colors import CMAP, CYCLE, EDGE, TRUTH
+from master_thesis_code.plotting._colors import CMAP, CYCLE, EDGE, MEAN, REFERENCE, TRUTH
 from master_thesis_code.plotting._helpers import _fig_from_ax, get_figure
 from master_thesis_code.plotting._labels import LABELS
 
@@ -347,4 +347,61 @@ def plot_number_of_possible_hosts(
     ax.set_xlabel("Number of possible hosts")
     ax.set_ylabel("Count")
     ax.legend()
+    return fig, ax
+
+
+def plot_snr_distribution(
+    snr_values: npt.NDArray[np.float64],
+    *,
+    snr_threshold: float = 20.0,
+    bins: int = 50,
+    ax: Axes | None = None,
+) -> tuple[Figure, Axes]:
+    """Histogram of SNR values with CDF overlay and threshold annotation.
+
+    Parameters
+    ----------
+    snr_values:
+        Array of signal-to-noise ratios.
+    snr_threshold:
+        Threshold value drawn as a vertical dashed line.
+    bins:
+        Number of histogram bins.
+    ax:
+        Optional pre-existing Axes to draw on.
+
+    Returns
+    -------
+    tuple[Figure, Axes]
+        Figure and the primary (left) Axes.
+    """
+    if ax is None:
+        fig, ax = get_figure(preset="single")
+    else:
+        fig = _fig_from_ax(ax)
+
+    # Left y-axis: histogram
+    ax.hist(snr_values, bins=bins, edgecolor=EDGE, alpha=0.7, color=CYCLE[0])
+
+    # Right y-axis: CDF step function
+    ax2 = ax.twinx()
+    sorted_snr = np.sort(snr_values)
+    cdf = np.arange(1, len(sorted_snr) + 1) / len(sorted_snr)
+    ax2.step(sorted_snr, cdf, color=MEAN, where="post", linewidth=1.5)
+    ax2.set_ylabel("Cumulative fraction")
+    ax2.set_ylim(0, 1)
+
+    # Threshold annotation
+    ax.axvline(snr_threshold, color=REFERENCE, linestyle="--", linewidth=1)
+    frac_above = float(np.mean(snr_values >= snr_threshold))
+    ax.annotate(
+        f"{frac_above:.0%} above threshold",
+        xy=(snr_threshold, 0),
+        xytext=(snr_threshold * 1.1, ax.get_ylim()[1] * 0.8),
+        fontsize=8,
+        arrowprops={"arrowstyle": "->", "color": REFERENCE},
+    )
+
+    ax.set_xlabel(LABELS["SNR"])
+    ax.set_ylabel("Count")
     return fig, ax
