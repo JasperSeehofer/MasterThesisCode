@@ -17,6 +17,10 @@ The simulation pipeline runs reliably on the GPU cluster as SLURM array jobs, pr
 
 **Goal:** Modernize the visualization stack and produce publication-quality plots informed by gravitational wave research standards, replacing ad-hoc matplotlib code with a systematic, modern approach.
 
+## Current State (v1.3 Phase 18 complete 2026-04-02)
+
+Phase 18 complete. Four new plot factory functions: Mollweide sky localization map, Fisher corner plots (via `corner` library), H0 convergence diagnostics (two-panel posterior narrowing + CI width), and detection efficiency curves with Wilson score CI. All follow (Figure, Axes) convention with smoke tests. 334 tests pass at 62% coverage. One phase remaining in v1.3 (Phase 19: Campaign Dashboards).
+
 ## Current State (v1.4 Phase 23 complete 2026-04-02)
 
 v1.4 milestone complete. Physics-floor strategy deployed to bwUniCluster (5793f70). Validated locally: physics-floor MAP=0.66 matches exclude MAP=0.66 (|Δ|=0.00 < 0.05 acceptance criterion — PASS). Cluster confirmed at correct commit; evaluate SLURM jobs were pending at deploy time and will run with the numerical stability fixes. Report at `results/v1.4-validation.md`.
@@ -154,4 +158,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-02 after Phase 22 completion*
+*Last updated: 2026-04-02 after Phase 18 completion*
