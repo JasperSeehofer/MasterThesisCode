@@ -1,16 +1,16 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.3
-milestone_name: Visualization Overhaul
-status: executing
-stopped_at: Phase 16 context gathered
-last_updated: "2026-04-02T15:00:59.080Z"
+milestone: v1.4
+milestone_name: Posterior Numerical Stability
+status: defining_requirements
+stopped_at: Milestone started, defining requirements
+last_updated: "2026-04-02T16:00:00.000Z"
 last_activity: 2026-04-02
 progress:
-  total_phases: 6
-  completed_phases: 3
-  total_plans: 5
-  completed_plans: 5
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
   percent: 0
 ---
 
@@ -18,19 +18,19 @@ progress:
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-04-01)
+See: .planning/PROJECT.md (updated 2026-04-02)
 
-**Core value:** Modernize visualization stack to produce publication-quality, thesis-ready matplotlib figures for EMRI parameter estimation results
-**Current focus:** Phase 16 — data-layer-fisher
+**Core value:** Fix posterior combination numerical instability and deploy before pending cluster evaluation jobs run
+**Current focus:** Defining requirements for v1.4
 
 ## Current Position
 
-Phase: 17
-Plan: Not started
-Status: Executing Phase 16
-Last activity: 2026-04-02
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-04-02 — Milestone v1.4 started
 
-Progress: [░░░░░░░░░░] 0% (v1.3: 0/6 phases)
+Progress: [░░░░░░░░░░] 0%
 
 ## Performance Metrics
 
@@ -40,22 +40,16 @@ Progress: [░░░░░░░░░░] 0% (v1.3: 0/6 phases)
 - Average duration: ~5 min
 - Total execution time: ~2 hours
 
-**Recent Trend:**
-
-- v1.2 phases executed rapidly
-- Trend: Stable
-
 ## Accumulated Context
 
 ### Decisions
 
-- [v1.3]: matplotlib-only stack; sole new dependency is `corner` for parameter posteriors (Phase 18)
+- [v1.4]: "With BH mass" naive MAP=0.72 is the best current result; "without BH mass" MAP=0.86 is biased by zero-count gradient
+- [v1.4]: Option 2 (per-event floor) overcorrects — both variants peak at h=0.60
+- [v1.4]: Option 1 (exclude zero events) gives MAP=0.66/0.68 — clean but loses 3-21% of events
+- [v1.4]: STAT-8 added to TODO.md documenting the full issue
+- [v1.3]: matplotlib-only stack; sole new dependency is `corner` for parameter posteriors
 - [v1.3]: `text.usetex=False` default; opt-in LaTeX toggle for final thesis figures only
-- [v1.3]: Safety-net tests must precede all refactoring (pitfall mitigation)
-- [Phase 14]: Autouse _close_figures fixture in plotting conftest prevents memory leaks
-- [Phase 14]: Fixed RNG seeds (default_rng(42)) in plotting fixtures for deterministic test data
-- [Phase 14]: rcParams regression test pins all 18 mplstyle values with type-aware assertions
-- [Phase 14]: Complete smoke test coverage: 23 factory functions across 6 test files
 
 ### Pending Todos
 
@@ -63,11 +57,12 @@ None.
 
 ### Blockers/Concerns
 
-- Verify exact `delta_X_delta_Y` column naming in CRB CSV before coding `_data.py` (Phase 16)
-- Confirm `corner` Python 3.13 wheel availability before Phase 18
+- **Time-sensitive:** 22 simulation tasks remain on cluster, then merge, then evaluate — must deploy before evaluate starts
+- **Physics code change:** `bayesian_statistics.py` modifications require `/physics-change` protocol if formulas change
+- **"With BH mass" has 111 zero-events (21%)** — more than "without BH mass" (17 events, 3%)
 
 ## Session Continuity
 
-Last session: 2026-04-01T22:36:51.782Z
-Stopped at: Phase 16 context gathered
-Resume file: .planning/phases/16-data-layer-fisher/16-CONTEXT.md
+Last session: 2026-04-02
+Stopped at: Milestone v1.4 started, defining requirements
+Resume file: —

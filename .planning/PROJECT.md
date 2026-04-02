@@ -8,15 +8,20 @@ A gravitational wave parameter estimation pipeline for LISA Extreme Mass Ratio I
 
 The simulation pipeline runs reliably on the GPU cluster as SLURM array jobs, producing enough Cramér-Rao bounds for statistically meaningful Hubble constant posteriors.
 
-## Current Milestone: v1.3 Visualization Overhaul
+## Current Milestone: v1.4 Posterior Numerical Stability
 
-**Goal:** Modernize the visualization stack and produce publication-quality plots informed by gravitational wave research standards, replacing ad-hoc matplotlib code with a systematic, modern approach.
+**Goal:** Fix the posterior combination numerical instability (input zeros + multiplication underflow) in the Bayesian inference pipeline and deploy to cluster before pending evaluation jobs run.
 
 **Target features:**
-- Physics-informed visualization audit: identify standard plots for EMRI/LISA parameter estimation literature
-- Modern visualization stack research: evaluate tools beyond base matplotlib for this physics domain
-- Critical assessment of existing `plotting/` module against research standards and modern best practices
-- Rebuilt visualization pipeline with consistent style, proper uncertainty visualization, and thesis-ready output
+- Analysis of zero-likelihood origins in `single_host_likelihood` — understand why events produce 0.0 at certain h-bins
+- Option 3: physically motivated likelihood floor in evaluation code (prevent zeros at computation time)
+- Log-space posterior accumulation in post-processing (replace `np.prod` with `np.sum(np.log)`)
+- Deploy updated code to cluster; validate against existing baselines (naive, Option 1, Option 2)
+- Post-processing combination script with robust numerical handling
+
+## Parallel Milestone: v1.3 Visualization Overhaul (paused at Phase 16)
+
+**Goal:** Modernize the visualization stack and produce publication-quality plots informed by gravitational wave research standards, replacing ad-hoc matplotlib code with a systematic, modern approach.
 
 ## Current State (v1.3 Phase 15 complete 2026-04-02)
 
