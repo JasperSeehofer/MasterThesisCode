@@ -86,6 +86,16 @@ def main() -> None:
     if arguments.generate_figures is not None:
         generate_figures(arguments.generate_figures)
 
+    if arguments.combine:
+        from master_thesis_code.bayesian_inference.posterior_combination import combine_posteriors
+
+        posteriors_dir = os.path.join(arguments.working_directory, "posteriors")
+        combine_posteriors(
+            posteriors_dir=posteriors_dir,
+            strategy=arguments.strategy,
+            output_dir=arguments.working_directory,
+        )
+
     end_time = time()
     _ROOT_LOGGER.debug(f"Finished in {end_time - start_time}s.")
 
@@ -114,6 +124,8 @@ def _write_run_metadata(working_directory: str, seed: int, arguments: Arguments)
             "snr_analysis": arguments.snr_analysis,
             "use_gpu": arguments.use_gpu,
             "num_workers": arguments.num_workers,
+            "combine": arguments.combine,
+            "strategy": arguments.strategy,
         },
     }
     slurm_vars = [

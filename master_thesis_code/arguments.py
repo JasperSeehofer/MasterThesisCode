@@ -100,6 +100,16 @@ class Arguments:
             return random.randint(0, 2**31 - 1)
         return int(raw)
 
+    @property
+    def combine(self) -> bool:
+        """Indicates whether to combine per-event posteriors into joint H0 posterior."""
+        return bool(self._parsed_arguments.combine)
+
+    @property
+    def strategy(self) -> str:
+        """Zero-handling strategy for posterior combination."""
+        return str(self._parsed_arguments.strategy)
+
     @staticmethod
     def create(sys_args: list[str] = sys.argv[1:]) -> "Arguments":
         parsed_arguments = _parse_arguments(sys_args)
@@ -184,6 +194,19 @@ def _parse_arguments(arguments: list[str]) -> argparse.Namespace:
         nargs="?",
         default="INFO",
         help="Log level ('DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'). Default is 'INFO'.",
+    )
+    parser.add_argument(
+        "--combine",
+        action="store_true",
+        default=False,
+        help="Combine per-event posteriors into joint H0 posterior.",
+    )
+    parser.add_argument(
+        "--strategy",
+        type=str,
+        default="physics-floor",
+        choices=["naive", "exclude", "per-event-floor", "physics-floor"],
+        help="Zero-handling strategy for posterior combination. Default: physics-floor (falls back to exclude until Phase 22).",
     )
     parsed_arguments: argparse.Namespace = parser.parse_args(arguments)
     return parsed_arguments

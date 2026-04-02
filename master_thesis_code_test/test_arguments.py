@@ -64,6 +64,38 @@ def test_num_workers_default_minimum_one() -> None:
     assert result == 1
 
 
+def test_combine_flag_default() -> None:
+    """When --combine is not passed, combine should be False."""
+    args = Arguments.create(["."])
+    assert args.combine is False
+
+
+def test_combine_flag_set() -> None:
+    """When --combine is passed, combine should be True."""
+    args = Arguments.create([".", "--combine"])
+    assert args.combine is True
+
+
+def test_strategy_default() -> None:
+    """Default strategy should be physics-floor."""
+    args = Arguments.create([".", "--combine"])
+    assert args.strategy == "physics-floor"
+
+
+def test_strategy_exclude() -> None:
+    """Strategy should accept 'exclude' value."""
+    args = Arguments.create([".", "--combine", "--strategy", "exclude"])
+    assert args.strategy == "exclude"
+
+
+def test_strategy_invalid() -> None:
+    """Invalid strategy should cause SystemExit."""
+    import pytest
+
+    with pytest.raises(SystemExit):
+        Arguments.create([".", "--combine", "--strategy", "invalid"])
+
+
 def test_help_shows_flags() -> None:
     """--help output should include both --use_gpu and --num_workers."""
     result = subprocess.run(
