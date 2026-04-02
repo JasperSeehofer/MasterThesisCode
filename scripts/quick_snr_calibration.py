@@ -66,9 +66,7 @@ def main() -> None:
             host_galaxy = next(host_galaxies)
         except StopIteration:
             parameter_samples = cosmological_model.sample_emri_events(200)
-            host_galaxies = iter(
-                galaxy_catalog.get_hosts_from_parameter_samples(parameter_samples)
-            )
+            host_galaxies = iter(galaxy_catalog.get_hosts_from_parameter_samples(parameter_samples))
             host_galaxy = next(host_galaxies)
         assert isinstance(host_galaxy, HostGalaxy)
 
