@@ -44,3 +44,12 @@
 See `.gpd/milestones/v1.2.2-ROADMAP.md` for full archive.
 
 </details>
+
+### Phase 24: Completeness Estimation
+
+**Goal:** GLADE+ completeness fraction f(z) is computed from the actual catalog data and available as an interpolatable function
+**Status:** Planned
+**Plans:** 1 plan
+
+Plans:
+- [ ] 24-01-PLAN.md -- Refactor GLADE+ completeness module with f(z, h) interface and comoving volume element
