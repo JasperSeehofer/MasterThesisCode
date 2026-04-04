@@ -1,5 +1,18 @@
 # Milestones
 
+## v1.4 Posterior Numerical Stability (Shipped: 2026-04-02)
+
+**Phases completed:** 3 phases (21–23), 5 plans, 299 tests passing
+
+**Key accomplishments:**
+
+- Log-space posterior accumulation (replace np.prod with log-sum-exp) with 4 zero-handling strategies: naive, exclude, per-event-floor, physics-floor (Phase 21)
+- Post-processing combination script with CLI wiring (`--combine --strategy`), diagnostic reports identifying zero-event root causes, comparison tables with MAP estimates (Phase 21)
+- Physics-motivated likelihood floor in `single_host_likelihood` using per-event min(nonzero); removed dead `check_overflow` code (Phase 22)
+- Deployed to bwUniCluster at commit `5793f70` before pending evaluate jobs; validated physics-floor MAP=0.66 matches exclude MAP=0.66 (|Δ|=0.00 < 0.05 — PASS) (Phase 23)
+
+---
+
 ## v1.3 Visualization Overhaul (Shipped: 2026-04-02)
 
 **Phases completed:** 6 phases (14–19), 11 plans, 342 tests passing
@@ -12,6 +25,20 @@
 - Enhanced all existing plot modules: H0 posterior with 68%/95% credible intervals + Planck/SH0ES bands, SNR CDF overlay, detection yield with efficiency curve, P_det heatmaps with contours, injected-vs-recovered scatter with residuals (Phase 17)
 - Four new plot factory functions: Mollweide sky localization map with localization ellipses, Fisher corner plots via `corner` library, H0 convergence two-panel (posterior narrowing + CI width vs N), detection efficiency with Wilson score CI (Phase 18)
 - Campaign dashboard composite (2×2 mosaic: H0 posterior, SNR, detection yield, sky map) + manifest-driven generate_figures() producing 15 thesis PDFs with graceful degradation and 2 MB size checks (Phase 19)
+
+---
+
+## v1.2 Production Campaign & Physics Corrections (Shipped: 2026-04-01)
+
+**Phases completed:** 6 phases (9–13, 11.1), 12 plans
+
+**Key accomplishments:**
+
+- Galactic confusion noise added to LISA PSD — galactic foreground component wired into `power_spectral_density()` (Phase 9)
+- Fisher matrix derivatives upgraded from O(ε) forward-difference to O(ε⁴) five-point stencil with condition number logging (Phase 10)
+- KDE detection probability replaced by simulation-based P_det with importance sampling (VRF 11.8–24.9×) and RegularGridInterpolator integration (Phase 11.1)
+- Production CRB catalog: 1000+ detections from 100 tasks × 50 steps (seed 200) on bwUniCluster (Phase 12)
+- H₀ posterior sweep over [0.6, 0.9] with baseline MAP values: 0.72 (with BH mass), 0.86 (without); zero-likelihood problem documented (Phase 13)
 
 ---
 

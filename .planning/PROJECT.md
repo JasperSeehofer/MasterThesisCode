@@ -11,47 +11,16 @@ The simulation pipeline runs reliably on the GPU cluster as SLURM array jobs, pr
 ## Shipped Milestones
 
 - **v1.4 Posterior Numerical Stability** — shipped 2026-04-02 (Phases 21-23). Log-space accumulation, physics-motivated likelihood floor, underflow detection. Deployed to bwUniCluster at `5793f70`. Full details: `.planning/milestones/v1.4-ROADMAP.md`
-- **v1.2 Production Campaign & Physics Corrections** — shipped 2026-04-01 (Phases 9-13, 11.1). Confusion noise + five-point stencil physics fixes, simulation-based P_det, 1000+ detection production campaign, H0 sweep baselines. Full details: `.planning/milestones/v1.2-ROADMAP.md`
-
-## Shipped Milestones (continued)
-
 - **v1.3 Visualization Overhaul** — shipped 2026-04-02 (Phases 14-19). Full publication-quality visualization stack: centralized style, Fisher data layer, enhanced existing plots, sky maps + corner plots + convergence diagnostics, 15-figure batch pipeline. Full details: `.planning/milestones/v1.3-ROADMAP.md`
+- **v1.2 Production Campaign & Physics Corrections** — shipped 2026-04-01 (Phases 9-13, 11.1). Confusion noise + five-point stencil physics fixes, simulation-based P_det, 1000+ detection production campaign, H0 sweep baselines. Full details: `.planning/milestones/v1.2-ROADMAP.md`
+- **v1.1 Clean Simulation Campaign** — shipped 2026-03-29 (Phases 6-8). Data cleanup, cluster access, end-to-end validation. Full details: `.planning/milestones/v1.1-ROADMAP.md`
+- **v1.0 EMRI HPC Integration** — shipped 2026-03-27 (Phases 1-5). CPU-safe imports, batch scripts, cluster env, SLURM jobs, documentation. Full details: `.planning/milestones/v1.0-ROADMAP.md`
 
-## Current State (v1.3 Phase 19 complete 2026-04-02)
+## Current State (v1.4 complete, 2026-04-04)
 
-v1.3 Visualization Overhaul milestone complete. Phase 19 adds campaign dashboard composite (2x2 mosaic: H0 posterior, SNR, detection yield, sky map) and batch figure generation pipeline (`generate_figures()` with 15-entry manifest). PDF size optimization via `rasterized=True` on scatter calls and 2MB warning check. 342 tests pass at 63% coverage. All 6 phases (14-19) shipped.
+All 5 milestones shipped (v1.0–v1.4). 23 phases, 41 plans completed across 9 days. Pipeline runs end-to-end on bwUniCluster 3.0: GPU-accelerated EMRI simulation → Cramér-Rao bounds → Bayesian H₀ posterior. Production CRB catalog (1000+ detections, seed 200) with corrected physics (five-point stencil, confusion noise, simulation-based P_det). Log-space posterior combination with physics-motivated likelihood floor deployed and validated. 15-figure publication-quality visualization pipeline. 342 tests at 63% coverage.
 
-## Current State (v1.3 Phase 18 complete 2026-04-02)
-
-Phase 18 complete. Four new plot factory functions: Mollweide sky localization map, Fisher corner plots (via `corner` library), H0 convergence diagnostics (two-panel posterior narrowing + CI width), and detection efficiency curves with Wilson score CI. All follow (Figure, Axes) convention with smoke tests. 334 tests pass at 62% coverage.
-
-## Current State (v1.4 Phase 23 complete 2026-04-02)
-
-v1.4 milestone complete. Physics-floor strategy deployed to bwUniCluster (5793f70). Validated locally: physics-floor MAP=0.66 matches exclude MAP=0.66 (|Δ|=0.00 < 0.05 acceptance criterion — PASS). Cluster confirmed at correct commit; evaluate SLURM jobs were pending at deploy time and will run with the numerical stability fixes. Report at `results/v1.4-validation.md`.
-
-## Current State (v1.3 Phase 21 complete 2026-04-02)
-
-Posterior combination pipeline complete: log-space accumulation with 4 zero-handling strategies (naive, exclude, per-event-floor, physics-floor fallback), diagnostic reports identifying zero-event root causes, comparison tables with MAP estimates. CLI wiring via `--combine --strategy`. Validated against campaign data (naive MAP=0.86 reproduced). 299 tests pass at 58% coverage.
-
-## Current State (v1.3 Phase 15 complete 2026-04-02)
-
-Style infrastructure in place: centralized figure presets (single/double column), LaTeX toggle, semantic color palette, shared label constants, consolidated helpers. All 6 plot modules wired to shared imports. 246 tests pass. Foundation ready for Phases 16-19.
-
-## Current State (v1.2 Phase 10 complete 2026-03-29)
-
-Fisher matrix now uses O(epsilon^4) five-point stencil derivatives by default (PHYS-01 resolved). Condition number logging and CRB safety checks added. CRB timeout increased to 90s. 198 CPU tests pass at 40.8% coverage. Galactic confusion noise (Phase 9) and stencil derivatives (Phase 10) are both wired — ready for validation campaign on cluster.
-
-## Current State (v1.1 shipped 2026-03-29)
-
-Pipeline validated end-to-end on bwUniCluster 3.0. Smoke-test campaign (3 tasks, 10 steps, seed 100) produced 20 detections, 18 passed the 10% d_L error filter, and the evaluation pipeline generated an H0 posterior at h=0.73. All quantitative checks passed.
-
-## Current State (v1.0 shipped 2026-03-27)
-
-- **Cluster pipeline operational:** `submit_pipeline.sh --tasks N --steps M --seed S` submits the full simulate→merge→evaluate chain
-- **186 CPU tests passing**, 43% coverage (gate at 25%)
-- **~24,400 LOC** (Python + Shell), 9 cluster scripts in `cluster/`
-- **Documentation complete:** `cluster/README.md` quickstart, `CLAUDE.md` cluster section, `README.md` HPC pointer
-- **Known physics bugs remain** (Fisher stencil, confusion noise, wCDM silent, etc.) — tracked in CLAUDE.md
+**Remaining physics bugs** (tracked in CLAUDE.md): wCDM params silently ignored, hardcoded 10% σ(d_L), WMAP-era cosmology, galaxy redshift uncertainty scaling.
 
 ## Requirements
 
@@ -168,4 +137,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-02 after v1.3 milestone completion*
+*Last updated: 2026-04-04 after v1.4 milestone archival cleanup*

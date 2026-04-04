@@ -84,11 +84,90 @@
 - Sessions: ~4 across all phases
 - Notable: Phase 8 was the most expensive — iterative cluster debugging required many round-trips
 
+## Milestone: v1.2 — Production Campaign & Physics Corrections
+
+**Shipped:** 2026-04-01
+**Phases:** 6 | **Plans:** 12
+
+### What Was Built
+- Galactic confusion noise added to LISA PSD (PHYS-02 resolved)
+- Fisher matrix derivatives upgraded to O(ε⁴) five-point stencil (PHYS-01 resolved)
+- KDE detection probability replaced by simulation-based P_det with importance sampling (VRF 11.8–24.9×)
+- Production CRB catalog: 1000+ detections from 100 tasks × 50 steps (seed 200)
+- H₀ posterior sweep over [0.6, 0.9]; baseline MAP values documented (0.72/0.86)
+
+### What Worked
+- Physics Change Protocol (`/physics-change`) ensured dimensional analysis and limiting-case verification before every formula change
+- Simulation-based P_det with importance sampling dramatically improved variance reduction (11.8–24.9×)
+- Decimal phase numbering (11.1) cleanly handled the inserted P_det rework without disrupting the roadmap
+- Production campaign on bwUniCluster delivered 1000+ detections reliably using the established SLURM infrastructure
+
+### What Was Inefficient
+- Phase 11.1 (simulation-based P_det) expanded from 1 planned phase to 5 plans — original scope underestimated the complexity of injection campaigns + importance sampling + grid interpolation + cluster scripts
+- Zero-likelihood problem discovered only at the H₀ sweep stage (Phase 13), too late to fix within v1.2
+- Some progress table dates were left as "-" instead of actual completion dates
+
+### Patterns Established
+- Physics Change Protocol as mandatory gate for formula modifications
+- Importance sampling for detection probability estimation
+- RegularGridInterpolator for efficient P_det lookups
+- `submit_injection.sh` pattern for injection campaign cluster jobs
+
+### Key Lessons
+1. Physics corrections should be validated at small scale before production runs — Phase 11 validation caught issues early
+2. Scope estimation for physics work is harder than software work — Phase 11.1 tripled in plan count
+3. Zero-likelihood events are a fundamental challenge when combining per-event posteriors — should have been anticipated
+
+### Cost Observations
+- Model mix: ~85% opus, ~15% sonnet
+- Sessions: ~5 across all phases
+- Notable: Phase 11.1 was the most expensive — 5 plans for what was originally scoped as a single-phase fix
+
+## Milestone: v1.4 — Posterior Numerical Stability
+
+**Shipped:** 2026-04-02
+**Phases:** 3 | **Plans:** 5
+
+### What Was Built
+- Log-space posterior accumulation replacing np.prod (avoids underflow to zero)
+- Physics-motivated likelihood floor in single_host_likelihood (per-event min(nonzero))
+- Post-processing combination script with 4 strategies and CLI wiring (--combine --strategy)
+- Diagnostic reports identifying zero-event root causes
+- Deployed to bwUniCluster at 5793f70; validated against baselines (PASS)
+
+### What Worked
+- Analysis done interactively in conversation first, then formalized in Phase 21 — saved rework
+- Clean three-phase structure (analyze → fix → deploy) was natural and efficient
+- Fast-forward merge for cluster deployment preserved linear history
+- Validation criterion (|Δ MAP| < 0.05) gave a clear PASS/FAIL signal
+
+### What Was Inefficient
+- v1.4 analysis and coding were partially done before the milestone was formally defined — Phase 21 was partly documenting existing work
+- "With BH mass" validation deferred because the campaign data directory didn't exist yet
+- check_overflow removal required reading through dead code paths to confirm it was truly dead
+
+### Patterns Established
+- Log-sum-exp trick for numerical stability in posterior combination
+- Per-event-min as physics-motivated floor (not arbitrary constant)
+- StrEnum for Python 3.13 ruff-compliant strategy enumerations
+- NaN to distinguish missing events from zero-likelihood events
+
+### Key Lessons
+1. Interactive analysis before formal planning is efficient for diagnosis — formalize only the solution
+2. Numerical stability should be designed in from the start, not patched after production data reveals problems
+3. Validation against baselines with a quantitative acceptance criterion makes deploy decisions objective
+
+### Cost Observations
+- Model mix: ~90% opus, ~10% sonnet
+- Sessions: ~3 across all phases
+- Notable: Most efficient milestone — tight scope, clear problem, well-understood solution space
+
 ## Cross-Milestone Trends
 
-| Metric | v1.0 | v1.1 |
-|--------|------|------|
-| Phases | 5 | 3 |
-| Plans | 9 | 4 |
-| Days | 2 | 3 |
-| Rework cycles | 1 (Phase 1 verification gap) | 6+ (waveform API fixes) |
+| Metric | v1.0 | v1.1 | v1.2 | v1.3 | v1.4 |
+|--------|------|------|------|------|------|
+| Phases | 5 | 3 | 6 | 6 | 3 |
+| Plans | 9 | 4 | 12 | 11 | 5 |
+| Days | 2 | 3 | 3 | 2 | 1 |
+| Rework cycles | 1 (verification gap) | 6+ (waveform API) | 1 (P_det scope expansion) | 0 | 0 |
+| Focus | Infrastructure | Cluster validation | Physics + production | Visualization | Numerical stability |

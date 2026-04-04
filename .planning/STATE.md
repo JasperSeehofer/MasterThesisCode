@@ -1,16 +1,16 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.3
-milestone_name: Visualization Overhaul
+milestone: v1.4
+milestone_name: Posterior Numerical Stability
 status: complete
-stopped_at: v1.3 milestone archived
-last_updated: "2026-04-02T20:14:19.406Z"
-last_activity: 2026-04-02
+stopped_at: v1.4 milestone archived
+last_updated: "2026-04-04"
+last_activity: 2026-04-04
 progress:
-  total_phases: 6
-  completed_phases: 6
-  total_plans: 11
-  completed_plans: 11
+  total_phases: 3
+  completed_phases: 3
+  total_plans: 5
+  completed_plans: 5
   percent: 100
 ---
 
@@ -18,17 +18,17 @@ progress:
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-04-02)
+See: .planning/PROJECT.md (updated 2026-04-04)
 
-**Core value:** The simulation pipeline runs reliably on the GPU cluster, producing enough Cramér-Rao bounds for statistically meaningful Hubble constant posteriors, with publication-quality visualization.
-**Current focus:** v1.3 complete — all milestones shipped; ready for `/gsd:new-milestone`
+**Core value:** The simulation pipeline runs reliably on the GPU cluster, producing enough Cramér-Rao bounds for statistically meaningful Hubble constant posteriors.
+**Current focus:** All milestones shipped (v1.0–v1.4); ready for `/gsd:new-milestone`
 
 ## Current Position
 
-Phase: v1.3 complete (all 6 phases, 11 plans done)
+Phase: v1.4 complete (all 3 phases, 5 plans done)
 Plan: N/A
-Status: Milestone archived
-Last activity: 2026-04-02
+Status: All milestones archived
+Last activity: 2026-04-04
 
 Progress: [██████████] 100%
 
@@ -36,42 +36,10 @@ Progress: [██████████] 100%
 
 **Velocity:**
 
-- Total plans completed: 22 (v1.0: 9, v1.1: 4, v1.2: ~9)
-- Average duration: ~5 min
-- Total execution time: ~2 hours
+- Total plans completed: 41 (v1.0: 9, v1.1: 4, v1.2: 12, v1.3: 11, v1.4: 5)
+- Total phases: 23
 
 ## Accumulated Context
-
-### Decisions
-
-- [v1.4]: "With BH mass" naive MAP=0.72 is the best current result; "without BH mass" MAP=0.86 is biased by zero-count gradient
-- [v1.4]: Option 2 (per-event floor) overcorrects — both variants peak at h=0.60
-- [v1.4]: Option 1 (exclude zero events) gives MAP=0.66/0.68 — clean but loses 3-21% of events
-- [v1.4]: Analysis largely done in conversation — Phase 21 formalizes it
-- [Phase 21]: Used StrEnum for CombinationStrategy (Python 3.13 ruff compliance)
-- [Phase 21]: Physics-floor strategy falls back to exclude with logged warning (Phase 22 placeholder)
-- [Phase 21]: NaN distinguishes missing events from zero-likelihood events in the array
-- [Phase 21]: Lazy import of combine_posteriors inside if-block matches existing generate_figures pattern
-- [Phase 21]: Integration tests use absolute path fallback for campaign data access from worktrees
-- [Phase 22]: Physics floor uses min(nonzero) directly per event (not /100); all-zero events excluded
-- [Phase 22]: check_overflow removed entirely (dead code); log-space accumulation handles stability
-- [Phase 23-deploy-validate]: Physics-floor MAP=0.66 equals exclude MAP=0.66 (diff=0.00 < 0.05 threshold) on h_sweep_20260401 campaign — PASS
-- [Phase 23-deploy-validate]: Deferred with-BH-mass validation: posteriors_with_bh_mass/ not present in h_sweep_20260401 campaign
-- [Phase 23-deploy-validate]: Fast-forward merge of claudes_sidequests into main preserved linear history; cluster at 5793f70 with phases 21+22 fixes before evaluate jobs ran
-- [Phase 17]: Used np.trapezoid instead of deprecated np.trapz for NumPy 2.x compatibility
-- [Phase 17]: Extracted _plot_detection_heatmap private helper to share logic between P_det coordinate variants
-- [Phase 17]: Widened make_colorbar type from AxesImage to ScalarMappable for contourf support
-- [Phase 17]: Used list[float] for bin_edges to satisfy mypy Axes.hist type expectations
-- [Phase 17]: LisaTdiConfiguration works on CPU (guarded cupy import) so decompose test runs without GPU marker
-- [Phase 18]: Widened make_colorbar mappable type from AxesImage to ScalarMappable for scatter/contourf support
-- [Phase 18]: Added corner to mypy ignore_missing_imports (no py.typed marker)
-- [Phase 18]: astropy.stats type stubs available -- no type: ignore needed for binom_conf_interval
-- [Phase 18]: Log-sum-exp used for numerical stability in posterior combination
-
-- [Phase 19]: Used constrained_layout instead of tight_layout for subplot_mosaic with colorbars
-- [Phase 19]: Figure height 5.25in (width*0.75) for Mollweide vertical space
-- [Phase 19]: Used dist_vectorized for array d_L(z) in figure generation (mypy type safety)
-- [Phase 19]: Made _check_file_size module-level for testability; manifest-driven pattern for batch figure generation
 
 ### Pending Todos
 
@@ -83,6 +51,6 @@ None — all milestones shipped.
 
 ## Session Continuity
 
-Last session: 2026-04-02T20:04:02.524Z
-Stopped at: Completed 19-02-PLAN.md
+Last session: 2026-04-04
+Stopped at: Milestone archival cleanup (v1.2 + v1.4)
 Resume file: None
