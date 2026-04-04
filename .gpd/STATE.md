@@ -13,7 +13,7 @@ See: .gpd/PROJECT.md (updated 2026-04-01)
 **Current Phase Name:** --
 **Total Phases:** 7 (Phases 14-20, across v1.2.1 + v1.2.2)
 **Status:** Between milestones
-**Last Activity:** 2026-04-02
+**Last Activity:** 2026-04-04
 **Last Activity Description:** Quick task 2 complete — bias evolution analysis (quick-2/bias-evolution-analysis.md)
 
 **Progress:** [██████████] 100%
@@ -47,6 +47,7 @@ Key carry-forward decisions:
 - IS estimator backward-compatible; Neyman allocation ready for production
 - alpha=0.3 defensive mixture bounds max weight at 3.33
 - [Phase quick-2]: Quick task 2: analyze evolution of residual bias across milestones: what bias sources were eliminated and what remains to be investigated — Ad-hoc task completed outside planned phases
+- [Phase quick-3]: Quick task 3: Literature research on galaxy catalog completeness correction for dark siren likelihood — Root cause of H0 bias identified as GLADE incompleteness; research produced implementation specification based on Gray et al. (2020) framework
 
 ### Active Approximations
 
