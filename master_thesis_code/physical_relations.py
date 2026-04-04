@@ -423,6 +423,8 @@ def comoving_volume_element(
     References
     ----------
     Hogg (1999), arXiv:astro-ph/9905116, Eq. (28).
+    Gray et al. (2020), arXiv:1908.06050, Appendix A.2.3
+    (Eqs. 31-32 use this volume element as the completion term prior).
     """
     # ASSERT_CONVENTION: distance=Mpc, speed=km/s, H0=km/s/Mpc, result=Mpc^3/sr
 

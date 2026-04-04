@@ -41,11 +41,13 @@ from master_thesis_code.datamodels.detection import (
     Detection,
     _sky_localization_uncertainty,
 )
+from master_thesis_code.galaxy_catalogue.glade_completeness import GladeCatalogCompleteness
 from master_thesis_code.galaxy_catalogue.handler import (
     GalaxyCatalogueHandler,
     HostGalaxy,
 )
 from master_thesis_code.physical_relations import (
+    comoving_volume_element,
     dist,
     dist_to_redshift,
     dist_vectorized,
@@ -220,6 +222,10 @@ class BayesianStatistics:
             )
         _LOGGER.debug("Detection likelihood gaussians created.")
 
+        # Gray et al. (2020), arXiv:1908.06050, Eq. 9:
+        # Completeness function f(z, h) for weighting catalog vs completion terms
+        completeness = GladeCatalogCompleteness()
+
         self.h = h_value
 
         if num_workers is None:
@@ -246,6 +252,9 @@ class BayesianStatistics:
                 galaxy_catalog=galaxy_catalog,
                 redshift_upper_limit=REDSHIFT_UPPER_LIMIT,
                 pool=pool,
+                completeness=completeness,
+                detection_probability_obj=detection_probability,
+                detection_gaussians=detection_likelihood_multivariate_gaussian_by_detection_index,
             )
         _LOGGER.info(f"posteriors comupted for h = {self.h}")
 
@@ -275,6 +284,15 @@ class BayesianStatistics:
         galaxy_catalog: GalaxyCatalogueHandler,
         redshift_upper_limit: float,
         pool: mp.pool.Pool,
+        completeness: GladeCatalogCompleteness,
+        detection_probability_obj: SimulationDetectionProbability,
+        detection_gaussians: dict[
+            int,
+            tuple[
+                _multivariate.multivariate_normal_frozen,
+                _multivariate.multivariate_normal_frozen,
+            ],
+        ],
     ) -> None:
         count = 0
         self.posterior_data_with_bh_mass[GALAXY_LIKELIHOODS] = {}
@@ -341,6 +359,9 @@ class BayesianStatistics:
                 possible_host_galaxies_with_bh_mass=possible_hosts_with_bh_mass,
                 detection_index=index,
                 pool=pool,
+                completeness=completeness,
+                detection_probability_obj=detection_probability_obj,
+                detection_gaussians=detection_gaussians,
             )
 
             self.posterior_data[index].append(event_likelihood)
@@ -355,6 +376,15 @@ class BayesianStatistics:
         possible_host_galaxies_with_bh_mass: list[HostGalaxy],
         detection_index: int,
         pool: mp.pool.Pool,
+        completeness: GladeCatalogCompleteness,
+        detection_probability_obj: SimulationDetectionProbability,
+        detection_gaussians: dict[
+            int,
+            tuple[
+                _multivariate.multivariate_normal_frozen,
+                _multivariate.multivariate_normal_frozen,
+            ],
+        ],
     ) -> tuple[float, float]:
         # start parallel computation
         _LOGGER.info(f"start parallel computation with: {pool}")
@@ -427,37 +457,152 @@ class BayesianStatistics:
             additional_likelihoods
         )
 
-        if len(results_without_blackhole_mass) == 0:
-            print("no results found")
-            return 0.0, 0.0
+        # --- Catalog term (L_cat): existing galaxy-sum likelihood ---
+        # Gray et al. (2020), arXiv:1908.06050, Eqs. 24-25
+        if len(results_without_blackhole_mass) == 0 and len(results_with_bh_mass) == 0:
+            _LOGGER.warning(f"Detection {detection_index}: no catalog results found")
+            L_cat_without_bh_mass = 0.0
+            L_cat_with_bh_mass = 0.0
+        else:
+            selection_effect_correction_without_bh_mass = np.sum(
+                [result[1] for result in results_without_blackhole_mass]
+            )
+            numerator_without_bh_mass = [result[0] for result in results_without_blackhole_mass]
+            numerator_without_bh_mass.extend([result[0] for result in results_with_bh_mass])
 
-        selection_effect_correction_without_bh_mass = np.sum(
-            [result[1] for result in results_without_blackhole_mass]
+            likelihood_without_bh_mass = np.sum(numerator_without_bh_mass)
+
+            selection_effect_correction_without_bh_mass += np.sum(
+                [result[1] for result in results_with_bh_mass]
+            )
+
+            if selection_effect_correction_without_bh_mass > 0:
+                L_cat_without_bh_mass = float(
+                    likelihood_without_bh_mass / selection_effect_correction_without_bh_mass
+                )
+            else:
+                L_cat_without_bh_mass = 0.0
+
+            if len(results_with_bh_mass) > 0:
+                likelihood_with_bh_mass = np.sum([result[2] for result in results_with_bh_mass])
+                selection_effect_correction_with_bh_mass = np.sum(
+                    [result[3] for result in results_with_bh_mass]
+                )
+                if selection_effect_correction_with_bh_mass > 0:
+                    L_cat_with_bh_mass = float(
+                        likelihood_with_bh_mass / selection_effect_correction_with_bh_mass
+                    )
+                else:
+                    L_cat_with_bh_mass = 0.0
+            else:
+                L_cat_with_bh_mass = 0.0
+
+        # --- Completion term: Gray et al. (2020), arXiv:1908.06050, Eqs. 31-32 ---
+        # L_comp = integral[p_GW * P_det * dVc/dz dz] / integral[P_det * dVc/dz dz]
+        # Uses "without BH mass" 3D Gaussian for both variants
+        # (uncataloged host has no galaxy mass information)
+
+        # Completeness at the detected redshift for the trial h
+        # Gray et al. (2020), arXiv:1908.06050, Eq. 9: f_i evaluated at z(d_L_det, h)
+        z_det = dist_to_redshift(self.detection.d_L, h=self.h)
+        f_i = completeness.get_completeness_at_redshift(z_det, self.h)
+
+        # Integration limits: same 4-sigma range as catalog term numerator
+        integration_limit_sigma_multiplier = 4.0
+        z_upper = dist_to_redshift(
+            self.detection.d_L
+            + integration_limit_sigma_multiplier * self.detection.d_L_uncertainty,
+            h=self.h,
         )
-        numerator_without_bh_mass = [result[0] for result in results_without_blackhole_mass]
-        numerator_without_bh_mass.extend([result[0] for result in results_with_bh_mass])
+        z_lower = dist_to_redshift(
+            self.detection.d_L
+            - integration_limit_sigma_multiplier * self.detection.d_L_uncertainty,
+            h=self.h,
+        )
+        z_lower = max(z_lower, 1e-6)  # avoid z=0 singularity in volume element
 
-        likelihood_without_bh_mass = np.sum(numerator_without_bh_mass)
+        FIXED_QUAD_N = 50
 
-        selection_effect_correction_without_bh_mass += np.sum(
-            [result[1] for result in results_with_bh_mass]
+        # Completion term numerator integrand
+        # Gray et al. (2020), arXiv:1908.06050, Eq. 31:
+        #   p_GW(x|z, Omega_det, h) * P_det(d_L(z,h)) * dVc/dz
+        gaussian_without_bh_mass = detection_gaussians[detection_index][0]
+
+        def completion_numerator_integrand(
+            z: npt.NDArray[np.float64],
+        ) -> npt.NDArray[np.float64]:
+            d_L: npt.NDArray[np.float64] = np.asarray(
+                dist_vectorized(z, h=self.h), dtype=np.float64
+            )  # Gpc
+            d_L_fraction = d_L / self.detection.d_L  # dimensionless
+            phi = np.full_like(z, self.detection.phi)
+            theta = np.full_like(z, self.detection.theta)
+
+            p_gw: npt.NDArray[np.float64] = gaussian_without_bh_mass.pdf(
+                np.vstack([phi, theta, d_L_fraction]).T
+            )
+            p_det = detection_probability_obj.detection_probability_without_bh_mass_interpolated(
+                d_L, phi, theta, h=self.h
+            )
+            dVc: npt.NDArray[np.float64] = np.atleast_1d(
+                np.asarray(comoving_volume_element(z, h=self.h), dtype=np.float64)
+            )
+
+            return p_gw * p_det * dVc
+
+        # Completion term denominator integrand
+        # Gray et al. (2020), arXiv:1908.06050, Eq. 32:
+        #   P_det(d_L(z,h)) * dVc/dz
+        def completion_denominator_integrand(
+            z: npt.NDArray[np.float64],
+        ) -> npt.NDArray[np.float64]:
+            d_L: npt.NDArray[np.float64] = np.asarray(
+                dist_vectorized(z, h=self.h), dtype=np.float64
+            )  # Gpc
+            phi = np.full_like(z, self.detection.phi)
+            theta = np.full_like(z, self.detection.theta)
+
+            p_det = detection_probability_obj.detection_probability_without_bh_mass_interpolated(
+                d_L, phi, theta, h=self.h
+            )
+            dVc: npt.NDArray[np.float64] = np.atleast_1d(
+                np.asarray(comoving_volume_element(z, h=self.h), dtype=np.float64)
+            )
+
+            return p_det * dVc
+
+        comp_numerator: float = fixed_quad(
+            completion_numerator_integrand, z_lower, z_upper, n=FIXED_QUAD_N
+        )[0]
+        comp_denominator: float = fixed_quad(
+            completion_denominator_integrand, z_lower, z_upper, n=FIXED_QUAD_N
+        )[0]
+
+        if comp_denominator > 0:
+            L_comp = float(comp_numerator / comp_denominator)
+        else:
+            _LOGGER.warning(
+                f"Detection {detection_index}: L_comp denominator is zero, using L_cat only"
+            )
+            L_comp = 0.0
+            f_i = 1.0  # fall back to catalog-only
+
+        _LOGGER.debug(
+            f"Detection {detection_index}: f_i={f_i:.4f}, "
+            f"L_cat_no_bh={L_cat_without_bh_mass:.6e}, "
+            f"L_cat_with_bh={L_cat_with_bh_mass:.6e}, L_comp={L_comp:.6e}"
         )
 
-        if len(results_with_bh_mass) == 0:
-            return float(
-                likelihood_without_bh_mass / selection_effect_correction_without_bh_mass
-            ), 0.0
-
-        likelihood_with_bh_mass = np.sum([result[2] for result in results_with_bh_mass])
-
-        selection_effect_correction_with_bh_mass = np.sum(
-            [result[3] for result in results_with_bh_mass]
+        # --- Combination: Gray et al. (2020), arXiv:1908.06050, Eq. 9 ---
+        # p_i = f_i * L_cat + (1 - f_i) * L_comp
+        # L_comp uses "without BH mass" Gaussian for both variants
+        # (uncataloged host has no galaxy mass information)
+        combined_without_bh_mass = float(
+            f_i * L_cat_without_bh_mass + (1 - f_i) * L_comp
         )
+        combined_with_bh_mass = float(f_i * L_cat_with_bh_mass + (1 - f_i) * L_comp)
 
-        return (
-            float(likelihood_without_bh_mass / selection_effect_correction_without_bh_mass),
-            float(likelihood_with_bh_mass / selection_effect_correction_with_bh_mass),
-        )
+        return (combined_without_bh_mass, combined_with_bh_mass)
 
 
 def use_detection(detection: Detection) -> bool:
