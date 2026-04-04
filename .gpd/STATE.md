@@ -5,17 +5,17 @@
 See: .gpd/PROJECT.md (updated 2026-04-01)
 
 **Core research question:** What is the Hubble constant H0 as measured by dark siren inference from LISA EMRI detections?
-**Current focus:** v1.5 Phase 24 complete — completeness estimation delivered
+**Current focus:** v1.5 Phase 25 complete — completeness-corrected likelihood delivered
 
 ## Current Position
 
-**Current Phase:** 24
-**Current Phase Name:** Completeness Estimation
+**Current Phase:** 25
+**Current Phase Name:** Likelihood Correction
 **Current Plan:** 1/1 complete
-**Total Phases:** 1 (Phase 24, v1.5)
-**Status:** Phase 24 complete
+**Total Phases:** 2 (Phases 24-25, v1.5)
+**Status:** Phase 25 complete
 **Last Activity:** 2026-04-04
-**Last Activity Description:** Phase 24 complete: GLADE+ completeness f(z,h) interface + comoving volume element + 23 tests. Verified 4/5 claims; data provenance deferred.
+**Last Activity Description:** Implemented completeness-corrected dark siren likelihood (Gray et al. 2020 Eq. 9) with completion term, combination formula, and 11 tests. Verified 4/4 claims (HIGH confidence).
 
 **Progress:** [██████████] 100%
 
@@ -50,6 +50,7 @@ Key carry-forward decisions:
 - [Phase quick-2]: Quick task 2: analyze evolution of residual bias across milestones: what bias sources were eliminated and what remains to be investigated — Ad-hoc task completed outside planned phases
 - [Phase quick-3]: Quick task 3: Literature research on galaxy catalog completeness correction for dark siren likelihood — Root cause of H0 bias identified as GLADE incompleteness; research produced implementation specification based on Gray et al. (2020) framework
 - [Phase 24]: Completeness estimation — f(z,h) interface and comoving_volume_element delivered. Old get_completeness() backward compat disregarded per user. Data provenance (number vs luminosity completeness) to be verified in Phase 25.
+- [Phase 25]: Likelihood correction — Gray et al. (2020) Eq. 9 combination formula: p_i = f_i * L_cat + (1-f_i) * L_comp. Completion term uses 'without BH mass' 3D Gaussian for both variants (uncataloged host has no galaxy mass info). Integration limits match catalog term (4-sigma d_L).
 
 ### Active Approximations
 
@@ -82,5 +83,5 @@ None.
 ## Session Continuity
 
 **Last session:** 2026-04-04
-**Stopped at:** Phase 24 complete — ready for Phase 25 (likelihood correction)
-**Resume file:** .gpd/phases/24-completeness-estimation/24-VERIFICATION.md
+**Stopped at:** Phase 25 complete — likelihood correction delivered, ready for posterior evaluation
+**Resume file:** .gpd/phases/25-likelihood-correction/25-VERIFICATION.md

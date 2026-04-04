@@ -58,8 +58,9 @@ Plans:
 ### Phase 25: Likelihood Correction
 
 **Goal:** The dark siren likelihood combines catalog and completion terms weighted by f(z), implementing Gray et al. (2020) Eq. 9
-**Status:** Planned
-**Plans:** 1 plan
+**Status:** Complete (2026-04-04)
+**Plans:** 1/1 complete
 
 Plans:
-- [ ] 25-01-PLAN.md -- Implement completeness-corrected likelihood (completion term + combination formula + tests)
+- [x] 25-01-PLAN.md -- Implement completeness-corrected likelihood (completion term + combination formula + tests)
+**Result:** Gray et al. (2020) Eq. 9 combination formula implemented: p_i = f_i * L_cat + (1-f_i) * L_comp. Completion term via fixed_quad. 11 tests, 4/4 contract claims verified (HIGH confidence).
