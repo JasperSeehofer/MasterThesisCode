@@ -39,17 +39,17 @@
 
 | REQ-ID | Phase | Plan | Status |
 |--------|-------|------|--------|
-| COMP-01 | — | — | pending |
-| COMP-02 | — | — | pending |
-| LIKE-01 | — | — | pending |
-| LIKE-02 | — | — | pending |
-| LIKE-03 | — | — | pending |
-| LIKE-04 | — | — | pending |
-| VER-01 | — | — | pending |
-| VER-02 | — | — | pending |
-| VER-03 | — | — | pending |
-| VER-04 | — | — | pending |
-| DEPL-01 | — | — | pending |
+| COMP-01 | Phase 24 | — | pending |
+| COMP-02 | Phase 24 | — | pending |
+| LIKE-01 | Phase 25 | — | pending |
+| LIKE-02 | Phase 25 | — | pending |
+| LIKE-03 | Phase 25 | — | pending |
+| LIKE-04 | Phase 25 | — | pending |
+| VER-01 | Phase 26 | — | pending |
+| VER-02 | Phase 26 | — | pending |
+| VER-03 | Phase 26 | — | pending |
+| VER-04 | Phase 26 | — | pending |
+| DEPL-01 | Phase 27 | — | pending |
 
 ## References
 
