@@ -54,3 +54,12 @@ See `.gpd/milestones/v1.2.2-ROADMAP.md` for full archive.
 Plans:
 - [x] 24-01-PLAN.md -- Refactor GLADE+ completeness module with f(z, h) interface and comoving volume element
 **Result:** f(z,h) interface delivered with 23 tests passing. Verification: 4/5 claims confirmed; data provenance (number vs luminosity completeness) deferred to Phase 25 review.
+
+### Phase 25: Likelihood Correction
+
+**Goal:** The dark siren likelihood combines catalog and completion terms weighted by f(z), implementing Gray et al. (2020) Eq. 9
+**Status:** Planned
+**Plans:** 1 plan
+
+Plans:
+- [ ] 25-01-PLAN.md -- Implement completeness-corrected likelihood (completion term + combination formula + tests)
