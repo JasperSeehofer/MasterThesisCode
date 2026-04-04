@@ -1,17 +1,17 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.4
-milestone_name: Posterior Numerical Stability
-status: complete
-stopped_at: v1.4 milestone archived
+milestone: v1.5
+milestone_name: Galaxy Catalog Completeness Correction
+status: defining_requirements
+stopped_at: Milestone v1.5 started - defining requirements
 last_updated: "2026-04-04"
 last_activity: 2026-04-04
 progress:
-  total_phases: 3
-  completed_phases: 3
-  total_plans: 5
-  completed_plans: 5
-  percent: 100
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-04)
 
 **Core value:** The simulation pipeline runs reliably on the GPU cluster, producing enough Cramér-Rao bounds for statistically meaningful Hubble constant posteriors.
-**Current focus:** All milestones shipped (v1.0–v1.4); ready for `/gsd:new-milestone`
+**Current focus:** v1.5 — Galaxy catalog completeness correction to eliminate H0 posterior bias
 
 ## Current Position
 
-Phase: v1.4 complete (all 3 phases, 5 plans done)
-Plan: N/A
-Status: All milestones archived
-Last activity: 2026-04-04
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-04-04 — Milestone v1.5 started
 
-Progress: [██████████] 100%
+Progress: [░░░░░░░░░░] 0%
 
 ## Performance Metrics
 
@@ -47,10 +47,17 @@ Progress: [██████████] 100%
 
 ### Blockers/Concerns
 
-None — all milestones shipped.
+None.
+
+### Key Context for v1.5
+
+- **Root cause confirmed:** GLADE+ catalog incompleteness at z > 0.08 causes systematic H0 bias (MAP=0.66 vs true h=0.73). See `scripts/bias_investigation/FINDINGS.md`.
+- **Research specification:** `.gpd/quick/3-literature-research-galaxy-catalog-in/galaxy-catalog-completeness-research.md` (Gray et al. 2020 framework)
+- **Physics changes required:** All modifications to `bayesian_statistics.py` and `physical_relations.py` require Physics Change Protocol
+- **Injection data available:** `simulations/injections/` contains 7 h-value injection campaigns (fetched from cluster)
 
 ## Session Continuity
 
 Last session: 2026-04-04
-Stopped at: Milestone archival cleanup (v1.2 + v1.4)
+Stopped at: Milestone v1.5 started — defining requirements
 Resume file: None

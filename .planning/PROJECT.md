@@ -55,9 +55,27 @@ All 5 milestones shipped (v1.0–v1.4). 23 phases, 41 plans completed across 9 d
 - ✓ Evaluation pipeline produces H₀ posterior from fresh Cramér-Rao bounds — v1.1 Phase 8
 - ✓ Results validated (SNR physical, seeds correct, detection rates reasonable) — v1.1 Phase 8
 
+## Current Milestone: v1.5 Galaxy Catalog Completeness Correction
+
+**Goal:** Implement the Gray et al. (2020) completeness-corrected dark siren likelihood to eliminate the systematic H0 bias caused by GLADE+ incompleteness at z > 0.08.
+
+**Target features:**
+- GLADE+ completeness estimation f(z) from B-band luminosity comparison
+- Completion term in the dark siren likelihood for uncataloged host galaxies
+- Modified p_Di() combining catalog + completion terms weighted by f(z)
+- Comoving volume element function in physical_relations.py
+- Verification: limiting cases (f=1, f=0), bias reduction on 534-detection dataset
+
+**Research specification:** `.gpd/quick/3-literature-research-galaxy-catalog-in/galaxy-catalog-completeness-research.md`
+
 ### Active
 
-- (No active milestone — all planned milestones shipped; run `/gsd:new-milestone` for next milestone)
+- [ ] GLADE+ completeness function f(z) estimated and validated
+- [ ] Completion term added to dark siren likelihood (Gray et al. 2020 Eq. 9)
+- [ ] p_Di() modified to combine catalog + completion terms
+- [ ] Comoving volume element added to physical_relations.py
+- [ ] Bias investigation tests re-run showing MAP shift toward h=0.73
+- [ ] Cluster deployment and production evaluation
 
 ### Recently Validated (v1.2 / v1.3 / v1.4)
 
@@ -137,4 +155,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-04 after v1.4 milestone archival cleanup*
+*Last updated: 2026-04-04 — v1.5 milestone started*
