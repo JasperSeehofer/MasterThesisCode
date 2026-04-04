@@ -17,6 +17,7 @@ from master_thesis_code.constants import (
     KM_TO_M,
     OMEGA_DE,
     OMEGA_M,
+    SPEED_OF_LIGHT_KM_S,
     W_0,
     W_A,
     C,
@@ -380,3 +381,64 @@ def get_redshift_outer_bounds(
         z_min = 0.0
     z_max = dist_to_redshift(distance + 3 * distance_error, h_max)
     return z_min, z_max
+
+
+# Eq. (28) in Hogg (1999), arXiv:astro-ph/9905116
+def comoving_volume_element(
+    z: float | npt.NDArray[np.floating[Any]],
+    h: float = H,
+    Omega_m: float = OMEGA_M,
+    Omega_de: float = OMEGA_DE,
+) -> float | npt.NDArray[np.floating[Any]]:
+    r"""Comoving volume element per unit redshift per unit solid angle.
+
+    .. math::
+
+        \frac{dV_c}{dz\,d\Omega} = \frac{d_{\mathrm{com}}^2(z)\,c}{H(z)}
+
+    where :math:`d_{\mathrm{com}} = d_L / (1+z)` is the comoving distance and
+    :math:`H(z) = h \times 100\,\mathrm{km\,s^{-1}\,Mpc^{-1}} \times E(z)`.
+
+    The result has units of :math:`\mathrm{Mpc}^3\,\mathrm{sr}^{-1}`.
+
+    Dimensional analysis
+    --------------------
+    :math:`[Mpc]^2 \times [km/s] / [km/s/Mpc] = [Mpc]^3` per steradian.
+
+    Limiting case (z << 1)
+    ----------------------
+    :math:`d_{\mathrm{com}} \approx c z / H_0`, :math:`H(z) \approx H_0`, so
+    :math:`dV_c/dz/d\Omega \approx (c/H_0)^3 z^2`, scaling as :math:`z^2`.
+
+    Args:
+        z: Redshift (scalar or array). Must be >= 0.
+        h: Dimensionless Hubble parameter.
+        Omega_m: Matter density parameter.
+        Omega_de: Dark energy density parameter.
+
+    Returns:
+        Comoving volume element :math:`dV_c / dz / d\Omega` in
+        :math:`\mathrm{Mpc}^3 / \mathrm{sr}`. Same type as input *z*.
+
+    References
+    ----------
+    Hogg (1999), arXiv:astro-ph/9905116, Eq. (28).
+    """
+    # ASSERT_CONVENTION: distance=Mpc, speed=km/s, H0=km/s/Mpc, result=Mpc^3/sr
+
+    # Luminosity distance in Mpc
+    z_arr = np.atleast_1d(np.asarray(z, dtype=np.float64))
+    d_L_mpc = dist_vectorized(z_arr, h=h, Omega_m=Omega_m, Omega_de=Omega_de) * GPC_TO_MPC
+
+    # Comoving distance in Mpc: d_com = d_L / (1+z)
+    d_com = d_L_mpc / (1.0 + z_arr)
+
+    # Hubble parameter H(z) in km/s/Mpc
+    H_z = h * 100.0 * np.asarray(hubble_function(z_arr, Omega_m=Omega_m, Omega_de=Omega_de))
+
+    # dVc/dz/dOmega = d_com^2 * c / H(z)  [Mpc^3/sr]
+    result = d_com**2 * SPEED_OF_LIGHT_KM_S / H_z
+
+    if np.ndim(z) == 0:
+        return float(result.flat[0])
+    return result
