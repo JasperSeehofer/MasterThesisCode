@@ -5,16 +5,17 @@
 See: .gpd/PROJECT.md (updated 2026-04-01)
 
 **Core research question:** What is the Hubble constant H0 as measured by dark siren inference from LISA EMRI detections?
-**Current focus:** v1.3 planning -- bias evolution analysis complete (quick-2)
+**Current focus:** v1.5 Phase 24 complete — completeness estimation delivered
 
 ## Current Position
 
-**Current Phase:** --
-**Current Phase Name:** --
-**Total Phases:** 7 (Phases 14-20, across v1.2.1 + v1.2.2)
-**Status:** Between milestones
+**Current Phase:** 24
+**Current Phase Name:** Completeness Estimation
+**Current Plan:** 1/1 complete
+**Total Phases:** 1 (Phase 24, v1.5)
+**Status:** Phase 24 complete
 **Last Activity:** 2026-04-04
-**Last Activity Description:** Quick task 2 complete — bias evolution analysis (quick-2/bias-evolution-analysis.md)
+**Last Activity Description:** Phase 24 complete: GLADE+ completeness f(z,h) interface + comoving volume element + 23 tests. Verified 4/5 claims; data provenance deferred.
 
 **Progress:** [██████████] 100%
 
@@ -48,6 +49,7 @@ Key carry-forward decisions:
 - alpha=0.3 defensive mixture bounds max weight at 3.33
 - [Phase quick-2]: Quick task 2: analyze evolution of residual bias across milestones: what bias sources were eliminated and what remains to be investigated — Ad-hoc task completed outside planned phases
 - [Phase quick-3]: Quick task 3: Literature research on galaxy catalog completeness correction for dark siren likelihood — Root cause of H0 bias identified as GLADE incompleteness; research produced implementation specification based on Gray et al. (2020) framework
+- [Phase 24]: Completeness estimation — f(z,h) interface and comoving_volume_element delivered. Old get_completeness() backward compat disregarded per user. Data provenance (number vs luminosity completeness) to be verified in Phase 25.
 
 ### Active Approximations
 
@@ -79,6 +81,6 @@ None.
 
 ## Session Continuity
 
-**Last session:** 2026-04-02
-**Stopped at:** Quick task 2 complete — bias evolution analysis written and committed (7e6731c)
-**Resume file:** .gpd/quick/2-analyze-evolution-of-residual-bias-ac/bias-evolution-analysis.md
+**Last session:** 2026-04-04
+**Stopped at:** Phase 24 complete — ready for Phase 25 (likelihood correction)
+**Resume file:** .gpd/phases/24-completeness-estimation/24-VERIFICATION.md
