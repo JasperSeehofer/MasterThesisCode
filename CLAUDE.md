@@ -416,6 +416,36 @@ GSD is the primary command surface. When a GSD workflow encounters **physics wor
 **Mixed phases:** If a GSD phase contains both software and physics tasks, keep the phase in GSD but invoke GPD for the physics subtasks. The GSD phase tracks overall progress; GPD handles the physics execution with its protocols.
 
 **State tracking:** GSD tracks progress in `.planning/`, GPD in `.gpd/`. Both systems commit atomically. No cross-updates needed — they are independent ledgers for independent concerns.
+
+### GitHub Integration
+
+GitHub issues, labels, and milestones are the **external-facing** record of project state. GSD/GPD workflows must keep them in sync as work progresses. This is not optional — stale issues erode trust in the tracker.
+
+**When to update GitHub (mandatory):**
+
+| Event | GitHub action | Command pattern |
+|---|---|---|
+| A bug or issue is **resolved** by a phase or quick task | Close the issue with a comment referencing the fix (commit, phase, file:line) | `gh issue close N --comment "..."` |
+| A new bug is **discovered** during work | Open a new issue with appropriate labels (`bug`, `physics`, `paper-blocker`, etc.) | `gh issue create --title "..." --label "..." --milestone "..."` |
+| A phase or milestone is **planned** that maps to open issues | Assign those issues to the relevant GitHub milestone | `gh issue edit N --milestone "..."` |
+| A phase **completes** and resolves multiple issues | Close all resolved issues in one pass with per-issue comments | Batch `gh issue close` |
+| Work priority changes (e.g., issue becomes paper-blocking) | Update labels accordingly | `gh issue edit N --add-label "paper-blocker"` |
+| A new milestone cycle starts (`/gsd:new-milestone` or `/gpd:new-milestone`) | Create a GitHub milestone if one doesn't exist for it | `gh api repos/.../milestones --method POST` |
+
+**Labels to use:**
+- `bug` — something is broken
+- `physics` — physics formula or scientific correctness
+- `paper-blocker` — must fix before paper submission
+- `design-choice` — deliberate simplification, documented
+- `enhancement` — new feature or improvement
+- `documentation` — docs improvement
+
+**Milestone:** The "Paper Submission" milestone tracks all issues that must be resolved before the paper is submitted. All open physics/design issues should be assigned to it.
+
+**What NOT to do:**
+- Do not create GitHub issues for internal GSD/GPD tracking (phase plans, verification checklists) — those belong in `.planning/` and `.gpd/`
+- Do not duplicate TODO.md items as issues unless they represent distinct, actionable bugs or features
+- Do not update issues for purely internal refactoring that has no user-facing effect
 <!-- GSD:workflow-end -->
 
 <!-- GSD:profile-start -->

@@ -1,0 +1,27 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+type: software
+title: "EMRI Dark Siren H₀ Inference"
+abstract: >-
+  Dark siren inference pipeline for measuring the Hubble constant H₀
+  from LISA Extreme Mass Ratio Inspiral (EMRI) detections. Includes
+  GPU-accelerated EMRI simulation with Fisher-matrix parameter estimation,
+  and Bayesian inference using the GLADE+ galaxy catalog with
+  completeness correction (Gray et al. 2020).
+authors:
+  - family-names: Seehofer
+    given-names: Jasper
+version: 0.1.0
+date-released: 2026-04-05
+url: "https://github.com/JasperSeehofer/MasterThesisCode"
+repository-code: "https://github.com/JasperSeehofer/MasterThesisCode"
+license: MIT
+keywords:
+  - gravitational waves
+  - EMRI
+  - Hubble constant
+  - dark sirens
+  - LISA
+  - Bayesian inference
+  - galaxy catalog
+  - completeness correction

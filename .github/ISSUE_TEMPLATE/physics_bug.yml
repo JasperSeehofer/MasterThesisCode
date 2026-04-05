@@ -1,0 +1,49 @@
+name: Physics Bug
+description: Report an incorrect formula, constant, or physical assumption
+labels: ["bug", "physics"]
+body:
+  - type: input
+    id: file_line
+    attributes:
+      label: File and line
+      description: Where is the incorrect formula?
+      placeholder: "master_thesis_code/physical_relations.py:72"
+    validations:
+      required: true
+  - type: textarea
+    id: current_formula
+    attributes:
+      label: Current formula
+      description: The formula as it currently appears in the code
+    validations:
+      required: true
+  - type: textarea
+    id: correct_formula
+    attributes:
+      label: Correct formula
+      description: The expected formula with proper notation
+    validations:
+      required: true
+  - type: textarea
+    id: reference
+    attributes:
+      label: Reference
+      description: Citation (arXiv ID, DOI, equation number) or step-by-step derivation
+      placeholder: "Hogg (1999) arXiv:astro-ph/9905116, Eq. (28)"
+    validations:
+      required: true
+  - type: textarea
+    id: dimensional_analysis
+    attributes:
+      label: Dimensional analysis
+      description: Units of inputs and output, consistency check
+    validations:
+      required: false
+  - type: textarea
+    id: limiting_case
+    attributes:
+      label: Limiting case
+      description: At least one analytical limit where the result is known
+      placeholder: "dist(z=0) should equal 0.0"
+    validations:
+      required: false

@@ -1,0 +1,29 @@
+name: Bug Report
+description: Report a software bug (crashes, wrong output, import errors)
+labels: ["bug"]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: What happened? What did you expect?
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      description: Minimal command or code to trigger the bug
+      placeholder: |
+        uv run python -m master_thesis_code <working_dir> --simulation_steps 1
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Python version, OS, GPU (if relevant)
+      placeholder: |
+        Python 3.13, Linux, CPU-only
+    validations:
+      required: false

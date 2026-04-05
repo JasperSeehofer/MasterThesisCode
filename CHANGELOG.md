@@ -8,6 +8,17 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- `galaxy_catalogue/glade_completeness.py`: GLADE+ catalog completeness estimation
+  $f(z, H_0)$ using galaxy counts in comoving volume shells (Phase 24).
+- Completeness-corrected dark siren likelihood implementing Gray et al. (2020) Eq. 9,
+  combining catalog and completion terms weighted by GLADE+ completeness (Phase 25).
+- 23 tests for completeness estimation, 11 tests for completion term and combination
+  formula (`test_glade_completeness.py`, `test_completion_term.py`).
+- `scripts/bias_investigation/`: 7 diagnostic scripts and `FINDINGS.md` documenting
+  root cause of H₀ posterior bias (GLADE catalog density gradient, not a formula bug).
+- Docs badge in README linking to GitHub Pages.
+- `CITATION.cff` for machine-readable citation metadata.
+- GitHub issue templates (bug report, physics bug) and PR template.
 - 14 new correctness tests for `BayesianInference` (TEST-3): likelihood peak location,
   detection probability monotonicity, selection effects, BH mass term, posterior
   positivity, and cross-H₀ consistency checks.
@@ -15,6 +26,12 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   integration-to-one, correct `loc` for redshift and mass distributions.
 
 ### Fixed
+- **[PHYSICS]** Comoving volume formula corrected to proper volume element $dV_c/dz$ with
+  $1/E(z)$ factor; methods renamed `comoving_volume` → `comoving_volume_element`
+  (PHYS-1, Issue #1).
+- **[PHYSICS]** Galactic confusion noise integrated into LISA PSD via
+  `LisaTdiConfiguration._confusion_noise()`, implementing Babak et al. (2023)
+  Eq. (17) (PHYS-4, Issue #3).
 - **[PHYSICS]** `GalaxyCatalog` truncnorm distributions (STAT-3): `truncnorm()` was created
   without `loc`/`scale` parameters in `setup_galaxy_mass_distribution`,
   `append_galaxy_to_galaxy_mass_distribution`, `setup_galaxy_distribution`, and
@@ -28,6 +45,9 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   biasing the H₀ posterior. Now consistent with `single_host_likelihood_integration_testing`.
 
 ### Changed
+- Project framing updated from master thesis to paper publication stage.
+- GitHub issues triaged: #1 and #3 closed as resolved, remaining issues labeled
+  (`paper-blocker`, `design-choice`) and assigned to "Paper Submission" milestone.
 - `.claude/skills/` directory with 6 custom skills for codified, repeatable workflows:
   - `physics-change`: enforces the 5-step Physics Change Protocol before any formula modification
   - `gpu-audit`: scans files for GPU/HPC compliance violations (guarded imports, xp pattern, vectorization)
@@ -36,10 +56,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   - `known-bugs`: shows current status of all known physics/code bugs with priorities
   - `pre-commit-docs`: verifies CHANGELOG, TODO, CLAUDE.md, README consistency with staged changes
 - Excalidraw MCP server configured (HTTP transport) for architecture diagram generation.
-
-### Changed
 - `CLAUDE.md`: new "Skill-Driven Workflows" section with trigger rules table and
   physics-change trigger file list. Skills are mandatory workflow gates, not optional.
+- `CLAUDE.md`: new "GitHub Integration" section — GSD/GPD workflows must keep GitHub
+  issues, milestones, and labels in sync as work progresses.
 
 ---
 

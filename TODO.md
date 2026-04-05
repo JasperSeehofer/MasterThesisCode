@@ -2,10 +2,10 @@
 
 ## Execution Order
 
-### Phase 1: Foundation (do first — prerequisites for everything)
-1. STAT-1 — Document which pipeline is production
-2. TEST-1 + TEST-2 — Add regression guards before fixing bugs
-3. ARCH-1 — Extract BayesianStatistics (makes all subsequent work cleaner)
+### Phase 1: Foundation (do first — prerequisites for everything) ✅
+1. ~~STAT-1 — Document which pipeline is production~~ (RESOLVED)
+2. ~~TEST-1 + TEST-2 — Add regression guards before fixing bugs~~ (RESOLVED)
+3. ~~ARCH-1 — Extract BayesianStatistics~~ (RESOLVED)
 
 ### Phase 2: Critical Physics Fixes (after Phase 1) ✅
 4. ~~PHYS-1 — Comoving volume element formula~~ (RESOLVED)
@@ -19,14 +19,14 @@
 
 ### Phase 4: Important Physics + Performance (after Phase 2)
 10. PHYS-3 — Five-point stencil
-11. PHYS-4 — Confusion noise
+11. ~~PHYS-4 — Confusion noise~~ (RESOLVED)
 12. PERF-1 + PERF-2 — GPU portability fixes
 13. REPRO-1 — RNG refactor
 
 ### Phase 5: Polish (after Phases 3-4)
 14. All P2 items
 15. Coverage gate increases (TEST-9)
-16. PHYS-9 — Document remaining physics TODOs as thesis scope or future work
+16. PHYS-9 — Document remaining physics TODOs as paper scope or future work
 
 ### Verification (after each phase)
 - `uv run pytest -m "not gpu and not slow"` — all CPU tests pass
@@ -62,12 +62,9 @@ reference, dimensional analysis, limiting case).
       evaluations per parameter (56 total vs 14).
       Ref: Vallisneri (2008) arXiv:gr-qc/0703086; Cutler & Flanagan (1994) PRD 49, 2658.
 
-- [ ] **PHYS-4 [P1, M]** Add galactic confusion noise to LISA PSD in `LISA_configuration.py`
-      Implement `galactic_confusion_noise(frequencies, T_obs)` and add to
-      `power_spectral_density_a_channel()`. Constants already defined in `constants.py:77–83`.
-      Dominates LISA sensitivity at 0.1–3 mHz; will change SNR values significantly.
-      Must invalidate and re-run all existing Cramér-Rao CSV data afterward.
-      Ref: Babak et al. (2023) arXiv:2303.15929 Eq. (17) and Table 1.
+- [x] **PHYS-4 [P1, M]** Add galactic confusion noise to LISA PSD in `LISA_configuration.py`
+      (RESOLVED — `_confusion_noise()` in `LisaTdiConfiguration`, Babak et al. 2023 Eq. 17.
+      Controlled by `include_confusion_noise` parameter, default True. Issue #3 closed.)
 
 - [ ] **PHYS-5 [P1, M]** Use per-source Fisher-matrix σ(d_L) in `bayesian_inference/bayesian_inference.py`
       Replace hardcoded `FRACTIONAL_LUMINOSITY_ERROR * d_L` (constant 10%) at lines 154, 186, 235
@@ -92,7 +89,7 @@ reference, dimensional analysis, limiting case).
       Consider making configurable rather than hardcoded.
       Ref: Planck Collaboration (2020) arXiv:1807.06209 Table 2.
 
-- [ ] **PHYS-9 [P2, L]** Address 7 pre-existing physics TODOs — document which are thesis scope vs future work:
+- [ ] **PHYS-9 [P2, L]** Address 7 pre-existing physics TODOs — document which are paper scope vs future work:
       - [ ] Coordinate transformation to orbital motion around sun
       - [ ] Check `_s` parameters: barycenter same as orientation of binary wrt fixed frame
       - [ ] Check spin limits for parameter `a`
@@ -238,7 +235,7 @@ Current: 149 tests, 37% coverage (gate 25%), target 50%.
 - [ ] **PERF-4 [P1, L]** Parallelize 14 Fisher matrix derivative evaluations
       `parameter_estimation.py:324-348`: currently sequential, but each derivative is independent.
       With five-point stencil (PHYS-3): 56 total waveform evaluations, all parallelizable.
-      Important for thesis-scale runs on multi-GPU systems.
+      Important for production-scale runs on multi-GPU systems.
 
 - [ ] **PERF-5 [P2, S]** Replace `.iterrows()` with `.itertuples()` or vectorized ops
       `cosmological_model.py:755,796`: `.iterrows()` is the slowest way to iterate a DataFrame.
@@ -298,12 +295,12 @@ Current: 149 tests, 37% coverage (gate 25%), target 50%.
 - [ ] **REPRO-2 [P1, S]** Expand `run_metadata.json` in `main.py:86-102`
       Currently records: `git_commit`, `timestamp`, `random_seed`, `cli_args`.
       Add: Python version, numpy/scipy/few versions, GPU info (if available), uv.lock hash.
-      Critical for thesis reproducibility claims.
+      Critical for paper reproducibility claims.
 
 - [ ] **REPRO-3 [P1, M]** Implement `--generate_figures` stub in `main.py:313-321`
       Currently logs "not implemented". All plotting factory functions exist in `plotting/`.
       Implement: load saved CSV/JSON data, call each factory function, save to output directory.
-      Allows regenerating all thesis figures from saved data.
+      Allows regenerating all paper figures from saved data.
 
 - [ ] **REPRO-4 [P2, S]** Add data provenance to CSV outputs
       Cramér-Rao bounds CSVs do not record which git commit, seed, or configuration produced them.
@@ -320,6 +317,19 @@ Current: 149 tests, 37% coverage (gate 25%), target 50%.
 - [ ] Rename GitHub repository from `MasterThesisCode` to `emri-dark-siren-h0` (or similar).
       Touches: CI badge URL in README, git remote URLs, all documentation references.
       GitHub auto-redirects the old URL indefinitely. Do as a dedicated task.
+
+---
+
+## Workstream 7: Publication
+
+All items tracked under the "Paper Submission" GitHub milestone.
+
+- [ ] **PUB-1 [P0, S]** Create `CITATION.cff` with project metadata and placeholder paper reference
+- [ ] **PUB-2 [P0, S]** Tag first GitHub Release (`v2.0.0-rc1`, paper-stage baseline)
+- [ ] **PUB-3 [P1, M]** Prepare reproducibility package (simulation seeds, config, expected outputs)
+- [ ] **PUB-4 [P2, S]** Archive Pipeline A or clearly label as development-only cross-check
+- [ ] **PUB-5 [P1, M]** Write paper methods section describing the completeness-corrected likelihood
+- [ ] **PUB-6 [P2, S]** Final data release preparation (simulation outputs, metadata, figure generation)
 
 ---
 

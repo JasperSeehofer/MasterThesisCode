@@ -100,7 +100,9 @@ xdg-open docs/build/html/index.html  # Linux
 | `master_thesis_code/constants.py` | Physical constants and simulation configuration |
 | `master_thesis_code/cosmological_model.py` | EMRI event rate model, H₀ evaluation orchestration |
 | `master_thesis_code/galaxy_catalogue/` | GLADE galaxy catalog interface (BallTree lookups) |
+| `master_thesis_code/galaxy_catalogue/glade_completeness.py` | GLADE+ catalog completeness estimation $f(z, H_0)$ |
 | `scripts/` | Utility scripts for post-processing simulation output |
+| `scripts/bias_investigation/` | H₀ posterior bias diagnostic scripts and findings |
 | `master_thesis_code_test/` | Test suite (mirrors source layout) |
 
 ---
@@ -164,6 +166,17 @@ $$\mathcal{L}(H_0) = \frac{\displaystyle\int p_\mathrm{GW}(\hat{d}_L \mid z,H_0)
 where $p_\mathrm{GW}$ is a Gaussian in $d_L$ with fractional width $\sigma/d_L$, and the
 denominator corrects for Malmquist-type selection bias.
 
+**Completeness-corrected likelihood** ([Gray et al. 2020](#gray2020), Eq. 9):
+
+$$p_i(H_0) = f(z, H_0)\,\mathcal{L}_\mathrm{cat} + \bigl(1 - f(z, H_0)\bigr)\,\mathcal{L}_\mathrm{comp}$$
+
+where $f(z, H_0)$ is the GLADE+ catalog completeness fraction at redshift $z$,
+$\mathcal{L}_\mathrm{cat}$ is the catalog term (sum over cataloged galaxies), and
+$\mathcal{L}_\mathrm{comp}$ is the completion term integrating over uncataloged hosts
+weighted by a comoving volume prior. Implemented in
+`bayesian_inference/bayesian_statistics.py` with completeness from
+`galaxy_catalogue/glade_completeness.py`.
+
 ---
 
 ### Model Assumptions
@@ -185,23 +198,15 @@ Items are ordered by severity. Each references the specific source location and 
 status tag: **bug** (incorrect formula or logic), **design choice** (deliberate simplification),
 or **pending fix** (acknowledged issue not yet addressed).
 
-#### Limitation 1 — Comoving volume formula is wrong  `[bug · CRITICAL]`
-**File:** `master_thesis_code/datamodels/galaxy.py:121`
+#### Limitation 1 — Comoving volume formula  `[FIXED]`
+**File:** `master_thesis_code/datamodels/galaxy.py`, `master_thesis_code/physical_relations.py`
 
-```python
-# Current (wrong)
-cv_grid = 4 * np.pi * (SPEED_OF_LIGHT / h0) ** 3 * cumulative_integral**2
-
-# Correct (Hogg 1999, Eq. 28)
-cv_grid = (4/3) * np.pi * (SPEED_OF_LIGHT / h0) ** 3 * cumulative_integral**3
-```
-
-Two errors: the exponent on the integral is 2 instead of the correct 3, and the prefactor
-is $4\pi$ instead of $4\pi/3$. The comoving volume therefore scales as $z^2$ at low
-redshift instead of the correct $z^3$. Every downstream use — galaxy sampling, background
-weight in the likelihood — draws from the wrong redshift distribution.
-
-Reference: Hogg (1999), arXiv:astro-ph/9905116, Eq. (28).
+The function computes the comoving volume *element* $dV_c/dz$, not total volume $V_c$.
+The exponent 2 and $4\pi$ prefactor were correct for the element, but the formula was
+missing the $1/E(z)$ factor. Fix applied: `cv_grid = 4π · (c/H₀)³ · I(z)² / E(z)`
+(Hogg 1999, Eq. 27). All methods renamed from `comoving_volume` to
+`comoving_volume_element` for clarity. Standalone `comoving_volume_element()` in
+`physical_relations.py` verified against astropy to 0.07% accuracy. Regression test added.
 
 ---
 
@@ -223,16 +228,13 @@ References: Vallisneri (2008), arXiv:gr-qc/0703086; Cutler & Flanagan (1994), PR
 
 ---
 
-#### Limitation 3 — Galactic confusion noise absent from LISA PSD  `[bug · MEDIUM]`
-**File:** `master_thesis_code/LISA_configuration.py` (PSD functions); `master_thesis_code/constants.py:77–83` (unused parameters)
+#### Limitation 3 — Galactic confusion noise  `[FIXED]`
+**File:** `master_thesis_code/LISA_configuration.py`
 
-`power_spectral_density_a_channel()` implements only the instrumental (OMS + test-mass)
-noise. The galactic confusion-noise parameters `LISA_PSD_A`, `LISA_PSD_ALPHA`, `LISA_PSD_F2`,
-etc. are defined in `constants.py` but never used. Galactic confusion noise dominates the
-LISA sensitivity from ~0.1 to ~3 mHz — exactly where many EMRI signals peak — so computed
-SNRs and Fisher bounds are systematically too optimistic.
-
-Reference: Babak et al. (2023), arXiv:2303.15929, Eq. (17) and Table 1.
+Galactic confusion noise is now included in the LISA PSD via `_confusion_noise()` in
+`LisaTdiConfiguration`, implementing Babak et al. (2023) arXiv:2303.15929 Eq. (17) with
+observation-time-dependent knee frequency. Controlled by `include_confusion_noise`
+parameter (default `True`). The constants from `constants.py:77–83` are now used.
 
 ---
 
@@ -354,6 +356,20 @@ arXiv:gr-qc/0703086.
 Chen, H.-Y., Fishbach, M. & Holz, D. E. (2018). A two percent Hubble constant measurement
 from standard sirens within five years. *Nature* **562**, 545–547. arXiv:1709.08079.
 
+<a id="gray2020"></a>
+Gray, R. et al. (2020). Cosmological inference using gravitational wave standard sirens:
+A mock data challenge. *Phys. Rev. D* **101**, 122001. arXiv:1908.06050.
+
 <a id="planck2018"></a>
 Planck Collaboration (2020). Planck 2018 results VI: Cosmological parameters.
 *Astron. Astrophys.* **641**, A6. arXiv:1807.06209.
+
+---
+
+## Citation
+
+If you use this code, please cite:
+
+> [Paper reference TBD — will be updated upon arXiv submission]
+
+See also [`CITATION.cff`](CITATION.cff) for machine-readable citation metadata.
