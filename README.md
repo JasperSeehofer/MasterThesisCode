@@ -1,8 +1,10 @@
 # EMRI Bayesian H₀ Inference
 
-Master's thesis code for inferring the Hubble constant H₀ from Extreme Mass Ratio Inspiral
-(EMRI) gravitational wave events detected by the LISA space detector, using Bayesian
-inference combined with a galaxy catalog.
+[![CI](https://github.com/JasperSeehofer/MasterThesisCode/actions/workflows/ci.yml/badge.svg)](https://github.com/JasperSeehofer/MasterThesisCode/actions/workflows/ci.yml)
+
+Dark siren inference of the Hubble constant H₀ from Extreme Mass Ratio Inspiral (EMRI)
+gravitational wave events detected by the LISA space detector, using Bayesian analysis
+with the GLADE+ galaxy catalog.
 
 ## Installation
 

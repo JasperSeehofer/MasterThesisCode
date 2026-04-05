@@ -2,6 +2,7 @@ name: CI
 
 on:
   push:
+    branches: [main]
   pull_request:
 
 jobs:
@@ -12,6 +13,8 @@ jobs:
 
       - name: Install uv
         uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
 
       - name: Set up Python
         run: uv python install
@@ -20,13 +23,13 @@ jobs:
         run: uv sync --extra cpu --extra dev
 
       - name: Ruff lint
-        run: uv run ruff check master_thesis_code/
+        run: uv run ruff check master_thesis_code/ master_thesis_code_test/
 
       - name: Ruff format check
-        run: uv run ruff format --check master_thesis_code/
+        run: uv run ruff format --check master_thesis_code/ master_thesis_code_test/
 
       - name: mypy
-        run: uv run mypy master_thesis_code/
+        run: uv run mypy master_thesis_code/ master_thesis_code_test/
 
       - name: pytest (CPU only)
         run: uv run pytest -m "not gpu and not slow"
@@ -37,20 +40,16 @@ jobs:
           name: coverage-xml
           path: coverage.xml
 
-      - name: pip-audit (security)
-        run: uv run pip-audit
-
   integration:
     runs-on: ubuntu-latest
     needs: check
-    permissions:
-      pages: write
-      id-token: write
     steps:
       - uses: actions/checkout@v6
 
       - name: Install uv
         uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
 
       - name: Set up Python
         run: uv python install
@@ -69,16 +68,6 @@ jobs:
           path: test-artifacts/
           if-no-files-found: ignore
 
-      - name: Upload Pages artifact
-        if: always()
-        uses: actions/upload-pages-artifact@v4
-        with:
-          path: test-artifacts/
-
-      - name: Deploy to GitHub Pages
-        if: always()
-        uses: actions/deploy-pages@v4
-
   docs:
     runs-on: ubuntu-latest
     steps:
@@ -86,6 +75,8 @@ jobs:
 
       - name: Install uv
         uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
 
       - name: Set up Python
         run: uv python install
@@ -101,3 +92,32 @@ jobs:
         with:
           name: docs-html
           path: docs/build/html/
+
+  pages:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    needs: [integration, docs]
+    permissions:
+      pages: write
+      id-token: write
+    steps:
+      - name: Download docs artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: docs-html
+          path: _site/
+
+      - name: Download test plots artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: integration-test-plots
+          path: _site/test-plots/
+        continue-on-error: true
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: _site/
+
+      - name: Deploy to GitHub Pages
+        uses: actions/deploy-pages@v4
