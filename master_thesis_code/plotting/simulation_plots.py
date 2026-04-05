@@ -88,18 +88,27 @@ def plot_lisa_psd(
         psd_confusion = np.maximum(psd_total - psd_inst, 0.0)
 
         ax.plot(
-            frequencies, psd_total,
-            color=EDGE, linestyle="-", linewidth=2,
+            frequencies,
+            psd_total,
+            color=EDGE,
+            linestyle="-",
+            linewidth=2,
             label=r"$S_n(f)$ total",
         )
         ax.plot(
-            frequencies, psd_inst,
-            color=REFERENCE, linestyle="--", linewidth=1.5,
+            frequencies,
+            psd_inst,
+            color=REFERENCE,
+            linestyle="--",
+            linewidth=1.5,
             label=r"$S_\mathrm{inst}(f)$",
         )
         ax.plot(
-            frequencies, psd_confusion,
-            color=CYCLE[1], linestyle="-.", linewidth=1.5,
+            frequencies,
+            psd_confusion,
+            color=CYCLE[1],
+            linestyle="-.",
+            linewidth=1.5,
             label=r"$S_\mathrm{gal}(f)$",
         )
     elif psd_values is not None:
@@ -176,12 +185,19 @@ def plot_detection_yield(
 
     # Left y-axis: injected (outline) + detected (filled)
     ax.hist(
-        injected_redshifts, bins=bin_edges,
-        histtype="step", color=CYCLE[0], linewidth=1.5, label="Injected",
+        injected_redshifts,
+        bins=bin_edges,
+        histtype="step",
+        color=CYCLE[0],
+        linewidth=1.5,
+        label="Injected",
     )
     ax.hist(
-        detected_redshifts, bins=bin_edges,
-        alpha=0.6, color=CYCLE[0], label="Detected",
+        detected_redshifts,
+        bins=bin_edges,
+        alpha=0.6,
+        color=CYCLE[0],
+        label="Detected",
     )
 
     # Right y-axis: detection fraction

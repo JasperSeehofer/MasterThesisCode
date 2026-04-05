@@ -5,9 +5,7 @@ import numpy.typing as npt
 from matplotlib.figure import Figure
 from matplotlib.patches import Ellipse
 
-
 from master_thesis_code.plotting.sky_plots import plot_sky_localization_mollweide
-
 
 # ---------------------------------------------------------------------------
 # Mollweide Sky Map (SKY-01)
@@ -38,9 +36,7 @@ def test_plot_sky_localization_mollweide_with_ellipses(
 ) -> None:
     """Smoke test: Mollweide sky map with localization ellipses."""
     theta_s, phi_s, snr, covariances = sample_sky_data
-    fig, ax = plot_sky_localization_mollweide(
-        theta_s, phi_s, snr, covariances=covariances
-    )
+    fig, ax = plot_sky_localization_mollweide(theta_s, phi_s, snr, covariances=covariances)
     assert isinstance(fig, Figure)
     ellipse_patches = [p for p in ax.patches if isinstance(p, Ellipse)]
     assert len(ellipse_patches) == 10

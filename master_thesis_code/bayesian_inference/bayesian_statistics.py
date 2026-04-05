@@ -597,9 +597,7 @@ class BayesianStatistics:
         # p_i = f_i * L_cat + (1 - f_i) * L_comp
         # L_comp uses "without BH mass" Gaussian for both variants
         # (uncataloged host has no galaxy mass information)
-        combined_without_bh_mass = float(
-            f_i * L_cat_without_bh_mass + (1 - f_i) * L_comp
-        )
+        combined_without_bh_mass = float(f_i * L_cat_without_bh_mass + (1 - f_i) * L_comp)
         combined_with_bh_mass = float(f_i * L_cat_with_bh_mass + (1 - f_i) * L_comp)
 
         return (combined_without_bh_mass, combined_with_bh_mass)

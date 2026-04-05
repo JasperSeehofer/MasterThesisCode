@@ -95,13 +95,11 @@ def sample_uncertainties() -> dict[str, npt.NDArray[np.float64]]:
 
 
 @pytest.fixture()
-def sample_injected_recovered() -> (
-    tuple[
-        dict[str, npt.NDArray[np.float64]],
-        dict[str, npt.NDArray[np.float64]],
-        dict[str, npt.NDArray[np.float64]],
-    ]
-):
+def sample_injected_recovered() -> tuple[
+    dict[str, npt.NDArray[np.float64]],
+    dict[str, npt.NDArray[np.float64]],
+    dict[str, npt.NDArray[np.float64]],
+]:
     """Fake injected, recovered, and uncertainty data for 6 parameters."""
     rng = np.random.default_rng(42)
     params = ["M", "mu", "luminosity_distance", "a", "e0", "qS"]
@@ -120,14 +118,12 @@ def sample_injected_recovered() -> (
 
 
 @pytest.fixture()
-def sample_sky_data() -> (
-    tuple[
-        npt.NDArray[np.float64],
-        npt.NDArray[np.float64],
-        npt.NDArray[np.float64],
-        list[npt.NDArray[np.float64]],
-    ]
-):
+def sample_sky_data() -> tuple[
+    npt.NDArray[np.float64],
+    npt.NDArray[np.float64],
+    npt.NDArray[np.float64],
+    list[npt.NDArray[np.float64]],
+]:
     """Sky data: (theta_s, phi_s, snr, covariances) for 10 sources."""
     rng = np.random.default_rng(42)
     theta_s = rng.uniform(0.1, np.pi - 0.1, 10)
@@ -153,8 +149,20 @@ def sample_crb_row() -> pd.Series:
     data: dict[str, float] = {}
     # Parameter values
     param_values = [
-        1e6, 10.0, 0.6, 10.0, 0.2, 1.0, 1000.0,
-        1.0, 2.0, 0.5, 3.0, 0.1, 0.2, 0.3,
+        1e6,
+        10.0,
+        0.6,
+        10.0,
+        0.2,
+        1.0,
+        1000.0,
+        1.0,
+        2.0,
+        0.5,
+        3.0,
+        0.1,
+        0.2,
+        0.3,
     ]
     for name, val in zip(PARAMETER_NAMES, param_values):
         data[name] = val

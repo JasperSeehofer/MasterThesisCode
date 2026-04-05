@@ -57,7 +57,9 @@ def _plot_detection_heatmap(
         contour_levels = [0.5, 0.9]
 
     cs = ax.contourf(
-        x, y, prob,
+        x,
+        y,
+        prob,
         levels=np.linspace(0, 1, 51),
         cmap=CMAP,
         vmin=0,
@@ -66,7 +68,9 @@ def _plot_detection_heatmap(
 
     # Contour lines at specified probability thresholds
     contours = ax.contour(
-        x, y, prob,
+        x,
+        y,
+        prob,
         levels=contour_levels,
         colors=EDGE,
         linewidths=1.0,

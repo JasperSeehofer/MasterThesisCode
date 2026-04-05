@@ -3,11 +3,10 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import pytest
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 
-from master_thesis_code.plotting._data import PARAMETER_NAMES, reconstruct_covariance
+from master_thesis_code.plotting._data import PARAMETER_NAMES
 from master_thesis_code.plotting.fisher_plots import (
     plot_characteristic_strain,
     plot_fisher_corner,

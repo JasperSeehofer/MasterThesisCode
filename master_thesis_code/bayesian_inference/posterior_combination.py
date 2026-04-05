@@ -136,9 +136,7 @@ def build_likelihood_array(
             if h in h_map:
                 array[row, col] = h_map[h]
 
-    logger.info(
-        "Built likelihood array: %d events x %d h-bins", n_events, n_h
-    )
+    logger.info("Built likelihood array: %d events x %d h-bins", n_events, n_h)
     return array, detection_indices
 
 
@@ -263,8 +261,7 @@ def _physics_floor(
             floor_value = float(np.min(nonzero_vals))
             result[i, zero_mask] = floor_value
             logger.info(
-                "Physics floor: event row %d: floored %d of %d bins "
-                "with value %.6e",
+                "Physics floor: event row %d: floored %d of %d bins with value %.6e",
                 i,
                 n_zeros,
                 n_bins,
@@ -274,9 +271,7 @@ def _physics_floor(
     excluded = int(np.sum(exclude_mask))
     kept = result[~exclude_mask]
     if excluded > 0:
-        logger.info(
-            "Physics floor: excluded %d all-zero events", excluded
-        )
+        logger.info("Physics floor: excluded %d all-zero events", excluded)
     return kept, excluded
 
 
@@ -379,9 +374,7 @@ def generate_diagnostic_report(
     if zero_det_indices:
         lines.append("| Detection Index | Zero h-bins | Pattern |")
         lines.append("|---|---|---|")
-        for det_idx, bins, pat in zip(
-            zero_det_indices, zero_h_bins, zero_patterns
-        ):
+        for det_idx, bins, pat in zip(zero_det_indices, zero_h_bins, zero_patterns):
             bins_str = ", ".join(f"{h:.2f}" for h in bins)
             lines.append(f"| {det_idx} | {bins_str} | {pat} |")
     else:
@@ -457,27 +450,20 @@ def generate_comparison_table(
     lines: list[str] = []
     lines.append("# Posterior Combination Method Comparison\n")
     lines.append(f"## Variant: {variant}\n")
-    lines.append(
-        "| Strategy | Events Used | Events Excluded | MAP h | MAP Posterior Value |"
-    )
+    lines.append("| Strategy | Events Used | Events Excluded | MAP h | MAP Posterior Value |")
     lines.append("|---|---|---|---|---|")
 
     for strat in CombinationStrategy:
         processed, excluded = apply_strategy(likelihoods, strat)
         n_used = n_total - excluded
         if processed.shape[0] == 0:
-            lines.append(
-                f"| {strat.value} | 0 | {excluded} | N/A | N/A |"
-            )
+            lines.append(f"| {strat.value} | 0 | {excluded} | N/A | N/A |")
             continue
         posterior = combine_log_space(processed)
         map_idx = int(np.argmax(posterior))
         map_h = float(h_arr[map_idx])
         map_val = float(posterior[map_idx])
-        lines.append(
-            f"| {strat.value} | {n_used} | {excluded} "
-            f"| {map_h:.4f} | {map_val:.6f} |"
-        )
+        lines.append(f"| {strat.value} | {n_used} | {excluded} | {map_h:.4f} | {map_val:.6f} |")
 
     return "\n".join(lines)
 
@@ -523,9 +509,7 @@ def combine_posteriors(
 
     # Load and build array
     h_values, event_likelihoods = load_posterior_jsons(posteriors_path)
-    likelihoods, detection_indices = build_likelihood_array(
-        h_values, event_likelihoods
-    )
+    likelihoods, detection_indices = build_likelihood_array(h_values, event_likelihoods)
 
     n_total = likelihoods.shape[0]
 
@@ -555,8 +539,7 @@ def combine_posteriors(
     variant = posteriors_path.name
 
     logger.info(
-        "Combined %d events (excluded %d, empty %d) with strategy '%s': "
-        "MAP h=%.4f",
+        "Combined %d events (excluded %d, empty %d) with strategy '%s': MAP h=%.4f",
         n_used,
         n_excluded,
         n_empty,
@@ -565,14 +548,10 @@ def combine_posteriors(
     )
 
     # Generate reports
-    diag_report = generate_diagnostic_report(
-        h_values, likelihoods, detection_indices
-    )
+    diag_report = generate_diagnostic_report(h_values, likelihoods, detection_indices)
     (output_path / "diagnostic_report.md").write_text(diag_report)
 
-    comp_table = generate_comparison_table(
-        h_arr, likelihoods, detection_indices, variant
-    )
+    comp_table = generate_comparison_table(h_arr, likelihoods, detection_indices, variant)
     (output_path / "comparison_table.md").write_text(comp_table)
 
     # Build result

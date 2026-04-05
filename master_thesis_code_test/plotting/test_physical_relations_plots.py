@@ -23,9 +23,7 @@ def test_plot_distance_redshift_multi_h0(
 ) -> None:
     """Multi-H0 mode plots additional comparison curves."""
 
-    def distance_fn(
-        z: npt.NDArray[np.float64], h0: float
-    ) -> npt.NDArray[np.float64]:
+    def distance_fn(z: npt.NDArray[np.float64], h0: float) -> npt.NDArray[np.float64]:
         return z * 4000.0 / h0
 
     fig, ax = plot_distance_redshift(

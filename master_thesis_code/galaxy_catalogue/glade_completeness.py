@@ -78,9 +78,7 @@ class GladeCatalogCompleteness:
         Returns:
             Completeness in percent (0-100).
         """
-        return float(
-            np.interp(distance, self.distance, self.completeness, right=0.0)
-        )
+        return float(np.interp(distance, self.distance, self.completeness, right=0.0))
 
     # ------------------------------------------------------------------
     # New interface: fraction in [0, 1]

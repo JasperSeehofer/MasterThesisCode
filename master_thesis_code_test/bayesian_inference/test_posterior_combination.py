@@ -148,9 +148,7 @@ class TestApplyStrategy:
 
     def test_strategy_per_event_floor(self) -> None:
         likelihoods = np.array([[5.0, 0.0, 10.0]])
-        result, excluded = apply_strategy(
-            likelihoods, CombinationStrategy.PER_EVENT_FLOOR
-        )
+        result, excluded = apply_strategy(likelihoods, CombinationStrategy.PER_EVENT_FLOOR)
         assert excluded == 0
         # min(5.0, 10.0) / 100 = 0.05
         assert result[0, 1] == pytest.approx(0.05)
@@ -160,9 +158,7 @@ class TestApplyStrategy:
 
     def test_strategy_per_event_floor_all_zero(self) -> None:
         likelihoods = np.array([[0.0, 0.0]])
-        result, excluded = apply_strategy(
-            likelihoods, CombinationStrategy.PER_EVENT_FLOOR
-        )
+        result, excluded = apply_strategy(likelihoods, CombinationStrategy.PER_EVENT_FLOOR)
         assert excluded == 0
         assert result[0, 0] == pytest.approx(np.finfo(float).tiny)
         assert result[0, 1] == pytest.approx(np.finfo(float).tiny)
@@ -170,9 +166,7 @@ class TestApplyStrategy:
     def test_strategy_physics_floor_basic(self) -> None:
         """Physics floor: zeros replaced with min(nonzero) per event."""
         likelihoods = np.array([[5.0, 0.0, 10.0]])
-        result, excluded = apply_strategy(
-            likelihoods, CombinationStrategy.PHYSICS_FLOOR
-        )
+        result, excluded = apply_strategy(likelihoods, CombinationStrategy.PHYSICS_FLOOR)
         assert excluded == 0
         # Floor = min nonzero = 5.0 (NOT divided by 100)
         np.testing.assert_array_equal(result[0], [5.0, 5.0, 10.0])
@@ -180,9 +174,7 @@ class TestApplyStrategy:
     def test_strategy_physics_floor_per_event(self) -> None:
         """Physics floor is independent per event (D-03)."""
         likelihoods = np.array([[5.0, 0.0, 10.0], [1.0, 2.0, 0.0]])
-        result, excluded = apply_strategy(
-            likelihoods, CombinationStrategy.PHYSICS_FLOOR
-        )
+        result, excluded = apply_strategy(likelihoods, CombinationStrategy.PHYSICS_FLOOR)
         assert excluded == 0
         # Row 0: floor = 5.0
         np.testing.assert_array_equal(result[0], [5.0, 5.0, 10.0])
@@ -192,9 +184,7 @@ class TestApplyStrategy:
     def test_strategy_physics_floor_all_zero_excluded(self) -> None:
         """All-zero event is excluded (no nonzero value for floor)."""
         likelihoods = np.array([[0.0, 0.0], [1.0, 2.0]])
-        result, excluded = apply_strategy(
-            likelihoods, CombinationStrategy.PHYSICS_FLOOR
-        )
+        result, excluded = apply_strategy(likelihoods, CombinationStrategy.PHYSICS_FLOOR)
         assert excluded == 1
         assert result.shape == (1, 2)
         np.testing.assert_array_equal(result[0], [1.0, 2.0])
@@ -202,15 +192,11 @@ class TestApplyStrategy:
     def test_strategy_physics_floor_no_zeros(self) -> None:
         """No zeros: array unchanged, excluded_count=0."""
         likelihoods = np.array([[1.0, 2.0]])
-        result, excluded = apply_strategy(
-            likelihoods, CombinationStrategy.PHYSICS_FLOOR
-        )
+        result, excluded = apply_strategy(likelihoods, CombinationStrategy.PHYSICS_FLOOR)
         assert excluded == 0
         np.testing.assert_array_equal(result[0], [1.0, 2.0])
 
-    def test_strategy_physics_floor_logs_floor_info(
-        self, caplog: pytest.LogCaptureFixture
-    ) -> None:
+    def test_strategy_physics_floor_logs_floor_info(self, caplog: pytest.LogCaptureFixture) -> None:
         """Floor application is logged with event index and floor value."""
         likelihoods = np.array([[5.0, 0.0, 10.0]])
         with caplog.at_level(logging.INFO):
@@ -265,11 +251,13 @@ class TestCombineLogSpace:
 class TestGenerateDiagnosticReport:
     def test_contains_required_sections(self) -> None:
         h_values = [0.6, 0.7, 0.8]
-        likelihoods = np.array([
-            [1.0, 2.0, 3.0],
-            [0.0, 0.0, 1.0],
-            [5.0, 6.0, 7.0],
-        ])
+        likelihoods = np.array(
+            [
+                [1.0, 2.0, 3.0],
+                [0.0, 0.0, 1.0],
+                [5.0, 6.0, 7.0],
+            ]
+        )
         detection_indices = [10, 20, 30]
         report = generate_diagnostic_report(h_values, likelihoods, detection_indices)
         assert "# Zero-Likelihood Diagnostic Report" in report or "## Zero-Likelihood" in report
@@ -292,11 +280,13 @@ class TestGenerateDiagnosticReport:
 class TestGenerateComparisonTable:
     def test_contains_all_strategies(self) -> None:
         h_values = np.array([0.6, 0.7, 0.8])
-        likelihoods = np.array([
-            [1.0, 2.0, 3.0],
-            [0.0, 1.0, 2.0],
-            [5.0, 6.0, 7.0],
-        ])
+        likelihoods = np.array(
+            [
+                [1.0, 2.0, 3.0],
+                [0.0, 1.0, 2.0],
+                [5.0, 6.0, 7.0],
+            ]
+        )
         detection_indices = [0, 1, 2]
         table = generate_comparison_table(h_values, likelihoods, detection_indices, "test")
         assert "naive" in table.lower()
@@ -346,9 +336,7 @@ class TestCombinePosteriors:
         posterior = np.array(result["posterior"])
         assert posterior.sum() == pytest.approx(1.0, abs=1e-6)
 
-    def test_physics_floor_works(
-        self, posteriors_dir: Path, tmp_path: Path
-    ) -> None:
+    def test_physics_floor_works(self, posteriors_dir: Path, tmp_path: Path) -> None:
         output_dir = tmp_path / "output"
         output_dir.mkdir()
         result = combine_posteriors(
@@ -376,14 +364,10 @@ _CAMPAIGN_CANDIDATES = [
     Path("results/h_sweep_20260401/posteriors"),
     Path("/home/jasper/Repositories/MasterThesisCode/results/h_sweep_20260401/posteriors"),
 ]
-CAMPAIGN_DIR: Path | None = next(
-    (p for p in _CAMPAIGN_CANDIDATES if p.exists()), None
-)
+CAMPAIGN_DIR: Path | None = next((p for p in _CAMPAIGN_CANDIDATES if p.exists()), None)
 
 
-@pytest.mark.skipif(
-    CAMPAIGN_DIR is None, reason="Campaign data not available"
-)
+@pytest.mark.skipif(CAMPAIGN_DIR is None, reason="Campaign data not available")
 class TestCampaignIntegration:
     """Integration tests against the real h_sweep_20260401 campaign data."""
 

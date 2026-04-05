@@ -132,9 +132,7 @@ class TestCompletionTermPositive:
             d_L_frac = d_L / d_L_det
             phi = np.full_like(z, phi_det)
             theta = np.full_like(z, theta_det)
-            p_gw: npt.NDArray[np.float64] = gw_gaussian.pdf(
-                np.vstack([phi, theta, d_L_frac]).T
-            )
+            p_gw: npt.NDArray[np.float64] = gw_gaussian.pdf(np.vstack([phi, theta, d_L_frac]).T)
             dVc: npt.NDArray[np.float64] = np.atleast_1d(
                 np.asarray(comoving_volume_element(z, h=h), dtype=np.float64)
             )
@@ -182,9 +180,7 @@ class TestCompletionTermDimensionless:
                 d_L_frac = d_L / d_L_det
                 phi = np.full_like(z, phi_det)
                 theta = np.full_like(z, theta_det)
-                p_gw: npt.NDArray[np.float64] = gw_gaussian.pdf(
-                    np.vstack([phi, theta, d_L_frac]).T
-                )
+                p_gw: npt.NDArray[np.float64] = gw_gaussian.pdf(np.vstack([phi, theta, d_L_frac]).T)
                 dVc: npt.NDArray[np.float64] = np.atleast_1d(
                     np.asarray(comoving_volume_element(z, h=h), dtype=np.float64)
                 )
@@ -229,9 +225,7 @@ class TestFVariesWithH:
         assert f_low_h != f_high_h, (
             f"f_i must vary with h: f(h=0.6)={f_low_h}, f(h=0.86)={f_high_h}"
         )
-        assert f_high_h > f_low_h, (
-            "Higher h should give higher completeness (smaller d_L)"
-        )
+        assert f_high_h > f_low_h, "Higher h should give higher completeness (smaller d_L)"
 
 
 # ======================================================================
@@ -259,24 +253,16 @@ class TestCompletionIntegrandUsesDetectionSkyPosition:
         phi_det_1 = 1.0
         theta_det_1 = 0.5
         cov = np.diag([0.01**2, 0.01**2, sigma_d_L_frac**2])
-        gw_gaussian_1 = multivariate_normal(
-            mean=[phi_det_1, theta_det_1, 1.0], cov=cov
-        )
+        gw_gaussian_1 = multivariate_normal(mean=[phi_det_1, theta_det_1, 1.0], cov=cov)
         d_L = np.asarray(dist_vectorized(z_test, h=h), dtype=np.float64)
         d_L_frac = d_L / d_L_det
-        val_1 = float(gw_gaussian_1.pdf(
-            [phi_det_1, theta_det_1, float(d_L_frac[0])]
-        ))
+        val_1 = float(gw_gaussian_1.pdf([phi_det_1, theta_det_1, float(d_L_frac[0])]))
 
         # Case 2: detection at (phi=2.0, theta=1.0) - different sky position
         phi_det_2 = 2.0
         theta_det_2 = 1.0
-        gw_gaussian_2 = multivariate_normal(
-            mean=[phi_det_2, theta_det_2, 1.0], cov=cov
-        )
-        val_2 = float(gw_gaussian_2.pdf(
-            [phi_det_2, theta_det_2, float(d_L_frac[0])]
-        ))
+        gw_gaussian_2 = multivariate_normal(mean=[phi_det_2, theta_det_2, 1.0], cov=cov)
+        val_2 = float(gw_gaussian_2.pdf([phi_det_2, theta_det_2, float(d_L_frac[0])]))
 
         # Both evaluate at their own detection position (the peak), so
         # they should be equal (both at the Gaussian peak in phi/theta)
@@ -286,9 +272,7 @@ class TestCompletionIntegrandUsesDetectionSkyPosition:
         )
 
         # But evaluating Gaussian 1 at Gaussian 2's position should differ
-        val_cross = float(gw_gaussian_1.pdf(
-            [phi_det_2, theta_det_2, float(d_L_frac[0])]
-        ))
+        val_cross = float(gw_gaussian_1.pdf([phi_det_2, theta_det_2, float(d_L_frac[0])]))
         assert val_cross != pytest.approx(val_1, rel=0.01), (
             "If evaluated at a different sky position, GW likelihood should change"
         )

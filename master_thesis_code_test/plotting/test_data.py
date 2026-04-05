@@ -5,15 +5,12 @@ intrinsic/extrinsic partitioning, and label key mapping.
 """
 
 import numpy as np
-import numpy.typing as npt
 import pandas as pd
-import pytest
 
 from master_thesis_code.plotting._data import (
     EXTRINSIC,
     INTRINSIC,
     PARAMETER_NAMES,
-    PARAM_TO_LABEL_KEY,
     label_key,
     reconstruct_covariance,
 )

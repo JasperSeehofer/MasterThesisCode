@@ -246,7 +246,7 @@ def test_evaluation_pipeline_produces_valid_posterior(
 
     fig, ax = plot_event_posteriors(
         h_values=h_arr,
-        posterior_data=plot_data,
+        posteriors=plot_data,
         true_h=0.73,
         title="Integration test: single h-value",
     )
@@ -358,7 +358,7 @@ def test_posterior_narrows_with_more_detections(
 
         fig_events, _ = plot_event_posteriors(
             h_values=H_GRID,
-            posterior_data=subset_data,
+            posteriors=subset_data,
             true_h=TRUE_H,
             title=f"Individual event posteriors ({n_det} det)",
         )
