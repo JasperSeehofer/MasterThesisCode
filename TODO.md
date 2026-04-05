@@ -317,6 +317,9 @@ Current: 149 tests, 37% coverage (gate 25%), target 50%.
       (blocks import on CPU machines without `try/except` guard)
 - [ ] Tag git release `v0.1.0` once current branch is merged: `git tag v0.1.0`
 - [ ] Add Codecov integration to CI for a coverage badge in README
+- [ ] Rename GitHub repository from `MasterThesisCode` to `emri-dark-siren-h0` (or similar).
+      Touches: CI badge URL in README, git remote URLs, all documentation references.
+      GitHub auto-redirects the old URL indefinitely. Do as a dedicated task.
 
 ---
 

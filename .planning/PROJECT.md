@@ -1,12 +1,12 @@
-# EMRI Parameter Estimation — HPC Integration
+# EMRI Dark Siren H₀ Inference
 
 ## What This Is
 
-A gravitational wave parameter estimation pipeline for LISA Extreme Mass Ratio Inspirals (EMRIs). Two pipelines: (1) GPU-accelerated EMRI simulation that computes SNR and Cramér-Rao bounds, and (2) CPU-based Bayesian inference that evaluates the Hubble constant posterior. The v1.0 milestone delivered production-ready HPC/cluster support: both pipelines now run on bwUniCluster 3.0 at KIT as SLURM array jobs with a single-command submission, reproducible seeding, failure recovery, and complete documentation.
+A dark siren inference pipeline for measuring the Hubble constant H₀ from LISA Extreme Mass Ratio Inspiral (EMRI) detections. Two pipelines: (1) GPU-accelerated EMRI simulation that computes SNR and Cramér-Rao bounds on bwUniCluster 3.0, and (2) CPU-based Bayesian inference that evaluates the H₀ posterior using the GLADE+ galaxy catalog with completeness correction (Gray et al. 2020). The thesis is complete; the project now focuses on finishing the research and wrapping results into a paper.
 
 ## Core Value
 
-The simulation pipeline runs reliably on the GPU cluster as SLURM array jobs, producing enough Cramér-Rao bounds for statistically meaningful Hubble constant posteriors.
+Measure H₀ from simulated EMRI dark siren events with galaxy catalog completeness correction, producing publication-ready results.
 
 ## Shipped Milestones
 
@@ -101,8 +101,8 @@ All 5 milestones shipped (v1.0–v1.4). 23 phases, 41 plans completed across 9 d
 - Dask/Ray distributed computing — overkill for this use case
 - GPU CI runners — cluster testing is manual; GitHub Actions stays CPU-only
 - Checkpointing/resume — each array task is short enough; failed tasks can be re-submitted
-- Self-hosted runners on cluster — security and maintenance overhead not justified for a thesis
-- Apptainer container definition — module-based approach works well; container deferred as not needed for thesis
+- Self-hosted runners on cluster — security and maintenance overhead not justified for this project
+- Apptainer container definition — module-based approach works well; container not needed
 
 ## Context
 

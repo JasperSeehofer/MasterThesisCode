@@ -46,7 +46,7 @@ uv run pytest -m "not gpu and not slow"
 uv run pytest -m "slow" --benchmark-only
 
 # Run mypy
-uv run mypy master_thesis_code/
+uv run mypy master_thesis_code/ master_thesis_code_test/
 ```
 
 Note: `fastemriwaveforms` installs as the `few` Python package — `import few`, not `import fastemriwaveforms`.
@@ -329,11 +329,11 @@ Prefix the commit subject line with `[PHYSICS]`:
 <!-- GSD:project-start source:PROJECT.md -->
 ## Project
 
-**EMRI Parameter Estimation — HPC Integration**
+**EMRI Dark Siren H₀ Inference**
 
-A gravitational wave parameter estimation pipeline for LISA Extreme Mass Ratio Inspirals (EMRIs). Two pipelines: (1) GPU-accelerated EMRI simulation that computes SNR and Cramer-Rao bounds, and (2) CPU-based Bayesian inference that evaluates the Hubble constant posterior. This milestone adds production-ready HPC/cluster support so both pipelines run on bwUniCluster 3.0 at KIT with proper job management, environment setup, and best-practices documentation.
+A dark siren inference pipeline for measuring the Hubble constant H₀ from LISA Extreme Mass Ratio Inspiral (EMRI) detections. Two pipelines: (1) GPU-accelerated EMRI simulation that computes SNR and Cramer-Rao bounds on bwUniCluster 3.0, and (2) CPU-based Bayesian inference that evaluates the H₀ posterior using the GLADE+ galaxy catalog with completeness correction.
 
-**Core Value:** The simulation pipeline runs reliably on the GPU cluster as SLURM array jobs, producing enough Cramer-Rao bounds for statistically meaningful Hubble constant posteriors.
+**Core Value:** Measure H₀ from simulated EMRI dark siren events with galaxy catalog completeness correction (Gray et al. 2020), producing publication-ready results.
 
 ### Constraints
 
@@ -350,7 +350,7 @@ A gravitational wave parameter estimation pipeline for LISA Extreme Mass Ratio I
 See `pyproject.toml` for complete dependency list and tool configuration.
 Key: Python 3.13, NumPy/SciPy/Pandas/Matplotlib, CuPy (GPU), fastemriwaveforms (EMRI waveforms), astropy (constants).
 Dev tools: ruff (lint/format), mypy (types), pytest (tests), pre-commit (hooks).
-CI: check (lint+type+test), integration (slow tests), docs (Sphinx).
+CI: check (lint+type+test on source+tests), integration (slow tests), docs (Sphinx), pages (docs+plots deploy on main).
 <!-- GSD:stack-end -->
 
 <!-- GSD:conventions-start source:CONVENTIONS.md -->
