@@ -31,6 +31,33 @@ TRUE_H = 0.73
 H_GRID = np.linspace(0.64, 0.82, 11)
 
 
+def _create_synthetic_injection_csvs(directory: str) -> None:
+    """Create synthetic injection CSVs for SimulationDetectionProbability."""
+    import pandas as pd
+
+    rng = np.random.default_rng(42)
+    for h_value in [0.70, 0.73, 0.80]:
+        n = 200
+        h_label = f"{h_value:.2f}".replace(".", "p")
+        z = rng.uniform(0.01, 1.0, size=n)
+        df = pd.DataFrame(
+            {
+                "z": z,
+                "M": rng.uniform(1e5, 5e5, size=n),
+                "phiS": rng.uniform(0, 2 * np.pi, size=n),
+                "qS": rng.uniform(0, np.pi, size=n),
+                "SNR": np.where(
+                    rng.random(n) > 0.5,
+                    rng.uniform(25, 50, n),
+                    rng.uniform(5, 15, n),
+                ),
+                "h_inj": h_value,
+                "luminosity_distance": z * 4.0,
+            }
+        )
+        df.to_csv(f"{directory}/injection_h_{h_label}_task_001.csv", index=False)
+
+
 def _combine_posterior(
     posterior_data: dict[int, list[float]],
     detection_indices: list[int],
@@ -148,12 +175,13 @@ def test_evaluation_pipeline_produces_valid_posterior(
         FIXTURES_DIR / "synthetic_prepared_cramer_rao_bounds.csv",
         sim_dir / "prepared_cramer_rao_bounds.csv",
     )
-    shutil.copy(
-        FIXTURES_DIR / "synthetic_undetected_events.csv",
-        sim_dir / "undetected_events.csv",
-    )
 
-    # ── 2. Monkeypatch CSV paths in bayesian_statistics module ──────────
+    # ── 2. Create synthetic injection CSVs for detection probability ─────
+    injection_dir = sim_dir / "injections"
+    injection_dir.mkdir()
+    _create_synthetic_injection_csvs(str(injection_dir))
+
+    # ── 3. Monkeypatch CSV paths in bayesian_statistics module ──────────
     import master_thesis_code.bayesian_inference.bayesian_statistics as bs
 
     monkeypatch.setattr(
@@ -166,19 +194,15 @@ def test_evaluation_pipeline_produces_valid_posterior(
         "CRAMER_RAO_BOUNDS_OUTPUT_PATH",
         str(sim_dir / "cramer_rao_bounds.csv"),
     )
-    monkeypatch.setattr(
-        bs,
-        "UNDETECTED_EVENTS_OUTPUT_PATH",
-        str(sim_dir / "undetected_events.csv"),
-    )
+    monkeypatch.setattr(bs, "INJECTION_DATA_DIR", str(injection_dir))
 
-    # ── 3. Monkeypatch cwd so relative output paths land in tmp_path ────
+    # ── 4. Monkeypatch cwd so relative output paths land in tmp_path ────
     monkeypatch.chdir(tmp_path)
 
-    # ── 4. Guarantee enough CPUs for the multiprocessing pool ───────────
+    # ── 5. Guarantee enough CPUs for the multiprocessing pool ───────────
     monkeypatch.setattr(os, "sched_getaffinity", lambda _pid: set(range(4)))
 
-    # ── 5. Create real Model1CrossCheck (needs MCMC burn-in) ────────────
+    # ── 6. Create real Model1CrossCheck (needs MCMC burn-in) ────────────
     from master_thesis_code.bayesian_inference.bayesian_statistics import BayesianStatistics
     from master_thesis_code.cosmological_model import Model1CrossCheck
 
@@ -187,7 +211,6 @@ def test_evaluation_pipeline_produces_valid_posterior(
     # ── 6. Create BayesianStatistics (reads monkeypatched CSV paths) ────
     bayesian_stats = BayesianStatistics()
     assert len(bayesian_stats.cramer_rao_bounds) == 5
-    assert len(bayesian_stats.undetected_events) == 20  # type: ignore[attr-defined]  # pre-existing: attribute does not exist on BayesianStatistics
 
     # ── 7. Run evaluate ─────────────────────────────────────────────────
     h_value = 0.73
@@ -296,10 +319,9 @@ def test_posterior_narrows_with_more_detections(
         FIXTURES_DIR / "synthetic_prepared_cramer_rao_bounds.csv",
         sim_dir / "prepared_cramer_rao_bounds.csv",
     )
-    shutil.copy(
-        FIXTURES_DIR / "synthetic_undetected_events.csv",
-        sim_dir / "undetected_events.csv",
-    )
+    injection_dir = sim_dir / "injections"
+    injection_dir.mkdir()
+    _create_synthetic_injection_csvs(str(injection_dir))
 
     import master_thesis_code.bayesian_inference.bayesian_statistics as bs
 
@@ -307,7 +329,7 @@ def test_posterior_narrows_with_more_detections(
         bs, "PREPARED_CRAMER_RAO_BOUNDS_PATH", str(sim_dir / "prepared_cramer_rao_bounds.csv")
     )
     monkeypatch.setattr(bs, "CRAMER_RAO_BOUNDS_OUTPUT_PATH", str(sim_dir / "cramer_rao_bounds.csv"))
-    monkeypatch.setattr(bs, "UNDETECTED_EVENTS_OUTPUT_PATH", str(sim_dir / "undetected_events.csv"))
+    monkeypatch.setattr(bs, "INJECTION_DATA_DIR", str(injection_dir))
     monkeypatch.chdir(tmp_path)
 
     # ── Build catalog and run full h-sweep with all 5 detections ────────
