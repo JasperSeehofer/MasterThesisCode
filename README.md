@@ -1,6 +1,7 @@
 # EMRI Bayesian H₀ Inference
 
 [![CI](https://github.com/JasperSeehofer/MasterThesisCode/actions/workflows/ci.yml/badge.svg)](https://github.com/JasperSeehofer/MasterThesisCode/actions/workflows/ci.yml)
+[![Docs](https://img.shields.io/badge/docs-GitHub%20Pages-blue)](https://jasperseehofer.github.io/MasterThesisCode/)
 
 Dark siren inference of the Hubble constant H₀ from Extreme Mass Ratio Inspiral (EMRI)
 gravitational wave events detected by the LISA space detector, using Bayesian analysis
