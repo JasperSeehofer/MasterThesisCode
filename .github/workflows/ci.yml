@@ -102,13 +102,13 @@ jobs:
       id-token: write
     steps:
       - name: Download docs artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: docs-html
           path: _site/
 
       - name: Download test plots artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: integration-test-plots
           path: _site/test-plots/
