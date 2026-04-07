@@ -2,26 +2,38 @@
 
 Replaces :class:`DetectionProbability` (KDE-based) with a histogram-binned
 approach that loads raw injection CSVs, applies an SNR threshold at evaluation
-time, and builds P_det interpolation grids per Hubble parameter value.
+time, and builds P_det grids via SNR rescaling.
+
+All injection data is pooled regardless of the Hubble parameter value used
+during the injection campaign.  When querying P_det at a target h value, each
+event's SNR is rescaled using the exact relation:
+
+    SNR(h_target) = SNR_raw * d_L(z, h_inj) / d_L(z, h_target)
+
+This is exact because the GW strain amplitude scales as 1/d_L, while the
+waveform frequency content depends only on source-frame parameters (which are
+h-independent).  See Gray et al. (2020) arXiv:1908.06050 Section III.B-C and
+Laghi et al. (2021) arXiv:2102.01708 Section III.A.
 
 Grids are built in (d_L, M) space so that query-time lookups avoid the
-expensive ``dist_to_redshift`` numerical inversion (fsolve).  The d_L values
-are precomputed from the injection CSV's ``luminosity_distance`` column.
-
-The class provides drop-in replacement methods for the old
-``DetectionProbability`` interface, with an additional ``h`` keyword argument
-to support h-dependent detection probability lookups.
+expensive ``dist_to_redshift`` numerical inversion (fsolve).
 """
+
+# ASSERT_CONVENTION: natural_units=SI, distance=Gpc, mass=solar_masses,
+#   h=dimensionless_H0_over_100, SNR=dimensionless
 
 import glob
 import logging
 import re
-from bisect import bisect_right
+import warnings
+from collections import OrderedDict
 
 import numpy as np
 import numpy.typing as npt
 import pandas as pd
 from scipy.interpolate import RegularGridInterpolator
+
+from master_thesis_code.physical_relations import dist_vectorized
 
 logger = logging.getLogger(__name__)
 
@@ -29,32 +41,44 @@ logger = logging.getLogger(__name__)
 _DL_BINS: int = 30
 _M_BINS: int = 20
 
+# Maximum number of cached grids (LRU eviction)
+_MAX_CACHE_SIZE: int = 20
+
 
 class SimulationDetectionProbability:
     """Simulation-based detection probability from injection campaign data.
 
     Loads raw injection CSVs (z, M, phiS, qS, SNR, h_inj, luminosity_distance),
-    applies an SNR threshold at evaluation time, bins into P_det grids, and
-    provides interpolated lookups.
+    pools ALL events regardless of h_inj, and builds P_det grids on-the-fly
+    via SNR rescaling at query time.
 
-    Grids are built in (d_L, M) space to avoid per-query ``dist_to_redshift``
-    calls.  The ``luminosity_distance`` column from the injection CSV is used
-    directly.
+    For a source at redshift z injected at h_inj with measured SNR_raw, the
+    rescaled SNR at target h is:
 
-    Per D-02: starts with P_det(d_L, M | h) by marginalizing over sky angles.
-    Per D-03: raw SNR stored; threshold applied here at evaluation time.
-    Per D-06: interpolates P_det between h grid points.
+        SNR(h) = SNR_raw * d_L(z, h_inj) / d_L(z, h)
+
+    This is exact because h(t) ~ 1/d_L for gravitational wave strain, while
+    the waveform shape depends only on source-frame parameters.
+
+    Grids are cached with LRU eviction (max 20 entries) for performance.
 
     Args:
         injection_data_dir: Directory containing injection CSV files matching
             ``injection_h_*_task_*.csv`` or ``injection_h_*.csv``.
         snr_threshold: SNR threshold for detection. Events with
             SNR >= snr_threshold are considered detected.
-        h_grid: Explicit list of h values to use. If None, auto-detected
-            from filenames.
+        h_grid: **Deprecated.** Previously used to specify h grid points for
+            pre-computed grids.  Now ignored (grids are built on-the-fly via
+            SNR rescaling).  Passing this parameter emits a deprecation
+            warning.
         _force_unit_weights: Internal flag for testing. When True, passes
             explicit ``weights=np.ones(N)`` to ``_build_grid_2d`` to verify
             IS estimator backward compatibility.
+
+    References:
+        Gray et al. (2020), arXiv:1908.06050, Section III.B-C.
+        Laghi et al. (2021), arXiv:2102.01708, Section III.A.
+        SNR ~ 1/d_L: Hogg (1999), arXiv:astro-ph/9905116, Eq. (16).
     """
 
     def __init__(
@@ -66,6 +90,16 @@ class SimulationDetectionProbability:
         _force_unit_weights: bool = False,
     ) -> None:
         self._snr_threshold = snr_threshold
+        self._force_unit_weights = _force_unit_weights
+
+        if h_grid is not None:
+            warnings.warn(
+                "The 'h_grid' parameter is deprecated and ignored. "
+                "SimulationDetectionProbability now builds P_det grids on-the-fly "
+                "via SNR rescaling from pooled injection data.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
 
         # Glob CSV files matching expected patterns
         patterns = [
@@ -86,60 +120,161 @@ class SimulationDetectionProbability:
             )
             raise FileNotFoundError(msg)
 
-        # Group files by h value extracted from filename
-        h_file_map: dict[float, list[str]] = {}
+        # Extract h values from filenames for reference
         h_pattern = re.compile(r"injection_h_(\d+p\d+)")
+        h_values_found: set[float] = set()
+
+        # Load ALL CSVs and pool into a single DataFrame
+        dfs: list[pd.DataFrame] = []
         for f in csv_files:
             match = h_pattern.search(f)
             if match:
                 h_label = match.group(1)
                 h_val = float(h_label.replace("p", "."))
-                h_file_map.setdefault(h_val, []).append(f)
+                h_values_found.add(h_val)
+            dfs.append(pd.read_csv(f))
 
-        if not h_file_map:
+        if not dfs:
             msg = (
-                f"Could not extract h values from filenames in '{injection_data_dir}'. "
+                f"Could not parse any injection CSV files in '{injection_data_dir}'. "
                 "Expected format: 'injection_h_0p70_task_001.csv'."
             )
             raise FileNotFoundError(msg)
 
-        # Set h grid
-        if h_grid is not None:
-            self._h_grid: list[float] = sorted(h_grid)
-        else:
-            self._h_grid = sorted(h_file_map.keys())
+        self._pooled_df: pd.DataFrame = pd.concat(dfs, ignore_index=True)
+        self._h_values_found: list[float] = sorted(h_values_found)
 
-        # Load data and build interpolators per h value
-        self._interpolators: dict[float, RegularGridInterpolator] = {}
-        self._interpolators_1d: dict[float, RegularGridInterpolator] = {}
+        logger.info(
+            "Pooled %d injection events from %d files (h values: %s).",
+            len(self._pooled_df),
+            len(csv_files),
+            ", ".join(f"{h:.2f}" for h in self._h_values_found),
+        )
+
+        # Validate required columns
+        required_cols = {"z", "M", "SNR", "h_inj", "luminosity_distance"}
+        missing = required_cols - set(self._pooled_df.columns)
+        if missing:
+            msg = f"Injection CSV missing required columns: {missing}"
+            raise ValueError(msg)
+
+        # Pre-extract arrays for efficient rescaling
+        self._z_arr: npt.NDArray[np.float64] = self._pooled_df["z"].values.astype(np.float64)
+        self._M_arr: npt.NDArray[np.float64] = self._pooled_df["M"].values.astype(np.float64)
+        self._snr_raw: npt.NDArray[np.float64] = self._pooled_df["SNR"].values.astype(np.float64)
+        self._h_inj_arr: npt.NDArray[np.float64] = self._pooled_df["h_inj"].values.astype(
+            np.float64
+        )
+        self._dl_raw: npt.NDArray[np.float64] = self._pooled_df[
+            "luminosity_distance"
+        ].values.astype(np.float64)
+
+        # LRU cache for built grids: h_value -> (2D interpolator, 1D interpolator)
+        self._grid_cache: OrderedDict[
+            float,
+            tuple[RegularGridInterpolator, RegularGridInterpolator],
+        ] = OrderedDict()
+
+        # Quality flags cache
         self._quality_flags: dict[
             float, dict[str, npt.NDArray[np.float64] | npt.NDArray[np.bool_]]
         ] = {}
 
-        for h_val in self._h_grid:
-            files = h_file_map.get(h_val, [])
-            if not files:
-                logger.warning("No injection files found for h=%.4f, skipping.", h_val)
-                continue
+    def _rescale_snr(
+        self, h_target: float
+    ) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
+        """Rescale SNR values from injection h to target h.
 
-            dfs = [pd.read_csv(f) for f in files]
-            df = pd.concat(dfs, ignore_index=True)
+        For each event at redshift z injected at h_inj with SNR_raw:
+            d_L_inj = dist(z, h_inj)   [from injection campaign]
+            d_L_target = dist(z, h_target)
+            SNR_target = SNR_raw * d_L_inj / d_L_target
 
-            logger.info(
-                "Loaded %d injection events for h=%.4f from %d files.",
-                len(df),
-                h_val,
-                len(files),
+        The d_L_inj values are recomputed from (z, h_inj) rather than using
+        the stored luminosity_distance column, ensuring consistency with the
+        cosmological model in physical_relations.py.
+
+        Args:
+            h_target: Target Hubble parameter value.
+
+        Returns:
+            Tuple of (d_L_target, SNR_rescaled) arrays, each shape (N,).
+
+        References:
+            SNR ~ 1/d_L: gravitational wave amplitude h(t) ~ 1/d_L.
+            Gray et al. (2020), arXiv:1908.06050, Section III.B-C.
+        """
+        # Compute d_L at injection h for each event
+        # Group by unique h_inj values for efficiency
+        unique_h_inj = np.unique(self._h_inj_arr)
+        d_L_inj = np.empty_like(self._z_arr)
+        for h_inj in unique_h_inj:
+            mask = self._h_inj_arr == h_inj
+            d_L_inj[mask] = dist_vectorized(self._z_arr[mask], h=float(h_inj))
+
+        # Compute d_L at target h for all events
+        d_L_target = dist_vectorized(self._z_arr, h=h_target)
+
+        # Rescale SNR: SNR(h_target) = SNR_raw * d_L(z, h_inj) / d_L(z, h_target)
+        # Guard against d_L_target = 0 (z = 0 edge case)
+        with np.errstate(divide="ignore", invalid="ignore"):
+            snr_rescaled = np.where(
+                d_L_target > 0,
+                self._snr_raw * d_L_inj / d_L_target,
+                0.0,
             )
 
-            weights = np.ones(len(df)) if _force_unit_weights else None
-            self._interpolators[h_val] = self._build_grid_2d(
-                df,
-                snr_threshold,
-                h_val,
-                weights=weights,
-            )
-            self._interpolators_1d[h_val] = self._build_grid_1d(df, snr_threshold)
+        return (
+            np.asarray(d_L_target, dtype=np.float64),
+            np.asarray(snr_rescaled, dtype=np.float64),
+        )
+
+    def _get_or_build_grid(
+        self, h: float
+    ) -> tuple[RegularGridInterpolator, RegularGridInterpolator]:
+        """Get cached grid or build a new one for the given h value.
+
+        Uses LRU eviction when cache exceeds _MAX_CACHE_SIZE entries.
+
+        Args:
+            h: Hubble parameter value.
+
+        Returns:
+            Tuple of (2D interpolator, 1D interpolator).
+        """
+        if h in self._grid_cache:
+            # Move to end (most recently used)
+            self._grid_cache.move_to_end(h)
+            return self._grid_cache[h]
+
+        # Cache miss: build grids via SNR rescaling
+        d_L_target, snr_rescaled = self._rescale_snr(h)
+
+        # Build a temporary DataFrame for the grid builders
+        df_rescaled = pd.DataFrame(
+            {
+                "luminosity_distance": d_L_target,
+                "M": self._M_arr,
+                "SNR": snr_rescaled,
+            }
+        )
+
+        weights = np.ones(len(df_rescaled)) if self._force_unit_weights else None
+
+        interp_2d = self._build_grid_2d(
+            df_rescaled,
+            self._snr_threshold,
+            h_val=h,
+            weights=weights,
+        )
+        interp_1d = self._build_grid_1d(df_rescaled, self._snr_threshold)
+
+        # LRU eviction
+        if len(self._grid_cache) >= _MAX_CACHE_SIZE:
+            self._grid_cache.popitem(last=False)  # Remove oldest
+
+        self._grid_cache[h] = (interp_2d, interp_1d)
+        return interp_2d, interp_1d
 
     def _build_grid_2d(
         self,
@@ -335,10 +470,13 @@ class SimulationDetectionProbability:
         )
 
     def quality_flags(self, h: float) -> dict[str, npt.NDArray[np.float64] | npt.NDArray[np.bool_]]:
-        """Return per-bin quality metadata for the nearest h grid point.
+        """Return per-bin quality metadata for the given h value.
 
         Quality flags are diagnostic metadata stored during grid construction.
         They do **not** affect the P_det interpolation result.
+
+        If the grid for this h has not been built yet, it will be built
+        (triggering SNR rescaling and caching).
 
         The returned dict contains:
 
@@ -351,8 +489,7 @@ class SimulationDetectionProbability:
           size per bin (equals n_total when weights are uniform)
 
         Args:
-            h: Hubble parameter value.  The flags for the nearest h grid
-                point are returned.
+            h: Hubble parameter value.
 
         Returns:
             Dict of quality flag arrays.
@@ -360,101 +497,14 @@ class SimulationDetectionProbability:
         Raises:
             ValueError: If no quality flags are available (empty grid).
         """
-        if not self._quality_flags:
-            msg = "No quality flags available. Were grids built successfully?"
+        # Ensure grid is built (which populates quality flags)
+        if h not in self._quality_flags:
+            self._get_or_build_grid(h)
+
+        if h not in self._quality_flags:
+            msg = f"No quality flags for h={h:.4f} after grid construction."
             raise ValueError(msg)
-
-        # Find nearest h in grid
-        idx = int(np.argmin([abs(h_g - h) for h_g in self._h_grid]))
-        h_nearest = self._h_grid[idx]
-        if h_nearest not in self._quality_flags:
-            msg = f"No quality flags for h={h_nearest:.4f}."
-            raise ValueError(msg)
-        return self._quality_flags[h_nearest]
-
-    def _interpolate_at_h(
-        self,
-        d_L: float | npt.NDArray[np.float64],
-        M: float | npt.NDArray[np.float64],  # noqa: N803
-        h: float,
-    ) -> float | npt.NDArray[np.float64]:
-        """Interpolate P_det(d_L, M) between h grid points.
-
-        Args:
-            d_L: Luminosity distance in Gpc.
-            M: Source-frame BH mass in solar masses.
-            h: Hubble parameter value.
-
-        Returns:
-            Detection probability, linearly interpolated between bracketing
-            h grid values.
-        """
-        dl_arr = np.atleast_1d(np.asarray(d_L, dtype=np.float64))
-        M_arr = np.atleast_1d(np.asarray(M, dtype=np.float64))  # noqa: N806
-        points = np.column_stack([dl_arr, M_arr])
-
-        # Find bracketing h values
-        idx = bisect_right(self._h_grid, h)
-
-        if idx == 0:
-            result = self._interpolators[self._h_grid[0]](points)
-        elif idx >= len(self._h_grid):
-            result = self._interpolators[self._h_grid[-1]](points)
-        elif h == self._h_grid[idx - 1]:
-            result = self._interpolators[h](points)
-        else:
-            h_low = self._h_grid[idx - 1]
-            h_high = self._h_grid[idx]
-            t = (h - h_low) / (h_high - h_low)
-            p_low = self._interpolators[h_low](points)
-            p_high = self._interpolators[h_high](points)
-            result = (1 - t) * p_low + t * p_high
-
-        result = np.clip(result, 0.0, 1.0)
-
-        if np.ndim(d_L) == 0 and np.ndim(M) == 0:
-            return float(result[0])
-        return result  # type: ignore[no-any-return]
-
-    def _interpolate_at_h_1d(
-        self,
-        d_L: float | npt.NDArray[np.float64],
-        h: float,
-    ) -> float | npt.NDArray[np.float64]:
-        """Interpolate P_det(d_L) between h grid points (1D, marginalized over M).
-
-        Args:
-            d_L: Luminosity distance in Gpc.
-            h: Hubble parameter value.
-
-        Returns:
-            Detection probability, linearly interpolated between bracketing
-            h grid values.
-        """
-        dl_arr = np.atleast_1d(np.asarray(d_L, dtype=np.float64))
-        points = dl_arr.reshape(-1, 1)
-
-        idx = bisect_right(self._h_grid, h)
-
-        if idx == 0:
-            result = self._interpolators_1d[self._h_grid[0]](points)
-        elif idx >= len(self._h_grid):
-            result = self._interpolators_1d[self._h_grid[-1]](points)
-        elif h == self._h_grid[idx - 1]:
-            result = self._interpolators_1d[h](points)
-        else:
-            h_low = self._h_grid[idx - 1]
-            h_high = self._h_grid[idx]
-            t = (h - h_low) / (h_high - h_low)
-            p_low = self._interpolators_1d[h_low](points)
-            p_high = self._interpolators_1d[h_high](points)
-            result = (1 - t) * p_low + t * p_high
-
-        result = np.clip(result, 0.0, 1.0)
-
-        if np.ndim(d_L) == 0:
-            return float(result[0])
-        return result  # type: ignore[no-any-return]
+        return self._quality_flags[h]
 
     def detection_probability_with_bh_mass_interpolated(
         self,
@@ -476,7 +526,7 @@ class SimulationDetectionProbability:
 
         The grid is in d_L space, so no ``dist_to_redshift`` inversion is
         needed.  The observer-frame mass M_z is converted to source-frame
-        using the approximate relation z ≈ d_L * H0/c for small z, but since
+        using the approximate relation z ~ d_L * H0/c for small z, but since
         the grid is in (d_L, M) and the injection data stored source-frame M
         directly, we pass M_z as-is (the grid was built from source-frame M).
 
@@ -489,14 +539,22 @@ class SimulationDetectionProbability:
 
         Returns:
             Detection probability in [0, 1].
+
+        References:
+            Gray et al. (2020), arXiv:1908.06050, Eq. (8).
+            Laghi et al. (2021), arXiv:2102.01708, Section III.A.
         """
-        # The injection campaign stores source-frame M directly.
-        # The caller passes M_z (observer-frame = M_source * (1+z)).
-        # For consistency we should convert, but since the grid bins are wide
-        # and the (1+z) factor is modest for z < 0.5 (factor 1.0-1.5),
-        # we pass M_z directly. This is conservative -- it slightly
-        # misaligns the mass bin but does not bias P_det systematically.
-        return self._interpolate_at_h(d_L, M_z, h)
+        interp_2d, _ = self._get_or_build_grid(h)
+
+        dl_arr = np.atleast_1d(np.asarray(d_L, dtype=np.float64))
+        M_arr = np.atleast_1d(np.asarray(M_z, dtype=np.float64))  # noqa: N806
+        points = np.column_stack([dl_arr, M_arr])
+
+        result = np.clip(interp_2d(points), 0.0, 1.0)
+
+        if np.ndim(d_L) == 0 and np.ndim(M_z) == 0:
+            return float(result[0])
+        return result  # type: ignore[no-any-return]
 
     def detection_probability_without_bh_mass_interpolated(
         self,
@@ -523,5 +581,18 @@ class SimulationDetectionProbability:
 
         Returns:
             Detection probability in [0, 1].
+
+        References:
+            Gray et al. (2020), arXiv:1908.06050, Eq. (8).
+            Laghi et al. (2021), arXiv:2102.01708, Section III.A.
         """
-        return self._interpolate_at_h_1d(d_L, h)
+        _, interp_1d = self._get_or_build_grid(h)
+
+        dl_arr = np.atleast_1d(np.asarray(d_L, dtype=np.float64))
+        points = dl_arr.reshape(-1, 1)
+
+        result = np.clip(interp_1d(points), 0.0, 1.0)
+
+        if np.ndim(d_L) == 0:
+            return float(result[0])
+        return result  # type: ignore[no-any-return]
