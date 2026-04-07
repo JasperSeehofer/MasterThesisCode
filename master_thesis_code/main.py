@@ -40,6 +40,37 @@ def main() -> None:
     _ROOT_LOGGER.info("---------- STARTING MASTER THESIS CODE ----------")
     start_time = time()
 
+    # Fast-path: --combine and --generate_figures don't need heavy initialization
+    _needs_model = (
+        arguments.simulation_steps > 0
+        or arguments.evaluate
+        or arguments.snr_analysis
+        or arguments.injection_campaign
+    )
+
+    if arguments.combine:
+        from master_thesis_code.bayesian_inference.posterior_combination import combine_posteriors
+
+        for variant_dir in ["posteriors", "posteriors_with_bh_mass"]:
+            posteriors_dir = os.path.join(arguments.working_directory, variant_dir)
+            if os.path.isdir(posteriors_dir):
+                _ROOT_LOGGER.info(f"Combining posteriors from {posteriors_dir}")
+                combine_posteriors(
+                    posteriors_dir=posteriors_dir,
+                    strategy=arguments.strategy,
+                    output_dir=os.path.join(arguments.working_directory, variant_dir),
+                )
+            else:
+                _ROOT_LOGGER.warning(f"Posteriors directory not found: {posteriors_dir}")
+
+    if arguments.generate_figures is not None:
+        generate_figures(arguments.generate_figures)
+
+    if not _needs_model:
+        end_time = time()
+        _ROOT_LOGGER.debug(f"Finished in {end_time - start_time}s.")
+        return
+
     seed = arguments.seed
     rng = np.random.default_rng(seed)
     _ROOT_LOGGER.info(f"Random seed: {seed}")
@@ -82,24 +113,6 @@ def main() -> None:
             rng=rng,
             use_gpu=arguments.use_gpu,
         )
-
-    if arguments.generate_figures is not None:
-        generate_figures(arguments.generate_figures)
-
-    if arguments.combine:
-        from master_thesis_code.bayesian_inference.posterior_combination import combine_posteriors
-
-        for variant_dir in ["posteriors", "posteriors_with_bh_mass"]:
-            posteriors_dir = os.path.join(arguments.working_directory, variant_dir)
-            if os.path.isdir(posteriors_dir):
-                _ROOT_LOGGER.info(f"Combining posteriors from {posteriors_dir}")
-                combine_posteriors(
-                    posteriors_dir=posteriors_dir,
-                    strategy=arguments.strategy,
-                    output_dir=os.path.join(arguments.working_directory, variant_dir),
-                )
-            else:
-                _ROOT_LOGGER.warning(f"Posteriors directory not found: {posteriors_dir}")
 
     end_time = time()
     _ROOT_LOGGER.debug(f"Finished in {end_time - start_time}s.")
