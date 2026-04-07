@@ -58,6 +58,7 @@ Key carry-forward decisions:
 - [Phase 24]: Completeness estimation — f(z,h) interface and comoving_volume_element delivered. Old get_completeness() backward compat disregarded per user. Data provenance (number vs luminosity completeness) to be verified in Phase 25.
 - [Phase 25]: Likelihood correction — Gray et al. (2020) Eq. 9 combination formula: p_i = f_i * L_cat + (1-f_i) * L_comp. Completion term uses 'without BH mass' 3D Gaussian for both variants (uncataloged host has no galaxy mass info). Integration limits match catalog term (4-sigma d_L).
 - [Phase quick-4]: Quick task 4: Physics audit of PrepareDetections — sigma chain correct, independent sampling non-standard but defensible — Ad-hoc task completed outside planned phases
+- [Phase quick-5]: Quick task 5: SNR rescaling refactor — literature confirms single-h injection is standard (Gray+2020, Laghi+2021, Finke+2021); SimulationDetectionProbability refactored to pool all injection data and compute P_det via exact SNR~1/d_L rescaling — Eliminates interpolation artifacts, pools 463k injection events, enables exact P_det at any h
 
 ### Active Approximations
 

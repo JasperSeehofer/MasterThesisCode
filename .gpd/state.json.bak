@@ -2,19 +2,19 @@
   "project_reference": {
     "project_md_updated": "2026-04-01",
     "core_research_question": "What is the Hubble constant H0 as measured by dark siren inference from LISA EMRI detections?",
-    "current_focus": "v1.3 planning -- bias evolution analysis complete (quick-2)"
+    "current_focus": "v2.0 Phase 26 complete \u2014 PRD paper draft delivered, awaiting production run (Phase 27)"
   },
   "project_contract": null,
   "position": {
-    "current_phase": "--",
-    "current_phase_name": "--",
+    "current_phase": "27",
+    "current_phase_name": "Production Run & Figures",
     "total_phases": null,
-    "current_plan": null,
+    "current_plan": "3/4 complete (Plans 01-03 done, Plan 04 postponed)",
     "total_plans_in_phase": null,
-    "status": "Between milestones",
-    "last_activity": "2026-04-04",
-    "last_activity_desc": "Quick task 2 complete \u2014 bias evolution analysis (quick-2/bias-evolution-analysis.md)",
-    "progress_percent": 100,
+    "status": "Phase 27 partially complete \u2014 data validated, results extracted, figures generated. Paper marker fill (Plan 04) deferred pending pipeline validation.",
+    "last_activity": "2026-04-07",
+    "last_activity_desc": "Plans 01-03 executed: pipeline bugs fixed, production data validated (23+7 files, 538 events), MAP/CI/precision extracted (h=0.66/0.68, both grid-limited), 3 figures generated + 1 placeholder. Plan 04 (paper markers) deferred.",
+    "progress_percent": 60,
     "paused_at": null
   },
   "active_calculations": [],
@@ -23,7 +23,13 @@
     "\"With BH mass\" posterior peak: h=0.652 (P_det=1 baseline, post-all-fixes, still biased)",
     "Detection yield: 0.22-0.81% per h at SNR>=15 (v1.2.2)",
     "IS estimator VRF: 11.8-24.9x in boundary bins (v1.2.2)",
-    "Validation: VALD-01 + VALD-02 PASS (v1.2.2)"
+    "Validation: VALD-01 + VALD-02 PASS (v1.2.2)",
+    "**Production (completeness-corrected, Phase 27):**",
+    "Without BH mass: MAP h=0.66, \u03c3<0.014 (grid UB), precision \u22642.1%, bias -9.6%, 531 events",
+    "With BH mass: MAP h=0.68, \u03c3<0.014 (grid UB), precision \u22642.0%, bias -6.8%, 527 events",
+    "Both CIs grid-limited (15-pt h-grid, spacing 0.02)",
+    "Completeness correction worsened bias vs thesis baseline (0.712/0.742 \u2192 0.66/0.68)",
+    "SNR_THRESHOLD = 15, convergence slope -0.71 (consistent with N^{-1/2})"
   ],
   "open_questions": [
     "[v1.2.1] What causes the remaining \"with BH mass\" low-h bias after /(1+z) fix? -- Diagnosis in quick-2: Sources A (p_det mismatch) + F (zero-likelihood clustering) are primary candidates. Fix requires: (1) P_det=1 production run, (2) zero-likelihood logging, (3) Physics Change Protocol for Source A fix.",
@@ -58,6 +64,26 @@
       "phase": "quick-3",
       "summary": "Quick task 3: Literature research on galaxy catalog completeness correction for dark siren likelihood",
       "rationale": "Root cause of H0 bias identified as GLADE incompleteness; research produced implementation specification based on Gray et al. (2020) framework"
+    },
+    {
+      "phase": "24",
+      "summary": "Completeness estimation",
+      "rationale": "f(z,h) interface and comoving_volume_element delivered. Old get_completeness() backward compat disregarded per user. Data provenance (number vs luminosity completeness) to be verified in Phase 25."
+    },
+    {
+      "phase": "25",
+      "summary": "Likelihood correction",
+      "rationale": "Gray et al. (2020) Eq. 9 combination formula: p_i = f_i * L_cat + (1-f_i) * L_comp. Completion term uses 'without BH mass' 3D Gaussian for both variants (uncataloged host has no galaxy mass info). Integration limits match catalog term (4-sigma d_L)."
+    },
+    {
+      "phase": "quick-4",
+      "summary": "Quick task 4: Physics audit of PrepareDetections",
+      "rationale": "sigma chain correct, independent sampling non-standard but defensible \u2014 Ad-hoc task completed outside planned phases"
+    },
+    {
+      "phase": "quick-5",
+      "summary": "Quick task 5: SNR rescaling refactor",
+      "rationale": "literature confirms single-h injection is standard (Gray+2020, Laghi+2021, Finke+2021); SimulationDetectionProbability refactored to pool all injection data and compute P_det via exact SNR~1/d_L rescaling \u2014 Eliminates interpolation artifacts, pools 463k injection events, enables exact P_det at any h"
     }
   ],
   "approximations": [],
@@ -90,10 +116,10 @@
     "p_det in numerator uses detection.M (Source A, Physics Change Protocol required for fix)"
   ],
   "session": {
-    "last_date": "2026-04-02",
-    "stopped_at": "Quick task 2 complete \u2014 bias evolution analysis written and committed (7e6731c)",
-    "resume_file": ".gpd/quick/2-analyze-evolution-of-residual-bias-ac/bias-evolution-analysis.md"
+    "last_date": "2026-04-07",
+    "stopped_at": "Phase 27 Plans 01-03 complete. Plan 04 (paper marker fill) deferred \u2014 user wants pipeline validation first.",
+    "resume_file": ".gpd/phases/27-production-run-figures/extracted_results.json"
   },
   "_version": 1,
-  "_synced_at": "2026-04-04T12:32:10.829922+00:00"
+  "_synced_at": "2026-04-07T12:12:59.462543+00:00"
 }
