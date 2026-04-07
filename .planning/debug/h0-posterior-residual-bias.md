@@ -1,5 +1,5 @@
 ---
-status: awaiting_human_verify
+status: resolved
 trigger: "H0 posterior residual bias after removing /d_L factor and disabling P_det"
 created: 2026-03-30T00:00:00Z
 updated: 2026-03-30T01:15:00Z
