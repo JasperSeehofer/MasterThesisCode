@@ -27,6 +27,7 @@ import logging
 import re
 import warnings
 from collections import OrderedDict
+from typing import Any
 
 import numpy as np
 import numpy.typing as npt
@@ -179,6 +180,15 @@ class SimulationDetectionProbability:
         self._quality_flags: dict[
             float, dict[str, npt.NDArray[np.float64] | npt.NDArray[np.bool_]]
         ] = {}
+
+    def __getstate__(self) -> dict[str, Any]:
+        """Exclude heavy DataFrame from pickle -- arrays are already extracted."""
+        state = self.__dict__.copy()
+        state["_pooled_df"] = None  # ~25-50 MB per worker saved
+        return state
+
+    def __setstate__(self, state: dict[str, Any]) -> None:
+        self.__dict__.update(state)
 
     def _rescale_snr(
         self, h_target: float

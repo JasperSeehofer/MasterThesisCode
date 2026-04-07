@@ -153,6 +153,11 @@ class BayesianStatistics:
         )
         _LOGGER.debug("Detection probability functions created.")
 
+        # Pre-warm P_det grid cache for target h -- avoids N workers each building
+        # the same grid independently after pool spawn
+        detection_probability._get_or_build_grid(h_value)
+        _LOGGER.debug("P_det grid pre-warmed for h=%.4f.", h_value)
+
         _LOGGER.debug("Creating detection likelihood gaussian functions...")
         detection_likelihood_multivariate_gaussian_by_detection_index: dict[
             int,
