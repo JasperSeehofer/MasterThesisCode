@@ -87,6 +87,23 @@ What is the Hubble constant H0 as measured by dark siren inference from LISA EMR
 | alpha=0.3 defensive mixture | Bounds max weight at 3.33; full support proof | Good (v1.2.2) |
 | Reliable mask on n_total >= 10, not N_eff | N_eff is diagnostic, not gating | Good (v1.2.2) |
 
+## Current Milestone: v2.1 Publication Figures
+
+**Goal:** Unify and modernize the visualization pipeline with publication-quality style, merge disconnected figure paths, exploit per-galaxy likelihood data for novel visualizations, and add interactive figures for GitHub Pages.
+
+**Target results:**
+
+- Unified `--generate_figures` manifest covering paper, thesis, and galaxy-level figures (~20+)
+- Publication-refined style: LaTeX/REVTeX, sequential emphasis palette + accent color, colorblind-safe, minimal spines, modern contour aesthetics (inspired by arXiv:2406.09228v1)
+- Galaxy-level visualizations from 580MB per-event per-galaxy likelihood data (ranking, dominant fraction, BH mass impact, sky map)
+- Completeness f(z,h) standalone + P_det-integrated figures
+- Contour variants for H0 posterior, P_det surface, parameter correlations, galaxy likelihood maps
+- Interactive Plotly/Bokeh HTML figures for GitHub Pages (hover, zoom, pan)
+- Jupyter widget notebooks for parameter exploration
+- All static figures print-optimized and grayscale-safe
+- Auto-detect h-grid resolution (works with current 15-pt and future finer grids)
+- Galaxy data: pre-process to CSV for speed, direct-load fallback for high-memory machines
+
 ## Constraints
 
 - **GPU:** CUDA 12 required; injection campaign runs on bwUniCluster gpu_h100 partition
@@ -97,4 +114,4 @@ What is the Hubble constant H0 as measured by dark siren inference from LISA EMR
 
 ---
 
-_Last updated: 2026-04-01 after v1.2.2 milestone_
+_Last updated: 2026-04-07 after v2.1 milestone start_

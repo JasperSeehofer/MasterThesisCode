@@ -2,22 +2,22 @@
 
 ## Project Reference
 
-See: .gpd/PROJECT.md (updated 2026-04-01)
+See: .gpd/PROJECT.md (updated 2026-04-07)
 
 **Core research question:** What is the Hubble constant H0 as measured by dark siren inference from LISA EMRI detections?
-**Current focus:** v2.0 Phase 26 complete — PRD paper draft delivered, awaiting production run (Phase 27)
+**Current focus:** v2.1 Publication Figures — defining objectives
 
 ## Current Position
 
-**Current Phase:** 27
-**Current Phase Name:** Production Run & Figures
-**Current Plan:** 3/4 complete (Plans 01-03 done, Plan 04 postponed)
-**Total Phases:** 3 (Phases 26-28, v2.0 Paper)
-**Status:** Phase 27 partially complete — data validated, results extracted, figures generated. Paper marker fill (Plan 04) deferred pending pipeline validation.
+**Current Phase:** TBD (v2.1 roadmap pending)
+**Current Phase Name:** Publication Figures — Defining Objectives
+**Current Plan:** —
+**Total Phases:** TBD (v2.0 Phases 26-28 remain; v2.1 phases to be added)
+**Status:** Defining objectives for v2.1 Publication Figures milestone
 **Last Activity:** 2026-04-07
-**Last Activity Description:** Plans 01-03 executed: pipeline bugs fixed, production data validated (23+7 files, 538 events), MAP/CI/precision extracted (h=0.66/0.68, both grid-limited), 3 figures generated + 1 placeholder. Plan 04 (paper markers) deferred.
+**Last Activity Description:** Started v2.1 milestone. Scope: unified figure manifest, publication-refined style, galaxy-level visualizations, interactive Plotly/Bokeh for GitHub Pages, Jupyter widgets. v2.0 Phase 27 (production run) in parallel on cluster.
 
-**Progress:** [██████░░░░] 60% (Phase 27 partial, 28 not started)
+**Progress:** [░░░░░░░░░░] 0% (v2.1 defining objectives)
 
 ## Active Calculations
 
@@ -59,6 +59,7 @@ Key carry-forward decisions:
 - [Phase 25]: Likelihood correction — Gray et al. (2020) Eq. 9 combination formula: p_i = f_i * L_cat + (1-f_i) * L_comp. Completion term uses 'without BH mass' 3D Gaussian for both variants (uncataloged host has no galaxy mass info). Integration limits match catalog term (4-sigma d_L).
 - [Phase quick-4]: Quick task 4: Physics audit of PrepareDetections — sigma chain correct, independent sampling non-standard but defensible — Ad-hoc task completed outside planned phases
 - [Phase quick-5]: Quick task 5: SNR rescaling refactor — literature confirms single-h injection is standard (Gray+2020, Laghi+2021, Finke+2021); SimulationDetectionProbability refactored to pool all injection data and compute P_det via exact SNR~1/d_L rescaling — Eliminates interpolation artifacts, pools 463k injection events, enables exact P_det at any h
+- [Phase 0]: Started milestone v2.1: Publication Figures — New milestone cycle — unify visualization, modern style, galaxy-level plots, interactive figures
 
 ### Active Approximations
 
