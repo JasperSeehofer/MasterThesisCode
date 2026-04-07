@@ -181,13 +181,21 @@ class BayesianStatistics:
             raise ValueError("Hubble constant out of bounds.")
 
         _LOGGER.debug(f"Loaded {len(self.cramer_rao_bounds)} detections...")
-        # filter detections with skylocalization error > 0.01
+        # Filter detections: SNR threshold + relative d_L error
+        n_before = len(self.cramer_rao_bounds)
+        self.cramer_rao_bounds = self.cramer_rao_bounds[
+            self.cramer_rao_bounds["SNR"] >= SNR_THRESHOLD
+        ]
+        _LOGGER.info(
+            f"SNR filter (>= {SNR_THRESHOLD}): {n_before} -> {len(self.cramer_rao_bounds)} detections"
+        )
         for index, detection in self.cramer_rao_bounds.iterrows():
             detection = Detection(detection)
             if use_detection(detection) is False:
                 self.cramer_rao_bounds.drop(index, inplace=True)
-        _LOGGER.debug(
-            f"After filtering {len(self.cramer_rao_bounds)} detections with relative luminosity distance error < {FRACTIONAL_LUMINOSITY_DISTANCE_ERROR_THRESHOLD}"
+        _LOGGER.info(
+            f"After quality filtering: {len(self.cramer_rao_bounds)} detections "
+            f"(d_L relative error < {FRACTIONAL_LUMINOSITY_DISTANCE_ERROR_THRESHOLD})"
         )
         # parameter limitations
         REDSHIFT_LOWER_LIMIT = 0.0
