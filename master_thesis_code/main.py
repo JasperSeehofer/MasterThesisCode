@@ -721,7 +721,7 @@ def generate_figures(output_dir: str) -> None:
     # ------------------------------------------------------------------
 
     crb_df = _load_crb_data()
-    post_data = _load_posteriors("posteriors_without_bh_mass")
+    post_data = _load_posteriors("posteriors")
 
     # ------------------------------------------------------------------
     # Manifest: list of (output_name, generator_callable)
