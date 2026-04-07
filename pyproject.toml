@@ -49,6 +49,7 @@ dev = [
 [project.scripts]
 emri-merge = "scripts.merge_cramer_rao_bounds:main"
 emri-prepare = "scripts.prepare_detections:main"
+emri-merge-injections = "scripts.merge_injections:main"
 
 [build-system]
 requires = ["hatchling"]
