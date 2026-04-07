@@ -105,12 +105,12 @@ def test_apply_style_default_unchanged() -> None:
     """apply_style() with no args matches the mplstyle defaults exactly."""
     apply_style()
     assert matplotlib.rcParams["text.usetex"] is False
-    assert matplotlib.rcParams["font.size"] == 11.0
-    assert matplotlib.rcParams["axes.titlesize"] == 13.0
-    assert matplotlib.rcParams["axes.labelsize"] == 12.0
-    assert matplotlib.rcParams["xtick.labelsize"] == 10.0
-    assert matplotlib.rcParams["ytick.labelsize"] == 10.0
-    assert matplotlib.rcParams["legend.fontsize"] == 10.0
+    assert matplotlib.rcParams["font.size"] == 8.0
+    assert matplotlib.rcParams["axes.titlesize"] == 9.0
+    assert matplotlib.rcParams["axes.labelsize"] == 8.0
+    assert matplotlib.rcParams["xtick.labelsize"] == 7.0
+    assert matplotlib.rcParams["ytick.labelsize"] == 7.0
+    assert matplotlib.rcParams["legend.fontsize"] == 7.0
 
 
 def test_rcparams_snapshot() -> None:
@@ -125,16 +125,23 @@ def test_rcparams_snapshot() -> None:
         "figure.figsize": [6.4, 4.0],
         "figure.dpi": 150.0,
         "savefig.dpi": 300.0,
-        "font.size": 11.0,
-        "axes.titlesize": 13.0,
-        "axes.labelsize": 12.0,
-        "xtick.labelsize": 10.0,
-        "ytick.labelsize": 10.0,
-        "legend.fontsize": 10.0,
+        "font.size": 8.0,
+        "axes.titlesize": 9.0,
+        "axes.labelsize": 8.0,
+        "xtick.labelsize": 7.0,
+        "ytick.labelsize": 7.0,
+        "legend.fontsize": 7.0,
+        "pdf.fonttype": 42,
+        "ps.fonttype": 42,
         "text.usetex": False,
         "lines.linewidth": 1.5,
         "axes.grid": False,
         "axes.linewidth": 0.8,
+        "axes.spines.top": False,
+        "axes.spines.right": False,
+        "xtick.direction": "in",
+        "ytick.direction": "in",
+        "legend.frameon": False,
         "legend.framealpha": 0.8,
         "legend.edgecolor": "0.8",
         "agg.path.chunksize": 10000,
@@ -152,3 +159,27 @@ def test_rcparams_snapshot() -> None:
             assert actual == expected_value, (
                 f"rcParam '{key}' drifted: expected {expected_value}, got {actual}"
             )
+
+
+def test_no_type3_fonts_in_pdf(tmp_path: object) -> None:
+    """Generated PDFs must not contain Type 3 bitmap fonts."""
+    import shutil
+    import subprocess
+
+    if shutil.which("pdffonts") is None:
+        import pytest
+
+        pytest.skip("pdffonts binary not available")
+
+    apply_style()
+    fig, ax = get_figure()
+    ax.plot([0, 1], [0, 1])
+    ax.set_xlabel("x label")
+    ax.set_ylabel("y label")
+    ax.set_title("title")
+    output = os.path.join(str(tmp_path), "font_check.pdf")
+    fig.savefig(output)
+    plt.close(fig)
+
+    result = subprocess.run(["pdffonts", output], capture_output=True, text=True, check=False)
+    assert "Type 3" not in result.stdout, f"Type 3 fonts found in PDF:\n{result.stdout}"

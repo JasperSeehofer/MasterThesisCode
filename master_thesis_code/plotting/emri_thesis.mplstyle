@@ -9,13 +9,17 @@ figure.figsize: 6.4, 4.0
 figure.dpi: 150
 savefig.dpi: 300
 
-# Font
-font.size: 11
-axes.titlesize: 13
-axes.labelsize: 12
-xtick.labelsize: 10
-ytick.labelsize: 10
-legend.fontsize: 10
+# Font — reduced for REVTeX column widths (3.375" single, 7.0" double)
+font.size:          8
+axes.titlesize:     9
+axes.labelsize:     8
+xtick.labelsize:    7
+ytick.labelsize:    7
+legend.fontsize:    7
+
+# PDF/PS font types — 42 = TrueType/Type1 (no Type 3 bitmap fonts)
+pdf.fonttype: 42
+ps.fonttype:  42
 
 # LaTeX rendering (requires a TeX installation)
 text.usetex: False
@@ -23,13 +27,23 @@ text.usetex: False
 # Lines
 lines.linewidth: 1.5
 
-# Axes
-axes.grid: False
-axes.linewidth: 0.8
+# Axes — remove top and right spines (publication style)
+axes.grid:         False
+axes.linewidth:    0.8
+axes.spines.top:   False
+axes.spines.right: False
 
-# Legend
+# Ticks — inward ticks
+xtick.direction: in
+ytick.direction: in
+
+# Legend — frameless
+legend.frameon:    False
 legend.framealpha: 0.8
-legend.edgecolor: 0.8
+legend.edgecolor:  0.8
+
+# Color cycle — Okabe-Ito (Wong 2011, Nature Methods doi:10.1038/nmeth.1618)
+axes.prop_cycle: cycler(color=["#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7"])
 
 # Rendering performance
 agg.path.chunksize: 10000

@@ -37,11 +37,11 @@ def apply_style(*, use_latex: bool = False) -> None:
                 "text.usetex": True,
                 "font.family": "serif",
                 "font.serif": ["Computer Modern Roman"],
-                "font.size": 10,
-                "axes.titlesize": 12,
-                "axes.labelsize": 10,
-                "xtick.labelsize": 9,
-                "ytick.labelsize": 9,
-                "legend.fontsize": 9,
+                "font.size": 8,
+                "axes.titlesize": 9,
+                "axes.labelsize": 8,
+                "xtick.labelsize": 7,
+                "ytick.labelsize": 7,
+                "legend.fontsize": 7,
             }
         )
