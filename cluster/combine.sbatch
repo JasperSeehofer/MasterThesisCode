@@ -12,7 +12,7 @@
 # via command line so that shell variables are expanded correctly.
 
 #SBATCH --job-name=emri-combine
-#SBATCH --partition=cpu
+#SBATCH --partition=cpu_il
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=4
 #SBATCH --time=00:10:00

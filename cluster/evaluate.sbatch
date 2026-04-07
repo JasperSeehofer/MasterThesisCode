@@ -20,10 +20,10 @@
 # via command line so that shell variables are expanded correctly.
 
 #SBATCH --job-name=emri-evaluate
-#SBATCH --partition=cpu
+#SBATCH --partition=cpu_il
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task=96
-#SBATCH --time=01:00:00
+#SBATCH --cpus-per-task=128
+#SBATCH --time=00:15:00
 
 set -euo pipefail
 
