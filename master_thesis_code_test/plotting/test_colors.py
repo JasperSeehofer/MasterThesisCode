@@ -1,6 +1,17 @@
 """Tests for the centralized color palette and label constants."""
 
-from master_thesis_code.plotting._colors import CMAP, CYCLE, EDGE, MEAN, REFERENCE, TRUTH
+from matplotlib.colors import LinearSegmentedColormap
+
+from master_thesis_code.plotting._colors import (
+    ACCENT,
+    CMAP,
+    CYCLE,
+    EDGE,
+    MEAN,
+    REFERENCE,
+    SEQUENTIAL_BLUES,
+    TRUTH,
+)
 from master_thesis_code.plotting._labels import LABELS
 
 # --- _colors.py tests ---
@@ -35,6 +46,21 @@ def test_cycle_entries_are_hex_strings() -> None:
 
 def test_cmap_is_viridis() -> None:
     assert CMAP == "viridis"
+
+
+def test_accent_is_hex() -> None:
+    assert isinstance(ACCENT, str) and ACCENT.startswith("#") and len(ACCENT) == 7
+
+
+def test_sequential_blues_is_cmap_object() -> None:
+    assert isinstance(SEQUENTIAL_BLUES, LinearSegmentedColormap)
+
+
+def test_cycle_is_okabe_ito() -> None:
+    """First three CYCLE entries match Okabe-Ito orange, sky blue, bluish green."""
+    assert CYCLE[0] == "#E69F00"
+    assert CYCLE[1] == "#56B4E9"
+    assert CYCLE[2] == "#009E73"
 
 
 # --- _labels.py tests ---
