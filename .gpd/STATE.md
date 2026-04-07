@@ -9,15 +9,15 @@ See: .gpd/PROJECT.md (updated 2026-04-01)
 
 ## Current Position
 
-**Current Phase:** 26
-**Current Phase Name:** Paper Draft
-**Current Plan:** 1/1 complete
+**Current Phase:** 27
+**Current Phase Name:** Production Run & Figures
+**Current Plan:** 3/4 complete (Plans 01-03 done, Plan 04 postponed)
 **Total Phases:** 3 (Phases 26-28, v2.0 Paper)
-**Status:** Phase 26 complete, Phase 27 not started
-**Last Activity:** 2026-04-05
-**Last Activity Description:** Drafted complete PRD paper (11 pages, 6 sections, 21 references). All sections written: Introduction, Method (12 eqs), Results (4 eqs, 4 figure placeholders), Discussion, Conclusions, Appendix A. 25 RESULT PENDING markers await production run.
+**Status:** Phase 27 partially complete — data validated, results extracted, figures generated. Paper marker fill (Plan 04) deferred pending pipeline validation.
+**Last Activity:** 2026-04-07
+**Last Activity Description:** Plans 01-03 executed: pipeline bugs fixed, production data validated (23+7 files, 538 events), MAP/CI/precision extracted (h=0.66/0.68, both grid-limited), 3 figures generated + 1 placeholder. Plan 04 (paper markers) deferred.
 
-**Progress:** [███░░░░░░░] 33% (Phase 26/28)
+**Progress:** [██████░░░░] 60% (Phase 27 partial, 28 not started)
 
 ## Active Calculations
 
@@ -30,6 +30,12 @@ None.
 - Detection yield: 0.22-0.81% per h at SNR>=15 (v1.2.2)
 - IS estimator VRF: 11.8-24.9x in boundary bins (v1.2.2)
 - Validation: VALD-01 + VALD-02 PASS (v1.2.2)
+- **Production (completeness-corrected, Phase 27):**
+  - Without BH mass: MAP h=0.66, σ<0.014 (grid UB), precision ≤2.1%, bias -9.6%, 531 events
+  - With BH mass: MAP h=0.68, σ<0.014 (grid UB), precision ≤2.0%, bias -6.8%, 527 events
+  - Both CIs grid-limited (15-pt h-grid, spacing 0.02)
+  - Completeness correction worsened bias vs thesis baseline (0.712/0.742 → 0.66/0.68)
+  - SNR_THRESHOLD = 15, convergence slope -0.71 (consistent with N^{-1/2})
 
 ## Open Questions
 
@@ -82,7 +88,8 @@ None.
 
 ## Session Continuity
 
-**Last session:** 2026-04-05
-**Stopped at:** Phase 26 (Paper Draft) complete. PRD paper in paper/main.tex builds to 11-page PDF. Next: Phase 27 (production run + figures).
-**Resume file:** paper/main.tex
-**Pending cluster action:** Read posteriors from /pfs/work9/workspace/scratch/st_ac147838-emri/run_20260401_seed200/simulations/posteriors/ (job 3862106, tasks 2,5,8 = h=0.652,0.730,0.808). Compare corrected posterior MAP to pre-correction baseline (h=0.66) — expect shift toward h=0.73. Then replace \pending{} markers in paper/sections/results.tex and paper/sections/conclusions.tex.
+**Last session:** 2026-04-07
+**Stopped at:** Phase 27 Plans 01-03 complete. Plan 04 (paper marker fill) deferred — user wants pipeline validation first.
+**Resume file:** .gpd/phases/27-production-run-figures/extracted_results.json
+**Pending cluster action:** Transfer CRB CSV files from bwUniCluster to cluster_results/eval_corrected_full/ for SNR distribution figure. Then re-run plot_snr_distribution() from paper_figures.py.
+**Pending pipeline validation:** Completeness correction worsened bias (MAP 0.66/0.68 vs thesis 0.712/0.742). Investigate before filling paper markers.
