@@ -1,17 +1,17 @@
 ---
 gsd_state_version: 1.0
-milestone: v2.0
-milestone_name: Paper
+milestone: v2.1
+milestone_name: Publication Figures
 status: executing
-stopped_at: Phase 26 complete — Phase 27 blocked on cluster filesystem
+stopped_at: Roadmap created — Phase 29 ready to plan
 last_updated: "2026-04-07"
-last_activity: 2026-04-05
+last_activity: 2026-04-07
 progress:
-  total_phases: 3
-  completed_phases: 1
-  total_plans: 1
-  completed_plans: 1
-  percent: 33
+  total_phases: 5
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
@@ -21,13 +21,13 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-07)
 
 **Core value:** Measure H0 from simulated EMRI dark siren events with galaxy catalog completeness correction, producing publication-ready results.
-**Current focus:** v2.0 Paper — Phase 26 (draft) complete, Phase 27 (production run) next, blocked on cluster filesystem recovery
+**Current focus:** v2.1 Publication Figures — modernize visualization, unified manifest, galaxy-level figures, interactive GitHub Pages. v2.0 Phase 27 (production run) in parallel on cluster.
 
 ## Current Position
 
-Phase: 27 (Production Run & Figures) — not started (blocked on cluster)
+Phase: 29 (Style Foundation) — not started
 Plan: —
-Status: Phase 26 (Paper Draft) complete. Phase 27 awaiting cluster filesystem recovery.
+Status: v2.1 roadmap created (5 phases, 23 requirements). Ready to plan Phase 29.
 Last activity: 2026-04-05 — Phase 26 Paper Draft completed (11-page PRD paper, 25 RESULT PENDING markers)
 
 Progress: [███░░░░░░░] 33% (1/3 v2.0 phases)

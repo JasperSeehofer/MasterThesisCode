@@ -92,7 +92,8 @@ None.
 ## Session Continuity
 
 **Last session:** 2026-04-07
-**Stopped at:** Phase 27 Plans 01-03 complete. Plan 04 (paper marker fill) deferred — user wants pipeline validation first.
+**Stopped at:** v2.1 Publication Figures milestone initialized. Roadmap created (Phases 29-33, GSD-tracked). Ready to plan Phase 29: Style Foundation.
+**v2.0 status:** Phase 27 Plans 01-03 complete. Plan 04 deferred. New evaluation run submitted on cluster (finer h-grid, more detections).
 **Resume file:** .gpd/phases/27-production-run-figures/extracted_results.json
-**Pending cluster action:** Transfer CRB CSV files from bwUniCluster to cluster_results/eval_corrected_full/ for SNR distribution figure. Then re-run plot_snr_distribution() from paper_figures.py.
-**Pending pipeline validation:** Completeness correction worsened bias (MAP 0.66/0.68 vs thesis 0.712/0.742). Investigate before filling paper markers.
+**Pending cluster action:** Await new evaluation run results (finer h-grid). Transfer CRB CSVs when complete.
+**v2.1 routing:** Implementation phases tracked in GSD (`.planning/`), not GPD. GPD holds research survey + requirements only.

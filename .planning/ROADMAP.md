@@ -9,6 +9,7 @@
 - ✅ **v1.4 Posterior Numerical Stability** — Phases 21-23 (shipped 2026-04-02)
 - ✅ **v1.5 Galaxy Catalog Completeness Correction** — Phases 24-25 (shipped 2026-04-04, GPD-tracked)
 - 🔄 **v2.0 Paper** — Phases 26-28 (in progress, GPD-tracked)
+- 🔄 **v2.1 Publication Figures** — Phases 29-33 (in progress, GSD-tracked)
 
 ## Phases
 
@@ -112,6 +113,76 @@ See `.gpd/ROADMAP.md` for full details.
 **Depends on**: Phase 27 (final results and figures)
 See `.gpd/ROADMAP.md` for full details.
 
+### v2.1 Publication Figures (GSD-tracked)
+
+- [ ] **Phase 29: Style Foundation** — Modernize mplstyle, colorblind-safe palette, font sizing, `pdf.fonttype: 42`
+- [ ] **Phase 30: Unified Figure Pipeline & Paper Figures** — Merge manifests, fix CI bug, polish 4 existing + add contour/smoothed variants
+- [ ] **Phase 31: Galaxy-Level Figures** — Pre-process 580MB JSONs, galaxy ranking, dominant fraction, BH mass impact, sky map
+- [ ] **Phase 32: Interactive Figures** — Plotly/Sphinx integration, data pre-aggregation, MyST-NB notebooks, JupyterLite
+- [ ] **Phase 33: Quality Assurance & New Science Figures** — P_det surface, completeness heatmap, parameter contours, colorblind/grayscale/pdffonts audit
+
+### Phase Details (v2.1)
+
+#### Phase 29: Style Foundation
+**Goal**: Modernize the visual style infrastructure so all downstream figures automatically inherit publication-quality aesthetics
+**Requirements**: STYL-01, STYL-02, STYL-03
+**Depends on**: None
+**Success criteria**:
+1. `emri_thesis.mplstyle` updated: top/right spines removed, `pdf.fonttype: 42`, font sizes 7-9pt, inward ticks, frameless legends
+2. `_colors.py` replaced with Okabe-Ito cycle + sequential Blues (0.1-0.85) + accent color
+3. `get_figure` presets tuned for new font sizes at REVTeX widths
+4. All existing tests pass with new style (no visual regression in smoke tests)
+5. `pdffonts` on any generated PDF shows zero Type 3 fonts
+
+#### Phase 30: Unified Figure Pipeline & Paper Figures
+**Goal**: Merge the two disconnected figure pipelines and deliver polished paper figures with new style
+**Requirements**: PFIG-01, PFIG-02, PFIG-03, PFIG-04
+**Depends on**: Phase 29 (style)
+**Success criteria**:
+1. Single `--generate_figures <dir>` command generates all figures (paper + thesis + galaxy-level)
+2. `paper_figures.py` functions integrated into unified manifest
+3. CI calculation uses trapezoidal CDF everywhere (unit test)
+4. 4 existing paper figures polished with new style
+5. Contour-smoothed H0 posterior added as new variant (KDE, preserves MAP within grid spacing)
+6. Auto-detect h-grid resolution (works with 15-pt and future finer grids)
+
+#### Phase 31: Galaxy-Level Figures
+**Goal**: Exploit the rich per-galaxy likelihood data from posteriors_with_bh_mass for novel visualizations
+**Requirements**: GLXY-01, GLXY-02, GLXY-03, GLXY-04, GLXY-05
+**Depends on**: Phase 29 (style), Phase 30 (manifest integration)
+**Success criteria**:
+1. Pre-processing script extracts per-event summaries from 580MB JSONs to CSVs (~1-5MB total)
+2. Memory-aware loading: pre-process path for low-memory, direct-load fallback for 64GB+ machines
+3. Galaxy likelihood ranking figure for representative events
+4. Dominant galaxy fraction plot (top-1/5/10 across all events)
+5. BH mass channel impact scatter (with vs without mass per galaxy)
+6. Sky map with candidate host galaxies colored by likelihood weight
+7. All galaxy figures integrated into unified manifest
+
+#### Phase 32: Interactive Figures
+**Goal**: Add interactive Plotly figures and Jupyter notebooks to GitHub Pages via Sphinx
+**Requirements**: INTV-01, INTV-02, INTV-03, INTV-04, INTV-05
+**Depends on**: Phase 29 (style), Phase 30 (data loaders)
+**Success criteria**:
+1. Plotly proof-of-concept: one interactive posterior plot embedded in Sphinx, no MathJax conflict
+2. Data pre-aggregation script produces ~1MB summary JSONs in `docs/source/_static/data/`
+3. Full interactive figure set: posterior explorer, sky map, galaxy browser
+4. MyST-NB: at least one executed notebook in Sphinx docs with caching
+5. JupyterLite: parameter exploration notebook (h-value slider) working in-browser
+6. CI pipeline deploys interactive figures to GitHub Pages alongside existing docs
+
+#### Phase 33: Quality Assurance & New Science Figures
+**Goal**: Complete the figure set with science figures and run full accessibility/format audit
+**Requirements**: PFIG-05, PFIG-06, PFIG-07, QUAL-01, QUAL-02, QUAL-03
+**Depends on**: Phase 29-31 (all figures must exist before audit)
+**Success criteria**:
+1. P_det surface figure as 2D filled contour
+2. Completeness f(z,h) standalone heatmap + P_det overlay version
+3. Parameter correlation contours (d_L vs M, z vs SNR)
+4. daltonize colorblind simulation passes for all paper figures
+5. All paper figures readable in grayscale
+6. `pdffonts` shows zero Type 3 fonts across all generated PDFs
+
 ## Progress
 
 | Phase | Milestone | Plans Complete | Status | Completed |
@@ -144,3 +215,8 @@ See `.gpd/ROADMAP.md` for full details.
 | 26. Paper Draft | v2.0 | 1/1 | Complete (GPD) | 2026-04-05 |
 | 27. Production Run & Figures | v2.0 | 0/? | Not started (GPD) | - |
 | 28. Review & Submission | v2.0 | 0/? | Not started (GPD) | - |
+| 29. Style Foundation | v2.1 | 0/? | Not started | - |
+| 30. Unified Pipeline & Paper Figs | v2.1 | 0/? | Not started | - |
+| 31. Galaxy-Level Figures | v2.1 | 0/? | Not started | - |
+| 32. Interactive Figures | v2.1 | 0/? | Not started | - |
+| 33. QA & New Science Figures | v2.1 | 0/? | Not started | - |

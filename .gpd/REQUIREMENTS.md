@@ -75,37 +75,37 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| STYL-01 | TBD | Pending |
-| STYL-02 | TBD | Pending |
-| STYL-03 | TBD | Pending |
-| PFIG-01 | TBD | Pending |
-| PFIG-02 | TBD | Pending |
-| PFIG-03 | TBD | Pending |
-| PFIG-04 | TBD | Pending |
-| PFIG-05 | TBD | Pending |
-| PFIG-06 | TBD | Pending |
-| PFIG-07 | TBD | Pending |
-| GLXY-01 | TBD | Pending |
-| GLXY-02 | TBD | Pending |
-| GLXY-03 | TBD | Pending |
-| GLXY-04 | TBD | Pending |
-| GLXY-05 | TBD | Pending |
-| INTV-01 | TBD | Pending |
-| INTV-02 | TBD | Pending |
-| INTV-03 | TBD | Pending |
-| INTV-04 | TBD | Pending |
-| INTV-05 | TBD | Pending |
-| QUAL-01 | TBD | Pending |
-| QUAL-02 | TBD | Pending |
-| QUAL-03 | TBD | Pending |
+| STYL-01 | Phase 29: Style Foundation | Pending |
+| STYL-02 | Phase 29: Style Foundation | Pending |
+| STYL-03 | Phase 29: Style Foundation | Pending |
+| PFIG-01 | Phase 30: Unified Pipeline & Paper Figs | Pending |
+| PFIG-02 | Phase 30: Unified Pipeline & Paper Figs | Pending |
+| PFIG-03 | Phase 30: Unified Pipeline & Paper Figs | Pending |
+| PFIG-04 | Phase 30: Unified Pipeline & Paper Figs | Pending |
+| PFIG-05 | Phase 33: QA & New Science Figures | Pending |
+| PFIG-06 | Phase 33: QA & New Science Figures | Pending |
+| PFIG-07 | Phase 33: QA & New Science Figures | Pending |
+| GLXY-01 | Phase 31: Galaxy-Level Figures | Pending |
+| GLXY-02 | Phase 31: Galaxy-Level Figures | Pending |
+| GLXY-03 | Phase 31: Galaxy-Level Figures | Pending |
+| GLXY-04 | Phase 31: Galaxy-Level Figures | Pending |
+| GLXY-05 | Phase 31: Galaxy-Level Figures | Pending |
+| INTV-01 | Phase 32: Interactive Figures | Pending |
+| INTV-02 | Phase 32: Interactive Figures | Pending |
+| INTV-03 | Phase 32: Interactive Figures | Pending |
+| INTV-04 | Phase 32: Interactive Figures | Pending |
+| INTV-05 | Phase 32: Interactive Figures | Pending |
+| QUAL-01 | Phase 33: QA & New Science Figures | Pending |
+| QUAL-02 | Phase 33: QA & New Science Figures | Pending |
+| QUAL-03 | Phase 33: QA & New Science Figures | Pending |
 
 **Coverage:**
 
 - Primary requirements: 23 total
-- Mapped to phases: 0 (roadmap pending)
-- Unmapped: 23
+- Mapped to phases: 23
+- Unmapped: 0
 
 ---
 
 _Requirements defined: 2026-04-07_
-_Last updated: 2026-04-07 after initial definition_
+_Last updated: 2026-04-07 after roadmap creation_

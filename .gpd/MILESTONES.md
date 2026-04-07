@@ -17,6 +17,12 @@
   - Full validation: VALD-01 PASS (916 bins), VALD-02 PASS (alpha_grid = alpha_MC exactly)
   - See `.gpd/milestones/v1.2.2-ROADMAP.md` for full archive
 
+- **v2.1** Publication Figures (In Progress: 2026-04-07, GSD-tracked) — Phases 29-33
+  - Unified figure manifest, publication-refined style, galaxy-level visualizations, interactive GitHub Pages
+  - Research survey complete (4 scouts: prior work, methods, computational, pitfalls)
+  - 23 requirements defined, 5 phases planned
+  - Implementation tracked in GSD (`.planning/`)
+
 See `.planning/MILESTONES.md` for full history.
 
 ---
