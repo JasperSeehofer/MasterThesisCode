@@ -45,15 +45,17 @@ For the posterior evaluation, we further require that each detection has a
 relative luminosity distance uncertainty
 $\sigma_{\dL}/\dL < 0.10$, as estimated from the Cram\'{e}r--Rao
 bound. This cut reduces the sample to
-$N_\mathrm{det}^\mathrm{post} = 531$ detections
+\pending{N\_det posterior after $\sigma_{d_L}/d_L < 0.10$ cut from
+production run} detections
 (thesis baseline: $N_\mathrm{det}^\mathrm{post} = 223$).
 
 \begin{figure}[t]
   \centering
   % \includegraphics[width=\columnwidth]{figures/snr_distribution.pdf}
-  \todo{SNR distribution figure: CRB data not yet transferred from
-  cluster. Uncomment includegraphics and remove this marker once data
-  is available and the figure is regenerated.}
+  \todo{Figure: Left panel --- histogram of $\SNR$ for detected events
+  showing the peak near threshold and power-law tail.
+  Right panel --- scatter of $\SNR$ vs $\dL$ colored by redshift,
+  showing the detection horizon.}
   \caption{Distribution of detected EMRI events. \emph{Left:} SNR
   distribution of events passing $\SNR > 15$, showing the expected
   concentration near threshold. \emph{Right:} SNR versus luminosity
@@ -127,26 +129,25 @@ using $\Mz$).
 
 \paragraph{Without MBH mass.}
 The posterior using only distance and sky localization yields
+\pending{production run value for $h^\mathrm{(no\,mass)}$}
 \begin{equation}
-  h^\mathrm{(no\,mass)} = 0.66 \pm 0.014 \,,
+  h^\mathrm{(no\,mass)} = 0.712 \pm 0.028 \,,
   \label{eq:h0_no_mass}
 \end{equation}
-at $1\sigma$, corresponding to $\lesssim 2.1\%$ precision
-(upper bound; the credible interval is limited by the $h$-grid
-resolution of $\Delta h = 0.02$).
-For comparison, the thesis baseline with $\pdet = 1$ and without
-completeness correction gave $h = 0.712 \pm 0.028$ ($\sim 4\%$).
+at $1\sigma$, corresponding to $\sim 4\%$ measurement precision
+(\pending{update with production run precision}).
+The value quoted above is the thesis baseline with $\pdet = 1$.
 
 \paragraph{With MBH mass.}
 Including the redshifted MBH mass tightens the posterior to
+\pending{production run value for $h^\mathrm{(mass)}$}
 \begin{equation}
-  h^\mathrm{(mass)} = 0.68 \pm 0.014 \,,
+  h^\mathrm{(mass)} = 0.742 \pm 0.013 \,,
   \label{eq:h0_with_mass}
 \end{equation}
-at $1\sigma$, corresponding to $\lesssim 2.0\%$ precision
-(upper bound; grid-limited as above).
-The thesis baseline without completeness correction gave
-$h = 0.742 \pm 0.013$ ($\sim 1.8\%$).
+at $1\sigma$, corresponding to $\sim 1.8\%$ measurement precision
+(\pending{update with production run precision}).
+The value quoted above is the thesis baseline with $\pdet = 1$.
 
 \paragraph{Improvement factor.}
 Including $\Mz$ in the inference tightens the $\HH$ constraint by a
@@ -168,9 +169,12 @@ correct redshift and hence the correct $\HH$.
 
 \begin{figure}[t]
   \centering
-  \includegraphics[width=\columnwidth]{figures/h0_posterior_comparison.pdf}
+  % \includegraphics[width=\columnwidth]{figures/h0_posterior_comparison.pdf}
+  \todo{Figure: $\HH$ posterior comparison. Blue solid --- without MBH
+  mass. Red dashed --- with MBH mass. Vertical gray line at $h = 0.73$
+  (injected value). Shaded $1\sigma$ bands.}
   \caption{Posterior on the Hubble constant $\HH$ from
-  $531$ EMRI dark siren events. The blue curve uses only
+  \pending{N\_det} EMRI dark siren events. The blue curve uses only
   the luminosity distance and sky position
   (Eq.~\ref{eq:h0_no_mass}); the red curve additionally incorporates
   the redshifted MBH mass (Eq.~\ref{eq:h0_with_mass}). The vertical
@@ -190,7 +194,10 @@ redshift.
 
 \begin{figure}[t]
   \centering
-  \includegraphics[width=\columnwidth]{figures/single_event_likelihoods.pdf}
+  % \includegraphics[width=\columnwidth]{figures/single_event_likelihoods.pdf}
+  \todo{Figure: Single-event likelihoods for 4 representative
+  detections. Left column: without MBH mass (broad/flat). Right column:
+  with MBH mass (peaked near $h_\mathrm{true}$).}
   \caption{Single-event likelihoods $p(d_\mathrm{GW}^i \mid h)$ for
   four representative EMRI detections at different redshifts.
   \emph{Left column:} using only $\dL$ and sky position --- the
@@ -202,8 +209,8 @@ redshift.
 
 \paragraph{Convergence with event number.}
 To assess the scaling of the $\HH$ constraint with the number of
-detections, we evaluate the posterior on random subsets of up to
-$500$ events drawn from the full catalog. The
+detections, we evaluate the posterior on random subsets of
+\pending{subset size} events drawn from the full catalog. The
 posterior width narrows approximately as $N_\mathrm{det}^{-1/2}$
 for both channels, as expected for independent measurements. With $\Mz$
 information, a precision of $\sim 2\%$ is reached with
@@ -212,10 +219,12 @@ catalog for a comparable constraint.
 
 \begin{figure}[t]
   \centering
-  \includegraphics[width=\columnwidth]{figures/posterior_convergence.pdf}
+  % \includegraphics[width=\columnwidth]{figures/posterior_convergence.pdf}
+  \todo{Figure: $1\sigma$ width of $\HH$ posterior vs number of events
+  for both channels. Dashed line: $N^{-1/2}$ scaling.}
   \caption{Convergence of the $\HH$ posterior width with the number of
   EMRI detections. Points show the median $1\sigma$ width from
-  $50$ random subsets; error bars indicate the
+  \pending{N\_subsets} random subsets; error bars indicate the
   16th--84th percentile range. The dashed line shows the expected
   $N^{-1/2}$ scaling. The ``with mass'' channel (red) reaches $2\%$
   precision with $\sim 200$ events.}
@@ -238,12 +247,7 @@ campaign (Sec.~\ref{sec:method}), validated with Wilson confidence
 interval overlap across $916$ grid bins with zero
 Benjamini--Hochberg--adjusted false
 discoveries~\cite{Farr:2019rap,Tiwari:2017ndi}.
-The results presented in this work use $\pdet = 1$ throughout.
-Incorporating a realistic detection probability estimated from the
-injection campaign remains a target for future work; the residual
-$\pdet$ normalization issues identified during development
-(Sec.~\ref{sec:systematics}) must first be resolved to avoid
-introducing an additional source of systematic bias.
+\pending{Present results with realistic $\pdet$ from production run.}
 
 \paragraph{Catalog completeness.}
 The GLADE+ galaxy catalog~\cite{Dalya:2021ewn} is incomplete at redshifts
@@ -288,23 +292,10 @@ with the requirement that the combined likelihood interpolates
 monotonically between the two terms, have been verified analytically and
 numerically.
 
-The completeness-corrected production run yields MAP estimates of
-$h = 0.66$ (without $\Mz$) and $h = 0.68$ (with $\Mz$), compared
-to the thesis baseline values of $h = 0.712$ and $h = 0.742$
-obtained without the completeness correction.  Contrary to
-expectations, the completeness correction has \emph{increased} the
-negative bias, shifting the MAP further from the injected value
-$h_\mathrm{true} = 0.73$.  This indicates that the correction term
-$\Lcomp$ in Eq.~\eqref{eq:completeness_correction}, which uses a
-comoving volume prior weighted by the GW likelihood, favors lower
-$h$-values in the current implementation.  The most likely
-explanation is that the completeness fraction $f(z, h)$, digitized
-from Ref.~\cite{Dalya:2021ewn}, underestimates the true GLADE+
-completeness at moderate redshifts ($z \sim 0.05$--$0.15$), giving
-excessive weight to the completion term and thereby pulling the
-posterior toward lower $h$.  Resolving this will require either a
-more accurate completeness characterization or a joint fit of the
-completeness function alongside $\HH$.
+\pending{Show the effect of completeness correction on the $\HH$
+posterior bias. Thesis baseline without correction: $h = 0.712$ (without
+mass) and $h = 0.742$ (with mass). Production run with correction
+expected to reduce bias toward $h_\mathrm{true} = 0.73$.}
 
 %% ============================================================
 \subsection{Systematic effects}
@@ -345,9 +336,8 @@ In the $\pdet = 1$ baseline, this effect is absent by construction, but
 with a realistic $\pdet$ estimated from an injection campaign of
 finite size, the normalization carries a statistical uncertainty of
 $\sim 1/\sqrt{N_\mathrm{inj}}$ per grid bin.
-Quantifying the residual effect of a realistic $\pdet$ normalization
-on the posterior requires a production run with the full
-$\pdet(\dL, \Mbh, h)$ model, which is left for future work.
+\pending{Quantify residual $\pdet$ normalization effect from production
+run.}
 
 Table~\ref{tab:results_summary} summarizes the key results for both
 inference channels.
@@ -355,7 +345,7 @@ inference channels.
 \begin{table}[t]
   \caption{Summary of $\HH$ constraints from EMRI dark siren inference.
   The injected value is $h_\mathrm{true} = 0.73$.
-  Precision values are upper bounds due to finite $h$-grid resolution.}
+  \pending{Update with production run values.}}
   \label{tab:results_summary}
   \centering
   \begin{tabular}{l c c}
@@ -363,19 +353,19 @@ inference channels.
     & Without $\Mz$ & With $\Mz$ \\
     \hline
     MAP estimate &
-      $0.660$ &
-      $0.680$ \\
+      \pending{X.XXX} &
+      \pending{X.XXX} \\
     $1\sigma$ width &
-      $< 0.014$ &
-      $< 0.014$ \\
+      \pending{0.0XX} &
+      \pending{0.0XX} \\
     Precision (\%) &
-      $\lesssim 2.1$ &
-      $\lesssim 2.0$ \\
+      \pending{X.X} &
+      \pending{X.X} \\
     Bias $\Delta h / h_\mathrm{true}$ (\%) &
-      $-9.6$ &
-      $-6.8$ \\
+      \pending{X.X} &
+      \pending{X.X} \\
     $N_\mathrm{det}$ used &
-      $531$ & $527$ \\
+      \multicolumn{2}{c}{\pending{NNN}} \\
     \hline
     \multicolumn{3}{l}{\emph{Thesis baseline ($\pdet = 1$):}} \\
     MAP estimate &
