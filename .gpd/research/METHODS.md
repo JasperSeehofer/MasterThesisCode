@@ -1,289 +1,395 @@
-# Computational and Analytical Methods: Enhanced Sampling for P_det Grid Estimation
+# Methods: Publication-Quality Figure Design for EMRI Dark Siren Thesis
 
-**Project:** EMRI Enhanced Sampling for Injection Campaign
-**Physics Domain:** Gravitational wave detection statistics, Monte Carlo sampling, selection effects
-**Researched:** 2026-03-31
+**Project:** EMRI Dark Siren H0 Inference -- Figure Refinement
+**Domain:** Scientific visualization, matplotlib publication techniques
+**Researched:** 2026-04-07
 
 ### Scope Boundary
 
-This file covers sampling and variance-reduction METHODS for estimating detection probability P_det(z, M, h) from injection campaigns. It does NOT cover software tools (see COMPUTATIONAL.md) or the underlying GW physics. It answers: "How do we sample injections efficiently and build unbiased P_det grids?"
+This file covers analytical and practical METHODS for creating modern, publication-quality scientific figures in matplotlib. It does NOT cover the physics pipeline or computational infrastructure -- those belong in other research files. It answers: "What specific techniques, rcParams, palettes, and patterns produce figures matching the refined aesthetic of arXiv:2406.09228v1 (Inchauspe et al. 2025) for a REVTeX thesis?"
 
 ---
 
-## Context and Problem Statement
+## Context and Current State
 
-We estimate P_det = P(SNR >= threshold | z, M, h) on a 2D grid in (z, M) for 7 values of h. Each grid cell's P_det is the fraction of injections in that cell that are detected. The current approach uses roughly uniform sampling in (log M, z) with uniform sky angles. Detection fraction is likely <10% at moderate-to-high z, making this a rare-event estimation problem in much of the parameter space.
+The current plotting pipeline uses `emri_thesis.mplstyle` with:
+- `figure.figsize: 6.4, 4.0` (matplotlib default, not journal-matched)
+- `font.size: 11` (too large for single-column REVTeX)
+- `text.usetex: False` (mathtext renderer, not true LaTeX)
+- `viridis` colormap (good for perceptual uniformity, wrong aesthetic for the target style)
+- `tab10`-derived color cycle (not colorblind-optimized, not sequential emphasis)
+- No spine removal, no tick direction control, default legend frames
 
-**Core tension:** Uniform sampling wastes most compute on cells where P_det is near 0 or near 1 (well-determined). The interesting region is the detection boundary where P_det transitions from ~1 to ~0, and this is where we need the most samples.
+The target aesthetic (arXiv:2406.09228v1) uses: clean minimal spines, LaTeX/Computer Modern typography, muted blue-dominant sequential palettes, filled contour regions for posteriors with smooth gradients, and a generally "less is more" design philosophy.
 
 ---
 
 ## Recommended Methods
 
-### Primary Method: Stratified Sampling with Importance Weighting
+### Primary Style Method: Custom mplstyle with LaTeX Typography
 
-Use stratified sampling across (z, M) bins with importance-weight correction. This is the recommended approach because it is simple to implement, guaranteed unbiased with correct weights, and directly compatible with histogram-based P_det estimation.
+| Method | Purpose | Applicability | Limitations |
+|---|---|---|---|
+| Custom `.mplstyle` + `apply_style()` | Global rcParams for all figures | All plots | Cannot handle per-figure contour styling |
+| `text.usetex: True` with Computer Modern | Journal-matched typography | All text, labels, legends | Requires TeX installation; slower rendering |
+| Programmatic spine removal | Minimal L-frame axes | All 2D plots | Must be called per-axes or via mplstyle |
+| `contourf` with custom `ListedColormap` | Smooth posterior fills | Posterior/density plots | Requires KDE preprocessing |
 
-### Secondary Method: Adaptive Boundary Refinement
+### Primary Palette Method: Curated Colorblind-Safe Palette
 
-After an initial uniform pass, concentrate additional samples near the P_det ~ 0.5 boundary. This is a two-stage approach that uses the first pass to identify where the detection boundary lies.
+| Method | Purpose | Applicability | Limitations |
+|---|---|---|---|
+| Custom sequential blue palette (see below) | Posterior contour fills | Density/contour plots | Single-hue, not for categorical data |
+| Okabe-Ito qualitative palette | Multi-line/categorical plots | Line plots, scatter, legends | Only 8 colors |
+| Grayscale-safe accent color | Truth/reference lines | Overlay annotations | Must contrast with blue fills |
 
-### Tertiary (defer unless needed): Cross-Entropy Adaptive Importance Sampling
+### Primary Smoothing Method: scipy.stats.gaussian_kde
 
-For extreme rare-event cells (P_det < 0.01), use the cross-entropy method to iteratively optimize a proposal distribution. This is significantly more complex and only warranted if the simple stratified approach has unacceptable variance in low-P_det cells.
+| Method | Purpose | Convergence | Cost Scaling | Implementation |
+|---|---|---|---|---|
+| `scipy.stats.gaussian_kde` | Smooth 1D/2D posteriors from discrete samples | Bandwidth-dependent | O(N*M) for N samples, M grid points | scipy built-in |
+| `scipy.ndimage.gaussian_filter` | Smooth 2D histograms on regular grids | sigma-dependent | O(grid_size) | scipy built-in |
+| `corner.corner` with `smooth` param | Corner/triangle plots with credible regions | Tunable via `smooth` | O(N_params^2 * N_samples) | `corner` package |
 
 ---
 
 ## Method Details
 
-### Method 1: Importance-Weighted Histogram Estimator
+### Method 1: REVTeX-Compatible mplstyle Configuration
 
-**What:** Sample injections from a non-uniform proposal distribution q(theta) instead of the prior p(theta), then correct each sample's contribution to the histogram bin with the importance weight w = p(theta) / q(theta).
+**What:** A complete `.mplstyle` file that produces figures matching APS/REVTeX journal requirements and the modern minimal aesthetic.
 
-**Mathematical basis:**
+**APS/REVTeX Figure Requirements (from APS Author Guidelines):**
+- Single-column width: 3.375 inches (8.6 cm)
+- Double-column width: 7.0 inches (17.8 cm)
+- Minimum text height: 2 mm for capital letters and numerals
+- Preferred formats: PDF (vector), EPS, PNG at 300+ dpi
+- Fonts must be embedded in vector formats
 
-The true P_det in bin B is:
+**At 3.375" single-column width, the 2 mm minimum text constraint means:**
+- 2 mm = 5.67 pt, so the absolute minimum font size is ~6 pt
+- For readability, tick labels should be 7-8 pt, axis labels 8-9 pt
+- This matches the `use_latex` branch in the current `apply_style()` which already sets font.size=10, but that is for the overall default. Axis-specific sizes need tuning.
 
+**Recommended rcParams (complete mplstyle):**
+
+```ini
+# === Typography (LaTeX/Computer Modern) ===
+text.usetex: True
+font.family: serif
+font.serif: Computer Modern Roman
+mathtext.fontset: cm
+
+# Font sizes calibrated for 3.375" single-column REVTeX
+font.size: 8
+axes.titlesize: 9
+axes.labelsize: 8
+xtick.labelsize: 7
+ytick.labelsize: 7
+legend.fontsize: 7
+
+# === Figure dimensions ===
+figure.figsize: 3.375, 2.53          # single-column, 4:3 aspect
+figure.dpi: 150                       # screen preview
+savefig.dpi: 300                      # publication output
+savefig.bbox: tight
+savefig.pad_inches: 0.02
+figure.constrained_layout.use: True
+
+# === Axes: minimal L-frame ===
+axes.linewidth: 0.6
+axes.edgecolor: 262626
+axes.labelcolor: 262626
+axes.spines.top: False
+axes.spines.right: False
+axes.grid: False
+axes.axisbelow: True
+axes.prop_cycle: cycler('color', ['0072B2', 'D55E00', '009E73', 'CC79A7', 'E69F00', '56B4E9', 'F0E442', '000000'])
+
+# === Ticks: inward, subtle ===
+xtick.direction: in
+ytick.direction: in
+xtick.major.width: 0.6
+ytick.major.width: 0.6
+xtick.minor.width: 0.4
+ytick.minor.width: 0.4
+xtick.major.size: 3.5
+ytick.major.size: 3.5
+xtick.minor.size: 2.0
+ytick.minor.size: 2.0
+xtick.minor.visible: True
+ytick.minor.visible: True
+xtick.top: False
+ytick.right: False
+xtick.color: 262626
+ytick.color: 262626
+
+# === Lines ===
+lines.linewidth: 1.0
+lines.markersize: 4
+
+# === Legend: frameless ===
+legend.frameon: False
+legend.borderpad: 0.3
+legend.handlelength: 1.5
+legend.handletextpad: 0.4
+legend.columnspacing: 1.0
+
+# === Colormaps ===
+image.cmap: Blues
+
+# === Rendering ===
+agg.path.chunksize: 10000
+pdf.fonttype: 42
+ps.fonttype: 42
 ```
-P_det(B) = E_p[I(SNR >= thr) | theta in B]
-         = integral_B p(theta) I(SNR(theta) >= thr) d theta  /  integral_B p(theta) d theta
-```
 
-where p(theta) is the physical prior over (z, M, sky angles, etc.) and I is the indicator function.
+**Key differences from current style:**
+- `axes.spines.top: False` and `axes.spines.right: False` -- the single most impactful change for modern appearance
+- `xtick.direction: in` -- inward ticks look cleaner and do not occlude data
+- Font sizes reduced from 10-13 pt range to 7-9 pt range (correct for 3.375" width)
+- `legend.frameon: False` -- removes the box around legends
+- `pdf.fonttype: 42` and `ps.fonttype: 42` -- embeds fonts as TrueType in PDF/PS (required by many journals)
+- Color cycle changed from tab10 to Okabe-Ito
+- Near-black (`#262626`) instead of pure black for axes/ticks (softer, modern look)
 
-When sampling from proposal q(theta) instead of p(theta), the unbiased estimator is:
+**Double-column variant:** For double-column figures (7.0" wide), multiply font sizes by ~1.3x (so font.size: 10, labels: 10, ticks: 9). Use `figure.figsize: 7.0, 3.5` or similar.
 
-```
-P_det_hat(B) = sum_{i in B} w_i * I(SNR_i >= thr)  /  sum_{i in B} w_i
-```
+**Implementation note for `apply_style()`:** The existing `use_latex=True` branch should be replaced entirely by this new mplstyle. The `use_latex=False` fallback (for CI) should use mathtext with `mathtext.fontset: cm` to approximate the look without requiring TeX.
 
-where w_i = p(theta_i) / q(theta_i) is the importance weight for sample i. This is the self-normalized importance sampling estimator (also called the ratio estimator or Haji-Akbari estimator). It is:
-- Biased for finite N (bias ~ O(1/N)), but consistent
-- More stable than the unnormalized estimator when the normalization of p is approximate
-- The standard estimator used in GW selection-effect studies (Tiwari 2018, arXiv:1712.00482)
+---
 
-**Key insight for histogram binning:** The denominator sum_{i in B} w_i acts as the effective number of prior-distributed samples in bin B. If you sample more densely near the detection boundary, the weights in easy bins (P_det ~ 0 or 1) will be large but few, and the weights in boundary bins will be small but numerous -- exactly as desired.
+### Method 2: Colorblind-Safe Palette System
 
-**Weight computation for current setup:**
+**What:** A three-tier palette system: (1) sequential blue for density/contour fills, (2) qualitative Okabe-Ito for categorical/multi-line plots, (3) semantic accent colors for truth/mean/reference.
 
-The current sampler draws (log M, z) roughly uniformly and sky angles uniformly. If we modify the (z, M) proposal:
+#### Tier 1: Sequential Blue Palette (Contour Fills)
 
-```
-w_i = p(z_i, M_i) / q(z_i, M_i)
-```
-
-Sky angles remain uniformly sampled (unchanged), so they cancel in the weight ratio. Only the (z, M) marginal needs reweighting.
-
-If the prior p(z, M) is the astrophysical rate density from Model1CrossCheck and the proposal q(z, M) is designed to oversample the boundary region:
+For posterior density contours, use a custom sequential blue palette built from matplotlib's `Blues` colormap, sampled at specific points to create discrete credible-interval bands:
 
 ```python
-# Per-injection weight
-w_i = p_prior(z_i, M_i) / q_proposal(z_i, M_i)
+import matplotlib.colors as mcolors
+from matplotlib.cm import get_cmap
 
-# Per-bin P_det (histogram estimator)
-numerator = sum(w_i for i in bin if SNR_i >= threshold)
-denominator = sum(w_i for i in bin)
-P_det_bin = numerator / denominator if denominator > 0 else 0.0
+# Sample Blues colormap at 4 levels for 2-sigma, 1-sigma, inner fills
+blues = get_cmap("Blues")
+CONTOUR_COLORS = [
+    blues(0.15),  # lightest: 3-sigma / background
+    blues(0.30),  # 2-sigma band
+    blues(0.50),  # 1-sigma band
+    blues(0.75),  # peak / mode region
+]
+
+# For continuous contourf, use Blues directly or a truncated version:
+from matplotlib.colors import LinearSegmentedColormap
+blues_truncated = LinearSegmentedColormap.from_list(
+    "blues_trunc", blues(np.linspace(0.1, 0.85, 256))
+)
 ```
 
-**Variance of the estimator:**
+**Why Blues and not a custom palette:** The matplotlib `Blues` colormap is perceptually uniform (monotonically increasing lightness), prints correctly in grayscale (lighter values map to lighter gray), and is universally recognized in GW/cosmology literature. It is the standard for single-parameter posteriors.
 
-```
-Var[P_det_hat(B)] ~ (1/N_eff(B)) * P_det(B) * (1 - P_det(B))
-```
+**Grayscale safety:** `Blues` maps monotonically to grayscale because it varies only in lightness. This is not true of diverging or multi-hue colormaps.
 
-where N_eff(B) = (sum w_i)^2 / sum w_i^2 is the effective sample size (Kish's formula). The variance is minimized when N_eff is maximized, which happens when all weights are equal (uniform sampling within the bin) or when the proposal concentrates samples where the variance P*(1-P) is largest (near P_det ~ 0.5).
+#### Tier 2: Okabe-Ito Qualitative Palette (Multi-Line Plots)
 
-**Convergence:** Standard Monte Carlo: O(1/sqrt(N_eff)). No improvement in convergence order, but N_eff can be much larger in the boundary region compared to uniform sampling.
+The Okabe-Ito palette provides 8 colors distinguishable under all common forms of color vision deficiency:
 
-**Known failure modes:**
-- If q(theta) has thin tails relative to p(theta), some samples get enormous weights, inflating variance. Always ensure q has support wherever p does (q(theta) > 0 whenever p(theta) > 0).
-- If the proposal is too concentrated, bins far from the concentration get very few samples with very large weights, potentially worse than uniform sampling in those bins.
-- Self-normalized estimator is biased at O(1/N). For N ~ 1000+ per bin, this bias is negligible compared to statistical error.
-
-**References:**
-- Tiwari (2018), "Estimation of the Sensitive Volume for Gravitational-wave Source Populations Using Weighted Monte Carlo Integration," CQG. arXiv:1712.00482
-- Gerosa & Fishbach (2024), "Quick recipes for gravitational-wave selection effects," CQG 41(12). arXiv:2404.16930
-
----
-
-### Method 2: Stratified Sampling Across (z, M) Bins
-
-**What:** Divide the (z, M) space into strata (which can coincide with or be finer than the P_det grid bins). Allocate a fixed number of samples per stratum rather than letting random sampling determine the per-bin count.
-
-**Mathematical basis:**
-
-Stratified sampling reduces variance compared to simple random sampling by eliminating between-stratum variance. For estimating P_det per bin, if we stratify by the bins themselves, we guarantee N_k samples per bin k rather than a Poisson-distributed count.
-
-The estimator per bin is simply:
-
-```
-P_det_hat(k) = (1/N_k) * sum_{i in stratum k} I(SNR_i >= thr)
-```
-
-No importance weights needed if the within-bin distribution matches the prior. If the within-bin distribution is uniform (rather than following the prior within the bin), apply importance weights as in Method 1.
-
-**Optimal allocation (Neyman allocation):**
-
-Allocate samples proportional to the within-stratum standard deviation:
-
-```
-N_k ~ sigma_k = sqrt(P_det(k) * (1 - P_det(k)))
-```
-
-This concentrates samples in bins where P_det ~ 0.5 (maximum uncertainty) and reduces samples in bins where P_det ~ 0 or 1. Since P_det is unknown a priori, use a pilot run (or the initial uniform pass) to estimate it.
-
-**Practical allocation for P_det grids:**
-
-After a pilot run of N_pilot uniform injections:
-1. Estimate P_det(k) in each bin from the pilot
-2. Compute sigma_k = sqrt(P_det_hat(k) * (1 - P_det_hat(k)))
-3. Allocate remaining budget N_remaining proportional to sigma_k
-4. Within each bin, sample (z, M) from the prior restricted to that bin
-5. Combine pilot + allocated samples (both are valid for the same estimator)
-
-**Variance reduction factor:** For a 2D grid where most cells are P_det ~ 0, stratified sampling with Neyman allocation can reduce total variance by a factor of 5-20x compared to uniform sampling, because it stops wasting samples on dead bins.
-
-**Convergence:** Same O(1/sqrt(N)) per bin, but N is now allocated optimally.
-
-**Known failure modes:**
-- If the grid is too coarse, within-bin variation in P_det is large and the bin-averaged P_det is a poor representation. Ensure grid resolution is fine enough that P_det does not vary dramatically within a single bin.
-- Pilot run must be large enough to identify the boundary region. With 10000 total injections, using 2000-3000 as a pilot is reasonable.
-
-**References:**
-- Cochran (1977), "Sampling Techniques," 3rd ed., Wiley. (Standard reference for stratified sampling)
-- Owen (2013), "Monte Carlo theory, methods and examples," Chapter 8. (Stratified sampling variance reduction)
-
----
-
-### Method 3: Adaptive Boundary Refinement (Two-Stage)
-
-**What:** Run an initial uniform injection campaign, identify the P_det boundary contour in (z, M) space, then run a second targeted campaign concentrating samples near the boundary.
-
-**Algorithm:**
-
-```
-Stage 1: Uniform pilot
-  - Run N_pilot injections uniformly in (z, M)
-  - Compute P_det histogram on coarse grid
-  - Identify boundary bins: 0.05 < P_det < 0.95
-
-Stage 2: Boundary-targeted sampling
-  - Define proposal q(z,M) with higher density in/near boundary bins
-  - Simple approach: uniform within boundary bins, reduced density elsewhere
-  - Run N_targeted injections from q
-  - Combine both stages with importance weights:
-    P_det(B) = sum_{all i in B} w_i * I_i / sum_{all i in B} w_i
-    where w_i = 1 for pilot samples (drawn from prior)
-    and w_i = p(z_i,M_i) / q(z_i,M_i) for targeted samples
-```
-
-**Multiple importance sampling (MIS) combination:**
-
-When combining samples from the pilot (distribution p) and targeted (distribution q) stages, use the balance heuristic (Veach & Guibas 1995):
-
-```
-P_det_hat(B) = [sum_{i from p, in B} f(theta_i)/(N_p * p_i + N_q * q_i)
-              + sum_{j from q, in B} f(theta_j)/(N_p * p_j + N_q * q_j)]
-```
-
-where f(theta) = I(SNR >= thr) * p(theta). In practice, for histogram-based estimation, the simpler approach of weighting each sample by w_i = p_i/q_i and using the self-normalized estimator works well and is much easier to implement.
-
-**Practical simplification:** If the pilot uses the same prior as the physics model, pilot samples have w_i = 1. Targeted samples have w_i = p(z_i,M_i) / q(z_i,M_i). Pool all samples and use the weighted histogram estimator from Method 1.
-
-**Convergence:** The boundary refinement can reduce the error in boundary bins by a factor of sqrt(N_total/N_boundary_uniform) compared to uniform, where N_boundary_uniform is the number of uniform samples that would have fallen in boundary bins.
-
-**Known failure modes:**
-- If the boundary is not well-identified from the pilot (too few pilot samples), the targeted stage may miss important regions.
-- Sharp boundaries in (z, M) that are sensitive to sky angles can be missed if the boundary is identified only from (z, M) marginals.
-
----
-
-### Method 4: Proposal Distribution Design for EMRI Injections
-
-**What:** Design q(z, M) to oversample the detection-boundary region where the P_det gradient is steepest.
-
-**Recommended proposal for EMRI P_det grids:**
-
-The detection boundary is primarily set by the SNR threshold. SNR scales roughly as:
-
-```
-SNR ~ M^(5/6) / d_L(z) * sqrt(T_obs)
-```
-
-where d_L(z) is the luminosity distance. The boundary contour SNR = threshold defines a curve z_max(M) in the (z, M) plane. We want to oversample near this curve.
-
-**Concrete proposal construction:**
-
-```python
-def proposal_density(z, M, z_max_estimate):
-    """
-    Proposal that oversamples the detection boundary.
-
-    z_max_estimate: function M -> z giving approximate boundary from pilot.
-    """
-    # Base: uniform in (log M, z) as currently used
-    base = 1.0 / (z_max * (log_M_max - log_M_min))
-
-    # Enhancement near boundary: Gaussian bump centered on z_max(M)
-    sigma_z = 0.1  # width of boundary region (tune from pilot)
-    boundary_enhancement = exp(-0.5 * ((z - z_max_estimate(M)) / sigma_z)**2)
-
-    # Mixture: alpha * base + (1-alpha) * boundary_enhanced
-    alpha = 0.3  # fraction kept uniform (defensive sampling)
-    q = alpha * base + (1 - alpha) * boundary_enhancement * normalization
-    return q
-```
-
-**Critical: defensive mixture.** Always include a uniform component (alpha ~ 0.2-0.4) to ensure coverage of the full parameter space. This prevents the proposal from having zero density anywhere the prior is nonzero, which would make importance weights undefined.
-
-**References:**
-- Chua & Vallisneri (2023), "Rapid determination of LISA sensitivity to EMRIs with machine learning," MNRAS 522(4). arXiv:2212.06166 -- demonstrates that the SNR function over EMRI parameter space is smooth enough to interpolate, supporting the idea that the detection boundary is a well-defined contour.
-
----
-
-### Method 5: Variance Diagnostics and Effective Sample Size Monitoring
-
-**What:** Monitor the quality of importance-weighted estimates in real time to detect pathological weight distributions.
-
-**Diagnostics to compute per bin:**
-
-| Diagnostic | Formula | Healthy Range | Action if Unhealthy |
+| Index | Name | Hex | Use Case |
 |---|---|---|---|
-| Effective sample size | N_eff = (sum w)^2 / sum w^2 | > 50 per bin | Allocate more samples |
-| Maximum weight fraction | max(w) / sum(w) | < 0.1 | Proposal too different from prior |
-| Coefficient of variation of weights | std(w) / mean(w) | < 2 | Proposal mismatched |
-| P_det standard error | sqrt(P*(1-P)/N_eff) | < 0.05 (5%) | Need more samples in this bin |
+| 0 | Blue | `#0072B2` | Primary data line |
+| 1 | Vermillion | `#D55E00` | Secondary data / contrast |
+| 2 | Bluish Green | `#009E73` | Tertiary data |
+| 3 | Reddish Purple | `#CC79A7` | Quaternary data |
+| 4 | Orange | `#E69F00` | Fifth series |
+| 5 | Sky Blue | `#56B4E9` | Light accent |
+| 6 | Yellow | `#F0E442` | Rarely used (low contrast on white) |
+| 7 | Black | `#000000` | Reference/baseline |
 
-**Implementation:**
+**Why Okabe-Ito over tab10:** Tab10 fails under deuteranopia (green-red confusion between colors 0/2 and 1/3). Okabe-Ito was specifically designed to remain distinguishable under protanopia, deuteranopia, and tritanopia. It is the recommended palette for scientific publications per Petroff (2021) and is now included in matplotlib 3.9+ as the `petroff10` style.
+
+Source: Okabe & Ito (2002), "Color Universal Design (CUD) -- How to make figures and presentations that are friendly to Colorblind people," https://jfly.uni-koeln.de/color/
+
+#### Tier 3: Semantic Accent Colors
+
+| Role | Hex | Description | Rationale |
+|---|---|---|---|
+| TRUTH | `#D55E00` | Vermillion | High contrast against blue fills; Okabe-Ito vermillion |
+| COMBINED | `#0072B2` | Deep blue | Matches contour palette; Okabe-Ito blue |
+| INDIVIDUAL | `#56B4E9` | Sky blue | Lighter than combined; distinguishable from deep blue |
+| REFERENCE | `#7F7F7F` | Medium gray | Neutral, does not compete with data |
+| EDGE | `#262626` | Near-black | Softer than pure black |
+
+**Change from current `_colors.py`:** Replace `TRUTH = "#2ca02c"` (green, from tab10) with `"#D55E00"` (vermillion, Okabe-Ito). Green truth lines are invisible to deuteranopes against blue contours.
+
+---
+
+### Method 3: Contour Smoothing for Posterior Distributions
+
+**What:** Convert discrete posterior samples or histogram grids into smooth contour plots showing credible regions.
+
+**Two distinct input scenarios in the codebase:**
+
+**Scenario A: Discrete MCMC/posterior samples** (e.g., H0 posterior from `BayesianStatistics`)
+Use `scipy.stats.gaussian_kde` for 1D, and `gaussian_kde` on stacked 2D data for corner plots.
 
 ```python
-def weighted_pdet_with_diagnostics(weights, detected, min_neff=50):
-    """
-    Compute importance-weighted P_det for a single bin.
+from scipy.stats import gaussian_kde
 
-    Parameters
-    ----------
-    weights : array, importance weights w_i = p(theta_i)/q(theta_i)
-    detected : array of bool, whether SNR >= threshold
-    min_neff : minimum effective sample size for reliable estimate
+# 1D posterior smoothing
+def smooth_posterior_1d(samples, x_grid, bw_method="scott"):
+    """KDE-smooth a 1D posterior from discrete samples."""
+    kde = gaussian_kde(samples, bw_method=bw_method)
+    density = kde(x_grid)
+    return density / np.trapz(density, x_grid)  # normalize
 
-    Returns
-    -------
-    pdet : float, estimated detection probability
-    se : float, standard error estimate
-    neff : float, effective sample size
-    reliable : bool, whether estimate meets quality threshold
-    """
-    w = weights
-    n_eff = np.sum(w)**2 / np.sum(w**2)
+# 2D contour from samples
+def contour_2d_from_samples(x_samples, y_samples, ax, levels=[0.68, 0.95]):
+    """Plot 2D credible region contours from posterior samples."""
+    data = np.vstack([x_samples, y_samples])
+    kde = gaussian_kde(data)
+    x_grid = np.linspace(x_samples.min(), x_samples.max(), 200)
+    y_grid = np.linspace(y_samples.min(), y_samples.max(), 200)
+    X, Y = np.meshgrid(x_grid, y_grid)
+    Z = kde(np.vstack([X.ravel(), Y.ravel()])).reshape(X.shape)
 
-    pdet = np.sum(w * detected) / np.sum(w)
-    se = np.sqrt(pdet * (1 - pdet) / n_eff) if n_eff > 1 else np.inf
-    reliable = (n_eff >= min_neff)
+    # Convert levels from credible fractions to density thresholds
+    sorted_z = np.sort(Z.ravel())[::-1]
+    cumsum = np.cumsum(sorted_z) / np.sum(sorted_z)
+    thresholds = [sorted_z[np.searchsorted(cumsum, level)] for level in levels]
 
-    return pdet, se, n_eff, reliable
+    ax.contourf(X, Y, Z, levels=[thresholds[1], thresholds[0], Z.max()],
+                colors=[blues(0.25), blues(0.50)], alpha=0.8)
+    ax.contour(X, Y, Z, levels=thresholds, colors=[blues(0.7)],
+               linewidths=0.8)
 ```
+
+**Scenario B: Pre-computed grids** (e.g., P_det on a regular (z, M) grid)
+Use `scipy.ndimage.gaussian_filter` to smooth the grid, then `contourf`:
+
+```python
+from scipy.ndimage import gaussian_filter
+
+def smooth_contour_from_grid(x_edges, y_edges, grid_values, ax, sigma=1.0):
+    """Smooth a 2D histogram/grid and plot filled contours."""
+    smoothed = gaussian_filter(grid_values, sigma=sigma)
+    ax.contourf(x_edges, y_edges, smoothed.T, levels=20,
+                cmap="Blues", alpha=0.9)
+    ax.contour(x_edges, y_edges, smoothed.T, levels=5,
+               colors=["#262626"], linewidths=0.4, alpha=0.5)
+```
+
+**Bandwidth/sigma selection:**
+- For `gaussian_kde`: use `bw_method="scott"` (default). Scott's rule: `h = N^{-1/(d+4)}` where d is dimension. For 1D with ~1000 samples, this gives ~0.1 * std(data). Avoid over-smoothing by checking that known features (e.g., the posterior peak near H0=0.73) remain resolved.
+- For `gaussian_filter`: `sigma=1.0` in grid units is a good starting point. Increase to 1.5-2.0 for very noisy grids. Never smooth beyond the grid resolution (sigma should be < half the number of bins in the narrowest dimension).
+
+**Credible interval contour levels:** For a 2D Gaussian, the standard sigma-levels correspond to:
+
+| Credible Level | Fraction of Probability | Contour Label |
+|---|---|---|
+| 1-sigma | 0.3935 | 39.3% |
+| 2-sigma | 0.8647 | 86.5% |
+| 3-sigma | 0.9889 | 98.9% |
+
+The `corner` library uses levels `[0.118, 0.393, 0.675, 0.864]` by default (half-sigma spacing). For publication, the conventional choice is `[0.68, 0.95]` (1-sigma and 2-sigma in 1D, corresponding to 39.3% and 86.5% enclosed probability in 2D).
+
+**References:**
+- Scott (1992), "Multivariate Density Estimation," Wiley -- bandwidth selection theory
+- `scipy.stats.gaussian_kde` documentation: https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.gaussian_kde.html
+- `corner` library: https://corner.readthedocs.io/en/latest/api/ -- `smooth` parameter, `levels` parameter
+
+---
+
+### Method 4: Modern Aesthetic Techniques (What Makes Plots Look "Modern")
+
+**What:** Specific techniques that distinguish the arXiv:2406.09228v1 style from traditional scientific plots.
+
+The difference between "traditional" and "modern" scientific figures comes down to a handful of specific choices:
+
+| Traditional | Modern | Implementation |
+|---|---|---|
+| Box frame (4 spines) | L-frame (2 spines) | `axes.spines.top/right: False` |
+| Outward ticks | Inward ticks | `xtick.direction: in` |
+| Boxed legend | Frameless legend | `legend.frameon: False` |
+| Pure black axes | Near-black (`#262626`) | `axes.edgecolor: 262626` |
+| Bold/large labels | Subtle/matched labels | Font sizes 7-9 pt at column width |
+| Dense grid lines | No grid or faint grid | `axes.grid: False` |
+| Rainbow/jet colormaps | Perceptually uniform, single-hue | `Blues`, Okabe-Ito |
+| Thick lines (2.0+) | Thinner lines (0.8-1.2) | `lines.linewidth: 1.0` |
+| Cluttered annotations | Clean whitespace | Fewer labels, tighter padding |
+| Default padding | Tight layout | `savefig.bbox: tight` |
+
+**Filled credible regions with gradient alpha:** For 1D posteriors, the "modern" look uses `fill_between` with transparency rather than plain histograms:
+
+```python
+def plot_posterior_1d(x, density, ax, color="#0072B2", label=None):
+    """Plot a 1D posterior with filled credible bands."""
+    ax.plot(x, density, color=color, linewidth=1.2, label=label)
+
+    # 1-sigma fill
+    peak = x[np.argmax(density)]
+    cumulative = np.cumsum(density) * np.diff(x, prepend=x[0])
+    cumulative /= cumulative[-1]
+    lo_1s = x[np.searchsorted(cumulative, 0.16)]
+    hi_1s = x[np.searchsorted(cumulative, 0.84)]
+
+    mask_1s = (x >= lo_1s) & (x <= hi_1s)
+    ax.fill_between(x, density, where=mask_1s, alpha=0.35, color=color)
+
+    # 2-sigma fill (lighter)
+    lo_2s = x[np.searchsorted(cumulative, 0.025)]
+    hi_2s = x[np.searchsorted(cumulative, 0.975)]
+    mask_2s = (x >= lo_2s) & (x <= hi_2s)
+    ax.fill_between(x, density, where=mask_2s, alpha=0.15, color=color)
+```
+
+**Vertical truth lines:** Use dashed lines with controlled dash pattern:
+
+```python
+ax.axvline(h_true, color="#D55E00", linestyle="--",
+           linewidth=0.8, dashes=(4, 3), label=r"$H_0^{\rm true}$")
+```
+
+**Clean axis labels with LaTeX:** Use `r"$H_0\;[\mathrm{km\,s^{-1}\,Mpc^{-1}}]$"` not plain text. The `\mathrm{}` ensures units are upright, and thin spaces (`\,`) improve readability.
+
+---
+
+### Method 5: Corner Plots for Multi-Parameter Posteriors
+
+**What:** Use the `corner` library (Dan Foreman-Mackey) for triangle/corner plots of multi-parameter posteriors, with style overrides to match the thesis aesthetic.
+
+```python
+import corner
+
+fig = corner.corner(
+    samples,                          # shape (N, ndim)
+    labels=[r"$H_0$", r"$d_L$", ...],
+    quantiles=[0.16, 0.5, 0.84],     # show median + 1-sigma on 1D
+    levels=[0.68, 0.95],             # 1-sigma, 2-sigma in 2D
+    smooth=1.2,                       # Gaussian smoothing sigma
+    smooth1d=0.8,                     # 1D histogram smoothing
+    color="#0072B2",                   # Okabe-Ito blue
+    hist_kwargs={"linewidth": 1.0, "density": True},
+    contourf_kwargs={"colors": [blues(0.25), blues(0.50)], "alpha": 0.85},
+    contour_kwargs={"linewidths": 0.8, "colors": [blues(0.7)]},
+    label_kwargs={"fontsize": 8},
+    title_kwargs={"fontsize": 8},
+    fill_contours=True,
+    show_titles=True,
+    title_fmt=".2f",
+    plot_density=False,
+    plot_datapoints=False,            # clean look, no scatter
+    no_fill_contours=False,
+    max_n_ticks=4,
+)
+```
+
+**Key corner settings for modern look:**
+- `plot_datapoints=False` -- removes scatter plot of individual samples (cleaner)
+- `fill_contours=True` -- filled contours instead of just lines
+- `smooth=1.2` -- light Gaussian smoothing for less jagged contours
+- `max_n_ticks=4` -- fewer tick labels, less clutter
+- Custom `contourf_kwargs` colors from the Blues palette
 
 ---
 
@@ -291,41 +397,31 @@ def weighted_pdet_with_diagnostics(weights, detected, min_neff=50):
 
 | Category | Recommended | Alternative | Why Not |
 |---|---|---|---|
-| Estimator type | Self-normalized IS (ratio estimator) | Unnormalized IS | Unnormalized requires exact normalization of p(theta); self-normalized is more robust |
-| Proposal design | Boundary-enhanced mixture | Pure boundary sampling | Pure boundary gives zero coverage in interior; need defensive uniform component |
-| Adaptive method | Two-stage (pilot + targeted) | Fully adaptive (iterative) | Two-stage is simpler, sufficient for 2D grid; iterative adds complexity for marginal gain |
-| Rare-event method | Importance sampling | Cross-entropy method | CE is powerful but overkill for P_det estimation; our "rare event" is detection, not extreme tail |
-| Grid construction | Histogram with IS weights | Kernel density estimation (KDE) | Histogram is simpler, directly gives per-bin estimate, no bandwidth selection needed |
-| ML surrogate | Not recommended for this project | Neural network P_det interpolator (Chua & Vallisneri) | Requires large training set and validation; histogram approach is adequate for 2D grid at current scale |
+| Style framework | Custom `.mplstyle` | SciencePlots package | SciencePlots adds top/right ticks, changes color cycle unnecessarily, increases execution time substantially, and we need more control than a preset provides |
+| Qualitative palette | Okabe-Ito (8 colors) | Paul Tol Bright/Muted | Okabe-Ito is the most widely adopted in GW/physics community; now in matplotlib 3.9+ as petroff10 |
+| Sequential palette | matplotlib `Blues` | Tol iridescent, custom LinearSegmentedColormap | `Blues` is universally recognized, perceptually uniform, grayscale-safe, zero dependencies |
+| KDE library | `scipy.stats.gaussian_kde` | `sklearn.neighbors.KernelDensity`, `statsmodels` KDE | scipy is already a dependency, sufficient for 1D/2D, no need for additional packages |
+| Corner plots | `corner` library | `getdist`, `chainconsumer`, manual subplots | `corner` is the de facto standard in GW astronomy, lightweight, highly configurable |
+| Contour smoothing | `gaussian_filter` on grids | Cubic interpolation, RBF interpolation | Gaussian filter preserves total probability (it is a convolution), interpolation does not |
+| Font rendering | `text.usetex: True` | `mathtext.fontset: cm` (mathtext) | `usetex` produces exact Computer Modern matching the thesis body; mathtext is a fallback for CI |
 
 ---
 
-## Integration with Current Codebase
+## Installation / Setup
 
-### Current setup (from milestone context):
-- `Model1CrossCheck` MCMC sampler draws (log M, z)
-- Sky angles: phiS ~ Uniform[0, 2pi], qS = arccos(Uniform(-1, 1))
-- z > 0.5 cutoff for high-z importance sampling
-- SNR-only computation (no Fisher matrix)
-- ~10000 injections per h-value, 7 h-values
+```bash
+# corner library for triangle plots (if not already installed)
+uv add corner
 
-### Minimal change for importance weighting:
+# TeX installation for text.usetex: True (already needed for thesis)
+# Arch: sudo pacman -S texlive-basic texlive-fontsrecommended texlive-latexrecommended
+# Ubuntu: sudo apt install texlive-latex-base texlive-fonts-recommended cm-super dvipng
 
-1. Record the proposal density q(z_i, M_i) for each injection alongside the injection parameters
-2. Compute the prior density p(z_i, M_i) (from the astrophysical model)
-3. When building the P_det histogram, use the weighted estimator instead of simple counting
+# tol-colors (optional, only if Paul Tol colormaps needed beyond Blues)
+# uv add tol-colors
+```
 
-### Stratified allocation change:
-
-1. After pilot run (~3000 injections uniform), compute preliminary P_det grid
-2. Identify boundary bins (0.05 < P_det < 0.95)
-3. Allocate remaining ~7000 injections with Neyman-optimal allocation across bins
-4. Within each bin, sample from the prior restricted to that bin
-
-### What NOT to change:
-- Sky angle sampling (already optimal: uniform on the sphere)
-- The SNR computation itself
-- The h-value grid (7 values, run independently)
+**No additional packages required** beyond `corner` for the recommended approach. `scipy`, `matplotlib`, and `numpy` are already dependencies.
 
 ---
 
@@ -333,48 +429,51 @@ def weighted_pdet_with_diagnostics(weights, detected, min_neff=50):
 
 | Check | Expected Result | Tolerance | Reference |
 |---|---|---|---|
-| Unweighted vs weighted P_det from uniform samples | Identical (weights all = 1 for uniform prior) | Machine precision | Self-consistency |
-| P_det in high-SNR region (low z, high M) | ~1.0 | < 0.02 deviation | Physical expectation |
-| P_det in low-SNR region (high z, low M) | ~0.0 | < 0.02 deviation | Physical expectation |
-| Effective sample size per bin | > 50 for reliable bins | Flag if < 50 | Kish (1965) |
-| sum of weights per bin | Proportional to prior mass in bin | < 10% deviation | Normalization check |
-| P_det monotonicity in z (fixed M) | Decreasing with z | No inversions beyond stat. noise | Physical: farther = fainter |
-| P_det monotonicity in M (fixed z) | Generally increasing with M | Allow non-monotonicity from LISA band edge | Physical: heavier = louder (mostly) |
-| Comparison: 10k uniform vs 3k pilot + 7k stratified | Same P_det within 2-sigma | Error bars overlap | Method validation |
+| Font size at 3.375" width | Capital letters >= 2 mm tall | Measure in PDF viewer | APS figure guidelines |
+| Grayscale rendering | Sequential fills remain distinguishable | Visual inspection in grayscale print | Matplotlib colormap docs |
+| Colorblind simulation | All data series distinguishable under deuteranopia | Use Coblis or Color Oracle tool | Okabe & Ito (2002) |
+| PDF font embedding | All fonts embedded (no Type 3) | `pdffonts output.pdf` shows no Type 3 | `pdf.fonttype: 42` setting |
+| LaTeX rendering | No mathtext fallback warnings | Clean matplotlib output log | `text.usetex: True` |
+| Credible intervals | 68% region contains ~68% of probability mass | Within 2% for N > 1000 samples | Statistical consistency |
+| KDE bandwidth | Posterior peak location preserved vs raw histogram | Peak shift < 0.5 * bin width | Scott (1992) |
+| Figure file size | PDF < 2 MB per figure (vector) | Check with `ls -lh` | Journal upload limits |
 
 ---
 
-## Computational Cost Estimates
+## Key Dimension Presets
 
-| Approach | Injections | Wall Time (est.) | P_det Boundary Accuracy |
-|---|---|---|---|
-| Current: uniform | 10000/h | ~3 hours/h (1s/injection) | ~10% per boundary bin (few samples there) |
-| Stratified (Neyman) | 10000/h (3k pilot + 7k targeted) | ~3 hours/h (same total) | ~4-5% per boundary bin |
-| Importance-weighted boundary enhancement | 10000/h | ~3 hours/h (same total) | ~3-5% per boundary bin |
-| Doubled budget, stratified | 20000/h | ~6 hours/h | ~3% per boundary bin |
+For convenience in the plotting code, define standard figure sizes:
 
-**Key point:** Stratified sampling and importance weighting do NOT increase the total number of injections. They redistribute the same budget more efficiently. The computational cost per injection is unchanged (~1 second for SNR). The improvement is purely statistical: better allocation of fixed compute.
+```python
+# REVTeX two-column document widths
+SINGLE_COL = 3.375    # inches
+DOUBLE_COL = 7.0      # inches
+MARGIN_NOTE = 1.0     # inches (if needed)
 
----
+# Standard aspect ratios
+GOLDEN = (1 + 5**0.5) / 2  # 1.618
 
-## Practical Recommendation: Implementation Order
-
-1. **First (minimal effort, high impact):** Record proposal densities for all injections. When building P_det grids, use the self-normalized importance-weighted histogram estimator. This makes ANY future change to the proposal distribution automatically handled.
-
-2. **Second (moderate effort, moderate impact):** Implement stratified sampling with Neyman-optimal allocation. Run a pilot of ~30% of budget uniformly, then allocate the remaining 70% based on pilot P_det estimates.
-
-3. **Third (only if needed):** Design a boundary-enhanced proposal distribution using the pilot P_det boundary contour. This gives the most variance reduction but requires estimating z_max(M) from the pilot.
-
-4. **Defer:** Cross-entropy method, neural network surrogates, fully adaptive sequential methods. These are overkill for the current 2D grid at 10k injections per h.
+# Common figure sizes
+FIG_SINGLE = (SINGLE_COL, SINGLE_COL / GOLDEN)         # 3.375 x 2.086
+FIG_SINGLE_SQUARE = (SINGLE_COL, SINGLE_COL)            # 3.375 x 3.375
+FIG_DOUBLE = (DOUBLE_COL, DOUBLE_COL / GOLDEN)          # 7.0 x 4.326
+FIG_DOUBLE_HALF = (DOUBLE_COL, DOUBLE_COL / (2*GOLDEN)) # 7.0 x 2.163
+```
 
 ---
 
 ## Sources
 
-- [Tiwari (2018), "Weighted Monte Carlo for GW sensitive volume," arXiv:1712.00482](https://arxiv.org/abs/1712.00482) -- Weighted MC estimator for reusing injections across population models. Directly applicable weight formula.
-- [Gerosa & Fishbach (2024), "Quick recipes for GW selection effects," arXiv:2404.16930](https://arxiv.org/abs/2404.16930) -- Detection probability approximations, Marcum Q-function, noise realization effects. State of the art for GW P_det.
-- [Chua & Vallisneri (2023), "Rapid EMRI sensitivity with ML," arXiv:2212.06166](https://arxiv.org/abs/2212.06166) -- Neural network SNR interpolation for EMRI selection functions. Demonstrates smoothness of SNR landscape.
-- [Owen (2013), "Monte Carlo theory, methods and examples"](https://artowen.su.domains/mc/) -- Chapters 8-9 on stratified sampling and importance sampling. Standard MC reference.
-- [Rubinstein & Kroese (2004), "The Cross-Entropy Method," Springer](https://link.springer.com/book/10.1007/978-1-4757-4321-0) -- Adaptive IS via cross-entropy for rare events. Deferred method.
-- [Veach & Guibas (1995), "Optimally Combining Sampling Techniques for MC Rendering," SIGGRAPH](https://dl.acm.org/doi/10.1145/218380.218498) -- Multiple importance sampling / balance heuristic for combining samples from different proposals.
-- [Kish (1965), "Survey Sampling," Wiley](https://www.wiley.com/en-us/Survey+Sampling-p-9780471109495) -- Effective sample size formula N_eff = (sum w)^2 / sum w^2.
+- APS Physical Review Tips for Authors: https://journals.aps.org/prx/authors/tips-authors-physical-review-physical-review-letters -- Figure format, size, and font requirements
+- Matplotlib customization docs: https://matplotlib.org/stable/users/explain/customizing.html -- Complete rcParams reference
+- Matplotlib LaTeX rendering: https://matplotlib.org/stable/users/explain/text/usetex.html -- `text.usetex` configuration
+- Matplotlib colormaps: https://matplotlib.org/stable/users/explain/colors/colormaps.html -- Sequential colormap perceptual properties
+- Leo C. Stein, "Fonts/sizes in matplotlib figures for LaTeX publications": https://duetosymmetry.com/code/latex-mpl-fig-tips/ -- Font size calibration for column widths
+- Okabe & Ito (2002), "Color Universal Design": https://jfly.uni-koeln.de/color/ -- Colorblind-safe palette design
+- Okabe-Ito hex codes reference: https://conceptviz.app/blog/okabe-ito-palette-hex-codes-complete-reference
+- Paul Tol color schemes: https://personal.sron.nl/~pault/ -- Additional colorblind-safe sequential/diverging schemes
+- SciencePlots GitHub: https://github.com/garrettj403/SciencePlots -- Reference for journal-specific mplstyle patterns (not recommended for direct use)
+- corner.py documentation: https://corner.readthedocs.io/en/latest/api/ -- Corner plot API, smoothing, levels
+- scipy.stats.gaussian_kde: https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.gaussian_kde.html -- KDE implementation
+- Inchauspe et al. (2025), "Measuring gravitational wave memory with LISA," Phys. Rev. D 111, 044044. arXiv:2406.09228 -- Reference aesthetic target
+- J.A. Wilcox, "Python for Publication Quality Figures": https://www.jawilcox.com/blog/2024/python-for-publication-quality-figures/ -- Practical matplotlib tips

@@ -1,197 +1,289 @@
-# Physics and Computational Pitfalls
+# Visualization and Figure-Quality Pitfalls
 
-**Physics Domain:** Gravitational wave selection effects, EMRI injection campaigns, P_det estimation for H0 inference
-**Researched:** 2026-03-31
-**Context:** Extending EMRI injection campaign results for simulation-based detection probability estimation with importance sampling
+**Physics Domain:** EMRI dark siren H0 inference -- publication figure preparation for PRD
+**Researched:** 2026-04-07
+**Context:** Upgrading matplotlib visualization pipeline for Physical Review D submission. Colorblind-safe, grayscale-safe, APS-compliant figures from discrete 15-point h-grid posteriors and 580MB per-galaxy JSON files.
 
 ## Critical Pitfalls
 
-Mistakes that invalidate the H0 posterior or produce biased detection probability grids.
+Mistakes that make figures unusable for review, mislead readers, or cause APS rejection.
 
-### Pitfall 1: Parameter Distribution Mismatch Between Injection and Evaluation Pipelines
+### Pitfall 1: Type 3 Fonts in PDF Output Cause APS Rejection
 
-**What goes wrong:** The injection campaign draws EMRI events from `Model1CrossCheck.sample_emri_events()` which uses an emcee MCMC sampler over the EMRI event rate distribution `emri_distribution(M, z)`. The evaluation pipeline (bayesian_statistics.py) uses `galaxy_redshift_normal_distribution` and `galaxy_mass_normal_distribution` centered on each host galaxy. If the injection distribution does not cover the support of the evaluation distribution, P_det will be zero in regions where the posterior needs it, biasing H0 low (or causing numerical zeros in the denominator).
+**What goes wrong:** By default, matplotlib embeds Type 3 fonts in PDF output. APS production runs automated quality checks and rejects PDFs with Type 3 fonts. Adobe Acrobat also does not recognize Type 3 as embedded, which triggers submission system diagnostics.
 
-**Why it happens:** The injection campaign samples from the *population prior* p(M, z), but the Bayesian inference evaluates P_det at the *per-event posterior* locations. These distributions differ: the population prior is broad (z up to 1.5, M over several orders of magnitude), while per-event posteriors are narrow Gaussians centered on the detected source. The mismatch becomes critical if the injection grid has empty bins near detected events.
+**Why it happens:** matplotlib's default `pdf.fonttype = 3` uses bitmap-based font subsets. Type 3 fonts are technically valid but poorly supported by some PDF viewers and journal production workflows.
 
-**Consequences:** If P_det is underestimated (returns 0 in a bin where the true value is nonzero), the selection-effect correction overcorrects, biasing H0. If P_det is overestimated (noisy bin with few samples), H0 is biased in the opposite direction. Since P_det enters the likelihood denominator, even small errors are amplified.
+**Consequences:** Manuscript rejection at the submission stage with an opaque error about non-embedded fonts. This typically happens late in the submission process when time pressure is highest.
 
-**Prevention:**
-- Verify that every detected event's (z, M) falls within the well-populated region of the injection grid. Log a warning if any event falls in a bin with fewer than 10 injections.
-- Plot the injection distribution p_inj(z, M) overlaid with the detected events. Gaps indicate coverage failure.
-- Ensure the injection campaign's `max_redshift = 1.5` matches the evaluation pipeline's `REDSHIFT_UPPER_LIMIT = cosmological_model.max_redshift` (currently both 1.5).
-- Check that the M sampling range in injection matches the evaluation prior. The injection uses `parameter_space.M.lower_limit` to `M.upper_limit`; confirm these match the mass prior in `bayesian_statistics.py`.
+**Prevention:** Set in `emri_thesis.mplstyle` or at the top of `apply_style()`:
+```
+pdf.fonttype: 42
+ps.fonttype: 42
+```
+This forces TrueType (Type 42) font embedding for both PDF and PostScript output. The existing `emri_thesis.mplstyle` does NOT currently set these -- this is a gap.
 
-**Detection:**
-- Anomalously peaked or asymmetric H0 posterior (should be roughly Gaussian for reasonable data).
-- P_det grid has columns or rows of zeros adjacent to nonzero values (coverage gap, not physical transition).
-- Compare P_det from injection data to the old KDE-based DetectionProbability at overlapping parameter values.
+**Detection:** Run `pdffonts paper/figures/*.pdf` (from poppler-utils). Any line showing "Type 3" in the "type" column is a problem. Alternatively, open the PDF in Adobe Acrobat, go to File > Properties > Fonts, and check that all fonts say "(Embedded Subset)" with type TrueType or Type 1.
 
 **References:**
-- Mandel, Farr & Gair (2019), arXiv:1809.02063 -- foundational framework for selection effects in hierarchical Bayesian inference
-- Essick & Farr (2022), arXiv:2204.00461 -- Monte Carlo uncertainty in selection functions
+- [Avoiding Type 3 fonts in matplotlib plots](http://phyletica.org/matplotlib-fonts/)
+- [matplotlib docs: Fonts in Matplotlib](https://matplotlib.org/stable/users/explain/text/fonts.html)
+- [APS Style Basics](https://journals.aps.org/authors/style-basics)
 
-### Pitfall 2: Waveform Failure Correlation with Parameter Regions
+### Pitfall 2: Current Color Palette (tab10) Is Not Colorblind-Safe
 
-**What goes wrong:** The `injection_campaign()` function catches at least 6 types of waveform failures: Warning (mass ratio out of bounds), ParameterOutOfBoundsError, RuntimeError, ValueError (EllipticK, Brent solver), ZeroDivisionError, and TimeoutError (90s). These failures cause the event to be *silently skipped* (not counted in the denominator). If failures correlate with specific parameter regions (e.g., high eccentricity, extreme mass ratios, edge of the FEW flux grid), then P_det is estimated from a *biased subsample* of the population.
+**What goes wrong:** The current `_colors.py` CYCLE uses tab10 colors (`#1f77b4`, `#ff7f0e`, `#2ca02c`, `#d62728`, ...). The tab10 palette is NOT designed for color vision deficiency (CVD) accessibility. Specifically:
+- `#2ca02c` (green, used for TRUTH) and `#d62728` (red, used for MEAN and "With Mz" variant) are nearly indistinguishable under deuteranopia (the most common form, affecting ~6% of males).
+- In `paper_figures.py`, the H0 posterior comparison plots the "Without Mz" curve in blue (`CYCLE[0]`) and "With Mz" in red (`CYCLE[3]`). These two colors collapse to similar olive tones under protanopia.
 
-**Why it happens:** The FEW/fastlisaresponse waveform generator has known parameter space limitations. For low-mass MBHs, up to 75% of EMRIs at 2 years from plunge fall outside the currently available flux parameter space (Speri et al., arXiv:2509.08875). Waveform failures cluster in specific regions: high eccentricity (e0 close to upper limit 0.2), extreme mass ratios, high spin values (a > 0.9), and configurations where the trajectory integrator fails (Brent solver, EllipticK errors).
+**Why it happens:** tab10 was designed for screen-only distinguishability in its original Tableau context, not for print or CVD accessibility. The matplotlib community has moved away from it for publication work.
 
-**Consequences:** The denominator of P_det = N_detected / N_total undercounts N_total in failure-prone regions. If those regions would have produced mostly undetected events (low SNR), then P_det is overestimated there. If some would have been detected, P_det is underestimated. The direction of bias depends on the correlation between failure probability and SNR, which is not known a priori.
+**Consequences:** ~8% of male readers (4.5% of all readers) cannot distinguish the two posterior variants in the key result figure. Referees with CVD may reject the paper on accessibility grounds. APS explicitly recommends "accessible color palettes."
 
-**Prevention:**
-- **Track failures separately:** Record failed events with their (z, M, e0, a, q) parameters in a separate CSV or add a `status` column to the injection CSV. Currently, failures are simply `continue`d past with no record.
-- **Quantify failure fraction by parameter region:** After the campaign, bin failure rate vs (z, M) and check for spatial correlation. If failure rate exceeds 10% in any populated bin, that bin's P_det is unreliable.
-- **Use conservative correction:** For bins with significant failure rates, P_det_corrected = N_detected / (N_success + N_failed), treating all failed waveforms as if they would have been undetected (conservative, biases P_det low rather than unknown direction).
-- **Report failure fraction:** Include total failure count and failure-by-type statistics in the injection campaign metadata.
+**Prevention:** Replace the CYCLE with the Okabe-Ito palette (Wong, Nature Methods 2011):
+```python
+CYCLE = [
+    "#0072B2",  # blue
+    "#E69F00",  # orange
+    "#009E73",  # bluish green
+    "#D55E00",  # vermillion
+    "#56B4E9",  # sky blue
+    "#CC79A7",  # reddish purple
+    "#F0E442",  # yellow (use sparingly, low contrast on white)
+    "#999999",  # grey
+]
+```
+For the two-curve posterior comparison, use blue (`#0072B2`) and vermillion (`#D55E00`) -- these are maximally separated under all three common CVD types (deuteranopia, protanopia, tritanopia).
 
-**Detection:**
-- Log analysis: count `Continue with new parameters...` messages vs successful SNR computations. Current code logs these but does not aggregate.
-- If failure rate > 30%, the injection results in affected parameter regions cannot be trusted.
-- Compare P_det(z) shape: physical expectation is monotonically decreasing with z. Non-monotonic features at specific z values may indicate parameter-correlated failures.
+For semantic colors:
+- TRUTH: `#009E73` (bluish green) -- distinct from both blue and vermillion under CVD
+- MEAN: `#D55E00` (vermillion)
+- REFERENCE: `#999999` (grey) -- unchanged, grayscale-safe by definition
 
-**References:**
-- Speri et al. (2025), arXiv:2509.08875 -- systematic errors in fast relativistic EMRI waveforms
-- Katz et al. (2021), arXiv:2104.04582 -- FastEMRIWaveforms parameter space limitations
-
-### Pitfall 3: z > 0.5 Cutoff Introduces Implicit Importance Sampling Without Weight Correction
-
-**What goes wrong:** The injection campaign applies `if sample.redshift > z_cut: continue` with z_cut = 0.5 (line 474 in main.py). The code comment states "Truncating here does not bias P_det because the numerator and denominator are both zero in the truncated region." This is incorrect as a general claim: it is an importance sampling approximation that is valid only if P_det(z > 0.5) is exactly zero.
-
-**Why it happens:** The initial campaign found 24/69500 detections all at z < 0.18. The z_cut = 0.5 gives a "generous margin." However:
-1. The claim that P_det = 0 for z > 0.5 is empirically motivated but not proven. Different h values change d_L(z), and at h = 0.60 an EMRI at z = 0.5 is closer in d_L than at h = 0.90.
-2. Future parameter changes (different SNR threshold, improved waveforms, different mass distribution) could make P_det(z > 0.5) nonzero.
-3. The histogram estimator in `SimulationDetectionProbability._build_grid_2d()` sets `z_max = max(z_vals) * 1.1`. Since no events exist above z = 0.5, the grid covers only [0, 0.55]. Evaluation at z > 0.55 returns `fill_value=0.0`, which is correct only if the cutoff is valid.
-
-**Consequences:** If any events at z > 0.5 would have been detected, P_det is underestimated (set to zero instead of a small positive value). This biases the selection-effect correction. The bias is h-dependent: lower h values push more events into the truncated region because d_L(z, h) decreases with h.
-
-**Prevention:**
-- Document the z_cut as an explicit importance sampling assumption. State the physical justification (maximum detected z at each h value) and the condition under which it breaks.
-- Validate by running a small sample (e.g., 1000 events) without the z_cut for one h value. If zero detections above z = 0.5, the approximation is confirmed for that configuration.
-- When extending the campaign, test whether the maximum detected z changes with h. If max detected z increases at low h, z_cut may need to be h-dependent.
-- Add a runtime check: if any evaluated z value falls above the injection grid's z_max, log a warning.
-
-**Detection:**
-- Check that `z_max` in the P_det grid exceeds the maximum z of any galaxy in the catalog weighted by the posterior. If the galaxy catalog's `GALAXY_CATALOG_REDSHIFT_UPPER_LIMIT = 0.55` (in constants.py), the cutoff is consistent. But if any inference path evaluates P_det at z > 0.55, the grid returns 0 by default.
-- Compare P_det at z = 0.45 across h values. If it is nonzero for low h but zero for high h, the cutoff matters.
+**Detection:** Use the `daltonize` Python package to simulate CVD on rendered figures:
+```python
+from daltonize import simulate_mpl
+fig_deut = simulate_mpl(fig, color_deficit="d", copy=True)  # deuteranopia
+fig_prot = simulate_mpl(fig, color_deficit="p", copy=True)  # protanopia
+```
+Or use `colorspacious` for pixel-level simulation. Alternatively, the Coblis online simulator (color-blindness.com/coblis-color-blindness-simulator/) works on exported PNGs.
 
 **References:**
-- Code: main.py lines 456-476
+- Wong, B. (2011). "Points of view: Color blindness." Nature Methods, 8(6), 441. doi:10.1038/nmeth.1618
+- [Okabe-Ito palette reference](https://conceptviz.app/blog/okabe-ito-palette-hex-codes-complete-reference)
+- [daltonize](https://github.com/joergdietrich/daltonize)
+
+### Pitfall 3: Connecting 15 Discrete h-Grid Points with Lines Implies Continuous Measurement
+
+**What goes wrong:** The current `paper_figures.py` plots posteriors as `"o-"` (markers + connecting line). With only 15 h-grid points spanning [0.60, 0.90], the connecting line implies the posterior was evaluated continuously. A reviewer who notices the coarse grid may question whether the posterior shape is an artifact of interpolation or represents real structure.
+
+**Why it happens:** The "o-" format string is a natural matplotlib default. With 15 points and a line connecting them, the visual impression is of a smooth curve evaluated at 15 sample points, when in reality the posterior was ONLY evaluated at those 15 points.
+
+**Consequences:**
+1. **Misleading shape:** Linear interpolation between 15 points can miss curvature. If the true posterior has a shoulder or asymmetry between grid points, the figure will not show it.
+2. **False precision in CI:** The 68% CI is computed via CDF interpolation to a 1000-point fine grid (`h_fine = np.linspace(..., 1000)`). This interpolation assigns sub-grid precision that does not exist in the data, potentially over-reporting CI width precision.
+3. **Reviewer distrust:** Experienced Bayesian reviewers will notice that `p(h | data)` is evaluated on only 15 points and may question whether the grid is adequate.
+
+**Prevention:**
+- **Always show markers** at the actual grid points (already done with `"o-"`, good).
+- **Do NOT smooth or spline** the 15-point posterior. The honest representation is markers connected by straight lines (current approach) or a step function.
+- **State the grid resolution** in the figure caption: "Posterior evaluated at 15 values of h in [0.60, 0.90]."
+- **For CI calculation:** Report CIs rounded to the grid spacing (0.02 in h). Do not quote CI boundaries to three decimal places when the grid spacing is 0.02.
+- **Consider a step-function representation** (bar plot or step plot) as an alternative that honestly communicates the discrete nature.
+
+**Detection:** Check whether the quoted CI boundaries fall on grid points. If h_16 = 0.683 but the nearest grid points are 0.68 and 0.70, the reported boundary is an interpolation artifact.
+
+### Pitfall 4: Credible Interval Calculation Using Raw cumsum Instead of Trapezoidal CDF
+
+**What goes wrong:** In `bayesian_plots.py` line 99-101, the credible interval is computed as:
+```python
+cumsum = np.cumsum(normalized)
+cumsum = cumsum / cumsum[-1]
+```
+This is a cumulative SUM, not a cumulative INTEGRAL. On a non-uniform h-grid (or even a uniform one), `np.cumsum` treats each posterior value as having equal weight regardless of the spacing between h points. The correct CDF is the cumulative trapezoidal integral: `CDF(h_i) = integral from h_0 to h_i of p(h) dh`.
+
+In contrast, `paper_figures.py` lines 216-224 correctly use `np.trapezoid` for the CDF calculation. This inconsistency means the same posterior will produce different CI boundaries depending on which plotting function is called.
+
+**Why it happens:** `np.cumsum` is the quick approximation. For a uniform grid it differs from trapezoidal integration by O(dh), which for 15 points with dh = 0.02 produces ~1% error in CI boundaries. For non-uniform grids the error is larger.
+
+**Consequences:** Inconsistent CI widths reported in different figures. If the thesis shows a dashboard plot (using `bayesian_plots.py`) and a paper figure (using `paper_figures.py`), the CIs may differ by 1-2% in h, which is confusing.
+
+**Prevention:** Use trapezoidal integration consistently. Replace the `cumsum` approach in `bayesian_plots.py` with the same `np.trapezoid`-based CDF as in `paper_figures.py`:
+```python
+cdf = np.zeros(len(h_values))
+for i in range(1, len(h_values)):
+    cdf[i] = cdf[i-1] + np.trapezoid(pn[i-1:i+1], h_values[i-1:i+1])
+cdf /= cdf[-1]
+```
+
+**Detection:** Compute CIs both ways for the same posterior and compare. Any difference > 0.5% in h indicates a problem.
 
 ## Moderate Pitfalls
 
-### Pitfall 4: Histogram P_det Estimator with Low Bin Counts
+### Pitfall 5: Grayscale Collapse -- Lines Distinguished Only by Color
 
-**What goes wrong:** The `_build_grid_2d` method uses `np.histogram2d` with 30 z-bins x 20 M-bins = 600 cells. With ~10,000 events per h value (20 tasks x 500 events), the average bin occupancy is ~17 events/bin. But the distribution is not uniform: high-z bins and extreme-M bins will have very few events. Bins with N < 5 produce P_det estimates with relative uncertainty > 45% (binomial standard error sqrt(p(1-p)/N)), and bins with N = 0 produce P_det = 0 by construction.
+**What goes wrong:** When printed in grayscale (as many readers will do for PRD papers), lines distinguished only by color become indistinguishable. The current `paper_figures.py` uses blue solid line with circles (`"o-"`) vs red dashed line with squares (`"s--"`) for the two posterior variants. The marker+linestyle distinction is good, but other plots in the pipeline (e.g., `plot_event_posteriors` in `bayesian_plots.py`) plot hundreds of lines in the same color with alpha=0.3, which becomes a uniform grey wash in grayscale.
 
-**Why it happens:** The histogram estimator is the simplest unbiased estimator for P_det, but it has high variance in sparse bins. The 2D binning compounds this because the event distribution concentrates at low z and intermediate M (reflecting the population prior), leaving the tails undersampled.
+**Why it happens:** Color is the easiest visual variable to manipulate in matplotlib. Linestyle and marker cycling require explicit setup.
 
-**Prevention:**
-- After building the grid, count the number of bins with N_total < 10. Report this as a data quality metric.
-- Consider adaptive binning: use finer bins where data is dense and coarser bins where data is sparse.
-- Consider smoothing: apply a Gaussian kernel or use a kernel density estimator instead of raw histogram ratios. The KDE approach was used in the old `DetectionProbability` class and has better variance properties.
-- For bins with 0 total events: use `fill_value=0.0` (conservative, current behavior). This is correct for high-z bins outside the detection horizon but incorrect for bins that are empty due to undersampling of the injection set.
-- Use Wilson score interval or Clopper-Pearson interval instead of the point estimate N_det/N_total to quantify uncertainty per bin.
-
-**Detection:**
-- Noisy or non-monotonic P_det(z) curve at fixed M.
-- P_det changing significantly when the number of bins is varied (sensitivity to binning is a sign of low statistics).
-- Compare 1D marginalized P_det(z) (30 bins, ~333 events/bin) with 2D P_det(z,M): if 1D is smooth but 2D is noisy, the 2D grid has insufficient statistics.
-
-### Pitfall 5: Linear Interpolation Between h Grid Points
-
-**What goes wrong:** `SimulationDetectionProbability._interpolate_at_h` linearly interpolates P_det between the bracketing h values on the grid. If the h grid is coarse (e.g., [0.60, 0.65, 0.70, 0.73, 0.80, 0.85, 0.90]), the spacing is 0.05, and linear interpolation may miss curvature in P_det(h). P_det depends on h through d_L(z, h), which enters the SNR nonlinearly.
-
-**Why it happens:** P_det(z | h) depends on h because changing h changes the luminosity distance d_L = d_L(z, h), and SNR scales as 1/d_L. The relationship SNR proportional to 1/d_L(z,h) is nonlinear in h, so P_det(h) at fixed z may have curvature that linear interpolation misses.
+**Consequences:** Figures become unreadable in printed copies. Many institutional printers default to grayscale. Senior faculty who print papers to read them cannot distinguish data series.
 
 **Prevention:**
-- Test interpolation accuracy: for a few z values, compare the linearly interpolated P_det(h=0.72) against the grid values at h=0.70 and h=0.73. If the true P_det at h=0.72 were known (e.g., from a small injection run), compare.
-- If the H0 posterior is sensitive to P_det values between grid points, add intermediate h values to the grid.
-- Consider using cubic spline interpolation in h instead of linear (but ensure P_det remains in [0, 1]).
+- For the two-variant posterior comparison: the current `"o-"` vs `"s--"` approach provides redundant encoding (marker shape + linestyle). This is correct. Verify that the two semantic colors chosen also have distinct lightness values in grayscale (blue maps to ~40% grey, vermillion maps to ~55% grey -- sufficient contrast).
+- For multi-line plots (event posteriors): use a sequential lightness ramp (light to dark) instead of alpha blending. Or use the `color_by` parameter with viridis (which is perceptually uniform and monotonic in lightness, so it degrades gracefully to grayscale).
+- For histograms: use hatching patterns in addition to color fill. matplotlib supports: `'/'`, `'\\'`, `'|'`, `'-'`, `'+'`, `'x'`, `'o'`, `'O'`, `'.'`, `'*'`.
+- **Test grayscale rendering** by applying `plt.style.use('grayscale')` temporarily and checking readability.
 
-**Detection:**
-- H0 posterior with artificial kinks or steps at the grid h values.
-- Discontinuities in the log-likelihood as a function of h.
+**Detection:** Export figure as PNG, convert to grayscale with PIL: `img.convert('L')`. Check if all data series remain distinguishable.
 
-### Pitfall 6: d_L-to-z Inversion Inconsistency
+### Pitfall 6: APS Figure Size Mismatch -- Font Too Small After Scaling
 
-**What goes wrong:** The `detection_probability_with_bh_mass_interpolated` method converts d_L to z using `dist_to_redshift(d_L, h=h)`, then converts M_z (observer-frame mass) to source-frame mass via `M_z / (1+z)`. The injection campaign stores z directly (from the population sampler) and M (source-frame mass). If `dist_to_redshift` uses a different cosmology or numerical inversion than the one used to generate d_L in the injection campaign, the z values will not match, and the lookup will hit the wrong bin.
+**What goes wrong:** The current `_helpers.py` defines `"single": (3.375, 3.375 / 1.618)` which is correct for REVTeX single-column width (3.375 inches = 8.5 cm). However, the `emri_thesis.mplstyle` sets `font.size: 11` and `axes.labelsize: 12`. When the figure is rendered at 3.375 inches wide with 12pt axis labels, the labels are physically correct. But if APS production scales the figure down (common for two-column layouts), fonts shrink below the 2mm minimum capital height requirement.
 
-**Why it happens:** `dist_to_redshift` is a numerical root-finding inversion of `dist(z, h)`. The injection campaign computes `dist(sample.redshift, h=h_value)` and stores both z and d_L. The evaluation pipeline receives d_L from the Cramer-Rao bounds and inverts it. Any numerical precision difference or cosmological parameter difference (Omega_m, w0, wa) between the two paths causes a z mismatch.
+**Why it happens:** APS requires that "the size of the smallest capital letters and numerals should be at least 2 mm." A 9pt font at 300 DPI has a capital height of ~2.1mm, which is borderline. If the figure is scaled to 80% of its original size during production, 9pt becomes 7.2pt (~1.7mm), which violates the requirement.
+
+**Consequences:** APS production may reject the figure or request a revision. At minimum, small fonts cause readability problems.
 
 **Prevention:**
-- Verify that the same cosmological parameters (Omega_m, H0 convention, dark energy EOS) are used in both the injection campaign's `dist()` call and the evaluation pipeline's `dist_to_redshift()`.
-- Known issue: `constants.py` uses WMAP-era cosmology (Omega_m = 0.25, H = 0.73). This is consistent within the project, but if any code path uses astropy's default Planck cosmology, there will be a mismatch.
-- Add a round-trip test: z_original -> dist(z, h) -> dist_to_redshift(d_L, h) should recover z_original to within 1e-4.
+- Use the `apply_style(use_latex=True)` path which sets `font.size: 10`, `axes.labelsize: 10`, `xtick.labelsize: 9`. These are the correct sizes for REVTeX.
+- **Never go below 8pt** for any text element in a single-column figure.
+- **Design at final size:** Always create figures at the exact output size (3.375" for single-column, 7.0" for double-column). Never create at a larger size and scale down.
+- The `"double": (7.0, 7.0 / 1.618)` preset is correct for APS double-column width.
+- Verify: render the figure, export at 300 DPI, measure the physical height of the smallest text in the PNG. It must exceed 2mm.
 
-**Detection:**
-- P_det lookup returning 0 for events that should clearly be detectable.
-- Systematic offset between z stored in injection CSV and z recovered from d_L.
+**References:**
+- [APS Style Basics](https://journals.aps.org/authors/style-basics): "Smallest capital letters >= 2 mm, data points >= 1 mm diameter, linewidth >= 0.18 mm (0.5 pt)"
+- [APS Author Guide for REVTeX 4.2](https://ctan.math.illinois.edu/macros/latex/contrib/revtex/aps/apsguide4-2.pdf)
+
+### Pitfall 7: Loading Multiple 580MB JSON Files Exhausts Memory
+
+**What goes wrong:** The `_load_per_event_with_mass_scalars` function in `paper_figures.py` already implements the tail-read optimization (reading only the last 300KB of each 580MB file). However, the `_load_per_event_no_mass` function loads ENTIRE JSON files with `json.load(fh)`. With 15 h-grid points, this loads 15 full JSON files into memory simultaneously (stored in `raw` dict). If the no-mass JSON files are also large, this can exhaust memory on a development machine.
+
+**Why it happens:** The no-mass JSON files are smaller than the with-mass files (because they lack per-galaxy breakdowns), but they still contain per-event data for hundreds of events. The `raw` dict holds all 15 parsed JSON objects in memory simultaneously.
+
+**Consequences:** Out-of-memory crash or severe swapping on machines with 16GB RAM. The crash happens during figure generation, not during the main simulation, so it may surprise the user.
+
+**Prevention:**
+- **Process one file at a time:** Instead of loading all 15 JSONs into `raw`, process each file immediately and discard the raw data:
+  ```python
+  for f in files:
+      h = _h_from_file(f)
+      with open(base / f) as fh:
+          data = json.load(fh)
+      # Extract per-event values immediately
+      for eid in event_ids:
+          events[eid].append(data.get(eid, [0.0])[0])
+      del data  # free memory
+  ```
+- **For the with-mass files:** The tail-read approach in `_load_per_event_with_mass_scalars` is already correct and memory-efficient. Do not change it.
+- **Memory monitoring:** Add a simple check before loading: `os.path.getsize(filepath)` and warn if total size exceeds available memory.
+- **Do NOT use `ijson` for this case:** The JSON files are structured as dicts, and the tail-read regex approach is faster and simpler than streaming for extracting scalars from the end of the file.
+
+**Detection:** Monitor RSS with `resource.getrusage(resource.RUSAGE_SELF).ru_maxrss` before and after loading. If RSS increases by more than 2GB, the loading is inefficient.
+
+### Pitfall 8: Peak Normalization Hides Relative Posterior Widths
+
+**What goes wrong:** Both `bayesian_plots.py` and `paper_figures.py` default to peak normalization (`posterior / max(posterior)`). When comparing two posteriors of different widths on the same axes, peak normalization makes them appear equally probable at their peaks. This hides the key scientific result: the narrower posterior (with-BH-mass) is more informative, but peak normalization makes both posteriors peak at 1.0.
+
+**Why it happens:** Peak normalization is visually clean and avoids the issue of one posterior being orders of magnitude larger than another. It is standard practice. But for COMPARING posteriors, it removes the information about relative constraining power.
+
+**Consequences:** A reader looking at the peak-normalized plot sees two curves both reaching 1.0 and may underestimate the significance of the width difference. The "area under the curve" meaning of probability is lost.
+
+**Prevention:**
+- For the main comparison figure: peak normalization is acceptable if the caption clearly states "peak-normalized for visual comparison" and the CI widths are reported quantitatively in the text.
+- Consider an inset or separate panel showing the density-normalized (`mode="density"`) versions, where the narrower posterior is taller.
+- At minimum, annotate the 68% CI width directly on the figure: `Delta h = X.XX` for each variant.
+- Do NOT density-normalize both posteriors on the same axes if their widths differ by more than 5x -- the broader one becomes invisible.
+
+**Detection:** If two posteriors are peak-normalized and their 68% CI widths differ by more than 3x, the visual comparison is misleading without annotation.
+
+### Pitfall 9: Non-Reproducible Event Selection in Single-Event Likelihood Figure
+
+**What goes wrong:** `_select_representative_events` in `paper_figures.py` selects 4 events based on likelihood width statistics. The selection is deterministic (no randomness), but it depends on the full set of loaded events and their ordering. If the input data changes (e.g., a few events are added or removed from the posterior directory), the "representative" events change, and the figure looks different.
+
+**Why it happens:** The selection algorithm sorts events by width and picks fixed percentile positions (5th, 25th, 50th, 95th). This is deterministic for a fixed input set but fragile to data changes.
+
+**Consequences:** A "before and after" comparison of figures from slightly different data sets shows different events, making it impossible to tell whether the difference is due to the data change or the event selection change.
+
+**Prevention:**
+- **Pin the selected event IDs** in the code or a config file once the initial selection is made. E.g., `REPRESENTATIVE_EVENTS = ["42", "117", "283", "491"]`.
+- If using algorithmic selection, document the selection criteria in the figure caption and accept that the selection may change with different data.
+- The convergence plot already uses a fixed seed (`seed=20260407`), which is good. Apply the same principle to event selection if randomness is involved.
+
+**Detection:** Run the figure generation twice with the same data. If the selected events differ, there is a hidden source of non-determinism (e.g., dict ordering, filesystem ordering of glob results).
 
 ## Minor Pitfalls
 
-### Pitfall 7: Geometric Mean for Mass Bin Centers
+### Pitfall 10: Missing `constrained_layout` Causes Label Clipping in Multi-Panel Figures
 
-**What goes wrong:** Line 173 of `simulation_detection_probability.py` uses geometric mean for M bin centers: `M_centers = np.sqrt(M_edges[:-1] * M_edges[1:])`. The bin edges are log-spaced (`np.geomspace`), so the geometric mean is the correct center in log-space. However, `RegularGridInterpolator` with `method="linear"` interpolates linearly in the provided coordinates. This means interpolation is linear in M (not log-M), which may be inaccurate for a function that varies slowly in log-M but rapidly in M.
+**What goes wrong:** The mplstyle sets `figure.constrained_layout.use: True`, but `paper_figures.py` creates some figures with `get_figure(figsize=(...))` which may not respect constrained layout for complex multi-panel setups (e.g., the 4x2 single-event likelihood grid). Axis labels, especially rotated y-labels like `"Peaked\n(event 42)"`, can be clipped.
 
-**Prevention:**
-- Consider passing log(M_centers) to the interpolator and converting query points to log-M before lookup. This makes the interpolation linear in log-M, which better matches the physics (SNR depends on chirp mass, which varies on a log scale).
-- Test: evaluate P_det at the midpoint of two adjacent M bins and compare to the average of the bin values. If the discrepancy exceeds 5%, log-space interpolation is needed.
+**Prevention:** After creating multi-panel figures, call `fig.set_constrained_layout_pads(w_pad=0.04, h_pad=0.04)` to add padding, or switch to `fig.tight_layout()` as a fallback. Test by exporting at final size and checking all labels are fully visible.
 
-### Pitfall 8: Extrinsic Parameter Marginalization Incompleteness
+### Pitfall 11: Viridis Colormap on Scatter Plots Fails for Small Point Counts
 
-**What goes wrong:** The injection campaign randomizes sky angles (phiS, qS) via `parameter_space.randomize_parameters(rng=rng)`, and the P_det grid marginalizes over them (bins in z and M only). The marginalization is correct only if the sky angle distribution in the injections matches the assumed prior (isotropic). If `randomize_parameters` draws from a non-isotropic distribution (e.g., uniform in theta rather than uniform in cos(theta)), the marginalization is biased.
+**What goes wrong:** The SNR vs d_L scatter in `paper_figures.py` uses viridis with `s=8` markers and `alpha=0.6`. With few data points (<50), the color mapping shows few discrete colors, making the colorbar misleading (it implies a continuous range). With many overlapping points (>500), alpha blending makes all points look the same washed-out color.
 
 **Prevention:**
-- Verify that `randomize_parameters` draws sky angles from the correct prior: phi ~ Uniform(0, 2pi), cos(theta) ~ Uniform(-1, 1) (i.e., theta is NOT uniform, but cos(theta) is).
-- The injection campaign stores phiS and qS in the CSV. Plot their distributions to confirm isotropy.
+- For <50 points: increase marker size to `s=20` and use `alpha=0.9`.
+- For >500 points: use `rasterized=True` to avoid huge PDF file sizes, and consider a 2D histogram (`hist2d`) instead of a scatter plot.
+- For the redshift colorbar: ensure the colorbar ticks match the actual data range, not a theoretical range.
 
-### Pitfall 9: Seed Isolation Insufficient for Large Campaigns
+### Pitfall 12: EPS Output Incompatible with Transparency
 
-**What goes wrong:** The injection campaign offsets seeds by `h_index * 10000` (line 118 of submit_injection.sh). With 20 tasks per h value, seeds span [BASE_SEED + offset, BASE_SEED + offset + 19]. If tasks_per_h > 10000 (unlikely but possible in extended campaigns), seed ranges for different h values overlap, producing correlated samples.
+**What goes wrong:** If APS requests EPS format, any figure using alpha transparency (`alpha=0.12` for CI shading, `alpha=0.3` for fill_between, `alpha=0.6` for scatter) will render incorrectly. EPS does not support transparency; matplotlib fakes it by compositing against a white background, but this fails for overlapping transparent elements.
 
 **Prevention:**
-- For the current campaign (20 tasks/h), this is safe. For extensions, verify that tasks_per_h * max(h_index) < 10000.
-- The RNG within each task also depends on the initial state of emcee's MCMC sampler, which adds another layer of randomness. The seed controls `np.random.Generator`, not emcee's internal state.
+- **Prefer PDF** for all APS submissions. APS accepts PDF and it handles transparency correctly.
+- If EPS is required: replace alpha-blended fills with solid fills using pre-mixed colors. E.g., instead of `alpha=0.12` blue on white, use `color="#dbe8f4"` (the composited result).
+- Test: export to EPS, re-open in a viewer, and check that overlapping transparent regions look correct.
+
+### Pitfall 13: Legend Placement Obscures Data Near the Peak
+
+**What goes wrong:** `paper_figures.py` uses `legend(loc="upper right")`. For the H0 posterior comparison, the posterior peaks are typically near h=0.73 (right-of-center), and the legend box can overlap with the data. With the truth line, Planck band, and SH0ES band all near the peak, the upper-right corner is crowded.
+
+**Prevention:** Use `legend(loc="upper left")` if the posteriors have low probability there, or move the legend outside the axes with `bbox_to_anchor=(1.02, 1)`. For paper figures, prefer annotating curves directly with `ax.text()` or `ax.annotate()` instead of using a legend box.
 
 ## Numerical Pitfalls
 
 | Issue | Symptom | Cause | Fix |
 |-------|---------|-------|-----|
-| P_det = 0 in populated bin | H0 posterior has sharp feature | Bin has zero detected events but nonzero total (legitimate P_det ~ 0) vs. bin has zero total events (coverage gap) | Distinguish the two cases: check `total_counts` array |
-| P_det > 1 after interpolation | Unphysical value | Linear interpolation between grid points can overshoot | Already handled: `np.clip(result, 0.0, 1.0)` in line 268 |
-| NaN in P_det | Crash or silent corruption | 0/0 in histogram ratio | Already handled: `np.divide(..., where=total_counts > 0)` with `out=np.zeros_like(...)` |
-| Binomial noise in P_det | Noisy H0 posterior | Low bin counts N < 10 | Increase injection count or reduce bin count |
-| fill_value=0.0 at grid boundary | Underestimated P_det at low z | z_edges start at 0, but first bin center is > 0; queries at z ~ 0 extrapolate | Verify that z = 0 is within the grid bounds or that no events have z ~ 0 |
-| d_L-to-z inversion precision | Wrong bin lookup | Root-finding tolerance in `dist_to_redshift` | Verify round-trip consistency to 1e-4 in z |
-| MC variance in denominator integral | Noisy single-event likelihoods | N_SAMPLES = 10,000 in bayesian_statistics.py line 689 may be too few if P_det varies rapidly | Increase N_SAMPLES or use stratified sampling; check variance across repeated evaluations |
+| `np.trapezoid` not available | `AttributeError` | matplotlib < 3.8 / numpy < 2.0 uses `np.trapz` | Check numpy version; use `np.trapz` as fallback or pin `numpy>=2.0` |
+| Zero posterior at all grid points | Division by zero in normalization | All likelihoods below numerical precision | Add `if peak <= 0: return posterior` guard (already present in `_normalize_posterior`) |
+| PDF file size > 10MB for scatter plots | Slow rendering, APS upload timeout | Vector rendering of thousands of scatter points | Use `rasterized=True` on scatter and fill operations |
+| LaTeX rendering fails on headless CI | `RuntimeError: latex not found` | `text.usetex: True` without TeX installation | Default `use_latex=False`; only enable for final paper figures on a machine with TeX |
+| Inconsistent DPI across figure types | Visual size mismatch when figures are placed side-by-side in paper | Different `dpi` settings for different figures | Always use `savefig.dpi: 300` from the mplstyle; never override per-figure |
 
 ## Convention and Notation Pitfalls
 
 | Pitfall | Sources That Differ | Resolution |
 |---------|-------------------|------------|
-| M (source-frame) vs M_z (observer-frame) | Injection CSV stores source-frame M; evaluation uses M_z = M*(1+z) | `simulation_detection_probability.py` line 351 correctly converts: `M_true = M_z / (1+z)`. Verify this conversion uses the same z as the injection. |
-| h convention: dimensionless vs km/s/Mpc | Code uses dimensionless h (H0 = 100*h km/s/Mpc) throughout | Consistent within project. But h=0.73 means H0=73 km/s/Mpc. |
-| d_L units: Gpc vs Mpc | `dist()` returns Gpc; `detection_probability_with_bh_mass_interpolated` expects Gpc | Consistent. Verify any new code paths also use Gpc. |
-| Omega_m: WMAP vs Planck | constants.py uses Omega_m = 0.25 (WMAP); Planck 2018 gives 0.3153 | Known bug (LOW priority). Consistent within project but physically outdated. |
+| h vs H_0 axis label | Some plots label x-axis as "$h$", others could use "$H_0$" | Use dimensionless $h$ consistently. State $H_0 = 100\,h$ km/s/Mpc in figure caption. Current code is consistent: `LABELS["h"]` returns `$h$`. |
+| Peak-normalized vs density-normalized y-axis | `bayesian_plots.py` defaults to peak; paper figures also default to peak | State normalization in y-axis label. "Posterior (peak-normalized)" is explicit and correct (as in `paper_figures.py` line 231). |
+| "Injected" vs "True" for reference line label | `paper_figures.py` uses "Injected"; `bayesian_plots.py` uses "True $h = 0.73$" | Use "Injected" in paper figures (physically precise: we injected this value into the simulation). Use "True" only in internal diagnostics. |
+| Planck vs SH0ES reference values | `bayesian_plots.py` hardcodes Planck h=0.674 +/- 0.005, SH0ES h=0.73 +/- 0.01 | These are Planck 2018 (arXiv:1807.06209) and Riess et al. 2022 (arXiv:2112.04510) values. Verify against latest values before submission. |
 
 ## Phase-Specific Warnings
 
 | Phase Topic | Likely Pitfall | Mitigation |
 |-------------|---------------|------------|
-| Analyzing existing injection results | Waveform failure fraction unknown | Parse logs or add failure tracking to future runs |
-| Extending injection campaign | z_cut=0.5 may need h-dependent adjustment | Run validation batch without cutoff for extreme h values |
-| Building P_det grid | Sparse bins at high z and extreme M | Monitor bin occupancy; fall back to 1D P_det(z) where 2D is too noisy |
-| Using P_det in H0 posterior | MC noise in denominator integral | Increase N_SAMPLES from 10,000 if posterior is noisy; test with 50,000 |
-| Comparing old KDE P_det with new simulation P_det | Different smoothing assumptions | Expect quantitative differences; qualitative shape should agree |
-| Adding new h grid points | Interpolation error between existing points | Verify that adding h = 0.75 does not change results at h = 0.73 significantly |
+| Replacing CYCLE colors | Breaking existing non-paper plots that depend on specific CYCLE indices | Use semantic named colors (TRUTH, MEAN, etc.) instead of CYCLE indices wherever possible. Only CYCLE-indexed code needs updating. |
+| Adding linestyle cycling | Too many line styles become confusing (>4 distinct styles) | Limit to 4 standard styles: solid, dashed, dotted, dashdot. Use markers for additional distinction. |
+| Testing colorblind safety | Daltonize may not be installed; adds a dev dependency | Add `daltonize` to the `dev` extras in `pyproject.toml`. Make the test a manual check, not a CI gate. |
+| Merging two figure pipelines | Style inconsistency between `bayesian_plots.py` and `paper_figures.py` | Both already import from `_colors.py` and `_helpers.py`. Ensure the new palette is the single source of truth in `_colors.py`. |
+| Memory during figure generation | Loading 15 with-mass JSON files (~580MB each) simultaneously | The tail-read approach in `paper_figures.py` is already correct. Do not regress by switching to full `json.load`. |
+| CI precision reporting | Quoting CI to 3 decimal places from 15-point grid | Round CI boundaries to nearest grid point (0.02 spacing) or state interpolation method. |
+| savefig format | Using PNG for paper submission | Always export PDF for vector quality. Use PNG only for rasterized supplementary material or web display. |
 
 ## Sources
 
-- Mandel, Farr & Gair (2019), arXiv:1809.02063 -- Selection effects in hierarchical Bayesian inference for GW populations
-- Essick & Farr (2022), arXiv:2204.00461 -- Monte Carlo uncertainty in selection functions; correlated uncertainties
-- Farr (2019), arXiv:1904.10879 -- Accuracy requirements for empirically measured selection functions
-- Vitale et al. (2022), "Quick recipes for gravitational-wave selection effects", arXiv:2404.16930 -- Approximations to GW selection effects, noise realization effects
-- Speri et al. (2025), arXiv:2509.08875 -- Systematic errors in fast relativistic EMRI waveforms
-- Essick et al. (2023), MNRAS 526, 3495 -- Growing pains: likelihood uncertainty impact on hierarchical inference
-- Katz et al. (2021), arXiv:2104.04582 -- FastEMRIWaveforms: parameter space coverage and limitations
+- Wong, B. (2011). "Points of view: Color blindness." Nature Methods, 8(6), 441. doi:10.1038/nmeth.1618
+- [Okabe-Ito palette complete reference](https://conceptviz.app/blog/okabe-ito-palette-hex-codes-complete-reference)
+- [APS Style Basics](https://journals.aps.org/authors/style-basics)
+- [APS Author Guide for REVTeX 4.2](https://ctan.math.illinois.edu/macros/latex/contrib/revtex/aps/apsguide4-2.pdf)
+- [APS Journals Style Guide for Authors (November 2024)](https://res.cloudinary.com/apsphysics/image/upload/v1736779890/APS_Journals_Style_Guide_Authors_Nov2024_ua91lv.pdf)
+- [matplotlib: Fonts in Matplotlib](https://matplotlib.org/stable/users/explain/text/fonts.html)
+- [daltonize: CVD simulation for matplotlib](https://github.com/joergdietrich/daltonize)
+- [colorspacious: color vision deficiency simulation](https://pypi.org/project/colorspacious/)
+- [Ranocha: Coloring in Scientific Publications](https://ranocha.de/blog/colors/)
+- Rougier, N.P. et al. (2014). "Ten Simple Rules for Better Figures." PLoS Comput Biol 10(9): e1003833. doi:10.1371/journal.pcbi.1003833

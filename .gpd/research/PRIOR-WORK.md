@@ -1,283 +1,309 @@
-# Prior Work
+# Prior Work: Visualization in Dark Siren H0 Inference Papers
 
-**Project:** Injection Campaign Physics Audit and Enhanced Sampling for EMRI Dark Siren P_det
-**Physics Domain:** Gravitational wave selection effects, dark siren cosmology, Monte Carlo methods
-**Researched:** 2026-03-31
+**Project:** EMRI Dark Siren H0 Inference -- Publication Figures
+**Physics Domain:** Gravitational wave cosmology, dark siren methodology, EMRI parameter estimation
+**Researched:** 2026-04-07
 
 ## Theoretical Framework
 
-### Governing Theory
+This document surveys figure types and visualization approaches used in state-of-the-art dark siren H0 inference papers, classifying each as standard (expected by referees), recommended (adds value), or novel (differentiating for an EMRI paper).
 
-| Framework | Scope | Key Equations | Regime of Validity |
-|-----------|-------|---------------|-------------------|
-| Hierarchical Bayesian inference with selection effects | Population-level inference from GW detections subject to Malmquist bias | Mandel, Farr & Gair (2019) Eq. 2-8: likelihood with P_det normalization | Applies whenever detected sample is a biased subset of the population |
-| Dark siren cosmology | H0 inference from GW events without EM counterparts, using galaxy catalogs | Likelihood marginalized over galaxy catalog with P_det selection correction | Requires galaxy catalog completeness or completeness correction; z < 1 for EMRI dark sirens |
-| Injection-based selection function estimation | Empirical P_det from simulated signal injections | P_det(theta) = N_found(theta) / N_total(theta) in each bin | Requires sufficient injection density per bin; subject to Poisson noise |
+### Key Reference Papers
 
-### The Selection Effects Problem
+| Paper | arXiv | Relevance | Figure Focus |
+|-------|-------|-----------|--------------|
+| Gray et al. (2020) | 1908.06050 | Foundational dark siren mock data challenge | H0 posterior, per-event likelihoods, convergence |
+| Finke et al. (2021) | 2101.12660 | GWTC-2 dark siren H0 with GLADE | Galaxy weighting, completeness, systematics |
+| Laghi et al. (2021) | 2102.01708 | First EMRI dark siren cosmology with LISA | Corner plots, convergence vs N_det, sky localization |
+| LVK GWTC-3 (2021) | 2111.03604 | Official LVK H0 constraints from O3 | Combined posterior, per-event contributions, sky maps |
+| Borghi et al. (2024) | 2404.16092 | O4a dark siren H0 update | Sky maps with galaxy overlays, posterior stacking |
+| Gray et al. (2022) | 2212.08694 | "Hitchhiker's Guide" to galaxy catalog method | Pedagogical figures: completeness, weighting, method |
+| Laghi et al. (2026) | 2603.23612 | Joint EMRI+MBHB LISA cosmology | 2D cosmological contours, combined constraints |
 
-In dark siren cosmology, the observed sample of GW events is subject to selection bias: louder, closer, more favorably oriented events are preferentially detected. The population-level likelihood for cosmological parameters (specifically H0) must account for this via the detection probability P_det. The standard hierarchical Bayesian framework (Mandel, Farr & Gair, arXiv:1809.02063; Loredo 2004) gives:
+**Confidence: HIGH** -- These are the canonical references; every dark siren paper cites Gray et al. (2020) and the LVK papers.
 
-```
-L(data | Lambda) ~ prod_i p(d_i | theta_i, Lambda) / alpha(Lambda)
-```
+## Standard Figure Types in Dark Siren Papers
 
-where alpha(Lambda) = integral p(theta | Lambda) P_det(theta) d(theta) is the fraction of the population that is detectable, and Lambda includes H0. Getting alpha(Lambda) wrong biases H0.
+### Category 1: H0 Posterior Distribution (MANDATORY)
 
-**Confidence: HIGH** -- This framework is the established standard in the field, used by LVK in all population and cosmology papers since O2.
+**What it is:** Combined posterior p(H0 | data) plotted against H0 (or h), with reference values marked.
 
-### Mathematical Prerequisites
+**Standard elements:**
+- Peak-normalized or density-normalized posterior curve
+- Vertical lines or bands for Planck (h = 0.674 +/- 0.005) and SH0ES (h = 0.73 +/- 0.01)
+- Shaded 68% and 95% credible intervals
+- Injected/true value marked (for simulations)
 
-| Topic | Why Needed | Key Results | References |
-|-------|-----------|-------------|------------|
-| Inhomogeneous Poisson processes | Selection effects enter as rate modulation | Detected events follow thinned Poisson process with rate R * P_det | Mandel, Farr & Gair (2019), arXiv:1809.02063 |
-| Monte Carlo integration with importance weights | Reweighting injections from proposal to target distribution | VT = sum w_i * V_i where w_i = p_target(theta_i) / p_draw(theta_i) | Tiwari (2018), arXiv:1712.00482 |
-| Marcum Q-function | Semi-analytic P_det for matched-filter SNR with noise fluctuations | P_det(rho_opt) = Q_1(rho_opt, rho_th) replaces step function at threshold | Gerosa & Bellotti (2024), arXiv:2404.16930 |
-| Binomial statistics in histogram bins | Uncertainty quantification for P_det = N_det / N_total per bin | Variance = P_det * (1 - P_det) / N_total; Wilson interval for small N | Standard Monte Carlo textbooks |
+**How leading papers do it:**
+- Gray et al. (2020): Single panel, multiple curves for different analysis variants, shaded CI bands
+- LVK GWTC-3 (2111.03604): Combined posterior with individual event contributions shown as thin transparent lines underneath, truth line
+- Finke et al. (2021): Multiple curves comparing different galaxy catalog treatments on same axes
+- Laghi et al. (2021): Corner-style 1D marginalized posterior for H0, often alongside w0 in a 2D corner
 
-### Unit System and Conventions
+**Your existing implementation:** `plot_combined_posterior()` in `bayesian_plots.py` and `plot_h0_posterior_comparison()` in `paper_figures.py`. Already includes Planck/SH0ES bands, CI shading, and two-variant comparison (with/without M_z). Uses discrete markers ("o-", "s--") to honestly show grid resolution -- this is good practice for a 23-point grid.
 
-- **Masses:** Solar masses (M_sun). Code uses M = total MBH mass in source frame; M_z = M * (1+z) is the redshifted (detector-frame) mass.
-- **Distances:** Mpc for luminosity distance d_L.
-- **SNR:** Dimensionless optimal matched-filter SNR. Detection threshold rho_th = 20 (current code).
-- **Hubble constant:** h = H0 / (100 km/s/Mpc), with h = 0.73 as fiducial.
-- **Redshift bins:** Linear in z (current code). Mass bins: logarithmic / geometric spacing (current code).
+**Assessment: IMPLEMENTED but needs refinement.** The existing figure is functional. For publication:
+- Consider adding a flat/uninformative prior line to show that the posterior is informative
+- The 23-point h-grid with markers is honest; add a note in the caption about grid resolution
+- Ensure the x-axis range (currently 0.59-0.87) captures the full posterior support
 
-### Known Limiting Cases
+**Status in your paper: Already Figure 1. Refine, do not redesign.**
 
-| Limit | Parameter Regime | Expected Behavior | Reference |
-|-------|-----------------|-------------------|-----------|
-| Low z, high M | z -> 0, M >> 10^5 M_sun | P_det -> 1 (all events detected) | Physical: SNR ~ 1/d_L -> inf |
-| High z | z >> 0.5 for EMRIs | P_det -> 0 (below threshold) | Confirmed: all detections at z < 0.18 in initial campaign |
-| SNR >> threshold | rho_opt >> rho_th | P_det -> 1 | Marcum Q_1(rho_opt, rho_th) -> 1 |
-| SNR << threshold | rho_opt << rho_th | P_det -> 0 | Marcum Q_1(rho_opt, rho_th) -> 0 |
-| N_total -> inf | Many injections per bin | P_det converges; Poisson noise -> 0 | Law of large numbers |
+### Category 2: Individual Event Likelihoods / Waterfall Plot (STANDARD)
 
-## Key Parameters and Constants
+**What it is:** Per-event likelihood curves overlaid, showing how individual events contribute to the combined posterior.
 
-| Parameter | Value | Source | Notes |
-|-----------|-------|--------|-------|
-| SNR threshold | 20 | constants.py | Conservative; LVK uses ~8-12 for ground-based |
-| z_cut for injection campaign | 0.5 | main.py:456 | All detections at z < 0.18 in initial campaign |
-| P_det grid: z bins | 30 | simulation_detection_probability.py:27 | Linear spacing |
-| P_det grid: M bins | 20 | simulation_detection_probability.py:28 | Log (geometric) spacing |
-| Fiducial h | 0.73 | constants.py | WMAP-era; Planck 2018 gives 0.6736 |
-| Waveform failure rate | ~30-50% | Operational experience | few/fastlisaresponse hangs on edge cases |
+**How leading papers do it:**
+- LVK papers: Hundreds of thin, semi-transparent lines (alpha ~0.1-0.3) in a single color, with the combined posterior as a thick line on top
+- Gray et al. (2020): Selected representative events shown in separate panels or as colored lines
+- Borghi et al. (2024): Individual contributions colored by metadata (SNR, redshift, distance error)
 
-## Established Results to Build On
+**Your existing implementation:** `plot_event_posteriors()` in `bayesian_plots.py` supports all three variants: uniform color, color-by-metadata (SNR/z/d_L error), and combined overlay. `plot_single_event_likelihoods()` in `paper_figures.py` shows 4 representative events in a 4x2 grid (without/with M_z).
 
-### Result 1: LVK Found-Injections Monte Carlo (Standard Method)
+**Assessment: IMPLEMENTED, two complementary versions.** The 4x2 representative grid is good for showing the effect of the BH mass channel. The waterfall plot (all events, semi-transparent) is standard and should also appear, either in the main text or supplementary material.
 
-**Statement:** The selection integral alpha(Lambda) is estimated by drawing N_inj signals from a proposal distribution p_draw(theta), computing SNR for each, and forming the importance-weighted Monte Carlo sum:
+**Status in your paper: Already Figure 2 (representative events). Add a waterfall/spaghetti plot as supplementary or Figure 5.**
 
-```
-alpha(Lambda) = (1/N_inj) * sum_{i=1}^{N_inj} [found_i] * p(theta_i|Lambda) / p_draw(theta_i)
-```
+### Category 3: Posterior Convergence vs Number of Events (STANDARD for forecasts)
 
-where [found_i] = 1 if SNR >= threshold. Crucially, the LVK does NOT bin P_det into a grid. The selection integral is computed directly as this MC sum over all injections for each Lambda value, avoiding all gridding and interpolation issues.
+**What it is:** CI width (or relative H0 uncertainty) as a function of N_det, demonstrating the statistical power of the method and the expected sqrt(N) scaling.
 
-**Status:** Established standard. Used in GWTC-2 (arXiv:2010.14533), GWTC-3 (arXiv:2111.03634), GWTC-4 (arXiv:2508.18083).
+**How leading papers do it:**
+- Laghi et al. (2021): sigma(H0)/H0 vs N_det on log-log axes, with N^{-1/2} reference line
+- Gray et al. (2020): Similar, showing convergence for different detection scenarios
+- Typically shows median and 16th/84th percentile scatter bands from bootstrap resampling
 
-**Reference:** Tiwari (2018), arXiv:1712.00482; Abbott et al. (2021), arXiv:2010.14533 Sec. IV.
+**Your existing implementation:** `plot_posterior_convergence()` in `paper_figures.py`. Uses 50 random subsets at each of 9 subset sizes (10-500), log-log axes, N^{-1/2} reference line, error bars from 16th/84th percentiles. Only for without-BH-mass channel (correct: with-BH-mass collapses on coarse grid).
 
-**Relevance to project:** The current code builds a P_det grid and interpolates via `SimulationDetectionProbability`. The LVK approach stores all (z, M, SNR) triples and sums at evaluation time. Cost is O(N_inj * N_h_values) per likelihood evaluation -- cheap for N_inj ~ 10^4. **Recommended as primary approach for alpha(Lambda); keep grid for visualization only.**
+**Assessment: IMPLEMENTED and well-designed.** The bootstrap approach with scatter bands is exactly what the field expects. The deliberate omission of the with-BH-mass channel (explained in docstring) is scientifically appropriate.
 
-**Confidence: HIGH**
+**Status in your paper: Already Figure 3. Minor polish only.**
 
-### Result 2: Importance Sampling for VT (Tiwari 2018)
+### Category 4: SNR Distribution and Detection Properties (STANDARD)
 
-**Statement:** A single injection set from a broad proposal p_draw(theta) can estimate VT for any population model via reweighting:
+**What it is:** Histogram of detected-event SNR, often paired with SNR vs distance or SNR vs redshift scatter.
 
-```
-VT(Lambda) = V_max * (sum_{i: found} w_i) / (sum_{i: all} w_i)
-```
+**How leading papers do it:**
+- Two-panel: left = SNR histogram with threshold line, right = SNR vs d_L colored by redshift
+- Sometimes includes a cumulative distribution overlay
+- Laghi et al. (2021): SNR histogram for different EMRI population models
 
-where w_i = p(theta_i|Lambda) / p_draw(theta_i). Self-normalized estimator, unbiased to O(1/N_inj).
+**Your existing implementation:** `plot_snr_distribution()` in `paper_figures.py`. Two-panel layout: SNR histogram + SNR vs d_L scatter colored by redshift. Falls back to placeholder if CRB data unavailable.
 
-Key requirement: **common support** -- p_draw > 0 wherever p(theta|Lambda) > 0. Efficiency depends on overlap: poor overlap gives high-variance weights and low N_eff.
+**Assessment: IMPLEMENTED.** Check that CRB CSV data is available locally before final figure generation.
 
-**Reference:** Tiwari (2018), arXiv:1712.00482.
+**Status in your paper: Already Figure 4. Ensure data is copied from cluster.**
 
-**Relevance to project:** Current campaign draws from the astrophysical population, so w_i = 1 (proposal = target). This is correct but wasteful: ~80%+ of GPU-evaluated injections at 0.18 < z < 0.5 produce SNR << 20 and contribute nothing. The z > 0.5 cut is equivalent to truncating the proposal; since P_det = 0 in the truncated region, no bias is introduced. If the proposal is changed to concentrate near the detection boundary, importance weights w_i must be tracked and applied.
+## Recommended Additional Figure Types
 
-**Confidence: HIGH**
+### Category 5: Detection Probability P_det Visualization (RECOMMENDED)
 
-### Result 3: Semi-Analytic P_det via Marcum Q-Function
+**What it is:** 2D heatmap or contour of P_det(z, M) or P_det(z, M_z), showing the selection function used in the inference.
 
-**Statement:** For a matched-filter search, the detection probability at optimal SNR rho_opt is:
+**How leading papers do it:**
+- Typically a filled contour or heatmap in (redshift, mass) space
+- Color represents detection probability from 0 to 1
+- Contour lines at P_det = 0.1, 0.5, 0.9
+- Sometimes overlaid with detected event positions as scatter points
 
-```
-P_det(rho_opt) = Q_1(rho_opt, rho_th)
-```
+**Relevance to your work:** Your pipeline uses `SimulationDetectionProbability` (injection-based P_det with `RegularGridInterpolator`). Visualizing this selection function is critical for the paper because:
+1. It demonstrates that your selection effects correction is well-behaved
+2. It shows the (z, M) parameter space your analysis covers
+3. Referees will want to see this -- it is the most common source of systematic error in dark siren analyses
 
-where Q_1 is the first-order Marcum Q-function. The measured SNR follows a Rice distribution centered on rho_opt due to noise fluctuations. The step-function approximation is biased asymmetrically: underestimates P_det for rho_opt slightly below threshold (noise can push above) and overestimates slightly above (noise can push below).
+**Your existing implementation:** `plot_detection_contour()` in `evaluation_plots.py` makes a 2D histogram of detections, but this is NOT the same as a P_det surface. You need a new figure that plots the actual P_det interpolation surface.
 
-**Reference:** Gerosa & Bellotti (2024), arXiv:2404.16930, Eqs. 3-7. Package: `pip install marcumq`.
+**Assessment: NOT YET IMPLEMENTED as a P_det surface. High priority.**
 
-**Relevance to project:** Current code uses sharp step function at SNR = 20. For threshold = 20, the transition region is narrow (~18-22), so the step function is a reasonable first approximation. The Marcum Q-function is a low-effort refinement: replace binary detected/not-detected with continuous p_det per injection.
+**Recommended approach:**
+- Plot P_det(z, M) as a `pcolormesh` heatmap with logarithmic mass axis
+- Overlay detected events as scatter points
+- Add contour lines at P_det = {0.1, 0.5, 0.9}
+- Use diverging or sequential colormap (viridis is fine)
 
-**Confidence: HIGH**
+### Category 6: Galaxy Catalog Completeness Visualization (RECOMMENDED)
 
-### Result 4: Effective Sample Size Criterion (Farr 2019)
+**What it is:** Shows the galaxy catalog coverage and completeness as a function of redshift or apparent magnitude.
 
-**Statement:** For reliable selection-effect correction, the effective sample size must satisfy:
+**How leading papers do it:**
+- Apparent magnitude vs redshift scatter/density plot with completeness limit marked
+- Number of galaxies per event vs redshift
+- Completeness fraction vs redshift (from comparison with uniform-in-comoving-volume expectation)
+- Gray et al. (2020), Finke et al. (2021): magnitude-redshift diagrams with survey depth overlaid
 
-```
-N_eff = (sum w_i)^2 / (sum w_i^2) > 4 * N_det
-```
+**Relevance to your work:** You use the GLADE+ catalog with BallTree lookups and a completeness correction. Showing the catalog's redshift-dependent completeness justifies your correction and helps readers understand at what redshifts the method becomes catalog-limited.
 
-where N_det is the number of observed GW events. Below this threshold, MC noise in alpha(Lambda) biases population inference.
+**Your existing implementation:** `plot_number_of_possible_hosts()` in `bayesian_plots.py` shows a histogram of host counts per event. This is useful but not sufficient.
 
-**Reference:** Farr (2019), arXiv:1904.10879.
+**Assessment: PARTIALLY IMPLEMENTED.** The host count histogram exists. Additional figures needed:
+- Number of candidate hosts vs event redshift (scatter plot)
+- Completeness fraction vs redshift
 
-**Relevance to project:** With uniform proposal (w_i = 1), N_eff = N_found. Current campaign: ~24 detections from ~69500 injections. If dark siren analysis uses ~10-20 simulated detections, need N_eff > 40-80. **Current N_found = 24 is marginal. This directly motivates concentrating injections in the detectable region to increase N_found.**
+### Category 7: Sky Localization / Localization Volume (CONTEXT-DEPENDENT)
 
-**Confidence: HIGH**
+**What it is:** Mollweide or orthographic projection showing sky position uncertainties of detected events, optionally overlaid with galaxy catalog positions.
 
-### Result 5: EMRI Dark Siren H0 with LISA
+**How leading papers do it:**
+- LVK papers: Mollweide sky maps with 90% credible regions for each event, galaxies as dots colored by redshift
+- Borghi et al. (2024): Sky map with galaxy positions and catalog completeness overlaid
+- EMRI papers (Laghi et al. 2021): Typically quote sky localization in square degrees rather than showing full sky maps (EMRI localization is much better than BBH)
 
-**Statement:** EMRIs detected by LISA serve as dark sirens for H0 measurement. With a complete galaxy catalogue and ~10-50 detections at z < 1, H0 constrainable to a few percent.
+**Relevance to your work:** EMRI sky localization with LISA is typically sub-degree to few-degree, much better than LIGO BBH. A sky map would be less dramatic than for BBH events but could still illustrate the EMRI advantage.
 
-**Reference:** MacLeod & Hogan (2008); Laghi et al. (2021) (cosmolisa code); Fang et al. (2024), arXiv:2403.04950.
+**Assessment: LOW PRIORITY for main text.** EMRI sky localization is well-known to be excellent. A sky map could be informative in supplementary material but is not essential for the main paper. Your 3D sky localization plot (`plot_sky_localization_3d`) is a thesis figure, not publication-ready.
 
-**Relevance:** Directly describes the science goal. Laghi et al. use galaxy-catalogue cross-matching similar to Pipeline B. Their selection function treatment is more schematic than the injection-based approach here.
+### Category 8: 2D Cosmological Parameter Contours (STANDARD for extended models)
 
-**Confidence: HIGH**
+**What it is:** Corner plot or 2D contour in (H0, w0) or (H0, Omega_m) parameter space.
 
-### Result 6: ML-Based EMRI Sensitivity (Wong et al. 2023)
+**How leading papers do it:**
+- Laghi et al. (2021, 2026): 2D Fisher ellipses or MCMC contours for H0 vs w0
+- LVK papers: Focus on 1D H0 posterior (since they fix other cosmological parameters)
+- Standard: 68% and 95% contour levels, with fiducial/true values marked
 
-**Statement:** Neural networks can rapidly predict EMRI SNR from source parameters and learn P_det(theta), enabling full treatment of selection effects without expensive per-event waveform generation.
+**Relevance to your work:** Your pipeline currently infers H0 only (grid-based), with other cosmological parameters fixed. If you only present H0 results, this figure is not applicable. If you extend to joint (H0, w0) or discuss future extensions, a forecast contour using Fisher matrix projections would be valuable.
 
-**Reference:** Wong et al. (2023), arXiv:2212.06166.
+**Assessment: NOT APPLICABLE to current analysis.** Your inference is 1D (h only). Mention as future work. If you want to include a Fisher forecast figure, you could project CRB results onto the (H0, w0) plane, but this would require additional analysis code.
 
-**Relevance:** Not recommended for this project (2D parameter space too simple). But validates that P_det varies strongly with (z, M) and selection effects are critical for EMRI population inference. Could serve as cross-check.
+## Novel / Differentiating Figure Types
 
-**Confidence: HIGH**
+### Category 9: Per-Galaxy Likelihood Decomposition (NOVEL for EMRI papers)
 
-### Result 7: Systematic Bias in Dark Siren P_det
+**What it is:** For a single representative event, show the per-galaxy likelihood contributions that sum to the event likelihood.
 
-**Statement:** Incorrect selection effects introduce systematic H0 bias exceeding statistical uncertainties at O4/O5 sensitivity. Sources: galaxy catalog incompleteness, incorrect host-galaxy weighting, P_det estimation errors.
+**How leading papers do it:**
+- Gray et al. (2022, Hitchhiker's Guide): Pedagogical version showing how galaxy weights combine
+- Finke et al. (2021): Galaxy weighting systematics comparison
+- NOT commonly shown for individual events in the EMRI literature
 
-**Reference:** Pierra et al. (2025), arXiv:2503.18887; LVK O4a (2025), arXiv:2603.20195.
+**Relevance to your work:** Your with-BH-mass JSON files contain per-galaxy breakdowns (files are ~585 MB because of this). You have up to 22k candidate galaxies per event. This is a unique dataset that most papers do not have or do not show.
 
-**Relevance:** Motivates the physics audit. The /(1+z) Jacobian fix (Phase 15) was one such systematic.
+**Recommended figure:**
+- For one well-localized event: horizontal bars showing per-galaxy likelihood contribution, colored by galaxy redshift
+- Or: scatter plot of galaxy d_L vs likelihood weight, showing which galaxies dominate
+- Demonstrates how the BH mass channel narrows the effective number of host candidates
 
-**Confidence: HIGH**
+**Assessment: HIGH NOVELTY, HIGH IMPACT.** This directly illustrates the physics of how the BH mass information breaks the d_L-z degeneracy. No EMRI dark siren paper has shown this decomposition.
 
-## Open Problems Relevant to This Project
+### Category 10: Channel Comparison: Information Gain from BH Mass (NOVEL)
 
-### Open Problem 1: Optimal EMRI Injection Distribution
+**What it is:** Direct visualization of how much information the BH mass channel adds, beyond just comparing posterior widths.
 
-**Statement:** What proposal distribution minimizes variance of alpha(Lambda) for EMRI dark siren H0 inference given GPU budget constraints?
+**Possible approaches:**
+- KL divergence between per-event with-mass and without-mass likelihoods, plotted vs event properties
+- Effective number of hosts (entropy-based) with vs without mass, showing the reduction
+- Ratio of CI widths (with-mass / without-mass) for each event
 
-**Why it matters:** Current campaign wastes ~80%+ of GPU time on undetectable events at z > 0.2.
+**Relevance to your work:** Your two-channel analysis (with/without M_z) is the central scientific contribution. A figure that quantifies the per-event information gain would be powerful.
 
-**Current status:** No EMRI-specific optimization published. LVK uses broad proposals for CBC (Tiwari 2018). Initial campaign identifies the detection boundary; second pass can concentrate there.
+**Assessment: HIGH NOVELTY.** Requires modest additional computation from existing per-event data.
 
-**Key references:** Tiwari (2018), arXiv:1712.00482.
+### Category 11: Detection Efficiency / Injection Campaign Summary (RECOMMENDED)
 
-### Open Problem 2: Grid Resolution vs. Poisson Noise Trade-off
+**What it is:** Summary of the injection campaign showing injected vs detected events in parameter space.
 
-**Statement:** What (z, M) grid resolution avoids H0 bias while maintaining per-bin statistics?
+**How leading papers do it:**
+- LVK papers (injection papers): 2D scatter of injected events colored by found/missed
+- P_det contour overlaid with injection results for validation
 
-**Why it matters:** 30x20 = 600 bins with ~69500 injections gives ~116/bin average, but highly non-uniform.
+**Relevance to your work:** You ran a large injection campaign. Showing the parameter space coverage validates the P_det estimate.
 
-**Current status:** No systematic study. LVK avoids gridding entirely (direct MC integral). Guidance: N_total > 20 per bin; Wilson CIs for uncertainty.
+**Assessment: MODERATE PRIORITY.** Good for supplementary material or a methods section figure.
 
-### Open Problem 3: Waveform Failure Selection Bias
+## Visualization Style Standards
 
-**Statement:** Does the 30-50% failure rate correlate with physical parameters, biasing P_det?
+### Color Conventions in the Field
 
-**Why it matters:** If failures correlate with (z, M, spin, eccentricity), effective proposal is modified.
+| Element | Convention | Your Current |
+|---------|-----------|-------------|
+| Primary posterior | Blue (muted) | CYCLE[0] = #1f77b4 (blue) -- matches |
+| Secondary/comparison | Red or orange | CYCLE[3] = #d62728 (red) -- matches |
+| Truth/injected value | Green dashed | TRUTH = #2ca02c (green) -- matches |
+| Planck band | Purple or teal | CYCLE[4] = #9467bd (purple) -- matches |
+| SH0ES band | Orange or gold | CYCLE[1] = #ff7f0e (orange) -- matches |
+| Reference/grid lines | Gray | REFERENCE = #7f7f7f -- matches |
 
-**Mitigation:** Log all failures with input parameters. Compare distributions. If correlated, apply correction.
+**Assessment:** Your color palette is already consistent with field conventions. The tab10-based cycle is standard in astronomy.
+
+### Figure Size and Layout
+
+| Journal | Single column | Double column |
+|---------|--------------|---------------|
+| Physical Review D | 3.375 in | 6.75 in |
+| MNRAS | 3.32 in | 6.97 in |
+| ApJ (AAS) | 3.5 in | 7.1 in |
+
+**Your presets:** `single = 3.375 in`, `double = 7.0 in` -- these target REVTeX (Physical Review D). Appropriate for a GW cosmology paper.
+
+### Font and Rendering
+
+- `text.usetex: False` in style sheet, but `apply_style(use_latex=True)` enables LaTeX for publication
+- Font sizes (10pt body, 9pt ticks/legend) match REVTeX conventions
+- **Recommendation:** Use `use_latex=True` for all final paper figures
+
+### Rasterization
+
+- Scatter plots with many points should use `rasterized=True` (you already do this in `plot_injected_vs_recovered`)
+- PDF + rasterized scatter is standard for GW papers with O(1000) events
+
+## What Existing Papers Do NOT Show (Gaps/Opportunities)
+
+1. **Per-galaxy likelihood decomposition** -- papers aggregate, never show the galaxy-level structure
+2. **Channel comparison at the event level** -- papers compare combined posteriors, not per-event information gain
+3. **P_det validation against injection truth** -- injection papers exist but are usually separate from inference papers
+4. **Effective number of hosts** -- quoted in text, rarely visualized as a function of event properties
+5. **Grid resolution effects** -- your honest markers on the 23-point grid are more transparent than most papers, which interpolate onto smooth curves
+
+## Recommended Paper Figure Set
+
+Based on the literature survey, here is the recommended figure set:
+
+### Main Text Figures (5-7 figures)
+
+| # | Figure | Type | Status | Priority |
+|---|--------|------|--------|----------|
+| 1 | H0 posterior comparison (without/with M_z) | Standard | Implemented | Polish |
+| 2 | Single-event likelihoods (4 representative, 2 channels) | Standard | Implemented | Polish |
+| 3 | Posterior convergence vs N_det | Standard | Implemented | Polish |
+| 4 | SNR distribution + SNR vs d_L | Standard | Implemented | Data needed |
+| 5 | P_det(z, M) surface with detected events overlaid | Recommended | NOT implemented | **New** |
+| 6 | Per-galaxy likelihood decomposition (1-2 events) | Novel | NOT implemented | **New** |
+| 7 | Channel information gain (effective N_hosts or KL div) | Novel | NOT implemented | **New** |
+
+### Supplementary / Appendix Figures
+
+| # | Figure | Type | Status |
+|---|--------|------|--------|
+| S1 | All-event waterfall plot (spaghetti) | Standard | Partially implemented |
+| S2 | Number of hosts vs redshift | Recommended | Partially implemented |
+| S3 | Injection campaign summary (injected vs detected) | Recommended | NOT implemented |
+| S4 | Fisher matrix / CRB heatmap | Context | Implemented |
 
 ## Alternatives Considered
 
 | Category | Recommended | Alternative | Why Not |
-|----------|------------|-------------|---------|
-| Selection integral | Direct MC sum (LVK standard) | Grid interpolation (current) | MC sum avoids interpolation artifacts |
-| P_det smoothing | Marcum Q-function | Sharp step function (current) | Step OK at rho_th=20 but Marcum Q more physical |
-| P_det emulation | 2D histogram + interpolation | Neural network | NN overkill for 2D space |
-| Interpolation | RegularGridInterpolator linear | Gaussian process regression | GP gives uncertainty but heavier |
-| Injection proposal | Stratified sampling | Optimized importance sampling | Stratified more robust, no P_det prior needed |
-
-## Concrete Implementable Methods
-
-### Method A: Direct MC Integral for alpha(Lambda) -- PRIMARY RECOMMENDATION
-
-Replace grid-based P_det interpolation with LVK-standard MC sum for the selection integral:
-
-```python
-# At evaluation time, for each h value:
-found_mask = injection_df["SNR"] >= snr_threshold
-alpha_h = found_mask.mean()  # uniform proposal
-# Non-uniform proposal: alpha_h = np.mean(weights[found_mask])
-```
-
-**Pros:** No binning, no interpolation, no edge effects. Matches LVK standard.
-**Cons:** Must load injection data at evaluation time. Less visual than P_det map.
-**Effort:** Low. Modify `SimulationDetectionProbability` to use MC integral.
-
-### Method B: Stratified Injection Sampling -- FOR NEXT CAMPAIGN
-
-Divide (z, M) into strata; draw N_min injections per stratum:
-
-```python
-z_strata = np.linspace(0, 0.5, 10)   # 9 z-strata
-M_strata = np.geomspace(M_min, M_max, 8)  # 7 M-strata -> 63 strata
-N_per_stratum = 200
-# Weight: w = p_astro(z, M) * bin_volume / N_per_stratum
-```
-
-**Pros:** Guarantees per-bin coverage. Detection boundary well-sampled.
-**Cons:** Modify injection_campaign(). Must track importance weights.
-**Effort:** Moderate.
-
-### Method C: Marcum Q-Function Smoothing -- LOW-EFFORT REFINEMENT
-
-Replace sharp threshold with continuous P_det per injection:
-
-```python
-from marcumq import marcumq
-p_det_i = marcumq(1, snr, threshold)  # continuous [0, 1]
-alpha_h = np.mean(p_det_per_injection)  # in MC integral
-```
-
-**Pros:** Physically motivated. One-line change. Handles near-threshold events.
-**Cons:** Requires `pip install marcumq`. Small effect at rho_th = 20.
-**Effort:** Minimal.
-
-### Method D: Per-Bin Quality Metrics -- DIAGNOSTIC
-
-Wilson CI for each grid bin:
-
-```python
-z_score = 1.96  # 95% CI
-p_hat = n_det / n_total
-denom = 1 + z_score**2 / n_total
-center = (p_hat + z_score**2 / (2*n_total)) / denom
-margin = z_score * np.sqrt(p_hat*(1-p_hat)/n_total + z_score**2/(4*n_total**2)) / denom
-# Flag: n_total < 20 or CI width > 0.3
-```
-
-**Pros:** Quantifies grid reliability.
-**Effort:** Low.
+|----------|-------------|-------------|---------|
+| Posterior plot style | Discrete markers on 23-pt grid | Smooth interpolated curve | Dishonest: hides grid resolution; 23 points is too few for smooth interpolation |
+| Color scheme | tab10 subset (field standard) | Custom perceptually uniform | Unnecessary: tab10 is recognized by reviewers; custom adds friction |
+| P_det visualization | 2D heatmap (pcolormesh) | 3D surface plot | 3D surfaces are harder to read and do not reproduce well in print |
+| Per-galaxy figure | Bar chart or scatter | Treemap or sunburst | Over-engineered for the information content |
+| Corner plots | Not recommended for 1D inference | Full corner plot | Only 1 parameter (h); corner plot is meaningless for 1D |
 
 ## Key References
 
 | Reference | arXiv/DOI | Type | Relevance |
 |-----------|-----------|------|-----------|
-| Mandel, Farr & Gair (2019) | arXiv:1809.02063 | Paper | Foundational: hierarchical Bayesian inference with selection effects |
-| Tiwari (2018) | arXiv:1712.00482 | Paper | Found-injections MC for VT; importance weighting |
-| Farr (2019) | arXiv:1904.10879 | Paper | N_eff > 4*N_det criterion for reliable selection correction |
-| Gerosa & Bellotti (2024) | arXiv:2404.16930 | Paper | Semi-analytic P_det via Marcum Q-function |
-| Abbott et al. / LVK (2021) | arXiv:2010.14533 | Paper | GWTC-2 population; injection campaign methodology |
-| Abbott et al. / LVK (2023) | arXiv:2111.03634 | Paper | GWTC-3 population; 4-pipeline injection campaign |
-| Wong et al. (2023) | arXiv:2212.06166 | Paper | ML-based EMRI sensitivity for LISA |
-| Laghi et al. (2021) | -- | Paper | EMRI dark siren H0; cosmolisa |
-| Pierra et al. (2025) | arXiv:2503.18887 | Paper | Systematic bias in dark siren P_det |
-| LVK O4a dark sirens (2025) | arXiv:2603.20195 | Paper | Latest LVK H0 from dark sirens |
-| Fang et al. (2024) | arXiv:2403.04950 | Paper | EMRI formation channel and dark siren H0 |
-| Talbot & Golomb (2024) | arXiv:2408.16828 | Paper | Neural network emulation of LVK selection function |
-| GWTC-4 population (2025) | arXiv:2508.18083 | Paper | Latest LVK population analysis |
+| Gray et al. (2020) | arXiv:1908.06050 | Foundational paper | Dark siren method, mock data, figure conventions |
+| Finke et al. (2021) | arXiv:2101.12660 | GWTC-2 analysis | Galaxy catalog systematics, weighting figures |
+| Laghi et al. (2021) | arXiv:2102.01708 | EMRI dark siren forecast | EMRI-specific figures, convergence, Fisher contours |
+| LVK (2021) | arXiv:2111.03604 | Official O3 H0 | Combined posterior, per-event contributions |
+| Gray et al. (2022) | arXiv:2212.08694 | Pedagogical review | Hitchhiker's Guide: completeness, weighting methods |
+| Borghi et al. (2024) | arXiv:2404.16092 | O4a H0 update | Sky maps with galaxies, posterior stacking |
+| Laghi et al. (2026) | arXiv:2603.23612 | Joint EMRI+MBHB | 2D cosmological contours, latest LISA forecast |
+| Mukherjee et al. (2022) | DOI:10.1093/mnras/stac366 | Completeness | Pixelated catalog completeness approach |
+
+## Open Questions
+
+- **Grid resolution disclosure:** The 23-point h-grid is coarser than typical MCMC posteriors in the field. Reviewers may ask for finer resolution. The markers-on-grid approach is honest but may look unusual. Consider either (a) running a finer grid evaluation, or (b) adding an explicit discussion in the methods section.
+- **With-BH-mass delta function:** The with-BH-mass posterior collapses to a near-delta on the coarse grid. This needs careful presentation -- it could look like an artifact rather than a genuine narrowing. A finer grid would resolve this.
+- **Per-galaxy data size:** The 585 MB per-h-value JSON files for the with-BH-mass channel contain the raw per-galaxy data needed for Figure 6. Extracting this efficiently requires the tail-reading approach already implemented in `_load_per_event_with_mass_scalars()`, extended to read galaxy-level entries.

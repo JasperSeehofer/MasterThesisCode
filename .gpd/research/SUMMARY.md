@@ -1,361 +1,412 @@
 # Research Summary
 
-**Project:** EMRI Parameter Estimation -- Injection Campaign Physics Analysis (v1.2.2)
-**Domain:** Gravitational wave selection effects, EMRI detection probability, dark siren H0 inference
-**Researched:** 2026-03-31
-**Confidence:** MEDIUM
+**Project:** EMRI Dark Siren H0 Inference -- v2.1 Publication Figures
+**Domain:** Scientific visualization for gravitational wave cosmology (PRD submission)
+**Researched:** 2026-04-07
+**Confidence:** HIGH
 
 ## Unified Notation
 
 | Symbol | Quantity | Units/Dimensions | Convention Notes |
 |--------|---------|-----------------|-----------------|
-| P_det | Detection probability | dimensionless [0,1] | P(SNR >= threshold \| z, M, h) marginalized over extrinsic parameters |
-| z | Source redshift | dimensionless | Cosmological redshift of the EMRI host |
-| M | Source-frame MBH mass | M_sun | Mass of the massive black hole |
-| M_z | Observer-frame (redshifted) mass | M_sun | M_z = M * (1+z) |
-| h | Dimensionless Hubble parameter | dimensionless | H0 = 100h km/s/Mpc; h = 0.73 is the project fiducial |
-| d_L | Luminosity distance | Gpc | From dist(z, h) using Omega_m = 0.25 (WMAP-era, known outdated) |
-| w_i | Importance weight | dimensionless | w_i = p(theta_i) / q(theta_i) for sample i |
-| N_eff | Effective sample size | dimensionless | Kish formula: (sum w)^2 / sum w^2 |
-| p(theta) | Physical/population prior density | [theta]^{-1} | From Model1CrossCheck EMRI rate distribution |
-| q(theta) | Proposal/sampling density | [theta]^{-1} | Distribution actually used to draw injections |
-| SNR | Signal-to-noise ratio | dimensionless | Matched-filter SNR against LISA PSD; threshold = 20 |
+| h | Dimensionless Hubble parameter | dimensionless | H0 = 100h km/s/Mpc; fiducial h = 0.73; x-axis label is "$h$" throughout |
+| P_det | Detection probability | dimensionless [0,1] | P(SNR >= threshold | z, M, h); visualized as 2D heatmap |
+| z | Source redshift | dimensionless | Cosmological redshift of EMRI host |
+| M | Source-frame MBH mass | M_sun | Logarithmic axis in P_det plots |
+| M_z | Observer-frame mass | M_sun | M_z = M(1+z); used in "with BH mass" channel |
+| d_L | Luminosity distance | Gpc | Scatter plot axis in SNR vs distance |
+| SNR | Signal-to-noise ratio | dimensionless | Matched-filter SNR; threshold = 20 |
+| CI | Credible interval | dimensionless | 68% and 95% levels; computed via trapezoidal CDF |
 
 **Convention notes:**
-- All distances in Gpc throughout. The dist() function returns Gpc; all P_det lookups expect Gpc.
-- Masses in solar masses, source-frame unless subscripted _z.
-- The project uses WMAP-era cosmology (Omega_m = 0.25, h = 0.73). This is internally consistent but physically outdated (Planck 2018: Omega_m = 0.3153, h = 0.6736). No convention conflict exists across research files; all four use the same system.
-- Fourier conventions are not relevant for this milestone (no waveform modifications).
+- Posteriors are peak-normalized for visual comparison; density normalization used only for insets or when comparing constraining power. State normalization in y-axis labels.
+- "Injected" (not "True") for reference H0 line in paper figures. "True" is reserved for internal diagnostics.
+- Planck reference: h = 0.674 +/- 0.005 (arXiv:1807.06209). SH0ES reference: h = 0.73 +/- 0.01 (arXiv:2112.04510). Verify against latest values before submission.
+- All figure sizes in inches: single-column = 3.375", double-column = 7.0" (REVTeX/Physical Review D).
+- Color convention: Okabe-Ito palette replaces tab10. Primary = #0072B2 (blue), secondary = #D55E00 (vermillion), truth = #009E73 (bluish green).
 
 ## Executive Summary
 
-The injection campaign for simulation-based P_det estimation follows the standard gravitational wave community methodology established by Mandel, Farr & Gair (2019) and operationalized by the LVK collaboration. The approach -- draw synthetic EMRIs from a population prior, compute SNR via full waveform generation, and bin detections into a (z, M) histogram per h-value -- is sound in principle. However, the current implementation has three quantifiable inefficiencies: (1) uniform sampling wastes the majority of GPU compute on events with zero detection probability, (2) the 30x20 grid produces many bins with fewer than 10 injections, degrading P_det accuracy in the transition region where it matters most, and (3) waveform generation failures at a rate of 30-50% effectively reduce the injection budget by a factor of 2-3 without any tracking of where failures concentrate.
+This milestone produces publication-quality figures for a Physical Review D submission on EMRI dark siren H0 inference. The literature survey reveals that four figure types are mandatory and already implemented (H0 posterior comparison, single-event likelihoods, convergence vs N_det, SNR distribution), while three high-value figures are missing: a P_det(z, M) surface visualization, a per-galaxy likelihood decomposition showing how BH mass information breaks the distance-redshift degeneracy, and a channel information gain metric (effective number of hosts or KL divergence). The per-galaxy decomposition and channel comparison are genuinely novel -- no EMRI dark siren paper has shown these, and they directly illustrate the paper's central scientific contribution.
 
-The recommended approach is a staged improvement: first, add importance weight tracking and Wilson confidence intervals to the existing P_det grid builder (minimal code change, high diagnostic value); second, implement stratified sampling with Neyman-optimal allocation to concentrate injections near the detection boundary; third, reduce grid resolution from 30x20 to 15x10 bins to ensure adequate per-bin statistics with the available injection count. These improvements do not change the total injection budget -- they redistribute the same compute more efficiently, with an expected 2-5x reduction in P_det boundary variance. The self-normalized importance sampling estimator (Tiwari 2018) is the standard tool and is guaranteed unbiased to O(1/N).
+The visualization approach requires two parallel tracks: (1) modernizing the matplotlib static pipeline for print publication (REVTeX-compliant sizing, Okabe-Ito colorblind-safe palette, Type 42 font embedding, minimal L-frame spines, LaTeX typography), and (2) building an interactive web pipeline (Plotly with CDN mode, MyST-NB for Sphinx notebook integration, JupyterLite for serverless parameter exploration on GitHub Pages). The static pipeline is the priority -- it directly supports the paper submission. The interactive pipeline is a value-add for the thesis website and can proceed in parallel without blocking the paper.
 
-The principal risks are: (a) waveform failure correlation with specific parameter regions creating a biased subsample (the failure rate is high enough to matter, and currently failures are silently skipped without tracking); (b) the z > 0.5 importance sampling cutoff is physically motivated but not rigorously validated for all h values; and (c) the P_det grid enters the likelihood denominator, so even modest systematic errors propagate into the H0 posterior. All three risks are addressable with the auditing and diagnostics recommended below.
+The principal risks are: (a) the 15-point h-grid produces coarse posteriors that look unusual compared to MCMC-based papers -- honest disclosure with markers is the correct approach but requires explicit caption language; (b) the "with BH mass" posterior collapses to a near-delta on the coarse grid, which could look like an artifact without explanation; (c) the 580 MB per-galaxy JSON files require a pre-aggregation pipeline before any interactive visualization is possible; and (d) Type 3 fonts in PDF output will cause APS rejection if `pdf.fonttype: 42` is not set. All risks are addressable with known solutions documented in the research files.
 
 ## Key Findings
 
-### Computational Approaches
-
-The P_det grid construction pipeline (injection CSV -> histogram2d -> RegularGridInterpolator -> linear h-interpolation) is functional and uses appropriate tools (numpy, scipy, astropy all already in the dependency tree). No new dependencies are needed. [CONFIDENCE: HIGH]
-
-**Core approach:**
-
-- **Histogram-based P_det estimator:** Simple N_det/N_total per (z, M) bin -- correct, standard, but high variance in sparse bins. The self-normalized importance-weighted variant (sum(w_i * I_i) / sum(w_i)) generalizes this to non-uniform proposals with O(1/N) bias.
-- **RegularGridInterpolator (linear):** Adequate for current grid resolution. Cannot overshoot [0,1] bounds. PCHIP and cubic alternatives rejected due to overshoot risk on noisy grids. [CONFIDENCE: HIGH]
-- **Wilson score confidence intervals:** Recommended per-bin quality metric. Correctly handles small n and extreme proportions, unlike Wald intervals. Available via astropy.stats.binom_conf_interval. [CONFIDENCE: HIGH -- Brown, Cai, DasGupta 2001 is definitive]
-
-**Deferred (overkill for current scale):** Gaussian process regression, neural network P_det emulators (Callister et al. 2024), cross-entropy adaptive importance sampling.
-
 ### Prior Work Landscape
 
-The GW community approach to selection effects via injection campaigns is well-established for compact binary coalescences (CBCs). EMRI-specific injection campaigns are less mature -- Babak et al. (2017) used semi-analytic SNR rather than full waveform injections. This project's full-waveform approach is more accurate but more expensive. [CONFIDENCE: HIGH for methodology; MEDIUM for EMRI-specific validation]
+The dark siren H0 inference visualization canon is well-established, with Gray et al. (2020), the LVK O3 paper (arXiv:2111.03604), and Laghi et al. (2021) setting the standard. [CONFIDENCE: HIGH]
 
-**Must reproduce (benchmarks):**
+**Must reproduce (standard figures):**
 
-- P_det(z, M | h) is monotonically decreasing in z at fixed M (farther = fainter) -- any non-monotonic structure beyond statistical noise indicates a bug or waveform failure artifact
-- P_det = 1 at low z, high M and P_det = 0 at high z, low M -- physical boundary conditions
-- Farr (2019) global criterion: N_eff > 4 * N_det (~80 effective injections needed for ~20 detections) -- easily satisfied globally but per-bin is the challenge
+- H0 posterior with Planck/SH0ES reference bands and injected value -- every dark siren paper shows this
+- Per-event likelihood waterfall (transparent overlaid curves) -- standard in LVK papers
+- Posterior convergence vs N_det on log-log axes with N^{-1/2} reference line -- standard for forecasts
+- SNR distribution histogram with threshold line -- standard characterization
 
-**Novel contributions:**
+**Novel contributions (differentiating):**
 
-- Full-waveform EMRI injection campaign with FEW/fastlisaresponse (no published EMRI injection optimization exists)
-- Importance-weighted P_det grid estimation for EMRIs -- if implemented, this is a methodological advance for the EMRI community
+- Per-galaxy likelihood decomposition showing which galaxies dominate the event likelihood and how BH mass narrows the effective host set -- no EMRI paper has shown this [HIGH NOVELTY]
+- Channel information gain visualization (effective N_hosts with vs without mass, or KL divergence per event) -- directly illustrates the central scientific contribution [HIGH NOVELTY]
+- P_det(z, M) surface with detected events overlaid -- recommended but not always shown; critical for demonstrating well-behaved selection effects
 
-**Defer:**
+**Defer (supplementary or future work):**
 
-- Neural network P_det emulators (applicable at LIGO scale, overkill for 2D grids with 7 h-slices)
-- Cross-entropy rare-event estimation (only needed if P_det < 0.01 cells require precision)
+- Sky localization maps (EMRI localization is sub-degree; less dramatic than BBH sky maps)
+- 2D cosmological contours in (H0, w0) plane (current analysis is 1D in h only)
+- Full corner plots (meaningless for 1D inference)
 
 ### Methods and Tools
 
-The recommended implementation order is: (1) record proposal densities and add importance-weight support to the histogram estimator, (2) add Wilson CIs and quality flags per bin, (3) implement stratified sampling with Neyman allocation for future campaigns, (4) test a coarser 15x10 grid as an alternative to the current 30x20. All methods are standard Monte Carlo techniques with well-understood convergence properties. The key insight is that improved sampling redistributes fixed compute without increasing cost.
+The recommended approach is a custom `.mplstyle` file targeting REVTeX single-column (3.375") with LaTeX/Computer Modern typography, Okabe-Ito qualitative palette, and Blues sequential palette for contour fills. Font sizes must be calibrated for column width: 8pt body, 7pt ticks, ensuring the 2mm minimum capital height after any production scaling. [CONFIDENCE: HIGH]
 
 **Major components:**
 
-1. **Self-normalized IS estimator** -- handles arbitrary proposal distributions; enables reusing injections across different population models (Tiwari 2018)
-2. **Stratified sampling with Neyman allocation** -- concentrates samples where variance is highest (P_det ~ 0.5 boundary); expected 2-5x variance reduction in boundary bins
-3. **Wilson score CI per bin** -- quality diagnostic flagging bins with insufficient statistics (n < 10 or CI half-width > 0.15)
-4. **Adaptive boundary refinement** -- two-stage approach using 30% pilot + 70% targeted allocation near the detection boundary
+1. **Custom mplstyle + `apply_style()`** -- Global rcParams: L-frame spines, inward ticks, frameless legends, near-black (#262626) axes, Type 42 font embedding. Replaces the current style entirely for paper figures.
+2. **Okabe-Ito palette** -- Colorblind-safe qualitative colors replacing tab10. Blue (#0072B2) + vermillion (#D55E00) for the two-channel comparison. Green truth line (#2ca02c) replaced with bluish green (#009E73) or vermillion depending on context.
+3. **KDE smoothing via scipy.stats.gaussian_kde** -- For 1D posteriors from discrete samples (Scott bandwidth). For 2D grids (P_det surface), use `scipy.ndimage.gaussian_filter` with sigma=1.0. Do NOT smooth the 15-point h-grid posterior -- markers + straight lines are the honest representation.
+4. **Plotly (CDN mode) + MyST-NB** -- Interactive figures for GitHub Pages. Self-contained HTML with `include_plotlyjs='cdn'` to avoid 3-5 MB per figure. MyST-NB provides Sphinx integration with execution caching via jupyter-cache.
+5. **corner library** -- For any multi-parameter visualization (e.g., if Fisher matrix projections are added). Configured with filled contours from Blues palette, `smooth=1.2`, `plot_datapoints=False`.
+
+### Computational Approaches
+
+The interactive pipeline requires solving the 580 MB JSON data problem through build-time pre-aggregation. [CONFIDENCE: HIGH]
+
+**Core approach:**
+
+- **Pre-aggregate at build time** into ~1 MB summary JSONs (binned posteriors, top-N events, HEALPix sky map, parameter histograms). Commit summaries to `docs/source/_static/data/`. No large files in git or CI.
+- **Plotly over Bokeh** -- Better Sphinx integration, CDN option, WebGL for large datasets (`Scattergl` handles up to 200k points).
+- **JupyterLite via jupyterlite-sphinx** -- Serverless notebooks on GitHub Pages using Pyodide. Limitations: no CuPy/GPU, ~2-4 GB browser memory, 5-15s cold start. Suitable only for lightweight analysis on pre-aggregated data.
+- **MyST-NB over nbsphinx** -- Execution caching via jupyter-cache, glue mechanism for embedding outputs in arbitrary Sphinx pages.
+- **Dual-output pattern** -- Keep matplotlib for thesis PDF (vector quality). Add Plotly equivalents for web. Never replace matplotlib with Plotly for the paper.
 
 ### Critical Pitfalls
 
-1. **Waveform failure correlation with parameter regions [CRITICAL]** -- 30-50% of injections fail (timeouts, parameter bounds, solver failures), and failures are silently skipped. If failures correlate with specific (z, M, e0, a) regions, the surviving subsample is biased. Prevention: track all failures with parameters in a separate CSV or status column; quantify failure rate by (z, M) bin; apply conservative correction treating failures as non-detections.
+1. **Type 3 fonts cause APS rejection [CRITICAL]** -- Set `pdf.fonttype: 42` and `ps.fonttype: 42` in mplstyle. The current `emri_thesis.mplstyle` does NOT set these. Detection: `pdffonts paper/figures/*.pdf` should show no Type 3.
 
-2. **Parameter distribution mismatch between injection and evaluation [CRITICAL]** -- Injection samples from the population prior p(M, z); evaluation queries P_det at per-event posterior locations. Empty bins near detected events bias the selection-effect correction. Prevention: verify every detected event falls in a well-populated bin; overlay injection distribution with detected events.
+2. **tab10 palette is not colorblind-safe [CRITICAL]** -- Green (TRUTH) and red (MEAN / "With Mz") are indistinguishable under deuteranopia (~6% of males). Replace with Okabe-Ito. The two-channel comparison should use blue + vermillion, which are maximally separated under all CVD types.
 
-3. **z > 0.5 cutoff as unvalidated importance sampling [MODERATE]** -- The cutoff is empirically motivated (all 24 detections at z < 0.18) but is an implicit importance sampling assumption. The cutoff validity is h-dependent: lower h reduces d_L at fixed z, potentially allowing detections beyond z = 0.5. Prevention: validate with a small no-cutoff batch at extreme h values.
+3. **15-point h-grid creates misleading visual impression [CRITICAL]** -- Do NOT smooth or spline the posterior. Show markers at grid points, connect with straight lines, state grid resolution in caption. CI boundaries should be rounded to grid spacing (0.02 in h); do not quote sub-grid precision from interpolation.
 
-4. **Low bin counts in 2D histogram [MODERATE]** -- 10,000 events / 600 bins = ~17 events/bin average, but non-uniform distribution means many bins have < 5 events. Prevention: reduce grid to 15x10 (150 bins, ~67/bin average) or merge sparse bins; add Wilson CI quality flags.
+4. **Inconsistent CI calculation between bayesian_plots.py and paper_figures.py [MODERATE]** -- `bayesian_plots.py` uses `np.cumsum` (discrete sum), `paper_figures.py` uses `np.trapezoid` (trapezoidal integral). These give different CI boundaries for the same posterior. Unify on trapezoidal integration throughout.
 
-5. **d_L-to-z inversion inconsistency [MODERATE]** -- Evaluation inverts d_L to z via root-finding; any numerical precision difference or cosmological parameter mismatch vs. injection creates bin lookup errors. Prevention: add round-trip test z -> d_L -> z with tolerance 1e-4.
+5. **Peak normalization hides relative constraining power [MODERATE]** -- Both channels peak at 1.0 after normalization. Annotate 68% CI width directly on the figure, or add a density-normalized inset showing the height difference.
+
+6. **580 MB JSON files cannot be loaded in CI or client-side [MODERATE]** -- Pre-aggregate locally, commit ~1 MB summaries. The tail-read approach in `_load_per_event_with_mass_scalars` is memory-efficient; do not regress by switching to full `json.load` for with-mass files.
+
+7. **Legend placement obscures posterior peak [MINOR]** -- Move legend to upper-left or outside axes. Consider direct curve annotation with `ax.annotate()` instead of legend box.
 
 ## Approximation Landscape
 
 | Method | Valid Regime | Breaks Down When | Controlled? | Complements |
 |--------|------------|-----------------|------------|-------------|
-| Histogram P_det (N_det/N_total) | N_total > ~30 per bin, P_det not extreme | N_total < 5; dominates by Poisson noise | Yes (binomial variance = P(1-P)/N) | Importance-weighted estimator for non-uniform proposals |
-| Self-normalized IS estimator | N_eff > 50 per bin; proposal has full support | Proposal has thin tails (extreme weights); N_eff < 10 | Yes, bias ~ O(1/N), variance via Kish N_eff | Stratified sampling to control per-bin N_eff |
-| Stratified/Neyman allocation | Known approximate P_det from pilot; stable boundary | Pilot too small to identify boundary (<~2000 samples); boundary shifts between pilot and production | Yes (variance reduction factor calculable from pilot) | Boundary refinement for sharp transitions |
-| Linear interpolation (z, M grid) | P_det varies slowly within each bin | Sharp detection boundary crosses bin interior; P_det gradient >> 1/bin_width | No formal error bound; empirical testing needed | Finer grid or PCHIP interpolation |
-| Linear interpolation (h grid) | P_det(h) approximately linear between grid points | Strong curvature in P_det(h) at fixed (z, M) near the detection boundary | No formal bound; d_L(z,h) is nonlinear in h | Add intermediate h values or use cubic with clipping |
-| z > 0.5 cutoff | P_det(z > 0.5) = 0 for all M, all h | Lower h values push detection horizon outward; different mass ranges | No (empirical assumption) | Run validation batch without cutoff |
+| KDE smoothing (Scott bandwidth) | N > 100 samples, unimodal | Multi-modal or sharp features; N < 50 | Yes (h = N^{-1/5} for 1D) | Raw histogram for validation |
+| Gaussian filter on 2D grid | Grid spacing << feature width; sigma < grid_dim/2 | Sharp boundaries (P_det transition); noisy grids | No formal bound; visual check | Unsmoothed grid comparison |
+| Linear interpolation (markers + lines) | Any grid; honest representation | Misses curvature between grid points | N/A (exact at grid points) | Finer grid if available |
+| Peak normalization | Visual comparison of shape | Hides relative constraining power (width differences) | N/A | Density normalization inset |
+| Trapezoidal CDF | Monotonic posterior on regular grid | Highly irregular spacing; posterior not well-sampled | Yes (error ~ O(dh^2)) | Simpson's rule if higher accuracy needed |
 
-**Coverage gap:** No reliable P_det estimate exists for bins with fewer than ~10 injections. With the current 30x20 grid and 10,000 injections per h, a significant fraction of bins (especially high-z, extreme-M) fall below this threshold. The coarser grid (15x10) is the simplest fix.
+**Coverage gap:** The 15-point h-grid is the fundamental limitation for posterior visualization. No smoothing or interpolation method can reliably recover sub-grid structure. If reviewers question the grid resolution, the only remedy is running a finer grid evaluation (computationally expensive but possible). The with-BH-mass channel is most affected because its posterior is narrow enough to be under-resolved.
 
 ## Theoretical Connections
 
-### Importance Sampling as a Unifying Framework [ESTABLISHED]
+### Honest Representation of Discrete Inference [ESTABLISHED]
 
-The self-normalized IS estimator unifies several currently separate operations: (1) the existing z > 0.5 cutoff is implicit importance sampling with a step-function proposal, (2) stratified sampling is IS with a piecewise-constant proposal matched to bin boundaries, (3) adaptive boundary refinement is IS with a pilot-estimated proposal. Implementing the general IS estimator (with weight tracking) from the start makes all future sampling improvements automatic -- any change to the proposal only requires updating the weight computation.
+The markers-on-grid approach for the 15-point posterior is more transparent than standard practice. Most dark siren papers show smooth MCMC posteriors from thousands of samples. This project's grid-based evaluation produces only 15 likelihood values per channel. The honest disclosure via markers is scientifically superior to artificial smoothing, but requires explicit caption language to avoid appearing as an artifact. This connects to the broader methodological point that grid-based posterior evaluation trades resolution for exact likelihood computation at each point.
 
-### Binomial Statistics for Quality Assessment [ESTABLISHED]
+### BH Mass as Degeneracy Breaker [ESTABLISHED]
 
-The per-bin P_det estimate is a binomial proportion. This connects directly to the well-studied problem of binomial confidence intervals (Wilson, Clopper-Pearson, Jeffreys). The Wilson interval is recommended because it performs well at small n and extreme proportions -- exactly the regime of most P_det bins.
+The per-galaxy likelihood decomposition (proposed Figure 6) directly visualizes how M_z measurement narrows the effective host galaxy set. This is the mechanism by which the "with BH mass" channel achieves a narrower posterior. The effective number of hosts is an entropy-based measure (N_eff = exp(H), where H is the Shannon entropy of the normalized galaxy weights). Connecting per-event N_eff reduction to the combined posterior width provides a quantitative bridge between the micro (galaxy-level) and macro (H0 posterior) scales of the analysis.
 
-### Hierarchical Bayesian Inference Framework [ESTABLISHED]
+### Dual Pipeline as Cross-Validation [ESTABLISHED]
 
-P_det enters the dark siren likelihood as a normalization factor: the denominator integral over the population must account for selection effects (Mandel, Farr & Gair 2019). This means P_det accuracy requirements are set by the desired H0 posterior precision, not by some abstract statistical threshold. The Farr (2019) N_eff > 4*N_det criterion quantifies this connection.
+The matplotlib (static/print) and Plotly (interactive/web) pipelines produce the same figures in different formats. Visual consistency between the two serves as an implicit cross-check that the data processing is correct. Any discrepancy between static and interactive versions of the same figure indicates a bug in one rendering path.
 
-### Cross-Validation Opportunity [CONJECTURED]
+### Selection Effects Visualization as Scientific Argument [ESTABLISHED]
 
-The old KDE-based DetectionProbability class and the new histogram-based SimulationDetectionProbability should agree qualitatively (same boundary shape, same high/low regions). Quantitative differences are expected due to different smoothing assumptions. This comparison is a free cross-check that validates both implementations.
+The P_det(z, M) surface figure serves dual purpose: it is both a standard characterization figure and a scientific argument that the selection function is well-behaved (monotonic in z, sensible boundary location). This connects to the injection campaign work (v1.2.2) where the P_det grid quality was assessed with Wilson CIs. The visualization should overlay quality flag information (e.g., hatch unreliable bins) to make this argument visually.
 
 ## Critical Claim Verification
 
 | # | Claim | Source | Verification | Result |
 |---|-------|--------|--------------|--------|
-| 1 | Self-normalized IS estimator is standard for GW selection effects | METHODS.md | web_search: Tiwari 2018 arXiv:1712.00482 | CONFIRMED -- published in CQG, widely cited |
-| 2 | Farr (2019) N_eff > 4*N_det criterion | PRIOR-WORK.md, COMPUTATIONAL.md | web_search: Farr 2019 arXiv:1904.10879 | CONFIRMED -- published in RNAAS, widely adopted |
-| 3 | Wilson score CI recommended for small n binomial proportions | COMPUTATIONAL.md | web_search: Brown Cai DasGupta 2001 | CONFIRMED -- definitive review in Statistical Science |
-| 4 | EMRI waveform failures at 30-50% rate | PITFALLS.md | Code context (CLAUDE.md known bugs, waveform hangs) | CONFIRMED by project experience -- 30s/90s timeouts documented |
-| 5 | All detections at z < 0.18, z_cut = 0.5 is safe margin | PITFALLS.md | PROJECT.md confirms 24/69500 detections, all z < 0.18 | CONFIRMED from project data |
+| 1 | APS requires Type 42 fonts (no Type 3) | PITFALLS.md | APS Style Basics page confirms font embedding requirements | CONFIRMED |
+| 2 | Okabe-Ito palette is distinguishable under all CVD types | METHODS.md, PITFALLS.md | Okabe & Ito (2002), Wong Nature Methods 2011 | CONFIRMED |
+| 3 | REVTeX single-column width is 3.375 inches | METHODS.md | APS Author Guidelines | CONFIRMED |
+| 4 | `pdf.fonttype: 42` forces TrueType embedding | PITFALLS.md | matplotlib docs on font handling | CONFIRMED |
+| 5 | Plotly CDN mode reduces per-figure HTML from ~5MB to ~2KB | COMPUTATIONAL.md | Plotly documentation on `include_plotlyjs='cdn'` | CONFIRMED |
+| 6 | JupyterLite supports scipy/numpy via Pyodide | COMPUTATIONAL.md | Pyodide package list and JupyterLite docs | CONFIRMED |
+| 7 | Gray et al. (2020) is the foundational dark siren method paper | PRIOR-WORK.md | arXiv:1908.06050, widely cited | CONFIRMED |
 
 ### Cross-Validation Matrix
 
-|                        | Histogram P_det | IS-weighted P_det | Old KDE P_det | Analytic (SNR scaling) |
-|-----------------------|:---:|:---:|:---:|:---:|
-| **Histogram P_det**    | --- | Identical when weights=1 | Qualitative boundary shape | Boundary location z_max(M) |
-| **IS-weighted P_det**  | Identical when uniform | --- | Qualitative boundary shape | Boundary location z_max(M) |
-| **Old KDE P_det**      | Boundary shape | Boundary shape | --- | Boundary location |
-| **Analytic (SNR~M^{5/6}/d_L)** | z_max(M) contour | z_max(M) contour | z_max(M) contour | --- |
-
-**Reading:** The SNR scaling relation SNR ~ M^{5/6}/d_L provides an independent check on where the detection boundary should lie. The old KDE-based P_det serves as a qualitative cross-validation of the boundary shape.
+|                    | Matplotlib PDF | Plotly HTML | Grayscale print | CVD simulation |
+|--------------------|:---:|:---:|:---:|:---:|
+| **Matplotlib PDF** | --- | Same data, different renderer | Convert to L-channel | daltonize/Coblis |
+| **Plotly HTML**    | Same data | --- | N/A (screen only) | N/A (screen only) |
+| **Grayscale**      | Visual check | N/A | --- | N/A |
+| **CVD sim**        | daltonize | N/A | N/A | --- |
 
 ### Input Quality -> Roadmap Impact
 
 | Input File | Quality | Affected Recommendations | Impact if Wrong |
 |------------|---------|------------------------|-----------------|
-| METHODS.md | GOOD | Sampling strategy, estimator choice, implementation order | Would change whether IS or stratified sampling is recommended first |
-| PRIOR-WORK.md | GOOD | Validation targets, benchmark criteria | Could miss a standard quality metric |
-| COMPUTATIONAL.md | GOOD | Tool selection, grid resolution, interpolation choice | Would affect specific implementation details |
-| PITFALLS.md | GOOD | Risk mitigation, failure tracking design, audit scope | Blind spots in pitfall coverage could lead to undetected biases |
+| PRIOR-WORK.md | GOOD | Figure selection, priority ordering, novelty assessment | Could miss a standard expected figure or overestimate novelty |
+| METHODS.md | GOOD | Style configuration, palette choice, smoothing approach | Wrong font sizes or palette could cause APS rejection |
+| COMPUTATIONAL.md | GOOD | Interactive pipeline architecture, data reduction strategy | Wrong tool choice adds unnecessary complexity |
+| PITFALLS.md | GOOD | Risk mitigation for APS compliance, accessibility, CI consistency | Missing a pitfall could cause late-stage rejection or incorrect results |
 
 ## Implications for Roadmap
 
-### Phase 1: Injection Physics Audit
+### Suggested Phase Structure
 
-**Rationale:** Before improving sampling or grids, verify that the existing injection pipeline is internally consistent. Mismatch between injection and evaluation parameters would invalidate all P_det grids regardless of statistical quality.
-**Delivers:** Verified parameter consistency (z, M, d_L, h, cosmology) between injection_campaign() and BayesianStatistics; documented waveform failure statistics; confirmed z > 0.5 cutoff validity.
-**Validates:** Round-trip d_L-to-z inversion consistency to 1e-4; M sampling range matches between pipelines; cosmological parameters identical in both paths.
-**Avoids:** Pitfall 1 (parameter distribution mismatch), Pitfall 6 (d_L-to-z inconsistency).
-**Methods:** Code audit, round-trip numerical tests, log parsing for failure statistics.
-**Risk:** LOW -- primarily code reading and simple numerical checks.
+#### Phase 1: Style Foundation
 
-### Phase 2: P_det Grid Quality Assessment
+**Rationale:** All downstream figures depend on the style configuration. Changing colors and fonts after figures are made wastes effort. Do this first.
+**Delivers:** New `emri_thesis_pub.mplstyle` with REVTeX sizing, Okabe-Ito palette, Type 42 fonts, L-frame spines; updated `_colors.py` with semantic Okabe-Ito colors; updated `apply_style()` to load the new style.
+**Validates:** `pdffonts` check on test PDF shows no Type 3; font size measurement confirms >= 2mm capitals at 3.375" width; daltonize simulation confirms two-channel distinguishability.
+**Avoids:** Pitfall 1 (Type 3 fonts), Pitfall 2 (colorblind safety), Pitfall 6 (font size after scaling).
+**Risk:** LOW -- well-documented matplotlib configuration.
 
-**Rationale:** Quantify the quality of existing P_det grids before designing improvements. Need to know which bins are reliable and which are not.
-**Delivers:** Per-bin Wilson CIs; quality flag arrays; injection count heatmaps; P_det(z) slice plots with error bands; comparison between 30x20 and 15x10 grids.
-**Uses:** Wilson score interval (astropy.stats.binom_conf_interval), Kish effective sample size, diagnostic visualizations.
-**Builds on:** Phase 1 verification that injection data is internally consistent.
-**Avoids:** Pitfall 4 (low bin counts without diagnostics).
-**Risk:** LOW -- standard statistical diagnostics on existing data.
+#### Phase 2: Polish Existing Figures (1-4)
 
-### Phase 3: Enhanced Sampling Design
+**Rationale:** Four figures already exist and are scientifically correct. Polish them to publication standard using the new style, fix the CI calculation inconsistency, and add missing annotations.
+**Delivers:** Refined Figures 1-4 (H0 posterior, single-event likelihoods, convergence, SNR distribution) with consistent trapezoidal CI, CI width annotations, grid resolution disclosure in captions.
+**Builds on:** Phase 1 style foundation.
+**Avoids:** Pitfall 3 (misleading grid interpolation), Pitfall 4 (inconsistent CI), Pitfall 5 (grayscale collapse), Pitfall 8 (peak normalization).
+**Risk:** LOW -- existing code with targeted modifications.
 
-**Rationale:** Design the improved sampling strategy informed by Phase 2 diagnostics showing where the grid is weak.
-**Delivers:** Importance weight tracking in injection pipeline; stratified allocation algorithm for future campaigns; proposal density design for boundary-enhanced sampling.
-**Uses:** Self-normalized IS estimator (Tiwari 2018); Neyman-optimal allocation; defensive mixture proposal.
-**Builds on:** Phase 2 boundary identification and quality metrics.
-**Avoids:** Pitfall 3 (untracked importance sampling), Pitfall 2 (failure tracking).
-**Risk:** MEDIUM -- requires modifying injection_campaign() code and validating that weights are correctly computed.
+#### Phase 3: New Science Figures (5-7)
 
-### Phase 4: Validation and Cross-Checks
+**Rationale:** The three new figures (P_det surface, per-galaxy decomposition, channel information gain) are the highest-impact additions. They require new plotting code and access to injection/per-galaxy data.
+**Delivers:** Figure 5 (P_det heatmap with contours and event overlay), Figure 6 (per-galaxy likelihood bar chart or scatter for 1-2 representative events), Figure 7 (effective N_hosts or KL divergence per event showing BH mass information gain).
+**Builds on:** Phase 1 style, Phase 2 data loading patterns.
+**Uses:** `pcolormesh` for P_det surface, tail-read approach for 580MB JSON extraction, entropy-based N_eff calculation.
+**Avoids:** Pitfall 7 (memory exhaustion from full JSON load), Pitfall 9 (non-reproducible event selection -- pin representative events).
+**Risk:** MEDIUM -- new code, requires 580MB JSON data available locally, per-galaxy data extraction not yet fully implemented.
 
-**Rationale:** Verify that the enhanced sampling produces P_det grids consistent with the original uniform approach, and that the H0 posterior is not sensitive to the methodological changes.
-**Delivers:** Side-by-side comparison of uniform vs. stratified P_det grids; P_det monotonicity verification; marginalized detection rate integral stability check; comparison with old KDE P_det.
-**Uses:** Bootstrap stability test (B=200); integral consistency check; cross-validation with analytic SNR scaling.
-**Builds on:** Phase 3 enhanced sampling implementation.
-**Risk:** LOW -- comparison and validation tests on existing and new data.
+#### Phase 4: Interactive Pipeline
+
+**Rationale:** Interactive figures add value for the thesis website but do not block the paper. Can proceed in parallel after Phase 1.
+**Delivers:** Pre-aggregation script (`scripts/prepare_interactive_data.py`), Plotly versions of key figures with CDN mode, MyST-NB integration in Sphinx, JupyterLite embed for parameter exploration.
+**Dependencies:** Pre-aggregated data from 580MB JSONs (overlaps with Phase 3 data access). Style foundation from Phase 1 (Plotly template should match matplotlib style).
+**Avoids:** Anti-approaches: loading 580MB client-side, self-contained Plotly HTML (3-5MB each), replacing matplotlib with Plotly for paper.
+**Risk:** MEDIUM -- MathJax conflict between Plotly and Sphinx is a known issue requiring early testing; JupyterLite cold start UX may be poor.
+
+#### Phase 5: Supplementary Figures and Final QA
+
+**Rationale:** Supplementary figures (waterfall plot, hosts vs redshift, injection summary) and final quality assurance (grayscale check, CVD simulation, `pdffonts` audit) complete the figure set.
+**Delivers:** Supplementary Figures S1-S4, comprehensive grayscale and CVD audit of all figures, final PDF validation.
+**Builds on:** All previous phases.
+**Risk:** LOW -- incremental additions and quality checks.
 
 ### Phase Ordering Rationale
 
-- Phase 1 must come first: no point improving sampling if the injection pipeline has parameter inconsistencies that would propagate to any grid.
-- Phase 2 before Phase 3: quantify current grid quality to know where improvements are needed and set the baseline for measuring improvement.
-- Phase 3 depends on Phase 2: the boundary-enhanced proposal requires knowing where the boundary is from the Phase 2 analysis.
-- Phase 4 after Phase 3: validation requires both the old (uniform) and new (stratified) grids to compare.
+- Phase 1 must come first: style changes cascade to every figure; retrofitting is expensive.
+- Phase 2 before Phase 3: polishing existing figures builds familiarity with the data loading patterns and identifies any data availability issues before attempting new figures.
+- Phase 3 is the creative/science-heavy phase: requires the most design decisions and data wrangling.
+- Phase 4 can run in parallel with Phases 2-3 after Phase 1 completes: interactive pipeline is independent of static figure refinement.
+- Phase 5 is final: quality assurance must run on the complete figure set.
 
 ### Phases Requiring Deep Investigation
 
-- **Phase 3 (Enhanced Sampling Design):** Requires careful implementation of importance weights, validated against the analytical result that weights=1 recovers the standard estimator. The proposal distribution design (mixture of uniform + boundary-enhanced) needs tuning parameters (alpha, sigma_z) that depend on Phase 2 results. The waveform failure tracking is a new feature requiring code changes to injection_campaign().
+- **Phase 3 (New Science Figures):** Per-galaxy data extraction from 580MB JSONs needs the tail-read approach extended to galaxy-level entries. The effective N_hosts metric requires defining the entropy measure and deciding on visualization (scatter, histogram, or heatmap). Representative event selection must be pinned for reproducibility.
 
 Phases with established methodology (straightforward execution):
 
-- **Phase 1 (Injection Physics Audit):** Standard code audit and numerical round-trip tests. Well-defined checks.
-- **Phase 2 (P_det Grid Quality):** Wilson CIs, histograms, and diagnostic plots are textbook statistics. astropy provides the implementation.
-- **Phase 4 (Validation):** Comparison tests and bootstrap are standard.
+- **Phase 1 (Style Foundation):** All rcParams are documented; Okabe-Ito hex codes are fixed; mplstyle syntax is standard.
+- **Phase 2 (Polish Existing Figures):** Code exists; changes are targeted (CI method, annotations, style application).
+- **Phase 5 (Supplementary + QA):** Standard quality checks with known tools.
 
 ## Confidence Assessment
 
 | Area | Confidence | Notes |
 |------|-----------|-------|
-| Computational Approaches | HIGH | All recommended tools (numpy, scipy, astropy) are mature; histogram estimator is textbook; Wilson CI is well-studied |
-| Prior Work | HIGH | GW selection effects methodology is well-established (LVK); Tiwari 2018 and Farr 2019 are widely cited and adopted |
-| Methods | MEDIUM | IS estimator and stratified sampling are well-understood in general, but EMRI-specific application is novel; no published benchmark exists for EMRI injection optimization |
-| Pitfalls | MEDIUM | Critical pitfalls (failure correlation, parameter mismatch) are well-identified but their quantitative impact depends on the actual injection data which has not yet been fully analyzed |
+| Prior Work | HIGH | Dark siren figure canon is well-established; 7 reference papers surveyed comprehensively |
+| Methods | HIGH | matplotlib publication techniques are mature; Okabe-Ito and REVTeX sizing are standard |
+| Computational | HIGH | Plotly/MyST-NB/JupyterLite are production tools; data reduction strategy is straightforward |
+| Pitfalls | HIGH | APS requirements are documented; colorblind and grayscale issues are well-characterized |
 
-**Overall confidence:** MEDIUM -- methodology is sound and well-grounded in the GW literature, but the EMRI-specific application is novel territory without published benchmarks. The main uncertainty is quantitative (how bad are the waveform failures? how sparse are the bins in practice?) rather than methodological.
+**Overall confidence:** HIGH
 
 ### Gaps to Address
 
-- **Waveform failure statistics:** Unknown until injection logs are parsed or failure tracking is added. This is the single largest uncertainty -- if failures are 50% and correlated with parameter regions, the existing P_det grids may have uncontrolled bias.
-- **Actual detection yield:** 24/69500 is the only data point so far. Per-h-value detection fractions needed.
-- **h-interpolation accuracy:** No test of whether linear interpolation between h grid points is adequate. Requires either a test injection run at intermediate h or an analytical argument based on d_L(z,h) curvature.
+- **Grid resolution sensitivity:** If reviewers demand finer h-grid resolution, a new evaluation run is needed. This is a computational cost issue, not a methodology gap. Consider preparing a response explaining why the 15-point grid is sufficient for the current analysis.
+- **With-BH-mass near-delta:** The posterior collapse on the coarse grid needs careful presentation. A finer grid would resolve whether it is genuinely narrow or an artifact of under-sampling. This may block full confidence in Figure 1.
+- **Per-galaxy data extraction:** The tail-read approach for 580MB files works for event-level scalars but has not been tested for galaxy-level entries. Phase 3 may discover that a different approach (pre-processing to intermediate CSV) is needed.
+- **MathJax conflict:** Plotly and Sphinx both load MathJax; double-loading may cause rendering issues. Needs early testing in Phase 4.
 
 ## Open Questions
 
-1. **What is the waveform failure fraction by (z, M) region?** [HIGH priority, blocks Phase 1 completion] -- determines whether existing P_det grids have parameter-correlated bias.
-2. **Does the z > 0.5 cutoff remain valid at h = 0.60?** [MEDIUM priority, blocks Phase 3 for extreme h values] -- lower h increases d_L, potentially pushing the detection horizon beyond z = 0.5 for massive EMRIs.
-3. **Is the 15x10 coarser grid sufficient?** [MEDIUM priority, Phase 2 deliverable] -- compare marginalized detection rate between 30x20 and 15x10; if they agree to 2%, the coarser grid is adequate.
-4. **How sensitive is the H0 posterior to per-bin P_det noise?** [MEDIUM priority, Phase 4] -- determines whether the current injection count is sufficient or whether the campaign needs extension.
+1. **Is the 15-point h-grid resolution sufficient for publication?** [HIGH priority] -- Reviewers may question the coarse grid. The markers-with-lines approach is honest, but a finer grid would strengthen the paper. Decision: proceed with 15-point grid, prepare response to reviewer objection, consider running finer grid if time permits.
+
+2. **How to present the with-BH-mass near-delta posterior?** [HIGH priority] -- The posterior is so narrow on the 15-point grid that it may look like an artifact. Options: (a) finer grid for this channel only, (b) inset zoom, (c) explicit discussion in caption and text.
+
+3. **Can per-galaxy likelihood data be extracted efficiently from 580MB JSONs?** [MEDIUM priority, blocks Phase 3] -- The tail-read approach needs extension; alternatively, a one-time pre-processing step could create intermediate CSV files.
+
+4. **Will ipywidgets work reliably in JupyterLite?** [LOW priority] -- Start with manual cell re-execution; add widgets only if UX warrants it.
+
+5. **Should the Plotly template match the matplotlib style exactly?** [LOW priority] -- Exact matching is difficult (different rendering engines). Consistent color palette and general aesthetic are sufficient.
 
 ## Sources
 
 ### Primary (HIGH)
 
-- [Tiwari (2018), "Weighted MC for GW sensitive volume," CQG, arXiv:1712.00482](https://arxiv.org/abs/1712.00482) -- Self-normalized IS estimator for P_det; directly applicable weight formula
-- [Farr (2019), "Accuracy Requirements for Selection Functions," RNAAS, arXiv:1904.10879](https://arxiv.org/abs/1904.10879) -- N_eff > 4*N_det criterion
-- [Mandel, Farr & Gair (2019), arXiv:1809.02063](https://arxiv.org/abs/1809.02063) -- Hierarchical Bayesian framework for GW population inference with selection effects
-- [Brown, Cai, DasGupta (2001), Stat. Sci. 16(2):101-133](https://projecteuclid.org/journals/statistical-science/volume-16/issue-2/Interval-Estimation-for-a-Binomial-Proportion/10.1214/ss/1009213286.full) -- Binomial CI comparison; recommends Wilson score
+- Gray et al. (2020), arXiv:1908.06050 -- Foundational dark siren method; figure conventions
+- LVK GWTC-3 (2021), arXiv:2111.03604 -- Official H0 constraints; waterfall plot standard
+- Laghi et al. (2021), arXiv:2102.01708 -- EMRI dark siren forecast; convergence plots
+- APS Style Basics, https://journals.aps.org/authors/style-basics -- Figure requirements
+- Wong, B. (2011), Nature Methods 8(6):441 -- Colorblind-safe palette
+- Okabe & Ito (2002), https://jfly.uni-koeln.de/color/ -- Color Universal Design palette
 
 ### Secondary (MEDIUM)
 
-- [Gerosa & Fishbach (2024), "Quick recipes for GW selection effects," arXiv:2404.16930](https://arxiv.org/abs/2404.16930) -- Detection probability approximations, Marcum Q-function
-- [Chua & Vallisneri (2023), "Rapid EMRI sensitivity with ML," arXiv:2212.06166](https://arxiv.org/abs/2212.06166) -- Neural network SNR interpolation for EMRIs; demonstrates smoothness of SNR landscape
-- [Gray et al. (2020)](https://arxiv.org/abs/1908.06050) -- Dark siren H0 inference; direct ancestor of this approach
-- [Owen (2013), "Monte Carlo theory, methods and examples"](https://artowen.su.domains/mc/) -- Standard MC reference for stratified and importance sampling
-- [Kish (1965), "Survey Sampling," Wiley](https://www.wiley.com/en-us/Survey+Sampling-p-9780471109495) -- Effective sample size formula
+- Finke et al. (2021), arXiv:2101.12660 -- GWTC-2 dark siren H0; galaxy weighting figures
+- Gray et al. (2022), arXiv:2212.08694 -- Hitchhiker's Guide to galaxy catalog method
+- Borghi et al. (2024), arXiv:2404.16092 -- O4a dark siren H0; sky maps with galaxies
+- Laghi et al. (2026), arXiv:2603.23612 -- Joint EMRI+MBHB LISA cosmology
+- Inchauspe et al. (2025), arXiv:2406.09228 -- Target aesthetic reference
+- Scott (1992), "Multivariate Density Estimation," Wiley -- KDE bandwidth selection
+- Rougier et al. (2014), PLoS Comput Biol 10(9):e1003833 -- Ten Simple Rules for Better Figures
 
 ### Tertiary (LOW)
 
-- [Speri et al. (2025), arXiv:2509.08875](https://arxiv.org/abs/2509.08875) -- Systematic errors in fast EMRI waveforms; relevant to waveform failure characterization
-- [Callister, Essick, Holz (2024), arXiv:2408.16828](https://arxiv.org/abs/2408.16828) -- Neural network P_det emulator for LIGO; overkill for current application but reference for future work
-- [Veach & Guibas (1995), SIGGRAPH](https://dl.acm.org/doi/10.1145/218380.218498) -- Multiple importance sampling / balance heuristic
+- Plotly documentation, https://plotly.com/python/ -- Interactive plotting API
+- MyST-NB documentation, https://github.com/executablebooks/MyST-NB -- Sphinx notebook integration
+- JupyterLite documentation, https://jupyterlite.readthedocs.io/ -- Serverless notebooks
+- corner.py documentation, https://corner.readthedocs.io/ -- Triangle plot library
 
 ---
 
-_Research analysis completed: 2026-03-31_
+_Research analysis completed: 2026-04-07_
 _Ready for research plan: yes_
 
 ```yaml
 # --- ROADMAP INPUT (machine-readable, consumed by gpd-roadmapper) ---
 synthesis_meta:
-  project_title: "EMRI Parameter Estimation -- Injection Campaign Physics Analysis (v1.2.2)"
-  synthesis_date: "2026-03-31"
+  project_title: "EMRI Dark Siren H0 Inference -- v2.1 Publication Figures"
+  synthesis_date: "2026-04-07"
   input_files: [METHODS.md, PRIOR-WORK.md, COMPUTATIONAL.md, PITFALLS.md]
   input_quality: {METHODS: good, PRIOR-WORK: good, COMPUTATIONAL: good, PITFALLS: good}
 
 conventions:
-  unit_system: "mixed: natural (GW), Gpc (distances), M_sun (masses)"
-  metric_signature: "N/A (no waveform modifications this milestone)"
+  unit_system: "mixed: dimensionless h, Gpc (distances), M_sun (masses)"
+  metric_signature: "N/A (visualization milestone)"
+  fourier_convention: "N/A"
   coupling_convention: "N/A"
   renormalization_scheme: "N/A"
 
 methods_ranked:
-  - name: "Self-normalized importance-weighted histogram estimator"
-    regime: "N_eff > 50 per bin; proposal has full support over prior"
+  - name: "Custom mplstyle with LaTeX/REVTeX typography"
+    regime: "All static figures for PRD submission"
     confidence: HIGH
-    cost: "O(N) per grid build (negligible vs injection cost)"
-    complements: "Stratified sampling to control per-bin N_eff"
-  - name: "Stratified sampling with Neyman-optimal allocation"
-    regime: "Pilot run identifies boundary (>2000 pilot samples)"
+    cost: "O(1) setup; applies globally via rcParams"
+    complements: "Plotly template for interactive figures"
+  - name: "Okabe-Ito colorblind-safe palette"
+    regime: "All figures with categorical color encoding"
     confidence: HIGH
-    cost: "Same total injections, redistributed; ~3h wall time per h-value"
-    complements: "IS estimator for combining pilot + targeted samples"
-  - name: "Wilson score binomial confidence intervals"
-    regime: "Any n >= 1; especially good for small n and extreme proportions"
+    cost: "O(1) palette swap in _colors.py"
+    complements: "Blues sequential colormap for density/contour fills"
+  - name: "scipy.stats.gaussian_kde for 1D/2D smoothing"
+    regime: "Posterior samples with N > 100; NOT for 15-point grid posteriors"
     confidence: HIGH
-    cost: "O(1) per bin (negligible)"
-    complements: "Quality flagging for grid reliability assessment"
-  - name: "Adaptive boundary refinement (two-stage)"
-    regime: "Well-identified boundary from pilot; 30% pilot + 70% targeted"
+    cost: "O(N*M) for N samples, M grid points"
+    complements: "scipy.ndimage.gaussian_filter for pre-computed 2D grids"
+  - name: "Plotly with CDN mode for interactive web figures"
+    regime: "GitHub Pages / Sphinx HTML output; datasets < 200k points"
+    confidence: HIGH
+    cost: "~2KB per figure HTML + CDN load"
+    complements: "matplotlib for print/PDF output"
+  - name: "Build-time pre-aggregation for 580MB JSON data"
+    regime: "Any interactive visualization or CI-built figure"
+    confidence: HIGH
+    cost: "One-time local script; ~1MB output committed to repo"
+    complements: "Tail-read approach for targeted extraction of specific events"
+  - name: "MyST-NB with jupyter-cache for Sphinx notebook integration"
+    regime: "Notebook-based interactive exploration pages"
     confidence: MEDIUM
-    cost: "Same total injections; requires boundary estimation from pilot"
-    complements: "IS estimator with defensive mixture proposal"
+    cost: "~3-4 min added to CI build time"
+    complements: "Raw HTML include for pre-built Plotly figures (faster build)"
 
 phase_suggestions:
-  - name: "Injection Physics Audit"
-    goal: "Verify parameter consistency between injection and evaluation pipelines; quantify waveform failure statistics"
-    methods: ["Self-normalized importance-weighted histogram estimator"]
+  - name: "Style Foundation"
+    goal: "Establish REVTeX-compliant mplstyle with Okabe-Ito palette, Type 42 fonts, and L-frame spines"
+    methods: ["Custom mplstyle with LaTeX/REVTeX typography", "Okabe-Ito colorblind-safe palette"]
     depends_on: []
     needs_research: false
     risk: LOW
-    pitfalls: ["parameter-distribution-mismatch", "dl-to-z-inversion-inconsistency"]
-  - name: "P_det Grid Quality Assessment"
-    goal: "Quantify per-bin reliability of existing P_det grids with Wilson CIs and quality flags"
-    methods: ["Wilson score binomial confidence intervals"]
-    depends_on: ["Injection Physics Audit"]
+    pitfalls: ["type3-fonts-aps-rejection", "tab10-not-colorblind-safe", "font-size-scaling"]
+  - name: "Polish Existing Figures"
+    goal: "Refine Figures 1-4 to publication standard with consistent CI calculation and annotations"
+    methods: ["Custom mplstyle with LaTeX/REVTeX typography", "Okabe-Ito colorblind-safe palette"]
+    depends_on: ["Style Foundation"]
     needs_research: false
     risk: LOW
-    pitfalls: ["low-bin-counts", "h-interpolation-accuracy"]
-  - name: "Enhanced Sampling Design"
-    goal: "Implement importance weight tracking and stratified allocation for future campaigns"
-    methods: ["Self-normalized importance-weighted histogram estimator", "Stratified sampling with Neyman-optimal allocation", "Adaptive boundary refinement (two-stage)"]
-    depends_on: ["P_det Grid Quality Assessment"]
+    pitfalls: ["grid-interpolation-misleading", "ci-cumsum-vs-trapezoid", "peak-normalization-hides-width", "grayscale-collapse"]
+  - name: "New Science Figures"
+    goal: "Create P_det surface, per-galaxy decomposition, and channel information gain figures"
+    methods: ["scipy.stats.gaussian_kde for 1D/2D smoothing", "Build-time pre-aggregation for 580MB JSON data"]
+    depends_on: ["Style Foundation"]
     needs_research: false
     risk: MEDIUM
-    pitfalls: ["z-cutoff-unvalidated-importance-sampling", "waveform-failure-correlation"]
-  - name: "Validation and Cross-Checks"
-    goal: "Verify enhanced sampling produces consistent P_det grids and stable H0 posteriors"
-    methods: ["Wilson score binomial confidence intervals"]
-    depends_on: ["Enhanced Sampling Design"]
+    pitfalls: ["memory-exhaustion-json-load", "non-reproducible-event-selection"]
+  - name: "Interactive Pipeline"
+    goal: "Build Plotly/MyST-NB/JupyterLite interactive figures for GitHub Pages"
+    methods: ["Plotly with CDN mode for interactive web figures", "MyST-NB with jupyter-cache for Sphinx notebook integration", "Build-time pre-aggregation for 580MB JSON data"]
+    depends_on: ["Style Foundation"]
+    needs_research: false
+    risk: MEDIUM
+    pitfalls: ["mathjax-double-loading", "580mb-client-side-crash"]
+  - name: "Supplementary Figures and QA"
+    goal: "Complete supplementary figure set and run grayscale/CVD/pdffonts quality audit"
+    methods: ["Custom mplstyle with LaTeX/REVTeX typography", "Okabe-Ito colorblind-safe palette"]
+    depends_on: ["Polish Existing Figures", "New Science Figures"]
     needs_research: false
     risk: LOW
-    pitfalls: []
+    pitfalls: ["eps-transparency-incompatibility", "legend-obscures-data"]
 
 critical_benchmarks:
-  - quantity: "P_det monotonicity in z at fixed M"
-    value: "Strictly non-increasing (within statistical noise)"
-    source: "Physical expectation (farther = fainter)"
+  - quantity: "Minimum font capital height at single-column width"
+    value: ">= 2mm (8pt minimum at 3.375 inches)"
+    source: "APS Style Basics"
     confidence: HIGH
-  - quantity: "P_det boundary conditions"
-    value: "P_det -> 1 at low z, high M; P_det -> 0 at high z, low M"
-    source: "Physical expectation"
+  - quantity: "PDF font type"
+    value: "Type 42 (TrueType) only; zero Type 3 fonts"
+    source: "APS submission requirements"
     confidence: HIGH
-  - quantity: "Farr criterion for global selection function"
-    value: "N_eff > 4 * N_det (~80 effective injections for ~20 detections)"
-    source: "Farr (2019), arXiv:1904.10879"
+  - quantity: "Colorblind distinguishability"
+    value: "All data series distinguishable under deuteranopia, protanopia, tritanopia"
+    source: "Wong (2011), Okabe & Ito (2002)"
     confidence: HIGH
-  - quantity: "Per-bin minimum for reliable P_det"
-    value: "N_total >= 10 (n >= 50 preferred for <5% relative error at P_det ~ 0.5)"
-    source: "Binomial statistics; Kish (1965)"
+  - quantity: "Planck h reference value"
+    value: "0.674 +/- 0.005"
+    source: "Planck 2018 (arXiv:1807.06209)"
+    confidence: HIGH
+  - quantity: "SH0ES h reference value"
+    value: "0.73 +/- 0.01"
+    source: "Riess et al. 2022 (arXiv:2112.04510)"
     confidence: HIGH
 
 open_questions:
-  - question: "What is the waveform failure fraction by (z, M) region?"
+  - question: "Is the 15-point h-grid resolution sufficient for publication, or will reviewers demand finer resolution?"
     priority: HIGH
-    blocks_phase: "Injection Physics Audit"
-  - question: "Does the z > 0.5 cutoff remain valid at h = 0.60?"
+    blocks_phase: "none"
+  - question: "How to present the with-BH-mass near-delta posterior on the coarse grid without it looking like an artifact?"
+    priority: HIGH
+    blocks_phase: "Polish Existing Figures"
+  - question: "Can per-galaxy likelihood data be extracted efficiently from 580MB JSONs for Figure 6?"
     priority: MEDIUM
-    blocks_phase: "Enhanced Sampling Design"
-  - question: "Is the 15x10 coarser grid sufficient for P_det accuracy?"
-    priority: MEDIUM
-    blocks_phase: "P_det Grid Quality Assessment"
-  - question: "How sensitive is the H0 posterior to per-bin P_det noise?"
-    priority: MEDIUM
-    blocks_phase: "Validation and Cross-Checks"
+    blocks_phase: "New Science Figures"
+  - question: "Will MathJax double-loading between Plotly and Sphinx cause rendering issues?"
+    priority: LOW
+    blocks_phase: "Interactive Pipeline"
 
-contradictions_unresolved: []
+contradictions_unresolved:
+  - claim_a: "METHODS.md recommends TRUTH color as vermillion (#D55E00) for contrast against blue fills"
+    claim_b: "PITFALLS.md recommends TRUTH color as bluish green (#009E73) for distinction from both blue and vermillion"
+    source_a: "METHODS.md Tier 3 Semantic Accent Colors"
+    source_b: "PITFALLS.md Pitfall 2 Prevention section"
+    investigation_needed: "Test both options with daltonize under all three CVD types; choose based on maximum contrast against the specific blue posterior fill used in Figure 1"
 ```
