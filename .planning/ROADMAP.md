@@ -127,6 +127,9 @@ See `.gpd/ROADMAP.md` for full details.
 **Goal**: Modernize the visual style infrastructure so all downstream figures automatically inherit publication-quality aesthetics
 **Requirements**: STYL-01, STYL-02, STYL-03
 **Depends on**: None
+**Plans:** 1 plan
+Plans:
+- [ ] 29-01-PLAN.md — Update mplstyle + Okabe-Ito colors + style regression tests
 **Success criteria**:
 1. `emri_thesis.mplstyle` updated: top/right spines removed, `pdf.fonttype: 42`, font sizes 7-9pt, inward ticks, frameless legends
 2. `_colors.py` replaced with Okabe-Ito cycle + sequential Blues (0.1-0.85) + accent color
