@@ -12,6 +12,7 @@ evaluation/
 test-artifacts/
 
 # Data files (regenerable, live on $WORKSPACE on cluster)
+cluster_results/
 simulations/
 results/h_sweep_*/
 few_data/
