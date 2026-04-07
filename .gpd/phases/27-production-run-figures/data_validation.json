@@ -1,0 +1,185 @@
+{
+  "without_bh_mass": {
+    "n_files": 23,
+    "h_values": [
+      0.6,
+      0.62,
+      0.626,
+      0.64,
+      0.652,
+      0.66,
+      0.678,
+      0.68,
+      0.7,
+      0.704,
+      0.72,
+      0.73,
+      0.74,
+      0.756,
+      0.76,
+      0.78,
+      0.782,
+      0.8,
+      0.808,
+      0.82,
+      0.834,
+      0.84,
+      0.86
+    ],
+    "events_per_file": 538,
+    "all_consistent": true,
+    "missing_event_indices_sample": [
+      5,
+      188,
+      248,
+      333
+    ],
+    "n_missing_indices": 4,
+    "zero_length_events": {
+      "h_0_6.json": 4,
+      "h_0_62.json": 4,
+      "h_0_626.json": 4,
+      "h_0_64.json": 4,
+      "h_0_652.json": 4,
+      "h_0_66.json": 4,
+      "h_0_678.json": 4,
+      "h_0_68.json": 4,
+      "h_0_7.json": 4,
+      "h_0_704.json": 4,
+      "h_0_72.json": 4,
+      "h_0_73.json": 4,
+      "h_0_74.json": 4,
+      "h_0_756.json": 4,
+      "h_0_76.json": 4,
+      "h_0_78.json": 4,
+      "h_0_782.json": 4,
+      "h_0_8.json": 4,
+      "h_0_808.json": 4,
+      "h_0_82.json": 4,
+      "h_0_834.json": 4,
+      "h_0_84.json": 4,
+      "h_0_86.json": 4
+    },
+    "combined_subdir": {
+      "h_values": [
+        0.6,
+        0.626,
+        0.652,
+        0.678,
+        0.704,
+        0.73,
+        0.756,
+        0.782,
+        0.808,
+        0.834,
+        0.86
+      ],
+      "map_h": 0.704,
+      "n_events_total": 534,
+      "n_events_used": 533,
+      "strategy": "physics-floor"
+    },
+    "combined_toplevel": {
+      "h_values": [
+        0.6,
+        0.62,
+        0.64,
+        0.66,
+        0.68,
+        0.7,
+        0.72,
+        0.73,
+        0.74,
+        0.76,
+        0.78,
+        0.8,
+        0.82,
+        0.84,
+        0.86
+      ],
+      "map_h": 0.66,
+      "n_events_total": 534,
+      "n_events_used": 531,
+      "strategy": "physics-floor"
+    },
+    "map_at_boundary": false
+  },
+  "with_bh_mass": {
+    "n_files": 7,
+    "h_values": [
+      0.6,
+      0.62,
+      0.626,
+      0.68,
+      0.78,
+      0.782,
+      0.834
+    ],
+    "events_per_file": 538,
+    "all_consistent": true,
+    "corrupted_files": [
+      "h_0_64.json"
+    ],
+    "missing_event_indices_sample": [
+      5,
+      188,
+      248,
+      333
+    ],
+    "n_missing_indices": 4,
+    "zero_length_events": {
+      "h_0_6.json": 4,
+      "h_0_62.json": 4,
+      "h_0_626.json": 4,
+      "h_0_68.json": 4,
+      "h_0_78.json": 4,
+      "h_0_782.json": 4,
+      "h_0_834.json": 4
+    },
+    "combined_subdir": {
+      "h_values": [
+        0.6,
+        0.626,
+        0.652,
+        0.678,
+        0.704,
+        0.73,
+        0.756,
+        0.782,
+        0.808,
+        0.834,
+        0.86
+      ],
+      "map_h": 0.704,
+      "n_events_total": 534,
+      "n_events_used": 533,
+      "strategy": "physics-floor"
+    },
+    "combined_toplevel": {
+      "h_values": [
+        0.6,
+        0.62,
+        0.64,
+        0.66,
+        0.68,
+        0.7,
+        0.72,
+        0.73,
+        0.74,
+        0.76,
+        0.78,
+        0.8,
+        0.82,
+        0.84,
+        0.86
+      ],
+      "map_h": 0.68,
+      "n_events_total": 534,
+      "n_events_used": 527,
+      "strategy": "physics-floor"
+    },
+    "map_at_boundary": false
+  },
+  "snr_threshold": 15,
+  "data_ready": true
+}
