@@ -115,7 +115,7 @@ See `.gpd/ROADMAP.md` for full details.
 
 ### v2.1 Publication Figures (GSD-tracked)
 
-- [ ] **Phase 29: Style Foundation** — Modernize mplstyle, colorblind-safe palette, font sizing, `pdf.fonttype: 42`
+- [x] **Phase 29: Style Foundation** — Modernize mplstyle, colorblind-safe palette, font sizing, `pdf.fonttype: 42` (completed 2026-04-07)
 - [ ] **Phase 30: Unified Figure Pipeline & Paper Figures** — Merge manifests, fix CI bug, polish 4 existing + add contour/smoothed variants
 - [ ] **Phase 31: Galaxy-Level Figures** — Pre-process 580MB JSONs, galaxy ranking, dominant fraction, BH mass impact, sky map
 - [ ] **Phase 32: Interactive Figures** — Plotly/Sphinx integration, data pre-aggregation, MyST-NB notebooks, JupyterLite
@@ -127,9 +127,9 @@ See `.gpd/ROADMAP.md` for full details.
 **Goal**: Modernize the visual style infrastructure so all downstream figures automatically inherit publication-quality aesthetics
 **Requirements**: STYL-01, STYL-02, STYL-03
 **Depends on**: None
-**Plans:** 1 plan
+**Plans:** 1/1 plans complete
 Plans:
-- [ ] 29-01-PLAN.md — Update mplstyle + Okabe-Ito colors + style regression tests
+- [x] 29-01-PLAN.md — Update mplstyle + Okabe-Ito colors + style regression tests
 **Success criteria**:
 1. `emri_thesis.mplstyle` updated: top/right spines removed, `pdf.fonttype: 42`, font sizes 7-9pt, inward ticks, frameless legends
 2. `_colors.py` replaced with Okabe-Ito cycle + sequential Blues (0.1-0.85) + accent color
@@ -218,7 +218,7 @@ Plans:
 | 26. Paper Draft | v2.0 | 1/1 | Complete (GPD) | 2026-04-05 |
 | 27. Production Run & Figures | v2.0 | 0/? | Not started (GPD) | - |
 | 28. Review & Submission | v2.0 | 0/? | Not started (GPD) | - |
-| 29. Style Foundation | v2.1 | 0/? | Not started | - |
+| 29. Style Foundation | v2.1 | 1/1 | Complete   | 2026-04-07 |
 | 30. Unified Pipeline & Paper Figs | v2.1 | 0/? | Not started | - |
 | 31. Galaxy-Level Figures | v2.1 | 0/? | Not started | - |
 | 32. Interactive Figures | v2.1 | 0/? | Not started | - |
