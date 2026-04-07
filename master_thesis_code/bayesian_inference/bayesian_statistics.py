@@ -24,7 +24,7 @@ import numpy as np
 import numpy.typing as npt
 import pandas as pd
 from scipy.integrate import dblquad, fixed_quad, quad
-from scipy.stats import _multivariate, multivariate_normal, norm
+from scipy.stats import multivariate_normal, norm
 
 from master_thesis_code.bayesian_inference.simulation_detection_probability import (
     SimulationDetectionProbability,
@@ -68,7 +68,56 @@ redshift_lower_integration_limit: float = 0.0
 bh_mass_upper_integration_limit: float = 0.0
 bh_mass_lower_integration_limit: float = 0.0
 detection_probability: Any = None
+# Legacy global kept for single_host_likelihood_integration_testing() and
+# single_host_likelihood_grid() — not used by the optimized production path.
 detection_likelihood_gaussians_by_detection_index: Any = None
+
+# Pre-computed Gaussian arrays (replace frozen scipy multivariate_normal objects)
+means_3d: npt.NDArray[np.float64] = np.empty(0)
+cov_inv_3d: npt.NDArray[np.float64] = np.empty(0)
+log_norm_3d: npt.NDArray[np.float64] = np.empty(0)
+means_4d: npt.NDArray[np.float64] = np.empty(0)
+cov_inv_4d: npt.NDArray[np.float64] = np.empty(0)
+log_norm_4d: npt.NDArray[np.float64] = np.empty(0)
+det_index_to_slot: dict[int, int] = {}
+
+# Pre-computed conditional distribution parameters for BH mass branch
+sigma2_cond_arr: npt.NDArray[np.float64] = np.empty(0)
+proj_arr: npt.NDArray[np.float64] = np.empty(0)
+
+# Pre-extracted detection parameters (avoid pickling Detection objects per starmap call)
+det_d_L_arr: npt.NDArray[np.float64] = np.empty(0)
+det_d_L_unc_arr: npt.NDArray[np.float64] = np.empty(0)
+det_M_arr: npt.NDArray[np.float64] = np.empty(0)
+det_phi_arr: npt.NDArray[np.float64] = np.empty(0)
+det_theta_arr: npt.NDArray[np.float64] = np.empty(0)
+
+
+def _mvn_pdf(
+    x: npt.NDArray[np.float64],
+    mean: npt.NDArray[np.float64],
+    cov_inv: npt.NDArray[np.float64],
+    log_norm: float,
+) -> npt.NDArray[np.float64]:
+    """Evaluate multivariate normal PDF using pre-computed inverse and log-normalization.
+
+    Equivalent to ``scipy.stats.multivariate_normal.pdf()`` but avoids repeated
+    Cholesky decompositions by using pre-computed Sigma^{-1} and
+    log((2*pi)^{-k/2} * |Sigma|^{-1/2}).
+
+    Args:
+        x: Evaluation points, shape ``(N, k)`` or ``(k,)``.
+        mean: Mean vector, shape ``(k,)``.
+        cov_inv: Inverse covariance matrix, shape ``(k, k)``.
+        log_norm: Pre-computed log-normalization constant.
+
+    Returns:
+        PDF values, shape ``(N,)``.
+    """
+    diff = np.atleast_2d(x) - mean  # (N, k)
+    maha = np.sum(diff @ cov_inv * diff, axis=-1)  # (N,)
+    result: npt.NDArray[np.float64] = np.exp(log_norm - 0.5 * maha)
+    return result
 
 
 class BayesianStatistics:
@@ -158,74 +207,133 @@ class BayesianStatistics:
         detection_probability._get_or_build_grid(h_value)
         _LOGGER.debug("P_det grid pre-warmed for h=%.4f.", h_value)
 
-        _LOGGER.debug("Creating detection likelihood gaussian functions...")
-        detection_likelihood_multivariate_gaussian_by_detection_index: dict[
-            int,
-            tuple[
-                _multivariate.multivariate_normal_frozen, _multivariate.multivariate_normal_frozen
-            ],
-        ] = {}
-        for index, detection in self.cramer_rao_bounds.iterrows():
-            detection = Detection(detection)
-            covariance_without_bh_mass = [
-                [
-                    detection.phi_error**2,
-                    detection.theta_phi_covariance,
-                    detection.d_L_phi_covariance / detection.d_L,
-                ],
-                [
-                    detection.theta_phi_covariance,
-                    detection.theta_error**2,
-                    detection.d_L_theta_covariance / detection.d_L,
-                ],
-                [
-                    detection.d_L_phi_covariance / detection.d_L,
-                    detection.d_L_theta_covariance / detection.d_L,
-                    detection.d_L_uncertainty**2 / detection.d_L**2,
-                ],
-            ]
-            covariance_with_bh_mass = [
-                [
-                    detection.phi_error**2,
-                    detection.theta_phi_covariance,
-                    detection.d_L_phi_covariance / detection.d_L,
-                    detection.M_phi_covariance / detection.M,
-                ],
-                [
-                    detection.theta_phi_covariance,
-                    detection.theta_error**2,
-                    detection.d_L_theta_covariance / detection.d_L,
-                    detection.M_theta_covariance / detection.M,
-                ],
-                [
-                    detection.d_L_phi_covariance / detection.d_L,
-                    detection.d_L_theta_covariance / detection.d_L,
-                    detection.d_L_uncertainty**2 / detection.d_L**2,
-                    detection.d_L_M_covariance / detection.d_L / detection.M,
-                ],
-                [
-                    detection.M_phi_covariance / detection.M,
-                    detection.M_theta_covariance / detection.M,
-                    detection.d_L_M_covariance / detection.d_L / detection.M,
-                    detection.M_uncertainty**2 / detection.M**2,
-                ],
-            ]
+        _LOGGER.debug("Pre-computing Gaussian arrays for GW likelihoods...")
+        _t0 = time.perf_counter()
 
-            gaussian_without_bh_mass = multivariate_normal(
-                mean=[detection.phi, detection.theta, 1],
-                cov=covariance_without_bh_mass,
-                allow_singular=True,  # TODO: this should not be needed in the end
+        det_indices = list(self.cramer_rao_bounds.index)
+        n_det = len(det_indices)
+        _det_index_to_slot: dict[int, int] = {
+            int(idx): slot for slot, idx in enumerate(det_indices)
+        }
+
+        # Pre-allocate arrays for 3D (without BH mass) and 4D (with BH mass) Gaussians
+        _means_3d = np.zeros((n_det, 3))
+        _cov_inv_3d = np.zeros((n_det, 3, 3))
+        _log_norm_3d = np.zeros(n_det)
+        _means_4d = np.zeros((n_det, 4))
+        _cov_inv_4d = np.zeros((n_det, 4, 4))
+        _log_norm_4d = np.zeros(n_det)
+
+        # Conditional distribution pre-computations for BH mass branch
+        _sigma2_cond_arr = np.zeros(n_det)
+        _proj_arr = np.zeros((n_det, 3))
+
+        # Pre-extracted detection scalar parameters (avoid pickling Detection objects)
+        _det_d_L = np.zeros(n_det)
+        _det_d_L_unc = np.zeros(n_det)
+        _det_M = np.zeros(n_det)
+        _det_phi = np.zeros(n_det)
+        _det_theta = np.zeros(n_det)
+
+        for index, row in self.cramer_rao_bounds.iterrows():
+            det = Detection(row)
+            slot = _det_index_to_slot[int(index)]
+
+            # Store detection scalars
+            _det_d_L[slot] = det.d_L
+            _det_d_L_unc[slot] = det.d_L_uncertainty
+            _det_M[slot] = det.M
+            _det_phi[slot] = det.phi
+            _det_theta[slot] = det.theta
+
+            # Build 3D covariance (without BH mass)
+            cov_3d = np.array(
+                [
+                    [
+                        det.phi_error**2,
+                        det.theta_phi_covariance,
+                        det.d_L_phi_covariance / det.d_L,
+                    ],
+                    [
+                        det.theta_phi_covariance,
+                        det.theta_error**2,
+                        det.d_L_theta_covariance / det.d_L,
+                    ],
+                    [
+                        det.d_L_phi_covariance / det.d_L,
+                        det.d_L_theta_covariance / det.d_L,
+                        det.d_L_uncertainty**2 / det.d_L**2,
+                    ],
+                ]
             )
-            gaussian_with_bh_mass = multivariate_normal(
-                mean=[detection.phi, detection.theta, 1, 1],
-                cov=covariance_with_bh_mass,
-                allow_singular=True,  # TODO: this should not be needed in the end
+
+            # Build 4D covariance (with BH mass)
+            cov_4d = np.array(
+                [
+                    [
+                        det.phi_error**2,
+                        det.theta_phi_covariance,
+                        det.d_L_phi_covariance / det.d_L,
+                        det.M_phi_covariance / det.M,
+                    ],
+                    [
+                        det.theta_phi_covariance,
+                        det.theta_error**2,
+                        det.d_L_theta_covariance / det.d_L,
+                        det.M_theta_covariance / det.M,
+                    ],
+                    [
+                        det.d_L_phi_covariance / det.d_L,
+                        det.d_L_theta_covariance / det.d_L,
+                        det.d_L_uncertainty**2 / det.d_L**2,
+                        det.d_L_M_covariance / det.d_L / det.M,
+                    ],
+                    [
+                        det.M_phi_covariance / det.M,
+                        det.M_theta_covariance / det.M,
+                        det.d_L_M_covariance / det.d_L / det.M,
+                        det.M_uncertainty**2 / det.M**2,
+                    ],
+                ]
             )
-            detection_likelihood_multivariate_gaussian_by_detection_index[index] = (
-                gaussian_without_bh_mass,
-                gaussian_with_bh_mass,
-            )
-        _LOGGER.debug("Detection likelihood gaussians created.")
+
+            # 3D Gaussian: mean, inverse, log-normalization
+            _means_3d[slot] = [det.phi, det.theta, 1]
+            _cov_inv_3d[slot] = np.linalg.pinv(cov_3d)
+            _sign, logdet = np.linalg.slogdet(cov_3d)
+            _log_norm_3d[slot] = -0.5 * (3 * np.log(2 * np.pi) + logdet)
+
+            # 4D Gaussian: mean, inverse, log-normalization
+            _means_4d[slot] = [det.phi, det.theta, 1, 1]
+            _cov_inv_4d[slot] = np.linalg.pinv(cov_4d)
+            _sign, logdet = np.linalg.slogdet(cov_4d)
+            _log_norm_4d[slot] = -0.5 * (4 * np.log(2 * np.pi) + logdet)
+
+            # Conditional distribution for BH mass branch
+            # Bishop (2006) PRML Eq. 2.81-2.82
+            cov_obs = cov_4d[:3, :3]  # = cov_3d
+            cov_cross = cov_4d[3, :3]
+            cov_mz = cov_4d[3, 3]
+            cov_obs_inv = _cov_inv_3d[slot]  # reuse already-computed inverse
+            _sigma2_cond_arr[slot] = max(float(cov_mz - cov_cross @ cov_obs_inv @ cov_cross), 1e-30)
+            _proj_arr[slot] = cov_cross @ cov_obs_inv
+
+        # Store index mapping on the instance for use in p_Di completion term
+        self._det_index_to_slot = _det_index_to_slot
+        self._means_3d = _means_3d
+        self._cov_inv_3d = _cov_inv_3d
+        self._log_norm_3d = _log_norm_3d
+        self._det_d_L = _det_d_L
+        self._det_d_L_unc = _det_d_L_unc
+        self._det_M = _det_M
+        self._det_phi = _det_phi
+        self._det_theta = _det_theta
+
+        _LOGGER.info(
+            "Gaussian precomputation: %.2fs (%d detections)",
+            time.perf_counter() - _t0,
+            n_det,
+        )
 
         # Gray et al. (2020), arXiv:1908.06050, Eq. 9:
         # Completeness function f(z, h) for weighting catalog vs completion terms
@@ -241,6 +349,7 @@ class BayesianStatistics:
             num_workers = max(1, available_cpus - 2)
         _LOGGER.debug(f"Using {num_workers} worker(s) for multiprocessing pool.")
 
+        _t0 = time.perf_counter()
         with mp.get_context("spawn").Pool(
             num_workers,
             initializer=child_process_init,
@@ -250,16 +359,33 @@ class BayesianStatistics:
                 BH_MASS_LOWER_LIMIT,
                 BH_MASS_UPPER_LIMIT,
                 detection_probability,
-                detection_likelihood_multivariate_gaussian_by_detection_index,
+                _means_3d,
+                _cov_inv_3d,
+                _log_norm_3d,
+                _means_4d,
+                _cov_inv_4d,
+                _log_norm_4d,
+                _det_index_to_slot,
+                _sigma2_cond_arr,
+                _proj_arr,
+                _det_d_L,
+                _det_d_L_unc,
+                _det_M,
+                _det_phi,
+                _det_theta,
             ),
         ) as pool:
+            _LOGGER.info(
+                "Pool spawn (%d workers): %.2fs",
+                num_workers,
+                time.perf_counter() - _t0,
+            )
             self.p_D(
                 galaxy_catalog=galaxy_catalog,
                 redshift_upper_limit=REDSHIFT_UPPER_LIMIT,
                 pool=pool,
                 completeness=completeness,
                 detection_probability_obj=detection_probability,
-                detection_gaussians=detection_likelihood_multivariate_gaussian_by_detection_index,
             )
         _LOGGER.info(f"posteriors comupted for h = {self.h}")
 
@@ -291,18 +417,13 @@ class BayesianStatistics:
         pool: mp.pool.Pool,
         completeness: GladeCatalogCompleteness,
         detection_probability_obj: SimulationDetectionProbability,
-        detection_gaussians: dict[
-            int,
-            tuple[
-                _multivariate.multivariate_normal_frozen,
-                _multivariate.multivariate_normal_frozen,
-            ],
-        ],
     ) -> None:
         count = 0
+        _det_times: list[float] = []
         self.posterior_data_with_bh_mass[GALAXY_LIKELIHOODS] = {}
         self.posterior_data_with_bh_mass[ADDITIONAL_GALAXIES_WITHOUT_BH_MASS] = {}
         for index, detection in self.cramer_rao_bounds.iterrows():
+            _t_det = time.perf_counter()
             _LOGGER.info(f"Progess: detections: {count}/{len(self.cramer_rao_bounds)}...")
             count += 1
             try:
@@ -366,11 +487,22 @@ class BayesianStatistics:
                 pool=pool,
                 completeness=completeness,
                 detection_probability_obj=detection_probability_obj,
-                detection_gaussians=detection_gaussians,
             )
 
             self.posterior_data[index].append(event_likelihood)
             self.posterior_data_with_bh_mass[index].append(event_likelihood_with_bh_mass)
+
+            _det_time = time.perf_counter() - _t_det
+            _det_times.append(_det_time)
+            if count % 100 == 0 or count == len(self.cramer_rao_bounds):
+                _LOGGER.info(
+                    "Detection %d/%d: last=%.2fs, avg=%.2fs, est_remaining=%.0fs",
+                    count,
+                    len(self.cramer_rao_bounds),
+                    _det_time,
+                    np.mean(_det_times),
+                    np.mean(_det_times) * (len(self.cramer_rao_bounds) - count),
+                )
             _LOGGER.debug(
                 f"event likelihood: {event_likelihood}\nevent likelihood with bh mass: {event_likelihood_with_bh_mass}"
             )
@@ -383,13 +515,6 @@ class BayesianStatistics:
         pool: mp.pool.Pool,
         completeness: GladeCatalogCompleteness,
         detection_probability_obj: SimulationDetectionProbability,
-        detection_gaussians: dict[
-            int,
-            tuple[
-                _multivariate.multivariate_normal_frozen,
-                _multivariate.multivariate_normal_frozen,
-            ],
-        ],
     ) -> tuple[float, float]:
         # start parallel computation
         _LOGGER.info(f"start parallel computation with: {pool}")
@@ -414,13 +539,17 @@ class BayesianStatistics:
             single_host_likelihood,
             [
                 (
-                    possible_host,
-                    self.detection,
+                    host.phiS,
+                    host.qS,
+                    host.z,
+                    host.z_error,
+                    host.M,
+                    host.M_error,
                     detection_index,
                     self.h,
                     True,
                 )
-                for possible_host in possible_host_galaxies_with_bh_mass
+                for host in possible_host_galaxies_with_bh_mass
             ],
             chunksize=chunksize_with_bh_mass,
         )
@@ -429,13 +558,17 @@ class BayesianStatistics:
             single_host_likelihood,
             [
                 (
-                    possible_host,
-                    self.detection,
+                    host.phiS,
+                    host.qS,
+                    host.z,
+                    host.z_error,
+                    host.M,
+                    host.M_error,
                     detection_index,
                     self.h,
                     False,
                 )
-                for possible_host in possible_host_galaxies_reduced
+                for host in possible_host_galaxies_reduced
             ],
             chunksize=chunksize,
         )
@@ -531,7 +664,11 @@ class BayesianStatistics:
         # Completion term numerator integrand
         # Gray et al. (2020), arXiv:1908.06050, Eq. 31:
         #   p_GW(x|z, Omega_det, h) * P_det(d_L(z,h)) * dVc/dz
-        gaussian_without_bh_mass = detection_gaussians[detection_index][0]
+        _comp_slot = self._det_index_to_slot[detection_index]
+        _comp_mean_3d = self._means_3d[_comp_slot]
+        _comp_cov_inv_3d = self._cov_inv_3d[_comp_slot]
+        _comp_log_norm_3d = float(self._log_norm_3d[_comp_slot])
+        _comp_det_d_L = self._det_d_L[_comp_slot]
 
         def completion_numerator_integrand(
             z: npt.NDArray[np.float64],
@@ -539,12 +676,15 @@ class BayesianStatistics:
             d_L: npt.NDArray[np.float64] = np.asarray(
                 dist_vectorized(z, h=self.h), dtype=np.float64
             )  # Gpc
-            d_L_fraction = d_L / self.detection.d_L  # dimensionless
+            d_L_fraction = d_L / _comp_det_d_L  # dimensionless
             phi = np.full_like(z, self.detection.phi)
             theta = np.full_like(z, self.detection.theta)
 
-            p_gw: npt.NDArray[np.float64] = gaussian_without_bh_mass.pdf(
-                np.vstack([phi, theta, d_L_fraction]).T
+            p_gw: npt.NDArray[np.float64] = _mvn_pdf(
+                np.vstack([phi, theta, d_L_fraction]).T,
+                _comp_mean_3d,
+                _comp_cov_inv_3d,
+                _comp_log_norm_3d,
             )
             p_det = detection_probability_obj.detection_probability_without_bh_mass_interpolated(
                 d_L, phi, theta, h=self.h
@@ -646,8 +786,12 @@ def single_host_likelihood_grid(
 
 
 def single_host_likelihood(
-    possible_host: HostGalaxy,
-    detection: Detection,
+    host_phiS: float,
+    host_qS: float,
+    host_z: float,
+    host_z_error: float,
+    host_M: float,
+    host_M_error: float,
     detection_index: int,
     h: float,
     evaluate_with_bh_mass: bool,
@@ -657,28 +801,39 @@ def single_host_likelihood(
     global bh_mass_upper_integration_limit
     global bh_mass_lower_integration_limit
     global detection_probability
-    global detection_likelihood_gaussians_by_detection_index
+    global means_3d, cov_inv_3d, log_norm_3d
+    global means_4d, cov_inv_4d, log_norm_4d
+    global det_index_to_slot
+    global sigma2_cond_arr, proj_arr
+    global det_d_L_arr, det_d_L_unc_arr, det_M_arr, det_phi_arr, det_theta_arr
 
-    ABS_ERROR = 1e-10
     FIXED_QUAD_N = 50
+
+    slot = det_index_to_slot[detection_index]
+    _det_d_L = float(det_d_L_arr[slot])
+    _det_d_L_unc = float(det_d_L_unc_arr[slot])
+    _det_M = float(det_M_arr[slot])
+    _mean_3d = means_3d[slot]
+    _cov_inv_3d = cov_inv_3d[slot]
+    _log_norm_3d = float(log_norm_3d[slot])
 
     integration_limit_sigma_multiplier = 4.0
 
     numerator_integration_upper_redshift_limit = dist_to_redshift(
-        detection.d_L + integration_limit_sigma_multiplier * detection.d_L_uncertainty, h=h
+        _det_d_L + integration_limit_sigma_multiplier * _det_d_L_unc, h=h
     )
     numerator_integration_lower_redshift_limit = dist_to_redshift(
-        detection.d_L - integration_limit_sigma_multiplier * detection.d_L_uncertainty, h=h
+        _det_d_L - integration_limit_sigma_multiplier * _det_d_L_unc, h=h
     )
     denominator_integration_upper_redshift_limit = (
-        possible_host.z + integration_limit_sigma_multiplier * possible_host.z_error
+        host_z + integration_limit_sigma_multiplier * host_z_error
     )
     denominator_integration_lower_redshift_limit = (
-        possible_host.z - integration_limit_sigma_multiplier * possible_host.z_error
+        host_z - integration_limit_sigma_multiplier * host_z_error
     )
 
     # construct normal distribution for redshift and mass for host galaxy
-    galaxy_redshift_normal_distribution = norm(loc=possible_host.z, scale=possible_host.z_error)
+    galaxy_redshift_normal_distribution = norm(loc=host_z, scale=host_z_error)
 
     # Sky localization weight (phi, theta) is inside the GW likelihood Gaussian.
     # Verified correct by Phase 14 derivation (Sec. 2.7): the 3D/4D GW Gaussian
@@ -686,25 +841,28 @@ def single_host_likelihood(
     def numerator_integrant_without_bh_mass(z: npt.NDArray[np.float64]) -> Any:
         d_L = dist_vectorized(z, h=h)
         # fraction = d_L_model / d_L_measured; matches covariance σ²/d_L_measured²
-        luminosity_distance_fraction = d_L / detection.d_L
-        phi = np.full_like(z, possible_host.phiS)
-        theta = np.full_like(z, possible_host.qS)
+        luminosity_distance_fraction = d_L / _det_d_L
+        phi = np.full_like(z, host_phiS)
+        theta = np.full_like(z, host_qS)
 
         p_det = detection_probability.detection_probability_without_bh_mass_interpolated(
             d_L, phi, theta, h=h
         )
         return (
             p_det
-            * detection_likelihood_gaussians_by_detection_index[detection_index][0].pdf(
-                np.vstack([phi, theta, luminosity_distance_fraction]).T
+            * _mvn_pdf(
+                np.vstack([phi, theta, luminosity_distance_fraction]).T,
+                _mean_3d,
+                _cov_inv_3d,
+                _log_norm_3d,
             )
             * galaxy_redshift_normal_distribution.pdf(z)
         )
 
     def denominator_integrant_without_bh_mass(z: npt.NDArray[np.float64]) -> Any:
         d_L = dist_vectorized(z, h=h)
-        phi = np.full_like(z, possible_host.phiS)
-        theta = np.full_like(z, possible_host.qS)
+        phi = np.full_like(z, host_phiS)
+        theta = np.full_like(z, host_qS)
         p_det = detection_probability.detection_probability_without_bh_mass_interpolated(
             d_L, phi, theta, h=h
         )
@@ -730,70 +888,52 @@ def single_host_likelihood(
     )
 
     if evaluate_with_bh_mass:
-        galaxy_mass_normal_distribution = norm(loc=possible_host.M, scale=possible_host.M_error)
+        galaxy_mass_normal_distribution = norm(loc=host_M, scale=host_M_error)
 
-        # --- Precompute conditional distribution for analytic M_z marginalization ---
-        # Partition 4D covariance [phi, theta, d_L_frac, M_z_frac] into
-        # observed (indices 0-2) and M_z_frac (index 3).
+        # Pre-computed conditional distribution parameters for analytic M_z marginalization
         # Eqs. (14.23)-(14.28) in derivations/dark_siren_likelihood.md
         # Ref: Bishop (2006) PRML Eq. 2.81-2.82 (multivariate normal conditioning)
-        gaussian_4d = detection_likelihood_gaussians_by_detection_index[detection_index][1]
-        cov_4d = np.asarray(gaussian_4d.cov)
-        mu_obs_4d = np.asarray(gaussian_4d.mean)
-
-        cov_obs = cov_4d[:3, :3]  # 3x3: phi, theta, d_L_frac
-        cov_cross = cov_4d[3, :3]  # (3,): cross-covariance M_z_frac with obs
-        cov_mz = cov_4d[3, 3]  # scalar: M_z_frac variance
-
-        # Use pseudoinverse for robustness against near-singular Fisher matrices
-        cov_obs_inv = np.linalg.pinv(cov_obs)
-
-        # Conditional variance of M_z_frac given (phi, theta, d_L_frac)
-        sigma2_cond = float(cov_mz - cov_cross @ cov_obs_inv @ cov_cross)
-        sigma2_cond = max(sigma2_cond, 1e-30)  # floor to avoid numerical issues
-
-        # Projection vector for conditional mean: μ_cond = μ_Mz + proj · (x_obs - μ_obs)
-        proj = cov_cross @ cov_obs_inv  # (3,) vector
-
-        # 3D marginal Gaussian for observed variables (marginalized over M_z_frac)
-        # Marginal covariance is just the 3x3 submatrix of the 4D covariance
-        gaussian_3d_marginal = multivariate_normal(
-            mean=mu_obs_4d[:3], cov=cov_obs, allow_singular=True
-        )
+        _sigma2_cond = float(sigma2_cond_arr[slot])
+        _proj = proj_arr[slot]
+        _mu_obs_4d = means_4d[slot]
 
         def numerator_integrant_with_bh_mass(z: npt.NDArray[np.float64]) -> Any:
             d_L = dist_vectorized(z, h=h)
-            luminosity_distance_fraction = d_L / detection.d_L
-            phi = np.full_like(z, possible_host.phiS)
-            theta = np.full_like(z, possible_host.qS)
+            luminosity_distance_fraction = d_L / _det_d_L
+            phi = np.full_like(z, host_phiS)
+            theta = np.full_like(z, host_qS)
 
             # NOTE: p_det uses the ML mass estimate (detection.M) rather than
             # M_gal*(1+z) at trial z. This is a known approximation, not a bug,
             # per Phase 14 analysis. The denominator uses M_gal*(1+z) correctly.
             p_det = detection_probability.detection_probability_with_bh_mass_interpolated(
-                d_L, np.full_like(z, detection.M), phi, theta, h=h
+                d_L, np.full_like(z, _det_M), phi, theta, h=h
             )
 
             # 3D marginal Gaussian: p(phi, theta, d_L_frac)
-            gw_3d = gaussian_3d_marginal.pdf(
-                np.vstack([phi, theta, luminosity_distance_fraction]).T
+            # The 3D marginal is the upper-left 3x3 block of the 4D covariance
+            gw_3d = _mvn_pdf(
+                np.vstack([phi, theta, luminosity_distance_fraction]).T,
+                _mean_3d,
+                _cov_inv_3d,
+                _log_norm_3d,
             )
 
             # Conditional mean of M_z_frac given (phi_gal, theta_gal, d_L_frac)
             x_obs = np.vstack([phi, theta, luminosity_distance_fraction]).T  # (N, 3)
-            mu_cond = mu_obs_4d[3] + (x_obs - mu_obs_4d[:3]) @ proj  # (N,)
+            mu_cond = _mu_obs_4d[3] + (x_obs - _mu_obs_4d[:3]) @ _proj  # (N,)
 
             # Galaxy mass in M_z_frac coordinates: M_z_frac = M_gal * (1+z) / M_z_det
             # Eq. (14.22) in derivations/dark_siren_likelihood.md
             # NOTE: (1+z) here is CORRECT -- it is the coordinate transform, not a Jacobian
-            mu_gal_frac = possible_host.M * (1 + z) / detection.M
-            sigma_gal_frac = possible_host.M_error * (1 + z) / detection.M
+            mu_gal_frac = host_M * (1 + z) / _det_M
+            sigma_gal_frac = host_M_error * (1 + z) / _det_M
 
             # Analytic Gaussian product integral:
             # ∫ N(x; μ_cond, σ²_cond) · N(x; μ_gal, σ²_gal) dx
             #   = N(μ_cond; μ_gal, σ²_cond + σ²_gal)
             # Eq. (14.31) in derivations/dark_siren_likelihood.md
-            sigma2_sum = sigma2_cond + sigma_gal_frac**2
+            sigma2_sum = _sigma2_cond + sigma_gal_frac**2
             mz_integral = np.exp(-0.5 * (mu_cond - mu_gal_frac) ** 2 / sigma2_sum) / np.sqrt(
                 2 * np.pi * sigma2_sum
             )
@@ -817,8 +957,8 @@ def single_host_likelihood(
         ) -> Any:
             d_L = dist_vectorized(z, h=h)
             M_z = M * (1 + z)
-            phi = np.full_like(M, possible_host.phiS)
-            theta = np.full_like(M, possible_host.qS)
+            phi = np.full_like(M, host_phiS)
+            theta = np.full_like(M, host_qS)
             p_det = detection_probability.detection_probability_with_bh_mass_interpolated(
                 d_L, M_z, phi, theta, h=h
             )
@@ -1146,26 +1286,51 @@ def child_process_init(
     bh_mass_lower_limit: float,
     bh_mass_upper_limit: float,
     current_detection_probability: SimulationDetectionProbability,
-    current_detection_likelihood_gaussians_by_detection_index: dict[
-        int,
-        tuple[_multivariate.multivariate_normal_frozen, _multivariate.multivariate_normal_frozen],
-    ],
+    current_means_3d: npt.NDArray[np.float64],
+    current_cov_inv_3d: npt.NDArray[np.float64],
+    current_log_norm_3d: npt.NDArray[np.float64],
+    current_means_4d: npt.NDArray[np.float64],
+    current_cov_inv_4d: npt.NDArray[np.float64],
+    current_log_norm_4d: npt.NDArray[np.float64],
+    current_det_index_to_slot: dict[int, int],
+    current_sigma2_cond_arr: npt.NDArray[np.float64],
+    current_proj_arr: npt.NDArray[np.float64],
+    current_det_d_L_arr: npt.NDArray[np.float64],
+    current_det_d_L_unc_arr: npt.NDArray[np.float64],
+    current_det_M_arr: npt.NDArray[np.float64],
+    current_det_phi_arr: npt.NDArray[np.float64],
+    current_det_theta_arr: npt.NDArray[np.float64],
 ) -> None:
     global redshift_upper_integration_limit
     global redshift_lower_integration_limit
     global bh_mass_upper_integration_limit
     global bh_mass_lower_integration_limit
     global detection_probability
-    global detection_likelihood_gaussians_by_detection_index
+    global means_3d, cov_inv_3d, log_norm_3d
+    global means_4d, cov_inv_4d, log_norm_4d
+    global det_index_to_slot
+    global sigma2_cond_arr, proj_arr
+    global det_d_L_arr, det_d_L_unc_arr, det_M_arr, det_phi_arr, det_theta_arr
 
     redshift_upper_integration_limit = redshift_upper_limit
     redshift_lower_integration_limit = redshift_lower_limit
     bh_mass_upper_integration_limit = bh_mass_upper_limit
     bh_mass_lower_integration_limit = bh_mass_lower_limit
     detection_probability = current_detection_probability
-    detection_likelihood_gaussians_by_detection_index = (
-        current_detection_likelihood_gaussians_by_detection_index
-    )
+    means_3d = current_means_3d
+    cov_inv_3d = current_cov_inv_3d
+    log_norm_3d = current_log_norm_3d
+    means_4d = current_means_4d
+    cov_inv_4d = current_cov_inv_4d
+    log_norm_4d = current_log_norm_4d
+    det_index_to_slot = current_det_index_to_slot
+    sigma2_cond_arr = current_sigma2_cond_arr
+    proj_arr = current_proj_arr
+    det_d_L_arr = current_det_d_L_arr
+    det_d_L_unc_arr = current_det_d_L_unc_arr
+    det_M_arr = current_det_M_arr
+    det_phi_arr = current_det_phi_arr
+    det_theta_arr = current_det_theta_arr
 
 
 def _get_closest_possible_host(
