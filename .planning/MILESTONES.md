@@ -1,5 +1,19 @@
 # Milestones
 
+## v1.5 Galaxy Catalog Completeness Correction (Shipped: 2026-04-04)
+
+**Phases completed:** 2 phases (24-25), 2 plans (GPD-tracked)
+
+**Key accomplishments:**
+
+- GLADE+ completeness function f(z,h) with B-band luminosity comparison against Dalya et al. (2022), 23 tests passing (Phase 24)
+- Gray et al. (2020) Eq. 9 completeness-corrected likelihood: f_i * L_cat + (1-f_i) * L_comp with completion term via fixed_quad, 11 tests, all contract claims verified (Phase 25)
+- Comoving volume element dVc/dz/dOmega added to physical_relations.py
+
+**Note:** Originally scoped as 4 GSD phases (24-27). Phases 24-25 executed by GPD. Phases 26-27 rescoped into v2.0 (Paper). Full artifacts: `.gpd/phases/24-completeness-estimation/`, `.gpd/phases/25-likelihood-correction/`
+
+---
+
 ## v1.4 Posterior Numerical Stability (Shipped: 2026-04-02)
 
 **Phases completed:** 3 phases (21–23), 5 plans, 299 tests passing

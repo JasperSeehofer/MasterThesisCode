@@ -415,7 +415,9 @@ GSD is the primary command surface. When a GSD workflow encounters **physics wor
 
 **Mixed phases:** If a GSD phase contains both software and physics tasks, keep the phase in GSD but invoke GPD for the physics subtasks. The GSD phase tracks overall progress; GPD handles the physics execution with its protocols.
 
-**State tracking:** GSD tracks progress in `.planning/`, GPD in `.gpd/`. Both systems commit atomically. No cross-updates needed — they are independent ledgers for independent concerns.
+**State tracking:** GSD tracks progress in `.planning/`, GPD in `.gpd/`. Both systems commit atomically. They are independent ledgers for independent concerns, with one exception:
+
+**Sync rule:** When GPD completes a milestone that overlaps with GSD's active milestone, update GSD state to reflect completion and any scope changes. Run `/gsd-progress` after GPD milestone completion to detect drift. If GSD's active milestone was fully executed by GPD, mark it shipped in `.planning/MILESTONES.md` and `.planning/ROADMAP.md`, then update `.planning/STATE.md` to point at the next milestone.
 
 ### GitHub Integration
 

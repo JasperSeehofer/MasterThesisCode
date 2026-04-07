@@ -10,15 +10,16 @@ Measure H₀ from simulated EMRI dark siren events with galaxy catalog completen
 
 ## Shipped Milestones
 
+- **v1.5 Galaxy Catalog Completeness Correction** — shipped 2026-04-04 (Phases 24-25, GPD-tracked). GLADE+ completeness function f(z,h) and Gray et al. (2020) Eq. 9 completeness-corrected likelihood. Full artifacts: `.gpd/phases/24-completeness-estimation/`, `.gpd/phases/25-likelihood-correction/`
 - **v1.4 Posterior Numerical Stability** — shipped 2026-04-02 (Phases 21-23). Log-space accumulation, physics-motivated likelihood floor, underflow detection. Deployed to bwUniCluster at `5793f70`. Full details: `.planning/milestones/v1.4-ROADMAP.md`
 - **v1.3 Visualization Overhaul** — shipped 2026-04-02 (Phases 14-19). Full publication-quality visualization stack: centralized style, Fisher data layer, enhanced existing plots, sky maps + corner plots + convergence diagnostics, 15-figure batch pipeline. Full details: `.planning/milestones/v1.3-ROADMAP.md`
 - **v1.2 Production Campaign & Physics Corrections** — shipped 2026-04-01 (Phases 9-13, 11.1). Confusion noise + five-point stencil physics fixes, simulation-based P_det, 1000+ detection production campaign, H0 sweep baselines. Full details: `.planning/milestones/v1.2-ROADMAP.md`
 - **v1.1 Clean Simulation Campaign** — shipped 2026-03-29 (Phases 6-8). Data cleanup, cluster access, end-to-end validation. Full details: `.planning/milestones/v1.1-ROADMAP.md`
 - **v1.0 EMRI HPC Integration** — shipped 2026-03-27 (Phases 1-5). CPU-safe imports, batch scripts, cluster env, SLURM jobs, documentation. Full details: `.planning/milestones/v1.0-ROADMAP.md`
 
-## Current State (v1.4 complete, 2026-04-04)
+## Current State (v2.0 active, 2026-04-07)
 
-All 5 milestones shipped (v1.0–v1.4). 23 phases, 41 plans completed across 9 days. Pipeline runs end-to-end on bwUniCluster 3.0: GPU-accelerated EMRI simulation → Cramér-Rao bounds → Bayesian H₀ posterior. Production CRB catalog (1000+ detections, seed 200) with corrected physics (five-point stencil, confusion noise, simulation-based P_det). Log-space posterior combination with physics-motivated likelihood floor deployed and validated. 15-figure publication-quality visualization pipeline. 342 tests at 63% coverage.
+All 6 milestones shipped (v1.0–v1.5). 25 phases, 43 plans completed across 12 days. Pipeline runs end-to-end on bwUniCluster 3.0 with completeness correction: GPU-accelerated EMRI simulation → Cramér-Rao bounds → Bayesian H₀ posterior with Gray et al. (2020) catalog+completion terms. v2.0 Paper milestone active: PRD paper draft complete (11 pages, 25 RESULT PENDING markers), production run blocked on cluster filesystem recovery.
 
 **Remaining physics bugs** (tracked in CLAUDE.md): wCDM params silently ignored, hardcoded 10% σ(d_L), WMAP-era cosmology, galaxy redshift uncertainty scaling.
 
@@ -55,27 +56,27 @@ All 5 milestones shipped (v1.0–v1.4). 23 phases, 41 plans completed across 9 d
 - ✓ Evaluation pipeline produces H₀ posterior from fresh Cramér-Rao bounds — v1.1 Phase 8
 - ✓ Results validated (SNR physical, seeds correct, detection rates reasonable) — v1.1 Phase 8
 
-## Current Milestone: v1.5 Galaxy Catalog Completeness Correction
+## Current Milestone: v2.0 Paper (GPD-tracked)
 
-**Goal:** Implement the Gray et al. (2020) completeness-corrected dark siren likelihood to eliminate the systematic H0 bias caused by GLADE+ incompleteness at z > 0.08.
+**Goal:** Produce a publication-ready PRD paper with completeness-corrected H0 results from production cluster runs.
 
-**Target features:**
-- GLADE+ completeness estimation f(z) from B-band luminosity comparison
-- Completion term in the dark siren likelihood for uncataloged host galaxies
-- Modified p_Di() combining catalog + completion terms weighted by f(z)
-- Comoving volume element function in physical_relations.py
-- Verification: limiting cases (f=1, f=0), bias reduction on 534-detection dataset
+**Status:** Phase 26 (Paper Draft) complete. Phase 27 (Production Run & Figures) blocked on cluster filesystem recovery.
 
-**Research specification:** `.gpd/quick/3-literature-research-galaxy-catalog-in/galaxy-catalog-completeness-research.md`
+**Target deliverables:**
+- Production H0 posterior with completeness correction and real P_det
+- Publication figures (4 placeholders in paper)
+- Final PRD paper submitted to arXiv
+
+**Paper:** `paper/main.tex` — 11 pages, REVTeX4-2, 25 RESULT PENDING markers
+**GPD details:** `.gpd/ROADMAP.md`, `.gpd/STATE.md`
 
 ### Active
 
-- [ ] GLADE+ completeness function f(z) estimated and validated
-- [ ] Completion term added to dark siren likelihood (Gray et al. 2020 Eq. 9)
-- [ ] p_Di() modified to combine catalog + completion terms
-- [ ] Comoving volume element added to physical_relations.py
-- [ ] Bias investigation tests re-run showing MAP shift toward h=0.73
-- [ ] Cluster deployment and production evaluation
+- [x] PRD paper draft with all sections (Introduction, Method, Results, Discussion, Conclusions, Appendix A)
+- [ ] Production cluster run with completeness-corrected evaluation
+- [ ] Replace 25 RESULT PENDING markers with final numbers
+- [ ] Generate 4 publication figures
+- [ ] Internal peer review and submission
 
 ### Recently Validated (v1.2 / v1.3 / v1.4)
 
@@ -155,4 +156,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-04 — v1.5 milestone started*
+*Last updated: 2026-04-07 — v2.0 milestone active (synced from GPD)*

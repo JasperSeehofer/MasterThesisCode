@@ -7,7 +7,8 @@
 - ✅ **v1.2 Production Campaign & Physics Corrections** — Phases 9-13 (shipped 2026-04-01)
 - ✅ **v1.3 Visualization Overhaul** — Phases 14-19 (shipped 2026-04-02)
 - ✅ **v1.4 Posterior Numerical Stability** — Phases 21-23 (shipped 2026-04-02)
-- 🔄 **v1.5 Galaxy Catalog Completeness Correction** — Phases 24-27 (in progress)
+- ✅ **v1.5 Galaxy Catalog Completeness Correction** — Phases 24-25 (shipped 2026-04-04, GPD-tracked)
+- 🔄 **v2.0 Paper** — Phases 26-28 (in progress, GPD-tracked)
 
 ## Phases
 
@@ -74,57 +75,42 @@ Full details: `.planning/milestones/v1.4-ROADMAP.md`
 
 </details>
 
-### v1.5 Galaxy Catalog Completeness Correction
+<details>
+<summary>✅ v1.5 Galaxy Catalog Completeness Correction (Phases 24-25) — SHIPPED 2026-04-04 (GPD-tracked)</summary>
 
-- [ ] **Phase 24: Completeness Estimation** — Compute GLADE+ f(z) from B-band luminosity comparison
-- [ ] **Phase 25: Likelihood Correction** — Add completion term + comoving volume element (Gray et al. 2020 physics changes)
-- [ ] **Phase 26: Verification** — Limiting case checks + bias reduction on 534-detection dataset
-- [ ] **Phase 27: Cluster Deployment** — Deploy corrected code and run production evaluation
+- [x] Phase 24: Completeness Estimation (1/1 plan) — GLADE+ f(z,h) from B-band luminosity comparison, 23 tests
+- [x] Phase 25: Likelihood Correction (1/1 plan) — Gray et al. (2020) Eq. 9 combination formula, completion term, 11 tests
 
-## Phase Details
+Full artifacts: `.gpd/phases/24-completeness-estimation/`, `.gpd/phases/25-likelihood-correction/`
 
-### Phase 24: Completeness Estimation
-**Goal**: GLADE+ completeness fraction f(z) is computed from the actual catalog data and available as an interpolatable function
-**Depends on**: Nothing (self-contained analysis of existing catalog)
-**Requirements**: COMP-01, COMP-02
-**Success Criteria** (what must be TRUE):
-  1. f(z) curve is computed from B-band luminosity comparison against Schechter function and matches the Dalya et al. (2022) figures: ~90% at z=0.029, declining to <<50% at z>0.11
-  2. f(z) returns values in [0, 1] for all z in the EMRI detection range (z=0.03–0.20) with no extrapolation failures
-  3. f(z) is available as an interpolating function callable from bayesian_statistics.py without loading the full catalog each time
-**Plans**: TBD
+**Note:** Originally scoped as 4 GSD phases (24-27). Phases 24-25 executed by GPD. Remaining scope (verification + deployment) rescoped into v2.0.
 
-### Phase 25: Likelihood Correction
-**Goal**: The dark siren likelihood combines catalog and completion terms weighted by f(z), implementing Gray et al. (2020) Eq. 9
-**Depends on**: Phase 24
-**Requirements**: LIKE-01, LIKE-02, LIKE-03, LIKE-04
-**Success Criteria** (what must be TRUE):
-  1. dV_c/dz/dOmega (comoving volume element) is implemented in physical_relations.py with a reference comment to Gray et al. (2020) Appendix A.2.3
-  2. p_Di() computes L_comp^i(h) (completion term integral over comoving volume prior) and combines it with the existing catalog term as: f_i * L_cat^i + (1 - f_i) * L_comp^i
-  3. The completeness function f(z) threads through evaluate() -> p_D() -> p_Di() without any hardcoded values
-  4. All physics changes carry Physics Change Protocol sign-offs and reference comments (arXiv:1908.06050 equation numbers)
-**Plans**: TBD
-**UI hint**: no
+</details>
 
-### Phase 26: Verification
-**Goal**: The corrected likelihood passes all limiting-case checks and reduces the H0 bias on the 534-detection dataset
-**Depends on**: Phase 25
-**Requirements**: VER-01, VER-02, VER-03, VER-04
-**Success Criteria** (what must be TRUE):
-  1. Setting f=1 everywhere produces a posterior identical (to numerical precision) to the pre-correction code on the same dataset
-  2. Setting f=0 everywhere produces a broad posterior with peak within 5% of h=0.73 (statistical siren result, no catalog information)
-  3. Running the corrected likelihood on the 534-detection dataset produces a MAP estimate visibly shifted toward h=0.73 compared to the biased MAP=0.66 baseline
-  4. Perturbing f(z) by +/-20% shifts the posterior peak by less than 20% of the peak shift from bias correction, confirming the result is not dominated by completeness uncertainty
-**Plans**: TBD
+### v2.0 Paper (GPD-tracked)
 
-### Phase 27: Cluster Deployment
-**Goal**: The corrected code runs on bwUniCluster and produces a validated production H0 posterior with real P_det
-**Depends on**: Phase 26
-**Requirements**: DEPL-01
-**Success Criteria** (what must be TRUE):
-  1. Corrected code is deployed to bwUniCluster and the evaluate job completes without error
-  2. Production posterior (with real P_det) shows MAP closer to h=0.73 than the pre-correction baseline (MAP=0.66)
-  3. Deployment commit is tagged and the cluster run is recorded in STATE.md with commit hash
-**Plans**: TBD
+- [x] **Phase 26: Paper Draft** — First complete PRD paper draft with all sections (1/1 plan, GPD)
+- [ ] **Phase 27: Production Run & Figures** — Cluster evaluation + replace RESULT PENDING placeholders + publication figures
+- [ ] **Phase 28: Review & Submission** — Internal review, finalize co-authors, submit to PRD + arXiv
+
+### Phase Details (v2.0)
+
+#### Phase 26: Paper Draft
+**Goal**: First complete draft of the PRD paper "Constraints on the Hubble constant from EMRI dark sirens with LISA using the massive black hole mass"
+**Status:** Complete (2026-04-05, GPD Phase 26)
+**Result:** 11-page PDF builds with REVTeX4-2. 6 sections (Introduction, Method, Results, Discussion, Conclusions, Appendix A). 21 references. 25 RESULT PENDING markers awaiting production run.
+See `.gpd/phases/` and `.gpd/ROADMAP.md` for full details.
+
+#### Phase 27: Production Run & Figures
+**Goal**: Run completeness-corrected evaluation on cluster, replace all RESULT PENDING placeholders with final numbers, generate publication figures
+**Depends on**: Phase 25 (completeness code), Phase 26 (paper structure)
+**Blocked on**: Cluster filesystem recovery
+See `.gpd/ROADMAP.md` for full details.
+
+#### Phase 28: Review & Submission
+**Goal**: Internal peer review, resolve all TODO markers, finalize co-authors, submit to PRD + arXiv
+**Depends on**: Phase 27 (final results and figures)
+See `.gpd/ROADMAP.md` for full details.
 
 ## Progress
 
@@ -153,7 +139,8 @@ Full details: `.planning/milestones/v1.4-ROADMAP.md`
 | 21. Analysis & Post-Processing | v1.4 | 2/2 | Complete | 2026-04-02 |
 | 22. Likelihood Floor & Overflow Fix | v1.4 | 1/1 | Complete | 2026-04-02 |
 | 23. Deploy & Validate | v1.4 | 2/2 | Complete | 2026-04-02 |
-| 24. Completeness Estimation | v1.5 | 0/? | Not started | - |
-| 25. Likelihood Correction | v1.5 | 0/? | Not started | - |
-| 26. Verification | v1.5 | 0/? | Not started | - |
-| 27. Cluster Deployment | v1.5 | 0/? | Not started | - |
+| 24. Completeness Estimation | v1.5 | 1/1 | Complete (GPD) | 2026-04-04 |
+| 25. Likelihood Correction | v1.5 | 1/1 | Complete (GPD) | 2026-04-04 |
+| 26. Paper Draft | v2.0 | 1/1 | Complete (GPD) | 2026-04-05 |
+| 27. Production Run & Figures | v2.0 | 0/? | Not started (GPD) | - |
+| 28. Review & Submission | v2.0 | 0/? | Not started (GPD) | - |
