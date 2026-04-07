@@ -1,0 +1,75 @@
+% appendix_parameters.tex — Appendix A: EMRI Parameter Space
+% Target: PRD two-column (revtex4-2)
+% Macros used: \HH, \dL, \Mz, \Mbh, \Mstellar
+
+Table~\ref{tab:emri_parameters} lists the 15 parameters characterizing
+each simulated EMRI event.  Source parameters that depend on the
+astrophysical context --- sky position, luminosity distance, and MBH
+mass --- are drawn from the GLADE+ galaxy catalog~\cite{Dalya:2021ewn}.
+The MBH mass is inferred from the catalog stellar mass via the
+$\Mbh$--$\Mstellar$ scaling relation of
+Reines~\&~Volonteri~\cite{Reines:2015moa}, restricted to the range
+$10^5$--$10^6\,M_\odot$ consistent with EMRI formation channels.
+Extrinsic parameters (sky angles and orbital phases) are drawn uniformly
+over their natural ranges.  The compact object mass $\mu = 10\,M_\odot$
+and spin $a = 0.98$ are held fixed, following the fiducial M1 model of
+Babak~\emph{et~al.}~\cite{Babak:2017tow}.  The initial semi-latus
+rectum $p_0$ is restricted from above to ensure the orbit lies outside
+the separatrix of the augmented analytic kludge (AAK)
+waveform model~\cite{Chua:2020stf,Katz:2021yft}.
+
+We emphasize that the population model adopted here --- uniform draws
+in mass, eccentricity, and inclination --- is simplified compared
+to astrophysical EMRI rate models~\cite{Babak:2017tow}.  This choice
+is deliberate: the goal of this work is to isolate and quantify the
+improvement from the MBH mass channel relative to the standard dark
+siren analysis, for which a simplified but controlled population is
+sufficient.  The effect of a realistic population model on the absolute
+$\HH$ precision is discussed in Sec.~\ref{sec:caveats}.
+
+\begin{table}[t]
+  \caption{EMRI parameter space used in the simulation campaign.
+  ``Catalog'' indicates the value is drawn from the GLADE+ galaxy
+  catalog~\cite{Dalya:2021ewn}; ``Uniform'' denotes a uniform draw
+  over the stated range; ``Fixed'' parameters are held constant.
+  The redshifted MBH mass $\Mz$ is derived from $\Mbh$ and the
+  catalog redshift $z$.}
+  \label{tab:emri_parameters}
+  \centering
+  \begin{tabular}{l l l l}
+    \hline\hline
+    Parameter & Symbol & Range / Value & Source \\
+    \hline
+    MBH mass & $\Mbh$ &
+      $[10^5, 10^6]\,M_\odot$ & Catalog \\
+    Compact object mass & $\mu$ &
+      $10\,M_\odot$ & Fixed \\
+    Spin parameter & $a$ &
+      $0.98$ & Fixed \\
+    Initial eccentricity & $e_0$ &
+      $[0, 0.2]$ & Uniform \\
+    Semi-latus rectum & $p_0$ &
+      $[10, 16]\,M$ & Uniform \\
+    Inclination cosine & $x_{I,0} = \cos I$ &
+      $[-1, 1]$ & Uniform \\
+    Luminosity distance & $\dL$ &
+      $\dL(z, h_\mathrm{true})$ & Catalog \\
+    Sky colatitude & $\theta_K$ &
+      $[0, \pi]$ & Uniform \\
+    Sky longitude & $\phi_K$ &
+      $[0, 2\pi]$ & Uniform \\
+    Initial orbital phase & $\Phi_{\varphi,0}$ &
+      $[0, 2\pi]$ & Uniform \\
+    Initial polar phase & $\Phi_{\theta,0}$ &
+      $[0, 2\pi]$ & Uniform \\
+    Initial radial phase & $\Phi_{r,0}$ &
+      $[0, 2\pi]$ & Uniform \\
+    Observation time & $T_\mathrm{obs}$ &
+      $5\,\mathrm{yr}$ & Fixed \\
+    Sampling interval & $\Delta t$ &
+      $10\,\mathrm{s}$ & Fixed \\
+    Redshifted MBH mass & $\Mz = \Mbh(1+z)$ &
+      Derived & --- \\
+    \hline\hline
+  \end{tabular}
+\end{table}

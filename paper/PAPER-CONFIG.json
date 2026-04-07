@@ -1,0 +1,52 @@
+{
+  "title": "Constraints on the Hubble constant from EMRI dark sirens with LISA using the massive black hole mass",
+  "authors": [
+    {
+      "name": "Jasper Seehofer",
+      "affiliation": "Institute for Theoretical Physics, Ruprecht-Karls University Heidelberg"
+    },
+    {
+      "name": "TBD",
+      "affiliation": "TBD"
+    }
+  ],
+  "abstract": "RESULT PENDING — Abstract will be written last after all sections are drafted.",
+  "sections": [
+    {
+      "heading": "Introduction",
+      "label": "sec:intro",
+      "content": "DRAFT PENDING"
+    },
+    {
+      "heading": "Method",
+      "label": "sec:method",
+      "content": "DRAFT PENDING"
+    },
+    {
+      "heading": "Results",
+      "label": "sec:results",
+      "content": "DRAFT PENDING"
+    },
+    {
+      "heading": "Discussion",
+      "label": "sec:discussion",
+      "content": "DRAFT PENDING"
+    },
+    {
+      "heading": "Conclusions",
+      "label": "sec:conclusions",
+      "content": "DRAFT PENDING"
+    }
+  ],
+  "figures": [],
+  "acknowledgments": "DRAFT PENDING",
+  "bib_file": "references",
+  "journal": "prl",
+  "appendix_sections": [
+    {
+      "heading": "EMRI parameter space",
+      "label": "app:parameters",
+      "content": "DRAFT PENDING"
+    }
+  ]
+}

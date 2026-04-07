@@ -1,0 +1,417 @@
+% method.tex — Section II: Method
+% Target: PRD two-column (revtex4-2)
+% Macros used: \HH, \dL, \Mz, \Mbh, \Mstellar, \pGW, \pdet, \pgal, \Lcat, \Lcomp, \SNR
+
+We describe the end-to-end analysis pipeline: EMRI waveform generation,
+LISA noise modeling, Fisher-matrix parameter estimation, and the dark siren
+Bayesian inference framework used to constrain the Hubble constant.
+
+%% ============================================================
+\subsection{EMRI signal model}
+\label{sec:emri_signal}
+%% ============================================================
+
+An extreme mass-ratio inspiral (EMRI) consists of a stellar-mass compact
+object of mass $\mu \sim 1$--$100\,M_\odot$ spiraling into a massive black
+hole (MBH) of mass $\Mbh \sim 10^4$--$10^7\,M_\odot$ under gravitational
+radiation reaction.  The resulting millihertz gravitational-wave signal is
+observable by the Laser Interferometer Space Antenna
+(LISA)~\cite{LISA:2024hlh,Babak:2017tow} over observation times of order
+years.
+
+We generate EMRI waveforms using the augmented analytic kludge (AAK)
+model~\cite{Chua:2020stf,Katz:2021yft}, which provides a fast, GPU-accelerated
+template family capturing the dominant features of Kerr geodesic motion
+including eccentricity, spin precession, and orbital inclination.
+The LISA detector response is obtained by projecting the waveform onto
+the time-delay interferometry (TDI) channels $A$ and $E$ via the
+equal-arm-length approximation~\cite{Katz:2022yqe}.  The $T$ channel
+is a null channel for the signal in this approximation and is neglected.
+
+Each EMRI signal is parameterized by 14 source parameters:
+the MBH mass $\Mbh$, compact-object mass $\mu$, dimensionless MBH spin $a$,
+initial orbital semi-latus rectum $p_0$, initial eccentricity $e_0$,
+inclination cosine $x_0 = \cos I$, luminosity distance $\dL$,
+sky position angles $(\theta_S, \phi_S)$ in ecliptic coordinates,
+spin orientation angles $(\theta_K, \phi_K)$,
+and three initial orbital phases $(\Phi_{\phi 0}, \Phi_{\theta 0}, \Phi_{r0})$.
+A summary of the parameter ranges is given in Appendix~\ref{app:parameters}.
+
+The observation time is set to $T_\mathrm{obs} = 5\,\mathrm{yr}$ with a
+sampling interval of $\Delta t = 10\,\mathrm{s}$, yielding
+$\sim 1.6 \times 10^7$ time-domain samples per channel.
+
+%% ============================================================
+\subsection{LISA noise model and signal-to-noise ratio}
+\label{sec:snr}
+%% ============================================================
+
+The noise power spectral density (PSD) for the $A$ and $E$ TDI channels
+is~\cite{Babak:2023lro}
+\begin{align}
+  S_n^{(A,E)}(f) &= 8\sin^2\!\Bigl(\frac{2\pi f L}{c}\Bigr)
+  \biggl[
+    S_\mathrm{OMS}(f)\,\Bigl(\cos\frac{2\pi f L}{c} + 2\Bigr)
+  \nonumber\\
+  &\quad + 2\Bigl(3 + 2\cos\frac{2\pi f L}{c}
+    + \cos\frac{4\pi f L}{c}\Bigr)\,S_\mathrm{TM}(f)
+  \biggr]
+  \nonumber\\
+  &\quad + S_c(f) \,,
+  \label{eq:psd}
+\end{align}
+where $L = 2.5\times10^9\,\mathrm{m}$ is the LISA arm length,
+$c$ is the speed of light,
+\begin{equation}
+  S_\mathrm{OMS}(f) = (15\,\mathrm{pm})^2\,
+  \Bigl(1 + \Bigl(\frac{2\,\mathrm{mHz}}{f}\Bigr)^{\!4}\Bigr)\,
+  \Bigl(\frac{2\pi f}{c}\Bigr)^{\!2}
+  \label{eq:s_oms}
+\end{equation}
+is the optical metrology noise, and
+\begin{equation}
+  S_\mathrm{TM}(f) = (3\,\mathrm{fm/s^2})^2\,
+  \Bigl(1 + \Bigl(\frac{0.4\,\mathrm{mHz}}{f}\Bigr)^{\!2}\Bigr)
+  \Bigl(1 + \Bigl(\frac{f}{8\,\mathrm{mHz}}\Bigr)^{\!4}\Bigr)
+  \Bigl(\frac{1}{2\pi f\, c}\Bigr)^{\!2}
+  \label{eq:s_tm}
+\end{equation}
+is the test-mass acceleration noise.
+The term $S_c(f)$ is the residual galactic confusion noise from unresolved
+white-dwarf binaries~\cite{Cornish:2017oic}, which depends on
+the observation time and dominates the sensitivity in the
+$0.1$--$3\,\mathrm{mHz}$ band.
+
+The optimal signal-to-noise ratio (SNR) is defined as
+\begin{equation}
+  \SNR^2 = \sum_{\alpha \in \{A,E\}}
+  4\,\mathrm{Re}\!\int_{f_\mathrm{min}}^{f_\mathrm{max}}
+  \frac{|\tilde{h}^\alpha(f)|^2}{S_n^{\alpha}(f)}\,\mathrm{d}f \,,
+  \label{eq:snr}
+\end{equation}
+where $\tilde{h}^\alpha(f)$ is the Fourier transform of the TDI response in
+channel $\alpha$ and the integration extends from
+$f_\mathrm{min} = 10^{-5}\,\mathrm{Hz}$ to
+$f_\mathrm{max} = 1\,\mathrm{Hz}$.
+We adopt a detection threshold of $\SNR \geq \SNR_\mathrm{th} = 20$.
+As a computational optimization, a preliminary SNR estimate is performed
+using $T_\mathrm{obs} = 1\,\mathrm{yr}$ of data; only events exceeding
+$0.2\,\SNR_\mathrm{th}$ in this pre-screening proceed to the full
+five-year waveform evaluation and Fisher-matrix computation.
+
+%% ============================================================
+\subsection{Parameter estimation}
+\label{sec:fisher}
+%% ============================================================
+
+For detected events ($\SNR \geq \SNR_\mathrm{th}$), we estimate parameter
+uncertainties via the Fisher information matrix~\cite{Vallisneri:2007ev}.
+The Fisher matrix for parameters $\boldsymbol{\theta} = \{\theta^i\}$ is
+\begin{equation}
+  \Gamma_{ij} = \bigl\langle \partial_i h \,\big|\, \partial_j h \bigr\rangle \,,
+  \label{eq:fisher}
+\end{equation}
+where the noise-weighted inner product $\langle \cdot | \cdot \rangle$
+is defined by Eq.~\eqref{eq:snr} with the replacement
+$|\tilde{h}^\alpha|^2 \to
+\tilde{h}_1^{\alpha}(f)\,\tilde{h}_2^{\alpha *}(f)$,
+and $\partial_i h \equiv \partial h / \partial \theta^i$.
+
+Partial derivatives of the waveform are computed numerically using a
+five-point central-difference stencil~\cite{Vallisneri:2007ev},
+\begin{equation}
+  \frac{\partial h}{\partial \theta^i} \approx
+  \frac{-h(\theta^i + 2\epsilon) + 8\,h(\theta^i + \epsilon)
+    - 8\,h(\theta^i - \epsilon) + h(\theta^i - 2\epsilon)}
+  {12\,\epsilon} \,,
+  \label{eq:five_point}
+\end{equation}
+with step sizes $\epsilon = 10^{-6}$ for each parameter (in the
+parameter's natural units).
+This $\mathcal{O}(\epsilon^4)$-accurate stencil requires four waveform
+evaluations per parameter, for a total of $4 \times 14 = 56$ waveform
+generations per Fisher matrix.  The resulting $14 \times 14$ Fisher matrix
+$\Gamma_{ij}$ is symmetric by construction, so the inner product
+computation exploits this symmetry.
+
+The Cram\'er-Rao lower bound on the parameter covariance is obtained
+by inverting the Fisher matrix,
+\begin{equation}
+  \Sigma_{ij} = \bigl(\Gamma^{-1}\bigr)_{ij} \,.
+  \label{eq:cramer_rao}
+\end{equation}
+This provides a lower bound on the variance of any unbiased estimator and
+is a reliable estimate of the true posterior width in the high-SNR
+regime~\cite{Vallisneri:2007ev}.
+
+For the dark siren analysis, the full $14 \times 14$ covariance matrix is
+projected onto the subspaces of interest.
+In the \emph{standard channel} (without MBH mass information), we retain the
+$3 \times 3$ sub-block corresponding to $(\phi_S, \theta_S, \dL)$.
+In the \emph{MBH mass channel}, we retain the $4 \times 4$ sub-block
+$(\phi_S, \theta_S, \dL, \Mz)$, where $\Mz = \Mbh(1+z)$ is the
+redshifted (detector-frame) MBH mass measured from the waveform.
+These projected covariance matrices enter the gravitational-wave likelihood
+described in Sec.~\ref{sec:likelihood}.
+
+%% ============================================================
+\subsection{Dark siren likelihood}
+\label{sec:likelihood}
+%% ============================================================
+
+We follow the dark siren formalism of
+Schutz~\cite{Schutz:1986gp}, extended by the galaxy catalog approach
+of Refs.~\cite{Gray:2019ksv,Gair:2022zsa}, including the
+completeness correction of Gray~et~al.~\cite{Gray:2019ksv}.
+
+\subsubsection{Posterior on \texorpdfstring{$\HH$}{H0}}
+
+Given $N_\mathrm{det}$ independent EMRI detections with data
+$\{d_\mathrm{GW}^i\}$ and a galaxy catalog $\mathcal{C}$, the posterior
+on the Hubble constant is
+\begin{equation}
+  p(\HH \mid \{d_\mathrm{GW}^i\}, \mathcal{C})
+  \propto p(\HH)\,\prod_{i=1}^{N_\mathrm{det}}
+  p(d_\mathrm{GW}^i \mid \HH, \mathcal{C}) \,,
+  \label{eq:h0_posterior}
+\end{equation}
+where $p(\HH)$ is the prior on the Hubble constant, taken to be uniform
+on $h \equiv \HH/(100\,\mathrm{km\,s^{-1}\,Mpc^{-1}}) \in [0.60, 0.86]$.
+
+\subsubsection{Single-event likelihood}
+
+The single-event likelihood marginalizes over the unknown host galaxy
+identity by summing over all candidate host galaxies $j$ in the catalog.
+We implement two channels that differ in the dimensionality of the
+gravitational-wave measurement used.
+
+\paragraph{Standard channel (without MBH mass).}
+In this channel, the gravitational-wave data constrain only the sky
+position and luminosity distance.  The single-event catalog likelihood for
+detection $i$ is~\cite{Gray:2019ksv,Gair:2022zsa}
+\begin{equation}
+  \Lcat^{(i)} = \frac{%
+    \sum_j \int \!\mathrm{d}z\;\pdet(z)\,
+    \pGW\bigl(\phi_j, \theta_j, \dL(z, \HH)/\dL^\mathrm{det}\bigr)\,
+    \pgal^{(j)}(z)
+  }{%
+    \sum_j \int \!\mathrm{d}z\;\pdet(z)\,\pgal^{(j)}(z)
+  } \,,
+  \label{eq:Lcat_no_mass}
+\end{equation}
+where $\pGW(\phi, \theta, \dL/\dL^\mathrm{det})$ is the three-dimensional
+multivariate Gaussian likelihood constructed from the projected Fisher-matrix
+covariance (Sec.~\ref{sec:fisher}) with mean at the measured values
+$(\phi^\mathrm{det}, \theta^\mathrm{det}, 1)$;
+$\pgal^{(j)}(z)$ is a Gaussian in redshift centered on the catalog value
+$z_j$ with uncertainty $\sigma_{z,j}$;
+$\dL(z, \HH)$ is the luminosity distance--redshift relation for the trial
+value of $\HH$ in a flat $\Lambda$CDM cosmology~\cite{Hogg:1999ad};
+and $\pdet(z)$ is the detection probability defined in
+Sec.~\ref{sec:pdet}.
+The numerator integrals are evaluated over the range
+$\dL^\mathrm{det} \pm 4\sigma_{\dL}$ (converted to redshift at the trial
+$\HH$), while the denominator integrals extend over
+$z_j \pm 4\sigma_{z,j}$.
+The sums run over all candidate host galaxies within the
+$3\sigma$ localization volume of the detection.
+
+\paragraph{MBH mass channel.}
+The key idea of this work is to exploit the precise measurement of the
+redshifted MBH mass $\Mz$ from the gravitational waveform as an additional
+discriminant when identifying the host galaxy.  The detector-frame mass
+is related to the source-frame mass by $\Mz = \Mbh(1+z)$.  Because the
+Fisher-matrix uncertainty on $\Mz$ is extremely small
+($\sigma_{\Mz}/\Mz \lesssim 10^{-6}$), the GW mass measurement acts
+effectively as a delta function when convolved with the galaxy catalog mass
+uncertainty ($\sigma_{\Mbh}/\Mbh \sim 20\%$).
+
+To construct the MBH mass channel likelihood, we start from the
+four-dimensional GW likelihood $\pGW(\phi, \theta, \dL/\dL^\mathrm{det},
+\Mz/\Mz^\mathrm{det})$ built from the $4\times 4$ projected Fisher-matrix
+covariance.  Marginalizing over the source-frame MBH mass $\Mbh$ with a
+Gaussian catalog prior $g(\Mbh) = \mathcal{N}(\Mbh;\, \Mbh^{(j)},\,
+\sigma_{\Mbh}^{(j)\,2})$ can be performed analytically.
+
+% REVISED: presentation of analytic marginalization
+Decomposing the four-dimensional GW covariance into a $3\times 3$ block
+$\Sigma_\mathrm{obs}$ for $(\phi, \theta, \dL/\dL^\mathrm{det})$ and a
+conditional distribution for $\Mz/\Mz^\mathrm{det}$ given the observed
+variables, the marginalization over $\Mbh$ reduces to a one-dimensional
+Gaussian integral.  Denoting the conditional mean and variance
+of $\Mz/\Mz^\mathrm{det}$ by $\mu_\mathrm{cond}(\mathbf{x}_\mathrm{obs})$
+and $\sigma^2_\mathrm{cond}$, respectively, and writing the catalog mass in
+detector-frame fractional coordinates as
+$\Mbh^{(j)}(1+z)/\Mz^\mathrm{det}$ with fractional uncertainty
+$\sigma_{\Mbh}^{(j)}(1+z)/\Mz^\mathrm{det}$, the integral yields
+\begin{align}
+  &\int\!\mathrm{d}\Mbh \;\pGW(\mathbf{x}_\mathrm{obs}, \Mz/\Mz^\mathrm{det})
+  \;g(\Mbh)
+  \nonumber\\
+  &\quad = \pGW^{(3)}(\mathbf{x}_\mathrm{obs})\,
+  \frac{1}{\sqrt{2\pi(\sigma^2_\mathrm{cond} + \tilde{\sigma}_g^2)}}
+  \nonumber\\
+  &\qquad \times \exp\!\biggl(
+    -\frac{(\mu_\mathrm{cond} - \tilde{\mu}_g)^2}
+    {2(\sigma^2_\mathrm{cond} + \tilde{\sigma}_g^2)}
+  \biggr) ,
+  \label{eq:mass_integral}
+\end{align}
+where $\pGW^{(3)}$ is the three-dimensional marginal Gaussian,
+$\tilde{\mu}_g = \Mbh^{(j)}(1+z)/\Mz^\mathrm{det}$, and
+$\tilde{\sigma}_g = \sigma_{\Mbh}^{(j)}(1+z)/\Mz^\mathrm{det}$.
+The single-event catalog likelihood for the MBH mass channel is then
+\begin{equation}
+  {L_\mathrm{cat,\Mz}}^{(i)} = \frac{%
+    \sum_j \int\!\mathrm{d}z\;
+    \pdet(z,\Mbh)\,
+    \pGW^{(3)}\, \mathcal{G}_j(z)\,
+    \pgal^{(j)}(z)
+  }{%
+    \sum_j \int\!\mathrm{d}z\!\int\!\mathrm{d}\Mbh\;
+    \pdet(z,\Mbh)\,\pgal^{(j)}(z)\,g(\Mbh)
+  } \,,
+  \label{eq:Lcat_mass}
+\end{equation}
+where $\mathcal{G}_j(z)$ denotes the Gaussian factor from
+Eq.~\eqref{eq:mass_integral} and the denominator accounts for the
+two-dimensional selection effect in $(z, \Mbh)$.
+
+\subsubsection{Completeness correction}
+
+The galaxy catalog is incomplete, particularly at higher redshifts.
+Following Gray~et~al.~\cite{Gray:2019ksv}, the full single-event likelihood
+$p(d_\mathrm{GW}^i \mid \HH, \mathcal{C})$ is a weighted combination of the
+catalog term $\Lcat$ and a completion term $\Lcomp$ that accounts for
+galaxies absent from the catalog:
+\begin{equation}
+  p(d_\mathrm{GW}^i \mid \HH, \mathcal{C})
+  = f_i\,\Lcat^{(i)} + (1 - f_i)\,\Lcomp^{(i)} \,,
+  \label{eq:completeness_combination}
+\end{equation}
+where $f_i \in [0,1]$ is the catalog completeness fraction evaluated at the
+inferred redshift of detection $i$ for the trial value of $\HH$.
+The completion term assumes a uniform-in-comoving-volume galaxy
+distribution,
+\begin{equation}
+  \Lcomp^{(i)} = \frac{%
+    \int \!\mathrm{d}z\;\pGW(z)\,\pdet(z)\,
+    \frac{\mathrm{d}V_c}{\mathrm{d}z}
+  }{%
+    \int \!\mathrm{d}z\;\pdet(z)\,
+    \frac{\mathrm{d}V_c}{\mathrm{d}z}
+  } \,,
+  \label{eq:Lcomp}
+\end{equation}
+where $\mathrm{d}V_c/\mathrm{d}z$ is the comoving volume element
+and $\pGW(z)$ denotes the three-dimensional GW likelihood marginalized
+over sky position, evaluated along the line of sight of the detection.
+For the MBH mass channel, the completion term uses the same
+three-dimensional likelihood as Eq.~\eqref{eq:Lcomp}, because an
+uncataloged host galaxy has no associated mass estimate.
+
+%% ============================================================
+\subsection{Galaxy catalog}
+\label{sec:catalog}
+%% ============================================================
+
+We use the GLADE+ galaxy catalog~\cite{Dalya:2021ewn}, which provides
+nearly full-sky coverage with approximately 23 million objects.
+For each galaxy, we extract the redshift $z$, redshift uncertainty
+$\sigma_z$, stellar mass $\Mstellar$, stellar mass uncertainty
+$\sigma_{\Mstellar}$, and sky position $(\theta, \phi)$.
+We restrict the catalog to galaxies with spectroscopic or
+photometric redshifts and require that $\Mstellar$ is available.
+
+The central MBH mass is estimated from the stellar mass via the
+scaling relation of Reines~\&~Volonteri~\cite{Reines:2015moa},
+\begin{equation}
+  \log_{10}\!\Bigl(\frac{\Mbh}{M_\odot}\Bigr)
+  = \alpha + \beta\,\log_{10}\!\Bigl(\frac{\Mstellar}{10^{11}\,M_\odot}\Bigr) ,
+  \label{eq:scaling_relation}
+\end{equation}
+with $\alpha = 7.45 \pm 0.08$ and $\beta = 1.05 \pm 0.11$.
+The uncertainty on the inferred $\Mbh$ is propagated from
+$\sigma_{\Mstellar}$ and the intrinsic scatter of the scaling relation,
+yielding typical fractional uncertainties
+$\sigma_{\Mbh}/\Mbh \sim 20\%$.
+
+Candidate host galaxies for each detection are identified by a ball-tree
+spatial query within the $3\sigma$ error volume defined by the Fisher-matrix
+uncertainties on $(\phi_S, \theta_S, \dL)$.
+We restrict the MBH mass range to
+$\Mbh \in [10^5,\, 10^6]\,M_\odot$
+to match the mass range covered by the injection campaign
+(Sec.~\ref{sec:pdet}).
+
+%% ============================================================
+\subsection{Detection probability}
+\label{sec:pdet}
+%% ============================================================
+
+The detection probability $\pdet(z, \Mbh, \HH)$ is required both in the
+likelihood numerator and in the selection-effect correction
+(denominators of Eqs.~\eqref{eq:Lcat_no_mass}--\eqref{eq:Lcomp}).
+We estimate it via a Monte Carlo injection campaign.
+
+A two-dimensional grid in $(h, z)$ is constructed with 15 values of
+$h \in [0.60, 0.86]$ and 10 redshift bins from $z = 0$ to $z_\mathrm{max}$.
+For each grid cell, EMRI events are injected with fixed $(h, z)$ and
+randomized extrinsic parameters (sky position, spin orientation,
+orbital phases, compact-object mass, eccentricity, inclination).
+For each injection, the full waveform is generated, the LISA TDI response
+is computed, and the SNR is evaluated; a detection is counted when
+$\SNR \geq \SNR_\mathrm{th}$.
+The detection fraction in each bin provides the empirical estimate of
+$\pdet$.
+
+For continuous evaluation at arbitrary $(h, z)$, the grid is interpolated
+using a regular-grid interpolator.  Per-bin uncertainties are quantified
+using Wilson confidence intervals~\cite{Wilson:1927}.
+At grid cells near the detection boundary where the detection fraction
+transitions from zero to one, variance reduction is achieved through
+importance-sampling-enhanced
+estimation~\cite{Tiwari:2017ndi} with Neyman allocation, yielding
+variance reduction factors of $11.8$--$24.9\times$ in the boundary
+bins~\cite{Farr:2019rap}.
+
+%% ============================================================
+\subsection{Simulation procedure}
+\label{sec:procedure}
+%% ============================================================
+
+We adopt a flat $\Lambda$CDM cosmology with fiducial parameters
+$h_\mathrm{true} = 0.73$ and $\Omega_m = 0.25$.
+The analysis proceeds as follows for each trial value of
+$h \in [0.60,\, 0.86]$ with spacing $\Delta h \leq 0.01$:
+
+\begin{enumerate}
+  \item A galaxy is drawn from the GLADE+ catalog restricted to the MBH
+    mass range $[10^5,\, 10^6]\,M_\odot$.
+
+  \item The luminosity distance is computed from the galaxy redshift
+    using the $\dL$--$z$ relation at $h_\mathrm{true}$.
+
+  \item An EMRI waveform is generated with the galaxy's sky position,
+    MBH mass, and luminosity distance, supplemented by randomized
+    extrinsic parameters.
+
+  \item If $\SNR \geq \SNR_\mathrm{th}$, the Fisher information matrix
+    is computed and inverted to obtain the Cram\'er-Rao covariance matrix.
+    Only events with $\sigma_{\dL}/\dL < 10\%$ are retained.
+
+  \item For each retained detection, the $\HH$ posterior
+    [Eq.~\eqref{eq:h0_posterior}] is evaluated by summing the
+    single-event likelihood over all candidate host galaxies identified
+    from the catalog.  Both the standard and MBH mass channels are
+    evaluated for each detection.  The completeness-corrected likelihood
+    [Eq.~\eqref{eq:completeness_combination}] is used throughout.
+\end{enumerate}
+
+The posterior is evaluated on a grid in $h$ and the combined constraint
+from all detected events is obtained by multiplying the per-event
+likelihoods [Eq.~\eqref{eq:h0_posterior}].
+
+%% CITATIONS NEEDED (for gpd-bibliographer):
+%% - MISSING:cornish-robson-2017 — Cornish & Robson (2017), arXiv:1703.09858, galactic confusion noise model
+%% - MISSING:wilson-1927-intervals — Wilson (1927), confidence interval for binomial proportion

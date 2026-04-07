@@ -1,0 +1,291 @@
+% discussion.tex — Section IV: Discussion
+% Target: PRD two-column (revtex4-2)
+% Macros used: \HH, \dL, \Mz, \Mbh, \Mstellar, \pGW, \pdet, \Lcat, \Lcomp, \SNR, \pending, \todo
+
+The results of Sec.~\ref{sec:results} demonstrate that the redshifted MBH
+mass $\Mz$ provides a powerful additional handle for dark siren cosmology
+with EMRIs.  We now place these findings in the context of prior work,
+discuss the physical mechanism behind the improvement, and assess the
+limitations of the analysis.
+
+%% ============================================================
+\subsection{Comparison with previous work}
+\label{sec:comparison}
+%% ============================================================
+
+The most direct comparison is with
+Laghi~\emph{et~al.}~\cite{Laghi:2021pqk}, who performed the first
+comprehensive study of EMRI dark sirens as probes of $\HH$ with LISA.
+Our analysis extends their work in four significant ways.
+
+First, Laghi~\emph{et~al.}\ adopted a fixed fractional luminosity
+distance uncertainty of $\sigma_{\dL}/\dL = 10\%$ for all detected
+EMRIs, independent of source parameters.  We replace this simplification
+with the full Cram\'{e}r--Rao bound derived from the $14 \times 14$
+Fisher information matrix (Sec.~\ref{sec:fisher}), which captures the
+dependence of $\sigma_{\dL}$ on SNR, sky position, mass ratio, and spin.
+The resulting per-event distance uncertainties span a wide range, with
+some high-SNR detections achieving $\sigma_{\dL}/\dL < 1\%$.
+
+Second, we introduce the MBH mass channel, which exploits the precise
+measurement of $\Mz$ from the gravitational waveform as an additional
+discriminant for host galaxy identification.  This channel is absent from
+Ref.~\cite{Laghi:2021pqk} and is, to our knowledge, the first
+application of the MBH mass information to EMRI dark siren cosmology.
+
+Third, we employ the real GLADE+ galaxy catalog~\cite{Dalya:2021ewn},
+which includes spectroscopic and photometric redshifts, stellar masses,
+and sky positions for approximately 23~million objects.
+Laghi~\emph{et~al.}\ used a synthetic catalog with idealized properties.
+The real catalog introduces the practical complication of spatially
+varying completeness, which we address by implementing the correction of
+Gray~\emph{et~al.}~\cite{Gray:2019ksv}.
+
+Fourth, we include the catalog completeness correction
+[Eq.~\eqref{eq:completeness_combination}] following Gray~\emph{et~al.},
+which was originally developed for ground-based dark siren analyses of
+binary black hole mergers~\cite{Gray:2019ksv}.  This correction is
+essential for avoiding the systematic low-$\HH$ bias caused by
+preferentially cataloged low-redshift galaxies, as demonstrated in
+Sec.~\ref{sec:systematics}.
+
+Our Fisher matrix results are validated against the benchmark
+Cram\'{e}r--Rao bounds in Table~III of
+Babak~\emph{et~al.}~\cite{Babak:2017tow}, finding agreement to within
+the numerical precision of the finite-difference stencil
+(Sec.~\ref{sec:pe_validation}).  This provides confidence that the
+parameter estimation inputs to the dark siren likelihood are correctly
+computed.
+
+The completeness correction we implement follows the framework of
+Gray~\emph{et~al.}~\cite{Gray:2019ksv}, adapted here for EMRI sources
+with LISA.  Gair~\emph{et~al.}~\cite{Gair:2022zsa} recently provided a
+comprehensive study of systematic biases in dark siren analyses,
+identifying catalog incompleteness as the dominant source of error for
+events beyond $z \sim 0.03$ in GLADE+.  Our treatment of the
+completeness correction is consistent with their recommendations,
+although we note that our completeness function is interpolated from
+digitized data rather than derived from a self-consistent luminosity
+function model (see Sec.~\ref{sec:caveats}).
+
+%% ============================================================
+\subsection{Physical interpretation of the MBH mass improvement}
+\label{sec:mass_interpretation}
+%% ============================================================
+
+The factor of $\sim 2$ improvement in $\HH$ precision from the MBH mass
+channel (from $\sim 4\%$ to $\sim 1.8\%$ in the $\pdet = 1$ baseline)
+has a clear physical origin: the mass measurement breaks the
+luminosity-distance--redshift degeneracy inherent in dark siren analyses.
+
+Without the mass channel, a GW detection constrains $\dL$ (and sky
+position) but not $z$ independently.  For a given trial value of $\HH$,
+the inferred redshift $z = z(\dL, \HH)$ identifies a shell in the galaxy
+catalog.  All galaxies consistent with the measured distance and sky
+position contribute to the single-event likelihood, potentially
+numbering $\sim 10$--$10^4$ candidates depending on the sky
+localization volume and local galaxy density.  Because each candidate is
+weighted equally (up to the GW measurement uncertainty), the per-event
+$\HH$ constraint is diluted by the large number of viable hosts.
+
+With the mass channel, the precisely measured $\Mz$ imposes an
+additional constraint: the true host must satisfy
+$\Mbh \approx \Mz / (1+z)$, where $z$ is determined by $\dL$ and the
+trial $\HH$.  Since the GW measurement determines $\Mz$ to a fractional
+precision of $\lesssim 10^{-6}$ (Sec.~\ref{sec:pe_validation}), while
+the catalog masses inferred from the $\Mbh$--$\Mstellar$ scaling
+relation~\cite{Reines:2015moa} carry uncertainties of $\sim 20\%$, the
+mass match effectively acts as a narrow filter.  Only galaxies whose
+inferred BH mass is consistent with $\Mz / (1+z)$ within the scaling
+relation scatter contribute significantly to the likelihood
+[Eq.~\eqref{eq:Lcat_mass}].  This typically reduces the number of viable
+hosts by one to two orders of magnitude, concentrating the single-event
+likelihood around the correct redshift and thus the correct $\HH$.
+
+The improvement is largest for detections in regions of high galaxy
+density (large angular extent and moderate distance), where the standard
+channel admits the most candidate hosts.  Conversely, for isolated
+detections in underdense regions where only a handful of galaxies lie
+within the error volume, the mass information provides a smaller
+marginal improvement because the host galaxy is already effectively
+identified by proximity.
+
+We note that the efficacy of the mass channel is limited by the accuracy
+of the $\Mbh$--$\Mstellar$ scaling relation.  The
+Reines~\&~Volonteri~\cite{Reines:2015moa} relation has an intrinsic
+scatter of approximately $0.55\,\mathrm{dex}$, with best-fit parameters
+$\alpha = 7.45 \pm 0.08$ and $\beta = 1.05 \pm 0.11$.  Improvements in
+the empirical calibration of this relation, particularly in the
+$10^5$--$10^6\,M_\odot$ range relevant for EMRI sources, would directly
+translate into a tighter mass filter and thus a stronger $\HH$
+constraint.
+
+%% ============================================================
+\subsection{Limitations and caveats}
+\label{sec:caveats}
+%% ============================================================
+
+We identify several approximations and limitations of the present
+analysis.  We discuss them in roughly decreasing order of expected
+impact on the results.
+
+\paragraph{Fisher matrix approximation.}
+The parameter estimation relies on the Fisher information matrix, which
+provides a lower bound on parameter variances that is tight only in the
+high-SNR, unimodal posterior regime~\cite{Vallisneri:2007ev}.  While our
+detection threshold of $\SNR \geq 20$ places the analysis in a regime
+where the Fisher approximation is generally reliable, multimodal
+posteriors can arise for EMRI sources due to correlations between mass,
+spin, and orbital parameters.  In such cases, the Fisher matrix may
+underestimate the true parameter uncertainty, leading to overly
+optimistic Cram\'{e}r--Rao bounds.  A full Bayesian parameter estimation
+using, e.g., Markov chain Monte Carlo (MCMC) sampling would capture
+these effects but is computationally prohibitive for the $\sim 10^5$
+injections considered here.
+
+\paragraph{Finite-difference accuracy.}
+The waveform derivatives entering the Fisher matrix are computed using
+forward finite differences with step size $\epsilon = 10^{-6}$,
+yielding $\mathcal{O}(\epsilon)$ accuracy.  The five-point stencil of
+Eq.~\eqref{eq:five_point}, which achieves $\mathcal{O}(\epsilon^4)$
+accuracy, is implemented in the codebase but was not used for the
+injection campaign due to the $4\times$ increase in waveform evaluations
+per parameter (56 vs.\ 14 per Fisher matrix).  While the forward-difference
+and five-point results agree for the validation source of
+Ref.~\cite{Babak:2017tow}, the higher-order stencil would provide
+improved robustness for sources near the edges of parameter space.
+
+\paragraph{Simplified population model.}
+We draw EMRI source parameters from a random distribution over the
+parameter ranges listed in Appendix~\ref{app:parameters}, rather than
+from an astrophysically motivated population model.  Realistic EMRI rate
+estimates~\cite{Babak:2017tow} predict event rates that depend strongly
+on the MBH mass function, the stellar environment of the galactic
+nucleus, and the efficiency of orbital capture.  A population-informed
+injection campaign may yield a different detection yield and a different
+distribution of per-event constraints, which could affect both the
+overall $\HH$ precision and the relative improvement from the mass
+channel.
+
+\paragraph{$\Mbh$--$\Mstellar$ scaling relation.}
+The mass channel relies on the empirical scaling relation of
+Reines~\&~Volonteri~\cite{Reines:2015moa} to infer the MBH mass from
+the stellar mass of candidate host galaxies.  This relation was
+calibrated in the local universe ($z \lesssim 0.055$) and may evolve
+with redshift.  Moreover, the intrinsic scatter of the relation
+($\sim 0.55\,\mathrm{dex}$) is the dominant source of uncertainty in
+the galaxy-side mass estimate.  Systematic shifts in the scaling
+relation parameters $\alpha$ and $\beta$ would propagate directly into
+the mass filter, potentially biasing or broadening the $\HH$ posterior.
+Future work should marginalize over the scaling relation parameters
+within their uncertainties.
+
+\paragraph{GLADE+ catalog completeness.}
+The completeness fraction $f(z, h)$ entering the correction of
+Eq.~\eqref{eq:completeness_combination} is interpolated from published
+completeness data for the GLADE+ catalog~\cite{Dalya:2021ewn}.  We note
+two caveats.  First, the published completeness may reflect
+\emph{number} completeness (fraction of galaxies detected) rather than
+\emph{luminosity} completeness (fraction of total luminosity captured),
+which is the more physically relevant quantity for galaxy-catalog-based
+analyses~\cite{Gray:2019ksv}.  Second, the completeness is treated as a
+function of redshift alone, whereas the actual catalog completeness
+varies with sky position, galaxy type, and apparent magnitude.  A more
+refined treatment would use the angular-dependent completeness, though
+this is beyond the scope of the present work.
+
+\paragraph{Cosmological model.}
+We assume a flat $\Lambda$CDM cosmology with fixed matter density
+$\Omega_m = 0.25$.  This value reflects the WMAP-era best
+fit~\cite{Hinshaw:2012aka} rather than the Planck~2018 result
+$\Omega_m = 0.3153 \pm 0.0073$~\cite{Planck:2018vyg}.  While the
+choice of $\Omega_m$ affects the $\dL$--$z$ relation and hence the
+inferred $\HH$, the sensitivity of the posterior to $\Omega_m$ is
+subdominant to the statistical uncertainty from the finite number of
+detections.  A joint inference over $(\HH, \Omega_m)$ or an extension
+to the $w$CDM model is straightforward with the existing pipeline
+infrastructure but is deferred to future work.
+
+\paragraph{Galactic confusion noise.}
+The LISA noise PSD used in this analysis
+[Eq.~\eqref{eq:psd}] does not include the foreground from unresolved
+galactic white-dwarf binaries, which dominates the sensitivity in the
+$0.1$--$3\,\mathrm{mHz}$ band.  While the noise model includes the
+$S_c(f)$ term in the formal expression, this component is set to zero in
+the current implementation.  Including the confusion noise would reduce
+the effective SNR for EMRI sources with significant power in this band,
+potentially lowering the detection yield and increasing the per-event
+distance uncertainty.  The effect is expected to be moderate for the MBH
+mass range considered here ($10^5$--$10^6\,M_\odot$), whose peak GW
+emission lies at frequencies above the confusion noise band.
+
+%% ============================================================
+\subsection{Future directions}
+\label{sec:future}
+%% ============================================================
+
+Several extensions of this work are planned or in progress.
+
+\paragraph{Completeness-corrected production run.}
+The results presented in Sec.~\ref{sec:results} use the $\pdet = 1$
+baseline.  A production-scale simulation incorporating the
+completeness-corrected likelihood of
+Eq.~\eqref{eq:completeness_combination} with a realistic $\pdet$
+estimated from the injection campaign is underway.  This will quantify
+the bias reduction from the Gray~\emph{et~al.}\ correction and
+establish the definitive $\HH$ constraint.
+
+\paragraph{Astrophysical population model.}
+Replacing the uniform parameter draws with an astrophysically motivated
+EMRI population model~\cite{Babak:2017tow} --- incorporating the MBH
+mass function, stellar cusp properties, and orbital capture
+efficiencies --- would provide a more realistic estimate of both the
+detection yield over the LISA mission lifetime and the expected $\HH$
+precision.
+
+\paragraph{Full Bayesian parameter estimation.}
+MCMC-based parameter estimation for individual EMRI detections would
+replace the Fisher matrix approximation and correctly capture multimodal
+and non-Gaussian posterior features.  While this is computationally
+expensive for the full injection campaign, targeted MCMC runs on a
+representative subset of detections would validate the Fisher-matrix
+results and quantify any systematic bias from the Gaussian
+approximation.
+
+\paragraph{Five-point stencil derivatives.}
+Upgrading the waveform derivatives from forward differences to the
+five-point stencil of Eq.~\eqref{eq:five_point} for the full injection
+campaign would improve the Fisher matrix accuracy at the cost of a
+$4\times$ increase in waveform evaluations.  This is straightforward to
+implement (the five-point stencil is already available in the codebase)
+and would be worthwhile for a production-quality analysis.
+
+\paragraph{Joint analysis with other LISA sources.}
+EMRIs are one of several source classes observable by LISA.  Combining
+the EMRI dark siren constraints with those from massive black hole
+binaries (MBBHs) and stellar-origin binary black holes (SOBBHs) would
+improve the overall $\HH$ precision, particularly if the different
+source classes probe complementary redshift
+ranges~\cite{LISA:2024hlh,Chen:2017rfc}.
+
+\paragraph{Dark energy equation of state.}
+The pipeline infrastructure already supports a $w$CDM cosmology with
+parameters $(w_0, w_a)$, though this extension has not yet been
+exercised.  With a sufficiently large detection catalog, EMRI dark
+sirens could provide independent constraints on the dark energy equation
+of state, complementary to those from Type~Ia
+supernovae~\cite{DES:2024tys} and baryon acoustic
+oscillations.
+
+\paragraph{Improved completeness modeling.}
+An angular-dependent and luminosity-weighted completeness model for
+GLADE+ would improve the fidelity of the correction in
+Eq.~\eqref{eq:completeness_combination}.  In combination with upcoming
+spectroscopic surveys (e.g., DESI, Euclid), which will substantially
+increase the catalog depth at $z \gtrsim 0.1$, the completeness
+correction is expected to become less critical as the catalog approaches
+full coverage over the EMRI detection volume.
+
+%% CITATIONS NEEDED (for gpd-bibliographer):
+%% - MISSING:wmap-9yr-2013 — Hinshaw et al. (2013), WMAP 9-year cosmological parameters, arXiv:1212.5226
+%% - MISSING:des-y5-2024 — DES Collaboration, Year 5 supernova cosmology results

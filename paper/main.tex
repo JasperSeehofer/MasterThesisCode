@@ -1,0 +1,111 @@
+\documentclass[aps,prd,twocolumn,superscriptaddress,nofootinbib]{revtex4-2}
+
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{bm}
+
+% Convenience macros
+\newcommand{\HH}{H_0}
+\newcommand{\dL}{d_L}
+\newcommand{\Mz}{M_z}
+\newcommand{\Mbh}{M_\mathrm{bh}}
+\newcommand{\Mstellar}{M_\mathrm{stellar}}
+\newcommand{\pGW}{p_\mathrm{GW}}
+\newcommand{\pdet}{P_\mathrm{det}}
+\newcommand{\pgal}{p_\mathrm{gal}}
+\newcommand{\Lcat}{L_\mathrm{cat}}
+\newcommand{\Lcomp}{L_\mathrm{comp}}
+\newcommand{\SNR}{\varrho}
+\newcommand{\todo}[1]{\textcolor{red}{\textbf{[TODO: #1]}}}
+\newcommand{\pending}[1]{\textcolor{blue}{\textbf{[RESULT PENDING: #1]}}}
+
+\begin{document}
+
+\title{Constraints on the Hubble constant from EMRI dark sirens with LISA using the massive black hole mass}
+
+\author{Jasper Seehofer}
+\affiliation{Institute for Theoretical Physics, Ruprecht-Karls University Heidelberg, Philosophenweg 16, 69120 Heidelberg, Germany}
+
+\author{TBD}
+\affiliation{TBD}
+
+\date{\today}
+
+\begin{abstract}
+Extreme mass ratio inspirals (EMRIs) detected by the Laser Interferometer
+Space Antenna (LISA) are promising dark siren sources for measuring the
+Hubble constant~$\HH$.  We present a Bayesian inference pipeline that
+cross-matches simulated EMRI detections with the GLADE+ galaxy catalog,
+comparing two likelihood channels: a standard three-parameter channel using
+the luminosity distance and sky position~$(\dL, \phi, \theta)$, and an
+extended four-parameter channel that additionally exploits the redshifted
+massive black hole mass~$\Mz$ measured from the gravitational waveform.
+Because LISA measures~$\Mz$ with fractional precision~$\sim\!10^{-6}$
+while galaxy catalog masses carry~$\sim\!20\%$ uncertainties, the mass
+channel sharply reduces the number of viable host galaxies and breaks the
+$\dL$--$z$ degeneracy inherent in the dark siren method.
+Using Fisher-matrix-based Cram\'er--Rao bounds for a population of
+detected EMRIs and the completeness-corrected galaxy catalog likelihood of
+Gray~\textit{et~al.}\ [Phys.\ Rev.\ D \textbf{101}, 122001 (2020)],
+we find that including~$\Mz$ tightens the $\HH$~constraint from
+\pending{$\sim\!4\%$} to \pending{$\sim\!1.8\%$} precision,
+a factor of~$\sim\!2$ improvement.  We discuss the impact of catalog
+incompleteness, detection probability estimation, and systematic
+effects on the posterior.
+\end{abstract}
+
+\maketitle
+
+%% ============================================================
+\section{Introduction}
+\label{sec:intro}
+%% ============================================================
+
+\input{sections/introduction}
+
+%% ============================================================
+\section{Method}
+\label{sec:method}
+%% ============================================================
+
+\input{sections/method}
+
+%% ============================================================
+\section{Results}
+\label{sec:results}
+%% ============================================================
+
+\input{sections/results}
+
+%% ============================================================
+\section{Discussion}
+\label{sec:discussion}
+%% ============================================================
+
+\input{sections/discussion}
+
+%% ============================================================
+\section{Conclusions}
+\label{sec:conclusions}
+%% ============================================================
+
+\input{sections/conclusions}
+
+%% ============================================================
+\begin{acknowledgments}
+\todo{Add acknowledgments: advisors, computing resources (bwUniCluster), funding}
+\end{acknowledgments}
+
+\bibliography{references}
+
+%% ============================================================
+\appendix
+
+\section{EMRI parameter space}
+\label{app:parameters}
+
+\input{sections/appendix_parameters}
+
+\end{document}

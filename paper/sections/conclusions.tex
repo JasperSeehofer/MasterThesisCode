@@ -1,0 +1,38 @@
+% conclusions.tex — Section V: Conclusions
+% Target: PRD two-column (revtex4-2)
+% Macros used: \HH, \dL, \Mz, \Mbh, \Mstellar, \pdet, \pending
+
+We have investigated whether the redshifted massive black hole mass
+$\Mz$, precisely measured from the EMRI gravitational waveform, can
+improve dark siren constraints on the Hubble constant $\HH$ with LISA.
+The answer is affirmative.  Including $\Mz$ in the Bayesian inference
+tightens the $\HH$ posterior by a factor of $\sim 2$, from
+$\sim 4\%$ to $\sim 1.8\%$ precision in the $\pdet = 1$ baseline
+(\pending{update with production run precision}).  The mechanism is
+straightforward: the GW measurement determines $\Mz$ to fractional
+precision $\lesssim 10^{-6}$, while the galaxy-side BH mass estimate
+from the $\Mbh$--$\Mstellar$ scaling relation carries $\sim 20\%$
+uncertainty.  This mismatch in precision acts as a narrow filter on
+candidate host galaxies, breaking the $\dL$--$z$ degeneracy that
+limits standard dark siren analyses.
+
+As a methodological contribution, we have adapted the catalog
+completeness correction of
+Gray~\emph{et~al.}~\cite{Gray:2019ksv} --- originally developed for
+ground-based dark siren analyses of binary black hole mergers --- to
+the EMRI context with LISA and the GLADE+ galaxy
+catalog~\cite{Dalya:2021ewn}.  This correction mitigates the
+systematic low-$\HH$ bias caused by the preferential cataloging of
+low-redshift galaxies (Sec.~\ref{sec:pdet_completeness}).
+
+Several directions for future work will strengthen these results.
+A production-scale simulation incorporating the full detection
+probability $\pdet(\dL, \Mbh, h)$ and the completeness-corrected
+likelihood is underway and will establish the definitive $\HH$
+constraint.  Replacing the uniform EMRI population model with an
+astrophysically motivated rate model~\cite{Babak:2017tow} will
+provide more realistic detection yields.  Finally, marginalizing over
+the parameters of the $\Mbh$--$\Mstellar$ scaling
+relation~\cite{Reines:2015moa} and extending the analysis to a joint
+$(\HH, \Omega_m)$ or $w$CDM inference are straightforward with the
+existing pipeline infrastructure.

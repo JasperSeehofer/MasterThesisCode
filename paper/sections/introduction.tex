@@ -1,0 +1,119 @@
+% Introduction — constraints on H0 from EMRI dark sirens with LISA using the MBH mass
+
+The Hubble constant $\HH$ sets the present-day expansion rate of the
+Universe and anchors the absolute distance scale in cosmology.  Two
+mature, independent determinations of $\HH$ are now in significant
+tension.  Observations of the cosmic microwave background (CMB) by the
+\textit{Planck} satellite, interpreted within a flat $\Lambda$CDM
+cosmology, yield $\HH = 67.4 \pm 0.5\;\mathrm{km\,s^{-1}\,Mpc^{-1}}$~\cite{Planck:2018vyg}.
+The local distance ladder, calibrated through Cepheid variables and
+Type~Ia supernovae by the SH0ES collaboration, gives $\HH = 73.0 \pm
+1.0\;\mathrm{km\,s^{-1}\,Mpc^{-1}}$~\cite{Riess:2021jrx}, a
+discrepancy exceeding $5\sigma$.  Whether this tension reflects
+unaccounted systematics in one or both measurements, or signals new
+physics beyond $\Lambda$CDM, remains an open question.  Resolving it
+demands independent probes of $\HH$ that do not share the systematic
+uncertainties of either the CMB or the distance ladder.
+
+Gravitational-wave (GW) observations provide such an independent
+probe.  As recognized by Schutz~\cite{Schutz:1986gp}, a coalescing
+compact binary is a \textit{standard siren}: the GW signal encodes the
+luminosity distance $\dL$ directly, without any need for a cosmic
+distance ladder.  If the redshift $z$ of the source is also known, the
+pair $(\dL, z)$ constrains $\HH$ through the distance--redshift
+relation.  The first demonstration came with GW170817, the binary
+neutron star merger detected by LIGO and Virgo, whose electromagnetic
+counterpart identified the host galaxy NGC~4993 and yielded $\HH =
+70.0^{+12.0}_{-8.0}\;\mathrm{km\,s^{-1}\,Mpc^{-1}}$~\cite{Abbott:2017xzu}.
+With a growing population of bright sirens accompanied by
+electromagnetic counterparts, percent-level $\HH$ measurements become
+feasible within a decade of advanced detector
+operations~\cite{Chen:2017rfc}.
+
+Most compact binary mergers, however, lack an identifiable
+electromagnetic counterpart.  These \textit{dark sirens} require a
+statistical approach to obtain redshift information.  In the galaxy
+catalog method~\cite{Schutz:1986gp,Gray:2019ksv}, one cross-matches
+the GW sky localization and distance estimate with a galaxy catalog,
+identifying candidate host galaxies within the localization volume.
+The likelihood for $\HH$ is then constructed by marginalizing over all
+potential hosts, weighted by their probability of being the true
+source.  As the number of dark siren events grows, the contributions
+from incorrect host galaxies average out, and the posterior on $\HH$
+converges to the true value.  A key subtlety is that galaxy catalogs
+are incomplete beyond a redshift that depends on the survey depth; a
+completeness correction must be included to avoid biasing the $\HH$
+inference~\cite{Gray:2019ksv,Gair:2022zsa}.
+
+The Laser Interferometer Space Antenna (LISA)~\cite{LISA:2024hlh}, an
+ESA-led space-based gravitational-wave observatory targeting the
+millihertz band, is expected to launch in the mid-2030s.  Among its
+richest source classes are extreme mass-ratio inspirals (EMRIs): a
+stellar-mass compact object ($\mu \sim 10\,M_\odot$) spiraling into a
+massive black hole ($\Mbh \sim 10^5$--$10^7\,M_\odot$) in the center
+of a galaxy~\cite{Babak:2017tow,LISA:2024hlh}.  An EMRI signal
+persists in the LISA band for $\sim\!10^5$ orbital cycles over
+months to years, enabling extraordinarily precise parameter estimation.
+Sky localization uncertainties of $\mathcal{O}(1\;\mathrm{deg}^2)$
+and fractional luminosity distance errors of a few percent are
+achievable for high signal-to-noise ratio (SNR) events~\cite{Babak:2017tow}.
+Because EMRIs are not expected to produce detectable electromagnetic
+radiation, they are natural dark siren sources.  Their superior sky
+localization compared to ground-based dark sirens, however, dramatically
+reduces the number of candidate host galaxies per event, making the
+statistical galaxy catalog method particularly powerful.
+
+Laghi et al.~\cite{Laghi:2021pqk} performed the first comprehensive
+study of $\HH$ inference from EMRI dark sirens with LISA, using the
+galaxy catalog approach.  Their analysis adopted a simplified treatment
+of EMRI parameter estimation errors, assigning a fixed fractional
+luminosity distance uncertainty of $\sigma(\dL)/\dL = 10\%$ to all
+detected events, and used only the GW-measured sky position and
+distance to cross-match with galaxy catalogs.  Under these assumptions,
+they projected $\HH$ constraints at the $\sim\!4\%$ level from a
+four-year LISA mission.
+
+In this work, we extend the EMRI dark siren framework by exploiting an
+additional observable that LISA measures with remarkable precision: the
+redshifted mass of the central massive black hole, $\Mz = \Mbh(1+z)$.
+LISA determines $\Mz$ from the EMRI waveform phase evolution to a
+fractional accuracy of $\sigma(\Mz)/\Mz \sim 10^{-5}$--$10^{-4}$,
+far exceeding the precision of any electromagnetic mass
+proxy~\cite{Babak:2017tow}.  Galaxy catalogs, meanwhile, provide
+stellar masses $\Mstellar$ for their entries, which can be mapped to
+black hole masses through empirical scaling
+relations~\cite{Reines:2015moa}.  The comparison between the
+GW-measured $\Mz/(1+z)$ and the catalog-predicted $\Mbh$ for each
+candidate galaxy provides a powerful additional discriminant that was
+not exploited in Ref.~\cite{Laghi:2021pqk}.
+
+We present a complete EMRI dark siren inference pipeline that
+incorporates Fisher-matrix-based Cram\'er--Rao bounds for all
+14~EMRI parameters, the GLADE+ galaxy catalog~\cite{Dalya:2021ewn},
+a completeness correction following Gray et
+al.~\cite{Gray:2019ksv}, and a detection probability model
+accounting for EMRI population and selection effects.
+We perform the first direct comparison of two likelihood
+configurations: a baseline ``without MBH mass'' channel that uses only
+the GW-measured luminosity distance and sky position $(\dL, \varphi,
+\theta)$ to identify candidate hosts, and an extended ``with MBH
+mass'' channel that additionally incorporates the redshifted mass
+$\Mz$.  We find that including the MBH mass information tightens the
+$\HH$ constraint from $\sim\!4\%$ to $\sim\!1.8\%$ fractional
+precision, demonstrating that the mass channel substantially enhances
+the dark siren method for EMRIs.
+
+The remainder of this paper is organized as follows.
+Section~\ref{sec:method} describes the signal model, parameter
+estimation framework, dark siren likelihood construction, galaxy
+catalog treatment, and detection probability model.
+Section~\ref{sec:results} presents our main results, including
+detection statistics, the $\HH$ posterior comparison between the two
+likelihood channels, and an assessment of systematic effects.
+Section~\ref{sec:discussion} discusses the implications and
+limitations of our findings.  We conclude in
+Sec.~\ref{sec:conclusions}.  Appendix~\ref{app:parameters} tabulates
+the EMRI parameter space used in the simulations.
+Throughout, we adopt geometrized units with $G = c = 1$ unless
+otherwise noted, and quote $\HH$ in units of
+$\mathrm{km\,s^{-1}\,Mpc^{-1}}$.
