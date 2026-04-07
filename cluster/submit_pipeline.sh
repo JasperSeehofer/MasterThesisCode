@@ -101,7 +101,7 @@ MERGE_JOB=$(sbatch --parsable \
     --dependency="afterany:$SIM_JOB" \
     --output="$RUN_DIR/logs/merge_%j.out" \
     --error="$RUN_DIR/logs/merge_%j.err" \
-    --export=ALL,RUN_DIR="$RUN_DIR" \
+    --export=ALL,RUN_DIR="$RUN_DIR",PREPARE_SEED="$((SEED + 999999))" \
     "$CLUSTER_DIR/merge.sbatch")
 
 # 3. Evaluate array job (CPU, after merge completes)

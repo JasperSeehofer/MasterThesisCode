@@ -63,7 +63,7 @@ emri-merge --workdir "$RUN_DIR" --delete-sources
 echo ""
 echo "=== Prepare Detections ==="
 
-emri-prepare --workdir "$RUN_DIR"
+emri-prepare --workdir "$RUN_DIR" --seed "${PREPARE_SEED:-42}" --force
 
 # ---------------------------------------------------------------------------
 # Summary

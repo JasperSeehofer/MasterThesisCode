@@ -1,5 +1,6 @@
 """Detection datamodel for Cramér-Rao bounds based EMRI inference."""
 
+import logging
 from dataclasses import dataclass
 
 import numpy as np
@@ -7,6 +8,8 @@ import pandas as pd
 from scipy.stats import truncnorm
 
 from master_thesis_code.physical_relations import dist
+
+_LOGGER = logging.getLogger(__name__)
 
 
 def _sky_localization_uncertainty(
@@ -118,7 +121,90 @@ class Detection:
     def get_relative_distance_error(self) -> float:
         return self.d_L_uncertainty / self.d_L
 
-    def convert_to_best_guess_parameters(self) -> None:
+    def convert_to_best_guess_parameters(self, rng: np.random.Generator | None = None) -> None:
+        """Draw simulated measured parameters from the Fisher-matrix posterior.
+
+        When *rng* is provided, draws a single correlated sample from the
+        4-dimensional multivariate normal defined by the full Cramér-Rao
+        covariance sub-matrix for (phi, theta, d_L, M) and clips to physical
+        bounds.  This is the standard procedure in the GW literature
+        (Cutler & Flanagan 1994; Vallisneri 2008, arXiv:gr-qc/0703086).
+
+        When *rng* is ``None`` the legacy behaviour is preserved: four
+        independent truncated-normal draws from the marginal distributions.
+
+        Args:
+            rng: NumPy random generator for reproducible, correlated draws.
+                 Pass ``None`` to keep the legacy independent-sampling path.
+        """
+        if rng is not None:
+            self._correlated_draw(rng)
+        else:
+            self._independent_draw()
+
+    # -- correlated multivariate draw (preferred) ---------------------------
+
+    def _correlated_draw(self, rng: np.random.Generator) -> None:
+        # Build the 4×4 covariance sub-matrix.
+        # Order: phi, theta, d_L, M
+        # Ref: Cramér-Rao lower bound, Γ⁻¹ sub-matrix for extrinsic params.
+        cov = np.array(
+            [
+                [
+                    self.phi_error**2,
+                    self.theta_phi_covariance,
+                    self.d_L_phi_covariance,
+                    self.M_phi_covariance,
+                ],
+                [
+                    self.theta_phi_covariance,
+                    self.theta_error**2,
+                    self.d_L_theta_covariance,
+                    self.M_theta_covariance,
+                ],
+                [
+                    self.d_L_phi_covariance,
+                    self.d_L_theta_covariance,
+                    self.d_L_uncertainty**2,
+                    self.d_L_M_covariance,
+                ],
+                [
+                    self.M_phi_covariance,
+                    self.M_theta_covariance,
+                    self.d_L_M_covariance,
+                    self.M_uncertainty**2,
+                ],
+            ]
+        )
+
+        mean = np.array([self.phi, self.theta, self.d_L, self.M])
+
+        # Positive-definiteness check — inv(Fisher) should always be PD, but
+        # numerical noise from the 5-point stencil can break this for marginal
+        # detections.  Fall back to independent draws with a warning.
+        try:
+            np.linalg.cholesky(cov)
+        except np.linalg.LinAlgError:
+            _LOGGER.warning(
+                "Covariance matrix not positive-definite for detection at "
+                "d_L=%.3f Gpc, M=%.0f M_sun — falling back to independent draws.",
+                self.d_L,
+                self.M,
+            )
+            self._independent_draw()
+            return
+
+        sample = rng.multivariate_normal(mean, cov)
+
+        # Clip to physical bounds (never reached in practice for EMRI events).
+        self.phi = float(np.clip(sample[0], 0.0, 2.0 * np.pi))
+        self.theta = float(np.clip(sample[1], 0.0, np.pi))
+        self.d_L = float(np.clip(sample[2], 0.0, dist(1.5)))
+        self.M = float(np.clip(sample[3], 1e4, 1e6))
+
+    # -- legacy independent truncated-normal draws --------------------------
+
+    def _independent_draw(self) -> None:
         self.phi = truncnorm(
             (0 - self.phi) / self.phi_error,
             (2 * np.pi - self.phi) / self.phi_error,
