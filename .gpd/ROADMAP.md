@@ -45,6 +45,8 @@ See `.gpd/milestones/v1.2.2-ROADMAP.md` for full archive.
 
 </details>
 
+## v1.5 Completeness Correction (Phases 24-25) -- COMPLETED 2026-04-04
+
 ### Phase 24: Completeness Estimation
 
 **Goal:** GLADE+ completeness fraction f(z) is computed from the actual catalog data and available as an interpolatable function
@@ -64,3 +66,24 @@ Plans:
 Plans:
 - [x] 25-01-PLAN.md -- Implement completeness-corrected likelihood (completion term + combination formula + tests)
 **Result:** Gray et al. (2020) Eq. 9 combination formula implemented: p_i = f_i * L_cat + (1-f_i) * L_comp. Completion term via fixed_quad. 11 tests, 4/4 contract claims verified (HIGH confidence).
+
+## v2.0 Paper (Phases 26-28) -- Active
+
+### Phase 26: Paper Draft
+
+**Goal:** First complete draft of the PRD paper "Constraints on the Hubble constant from EMRI dark sirens with LISA using the massive black hole mass"
+**Status:** Complete (2026-04-05)
+**Plans:** 1/1 complete
+**Result:** All sections drafted (Introduction, Method, Results, Discussion, Conclusions, Appendix A). 11-page PDF builds with REVTeX4-2. 21 references. 25 RESULT PENDING markers awaiting production run.
+
+### Phase 27: Production Run & Figures
+
+**Goal:** Run completeness-corrected evaluation on cluster, replace all RESULT PENDING placeholders with final numbers, generate publication figures
+**Status:** Not started (blocked on cluster filesystem recovery)
+**Depends on:** Phase 25 (completeness code), Phase 26 (paper structure)
+
+### Phase 28: Review & Submission
+
+**Goal:** Internal peer review, resolve all TODO markers, finalize co-authors, submit to PRD + arXiv
+**Status:** Not started
+**Depends on:** Phase 27 (final results and figures)

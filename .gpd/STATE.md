@@ -5,19 +5,19 @@
 See: .gpd/PROJECT.md (updated 2026-04-01)
 
 **Core research question:** What is the Hubble constant H0 as measured by dark siren inference from LISA EMRI detections?
-**Current focus:** v1.5 Phase 25 complete — completeness-corrected likelihood delivered
+**Current focus:** v2.0 Phase 26 complete — PRD paper draft delivered, awaiting production run (Phase 27)
 
 ## Current Position
 
-**Current Phase:** 25
-**Current Phase Name:** Likelihood Correction
+**Current Phase:** 26
+**Current Phase Name:** Paper Draft
 **Current Plan:** 1/1 complete
-**Total Phases:** 2 (Phases 24-25, v1.5)
-**Status:** Phase 25 complete
-**Last Activity:** 2026-04-04
-**Last Activity Description:** Implemented completeness-corrected dark siren likelihood (Gray et al. 2020 Eq. 9) with completion term, combination formula, and 11 tests. Verified 4/4 claims (HIGH confidence).
+**Total Phases:** 3 (Phases 26-28, v2.0 Paper)
+**Status:** Phase 26 complete, Phase 27 not started
+**Last Activity:** 2026-04-05
+**Last Activity Description:** Drafted complete PRD paper (11 pages, 6 sections, 21 references). All sections written: Introduction, Method (12 eqs), Results (4 eqs, 4 figure placeholders), Discussion, Conclusions, Appendix A. 25 RESULT PENDING markers await production run.
 
-**Progress:** [██████████] 100%
+**Progress:** [███░░░░░░░] 33% (Phase 26/28)
 
 ## Active Calculations
 
@@ -82,6 +82,7 @@ None.
 
 ## Session Continuity
 
-**Last session:** 2026-04-04
-**Stopped at:** Phase 25 complete — likelihood correction delivered, ready for posterior evaluation
-**Resume file:** .gpd/phases/25-likelihood-correction/25-VERIFICATION.md
+**Last session:** 2026-04-05
+**Stopped at:** Phase 26 (Paper Draft) complete. PRD paper in paper/main.tex builds to 11-page PDF. Next: Phase 27 (production run + figures).
+**Resume file:** paper/main.tex
+**Pending cluster action:** Read posteriors from /pfs/work9/workspace/scratch/st_ac147838-emri/run_20260401_seed200/simulations/posteriors/ (job 3862106, tasks 2,5,8 = h=0.652,0.730,0.808). Compare corrected posterior MAP to pre-correction baseline (h=0.66) — expect shift toward h=0.73. Then replace \pending{} markers in paper/sections/results.tex and paper/sections/conclusions.tex.

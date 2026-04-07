@@ -2,32 +2,33 @@
   "project_reference": {
     "project_md_updated": "2026-04-01",
     "core_research_question": "What is the Hubble constant H0 as measured by dark siren inference from LISA EMRI detections?",
-    "current_focus": "v1.2.2 complete -- planning next milestone"
+    "current_focus": "v2.0 Paper -- Phase 26 (draft) complete, Phase 27 (production run) next"
   },
   "project_contract": null,
   "position": {
-    "current_phase": "--",
-    "current_phase_name": "--",
-    "total_phases": null,
+    "current_phase": "27",
+    "current_phase_name": "Production Run & Figures",
+    "total_phases": 3,
     "current_plan": null,
     "total_plans_in_phase": null,
-    "status": "Between milestones",
-    "last_activity": "2026-04-01",
-    "last_activity_desc": "v1.2.2 milestone archived (Injection Campaign Physics Analysis)",
-    "progress_percent": 100,
+    "status": "Phase 26 complete, Phase 27 not started",
+    "last_activity": "2026-04-05",
+    "last_activity_desc": "Phase 26 (Paper Draft) complete \u2014 11-page PRD paper drafted with all sections, 25 RESULT PENDING markers",
+    "progress_percent": 33,
     "paused_at": null
   },
   "active_calculations": [],
   "intermediate_results": [
     "\"Without BH mass\" posterior peak: h=0.678 (P_det=1 baseline)",
-    "\"With BH mass\" posterior peak: h=0.600 (P_det=1 baseline, post-fix, still biased)",
+    "\"With BH mass\" posterior peak: h=0.652 (P_det=1 baseline, post-all-fixes, still biased)",
     "Detection yield: 0.22-0.81% per h at SNR>=15 (v1.2.2)",
     "IS estimator VRF: 11.8-24.9x in boundary bins (v1.2.2)",
     "Validation: VALD-01 + VALD-02 PASS (v1.2.2)"
   ],
   "open_questions": [
-    "[v1.2.1] What causes the remaining \"with BH mass\" low-h bias after /(1+z) fix? -- Phase 16 scope, blocked on P_det data",
-    "[v1.2.1] p_det in numerator uses detection.M rather than galaxy M*(1+z) at trial z -- known approximation"
+    "[v1.2.1] What causes the remaining \"with BH mass\" low-h bias after /(1+z) fix? -- Diagnosis in quick-2: Sources A (p_det mismatch) + F (zero-likelihood clustering) are primary candidates. Fix requires: (1) P_det=1 production run, (2) zero-likelihood logging, (3) Physics Change Protocol for Source A fix.",
+    "[v1.2.1] \"Without BH mass\" h=0.86 overshoot with real P_det -- Diagnosis in quick-2: Source E (P_det normalization). Confirmed by P_det=1 cross-check (h=0.678). Action: P_det=1 production run.",
+    "[v1.2.1] p_det in numerator uses detection.M rather than galaxy M*(1+z) at trial z -- Source A in quick-2 analysis. Physics Change Protocol required before fix."
   ],
   "performance_metrics": {
     "rows": []
@@ -47,6 +48,16 @@
       "phase": null,
       "summary": "alpha=0.3 defensive mixture bounds max weight at 3.33",
       "rationale": null
+    },
+    {
+      "phase": "quick-2",
+      "summary": "Quick task 2: analyze evolution of residual bias across milestones: what bias sources were eliminated and what remains to be investigated",
+      "rationale": "Ad-hoc task completed outside planned phases"
+    },
+    {
+      "phase": "quick-3",
+      "summary": "Quick task 3: Literature research on galaxy catalog completeness correction for dark siren likelihood",
+      "rationale": "Root cause of H0 bias identified as GLADE incompleteness; research produced implementation specification based on Gray et al. (2020) framework"
     }
   ],
   "approximations": [],
@@ -74,14 +85,15 @@
   "propagated_uncertainties": [],
   "pending_todos": [],
   "blockers": [
-    "**\"With BH mass\" posterior still biased low** -- Phase 16 blocked on P_det data",
-    "p_det in numerator uses detection.M (known approximation, Phase 15)"
+    "**\"With BH mass\" posterior still biased low** -- Dominant mechanisms: Source A (p_det(M_det) mismatch) + Source F (21% zero-likelihood events, h-bin-correlated). Phase 16 blocked until diagnosis confirmed via P_det=1 production run and zero-likelihood logging.",
+    "**\"Without BH mass\" h=0.86 overshoot with real P_det** -- Source E (P_det normalization). Fix path: P_det=1 production run to confirm, then investigate IS estimator h-dependent coverage at high d_L.",
+    "p_det in numerator uses detection.M (Source A, Physics Change Protocol required for fix)"
   ],
   "session": {
-    "last_date": "2026-04-01",
-    "stopped_at": "v1.2.2 milestone completed and archived",
-    "resume_file": "--"
+    "last_date": "2026-04-05",
+    "stopped_at": "Phase 26 (Paper Draft) complete. PRD paper builds to 11 pages. Next: Phase 27 (production run + figures).",
+    "resume_file": "paper/main.tex"
   },
   "_version": 1,
-  "_synced_at": "2026-04-02T18:42:47.091377+00:00"
+  "_synced_at": "2026-04-04T12:32:10.829922+00:00"
 }
