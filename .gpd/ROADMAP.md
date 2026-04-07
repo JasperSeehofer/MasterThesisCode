@@ -78,9 +78,16 @@ Plans:
 
 ### Phase 27: Production Run & Figures
 
-**Goal:** Run completeness-corrected evaluation on cluster, replace all RESULT PENDING placeholders with final numbers, generate publication figures
-**Status:** Not started (blocked on cluster filesystem recovery)
+**Goal:** Extract numerical results from existing completeness-corrected cluster data, generate publication figures, fill all 25 \pending{} and 4 \todo{} markers in the paper
+**Status:** Planned (4 plans)
 **Depends on:** Phase 25 (completeness code), Phase 26 (paper structure)
+**Plans:** 4 plans
+
+Plans:
+- [ ] 27-01-PLAN.md -- Fix pipeline bugs (directory name, corrupted JSON) and validate data integrity
+- [ ] 27-02-PLAN.md -- Extract MAP, CI, precision, bias; generate posterior comparison and single-event figures
+- [ ] 27-03-PLAN.md -- Generate convergence and SNR distribution figures
+- [ ] 27-04-PLAN.md -- Fill all \pending{} markers and include figures in paper LaTeX
 
 ### Phase 28: Review & Submission
 
