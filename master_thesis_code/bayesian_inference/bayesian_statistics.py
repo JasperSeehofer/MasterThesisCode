@@ -358,14 +358,29 @@ class BayesianStatistics:
         _LOGGER.debug(f"Using {num_workers} worker(s) for multiprocessing pool.")
 
         _t0 = time.perf_counter()
-        # forkserver: pre-forks a server that has already imported all modules.
-        # Workers fork from the server (inheriting imports via COW), avoiding
-        # 126× Python startup + scipy/numpy import on the shared filesystem.
-        # Safe with BLAS because the server only imports — no computation before fork.
+        # forkserver with module preloading: the server imports heavy modules
+        # once, then workers inherit them via copy-on-write — eliminates 126×
+        # Python startup + module import on the shared cluster filesystem.
         # Fallback: if forkserver is unavailable, use spawn (always safe).
-        _mp_context = "forkserver" if "forkserver" in mp.get_all_start_methods() else "spawn"
-        _LOGGER.info("Multiprocessing context: %s", _mp_context)
-        with mp.get_context(_mp_context).Pool(
+        _ctx: mp.context.BaseContext
+        if "forkserver" in mp.get_all_start_methods():
+            _fs_ctx = mp.get_context("forkserver")
+            _fs_ctx.set_forkserver_preload(
+                [
+                    "numpy",
+                    "scipy.interpolate",
+                    "scipy.integrate",
+                    "scipy.stats",
+                    "pandas",
+                    "master_thesis_code.bayesian_inference.simulation_detection_probability",
+                    "master_thesis_code.physical_relations",
+                ]
+            )
+            _ctx = _fs_ctx
+        else:
+            _ctx = mp.get_context("spawn")
+        _LOGGER.info("Multiprocessing context: %s", _ctx.get_start_method())
+        with _ctx.Pool(
             num_workers,
             initializer=child_process_init,
             initargs=(
