@@ -1,13 +1,17 @@
 """Paper figures for the EMRI dark siren H0 inference results.
 
-Two publication-quality figures:
+Publication-quality figures:
 
 1. **H0 posterior comparison** -- combined posteriors for the two analysis
    variants (without / with BH mass channel) on a single axes.
 2. **Single-event likelihoods** -- 4 representative events showing how the
    BH mass channel narrows the per-event likelihood.
+3. **Posterior convergence** -- CI width vs number of events with
+   N^{-1/2} reference line (without-BH-mass channel only).
+4. **SNR distribution** -- histogram and scatter of detected-event SNR
+   (requires CRB CSV data from cluster).
 
-Both functions follow the project plotting convention: data in,
+All functions follow the project plotting convention: data in,
 ``(Figure, Axes)`` out.
 """
 
@@ -24,7 +28,7 @@ import numpy.typing as npt
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 
-from master_thesis_code.plotting._colors import CYCLE, TRUTH
+from master_thesis_code.plotting._colors import CYCLE, EDGE, MEAN, REFERENCE, TRUTH
 from master_thesis_code.plotting._helpers import get_figure, save_figure
 from master_thesis_code.plotting._style import apply_style
 
@@ -365,12 +369,324 @@ def plot_single_event_likelihoods(
 
 
 # ---------------------------------------------------------------------------
+# Figure 3: Posterior convergence (without-BH-mass only)
+# ---------------------------------------------------------------------------
+
+# Subset sizes for convergence study.  Chosen to span one-and-a-half
+# decades on a log scale with good coverage at both ends.
+_CONVERGENCE_SUBSET_SIZES: list[int] = [10, 20, 50, 100, 150, 200, 300, 400, 500]
+_CONVERGENCE_N_SUBSETS: int = 50
+
+
+def _ci_width_from_log_posteriors(
+    h_values: npt.NDArray[np.float64],
+    log_posteriors: npt.NDArray[np.float64],
+) -> float:
+    """Compute 68% credible interval width from log-posterior samples.
+
+    Parameters
+    ----------
+    h_values:
+        Sorted 1-D array of h grid points (length G).
+    log_posteriors:
+        1-D array of log-posterior values on the same grid (length G).
+
+    Returns
+    -------
+    Width of the symmetric 68% CI (h_84 - h_16) via CDF interpolation.
+    """
+    # Shift for numerical stability, exponentiate, normalise
+    log_p = log_posteriors - np.max(log_posteriors)
+    p = np.exp(log_p)
+    norm = np.trapezoid(p, h_values)
+    if norm <= 0:
+        return np.nan
+    pn = p / norm
+
+    # Build CDF by cumulative trapezoid integration
+    cdf = np.zeros(len(h_values))
+    for i in range(1, len(h_values)):
+        cdf[i] = cdf[i - 1] + np.trapezoid(pn[i - 1 : i + 1], h_values[i - 1 : i + 1])
+    cdf /= cdf[-1]
+
+    # Interpolate to find 16th and 84th percentile h values
+    h_fine = np.linspace(h_values[0], h_values[-1], 2000)
+    cdf_fine = np.interp(h_fine, h_values, cdf)
+    idx16 = np.searchsorted(cdf_fine, 0.16)
+    idx84 = np.searchsorted(cdf_fine, 0.84)
+    if idx16 >= len(h_fine) or idx84 >= len(h_fine):
+        return np.nan
+    return float(h_fine[idx84] - h_fine[idx16])
+
+
+def plot_posterior_convergence(
+    data_dir: Path = _DATA_ROOT,
+    *,
+    subset_sizes: list[int] | None = None,
+    n_subsets: int = _CONVERGENCE_N_SUBSETS,
+    seed: int = 20260407,
+) -> tuple[Figure, Axes]:
+    """Plot 68% CI width vs number of events for the without-BH-mass channel.
+
+    Demonstrates the expected N^{-1/2} narrowing of the posterior as more
+    independent EMRI events are combined.
+
+    The with-BH-mass channel is intentionally omitted: its per-event
+    posteriors collapse to a delta function on the coarse h-grid, making
+    CI-width vs N scientifically meaningless.
+
+    Parameters
+    ----------
+    data_dir:
+        Root directory containing ``posteriors/`` subdirectory with
+        per-event JSON files.
+    subset_sizes:
+        List of event counts to probe.  Defaults to
+        ``[10, 20, 50, 100, 150, 200, 300, 400, 500]``.
+    n_subsets:
+        Number of random subsets drawn at each size (default 50).
+    seed:
+        Random seed for reproducibility.
+
+    Returns
+    -------
+    (fig, ax) following the project factory convention.
+    """
+    if subset_sizes is None:
+        subset_sizes = list(_CONVERGENCE_SUBSET_SIZES)
+
+    # Load all per-event posteriors (without BH mass, 23-point h-grid)
+    h_values, events = _load_per_event_no_mass(data_dir / "posteriors")
+    n_h = len(h_values)
+
+    # Build event-posterior matrix: (n_events, n_h)
+    event_ids = sorted(events.keys(), key=int)
+    # Filter out zero-posterior events (4 missing indices)
+    valid_ids = [eid for eid in event_ids if np.max(events[eid]) > 0]
+    n_events_total = len(valid_ids)
+
+    event_matrix = np.empty((n_events_total, n_h))
+    for i, eid in enumerate(valid_ids):
+        event_matrix[i, :] = events[eid]
+
+    # Pre-compute log-posteriors (clip zeros to avoid log(0))
+    log_event_matrix = np.log(np.clip(event_matrix, 1e-300, None))
+
+    rng = np.random.default_rng(seed)
+
+    # For each subset size, draw n_subsets random subsets and compute CI width
+    medians: list[float] = []
+    lo_pctiles: list[float] = []
+    hi_pctiles: list[float] = []
+    used_sizes: list[int] = []
+
+    for n_sub in subset_sizes:
+        if n_sub > n_events_total:
+            continue
+        used_sizes.append(n_sub)
+        widths: list[float] = []
+        for _ in range(n_subsets):
+            idx = rng.choice(n_events_total, size=n_sub, replace=False)
+            log_combined = np.sum(log_event_matrix[idx, :], axis=0)
+            w = _ci_width_from_log_posteriors(h_values, log_combined)
+            if not np.isnan(w):
+                widths.append(w)
+
+        if widths:
+            medians.append(float(np.median(widths)))
+            lo_pctiles.append(float(np.percentile(widths, 16)))
+            hi_pctiles.append(float(np.percentile(widths, 84)))
+        else:
+            medians.append(np.nan)
+            lo_pctiles.append(np.nan)
+            hi_pctiles.append(np.nan)
+
+    x = np.array(used_sizes, dtype=float)
+    y_med = np.array(medians)
+    y_lo = np.array(lo_pctiles)
+    y_hi = np.array(hi_pctiles)
+
+    # -- Plot --
+    fig, ax = get_figure(preset="single")
+
+    ax.errorbar(
+        x,
+        y_med,
+        yerr=[y_med - y_lo, y_hi - y_med],
+        fmt="o",
+        color=CYCLE[0],
+        markersize=4,
+        capsize=3,
+        linewidth=1.0,
+        label=r"Without $M_z$",
+        zorder=3,
+    )
+
+    # N^{-1/2} reference line anchored to the largest N median
+    if len(used_sizes) > 0 and not np.isnan(y_med[-1]):
+        n_ref = x[-1]
+        y_ref = y_med[-1]
+        x_line = np.logspace(np.log10(x[0] * 0.8), np.log10(x[-1] * 1.2), 100)
+        y_line = y_ref * np.sqrt(n_ref / x_line)
+        ax.plot(
+            x_line,
+            y_line,
+            "--",
+            color=REFERENCE,
+            linewidth=1.0,
+            label=r"$\propto N_\mathrm{det}^{-1/2}$",
+            zorder=2,
+        )
+
+    ax.set_xscale("log")
+    ax.set_yscale("log")
+    ax.set_xlabel(r"Number of events $N_\mathrm{det}$")
+    ax.set_ylabel(r"$1\sigma$ width of $h$ posterior")
+    ax.legend(loc="upper right", fontsize=9)
+
+    return fig, ax
+
+
+# ---------------------------------------------------------------------------
+# Figure 4: SNR distribution
+# ---------------------------------------------------------------------------
+
+
+def plot_snr_distribution(
+    data_dir: Path = _DATA_ROOT,
+    snr_threshold: float = 15.0,
+) -> tuple[Figure, Any]:
+    """Plot SNR distribution of detected EMRI events.
+
+    If CRB CSV data is available in *data_dir*, creates a two-panel figure:
+    left = SNR histogram, right = SNR vs luminosity distance scatter.
+    Otherwise creates a placeholder documenting what data is needed.
+
+    Parameters
+    ----------
+    data_dir:
+        Root directory to search for CRB CSV files.
+    snr_threshold:
+        Detection threshold (vertical line on histogram).
+
+    Returns
+    -------
+    (fig, axes) following the project factory convention.
+    """
+    import glob
+
+    # Search for CRB CSV files
+    csv_patterns = [
+        str(data_dir / "**" / "crb*.csv"),
+        str(data_dir / "**" / "CRB*.csv"),
+        str(data_dir / "**" / "cramer_rao*.csv"),
+        str(data_dir / "*.csv"),
+    ]
+    csv_files: list[str] = []
+    for pat in csv_patterns:
+        csv_files.extend(glob.glob(pat, recursive=True))
+
+    if csv_files:
+        # ------ Data available path ------
+        import pandas as pd
+
+        frames = [pd.read_csv(f) for f in csv_files]
+        df = pd.concat(frames, ignore_index=True)
+
+        # Identify columns (case-insensitive)
+        col_map = {c.lower(): c for c in df.columns}
+        snr_col = col_map.get("snr", col_map.get("signal_to_noise_ratio"))
+        dl_col = col_map.get("d_l", col_map.get("luminosity_distance"))
+        z_col = col_map.get("z", col_map.get("redshift"))
+
+        if snr_col is None:
+            msg = f"No SNR column found in CRB CSV. Columns: {list(df.columns)}"
+            raise ValueError(msg)
+
+        snr = df[snr_col].to_numpy()
+        detected = snr >= snr_threshold
+
+        fig, axes = get_figure(nrows=1, ncols=2, preset="double")
+        ax_hist: Axes = axes[0]
+        ax_scat: Axes = axes[1]
+
+        # Left: SNR histogram
+        snr_det = snr[detected]
+        ax_hist.hist(snr_det, bins=30, color=CYCLE[0], edgecolor=EDGE, alpha=0.8)
+        ax_hist.axvline(snr_threshold, color=MEAN, linestyle="--", linewidth=1.2, label="Threshold")
+        ax_hist.set_xlabel("SNR")
+        ax_hist.set_ylabel("Number of events")
+        ax_hist.legend(fontsize=8)
+
+        # Right: SNR vs d_L scatter
+        if dl_col is not None:
+            d_l = df[dl_col].to_numpy()
+            if z_col is not None:
+                z = df[z_col].to_numpy()
+                sc = ax_scat.scatter(
+                    d_l[detected],
+                    snr_det,
+                    c=z[detected],
+                    cmap="viridis",
+                    s=8,
+                    alpha=0.6,
+                )
+                fig.colorbar(sc, ax=ax_scat, label=r"Redshift $z$")
+            else:
+                ax_scat.scatter(d_l[detected], snr_det, color=CYCLE[0], s=8, alpha=0.6)
+            ax_scat.axhline(snr_threshold, color=MEAN, linestyle="--", linewidth=1.0, alpha=0.7)
+            ax_scat.set_xlabel(r"$d_L$ [Gpc]")
+            ax_scat.set_ylabel("SNR")
+        else:
+            ax_scat.text(
+                0.5,
+                0.5,
+                r"$d_L$ column not found",
+                transform=ax_scat.transAxes,
+                ha="center",
+                va="center",
+                fontsize=10,
+            )
+
+        return fig, axes
+
+    # ------ Placeholder path (no CRB data locally) ------
+    fig, ax = get_figure(preset="single")
+    ax.text(
+        0.5,
+        0.55,
+        "SNR distribution data not available locally",
+        transform=ax.transAxes,
+        ha="center",
+        va="center",
+        fontsize=10,
+        fontweight="bold",
+    )
+    ax.text(
+        0.5,
+        0.38,
+        "Copy CRB CSV files from the cluster to\n"
+        "cluster_results/eval_corrected_full/\n"
+        "and re-run this figure.",
+        transform=ax.transAxes,
+        ha="center",
+        va="center",
+        fontsize=8,
+        style="italic",
+    )
+    ax.set_xticks([])
+    ax.set_yticks([])
+
+    return fig, ax
+
+
+# ---------------------------------------------------------------------------
 # CLI entry point
 # ---------------------------------------------------------------------------
 
 
 def main() -> None:
-    """Generate both paper figures and save to ``paper/figures/``."""
+    """Generate all paper figures and save to ``paper/figures/``."""
     apply_style()
 
     out_dir = Path("paper/figures")
@@ -385,6 +701,16 @@ def main() -> None:
     fig2, _ = plot_single_event_likelihoods()
     save_figure(fig2, str(out_dir / "single_event_likelihoods"))
     print(f"Saved {out_dir / 'single_event_likelihoods.pdf'}")
+
+    # Figure 3: Posterior convergence
+    fig3, _ = plot_posterior_convergence()
+    save_figure(fig3, str(out_dir / "posterior_convergence"))
+    print(f"Saved {out_dir / 'posterior_convergence.pdf'}")
+
+    # Figure 4: SNR distribution
+    fig4, _ = plot_snr_distribution()
+    save_figure(fig4, str(out_dir / "snr_distribution"))
+    print(f"Saved {out_dir / 'snr_distribution.pdf'}")
 
 
 if __name__ == "__main__":
