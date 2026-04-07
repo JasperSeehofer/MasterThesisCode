@@ -76,6 +76,12 @@ class Arguments:
         return val
 
     @property
+    def generate_interactive(self) -> str | None:
+        """Output directory for interactive Plotly figure generation. None means skip."""
+        val: str | None = self._parsed_arguments.generate_interactive
+        return val
+
+    @property
     def use_gpu(self) -> bool:
         """Whether to use GPU acceleration."""
         return bool(self._parsed_arguments.use_gpu)
@@ -207,6 +213,12 @@ def _parse_arguments(arguments: list[str]) -> argparse.Namespace:
         default="physics-floor",
         choices=["naive", "exclude", "per-event-floor", "physics-floor"],
         help="Zero-handling strategy for posterior combination. Default: physics-floor (falls back to exclude until Phase 22).",
+    )
+    parser.add_argument(
+        "--generate_interactive",
+        help="Output directory for generating interactive Plotly HTML figures.",
+        type=str,
+        default=None,
     )
     parsed_arguments: argparse.Namespace = parser.parse_args(arguments)
     return parsed_arguments

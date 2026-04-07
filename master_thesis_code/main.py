@@ -66,6 +66,9 @@ def main() -> None:
     if arguments.generate_figures is not None:
         generate_figures(arguments.generate_figures)
 
+    if arguments.generate_interactive is not None:
+        generate_interactive_figures(arguments.generate_interactive)
+
     if not _needs_model:
         end_time = time()
         _ROOT_LOGGER.debug(f"Finished in {end_time - start_time}s.")
@@ -966,6 +969,35 @@ def generate_figures(output_dir: str) -> None:
         skipped,
         failed,
     )
+
+
+def generate_interactive_figures(data_dir: str) -> None:
+    """Load saved simulation data and produce interactive Plotly HTML figures.
+
+    Called by ``--generate_interactive <dir>``.  Writes HTML files to
+    ``<data_dir>/interactive/`` and logs the paths of written files.
+
+    Parameters
+    ----------
+    data_dir:
+        Working directory containing CRB CSVs and posterior JSON subdirectories.
+        HTML output is written to ``<data_dir>/interactive/``.
+    """
+    from master_thesis_code.plotting.interactive import generate_all_interactive
+
+    output_dir = os.path.join(data_dir, "interactive")
+    _ROOT_LOGGER.info("Generating interactive figures to %s", output_dir)
+    written = generate_all_interactive(output_dir=output_dir, data_dir=data_dir)
+    if written:
+        _ROOT_LOGGER.info(
+            "Interactive figure generation complete: %d file(s) written", len(written)
+        )
+        for path in written:
+            _ROOT_LOGGER.info("  Written: %s", path)
+    else:
+        _ROOT_LOGGER.info(
+            "Interactive figure generation complete: no files written (data not found)"
+        )
 
 
 if __name__ == "__main__":

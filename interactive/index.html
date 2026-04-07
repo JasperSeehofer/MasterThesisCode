@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EMRI Dark Siren H0 -- Interactive Figures</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+
+    body {
+      font-family: Georgia, "Times New Roman", serif;
+      color: #1a1a1a;
+      background: #fafafa;
+      margin: 0;
+      padding: 2rem 1rem;
+    }
+
+    main {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      font-size: 1.75rem;
+      font-weight: normal;
+      border-bottom: 1px solid #ccc;
+      padding-bottom: 0.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .subtitle {
+      font-size: 0.95rem;
+      color: #555;
+      margin-bottom: 1.5rem;
+      font-style: italic;
+    }
+
+    p {
+      line-height: 1.7;
+      margin-bottom: 1.25rem;
+    }
+
+    .figure-list {
+      list-style: none;
+      padding: 0;
+      margin: 1.5rem 0;
+    }
+
+    .figure-list li {
+      border-left: 3px solid #0072B2;
+      margin-bottom: 1.25rem;
+      padding: 0.75rem 1rem;
+      background: #fff;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    }
+
+    .figure-list a {
+      font-size: 1.05rem;
+      color: #0072B2;
+      text-decoration: none;
+      font-weight: bold;
+    }
+
+    .figure-list a:hover {
+      text-decoration: underline;
+    }
+
+    .figure-list .description {
+      display: block;
+      margin-top: 0.35rem;
+      font-size: 0.9rem;
+      color: #444;
+      font-style: italic;
+    }
+
+    footer {
+      margin-top: 3rem;
+      padding-top: 1rem;
+      border-top: 1px solid #ddd;
+      font-size: 0.85rem;
+      color: #777;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>EMRI Dark Siren H&#8320; &mdash; Interactive Figures</h1>
+    <p class="subtitle">Jasper Seehofer &mdash; Master Thesis, Heidelberg University</p>
+
+    <p>
+      This page provides browser-explorable versions of key figures from the EMRI dark siren
+      H&#8320; inference pipeline. Each figure is fully interactive: hover over data points for
+      exact values, toggle legend entries to isolate traces, and zoom or pan to explore regions
+      of interest.
+    </p>
+
+    <ul class="figure-list">
+      <li>
+        <a href="combined_posterior.html">Combined H&#8320; Posterior</a>
+        <span class="description">
+          Joint posterior over the dimensionless Hubble parameter h from all detected EMRI events,
+          with 68% and 95% credible intervals and Planck / SH0ES reference bands.
+        </span>
+      </li>
+      <li>
+        <a href="sky_map.html">Sky Localization Map</a>
+        <span class="description">
+          Mollweide projection of detected EMRI event sky positions, colour-coded by
+          signal-to-noise ratio. Hover for per-event SNR, redshift, and luminosity distance.
+        </span>
+      </li>
+      <li>
+        <a href="fisher_ellipses.html">Fisher Matrix Error Ellipses</a>
+        <span class="description">
+          Cramer&ndash;Rao parameter uncertainty ellipses for selected pairs of EMRI parameters.
+          1&#963; and 2&#963; contours shown per event; zoom in to compare event-to-event spread.
+        </span>
+      </li>
+      <li>
+        <a href="h0_convergence.html">H&#8320; Posterior Convergence</a>
+        <span class="description">
+          Two-panel diagnostic: combined posterior sharpening as more events are included (left)
+          and credible-interval width vs event count with a 1/&#8730;N reference (right).
+        </span>
+      </li>
+    </ul>
+
+    <footer>
+      Figures generated from EMRI simulation data. Toggle legend entries,
+      hover for values, zoom and pan to explore.<br>
+      Source code: <a href="https://github.com/jasper-seehofer/MasterThesisCode">github.com/jasper-seehofer/MasterThesisCode</a>
+    </footer>
+  </main>
+</body>
+</html>

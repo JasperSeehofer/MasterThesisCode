@@ -101,6 +101,19 @@ jobs:
       pages: write
       id-token: write
     steps:
+      - uses: actions/checkout@v6
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+
+      - name: Set up Python
+        run: uv python install
+
+      - name: Install dependencies
+        run: uv sync --extra cpu --extra dev
+
       - name: Download docs artifact
         uses: actions/download-artifact@v8
         with:
@@ -112,6 +125,15 @@ jobs:
         with:
           name: integration-test-plots
           path: _site/test-plots/
+        continue-on-error: true
+
+      - name: Generate interactive figures
+        run: |
+          mkdir -p _site/interactive
+          cp interactive/index.html _site/interactive/
+          if [ -d cluster_results ]; then
+            uv run python -m master_thesis_code cluster_results --generate_interactive _site/interactive/ || true
+          fi
         continue-on-error: true
 
       - name: Upload Pages artifact
