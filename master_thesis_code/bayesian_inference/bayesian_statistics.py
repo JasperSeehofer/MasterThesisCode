@@ -358,7 +358,14 @@ class BayesianStatistics:
         _LOGGER.debug(f"Using {num_workers} worker(s) for multiprocessing pool.")
 
         _t0 = time.perf_counter()
-        with mp.get_context("spawn").Pool(
+        # forkserver: pre-forks a server that has already imported all modules.
+        # Workers fork from the server (inheriting imports via COW), avoiding
+        # 126× Python startup + scipy/numpy import on the shared filesystem.
+        # Safe with BLAS because the server only imports — no computation before fork.
+        # Fallback: if forkserver is unavailable, use spawn (always safe).
+        _mp_context = "forkserver" if "forkserver" in mp.get_all_start_methods() else "spawn"
+        _LOGGER.info("Multiprocessing context: %s", _mp_context)
+        with mp.get_context(_mp_context).Pool(
             num_workers,
             initializer=child_process_init,
             initargs=(

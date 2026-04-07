@@ -182,9 +182,22 @@ class SimulationDetectionProbability:
         ] = {}
 
     def __getstate__(self) -> dict[str, Any]:
-        """Exclude heavy DataFrame from pickle -- arrays are already extracted."""
+        """Exclude heavy data from pickle that workers don't need.
+
+        Workers only call detection_probability_*_interpolated() which uses the
+        pre-built RegularGridInterpolator from _grid_cache.  The raw injection
+        arrays (_z_arr, etc.) are only needed to build new grids via _rescale_snr,
+        which never happens in workers because the cache is pre-warmed for the
+        target h before pool spawn.
+        """
         state = self.__dict__.copy()
-        state["_pooled_df"] = None  # ~25-50 MB per worker saved
+        state["_pooled_df"] = None
+        # Raw injection arrays (~18.5 MB) — not needed when grid is pre-warmed
+        state["_z_arr"] = None
+        state["_M_arr"] = None
+        state["_snr_raw"] = None
+        state["_h_inj_arr"] = None
+        state["_dl_raw"] = None
         return state
 
     def __setstate__(self, state: dict[str, Any]) -> None:
