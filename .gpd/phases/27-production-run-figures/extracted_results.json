@@ -1,0 +1,67 @@
+{
+  "without_bh_mass": {
+    "map_h": 0.66,
+    "median_h": 0.6611611611611612,
+    "ci_68": [
+      0.6468468468468468,
+      0.6746946946946947
+    ],
+    "ci_95": [
+      0.6411211211211211,
+      0.6806806806806807
+    ],
+    "sigma_h": 0.013923923923923942,
+    "precision_pct": 2.109685443018779,
+    "bias_pct": -9.589041095890405,
+    "n_events_total": 534,
+    "n_events_used": 531,
+    "n_events_excluded": 3,
+    "n_events_empty": 4,
+    "strategy": "physics-floor",
+    "ci_grid_limited": true,
+    "n_bins_above_1pct_peak": 2,
+    "ci_note": "upper bound limited by h-grid resolution (0.01 spacing)"
+  },
+  "with_bh_mass": {
+    "map_h": 0.68,
+    "median_h": 0.6801601601601601,
+    "ci_68": [
+      0.6666266266266266,
+      0.6936936936936937
+    ],
+    "ci_95": [
+      0.6611611611611612,
+      0.6991591591591592
+    ],
+    "sigma_h": 0.013533533533533537,
+    "precision_pct": 1.9902255196372847,
+    "bias_pct": -6.849315068493142,
+    "n_events_total": 534,
+    "n_events_used": 527,
+    "n_events_excluded": 7,
+    "n_events_empty": 6,
+    "strategy": "physics-floor",
+    "ci_grid_limited": true,
+    "n_bins_above_1pct_peak": 1,
+    "ci_note": "upper bound limited by h-grid resolution (0.01 spacing)"
+  },
+  "h_true": 0.73,
+  "thesis_baseline": {
+    "without_mass": {
+      "map": 0.712,
+      "sigma": 0.028,
+      "precision_pct": 3.9
+    },
+    "with_mass": {
+      "map": 0.742,
+      "sigma": 0.013,
+      "precision_pct": 1.8
+    }
+  },
+  "notes": {
+    "grid": "15-point regular grid from h=0.60 to h=0.86, spacing 0.02",
+    "normalization": "peak-normalized posteriors from completeness-corrected production run",
+    "grid_limitation": "Both posteriors are grid-limited (probability concentrated in 1-2 bins). CIs are upper bounds.",
+    "precision_comparison": "NOT meaningful when both variants are grid-limited. Both precisions are upper bounds."
+  }
+}
