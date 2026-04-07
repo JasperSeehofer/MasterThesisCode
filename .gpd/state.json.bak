@@ -84,6 +84,11 @@
       "phase": "quick-5",
       "summary": "Quick task 5: SNR rescaling refactor",
       "rationale": "literature confirms single-h injection is standard (Gray+2020, Laghi+2021, Finke+2021); SimulationDetectionProbability refactored to pool all injection data and compute P_det via exact SNR~1/d_L rescaling \u2014 Eliminates interpolation artifacts, pools 463k injection events, enables exact P_det at any h"
+    },
+    {
+      "phase": "0",
+      "summary": "Started milestone v2.1: Publication Figures",
+      "rationale": "New milestone cycle \u2014 unify visualization, modern style, galaxy-level plots, interactive figures"
     }
   ],
   "approximations": [],
@@ -121,5 +126,5 @@
     "resume_file": ".gpd/phases/27-production-run-figures/extracted_results.json"
   },
   "_version": 1,
-  "_synced_at": "2026-04-07T12:12:59.462543+00:00"
+  "_synced_at": "2026-04-07T13:44:02.526258+00:00"
 }
