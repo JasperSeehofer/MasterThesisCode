@@ -89,12 +89,17 @@ def main() -> None:
     if arguments.combine:
         from master_thesis_code.bayesian_inference.posterior_combination import combine_posteriors
 
-        posteriors_dir = os.path.join(arguments.working_directory, "posteriors")
-        combine_posteriors(
-            posteriors_dir=posteriors_dir,
-            strategy=arguments.strategy,
-            output_dir=arguments.working_directory,
-        )
+        for variant_dir in ["posteriors", "posteriors_with_bh_mass"]:
+            posteriors_dir = os.path.join(arguments.working_directory, variant_dir)
+            if os.path.isdir(posteriors_dir):
+                _ROOT_LOGGER.info(f"Combining posteriors from {posteriors_dir}")
+                combine_posteriors(
+                    posteriors_dir=posteriors_dir,
+                    strategy=arguments.strategy,
+                    output_dir=os.path.join(arguments.working_directory, variant_dir),
+                )
+            else:
+                _ROOT_LOGGER.warning(f"Posteriors directory not found: {posteriors_dir}")
 
     end_time = time()
     _ROOT_LOGGER.debug(f"Finished in {end_time - start_time}s.")

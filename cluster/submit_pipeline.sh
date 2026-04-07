@@ -114,6 +114,14 @@ EVAL_JOB=$(sbatch --parsable \
     --export=ALL,RUN_DIR="$RUN_DIR" \
     "$CLUSTER_DIR/evaluate.sbatch")
 
+# 4. Combine posteriors (CPU, after all evaluate tasks finish)
+COMBINE_JOB=$(sbatch --parsable \
+    --dependency="afterok:$EVAL_JOB" \
+    --output="$RUN_DIR/logs/combine_%j.out" \
+    --error="$RUN_DIR/logs/combine_%j.err" \
+    --export=ALL,RUN_DIR="$RUN_DIR" \
+    "$CLUSTER_DIR/combine.sbatch")
+
 # ---------------------------------------------------------------------------
 # Summary
 # ---------------------------------------------------------------------------
@@ -123,5 +131,6 @@ echo "  Run directory: $RUN_DIR"
 echo "  Simulate:  $SIM_JOB (array 0-$((TASKS - 1)))"
 echo "  Merge:     $MERGE_JOB (after simulate)"
 echo "  Evaluate:  $EVAL_JOB (array 0-10, h sweep 0.6–0.86)"
+echo "  Combine:   $COMBINE_JOB (after evaluate)"
 echo ""
-echo "Monitor: sacct -j $SIM_JOB,$MERGE_JOB,$EVAL_JOB"
+echo "Monitor: sacct -j $SIM_JOB,$MERGE_JOB,$EVAL_JOB,$COMBINE_JOB"

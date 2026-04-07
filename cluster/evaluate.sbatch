@@ -56,6 +56,64 @@ if [[ -z "${RUN_DIR:-}" ]]; then
 fi
 
 # ---------------------------------------------------------------------------
+# Archive old posteriors (task 0 only — runs before other tasks start writing)
+# ---------------------------------------------------------------------------
+
+if [[ "$SLURM_ARRAY_TASK_ID" -eq 0 ]]; then
+    POSTERIORS_DIR="$RUN_DIR/simulations/posteriors"
+    POSTERIORS_BH_DIR="$RUN_DIR/simulations/posteriors_with_bh_mass"
+    ARCHIVE_BASE="$RUN_DIR/simulations/archive"
+
+    _has_old_files() {
+        local dir="$1"
+        [[ -d "$dir" ]] && compgen -G "$dir/h_*.json" > /dev/null 2>&1
+    }
+
+    if _has_old_files "$POSTERIORS_DIR" || _has_old_files "$POSTERIORS_BH_DIR"; then
+        TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+        ARCHIVE_DIR="$ARCHIVE_BASE/eval_${TIMESTAMP}"
+        mkdir -p "$ARCHIVE_DIR"
+
+        # Save metadata for traceability
+        cat > "$ARCHIVE_DIR/archive_metadata.json" <<METAEOF
+{
+  "archived_at": "$(date -Iseconds)",
+  "archived_by_job": "$SLURM_JOB_ID",
+  "git_commit": "$(cd "$PROJECT_ROOT" && git rev-parse HEAD 2>/dev/null || echo unknown)",
+  "git_branch": "$(cd "$PROJECT_ROOT" && git rev-parse --abbrev-ref HEAD 2>/dev/null || echo unknown)",
+  "reason": "Pre-evaluation cleanup: archiving old posteriors before new evaluation run",
+  "h_grid": "$(echo "${H_VALUES[@]}")",
+  "source_run_dir": "$RUN_DIR"
+}
+METAEOF
+
+        # Move old posteriors to archive
+        if _has_old_files "$POSTERIORS_DIR"; then
+            mkdir -p "$ARCHIVE_DIR/posteriors"
+            mv "$POSTERIORS_DIR"/h_*.json "$ARCHIVE_DIR/posteriors/" 2>/dev/null || true
+            mv "$POSTERIORS_DIR"/combined_posterior.json "$ARCHIVE_DIR/posteriors/" 2>/dev/null || true
+            mv "$POSTERIORS_DIR"/diagnostic_report.md "$ARCHIVE_DIR/posteriors/" 2>/dev/null || true
+            mv "$POSTERIORS_DIR"/comparison_table.md "$ARCHIVE_DIR/posteriors/" 2>/dev/null || true
+            echo "Archived old posteriors/ to $ARCHIVE_DIR/posteriors/"
+        fi
+
+        if _has_old_files "$POSTERIORS_BH_DIR"; then
+            mkdir -p "$ARCHIVE_DIR/posteriors_with_bh_mass"
+            mv "$POSTERIORS_BH_DIR"/h_*.json "$ARCHIVE_DIR/posteriors_with_bh_mass/" 2>/dev/null || true
+            mv "$POSTERIORS_BH_DIR"/combined_posterior.json "$ARCHIVE_DIR/posteriors_with_bh_mass/" 2>/dev/null || true
+            mv "$POSTERIORS_BH_DIR"/diagnostic_report.md "$ARCHIVE_DIR/posteriors_with_bh_mass/" 2>/dev/null || true
+            mv "$POSTERIORS_BH_DIR"/comparison_table.md "$ARCHIVE_DIR/posteriors_with_bh_mass/" 2>/dev/null || true
+            echo "Archived old posteriors_with_bh_mass/ to $ARCHIVE_DIR/posteriors_with_bh_mass/"
+        fi
+    else
+        echo "No old posteriors to archive."
+    fi
+fi
+
+# Brief pause so task 0 archive completes before other tasks start writing
+sleep 3
+
+# ---------------------------------------------------------------------------
 # Run Bayesian inference
 # ---------------------------------------------------------------------------
 
