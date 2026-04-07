@@ -605,12 +605,19 @@ def generate_all_interactive(output_dir: str, data_dir: str) -> list[str]:
     # Data loading helpers
     # ------------------------------------------------------------------
 
+    # Search both data_dir/ and data_dir/simulations/ for data files
+    _search_dirs = [Path(data_dir)]
+    _sim_dir = Path(data_dir) / "simulations"
+    if _sim_dir.is_dir():
+        _search_dirs.insert(0, _sim_dir)
+
     def _load_crb_data() -> pd.DataFrame | None:
-        csv_files = sorted(glob.glob(os.path.join(data_dir, "cramer_rao_bounds_*.csv")))
-        if not csv_files:
-            return None
-        frames = [pd.read_csv(f) for f in csv_files]
-        return pd.concat(frames, ignore_index=True)
+        for search in _search_dirs:
+            csv_files = sorted(glob.glob(str(search / "*cramer_rao_bounds*.csv")))
+            if csv_files:
+                frames = [pd.read_csv(f) for f in csv_files]
+                return pd.concat(frames, ignore_index=True)
+        return None
 
     def _load_posteriors(
         subdir: str,
@@ -619,7 +626,14 @@ def generate_all_interactive(output_dir: str, data_dir: str) -> list[str]:
             load_posterior_jsons,
         )
 
-        posteriors_dir = Path(data_dir) / subdir
+        posteriors_dir: Path | None = None
+        for search in _search_dirs:
+            candidate = search / subdir
+            if candidate.is_dir():
+                posteriors_dir = candidate
+                break
+        if posteriors_dir is None:
+            return None
         if not posteriors_dir.is_dir():
             return None
         try:
