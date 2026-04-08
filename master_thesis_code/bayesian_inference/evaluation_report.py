@@ -58,7 +58,9 @@ class BaselineSnapshot:
     h_values: list[float] = field(default_factory=list)
     log_posteriors: list[float] = field(default_factory=list)
     per_event_summaries: list[dict[str, float]] = field(default_factory=list)
-    created_at: str = field(default_factory=lambda: datetime.datetime.now(datetime.UTC).isoformat() + "Z")
+    created_at: str = field(
+        default_factory=lambda: datetime.datetime.now(datetime.UTC).isoformat() + "Z"
+    )
     git_commit: str = field(default_factory=_get_git_commit_safe)
 
     def to_json(self) -> dict[str, object]:
@@ -91,18 +93,21 @@ class BaselineSnapshot:
         Returns:
             A new BaselineSnapshot instance.
         """
+        from typing import Any
+
+        d: dict[str, Any] = data
         return cls(
-            map_h=float(data["map_h"]),  # type: ignore[arg-type]
-            ci_lower=float(data["ci_lower"]),  # type: ignore[arg-type]
-            ci_upper=float(data["ci_upper"]),  # type: ignore[arg-type]
-            ci_width=float(data["ci_width"]),  # type: ignore[arg-type]
-            bias_percent=float(data["bias_percent"]),  # type: ignore[arg-type]
-            n_events=int(data["n_events"]),  # type: ignore[arg-type]
-            h_values=list(data.get("h_values", [])),  # type: ignore[arg-type]
-            log_posteriors=list(data.get("log_posteriors", [])),  # type: ignore[arg-type]
-            per_event_summaries=list(data.get("per_event_summaries", [])),  # type: ignore[arg-type]
-            created_at=str(data.get("created_at", "")),
-            git_commit=str(data.get("git_commit", "unknown")),
+            map_h=float(d["map_h"]),
+            ci_lower=float(d["ci_lower"]),
+            ci_upper=float(d["ci_upper"]),
+            ci_width=float(d["ci_width"]),
+            bias_percent=float(d["bias_percent"]),
+            n_events=int(d["n_events"]),
+            h_values=list(d.get("h_values", [])),
+            log_posteriors=list(d.get("log_posteriors", [])),
+            per_event_summaries=list(d.get("per_event_summaries", [])),
+            created_at=str(d.get("created_at", "")),
+            git_commit=str(d.get("git_commit", "unknown")),
         )
 
 
@@ -388,7 +393,9 @@ def generate_comparison_report(
         "",
         "```",
     ]
-    lines += _ascii_chart(baseline.h_values, baseline.log_posteriors, current.h_values, current.log_posteriors)
+    lines += _ascii_chart(
+        baseline.h_values, baseline.log_posteriors, current.h_values, current.log_posteriors
+    )
     lines += [
         "```",
         "",
