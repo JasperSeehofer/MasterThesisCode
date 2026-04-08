@@ -9,15 +9,15 @@ See: .gpd/PROJECT.md (updated 2026-04-07)
 
 ## Current Position
 
-**Current Phase:** TBD (v2.1 roadmap pending)
-**Current Phase Name:** Publication Figures — Defining Objectives
-**Current Plan:** —
+**Current Phase:** 32 (complete)
+**Current Phase Name:** Completion Term Fix
+**Current Plan:** 02 (complete)
 **Total Phases:** TBD (v2.0 Phases 26-28 remain; v2.1 phases to be added)
-**Status:** Defining objectives for v2.1 Publication Figures milestone
-**Last Activity:** 2026-04-07
-**Last Activity Description:** Started v2.1 milestone. Scope: unified figure manifest, publication-refined style, galaxy-level visualizations, interactive Plotly/Bokeh for GitHub Pages, Jupyter widgets. v2.0 Phase 27 (production run) in parallel on cluster.
+**Status:** Phase 32 complete. Full-volume D(h) denominator fix validated.
+**Last Activity:** 2026-04-08
+**Last Activity Description:** Phase 32 complete. Full-volume D(h) denominator for L_comp eliminates H0 posterior bias: MAP 0.60→0.73 (both channels), bias -17.8%→0.0% at 59 events (SNR≥20). Cluster production run pending for definitive validation at 531 events.
 
-**Progress:** [░░░░░░░░░░] 0% (v2.1 defining objectives)
+**Progress:** [██████████] 100% (Phase 32 complete)
 
 ## Active Calculations
 
@@ -36,6 +36,12 @@ None.
   - Both CIs grid-limited (15-pt h-grid, spacing 0.02)
   - Completeness correction worsened bias vs thesis baseline (0.712/0.742 → 0.66/0.68)
   - SNR_THRESHOLD = 15, convergence slope -0.71 (consistent with N^{-1/2})
+- **Post-completion-term-fix (Phase 32, local validation):**
+  - Without BH mass: MAP h=0.73, bias 0.0%, 59 events (SNR≥20)
+  - With BH mass: MAP h=0.73, bias 0.0%, 59 events (SNR≥20)
+  - Fix: full-volume D(h) denominator per Gray et al. (2020) Eq. A.19
+  - Bias-vs-N: monotonically decreasing, 0.0% at N=59
+  - Cluster production run needed for definitive 531-event comparison
 
 ## Open Questions
 
@@ -60,6 +66,7 @@ Key carry-forward decisions:
 - [Phase quick-4]: Quick task 4: Physics audit of PrepareDetections — sigma chain correct, independent sampling non-standard but defensible — Ad-hoc task completed outside planned phases
 - [Phase quick-5]: Quick task 5: SNR rescaling refactor — literature confirms single-h injection is standard (Gray+2020, Laghi+2021, Finke+2021); SimulationDetectionProbability refactored to pool all injection data and compute P_det via exact SNR~1/d_L rescaling — Eliminates interpolation artifacts, pools 463k injection events, enables exact P_det at any h
 - [Phase 0]: Started milestone v2.1: Publication Figures — New milestone cycle — unify visualization, modern style, galaxy-level plots, interactive figures
+- [Phase 32]: Completion term fix — Full-volume D(h) denominator per Gray et al. (2020) Eq. A.19 eliminates H0 posterior bias (MAP 0.60→0.73, bias -17.8%→0.0%). L_comp > 1 is physically expected (p_GW is a probability density).
 
 ### Active Approximations
 
@@ -91,9 +98,9 @@ None.
 
 ## Session Continuity
 
-**Last session:** 2026-04-07
-**Stopped at:** v2.1 Publication Figures milestone initialized. Roadmap created (Phases 29-33, GSD-tracked). Ready to plan Phase 29: Style Foundation.
-**v2.0 status:** Phase 27 Plans 01-03 complete. Plan 04 deferred. New evaluation run submitted on cluster (finer h-grid, more detections).
-**Resume file:** .gpd/phases/27-production-run-figures/extracted_results.json
-**Pending cluster action:** Await new evaluation run results (finer h-grid). Transfer CRB CSVs when complete.
+**Last session:** 2026-04-08
+**Stopped at:** Phase 32 (Completion Term Fix) complete. Full-volume D(h) denominator validated locally (MAP 0.60→0.73). Ready for cluster production run to confirm at 531 events.
+**v2.0 status:** Phase 27 Plans 01-03 complete. Plan 04 deferred. Phase 32 complete. New evaluation run submitted on cluster (finer h-grid, more detections).
+**Resume file:** .gpd/phases/32-completion-term-fix/validation/map_comparison.json
+**Pending cluster action:** Re-run evaluation with Phase 32 fix on cluster (531 events, SNR≥15) for definitive production comparison.
 **v2.1 routing:** Implementation phases tracked in GSD (`.planning/`), not GPD. GPD holds research survey + requirements only.

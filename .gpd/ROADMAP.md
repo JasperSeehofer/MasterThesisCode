@@ -98,10 +98,11 @@ Plans:
 ### Phase 32: Completion Term Fix
 
 **Goal:** Fix the systematic low-h bias in the H0 posterior caused by the completion term L_comp. Extend the L_comp denominator to the full detectable volume per Gray et al. (2020) Eq. A.19, precompute D(h) table, and validate that MAP shifts toward h=0.73 with bias shrinking as ~1/sqrt(N).
-**Status:** Planned (2 plans)
+**Status:** Complete (2026-04-08)
 **Depends on:** Phase 25 (completeness code), Phase 27 (production baseline)
-**Plans:** 2 plans
+**Plans:** 2/2 complete
+**Result:** Full-volume D(h) denominator eliminates H0 posterior bias: MAP 0.60→0.73 (both channels), bias -17.8%→0.0% at 59 events (SNR≥20). Validated locally; cluster production run pending.
 
 Plans:
-- [ ] 32-01-PLAN.md -- Implement D(h) full-volume denominator precomputation and fix L_comp
-- [ ] 32-02-PLAN.md -- Validate: MAP comparison, bias-vs-N convergence, per-event L_comp decomposition
+- [x] 32-01-PLAN.md -- Implement D(h) full-volume denominator precomputation and fix L_comp
+- [x] 32-02-PLAN.md -- Validate: MAP comparison, bias-vs-N convergence, per-event L_comp decomposition
