@@ -394,13 +394,14 @@ def test_save_baseline_cli_integration(tmp_path: Path) -> None:
 
     h_values = [0.69, 0.71, 0.73, 0.75, 0.77]
     _make_posteriors_dir(tmp_path, h_values, center=0.73)
+    sim_dir = tmp_path / "simulations"
 
-    _save_baseline(str(tmp_path))
+    _save_baseline(str(sim_dir))
 
     # The baseline is written to .planning/debug/ relative to project root
     # But for tests we need to verify it ran without error and returned a baseline
     # The function logs but also we can check by calling extract_baseline directly
-    posteriors_dir = tmp_path / "simulations" / "posteriors"
+    posteriors_dir = sim_dir / "posteriors"
     baseline = extract_baseline(posteriors_dir)
 
     assert abs(baseline.map_h - 0.73) < 0.02  # within grid spacing + tolerance
@@ -415,8 +416,8 @@ def test_compare_baseline_cli_integration(tmp_path: Path) -> None:
     # Create baseline from centered posteriors
     h_values = [0.69, 0.71, 0.73, 0.75, 0.77]
     baseline_dir = tmp_path / "baseline_run"
-    posteriors_dir_baseline = _make_posteriors_dir(baseline_dir, h_values, center=0.73)
-    baseline = extract_baseline(posteriors_dir_baseline)
+    _make_posteriors_dir(baseline_dir, h_values, center=0.73)
+    baseline = extract_baseline(baseline_dir / "simulations" / "posteriors")
     baseline_json_path = tmp_path / "baseline.json"
     baseline_json_path.write_text(json.dumps(baseline.to_json()))
 
@@ -424,7 +425,7 @@ def test_compare_baseline_cli_integration(tmp_path: Path) -> None:
     current_dir = tmp_path / "current_run"
     _make_posteriors_dir(current_dir, h_values, center=0.71)
 
-    _compare_baseline(str(current_dir), str(baseline_json_path))
+    _compare_baseline(str(current_dir / "simulations"), str(baseline_json_path))
 
     # Verify comparison files were written to .planning/debug/
     # (We test the function runs without error; files go to project root .planning/debug/)
@@ -447,4 +448,4 @@ def test_compare_baseline_standalone(tmp_path: Path) -> None:
     baseline_json_path.write_text(json.dumps(baseline.to_json()))
 
     # Should not raise even though --evaluate was not run
-    _compare_baseline(str(tmp_path), str(baseline_json_path))
+    _compare_baseline(str(tmp_path / "simulations"), str(baseline_json_path))
