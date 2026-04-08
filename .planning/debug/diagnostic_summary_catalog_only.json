@@ -1,0 +1,17 @@
+{
+  "n_rows": 59,
+  "n_events": 59,
+  "n_h_values": 1,
+  "mean_f_i": 1.0,
+  "median_f_i": 1.0,
+  "min_f_i": 1.0,
+  "max_f_i": 1.0,
+  "mean_L_comp": 0.0,
+  "median_L_comp": 0.0,
+  "mean_L_comp_fraction_of_combined": 0.0,
+  "frac_L_comp_pulls_low_h": 0.0,
+  "n_events_L_comp_pulls_low": 0,
+  "n_events_compared": 0,
+  "h_low_compared": null,
+  "h_high_compared": null
+}
