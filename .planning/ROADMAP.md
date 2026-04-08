@@ -119,7 +119,7 @@ See `.gpd/ROADMAP.md` for full details.
 ### v2.1 H0 Bias Resolution (GSD/GPD mixed, active)
 
 - [x] **Phase 30: Baseline & Evaluation Infrastructure** — Capture baseline posterior snapshot, build before/after comparison tooling (DIAG-03, EVAL-01, EVAL-02) — GSD (completed 2026-04-08)
-- [ ] **Phase 31: Catalog-Only Diagnostic** — Run f_i=1.0 evaluation to confirm L_comp is the primary bias source (DIAG-01, DIAG-02) — GSD
+- [x] **Phase 31: Catalog-Only Diagnostic** — Run f_i=1.0 evaluation to confirm L_comp is the primary bias source (DIAG-01, DIAG-02) — GSD (completed 2026-04-08)
 - [ ] **Phase 32: Completion Term Fix** — Replace dVc/dz source prior with EMRI rate-weighted prior, validate h-dependence (COMP-01, COMP-02) — GPD (physics)
 - [ ] **Phase 33: P_det Grid Resolution** — Increase grid from 30 to 60 d_L bins, validate coverage (PDET-01, PDET-02) — GSD
 - [ ] **Phase 34: Fisher Matrix Quality** — Replace allow_singular=True with regularization or exclusion, flag degenerates (FISH-01, FISH-02) — GSD
@@ -163,10 +163,10 @@ Plans:
   2. Per-event diagnostic log writes L_cat, L_comp, f_i, and combined log-likelihood at each h value to a CSV or JSONL file
   3. Catalog-only MAP h shifts measurably toward h=0.73 compared to baseline (bias reduced by at least 50% if L_comp is the cause)
   4. Before/after comparison report is produced automatically using the Phase 30 infrastructure
-**Plans:** 2 plans
+**Plans:** 2/2 plans complete
 Plans:
-- [ ] 31-01-PLAN.md — Add --catalog_only CLI flag, completion term bypass, and per-event diagnostic CSV
-- [ ] 31-02-PLAN.md — Diagnostic summary generator, comparison flow integration, end-to-end verification
+- [x] 31-01-PLAN.md — Add --catalog_only CLI flag, completion term bypass, and per-event diagnostic CSV
+- [x] 31-02-PLAN.md — Diagnostic summary generator, comparison flow integration, end-to-end verification
 
 ### Phase 32: Completion Term Fix
 **Goal**: Replace the dVc/dz source population prior in the completion term with an EMRI rate-weighted prior, so L_comp no longer introduces a systematic low-h preference
@@ -302,7 +302,7 @@ Plans:
 | 28. Review & Submission | v2.0 | 0/? | Paused (GPD) | - |
 | 29. Style Foundation | v2.1 PubFigs | 1/1 | Complete | 2026-04-07 |
 | 30. Baseline & Evaluation Infra | v2.1 BiasRes | 2/2 | Complete    | 2026-04-08 |
-| 31. Catalog-Only Diagnostic | v2.1 BiasRes | 0/2 | Not started | - |
+| 31. Catalog-Only Diagnostic | v2.1 BiasRes | 2/2 | Complete   | 2026-04-08 |
 | 32. Completion Term Fix | v2.1 BiasRes | 0/? | Not started (GPD) | - |
 | 33. P_det Grid Resolution | v2.1 BiasRes | 0/? | Not started | - |
 | 34. Fisher Matrix Quality | v2.1 BiasRes | 0/? | Not started | - |

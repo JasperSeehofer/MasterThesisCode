@@ -9,8 +9,8 @@ Systematically diagnose and fix the per-event H₀ posterior bias, testing each 
 
 ### Diagnostics
 
-- [ ] **DIAG-01**: Evaluation can run with f_i=1.0 (catalog-only, no completion term) via CLI flag to confirm L_comp as bias source
-- [ ] **DIAG-02**: Per-event diagnostic output logs L_cat, L_comp, f_i, and combined likelihood at each h value
+- [x] **DIAG-01**: Evaluation can run with f_i=1.0 (catalog-only, no completion term) via CLI flag to confirm L_comp as bias source
+- [x] **DIAG-02**: Per-event diagnostic output logs L_cat, L_comp, f_i, and combined likelihood at each h value
 - [ ] **DIAG-03**: Baseline posterior snapshot (current MAP h, 68% CI, bias %) saved before any fixes
 
 ### Completion Term
@@ -55,8 +55,8 @@ Systematically diagnose and fix the per-event H₀ posterior bias, testing each 
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| DIAG-01 | Phase 31 | Pending |
-| DIAG-02 | Phase 31 | Pending |
+| DIAG-01 | Phase 31 | Complete |
+| DIAG-02 | Phase 31 | Complete |
 | DIAG-03 | Phase 30 | Pending |
 | COMP-01 | Phase 32 | Pending |
 | COMP-02 | Phase 32 | Pending |
