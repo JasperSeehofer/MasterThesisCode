@@ -30,6 +30,43 @@ from master_thesis_code.plotting._colors import CYCLE, EDGE, MEAN, REFERENCE, TR
 from master_thesis_code.plotting._helpers import compute_credible_interval, get_figure
 
 # ---------------------------------------------------------------------------
+# KDE smoothing helper
+# ---------------------------------------------------------------------------
+
+
+def _kde_smooth_posterior(
+    h_values: npt.NDArray[np.float64],
+    posterior: npt.NDArray[np.float64],
+    n_fine: int = 500,
+) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
+    """Smooth posterior with Gaussian KDE (Scott's rule).
+
+    Parameters
+    ----------
+    h_values:
+        Sorted 1-D array of h grid points.
+    posterior:
+        Posterior density on the same grid (need not be normalized).
+    n_fine:
+        Number of points in the fine evaluation grid.
+
+    Returns
+    -------
+    h_fine, kde_fine : smoothed posterior on a fine grid.
+        Returns (h_values.copy(), posterior.copy()) if norm <= 0.
+    """
+    from scipy.stats import gaussian_kde
+
+    norm = posterior.sum()
+    if norm <= 0:
+        return h_values.copy(), posterior.copy()
+    weights = posterior / norm
+    kde = gaussian_kde(h_values, weights=weights, bw_method="scott")
+    h_fine = np.linspace(float(h_values[0]), float(h_values[-1]), n_fine)
+    kde_fine = kde(h_fine)
+    return h_fine, kde_fine
+
+# ---------------------------------------------------------------------------
 # Data loading helpers
 # ---------------------------------------------------------------------------
 
@@ -220,8 +257,9 @@ def plot_h0_posterior_comparison(
     ax.set_ylabel("Posterior (peak-normalized)")
     ax.set_xlim(0.59, 0.87)
     ax.set_ylim(-0.05, 1.15)
-    ax.legend(loc="upper right", fontsize=9)
+    ax.legend(loc="upper right")
 
+    fig.tight_layout()
     return fig, ax
 
 
@@ -332,7 +370,7 @@ def plot_single_event_likelihoods(
         ax_with.plot(h_with, lik_with_norm, "s-", color=CYCLE[3], markersize=2.5, linewidth=1.0)
 
         # Row label
-        ax_no.set_ylabel(f"{label}\n(event {eid})", fontsize=7)
+        ax_no.set_ylabel(f"{label}\n(event {eid})")
 
         # Truth lines
         ax_no.axvline(0.73, color=TRUTH, linestyle=":", linewidth=0.8, alpha=0.7)
@@ -345,14 +383,15 @@ def plot_single_event_likelihoods(
         ax_with.set_yticklabels([])
 
     # Column titles
-    axes[0, 0].set_title(r"Without $M_z$", fontsize=9)
-    axes[0, 1].set_title(r"With $M_z$", fontsize=9)
+    axes[0, 0].set_title(r"Without $M_z$")
+    axes[0, 1].set_title(r"With $M_z$")
 
     # Bottom row x-labels
-    axes[-1, 0].set_xlabel(r"$h$", fontsize=9)
-    axes[-1, 1].set_xlabel(r"$h$", fontsize=9)
+    axes[-1, 0].set_xlabel(r"$h$")
+    axes[-1, 1].set_xlabel(r"$h$")
 
     fig.align_ylabels(axes[:, 0])
+    fig.tight_layout(h_pad=0.3)
 
     return fig, axes
 
@@ -493,8 +532,10 @@ def plot_posterior_convergence(
     ax.set_yscale("log")
     ax.set_xlabel(r"Number of events $N_\mathrm{det}$")
     ax.set_ylabel(r"$1\sigma$ width of $h$ posterior")
-    ax.legend(loc="upper right", fontsize=9)
+    ax.minorticks_on()
+    ax.legend(loc="upper right")
 
+    fig.tight_layout()
     return fig, ax
 
 
@@ -567,7 +608,7 @@ def plot_snr_distribution(
         ax_hist.axvline(snr_threshold, color=MEAN, linestyle="--", linewidth=1.2, label="Threshold")
         ax_hist.set_xlabel("SNR")
         ax_hist.set_ylabel("Number of events")
-        ax_hist.legend(fontsize=8)
+        ax_hist.legend()
 
         # Right: SNR vs d_L scatter
         if dl_col is not None:
@@ -599,6 +640,7 @@ def plot_snr_distribution(
                 fontsize=10,
             )
 
+        fig.tight_layout(w_pad=1.0)
         return fig, axes
 
     # ------ Placeholder path (no CRB data locally) ------
@@ -628,6 +670,141 @@ def plot_snr_distribution(
     ax.set_xticks([])
     ax.set_yticks([])
 
+    return fig, ax
+
+
+# ---------------------------------------------------------------------------
+# Figure 5: KDE-smoothed H0 posterior comparison (D-05, D-06)
+# ---------------------------------------------------------------------------
+
+
+def plot_h0_posterior_kde(
+    data_dir: Path,
+) -> tuple[Figure, Axes]:
+    """Plot KDE-smoothed H0 posterior comparison.
+
+    Shows the discrete posterior points with a KDE-smoothed overlay
+    for both analysis variants. Auto-detects h-grid resolution (D-06).
+
+    Parameters
+    ----------
+    data_dir:
+        Root directory containing combined posterior JSONs.
+
+    Returns
+    -------
+    (fig, ax) following the project factory convention.
+    """
+    import logging
+
+    _log = logging.getLogger(__name__)
+
+    p_no = _load_combined_posterior("posteriors", data_dir)
+    p_with = _load_combined_posterior("posteriors_with_bh_mass", data_dir)
+
+    h_no = np.array(p_no["h_values"])
+    h_with = np.array(p_with["h_values"])
+    post_no = np.array(p_no["posterior"])
+    post_with = np.array(p_with["posterior"])
+
+    # Auto-detect grid spacing (D-06) — no hardcoded grid size
+    grid_spacing_no = float(np.diff(h_no).mean())
+    grid_spacing_with = float(np.diff(h_with).mean())
+
+    # KDE-smooth both posteriors
+    h_fine_no, kde_no = _kde_smooth_posterior(h_no, post_no)
+    h_fine_with, kde_with = _kde_smooth_posterior(h_with, post_with)
+
+    # Verify MAP preservation — warn if KDE MAP drifts more than one grid spacing
+    discrete_map_no = h_no[int(np.argmax(post_no))]
+    kde_map_no = h_fine_no[int(np.argmax(kde_no))]
+    if abs(kde_map_no - discrete_map_no) >= grid_spacing_no:
+        _log.warning(
+            "KDE MAP (%.4f) drifted more than one grid spacing (%.4f) from discrete MAP (%.4f) "
+            "for 'without BH mass' variant",
+            kde_map_no,
+            grid_spacing_no,
+            discrete_map_no,
+        )
+
+    discrete_map_with = h_with[int(np.argmax(post_with))]
+    kde_map_with = h_fine_with[int(np.argmax(kde_with))]
+    if abs(kde_map_with - discrete_map_with) >= grid_spacing_with:
+        _log.warning(
+            "KDE MAP (%.4f) drifted more than one grid spacing (%.4f) from discrete MAP (%.4f) "
+            "for 'with BH mass' variant",
+            kde_map_with,
+            grid_spacing_with,
+            discrete_map_with,
+        )
+
+    # Peak-normalize for display
+    post_no_norm = post_no / np.max(post_no) if np.max(post_no) > 0 else post_no
+    post_with_norm = post_with / np.max(post_with) if np.max(post_with) > 0 else post_with
+    kde_no_norm = kde_no / np.max(kde_no) if np.max(kde_no) > 0 else kde_no
+    kde_with_norm = kde_with / np.max(kde_with) if np.max(kde_with) > 0 else kde_with
+
+    fig, ax = get_figure(preset="single")
+
+    # Discrete markers (subdued alpha)
+    ax.plot(
+        h_no,
+        post_no_norm,
+        "o",
+        color=CYCLE[0],
+        alpha=0.4,
+        markersize=3,
+        zorder=2,
+    )
+    ax.plot(
+        h_with,
+        post_with_norm,
+        "s",
+        color=CYCLE[3],
+        alpha=0.4,
+        markersize=3,
+        zorder=2,
+    )
+
+    # KDE smooth lines (solid, full alpha)
+    ax.plot(
+        h_fine_no,
+        kde_no_norm,
+        "-",
+        color=CYCLE[0],
+        linewidth=1.4,
+        label=r"Without $M_z$",
+        zorder=3,
+    )
+    ax.plot(
+        h_fine_with,
+        kde_with_norm,
+        "--",
+        color=CYCLE[3],
+        linewidth=1.4,
+        label=r"With $M_z$",
+        zorder=3,
+    )
+
+    # 68% CI shading on KDE-smoothed values
+    for h_fine, kde_fine, color in [
+        (h_fine_no, kde_no, CYCLE[0]),
+        (h_fine_with, kde_with, CYCLE[3]),
+    ]:
+        lo, hi = compute_credible_interval(h_fine, kde_fine)
+        if not (np.isnan(lo) or np.isnan(hi)):
+            ax.axvspan(lo, hi, alpha=0.12, color=color, zorder=1)
+
+    # Truth line
+    ax.axvline(0.73, color=TRUTH, linestyle=":", linewidth=1.2, label="Injected", zorder=4)
+
+    ax.set_xlabel(r"$h$")
+    ax.set_ylabel("Posterior (peak-normalized)")
+    ax.set_xlim(0.59, 0.87)
+    ax.set_ylim(-0.05, 1.15)
+    ax.legend(loc="upper right")
+
+    fig.tight_layout()
     return fig, ax
 
 

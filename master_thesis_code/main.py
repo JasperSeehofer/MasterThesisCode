@@ -1087,6 +1087,17 @@ def generate_figures(output_dir: str) -> None:
 
     manifest.append(("paper_snr_distribution", _gen_paper_snr_distribution))
 
+    # 20. Paper figure: KDE-smoothed H0 posterior (D-05)
+    def _gen_paper_h0_posterior_kde() -> tuple[object, object] | None:
+        from master_thesis_code.plotting.paper_figures import plot_h0_posterior_kde
+
+        try:
+            return plot_h0_posterior_kde(data_dir=Path(output_dir))
+        except (FileNotFoundError, KeyError):
+            return None
+
+    manifest.append(("paper_h0_posterior_kde", _gen_paper_h0_posterior_kde))
+
     # ------------------------------------------------------------------
     # Execute manifest
     # ------------------------------------------------------------------
