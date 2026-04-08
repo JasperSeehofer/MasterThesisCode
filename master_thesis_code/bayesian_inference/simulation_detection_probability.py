@@ -447,12 +447,15 @@ class SimulationDetectionProbability:
             M_edges[:-1] * M_edges[1:]
         )  # geometric mean for log-spaced  # noqa: N806
 
+        # fill_value=None → nearest-neighbor extrapolation outside grid.
+        # fill_value=0.0 caused 44% of events to lose completeness correction
+        # because high-SNR events' 4σ integration bounds exceed the injection grid.
         return RegularGridInterpolator(
             (dl_centers, M_centers),
             p_det_grid,
             method="linear",
             bounds_error=False,
-            fill_value=0.0,
+            fill_value=None,
         )
 
     def _build_grid_1d(self, df: pd.DataFrame, snr_threshold: float) -> RegularGridInterpolator:
@@ -484,12 +487,14 @@ class SimulationDetectionProbability:
 
         dl_centers = 0.5 * (dl_edges[:-1] + dl_edges[1:])
 
+        # fill_value=None → nearest-neighbor extrapolation outside grid.
+        # See 2D grid comment above for rationale.
         return RegularGridInterpolator(
             (dl_centers,),
             p_det_1d,
             method="linear",
             bounds_error=False,
-            fill_value=0.0,
+            fill_value=None,
         )
 
     def quality_flags(self, h: float) -> dict[str, npt.NDArray[np.float64] | npt.NDArray[np.bool_]]:
