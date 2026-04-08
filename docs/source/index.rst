@@ -7,6 +7,7 @@ EMRI Bayesian H₀ Inference — Documentation
 
    quickstart
    architecture
+   limitations
 
 .. toctree::
    :maxdepth: 2

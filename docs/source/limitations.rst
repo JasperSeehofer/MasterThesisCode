@@ -2,7 +2,8 @@ Known Limitations & Scientific References
 ==========================================
 
 This page documents model assumptions, known limitations, verified components,
-and scientific references for the EMRI dark siren H₀ inference pipeline.
+and scientific references for the EMRI dark siren H₀ inference pipeline
+([Chen2018]_, [Gray2020]_).
 
 For the H₀ posterior bias investigation timeline, see
 `docs/H0_BIAS_RESOLUTION.md <../../H0_BIAS_RESOLUTION.md>`_.
@@ -54,7 +55,7 @@ Limitation 1 — Comoving volume formula ``[FIXED]``
 The function computes the comoving volume *element* :math:`dV_c/dz`, not total volume :math:`V_c`.
 The exponent 2 and :math:`4\pi` prefactor were correct for the element, but the formula was
 missing the :math:`1/E(z)` factor. Fix applied: :math:`cv\_grid = 4\pi \cdot (c/H_0)^3 \cdot I(z)^2 / E(z)`
-(Hogg 1999, Eq. 27). All methods renamed from ``comoving_volume`` to
+([Hogg1999]_, Eq. 27). All methods renamed from ``comoving_volume`` to
 ``comoving_volume_element`` for clarity. Standalone ``comoving_volume_element()`` in
 ``physical_relations.py`` verified against astropy to 0.07% accuracy. Regression test added.
 
@@ -70,7 +71,7 @@ five-point stencil (``five_point_stencil_derivative()``) as the default in GPD P
 Controlled by the ``use_five_point_stencil`` constructor parameter (default ``True``).
 The forward difference remains available as a fallback but is no longer used in production.
 
-References: Vallisneri (2008), arXiv:gr-qc/0703086; Cutler & Flanagan (1994), PRD 49, 2658.
+References: [Vallisneri2008]_; [CF1994]_.
 
 
 Limitation 3 — Galactic confusion noise ``[FIXED]``
@@ -79,7 +80,7 @@ Limitation 3 — Galactic confusion noise ``[FIXED]``
 **File:** ``master_thesis_code/LISA_configuration.py``
 
 Galactic confusion noise is now included in the LISA PSD via ``_confusion_noise()`` in
-``LisaTdiConfiguration``, implementing Babak et al. (2023) arXiv:2303.15929 Eq. (17) with
+``LisaTdiConfiguration``, implementing [Babak2023]_ Eq. (17) with
 observation-time-dependent knee frequency. Controlled by ``include_confusion_noise``
 parameter (default ``True``). The constants from ``constants.py:77–83`` are now used.
 
@@ -95,7 +96,7 @@ which ignores them — the hypergeometric formula is exact only for flat ΛCDM (
 silently receives ΛCDM distances. The correct general formula would require numerical
 integration via ``hubble_function()``, which already implements the full CPL parameterisation.
 
-Reference: Hogg (1999), arXiv:astro-ph/9905116, Eq. (14–16).
+Reference: [Hogg1999]_, Eq. (14–16).
 
 
 Limitation 5 — GW likelihood distance uncertainty hardcoded at 10% ``[design choice · MEDIUM]``
@@ -140,7 +141,7 @@ Limitation 7 — Outdated fiducial cosmological parameters ``[design choice · L
 
    * - Parameter
      - Code
-     - Planck 2018
+     - [Planck2018]_
    * - :math:`\Omega_m`
      - 0.25
      - 0.3153 ± 0.0073
@@ -155,7 +156,7 @@ The WMAP-era values used here differ from the current Planck 2018 best fit by ~2
 :math:`\Omega_m` and ~1σ in :math:`h`. For a simulation intended to represent realistic LISA science
 the fiducial point should be updated.
 
-Reference: Planck Collaboration (2018), arXiv:1807.06209, Table 2.
+Reference: [Planck2018]_, Table 2.
 
 
 Limitation 8 — Galaxy redshift uncertainty has non-standard scaling ``[design choice · LOW]``
@@ -181,8 +182,8 @@ The following components have been verified against their cited references:
 - **Luminosity distance hypergeometric integral** (``physical_relations.py``): the form
   :math:`\,{}_2F_1(1/3,1/2;4/3;-\Omega_m(1+z)^3/\Omega_\Lambda)` is the correct analytic
   solution for flat ΛCDM. ✓
-- **LISA instrumental PSD (A/E channels)** (``LISA_configuration.py``): matches Babak et al.
-  (2023), arXiv:2303.15929, Eqs. (8)–(11), excluding galactic confusion noise. ✓
+- **LISA instrumental PSD (A/E channels)** (``LISA_configuration.py``): matches [Babak2023]_,
+  Eqs. (8)–(11), excluding galactic confusion noise. ✓
 - **Noise-weighted inner product** (``parameter_estimation.py``): the factor-of-4 prefactor
   and one-sided PSD convention are correct; FFT normalisation is handled correctly via
   ``trapz`` over the frequency axis. ✓
