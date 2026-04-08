@@ -163,8 +163,8 @@ The codebase has two distinct pipelines:
 1. **`LISA_configuration.py` unconditional `import cupy`**: still at module top level — any module that imports `LisaTdiConfiguration` is un-importable on CPU-only machines without the guarded `try/except`. Fix when that file is next touched.
 
 #### Physics / mathematics (Physics Change Protocol required)
-4. **`parameter_estimation.py:336` Fisher matrix uses O(e) forward difference** [HIGH]: calls `finite_difference_derivative()` instead of `five_point_stencil_derivative()`. Ref: Vallisneri (2008) arXiv:gr-qc/0703086.
-5. **`LISA_configuration.py` galactic confusion noise absent from PSD** [MEDIUM]: constants defined in `constants.py:77-83` but never used. Ref: Babak et al. (2023) arXiv:2303.15929 Eq. (17).
+~~4. **`parameter_estimation.py:336` Fisher matrix uses O(e) forward difference** [HIGH]~~ [FIXED Phase 10]: `use_five_point_stencil=True` is now default. Ref: Vallisneri (2008) arXiv:gr-qc/0703086.
+~~5. **`LISA_configuration.py` galactic confusion noise absent from PSD** [MEDIUM]~~ [FIXED Phase 9]: `_confusion_noise()` added to `LisaTdiConfiguration`. Ref: Babak et al. (2023) arXiv:2303.15929 Eq. (17).
 6. **`physical_relations.py:72` wCDM params w0, wa silently ignored** [MEDIUM]: `dist()` accepts them but passes to a hardcoded-LCDM hypergeometric function.
 7. **`bayesian_inference/bayesian_inference.py` hardcoded 10% distance error** [MEDIUM]: uses `FRACTIONAL_LUMINOSITY_ERROR` instead of per-source Cramer-Rao bound from CSV.
 8. **`constants.py:29-30` outdated WMAP-era cosmology** [LOW]: Omega_m = 0.25, H = 0.73; Planck 2018 best-fit is Omega_m = 0.3153, H = 0.6736.

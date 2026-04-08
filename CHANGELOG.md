@@ -24,6 +24,28 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   positivity, and cross-H₀ consistency checks.
 - 4 regression tests for truncnorm distribution correctness (STAT-3): PDF peak location,
   integration-to-one, correct `loc` for redshift and mass distributions.
+- `bayesian_inference/simulation_detection_probability.py`: simulation-based P_det
+  replacing KDE with injection-campaign histograms and importance-sampling weights
+  (Phase 11.1).
+- `bayesian_inference/posterior_combination.py`: log-space posterior combination with
+  four strategies (log-sum, per-event floor, per-event nonzero-min, global floor)
+  (Phase 21).
+- `analysis/` module: post-hoc analysis scripts for grid quality, importance sampling,
+  injection yield, sampling design, and validation (Phases 17–20).
+- `interactive/` directory: five Plotly HTML figures — combined posterior, Fisher ellipses,
+  H₀ convergence, sky map, index page (Phases 18–19).
+- `derivations/dark_siren_likelihood.md`: first-principles derivation of the dark siren
+  likelihood from Bayes' theorem (Phase 14).
+- `paper/` directory: REVTeX4-2 PRD paper draft with 6 sections and 21 references
+  (Phase 26).
+- `docs/H0_BIAS_RESOLUTION.md`: dedicated chronological changelog of the H₀ posterior
+  bias investigation and resolution (10 phases documented).
+- `docs/source/limitations.rst`: known limitations, model assumptions, verified
+  components, and bibliography moved from README to Sphinx docs.
+- H₀ sweep capability: evaluation pipeline sweeps over H₀ grid points for posterior
+  construction (Phase 13).
+- `--injection_campaign` CLI flag for running SNR-only injection campaigns (Phase 11.1).
+- `emri-merge-injections` entry point for merging injection CSV outputs (Phase 11.1).
 
 ### Fixed
 - **[PHYSICS]** Comoving volume formula corrected to proper volume element $dV_c/dz$ with
@@ -43,6 +65,16 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   instead of the correct `d_L / detection.d_L` (model/measured). The incorrect direction
   introduced a spurious `(d_L_measured/d_L_model)²` factor in the Gaussian exponent,
   biasing the H₀ posterior. Now consistent with `single_host_likelihood_integration_testing`.
+- **[PHYSICS]** Fisher matrix now uses five-point stencil $O(\varepsilon^4)$ derivatives
+  by default (`use_five_point_stencil=True`), replacing the $O(\varepsilon)$ forward
+  difference (Phase 10, PHYS-3). Ref: Vallisneri (2008) arXiv:gr-qc/0703086.
+- **[PHYSICS]** Spurious `/(1+z)` Jacobian removed from `single_host_likelihood`
+  with-BH-mass numerator in `bayesian_statistics.py` (Phase 15).
+- **[PHYSICS]** P_det grid extrapolation fix: `RegularGridInterpolator` `fill_value`
+  changed from `0.0` to `None` (nearest-neighbor extrapolation), eliminating 702
+  zero-likelihood completeness fallbacks (commit `44d5358`).
+- Likelihood floor added to `single_host_likelihood` to prevent zero-product posterior
+  collapse; per-event min-nonzero floor strategy (Phase 22).
 
 ### Changed
 - Project framing updated from master thesis to paper publication stage.
@@ -60,6 +92,15 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   physics-change trigger file list. Skills are mandatory workflow gates, not optional.
 - `CLAUDE.md`: new "GitHub Integration" section — GSD/GPD workflows must keep GitHub
   issues, milestones, and labels in sync as work progresses.
+- Detection probability estimation switched from KDE-based (`DetectionProbability` class)
+  to simulation-based importance sampling estimator with injection campaign data
+  (`SimulationDetectionProbability`, Phase 11.1).
+- Posterior combination moved to log-space accumulation to prevent float64 underflow
+  with 500+ events (Phase 21).
+- `SimulationDetectionProbability` refactored to use SNR rescaling for h-dependent
+  detection probability (commit `8161533`).
+- README slimmed: known limitations, model assumptions, verification checklist, and
+  bibliography moved to Sphinx docs (`docs/source/limitations.rst`).
 
 ---
 

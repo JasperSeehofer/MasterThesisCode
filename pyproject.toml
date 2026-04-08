@@ -1,5 +1,6 @@
 [project]
 name = "master-thesis-code"
+description = "Bayesian inference of the Hubble constant H0 from EMRI dark sirens with LISA"
 version = "0.1.0"
 requires-python = ">=3.10,<3.14"
 authors = [{name = "Jasper Seehofer"}]

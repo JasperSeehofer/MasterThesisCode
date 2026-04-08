@@ -18,7 +18,7 @@
 9. TEST-4 through TEST-7 — Expand coverage to untested modules
 
 ### Phase 4: Important Physics + Performance (after Phase 2)
-10. PHYS-3 — Five-point stencil
+10. ~~PHYS-3 — Five-point stencil~~ (RESOLVED)
 11. ~~PHYS-4 — Confusion noise~~ (RESOLVED)
 12. PERF-1 + PERF-2 — GPU portability fixes
 13. REPRO-1 — RNG refactor
@@ -56,10 +56,8 @@ reference, dimensional analysis, limiting case).
       `loc=0, scale=1`), making it inconsistent with the `append_*` method.
       **Depends on:** TEST-2 (regression guard must come first)
 
-- [ ] **PHYS-3 [P1, M]** Switch Fisher matrix to five-point stencil in `parameter_estimation.py:328`
-      Replace `finite_difference_derivative()` call with `five_point_stencil_derivative()`.
-      The O(ε⁴) method already exists but is never called. Requires 4× more waveform
-      evaluations per parameter (56 total vs 14).
+- [x] **PHYS-3 [P1, M]** Switch Fisher matrix to five-point stencil in `parameter_estimation.py:328`
+      (RESOLVED — Phase 10, `use_five_point_stencil=True` is default. Commit `a87eeab`.)
       Ref: Vallisneri (2008) arXiv:gr-qc/0703086; Cutler & Flanagan (1994) PRD 49, 2658.
 
 - [x] **PHYS-4 [P1, M]** Add galactic confusion noise to LISA PSD in `LISA_configuration.py`
@@ -324,7 +322,8 @@ Current: 149 tests, 37% coverage (gate 25%), target 50%.
 
 All items tracked under the "Paper Submission" GitHub milestone.
 
-- [ ] **PUB-1 [P0, S]** Create `CITATION.cff` with project metadata and placeholder paper reference
+- [x] **PUB-1 [P0, S]** Create `CITATION.cff` with project metadata and placeholder paper reference
+      (RESOLVED — `CITATION.cff` created 2026-04-05.)
 - [ ] **PUB-2 [P0, S]** Tag first GitHub Release (`v2.0.0-rc1`, paper-stage baseline)
 - [ ] **PUB-3 [P1, M]** Prepare reproducibility package (simulation seeds, config, expected outputs)
 - [ ] **PUB-4 [P2, S]** Archive Pipeline A or clearly label as development-only cross-check
