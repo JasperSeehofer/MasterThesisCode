@@ -163,7 +163,10 @@ Plans:
   2. Per-event diagnostic log writes L_cat, L_comp, f_i, and combined log-likelihood at each h value to a CSV or JSONL file
   3. Catalog-only MAP h shifts measurably toward h=0.73 compared to baseline (bias reduced by at least 50% if L_comp is the cause)
   4. Before/after comparison report is produced automatically using the Phase 30 infrastructure
-**Plans**: TBD
+**Plans:** 2 plans
+Plans:
+- [ ] 31-01-PLAN.md — Add --catalog_only CLI flag, completion term bypass, and per-event diagnostic CSV
+- [ ] 31-02-PLAN.md — Diagnostic summary generator, comparison flow integration, end-to-end verification
 
 ### Phase 32: Completion Term Fix
 **Goal**: Replace the dVc/dz source population prior in the completion term with an EMRI rate-weighted prior, so L_comp no longer introduces a systematic low-h preference
@@ -299,7 +302,7 @@ Plans:
 | 28. Review & Submission | v2.0 | 0/? | Paused (GPD) | - |
 | 29. Style Foundation | v2.1 PubFigs | 1/1 | Complete | 2026-04-07 |
 | 30. Baseline & Evaluation Infra | v2.1 BiasRes | 2/2 | Complete    | 2026-04-08 |
-| 31. Catalog-Only Diagnostic | v2.1 BiasRes | 0/? | Not started | - |
+| 31. Catalog-Only Diagnostic | v2.1 BiasRes | 0/2 | Not started | - |
 | 32. Completion Term Fix | v2.1 BiasRes | 0/? | Not started (GPD) | - |
 | 33. P_det Grid Resolution | v2.1 BiasRes | 0/? | Not started | - |
 | 34. Fisher Matrix Quality | v2.1 BiasRes | 0/? | Not started | - |
