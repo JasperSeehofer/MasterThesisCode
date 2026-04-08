@@ -55,23 +55,23 @@ Systematically diagnose and fix the per-event H₀ posterior bias, testing each 
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| DIAG-01 | — | Pending |
-| DIAG-02 | — | Pending |
-| DIAG-03 | — | Pending |
-| COMP-01 | — | Pending |
-| COMP-02 | — | Pending |
-| PDET-01 | — | Pending |
-| PDET-02 | — | Pending |
-| FISH-01 | — | Pending |
-| FISH-02 | — | Pending |
-| EVAL-01 | — | Pending |
-| EVAL-02 | — | Pending |
+| DIAG-01 | Phase 31 | Pending |
+| DIAG-02 | Phase 31 | Pending |
+| DIAG-03 | Phase 30 | Pending |
+| COMP-01 | Phase 32 | Pending |
+| COMP-02 | Phase 32 | Pending |
+| PDET-01 | Phase 33 | Pending |
+| PDET-02 | Phase 33 | Pending |
+| FISH-01 | Phase 34 | Pending |
+| FISH-02 | Phase 34 | Pending |
+| EVAL-01 | Phase 30 | Pending |
+| EVAL-02 | Phase 30 | Pending |
 
 **Coverage:**
 - v2.1 requirements: 11 total
-- Mapped to phases: 0
-- Unmapped: 11 ⚠️
+- Mapped to phases: 11
+- Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-04-08*
-*Last updated: 2026-04-08 after initial definition*
+*Last updated: 2026-04-08 — traceability filled after roadmap creation (Phases 30-34)*

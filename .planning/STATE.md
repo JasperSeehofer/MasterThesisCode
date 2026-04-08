@@ -2,12 +2,12 @@
 gsd_state_version: 1.0
 milestone: v2.1
 milestone_name: H0 Bias Resolution
-status: defining_requirements
-stopped_at: Milestone started, defining requirements
+status: roadmap_defined
+stopped_at: Roadmap created — Phase 30 ready to plan
 last_updated: "2026-04-08T00:00:00.000Z"
-last_activity: 2026-04-08 -- Milestone v2.1 started
+last_activity: 2026-04-08 -- Roadmap defined for v2.1 H0 Bias Resolution (Phases 30-34)
 progress:
-  total_phases: 0
+  total_phases: 5
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -21,21 +21,21 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-08)
 
 **Core value:** Measure H0 from simulated EMRI dark siren events with galaxy catalog completeness correction, producing publication-ready results.
-**Current focus:** v2.1 H0 Bias Resolution — diagnose and fix per-event posterior bias, test each fix in isolation.
+**Current focus:** v2.1 H0 Bias Resolution — diagnose and fix per-event posterior bias (MAP h=0.66 vs true h=0.73), testing each fix in isolation.
 
 ## Current Position
 
-Phase: Not started (defining requirements)
+Phase: 30 — Baseline & Evaluation Infrastructure
 Plan: —
-Status: Defining requirements
-Last activity: 2026-04-08 — Milestone v2.1 started
+Status: Ready to plan
+Last activity: 2026-04-08 — Roadmap defined (5 phases, 11 requirements mapped)
 
 ## Performance Metrics
 
 **Velocity:**
 
 - Total plans completed: 43 (v1.0: 9, v1.1: 4, v1.2: 12, v1.3: 11, v1.4: 5, v1.5: 2)
-- Total phases: 28 (25 complete across v1.0-v1.5, 3 planned for v2.0)
+- Total phases: 33 (28 complete across v1.0-v1.5 + v2.0 Phase 26; 5 planned for v2.1 BiasRes)
 
 ## Accumulated Context
 
@@ -46,14 +46,39 @@ Last activity: 2026-04-08 — Milestone v2.1 started
 ### Blockers/Concerns
 
 - v2.0 Paper paused: posterior bias must be resolved before production run results are meaningful
+- v2.1 Publication Figures paused (phases 35-38): depends on bias resolution
 
-### Key Context for v2.1
+### Key Context for v2.1 H0 Bias Resolution
 
 - **Bias diagnosis:** MAP h=0.66 (without BH mass) / h=0.68 (with BH mass), true h=0.73. 531 events, bias compounds exponentially.
-- **Root cause:** Completion term L_comp dominates (79% weight, GLADE completeness ~21% at EMRI distances). dVc/dz volume prior in L_comp introduces systematic low-h preference.
-- **P_det fix partial:** Commit 44d5358 fixed fill_value=0.0→None, reduced bias -9.2%→-6.9%. Residual remains.
+- **Root cause hypothesis:** Completion term L_comp dominates (79% weight, GLADE completeness ~21% at EMRI distances). dVc/dz volume prior in L_comp introduces systematic low-h preference.
+- **P_det fix partial:** Commit 44d5358 fixed fill_value=0.0->None, reduced bias -9.2%->-6.9%. Residual remains.
 - **Debug artifacts:** `.planning/debug/h0-inference-worsening.md`, `.gpd/debug/h0-posterior-bias-worsening.md`
 - **Strategy:** Test fixes ONE AT A TIME with before/after posterior comparison (MAP h, width, bias %).
+- **Phase 32 is physics:** Completion term prior change requires `/physics-change` protocol and GPD execution.
+
+### Phase Notes (v2.1 H0 Bias Resolution)
+
+**Phase 30 (Baseline & Evaluation Infrastructure) — READY:**
+- Capture MAP h, 68% CI, bias % from current pipeline as baseline JSON
+- Build before/after comparison report (human + machine readable)
+- Store baseline in `.planning/debug/`
+
+**Phase 31 (Catalog-Only Diagnostic) — PENDING Phase 30:**
+- Run with f_i=1.0 to confirm L_comp hypothesis
+- Add per-event diagnostic logging (L_cat, L_comp, f_i, log-likelihood per h)
+
+**Phase 32 (Completion Term Fix) — PENDING Phase 31, GPD/physics:**
+- Replace dVc/dz with EMRI-rate-weighted prior
+- Invoke `/physics-change` before implementation
+
+**Phase 33 (P_det Grid Resolution) — PENDING Phase 30:**
+- Increase 30->60 d_L bins, make configurable
+- Validate 4-sigma coverage for >95% of events
+
+**Phase 34 (Fisher Matrix Quality) — PENDING Phase 30:**
+- Remove allow_singular=True
+- Regularize or exclude near-singular matrices, log condition numbers
 
 ### Phase Notes (v2.0 — paused)
 
@@ -70,12 +95,12 @@ Last activity: 2026-04-08 — Milestone v2.1 started
 ## Session Continuity
 
 Last session: 2026-04-08T00:00:00.000Z
-Stopped at: Milestone v2.1 started after dual-agent bias diagnosis
+Stopped at: Roadmap defined for v2.1 H0 Bias Resolution
 Resume file: None
 
 ## Quick Tasks Completed
 
 | Date | Task | Commits | Summary |
 |------|------|---------|---------|
-| 2026-04-07 | Evaluation pipeline performance | de86052..a0de491 (7 commits) | Pool spawn 12 min→1.7 min, total 7:16 per h-value. forkserver+preload, numpy arrays, SNR filter, cpu_il partition. |
+| 2026-04-07 | Evaluation pipeline performance | de86052..a0de491 (7 commits) | Pool spawn 12 min->1.7 min, total 7:16 per h-value. forkserver+preload, numpy arrays, SNR filter, cpu_il partition. |
 | 2026-04-07 | Add interactive Plotly figures to GitHub Pages | 8b47b5f..33e1c86 (2 commits) | 4 Plotly HTML figures (posterior, sky map, Fisher ellipses, convergence), --generate_interactive CLI flag, CI Pages deployment, landing page. |

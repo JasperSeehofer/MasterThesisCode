@@ -8,8 +8,9 @@
 - ✅ **v1.3 Visualization Overhaul** — Phases 14-19 (shipped 2026-04-02)
 - ✅ **v1.4 Posterior Numerical Stability** — Phases 21-23 (shipped 2026-04-02)
 - ✅ **v1.5 Galaxy Catalog Completeness Correction** — Phases 24-25 (shipped 2026-04-04, GPD-tracked)
-- 🔄 **v2.0 Paper** — Phases 26-28 (in progress, GPD-tracked)
-- 🔄 **v2.1 Publication Figures** — Phases 29-33 (in progress, GSD-tracked)
+- 🔄 **v2.0 Paper** — Phases 26-28 (paused, GPD-tracked)
+- 🔄 **v2.1 H0 Bias Resolution** — Phases 30-34 (active, GSD/GPD mixed)
+- ⏸ **v2.1 Publication Figures** — Phases 35-39 (paused pending bias fix)
 
 ## Phases
 
@@ -88,7 +89,7 @@ Full artifacts: `.gpd/phases/24-completeness-estimation/`, `.gpd/phases/25-likel
 
 </details>
 
-### v2.0 Paper (GPD-tracked)
+### v2.0 Paper (GPD-tracked, paused)
 
 - [x] **Phase 26: Paper Draft** — First complete PRD paper draft with all sections (1/1 plan, GPD)
 - [ ] **Phase 27: Production Run & Figures** — Cluster evaluation + replace RESULT PENDING placeholders + publication figures
@@ -105,7 +106,7 @@ See `.gpd/phases/` and `.gpd/ROADMAP.md` for full details.
 #### Phase 27: Production Run & Figures
 **Goal**: Run completeness-corrected evaluation on cluster, replace all RESULT PENDING placeholders with final numbers, generate publication figures
 **Depends on**: Phase 25 (completeness code), Phase 26 (paper structure)
-**Blocked on**: Cluster filesystem recovery
+**Blocked on**: v2.1 bias resolution and cluster filesystem recovery
 See `.gpd/ROADMAP.md` for full details.
 
 #### Phase 28: Review & Submission
@@ -113,17 +114,19 @@ See `.gpd/ROADMAP.md` for full details.
 **Depends on**: Phase 27 (final results and figures)
 See `.gpd/ROADMAP.md` for full details.
 
-### v2.1 Publication Figures (GSD-tracked)
+---
 
-- [x] **Phase 29: Style Foundation** — Modernize mplstyle, colorblind-safe palette, font sizing, `pdf.fonttype: 42` (completed 2026-04-07)
-- [ ] **Phase 30: Unified Figure Pipeline & Paper Figures** — Merge manifests, fix CI bug, polish 4 existing + add contour/smoothed variants
-- [ ] **Phase 31: Galaxy-Level Figures** — Pre-process 580MB JSONs, galaxy ranking, dominant fraction, BH mass impact, sky map
-- [ ] **Phase 32: Interactive Figures** — Plotly/Sphinx integration, data pre-aggregation, MyST-NB notebooks, JupyterLite
-- [ ] **Phase 33: Quality Assurance & New Science Figures** — P_det surface, completeness heatmap, parameter contours, colorblind/grayscale/pdffonts audit
+### v2.1 H0 Bias Resolution (GSD/GPD mixed, active)
 
-### Phase Details (v2.1)
+- [ ] **Phase 30: Baseline & Evaluation Infrastructure** — Capture baseline posterior snapshot, build before/after comparison tooling (DIAG-03, EVAL-01, EVAL-02) — GSD
+- [ ] **Phase 31: Catalog-Only Diagnostic** — Run f_i=1.0 evaluation to confirm L_comp is the primary bias source (DIAG-01, DIAG-02) — GSD
+- [ ] **Phase 32: Completion Term Fix** — Replace dVc/dz source prior with EMRI rate-weighted prior, validate h-dependence (COMP-01, COMP-02) — GPD (physics)
+- [ ] **Phase 33: P_det Grid Resolution** — Increase grid from 30 to 60 d_L bins, validate coverage (PDET-01, PDET-02) — GSD
+- [ ] **Phase 34: Fisher Matrix Quality** — Replace allow_singular=True with regularization or exclusion, flag degenerates (FISH-01, FISH-02) — GSD
 
-#### Phase 29: Style Foundation
+## Phase Details
+
+### Phase 29: Style Foundation
 **Goal**: Modernize the visual style infrastructure so all downstream figures automatically inherit publication-quality aesthetics
 **Requirements**: STYL-01, STYL-02, STYL-03
 **Depends on**: None
@@ -137,7 +140,78 @@ Plans:
 4. All existing tests pass with new style (no visual regression in smoke tests)
 5. `pdffonts` on any generated PDF shows zero Type 3 fonts
 
-#### Phase 30: Unified Figure Pipeline & Paper Figures
+### Phase 30: Baseline & Evaluation Infrastructure
+**Goal**: Capture a reproducible baseline posterior snapshot and establish the comparison framework that all subsequent phases use to measure their effect
+**Depends on**: None (first phase of v2.1 H0 Bias Resolution)
+**Requirements**: DIAG-03, EVAL-01, EVAL-02
+**Success Criteria** (what must be TRUE):
+  1. Running `--evaluate` on the existing CRB catalog produces a baseline JSON with MAP h, 68% CI bounds, bias %, and event count
+  2. The before/after comparison report is generated automatically when a new evaluation is run alongside the baseline JSON
+  3. Comparison output is human-readable (table: MAP h, CI width, bias %, events) and machine-readable (JSON)
+  4. Baseline snapshot is committed to `.planning/debug/` so it can be referenced by all subsequent phases
+**Plans**: TBD
+
+### Phase 31: Catalog-Only Diagnostic
+**Goal**: Confirm that the completion term L_comp is the dominant source of the h=0.66 bias by running the pipeline with f_i=1.0 (catalog only) and observing whether the MAP shifts toward h=0.73
+**Depends on**: Phase 30 (baseline snapshot and comparison tool)
+**Requirements**: DIAG-01, DIAG-02
+**Success Criteria** (what must be TRUE):
+  1. `--evaluate --catalog_only` (or equivalent flag) runs the pipeline with f_i=1.0 for all events, bypassing the completion term
+  2. Per-event diagnostic log writes L_cat, L_comp, f_i, and combined log-likelihood at each h value to a CSV or JSONL file
+  3. Catalog-only MAP h shifts measurably toward h=0.73 compared to baseline (bias reduced by at least 50% if L_comp is the cause)
+  4. Before/after comparison report is produced automatically using the Phase 30 infrastructure
+**Plans**: TBD
+
+### Phase 32: Completion Term Fix
+**Goal**: Replace the dVc/dz source population prior in the completion term with an EMRI rate-weighted prior, so L_comp no longer introduces a systematic low-h preference
+**Depends on**: Phase 31 (hypothesis confirmed), Phase 30 (comparison infrastructure)
+**Requirements**: COMP-01, COMP-02
+**Success Criteria** (what must be TRUE):
+  1. Completion term integrand uses EMRI-rate-weighted prior p(z|EMRI) instead of bare dVc/dz (change visible in `bayesian_statistics.py`)
+  2. L_comp ratio L(h=0.66)/L(h=0.73) is within a physically reasonable range (close to 1.0 rather than systematically >1)
+  3. Full pipeline MAP h with the new prior is closer to h=0.73 than before (bias % reduced vs Phase 31 baseline)
+  4. Before/after comparison report generated; result stored in structured tracking format
+  5. New physics change has reference comment (arXiv + equation) above modified line
+**Plans**: TBD
+**Note**: Physics change — must invoke `/physics-change` protocol before implementation. GPD execution required.
+
+### Phase 33: P_det Grid Resolution
+**Goal**: Increase P_det grid resolution from 30 to 60 d_L bins and validate that 4-sigma integration bounds fall within the grid for at least 95% of events
+**Depends on**: Phase 30 (comparison infrastructure)
+**Requirements**: PDET-01, PDET-02
+**Success Criteria** (what must be TRUE):
+  1. P_det grid d_L bin count is configurable via a constant or config parameter (not hardcoded 30)
+  2. Default bin count increased to 60; existing tests updated to reflect new resolution
+  3. Grid coverage validation runs after grid construction and reports the fraction of events whose 4-sigma bounds fall within the grid
+  4. Coverage fraction is above 95% with 60 bins; warning logged if any event falls outside
+  5. Before/after comparison report shows MAP h change from grid resolution alone
+**Plans**: TBD
+
+### Phase 34: Fisher Matrix Quality
+**Goal**: Replace allow_singular=True with explicit degeneracy handling so near-singular covariance matrices are caught, logged, and treated consistently rather than silently producing unreliable error estimates
+**Depends on**: Phase 30 (comparison infrastructure)
+**Requirements**: FISH-01, FISH-02
+**Success Criteria** (what must be TRUE):
+  1. `allow_singular=True` is removed from multivariate normal construction in `bayesian_statistics.py`
+  2. Events with condition number above a configurable threshold are flagged in diagnostic output with their condition number
+  3. Flagged events are either regularized (ridge-like diagonal addition) or excluded, with the strategy configurable
+  4. Diagnostic output counts how many events were flagged and excluded per evaluation run
+  5. Before/after comparison report shows MAP h change from Fisher quality fix alone
+**Plans**: TBD
+
+---
+
+### v2.1 Publication Figures (GSD-tracked, paused pending bias fix)
+
+**Note:** Phase numbering shifted from 30-33 to 35-38 to make room for H0 Bias Resolution phases 30-34.
+
+- [x] **Phase 29: Style Foundation** — completed 2026-04-07
+- [ ] **Phase 35: Unified Figure Pipeline & Paper Figures** — Merge manifests, fix CI bug, polish 4 existing + add contour/smoothed variants
+- [ ] **Phase 36: Galaxy-Level Figures** — Pre-process 580MB JSONs, galaxy ranking, dominant fraction, BH mass impact, sky map
+- [ ] **Phase 37: Interactive Figures** — Plotly/Sphinx integration, data pre-aggregation, MyST-NB notebooks, JupyterLite
+- [ ] **Phase 38: Quality Assurance & New Science Figures** — P_det surface, completeness heatmap, parameter contours, colorblind/grayscale/pdffonts audit
+
+#### Phase 35: Unified Figure Pipeline & Paper Figures
 **Goal**: Merge the two disconnected figure pipelines and deliver polished paper figures with new style
 **Requirements**: PFIG-01, PFIG-02, PFIG-03, PFIG-04
 **Depends on**: Phase 29 (style)
@@ -149,10 +223,10 @@ Plans:
 5. Contour-smoothed H0 posterior added as new variant (KDE, preserves MAP within grid spacing)
 6. Auto-detect h-grid resolution (works with 15-pt and future finer grids)
 
-#### Phase 31: Galaxy-Level Figures
+#### Phase 36: Galaxy-Level Figures
 **Goal**: Exploit the rich per-galaxy likelihood data from posteriors_with_bh_mass for novel visualizations
 **Requirements**: GLXY-01, GLXY-02, GLXY-03, GLXY-04, GLXY-05
-**Depends on**: Phase 29 (style), Phase 30 (manifest integration)
+**Depends on**: Phase 29 (style), Phase 35 (manifest integration)
 **Success criteria**:
 1. Pre-processing script extracts per-event summaries from 580MB JSONs to CSVs (~1-5MB total)
 2. Memory-aware loading: pre-process path for low-memory, direct-load fallback for 64GB+ machines
@@ -162,10 +236,10 @@ Plans:
 6. Sky map with candidate host galaxies colored by likelihood weight
 7. All galaxy figures integrated into unified manifest
 
-#### Phase 32: Interactive Figures
+#### Phase 37: Interactive Figures
 **Goal**: Add interactive Plotly figures and Jupyter notebooks to GitHub Pages via Sphinx
 **Requirements**: INTV-01, INTV-02, INTV-03, INTV-04, INTV-05
-**Depends on**: Phase 29 (style), Phase 30 (data loaders)
+**Depends on**: Phase 29 (style), Phase 35 (data loaders)
 **Success criteria**:
 1. Plotly proof-of-concept: one interactive posterior plot embedded in Sphinx, no MathJax conflict
 2. Data pre-aggregation script produces ~1MB summary JSONs in `docs/source/_static/data/`
@@ -174,10 +248,10 @@ Plans:
 5. JupyterLite: parameter exploration notebook (h-value slider) working in-browser
 6. CI pipeline deploys interactive figures to GitHub Pages alongside existing docs
 
-#### Phase 33: Quality Assurance & New Science Figures
+#### Phase 38: Quality Assurance & New Science Figures
 **Goal**: Complete the figure set with science figures and run full accessibility/format audit
 **Requirements**: PFIG-05, PFIG-06, PFIG-07, QUAL-01, QUAL-02, QUAL-03
-**Depends on**: Phase 29-31 (all figures must exist before audit)
+**Depends on**: Phase 29-36 (all figures must exist before audit)
 **Success criteria**:
 1. P_det surface figure as 2D filled contour
 2. Completeness f(z,h) standalone heatmap + P_det overlay version
@@ -185,6 +259,8 @@ Plans:
 4. daltonize colorblind simulation passes for all paper figures
 5. All paper figures readable in grayscale
 6. `pdffonts` shows zero Type 3 fonts across all generated PDFs
+
+---
 
 ## Progress
 
@@ -216,10 +292,15 @@ Plans:
 | 24. Completeness Estimation | v1.5 | 1/1 | Complete (GPD) | 2026-04-04 |
 | 25. Likelihood Correction | v1.5 | 1/1 | Complete (GPD) | 2026-04-04 |
 | 26. Paper Draft | v2.0 | 1/1 | Complete (GPD) | 2026-04-05 |
-| 27. Production Run & Figures | v2.0 | 0/? | Not started (GPD) | - |
-| 28. Review & Submission | v2.0 | 0/? | Not started (GPD) | - |
-| 29. Style Foundation | v2.1 | 1/1 | Complete   | 2026-04-07 |
-| 30. Unified Pipeline & Paper Figs | v2.1 | 0/? | Not started | - |
-| 31. Galaxy-Level Figures | v2.1 | 0/? | Not started | - |
-| 32. Interactive Figures | v2.1 | 0/? | Not started | - |
-| 33. QA & New Science Figures | v2.1 | 0/? | Not started | - |
+| 27. Production Run & Figures | v2.0 | 0/? | Paused (GPD) | - |
+| 28. Review & Submission | v2.0 | 0/? | Paused (GPD) | - |
+| 29. Style Foundation | v2.1 PubFigs | 1/1 | Complete | 2026-04-07 |
+| 30. Baseline & Evaluation Infra | v2.1 BiasRes | 0/? | Not started | - |
+| 31. Catalog-Only Diagnostic | v2.1 BiasRes | 0/? | Not started | - |
+| 32. Completion Term Fix | v2.1 BiasRes | 0/? | Not started (GPD) | - |
+| 33. P_det Grid Resolution | v2.1 BiasRes | 0/? | Not started | - |
+| 34. Fisher Matrix Quality | v2.1 BiasRes | 0/? | Not started | - |
+| 35. Unified Pipeline & Paper Figs | v2.1 PubFigs | 0/? | Paused | - |
+| 36. Galaxy-Level Figures | v2.1 PubFigs | 0/? | Paused | - |
+| 37. Interactive Figures | v2.1 PubFigs | 0/? | Paused | - |
+| 38. QA & New Science Figures | v2.1 PubFigs | 0/? | Paused | - |
