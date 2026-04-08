@@ -56,27 +56,35 @@ All 6 milestones shipped (v1.0–v1.5). 25 phases, 43 plans completed across 12 
 - ✓ Evaluation pipeline produces H₀ posterior from fresh Cramér-Rao bounds — v1.1 Phase 8
 - ✓ Results validated (SNR physical, seeds correct, detection rates reasonable) — v1.1 Phase 8
 
-## Current Milestone: v2.0 Paper (GPD-tracked)
+## Current Milestone: v2.1 H₀ Bias Resolution
 
-**Goal:** Produce a publication-ready PRD paper with completeness-corrected H0 results from production cluster runs.
+**Goal:** Systematically diagnose and fix the per-event H₀ posterior bias (MAP h=0.66 vs true h=0.73) that compounds with more detections, testing each fix in isolation to measure its effect.
 
-**Status:** Phase 26 (Paper Draft) complete. Phase 27 (Production Run & Figures) blocked on cluster filesystem recovery.
+**Target features:**
+- Catalog-only diagnostic (f_i=1.0) to confirm completion term as bias source
+- Diagnostic logging of L_cat, L_comp, f_i per event per h value
+- Fix completion term source population prior (replace dVc/dz with EMRI rate)
+- Increase P_det grid resolution (30→60 bins)
+- Handle degenerate Fisher matrices (replace allow_singular=True)
+- Before/after posterior comparison (MAP h, width, bias %) for each change
 
-**Target deliverables:**
-- Production H0 posterior with completeness correction and real P_det
-- Publication figures (4 placeholders in paper)
-- Final PRD paper submitted to arXiv
+**Context:** Posterior peaks at h=0.66 (without BH mass) / h=0.68 (with BH mass) instead of true h=0.73. With 531 events, L(h=0.66)/L(h=0.73) compounds to ~10⁶⁵. Root cause: completion term L_comp gets 79% weight (GLADE completeness ~21% at EMRI distances) and carries systematic low-h bias via dVc/dz volume prior. P_det grid extrapolation fix (commit 44d5358) reduced bias from -9.2% to -6.9% but residual remains.
 
-**Paper:** `paper/main.tex` — 11 pages, REVTeX4-2, 25 RESULT PENDING markers
-**GPD details:** `.gpd/ROADMAP.md`, `.gpd/STATE.md`
+**Debug artifacts:** `.planning/debug/h0-inference-worsening.md`, `.gpd/debug/h0-posterior-bias-worsening.md`
 
 ### Active
 
-- [x] PRD paper draft with all sections (Introduction, Method, Results, Discussion, Conclusions, Appendix A)
-- [ ] Production cluster run with completeness-corrected evaluation
-- [ ] Replace 25 RESULT PENDING markers with final numbers
-- [ ] Generate 4 publication figures
-- [ ] Internal peer review and submission
+- [ ] Confirm L_comp as primary bias source via f_i=1.0 catalog-only evaluation
+- [ ] Add diagnostic logging (L_cat, L_comp, f_i per event per h)
+- [ ] Fix completion term source population prior
+- [ ] Increase P_det grid resolution
+- [ ] Handle degenerate Fisher matrices
+- [ ] Quantitative before/after comparison for each fix
+
+### Paused: v2.0 Paper (GPD-tracked)
+
+**Status:** Phase 26 (Paper Draft) complete. Phase 27 (Production Run & Figures) paused — posterior bias must be resolved first.
+**GPD details:** `.gpd/ROADMAP.md`, `.gpd/STATE.md`
 
 ### Recently Validated (v1.2 / v1.3 / v1.4)
 
@@ -156,4 +164,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-07 — v2.0 milestone active (synced from GPD)*
+*Last updated: 2026-04-08 — v2.1 H₀ Bias Resolution milestone started*

@@ -1,36 +1,34 @@
 ---
 gsd_state_version: 1.0
-milestone: v2.0
-milestone_name: Paper
-status: executing
-stopped_at: Completed 29-01-PLAN.md (Style Foundation)
-last_updated: "2026-04-07T15:00:34.036Z"
-last_activity: 2026-04-07 -- Phase 29 planning complete
+milestone: v2.1
+milestone_name: H0 Bias Resolution
+status: defining_requirements
+stopped_at: Milestone started, defining requirements
+last_updated: "2026-04-08T00:00:00.000Z"
+last_activity: 2026-04-08 -- Milestone v2.1 started
 progress:
-  total_phases: 4
-  completed_phases: 1
-  total_plans: 1
-  completed_plans: 1
-  percent: 100
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-04-07)
+See: .planning/PROJECT.md (updated 2026-04-08)
 
 **Core value:** Measure H0 from simulated EMRI dark siren events with galaxy catalog completeness correction, producing publication-ready results.
-**Current focus:** v2.1 Publication Figures — modernize visualization, unified manifest, galaxy-level figures, interactive GitHub Pages. v2.0 Phase 27 (production run) in parallel on cluster.
+**Current focus:** v2.1 H0 Bias Resolution — diagnose and fix per-event posterior bias, test each fix in isolation.
 
 ## Current Position
 
-Phase: 29 (Style Foundation) — not started
+Phase: Not started (defining requirements)
 Plan: —
-Status: Ready to execute
-Last activity: 2026-04-07 -- Completed quick task 260407-va0: Add interactive Plotly figures to GitHub Pages
-
-Progress: [███░░░░░░░] 33% (1/3 v2.0 phases)
+Status: Defining requirements
+Last activity: 2026-04-08 — Milestone v2.1 started
 
 ## Performance Metrics
 
@@ -47,41 +45,32 @@ Progress: [███░░░░░░░] 33% (1/3 v2.0 phases)
 
 ### Blockers/Concerns
 
-- Cluster filesystem recovery — Phase 27 cannot start until bwUniCluster workspace is accessible
+- v2.0 Paper paused: posterior bias must be resolved before production run results are meaningful
 
-### Key Context for v2.0
+### Key Context for v2.1
 
-- **Paper draft:** `paper/main.tex` — 11-page PRD paper, REVTeX4-2, 6 sections, 21 references. 25 RESULT PENDING markers need production run data.
-- **Completeness code shipped:** v1.5 Phases 24-25 delivered f(z,h) and Gray et al. (2020) Eq. 9 combination formula. All tests passing, all contract claims verified.
-- **Production run needed:** Run completeness-corrected `--evaluate` on bwUniCluster with real P_det data. Replace 25 placeholder values in paper with actual numbers.
-- **Figures needed:** Generate publication-quality figures for all 4 figure placeholders in paper.
-- **GPD is authoritative:** v2.0 phases are tracked in `.gpd/ROADMAP.md` and `.gpd/STATE.md`. GSD mirrors the status here for unified progress tracking.
+- **Bias diagnosis:** MAP h=0.66 (without BH mass) / h=0.68 (with BH mass), true h=0.73. 531 events, bias compounds exponentially.
+- **Root cause:** Completion term L_comp dominates (79% weight, GLADE completeness ~21% at EMRI distances). dVc/dz volume prior in L_comp introduces systematic low-h preference.
+- **P_det fix partial:** Commit 44d5358 fixed fill_value=0.0→None, reduced bias -9.2%→-6.9%. Residual remains.
+- **Debug artifacts:** `.planning/debug/h0-inference-worsening.md`, `.gpd/debug/h0-posterior-bias-worsening.md`
+- **Strategy:** Test fixes ONE AT A TIME with before/after posterior comparison (MAP h, width, bias %).
 
-### Phase Notes
+### Phase Notes (v2.0 — paused)
 
 **Phase 26 (Paper Draft) — COMPLETE:**
-
 - All sections drafted: Introduction, Method (12 equations), Results (4 equations, 4 figure placeholders), Discussion, Conclusions, Appendix A
 - 25 RESULT PENDING markers awaiting production run
 
-**Phase 27 (Production Run & Figures):**
+**Phase 27 (Production Run & Figures) — PAUSED:**
+- Blocked on bias resolution (v2.1) — results are meaningless with 7% bias
 
-- Run completeness-corrected evaluation on cluster
-- Replace all RESULT PENDING placeholders with final numbers
-- Generate publication figures
-- Blocked on cluster filesystem recovery
-
-**Phase 28 (Review & Submission):**
-
-- Internal peer review
-- Resolve all TODO markers
-- Finalize co-authors
-- Submit to PRD + arXiv
+**Phase 28 (Review & Submission) — PAUSED:**
+- Depends on Phase 27
 
 ## Session Continuity
 
-Last session: 2026-04-07T20:10:00.000Z
-Stopped at: Evaluation pipeline performance optimization complete; full 31-job array submitted
+Last session: 2026-04-08T00:00:00.000Z
+Stopped at: Milestone v2.1 started after dual-agent bias diagnosis
 Resume file: None
 
 ## Quick Tasks Completed
