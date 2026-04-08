@@ -66,6 +66,7 @@ def _kde_smooth_posterior(
     kde_fine = kde(h_fine)
     return h_fine, kde_fine
 
+
 # ---------------------------------------------------------------------------
 # Data loading helpers
 # ---------------------------------------------------------------------------
@@ -806,5 +807,3 @@ def plot_h0_posterior_kde(
 
     fig.tight_layout()
     return fig, ax
-
-

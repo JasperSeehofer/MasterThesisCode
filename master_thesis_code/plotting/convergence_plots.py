@@ -23,7 +23,6 @@ from master_thesis_code.plotting._labels import LABELS
 _DEFAULT_SUBSETS: list[int] = [1, 5, 10, 25, 50, 100]
 
 
-
 def plot_h0_convergence(
     h_values: npt.NDArray[np.float64],
     event_posteriors: list[npt.NDArray[np.float64]] | npt.NDArray[np.float64],
