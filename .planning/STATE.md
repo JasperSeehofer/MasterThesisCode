@@ -1,17 +1,17 @@
 ---
 gsd_state_version: 1.0
-milestone: v2.1
-milestone_name: H0 Bias Resolution
-status: roadmap_defined
-stopped_at: Roadmap created — Phase 30 ready to plan
-last_updated: "2026-04-08T00:00:00.000Z"
-last_activity: 2026-04-08 -- Roadmap defined for v2.1 H0 Bias Resolution (Phases 30-34)
+milestone: v2.0
+milestone_name: Paper
+status: planning
+stopped_at: Phase 30 context gathered
+last_updated: "2026-04-08T09:37:27.384Z"
+last_activity: 2026-04-08 — Roadmap defined (5 phases, 11 requirements mapped)
 progress:
-  total_phases: 5
-  completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
-  percent: 0
+  total_phases: 9
+  completed_phases: 1
+  total_plans: 1
+  completed_plans: 1
+  percent: 100
 ---
 
 # Project State
@@ -60,43 +60,51 @@ Last activity: 2026-04-08 — Roadmap defined (5 phases, 11 requirements mapped)
 ### Phase Notes (v2.1 H0 Bias Resolution)
 
 **Phase 30 (Baseline & Evaluation Infrastructure) — READY:**
+
 - Capture MAP h, 68% CI, bias % from current pipeline as baseline JSON
 - Build before/after comparison report (human + machine readable)
 - Store baseline in `.planning/debug/`
 
 **Phase 31 (Catalog-Only Diagnostic) — PENDING Phase 30:**
+
 - Run with f_i=1.0 to confirm L_comp hypothesis
 - Add per-event diagnostic logging (L_cat, L_comp, f_i, log-likelihood per h)
 
 **Phase 32 (Completion Term Fix) — PENDING Phase 31, GPD/physics:**
+
 - Replace dVc/dz with EMRI-rate-weighted prior
 - Invoke `/physics-change` before implementation
 
 **Phase 33 (P_det Grid Resolution) — PENDING Phase 30:**
+
 - Increase 30->60 d_L bins, make configurable
 - Validate 4-sigma coverage for >95% of events
 
 **Phase 34 (Fisher Matrix Quality) — PENDING Phase 30:**
+
 - Remove allow_singular=True
 - Regularize or exclude near-singular matrices, log condition numbers
 
 ### Phase Notes (v2.0 — paused)
 
 **Phase 26 (Paper Draft) — COMPLETE:**
+
 - All sections drafted: Introduction, Method (12 equations), Results (4 equations, 4 figure placeholders), Discussion, Conclusions, Appendix A
 - 25 RESULT PENDING markers awaiting production run
 
 **Phase 27 (Production Run & Figures) — PAUSED:**
+
 - Blocked on bias resolution (v2.1) — results are meaningless with 7% bias
 
 **Phase 28 (Review & Submission) — PAUSED:**
+
 - Depends on Phase 27
 
 ## Session Continuity
 
-Last session: 2026-04-08T00:00:00.000Z
-Stopped at: Roadmap defined for v2.1 H0 Bias Resolution
-Resume file: None
+Last session: 2026-04-08T09:37:27.383Z
+Stopped at: Phase 30 context gathered
+Resume file: .planning/phases/30-baseline-evaluation-infrastructure/30-CONTEXT.md
 
 ## Quick Tasks Completed
 
