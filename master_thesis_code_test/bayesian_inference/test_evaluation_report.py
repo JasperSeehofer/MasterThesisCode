@@ -4,7 +4,6 @@ import json
 import math
 from pathlib import Path
 
-import numpy as np
 import pytest
 
 from master_thesis_code.bayesian_inference.evaluation_report import (
@@ -14,7 +13,6 @@ from master_thesis_code.bayesian_inference.evaluation_report import (
     generate_comparison_report,
     load_posteriors,
 )
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -104,7 +102,9 @@ def test_load_posteriors_counts_detections(tmp_path: Path) -> None:
     assert results[0]["n_detections"] == 3
 
 
-def test_load_posteriors_warns_large_file_count(tmp_path: Path, caplog: pytest.LogCaptureFixture) -> None:
+def test_load_posteriors_warns_large_file_count(
+    tmp_path: Path, caplog: pytest.LogCaptureFixture
+) -> None:
     """load_posteriors should log warning when more than 100 files exist."""
     # T-30-02: DoS mitigation — log warning for > 100 files
     import logging
