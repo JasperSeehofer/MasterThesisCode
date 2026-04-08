@@ -584,6 +584,76 @@ class SimulationDetectionProbability:
             return float(result[0])
         return result  # type: ignore[no-any-return]
 
+    def get_dl_max(self, h: float) -> float:
+        """Return the maximum d_L of the 1D P_det grid for the given h value.
+
+        This is ``max(injection_d_L) * 1.1``, i.e. the upper edge of the
+        1D histogram used by :meth:`_build_grid_1d`.  Needed to compute
+        ``z_max(h)`` for the full-volume denominator integral.
+
+        Args:
+            h: Dimensionless Hubble parameter.
+
+        Returns:
+            Maximum d_L in Gpc.
+        """
+        # Ensure grid is built (populates cache)
+        self._get_or_build_grid(h)
+        # Reconstruct dl_max from the 1D interpolator's grid points
+        _, interp_1d = self._grid_cache[h]
+        dl_centers = interp_1d.grid[0]
+        # The centers are midpoints of linspace(0, dl_max, N+1).
+        # spacing = dl_centers[1] - dl_centers[0], last center = dl_max - spacing/2
+        spacing = float(dl_centers[1] - dl_centers[0])
+        return float(dl_centers[-1] + spacing / 2)
+
+    def detection_probability_without_bh_mass_interpolated_zero_fill(
+        self,
+        d_L: float | npt.NDArray[np.float64],
+        phi: float | npt.NDArray[np.float64],
+        theta: float | npt.NDArray[np.float64],
+        *,
+        h: float,
+    ) -> float | npt.NDArray[np.float64]:
+        """Detection probability with fill_value=0 outside the grid.
+
+        Identical to
+        :meth:`detection_probability_without_bh_mass_interpolated` but
+        returns 0 (not nearest-neighbor) for ``d_L`` values outside the
+        P_det grid range.  Used exclusively for the completion-term
+        denominator integral ``D(h)``, where detectability beyond the
+        injection grid is physically zero.
+
+        Args:
+            d_L: Luminosity distance in Gpc.
+            phi: Sky angle phi (unused, marginalized over).
+            theta: Sky angle theta (unused, marginalized over).
+            h: Dimensionless Hubble parameter.
+
+        Returns:
+            Detection probability in [0, 1], with 0 outside grid.
+
+        References:
+            Gray et al. (2020), arXiv:1908.06050, Eq. A.19.
+        """
+        _, interp_1d = self._get_or_build_grid(h)
+
+        dl_arr = np.atleast_1d(np.asarray(d_L, dtype=np.float64))
+        points = dl_arr.reshape(-1, 1)
+
+        result = np.clip(interp_1d(points), 0.0, 1.0)
+
+        # Zero out values outside the grid range (override nearest-neighbor)
+        dl_centers = interp_1d.grid[0]
+        dl_min = float(dl_centers[0])
+        dl_max = float(dl_centers[-1])
+        out_of_range = (dl_arr < dl_min) | (dl_arr > dl_max)
+        result[out_of_range] = 0.0
+
+        if np.ndim(d_L) == 0:
+            return float(result[0])
+        return result  # type: ignore[no-any-return]
+
     def detection_probability_without_bh_mass_interpolated(
         self,
         d_L: float | npt.NDArray[np.float64],

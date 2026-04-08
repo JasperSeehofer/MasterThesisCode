@@ -63,12 +63,103 @@ ADDITIONAL_GALAXIES_WITHOUT_BH_MASS = "additional_galaxies_without_bh_mass"
 
 FRACTIONAL_LUMINOSITY_DISTANCE_ERROR_THRESHOLD = 0.10
 
+# Fixed-quad order for D(h) precomputation
+_DH_QUAD_ORDER: int = 100
+
+
+def precompute_completion_denominator(
+    h_values: list[float],
+    detection_probability_obj: SimulationDetectionProbability,
+    Omega_m: float,
+    Omega_DE: float,
+    *,
+    quad_n: int = _DH_QUAD_ORDER,
+) -> dict[float, float]:
+    """Precompute the completion-term denominator D(h) for each h value.
+
+    Gray et al. (2020), arXiv:1908.06050, Eq. A.19:
+    Denominator integrates P_det * dVc/dz over the full detectable volume.
+
+    .. math::
+
+        D(h) = \\int_{z_{\\min}}^{z_{\\max}(h)} P_{\\det}(d_L(z,h))
+               \\frac{dV_c}{dz\\,d\\Omega}\\, dz
+
+    where ``z_max(h)`` is the redshift corresponding to the P_det grid's
+    maximum ``d_L`` at the given h.
+
+    Args:
+        h_values: List of Hubble parameter values to evaluate.
+        detection_probability_obj: SimulationDetectionProbability instance
+            (must have ``get_dl_max`` and
+            ``detection_probability_without_bh_mass_interpolated_zero_fill``).
+        Omega_m: Matter density parameter.
+        Omega_DE: Dark energy density parameter.
+        quad_n: Gauss-Legendre quadrature order (default 100).
+
+    Returns:
+        Dict mapping h -> D(h) in units of Mpc^3/sr.
+    """
+    D_h_table: dict[float, float] = {}
+
+    for h in h_values:
+        dl_max = detection_probability_obj.get_dl_max(h)
+        z_max = dist_to_redshift(dl_max, h=h)
+        z_min = 1e-6
+
+        def _denom_integrand(
+            z: npt.NDArray[np.float64],
+            _h: float = h,
+        ) -> npt.NDArray[np.float64]:
+            d_L: npt.NDArray[np.float64] = np.asarray(
+                dist_vectorized(z, h=_h), dtype=np.float64
+            )  # Gpc
+            phi = np.zeros_like(z)  # marginalized; value does not matter
+            theta = np.zeros_like(z)
+            p_det = detection_probability_obj.detection_probability_without_bh_mass_interpolated_zero_fill(
+                d_L, phi, theta, h=_h
+            )
+            dVc: npt.NDArray[np.float64] = np.atleast_1d(
+                np.asarray(comoving_volume_element(z, h=_h), dtype=np.float64)
+            )
+            return np.asarray(p_det, dtype=np.float64) * dVc
+
+        D_h: float = fixed_quad(_denom_integrand, z_min, z_max, n=quad_n)[0]
+        D_h_table[h] = D_h
+        _LOGGER.info(
+            "D(h=%.4f) = %.6e  [z_max=%.4f, dl_max=%.4f Gpc]",
+            h,
+            D_h,
+            z_max,
+            dl_max,
+        )
+
+    # --- Red flag checks ---
+    D_values = list(D_h_table.values())
+    if any(d <= 0 for d in D_values):
+        _LOGGER.warning(
+            "D(h) <= 0 for some h values: %s",
+            {h: d for h, d in D_h_table.items() if d <= 0},
+        )
+    if len(D_values) > 1:
+        ratio = max(D_values) / max(min(D_values), 1e-300)
+        if ratio > 10:
+            _LOGGER.warning("D(h) varies by %.1fx across h grid (max/min)", ratio)
+        if max(D_values) - min(D_values) < 1e-10 * max(D_values):
+            _LOGGER.warning("D(h) is nearly identical for all h — h-dependence may not be captured")
+
+    return D_h_table
+
+
 # Module-level globals used by child_process_init for multiprocessing worker state
 redshift_upper_integration_limit: float = 0.0
 redshift_lower_integration_limit: float = 0.0
 bh_mass_upper_integration_limit: float = 0.0
 bh_mass_lower_integration_limit: float = 0.0
 detection_probability: Any = None
+# Gray et al. (2020), arXiv:1908.06050, Eq. A.19:
+# Precomputed completion-term denominator D(h) for each h in the evaluation grid
+D_h_table: dict[float, float] = {}
 # Legacy global kept for single_host_likelihood_integration_testing() and
 # single_host_likelihood_grid() — not used by the optimized production path.
 detection_likelihood_gaussians_by_detection_index: Any = None
@@ -223,6 +314,17 @@ class BayesianStatistics:
         detection_probability._get_or_build_grid(h_value)
         _LOGGER.debug("P_det grid pre-warmed for h=%.4f.", h_value)
 
+        # Gray et al. (2020), arXiv:1908.06050, Eq. A.19:
+        # Precompute completion-term denominator D(h) over full detectable volume.
+        # D(h) is event-independent; compute once per h-value.
+        _D_h_table = precompute_completion_denominator(
+            h_values=[h_value],
+            detection_probability_obj=detection_probability,
+            Omega_m=self.Omega_m,
+            Omega_DE=self.Omega_DE,
+        )
+        _LOGGER.info("D(h) precomputed for %d h-value(s).", len(_D_h_table))
+
         _LOGGER.debug("Pre-computing Gaussian arrays for GW likelihoods...")
         _t0 = time.perf_counter()
 
@@ -344,6 +446,7 @@ class BayesianStatistics:
         self._det_M = _det_M
         self._det_phi = _det_phi
         self._det_theta = _det_theta
+        self._D_h_table = _D_h_table
 
         _LOGGER.info(
             "Gaussian precomputation: %.2fs (%d detections)",
@@ -411,6 +514,7 @@ class BayesianStatistics:
                 _det_M,
                 _det_phi,
                 _det_theta,
+                _D_h_table,
             ),
         ) as pool:
             _LOGGER.info(
@@ -777,42 +881,37 @@ class BayesianStatistics:
 
                 return p_gw * p_det * dVc
 
-            # Completion term denominator integrand
-            # Gray et al. (2020), arXiv:1908.06050, Eq. 32:
-            #   P_det(d_L(z,h)) * dVc/dz
-            def completion_denominator_integrand(
-                z: npt.NDArray[np.float64],
-            ) -> npt.NDArray[np.float64]:
-                d_L: npt.NDArray[np.float64] = np.asarray(
-                    dist_vectorized(z, h=self.h), dtype=np.float64
-                )  # Gpc
-                phi = np.full_like(z, self.detection.phi)
-                theta = np.full_like(z, self.detection.theta)
-
-                p_det = (
-                    detection_probability_obj.detection_probability_without_bh_mass_interpolated(
-                        d_L, phi, theta, h=self.h
-                    )
-                )
-                dVc: npt.NDArray[np.float64] = np.atleast_1d(
-                    np.asarray(comoving_volume_element(z, h=self.h), dtype=np.float64)
-                )
-
-                return p_det * dVc
-
             comp_numerator: float = fixed_quad(
                 completion_numerator_integrand, z_lower, z_upper, n=FIXED_QUAD_N
             )[0]
-            comp_denominator: float = fixed_quad(
-                completion_denominator_integrand, z_lower, z_upper, n=FIXED_QUAD_N
-            )[0]
+
+            # Gray et al. (2020), arXiv:1908.06050, Eq. A.19:
+            # Denominator integrates P_det * dVc/dz over full detectable volume,
+            # precomputed once per h-value (event-independent).
+            comp_denominator: float = self._D_h_table.get(self.h, 0.0)
+
+            # Grid coverage flag: warn if numerator 4-sigma window exceeds P_det grid
+            d_L_upper = self.detection.d_L + 4.0 * self.detection.d_L_uncertainty
+            dl_max_grid = detection_probability_obj.get_dl_max(self.h)
+            if d_L_upper > dl_max_grid:
+                _LOGGER.warning(
+                    "Detection %d: 4-sigma d_L upper (%.4f Gpc) exceeds P_det grid max (%.4f Gpc)",
+                    detection_index,
+                    d_L_upper,
+                    dl_max_grid,
+                )
 
             if comp_denominator > 0:
                 L_comp = float(comp_numerator / comp_denominator)
+                # Diagnostic: N_i(h)/D(h) ratio should be < 1
+                if L_comp > 1.0:
+                    _LOGGER.warning(
+                        "Detection %d: N_i/D(h) = %.4e > 1.0 (unexpected)",
+                        detection_index,
+                        L_comp,
+                    )
             else:
-                _LOGGER.warning(
-                    f"Detection {detection_index}: L_comp denominator is zero, using L_cat only"
-                )
+                _LOGGER.warning(f"Detection {detection_index}: D(h) is zero, using L_cat only")
                 L_comp = 0.0
                 f_i = 1.0  # fall back to catalog-only
 
@@ -1398,6 +1497,7 @@ def child_process_init(
     current_det_M_arr: npt.NDArray[np.float64],
     current_det_phi_arr: npt.NDArray[np.float64],
     current_det_theta_arr: npt.NDArray[np.float64],
+    current_D_h_table: dict[float, float] | None = None,
 ) -> None:
     global redshift_upper_integration_limit
     global redshift_lower_integration_limit
@@ -1409,6 +1509,7 @@ def child_process_init(
     global det_index_to_slot
     global sigma2_cond_arr, proj_arr
     global det_d_L_arr, det_d_L_unc_arr, det_M_arr, det_phi_arr, det_theta_arr
+    global D_h_table
 
     redshift_upper_integration_limit = redshift_upper_limit
     redshift_lower_integration_limit = redshift_lower_limit
@@ -1429,6 +1530,8 @@ def child_process_init(
     det_M_arr = current_det_M_arr
     det_phi_arr = current_det_phi_arr
     det_theta_arr = current_det_theta_arr
+    if current_D_h_table is not None:
+        D_h_table = current_D_h_table
 
 
 def _get_closest_possible_host(
