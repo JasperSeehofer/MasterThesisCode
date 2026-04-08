@@ -118,7 +118,7 @@ See `.gpd/ROADMAP.md` for full details.
 
 ### v2.1 H0 Bias Resolution (GSD/GPD mixed, active)
 
-- [ ] **Phase 30: Baseline & Evaluation Infrastructure** — Capture baseline posterior snapshot, build before/after comparison tooling (DIAG-03, EVAL-01, EVAL-02) — GSD
+- [x] **Phase 30: Baseline & Evaluation Infrastructure** — Capture baseline posterior snapshot, build before/after comparison tooling (DIAG-03, EVAL-01, EVAL-02) — GSD (completed 2026-04-08)
 - [ ] **Phase 31: Catalog-Only Diagnostic** — Run f_i=1.0 evaluation to confirm L_comp is the primary bias source (DIAG-01, DIAG-02) — GSD
 - [ ] **Phase 32: Completion Term Fix** — Replace dVc/dz source prior with EMRI rate-weighted prior, validate h-dependence (COMP-01, COMP-02) — GPD (physics)
 - [ ] **Phase 33: P_det Grid Resolution** — Increase grid from 30 to 60 d_L bins, validate coverage (PDET-01, PDET-02) — GSD
@@ -130,7 +130,7 @@ See `.gpd/ROADMAP.md` for full details.
 **Goal**: Modernize the visual style infrastructure so all downstream figures automatically inherit publication-quality aesthetics
 **Requirements**: STYL-01, STYL-02, STYL-03
 **Depends on**: None
-**Plans:** 1/1 plans complete
+**Plans:** 2 plans (1 complete + 1 gap closure)
 Plans:
 - [x] 29-01-PLAN.md — Update mplstyle + Okabe-Ito colors + style regression tests
 **Success criteria**:
@@ -149,9 +149,10 @@ Plans:
   2. The before/after comparison report is generated automatically when a new evaluation is run alongside the baseline JSON
   3. Comparison output is human-readable (table: MAP h, CI width, bias %, events) and machine-readable (JSON)
   4. Baseline snapshot is committed to `.planning/debug/` so it can be referenced by all subsequent phases
-**Plans:** 1 plan
+**Plans:** 2 plans (1 complete + 1 gap closure)
 Plans:
-- [ ] 30-01-PLAN.md — evaluation_report.py module + CLI flags + tests
+- [x] 30-01-PLAN.md — evaluation_report.py module + CLI flags + tests
+- [ ] 30-02-PLAN.md — Gap closure: commit real production baseline from run_v12_validation
 
 ### Phase 31: Catalog-Only Diagnostic
 **Goal**: Confirm that the completion term L_comp is the dominant source of the h=0.66 bias by running the pipeline with f_i=1.0 (catalog only) and observing whether the MAP shifts toward h=0.73
@@ -297,7 +298,7 @@ Plans:
 | 27. Production Run & Figures | v2.0 | 0/? | Paused (GPD) | - |
 | 28. Review & Submission | v2.0 | 0/? | Paused (GPD) | - |
 | 29. Style Foundation | v2.1 PubFigs | 1/1 | Complete | 2026-04-07 |
-| 30. Baseline & Evaluation Infra | v2.1 BiasRes | 0/1 | Planning | - |
+| 30. Baseline & Evaluation Infra | v2.1 BiasRes | 1/1 | Complete   | 2026-04-08 |
 | 31. Catalog-Only Diagnostic | v2.1 BiasRes | 0/? | Not started | - |
 | 32. Completion Term Fix | v2.1 BiasRes | 0/? | Not started (GPD) | - |
 | 33. P_det Grid Resolution | v2.1 BiasRes | 0/? | Not started | - |
