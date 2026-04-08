@@ -118,6 +118,11 @@ class Arguments:
         return val
 
     @property
+    def catalog_only(self) -> bool:
+        """Skip completion integral: set f_i=1, L_comp=0 (catalog-only diagnostic)."""
+        return bool(self._parsed_arguments.catalog_only)
+
+    @property
     def combine(self) -> bool:
         """Indicates whether to combine per-event posteriors into joint H0 posterior."""
         return bool(self._parsed_arguments.combine)
@@ -244,6 +249,12 @@ def _parse_arguments(arguments: list[str]) -> argparse.Namespace:
         default=None,
         help="Path to a baseline.json file. Generates a comparison report between the baseline "
         "and the current posteriors directory. Works with or without --evaluate.",
+    )
+    parser.add_argument(
+        "--catalog_only",
+        action="store_true",
+        default=False,
+        help="Skip completion integral in evaluation: set f_i=1, L_comp=0 (catalog-only diagnostic).",
     )
     parsed_arguments: argparse.Namespace = parser.parse_args(arguments)
     return parsed_arguments
