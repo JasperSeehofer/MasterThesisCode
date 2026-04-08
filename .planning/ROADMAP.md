@@ -221,6 +221,11 @@ Plans:
 **Goal**: Merge the two disconnected figure pipelines and deliver polished paper figures with new style
 **Requirements**: PFIG-01, PFIG-02, PFIG-03, PFIG-04
 **Depends on**: Phase 29 (style)
+**Plans:** 3 plans
+Plans:
+- [ ] 35-01-PLAN.md — Extract shared compute_credible_interval + unit tests
+- [ ] 35-02-PLAN.md — Wire paper figures into unified manifest, thread data_dir
+- [ ] 35-03-PLAN.md — Visual polish, KDE-smoothed posterior variant, human verify
 **Success criteria**:
 1. Single `--generate_figures <dir>` command generates all figures (paper + thesis + galaxy-level)
 2. `paper_figures.py` functions integrated into unified manifest
@@ -306,7 +311,7 @@ Plans:
 | 32. Completion Term Fix | v2.1 BiasRes | 0/? | Not started (GPD) | - |
 | 33. P_det Grid Resolution | v2.1 BiasRes | 0/? | Not started | - |
 | 34. Fisher Matrix Quality | v2.1 BiasRes | 0/? | Not started | - |
-| 35. Unified Pipeline & Paper Figs | v2.1 PubFigs | 0/? | Paused | - |
+| 35. Unified Pipeline & Paper Figs | v2.1 PubFigs | 0/3 | Planning complete | - |
 | 36. Galaxy-Level Figures | v2.1 PubFigs | 0/? | Paused | - |
 | 37. Interactive Figures | v2.1 PubFigs | 0/? | Paused | - |
 | 38. QA & New Science Figures | v2.1 PubFigs | 0/? | Paused | - |
