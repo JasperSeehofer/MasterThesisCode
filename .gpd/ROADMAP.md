@@ -94,3 +94,14 @@ Plans:
 **Goal:** Internal peer review, resolve all TODO markers, finalize co-authors, submit to PRD + arXiv
 **Status:** Not started
 **Depends on:** Phase 27 (final results and figures)
+
+### Phase 32: Completion Term Fix
+
+**Goal:** Fix the systematic low-h bias in the H0 posterior caused by the completion term L_comp. Extend the L_comp denominator to the full detectable volume per Gray et al. (2020) Eq. A.19, precompute D(h) table, and validate that MAP shifts toward h=0.73 with bias shrinking as ~1/sqrt(N).
+**Status:** Planned (2 plans)
+**Depends on:** Phase 25 (completeness code), Phase 27 (production baseline)
+**Plans:** 2 plans
+
+Plans:
+- [ ] 32-01-PLAN.md -- Implement D(h) full-volume denominator precomputation and fix L_comp
+- [ ] 32-02-PLAN.md -- Validate: MAP comparison, bias-vs-N convergence, per-event L_comp decomposition
