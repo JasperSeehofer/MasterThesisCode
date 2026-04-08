@@ -69,6 +69,12 @@ def main() -> None:
     if arguments.generate_interactive is not None:
         generate_interactive_figures(arguments.generate_interactive)
 
+    if arguments.save_baseline:
+        _save_baseline(arguments.working_directory)
+
+    if arguments.compare_baseline is not None:
+        _compare_baseline(arguments.working_directory, arguments.compare_baseline)
+
     if not _needs_model:
         end_time = time()
         _ROOT_LOGGER.debug(f"Finished in {end_time - start_time}s.")
@@ -119,6 +125,73 @@ def main() -> None:
 
     end_time = time()
     _ROOT_LOGGER.debug(f"Finished in {end_time - start_time}s.")
+
+
+def _save_baseline(working_directory: str) -> None:
+    """Extract baseline metrics from existing posteriors and save as baseline.json."""
+    from pathlib import Path
+
+    from master_thesis_code.bayesian_inference.evaluation_report import extract_baseline
+
+    posteriors_dir = Path(working_directory) / "simulations" / "posteriors"
+    crb_csv = Path(working_directory) / "simulations" / "prepared_cramer_rao_bounds.csv"
+
+    baseline = extract_baseline(
+        posteriors_dir=posteriors_dir,
+        crb_csv_path=crb_csv if crb_csv.exists() else None,
+    )
+
+    import json
+
+    project_root = Path(__file__).resolve().parents[1]
+    debug_dir = project_root / ".planning" / "debug"
+    debug_dir.mkdir(parents=True, exist_ok=True)
+    output_path = debug_dir / "baseline.json"
+    output_path.write_text(json.dumps(baseline.to_json(), indent=2))
+    _ROOT_LOGGER.info(
+        "Baseline saved to %s (MAP h=%.4f, bias=%.1f%%)",
+        output_path,
+        baseline.map_h,
+        baseline.bias_percent,
+    )
+
+
+def _compare_baseline(working_directory: str, baseline_path: str) -> None:
+    """Generate comparison report between baseline and current posteriors."""
+    import json
+    from pathlib import Path
+
+    from master_thesis_code.bayesian_inference.evaluation_report import (
+        BaselineSnapshot,
+        extract_baseline,
+        generate_comparison_report,
+    )
+
+    baseline_data = json.loads(Path(baseline_path).read_text())
+    baseline = BaselineSnapshot.from_json(baseline_data)
+
+    posteriors_dir = Path(working_directory) / "simulations" / "posteriors"
+    crb_csv = Path(working_directory) / "simulations" / "prepared_cramer_rao_bounds.csv"
+
+    current = extract_baseline(
+        posteriors_dir=posteriors_dir,
+        crb_csv_path=crb_csv if crb_csv.exists() else None,
+    )
+
+    project_root = Path(__file__).resolve().parents[1]
+    output_dir = project_root / ".planning" / "debug"
+    output_dir.mkdir(parents=True, exist_ok=True)
+    report_path = generate_comparison_report(baseline, current, output_dir)
+    _ROOT_LOGGER.info("Comparison report written to %s", report_path)
+
+    print(f"\n{'=' * 60}")
+    print(f"  Baseline: MAP h={baseline.map_h:.4f}, bias={baseline.bias_percent:+.1f}%")
+    print(f"  Current:  MAP h={current.map_h:.4f}, bias={current.bias_percent:+.1f}%")
+    print(
+        f"  Delta:    MAP h={current.map_h - baseline.map_h:+.4f}, "
+        f"bias={current.bias_percent - baseline.bias_percent:+.1f}%"
+    )
+    print(f"{'=' * 60}\n")
 
 
 def _get_git_commit() -> str:

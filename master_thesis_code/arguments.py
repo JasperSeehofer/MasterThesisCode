@@ -107,6 +107,17 @@ class Arguments:
         return int(raw)
 
     @property
+    def save_baseline(self) -> bool:
+        """Indicates whether to save baseline posterior metrics to baseline.json."""
+        return bool(self._parsed_arguments.save_baseline)
+
+    @property
+    def compare_baseline(self) -> str | None:
+        """Path to a baseline.json file for comparison, or None if not set."""
+        val: str | None = self._parsed_arguments.compare_baseline
+        return val
+
+    @property
     def combine(self) -> bool:
         """Indicates whether to combine per-event posteriors into joint H0 posterior."""
         return bool(self._parsed_arguments.combine)
@@ -219,6 +230,20 @@ def _parse_arguments(arguments: list[str]) -> argparse.Namespace:
         help="Output directory for generating interactive Plotly HTML figures.",
         type=str,
         default=None,
+    )
+    parser.add_argument(
+        "--save_baseline",
+        action="store_true",
+        default=False,
+        help="Extract baseline posterior metrics from existing h-sweep posteriors and save as baseline.json. "
+        "Requires a full h-grid sweep (3+ h-values) in the posteriors directory.",
+    )
+    parser.add_argument(
+        "--compare_baseline",
+        type=str,
+        default=None,
+        help="Path to a baseline.json file. Generates a comparison report between the baseline "
+        "and the current posteriors directory. Works with or without --evaluate.",
     )
     parsed_arguments: argparse.Namespace = parser.parse_args(arguments)
     return parsed_arguments
