@@ -1,13 +1,13 @@
 ---
 phase: 30-baseline-evaluation-infrastructure
-reviewed: 2026-04-08T00:00:00Z
+reviewed: 2026-04-08T10:23:08Z
 depth: standard
 files_reviewed: 4
 files_reviewed_list:
-  - master_thesis_code/bayesian_inference/evaluation_report.py
-  - master_thesis_code_test/bayesian_inference/test_evaluation_report.py
   - master_thesis_code/arguments.py
+  - master_thesis_code/bayesian_inference/evaluation_report.py
   - master_thesis_code/main.py
+  - master_thesis_code_test/bayesian_inference/test_evaluation_report.py
 findings:
   critical: 0
   warning: 4
@@ -18,63 +18,37 @@ status: issues_found
 
 # Phase 30: Code Review Report
 
-**Reviewed:** 2026-04-08T00:00:00Z
+**Reviewed:** 2026-04-08T10:23:08Z
 **Depth:** standard
 **Files Reviewed:** 4
 **Status:** issues_found
 
 ## Summary
 
-Phase 30 introduces `evaluation_report.py`, two CLI flags (`--save_baseline`, `--compare_baseline`),
-and their wiring in `main.py`. The code is generally well-structured and well-tested.
-Four warnings stand out: an incorrect `n_events` extraction that silently reads the first file
-instead of the consistent maximum, a `_save_baseline` that raises unhandled `ValueError`/`FileNotFoundError`
-when the posteriors directory is absent, a `from_json` type import inside a method body that
-circumvents mypy, and inconsistent duplicate isoformat timestamp generation in `extract_baseline`.
-Three lower-priority info items follow.
-
----
+Phase 30 introduces `evaluation_report.py` (baseline extraction, credible interval computation, comparison reports), two CLI flags (`--save_baseline`, `--compare_baseline`) in `arguments.py`, their wiring in `main.py`, and comprehensive tests. The code is well-structured with good test coverage. Four warnings were identified: silent miscount of `n_events`, missing directory existence checks in CLI wrappers, a type-annotation workaround that bypasses mypy, and redundant timestamp generation. Three info-level items cover dead code, a non-vectorised pandas pattern, and overwrite-prone output file naming.
 
 ## Warnings
 
-### WR-01: `n_events` always taken from first posterior file — may silently miscount
+### WR-01: `n_events` always taken from first posterior file -- may silently miscount
 
 **File:** `master_thesis_code/bayesian_inference/evaluation_report.py:254`
-
-**Issue:** `n_events` is set from `posteriors[0]["n_detections"]`, where `posteriors` is sorted
-by ascending `h` value. There is no guarantee that every `h_*.json` file in an h-sweep records
-the same number of detection events. If different h-value files contain different event sets (e.g.,
-after a partial re-run where some files were regenerated), `n_events` will silently reflect
-whichever file has the smallest `h` value, not the actual count for the MAP value or a stable
-aggregate. A more robust approach is to verify consistency across files or use the MAP-h file:
-
+**Issue:** `n_events = int(posteriors[0]["n_detections"])` reads from the file with the smallest `h` value (since `posteriors` is sorted by `h`). If different `h_*.json` files have different detection counts (e.g., after a partial re-run), `n_events` will be incorrect without any warning. The MAP-h file is the natural choice, since that is the file corresponding to the reported MAP value.
+**Fix:**
 ```python
-# Take n_events from the MAP-h file, not arbitrarily the first
+# Use the MAP-h file instead of the first file
 n_events = int(posteriors[map_idx]["n_detections"])
-```
 
-If the intent is to assert all files agree, add an assertion and surface a warning on mismatch:
-```python
+# Optionally warn on inconsistency
 counts = {int(r["n_detections"]) for r in posteriors}
 if len(counts) > 1:
     _LOGGER.warning("Inconsistent n_detections across h files: %s. Using MAP-h count.", counts)
-n_events = int(posteriors[map_idx]["n_detections"])
 ```
 
----
+### WR-02: `_save_baseline` and `_compare_baseline` raise unhandled errors when posteriors directory is absent
 
-### WR-02: `_save_baseline` in `main.py` propagates `ValueError`/`FileNotFoundError` to the user without context
-
-**File:** `master_thesis_code/main.py:136-156`
-
-**Issue:** `_save_baseline` calls `extract_baseline(posteriors_dir=...)` without checking whether
-`posteriors_dir` exists first. If the user runs `--save_baseline` before an h-sweep has been
-executed, `load_posteriors` calls `posteriors_dir.glob(...)` on a non-existent path, which raises
-`FileNotFoundError` on some platforms (Python `Path.glob` on a non-existent directory raises
-`OSError` on Windows; on Linux it returns an empty iterator, which then raises the `ValueError`
-from `extract_baseline`). Either path produces an unformatted traceback instead of an actionable
-error message. The fix is a pre-flight existence check:
-
+**File:** `master_thesis_code/main.py:136` and `master_thesis_code/main.py:173`
+**Issue:** Neither `_save_baseline` nor `_compare_baseline` checks whether `posteriors_dir` exists before calling `extract_baseline`. If the user runs `--save_baseline` before an h-sweep has been executed, `posteriors_dir.glob(...)` returns an empty iterator on Linux, which then hits the `len(posteriors) < 3` check in `extract_baseline` and raises a `ValueError` with a traceback. On Windows, `Path.glob` on a non-existent directory raises `OSError`. Both produce poor user experience. A pre-flight check with an actionable log message is better.
+**Fix:**
 ```python
 def _save_baseline(working_directory: str) -> None:
     from pathlib import Path
@@ -83,76 +57,44 @@ def _save_baseline(working_directory: str) -> None:
     posteriors_dir = Path(working_directory) / "simulations" / "posteriors"
     if not posteriors_dir.is_dir():
         _ROOT_LOGGER.error(
-            "--save_baseline requires a posteriors directory at %s. "
-            "Run a full h-sweep (--evaluate with multiple --h_value calls) first.",
+            "--save_baseline requires posteriors at %s. Run an h-sweep first.",
             posteriors_dir,
         )
         return
-    ...
+    # ... rest unchanged
 ```
 
-The same applies to `_compare_baseline` at line 173 for the same `posteriors_dir`.
+Apply the same pattern to `_compare_baseline` at line 173.
 
----
-
-### WR-03: `from_json` imports `Any` inside method body — bypasses mypy
+### WR-03: `from_json` imports `Any` inside method body -- bypasses mypy visibility
 
 **File:** `master_thesis_code/bayesian_inference/evaluation_report.py:96-98`
-
 **Issue:**
 ```python
-@classmethod
-def from_json(cls, data: dict[str, object]) -> "BaselineSnapshot":
-    from typing import Any
-    d: dict[str, Any] = data
+from typing import Any
+d: dict[str, Any] = data
 ```
-
-The local `from typing import Any` is used solely to re-annotate `data` as `dict[str, Any]`
-to silence mypy complaints about subscript access on `object` values. This is a workaround that
-hides a genuine type narrowing gap. Mypy cannot see the annotation because `Any` is imported
-inside the function. The proper fix is to declare the parameter as `dict[str, Any]` directly:
-
+The local import of `Any` inside the method is a workaround to silence mypy about subscript access on `object` values. Mypy may not fully resolve the annotation since `Any` is imported at function scope. The correct approach is to declare the parameter type directly or import `Any` at module level.
+**Fix:**
 ```python
-# At module top level (already has: from dataclasses import dataclass, field)
-from typing import Any  # add this
+# At module top level, add:
+from typing import Any
 
+# Then change the method signature:
 @classmethod
 def from_json(cls, data: dict[str, Any]) -> "BaselineSnapshot":
     return cls(
         map_h=float(data["map_h"]),
-        ...
+        # ... no need for re-annotation trick
     )
 ```
 
-This lets mypy correctly type-check the entire method rather than silently widening to `Any`.
+### WR-04: `extract_baseline` redundantly generates timestamp and git commit -- default_factory is misleading
 
----
-
-### WR-04: `extract_baseline` constructs timestamp twice — `created_at` field is always overwritten
-
-**File:** `master_thesis_code/bayesian_inference/evaluation_report.py:261-273`
-
-**Issue:** `BaselineSnapshot` has a `default_factory` for `created_at` that generates an
-ISO-8601 timestamp. However, `extract_baseline` explicitly re-generates the timestamp at line 271
-and passes it to the constructor, effectively ignoring the default and running
-`datetime.datetime.now(datetime.UTC)` twice (once via the default factory if the field were not
-overridden, but here it is overridden). While not a bug per se, the pattern is inconsistent —
-the constructor is called with `created_at=...` and `git_commit=...` explicitly, making the
-`default_factory` declarations on those fields misleading. They appear to be self-contained
-defaults but are always externally supplied by `extract_baseline`.
-
-Consider either:
-1. Removing the `default_factory` for `created_at` and `git_commit` (use `field(default="")`)
-   and documenting that callers are expected to populate them, or
-2. Removing the explicit `created_at=` and `git_commit=` arguments from the `extract_baseline`
-   call and relying on the defaults — which is cleaner and avoids the dual generation.
-
-Option 2 is preferred for minimising call-site boilerplate:
+**File:** `master_thesis_code/bayesian_inference/evaluation_report.py:271-272`
+**Issue:** `BaselineSnapshot` defines `default_factory` for `created_at` and `git_commit`, but `extract_baseline` explicitly passes both fields at lines 271-272, making the defaults dead code. This is not a bug, but makes the dataclass contract misleading -- the defaults suggest the fields are self-populating, while the only real call site always overrides them.
+**Fix:** Remove the explicit arguments from `extract_baseline` and rely on the defaults:
 ```python
-# In extract_baseline — remove these two lines:
-#     created_at=datetime.datetime.now(datetime.UTC).isoformat() + "Z",
-#     git_commit=_get_git_commit_safe(),
-# The dataclass default_factory already handles them.
 return BaselineSnapshot(
     map_h=map_h,
     ci_lower=ci_lower,
@@ -163,68 +105,47 @@ return BaselineSnapshot(
     h_values=h_values,
     log_posteriors=log_posts,
     per_event_summaries=per_event_summaries,
+    # created_at and git_commit use default_factory
 )
 ```
 
----
-
 ## Info
 
-### IN-01: `_extract_per_event_summaries` iterates with `df.iterrows()` — consider vectorised extraction
+### IN-01: `validate()` stores `_simulation_steps` as dead instance attribute
+
+**File:** `master_thesis_code/arguments.py:149`
+**Issue:** `self._simulation_steps = int(self._parsed_arguments.simulation_steps)` assigns a new instance attribute that is never read. The `simulation_steps` property reads from `self._parsed_arguments` directly. This is dead code.
+**Fix:** Remove the assignment. The `try/except ValueError` can still raise `ArgumentsError` without storing the result:
+```python
+try:
+    int(self._parsed_arguments.simulation_steps)
+except ValueError as original_error:
+    raise ArgumentsError(...) from original_error
+```
+
+### IN-02: `_extract_per_event_summaries` uses `df.iterrows()` -- could use vectorised extraction
 
 **File:** `master_thesis_code/bayesian_inference/evaluation_report.py:291`
-
-**Issue:** `df.iterrows()` is the slowest pandas row iteration method. For the sizes expected
-(tens to hundreds of rows) this is not a performance issue, but the pattern is flagged as a
-code-quality note because the project conventions call out vectorised operations for array code.
-The columns of interest are all numeric; a vectorised extraction is both idiomatic and avoids
-the pandas `Series.index` attribute used on line 295:
-
+**Issue:** `df.iterrows()` is the slowest pandas row-iteration pattern. For the expected sizes (tens to hundreds of rows) this has no practical impact, but the vectorised alternative is both shorter and idiomatic:
+**Fix:**
 ```python
 keep = [c for c in ["d_L", "SNR", "sigma_d_L_over_d_L", "condition_number", "quality_pass"]
         if c in df.columns]
 return df[keep].to_dict(orient="records")
 ```
 
-Note: the return type would then be `list[dict[str, float]]` only if `quality_pass` is numeric
-(boolean stored as 0/1), which should be verified against the CSV schema.
-
----
-
-### IN-02: `arguments.py` — `validate()` stores `_simulation_steps` as instance attribute but never uses it
-
-**File:** `master_thesis_code/arguments.py:149`
-
-**Issue:** Inside `validate()`:
-```python
-self._simulation_steps = int(self._parsed_arguments.simulation_steps)
-```
-This assigns a new instance attribute `_simulation_steps` that shadows nothing and is never
-read again. The `simulation_steps` property already reads from `self._parsed_arguments` directly.
-The assignment is dead code left over from a refactor. It should be removed.
-
----
-
-### IN-03: `_compare_baseline` in `main.py` calls `generate_comparison_report` without a `label` argument — output file name is always `comparison_current.md`
+### IN-03: `_compare_baseline` output always overwrites `comparison_current.md`
 
 **File:** `master_thesis_code/main.py:184`
-
-**Issue:**
+**Issue:** `generate_comparison_report(baseline, current, output_dir)` uses the default `label="current"`, so every invocation writes to `comparison_current.md`. Multiple sequential comparisons (e.g., after Phase 31 and Phase 32 fixes) silently overwrite earlier reports.
+**Fix:** Derive the label from the baseline file name or include a timestamp:
 ```python
-report_path = generate_comparison_report(baseline, current, output_dir)
-```
-The `label` parameter defaults to `"current"`, so every invocation of `--compare_baseline`
-overwrites the same file `comparison_current.md`. If the user runs multiple comparisons
-(e.g., after Phase 31 and Phase 32), earlier reports are silently lost. Consider deriving
-the label from the baseline file name or a timestamp:
-
-```python
-label = Path(baseline_path).stem  # e.g. "baseline" → "comparison_baseline.md"
+label = Path(baseline_path).stem  # e.g. "baseline" -> comparison_baseline.md
 report_path = generate_comparison_report(baseline, current, output_dir, label=label)
 ```
 
 ---
 
-_Reviewed: 2026-04-08T00:00:00Z_
+_Reviewed: 2026-04-08T10:23:08Z_
 _Reviewer: Claude (gsd-code-reviewer)_
 _Depth: standard_
