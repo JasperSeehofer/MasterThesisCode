@@ -16,46 +16,12 @@ from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 
 from master_thesis_code.plotting._colors import CYCLE, TRUTH
-from master_thesis_code.plotting._helpers import _fig_from_ax, get_figure
+from master_thesis_code.plotting._helpers import _fig_from_ax, compute_credible_interval, get_figure
 from master_thesis_code.plotting._labels import LABELS
 
 # Default subset sizes for convergence analysis
 _DEFAULT_SUBSETS: list[int] = [1, 5, 10, 25, 50, 100]
 
-
-def _credible_interval_width(
-    h_values: npt.NDArray[np.float64],
-    posterior: npt.NDArray[np.float64],
-    level: float = 0.68,
-) -> float:
-    """Compute the symmetric credible-interval width at *level*.
-
-    Parameters
-    ----------
-    h_values:
-        Grid of h values.
-    posterior:
-        Posterior density evaluated on *h_values* (need not be normalized).
-    level:
-        Probability mass enclosed (default 68%).
-
-    Returns
-    -------
-    float
-        Width ``hi - lo`` of the central credible interval.
-    """
-    # Normalize
-    norm = np.trapezoid(posterior, h_values)
-    if norm <= 0:
-        return float(h_values[-1] - h_values[0])
-    p = posterior / norm
-    # CDF via cumulative trapezoid
-    dh = np.gradient(h_values)
-    cdf = np.cumsum(p * dh)
-    cdf /= cdf[-1]  # ensure exactly [0, 1]
-    lo = float(np.interp((1 - level) / 2, cdf, h_values))
-    hi = float(np.interp((1 + level) / 2, cdf, h_values))
-    return hi - lo
 
 
 def plot_h0_convergence(
@@ -130,8 +96,9 @@ def plot_h0_convergence(
         color = CYCLE[idx % len(CYCLE)]
         ax_post.plot(h_values, combined, color=color, label=f"N={n}")
 
-        width = _credible_interval_width(h_values, combined, level=level)
-        ci_widths.append(width)
+        lo, hi = compute_credible_interval(h_values, combined, level=level)
+        ci_width = hi - lo
+        ci_widths.append(ci_width)
 
     # Left panel styling
     ax_post.set_xlabel(LABELS["h"])

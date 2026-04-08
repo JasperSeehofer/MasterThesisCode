@@ -5,6 +5,8 @@ from collections.abc import Sequence
 from typing import Any, Literal
 
 import matplotlib.pyplot as plt
+import numpy as np
+import numpy.typing as npt
 from matplotlib.axes import Axes
 from matplotlib.cm import ScalarMappable
 from matplotlib.colorbar import Colorbar
@@ -15,6 +17,51 @@ _PRESETS: dict[str, tuple[float, float]] = {
     "single": (3.375, 3.375 / 1.618),  # ~3.375 x 2.086
     "double": (7.0, 7.0 / 1.618),  # ~7.0 x 4.327
 }
+
+
+def compute_credible_interval(
+    h_values: npt.NDArray[np.float64],
+    posterior: npt.NDArray[np.float64],
+    level: float = 0.68,
+) -> tuple[float, float]:
+    """Compute the central credible interval at *level* using trapezoidal CDF.
+
+    Shared CI utility (per D-07 from phase 35 CONTEXT.md) used by both
+    ``convergence_plots.py`` and ``paper_figures.py`` to ensure a consistent
+    trapezoidal CDF everywhere (PFIG-03).
+
+    Parameters
+    ----------
+    h_values:
+        Monotonically increasing grid of Hubble-constant values.
+    posterior:
+        Posterior density evaluated on *h_values* (need not be normalized).
+    level:
+        Probability mass enclosed by the interval (default 0.68 for 68%).
+
+    Returns
+    -------
+    tuple[float, float]
+        ``(lo, hi)`` bounds of the central credible interval.  Returns
+        ``(nan, nan)`` when *posterior* integrates to zero or less.
+    """
+    norm = np.trapezoid(posterior, h_values)
+    if norm <= 0:
+        return (float("nan"), float("nan"))
+
+    p = posterior / norm
+
+    # Build CDF by accumulating per-step trapezoid areas
+    cdf = np.zeros(len(h_values), dtype=np.float64)
+    for i in range(1, len(h_values)):
+        cdf[i] = cdf[i - 1] + np.trapezoid(p[i - 1 : i + 1], h_values[i - 1 : i + 1])
+
+    # Normalize so CDF ends at exactly 1.0
+    cdf /= cdf[-1]
+
+    lo = float(np.interp((1.0 - level) / 2.0, cdf, h_values))
+    hi = float(np.interp((1.0 + level) / 2.0, cdf, h_values))
+    return (lo, hi)
 
 
 def _fig_from_ax(ax: Axes) -> Figure:
