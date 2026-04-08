@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Paper
-status: planning
+status: executing
 stopped_at: Phase 30 context gathered
-last_updated: "2026-04-08T09:37:27.384Z"
-last_activity: 2026-04-08 — Roadmap defined (5 phases, 11 requirements mapped)
+last_updated: "2026-04-08T10:40:18.284Z"
+last_activity: 2026-04-08
 progress:
-  total_phases: 9
-  completed_phases: 1
-  total_plans: 1
-  completed_plans: 1
+  total_phases: 5
+  completed_phases: 2
+  total_plans: 3
+  completed_plans: 3
   percent: 100
 ---
 
@@ -21,20 +21,20 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-08)
 
 **Core value:** Measure H0 from simulated EMRI dark siren events with galaxy catalog completeness correction, producing publication-ready results.
-**Current focus:** v2.1 H0 Bias Resolution — diagnose and fix per-event posterior bias (MAP h=0.66 vs true h=0.73), testing each fix in isolation.
+**Current focus:** Phase 30 — baseline-evaluation-infrastructure
 
 ## Current Position
 
-Phase: 30 — Baseline & Evaluation Infrastructure
-Plan: —
-Status: Ready to plan
-Last activity: 2026-04-08 — Roadmap defined (5 phases, 11 requirements mapped)
+Phase: 30
+Plan: Not started
+Status: Executing Phase 30
+Last activity: 2026-04-08
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 43 (v1.0: 9, v1.1: 4, v1.2: 12, v1.3: 11, v1.4: 5, v1.5: 2)
+- Total plans completed: 45 (v1.0: 9, v1.1: 4, v1.2: 12, v1.3: 11, v1.4: 5, v1.5: 2)
 - Total phases: 33 (28 complete across v1.0-v1.5 + v2.0 Phase 26; 5 planned for v2.1 BiasRes)
 
 ## Accumulated Context
