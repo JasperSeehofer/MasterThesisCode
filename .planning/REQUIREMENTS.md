@@ -1,60 +1,77 @@
-# Requirements — v1.5 Galaxy Catalog Completeness Correction
+# Requirements — v2.1 H₀ Bias Resolution
 
-## Completeness Estimation
+**Defined:** 2026-04-08
+**Core Value:** Measure H₀ from simulated EMRI dark siren events with galaxy catalog completeness correction, producing publication-ready results.
 
-- [ ] **COMP-01**: Compute GLADE+ completeness f(z) from B-band luminosity comparison with Schechter function extrapolation
-- [ ] **COMP-02**: Provide angle-averaged f(z) as interpolatable function usable by the likelihood computation
+## v2.1 Requirements
 
-## Likelihood Correction
+Systematically diagnose and fix the per-event H₀ posterior bias, testing each fix in isolation.
 
-- [ ] **LIKE-01**: Add completion term integrating GW likelihood over uniform-in-comoving-volume prior for uncataloged hosts (Gray et al. 2020 Eq. 9)
-- [ ] **LIKE-02**: Add comoving volume element dV_c/dz/dOmega to physical_relations.py
-- [ ] **LIKE-03**: Modify p_Di() to combine catalog term + completion term weighted by f(z) and (1-f(z))
-- [ ] **LIKE-04**: Thread completeness function through evaluate() -> p_D() -> p_Di() call chain
+### Diagnostics
 
-## Verification
+- [ ] **DIAG-01**: Evaluation can run with f_i=1.0 (catalog-only, no completion term) via CLI flag to confirm L_comp as bias source
+- [ ] **DIAG-02**: Per-event diagnostic output logs L_cat, L_comp, f_i, and combined likelihood at each h value
+- [ ] **DIAG-03**: Baseline posterior snapshot (current MAP h, 68% CI, bias %) saved before any fixes
 
-- [ ] **VER-01**: Limiting case f=1 recovers current (uncorrected) code exactly
-- [ ] **VER-02**: Limiting case f=0 produces broad posterior centered near true H0 (statistical siren)
-- [ ] **VER-03**: Re-run 534-detection dataset with corrected likelihood showing MAP shift toward h=0.73
-- [ ] **VER-04**: Sensitivity test: vary f(z) by +/-20% and verify posterior peak is stable (shift << 20%)
+### Completion Term
 
-## Deployment
+- [ ] **COMP-01**: Completion term uses EMRI rate-weighted source population prior instead of bare dVc/dz
+- [ ] **COMP-02**: Completion term h-dependence validated: L_comp ratio between h=0.66 and h=0.73 is physically reasonable
 
-- [ ] **DEPL-01**: Deploy corrected code to bwUniCluster and run production evaluation with real P_det
+### P_det Grid
+
+- [ ] **PDET-01**: P_det grid resolution configurable, increased from 30 to 60 d_L bins
+- [ ] **PDET-02**: P_det grid coverage validated: 4-sigma integration bounds fall within grid for >95% of events
+
+### Fisher Quality
+
+- [ ] **FISH-01**: Degenerate Fisher matrices detected and handled (regularization or exclusion) instead of allow_singular=True
+- [ ] **FISH-02**: Events with near-singular covariance flagged in diagnostic output with condition number
+
+### Evaluation Infrastructure
+
+- [ ] **EVAL-01**: Before/after comparison report generated automatically: MAP h, 68% CI width, bias %, number of events used
+- [ ] **EVAL-02**: Each fix produces a comparison against the baseline, stored in a structured format for cumulative tracking
 
 ## Future Requirements
 
-- Angular-dependent completeness f(z, Omega) using per-event sky position (second-order improvement)
-- "With BH mass" pathway completeness correction (requires additional mass-dependent completeness)
-- Comparison with gwcosmo package results on same dataset
+### Remaining Physics Bugs (deferred — not blocking bias resolution)
+
+- **PHYS-01**: wCDM params w0, wa accepted but silently ignored in dist()
+- **PHYS-02**: Pipeline A hardcodes 10% σ(d_L) instead of per-source CRB
+- **PHYS-03**: Update from WMAP-era cosmology (Omega_m=0.25, H=0.73) to Planck 2018
+- **PHYS-04**: Galaxy redshift uncertainty scaling (1+z)^3 has no reference
 
 ## Out of Scope
 
-- Full pixelated completeness a la Gray et al. (2022) — angular variation within LISA error boxes is negligible
-- Replacing GLADE+ with a different catalog — GLADE+ is the standard for this analysis
-- Updating to Planck 2018 cosmology (Omega_m=0.3153) — separate physics change, tracked in CLAUDE.md
+| Feature | Reason |
+|---------|--------|
+| Full re-simulation campaign | Fix bias first, then re-run in v2.0 Phase 27 |
+| Paper updates | v2.0 Paper milestone paused until bias resolved |
+| wCDM equation of state | Known bug but not related to H₀ bias |
+| Pipeline A (bayesian_inference.py) fixes | Pipeline B is production; Pipeline A is dev cross-check only |
 
 ## Traceability
 
-| REQ-ID | Phase | Plan | Status |
-|--------|-------|------|--------|
-| COMP-01 | Phase 24 | — | pending |
-| COMP-02 | Phase 24 | — | pending |
-| LIKE-01 | Phase 25 | — | pending |
-| LIKE-02 | Phase 25 | — | pending |
-| LIKE-03 | Phase 25 | — | pending |
-| LIKE-04 | Phase 25 | — | pending |
-| VER-01 | Phase 26 | — | pending |
-| VER-02 | Phase 26 | — | pending |
-| VER-03 | Phase 26 | — | pending |
-| VER-04 | Phase 26 | — | pending |
-| DEPL-01 | Phase 27 | — | pending |
+| Requirement | Phase | Status |
+|-------------|-------|--------|
+| DIAG-01 | — | Pending |
+| DIAG-02 | — | Pending |
+| DIAG-03 | — | Pending |
+| COMP-01 | — | Pending |
+| COMP-02 | — | Pending |
+| PDET-01 | — | Pending |
+| PDET-02 | — | Pending |
+| FISH-01 | — | Pending |
+| FISH-02 | — | Pending |
+| EVAL-01 | — | Pending |
+| EVAL-02 | — | Pending |
 
-## References
+**Coverage:**
+- v2.1 requirements: 11 total
+- Mapped to phases: 0
+- Unmapped: 11 ⚠️
 
-- Gray et al. (2020), arXiv:1908.06050 — primary framework (Eq. 9)
-- Dalya et al. (2022), arXiv:2110.06184 — GLADE+ completeness data
-- Finke et al. (2021), arXiv:2101.12660 — alternative approach comparison
-- Research specification: `.gpd/quick/3-literature-research-galaxy-catalog-in/galaxy-catalog-completeness-research.md`
-- Bias investigation: `scripts/bias_investigation/FINDINGS.md`
+---
+*Requirements defined: 2026-04-08*
+*Last updated: 2026-04-08 after initial definition*
