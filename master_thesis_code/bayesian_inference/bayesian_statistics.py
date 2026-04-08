@@ -12,6 +12,7 @@ For the simpler dev cross-check pipeline, see **Pipeline A**
 (:class:`~master_thesis_code.bayesian_inference.bayesian_inference.BayesianInference`).
 """
 
+import csv
 import json
 import logging
 import math
@@ -166,6 +167,8 @@ class BayesianStatistics:
         self.Omega_DE = 1 - self.Omega_m
         self.w_0 = self.cosmological_model.w_0
         self.w_a = self.cosmological_model.w_a
+        self.catalog_only: bool = False
+        self._diagnostic_rows: list[dict[str, object]] = []
 
     def evaluate(
         self,
@@ -173,7 +176,12 @@ class BayesianStatistics:
         cosmological_model: Model1CrossCheck,
         h_value: float,
         num_workers: int | None = None,
+        catalog_only: bool = False,
     ) -> None:
+        self.catalog_only = catalog_only
+        self._diagnostic_rows = []
+        if catalog_only:
+            _LOGGER.info("catalog_only mode: f_i=1, L_comp=0 (skipping completion integral)")
         _LOGGER.info(f"Computing posteriors for h = {h_value}...")
         if (h_value < self.cosmological_model.h.lower_limit) or (
             h_value > self.cosmological_model.h.upper_limit
@@ -440,6 +448,42 @@ class BayesianStatistics:
             data = {str(key): value for key, value in self.posterior_data_with_bh_mass.items()}
             json.dump(data | {"h": self.h}, file)
 
+        # Write per-event diagnostic CSV
+        if self._diagnostic_rows:
+            diagnostic_csv_path = "simulations/diagnostics/event_likelihoods.csv"
+            self._write_diagnostic_csv(diagnostic_csv_path)
+
+    def _write_diagnostic_csv(self, csv_path: str) -> None:
+        """Write per-event diagnostic rows to CSV (append mode, header on first write).
+
+        Args:
+            csv_path: Path to the output CSV file.
+        """
+        if not self._diagnostic_rows:
+            return
+
+        fieldnames = [
+            "event_idx",
+            "h",
+            "f_i",
+            "L_cat_no_bh",
+            "L_cat_with_bh",
+            "L_comp",
+            "combined_no_bh",
+            "combined_with_bh",
+        ]
+
+        os.makedirs(os.path.dirname(csv_path), exist_ok=True)
+        write_header = not os.path.isfile(csv_path)
+
+        with open(csv_path, "a", newline="") as f:
+            writer = csv.DictWriter(f, fieldnames=fieldnames)
+            if write_header:
+                writer.writeheader()
+            writer.writerows(self._diagnostic_rows)
+
+        _LOGGER.info("Wrote %d diagnostic rows to %s", len(self._diagnostic_rows), csv_path)
+
     def p_D(
         self,
         galaxy_catalog: GalaxyCatalogueHandler,
@@ -666,101 +710,111 @@ class BayesianStatistics:
                 L_cat_with_bh_mass = 0.0
 
         # --- Completion term: Gray et al. (2020), arXiv:1908.06050, Eqs. 31-32 ---
-        # L_comp = integral[p_GW * P_det * dVc/dz dz] / integral[P_det * dVc/dz dz]
-        # Uses "without BH mass" 3D Gaussian for both variants
-        # (uncataloged host has no galaxy mass information)
-
-        # Completeness at the detected redshift for the trial h
-        # Gray et al. (2020), arXiv:1908.06050, Eq. 9: f_i evaluated at z(d_L_det, h)
-        z_det = dist_to_redshift(self.detection.d_L, h=self.h)
-        f_i = completeness.get_completeness_at_redshift(z_det, self.h)
-
-        # Integration limits: same 4-sigma range as catalog term numerator
-        integration_limit_sigma_multiplier = 4.0
-        z_upper = dist_to_redshift(
-            self.detection.d_L
-            + integration_limit_sigma_multiplier * self.detection.d_L_uncertainty,
-            h=self.h,
-        )
-        z_lower = dist_to_redshift(
-            self.detection.d_L
-            - integration_limit_sigma_multiplier * self.detection.d_L_uncertainty,
-            h=self.h,
-        )
-        z_lower = max(z_lower, 1e-6)  # avoid z=0 singularity in volume element
-
-        FIXED_QUAD_N = 50
-
-        # Completion term numerator integrand
-        # Gray et al. (2020), arXiv:1908.06050, Eq. 31:
-        #   p_GW(x|z, Omega_det, h) * P_det(d_L(z,h)) * dVc/dz
-        _comp_slot = self._det_index_to_slot[detection_index]
-        _comp_mean_3d = self._means_3d[_comp_slot]
-        _comp_cov_inv_3d = self._cov_inv_3d[_comp_slot]
-        _comp_log_norm_3d = float(self._log_norm_3d[_comp_slot])
-        _comp_det_d_L = self._det_d_L[_comp_slot]
-
-        def completion_numerator_integrand(
-            z: npt.NDArray[np.float64],
-        ) -> npt.NDArray[np.float64]:
-            d_L: npt.NDArray[np.float64] = np.asarray(
-                dist_vectorized(z, h=self.h), dtype=np.float64
-            )  # Gpc
-            d_L_fraction = d_L / _comp_det_d_L  # dimensionless
-            phi = np.full_like(z, self.detection.phi)
-            theta = np.full_like(z, self.detection.theta)
-
-            p_gw: npt.NDArray[np.float64] = _mvn_pdf(
-                np.vstack([phi, theta, d_L_fraction]).T,
-                _comp_mean_3d,
-                _comp_cov_inv_3d,
-                _comp_log_norm_3d,
-            )
-            p_det = detection_probability_obj.detection_probability_without_bh_mass_interpolated(
-                d_L, phi, theta, h=self.h
-            )
-            dVc: npt.NDArray[np.float64] = np.atleast_1d(
-                np.asarray(comoving_volume_element(z, h=self.h), dtype=np.float64)
-            )
-
-            return p_gw * p_det * dVc
-
-        # Completion term denominator integrand
-        # Gray et al. (2020), arXiv:1908.06050, Eq. 32:
-        #   P_det(d_L(z,h)) * dVc/dz
-        def completion_denominator_integrand(
-            z: npt.NDArray[np.float64],
-        ) -> npt.NDArray[np.float64]:
-            d_L: npt.NDArray[np.float64] = np.asarray(
-                dist_vectorized(z, h=self.h), dtype=np.float64
-            )  # Gpc
-            phi = np.full_like(z, self.detection.phi)
-            theta = np.full_like(z, self.detection.theta)
-
-            p_det = detection_probability_obj.detection_probability_without_bh_mass_interpolated(
-                d_L, phi, theta, h=self.h
-            )
-            dVc: npt.NDArray[np.float64] = np.atleast_1d(
-                np.asarray(comoving_volume_element(z, h=self.h), dtype=np.float64)
-            )
-
-            return p_det * dVc
-
-        comp_numerator: float = fixed_quad(
-            completion_numerator_integrand, z_lower, z_upper, n=FIXED_QUAD_N
-        )[0]
-        comp_denominator: float = fixed_quad(
-            completion_denominator_integrand, z_lower, z_upper, n=FIXED_QUAD_N
-        )[0]
-
-        if comp_denominator > 0:
-            L_comp = float(comp_numerator / comp_denominator)
-        else:
-            _LOGGER.warning(
-                f"Detection {detection_index}: L_comp denominator is zero, using L_cat only"
-            )
+        # When catalog_only=True, skip the completion integral entirely:
+        # set f_i=1.0 (pure catalog), L_comp=0.0
+        if self.catalog_only:
+            f_i = 1.0
             L_comp = 0.0
-            f_i = 1.0  # fall back to catalog-only
+        else:
+            # L_comp = integral[p_GW * P_det * dVc/dz dz] / integral[P_det * dVc/dz dz]
+            # Uses "without BH mass" 3D Gaussian for both variants
+            # (uncataloged host has no galaxy mass information)
+
+            # Completeness at the detected redshift for the trial h
+            # Gray et al. (2020), arXiv:1908.06050, Eq. 9: f_i evaluated at z(d_L_det, h)
+            z_det = dist_to_redshift(self.detection.d_L, h=self.h)
+            f_i = float(completeness.get_completeness_at_redshift(z_det, self.h))
+
+            # Integration limits: same 4-sigma range as catalog term numerator
+            integration_limit_sigma_multiplier = 4.0
+            z_upper = dist_to_redshift(
+                self.detection.d_L
+                + integration_limit_sigma_multiplier * self.detection.d_L_uncertainty,
+                h=self.h,
+            )
+            z_lower = dist_to_redshift(
+                self.detection.d_L
+                - integration_limit_sigma_multiplier * self.detection.d_L_uncertainty,
+                h=self.h,
+            )
+            z_lower = max(z_lower, 1e-6)  # avoid z=0 singularity in volume element
+
+            FIXED_QUAD_N = 50
+
+            # Completion term numerator integrand
+            # Gray et al. (2020), arXiv:1908.06050, Eq. 31:
+            #   p_GW(x|z, Omega_det, h) * P_det(d_L(z,h)) * dVc/dz
+            _comp_slot = self._det_index_to_slot[detection_index]
+            _comp_mean_3d = self._means_3d[_comp_slot]
+            _comp_cov_inv_3d = self._cov_inv_3d[_comp_slot]
+            _comp_log_norm_3d = float(self._log_norm_3d[_comp_slot])
+            _comp_det_d_L = self._det_d_L[_comp_slot]
+
+            def completion_numerator_integrand(
+                z: npt.NDArray[np.float64],
+            ) -> npt.NDArray[np.float64]:
+                d_L: npt.NDArray[np.float64] = np.asarray(
+                    dist_vectorized(z, h=self.h), dtype=np.float64
+                )  # Gpc
+                d_L_fraction = d_L / _comp_det_d_L  # dimensionless
+                phi = np.full_like(z, self.detection.phi)
+                theta = np.full_like(z, self.detection.theta)
+
+                p_gw: npt.NDArray[np.float64] = _mvn_pdf(
+                    np.vstack([phi, theta, d_L_fraction]).T,
+                    _comp_mean_3d,
+                    _comp_cov_inv_3d,
+                    _comp_log_norm_3d,
+                )
+                p_det = (
+                    detection_probability_obj.detection_probability_without_bh_mass_interpolated(
+                        d_L, phi, theta, h=self.h
+                    )
+                )
+                dVc: npt.NDArray[np.float64] = np.atleast_1d(
+                    np.asarray(comoving_volume_element(z, h=self.h), dtype=np.float64)
+                )
+
+                return p_gw * p_det * dVc
+
+            # Completion term denominator integrand
+            # Gray et al. (2020), arXiv:1908.06050, Eq. 32:
+            #   P_det(d_L(z,h)) * dVc/dz
+            def completion_denominator_integrand(
+                z: npt.NDArray[np.float64],
+            ) -> npt.NDArray[np.float64]:
+                d_L: npt.NDArray[np.float64] = np.asarray(
+                    dist_vectorized(z, h=self.h), dtype=np.float64
+                )  # Gpc
+                phi = np.full_like(z, self.detection.phi)
+                theta = np.full_like(z, self.detection.theta)
+
+                p_det = (
+                    detection_probability_obj.detection_probability_without_bh_mass_interpolated(
+                        d_L, phi, theta, h=self.h
+                    )
+                )
+                dVc: npt.NDArray[np.float64] = np.atleast_1d(
+                    np.asarray(comoving_volume_element(z, h=self.h), dtype=np.float64)
+                )
+
+                return p_det * dVc
+
+            comp_numerator: float = fixed_quad(
+                completion_numerator_integrand, z_lower, z_upper, n=FIXED_QUAD_N
+            )[0]
+            comp_denominator: float = fixed_quad(
+                completion_denominator_integrand, z_lower, z_upper, n=FIXED_QUAD_N
+            )[0]
+
+            if comp_denominator > 0:
+                L_comp = float(comp_numerator / comp_denominator)
+            else:
+                _LOGGER.warning(
+                    f"Detection {detection_index}: L_comp denominator is zero, using L_cat only"
+                )
+                L_comp = 0.0
+                f_i = 1.0  # fall back to catalog-only
 
         _LOGGER.debug(
             f"Detection {detection_index}: f_i={f_i:.4f}, "
@@ -774,6 +828,20 @@ class BayesianStatistics:
         # (uncataloged host has no galaxy mass information)
         combined_without_bh_mass = float(f_i * L_cat_without_bh_mass + (1 - f_i) * L_comp)
         combined_with_bh_mass = float(f_i * L_cat_with_bh_mass + (1 - f_i) * L_comp)
+
+        # Record diagnostic row for every event
+        self._diagnostic_rows.append(
+            {
+                "event_idx": detection_index,
+                "h": self.h,
+                "f_i": f_i,
+                "L_cat_no_bh": L_cat_without_bh_mass,
+                "L_cat_with_bh": L_cat_with_bh_mass,
+                "L_comp": L_comp,
+                "combined_no_bh": combined_without_bh_mass,
+                "combined_with_bh": combined_with_bh_mass,
+            }
+        )
 
         return (combined_without_bh_mass, combined_with_bh_mass)
 

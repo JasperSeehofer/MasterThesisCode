@@ -102,6 +102,7 @@ def main() -> None:
             galaxy_catalog,
             arguments.h_value,
             num_workers=arguments.num_workers,
+            catalog_only=arguments.catalog_only,
         )
 
     if arguments.snr_analysis:
@@ -617,12 +618,17 @@ def evaluate(
     h_value: float,
     *,
     num_workers: int | None = None,
+    catalog_only: bool = False,
 ) -> None:
     from master_thesis_code.bayesian_inference.bayesian_statistics import BayesianStatistics
 
     hubble_constant_evaluation = BayesianStatistics()
     hubble_constant_evaluation.evaluate(
-        galaxy_catalog, cosmological_model, h_value, num_workers=num_workers
+        galaxy_catalog,
+        cosmological_model,
+        h_value,
+        num_workers=num_workers,
+        catalog_only=catalog_only,
     )
 
 
