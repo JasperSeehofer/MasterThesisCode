@@ -73,7 +73,11 @@ def main() -> None:
         _save_baseline(arguments.working_directory)
 
     if arguments.compare_baseline is not None:
-        _compare_baseline(arguments.working_directory, arguments.compare_baseline)
+        _compare_baseline(
+            arguments.working_directory,
+            arguments.compare_baseline,
+            label="catalog_only" if arguments.catalog_only else "current",
+        )
 
     if not _needs_model:
         end_time = time()
@@ -157,7 +161,7 @@ def _save_baseline(working_directory: str) -> None:
     )
 
 
-def _compare_baseline(working_directory: str, baseline_path: str) -> None:
+def _compare_baseline(working_directory: str, baseline_path: str, label: str = "current") -> None:
     """Generate comparison report between baseline and current posteriors."""
     import json
     from pathlib import Path
@@ -182,8 +186,25 @@ def _compare_baseline(working_directory: str, baseline_path: str) -> None:
     project_root = Path(__file__).resolve().parents[1]
     output_dir = project_root / ".planning" / "debug"
     output_dir.mkdir(parents=True, exist_ok=True)
-    report_path = generate_comparison_report(baseline, current, output_dir)
+    report_path = generate_comparison_report(baseline, current, output_dir, label=label)
     _ROOT_LOGGER.info("Comparison report written to %s", report_path)
+
+    # Diagnostic summary if event_likelihoods.csv exists (D-07)
+    diag_csv = Path(working_directory) / "simulations" / "diagnostics" / "event_likelihoods.csv"
+    if diag_csv.exists():
+        from master_thesis_code.bayesian_inference.evaluation_report import (
+            generate_diagnostic_summary,
+        )
+
+        diag_summary = generate_diagnostic_summary(diag_csv, output_dir, label=label)
+        frac_low = float(str(diag_summary["frac_L_comp_pulls_low_h"]))
+        frac_comb = float(str(diag_summary["mean_L_comp_fraction_of_combined"]))
+        _ROOT_LOGGER.info(
+            "Diagnostic: mean_f_i=%.4f, L_comp_pulls_low=%.1f%%, L_comp_frac=%.1f%%",
+            diag_summary["mean_f_i"],
+            frac_low * 100,
+            frac_comb * 100,
+        )
 
     print(f"\n{'=' * 60}")
     print(f"  Baseline: MAP h={baseline.map_h:.4f}, bias={baseline.bias_percent:+.1f}%")

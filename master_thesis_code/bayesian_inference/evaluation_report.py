@@ -14,6 +14,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 import numpy as np
+import pandas as pd
 from scipy.integrate import cumulative_trapezoid
 
 _LOGGER = logging.getLogger(__name__)
@@ -283,8 +284,6 @@ def _extract_per_event_summaries(crb_csv_path: Path) -> list[dict[str, float]]:
         List of dicts with keys: d_L, SNR, sigma_d_L_over_d_L, condition_number,
         quality_pass.
     """
-    import pandas as pd
-
     df = pd.read_csv(crb_csv_path)
     summaries: list[dict[str, float]] = []
 
@@ -417,6 +416,148 @@ def generate_comparison_report(
     md_path.write_text("\n".join(lines))
 
     return md_path
+
+
+def generate_diagnostic_summary(
+    diagnostic_csv_path: Path,
+    output_dir: Path,
+    label: str = "diagnostic",
+) -> dict[str, object]:
+    """Analyze per-event diagnostic CSV and generate explanatory summary.
+
+    Reads the diagnostic CSV produced by BayesianStatistics.evaluate() and
+    computes statistics explaining WHY the posterior bias changes:
+    - Mean/median f_i across events (catalog completeness fraction)
+    - L_comp contribution statistics
+    - Fraction of events where L_comp pulls toward lower h
+
+    The "L_comp pulls toward lower h" metric compares L_comp at h=0.66 vs
+    h=0.73 per event. If L_comp(h=0.66) > L_comp(h=0.73), the completion
+    term biases that event toward lower h.
+
+    Args:
+        diagnostic_csv_path: Path to event_likelihoods.csv from evaluate().
+        output_dir: Directory to write the summary report.
+        label: Label suffix for output file name.
+
+    Returns:
+        Dict with summary statistics (also written to JSON).
+    """
+    df = pd.read_csv(diagnostic_csv_path)
+
+    # --- Per-event f_i statistics (use mean across h-values per event) ---
+    event_fi = df.groupby("event_idx")["f_i"].mean()
+    mean_f_i = float(event_fi.mean())
+    median_f_i = float(event_fi.median())
+    min_f_i = float(event_fi.min())
+    max_f_i = float(event_fi.max())
+
+    # --- L_comp statistics ---
+    mean_L_comp = float(df["L_comp"].mean())
+    median_L_comp = float(df["L_comp"].median())
+
+    # --- L_comp weight in combination: (1-f_i)*L_comp vs f_i*L_cat ---
+    df_normal = df[df["f_i"] < 1.0].copy()
+    if len(df_normal) > 0:
+        df_normal.loc[:, "L_comp_weight"] = (1 - df_normal["f_i"]) * df_normal["L_comp"]
+        df_normal.loc[:, "L_cat_weight"] = df_normal["f_i"] * df_normal["L_cat_no_bh"]
+        total_combined = df_normal["L_comp_weight"] + df_normal["L_cat_weight"]
+        safe_mask = total_combined > 0
+        mean_L_comp_frac = (
+            float((df_normal.loc[safe_mask, "L_comp_weight"] / total_combined[safe_mask]).mean())
+            if safe_mask.any()
+            else 0.0
+        )
+    else:
+        mean_L_comp_frac = 0.0
+
+    # --- Fraction of events where L_comp pulls toward lower h ---
+    # Compare L_comp at lowest h vs highest h per event
+    # If L_comp(h_low) > L_comp(h_high), completion term prefers lower h
+    h_values_sorted = sorted(df["h"].unique())
+    n_pulls_low = 0
+    n_events_compared = 0
+    h_low = 0.0
+    h_high = 0.0
+    if len(h_values_sorted) >= 2:
+        h_low = h_values_sorted[0]
+        h_high = h_values_sorted[-1]
+        # Find the two h-values closest to 0.66 and 0.73 if available
+        h_target_low = min(h_values_sorted, key=lambda x: abs(x - 0.66))
+        h_target_high = min(h_values_sorted, key=lambda x: abs(x - 0.73))
+        if h_target_low != h_target_high:
+            h_low, h_high = h_target_low, h_target_high
+
+        df_low = df[df["h"] == h_low].set_index("event_idx")
+        df_high = df[df["h"] == h_high].set_index("event_idx")
+        common_events = df_low.index.intersection(df_high.index)
+        n_events_compared = len(common_events)
+        for evt in common_events:
+            if df_low.loc[evt, "L_comp"] > df_high.loc[evt, "L_comp"]:
+                n_pulls_low += 1
+
+    frac_pulls_low = float(n_pulls_low / n_events_compared) if n_events_compared > 0 else 0.0
+
+    summary: dict[str, object] = {
+        "n_rows": len(df),
+        "n_events": int(df["event_idx"].nunique()),
+        "n_h_values": int(df["h"].nunique()),
+        "mean_f_i": round(mean_f_i, 6),
+        "median_f_i": round(median_f_i, 6),
+        "min_f_i": round(min_f_i, 6),
+        "max_f_i": round(max_f_i, 6),
+        "mean_L_comp": mean_L_comp,
+        "median_L_comp": median_L_comp,
+        "mean_L_comp_fraction_of_combined": round(mean_L_comp_frac, 4),
+        "frac_L_comp_pulls_low_h": round(frac_pulls_low, 4),
+        "n_events_L_comp_pulls_low": n_pulls_low,
+        "n_events_compared": n_events_compared,
+        "h_low_compared": h_low if n_events_compared > 0 else None,
+        "h_high_compared": h_high if n_events_compared > 0 else None,
+    }
+
+    # Write JSON summary
+    output_dir.mkdir(parents=True, exist_ok=True)
+    json_path = output_dir / f"diagnostic_summary_{label}.json"
+    json_path.write_text(json.dumps(summary, indent=2))
+
+    # Write markdown summary
+    md_path = output_dir / f"diagnostic_summary_{label}.md"
+    md_lines = [
+        f"# Diagnostic Summary: {label}",
+        "",
+        f"Source: `{diagnostic_csv_path}`",
+        f"Events: {summary['n_events']}, H-values: {summary['n_h_values']}, "
+        f"Rows: {summary['n_rows']}",
+        "",
+        "## Catalog Completeness (f_i)",
+        "",
+        f"- Mean f_i: {summary['mean_f_i']}",
+        f"- Median f_i: {summary['median_f_i']}",
+        f"- Range: [{summary['min_f_i']}, {summary['max_f_i']}]",
+        "",
+        "## Completion Term (L_comp)",
+        "",
+        f"- Mean L_comp: {summary['mean_L_comp']:.6e}",
+        f"- Median L_comp: {summary['median_L_comp']:.6e}",
+        f"- Mean L_comp fraction of combined likelihood: "
+        f"{summary['mean_L_comp_fraction_of_combined']:.1%}",
+        "",
+        "## Bias Direction",
+        "",
+        f"- Events where L_comp pulls toward lower h: "
+        f"{summary['n_events_L_comp_pulls_low']}/{summary['n_events_compared']}",
+        f"- Fraction: {summary['frac_L_comp_pulls_low_h']:.1%}",
+    ]
+    if n_events_compared > 0:
+        md_lines.append(
+            f"- Compared h={summary['h_low_compared']} vs h={summary['h_high_compared']}"
+        )
+    md_lines.append("")
+    md_path.write_text("\n".join(md_lines))
+
+    _LOGGER.info("Diagnostic summary written to %s", json_path)
+    return summary
 
 
 def _ascii_chart(
