@@ -138,8 +138,8 @@ def _save_baseline(working_directory: str) -> None:
 
     from master_thesis_code.bayesian_inference.evaluation_report import extract_baseline
 
-    posteriors_dir = Path(working_directory) / "simulations" / "posteriors"
-    crb_csv = Path(working_directory) / "simulations" / "prepared_cramer_rao_bounds.csv"
+    posteriors_dir = Path(working_directory) / "posteriors"
+    crb_csv = Path(working_directory) / "prepared_cramer_rao_bounds.csv"
 
     baseline = extract_baseline(
         posteriors_dir=posteriors_dir,
@@ -175,8 +175,8 @@ def _compare_baseline(working_directory: str, baseline_path: str, label: str = "
     baseline_data = json.loads(Path(baseline_path).read_text())
     baseline = BaselineSnapshot.from_json(baseline_data)
 
-    posteriors_dir = Path(working_directory) / "simulations" / "posteriors"
-    crb_csv = Path(working_directory) / "simulations" / "prepared_cramer_rao_bounds.csv"
+    posteriors_dir = Path(working_directory) / "posteriors"
+    crb_csv = Path(working_directory) / "prepared_cramer_rao_bounds.csv"
 
     current = extract_baseline(
         posteriors_dir=posteriors_dir,
@@ -190,7 +190,7 @@ def _compare_baseline(working_directory: str, baseline_path: str, label: str = "
     _ROOT_LOGGER.info("Comparison report written to %s", report_path)
 
     # Diagnostic summary if event_likelihoods.csv exists (D-07)
-    diag_csv = Path(working_directory) / "simulations" / "diagnostics" / "event_likelihoods.csv"
+    diag_csv = Path(working_directory) / "diagnostics" / "event_likelihoods.csv"
     if diag_csv.exists():
         from master_thesis_code.bayesian_inference.evaluation_report import (
             generate_diagnostic_summary,
