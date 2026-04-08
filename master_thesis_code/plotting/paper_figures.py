@@ -15,8 +15,6 @@ All functions follow the project plotting convention: data in,
 ``(Figure, Axes)`` out.
 """
 
-from __future__ import annotations
-
 import json
 import os
 import re
@@ -29,32 +27,31 @@ from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 
 from master_thesis_code.plotting._colors import CYCLE, EDGE, MEAN, REFERENCE, TRUTH
-from master_thesis_code.plotting._helpers import get_figure, save_figure
-from master_thesis_code.plotting._style import apply_style
+from master_thesis_code.plotting._helpers import compute_credible_interval, get_figure
 
 # ---------------------------------------------------------------------------
 # Data loading helpers
 # ---------------------------------------------------------------------------
 
-_DATA_ROOT = Path("cluster_results/eval_corrected_full")
 
-
-def _load_combined_posterior(variant: str) -> dict[str, Any]:
+def _load_combined_posterior(variant: str, data_dir: Path) -> dict[str, Any]:
     """Load a toplevel combined posterior JSON.
 
     Parameters
     ----------
     variant:
         ``"posteriors"`` or ``"posteriors_with_bh_mass"``.
+    data_dir:
+        Root directory containing the combined posterior JSONs.
 
     Returns
     -------
     dict with keys ``h_values``, ``posterior``, ``map_h``, etc.
     """
     if variant == "posteriors":
-        path = _DATA_ROOT / "combined_posterior.json"
+        path = data_dir / "combined_posterior.json"
     elif variant == "posteriors_with_bh_mass":
-        path = _DATA_ROOT / "combined_posterior_with_bh_mass.json"
+        path = data_dir / "combined_posterior_with_bh_mass.json"
     else:
         msg = f"Unknown variant: {variant}"
         raise ValueError(msg)
@@ -160,7 +157,7 @@ def _load_per_event_with_mass_scalars(
 
 
 def plot_h0_posterior_comparison(
-    data_dir: Path = _DATA_ROOT,
+    data_dir: Path,
 ) -> tuple[Figure, Axes]:
     """Plot combined H0 posteriors for both analysis variants.
 
@@ -173,8 +170,8 @@ def plot_h0_posterior_comparison(
     -------
     (fig, ax) following the project factory convention.
     """
-    p_no = _load_combined_posterior("posteriors")
-    p_with = _load_combined_posterior("posteriors_with_bh_mass")
+    p_no = _load_combined_posterior("posteriors", data_dir)
+    p_with = _load_combined_posterior("posteriors_with_bh_mass", data_dir)
 
     h_no = np.array(p_no["h_values"])
     h_with = np.array(p_with["h_values"])
@@ -207,22 +204,14 @@ def plot_h0_posterior_comparison(
         zorder=3,
     )
 
-    # 68% CI shading via CDF interpolation
+    # 68% CI shading via shared CDF utility
     for h_arr, post_arr, color in [
         (h_no, post_no, CYCLE[0]),
         (h_with, post_with, CYCLE[3]),
     ]:
-        norm = np.trapezoid(post_arr, h_arr)
-        pn = post_arr / norm
-        cdf = np.zeros(len(h_arr))
-        for i in range(1, len(h_arr)):
-            cdf[i] = cdf[i - 1] + np.trapezoid(pn[i - 1 : i + 1], h_arr[i - 1 : i + 1])
-        cdf /= cdf[-1]
-        h_fine = np.linspace(h_arr[0], h_arr[-1], 1000)
-        cdf_fine = np.interp(h_fine, h_arr, cdf)
-        h16 = h_fine[np.searchsorted(cdf_fine, 0.16)]
-        h84 = h_fine[np.searchsorted(cdf_fine, 0.84)]
-        ax.axvspan(h16, h84, alpha=0.12, color=color, zorder=1)
+        lo, hi = compute_credible_interval(h_arr, post_arr)
+        if not (np.isnan(lo) or np.isnan(hi)):
+            ax.axvspan(lo, hi, alpha=0.12, color=color, zorder=1)
 
     # Truth line
     ax.axvline(0.73, color=TRUTH, linestyle=":", linewidth=1.2, label="Injected", zorder=2)
@@ -286,7 +275,7 @@ def _select_representative_events(
 
 
 def plot_single_event_likelihoods(
-    data_dir: Path = _DATA_ROOT,
+    data_dir: Path,
 ) -> tuple[Figure, Any]:
     """Plot single-event likelihoods for 4 representative events.
 
@@ -378,49 +367,8 @@ _CONVERGENCE_SUBSET_SIZES: list[int] = [10, 20, 50, 100, 150, 200, 300, 400, 500
 _CONVERGENCE_N_SUBSETS: int = 50
 
 
-def _ci_width_from_log_posteriors(
-    h_values: npt.NDArray[np.float64],
-    log_posteriors: npt.NDArray[np.float64],
-) -> float:
-    """Compute 68% credible interval width from log-posterior samples.
-
-    Parameters
-    ----------
-    h_values:
-        Sorted 1-D array of h grid points (length G).
-    log_posteriors:
-        1-D array of log-posterior values on the same grid (length G).
-
-    Returns
-    -------
-    Width of the symmetric 68% CI (h_84 - h_16) via CDF interpolation.
-    """
-    # Shift for numerical stability, exponentiate, normalise
-    log_p = log_posteriors - np.max(log_posteriors)
-    p = np.exp(log_p)
-    norm = np.trapezoid(p, h_values)
-    if norm <= 0:
-        return np.nan
-    pn = p / norm
-
-    # Build CDF by cumulative trapezoid integration
-    cdf = np.zeros(len(h_values))
-    for i in range(1, len(h_values)):
-        cdf[i] = cdf[i - 1] + np.trapezoid(pn[i - 1 : i + 1], h_values[i - 1 : i + 1])
-    cdf /= cdf[-1]
-
-    # Interpolate to find 16th and 84th percentile h values
-    h_fine = np.linspace(h_values[0], h_values[-1], 2000)
-    cdf_fine = np.interp(h_fine, h_values, cdf)
-    idx16 = np.searchsorted(cdf_fine, 0.16)
-    idx84 = np.searchsorted(cdf_fine, 0.84)
-    if idx16 >= len(h_fine) or idx84 >= len(h_fine):
-        return np.nan
-    return float(h_fine[idx84] - h_fine[idx16])
-
-
 def plot_posterior_convergence(
-    data_dir: Path = _DATA_ROOT,
+    data_dir: Path,
     *,
     subset_sizes: list[int] | None = None,
     n_subsets: int = _CONVERGENCE_N_SUBSETS,
@@ -488,7 +436,10 @@ def plot_posterior_convergence(
         for _ in range(n_subsets):
             idx = rng.choice(n_events_total, size=n_sub, replace=False)
             log_combined = np.sum(log_event_matrix[idx, :], axis=0)
-            w = _ci_width_from_log_posteriors(h_values, log_combined)
+            log_p = log_combined - np.max(log_combined)
+            p = np.exp(log_p)
+            lo, hi = compute_credible_interval(h_values, p)
+            w = hi - lo
             if not np.isnan(w):
                 widths.append(w)
 
@@ -553,7 +504,7 @@ def plot_posterior_convergence(
 
 
 def plot_snr_distribution(
-    data_dir: Path = _DATA_ROOT,
+    data_dir: Path,
     snr_threshold: float = 15.0,
 ) -> tuple[Figure, Any]:
     """Plot SNR distribution of detected EMRI events.
@@ -680,38 +631,3 @@ def plot_snr_distribution(
     return fig, ax
 
 
-# ---------------------------------------------------------------------------
-# CLI entry point
-# ---------------------------------------------------------------------------
-
-
-def main() -> None:
-    """Generate all paper figures and save to ``paper/figures/``."""
-    apply_style()
-
-    out_dir = Path("paper/figures")
-    out_dir.mkdir(parents=True, exist_ok=True)
-
-    # Figure 1: H0 posterior comparison
-    fig1, _ = plot_h0_posterior_comparison()
-    save_figure(fig1, str(out_dir / "h0_posterior_comparison"))
-    print(f"Saved {out_dir / 'h0_posterior_comparison.pdf'}")
-
-    # Figure 2: Single-event likelihoods
-    fig2, _ = plot_single_event_likelihoods()
-    save_figure(fig2, str(out_dir / "single_event_likelihoods"))
-    print(f"Saved {out_dir / 'single_event_likelihoods.pdf'}")
-
-    # Figure 3: Posterior convergence
-    fig3, _ = plot_posterior_convergence()
-    save_figure(fig3, str(out_dir / "posterior_convergence"))
-    print(f"Saved {out_dir / 'posterior_convergence.pdf'}")
-
-    # Figure 4: SNR distribution
-    fig4, _ = plot_snr_distribution()
-    save_figure(fig4, str(out_dir / "snr_distribution"))
-    print(f"Saved {out_dir / 'snr_distribution.pdf'}")
-
-
-if __name__ == "__main__":
-    main()
