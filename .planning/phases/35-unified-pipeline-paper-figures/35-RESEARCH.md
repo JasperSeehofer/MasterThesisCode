@@ -386,13 +386,15 @@ class TestComputeCredibleInterval:
 
 ---
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Should `compute_credible_interval` return `(lo, hi)` or just `hi - lo` (width)?**
+   RESOLVED: Return `(lo, hi)` tuple. Plan 35-01 implements this signature.
    - What we know: `paper_figures.py` uses both `lo` and `hi` individually (for CI shading in `plot_h0_posterior_comparison` lines 222-225); `convergence_plots.py` only uses the width.
    - Recommendation: Return `(lo, hi)` tuple. Callers that only need width use `hi - lo`. This avoids a future change when CI shading is needed.
 
 2. **Figure numbering: fig16-fig19 or paper_01-paper_04?**
+   RESOLVED: Use `paper_` prefix without sequential number. Plan 35-02 implements this.
    - Claude's discretion per CONTEXT.md.
    - Recommendation: Use `paper_` prefix without a sequential number (e.g., `paper_h0_posterior`, `paper_single_event`, `paper_convergence`, `paper_snr_distribution`). More readable, avoids renumbering if thesis figures change.
 
