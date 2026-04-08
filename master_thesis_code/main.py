@@ -1043,6 +1043,50 @@ def generate_figures(output_dir: str) -> None:
 
     manifest.append(("fig15_campaign_dashboard", _gen_dashboard))
 
+    # 16. Paper figure: H0 posterior comparison (D-01, D-09)
+    def _gen_paper_h0_posterior() -> tuple[object, object] | None:
+        from master_thesis_code.plotting.paper_figures import plot_h0_posterior_comparison
+
+        try:
+            return plot_h0_posterior_comparison(data_dir=Path(output_dir))
+        except (FileNotFoundError, KeyError):
+            return None
+
+    manifest.append(("paper_h0_posterior", _gen_paper_h0_posterior))
+
+    # 17. Paper figure: single-event likelihoods
+    def _gen_paper_single_event() -> tuple[object, object] | None:
+        from master_thesis_code.plotting.paper_figures import plot_single_event_likelihoods
+
+        try:
+            return plot_single_event_likelihoods(data_dir=Path(output_dir))
+        except (FileNotFoundError, KeyError, ValueError):
+            return None
+
+    manifest.append(("paper_single_event", _gen_paper_single_event))
+
+    # 18. Paper figure: posterior convergence
+    def _gen_paper_convergence() -> tuple[object, object] | None:
+        from master_thesis_code.plotting.paper_figures import plot_posterior_convergence
+
+        try:
+            return plot_posterior_convergence(data_dir=Path(output_dir))
+        except (FileNotFoundError, KeyError):
+            return None
+
+    manifest.append(("paper_convergence", _gen_paper_convergence))
+
+    # 19. Paper figure: SNR distribution
+    def _gen_paper_snr_distribution() -> tuple[object, object] | None:
+        from master_thesis_code.plotting.paper_figures import plot_snr_distribution
+
+        try:
+            return plot_snr_distribution(data_dir=Path(output_dir))
+        except (FileNotFoundError, KeyError, ValueError):
+            return None
+
+    manifest.append(("paper_snr_distribution", _gen_paper_snr_distribution))
+
     # ------------------------------------------------------------------
     # Execute manifest
     # ------------------------------------------------------------------
