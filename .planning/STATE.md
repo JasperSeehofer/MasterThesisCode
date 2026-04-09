@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-04-08)
 Phase: 30
 Plan: Not started
 Status: Ready to execute
-Last activity: 2026-04-08 -- Phase 31 planning complete
+Last activity: 2026-04-09 -- Quick task 260409-dk2: add with-BH-mass variant to convergence plot
 
 ## Performance Metrics
 
@@ -113,3 +113,4 @@ Resume file: .planning/phases/35-unified-pipeline-paper-figures/35-CONTEXT.md
 | 2026-04-07 | Evaluation pipeline performance | de86052..a0de491 (7 commits) | Pool spawn 12 min->1.7 min, total 7:16 per h-value. forkserver+preload, numpy arrays, SNR filter, cpu_il partition. |
 | 2026-04-07 | Add interactive Plotly figures to GitHub Pages | 8b47b5f..33e1c86 (2 commits) | 4 Plotly HTML figures (posterior, sky map, Fisher ellipses, convergence), --generate_interactive CLI flag, CI Pages deployment, landing page. |
 | Phase 31 P02 | 196 | 1 tasks | 3 files |
+| 2026-04-09 | Add with-BH-mass variant to plot_posterior_convergence | 1af4487 | Both variants shown on convergence plot; outdated delta-function assumption removed. |
