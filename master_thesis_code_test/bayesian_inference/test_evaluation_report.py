@@ -449,3 +449,193 @@ def test_compare_baseline_standalone(tmp_path: Path) -> None:
 
     # Should not raise even though --evaluate was not run
     _compare_baseline(str(tmp_path / "simulations"), str(baseline_json_path))
+
+
+# ---------------------------------------------------------------------------
+# Fisher Quality fields — Task 1 (Phase 34-02)
+# ---------------------------------------------------------------------------
+
+
+def test_baseline_snapshot_fisher_fields_default_zero() -> None:
+    """BaselineSnapshot should default fisher fields to 0 when not provided."""
+    snap = BaselineSnapshot(
+        map_h=0.73,
+        ci_lower=0.71,
+        ci_upper=0.75,
+        ci_width=0.04,
+        bias_percent=0.0,
+        n_events=10,
+    )
+
+    assert snap.n_excluded_fisher == 0
+    assert snap.median_cond_3d == 0.0
+    assert snap.median_cond_4d == 0.0
+
+
+def test_baseline_snapshot_fisher_fields_roundtrip() -> None:
+    """BaselineSnapshot with n_excluded_fisher=5 should serialize and deserialize correctly."""
+    original = BaselineSnapshot(
+        map_h=0.73,
+        ci_lower=0.71,
+        ci_upper=0.75,
+        ci_width=0.04,
+        bias_percent=0.0,
+        n_events=10,
+        n_excluded_fisher=5,
+        median_cond_3d=1.23e4,
+        median_cond_4d=4.56e11,
+        created_at="2026-01-01T00:00:00Z",
+        git_commit="abc123",
+    )
+
+    json_data = original.to_json()
+    restored = BaselineSnapshot.from_json(json_data)
+
+    assert restored.n_excluded_fisher == 5
+    assert abs(restored.median_cond_3d - 1.23e4) < 1.0
+    assert abs(restored.median_cond_4d - 4.56e11) < 1e6
+
+
+def test_baseline_snapshot_fisher_fields_backward_compat() -> None:
+    """from_json should default fisher fields to 0 when keys are absent (old baseline.json)."""
+    old_json: dict[str, object] = {
+        "map_h": 0.73,
+        "ci_lower": 0.71,
+        "ci_upper": 0.75,
+        "ci_width": 0.04,
+        "bias_percent": 0.0,
+        "n_events": 10,
+        # n_excluded_fisher, median_cond_3d, median_cond_4d intentionally absent
+    }
+
+    restored = BaselineSnapshot.from_json(old_json)
+
+    assert restored.n_excluded_fisher == 0
+    assert restored.median_cond_3d == 0.0
+    assert restored.median_cond_4d == 0.0
+
+
+def test_generate_comparison_report_fisher_quality_section(tmp_path: Path) -> None:
+    """generate_comparison_report should include Fisher Quality section when exclusions exist."""
+    baseline = BaselineSnapshot(
+        map_h=0.73,
+        ci_lower=0.71,
+        ci_upper=0.75,
+        ci_width=0.04,
+        bias_percent=0.0,
+        n_events=10,
+        n_excluded_fisher=0,
+        median_cond_3d=1.5e4,
+        median_cond_4d=2.3e11,
+        h_values=[0.69, 0.71, 0.73, 0.75, 0.77],
+        log_posteriors=[-2.0, -1.0, 0.0, -1.0, -2.0],
+        created_at="2026-01-01T00:00:00Z",
+        git_commit="abc123",
+    )
+    current = BaselineSnapshot(
+        map_h=0.73,
+        ci_lower=0.71,
+        ci_upper=0.75,
+        ci_width=0.04,
+        bias_percent=0.0,
+        n_events=10,
+        n_excluded_fisher=3,
+        median_cond_3d=1.5e4,
+        median_cond_4d=2.3e11,
+        h_values=[0.69, 0.71, 0.73, 0.75, 0.77],
+        log_posteriors=[-2.0, -1.0, 0.0, -1.0, -2.0],
+        created_at="2026-01-01T00:00:00Z",
+        git_commit="abc123",
+    )
+
+    report_path = generate_comparison_report(baseline, current, tmp_path, label="fisher_test")
+
+    content = report_path.read_text()
+    assert "Fisher Quality" in content
+    assert "Events excluded (Fisher)" in content
+    assert "+3" in content  # delta = 3 - 0 = +3
+
+
+def test_generate_comparison_report_no_fisher_section_when_zero(tmp_path: Path) -> None:
+    """generate_comparison_report should omit Fisher Quality section when both have 0 excluded."""
+    baseline = _make_baseline_snapshot(map_h=0.73)
+    current = _make_baseline_snapshot(map_h=0.71)
+    # Both have n_excluded_fisher=0 (default)
+
+    report_path = generate_comparison_report(baseline, current, tmp_path, label="no_fisher")
+
+    content = report_path.read_text()
+    assert "Fisher Quality" not in content
+
+
+def test_generate_comparison_report_json_has_fisher_fields(tmp_path: Path) -> None:
+    """The JSON sidecar should contain fisher quality fields in baseline/current/delta."""
+    baseline = _make_baseline_snapshot(map_h=0.73)
+    current = BaselineSnapshot(
+        map_h=0.71,
+        ci_lower=0.69,
+        ci_upper=0.73,
+        ci_width=0.04,
+        bias_percent=-2.74,
+        n_events=10,
+        n_excluded_fisher=2,
+        median_cond_3d=1.1e4,
+        median_cond_4d=3.3e12,
+        h_values=[0.69, 0.71, 0.73, 0.75, 0.77],
+        log_posteriors=[-2.0, -1.0, 0.0, -1.0, -2.0],
+        created_at="2026-01-01T00:00:00Z",
+        git_commit="abc123",
+    )
+
+    generate_comparison_report(baseline, current, tmp_path, label="json_fisher")
+
+    json_path = tmp_path / "comparison_json_fisher.json"
+    data = json.loads(json_path.read_text())
+
+    assert "n_excluded_fisher" in data["baseline"]
+    assert "n_excluded_fisher" in data["current"]
+    assert "n_excluded_fisher" in data["delta"]
+    assert data["current"]["n_excluded_fisher"] == 2
+    assert data["delta"]["n_excluded_fisher"] == 2  # 2 - 0 = +2
+
+
+def test_extract_baseline_reads_fisher_quality_csv(tmp_path: Path) -> None:
+    """extract_baseline should read fisher_quality.csv from posteriors_dir.parent if present."""
+    import pandas as pd
+
+    posteriors_dir = tmp_path / "posteriors"
+    posteriors_dir.mkdir(parents=True)
+
+    h_values = [0.69, 0.71, 0.73, 0.75, 0.77]
+    for h in h_values:
+        _make_h_json(posteriors_dir, h, [-1.0])
+
+    # Write a fisher_quality.csv in tmp_path (posteriors_dir.parent)
+    fq_data = pd.DataFrame(
+        {
+            "detection_index": [0, 1, 2, 3, 4],
+            "cond_3d": [10.0, 20.0, 30.0, 40.0, 50.0],
+            "cond_4d": [1e10, 2e10, 3e10, 4e10, 5e10],
+            "excluded": [False, False, True, False, True],
+        }
+    )
+    fq_data.to_csv(tmp_path / "fisher_quality.csv", index=False)
+
+    baseline = extract_baseline(posteriors_dir)
+
+    assert baseline.n_excluded_fisher == 2
+    assert abs(baseline.median_cond_3d - 30.0) < 1e-6
+    assert abs(baseline.median_cond_4d - 3e10) < 1e4
+
+
+def test_extract_baseline_zero_fisher_when_no_csv(tmp_path: Path) -> None:
+    """extract_baseline should default to 0 excluded fisher if CSV is absent."""
+    h_values = [0.69, 0.71, 0.73, 0.75, 0.77]
+    for h in h_values:
+        _make_h_json(tmp_path, h, [-1.0])
+
+    baseline = extract_baseline(tmp_path)
+
+    assert baseline.n_excluded_fisher == 0
+    assert baseline.median_cond_3d == 0.0
+    assert baseline.median_cond_4d == 0.0

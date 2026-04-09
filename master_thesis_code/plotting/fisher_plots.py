@@ -5,6 +5,8 @@ uncertainty distributions.  All functions follow the project convention:
 data in, ``(fig, ax)`` out.  None call ``plt.show()`` or ``plt.savefig()``.
 """
 
+import os
+
 import corner
 import matplotlib
 import numpy as np
@@ -21,8 +23,9 @@ from master_thesis_code.plotting._data import (
     PARAMETER_NAMES,
     label_key,
 )
-from master_thesis_code.plotting._helpers import _fig_from_ax, get_figure
+from master_thesis_code.plotting._helpers import _fig_from_ax, get_figure, save_figure
 from master_thesis_code.plotting._labels import LABELS
+from master_thesis_code.plotting._style import apply_style
 
 # ---------------------------------------------------------------------------
 # Private helper
@@ -453,3 +456,164 @@ def plot_fisher_corner(
 
     axes: npt.NDArray[np.object_] = np.array(fig.axes, dtype=object).reshape(n, n)
     return fig, axes
+
+
+# ---------------------------------------------------------------------------
+# Fisher quality diagnostic plot (Phase 34)
+# ---------------------------------------------------------------------------
+
+
+def plot_fisher_diagnostics(
+    cond_3d: npt.NDArray[np.float64],
+    cond_4d: npt.NDArray[np.float64],
+    excluded_mask: npt.NDArray[np.bool_],
+    eigen_3d: dict[int, npt.NDArray[np.float64]],
+    eigen_4d: dict[int, npt.NDArray[np.float64]],
+    det_d_L: npt.NDArray[np.float64],
+    det_M: npt.NDArray[np.float64],
+    det_index_to_slot: dict[int, int],
+    threshold: float,
+    output_dir: str,
+) -> None:
+    """Generate a two-panel Fisher quality diagnostic plot.
+
+    Panel 1 (left): Eigenvalue spectrum for flagged events (or annotation if none).
+    Panel 2 (right): Parameter scatter of all events in (d_L, M) space coloured
+    by max(cond_3d, cond_4d); flagged events highlighted with larger markers.
+
+    Saved as ``fisher_quality_diagnostic.pdf`` in *output_dir*.
+
+    Parameters
+    ----------
+    cond_3d:
+        Condition numbers of the 3x3 covariance matrices, shape (n_det,).
+    cond_4d:
+        Condition numbers of the 4x4 covariance matrices, shape (n_det,).
+    excluded_mask:
+        Boolean mask, True where an event was excluded, shape (n_det,).
+    eigen_3d:
+        Dict mapping slot index -> eigenvalues array for flagged events (3D).
+    eigen_4d:
+        Dict mapping slot index -> eigenvalues array for flagged events (4D).
+    det_d_L:
+        Luminosity distances for all detections, shape (n_det,).
+    det_M:
+        BH masses for all detections, shape (n_det,).
+    det_index_to_slot:
+        Mapping from detection_index to slot index.
+    threshold:
+        Condition-number threshold used for exclusion.
+    output_dir:
+        Directory in which to save the plot.
+    """
+    apply_style()
+    fig, axes = get_figure(nrows=1, ncols=2, preset="double")
+    # get_figure may return axes as a 2-D array when squeeze=False; flatten safely
+    axes_arr: npt.NDArray[np.object_] = np.asarray(axes).flatten()
+    ax_eig: Axes = axes_arr[0]
+    ax_scatter: Axes = axes_arr[1]
+
+    flagged_slots = sorted(slot for slot, excl in enumerate(excluded_mask) if excl)
+    n_flagged = len(flagged_slots)
+
+    # ------------------------------------------------------------------
+    # Panel 1: Eigenvalue spectrum of flagged events
+    # ------------------------------------------------------------------
+    if n_flagged == 0:
+        ax_eig.text(
+            0.5,
+            0.5,
+            "No degenerate events detected",
+            transform=ax_eig.transAxes,
+            ha="center",
+            va="center",
+            fontsize="small",
+            color="gray",
+        )
+        ax_eig.set_xticks([])
+        ax_eig.set_yticks([])
+    else:
+        bar_width = 0.25
+        x_positions = np.arange(n_flagged, dtype=np.float64)
+        colors_eig = [CYCLE[0], CYCLE[1], CYCLE[2] if len(CYCLE) > 2 else EDGE]
+
+        for local_idx, slot in enumerate(flagged_slots):
+            eig_vals = np.sort(np.abs(eigen_3d.get(slot, np.array([0.0, 0.0, 0.0]))))
+            for k, ev in enumerate(eig_vals[:3]):
+                offset = (k - 1) * bar_width
+                ax_eig.bar(
+                    x_positions[local_idx] + offset,
+                    max(ev, 1e-30),  # guard log scale against zeros
+                    width=bar_width,
+                    color=colors_eig[k % len(colors_eig)],
+                    edgecolor=EDGE,
+                    linewidth=0.5,
+                    label=f"$\\lambda_{k + 1}$" if local_idx == 0 else "_nolegend_",
+                )
+
+        ax_eig.set_yscale("log")
+        ax_eig.set_xticks(x_positions)
+        ax_eig.set_xticklabels([f"slot {s}" for s in flagged_slots], rotation=45, ha="right")
+        ax_eig.set_xlabel("Flagged event")
+        ax_eig.set_ylabel("Eigenvalue magnitude")
+        ax_eig.legend(fontsize="x-small", loc="upper right")
+
+    ax_eig.set_title(
+        f"Eigenvalue spectrum (flagged: {n_flagged}, threshold: {threshold:.1e})",
+        fontsize="small",
+    )
+
+    # ------------------------------------------------------------------
+    # Panel 2: Parameter scatter in (d_L, M) space
+    # ------------------------------------------------------------------
+    # All events as small gray dots for context
+    ax_scatter.scatter(
+        det_d_L,
+        det_M,
+        s=10,
+        color="gray",
+        alpha=0.5,
+        linewidths=0,
+        label="All events",
+        zorder=1,
+    )
+
+    if n_flagged == 0:
+        ax_scatter.text(
+            0.5,
+            0.98,
+            "No flagged events",
+            transform=ax_scatter.transAxes,
+            ha="center",
+            va="top",
+            fontsize="x-small",
+            color="gray",
+        )
+    else:
+        flagged_slots_arr = np.array(flagged_slots)
+        flagged_d_L = det_d_L[flagged_slots_arr]
+        flagged_M = det_M[flagged_slots_arr]
+        # Colour by max(cond_3d, cond_4d) — cond_4d typically dominates
+        cond_max = np.maximum(cond_3d[flagged_slots_arr], cond_4d[flagged_slots_arr])
+
+        sc = ax_scatter.scatter(
+            flagged_d_L,
+            flagged_M,
+            c=np.log10(np.maximum(cond_max, 1.0)),
+            s=60,
+            cmap="plasma",
+            edgecolors=EDGE,
+            linewidths=0.8,
+            label="Flagged events",
+            zorder=2,
+        )
+        cbar = fig.colorbar(sc, ax=ax_scatter, pad=0.02)
+        cbar.set_label(r"$\log_{10}(\max(\kappa_{3d}, \kappa_{4d}))$", fontsize="x-small")
+
+    ax_scatter.set_xlabel(r"$d_L$ [Gpc]")
+    ax_scatter.set_ylabel(r"$M$ [$M_\odot$]")
+    ax_scatter.set_title("Parameter space scatter", fontsize="small")
+    ax_scatter.legend(fontsize="x-small", loc="upper right")
+
+    fig.tight_layout()
+    save_figure(fig, os.path.join(output_dir, "fisher_quality_diagnostic"))

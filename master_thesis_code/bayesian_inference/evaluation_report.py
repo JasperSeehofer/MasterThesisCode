@@ -59,6 +59,9 @@ class BaselineSnapshot:
     h_values: list[float] = field(default_factory=list)
     log_posteriors: list[float] = field(default_factory=list)
     per_event_summaries: list[dict[str, float]] = field(default_factory=list)
+    n_excluded_fisher: int = 0
+    median_cond_3d: float = 0.0
+    median_cond_4d: float = 0.0
     created_at: str = field(
         default_factory=lambda: datetime.datetime.now(datetime.UTC).isoformat() + "Z"
     )
@@ -80,6 +83,9 @@ class BaselineSnapshot:
             "h_values": self.h_values,
             "log_posteriors": self.log_posteriors,
             "per_event_summaries": self.per_event_summaries,
+            "n_excluded_fisher": self.n_excluded_fisher,
+            "median_cond_3d": self.median_cond_3d,
+            "median_cond_4d": self.median_cond_4d,
             "created_at": self.created_at,
             "git_commit": self.git_commit,
         }
@@ -107,6 +113,9 @@ class BaselineSnapshot:
             h_values=list(d.get("h_values", [])),
             log_posteriors=list(d.get("log_posteriors", [])),
             per_event_summaries=list(d.get("per_event_summaries", [])),
+            n_excluded_fisher=int(d.get("n_excluded_fisher", 0)),
+            median_cond_3d=float(d.get("median_cond_3d", 0.0)),
+            median_cond_4d=float(d.get("median_cond_4d", 0.0)),
             created_at=str(d.get("created_at", "")),
             git_commit=str(d.get("git_commit", "unknown")),
         )
@@ -259,6 +268,17 @@ def extract_baseline(
     if crb_csv_path is not None and crb_csv_path.exists():
         per_event_summaries = _extract_per_event_summaries(crb_csv_path)
 
+    # Fisher quality metrics from CSV (written by BayesianStatistics.evaluate())
+    n_excluded_fisher = 0
+    median_cond_3d = 0.0
+    median_cond_4d = 0.0
+    fq_path = posteriors_dir.parent / "fisher_quality.csv"
+    if fq_path.exists():
+        fq_df = pd.read_csv(fq_path)
+        n_excluded_fisher = int(fq_df["excluded"].sum())
+        median_cond_3d = float(fq_df["cond_3d"].median())
+        median_cond_4d = float(fq_df["cond_4d"].median())
+
     return BaselineSnapshot(
         map_h=map_h,
         ci_lower=ci_lower,
@@ -269,6 +289,9 @@ def extract_baseline(
         h_values=h_values,
         log_posteriors=log_posts,
         per_event_summaries=per_event_summaries,
+        n_excluded_fisher=n_excluded_fisher,
+        median_cond_3d=median_cond_3d,
+        median_cond_4d=median_cond_4d,
         created_at=datetime.datetime.now(datetime.UTC).isoformat() + "Z",
         git_commit=_get_git_commit_safe(),
     )
@@ -336,6 +359,9 @@ def generate_comparison_report(
             "ci_width": baseline.ci_width,
             "bias_pct": baseline.bias_percent,
             "n_events": baseline.n_events,
+            "n_excluded_fisher": baseline.n_excluded_fisher,
+            "median_cond_3d": baseline.median_cond_3d,
+            "median_cond_4d": baseline.median_cond_4d,
         },
         "current": {
             "map_h": current.map_h,
@@ -344,12 +370,16 @@ def generate_comparison_report(
             "ci_width": current.ci_width,
             "bias_pct": current.bias_percent,
             "n_events": current.n_events,
+            "n_excluded_fisher": current.n_excluded_fisher,
+            "median_cond_3d": current.median_cond_3d,
+            "median_cond_4d": current.median_cond_4d,
         },
         "delta": {
             "map_h": delta_map_h,
             "ci_width": delta_ci_width,
             "bias_pct": delta_bias_pct,
             "n_events": delta_n_events,
+            "n_excluded_fisher": current.n_excluded_fisher - baseline.n_excluded_fisher,
         },
     }
     json_path.write_text(json.dumps(comparison_data, indent=2))
@@ -412,6 +442,23 @@ def generate_comparison_report(
 
     lines.append(verdict)
     lines.append("")
+
+    # Fisher Quality section (D-13)
+    if baseline.n_excluded_fisher > 0 or current.n_excluded_fisher > 0:
+        delta_excluded = current.n_excluded_fisher - baseline.n_excluded_fisher
+        lines += [
+            "## Fisher Quality",
+            "",
+            "| Metric | Baseline | Current | Delta |",
+            "|--------|----------|---------|-------|",
+            f"| Events excluded (Fisher) | {baseline.n_excluded_fisher} | "
+            f"{current.n_excluded_fisher} | {delta_excluded:+d} |",
+            f"| Median cond (3D) | {baseline.median_cond_3d:.2e} | "
+            f"{current.median_cond_3d:.2e} | - |",
+            f"| Median cond (4D) | {baseline.median_cond_4d:.2e} | "
+            f"{current.median_cond_4d:.2e} | - |",
+            "",
+        ]
 
     md_path.write_text("\n".join(lines))
 

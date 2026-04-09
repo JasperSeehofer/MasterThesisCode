@@ -662,6 +662,22 @@ class BayesianStatistics:
         # Write Fisher quality CSV (per D-12)
         self._write_fisher_quality_csv()
 
+        # Generate Fisher quality diagnostic plot (per D-06, D-07)
+        from master_thesis_code.plotting.fisher_plots import plot_fisher_diagnostics
+
+        plot_fisher_diagnostics(
+            cond_3d=self._cond_3d,
+            cond_4d=self._cond_4d,
+            excluded_mask=self._excluded_mask,
+            eigen_3d=self._eigen_3d,
+            eigen_4d=self._eigen_4d,
+            det_d_L=self._det_d_L,
+            det_M=self._det_M,
+            det_index_to_slot=self._det_index_to_slot,
+            threshold=self._fisher_cond_threshold,
+            output_dir="simulations",
+        )
+
     def _write_fisher_quality_csv(self) -> None:
         """Write per-event Fisher matrix condition numbers and exclusion flags to CSV.
 
@@ -1467,11 +1483,16 @@ def single_host_likelihood_integration_testing(
         sigma2_cond_test = float(cov_mz_test - cov_cross_test @ cov_obs_inv_test @ cov_cross_test)
         sigma2_cond_test = max(sigma2_cond_test, 1e-30)
         proj_test = cov_cross_test @ cov_obs_inv_test
-        # TODO(Phase 34): This testing path still uses allow_singular=True.
-        # Apply exclusion mask if this code path is ever activated in production.
-        gaussian_3d_marginal_test = multivariate_normal(
-            mean=mu_obs_4d_test[:3], cov=cov_obs_test, allow_singular=True
-        )
+        try:
+            gaussian_3d_marginal_test = multivariate_normal(
+                mean=mu_obs_4d_test[:3], cov=cov_obs_test
+            )
+        except np.linalg.LinAlgError:
+            _LOGGER.warning(
+                "Testing path: degenerate 3D covariance for detection %d — skipping",
+                detection_index,
+            )
+            return [0.0]
 
         def numerator_integrant_with_bh_mass(z: float) -> float:
             d_L = dist(z, h=h)
