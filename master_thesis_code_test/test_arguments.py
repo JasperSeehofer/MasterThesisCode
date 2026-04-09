@@ -111,9 +111,9 @@ def test_help_shows_flags() -> None:
 
 
 def test_fisher_cond_threshold_default() -> None:
-    """Default fisher_cond_threshold should be 1e10."""
+    """Default fisher_cond_threshold should be 1e16."""
     args = Arguments.create(["."])
-    assert args.fisher_cond_threshold == pytest.approx(1e10)
+    assert args.fisher_cond_threshold == pytest.approx(1e16)
 
 
 def test_fisher_cond_threshold_custom() -> None:

@@ -286,8 +286,8 @@ def _parse_arguments(arguments: list[str]) -> argparse.Namespace:
     parser.add_argument(
         "--fisher_cond_threshold",
         type=float,
-        default=1e10,
-        help="Condition number threshold for excluding near-singular covariance matrices (default: 1e10).",
+        default=1e16,
+        help="Condition number threshold for excluding near-singular covariance matrices (default: 1e16).",
     )
     parsed_arguments: argparse.Namespace = parser.parse_args(arguments)
     return parsed_arguments

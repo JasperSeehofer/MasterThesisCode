@@ -735,7 +735,7 @@ def evaluate(
     catalog_only: bool = False,
     pdet_dl_bins: int = 60,
     pdet_mass_bins: int = 40,
-    fisher_cond_threshold: float = 1e10,
+    fisher_cond_threshold: float = 1e16,
 ) -> None:
     from master_thesis_code.bayesian_inference.bayesian_statistics import BayesianStatistics
 
