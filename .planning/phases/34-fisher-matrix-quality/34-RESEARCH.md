@@ -433,22 +433,25 @@ if _excluded_mask[slot]:
 
 ---
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **What is the actual condition-number distribution of the current 531-event dataset?**
    - What we know: Some events produce singular matrices (else `allow_singular=True` would not have been needed).
    - What's unclear: How many events? What condition numbers? Is there a clear gap?
    - Recommendation: Make the empirical calibration run the first task in Wave 1. Add CSV logging with a sentinel threshold (`1e30`) so all condition numbers are collected without exclusion. Inspect distribution, then set final default.
+   - RESOLVED: Addressed by 34-01 Task 2 (human checkpoint) — run evaluation with sentinel threshold `1e30`, inspect CSV, then set final default before proceeding to Wave 2.
 
 2. **Does the testing path at `bayesian_statistics.py:1347-1348` run on real evaluation events or only in unit tests?**
    - What we know: It exists at line 1347 and uses `allow_singular=True`.
    - What's unclear: Whether it is exercised during `--evaluate` runs (not apparent from reading ~40 lines of context around it).
    - Recommendation: Read the surrounding function context before implementation to determine if this path needs the same condition-number guard or can be left for now.
+   - RESOLVED: 34-02 Task 2 action step 3 uses option (a) — the surrounding code is a dead-code testing comparison block (line 1260 area); remove `allow_singular=True` and add a try/except that logs a warning if `LinAlgError` is raised.
 
 3. **Should `fisher_quality.csv` be written per-h-value or once per evaluation session?**
    - What we know: Condition numbers are computed once in `__init__()`, not per h-value. The CSV should be written once.
    - What's unclear: Whether the output directory is available in `__init__()` or only in `evaluate()`.
    - Recommendation: Write CSV at end of `evaluate()` after `output_dir` is established. Pass condition-number arrays as instance attributes (`self._cond_3d`, `self._cond_4d`, `self._excluded_mask`) from `__init__()` to `evaluate()`.
+   - RESOLVED: 34-01 Task 1 action step 3f — write CSV once at end of `evaluate()` using instance attributes set in `__init__()`.
 
 ---
 
