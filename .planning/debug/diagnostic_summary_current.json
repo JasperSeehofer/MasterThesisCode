@@ -1,0 +1,17 @@
+{
+  "n_rows": 1652,
+  "n_events": 59,
+  "n_h_values": 27,
+  "mean_f_i": 0.470519,
+  "median_f_i": 0.414096,
+  "min_f_i": 0.258316,
+  "max_f_i": 0.723059,
+  "mean_L_comp": 761.8113032937324,
+  "median_L_comp": 562.5370689563442,
+  "mean_L_comp_fraction_of_combined": 0.712,
+  "frac_L_comp_pulls_low_h": 0.4746,
+  "n_events_L_comp_pulls_low": 28,
+  "n_events_compared": 59,
+  "h_low_compared": 0.66,
+  "h_high_compared": 0.73
+}
