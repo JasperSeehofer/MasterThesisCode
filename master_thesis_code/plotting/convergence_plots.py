@@ -15,12 +15,36 @@ from astropy.stats import binom_conf_interval
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 
-from master_thesis_code.plotting._colors import CYCLE, TRUTH
+from master_thesis_code.plotting._colors import CYCLE, TRUTH, VARIANT_NO_MASS, VARIANT_WITH_MASS
 from master_thesis_code.plotting._helpers import _fig_from_ax, compute_credible_interval, get_figure
 from master_thesis_code.plotting._labels import LABELS
 
 # Default subset sizes for convergence analysis
 _DEFAULT_SUBSETS: list[int] = [1, 5, 10, 25, 50, 100]
+
+
+def _convergence_ci_widths(
+    h_values: npt.NDArray[np.float64],
+    posteriors_list: list[npt.NDArray[np.float64]],
+    sizes: list[int],
+    rng: np.random.Generator,
+    level: float,
+) -> list[float]:
+    """Compute CI widths for random subsets of increasing size."""
+    n_events = len(posteriors_list)
+    ci_widths: list[float] = []
+    for n in sizes:
+        indices = rng.choice(n_events, size=n, replace=False)
+        log_posteriors = [np.log(np.maximum(posteriors_list[i], 1e-300)) for i in indices]
+        log_combined = np.sum(log_posteriors, axis=0)
+        log_combined -= log_combined.max()
+        combined = np.exp(log_combined)
+        norm = np.trapezoid(combined, h_values)
+        if norm > 0:
+            combined /= norm
+        lo, hi = compute_credible_interval(h_values, combined, level=level)
+        ci_widths.append(hi - lo)
+    return ci_widths
 
 
 def plot_h0_convergence(
@@ -31,9 +55,15 @@ def plot_h0_convergence(
     subset_sizes: list[int] | None = None,
     seed: int = 42,
     level: float = 0.68,
+    h_values_alt: npt.NDArray[np.float64] | None = None,
+    event_posteriors_alt: list[npt.NDArray[np.float64]] | None = None,
+    label: str = r"Without $M_z$",
+    label_alt: str = r"With $M_z$",
+    color: str | None = None,
+    color_alt: str | None = None,
     ax: None = None,  # noqa: ARG001 — reserved for API consistency
 ) -> tuple[Figure, npt.NDArray[np.object_]]:
-    """Two-panel H0 convergence plot.
+    """Two-panel H0 convergence plot, optionally comparing two variants.
 
     Left panel: combined posterior curves for increasing event counts.
     Right panel: credible-interval width vs number of events with a
@@ -53,6 +83,18 @@ def plot_h0_convergence(
         RNG seed for reproducible random sub-sampling.
     level:
         Credible-interval probability mass (default 68%).
+    h_values_alt:
+        H-grid for the alternative (with-mass) variant.
+    event_posteriors_alt:
+        Per-event posteriors for the alternative variant.
+    label:
+        Legend label for the primary variant.
+    label_alt:
+        Legend label for the alternative variant.
+    color:
+        Curve color for the primary variant.
+    color_alt:
+        Curve color for the alternative variant.
     ax:
         Ignored (two-panel layout always created internally).
 
@@ -61,11 +103,12 @@ def plot_h0_convergence(
     tuple[Figure, NDArray[object]]
         Figure and array of two Axes ``[ax_posterior, ax_ci_width]``.
     """
-    posteriors_list: list[npt.NDArray[np.float64]] = (
-        list(event_posteriors)
-        if isinstance(event_posteriors, np.ndarray)
-        else list(event_posteriors)
-    )
+    if color is None:
+        color = VARIANT_NO_MASS
+    if color_alt is None:
+        color_alt = VARIANT_WITH_MASS
+
+    posteriors_list: list[npt.NDArray[np.float64]] = list(event_posteriors)
     n_events = len(posteriors_list)
 
     # Resolve subset sizes, cap at available events
@@ -79,25 +122,66 @@ def plot_h0_convergence(
     fig, (ax_post, ax_ci) = get_figure(nrows=1, ncols=2, preset="double")
 
     rng = np.random.default_rng(seed)
-    ci_widths: list[float] = []
 
-    for idx, n in enumerate(sizes):
-        indices = rng.choice(n_events, size=n, replace=False)
-        # Log-sum-exp for numerical stability
-        log_posteriors = [np.log(np.maximum(posteriors_list[i], 1e-300)) for i in indices]
-        log_combined = np.sum(log_posteriors, axis=0)
-        log_combined -= log_combined.max()
-        combined = np.exp(log_combined)
-        norm = np.trapezoid(combined, h_values)
-        if norm > 0:
-            combined /= norm
+    # --- Primary variant ---
+    ci_widths = _convergence_ci_widths(h_values, posteriors_list, sizes, rng, level)
 
-        color = CYCLE[idx % len(CYCLE)]
-        ax_post.plot(h_values, combined, color=color, label=f"N={n}")
+    # Show combined posterior at largest subset for left panel
+    rng_post = np.random.default_rng(seed)
+    indices = rng_post.choice(n_events, size=sizes[-1], replace=False)
+    log_posts = [np.log(np.maximum(posteriors_list[i], 1e-300)) for i in indices]
+    log_combined = np.sum(log_posts, axis=0)
+    log_combined -= log_combined.max()
+    combined = np.exp(log_combined)
+    norm = np.trapezoid(combined, h_values)
+    if norm > 0:
+        combined /= norm
+    ax_post.plot(h_values, combined, color=color, label=label)
 
-        lo, hi = compute_credible_interval(h_values, combined, level=level)
-        ci_width = hi - lo
-        ci_widths.append(ci_width)
+    # Right panel: CI width vs N
+    sizes_arr = np.asarray(sizes, dtype=np.float64)
+    ci_arr = np.asarray(ci_widths, dtype=np.float64)
+    ax_ci.plot(sizes_arr, ci_arr, "o-", color=color, label=label)
+
+    # --- Alternative variant (if provided) ---
+    if event_posteriors_alt is not None:
+        h_alt = h_values_alt if h_values_alt is not None else h_values
+        posteriors_alt_list: list[npt.NDArray[np.float64]] = list(event_posteriors_alt)
+        n_alt = len(posteriors_alt_list)
+        sizes_alt = [min(s, n_alt) for s in sizes]
+
+        rng_alt = np.random.default_rng(seed)
+        ci_widths_alt = _convergence_ci_widths(
+            h_alt, posteriors_alt_list, sizes_alt, rng_alt, level
+        )
+
+        # Combined posterior for left panel
+        rng_alt_post = np.random.default_rng(seed)
+        indices_alt = rng_alt_post.choice(n_alt, size=sizes_alt[-1], replace=False)
+        log_posts_alt = [np.log(np.maximum(posteriors_alt_list[i], 1e-300)) for i in indices_alt]
+        log_combined_alt = np.sum(log_posts_alt, axis=0)
+        log_combined_alt -= log_combined_alt.max()
+        combined_alt = np.exp(log_combined_alt)
+        norm_alt = np.trapezoid(combined_alt, h_alt)
+        if norm_alt > 0:
+            combined_alt /= norm_alt
+        ax_post.plot(h_alt, combined_alt, color=color_alt, linestyle="--", label=label_alt)
+
+        sizes_alt_arr = np.asarray(sizes_alt, dtype=np.float64)
+        ci_alt_arr = np.asarray(ci_widths_alt, dtype=np.float64)
+        ax_ci.plot(sizes_alt_arr, ci_alt_arr, "s--", color=color_alt, label=label_alt)
+
+    # 1/sqrt(N) reference curve scaled to match first point of primary
+    if len(sizes) > 1 and ci_widths[0] > 0:
+        ref = ci_widths[0] * np.sqrt(sizes_arr[0]) / np.sqrt(sizes_arr)
+        ax_ci.plot(
+            sizes_arr,
+            ref,
+            ":",
+            color=CYCLE[5],
+            alpha=0.6,
+            label=r"$1/\sqrt{N}$ ref",
+        )
 
     # Left panel styling
     ax_post.set_xlabel(LABELS["h"])
@@ -106,22 +190,7 @@ def plot_h0_convergence(
         ax_post.axvline(true_h, color=TRUTH, linestyle="--", label="Truth")
     ax_post.legend(fontsize="small")
 
-    # Right panel: CI width vs N
-    sizes_arr = np.asarray(sizes, dtype=np.float64)
-    ci_arr = np.asarray(ci_widths, dtype=np.float64)
-    ax_ci.plot(sizes_arr, ci_arr, "o-", color=CYCLE[0], label="CI width")
-
-    # 1/sqrt(N) reference curve scaled to match first point
-    if len(sizes) > 1 and ci_widths[0] > 0:
-        ref = ci_widths[0] * np.sqrt(sizes_arr[0]) / np.sqrt(sizes_arr)
-        ax_ci.plot(
-            sizes_arr,
-            ref,
-            "--",
-            color=CYCLE[1],
-            alpha=0.6,
-            label=r"$1/\sqrt{N}$ ref",
-        )
+    # Right panel styling
     ax_ci.set_xlabel("Number of events")
     ax_ci.set_ylabel(rf"{int(level * 100)}\% CI width")
     ax_ci.legend(fontsize="small")

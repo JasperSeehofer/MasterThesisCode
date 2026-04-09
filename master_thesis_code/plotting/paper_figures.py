@@ -26,7 +26,15 @@ import numpy.typing as npt
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 
-from master_thesis_code.plotting._colors import CYCLE, EDGE, MEAN, REFERENCE, TRUTH
+from master_thesis_code.plotting._colors import (
+    CYCLE,
+    EDGE,
+    MEAN,
+    REFERENCE,
+    TRUTH,
+    VARIANT_NO_MASS,
+    VARIANT_WITH_MASS,
+)
 from master_thesis_code.plotting._helpers import compute_credible_interval, get_figure
 
 # ---------------------------------------------------------------------------
@@ -227,7 +235,7 @@ def plot_h0_posterior_comparison(
         h_no,
         post_no_norm,
         "o-",
-        color=CYCLE[0],
+        color=VARIANT_NO_MASS,
         label=r"Without $M_z$",
         markersize=4,
         zorder=3,
@@ -236,7 +244,7 @@ def plot_h0_posterior_comparison(
         h_with,
         post_with_norm,
         "s--",
-        color=CYCLE[3],
+        color=VARIANT_WITH_MASS,
         label=r"With $M_z$",
         markersize=4,
         zorder=3,
@@ -244,8 +252,8 @@ def plot_h0_posterior_comparison(
 
     # 68% CI shading via shared CDF utility
     for h_arr, post_arr, color in [
-        (h_no, post_no, CYCLE[0]),
-        (h_with, post_with, CYCLE[3]),
+        (h_no, post_no, VARIANT_NO_MASS),
+        (h_with, post_with, VARIANT_WITH_MASS),
     ]:
         lo, hi = compute_credible_interval(h_arr, post_arr)
         if not (np.isnan(lo) or np.isnan(hi)):
@@ -363,12 +371,14 @@ def plot_single_event_likelihoods(
         # No-mass likelihood
         lik_no = events_no[eid]
         lik_no_norm = lik_no / np.max(lik_no) if np.max(lik_no) > 0 else lik_no
-        ax_no.plot(h_no, lik_no_norm, "o-", color=CYCLE[0], markersize=2.5, linewidth=1.0)
+        ax_no.plot(h_no, lik_no_norm, "o-", color=VARIANT_NO_MASS, markersize=2.5, linewidth=1.0)
 
         # With-mass likelihood
         lik_with = events_with[eid]
         lik_with_norm = lik_with / np.max(lik_with) if np.max(lik_with) > 0 else lik_with
-        ax_with.plot(h_with, lik_with_norm, "s-", color=CYCLE[3], markersize=2.5, linewidth=1.0)
+        ax_with.plot(
+            h_with, lik_with_norm, "s-", color=VARIANT_WITH_MASS, markersize=2.5, linewidth=1.0
+        )
 
         # Row label
         ax_no.set_ylabel(f"{label}\n(event {eid})")
@@ -559,7 +569,7 @@ def plot_posterior_convergence(
         y_med,
         yerr=[y_med - y_lo, y_hi - y_med],
         fmt="o",
-        color=CYCLE[0],
+        color=VARIANT_NO_MASS,
         markersize=4,
         capsize=3,
         linewidth=1.0,
@@ -572,7 +582,7 @@ def plot_posterior_convergence(
         y_med_wm,
         yerr=[y_med_wm - y_lo_wm, y_hi_wm - y_med_wm],
         fmt="s",
-        color=CYCLE[3],
+        color=VARIANT_WITH_MASS,
         markersize=4,
         capsize=3,
         linewidth=1.0,
@@ -819,7 +829,7 @@ def plot_h0_posterior_kde(
         h_no,
         post_no_norm,
         "o",
-        color=CYCLE[0],
+        color=VARIANT_NO_MASS,
         alpha=0.4,
         markersize=3,
         zorder=2,
@@ -828,7 +838,7 @@ def plot_h0_posterior_kde(
         h_with,
         post_with_norm,
         "s",
-        color=CYCLE[3],
+        color=VARIANT_WITH_MASS,
         alpha=0.4,
         markersize=3,
         zorder=2,
@@ -839,7 +849,7 @@ def plot_h0_posterior_kde(
         h_fine_no,
         kde_no_norm,
         "-",
-        color=CYCLE[0],
+        color=VARIANT_NO_MASS,
         linewidth=1.4,
         label=r"Without $M_z$",
         zorder=3,
@@ -848,7 +858,7 @@ def plot_h0_posterior_kde(
         h_fine_with,
         kde_with_norm,
         "--",
-        color=CYCLE[3],
+        color=VARIANT_WITH_MASS,
         linewidth=1.4,
         label=r"With $M_z$",
         zorder=3,
@@ -856,8 +866,8 @@ def plot_h0_posterior_kde(
 
     # 68% CI shading on KDE-smoothed values
     for h_fine, kde_fine, color in [
-        (h_fine_no, kde_no, CYCLE[0]),
-        (h_fine_with, kde_with, CYCLE[3]),
+        (h_fine_no, kde_no, VARIANT_NO_MASS),
+        (h_fine_with, kde_with, VARIANT_WITH_MASS),
     ]:
         lo, hi = compute_credible_interval(h_fine, kde_fine)
         if not (np.isnan(lo) or np.isnan(hi)):

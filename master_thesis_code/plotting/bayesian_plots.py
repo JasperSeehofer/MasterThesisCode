@@ -15,7 +15,15 @@ from matplotlib.cm import ScalarMappable
 from matplotlib.colors import Normalize
 from matplotlib.figure import Figure
 
-from master_thesis_code.plotting._colors import CMAP, CYCLE, EDGE, MEAN, REFERENCE, TRUTH
+from master_thesis_code.plotting._colors import (
+    CMAP,
+    CYCLE,
+    EDGE,
+    MEAN,
+    REFERENCE,
+    TRUTH,
+    VARIANT_NO_MASS,
+)
 from master_thesis_code.plotting._helpers import _fig_from_ax, get_figure
 from master_thesis_code.plotting._labels import LABELS
 
@@ -60,6 +68,7 @@ def plot_combined_posterior(
     normalize: str = "peak",
     show_credible: bool = True,
     show_references: bool = True,
+    color: str | None = None,
     ax: Axes | None = None,
 ) -> tuple[Figure, Axes]:
     """Plot a single combined Hubble constant posterior.
@@ -81,6 +90,8 @@ def plot_combined_posterior(
         If ``True`` (default), shade 68% and 95% credible intervals.
     show_references:
         If ``True`` (default), show Planck and SH0ES reference bands.
+    color:
+        Curve and CI shading color.  Defaults to ``VARIANT_NO_MASS``.
     ax:
         Optional pre-existing Axes to draw on.
     """
@@ -89,10 +100,13 @@ def plot_combined_posterior(
     else:
         fig = _fig_from_ax(ax)
 
+    if color is None:
+        color = VARIANT_NO_MASS
+
     normalized = _normalize_posterior(posterior, h_values, normalize)
 
     # Main posterior curve
-    ax.plot(h_values, normalized, label=label)
+    ax.plot(h_values, normalized, label=label, color=color)
 
     # --- Credible intervals (D-01) ---
     if show_credible:
@@ -112,7 +126,7 @@ def plot_combined_posterior(
             normalized,
             where=mask_95,
             alpha=0.15,
-            color=CYCLE[0],
+            color=color,
         )
         # 68% region
         mask_68 = (h_values >= h_q[1]) & (h_values <= h_q[2])
@@ -122,11 +136,11 @@ def plot_combined_posterior(
             normalized,
             where=mask_68,
             alpha=0.3,
-            color=CYCLE[0],
+            color=color,
         )
         # Thin boundary lines at interval edges
         for h_edge in h_q:
-            ax.axvline(h_edge, color=CYCLE[0], linewidth=0.5, alpha=0.5)
+            ax.axvline(h_edge, color=color, linewidth=0.5, alpha=0.5)
 
     # --- Reference bands (D-02) ---
     if show_references:
@@ -136,10 +150,10 @@ def plot_combined_posterior(
             planck_h - planck_sigma,
             planck_h + planck_sigma,
             alpha=0.15,
-            color=CYCLE[4],
+            color=CYCLE[6],
             zorder=0,
         )
-        ax.axvline(planck_h, color=CYCLE[4], linewidth=0.8, linestyle="--")
+        ax.axvline(planck_h, color=CYCLE[6], linewidth=0.8, linestyle="--")
         ax.text(
             planck_h,
             0.95,
@@ -148,7 +162,7 @@ def plot_combined_posterior(
             ha="center",
             va="top",
             fontsize=6,
-            color=CYCLE[4],
+            color=CYCLE[6],
         )
 
         # SH0ES: h = 0.73 +/- 0.01
@@ -157,10 +171,10 @@ def plot_combined_posterior(
             shoes_h - shoes_sigma,
             shoes_h + shoes_sigma,
             alpha=0.15,
-            color=CYCLE[1],
+            color=CYCLE[0],
             zorder=0,
         )
-        ax.axvline(shoes_h, color=CYCLE[1], linewidth=0.8, linestyle="--")
+        ax.axvline(shoes_h, color=CYCLE[0], linewidth=0.8, linestyle="--")
         ax.text(
             shoes_h,
             0.95,
@@ -169,7 +183,7 @@ def plot_combined_posterior(
             ha="center",
             va="top",
             fontsize=6,
-            color=CYCLE[1],
+            color=CYCLE[0],
         )
 
     # Truth line

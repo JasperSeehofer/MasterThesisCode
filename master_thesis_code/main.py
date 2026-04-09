@@ -779,11 +779,25 @@ def generate_figures(output_dir: str) -> None:
 
     def _load_crb_data() -> pd.DataFrame | None:
         """Load and concatenate all CRB CSV files."""
-        csv_files = sorted(glob.glob(os.path.join(output_dir, "cramer_rao_bounds_*.csv")))
+        csv_files = sorted(glob.glob(os.path.join(output_dir, "cramer_rao_bounds*.csv")))
+        if not csv_files:
+            # Fallback: check simulations/ directory relative to project root
+            project_root = Path(__file__).resolve().parents[1]
+            fallback = project_root / "simulations" / "cramer_rao_bounds.csv"
+            if fallback.is_file():
+                csv_files = [str(fallback)]
         if not csv_files:
             return None
         frames = [pd.read_csv(f) for f in csv_files]
-        return pd.concat(frames, ignore_index=True)
+        df = pd.concat(frames, ignore_index=True)
+        # Derive redshift from luminosity_distance if column is missing
+        if "redshift" not in df.columns and "luminosity_distance" in df.columns:
+            from master_thesis_code.physical_relations import dist_to_redshift
+
+            df["redshift"] = df["luminosity_distance"].apply(
+                lambda d: dist_to_redshift(float(d), h=0.73)
+            )
+        return df
 
     def _load_posteriors(
         subdir: str,
@@ -825,6 +839,7 @@ def generate_figures(output_dir: str) -> None:
 
     crb_df = _load_crb_data()
     post_data = _load_posteriors("posteriors")
+    post_data_with = _load_posteriors("posteriors_with_bh_mass")
 
     # ------------------------------------------------------------------
     # Manifest: list of (output_name, generator_callable)
@@ -838,6 +853,7 @@ def generate_figures(output_dir: str) -> None:
     def _gen_h0_posterior_combined() -> tuple[object, object] | None:
         if post_data is None:
             return None
+        from master_thesis_code.plotting._colors import VARIANT_NO_MASS, VARIANT_WITH_MASS
         from master_thesis_code.plotting.bayesian_plots import plot_combined_posterior
 
         h_vals, event_posts = post_data
@@ -845,7 +861,29 @@ def generate_figures(output_dir: str) -> None:
         log_combined = np.sum(log_posts, axis=0)
         log_combined -= log_combined.max()
         combined = np.exp(log_combined)
-        return plot_combined_posterior(h_vals, combined, 0.73)
+        fig, ax = plot_combined_posterior(
+            h_vals,
+            combined,
+            0.73,
+            label=r"Without $M_z$",
+            color=VARIANT_NO_MASS,
+        )
+        if post_data_with is not None:
+            h_w, ep_w = post_data_with
+            log_w = [np.log(np.maximum(p, 1e-300)) for p in ep_w]
+            log_comb_w = np.sum(log_w, axis=0)
+            log_comb_w -= log_comb_w.max()
+            comb_w = np.exp(log_comb_w)
+            plot_combined_posterior(
+                h_w,
+                comb_w,
+                0.73,
+                label=r"With $M_z$",
+                color=VARIANT_WITH_MASS,
+                show_references=False,
+                ax=ax,
+            )
+        return fig, ax
 
     manifest.append(("fig01_h0_posterior_combined", _gen_h0_posterior_combined))
 
@@ -853,14 +891,32 @@ def generate_figures(output_dir: str) -> None:
     def _gen_event_posteriors() -> tuple[object, object] | None:
         if post_data is None:
             return None
-        from master_thesis_code.plotting.bayesian_plots import plot_event_posteriors
+        from master_thesis_code.plotting._colors import VARIANT_WITH_MASS
+        from master_thesis_code.plotting.bayesian_plots import (
+            plot_event_posteriors,
+        )
 
         h_vals, event_posts = post_data
         log_posts = [np.log(np.maximum(p, 1e-300)) for p in event_posts]
         log_combined = np.sum(log_posts, axis=0)
         log_combined -= log_combined.max()
         combined = np.exp(log_combined)
-        return plot_event_posteriors(h_vals, event_posts, 0.73, combined_posterior=combined)
+        fig, ax = plot_event_posteriors(h_vals, event_posts, 0.73, combined_posterior=combined)
+        # Overlay with-M_z combined posterior
+        if post_data_with is not None:
+            h_w, ep_w = post_data_with
+            log_w = [np.log(np.maximum(p, 1e-300)) for p in ep_w]
+            log_comb_w = np.sum(log_w, axis=0)
+            log_comb_w -= log_comb_w.max()
+            comb_w = np.exp(log_comb_w)
+            norm_w = np.trapezoid(comb_w, h_w)
+            if norm_w > 0:
+                comb_w /= norm_w
+            ax.plot(
+                h_w, comb_w, color=VARIANT_WITH_MASS, linewidth=2, label=r"Combined (with $M_z$)"
+            )
+            ax.legend(fontsize="small")
+        return fig, ax
 
     manifest.append(("fig02_event_posteriors", _gen_event_posteriors))
 
@@ -931,7 +987,14 @@ def generate_figures(output_dir: str) -> None:
         from master_thesis_code.plotting.convergence_plots import plot_h0_convergence
 
         h_vals, event_posts = post_data
-        return plot_h0_convergence(h_vals, event_posts, true_h=0.73)
+        h_alt, ep_alt = post_data_with if post_data_with is not None else (None, None)
+        return plot_h0_convergence(
+            h_vals,
+            event_posts,
+            true_h=0.73,
+            h_values_alt=h_alt,
+            event_posteriors_alt=ep_alt,
+        )
 
     manifest.append(("fig08_h0_convergence", _gen_h0_convergence))
 

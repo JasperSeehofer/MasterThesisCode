@@ -33,6 +33,10 @@ EDGE: str = "#1a1a1a"  # near-black -- histogram edges, outlines
 REFERENCE: str = "#56B4E9"  # sky blue -- secondary reference lines
 ACCENT: str = "#E69F00"  # orange -- accent for annotations/highlights
 
+# --- Variant comparison colors (without / with BH mass channel) ---
+VARIANT_NO_MASS: str = "#0072B2"  # Okabe-Ito blue (petrol) -- without M_z
+VARIANT_WITH_MASS: str = "#56B4E9"  # Okabe-Ito sky blue -- with M_z
+
 # --- Sequential Blues (truncated 0.1-0.85 to avoid near-white/near-black) ---
 _blues_base = plt.colormaps["Blues"]
 SEQUENTIAL_BLUES: LinearSegmentedColormap = LinearSegmentedColormap.from_list(
