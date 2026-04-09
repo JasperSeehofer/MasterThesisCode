@@ -7,7 +7,7 @@ Publication-quality figures:
 2. **Single-event likelihoods** -- 4 representative events showing how the
    BH mass channel narrows the per-event likelihood.
 3. **Posterior convergence** -- CI width vs number of events with
-   N^{-1/2} reference line (without-BH-mass channel only).
+   N^{-1/2} reference line (both analysis variants).
 4. **SNR distribution** -- histogram and scatter of detected-event SNR
    (requires CRB CSV data from cluster).
 
@@ -398,7 +398,7 @@ def plot_single_event_likelihoods(
 
 
 # ---------------------------------------------------------------------------
-# Figure 3: Posterior convergence (without-BH-mass only)
+# Figure 3: Posterior convergence (both analysis variants)
 # ---------------------------------------------------------------------------
 
 # Subset sizes for convergence study.  Chosen to span one-and-a-half
@@ -407,66 +407,46 @@ _CONVERGENCE_SUBSET_SIZES: list[int] = [10, 20, 50, 100, 150, 200, 300, 400, 500
 _CONVERGENCE_N_SUBSETS: int = 50
 
 
-def plot_posterior_convergence(
-    data_dir: Path,
-    *,
-    subset_sizes: list[int] | None = None,
-    n_subsets: int = _CONVERGENCE_N_SUBSETS,
-    seed: int = 20260407,
-) -> tuple[Figure, Axes]:
-    """Plot 68% CI width vs number of events for the without-BH-mass channel.
+def _compute_convergence_stats(
+    log_event_matrix: npt.NDArray[np.float64],
+    n_events_total: int,
+    subset_sizes: list[int],
+    n_subsets: int,
+    rng: np.random.Generator,
+    h_values: npt.NDArray[np.float64],
+) -> tuple[list[int], list[float], list[float], list[float]]:
+    """Compute convergence statistics for one analysis variant.
 
-    Demonstrates the expected N^{-1/2} narrowing of the posterior as more
-    independent EMRI events are combined.
-
-    The with-BH-mass channel is intentionally omitted: its per-event
-    posteriors collapse to a delta function on the coarse h-grid, making
-    CI-width vs N scientifically meaningless.
+    For each subset size, draws ``n_subsets`` random subsets of events,
+    combines their log-posteriors, and computes the 68% CI width.
 
     Parameters
     ----------
-    data_dir:
-        Root directory containing ``posteriors/`` subdirectory with
-        per-event JSON files.
+    log_event_matrix:
+        Array of shape (n_events_total, n_h) containing pre-computed
+        log-likelihoods clipped to avoid log(0).
+    n_events_total:
+        Number of valid events (rows in log_event_matrix).
     subset_sizes:
-        List of event counts to probe.  Defaults to
-        ``[10, 20, 50, 100, 150, 200, 300, 400, 500]``.
+        Candidate event counts to probe.
     n_subsets:
-        Number of random subsets drawn at each size (default 50).
-    seed:
-        Random seed for reproducibility.
+        Number of random draws per subset size.
+    rng:
+        NumPy random Generator instance (caller owns the seed).
+    h_values:
+        Sorted 1-D array of h grid points (length n_h).
 
     Returns
     -------
-    (fig, ax) following the project factory convention.
+    used_sizes, medians, lo_pctiles, hi_pctiles
+        Parallel lists of the subset sizes that were actually used
+        (those <= n_events_total) and their per-size 50th/16th/84th
+        percentile CI widths.
     """
-    if subset_sizes is None:
-        subset_sizes = list(_CONVERGENCE_SUBSET_SIZES)
-
-    # Load all per-event posteriors (without BH mass, 23-point h-grid)
-    h_values, events = _load_per_event_no_mass(data_dir / "posteriors")
-    n_h = len(h_values)
-
-    # Build event-posterior matrix: (n_events, n_h)
-    event_ids = sorted(events.keys(), key=int)
-    # Filter out zero-posterior events (4 missing indices)
-    valid_ids = [eid for eid in event_ids if np.max(events[eid]) > 0]
-    n_events_total = len(valid_ids)
-
-    event_matrix = np.empty((n_events_total, n_h))
-    for i, eid in enumerate(valid_ids):
-        event_matrix[i, :] = events[eid]
-
-    # Pre-compute log-posteriors (clip zeros to avoid log(0))
-    log_event_matrix = np.log(np.clip(event_matrix, 1e-300, None))
-
-    rng = np.random.default_rng(seed)
-
-    # For each subset size, draw n_subsets random subsets and compute CI width
+    used_sizes: list[int] = []
     medians: list[float] = []
     lo_pctiles: list[float] = []
     hi_pctiles: list[float] = []
-    used_sizes: list[int] = []
 
     for n_sub in subset_sizes:
         if n_sub > n_events_total:
@@ -492,10 +472,84 @@ def plot_posterior_convergence(
             lo_pctiles.append(np.nan)
             hi_pctiles.append(np.nan)
 
+    return used_sizes, medians, lo_pctiles, hi_pctiles
+
+
+def plot_posterior_convergence(
+    data_dir: Path,
+    *,
+    subset_sizes: list[int] | None = None,
+    n_subsets: int = _CONVERGENCE_N_SUBSETS,
+    seed: int = 20260407,
+) -> tuple[Figure, Axes]:
+    """Plot 68% CI width vs number of events for both analysis variants.
+
+    Demonstrates the expected N^{-1/2} narrowing of the posterior as more
+    independent EMRI events are combined.  Both the without-BH-mass and
+    with-BH-mass channels are shown as separate errorbar curves.
+
+    Parameters
+    ----------
+    data_dir:
+        Root directory containing ``posteriors/`` and
+        ``posteriors_with_bh_mass/`` subdirectories with per-event JSON
+        files.
+    subset_sizes:
+        List of event counts to probe.  Defaults to
+        ``[10, 20, 50, 100, 150, 200, 300, 400, 500]``.
+    n_subsets:
+        Number of random subsets drawn at each size (default 50).
+    seed:
+        Random seed for reproducibility.
+
+    Returns
+    -------
+    (fig, ax) following the project factory convention.
+    """
+    if subset_sizes is None:
+        subset_sizes = list(_CONVERGENCE_SUBSET_SIZES)
+
+    # --- Load without-BH-mass data ---
+    h_values, events = _load_per_event_no_mass(data_dir / "posteriors")
+    n_h = len(h_values)
+    event_ids = sorted(events.keys(), key=int)
+    valid_ids = [eid for eid in event_ids if np.max(events[eid]) > 0]
+    n_events_total = len(valid_ids)
+    event_matrix = np.empty((n_events_total, n_h))
+    for i, eid in enumerate(valid_ids):
+        event_matrix[i, :] = events[eid]
+    log_event_matrix = np.log(np.clip(event_matrix, 1e-300, None))
+
+    # --- Load with-BH-mass data ---
+    h_values_wm, events_wm = _load_per_event_with_mass_scalars(data_dir / "posteriors_with_bh_mass")
+    n_h_wm = len(h_values_wm)
+    event_ids_wm = sorted(events_wm.keys(), key=int)
+    valid_ids_wm = [eid for eid in event_ids_wm if np.max(events_wm[eid]) > 0]
+    n_events_total_wm = len(valid_ids_wm)
+    event_matrix_wm = np.empty((n_events_total_wm, n_h_wm))
+    for i, eid in enumerate(valid_ids_wm):
+        event_matrix_wm[i, :] = events_wm[eid]
+    log_event_matrix_wm = np.log(np.clip(event_matrix_wm, 1e-300, None))
+
+    # Seed once; each call to _compute_convergence_stats advances the rng
+    rng = np.random.default_rng(seed)
+
+    used_sizes, medians, lo_pctiles, hi_pctiles = _compute_convergence_stats(
+        log_event_matrix, n_events_total, subset_sizes, n_subsets, rng, h_values
+    )
+    used_sizes_wm, medians_wm, lo_pctiles_wm, hi_pctiles_wm = _compute_convergence_stats(
+        log_event_matrix_wm, n_events_total_wm, subset_sizes, n_subsets, rng, h_values_wm
+    )
+
     x = np.array(used_sizes, dtype=float)
     y_med = np.array(medians)
     y_lo = np.array(lo_pctiles)
     y_hi = np.array(hi_pctiles)
+
+    x_wm = np.array(used_sizes_wm, dtype=float)
+    y_med_wm = np.array(medians_wm)
+    y_lo_wm = np.array(lo_pctiles_wm)
+    y_hi_wm = np.array(hi_pctiles_wm)
 
     # -- Plot --
     fig, ax = get_figure(preset="single")
@@ -513,7 +567,20 @@ def plot_posterior_convergence(
         zorder=3,
     )
 
-    # N^{-1/2} reference line anchored to the largest N median
+    ax.errorbar(
+        x_wm,
+        y_med_wm,
+        yerr=[y_med_wm - y_lo_wm, y_hi_wm - y_med_wm],
+        fmt="s",
+        color=CYCLE[3],
+        markersize=4,
+        capsize=3,
+        linewidth=1.0,
+        label=r"With $M_z$",
+        zorder=3,
+    )
+
+    # N^{-1/2} reference line anchored to the largest N median of no-mass variant
     if len(used_sizes) > 0 and not np.isnan(y_med[-1]):
         n_ref = x[-1]
         y_ref = y_med[-1]

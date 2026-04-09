@@ -1,6 +1,7 @@
 """Smoke tests for paper_figures.py factory functions."""
 
 import inspect
+import json
 from pathlib import Path
 
 import matplotlib.pyplot as plt
@@ -141,4 +142,57 @@ class TestKDESmoothing:
 
         fig, ax = plot_h0_posterior_kde(data_dir=tmp_path)
         assert isinstance(fig, Figure)
+        plt.close(fig)
+
+
+class TestPosteriorConvergenceDualVariant:
+    """Tests for plot_posterior_convergence showing both analysis variants."""
+
+    def _write_per_event_json(
+        self,
+        directory: Path,
+        h_vals: list[float],
+        n_events: int,
+        rng: np.random.Generator,
+    ) -> None:
+        """Write synthetic per-event posterior JSON files.
+
+        Each file is named ``h_{int}_{frac}.json`` (matching the loader's
+        naming convention) and contains event IDs as keys with
+        single-element list values.
+        """
+        directory.mkdir(parents=True, exist_ok=True)
+        for h in h_vals:
+            int_part = int(h)
+            frac = round((h - int_part) * 100)
+            fname = f"h_{int_part}_{frac:02d}.json"
+            data = {str(i): [float(rng.uniform(0.1, 2.0))] for i in range(n_events)}
+            (directory / fname).write_text(json.dumps(data))
+
+    def test_posterior_convergence_with_synthetic_data(self, tmp_path: Path) -> None:
+        """plot_posterior_convergence returns (Figure, Axes) and plots both variants."""
+        import matplotlib.pyplot as plt
+        from matplotlib.figure import Figure
+
+        from master_thesis_code.plotting.paper_figures import plot_posterior_convergence
+
+        rng = np.random.default_rng(42)
+        # 15-point h-grid from 0.60 to 0.88 (step 0.02)
+        h_vals = [round(0.60 + i * 0.02, 2) for i in range(15)]
+        n_events = 20
+
+        self._write_per_event_json(tmp_path / "posteriors", h_vals, n_events, rng)
+        self._write_per_event_json(tmp_path / "posteriors_with_bh_mass", h_vals, n_events, rng)
+
+        fig, ax = plot_posterior_convergence(
+            data_dir=tmp_path,
+            subset_sizes=[5, 10, 15],
+            n_subsets=5,
+        )
+
+        assert isinstance(fig, Figure)
+        # Both variants should be plotted as errorbar containers.
+        assert len(ax.containers) >= 2, (
+            f"Expected at least 2 errorbar containers (one per variant), got {len(ax.containers)}"
+        )
         plt.close(fig)
