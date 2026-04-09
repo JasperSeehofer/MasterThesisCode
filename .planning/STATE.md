@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Paper
-status: Blocked — awaiting cluster evaluation
-stopped_at: Phase 34 context gathered
-last_updated: "2026-04-09T18:18:55.190Z"
-last_activity: "2026-04-09 -- Plan 01 complete, Plan 02 cluster scripts committed. Cluster jobs: evaluate=3897259 combine=3897260 (run_20260401_seed200)"
+status: executing
+stopped_at: Completed 34-01-PLAN.md; 34-02-PLAN.md next (empirical calibration checkpoint)
+last_updated: "2026-04-09T18:45:40.448Z"
+last_activity: 2026-04-09
 progress:
   total_phases: 9
   completed_phases: 5
-  total_plans: 10
-  completed_plans: 10
-  percent: 100
+  total_plans: 12
+  completed_plans: 11
+  percent: 92
 ---
 
 # Project State
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-08)
 
 **Core value:** Measure H0 from simulated EMRI dark siren events with galaxy catalog completeness correction, producing publication-ready results.
-**Current focus:** Phase 30 — baseline-evaluation-infrastructure
+**Current focus:** Phase 34 — fisher-matrix-quality
 
 ## Current Position
 
-Phase: 33
+Phase: 34 (fisher-matrix-quality) — EXECUTING
 Plan: 2 of 2
-Status: Blocked — awaiting cluster evaluation
-Last activity: 2026-04-09 -- Plan 01 complete, Plan 02 cluster scripts committed. Cluster jobs: evaluate=3897259 combine=3897260 (run_20260401_seed200)
+Status: Ready to execute
+Last activity: 2026-04-09
 
 ## Performance Metrics
 
@@ -102,9 +102,9 @@ Last activity: 2026-04-09 -- Plan 01 complete, Plan 02 cluster scripts committed
 
 ## Session Continuity
 
-Last session: 2026-04-09T18:18:55.189Z
-Stopped at: Phase 34 context gathered
-Resume file: .planning/phases/34-fisher-matrix-quality/34-CONTEXT.md
+Last session: 2026-04-09T18:45:40.446Z
+Stopped at: Completed 34-01-PLAN.md; 34-02-PLAN.md next (empirical calibration checkpoint)
+Resume file: None
 
 ## Quick Tasks Completed
 
@@ -114,3 +114,4 @@ Resume file: .planning/phases/34-fisher-matrix-quality/34-CONTEXT.md
 | 2026-04-07 | Add interactive Plotly figures to GitHub Pages | 8b47b5f..33e1c86 (2 commits) | 4 Plotly HTML figures (posterior, sky map, Fisher ellipses, convergence), --generate_interactive CLI flag, CI Pages deployment, landing page. |
 | Phase 31 P02 | 196 | 1 tasks | 3 files |
 | 2026-04-09 | Add with-BH-mass variant to plot_posterior_convergence | 1af4487 | Both variants shown on convergence plot; outdated delta-function assumption removed. |
+| Phase 34 P01 | 12 | 1 tasks | 5 files |

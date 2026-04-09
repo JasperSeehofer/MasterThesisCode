@@ -204,9 +204,9 @@ Plans:
   3. Flagged events are either regularized (ridge-like diagonal addition) or excluded, with the strategy configurable
   4. Diagnostic output counts how many events were flagged and excluded per evaluation run
   5. Before/after comparison report shows MAP h change from Fisher quality fix alone
-**Plans:** 2 plans
+**Plans:** 1/2 plans executed
 Plans:
-- [ ] 34-01-PLAN.md — Condition-number gate, exclusion mask, CSV diagnostics, CLI flag, empirical calibration
+- [x] 34-01-PLAN.md — Condition-number gate, exclusion mask, CSV diagnostics, CLI flag, empirical calibration
 - [ ] 34-02-PLAN.md — Diagnostic plot, comparison report Fisher Quality section, allow_singular cleanup
 
 ---
@@ -314,7 +314,7 @@ Plans:
 | 31. Catalog-Only Diagnostic | v2.1 BiasRes | 2/2 | Complete   | 2026-04-08 |
 | 32. Completion Term Fix | v2.1 BiasRes | 2/2 | Complete (GPD) | 2026-04-08 |
 | 33. P_det Grid Resolution | v2.1 BiasRes | 1/2 | In Progress|  |
-| 34. Fisher Matrix Quality | v2.1 BiasRes | 0/2 | Not started | - |
+| 34. Fisher Matrix Quality | v2.1 BiasRes | 1/2 | In Progress|  |
 | 35. Unified Pipeline & Paper Figs | v2.1 PubFigs | 3/3 | Complete | 2026-04-08 |
 | 36. Galaxy-Level Figures | v2.1 PubFigs | 0/? | Paused | - |
 | 37. Interactive Figures | v2.1 PubFigs | 0/? | Paused | - |

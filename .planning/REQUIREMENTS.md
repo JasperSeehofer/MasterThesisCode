@@ -25,8 +25,8 @@ Systematically diagnose and fix the per-event H₀ posterior bias, testing each 
 
 ### Fisher Quality
 
-- [ ] **FISH-01**: Degenerate Fisher matrices detected and handled (regularization or exclusion) instead of allow_singular=True
-- [ ] **FISH-02**: Events with near-singular covariance flagged in diagnostic output with condition number
+- [x] **FISH-01**: Degenerate Fisher matrices detected and handled (regularization or exclusion) instead of allow_singular=True
+- [x] **FISH-02**: Events with near-singular covariance flagged in diagnostic output with condition number
 
 ### Evaluation Infrastructure
 
@@ -62,8 +62,8 @@ Systematically diagnose and fix the per-event H₀ posterior bias, testing each 
 | COMP-02 | Phase 32 | Pending |
 | PDET-01 | Phase 33 | Complete |
 | PDET-02 | Phase 33 | Complete |
-| FISH-01 | Phase 34 | Pending |
-| FISH-02 | Phase 34 | Pending |
+| FISH-01 | Phase 34 | Complete |
+| FISH-02 | Phase 34 | Complete |
 | EVAL-01 | Phase 30 | Pending |
 | EVAL-02 | Phase 30 | Pending |
 
