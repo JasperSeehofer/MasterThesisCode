@@ -362,6 +362,8 @@ def data_simulation(
     for cb in _callbacks:
         cb.on_simulation_start(simulation_steps)
 
+    from master_thesis_code.constants import LUMINOSITY_DISTANCE_PRESCREEN_GPC
+
     counter = 0
     iteration = 0
     host_galaxies: Iterator[HostGalaxy] = iter([])
@@ -387,6 +389,21 @@ def data_simulation(
         parameter_estimation.parameter_space.randomize_parameters(rng=rng)
 
         parameter_estimation.parameter_space.set_host_galaxy_parameters(host_galaxy)
+
+        # Distance pre-screen: skip events far beyond LISA's EMRI detection horizon
+        # (~1.55 Gpc) before generating any waveform.  The 2.0 Gpc cutoff includes
+        # generous margin for orientation-dependent SNR boosts.  No detectable EMRI
+        # (SNR >= 20) has ever been observed beyond d_L ~ 1.66 Gpc in injection data
+        # (165 000 events).  P_det is already 0 at these distances, so this cut
+        # does not affect the Bayesian inference.
+        d_L = parameter_estimation.parameter_space.luminosity_distance.value
+        if d_L > LUMINOSITY_DISTANCE_PRESCREEN_GPC:
+            _ROOT_LOGGER.debug(
+                "Skipping event: d_L = %.2f Gpc > %.1f Gpc pre-screen cutoff.",
+                d_L,
+                LUMINOSITY_DISTANCE_PRESCREEN_GPC,
+            )
+            continue
 
         try:
             warnings.filterwarnings("error")

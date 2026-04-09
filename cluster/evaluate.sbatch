@@ -6,7 +6,7 @@
 # Hubble constant posterior at multiple h values.
 #
 # Array tasks map to h values via the H_VALUES array below:
-#   task 0 → h=0.600, task 1 → h=0.626, ..., task 5 → h=0.730, ..., task 10 → h=0.860
+#   38 values: 0.010 step in wings (0.60–0.67, 0.79–0.86), 0.005 step in peak (0.68–0.785)
 #
 # Worker count: --num_workers is NOT passed explicitly. The default in
 # arguments.py uses os.sched_getaffinity(0) - 2, which automatically respects
@@ -28,11 +28,13 @@
 set -euo pipefail
 
 # ---------------------------------------------------------------------------
-# H-value sweep: 0.60 to 0.86 in 27 steps (step=0.01, includes 0.73)
+# H-value sweep: 0.60 to 0.86, 38 values (hybrid grid)
+#   Wings (0.60–0.67, 0.79–0.86): step 0.010 — low posterior weight, coarse is fine
+#   Peak  (0.68–0.785):           step 0.005 — dense where MAP shifts matter
 # Upper bound 0.86 matches LamCDMScenario.h.upper_limit in cosmological_model.py
 # ---------------------------------------------------------------------------
 
-H_VALUES=(0.600 0.610 0.620 0.630 0.640 0.650 0.660 0.670 0.680 0.690 0.700 0.710 0.720 0.730 0.740 0.750 0.760 0.770 0.780 0.790 0.800 0.810 0.820 0.830 0.840 0.850 0.860)
+H_VALUES=(0.600 0.610 0.620 0.630 0.640 0.650 0.660 0.670 0.680 0.685 0.690 0.695 0.700 0.705 0.710 0.715 0.720 0.725 0.730 0.735 0.740 0.745 0.750 0.755 0.760 0.765 0.770 0.775 0.780 0.785 0.790 0.800 0.810 0.820 0.830 0.840 0.850 0.860)
 
 H_VALUE="${H_VALUES[$SLURM_ARRAY_TASK_ID]}"
 

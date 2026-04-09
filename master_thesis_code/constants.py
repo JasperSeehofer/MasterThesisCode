@@ -56,6 +56,7 @@ SKY_LOCALIZATION_ERROR: float = 2 / 180 * np.pi  # rad, EMRI sky localization er
 GALAXY_CATALOG_REDSHIFT_LOWER_LIMIT: float = 0.00001  # minimum redshift for galaxy catalog
 GALAXY_CATALOG_REDSHIFT_UPPER_LIMIT: float = 0.55  # maximum redshift for galaxy catalog
 LUMINOSITY_DISTANCE_THRESHOLD_GPC: float = 1.55  # Gpc, LISA detection horizon for EMRIs
+LUMINOSITY_DISTANCE_PRESCREEN_GPC: float = 2.0  # Gpc, generous pre-screen cutoff (see main.py)
 
 # saving Cramer-Rao bounds for marginalization.
 CRAMER_RAO_BOUNDS_PATH: str = "simulations/cramer_rao_bounds_simulation_$index.csv"

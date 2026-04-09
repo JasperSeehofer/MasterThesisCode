@@ -105,9 +105,9 @@ MERGE_JOB=$(sbatch --parsable \
     "$CLUSTER_DIR/merge.sbatch")
 
 # 3. Evaluate array job (CPU, after merge completes)
-#    Array tasks map to h values defined in evaluate.sbatch (27 values: 0.60–0.86, step 0.01)
+#    Array tasks map to h values defined in evaluate.sbatch (38 values: 0.60–0.86, hybrid grid)
 EVAL_JOB=$(sbatch --parsable \
-    --array="0-26" \
+    --array="0-37" \
     --dependency="afterok:$MERGE_JOB" \
     --output="$RUN_DIR/logs/evaluate_%A_%a.out" \
     --error="$RUN_DIR/logs/evaluate_%A_%a.err" \
@@ -130,7 +130,7 @@ echo "Pipeline submitted:"
 echo "  Run directory: $RUN_DIR"
 echo "  Simulate:  $SIM_JOB (array 0-$((TASKS - 1)))"
 echo "  Merge:     $MERGE_JOB (after simulate)"
-echo "  Evaluate:  $EVAL_JOB (array 0-26, h sweep 0.60–0.86, step 0.01)"
+echo "  Evaluate:  $EVAL_JOB (array 0-37, h sweep 0.60–0.86, 38-point hybrid grid)"
 echo "  Combine:   $COMBINE_JOB (after evaluate)"
 echo ""
 echo "Monitor: sacct -j $SIM_JOB,$MERGE_JOB,$EVAL_JOB,$COMBINE_JOB"
