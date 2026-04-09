@@ -120,7 +120,7 @@ See `.gpd/ROADMAP.md` for full details.
 
 - [x] **Phase 30: Baseline & Evaluation Infrastructure** — Capture baseline posterior snapshot, build before/after comparison tooling (DIAG-03, EVAL-01, EVAL-02) — GSD (completed 2026-04-08)
 - [x] **Phase 31: Catalog-Only Diagnostic** — Run f_i=1.0 evaluation to confirm L_comp is the primary bias source (DIAG-01, DIAG-02) — GSD (completed 2026-04-08)
-- [ ] **Phase 32: Completion Term Fix** — Replace dVc/dz source prior with EMRI rate-weighted prior, validate h-dependence (COMP-01, COMP-02) — GPD (physics)
+- [x] **Phase 32: Completion Term Fix** — Full-volume D(h) denominator per Gray et al. (2020) Eq. A.19, bias 0.0% (COMP-01, COMP-02) — GPD (completed 2026-04-08)
 - [ ] **Phase 33: P_det Grid Resolution** — Increase grid from 30 to 60 d_L bins, validate coverage (PDET-01, PDET-02) — GSD
 - [ ] **Phase 34: Fisher Matrix Quality** — Replace allow_singular=True with regularization or exclusion, flag degenerates (FISH-01, FISH-02) — GSD
 
@@ -172,14 +172,12 @@ Plans:
 **Goal**: Replace the dVc/dz source population prior in the completion term with an EMRI rate-weighted prior, so L_comp no longer introduces a systematic low-h preference
 **Depends on**: Phase 31 (hypothesis confirmed), Phase 30 (comparison infrastructure)
 **Requirements**: COMP-01, COMP-02
-**Success Criteria** (what must be TRUE):
-  1. Completion term integrand uses EMRI-rate-weighted prior p(z|EMRI) instead of bare dVc/dz (change visible in `bayesian_statistics.py`)
-  2. L_comp ratio L(h=0.66)/L(h=0.73) is within a physically reasonable range (close to 1.0 rather than systematically >1)
-  3. Full pipeline MAP h with the new prior is closer to h=0.73 than before (bias % reduced vs Phase 31 baseline)
-  4. Before/after comparison report generated; result stored in structured tracking format
-  5. New physics change has reference comment (arXiv + equation) above modified line
-**Plans**: TBD
-**Note**: Physics change — must invoke `/physics-change` protocol before implementation. GPD execution required.
+**Status:** Complete (2026-04-08, GPD Phase 32)
+**Result:** Full-volume D(h) denominator per Gray et al. (2020) Eq. A.19. MAP shifts from 0.60 to 0.73, bias 0.0% at N=59. 11 unit tests. Validation artifacts in `.gpd/phases/32-completion-term-fix/validation/`.
+**Plans:** 2/2 plans complete
+Plans:
+- [x] 32-01-PLAN.md — Implement precompute_completion_denominator(), D_h_table, zero-fill P_det accessor
+- [x] 32-02-PLAN.md — Validation: MAP comparison, bias-vs-N convergence, L_comp decomposition
 
 ### Phase 33: P_det Grid Resolution
 **Goal**: Increase P_det grid resolution from 30 to 60 d_L bins and validate that 4-sigma integration bounds fall within the grid for at least 95% of events
@@ -191,7 +189,10 @@ Plans:
   3. Grid coverage validation runs after grid construction and reports the fraction of events whose 4-sigma bounds fall within the grid
   4. Coverage fraction is above 95% with 60 bins; warning logged if any event falls outside
   5. Before/after comparison report shows MAP h change from grid resolution alone
-**Plans**: TBD
+**Plans:** 2 plans
+Plans:
+- [ ] 33-01-PLAN.md — Configurable P_det bins (CLI flags + threading + coverage validation + tests)
+- [ ] 33-02-PLAN.md — Cluster script update + before/after comparison checkpoint
 
 ### Phase 34: Fisher Matrix Quality
 **Goal**: Replace allow_singular=True with explicit degeneracy handling so near-singular covariance matrices are caught, logged, and treated consistently rather than silently producing unreliable error estimates
@@ -308,10 +309,10 @@ Plans:
 | 29. Style Foundation | v2.1 PubFigs | 1/1 | Complete | 2026-04-07 |
 | 30. Baseline & Evaluation Infra | v2.1 BiasRes | 2/2 | Complete    | 2026-04-08 |
 | 31. Catalog-Only Diagnostic | v2.1 BiasRes | 2/2 | Complete   | 2026-04-08 |
-| 32. Completion Term Fix | v2.1 BiasRes | 0/? | Not started (GPD) | - |
+| 32. Completion Term Fix | v2.1 BiasRes | 2/2 | Complete (GPD) | 2026-04-08 |
 | 33. P_det Grid Resolution | v2.1 BiasRes | 0/? | Not started | - |
 | 34. Fisher Matrix Quality | v2.1 BiasRes | 0/? | Not started | - |
-| 35. Unified Pipeline & Paper Figs | v2.1 PubFigs | 0/3 | Planning complete | - |
+| 35. Unified Pipeline & Paper Figs | v2.1 PubFigs | 3/3 | Complete | 2026-04-08 |
 | 36. Galaxy-Level Figures | v2.1 PubFigs | 0/? | Paused | - |
 | 37. Interactive Figures | v2.1 PubFigs | 0/? | Paused | - |
 | 38. QA & New Science Figures | v2.1 PubFigs | 0/? | Paused | - |
