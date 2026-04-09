@@ -477,3 +477,195 @@ class TestGridCaching:
 
         # Cache should not exceed max size
         assert len(pdet._grid_cache) <= _MAX_CACHE_SIZE
+
+
+class TestConfigurableBins:
+    """Tests for configurable dl_bins and mass_bins parameters."""
+
+    def test_custom_bins_grid_shape(self, injection_dir: str) -> None:
+        """Custom dl_bins=10, mass_bins=5 produces grid with correct shape."""
+        from master_thesis_code.bayesian_inference.simulation_detection_probability import (
+            SimulationDetectionProbability,
+        )
+
+        pdet = SimulationDetectionProbability(
+            injection_data_dir=injection_dir,
+            snr_threshold=20.0,
+            dl_bins=10,
+            mass_bins=5,
+        )
+        assert pdet._dl_bins == 10
+        assert pdet._mass_bins == 5
+
+        # Build a grid and verify quality flags shape
+        flags = pdet.quality_flags(h=0.70)
+        assert flags["n_total"].shape == (10, 5)
+        assert flags["n_detected"].shape == (10, 5)
+
+    def test_default_bins(self, injection_dir: str) -> None:
+        """Default construction uses dl_bins=60, mass_bins=40."""
+        from master_thesis_code.bayesian_inference.simulation_detection_probability import (
+            SimulationDetectionProbability,
+        )
+
+        pdet = SimulationDetectionProbability(
+            injection_data_dir=injection_dir,
+            snr_threshold=20.0,
+        )
+        assert pdet._dl_bins == 60
+        assert pdet._mass_bins == 40
+
+    def test_pickle_preserves_bins(self, injection_dir: str) -> None:
+        """Pickle roundtrip preserves custom bin counts."""
+        from master_thesis_code.bayesian_inference.simulation_detection_probability import (
+            SimulationDetectionProbability,
+        )
+
+        pdet = SimulationDetectionProbability(
+            injection_data_dir=injection_dir,
+            snr_threshold=20.0,
+            dl_bins=15,
+            mass_bins=8,
+        )
+        # Pre-warm a grid so cache has content
+        pdet._get_or_build_grid(0.70)
+
+        data = pickle.dumps(pdet)
+        pdet_restored = pickle.loads(data)  # noqa: S301
+
+        assert pdet_restored._dl_bins == 15
+        assert pdet_restored._mass_bins == 8
+
+
+class TestCoverageValidation:
+    """Tests for validate_coverage() method."""
+
+    def test_full_coverage(self, injection_dir: str) -> None:
+        """All events well within grid -> coverage == 1.0."""
+        from master_thesis_code.bayesian_inference.simulation_detection_probability import (
+            SimulationDetectionProbability,
+        )
+
+        pdet = SimulationDetectionProbability(
+            injection_data_dir=injection_dir,
+            snr_threshold=20.0,
+        )
+        # Build grid to learn the d_L range
+        pdet._get_or_build_grid(0.70)
+        _, interp_1d = pdet._grid_cache[0.70]
+        dl_centers = interp_1d.grid[0]
+        dl_mid = float(dl_centers[len(dl_centers) // 2])
+
+        # Create CRB DataFrame with events well inside grid
+        crb_df = pd.DataFrame(
+            {
+                "luminosity_distance": [dl_mid] * 10,
+                "delta_luminosity_distance_delta_luminosity_distance": [0.001] * 10,
+            }
+        )
+
+        coverage = pdet.validate_coverage(0.70, crb_df)
+        assert coverage == 1.0
+
+    def test_partial_coverage(self, injection_dir: str) -> None:
+        """Some events have 4-sigma d_L bounds outside grid -> coverage < 1.0."""
+        from master_thesis_code.bayesian_inference.simulation_detection_probability import (
+            SimulationDetectionProbability,
+        )
+
+        pdet = SimulationDetectionProbability(
+            injection_data_dir=injection_dir,
+            snr_threshold=20.0,
+        )
+        pdet._get_or_build_grid(0.70)
+        _, interp_1d = pdet._grid_cache[0.70]
+        dl_centers = interp_1d.grid[0]
+        dl_max = float(dl_centers[-1])
+        dl_mid = float(dl_centers[len(dl_centers) // 2])
+
+        # Mix: 5 events inside, 5 events with huge sigma that extends beyond grid
+        crb_df = pd.DataFrame(
+            {
+                "luminosity_distance": [dl_mid] * 5 + [dl_max] * 5,
+                "delta_luminosity_distance_delta_luminosity_distance": [0.001] * 5
+                + [dl_max**2] * 5,  # sigma = dl_max, so 4*sigma >> grid
+            }
+        )
+
+        coverage = pdet.validate_coverage(0.70, crb_df)
+        assert 0.0 < coverage < 1.0
+
+    def test_coverage_warning_logged(
+        self, injection_dir: str, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        """WARNING logged when coverage < 95%."""
+        import logging
+
+        from master_thesis_code.bayesian_inference.simulation_detection_probability import (
+            SimulationDetectionProbability,
+        )
+
+        pdet = SimulationDetectionProbability(
+            injection_data_dir=injection_dir,
+            snr_threshold=20.0,
+        )
+        pdet._get_or_build_grid(0.70)
+        _, interp_1d = pdet._grid_cache[0.70]
+        dl_centers = interp_1d.grid[0]
+        dl_max = float(dl_centers[-1])
+
+        # All events have huge sigma -> all outside grid -> 0% coverage
+        crb_df = pd.DataFrame(
+            {
+                "luminosity_distance": [dl_max] * 10,
+                "delta_luminosity_distance_delta_luminosity_distance": [dl_max**2] * 10,
+            }
+        )
+
+        with caplog.at_level(
+            logging.WARNING,
+            logger="master_thesis_code.bayesian_inference.simulation_detection_probability",
+        ):
+            pdet.validate_coverage(0.70, crb_df)
+
+        warning_msgs = [r.message for r in caplog.records if r.levelno == logging.WARNING]
+        assert any("below 95%" in msg for msg in warning_msgs), (
+            f"Expected warning about coverage, got: {warning_msgs}"
+        )
+
+    def test_coverage_info_logged(
+        self, injection_dir: str, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        """INFO log is always emitted with coverage percentage."""
+        import logging
+
+        from master_thesis_code.bayesian_inference.simulation_detection_probability import (
+            SimulationDetectionProbability,
+        )
+
+        pdet = SimulationDetectionProbability(
+            injection_data_dir=injection_dir,
+            snr_threshold=20.0,
+        )
+        pdet._get_or_build_grid(0.70)
+        _, interp_1d = pdet._grid_cache[0.70]
+        dl_centers = interp_1d.grid[0]
+        dl_mid = float(dl_centers[len(dl_centers) // 2])
+
+        crb_df = pd.DataFrame(
+            {
+                "luminosity_distance": [dl_mid] * 5,
+                "delta_luminosity_distance_delta_luminosity_distance": [0.001] * 5,
+            }
+        )
+
+        with caplog.at_level(
+            logging.INFO,
+            logger="master_thesis_code.bayesian_inference.simulation_detection_probability",
+        ):
+            pdet.validate_coverage(0.70, crb_df)
+
+        info_msgs = [r.message for r in caplog.records if r.levelno == logging.INFO]
+        assert any("P_det grid coverage" in msg for msg in info_msgs), (
+            f"Expected info about coverage, got: {info_msgs}"
+        )
