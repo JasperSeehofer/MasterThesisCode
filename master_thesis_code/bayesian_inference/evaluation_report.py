@@ -540,7 +540,12 @@ def generate_diagnostic_summary(
         common_events = df_low.index.intersection(df_high.index)
         n_events_compared = len(common_events)
         for evt in common_events:
-            if df_low.loc[evt, "L_comp"] > df_high.loc[evt, "L_comp"]:
+            low_val = df_low.loc[evt, "L_comp"]
+            high_val = df_high.loc[evt, "L_comp"]
+            # Use scalar mean when event_idx has duplicate rows (multiple detections per event)
+            low_scalar = float(low_val.mean()) if hasattr(low_val, "mean") else float(low_val)
+            high_scalar = float(high_val.mean()) if hasattr(high_val, "mean") else float(high_val)
+            if low_scalar > high_scalar:
                 n_pulls_low += 1
 
     frac_pulls_low = float(n_pulls_low / n_events_compared) if n_events_compared > 0 else 0.0
