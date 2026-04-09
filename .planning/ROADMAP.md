@@ -9,7 +9,7 @@
 - ✅ **v1.4 Posterior Numerical Stability** — Phases 21-23 (shipped 2026-04-02)
 - ✅ **v1.5 Galaxy Catalog Completeness Correction** — Phases 24-25 (shipped 2026-04-04, GPD-tracked)
 - 🔄 **v2.0 Paper** — Phases 26-28 (paused, GPD-tracked)
-- 🔄 **v2.1 H0 Bias Resolution** — Phases 30-34 (active, GSD/GPD mixed)
+- ✅ **v2.1 H0 Bias Resolution** — Phases 30-34 (shipped 2026-04-09, GSD/GPD mixed)
 - ⏸ **v2.1 Publication Figures** — Phases 35-39 (paused pending bias fix)
 
 ## Phases
@@ -121,7 +121,7 @@ See `.gpd/ROADMAP.md` for full details.
 - [x] **Phase 30: Baseline & Evaluation Infrastructure** — Capture baseline posterior snapshot, build before/after comparison tooling (DIAG-03, EVAL-01, EVAL-02) — GSD (completed 2026-04-08)
 - [x] **Phase 31: Catalog-Only Diagnostic** — Run f_i=1.0 evaluation to confirm L_comp is the primary bias source (DIAG-01, DIAG-02) — GSD (completed 2026-04-08)
 - [x] **Phase 32: Completion Term Fix** — Full-volume D(h) denominator per Gray et al. (2020) Eq. A.19, bias 0.0% (COMP-01, COMP-02) — GPD (completed 2026-04-08)
-- [ ] **Phase 33: P_det Grid Resolution** — Increase grid from 30 to 60 d_L bins, validate coverage (PDET-01, PDET-02) — GSD ⏳ BLOCKED: awaiting cluster evaluation (job 3897259 evaluate + 3897260 combine, run_20260401_seed200)
+- [x] **Phase 33: P_det Grid Resolution** — 60-bin grid deployed; full 38-point cluster sweep confirmed zero delta vs 30-bin baseline (PDET-01, PDET-02) — GSD (completed 2026-04-09)
 - [x] **Phase 34: Fisher Matrix Quality** — Replace allow_singular=True with regularization or exclusion, flag degenerates (FISH-01, FISH-02) — GSD (completed 2026-04-09)
 
 ## Phase Details
@@ -313,7 +313,7 @@ Plans:
 | 30. Baseline & Evaluation Infra | v2.1 BiasRes | 2/2 | Complete    | 2026-04-08 |
 | 31. Catalog-Only Diagnostic | v2.1 BiasRes | 2/2 | Complete   | 2026-04-08 |
 | 32. Completion Term Fix | v2.1 BiasRes | 2/2 | Complete (GPD) | 2026-04-08 |
-| 33. P_det Grid Resolution | v2.1 BiasRes | 1/2 | In Progress|  |
+| 33. P_det Grid Resolution | v2.1 BiasRes | 2/2 | Complete   | 2026-04-09 |
 | 34. Fisher Matrix Quality | v2.1 BiasRes | 2/2 | Complete   | 2026-04-09 |
 | 35. Unified Pipeline & Paper Figs | v2.1 PubFigs | 3/3 | Complete | 2026-04-08 |
 | 36. Galaxy-Level Figures | v2.1 PubFigs | 0/? | Paused | - |

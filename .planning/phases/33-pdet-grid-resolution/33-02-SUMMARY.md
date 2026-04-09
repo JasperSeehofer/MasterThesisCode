@@ -1,9 +1,9 @@
 ---
 phase: 33-pdet-grid-resolution
 plan: 02
-status: partial
-completed_tasks: [1]
-pending_tasks: [2]
+status: complete
+completed_tasks: [1, 2]
+pending_tasks: []
 ---
 
 # Plan 02 Summary: Cluster Scripts & Comparison
@@ -17,14 +17,17 @@ pending_tasks: [2]
 
 **Commit:** `4b39979` — feat(33-02): cluster scripts: 60-bin P_det grid, baseline save, on-cluster figures
 
-## Pending
+### Task 2: Human verification checkpoint — COMPLETE
 
-### Task 2: Human verification checkpoint
-User will run the full 38-point h-sweep on the cluster and verify:
-1. P_det grid coverage > 95% in evaluation logs
-2. Figures generated successfully in `$RUN_DIR/simulations/figures/`
-3. Baseline saved to `$RUN_DIR/baseline.json`
-4. Visual comparison of posteriors (combined + single-event) against previous 30-bin results
+Full 38-point h-sweep completed on cluster (jobs 3897259 + retry 3898710 + combine 3898840).
+
+Results:
+1. 3 tasks (17/25/26) initially failed due to NFS symlink race — resubmitted sequentially (`%1`), all passed
+2. Figures generated in `$RUN_DIR/simulations/figures/` and rsynced locally
+3. Baseline saved: MAP h=0.740, bias=+1.4%
+4. **Zero delta** vs 30-bin baseline — log-posteriors identical to 4 decimal places across all 38 h-values, both variants (with and without BH mass)
+
+**Conclusion:** P_det grid resolution is not a source of bias. Phase 33 validated.
 
 ## Deviations
 - **Scope change**: User requested full cluster sweep instead of local single-h comparison. Added baseline saving and on-cluster figure generation to combine.sbatch so figures can be rsynced directly without transferring raw posteriors.

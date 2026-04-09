@@ -1,5 +1,21 @@
 # Milestones
 
+## v2.1 H₀ Bias Resolution (Shipped: 2026-04-09)
+
+**Phases completed:** 5 phases (30–34), 10 plans
+
+**Key accomplishments:**
+
+- Evaluation infrastructure: `BaselineSnapshot`, `extract_baseline()`, `generate_comparison_report()`, `--save_baseline`/`--compare_baseline` CLI flags for automated before/after tracking (Phase 30)
+- Catalog-only diagnostic confirmed L_comp as dominant bias source: `--catalog_only` flag, per-event CSV logging L_cat, L_comp, f_i at each h, diagnostic summary generator (Phase 31)
+- Root cause fixed: L_comp denominator replaced with full-volume D(h) = ∫P_det·dVc/dz dz per Gray et al. (2020) Eq. A.19; MAP 0.60→0.73, bias -17.8%→0.0% at N=59 (Phase 32, GPD)
+- P_det grid resolution validated: 30→60 d_L bins configurable, full 38-point cluster sweep confirmed zero delta — grid resolution not a bias source (Phase 33)
+- Fisher matrix quality: `allow_singular=True` removed, condition-number gate, `fisher_quality.csv` diagnostics, two-panel `plot_fisher_diagnostics()` figure (Phase 34)
+
+Full archive: `.planning/milestones/v2.1-biasres-ROADMAP.md`
+
+---
+
 ## v1.5 Galaxy Catalog Completeness Correction (Shipped: 2026-04-04)
 
 **Phases completed:** 2 phases (24-25), 2 plans (GPD-tracked)

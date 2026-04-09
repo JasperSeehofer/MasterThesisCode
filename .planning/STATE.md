@@ -75,10 +75,10 @@ Last activity: 2026-04-09
 - Replace dVc/dz with EMRI-rate-weighted prior
 - Invoke `/physics-change` before implementation
 
-**Phase 33 (P_det Grid Resolution) — PENDING Phase 30:**
+**Phase 33 (P_det Grid Resolution) — COMPLETE:**
 
-- Increase 30->60 d_L bins, make configurable
-- Validate 4-sigma coverage for >95% of events
+- 60-bin grid deployed; full 38-point h-sweep validated on cluster
+- Zero delta vs 30-bin baseline — P_det resolution not a source of bias
 
 **Phase 34 (Fisher Matrix Quality) — PENDING Phase 30:**
 
