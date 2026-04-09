@@ -38,9 +38,9 @@ from master_thesis_code.physical_relations import dist_vectorized
 
 logger = logging.getLogger(__name__)
 
-# Number of bins for the P_det grids
-_DL_BINS: int = 30
-_M_BINS: int = 20
+# Default number of bins for the P_det grids
+_DEFAULT_DL_BINS: int = 60
+_DEFAULT_M_BINS: int = 40
 
 # Maximum number of cached grids (LRU eviction)
 _MAX_CACHE_SIZE: int = 20
@@ -88,8 +88,12 @@ class SimulationDetectionProbability:
         snr_threshold: float,
         h_grid: list[float] | None = None,
         *,
+        dl_bins: int = _DEFAULT_DL_BINS,
+        mass_bins: int = _DEFAULT_M_BINS,
         _force_unit_weights: bool = False,
     ) -> None:
+        self._dl_bins = dl_bins
+        self._mass_bins = mass_bins
         self._snr_threshold = snr_threshold
         self._force_unit_weights = _force_unit_weights
 
@@ -353,11 +357,11 @@ class SimulationDetectionProbability:
 
         # Define bin edges in d_L space (IDENTICAL to previous implementation)
         dl_max = float(np.max(dl_vals)) * 1.1
-        dl_edges = np.linspace(0, dl_max, _DL_BINS + 1)
+        dl_edges = np.linspace(0, dl_max, self._dl_bins + 1)
 
         M_min = float(np.min(M_vals)) * 0.9  # noqa: N806
         M_max = float(np.max(M_vals)) * 1.1  # noqa: N806
-        M_edges = np.geomspace(M_min, M_max, _M_BINS + 1)  # noqa: N806
+        M_edges = np.geomspace(M_min, M_max, self._mass_bins + 1)  # noqa: N806
 
         detected_mask = snr_vals >= snr_threshold
 
@@ -388,17 +392,17 @@ class SimulationDetectionProbability:
             M_bin_idx = np.digitize(M_vals, M_edges) - 1  # noqa: N806
 
             # Clip to valid range (digitize can return out-of-range)
-            dl_bin_idx = np.clip(dl_bin_idx, 0, _DL_BINS - 1)
-            M_bin_idx = np.clip(M_bin_idx, 0, _M_BINS - 1)
+            dl_bin_idx = np.clip(dl_bin_idx, 0, self._dl_bins - 1)
+            M_bin_idx = np.clip(M_bin_idx, 0, self._mass_bins - 1)
 
             # Accumulate weighted sums per bin using np.add.at
-            total_weights = np.zeros((_DL_BINS, _M_BINS), dtype=np.float64)
-            detected_weights = np.zeros((_DL_BINS, _M_BINS), dtype=np.float64)
-            n_eff_grid = np.zeros((_DL_BINS, _M_BINS), dtype=np.float64)
+            total_weights = np.zeros((self._dl_bins, self._mass_bins), dtype=np.float64)
+            detected_weights = np.zeros((self._dl_bins, self._mass_bins), dtype=np.float64)
+            n_eff_grid = np.zeros((self._dl_bins, self._mass_bins), dtype=np.float64)
 
             # Also track integer counts for quality flags
-            total_counts = np.zeros((_DL_BINS, _M_BINS), dtype=np.float64)
-            detected_counts = np.zeros((_DL_BINS, _M_BINS), dtype=np.float64)
+            total_counts = np.zeros((self._dl_bins, self._mass_bins), dtype=np.float64)
+            detected_counts = np.zeros((self._dl_bins, self._mass_bins), dtype=np.float64)
 
             np.add.at(total_weights, (dl_bin_idx, M_bin_idx), w)
             np.add.at(total_counts, (dl_bin_idx, M_bin_idx), 1.0)
@@ -415,18 +419,18 @@ class SimulationDetectionProbability:
             p_det_grid = np.divide(
                 detected_weights,
                 total_weights,
-                out=np.zeros((_DL_BINS, _M_BINS), dtype=np.float64),
+                out=np.zeros((self._dl_bins, self._mass_bins), dtype=np.float64),
                 where=total_weights > 0,
             )
 
             # Kish N_eff per bin: (sum w)^2 / sum(w^2)
             # Kish (1965), Survey Sampling
-            sum_w2_grid = np.zeros((_DL_BINS, _M_BINS), dtype=np.float64)
+            sum_w2_grid = np.zeros((self._dl_bins, self._mass_bins), dtype=np.float64)
             np.add.at(sum_w2_grid, (dl_bin_idx, M_bin_idx), w**2)
             n_eff_grid = np.divide(
                 total_weights**2,
                 sum_w2_grid,
-                out=np.zeros((_DL_BINS, _M_BINS), dtype=np.float64),
+                out=np.zeros((self._dl_bins, self._mass_bins), dtype=np.float64),
                 where=sum_w2_grid > 0,
             )
 
@@ -472,7 +476,7 @@ class SimulationDetectionProbability:
         snr_vals = df["SNR"].values
 
         dl_max = float(np.max(dl_vals)) * 1.1
-        dl_edges = np.linspace(0, dl_max, _DL_BINS + 1)
+        dl_edges = np.linspace(0, dl_max, self._dl_bins + 1)
 
         total_counts, _ = np.histogram(dl_vals, bins=dl_edges)
         detected_mask = snr_vals >= snr_threshold
@@ -606,6 +610,64 @@ class SimulationDetectionProbability:
         # spacing = dl_centers[1] - dl_centers[0], last center = dl_max - spacing/2
         spacing = float(dl_centers[1] - dl_centers[0])
         return float(dl_centers[-1] + spacing / 2)
+
+    def validate_coverage(
+        self,
+        h: float,
+        crb_df: pd.DataFrame,
+    ) -> float:
+        """Compute fraction of events whose 4-sigma d_L bounds fall within the P_det grid.
+
+        For each event, compute d_L +/- 4*sigma_dL from the Cramer-Rao bounds.
+        Check if both bounds fall within the grid's d_L range.
+
+        Args:
+            h: Hubble parameter value (to build/retrieve grid).
+            crb_df: DataFrame with columns ``luminosity_distance`` and
+                ``delta_luminosity_distance_delta_luminosity_distance`` (variance).
+
+        Returns:
+            Coverage fraction in [0, 1].
+        """
+        # Build/retrieve the grid to get d_L edge range
+        self._get_or_build_grid(h)
+        _, interp_1d = self._grid_cache[h]
+        dl_centers = interp_1d.grid[0]
+        spacing = float(dl_centers[1] - dl_centers[0])
+        dl_grid_min = float(dl_centers[0] - spacing / 2)
+        dl_grid_max = float(dl_centers[-1] + spacing / 2)
+
+        # Extract per-event d_L and sigma_dL from CRB DataFrame
+        d_L_vals = crb_df["luminosity_distance"].values.astype(np.float64)
+        sigma_dL = np.sqrt(
+            crb_df["delta_luminosity_distance_delta_luminosity_distance"].values.astype(np.float64)
+        )
+
+        # Compute 4-sigma bounds
+        lower_bounds = d_L_vals - 4.0 * sigma_dL
+        upper_bounds = d_L_vals + 4.0 * sigma_dL
+
+        # Event is covered if both bounds fall within the grid range
+        covered = (lower_bounds >= dl_grid_min) & (upper_bounds <= dl_grid_max)
+        n_covered = int(np.sum(covered))
+        n_total = len(d_L_vals)
+
+        coverage_fraction = n_covered / n_total if n_total > 0 else 1.0
+
+        logger.info(
+            "P_det grid coverage: %.1f%% of events have 4-sigma d_L bounds within grid (%d/%d)",
+            coverage_fraction * 100,
+            n_covered,
+            n_total,
+        )
+        if coverage_fraction < 0.95:
+            logger.warning(
+                "P_det grid coverage %.1f%% is below 95%% threshold. "
+                "Consider increasing --pdet_dl_bins.",
+                coverage_fraction * 100,
+            )
+
+        return coverage_fraction
 
     def detection_probability_without_bh_mass_interpolated_zero_fill(
         self,

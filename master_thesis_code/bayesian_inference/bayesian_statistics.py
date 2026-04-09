@@ -268,6 +268,8 @@ class BayesianStatistics:
         h_value: float,
         num_workers: int | None = None,
         catalog_only: bool = False,
+        pdet_dl_bins: int = 60,
+        pdet_mass_bins: int = 40,
     ) -> None:
         self.catalog_only = catalog_only
         self._diagnostic_rows = []
@@ -306,6 +308,8 @@ class BayesianStatistics:
         detection_probability = SimulationDetectionProbability(
             injection_data_dir=INJECTION_DATA_DIR,
             snr_threshold=SNR_THRESHOLD,
+            dl_bins=pdet_dl_bins,
+            mass_bins=pdet_mass_bins,
         )
         _LOGGER.debug("Detection probability functions created.")
 
@@ -313,6 +317,9 @@ class BayesianStatistics:
         # the same grid independently after pool spawn
         detection_probability._get_or_build_grid(h_value)
         _LOGGER.debug("P_det grid pre-warmed for h=%.4f.", h_value)
+
+        # Validate P_det grid coverage for observed events
+        detection_probability.validate_coverage(h_value, self.cramer_rao_bounds)
 
         # Gray et al. (2020), arXiv:1908.06050, Eq. A.19:
         # Precompute completion-term denominator D(h) over full detectable volume.

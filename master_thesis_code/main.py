@@ -113,6 +113,8 @@ def main() -> None:
             arguments.h_value,
             num_workers=arguments.num_workers,
             catalog_only=arguments.catalog_only,
+            pdet_dl_bins=arguments.pdet_dl_bins,
+            pdet_mass_bins=arguments.pdet_mass_bins,
         )
 
     if arguments.snr_analysis:
@@ -730,6 +732,8 @@ def evaluate(
     *,
     num_workers: int | None = None,
     catalog_only: bool = False,
+    pdet_dl_bins: int = 60,
+    pdet_mass_bins: int = 40,
 ) -> None:
     from master_thesis_code.bayesian_inference.bayesian_statistics import BayesianStatistics
 
@@ -740,6 +744,8 @@ def evaluate(
         h_value,
         num_workers=num_workers,
         catalog_only=catalog_only,
+        pdet_dl_bins=pdet_dl_bins,
+        pdet_mass_bins=pdet_mass_bins,
     )
 
 

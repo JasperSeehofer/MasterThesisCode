@@ -118,6 +118,16 @@ class Arguments:
         return val
 
     @property
+    def pdet_dl_bins(self) -> int:
+        """Number of luminosity distance bins for P_det grid."""
+        return int(self._parsed_arguments.pdet_dl_bins)
+
+    @property
+    def pdet_mass_bins(self) -> int:
+        """Number of mass bins for P_det grid."""
+        return int(self._parsed_arguments.pdet_mass_bins)
+
+    @property
     def catalog_only(self) -> bool:
         """Skip completion integral: set f_i=1, L_comp=0 (catalog-only diagnostic)."""
         return bool(self._parsed_arguments.catalog_only)
@@ -255,6 +265,18 @@ def _parse_arguments(arguments: list[str]) -> argparse.Namespace:
         action="store_true",
         default=False,
         help="Skip completion integral in evaluation: set f_i=1, L_comp=0 (catalog-only diagnostic).",
+    )
+    parser.add_argument(
+        "--pdet_dl_bins",
+        type=int,
+        default=60,
+        help="Number of luminosity distance bins for P_det grid (default: 60).",
+    )
+    parser.add_argument(
+        "--pdet_mass_bins",
+        type=int,
+        default=40,
+        help="Number of mass bins for P_det grid (default: 40).",
     )
     parsed_arguments: argparse.Namespace = parser.parse_args(arguments)
     return parsed_arguments
