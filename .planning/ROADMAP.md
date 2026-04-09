@@ -122,7 +122,7 @@ See `.gpd/ROADMAP.md` for full details.
 - [x] **Phase 31: Catalog-Only Diagnostic** — Run f_i=1.0 evaluation to confirm L_comp is the primary bias source (DIAG-01, DIAG-02) — GSD (completed 2026-04-08)
 - [x] **Phase 32: Completion Term Fix** — Full-volume D(h) denominator per Gray et al. (2020) Eq. A.19, bias 0.0% (COMP-01, COMP-02) — GPD (completed 2026-04-08)
 - [ ] **Phase 33: P_det Grid Resolution** — Increase grid from 30 to 60 d_L bins, validate coverage (PDET-01, PDET-02) — GSD ⏳ BLOCKED: awaiting cluster evaluation (job 3897259 evaluate + 3897260 combine, run_20260401_seed200)
-- [ ] **Phase 34: Fisher Matrix Quality** — Replace allow_singular=True with regularization or exclusion, flag degenerates (FISH-01, FISH-02) — GSD
+- [x] **Phase 34: Fisher Matrix Quality** — Replace allow_singular=True with regularization or exclusion, flag degenerates (FISH-01, FISH-02) — GSD (completed 2026-04-09)
 
 ## Phase Details
 
@@ -204,10 +204,10 @@ Plans:
   3. Flagged events are either regularized (ridge-like diagonal addition) or excluded, with the strategy configurable
   4. Diagnostic output counts how many events were flagged and excluded per evaluation run
   5. Before/after comparison report shows MAP h change from Fisher quality fix alone
-**Plans:** 1/2 plans executed
+**Plans:** 2/2 plans complete
 Plans:
 - [x] 34-01-PLAN.md — Condition-number gate, exclusion mask, CSV diagnostics, CLI flag, empirical calibration
-- [ ] 34-02-PLAN.md — Diagnostic plot, comparison report Fisher Quality section, allow_singular cleanup
+- [x] 34-02-PLAN.md — Diagnostic plot, comparison report Fisher Quality section, allow_singular cleanup
 
 ---
 
@@ -314,7 +314,7 @@ Plans:
 | 31. Catalog-Only Diagnostic | v2.1 BiasRes | 2/2 | Complete   | 2026-04-08 |
 | 32. Completion Term Fix | v2.1 BiasRes | 2/2 | Complete (GPD) | 2026-04-08 |
 | 33. P_det Grid Resolution | v2.1 BiasRes | 1/2 | In Progress|  |
-| 34. Fisher Matrix Quality | v2.1 BiasRes | 1/2 | In Progress|  |
+| 34. Fisher Matrix Quality | v2.1 BiasRes | 2/2 | Complete   | 2026-04-09 |
 | 35. Unified Pipeline & Paper Figs | v2.1 PubFigs | 3/3 | Complete | 2026-04-08 |
 | 36. Galaxy-Level Figures | v2.1 PubFigs | 0/? | Paused | - |
 | 37. Interactive Figures | v2.1 PubFigs | 0/? | Paused | - |
