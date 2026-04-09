@@ -4,6 +4,8 @@ import subprocess
 import sys
 from unittest.mock import patch
 
+import pytest
+
 from master_thesis_code.arguments import Arguments
 
 
@@ -106,3 +108,15 @@ def test_help_shows_flags() -> None:
     )
     assert "--use_gpu" in result.stdout
     assert "--num_workers" in result.stdout
+
+
+def test_fisher_cond_threshold_default() -> None:
+    """Default fisher_cond_threshold should be 1e10."""
+    args = Arguments.create(["."])
+    assert args.fisher_cond_threshold == pytest.approx(1e10)
+
+
+def test_fisher_cond_threshold_custom() -> None:
+    """--fisher_cond_threshold should accept a custom float value."""
+    args = Arguments.create([".", "--fisher_cond_threshold", "1e8"])
+    assert args.fisher_cond_threshold == pytest.approx(1e8)

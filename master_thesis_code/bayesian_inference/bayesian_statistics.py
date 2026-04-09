@@ -185,6 +185,30 @@ det_phi_arr: npt.NDArray[np.float64] = np.empty(0)
 det_theta_arr: npt.NDArray[np.float64] = np.empty(0)
 
 
+def _check_covariance_quality(
+    cov: npt.NDArray[np.float64],
+    threshold: float,
+) -> tuple[float, bool]:
+    """Check whether a covariance matrix is numerically degenerate.
+
+    Computes the condition number of *cov* and returns whether it exceeds
+    *threshold*.  A high condition number indicates near-singularity that
+    would make ``np.linalg.pinv`` and ``np.linalg.slogdet`` unreliable.
+
+    Args:
+        cov: Square covariance matrix to check.
+        threshold: Condition-number threshold above which the matrix is
+            considered degenerate.
+
+    Returns:
+        A tuple ``(condition_number, should_exclude)`` where
+        *condition_number* is ``float(np.linalg.cond(cov))`` and
+        *should_exclude* is ``True`` when ``condition_number > threshold``.
+    """
+    cond = float(np.linalg.cond(cov))
+    return cond, cond > threshold
+
+
 def _mvn_pdf(
     x: npt.NDArray[np.float64],
     mean: npt.NDArray[np.float64],
@@ -270,6 +294,7 @@ class BayesianStatistics:
         catalog_only: bool = False,
         pdet_dl_bins: int = 60,
         pdet_mass_bins: int = 40,
+        fisher_cond_threshold: float = 1e10,
     ) -> None:
         self.catalog_only = catalog_only
         self._diagnostic_rows = []
@@ -353,6 +378,13 @@ class BayesianStatistics:
         _sigma2_cond_arr = np.zeros(n_det)
         _proj_arr = np.zeros((n_det, 3))
 
+        # Fisher quality: condition numbers and exclusion mask
+        _excluded_mask = np.zeros(n_det, dtype=bool)
+        _cond_3d = np.zeros(n_det, dtype=np.float64)
+        _cond_4d = np.zeros(n_det, dtype=np.float64)
+        _eigen_3d: dict[int, npt.NDArray[np.float64]] = {}  # flagged slots only
+        _eigen_4d: dict[int, npt.NDArray[np.float64]] = {}  # flagged slots only
+
         # Pre-extracted detection scalar parameters (avoid pickling Detection objects)
         _det_d_L = np.zeros(n_det)
         _det_d_L_unc = np.zeros(n_det)
@@ -422,17 +454,56 @@ class BayesianStatistics:
                 ]
             )
 
+            # Compute condition numbers for degeneracy detection (per D-01, D-02)
+            cond_3d, exclude_3d = _check_covariance_quality(cov_3d, fisher_cond_threshold)
+            cond_4d, exclude_4d = _check_covariance_quality(cov_4d, fisher_cond_threshold)
+            _cond_3d[slot] = cond_3d
+            _cond_4d[slot] = cond_4d
+
+            if exclude_3d or exclude_4d:
+                _excluded_mask[slot] = True
+                _eigen_3d[slot] = np.linalg.eigh(cov_3d)[0]
+                _eigen_4d[slot] = np.linalg.eigh(cov_4d)[0]
+                _LOGGER.warning(
+                    "Detection %d excluded: cond_3d=%.2e, cond_4d=%.2e (threshold=%.2e)",
+                    int(index),
+                    cond_3d,
+                    cond_4d,
+                    fisher_cond_threshold,
+                )
+                continue
+
             # 3D Gaussian: mean, inverse, log-normalization
             _means_3d[slot] = [det.phi, det.theta, 1]
             _cov_inv_3d[slot] = np.linalg.pinv(cov_3d)
-            _sign, logdet = np.linalg.slogdet(cov_3d)
-            _log_norm_3d[slot] = -0.5 * (3 * np.log(2 * np.pi) + logdet)
+            _sign_3d, logdet_3d = np.linalg.slogdet(cov_3d)
+            if _sign_3d <= 0:
+                _excluded_mask[slot] = True
+                _eigen_3d[slot] = np.linalg.eigh(cov_3d)[0]
+                _eigen_4d[slot] = np.linalg.eigh(cov_4d)[0]
+                _LOGGER.warning(
+                    "Detection %d excluded: slogdet sign_3d=%d (non-positive definite)",
+                    int(index),
+                    _sign_3d,
+                )
+                continue
+            _log_norm_3d[slot] = -0.5 * (3 * np.log(2 * np.pi) + logdet_3d)
 
             # 4D Gaussian: mean, inverse, log-normalization
             _means_4d[slot] = [det.phi, det.theta, 1, 1]
             _cov_inv_4d[slot] = np.linalg.pinv(cov_4d)
-            _sign, logdet = np.linalg.slogdet(cov_4d)
-            _log_norm_4d[slot] = -0.5 * (4 * np.log(2 * np.pi) + logdet)
+            _sign_4d, logdet_4d = np.linalg.slogdet(cov_4d)
+            if _sign_4d <= 0:
+                _excluded_mask[slot] = True
+                _eigen_3d[slot] = np.linalg.eigh(cov_3d)[0]
+                _eigen_4d[slot] = np.linalg.eigh(cov_4d)[0]
+                _LOGGER.warning(
+                    "Detection %d excluded: slogdet sign_4d=%d (non-positive definite)",
+                    int(index),
+                    _sign_4d,
+                )
+                continue
+            _log_norm_4d[slot] = -0.5 * (4 * np.log(2 * np.pi) + logdet_4d)
 
             # Conditional distribution for BH mass branch
             # Bishop (2006) PRML Eq. 2.81-2.82
@@ -442,6 +513,24 @@ class BayesianStatistics:
             cov_obs_inv = _cov_inv_3d[slot]  # reuse already-computed inverse
             _sigma2_cond_arr[slot] = max(float(cov_mz - cov_cross @ cov_obs_inv @ cov_cross), 1e-30)
             _proj_arr[slot] = cov_cross @ cov_obs_inv
+
+        # Log Fisher quality summary (D-11)
+        n_flagged = int(_excluded_mask.sum())
+        top5_worst = sorted(
+            [
+                (int(idx), float(_cond_3d[slot]), float(_cond_4d[slot]))
+                for idx, slot in _det_index_to_slot.items()
+            ],
+            key=lambda t: max(t[1], t[2]),
+            reverse=True,
+        )[:5]
+        _LOGGER.info(
+            "Fisher quality: %d total, %d flagged/excluded (%.1f%%). Top-5 worst cond: %s",
+            n_det,
+            n_flagged,
+            100 * n_flagged / max(n_det, 1),
+            [(idx, f"{c3:.2e}", f"{c4:.2e}") for idx, c3, c4 in top5_worst],
+        )
 
         # Store index mapping on the instance for use in p_Di completion term
         self._det_index_to_slot = _det_index_to_slot
@@ -454,6 +543,12 @@ class BayesianStatistics:
         self._det_phi = _det_phi
         self._det_theta = _det_theta
         self._D_h_table = _D_h_table
+        self._excluded_mask = _excluded_mask
+        self._cond_3d = _cond_3d
+        self._cond_4d = _cond_4d
+        self._eigen_3d = _eigen_3d
+        self._eigen_4d = _eigen_4d
+        self._fisher_cond_threshold = fisher_cond_threshold
 
         _LOGGER.info(
             "Gaussian precomputation: %.2fs (%d detections)",
@@ -564,6 +659,30 @@ class BayesianStatistics:
             diagnostic_csv_path = "simulations/diagnostics/event_likelihoods.csv"
             self._write_diagnostic_csv(diagnostic_csv_path)
 
+        # Write Fisher quality CSV (per D-12)
+        self._write_fisher_quality_csv()
+
+    def _write_fisher_quality_csv(self) -> None:
+        """Write per-event Fisher matrix condition numbers and exclusion flags to CSV.
+
+        Columns: detection_index, cond_3d, cond_4d, excluded.
+        Written once per evaluation run to ``simulations/fisher_quality.csv``.
+        """
+        rows = [
+            {
+                "detection_index": int(idx),
+                "cond_3d": float(self._cond_3d[slot]),
+                "cond_4d": float(self._cond_4d[slot]),
+                "excluded": bool(self._excluded_mask[slot]),
+            }
+            for idx, slot in self._det_index_to_slot.items()
+        ]
+        df = pd.DataFrame(rows)
+        csv_path = os.path.join("simulations", "fisher_quality.csv")
+        os.makedirs(os.path.dirname(csv_path), exist_ok=True)
+        df.to_csv(csv_path, index=False)
+        _LOGGER.info("Fisher quality CSV written to %s (%d rows)", csv_path, len(rows))
+
     def _write_diagnostic_csv(self, csv_path: str) -> None:
         """Write per-event diagnostic rows to CSV (append mode, header on first write).
 
@@ -609,6 +728,10 @@ class BayesianStatistics:
         self.posterior_data_with_bh_mass[ADDITIONAL_GALAXIES_WITHOUT_BH_MASS] = {}
         for index, detection in self.cramer_rao_bounds.iterrows():
             _t_det = time.perf_counter()
+            slot = self._det_index_to_slot[int(index)]
+            if self._excluded_mask[slot]:
+                _LOGGER.debug("Skipping excluded detection %d (Fisher quality)", int(index))
+                continue
             _LOGGER.info(f"Progess: detections: {count}/{len(self.cramer_rao_bounds)}...")
             count += 1
             try:
@@ -1344,6 +1467,8 @@ def single_host_likelihood_integration_testing(
         sigma2_cond_test = float(cov_mz_test - cov_cross_test @ cov_obs_inv_test @ cov_cross_test)
         sigma2_cond_test = max(sigma2_cond_test, 1e-30)
         proj_test = cov_cross_test @ cov_obs_inv_test
+        # TODO(Phase 34): This testing path still uses allow_singular=True.
+        # Apply exclusion mask if this code path is ever activated in production.
         gaussian_3d_marginal_test = multivariate_normal(
             mean=mu_obs_4d_test[:3], cov=cov_obs_test, allow_singular=True
         )

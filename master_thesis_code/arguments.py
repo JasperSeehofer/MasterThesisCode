@@ -128,6 +128,11 @@ class Arguments:
         return int(self._parsed_arguments.pdet_mass_bins)
 
     @property
+    def fisher_cond_threshold(self) -> float:
+        """Condition number threshold for flagging near-singular covariance matrices."""
+        return float(self._parsed_arguments.fisher_cond_threshold)
+
+    @property
     def catalog_only(self) -> bool:
         """Skip completion integral: set f_i=1, L_comp=0 (catalog-only diagnostic)."""
         return bool(self._parsed_arguments.catalog_only)
@@ -277,6 +282,12 @@ def _parse_arguments(arguments: list[str]) -> argparse.Namespace:
         type=int,
         default=40,
         help="Number of mass bins for P_det grid (default: 40).",
+    )
+    parser.add_argument(
+        "--fisher_cond_threshold",
+        type=float,
+        default=1e10,
+        help="Condition number threshold for excluding near-singular covariance matrices (default: 1e10).",
     )
     parsed_arguments: argparse.Namespace = parser.parse_args(arguments)
     return parsed_arguments
