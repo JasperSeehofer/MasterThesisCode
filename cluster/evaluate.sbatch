@@ -133,9 +133,12 @@ echo ""
 cd "$PROJECT_ROOT"
 ln -sfn "$RUN_DIR/simulations" "$PROJECT_ROOT/simulations"
 
+# P_det grid resolution: explicit flags for reproducibility (Phase 33)
 python -m master_thesis_code "$RUN_DIR" \
     --evaluate \
     --h_value "$H_VALUE" \
+    --pdet_dl_bins 60 \
+    --pdet_mass_bins 40 \
     --log_level INFO
 
 echo ""
