@@ -20,8 +20,8 @@ Systematically diagnose and fix the per-event H₀ posterior bias, testing each 
 
 ### P_det Grid
 
-- [ ] **PDET-01**: P_det grid resolution configurable, increased from 30 to 60 d_L bins
-- [ ] **PDET-02**: P_det grid coverage validated: 4-sigma integration bounds fall within grid for >95% of events
+- [x] **PDET-01**: P_det grid resolution configurable, increased from 30 to 60 d_L bins
+- [x] **PDET-02**: P_det grid coverage validated: 4-sigma integration bounds fall within grid for >95% of events
 
 ### Fisher Quality
 
@@ -60,8 +60,8 @@ Systematically diagnose and fix the per-event H₀ posterior bias, testing each 
 | DIAG-03 | Phase 30 | Pending |
 | COMP-01 | Phase 32 | Pending |
 | COMP-02 | Phase 32 | Pending |
-| PDET-01 | Phase 33 | Pending |
-| PDET-02 | Phase 33 | Pending |
+| PDET-01 | Phase 33 | Complete |
+| PDET-02 | Phase 33 | Complete |
 | FISH-01 | Phase 34 | Pending |
 | FISH-02 | Phase 34 | Pending |
 | EVAL-01 | Phase 30 | Pending |

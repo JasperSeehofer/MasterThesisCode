@@ -189,9 +189,9 @@ Plans:
   3. Grid coverage validation runs after grid construction and reports the fraction of events whose 4-sigma bounds fall within the grid
   4. Coverage fraction is above 95% with 60 bins; warning logged if any event falls outside
   5. Before/after comparison report shows MAP h change from grid resolution alone
-**Plans:** 2 plans
+**Plans:** 1/2 plans executed
 Plans:
-- [ ] 33-01-PLAN.md — Configurable P_det bins (CLI flags + threading + coverage validation + tests)
+- [x] 33-01-PLAN.md — Configurable P_det bins (CLI flags + threading + coverage validation + tests)
 - [ ] 33-02-PLAN.md — Cluster script update + before/after comparison checkpoint
 
 ### Phase 34: Fisher Matrix Quality
@@ -310,7 +310,7 @@ Plans:
 | 30. Baseline & Evaluation Infra | v2.1 BiasRes | 2/2 | Complete    | 2026-04-08 |
 | 31. Catalog-Only Diagnostic | v2.1 BiasRes | 2/2 | Complete   | 2026-04-08 |
 | 32. Completion Term Fix | v2.1 BiasRes | 2/2 | Complete (GPD) | 2026-04-08 |
-| 33. P_det Grid Resolution | v2.1 BiasRes | 0/? | Not started | - |
+| 33. P_det Grid Resolution | v2.1 BiasRes | 1/2 | In Progress|  |
 | 34. Fisher Matrix Quality | v2.1 BiasRes | 0/? | Not started | - |
 | 35. Unified Pipeline & Paper Figs | v2.1 PubFigs | 3/3 | Complete | 2026-04-08 |
 | 36. Galaxy-Level Figures | v2.1 PubFigs | 0/? | Paused | - |

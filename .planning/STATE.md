@@ -25,10 +25,10 @@ See: .planning/PROJECT.md (updated 2026-04-08)
 
 ## Current Position
 
-Phase: 30
-Plan: Not started
-Status: Ready to execute
-Last activity: 2026-04-09 -- Quick task 260409-dk2: add with-BH-mass variant to convergence plot
+Phase: 33
+Plan: 1 of 2
+Status: Executing
+Last activity: 2026-04-09 -- Phase 33 Plan 01 complete: configurable P_det grid bins
 
 ## Performance Metrics
 
