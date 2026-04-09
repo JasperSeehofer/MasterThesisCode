@@ -83,6 +83,39 @@ cp "$PROJECT_ROOT/.planning/debug/comparison_"*.md "$RUN_DIR/" 2>/dev/null || tr
 echo "Baseline + comparison report copied to $RUN_DIR/"
 
 # ---------------------------------------------------------------------------
+# Archive old figures (if any exist from a previous run)
+# ---------------------------------------------------------------------------
+
+FIGURES_DIR="$RUN_DIR/simulations/figures"
+
+_has_old_figures() {
+    [[ -d "$FIGURES_DIR" ]] && compgen -G "$FIGURES_DIR/*.pdf" > /dev/null 2>&1
+}
+
+if _has_old_figures; then
+    ARCHIVE_BASE="$RUN_DIR/simulations/archive"
+    TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+    ARCHIVE_DIR="$ARCHIVE_BASE/figures_${TIMESTAMP}"
+    mkdir -p "$ARCHIVE_DIR"
+
+    cat > "$ARCHIVE_DIR/archive_metadata.json" <<METAEOF
+{
+  "archived_at": "$(date -Iseconds)",
+  "archived_by_job": "$SLURM_JOB_ID",
+  "git_commit": "$(cd "$PROJECT_ROOT" && git rev-parse HEAD 2>/dev/null || echo unknown)",
+  "git_branch": "$(cd "$PROJECT_ROOT" && git rev-parse --abbrev-ref HEAD 2>/dev/null || echo unknown)",
+  "reason": "Pre-figure-generation cleanup: archiving old figures before regeneration",
+  "source_run_dir": "$RUN_DIR"
+}
+METAEOF
+
+    mv "$FIGURES_DIR"/*.pdf "$ARCHIVE_DIR/" 2>/dev/null || true
+    echo "Archived old figures to $ARCHIVE_DIR/"
+else
+    echo "No old figures to archive."
+fi
+
+# ---------------------------------------------------------------------------
 # Generate figures on-cluster (avoids rsyncing ~600 MB/h of raw posteriors)
 # ---------------------------------------------------------------------------
 
