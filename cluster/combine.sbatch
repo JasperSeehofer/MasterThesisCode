@@ -66,18 +66,21 @@ ls -la "$RUN_DIR/simulations/posteriors/combined_posterior.json" 2>/dev/null || 
 ls -la "$RUN_DIR/simulations/posteriors_with_bh_mass/combined_posterior.json" 2>/dev/null || echo "  (no posteriors_with_bh_mass/combined_posterior.json)"
 
 # ---------------------------------------------------------------------------
-# Save baseline snapshot (metrics JSON for later comparison)
+# Save baseline snapshot and compare against previous baseline
 # ---------------------------------------------------------------------------
 
 echo ""
-echo "=== Saving Baseline ==="
+echo "=== Saving Baseline & Comparison ==="
 python -m master_thesis_code "$RUN_DIR/simulations" \
     --save_baseline \
+    --compare_baseline "$PROJECT_ROOT/.planning/debug/baseline.json" \
     --log_level INFO
 
 # Copy baseline into RUN_DIR so it's included in rsync
 cp "$PROJECT_ROOT/.planning/debug/baseline.json" "$RUN_DIR/baseline.json" 2>/dev/null || true
-echo "Baseline also copied to $RUN_DIR/baseline.json"
+# Copy comparison report too
+cp "$PROJECT_ROOT/.planning/debug/comparison_"*.md "$RUN_DIR/" 2>/dev/null || true
+echo "Baseline + comparison report copied to $RUN_DIR/"
 
 # ---------------------------------------------------------------------------
 # Generate figures on-cluster (avoids rsyncing ~600 MB/h of raw posteriors)
