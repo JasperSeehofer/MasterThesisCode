@@ -64,6 +64,72 @@ def compute_credible_interval(
     return (lo, hi)
 
 
+def compute_hdi_interval(
+    h_values: npt.NDArray[np.float64],
+    posterior: npt.NDArray[np.float64],
+    level: float = 0.683,
+) -> tuple[float, float]:
+    """Compute the minimal (highest-density) credible interval at *level*.
+
+    For a unimodal posterior this returns the shortest interval enclosing
+    *level* of the probability mass — equivalent to the LIGO/Virgo
+    "minimal credible interval" reporting convention used for H0 dark
+    standard sirens (e.g. ``H0 = 70.0^{+12.0}_{-8.0}`` in Abbott et al.
+    2017 for GW170817).  For symmetric posteriors it agrees with
+    :func:`compute_credible_interval`; for skewed posteriors the HDI is
+    narrower and shifted toward the mode.
+
+    Algorithm: sort grid points by posterior density (descending),
+    accumulate trapezoidal mass, and stop at the first density level
+    where the enclosed mass crosses *level*.  The HDI is the
+    ``[h_min, h_max]`` envelope of all grid points above that level.
+
+    Parameters
+    ----------
+    h_values:
+        Monotonically increasing grid of Hubble-constant values.
+    posterior:
+        Posterior density evaluated on *h_values* (need not be normalized).
+    level:
+        Probability mass enclosed by the interval (default 0.683 for the
+        1-sigma equivalent — matches LIGO HDI convention).
+
+    Returns
+    -------
+    tuple[float, float]
+        ``(lo, hi)`` bounds of the highest-density interval.  Returns
+        ``(nan, nan)`` when *posterior* integrates to zero or less.
+    """
+    norm = np.trapezoid(posterior, h_values)
+    if norm <= 0:
+        return (float("nan"), float("nan"))
+
+    p = posterior / norm
+
+    # Trapezoidal cell mass for each grid point: half of each adjacent edge
+    dh = np.zeros_like(h_values)
+    if len(h_values) > 1:
+        diffs = np.diff(h_values)
+        dh[0] = diffs[0] / 2.0
+        dh[-1] = diffs[-1] / 2.0
+        dh[1:-1] = (diffs[:-1] + diffs[1:]) / 2.0
+    cell_mass = p * dh
+
+    # Sort by density descending and accumulate mass
+    order = np.argsort(-p)
+    cum = np.cumsum(cell_mass[order])
+    # Find smallest k such that cum[k] >= level
+    k_arr = np.searchsorted(cum, level, side="left")
+    k = int(k_arr)
+    if k >= len(order):
+        k = len(order) - 1
+
+    selected = order[: k + 1]
+    lo = float(h_values[selected].min())
+    hi = float(h_values[selected].max())
+    return (lo, hi)
+
+
 def _fig_from_ax(ax: Axes) -> Figure:
     """Extract Figure from an Axes, asserting it is not None."""
     fig = ax.get_figure()

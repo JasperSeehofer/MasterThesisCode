@@ -1187,6 +1187,24 @@ def generate_figures(output_dir: str) -> None:
 
     manifest.append(("paper_h0_posterior_kde", _gen_paper_h0_posterior_kde))
 
+    # 21. Paper figure: M_z improvement panels (HDI68 + Δ(N) + K(N))
+    def _gen_paper_m_z_improvement() -> tuple[object, object] | None:
+        from master_thesis_code.constants import H as TRUE_H
+        from master_thesis_code.plotting.convergence_analysis import (
+            compute_m_z_improvement_bank,
+            plot_m_z_improvement_panels,
+        )
+
+        try:
+            bank = compute_m_z_improvement_bank(Path(output_dir), h_true=float(TRUE_H))
+        except (FileNotFoundError, ValueError, KeyError):
+            return None
+        if bank is None:
+            return None
+        return plot_m_z_improvement_panels(bank)
+
+    manifest.append(("paper_m_z_improvement", _gen_paper_m_z_improvement))
+
     # ------------------------------------------------------------------
     # Execute manifest
     # ------------------------------------------------------------------

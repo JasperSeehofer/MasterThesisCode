@@ -16,13 +16,21 @@ data from a working directory and writes all 4 HTML files.
 import logging
 import os
 import re
+from typing import Any
 
 import numpy as np
 import numpy.typing as npt
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
-from master_thesis_code.plotting._colors import CYCLE, EDGE, REFERENCE, TRUTH
+from master_thesis_code.plotting._colors import (
+    CYCLE,
+    EDGE,
+    REFERENCE,
+    TRUTH,
+    VARIANT_NO_MASS,
+    VARIANT_WITH_MASS,
+)
 from master_thesis_code.plotting._data import PARAMETER_NAMES
 from master_thesis_code.plotting._labels import LABELS
 
@@ -570,6 +578,503 @@ def interactive_h0_convergence(
 
 
 # ---------------------------------------------------------------------------
+# M_z improvement explorer
+# ---------------------------------------------------------------------------
+
+
+# Lazy import target — keeps the heavy bank module out of the import
+# graph for users that only want a basic interactive plot.
+_BANK_IMPORT = "master_thesis_code.plotting.convergence_analysis"
+
+
+def _hex_to_rgba(hex_color: str, alpha: float) -> str:
+    h = hex_color.lstrip("#")
+    r, g, b = int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)
+    return f"rgba({r},{g},{b},{alpha})"
+
+
+def interactive_m_z_improvement(
+    bank: Any,  # ImprovementBank — typed loosely to avoid an eager import
+) -> go.Figure:
+    """Interactive three-panel M_z improvement explorer.
+
+    Built directly from an :class:`ImprovementBank` (computed by
+    :func:`master_thesis_code.plotting.convergence_analysis.compute_m_z_improvement_bank`).
+
+    The figure has three panels and one slider:
+
+    * Top-left  — selectable metric vs. number of events
+                  (HDI68 width / fractional improvement / effective
+                  event gain / KL information gain), with bootstrap
+                  16/84 percentile bands.
+    * Top-right — combined posteriors at the slider-selected N for both
+                  variants, with the injected truth line.
+    * Bottom    — text annotation that updates with the slider showing
+                  the headline numbers at the chosen N (HDI widths,
+                  improvement, K factor, JSD).
+
+    Parameters
+    ----------
+    bank:
+        Result of :func:`compute_m_z_improvement_bank`.  Passed in as
+        ``Any`` to avoid pulling the analysis module into this file's
+        import graph.
+
+    Returns
+    -------
+    go.Figure
+    """
+    sizes = list(bank.sizes)
+    sizes_arr = np.asarray(sizes, dtype=np.float64)
+    h_grid = np.asarray(bank.h_grid, dtype=np.float64)
+    h_true = float(bank.h_true)
+
+    # ----- Panel A: metric series + 16/84 bands -----
+
+    # Each metric has three traces: lower band, upper band (transparent
+    # fill between), and the median line.  We pre-build all of them and
+    # toggle visibility via an updatemenu.
+    fill_no = _hex_to_rgba(VARIANT_NO_MASS, 0.18)
+    fill_with = _hex_to_rgba(VARIANT_WITH_MASS, 0.25)
+
+    def _series(
+        name: str, source: dict[str, list[float]]
+    ) -> tuple[list[float], list[float], list[float]]:
+        return (
+            list(source["median"]),
+            list(source["p16"]),
+            list(source["p84"]),
+        )
+
+    metric_options: list[dict[str, Any]] = [
+        {
+            "key": "hdi68_width",
+            "label": "68% HDI width",
+            "yaxis_title": "68% HDI width of h",
+            "no": _series("hdi68_width", bank.metrics_no_mass["hdi68_width"]),
+            "with": _series("hdi68_width", bank.metrics_with_mass["hdi68_width"]),
+            "scale_y": "log",
+        },
+        {
+            "key": "rel_precision",
+            "label": "Relative precision (HDI/MAP)",
+            "yaxis_title": "HDI width / MAP h",
+            "no": _series("rel_precision", bank.metrics_no_mass["rel_precision"]),
+            "with": _series("rel_precision", bank.metrics_with_mass["rel_precision"]),
+            "scale_y": "log",
+        },
+        {
+            "key": "kl_from_uniform",
+            "label": "KL info gain (nats)",
+            "yaxis_title": "KL(posterior || flat) [nats]",
+            "no": _series("kl_from_uniform", bank.metrics_no_mass["kl_from_uniform"]),
+            "with": _series("kl_from_uniform", bank.metrics_with_mass["kl_from_uniform"]),
+            "scale_y": "linear",
+        },
+        {
+            "key": "bias_pct",
+            "label": "MAP bias [%]",
+            "yaxis_title": "(MAP h - h_true) / h_true [%]",
+            "no": _series("bias_pct", bank.metrics_no_mass["bias_pct"]),
+            "with": _series("bias_pct", bank.metrics_with_mass["bias_pct"]),
+            "scale_y": "linear",
+        },
+    ]
+
+    fig = make_subplots(
+        rows=2,
+        cols=2,
+        specs=[
+            [{"type": "xy"}, {"type": "xy"}],
+            [{"type": "xy", "colspan": 2}, None],
+        ],
+        row_heights=[0.62, 0.38],
+        subplot_titles=[
+            "Metric vs N",
+            "Representative combined posterior",
+            "Improvement summary at selected N",
+        ],
+        horizontal_spacing=0.10,
+        vertical_spacing=0.18,
+    )
+
+    # Per-metric trace blocks (each block = 5 traces: no-band-low,
+    # no-band-high (with fill), no-median, with-band-low,
+    # with-band-high (with fill), with-median).  We use Plotly's
+    # "tonexty" fill convention: low trace first, high trace second
+    # with fill="tonexty".  That's 6 traces per metric.
+    n_traces_per_metric = 6
+    metric_trace_offset: dict[str, int] = {}
+
+    for m_idx, opt in enumerate(metric_options):
+        med_no, p16_no, p84_no = opt["no"]
+        med_w, p16_w, p84_w = opt["with"]
+
+        visible = m_idx == 0
+        metric_trace_offset[opt["key"]] = m_idx * n_traces_per_metric
+
+        # without — band low, band high (fill), median
+        fig.add_trace(
+            go.Scatter(
+                x=sizes,
+                y=p16_no,
+                mode="lines",
+                line={"color": "rgba(0,0,0,0)"},
+                showlegend=False,
+                hoverinfo="skip",
+                visible=visible,
+            ),
+            row=1,
+            col=1,
+        )
+        fig.add_trace(
+            go.Scatter(
+                x=sizes,
+                y=p84_no,
+                mode="lines",
+                line={"color": "rgba(0,0,0,0)"},
+                fill="tonexty",
+                fillcolor=fill_no,
+                name="Without M_z (16-84)",
+                legendgroup="no_band",
+                showlegend=False,
+                hoverinfo="skip",
+                visible=visible,
+            ),
+            row=1,
+            col=1,
+        )
+        fig.add_trace(
+            go.Scatter(
+                x=sizes,
+                y=med_no,
+                mode="lines+markers",
+                name="Without M_z",
+                legendgroup="no",
+                line={"color": VARIANT_NO_MASS, "width": 2},
+                marker={"size": 7, "symbol": "circle"},
+                hovertemplate="N = %{x}<br>median = %{y:.4f}<extra>Without M_z</extra>",
+                visible=visible,
+                showlegend=True,
+            ),
+            row=1,
+            col=1,
+        )
+
+        # with — band low, band high (fill), median
+        fig.add_trace(
+            go.Scatter(
+                x=sizes,
+                y=p16_w,
+                mode="lines",
+                line={"color": "rgba(0,0,0,0)"},
+                showlegend=False,
+                hoverinfo="skip",
+                visible=visible,
+            ),
+            row=1,
+            col=1,
+        )
+        fig.add_trace(
+            go.Scatter(
+                x=sizes,
+                y=p84_w,
+                mode="lines",
+                line={"color": "rgba(0,0,0,0)"},
+                fill="tonexty",
+                fillcolor=fill_with,
+                name="With M_z (16-84)",
+                legendgroup="with_band",
+                showlegend=False,
+                hoverinfo="skip",
+                visible=visible,
+            ),
+            row=1,
+            col=1,
+        )
+        fig.add_trace(
+            go.Scatter(
+                x=sizes,
+                y=med_w,
+                mode="lines+markers",
+                name="With M_z",
+                legendgroup="with",
+                line={"color": VARIANT_WITH_MASS, "width": 2, "dash": "dash"},
+                marker={"size": 7, "symbol": "square"},
+                hovertemplate="N = %{x}<br>median = %{y:.4f}<extra>With M_z</extra>",
+                visible=visible,
+                showlegend=True,
+            ),
+            row=1,
+            col=1,
+        )
+
+    # 1/sqrt(N) reference (anchored to the without-M_z largest-N median
+    # of the FIRST metric — only sensible for the width metric, hidden
+    # otherwise via the dropdown).
+    first_med_no = metric_options[0]["no"][0]
+    if len(sizes) > 1 and not np.isnan(first_med_no[-1]) and first_med_no[-1] > 0:
+        n_ref = sizes_arr[-1]
+        y_ref = first_med_no[-1]
+        ref_y = (y_ref * np.sqrt(n_ref / sizes_arr)).tolist()
+    else:
+        ref_y = [None] * len(sizes)
+    fig.add_trace(
+        go.Scatter(
+            x=sizes,
+            y=ref_y,
+            mode="lines",
+            name="1/sqrt(N) ref",
+            line={"color": REFERENCE, "dash": "dot"},
+            opacity=0.7,
+            hovertemplate="N = %{x}<br>1/sqrt(N) = %{y:.4f}<extra></extra>",
+            visible=True,
+        ),
+        row=1,
+        col=1,
+    )
+    ref_trace_index = len(metric_options) * n_traces_per_metric
+
+    # ----- Panel B: representative posteriors at slider N (frames) -----
+    # Initial N = last (largest) size
+    init_idx = len(sizes) - 1
+    init_no = bank.representative_posteriors_no_mass[init_idx]
+    init_with = bank.representative_posteriors_with_mass[init_idx]
+
+    fig.add_trace(
+        go.Scatter(
+            x=h_grid.tolist(),
+            y=np.asarray(init_no, dtype=np.float64).tolist(),
+            mode="lines",
+            name="Without M_z (posterior)",
+            legendgroup="no",
+            line={"color": VARIANT_NO_MASS, "width": 2},
+            hovertemplate="h = %{x:.4f}<br>density = %{y:.3f}<extra>Without M_z</extra>",
+            showlegend=False,
+        ),
+        row=1,
+        col=2,
+    )
+    fig.add_trace(
+        go.Scatter(
+            x=h_grid.tolist(),
+            y=np.asarray(init_with, dtype=np.float64).tolist(),
+            mode="lines",
+            name="With M_z (posterior)",
+            legendgroup="with",
+            line={"color": VARIANT_WITH_MASS, "width": 2, "dash": "dash"},
+            hovertemplate="h = %{x:.4f}<br>density = %{y:.3f}<extra>With M_z</extra>",
+            showlegend=False,
+        ),
+        row=1,
+        col=2,
+    )
+    panel_b_no_idx = ref_trace_index + 1
+    panel_b_with_idx = ref_trace_index + 2
+
+    # ----- Panel C: text annotation (subplot 2,1) -----
+    # We use a hidden scatter so the subplot has axes; the actual text
+    # is overlaid via fig.add_annotation tied to that subplot's domain.
+    fig.add_trace(
+        go.Scatter(
+            x=[0],
+            y=[0],
+            mode="markers",
+            marker={"color": "rgba(0,0,0,0)"},
+            showlegend=False,
+            hoverinfo="skip",
+        ),
+        row=2,
+        col=1,
+    )
+    fig.update_xaxes(visible=False, row=2, col=1)
+    fig.update_yaxes(visible=False, row=2, col=1)
+
+    # Build the per-N text strings used by the slider frames.
+    def _summary_text(idx: int) -> str:
+        n = sizes[idx]
+        w_no = bank.metrics_no_mass["hdi68_width"]["median"][idx]
+        w_w = bank.metrics_with_mass["hdi68_width"]["median"][idx]
+        frac = bank.fractional_improvement["median"][idx] * 100.0
+        frac_lo = bank.fractional_improvement["p16"][idx] * 100.0
+        frac_hi = bank.fractional_improvement["p84"][idx] * 100.0
+        K = bank.effective_event_gain["median"][idx]
+        K_lo = bank.effective_event_gain["p16"][idx]
+        K_hi = bank.effective_event_gain["p84"][idx]
+        jsd_med = bank.jsd_bits["median"][idx]
+        agree = "agree" if (not np.isnan(jsd_med) and jsd_med < 0.05) else "differ"
+        K_str = f"{K:.2f} ({K_lo:.2f}-{K_hi:.2f})" if not np.isnan(K) else "n/a"
+        return (
+            f"<b>N = {n} detections</b><br>"
+            f"HDI<sub>without</sub> = {w_no:.4f} &nbsp;&nbsp; "
+            f"HDI<sub>with</sub> = {w_w:.4f}<br>"
+            f"Fractional improvement &Delta;(N) = {frac:+.1f}% "
+            f"(68% bootstrap: {frac_lo:+.1f}% to {frac_hi:+.1f}%)<br>"
+            f"Effective event gain K(N) = {K_str}<br>"
+            f"JSD(with, without) = {jsd_med * 1000:.0f} mbits "
+            f"&rArr; distributions {agree}"
+        )
+
+    annotation_text_init = _summary_text(init_idx)
+    fig.add_annotation(
+        text=annotation_text_init,
+        xref="x3 domain",
+        yref="y3 domain",
+        x=0.02,
+        y=0.95,
+        xanchor="left",
+        yanchor="top",
+        showarrow=False,
+        align="left",
+        font={"size": 12, "family": "monospace"},
+    )
+
+    # ----- Slider over N -----
+    # Each frame updates: panel B y-data (2 traces) + the annotation.
+    frames: list[go.Frame] = []
+    for idx, n in enumerate(sizes):
+        post_no = np.asarray(bank.representative_posteriors_no_mass[idx], dtype=np.float64).tolist()
+        post_w = np.asarray(
+            bank.representative_posteriors_with_mass[idx], dtype=np.float64
+        ).tolist()
+        frames.append(
+            go.Frame(
+                name=str(n),
+                data=[
+                    go.Scatter(y=post_no),
+                    go.Scatter(y=post_w),
+                ],
+                traces=[panel_b_no_idx, panel_b_with_idx],
+                layout=go.Layout(
+                    annotations=[
+                        {
+                            "text": _summary_text(idx),
+                            "xref": "x3 domain",
+                            "yref": "y3 domain",
+                            "x": 0.02,
+                            "y": 0.95,
+                            "xanchor": "left",
+                            "yanchor": "top",
+                            "showarrow": False,
+                            "align": "left",
+                            "font": {"size": 12, "family": "monospace"},
+                        },
+                        # Preserve subplot titles in each frame
+                        *list(fig.layout.annotations[:3]),
+                    ]
+                ),
+            )
+        )
+    fig.frames = frames
+
+    slider_steps = [
+        {
+            "method": "animate",
+            "label": str(n),
+            "args": [
+                [str(n)],
+                {
+                    "mode": "immediate",
+                    "frame": {"duration": 0, "redraw": True},
+                    "transition": {"duration": 0},
+                },
+            ],
+        }
+        for n in sizes
+    ]
+
+    # ----- Dropdown for the metric in panel A -----
+    n_metrics = len(metric_options)
+    n_metric_traces = n_metrics * n_traces_per_metric
+    dropdown_buttons: list[dict[str, Any]] = []
+    for m_idx, opt in enumerate(metric_options):
+        # Visibility vector covers ALL traces in the figure.
+        visible_vec: list[bool] = []
+        # Metric trace blocks
+        for j in range(n_metrics):
+            for _k in range(n_traces_per_metric):
+                visible_vec.append(j == m_idx)
+        # 1/sqrt(N) reference: only meaningful for hdi68_width
+        visible_vec.append(opt["key"] == "hdi68_width")
+        # Panel B traces (always visible)
+        visible_vec.append(True)
+        visible_vec.append(True)
+        # Panel C dummy
+        visible_vec.append(True)
+
+        dropdown_buttons.append(
+            {
+                "method": "update",
+                "label": opt["label"],
+                "args": [
+                    {"visible": visible_vec},
+                    {
+                        "yaxis": {
+                            "title": {"text": opt["yaxis_title"]},
+                            "type": opt["scale_y"],
+                        }
+                    },
+                ],
+            }
+        )
+
+    # ----- Truth line on panel B -----
+    fig.add_vline(
+        x=h_true,
+        line_color=TRUTH,
+        line_dash="dot",
+        line_width=2,
+        annotation_text="Injected",
+        annotation_position="top right",
+        row=1,
+        col=2,
+    )
+
+    # ----- Layout -----
+    fig.update_xaxes(title_text="Number of events N", type="log", row=1, col=1)
+    fig.update_yaxes(
+        title_text=metric_options[0]["yaxis_title"],
+        type=metric_options[0]["scale_y"],
+        row=1,
+        col=1,
+    )
+    fig.update_xaxes(title_text="h", row=1, col=2)
+    fig.update_yaxes(title_text="Posterior (peak-norm.)", row=1, col=2)
+
+    fig.update_layout(
+        title="M_z improvement explorer — does adding the BH-mass channel tighten H0?",
+        height=720,
+        sliders=[
+            {
+                "active": init_idx,
+                "currentvalue": {"prefix": "N = ", "font": {"size": 14}},
+                "pad": {"t": 50, "b": 10},
+                "x": 0.0,
+                "xanchor": "left",
+                "y": 0.0,
+                "yanchor": "top",
+                "len": 1.0,
+                "steps": slider_steps,
+            }
+        ],
+        updatemenus=[
+            {
+                "type": "dropdown",
+                "buttons": dropdown_buttons,
+                "x": 0.45,
+                "xanchor": "left",
+                "y": 1.10,
+                "yanchor": "top",
+                "showactive": True,
+                "direction": "down",
+            }
+        ],
+        margin={"t": 110, "b": 110},
+    )
+    return fig
+
+
+# ---------------------------------------------------------------------------
 # Convenience entry point
 # ---------------------------------------------------------------------------
 
@@ -772,5 +1277,27 @@ def generate_all_interactive(output_dir: str, data_dir: str) -> list[str]:
             _LOGGER.warning("Not enough posterior data for convergence -- skipping")
     else:
         _LOGGER.warning("No posterior data -- skipping h0_convergence.html")
+
+    # ------------------------------------------------------------------
+    # Figure 5: M_z improvement explorer
+    # ------------------------------------------------------------------
+    try:
+        from master_thesis_code.constants import H as TRUE_H
+        from master_thesis_code.plotting.convergence_analysis import (
+            compute_m_z_improvement_bank,
+        )
+
+        bank_dir = _search_dirs[0]
+        bank = compute_m_z_improvement_bank(Path(bank_dir), h_true=float(TRUE_H))
+        if bank is not None:
+            fig5 = interactive_m_z_improvement(bank)
+            path5 = os.path.join(output_dir, "m_z_improvement.html")
+            fig5.write_html(path5, include_plotlyjs="cdn")
+            written.append(path5)
+            _LOGGER.info("Written: %s", path5)
+        else:
+            _LOGGER.warning("Skipping m_z_improvement.html: improvement bank could not be computed")
+    except Exception as exc:
+        _LOGGER.warning("Skipping m_z_improvement.html: %s", exc)
 
     return written

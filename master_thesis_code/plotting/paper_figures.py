@@ -16,8 +16,6 @@ All functions follow the project plotting convention: data in,
 """
 
 import json
-import os
-import re
 from pathlib import Path
 from typing import Any
 
@@ -36,6 +34,20 @@ from master_thesis_code.plotting._colors import (
     VARIANT_WITH_MASS,
 )
 from master_thesis_code.plotting._helpers import compute_credible_interval, get_figure
+from master_thesis_code.plotting.convergence_analysis import (
+    _load_per_event_no_mass,
+    _load_per_event_with_mass_scalars,
+)
+
+__all__ = [
+    "_load_per_event_no_mass",
+    "_load_per_event_with_mass_scalars",
+    "plot_h0_posterior_comparison",
+    "plot_h0_posterior_kde",
+    "plot_posterior_convergence",
+    "plot_single_event_likelihoods",
+    "plot_snr_distribution",
+]
 
 # ---------------------------------------------------------------------------
 # KDE smoothing helper
@@ -106,95 +118,9 @@ def _load_combined_posterior(variant: str, data_dir: Path) -> dict[str, Any]:
         return json.load(f)  # type: ignore[no-any-return]
 
 
-def _load_per_event_no_mass(
-    base: Path,
-) -> tuple[npt.NDArray[np.float64], dict[str, npt.NDArray[np.float64]]]:
-    """Load all per-event likelihoods from the no-mass posteriors directory.
-
-    Returns
-    -------
-    h_values : sorted array of h grid points
-    events : dict mapping event-ID string to likelihood array (same order as h_values)
-    """
-    files = sorted([f for f in os.listdir(base) if f.startswith("h_") and f.endswith(".json")])
-
-    def _h_from_file(fname: str) -> float:
-        parts = fname.replace(".json", "").split("_")
-        return float(parts[1] + "." + parts[2])
-
-    raw: dict[float, dict[str, list[float]]] = {}
-    for f in files:
-        h = _h_from_file(f)
-        with open(base / f) as fh:
-            raw[h] = json.load(fh)
-
-    h_sorted = sorted(raw.keys())
-    h_arr = np.array(h_sorted)
-
-    # Collect event IDs from the first file
-    event_ids = sorted(
-        [k for k in raw[h_sorted[0]] if k.isdigit()],
-        key=int,
-    )
-
-    events: dict[str, npt.NDArray[np.float64]] = {}
-    for eid in event_ids:
-        vals = []
-        for h in h_sorted:
-            v = raw[h].get(eid, [])
-            vals.append(v[0] if v else 0.0)
-        events[eid] = np.array(vals)
-
-    return h_arr, events
-
-
-def _load_per_event_with_mass_scalars(
-    base: Path,
-) -> tuple[npt.NDArray[np.float64], dict[str, npt.NDArray[np.float64]]]:
-    """Load aggregated per-event likelihoods from with-mass posteriors.
-
-    The with-BH-mass JSON files are large (~585 MB) because they contain
-    per-galaxy breakdowns.  The aggregated scalar likelihoods are stored
-    at the end of each file.  This function reads only the last 300 KB
-    of each file and extracts the scalars with a regex, avoiding full
-    JSON parsing.
-
-    Returns
-    -------
-    h_values : sorted array of h grid points
-    events : dict mapping event-ID string to likelihood array
-    """
-    files = sorted([f for f in os.listdir(base) if f.startswith("h_") and f.endswith(".json")])
-
-    def _h_from_file(fname: str) -> float:
-        parts = fname.replace(".json", "").split("_")
-        return float(parts[1] + "." + parts[2])
-
-    pattern = re.compile(r'"(\d+)": \[(\d+\.\d+(?:e[+-]?\d+)?)\]')
-
-    raw: dict[float, dict[str, float]] = {}
-    for f in files:
-        h = _h_from_file(f)
-        filepath = base / f
-        with open(filepath, "rb") as fh:
-            fh.seek(0, 2)
-            size = fh.tell()
-            read_size = min(300_000, size)
-            fh.seek(-read_size, 2)
-            tail = fh.read().decode("utf-8")
-        matches = pattern.findall(tail)
-        raw[h] = {k: float(v) for k, v in matches}
-
-    h_sorted = sorted(raw.keys())
-    h_arr = np.array(h_sorted)
-
-    event_ids = sorted(raw[h_sorted[0]].keys(), key=int)
-    events: dict[str, npt.NDArray[np.float64]] = {}
-    for eid in event_ids:
-        vals = [raw[h].get(eid, 0.0) for h in h_sorted]
-        events[eid] = np.array(vals)
-
-    return h_arr, events
+# Per-event loaders are imported from convergence_analysis (above) so
+# both this module and the M_z improvement bank can use them without a
+# circular import.
 
 
 # ---------------------------------------------------------------------------

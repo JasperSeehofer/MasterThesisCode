@@ -8,6 +8,27 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- `plotting/_metrics.py`: pure-function constraint-quality metrics for H₀ posteriors
+  — HDI width, relative precision, KL info gain, Jensen–Shannon divergence (bits),
+  MAP bias, and the paired-curve `effective_event_gain` interpolated in
+  (log-width, log-N) space (exact for 1/√N power-law curves).
+- `plotting/convergence_analysis.py`: `compute_m_z_improvement_bank()` paired-bootstrap
+  aggregator (B=200, seed 20260410) that answers "does adding M_z tighten H₀, and
+  by how much?" for varying numbers of detections. Emits
+  `diagnostics/m_z_improvement_bank.json` (signature-validated cache) plus the
+  static three-panel `plot_m_z_improvement_panels()` matplotlib figure.
+- `plotting/interactive.py::interactive_m_z_improvement()`: Plotly three-panel
+  explorer with a slider over N and a dropdown over metrics
+  (HDI68 width / rel. precision / KL info gain / MAP bias), plus a live
+  headline-numbers annotation. Wired into `generate_all_interactive()` so
+  `--generate_interactive` emits `m_z_improvement.html`.
+- `plotting/_helpers.py::compute_hdi_interval()`: minimal/highest-density credible
+  interval (LIGO convention) — complements the existing equal-tailed helper.
+- Paper figure `paper_m_z_improvement` registered in `main.py` figure manifest.
+- 14 unit tests in `master_thesis_code_test/plotting/test_metrics.py` covering
+  analytical limits of every new metric (Gaussian HDI = 2 × 0.99445σ,
+  KL(uniform)=0, JSD self=0 and ≤1 bit, K(N)=1 for identical curves and =2 for
+  1/√(2N) scaling, out-of-range → nan).
 - `galaxy_catalogue/glade_completeness.py`: GLADE+ catalog completeness estimation
   $f(z, H_0)$ using galaxy counts in comoving volume shells (Phase 24).
 - Completeness-corrected dark siren likelihood implementing Gray et al. (2020) Eq. 9,
