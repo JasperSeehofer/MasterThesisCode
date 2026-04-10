@@ -21,6 +21,15 @@ EMRI Bayesian H₀ Inference — Documentation
    api/lisa_configuration
    api/cosmological_model
 
+Interactive Figures
+===================
+
+Browser-explorable versions of key pipeline figures (posteriors, sky maps,
+Fisher ellipses, H₀ convergence, M\ :sub:`z` improvement explorer) are
+available at:
+
+`Interactive Figures → <../interactive/>`_
+
 Indices and tables
 ==================
 

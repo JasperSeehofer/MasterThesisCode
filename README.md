@@ -2,6 +2,7 @@
 
 [![CI](https://github.com/JasperSeehofer/MasterThesisCode/actions/workflows/ci.yml/badge.svg)](https://github.com/JasperSeehofer/MasterThesisCode/actions/workflows/ci.yml)
 [![Docs](https://img.shields.io/badge/docs-GitHub%20Pages-blue)](https://jasperseehofer.github.io/MasterThesisCode/)
+[![Interactive Figures](https://img.shields.io/badge/figures-interactive-56B4E9)](https://jasperseehofer.github.io/MasterThesisCode/interactive/)
 
 Dark siren inference of the Hubble constant H₀ from Extreme Mass Ratio Inspiral (EMRI)
 gravitational wave events detected by the LISA space detector, using Bayesian analysis
