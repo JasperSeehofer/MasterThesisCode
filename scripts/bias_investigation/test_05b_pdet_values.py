@@ -8,7 +8,6 @@ correction for nearby sources, and the galaxy density bias is uncorrectable.
 This is the smoking gun test.
 """
 
-import glob
 import sys
 from pathlib import Path
 
@@ -23,7 +22,7 @@ from master_thesis_code.bayesian_inference.simulation_detection_probability impo
     SimulationDetectionProbability,
 )
 from master_thesis_code.constants import SNR_THRESHOLD
-from master_thesis_code.physical_relations import dist, dist_to_redshift
+from master_thesis_code.physical_relations import dist_to_redshift
 
 RESULTS_DIR = PROJECT_ROOT / "results" / "h_sweep_20260401"
 CRB_FILE = RESULTS_DIR / "cramer_rao_bounds.csv"
@@ -56,8 +55,10 @@ def main() -> None:
     # P_det at actual detection parameters for various h values
     h_test_values = [0.60, 0.66, 0.70, 0.73, 0.80, 0.86]
 
-    print(f"\n=== P_det AT DETECTION d_L VALUES (1D, marginalized over M) ===")
-    print(f"{'h':>6s} {'mean':>8s} {'min':>8s} {'max':>8s} {'std':>8s} {'frac<0.9':>10s} {'frac<0.5':>10s}")
+    print("\n=== P_det AT DETECTION d_L VALUES (1D, marginalized over M) ===")
+    print(
+        f"{'h':>6s} {'mean':>8s} {'min':>8s} {'max':>8s} {'std':>8s} {'frac<0.9':>10s} {'frac<0.5':>10s}"
+    )
     for h in h_test_values:
         # d_L at trial h for these sources
         dl_trial = (H_TRUE / h) * det_dL
@@ -65,11 +66,13 @@ def main() -> None:
             dl_trial, det_phi, det_theta, h=h
         )
         p_vals = np.atleast_1d(p_vals)
-        print(f"{h:6.2f} {np.mean(p_vals):8.4f} {np.min(p_vals):8.4f} {np.max(p_vals):8.4f} "
-              f"{np.std(p_vals):8.4f} {(p_vals < 0.9).mean():10.3f} {(p_vals < 0.5).mean():10.3f}")
+        print(
+            f"{h:6.2f} {np.mean(p_vals):8.4f} {np.min(p_vals):8.4f} {np.max(p_vals):8.4f} "
+            f"{np.std(p_vals):8.4f} {(p_vals < 0.9).mean():10.3f} {(p_vals < 0.5).mean():10.3f}"
+        )
 
     # P_det across a wide d_L range at h=0.73
-    print(f"\n=== P_det PROFILE vs d_L AT h=0.73 ===")
+    print("\n=== P_det PROFILE vs d_L AT h=0.73 ===")
     dl_range = np.linspace(0.01, 3.0, 300)
     phi_const = np.full_like(dl_range, 1.0)
     theta_const = np.full_like(dl_range, 0.8)
@@ -95,23 +98,31 @@ def main() -> None:
     print(f"\n=== P_det IN DETECTION d_L RANGE [0, {det_dL.max():.3f}] ===")
     print(f"P_det at d_L=0.01: {p_det_range[0]:.4f}")
     print(f"P_det at d_L={det_dL.max():.3f}: {p_det_range[-1]:.4f}")
-    print(f"P_det range in detection region: [{np.min(p_det_range):.4f}, {np.max(p_det_range):.4f}]")
+    print(
+        f"P_det range in detection region: [{np.min(p_det_range):.4f}, {np.max(p_det_range):.4f}]"
+    )
     print(f"P_det variation (max-min): {np.max(p_det_range) - np.min(p_det_range):.4f}")
 
     # Critical check: how does P_det RATIO between h=0.66 and h=0.73 vary?
-    print(f"\n=== P_det RATIO: P_det(d_L, h=0.66) / P_det(d_L, h=0.73) ===")
+    print("\n=== P_det RATIO: P_det(d_L, h=0.66) / P_det(d_L, h=0.73) ===")
     for i_det in range(min(10, len(det_dL))):
         dl = det_dL[i_det]
         dl_at_66 = (H_TRUE / 0.66) * dl
         dl_at_73 = dl
-        p66 = float(pdet.detection_probability_without_bh_mass_interpolated(
-            dl_at_66, det_phi[i_det], det_theta[i_det], h=0.66
-        ))
-        p73 = float(pdet.detection_probability_without_bh_mass_interpolated(
-            dl_at_73, det_phi[i_det], det_theta[i_det], h=0.73
-        ))
+        p66 = float(
+            pdet.detection_probability_without_bh_mass_interpolated(
+                dl_at_66, det_phi[i_det], det_theta[i_det], h=0.66
+            )
+        )
+        p73 = float(
+            pdet.detection_probability_without_bh_mass_interpolated(
+                dl_at_73, det_phi[i_det], det_theta[i_det], h=0.73
+            )
+        )
         ratio = p66 / p73 if p73 > 0 else np.nan
-        print(f"  det {i_det}: d_L={dl:.4f}, P_det(h=0.66)={p66:.4f}, P_det(h=0.73)={p73:.4f}, ratio={ratio:.4f}")
+        print(
+            f"  det {i_det}: d_L={dl:.4f}, P_det(h=0.66)={p66:.4f}, P_det(h=0.73)={p73:.4f}, ratio={ratio:.4f}"
+        )
 
     # Plot
     fig, axes = plt.subplots(2, 2, figsize=(14, 10))
@@ -123,7 +134,9 @@ def main() -> None:
             dl_range, phi_const, theta_const, h=h
         )
         ax.plot(dl_range, np.atleast_1d(p), label=f"h={h}")
-    ax.axvspan(0, det_dL.max(), alpha=0.1, color="green", label=f"detection range (< {det_dL.max():.2f})")
+    ax.axvspan(
+        0, det_dL.max(), alpha=0.1, color="green", label=f"detection range (< {det_dL.max():.2f})"
+    )
     ax.set_xlabel("d_L [Gpc]")
     ax.set_ylabel("P_det")
     ax.set_title("P_det profile vs luminosity distance")
@@ -146,9 +159,11 @@ def main() -> None:
     ax = axes[1, 0]
     for h in [0.66, 0.73, 0.80]:
         dl_trial = (H_TRUE / h) * det_dL
-        p_vals = np.atleast_1d(pdet.detection_probability_without_bh_mass_interpolated(
-            dl_trial, det_phi, det_theta, h=h
-        ))
+        p_vals = np.atleast_1d(
+            pdet.detection_probability_without_bh_mass_interpolated(
+                dl_trial, det_phi, det_theta, h=h
+            )
+        )
         ax.scatter(det_z, p_vals, s=5, alpha=0.3, label=f"h={h}")
     ax.set_xlabel("z_true")
     ax.set_ylabel("P_det at detection")
@@ -158,12 +173,14 @@ def main() -> None:
     # Plot 4: P_det ratio (h=0.66 / h=0.73) per detection
     ax = axes[1, 1]
     dl_at_66 = (H_TRUE / 0.66) * det_dL
-    p66 = np.atleast_1d(pdet.detection_probability_without_bh_mass_interpolated(
-        dl_at_66, det_phi, det_theta, h=0.66
-    ))
-    p73 = np.atleast_1d(pdet.detection_probability_without_bh_mass_interpolated(
-        det_dL, det_phi, det_theta, h=0.73
-    ))
+    p66 = np.atleast_1d(
+        pdet.detection_probability_without_bh_mass_interpolated(
+            dl_at_66, det_phi, det_theta, h=0.66
+        )
+    )
+    p73 = np.atleast_1d(
+        pdet.detection_probability_without_bh_mass_interpolated(det_dL, det_phi, det_theta, h=0.73)
+    )
     ratio = np.where(p73 > 0, p66 / p73, np.nan)
     ax.scatter(det_z, ratio, s=5, alpha=0.5)
     ax.axhline(1.0, color="r", ls="--", lw=1)
@@ -179,16 +196,18 @@ def main() -> None:
 
     # Summary
     print("\n=== SUMMARY ===")
-    p73_at_dets = np.atleast_1d(pdet.detection_probability_without_bh_mass_interpolated(
-        det_dL, det_phi, det_theta, h=0.73
-    ))
+    p73_at_dets = np.atleast_1d(
+        pdet.detection_probability_without_bh_mass_interpolated(det_dL, det_phi, det_theta, h=0.73)
+    )
     if np.mean(p73_at_dets) > 0.95:
         print(f"P_det ≈ {np.mean(p73_at_dets):.3f} at detection distances (nearly constant)")
         print("→ P_det provides NO SELECTION CORRECTION for these nearby sources")
         print("→ Galaxy density bias is UNCORRECTABLE by P_det at these distances")
         print("→ This is a fundamental limitation, not a bug")
     else:
-        print(f"P_det varies significantly at detection distances (mean={np.mean(p73_at_dets):.3f})")
+        print(
+            f"P_det varies significantly at detection distances (mean={np.mean(p73_at_dets):.3f})"
+        )
         print("→ P_det should provide some correction")
 
 

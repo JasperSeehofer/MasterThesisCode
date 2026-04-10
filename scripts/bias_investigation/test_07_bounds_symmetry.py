@@ -18,7 +18,6 @@ from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
-import pandas as pd
 from scipy.integrate import fixed_quad
 from scipy.stats import multivariate_normal, norm
 
@@ -38,14 +37,19 @@ def make_detection(z_true: float, frac_err: float = 0.05) -> dict:
     d_L = dist(z_true, h=H_TRUE)
     sigma_dL = frac_err * d_L
     return {
-        "d_L": d_L, "sigma_dL": sigma_dL,
-        "phi": 1.0, "theta": 0.8,
-        "sigma_phi": 0.05, "sigma_theta": 0.05,
+        "d_L": d_L,
+        "sigma_dL": sigma_dL,
+        "phi": 1.0,
+        "theta": 0.8,
+        "sigma_phi": 0.05,
+        "sigma_theta": 0.05,
     }
 
 
 def build_gaussian_3d(det: dict) -> multivariate_normal:
-    cov = np.diag([det["sigma_phi"]**2, det["sigma_theta"]**2, (det["sigma_dL"] / det["d_L"])**2])
+    cov = np.diag(
+        [det["sigma_phi"] ** 2, det["sigma_theta"] ** 2, (det["sigma_dL"] / det["d_L"]) ** 2]
+    )
     return multivariate_normal(mean=[det["phi"], det["theta"], 1.0], cov=cov, allow_singular=True)
 
 
@@ -118,7 +122,9 @@ def main() -> None:
     gal_z_err = 0.002
     print(f"Galaxy: z={gal_z}, σ_z={gal_z_err}")
     print()
-    print(f"{'h':>6s} {'num_z_lo':>10s} {'num_z_hi':>10s} {'den_z_lo':>10s} {'den_z_hi':>10s} {'overlap':>10s}")
+    print(
+        f"{'h':>6s} {'num_z_lo':>10s} {'num_z_hi':>10s} {'den_z_lo':>10s} {'den_z_hi':>10s} {'overlap':>10s}"
+    )
     for h in [0.60, 0.66, 0.70, 0.73, 0.80, 0.86]:
         num_upper = dist_to_redshift(det["d_L"] + 4 * det["sigma_dL"], h=h)
         num_lower = dist_to_redshift(max(0.001, det["d_L"] - 4 * det["sigma_dL"]), h=h)
@@ -126,7 +132,9 @@ def main() -> None:
         den_lower = max(0.001, gal_z - 4 * gal_z_err)
         overlap = max(0, min(num_upper, den_upper) - max(num_lower, den_lower))
         total = (num_upper - num_lower) + (den_upper - den_lower)
-        print(f"{h:6.2f} {num_lower:10.4f} {num_upper:10.4f} {den_lower:10.4f} {den_upper:10.4f} {overlap:10.4f}")
+        print(
+            f"{h:6.2f} {num_lower:10.4f} {num_upper:10.4f} {den_lower:10.4f} {den_upper:10.4f} {overlap:10.4f}"
+        )
 
     # Run with different bounds modes (true host only first)
     modes = ["asymmetric", "numerator", "denominator", "union"]
@@ -169,11 +177,13 @@ def main() -> None:
 
     # Run with low-z biased galaxies (mimicking GLADE)
     print("\n=== 100 LOW-Z BIASED GALAXIES — BOUNDS COMPARISON ===")
-    galaxy_positions_lowz = np.concatenate([
-        [z_true],
-        np.linspace(0.02, z_true, 70),
-        np.linspace(z_true, 0.25, 30),
-    ])
+    galaxy_positions_lowz = np.concatenate(
+        [
+            [z_true],
+            np.linspace(0.02, z_true, 70),
+            np.linspace(z_true, 0.25, 30),
+        ]
+    )
     results_lowz = {}
 
     for mode in modes:
@@ -222,7 +232,7 @@ def main() -> None:
     asym_peak = results_lowz["asymmetric"][1]
     union_peak = results_lowz["union"][1]
     den_peak = results_lowz["denominator"][1]
-    print(f"Low-z biased galaxies:")
+    print("Low-z biased galaxies:")
     print(f"  Asymmetric (production): peak = {asym_peak:.3f}")
     print(f"  Union bounds:            peak = {union_peak:.3f}")
     print(f"  Denominator bounds:      peak = {den_peak:.3f}")

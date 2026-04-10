@@ -33,14 +33,10 @@ H_TRUE = 0.73
 class MockDetectionProbability:
     """Returns P_det = 1.0 for all inputs."""
 
-    def detection_probability_without_bh_mass_interpolated(
-        self, d_L, phi, theta, *, h
-    ):
+    def detection_probability_without_bh_mass_interpolated(self, d_L, phi, theta, *, h):
         return np.ones_like(np.atleast_1d(np.asarray(d_L, dtype=np.float64)))
 
-    def detection_probability_with_bh_mass_interpolated(
-        self, d_L, M, phi, theta, *, h
-    ):
+    def detection_probability_with_bh_mass_interpolated(self, d_L, M, phi, theta, *, h):
         return np.ones_like(np.atleast_1d(np.asarray(d_L, dtype=np.float64)))
 
 
@@ -55,36 +51,51 @@ def make_synthetic_detection(z_true: float, h_true: float, frac_dl_err: float = 
     M = 5e5  # solar masses
     sigma_M = 50.0
 
-    params = pd.Series({
-        "luminosity_distance": d_L,
-        "delta_luminosity_distance_delta_luminosity_distance": sigma_dL**2,
-        "phiS": phi,
-        "delta_phiS_delta_phiS": sigma_phi**2,
-        "qS": theta,
-        "delta_qS_delta_qS": sigma_theta**2,
-        "M": M,
-        "delta_M_delta_M": sigma_M**2,
-        "delta_phiS_delta_qS": 0.0,
-        "delta_phiS_delta_M": 0.0,
-        "delta_qS_delta_M": 0.0,
-        "delta_luminosity_distance_delta_M": 0.0,
-        "delta_qS_delta_luminosity_distance": 0.0,
-        "delta_phiS_delta_luminosity_distance": 0.0,
-        "SNR": 25.0,
-        "host_galaxy_index": 0,
-    })
+    params = pd.Series(
+        {
+            "luminosity_distance": d_L,
+            "delta_luminosity_distance_delta_luminosity_distance": sigma_dL**2,
+            "phiS": phi,
+            "delta_phiS_delta_phiS": sigma_phi**2,
+            "qS": theta,
+            "delta_qS_delta_qS": sigma_theta**2,
+            "M": M,
+            "delta_M_delta_M": sigma_M**2,
+            "delta_phiS_delta_qS": 0.0,
+            "delta_phiS_delta_M": 0.0,
+            "delta_qS_delta_M": 0.0,
+            "delta_luminosity_distance_delta_M": 0.0,
+            "delta_qS_delta_luminosity_distance": 0.0,
+            "delta_phiS_delta_luminosity_distance": 0.0,
+            "SNR": 25.0,
+            "host_galaxy_index": 0,
+        }
+    )
     return Detection(params)
 
 
 def build_gaussian_3d(detection: Detection) -> multivariate_normal:
     """Build the 3D GW likelihood Gaussian (phi, theta, d_L_frac)."""
     cov = [
-        [detection.phi_error**2, detection.theta_phi_covariance, detection.d_L_phi_covariance / detection.d_L],
-        [detection.theta_phi_covariance, detection.theta_error**2, detection.d_L_theta_covariance / detection.d_L],
-        [detection.d_L_phi_covariance / detection.d_L, detection.d_L_theta_covariance / detection.d_L,
-         detection.d_L_uncertainty**2 / detection.d_L**2],
+        [
+            detection.phi_error**2,
+            detection.theta_phi_covariance,
+            detection.d_L_phi_covariance / detection.d_L,
+        ],
+        [
+            detection.theta_phi_covariance,
+            detection.theta_error**2,
+            detection.d_L_theta_covariance / detection.d_L,
+        ],
+        [
+            detection.d_L_phi_covariance / detection.d_L,
+            detection.d_L_theta_covariance / detection.d_L,
+            detection.d_L_uncertainty**2 / detection.d_L**2,
+        ],
     ]
-    return multivariate_normal(mean=[detection.phi, detection.theta, 1.0], cov=cov, allow_singular=True)
+    return multivariate_normal(
+        mean=[detection.phi, detection.theta, 1.0], cov=cov, allow_singular=True
+    )
 
 
 def compute_single_host_likelihood(
@@ -99,15 +110,18 @@ def compute_single_host_likelihood(
     Reimplements the core logic from bayesian_statistics.py single_host_likelihood
     WITHOUT the global state dependency, for testing.
     """
-    from master_thesis_code.physical_relations import dist_vectorized
     from scipy.integrate import fixed_quad
     from scipy.stats import norm
+
+    from master_thesis_code.physical_relations import dist_vectorized
 
     sigma_mult = 4.0
 
     # Integration bounds for numerator (h-dependent)
     num_z_upper = dist_to_redshift(detection.d_L + sigma_mult * detection.d_L_uncertainty, h=h)
-    num_z_lower = dist_to_redshift(max(0.001, detection.d_L - sigma_mult * detection.d_L_uncertainty), h=h)
+    num_z_lower = dist_to_redshift(
+        max(0.001, detection.d_L - sigma_mult * detection.d_L_uncertainty), h=h
+    )
 
     # Integration bounds for denominator (galaxy-based, h-independent)
     den_z_upper = galaxy.z + sigma_mult * galaxy.z_error
@@ -178,13 +192,15 @@ def main() -> None:
         print(f"\nz_true = {z_true:.2f}:")
         print(f"  d_L = {detection.d_L:.4f} Gpc, σ_dL = {detection.d_L_uncertainty:.4f} Gpc")
         print(f"  Peak h = {peak_h:.3f} (offset = {offset:+.3f})")
-        print(f"  L(0.66) / L(0.73) = {likelihoods[np.argmin(abs(h_values-0.66))] / max(likelihoods[np.argmin(abs(h_values-0.73))], 1e-30):.6f}")
+        print(
+            f"  L(0.66) / L(0.73) = {likelihoods[np.argmin(abs(h_values - 0.66))] / max(likelihoods[np.argmin(abs(h_values - 0.73))], 1e-30):.6f}"
+        )
 
         # Diagnostic: check num and den separately
-        print(f"  Numerator at h=0.73: {numerators[np.argmin(abs(h_values-0.73))]:.6e}")
-        print(f"  Denominator at h=0.73: {denominators[np.argmin(abs(h_values-0.73))]:.6e}")
-        print(f"  Numerator at h=0.66: {numerators[np.argmin(abs(h_values-0.66))]:.6e}")
-        print(f"  Denominator at h=0.66: {denominators[np.argmin(abs(h_values-0.66))]:.6e}")
+        print(f"  Numerator at h=0.73: {numerators[np.argmin(abs(h_values - 0.73))]:.6e}")
+        print(f"  Denominator at h=0.73: {denominators[np.argmin(abs(h_values - 0.73))]:.6e}")
+        print(f"  Numerator at h=0.66: {numerators[np.argmin(abs(h_values - 0.66))]:.6e}")
+        print(f"  Denominator at h=0.66: {denominators[np.argmin(abs(h_values - 0.66))]:.6e}")
 
         ax = axes[ax_idx]
         ax.plot(h_values, likelihoods, "o-", ms=3)
@@ -195,7 +211,9 @@ def main() -> None:
         if ax_idx == 0:
             ax.set_ylabel("L(h) / L_max")
 
-    plt.suptitle("Test 3: Single galaxy (true host), P_det=1\nExpected: peak at h=0.73", fontsize=12)
+    plt.suptitle(
+        "Test 3: Single galaxy (true host), P_det=1\nExpected: peak at h=0.73", fontsize=12
+    )
     plt.tight_layout()
     outpath = OUTPUT_DIR / "test_03_single_galaxy_sanity.png"
     fig.savefig(outpath, dpi=150)

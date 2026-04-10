@@ -41,7 +41,11 @@ def load_posterior(h_val: float) -> dict[int, float]:
     for k, v in data.items():
         if k == "h":
             continue
-        val = v[0] if isinstance(v, list) and len(v) > 0 else (0.0 if isinstance(v, list) else float(v))
+        val = (
+            v[0]
+            if isinstance(v, list) and len(v) > 0
+            else (0.0 if isinstance(v, list) else float(v))
+        )
         result[int(k)] = val
     return result
 
@@ -65,7 +69,9 @@ def main() -> None:
     posteriors = {h: load_posterior(h) for h in h_values}
 
     # Compute per-event log-ratios
-    det_ids = sorted(set(posteriors[0.66].keys()) & set(posteriors[0.73].keys()) & set(z_true_map.keys()))
+    det_ids = sorted(
+        set(posteriors[0.66].keys()) & set(posteriors[0.73].keys()) & set(z_true_map.keys())
+    )
     print(f"Common detections across all datasets: {len(det_ids)}")
 
     z_arr = []
@@ -102,7 +108,9 @@ def main() -> None:
     # Bin by redshift
     z_bins = np.linspace(z_arr.min(), z_arr.max(), 11)
     print("\nBinned analysis:")
-    print(f"{'z_bin':>12s} {'N':>5s} {'mean_logR':>10s} {'std_logR':>10s} {'frac>0':>8s} {'mean_peak_h':>12s}")
+    print(
+        f"{'z_bin':>12s} {'N':>5s} {'mean_logR':>10s} {'std_logR':>10s} {'frac>0':>8s} {'mean_peak_h':>12s}"
+    )
     for i in range(len(z_bins) - 1):
         mask = (z_arr >= z_bins[i]) & (z_arr < z_bins[i + 1])
         if mask.sum() == 0:
@@ -112,14 +120,17 @@ def main() -> None:
         std_lr = log_ratio_66_73[mask].std()
         frac_pos = (log_ratio_66_73[mask] > 0).mean()
         mean_peak = peak_h_arr[mask].mean()
-        print(f"{z_mid:12.4f} {mask.sum():5d} {mean_lr:10.4f} {std_lr:10.4f} {frac_pos:8.3f} {mean_peak:12.4f}")
+        print(
+            f"{z_mid:12.4f} {mask.sum():5d} {mean_lr:10.4f} {std_lr:10.4f} {frac_pos:8.3f} {mean_peak:12.4f}"
+        )
 
     # Plot 1: log-ratio vs redshift
     fig, axes = plt.subplots(2, 2, figsize=(14, 10))
 
     ax = axes[0, 0]
-    scatter = ax.scatter(z_arr, log_ratio_66_73, c=peak_h_arr, cmap="RdYlBu_r",
-                         s=8, alpha=0.5, vmin=0.60, vmax=0.86)
+    scatter = ax.scatter(
+        z_arr, log_ratio_66_73, c=peak_h_arr, cmap="RdYlBu_r", s=8, alpha=0.5, vmin=0.60, vmax=0.86
+    )
     ax.axhline(0, color="k", ls="--", lw=0.8)
     ax.set_xlabel("z_true")
     ax.set_ylabel("log(L(h=0.66) / L(h=0.73))")

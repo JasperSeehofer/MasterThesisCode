@@ -35,24 +35,26 @@ N_QUAD = 50
 def make_synthetic_detection(z_true: float, frac_dl_err: float = 0.05) -> Detection:
     d_L = dist(z_true, h=H_TRUE)
     sigma_dL = frac_dl_err * d_L
-    params = pd.Series({
-        "luminosity_distance": d_L,
-        "delta_luminosity_distance_delta_luminosity_distance": sigma_dL**2,
-        "phiS": 1.0,
-        "delta_phiS_delta_phiS": 0.05**2,
-        "qS": 0.8,
-        "delta_qS_delta_qS": 0.05**2,
-        "M": 5e5,
-        "delta_M_delta_M": 50.0**2,
-        "delta_phiS_delta_qS": 0.0,
-        "delta_phiS_delta_M": 0.0,
-        "delta_qS_delta_M": 0.0,
-        "delta_luminosity_distance_delta_M": 0.0,
-        "delta_qS_delta_luminosity_distance": 0.0,
-        "delta_phiS_delta_luminosity_distance": 0.0,
-        "SNR": 25.0,
-        "host_galaxy_index": 0,
-    })
+    params = pd.Series(
+        {
+            "luminosity_distance": d_L,
+            "delta_luminosity_distance_delta_luminosity_distance": sigma_dL**2,
+            "phiS": 1.0,
+            "delta_phiS_delta_phiS": 0.05**2,
+            "qS": 0.8,
+            "delta_qS_delta_qS": 0.05**2,
+            "M": 5e5,
+            "delta_M_delta_M": 50.0**2,
+            "delta_phiS_delta_qS": 0.0,
+            "delta_phiS_delta_M": 0.0,
+            "delta_qS_delta_M": 0.0,
+            "delta_luminosity_distance_delta_M": 0.0,
+            "delta_qS_delta_luminosity_distance": 0.0,
+            "delta_phiS_delta_luminosity_distance": 0.0,
+            "SNR": 25.0,
+            "host_galaxy_index": 0,
+        }
+    )
     return Detection(params)
 
 
@@ -60,8 +62,11 @@ def build_gaussian_3d(det: Detection) -> multivariate_normal:
     cov = [
         [det.phi_error**2, det.theta_phi_covariance, det.d_L_phi_covariance / det.d_L],
         [det.theta_phi_covariance, det.theta_error**2, det.d_L_theta_covariance / det.d_L],
-        [det.d_L_phi_covariance / det.d_L, det.d_L_theta_covariance / det.d_L,
-         det.d_L_uncertainty**2 / det.d_L**2],
+        [
+            det.d_L_phi_covariance / det.d_L,
+            det.d_L_theta_covariance / det.d_L,
+            det.d_L_uncertainty**2 / det.d_L**2,
+        ],
     ]
     return multivariate_normal(mean=[det.phi, det.theta, 1.0], cov=cov, allow_singular=True)
 
@@ -132,7 +137,7 @@ def main() -> None:
     gaussian_3d = build_gaussian_3d(det)
 
     print(f"Detection: z_true={z_true}, d_L={det.d_L:.4f} Gpc, σ_dL={det.d_L_uncertainty:.4f} Gpc")
-    print(f"  σ_dL/d_L = {det.d_L_uncertainty/det.d_L:.4f}")
+    print(f"  σ_dL/d_L = {det.d_L_uncertainty / det.d_L:.4f}")
     print()
 
     # Scenario A: True host only
@@ -146,44 +151,57 @@ def main() -> None:
     n_bg = 50
     bg_galaxies = []
     for z_bg in np.linspace(0.02, 0.25, n_bg):
-        bg_galaxies.append(HostGalaxy.from_attributes(
-            phiS=det.phi, qS=det.theta, z=z_bg, z_error=0.002, M=5e5, M_error=1e4
-        ))
-    L_b, peak_b = run_scenario(det, [true_host] + bg_galaxies, gaussian_3d, h_values,
-                                "B: True host + 50 uniform")
+        bg_galaxies.append(
+            HostGalaxy.from_attributes(
+                phiS=det.phi, qS=det.theta, z=z_bg, z_error=0.002, M=5e5, M_error=1e4
+            )
+        )
+    L_b, peak_b = run_scenario(
+        det, [true_host] + bg_galaxies, gaussian_3d, h_values, "B: True host + 50 uniform"
+    )
 
     # Scenario C: True host + 100 uniform galaxies
     bg_galaxies_100 = []
     for z_bg in np.linspace(0.02, 0.25, 100):
-        bg_galaxies_100.append(HostGalaxy.from_attributes(
-            phiS=det.phi, qS=det.theta, z=z_bg, z_error=0.002, M=5e5, M_error=1e4
-        ))
-    L_c, peak_c = run_scenario(det, [true_host] + bg_galaxies_100, gaussian_3d, h_values,
-                                "C: True host + 100 uniform")
+        bg_galaxies_100.append(
+            HostGalaxy.from_attributes(
+                phiS=det.phi, qS=det.theta, z=z_bg, z_error=0.002, M=5e5, M_error=1e4
+            )
+        )
+    L_c, peak_c = run_scenario(
+        det, [true_host] + bg_galaxies_100, gaussian_3d, h_values, "C: True host + 100 uniform"
+    )
 
     # Scenario D: True host + 100 galaxies biased toward LOW z (more at z<z_true)
     bg_low_z = []
     z_vals_low = np.concatenate([np.linspace(0.02, z_true, 70), np.linspace(z_true, 0.25, 30)])
     for z_bg in z_vals_low:
-        bg_low_z.append(HostGalaxy.from_attributes(
-            phiS=det.phi, qS=det.theta, z=z_bg, z_error=0.002, M=5e5, M_error=1e4
-        ))
-    L_d, peak_d = run_scenario(det, [true_host] + bg_low_z, gaussian_3d, h_values,
-                                "D: True host + 100 low-z biased")
+        bg_low_z.append(
+            HostGalaxy.from_attributes(
+                phiS=det.phi, qS=det.theta, z=z_bg, z_error=0.002, M=5e5, M_error=1e4
+            )
+        )
+    L_d, peak_d = run_scenario(
+        det, [true_host] + bg_low_z, gaussian_3d, h_values, "D: True host + 100 low-z biased"
+    )
 
     # Scenario E: True host + 100 galaxies biased toward HIGH z
     bg_high_z = []
     z_vals_high = np.concatenate([np.linspace(0.02, z_true, 30), np.linspace(z_true, 0.25, 70)])
     for z_bg in z_vals_high:
-        bg_high_z.append(HostGalaxy.from_attributes(
-            phiS=det.phi, qS=det.theta, z=z_bg, z_error=0.002, M=5e5, M_error=1e4
-        ))
-    L_e, peak_e = run_scenario(det, [true_host] + bg_high_z, gaussian_3d, h_values,
-                                "E: True host + 100 high-z biased")
+        bg_high_z.append(
+            HostGalaxy.from_attributes(
+                phiS=det.phi, qS=det.theta, z=z_bg, z_error=0.002, M=5e5, M_error=1e4
+            )
+        )
+    L_e, peak_e = run_scenario(
+        det, [true_host] + bg_high_z, gaussian_3d, h_values, "E: True host + 100 high-z biased"
+    )
 
     # Scenario F: No true host — only 100 uniform galaxies (worst case)
-    L_f, peak_f = run_scenario(det, bg_galaxies_100, gaussian_3d, h_values,
-                                "F: 100 uniform (NO true host)")
+    L_f, peak_f = run_scenario(
+        det, bg_galaxies_100, gaussian_3d, h_values, "F: 100 uniform (NO true host)"
+    )
 
     # Plot
     fig, axes = plt.subplots(1, 2, figsize=(14, 5))
@@ -228,9 +246,13 @@ def main() -> None:
     if abs(peak_b - H_TRUE) < 0.02:
         print("Uniform galaxies cause < 0.02 offset → P_det=1 galaxy density bias is SMALL")
     else:
-        print(f"Uniform galaxies cause {abs(peak_b - H_TRUE):.3f} offset → galaxy density bias is SIGNIFICANT")
+        print(
+            f"Uniform galaxies cause {abs(peak_b - H_TRUE):.3f} offset → galaxy density bias is SIGNIFICANT"
+        )
     if abs(peak_d - peak_e) > 0.03:
-        print(f"Galaxy density gradient causes {abs(peak_d - peak_e):.3f} shift → density distribution MATTERS")
+        print(
+            f"Galaxy density gradient causes {abs(peak_d - peak_e):.3f} shift → density distribution MATTERS"
+        )
 
 
 if __name__ == "__main__":

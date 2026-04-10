@@ -20,7 +20,7 @@ import pandas as pd
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from master_thesis_code.physical_relations import dist, dist_to_redshift
+from master_thesis_code.physical_relations import dist_to_redshift
 
 RESULTS_DIR = PROJECT_ROOT / "results" / "h_sweep_20260401"
 CRB_FILE = RESULTS_DIR / "cramer_rao_bounds.csv"
@@ -135,7 +135,7 @@ def main() -> None:
         print(f"{h:6.2f} {dl_max_est:12.4f} {n_exceed:10d} {frac_exceed:12.3f} {z_crit:8.4f}")
 
     # Also check: for each detection, at what h does d_L first exceed dl_max?
-    print(f"\n=== PER-DETECTION: h WHERE d_L(z_true, h) FIRST EXCEEDS dl_max ===")
+    print("\n=== PER-DETECTION: h WHERE d_L(z_true, h) FIRST EXCEEDS dl_max ===")
     exceed_h = []
     for i in range(len(det_dL)):
         # d_L(z_true, h) > dl_max when (0.73/h) * det_dL[i] > dl_max
@@ -147,15 +147,17 @@ def main() -> None:
     if exceed_h:
         exceed_h = np.array(exceed_h)
         print(f"  {len(exceed_h)}/{len(det_dL)} detections exceed dl_max at some h < 0.86")
-        print(f"  Threshold h distribution: min={exceed_h.min():.3f}, median={np.median(exceed_h):.3f}, max={exceed_h.max():.3f}")
+        print(
+            f"  Threshold h distribution: min={exceed_h.min():.3f}, median={np.median(exceed_h):.3f}, max={exceed_h.max():.3f}"
+        )
 
         # Histogram of threshold h values
         h_bins = np.arange(0.60, 0.87, 0.02)
         counts, _ = np.histogram(exceed_h, bins=h_bins)
-        print(f"  Events hitting dl_max boundary per h-bin:")
+        print("  Events hitting dl_max boundary per h-bin:")
         for i in range(len(h_bins) - 1):
             if counts[i] > 0:
-                print(f"    h=[{h_bins[i]:.2f}, {h_bins[i+1]:.2f}): {counts[i]} events")
+                print(f"    h=[{h_bins[i]:.2f}, {h_bins[i + 1]:.2f}): {counts[i]} events")
 
     # Plot
     fig, axes = plt.subplots(2, 2, figsize=(14, 10))
@@ -170,7 +172,9 @@ def main() -> None:
 
     ax = axes[0, 1]
     ax.plot(h_values, z_crit_arr, "o-", ms=4)
-    ax.axhline(np.median(det_z), color="orange", ls=":", label=f"median z_det={np.median(det_z):.3f}")
+    ax.axhline(
+        np.median(det_z), color="orange", ls=":", label=f"median z_det={np.median(det_z):.3f}"
+    )
     ax.axvline(H_TRUE, color="r", ls="--", lw=1, label="h_true")
     ax.set_xlabel("h")
     ax.set_ylabel("z_crit (max detectable z)")
@@ -182,7 +186,7 @@ def main() -> None:
     if len(exceed_h) > 0:
         # For each z, find the h where it hits boundary
         z_for_exceed = det_z[det_dL > dl_max_est * (0.73 / 0.73)]  # always beyond at some h
-        ax.axvline(np.median(det_z), color="orange", ls=":", label=f"median z")
+        ax.axvline(np.median(det_z), color="orange", ls=":", label="median z")
     ax.set_xlabel("z_true")
     ax.set_ylabel("count")
     ax.set_title("Detection redshift distribution")
@@ -197,8 +201,15 @@ def main() -> None:
         ax.set_title("Per-event boundary crossing h")
         ax.legend()
     else:
-        ax.text(0.5, 0.5, "No events exceed dl_max\nin [0.60, 0.86] range",
-                ha="center", va="center", transform=ax.transAxes, fontsize=12)
+        ax.text(
+            0.5,
+            0.5,
+            "No events exceed dl_max\nin [0.60, 0.86] range",
+            ha="center",
+            va="center",
+            transform=ax.transAxes,
+            fontsize=12,
+        )
 
     plt.tight_layout()
     outpath = OUTPUT_DIR / "test_05_pdet_boundary.png"

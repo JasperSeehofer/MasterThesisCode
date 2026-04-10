@@ -40,7 +40,11 @@ def load_posterior(h_val: float) -> dict[int, float]:
     for k, v in data.items():
         if k == "h":
             continue
-        val = v[0] if isinstance(v, list) and len(v) > 0 else (0.0 if isinstance(v, list) else float(v))
+        val = (
+            v[0]
+            if isinstance(v, list) and len(v) > 0
+            else (0.0 if isinstance(v, list) else float(v))
+        )
         result[int(k)] = val
     return result
 
@@ -50,7 +54,23 @@ def main() -> None:
     print(f"Loaded {len(crb)} detections")
 
     # Load posteriors at all h values
-    h_values = [0.60, 0.62, 0.64, 0.66, 0.68, 0.70, 0.72, 0.73, 0.74, 0.76, 0.78, 0.80, 0.82, 0.84, 0.86]
+    h_values = [
+        0.60,
+        0.62,
+        0.64,
+        0.66,
+        0.68,
+        0.70,
+        0.72,
+        0.73,
+        0.74,
+        0.76,
+        0.78,
+        0.80,
+        0.82,
+        0.84,
+        0.86,
+    ]
     posteriors = {h: load_posterior(h) for h in h_values}
 
     # Compute z_true and d_L for each detection
@@ -76,13 +96,17 @@ def main() -> None:
                 deltas.append(np.log(l_hi) - np.log(l_lo))
         if deltas:
             total = sum(deltas)
-            print(f"  h={h_lo:.2f}→{h_hi:.2f}: Δ sum log L = {total:+8.1f}  (N={len(deltas)}, mean={np.mean(deltas):+.4f})")
+            print(
+                f"  h={h_lo:.2f}→{h_hi:.2f}: Δ sum log L = {total:+8.1f}  (N={len(deltas)}, mean={np.mean(deltas):+.4f})"
+            )
 
     # ================================================================
     # Analysis 2: Events causing the h=0.70→0.72 drop
     # ================================================================
     print("\n=== TOP 50 EVENTS CAUSING h=0.70→0.72 DROP ===")
-    common_70_72 = sorted(set(posteriors[0.70].keys()) & set(posteriors[0.72].keys()) & set(det_info.keys()))
+    common_70_72 = sorted(
+        set(posteriors[0.70].keys()) & set(posteriors[0.72].keys()) & set(det_info.keys())
+    )
 
     event_deltas = []
     for d in common_70_72:
@@ -90,33 +114,59 @@ def main() -> None:
         l72 = posteriors[0.72][d]
         if l70 > 0 and l72 > 0:
             delta = np.log(l72) - np.log(l70)
-            event_deltas.append((d, delta, det_info[d]["d_L"], det_info[d]["z_true"], det_info[d]["sigma_dL"]))
+            event_deltas.append(
+                (d, delta, det_info[d]["d_L"], det_info[d]["z_true"], det_info[d]["sigma_dL"])
+            )
 
     event_deltas.sort(key=lambda x: x[1])  # most negative first
 
-    print(f"{'rank':>5s} {'det':>5s} {'Δlog L':>10s} {'d_L':>8s} {'z_true':>8s} {'σ_dL':>8s} {'d_L(z,0.70)':>12s} {'d_L(z,0.72)':>12s}")
+    print(
+        f"{'rank':>5s} {'det':>5s} {'Δlog L':>10s} {'d_L':>8s} {'z_true':>8s} {'σ_dL':>8s} {'d_L(z,0.70)':>12s} {'d_L(z,0.72)':>12s}"
+    )
     for rank, (det_id, delta, d_L, z, sigma) in enumerate(event_deltas[:50]):
         # d_L at the trial h values for this event's true redshift
         dl_at_70 = dist(z, h=0.70)
         dl_at_72 = dist(z, h=0.72)
-        print(f"{rank + 1:5d} {det_id:5d} {delta:+10.4f} {d_L:8.4f} {z:8.4f} {sigma:8.4f} {dl_at_70:12.4f} {dl_at_72:12.4f}")
+        print(
+            f"{rank + 1:5d} {det_id:5d} {delta:+10.4f} {d_L:8.4f} {z:8.4f} {sigma:8.4f} {dl_at_70:12.4f} {dl_at_72:12.4f}"
+        )
 
     # ================================================================
     # Analysis 3: d_L clustering of drop events
     # ================================================================
-    all_dl = np.array([det_info[d]["d_L"] for d in common_70_72 if posteriors[0.70][d] > 0 and posteriors[0.72][d] > 0])
-    all_z = np.array([det_info[d]["z_true"] for d in common_70_72 if posteriors[0.70][d] > 0 and posteriors[0.72][d] > 0])
+    all_dl = np.array(
+        [
+            det_info[d]["d_L"]
+            for d in common_70_72
+            if posteriors[0.70][d] > 0 and posteriors[0.72][d] > 0
+        ]
+    )
+    all_z = np.array(
+        [
+            det_info[d]["z_true"]
+            for d in common_70_72
+            if posteriors[0.70][d] > 0 and posteriors[0.72][d] > 0
+        ]
+    )
     all_deltas = np.array([d[1] for d in event_deltas])
 
     # Check for d_L clustering in top-50 worst events
     top50_dl = np.array([d[2] for d in event_deltas[:50]])
     top50_z = np.array([d[3] for d in event_deltas[:50]])
 
-    print(f"\n=== d_L STATISTICS ===")
-    print(f"All events: d_L range [{all_dl.min():.4f}, {all_dl.max():.4f}], median={np.median(all_dl):.4f}")
-    print(f"Top-50 drop: d_L range [{top50_dl.min():.4f}, {top50_dl.max():.4f}], median={np.median(top50_dl):.4f}")
-    print(f"All events: z range [{all_z.min():.4f}, {all_z.max():.4f}], median={np.median(all_z):.4f}")
-    print(f"Top-50 drop: z range [{top50_z.min():.4f}, {top50_z.max():.4f}], median={np.median(top50_z):.4f}")
+    print("\n=== d_L STATISTICS ===")
+    print(
+        f"All events: d_L range [{all_dl.min():.4f}, {all_dl.max():.4f}], median={np.median(all_dl):.4f}"
+    )
+    print(
+        f"Top-50 drop: d_L range [{top50_dl.min():.4f}, {top50_dl.max():.4f}], median={np.median(top50_dl):.4f}"
+    )
+    print(
+        f"All events: z range [{all_z.min():.4f}, {all_z.max():.4f}], median={np.median(all_z):.4f}"
+    )
+    print(
+        f"Top-50 drop: z range [{top50_z.min():.4f}, {top50_z.max():.4f}], median={np.median(top50_z):.4f}"
+    )
 
     # ================================================================
     # Analysis 4: Check ALL h-bin transitions for each event
@@ -203,7 +253,9 @@ def main() -> None:
     elif np.median(top50_dl) < np.median(all_dl) * 0.9:
         print("Top-50 drop events are at LOWER d_L — inconsistent with P_det boundary hypothesis")
     else:
-        print("Top-50 drop events have similar d_L distribution — suggests uniform effect, not boundary")
+        print(
+            "Top-50 drop events have similar d_L distribution — suggests uniform effect, not boundary"
+        )
 
 
 if __name__ == "__main__":
