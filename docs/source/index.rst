@@ -28,7 +28,7 @@ Browser-explorable versions of key pipeline figures (posteriors, sky maps,
 Fisher ellipses, H₀ convergence, M\ :sub:`z` improvement explorer) are
 available at:
 
-`Interactive Figures → <../interactive/>`_
+`Interactive Figures → <interactive/>`_
 
 Indices and tables
 ==================

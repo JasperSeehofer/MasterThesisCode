@@ -106,7 +106,7 @@ def _load_per_event_no_mass(
         vals = []
         for h in h_sorted:
             v = raw[h].get(eid, [])
-            vals.append(v[0] if v else 0.0)
+            vals.append(v[0] if v else np.nan)
         events[eid] = np.array(vals)
 
     return h_arr, events
@@ -151,7 +151,7 @@ def _load_per_event_with_mass_scalars(
     event_ids = sorted(raw[h_sorted[0]].keys(), key=int)
     events: dict[str, npt.NDArray[np.float64]] = {}
     for eid in event_ids:
-        vals = [raw[h].get(eid, 0.0) for h in h_sorted]
+        vals = [raw[h].get(eid, np.nan) for h in h_sorted]
         events[eid] = np.array(vals)
 
     return h_arr, events
@@ -297,7 +297,7 @@ def _combine_log(
     indices: npt.NDArray[np.intp],
 ) -> npt.NDArray[np.float64]:
     """Combine log-likelihoods of selected events into a normalized posterior."""
-    log_combined = np.sum(log_event_matrix[indices, :], axis=0)
+    log_combined = np.nansum(log_event_matrix[indices, :], axis=0)
     log_combined -= np.max(log_combined)
     return np.asarray(np.exp(log_combined), dtype=np.float64)
 
@@ -311,7 +311,7 @@ def _build_event_matrix(
     Drops events whose likelihood is zero everywhere.
     """
     event_ids = sorted(events.keys(), key=int)
-    valid_ids = [eid for eid in event_ids if np.max(events[eid]) > 0]
+    valid_ids = [eid for eid in event_ids if np.nanmax(events[eid]) > 0]
     n_h = len(h_values)
     matrix = np.empty((len(valid_ids), n_h), dtype=np.float64)
     for i, eid in enumerate(valid_ids):

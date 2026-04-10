@@ -688,14 +688,9 @@ def interactive_m_z_improvement(
             [{"type": "xy"}, {"type": "xy"}],
             [{"type": "xy", "colspan": 2}, None],
         ],
-        row_heights=[0.62, 0.38],
-        subplot_titles=[
-            "Metric vs N",
-            "Representative combined posterior",
-            "Improvement summary at selected N",
-        ],
-        horizontal_spacing=0.10,
-        vertical_spacing=0.18,
+        row_heights=[0.60, 0.40],
+        horizontal_spacing=0.13,
+        vertical_spacing=0.22,
     )
 
     # Per-metric trace blocks (each block = 5 traces: no-band-low,
@@ -915,6 +910,27 @@ def interactive_m_z_improvement(
             f"&rArr; distributions {agree}"
         )
 
+    # Subplot titles must be added BEFORE the frame loop so that
+    # fig.layout.annotations[:3] captures them in each frame (the frames
+    # slice exactly the first 3 annotations to preserve titles while
+    # replacing the summary-text annotation at index 3).
+    for _ann_text, _ann_x, _ann_y in [
+        ("Metric vs N", 0.20, 1.01),
+        ("Representative combined posterior", 0.77, 1.01),
+        ("Improvement summary at selected N", 0.20, 0.405),
+    ]:
+        fig.add_annotation(
+            text=f"<b>{_ann_text}</b>",
+            xref="paper",
+            yref="paper",
+            x=_ann_x,
+            y=_ann_y,
+            xanchor="center",
+            yanchor="bottom",
+            showarrow=False,
+            font={"size": 13},
+        )
+
     annotation_text_init = _summary_text(init_idx)
     fig.add_annotation(
         text=annotation_text_init,
@@ -1042,13 +1058,18 @@ def interactive_m_z_improvement(
     fig.update_yaxes(title_text="Posterior (peak-norm.)", row=1, col=2)
 
     fig.update_layout(
-        title="M_z improvement explorer — does adding the BH-mass channel tighten H0?",
-        height=720,
+        title={
+            "text": "M<sub>z</sub> improvement explorer — does adding the BH-mass channel tighten H<sub>0</sub>?",
+            "x": 0.5,
+            "xanchor": "center",
+            "font": {"size": 15},
+        },
+        height=950,
         sliders=[
             {
                 "active": init_idx,
                 "currentvalue": {"prefix": "N = ", "font": {"size": 14}},
-                "pad": {"t": 50, "b": 10},
+                "pad": {"t": 60, "b": 20},
                 "x": 0.0,
                 "xanchor": "left",
                 "y": 0.0,
@@ -1061,15 +1082,15 @@ def interactive_m_z_improvement(
             {
                 "type": "dropdown",
                 "buttons": dropdown_buttons,
-                "x": 0.45,
+                "x": 0.12,
                 "xanchor": "left",
-                "y": 1.10,
-                "yanchor": "top",
+                "y": 1.06,
+                "yanchor": "bottom",
                 "showactive": True,
                 "direction": "down",
             }
         ],
-        margin={"t": 110, "b": 110},
+        margin={"t": 120, "b": 150, "l": 80, "r": 20},
     )
     return fig
 

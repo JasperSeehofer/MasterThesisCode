@@ -7,6 +7,20 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Fixed
+- `plotting/convergence_analysis.py`: missing per-event likelihood values (empty
+  list in JSON, e.g. event 255 in `h_0_73.json`) now recorded as `nan` instead
+  of `0.0`, and combined via `nansum` in log-space — eliminates the sharp dip to
+  zero at h=0.73 in the representative combined posterior.
+- `plotting/interactive.py` (`interactive_m_z_improvement`): layout crowding
+  fixed — increased figure height (720→950 px), wider margins, repositioned
+  dropdown above panel A (no longer overlaps panel B title), manual subplot
+  titles placed via `add_annotation` before the frame loop (no auto-placement
+  bleed into adjacent panels), increased vertical spacing (0.18→0.22).
+- `docs/source/index.rst`: interactive figures link changed from `../interactive/`
+  to `interactive/` — was routing to `/interactive/` (wrong domain root) instead
+  of `/MasterThesisCode/interactive/`.
+
 ### Added
 - `interactive/m_z_improvement.html`: committed pre-generated HTML for the M_z
   improvement explorer — now reachable from the GitHub Pages interactive index.
