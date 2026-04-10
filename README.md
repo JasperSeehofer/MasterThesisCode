@@ -125,7 +125,7 @@ xdg-open docs/build/html/index.html  # Linux
 | `scripts/` | Utility scripts for post-processing simulation output |
 | `scripts/bias_investigation/` | H₀ posterior bias diagnostic scripts and findings |
 | `derivations/` | Physics derivation notes (dark siren likelihood) |
-| `interactive/` | Interactive Plotly HTML figures (posteriors, Fisher ellipses, sky map) |
+| `interactive/` | Interactive Plotly HTML figures (posteriors, Fisher ellipses, sky map, M_z improvement explorer) |
 | `paper/` | LaTeX paper source (REVTeX4-2 PRD format) |
 | `master_thesis_code_test/` | Test suite (mirrors source layout) |
 

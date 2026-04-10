@@ -8,6 +8,19 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- `interactive/m_z_improvement.html`: committed pre-generated HTML for the M_z
+  improvement explorer — now reachable from the GitHub Pages interactive index.
+- `interactive/index.html`: added entry for the M_z improvement explorer.
+  All five interactive figures are now linked from the index page.
+
+### Fixed
+- `.github/workflows/ci.yml`: Pages deploy step now copies all committed
+  `interactive/*.html` files (not just `index.html`), so every interactive
+  figure is live on GitHub Pages after each push to main.
+- Refreshed `interactive/combined_posterior.html`, `sky_map.html`,
+  `fisher_ellipses.html`, `h0_convergence.html` from latest `simulations/` data.
+
+### Added
 - `plotting/_metrics.py`: pure-function constraint-quality metrics for H₀ posteriors
   — HDI width, relative precision, KL info gain, Jensen–Shannon divergence (bits),
   MAP bias, and the paired-curve `effective_event_gain` interpolated in

@@ -130,7 +130,7 @@ jobs:
       - name: Generate interactive figures
         run: |
           mkdir -p _site/interactive
-          cp interactive/index.html _site/interactive/
+          cp interactive/*.html _site/interactive/
           if [ -d cluster_results ]; then
             uv run python -m master_thesis_code cluster_results --generate_interactive _site/interactive/ || true
           fi
