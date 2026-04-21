@@ -66,10 +66,7 @@ def compute_band_counts(
         ``{"5": count, "10": count, "15": count}``.
     """
     offset = np.abs(qS_values - np.pi / 2)
-    return {
-        str(band): int(np.sum(offset < band * np.pi / 180))
-        for band in bands_deg
-    }
+    return {str(band): int(np.sum(offset < band * np.pi / 180)) for band in bands_deg}
 
 
 def compute_band_fractions(
@@ -153,17 +150,14 @@ def audit_coordinate_bug(
     df = pd.read_csv(csv_path)
     if _QS_COLUMN not in df.columns:
         raise KeyError(
-            f"Expected column {_QS_COLUMN!r} in {csv_path}; got columns: "
-            f"{list(df.columns)[:10]}..."
+            f"Expected column {_QS_COLUMN!r} in {csv_path}; got columns: {list(df.columns)[:10]}..."
         )
     qS_values = df[_QS_COLUMN].to_numpy(dtype=np.float64)
     event_count = int(len(qS_values))
 
     band_counts = compute_band_counts(qS_values)
     band_fractions = compute_band_fractions(band_counts, event_count)
-    expected_fractions = {
-        str(band): expected_fraction_isotropic(band) for band in _BANDS_DEG
-    }
+    expected_fractions = {str(band): expected_fraction_isotropic(band) for band in _BANDS_DEG}
 
     # Build summary dict (flat, JSON-serializable, snake_case).
     timestamp = datetime.datetime.now(datetime.UTC).isoformat() + "Z"
@@ -209,9 +203,7 @@ def audit_coordinate_bug(
         obs = band_fractions[str(band)]
         exp = expected_fractions[str(band)]
         dev = obs - exp
-        md_lines.append(
-            f"| ±{band}° | {count} | {obs:.4f} | {exp:.4f} | {dev:+.4f} |"
-        )
+        md_lines.append(f"| ±{band}° | {count} | {obs:.4f} | {exp:.4f} | {dev:+.4f} |")
     md_lines.extend(
         [
             "",
@@ -289,9 +281,7 @@ def main(argv: list[str] | None = None) -> None:
         csv_path=Path(args.csv),
         output_dir=Path(args.output_dir),
     )
-    print(
-        f"Wrote audit artifacts to {args.output_dir}/ for {summary['event_count']} events."
-    )
+    print(f"Wrote audit artifacts to {args.output_dir}/ for {summary['event_count']} events.")
 
 
 if __name__ == "__main__":

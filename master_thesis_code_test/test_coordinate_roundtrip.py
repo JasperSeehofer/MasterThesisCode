@@ -44,10 +44,7 @@ from master_thesis_code_test.fixtures.coordinate import (
 )
 
 # D-01: Locked xfail reason string. Phase 36 removes these markers.
-_XFAIL_REASON = (
-    "Phase 36 fixes coordinate frame bug — "
-    "see .planning/milestones/v2.2-..."
-)
+_XFAIL_REASON = "Phase 36 fixes coordinate frame bug — see .planning/milestones/v2.2-..."
 
 
 class TestEquatorialToEclipticGroundTruth:
@@ -104,7 +101,7 @@ class TestEquatorialToEclipticGroundTruth:
         assert abs(result.lambda_rad - np.pi / 2) < tol_lambda_rad, (
             f"Summer solstice should have lambda≈pi/2, got "
             f"lambda={np.rad2deg(result.lambda_rad)} deg "
-            f"(diff={np.rad2deg(abs(result.lambda_rad - np.pi/2)):.4f}°)"
+            f"(diff={np.rad2deg(abs(result.lambda_rad - np.pi / 2)):.4f}°)"
         )
 
     def test_ecliptic_pole_has_beta_90(self) -> None:
@@ -183,9 +180,7 @@ class TestBallTreeRecoversNorthCelestialPole:
 
         # Build a catalog in DEGREES equatorial (already_rotated=False):
         # Inject a single row with equatorial NCP.
-        df = synthetic_catalog_builder(
-            n=1, sky_band="north_pole", seed=42, already_rotated=False
-        )
+        df = synthetic_catalog_builder(n=1, sky_band="north_pole", seed=42, already_rotated=False)
         df.iloc[0, df.columns.get_loc(InternalCatalogColumns.PHI_S)] = 0.0  # RA=0
         df.iloc[0, df.columns.get_loc(InternalCatalogColumns.THETA_S)] = 90.0  # Dec=+90
 
@@ -229,9 +224,7 @@ class TestSummerSolsticeRotation:
         """Ingestion of (RA=90°, Dec=+23.4393°) must yield ecliptic theta_polar≈pi/2."""
         from master_thesis_code.galaxy_catalogue.handler import GalaxyCatalogueHandler
 
-        df = synthetic_catalog_builder(
-            n=1, sky_band="uniform", seed=42, already_rotated=False
-        )
+        df = synthetic_catalog_builder(n=1, sky_band="uniform", seed=42, already_rotated=False)
         df.iloc[0, df.columns.get_loc(InternalCatalogColumns.PHI_S)] = 90.0  # RA
         df.iloc[0, df.columns.get_loc(InternalCatalogColumns.THETA_S)] = 23.4392911  # Dec
 
@@ -261,9 +254,7 @@ class TestEclipticPoleIngestion:
         """Ingestion of (RA=270°, Dec=+66.5607°) must yield theta_polar≈0."""
         from master_thesis_code.galaxy_catalogue.handler import GalaxyCatalogueHandler
 
-        df = synthetic_catalog_builder(
-            n=1, sky_band="uniform", seed=42, already_rotated=False
-        )
+        df = synthetic_catalog_builder(n=1, sky_band="uniform", seed=42, already_rotated=False)
         df.iloc[0, df.columns.get_loc(InternalCatalogColumns.PHI_S)] = 270.0  # RA
         df.iloc[0, df.columns.get_loc(InternalCatalogColumns.THETA_S)] = 66.5607083  # Dec
 
@@ -293,9 +284,7 @@ class TestVernalEquinoxRoundTrip:
         """Dec=0 galaxy (on both equators) must be retrievable via BallTree."""
         from master_thesis_code.galaxy_catalogue.handler import GalaxyCatalogueHandler
 
-        df = synthetic_catalog_builder(
-            n=1, sky_band="uniform", seed=42, already_rotated=False
-        )
+        df = synthetic_catalog_builder(n=1, sky_band="uniform", seed=42, already_rotated=False)
         df.iloc[0, df.columns.get_loc(InternalCatalogColumns.PHI_S)] = 0.0  # RA
         df.iloc[0, df.columns.get_loc(InternalCatalogColumns.THETA_S)] = 0.0  # Dec
 
