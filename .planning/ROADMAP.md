@@ -16,7 +16,7 @@ Fix all 10 findings from the 2026-04-21 pre-batch audit — two critical coordin
 
 ## Phases
 
-- [ ] **Phase 35: Coordinate Bug Characterization** [GSD] — Failing tests + baseline equator-band count before any fix
+- [x] **Phase 35: Coordinate Bug Characterization** [GSD] — Failing tests + baseline equator-band count before any fix (completed 2026-04-21)
 - [ ] **Phase 36: Coordinate Frame Fix** [GPD] — Equatorial→ecliptic rotation, correct polar Cartesian embedding, eigenvalue sky ellipse
 - [ ] **Phase 37: Parameter Estimation Correctness** [GSD+GPD] — Thread h into host-distance, per-parameter derivative_epsilon, plus hygiene (Omega_m limits, unified SNR threshold, C/1000, idempotency guard)
 - [ ] **Phase 38: Statistical Correctness** [GSD+GPD] — L_cat form (proof or fix), P_det extrapolation alignment, per-event quadrature-weight diagnostic
@@ -38,9 +38,9 @@ Fix all 10 findings from the 2026-04-21 pre-batch audit — two critical coordin
   3. A `.planning/audit_coordinate_bug.md` artifact reports the baseline count and percentage of events in the production CRB CSV whose recovered `qS` lands within ±5° of the ecliptic equator (`|qS − π/2| < 5° × π/180`)
   4. Baseline artifact is committed so subsequent phases can reference it
 **Plans**: 3 plans
-  - [ ] 35-01-PLAN.md — Fixtures module: synthetic_catalog_builder, equatorial_to_ecliptic_astropy, build_balltree (Wave 1)
-  - [ ] 35-02-PLAN.md — RED test file: 6 xfail(strict) tests + 3 ground-truth checks covering D-04/D-05/D-06/D-07 scenarios (Wave 2)
-  - [ ] 35-03-PLAN.md — Baseline audit CLI + 3 committed artifacts (md, json, png) for ±5°/±10°/±15° ecliptic-equator bands (Wave 2)
+  - [x] 35-01-PLAN.md — Fixtures module: synthetic_catalog_builder, equatorial_to_ecliptic_astropy, build_balltree (Wave 1)
+  - [x] 35-02-PLAN.md — RED test file: 6 xfail(strict) tests + 3 ground-truth checks covering D-04/D-05/D-06/D-07 scenarios (Wave 2)
+  - [x] 35-03-PLAN.md — Baseline audit CLI + 3 committed artifacts (md, json, png) for ±5°/±10°/±15° ecliptic-equator bands (Wave 2)
 
 ### Phase 36: Coordinate Frame Fix
 **Goal**: Fix both critical coordinate bugs — apply equatorial→ecliptic rotation on catalog ingestion, correct the BallTree embedding to match polar-angle convention, and replace the axis-aligned search radius with an eigenvalue-based ellipse on the 2×2 sky covariance.
@@ -153,7 +153,7 @@ Fix all 10 findings from the 2026-04-21 pre-batch audit — two critical coordin
 
 | Phase | Routing | Plans Complete | Status | Completed |
 |-------|---------|----------------|--------|-----------|
-| 35. Coordinate Bug Characterization | GSD | 0/3 | Planned | - |
+| 35. Coordinate Bug Characterization | GSD | 3/3 | Complete    | 2026-04-21 |
 | 36. Coordinate Frame Fix | GPD | 0/? | Not started | - |
 | 37. Parameter Estimation Correctness | GSD+GPD | 0/? | Not started | - |
 | 38. Statistical Correctness | GSD+GPD | 0/? | Not started | - |

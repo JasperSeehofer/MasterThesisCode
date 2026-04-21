@@ -9,7 +9,7 @@ Fix all 10 findings from the 2026-04-21 pre-batch audit — two critical coordin
 
 ### Coordinate Frame Correctness
 
-- [ ] **COORD-01**: Failing-test-first characterization exists: round-trip tests for equatorial↔ecliptic and polar↔latitude conventions, plus baseline counts of events in ±5° ecliptic-equator band from existing CRB CSV
+- [x] **COORD-01**: Failing-test-first characterization exists: round-trip tests for equatorial↔ecliptic and polar↔latitude conventions, plus baseline counts of events in ±5° ecliptic-equator band from existing CRB CSV
 - [ ] **COORD-02**: BallTree embedding uses correct polar-to-Cartesian formula `(sin θ cos φ, sin θ sin φ, cos θ)` where θ is polar angle ∈ [0, π]; applied consistently in both `setup_galaxy_catalog_balltree` and `get_possible_hosts_from_ball_tree`
 - [ ] **COORD-03**: GLADE catalog angles are rotated from equatorial J2000 (RA, Dec) to ecliptic SSB (φ, θ_polar) via `astropy.coordinates.SkyCoord.transform_to(BarycentricTrueEcliptic())` during catalog ingestion; docstring documents the stored frame
 - [ ] **COORD-04**: Sky candidate-host search radius derived from 2×2 sky covariance eigendecomposition (including |sin θ| Jacobian on φ-component) rather than axis-aligned `max(σ_φ, σ_θ)`
