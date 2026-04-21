@@ -1,17 +1,16 @@
 ---
 gsd_state_version: 1.0
 milestone: v2.2
-milestone_name: Pipeline Correctness
-status: roadmap_defined
-stopped_at: Roadmap defined — Phase 35 ready to plan
-last_updated: "2026-04-21T00:00:00.000Z"
-last_activity: 2026-04-21
+milestone_name: milestone
+status: "Roadmap defined; ready for `/gsd:plan-phase 35`"
+stopped_at: Phase 35 context gathered
+last_updated: "2026-04-21T20:57:01.781Z"
+last_activity: 2026-04-21 — ROADMAP.md written with 8 phases (35–42), 28 requirements mapped (100% coverage)
 progress:
   total_phases: 8
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
-  percent: 0
 ---
 
 # Project State
@@ -92,6 +91,7 @@ Last activity: 2026-04-21 — ROADMAP.md written with 8 phases (35–42), 28 req
    - `_crb_flush_interval=1` + FFT cache cleared every iteration.
 
 **User decisions (from AskUserQuestion):**
+
 - Coord: fix + re-evaluate existing CRBs (no re-simulation).
 - L_cat: prove equivalence (or fix if not equivalent).
 - Injection: staged — densify M×z×d_L first, then sky-dependent P_det.
@@ -106,6 +106,7 @@ Phase 30 (Baseline/comparison), Phase 31 (Catalog-only diagnostic), Phase 32 (L_
 ### Phase Notes (v2.0 — paused)
 
 **Phase 26 (Paper Draft) — COMPLETE:**
+
 - All sections drafted: Introduction, Method, Results, Discussion, Conclusions, Appendix A
 - 25 RESULT PENDING markers awaiting post-v2.2 re-evaluation
 
@@ -113,9 +114,9 @@ Phase 30 (Baseline/comparison), Phase 31 (Catalog-only diagnostic), Phase 32 (L_
 
 ## Session Continuity
 
-Last session: 2026-04-21
-Stopped at: Roadmap defined — Phase 35 (Coordinate Bug Characterization) ready to plan
-Resume file: None
+Last session: --stopped-at
+Stopped at: Phase 35 context gathered
+Resume file: --resume-file
 Next command: `/gsd:plan-phase 35`
 
 ## Quick Tasks Completed
