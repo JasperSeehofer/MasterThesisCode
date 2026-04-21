@@ -1,0 +1,22 @@
+{
+  "event_count": 42,
+  "band_counts": {
+    "5": 0,
+    "10": 2,
+    "15": 5
+  },
+  "band_fractions": {
+    "5": 0.0,
+    "10": 0.047619047619047616,
+    "15": 0.11904761904761904
+  },
+  "expected_fraction_5deg": 0.08715574274765817,
+  "expected_fractions_all_bands": {
+    "5": 0.08715574274765817,
+    "10": 0.17364817766693033,
+    "15": 0.25881904510252074
+  },
+  "csv_source_path": "/home/jasper/Repositories/MasterThesisCode/simulations/cramer_rao_bounds.csv",
+  "git_commit": "edd6f03ad7e05f341be5981ac87f67250175a91a",
+  "timestamp": "2026-04-21T21:42:02.736778+00:00Z"
+}

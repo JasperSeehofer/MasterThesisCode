@@ -23,6 +23,8 @@ reduced_galaxy_catalogue.csv
 # Figures (regenerable)
 saved_figures/
 *.png
+# Exception: committed baseline audit histograms in .planning/
+!.planning/*.png
 
 # Run metadata (per-run)
 run_metadata.json
