@@ -10,6 +10,7 @@ Measure H₀ from simulated EMRI dark siren events with galaxy catalog completen
 
 ## Shipped Milestones
 
+- **v2.1 H₀ Bias Resolution** — shipped 2026-04-09 (Phases 30–34, 10 plans). L_comp denominator fixed to full-volume D(h) per Gray Eq. A.19 → MAP 0.60→0.73, bias −17.8%→0.0%. Baseline infrastructure, catalog-only diagnostic, P_det grid validation, Fisher condition-number gate. Full details: `.planning/milestones/v2.1-biasres-ROADMAP.md`
 - **v1.5 Galaxy Catalog Completeness Correction** — shipped 2026-04-04 (Phases 24-25, GPD-tracked). GLADE+ completeness function f(z,h) and Gray et al. (2020) Eq. 9 completeness-corrected likelihood. Full artifacts: `.gpd/phases/24-completeness-estimation/`, `.gpd/phases/25-likelihood-correction/`
 - **v1.4 Posterior Numerical Stability** — shipped 2026-04-02 (Phases 21-23). Log-space accumulation, physics-motivated likelihood floor, underflow detection. Deployed to bwUniCluster at `5793f70`. Full details: `.planning/milestones/v1.4-ROADMAP.md`
 - **v1.3 Visualization Overhaul** — shipped 2026-04-02 (Phases 14-19). Full publication-quality visualization stack: centralized style, Fisher data layer, enhanced existing plots, sky maps + corner plots + convergence diagnostics, 15-figure batch pipeline. Full details: `.planning/milestones/v1.3-ROADMAP.md`
@@ -17,11 +18,23 @@ Measure H₀ from simulated EMRI dark siren events with galaxy catalog completen
 - **v1.1 Clean Simulation Campaign** — shipped 2026-03-29 (Phases 6-8). Data cleanup, cluster access, end-to-end validation. Full details: `.planning/milestones/v1.1-ROADMAP.md`
 - **v1.0 EMRI HPC Integration** — shipped 2026-03-27 (Phases 1-5). CPU-safe imports, batch scripts, cluster env, SLURM jobs, documentation. Full details: `.planning/milestones/v1.0-ROADMAP.md`
 
-## Current State (v2.0 active, 2026-04-07)
+## Current State (v2.2 active, 2026-04-21)
 
-All 6 milestones shipped (v1.0–v1.5). 25 phases, 43 plans completed across 12 days. Pipeline runs end-to-end on bwUniCluster 3.0 with completeness correction: GPU-accelerated EMRI simulation → Cramér-Rao bounds → Bayesian H₀ posterior with Gray et al. (2020) catalog+completion terms. v2.0 Paper milestone active: PRD paper draft complete (11 pages, 25 RESULT PENDING markers), production run blocked on cluster filesystem recovery.
+All 7 prior milestones shipped (v1.0–v1.5, v2.1). v2.1 fixed the completion-term
+bias to MAP=0.73 at bias=0.0% with N=59 events. The 2026-04-21 pre-batch audit
+(across statistical, physical, and HPC axes) surfaced **10 new findings**, two
+critical: (1) the GLADE catalog is matched to waveform ecliptic `qS`/`phiS` with
+no equatorial→ecliptic rotation, and (2) the BallTree embedding mixes polar and
+latitude conventions, collapsing all ecliptic-equator galaxies to a single axis
+and artificially spreading near-polar galaxies.
 
-**Remaining physics bugs** (tracked in CLAUDE.md): wCDM params silently ignored, hardcoded 10% σ(d_L), WMAP-era cosmology, galaxy redshift uncertainty scaling.
+v2.2 Pipeline Correctness addresses all 10 findings before the next cluster
+batch. v2.0 Paper remains paused pending v2.2 re-evaluation. Plan artifact:
+`~/.claude/plans/i-want-a-last-elegant-feather.md`.
+
+**Remaining physics bugs** (tracked in CLAUDE.md, explicitly deferred past v2.2):
+wCDM params silently ignored, Pipeline-A hardcoded 10% σ(d_L), WMAP-era
+cosmology, galaxy redshift uncertainty (1+z)³ scaling.
 
 ## Requirements
 
@@ -55,31 +68,48 @@ All 6 milestones shipped (v1.0–v1.5). 25 phases, 43 plans completed across 12 
 - ✓ Test simulation run completed (3 tasks, 10 steps, seed 100) with timing data — v1.1 Phase 8
 - ✓ Evaluation pipeline produces H₀ posterior from fresh Cramér-Rao bounds — v1.1 Phase 8
 - ✓ Results validated (SNR physical, seeds correct, detection rates reasonable) — v1.1 Phase 8
+- ✓ Baseline/comparison infrastructure (`BaselineSnapshot`, `--save_baseline`, `--compare_baseline`) — v2.1 Phase 30
+- ✓ Catalog-only diagnostic (`--catalog_only` flag, per-event CSV of L_cat, L_comp, f_i) — v2.1 Phase 31
+- ✓ Completion term: full-volume D(h) = ∫P_det·dVc/dz dz per Gray Eq. A.19, MAP 0.60→0.73, bias 0.0% — v2.1 Phase 32 (GPD)
+- ✓ P_det grid resolution validated (60-bin configurable, full 38-point cluster sweep, zero delta vs 30-bin) — v2.1 Phase 33
+- ✓ Fisher matrix quality gates (`allow_singular=True` removed, condition-number gate, `fisher_quality.csv`, `plot_fisher_diagnostics`) — v2.1 Phase 34
 
-## Current Milestone: v2.1 H₀ Bias Resolution
+## Current Milestone: v2.2 Pipeline Correctness
 
-**Goal:** Systematically diagnose and fix the per-event H₀ posterior bias (MAP h=0.66 vs true h=0.73) that compounds with more detections, testing each fix in isolation to measure its effect.
+**Goal:** Fix all 10 findings from the 2026-04-21 pre-batch audit — two critical coordinate-frame bugs (no equatorial→ecliptic rotation + singular BallTree embedding at ecliptic equator), plus L_cat drift from Gray Eq. 24-25, P_det extrapolation asymmetry, h-hardcode in Fisher CRBs, uniform derivative_epsilon, and latent correctness hygiene — before investing new cluster compute on the next simulation batch and extended P_det injection run.
 
 **Target features:**
-- Catalog-only diagnostic (f_i=1.0) to confirm completion term as bias source
-- Diagnostic logging of L_cat, L_comp, f_i per event per h value
-- Fix completion term source population prior (replace dVc/dz with EMRI rate)
-- Increase P_det grid resolution (30→60 bins)
-- Handle degenerate Fisher matrices (replace allow_singular=True)
-- Before/after posterior comparison (MAP h, width, bias %) for each change
+- Failing-test-first characterization of the coordinate bugs + per-event equator-fraction baseline
+- Equatorial→ecliptic rotation via `astropy.coordinates.SkyCoord` + correct polar Cartesian embedding + eigenvalue-based sky search radius
+- Thread `h` through `ParameterSpace.set_host_galaxy_parameters`
+- Per-parameter `derivative_epsilon` (relative for M/mu/d_L, absolute for angles)
+- L_cat form: analytical proof of Gray Eq. 24-25 equivalence OR canonical replacement (`/physics-change` gated)
+- P_det extrapolation alignment between numerator and denominator + per-event quadrature-weight-outside-grid diagnostic
+- Correctness hygiene: swapped `Omega_m` limits, unified SNR threshold, `SPEED_OF_LIGHT_KM_S = C / 1000`
+- HPC safe wins: `_crb_flush_interval` 1→25, remove per-iteration FFT cache clear, `_get_xp` shim in `parameter_estimation.py`, dead code removal, `flip_hx=True` verification
+- Visualization safe wins: `apply_style(use_latex=True)` in production figures, bootstrap HDI bands on static H₀ convergence plot
+- Verification gate: re-evaluate existing CRBs under fixed frame; abort new compute if MAP at h=0.73 shifts >5%
+- Staged cluster campaign: Stage 1 densifies M×z×d_L injection grid (conditional on diagnostics); Stage 2 adds sky-dependent P_det (conditional on Stage 1 anisotropy check)
 
-**Context:** Posterior peaks at h=0.66 (without BH mass) / h=0.68 (with BH mass) instead of true h=0.73. With 531 events, L(h=0.66)/L(h=0.73) compounds to ~10⁶⁵. Root cause: completion term L_comp gets 79% weight (GLADE completeness ~21% at EMRI distances) and carries systematic low-h bias via dVc/dz volume prior. P_det grid extrapolation fix (commit 44d5358) reduced bias from -9.2% to -6.9% but residual remains.
+**Context:** Current self-consistency (sim uses same buggy frame as eval) hid the bugs. Any real dark-siren science requires them fixed. User decisions: fix + re-evaluate (no re-simulation); prove L_cat equivalence (or fix); safe HPC/viz wins only (no CUDA-stream refactor, no full viz overhaul); staged injection campaign.
 
-**Debug artifacts:** `.planning/debug/h0-inference-worsening.md`, `.gpd/debug/h0-posterior-bias-worsening.md`
+**Plan artifact:** `~/.claude/plans/i-want-a-last-elegant-feather.md`
+
+**Audit artifacts:** `.claude/projects/…/memory/project_coordinate_bugs.md`, `project_audit_2026_04_21.md`
 
 ### Active
 
-- [ ] Confirm L_comp as primary bias source via f_i=1.0 catalog-only evaluation
-- [ ] Add diagnostic logging (L_cat, L_comp, f_i per event per h)
-- [ ] Fix completion term source population prior
-- [ ] Increase P_det grid resolution
-- [ ] Handle degenerate Fisher matrices
-- [ ] Quantitative before/after comparison for each fix
+- [ ] Coordinate bug characterization (failing tests + equator-fraction baseline)
+- [ ] Equatorial→ecliptic rotation + correct polar Cartesian embedding + sky ellipse search
+- [ ] Thread `h` through `set_host_galaxy_parameters`; per-parameter `derivative_epsilon`
+- [ ] L_cat equivalence proof (or canonical Gray-form fix)
+- [ ] P_det extrapolation alignment; per-event diagnostic
+- [ ] Correctness hygiene (Omega_m limits, SNR threshold, `C/1000`)
+- [ ] HPC safe wins (`_crb_flush_interval`, FFT cache, `_get_xp` shim, `flip_hx` verify, dead code)
+- [ ] Visualization safe wins (`use_latex=True`, HDI bands)
+- [ ] Verification gate (re-evaluate existing CRBs; abort if MAP shifts >5%)
+- [ ] Stage 1 injection: densified M×z×d_L grid (conditional on diagnostics)
+- [ ] Stage 2 injection: sky-dependent P_det (conditional on Stage 1)
 
 ### Paused: v2.0 Paper (GPD-tracked)
 
@@ -164,4 +194,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-08 — v2.1 H₀ Bias Resolution milestone started*
+*Last updated: 2026-04-21 — v2.2 Pipeline Correctness milestone started (post pre-batch audit)*
