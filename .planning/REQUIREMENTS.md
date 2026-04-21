@@ -88,42 +88,44 @@ Fix all 10 findings from the 2026-04-21 pre-batch audit — two critical coordin
 
 ## Traceability
 
-| Requirement | Phase | Status |
-|-------------|-------|--------|
-| COORD-01 | TBD | Pending |
-| COORD-02 | TBD | Pending |
-| COORD-03 | TBD | Pending |
-| COORD-04 | TBD | Pending |
-| COORD-05 | TBD | Pending |
-| STAT-01 | TBD | Pending |
-| STAT-02 | TBD | Pending |
-| STAT-03 | TBD | Pending |
-| STAT-04 | TBD | Pending |
-| PE-01 | TBD | Pending |
-| PE-02 | TBD | Pending |
-| PE-03 | TBD | Pending |
-| PE-04 | TBD | Pending |
-| PE-05 | TBD | Pending |
-| HPC-01 | TBD | Pending |
-| HPC-02 | TBD | Pending |
-| HPC-03 | TBD | Pending |
-| HPC-04 | TBD | Pending |
-| HPC-05 | TBD | Pending |
-| VIZ-01 | TBD | Pending |
-| VIZ-02 | TBD | Pending |
-| VERIFY-01 | TBD | Pending |
-| VERIFY-02 | TBD | Pending |
-| VERIFY-03 | TBD | Pending |
-| VERIFY-04 | TBD | Pending |
-| VERIFY-05 | TBD | Pending |
-| CAMP-01 | TBD | Pending |
-| CAMP-02 | TBD | Pending |
+| Requirement | Phase | Routing | Status |
+|-------------|-------|---------|--------|
+| COORD-01 | Phase 35 | GSD | Pending |
+| COORD-02 | Phase 36 | GPD | Pending |
+| COORD-03 | Phase 36 | GPD | Pending |
+| COORD-04 | Phase 36 | GPD | Pending |
+| COORD-05 | Phase 37 | GSD | Pending |
+| STAT-01 | Phase 38 | GSD (if proof) / GPD (if fix) | Pending |
+| STAT-02 | Phase 38 | GSD | Pending |
+| STAT-03 | Phase 38 | GPD | Pending |
+| STAT-04 | Phase 38 | GSD | Pending |
+| PE-01 | Phase 37 | GPD | Pending |
+| PE-02 | Phase 37 | GPD | Pending |
+| PE-03 | Phase 37 | GSD | Pending |
+| PE-04 | Phase 37 | GSD | Pending |
+| PE-05 | Phase 37 | GSD | Pending |
+| HPC-01 | Phase 39 | GSD | Pending |
+| HPC-02 | Phase 39 | GSD | Pending |
+| HPC-03 | Phase 39 | GSD | Pending |
+| HPC-04 | Phase 39 | GSD | Pending |
+| HPC-05 | Phase 39 | GSD (verify) / GPD (if removed) | Pending |
+| VIZ-01 | Phase 39 | GSD | Pending |
+| VIZ-02 | Phase 39 | GSD | Pending |
+| VERIFY-01 | Phase 40 | GSD | Pending |
+| VERIFY-02 | Phase 40 | GPD (runs physics-changed code) | Pending |
+| VERIFY-03 | Phase 40 | GSD | Pending |
+| VERIFY-04 | Phase 40 | GSD | Pending |
+| VERIFY-05 | Phase 40 | GSD | Pending |
+| CAMP-01 | Phase 41 | GSD (conditional on VERIFY-05) | Pending |
+| CAMP-02 | Phase 42 | GSD (conditional on VERIFY-04 / CAMP-01) | Pending |
 
 **Coverage:**
 - v2.2 requirements: 28 total
-- Mapped to phases: 0 (roadmap pending)
-- Unmapped: 28 (will be filled by roadmapper)
+- Mapped to phases: 28 ✓ (100%)
+- Unmapped: 0
+
+**Physics-gate REQ-IDs** (trigger `/physics-change` protocol when executed): COORD-02, COORD-03, COORD-04, PE-01, PE-02, STAT-03, STAT-01 (conditional on fix), HPC-05 (conditional on removal), VERIFY-02 (as runner of physics-changed code).
 
 ---
 *Requirements defined: 2026-04-21*
-*Last updated: 2026-04-21 — pending roadmap*
+*Last updated: 2026-04-21 — traceability filled with phase numbers (Phase 35–42) per ROADMAP.md*

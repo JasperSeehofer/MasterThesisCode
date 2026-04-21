@@ -1,321 +1,194 @@
-# Roadmap: EMRI Parameter Estimation
+# Roadmap: v2.2 Pipeline Correctness
 
-## Milestones
+**Milestone:** v2.2 Pipeline Correctness
+**Defined:** 2026-04-21
+**Source plan:** `~/.claude/plans/i-want-a-last-elegant-feather.md`
+**Granularity:** standard (8 phases)
+**Coverage:** 28/28 requirements mapped
 
-- ✅ **v1.0 EMRI HPC Integration** — Phases 1-5 (shipped 2026-03-27)
-- ✅ **v1.1 Clean Simulation Campaign** — Phases 6-8 (shipped 2026-03-29)
-- ✅ **v1.2 Production Campaign & Physics Corrections** — Phases 9-13 (shipped 2026-04-01)
-- ✅ **v1.3 Visualization Overhaul** — Phases 14-19 (shipped 2026-04-02)
-- ✅ **v1.4 Posterior Numerical Stability** — Phases 21-23 (shipped 2026-04-02)
-- ✅ **v1.5 Galaxy Catalog Completeness Correction** — Phases 24-25 (shipped 2026-04-04, GPD-tracked)
-- 🔄 **v2.0 Paper** — Phases 26-28 (paused, GPD-tracked)
-- ✅ **v2.1 H0 Bias Resolution** — Phases 30-34 (shipped 2026-04-09, GSD/GPD mixed)
-- ⏸ **v2.1 Publication Figures** — Phases 35-39 (paused pending bias fix)
+> **Scope note:** This ROADMAP.md is v2.2-scoped only. The prior cumulative roadmap is preserved at `.planning/milestones/v2.1-cumulative-ROADMAP.md`. Individual shipped milestone roadmaps live at `.planning/milestones/v{1.0,1.1,1.2,1.3,1.4,2.1-biasres}-ROADMAP.md`. Last shipped v2.1 BiasRes phase was Phase 34. v2.1 Publication Figures (Phases 29, 35 already completed; 36-38 paused) will resume post-v2.2 — the PubFigs Phase 35 number collides with the v2.2 Phase 35 chosen here; since v2.2 is the active milestone and the user instruction was explicit ("Start at Phase 35"), PubFigs-paused phases will need renumbering when resumed.
+
+## Goal
+
+Fix all 10 findings from the 2026-04-21 pre-batch audit — two critical coordinate-frame bugs (no equatorial→ecliptic rotation + singular BallTree embedding at ecliptic equator), plus L_cat drift from Gray Eq. 24-25, P_det extrapolation asymmetry, h-hardcode in Fisher CRBs, uniform derivative_epsilon, and latent correctness hygiene — before investing new cluster compute on the next simulation batch and extended P_det injection run.
+
+**Verification gate:** existing CRBs re-evaluated under fixed frame. Abort new cluster compute if MAP at h=0.73 shifts >5% from v2.1 baseline MAP=0.73.
 
 ## Phases
 
-<details>
-<summary>✅ v1.0 EMRI HPC Integration (Phases 1-5) — SHIPPED 2026-03-27</summary>
-
-- [x] Phase 1: Code Hardening (2/2 plans) — CPU-safe imports, --use_gpu/--num_workers CLI flags
-- [x] Phase 2: Batch Compatibility (1/1 plan) — Non-interactive merge/prepare scripts with entry points
-- [x] Phase 3: Cluster Environment (1/1 plan) — modules.sh + setup.sh for bwUniCluster 3.0
-- [x] Phase 4: SLURM Job Infrastructure (3/3 plans) — simulate/merge/evaluate pipeline with dependency chaining
-- [x] Phase 5: Documentation (2/2 plans) — cluster/README.md quickstart, CLAUDE.md/README.md sections
-
-Full details: `.planning/milestones/v1.0-ROADMAP.md`
-
-</details>
-
-<details>
-<summary>✅ v1.1 Clean Simulation Campaign (Phases 6-8) — SHIPPED 2026-03-29</summary>
-
-- [x] Phase 6: Data Cleanup (1/1 plan) — Removed stale artifacts, verified .gitignore
-- [x] Phase 7: Cluster Access (1/1 plan) — SSH ControlMaster, environment preflight
-- [x] Phase 8: Simulation Campaign (2/2 plans) — Smoke-test pipeline, validation, H0 posterior
-
-Full details: `.planning/milestones/v1.1-ROADMAP.md`
-
-</details>
-
-<details>
-<summary>✅ v1.2 Production Campaign & Physics Corrections (Phases 9-13) — SHIPPED 2026-04-01</summary>
-
-- [x] Phase 9: Galactic Confusion Noise (1/1 plan) — Added galactic foreground to LISA PSD
-- [x] Phase 10: Five-Point Stencil Derivatives (1/1 plan) — O(epsilon^4) Fisher matrix derivatives
-- [x] Phase 11: Validation Campaign (2/2 plans) — Corrected physics validated at small scale
-- [x] Phase 11.1: Simulation-Based Detection Probability (5/5 plans) — Replaced KDE P_det with simulation-based
-- [x] Phase 12: Production Campaign (1/1 plan) — 100+ task campaign on bwUniCluster
-- [x] Phase 13: H0 Posterior Sweep (1/1 plan) — Full H0 posterior over [0.6, 0.9]
-
-Full details: `.planning/milestones/v1.2-ROADMAP.md`
-
-</details>
-
-<details>
-<summary>✅ v1.3 Visualization Overhaul (Phases 14-19) — SHIPPED 2026-04-02</summary>
-
-- [x] Phase 14: Test Infrastructure & Safety Net (2/2 plans) — 23 smoke tests + rcParams regression test
-- [x] Phase 15: Style Infrastructure (1/1 plan) — _colors.py, _labels.py, REVTeX presets, LaTeX toggle
-- [x] Phase 16: Data Layer & Fisher Visualizations (2/2 plans) — _data.py CRB loader, fisher_plots.py factory functions
-- [x] Phase 17: Enhanced Existing Plots (3/3 plans) — credible intervals, heatmaps with contours, injected-vs-recovered scatter
-- [x] Phase 18: New Plot Modules (2/2 plans) — Mollweide sky map, corner plots, H0 convergence, efficiency curve
-- [x] Phase 19: Campaign Dashboards & Batch Generation (2/2 plans) — 2x2 dashboard mosaic, 15-figure manifest pipeline
-
-Full details: `.planning/milestones/v1.3-ROADMAP.md`
-
-</details>
-
-<details>
-<summary>✅ v1.4 Posterior Numerical Stability (Phases 21-23) — SHIPPED 2026-04-02</summary>
-
-- [x] Phase 21: Analysis & Post-Processing (2/2 plans) — Log-space combination script, 4 strategies, diagnostics, comparison table
-- [x] Phase 22: Likelihood Floor & Overflow Fix (1/1 plan) — Physics-motivated floor in single_host_likelihood, underflow detection
-- [x] Phase 23: Deploy & Validate (2/2 plans) — Deployed to cluster at 5793f70, validation PASS (|delta MAP|=0.00 < 0.05)
-
-Full details: `.planning/milestones/v1.4-ROADMAP.md`
-
-</details>
-
-<details>
-<summary>✅ v1.5 Galaxy Catalog Completeness Correction (Phases 24-25) — SHIPPED 2026-04-04 (GPD-tracked)</summary>
-
-- [x] Phase 24: Completeness Estimation (1/1 plan) — GLADE+ f(z,h) from B-band luminosity comparison, 23 tests
-- [x] Phase 25: Likelihood Correction (1/1 plan) — Gray et al. (2020) Eq. 9 combination formula, completion term, 11 tests
-
-Full artifacts: `.gpd/phases/24-completeness-estimation/`, `.gpd/phases/25-likelihood-correction/`
-
-**Note:** Originally scoped as 4 GSD phases (24-27). Phases 24-25 executed by GPD. Remaining scope (verification + deployment) rescoped into v2.0.
-
-</details>
-
-### v2.0 Paper (GPD-tracked, paused)
-
-- [x] **Phase 26: Paper Draft** — First complete PRD paper draft with all sections (1/1 plan, GPD)
-- [ ] **Phase 27: Production Run & Figures** — Cluster evaluation + replace RESULT PENDING placeholders + publication figures
-- [ ] **Phase 28: Review & Submission** — Internal review, finalize co-authors, submit to PRD + arXiv
-
-### Phase Details (v2.0)
-
-#### Phase 26: Paper Draft
-**Goal**: First complete draft of the PRD paper "Constraints on the Hubble constant from EMRI dark sirens with LISA using the massive black hole mass"
-**Status:** Complete (2026-04-05, GPD Phase 26)
-**Result:** 11-page PDF builds with REVTeX4-2. 6 sections (Introduction, Method, Results, Discussion, Conclusions, Appendix A). 21 references. 25 RESULT PENDING markers awaiting production run.
-See `.gpd/phases/` and `.gpd/ROADMAP.md` for full details.
-
-#### Phase 27: Production Run & Figures
-**Goal**: Run completeness-corrected evaluation on cluster, replace all RESULT PENDING placeholders with final numbers, generate publication figures
-**Depends on**: Phase 25 (completeness code), Phase 26 (paper structure)
-**Blocked on**: v2.1 bias resolution and cluster filesystem recovery
-See `.gpd/ROADMAP.md` for full details.
-
-#### Phase 28: Review & Submission
-**Goal**: Internal peer review, resolve all TODO markers, finalize co-authors, submit to PRD + arXiv
-**Depends on**: Phase 27 (final results and figures)
-See `.gpd/ROADMAP.md` for full details.
-
----
-
-### v2.1 H0 Bias Resolution (GSD/GPD mixed, active)
-
-- [x] **Phase 30: Baseline & Evaluation Infrastructure** — Capture baseline posterior snapshot, build before/after comparison tooling (DIAG-03, EVAL-01, EVAL-02) — GSD (completed 2026-04-08)
-- [x] **Phase 31: Catalog-Only Diagnostic** — Run f_i=1.0 evaluation to confirm L_comp is the primary bias source (DIAG-01, DIAG-02) — GSD (completed 2026-04-08)
-- [x] **Phase 32: Completion Term Fix** — Full-volume D(h) denominator per Gray et al. (2020) Eq. A.19, bias 0.0% (COMP-01, COMP-02) — GPD (completed 2026-04-08)
-- [x] **Phase 33: P_det Grid Resolution** — 60-bin grid deployed; full 38-point cluster sweep confirmed zero delta vs 30-bin baseline (PDET-01, PDET-02) — GSD (completed 2026-04-09)
-- [x] **Phase 34: Fisher Matrix Quality** — Replace allow_singular=True with regularization or exclusion, flag degenerates (FISH-01, FISH-02) — GSD (completed 2026-04-09)
+- [ ] **Phase 35: Coordinate Bug Characterization** [GSD] — Failing tests + baseline equator-band count before any fix
+- [ ] **Phase 36: Coordinate Frame Fix** [GPD] — Equatorial→ecliptic rotation, correct polar Cartesian embedding, eigenvalue sky ellipse
+- [ ] **Phase 37: Parameter Estimation Correctness** [GSD+GPD] — Thread h into host-distance, per-parameter derivative_epsilon, plus hygiene (Omega_m limits, unified SNR threshold, C/1000, idempotency guard)
+- [ ] **Phase 38: Statistical Correctness** [GSD+GPD] — L_cat form (proof or fix), P_det extrapolation alignment, per-event quadrature-weight diagnostic
+- [ ] **Phase 39: HPC & Visualization Safe Wins** [GSD+GPD] — CPU-importable parameter_estimation, raise flush interval, drop per-iteration FFT clear, dead-code removal, flip_hx verify, LaTeX figures, HDI bands
+- [ ] **Phase 40: Verification Gate** [GSD+GPD] — Full regression + posterior re-evaluation + h-sweep + anisotropy audit + P_det diagnostic; abort gate on >5% MAP shift
+- [ ] **Phase 41: Stage 1 Injection Campaign (Conditional)** [GSD] — Densified M×z×d_L grid on gpu_h100 if >5% extrapolation weight
+- [ ] **Phase 42: Stage 2 Sky-Dependent Injection (Conditional)** [GSD] — Sky-grid P_det campaign if anisotropy or Stage 1 residual
 
 ## Phase Details
 
-### Phase 29: Style Foundation
-**Goal**: Modernize the visual style infrastructure so all downstream figures automatically inherit publication-quality aesthetics
-**Requirements**: STYL-01, STYL-02, STYL-03
-**Depends on**: None
-**Plans:** 2 plans (1 complete + 1 gap closure)
-Plans:
-- [x] 29-01-PLAN.md — Update mplstyle + Okabe-Ito colors + style regression tests
-**Success criteria**:
-1. `emri_thesis.mplstyle` updated: top/right spines removed, `pdf.fonttype: 42`, font sizes 7-9pt, inward ticks, frameless legends
-2. `_colors.py` replaced with Okabe-Ito cycle + sequential Blues (0.1-0.85) + accent color
-3. `get_figure` presets tuned for new font sizes at REVTeX widths
-4. All existing tests pass with new style (no visual regression in smoke tests)
-5. `pdffonts` on any generated PDF shows zero Type 3 fonts
-
-### Phase 30: Baseline & Evaluation Infrastructure
-**Goal**: Capture a reproducible baseline posterior snapshot and establish the comparison framework that all subsequent phases use to measure their effect
-**Depends on**: None (first phase of v2.1 H0 Bias Resolution)
-**Requirements**: DIAG-03, EVAL-01, EVAL-02
+### Phase 35: Coordinate Bug Characterization
+**Goal**: Encode the two critical coordinate bugs in failing tests before touching the production code, and capture the pre-fix baseline of how many events sit in the danger zone (±5° ecliptic equator).
+**Routing**: [GSD] — test infrastructure only, no physics formulas changed
+**Depends on**: Nothing (first phase of v2.2)
+**Requirements**: COORD-01
 **Success Criteria** (what must be TRUE):
-  1. Running `--evaluate` on the existing CRB catalog produces a baseline JSON with MAP h, 68% CI bounds, bias %, and event count
-  2. The before/after comparison report is generated automatically when a new evaluation is run alongside the baseline JSON
-  3. Comparison output is human-readable (table: MAP h, CI width, bias %, events) and machine-readable (JSON)
-  4. Baseline snapshot is committed to `.planning/debug/` so it can be referenced by all subsequent phases
-**Plans:** 2/2 plans complete
-Plans:
-- [x] 30-01-PLAN.md — evaluation_report.py module + CLI flags + tests
-- [x] 30-02-PLAN.md — Gap closure: commit real production baseline from run_v12_validation
+  1. `master_thesis_code_test/test_coordinate_roundtrip.py` exists and contains at least three tests: (a) synthetic galaxy at ecliptic Dec=0° is retrieved by BallTree for a query at the same position, (b) synthetic galaxy at Dec=90° (NCP) round-trip, (c) equatorial→ecliptic conversion matches `astropy.coordinates.SkyCoord` ground truth to <0.001°
+  2. The three new tests are **RED** against the current code (assert that the current embedding fails the Dec=0° retrieval and that no rotation is applied in ingestion)
+  3. A `.planning/audit_coordinate_bug.md` artifact reports the baseline count and percentage of events in the production CRB CSV whose recovered `qS` lands within ±5° of the ecliptic equator (`|qS − π/2| < 5° × π/180`)
+  4. Baseline artifact is committed so subsequent phases can reference it
+**Plans**: TBD
 
-### Phase 31: Catalog-Only Diagnostic
-**Goal**: Confirm that the completion term L_comp is the dominant source of the h=0.66 bias by running the pipeline with f_i=1.0 (catalog only) and observing whether the MAP shifts toward h=0.73
-**Depends on**: Phase 30 (baseline snapshot and comparison tool)
-**Requirements**: DIAG-01, DIAG-02
+### Phase 36: Coordinate Frame Fix
+**Goal**: Fix both critical coordinate bugs — apply equatorial→ecliptic rotation on catalog ingestion, correct the BallTree embedding to match polar-angle convention, and replace the axis-aligned search radius with an eigenvalue-based ellipse on the 2×2 sky covariance.
+**Routing**: [GPD] — all three requirements change a computed value (catalog positions propagate through Fisher matrix and waveform response); `/physics-change` gate required per CLAUDE.md
+**Physics-gate REQ-IDs**: COORD-02, COORD-03, COORD-04
+**Depends on**: Phase 35 (failing tests must exist before fix)
+**Requirements**: COORD-02, COORD-03, COORD-04
 **Success Criteria** (what must be TRUE):
-  1. `--evaluate --catalog_only` (or equivalent flag) runs the pipeline with f_i=1.0 for all events, bypassing the completion term
-  2. Per-event diagnostic log writes L_cat, L_comp, f_i, and combined log-likelihood at each h value to a CSV or JSONL file
-  3. Catalog-only MAP h shifts measurably toward h=0.73 compared to baseline (bias reduced by at least 50% if L_comp is the cause)
-  4. Before/after comparison report is produced automatically using the Phase 30 infrastructure
-**Plans:** 2/2 plans complete
-Plans:
-- [x] 31-01-PLAN.md — Add --catalog_only CLI flag, completion term bypass, and per-event diagnostic CSV
-- [x] 31-02-PLAN.md — Diagnostic summary generator, comparison flow integration, end-to-end verification
+  1. Phase 35 tests go **GREEN**: BallTree returns the known host when a synthetic galaxy is injected at ecliptic equator (`θ=π/2`) with recovery rate ≥99% over randomized offsets
+  2. `galaxy_catalogue/handler.py:_map_angles_to_spherical_coordinates` uses `astropy.coordinates.SkyCoord.transform_to(BarycentricTrueEcliptic())` at J2000 and the docstring declares "all stored angles henceforth in ecliptic SSB frame"
+  3. BallTree Cartesian embedding is `(sin θ cos φ, sin θ sin φ, cos θ)` with `θ ∈ [0, π]` polar, consistent across both `setup_galaxy_catalog_balltree` and `get_possible_hosts_from_ball_tree`
+  4. Candidate-host search radius uses the 2×2 sky-covariance eigendecomposition (including `|sin θ|` Jacobian on the φ-component); a regression pickle shows the new candidate-host set is a **superset** of the old one for one reference event
+  5. Sign convention and dimensional analysis reports pass the `/physics-change` post-implementation checks; reference comments (Eq./arXiv) added above each changed line
+**Plans**: TBD
 
-### Phase 32: Completion Term Fix
-**Goal**: Replace the dVc/dz source population prior in the completion term with an EMRI rate-weighted prior, so L_comp no longer introduces a systematic low-h preference
-**Depends on**: Phase 31 (hypothesis confirmed), Phase 30 (comparison infrastructure)
-**Requirements**: COMP-01, COMP-02
-**Status:** Complete (2026-04-08, GPD Phase 32)
-**Result:** Full-volume D(h) denominator per Gray et al. (2020) Eq. A.19. MAP shifts from 0.60 to 0.73, bias 0.0% at N=59. 11 unit tests. Validation artifacts in `.gpd/phases/32-completion-term-fix/validation/`.
-**Plans:** 2/2 plans complete
-Plans:
-- [x] 32-01-PLAN.md — Implement precompute_completion_denominator(), D_h_table, zero-fill P_det accessor
-- [x] 32-02-PLAN.md — Validation: MAP comparison, bias-vs-N convergence, L_comp decomposition
-
-### Phase 33: P_det Grid Resolution
-**Goal**: Increase P_det grid resolution from 30 to 60 d_L bins and validate that 4-sigma integration bounds fall within the grid for at least 95% of events
-**Depends on**: Phase 30 (comparison infrastructure)
-**Requirements**: PDET-01, PDET-02
+### Phase 37: Parameter Estimation Correctness
+**Goal**: Remove hidden coupling between `h` and the saved Fisher CRBs, replace uniform `derivative_epsilon` with per-parameter values appropriate to each scale, and close the latent hygiene holes (swapped `Omega_m` limits, unified `SNR_THRESHOLD`, `SPEED_OF_LIGHT_KM_S = C/1000`, idempotency guard on the angle mapping).
+**Routing**: [GSD+GPD] — GSD phase tracks overall progress; GPD invoked for physics subtasks
+**Physics-gate REQ-IDs**: PE-01 (h-threading changes Fisher derivatives at host position), PE-02 (per-parameter epsilon changes Fisher matrix values)
+**Non-physics REQ-IDs**: COORD-05, PE-03, PE-04, PE-05
+**Depends on**: Phase 36 (frame fix — `h` threading must land on top of the corrected frame, otherwise double-fixing the same event at different layers)
+**Requirements**: COORD-05, PE-01, PE-02, PE-03, PE-04, PE-05
 **Success Criteria** (what must be TRUE):
-  1. P_det grid d_L bin count is configurable via a constant or config parameter (not hardcoded 30)
-  2. Default bin count increased to 60; existing tests updated to reflect new resolution
-  3. Grid coverage validation runs after grid construction and reports the fraction of events whose 4-sigma bounds fall within the grid
-  4. Coverage fraction is above 95% with 60 bins; warning logged if any event falls outside
-  5. Before/after comparison report shows MAP h change from grid resolution alone
-**Plans:** 1/2 plans executed
-Plans:
-- [x] 33-01-PLAN.md — Configurable P_det bins (CLI flags + threading + coverage validation + tests)
-- [ ] 33-02-PLAN.md — Cluster script update + before/after comparison checkpoint
+  1. `ParameterSpace.set_host_galaxy_parameters(host, h=0.5)` produces exactly half the `luminosity_distance` of the same call with `h=1.0`; regression test in `test_parameter_space_h.py` pins this ratio to within floating-point tolerance
+  2. Running `set_host_galaxy_parameters` without an explicit `h` argument raises `TypeError` (no hardcoded default): `dist(host.z)` no longer appears in `parameter_space.py:148`
+  3. Fisher determinant on one representative event (seed-pinned in regression test) differs by less than 1% after switching to per-parameter `derivative_epsilon`; behavior is stable across at least three random-perturbation resamples (demonstrates non-degeneracy)
+  4. `LamCDMScenario.Omega_m.lower_limit < upper_limit` with both values in the physically plausible range `[0.04, 0.5]`
+  5. Greping for literal `15` and `20` adjacent to the token `snr` finds no direct uses: `Model1CrossCheck`, pre-screen coefficient, evaluation filter, injection quality gate all resolve to `SNR_THRESHOLD` (constant) — enforced by a smoke test
+  6. `SPEED_OF_LIGHT_KM_S` is defined as `C / 1000` in `constants.py`; `comoving_volume_element` test matches to 14 decimal places with no `300000.0` hardcode
+  7. `_map_angles_to_spherical_coordinates` raises `AssertionError` when called a second time on already-ecliptic angles (idempotency guard); existing callers unaffected
+**Plans**: TBD
 
-### Phase 34: Fisher Matrix Quality
-**Goal**: Replace allow_singular=True with explicit degeneracy handling so near-singular covariance matrices are caught, logged, and treated consistently rather than silently producing unreliable error estimates
-**Depends on**: Phase 30 (comparison infrastructure)
-**Requirements**: FISH-01, FISH-02
+### Phase 38: Statistical Correctness
+**Goal**: Reconcile the catalog likelihood with Gray et al. (2020) Eq. 24-25 (prove equivalence or replace), and make the P_det extrapolation symmetric between the single-host integrand and the completion-term denominator so the posterior doesn't silently lose quadrature weight at the grid edges.
+**Routing**: [GSD+GPD] — STAT-01 routes to GSD if equivalence proof succeeds, GPD if a fix is required; STAT-03 routes to GPD (extrapolation policy change affects computed posteriors); STAT-02 and STAT-04 are GSD (tests and diagnostics)
+**Physics-gate REQ-IDs**: STAT-03 always; STAT-01 if it becomes a fix
+**Non-physics REQ-IDs**: STAT-02, STAT-04, STAT-01 (if equivalence proof)
+**Depends on**: Phase 37 (stable CRB inputs; per-parameter epsilon landed)
+**Requirements**: STAT-01, STAT-02, STAT-03, STAT-04
 **Success Criteria** (what must be TRUE):
-  1. `allow_singular=True` is removed from multivariate normal construction in `bayesian_statistics.py`
-  2. Events with condition number above a configurable threshold are flagged in diagnostic output with their condition number
-  3. Flagged events are either regularized (ridge-like diagonal addition) or excluded, with the strategy configurable
-  4. Diagnostic output counts how many events were flagged and excluded per evaluation run
-  5. Before/after comparison report shows MAP h change from Fisher quality fix alone
-**Plans:** 2/2 plans complete
-Plans:
-- [x] 34-01-PLAN.md — Condition-number gate, exclusion mask, CSV diagnostics, CLI flag, empirical calibration
-- [x] 34-02-PLAN.md — Diagnostic plot, comparison report Fisher Quality section, allow_singular cleanup
+  1. `bayesian_statistics.py:922` contains either (a) a docstring derivation proving `(Σ N_g) / (Σ D_g) = (1/N) Σ (N_g/D_g)` under the code's implicit uniform `1/N` galaxy prior, with a reference to Gray Eq. 24-25, OR (b) the canonical `(1/N) Σ (N_g/D_g)` form after `/physics-change` protocol
+  2. `test_l_cat_equivalence.py` unit test with 3 synthetic galaxies computes both forms; asserts they agree numerically (if proof) or documents the exact numerical divergence and explains why (if fix)
+  3. `single_host_likelihood` numerator and `precompute_completion_denominator` both use the same P_det extrapolation policy (both zero-fill OR both NN-fill), grep-verified in CI; default is zero-fill per the plan
+  4. Per-event diagnostic log writes `quadrature_weight_outside_grid_numerator` and `quadrature_weight_outside_grid_denominator` columns; any event where either exceeds 5% triggers a WARNING log line with the event ID
+  5. End-to-end smoke run of `--evaluate` on a small subset (e.g., `simulations/h_0_73` at N≤5) completes without NaN/Inf in the posterior and the diagnostic CSV is non-empty
+**Plans**: TBD
 
----
+### Phase 39: HPC & Visualization Safe Wins
+**Goal**: Make `parameter_estimation.py` CPU-importable via the `_get_xp` shim, remove the Lustre-heavy per-iteration I/O, drop the per-iteration FFT cache clear, delete dead code, verify the `flip_hx` flag against the current `fastlisaresponse`, enable LaTeX in production figures, and add bootstrap HDI bands to the static convergence plot.
+**Routing**: [GSD+GPD] — HPC-05 (`flip_hx` verification) routes to GPD only if the flag is removed; HPC-01..HPC-04 and VIZ-01..VIZ-02 are software-only
+**Physics-gate REQ-IDs**: HPC-05 conditional (only if `flip_hx` is removed after verification finds it obsolete)
+**Non-physics REQ-IDs**: HPC-01, HPC-02, HPC-03, HPC-04, VIZ-01, VIZ-02
+**Depends on**: Phase 38 (downstream runs must already be correct before optimizing I/O)
+**Requirements**: HPC-01, HPC-02, HPC-03, HPC-04, HPC-05, VIZ-01, VIZ-02
+**Success Criteria** (what must be TRUE):
+  1. `from master_thesis_code.parameter_estimation.parameter_estimation import ParameterEstimation` succeeds on a machine without `cupy` installed; `pytest -m "not gpu"` runs the module's tests without skipping on CPU-only CI
+  2. `_crb_flush_interval = 25` in `parameter_estimation.py:99`; SIGTERM handler still flushes on termination; a single-task dry run writes the CSV in batches of 25 (verified by a small N=50 simulation test)
+  3. `memory_management.py` no longer clears `_fft_cache` per Fisher iteration; cache clear happens only on explicit `free_gpu_memory()` call or memory-pressure trigger
+  4. `_crop_frequency_domain` no longer appears in `parameter_estimation.py`; grep returns empty
+  5. `flip_hx=True` status is documented in `waveform_generator.py` with either a kept-for-reason comment citing current `fastlisaresponse` behavior, or removed via `/physics-change` with waveform regression test showing pre/post identical result
+  6. `main.py:generate_figures` calls `apply_style(use_latex=True)` when `shutil.which("latex")` is truthy and falls back to mathtext otherwise; smoke test confirms both branches run without crash
+  7. Static `plot_h0_convergence` displays a 16/84 percentile shaded HDI band; visual smoke test confirms the band is present and sits inside the CI rails
+**Plans**: TBD
 
-### v2.1 Publication Figures (GSD-tracked, paused pending bias fix)
+### Phase 40: Verification Gate
+**Goal**: Before committing any new cluster compute, re-evaluate the existing CRBs under all v2.2 fixes and confirm the posterior at h=0.73 is stable; run the 27-value h-sweep; audit anisotropy by `|qS − π/2|` quartiles; report the P_det quadrature-weight diagnostic summary. This phase is the **abort gate** for the staged campaign.
+**Routing**: [GSD+GPD] — GSD phase tracking; GPD invoked for VERIFY-02 because it runs the physics-changed evaluation code (but the runner itself is software)
+**Physics-gate REQ-IDs**: VERIFY-02 (execution of re-evaluation invokes physics-changed code paths; GPD runs the pipeline with physics protocols active)
+**Non-physics REQ-IDs**: VERIFY-01, VERIFY-03, VERIFY-04, VERIFY-05
+**Depends on**: Phases 35–39 (all fixes must be landed)
+**Requirements**: VERIFY-01, VERIFY-02, VERIFY-03, VERIFY-04, VERIFY-05
+**Abort gate**: if the re-evaluated MAP at h=0.73 shifts more than 5% from the v2.1 baseline MAP=0.73, **pause and investigate before any CAMP-\* phase begins**. The pause is mandatory — do not advance to Phase 41.
+**Success Criteria** (what must be TRUE):
+  1. `uv run pytest -m "not gpu"` passes with all v2.2-era tests included (baseline ≥508 tests plus the new coordinate-roundtrip, h-threading, L_cat equivalence, and SNR-threshold unification tests)
+  2. `uv run python -m master_thesis_code simulations/h_0_73 --evaluate --h_value 0.73` on the existing CRB set produces a posterior whose MAP is within 1% bias of h=0.73 and is within 5% of the v2.1 baseline MAP (abort gate)
+  3. All 27 h-value posteriors regenerated; `docs_src/interactive/m_z_improvement.html` is updated; static convergence figure shows MAP at h=0.73 is 0.73 ± 0.01 with ≥95% CI coverage (sanity assertion, not a pre-registered gate)
+  4. H₀ MAP binned by `|qS − π/2|` quartiles shows no systematic trend: per-quartile MAP shifts stay within 1σ; any >1σ shift is logged and treated as a Stage 2 trigger rather than an abort condition
+  5. `.planning/debug/verify_gate_{timestamp}.md` reports the P_det quadrature-weight-outside-grid summary: mean and max per-event fraction across all events, plus a histogram; this number decides whether Phase 41 fires
+**Plans**: TBD
 
-**Note:** Phase numbering shifted from 30-33 to 35-38 to make room for H0 Bias Resolution phases 30-34.
+### Phase 41: Stage 1 Injection Campaign (Conditional)
+**Goal**: If VERIFY-05 reports that more than 5% of quadrature weight lands outside the P_det injection grid on average, submit a densified M×z×d_L injection campaign to bwUniCluster `gpu_h100`; re-evaluate posteriors against the Phase 40 baseline.
+**Routing**: [GSD] — cluster submission, data management, re-evaluation pipeline; no formula changes
+**Non-physics REQ-IDs**: CAMP-01
+**Depends on**: Phase 40 (verification passes and Phase 40 reports >5% mean extrapolation weight)
+**Conditional**: skip if Phase 40 reports mean extrapolation weight ≤5% per event — in that case, mark the phase `skipped (not triggered)` in MILESTONES.md
+**Requirements**: CAMP-01
+**Success Criteria** (what must be TRUE):
+  1. Injection grid upper bound on `d_L` is extended and all three axes (M, z, d_L) are densified by a factor of 1.5×; the new grid spec is committed and documented
+  2. SLURM array job on `gpu_h100` completes with >95% task success rate using the existing `cluster/injection` infrastructure (per Phase 33 memory); failed tasks retried successfully
+  3. Re-evaluated posterior using the new P_det table is indistinguishable from Phase 40 result under a Kolmogorov–Smirnov test (p-value > 0.05) at h=0.73, OR shows a quantified shift that is documented
+  4. Post-Stage-1 VERIFY-05 diagnostic confirms the mean quadrature-weight-outside-grid has dropped below the 5% threshold
+**Plans**: TBD
 
-- [x] **Phase 29: Style Foundation** — completed 2026-04-07
-- [ ] **Phase 35: Unified Figure Pipeline & Paper Figures** — Merge manifests, fix CI bug, polish 4 existing + add contour/smoothed variants
-- [ ] **Phase 36: Galaxy-Level Figures** — Pre-process 580MB JSONs, galaxy ranking, dominant fraction, BH mass impact, sky map
-- [ ] **Phase 37: Interactive Figures** — Plotly/Sphinx integration, data pre-aggregation, MyST-NB notebooks, JupyterLite
-- [ ] **Phase 38: Quality Assurance & New Science Figures** — P_det surface, completeness heatmap, parameter contours, colorblind/grayscale/pdffonts audit
-
-#### Phase 35: Unified Figure Pipeline & Paper Figures
-**Goal**: Merge the two disconnected figure pipelines and deliver polished paper figures with new style
-**Requirements**: PFIG-01, PFIG-02, PFIG-03, PFIG-04
-**Depends on**: Phase 29 (style)
-**Plans:** 3 plans
-Plans:
-- [ ] 35-01-PLAN.md — Extract shared compute_credible_interval + unit tests
-- [ ] 35-02-PLAN.md — Wire paper figures into unified manifest, thread data_dir
-- [ ] 35-03-PLAN.md — Visual polish, KDE-smoothed posterior variant, human verify
-**Success criteria**:
-1. Single `--generate_figures <dir>` command generates all figures (paper + thesis + galaxy-level)
-2. `paper_figures.py` functions integrated into unified manifest
-3. CI calculation uses trapezoidal CDF everywhere (unit test)
-4. 4 existing paper figures polished with new style
-5. Contour-smoothed H0 posterior added as new variant (KDE, preserves MAP within grid spacing)
-6. Auto-detect h-grid resolution (works with 15-pt and future finer grids)
-
-#### Phase 36: Galaxy-Level Figures
-**Goal**: Exploit the rich per-galaxy likelihood data from posteriors_with_bh_mass for novel visualizations
-**Requirements**: GLXY-01, GLXY-02, GLXY-03, GLXY-04, GLXY-05
-**Depends on**: Phase 29 (style), Phase 35 (manifest integration)
-**Success criteria**:
-1. Pre-processing script extracts per-event summaries from 580MB JSONs to CSVs (~1-5MB total)
-2. Memory-aware loading: pre-process path for low-memory, direct-load fallback for 64GB+ machines
-3. Galaxy likelihood ranking figure for representative events
-4. Dominant galaxy fraction plot (top-1/5/10 across all events)
-5. BH mass channel impact scatter (with vs without mass per galaxy)
-6. Sky map with candidate host galaxies colored by likelihood weight
-7. All galaxy figures integrated into unified manifest
-
-#### Phase 37: Interactive Figures
-**Goal**: Add interactive Plotly figures and Jupyter notebooks to GitHub Pages via Sphinx
-**Requirements**: INTV-01, INTV-02, INTV-03, INTV-04, INTV-05
-**Depends on**: Phase 29 (style), Phase 35 (data loaders)
-**Success criteria**:
-1. Plotly proof-of-concept: one interactive posterior plot embedded in Sphinx, no MathJax conflict
-2. Data pre-aggregation script produces ~1MB summary JSONs in `docs/source/_static/data/`
-3. Full interactive figure set: posterior explorer, sky map, galaxy browser
-4. MyST-NB: at least one executed notebook in Sphinx docs with caching
-5. JupyterLite: parameter exploration notebook (h-value slider) working in-browser
-6. CI pipeline deploys interactive figures to GitHub Pages alongside existing docs
-
-#### Phase 38: Quality Assurance & New Science Figures
-**Goal**: Complete the figure set with science figures and run full accessibility/format audit
-**Requirements**: PFIG-05, PFIG-06, PFIG-07, QUAL-01, QUAL-02, QUAL-03
-**Depends on**: Phase 29-36 (all figures must exist before audit)
-**Success criteria**:
-1. P_det surface figure as 2D filled contour
-2. Completeness f(z,h) standalone heatmap + P_det overlay version
-3. Parameter correlation contours (d_L vs M, z vs SNR)
-4. daltonize colorblind simulation passes for all paper figures
-5. All paper figures readable in grayscale
-6. `pdffonts` shows zero Type 3 fonts across all generated PDFs
-
----
+### Phase 42: Stage 2 Sky-Dependent Injection (Conditional)
+**Goal**: If VERIFY-04 or Phase 41 reveals residual sky anisotropy, submit a second injection campaign with `qS` and `phiS` as additional grid axes (6×12 sky grid); otherwise document that isotropic-sky P_det marginalization is verified sufficient.
+**Routing**: [GSD] — cluster submission and re-evaluation; no formula changes
+**Non-physics REQ-IDs**: CAMP-02
+**Depends on**: Phase 41 (outcome of Stage 1) or Phase 40 (VERIFY-04 anisotropy result)
+**Conditional**: skip if Phase 40 VERIFY-04 shows no >1σ MAP trend across `|qS − π/2|` quartiles AND Phase 41 shows no residual sky anisotropy — in that case, write a short documentation note in `.planning/debug/` stating that isotropic P_det marginalization is verified sufficient for the paper
+**Requirements**: CAMP-02
+**Success Criteria** (what must be TRUE):
+  1. Pre-registered anisotropy test specification (e.g., event groups binned by `sin²(2·qS)` with `>1σ` per-bin MAP shift threshold) is written and committed **before** the campaign launches; this pins the decision criterion
+  2. If the pre-registered test triggers: a 6×12 `(qS, phiS)` sky grid P_det campaign completes on `gpu_h100`; new P_det tables replace the isotropic tables and re-evaluated posteriors show the sky-trend is eliminated (per-bin MAP trend within 1σ)
+  3. If the pre-registered test does not trigger: `.planning/debug/isotropic_p_det_verification.md` documents the quartile MAP values, the 1σ thresholds, and a final paragraph explaining that marginalized isotropic P_det is sufficient for the paper
+  4. Phase 42 closes v2.2 by updating `.planning/MILESTONES.md` with the shipped status, linking to the campaign artifacts, and flipping the active milestone in STATE.md
+**Plans**: TBD
 
 ## Progress
 
-| Phase | Milestone | Plans Complete | Status | Completed |
-|-------|-----------|----------------|--------|-----------|
-| 1. Code Hardening | v1.0 | 2/2 | Complete | 2026-03-26 |
-| 2. Batch Compatibility | v1.0 | 1/1 | Complete | 2026-03-26 |
-| 3. Cluster Environment | v1.0 | 1/1 | Complete | 2026-03-27 |
-| 4. SLURM Job Infrastructure | v1.0 | 3/3 | Complete | 2026-03-27 |
-| 5. Documentation | v1.0 | 2/2 | Complete | 2026-03-27 |
-| 6. Data Cleanup | v1.1 | 1/1 | Complete | 2026-03-27 |
-| 7. Cluster Access | v1.1 | 1/1 | Complete | 2026-03-28 |
-| 8. Simulation Campaign | v1.1 | 2/2 | Complete | 2026-03-29 |
-| 9. Galactic Confusion Noise | v1.2 | 1/1 | Complete | 2026-03-29 |
-| 10. Five-Point Stencil | v1.2 | 1/1 | Complete | 2026-03-29 |
-| 11. Validation Campaign | v1.2 | 2/2 | Complete | 2026-04-01 |
-| 11.1 Simulation-Based P_det | v1.2 | 5/5 | Complete | 2026-04-01 |
-| 12. Production Campaign | v1.2 | 1/1 | Complete | 2026-04-01 |
-| 13. H0 Posterior Sweep | v1.2 | 1/1 | Complete | 2026-04-01 |
-| 14. Test Infrastructure | v1.3 | 2/2 | Complete | 2026-04-01 |
-| 15. Style Infrastructure | v1.3 | 1/1 | Complete | 2026-04-01 |
-| 16. Data Layer & Fisher | v1.3 | 2/2 | Complete | 2026-04-02 |
-| 17. Enhanced Existing Plots | v1.3 | 3/3 | Complete | 2026-04-02 |
-| 18. New Plot Modules | v1.3 | 2/2 | Complete | 2026-04-02 |
-| 19. Campaign Dashboards | v1.3 | 2/2 | Complete | 2026-04-02 |
-| 21. Analysis & Post-Processing | v1.4 | 2/2 | Complete | 2026-04-02 |
-| 22. Likelihood Floor & Overflow Fix | v1.4 | 1/1 | Complete | 2026-04-02 |
-| 23. Deploy & Validate | v1.4 | 2/2 | Complete | 2026-04-02 |
-| 24. Completeness Estimation | v1.5 | 1/1 | Complete (GPD) | 2026-04-04 |
-| 25. Likelihood Correction | v1.5 | 1/1 | Complete (GPD) | 2026-04-04 |
-| 26. Paper Draft | v2.0 | 1/1 | Complete (GPD) | 2026-04-05 |
-| 27. Production Run & Figures | v2.0 | 0/? | Paused (GPD) | - |
-| 28. Review & Submission | v2.0 | 0/? | Paused (GPD) | - |
-| 29. Style Foundation | v2.1 PubFigs | 1/1 | Complete | 2026-04-07 |
-| 30. Baseline & Evaluation Infra | v2.1 BiasRes | 2/2 | Complete    | 2026-04-08 |
-| 31. Catalog-Only Diagnostic | v2.1 BiasRes | 2/2 | Complete   | 2026-04-08 |
-| 32. Completion Term Fix | v2.1 BiasRes | 2/2 | Complete (GPD) | 2026-04-08 |
-| 33. P_det Grid Resolution | v2.1 BiasRes | 2/2 | Complete   | 2026-04-09 |
-| 34. Fisher Matrix Quality | v2.1 BiasRes | 2/2 | Complete   | 2026-04-09 |
-| 35. Unified Pipeline & Paper Figs | v2.1 PubFigs | 3/3 | Complete | 2026-04-08 |
-| 36. Galaxy-Level Figures | v2.1 PubFigs | 0/? | Paused | - |
-| 37. Interactive Figures | v2.1 PubFigs | 0/? | Paused | - |
-| 38. QA & New Science Figures | v2.1 PubFigs | 0/? | Paused | - |
+| Phase | Routing | Plans Complete | Status | Completed |
+|-------|---------|----------------|--------|-----------|
+| 35. Coordinate Bug Characterization | GSD | 0/? | Not started | - |
+| 36. Coordinate Frame Fix | GPD | 0/? | Not started | - |
+| 37. Parameter Estimation Correctness | GSD+GPD | 0/? | Not started | - |
+| 38. Statistical Correctness | GSD+GPD | 0/? | Not started | - |
+| 39. HPC & Visualization Safe Wins | GSD+GPD | 0/? | Not started | - |
+| 40. Verification Gate | GSD+GPD | 0/? | Not started | - |
+| 41. Stage 1 Injection Campaign | GSD | 0/? | Not started (conditional on Phase 40) | - |
+| 42. Stage 2 Sky-Dependent Injection | GSD | 0/? | Not started (conditional on Phases 40, 41) | - |
+
+## Coverage
+
+| Phase | REQ-IDs | Count |
+|-------|---------|-------|
+| 35 | COORD-01 | 1 |
+| 36 | COORD-02, COORD-03, COORD-04 | 3 |
+| 37 | COORD-05, PE-01, PE-02, PE-03, PE-04, PE-05 | 6 |
+| 38 | STAT-01, STAT-02, STAT-03, STAT-04 | 4 |
+| 39 | HPC-01, HPC-02, HPC-03, HPC-04, HPC-05, VIZ-01, VIZ-02 | 7 |
+| 40 | VERIFY-01, VERIFY-02, VERIFY-03, VERIFY-04, VERIFY-05 | 5 |
+| 41 | CAMP-01 | 1 |
+| 42 | CAMP-02 | 1 |
+
+**Total mapped:** 28/28 ✓ — 100% coverage, no orphans.
+
+## Hard Constraints (from plan)
+
+- **COORD-01 (Phase 35) MUST precede all other COORD-\* requirements** — failing-test baseline captures pre-fix state before Phase 36 fixes.
+- **VERIFY-02 (Phase 40) MUST complete BEFORE any CAMP-\* phase begins** — no new cluster compute without the verification gate.
+- **CAMP-02 (Phase 42) is conditional on VERIFY-04 or CAMP-01 outcome** — not guaranteed to execute.
+- **Abort condition at Phase 40:** if re-evaluated MAP at h=0.73 shifts >5% from v2.1 baseline MAP=0.73, pause and investigate before CAMP-\* phases. Do not advance until diagnosed.
+
+## Links
+
+- **Plan artifact:** `~/.claude/plans/i-want-a-last-elegant-feather.md`
+- **Requirements:** `.planning/REQUIREMENTS.md`
+- **State:** `.planning/STATE.md`
+- **Audit memory:** `.claude/projects/-home-jasper-Repositories-MasterThesisCode/memory/project_coordinate_bugs.md`, `project_audit_2026_04_21.md`
+- **Prior cumulative roadmap:** `.planning/milestones/v2.1-cumulative-ROADMAP.md`
+- **Prior shipped milestones:** `.planning/milestones/v{1.0,1.1,1.2,1.3,1.4,2.1-biasres}-ROADMAP.md`
+
+---
+*Created: 2026-04-21 — v2.2 Pipeline Correctness roadmap from pre-batch audit plan*

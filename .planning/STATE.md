@@ -2,12 +2,12 @@
 gsd_state_version: 1.0
 milestone: v2.2
 milestone_name: Pipeline Correctness
-status: defining_requirements
-stopped_at: Milestone started — requirements next
+status: roadmap_defined
+stopped_at: Roadmap defined — Phase 35 ready to plan
 last_updated: "2026-04-21T00:00:00.000Z"
 last_activity: 2026-04-21
 progress:
-  total_phases: 0
+  total_phases: 8
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -25,10 +25,25 @@ See: .planning/PROJECT.md (updated 2026-04-21)
 
 ## Current Position
 
-Phase: Not started (defining requirements)
+Phase: Phase 35 — Coordinate Bug Characterization (ready to plan)
 Plan: —
-Status: Defining requirements
-Last activity: 2026-04-21 — Milestone v2.2 started following pre-batch audit
+Status: Roadmap defined; ready for `/gsd:plan-phase 35`
+Last activity: 2026-04-21 — ROADMAP.md written with 8 phases (35–42), 28 requirements mapped (100% coverage)
+
+**Milestone phase map:**
+
+| # | Phase | Routing | REQ-IDs (count) |
+|---|-------|---------|-----------------|
+| 35 | Coordinate Bug Characterization | GSD | COORD-01 (1) |
+| 36 | Coordinate Frame Fix | GPD | COORD-02, 03, 04 (3) |
+| 37 | Parameter Estimation Correctness | GSD+GPD | COORD-05, PE-01..05 (6) |
+| 38 | Statistical Correctness | GSD+GPD | STAT-01..04 (4) |
+| 39 | HPC & Visualization Safe Wins | GSD+GPD | HPC-01..05, VIZ-01..02 (7) |
+| 40 | Verification Gate | GSD+GPD | VERIFY-01..05 (5) |
+| 41 | Stage 1 Injection Campaign | GSD (conditional) | CAMP-01 (1) |
+| 42 | Stage 2 Sky-Dependent Injection | GSD (conditional) | CAMP-02 (1) |
+
+**Abort gate:** Phase 40 VERIFY-02 — if re-evaluated MAP at h=0.73 shifts >5% from v2.1 baseline MAP=0.73, pause before CAMP-* phases.
 
 ## Performance Metrics
 
@@ -46,7 +61,7 @@ Last activity: 2026-04-21 — Milestone v2.2 started following pre-batch audit
 ### Blockers/Concerns
 
 - v2.0 Paper paused: posterior re-evaluation required under v2.2 corrected frame before production run figures
-- v2.1 Publication Figures paused (originally phases 35–38): depends on v2.2 correctness gate
+- v2.1 Publication Figures paused (originally phases 35–38): depends on v2.2 correctness gate. **Number conflict note:** v2.2 Phase 35 (Coordinate Bug Characterization) collides with the existing Phase 35 (Unified Pipeline & Paper Figures) already shipped in v2.1 PubFigs. Since v2.2 is the active milestone and the user specified "Start at Phase 35," v2.1 PubFigs phases 36-38 will need renumbering if/when they resume post-v2.2.
 
 ### Key Context for v2.2 Pipeline Correctness
 
@@ -99,8 +114,9 @@ Phase 30 (Baseline/comparison), Phase 31 (Catalog-only diagnostic), Phase 32 (L_
 ## Session Continuity
 
 Last session: 2026-04-21
-Stopped at: Milestone v2.2 started — awaiting roadmap
+Stopped at: Roadmap defined — Phase 35 (Coordinate Bug Characterization) ready to plan
 Resume file: None
+Next command: `/gsd:plan-phase 35`
 
 ## Quick Tasks Completed
 
