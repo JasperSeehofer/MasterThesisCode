@@ -163,6 +163,13 @@ reference, dimensional analysis, limiting case).
 
 Current: 149 tests, 37% coverage (gate 25%), target 50%.
 
+- [ ] **TEST-COORD [P0, S]** Remove xfail markers from `test_coordinate_roundtrip.py` after Phase 36 lands
+      Six `@pytest.mark.xfail(strict=True, reason=_XFAIL_REASON)` markers in
+      `master_thesis_code_test/test_coordinate_roundtrip.py` must be removed once Phase 36
+      fixes both coordinate-frame bugs (equatorial→ecliptic rotation + BallTree polar embedding).
+      When the fix lands, tests flip XPASS → CI fails until markers are removed (by design, D-01).
+      **Depends on:** Phase 36 completion.
+
 - [x] **TEST-1 [P0, S]** Regression test for comoving volume element
       `test_comoving_volume_element_spline_matches_integration` now asserts the correct
       formula (including 1/E(z) factor). Resolved alongside PHYS-1.
