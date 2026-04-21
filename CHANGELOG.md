@@ -7,6 +7,14 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+- Phase 35: coordinate-bug baseline audit (`scripts/audit_coordinate_bug.py` CLI +
+  `.planning/audit_coordinate_bug.{md,json,png}` artifacts). Pre-fix baseline:
+  42 CRB events — 0 in ±5° ecliptic-equator band (expected ~8.7% under isotropic
+  prior). Phase 40 VERIFY-04 diffs the JSON sidecar post-fix.
+- Phase 35: coordinate-frame test fixtures (`master_thesis_code_test/fixtures/coordinate.py`)
+  with `equatorial_to_ecliptic_astropy`, `synthetic_catalog_builder`, `build_balltree` helpers.
+
 ### Fixed
 - `plotting/convergence_analysis.py`: missing per-event likelihood values (empty
   list in JSON, e.g. event 255 in `h_0_73.json`) now recorded as `nan` instead
