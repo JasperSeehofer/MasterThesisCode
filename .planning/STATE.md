@@ -4,13 +4,14 @@ milestone: v2.2
 milestone_name: milestone
 status: "Roadmap defined; ready for `/gsd:plan-phase 35`"
 stopped_at: Phase 35 context gathered
-last_updated: "2026-04-21T20:57:01.781Z"
+last_updated: "2026-04-21T21:29:40.877Z"
 last_activity: 2026-04-21 — ROADMAP.md written with 8 phases (35–42), 28 requirements mapped (100% coverage)
 progress:
   total_phases: 8
   completed_phases: 0
-  total_plans: 0
+  total_plans: 3
   completed_plans: 0
+  percent: 0
 ---
 
 # Project State
@@ -126,3 +127,5 @@ Next command: `/gsd:plan-phase 35`
 | 2026-04-07 | Evaluation pipeline performance | de86052..a0de491 (7 commits) | Pool spawn 12 min→1.7 min, total 7:16 per h-value. forkserver+preload, numpy arrays, SNR filter, cpu_il partition. |
 | 2026-04-07 | Add interactive Plotly figures to GitHub Pages | 8b47b5f..33e1c86 (2 commits) | 4 Plotly HTML figures (posterior, sky map, Fisher ellipses, convergence), --generate_interactive CLI flag, CI Pages deployment, landing page. |
 | 2026-04-09 | Add with-BH-mass variant to plot_posterior_convergence | 1af4487 | Both variants shown on convergence plot; outdated delta-function assumption removed. |
+
+**Planned Phase:** 35 (Coordinate Bug Characterization) — 3 plans — 2026-04-21T21:29:40.875Z
