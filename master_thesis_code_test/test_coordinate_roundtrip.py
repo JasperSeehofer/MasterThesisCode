@@ -34,7 +34,6 @@ References
 """
 
 import numpy as np
-import pytest
 
 from master_thesis_code.galaxy_catalogue.handler import InternalCatalogColumns
 from master_thesis_code_test.fixtures.coordinate import (
@@ -127,7 +126,6 @@ class TestBallTreeRecoversEclipticEquatorGalaxy:
     xfail(strict) flips to XPASS once Phase 36 fixes the embedding.
     """
 
-    @pytest.mark.xfail(strict=True, reason=_XFAIL_REASON)
     def test_ball_tree_recovers_ecliptic_equator_galaxy(self) -> None:
         """Single galaxy at ecliptic theta=pi/2, phi=pi; query at the same point must retrieve it."""
         # Build a catalog already in ecliptic radians (bypass the rotation bug
@@ -171,7 +169,6 @@ class TestBallTreeRecoversNorthCelestialPole:
     numerical stability is subsumed per D-deferred note.
     """
 
-    @pytest.mark.xfail(strict=True, reason=_XFAIL_REASON)
     def test_ncp_round_trip_through_ingestion_and_balltree(self) -> None:
         """Equatorial Dec=+90° NCP should be retrievable after ingestion."""
         # Ground truth: NCP in ecliptic frame
@@ -280,7 +277,6 @@ class TestVernalEquinoxRoundTrip:
     tests to triangulate the obliquity sign and magnitude.
     """
 
-    @pytest.mark.xfail(strict=True, reason=_XFAIL_REASON)
     def test_vernal_equinox_galaxy_recovered_by_balltree(self) -> None:
         """Dec=0 galaxy (on both equators) must be retrievable via BallTree."""
         from master_thesis_code.galaxy_catalogue.handler import GalaxyCatalogueHandler
@@ -317,7 +313,6 @@ class TestNRandomEclipticEquatorRecovery:
     ambiguity.
     """
 
-    @pytest.mark.xfail(strict=True, reason=_XFAIL_REASON)
     def test_n_random_ecliptic_equator_galaxies_recovery_rate_above_99pct(self) -> None:
         """100 random ecliptic-equator galaxies; >=99 must round-trip via BallTree."""
         n = 100

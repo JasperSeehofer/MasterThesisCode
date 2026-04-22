@@ -284,13 +284,15 @@ class GalaxyCatalogueHandler:
 
     def setup_galaxy_catalog_balltree(self) -> None:
         # expects the reduced galaxy catalog to be setup already
-        ra = self.reduced_galaxy_catalog[InternalCatalogColumns.PHI_S].values
-        dec = self.reduced_galaxy_catalog[InternalCatalogColumns.THETA_S].values
+        # Columns were historically named RA/Dec (GLADE equatorial) but after
+        # Plan 36-01 (_rotate_equatorial_to_ecliptic), they hold ecliptic polar-
+        # angle pairs (θ_polar ∈ [0, π], φ ∈ [0, 2π)). The column constants
+        # PHI_S / THETA_S are kept for backward compatibility; see CONTEXT.md D-13.
+        phi = self.reduced_galaxy_catalog[InternalCatalogColumns.PHI_S].values
+        theta = self.reduced_galaxy_catalog[InternalCatalogColumns.THETA_S].values
 
-        x = np.cos(dec) * np.cos(ra)
-        y = np.cos(dec) * np.sin(ra)
-        z = np.sin(dec)
-        data = np.vstack((x, y, z)).T
+        # Eq. (standard spherical polar); COORD-02 fix per .planning/phases/36-coordinate-frame-fix/36-CONTEXT.md D-17
+        data = _polar_to_cartesian(theta, phi)
 
         self.catalog_ball_tree = BallTree(data, metric="euclidean")
         self.reduced_galaxy_catalog = self.reduced_galaxy_catalog.reset_index()
@@ -308,11 +310,9 @@ class GalaxyCatalogueHandler:
         z_max: float,
         sigma_multiplier: int = 2,
     ) -> tuple[list[HostGalaxy], list[HostGalaxy]] | None:
-        x = np.cos(theta) * np.cos(phi)
-        y = np.cos(theta) * np.sin(phi)
-        z = np.sin(theta)
-
-        query_point = np.array([[x, y, z]])
+        # Eq. (standard spherical polar); COORD-02 fix per .planning/phases/36-coordinate-frame-fix/36-CONTEXT.md D-17
+        # _polar_to_cartesian expects array inputs; wrap scalars.
+        query_point = _polar_to_cartesian(np.array([theta]), np.array([phi]))
 
         radius = max(phi_sigma, theta_sigma) * sigma_multiplier
 
