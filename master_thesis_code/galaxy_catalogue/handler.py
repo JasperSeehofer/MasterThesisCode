@@ -144,6 +144,7 @@ class GalaxyCatalogueHandler:
         self.M_min = M_min
         self.M_max = M_max
         self.z_max = z_max
+        self._angles_mapped_to_ecliptic: bool = False
         try:
             self.reduced_galaxy_catalog = self.read_reduced_galaxy_catalog()
             _LOGGER.info("Successfully loaded reduced galaxy catalog.")
@@ -615,6 +616,11 @@ class GalaxyCatalogueHandler:
         Expects :meth:`_rotate_equatorial_to_ecliptic` to have been called
         first (see Phase 36 COORD-03). ``θ_polar = π/2 − β`` ∈ ``[0, π]``.
         """
+        assert not self._angles_mapped_to_ecliptic, (
+            "_map_angles_to_spherical_coordinates called twice — "
+            "angles are already in ecliptic polar frame"
+        )
+        self._angles_mapped_to_ecliptic = True
         self.reduced_galaxy_catalog[InternalCatalogColumns.PHI_S] = (
             self.reduced_galaxy_catalog[InternalCatalogColumns.PHI_S] * np.pi / 180
         )

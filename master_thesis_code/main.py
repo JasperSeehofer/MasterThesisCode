@@ -365,7 +365,10 @@ def data_simulation(
     for cb in _callbacks:
         cb.on_simulation_start(simulation_steps)
 
-    from master_thesis_code.constants import LUMINOSITY_DISTANCE_PRESCREEN_GPC
+    from master_thesis_code.constants import (
+        LUMINOSITY_DISTANCE_PRESCREEN_GPC,
+        PRE_SCREEN_SNR_FACTOR,
+    )
 
     counter = 0
     iteration = 0
@@ -418,10 +421,10 @@ def data_simulation(
             # SNR scales as √T for stationary sources; EMRIs chirp so the
             # 1-yr / 5-yr ratio can be even lower.  Factor 0.3 is a conservative
             # compromise between the √T bound (0.447) and chirp margin.
-            if quick_snr < cosmological_model.snr_threshold * 0.3:
+            if quick_snr < cosmological_model.snr_threshold * PRE_SCREEN_SNR_FACTOR:
                 signal.alarm(0)
                 _ROOT_LOGGER.info(
-                    f"Quick SNR threshold check failed: {np.round(quick_snr, 3)} < {cosmological_model.snr_threshold * 0.3}."
+                    f"Quick SNR threshold check failed: {np.round(quick_snr, 3)} < {cosmological_model.snr_threshold * PRE_SCREEN_SNR_FACTOR}."
                 )
                 for cb in _callbacks:
                     cb.on_snr_computed(counter, quick_snr * np.sqrt(5), False)
