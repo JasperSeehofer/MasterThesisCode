@@ -18,7 +18,7 @@ Measure H₀ from simulated EMRI dark siren events with galaxy catalog completen
 - **v1.1 Clean Simulation Campaign** — shipped 2026-03-29 (Phases 6-8). Data cleanup, cluster access, end-to-end validation. Full details: `.planning/milestones/v1.1-ROADMAP.md`
 - **v1.0 EMRI HPC Integration** — shipped 2026-03-27 (Phases 1-5). CPU-safe imports, batch scripts, cluster env, SLURM jobs, documentation. Full details: `.planning/milestones/v1.0-ROADMAP.md`
 
-## Current State (v2.2 active, 2026-04-21)
+## Current State (v2.2 active, Phases 35–39 shipped, Phase 40 next)
 
 All 7 prior milestones shipped (v1.0–v1.5, v2.1). v2.1 fixed the completion-term
 bias to MAP=0.73 at bias=0.0% with N=59 events. The 2026-04-21 pre-batch audit
@@ -29,7 +29,15 @@ latitude conventions, collapsing all ecliptic-equator galaxies to a single axis
 and artificially spreading near-polar galaxies.
 
 v2.2 Pipeline Correctness addresses all 10 findings before the next cluster
-batch. v2.0 Paper remains paused pending v2.2 re-evaluation. Plan artifact:
+batch. **Phases 35–39 complete (2026-04-21..2026-04-23):** coordinate frame
+fixed (Phase 36), parameter estimation correctness restored (Phase 37 — h-threading
++ per-param epsilon), L_cat aligned with Gray Eq. 24-25 + symmetric P_det
+zero-fill (Phase 38), HPC + visualization safe wins shipped (Phase 39 —
+parameter_estimation.py CPU-importable, batched CRB writes, pressure-gated FFT
+cache, dead code removed, flip_hx verified KEEP, LaTeX figures, HDI bands).
+540 tests GREEN. **Phase 40 Verification Gate next** — re-evaluates existing
+CRBs under all v2.2 fixes; abort gate triggers if MAP at h=0.73 shifts >5% from
+v2.1 baseline. v2.0 Paper remains paused pending Phase 40 outcome. Plan artifact:
 `~/.claude/plans/i-want-a-last-elegant-feather.md`.
 
 **Remaining physics bugs** (tracked in CLAUDE.md, explicitly deferred past v2.2):
@@ -194,4 +202,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-21 — v2.2 Pipeline Correctness milestone started (post pre-batch audit)*
+*Last updated: 2026-04-23 — v2.2 Phases 35–39 complete (coord frame, PE correctness, statistical correctness, HPC/viz safe wins); Phase 40 Verification Gate next*
