@@ -1001,10 +1001,10 @@ class BayesianStatistics:
                     _comp_cov_inv_3d,
                     _comp_log_norm_3d,
                 )
-                p_det = (
-                    detection_probability_obj.detection_probability_without_bh_mass_interpolated(
-                        d_L, phi, theta, h=self.h
-                    )
+                # Gray et al. (2020), arXiv:1908.06050, Eq. A.19: symmetric zero-fill with D(h) denominator.
+                # P_det outside the injection grid is unmodeled; zero-fill is conservative (NN-fill overestimates).
+                p_det = detection_probability_obj.detection_probability_without_bh_mass_interpolated_zero_fill(
+                    d_L, phi, theta, h=self.h
                 )
                 dVc: npt.NDArray[np.float64] = np.atleast_1d(
                     np.asarray(comoving_volume_element(z, h=self.h), dtype=np.float64)
@@ -1173,7 +1173,9 @@ def single_host_likelihood(
         phi = np.full_like(z, host_phiS)
         theta = np.full_like(z, host_qS)
 
-        p_det = detection_probability.detection_probability_without_bh_mass_interpolated(
+        # Gray et al. (2020), arXiv:1908.06050, Eq. A.19: symmetric zero-fill with D(h) denominator.
+        # P_det outside the injection grid is unmodeled; zero-fill is conservative (NN-fill overestimates).
+        p_det = detection_probability.detection_probability_without_bh_mass_interpolated_zero_fill(
             d_L, phi, theta, h=h
         )
         return (
@@ -1191,7 +1193,9 @@ def single_host_likelihood(
         d_L = dist_vectorized(z, h=h)
         phi = np.full_like(z, host_phiS)
         theta = np.full_like(z, host_qS)
-        p_det = detection_probability.detection_probability_without_bh_mass_interpolated(
+        # Gray et al. (2020), arXiv:1908.06050, Eq. A.19: symmetric zero-fill with D(h) denominator.
+        # P_det outside the injection grid is unmodeled; zero-fill is conservative (NN-fill overestimates).
+        p_det = detection_probability.detection_probability_without_bh_mass_interpolated_zero_fill(
             d_L, phi, theta, h=h
         )
         return p_det * galaxy_redshift_normal_distribution.pdf(z)
@@ -1215,6 +1219,61 @@ def single_host_likelihood(
         n=FIXED_QUAD_N,
     )
 
+    # STAT-04: Per-event off-grid quadrature weight diagnostic.
+    # Estimate the fraction of the integration window that lies outside the P_det grid.
+    # Grid bounds are the first/last bin centres of the 1D interpolator grid.
+    # Attribute access: detection_probability._get_or_build_grid(h)[1].grid[0] → d_L centres.
+    _, _interp_1d = detection_probability._get_or_build_grid(h)
+    _dl_centers = _interp_1d.grid[0]
+    _dl_grid_min = float(_dl_centers[0])
+    _dl_grid_max = float(_dl_centers[-1])
+
+    # Numerator window: d_L(z_det ± 4σ)  [redshift limits → d_L limits]
+    _dl_lower_num = float(
+        dist_vectorized(np.array([numerator_integration_lower_redshift_limit]), h=h)[0]
+    )
+    _dl_upper_num = float(
+        dist_vectorized(np.array([numerator_integration_upper_redshift_limit]), h=h)[0]
+    )
+    _window_num = _dl_upper_num - _dl_lower_num
+    if _window_num > 0.0:
+        _below_min_num = max(0.0, min(_dl_upper_num, _dl_grid_min) - _dl_lower_num) / _window_num
+        _above_max_num = max(0.0, _dl_upper_num - max(_dl_lower_num, _dl_grid_max)) / _window_num
+        quadrature_weight_outside_grid_numerator = float(
+            np.clip(_below_min_num + _above_max_num, 0.0, 1.0)
+        )
+    else:
+        quadrature_weight_outside_grid_numerator = 0.0
+
+    # Denominator window: d_L(z_gal ± 4σ_z)  [redshift limits → d_L limits]
+    _dl_lower_den = float(
+        dist_vectorized(np.array([denominator_integration_lower_redshift_limit]), h=h)[0]
+    )
+    _dl_upper_den = float(
+        dist_vectorized(np.array([denominator_integration_upper_redshift_limit]), h=h)[0]
+    )
+    _window_den = _dl_upper_den - _dl_lower_den
+    if _window_den > 0.0:
+        _below_min_den = max(0.0, min(_dl_upper_den, _dl_grid_min) - _dl_lower_den) / _window_den
+        _above_max_den = max(0.0, _dl_upper_den - max(_dl_lower_den, _dl_grid_max)) / _window_den
+        quadrature_weight_outside_grid_denominator = float(
+            np.clip(_below_min_den + _above_max_den, 0.0, 1.0)
+        )
+    else:
+        quadrature_weight_outside_grid_denominator = 0.0
+
+    if (
+        quadrature_weight_outside_grid_numerator > 0.05
+        or quadrature_weight_outside_grid_denominator > 0.05
+    ):
+        _LOGGER.warning(
+            "Event %d: >5%% quadrature weight outside P_det grid — "
+            "numerator=%.3f, denominator=%.3f",
+            detection_index,
+            quadrature_weight_outside_grid_numerator,
+            quadrature_weight_outside_grid_denominator,
+        )
+
     if evaluate_with_bh_mass:
         galaxy_mass_normal_distribution = norm(loc=host_M, scale=host_M_error)
 
@@ -1234,6 +1293,9 @@ def single_host_likelihood(
             # NOTE: p_det uses the ML mass estimate (detection.M) rather than
             # M_gal*(1+z) at trial z. This is a known approximation, not a bug,
             # per Phase 14 analysis. The denominator uses M_gal*(1+z) correctly.
+            # TODO(STAT-03-bh): No zero_fill variant for with_bh_mass channel.
+            # detection_probability_with_bh_mass_interpolated_zero_fill not yet implemented.
+            # This creates a minor asymmetry vs the 1D channel — tracked in GitHub issue.
             p_det = detection_probability.detection_probability_with_bh_mass_interpolated(
                 d_L, np.full_like(z, _det_M), phi, theta, h=h
             )
@@ -1287,6 +1349,9 @@ def single_host_likelihood(
             M_z = M * (1 + z)
             phi = np.full_like(M, host_phiS)
             theta = np.full_like(M, host_qS)
+            # TODO(STAT-03-bh): No zero_fill variant for with_bh_mass channel.
+            # detection_probability_with_bh_mass_interpolated_zero_fill not yet implemented.
+            # This creates a minor asymmetry vs the 1D channel — tracked in GitHub issue.
             p_det = detection_probability.detection_probability_with_bh_mass_interpolated(
                 d_L, M_z, phi, theta, h=h
             )
@@ -1322,10 +1387,14 @@ def single_host_likelihood(
             single_host_likelihood_denominator_without_bh_mass,
             single_host_likelihood_numerator_with_bh_mass,
             single_host_likelihood_denominator_with_bh_mass,
+            quadrature_weight_outside_grid_numerator,
+            quadrature_weight_outside_grid_denominator,
         ]
     return [
         single_host_likelihood_numerator_without_bh_mass,
         single_host_likelihood_denominator_without_bh_mass,
+        quadrature_weight_outside_grid_numerator,
+        quadrature_weight_outside_grid_denominator,
     ]
 
 
@@ -1353,8 +1422,9 @@ def single_host_likelihood_integration_testing(
     def numerator_integrant_without_bh_mass(z: float) -> float:
         d_L = dist(z, h=h)
         luminosity_distance_fraction = d_L / detection.d_L
+        # Gray et al. (2020), arXiv:1908.06050, Eq. A.19: symmetric zero-fill with D(h) denominator.
         return float(
-            detection_probability.detection_probability_without_bh_mass_interpolated(
+            detection_probability.detection_probability_without_bh_mass_interpolated_zero_fill(
                 d_L, possible_host.phiS, possible_host.qS, h=h
             )
             * detection_likelihood_gaussians_by_detection_index[detection_index][0].pdf(
@@ -1365,8 +1435,9 @@ def single_host_likelihood_integration_testing(
 
     def denominator_integrant_without_bh_mass(z: float) -> float:
         d_L = dist(z, h=h)
+        # Gray et al. (2020), arXiv:1908.06050, Eq. A.19: symmetric zero-fill with D(h) denominator.
         return float(
-            detection_probability.detection_probability_without_bh_mass_interpolated(
+            detection_probability.detection_probability_without_bh_mass_interpolated_zero_fill(
                 d_L, possible_host.phiS, possible_host.qS, h=h
             )
             * galaxy_redshift_normal_distribution.pdf(z)
