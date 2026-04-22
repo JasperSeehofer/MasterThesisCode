@@ -927,36 +927,20 @@ class BayesianStatistics:
             L_cat_without_bh_mass = 0.0
             L_cat_with_bh_mass = 0.0
         else:
-            selection_effect_correction_without_bh_mass = np.sum(
-                [result[1] for result in results_without_blackhole_mass]
+            # Gray et al. (2020), arXiv:1908.06050, Eq. 24-25: L_cat = (1/N) Σ_g [N_g / D_g]
+            # under uniform 1/N galaxy prior. Note: Σ N_g / Σ D_g ≠ (1/N) Σ (N_g/D_g) when D_g
+            # vary (e.g., N=2, N_1=1, D_1=1, N_2=1, D_2=2: old=2/3, new=3/4). See
+            # test_l_cat_equivalence.py for the counterexample and limiting-case checks.
+            all_results_without_bh = list(results_without_blackhole_mass) + list(
+                results_with_bh_mass
             )
-            numerator_without_bh_mass = [result[0] for result in results_without_blackhole_mass]
-            numerator_without_bh_mass.extend([result[0] for result in results_with_bh_mass])
-
-            likelihood_without_bh_mass = np.sum(numerator_without_bh_mass)
-
-            selection_effect_correction_without_bh_mass += np.sum(
-                [result[1] for result in results_with_bh_mass]
-            )
-
-            if selection_effect_correction_without_bh_mass > 0:
-                L_cat_without_bh_mass = float(
-                    likelihood_without_bh_mass / selection_effect_correction_without_bh_mass
-                )
-            else:
-                L_cat_without_bh_mass = 0.0
+            ratios_without_bh = [r[0] / r[1] for r in all_results_without_bh if r[1] > 0]
+            L_cat_without_bh_mass = float(np.mean(ratios_without_bh)) if ratios_without_bh else 0.0
 
             if len(results_with_bh_mass) > 0:
-                likelihood_with_bh_mass = np.sum([result[2] for result in results_with_bh_mass])
-                selection_effect_correction_with_bh_mass = np.sum(
-                    [result[3] for result in results_with_bh_mass]
-                )
-                if selection_effect_correction_with_bh_mass > 0:
-                    L_cat_with_bh_mass = float(
-                        likelihood_with_bh_mass / selection_effect_correction_with_bh_mass
-                    )
-                else:
-                    L_cat_with_bh_mass = 0.0
+                # Gray et al. (2020), arXiv:1908.06050, Eq. 24-25: L_cat = (1/N) Σ_g [N_g / D_g]
+                ratios_with_bh = [r[2] / r[3] for r in results_with_bh_mass if r[3] > 0]
+                L_cat_with_bh_mass = float(np.mean(ratios_with_bh)) if ratios_with_bh else 0.0
             else:
                 L_cat_with_bh_mass = 0.0
 
