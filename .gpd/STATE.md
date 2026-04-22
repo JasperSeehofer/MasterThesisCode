@@ -14,7 +14,7 @@ See: .gpd/PROJECT.md (updated 2026-04-07)
 **Current Plan:** 02 (complete)
 **Total Phases:** TBD (v2.0 Phases 26-28 remain; v2.1 phases to be added)
 **Status:** Phase 32 complete. Full-volume D(h) denominator fix validated.
-**Last Activity:** 2026-04-08
+**Last Activity:** 2026-04-22
 **Last Activity Description:** Phase 32 complete. Full-volume D(h) denominator for L_comp eliminates H0 posterior bias: MAP 0.60→0.73 (both channels), bias -17.8%→0.0% at 59 events (SNR≥20). Cluster production run pending for definitive validation at 531 events.
 
 **Progress:** [██████████] 100% (Phase 32 complete)
@@ -67,6 +67,7 @@ Key carry-forward decisions:
 - [Phase quick-5]: Quick task 5: SNR rescaling refactor — literature confirms single-h injection is standard (Gray+2020, Laghi+2021, Finke+2021); SimulationDetectionProbability refactored to pool all injection data and compute P_det via exact SNR~1/d_L rescaling — Eliminates interpolation artifacts, pools 463k injection events, enables exact P_det at any h
 - [Phase 0]: Started milestone v2.1: Publication Figures — New milestone cycle — unify visualization, modern style, galaxy-level plots, interactive figures
 - [Phase 32]: Completion term fix — Full-volume D(h) denominator per Gray et al. (2020) Eq. A.19 eliminates H0 posterior bias (MAP 0.60→0.73, bias -17.8%→0.0%). L_comp > 1 is physically expected (p_GW is a probability density).
+- [Phase quick-6]: Quick task 6: PE-02 — Per-parameter derivative_epsilon for 14 EMRI parameters in ParameterSpace — Per-parameter epsilons derived from Vallisneri (2008) arXiv:gr-qc/0703086 Eq. (A11) 5-point stencil optimal step h* ≈ 3.3e-4 × |x|. Committed as [PHYSICS] PE-02. SC-3 regression tests pass (521 passing).
 
 ### Active Approximations
 
