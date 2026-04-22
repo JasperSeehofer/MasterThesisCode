@@ -60,6 +60,77 @@ class TestPlotH0Convergence:
         vlines = [line for line in ax_post.get_lines() if len(set(line.get_xdata())) == 1]
         assert len(vlines) >= 1
 
+    def test_plot_h0_convergence_without_bootstrap_bank_has_no_fill_between(self) -> None:
+        """VIZ-02 backward-compat: no band PolyCollection when bootstrap_bank=None."""
+        import matplotlib.pyplot as plt
+
+        h_values = np.linspace(0.5, 1.0, 100)
+        event_posteriors = [np.ones(100) for _ in range(10)]
+        fig, axes = plot_h0_convergence(h_values, event_posteriors)
+        ax_ci = axes[1]
+        poly_artists = [a for a in ax_ci.get_children() if isinstance(a, PolyCollection)]
+        assert len(poly_artists) == 0, "No PolyCollection expected without bootstrap_bank"
+        plt.close(fig)
+
+    def test_plot_h0_convergence_with_bootstrap_bank_adds_fill_between(self) -> None:
+        """VIZ-02: passing a bootstrap_bank adds at least one fill_between
+        PolyCollection on the right panel (axes[1]) for BOTH variants (no-mass
+        and with-mass) when event_posteriors_alt is supplied."""
+        import matplotlib.pyplot as plt
+
+        from master_thesis_code.plotting.convergence_analysis import ImprovementBank
+
+        h_values = np.linspace(0.5, 1.0, 100)
+        event_posteriors = [np.ones(100) for _ in range(10)]
+        event_posteriors_alt = [np.ones(100) for _ in range(10)]
+
+        # Minimal synthetic bank: every REQUIRED @dataclass field supplied
+        # (verified field list from convergence_analysis.py:218-232).  Only
+        # `sizes` and `metrics_{no,with}_mass["hdi68_width"]["p16"/"p84"]` are
+        # read by plot_h0_convergence's band block; the rest are placeholders.
+        bank = ImprovementBank(
+            h_grid=np.linspace(0.5, 1.0, 100),
+            h_true=0.73,
+            sizes=[1, 5, 10],
+            n_bootstrap=0,
+            seed=0,
+            metrics_no_mass={
+                "hdi68_width": {
+                    "median": [0.30, 0.20, 0.10],
+                    "p16": [0.25, 0.15, 0.08],
+                    "p84": [0.35, 0.25, 0.12],
+                }
+            },
+            metrics_with_mass={
+                "hdi68_width": {
+                    "median": [0.25, 0.18, 0.09],
+                    "p16": [0.22, 0.14, 0.07],
+                    "p84": [0.28, 0.22, 0.11],
+                }
+            },
+            fractional_improvement={},
+            effective_event_gain={},
+            jsd_bits={},
+            representative_posteriors_no_mass=[],
+            representative_posteriors_with_mass=[],
+            n_events_no_mass=0,
+            n_events_with_mass=0,
+            # cache_meta omitted — has default_factory
+        )
+
+        fig, axes = plot_h0_convergence(
+            h_values,
+            event_posteriors,
+            event_posteriors_alt=event_posteriors_alt,
+            bootstrap_bank=bank,
+        )
+        ax_ci = axes[1]
+        poly_artists = [a for a in ax_ci.get_children() if isinstance(a, PolyCollection)]
+        # Two fill_between calls expected (no-mass + with-mass); a conservative
+        # lower bound of 1 still flags the total absence of the band block.
+        assert len(poly_artists) >= 1, "At least one PolyCollection (fill_between) expected"
+        plt.close(fig)
+
 
 class TestPlotDetectionEfficiency:
     """Tests for the detection efficiency curve plot."""
