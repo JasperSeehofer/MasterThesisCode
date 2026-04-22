@@ -9,6 +9,7 @@ all 14 EMRI parameters.
 
 import logging
 import time
+import types
 import warnings
 from typing import Any
 
@@ -48,6 +49,20 @@ from master_thesis_code.waveform_generator import (
 _LOGGER = logging.getLogger()
 
 
+def _get_xp(use_gpu: bool) -> types.ModuleType:
+    """Resolve the array namespace: cupy when use_gpu and cupy available, else numpy."""
+    if use_gpu and _CUPY_AVAILABLE and cp is not None:
+        return cp  # type: ignore[no-any-return]
+    return np
+
+
+def _get_fft(use_gpu: bool) -> types.ModuleType:
+    """Resolve the FFT namespace: cupyx.scipy.fft when use_gpu and cupy available, else numpy.fft."""
+    if use_gpu and _CUPY_AVAILABLE and cufft is not None:
+        return cufft  # type: ignore[no-any-return]
+    return np.fft
+
+
 class ParameterEstimation:
     """EMRI waveform-based parameter estimation using the LISA Fisher information matrix.
 
@@ -81,6 +96,20 @@ class ParameterEstimation:
         self.parameter_space = parameter_space
         self._use_gpu = use_gpu
         self._use_five_point_stencil = use_five_point_stencil
+        # HPC-01: resolve array / FFT namespaces once. Downstream methods
+        # (_get_cached_psd, scalar_product_of_functions, five_point_stencil_derivative,
+        # _crop_to_same_length, compute_fisher_information_matrix, compute_signal_to_noise_ratio)
+        # use self._xp and self._fft instead of module-level cp / cufft, so the class
+        # is importable and runnable on a CPU-only machine without cupy installed.
+        self._xp = _get_xp(use_gpu)
+        self._fft = _get_fft(use_gpu)
+        if use_gpu and not _CUPY_AVAILABLE:
+            warnings.warn(
+                "ParameterEstimation: use_gpu=True but cupy is not installed; "
+                "falling back to numpy. Expect ~100x slowdown.",
+                RuntimeWarning,
+                stacklevel=2,
+            )
         self.lisa_response_generator = create_lisa_response_generator(
             waveform_generation_type,
             self.dt,
@@ -107,14 +136,14 @@ class ParameterEstimation:
         inner products — all 105 calls in one Fisher matrix share the same n in practice.
         """
         if n not in self._psd_cache:
-            fs_full = cufft.rfftfreq(n, self.dt)[1:]
-            lower_idx = int(cp.argmax(fs_full >= MINIMAL_FREQUENCY))
-            upper_idx = int(cp.argmax(fs_full >= MAXIMAL_FREQUENCY))
+            fs_full = self._fft.rfftfreq(n, self.dt)[1:]
+            lower_idx = int(self._xp.argmax(fs_full >= MINIMAL_FREQUENCY))
+            upper_idx = int(self._xp.argmax(fs_full >= MAXIMAL_FREQUENCY))
             if upper_idx == 0:
                 upper_idx = int(len(fs_full))
             fs = fs_full[lower_idx:upper_idx]
             # A and E channels share the same PSD formula; stack to (n_channels, n_freqs)
-            psd_stack = cp.stack(
+            psd_stack = self._xp.stack(
                 [
                     self.lisa_configuration.power_spectral_density(fs, channel=ch)
                     for ch in ESA_TDI_CHANNELS
@@ -135,7 +164,7 @@ class ParameterEstimation:
         # fastlisaresponse >=1.1.17 returns a list of per-channel arrays instead of
         # a single stacked array. Convert to (n_channels, n_samples) for downstream code.
         if isinstance(result, list):
-            result = cp.stack(result)
+            result = self._xp.stack(result)
         return result
 
     def finite_difference_derivative(self) -> dict[str, Any]:
@@ -256,8 +285,8 @@ class ParameterEstimation:
         _LOGGER.info("Finished computing 5-point stencil partial derivatives.")
         return derivatives
 
-    @staticmethod
     def _crop_to_same_length(
+        self,
         signal_collection: list[list[Any]],
     ) -> Any:
         max_possible_length = min(
@@ -270,7 +299,7 @@ class ParameterEstimation:
                 ]
             )
         )
-        return cp.array(
+        return self._xp.array(
             [
                 [tdi_channel[:max_possible_length] for tdi_channel in tdi_channels]
                 for tdi_channels in signal_collection
@@ -314,8 +343,10 @@ class ParameterEstimation:
 
         # Batch FFT all channels at once: rfft shape (n_channels, n_min//2+1).
         # Slice [1:] skips DC; [lower_idx:upper_idx] restricts to the analysis band.
-        a_ffts = cufft.rfft(tdi_channels_a[:, :n_min], axis=-1)[:, 1 + lower_idx : 1 + upper_idx]
-        b_ffts_cc = cp.conjugate(cufft.rfft(tdi_channels_b[:, :n_min], axis=-1))[
+        a_ffts = self._fft.rfft(tdi_channels_a[:, :n_min], axis=-1)[
+            :, 1 + lower_idx : 1 + upper_idx
+        ]
+        b_ffts_cc = self._xp.conjugate(self._fft.rfft(tdi_channels_b[:, :n_min], axis=-1))[
             :, 1 + lower_idx : 1 + upper_idx
         ]
 
@@ -328,23 +359,8 @@ class ParameterEstimation:
 
         # Integrand (n_channels, n_freqs); sum over channels then integrate over frequency.
         integrant = (a_ffts * b_ffts_cc) / psd_crop
-        result = 4.0 * float(cp.trapz(integrant.sum(axis=0).real, x=fs_crop))
+        result = 4.0 * float(self._xp.trapz(integrant.sum(axis=0).real, x=fs_crop))
         return result
-
-    @staticmethod
-    def _crop_frequency_domain(fs: Any, integrant: Any) -> tuple[Any, Any]:
-        if len(fs) != len(integrant):
-            _LOGGER.warning("length of frequency domain and integrant are not equal.")
-
-        # find lowest frequency
-        lower_limit_index = cp.argmax(fs >= MINIMAL_FREQUENCY)
-        upper_limit_index = cp.argmax(fs >= MAXIMAL_FREQUENCY)
-        if upper_limit_index == 0:
-            upper_limit_index = len(fs)
-        return (
-            fs[lower_limit_index:upper_limit_index],
-            integrant[lower_limit_index:upper_limit_index],
-        )
 
     def compute_fisher_information_matrix(self) -> Any:
         # compute derivatives for fisher information matrix
@@ -356,8 +372,7 @@ class ParameterEstimation:
         else:
             lisa_response_derivatives = self.finite_difference_derivative()
 
-        xp = cp if (_CUPY_AVAILABLE and cp is not None) else np
-        fisher_information_matrix = xp.zeros(
+        fisher_information_matrix = self._xp.zeros(
             shape=(len(parameter_symbol_list), len(parameter_symbol_list)), dtype=float
         )
 
@@ -429,7 +444,7 @@ class ParameterEstimation:
         self.waveform_generation_time = round(end - start, 3)
 
         self.current_waveform = waveform
-        snr = cp.sqrt(self.scalar_product_of_functions(waveform, waveform))
+        snr = self._xp.sqrt(self.scalar_product_of_functions(waveform, waveform))
         del waveform
         return float(snr)
 
