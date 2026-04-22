@@ -145,12 +145,12 @@ def test_set_host_galaxy_parameters_updates_fields() -> None:
     )
 
     ps = ParameterSpace()
-    ps.set_host_galaxy_parameters(host)
+    ps.set_host_galaxy_parameters(host, h=0.73)
 
     assert ps.phiS.value == phi_s
     assert ps.qS.value == q_s
     assert ps.M.value == M
-    expected_dist = dist(z)
+    expected_dist = dist(z, h=0.73)
     assert abs(ps.luminosity_distance.value - expected_dist) < 1e-10
 
 
@@ -162,8 +162,8 @@ def test_set_host_galaxy_parameters_overwrites_previous_values() -> None:
     host2 = HostGalaxy.from_attributes(phiS=2.5, qS=1.0, z=0.5, z_error=0.001, M=9e5, M_error=1e4)
 
     ps = ParameterSpace()
-    ps.set_host_galaxy_parameters(host1)
-    ps.set_host_galaxy_parameters(host2)
+    ps.set_host_galaxy_parameters(host1, h=0.73)
+    ps.set_host_galaxy_parameters(host2, h=0.73)
 
     assert ps.phiS.value == 2.5
     assert ps.qS.value == 1.0

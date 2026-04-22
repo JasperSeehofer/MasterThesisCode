@@ -141,11 +141,13 @@ class ParameterSpace:
             if isinstance(parameter, Parameter) and not parameter.is_fixed:
                 self.randomize_parameter(parameter=parameter, rng=rng)
 
-    def set_host_galaxy_parameters(self, host_galaxy: HostGalaxy) -> None:
+    def set_host_galaxy_parameters(self, host_galaxy: HostGalaxy, h: float) -> None:
         self.M.value = host_galaxy.M
         self.phiS.value = host_galaxy.phiS
         self.qS.value = host_galaxy.qS
-        self.luminosity_distance.value = dist(host_galaxy.z)
+        # h_inj threaded explicitly per PE-01 (Phase 37); dark siren PE self-consistency at h_inj
+        # (Gray et al. 2020, Laghi et al. 2021). h has no default — calling without h raises TypeError (SC-2).
+        self.luminosity_distance.value = dist(host_galaxy.z, h=h)  # SC-1: h_inj threaded
 
     def _parameters_to_dict(self) -> dict:
         return {

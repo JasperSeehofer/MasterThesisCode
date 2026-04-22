@@ -102,6 +102,7 @@ def main() -> None:
             cosmological_model,
             galaxy_catalog,
             arguments.simulation_index,
+            arguments.h_value,
             rng=rng,
             use_gpu=arguments.use_gpu,
         )
@@ -321,6 +322,7 @@ def data_simulation(
     cosmological_model: Model1CrossCheck,
     galaxy_catalog: GalaxyCatalogueHandler,
     simulation_index: int,
+    h_value: float,
     callbacks: list["SimulationCallback"] | None = None,
     rng: np.random.Generator | None = None,
     *,
@@ -394,7 +396,7 @@ def data_simulation(
 
         parameter_estimation.parameter_space.randomize_parameters(rng=rng)
 
-        parameter_estimation.parameter_space.set_host_galaxy_parameters(host_galaxy)
+        parameter_estimation.parameter_space.set_host_galaxy_parameters(host_galaxy, h=h_value)
 
         # Distance pre-screen: skip events far beyond LISA's EMRI detection horizon
         # (~1.55 Gpc) before generating any waveform.  The 2.0 Gpc cutoff includes
@@ -649,8 +651,8 @@ def injection_campaign(
         # Set M from population model sample
         parameter_estimation.parameter_space.M.value = sample.M
 
-        # CRITICAL per D-04: Set luminosity distance with candidate h value
-        # (NOT set_host_galaxy_parameters which hardcodes h=0.73)
+        # Set luminosity distance with candidate h value (injection pipeline does not use
+        # set_host_galaxy_parameters — it sets d_L directly since no host galaxy is needed).
         luminosity_distance = dist(sample.redshift, h=h_value)
         parameter_estimation.parameter_space.luminosity_distance.value = luminosity_distance
 
