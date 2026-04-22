@@ -378,7 +378,7 @@ def data_simulation(
 
     while counter < simulation_steps:
         memory_management.gpu_usage_stamp()
-        memory_management.free_gpu_memory()
+        memory_management.free_gpu_memory_if_pressured()
         memory_management.gpu_usage_stamp()
 
         _ROOT_LOGGER.info(
@@ -636,7 +636,7 @@ def injection_campaign(
 
         if iteration % _GPU_FREE_INTERVAL == 0:
             memory_management.gpu_usage_stamp()
-            memory_management.free_gpu_memory()
+            memory_management.free_gpu_memory_if_pressured()
         iteration += 1
 
         if counter % _LOG_INTERVAL == 0:
