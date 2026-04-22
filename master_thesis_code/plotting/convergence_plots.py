@@ -9,6 +9,8 @@ Factory functions for two key thesis diagnostic plots:
   confidence intervals.
 """
 
+from typing import TYPE_CHECKING
+
 import numpy as np
 import numpy.typing as npt
 from astropy.stats import binom_conf_interval
@@ -18,6 +20,10 @@ from matplotlib.figure import Figure
 from master_thesis_code.plotting._colors import CYCLE, TRUTH, VARIANT_NO_MASS, VARIANT_WITH_MASS
 from master_thesis_code.plotting._helpers import _fig_from_ax, compute_credible_interval, get_figure
 from master_thesis_code.plotting._labels import LABELS
+
+if TYPE_CHECKING:
+    # Type-only import avoids a circular dep with convergence_analysis at runtime.
+    from master_thesis_code.plotting.convergence_analysis import ImprovementBank
 
 # Default subset sizes for convergence analysis
 _DEFAULT_SUBSETS: list[int] = [1, 5, 10, 25, 50, 100]
@@ -61,6 +67,7 @@ def plot_h0_convergence(
     label_alt: str = r"With $M_z$",
     color: str | None = None,
     color_alt: str | None = None,
+    bootstrap_bank: "ImprovementBank | None" = None,
     ax: None = None,  # noqa: ARG001 — reserved for API consistency
 ) -> tuple[Figure, npt.NDArray[np.object_]]:
     """Two-panel H0 convergence plot, optionally comparing two variants.
@@ -95,6 +102,12 @@ def plot_h0_convergence(
         Curve color for the primary variant.
     color_alt:
         Curve color for the alternative variant.
+    bootstrap_bank:
+        Optional :class:`ImprovementBank` from
+        :func:`compute_m_z_improvement_bank`.  When provided, the right
+        panel draws a 16/84 percentile HDI band around the CI-width
+        curve, per variant (primary, alt).  Default ``None`` preserves
+        the pre-VIZ-02 behavior (no band).
     ax:
         Ignored (two-panel layout always created internally).
 
@@ -170,6 +183,29 @@ def plot_h0_convergence(
         sizes_alt_arr = np.asarray(sizes_alt, dtype=np.float64)
         ci_alt_arr = np.asarray(ci_widths_alt, dtype=np.float64)
         ax_ci.plot(sizes_alt_arr, ci_alt_arr, "s--", color=color_alt, label=label_alt)
+
+    # --- Optional bootstrap HDI band on the right panel (VIZ-02) ---
+    if bootstrap_bank is not None:
+        b_sizes = np.asarray(bootstrap_bank.sizes, dtype=np.float64)
+        # Primary variant (no mass)
+        w_no_lo = np.asarray(
+            bootstrap_bank.metrics_no_mass["hdi68_width"]["p16"], dtype=np.float64
+        )
+        w_no_hi = np.asarray(
+            bootstrap_bank.metrics_no_mass["hdi68_width"]["p84"], dtype=np.float64
+        )
+        ax_ci.fill_between(b_sizes, w_no_lo, w_no_hi, color=color, alpha=0.2, zorder=2)
+        # Alt variant (with mass) — only if alt posteriors were provided
+        if event_posteriors_alt is not None:
+            w_with_lo = np.asarray(
+                bootstrap_bank.metrics_with_mass["hdi68_width"]["p16"], dtype=np.float64
+            )
+            w_with_hi = np.asarray(
+                bootstrap_bank.metrics_with_mass["hdi68_width"]["p84"], dtype=np.float64
+            )
+            ax_ci.fill_between(
+                b_sizes, w_with_lo, w_with_hi, color=color_alt, alpha=0.2, zorder=2
+            )
 
     # 1/sqrt(N) reference curve scaled to match first point of primary
     if len(sizes) > 1 and ci_widths[0] > 0:
