@@ -7,6 +7,7 @@ from enum import Enum
 from statistics import NormalDist
 
 import numpy as np
+import numpy.typing as npt
 import pandas as pd
 from sklearn.neighbors import BallTree
 
@@ -641,6 +642,30 @@ class GalaxyCatalogueHandler:
                 ** 2
             ).idxmin()
         )
+
+
+def _polar_to_cartesian(
+    theta: npt.NDArray[np.float64], phi: npt.NDArray[np.float64]
+) -> npt.NDArray[np.float64]:
+    """Map polar (θ, φ) to Cartesian unit vectors on S².
+
+    Uses the standard physics convention where θ is the polar angle
+    measured from the north pole: θ ∈ [0, π], θ=0 at north pole.
+
+    Args:
+        theta: Polar angle(s) in radians, shape (N,) or scalar.
+        phi: Azimuthal angle(s) in radians, shape (N,) or scalar.
+
+    Returns:
+        (N, 3) array of unit vectors (x, y, z) = (sin θ cos φ, sin θ sin φ, cos θ).
+        Each row satisfies ||v||₂ = 1 to floating-point precision.
+
+    References:
+        Standard spherical polar convention; see
+        .planning/phases/36-coordinate-frame-fix/36-CONTEXT.md D-17.
+    """
+    # Eq. (standard spherical polar); .planning/phases/36-coordinate-frame-fix/36-CONTEXT.md D-17
+    return np.vstack((np.sin(theta) * np.cos(phi), np.sin(theta) * np.sin(phi), np.cos(theta))).T
 
 
 def _polar_angle_to_declination(polar_angle: float) -> float:

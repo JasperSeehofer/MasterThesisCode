@@ -195,6 +195,7 @@ class TestBallTreeRecoversNorthCelestialPole:
         instance.reduced_galaxy_catalog = df
         # This call is expected to rotate equatorial->ecliptic AND map deg->rad
         # (currently it only maps deg->rad — that is the bug).
+        instance._rotate_equatorial_to_ecliptic()  # type: ignore[attr-defined]  # noqa: SLF001  (D-13: rotation is a separate __init__ step; type: ignore removed when [PHYSICS] COORD-03 lands the method)
         instance._map_angles_to_spherical_coordinates()  # noqa: SLF001
         instance.setup_galaxy_catalog_balltree()
 
@@ -230,6 +231,7 @@ class TestSummerSolsticeRotation:
 
         instance = object.__new__(GalaxyCatalogueHandler)
         instance.reduced_galaxy_catalog = df
+        instance._rotate_equatorial_to_ecliptic()  # type: ignore[attr-defined]  # noqa: SLF001  (D-13: rotation is a separate __init__ step; type: ignore removed when [PHYSICS] COORD-03 lands the method)
         instance._map_angles_to_spherical_coordinates()  # noqa: SLF001
 
         theta_stored = float(
@@ -260,6 +262,7 @@ class TestEclipticPoleIngestion:
 
         instance = object.__new__(GalaxyCatalogueHandler)
         instance.reduced_galaxy_catalog = df
+        instance._rotate_equatorial_to_ecliptic()  # type: ignore[attr-defined]  # noqa: SLF001  (D-13: rotation is a separate __init__ step; type: ignore removed when [PHYSICS] COORD-03 lands the method)
         instance._map_angles_to_spherical_coordinates()  # noqa: SLF001
 
         theta_stored = float(
@@ -290,6 +293,7 @@ class TestVernalEquinoxRoundTrip:
 
         instance = object.__new__(GalaxyCatalogueHandler)
         instance.reduced_galaxy_catalog = df
+        instance._rotate_equatorial_to_ecliptic()  # type: ignore[attr-defined]  # noqa: SLF001  (D-13: rotation is a separate __init__ step; type: ignore removed when [PHYSICS] COORD-03 lands the method)
         instance._map_angles_to_spherical_coordinates()  # noqa: SLF001
         instance.setup_galaxy_catalog_balltree()
 
