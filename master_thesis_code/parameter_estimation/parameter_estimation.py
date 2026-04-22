@@ -174,7 +174,8 @@ class ParameterEstimation:
             parameter_symbol (str): parameter w.r.t. which the derivative is taken (Note: symbol string has to coincide with that in the ParameterSpace list!)
 
         Returns:
-            cp.array[float]: data series of derivative
+            dict[str, Any]: mapping of parameter symbol to its derivative array
+            (numpy.ndarray on CPU, cupy.ndarray on GPU; resolved by self._xp).
         """
         derivatives: dict = {}
 
