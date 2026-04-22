@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v2.2
 milestone_name: milestone
-status: planning
-stopped_at: Phase 37 context gathered (2026-04-22)
-last_updated: "2026-04-22T12:30:00.000Z"
-last_activity: 2026-04-22
+status: executing
+stopped_at: Completed [PHYSICS] PE-01 commit 55a6d99 — h-threading into set_host_galaxy_parameters; PE-02 pending GPD delegation
+last_updated: "2026-04-22T12:56:01.852Z"
+last_activity: 2026-04-22 -- Phase --phase execution started
 progress:
   total_phases: 8
   completed_phases: 2
-  total_plans: 8
-  completed_plans: 8
-  percent: 100
+  total_plans: 11
+  completed_plans: 10
+  percent: 91
 ---
 
 # Project State
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-21)
 
 **Core value:** Measure H₀ from simulated EMRI dark siren events with galaxy catalog completeness correction, producing publication-ready results.
-**Current focus:** Phase 37 — Parameter Estimation Correctness
+**Current focus:** Phase --phase — 37
 
 ## Current Position
 
-Phase: 37
-Plan: Not started
-Status: Ready to plan
-Last activity: 2026-04-22
+Phase: --phase (37) — EXECUTING
+Plan: 1 of --name
+Status: Executing Phase --phase
+Last activity: 2026-04-22 -- Phase --phase execution started
 
 **Milestone phase map:**
 
@@ -115,8 +115,8 @@ Phase 30 (Baseline/comparison), Phase 31 (Catalog-only diagnostic), Phase 32 (L_
 
 ## Session Continuity
 
-Last session: 2026-04-22T11:54:22.106Z
-Stopped at: context exhaustion at 96% (2026-04-22)
+Last session: 2026-04-22T12:56:01.850Z
+Stopped at: Completed [PHYSICS] PE-01 commit 55a6d99 — h-threading into set_host_galaxy_parameters; PE-02 pending GPD delegation
 Resume file: None
 Next command: `/gpd:plan-phase 37`
 
@@ -131,3 +131,4 @@ Next command: `/gpd:plan-phase 37`
 **Planned Phase:** 35 (Coordinate Bug Characterization) — 3 plans — 2026-04-21T21:29:40.875Z
 | Phase 36 P03 | 230 | 4 tasks | 4 files |
 | Phase 36-coordinate-frame-fix P04 | 2 | 3 tasks | 1 files |
+| Phase 37 P02 | 18 | 4 tasks | 4 files |
