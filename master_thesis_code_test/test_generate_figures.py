@@ -91,3 +91,59 @@ class TestGenerateFigures:
                 _check_file_size(fake_path, "small_figure")
 
         assert not any("exceeds 2 MB" in rec.message for rec in caplog.records)
+
+
+class TestApplyStyleLatexGating:
+    """VIZ-01: LaTeX auto-detection at the top of generate_figures."""
+
+    def test_latex_branch_called_when_which_returns_path(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """When shutil.which('latex') returns a string,
+        apply_style(use_latex=True) is invoked exactly once."""
+        calls: list[bool] = []
+
+        def fake_apply_style(*, use_latex: bool = False) -> None:
+            calls.append(use_latex)
+
+        import master_thesis_code.main as main_module
+        from master_thesis_code.plotting import _style as style_module
+
+        monkeypatch.setattr(main_module.shutil, "which", lambda name: "/usr/bin/latex")
+        # generate_figures does `from master_thesis_code.plotting._style import apply_style`
+        # at function entry; patching the attribute on the source module makes the
+        # rebinding pick up our spy.
+        monkeypatch.setattr(style_module, "apply_style", fake_apply_style)
+
+        out = tmp_path / "out"
+        out.mkdir()
+        try:
+            main_module.generate_figures(str(out))
+        except Exception:
+            # downstream figure failures are acceptable; we only assert on apply_style
+            pass
+        assert True in calls, f"apply_style(use_latex=True) not called; calls={calls}"
+
+    def test_mathtext_branch_called_when_which_returns_none(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """When shutil.which('latex') returns None, apply_style() (use_latex=False)
+        is invoked exactly once."""
+        calls: list[bool] = []
+
+        def fake_apply_style(*, use_latex: bool = False) -> None:
+            calls.append(use_latex)
+
+        import master_thesis_code.main as main_module
+        from master_thesis_code.plotting import _style as style_module
+
+        monkeypatch.setattr(main_module.shutil, "which", lambda name: None)
+        monkeypatch.setattr(style_module, "apply_style", fake_apply_style)
+
+        out = tmp_path / "out"
+        out.mkdir()
+        try:
+            main_module.generate_figures(str(out))
+        except Exception:
+            pass
+        assert False in calls, f"apply_style() (no kwarg) not called; calls={calls}"

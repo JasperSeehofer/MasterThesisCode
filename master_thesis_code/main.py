@@ -2,6 +2,7 @@ import datetime
 import json
 import logging
 import os
+import shutil
 import signal
 import subprocess
 import warnings
@@ -800,7 +801,13 @@ def generate_figures(output_dir: str) -> None:
     from master_thesis_code.plotting._helpers import save_figure
     from master_thesis_code.plotting._style import apply_style
 
-    apply_style()
+    # VIZ-01: auto-detect a local LaTeX install and route to the matching style.
+    if shutil.which("latex"):
+        apply_style(use_latex=True)
+        _ROOT_LOGGER.info("LaTeX detected; rendering figures with text.usetex=True")
+    else:
+        apply_style()
+        _ROOT_LOGGER.info("LaTeX not detected; using mathtext fallback")
     figures_dir = os.path.join(output_dir, "figures")
     _ROOT_LOGGER.info("Generating figures to %s", figures_dir)
 
@@ -1015,16 +1022,27 @@ def generate_figures(output_dir: str) -> None:
     def _gen_h0_convergence() -> tuple[object, object] | None:
         if post_data is None:
             return None
+        from master_thesis_code.constants import H as TRUE_H
+        from master_thesis_code.plotting.convergence_analysis import (
+            compute_m_z_improvement_bank,
+        )
         from master_thesis_code.plotting.convergence_plots import plot_h0_convergence
 
         h_vals, event_posts = post_data
         h_alt, ep_alt = post_data_with if post_data_with is not None else (None, None)
+        # VIZ-02: try to load the cached improvement bank for the right-panel band.
+        # Cached on disk by compute_m_z_improvement_bank — one JSON read per call.
+        try:
+            bootstrap_bank = compute_m_z_improvement_bank(Path(output_dir), h_true=float(TRUE_H))
+        except (FileNotFoundError, ValueError, KeyError):
+            bootstrap_bank = None
         return plot_h0_convergence(
             h_vals,
             event_posts,
-            true_h=0.73,
+            true_h=float(TRUE_H),
             h_values_alt=h_alt,
             event_posteriors_alt=ep_alt,
+            bootstrap_bank=bootstrap_bank,
         )
 
     manifest.append(("fig08_h0_convergence", _gen_h0_convergence))
