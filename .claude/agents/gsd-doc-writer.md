@@ -1,0 +1,1 @@
+/home/jasper/.claude/agent-store/gsd-doc-writer.md

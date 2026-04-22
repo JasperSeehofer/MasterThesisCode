@@ -1,0 +1,1 @@
+/home/jasper/.claude/agent-store/gsd-research-synthesizer.md
