@@ -41,6 +41,9 @@ def _make_minimal_pe(tmp_path: pathlib.Path) -> Any:
     pe._use_five_point_stencil = True  # default after Phase 10 Task 2
     pe._crb_buffer = []
     pe._crb_flush_interval = 1  # flush immediately so tests can assert on file contents
+    # HPC-01: shim attributes so downstream methods work on CPU
+    pe._xp = pe_module._get_xp(False)
+    pe._fft = pe_module._get_fft(False)
     return pe
 
 
@@ -487,3 +490,73 @@ def test_fisher_matrix_is_symmetric() -> None:
     n_params = len(param_names)
     assert F_np.shape == (n_params, n_params)
     assert np.allclose(F_np, F_np.T), "Fisher matrix must be symmetric"
+
+
+# ---------------------------------------------------------------------------
+# HPC-01: self._xp / self._fft shim (CPU-only — no GPU required)
+# ---------------------------------------------------------------------------
+
+
+class TestArrayNamespaceShim:
+    """Verify the HPC-01 _get_xp / _get_fft helpers and self._xp / self._fft attributes."""
+
+    def test_get_xp_returns_numpy_when_use_gpu_false(self) -> None:
+        """`_get_xp(False)` must return the numpy module."""
+        assert pe_module._get_xp(False) is np
+
+    def test_get_fft_returns_numpy_fft_when_use_gpu_false(self) -> None:
+        """`_get_fft(False)` must return numpy.fft."""
+        assert pe_module._get_fft(False) is np.fft
+
+    def test_get_xp_returns_numpy_when_cupy_unavailable(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """`_get_xp(True)` must fall back to numpy when cupy is not available."""
+        monkeypatch.setattr(pe_module, "_CUPY_AVAILABLE", False)
+        monkeypatch.setattr(pe_module, "cp", None)
+        assert pe_module._get_xp(True) is np
+
+    def test_get_fft_returns_numpy_fft_when_cupy_unavailable(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """`_get_fft(True)` must fall back to numpy.fft when cupy is not available."""
+        monkeypatch.setattr(pe_module, "_CUPY_AVAILABLE", False)
+        monkeypatch.setattr(pe_module, "cufft", None)
+        assert pe_module._get_fft(True) is np.fft
+
+    def test_minimal_pe_has_xp_and_fft_attributes(self, tmp_path: pathlib.Path) -> None:
+        """A constructed ParameterEstimation instance must have _xp and _fft attributes."""
+        pe = _make_minimal_pe(tmp_path)
+        # _make_minimal_pe must initialise the shim so downstream methods work on CPU
+        assert hasattr(pe, "_xp"), "ParameterEstimation instance must expose self._xp"
+        assert hasattr(pe, "_fft"), "ParameterEstimation instance must expose self._fft"
+
+    def test_get_cached_psd_works_on_cpu(self, tmp_path: pathlib.Path) -> None:
+        """_get_cached_psd must run without crashing on CPU when self._xp/_fft are numpy."""
+        from master_thesis_code.LISA_configuration import LisaTdiConfiguration
+
+        pe = _make_minimal_pe(tmp_path)
+        # Use a real LISA configuration so power_spectral_density returns an array
+        pe.lisa_configuration = LisaTdiConfiguration()
+        pe._psd_cache = {}
+
+        fs, psd_stack, lower_idx, upper_idx = pe._get_cached_psd(8192)
+        # On CPU, fs and psd_stack must be numpy arrays
+        assert isinstance(fs, np.ndarray)
+        assert isinstance(psd_stack, np.ndarray)
+        # Sanity: PSD has 2 channels (A, E) and matches fs length
+        assert psd_stack.shape[0] == 2
+        assert psd_stack.shape[1] == fs.shape[0]
+        assert upper_idx > lower_idx
+
+
+# ---------------------------------------------------------------------------
+# HPC-04: Dead code removal — _crop_frequency_domain must not exist
+# ---------------------------------------------------------------------------
+
+
+def test_crop_frequency_domain_method_is_removed() -> None:
+    """_crop_frequency_domain (HPC-04) must be deleted from ParameterEstimation."""
+    assert not hasattr(ParameterEstimation, "_crop_frequency_domain"), (
+        "_crop_frequency_domain dead method must be removed (HPC-04 / D-13)"
+    )
