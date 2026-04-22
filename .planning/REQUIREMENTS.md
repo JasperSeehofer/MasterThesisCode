@@ -10,12 +10,10 @@ Fix all 10 findings from the 2026-04-21 pre-batch audit — two critical coordin
 ### Coordinate Frame Correctness
 
 - [x] **COORD-01**: Failing-test-first characterization exists: round-trip tests for equatorial↔ecliptic and polar↔latitude conventions, plus baseline counts of events in ±5° ecliptic-equator band from existing CRB CSV
-- [ ] **COORD-02**: BallTree embedding uses correct polar-to-Cartesian formula `(sin θ cos φ, sin θ sin φ, cos θ)` where θ is polar angle ∈ [0, π]; applied consistently in both `setup_galaxy_catalog_balltree` and `get_possible_hosts_from_ball_tree`
-- [x] **COORD-02b
-**: 4D BallTree (`setup_4d_galaxy_catalog_balltree` / `find_closest_galaxy_to_coordinates`) uses spherical embedding on the sky sub-space — `_polar_to_cartesian(θ, φ)` on the (θ, φ) axes plus normalized z and normalized log M — instead of the flat `θ / π` + `φ / 2π` embedding that exhibits the same latitude-vs-polar bug as COORD-02
-- [ ] **COORD-03**: GLADE catalog angles are rotated from equatorial J2000 (RA, Dec) to ecliptic SSB (φ, θ_polar) via `astropy.coordinates.SkyCoord.transform_to(BarycentricTrueEcliptic())` during catalog ingestion; docstring documents the stored frame
-- [x] **COORD-04
-**: Sky candidate-host search radius derived from 2×2 sky covariance eigendecomposition (including |sin θ| Jacobian on φ-component) rather than axis-aligned `max(σ_φ, σ_θ)`
+- [x] **COORD-02**: BallTree embedding uses correct polar-to-Cartesian formula `(sin θ cos φ, sin θ sin φ, cos θ)` where θ is polar angle ∈ [0, π]; applied consistently in both `setup_galaxy_catalog_balltree` and `get_possible_hosts_from_ball_tree`
+- [x] **COORD-02b**: 4D BallTree (`setup_4d_galaxy_catalog_balltree` / `find_closest_galaxy_to_coordinates`) uses spherical embedding on the sky sub-space — `_polar_to_cartesian(θ, φ)` on the (θ, φ) axes plus normalized z and normalized log M — instead of the flat `θ / π` + `φ / 2π` embedding that exhibits the same latitude-vs-polar bug as COORD-02
+- [x] **COORD-03**: GLADE catalog angles are rotated from equatorial J2000 (RA, Dec) to ecliptic SSB (φ, θ_polar) via `astropy.coordinates.SkyCoord.transform_to(BarycentricTrueEcliptic())` during catalog ingestion; docstring documents the stored frame
+- [x] **COORD-04**: Sky candidate-host search radius derived from 2×2 sky covariance eigendecomposition (including |sin θ| Jacobian on φ-component) rather than axis-aligned `max(σ_φ, σ_θ)`
 - [ ] **COORD-05**: `_map_angles_to_spherical_coordinates` guarded against double-application via idempotency assertion on raw input range
 
 ### Statistical Correctness
@@ -94,10 +92,10 @@ Fix all 10 findings from the 2026-04-21 pre-batch audit — two critical coordin
 | Requirement | Phase | Routing | Status |
 |-------------|-------|---------|--------|
 | COORD-01 | Phase 35 | GSD | Pending |
-| COORD-02 | Phase 36 | GPD | Pending |
-| COORD-02b | Phase 36 | GPD | Pending |
-| COORD-03 | Phase 36 | GPD | Pending |
-| COORD-04 | Phase 36 | GPD | Pending |
+| COORD-02 | Phase 36 | GPD | Done |
+| COORD-02b | Phase 36 | GPD | Done |
+| COORD-03 | Phase 36 | GPD | Done |
+| COORD-04 | Phase 36 | GPD | Done |
 | COORD-05 | Phase 37 | GSD | Pending |
 | STAT-01 | Phase 38 | GSD (if proof) / GPD (if fix) | Pending |
 | STAT-02 | Phase 38 | GSD | Pending |
@@ -132,4 +130,4 @@ Fix all 10 findings from the 2026-04-21 pre-batch audit — two critical coordin
 
 ---
 *Requirements defined: 2026-04-21*
-*Last updated: 2026-04-21 — traceability filled with phase numbers (Phase 35–42) per ROADMAP.md*
+*Last updated: 2026-04-22 — Phase 36 complete: COORD-02, COORD-02b, COORD-03, COORD-04 checkboxes flipped; traceability status Pending → Done*

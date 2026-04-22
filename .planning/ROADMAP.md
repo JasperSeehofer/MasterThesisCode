@@ -17,7 +17,7 @@ Fix all 10 findings from the 2026-04-21 pre-batch audit — two critical coordin
 ## Phases
 
 - [x] **Phase 35: Coordinate Bug Characterization** [GSD] — Failing tests + baseline equator-band count before any fix (completed 2026-04-21)
-- [ ] **Phase 36: Coordinate Frame Fix** [GPD] — Equatorial→ecliptic rotation, correct polar Cartesian embedding, eigenvalue sky ellipse
+- [x] **Phase 36: Coordinate Frame Fix** [GPD] — Equatorial→ecliptic rotation, correct polar Cartesian embedding, eigenvalue sky ellipse (completed 2026-04-22)
 - [ ] **Phase 37: Parameter Estimation Correctness** [GSD+GPD] — Thread h into host-distance, per-parameter derivative_epsilon, plus hygiene (Omega_m limits, unified SNR threshold, C/1000, idempotency guard)
 - [ ] **Phase 38: Statistical Correctness** [GSD+GPD] — L_cat form (proof or fix), P_det extrapolation alignment, per-event quadrature-weight diagnostic
 - [ ] **Phase 39: HPC & Visualization Safe Wins** [GSD+GPD] — CPU-importable parameter_estimation, raise flush interval, drop per-iteration FFT clear, dead-code removal, flip_hx verify, LaTeX figures, HDI bands
@@ -54,7 +54,12 @@ Fix all 10 findings from the 2026-04-21 pre-batch audit — two critical coordin
   3. BallTree Cartesian embedding is `(sin θ cos φ, sin θ sin φ, cos θ)` with `θ ∈ [0, π]` polar, consistent across both `setup_galaxy_catalog_balltree` and `get_possible_hosts_from_ball_tree`
   4. Candidate-host search radius uses the 2×2 sky-covariance eigendecomposition (including `|sin θ|` Jacobian on the φ-component); a regression pickle shows the new candidate-host set is a **superset** of the old one for one reference event
   5. Sign convention and dimensional analysis reports pass the `/physics-change` post-implementation checks; reference comments (Eq./arXiv) added above each changed line
-**Plans**: TBD
+**Plans**: 5 plans
+  - [x] 36-01-PLAN.md — COORD-03 rotation + _polar_to_cartesian helper (Wave 1)
+  - [x] 36-02-PLAN.md — COORD-02 3D BallTree embedding (Wave 2)
+  - [x] 36-03-PLAN.md — COORD-04 eigenvalue search radius + regression pickle (Wave 3)
+  - [x] 36-04-PLAN.md — COORD-02b 4D BallTree spherical embedding (Wave 3)
+  - [x] 36-05-PLAN.md — Verification + state update (Wave 4)
 
 ### Phase 37: Parameter Estimation Correctness
 **Goal**: Remove hidden coupling between `h` and the saved Fisher CRBs, replace uniform `derivative_epsilon` with per-parameter values appropriate to each scale, and close the latent hygiene holes (swapped `Omega_m` limits, unified `SNR_THRESHOLD`, `SPEED_OF_LIGHT_KM_S = C/1000`, idempotency guard on the angle mapping).
@@ -154,7 +159,7 @@ Fix all 10 findings from the 2026-04-21 pre-batch audit — two critical coordin
 | Phase | Routing | Plans Complete | Status | Completed |
 |-------|---------|----------------|--------|-----------|
 | 35. Coordinate Bug Characterization | GSD | 3/3 | Complete    | 2026-04-21 |
-| 36. Coordinate Frame Fix | GPD | 0/? | Not started | - |
+| 36. Coordinate Frame Fix | GPD | 5/5 | Complete    | 2026-04-22 |
 | 37. Parameter Estimation Correctness | GSD+GPD | 0/? | Not started | - |
 | 38. Statistical Correctness | GSD+GPD | 0/? | Not started | - |
 | 39. HPC & Visualization Safe Wins | GSD+GPD | 0/? | Not started | - |

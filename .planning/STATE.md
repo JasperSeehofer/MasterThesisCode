@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v2.2
 milestone_name: milestone
 status: planning
-stopped_at: Completed 36-04-PLAN.md (COORD-02b 4D BallTree spherical embedding)
-last_updated: "2026-04-22T11:41:53.499Z"
-last_activity: 2026-04-21
+stopped_at: Completed 36-05-PLAN.md (Phase 36 verification + state advanced to Phase 37)
+last_updated: "2026-04-22T11:43:00.000Z"
+last_activity: 2026-04-22
 progress:
   total_phases: 8
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 8
   completed_plans: 7
   percent: 88
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-21)
 
 **Core value:** Measure H₀ from simulated EMRI dark siren events with galaxy catalog completeness correction, producing publication-ready results.
-**Current focus:** Phase 35 — Coordinate Bug Characterization
+**Current focus:** Phase 37 — Parameter Estimation Correctness
 
 ## Current Position
 
-Phase: 36
+Phase: 37
 Plan: Not started
 Status: Ready to plan
-Last activity: 2026-04-21
+Last activity: 2026-04-22
 
 **Milestone phase map:**
 
@@ -50,7 +50,7 @@ Last activity: 2026-04-21
 **Velocity:**
 
 - Total plans completed: 58 (v1.0: 9, v1.1: 4, v1.2: 12, v1.3: 11, v1.4: 5, v1.5: 2, v2.1: 10, v2.0 paused)
-- Total phases completed: 33 (28 across v1.0–v1.5 + v2.0 Phase 26 + v2.1 Phases 30–34)
+- Total phases completed: 35 (28 across v1.0–v1.5 + v2.0 Phase 26 + v2.1 Phases 30–34 + v2.2 Phases 35–36)
 
 ## Accumulated Context
 
@@ -115,10 +115,10 @@ Phase 30 (Baseline/comparison), Phase 31 (Catalog-only diagnostic), Phase 32 (L_
 
 ## Session Continuity
 
-Last session: 2026-04-22T11:41:53.497Z
-Stopped at: Completed 36-04-PLAN.md (COORD-02b 4D BallTree spherical embedding)
+Last session: 2026-04-22T11:43:00Z
+Stopped at: Completed 36-05-PLAN.md (Phase 36 verification — COORD-02/02b/03/04 done, state advanced to Phase 37)
 Resume file: None
-Next command: `/gsd:plan-phase 35`
+Next command: `/gpd:plan-phase 37`
 
 ## Quick Tasks Completed
 

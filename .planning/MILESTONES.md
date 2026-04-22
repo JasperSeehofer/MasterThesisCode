@@ -1,5 +1,31 @@
 # Milestones
 
+## v2.2 Pipeline Correctness (Active — started 2026-04-21)
+
+**Phases completed:** 2/8 phases (35–36)
+
+**Phase checklist:**
+
+- [x] Phase 35: Coordinate Bug Characterization (completed 2026-04-21)
+- [x] Phase 36: Coordinate Frame Fix (completed 2026-04-22)
+- [ ] Phase 37: Parameter Estimation Correctness
+- [ ] Phase 38: Statistical Correctness
+- [ ] Phase 39: HPC & Visualization Safe Wins
+- [ ] Phase 40: Verification Gate
+- [ ] Phase 41: Stage 1 Injection Campaign (conditional)
+- [ ] Phase 42: Stage 2 Sky-Dependent Injection (conditional)
+
+**Key accomplishments (Phase 36):**
+
+- COORD-03: Equatorial→ecliptic rotation on GLADE ingestion via astropy BarycentricTrueEcliptic(J2000) — commit b460297
+- COORD-02: Polar-correct BallTree Cartesian embedding `(sin θ cos φ, sin θ sin φ, cos θ)` — commit c17ecb6
+- COORD-04: Eigenvalue sky search radius on 2×2 Fisher sky covariance with |sin θ| Jacobian — commit b2ef9c9
+- COORD-02b: 4D BallTree sky sub-space uses spherical embedding — commit 5b9cfbf
+- Regression pickle `.planning/phases/36-coordinate-frame-fix/36-superset-regression.pkl` locked as Phase 40 VERIFY-02 anchor
+- test_coordinate_roundtrip.py: 9 passed, 0 xfailed, 0 XPASS, 0 FAILED (D-27 decisive deliverable)
+
+---
+
 ## v2.1 H₀ Bias Resolution (Shipped: 2026-04-09)
 
 **Phases completed:** 5 phases (30–34), 10 plans
