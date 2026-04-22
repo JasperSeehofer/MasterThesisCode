@@ -775,6 +775,7 @@ class BayesianStatistics:
                 theta=self.detection.theta,
                 phi_sigma=self.detection.phi_error,
                 theta_sigma=self.detection.theta_error,
+                cov_theta_phi=self.detection.theta_phi_covariance,  # COORD-04: 2×2 sky Fisher off-diagonal
                 z_min=z_min,
                 z_max=z_max,
                 M_z=self.detection.M,

@@ -309,12 +309,51 @@ class GalaxyCatalogueHandler:
         z_min: float,
         z_max: float,
         sigma_multiplier: int = 2,
+        cov_theta_phi: float = 0.0,
     ) -> tuple[list[HostGalaxy], list[HostGalaxy]] | None:
+        """Find candidate host galaxies within the sky-Fisher error ellipse + mass-redshift cuts.
+
+        The sky search radius is ``sigma_multiplier × √λ_max(Σ')`` where
+        ``Σ' = J Σ Jᵀ``, ``J = diag(|sin θ|, 1)``, and ``Σ`` is the 2×2 Fisher
+        sky covariance block ``[[σ_φ², C_θφ], [C_θφ, σ_θ²]]``. This is the
+        chord-length-on-unit-sphere interpretation consistent with the Cartesian
+        BallTree embedding (see :func:`_polar_to_cartesian`).
+
+        Args:
+            phi: ML estimate of ecliptic azimuth φ_S (rad).
+            phi_sigma: 1-σ uncertainty on φ_S (rad).
+            theta: ML estimate of ecliptic polar angle θ_S (rad, ∈ [0, π]).
+            theta_sigma: 1-σ uncertainty on θ_S (rad).
+            M_z: Redshifted central BH mass estimate (solar masses).
+            M_z_sigma: 1-σ uncertainty on M_z (solar masses).
+            z_min: Lower redshift bound for the galaxy search.
+            z_max: Upper redshift bound for the galaxy search.
+            sigma_multiplier: Number of σ to use as the search radius (default 2).
+            cov_theta_phi: Off-diagonal Cramér-Rao element C_{θφ} (rad²).
+                Default 0.0 reduces to the isotropic-ellipse case.
+                Positioned at the signature tail so that Python's
+                non-default-follows-default rule is respected.
+
+        Returns:
+            Tuple of (hosts_without_BH_mass_filter, hosts_with_BH_mass_filter) or None.
+
+        References:
+            .planning/phases/36-coordinate-frame-fix/36-CONTEXT.md D-21, D-22.
+            master_thesis_code/datamodels/detection.py:15-40 (_sky_localization_uncertainty).
+        """
         # Eq. (standard spherical polar); COORD-02 fix per .planning/phases/36-coordinate-frame-fix/36-CONTEXT.md D-17
         # _polar_to_cartesian expects array inputs; wrap scalars.
         query_point = _polar_to_cartesian(np.array([theta]), np.array([phi]))
 
-        radius = max(phi_sigma, theta_sigma) * sigma_multiplier
+        # Eq. (eigenvalue of J Σ Jᵀ on 2×2 Fisher sky block); COORD-04 per
+        # .planning/phases/36-coordinate-frame-fix/36-CONTEXT.md D-22.
+        # J = diag(|sin θ|, 1) rescales the azimuthal std to great-circle distance
+        # on the unit sphere (ds² = dθ² + sin²θ dφ² — see detection.py:15-40).
+        sigma_matrix = np.array([[phi_sigma**2, cov_theta_phi], [cov_theta_phi, theta_sigma**2]])
+        jacobian = np.diag([abs(np.sin(theta)), 1.0])
+        sigma_scaled = jacobian @ sigma_matrix @ jacobian.T
+        lambda_max = float(np.linalg.eigvalsh(sigma_scaled).max())
+        radius = float(sigma_multiplier * np.sqrt(max(lambda_max, 0.0)))
 
         indices = self.catalog_ball_tree.query_radius(query_point, r=radius)[0]
 
