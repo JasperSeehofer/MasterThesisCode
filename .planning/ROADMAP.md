@@ -174,7 +174,7 @@ Fix all 10 findings from the 2026-04-21 pre-batch audit — two critical coordin
 | 36. Coordinate Frame Fix | GPD | 5/5 | Complete    | 2026-04-22 |
 | 37. Parameter Estimation Correctness | GSD+GPD | 3/3 | Complete    | 2026-04-22 |
 | 38. Statistical Correctness | GSD+GPD | 3/3 | Complete    | 2026-04-22 |
-| 39. HPC & Visualization Safe Wins | GSD+GPD | 6/6 | Complete | 2026-04-23 |
+| 39. HPC & Visualization Safe Wins | GSD+GPD | 6/6 | Complete    | 2026-04-22 |
 | 40. Verification Gate | GSD+GPD | 0/? | Not started | - |
 | 41. Stage 1 Injection Campaign | GSD | 0/? | Not started (conditional on Phase 40) | - |
 | 42. Stage 2 Sky-Dependent Injection | GSD | 0/? | Not started (conditional on Phases 40, 41) | - |
