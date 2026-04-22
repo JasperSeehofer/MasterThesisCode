@@ -11,7 +11,8 @@ Fix all 10 findings from the 2026-04-21 pre-batch audit — two critical coordin
 
 - [x] **COORD-01**: Failing-test-first characterization exists: round-trip tests for equatorial↔ecliptic and polar↔latitude conventions, plus baseline counts of events in ±5° ecliptic-equator band from existing CRB CSV
 - [ ] **COORD-02**: BallTree embedding uses correct polar-to-Cartesian formula `(sin θ cos φ, sin θ sin φ, cos θ)` where θ is polar angle ∈ [0, π]; applied consistently in both `setup_galaxy_catalog_balltree` and `get_possible_hosts_from_ball_tree`
-- [ ] **COORD-02b**: 4D BallTree (`setup_4d_galaxy_catalog_balltree` / `find_closest_galaxy_to_coordinates`) uses spherical embedding on the sky sub-space — `_polar_to_cartesian(θ, φ)` on the (θ, φ) axes plus normalized z and normalized log M — instead of the flat `θ / π` + `φ / 2π` embedding that exhibits the same latitude-vs-polar bug as COORD-02
+- [x] **COORD-02b
+**: 4D BallTree (`setup_4d_galaxy_catalog_balltree` / `find_closest_galaxy_to_coordinates`) uses spherical embedding on the sky sub-space — `_polar_to_cartesian(θ, φ)` on the (θ, φ) axes plus normalized z and normalized log M — instead of the flat `θ / π` + `φ / 2π` embedding that exhibits the same latitude-vs-polar bug as COORD-02
 - [ ] **COORD-03**: GLADE catalog angles are rotated from equatorial J2000 (RA, Dec) to ecliptic SSB (φ, θ_polar) via `astropy.coordinates.SkyCoord.transform_to(BarycentricTrueEcliptic())` during catalog ingestion; docstring documents the stored frame
 - [x] **COORD-04
 **: Sky candidate-host search radius derived from 2×2 sky covariance eigendecomposition (including |sin θ| Jacobian on φ-component) rather than axis-aligned `max(σ_φ, σ_θ)`

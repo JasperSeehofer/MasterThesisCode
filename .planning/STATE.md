@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v2.2
 milestone_name: milestone
 status: planning
-stopped_at: Completed 36-03-PLAN.md (COORD-04 eigenvalue sky search radius)
-last_updated: "2026-04-22T11:37:25.620Z"
+stopped_at: Completed 36-04-PLAN.md (COORD-02b 4D BallTree spherical embedding)
+last_updated: "2026-04-22T11:41:53.499Z"
 last_activity: 2026-04-21
 progress:
   total_phases: 8
   completed_phases: 1
   total_plans: 8
-  completed_plans: 6
-  percent: 75
+  completed_plans: 7
+  percent: 88
 ---
 
 # Project State
@@ -115,8 +115,8 @@ Phase 30 (Baseline/comparison), Phase 31 (Catalog-only diagnostic), Phase 32 (L_
 
 ## Session Continuity
 
-Last session: 2026-04-22T11:37:25.617Z
-Stopped at: Completed 36-03-PLAN.md (COORD-04 eigenvalue sky search radius)
+Last session: 2026-04-22T11:41:53.497Z
+Stopped at: Completed 36-04-PLAN.md (COORD-02b 4D BallTree spherical embedding)
 Resume file: None
 Next command: `/gsd:plan-phase 35`
 
@@ -130,3 +130,4 @@ Next command: `/gsd:plan-phase 35`
 
 **Planned Phase:** 35 (Coordinate Bug Characterization) — 3 plans — 2026-04-21T21:29:40.875Z
 | Phase 36 P03 | 230 | 4 tasks | 4 files |
+| Phase 36-coordinate-frame-fix P04 | 2 | 3 tasks | 1 files |
