@@ -69,8 +69,13 @@ def test_display_gpu_information_cpu(caplog: pytest.LogCaptureFixture) -> None:
 @patch("master_thesis_code.memory_management.cp", None)
 def test_free_gpu_memory_cpu() -> None:
     """free_gpu_memory() returns None without error when memory_pool is None."""
+    import warnings as _warnings
+
     m = MemoryManagement()
-    m.free_gpu_memory()  # should not raise
+    # Deprecated alias emits DeprecationWarning; behavior must still be a no-op on CPU.
+    with _warnings.catch_warnings():
+        _warnings.simplefilter("ignore", DeprecationWarning)
+        m.free_gpu_memory()  # should not raise
 
 
 @patch("master_thesis_code.memory_management._GPUTIL_AVAILABLE", False)
@@ -81,3 +86,60 @@ def test_display_fft_cache_cpu() -> None:
     """display_fft_cache() returns without error when _fft_cache is None."""
     m = MemoryManagement()
     m.display_fft_cache()  # should not raise
+
+
+# ---------------------------------------------------------------------------
+# HPC-03: free_gpu_memory() API split — free_memory_pool, clear_fft_cache,
+# free_gpu_memory_if_pressured, and deprecated free_gpu_memory alias.
+# ---------------------------------------------------------------------------
+
+
+@patch("master_thesis_code.memory_management._GPUTIL_AVAILABLE", False)
+@patch("master_thesis_code.memory_management.GPUtil", None)
+@patch("master_thesis_code.memory_management._CUPY_AVAILABLE", False)
+@patch("master_thesis_code.memory_management.cp", None)
+def test_free_memory_pool_is_noop_on_cpu() -> None:
+    """On CPU, free_memory_pool does nothing and does not raise."""
+    mm = MemoryManagement(use_gpu=False)
+    mm.free_memory_pool()  # must not raise
+    assert mm.memory_pool is None
+
+
+@patch("master_thesis_code.memory_management._GPUTIL_AVAILABLE", False)
+@patch("master_thesis_code.memory_management.GPUtil", None)
+@patch("master_thesis_code.memory_management._CUPY_AVAILABLE", False)
+@patch("master_thesis_code.memory_management.cp", None)
+def test_clear_fft_cache_is_noop_on_cpu() -> None:
+    """On CPU, clear_fft_cache does nothing and does not raise."""
+    mm = MemoryManagement(use_gpu=False)
+    mm.clear_fft_cache()  # must not raise
+    assert mm._fft_cache is None
+
+
+@patch("master_thesis_code.memory_management._GPUTIL_AVAILABLE", False)
+@patch("master_thesis_code.memory_management.GPUtil", None)
+@patch("master_thesis_code.memory_management._CUPY_AVAILABLE", False)
+@patch("master_thesis_code.memory_management.cp", None)
+def test_free_gpu_memory_if_pressured_is_noop_on_cpu() -> None:
+    """On CPU, free_gpu_memory_if_pressured does nothing and does not raise."""
+    mm = MemoryManagement(use_gpu=False)
+    mm.free_gpu_memory_if_pressured()  # must not raise
+    assert mm.memory_pool is None
+    assert mm._fft_cache is None
+
+
+@patch("master_thesis_code.memory_management._GPUTIL_AVAILABLE", False)
+@patch("master_thesis_code.memory_management.GPUtil", None)
+@patch("master_thesis_code.memory_management._CUPY_AVAILABLE", False)
+@patch("master_thesis_code.memory_management.cp", None)
+def test_free_gpu_memory_alias_emits_deprecation_warning() -> None:
+    """free_gpu_memory() is a deprecated alias that routes to free_gpu_memory_if_pressured."""
+    import warnings as _warnings
+
+    mm = MemoryManagement(use_gpu=False)
+    with _warnings.catch_warnings(record=True) as w:
+        _warnings.simplefilter("always")
+        mm.free_gpu_memory()
+        assert len(w) == 1
+        assert issubclass(w[0].category, DeprecationWarning)
+        assert "free_gpu_memory_if_pressured" in str(w[0].message)
