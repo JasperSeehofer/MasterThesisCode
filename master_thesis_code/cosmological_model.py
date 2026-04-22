@@ -29,6 +29,7 @@ import numpy as np
 import numpy.typing as npt
 from scipy.stats import truncnorm
 
+from master_thesis_code.constants import SNR_THRESHOLD
 from master_thesis_code.datamodels.detection import (
     Detection as Detection,
 )
@@ -168,7 +169,7 @@ class Model1CrossCheck:
 
     parameter_space: ParameterSpace
     emri_rate: int = 294  # 1/yr
-    snr_threshold: int = 15
+    snr_threshold: float = SNR_THRESHOLD
     detection_fraction = DetectionFraction()
 
     def __init__(self, rng: np.random.Generator | None = None) -> None:
@@ -318,8 +319,8 @@ class LamCDMScenario:
         )
         self.Omega_m = CosmologicalParameter(
             symbol="Omega_m",
-            upper_limit=0.04,
-            lower_limit=0.5,
+            upper_limit=0.5,
+            lower_limit=0.04,
             unit="s*Mpc/km",
             randomize_by_distribution=uniform,
             fiducial_value=0.25,

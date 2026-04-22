@@ -24,6 +24,7 @@ import numpy.typing as npt
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 
+from master_thesis_code.constants import SNR_THRESHOLD
 from master_thesis_code.plotting._colors import (
     CYCLE,
     EDGE,
@@ -550,7 +551,7 @@ def plot_posterior_convergence(
 
 def plot_snr_distribution(
     data_dir: Path,
-    snr_threshold: float = 15.0,
+    snr_threshold: float = SNR_THRESHOLD,
 ) -> tuple[Figure, Any]:
     """Plot SNR distribution of detected EMRI events.
 

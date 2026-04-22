@@ -189,6 +189,7 @@ class TestBallTreeRecoversNorthCelestialPole:
         from master_thesis_code.galaxy_catalogue.handler import GalaxyCatalogueHandler
 
         instance = object.__new__(GalaxyCatalogueHandler)
+        instance._angles_mapped_to_ecliptic = False  # noqa: SLF001  (bypass __init__ in test)
         instance.reduced_galaxy_catalog = df
         # This call is expected to rotate equatorial->ecliptic AND map deg->rad
         # (currently it only maps deg->rad — that is the bug).
@@ -226,6 +227,7 @@ class TestSummerSolsticeRotation:
         df.iloc[0, df.columns.get_loc(InternalCatalogColumns.THETA_S)] = 23.4392911  # Dec
 
         instance = object.__new__(GalaxyCatalogueHandler)
+        instance._angles_mapped_to_ecliptic = False  # noqa: SLF001  (bypass __init__ in test)
         instance.reduced_galaxy_catalog = df
         instance._rotate_equatorial_to_ecliptic()  # noqa: SLF001  (D-13: rotation is a separate __init__ step)
         instance._map_angles_to_spherical_coordinates()  # noqa: SLF001
@@ -256,6 +258,7 @@ class TestEclipticPoleIngestion:
         df.iloc[0, df.columns.get_loc(InternalCatalogColumns.THETA_S)] = 66.5607083  # Dec
 
         instance = object.__new__(GalaxyCatalogueHandler)
+        instance._angles_mapped_to_ecliptic = False  # noqa: SLF001  (bypass __init__ in test)
         instance.reduced_galaxy_catalog = df
         instance._rotate_equatorial_to_ecliptic()  # noqa: SLF001  (D-13: rotation is a separate __init__ step)
         instance._map_angles_to_spherical_coordinates()  # noqa: SLF001
@@ -286,6 +289,7 @@ class TestVernalEquinoxRoundTrip:
         df.iloc[0, df.columns.get_loc(InternalCatalogColumns.THETA_S)] = 0.0  # Dec
 
         instance = object.__new__(GalaxyCatalogueHandler)
+        instance._angles_mapped_to_ecliptic = False  # noqa: SLF001  (bypass __init__ in test)
         instance.reduced_galaxy_catalog = df
         instance._rotate_equatorial_to_ecliptic()  # noqa: SLF001  (D-13: rotation is a separate __init__ step)
         instance._map_angles_to_spherical_coordinates()  # noqa: SLF001

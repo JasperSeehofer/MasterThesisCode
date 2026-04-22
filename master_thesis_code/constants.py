@@ -18,7 +18,7 @@ IMAGINARY_PART: str = "imaginary"
 M_IN_GPC: float = 3.2407788498994e-26  # m / Gpc (conversion factor)
 C: float = float(ac.c.to(u.m / u.s).value)  # 299792458.0 m/s
 G: float = float(ac.G.to(u.Gpc**3 / (u.s**2 * u.solMass)).value)  # Gpc^3 / (s^2 M_sun)
-SPEED_OF_LIGHT_KM_S: float = 300000.0  # km/s (approximation used in bayesian_inference_mwe.py)
+SPEED_OF_LIGHT_KM_S: float = C / 1000  # km/s, derived from C (m/s)
 H0: float = 73e3  # m / (s * Mpc), Hubble constant in SI-adjacent units
 H_MIN: float = 60.0  # lower limit for dimensionless h
 H_MAX: float = 86.0  # upper limit for dimensionless h
@@ -46,6 +46,7 @@ DEFAULT_SIMULATION_PATH: str = "simulations/simulation"
 MINIMAL_FREQUENCY: float = 1e-5
 MAXIMAL_FREQUENCY: float = 1
 SNR_THRESHOLD: float = 20
+PRE_SCREEN_SNR_FACTOR: float = 0.3  # pre-screen heuristic (main.py simulation loop)
 
 # galaxy catalog and EMRI detection
 GALAXY_REDSHIFT_ERROR_COEFFICIENT: float = 0.013  # Galaxy.redshift_uncertainty ∝ 0.013*(1+z)^3
