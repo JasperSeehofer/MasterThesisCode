@@ -33,16 +33,16 @@ Fix all 10 findings from the 2026-04-21 pre-batch audit — two critical coordin
 
 ### HPC Hygiene (Safe Wins)
 
-- [ ] **HPC-01**: `parameter_estimation.py` is CPU-importable via `_get_xp(use_gpu)` shim; all `cp.*` calls gated; module passes `pytest -m "not gpu"` without `cupy` installed
-- [ ] **HPC-02**: `_crb_flush_interval` set to 25 (SIGTERM flush retained for tail safety); expected Lustre I/O reduction 5–20 s per SLURM array task
-- [ ] **HPC-03**: FFT cache is only cleared on explicit memory-pressure signal in `memory_management.py`, not per Fisher iteration; expected 20–100 ms savings per event
-- [ ] **HPC-04**: Dead `_crop_frequency_domain` removed from `parameter_estimation.py`
-- [ ] **HPC-05**: `flip_hx=True` in `waveform_generator.py` verified against current `fastlisaresponse` version; obsolete flag removed with `/physics-change` if so, documented if correct
+- [x] **HPC-01**: `parameter_estimation.py` is CPU-importable via `_get_xp(use_gpu)` shim; all `cp.*` calls gated; module passes `pytest -m "not gpu"` without `cupy` installed
+- [x] **HPC-02**: `_crb_flush_interval` set to 25 (SIGTERM flush retained for tail safety); expected Lustre I/O reduction 5–20 s per SLURM array task
+- [x] **HPC-03**: FFT cache is only cleared on explicit memory-pressure signal in `memory_management.py`, not per Fisher iteration; expected 20–100 ms savings per event
+- [x] **HPC-04**: Dead `_crop_frequency_domain` removed from `parameter_estimation.py`
+- [x] **HPC-05**: `flip_hx=True` in `waveform_generator.py` verified against current `fastlisaresponse` version; obsolete flag removed with `/physics-change` if so, documented if correct
 
 ### Visualization (Safe Wins)
 
-- [ ] **VIZ-01**: Production figures generated with `apply_style(use_latex=True)` when TeX is available; graceful fallback to mathtext when not; applied in `main.py:generate_figures`
-- [ ] **VIZ-02**: Static `plot_h0_convergence` displays bootstrap HDI band (16/84 percentile shading) via existing `convergence_analysis.compute_m_z_improvement_bank`
+- [x] **VIZ-01**: Production figures generated with `apply_style(use_latex=True)` when TeX is available; graceful fallback to mathtext when not; applied in `main.py:generate_figures`
+- [x] **VIZ-02**: Static `plot_h0_convergence` displays bootstrap HDI band (16/84 percentile shading) via existing `convergence_analysis.compute_m_z_improvement_bank`
 
 ### Verification Gate
 
@@ -106,13 +106,13 @@ Fix all 10 findings from the 2026-04-21 pre-batch audit — two critical coordin
 | PE-03 | Phase 37 | GSD | Pending |
 | PE-04 | Phase 37 | GSD | Pending |
 | PE-05 | Phase 37 | GSD | Pending |
-| HPC-01 | Phase 39 | GSD | Pending |
-| HPC-02 | Phase 39 | GSD | Pending |
-| HPC-03 | Phase 39 | GSD | Pending |
-| HPC-04 | Phase 39 | GSD | Pending |
-| HPC-05 | Phase 39 | GSD (verify) / GPD (if removed) | Pending |
-| VIZ-01 | Phase 39 | GSD | Pending |
-| VIZ-02 | Phase 39 | GSD | Pending |
+| HPC-01 | Phase 39 | GSD | Done |
+| HPC-02 | Phase 39 | GSD | Done |
+| HPC-03 | Phase 39 | GSD | Done |
+| HPC-04 | Phase 39 | GSD | Done |
+| HPC-05 | Phase 39 | GSD (verify) / GPD (if removed) | Done (KEEP) |
+| VIZ-01 | Phase 39 | GSD | Done |
+| VIZ-02 | Phase 39 | GSD | Done |
 | VERIFY-01 | Phase 40 | GSD | Pending |
 | VERIFY-02 | Phase 40 | GPD (runs physics-changed code) | Pending |
 | VERIFY-03 | Phase 40 | GSD | Pending |
@@ -130,4 +130,4 @@ Fix all 10 findings from the 2026-04-21 pre-batch audit — two critical coordin
 
 ---
 *Requirements defined: 2026-04-21*
-*Last updated: 2026-04-22 — Phase 36 complete: COORD-02, COORD-02b, COORD-03, COORD-04 checkboxes flipped; traceability status Pending → Done*
+*Last updated: 2026-04-23 — Phase 39 complete: HPC-01..HPC-05, VIZ-01, VIZ-02 checkboxes flipped; traceability status Pending → Done (HPC-05 followed KEEP path, no /physics-change triggered)*

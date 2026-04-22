@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v2.2
 milestone_name: milestone
-status: executing
-stopped_at: Phase 39 context gathered
-last_updated: "2026-04-22T22:17:32.062Z"
-last_activity: 2026-04-22 -- Phase 39 execution started
+status: completed
+stopped_at: Phase 39 complete; Phase 40 ready
+last_updated: "2026-04-23T00:00:00.000Z"
+last_activity: 2026-04-23 — Phase 39 complete; SC-1..SC-7 PASS; 540 tests GREEN
 progress:
   total_phases: 8
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 20
-  completed_plans: 12
-  percent: 60
+  completed_plans: 18
+  percent: 90
 ---
 
 # Project State
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-21)
 
 **Core value:** Measure H₀ from simulated EMRI dark siren events with galaxy catalog completeness correction, producing publication-ready results.
-**Current focus:** Phase 39 — hpc-visualization-safe-wins
+**Current focus:** Phase 40 — Verification Gate
 
 ## Current Position
 
-Phase: 39 (hpc-visualization-safe-wins) — EXECUTING
-Plan: 1 of 6
-Status: Executing Phase 39
-Last activity: 2026-04-22 -- Phase 39 execution started
+Phase: 40 — NEXT, READY TO EXECUTE
+Plan: TBD (plans not yet written)
+Status: In-progress (Phase 39 COMPLETE 2026-04-23; Phase 40 queued)
+Last activity: 2026-04-23 — Phase 39 complete; SC-1..SC-7 PASS; 540 tests GREEN
 
 **Milestone phase map:**
 
@@ -102,6 +102,17 @@ Last activity: 2026-04-22 -- Phase 39 execution started
 
 ### Phase Notes (v2.2 — active)
 
+**Phase 39 (HPC & Visualization Safe Wins) — COMPLETE 2026-04-23:**
+HPC-01..HPC-05, VIZ-01, VIZ-02 all resolved. SC-1..SC-7 all PASS.
+- HPC-01: parameter_estimation.py CPU-importable via self._xp/self._fft shim (commit b3cec75)
+- HPC-02: _crb_flush_interval raised 1→25; SIGTERM drain regression test passes (commit 815ac4a)
+- HPC-03: memory_management API split (free_memory_pool + clear_fft_cache + free_gpu_memory_if_pressured); main.py call sites migrated (commits 49e3d60, 6feeeb3)
+- HPC-04: _crop_frequency_domain deleted; grep gate clean (commit b3cec75)
+- HPC-05: KEEP path — flip_hx=True verified against fastlisaresponse 1.1.17 + few 2.0.0rc1; 2-line citation comment added; see 39-05-VERIFICATION.md (commits 5b182d1, 35d9366)
+- VIZ-01: LaTeX auto-detection in generate_figures via shutil.which("latex"); both branches smoke-tested (commit c1cbaac)
+- VIZ-02: Bootstrap HDI band on plot_h0_convergence right panel (commits fd1953c, c1cbaac)
+Full CPU suite: 540 tests GREEN. Phase 36/37/38 regressions intact (9+4+3=16/16). ruff + mypy clean across 57 source files.
+
 **Phase 38 (Statistical Correctness) — COMPLETE 2026-04-22:**
 STAT-01..STAT-04 all resolved. STAT-01: L_cat fixed to (1/N)Σ(N_g/D_g) per Gray et al. (2020) Eq. 24-25 (commit 005e792). STAT-02: test_l_cat_equivalence.py 3/3 pass with counterexample (2/3 ≠ 3/4). STAT-03: single_host_likelihood now uses zero-fill P_det matching D(h) denominator (commit a70d1a2). STAT-04: quadrature_weight_outside_grid WARNING infrastructure in place; event 2 shows numerator=1.000 (injection grid coverage gap — Phase 41 trigger). SC-1..SC-5 all PASS. 524 tests GREEN. Smoke run exits 0; posterior finite.
 **Phase 40 VERIFY-02 note:** P_det zero-fill change (STAT-03) may shift posterior relative to Phase 37 baseline. Phase 40 must use post-Phase-38 evaluation as its reference. Event 2's 100% off-grid numerator weight strongly suggests Phase 41 injection campaign will trigger.
@@ -125,10 +136,10 @@ Phase 30 (Baseline/comparison), Phase 31 (Catalog-only diagnostic), Phase 32 (L_
 
 ## Session Continuity
 
-Last session: --stopped-at
-Stopped at: Phase 39 context gathered
-Resume file: --resume-file
-Next command: `/gpd:execute-phase 38` (run 38-01 first, then 38-02, then 38-03)
+Last session: 2026-04-23 — Phase 39 execution complete
+Stopped at: Phase 39 complete; Phase 40 ready
+Resume file: .planning/phases/39-hpc-visualization-safe-wins/39-VERIFICATION.md
+Next command: `/gsd-discuss-phase 40` (Phase 40 Verification Gate — discuss before planning)
 
 ## Quick Tasks Completed
 

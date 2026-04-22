@@ -20,7 +20,7 @@ Fix all 10 findings from the 2026-04-21 pre-batch audit — two critical coordin
 - [x] **Phase 36: Coordinate Frame Fix** [GPD] — Equatorial→ecliptic rotation, correct polar Cartesian embedding, eigenvalue sky ellipse (completed 2026-04-22)
 - [x] **Phase 37: Parameter Estimation Correctness** [GSD+GPD] — Thread h into host-distance, per-parameter derivative_epsilon, plus hygiene (Omega_m limits, unified SNR threshold, C/1000, idempotency guard) (completed 2026-04-22)
 - [x] **Phase 38: Statistical Correctness** [GSD+GPD] — L_cat form (proof or fix), P_det extrapolation alignment, per-event quadrature-weight diagnostic (completed 2026-04-22)
-- [ ] **Phase 39: HPC & Visualization Safe Wins** [GSD+GPD] — CPU-importable parameter_estimation, raise flush interval, drop per-iteration FFT clear, dead-code removal, flip_hx verify, LaTeX figures, HDI bands
+- [x] **Phase 39: HPC & Visualization Safe Wins** [GSD+GPD] — CPU-importable parameter_estimation, raise flush interval, drop per-iteration FFT clear, dead-code removal, flip_hx verify (KEEP), LaTeX figures, HDI bands (completed 2026-04-23)
 - [ ] **Phase 40: Verification Gate** [GSD+GPD] — Full regression + posterior re-evaluation + h-sweep + anisotropy audit + P_det diagnostic; abort gate on >5% MAP shift
 - [ ] **Phase 41: Stage 1 Injection Campaign (Conditional)** [GSD] — Densified M×z×d_L grid on gpu_h100 if >5% extrapolation weight
 - [ ] **Phase 42: Stage 2 Sky-Dependent Injection (Conditional)** [GSD] — Sky-grid P_det campaign if anisotropy or Stage 1 residual
@@ -115,12 +115,12 @@ Fix all 10 findings from the 2026-04-21 pre-batch audit — two critical coordin
   6. `main.py:generate_figures` calls `apply_style(use_latex=True)` when `shutil.which("latex")` is truthy and falls back to mathtext otherwise; smoke test confirms both branches run without crash
   7. Static `plot_h0_convergence` displays a 16/84 percentile shaded HDI band; visual smoke test confirms the band is present and sits inside the CI rails
 **Plans**: 6 plans
-  - [ ] 39-01-PLAN.md — HPC-01 self._xp/self._fft shim + HPC-04 dead code removal (Wave 1)
-  - [ ] 39-02-PLAN.md — HPC-02 _crb_flush_interval=25 + SIGTERM drain regression test (Wave 2)
-  - [ ] 39-03-PLAN.md — HPC-03 memory_management API split + main.py call-site migration (Wave 2)
-  - [ ] 39-04-PLAN.md — VIZ-01 LaTeX auto-detect + VIZ-02 bootstrap HDI band (Wave 3)
-  - [ ] 39-05-PLAN.md — HPC-05 flip_hx verify + reference comment (conditional /physics-change fallback) (Wave 3)
-  - [ ] 39-06-PLAN.md — Phase 39 verification (SC-1..SC-7) + state update (Wave 4)
+  - [x] 39-01-PLAN.md — HPC-01 self._xp/self._fft shim + HPC-04 dead code removal (Wave 1)
+  - [x] 39-02-PLAN.md — HPC-02 _crb_flush_interval=25 + SIGTERM drain regression test (Wave 2)
+  - [x] 39-03-PLAN.md — HPC-03 memory_management API split + main.py call-site migration (Wave 2)
+  - [x] 39-04-PLAN.md — VIZ-01 LaTeX auto-detect + VIZ-02 bootstrap HDI band (Wave 3)
+  - [x] 39-05-PLAN.md — HPC-05 flip_hx verify + reference comment (KEEP path) (Wave 3)
+  - [x] 39-06-PLAN.md — Phase 39 verification (SC-1..SC-7) + state update (Wave 4)
 
 ### Phase 40: Verification Gate
 **Goal**: Before committing any new cluster compute, re-evaluate the existing CRBs under all v2.2 fixes and confirm the posterior at h=0.73 is stable; run the 27-value h-sweep; audit anisotropy by `|qS − π/2|` quartiles; report the P_det quadrature-weight diagnostic summary. This phase is the **abort gate** for the staged campaign.
@@ -174,7 +174,7 @@ Fix all 10 findings from the 2026-04-21 pre-batch audit — two critical coordin
 | 36. Coordinate Frame Fix | GPD | 5/5 | Complete    | 2026-04-22 |
 | 37. Parameter Estimation Correctness | GSD+GPD | 3/3 | Complete    | 2026-04-22 |
 | 38. Statistical Correctness | GSD+GPD | 3/3 | Complete    | 2026-04-22 |
-| 39. HPC & Visualization Safe Wins | GSD+GPD | 0/6 | Not started | - |
+| 39. HPC & Visualization Safe Wins | GSD+GPD | 6/6 | Complete | 2026-04-23 |
 | 40. Verification Gate | GSD+GPD | 0/? | Not started | - |
 | 41. Stage 1 Injection Campaign | GSD | 0/? | Not started (conditional on Phase 40) | - |
 | 42. Stage 2 Sky-Dependent Injection | GSD | 0/? | Not started (conditional on Phases 40, 41) | - |
