@@ -533,3 +533,38 @@ def test_dead_freq_crop_helper_is_removed() -> None:
     assert not hasattr(ParameterEstimation, dead_method_name), (
         f"{dead_method_name} dead method must be removed (HPC-04 / D-13)"
     )
+
+
+# ---------------------------------------------------------------------------
+# HPC-02: SIGTERM-drain regression — flush_pending_results() drains tail buffer
+# ---------------------------------------------------------------------------
+
+
+def test_sigterm_drain_with_flush_interval_25(
+    tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """HPC-02 regression: with _crb_flush_interval=25, writing 30 rows auto-flushes
+    once (at row 25) and leaves 5 rows in the buffer. flush_pending_results()
+    drains the remaining 5, matching the SIGTERM handler contract at main.py:351.
+    """
+    csv_path = str(tmp_path / "crb_simulation_$index.csv")
+    monkeypatch.setattr(pe_module, "CRAMER_RAO_BOUNDS_PATH", csv_path)
+
+    pe = _make_minimal_pe(tmp_path)
+    pe._crb_flush_interval = 25
+
+    for i in range(30):
+        pe.save_cramer_rao_bound({}, snr=10.0 + i, simulation_index=0)
+
+    # After 25 saves: auto-flushed; 5 pending
+    result_path = csv_path.replace("$index", "0")
+    assert pathlib.Path(result_path).exists(), "CSV should be created after auto-flush at row 25"
+    df_after_auto = pd.read_csv(result_path)
+    assert len(df_after_auto) == 25, f"expected 25 rows after auto-flush, got {len(df_after_auto)}"
+    assert len(pe._crb_buffer) == 5, f"expected 5 rows in buffer, got {len(pe._crb_buffer)}"
+
+    # Simulate SIGTERM handler path: flush drains remaining 5
+    pe.flush_pending_results()
+    df_final = pd.read_csv(result_path)
+    assert len(df_final) == 30, f"expected 30 rows after manual flush, got {len(df_final)}"
+    assert pe._crb_buffer == [], "buffer should be empty after manual flush"
