@@ -40,12 +40,49 @@ class MemoryManagement:
         self._gpu_usage: list[list[float]] = []
         self._time_series: list[float] = []
 
-    def free_gpu_memory(self) -> None:
-        """Free GPU memory pool blocks and clear FFT plan cache. No-op on CPU."""
+    def free_memory_pool(self) -> None:
+        """Free CuPy memory-pool blocks. Safe to call every simulation step. No-op on CPU."""
         if self.memory_pool is not None:
             self.memory_pool.free_all_blocks()
+
+    def clear_fft_cache(self) -> None:
+        """Clear FFT plan cache. Expensive — rebuilds on next rfft. No-op on CPU."""
         if self._fft_cache is not None:
             self._fft_cache.clear()
+
+    def free_gpu_memory_if_pressured(self, threshold: float = 0.8) -> None:
+        """Free memory pool every call; clear FFT cache only when pool usage exceeds threshold.
+
+        Args:
+            threshold: Fraction of total GPU memory (default 0.8 = 64 GB on 80 GB H100).
+        """
+        self.free_memory_pool()
+        if self.memory_pool is None or not _CUPY_AVAILABLE or cp is None:
+            return
+        try:
+            _free, total = cp.cuda.runtime.memGetInfo()
+        except Exception:  # noqa: BLE001 — tolerate absent runtime on CPU-only
+            return
+        used = int(self.memory_pool.total_bytes())
+        if total > 0 and used / total >= threshold:
+            _LOGGER.info(
+                "FFT cache cleared — pool usage %.1f%% of %.1f GB",
+                100.0 * used / total,
+                total / 1e9,
+            )
+            self.clear_fft_cache()
+
+    def free_gpu_memory(self) -> None:
+        """Deprecated alias. Routes to free_gpu_memory_if_pressured()."""
+        import warnings
+
+        warnings.warn(
+            "free_gpu_memory() is deprecated; use free_gpu_memory_if_pressured() "
+            "or free_memory_pool() directly.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        self.free_gpu_memory_if_pressured()
 
     def gpu_usage_stamp(self) -> None:
         self._time_series.append(time() - self._start_time)
