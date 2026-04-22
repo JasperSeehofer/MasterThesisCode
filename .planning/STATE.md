@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v2.2
 milestone_name: milestone
-status: planned
-stopped_at: context exhaustion at 98% (2026-04-22); Phase 38 plans written and checker-approved
-last_updated: "2026-04-22T16:30:00.000Z"
-last_activity: 2026-04-22 — Phase 38 planned (38-01, 38-02, 38-03 all pass gpd-plan-checker)
+status: in-progress
+stopped_at: Phase 38 complete; Phase 39 ready to execute
+last_updated: "2026-04-22T23:10:00.000Z"
+last_activity: 2026-04-22 — Phase 38 complete (STAT-01..04 all pass; 524 tests GREEN)
 progress:
   total_phases: 8
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 17
-  completed_plans: 11
-  percent: 79
+  completed_plans: 14
+  percent: 86
 ---
 
 # Project State
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-21)
 
 **Core value:** Measure H₀ from simulated EMRI dark siren events with galaxy catalog completeness correction, producing publication-ready results.
-**Current focus:** Phase 38 — Statistical Correctness
+**Current focus:** Phase 39 — HPC & Visualization Safe Wins
 
 ## Current Position
 
-Phase: 38 — PLANNED, READY TO EXECUTE
-Plan: 38-01 (Wave 1), 38-02 (Wave 2), 38-03 (Wave 3) — all 3 plans pass gpd-plan-checker
-Status: Planned
-Last activity: 2026-04-22 — Phase 38 plans written; checker approved all 3 plans (attempt 2/3)
+Phase: 39 — NEXT, READY TO EXECUTE
+Plan: TBD (plans not yet written)
+Status: In-progress (Phase 38 COMPLETE 2026-04-22; Phase 39 queued)
+Last activity: 2026-04-22 — Phase 38 complete; all 5 SCs pass; state advanced to Phase 39
 
 **Milestone phase map:**
 
@@ -101,6 +101,10 @@ Last activity: 2026-04-22 — Phase 38 plans written; checker approved all 3 pla
 **Abort gate before cluster submission:** if re-evaluated MAP at h=0.73 shifts >5%, pause and investigate.
 
 ### Phase Notes (v2.2 — active)
+
+**Phase 38 (Statistical Correctness) — COMPLETE 2026-04-22:**
+STAT-01..STAT-04 all resolved. STAT-01: L_cat fixed to (1/N)Σ(N_g/D_g) per Gray et al. (2020) Eq. 24-25 (commit 005e792). STAT-02: test_l_cat_equivalence.py 3/3 pass with counterexample (2/3 ≠ 3/4). STAT-03: single_host_likelihood now uses zero-fill P_det matching D(h) denominator (commit a70d1a2). STAT-04: quadrature_weight_outside_grid WARNING infrastructure in place; event 2 shows numerator=1.000 (injection grid coverage gap — Phase 41 trigger). SC-1..SC-5 all PASS. 524 tests GREEN. Smoke run exits 0; posterior finite.
+**Phase 40 VERIFY-02 note:** P_det zero-fill change (STAT-03) may shift posterior relative to Phase 37 baseline. Phase 40 must use post-Phase-38 evaluation as its reference. Event 2's 100% off-grid numerator weight strongly suggests Phase 41 injection campaign will trigger.
 
 **Phase 37 (Parameter Estimation Correctness) — COMPLETE 2026-04-22:**
 COORD-05, PE-01..PE-05 all resolved. PE-01: h_inj threaded into set_host_galaxy_parameters — Fisher CRBs now self-consistent at injected h. PE-02: per-parameter derivative_epsilon under Vallisneri 2008 protocol (Fisher det change < 1% on 4 seeds). SC-1..SC-7 all PASS. Phase 36 roundtrip regression (9 tests) GREEN throughout.

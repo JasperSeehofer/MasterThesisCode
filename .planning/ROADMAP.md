@@ -19,7 +19,7 @@ Fix all 10 findings from the 2026-04-21 pre-batch audit — two critical coordin
 - [x] **Phase 35: Coordinate Bug Characterization** [GSD] — Failing tests + baseline equator-band count before any fix (completed 2026-04-21)
 - [x] **Phase 36: Coordinate Frame Fix** [GPD] — Equatorial→ecliptic rotation, correct polar Cartesian embedding, eigenvalue sky ellipse (completed 2026-04-22)
 - [x] **Phase 37: Parameter Estimation Correctness** [GSD+GPD] — Thread h into host-distance, per-parameter derivative_epsilon, plus hygiene (Omega_m limits, unified SNR threshold, C/1000, idempotency guard) (completed 2026-04-22)
-- [ ] **Phase 38: Statistical Correctness** [GSD+GPD] — L_cat form (proof or fix), P_det extrapolation alignment, per-event quadrature-weight diagnostic
+- [x] **Phase 38: Statistical Correctness** [GSD+GPD] — L_cat form (proof or fix), P_det extrapolation alignment, per-event quadrature-weight diagnostic (completed 2026-04-22)
 - [ ] **Phase 39: HPC & Visualization Safe Wins** [GSD+GPD] — CPU-importable parameter_estimation, raise flush interval, drop per-iteration FFT clear, dead-code removal, flip_hx verify, LaTeX figures, HDI bands
 - [ ] **Phase 40: Verification Gate** [GSD+GPD] — Full regression + posterior re-evaluation + h-sweep + anisotropy audit + P_det diagnostic; abort gate on >5% MAP shift
 - [ ] **Phase 41: Stage 1 Injection Campaign (Conditional)** [GSD] — Densified M×z×d_L grid on gpu_h100 if >5% extrapolation weight
@@ -94,7 +94,10 @@ Fix all 10 findings from the 2026-04-21 pre-batch audit — two critical coordin
   3. `single_host_likelihood` numerator and `precompute_completion_denominator` both use the same P_det extrapolation policy (both zero-fill OR both NN-fill), grep-verified in CI; default is zero-fill per the plan
   4. Per-event diagnostic log writes `quadrature_weight_outside_grid_numerator` and `quadrature_weight_outside_grid_denominator` columns; any event where either exceeds 5% triggers a WARNING log line with the event ID
   5. End-to-end smoke run of `--evaluate` on a small subset (e.g., `simulations/h_0_73` at N≤5) completes without NaN/Inf in the posterior and the diagnostic CSV is non-empty
-**Plans**: TBD
+**Plans**: 3 plans
+  - [x] 38-01-PLAN.md — STAT-01/STAT-02: L_cat fix + unit test (Wave 1)
+  - [x] 38-02-PLAN.md — STAT-03/STAT-04: P_det zero-fill + quadrature diagnostic (Wave 2)
+  - [x] 38-03-PLAN.md — Verification (SC-1..SC-5) + state update (Wave 3)
 
 ### Phase 39: HPC & Visualization Safe Wins
 **Goal**: Make `parameter_estimation.py` CPU-importable via the `_get_xp` shim, remove the Lustre-heavy per-iteration I/O, drop the per-iteration FFT cache clear, delete dead code, verify the `flip_hx` flag against the current `fastlisaresponse`, enable LaTeX in production figures, and add bootstrap HDI bands to the static convergence plot.
@@ -164,7 +167,7 @@ Fix all 10 findings from the 2026-04-21 pre-batch audit — two critical coordin
 | 35. Coordinate Bug Characterization | GSD | 3/3 | Complete    | 2026-04-21 |
 | 36. Coordinate Frame Fix | GPD | 5/5 | Complete    | 2026-04-22 |
 | 37. Parameter Estimation Correctness | GSD+GPD | 3/3 | Complete    | 2026-04-22 |
-| 38. Statistical Correctness | GSD+GPD | 0/? | Not started | - |
+| 38. Statistical Correctness | GSD+GPD | 3/3 | Complete    | 2026-04-22 |
 | 39. HPC & Visualization Safe Wins | GSD+GPD | 0/? | Not started | - |
 | 40. Verification Gate | GSD+GPD | 0/? | Not started | - |
 | 41. Stage 1 Injection Campaign | GSD | 0/? | Not started (conditional on Phase 40) | - |
