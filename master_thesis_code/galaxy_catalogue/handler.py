@@ -397,34 +397,78 @@ class GalaxyCatalogueHandler:
         return (possible_hosts_without_bh_mass, possible_hosts_with_bh_mass)
 
     def setup_4d_galaxy_catalog_balltree(self) -> None:
-        # Normalize parameters
-        phi_norm = self.reduced_galaxy_catalog[InternalCatalogColumns.PHI_S] / (2 * np.pi)
-        theta_norm = self.reduced_galaxy_catalog[InternalCatalogColumns.THETA_S] / np.pi
-        redshift_norm = self.reduced_galaxy_catalog[InternalCatalogColumns.REDSHIFT] / self.z_max
+        """Build the 5-D host-assignment BallTree (sky chord + z + log M).
+
+        The sky sub-space uses spherical Cartesian embedding via
+        ``_polar_to_cartesian(θ, φ)`` so that chord-length on the unit sphere
+        is the sky metric — avoiding the COORD-02b flat-metric bug that
+        collapsed equatorial points to a corner of the flat (φ/2π, θ/π)
+        square. Redshift and log-mass axes are linearly normalized to [0, 1].
+
+        Metric weights (planner's choice per Claude's Discretion in
+        .planning/phases/36-coordinate-frame-fix/36-CONTEXT.md D-18):
+        sky chord length ∈ [0, 2] + z_norm ∈ [0, 1] + log_M_norm ∈ [0, 1],
+        euclidean on ℝ⁵. This gives the sky axes slightly more weight
+        than z or M, which matches the physical intuition: two galaxies
+        at the same sky position but different z are candidates for the
+        same EMRI sky localization; two galaxies at the same z but
+        different sky positions are not.
+
+        Note: the attribute is named ``catalog_4d_ball_tree`` for backward
+        compatibility; the tree is actually 5-D (3 sky Cartesian + z_norm +
+        log_M_norm) after the COORD-02b fix.
+
+        References:
+            COORD-02b fix; .planning/phases/36-coordinate-frame-fix/36-CONTEXT.md D-17, D-18.
+            .planning/REQUIREMENTS.md §Coordinate Frame Correctness COORD-02b.
+        """
+        # Sky sub-space: spherical Cartesian unit vectors (COORD-02b)
+        phi = self.reduced_galaxy_catalog[InternalCatalogColumns.PHI_S].values
+        theta = self.reduced_galaxy_catalog[InternalCatalogColumns.THETA_S].values
+        # Eq. (standard spherical polar); CONTEXT.md D-17.
+        sky_xyz = _polar_to_cartesian(theta, phi)  # shape (N, 3), unit vectors
+
+        # Redshift axis: linear normalization to [0, 1]
+        redshift_norm = (
+            self.reduced_galaxy_catalog[InternalCatalogColumns.REDSHIFT] / self.z_max
+        ).values
+
+        # Mass axis: log normalization to [0, 1]
         log_mass = np.log10(self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS])
         log_mass_min = np.log10(self.M_min)
         log_mass_max = np.log10(self.M_max)
-        mass_norm = (log_mass - log_mass_min) / (log_mass_max - log_mass_min)
+        mass_norm = ((log_mass - log_mass_min) / (log_mass_max - log_mass_min)).values
 
-        # Combine normalized parameters into a single array
-        data = np.vstack((phi_norm, theta_norm, redshift_norm, mass_norm)).T
+        # Combine into a 5-D array: [sky_x, sky_y, sky_z, z_norm, log_M_norm]
+        data = np.hstack((sky_xyz, redshift_norm.reshape(-1, 1), mass_norm.reshape(-1, 1)))
 
-        # Build the BallTree
         self.catalog_4d_ball_tree = BallTree(data, metric="euclidean")
-        _LOGGER.info("BallTree with all parameters has been built successfully.")
+        _LOGGER.info("5-D BallTree (3 sky Cartesian + z_norm + log_M_norm) built successfully.")
 
     def find_closest_galaxy_to_coordinates(
         self, phi: float, theta: float, redshift: float, mass: float
     ) -> HostGalaxy:
-        phi_norm = phi / 2 / np.pi
-        theta_norm = theta / np.pi
+        """Return the catalog galaxy closest to (φ, θ, z, M) under the 5-D metric.
+
+        Sky query embedded via the same ``_polar_to_cartesian`` helper used in
+        ``setup_4d_galaxy_catalog_balltree`` — structural symmetry per D-17
+        ensures tree data and query point live in the same 5-D space.
+
+        References:
+            COORD-02b fix; .planning/phases/36-coordinate-frame-fix/36-CONTEXT.md D-17, D-18.
+        """
+        # Sky sub-space: spherical Cartesian unit vector (COORD-02b)
+        # Eq. (standard spherical polar); CONTEXT.md D-17.
+        sky_xyz = _polar_to_cartesian(np.array([theta]), np.array([phi]))  # shape (1, 3)
+
+        # Normalized z and log M, matching setup_4d_galaxy_catalog_balltree.
         redshift_norm = redshift / self.z_max
-        log_mass_norm = np.log10(mass)
-        mass_norm = (log_mass_norm - np.log10(self.M_min)) / (
+        log_mass_norm = (np.log10(mass) - np.log10(self.M_min)) / (
             np.log10(self.M_max) - np.log10(self.M_min)
         )
 
-        query_point = np.array([[phi_norm, theta_norm, redshift_norm, mass_norm]])
+        # Combine into (1, 5) query point: [sky_x, sky_y, sky_z, z_norm, log_M_norm]
+        query_point = np.hstack((sky_xyz, np.array([[redshift_norm, log_mass_norm]])))
 
         # Query the BallTree
         distance, index = self.catalog_4d_ball_tree.query(query_point, k=1)
