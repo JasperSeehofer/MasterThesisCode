@@ -18,7 +18,7 @@ Fix all 10 findings from the 2026-04-21 pre-batch audit — two critical coordin
 
 - [x] **Phase 35: Coordinate Bug Characterization** [GSD] — Failing tests + baseline equator-band count before any fix (completed 2026-04-21)
 - [x] **Phase 36: Coordinate Frame Fix** [GPD] — Equatorial→ecliptic rotation, correct polar Cartesian embedding, eigenvalue sky ellipse (completed 2026-04-22)
-- [ ] **Phase 37: Parameter Estimation Correctness** [GSD+GPD] — Thread h into host-distance, per-parameter derivative_epsilon, plus hygiene (Omega_m limits, unified SNR threshold, C/1000, idempotency guard)
+- [x] **Phase 37: Parameter Estimation Correctness** [GSD+GPD] — Thread h into host-distance, per-parameter derivative_epsilon, plus hygiene (Omega_m limits, unified SNR threshold, C/1000, idempotency guard) (completed 2026-04-22)
 - [ ] **Phase 38: Statistical Correctness** [GSD+GPD] — L_cat form (proof or fix), P_det extrapolation alignment, per-event quadrature-weight diagnostic
 - [ ] **Phase 39: HPC & Visualization Safe Wins** [GSD+GPD] — CPU-importable parameter_estimation, raise flush interval, drop per-iteration FFT clear, dead-code removal, flip_hx verify, LaTeX figures, HDI bands
 - [ ] **Phase 40: Verification Gate** [GSD+GPD] — Full regression + posterior re-evaluation + h-sweep + anisotropy audit + P_det diagnostic; abort gate on >5% MAP shift
@@ -76,7 +76,10 @@ Fix all 10 findings from the 2026-04-21 pre-batch audit — two critical coordin
   5. Greping for literal `15` and `20` adjacent to the token `snr` finds no direct uses: `Model1CrossCheck`, pre-screen coefficient, evaluation filter, injection quality gate all resolve to `SNR_THRESHOLD` (constant) — enforced by a smoke test
   6. `SPEED_OF_LIGHT_KM_S` is defined as `C / 1000` in `constants.py`; `comoving_volume_element` test matches to 14 decimal places with no `300000.0` hardcode
   7. `_map_angles_to_spherical_coordinates` raises `AssertionError` when called a second time on already-ecliptic angles (idempotency guard); existing callers unaffected
-**Plans**: TBD
+**Plans**:
+  - [x] 37-01-PLAN.md — Software hygiene (PE-03, PE-04, PE-05, COORD-05)
+  - [x] 37-02-PLAN.md — Physics tasks: PE-01 h-threading ([PHYSICS]) + PE-02 per-parameter epsilon (GPD, [PHYSICS])
+  - [x] 37-03-PLAN.md — Verification (SC-1..SC-7) + state update
 
 ### Phase 38: Statistical Correctness
 **Goal**: Reconcile the catalog likelihood with Gray et al. (2020) Eq. 24-25 (prove equivalence or replace), and make the P_det extrapolation symmetric between the single-host integrand and the completion-term denominator so the posterior doesn't silently lose quadrature weight at the grid edges.
@@ -160,7 +163,7 @@ Fix all 10 findings from the 2026-04-21 pre-batch audit — two critical coordin
 |-------|---------|----------------|--------|-----------|
 | 35. Coordinate Bug Characterization | GSD | 3/3 | Complete    | 2026-04-21 |
 | 36. Coordinate Frame Fix | GPD | 5/5 | Complete    | 2026-04-22 |
-| 37. Parameter Estimation Correctness | GSD+GPD | 0/? | Not started | - |
+| 37. Parameter Estimation Correctness | GSD+GPD | 3/3 | Complete    | 2026-04-22 |
 | 38. Statistical Correctness | GSD+GPD | 0/? | Not started | - |
 | 39. HPC & Visualization Safe Wins | GSD+GPD | 0/? | Not started | - |
 | 40. Verification Gate | GSD+GPD | 0/? | Not started | - |

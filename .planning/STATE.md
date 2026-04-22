@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v2.2
 milestone_name: milestone
-status: executing
-stopped_at: Completed [PHYSICS] PE-01 commit 55a6d99 — h-threading into set_host_galaxy_parameters; PE-02 pending GPD delegation
-last_updated: "2026-04-22T12:56:01.852Z"
-last_activity: 2026-04-22 -- Phase --phase execution started
+status: planning
+stopped_at: "Phase 38 next — Statistical Correctness"
+last_updated: "2026-04-22T14:00:00.000Z"
+last_activity: 2026-04-22
 progress:
   total_phases: 8
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 11
-  completed_plans: 10
-  percent: 91
+  completed_plans: 11
+  percent: 100
 ---
 
 # Project State
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-21)
 
 **Core value:** Measure H₀ from simulated EMRI dark siren events with galaxy catalog completeness correction, producing publication-ready results.
-**Current focus:** Phase --phase — 37
+**Current focus:** Phase 38 — Statistical Correctness
 
 ## Current Position
 
-Phase: --phase (37) — EXECUTING
-Plan: 1 of --name
-Status: Executing Phase --phase
-Last activity: 2026-04-22 -- Phase --phase execution started
+Phase: 38 — READY TO PLAN
+Plan: Not started
+Status: Planning
+Last activity: 2026-04-22 — Phase 37 complete (all 7 SCs pass)
 
 **Milestone phase map:**
 
@@ -100,6 +100,12 @@ Last activity: 2026-04-22 -- Phase --phase execution started
 
 **Abort gate before cluster submission:** if re-evaluated MAP at h=0.73 shifts >5%, pause and investigate.
 
+### Phase Notes (v2.2 — active)
+
+**Phase 37 (Parameter Estimation Correctness) — COMPLETE 2026-04-22:**
+COORD-05, PE-01..PE-05 all resolved. PE-01: h_inj threaded into set_host_galaxy_parameters — Fisher CRBs now self-consistent at injected h. PE-02: per-parameter derivative_epsilon under Vallisneri 2008 protocol (Fisher det change < 1% on 4 seeds). SC-1..SC-7 all PASS. Phase 36 roundtrip regression (9 tests) GREEN throughout.
+**Phase 40 VERIFY-02 note:** PE-02 epsilon change may perturb fisher_sky_2x2 values relative to the Phase 36 regression pickle (36-superset-regression.pkl). Phase 40 should use post-Phase-37 CRB values as its reference baseline, not the Phase 36 pickle.
+
 ### Phase Notes (v2.1 — shipped)
 
 Phase 30 (Baseline/comparison), Phase 31 (Catalog-only diagnostic), Phase 32 (L_comp full-volume D(h), GPD, /physics-change), Phase 33 (P_det 60-bin validation), Phase 34 (Fisher condition-number gate) — all shipped 2026-04-09. MAP 0.73, bias 0.0% at N=59 with h=0.73 injections.
@@ -115,10 +121,10 @@ Phase 30 (Baseline/comparison), Phase 31 (Catalog-only diagnostic), Phase 32 (L_
 
 ## Session Continuity
 
-Last session: 2026-04-22T12:56:01.850Z
-Stopped at: Completed [PHYSICS] PE-01 commit 55a6d99 — h-threading into set_host_galaxy_parameters; PE-02 pending GPD delegation
+Last session: 2026-04-22T14:00:00.000Z
+Stopped at: Phase 37 complete — all 7 SCs pass, state advanced to Phase 38
 Resume file: None
-Next command: `/gpd:plan-phase 37`
+Next command: `/gpd:plan-phase 38` (STAT-03 always GPD; STAT-01 may also require GPD if L_cat equivalence proof fails)
 
 ## Quick Tasks Completed
 
