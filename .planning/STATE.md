@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v2.2
 milestone_name: milestone
 status: planning
-stopped_at: Phase 36 context gathered
-last_updated: "2026-04-21T23:47:43.540Z"
+stopped_at: Completed 36-03-PLAN.md (COORD-04 eigenvalue sky search radius)
+last_updated: "2026-04-22T11:37:25.620Z"
 last_activity: 2026-04-21
 progress:
   total_phases: 8
   completed_phases: 1
-  total_plans: 3
-  completed_plans: 3
-  percent: 100
+  total_plans: 8
+  completed_plans: 6
+  percent: 75
 ---
 
 # Project State
@@ -115,9 +115,9 @@ Phase 30 (Baseline/comparison), Phase 31 (Catalog-only diagnostic), Phase 32 (L_
 
 ## Session Continuity
 
-Last session: --stopped-at
-Stopped at: Phase 36 context gathered
-Resume file: --resume-file
+Last session: 2026-04-22T11:37:25.617Z
+Stopped at: Completed 36-03-PLAN.md (COORD-04 eigenvalue sky search radius)
+Resume file: None
 Next command: `/gsd:plan-phase 35`
 
 ## Quick Tasks Completed
@@ -129,3 +129,4 @@ Next command: `/gsd:plan-phase 35`
 | 2026-04-09 | Add with-BH-mass variant to plot_posterior_convergence | 1af4487 | Both variants shown on convergence plot; outdated delta-function assumption removed. |
 
 **Planned Phase:** 35 (Coordinate Bug Characterization) — 3 plans — 2026-04-21T21:29:40.875Z
+| Phase 36 P03 | 230 | 4 tasks | 4 files |
