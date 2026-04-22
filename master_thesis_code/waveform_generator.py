@@ -55,6 +55,8 @@ def create_lisa_response_generator(
 
     lisa_response_generator = ResponseWrapper(
         waveform_gen=_set_waveform_generator(waveform_generator_type, use_gpu=use_gpu),
+        # flip_hx=True required when waveform_gen emits h_+ - i*h_x; see fastlisaresponse
+        # 1.1.17 (ResponseWrapper.__init__) and Katz et al. (2022) arXiv:2204.06633
         flip_hx=True,
         index_lambda=INDEX_LAMBDA,
         index_beta=INDEX_BETA,
