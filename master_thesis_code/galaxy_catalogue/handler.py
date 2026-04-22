@@ -6,9 +6,11 @@ from enum import Enum
 # import normal distribution
 from statistics import NormalDist
 
+import astropy.units as u
 import numpy as np
 import numpy.typing as npt
 import pandas as pd
+from astropy.coordinates import BarycentricTrueEcliptic, SkyCoord
 from sklearn.neighbors import BallTree
 
 from master_thesis_code.physical_relations import (
@@ -165,6 +167,7 @@ class GalaxyCatalogueHandler:
             "Mapping catalog to spherical coordinates and using empirical relation to estimate BH mass."
         )
         self._map_stellar_masses_to_BH_masses()
+        self._rotate_equatorial_to_ecliptic()  # COORD-03 (Phase 36): equatorial J2000 -> ecliptic SSB
         self._map_angles_to_spherical_coordinates()
         self._remove_galaxies_without_mass_information()
         self.reduced_galaxy_catalog = self._get_pruned_galaxy_catalog(M_min, M_max, z_max)
@@ -484,7 +487,51 @@ class GalaxyCatalogueHandler:
         self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS] = BH_mass
         self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS_ERROR] = BH_mass_error
 
+    def _rotate_equatorial_to_ecliptic(self) -> None:
+        """Rotate catalog RA/Dec from equatorial ICRS J2000 to ecliptic SSB.
+
+        The GLADE+ catalog stores source positions as equatorial right ascension
+        and declination at the J2000 epoch. LISA waveform conventions use the
+        barycentric ecliptic frame. This method performs the vectorized
+        astropy rotation once at catalog load time. After this call, the
+        columns ``PHI_S`` / ``THETA_S`` hold ecliptic longitude / latitude
+        (degrees, ranges ``[0, 360)`` and ``[-90, +90]``); a subsequent call
+        to :meth:`_map_angles_to_spherical_coordinates` converts these to
+        radians plus the standard polar-angle offset.
+
+        Hard range assertions (D-15) fail loud rather than silently drift.
+
+        References:
+            astropy.coordinates.BarycentricTrueEcliptic(equinox='J2000').
+            .planning/phases/36-coordinate-frame-fix/36-CONTEXT.md D-13, D-14, D-15.
+        """
+        ra_deg = self.reduced_galaxy_catalog[InternalCatalogColumns.PHI_S].values
+        dec_deg = self.reduced_galaxy_catalog[InternalCatalogColumns.THETA_S].values
+
+        # Eq. (astropy BarycentricTrueEcliptic(J2000));
+        # .planning/phases/36-coordinate-frame-fix/36-CONTEXT.md D-13
+        coord = SkyCoord(ra=ra_deg * u.deg, dec=dec_deg * u.deg, frame="icrs")
+        ecl = coord.transform_to(BarycentricTrueEcliptic(equinox="J2000"))
+        lon_deg = ecl.lon.to(u.deg).value % 360.0
+        lat_deg = ecl.lat.to(u.deg).value
+
+        # D-15: fail loud on out-of-range outputs; no silent coordinate drift.
+        assert np.all((lon_deg >= 0) & (lon_deg < 360)), (
+            f"Ecliptic longitude out of [0, 360): min={lon_deg.min()}, max={lon_deg.max()}"
+        )
+        assert np.all((lat_deg >= -90) & (lat_deg <= 90)), (
+            f"Ecliptic latitude out of [-90, +90]: min={lat_deg.min()}, max={lat_deg.max()}"
+        )
+
+        self.reduced_galaxy_catalog[InternalCatalogColumns.PHI_S] = lon_deg
+        self.reduced_galaxy_catalog[InternalCatalogColumns.THETA_S] = lat_deg
+
     def _map_angles_to_spherical_coordinates(self) -> None:
+        """Convert ecliptic (lon, lat) in degrees to (φ, θ_polar) in radians.
+
+        Expects :meth:`_rotate_equatorial_to_ecliptic` to have been called
+        first (see Phase 36 COORD-03). ``θ_polar = π/2 − β`` ∈ ``[0, π]``.
+        """
         self.reduced_galaxy_catalog[InternalCatalogColumns.PHI_S] = (
             self.reduced_galaxy_catalog[InternalCatalogColumns.PHI_S] * np.pi / 180
         )
