@@ -1,0 +1,17 @@
+{
+  "ts": "20260423T172607Z",
+  "baseline_map_h": 0.735,
+  "current_map_h": 0.735,
+  "delta_map_abs": 0.0,
+  "delta_map_relative": 0.0,
+  "abort_threshold": 0.05,
+  "abort": false,
+  "bias_percent_v2_2": 0.6849315068493157,
+  "ci_width_v2_1": 0.01392133915787186,
+  "ci_width_v2_2": 0.01392133915787186,
+  "ks_statistic": 0.02631578947368421,
+  "ks_pvalue": 0.9999999999999999,
+  "n_common_h": 38,
+  "baseline_git_commit": "53f7042aae0147c34db8e9b0ee55c5b23c5636ca",
+  "current_git_commit": "53f7042aae0147c34db8e9b0ee55c5b23c5636ca"
+}

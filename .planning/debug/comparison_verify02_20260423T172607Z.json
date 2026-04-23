@@ -1,0 +1,31 @@
+{
+  "baseline": {
+    "map_h": 0.735,
+    "ci_lower": 0.7262271496268381,
+    "ci_upper": 0.74014848878471,
+    "ci_width": 0.01392133915787186,
+    "bias_pct": 0.6849315068493157,
+    "n_events": 417,
+    "n_excluded_fisher": 0,
+    "median_cond_3d": 0.0,
+    "median_cond_4d": 0.0
+  },
+  "current": {
+    "map_h": 0.735,
+    "ci_lower": 0.7262271496268381,
+    "ci_upper": 0.74014848878471,
+    "ci_width": 0.01392133915787186,
+    "bias_pct": 0.6849315068493157,
+    "n_events": 417,
+    "n_excluded_fisher": 0,
+    "median_cond_3d": 29.889146044763667,
+    "median_cond_4d": 440202781846.4773
+  },
+  "delta": {
+    "map_h": 0.0,
+    "ci_width": 0.0,
+    "bias_pct": 0.0,
+    "n_events": 0,
+    "n_excluded_fisher": 0
+  }
+}
