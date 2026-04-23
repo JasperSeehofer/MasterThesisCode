@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v2.2
 milestone_name: milestone
-status: ready_to_plan
-stopped_at: Phase 39 complete; Phase 40 ready
-last_updated: "2026-04-23T00:00:00.000Z"
-last_activity: 2026-04-23 — Phase 39 complete; SC-1..SC-7 PASS; 540 tests GREEN
+status: planning
+stopped_at: Phase 40 context gathered
+last_updated: "2026-04-23T12:06:38.299Z"
+last_activity: 2026-04-22
 progress:
   total_phases: 8
-  completed_phases: 5
+  completed_phases: 4
   total_plans: 20
   completed_plans: 18
-  percent: 63
+  percent: 90
 ---
 
 # Project State
@@ -104,6 +104,7 @@ Last activity: 2026-04-22
 
 **Phase 39 (HPC & Visualization Safe Wins) — COMPLETE 2026-04-23:**
 HPC-01..HPC-05, VIZ-01, VIZ-02 all resolved. SC-1..SC-7 all PASS.
+
 - HPC-01: parameter_estimation.py CPU-importable via self._xp/self._fft shim (commit b3cec75)
 - HPC-02: _crb_flush_interval raised 1→25; SIGTERM drain regression test passes (commit 815ac4a)
 - HPC-03: memory_management API split (free_memory_pool + clear_fft_cache + free_gpu_memory_if_pressured); main.py call sites migrated (commits 49e3d60, 6feeeb3)
@@ -111,6 +112,7 @@ HPC-01..HPC-05, VIZ-01, VIZ-02 all resolved. SC-1..SC-7 all PASS.
 - HPC-05: KEEP path — flip_hx=True verified against fastlisaresponse 1.1.17 + few 2.0.0rc1; 2-line citation comment added; see 39-05-VERIFICATION.md (commits 5b182d1, 35d9366)
 - VIZ-01: LaTeX auto-detection in generate_figures via shutil.which("latex"); both branches smoke-tested (commit c1cbaac)
 - VIZ-02: Bootstrap HDI band on plot_h0_convergence right panel (commits fd1953c, c1cbaac)
+
 Full CPU suite: 540 tests GREEN. Phase 36/37/38 regressions intact (9+4+3=16/16). ruff + mypy clean across 57 source files.
 
 **Phase 38 (Statistical Correctness) — COMPLETE 2026-04-22:**
@@ -136,9 +138,9 @@ Phase 30 (Baseline/comparison), Phase 31 (Catalog-only diagnostic), Phase 32 (L_
 
 ## Session Continuity
 
-Last session: 2026-04-23 — Phase 39 execution complete
-Stopped at: Phase 39 complete; Phase 40 ready
-Resume file: .planning/phases/39-hpc-visualization-safe-wins/39-VERIFICATION.md
+Last session: --stopped-at
+Stopped at: Phase 40 context gathered
+Resume file: --resume-file
 Next command: `/gsd-discuss-phase 40` (Phase 40 Verification Gate — discuss before planning)
 
 ## Quick Tasks Completed
