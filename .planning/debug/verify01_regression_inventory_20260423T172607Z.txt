@@ -1,0 +1,12 @@
+# VERIFY-01 Regression Inventory (D-06) — REVISED
+timestamp: 20260423T172607Z
+Note: Counts from pytest run log (file progress lines); tree-format collect log not used for counts.
+
+D-06.1 test_coordinate_roundtrip.py test_count=10 (expect >= 9)
+D-06.2 PE-01 test_parameter_space_h.py test_count=5 (expect >= 1)
+D-06.3 test_l_cat_equivalence.py test_count=4 (expect >= 3)
+D-06.4 STAT-03 test_completion_term_fix.py test_count=12 (STAT-03 zero-fill pinned: test_zero_fill_matches_standard_inside_grid)
+D-06.5 HPC-02 sigterm_run_matches=0 sigterm_collect_matches=1
+
+## Verdict
+  PASS: all 5 regression inventory items present
