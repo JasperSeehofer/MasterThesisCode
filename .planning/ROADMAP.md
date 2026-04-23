@@ -136,7 +136,14 @@ Fix all 10 findings from the 2026-04-21 pre-batch audit — two critical coordin
   3. All 27 h-value posteriors regenerated; `docs_src/interactive/m_z_improvement.html` is updated; static convergence figure shows MAP at h=0.73 is 0.73 ± 0.01 with ≥95% CI coverage (sanity assertion, not a pre-registered gate)
   4. H₀ MAP binned by `|qS − π/2|` quartiles shows no systematic trend: per-quartile MAP shifts stay within 1σ; any >1σ shift is logged and treated as a Stage 2 trigger rather than an abort condition
   5. `.planning/debug/verify_gate_{timestamp}.md` reports the P_det quadrature-weight-outside-grid summary: mean and max per-event fraction across all events, plus a histogram; this number decides whether Phase 41 fires
-**Plans**: TBD
+**Plans**: 7 plans (Wave 0–4)
+  - [x] 40-00-PLAN.md — Baseline archive (Wave 0)
+  - [x] 40-01-PLAN.md — VERIFY-01 CPU test-suite gate (Wave 1)
+  - [x] 40-02-PLAN.md — VERIFY-02 abort gate: h=0.73 re-eval (Wave 2) — PASS (0.00% MAP shift)
+  - [ ] 40-03-PLAN.md — VERIFY-03 h-sweep re-evaluation (Wave 3)
+  - [ ] 40-04-PLAN.md — VERIFY-04 anisotropy audit (Wave 3)
+  - [ ] 40-05-PLAN.md — VERIFY-05 P_det quadrature diagnostic (Wave 3)
+  - [ ] 40-06-PLAN.md — Phase 40 verification + state update (Wave 4)
 
 ### Phase 41: Stage 1 Injection Campaign (Conditional)
 **Goal**: If VERIFY-05 reports that more than 5% of quadrature weight lands outside the P_det injection grid on average, submit a densified M×z×d_L injection campaign to bwUniCluster `gpu_h100`; re-evaluate posteriors against the Phase 40 baseline.

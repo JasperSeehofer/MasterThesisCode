@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v2.2
 milestone_name: milestone
 status: executing
-stopped_at: Phase 40 planning complete — ready to execute
-last_updated: "2026-04-23T16:00:00.000Z"
-last_activity: 2026-04-23
+stopped_at: Phase 40 context gathered
+last_updated: "2026-04-23T17:46:39.680Z"
+last_activity: 2026-04-22
 progress:
   total_phases: 8
   completed_phases: 4
-  total_plans: 27
-  completed_plans: 18
-  percent: 90
+  total_plans: 26
+  completed_plans: 22
+  percent: 85
 ---
 
 # Project State
@@ -26,9 +26,9 @@ See: .planning/PROJECT.md (updated 2026-04-21)
 ## Current Position
 
 Phase: 40
-Plan: 40-00 (Wave 0 — first)
-Status: Planned — ready to execute
-Last activity: 2026-04-22
+Plan: 40-03 (Wave 3 — next to execute)
+Status: Executing — VERIFY-02 PASS; Wave 3 cleared
+Last activity: 2026-04-23
 
 **Milestone phase map:**
 
@@ -119,6 +119,9 @@ Full CPU suite: 540 tests GREEN. Phase 36/37/38 regressions intact (9+4+3=16/16)
 STAT-01..STAT-04 all resolved. STAT-01: L_cat fixed to (1/N)Σ(N_g/D_g) per Gray et al. (2020) Eq. 24-25 (commit 005e792). STAT-02: test_l_cat_equivalence.py 3/3 pass with counterexample (2/3 ≠ 3/4). STAT-03: single_host_likelihood now uses zero-fill P_det matching D(h) denominator (commit a70d1a2). STAT-04: quadrature_weight_outside_grid WARNING infrastructure in place; event 2 shows numerator=1.000 (injection grid coverage gap — Phase 41 trigger). SC-1..SC-5 all PASS. 524 tests GREEN. Smoke run exits 0; posterior finite.
 **Phase 40 VERIFY-02 note:** P_det zero-fill change (STAT-03) may shift posterior relative to Phase 37 baseline. Phase 40 must use post-Phase-38 evaluation as its reference. Event 2's 100% off-grid numerator weight strongly suggests Phase 41 injection campaign will trigger.
 
+**Phase 40 VERIFY-02 COMPLETE (2026-04-23):**
+VERIFY-02 abort gate: PASS. MAP shift = 0.0000% (threshold 5%). v2.2 MAP = v2.1 MAP = 0.7350. bias_percent = +0.68% (SC-2 PASS < 1%). KS p-value ≈ 1.0. Wave 3 cleared. 26,053 STAT-04 quadrature warnings captured for VERIFY-05. Commit: 81ae3e3.
+
 **Phase 37 (Parameter Estimation Correctness) — COMPLETE 2026-04-22:**
 COORD-05, PE-01..PE-05 all resolved. PE-01: h_inj threaded into set_host_galaxy_parameters — Fisher CRBs now self-consistent at injected h. PE-02: per-parameter derivative_epsilon under Vallisneri 2008 protocol (Fisher det change < 1% on 4 seeds). SC-1..SC-7 all PASS. Phase 36 roundtrip regression (9 tests) GREEN throughout.
 **Phase 40 VERIFY-02 note:** PE-02 epsilon change may perturb fisher_sky_2x2 values relative to the Phase 36 regression pickle (36-superset-regression.pkl). Phase 40 should use post-Phase-37 CRB values as its reference baseline, not the Phase 36 pickle.
@@ -138,10 +141,10 @@ Phase 30 (Baseline/comparison), Phase 31 (Catalog-only diagnostic), Phase 32 (L_
 
 ## Session Continuity
 
-Last session: --stopped-at
-Stopped at: Phase 40 context gathered
-Resume file: --resume-file
-Next command: `/gsd-discuss-phase 40` (Phase 40 Verification Gate — discuss before planning)
+Last session: 2026-04-23T17:56:00Z
+Stopped at: Plan 40-02 complete — VERIFY-02 PASS (Wave 3 cleared)
+Resume file: None
+Next command: Execute Plan 40-03 (Wave 3 — h-sweep re-evaluation VERIFY-03)
 
 ## Quick Tasks Completed
 

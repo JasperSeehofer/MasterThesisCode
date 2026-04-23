@@ -104,7 +104,7 @@ v2.2 bias_percent = +0.68% — **PASS** (reported only, not abort criterion)
 2. **Task 2: Compare v2.1 vs v2.2 — abort-gate verdict** — staged in Task 3 commit
 3. **Task 3: Write SUMMARY, commit** — see commit hash below
 
-**Task/SUMMARY commit:** `<hash>` — `[PHYSICS] docs(40-02): VERIFY-02 abort-gate check — PASS [ts=20260423T172607Z]`
+**Task/SUMMARY commit:** `81ae3e3` — `[PHYSICS] docs(40-02): VERIFY-02 abort-gate check — PASS [ts=20260423T172607Z]`
 
 ## Artifacts
 
