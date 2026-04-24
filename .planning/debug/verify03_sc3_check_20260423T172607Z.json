@@ -1,0 +1,10 @@
+{
+  "map_h": 0.86,
+  "ci_lower": 0.8507696598495461,
+  "ci_upper": 0.8582418399713421,
+  "ci_width": 0.007472180121795957,
+  "bias_percent": 17.808219178082194,
+  "n_events": 60,
+  "n_h_values": 38,
+  "map_within_0p01_of_0p73": false
+}
