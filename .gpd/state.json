@@ -1,94 +1,86 @@
 {
   "project_reference": {
-    "project_md_updated": "2026-04-01",
+    "project_md_updated": "2026-04-24",
     "core_research_question": "What is the Hubble constant H0 as measured by dark siren inference from LISA EMRI detections?",
-    "current_focus": "v2.0 Phase 26 complete \u2014 PRD paper draft delivered, awaiting production run (Phase 27)"
+    "current_focus": "v2.2 Phase 43 — Posterior Calibration Fix (SC-3 MAP=0.860 root cause diagnosis)"
   },
-  "project_contract": null,
+  "project_contract": {
+    "phase": "43",
+    "phase_name": "Posterior Calibration Fix",
+    "approved_at": "2026-04-24",
+    "approved_by": "user (Phase 40 Q1 decision)",
+    "scope": "Diagnose and fix SC-3 MAP=0.860 failure. Two hypotheses: H1 = D(h) denominator missing from --combine/extract_baseline; H2 = CRBs store equatorial sky angles but v2.2 catalog expects ecliptic. Fix confirmed root causes. Re-run --evaluate to verify MAP ≈ 0.73 ± 0.01.",
+    "claims": [
+      "FIX-01: Root cause of SC-3 MAP=0.860 identified (H1, H2, or both)",
+      "FIX-02: Root cause(s) fixed in code",
+      "FIX-03: --evaluate confirms MAP ≈ 0.73 ± 0.01 post-fix"
+    ],
+    "deliverables": [
+      "Angle audit: code-path trace from simulation to CRB CSV confirming qS/phiS frame",
+      "D(h) audit: _combine_posteriors/extract_baseline code path traced",
+      "Bug fix commits (with [PHYSICS] prefix if formula change)",
+      "Re-evaluated --evaluate log showing MAP ≈ 0.73 ± 0.01",
+      "VERIFY-04 anisotropy re-assessment (Phase 42 proceed/defer decision)"
+    ],
+    "acceptance_tests": [
+      "uv run python -m master_thesis_code simulations/ --evaluate shows MAP ≈ 0.73 ± 0.01",
+      "pytest -m 'not gpu' exits 0 (≥ 544 tests)",
+      "VERIFY-03 SC-3 PASS: MAP within 0.73 ± 0.01"
+    ],
+    "forbidden_proxies": [
+      "extract_baseline MAP alone is NOT sufficient (it lacks D(h) — use --evaluate log MAP)",
+      "VERIFY-02-style comparison (pre/post same format) does not catch this bug"
+    ],
+    "uncertainty_markers": [
+      "If H2 (CRB frame mismatch) is confirmed, a new simulation run may be required — this would significantly expand scope",
+      "VERIFY-04 anisotropy may or may not be caused by the same bug"
+    ]
+  },
   "position": {
-    "current_phase": "27",
-    "current_phase_name": "Production Run & Figures",
+    "current_phase": "43",
+    "current_phase_name": "Posterior Calibration Fix",
     "total_phases": null,
-    "current_plan": "3/4 complete (Plans 01-03 done, Plan 04 postponed)",
+    "current_plan": "0/? — planning",
     "total_plans_in_phase": null,
-    "status": "Phase 27 partially complete \u2014 data validated, results extracted, figures generated. Paper marker fill (Plan 04) deferred pending pipeline validation.",
-    "last_activity": "2026-04-07",
-    "last_activity_desc": "Plans 01-03 executed: pipeline bugs fixed, production data validated (23+7 files, 538 events), MAP/CI/precision extracted (h=0.66/0.68, both grid-limited), 3 figures generated + 1 placeholder. Plan 04 (paper markers) deferred.",
-    "progress_percent": 60,
+    "status": "Planning — Phase 43 scope approved 2026-04-24",
+    "last_activity": "2026-04-24",
+    "last_activity_desc": "Phase 40 GAPS_FOUND; Phase 43 fix phase inserted per Q1 decision; planning in progress.",
+    "progress_percent": 0,
     "paused_at": null
   },
   "active_calculations": [],
   "intermediate_results": [
-    "\"Without BH mass\" posterior peak: h=0.678 (P_det=1 baseline)",
-    "\"With BH mass\" posterior peak: h=0.652 (P_det=1 baseline, post-all-fixes, still biased)",
-    "Detection yield: 0.22-0.81% per h at SNR>=15 (v1.2.2)",
-    "IS estimator VRF: 11.8-24.9x in boundary bins (v1.2.2)",
-    "Validation: VALD-01 + VALD-02 PASS (v1.2.2)",
-    "**Production (completeness-corrected, Phase 27):**",
-    "Without BH mass: MAP h=0.66, \u03c3<0.014 (grid UB), precision \u22642.1%, bias -9.6%, 531 events",
-    "With BH mass: MAP h=0.68, \u03c3<0.014 (grid UB), precision \u22642.0%, bias -6.8%, 527 events",
-    "Both CIs grid-limited (15-pt h-grid, spacing 0.02)",
-    "Completeness correction worsened bias vs thesis baseline (0.712/0.742 \u2192 0.66/0.68)",
-    "SNR_THRESHOLD = 15, convergence slope -0.71 (consistent with N^{-1/2})"
+    "Phase 40 VERIFY-03 SC-3: MAP=0.860 (expected 0.73±0.01) — extract_baseline sums log-L without D(h)",
+    "Phase 40 VERIFY-02: MAP shift 0.0% (abort gate NOT fired)",
+    "Phase 40 VERIFY-04: stage_2_trigger=true (Q3 |ΔMAP|=0.020 >> σ=0.0037)",
+    "Phase 40 VERIFY-05: mean_lb=0.041 (borderline; Phase 41 SKIPPED per user Q2)",
+    "v2.2 CRB re-evaluation: 60 events at SNR≥20 (vs v2.1 417 events)",
+    "v2.2 MAP=0.73 confirmed by --evaluate comparison in VERIFY-02"
   ],
   "open_questions": [
-    "[v1.2.1] What causes the remaining \"with BH mass\" low-h bias after /(1+z) fix? -- Diagnosis in quick-2: Sources A (p_det mismatch) + F (zero-likelihood clustering) are primary candidates. Fix requires: (1) P_det=1 production run, (2) zero-likelihood logging, (3) Physics Change Protocol for Source A fix.",
-    "[v1.2.1] \"Without BH mass\" h=0.86 overshoot with real P_det -- Diagnosis in quick-2: Source E (P_det normalization). Confirmed by P_det=1 cross-check (h=0.678). Action: P_det=1 production run.",
-    "[v1.2.1] p_det in numerator uses detection.M rather than galaxy M*(1+z) at trial z -- Source A in quick-2 analysis. Physics Change Protocol required before fix."
+    "Is D(h) denominator missing from _combine_posteriors/extract_baseline? (FIX-01)",
+    "Do CRBs in simulations/prepared_cramer_rao_bounds.csv store qS/phiS in equatorial or ecliptic frame? (FIX-02)",
+    "If CRBs are equatorial (pre-COORD): does a new simulation run need to be triggered? (scope-expander)",
+    "Will VERIFY-04 anisotropy resolve after D(h)/frame fix, or is Phase 42 still needed?"
   ],
   "performance_metrics": {
     "rows": []
   },
   "decisions": [
     {
-      "phase": null,
-      "summary": "15x10 grid recommended over 30x20 for current injection counts",
-      "rationale": null
+      "phase": "40",
+      "summary": "Q1: Insert fix phase for VERIFY-03 SC-3 (angle audit + D(h) in --combine)",
+      "rationale": "MAP=0.860 from extract_baseline; root cause: D(h) missing OR CRB frame mismatch post-COORD fix"
     },
     {
-      "phase": null,
-      "summary": "IS estimator backward-compatible; Neyman allocation ready for production",
-      "rationale": null
+      "phase": "40",
+      "summary": "Q2: Skip Phase 41 (Stage 1 Injection Campaign)",
+      "rationale": "VERIFY-05 mean_lb=0.041 accepted as known limitation; 19 off-grid events (3.5%) documented"
     },
     {
-      "phase": null,
-      "summary": "alpha=0.3 defensive mixture bounds max weight at 3.33",
-      "rationale": null
-    },
-    {
-      "phase": "quick-2",
-      "summary": "Quick task 2: analyze evolution of residual bias across milestones: what bias sources were eliminated and what remains to be investigated",
-      "rationale": "Ad-hoc task completed outside planned phases"
-    },
-    {
-      "phase": "quick-3",
-      "summary": "Quick task 3: Literature research on galaxy catalog completeness correction for dark siren likelihood",
-      "rationale": "Root cause of H0 bias identified as GLADE incompleteness; research produced implementation specification based on Gray et al. (2020) framework"
-    },
-    {
-      "phase": "24",
-      "summary": "Completeness estimation",
-      "rationale": "f(z,h) interface and comoving_volume_element delivered. Old get_completeness() backward compat disregarded per user. Data provenance (number vs luminosity completeness) to be verified in Phase 25."
-    },
-    {
-      "phase": "25",
-      "summary": "Likelihood correction",
-      "rationale": "Gray et al. (2020) Eq. 9 combination formula: p_i = f_i * L_cat + (1-f_i) * L_comp. Completion term uses 'without BH mass' 3D Gaussian for both variants (uncataloged host has no galaxy mass info). Integration limits match catalog term (4-sigma d_L)."
-    },
-    {
-      "phase": "quick-4",
-      "summary": "Quick task 4: Physics audit of PrepareDetections",
-      "rationale": "sigma chain correct, independent sampling non-standard but defensible \u2014 Ad-hoc task completed outside planned phases"
-    },
-    {
-      "phase": "quick-5",
-      "summary": "Quick task 5: SNR rescaling refactor",
-      "rationale": "literature confirms single-h injection is standard (Gray+2020, Laghi+2021, Finke+2021); SimulationDetectionProbability refactored to pool all injection data and compute P_det via exact SNR~1/d_L rescaling \u2014 Eliminates interpolation artifacts, pools 463k injection events, enables exact P_det at any h"
-    },
-    {
-      "phase": "0",
-      "summary": "Started milestone v2.1: Publication Figures",
-      "rationale": "New milestone cycle \u2014 unify visualization, modern style, galaxy-level plots, interactive figures"
+      "phase": "40",
+      "summary": "Q3: Defer Phase 42 until Phase 43 Q1 resolved",
+      "rationale": "Anisotropy may be a symptom of same D(h)/COORD bug, not genuine sky-dependent P_det"
     }
   ],
   "approximations": [],
@@ -100,6 +92,7 @@
     "regularization_scheme": null,
     "renormalization_scheme": null,
     "coordinate_system": "spherical",
+    "sky_frame": "SSB ecliptic (post-Phase-36 COORD fix)",
     "spin_basis": null,
     "state_normalization": null,
     "coupling_convention": null,
@@ -111,20 +104,20 @@
     "covariant_derivative_sign": null,
     "gamma_matrix_convention": null,
     "creation_annihilation_order": null,
-    "custom_conventions": {}
+    "custom_conventions": {
+      "sky_angles": "qS = ecliptic colatitude (polar angle from north ecliptic pole), phiS = ecliptic longitude; GLADE equatorial RA/Dec rotated to ecliptic via astropy BarycentricTrueEcliptic (Phase 36 fix)",
+      "h0_units": "dimensionless ratio (H0 / 100 km/s/Mpc)",
+      "posterior_normalization": "p(h|data) ∝ sum_i log[L_i(h)] - N*log[D(h)], where D(h) is the completeness-corrected detectable volume"
+    }
   },
   "propagated_uncertainties": [],
   "pending_todos": [],
-  "blockers": [
-    "**\"With BH mass\" posterior still biased low** -- Dominant mechanisms: Source A (p_det(M_det) mismatch) + Source F (21% zero-likelihood events, h-bin-correlated). Phase 16 blocked until diagnosis confirmed via P_det=1 production run and zero-likelihood logging.",
-    "**\"Without BH mass\" h=0.86 overshoot with real P_det** -- Source E (P_det normalization). Fix path: P_det=1 production run to confirm, then investigate IS estimator h-dependent coverage at high d_L.",
-    "p_det in numerator uses detection.M (Source A, Physics Change Protocol required for fix)"
-  ],
+  "blockers": [],
   "session": {
-    "last_date": "2026-04-07",
-    "stopped_at": "Phase 27 Plans 01-03 complete. Plan 04 (paper marker fill) deferred \u2014 user wants pipeline validation first.",
-    "resume_file": ".gpd/phases/27-production-run-figures/extracted_results.json"
+    "last_date": "2026-04-24",
+    "stopped_at": "Phase 43 planning started",
+    "resume_file": null
   },
   "_version": 1,
-  "_synced_at": "2026-04-07T13:44:02.526258+00:00"
+  "_synced_at": "2026-04-24T00:00:00.000000+00:00"
 }

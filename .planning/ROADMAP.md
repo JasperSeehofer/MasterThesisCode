@@ -173,6 +173,20 @@ Fix all 10 findings from the 2026-04-21 pre-batch audit — two critical coordin
   4. Phase 42 closes v2.2 by updating `.planning/MILESTONES.md` with the shipped status, linking to the campaign artifacts, and flipping the active milestone in STATE.md
 **Plans**: TBD
 
+### Phase 43: Posterior Calibration Fix
+**Goal**: Diagnose and fix the SC-3 MAP=0.860 failure from Phase 40. Determine whether root cause is (H1) D(h) denominator missing from `--combine`/`extract_baseline` code path, (H2) CRBs on disk store equatorial sky angles (sim-side, pre-COORD) while v2.2 catalog now expects ecliptic coordinates, or both. Fix confirmed root causes. Re-run `--evaluate` to confirm MAP ≈ 0.73 ± 0.01. Re-verify VERIFY-03 SC-3. Conditionally re-assess VERIFY-04 anisotropy trigger.
+**Routing**: GSD+GPD (physics: posterior normalization + sky-angle frame convention)
+**Depends on**: Phase 40 (GAPS_FOUND — user Q1: insert fix phase)
+**Requirements**: FIX-01 (D(h) audit), FIX-02 (angle audit), FIX-03 (MAP re-verification)
+**Key question**: "If angles were always wrong in v2.1 it should have been self-consistent — why does MAP=0.86 appear only after the COORD fix?"
+**Success Criteria** (what must be TRUE):
+  1. Angle audit: definitive determination of whether `simulations/prepared_cramer_rao_bounds.csv` qS/phiS are equatorial or ecliptic, with code-path trace from simulation to CSV
+  2. D(h) audit: `_combine_posteriors`/`extract_baseline` code path traced; missing D(h) correction identified or ruled out
+  3. Root cause(s) fixed and committed with `[PHYSICS]` prefix if formula change
+  4. `--evaluate` run confirms MAP ≈ 0.73 ± 0.01 (VERIFY-03 SC-3 PASS)
+  5. VERIFY-04 anisotropy re-assessed: if caused by same bug, Phase 42 deferred; if independent, Phase 42 proceeds
+**Plans**: TBD
+
 ## Progress
 
 | Phase | Routing | Plans Complete | Status | Completed |
@@ -185,6 +199,7 @@ Fix all 10 findings from the 2026-04-21 pre-batch audit — two critical coordin
 | 40. Verification Gate | GSD+GPD | 7/7 | GAPS_FOUND | 2026-04-24 |
 | 41. Stage 1 Injection Campaign | GSD | 0/? | Skipped (user decision Q2 — VERIFY-05 borderline accepted) | - |
 | 42. Stage 2 Sky-Dependent Injection | GSD | 0/? | Deferred (user decision Q3 — pending fix-phase Q1 resolution) | - |
+| 43. Posterior Calibration Fix | GSD+GPD | 0/? | Planning | - |
 
 ## Coverage
 

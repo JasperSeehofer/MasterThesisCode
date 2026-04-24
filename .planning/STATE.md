@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v2.2
 milestone_name: milestone
-status: gaps_found
-stopped_at: Phase 40 GAPS_FOUND — VERIFY-03 SC-3 MAP=0.86; fix phase required (2026-04-24)
-last_updated: "2026-04-24T12:00:00.000Z"
-last_activity: 2026-04-24 — Phase 40 closed GAPS_FOUND; fix phase required before Phase 41/42
+status: planning
+stopped_at: Phase 43 planning interrupted — infrastructure complete, researcher not yet spawned (2026-04-24)
+last_updated: "2026-04-24T12:41:00.000Z"
+last_activity: 2026-04-24 — Phase 43 (Posterior Calibration Fix) scaffolded; H1+H2 hypotheses confirmed via code trace; planning paused
 progress:
   total_phases: 8
   completed_phases: 6

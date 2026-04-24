@@ -95,6 +95,17 @@ Plans:
 **Status:** Not started
 **Depends on:** Phase 27 (final results and figures)
 
+## v2.2 Pipeline Correctness — Active
+
+### Phase 43: Posterior Calibration Fix
+
+**Goal:** Diagnose and fix the SC-3 MAP=0.860 failure from Phase 40. Determine whether root cause is (H1) D(h) denominator missing from `--combine`/`extract_baseline` code path, (H2) CRBs on disk store equatorial sky angles while v2.2 catalog now expects ecliptic coordinates, or both. Fix confirmed root causes. Re-run `--evaluate` to confirm MAP ≈ 0.73 ± 0.01.
+**Status:** Planning
+**Routing:** GSD+GPD
+**Depends on:** Phase 40 (GAPS_FOUND — SC-3 MAP=0.860; user Q1=insert fix phase)
+
+---
+
 ### Phase 32: Completion Term Fix
 
 **Goal:** Fix the systematic low-h bias in the H0 posterior caused by the completion term L_comp. Extend the L_comp denominator to the full detectable volume per Gray et al. (2020) Eq. A.19, precompute D(h) table, and validate that MAP shifts toward h=0.73 with bias shrinking as ~1/sqrt(N).
