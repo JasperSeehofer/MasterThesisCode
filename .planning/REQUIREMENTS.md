@@ -51,7 +51,7 @@ Fix all 10 findings from the 2026-04-21 pre-batch audit — two critical coordin
 **: Existing CRBs re-evaluated under fixed frame + fixed L_cat + fixed P_det + eigenvalue sky radius; posterior MAP at h=0.73 within 1% bias; abort new compute if MAP shifts >5% from v2.1 baseline
 - [x] **VERIFY-03
 **: 27-value h-sweep re-evaluated; convergence figure regenerated; M_z improvement interactive updated
-- [ ] **VERIFY-04**: Anisotropy audit: H₀ MAP binned by `|qS − π/2|` quartiles shows no systematic trend (>1σ shift is a blocker)
+- [ ] **VERIFY-04**: Anisotropy audit: H₀ MAP binned by `|qS − π/2|` quartiles shows no systematic trend — >1σ shift is a Stage-2 trigger for Phase 42 (not a blocker)
 - [ ] **VERIFY-05**: P_det quadrature-weight-outside-grid diagnostic (STAT-04) logged for every event in the re-evaluation; summary statistic reported
 
 ### Staged Cluster Campaign
@@ -134,3 +134,4 @@ Fix all 10 findings from the 2026-04-21 pre-batch audit — two critical coordin
 ---
 *Requirements defined: 2026-04-21*
 *Last updated: 2026-04-23 — Phase 39 complete: HPC-01..HPC-05, VIZ-01, VIZ-02 checkboxes flipped; traceability status Pending → Done (HPC-05 followed KEEP path, no /physics-change triggered)*
+*Last updated: 2026-04-23 — Phase 40 D-12 + W3: VERIFY-04 wording fixed to flat form — >1σ is a Stage-2 trigger for Phase 42 (not a blocker)*
