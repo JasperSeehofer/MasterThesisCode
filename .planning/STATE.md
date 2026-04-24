@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v2.2
 milestone_name: milestone
 status: executing
-stopped_at: Phase 40 context gathered
-last_updated: "2026-04-23T17:46:39.680Z"
-last_activity: 2026-04-22
+stopped_at: Plan 40-03 complete — VERIFY-03 FAIL (SC-3 MAP=0.860, investigation needed)
+last_updated: "2026-04-24T10:06:09.583Z"
+last_activity: 2026-04-24 -- Phase --phase execution started
 progress:
   total_phases: 8
   completed_phases: 4
-  total_plans: 26
+  total_plans: 27
   completed_plans: 22
-  percent: 85
+  percent: 81
 ---
 
 # Project State
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-21)
 
 **Core value:** Measure H₀ from simulated EMRI dark siren events with galaxy catalog completeness correction, producing publication-ready results.
-**Current focus:** Phase 40 — Verification Gate
+**Current focus:** Phase --phase — 40
 
 ## Current Position
 
-Phase: 40
-Plan: 40-03 (Wave 3 — next to execute)
-Status: Executing — VERIFY-02 PASS; Wave 3 cleared
-Last activity: 2026-04-23
+Phase: --phase (40) — EXECUTING
+Plan: 1 of --name
+Status: Executing Phase --phase
+Last activity: 2026-04-24 -- Phase --phase execution started
 
 **Milestone phase map:**
 
@@ -122,6 +122,9 @@ STAT-01..STAT-04 all resolved. STAT-01: L_cat fixed to (1/N)Σ(N_g/D_g) per Gray
 **Phase 40 VERIFY-02 COMPLETE (2026-04-23):**
 VERIFY-02 abort gate: PASS. MAP shift = 0.0000% (threshold 5%). v2.2 MAP = v2.1 MAP = 0.7350. bias_percent = +0.68% (SC-2 PASS < 1%). KS p-value ≈ 1.0. Wave 3 cleared. 26,053 STAT-04 quadrature warnings captured for VERIFY-05. Commit: 81ae3e3.
 
+**Phase 40 VERIFY-03 COMPLETE (2026-04-24) — verdict: FAIL:**
+All 37 non-0.73 h-values re-evaluated under v2.2 code (zero sweep failures). Combined posteriors, interactive m_z_improvement.html, and static figures regenerated. SC-3 FAIL: MAP from v2.2 full sweep = 0.860 (expected 0.73±0.01). Root cause: extract_baseline sums log-likelihoods without D(h) denominator correction; v2.2 60-event posteriors have monotonically increasing log-likelihood with h. VERIFY-02 comparison was unaffected because it compared pre-sweep v2.1 format posteriors (417 events/file) against themselves. Investigation required before Phase 40 overall PASS. 94 per-h log files retained for VERIFY-05. Commits: 5b5e44e, 4258551, 5850a86.
+
 **Phase 37 (Parameter Estimation Correctness) — COMPLETE 2026-04-22:**
 COORD-05, PE-01..PE-05 all resolved. PE-01: h_inj threaded into set_host_galaxy_parameters — Fisher CRBs now self-consistent at injected h. PE-02: per-parameter derivative_epsilon under Vallisneri 2008 protocol (Fisher det change < 1% on 4 seeds). SC-1..SC-7 all PASS. Phase 36 roundtrip regression (9 tests) GREEN throughout.
 **Phase 40 VERIFY-02 note:** PE-02 epsilon change may perturb fisher_sky_2x2 values relative to the Phase 36 regression pickle (36-superset-regression.pkl). Phase 40 should use post-Phase-37 CRB values as its reference baseline, not the Phase 36 pickle.
@@ -141,8 +144,8 @@ Phase 30 (Baseline/comparison), Phase 31 (Catalog-only diagnostic), Phase 32 (L_
 
 ## Session Continuity
 
-Last session: 2026-04-23T17:56:00Z
-Stopped at: Plan 40-02 complete — VERIFY-02 PASS (Wave 3 cleared)
+Last session: 2026-04-24T10:06:09.581Z
+Stopped at: Plan 40-03 complete — VERIFY-03 FAIL (SC-3 MAP=0.860, investigation needed)
 Resume file: None
 Next command: Execute Plan 40-03 (Wave 3 — h-sweep re-evaluation VERIFY-03)
 
@@ -158,3 +161,4 @@ Next command: Execute Plan 40-03 (Wave 3 — h-sweep re-evaluation VERIFY-03)
 | Phase 36 P03 | 230 | 4 tasks | 4 files |
 | Phase 36-coordinate-frame-fix P04 | 2 | 3 tasks | 1 files |
 | Phase 37 P02 | 18 | 4 tasks | 4 files |
+| Phase 40 P03 | 21min | 3 tasks | 37 files |

@@ -49,7 +49,8 @@ Fix all 10 findings from the 2026-04-21 pre-batch audit — two critical coordin
 - [ ] **VERIFY-01**: Full regression suite passes on CPU (`uv run pytest -m "not gpu"`), including new coordinate round-trip tests
 - [x] **VERIFY-02
 **: Existing CRBs re-evaluated under fixed frame + fixed L_cat + fixed P_det + eigenvalue sky radius; posterior MAP at h=0.73 within 1% bias; abort new compute if MAP shifts >5% from v2.1 baseline
-- [ ] **VERIFY-03**: 27-value h-sweep re-evaluated; convergence figure regenerated; M_z improvement interactive updated
+- [x] **VERIFY-03
+**: 27-value h-sweep re-evaluated; convergence figure regenerated; M_z improvement interactive updated
 - [ ] **VERIFY-04**: Anisotropy audit: H₀ MAP binned by `|qS − π/2|` quartiles shows no systematic trend (>1σ shift is a blocker)
 - [ ] **VERIFY-05**: P_det quadrature-weight-outside-grid diagnostic (STAT-04) logged for every event in the re-evaluation; summary statistic reported
 
