@@ -53,7 +53,8 @@ Fix all 10 findings from the 2026-04-21 pre-batch audit — two critical coordin
 **: 27-value h-sweep re-evaluated; convergence figure regenerated; M_z improvement interactive updated
 - [x] **VERIFY-04
 **: Anisotropy audit: H₀ MAP binned by `|qS − π/2|` quartiles shows no systematic trend — >1σ shift is a Stage-2 trigger for Phase 42 (not a blocker)
-- [ ] **VERIFY-05**: P_det quadrature-weight-outside-grid diagnostic (STAT-04) logged for every event in the re-evaluation; summary statistic reported
+- [x] **VERIFY-05
+**: P_det quadrature-weight-outside-grid diagnostic (STAT-04) logged for every event in the re-evaluation; summary statistic reported
 
 ### Staged Cluster Campaign
 

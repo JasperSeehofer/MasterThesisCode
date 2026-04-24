@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v2.2
 milestone_name: milestone
 status: executing
-stopped_at: Plan 40-04 complete — VERIFY-04 STAGE-2-TRIGGER (Q3 MAP_q=0.84 vs MAP_total=0.86)
-last_updated: "2026-04-24T10:20:57.430Z"
+stopped_at: Plan 40-05 complete — VERIFY-05 PHASE-41-TRIGGER-BORDERLINE (mean_h_073_lb=0.0409)
+last_updated: "2026-04-24T10:31:37.505Z"
 last_activity: 2026-04-24 -- Phase --phase execution started
 progress:
   total_phases: 8
   completed_phases: 4
   total_plans: 27
-  completed_plans: 23
-  percent: 85
+  completed_plans: 24
+  percent: 89
 ---
 
 # Project State
@@ -144,8 +144,8 @@ Phase 30 (Baseline/comparison), Phase 31 (Catalog-only diagnostic), Phase 32 (L_
 
 ## Session Continuity
 
-Last session: 2026-04-24T10:20:57.427Z
-Stopped at: Plan 40-04 complete — VERIFY-04 STAGE-2-TRIGGER (Q3 MAP_q=0.84 vs MAP_total=0.86)
+Last session: 2026-04-24T10:31:37.502Z
+Stopped at: Plan 40-05 complete — VERIFY-05 PHASE-41-TRIGGER-BORDERLINE (mean_h_073_lb=0.0409)
 Resume file: None
 Next command: Execute Plan 40-03 (Wave 3 — h-sweep re-evaluation VERIFY-03)
 
@@ -163,3 +163,4 @@ Next command: Execute Plan 40-03 (Wave 3 — h-sweep re-evaluation VERIFY-03)
 | Phase 37 P02 | 18 | 4 tasks | 4 files |
 | Phase 40 P03 | 21min | 3 tasks | 37 files |
 | Phase 40 P04 | 15min | 3 tasks | 7 files |
+| Phase 40 P05 | 20 | 3 tasks | 7 files |
