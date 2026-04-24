@@ -51,14 +51,16 @@ Fix all 10 findings from the 2026-04-21 pre-batch audit — two critical coordin
 **: Existing CRBs re-evaluated under fixed frame + fixed L_cat + fixed P_det + eigenvalue sky radius; posterior MAP at h=0.73 within 1% bias; abort new compute if MAP shifts >5% from v2.1 baseline
 - [x] **VERIFY-03
 **: 27-value h-sweep re-evaluated; convergence figure regenerated; M_z improvement interactive updated
-- [ ] **VERIFY-04**: Anisotropy audit: H₀ MAP binned by `|qS − π/2|` quartiles shows no systematic trend — >1σ shift is a Stage-2 trigger for Phase 42 (not a blocker)
+- [x] **VERIFY-04
+**: Anisotropy audit: H₀ MAP binned by `|qS − π/2|` quartiles shows no systematic trend — >1σ shift is a Stage-2 trigger for Phase 42 (not a blocker)
 - [ ] **VERIFY-05**: P_det quadrature-weight-outside-grid diagnostic (STAT-04) logged for every event in the re-evaluation; summary statistic reported
 
 ### Staged Cluster Campaign
 
 - [x] **CAMP-01**: Stage 1 — if VERIFY-05 reports >5% mean extrapolation weight per event, submit densified M×z×d_L injection grid (1.5× in each axis, extended d_L upper bound) to bwUniCluster gpu_h100; re-evaluate posteriors; compare to VERIFY-02
  baseline
-- [ ] **CAMP-02**: Stage 2 — if VERIFY-04 or Stage 1 reveals residual sky anisotropy, submit sky-dependent P_det injection campaign with (qS, phiS) as additional grid axes (6×12 sky grid); otherwise document that isotropic P_det marginalization is verified sufficient
+- [x] **CAMP-02**: Stage 2 — if VERIFY-04
+ or Stage 1 reveals residual sky anisotropy, submit sky-dependent P_det injection campaign with (qS, phiS) as additional grid axes (6×12 sky grid); otherwise document that isotropic P_det marginalization is verified sufficient
 
 ## Future Requirements (deferred past v2.2)
 
