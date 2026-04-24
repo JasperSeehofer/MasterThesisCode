@@ -1,0 +1,36 @@
+{
+  "version": "1.0",
+  "timestamp": "2026-04-24T11:07:27Z",
+  "phase": "40",
+  "phase_name": "verification-gate",
+  "phase_dir": ".planning/phases/40-verification-gate",
+  "plan": 6,
+  "task": 3,
+  "total_tasks": 5,
+  "status": "paused",
+  "completed_tasks": [
+    {"id": 1, "name": "Assemble verify_gate D-20 index", "status": "done", "commit": "f249ede"},
+    {"id": 2, "name": "Write 40-VERIFICATION.md (SC-1..SC-5)", "status": "done", "commit": "f249ede"}
+  ],
+  "remaining_tasks": [
+    {"id": 3, "name": "Update STATE.md with decisions + next routing", "status": "not_started"},
+    {"id": 4, "name": "Update ROADMAP.md + REQUIREMENTS.md", "status": "not_started"},
+    {"id": 5, "name": "Phase-close atomic commit + SUMMARY.md", "status": "not_started"}
+  ],
+  "blockers": [
+    {
+      "description": "VERIFY-03 SC-3 FAIL: combined posterior MAP=0.86 (expected 0.73). Hypotheses: (A) D(h) missing from --combine code path, (B) coordinate mismatch between pre-fix CRBs (equatorial qS/phiS) and post-fix galaxy catalog (ecliptic). Fix phase required before Phase 41/42.",
+      "type": "technical",
+      "workaround": "none — must be fixed"
+    }
+  ],
+  "human_actions_pending": [],
+  "decisions": [
+    {"decision": "Q1 VERIFY-03 MAP=0.86: Insert fix phase (Option B). Audit angle mapping independently, then check D(h) in --combine.", "rationale": "Cannot declare Phase 40 PASS with unknown MAP bias. User wants angle-mapping verified first, then D(h) hypothesis tested.", "phase": "40"},
+    {"decision": "Q2 VERIFY-05 borderline Phase 41: Skip. 19 off-grid events noted as known limitation.", "rationale": "0.041 below 0.05 threshold; accept for now with documented consequence.", "phase": "40"},
+    {"decision": "Q3 VERIFY-04 Phase 42: Defer until Q1 resolved. Anisotropy (STAGE-2-TRIGGER) may be symptom of same coordinate/D(h) bug.", "rationale": "User decision — anisotropy result unreliable if MAP is biased.", "phase": "40"}
+  ],
+  "uncommitted_files": [".planning/phases/40-verification-gate/.continue-here.md", ".planning/HANDOFF.json"],
+  "next_action": "Resume 40-06: spawn fresh gsd-executor with the three user decisions (Q1=B, Q2=skip, Q3=defer) and remaining tasks 3-5. Then plan the fix phase (angle audit + D(h) diagnosis).",
+  "context_notes": "The MAP=0.86 surprise likely stems from a coordinate mismatch created by the COORD fix: CRBs on disk store equatorial (qS,phiS) from pre-fix simulation, but the v2.2 galaxy catalog now stores ecliptic coordinates. This breaks the sim/eval self-consistency that v2.1 had (both sides were wrong, but consistently so). The fix phase must audit this specifically."
+}
