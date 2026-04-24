@@ -14,22 +14,22 @@ Fix all 10 findings from the 2026-04-21 pre-batch audit — two critical coordin
 - [x] **COORD-02b**: 4D BallTree (`setup_4d_galaxy_catalog_balltree` / `find_closest_galaxy_to_coordinates`) uses spherical embedding on the sky sub-space — `_polar_to_cartesian(θ, φ)` on the (θ, φ) axes plus normalized z and normalized log M — instead of the flat `θ / π` + `φ / 2π` embedding that exhibits the same latitude-vs-polar bug as COORD-02
 - [x] **COORD-03**: GLADE catalog angles are rotated from equatorial J2000 (RA, Dec) to ecliptic SSB (φ, θ_polar) via `astropy.coordinates.SkyCoord.transform_to(BarycentricTrueEcliptic())` during catalog ingestion; docstring documents the stored frame
 - [x] **COORD-04**: Sky candidate-host search radius derived from 2×2 sky covariance eigendecomposition (including |sin θ| Jacobian on φ-component) rather than axis-aligned `max(σ_φ, σ_θ)`
-- [ ] **COORD-05**: `_map_angles_to_spherical_coordinates` guarded against double-application via idempotency assertion on raw input range
+- [x] **COORD-05**: `_map_angles_to_spherical_coordinates` guarded against double-application via idempotency assertion on raw input range
 
 ### Statistical Correctness
 
-- [ ] **STAT-01**: L_cat form reconciled with Gray et al. (2020) Eq. 24-25: either proven analytically equivalent to `(1/N) Σ_g N_g/D_g` under the code's implicit uniform 1/N galaxy prior (with docstring derivation + unit test), or replaced with the canonical form via `/physics-change` protocol
-- [ ] **STAT-02**: Unit test with 3 synthetic galaxies reproduces both L_cat forms and asserts their agreement (or documents divergence with quantitative reason)
-- [ ] **STAT-03**: P_det extrapolation is symmetric between numerator (`single_host_likelihood` integrand) and denominator (`precompute_completion_denominator`); either both use zero-fill or both use NN-fill
-- [ ] **STAT-04**: Per-event diagnostic logs the fraction of quadrature weight landing outside the P_det injection grid, for both numerator and denominator integrals; warning fires if >5% for any event
+- [x] **STAT-01**: L_cat form reconciled with Gray et al. (2020) Eq. 24-25: either proven analytically equivalent to `(1/N) Σ_g N_g/D_g` under the code's implicit uniform 1/N galaxy prior (with docstring derivation + unit test), or replaced with the canonical form via `/physics-change` protocol
+- [x] **STAT-02**: Unit test with 3 synthetic galaxies reproduces both L_cat forms and asserts their agreement (or documents divergence with quantitative reason)
+- [x] **STAT-03**: P_det extrapolation is symmetric between numerator (`single_host_likelihood` integrand) and denominator (`precompute_completion_denominator`); either both use zero-fill or both use NN-fill
+- [x] **STAT-04**: Per-event diagnostic logs the fraction of quadrature weight landing outside the P_det injection grid, for both numerator and denominator integrals; warning fires if >5% for any event
 
 ### Parameter Estimation Correctness
 
-- [ ] **PE-01**: `ParameterSpace.set_host_galaxy_parameters(host, h)` threads `h` explicitly through `dist()`; default h removed; regression test confirms 2× d_L ratio between h=0.5 and h=1.0
-- [ ] **PE-02**: `derivative_epsilon` is per-parameter: relative (fractional-of-value) for scale parameters (M, mu, d_L, p0), absolute for angles (qS, phiS, qK, phiK, Phi_*) and eccentricity-like parameters (e0, x0, a); validated against Fisher determinant stability on one representative event
-- [ ] **PE-03**: `LamCDMScenario.Omega_m` limits correctly ordered (`lower_limit < upper_limit`) with physically sensible range
-- [ ] **PE-04**: SNR threshold has a single source of truth (`SNR_THRESHOLD` constant); `Model1CrossCheck`, pre-screen coefficient, evaluation filter, and injection quality gate all read from it
-- [ ] **PE-05**: `SPEED_OF_LIGHT_KM_S = C / 1000` derived from `C`, not hardcoded; eliminates 0.07% inconsistency in `comoving_volume_element`
+- [x] **PE-01**: `ParameterSpace.set_host_galaxy_parameters(host, h)` threads `h` explicitly through `dist()`; default h removed; regression test confirms 2× d_L ratio between h=0.5 and h=1.0
+- [x] **PE-02**: `derivative_epsilon` is per-parameter: relative (fractional-of-value) for scale parameters (M, mu, d_L, p0), absolute for angles (qS, phiS, qK, phiK, Phi_*) and eccentricity-like parameters (e0, x0, a); validated against Fisher determinant stability on one representative event
+- [x] **PE-03**: `LamCDMScenario.Omega_m` limits correctly ordered (`lower_limit < upper_limit`) with physically sensible range
+- [x] **PE-04**: SNR threshold has a single source of truth (`SNR_THRESHOLD` constant); `Model1CrossCheck`, pre-screen coefficient, evaluation filter, and injection quality gate all read from it
+- [x] **PE-05**: `SPEED_OF_LIGHT_KM_S = C / 1000` derived from `C`, not hardcoded; eliminates 0.07% inconsistency in `comoving_volume_element`
 
 ### HPC Hygiene (Safe Wins)
 
@@ -46,7 +46,7 @@ Fix all 10 findings from the 2026-04-21 pre-batch audit — two critical coordin
 
 ### Verification Gate
 
-- [ ] **VERIFY-01**: Full regression suite passes on CPU (`uv run pytest -m "not gpu"`), including new coordinate round-trip tests
+- [x] **VERIFY-01**: Full regression suite passes on CPU (`uv run pytest -m "not gpu"`), including new coordinate round-trip tests
 - [x] **VERIFY-02
 **: Existing CRBs re-evaluated under fixed frame + fixed L_cat + fixed P_det + eigenvalue sky radius; posterior MAP at h=0.73 within 1% bias; abort new compute if MAP shifts >5% from v2.1 baseline
 - [x] **VERIFY-03
@@ -97,21 +97,21 @@ Fix all 10 findings from the 2026-04-21 pre-batch audit — two critical coordin
 
 | Requirement | Phase | Routing | Status |
 |-------------|-------|---------|--------|
-| COORD-01 | Phase 35 | GSD | Pending |
+| COORD-01 | Phase 35 | GSD | Done |
 | COORD-02 | Phase 36 | GPD | Done |
 | COORD-02b | Phase 36 | GPD | Done |
 | COORD-03 | Phase 36 | GPD | Done |
 | COORD-04 | Phase 36 | GPD | Done |
-| COORD-05 | Phase 37 | GSD | Pending |
-| STAT-01 | Phase 38 | GSD (if proof) / GPD (if fix) | Pending |
-| STAT-02 | Phase 38 | GSD | Pending |
-| STAT-03 | Phase 38 | GPD | Pending |
-| STAT-04 | Phase 38 | GSD | Pending |
-| PE-01 | Phase 37 | GPD | Pending |
-| PE-02 | Phase 37 | GPD | Pending |
-| PE-03 | Phase 37 | GSD | Pending |
-| PE-04 | Phase 37 | GSD | Pending |
-| PE-05 | Phase 37 | GSD | Pending |
+| COORD-05 | Phase 37 | GSD | Done |
+| STAT-01 | Phase 38 | GSD (if proof) / GPD (if fix) | Done |
+| STAT-02 | Phase 38 | GSD | Done |
+| STAT-03 | Phase 38 | GPD | Done |
+| STAT-04 | Phase 38 | GSD | Done |
+| PE-01 | Phase 37 | GPD | Done |
+| PE-02 | Phase 37 | GPD | Done |
+| PE-03 | Phase 37 | GSD | Done |
+| PE-04 | Phase 37 | GSD | Done |
+| PE-05 | Phase 37 | GSD | Done |
 | HPC-01 | Phase 39 | GSD | Done |
 | HPC-02 | Phase 39 | GSD | Done |
 | HPC-03 | Phase 39 | GSD | Done |
@@ -119,13 +119,13 @@ Fix all 10 findings from the 2026-04-21 pre-batch audit — two critical coordin
 | HPC-05 | Phase 39 | GSD (verify) / GPD (if removed) | Done (KEEP) |
 | VIZ-01 | Phase 39 | GSD | Done |
 | VIZ-02 | Phase 39 | GSD | Done |
-| VERIFY-01 | Phase 40 | GSD | Done |
+| VERIFY-01 | Phase 40 | GSD | Done — PASS 544 tests |
 | VERIFY-02 | Phase 40 | GPD (runs physics-changed code) | Done — PASS 0.00% MAP shift |
-| VERIFY-03 | Phase 40 | GSD | Pending |
-| VERIFY-04 | Phase 40 | GSD | Pending |
-| VERIFY-05 | Phase 40 | GSD | Pending |
-| CAMP-01 | Phase 41 | GSD (conditional on VERIFY-05) | Pending |
-| CAMP-02 | Phase 42 | GSD (conditional on VERIFY-04 / CAMP-01) | Pending |
+| VERIFY-03 | Phase 40 | GSD | GAPS_FOUND (SC-3 FAIL — fix phase required) |
+| VERIFY-04 | Phase 40 | GSD | STAGE-2-TRIGGER (deferred per user decision Q3) |
+| VERIFY-05 | Phase 40 | GSD | PHASE-41-TRIGGER-BORDERLINE (accepted per user decision Q2) |
+| CAMP-01 | Phase 41 | GSD (conditional on VERIFY-05) | Skipped (user decision Q2 — borderline accepted) |
+| CAMP-02 | Phase 42 | GSD (conditional on VERIFY-04 / CAMP-01) | Deferred (user decision Q3 — pending fix-phase) |
 
 **Coverage:**
 - v2.2 requirements: 29 total
@@ -137,4 +137,4 @@ Fix all 10 findings from the 2026-04-21 pre-batch audit — two critical coordin
 ---
 *Requirements defined: 2026-04-21*
 *Last updated: 2026-04-23 — Phase 39 complete: HPC-01..HPC-05, VIZ-01, VIZ-02 checkboxes flipped; traceability status Pending → Done (HPC-05 followed KEEP path, no /physics-change triggered)*
-*Last updated: 2026-04-23 — Phase 40 D-12 + W3: VERIFY-04 wording fixed to flat form — >1σ is a Stage-2 trigger for Phase 42 (not a blocker)*
+*Last updated: 2026-04-24 — Phase 40 complete (GAPS_FOUND): VERIFY-01..05 processed; COORD-01/05, STAT-01..04, PE-01..05 traceability updated Done; fix phase required for VERIFY-03 SC-3 before Phase 41/42*

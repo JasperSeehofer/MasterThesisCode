@@ -1,11 +1,11 @@
 ---
 phase: 40-verification-gate
 plan: "06"
-status: CHECKPOINT
+status: COMPLETE
 date: 2026-04-24
 requirements: []
 tags: [wave-4, phase-close, verify-gate-index, state-update]
-next_phase: "GAPS_FOUND — pending user decision on SC-3 investigation + Phase 41/42 routing"
+next_phase: "fix-phase (VERIFY-03 SC-3 angle audit + D(h) in --combine)"
 ---
 
 # Phase 40 Plan 06: Phase Close — Summary
@@ -25,18 +25,19 @@ decision.
 Per VERIFY-04: stage_2_trigger = true. Phase 42 routing CONFIRMED (independent of other
 decisions).
 
-## Open Questions (checkpoint)
+## User Decisions (resolved at checkpoint)
 
-1. **SC-3 investigation path:** Should we run `--evaluate` at h=0.73 and read the log-output MAP
-   (which includes D(h)) to resolve the verification-metric ambiguity, or fix `extract_baseline`
-   to include the D(h) correction, or declare SC-3 as a known limitation and mark Phase 40
-   PARTIAL instead of FAIL?
+1. **Q1 — SC-3 investigation path (VERIFY-03 MAP=0.86):** Insert fix phase.
+   - Independently verify angle mapping after COORD fix (equatorial CRBs vs ecliptic catalog).
+   - Check whether D(h) is missing from `--combine`/`_combine_posteriors` code path.
+   - Key question: "If angles were always wrong in v2.1 it should have been self-consistent —
+     why does MAP=0.86 appear only after the COORD fix?" Must be answered by fix phase.
 
-2. **VERIFY-05 Phase 41 routing:** mean_lb=0.0409 is below the 0.05 trigger threshold but inside
-   the borderline band [0.03, 0.05]. Should Phase 41 (Stage 1 Injection Campaign) be triggered?
+2. **Q2 — VERIFY-05 Phase 41 routing:** Skip Phase 41. Accept mean_lb=0.041 as known
+   limitation; document 19 off-grid events (3.5%). Phase 41 not triggered.
 
-3. **Phase 42 routing:** VERIFY-04 Stage-2 trigger confirmed (Q3 |ΔMAP|=0.020 >> σ=0.0037).
-   Confirm `/gsd:execute-phase 42`?
+3. **Q3 — Phase 42 routing:** Deferred until Q1 resolved. The anisotropy result (STAGE-2-TRIGGER)
+   may be a symptom of the same D(h)/COORD bug rather than genuine sky-dependent P_det.
 
 ## Artifacts
 
@@ -51,11 +52,5 @@ decisions).
 
 ## Next
 
-Awaiting user decision (checkpoint) on:
-- SC-3 investigation path
-- Phase 41 trigger (borderline)
-- Phase 42 confirmation
-
-After user decisions:
-- STATE.md / ROADMAP.md / REQUIREMENTS.md updates will be made
-- Final atomic phase-close commit will land
+Plan fix phase: angle audit (verify CRB qS/phiS frame vs v2.2 ecliptic catalog) + D(h) diagnosis
+in `--combine`/`_combine_posteriors`. After fix: re-run VERIFY-03. Phase 41/42 on hold until Q1 resolved.

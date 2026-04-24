@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v2.2
 milestone_name: milestone
-status: executing
-stopped_at: Plan 40-05 complete — VERIFY-05 PHASE-41-TRIGGER-BORDERLINE (mean_h_073_lb=0.0409)
-last_updated: "2026-04-24T10:31:37.505Z"
-last_activity: 2026-04-24 -- Phase --phase execution started
+status: gaps_found
+stopped_at: Phase 40 GAPS_FOUND — VERIFY-03 SC-3 MAP=0.86; fix phase required (2026-04-24)
+last_updated: "2026-04-24T12:00:00.000Z"
+last_activity: 2026-04-24 — Phase 40 closed GAPS_FOUND; fix phase required before Phase 41/42
 progress:
   total_phases: 8
-  completed_phases: 4
+  completed_phases: 6
   total_plans: 27
-  completed_plans: 24
-  percent: 89
+  completed_plans: 26
+  percent: 96
 ---
 
 # Project State
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-21)
 
 **Core value:** Measure H₀ from simulated EMRI dark siren events with galaxy catalog completeness correction, producing publication-ready results.
-**Current focus:** Phase --phase — 40
+**Current focus:** Fix phase — VERIFY-03 SC-3 bias (angle audit + D(h) in --combine)
 
 ## Current Position
 
-Phase: --phase (40) — EXECUTING
-Plan: 1 of --name
-Status: Executing Phase --phase
-Last activity: 2026-04-24 -- Phase --phase execution started
+Phase: 40 — COMPLETE (GAPS_FOUND); next = fix phase (VERIFY-03 bias + angle audit)
+Plan: 40-06 of 7 — COMPLETE
+Status: GAPS_FOUND — SC-3 MAP=0.86; fix phase required before Phase 41/42
+Last activity: 2026-04-24 — Phase 40 closed GAPS_FOUND; fix phase required before Phase 41/42
 
 **Milestone phase map:**
 
@@ -102,6 +102,10 @@ Last activity: 2026-04-24 -- Phase --phase execution started
 
 ### Phase Notes (v2.2 — active)
 
+**Phase 40 (Verification Gate) — GAPS_FOUND 2026-04-24:**
+VERIFY-01 PASS — 544 tests, 5/5 regression items. VERIFY-02 PASS — 0.00% MAP shift (abort gate not fired). VERIFY-03 FAIL — SC-3 MAP=0.860 (expected 0.73±0.01); extract_baseline missing D(h); coordinate mismatch hypothesis (CRBs store equatorial angles, v2.2 catalog now ecliptic). VERIFY-04 STAGE-2-TRIGGER — per-quartile |ΔMAP|=0.020 >> 1σ=0.0037. VERIFY-05 PHASE-41-TRIGGER-BORDERLINE — mean_lb=0.041 (threshold 0.05).
+User decisions: Q1=insert fix phase (angle audit + D(h) in --combine); Q2=skip Phase 41 (borderline accepted as known limitation, 19 off-grid events); Q3=defer Phase 42 until Q1 resolved. Abort gate: NOT FIRED. Next: plan fix phase for VERIFY-03 SC-3 bias.
+
 **Phase 39 (HPC & Visualization Safe Wins) — COMPLETE 2026-04-23:**
 HPC-01..HPC-05, VIZ-01, VIZ-02 all resolved. SC-1..SC-7 all PASS.
 
@@ -144,10 +148,10 @@ Phase 30 (Baseline/comparison), Phase 31 (Catalog-only diagnostic), Phase 32 (L_
 
 ## Session Continuity
 
-Last session: 2026-04-24T10:31:37.502Z
-Stopped at: Plan 40-05 complete — VERIFY-05 PHASE-41-TRIGGER-BORDERLINE (mean_h_073_lb=0.0409)
+Last session: 2026-04-24T12:00:00.000Z
+Stopped at: Phase 40-06 complete — fix phase planning pending
 Resume file: None
-Next command: Execute Plan 40-03 (Wave 3 — h-sweep re-evaluation VERIFY-03)
+Next command: Plan fix phase (VERIFY-03 SC-3 angle audit + D(h) in --combine diagnosis)
 
 ## Quick Tasks Completed
 

@@ -21,7 +21,7 @@ Fix all 10 findings from the 2026-04-21 pre-batch audit — two critical coordin
 - [x] **Phase 37: Parameter Estimation Correctness** [GSD+GPD] — Thread h into host-distance, per-parameter derivative_epsilon, plus hygiene (Omega_m limits, unified SNR threshold, C/1000, idempotency guard) (completed 2026-04-22)
 - [x] **Phase 38: Statistical Correctness** [GSD+GPD] — L_cat form (proof or fix), P_det extrapolation alignment, per-event quadrature-weight diagnostic (completed 2026-04-22)
 - [x] **Phase 39: HPC & Visualization Safe Wins** [GSD+GPD] — CPU-importable parameter_estimation, raise flush interval, drop per-iteration FFT clear, dead-code removal, flip_hx verify (KEEP), LaTeX figures, HDI bands (completed 2026-04-23)
-- [ ] **Phase 40: Verification Gate** [GSD+GPD] — Full regression + posterior re-evaluation + h-sweep + anisotropy audit + P_det diagnostic; abort gate on >5% MAP shift
+- [x] **Phase 40: Verification Gate** [GSD+GPD] — Full regression + posterior re-evaluation + h-sweep + anisotropy audit + P_det diagnostic; abort gate on >5% MAP shift (GAPS_FOUND: SC-3 MAP=0.86; fix phase required)
 - [ ] **Phase 41: Stage 1 Injection Campaign (Conditional)** [GSD] — Densified M×z×d_L grid on gpu_h100 if >5% extrapolation weight
 - [ ] **Phase 42: Stage 2 Sky-Dependent Injection (Conditional)** [GSD] — Sky-grid P_det campaign if anisotropy or Stage 1 residual
 
@@ -140,10 +140,10 @@ Fix all 10 findings from the 2026-04-21 pre-batch audit — two critical coordin
   - [x] 40-00-PLAN.md — Baseline archive (Wave 0)
   - [x] 40-01-PLAN.md — VERIFY-01 CPU test-suite gate (Wave 1)
   - [x] 40-02-PLAN.md — VERIFY-02 abort gate: h=0.73 re-eval (Wave 2) — PASS (0.00% MAP shift)
-  - [ ] 40-03-PLAN.md — VERIFY-03 h-sweep re-evaluation (Wave 3)
-  - [ ] 40-04-PLAN.md — VERIFY-04 anisotropy audit (Wave 3)
-  - [ ] 40-05-PLAN.md — VERIFY-05 P_det quadrature diagnostic (Wave 3)
-  - [ ] 40-06-PLAN.md — Phase 40 verification + state update (Wave 4)
+  - [x] 40-03-PLAN.md — VERIFY-03 h-sweep re-evaluation (Wave 3) — FAIL SC-3 MAP=0.860
+  - [x] 40-04-PLAN.md — VERIFY-04 anisotropy audit (Wave 3) — STAGE-2-TRIGGER
+  - [x] 40-05-PLAN.md — VERIFY-05 P_det quadrature diagnostic (Wave 3) — PHASE-41-TRIGGER-BORDERLINE
+  - [x] 40-06-PLAN.md — Phase-close index + state update (Wave 4) — GAPS_FOUND
 
 ### Phase 41: Stage 1 Injection Campaign (Conditional)
 **Goal**: If VERIFY-05 reports that more than 5% of quadrature weight lands outside the P_det injection grid on average, submit a densified M×z×d_L injection campaign to bwUniCluster `gpu_h100`; re-evaluate posteriors against the Phase 40 baseline.
@@ -182,9 +182,9 @@ Fix all 10 findings from the 2026-04-21 pre-batch audit — two critical coordin
 | 37. Parameter Estimation Correctness | GSD+GPD | 3/3 | Complete    | 2026-04-22 |
 | 38. Statistical Correctness | GSD+GPD | 3/3 | Complete    | 2026-04-22 |
 | 39. HPC & Visualization Safe Wins | GSD+GPD | 6/6 | Complete    | 2026-04-22 |
-| 40. Verification Gate | GSD+GPD | 0/? | Not started | - |
-| 41. Stage 1 Injection Campaign | GSD | 0/? | Not started (conditional on Phase 40) | - |
-| 42. Stage 2 Sky-Dependent Injection | GSD | 0/? | Not started (conditional on Phases 40, 41) | - |
+| 40. Verification Gate | GSD+GPD | 7/7 | GAPS_FOUND | 2026-04-24 |
+| 41. Stage 1 Injection Campaign | GSD | 0/? | Skipped (user decision Q2 — VERIFY-05 borderline accepted) | - |
+| 42. Stage 2 Sky-Dependent Injection | GSD | 0/? | Deferred (user decision Q3 — pending fix-phase Q1 resolution) | - |
 
 ## Coverage
 
