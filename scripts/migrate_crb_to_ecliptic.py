@@ -94,6 +94,7 @@ def migrate_csv(path: Path, *, dry_run: bool = False) -> dict[str, object]:
         print(f"BACKUP {backup}")
 
     original_sha = _sha256(path)
+    df = df.copy()  # defragment before column assignment (avoids PerformanceWarning on wide CSVs)
     df["phiS"] = phi_ecl
     df["qS"] = q_ecl
     df["_coord_frame"] = _COORD_FRAME
