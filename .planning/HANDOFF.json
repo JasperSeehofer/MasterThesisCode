@@ -1,9 +1,9 @@
 {
   "version": "1.0",
-  "timestamp": "2026-04-27T23:55:00Z",
+  "timestamp": "2026-04-28T00:00:00Z",
   "phase": null,
   "phase_name": "combine-dh-fix + cluster-covariance-migration",
-  "status": "paused",
+  "status": "in_progress",
   "task": null,
   "total_tasks": null,
 
@@ -17,7 +17,7 @@
     {
       "id": 1,
       "name": "Fix D(h) normalization in combine path",
-      "status": "not_started",
+      "status": "done",
       "priority": "HIGH — paper blocker, PHYSICS CHANGE required",
       "notes": "posterior_combination.py:combine_posteriors() (line 476) calls combine_log_space(processed) with NO D(h) term. Fix: compute D(h) per h-value and subtract N_det*log(D(h)) from each h-column of the log-likelihood array before combining. This matches what --evaluate does in bayesian_statistics.py:352-358 via precompute_completion_denominator(). Physics-change protocol required before writing code. Reference: Gray et al. 2020 Eq. A.19."
     },
