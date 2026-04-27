@@ -100,15 +100,16 @@ Plans:
 ### Phase 43: Posterior Calibration Fix
 
 **Goal:** Diagnose and fix the SC-3 MAP=0.860 failure from Phase 40. Determine whether root cause is (H1) D(h) denominator missing from `--combine`/`extract_baseline` code path, (H2) CRBs on disk store equatorial sky angles while v2.2 catalog now expects ecliptic coordinates, or both. Fix confirmed root causes. Re-run `--evaluate` to confirm MAP ≈ 0.73 ± 0.01.
-**Status:** Planning (plans created 2026-04-27)
+**Status:** Complete (2026-04-27)
 **Routing:** GSD+GPD
 **Depends on:** Phase 40 (GAPS_FOUND — SC-3 MAP=0.860; user Q1=insert fix phase)
-**Plans:** 3 plans
+**Plans:** 3/3 complete
+**Result:** BRANCH-B: H2 CRB equatorial→ecliptic migration (542 events) + H1 extract_baseline deprecation. Post-fix MAP=0.730 (VERIFY-03 SC-3 PASS). Q3 anisotropy resolved; Phase 42 DEFERRED.
 
 Plans:
-- [ ] 43-01-PLAN.md -- Diagnostic --evaluate run: measure true v2.2 MAP; determine BRANCH-A (H1-only) or BRANCH-B (H1+H2)
-- [ ] 43-02-PLAN.md -- Apply fixes: H2 CRB equatorial→ecliptic migration (BRANCH-B); H1 extract_baseline D(h) deprecation/correction
-- [ ] 43-03-PLAN.md -- Post-fix --evaluate verification (MAP ≈ 0.73 ± 0.01); VERIFY-04 re-assessment; Phase 42 decision
+- [x] 43-01-PLAN.md -- Diagnostic --evaluate run: BRANCH-B confirmed; H1+H2 root causes identified
+- [x] 43-02-PLAN.md -- H2 CRB ecliptic migration + H1 extract_baseline deprecation; commit a2df67b; 540 tests pass
+- [x] 43-03-PLAN.md -- Post-fix MAP=0.730 (SC-3 PASS); VERIFY-04 Q3 resolved; Phase 42 DEFERRED
 
 ---
 
