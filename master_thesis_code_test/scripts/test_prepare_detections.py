@@ -29,6 +29,8 @@ def _write_valid_cramer_rao_csv(path: Path) -> None:
         "delta_phiS_delta_luminosity_distance": [0.001],
         "SNR": [25.0],
         "host_galaxy_index": [0],
+        "_coord_frame": ["ecliptic_BarycentricTrue_J2000"],
+        "_cov_frame": ["ecliptic_BarycentricTrue_J2000"],
     }
     df = pd.DataFrame(data)
     df.to_csv(path, index=False)

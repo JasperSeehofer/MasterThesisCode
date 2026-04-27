@@ -322,6 +322,10 @@ class GalaxyCatalogueHandler:
 
         Args:
             phi: ML estimate of ecliptic azimuth φ_S (rad).
+                Must be in BarycentricTrueEcliptic J2000 — the same frame as the
+                BallTree (see migrate_crb_to_ecliptic.py).  phi_sigma and
+                cov_theta_phi must also be in this ecliptic frame (_cov_frame guard
+                in Detection.__init__ enforces this at load time).
             phi_sigma: 1-σ uncertainty on φ_S (rad).
             theta: ML estimate of ecliptic polar angle θ_S (rad, ∈ [0, π]).
             theta_sigma: 1-σ uncertainty on θ_S (rad).

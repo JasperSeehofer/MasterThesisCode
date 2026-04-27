@@ -94,6 +94,18 @@ class Detection:
     WL_uncertainty: float = 0.0  # Gpc, weak-lensing contribution to d_L uncertainty
 
     def __init__(self, parameters: pd.Series) -> None:
+        _expected = "ecliptic_BarycentricTrue_J2000"
+        for col in ("_coord_frame", "_cov_frame"):
+            if col not in parameters.index:
+                raise ValueError(
+                    f"Detection: '{col}' missing from CRB row — "
+                    "run migrate_crb_to_ecliptic.py before evaluation"
+                )
+            if parameters[col] != _expected:
+                raise ValueError(
+                    f"Detection: {col}={parameters[col]!r}, expected {_expected!r} — "
+                    "frame mismatch would corrupt BallTree search and covariance"
+                )
         self.d_L = parameters["luminosity_distance"]
         self.d_L_uncertainty = np.sqrt(
             parameters["delta_luminosity_distance_delta_luminosity_distance"]

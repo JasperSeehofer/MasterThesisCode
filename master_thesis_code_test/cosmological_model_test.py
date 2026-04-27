@@ -40,6 +40,8 @@ def _make_detection_series(
             "delta_phiS_delta_luminosity_distance": 0.0,
             "SNR": snr,
             "host_galaxy_index": host_galaxy_index,
+            "_coord_frame": "ecliptic_BarycentricTrue_J2000",
+            "_cov_frame": "ecliptic_BarycentricTrue_J2000",
         }
     )
 

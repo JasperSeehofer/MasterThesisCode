@@ -41,7 +41,10 @@ for i, p_i in enumerate(PARAM_NAMES):
         p_j = PARAM_NAMES[j]
         FISHER_COLUMNS.append(f"delta_{p_i}_delta_{p_j}")
 
-METADATA_COLUMNS = ["T", "dt", "SNR", "generation_time", "host_galaxy_index"]
+METADATA_COLUMNS = [
+    "T", "dt", "SNR", "generation_time", "host_galaxy_index",
+    "_coord_frame", "_cov_frame",
+]
 
 DETECTED_COLUMNS = PARAM_NAMES + FISHER_COLUMNS + METADATA_COLUMNS
 UNDETECTED_COLUMNS = PARAM_NAMES + ["T", "dt", "SNR", "generation_time"]
@@ -108,6 +111,8 @@ def _make_detected_row(spec: dict) -> dict:
     row["SNR"] = 30.0
     row["generation_time"] = 1.0
     row["host_galaxy_index"] = spec["host_idx"]
+    row["_coord_frame"] = "ecliptic_BarycentricTrue_J2000"
+    row["_cov_frame"] = "ecliptic_BarycentricTrue_J2000"
 
     return row
 
