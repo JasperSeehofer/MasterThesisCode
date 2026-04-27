@@ -1,11 +1,16 @@
 ---
 phase: 43-posterior-calibration-fix
 plan: 01
-status: checkpoint:human-verify
-completed_tasks: 2/3
+status: completed
+completed_tasks: 3/3
 checkpoint_hash: pending
 date: 2026-04-27
 plan_contract_ref: FIX-01-diagnostic
+branch_decision: BRANCH-B
+MAP_evaluate: 0.860
+no_possible_hosts_count: 10
+D_h_confirmed: true
+posteriors_written: 38
 ---
 
 <!-- ASSERT_CONVENTION: natural_units=SI, coordinate_system=spherical -->
@@ -15,7 +20,7 @@ plan_contract_ref: FIX-01-diagnostic
 
 ## One-liner
 
-Ran production `--evaluate` at h=0.73 on v2.2 code + equatorial CRBs; MAP=0.860 confirmed from full h-sweep; "no possible hosts" count = 10 (BH-mass filtering, NOT BallTree failure); BallTree host recovery = 31/60 events (52%); H1 identified as sole cause of MAP bias; H2 does NOT cause BallTree failures for these events.
+Ran production `--evaluate` at h=0.73 on v2.2 code + equatorial CRBs; MAP=0.860 confirmed (H1: missing -N log D(h) in combine_log_space); "no possible hosts" = 10 (BH-mass filter, not BallTree); BallTree recovers 31/60 (52%); branch BRANCH-B confirmed by researcher: H1 fix (add -N log D(h) to combine_log_space) + H2 CRB migration (equatorial→ecliptic) both proceed in Plan 43-02 for physical correctness.
 
 ## Pre-condition Checks (Task 1)
 
@@ -123,6 +128,10 @@ This is a BRANCH-B execution (CRB migration + H1 fix + re-evaluate) but the BRAN
 should be ordered: **H1 first** (combine_posteriors D(h) fix), then H2 (CRB frame migration for
 correctness), then re-verify.
 
+**HUMAN CONFIRMED (2026-04-27):** BRANCH-B. Both H1 fix and H2 CRB migration will be applied
+in Plan 43-02. Key finding: H1 is in combine_log_space (not just extract_baseline); H2 has mild
+impact (31/60 hosts found) but CRB migration needed for physical correctness.
+
 ## Conventions Used
 
 | Convention | Value |
@@ -148,7 +157,7 @@ None — this was a diagnostic read-only run plus a single --evaluate invocation
 
 | Claim ID | Status | Evidence |
 |---|---|---|
-| FIX-01-diagnostic | partial (checkpoint pending) | MAP=0.860 measured; H2 impact determined as mild |
+| FIX-01-diagnostic | COMPLETE | MAP=0.860 measured; H2 mild (31/60 hosts); H1 root cause confirmed; BRANCH-B verified by researcher |
 
 | Deliverable ID | Status | Path |
 |---|---|---|
@@ -179,4 +188,13 @@ None — this was a diagnostic read-only run plus a single --evaluate invocation
 - [x] FP-01 respected (not using extract_baseline)
 - [x] Branch decision prepared for human review
 
-## Self-Check: CHECKPOINT PENDING — awaiting human branch verification
+## Self-Check: PASSED
+
+- [x] --evaluate completed without crash
+- [x] h_0_73.json written with 60 events (31 nonzero, 19 zero)
+- [x] D(h=0.73) = 3.705720e+06 confirmed computed
+- [x] "no possible hosts" count = 10 (logged; BH-mass filter, not BallTree failure)
+- [x] MAP_evaluate = 0.860 measured from posteriors/ shape
+- [x] FP-01 respected (not using extract_baseline)
+- [x] Branch decision BRANCH-B confirmed by researcher (2026-04-27)
+- [x] Plan 43-02 fix order confirmed: H1 (combine_log_space -N log D(h)) + H2 (CRB equatorial→ecliptic migration)
