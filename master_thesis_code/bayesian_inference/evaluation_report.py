@@ -225,6 +225,19 @@ def extract_baseline(
 ) -> BaselineSnapshot:
     """Extract baseline H0 posterior metrics from a posteriors directory.
 
+    .. warning::
+        This function does **NOT** apply the ``-N log D(h)`` selection-effect
+        normalization from Gray et al. (2020) arXiv:1908.06050 Eq. A.19.  The
+        MAP returned here is systematically biased toward ``h_max`` in standard
+        ΛCDM cosmology (where D(h) grows with h), because the log-posterior
+        ``Σ_i log L_i(h)`` is a monotone-increasing function of h without the
+        D(h) correction.
+
+        Use ``--evaluate`` (``BayesianStatistics.evaluate``) for production MAP
+        reporting.  ``extract_baseline`` is **diagnostic-only** — suitable for
+        comparing relative shifts between h-sweeps run under identical
+        conditions, but not for absolute MAP recovery.
+
     Args:
         posteriors_dir: Directory containing h_*.json files from an h-sweep.
         crb_csv_path: Optional path to CRB CSV for per-event summaries.
@@ -237,6 +250,14 @@ def extract_baseline(
         ValueError: If fewer than 3 h-value files are found (insufficient for
             credible interval computation per D-02).
     """
+    # Gray et al. (2020) arXiv:1908.06050 Eq. A.19: correct posterior is
+    # log p(h) = sum_i log L_i(h) - N * log D(h).  This function omits the
+    # -N log D(h) term; MAP is therefore biased.  Use --evaluate for production.
+    _LOGGER.warning(
+        "extract_baseline does not apply -N log D(h) normalization "
+        "(Gray et al. 2020 arXiv:1908.06050 Eq. A.19). "
+        "MAP may be biased toward h_max. Use --evaluate for production results."
+    )
     posteriors = load_posteriors(posteriors_dir)
 
     if len(posteriors) < 3:
