@@ -16,6 +16,13 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   with `equatorial_to_ecliptic_astropy`, `synthetic_catalog_builder`, `build_balltree` helpers.
 
 ### Fixed
+- `bayesian_inference/posterior_combination.py` (`combine_posteriors`, `combine_log_space`,
+  `generate_comparison_table`): missing Gray et al. (2020) arXiv:1908.06050 Eq. A.19
+  selection-function correction. The combine path was summing per-event log-likelihoods
+  with no `−N·log D(h)` term, causing the joint posterior to grow monotonically with `h`
+  and pin to the grid ceiling (MAP = 0.860). Fix subtracts `n_used · log D(h)` where
+  `D(h)` is precomputed via `precompute_completion_denominator()`. Expected MAP ~0.730
+  (matches `--evaluate` path, Phase 43). Paper-blocker resolved.
 - `plotting/convergence_analysis.py`: missing per-event likelihood values (empty
   list in JSON, e.g. event 255 in `h_0_73.json`) now recorded as `nan` instead
   of `0.0`, and combined via `nansum` in log-space — eliminates the sharp dip to
