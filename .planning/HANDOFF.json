@@ -1,59 +1,80 @@
 {
   "version": "1.0",
-  "timestamp": "2026-04-27T16:05:34Z",
+  "timestamp": "2026-04-27T23:55:00Z",
   "phase": null,
-  "phase_name": "fisher-frame-mismatch-fix",
-  "phase_dir": null,
-  "plan": null,
-  "task": null,
-  "total_tasks": 8,
+  "phase_name": "combine-dh-fix + cluster-covariance-migration",
   "status": "paused",
+  "task": null,
+  "total_tasks": null,
+
   "completed_tasks": [
-    {"id": 1, "name": "Debug investigation — angle frame audit", "status": "done", "commit": null, "notes": "gsd-debugger produced full Root Cause Report: 7 bugs found, all trace to migration script not rotating Fisher covariance"},
-    {"id": 2, "name": "Physics-change protocol — covariance rotation formula", "status": "done", "commit": null, "notes": "5 protocol items presented and APPROVED by user. Formula: Sigma_ecl = J_rot * Sigma_eq * J_rot^T, cross-terms v_ecl = J_rot * v_eq. Reference: Taylor An Introduction to Error Analysis Eq. 3.47"}
+    {"id": "fisher-1-8", "name": "Fisher covariance rotation code (tasks 1-8)", "status": "done", "commit": "ab4bc80", "notes": "migrate_crb_to_ecliptic.py rotates full 14x14 Fisher covariance (Sigma_ecl=R*Sigma_eq*R^T). Detection.__init__ hard-errors on missing _coord_frame/_cov_frame. 535 tests passing."},
+    {"id": "cluster-eval", "name": "38-point h-sweep evaluation seed200 (job 4127117)", "status": "done", "notes": "38 h_*.json posteriors complete in run_20260401_seed200/simulations/posteriors/"},
+    {"id": "combine-run", "name": "Combine + generate figures (job 4148484)", "status": "done", "notes": "Done. Figures rsynced to results/figures_seed200/. MAP=0.86 — BIASED, H1 bug confirmed (see context_notes)."}
   ],
+
   "remaining_tasks": [
-    {"id": 3, "name": "Implement migrate_crb_to_ecliptic.py covariance rotation", "status": "not_started", "notes": "PHYSICS CHANGE — approved. Add _compute_ecliptic_jacobian + _rotate_covariance_block + update migrate_csv for 3 states (fully migrated / pos-only migrated / unmigrated). Also add _cov_frame column and update idempotency guard."},
-    {"id": 4, "name": "Update test_migrate_crb_to_ecliptic.py", "status": "not_started", "notes": "Add Fisher columns to _make_synthetic_csv. Add test_covariance_block_rotated. Add test for partial migration (has _coord_frame, no _cov_frame). Update test_other_columns_unchanged to exclude rotated columns. Add test_cov_frame_column_added."},
-    {"id": 5, "name": "Add frame guard to datamodels/detection.py __init__", "status": "not_started", "notes": "Raise ValueError if _coord_frame or _cov_frame missing/wrong. Pure software change, no physics protocol needed."},
-    {"id": 6, "name": "Update all test _make_series helpers with frame columns", "status": "not_started", "notes": "Files: test_detection.py:_make_series(), cosmological_model_test.py:_make_detection_series(). Add _coord_frame and _cov_frame keys with value 'ecliptic_BarycentricTrue_J2000'."},
-    {"id": 7, "name": "Regenerate fixture CSVs + add frame columns", "status": "not_started", "notes": "Update generate_fixtures.py _make_detected_row() to add _coord_frame and _cov_frame to row dict and DETECTED_COLUMNS. Re-run to regenerate synthetic_cramer_rao_bounds.csv, synthetic_prepared_cramer_rao_bounds.csv, and *_1det, *_3det subsets."},
-    {"id": 8, "name": "Add clarifying comment to handler.py get_possible_hosts_from_ball_tree", "status": "not_started", "notes": "Documentation only. Note that phi_sigma/theta_sigma/cov_theta_phi must be in same ecliptic frame as theta/phi. Reference migration script."},
-    {"id": 9, "name": "Run extended migration on production CSVs", "status": "not_started", "notes": "After implementing task 3, run: uv run python scripts/migrate_crb_to_ecliptic.py simulations/ to apply covariance rotation to existing migrated CSVs in simulations/. These have _coord_frame but no _cov_frame."},
-    {"id": 10, "name": "Run full test suite + commit", "status": "not_started", "notes": "uv run pytest -m 'not gpu and not slow'. Then [PHYSICS] commit."}
-  ],
-  "blockers": [],
-  "human_actions_pending": [],
-  "decisions": [
     {
-      "decision": "Covariance rotation formula: Sigma_ecl = J_rot * Sigma_eq * J_rot^T, J_rot computed via central finite differences (delta=1e-7 rad) using astropy ICRS->BarycentricTrueEcliptic transform",
-      "rationale": "Standard error propagation under coordinate transform. J_rot per source because the rotation is position-dependent. Central differences more accurate than forward-diff.",
-      "phase": "debug-fix"
+      "id": 1,
+      "name": "Fix D(h) normalization in combine path",
+      "status": "not_started",
+      "priority": "HIGH — paper blocker, PHYSICS CHANGE required",
+      "notes": "posterior_combination.py:combine_posteriors() (line 476) calls combine_log_space(processed) with NO D(h) term. Fix: compute D(h) per h-value and subtract N_det*log(D(h)) from each h-column of the log-likelihood array before combining. This matches what --evaluate does in bayesian_statistics.py:352-358 via precompute_completion_denominator(). Physics-change protocol required before writing code. Reference: Gray et al. 2020 Eq. A.19."
     },
     {
-      "decision": "Migration script handles 3 states: (1) fully migrated (both _coord_frame + _cov_frame) -> skip, (2) pos-only migrated (_coord_frame but no _cov_frame) -> load .bak_equatorial backup for original equatorial positions to compute J_rot, then rotate covariance only, (3) unmigrated -> full migration",
-      "rationale": "Production CSVs in simulations/ were migrated by old script (Phase 43) — they have _coord_frame but no _cov_frame. Backup .bak_equatorial always exists for these.",
-      "phase": "debug-fix"
+      "id": 2,
+      "name": "Cluster-side covariance migration (fisher-frame-mismatch-fix task 9)",
+      "status": "not_started",
+      "priority": "HIGH — needed before paper production run",
+      "notes": "Production CSVs in run_20260401_seed200/simulations/ have _coord_frame but no _cov_frame (pos-only migrated state). Steps: (1) sync commit ab4bc80 to cluster via git pull, (2) run: uv run python scripts/migrate_crb_to_ecliptic.py simulations/ in the run dir. Script handles pos-only state automatically via .bak_equatorial backups."
     },
     {
-      "decision": "Detection.__init__ frame guard is a hard ValueError (not just warning)",
-      "rationale": "Silent frame mismatch is the whole bug. Hard error prevents future silent data corruption. Tests updated to include frame columns.",
-      "phase": "debug-fix"
+      "id": 3,
+      "name": "Re-run combine + figures after both fixes",
+      "status": "not_started",
+      "priority": "HIGH — verification gate before production",
+      "notes": "Resubmit cluster/combine.sbatch on same RUN_DIR=/pfs/work9/workspace/scratch/st_ac147838-emri/run_20260401_seed200. Expected MAP ~ 0.73. Rsync figures + combined_posterior.json locally and verify posterior peak."
     },
     {
-      "decision": "Bug scope: bugs 1-5 apply ONLY to pre-Phase-43 CSVs that were migrated with old script. New simulation runs (post-Phase-43) are already correct — Fisher is computed with ecliptic qS/phiS so covariance is natively ecliptic.",
-      "rationale": "Key insight from debugger: Fisher matrix is computed by numerically differentiating waveform at current qS/phiS values. After Phase 43 those are already ecliptic.",
-      "phase": "debug-fix"
+      "id": 4,
+      "name": "Paper-ready production run",
+      "status": "not_started",
+      "priority": "MEDIUM — after verification gate",
+      "notes": "New simulation campaign with fully corrected pipeline. Deferred until tasks 1-3 pass and MAP ~ 0.73 is confirmed from the combine path."
     }
   ],
-  "uncommitted_files": [
-    ".planning/debug/fisher-frame-mismatch-angles.md",
-    ".gpd/state.json",
-    ".gpd/state.json.bak",
-    ".planning/STATE.md",
-    ".planning/debug/baseline.json",
-    ".planning/debug/comparison_current.md"
+
+  "blockers": [],
+  "human_actions_pending": [
+    "Physics-change protocol approval for D(h) fix before implementing task 1",
+    "Sync commit ab4bc80 to cluster (git pull on login node) before task 2"
   ],
-  "next_action": "Implement scripts/migrate_crb_to_ecliptic.py: add _compute_ecliptic_jacobian() and _rotate_covariance_block() helpers, update migrate_csv() to handle 3 states, add _COV_FRAME constant and _cov_frame column. Physics change approved.",
-  "context_notes": "Physics-change protocol completed and approved. All 5 items presented: old formula (migrate_crb_to_ecliptic.py:98-100 only rotates qS/phiS), new formula (Sigma_ecl=J_rot*Sigma_eq*J_rot^T + cross-term rotation), reference (Taylor Eq.3.47), dimensional analysis (J_rot dimensionless, Sigma in rad^2), limiting case (zero obliquity -> identity). Bug scope: 7 bugs found by debugger, all downstream of missing covariance rotation in migration script. Bugs 1-5 affect migrated pre-Phase-43 data; new simulations are already correct. MAP=0.730 is valid."
+
+  "decisions": [
+    {
+      "decision": "Fix approach for combine D(h): subtract N_det * log(D(h)) per h-value inside combine_posteriors(), reusing precompute_completion_denominator() from bayesian_statistics.py",
+      "rationale": "Gray et al. 2020 Eq. A.19. Without it, D(h) grows monotonically with h -> raw log-likelihood always increasing -> MAP pinned to h_max.",
+      "phase": "session-2026-04-27"
+    },
+    {
+      "decision": "Sequencing: fix combine D(h) + covariance migration BEFORE paper production. --evaluate MAP=0.730 is the only trustworthy current result.",
+      "rationale": "combine MAP=0.860 confirmed biased this session. User requested verify-first sequencing.",
+      "phase": "session-2026-04-27"
+    }
+  ],
+
+  "key_diagnostics": {
+    "evaluate_path_map": 0.730,
+    "combine_path_map": 0.860,
+    "combine_bias_percent": 16.4,
+    "n_events_used": 312,
+    "n_events_total": 412,
+    "run_dir": "/pfs/work9/workspace/scratch/st_ac147838-emri/run_20260401_seed200",
+    "figures_local": "results/figures_seed200/",
+    "combined_posterior_local": "results/combined_posterior_seed200.json"
+  },
+
+  "next_action": "Start session with physics-change protocol for D(h) fix in posterior_combination.py:combine_posteriors(). Present old formula (no D(h)), new formula (subtract N_det*log(D(h)) per h), reference Gray 2020 Eq. A.19, dimensional analysis, limiting case. Then implement after approval.",
+
+  "context_notes": "The --evaluate path (BayesianStatistics.evaluate() in bayesian_statistics.py) is CORRECT — applies D(h) via precompute_completion_denominator(), gave MAP=0.730 in Phase 43. The --combine path (combine_posteriors() in posterior_combination.py) is MISSING D(h) — confirmed this session: MAP=0.860 with posterior entirely at grid ceiling h=0.86. The fix is one targeted addition in combine_posteriors(). precompute_completion_denominator() in bayesian_statistics.py can be imported and reused directly."
 }
