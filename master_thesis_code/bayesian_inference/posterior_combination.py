@@ -282,6 +282,8 @@ def _physics_floor(
 
 def combine_log_space(
     likelihoods: npt.NDArray[np.float64],
+    log_D_h: npt.NDArray[np.float64] | None = None,
+    n_events_used: int = 0,
 ) -> npt.NDArray[np.float64]:
     """Combine per-event likelihoods into a joint posterior using log-space.
 
@@ -289,6 +291,14 @@ def combine_log_space(
     ----------
     likelihoods : ndarray of shape ``(n_events, n_h_values)``
         Likelihood array with zeros already handled (all values > 0).
+    log_D_h : ndarray of shape ``(n_h_values,)`` or None
+        ``log D(h)`` for each h-bin.  When provided, the selection-function
+        correction ``−n_events_used · log D(h)`` is applied before combining
+        (Gray et al. 2020, arXiv:1908.06050, Eq. A.19).
+    n_events_used : int
+        Number of events that contribute to the joint product (i.e. not
+        excluded by the zero-handling strategy).  Ignored when ``log_D_h``
+        is ``None``.
 
     Returns
     -------
@@ -297,6 +307,10 @@ def combine_log_space(
     """
     log_likes = np.log(likelihoods)
     joint_log = np.sum(log_likes, axis=0)
+    if log_D_h is not None:
+        # Eq. A.19 in Gray et al. (2020), arXiv:1908.06050:
+        # joint posterior ∝ Π_i L_i(h) / D(h)^N  →  subtract N·log D(h).
+        joint_log = joint_log - n_events_used * log_D_h
     max_log = np.max(joint_log)
     posterior = np.exp(joint_log - max_log)
     posterior = posterior / np.sum(posterior)
@@ -425,6 +439,7 @@ def generate_comparison_table(
     likelihoods: npt.NDArray[np.float64],
     detection_indices: list[int],
     variant: str,
+    log_D_h: npt.NDArray[np.float64] | None = None,
 ) -> str:
     """Generate a markdown comparison table for all strategies.
 
@@ -438,6 +453,9 @@ def generate_comparison_table(
         Detection indices.
     variant : str
         Name of the posterior variant (e.g. ``"posteriors"``).
+    log_D_h : ndarray of shape ``(n_h_values,)`` or None
+        Selection-function correction array (Gray et al. 2020, Eq. A.19).
+        Passed through to ``combine_log_space`` for each strategy.
 
     Returns
     -------
@@ -459,7 +477,7 @@ def generate_comparison_table(
         if processed.shape[0] == 0:
             lines.append(f"| {strat.value} | 0 | {excluded} | N/A | N/A |")
             continue
-        posterior = combine_log_space(processed)
+        posterior = combine_log_space(processed, log_D_h=log_D_h, n_events_used=n_used)
         map_idx = int(np.argmax(posterior))
         map_h = float(h_arr[map_idx])
         map_val = float(posterior[map_idx])
@@ -477,6 +495,7 @@ def combine_posteriors(
     posteriors_dir: str,
     strategy: str,
     output_dir: str,
+    d_h_table: dict[float, float] | None = None,
 ) -> dict[str, object]:
     """Combine per-event posteriors into a joint posterior.
 
@@ -490,6 +509,10 @@ def combine_posteriors(
         Zero-handling strategy name (one of the ``CombinationStrategy`` values).
     output_dir : str
         Path to write output files.
+    d_h_table : dict[float, float] or None
+        Pre-computed ``{h: D(h)}`` mapping (Gray et al. 2020, Eq. A.19).
+        When ``None``, ``D(h)`` is computed automatically using
+        :func:`~master_thesis_code.bayesian_inference.bayesian_statistics.precompute_completion_denominator`.
 
     Returns
     -------
@@ -497,7 +520,7 @@ def combine_posteriors(
         Combined posterior result with keys ``h_values``, ``posterior``,
         ``strategy``, ``n_events_total``, ``n_events_used``,
         ``n_events_excluded``, ``n_events_empty``, ``map_h``,
-        ``map_posterior``, ``variant``.
+        ``map_posterior``, ``variant``, ``D_h_per_h``.
     """
     posteriors_path = Path(posteriors_dir)
     output_path = Path(output_dir)
@@ -523,11 +546,53 @@ def combine_posteriors(
         all_keys.update(k for k in data if k != "h")
     n_empty = len(all_keys) - n_total
 
+    # Compute or validate D(h) selection-function denominator
+    # Gray et al. (2020), arXiv:1908.06050, Eq. A.19.
+    if d_h_table is None:
+        # Lazy import: avoids pulling heavy scipy/pandas/astropy into this
+        # module's top-level import at the cost of a slightly slower first call.
+        from master_thesis_code.bayesian_inference.bayesian_statistics import (  # noqa: PLC0415
+            precompute_completion_denominator,
+        )
+        from master_thesis_code.bayesian_inference.simulation_detection_probability import (  # noqa: PLC0415
+            SimulationDetectionProbability,
+        )
+        from master_thesis_code.constants import (  # noqa: PLC0415
+            INJECTION_DATA_DIR,
+            OMEGA_DE,
+            OMEGA_M,
+            SNR_THRESHOLD,
+        )
+
+        detection_probability = SimulationDetectionProbability(
+            injection_data_dir=INJECTION_DATA_DIR,
+            snr_threshold=SNR_THRESHOLD,
+        )
+        for h in h_values:
+            detection_probability._get_or_build_grid(h)
+
+        d_h_table = precompute_completion_denominator(
+            h_values=h_values,
+            detection_probability_obj=detection_probability,
+            Omega_m=OMEGA_M,
+            Omega_DE=OMEGA_DE,
+        )
+
+    D_h_array = np.array([d_h_table[h] for h in h_values], dtype=np.float64)
+    log_D_h = np.log(D_h_array)
+    logger.info(
+        "D(h) range: %.4e – %.4e (ratio %.2fx)",
+        float(np.min(D_h_array)),
+        float(np.max(D_h_array)),
+        float(np.max(D_h_array) / max(float(np.min(D_h_array)), 1e-300)),
+    )
+
     # Apply strategy
     processed, n_excluded = apply_strategy(likelihoods, effective_strategy)
+    n_used = n_total - n_excluded
 
-    # Combine
-    posterior = combine_log_space(processed)
+    # Combine with Gray Eq. A.19 selection-function correction
+    posterior = combine_log_space(processed, log_D_h=log_D_h, n_events_used=n_used)
 
     # MAP estimate
     h_arr = np.array(h_values, dtype=np.float64)
@@ -535,7 +600,6 @@ def combine_posteriors(
     map_h = float(h_arr[map_idx])
     map_posterior = float(posterior[map_idx])
 
-    n_used = n_total - n_excluded
     variant = posteriors_path.name
 
     logger.info(
@@ -551,7 +615,9 @@ def combine_posteriors(
     diag_report = generate_diagnostic_report(h_values, likelihoods, detection_indices)
     (output_path / "diagnostic_report.md").write_text(diag_report)
 
-    comp_table = generate_comparison_table(h_arr, likelihoods, detection_indices, variant)
+    comp_table = generate_comparison_table(
+        h_arr, likelihoods, detection_indices, variant, log_D_h=log_D_h
+    )
     (output_path / "comparison_table.md").write_text(comp_table)
 
     # Build result
@@ -566,6 +632,7 @@ def combine_posteriors(
         "map_h": map_h,
         "map_posterior": map_posterior,
         "variant": variant,
+        "D_h_per_h": [float(d) for d in D_h_array],
     }
 
     # Write combined posterior JSON
