@@ -1,80 +1,107 @@
 {
   "version": "1.0",
-  "timestamp": "2026-04-28T00:00:00Z",
+  "timestamp": "2026-04-28T01:00:00Z",
   "phase": null,
-  "phase_name": "combine-dh-fix + cluster-covariance-migration",
-  "status": "in_progress",
-  "task": null,
-  "total_tasks": null,
+  "phase_name": "H0-posterior-bias-root-cause-investigation",
+  "status": "blocked_needs_physics_decision",
 
   "completed_tasks": [
-    {"id": "fisher-1-8", "name": "Fisher covariance rotation code (tasks 1-8)", "status": "done", "commit": "ab4bc80", "notes": "migrate_crb_to_ecliptic.py rotates full 14x14 Fisher covariance (Sigma_ecl=R*Sigma_eq*R^T). Detection.__init__ hard-errors on missing _coord_frame/_cov_frame. 535 tests passing."},
-    {"id": "cluster-eval", "name": "38-point h-sweep evaluation seed200 (job 4127117)", "status": "done", "notes": "38 h_*.json posteriors complete in run_20260401_seed200/simulations/posteriors/"},
-    {"id": "combine-run", "name": "Combine + generate figures (job 4148484)", "status": "done", "notes": "Done. Figures rsynced to results/figures_seed200/. MAP=0.86 — BIASED, H1 bug confirmed (see context_notes)."}
-  ],
-
-  "remaining_tasks": [
     {
-      "id": 1,
-      "name": "Fix D(h) normalization in combine path",
+      "id": "task-1-dh-fix",
+      "name": "Add D(h) correction to combine path",
       "status": "done",
-      "priority": "HIGH — paper blocker, PHYSICS CHANGE required",
-      "notes": "posterior_combination.py:combine_posteriors() (line 476) calls combine_log_space(processed) with NO D(h) term. Fix: compute D(h) per h-value and subtract N_det*log(D(h)) from each h-column of the log-likelihood array before combining. This matches what --evaluate does in bayesian_statistics.py:352-358 via precompute_completion_denominator(). Physics-change protocol required before writing code. Reference: Gray et al. 2020 Eq. A.19."
+      "commit": "2853c32",
+      "notes": "posterior_combination.py:combine_posteriors() now calls precompute_completion_denominator() and subtracts n_events*log(D(h)) before combining. Implemented. But see 'findings' — this fix is insufficient."
     },
     {
-      "id": 2,
-      "name": "Cluster-side covariance migration (fisher-frame-mismatch-fix task 9)",
-      "status": "not_started",
-      "priority": "HIGH — needed before paper production run",
-      "notes": "Production CSVs in run_20260401_seed200/simulations/ have _coord_frame but no _cov_frame (pos-only migrated state). Steps: (1) sync commit ab4bc80 to cluster via git pull, (2) run: uv run python scripts/migrate_crb_to_ecliptic.py simulations/ in the run dir. Script handles pos-only state automatically via .bak_equatorial backups."
+      "id": "task-2-covariance-migration",
+      "name": "Cluster-side covariance migration",
+      "status": "done",
+      "notes": "Ran on cluster: 'uv run python scripts/migrate_crb_to_ecliptic.py /pfs/work9/workspace/scratch/st_ac147838-emri/run_20260401_seed200/simulations/'. Result: 3 CSVs fully migrated to ecliptic_BarycentricTrue_J2000, 1 cov-rotation-only. Backups in *.bak_equatorial."
     },
     {
-      "id": 3,
-      "name": "Re-run combine + figures after both fixes",
-      "status": "not_started",
-      "priority": "HIGH — verification gate before production",
-      "notes": "Resubmit cluster/combine.sbatch on same RUN_DIR=/pfs/work9/workspace/scratch/st_ac147838-emri/run_20260401_seed200. Expected MAP ~ 0.73. Rsync figures + combined_posterior.json locally and verify posterior peak."
-    },
-    {
-      "id": 4,
-      "name": "Paper-ready production run",
-      "status": "not_started",
-      "priority": "MEDIUM — after verification gate",
-      "notes": "New simulation campaign with fully corrected pipeline. Deferred until tasks 1-3 pass and MAP ~ 0.73 is confirmed from the combine path."
+      "id": "task-3-combine-rerun",
+      "name": "Re-run combine with both fixes (job 4148717)",
+      "status": "done",
+      "notes": "SLURM job 4148717 COMPLETED (3m08s). MAP=0.86 STILL BIASED. D(h) fix made no meaningful difference. Root cause is not D(h). See 'findings'."
     }
   ],
 
-  "blockers": [],
-  "human_actions_pending": [
-    "Physics-change protocol approval for D(h) fix before implementing task 1",
-    "Sync commit ab4bc80 to cluster (git pull on login node) before task 2"
-  ],
-
-  "decisions": [
-    {
-      "decision": "Fix approach for combine D(h): subtract N_det * log(D(h)) per h-value inside combine_posteriors(), reusing precompute_completion_denominator() from bayesian_statistics.py",
-      "rationale": "Gray et al. 2020 Eq. A.19. Without it, D(h) grows monotonically with h -> raw log-likelihood always increasing -> MAP pinned to h_max.",
-      "phase": "session-2026-04-27"
+  "findings": {
+    "summary": "MAP=0.86 persists after both the D(h) fix and covariance migration. Root cause is L_cat exploding at high h, not missing D(h).",
+    "root_cause": "L_cat (galaxy catalog match term) is 1000-36000x larger at h=0.86 than h=0.73 for ~121 of 312 events. At higher h, the implied luminosity distance is smaller → galaxy search window moves to lower redshift → more GLADE galaxies match (GLADE is more complete at lower z) → L_cat inflated. D(h) should correct for this, but it is also computed incorrectly.",
+    "dh_direction_bug": "D(h) DECREASES from 4.14e6 at h=0.60 to 3.46e6 at h=0.86. It should INCREASE (more detectable galaxies at closer distances). Suspected cause: P_det grid zero-fills below d_L_min (sources closer than the injection grid minimum get p_det=0 instead of p_det~1). This means the completeness denominator misses the contribution from very close/loud sources at high h, causing D(h) to decrease artificially.",
+    "magnitude": "D(h) varies only ~20% across the full h range. L_cat varies up to 36000x. Even a correct D(h) cannot compensate unless it also increases by ~36000x (which would require fixing the P_det zero-fill issue).",
+    "event_breakdown": {
+      "events_favoring_h_0p86": 121,
+      "events_favoring_h_0p73": 148,
+      "max_delta_toward_0p86_log_units": 12.81,
+      "max_delta_toward_0p73_log_units": 1.86,
+      "net_log_posterior_shift_0p86_vs_0p73": 145.7,
+      "note": "The few events strongly favoring h=0.86 dominate completely over the many events weakly favoring h=0.73."
     },
-    {
-      "decision": "Sequencing: fix combine D(h) + covariance migration BEFORE paper production. --evaluate MAP=0.730 is the only trustworthy current result.",
-      "rationale": "combine MAP=0.860 confirmed biased this session. User requested verify-first sequencing.",
-      "phase": "session-2026-04-27"
-    }
-  ],
-
-  "key_diagnostics": {
-    "evaluate_path_map": 0.730,
-    "combine_path_map": 0.860,
-    "combine_bias_percent": 16.4,
-    "n_events_used": 312,
-    "n_events_total": 412,
-    "run_dir": "/pfs/work9/workspace/scratch/st_ac147838-emri/run_20260401_seed200",
-    "figures_local": "results/figures_seed200/",
-    "combined_posterior_local": "results/combined_posterior_seed200.json"
+    "high_delta_events": [
+      {"event_idx": 586,  "log_lk_0p73": -9.62, "log_lk_0p86": 3.19,  "L_cat_0p73": 0.0001, "L_cat_0p86": 31.6,  "f_i": 0.562},
+      {"event_idx": 1146, "log_lk_0p73": -6.12, "log_lk_0p86": 5.10,  "L_cat_0p73": 0.004,  "L_cat_0p86": 246.8, "f_i": 0.55},
+      {"event_idx": 254,  "log_lk_0p73": -9.89, "log_lk_0p86": 0.84,  "L_cat_0p73": 0.0001, "L_cat_0p86": 3.63,  "f_i": 0.602},
+      {"event_idx": 113,  "log_lk_0p73": -5.01, "log_lk_0p86": 5.48,  "L_cat_0p73": 0.0102, "L_cat_0p86": 364.3, "f_i": 0.561}
+    ],
+    "files_on_cluster": {
+      "run_dir": "/pfs/work9/workspace/scratch/st_ac147838-emri/run_20260401_seed200",
+      "combined_posterior": "simulations/posteriors/combined_posterior.json",
+      "h_json_dir": "simulations/posteriors/",
+      "diagnostics_csv": "simulations/diagnostics/event_likelihoods.csv"
+    },
+    "note_on_phase43_map073": "The MAP=0.730 baseline (baseline.json, n_events=5, symmetric log-posteriors) was from a LOCAL SYNTHETIC test during Phase 43, NOT from the 412-event production data. The production cluster run has always given MAP=0.86."
   },
 
-  "next_action": "Start session with physics-change protocol for D(h) fix in posterior_combination.py:combine_posteriors(). Present old formula (no D(h)), new formula (subtract N_det*log(D(h)) per h), reference Gray 2020 Eq. A.19, dimensional analysis, limiting case. Then implement after approval.",
+  "options_for_next_session": [
+    {
+      "id": "A",
+      "name": "Fix P_det zero-fill: use p_det=1 below d_L_min",
+      "description": "In simulation_detection_probability.py, change interpolated_zero_fill to use p_det=1.0 (or linearly extrapolate) for d_L < d_L_min. This is physically correct (sources closer than the injection grid minimum are always louder → always detectable). Also affects D(h) numerically, should make D(h) increase with h. Requires physics-change protocol. Medium-sized code change.",
+      "expected_outcome": "D(h) increases with h, partially correcting the L_cat bias. MAP may shift toward h=0.73 but magnitude uncertain.",
+      "risk": "p_det=1 extrapolation may be too aggressive if the injection grid minimum is not well-defined. May need to check injection data coverage."
+    },
+    {
+      "id": "B",
+      "name": "Restrict galaxy catalog to a redshift floor",
+      "description": "Add z_min cutoff to the GLADE search (e.g. z > 0.01) to avoid contamination from very nearby galaxies. This prevents the 'nearby galaxy explosion' of L_cat at high h.",
+      "expected_outcome": "Removes the strongest high-delta events. May shift MAP toward 0.73.",
+      "risk": "May discard genuine host galaxies of nearby events. Needs justification from catalog completeness data."
+    },
+    {
+      "id": "C",
+      "name": "Debug the high-delta events individually",
+      "description": "Pick event 113 (f_i=0.561, L_cat jumps 36000x) and trace exactly which galaxies are matched at h=0.73 vs h=0.86. Check if it is a single massive galaxy causing the jump, and whether that galaxy is the true host or an accidental match.",
+      "expected_outcome": "Precise diagnosis of the catalog contamination mechanism.",
+      "risk": "Low — diagnostic only. But may not immediately suggest a fix."
+    },
+    {
+      "id": "D",
+      "name": "Accept MAP=0.86 and document as incompleteness bias",
+      "description": "Do not change the pipeline. Characterize the bias as arising from GLADE incompleteness correction failure at the current implementation level. Report in the paper with an estimated bias correction.",
+      "expected_outcome": "No code changes. Paper acknowledges known bias. Faster to thesis completion.",
+      "risk": "H0 result would be biased +16% from truth. Reviewers may object."
+    }
+  ],
 
-  "context_notes": "The --evaluate path (BayesianStatistics.evaluate() in bayesian_statistics.py) is CORRECT — applies D(h) via precompute_completion_denominator(), gave MAP=0.730 in Phase 43. The --combine path (combine_posteriors() in posterior_combination.py) is MISSING D(h) — confirmed this session: MAP=0.860 with posterior entirely at grid ceiling h=0.86. The fix is one targeted addition in combine_posteriors(). precompute_completion_denominator() in bayesian_statistics.py can be imported and reused directly."
+  "recommended_next_action": "Start with /gpd:debug. The bug is in simulation_detection_probability.py:detection_probability_without_bh_mass_interpolated_zero_fill — the zero-fill is physically wrong for d_L below the injection grid minimum. Option A is the likely correct fix. But first: confirm via Option C (trace event 113 at h=0.73 vs h=0.86) to make sure the hypothesis is correct before changing P_det. Physics-change protocol required for any P_det modification.",
+
+  "key_files": {
+    "P_det_implementation": "master_thesis_code/bayesian_inference/simulation_detection_probability.py",
+    "D_h_computation": "master_thesis_code/bayesian_inference/bayesian_statistics.py:70 (precompute_completion_denominator)",
+    "L_cat_computation": "master_thesis_code/bayesian_inference/bayesian_statistics.py:923-945 (p_Di, L_cat term)",
+    "combine_path": "master_thesis_code/bayesian_inference/posterior_combination.py",
+    "diagnostics_csv": "/pfs/work9/workspace/scratch/st_ac147838-emri/run_20260401_seed200/simulations/diagnostics/event_likelihoods.csv",
+    "h_json_posteriors": "/pfs/work9/workspace/scratch/st_ac147838-emri/run_20260401_seed200/simulations/posteriors/"
+  },
+
+  "cluster_state": {
+    "git_commit": "481f918",
+    "csved_migrated": true,
+    "last_combine_job": 4148717,
+    "last_combine_map": 0.86,
+    "run_dir": "/pfs/work9/workspace/scratch/st_ac147838-emri/run_20260401_seed200"
+  }
 }
