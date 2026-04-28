@@ -1001,8 +1001,10 @@ class BayesianStatistics:
                     _comp_cov_inv_3d,
                     _comp_log_norm_3d,
                 )
-                # Gray et al. (2020), arXiv:1908.06050, Eq. A.19: symmetric zero-fill with D(h) denominator.
-                # P_det outside the injection grid is unmodeled; zero-fill is conservative (NN-fill overestimates).
+                # Gray et al. (2020), arXiv:1908.06050, Eq. A.19: shared p_det
+                # function for L_comp numerator and D(h) denominator (STAT-03
+                # symmetry, commit a70d1a2).  Phase 44: NN-fill below first bin
+                # (real injection statistic), zero above injection horizon.
                 p_det = detection_probability_obj.detection_probability_without_bh_mass_interpolated_zero_fill(
                     d_L, phi, theta, h=self.h
                 )
@@ -1173,8 +1175,10 @@ def single_host_likelihood(
         phi = np.full_like(z, host_phiS)
         theta = np.full_like(z, host_qS)
 
-        # Gray et al. (2020), arXiv:1908.06050, Eq. A.19: symmetric zero-fill with D(h) denominator.
-        # P_det outside the injection grid is unmodeled; zero-fill is conservative (NN-fill overestimates).
+        # Gray et al. (2020), arXiv:1908.06050, Eq. A.19: shared p_det function
+        # with D(h) denominator (STAT-03 symmetry, commit a70d1a2).  Phase 44:
+        # NN-fill below first bin (real injection statistic), zero above
+        # injection horizon.
         p_det = detection_probability.detection_probability_without_bh_mass_interpolated_zero_fill(
             d_L, phi, theta, h=h
         )
@@ -1193,8 +1197,10 @@ def single_host_likelihood(
         d_L = dist_vectorized(z, h=h)
         phi = np.full_like(z, host_phiS)
         theta = np.full_like(z, host_qS)
-        # Gray et al. (2020), arXiv:1908.06050, Eq. A.19: symmetric zero-fill with D(h) denominator.
-        # P_det outside the injection grid is unmodeled; zero-fill is conservative (NN-fill overestimates).
+        # Gray et al. (2020), arXiv:1908.06050, Eq. A.19: shared p_det function
+        # with D(h) denominator (STAT-03 symmetry, commit a70d1a2).  Phase 44:
+        # NN-fill below first bin (real injection statistic), zero above
+        # injection horizon.
         p_det = detection_probability.detection_probability_without_bh_mass_interpolated_zero_fill(
             d_L, phi, theta, h=h
         )
@@ -1422,7 +1428,9 @@ def single_host_likelihood_integration_testing(
     def numerator_integrant_without_bh_mass(z: float) -> float:
         d_L = dist(z, h=h)
         luminosity_distance_fraction = d_L / detection.d_L
-        # Gray et al. (2020), arXiv:1908.06050, Eq. A.19: symmetric zero-fill with D(h) denominator.
+        # Gray et al. (2020), arXiv:1908.06050, Eq. A.19: shared p_det function
+        # with D(h) denominator (STAT-03 symmetry).  Phase 44 boundary convention:
+        # NN-fill below first bin, zero above injection horizon.
         return float(
             detection_probability.detection_probability_without_bh_mass_interpolated_zero_fill(
                 d_L, possible_host.phiS, possible_host.qS, h=h
@@ -1435,7 +1443,9 @@ def single_host_likelihood_integration_testing(
 
     def denominator_integrant_without_bh_mass(z: float) -> float:
         d_L = dist(z, h=h)
-        # Gray et al. (2020), arXiv:1908.06050, Eq. A.19: symmetric zero-fill with D(h) denominator.
+        # Gray et al. (2020), arXiv:1908.06050, Eq. A.19: shared p_det function
+        # with D(h) denominator (STAT-03 symmetry).  Phase 44 boundary convention:
+        # NN-fill below first bin, zero above injection horizon.
         return float(
             detection_probability.detection_probability_without_bh_mass_interpolated_zero_fill(
                 d_L, possible_host.phiS, possible_host.qS, h=h

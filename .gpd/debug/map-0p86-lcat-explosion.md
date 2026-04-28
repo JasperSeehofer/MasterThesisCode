@@ -1,12 +1,12 @@
 ---
 session_id: map-0p86-lcat-explosion
-status: diagnosed — fix proposal revised, awaiting approval
+status: fix applied locally (Phase 44, branch phase-44-pdet-zerofill-fix); awaiting cluster re-eval and revert outcome
 created: 2026-04-28
 last_updated: 2026-04-28
 symptom: "MAP=0.86 after ecliptic migration; L_comp 1000-36000x larger at h=0.86 than h=0.73 for ~4 close events that dominate the product"
 root_cause: "p_det_zero_fill returns 0 for d_L < dl_centers[0]. dl_centers[0] = dl_max/120 is a bin-width artifact that scales ∝ 1/h. Close events (d_L=0.085-0.097 Gpc) drop below this moving threshold at h=0.73 (threshold=0.100 Gpc) but not at h=0.86 (threshold=0.085 Gpc). L_comp=0 at h=0.73, L_comp>>0 at h=0.86 for these events. The threshold is NOT the injection minimum — injections cover d_L→0 through GLADE low-z galaxies."
 fix_proposal: "Remove result[dl_arr < dl_min] = 0.0 from zero_fill function. Keep result[dl_arr > dl_max] = 0.0. Nearest-neighbour extrapolation (fill_value=None, already on interpolator) returns p_det(dl_centers[0]) ≈ 0.55 below threshold — correct because the first bin covers (0, 2*dl_centers[0]) and genuinely has p_det≈0.55 from real injection data."
-fix_status: "REVISED — see below. Setting p_det=1 was initial proposal but is WRONG. Correct fix is nearest-neighbour (remove the offending line only)."
+fix_status: "APPLIED on branch phase-44-pdet-zerofill-fix. Local verification: at d_L=0.085 Gpc, p_det varies smoothly 0.558→0.595 across h ∈ [0.65,0.86] (was 0 across h<0.86 and 0.59 at h=0.86). 4 regression tests added; CPU suite 557/557 pass. Cluster re-eval and revert (jobs 4159826/4159827) outstanding."
 ---
 
 # Debug Session: MAP=0.86 L_comp Explosion
@@ -210,3 +210,43 @@ These must be answered before closing:
 - `master_thesis_code/galaxy_catalogue/handler.py`: BallTree in ecliptic frame is correct
 - `master_thesis_code/bayesian_inference/posterior_combination.py`: D(h) correction correctly subtracts N×log D(h)
 - CRB CSV files (migrated to ecliptic): correct sky angles and covariances
+
+---
+
+## Phase 44 Fix Applied (2026-04-28)
+
+**Branch:** `phase-44-pdet-zerofill-fix` (off `main`)
+**Files changed:**
+- `master_thesis_code/bayesian_inference/simulation_detection_probability.py` —
+  removed left-side cutoff at lines 708–713; rewrote docstring to enumerate the
+  6 actual call sites (was stale "exclusively for D(h)"). Added defensive
+  `total_counts[0] < 100` warning in `_build_grid_1d`.
+- `master_thesis_code/bayesian_inference/bayesian_statistics.py` — updated 6
+  inline call-site comments to reflect the new boundary convention.
+- `master_thesis_code_test/bayesian_inference/test_simulation_detection_probability.py` —
+  added `TestZeroFillBoundaryConvention` (4 tests).
+- `CHANGELOG.md`, `CLAUDE.md`, `.planning/STATE.md` — documentation.
+
+**Open Question 1 resolution:** the debug session claim that the function was
+called only by `precompute_completion_denominator` was WRONG. Actual call sites
+verified by `grep` in `bayesian_statistics.py`: lines 119, 1006, 1178, 1198,
+1427, 1440 (D(h) denominator, L_comp numerator, L_cat num/denom, +2 legacy).
+All six share the function — Phase 38 STAT-03 (commit a70d1a2) deliberately
+enforced this. The Phase 44 fix preserves the symmetry by editing the function
+body only.
+
+**Open Question 3 resolution:** ran `quality_flags(h=h)` at h ∈ {0.60, 0.73,
+0.86} on production injections. `n_total[0] = 312` at all three (well above
+100-event reliability threshold). `p̂(c_0) = 0.471, 0.545, 0.596` respectively
+— smoothly varying, no h-dependent step.
+
+**Local verification:** at `d_L = 0.085 Gpc` (the close-event d_L), p_det
+varies smoothly 0.558 → 0.595 across `h ∈ [0.65, 0.86]`. Pre-fix it was 0 for
+all h < 0.86 and 0.59 at h = 0.86 — that single jump drove the entire MAP bias.
+
+**Open Questions still open:**
+- 2: cluster revert (jobs 4159826/4159827) PENDING. Needed to confirm the bias
+  predates the ecliptic migration (expected MAP ≈ 0.86 on `.bak_equatorial`
+  CRBs).
+- 4: cluster re-eval with the fix applied — pending merge.
+- 6: residual bias check against MAP ∈ [0.72, 0.74] — pending cluster re-eval.

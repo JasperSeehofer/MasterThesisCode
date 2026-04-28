@@ -294,7 +294,7 @@ class SimulationDetectionProbability:
             h_val=h,
             weights=weights,
         )
-        interp_1d = self._build_grid_1d(df_rescaled, self._snr_threshold)
+        interp_1d = self._build_grid_1d(df_rescaled, self._snr_threshold, h_val=h)
 
         # LRU eviction
         if len(self._grid_cache) >= _MAX_CACHE_SIZE:
@@ -462,12 +462,25 @@ class SimulationDetectionProbability:
             fill_value=None,
         )
 
-    def _build_grid_1d(self, df: pd.DataFrame, snr_threshold: float) -> RegularGridInterpolator:
+    def _build_grid_1d(
+        self,
+        df: pd.DataFrame,
+        snr_threshold: float,
+        *,
+        h_val: float | None = None,
+    ) -> RegularGridInterpolator:
         """Build a 1D P_det(d_L) grid by marginalizing over M and sky angles.
+
+        The histogram edges are ``np.linspace(0, dl_max, N+1)`` so the first
+        bin covers ``[0, 2·c_0)`` with ``c_0 = dl_centers[0] = dl_max/(2N)``.
+        Off-grid evaluation uses ``fill_value=None`` (nearest-neighbour); see
+        :meth:`detection_probability_without_bh_mass_interpolated_zero_fill`
+        for the boundary convention.
 
         Args:
             df: DataFrame with columns luminosity_distance, SNR.
             snr_threshold: SNR detection threshold.
+            h_val: Hubble parameter value (used for diagnostic logging only).
 
         Returns:
             RegularGridInterpolator for P_det(d_L).
@@ -481,6 +494,19 @@ class SimulationDetectionProbability:
         total_counts, _ = np.histogram(dl_vals, bins=dl_edges)
         detected_mask = snr_vals >= snr_threshold
         detected_counts, _ = np.histogram(dl_vals[detected_mask], bins=dl_edges)
+
+        # Phase 44 reliability check: post-fix the first-bin estimate p̂(c_0)
+        # is returned for all d_L < c_0 via nearest-neighbour fill.  Wilson 95%
+        # CI half-width ≈ 1/sqrt(n); n=100 → ~0.05 absolute uncertainty.
+        if total_counts[0] < 100:
+            logger.warning(
+                "P_det 1D grid first bin [0, %.4f Gpc) has only %d injections "
+                "(h=%s).  p_det(d_L < c_0) returned by nearest-neighbour fill "
+                "may be noisy.  Consider denser low-d_L injections.",
+                float(dl_edges[1]),
+                int(total_counts[0]),
+                f"{h_val:.4f}" if h_val is not None else "?",
+            )
 
         p_det_1d = np.divide(
             detected_counts,
@@ -677,14 +703,32 @@ class SimulationDetectionProbability:
         *,
         h: float,
     ) -> float | npt.NDArray[np.float64]:
-        """Detection probability with fill_value=0 outside the grid.
+        """Detection probability with hard zero above the injection grid.
 
-        Identical to
-        :meth:`detection_probability_without_bh_mass_interpolated` but
-        returns 0 (not nearest-neighbor) for ``d_L`` values outside the
-        P_det grid range.  Used exclusively for the completion-term
-        denominator integral ``D(h)``, where detectability beyond the
-        injection grid is physically zero.
+        Used by every production p_det evaluation for symmetry between
+        L_comp / L_cat numerators and the D(h) denominator (STAT-03 invariant,
+        commit ``a70d1a2``).  Call sites in :mod:`bayesian_statistics`:
+
+        * ``precompute_completion_denominator`` (D(h) full-volume denominator)
+        * ``p_Di.completion_numerator_integrand`` (L_comp 4σ window)
+        * ``single_host_likelihood.numerator_integrant_without_bh_mass`` (L_cat numerator)
+        * ``single_host_likelihood.denominator_integrant_without_bh_mass`` (L_cat denominator)
+        * ``single_host_likelihood_integration_testing`` (legacy, two integrands)
+
+        Boundary convention (Phase 44 fix):
+
+        * ``d_L > dl_centers[-1]``: source beyond the injection horizon →
+          detectability is unmodelled and physically zero.
+        * ``d_L < dl_centers[0]``: nearest-neighbour from
+          ``RegularGridInterpolator(fill_value=None)`` returns the first-bin
+          estimate ``p̂(c_0)``.  The first edge of the histogram is at
+          ``dl_edges[0] = 0`` (see :meth:`_build_grid_1d`), so the first bin
+          covers ``[0, 2·c_0)`` with real injections; ``p̂(c_0)`` is the
+          unbiased histogram estimate over that interval (≈ 0.55 at h=0.73).
+
+        The previous implementation also zeroed ``d_L < c_0(h) = dl_max(h)/120``
+        — a bin-midpoint artifact that scaled as ``1/h`` and drove a
+        ``+145.7`` log-unit MAP bias for 312 events between h=0.73 and h=0.86.
 
         Args:
             d_L: Luminosity distance in Gpc.
@@ -693,7 +737,7 @@ class SimulationDetectionProbability:
             h: Dimensionless Hubble parameter.
 
         Returns:
-            Detection probability in [0, 1], with 0 outside grid.
+            Detection probability in [0, 1].  Zero only above ``dl_centers[-1]``.
 
         References:
             Gray et al. (2020), arXiv:1908.06050, Eq. A.19.
@@ -705,12 +749,15 @@ class SimulationDetectionProbability:
 
         result = np.clip(interp_1d(points), 0.0, 1.0)
 
-        # Zero out values outside the grid range (override nearest-neighbor)
+        # Phase 44 fix: removed result[dl_arr < dl_min] = 0.0.  Below
+        # dl_centers[0] = dl_max/120 the first injection bin (0, 2*c_0) has
+        # real events; nearest-neighbour from fill_value=None already returns
+        # p̂(c_0).  The previous left-side cutoff scaled as 1/h, biasing MAP
+        # toward h_max for events with d_L ≈ c_0.
+        # Eq. (A.19) in Gray et al. (2020), arXiv:1908.06050.
         dl_centers = interp_1d.grid[0]
-        dl_min = float(dl_centers[0])
         dl_max = float(dl_centers[-1])
-        out_of_range = (dl_arr < dl_min) | (dl_arr > dl_max)
-        result[out_of_range] = 0.0
+        result[dl_arr > dl_max] = 0.0
 
         if np.ndim(d_L) == 0:
             return float(result[0])

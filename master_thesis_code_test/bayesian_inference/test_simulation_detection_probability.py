@@ -669,3 +669,134 @@ class TestCoverageValidation:
         assert any("P_det grid coverage" in msg for msg in info_msgs), (
             f"Expected info about coverage, got: {info_msgs}"
         )
+
+
+class TestZeroFillBoundaryConvention:
+    """Phase 44 regressions: detection_probability_without_bh_mass_interpolated_zero_fill
+    must use nearest-neighbour fill below the first bin centre and zero only
+    above the injection horizon.
+
+    Pre-fix the function zeroed any d_L < dl_centers[0] = dl_max/120.  Because
+    dl_max(h) ∝ 1/h, this created a moving threshold c_0(h) ∝ 1/h that produced
+    a +145.7 log-unit MAP bias toward h_max for events with d_L ≈ c_0.
+    """
+
+    def test_zero_fill_below_first_bin_is_nonzero_for_valid_dL(self, injection_dir: str) -> None:
+        """d_L below dl_centers[0] but inside the first bin (0, 2*c_0) returns p̂(c_0)."""
+        from master_thesis_code.bayesian_inference.simulation_detection_probability import (
+            SimulationDetectionProbability,
+        )
+
+        pdet = SimulationDetectionProbability(
+            injection_data_dir=injection_dir,
+            snr_threshold=20.0,
+        )
+        h = 0.70
+        pdet._get_or_build_grid(h)
+        _, interp_1d = pdet._grid_cache[h]
+        c0 = float(interp_1d.grid[0][0])
+        assert c0 > 0.0  # bin midpoint is in the regime that matters
+
+        # d_L = c0/2 sits inside the first histogram bin (0, 2*c0) but below c0.
+        p_below = pdet.detection_probability_without_bh_mass_interpolated_zero_fill(
+            d_L=c0 / 2.0, phi=0.0, theta=0.0, h=h
+        )
+        p_at = pdet.detection_probability_without_bh_mass_interpolated_zero_fill(
+            d_L=c0, phi=0.0, theta=0.0, h=h
+        )
+        # Nearest-neighbour fill: identical values.
+        assert float(p_below) == pytest.approx(float(p_at), rel=1e-9), (
+            f"Phase 44: expected NN fill p_det({c0 / 2:.4f}) == p_det({c0:.4f}); "
+            f"got p_below={p_below}, p_at={p_at}"
+        )
+        # The first-bin estimate must be a real probability, not the old zero.
+        assert 0.0 < float(p_below) <= 1.0, (
+            f"p_det must be in (0, 1] for d_L < c_0 inside the first bin, got {p_below}"
+        )
+
+    def test_zero_fill_no_h_dependent_step_for_close_dL(self, injection_dir: str) -> None:
+        """At fixed d_L just below the c_0(h=0.70) threshold, p_det varies smoothly with h."""
+        from master_thesis_code.bayesian_inference.simulation_detection_probability import (
+            SimulationDetectionProbability,
+        )
+
+        pdet = SimulationDetectionProbability(
+            injection_data_dir=injection_dir,
+            snr_threshold=20.0,
+        )
+        # Pick a d_L that straddles c_0(h) across the h grid pre-fix.
+        # c_0(0.70) ≈ dl_max(0.70)/120; pick d_L slightly below that.
+        pdet._get_or_build_grid(0.70)
+        _, interp_70 = pdet._grid_cache[0.70]
+        c0_70 = float(interp_70.grid[0][0])
+        d_L_test = 0.5 * c0_70  # well inside the first bin, below c_0(0.70)
+
+        p_vals: dict[float, float] = {}
+        for h in (0.65, 0.70, 0.75, 0.80, 0.85):
+            p_vals[h] = float(
+                pdet.detection_probability_without_bh_mass_interpolated_zero_fill(
+                    d_L=d_L_test, phi=0.0, theta=0.0, h=h
+                )
+            )
+
+        # All non-zero (pre-fix at least one would be 0 because of the moving threshold).
+        assert all(p > 0.0 for p in p_vals.values()), (
+            f"Phase 44: p_det must be nonzero for d_L={d_L_test:.4f} Gpc at all h, got {p_vals}"
+        )
+
+        # Largest consecutive Δ across h-grid below 0.20 (synthetic data is noisier than real).
+        h_sorted = sorted(p_vals)
+        diffs = [abs(p_vals[h2] - p_vals[h1]) for h1, h2 in zip(h_sorted[:-1], h_sorted[1:])]
+        assert max(diffs) < 0.20, (
+            f"Phase 44: p_det jumps too sharply across h grid (suggests resurfaced "
+            f"h-dependent threshold artifact): {p_vals}"
+        )
+
+    def test_zero_fill_above_dl_max_remains_zero(self, injection_dir: str) -> None:
+        """Above dl_centers[-1] p_det is zero (source beyond injection horizon)."""
+        from master_thesis_code.bayesian_inference.simulation_detection_probability import (
+            SimulationDetectionProbability,
+        )
+
+        pdet = SimulationDetectionProbability(
+            injection_data_dir=injection_dir,
+            snr_threshold=20.0,
+        )
+        h = 0.70
+        pdet._get_or_build_grid(h)
+        _, interp_1d = pdet._grid_cache[h]
+        dl_max = float(interp_1d.grid[0][-1])
+
+        result = pdet.detection_probability_without_bh_mass_interpolated_zero_fill(
+            d_L=dl_max * 1.5, phi=0.0, theta=0.0, h=h
+        )
+        assert float(result) == 0.0, (
+            f"Phase 44: above dl_max the source is beyond the injection horizon; "
+            f"p_det must be 0.  Got {result} for d_L={dl_max * 1.5:.4f}, "
+            f"dl_max={dl_max:.4f}."
+        )
+
+    def test_zero_fill_symmetry_invariant(self) -> None:
+        """STAT-03 contract: numerator and denominator paths in L_comp/L_cat must
+        share the same p_det function (commit a70d1a2).  Phase 44 preserves this
+        by editing the function body, not the call sites.
+
+        This test catches accidental divergence (e.g. someone replacing one site
+        with the non-zero-fill variant for "performance").
+        """
+        import inspect
+
+        from master_thesis_code.bayesian_inference import bayesian_statistics as bs
+
+        src = inspect.getsource(bs)
+        n_calls = src.count("detection_probability_without_bh_mass_interpolated_zero_fill")
+        # 6 expected: precompute_completion_denominator (1) +
+        # p_Di.completion_numerator_integrand (1) +
+        # single_host_likelihood (numerator + denominator = 2) +
+        # single_host_likelihood_integration_testing (numerator + denominator = 2)
+        # = 6 production sites.  Plus 1 docstring/comment reference allowed.
+        assert n_calls >= 6, (
+            f"Expected >= 6 zero_fill call sites in bayesian_statistics.py "
+            f"(Phase 38 STAT-03 invariant, commit a70d1a2), got {n_calls}.  "
+            f"Numerator/denominator symmetry may be broken."
+        )

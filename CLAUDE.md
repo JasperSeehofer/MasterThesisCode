@@ -200,6 +200,8 @@ Any edit to these files that modifies a computed value (not just refactoring/typ
 - `parameter_estimation/parameter_estimation.py`
 - `datamodels/galaxy.py`
 - `bayesian_inference/bayesian_inference.py`
+- `bayesian_inference/bayesian_statistics.py`
+- `bayesian_inference/simulation_detection_probability.py`
 - `cosmological_model.py`
 
 ---

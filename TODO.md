@@ -149,8 +149,12 @@ reference, dimensional analysis, limiting case).
       (naive, exclude, per-event-floor, physics-floor). Physics-floor is production default.
       (b) Log-space accumulation: `combine_log_space()` uses `Σ log p` throughout.
       (c) D(h) selection-function correction (Gray et al. 2020 Eq. A.19): added
-      `−N·log D(h)` term to `combine_log_space()` (commit 2853c32). The MAP=0.86 bias
-      was caused by the missing D(h) term, not zero-counts. Expected MAP ~0.73 after fix.
+      `−N·log D(h)` term to `combine_log_space()` (commit 2853c32).
+      (d) **Phase 44 follow-up** (2026-04-28): the residual MAP=0.86 after STAT-8
+      was caused by a *separate* bug — left-side zero-fill at `c_0 ∝ 1/h` in
+      `simulation_detection_probability.py:708–713`. Phase 44 removes the cutoff;
+      local verification confirms p_det smooth across h. Cluster re-eval pending
+      to confirm MAP ∈ [0.72, 0.74].
 
 ---
 

@@ -16,6 +16,22 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   with `equatorial_to_ecliptic_astropy`, `synthetic_catalog_builder`, `build_balltree` helpers.
 
 ### Fixed
+- `[PHYSICS]` `bayesian_inference/simulation_detection_probability.py:708–713`
+  (`detection_probability_without_bh_mass_interpolated_zero_fill`): removed
+  spurious left-side cutoff that zeroed `p_det` for `d_L < dl_centers[0]`.
+  Because `dl_centers[0] = dl_max(h)/120` scales as `1/h`, the cutoff was a
+  moving threshold that biased every close event with `d_L ≈ c_0` toward
+  `h_max`. Pre-fix at `d_L = 0.085 Gpc`: `p_det = 0` for `h ∈ [0.65, 0.83]`
+  and `p_det = 0.59` at `h = 0.86`, driving a +145.7 log-unit shift across
+  312 events and producing the production MAP = 0.860. Post-fix: p_det
+  varies smoothly 0.558 → 0.595 across `h ∈ [0.65, 0.86]`. Below the first
+  bin centre, the interpolator's existing `fill_value=None` (nearest-
+  neighbour) returns the genuine first-bin injection statistic (≈ 0.55 at
+  h = 0.73, n = 312 injections in bin). Right-side cutoff above `dl_max`
+  preserved (source beyond injection horizon → undetectable). Function is
+  shared across L_comp numerator, L_cat numerator/denominator, and D(h)
+  denominator (STAT-03 invariant preserved). 4 regression tests added.
+  Phase 44 — Eq. (A.19) in Gray et al. (2020), arXiv:1908.06050.
 - `bayesian_inference/posterior_combination.py` (`combine_posteriors`, `combine_log_space`,
   `generate_comparison_table`): missing Gray et al. (2020) arXiv:1908.06050 Eq. A.19
   selection-function correction. The combine path was summing per-event log-likelihoods
