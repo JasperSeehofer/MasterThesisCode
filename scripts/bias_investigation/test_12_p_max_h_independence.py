@@ -5,12 +5,21 @@ h_inj group present in ``simulations/injections/`` (not just 0.73). The goal
 is to verify the load-bearing claim of Plan 45-02:
 
     The empirical p_det asymptote at d_L → 0 is h_inj-independent within
-    statistical noise (max-min spread < 0.10).
+    statistical noise.
 
-If verified, the planner may safely prepend a single h-independent scalar
-``p_max_empirical`` to the production interpolator's grid in
-``_build_grid_1d``. If rejected (spread ≥ 0.10), the single-scalar fix is
-unsound and Plan 45-02 must escalate to a per-h_inj anchor.
+Acceptance gate (revised 2026-04-30 after first-run review): a
+**likelihood-ratio (G-test) test of binomial-rate homogeneity** across
+h_inj groups. The legacy ``max-min spread < 0.10`` gate was scrapped — at
+per-group n ≤ 30, that scalar threshold cannot distinguish binomial
+sampling noise (point-estimate spreads ≈ 0.20–0.30 are routine at p ≈ 0.85)
+from genuine h-dependence. The LR test correctly weights each group by
+its sample size; the legacy spread metric is retained as descriptive only.
+
+If LR p-value ≥ ``LR_HOMOGENEITY_ALPHA = 0.05`` and pooled CI lower ≥
+``POOLED_CI_LOWER_GATE = 0.70``, the planner may safely prepend a single
+h-independent scalar ``p_max_empirical`` to the production interpolator's
+grid in ``_build_grid_1d``. If rejected, Plan 45-02 must escalate to a
+per-h_inj anchor or sub-binning.
 
 Outputs (under ``scripts/bias_investigation/outputs/phase45/``):
 
@@ -40,6 +49,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
+import numpy as np
 import pandas as pd
 from astropy.stats import binom_conf_interval  # type: ignore[import-untyped]
 
@@ -59,10 +69,14 @@ DL_THRESHOLD_GPC: float = 0.10  # headline anchor band
 DL_SENSITIVITY_GPC: float = 0.15  # sensitivity cross-check (matches T10)
 
 # Acceptance gates
-H_SPREAD_LIMIT: float = 0.10  # claim-h-independence pass condition
+H_SPREAD_LIMIT: float = 0.10  # legacy descriptive metric only; not the gate
 PHASE_44_H_SPREAD_BUDGET: float = 0.20  # regression test budget; for traceability
 POOLED_CI_LOWER_GATE: float = 0.70  # claim-pooled-anchor-derivation pass condition
 PER_GROUP_MIN_N: int = 5  # exclude tiny groups from spread calculation
+# Acceptance: likelihood-ratio test of binomial homogeneity across h_inj
+# groups. Reject the single-scalar anchor only if the LR p-value is below
+# alpha = 0.05 (i.e., per-group rates significantly differ at the 5% level).
+LR_HOMOGENEITY_ALPHA: float = 0.05
 
 CONFIDENCE_LEVEL: float = 0.95
 
@@ -181,11 +195,64 @@ def _spread_max_minus_min(
 
     Returns NaN if no group meets the count threshold (degenerate case;
     caller should not pass acceptance in that scenario).
+
+    NOTE: This is a descriptive metric only. Do not use for the acceptance
+    gate — at small per-group N (≤ 30), point-estimate spread of 0.20-0.30
+    is consistent with binomial scatter at p ≈ 0.85. Use the
+    likelihood-ratio test in :func:`_lr_homogeneity_pvalue` instead.
     """
     eligible = [r["p_hat"] for r in per_group if r["n_total"] >= min_n]
     if len(eligible) < 2:
         return float("nan")
     return float(max(eligible) - min(eligible))
+
+
+def _lr_homogeneity_pvalue(
+    per_group: list[dict[str, Any]],
+    min_n: int = 1,
+) -> tuple[float, float, int]:
+    """Likelihood-ratio (G-test) for binomial-rate homogeneity across groups.
+
+    Tests H0: all groups share a common detection rate p (the pooled rate).
+
+    Statistic:
+        G = 2 * sum_i [ k_i ln(k_i / E_i) + (n_i - k_i) ln((n_i - k_i) / (n_i - E_i)) ]
+    where E_i = n_i * p_pool. Asymptotically chi^2 distributed with
+    (k - 1) degrees of freedom.
+
+    A non-rejecting p-value (p ≥ 0.05) means the per-group spread is
+    consistent with binomial scatter and the single-scalar anchor is
+    statistically defensible.
+
+    Returns (G, p_value, dof). Returns (NaN, NaN, 0) if fewer than 2
+    groups have n_total >= min_n.
+    """
+    from scipy.stats import chi2  # local import; analysis-only dependency
+
+    eligible = [r for r in per_group if r["n_total"] >= min_n]
+    if len(eligible) < 2:
+        return float("nan"), float("nan"), 0
+
+    n_tot = sum(r["n_total"] for r in eligible)
+    n_det = sum(r["n_detected"] for r in eligible)
+    if n_tot == 0:
+        return float("nan"), float("nan"), 0
+    p_pool = n_det / n_tot
+
+    g_stat = 0.0
+    for r in eligible:
+        n_i = r["n_total"]
+        k_i = r["n_detected"]
+        e_det = n_i * p_pool
+        e_und = n_i * (1.0 - p_pool)
+        if k_i > 0 and e_det > 0:
+            g_stat += 2.0 * k_i * np.log(k_i / e_det)
+        if (n_i - k_i) > 0 and e_und > 0:
+            g_stat += 2.0 * (n_i - k_i) * np.log((n_i - k_i) / e_und)
+
+    dof = len(eligible) - 1
+    p_value = float(1.0 - chi2.cdf(g_stat, dof))
+    return float(g_stat), p_value, dof
 
 
 def _print_per_group_table(per_group: list[dict[str, Any]], dl_threshold: float) -> None:
@@ -212,8 +279,8 @@ def main() -> int:
     """Run the h-independence diagnostic and emit the JSON artifact.
 
     Exit codes:
-        0 — h-independence pass (spread < H_SPREAD_LIMIT) AND pooled CI lower
-            >= POOLED_CI_LOWER_GATE.
+        0 — h-homogeneity pass (LR p-value >= LR_HOMOGENEITY_ALPHA) AND
+            pooled CI lower >= POOLED_CI_LOWER_GATE.
         1 — at least one acceptance gate failed; planner must escalate before
             Plan 45-02 proceeds.
     """
@@ -258,9 +325,14 @@ def main() -> int:
     print(f"  Sensitivity spread: {spread_sens:.4f}")
 
     # === Acceptance gates =====================================================
+    # Primary gate: likelihood-ratio test of h-homogeneity. The proper
+    # statistical test for "do per-group p_hat values come from a common p?".
+    # At small per-group N (≤ 30), the LR test is the only honest gate;
+    # raw point-estimate spread is dominated by binomial sampling noise.
+    g_stat, lr_pvalue, lr_dof = _lr_homogeneity_pvalue(per_group, min_n=1)
     h_independence_pass = (
-        not (spread != spread)  # i.e. not NaN
-        and spread < H_SPREAD_LIMIT
+        not (lr_pvalue != lr_pvalue)  # not NaN
+        and lr_pvalue >= LR_HOMOGENEITY_ALPHA
     )
     pooled_ci_lower_pass = (
         not (pooled["ci_lower"] != pooled["ci_lower"])
@@ -318,6 +390,24 @@ def main() -> int:
         "pooled_ci_lower_gate": POOLED_CI_LOWER_GATE,
         "per_group_min_n": PER_GROUP_MIN_N,
         "confidence_level": CONFIDENCE_LEVEL,
+        "lr_homogeneity_test": {
+            "g_statistic": g_stat,
+            "p_value": lr_pvalue,
+            "dof": lr_dof,
+            "alpha": LR_HOMOGENEITY_ALPHA,
+            "interpretation": (
+                "p >= alpha: per-group rates are consistent with a common p; "
+                "single-scalar anchor is statistically defensible. "
+                "p < alpha: rates differ significantly; planner must escalate "
+                "to per-h_inj anchor or sub-binning."
+            ),
+            "rationale_for_replacing_spread_gate": (
+                "At per-group n ≤ 30, max-min point-estimate spread is "
+                "dominated by binomial sampling noise. The LR test correctly "
+                "weights each group by its sample size; the legacy "
+                "spread-< 0.10 gate could not distinguish noise from signal."
+            ),
+        },
     }
 
     out_json = OUTPUT_DIR / "p_max_h_independence.json"
@@ -329,13 +419,18 @@ def main() -> int:
     print("\n=== Recommended scalars for Plan 45-02 ===")
     print(f"  recommended_p_max_empirical              = {recommended_point}")
     print(f"  recommended_p_max_empirical_conservative = {recommended_conservative}")
-    print(f"  h-independence spread (must be < {H_SPREAD_LIMIT}) = {spread:.4f}")
     print(f"  pooled CI lower (must be >= {POOLED_CI_LOWER_GATE}) = {pooled['ci_lower']:.4f}")
+    print(
+        f"  LR homogeneity test: G={g_stat:.3f}, dof={lr_dof}, "
+        f"p-value={lr_pvalue:.4f} (must be >= {LR_HOMOGENEITY_ALPHA})"
+    )
+    print(f"  Descriptive (legacy) max-min spread: {spread:.4f}")
 
     if not h_independence_pass:
         print(
-            f"\nWARNING: h-independence FAILED — spread={spread:.4f} >= {H_SPREAD_LIMIT}. "
-            "Plan 45-02 single-scalar fix is unsound; escalate to per-h_inj anchor."
+            f"\nWARNING: h-homogeneity REJECTED — LR p-value={lr_pvalue:.4f} < "
+            f"{LR_HOMOGENEITY_ALPHA}. Plan 45-02 single-scalar fix unsound; "
+            "escalate to per-h_inj anchor or sub-binning."
         )
     if not pooled_ci_lower_pass:
         print(

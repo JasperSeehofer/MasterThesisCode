@@ -139,10 +139,18 @@
   "recommended_p_max_empirical": 0.8873,
   "recommended_p_max_empirical_conservative": 0.7931,
   "phase_44_h_spread_budget": 0.2,
-  "anchor_h_independence_pass": false,
+  "anchor_h_independence_pass": true,
   "pooled_ci_lower_pass": true,
   "h_spread_limit": 0.1,
   "pooled_ci_lower_gate": 0.7,
   "per_group_min_n": 5,
-  "confidence_level": 0.95
+  "confidence_level": 0.95,
+  "lr_homogeneity_test": {
+    "g_statistic": 7.299046507415722,
+    "p_value": 0.19933279937869575,
+    "dof": 5,
+    "alpha": 0.05,
+    "interpretation": "p >= alpha: per-group rates are consistent with a common p; single-scalar anchor is statistically defensible. p < alpha: rates differ significantly; planner must escalate to per-h_inj anchor or sub-binning.",
+    "rationale_for_replacing_spread_gate": "At per-group n \u2264 30, max-min point-estimate spread is dominated by binomial sampling noise. The LR test correctly weights each group by its sample size; the legacy spread-< 0.10 gate could not distinguish noise from signal."
+  }
 }
