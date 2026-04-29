@@ -150,11 +150,12 @@ reference, dimensional analysis, limiting case).
       (b) Log-space accumulation: `combine_log_space()` uses `Σ log p` throughout.
       (c) D(h) selection-function correction (Gray et al. 2020 Eq. A.19): added
       `−N·log D(h)` term to `combine_log_space()` (commit 2853c32).
-      (d) **Phase 44 follow-up** (2026-04-28): the residual MAP=0.86 after STAT-8
+      (d) **Phase 44 follow-up** (2026-04-29): the residual MAP=0.86 after STAT-8
       was caused by a *separate* bug — left-side zero-fill at `c_0 ∝ 1/h` in
-      `simulation_detection_probability.py:708–713`. Phase 44 removes the cutoff;
-      local verification confirms p_det smooth across h. Cluster re-eval pending
-      to confirm MAP ∈ [0.72, 0.74].
+      `simulation_detection_probability.py:708–713`. Phase 44 removed the cutoff.
+      Cluster re-eval (jobs 4160638/4160639) on production seed200 (412 events):
+      **MAP = 0.7650** (was 0.860; truth h=0.73). Shift of -0.095 toward truth,
+      +145.7 log-unit pathology eliminated. Residual +0.035 above truth → Phase 45.
 
 ---
 

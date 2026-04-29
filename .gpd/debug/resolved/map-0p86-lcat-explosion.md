@@ -1,12 +1,21 @@
 ---
 session_id: map-0p86-lcat-explosion
-status: fix applied locally (Phase 44, branch phase-44-pdet-zerofill-fix); awaiting cluster re-eval and revert outcome
+status: RESOLVED — Phase 44 shipped, MAP shifted 0.860 → 0.765 on cluster (412 events). Residual +0.035 to be addressed in a follow-up phase.
 created: 2026-04-28
-last_updated: 2026-04-28
+last_updated: 2026-04-29
+resolved_in: Phase 44 (commit 3697bdd, merged to main as 857a1c8)
 symptom: "MAP=0.86 after ecliptic migration; L_comp 1000-36000x larger at h=0.86 than h=0.73 for ~4 close events that dominate the product"
 root_cause: "p_det_zero_fill returns 0 for d_L < dl_centers[0]. dl_centers[0] = dl_max/120 is a bin-width artifact that scales ∝ 1/h. Close events (d_L=0.085-0.097 Gpc) drop below this moving threshold at h=0.73 (threshold=0.100 Gpc) but not at h=0.86 (threshold=0.085 Gpc). L_comp=0 at h=0.73, L_comp>>0 at h=0.86 for these events. The threshold is NOT the injection minimum — injections cover d_L→0 through GLADE low-z galaxies."
 fix_proposal: "Remove result[dl_arr < dl_min] = 0.0 from zero_fill function. Keep result[dl_arr > dl_max] = 0.0. Nearest-neighbour extrapolation (fill_value=None, already on interpolator) returns p_det(dl_centers[0]) ≈ 0.55 below threshold — correct because the first bin covers (0, 2*dl_centers[0]) and genuinely has p_det≈0.55 from real injection data."
-fix_status: "APPLIED on branch phase-44-pdet-zerofill-fix. Local verification: at d_L=0.085 Gpc, p_det varies smoothly 0.558→0.595 across h ∈ [0.65,0.86] (was 0 across h<0.86 and 0.59 at h=0.86). 4 regression tests added; CPU suite 557/557 pass. Cluster re-eval and revert (jobs 4159826/4159827) outstanding."
+fix_status: |
+  RESOLVED. Cluster re-eval (jobs 4160638 + 4160639) on production seed200 (412 events
+  post-SNR-filter) gave MAP = 0.7650 (was 0.860 pre-fix, truth h=0.73). Shift of
+  -0.095 toward truth, +145.7 log-unit pathology eliminated, all 4 zero-handling
+  strategies agree (no zero events remain). Cluster equatorial-revert test was
+  cancelled (4159826/4159827) — local revert reproduced MAP=0.86 on the same data
+  in 2 minutes (see "Local Revert Falsifiability" below), making the cluster revert
+  redundant. Residual bias +0.035 (MAP=0.765 vs truth 0.730) deferred to a follow-up
+  phase per plan §8 fallback regime "MAP ∈ [0.74, 0.79]".
 ---
 
 # Debug Session: MAP=0.86 L_comp Explosion
@@ -250,3 +259,49 @@ all h < 0.86 and 0.59 at h = 0.86 — that single jump drove the entire MAP bias
   CRBs).
 - 4: cluster re-eval with the fix applied — pending merge.
 - 6: residual bias check against MAP ∈ [0.72, 0.74] — pending cluster re-eval.
+
+---
+
+## Local Revert Falsifiability (2026-04-28, 23:55–00:00)
+
+Cluster revert was effectively superseded by an in-place local test on the same
+49-event production subset:
+
+| | Events surviving zero-handling | MAP | h=0.73 vs MAP gap |
+|---|---|---|---|
+| Pre-fix (left-side cutoff restored) | 3 / 49 | **h = 0.86** | h=0.73 trails by +5.72 log units |
+| Post-fix (current main) | 27 / 49 | **h = 0.73** | h=0.86 trails by −0.60 log units |
+
+Same data, same code, only the boolean cutoff line differs. Pre-fix on the same
+subset reproduces the MAP=0.86 pathology. Diagnosis confirmed.
+
+The cluster revert (4159826/4159827) was therefore cancelled in favour of running
+a fresh post-fix re-eval on the production seed200 (jobs 4160638/4160639).
+
+---
+
+## Cluster Re-Evaluation Result (2026-04-29)
+
+Jobs 4160638 (38-task array, eval) + 4160639 (combine) on `cpu` partition,
+~2:30 each. Source CRBs: `run_20260401_seed200/simulations/` (post-Phase-43
+ecliptic-migrated). Results in `results/phase44_posteriors/`.
+
+| Metric | Pre-fix | Post-fix |
+|---|---|---|
+| MAP h | 0.860 | **0.7650** |
+| Distance from truth (h=0.73) | +0.130 (+18%) | +0.035 (+5%) |
+| Events with zero likelihoods | many (per handoff) | 0 |
+| Strategy variance (4 zero-handling strategies) | strategies disagreed | all 4 agree exactly |
+| 68% equal-tailed interval | (not reported) | [0.750, 0.765] |
+
+Headline: catastrophic +145.7 log-unit pathology eliminated; all 4 zero-handling
+strategies now produce identical MAP, confirming no events are being suppressed
+by zero-handling logic. The fix is unambiguously a net win.
+
+**Residual bias +0.035 deferred** to a follow-up phase (Phase 45 candidate). Per
+the Phase 44 plan §8 fallback table, this places us in the
+"MAP ∈ [0.74, 0.79]" regime whose recommended remedy is Alternative C — add an
+explicit `(d_L=0, p_det=interp(c_0))` anchor to refine first-bin behavior. The
+hypothesis is that p̂(c_0) ≈ 0.55 underestimates the true p_det → 1 limit at
+d_L → 0, biasing L_comp low at low h (where c_0 is largest) and pushing MAP
+toward higher h.

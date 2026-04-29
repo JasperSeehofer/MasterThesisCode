@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v2.2
 milestone_name: milestone
-status: Phase 44 fix applied locally — pending cluster re-eval to confirm MAP ∈ [0.72, 0.74]
-stopped_at: code change committed on branch phase-44-pdet-zerofill-fix; cluster revert (jobs 4159826/4159827) PENDING
-last_updated: "2026-04-28T23:45:00.000Z"
-last_activity: 2026-04-28 — Phase 44 P_det zero-fill cutoff fix on branch; 4 regression tests pass; full CPU suite 557/557 pass
+status: Phase 44 SHIPPED — MAP shifted 0.860 → 0.7650 on cluster (412 events). Residual +0.035 deferred to Phase 45.
+stopped_at: cluster re-eval complete (jobs 4160638/4160639); +0.035 residual bias above truth h=0.73 to be addressed in Phase 45
+last_updated: "2026-04-29T00:30:00.000Z"
+last_activity: 2026-04-29 — Phase 44 cluster re-eval complete; MAP=0.7650 on production seed200; +145.7 log-unit pathology eliminated; all 4 strategies agree; residual +0.035 → Phase 45
 progress:
   total_phases: 9
   completed_phases: 5
@@ -129,26 +129,30 @@ VERIFY-02 abort gate: PASS. MAP shift = 0.0000% (threshold 5%). v2.2 MAP = v2.1 
 **Phase 40 VERIFY-03 COMPLETE (2026-04-24) — verdict: FAIL:**
 All 37 non-0.73 h-values re-evaluated under v2.2 code (zero sweep failures). Combined posteriors, interactive m_z_improvement.html, and static figures regenerated. SC-3 FAIL: MAP from v2.2 full sweep = 0.860 (expected 0.73±0.01). Root cause: extract_baseline sums log-likelihoods without D(h) denominator correction; v2.2 60-event posteriors have monotonically increasing log-likelihood with h. VERIFY-02 comparison was unaffected because it compared pre-sweep v2.1 format posteriors (417 events/file) against themselves. Investigation required before Phase 40 overall PASS. 94 per-h log files retained for VERIFY-05. Commits: 5b5e44e, 4258551, 5850a86.
 
-**Phase 44 (P_det zero-fill cutoff fix) — IN PROGRESS 2026-04-28:**
-SC-3 MAP=0.860 root-caused beyond Phase 43's D(h)-in-combine fix. Debug session
-`.gpd/debug/map-0p86-lcat-explosion.md` traced bias to a left-side zero-fill in
+**Phase 44 (P_det zero-fill cutoff fix) — SHIPPED 2026-04-29:**
+Cluster re-eval (jobs 4160638 + 4160639, `cpu` partition, ~2:30 per task) on
+production seed200 (412 events post-SNR-filter). **MAP = 0.7650** (was 0.860
+pre-fix; truth h=0.73). Shift of -0.095 toward truth, eliminating the +145.7
+log-unit pathology. All 4 zero-handling strategies (naive/exclude/per-event-
+floor/physics-floor) produce identical MAP — confirming no events are being
+suppressed by zero-handling logic. 68% equal-tailed interval [0.750, 0.765].
+Residual bias +0.035 → Phase 45 (per plan §8 fallback "MAP ∈ [0.74, 0.79]"
+regime; hypothesis: p̂(c_0) underestimates true p_det → 1 at d_L → 0, biasing
+L_comp low at low h). Results in `results/phase44_posteriors/`. Debug session
+moved to `.gpd/debug/resolved/map-0p86-lcat-explosion.md`. Commits:
+3697bdd (fix), 857a1c8 (cluster submit script).
+
+**Phase 44 diagnosis (2026-04-28):** SC-3 MAP=0.860 root-caused beyond Phase 43's
+D(h)-in-combine fix. Bug: left-side zero-fill in
 `detection_probability_without_bh_mass_interpolated_zero_fill` at
 `simulation_detection_probability.py:708–713`. dl_centers[0] = dl_max(h)/120
-scales as 1/h, creating a moving threshold that zeroed p_det for any close
-event below c_0(h). Four close events (113/114/108/106 with d_L = 0.085–0.097
-Gpc) jumped from p_det=0 to p_det≈0.55 between h=0.73 and h=0.86, contributing
-+145.7 log-units toward h=0.86. **Phase 43 PASS verdict was masked by this bug
-on a different test dataset.** Phase 44 fix removes the spurious left-side
-cutoff, keeps right-side (beyond injection horizon → undetectable). NN fill from
-`fill_value=None` returns the genuine first-bin injection estimate
-(p̂(c_0) ≈ 0.55, n_total[0] = 312 injections at h=0.73, well above 100-event
-reliability threshold). Local verification confirms p_det(0.085 Gpc) varies
-smoothly 0.558 → 0.595 across h ∈ [0.65, 0.86]. Function shared across L_comp
-numerator, L_cat numerator/denominator, and D(h) denominator — STAT-03
-symmetry preserved. 4 regression tests added; full CPU suite 557/557 pass.
-Cluster revert test (jobs 4159826/4159827 on `.bak_equatorial` CRBs) PENDING —
-expected MAP ≈ 0.86 to confirm bias predates Phase 43 ecliptic migration.
-Awaiting cluster re-eval after fix to confirm MAP ∈ [0.72, 0.74].
+scales as 1/h, creating a moving threshold that zeroed p_det for any close event
+below c_0(h). Four close events (d_L=0.085–0.097 Gpc) flipped p_det 0 → ~0.55
+between h=0.73 and h=0.86, contributing +145.7 log-units. Phase 43 PASS verdict
+had been masked by this bug on a different test dataset. Fix preserved STAT-03
+symmetry (function shared by all 6 call sites). Local revert reproduced MAP=0.86
+on the same data, then post-fix MAP=0.73. 4 regression tests added; full CPU
+suite 557/557 pass. Resolved details in `.gpd/debug/resolved/map-0p86-lcat-explosion.md`.
 
 **Phase 37 (Parameter Estimation Correctness) — COMPLETE 2026-04-22:**
 COORD-05, PE-01..PE-05 all resolved. PE-01: h_inj threaded into set_host_galaxy_parameters — Fisher CRBs now self-consistent at injected h. PE-02: per-parameter derivative_epsilon under Vallisneri 2008 protocol (Fisher det change < 1% on 4 seeds). SC-1..SC-7 all PASS. Phase 36 roundtrip regression (9 tests) GREEN throughout.

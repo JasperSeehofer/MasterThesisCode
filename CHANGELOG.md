@@ -23,15 +23,22 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   moving threshold that biased every close event with `d_L ≈ c_0` toward
   `h_max`. Pre-fix at `d_L = 0.085 Gpc`: `p_det = 0` for `h ∈ [0.65, 0.83]`
   and `p_det = 0.59` at `h = 0.86`, driving a +145.7 log-unit shift across
-  312 events and producing the production MAP = 0.860. Post-fix: p_det
-  varies smoothly 0.558 → 0.595 across `h ∈ [0.65, 0.86]`. Below the first
-  bin centre, the interpolator's existing `fill_value=None` (nearest-
-  neighbour) returns the genuine first-bin injection statistic (≈ 0.55 at
-  h = 0.73, n = 312 injections in bin). Right-side cutoff above `dl_max`
-  preserved (source beyond injection horizon → undetectable). Function is
-  shared across L_comp numerator, L_cat numerator/denominator, and D(h)
-  denominator (STAT-03 invariant preserved). 4 regression tests added.
-  Phase 44 — Eq. (A.19) in Gray et al. (2020), arXiv:1908.06050.
+  the 412-event production seed200 dataset and producing MAP = 0.860.
+  Post-fix cluster re-eval (jobs 4160638/4160639) gives **MAP = 0.7650**
+  on the same data, eliminating the +145.7 log-unit pathology and shifting
+  the posterior 0.095 toward the true h=0.73. All 4 zero-handling
+  strategies (naive/exclude/per-event-floor/physics-floor) now produce
+  identical MAP, confirming no events are being suppressed by zero-handling
+  logic. Below the first bin centre, the interpolator's existing
+  `fill_value=None` (nearest-neighbour) returns the genuine first-bin
+  injection statistic (≈ 0.55 at h = 0.73, n_total[0] = 312 injections in
+  bin). Right-side cutoff above `dl_max` preserved. Function is shared
+  across L_comp numerator, L_cat numerator/denominator, and D(h) denominator
+  (STAT-03 invariant preserved). 4 regression tests added; full CPU suite
+  557/557 pass. Residual +0.035 bias above truth is deferred to a follow-up
+  phase (plan §8 fallback regime; hypothesis: p̂(c_0) underestimates true
+  p_det → 1 at d_L → 0). Phase 44 — Eq. (A.19) in Gray et al. (2020),
+  arXiv:1908.06050.
 - `bayesian_inference/posterior_combination.py` (`combine_posteriors`, `combine_log_space`,
   `generate_comparison_table`): missing Gray et al. (2020) arXiv:1908.06050 Eq. A.19
   selection-function correction. The combine path was summing per-event log-likelihoods
