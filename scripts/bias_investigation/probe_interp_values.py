@@ -76,8 +76,16 @@ def main() -> int:
     for h in H_VALUES:
         pdet._get_or_build_grid(h)  # noqa: SLF001
         _, interp_1d = pdet._grid_cache[h]  # noqa: SLF001
-        c0 = float(interp_1d.grid[0][0])
-        dl_max = float(interp_1d.grid[0][-1])
+        # Phase 45-aware: grid[0] may be the prepended anchor at 0.0, in which
+        # case c_0 (the first histogram bin centre) is grid[1].  Pre-Phase-45
+        # the grid had no anchor and c_0 was grid[0].  Identify by inspecting
+        # whether grid[0] is exactly 0.0.
+        grid_axis = interp_1d.grid[0]
+        if float(grid_axis[0]) == 0.0:
+            c0 = float(grid_axis[1])
+        else:
+            c0 = float(grid_axis[0])
+        dl_max = float(grid_axis[-1])
         for d_L in DL_VALUES_GPC:
             result = pdet.detection_probability_without_bh_mass_interpolated_zero_fill(
                 d_L=d_L, phi=0.0, theta=0.0, h=h
