@@ -45,6 +45,29 @@ _DEFAULT_M_BINS: int = 40
 # Maximum number of cached grids (LRU eviction)
 _MAX_CACHE_SIZE: int = 20
 
+# ----------------------------------------------------------------------
+# Phase 45 empirical asymptote anchor for d_L → 0.
+#
+# Derived from the unrescaled injection campaign (simulations/injections/)
+# pooled across all h_inj groups; see
+#   scripts/bias_investigation/outputs/phase45/p_max_h_independence.json
+# for per-h empirical detection rates at d_L < 0.10 Gpc and the pooled
+# Wilson 95% CI (lower bound = this constant).  H-independence is supported
+# by a likelihood-ratio test of binomial-rate homogeneity:
+#   G = 7.299, dof = 5, p-value = 0.199 ≥ alpha = 0.05
+# (cannot reject a common p across h_inj groups; see Plan 45-01 SUMMARY,
+# .gpd/phases/45-p-det-first-bin-asymptote-fix/45-01-SUMMARY.md).
+#
+# Phase 45 RESEARCH.md §4a-(ii) recommends the conservative Wilson 95%
+# lower bound (0.7931) rather than the point estimate (0.8873) so the
+# anchor cannot overshoot truth on production posteriors.
+#
+# This constant is intentionally h-INDEPENDENT: it is the same scalar at
+# every Hubble parameter target.  Phase 44 regression
+# `test_zero_fill_no_h_dependent_step_for_close_dL` requires this property.
+# ----------------------------------------------------------------------
+_P_MAX_EMPIRICAL_ANCHOR: float = 0.7931
+
 
 class SimulationDetectionProbability:
     """Simulation-based detection probability from injection campaign data.
@@ -473,7 +496,12 @@ class SimulationDetectionProbability:
 
         The histogram edges are ``np.linspace(0, dl_max, N+1)`` so the first
         bin covers ``[0, 2·c_0)`` with ``c_0 = dl_centers[0] = dl_max/(2N)``.
-        Off-grid evaluation uses ``fill_value=None`` (nearest-neighbour); see
+        Phase 45 prepends the h-independent empirical asymptote
+        ``(0.0, _P_MAX_EMPIRICAL_ANCHOR)`` to the grid before constructing
+        the interpolator, so on ``[0, c_0)`` the result is a linear
+        interpolation between the empirical anchor and the histogram first
+        bin centre ``p̂(c_0)``.  Off-grid evaluation uses ``fill_value=None``
+        (linear extrapolation); see
         :meth:`detection_probability_without_bh_mass_interpolated_zero_fill`
         for the boundary convention.
 
@@ -483,7 +511,8 @@ class SimulationDetectionProbability:
             h_val: Hubble parameter value (used for diagnostic logging only).
 
         Returns:
-            RegularGridInterpolator for P_det(d_L).
+            RegularGridInterpolator for P_det(d_L) on the anchored grid
+            (length ``dl_bins + 1`` with the anchor prepended at d_L=0).
         """
         dl_vals = df["luminosity_distance"].values
         snr_vals = df["SNR"].values
@@ -495,14 +524,16 @@ class SimulationDetectionProbability:
         detected_mask = snr_vals >= snr_threshold
         detected_counts, _ = np.histogram(dl_vals[detected_mask], bins=dl_edges)
 
-        # Phase 44 reliability check: post-fix the first-bin estimate p̂(c_0)
-        # is returned for all d_L < c_0 via nearest-neighbour fill.  Wilson 95%
-        # CI half-width ≈ 1/sqrt(n); n=100 → ~0.05 absolute uncertainty.
+        # Phase 44 reliability check: the first-bin estimate p̂(c_0) anchors
+        # the upper end of the [0, c_0) linear-interp segment after the
+        # Phase 45 empirical-anchor prepend below.  Wilson 95% CI half-width
+        # ≈ 1/sqrt(n); n=100 → ~0.05 absolute uncertainty on p̂(c_0).
         if total_counts[0] < 100:
             logger.warning(
                 "P_det 1D grid first bin [0, %.4f Gpc) has only %d injections "
-                "(h=%s).  p_det(d_L < c_0) returned by nearest-neighbour fill "
-                "may be noisy.  Consider denser low-d_L injections.",
+                "(h=%s).  p̂(c_0) (the upper anchor of the [0, c_0) linear-"
+                "interp segment) may be noisy.  Consider denser low-d_L "
+                "injections.",
                 float(dl_edges[1]),
                 int(total_counts[0]),
                 f"{h_val:.4f}" if h_val is not None else "?",
@@ -517,11 +548,32 @@ class SimulationDetectionProbability:
 
         dl_centers = 0.5 * (dl_edges[:-1] + dl_edges[1:])
 
-        # fill_value=None → nearest-neighbor extrapolation outside grid.
-        # See 2D grid comment above for rationale.
+        # Phase 45 fix: prepend an h-independent empirical anchor at d_L=0.
+        # The first injection bin [0, 2*c_0) is upper-skewed in d_L (weighted-
+        # mean d_L = 0.132 Gpc; ratio 3.22 of upper-third to lower-third
+        # events at h_inj=0.73, see outputs/phase45/first_bin_density.json),
+        # so the histogram estimate p̂(c_0) systematically underestimates
+        # p_det near d_L=0.  The empirical asymptote at d_L < 0.10 Gpc
+        # (n_pooled=63/71 across all h_inj; Wilson 95% lower bound ≥ 0.7931;
+        # LR homogeneity p=0.199 → h-independent) is the correct value at
+        # d_L=0.  On [0, c_0) the interpolator now linearly interpolates
+        # from (0, _P_MAX_EMPIRICAL_ANCHOR) to (c_0, p̂(c_0)); above c_0 the
+        # values are unchanged because the prepended anchor lies outside
+        # the original grid range and the linear interpolant passes through
+        # both prepended and original first centres.
+        # Eq. (A.19) in Gray et al. (2020), arXiv:1908.06050.
+        # See scripts/bias_investigation/outputs/phase45/p_max_h_independence.json
+        # for the empirical derivation; Plan 45-01 SUMMARY for the LR test.
+        dl_centers_anchored = np.concatenate(([0.0], dl_centers))
+        p_det_1d_anchored = np.concatenate(([_P_MAX_EMPIRICAL_ANCHOR], p_det_1d))
+
+        # fill_value=None → linear extrapolation outside grid.  Below
+        # dl_centers_anchored[0] = 0 this is unreachable since d_L < 0 is
+        # unphysical; above dl_centers_anchored[-1] the calling function
+        # explicitly clips to 0 (Phase 44 invariant).
         return RegularGridInterpolator(
-            (dl_centers,),
-            p_det_1d,
+            (dl_centers_anchored,),
+            p_det_1d_anchored,
             method="linear",
             bounds_error=False,
             fill_value=None,
@@ -715,20 +767,38 @@ class SimulationDetectionProbability:
         * ``single_host_likelihood.denominator_integrant_without_bh_mass`` (L_cat denominator)
         * ``single_host_likelihood_integration_testing`` (legacy, two integrands)
 
-        Boundary convention (Phase 44 fix):
+        Boundary convention (Phase 44 + Phase 45 fix):
 
         * ``d_L > dl_centers[-1]``: source beyond the injection horizon →
-          detectability is unmodelled and physically zero.
-        * ``d_L < dl_centers[0]``: nearest-neighbour from
-          ``RegularGridInterpolator(fill_value=None)`` returns the first-bin
-          estimate ``p̂(c_0)``.  The first edge of the histogram is at
-          ``dl_edges[0] = 0`` (see :meth:`_build_grid_1d`), so the first bin
-          covers ``[0, 2·c_0)`` with real injections; ``p̂(c_0)`` is the
-          unbiased histogram estimate over that interval (≈ 0.55 at h=0.73).
+          detectability is unmodelled and physically zero (explicit clip
+          below).
+        * ``d_L < dl_centers[0] = c_0``: ``RegularGridInterpolator(method=
+          "linear", fill_value=None)`` performs **linear extrapolation**, NOT
+          nearest-neighbour as the pre-Phase-45 docstring claimed.  Phase 45
+          prepends an h-independent empirical anchor ``(0.0,
+          _P_MAX_EMPIRICAL_ANCHOR)`` to the grid before constructing the
+          interpolator (see :data:`_P_MAX_EMPIRICAL_ANCHOR` and
+          :meth:`_build_grid_1d`).  On ``[0, c_0)`` this gives
+          ``p_det = linear_interp((0, P_MAX), (c_0, p̂(c_0)))``.  At
+          ``d_L = 0`` the value equals ``_P_MAX_EMPIRICAL_ANCHOR`` (the
+          empirical asymptote from the unrescaled injection campaign); at
+          ``d_L = c_0`` it equals the unchanged histogram estimate
+          ``p̂(c_0)``.  The empirical anchor's h-independence is established
+          by a likelihood-ratio binomial-rate-homogeneity test
+          (G = 7.30, dof = 5, p = 0.199; Wilson 95% lower bound across
+          pooled groups: 0.7931).  See Plan 45-01 SUMMARY and
+          ``scripts/bias_investigation/outputs/phase45/p_max_h_independence.json``.
 
-        The previous implementation also zeroed ``d_L < c_0(h) = dl_max(h)/120``
-        — a bin-midpoint artifact that scaled as ``1/h`` and drove a
-        ``+145.7`` log-unit MAP bias for 312 events between h=0.73 and h=0.86.
+        Pre-Phase-45 the interpolator linearly extrapolated through bins 0
+        and 1 to ≈0.748 at d_L=0 (vs the empirical asymptote ≈1.0), biasing
+        ``L_comp`` downward at low h and producing a residual MAP=0.7650 vs
+        truth 0.73 on the 412-event production posterior (see
+        ``.gpd/HANDOFF-phase45-diagnosis.md``).
+
+        Pre-Phase-44 the function also zeroed
+        ``d_L < c_0(h) = dl_max(h)/120`` — a bin-midpoint artifact that
+        scaled as ``1/h`` and drove a ``+145.7`` log-unit MAP bias for 312
+        events between h=0.73 and h=0.86.
 
         Args:
             d_L: Luminosity distance in Gpc.
