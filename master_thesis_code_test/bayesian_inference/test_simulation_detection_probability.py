@@ -673,17 +673,32 @@ class TestCoverageValidation:
 
 class TestZeroFillBoundaryConvention:
     """Phase 44 regressions: detection_probability_without_bh_mass_interpolated_zero_fill
-    must use nearest-neighbour fill below the first bin centre and zero only
-    above the injection horizon.
+    must remain nonzero below the first bin centre (Phase 44 invariant) and
+    zero only above the injection horizon.
 
     Pre-fix the function zeroed any d_L < dl_centers[0] = dl_max/120.  Because
     dl_max(h) ∝ 1/h, this created a moving threshold c_0(h) ∝ 1/h that produced
     a +145.7 log-unit MAP bias toward h_max for events with d_L ≈ c_0.
+
+    Phase 45 amends ``test_zero_fill_below_first_bin_is_nonzero_for_valid_dL``:
+    after the empirical-anchor patch (commit ``[PHYSICS] Phase 45``), the value
+    at ``d_L = c_0/2`` is exactly the linear midpoint between the empirical
+    anchor ``_P_MAX_EMPIRICAL_ANCHOR`` and the first-bin estimate ``p̂(c_0)``;
+    the amended assertion is fixture-independent (tests the predicted
+    interpolation formula, not a synthetic-data-specific magnitude).
     """
 
     def test_zero_fill_below_first_bin_is_nonzero_for_valid_dL(self, injection_dir: str) -> None:
-        """d_L below dl_centers[0] but inside the first bin (0, 2*c_0) returns p̂(c_0)."""
+        """d_L below dl_centers[0] is the linear midpoint of (anchor, p̂(c_0)).
+
+        Fixture-independent: after Phase 45 the interpolator on [0, c_0) is
+        ``linear_interp((0, P_MAX), (c_0, p̂(c_0)))``, so at d_L = c_0/2 the
+        value equals exactly ``0.5 * (P_MAX + p̂(c_0))``.  This test asserts
+        the interpolation formula directly rather than a magnitude that
+        depends on the synthetic 200-event histogram.
+        """
         from master_thesis_code.bayesian_inference.simulation_detection_probability import (
+            _P_MAX_EMPIRICAL_ANCHOR,
             SimulationDetectionProbability,
         )
 
@@ -694,20 +709,28 @@ class TestZeroFillBoundaryConvention:
         h = 0.70
         pdet._get_or_build_grid(h)
         _, interp_1d = pdet._grid_cache[h]
-        c0 = float(interp_1d.grid[0][0])
+        # After Phase 45, grid[0] is the prepended anchor at d_L=0;
+        # grid[1] is the first histogram bin centre c_0.
+        anchor_dl = float(interp_1d.grid[0][0])
+        c0 = float(interp_1d.grid[0][1])
+        assert anchor_dl == 0.0  # Phase 45 anchor at d_L=0
         assert c0 > 0.0  # bin midpoint is in the regime that matters
 
-        # d_L = c0/2 sits inside the first histogram bin (0, 2*c0) but below c0.
+        # d_L = c0/2 sits between the anchor (d_L=0) and the first bin centre c_0.
         p_below = pdet.detection_probability_without_bh_mass_interpolated_zero_fill(
             d_L=c0 / 2.0, phi=0.0, theta=0.0, h=h
         )
         p_at = pdet.detection_probability_without_bh_mass_interpolated_zero_fill(
             d_L=c0, phi=0.0, theta=0.0, h=h
         )
-        # Nearest-neighbour fill: identical values.
-        assert float(p_below) == pytest.approx(float(p_at), rel=1e-9), (
-            f"Phase 44: expected NN fill p_det({c0 / 2:.4f}) == p_det({c0:.4f}); "
-            f"got p_below={p_below}, p_at={p_at}"
+        # Phase 45: with empirical anchor at (0, _P_MAX_EMPIRICAL_ANCHOR), the
+        # interpolator at d_L = 0.5 * c_0 is the linear midpoint between the
+        # anchor and the first bin centre (p̂(c_0) = p_at).
+        expected_p_below = 0.5 * (_P_MAX_EMPIRICAL_ANCHOR + float(p_at))
+        assert float(p_below) == pytest.approx(expected_p_below, rel=1e-6), (
+            f"Phase 45: expected linear interp midpoint "
+            f"0.5 * (P_MAX={_P_MAX_EMPIRICAL_ANCHOR} + p̂(c_0)={p_at}) = "
+            f"{expected_p_below:.6f}; got p_below={p_below}"
         )
         # The first-bin estimate must be a real probability, not the old zero.
         assert 0.0 < float(p_below) <= 1.0, (
@@ -799,4 +822,261 @@ class TestZeroFillBoundaryConvention:
             f"Expected >= 6 zero_fill call sites in bayesian_statistics.py "
             f"(Phase 38 STAT-03 invariant, commit a70d1a2), got {n_calls}.  "
             f"Numerator/denominator symmetry may be broken."
+        )
+
+
+class TestPhase45EmpiricalAnchor:
+    """Phase 45 regressions: detection_probability_without_bh_mass_interpolated_zero_fill
+    must use the empirical anchor (0, _P_MAX_EMPIRICAL_ANCHOR) prepended to
+    the histogram grid, so that on [0, c_0) the result is a linear
+    interpolation between the empirical asymptote and the first bin centre.
+
+    Pre-Phase-45 the interpolator linearly extrapolated through bins 0 and 1
+    to ≈0.748 at d_L=0 (vs the empirical ≈1.0), biasing L_comp downward at
+    low h and producing a residual MAP=0.7650 vs truth 0.73 on the
+    412-event production posterior.  See
+    ``.gpd/phases/45-p-det-first-bin-asymptote-fix/45-01-SUMMARY.md`` and
+    ``scripts/bias_investigation/outputs/phase45/p_max_h_independence.json``
+    for the empirical derivation (LR homogeneity p=0.199, pooled Wilson 95%
+    lower bound 0.7931 across all h_inj groups).
+    """
+
+    def test_anchor_value_in_unit_interval(self) -> None:
+        """`_P_MAX_EMPIRICAL_ANCHOR` is a float in [0, 1] (probability)."""
+        from master_thesis_code.bayesian_inference.simulation_detection_probability import (
+            _P_MAX_EMPIRICAL_ANCHOR,
+        )
+
+        assert isinstance(_P_MAX_EMPIRICAL_ANCHOR, float), (
+            f"_P_MAX_EMPIRICAL_ANCHOR must be float, got {type(_P_MAX_EMPIRICAL_ANCHOR)}"
+        )
+        assert 0.0 <= _P_MAX_EMPIRICAL_ANCHOR <= 1.0, (
+            f"_P_MAX_EMPIRICAL_ANCHOR must be in [0, 1], got {_P_MAX_EMPIRICAL_ANCHOR}"
+        )
+
+    def test_anchor_value_within_wilson_ci(self) -> None:
+        """`_P_MAX_EMPIRICAL_ANCHOR` lies in the pooled Wilson 95% CI from
+        Plan 45-01 ([0.7931, 0.9418]).
+
+        This test catches accidental edits that drift the constant outside
+        the empirically-defensible range derived in Plan 45-01.  The
+        recommended default (conservative) is the lower bound 0.7931 so the
+        anchor cannot overshoot truth on production posteriors.
+        """
+        from master_thesis_code.bayesian_inference.simulation_detection_probability import (
+            _P_MAX_EMPIRICAL_ANCHOR,
+        )
+
+        # Wilson 95% CI from p_max_h_independence.json (pooled n=63/71).
+        ci_lower = 0.7931
+        ci_upper = 0.9418
+        assert ci_lower <= _P_MAX_EMPIRICAL_ANCHOR <= ci_upper, (
+            f"_P_MAX_EMPIRICAL_ANCHOR={_P_MAX_EMPIRICAL_ANCHOR} outside Plan 45-01 "
+            f"Wilson 95% CI [{ci_lower}, {ci_upper}]; see "
+            f"scripts/bias_investigation/outputs/phase45/p_max_h_independence.json."
+        )
+
+    def test_anchor_at_dL_zero_equals_empirical_constant(self, injection_dir: str) -> None:
+        """interp(d_L=0; h=0.73) == _P_MAX_EMPIRICAL_ANCHOR exactly."""
+        from master_thesis_code.bayesian_inference.simulation_detection_probability import (
+            _P_MAX_EMPIRICAL_ANCHOR,
+            SimulationDetectionProbability,
+        )
+
+        pdet = SimulationDetectionProbability(
+            injection_data_dir=injection_dir,
+            snr_threshold=20.0,
+        )
+        # The synthetic fixture covers h=0.70 and h=0.80; query at h=0.73 is
+        # SNR-rescaled internally by SimulationDetectionProbability.
+        result = pdet.detection_probability_without_bh_mass_interpolated_zero_fill(
+            d_L=0.0, phi=0.0, theta=0.0, h=0.73
+        )
+        assert float(result) == pytest.approx(_P_MAX_EMPIRICAL_ANCHOR, rel=1e-9), (
+            f"Phase 45: interp(d_L=0; h=0.73) must equal "
+            f"_P_MAX_EMPIRICAL_ANCHOR={_P_MAX_EMPIRICAL_ANCHOR} exactly; "
+            f"got {result}"
+        )
+
+    def test_anchor_h_independent(self, injection_dir: str) -> None:
+        """interp(d_L=0; h) is the same constant for every h
+        (the anchor is module-level, not per-h)."""
+        from master_thesis_code.bayesian_inference.simulation_detection_probability import (
+            _P_MAX_EMPIRICAL_ANCHOR,
+            SimulationDetectionProbability,
+        )
+
+        pdet = SimulationDetectionProbability(
+            injection_data_dir=injection_dir,
+            snr_threshold=20.0,
+        )
+
+        values: dict[float, float] = {}
+        for h in (0.65, 0.70, 0.73, 0.80, 0.85):
+            v = pdet.detection_probability_without_bh_mass_interpolated_zero_fill(
+                d_L=0.0, phi=0.0, theta=0.0, h=h
+            )
+            values[h] = float(v)
+
+        h_spread = max(values.values()) - min(values.values())
+        assert h_spread < 1e-9, (
+            f"Phase 45: interp(d_L=0) must be h-INDEPENDENT (the anchor is a "
+            f"module-level scalar).  h-spread = {h_spread}, values = {values}"
+        )
+        for h, v in values.items():
+            assert v == pytest.approx(_P_MAX_EMPIRICAL_ANCHOR, rel=1e-9), (
+                f"interp(d_L=0; h={h}) = {v} != _P_MAX_EMPIRICAL_ANCHOR={_P_MAX_EMPIRICAL_ANCHOR}"
+            )
+
+    def test_interp_at_c0_unchanged_by_anchor(self, injection_dir: str) -> None:
+        """interp(d_L=c_0) equals the unchanged histogram first-bin estimate p̂(c_0).
+
+        The Phase 45 anchor at d_L=0 must NOT perturb the value at the first
+        histogram bin centre c_0: linear interpolation between two distinct
+        endpoint values passes through both.  We verify this by reproducing
+        the histogram logic from `_build_grid_1d` directly and comparing.
+        """
+        from master_thesis_code.bayesian_inference.simulation_detection_probability import (
+            SimulationDetectionProbability,
+        )
+        from master_thesis_code.physical_relations import dist_vectorized
+
+        pdet = SimulationDetectionProbability(
+            injection_data_dir=injection_dir,
+            snr_threshold=20.0,
+        )
+        h = 0.70
+        pdet._get_or_build_grid(h)
+        _, interp_1d = pdet._grid_cache[h]
+        # Phase 45: grid[0] is the anchor (d_L=0); grid[1] is the first bin centre c_0.
+        c0 = float(interp_1d.grid[0][1])
+
+        # Reproduce histogram first-bin estimate p̂(c_0) at h=0.70 directly.
+        pooled = pdet._pooled_df
+        dl_inj = pooled["luminosity_distance"].values
+        snr_raw = pooled["SNR"].values
+        z = pooled["z"].values
+        dl_target = dist_vectorized(z, h=h)
+        snr_rescaled = snr_raw * dl_inj / dl_target
+        dl_max = float(np.max(dl_target)) * 1.1
+        dl_edges = np.linspace(0, dl_max, 60 + 1)  # _DEFAULT_DL_BINS = 60
+        total_counts, _ = np.histogram(dl_target, bins=dl_edges)
+        detected_counts, _ = np.histogram(
+            dl_target[snr_rescaled >= 20.0], bins=dl_edges
+        )
+        p_hat_c0 = (
+            float(detected_counts[0]) / float(total_counts[0])
+            if total_counts[0] > 0
+            else 0.0
+        )
+
+        result = pdet.detection_probability_without_bh_mass_interpolated_zero_fill(
+            d_L=c0, phi=0.0, theta=0.0, h=h
+        )
+        assert float(result) == pytest.approx(p_hat_c0, rel=1e-9), (
+            f"Phase 45: interp(d_L=c_0; h={h}) must equal p̂(c_0)={p_hat_c0:.10f} "
+            f"(unchanged from histogram bin 0); got {result}"
+        )
+
+    def test_interp_below_c0_strictly_lifted(self) -> None:
+        """On the PRODUCTION injection fixture (where p̂(c_0) ≈ 0.544 at h=0.73),
+        interp(c_0/2; h=0.73) > pre-fix value and > p̂(c_0).
+
+        This test uses the real `simulations/injections/` campaign rather
+        than the synthetic 200-event fixture, because Plan 45-01 established
+        empirically that p̂(c_0) ≈ 0.544 < 0.7931 ≈ _P_MAX_EMPIRICAL_ANCHOR
+        at h=0.73 there.  On the synthetic fixture the magnitudes are
+        dataset-specific and a strict-lift assertion would be fragile.
+
+        Skipped if the production injection directory is not available
+        (e.g. on CI machines without the dataset checked out).
+        """
+        import os
+        import pathlib
+
+        from master_thesis_code.bayesian_inference.simulation_detection_probability import (
+            _P_MAX_EMPIRICAL_ANCHOR,
+            SimulationDetectionProbability,
+        )
+
+        prod_dir = pathlib.Path("simulations/injections")
+        if not prod_dir.is_dir() or not any(prod_dir.glob("injection_h_*.csv")):
+            pytest.skip(
+                "Production injection campaign at simulations/injections/ "
+                "not available; this test only runs in the dev/research env."
+            )
+        # Sanity: ensure the test runs from a directory where simulations/
+        # is reachable (i.e. project root).
+        if not os.path.isabs(str(prod_dir)):
+            prod_dir = pathlib.Path.cwd() / "simulations/injections"
+
+        pdet = SimulationDetectionProbability(
+            injection_data_dir=str(prod_dir),
+            snr_threshold=20.0,
+        )
+        h = 0.73
+        pdet._get_or_build_grid(h)
+        _, interp_1d = pdet._grid_cache[h]
+        c0 = float(interp_1d.grid[0][1])  # grid[0]=anchor, grid[1]=c_0
+        d_L_test = 0.5 * c0
+
+        p_at = float(
+            pdet.detection_probability_without_bh_mass_interpolated_zero_fill(
+                d_L=c0, phi=0.0, theta=0.0, h=h
+            )
+        )
+        p_below = float(
+            pdet.detection_probability_without_bh_mass_interpolated_zero_fill(
+                d_L=d_L_test, phi=0.0, theta=0.0, h=h
+            )
+        )
+
+        # On the production fixture, p̂(c_0) ≈ 0.544 < 0.7931 ≈ anchor, so
+        # the linear-interp midpoint must lie strictly between p̂(c_0) and
+        # the anchor; in particular strictly above p̂(c_0).
+        assert p_at < _P_MAX_EMPIRICAL_ANCHOR, (
+            f"Production fixture sanity: expected p̂(c_0)={p_at} < "
+            f"_P_MAX_EMPIRICAL_ANCHOR={_P_MAX_EMPIRICAL_ANCHOR}; if this fails "
+            "the pre-Phase-45 bias diagnosis no longer applies to this dataset."
+        )
+        assert p_below > p_at, (
+            f"Phase 45: with anchor at d_L=0 above p̂(c_0), interp(c_0/2) must "
+            f"strictly exceed p̂(c_0)={p_at}; got {p_below}"
+        )
+        assert p_below < _P_MAX_EMPIRICAL_ANCHOR, (
+            f"Phase 45: interp(c_0/2) must stay below the anchor "
+            f"_P_MAX_EMPIRICAL_ANCHOR={_P_MAX_EMPIRICAL_ANCHOR} (we are "
+            f"between c_0=0 and c_0); got {p_below}"
+        )
+        # Linear-interp identity: interp(c_0/2) == 0.5 * (anchor + p̂(c_0))
+        expected = 0.5 * (_P_MAX_EMPIRICAL_ANCHOR + p_at)
+        assert p_below == pytest.approx(expected, rel=1e-6), (
+            f"Phase 45 linear-interp identity: interp(c_0/2)={p_below} != "
+            f"0.5*({_P_MAX_EMPIRICAL_ANCHOR} + {p_at}) = {expected}"
+        )
+
+    def test_docstring_states_linear_and_anchor(self) -> None:
+        """The docstring of detection_probability_without_bh_mass_interpolated_zero_fill
+        must state the new boundary convention: linear interpolation lifted
+        by an empirical anchor introduced in Phase 45.
+        """
+        import inspect
+
+        from master_thesis_code.bayesian_inference.simulation_detection_probability import (
+            SimulationDetectionProbability,
+        )
+
+        doc = inspect.getdoc(
+            SimulationDetectionProbability.detection_probability_without_bh_mass_interpolated_zero_fill
+        )
+        assert doc is not None, "missing docstring"
+        doc_lower = doc.lower()
+        assert "linear" in doc_lower, (
+            f"Phase 45: docstring must state 'linear' (interp/extrap), got:\n{doc}"
+        )
+        assert "empirical anchor" in doc_lower, (
+            f"Phase 45: docstring must reference 'empirical anchor', got:\n{doc}"
+        )
+        assert "phase 45" in doc_lower, (
+            f"Phase 45: docstring must cite 'Phase 45', got:\n{doc}"
         )
