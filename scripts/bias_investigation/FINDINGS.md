@@ -77,3 +77,43 @@ This bias is inherent to the dark siren method with an incomplete galaxy catalog
 - `physical_relations.py` — d_L(z,h) function
 - `results/h_sweep_20260401/` — 534-detection posterior data
 - `simulations/injections/` — injection campaign CSVs (7 h-grid points)
+
+---
+
+## Phase 45 Step 0/1 — Residual MAP bias after Phase 44 (2026-04-29)
+
+**Baseline:** Phase 44 fix removed the h-dependent zero-fill cutoff at
+`dl_centers[0] ∝ 1/h`. Cluster re-eval on production seed200 (412 events,
+truth h=0.73) gave MAP = 0.7650, residual +0.035. Phase 45 diagnoses why.
+
+| Test | Finding | Status |
+|------|---------|--------|
+| **T8: Bootstrap MAP** (B=1000 on cached posteriors) | Median 0.7650, σ_boot=0.0114, 68%-interval [0.745, 0.765] excludes 0.73 | SYSTEMATIC (~3 σ_boot) |
+| **T9: First-bin density** (h_inj=0.73, [0, 0.20] Gpc) | n_upper3 / n_lower3 = 29 / 9 = 3.22; weighted-mean d_L = 0.132 Gpc (above midpoint 0.10) | UPPER-EDGE SKEW |
+| **T10: p_det asymptote** | Empirical 16/16 = 1.000 [0.806, 1.000] for d_L<0.10 Gpc; interpolator returns 0.544 at c_0 and ~0.75 at d_L→0 (linear extrapolation, NOT NN) | INTERPOLATOR UNDERESTIMATES BY ~0.45 |
+| **T11: Window proximity** (60 SNR≥20 events, local proxy) | 0/60 touch d_L=0; 26/60 (43%) cross c_0=0.10 Gpc | ANCHOR-AT-ZERO INERT; FIX MUST LIVE IN [0, c_0] |
+
+### Phase 45 conclusion (locked in `.gpd/HANDOFF-phase45-diagnosis.md`)
+
+Residual +0.035 is systematic. Mechanism: the production p_det interpolator
+in `[0, c_0]` returns ~0.5–0.75 via linear extrapolation through the first
+two histogram bins, but the empirical asymptote at d_L→0 is 1.0 (16/16
+detected for d_L<0.10 Gpc). 26 of 60 representative events have their 4σ
+integration window crossing into this region, so the underestimate biases
+L_comp downward at low h, biasing MAP upward.
+
+**Corrected from Phase 44 plan §8:** the recommended *Alternative C* fix
+"anchor at `(d_L=0, p_det=interp(c_0))`" is wrong — anchoring at
+`interp(c_0)` is a no-op AND no production event integrates to d_L=0
+anyway. The correct fix lifts the interpolator in `[0, c_0]` (sub-binning,
+empirical-anchor at d_L=0 with p_max=1.0, or a hybrid). Plan-phase will
+choose. Anchor must be h-independent.
+
+### Reproducibility
+```
+uv run python scripts/bias_investigation/test_08_bootstrap_map.py
+uv run python scripts/bias_investigation/test_09_first_bin_density.py
+uv run python scripts/bias_investigation/test_10_pdet_asymptote.py
+uv run python scripts/bias_investigation/test_11_window_proximity.py
+```
+Outputs in `scripts/bias_investigation/outputs/phase45/`.

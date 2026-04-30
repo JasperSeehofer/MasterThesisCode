@@ -1,0 +1,53 @@
+{
+  "h_inj": 0.73,
+  "dl_bin_range_gpc": [
+    0.0,
+    0.2
+  ],
+  "n_sub_bins": 10,
+  "edges_gpc": [
+    0.0,
+    0.02,
+    0.04,
+    0.06,
+    0.08,
+    0.1,
+    0.12,
+    0.14,
+    0.16,
+    0.18,
+    0.2
+  ],
+  "centers_gpc": [
+    0.01,
+    0.03,
+    0.05,
+    0.07,
+    0.09,
+    0.11,
+    0.13,
+    0.15000000000000002,
+    0.16999999999999998,
+    0.19
+  ],
+  "counts": [
+    0,
+    0,
+    9,
+    2,
+    5,
+    4,
+    1,
+    11,
+    5,
+    13
+  ],
+  "n_first_bin_total": 50,
+  "n_lower3": 9,
+  "n_upper3": 29,
+  "skew_ratio_upper_over_lower": 3.2222222222222223,
+  "skew_ratio_threshold": 1.5,
+  "verdict": "upper-skew",
+  "weighted_mean_dl_in_bin_gpc": 0.1316,
+  "bin_midpoint_gpc": 0.1
+}

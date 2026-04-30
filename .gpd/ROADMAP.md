@@ -124,3 +124,24 @@ Plans:
 Plans:
 - [x] 32-01-PLAN.md -- Implement D(h) full-volume denominator precomputation and fix L_comp
 - [x] 32-02-PLAN.md -- Validate: MAP comparison, bias-vs-N convergence, per-event L_comp decomposition
+
+### Phase 44: P_det Zero-Fill Cutoff Fix
+
+**Goal:** Remove the h-dependent zero-fill cutoff at `dl_centers[0] ∝ 1/h` in `detection_probability_without_bh_mass_interpolated_zero_fill` that drove a +145.7 log-unit MAP bias (MAP=0.860 vs truth 0.73). Re-evaluate on production seed200.
+**Status:** Complete (2026-04-29)
+**Routing:** GPD physics-change
+**Depends on:** Phase 43 (CRB ecliptic migration)
+**Plans:** 1/1 complete
+**Result:** Cutoff removed (commit `3697bdd`); cluster MAP shifted 0.860 → 0.7650 on 412 events; 4 zero-handling strategies converge identically; +145.7 log-unit pathology eliminated. Residual +0.035 above truth → Phase 45.
+
+Plans:
+- [x] 44-01-PLAN.md -- Remove zero-fill cutoff; add 4 regression tests; cluster re-eval
+
+### Phase 45: P_det First-Bin Asymptote Fix
+
+**Goal:** Eliminate the residual +0.035 MAP bias remaining after Phase 44. Diagnosis (kickoff complete, lock-in at `.gpd/HANDOFF-phase45-diagnosis.md`): the production p_det interpolator returns ~0.55 at c_0 and ~0.75 at d_L→0 via linear extrapolation, but the empirical asymptote is 1.0 (16/16 detected for d_L<0.10 Gpc). 26/60 representative events integrate across c_0, so the underestimate biases L_comp downward at low h. Apply an h-independent fix that lifts the interpolator in `[0, c_0]` so MAP ∈ [0.72, 0.74] post-fix and 68% interval contains 0.73.
+**Status:** Diagnosis complete; planning in progress
+**Routing:** GPD physics-change
+**Depends on:** Phase 44 (zero-fill cutoff fix)
+**Plans:** 0 (this run)
+

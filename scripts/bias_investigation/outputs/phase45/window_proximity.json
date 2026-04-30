@@ -1,0 +1,95 @@
+{
+  "n_events_total": 60,
+  "n_events_touching_zero": 0,
+  "n_events_window_below_c0_010_gpc": 26,
+  "sigma_mult": 4.0,
+  "sigma_over_dl_max": 0.07399298114084295,
+  "sigma_over_dl_p99": 0.07093149853404357,
+  "sigma_over_dl_p95": 0.06267461633356017,
+  "sigma_over_dl_median": 0.046040082437867155,
+  "dl_over_sigma_min": 13.51479538439648,
+  "threshold_sigma_over_dl_for_zero_touch": 0.25,
+  "closest_events": [
+    {
+      "event_id": 506,
+      "luminosity_distance": 0.0391415676330697,
+      "sigma_dL": 0.0007760292784213623,
+      "dl_minus_4sigma": 0.036037450519384256,
+      "dl_over_sigma": 50.43826144381234,
+      "SNR": 50.99393242200343
+    },
+    {
+      "event_id": 507,
+      "luminosity_distance": 0.0381672496392099,
+      "sigma_dL": 0.0003639102486332024,
+      "dl_minus_4sigma": 0.03671160864467709,
+      "dl_over_sigma": 104.88094188762454,
+      "SNR": 128.9007052311279
+    },
+    {
+      "event_id": 244,
+      "luminosity_distance": 0.0462615544586001,
+      "sigma_dL": 0.0017994019790028345,
+      "dl_minus_4sigma": 0.03906394654258876,
+      "dl_over_sigma": 25.709405123715953,
+      "SNR": 25.38369037183659
+    },
+    {
+      "event_id": 440,
+      "luminosity_distance": 0.0516476598411848,
+      "sigma_dL": 0.0018254144812187847,
+      "dl_minus_4sigma": 0.04434600191630966,
+      "dl_over_sigma": 28.29366172591165,
+      "SNR": 38.841056738605786
+    },
+    {
+      "event_id": 107,
+      "luminosity_distance": 0.0529662976862962,
+      "sigma_dL": 0.0007027894285350166,
+      "dl_minus_4sigma": 0.050155139972156135,
+      "dl_over_sigma": 75.36581447547648,
+      "SNR": 81.24425825938044
+    },
+    {
+      "event_id": 228,
+      "luminosity_distance": 0.053541894771913,
+      "sigma_dL": 0.0006907541169665154,
+      "dl_minus_4sigma": 0.05077887830404694,
+      "dl_over_sigma": 77.51223403060581,
+      "SNR": 82.33522460808845
+    },
+    {
+      "event_id": 468,
+      "luminosity_distance": 0.0592861513689328,
+      "sigma_dL": 0.001403839539102506,
+      "dl_minus_4sigma": 0.05367079321252278,
+      "dl_over_sigma": 42.23143010121745,
+      "SNR": 45.43854400536485
+    },
+    {
+      "event_id": 115,
+      "luminosity_distance": 0.0700511790922163,
+      "sigma_dL": 0.00359648458335954,
+      "dl_minus_4sigma": 0.055665240758778135,
+      "dl_over_sigma": 19.477680904384762,
+      "SNR": 25.834830821869023
+    },
+    {
+      "event_id": 103,
+      "luminosity_distance": 0.0645523961631397,
+      "sigma_dL": 0.0018962317125396633,
+      "dl_minus_4sigma": 0.056967469312981044,
+      "dl_over_sigma": 34.04246207689634,
+      "SNR": 34.75364380616192
+    },
+    {
+      "event_id": 408,
+      "luminosity_distance": 0.0745169383224814,
+      "sigma_dL": 0.003983295674112749,
+      "dl_minus_4sigma": 0.058583755626030395,
+      "dl_over_sigma": 18.707358031883867,
+      "SNR": 27.36540115831698
+    }
+  ],
+  "verdict": "alternative_c_anchor_active"
+}
