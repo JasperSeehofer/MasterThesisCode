@@ -96,6 +96,14 @@ _P_MAX_EMPIRICAL_ANCHOR: float = 0.7931
 # `RegularGridInterpolator`.  In that branch, the layout falls back to the
 # Plan 45-02 single-anchor layout (anchor + first bin centre only).
 #
+# Plan 45-07 (Option D) applies the SAME hybrid anchor layout to the d_L
+# axis of the 2D grid (`_build_grid_2d`).  Both anchor values are broadcast
+# across all M_z bins because the empirical asymptote at d_L → 0 is
+# M_z-independent (SNR ~ 1/d_L diverges regardless of intrinsic loudness).
+# This addresses the with_bh_mass channel's residual MAP=0.7450 from Plan
+# 45-05 SUMMARY (the without_bh_mass channel was already addressed by
+# Plan 45-04, but the 2D channel was untouched until Plan 45-07).
+#
 # Sign-convention note (documented; not a bug):
 #   On [0, 0.05] the slope is +4.138/Gpc (POSITIVE), reflecting the
 #   conservative Wilson LB at d_L=0 transitioning to the empirical
@@ -515,12 +523,36 @@ class SimulationDetectionProbability:
             M_edges[:-1] * M_edges[1:]
         )  # geometric mean for log-spaced  # noqa: N806
 
-        # fill_value=None → nearest-neighbor extrapolation outside grid.
+        # Phase 45 Plan 45-07 (Option D): apply the same hybrid anchor layout
+        # to the d_L axis of the 2D grid as `_build_grid_1d` does for the 1D
+        # grid (Plan 45-02 + Plan 45-04).  Prepend BOTH (0, _P_MAX_EMPIRICAL_ANCHOR)
+        # AND (_D_INTERMEDIATE_ANCHOR_GPC, _P_INTERMEDIATE_EMPIRICAL) along
+        # the d_L axis, broadcasting both anchor values across ALL M_z bins
+        # (the empirical asymptote at d_L → 0 is M_z-independent because
+        # SNR ~ 1/d_L diverges regardless of intrinsic loudness).  Falls back
+        # to the single-anchor layout when c_0(h) <= _D_INTERMEDIATE_ANCHOR_GPC.
+        # See Plan 45-05 SUMMARY for the motivation and Plan 45-07 SUMMARY
+        # for the cluster re-eval predictions.
+        # Eq. (A.19) in Gray et al. (2020), arXiv:1908.06050.
+        n_mass = p_det_grid.shape[1]
+        if dl_centers[0] > _D_INTERMEDIATE_ANCHOR_GPC:
+            dl_centers_anchored = np.concatenate(([0.0, _D_INTERMEDIATE_ANCHOR_GPC], dl_centers))
+            anchor_row = np.full((1, n_mass), _P_MAX_EMPIRICAL_ANCHOR, dtype=np.float64)
+            intermediate_row = np.full((1, n_mass), _P_INTERMEDIATE_EMPIRICAL, dtype=np.float64)
+            p_det_grid_anchored = np.concatenate((anchor_row, intermediate_row, p_det_grid), axis=0)
+        else:
+            # Plan 45-02 fallback layout for c_0(h) <= _D_INTERMEDIATE_ANCHOR_GPC.
+            dl_centers_anchored = np.concatenate(([0.0], dl_centers))
+            anchor_row = np.full((1, n_mass), _P_MAX_EMPIRICAL_ANCHOR, dtype=np.float64)
+            p_det_grid_anchored = np.concatenate((anchor_row, p_det_grid), axis=0)
+
+        # fill_value=None → linear extrapolation outside grid (NOT nearest-
+        # neighbour as the pre-Phase-45 docstring incorrectly claimed).
         # fill_value=0.0 caused 44% of events to lose completeness correction
         # because high-SNR events' 4σ integration bounds exceed the injection grid.
         return RegularGridInterpolator(
-            (dl_centers, M_centers),
-            p_det_grid,
+            (dl_centers_anchored, M_centers),
+            p_det_grid_anchored,
             method="linear",
             bounds_error=False,
             fill_value=None,

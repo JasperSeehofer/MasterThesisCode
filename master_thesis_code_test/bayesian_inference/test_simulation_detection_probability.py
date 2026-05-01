@@ -1434,3 +1434,138 @@ class TestPhase45EmpiricalAnchor:
         assert 0.0 <= v <= 1.0, (
             f"Plan 45-04 fallback: interp(0.05) under c_0 ≤ 0.05 must remain in [0, 1]; got {v}"
         )
+
+
+class TestPhase45EmpiricalAnchor2D:
+    """Phase 45 Plan 45-07 (Option D): the same hybrid anchor layout
+    `(0, _P_MAX_EMPIRICAL_ANCHOR)` + `(_D_INTERMEDIATE_ANCHOR_GPC,
+    _P_INTERMEDIATE_EMPIRICAL)` is applied along the d_L axis of the 2D
+    P_det grid in `_build_grid_2d`.  Both anchor values are broadcast
+    across ALL M_z bins because the empirical asymptote at d_L → 0 is
+    M_z-independent (SNR ~ 1/d_L diverges regardless of intrinsic
+    loudness).  Tested in parallel with the 1D anchor tests above.
+    """
+
+    def test_2d_anchor_at_dL_zero_equals_empirical_constant(self, injection_dir: str) -> None:
+        """interp_2d(d_L=0, M_z; h=0.73) == _P_MAX_EMPIRICAL_ANCHOR for any M_z."""
+        from master_thesis_code.bayesian_inference.simulation_detection_probability import (
+            _P_MAX_EMPIRICAL_ANCHOR,
+            SimulationDetectionProbability,
+        )
+
+        pdet = SimulationDetectionProbability(
+            injection_data_dir=injection_dir,
+            snr_threshold=20.0,
+        )
+        h = 0.73
+        pdet._get_or_build_grid(h)
+        interp_2d, _ = pdet._grid_cache[h]
+        # Query at d_L=0 across a sweep of M_z (5 mass values within the 2D grid range).
+        M_grid = interp_2d.grid[1]
+        for M_z in [M_grid[0], M_grid[len(M_grid) // 2], M_grid[-1]]:
+            v = float(interp_2d([[0.0, M_z]])[0])
+            assert v == pytest.approx(_P_MAX_EMPIRICAL_ANCHOR, rel=1e-12), (
+                f"Plan 45-07: interp_2d(d_L=0, M_z={M_z}) must equal "
+                f"_P_MAX_EMPIRICAL_ANCHOR={_P_MAX_EMPIRICAL_ANCHOR}; got {v}"
+            )
+
+    def test_2d_intermediate_value_at_005_equals_constant(self, injection_dir: str) -> None:
+        """interp_2d(d_L=0.05, M_z; h) == _P_INTERMEDIATE_EMPIRICAL=1.0 for any M_z
+        when the hybrid layout is active (c_0(h) > 0.05).
+        """
+        from master_thesis_code.bayesian_inference.simulation_detection_probability import (
+            _D_INTERMEDIATE_ANCHOR_GPC,
+            _P_INTERMEDIATE_EMPIRICAL,
+            SimulationDetectionProbability,
+        )
+
+        pdet = SimulationDetectionProbability(
+            injection_data_dir=injection_dir,
+            snr_threshold=20.0,
+        )
+        h = 0.73
+        pdet._get_or_build_grid(h)
+        interp_2d, _ = pdet._grid_cache[h]
+        # Precondition: hybrid layout (intermediate anchor present in d_L axis).
+        if abs(float(interp_2d.grid[0][1]) - _D_INTERMEDIATE_ANCHOR_GPC) >= 1e-12:
+            pytest.skip("c_0(h) <= 0.05; fallback layout — intermediate anchor absent.")
+
+        M_grid = interp_2d.grid[1]
+        for M_z in [M_grid[0], M_grid[len(M_grid) // 2], M_grid[-1]]:
+            v = float(interp_2d([[_D_INTERMEDIATE_ANCHOR_GPC, M_z]])[0])
+            assert v == pytest.approx(_P_INTERMEDIATE_EMPIRICAL, rel=1e-12), (
+                f"Plan 45-07: interp_2d(d_L=0.05, M_z={M_z}) must equal "
+                f"_P_INTERMEDIATE_EMPIRICAL={_P_INTERMEDIATE_EMPIRICAL}; got {v}"
+            )
+
+    def test_2d_anchor_h_independent(self, injection_dir: str) -> None:
+        """h-spread at (d_L=0, M_z=median) is exactly 0 across multiple h values."""
+        from master_thesis_code.bayesian_inference.simulation_detection_probability import (
+            SimulationDetectionProbability,
+        )
+
+        pdet = SimulationDetectionProbability(
+            injection_data_dir=injection_dir,
+            snr_threshold=20.0,
+        )
+        # Pick a fixed M_z within all per-h grids' ranges.
+        pdet._get_or_build_grid(0.73)
+        interp_73, _ = pdet._grid_cache[0.73], None
+        M_grid_73 = pdet._grid_cache[0.73][0].grid[1]
+        M_z_test = float(M_grid_73[len(M_grid_73) // 2])
+
+        values: dict[float, float] = {}
+        for h in (0.65, 0.70, 0.73, 0.80, 0.85):
+            pdet._get_or_build_grid(h)
+            interp_2d, _ = pdet._grid_cache[h]
+            M_grid_h = interp_2d.grid[1]
+            # Use the same M_z if in this h's grid range; otherwise clip.
+            M_z_h = max(float(M_grid_h[0]), min(M_z_test, float(M_grid_h[-1])))
+            v = float(interp_2d([[0.0, M_z_h]])[0])
+            values[h] = v
+        spread = max(values.values()) - min(values.values())
+        assert spread < 1e-12, (
+            f"Plan 45-07: interp_2d(d_L=0, M_z=median) must be h-INDEPENDENT "
+            f"(anchor is a module-level scalar broadcast across M_z).  "
+            f"h-spread = {spread}, values = {values}"
+        )
+
+    def test_2d_grid_layout_after_hybrid_patch(self, injection_dir: str) -> None:
+        """The 2D interpolator's d_L axis must start with [0, 0.05, c_0, ...]
+        under the hybrid layout, mirroring the 1D layout exactly.
+        """
+        from master_thesis_code.bayesian_inference.simulation_detection_probability import (
+            _D_INTERMEDIATE_ANCHOR_GPC,
+            SimulationDetectionProbability,
+        )
+
+        pdet = SimulationDetectionProbability(
+            injection_data_dir=injection_dir,
+            snr_threshold=20.0,
+        )
+        h = 0.73
+        pdet._get_or_build_grid(h)
+        interp_2d, _ = pdet._grid_cache[h]
+        dl_axis = interp_2d.grid[0]
+        assert float(dl_axis[0]) == 0.0, (
+            f"Plan 45-07: 2D d_L axis must start at 0 (anchor); got {dl_axis[0]}"
+        )
+        assert abs(float(dl_axis[1]) - _D_INTERMEDIATE_ANCHOR_GPC) < 1e-12, (
+            f"Plan 45-07: 2D d_L axis second point must be "
+            f"_D_INTERMEDIATE_ANCHOR_GPC={_D_INTERMEDIATE_ANCHOR_GPC} (hybrid layout); "
+            f"got {dl_axis[1]} — fallback may have triggered."
+        )
+        # 1D and 2D should share the same anchored d_L layout for matching h.
+        interp_1d = pdet._grid_cache[h][1]
+        dl_axis_1d = interp_1d.grid[0]
+        assert len(dl_axis) == len(dl_axis_1d), (
+            f"Plan 45-07: 1D and 2D d_L axes must have matching length under hybrid; "
+            f"got 1D={len(dl_axis_1d)}, 2D={len(dl_axis)}"
+        )
+        # Element-wise equality (exact binning).
+        import numpy as np
+
+        assert np.allclose(dl_axis, dl_axis_1d, atol=1e-12), (
+            f"Plan 45-07: 1D and 2D d_L axes must be elementwise identical; "
+            f"got 1D[:3]={dl_axis_1d[:3]}, 2D[:3]={dl_axis[:3]}"
+        )
