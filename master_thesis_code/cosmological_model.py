@@ -1,24 +1,14 @@
 """EMRI event-rate cosmological model and H₀ evaluation orchestration.
 
-This module contains two conceptual layers:
+This module defines the cosmological event-rate model used for simulation:
+:class:`Model1CrossCheck` samples EMRI events from a cosmological rate model,
+while :class:`LamCDMScenario` and :class:`DarkEnergyScenario` define the
+parameter spaces.
 
-1. **Cosmological model** — :class:`Model1CrossCheck` samples EMRI events from a
-   cosmological rate model; :class:`LamCDMScenario` and :class:`DarkEnergyScenario`
-   define the parameter spaces.
-
-2. **Pipeline B (production)** — :class:`BayesianStatistics` loads saved Cramér-Rao
-   bounds and orchestrates the full Hubble-constant posterior evaluation using the
-   real GLADE galaxy catalog, KDE-based :class:`DetectionProbability`, full
-   Fisher-matrix covariance, and multiprocessing.  Invoked via
-   ``main.py:evaluate()`` / ``--evaluate`` CLI flag.
-   **Extracted to** :mod:`master_thesis_code.bayesian_inference.bayesian_statistics`
-   and :mod:`master_thesis_code.bayesian_inference.detection_probability`.
-   Re-exported here for backward compatibility.
-
-A simpler, self-contained cross-check pipeline exists as **Pipeline A**
-(:class:`~master_thesis_code.bayesian_inference.bayesian_inference.BayesianInference`),
-which uses a synthetic galaxy catalog, erf-based detection probability, and a
-hardcoded 10 % σ(d_L).  See ``bayesian_inference/bayesian_inference.py``.
+The Hubble-constant posterior evaluation has been extracted to
+:mod:`master_thesis_code.bayesian_inference.bayesian_statistics`
+(:class:`~master_thesis_code.bayesian_inference.bayesian_statistics.BayesianStatistics`)
+and is invoked via ``main.py:evaluate()`` / ``--evaluate``.
 """
 
 import logging

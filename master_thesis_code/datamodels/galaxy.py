@@ -76,7 +76,7 @@ class GalaxyCatalog:
     """Synthetic galaxy catalog for Bayesian H₀ inference.
 
     Holds a list of :class:`Galaxy` objects and provides redshift/mass probability
-    distributions used by :class:`~master_thesis_code.bayesian_inference.bayesian_inference.BayesianInference`.
+    distributions for the cosmological model.
 
     Attributes:
         lower_mass_limit: Minimum central BH mass in :math:`M_\\odot`.

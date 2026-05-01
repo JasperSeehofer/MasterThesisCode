@@ -17,14 +17,6 @@ Galaxy Catalog
    :undoc-members:
    :show-inheritance:
 
-EMRI Detection
---------------
-
-.. automodule:: master_thesis_code.datamodels.emri_detection
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 Detection (Cramér-Rao)
 -----------------------
 

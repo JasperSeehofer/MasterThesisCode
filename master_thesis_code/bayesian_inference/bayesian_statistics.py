@@ -1,4 +1,4 @@
-"""Pipeline B — science-grade Hubble constant posterior evaluation.
+"""Hubble constant posterior evaluation.
 
 :class:`BayesianStatistics` loads saved Cramér-Rao bounds and orchestrates the
 full Hubble-constant posterior evaluation using the real GLADE galaxy catalog,
@@ -7,9 +7,6 @@ full Fisher-matrix covariance, and multiprocessing.
 
 Invoked via ``main.py:evaluate()`` / ``--evaluate`` CLI flag.
 Output is written to ``simulations/posteriors/`` as JSON.
-
-For the simpler dev cross-check pipeline, see **Pipeline A**
-(:class:`~master_thesis_code.bayesian_inference.bayesian_inference.BayesianInference`).
 """
 
 import csv
@@ -237,7 +234,7 @@ def _mvn_pdf(
 
 
 class BayesianStatistics:
-    """Pipeline B — science-grade Hubble constant posterior evaluation.
+    """Hubble constant posterior evaluation.
 
     Loads saved Cramér-Rao bounds from CSV, constructs a simulation-based
     :class:`SimulationDetectionProbability`, builds multivariate-normal GW
@@ -246,9 +243,6 @@ class BayesianStatistics:
 
     Invoked via ``main.py:evaluate()`` (``--evaluate`` CLI flag).
     Output is written to ``simulations/posteriors/`` as JSON.
-
-    For the simpler dev cross-check pipeline, see **Pipeline A**
-    (:class:`~master_thesis_code.bayesian_inference.bayesian_inference.BayesianInference`).
     """
 
     cramer_rao_bounds: pd.DataFrame

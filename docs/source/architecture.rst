@@ -20,13 +20,17 @@ EMRI Simulation Pipeline
 Bayesian Inference Pipeline
 ----------------------------
 
-``main.py:evaluate()`` → ``BayesianStatistics.evaluate()``:
+``main.py:evaluate()`` → ``BayesianStatistics.evaluate()``
+(in ``bayesian_inference/bayesian_statistics.py``):
 
-* Loads saved Cramér-Rao bounds from CSV.
-* Uses ``BayesianInference`` (in ``bayesian_inference/bayesian_inference.py``) to compute the
-  posterior over H₀.
-* ``GalaxyCatalog`` models the galaxy distribution and mass distribution using
-  normal/truncnorm distributions.
+* Loads saved Cramér-Rao bounds from CSV into per-event ``Detection`` objects.
+* Constructs a simulation-based
+  :class:`~master_thesis_code.bayesian_inference.simulation_detection_probability.SimulationDetectionProbability`
+  built from the real GLADE galaxy catalog.
+* Builds multivariate-normal GW likelihoods from the full Fisher-matrix covariance
+  and evaluates per-detection posteriors over an H₀ grid using a multiprocessing pool.
+* Output is written to ``simulations/posteriors/`` as JSON; per-event posteriors are
+  combined via ``posterior_combination.py``.
 
 Key Data Flow
 -------------
@@ -48,7 +52,7 @@ Key Data Flow
                                               Detection (from CSV)
                                                       │
                                                       ▼
-                                              BayesianInference
+                                              BayesianStatistics
                                                       │
                                                       ▼
                                               posterior p(H₀ | {dᵢ})
@@ -70,14 +74,18 @@ Module Responsibilities
      - LISA antenna patterns (F+, F×), PSD, SSB↔detector frame transformations.
    * - ``datamodels/parameter_space.py``
      - 14-parameter EMRI space with randomization and bounds.
-   * - ``bayesian_inference/bayesian_inference.py``
-     - ``BayesianInference`` class: likelihood, posterior, detection probability,
-       and ``dist_array`` helper.
+   * - ``bayesian_inference/bayesian_statistics.py``
+     - ``BayesianStatistics`` class: orchestrates the full H₀ posterior evaluation
+       (per-event MV-normal likelihood, simulation-based detection probability,
+       multiprocessing pool, JSON output).
+   * - ``bayesian_inference/simulation_detection_probability.py``
+     - ``SimulationDetectionProbability``: KDE-based selection function built from
+       injection campaign results.
+   * - ``bayesian_inference/posterior_combination.py``
+     - Combines per-event posteriors into the population-level H₀ posterior.
    * - ``datamodels/galaxy.py``
      - ``Galaxy`` and ``GalaxyCatalog`` dataclasses; comoving volume, redshift/mass
        distributions.
-   * - ``datamodels/emri_detection.py``
-     - ``EMRIDetection`` dataclass constructed from a host galaxy.
    * - ``datamodels/detection.py``
      - ``Detection`` dataclass parsed from Cramér-Rao CSV output.
    * - ``cosmological_model.py``

@@ -24,16 +24,13 @@ Model Assumptions
      - ``physical_relations.py``; wCDM infrastructure exists but is untested
    * - Gaussian measurement noise on :math:`d_L`
      - GW likelihood
-     - Width hardcoded to 10% of :math:`d_L` in Pipeline A (see Limitation 5); Pipeline B uses Fisher covariance
+     - Uses the full Fisher-matrix covariance (per-source) in ``bayesian_statistics.py``
    * - SNR threshold as detection proxy
-     - ``parameter_estimation.py``, ``bayesian_inference.py``
+     - ``parameter_estimation.py``
      - Threshold = 20; detailed waveform-parameter dependence not captured
    * - Uniform prior on :math:`H_0`
-     - ``bayesian_inference.py``
+     - ``bayesian_statistics.py``
      - No prior declared; implicitly flat over :math:`[H_\mathrm{min}, H_\mathrm{max}]`
-   * - Synthetic galaxy catalog
-     - Pipeline A
-     - Galaxies drawn uniformly in log-mass and from comoving volume; GLADE used in Pipeline B
    * - LISA mission duration 5 years
      - Waveform generation
      - Feeds directly into TDI response and sky-averaged sensitivity
@@ -99,38 +96,6 @@ integration via ``hubble_function()``, which already implements the full CPL par
 Reference: [Hogg1999]_, Eq. (14–16).
 
 
-Limitation 5 — GW likelihood distance uncertainty hardcoded at 10% ``[design choice · MEDIUM]``
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-**File:** ``master_thesis_code/bayesian_inference/bayesian_inference.py``
-
-**Applies to Pipeline A only.** Pipeline B (``BayesianStatistics`` in
-``bayesian_statistics.py``) uses the full Fisher-matrix covariance.
-
-The Pipeline A GW likelihood uses :math:`\sigma_{d_L} = 0.1\,d_L` for every event (via
-``FRACTIONAL_LUMINOSITY_ERROR``). The simulation already computes the actual per-source
-Cramér–Rao bound on :math:`d_L` (stored as ``delta_luminosity_distance_delta_luminosity_distance``
-in the CSV output). Using a source-by-source uncertainty from the Fisher matrix would make
-nearby, well-localised events contribute more sharply to the :math:`H_0` posterior, as they
-physically should.
-
-
-Limitation 6 — Two Bayesian pipelines with inconsistent formulations ``[design choice · IMPORTANT]``
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-**Files:** ``master_thesis_code/bayesian_inference/bayesian_inference.py`` (Pipeline A);
-``master_thesis_code/bayesian_inference/bayesian_statistics.py`` (Pipeline B)
-
-Pipeline A (synthetic catalog) marginalises over a continuous redshift grid with a scalar
-Gaussian likelihood on :math:`d_L` and a simplified selection correction.
-Pipeline B (GLADE catalog) constructs a full multivariate Gaussian likelihood over
-:math:`(\varphi, \theta, d_L/d_L^\mathrm{pred})` using the actual Fisher-matrix covariance and a
-simulation-based detection-probability estimate.
-The two formulations are not mathematically equivalent and would yield different posteriors
-on identical data. **Pipeline B is the science-grade implementation; Pipeline A is a
-development-only cross-check.**
-
-
 Limitation 7 — Outdated fiducial cosmological parameters ``[design choice · LOW]``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -190,10 +155,6 @@ The following components have been verified against their cited references:
 - **Five-point stencil formula** (``five_point_stencil_derivative`` in ``parameter_estimation.py``):
   the coefficients :math:`(-1, 8, -8, 1)/12\varepsilon` are the correct :math:`O(\varepsilon^4)`
   centred finite difference. Now used by default in the Fisher matrix computation. ✓
-- **Bayesian selection-effects correction** (Pipeline A): the ratio
-  numerator/denominator where the denominator integrates
-  :math:`p_\mathrm{det}(z,H_0)\,p(z|\mathrm{cat})` correctly implements the Loredo–Mandel
-  selection-bias correction for the marginalised likelihood. ✓
 - **Redshifted mass conversion**: :math:`M_z = M(1+z)` and its inverse are correctly implemented
   in ``physical_relations.py``. ✓
 

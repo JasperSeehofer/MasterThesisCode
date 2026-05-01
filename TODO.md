@@ -102,11 +102,10 @@ reference, dimensional analysis, limiting case).
 ## Workstream 2: Statistical Methodology
 
 - [x] **STAT-1 [P0, S]** Document which Bayesian pipeline is production
-      Pipeline A (`BayesianInference` in `bayesian_inference/bayesian_inference.py`): simpler,
-      synthetic galaxy catalog, erf-based detection probability.
-      Pipeline B (`BayesianStatistics` in `cosmological_model.py`): real GLADE catalog,
-      KDE-based detection probability, multiprocessing.
-      Add module-level docstrings clarifying roles. Note in README.
+      `BayesianStatistics` (in `bayesian_inference/bayesian_statistics.py`) is the
+      production pipeline: real GLADE catalog, simulation-based detection probability,
+      full Fisher-matrix covariance, multiprocessing. Invoked by `--evaluate`.
+      The earlier `BayesianInference` cross-check pipeline was removed (see PUB-4).
 
 - [ ] **STAT-2 [P1, S]** Validate emcee MCMC convergence for comoving volume sampling
       `galaxy.py:137` uses 5 walkers × 1000 burn-in for 1D sampling.
@@ -333,7 +332,10 @@ All items tracked under the "Paper Submission" GitHub milestone.
       (RESOLVED — `CITATION.cff` created 2026-04-05.)
 - [ ] **PUB-2 [P0, S]** Tag first GitHub Release (`v2.0.0-rc1`, paper-stage baseline)
 - [ ] **PUB-3 [P1, M]** Prepare reproducibility package (simulation seeds, config, expected outputs)
-- [ ] **PUB-4 [P2, S]** Archive Pipeline A or clearly label as development-only cross-check
+- [x] **PUB-4 [P2, S]** Archive Pipeline A or clearly label as development-only cross-check
+      (RESOLVED 2026-05-01 — Pipeline A code, MWE, EMRIDetection datamodel, and
+      associated tests/benchmark deleted in favor of `BayesianStatistics` as the
+      sole production pipeline.)
 - [ ] **PUB-5 [P1, M]** Write paper methods section describing the completeness-corrected likelihood
 - [ ] **PUB-6 [P2, S]** Final data release preparation (simulation outputs, metadata, figure generation)
 
