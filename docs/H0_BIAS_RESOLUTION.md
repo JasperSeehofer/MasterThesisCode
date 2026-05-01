@@ -44,10 +44,22 @@ staged escalations on side branches (`phase-45-option-A` raises anchor 0.7931→
 0.8873; `phase-45-option-D` extends hybrid to 2D channel) **remain
 deployment-blocked** pending the closure-test backstop (Audit A7).
 
-**v2.3 audit programme summary (2026-05-01):**
+**v2.3 audit programme summary (2026-05-02):**
 A0 G0a CLEAN · A1 G1b real shift · A2 G2b 1D over-anchors structurally ·
-A5 G5a-PARTIAL H2 was primary mover · A8 G8a Phase 33/34 verdicts hold.
-A3, A4, A6, A7 PENDING (require cluster).
+**A4 G4b BIAS DOMINATED BY D(h), not anchor** · A5 G5a-PARTIAL H2 was
+primary mover · A8 G8a Phase 33/34 verdicts hold. A3, A6 superseded by
+A4 finding; A7 (closure test) PENDING and now decisive.
+
+**A4 critical finding (2026-05-02):** Per-event diagnostic CSV (412 cluster
+events × 38 h-values) reconstructs cluster MAP=0.7550 exactly. Decomposing
+into Σ log L_i(h) vs −N log D(h):
+- **Σ log L_i(h) alone peaks at h=0.7400** (within σ_boot=0.0109 of truth
+  h=0.73 — likely statistical, not anchor-related).
+- **−N log D(h) shifts MAP from 0.7400 → 0.7550** (+0.015, and is 2.7×
+  larger than the per-event L pull with OPPOSITE sign).
+- **Phase 45 anchor escalation targets per-event L_comp; the dominant
+  bias is in D(h) selection-function normalization.** Plans 45-06 and 45-07
+  are aimed at the wrong layer. **HALT anchor escalation.**
 
 **What is resolved (cluster posterior):**
 - Galactic confusion noise (Phase 9), Fisher derivatives (Phase 10), KDE→IS
@@ -275,13 +287,19 @@ Each entry links to its date-stamped narrative in [Appendix A](#appendix-a--chro
   (~−0.005). Saturation hand-waved, not derived.
 
 - **Limitations & open questions:**
+  - **Audit A4 (2026-05-02) found that Phase 45's anchor target is the wrong
+    layer.** The cluster MAP=0.7550 decomposes into Σ log L peak at h=0.7400
+    (within σ_boot=0.0109 of truth) plus D(h) selection-function shift of
+    +0.015. The dominant bias is in D(h), not in per-event L_comp. Anchor
+    escalation (Plans 45-06, 45-07) targets per-event L_comp and cannot fix
+    the D(h) offset. **Phase 45 anchor work should be HALTED** pending D(h)
+    audit (next priority).
   - **Anchor is being empirically tuned toward truth.** Sub-binning (RESEARCH §4b),
-    the principled mechanism-addressing alternative, was rejected at planning
-    as "more code surface" and has not been quantitatively predicted vs the
-    anchor's lift. **Audit A3 is the gate that decides whether the anchor or
-    sub-binning is the real fix.**
+    the principled mechanism-addressing alternative, is also a per-event
+    L_comp lever and is therefore superseded by A4's redirect to D(h).
   - **Discrete grid Δh=0.005 + σ_boot ≈ 0.01** makes "1 grid step toward
-    truth" hard to interpret as physics improvement. **Audit A1** resolves.
+    truth" hard to interpret as physics improvement. **Audit A1 (2026-05-01)
+    resolved this**: continuous shift is real (G1b).
   - **2D channel (`_build_grid_2d`) currently unanchored** — uses linear
     extrapolation through histogram bins 0,1, MAP=0.7450 (closer to truth than
     anchored 1D 0.7550). Plan 45-07 would extend hybrid to 2D.
@@ -417,32 +435,50 @@ Each entry links to its date-stamped narrative in [Appendix A](#appendix-a--chro
 4. `~/.claude/plans/can-you-critically-think-calm-cocke.md` — full audit plan
    with pre-registered gates and decision tree.
 
-**Done so far (2026-05-01, no cluster needed):**
-A0 G0a CLEAN · A1 G1b real shift · A2 G2b 1D over-anchors · A5 G5a-PARTIAL ·
-A8 G8a both verdicts hold. Doc restructured (D0). Two new diagnostic
-scripts at `scripts/bias_investigation/test_{13,14}_*.py`.
+**Done so far (2026-05-01 / 2026-05-02):**
+A0 G0a CLEAN · A1 G1b real shift · A2 G2b 1D over-anchors · A4 G4b D(h)
+DOMINATES bias · A5 G5a-PARTIAL · A8 G8a both verdicts hold. Doc
+restructured (D0). Three new diagnostic scripts at
+`scripts/bias_investigation/test_{13,14,16}_*.py`. Cluster CSVs rsync'd
+to `simulations/cluster_run_phase45_20260501/`.
 
-**Next actions, in priority order:**
+**A4 changes the picture: anchor work is the wrong layer.**
+
+The +0.025 residual decomposes:
+- +0.010 from per-event Σ log L (peak at h=0.7400, within σ_boot of truth)
+- +0.015 from D(h) selection-function correction (shifts MAP 0.74 → 0.755)
+
+D(h) is 2.7× larger than per-event L and opposite sign. Phase 45's anchor
+system targets per-event L_comp; can't fix D(h)-driven offset.
+
+**Next actions, in priority order (post-A4):**
 
 | # | Action | Cost | Blocks |
 |---|---|---|---|
-| 1 | **Run A4** — re-evaluate ONE cluster task at h=0.73 to harvest `simulations/diagnostics/event_likelihoods.csv`; analyze for top-10 bias-driving events. | ~15 min cluster | Knowing whether bias is on <20 boundary events (mechanism confirmed) or globally distributed (escalate to A8). |
-| 2 | **Run A3** on cluster-scale data — sub-binning predicted MAP shift from cluster injection campaign per RESEARCH §4b; Wilson floor for sub-bins n<10. | ~30 min analysis once cluster CSV available | Whether to ship Plan 45-08 sub-binning or stick with anchor escalation. |
-| 3 | **Run A7 closure test** at h_true=0.65, seed 201 — gold-standard pipeline validation. **Highest-priority remaining audit.** | ~6–8 hr cluster (full re-injection) | Whether the +0.025 residual is real bias or calibration tuned to truth. Until A7 passes, paper-readiness is not justified. |
-| 4 | Plan 45-06 / 45-07 deployment decision. Currently BLOCKED. | n/a | Wait for A4 + A7 results, then signed-correct prediction is possible. |
+| 1 | **HALT Plan 45-06 and 45-07 deployment.** They target per-event L_comp via P_det anchor lift, but A4 shows the dominant bias is in D(h). Don't merge side branches. | n/a | Avoiding wasted cluster time on wrong-layer fixes. |
+| 2 | **Audit D(h) computation** — investigate `precompute_completion_denominator()` in `bayesian_statistics.py`. Why does Σ log L peak at h=0.7400 (close to truth) but D(h) shift MAP to 0.7550? Candidates: (a) integration grid resolution in z; (b) `dV_c/dz` factor at high h; (c) P_det grid behavior at large d_L (most volume); (d) cosmological d_L-z relation accuracy. | read-only ~1 hr per candidate | Identifying the specific D(h) systematic. |
+| 3 | **Run A7 closure test** at h_true=0.65 — leaner version: rescale existing cluster CRB CSV (d_L, σ_dL, SNR, Fisher d_L block) to h=0.65; drop SNR<20 events; rerun --evaluate at extended h-grid [0.55, 0.85]. Test whether D(h) decomposition pattern is the same at a different truth. | ~30 min total | Distinguishing parametric/statistical bias (A7 passes) from D(h) bug (A7 fails or shows different pattern). |
+| 4 | A3 sub-binning prediction superseded by A4 finding — sub-binning of P_det first bin is also a per-event L_comp lever. | n/a | — |
 
-**Cluster prerequisite:** confirm `cluster/submit_injection.sh` accepts a
-`--seed` flag; per the Phase-1 explorer, it currently does not. ~3 LOC fix
-needed before A7 can run with seed 201.
+**Cluster prerequisite for A7:** `cluster/submit_injection.sh` may not be
+needed if we use the rescaling approach (no re-injection). Lean A7 only
+needs the existing cluster CRB + a Python rescaling script + 38-task
+evaluate.sbatch on the rescaled CSV.
 
 **Context for cold pickup:**
 - Project root: `/home/jasper/Repositories/MasterThesisCode`
-- Cluster: bwUniCluster 3.0 (KIT), GPU partition. SSH access in the user's
-  memory under `reference_cluster_access.md`.
-- Current working tree state (2026-05-01): branch `main`, two staged side
-  branches (`phase-45-option-A`, `phase-45-option-D`) with un-merged
-  commits ready for cluster verification once the audit gates open.
+- Cluster: bwUniCluster 3.0 (KIT), GPU partition. SSH access available
+  via `ssh bwunicluster`. SSH agent set up for git push.
+- Current working tree state: branch `main`, two staged side branches
+  (`phase-45-option-A`, `phase-45-option-D`) — **DO NOT MERGE** per A4
+  finding.
+- A parallel session began running 45-06 and 45-07 on the cluster (per
+  user 2026-05-01); the cluster results from those runs will inform but
+  not deploy — they're empirical data points, not validations.
 - Diagnostic outputs: `scripts/bias_investigation/outputs/phase45/*.json`.
+- Cluster CSVs rsync'd to: `simulations/cluster_run_phase45_20260501/`
+  (cramer_rao_bounds.csv, prepared_cramer_rao_bounds.csv,
+  diagnostics/event_likelihoods.csv, fisher_quality.csv).
 
 ### 4.1 Cluster MAP residual +0.025 (Phase 45 ESCALATING)
 
@@ -476,7 +512,7 @@ Decision-tree of eight prioritized audits (full plan:
 | **A1** | Δh=0.001 reinterpretation of existing posteriors | no cluster, 1 hr | G1a/b/c per continuous MAP | **DONE — G1b** (2026-05-01): continuous 1D MAP=0.7550, σ_boot=0.0109, real shift |
 | **A2** | 1D vs 2D channel structural audit (`p̂(c_0)` per channel, lift comparison) | no cluster, 30 min | G2a/b/c per anchor signedness | **DONE — G2b cluster-projection** (2026-05-01): 1D anchored mean lift on [0, c_0_cluster=0.10] ≈ 0.834 vs 2D unanchored ≈ 0.568 (Δ=−0.27, sensitivity-robust). Local data limited by geometry mismatch (local dl_max=2.77 Gpc vs cluster 12 Gpc). |
 | **A3** | Sub-binning quantitative pre-prediction (RESEARCH §4b) | no cluster, 30 min | G3a/b/c/d per predicted MAP shift | DEFERRED (needs cluster-scale data; local geometry mismatch ↔ A2) |
-| **A4** | Per-event L_cat / L_comp / f_i CSV analysis at 412 events | 0–15 min cluster | G4a/b/c per bias concentration | PENDING (needs cluster — `prepared_cramer_rao_bounds.csv` gitignored locally) |
+| **A4** | Per-event L_cat / L_comp / f_i CSV analysis at 412 events | 0–15 min cluster | G4a/b/c per bias concentration | **DONE — G4b + decomposition** (2026-05-02): rsync'd cluster CSVs to `simulations/cluster_run_phase45_20260501/`. Reconstructed cluster MAP=0.7550 exactly. **Critical finding: Σ log L_i alone peaks at h=0.7400 (within σ_boot of truth); D(h) selection-function correction shifts MAP +0.015 → 0.7550.** D(h) effect is 2.7× per-event L pull, opposite sign. Anchor escalation aimed at wrong layer. |
 | **A5** | Phase 43 H1/H2 ablation evidence audit | read-only 30 min | G5a/b per ablation evidence presence | **DONE — G5a-PARTIAL** (2026-05-01): H2 alone moved MAP 0.860 → 0.730 ("raw Σ log L_i already peaks at 0.730 without needing D(h) correction"); H1 only "sharpens the peak". H1 standalone effect not tested but inferred small. |
 | **A6** | Native Δh=0.001 cluster sweep | 30 min cluster | G6a/b vs A1 interp agreement | RESERVED (only if A1 contested; A1 cubic cross-check passed) |
 | **A7** | Closure test at h_true=0.65 (gold standard) | 6–8 hr cluster | G7a/b/c/d per recovered MAP | PENDING (needs cluster) |
