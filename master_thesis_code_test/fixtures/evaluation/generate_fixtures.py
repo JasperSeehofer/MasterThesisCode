@@ -42,8 +42,13 @@ for i, p_i in enumerate(PARAM_NAMES):
         FISHER_COLUMNS.append(f"delta_{p_i}_delta_{p_j}")
 
 METADATA_COLUMNS = [
-    "T", "dt", "SNR", "generation_time", "host_galaxy_index",
-    "_coord_frame", "_cov_frame",
+    "T",
+    "dt",
+    "SNR",
+    "generation_time",
+    "host_galaxy_index",
+    "_coord_frame",
+    "_cov_frame",
 ]
 
 DETECTED_COLUMNS = PARAM_NAMES + FISHER_COLUMNS + METADATA_COLUMNS

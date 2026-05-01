@@ -188,12 +188,8 @@ def plot_h0_convergence(
     if bootstrap_bank is not None:
         b_sizes = np.asarray(bootstrap_bank.sizes, dtype=np.float64)
         # Primary variant (no mass)
-        w_no_lo = np.asarray(
-            bootstrap_bank.metrics_no_mass["hdi68_width"]["p16"], dtype=np.float64
-        )
-        w_no_hi = np.asarray(
-            bootstrap_bank.metrics_no_mass["hdi68_width"]["p84"], dtype=np.float64
-        )
+        w_no_lo = np.asarray(bootstrap_bank.metrics_no_mass["hdi68_width"]["p16"], dtype=np.float64)
+        w_no_hi = np.asarray(bootstrap_bank.metrics_no_mass["hdi68_width"]["p84"], dtype=np.float64)
         ax_ci.fill_between(b_sizes, w_no_lo, w_no_hi, color=color, alpha=0.2, zorder=2)
         # Alt variant (with mass) — only if alt posteriors were provided
         if event_posteriors_alt is not None:
@@ -203,9 +199,7 @@ def plot_h0_convergence(
             w_with_hi = np.asarray(
                 bootstrap_bank.metrics_with_mass["hdi68_width"]["p84"], dtype=np.float64
             )
-            ax_ci.fill_between(
-                b_sizes, w_with_lo, w_with_hi, color=color_alt, alpha=0.2, zorder=2
-            )
+            ax_ci.fill_between(b_sizes, w_with_lo, w_with_hi, color=color_alt, alpha=0.2, zorder=2)
 
     # 1/sqrt(N) reference curve scaled to match first point of primary
     if len(sizes) > 1 and ci_widths[0] > 0:

@@ -10,7 +10,6 @@ import astropy.units as u
 import numpy as np
 import numpy.typing as npt
 import pandas as pd
-import pytest
 from astropy.coordinates import BarycentricTrueEcliptic, SkyCoord
 
 from scripts.migrate_crb_to_ecliptic import (
@@ -123,10 +122,7 @@ def test_other_columns_unchanged(tmp_path: Path) -> None:
         for r in range(_N_PARAMS)
         for c in range(r + 1)
     }
-    unchanged = [
-        c for c in original.columns
-        if c not in ("qS", "phiS") and c not in fisher_cols
-    ]
+    unchanged = [c for c in original.columns if c not in ("qS", "phiS") and c not in fisher_cols]
     pd.testing.assert_frame_equal(
         migrated[unchanged].reset_index(drop=True),
         original[unchanged].reset_index(drop=True),
@@ -158,21 +154,25 @@ def test_covariance_block_rotated(tmp_path: Path) -> None:
         J = J_all[i]  # (2, 2)
 
         # Original 2x2 sky-sky block
-        sig_qq = float(original[f"delta_qS_delta_qS"].iloc[i])
-        sig_pp = float(original[f"delta_phiS_delta_phiS"].iloc[i])
-        sig_pq = float(original[f"delta_phiS_delta_qS"].iloc[i])
+        sig_qq = float(original["delta_qS_delta_qS"].iloc[i])
+        sig_pp = float(original["delta_phiS_delta_phiS"].iloc[i])
+        sig_pq = float(original["delta_phiS_delta_qS"].iloc[i])
         sigma_eq = np.array([[sig_qq, sig_pq], [sig_pq, sig_pp]])
 
         sigma_ecl_expected = J @ sigma_eq @ J.T
 
-        qq_ecl = float(migrated[f"delta_qS_delta_qS"].iloc[i])
-        pp_ecl = float(migrated[f"delta_phiS_delta_phiS"].iloc[i])
-        pq_ecl = float(migrated[f"delta_phiS_delta_qS"].iloc[i])
+        qq_ecl = float(migrated["delta_qS_delta_qS"].iloc[i])
+        pp_ecl = float(migrated["delta_phiS_delta_phiS"].iloc[i])
+        pq_ecl = float(migrated["delta_phiS_delta_qS"].iloc[i])
         sigma_ecl_actual = np.array([[qq_ecl, pq_ecl], [pq_ecl, pp_ecl]])
 
         # rtol=1e-6: central finite differences with δ=1e-7 give O(δ²/ε)≈1e-8 precision
-        np.testing.assert_allclose(sigma_ecl_actual, sigma_ecl_expected, rtol=1e-6,
-                                   err_msg=f"Sky-sky covariance mismatch at row {i}")
+        np.testing.assert_allclose(
+            sigma_ecl_actual,
+            sigma_ecl_expected,
+            rtol=1e-6,
+            err_msg=f"Sky-sky covariance mismatch at row {i}",
+        )
 
 
 def test_covariance_non_sky_diagonal_unchanged(tmp_path: Path) -> None:
@@ -200,6 +200,7 @@ def test_partial_migration_cov_only(tmp_path: Path) -> None:
     # Simulate state 2: migrate positions but NOT covariance (old script behaviour)
     backup = path.with_suffix(path.suffix + ".bak_equatorial")
     import shutil
+
     shutil.copy2(path, backup)  # backup holds original equatorial positions
 
     df = pd.read_csv(path)
