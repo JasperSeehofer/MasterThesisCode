@@ -58,15 +58,22 @@ _MAX_CACHE_SIZE: int = 20
 # (cannot reject a common p across h_inj groups; see Plan 45-01 SUMMARY,
 # .gpd/phases/45-p-det-first-bin-asymptote-fix/45-01-SUMMARY.md).
 #
-# Phase 45 RESEARCH.md §4a-(ii) recommends the conservative Wilson 95%
-# lower bound (0.7931) rather than the point estimate (0.8873) so the
-# anchor cannot overshoot truth on production posteriors.
+# Plan 45-04 (hybrid) cluster re-eval at MAP=0.7550 is still outside the
+# acceptance window [0.72, 0.74] (see Plan 45-05 SUMMARY).  Plan 45-06
+# (Option A in Plan 45-05 SUMMARY's escalation tree) raises this anchor
+# from the conservative Wilson 95% lower bound (0.7931) to the pooled
+# point estimate (0.8873; n=63/71 detected at d_L < 0.10 Gpc across all
+# h_inj groups; LR homogeneity p=0.199, see Plan 45-01).  The point
+# estimate is defensible because two cluster re-evals already showed the
+# conservative bound undershoots; the empirically observed asymptote at
+# d_L < 0.10 Gpc is 0.8873.  The hybrid intermediate anchor at d_L=0.05
+# (= 1.0) is unchanged.
 #
 # This constant is intentionally h-INDEPENDENT: it is the same scalar at
 # every Hubble parameter target.  Phase 44 regression
 # `test_zero_fill_no_h_dependent_step_for_close_dL` requires this property.
 # ----------------------------------------------------------------------
-_P_MAX_EMPIRICAL_ANCHOR: float = 0.7931
+_P_MAX_EMPIRICAL_ANCHOR: float = 0.8873
 
 # ----------------------------------------------------------------------
 # Phase 45 Plan 45-04 hybrid intermediate anchor at d_L = 0.05 Gpc.
