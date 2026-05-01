@@ -32,10 +32,12 @@ from master_thesis_code.bayesian_inference.simulation_detection_probability impo
     SimulationDetectionProbability,
 )
 
-# Plan 45-02 Task 1: 8 d_L values x 5 h values = 40 query results
-# (Plan text says "5 d_L values × 5 h values = 25" but the spec lists 8 d_L
-# points; we use the 8-point list for full coverage.)
-DL_VALUES_GPC = [0.0, 0.001, 0.01, 0.05, 0.10, 0.15, 0.20, 0.30]
+# Plan 45-02 + 45-04 d_L probe grid:
+# - Plan 45-02 (8 points): 0.0, 0.001, 0.01, 0.05, 0.10, 0.15, 0.20, 0.30
+# - Plan 45-04 adds (3 points): 0.005, 0.025, 0.075 — the midpoints of the
+#   [0, 0.05] and [0.05, 0.10] hybrid segments where the linear-interp
+#   identity is verified. Total: 11 d_L points × 5 h values = 55 rows.
+DL_VALUES_GPC = [0.0, 0.001, 0.005, 0.01, 0.025, 0.05, 0.075, 0.10, 0.15, 0.20, 0.30]
 H_VALUES = [0.65, 0.70, 0.73, 0.80, 0.85]
 
 INJECTION_DATA_DIR = "simulations/injections"

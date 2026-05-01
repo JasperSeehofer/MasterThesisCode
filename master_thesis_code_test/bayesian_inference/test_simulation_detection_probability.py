@@ -681,23 +681,31 @@ class TestZeroFillBoundaryConvention:
     a +145.7 log-unit MAP bias toward h_max for events with d_L ≈ c_0.
 
     Phase 45 amends ``test_zero_fill_below_first_bin_is_nonzero_for_valid_dL``:
-    after the empirical-anchor patch (commit ``[PHYSICS] Phase 45``), the value
-    at ``d_L = c_0/2`` is exactly the linear midpoint between the empirical
-    anchor ``_P_MAX_EMPIRICAL_ANCHOR`` and the first-bin estimate ``p̂(c_0)``;
-    the amended assertion is fixture-independent (tests the predicted
-    interpolation formula, not a synthetic-data-specific magnitude).
+    Plan 45-02 made the value at ``d_L = c_0/2`` the linear midpoint between
+    ``_P_MAX_EMPIRICAL_ANCHOR`` and ``p̂(c_0)``.  Plan 45-04 (hybrid) extends the
+    layout with an intermediate anchor at ``(0.05, 1.0)``; the value at
+    ``d_L = c_0/2`` now follows the hybrid two-segment linear interp formula
+    (linear from ``(0, 0.7931)`` to ``(0.05, 1.0)`` on ``[0, 0.05]``; linear
+    from ``(0.05, 1.0)`` to ``(c_0, p̂(c_0))`` on ``[0.05, c_0]``).  The
+    assertion is still fixture-independent.
     """
 
     def test_zero_fill_below_first_bin_is_nonzero_for_valid_dL(self, injection_dir: str) -> None:
-        """d_L below dl_centers[0] is the linear midpoint of (anchor, p̂(c_0)).
+        """d_L below dl_centers[0] follows the Phase 45 hybrid linear-interp formula.
 
-        Fixture-independent: after Phase 45 the interpolator on [0, c_0) is
-        ``linear_interp((0, P_MAX), (c_0, p̂(c_0)))``, so at d_L = c_0/2 the
-        value equals exactly ``0.5 * (P_MAX + p̂(c_0))``.  This test asserts
-        the interpolation formula directly rather than a magnitude that
-        depends on the synthetic 200-event histogram.
+        Fixture-independent: Plan 45-04 inserts an intermediate anchor at
+        ``(_D_INTERMEDIATE_ANCHOR_GPC, _P_INTERMEDIATE_EMPIRICAL) = (0.05, 1.0)``
+        when ``c_0(h) > 0.05``.  The value at ``d_L = c_0/2`` is therefore:
+        - on segment ``[0, 0.05]`` (when ``c_0/2 < 0.05``):
+          ``P_MAX + (P_INTERMEDIATE - P_MAX) * (c_0/2) / 0.05``
+        - on segment ``[0.05, c_0]`` (when ``c_0/2 >= 0.05``):
+          ``P_INTERMEDIATE + (p̂(c_0) - P_INTERMEDIATE) * (c_0/2 - 0.05) / (c_0 - 0.05)``
+        - in the c_0 ≤ 0.05 fallback (no intermediate):
+          ``0.5 * (P_MAX + p̂(c_0))`` (Plan 45-02 formula).
         """
         from master_thesis_code.bayesian_inference.simulation_detection_probability import (
+            _D_INTERMEDIATE_ANCHOR_GPC,
+            _P_INTERMEDIATE_EMPIRICAL,
             _P_MAX_EMPIRICAL_ANCHOR,
             SimulationDetectionProbability,
         )
@@ -709,27 +717,48 @@ class TestZeroFillBoundaryConvention:
         h = 0.70
         pdet._get_or_build_grid(h)
         _, interp_1d = pdet._grid_cache[h]
-        # After Phase 45, grid[0] is the prepended anchor at d_L=0;
-        # grid[1] is the first histogram bin centre c_0.
-        anchor_dl = float(interp_1d.grid[0][0])
-        c0 = float(interp_1d.grid[0][1])
-        assert anchor_dl == 0.0  # Phase 45 anchor at d_L=0
-        assert c0 > 0.0  # bin midpoint is in the regime that matters
+        # Phase 45 layout: grid[0] = 0.0 (Plan 45-02 anchor); grid[1] is either
+        # _D_INTERMEDIATE_ANCHOR_GPC (Plan 45-04 hybrid) OR c_0 (fallback when
+        # c_0 ≤ _D_INTERMEDIATE_ANCHOR_GPC).
+        grid_axis = interp_1d.grid[0]
+        anchor_dl = float(grid_axis[0])
+        assert anchor_dl == 0.0  # Plan 45-02 anchor at d_L=0
+        if abs(float(grid_axis[1]) - _D_INTERMEDIATE_ANCHOR_GPC) < 1e-12:
+            c0 = float(grid_axis[2])  # hybrid layout
+        else:
+            c0 = float(grid_axis[1])  # fallback layout
+        assert c0 > 0.0
 
-        # d_L = c0/2 sits between the anchor (d_L=0) and the first bin centre c_0.
+        d_query = 0.5 * c0
         p_below = pdet.detection_probability_without_bh_mass_interpolated_zero_fill(
-            d_L=c0 / 2.0, phi=0.0, theta=0.0, h=h
+            d_L=d_query, phi=0.0, theta=0.0, h=h
         )
-        p_at = pdet.detection_probability_without_bh_mass_interpolated_zero_fill(
-            d_L=c0, phi=0.0, theta=0.0, h=h
+        p_at = float(
+            pdet.detection_probability_without_bh_mass_interpolated_zero_fill(
+                d_L=c0, phi=0.0, theta=0.0, h=h
+            )
         )
-        # Phase 45: with empirical anchor at (0, _P_MAX_EMPIRICAL_ANCHOR), the
-        # interpolator at d_L = 0.5 * c_0 is the linear midpoint between the
-        # anchor and the first bin centre (p̂(c_0) = p_at).
-        expected_p_below = 0.5 * (_P_MAX_EMPIRICAL_ANCHOR + float(p_at))
+
+        # Plan 45-04 hybrid linear-interp formula (fixture-independent):
+        if c0 <= _D_INTERMEDIATE_ANCHOR_GPC:
+            # Fallback: Plan 45-02 single-anchor layout.
+            expected_p_below = 0.5 * (_P_MAX_EMPIRICAL_ANCHOR + p_at)
+        elif d_query > _D_INTERMEDIATE_ANCHOR_GPC:
+            # Hybrid right segment: linear from (0.05, 1.0) to (c_0, p_at).
+            expected_p_below = _P_INTERMEDIATE_EMPIRICAL + (p_at - _P_INTERMEDIATE_EMPIRICAL) * (
+                d_query - _D_INTERMEDIATE_ANCHOR_GPC
+            ) / (c0 - _D_INTERMEDIATE_ANCHOR_GPC)
+        else:
+            # Hybrid left segment: linear from (0, 0.7931) to (0.05, 1.0).
+            expected_p_below = (
+                _P_MAX_EMPIRICAL_ANCHOR
+                + (_P_INTERMEDIATE_EMPIRICAL - _P_MAX_EMPIRICAL_ANCHOR)
+                * d_query
+                / _D_INTERMEDIATE_ANCHOR_GPC
+            )
+
         assert float(p_below) == pytest.approx(expected_p_below, rel=1e-6), (
-            f"Phase 45: expected linear interp midpoint "
-            f"0.5 * (P_MAX={_P_MAX_EMPIRICAL_ANCHOR} + p̂(c_0)={p_at}) = "
+            f"Phase 45 hybrid: at d_L={d_query:.6f} (c_0={c0:.6f}), expected "
             f"{expected_p_below:.6f}; got p_below={p_below}"
         )
         # The first-bin estimate must be a real probability, not the old zero.
@@ -931,12 +960,14 @@ class TestPhase45EmpiricalAnchor:
     def test_interp_at_c0_unchanged_by_anchor(self, injection_dir: str) -> None:
         """interp(d_L=c_0) equals the unchanged histogram first-bin estimate p̂(c_0).
 
-        The Phase 45 anchor at d_L=0 must NOT perturb the value at the first
-        histogram bin centre c_0: linear interpolation between two distinct
-        endpoint values passes through both.  We verify this by reproducing
-        the histogram logic from `_build_grid_1d` directly and comparing.
+        The Phase 45 anchors at d_L=0 (Plan 45-02) and d_L=0.05 (Plan 45-04)
+        must NOT perturb the value at the first histogram bin centre c_0:
+        linear interpolation between two distinct endpoint values passes
+        through both.  We verify this by reproducing the histogram logic from
+        `_build_grid_1d` directly and comparing.
         """
         from master_thesis_code.bayesian_inference.simulation_detection_probability import (
+            _D_INTERMEDIATE_ANCHOR_GPC,
             SimulationDetectionProbability,
         )
         from master_thesis_code.physical_relations import dist_vectorized
@@ -948,8 +979,13 @@ class TestPhase45EmpiricalAnchor:
         h = 0.70
         pdet._get_or_build_grid(h)
         _, interp_1d = pdet._grid_cache[h]
-        # Phase 45: grid[0] is the anchor (d_L=0); grid[1] is the first bin centre c_0.
-        c0 = float(interp_1d.grid[0][1])
+        # Phase 45 layout: grid[0] = 0.0 anchor; grid[1] is either the
+        # intermediate (0.05) or the first bin centre (fallback).
+        grid_axis = interp_1d.grid[0]
+        if abs(float(grid_axis[1]) - _D_INTERMEDIATE_ANCHOR_GPC) < 1e-12:
+            c0 = float(grid_axis[2])  # hybrid layout
+        else:
+            c0 = float(grid_axis[1])  # fallback layout
 
         # Reproduce histogram first-bin estimate p̂(c_0) at h=0.70 directly.
         pooled = pdet._pooled_df
@@ -961,13 +997,9 @@ class TestPhase45EmpiricalAnchor:
         dl_max = float(np.max(dl_target)) * 1.1
         dl_edges = np.linspace(0, dl_max, 60 + 1)  # _DEFAULT_DL_BINS = 60
         total_counts, _ = np.histogram(dl_target, bins=dl_edges)
-        detected_counts, _ = np.histogram(
-            dl_target[snr_rescaled >= 20.0], bins=dl_edges
-        )
+        detected_counts, _ = np.histogram(dl_target[snr_rescaled >= 20.0], bins=dl_edges)
         p_hat_c0 = (
-            float(detected_counts[0]) / float(total_counts[0])
-            if total_counts[0] > 0
-            else 0.0
+            float(detected_counts[0]) / float(total_counts[0]) if total_counts[0] > 0 else 0.0
         )
 
         result = pdet.detection_probability_without_bh_mass_interpolated_zero_fill(
@@ -980,7 +1012,8 @@ class TestPhase45EmpiricalAnchor:
 
     def test_interp_below_c0_strictly_lifted(self) -> None:
         """On the PRODUCTION injection fixture (where p̂(c_0) ≈ 0.544 at h=0.73),
-        interp(c_0/2; h=0.73) > pre-fix value and > p̂(c_0).
+        interp(c_0/2; h=0.73) is strictly above p̂(c_0) and bounded above by
+        the intermediate anchor value 1.0 (Plan 45-04 hybrid).
 
         This test uses the real `simulations/injections/` campaign rather
         than the synthetic 200-event fixture, because Plan 45-01 established
@@ -995,6 +1028,8 @@ class TestPhase45EmpiricalAnchor:
         import pathlib
 
         from master_thesis_code.bayesian_inference.simulation_detection_probability import (
+            _D_INTERMEDIATE_ANCHOR_GPC,
+            _P_INTERMEDIATE_EMPIRICAL,
             _P_MAX_EMPIRICAL_ANCHOR,
             SimulationDetectionProbability,
         )
@@ -1017,7 +1052,13 @@ class TestPhase45EmpiricalAnchor:
         h = 0.73
         pdet._get_or_build_grid(h)
         _, interp_1d = pdet._grid_cache[h]
-        c0 = float(interp_1d.grid[0][1])  # grid[0]=anchor, grid[1]=c_0
+        # Phase 45 layout: grid[0]=0 anchor; grid[1] is either 0.05 (hybrid)
+        # or c_0 (fallback). Read c_0 from the appropriate position.
+        grid_axis = interp_1d.grid[0]
+        if abs(float(grid_axis[1]) - _D_INTERMEDIATE_ANCHOR_GPC) < 1e-12:
+            c0 = float(grid_axis[2])  # hybrid layout
+        else:
+            c0 = float(grid_axis[1])  # fallback layout
         d_L_test = 0.5 * c0
 
         p_at = float(
@@ -1031,34 +1072,30 @@ class TestPhase45EmpiricalAnchor:
             )
         )
 
-        # On the production fixture, p̂(c_0) ≈ 0.544 < 0.7931 ≈ anchor, so
-        # the linear-interp midpoint must lie strictly between p̂(c_0) and
-        # the anchor; in particular strictly above p̂(c_0).
+        # On the production fixture, p̂(c_0) ≈ 0.544 < 0.7931 ≈ anchor — the
+        # pre-Phase-45 bias-diagnosis precondition is preserved by the hybrid.
         assert p_at < _P_MAX_EMPIRICAL_ANCHOR, (
             f"Production fixture sanity: expected p̂(c_0)={p_at} < "
             f"_P_MAX_EMPIRICAL_ANCHOR={_P_MAX_EMPIRICAL_ANCHOR}; if this fails "
             "the pre-Phase-45 bias diagnosis no longer applies to this dataset."
         )
+        # Plan 45-04 hybrid: at d_L = c_0/2 the value lies on one of the two
+        # hybrid segments, both bounded above by _P_INTERMEDIATE_EMPIRICAL=1.0
+        # and strictly above p̂(c_0).
         assert p_below > p_at, (
-            f"Phase 45: with anchor at d_L=0 above p̂(c_0), interp(c_0/2) must "
-            f"strictly exceed p̂(c_0)={p_at}; got {p_below}"
+            f"Phase 45 hybrid: interp(c_0/2) must strictly exceed p̂(c_0)={p_at}; got {p_below}"
         )
-        assert p_below < _P_MAX_EMPIRICAL_ANCHOR, (
-            f"Phase 45: interp(c_0/2) must stay below the anchor "
-            f"_P_MAX_EMPIRICAL_ANCHOR={_P_MAX_EMPIRICAL_ANCHOR} (we are "
-            f"between c_0=0 and c_0); got {p_below}"
-        )
-        # Linear-interp identity: interp(c_0/2) == 0.5 * (anchor + p̂(c_0))
-        expected = 0.5 * (_P_MAX_EMPIRICAL_ANCHOR + p_at)
-        assert p_below == pytest.approx(expected, rel=1e-6), (
-            f"Phase 45 linear-interp identity: interp(c_0/2)={p_below} != "
-            f"0.5*({_P_MAX_EMPIRICAL_ANCHOR} + {p_at}) = {expected}"
+        assert p_below <= _P_INTERMEDIATE_EMPIRICAL, (
+            f"Phase 45 hybrid: interp(c_0/2) must be bounded above by the "
+            f"intermediate anchor _P_INTERMEDIATE_EMPIRICAL={_P_INTERMEDIATE_EMPIRICAL}; "
+            f"got {p_below}"
         )
 
     def test_docstring_states_linear_and_anchor(self) -> None:
         """The docstring of detection_probability_without_bh_mass_interpolated_zero_fill
-        must state the new boundary convention: linear interpolation lifted
-        by an empirical anchor introduced in Phase 45.
+        must state the boundary convention: linear interpolation lifted by an
+        empirical anchor (Plan 45-02) plus a hybrid intermediate anchor at
+        d_L=0.05 (Plan 45-04).
         """
         import inspect
 
@@ -1074,9 +1111,326 @@ class TestPhase45EmpiricalAnchor:
         assert "linear" in doc_lower, (
             f"Phase 45: docstring must state 'linear' (interp/extrap), got:\n{doc}"
         )
-        assert "empirical anchor" in doc_lower, (
+        assert "empirical anchor" in doc_lower or "empirical anchors" in doc_lower, (
             f"Phase 45: docstring must reference 'empirical anchor', got:\n{doc}"
         )
-        assert "phase 45" in doc_lower, (
-            f"Phase 45: docstring must cite 'Phase 45', got:\n{doc}"
+        assert "phase 45" in doc_lower, f"Phase 45: docstring must cite 'Phase 45', got:\n{doc}"
+        # Plan 45-04: docstring must additionally mention the hybrid layout.
+        assert "hybrid" in doc_lower or "intermediate" in doc_lower, (
+            f"Phase 45 Plan 45-04: docstring must mention 'hybrid' or "
+            f"'intermediate' anchor, got:\n{doc}"
+        )
+
+    # ------------------------------------------------------------------
+    # Plan 45-04 hybrid (intermediate anchor at d_L = 0.05 Gpc, value = 1.0)
+    # ------------------------------------------------------------------
+
+    def test_intermediate_value_at_005_equals_constant(self, injection_dir: str) -> None:
+        """interp(d_L=0.05; h) == _P_INTERMEDIATE_EMPIRICAL=1.0 for all h with c_0(h) > 0.05."""
+        from master_thesis_code.bayesian_inference.simulation_detection_probability import (
+            _D_INTERMEDIATE_ANCHOR_GPC,
+            _P_INTERMEDIATE_EMPIRICAL,
+            SimulationDetectionProbability,
+        )
+
+        pdet = SimulationDetectionProbability(
+            injection_data_dir=injection_dir,
+            snr_threshold=20.0,
+        )
+        for h in (0.65, 0.70, 0.73, 0.80, 0.85):
+            pdet._get_or_build_grid(h)
+            grid_axis = pdet._grid_cache[h][1].grid[0]
+            # Hybrid layout precondition: c_0(h) > _D_INTERMEDIATE_ANCHOR_GPC.
+            if abs(float(grid_axis[1]) - _D_INTERMEDIATE_ANCHOR_GPC) >= 1e-12:
+                pytest.skip(
+                    f"h={h}: c_0={float(grid_axis[1])} <= 0.05; intermediate anchor "
+                    "absent (fallback layout); not the regime this test covers."
+                )
+            v = pdet.detection_probability_without_bh_mass_interpolated_zero_fill(
+                d_L=_D_INTERMEDIATE_ANCHOR_GPC, phi=0.0, theta=0.0, h=h
+            )
+            assert float(v) == pytest.approx(_P_INTERMEDIATE_EMPIRICAL, rel=1e-12), (
+                f"Plan 45-04: interp(d_L=0.05; h={h}) must equal "
+                f"_P_INTERMEDIATE_EMPIRICAL={_P_INTERMEDIATE_EMPIRICAL}; got {v}"
+            )
+
+    def test_intermediate_h_independent(self, injection_dir: str) -> None:
+        """h-spread at d_L=0.05 is exactly 0 (intermediate is a fixed scalar)."""
+        from master_thesis_code.bayesian_inference.simulation_detection_probability import (
+            _D_INTERMEDIATE_ANCHOR_GPC,
+            SimulationDetectionProbability,
+        )
+
+        pdet = SimulationDetectionProbability(
+            injection_data_dir=injection_dir,
+            snr_threshold=20.0,
+        )
+        values: dict[float, float] = {}
+        for h in (0.65, 0.70, 0.73, 0.80, 0.85):
+            v = pdet.detection_probability_without_bh_mass_interpolated_zero_fill(
+                d_L=_D_INTERMEDIATE_ANCHOR_GPC, phi=0.0, theta=0.0, h=h
+            )
+            values[h] = float(v)
+        spread = max(values.values()) - min(values.values())
+        assert spread < 1e-12, (
+            f"Plan 45-04: interp(d_L=0.05) must be h-INDEPENDENT (intermediate "
+            f"is a module-level scalar at a fixed physical position).  "
+            f"h-spread = {spread}, values = {values}"
+        )
+
+    def test_anchor_at_zero_unchanged(self, injection_dir: str) -> None:
+        """interp(d_L=0; h) still equals _P_MAX_EMPIRICAL_ANCHOR=0.7931 (Plan 45-02 invariant)."""
+        from master_thesis_code.bayesian_inference.simulation_detection_probability import (
+            _P_MAX_EMPIRICAL_ANCHOR,
+            SimulationDetectionProbability,
+        )
+
+        pdet = SimulationDetectionProbability(
+            injection_data_dir=injection_dir,
+            snr_threshold=20.0,
+        )
+        for h in (0.65, 0.70, 0.73, 0.80, 0.85):
+            v = pdet.detection_probability_without_bh_mass_interpolated_zero_fill(
+                d_L=0.0, phi=0.0, theta=0.0, h=h
+            )
+            assert float(v) == pytest.approx(_P_MAX_EMPIRICAL_ANCHOR, rel=1e-12), (
+                f"Plan 45-04: d_L=0 anchor invariant violated at h={h}; got {v}"
+            )
+
+    def test_interp_at_c0_unchanged_by_intermediate(self, injection_dir: str) -> None:
+        """Plan 45-04 invariant: interp(d_L=c_0; h) still equals p̂(c_0).
+
+        The intermediate anchor at d_L=0.05 is BETWEEN d_L=0 and d_L=c_0; the
+        linear interpolant on [0.05, c_0] passes through both (0.05, 1.0) and
+        (c_0, p̂(c_0)), so the value at c_0 is unchanged by Plan 45-04.
+        """
+        import numpy as np
+
+        from master_thesis_code.bayesian_inference.simulation_detection_probability import (
+            _D_INTERMEDIATE_ANCHOR_GPC,
+            SimulationDetectionProbability,
+        )
+        from master_thesis_code.physical_relations import dist_vectorized
+
+        pdet = SimulationDetectionProbability(
+            injection_data_dir=injection_dir,
+            snr_threshold=20.0,
+        )
+        h = 0.70
+        pdet._get_or_build_grid(h)
+        _, interp_1d = pdet._grid_cache[h]
+        grid_axis = interp_1d.grid[0]
+        if abs(float(grid_axis[1]) - _D_INTERMEDIATE_ANCHOR_GPC) < 1e-12:
+            c0 = float(grid_axis[2])  # hybrid
+        else:
+            c0 = float(grid_axis[1])  # fallback
+
+        # Reproduce histogram p̂(c_0) directly.
+        pooled = pdet._pooled_df
+        z = pooled["z"].values
+        snr_raw = pooled["SNR"].values
+        dl_inj = pooled["luminosity_distance"].values
+        dl_target = dist_vectorized(z, h=h)
+        snr_rescaled = snr_raw * dl_inj / dl_target
+        dl_max = float(np.max(dl_target)) * 1.1
+        dl_edges = np.linspace(0, dl_max, 60 + 1)
+        total_counts, _ = np.histogram(dl_target, bins=dl_edges)
+        detected_counts, _ = np.histogram(dl_target[snr_rescaled >= 20.0], bins=dl_edges)
+        p_hat_c0 = (
+            float(detected_counts[0]) / float(total_counts[0]) if total_counts[0] > 0 else 0.0
+        )
+
+        v = pdet.detection_probability_without_bh_mass_interpolated_zero_fill(
+            d_L=c0, phi=0.0, theta=0.0, h=h
+        )
+        assert float(v) == pytest.approx(p_hat_c0, rel=1e-9), (
+            f"Plan 45-04: interp(d_L=c_0; h={h}) must equal p̂(c_0)={p_hat_c0:.10f} "
+            f"(Plan 45-02 invariant under hybrid; intermediate anchor at 0.05 "
+            f"does not perturb the c_0 value); got {v}"
+        )
+
+    def test_below_intermediate_strict_lift(self) -> None:
+        """interp(d_L=0.025; h=0.73) on production fixture equals the linear-interp
+        midpoint of (0.7931, 1.0) = 0.89655 AND strictly exceeds the pre-hybrid value.
+        """
+        import json
+        import pathlib
+
+        from master_thesis_code.bayesian_inference.simulation_detection_probability import (
+            _P_INTERMEDIATE_EMPIRICAL,
+            _P_MAX_EMPIRICAL_ANCHOR,
+            SimulationDetectionProbability,
+        )
+
+        prod_dir = pathlib.Path("simulations/injections")
+        if not prod_dir.is_dir() or not any(prod_dir.glob("injection_h_*.csv")):
+            pytest.skip("Production injection campaign not available.")
+
+        # Read pre-hybrid baseline; required for the strict-lift assertion.
+        pre_path = pathlib.Path(
+            "scripts/bias_investigation/outputs/phase45/pre_hybrid_interp_probe.json"
+        )
+        if not pre_path.exists():
+            pytest.fail(
+                "pre_hybrid_interp_probe.json missing; run Plan 45-04 Task 1 first: "
+                "uv run python -m scripts.bias_investigation.probe_interp_values "
+                "--output-name pre_hybrid_interp_probe.json --label pre-hybrid"
+            )
+        pre = json.loads(pre_path.read_text())
+        pre_value = next(
+            r["value"] for r in pre["rows"] if r["h"] == 0.73 and r["d_L_gpc"] == 0.025
+        )
+
+        pdet = SimulationDetectionProbability(
+            injection_data_dir=str(prod_dir),
+            snr_threshold=20.0,
+        )
+        v = float(
+            pdet.detection_probability_without_bh_mass_interpolated_zero_fill(
+                d_L=0.025, phi=0.0, theta=0.0, h=0.73
+            )
+        )
+        expected = 0.5 * (_P_MAX_EMPIRICAL_ANCHOR + _P_INTERMEDIATE_EMPIRICAL)
+        assert v == pytest.approx(expected, rel=1e-9), (
+            f"Plan 45-04 linear-interp midpoint identity on [0, 0.05]: "
+            f"interp(0.025; h=0.73) must equal 0.5*(0.7931+1.0)={expected}; got {v}"
+        )
+        assert v > pre_value, (
+            f"Plan 45-04 strict lift: post-hybrid interp(0.025; h=0.73)={v} must "
+            f"exceed pre-hybrid value {pre_value} from pre_hybrid_interp_probe.json"
+        )
+
+    def test_above_intermediate_strict_lift(self) -> None:
+        """interp(d_L=0.075; h=0.73) on production fixture matches the linear-interp
+        prediction on segment [0.05, c_0] AND strictly exceeds pre-hybrid value.
+        """
+        import json
+        import pathlib
+
+        import numpy as np
+
+        from master_thesis_code.bayesian_inference.simulation_detection_probability import (
+            _D_INTERMEDIATE_ANCHOR_GPC,
+            _P_INTERMEDIATE_EMPIRICAL,
+            SimulationDetectionProbability,
+        )
+        from master_thesis_code.physical_relations import dist_vectorized
+
+        prod_dir = pathlib.Path("simulations/injections")
+        if not prod_dir.is_dir() or not any(prod_dir.glob("injection_h_*.csv")):
+            pytest.skip("Production injection campaign not available.")
+
+        pre_path = pathlib.Path(
+            "scripts/bias_investigation/outputs/phase45/pre_hybrid_interp_probe.json"
+        )
+        if not pre_path.exists():
+            pytest.fail("pre_hybrid_interp_probe.json missing; run Plan 45-04 Task 1.")
+        pre = json.loads(pre_path.read_text())
+        pre_value = next(
+            r["value"] for r in pre["rows"] if r["h"] == 0.73 and r["d_L_gpc"] == 0.075
+        )
+
+        pdet = SimulationDetectionProbability(
+            injection_data_dir=str(prod_dir),
+            snr_threshold=20.0,
+        )
+        h = 0.73
+        pdet._get_or_build_grid(h)
+        _, interp_1d = pdet._grid_cache[h]
+        grid_axis = interp_1d.grid[0]
+        c0 = float(grid_axis[2])  # hybrid layout (production fixture has c_0 > 0.05)
+
+        # Reproduce p̂(c_0) for the prediction.
+        pooled = pdet._pooled_df
+        z = pooled["z"].values
+        snr_raw = pooled["SNR"].values
+        dl_inj = pooled["luminosity_distance"].values
+        dl_target = dist_vectorized(z, h=h)
+        snr_rescaled = snr_raw * dl_inj / dl_target
+        dl_max = float(np.max(dl_target)) * 1.1
+        dl_edges = np.linspace(0, dl_max, 60 + 1)
+        total_counts, _ = np.histogram(dl_target, bins=dl_edges)
+        detected_counts, _ = np.histogram(dl_target[snr_rescaled >= 20.0], bins=dl_edges)
+        p_at = float(detected_counts[0]) / float(total_counts[0]) if total_counts[0] > 0 else 0.0
+
+        v = float(
+            pdet.detection_probability_without_bh_mass_interpolated_zero_fill(
+                d_L=0.075, phi=0.0, theta=0.0, h=h
+            )
+        )
+        expected = _P_INTERMEDIATE_EMPIRICAL + (p_at - _P_INTERMEDIATE_EMPIRICAL) * (
+            0.075 - _D_INTERMEDIATE_ANCHOR_GPC
+        ) / (c0 - _D_INTERMEDIATE_ANCHOR_GPC)
+        assert v == pytest.approx(expected, rel=1e-3), (
+            f"Plan 45-04 linear-interp on [0.05, c_0]: interp(0.075; h=0.73)={v} "
+            f"must match prediction {expected:.6f} (c_0={c0:.6f}, p̂(c_0)={p_at:.6f})"
+        )
+        assert v > pre_value, (
+            f"Plan 45-04 strict lift: post-hybrid interp(0.075; h=0.73)={v} must "
+            f"exceed pre-hybrid value {pre_value}"
+        )
+
+    def test_edge_case_small_c0_skips_intermediate(self, tmp_path: object) -> None:
+        """When dl_max(h) is small enough that c_0 ≤ 0.05, the intermediate
+        anchor must be SKIPPED (fallback to Plan 45-02 single-anchor layout)
+        to preserve grid monotonicity.
+        """
+        import numpy as np
+        import pandas as pd
+
+        from master_thesis_code.bayesian_inference.simulation_detection_probability import (
+            _D_INTERMEDIATE_ANCHOR_GPC,
+            SimulationDetectionProbability,
+        )
+
+        # Synthesize an injection campaign with d_L bounded so c_0 < 0.05.
+        # c_0 = dl_max / (2*N) with N=60 default; so we need dl_max < 6.0 Gpc.
+        # 1.0 * 1.1 = 1.1 Gpc → c_0 ≈ 0.00917 << 0.05.
+        rng = np.random.default_rng(42)
+        n = 200
+        df = pd.DataFrame(
+            {
+                "z": rng.uniform(0.01, 0.10, size=n),
+                "M": rng.uniform(1e6, 1e7, size=n),
+                "phiS": rng.uniform(0.0, 2.0 * np.pi, size=n),
+                "qS": rng.uniform(0.0, np.pi, size=n),
+                "SNR": rng.uniform(15.0, 40.0, size=n),
+                "h_inj": np.full(n, 0.73),
+                "luminosity_distance": rng.uniform(0.01, 1.0, size=n),
+            }
+        )
+        tmp_dir = str(tmp_path)
+        df.to_csv(f"{tmp_dir}/injection_h_0p73_task_0.csv", index=False)
+
+        pdet = SimulationDetectionProbability(
+            injection_data_dir=tmp_dir,
+            snr_threshold=20.0,
+        )
+        # Use a very high h so dl_max(h) shrinks and c_0 < 0.05.
+        h = 0.85
+        pdet._get_or_build_grid(h)
+        _, interp_1d = pdet._grid_cache[h]
+        grid_axis = interp_1d.grid[0]
+        # Intermediate must NOT be present in the grid when c_0 ≤ 0.05.
+        c0 = float(grid_axis[1])  # under fallback, grid[0]=0.0, grid[1]=c_0
+        assert c0 <= _D_INTERMEDIATE_ANCHOR_GPC, (
+            f"Test premise violated: synthetic fixture has c_0={c0} > 0.05; "
+            "the fallback branch wasn't exercised."
+        )
+        # Structural test: 0.05 must NOT appear in the grid axis (this is the
+        # fixture-independent invariant of the fallback branch).
+        assert _D_INTERMEDIATE_ANCHOR_GPC not in grid_axis.tolist(), (
+            f"Plan 45-04 fallback: when c_0 ≤ 0.05, the intermediate anchor "
+            f"must be skipped; grid={grid_axis.tolist()[:5]}..."
+        )
+        # No exception must be raised when querying past c_0 (regression
+        # against accidental strict-monotonicity violations on the grid).
+        v = float(
+            pdet.detection_probability_without_bh_mass_interpolated_zero_fill(
+                d_L=_D_INTERMEDIATE_ANCHOR_GPC, phi=0.0, theta=0.0, h=h
+            )
+        )
+        # Value must remain a valid probability (Phase 44 + Phase 45 invariant).
+        assert 0.0 <= v <= 1.0, (
+            f"Plan 45-04 fallback: interp(0.05) under c_0 ≤ 0.05 must remain in [0, 1]; got {v}"
         )

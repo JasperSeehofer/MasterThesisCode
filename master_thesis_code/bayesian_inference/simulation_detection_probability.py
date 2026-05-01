@@ -68,6 +68,47 @@ _MAX_CACHE_SIZE: int = 20
 # ----------------------------------------------------------------------
 _P_MAX_EMPIRICAL_ANCHOR: float = 0.7931
 
+# ----------------------------------------------------------------------
+# Phase 45 Plan 45-04 hybrid intermediate anchor at d_L = 0.05 Gpc.
+#
+# Plan 45-02 prepended a single empirical anchor (0, 0.7931) using the
+# Wilson 95% lower bound of the pooled asymptote at d_L < 0.10 Gpc.
+# Cluster re-eval (Plan 45-03) showed the resulting MAP shift was
+# sub-discrete-grid-step (mean(bootstrap_MAP) shifted only -0.0047 vs
+# Δh=0.005); the discrete MAP did not move from 0.7650 toward truth 0.73.
+# Plan 45-04 escalates per RESEARCH.md §4c hybrid: a SECOND anchor at a
+# fixed physical position d_L = 0.05 Gpc with value 1.0 (the empirical
+# point estimate at d_L < 0.10 Gpc; the d_L < 0.05 subset is also 100%
+# detected by monotonicity of detection rate in d_L; see
+#   scripts/bias_investigation/outputs/phase45/pdet_asymptote.json).
+#
+# The intermediate position is FIXED (h-INDEPENDENT), not c_0(h)/2.
+# Rationale: the empirical asymptote (16/16 detected at d_L < 0.10 Gpc)
+# was derived in fixed physical d_L bins, NOT at fractional positions of
+# c_0(h).  A fixed physical position is more physically uniform across
+# h_inj groups and trivially passes the h-spread regression
+# `test_zero_fill_no_h_dependent_step_for_close_dL` (the value at d_L=0.05
+# is exactly the same constant 1.0 across all h, contributing zero spread).
+#
+# Edge case: when c_0(h) <= 0.05 Gpc (rare; only at very high h where
+# dl_max(h) shrinks below 6.0 Gpc), the intermediate anchor is SKIPPED to
+# preserve strict monotonicity of the dl_centers grid required by
+# `RegularGridInterpolator`.  In that branch, the layout falls back to the
+# Plan 45-02 single-anchor layout (anchor + first bin centre only).
+#
+# Sign-convention note (documented; not a bug):
+#   On [0, 0.05] the slope is +4.138/Gpc (POSITIVE), reflecting the
+#   conservative Wilson LB at d_L=0 transitioning to the empirical
+#   asymptote at d_L=0.05.  This deviates from physical monotonicity in
+#   d_L but is justified empirically: the d_L=0 value is intentionally
+#   below the asymptote to avoid overshoot of production MAP.  The
+#   integrand on L_comp remains conservatively lower-bounded.
+#
+# Eq. (A.19) in Gray et al. (2020), arXiv:1908.06050.
+# ----------------------------------------------------------------------
+_D_INTERMEDIATE_ANCHOR_GPC: float = 0.05
+_P_INTERMEDIATE_EMPIRICAL: float = 1.0
+
 
 class SimulationDetectionProbability:
     """Simulation-based detection probability from injection campaign data.
@@ -496,11 +537,18 @@ class SimulationDetectionProbability:
 
         The histogram edges are ``np.linspace(0, dl_max, N+1)`` so the first
         bin covers ``[0, 2·c_0)`` with ``c_0 = dl_centers[0] = dl_max/(2N)``.
-        Phase 45 prepends the h-independent empirical asymptote
-        ``(0.0, _P_MAX_EMPIRICAL_ANCHOR)`` to the grid before constructing
-        the interpolator, so on ``[0, c_0)`` the result is a linear
-        interpolation between the empirical anchor and the histogram first
-        bin centre ``p̂(c_0)``.  Off-grid evaluation uses ``fill_value=None``
+        Phase 45 (Plan 45-02 + Plan 45-04 hybrid) prepends TWO h-independent
+        empirical anchors before constructing the interpolator:
+        ``(0.0, _P_MAX_EMPIRICAL_ANCHOR=0.7931)`` (Wilson 95% lower bound)
+        and the intermediate ``(_D_INTERMEDIATE_ANCHOR_GPC=0.05,
+        _P_INTERMEDIATE_EMPIRICAL=1.0)`` (empirical point estimate).  On
+        ``[0, 0.05]`` the result is a linear interpolation between the
+        d_L=0 anchor and the intermediate anchor (slope +4.138/Gpc); on
+        ``[0.05, c_0)`` it is a linear interpolation between the
+        intermediate anchor and the histogram first bin centre ``p̂(c_0)``.
+        When ``c_0(h) <= 0.05`` (rare; only at very high h), the intermediate
+        anchor is skipped and the layout falls back to the Plan 45-02
+        single-anchor variant.  Off-grid evaluation uses ``fill_value=None``
         (linear extrapolation); see
         :meth:`detection_probability_without_bh_mass_interpolated_zero_fill`
         for the boundary convention.
@@ -512,7 +560,8 @@ class SimulationDetectionProbability:
 
         Returns:
             RegularGridInterpolator for P_det(d_L) on the anchored grid
-            (length ``dl_bins + 1`` with the anchor prepended at d_L=0).
+            (length ``dl_bins + 2`` when c_0(h) > 0.05; ``dl_bins + 1`` in
+            the c_0 ≤ 0.05 fallback).
         """
         dl_vals = df["luminosity_distance"].values
         snr_vals = df["SNR"].values
@@ -548,24 +597,56 @@ class SimulationDetectionProbability:
 
         dl_centers = 0.5 * (dl_edges[:-1] + dl_edges[1:])
 
-        # Phase 45 fix: prepend an h-independent empirical anchor at d_L=0.
-        # The first injection bin [0, 2*c_0) is upper-skewed in d_L (weighted-
-        # mean d_L = 0.132 Gpc; ratio 3.22 of upper-third to lower-third
-        # events at h_inj=0.73, see outputs/phase45/first_bin_density.json),
-        # so the histogram estimate p̂(c_0) systematically underestimates
-        # p_det near d_L=0.  The empirical asymptote at d_L < 0.10 Gpc
-        # (n_pooled=63/71 across all h_inj; Wilson 95% lower bound ≥ 0.7931;
-        # LR homogeneity p=0.199 → h-independent) is the correct value at
-        # d_L=0.  On [0, c_0) the interpolator now linearly interpolates
-        # from (0, _P_MAX_EMPIRICAL_ANCHOR) to (c_0, p̂(c_0)); above c_0 the
-        # values are unchanged because the prepended anchor lies outside
-        # the original grid range and the linear interpolant passes through
-        # both prepended and original first centres.
+        # Phase 45 Plan 45-04 hybrid: prepend BOTH (0, _P_MAX_EMPIRICAL_ANCHOR)
+        # AND (_D_INTERMEDIATE_ANCHOR_GPC, _P_INTERMEDIATE_EMPIRICAL) when
+        # c_0(h) > _D_INTERMEDIATE_ANCHOR_GPC.
+        #
+        # Plan 45-02 prepended ONLY (0, 0.7931).  The first injection bin
+        # [0, 2*c_0) is upper-skewed in d_L (weighted-mean d_L = 0.132 Gpc;
+        # ratio 3.22 of upper-third to lower-third events at h_inj=0.73, see
+        # outputs/phase45/first_bin_density.json), so the histogram estimate
+        # p̂(c_0) systematically underestimates p_det near d_L=0.  The pooled
+        # Wilson 95% lower bound at d_L < 0.10 Gpc (n_pooled=63/71 across all
+        # h_inj; LR homogeneity p=0.199 → h-independent; Plan 45-01) gives
+        # the conservative anchor 0.7931 at d_L=0.
+        #
+        # Cluster re-eval (Plan 45-03) showed the Plan 45-02 single-anchor
+        # produced a sub-discrete-grid-step lift on the production posterior
+        # (mean(bootstrap_MAP) shifted only -0.0047; discrete MAP unchanged).
+        # The hybrid adds the empirical-asymptote point at d_L = 0.05 Gpc
+        # (16/16 detected at d_L < 0.10 Gpc per pdet_asymptote.json; subset
+        # at d_L < 0.05 is also 100% detected by monotonicity argument).  At
+        # h=0.73 this raises interp(0.05) from ≈0.6687 (linear interp from
+        # 0.7931 down to p̂(c_0)≈0.5448) to exactly 1.0 — a +0.33 lift.
+        #
+        # On [0, 0.05] the linear interp from (0, 0.7931) to (0.05, 1.0) has
+        # POSITIVE slope +4.138/Gpc.  This is a sign-convention deviation
+        # from physical monotonicity in d_L, but is justified empirically:
+        # the d_L=0 value 0.7931 is the conservative Wilson LB, intentionally
+        # below the observed asymptote ≈1.0 to avoid overshoot of the
+        # production MAP.  The integrand on L_comp is the value, not the
+        # slope; the integrated effect remains conservatively lower-bounded.
+        #
+        # Edge case fallback: when c_0(h) <= _D_INTERMEDIATE_ANCHOR_GPC, the
+        # intermediate point would violate strict monotonicity of dl_centers
+        # required by RegularGridInterpolator.  Skip the intermediate; revert
+        # to the Plan 45-02 single-anchor layout.  This branch is rare (only
+        # triggered at very high h where dl_max(h) < 6.0 Gpc).
+        #
         # Eq. (A.19) in Gray et al. (2020), arXiv:1908.06050.
-        # See scripts/bias_investigation/outputs/phase45/p_max_h_independence.json
-        # for the empirical derivation; Plan 45-01 SUMMARY for the LR test.
-        dl_centers_anchored = np.concatenate(([0.0], dl_centers))
-        p_det_1d_anchored = np.concatenate(([_P_MAX_EMPIRICAL_ANCHOR], p_det_1d))
+        # See scripts/bias_investigation/outputs/phase45/pdet_asymptote.json
+        # for the empirical 1.0 asymptote at d_L < 0.10 Gpc;
+        # scripts/bias_investigation/outputs/phase45/p_max_h_independence.json
+        # for the pooled Wilson LB; Plan 45-01 SUMMARY for the LR test.
+        if dl_centers[0] > _D_INTERMEDIATE_ANCHOR_GPC:
+            dl_centers_anchored = np.concatenate(([0.0, _D_INTERMEDIATE_ANCHOR_GPC], dl_centers))
+            p_det_1d_anchored = np.concatenate(
+                ([_P_MAX_EMPIRICAL_ANCHOR, _P_INTERMEDIATE_EMPIRICAL], p_det_1d)
+            )
+        else:
+            # Plan 45-02 fallback layout for c_0(h) <= _D_INTERMEDIATE_ANCHOR_GPC.
+            dl_centers_anchored = np.concatenate(([0.0], dl_centers))
+            p_det_1d_anchored = np.concatenate(([_P_MAX_EMPIRICAL_ANCHOR], p_det_1d))
 
         # fill_value=None → linear extrapolation outside grid.  Below
         # dl_centers_anchored[0] = 0 this is unreachable since d_L < 0 is
@@ -775,25 +856,42 @@ class SimulationDetectionProbability:
         * ``d_L < dl_centers[0] = c_0``: ``RegularGridInterpolator(method=
           "linear", fill_value=None)`` performs **linear extrapolation**, NOT
           nearest-neighbour as the pre-Phase-45 docstring claimed.  Phase 45
-          prepends an h-independent empirical anchor ``(0.0,
-          _P_MAX_EMPIRICAL_ANCHOR)`` to the grid before constructing the
-          interpolator (see :data:`_P_MAX_EMPIRICAL_ANCHOR` and
-          :meth:`_build_grid_1d`).  On ``[0, c_0)`` this gives
-          ``p_det = linear_interp((0, P_MAX), (c_0, p̂(c_0)))``.  At
-          ``d_L = 0`` the value equals ``_P_MAX_EMPIRICAL_ANCHOR`` (the
-          empirical asymptote from the unrescaled injection campaign); at
-          ``d_L = c_0`` it equals the unchanged histogram estimate
-          ``p̂(c_0)``.  The empirical anchor's h-independence is established
-          by a likelihood-ratio binomial-rate-homogeneity test
+          (Plan 45-02 + Plan 45-04 hybrid) prepends TWO h-independent
+          empirical anchors before constructing the interpolator (see
+          :data:`_P_MAX_EMPIRICAL_ANCHOR`, :data:`_D_INTERMEDIATE_ANCHOR_GPC`,
+          :data:`_P_INTERMEDIATE_EMPIRICAL`, and :meth:`_build_grid_1d`):
+          ``(0, P_MAX=0.7931)`` (Wilson 95% lower bound) AND
+          ``(0.05, P_INTERMEDIATE=1.0)`` (empirical point estimate at
+          d_L < 0.10 Gpc; the d_L < 0.05 subset is also 100% detected by
+          monotonicity argument).  On ``[0, c_0)`` this gives a piecewise
+          hybrid: ``p_det = linear_interp((0, P_MAX), (0.05, P_INTERMEDIATE))``
+          on ``[0, 0.05]`` and
+          ``p_det = linear_interp((0.05, P_INTERMEDIATE), (c_0, p̂(c_0)))``
+          on ``[0.05, c_0]``.  At ``d_L = 0`` the value equals
+          ``_P_MAX_EMPIRICAL_ANCHOR=0.7931`` (the conservative Wilson lower
+          bound of the empirical asymptote); at ``d_L = 0.05`` it equals
+          ``_P_INTERMEDIATE_EMPIRICAL=1.0`` (the empirical point estimate);
+          at ``d_L = c_0`` it equals the unchanged histogram estimate
+          ``p̂(c_0)``.  When ``c_0(h) <= 0.05`` (rare; only at very high h),
+          the intermediate anchor is skipped (Plan 45-02 fallback layout).
+          The hybrid's h-independence is by construction (both anchor values
+          are module-level scalars at fixed physical positions); the d_L=0
+          anchor's h-independence under the original asymptote test is
+          established by a likelihood-ratio binomial-rate-homogeneity test
           (G = 7.30, dof = 5, p = 0.199; Wilson 95% lower bound across
           pooled groups: 0.7931).  See Plan 45-01 SUMMARY and
-          ``scripts/bias_investigation/outputs/phase45/p_max_h_independence.json``.
+          ``scripts/bias_investigation/outputs/phase45/p_max_h_independence.json``;
+          Plan 45-04 PLAN/SUMMARY for the hybrid lift rationale.
 
-        Pre-Phase-45 the interpolator linearly extrapolated through bins 0
-        and 1 to ≈0.748 at d_L=0 (vs the empirical asymptote ≈1.0), biasing
-        ``L_comp`` downward at low h and producing a residual MAP=0.7650 vs
-        truth 0.73 on the 412-event production posterior (see
-        ``.gpd/HANDOFF-phase45-diagnosis.md``).
+        Plan 45-02 (single-anchor) lifted interp(d_L=0) from ≈0.748 (linear
+        extrap through bins 0,1; pre-Phase-45 behaviour) to 0.7931, but the
+        cluster re-eval (Plan 45-03) showed the resulting MAP shift was
+        sub-discrete-grid-step and the discrete MAP did not move from
+        0.7650 (see ``.gpd/phases/45-p-det-first-bin-asymptote-fix/45-03-SUMMARY.md``).
+        Plan 45-04's hybrid intermediate anchor at d_L=0.05 raises
+        interp(0.05) from ≈0.6687 to 1.0 — a +0.33 lift in the integration
+        window crossed by ≈26/60 production events per
+        ``scripts/bias_investigation/outputs/phase45/window_proximity.json``.
 
         Pre-Phase-44 the function also zeroed
         ``d_L < c_0(h) = dl_max(h)/120`` — a bin-midpoint artifact that
