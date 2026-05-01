@@ -1,0 +1,79 @@
+{
+  "audit": "A1 \u2014 \u0394h=0.001 reinterpretation",
+  "h_truth": 0.73,
+  "fine_grid": {
+    "lo": 0.6,
+    "hi": 0.86,
+    "step": 0.001,
+    "peak_region": [
+      0.7,
+      0.8
+    ]
+  },
+  "preregistered_gates": {
+    "G1a_band": [
+      0.72,
+      0.74
+    ],
+    "G1b_band": [
+      0.745,
+      0.755
+    ],
+    "cross_check_tol": 0.002
+  },
+  "channel_1d_without_bh_mass": {
+    "channel": "without_bh_mass_1d",
+    "n_events": 412,
+    "n_excluded": 0,
+    "discrete_cached_map_h": 0.755,
+    "continuous_map_h_linear": 0.7550000000000001,
+    "continuous_map_h_cubic": 0.7540000000000001,
+    "linear_summary": {
+      "map_h": 0.7550000000000001,
+      "peak_local_map_h": 0.7550000000000001,
+      "mean": 0.7535226675359952,
+      "median": 0.7526759957674495,
+      "p16": 0.745035713508728,
+      "p84": 0.7624438444415617,
+      "p2.5": 0.7387353899384503,
+      "p97.5": 0.7669077745834689
+    },
+    "cubic_summary": {
+      "map_h": 0.7540000000000001,
+      "peak_local_map_h": 0.7540000000000001,
+      "mean": 0.7536009328443245,
+      "median": 0.7526516893498747,
+      "p16": 0.7450447125933551,
+      "p84": 0.7627700519549051,
+      "p2.5": 0.7391095573045381,
+      "p97.5": 0.7668310998891412
+    },
+    "delta_linear_cubic": 0.0010000000000000009,
+    "cross_check_tol": 0.002,
+    "cross_check_pass": true,
+    "sigma_boot": 0.010854132263206829,
+    "bootstrap_median": 0.7550000000000001,
+    "bootstrap_68_hpd": [
+      0.7450000000000001,
+      0.7650000000000001
+    ],
+    "bootstrap_95_hpd": [
+      0.7450000000000001,
+      0.7650000000000001
+    ],
+    "n_bootstrap": 1000,
+    "random_seed": 20260501,
+    "gate_verdict": "G1b (real shift; bias genuine ~+0.020 to +0.025)",
+    "h_truth": 0.73
+  },
+  "channel_2d_with_bh_mass": {
+    "channel": "with_bh_mass_2d_joint_only",
+    "discrete_cached_map_h": 0.745,
+    "continuous_map_h_linear": 0.7450000000000001,
+    "continuous_map_h_cubic": 0.7450000000000001,
+    "delta_linear_cubic": 0.0,
+    "cross_check_tol": 0.002,
+    "cross_check_pass": true,
+    "note": "2D channel has no cached per-event JSONs locally; this is a joint-posterior interpolation only. No bootstrap. If the linear and cubic continuous MAPs differ from the discrete cached MAP by less than \u0394h=0.005, the discrete shift is at the grid floor; if they differ by more, the discrete grid was hiding a continuous shift."
+  }
+}
