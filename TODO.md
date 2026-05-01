@@ -249,6 +249,23 @@ Current: 149 tests, 37% coverage (gate 25%), target 50%.
       `arguments.py`: currently missing entirely. Thread through `main.py` →
       `ParameterEstimation` → `waveform_generator.py`.
 
+- [ ] **PERF-7 [P1, S]** Verify GPU is actually exercised on the cluster (smoke job)
+      Run `bash cluster/submit_gpu_smoke.sh` once. Inspect
+      `$RUN_DIR/gpu_smoke/nvidia_smi_trace.csv` — `utilization.gpu` must be > 0
+      for a sustained window during the python call. If it stays at 0, `--use_gpu`
+      is silently falling back to numpy via the cupy-import guard in
+      `memory_management.py` (a real bug to chase, not just a config issue).
+      Also confirm `display_GPU_information()` output appears in the .out log.
+      Added 2026-05-01 alongside `cluster/gpu_smoke.sbatch`.
+
+- [ ] **PERF-8 [P2, M]** GPU profiling spike — identify top 3 inject bottlenecks
+      Prerequisite: PERF-7 verified. Pick one tool based on what the smoke
+      trace reveals (saturated → `ncu` per-kernel; idle/thrashing → `nsys`
+      timeline; Python-bound → `cupy.cuda.profiler` + `cProfile`). Run with
+      `INJ_STEPS=10` on `gpu_a100_short`. Goal: name the top 3 bottlenecks and
+      decide which (if any) warrant a refactor; this is an investigation
+      session, not a deliverable. Educational + bottleneck-driven.
+
 ---
 
 ## Workstream 5: Code Architecture
