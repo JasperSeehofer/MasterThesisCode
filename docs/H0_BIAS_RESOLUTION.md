@@ -128,7 +128,7 @@ Source: `results/phase45_v2_posteriors/combined_posterior.json` (1D),
 | Truth h | 0.7300 | Injection seed |
 | Discrete MAP, 1D channel | 0.7550 | post-Plan-45-04 hybrid anchor |
 | Discrete MAP, 2D channel | 0.7450 | unanchored; Plan 45-07 staged but not deployed |
-| Continuous MAP (1D) | TBD (Audit A1) | linear-interp + cubic-spline cross-check planned |
+| Continuous MAP (1D, A1) | 0.7550 (lin) / 0.7540 (cub) | cubic-vs-linear Δ=0.0010 < tol 0.002 PASS |
 | σ_boot (1D) | 0.0099 | B=1000, RNG=20260429 |
 | 68% bootstrap interval (1D) | [0.7450, 0.7650] | does **not** contain truth |
 | 95% bootstrap interval (1D) | [0.7450, 0.7650] | degenerate with 68% — discrete h-grid |
@@ -146,9 +146,21 @@ Source: Phase 43 VERIFY-03 SC-3 PASS.
 The cluster vs --evaluate gap is sample-size-driven (412 vs 60); both paths run
 identical `BayesianStatistics.evaluate()` code.
 
-### Closure test (h_true ≠ 0.73) — *PENDING (Audit A7)*
+### Closure test at h_true=0.65 — *G7a UNBIASED (Audit A7, 2026-05-03)*
 
-Reserved.
+Lean rescaling closure test, cluster job 4198463 on `dev_cpu_il`.
+
+| Quantity | Value | Notes |
+|---|---|---|
+| Truth h | 0.6500 | Closure-test injection (rescaled cluster CRB) |
+| Continuous MAP, 1D channel | **0.6517** | bias = +0.0017, ≪ σ_boot |
+| Continuous MAP, 2D channel | **0.6501** | bias = +0.0001, essentially exact |
+| N events post-rescaling SNR≥20 | 251 (243 used) | from 412 at h_true=0.73 |
+
+**Pipeline closure-validated.** The +0.025 residual at h_true=0.73 is NOT a
+structural pipeline bias; it's specific to the h=0.73 realization (most likely
+statistical fluctuation combined with sample-size effects on the relative
+weights of per-event Σ log L_i and −N log D(h) at the joint MAP).
 
 ---
 
@@ -735,20 +747,58 @@ across p̂(bin1) ∈ [0.40, 0.55]. Caveat: local data has dl_max ≈ 2.77 Gpc
 geometrically incompatible; the cluster-projection numbers are analytical
 from known cluster bin geometry.
 
-### 6.6 Audit A7 — Closure test at h_true=0.65 *(PENDING — needs cluster)*
-
-Recipe filled in once A7 lands. Anticipated:
+### 6.6 Audit A4 — per-event diagnostic (412 cluster events)
 
 ```bash
-# Cluster injection at h_true=0.65, seed 201
-sbatch --export=ALL,H_VALUE=0.65,SEED=201 cluster/submit_injection.sh
-sbatch cluster/merge.sbatch
-sbatch --array=0-37 cluster/evaluate.sbatch
-sbatch cluster/combine.sbatch
+# After rsyncing cluster diagnostic CSV (already in repo at simulations/cluster_run_phase45_20260501/):
+uv run python scripts/bias_investigation/test_16_per_event_diagnostic.py
 ```
 
-Note: `cluster/submit_injection.sh` may need `--seed` plumbing
-(verify before running).
+Reads `simulations/cluster_run_phase45_20260501/event_likelihoods.csv`
+(append-mode CSV from multiple cluster eval runs; deduplicated to latest
+per (event, h)) and `prepared_cramer_rao_bounds.csv`. Reconstructs cluster
+MAP, decomposes into Σ log L_i(h) vs −N log D(h), identifies bias-driving
+events, computes channel-divergence drivers.
+
+Output: `scripts/bias_investigation/outputs/phase45/per_event_diagnostic.json`.
+
+**Result (2026-05-02):** G4b — bias is broad (top-10 events contribute
+21.6% of |pull|, all in first bin d_L < 0.20 Gpc). Decomposition: Σ log L
+peaks at h=0.7400, D(h) shifts MAP to 0.7550 (+0.015, 2.7× larger than
+per-event L pull, opposite sign). **Anchor escalation targets wrong layer.**
+
+### 6.7 Audit A7 — Closure test at h_true=0.65 *(lean rescaling approach)*
+
+```bash
+# 1. Rescale the existing cluster CRB to h_true=0.65
+uv run python scripts/bias_investigation/test_17_rescale_crb_to_h065.py
+
+# 2. Re-draw best-guess parameters with fresh seed
+uv run python scripts/prepare_detections.py \
+    --workdir simulations/closure_h065 --seed 201 --force
+
+# 3. Push to cluster RUN_DIR and submit (dev_cpu_il QOS: max --array=0-3)
+ssh bwunicluster 'mkdir -p /pfs/work9/.../run_closure_h065_20260503/simulations/logs
+ln -sfn /pfs/.../run_phase45_20260501/simulations/injections \
+    /pfs/.../run_closure_h065_20260503/simulations/injections'
+rsync -avz simulations/closure_h065/simulations/{,prepared_}cramer_rao_bounds.csv \
+    bwunicluster:/pfs/.../run_closure_h065_20260503/simulations/
+scp cluster/evaluate_closure_h065.sbatch bwunicluster:~/MasterThesisCode/cluster/
+ssh bwunicluster 'cd ~/MasterThesisCode && sbatch --array=0-3 \
+    --export=ALL,RUN_DIR=/pfs/.../run_closure_h065_20260503,PROJECT_ROOT=$HOME/MasterThesisCode \
+    cluster/evaluate_closure_h065.sbatch'
+
+# 4. Pull posteriors and analyze
+rsync -avz bwunicluster:/pfs/.../run_closure_h065_20260503/simulations/posteriors* \
+    simulations/cluster_run_closure_h065_20260503/
+uv run python scripts/bias_investigation/test_18_closure_analyze.py
+```
+
+Output: `scripts/bias_investigation/outputs/phase45/closure_h065.json`.
+
+**Result (2026-05-03):** G7a — pipeline UNBIASED. 1D continuous MAP=0.6517
+(bias=+0.0017), 2D=0.6501 (bias=+0.0001). The +0.025 residual at h_true=0.73
+is NOT structural; specific to that realization.
 
 
 ---
@@ -791,7 +841,15 @@ Note: `cluster/submit_injection.sh` may need `--seed` plumbing
 | Phase 44 root-cause analysis | `.gpd/debug/resolved/map-0p86-lcat-explosion.md` |
 | Phase 45 diagnosis lock-in | `.gpd/HANDOFF-phase45-diagnosis.md` |
 | Phase 45 plan-by-plan SUMMARYs | `.gpd/phases/45-p-det-first-bin-asymptote-fix/45-0{1..5}-SUMMARY.md` |
-| Cluster posteriors (current head) | `results/phase45_v2_posteriors/`, `results/phase45_v2_posteriors_with_bh_mass/` |
+| Cluster posteriors (current head — Plan 45-04 baseline) | `results/phase45_v2_posteriors/`, `results/phase45_v2_posteriors_with_bh_mass/` |
+| Cluster posteriors (Plan 45-06 = anchor 0.8873) | `simulations/cluster_run_phase45_option_A/combined_posterior_{no_bh,with_bh}.json` |
+| **v2.3 A1 fine-grid script + output** | `scripts/bias_investigation/test_13_fine_grid_map.py`, `outputs/phase45/fine_grid_map.json` |
+| **v2.3 A2 channel audit script + output** | `scripts/bias_investigation/test_14_channel_audit.py`, `outputs/phase45/channel_audit.json` |
+| **v2.3 A4 per-event diagnostic script + output** | `scripts/bias_investigation/test_16_per_event_diagnostic.py`, `outputs/phase45/per_event_diagnostic.json` |
+| **v2.3 A7 rescaling script** | `scripts/bias_investigation/test_17_rescale_crb_to_h065.py` |
+| **v2.3 A7 closure analysis script + output** | `scripts/bias_investigation/test_18_closure_analyze.py`, `outputs/phase45/closure_h065.json` |
+| **v2.3 closure-test cluster sbatch** | `cluster/evaluate_closure_h065.sbatch` |
+| **v2.3 cluster CSVs (rsynced from cluster)** | `simulations/cluster_run_phase45_20260501/` (Plan 45-04 cramer_rao_bounds, prepared_cramer_rao_bounds, diagnostics/event_likelihoods, fisher_quality), `simulations/cluster_run_closure_h065_20260503/` (closure-test posteriors) |
 | Dark siren likelihood derivation | `derivations/dark_siren_likelihood.md` |
 | v2.3 audit programme plan | `~/.claude/plans/can-you-critically-think-calm-cocke.md` |
 | Resolved debug sessions | `.gpd/debug/resolved/{h0-posterior-residual-bias,map-0p86-lcat-explosion}.md` |
