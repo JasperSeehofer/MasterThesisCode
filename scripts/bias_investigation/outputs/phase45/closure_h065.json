@@ -1,0 +1,92 @@
+{
+  "audit": "A7 \u2014 lean closure test at h_true=0.65",
+  "h_truth": 0.65,
+  "preregistered_gates": {
+    "G7a_unbiased": [
+      0.635,
+      0.665
+    ],
+    "G7b_additive": [
+      0.665,
+      0.685
+    ],
+    "G7c_multiplicative": [
+      0.668,
+      0.68
+    ],
+    "G7d_tuned_to_0p73": [
+      0.72,
+      0.74
+    ]
+  },
+  "without_bh_mass (1D)": {
+    "h_values": [
+      0.6,
+      0.65,
+      0.7,
+      0.75
+    ],
+    "n_events": 243,
+    "L_term_per_h": [
+      1345.561234750515,
+      1375.1242814530078,
+      1351.4399481019066,
+      1327.2234314658447
+    ],
+    "D_term_per_h": [
+      -3690.635397482836,
+      -3679.348494568722,
+      -3671.7879408719323,
+      -3658.014922424381
+    ],
+    "joint_log_per_h": [
+      -2345.0741627323214,
+      -2304.224213115714,
+      -2320.3479927700255,
+      -2330.791490958536
+    ],
+    "L_only_peak_h_discrete": 0.65,
+    "joint_map_h_discrete": 0.65,
+    "joint_map_h_continuous": 0.6517499999999999,
+    "L_only_peak_h_continuous": 0.6448499999999999,
+    "bias_vs_truth": 0.0017499999999999183,
+    "delta_L_truth_to_map": 0.0,
+    "delta_D_truth_to_map": 0.0,
+    "gate_verdict": "G7a \u2014 pipeline UNBIASED at h_true=0.65"
+  },
+  "with_bh_mass (2D)": {
+    "h_values": [
+      0.6,
+      0.65,
+      0.7,
+      0.75
+    ],
+    "n_events": 243,
+    "L_term_per_h": [
+      1315.9076883830887,
+      1355.5218476201262,
+      1323.9868707732553,
+      1290.9907558650068
+    ],
+    "D_term_per_h": [
+      -3690.635397482836,
+      -3679.348494568722,
+      -3671.7879408719323,
+      -3658.014922424381
+    ],
+    "joint_log_per_h": [
+      -2374.7277090997477,
+      -2323.8266469485957,
+      -2347.801070098677,
+      -2367.024166559374
+    ],
+    "L_only_peak_h_discrete": 0.65,
+    "joint_map_h_discrete": 0.65,
+    "joint_map_h_continuous": 0.6501,
+    "L_only_peak_h_continuous": 0.645,
+    "bias_vs_truth": 9.999999999998899e-05,
+    "delta_L_truth_to_map": 0.0,
+    "delta_D_truth_to_map": 0.0,
+    "gate_verdict": "G7a \u2014 pipeline UNBIASED at h_true=0.65"
+  }
+}
