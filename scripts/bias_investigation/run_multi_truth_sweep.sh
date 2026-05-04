@@ -37,6 +37,11 @@ cd "$PROJECT_ROOT"
 # Truth panel — default mirrors the verification plan
 TRUTHS=${TRUTHS:-"0.60 0.65 0.70 0.73 0.75 0.80 0.85"}
 
+# Source CRB for rescaling.  Default is the phase46-merged dataset
+# (Phase 45 seed=200 + seed=300 extension), 924 SNR>=20 events.  Override
+# via INPUT_CRB env var to use a different CRB (e.g. raw Phase 45 only).
+INPUT_CRB=${INPUT_CRB:-"$PROJECT_ROOT/simulations/cluster_run_phase46_merged_20260504/cramer_rao_bounds.csv"}
+
 CLUSTER_HOST="bwunicluster"
 CLUSTER_WS="/pfs/work9/workspace/scratch/st_ac147838-emri"
 SEED_BASE=200  # bumped per truth to ensure fresh noise draws
@@ -48,8 +53,14 @@ SBATCH_ARRAY=${SBATCH_ARRAY:-0-6}
 
 echo "=== Multi-truth closure sweep ==="
 echo "Truths:    $TRUTHS"
+echo "Input CRB: $INPUT_CRB"
 echo "Partition: $SBATCH_PARTITION (cpus=$SBATCH_CPUS, array=$SBATCH_ARRAY)"
 echo ""
+
+if [[ ! -f "$INPUT_CRB" ]]; then
+    echo "ERROR: INPUT_CRB does not exist: $INPUT_CRB" >&2
+    exit 1
+fi
 
 # ssh helper with retries (dev_cpu_il connections sometimes drop)
 ssh_retry() {
@@ -94,7 +105,8 @@ for h_truth in $TRUTHS; do
     echo "[1/5] Rescaling CRB locally..."
     uv run python scripts/bias_investigation/test_23_rescale_crb_to_h_true.py \
         --h-true "$h_truth" \
-        --workdir "$workdir"
+        --workdir "$workdir" \
+        --input-crb "$INPUT_CRB"
 
     # 2. prepare_detections
     echo "[2/5] Running prepare_detections (seed=$seed)..."

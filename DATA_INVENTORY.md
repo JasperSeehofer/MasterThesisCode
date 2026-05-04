@@ -51,19 +51,41 @@ corresponding tier before reporting results.
 | Property | Value |
 |----------|-------|
 | **Location (cluster)** | `/pfs/work9/workspace/scratch/st_ac147838-emri/run_20260504_seed300_extension/` |
-| **Submission** | 2026-05-04 (job `4216105`, gpu_h100) |
+| **Submission** | 2026-05-04 (job `4216105` failed, replaced by `4216323`, gpu_h100) |
 | **Git commit (simulation)** | `b110ba7` — verification scaffold |
 | **SLURM tasks** | 50 GPU tasks, `gpu_h100`, BASE_SEED=300 (per-task seed = 300 + array_id) |
 | **Sim steps per task** | 10 000 (walltime-capped at 1 h) |
-| **Expected yield** | ~45 events/task × 50 tasks ≈ 2 250 total CRBs; ~210 SNR≥20 (9.4% yield, extrapolated from prod-seed200) |
+| **Observed yield (partial, 2026-05-04 19:30)** | 17 of 50 tasks complete → 500 SNR≥20 events (~30 events/task, far above 9.4% extrapolation; remaining 33 tasks running/pending) |
 | **Confusion noise (Phase 9)** | ✅ included |
 | **5-point stencil (Phase 10)** | ✅ included |
-| **Coordinate frame** | ⬜ TBD on completion |
-| **Status** | 🔄 PENDING in queue at submission time |
+| **Coordinate frame** | ✅ `ecliptic_BarycentricTrue_J2000` — **natively ecliptic** (sim ran at `b110ba7`, post Phase 36 catalog rotation `b460297` 2026-04-22). `_coord_frame`/`_cov_frame` markers added by hand, **no rotation applied** |
+| **Status** | 🟡 partial — 17/50 tasks merged into phase46-merged-20260504; remaining tasks may land later |
 
 **Goal:** When merged with `phase45-seed200-20260501`, target ~600–650 SNR≥20 events for tighter σ_boot in the multi-truth panel and better-resolved D(h). Continued extension may follow.
 
-**Merge plan:** post-completion, run `cluster/merge.sbatch` to combine per-task CSVs, ecliptic-migrate, then concatenate with the Phase 45 CRB into a new canonical `phase46-merged-20260505` (or similar) entry.
+**Merge realised:** local concat of 17 per-task CSVs (rsynced 2026-05-04 19:30) → tagged with `_coord_frame`/`_cov_frame` (no rotation — sim already ecliptic) → concatenated with Phase 45 CRB into `phase46-merged-20260504` (see below).
+
+**⚠️ Migration foot-gun caught 2026-05-04:** an initial pass ran `migrate_crb_to_ecliptic.py` on this CSV, which double-rotated phiS/qS by ~obliquity. The script's idempotency guard relies solely on the `_coord_frame` marker; it cannot detect that a *new* simulation already wrote ecliptic natively. The mistake was reverted from `.bak_equatorial`. **Action item:** harden `migrate_crb_to_ecliptic.py` to refuse migration when the source commit is post-Phase-36 (or require an explicit `--legacy-equatorial` flag for pre-Phase-36 archives).
+
+---
+
+### phase46-merged-20260504 *(current canonical for multi-truth verification)*
+
+| Property | Value |
+|----------|-------|
+| **Location (local)** | `simulations/cluster_run_phase46_merged_20260504/cramer_rao_bounds.csv` |
+| **Lineage** | `phase45-seed200-20260501` (4497 rows, 424 SNR≥20) ⊕ `sim-seed300-extension-20260504` partial (500 rows, 500 SNR≥20) |
+| **Total CRB rows** | 4 997 |
+| **Rows with SNR ≥ 20** | **924** (~2.18× over Phase 45 alone) |
+| **Coordinate frame** | ✅ `ecliptic_BarycentricTrue_J2000` — Phase 45 half: rotated by `migrate_crb_to_ecliptic.py` (origin commit predates Phase 36, so equatorial → ecliptic was correct). seed=300 half: **natively ecliptic** (origin commit post Phase 36), markers added without rotation. |
+| **Schema** | 126 cols (matches Phase 45) |
+| **Constructed** | 2026-05-04 ~19:30 local; commit (pending) |
+| **Used by** | Multi-truth panel (`run_multi_truth_sweep.sh` via `INPUT_CRB` env var; default points here) |
+
+**Notes:**
+- The seed=300 extension job (`4216323`) is still in flight — at the time of merge, 17/50 tasks had flushed CSVs. A second merge can be performed later if tighter σ_boot is desired.
+- Injections directory is **not** merged — the panel orchestrator symlinks Phase 45's `injections/` for D(h) estimation. This is scientifically valid: D(h) is population-level, and seed=300 follows the same population as Phase 45, so reusing Phase 45 injections is consistent.
+- Per-task CSVs preserved at `simulations/cluster_run_seed300_extension_20260504/simulations/cramer_rao_bounds_simulation_*.csv` for reproducibility.
 
 ---
 
@@ -164,5 +186,6 @@ Aggregated by `scripts/bias_investigation/test_24_multi_truth_bias_sweep.py` →
 | 2026-04-27 | local-phase43-verification | `a2df67bf` | single h=0.73 | 60 | 0.730 | — | Phase 43-03 verification only |
 | 2026-05-04 | phase45-seed200-20260501 (Tier 3 fix) | `d6b784c` | 38-pt + closure h=0.65 | 424 (h=0.73) / 251 (h=0.65) | 0.7400 (z=+1.4σ) | 0.7400 (z=+1.97σ) | Production result post-Tier-3 fix; closure h=0.65 PASSED |
 | 2026-05-04 (smoke) | closure-verification (multi-truth) | `b110ba7` | 21-pt fine | 243 (h=0.65) / 408 (h=0.73) | 0.6555 / 0.7233 | 0.6558 / 0.7285 | Smoke for 2-truth panel; sign flip — **production seed-dependence ~0.02** |
-| *(pending)* | full 7-truth panel | next | 11–21-pt fine each | per-truth | per-truth | per-truth | cpu_il post-20:00 |
-| *(pending)* | phase45 + sim-seed300 merged | next | 38-pt | ~600–650 | — | — | After seed=300 extension lands |
+| *(pending)* | full 7-truth panel (on phase46-merged) | tonight | 11–21-pt fine each | per-truth (~924 base) | per-truth | per-truth | cpu_il post-20:00, INPUT_CRB→phase46-merged |
+| 2026-05-04 (merge) | phase46-merged-20260504 | pending commit | n/a (CRB construction) | 924 (424+500) | — | — | Phase 45 ⊕ seed=300 partial (17/50 tasks); ~2.18× event count for tighter σ_boot |
+| *(pending)* | phase45 + full sim-seed300 merged | next | 38-pt | ~1100+ | — | — | After remaining seed=300 tasks land (~later tonight) |
