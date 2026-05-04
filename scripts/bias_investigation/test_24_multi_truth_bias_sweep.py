@@ -14,6 +14,26 @@ Pre-registered alternative (residual structural systematic remains):
   - all biases share the same sign
   - magnitude scatter > σ_boot (would suggest h-dependent systematic)
 
+CAVEAT — shared injection set
+-----------------------------
+All truths in the panel reuse the *same* Phase 45 injection campaign
+(rescaling reuses the cluster CRB; only ``prepare_detections --seed``
+varies, which decorrelates the observed-d_L noise but not the underlying
+sky positions, masses, or true redshifts).  The bootstrap σ_boot resamples
+events at fixed truth and therefore captures statistical scatter in the
+per-event d_L draw, but it does *not* capture correlation through the
+shared injection campaign.  If a coherent positive (or negative) bias
+appears across the panel, two interpretations remain:
+  (a) genuine structural residual in the inference pipeline, or
+  (b) idiosyncratic pull from the shared injection set.
+
+The per-event diagnostic ``per_event_bias_pos_frac_*`` reports, for each
+truth, what fraction of individual events have positive per-event bias.
+If those fractions are similar across truths, the same events are pulling
+MAP in the same direction at every truth — a signature of (b).  A fraction
+that drifts smoothly with h_true (e.g. monotonic with truth) is more
+consistent with (a).
+
 Inputs: rsync'd posteriors at
   ``simulations/cluster_run_closure_h{HHH}_finegrid/posteriors{,_with_bh_mass}/``
 where HHH = e.g. 0p60, 0p65, 0p70, 0p73, 0p75, 0p80, 0p85.
@@ -149,10 +169,21 @@ def analyze_one_truth(
 
     # Joint posterior post-Tier-3 fix: just Σ log L_i (no outer −N log D).
     L_term = log_L.sum(axis=0)
-    discrete_map = float(h_grid[int(np.argmax(L_term))])
+    discrete_argmax = int(np.argmax(L_term))
+    discrete_map = float(h_grid[discrete_argmax])
     continuous_map = parabolic_refine(h_grid, L_term)
 
-    # Bootstrap σ_boot (event resample with replacement).
+    # Boundary-rail flag: if the discrete MAP sits at either edge of the
+    # grid, the parabolic refinement returns the boundary itself and the
+    # underlying posterior peak likely lies outside the window.  Surface
+    # this so the panel verdict can flag the truth instead of trusting a
+    # truncated estimate.
+    boundary_rail = discrete_argmax == 0 or discrete_argmax == len(h_grid) - 1
+
+    # Bootstrap σ_boot (event resample with replacement) — captures
+    # statistical scatter at fixed injection set; does NOT see correlation
+    # through the shared injection campaign across truths (see module
+    # docstring caveat).
     boot_maps = np.empty(N_BOOTSTRAP)
     for b in range(N_BOOTSTRAP):
         idx = rng.choice(n_events, size=n_events, replace=True)
@@ -160,13 +191,27 @@ def analyze_one_truth(
     sigma_boot = float(np.std(boot_maps, ddof=1))
     boot_q = np.percentile(boot_maps, [5, 16, 50, 84, 95]).tolist()
 
+    # Per-event MAP and bias: argmax_h log_L_i(h) for each event i.  The
+    # distribution of (h_event_map_i - h_truth) across events at fixed
+    # truth probes whether individual injections systematically pull the
+    # MAP in one direction.  If pos_frac is similar across truths, the
+    # same injections drive the per-truth bias — a shared-injection-set
+    # signature (interpretation b in the docstring caveat).
+    per_event_map = np.array(
+        [parabolic_refine(h_grid, log_L[i]) for i in range(n_events)]
+    )
+    per_event_bias = per_event_map - h_truth
+    per_event_pos_frac = float(np.mean(per_event_bias > 0))
+    per_event_median_bias = float(np.median(per_event_bias))
+
     bias = continuous_map - h_truth
     z = bias / sigma_boot if sigma_boot > 0 else float("inf")
 
+    rail_flag = " [RAIL]" if boundary_rail else ""
     print(
         f"  [{label}] h_truth={h_truth:.3f}  N={n_events:>3}  "
         f"MAP={continuous_map:.4f}  bias={bias:+.4f}  σ_boot={sigma_boot:.4f}  "
-        f"z={z:+.2f}"
+        f"z={z:+.2f}  pos_frac={per_event_pos_frac:.2f}{rail_flag}"
     )
 
     return {
@@ -174,6 +219,9 @@ def analyze_one_truth(
         "n_events": int(n_events),
         "discrete_map": discrete_map,
         "continuous_map": continuous_map,
+        "boundary_rail": bool(boundary_rail),
+        "h_grid_min": float(h_grid.min()),
+        "h_grid_max": float(h_grid.max()),
         "bias": bias,
         "sigma_boot": sigma_boot,
         "z_score": z,
@@ -184,6 +232,8 @@ def analyze_one_truth(
             "q84": boot_q[3],
             "q95": boot_q[4],
         },
+        "per_event_bias_pos_frac": per_event_pos_frac,
+        "per_event_bias_median": per_event_median_bias,
         "h_grid": h_values,
     }
 
@@ -196,6 +246,10 @@ def panel_verdict(rows: list[dict[str, Any]]) -> dict[str, Any]:
       - z of (weighted mean) vs zero
       - sign concordance: fraction of biases with same sign
       - reduced χ² of biases against zero
+      - boundary-rail flag: any per-truth MAP at the grid edge
+      - per-event pos-fraction stability: std across truths of the
+        per-truth fraction of events with positive per-event bias
+        (small std + |mean - 0.5| > ~0.05 ⇒ shared-injection-set pull)
     """
     if not rows:
         return {"verdict": "INSUFFICIENT_DATA"}
@@ -219,6 +273,26 @@ def panel_verdict(rows: list[dict[str, Any]]) -> dict[str, Any]:
     p_sign_two_sided = sum(comb(n, k) for k in range(extreme, n + 1)) / 2 ** (n - 1)
     p_sign_two_sided = min(p_sign_two_sided, 1.0)
 
+    # Boundary-rail flag: any truth where MAP railed at the grid edge.
+    railed_truths = [r["h_truth"] for r in rows if r.get("boundary_rail")]
+
+    # Per-event pos-fraction stability across truths.
+    pe_pos_fracs = np.array([r["per_event_bias_pos_frac"] for r in rows])
+    pe_mean = float(np.mean(pe_pos_fracs))
+    pe_std = float(np.std(pe_pos_fracs, ddof=1)) if len(pe_pos_fracs) > 1 else 0.0
+    # Heuristic: a stable pos_frac far from 0.5 signals a shared-injection
+    # pull.  Flag when std < 0.05 and |mean - 0.5| > 0.05 (~10% imbalance).
+    if pe_std < 0.05 and abs(pe_mean - 0.5) > 0.05 and len(pe_pos_fracs) >= 3:
+        v_inj = (
+            f"FLAG — per-event pos_frac stable across truths "
+            f"(mean={pe_mean:.2f}, std={pe_std:.2f}); shared injection set may be pulling MAP"
+        )
+    else:
+        v_inj = (
+            f"PASS — per-event pos_frac dispersion not suspicious "
+            f"(mean={pe_mean:.2f}, std={pe_std:.2f})"
+        )
+
     if abs(z_panel) <= 2:
         v_mean = "PASS — weighted mean bias consistent with 0 (|z| ≤ 2)"
     elif abs(z_panel) <= 3:
@@ -233,6 +307,14 @@ def panel_verdict(rows: list[dict[str, Any]]) -> dict[str, Any]:
     else:
         v_sign = f"PASS — sign distribution consistent with random (p={p_sign_two_sided:.2f})"
 
+    if railed_truths:
+        v_rail = (
+            f"FLAG — boundary-rail at h_truth={railed_truths!r}; "
+            "discrete MAP sits at grid edge — widen window or trust with caution"
+        )
+    else:
+        v_rail = "PASS — no boundary-rail; all MAPs lie in the interior"
+
     return {
         "weighted_mean_bias": weighted_mean,
         "weighted_mean_sigma": weighted_mean_sigma,
@@ -242,8 +324,13 @@ def panel_verdict(rows: list[dict[str, Any]]) -> dict[str, Any]:
         "n_dof": n_dof,
         "positive_fraction": pos_frac,
         "binomial_p_sign_concordance_2sided": p_sign_two_sided,
+        "per_event_pos_frac_mean": pe_mean,
+        "per_event_pos_frac_std": pe_std,
+        "railed_truths": railed_truths,
         "verdict_mean": v_mean,
         "verdict_sign_concordance": v_sign,
+        "verdict_boundary_rail": v_rail,
+        "verdict_shared_injection_pull": v_inj,
     }
 
 
@@ -278,7 +365,10 @@ def maybe_plot(channel_results: dict[str, list[dict[str, Any]]], out_path: Path)
     ax.axhline(0, color="black", linewidth=0.5, linestyle="--", alpha=0.5)
     ax.set_xlabel(r"$h_{\rm true}$")
     ax.set_ylabel(r"bias = $\hat{h}_{\rm MAP} - h_{\rm true}$")
-    ax.set_title("Multi-truth bias sweep (post-Tier-3 fix)")
+    ax.set_title(
+        "Multi-truth bias sweep (post-Tier-3 fix)\n"
+        r"$\sigma_{\rm boot}$ = event resample at fixed truth — does not capture shared-injection correlation"
+    )
     ax.legend()
     ax.grid(True, alpha=0.3)
     fig.tight_layout()

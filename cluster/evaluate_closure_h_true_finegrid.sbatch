@@ -2,22 +2,27 @@
 # cluster/evaluate_closure_h_true_finegrid.sbatch -- Multi-truth fine-grid closure test.
 #
 # Generalized successor to evaluate_closure_h065_finegrid.sbatch.  Evaluates
-# Bayesian inference on a rescaled CRB at 11 h-values centred on H_TRUE
-# (Δh=0.005), enabling a multi-truth bias-vs-h_true sweep to test whether the
-# post-Tier-3 residual bias is purely statistical.
+# Bayesian inference on a rescaled CRB at 21 h-values centred on H_TRUE
+# (Δh=0.005, half-width 0.05), enabling a multi-truth bias-vs-h_true sweep
+# to test whether the post-Tier-3 residual bias is purely statistical.
+#
+# Grid widened from ±0.025 to ±0.05 so the panel-extreme truths (0.60, 0.85)
+# can resolve a posterior peak that drifts toward the production injection
+# truth h=0.73 without railing at the grid boundary.
 #
 # Required environment variables (set via --export when submitting):
 #   RUN_DIR -- workspace directory containing rescaled prepared CRB.
 #   H_TRUE  -- the rescaled injection truth (e.g. 0.60, 0.65, 0.70, 0.73, 0.75, 0.80, 0.85).
 #
-# Strategy: dev_cpu_il caps at 1 running + 3 queued.  Submit --array=0-3 and
-# stride-slice 11 h-values across the 4 tasks.  At ~3 min/h on dev_cpu_il,
-# each task does ≤3 h × 3 min ≈ 9 min wall, well inside 30-min walltime.
+# Strategy: cpu_il queue with --array=0-6 (7 tasks), stride-slicing 21
+# h-values across the 7 tasks (3 h-values each).  At ~1.5 min/h on cpu_il
+# (128 cores), each task does 3 × 1.5 min ≈ 5 min wall, well inside the
+# 30-min walltime.
 
 #SBATCH --job-name=emri-closure-multi
-#SBATCH --partition=dev_cpu_il
+#SBATCH --partition=cpu_il
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task=64
+#SBATCH --cpus-per-task=128
 #SBATCH --time=00:30:00
 
 set -euo pipefail
@@ -36,26 +41,43 @@ if [[ -z "${H_TRUE:-}" ]]; then
 fi
 
 # ---------------------------------------------------------------------------
-# Build the 11-point fine grid centred on H_TRUE (Δh=0.005, half-width 0.025)
+# Build the fine grid centred on H_TRUE (Δh=0.005, half-width 0.05).
+# Clamp to the LamCDMScenario h prior support [0.60, 0.86]
+# (cosmological_model.py:303-305) so the inference is never asked for an
+# h-value outside the prior.  At panel extremes the grid is asymmetric:
+#   h_true = 0.60 → 11 points (0.6000 .. 0.6500)
+#   h_true = 0.65 → 21 points (0.6000 .. 0.7000)
+#   h_true = 0.85 → 13 points (0.8000 .. 0.8600)
+# parabolic_refine in test_24 handles arbitrary grids transparently, but the
+# panel verdict will FLAG truths whose MAP rails at the (clamped) edge.
 # ---------------------------------------------------------------------------
 
 # Use awk for portable float arithmetic (bash can't do floats natively).
-# Generate H_TRUE-0.025, H_TRUE-0.020, ..., H_TRUE+0.025 rounded to 4 decimals.
+# Generate H_TRUE-0.05, H_TRUE-0.045, ..., H_TRUE+0.05 rounded to 4 decimals
+# and drop values outside the LamCDM prior.
 # LC_ALL=C forces "." as the decimal separator regardless of cluster locale —
 # without it, locales like de_DE.UTF-8 emit "," and break the H_VALUES array.
 mapfile -t H_VALUES_ALL < <(LC_ALL=C awk -v h="$H_TRUE" 'BEGIN{
-    for (i = -5; i <= 5; i++) printf "%.4f\n", h + i*0.005
+    for (i = -10; i <= 10; i++) {
+        v = h + i*0.005
+        if (v + 1e-9 >= 0.60 && v - 1e-9 <= 0.86) printf "%.4f\n", v
+    }
 }')
 
-if [[ ${#H_VALUES_ALL[@]} -ne 11 ]]; then
-    echo "ERROR: expected 11 h-values, got ${#H_VALUES_ALL[@]}" >&2
+# Need at least ~11 points to support parabolic-refine + bootstrap σ_boot.
+if [[ ${#H_VALUES_ALL[@]} -lt 11 ]]; then
+    echo "ERROR: clamped grid has only ${#H_VALUES_ALL[@]} points; minimum 11 required" >&2
+    echo "       (H_TRUE=$H_TRUE pushes the ±0.05 window outside [0.60, 0.86])" >&2
     exit 1
 fi
 
-# Stride-slice across 4 tasks: task k → indices k, k+4, k+8 (3, 3, 3, 2 values)
+# Stride-slice across N tasks: task k → indices k, k+N, k+2N, ...
+# N is taken from SLURM_ARRAY_TASK_COUNT so the same sbatch handles cpu_il
+# (--array=0-6, N=7) and dev_cpu_il (--array=0-3, N=4) without edits.
 TASK_ID="${SLURM_ARRAY_TASK_ID:-0}"
+TASK_COUNT="${SLURM_ARRAY_TASK_COUNT:-7}"
 TASK_H_VALUES=()
-for ((i = TASK_ID; i < ${#H_VALUES_ALL[@]}; i += 4)); do
+for ((i = TASK_ID; i < ${#H_VALUES_ALL[@]}; i += TASK_COUNT)); do
     TASK_H_VALUES+=("${H_VALUES_ALL[$i]}")
 done
 
@@ -122,9 +144,9 @@ ln -sfn "$RUN_DIR/simulations" "$PROJECT_ROOT/simulations"
 echo "=== Multi-truth Closure Test (h_true=$H_TRUE) ==="
 echo "  RUN_DIR:                $RUN_DIR"
 echo "  H_TRUE (injection):     $H_TRUE"
-echo "  Task:                   $TASK_ID of 4"
+echo "  Task:                   $TASK_ID of $TASK_COUNT"
 echo "  H values this task:     ${TASK_H_VALUES[*]}"
-echo "  Full grid (11 values):  ${H_VALUES_ALL[*]}"
+echo "  Full grid (${#H_VALUES_ALL[@]} values):   ${H_VALUES_ALL[*]}"
 echo "  Node:                   $(hostname)"
 echo ""
 

@@ -8,9 +8,14 @@
 #   4. Submit the parameterized sbatch
 # Once all jobs complete, pull posteriors and run the analyzer (test_24).
 #
-# Submission and rsync are gated on dev_cpu_il queue capacity (max 4 in
-# system). The script submits one truth at a time, polling for completion
-# before moving to the next.
+# Submission runs on a configurable partition (default cpu_il, 128 cpus,
+# --array=0-6).  Override via env to run on dev_cpu_il for the smoke or to
+# tune the production sweep:
+#   SBATCH_PARTITION (default cpu_il)
+#   SBATCH_CPUS      (default 128)
+#   SBATCH_ARRAY     (default 0-6)
+# The script submits one truth at a time, polling for completion before
+# moving to the next, so we never have more than one job in queue.
 #
 # Usage:
 #   bash scripts/bias_investigation/run_multi_truth_sweep.sh
@@ -19,6 +24,12 @@
 #   TRUTHS="0.65 0.70 0.75" bash scripts/bias_investigation/run_multi_truth_sweep.sh
 
 set -euo pipefail
+
+# Force "." as decimal separator so printf "%.2f" "$h_truth" works regardless
+# of the user's locale (de_DE.UTF-8 etc. otherwise emit "," and break the
+# orchestrator's filename construction).  Mirrors the LC_ALL=C usage inside
+# cluster/evaluate_closure_h_true_finegrid.sbatch.
+export LC_ALL=C
 
 PROJECT_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 cd "$PROJECT_ROOT"
@@ -30,8 +41,14 @@ CLUSTER_HOST="bwunicluster"
 CLUSTER_WS="/pfs/work9/workspace/scratch/st_ac147838-emri"
 SEED_BASE=200  # bumped per truth to ensure fresh noise draws
 
+# Cluster job parameters (env-overridable for smoke / different partitions)
+SBATCH_PARTITION=${SBATCH_PARTITION:-cpu_il}
+SBATCH_CPUS=${SBATCH_CPUS:-128}
+SBATCH_ARRAY=${SBATCH_ARRAY:-0-6}
+
 echo "=== Multi-truth closure sweep ==="
-echo "Truths: $TRUTHS"
+echo "Truths:    $TRUTHS"
+echo "Partition: $SBATCH_PARTITION (cpus=$SBATCH_CPUS, array=$SBATCH_ARRAY)"
 echo ""
 
 # ssh helper with retries (dev_cpu_il connections sometimes drop)
@@ -94,10 +111,13 @@ for h_truth in $TRUTHS; do
         "$PROJECT_ROOT/$workdir/simulations/prepared_cramer_rao_bounds.csv" \
         "$CLUSTER_HOST:$cluster_run_dir/simulations/" | tail -3
 
-    # 4. Submit
-    echo "[4/5] Submitting sbatch..."
+    # 4. Submit — array/partition/cpus chosen at orchestrator entry; sbatch
+    #    stride logic auto-adapts via SLURM_ARRAY_TASK_COUNT.
+    echo "[4/5] Submitting sbatch on $SBATCH_PARTITION (array=$SBATCH_ARRAY, cpus=$SBATCH_CPUS)..."
     submit_out=$(ssh_retry "cd ~/MasterThesisCode && \
-        sbatch --array=0-3 \
+        sbatch --array=$SBATCH_ARRAY \
+            --partition=$SBATCH_PARTITION \
+            --cpus-per-task=$SBATCH_CPUS \
             --export=ALL,RUN_DIR=$cluster_run_dir,H_TRUE=$h_truth,PROJECT_ROOT=\$HOME/MasterThesisCode \
             --output=$cluster_run_dir/simulations/logs/closure_multi_%A_%a.out \
             --error=$cluster_run_dir/simulations/logs/closure_multi_%A_%a.err \
@@ -110,7 +130,7 @@ for h_truth in $TRUTHS; do
     fi
     echo "  Job ID: $job_id"
 
-    # 5. Wait for completion (dev_cpu_il serializes 4 tasks at ~7 min each)
+    # 5. Wait for completion (cpu_il runs the 7 tasks in parallel; ~5 min each)
     echo "[5/5] Waiting for job $job_id to complete..."
     while true; do
         sleep 60
