@@ -22,25 +22,54 @@ corresponding tier before reporting results.
 
 ## Dataset Registry
 
-### prod-seed200-20260401 *(canonical large set)*
+### phase45-seed200-20260501 *(current canonical, post-Tier-3 fix)*
 
 | Property | Value |
 |----------|-------|
-| **Location (cluster)** | `/pfs/work9/workspace/scratch/st_ac147838-emri/run_20260401_seed200/` |
-| **Location (local)** | `simulations/prepared_cramer_rao_bounds.csv` *(partial — 542 of 4 497 rows)* |
-| **Simulation date** | 2026-04-01 / 2026-04-02 |
+| **Location (cluster)** | `/pfs/work9/workspace/scratch/st_ac147838-emri/run_phase45_20260501/simulations/` |
+| **Location (local)** | `simulations/cluster_run_phase45_20260501/cramer_rao_bounds.csv` |
+| **Lineage** | Same population as `prod-seed200-20260401`; CRB rsynced into Phase 45 workspace 2026-05-01 19:44 (no new GPU sims) |
+| **Simulation date (origin)** | 2026-04-01 / 2026-04-02 |
 | **Git commit (simulation)** | `a56e30de` — v1.3 milestone roadmap |
-| **SLURM tasks** | 99 GPU tasks, `gpu_h100`, seed 200 |
+| **SLURM tasks (origin)** | 99 GPU tasks, `gpu_h100`, BASE_SEED=200 |
 | **SNR threshold (simulation)** | 15 |
-| **Total prepared rows** | 4 497 |
+| **Total CRB rows** | 4 497 |
 | **Rows with SNR ≥ 20** | 424 *(used by evaluation at runtime)* |
 | **Confusion noise (Phase 9)** | ✅ included |
 | **5-point stencil (Phase 10)** | ✅ included |
-| **Coordinate frame** | ⬜ equatorial ICRS *(needs `migrate_crb_to_ecliptic.py`)* |
-| **Ecliptic migration** | ⬜ NOT YET applied |
-| **Evaluation status** | ⬜ Not evaluated post-migration |
+| **Coordinate frame** | ✅ ecliptic (Phase 43 migration) |
+| **Ecliptic migration** | ✅ applied |
+| **Evaluation status** | ✅ evaluated post-Tier-3 fix (commit `d6b784c`, 2026-05-04): 1D MAP=0.7400 z=+1.4σ, 2D MAP=0.7400 z=+1.97σ |
+| **Verification status** | 🔄 Multi-truth bias-vs-h_true sweep in progress (commit `b110ba7`, 2026-05-04) |
 
-**Next action:** run `scripts/migrate_crb_to_ecliptic.py` on cluster, then submit `cluster/evaluate.sbatch` with `RUN_DIR` pointing to this workspace.
+**Status:** Active reference dataset for the bias-resolution paper. The h_true=0.65 closure test and the multi-truth panel both rescale this CRB.
+
+---
+
+### sim-seed300-extension-20260504 *(in flight — extension to ~1000 events)*
+
+| Property | Value |
+|----------|-------|
+| **Location (cluster)** | `/pfs/work9/workspace/scratch/st_ac147838-emri/run_20260504_seed300_extension/` |
+| **Submission** | 2026-05-04 (job `4216105`, gpu_h100) |
+| **Git commit (simulation)** | `b110ba7` — verification scaffold |
+| **SLURM tasks** | 50 GPU tasks, `gpu_h100`, BASE_SEED=300 (per-task seed = 300 + array_id) |
+| **Sim steps per task** | 10 000 (walltime-capped at 1 h) |
+| **Expected yield** | ~45 events/task × 50 tasks ≈ 2 250 total CRBs; ~210 SNR≥20 (9.4% yield, extrapolated from prod-seed200) |
+| **Confusion noise (Phase 9)** | ✅ included |
+| **5-point stencil (Phase 10)** | ✅ included |
+| **Coordinate frame** | ⬜ TBD on completion |
+| **Status** | 🔄 PENDING in queue at submission time |
+
+**Goal:** When merged with `phase45-seed200-20260501`, target ~600–650 SNR≥20 events for tighter σ_boot in the multi-truth panel and better-resolved D(h). Continued extension may follow.
+
+**Merge plan:** post-completion, run `cluster/merge.sbatch` to combine per-task CSVs, ecliptic-migrate, then concatenate with the Phase 45 CRB into a new canonical `phase46-merged-20260505` (or similar) entry.
+
+---
+
+### prod-seed200-20260401 *(superseded — see phase45-seed200-20260501)*
+
+Historical record of the original simulation campaign. Same data lives in `phase45-seed200-20260501` with the post-Tier-3 evaluation results attached.
 
 ---
 
@@ -92,6 +121,28 @@ Runs `run_20260328_seed100_v3` (19 rows), `run_20260330_seed100` (22 rows), `run
 
 ---
 
+### closure-verification-runs *(post-Tier-3 verification CRBs, rescaled from phase45)*
+
+Each closure run rescales `phase45-seed200-20260501` to a different h_true via `scripts/bias_investigation/test_23_rescale_crb_to_h_true.py`. Distance and SNR transform as `d_L_new = (h_old/h_new) · d_L_old`, `SNR_new = (h_new/h_old) · SNR_old`; events with SNR_new < 20 are dropped.
+
+| Workdir | h_true | N_events post-rescale | Source CRB | Status |
+|---------|--------|----------------------|------------|--------|
+| `simulations/closure_h0p65/` | 0.65 | 251 (424 → 251 after SNR filter) | phase45-seed200 | ✅ smoke 2026-05-04 (cluster job 4210104) |
+| `simulations/closure_h0p73/` | 0.73 | 424 (identity rescale) | phase45-seed200 | ✅ smoke 2026-05-04 (cluster job 4213944) |
+
+Posteriors landed at:
+- `simulations/cluster_run_closure_h0p65_finegrid/posteriors{,_with_bh_mass}/h_*.json` (21-pt grid 0.6000–0.7000)
+- `simulations/cluster_run_closure_h0p73_finegrid/posteriors{,_with_bh_mass}/h_*.json` (21-pt grid 0.6800–0.7800)
+
+Aggregated by `scripts/bias_investigation/test_24_multi_truth_bias_sweep.py` →
+- `scripts/bias_investigation/outputs/phase45/multi_truth_sweep.{json,png}`
+
+**Smoke verdict (2 truths):** all four panel checks PASS — weighted mean bias |z|≤2, sign distribution random (sign FLIP between truths), no boundary-rail, per-event pos_frac dispersion not suspicious.
+
+**Pending:** full 7-truth panel (`{0.60, 0.65, 0.70, 0.73, 0.75, 0.80, 0.85}`) on cpu_il post-20:00.
+
+---
+
 ## Injection Data
 
 | Property | Value |
@@ -107,8 +158,11 @@ Runs `run_20260328_seed100_v3` (19 rows), `run_20260330_seed100` (22 rows), `run
 
 ## Evaluation Log
 
-| Date | Dataset | Git commit | h-grid | SNR≥20 events | MAP | Notes |
-|------|---------|-----------|--------|--------------|-----|-------|
-| 2026-04-24 | local-phase43-verification (pre-fix) | pre-`a2df67b` | 38-pt | 60 | 0.860 | Equatorial frame — biased |
-| 2026-04-27 | local-phase43-verification | `a2df67bf` | single h=0.73 | 60 | 0.730 | Phase 43-03 verification only |
-| *(pending)* | prod-seed200-20260401 (post-migration) | HEAD | 38-pt | 424 | — | **Next evaluation target** |
+| Date | Dataset | Git commit | h-grid | SNR≥20 events | 1D MAP | 2D MAP | Notes |
+|------|---------|-----------|--------|--------------|--------|--------|-------|
+| 2026-04-24 | local-phase43-verification (pre-fix) | pre-`a2df67b` | 38-pt | 60 | 0.860 | — | Equatorial frame — biased |
+| 2026-04-27 | local-phase43-verification | `a2df67bf` | single h=0.73 | 60 | 0.730 | — | Phase 43-03 verification only |
+| 2026-05-04 | phase45-seed200-20260501 (Tier 3 fix) | `d6b784c` | 38-pt + closure h=0.65 | 424 (h=0.73) / 251 (h=0.65) | 0.7400 (z=+1.4σ) | 0.7400 (z=+1.97σ) | Production result post-Tier-3 fix; closure h=0.65 PASSED |
+| 2026-05-04 (smoke) | closure-verification (multi-truth) | `b110ba7` | 21-pt fine | 243 (h=0.65) / 408 (h=0.73) | 0.6555 / 0.7233 | 0.6558 / 0.7285 | Smoke for 2-truth panel; sign flip — **production seed-dependence ~0.02** |
+| *(pending)* | full 7-truth panel | next | 11–21-pt fine each | per-truth | per-truth | per-truth | cpu_il post-20:00 |
+| *(pending)* | phase45 + sim-seed300 merged | next | 38-pt | ~600–650 | — | — | After seed=300 extension lands |
