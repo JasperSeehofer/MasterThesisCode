@@ -242,23 +242,16 @@ class TestCombineLogSpace:
         assert posterior.sum() == pytest.approx(1.0)
         assert posterior.shape == (15,)
 
-    def test_constant_D_h_leaves_shape_unchanged(self) -> None:
-        """Uniform D(h) adds a constant offset → posterior shape identical to no-D(h) case."""
+    def test_log_D_h_argument_is_ignored(self) -> None:
+        """Tier 3 (2026-05-04): outer −N log D was double-counting D (D is already
+        in L_comp = num/D per Gray Eq. 31).  combine_log_space now ignores
+        log_D_h and n_events_used; passing them must NOT change the posterior.
+        """
         likelihoods = np.array([[2.0, 3.0], [4.0, 5.0]])
         posterior_no_dh = combine_log_space(likelihoods)
-        log_D_h = np.full(2, np.log(1e5))  # constant across h
-        posterior_with_dh = combine_log_space(likelihoods, log_D_h=log_D_h, n_events_used=2)
+        log_D_h_growing = np.log(np.array([1.0, 100.0]))  # would have suppressed h[1]
+        posterior_with_dh = combine_log_space(likelihoods, log_D_h=log_D_h_growing, n_events_used=2)
         np.testing.assert_allclose(posterior_with_dh, posterior_no_dh, rtol=1e-10)
-
-    def test_D_h_suppresses_high_h(self) -> None:
-        """Monotonically growing D(h) suppresses high-h bins (regression guard)."""
-        # Equal raw likelihoods across 3 h-bins; D(h) grows monotonically.
-        likelihoods = np.array([[1.0, 1.0, 1.0]])
-        # D(h) = [1, 10, 100] → log D = [0, log10, log100]
-        log_D_h = np.log(np.array([1.0, 10.0, 100.0]))
-        posterior = combine_log_space(likelihoods, log_D_h=log_D_h, n_events_used=1)
-        # With n=1 event and log Π_i L_i = 0, joint_log = -log D(h), so posterior peaks at h[0].
-        assert np.argmax(posterior) == 0
 
 
 # ---------------------------------------------------------------------------
@@ -377,39 +370,40 @@ class TestCombinePosteriors:
         posterior = np.array(result["posterior"])
         assert posterior.sum() == pytest.approx(1.0, abs=1e-6)
 
-    def test_D_h_correction_suppresses_high_h(self, tmp_path: Path) -> None:
-        """Growing D(h) should shift MAP toward lower h (regression guard for the fix)."""
-        # Build posteriors dir with uniform likelihoods across h — without D(h)
-        # correction all h-bins are equally likely; with growing D(h) low-h is favoured.
+    def test_d_h_table_does_not_alter_posterior(self, tmp_path: Path) -> None:
+        """Tier 3 (2026-05-04): D(h) is the prior normalization for L_comp = num/D
+        inside each per-event likelihood (Gray Eq. 31), NOT an outer selection
+        correction.  The d_h_table argument to combine_posteriors is therefore
+        diagnostic-only — passing different D(h) tables must not change the
+        joint posterior over uniform per-event likelihoods.
+        """
         h_values = [0.6, 0.7, 0.8]
         for h in h_values:
             data = {"0": [1.0], "1": [1.0], "h": h}
             fname = f"h_0_{str(h).replace('0.', '')}.json"
             (tmp_path / fname).write_text(json.dumps(data))
 
-        # Constant D(h) → uniform posterior (no suppression)
+        # Constant D(h) baseline — uniform posterior (per-event uniform).
         result_flat = combine_posteriors(
             posteriors_dir=str(tmp_path),
             strategy="exclude",
             output_dir=str(tmp_path / "out_flat"),
             d_h_table={0.6: 1.0, 0.7: 1.0, 0.8: 1.0},
         )
-        # With constant D and uniform likelihoods, all posteriors are equal → first bin is MAP
         posterior_flat = np.array(result_flat["posterior"])
         assert pytest.approx(posterior_flat, abs=1e-9) == [1 / 3, 1 / 3, 1 / 3]
 
-        # Growing D(h) → posterior suppressed at high h
+        # Growing D(h) — must produce the SAME uniform posterior, since the
+        # outer correction is no longer applied.  (If it were still applied,
+        # this would suppress h[2] and shift MAP to h[0].)
         result_grow = combine_posteriors(
             posteriors_dir=str(tmp_path),
             strategy="exclude",
             output_dir=str(tmp_path / "out_grow"),
             d_h_table={0.6: 1.0, 0.7: 10.0, 0.8: 100.0},
         )
-        # With n_used=2 events: joint_log corrected by −2·log D(h).
-        # D = [1, 10, 100] → correction = [0, -2·log10, -2·log100].
-        # Raw joint_log = [log1+log1, log1+log1, log1+log1] = 0 for all h.
-        # After correction: [0, −2·log10, −4·log10]. MAP at h=0.6.
-        assert result_grow["map_h"] == pytest.approx(0.6)
+        posterior_grow = np.array(result_grow["posterior"])
+        np.testing.assert_allclose(posterior_grow, posterior_flat, rtol=1e-10)
 
 
 # ---------------------------------------------------------------------------

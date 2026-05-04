@@ -282,23 +282,37 @@ def _physics_floor(
 
 def combine_log_space(
     likelihoods: npt.NDArray[np.float64],
-    log_D_h: npt.NDArray[np.float64] | None = None,
-    n_events_used: int = 0,
+    log_D_h: npt.NDArray[np.float64] | None = None,  # noqa: ARG001 (kept for backward compat / diagnostics)
+    n_events_used: int = 0,  # noqa: ARG001
 ) -> npt.NDArray[np.float64]:
     """Combine per-event likelihoods into a joint posterior using log-space.
+
+    The per-event likelihoods :math:`L_i(h)` are already conditional on
+    detection: ``L_comp = num/D(h)`` (Gray et al. 2020 Eq. 31, where ``D(h)``
+    plays the role of the prior normalization for ``p_galaxy ∝ p_det · dV_c``)
+    and ``L_cat = (1/N_g) Σ_g (N_g_local/D_g_local)`` (per-galaxy
+    detection-conditional expectation).  The joint posterior is therefore
+    just ``Π_i L_i(h)`` with no additional ``β(h)^N`` selection correction
+    (Loredo 2004; Mandel et al. 2019, arXiv:1809.02063 §3): conditioning on
+    the observed N_detected makes the β^N factor in the unconditional
+    likelihood cancel against the Poisson rate prior.
+
+    The ``log_D_h`` and ``n_events_used`` arguments are retained for
+    backward compatibility with older callers, but are now **ignored** —
+    applying ``−N · log D(h)`` here would double-count the selection
+    correction already inside each per-event ``L_comp``.
 
     Parameters
     ----------
     likelihoods : ndarray of shape ``(n_events, n_h_values)``
         Likelihood array with zeros already handled (all values > 0).
     log_D_h : ndarray of shape ``(n_h_values,)`` or None
-        ``log D(h)`` for each h-bin.  When provided, the selection-function
-        correction ``−n_events_used · log D(h)`` is applied before combining
-        (Gray et al. 2020, arXiv:1908.06050, Eq. A.19).
+        Ignored.  Kept for backward compatibility; pass ``None`` for new
+        callers.  Phase 43-H1 commit ``2853c32`` introduced an
+        ``−N · log D(h)`` subtraction here that we have since shown
+        (Tier 3 audit, 2026-05-04) over-applies the selection correction.
     n_events_used : int
-        Number of events that contribute to the joint product (i.e. not
-        excluded by the zero-handling strategy).  Ignored when ``log_D_h``
-        is ``None``.
+        Ignored.  Kept for backward compatibility.
 
     Returns
     -------
@@ -307,10 +321,6 @@ def combine_log_space(
     """
     log_likes = np.log(likelihoods)
     joint_log = np.sum(log_likes, axis=0)
-    if log_D_h is not None:
-        # Eq. A.19 in Gray et al. (2020), arXiv:1908.06050:
-        # joint posterior ∝ Π_i L_i(h) / D(h)^N  →  subtract N·log D(h).
-        joint_log = joint_log - n_events_used * log_D_h
     max_log = np.max(joint_log)
     posterior = np.exp(joint_log - max_log)
     posterior = posterior / np.sum(posterior)
@@ -454,8 +464,9 @@ def generate_comparison_table(
     variant : str
         Name of the posterior variant (e.g. ``"posteriors"``).
     log_D_h : ndarray of shape ``(n_h_values,)`` or None
-        Selection-function correction array (Gray et al. 2020, Eq. A.19).
-        Passed through to ``combine_log_space`` for each strategy.
+        Ignored (kept for backward compatibility).  See ``combine_log_space``
+        docstring — D(h) enters via L_comp = num/D inside each per-event
+        likelihood (Gray Eq. 31), not as an outer correction.
 
     Returns
     -------

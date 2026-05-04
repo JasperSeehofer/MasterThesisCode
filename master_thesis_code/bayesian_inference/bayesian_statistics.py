@@ -1012,9 +1012,14 @@ class BayesianStatistics:
                 completion_numerator_integrand, z_lower, z_upper, n=FIXED_QUAD_N
             )[0]
 
-            # Gray et al. (2020), arXiv:1908.06050, Eq. A.19:
-            # Denominator integrates P_det * dVc/dz over full detectable volume,
-            # precomputed once per h-value (event-independent).
+            # Gray et al. (2020), arXiv:1908.06050, Eq. 31:
+            # D(h) = ∫ p_det · dV_c/dz dz normalizes p_galaxy ∝ p_det · dV_c
+            # to a probability density, making L_comp = num/D the per-event
+            # likelihood CONDITIONAL on detection (not an outer selection
+            # correction).  Tier 3 audit (2026-05-04) confirmed that combining
+            # this with combine_log_space's old −N log D outer subtraction
+            # double-counted D and biased MAP by +0.020 to +0.025; outer
+            # subtraction is now disabled in posterior_combination.combine_log_space.
             comp_denominator: float = self._D_h_table.get(self.h, 0.0)
 
             # Grid coverage flag: warn if numerator 4-sigma window exceeds P_det grid

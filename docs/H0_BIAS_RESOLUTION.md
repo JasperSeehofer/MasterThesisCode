@@ -1,6 +1,6 @@
 # H0 Posterior Bias — Resolution Catalog
 
-**Last updated:** 2026-05-01
+**Last updated:** 2026-05-04 (Tier 3 fix LANDED — D(h) double-counting removed from joint posterior; both closure h=0.65 and production h=0.73 now PASS within 2σ)
 
 This is the bundled source of truth for the H0 posterior bias investigation in
 the LISA EMRI dark-siren H0 inference pipeline. It is organized as a **catalog
@@ -22,11 +22,24 @@ EMRI dark-siren H0 inference: the simulation injects events at `h_true = 0.73`
 over `h ∈ [0.60, 0.86]`. Across 12 confirmed bias sources resolved over phases
 9–45, the cluster MAP currently sits at:
 
-| Channel | Discrete MAP | Continuous MAP (A1) | σ_boot | Bias |
-|---|---|---|---|---|
-| `without_bh_mass` (1D, anchored) | **0.7550** | **0.7550 lin / 0.7540 cub** | 0.0109 | +3.4 % |
-| `with_bh_mass` (2D, unanchored) | **0.7450** | **0.7450 lin/cub** | n/a (joint-only) | +2.0 % |
-| `--evaluate` (60 events, local) | 0.7300 | n/a | n/a | 0.0 % (Phase 43 PASS) |
+**Pre-Tier-3 (with the now-removed outer −N log D double-counting):**
+
+| Channel | Discrete MAP | Continuous MAP | σ_boot | Bias | z |
+|---|---|---|---|---|---|
+| `without_bh_mass` (1D, anchored) | 0.7550 | 0.7535 (parabolic) | 0.0102 | +3.4 % | +2.30 σ |
+| `with_bh_mass` (2D, unanchored) | 0.7450 | 0.7456 (parabolic) | 0.0050 | +2.0 % | +3.12 σ |
+| Closure h_true=0.65 (1D, fine grid 11 h) | 0.6700 | 0.6708 (parabolic) | 0.0037 | +3.2 % | +5.62 σ FAIL |
+| Closure h_true=0.65 (2D, fine grid 11 h) | 0.6700 | 0.6697 (parabolic) | 0.0059 | +3.0 % | +3.36 σ MARGINAL |
+
+**Post-Tier-3 fix (combine_log_space joint = Σ log L_i, no outer correction):**
+
+| Channel | Discrete MAP | Continuous MAP | σ_boot | Bias | z |
+|---|---|---|---|---|---|
+| `without_bh_mass` (1D) | **0.7400** | **0.7413** (parabolic) | 0.0073 | +1.4 % | **+1.54 σ PASS** |
+| `with_bh_mass` (2D) | **0.7400** | **0.7409** (parabolic) | 0.0055 | +1.2 % | **+1.97 σ PASS** |
+| `--evaluate` (60 events, local) | 0.7300 | n/a | n/a | 0.0 % (Phase 43 PASS) | n/a |
+| **Closure h_true=0.65** (1D, fine grid 11 h) | **0.6550** | **0.6555** (parabolic) | 0.0033 | +0.85 % | **+1.67 σ PASS** |
+| **Closure h_true=0.65** (2D, fine grid 11 h) | **0.6550** | **0.6557** (parabolic) | 0.0034 | +0.88 % | **+1.68 σ PASS** |
 
 **Audit A1 (2026-05-01) — G1b:** real shift, not a discrete-grid artifact.
 Continuous 1D MAP=0.7550 with linear-vs-cubic Δ=0.0010 (PASS, tol 0.002).
@@ -44,30 +57,50 @@ staged escalations on side branches (`phase-45-option-A` raises anchor 0.7931→
 0.8873; `phase-45-option-D` extends hybrid to 2D channel) **remain
 deployment-blocked** pending the closure-test backstop (Audit A7).
 
-**v2.3 audit programme summary (2026-05-03):**
+**v2.3 audit programme summary (2026-05-04):**
 A0 G0a CLEAN · A1 G1b real shift · A2 G2b 1D over-anchors structurally ·
-A4 G4b BIAS DOMINATED BY D(h), not anchor · A5 G5a-PARTIAL · **A7 G7a
-PIPELINE CLOSURE-VALIDATED at h_true=0.65** · A8 G8a Phase 33/34 verdicts
-hold. A3, A6 superseded.
+A4 G4b BIAS DOMINATED BY D(h), not anchor · A5 G5a-PARTIAL · A7 redux
+identified D(h) double-counting · **Tier 3 FIX LANDED**: outer −N log D
+removed from `combine_log_space`; closure h=0.65 1D PASS (z=+1.67σ),
+closure h=0.65 2D PASS (z=+1.68σ), production h=0.73 1D PASS (z=+1.4σ at
+discrete MAP=0.7400), production h=0.73 2D PASS (z=+1.97σ). · A8 G8a
+Phase 33/34 verdicts hold. A3, A6 superseded.
 
-**A7 critical result (2026-05-03):** Lean closure test rescaled the cluster
-CRB to h_true=0.65, ran 4-h-grid evaluation on cluster dev_cpu_il, recovered:
-- 1D continuous MAP = **0.6517** (bias = +0.0017, ≪ σ_boot)
-- 2D continuous MAP = **0.6501** (bias = +0.0001, essentially exact)
+**A7 redux critical result (2026-05-04, supersedes 2026-05-03 G7a):** The
+original A7 evaluated the rescaled-CRB closure on **only 4 h-values
+[0.60, 0.65, 0.70, 0.75], Δh=0.05, with truth on a grid point** and used a
+cubic spline through 4 points to extract a continuous MAP. With truth at the
+grid centre, that geometry cannot resolve a sub-grid bias of magnitude
+≲0.025. A re-run on **11 h-values Δh=0.005 in [0.625, 0.675]** with bootstrap
+σ_boot via event resample (B=1000) — same resolution at which the +0.025 at
+h=0.73 was detected — recovers:
+- 1D continuous MAP = **0.6708** (bias = **+0.0208**, σ_boot=0.0037, **z=+5.62σ → FAIL**)
+- 2D continuous MAP = **0.6697** (bias = +0.0197, σ_boot=0.0059, z=+3.36σ — MARGINAL)
 
-vs h_true=0.73 case: continuous MAP=0.7550, bias=+0.025. **The +0.025 residual
-at h_true=0.73 is NOT a structural pipeline bias** — closure test at h=0.65
-recovers truth within 0.002. The h=0.73 residual is therefore most likely
-statistical fluctuation specific to that injection realization, possibly
-combined with a sample-size effect (412 events at h=0.73 vs 243 surviving
-SNR≥20 at h=0.65). Pipeline integrity is validated for paper readiness.
+**Decomposition (1D, h_true → MAP):** ΔΣ log L = −3.6 (per-event likelihoods
+prefer truth, pulling MAP DOWN), Δ(−N log D) = +7.6 (selection-function
+correction pushes MAP UP, +0.02). **The h=0.73 +0.025 residual IS a
+structural pipeline bias** — same magnitude, same direction, same D(h)
+mechanism at h_true=0.65. A4's hypothesis is now empirically confirmed by
+the closure test, and the original "h=0.73 bias is realization-specific
+fluctuation" framing is invalidated.
+
+Cluster: job 4200482 on dev_cpu_il, 4 array tasks chained (3+3+3+2 h-values
+serialized). Output: `scripts/bias_investigation/outputs/phase45/closure_h065_finegrid.json`.
+
+**Tier 2 bootstrap-subsample at h=0.73 (2026-05-04):** Independently
+corroborates: σ_boot at N=412 = 0.0102 stable across N ∈ {200, 300, 412}
+with no convergence toward truth as N grows. P(MAP_b ≤ MAP_full)≈0.48 → MAP
+sits at the median of its own bootstrap distribution. The +0.025 is real
+and reproducible under resampling, NOT a sample-size fluctuation.
+Output: `scripts/bias_investigation/outputs/phase45/bootstrap_subsample.json`.
 
 **A4 empirical confirmation via Plan 45-06 (2026-05-03):** Parallel session
 ran Plan 45-06 (raise d_L=0 anchor 0.7931 → 0.8873, +12% lift). Cluster MAP
 **unchanged at 0.7550 / 0.7450** — direct empirical confirmation that anchor
-escalation can't move the residual. Combined with A7, this confirms anchor
-work is the wrong layer AND the residual itself is not a structural bias
-worth fixing.
+escalation can't move the residual. Combined with A7-redux, this confirms
+anchor work is the wrong layer AND the residual is a real structural bias
+that anchor escalation cannot fix.
 
 **A4 critical finding (2026-05-02):** Per-event diagnostic CSV (412 cluster
 events × 38 h-values) reconstructs cluster MAP=0.7550 exactly. Decomposing
@@ -101,18 +134,20 @@ is not the bottleneck.
 - **A8 confirmed** Phase 33/34 verdicts hold against post-Phase-43 baseline.
 
 **What is not yet resolved:**
-- **Phase 45 first-bin asymptote underestimate** at d_L < c_0 — partially fixed
-  (anchor + hybrid lift); residual cluster MAP +0.025 over truth (3 σ_boot).
-  A2 confirmed 1D anchor system over-lifts vs 2D's natural extrapolation by
-  ~0.27 on [0, c_0]. Sub-binning (Audit A3 / Plan 45-08) is the principled
-  alternative; needs cluster data for quantitative prediction.
-- **Closure-test backstop** (Audit A7): pipeline has not been validated against
-  a non-0.73 injected truth — **highest-priority remaining audit**. Until A7
-  passes, the +0.025 residual cannot be ruled out as a parameter-tuning
-  artifact.
-- **Per-event diagnostic CSV** (Audit A4): which events drive the +0.025
-  bias is not yet known. Could be ≤20 boundary events (A3 mechanism applies)
-  or globally distributed (A8 escalation).
+- **D(h) selection-function structural bias** (Tier 3 / new top priority).
+  A4 + A7-redux empirically converge: ΔΣ log L pulls MAP toward truth at
+  both h_true=0.65 and h_true=0.73, but Δ(−N log D) overrides with +0.015
+  to +0.020 toward higher h. The structural systematic lives in the D(h)
+  computation. Suspect surfaces: z-integration grid in
+  `precompute_completion_denominator()`, `dV_c/dz` accuracy at high h,
+  P_det grid extrapolation at large d_L (most of D(h)'s integrand mass),
+  cosmological d_L↔z relation accuracy. **Read-only audit, ~1 hour per
+  candidate.** Now blocking paper readiness.
+- **Phase 45 first-bin asymptote underestimate** at d_L < c_0 — formally
+  open but per A4+A7-redux this is the wrong layer; do not invest further.
+- **Per-event diagnostic CSV** (Audit A4): closure-test decomposition makes
+  it now clear that bias is global (D(h)-driven), not concentrated in
+  ≤20 boundary events.
 
 ---
 
@@ -146,21 +181,50 @@ Source: Phase 43 VERIFY-03 SC-3 PASS.
 The cluster vs --evaluate gap is sample-size-driven (412 vs 60); both paths run
 identical `BayesianStatistics.evaluate()` code.
 
-### Closure test at h_true=0.65 — *G7a UNBIASED (Audit A7, 2026-05-03)*
+### Closure test at h_true=0.65 — *2026-05-03 4-h-grid result was a smoke test, not a validation*
 
 Lean rescaling closure test, cluster job 4198463 on `dev_cpu_il`.
 
 | Quantity | Value | Notes |
 |---|---|---|
 | Truth h | 0.6500 | Closure-test injection (rescaled cluster CRB) |
-| Continuous MAP, 1D channel | **0.6517** | bias = +0.0017, ≪ σ_boot |
-| Continuous MAP, 2D channel | **0.6501** | bias = +0.0001, essentially exact |
+| Continuous MAP, 1D channel | 0.6517 | from cubic spline through 4 widely-spaced points |
+| Continuous MAP, 2D channel | 0.6501 | same |
+| Cluster h-grid | [0.60, 0.65, 0.70, 0.75] | Δh=0.05, **truth on grid centre** |
+| Bootstrap σ_boot | NOT COMPUTED | claimed bias "≪ σ_boot" had no σ_boot reference |
 | N events post-rescaling SNR≥20 | 251 (243 used) | from 412 at h_true=0.73 |
 
-**Pipeline closure-validated.** The +0.025 residual at h_true=0.73 is NOT a
-structural pipeline bias; it's specific to the h=0.73 realization (most likely
-statistical fluctuation combined with sample-size effects on the relative
-weights of per-event Σ log L_i and −N log D(h) at the joint MAP).
+**Withdrawn.** Cubic spline through 4 points cannot resolve a ≲0.025 sub-grid
+bias when truth sits at a grid point. The "G7a UNBIASED" verdict was a
+smoothing artifact. See `closure test fine grid` below for the actual
+verdict.
+
+### Closure test at h_true=0.65 — fine grid (Audit A7-redux, 2026-05-04) — **FAIL**
+
+Cluster job 4200482 on `dev_cpu_il`, 4-task array chained (2-3 h-values per
+task). Same RUN_DIR as A7 (rescaled CRB at h_true=0.65), but evaluated on
+11 h-values Δh=0.005 in [0.625, 0.675] — the resolution at which the +0.025
+at h=0.73 was originally detected. Bootstrap σ_boot via event resample
+(B=1000, RNG seed 20260504, `test_20_closure_finegrid_analyze.py`).
+
+| Quantity | 1D channel | 2D channel | Notes |
+|---|---|---|---|
+| Discrete MAP | 0.6700 | 0.6700 | (h-grid centred on truth, peak at h=0.67) |
+| Continuous MAP (parabolic 3-pt) | **0.6708** | **0.6697** | sub-grid refine at the peak |
+| Bias vs h_true | **+0.0208** | +0.0197 | similar magnitude both channels |
+| σ_boot (B=1000) | 0.0037 | 0.0059 | bootstrap event resample |
+| z = bias / σ_boot | **+5.62 σ** | +3.36 σ | 1D **FAIL**, 2D MARGINAL |
+| ΔΣ log L (truth → MAP) | −3.6 | −5.1 | per-event L prefers truth |
+| Δ(−N log D) (truth → MAP) | **+7.6** | **+7.6** | D(h) drives MAP up |
+| Net Δ log p | +3.9 | +2.5 | D(h) overrides per-event L |
+
+**Pipeline closure FAILS at h_true=0.65 on the same grid resolution that
+detected the h=0.73 bias.** Both channels show the same direction and
+magnitude (~+0.02) of structural bias dominated by Δ(−N log D)=+7.6.
+A4's mechanistic claim — D(h) is the dominant bias driver — is now
+empirically confirmed across two truths. The h=0.73 +0.025 residual is
+therefore reproducible structural systematic, not realization-specific
+fluctuation. Tier 3 D(h) audit is required before paper.
 
 ---
 
@@ -448,6 +512,52 @@ Each entry links to its date-stamped narrative in [Appendix A](#appendix-a--chro
 - **Reference:** Vallisneri (2008) arXiv:gr-qc/0703086.
 - **Detail →** [Appendix A · Phase 10](#phase-10--five-point-stencil-derivatives-2026-03-29).
 
+### 3.13 D(h) double-counting in joint posterior (Tier 3 fix, 2026-05-04) → +0.020 to +0.025 bias eliminated
+
+- **Symptom:** Cluster MAP +0.025 over truth at h_true=0.73 (z=+2.30 σ_boot).
+  A7 fine-grid closure at h_true=0.65 also failed: 1D MAP=0.6708, bias=+0.0208,
+  z=+5.62σ. A4 decomposition: per-event Σ log L_i peaked at h≈truth at both
+  truths, but Δ(−N log D)=+7.6 dominated and pushed MAP up by ~+0.02.
+- **Mechanism:** D(h) appeared **twice** in the joint posterior. (1) Inside
+  per-event L_comp = num/D (Phase 32 commit `fc7c84c`) — this is the prior
+  normalization for `p_galaxy ∝ p_det · dV_c/dz` per Gray Eq. 31, making L_comp
+  a probability density of d_obs *conditional on detection*. (2) Outside via
+  `combine_log_space`'s subtraction of N · log D(h) (Phase 43-H1 commit
+  `2853c32`) — re-applying selection correction that's already inside the
+  per-event likelihoods. For completion-dominated events (f_i → 0) the joint
+  contribution became `log num_i − 2·log D`, over-correcting; for catalog-dominated
+  events (f_i → 1) it remained `log L_cat − log D`. Net structural bias whose
+  sign and magnitude depended on D(h)'s actual h-dependence post-Phase-44.
+- **Why Phase 43-H1 appeared correct at the time:** verification used a toy
+  D(h) ∝ h³ that doesn't match production. Phase 43-H2 (the *real* fix —
+  ecliptic CRB migration) independently moved MAP from 0.860 to 0.730 (per
+  A5: "the raw Σ log L_i already peaks at 0.730 without needing D(h)
+  correction"). After Phase 44 inverted D(h)'s slope from increasing-in-h to
+  decreasing-in-h, H1's correction became actively harmful.
+- **Diagnostic:** `scripts/bias_investigation/test_22_dh_double_count.py` —
+  joint MAP with outer correction coefficient c ∈ {0, 1} at all 4 (channel × truth)
+  combinations. With c=1 (current pre-fix): 3/4 FAIL, 1/4 MARGINAL. With c=0:
+  4/4 PASS within 2·σ_boot of truth.
+- **Fix:** `master_thesis_code/bayesian_inference/posterior_combination.py` —
+  `combine_log_space` no longer subtracts `n_events_used · log_D_h`; the
+  parameter is retained for API compatibility but ignored. Per-event L_comp = num/D
+  (Phase 32) is unchanged. Joint posterior is now `Σ log L_i` per Loredo (2004) /
+  Mandel et al. (2019) §3 — each L_i already conditions on detection, no extra β^N
+  correction needed.
+- **Evidence:** Closure h_true=0.65 fine-grid 1D MAP 0.6708 → 0.6555
+  (z=+5.62σ → z=+1.67σ, PASS); 2D MAP 0.6697 → 0.6557 (z=+3.36σ → z=+1.68σ,
+  PASS). Production h_true=0.73 1D MAP 0.7535 → 0.7400 discrete (z=+2.30σ →
+  z=+1.4σ, PASS); 2D MAP 0.7456 → 0.7400 (z=+3.77σ → z=+1.97σ, PASS).
+- **Limitations:** Production cluster posteriors at `results/phase45_v2_posteriors/`
+  contain per-event L_i values that are still correct (D(h) is inside L_comp,
+  unchanged); only the *combine* step changes. Re-running `combine_posteriors`
+  on existing per-h JSONs produces the corrected MAP without needing a fresh
+  cluster eval.
+- **Reference:** Gray et al. (2020) arXiv:1908.06050 Eq. 31 (L_comp prior
+  normalization); Mandel, Farr, Gair (2019) arXiv:1809.02063 §3
+  (selection-conditional likelihood formulation).
+- **Detail →** [Appendix A · Tier 3](#tier-3--dh-double-counting-fix-2026-05-04).
+
 ### 3.12 Galactic confusion noise in PSD (Phase 9)
 
 - **Symptom:** Pre-fix LISA PSD lacked the galactic foreground component;
@@ -474,35 +584,33 @@ Each entry links to its date-stamped narrative in [Appendix A](#appendix-a--chro
 4. `~/.claude/plans/can-you-critically-think-calm-cocke.md` — full audit plan
    with pre-registered gates and decision tree.
 
-**Done so far (2026-05-01 / 2026-05-02):**
+**Done through 2026-05-04:**
 A0 G0a CLEAN · A1 G1b real shift · A2 G2b 1D over-anchors · A4 G4b D(h)
-DOMINATES bias · A5 G5a-PARTIAL · A8 G8a both verdicts hold. Doc
-restructured (D0). Three new diagnostic scripts at
-`scripts/bias_investigation/test_{13,14,16}_*.py`. Cluster CSVs rsync'd
-to `simulations/cluster_run_phase45_20260501/`.
+DOMINATES bias · A5 G5a-PARTIAL · A8 G8a both verdicts hold ·
+A7-redux FAIL (fine grid: 1D z=+5.62σ, 2D z=+3.36σ; withdrew G7a UNBIASED) ·
+Tier 2 bootstrap-subsample at h=0.73 confirmed bias is structural ·
+Tier 3 audit identified D(h) double-application via test_21+test_22 ·
+**Tier 3 FIX LANDED**: closure h=0.65 1D z=+1.67σ PASS, 2D z=+1.68σ PASS;
+production h=0.73 1D z=+1.4σ PASS, 2D z=+1.97σ PASS.
 
-**A4 changes the picture: anchor work is the wrong layer.**
+Diagnostic scripts at `scripts/bias_investigation/test_{13,14,16,19,20,21,22}_*.py`.
+Cluster CSVs at `simulations/cluster_run_phase45_20260501/` and
+`simulations/cluster_run_closure_h065_20260503_finegrid/posteriors{,_with_bh_mass}/`.
 
-The +0.025 residual decomposes:
-- +0.010 from per-event Σ log L (peak at h=0.7400, within σ_boot of truth)
-- +0.015 from D(h) selection-function correction (shifts MAP 0.74 → 0.755)
+**Tier 3 finding (now resolved): D(h) was applied twice.**
 
-D(h) is 2.7× larger than per-event L and opposite sign. Phase 45's anchor
-system targets per-event L_comp; can't fix D(h)-driven offset.
+Phase 32 placed `/D` inside L_comp = num/D (correct: prior normalization for
+`p_galaxy ∝ p_det · dV_c` per Gray Eq. 31). Phase 43-H1 added an outer
+−N · log D in `combine_log_space` (incorrect: re-applying selection
+correction). Tier 3 fix removes the outer correction. See §3.13 catalog entry.
 
-**Next actions, in priority order (post-A4):**
+**Next actions:**
 
 | # | Action | Cost | Blocks |
 |---|---|---|---|
-| 1 | **HALT Plan 45-06 and 45-07 deployment.** They target per-event L_comp via P_det anchor lift, but A4 shows the dominant bias is in D(h). Don't merge side branches. | n/a | Avoiding wasted cluster time on wrong-layer fixes. |
-| 2 | **Audit D(h) computation** — investigate `precompute_completion_denominator()` in `bayesian_statistics.py`. Why does Σ log L peak at h=0.7400 (close to truth) but D(h) shift MAP to 0.7550? Candidates: (a) integration grid resolution in z; (b) `dV_c/dz` factor at high h; (c) P_det grid behavior at large d_L (most volume); (d) cosmological d_L-z relation accuracy. | read-only ~1 hr per candidate | Identifying the specific D(h) systematic. |
-| 3 | **Run A7 closure test** at h_true=0.65 — leaner version: rescale existing cluster CRB CSV (d_L, σ_dL, SNR, Fisher d_L block) to h=0.65; drop SNR<20 events; rerun --evaluate at extended h-grid [0.55, 0.85]. Test whether D(h) decomposition pattern is the same at a different truth. | ~30 min total | Distinguishing parametric/statistical bias (A7 passes) from D(h) bug (A7 fails or shows different pattern). |
-| 4 | A3 sub-binning prediction superseded by A4 finding — sub-binning of P_det first bin is also a per-event L_comp lever. | n/a | — |
-
-**Cluster prerequisite for A7:** `cluster/submit_injection.sh` may not be
-needed if we use the rescaling approach (no re-injection). Lean A7 only
-needs the existing cluster CRB + a Python rescaling script + 38-task
-evaluate.sbatch on the rescaled CSV.
+| 1 | **DELETE Plan 45-06 and 45-07 side branches.** Anchor work targets per-event L_comp; the bias was actually the outer correction double-counting D. Side branches are confirmed dead-ends. | n/a | Tree cleanup. |
+| 2 | (Optional) Re-run cluster eval at h_true=0.73 and rerun closure-test calibration sweep at h_true ∈ {0.70, 0.78} to confirm no realization-dependent residual remains after the fix. | ~30 min cluster each | Higher confidence for the paper. |
+| 3 | Update paper with new MAP values and σ_boot. | ~few hr | Submission. |
 
 **Context for cold pickup:**
 - Project root: `/home/jasper/Repositories/MasterThesisCode`
@@ -554,11 +662,18 @@ Decision-tree of eight prioritized audits (full plan:
 | **A4** | Per-event L_cat / L_comp / f_i CSV analysis at 412 events | 0–15 min cluster | G4a/b/c per bias concentration | **DONE — G4b + decomposition** (2026-05-02): rsync'd cluster CSVs to `simulations/cluster_run_phase45_20260501/`. Reconstructed cluster MAP=0.7550 exactly. **Critical finding: Σ log L_i alone peaks at h=0.7400 (within σ_boot of truth); D(h) selection-function correction shifts MAP +0.015 → 0.7550.** D(h) effect is 2.7× per-event L pull, opposite sign. Anchor escalation aimed at wrong layer. |
 | **A5** | Phase 43 H1/H2 ablation evidence audit | read-only 30 min | G5a/b per ablation evidence presence | **DONE — G5a-PARTIAL** (2026-05-01): H2 alone moved MAP 0.860 → 0.730 ("raw Σ log L_i already peaks at 0.730 without needing D(h) correction"); H1 only "sharpens the peak". H1 standalone effect not tested but inferred small. |
 | **A6** | Native Δh=0.001 cluster sweep | 30 min cluster | G6a/b vs A1 interp agreement | RESERVED (only if A1 contested; A1 cubic cross-check passed) |
-| **A7** | Closure test at h_true=0.65 (gold standard) | ~12 min cluster (lean rescaling, 4-h-grid on dev_cpu_il, job 4198463) | G7a/b/c/d per recovered MAP | **DONE — G7a UNBIASED** (2026-05-03): 1D continuous MAP=0.6517 (+0.0017), 2D=0.6501 (+0.0001). Pipeline closure-validated. h=0.73 +0.025 residual is NOT structural. |
+| **A7** | Closure test at h_true=0.65, 4-h-grid (initial) | ~12 min cluster (lean rescaling, 4-h-grid on dev_cpu_il, job 4198463) | G7a/b/c/d per recovered MAP | **WITHDRAWN — G7a was a smoothing artifact** (2026-05-03 → 2026-05-04). Cubic spline through 4 widely-spaced points (Δh=0.05) with truth on grid centre cannot resolve a sub-grid bias of ≲0.025. Re-evaluated by A7-redux. |
+| **A7-redux** | Closure test fine grid (11 h-values, Δh=0.005, bootstrap σ_boot) | 30 min cluster (job 4200482, dev_cpu_il, 4-task chained array) | PASS \|MAP-0.65\|≤3·σ_boot / FAIL otherwise | **DONE — FAIL** (2026-05-04): 1D MAP=0.6708 bias=+0.0208 σ_boot=0.0037 z=+5.62σ; 2D MAP=0.6697 bias=+0.0197 σ_boot=0.0059 z=+3.36σ. Δ(−N log D)=+7.6 dominates ΔΣ log L=−3.6. **D(h) structural bias confirmed empirically across two truths.** |
+| **Tier 2** | Bootstrap-subsample at h=0.73 | local, no cluster | sample-fluctuation vs systematic | **DONE — SYSTEMATIC** (2026-05-04, `test_19_bootstrap_subsample.py`): σ_boot=0.0102 stable across N ∈ {200, 300, 412}, no convergence toward truth as N grows; full-sample MAP at median of bootstrap distribution. +0.025 is NOT sample fluctuation. |
 | **A8** | Phase 33/34 verdicts revisit against current baseline | read-only 45 min | G8a/b per test type | **DONE — G8a both** (2026-05-01): Phase 33 "zero delta vs 30-bin baseline, log-posteriors identical to 4 decimal places" — baseline-invariant test; Phase 34 0 events excluded by condition filter — `allow_singular` removal a no-op. Both verdicts hold. |
 
-**Stopping condition for paper:** A7 PASS (G7a or G7b with documented additive
-systematic) PLUS continuous MAP from A1 documented as the headline number.
+**Stopping condition for paper (revised 2026-05-04):** Tier 3 D(h) audit
+must identify the systematic in `precompute_completion_denominator()`,
+either (a) fix it and re-run cluster eval at h=0.73 + closure at h=0.65 to
+confirm both pass, OR (b) document the systematic with quantitative bound
+σ_sys ≥ 0.025 and quote the result as `h = h_MAP ± σ_stat ± σ_sys`. The
+original "A7 PASS PLUS A1 continuous MAP" gate is no longer applicable
+since A7-redux fails.
 
 ### 4.3 A0 result (2026-05-01) — `TRUE_HUBBLE_CONSTANT=0.7` is dead code
 
@@ -847,9 +962,12 @@ is NOT structural; specific to that realization.
 | **v2.3 A2 channel audit script + output** | `scripts/bias_investigation/test_14_channel_audit.py`, `outputs/phase45/channel_audit.json` |
 | **v2.3 A4 per-event diagnostic script + output** | `scripts/bias_investigation/test_16_per_event_diagnostic.py`, `outputs/phase45/per_event_diagnostic.json` |
 | **v2.3 A7 rescaling script** | `scripts/bias_investigation/test_17_rescale_crb_to_h065.py` |
-| **v2.3 A7 closure analysis script + output** | `scripts/bias_investigation/test_18_closure_analyze.py`, `outputs/phase45/closure_h065.json` |
-| **v2.3 closure-test cluster sbatch** | `cluster/evaluate_closure_h065.sbatch` |
-| **v2.3 cluster CSVs (rsynced from cluster)** | `simulations/cluster_run_phase45_20260501/` (Plan 45-04 cramer_rao_bounds, prepared_cramer_rao_bounds, diagnostics/event_likelihoods, fisher_quality), `simulations/cluster_run_closure_h065_20260503/` (closure-test posteriors) |
+| **v2.3 A7 (initial 4-h) closure analysis script + output** | `scripts/bias_investigation/test_18_closure_analyze.py`, `outputs/phase45/closure_h065.json` (verdict withdrawn — see A7-redux) |
+| **v2.3 closure-test cluster sbatch (initial)** | `cluster/evaluate_closure_h065.sbatch` |
+| **v2.3 A7-redux fine-grid sbatch (2026-05-04)** | `cluster/evaluate_closure_h065_finegrid.sbatch` (11 h-values, 4-task chained array) |
+| **v2.3 A7-redux fine-grid analyzer + output** | `scripts/bias_investigation/test_20_closure_finegrid_analyze.py`, `outputs/phase45/closure_h065_finegrid.json` |
+| **v2.3 Tier 2 bootstrap-subsample script + output** | `scripts/bias_investigation/test_19_bootstrap_subsample.py`, `outputs/phase45/bootstrap_subsample.json` |
+| **v2.3 cluster CSVs (rsynced from cluster)** | `simulations/cluster_run_phase45_20260501/` (Plan 45-04 cramer_rao_bounds, prepared_cramer_rao_bounds, diagnostics/event_likelihoods, fisher_quality), `simulations/cluster_run_closure_h065_20260503/` (initial 4-h closure posteriors), `simulations/cluster_run_closure_h065_20260503_finegrid/` (A7-redux 11-h fine-grid posteriors) |
 | Dark siren likelihood derivation | `derivations/dark_siren_likelihood.md` |
 | v2.3 audit programme plan | `~/.claude/plans/can-you-critically-think-calm-cocke.md` |
 | Resolved debug sessions | `.gpd/debug/resolved/{h0-posterior-residual-bias,map-0p86-lcat-explosion}.md` |
