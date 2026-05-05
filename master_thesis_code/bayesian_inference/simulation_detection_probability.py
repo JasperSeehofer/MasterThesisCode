@@ -46,68 +46,31 @@ _DEFAULT_M_BINS: int = 40
 _MAX_CACHE_SIZE: int = 20
 
 # ----------------------------------------------------------------------
-# Phase 45 empirical asymptote anchor for d_L → 0.
+# Out-of-grid detection-probability behavior (1D and 2D channels).
 #
-# Derived from the unrescaled injection campaign (simulations/injections/)
-# pooled across all h_inj groups; see
-#   scripts/bias_investigation/outputs/phase45/p_max_h_independence.json
-# for per-h empirical detection rates at d_L < 0.10 Gpc and the pooled
-# Wilson 95% CI (lower bound = this constant).  H-independence is supported
-# by a likelihood-ratio test of binomial-rate homogeneity:
-#   G = 7.299, dof = 5, p-value = 0.199 ≥ alpha = 0.05
-# (cannot reject a common p across h_inj groups; see Plan 45-01 SUMMARY,
-# .gpd/phases/45-p-det-first-bin-asymptote-fix/45-01-SUMMARY.md).
+# As of 2026-05-05, both channels use a principled monotonic-asymptotic
+# extrapolation scheme implemented inside the corresponding interpolated
+# probability functions:
 #
-# Phase 45 RESEARCH.md §4a-(ii) recommends the conservative Wilson 95%
-# lower bound (0.7931) rather than the point estimate (0.8873) so the
-# anchor cannot overshoot truth on production posteriors.
+# * Saturating face (d_L < d_L_min): linear bridge from (d_L_min, p_edge)
+#   to (0, 1).  The d_L=0 limit is the unique natural physical scale
+#   where the asymptote p_det=1 is exact (no source closer than the
+#   observer).
 #
-# This constant is intentionally h-INDEPENDENT: it is the same scalar at
-# every Hubble parameter target.  Phase 44 regression
-# `test_zero_fill_no_h_dependent_step_for_close_dL` requires this property.
+# * Suppressing faces (d_L > d_L_max; M_z out of bounds in the 2D case):
+#   slope-matched linear extrapolation from the boundary, clamped to
+#   [0, p_edge] (Option A directional clamp).
+#
+# * Corner cells (2D, both axes outside): min of the two face
+#   extrapolations.
+#
+# The scheme replaces the Phase 45 Plan 45-02/04 anchor approach (Wilson
+# 95% LB at d_L=0 plus an empirical point estimate at d_L=0.05), which
+# was fitted to production-posterior behavior and incompatible with the
+# project's principled-physics preference.  See
+# `.planning/2D-CHANNEL-AUDIT-20260505.md` for the full audit and
+# rationale.
 # ----------------------------------------------------------------------
-_P_MAX_EMPIRICAL_ANCHOR: float = 0.7931
-
-# ----------------------------------------------------------------------
-# Phase 45 Plan 45-04 hybrid intermediate anchor at d_L = 0.05 Gpc.
-#
-# Plan 45-02 prepended a single empirical anchor (0, 0.7931) using the
-# Wilson 95% lower bound of the pooled asymptote at d_L < 0.10 Gpc.
-# Cluster re-eval (Plan 45-03) showed the resulting MAP shift was
-# sub-discrete-grid-step (mean(bootstrap_MAP) shifted only -0.0047 vs
-# Δh=0.005); the discrete MAP did not move from 0.7650 toward truth 0.73.
-# Plan 45-04 escalates per RESEARCH.md §4c hybrid: a SECOND anchor at a
-# fixed physical position d_L = 0.05 Gpc with value 1.0 (the empirical
-# point estimate at d_L < 0.10 Gpc; the d_L < 0.05 subset is also 100%
-# detected by monotonicity of detection rate in d_L; see
-#   scripts/bias_investigation/outputs/phase45/pdet_asymptote.json).
-#
-# The intermediate position is FIXED (h-INDEPENDENT), not c_0(h)/2.
-# Rationale: the empirical asymptote (16/16 detected at d_L < 0.10 Gpc)
-# was derived in fixed physical d_L bins, NOT at fractional positions of
-# c_0(h).  A fixed physical position is more physically uniform across
-# h_inj groups and trivially passes the h-spread regression
-# `test_zero_fill_no_h_dependent_step_for_close_dL` (the value at d_L=0.05
-# is exactly the same constant 1.0 across all h, contributing zero spread).
-#
-# Edge case: when c_0(h) <= 0.05 Gpc (rare; only at very high h where
-# dl_max(h) shrinks below 6.0 Gpc), the intermediate anchor is SKIPPED to
-# preserve strict monotonicity of the dl_centers grid required by
-# `RegularGridInterpolator`.  In that branch, the layout falls back to the
-# Plan 45-02 single-anchor layout (anchor + first bin centre only).
-#
-# Sign-convention note (documented; not a bug):
-#   On [0, 0.05] the slope is +4.138/Gpc (POSITIVE), reflecting the
-#   conservative Wilson LB at d_L=0 transitioning to the empirical
-#   asymptote at d_L=0.05.  This deviates from physical monotonicity in
-#   d_L but is justified empirically: the d_L=0 value is intentionally
-#   below the asymptote to avoid overshoot of production MAP.  The
-#   integrand on L_comp remains conservatively lower-bounded.
-#
-# Eq. (A.19) in Gray et al. (2020), arXiv:1908.06050.
-# ----------------------------------------------------------------------
-_D_INTERMEDIATE_ANCHOR_GPC: float = 0.05
-_P_INTERMEDIATE_EMPIRICAL: float = 1.0
 
 
 class SimulationDetectionProbability:
@@ -537,21 +500,12 @@ class SimulationDetectionProbability:
 
         The histogram edges are ``np.linspace(0, dl_max, N+1)`` so the first
         bin covers ``[0, 2·c_0)`` with ``c_0 = dl_centers[0] = dl_max/(2N)``.
-        Phase 45 (Plan 45-02 + Plan 45-04 hybrid) prepends TWO h-independent
-        empirical anchors before constructing the interpolator:
-        ``(0.0, _P_MAX_EMPIRICAL_ANCHOR=0.7931)`` (Wilson 95% lower bound)
-        and the intermediate ``(_D_INTERMEDIATE_ANCHOR_GPC=0.05,
-        _P_INTERMEDIATE_EMPIRICAL=1.0)`` (empirical point estimate).  On
-        ``[0, 0.05]`` the result is a linear interpolation between the
-        d_L=0 anchor and the intermediate anchor (slope +4.138/Gpc); on
-        ``[0.05, c_0)`` it is a linear interpolation between the
-        intermediate anchor and the histogram first bin centre ``p̂(c_0)``.
-        When ``c_0(h) <= 0.05`` (rare; only at very high h), the intermediate
-        anchor is skipped and the layout falls back to the Plan 45-02
-        single-anchor variant.  Off-grid evaluation uses ``fill_value=None``
-        (linear extrapolation); see
+        The grid is the raw histogram with bin centers in d_L; off-grid
+        extrapolation behaviour is implemented in
         :meth:`detection_probability_without_bh_mass_interpolated_zero_fill`
-        for the boundary convention.
+        as a principled scheme (linear bridge to the saturated asymptote
+        at d_L=0, slope-matched linear extrapolation toward 0 above
+        d_L_max), aligned with the 2D channel.
 
         Args:
             df: DataFrame with columns luminosity_distance, SNR.
@@ -559,9 +513,8 @@ class SimulationDetectionProbability:
             h_val: Hubble parameter value (used for diagnostic logging only).
 
         Returns:
-            RegularGridInterpolator for P_det(d_L) on the anchored grid
-            (length ``dl_bins + 2`` when c_0(h) > 0.05; ``dl_bins + 1`` in
-            the c_0 ≤ 0.05 fallback).
+            RegularGridInterpolator for P_det(d_L) on the histogram bin
+            centers (length ``dl_bins``).
         """
         dl_vals = df["luminosity_distance"].values
         snr_vals = df["SNR"].values
@@ -597,64 +550,17 @@ class SimulationDetectionProbability:
 
         dl_centers = 0.5 * (dl_edges[:-1] + dl_edges[1:])
 
-        # Phase 45 Plan 45-04 hybrid: prepend BOTH (0, _P_MAX_EMPIRICAL_ANCHOR)
-        # AND (_D_INTERMEDIATE_ANCHOR_GPC, _P_INTERMEDIATE_EMPIRICAL) when
-        # c_0(h) > _D_INTERMEDIATE_ANCHOR_GPC.
-        #
-        # Plan 45-02 prepended ONLY (0, 0.7931).  The first injection bin
-        # [0, 2*c_0) is upper-skewed in d_L (weighted-mean d_L = 0.132 Gpc;
-        # ratio 3.22 of upper-third to lower-third events at h_inj=0.73, see
-        # outputs/phase45/first_bin_density.json), so the histogram estimate
-        # p̂(c_0) systematically underestimates p_det near d_L=0.  The pooled
-        # Wilson 95% lower bound at d_L < 0.10 Gpc (n_pooled=63/71 across all
-        # h_inj; LR homogeneity p=0.199 → h-independent; Plan 45-01) gives
-        # the conservative anchor 0.7931 at d_L=0.
-        #
-        # Cluster re-eval (Plan 45-03) showed the Plan 45-02 single-anchor
-        # produced a sub-discrete-grid-step lift on the production posterior
-        # (mean(bootstrap_MAP) shifted only -0.0047; discrete MAP unchanged).
-        # The hybrid adds the empirical-asymptote point at d_L = 0.05 Gpc
-        # (16/16 detected at d_L < 0.10 Gpc per pdet_asymptote.json; subset
-        # at d_L < 0.05 is also 100% detected by monotonicity argument).  At
-        # h=0.73 this raises interp(0.05) from ≈0.6687 (linear interp from
-        # 0.7931 down to p̂(c_0)≈0.5448) to exactly 1.0 — a +0.33 lift.
-        #
-        # On [0, 0.05] the linear interp from (0, 0.7931) to (0.05, 1.0) has
-        # POSITIVE slope +4.138/Gpc.  This is a sign-convention deviation
-        # from physical monotonicity in d_L, but is justified empirically:
-        # the d_L=0 value 0.7931 is the conservative Wilson LB, intentionally
-        # below the observed asymptote ≈1.0 to avoid overshoot of the
-        # production MAP.  The integrand on L_comp is the value, not the
-        # slope; the integrated effect remains conservatively lower-bounded.
-        #
-        # Edge case fallback: when c_0(h) <= _D_INTERMEDIATE_ANCHOR_GPC, the
-        # intermediate point would violate strict monotonicity of dl_centers
-        # required by RegularGridInterpolator.  Skip the intermediate; revert
-        # to the Plan 45-02 single-anchor layout.  This branch is rare (only
-        # triggered at very high h where dl_max(h) < 6.0 Gpc).
-        #
         # Eq. (A.19) in Gray et al. (2020), arXiv:1908.06050.
-        # See scripts/bias_investigation/outputs/phase45/pdet_asymptote.json
-        # for the empirical 1.0 asymptote at d_L < 0.10 Gpc;
-        # scripts/bias_investigation/outputs/phase45/p_max_h_independence.json
-        # for the pooled Wilson LB; Plan 45-01 SUMMARY for the LR test.
-        if dl_centers[0] > _D_INTERMEDIATE_ANCHOR_GPC:
-            dl_centers_anchored = np.concatenate(([0.0, _D_INTERMEDIATE_ANCHOR_GPC], dl_centers))
-            p_det_1d_anchored = np.concatenate(
-                ([_P_MAX_EMPIRICAL_ANCHOR, _P_INTERMEDIATE_EMPIRICAL], p_det_1d)
-            )
-        else:
-            # Plan 45-02 fallback layout for c_0(h) <= _D_INTERMEDIATE_ANCHOR_GPC.
-            dl_centers_anchored = np.concatenate(([0.0], dl_centers))
-            p_det_1d_anchored = np.concatenate(([_P_MAX_EMPIRICAL_ANCHOR], p_det_1d))
-
-        # fill_value=None → linear extrapolation outside grid.  Below
-        # dl_centers_anchored[0] = 0 this is unreachable since d_L < 0 is
-        # unphysical; above dl_centers_anchored[-1] the calling function
-        # explicitly clips to 0 (Phase 44 invariant).
+        # No anchors are prepended: out-of-grid extrapolation is the
+        # responsibility of
+        # :meth:`detection_probability_without_bh_mass_interpolated_zero_fill`,
+        # which applies a principled scheme (linear bridge to the saturated
+        # asymptote at d_L=0; slope-matched linear extrapolation toward 0
+        # above d_L_max).  Replaced the Plan 45-02/04 anchor scheme on
+        # 2026-05-05 — see ``.planning/2D-CHANNEL-AUDIT-20260505.md``.
         return RegularGridInterpolator(
-            (dl_centers_anchored,),
-            p_det_1d_anchored,
+            (dl_centers,),
+            p_det_1d,
             method="linear",
             bounds_error=False,
             fill_value=None,
@@ -708,18 +614,85 @@ class SimulationDetectionProbability:
     ) -> float | npt.NDArray[np.float64]:
         """Detection probability including BH mass dependence.
 
-        Drop-in replacement for
-        ``DetectionProbability.detection_probability_with_bh_mass_interpolated``
-        with an additional ``h`` keyword for h-dependent P_det.
-
         Sky angles (phi, theta) are accepted for API compatibility but are
         marginalized over internally (D-02).
 
-        The grid is in d_L space, so no ``dist_to_redshift`` inversion is
-        needed.  The observer-frame mass M_z is converted to source-frame
-        using the approximate relation z ~ d_L * H0/c for small z, but since
-        the grid is in (d_L, M) and the injection data stored source-frame M
-        directly, we pass M_z as-is (the grid was built from source-frame M).
+        The grid is in (d_L, M) space, so no ``dist_to_redshift`` inversion is
+        needed.  The observer-frame mass M_z is queried as-is (the grid was
+        built from source-frame M; this is a known approximation, see
+        :class:`SimulationDetectionProbability` docstring).
+
+        **Out-of-grid policy: principled monotonic-asymptotic extrapolation.**
+
+        For queries inside the (d_L, M) grid, returns scipy's bilinear
+        interpolation (clipped to [0, 1]).  For queries outside the grid,
+        applies a slope-matched linear extrapolation from the nearest face,
+        clamped per the physical asymptote table:
+
+        +------------------+--------------+--------------------------------+
+        | Direction        | Asymptote    | Reason                         |
+        +==================+==============+================================+
+        | d_L > d_L_max    | 0            | SNR-suppressed (sources too    |
+        |                  |              | distant for SNR ≥ threshold)   |
+        +------------------+--------------+--------------------------------+
+        | d_L < d_L_min    | 1            | SNR-saturated (very nearby     |
+        |                  |              | sources detected with prob 1)  |
+        +------------------+--------------+--------------------------------+
+        | M_z > M_z_max    | 0            | EMRI rate / waveform model     |
+        |                  |              | breakdown above the EMRI mass  |
+        +------------------+--------------+--------------------------------+
+        | M_z < M_z_min    | 0            | SNR-suppressed and/or rate     |
+        |                  |              | cutoff at low M                |
+        +------------------+--------------+--------------------------------+
+        | corner (both     | min of the   | "Either axis suppresses" — the |
+        | axes outside)    | two faces    | only saturating face is        |
+        |                  |              | (d_L<min, M in grid), which is |
+        |                  |              | NOT a corner                   |
+        +------------------+--------------+--------------------------------+
+
+        **Construction.**  Two cases.
+
+        *Saturating face (d_L<d_L_min):* there is a unique natural scale
+        d_L=0 where the asymptote p_det=1 is exact (no source closer than
+        the observer).  Linearly interpolate from (dl_min, p_edge) to
+        (0, 1) — C0 continuous at dl_min, reaches the asymptote at the
+        natural physical boundary, and uses no fitted parameters or noisy
+        boundary slope estimates.  Explicitly:
+        ``p(dl) = 1 - (1 - p_edge) * (dl / dl_min)`` for ``dl ∈ [0, dl_min]``.
+
+        *Suppressing faces (d_L>d_L_max, M_z>M_max, M_z<M_min):* no analogous
+        finite asymptote scale exists (suppression is at infinity).  Use
+        slope-matched linear extrapolation from the boundary, computed
+        from the last two grid centers along the relevant axis with the
+        slope evaluated at the projected position on the other axis.
+        ``p_extrap = p_edge + slope · (query - edge)``, clamped to
+        ``[0, p_edge]`` (Option A: never overshoots boundary value, floor
+        at the asymptote 0).
+
+        Corner cells (both axes outside) take the ``min`` of the two face
+        extrapolations.  The only saturating face is (d_L<d_L_min,
+        M in grid), which is not a corner; all true corners involve at
+        least one suppressing axis, so ``min`` is monotone-correct.
+
+        **Properties.**
+
+        * **C0 continuous at the boundary** by construction (extrapolation
+          formula evaluates to p_edge at the boundary, matching the in-grid
+          interpolation).  Removes the discontinuity that previously
+          drove spurious h_trial-dependence in the joint posterior as
+          hosts crossed the grid boundary at small Δh.
+        * **Bounded in [0, 1]** by construction (clamp + asymptote table).
+          The previous policy (raw scipy linear extrapolation + clip) could
+          drift to negative values at the d_L→0 boundary due to KDE noise
+          in the low-d_L bins (only ~7 injections per bin in production),
+          systematically returning ≈0 instead of ≈1 for 6–12% of events.
+          See ``.planning/2D-CHANNEL-AUDIT-20260505.md`` Step 1b for the
+          quantitative diagnostic.
+        * **Slope from the simulated KDE** (no fitted anchor): the
+          boundary slope is the same one scipy would use for its own
+          linear extrapolation; the difference from the prior policy is
+          the directional clamp (Option A) that prevents wrong-direction
+          KDE noise from running into the wrong asymptote.
 
         Args:
             d_L: Luminosity distance in Gpc.
@@ -734,14 +707,93 @@ class SimulationDetectionProbability:
         References:
             Gray et al. (2020), arXiv:1908.06050, Eq. (8).
             Laghi et al. (2021), arXiv:2102.01708, Section III.A.
+            Maggiore (2008), Gravitational Waves Vol 1 §7.7 (SNR scaling
+            for inspirals → monotonicity argument).
+            Babak et al. (2017), arXiv:1703.09722 §III (EMRI rate density
+            with high/low M cutoffs → asymptote table).
         """
         interp_2d, _ = self._get_or_build_grid(h)
+        dl_centers = np.asarray(interp_2d.grid[0])
+        M_centers = np.asarray(interp_2d.grid[1])  # noqa: N806
+        p_grid = np.asarray(interp_2d.values, dtype=np.float64)
 
         dl_arr = np.atleast_1d(np.asarray(d_L, dtype=np.float64))
         M_arr = np.atleast_1d(np.asarray(M_z, dtype=np.float64))  # noqa: N806
-        points = np.column_stack([dl_arr, M_arr])
 
-        result = np.clip(interp_2d(points), 0.0, 1.0)
+        dl_min = float(dl_centers[0])
+        dl_max = float(dl_centers[-1])
+        M_min = float(M_centers[0])  # noqa: N806
+        M_max = float(M_centers[-1])  # noqa: N806
+
+        # Project queries onto the in-grid box, then evaluate the in-grid
+        # interpolator at the projected point — this is p_edge for face/corner
+        # cells, and the in-grid value for in-grid cells.
+        dl_clamp = np.clip(dl_arr, dl_min, dl_max)
+        M_clamp = np.clip(M_arr, M_min, M_max)  # noqa: N806
+        p_edge = np.clip(interp_2d(np.column_stack([dl_clamp, M_clamp])), 0.0, 1.0)
+
+        # Start from p_edge; overlay face extrapolations where applicable.
+        # In-grid cells keep p_edge as their final value (no face triggers).
+        result = p_edge.copy()
+
+        # ---- d_L < d_L_min face (saturating direction; asymptote 1) ----
+        # The d_L=0 limit is the unique natural physical scale where the
+        # asymptote p_det=1 is exact (closest possible source).  Use a
+        # linear bridge from (dl_min, p_edge) to (0, 1) — guaranteed to
+        # be C0 continuous at dl_min (matches p_edge by construction) and
+        # to reach the asymptote at dl=0.  This deliberately ignores the
+        # boundary KDE slope, which is unreliable in the first d_L bin
+        # (~7 injections in production; warned by ``_build_grid_1d``).
+        # Using the KDE slope here would let counting noise drive the
+        # extrapolation; the bridge is the same scheme as the boundary,
+        # extended monotonically to the natural asymptote location.
+        out_dl_low = dl_arr < dl_min
+        if out_dl_low.any():
+            idx = np.where(out_dl_low)[0]
+            # Bridge: p(dl) = p_edge + (1 - p_edge) * (dl_min - dl) / dl_min
+            #              = 1 - (1 - p_edge) * dl / dl_min
+            # At dl=dl_min: p = p_edge (C0).  At dl=0: p = 1 (asymptote).
+            p_bridge = 1.0 - (1.0 - p_edge[idx]) * (dl_arr[idx] / dl_min)
+            # Clamp into [p_edge, 1] for queries with dl < 0 (defensive).
+            result[idx] = np.clip(p_bridge, p_edge[idx], 1.0)
+
+        # ---- d_L > d_L_max face (suppressing direction; asymptote 0) ----
+        out_dl_high = dl_arr > dl_max
+        if out_dl_high.any():
+            idx = np.where(out_dl_high)[0]
+            slope_row = (p_grid[-1, :] - p_grid[-2, :]) / (dl_centers[-1] - dl_centers[-2])
+            slope_at_query = np.interp(M_clamp[idx], M_centers, slope_row)
+            delta = dl_arr[idx] - dl_max  # positive
+            p_extrap = p_edge[idx] + slope_at_query * delta
+            # Option A: floor at 0, ceiling at p_edge (asymptote 0).
+            result[idx] = np.clip(p_extrap, 0.0, p_edge[idx])
+
+        # ---- M < M_min face (suppressing; asymptote 0) ----
+        out_M_low = M_arr < M_min  # noqa: N806
+        if out_M_low.any():
+            idx = np.where(out_M_low)[0]
+            slope_col = (p_grid[:, 0] - p_grid[:, 1]) / (M_centers[0] - M_centers[1])
+            slope_at_query = np.interp(dl_clamp[idx], dl_centers, slope_col)
+            delta = M_arr[idx] - M_min  # negative
+            p_extrap = p_edge[idx] + slope_at_query * delta
+            face_M_low = np.clip(p_extrap, 0.0, p_edge[idx])
+            # Corner rule: min of the per-face values for cells outside on
+            # both axes.
+            result[idx] = np.minimum(result[idx], face_M_low)
+
+        # ---- M > M_max face (suppressing; asymptote 0) ----
+        out_M_high = M_arr > M_max  # noqa: N806
+        if out_M_high.any():
+            idx = np.where(out_M_high)[0]
+            slope_col = (p_grid[:, -1] - p_grid[:, -2]) / (M_centers[-1] - M_centers[-2])
+            slope_at_query = np.interp(dl_clamp[idx], dl_centers, slope_col)
+            delta = M_arr[idx] - M_max  # positive
+            p_extrap = p_edge[idx] + slope_at_query * delta
+            face_M_high = np.clip(p_extrap, 0.0, p_edge[idx])
+            result[idx] = np.minimum(result[idx], face_M_high)
+
+        # Final safety clip (already enforced face-by-face but be defensive).
+        result = np.clip(result, 0.0, 1.0)
 
         if np.ndim(d_L) == 0 and np.ndim(M_z) == 0:
             return float(result[0])
@@ -836,11 +888,11 @@ class SimulationDetectionProbability:
         *,
         h: float,
     ) -> float | npt.NDArray[np.float64]:
-        """Detection probability with hard zero above the injection grid.
+        """Detection probability with principled out-of-grid extrapolation.
 
-        Used by every production p_det evaluation for symmetry between
-        L_comp / L_cat numerators and the D(h) denominator (STAT-03 invariant,
-        commit ``a70d1a2``).  Call sites in :mod:`bayesian_statistics`:
+        Mirror of :meth:`detection_probability_with_bh_mass_interpolated`
+        (2D channel) specialized to the 1D (d_L only) grid.  Call sites in
+        :mod:`bayesian_statistics`:
 
         * ``precompute_completion_denominator`` (D(h) full-volume denominator)
         * ``p_Di.completion_numerator_integrand`` (L_comp 4σ window)
@@ -848,55 +900,51 @@ class SimulationDetectionProbability:
         * ``single_host_likelihood.denominator_integrant_without_bh_mass`` (L_cat denominator)
         * ``single_host_likelihood_integration_testing`` (legacy, two integrands)
 
-        Boundary convention (Phase 44 + Phase 45 fix):
+        **Out-of-grid policy: principled monotonic-asymptotic extrapolation.**
 
-        * ``d_L > dl_centers[-1]``: source beyond the injection horizon →
-          detectability is unmodelled and physically zero (explicit clip
-          below).
-        * ``d_L < dl_centers[0] = c_0``: ``RegularGridInterpolator(method=
-          "linear", fill_value=None)`` performs **linear extrapolation**, NOT
-          nearest-neighbour as the pre-Phase-45 docstring claimed.  Phase 45
-          (Plan 45-02 + Plan 45-04 hybrid) prepends TWO h-independent
-          empirical anchors before constructing the interpolator (see
-          :data:`_P_MAX_EMPIRICAL_ANCHOR`, :data:`_D_INTERMEDIATE_ANCHOR_GPC`,
-          :data:`_P_INTERMEDIATE_EMPIRICAL`, and :meth:`_build_grid_1d`):
-          ``(0, P_MAX=0.7931)`` (Wilson 95% lower bound) AND
-          ``(0.05, P_INTERMEDIATE=1.0)`` (empirical point estimate at
-          d_L < 0.10 Gpc; the d_L < 0.05 subset is also 100% detected by
-          monotonicity argument).  On ``[0, c_0)`` this gives a piecewise
-          hybrid: ``p_det = linear_interp((0, P_MAX), (0.05, P_INTERMEDIATE))``
-          on ``[0, 0.05]`` and
-          ``p_det = linear_interp((0.05, P_INTERMEDIATE), (c_0, p̂(c_0)))``
-          on ``[0.05, c_0]``.  At ``d_L = 0`` the value equals
-          ``_P_MAX_EMPIRICAL_ANCHOR=0.7931`` (the conservative Wilson lower
-          bound of the empirical asymptote); at ``d_L = 0.05`` it equals
-          ``_P_INTERMEDIATE_EMPIRICAL=1.0`` (the empirical point estimate);
-          at ``d_L = c_0`` it equals the unchanged histogram estimate
-          ``p̂(c_0)``.  When ``c_0(h) <= 0.05`` (rare; only at very high h),
-          the intermediate anchor is skipped (Plan 45-02 fallback layout).
-          The hybrid's h-independence is by construction (both anchor values
-          are module-level scalars at fixed physical positions); the d_L=0
-          anchor's h-independence under the original asymptote test is
-          established by a likelihood-ratio binomial-rate-homogeneity test
-          (G = 7.30, dof = 5, p = 0.199; Wilson 95% lower bound across
-          pooled groups: 0.7931).  See Plan 45-01 SUMMARY and
-          ``scripts/bias_investigation/outputs/phase45/p_max_h_independence.json``;
-          Plan 45-04 PLAN/SUMMARY for the hybrid lift rationale.
+        +------------------+--------------+--------------------------------+
+        | Direction        | Asymptote    | Reason                         |
+        +==================+==============+================================+
+        | d_L > d_L_max    | 0            | SNR-suppressed (sources too    |
+        |                  |              | distant for SNR ≥ threshold)   |
+        +------------------+--------------+--------------------------------+
+        | d_L < d_L_min    | 1            | SNR-saturated (very nearby     |
+        |                  |              | sources detected with prob 1)  |
+        +------------------+--------------+--------------------------------+
 
-        Plan 45-02 (single-anchor) lifted interp(d_L=0) from ≈0.748 (linear
-        extrap through bins 0,1; pre-Phase-45 behaviour) to 0.7931, but the
-        cluster re-eval (Plan 45-03) showed the resulting MAP shift was
-        sub-discrete-grid-step and the discrete MAP did not move from
-        0.7650 (see ``.gpd/phases/45-p-det-first-bin-asymptote-fix/45-03-SUMMARY.md``).
-        Plan 45-04's hybrid intermediate anchor at d_L=0.05 raises
-        interp(0.05) from ≈0.6687 to 1.0 — a +0.33 lift in the integration
-        window crossed by ≈26/60 production events per
-        ``scripts/bias_investigation/outputs/phase45/window_proximity.json``.
+        **Construction.**
 
-        Pre-Phase-44 the function also zeroed
-        ``d_L < c_0(h) = dl_max(h)/120`` — a bin-midpoint artifact that
-        scaled as ``1/h`` and drove a ``+145.7`` log-unit MAP bias for 312
-        events between h=0.73 and h=0.86.
+        * **Saturating face (d_L < d_L_min):** linear bridge from
+          ``(d_L_min, p_edge)`` to ``(0, 1)``.  The d_L=0 limit is the
+          natural physical scale where the asymptote p_det=1 is exact (no
+          source closer than the observer).  Explicitly:
+          ``p(dl) = 1 - (1 - p_edge) * (dl / d_L_min)`` for
+          ``dl ∈ [0, d_L_min]``.  C0 continuous at d_L_min by construction;
+          reaches the asymptote 1 at d_L=0 by construction.  Uses no
+          fitted constants and no boundary KDE slope (the first bin has
+          ~7 injections in production; the bridge construction is
+          insensitive to that noise).
+
+        * **Suppressing face (d_L > d_L_max):** slope-matched linear
+          extrapolation from the boundary, computed from the last two grid
+          centers along d_L.  ``p_extrap = p_edge + slope · (query - edge)``,
+          clamped to ``[0, p_edge]`` (Option A: never exceeds boundary,
+          asymptotic floor at 0).
+
+        **Why this replaces the Phase 45 anchor scheme (2026-05-05):**
+        the previous scheme prepended two empirical anchors at d_L=0
+        (Wilson 95% LB = 0.7931) and d_L=0.05 (empirical point estimate =
+        1.0).  The Wilson LB was deliberately chosen to "not overshoot
+        truth on production posteriors" — fitted to truth, against the
+        project's principled-modeling preference.  The augmented Phase 46
+        injection campaign now gives p̂(c_0) ≈ 1.0 at the first bin, so
+        the Wilson anchor is actively *suppressing* the empirical 1.0 down
+        to 0.7931 — the opposite of its original lift purpose.  The bridge
+        construction here is the same scheme as the boundary
+        (linear, C0) extended to the natural asymptote location; no fit,
+        no anchor.  See ``.planning/2D-CHANNEL-AUDIT-20260505.md`` for the
+        full rationale and the 2D-channel sibling that motivated this
+        alignment.
 
         Args:
             d_L: Luminosity distance in Gpc.
@@ -905,27 +953,47 @@ class SimulationDetectionProbability:
             h: Dimensionless Hubble parameter.
 
         Returns:
-            Detection probability in [0, 1].  Zero only above ``dl_centers[-1]``.
+            Detection probability in [0, 1].
 
         References:
-            Gray et al. (2020), arXiv:1908.06050, Eq. A.19.
+            Gray et al. (2020), arXiv:1908.06050, Eq. (A.19).
+            Maggiore (2008), Gravitational Waves Vol 1 §7.7 (SNR scaling
+            for inspirals → monotonicity argument).
         """
         _, interp_1d = self._get_or_build_grid(h)
+        dl_centers = np.asarray(interp_1d.grid[0])
+        p_grid = np.asarray(interp_1d.values, dtype=np.float64)
 
         dl_arr = np.atleast_1d(np.asarray(d_L, dtype=np.float64))
-        points = dl_arr.reshape(-1, 1)
-
-        result = np.clip(interp_1d(points), 0.0, 1.0)
-
-        # Phase 44 fix: removed result[dl_arr < dl_min] = 0.0.  Below
-        # dl_centers[0] = dl_max/120 the first injection bin (0, 2*c_0) has
-        # real events; nearest-neighbour from fill_value=None already returns
-        # p̂(c_0).  The previous left-side cutoff scaled as 1/h, biasing MAP
-        # toward h_max for events with d_L ≈ c_0.
-        # Eq. (A.19) in Gray et al. (2020), arXiv:1908.06050.
-        dl_centers = interp_1d.grid[0]
+        dl_min = float(dl_centers[0])
         dl_max = float(dl_centers[-1])
-        result[dl_arr > dl_max] = 0.0
+
+        # Project to in-grid; evaluate at projected point → p_edge.
+        dl_clamp = np.clip(dl_arr, dl_min, dl_max)
+        p_edge = np.clip(interp_1d(dl_clamp.reshape(-1, 1)), 0.0, 1.0)
+        result = p_edge.copy()
+
+        # ---- d_L < d_L_min face (saturating; asymptote 1) ----
+        # Linear bridge from (dl_min, p_edge) to (0, 1).  At dl=dl_min:
+        # p = p_edge (C0); at dl=0: p = 1 (asymptote).
+        out_low = dl_arr < dl_min
+        if out_low.any():
+            idx = np.where(out_low)[0]
+            p_bridge = 1.0 - (1.0 - p_edge[idx]) * (dl_arr[idx] / dl_min)
+            result[idx] = np.clip(p_bridge, p_edge[idx], 1.0)
+
+        # ---- d_L > d_L_max face (suppressing; asymptote 0) ----
+        # Slope-matched linear extrapolation, clamped to [0, p_edge].
+        out_high = dl_arr > dl_max
+        if out_high.any():
+            idx = np.where(out_high)[0]
+            slope = (p_grid[-1] - p_grid[-2]) / (dl_centers[-1] - dl_centers[-2])
+            delta = dl_arr[idx] - dl_max  # positive
+            p_extrap = p_edge[idx] + slope * delta
+            result[idx] = np.clip(p_extrap, 0.0, p_edge[idx])
+
+        # Final safety clip.
+        result = np.clip(result, 0.0, 1.0)
 
         if np.ndim(d_L) == 0:
             return float(result[0])

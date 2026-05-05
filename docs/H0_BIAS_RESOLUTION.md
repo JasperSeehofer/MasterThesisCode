@@ -605,6 +605,85 @@ Each entry links to its date-stamped narrative in [Appendix A](#appendix-a--chro
   (selection-conditional likelihood formulation).
 - **Detail →** [Appendix A · Tier 3](#tier-3--dh-double-counting-fix-2026-05-04).
 
+### 3.14 Detection-probability extrapolation: principled bridge replaces Phase 45 anchor (2026-05-05)
+
+- **Symptom:** post-Tier-3 partial 4-truth panel on the phase46-merged CRB
+  (1549 SNR≥20 events) reported 2D z=+37 at h=0.73 and z=+55 at h=0.60 —
+  while the Phase 45 412-event closure test had previously PASSED at z=+1.97.
+  Absolute 2D bias **doubled** going 412 → 1473 events (0.0109 → 0.0212),
+  inconsistent with a pure σ_boot-blindspot (H1) story; strongly consistent
+  with a deterministic per-event mechanism (H2). 1D bias also grew but more
+  modestly (z=+0.6 to +3.8 across truths).
+- **Mechanism (audit script
+  `scripts/bias_investigation/test_26_2d_pdet_edge_behavior.py`,
+  2026-05-05):**
+  - **6–12% of events at every truth fall below `dl_min(2D grid)`** (the
+    saturated d_L→0 regime). Raw scipy linear extrapolation in
+    `RegularGridInterpolator(method="linear", fill_value=None)` extrapolates
+    using the boundary-cell slope, which can drift downward (the first 2D
+    bin has only ~7 injections per d_L slice — KDE noise). Extrapolated
+    values reach −0.25; the [0, 1] clip at the production lookup floors
+    these to ≈0.
+  - Principled value at d_L<dl_min is p_det → 1 (saturated; no source
+    closer than the observer). Production code returns ≈0 — a 100×
+    underestimate for very nearby events.
+  - As h_trial varies (Δh=0.005 step), the 2D grid bounds shift slightly
+    and ~50–60 events cross the boundary at each step; each crossing
+    produces a per-event likelihood discontinuity, manifesting as spurious
+    h-trial-dependence in the joint posterior. Confirmed at h_truth=0.73:
+    h_trial 0.680 → 0.685 transition shifts 57 events from out-of-grid to
+    in-grid.
+  - **1D channel asymmetry:** 1D used the Phase 45 Plan 45-02/04 anchor
+    scheme (Wilson 95% LB at d_L=0 = 0.7931, intermediate at d_L=0.05 = 1.0)
+    to handle the same d_L→0 saturation regime. The 2D channel had no
+    anchors — that's why the 2D residual was ≈10× larger than the 1D.
+    However, the 1D anchor was deliberately fitted to truth ("conservative
+    Wilson LB chosen to not overshoot truth on production posteriors";
+    `simulation_detection_probability.py:62-63` pre-fix) and the augmented
+    Phase 46 injection campaign now gives p̂(c_0) = 1.0 at the first bin,
+    so the Wilson anchor is actively *suppressing* the empirical 1.0 down
+    to 0.7931 — opposite of its original lift purpose.
+- **Diagnostic →** test_26 output JSON
+  `scripts/bias_investigation/outputs/phase46_merged/2d_pdet_edge_behavior.json`;
+  per-truth direction tables in `.planning/2D-CHANNEL-AUDIT-20260505.md`.
+- **Fix:** principled monotonic-asymptotic extrapolation (uniform scheme
+  for both 1D and 2D channels, replacing Phase 45 anchor and raw scipy
+  extrapolation):
+  - **Saturating face (d_L < dl_min):** linear bridge from
+    (dl_min, p_edge) to (0, 1). C0 continuous at dl_min; reaches p_det=1
+    at the unique natural physical scale d_L=0; uses no fitted constants
+    or noisy boundary KDE slopes.
+  - **Suppressing faces (d_L > dl_max; M_z > M_max; M_z < M_min):**
+    slope-matched linear extrapolation from the boundary, clamped to
+    [0, p_edge] (Option A directional clamp).
+  - **Corner cells (2D, both axes outside):** min of the two face
+    extrapolations.
+- **Implementation:**
+  `master_thesis_code/bayesian_inference/simulation_detection_probability.py`
+  — replaced bodies of `detection_probability_with_bh_mass_interpolated`
+  and `detection_probability_without_bh_mass_interpolated_zero_fill`.
+  Removed the anchor-prepending in `_build_grid_1d`. Removed module
+  constants `_P_MAX_EMPIRICAL_ANCHOR`, `_D_INTERMEDIATE_ANCHOR_GPC`,
+  `_P_INTERMEDIATE_EMPIRICAL`. Test suite extended with 15 property-based
+  tests across both channels.
+- **Reference:** monotonicity argument (Maggiore 2008, Vol 1, §7.7
+  inspiral SNR scaling) + the EMRI rate-density cutoffs at high/low M_z
+  encoded by the simulation grid itself. Numerics-of-grids choice — not
+  citable to a specific paper. Rationale captured in
+  `.planning/2D-CHANNEL-AUDIT-20260505.md` and the user-feedback memory
+  `feedback_principled_physics_choices.md`.
+- **Status:** code change committed; **production validation pending** —
+  closure re-run on h=0.73 phase46-merged with the new code is required
+  to measure the actual MAP collapse. Local property tests pass (15/15);
+  full test suite 514/514 pass. The previously-PASSING Phase 45 412-event
+  closure test must also be re-validated (the change shifts the d_L→0
+  regime more aggressively than the anchor did).
+- **Note on §3.5 supersession:** Phase 45's anchor work (§3.5) is now
+  formally superseded by this principled scheme. The Wilson 95% LB and
+  intermediate empirical anchor were deliberately fitted to truth — a
+  modeling choice the project has since rejected on principle.
+- **Detail →** `.planning/2D-CHANNEL-AUDIT-20260505.md`.
+
 ### 3.12 Galactic confusion noise in PSD (Phase 9)
 
 - **Symptom:** Pre-fix LISA PSD lacked the galactic foreground component;

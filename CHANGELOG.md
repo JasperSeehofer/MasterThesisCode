@@ -14,6 +14,67 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   prior). Phase 40 VERIFY-04 diffs the JSON sidecar post-fix.
 - Phase 35: coordinate-frame test fixtures (`master_thesis_code_test/fixtures/coordinate.py`)
   with `equatorial_to_ecliptic_astropy`, `synthetic_catalog_builder`, `build_balltree` helpers.
+- 2D-bias investigation diagnostic
+  `scripts/bias_investigation/test_26_2d_pdet_edge_behavior.py`: classifies every
+  (event × h_trial) cell on the phase46-merged CRB as in-grid or out-of-grid by
+  direction relative to the 2D `p_det_with_bh_mass` grid; reports raw scipy
+  extrapolation, production-clipped value, and principled-asymptote value
+  side-by-side. Confirmed H2 mechanism: 6–12% of events at every truth fall in
+  the d_L<dl_min direction, where the production code returns p_det ≈ 0 (mean)
+  vs principled value 1.0 (saturated regime); 57 events cross the grid boundary
+  at the h_trial=0.680→0.685 transition (Δh=0.005), causing per-event likelihood
+  steps that drive spurious h-trial-dependence in the joint MAP.
+- `.planning/2D-CHANNEL-AUDIT-20260505.md`: audit report tracking the 2D-bias
+  investigation (Step 1a tier-3-fix sanity, Step 1b 2D p_det edge behaviour,
+  Step 2 principled-extrapolation implementation, Step 2 follow-up 1D alignment).
+
+### Changed
+- `[PHYSICS]` `bayesian_inference/simulation_detection_probability.py`
+  (`detection_probability_with_bh_mass_interpolated`, 2D channel): replaced raw
+  scipy linear extrapolation + [0,1] clip with a principled
+  monotonic-asymptotic scheme. Saturating face (d_L<dl_min): linear bridge
+  from (dl_min, p_edge) to (0, 1) — C0 continuous at dl_min, reaches the
+  asymptote p_det=1 at the unique natural physical scale d_L=0. Suppressing
+  faces (d_L>dl_max, M_z>M_max, M_z<M_min): slope-matched linear extrapolation
+  from the boundary, clamped to [0, p_edge] (Option A directional clamp).
+  Corner cells: min of the two face extrapolations. Removes the
+  ~h_trial-driven discontinuity that drove spurious h-dependence as hosts
+  crossed the moving 2D grid boundary; replaces the 6–12% out-of-grid clipped
+  ≈0 values with the principled saturated ≈1 in the d_L→0 regime. Property
+  tests added (`TestDetectionProbabilityWithBHMassPrincipledExtrapolation`):
+  in-grid contract, C0 continuity, Option A floor, suppressing-face decay,
+  corner min-rule, vectorisation. Mechanism documented in
+  `.planning/2D-CHANNEL-AUDIT-20260505.md` Step 1b. **All
+  `posteriors_with_bh_mass/` produced before this commit are stale** for any
+  conclusion that depends on absolute p_det values near the d_L grid edges.
+- `[PHYSICS]` `bayesian_inference/simulation_detection_probability.py`
+  (`detection_probability_without_bh_mass_interpolated_zero_fill`, 1D channel,
+  alignment with 2D): replaced the Phase 45 Plan 45-02/04 anchor scheme
+  (Wilson 95% LB at d_L=0 = 0.7931 + intermediate empirical anchor at
+  d_L=0.05 = 1.0, deliberately fitted to "not overshoot truth on production
+  posteriors") with the same principled bridge + slope-matched scheme as the
+  2D channel. The Wilson 95% LB anchor was actively suppressing the
+  empirical p̂(c_0)=1.0 produced by the augmented Phase 46 injection campaign
+  (the opposite of its original lift purpose). Removed module constants
+  `_P_MAX_EMPIRICAL_ANCHOR`, `_D_INTERMEDIATE_ANCHOR_GPC`,
+  `_P_INTERMEDIATE_EMPIRICAL`. Removed anchor-prepending in `_build_grid_1d`
+  (grid is now the raw histogram with bin centres in d_L). Function name
+  retains the legacy `_zero_fill` suffix for backward compatibility with ~15
+  call sites; new behaviour at d_L=0 is **1.0** (asymptote) instead of the
+  old **0.7931**. **All `posteriors/` produced before this commit are stale.**
+- `master_thesis_code_test/bayesian_inference/test_simulation_detection_probability.py`:
+  removed the entire `TestPhase45EmpiricalAnchor` class (13 anchor-specific
+  tests; the scheme they tested no longer exists). Renamed and rewrote two
+  `TestZeroFillBoundaryConvention` tests to test the bridge formula and the
+  slope-matched-toward-0 above-dl_max behaviour. Added 8+7=15 new
+  property-based tests covering the principled extrapolation in both
+  channels.
+- `scripts/bias_investigation/test_22_dh_double_count.py:254`: rename
+  `D_term_per_h` → `D_term_per_h_legacy` to match the JSON schema produced
+  by the post-Tier-3 audit script (one-line key fix; not a physics change).
+- `scripts/bias_investigation/test_14_channel_audit.py`: deprecation header
+  added — the script imports the now-deleted anchor constants and is
+  superseded by the principled-extrapolation scheme.
 
 ### Fixed
 - `[PHYSICS]` `bayesian_inference/simulation_detection_probability.py:708–713`

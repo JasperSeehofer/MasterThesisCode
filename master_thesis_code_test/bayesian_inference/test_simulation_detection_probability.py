@@ -230,6 +230,218 @@ class TestDetectionProbabilityWithBHMass:
         assert 0.0 <= float(result) <= 1.0
 
 
+class TestDetectionProbabilityWithBHMassPrincipledExtrapolation:
+    """Property-based tests for the principled out-of-grid policy
+    (Step 2 fix, ``.planning/2D-CHANNEL-AUDIT-20260505.md``).
+
+    Verifies the asymptote table, C0 boundary continuity, the Option A
+    directional clamp, and the corner = min(faces) rule.
+    """
+
+    def _build_pdet(self, injection_dir: str) -> object:
+        from master_thesis_code.bayesian_inference.simulation_detection_probability import (
+            SimulationDetectionProbability,
+        )
+
+        return SimulationDetectionProbability(
+            injection_data_dir=injection_dir,
+            snr_threshold=20.0,
+        )
+
+    def _grid_bounds(
+        self,
+        pdet: object,
+        h: float,
+    ) -> tuple[float, float, float, float]:
+        interp_2d, _ = pdet._get_or_build_grid(h)  # type: ignore[attr-defined]
+        dl_centers = np.asarray(interp_2d.grid[0])
+        M_centers = np.asarray(interp_2d.grid[1])  # noqa: N806
+        return (
+            float(dl_centers[0]),
+            float(dl_centers[-1]),
+            float(M_centers[0]),
+            float(M_centers[-1]),
+        )
+
+    def test_in_grid_query_returns_value_in_unit_interval(
+        self, injection_dir: str
+    ) -> None:
+        pdet = self._build_pdet(injection_dir)
+        dl_min, dl_max, M_min, M_max = self._grid_bounds(pdet, h=0.75)
+        # Mid-grid query
+        d_L = 0.5 * (dl_min + dl_max)
+        M_z = np.sqrt(M_min * M_max)
+        p = float(
+            pdet.detection_probability_with_bh_mass_interpolated(  # type: ignore[attr-defined]
+                d_L, M_z, 0.0, 0.0, h=0.75
+            )
+        )
+        assert 0.0 <= p <= 1.0
+
+    def test_c0_continuity_at_dl_min_face(self, injection_dir: str) -> None:
+        """As d_L → dl_min from below, p_det should approach the in-grid
+        boundary value continuously (no step)."""
+        pdet = self._build_pdet(injection_dir)
+        dl_min, _, M_min, M_max = self._grid_bounds(pdet, h=0.75)
+        M_z = np.sqrt(M_min * M_max)
+        # Sample on both sides of dl_min
+        eps = 1e-6
+        p_inside = float(
+            pdet.detection_probability_with_bh_mass_interpolated(  # type: ignore[attr-defined]
+                dl_min + eps, M_z, 0.0, 0.0, h=0.75
+            )
+        )
+        p_outside = float(
+            pdet.detection_probability_with_bh_mass_interpolated(  # type: ignore[attr-defined]
+                dl_min - eps, M_z, 0.0, 0.0, h=0.75
+            )
+        )
+        # C0 continuity: |p_inside - p_outside| should be tiny
+        assert abs(p_inside - p_outside) < 1e-3
+
+    def test_dl_below_min_floor_at_pedge(self, injection_dir: str) -> None:
+        """Option A: in the saturating d_L<dl_min direction, the result
+        should never drop below the in-grid boundary value p_edge."""
+        pdet = self._build_pdet(injection_dir)
+        dl_min, _, M_min, M_max = self._grid_bounds(pdet, h=0.75)
+        M_z = np.sqrt(M_min * M_max)
+        p_edge = float(
+            pdet.detection_probability_with_bh_mass_interpolated(  # type: ignore[attr-defined]
+                dl_min, M_z, 0.0, 0.0, h=0.75
+            )
+        )
+        # Probe several positions below dl_min; result must be >= p_edge.
+        for d_L in (dl_min * 0.5, dl_min * 0.1, 1e-6):
+            p = float(
+                pdet.detection_probability_with_bh_mass_interpolated(  # type: ignore[attr-defined]
+                    d_L, M_z, 0.0, 0.0, h=0.75
+                )
+            )
+            assert p >= p_edge - 1e-9, (
+                f"d_L={d_L}: p={p} dropped below p_edge={p_edge} (Option A floor violated)"
+            )
+            assert p <= 1.0 + 1e-9
+
+    def test_dl_above_max_decays_toward_zero(self, injection_dir: str) -> None:
+        """In the suppressing d_L>dl_max direction, the result should
+        never exceed the in-grid boundary value p_edge."""
+        pdet = self._build_pdet(injection_dir)
+        _, dl_max, M_min, M_max = self._grid_bounds(pdet, h=0.75)
+        M_z = np.sqrt(M_min * M_max)
+        p_edge = float(
+            pdet.detection_probability_with_bh_mass_interpolated(  # type: ignore[attr-defined]
+                dl_max, M_z, 0.0, 0.0, h=0.75
+            )
+        )
+        # Probe positions above dl_max; result must be <= p_edge.
+        for d_L in (dl_max * 1.1, dl_max * 1.5, dl_max * 5.0):
+            p = float(
+                pdet.detection_probability_with_bh_mass_interpolated(  # type: ignore[attr-defined]
+                    d_L, M_z, 0.0, 0.0, h=0.75
+                )
+            )
+            assert p <= p_edge + 1e-9
+            assert p >= 0.0
+
+    def test_M_extremes_decay_toward_zero(self, injection_dir: str) -> None:  # noqa: N802
+        """Both M extremes are suppressing: results <= p_edge."""
+        pdet = self._build_pdet(injection_dir)
+        dl_min, dl_max, M_min, M_max = self._grid_bounds(pdet, h=0.75)
+        d_L = 0.5 * (dl_min + dl_max)
+        # M < M_min
+        p_edge_low = float(
+            pdet.detection_probability_with_bh_mass_interpolated(  # type: ignore[attr-defined]
+                d_L, M_min, 0.0, 0.0, h=0.75
+            )
+        )
+        for M_z in (M_min * 0.5, M_min * 0.1):  # noqa: N806
+            p = float(
+                pdet.detection_probability_with_bh_mass_interpolated(  # type: ignore[attr-defined]
+                    d_L, M_z, 0.0, 0.0, h=0.75
+                )
+            )
+            assert p <= p_edge_low + 1e-9
+            assert p >= 0.0
+        # M > M_max
+        p_edge_high = float(
+            pdet.detection_probability_with_bh_mass_interpolated(  # type: ignore[attr-defined]
+                d_L, M_max, 0.0, 0.0, h=0.75
+            )
+        )
+        for M_z in (M_max * 1.5, M_max * 5.0):  # noqa: N806
+            p = float(
+                pdet.detection_probability_with_bh_mass_interpolated(  # type: ignore[attr-defined]
+                    d_L, M_z, 0.0, 0.0, h=0.75
+                )
+            )
+            assert p <= p_edge_high + 1e-9
+            assert p >= 0.0
+
+    def test_corner_returns_min_of_face_extrapolations(
+        self, injection_dir: str
+    ) -> None:
+        """At a corner cell (both axes outside), the result should be the
+        min of the two face extrapolations.  Since at least one axis is
+        always suppressing for any corner, the corner should be at most
+        the minimum of the two face boundary values, asymptotically 0."""
+        pdet = self._build_pdet(injection_dir)
+        dl_min, dl_max, M_min, M_max = self._grid_bounds(pdet, h=0.75)
+
+        # Corner: d_L > dl_max AND M > M_max  (both suppressing)
+        p_corner = float(
+            pdet.detection_probability_with_bh_mass_interpolated(  # type: ignore[attr-defined]
+                dl_max * 1.5, M_max * 1.5, 0.0, 0.0, h=0.75
+            )
+        )
+        assert 0.0 <= p_corner <= 1.0
+        # Bound: corner <= p_edge of the corner of the grid
+        p_grid_corner = float(
+            pdet.detection_probability_with_bh_mass_interpolated(  # type: ignore[attr-defined]
+                dl_max, M_max, 0.0, 0.0, h=0.75
+            )
+        )
+        assert p_corner <= p_grid_corner + 1e-9
+
+        # Corner: d_L < dl_min AND M > M_max
+        # d_L<min wants asymptote 1, M>max wants asymptote 0.
+        # min rule → corner driven toward 0 by the M side.
+        p_corner_mixed = float(
+            pdet.detection_probability_with_bh_mass_interpolated(  # type: ignore[attr-defined]
+                dl_min * 0.5, M_max * 1.5, 0.0, 0.0, h=0.75
+            )
+        )
+        # Must be at most the p_edge value at the (dl_min, M_max) corner
+        p_edge_mixed = float(
+            pdet.detection_probability_with_bh_mass_interpolated(  # type: ignore[attr-defined]
+                dl_min, M_max, 0.0, 0.0, h=0.75
+            )
+        )
+        assert p_corner_mixed <= p_edge_mixed + 1e-9
+        assert 0.0 <= p_corner_mixed <= 1.0
+
+    def test_array_input_matches_scalar_input(self, injection_dir: str) -> None:
+        """Vectorized input should produce identical results to scalar."""
+        pdet = self._build_pdet(injection_dir)
+        dl_min, dl_max, M_min, M_max = self._grid_bounds(pdet, h=0.75)
+        # Mix of in-grid, face, and corner queries
+        dl_arr = np.array([dl_min - 0.01, 0.5 * (dl_min + dl_max), dl_max + 0.5])
+        M_arr = np.array([np.sqrt(M_min * M_max), M_min * 0.5, M_max * 1.5])  # noqa: N806
+        result_vec = np.asarray(
+            pdet.detection_probability_with_bh_mass_interpolated(  # type: ignore[attr-defined]
+                dl_arr, M_arr, np.zeros(3), np.zeros(3), h=0.75
+            )
+        )
+        for i in range(3):
+            scalar = float(
+                pdet.detection_probability_with_bh_mass_interpolated(  # type: ignore[attr-defined]
+                    float(dl_arr[i]), float(M_arr[i]), 0.0, 0.0, h=0.75
+                )
+            )
+            assert abs(scalar - float(result_vec[i])) < 1e-9, (
+                f"mismatch at i={i}: scalar={scalar}, vec={result_vec[i]}"
+            )
+
+
 class TestPickleSafety:
     """Test 5: Class instance is pickle-safe."""
 
@@ -672,41 +884,41 @@ class TestCoverageValidation:
 
 
 class TestZeroFillBoundaryConvention:
-    """Phase 44 regressions: detection_probability_without_bh_mass_interpolated_zero_fill
-    must remain nonzero below the first bin centre (Phase 44 invariant) and
-    zero only above the injection horizon.
+    """Boundary-convention regressions for
+    detection_probability_without_bh_mass_interpolated_zero_fill.
 
-    Pre-fix the function zeroed any d_L < dl_centers[0] = dl_max/120.  Because
-    dl_max(h) ∝ 1/h, this created a moving threshold c_0(h) ∝ 1/h that produced
-    a +145.7 log-unit MAP bias toward h_max for events with d_L ≈ c_0.
+    The function name retains the legacy ``_zero_fill`` suffix for
+    backward-compatibility with existing call sites; the policy is
+    no longer pure zero-fill.  As of 2026-05-05 (audit document
+    ``.planning/2D-CHANNEL-AUDIT-20260505.md``) the function uses a
+    principled monotonic-asymptotic extrapolation:
 
-    Phase 45 amends ``test_zero_fill_below_first_bin_is_nonzero_for_valid_dL``:
-    Plan 45-02 made the value at ``d_L = c_0/2`` the linear midpoint between
-    ``_P_MAX_EMPIRICAL_ANCHOR`` and ``p̂(c_0)``.  Plan 45-04 (hybrid) extends the
-    layout with an intermediate anchor at ``(0.05, 1.0)``; the value at
-    ``d_L = c_0/2`` now follows the hybrid two-segment linear interp formula
-    (linear from ``(0, 0.7931)`` to ``(0.05, 1.0)`` on ``[0, 0.05]``; linear
-    from ``(0.05, 1.0)`` to ``(c_0, p̂(c_0))`` on ``[0.05, c_0]``).  The
-    assertion is still fixture-independent.
+    * Saturating face (d_L < d_L_min): linear bridge from (d_L_min, p_edge)
+      to (0, 1) — reaches the asymptote at the natural physical scale d_L=0.
+    * Suppressing face (d_L > d_L_max): slope-matched linear extrapolation
+      from the boundary, clamped to [0, p_edge].
+
+    Earlier history this class encoded:
+
+    * Pre-Phase-44 the function zeroed any d_L < dl_centers[0] = dl_max/120.
+      Because dl_max(h) ∝ 1/h, this created a moving threshold c_0(h) ∝ 1/h
+      that produced a +145.7 log-unit MAP bias toward h_max for events with
+      d_L ≈ c_0.  The Phase 44 fix removed that left-side cutoff.
+    * Phase 45 (Plan 45-02 + Plan 45-04 hybrid) prepended fitted anchors
+      ``(0, 0.7931)`` and ``(0.05, 1.0)`` to lift the d_L→0 saturation
+      regime.  Replaced 2026-05-05 by the principled bridge construction
+      because the anchor values were fitted to production-truth
+      ("conservative Wilson LB chosen to not overshoot truth on production
+      posteriors"), against the project's principled-physics preference.
     """
 
-    def test_zero_fill_below_first_bin_is_nonzero_for_valid_dL(self, injection_dir: str) -> None:
-        """d_L below dl_centers[0] follows the Phase 45 hybrid linear-interp formula.
-
-        Fixture-independent: Plan 45-04 inserts an intermediate anchor at
-        ``(_D_INTERMEDIATE_ANCHOR_GPC, _P_INTERMEDIATE_EMPIRICAL) = (0.05, 1.0)``
-        when ``c_0(h) > 0.05``.  The value at ``d_L = c_0/2`` is therefore:
-        - on segment ``[0, 0.05]`` (when ``c_0/2 < 0.05``):
-          ``P_MAX + (P_INTERMEDIATE - P_MAX) * (c_0/2) / 0.05``
-        - on segment ``[0.05, c_0]`` (when ``c_0/2 >= 0.05``):
-          ``P_INTERMEDIATE + (p̂(c_0) - P_INTERMEDIATE) * (c_0/2 - 0.05) / (c_0 - 0.05)``
-        - in the c_0 ≤ 0.05 fallback (no intermediate):
-          ``0.5 * (P_MAX + p̂(c_0))`` (Plan 45-02 formula).
+    def test_below_first_bin_follows_principled_bridge(
+        self, injection_dir: str
+    ) -> None:
+        """d_L below the first bin center follows the linear bridge from
+        (dl_min, p_edge) to (0, 1).
         """
         from master_thesis_code.bayesian_inference.simulation_detection_probability import (
-            _D_INTERMEDIATE_ANCHOR_GPC,
-            _P_INTERMEDIATE_EMPIRICAL,
-            _P_MAX_EMPIRICAL_ANCHOR,
             SimulationDetectionProbability,
         )
 
@@ -717,53 +929,34 @@ class TestZeroFillBoundaryConvention:
         h = 0.70
         pdet._get_or_build_grid(h)
         _, interp_1d = pdet._grid_cache[h]
-        # Phase 45 layout: grid[0] = 0.0 (Plan 45-02 anchor); grid[1] is either
-        # _D_INTERMEDIATE_ANCHOR_GPC (Plan 45-04 hybrid) OR c_0 (fallback when
-        # c_0 ≤ _D_INTERMEDIATE_ANCHOR_GPC).
         grid_axis = interp_1d.grid[0]
-        anchor_dl = float(grid_axis[0])
-        assert anchor_dl == 0.0  # Plan 45-02 anchor at d_L=0
-        if abs(float(grid_axis[1]) - _D_INTERMEDIATE_ANCHOR_GPC) < 1e-12:
-            c0 = float(grid_axis[2])  # hybrid layout
-        else:
-            c0 = float(grid_axis[1])  # fallback layout
+        # No more anchors; first grid coord is the histogram first bin
+        # center c_0, not 0.0.
+        c0 = float(grid_axis[0])
         assert c0 > 0.0
 
         d_query = 0.5 * c0
-        p_below = pdet.detection_probability_without_bh_mass_interpolated_zero_fill(
-            d_L=d_query, phi=0.0, theta=0.0, h=h
-        )
         p_at = float(
             pdet.detection_probability_without_bh_mass_interpolated_zero_fill(
                 d_L=c0, phi=0.0, theta=0.0, h=h
             )
         )
-
-        # Plan 45-04 hybrid linear-interp formula (fixture-independent):
-        if c0 <= _D_INTERMEDIATE_ANCHOR_GPC:
-            # Fallback: Plan 45-02 single-anchor layout.
-            expected_p_below = 0.5 * (_P_MAX_EMPIRICAL_ANCHOR + p_at)
-        elif d_query > _D_INTERMEDIATE_ANCHOR_GPC:
-            # Hybrid right segment: linear from (0.05, 1.0) to (c_0, p_at).
-            expected_p_below = _P_INTERMEDIATE_EMPIRICAL + (p_at - _P_INTERMEDIATE_EMPIRICAL) * (
-                d_query - _D_INTERMEDIATE_ANCHOR_GPC
-            ) / (c0 - _D_INTERMEDIATE_ANCHOR_GPC)
-        else:
-            # Hybrid left segment: linear from (0, 0.7931) to (0.05, 1.0).
-            expected_p_below = (
-                _P_MAX_EMPIRICAL_ANCHOR
-                + (_P_INTERMEDIATE_EMPIRICAL - _P_MAX_EMPIRICAL_ANCHOR)
-                * d_query
-                / _D_INTERMEDIATE_ANCHOR_GPC
+        p_below = float(
+            pdet.detection_probability_without_bh_mass_interpolated_zero_fill(
+                d_L=d_query, phi=0.0, theta=0.0, h=h
             )
-
-        assert float(p_below) == pytest.approx(expected_p_below, rel=1e-6), (
-            f"Phase 45 hybrid: at d_L={d_query:.6f} (c_0={c0:.6f}), expected "
-            f"{expected_p_below:.6f}; got p_below={p_below}"
         )
-        # The first-bin estimate must be a real probability, not the old zero.
-        assert 0.0 < float(p_below) <= 1.0, (
-            f"p_det must be in (0, 1] for d_L < c_0 inside the first bin, got {p_below}"
+
+        # Bridge formula: p(dl) = 1 - (1 - p_edge) * (dl / dl_min)
+        # At d_query = c0/2 with p_edge = p_at: expected = 1 - (1 - p_at) * 0.5
+        expected = 1.0 - (1.0 - p_at) * (d_query / c0)
+        assert float(p_below) == pytest.approx(expected, rel=1e-6), (
+            f"Bridge: at d_L={d_query:.6f} (c_0={c0:.6f}), expected "
+            f"{expected:.6f}; got p_below={p_below}"
+        )
+        # Inside [p_edge, 1] by construction.
+        assert p_at - 1e-9 <= p_below <= 1.0 + 1e-9, (
+            f"Bridge result {p_below} outside [p_edge={p_at}, 1]"
         )
 
     def test_zero_fill_no_h_dependent_step_for_close_dL(self, injection_dir: str) -> None:
@@ -804,8 +997,11 @@ class TestZeroFillBoundaryConvention:
             f"h-dependent threshold artifact): {p_vals}"
         )
 
-    def test_zero_fill_above_dl_max_remains_zero(self, injection_dir: str) -> None:
-        """Above dl_centers[-1] p_det is zero (source beyond injection horizon)."""
+    def test_above_dl_max_decays_toward_zero(self, injection_dir: str) -> None:
+        """Above dl_centers[-1] p_det approaches 0 (source beyond injection
+        horizon).  Slope-matched linear extrapolation, clamped to
+        [0, p_edge]; never exceeds the boundary value, asymptotes at 0.
+        """
         from master_thesis_code.bayesian_inference.simulation_detection_probability import (
             SimulationDetectionProbability,
         )
@@ -818,15 +1014,22 @@ class TestZeroFillBoundaryConvention:
         pdet._get_or_build_grid(h)
         _, interp_1d = pdet._grid_cache[h]
         dl_max = float(interp_1d.grid[0][-1])
+        p_edge = float(
+            pdet.detection_probability_without_bh_mass_interpolated_zero_fill(
+                d_L=dl_max, phi=0.0, theta=0.0, h=h
+            )
+        )
 
-        result = pdet.detection_probability_without_bh_mass_interpolated_zero_fill(
-            d_L=dl_max * 1.5, phi=0.0, theta=0.0, h=h
-        )
-        assert float(result) == 0.0, (
-            f"Phase 44: above dl_max the source is beyond the injection horizon; "
-            f"p_det must be 0.  Got {result} for d_L={dl_max * 1.5:.4f}, "
-            f"dl_max={dl_max:.4f}."
-        )
+        for d_L in (dl_max * 1.1, dl_max * 1.5, dl_max * 5.0):
+            p = float(
+                pdet.detection_probability_without_bh_mass_interpolated_zero_fill(
+                    d_L=d_L, phi=0.0, theta=0.0, h=h
+                )
+            )
+            assert 0.0 <= p <= p_edge + 1e-9, (
+                f"Suppressing direction: at d_L={d_L:.4f}, expected "
+                f"p_det ∈ [0, p_edge={p_edge:.6f}]; got {p}"
+            )
 
     def test_zero_fill_symmetry_invariant(self) -> None:
         """STAT-03 contract: numerator and denominator paths in L_comp/L_cat must
@@ -854,583 +1057,153 @@ class TestZeroFillBoundaryConvention:
         )
 
 
-class TestPhase45EmpiricalAnchor:
-    """Phase 45 regressions: detection_probability_without_bh_mass_interpolated_zero_fill
-    must use the empirical anchor (0, _P_MAX_EMPIRICAL_ANCHOR) prepended to
-    the histogram grid, so that on [0, c_0) the result is a linear
-    interpolation between the empirical asymptote and the first bin centre.
 
-    Pre-Phase-45 the interpolator linearly extrapolated through bins 0 and 1
-    to ≈0.748 at d_L=0 (vs the empirical ≈1.0), biasing L_comp downward at
-    low h and producing a residual MAP=0.7650 vs truth 0.73 on the
-    412-event production posterior.  See
-    ``.gpd/phases/45-p-det-first-bin-asymptote-fix/45-01-SUMMARY.md`` and
-    ``scripts/bias_investigation/outputs/phase45/p_max_h_independence.json``
-    for the empirical derivation (LR homogeneity p=0.199, pooled Wilson 95%
-    lower bound 0.7931 across all h_inj groups).
+
+class TestDetectionProbabilityWithoutBHMassPrincipledExtrapolation:
+    """Property-based tests for the 1D principled out-of-grid policy
+    (replaces the Phase 45 anchor scheme; ``.planning/2D-CHANNEL-AUDIT-20260505.md``).
+
+    Mirror of TestDetectionProbabilityWithBHMassPrincipledExtrapolation
+    specialized to the 1D channel.  Verifies the bridge construction in
+    the saturating direction, the slope-matched suppression in the
+    high-d_L direction, and C0 boundary continuity at both ends.
     """
 
-    def test_anchor_value_in_unit_interval(self) -> None:
-        """`_P_MAX_EMPIRICAL_ANCHOR` is a float in [0, 1] (probability)."""
+    def _build_pdet(self, injection_dir: str) -> object:
         from master_thesis_code.bayesian_inference.simulation_detection_probability import (
-            _P_MAX_EMPIRICAL_ANCHOR,
-        )
-
-        assert isinstance(_P_MAX_EMPIRICAL_ANCHOR, float), (
-            f"_P_MAX_EMPIRICAL_ANCHOR must be float, got {type(_P_MAX_EMPIRICAL_ANCHOR)}"
-        )
-        assert 0.0 <= _P_MAX_EMPIRICAL_ANCHOR <= 1.0, (
-            f"_P_MAX_EMPIRICAL_ANCHOR must be in [0, 1], got {_P_MAX_EMPIRICAL_ANCHOR}"
-        )
-
-    def test_anchor_value_within_wilson_ci(self) -> None:
-        """`_P_MAX_EMPIRICAL_ANCHOR` lies in the pooled Wilson 95% CI from
-        Plan 45-01 ([0.7931, 0.9418]).
-
-        This test catches accidental edits that drift the constant outside
-        the empirically-defensible range derived in Plan 45-01.  The
-        recommended default (conservative) is the lower bound 0.7931 so the
-        anchor cannot overshoot truth on production posteriors.
-        """
-        from master_thesis_code.bayesian_inference.simulation_detection_probability import (
-            _P_MAX_EMPIRICAL_ANCHOR,
-        )
-
-        # Wilson 95% CI from p_max_h_independence.json (pooled n=63/71).
-        ci_lower = 0.7931
-        ci_upper = 0.9418
-        assert ci_lower <= _P_MAX_EMPIRICAL_ANCHOR <= ci_upper, (
-            f"_P_MAX_EMPIRICAL_ANCHOR={_P_MAX_EMPIRICAL_ANCHOR} outside Plan 45-01 "
-            f"Wilson 95% CI [{ci_lower}, {ci_upper}]; see "
-            f"scripts/bias_investigation/outputs/phase45/p_max_h_independence.json."
-        )
-
-    def test_anchor_at_dL_zero_equals_empirical_constant(self, injection_dir: str) -> None:
-        """interp(d_L=0; h=0.73) == _P_MAX_EMPIRICAL_ANCHOR exactly."""
-        from master_thesis_code.bayesian_inference.simulation_detection_probability import (
-            _P_MAX_EMPIRICAL_ANCHOR,
             SimulationDetectionProbability,
         )
 
-        pdet = SimulationDetectionProbability(
-            injection_data_dir=injection_dir,
-            snr_threshold=20.0,
-        )
-        # The synthetic fixture covers h=0.70 and h=0.80; query at h=0.73 is
-        # SNR-rescaled internally by SimulationDetectionProbability.
-        result = pdet.detection_probability_without_bh_mass_interpolated_zero_fill(
-            d_L=0.0, phi=0.0, theta=0.0, h=0.73
-        )
-        assert float(result) == pytest.approx(_P_MAX_EMPIRICAL_ANCHOR, rel=1e-9), (
-            f"Phase 45: interp(d_L=0; h=0.73) must equal "
-            f"_P_MAX_EMPIRICAL_ANCHOR={_P_MAX_EMPIRICAL_ANCHOR} exactly; "
-            f"got {result}"
-        )
-
-    def test_anchor_h_independent(self, injection_dir: str) -> None:
-        """interp(d_L=0; h) is the same constant for every h
-        (the anchor is module-level, not per-h)."""
-        from master_thesis_code.bayesian_inference.simulation_detection_probability import (
-            _P_MAX_EMPIRICAL_ANCHOR,
-            SimulationDetectionProbability,
-        )
-
-        pdet = SimulationDetectionProbability(
+        return SimulationDetectionProbability(
             injection_data_dir=injection_dir,
             snr_threshold=20.0,
         )
 
-        values: dict[float, float] = {}
-        for h in (0.65, 0.70, 0.73, 0.80, 0.85):
-            v = pdet.detection_probability_without_bh_mass_interpolated_zero_fill(
-                d_L=0.0, phi=0.0, theta=0.0, h=h
-            )
-            values[h] = float(v)
+    def _grid_bounds(
+        self,
+        pdet: object,
+        h: float,
+    ) -> tuple[float, float]:
+        _, interp_1d = pdet._get_or_build_grid(h)  # type: ignore[attr-defined]
+        dl_centers = np.asarray(interp_1d.grid[0])
+        return float(dl_centers[0]), float(dl_centers[-1])
 
-        h_spread = max(values.values()) - min(values.values())
-        assert h_spread < 1e-9, (
-            f"Phase 45: interp(d_L=0) must be h-INDEPENDENT (the anchor is a "
-            f"module-level scalar).  h-spread = {h_spread}, values = {values}"
-        )
-        for h, v in values.items():
-            assert v == pytest.approx(_P_MAX_EMPIRICAL_ANCHOR, rel=1e-9), (
-                f"interp(d_L=0; h={h}) = {v} != _P_MAX_EMPIRICAL_ANCHOR={_P_MAX_EMPIRICAL_ANCHOR}"
-            )
-
-    def test_interp_at_c0_unchanged_by_anchor(self, injection_dir: str) -> None:
-        """interp(d_L=c_0) equals the unchanged histogram first-bin estimate p̂(c_0).
-
-        The Phase 45 anchors at d_L=0 (Plan 45-02) and d_L=0.05 (Plan 45-04)
-        must NOT perturb the value at the first histogram bin centre c_0:
-        linear interpolation between two distinct endpoint values passes
-        through both.  We verify this by reproducing the histogram logic from
-        `_build_grid_1d` directly and comparing.
-        """
-        from master_thesis_code.bayesian_inference.simulation_detection_probability import (
-            _D_INTERMEDIATE_ANCHOR_GPC,
-            SimulationDetectionProbability,
-        )
-        from master_thesis_code.physical_relations import dist_vectorized
-
-        pdet = SimulationDetectionProbability(
-            injection_data_dir=injection_dir,
-            snr_threshold=20.0,
-        )
-        h = 0.70
-        pdet._get_or_build_grid(h)
-        _, interp_1d = pdet._grid_cache[h]
-        # Phase 45 layout: grid[0] = 0.0 anchor; grid[1] is either the
-        # intermediate (0.05) or the first bin centre (fallback).
-        grid_axis = interp_1d.grid[0]
-        if abs(float(grid_axis[1]) - _D_INTERMEDIATE_ANCHOR_GPC) < 1e-12:
-            c0 = float(grid_axis[2])  # hybrid layout
-        else:
-            c0 = float(grid_axis[1])  # fallback layout
-
-        # Reproduce histogram first-bin estimate p̂(c_0) at h=0.70 directly.
-        pooled = pdet._pooled_df
-        dl_inj = pooled["luminosity_distance"].values
-        snr_raw = pooled["SNR"].values
-        z = pooled["z"].values
-        dl_target = dist_vectorized(z, h=h)
-        snr_rescaled = snr_raw * dl_inj / dl_target
-        dl_max = float(np.max(dl_target)) * 1.1
-        dl_edges = np.linspace(0, dl_max, 60 + 1)  # _DEFAULT_DL_BINS = 60
-        total_counts, _ = np.histogram(dl_target, bins=dl_edges)
-        detected_counts, _ = np.histogram(dl_target[snr_rescaled >= 20.0], bins=dl_edges)
-        p_hat_c0 = (
-            float(detected_counts[0]) / float(total_counts[0]) if total_counts[0] > 0 else 0.0
-        )
-
-        result = pdet.detection_probability_without_bh_mass_interpolated_zero_fill(
-            d_L=c0, phi=0.0, theta=0.0, h=h
-        )
-        assert float(result) == pytest.approx(p_hat_c0, rel=1e-9), (
-            f"Phase 45: interp(d_L=c_0; h={h}) must equal p̂(c_0)={p_hat_c0:.10f} "
-            f"(unchanged from histogram bin 0); got {result}"
-        )
-
-    def test_interp_below_c0_strictly_lifted(self) -> None:
-        """On the PRODUCTION injection fixture (where p̂(c_0) ≈ 0.544 at h=0.73),
-        interp(c_0/2; h=0.73) is strictly above p̂(c_0) and bounded above by
-        the intermediate anchor value 1.0 (Plan 45-04 hybrid).
-
-        This test uses the real `simulations/injections/` campaign rather
-        than the synthetic 200-event fixture, because Plan 45-01 established
-        empirically that p̂(c_0) ≈ 0.544 < 0.7931 ≈ _P_MAX_EMPIRICAL_ANCHOR
-        at h=0.73 there.  On the synthetic fixture the magnitudes are
-        dataset-specific and a strict-lift assertion would be fragile.
-
-        Skipped if the production injection directory is not available
-        (e.g. on CI machines without the dataset checked out).
-        """
-        import os
-        import pathlib
-
-        from master_thesis_code.bayesian_inference.simulation_detection_probability import (
-            _D_INTERMEDIATE_ANCHOR_GPC,
-            _P_INTERMEDIATE_EMPIRICAL,
-            _P_MAX_EMPIRICAL_ANCHOR,
-            SimulationDetectionProbability,
-        )
-
-        prod_dir = pathlib.Path("simulations/injections")
-        if not prod_dir.is_dir() or not any(prod_dir.glob("injection_h_*.csv")):
-            pytest.skip(
-                "Production injection campaign at simulations/injections/ "
-                "not available; this test only runs in the dev/research env."
-            )
-        # Sanity: ensure the test runs from a directory where simulations/
-        # is reachable (i.e. project root).
-        if not os.path.isabs(str(prod_dir)):
-            prod_dir = pathlib.Path.cwd() / "simulations/injections"
-
-        pdet = SimulationDetectionProbability(
-            injection_data_dir=str(prod_dir),
-            snr_threshold=20.0,
-        )
-        h = 0.73
-        pdet._get_or_build_grid(h)
-        _, interp_1d = pdet._grid_cache[h]
-        # Phase 45 layout: grid[0]=0 anchor; grid[1] is either 0.05 (hybrid)
-        # or c_0 (fallback). Read c_0 from the appropriate position.
-        grid_axis = interp_1d.grid[0]
-        if abs(float(grid_axis[1]) - _D_INTERMEDIATE_ANCHOR_GPC) < 1e-12:
-            c0 = float(grid_axis[2])  # hybrid layout
-        else:
-            c0 = float(grid_axis[1])  # fallback layout
-        d_L_test = 0.5 * c0
-
-        p_at = float(
-            pdet.detection_probability_without_bh_mass_interpolated_zero_fill(
-                d_L=c0, phi=0.0, theta=0.0, h=h
+    def test_in_grid_query_returns_value_in_unit_interval(
+        self, injection_dir: str
+    ) -> None:
+        pdet = self._build_pdet(injection_dir)
+        dl_min, dl_max = self._grid_bounds(pdet, h=0.75)
+        d_L = 0.5 * (dl_min + dl_max)
+        p = float(
+            pdet.detection_probability_without_bh_mass_interpolated_zero_fill(  # type: ignore[attr-defined]
+                d_L=d_L, phi=0.0, theta=0.0, h=0.75
             )
         )
-        p_below = float(
-            pdet.detection_probability_without_bh_mass_interpolated_zero_fill(
-                d_L=d_L_test, phi=0.0, theta=0.0, h=h
+        assert 0.0 <= p <= 1.0
+
+    def test_c0_continuity_at_dl_min_face(self, injection_dir: str) -> None:
+        """As d_L → dl_min from below, p_det should approach the in-grid
+        boundary value continuously (no step)."""
+        pdet = self._build_pdet(injection_dir)
+        dl_min, _ = self._grid_bounds(pdet, h=0.75)
+        eps = 1e-6
+        p_inside = float(
+            pdet.detection_probability_without_bh_mass_interpolated_zero_fill(  # type: ignore[attr-defined]
+                d_L=dl_min + eps, phi=0.0, theta=0.0, h=0.75
             )
         )
+        p_outside = float(
+            pdet.detection_probability_without_bh_mass_interpolated_zero_fill(  # type: ignore[attr-defined]
+                d_L=dl_min - eps, phi=0.0, theta=0.0, h=0.75
+            )
+        )
+        assert abs(p_inside - p_outside) < 1e-3
 
-        # On the production fixture, p̂(c_0) ≈ 0.544 < 0.7931 ≈ anchor — the
-        # pre-Phase-45 bias-diagnosis precondition is preserved by the hybrid.
-        assert p_at < _P_MAX_EMPIRICAL_ANCHOR, (
-            f"Production fixture sanity: expected p̂(c_0)={p_at} < "
-            f"_P_MAX_EMPIRICAL_ANCHOR={_P_MAX_EMPIRICAL_ANCHOR}; if this fails "
-            "the pre-Phase-45 bias diagnosis no longer applies to this dataset."
+    def test_c0_continuity_at_dl_max_face(self, injection_dir: str) -> None:
+        """As d_L → dl_max from above, p_det should approach the in-grid
+        boundary value continuously (no step)."""
+        pdet = self._build_pdet(injection_dir)
+        _, dl_max = self._grid_bounds(pdet, h=0.75)
+        eps = 1e-6
+        p_inside = float(
+            pdet.detection_probability_without_bh_mass_interpolated_zero_fill(  # type: ignore[attr-defined]
+                d_L=dl_max - eps, phi=0.0, theta=0.0, h=0.75
+            )
         )
-        # Plan 45-04 hybrid: at d_L = c_0/2 the value lies on one of the two
-        # hybrid segments, both bounded above by _P_INTERMEDIATE_EMPIRICAL=1.0
-        # and strictly above p̂(c_0).
-        assert p_below > p_at, (
-            f"Phase 45 hybrid: interp(c_0/2) must strictly exceed p̂(c_0)={p_at}; got {p_below}"
+        p_outside = float(
+            pdet.detection_probability_without_bh_mass_interpolated_zero_fill(  # type: ignore[attr-defined]
+                d_L=dl_max + eps, phi=0.0, theta=0.0, h=0.75
+            )
         )
-        assert p_below <= _P_INTERMEDIATE_EMPIRICAL, (
-            f"Phase 45 hybrid: interp(c_0/2) must be bounded above by the "
-            f"intermediate anchor _P_INTERMEDIATE_EMPIRICAL={_P_INTERMEDIATE_EMPIRICAL}; "
-            f"got {p_below}"
-        )
+        assert abs(p_inside - p_outside) < 1e-3
 
-    def test_docstring_states_linear_and_anchor(self) -> None:
-        """The docstring of detection_probability_without_bh_mass_interpolated_zero_fill
-        must state the boundary convention: linear interpolation lifted by an
-        empirical anchor (Plan 45-02) plus a hybrid intermediate anchor at
-        d_L=0.05 (Plan 45-04).
-        """
-        import inspect
+    def test_bridge_reaches_unity_at_dl_zero(self, injection_dir: str) -> None:
+        """At d_L=0 the bridge gives exactly p_det=1 (saturated asymptote at
+        the natural physical scale)."""
+        pdet = self._build_pdet(injection_dir)
+        p = float(
+            pdet.detection_probability_without_bh_mass_interpolated_zero_fill(  # type: ignore[attr-defined]
+                d_L=0.0, phi=0.0, theta=0.0, h=0.75
+            )
+        )
+        assert p == pytest.approx(1.0, abs=1e-9)
 
-        from master_thesis_code.bayesian_inference.simulation_detection_probability import (
-            SimulationDetectionProbability,
+    def test_bridge_floor_at_pedge(self, injection_dir: str) -> None:
+        """In the saturating d_L<dl_min direction, the result should never
+        drop below the in-grid boundary value p_edge (Option A floor)."""
+        pdet = self._build_pdet(injection_dir)
+        dl_min, _ = self._grid_bounds(pdet, h=0.75)
+        p_edge = float(
+            pdet.detection_probability_without_bh_mass_interpolated_zero_fill(  # type: ignore[attr-defined]
+                d_L=dl_min, phi=0.0, theta=0.0, h=0.75
+            )
         )
-
-        doc = inspect.getdoc(
-            SimulationDetectionProbability.detection_probability_without_bh_mass_interpolated_zero_fill
-        )
-        assert doc is not None, "missing docstring"
-        doc_lower = doc.lower()
-        assert "linear" in doc_lower, (
-            f"Phase 45: docstring must state 'linear' (interp/extrap), got:\n{doc}"
-        )
-        assert "empirical anchor" in doc_lower or "empirical anchors" in doc_lower, (
-            f"Phase 45: docstring must reference 'empirical anchor', got:\n{doc}"
-        )
-        assert "phase 45" in doc_lower, f"Phase 45: docstring must cite 'Phase 45', got:\n{doc}"
-        # Plan 45-04: docstring must additionally mention the hybrid layout.
-        assert "hybrid" in doc_lower or "intermediate" in doc_lower, (
-            f"Phase 45 Plan 45-04: docstring must mention 'hybrid' or "
-            f"'intermediate' anchor, got:\n{doc}"
-        )
-
-    # ------------------------------------------------------------------
-    # Plan 45-04 hybrid (intermediate anchor at d_L = 0.05 Gpc, value = 1.0)
-    # ------------------------------------------------------------------
-
-    def test_intermediate_value_at_005_equals_constant(self, injection_dir: str) -> None:
-        """interp(d_L=0.05; h) == _P_INTERMEDIATE_EMPIRICAL=1.0 for all h with c_0(h) > 0.05."""
-        from master_thesis_code.bayesian_inference.simulation_detection_probability import (
-            _D_INTERMEDIATE_ANCHOR_GPC,
-            _P_INTERMEDIATE_EMPIRICAL,
-            SimulationDetectionProbability,
-        )
-
-        pdet = SimulationDetectionProbability(
-            injection_data_dir=injection_dir,
-            snr_threshold=20.0,
-        )
-        for h in (0.65, 0.70, 0.73, 0.80, 0.85):
-            pdet._get_or_build_grid(h)
-            grid_axis = pdet._grid_cache[h][1].grid[0]
-            # Hybrid layout precondition: c_0(h) > _D_INTERMEDIATE_ANCHOR_GPC.
-            if abs(float(grid_axis[1]) - _D_INTERMEDIATE_ANCHOR_GPC) >= 1e-12:
-                pytest.skip(
-                    f"h={h}: c_0={float(grid_axis[1])} <= 0.05; intermediate anchor "
-                    "absent (fallback layout); not the regime this test covers."
+        for d_L in (dl_min * 0.5, dl_min * 0.1, 1e-6):
+            p = float(
+                pdet.detection_probability_without_bh_mass_interpolated_zero_fill(  # type: ignore[attr-defined]
+                    d_L=d_L, phi=0.0, theta=0.0, h=0.75
                 )
-            v = pdet.detection_probability_without_bh_mass_interpolated_zero_fill(
-                d_L=_D_INTERMEDIATE_ANCHOR_GPC, phi=0.0, theta=0.0, h=h
             )
-            assert float(v) == pytest.approx(_P_INTERMEDIATE_EMPIRICAL, rel=1e-12), (
-                f"Plan 45-04: interp(d_L=0.05; h={h}) must equal "
-                f"_P_INTERMEDIATE_EMPIRICAL={_P_INTERMEDIATE_EMPIRICAL}; got {v}"
+            assert p >= p_edge - 1e-9, (
+                f"d_L={d_L}: p={p} dropped below p_edge={p_edge} (Option A floor violated)"
             )
+            assert p <= 1.0 + 1e-9
 
-    def test_intermediate_h_independent(self, injection_dir: str) -> None:
-        """h-spread at d_L=0.05 is exactly 0 (intermediate is a fixed scalar)."""
-        from master_thesis_code.bayesian_inference.simulation_detection_probability import (
-            _D_INTERMEDIATE_ANCHOR_GPC,
-            SimulationDetectionProbability,
-        )
-
-        pdet = SimulationDetectionProbability(
-            injection_data_dir=injection_dir,
-            snr_threshold=20.0,
-        )
-        values: dict[float, float] = {}
-        for h in (0.65, 0.70, 0.73, 0.80, 0.85):
-            v = pdet.detection_probability_without_bh_mass_interpolated_zero_fill(
-                d_L=_D_INTERMEDIATE_ANCHOR_GPC, phi=0.0, theta=0.0, h=h
-            )
-            values[h] = float(v)
-        spread = max(values.values()) - min(values.values())
-        assert spread < 1e-12, (
-            f"Plan 45-04: interp(d_L=0.05) must be h-INDEPENDENT (intermediate "
-            f"is a module-level scalar at a fixed physical position).  "
-            f"h-spread = {spread}, values = {values}"
-        )
-
-    def test_anchor_at_zero_unchanged(self, injection_dir: str) -> None:
-        """interp(d_L=0; h) still equals _P_MAX_EMPIRICAL_ANCHOR=0.7931 (Plan 45-02 invariant)."""
-        from master_thesis_code.bayesian_inference.simulation_detection_probability import (
-            _P_MAX_EMPIRICAL_ANCHOR,
-            SimulationDetectionProbability,
-        )
-
-        pdet = SimulationDetectionProbability(
-            injection_data_dir=injection_dir,
-            snr_threshold=20.0,
-        )
-        for h in (0.65, 0.70, 0.73, 0.80, 0.85):
-            v = pdet.detection_probability_without_bh_mass_interpolated_zero_fill(
-                d_L=0.0, phi=0.0, theta=0.0, h=h
-            )
-            assert float(v) == pytest.approx(_P_MAX_EMPIRICAL_ANCHOR, rel=1e-12), (
-                f"Plan 45-04: d_L=0 anchor invariant violated at h={h}; got {v}"
-            )
-
-    def test_interp_at_c0_unchanged_by_intermediate(self, injection_dir: str) -> None:
-        """Plan 45-04 invariant: interp(d_L=c_0; h) still equals p̂(c_0).
-
-        The intermediate anchor at d_L=0.05 is BETWEEN d_L=0 and d_L=c_0; the
-        linear interpolant on [0.05, c_0] passes through both (0.05, 1.0) and
-        (c_0, p̂(c_0)), so the value at c_0 is unchanged by Plan 45-04.
-        """
-        import numpy as np
-
-        from master_thesis_code.bayesian_inference.simulation_detection_probability import (
-            _D_INTERMEDIATE_ANCHOR_GPC,
-            SimulationDetectionProbability,
-        )
-        from master_thesis_code.physical_relations import dist_vectorized
-
-        pdet = SimulationDetectionProbability(
-            injection_data_dir=injection_dir,
-            snr_threshold=20.0,
-        )
-        h = 0.70
-        pdet._get_or_build_grid(h)
-        _, interp_1d = pdet._grid_cache[h]
-        grid_axis = interp_1d.grid[0]
-        if abs(float(grid_axis[1]) - _D_INTERMEDIATE_ANCHOR_GPC) < 1e-12:
-            c0 = float(grid_axis[2])  # hybrid
-        else:
-            c0 = float(grid_axis[1])  # fallback
-
-        # Reproduce histogram p̂(c_0) directly.
-        pooled = pdet._pooled_df
-        z = pooled["z"].values
-        snr_raw = pooled["SNR"].values
-        dl_inj = pooled["luminosity_distance"].values
-        dl_target = dist_vectorized(z, h=h)
-        snr_rescaled = snr_raw * dl_inj / dl_target
-        dl_max = float(np.max(dl_target)) * 1.1
-        dl_edges = np.linspace(0, dl_max, 60 + 1)
-        total_counts, _ = np.histogram(dl_target, bins=dl_edges)
-        detected_counts, _ = np.histogram(dl_target[snr_rescaled >= 20.0], bins=dl_edges)
-        p_hat_c0 = (
-            float(detected_counts[0]) / float(total_counts[0]) if total_counts[0] > 0 else 0.0
-        )
-
-        v = pdet.detection_probability_without_bh_mass_interpolated_zero_fill(
-            d_L=c0, phi=0.0, theta=0.0, h=h
-        )
-        assert float(v) == pytest.approx(p_hat_c0, rel=1e-9), (
-            f"Plan 45-04: interp(d_L=c_0; h={h}) must equal p̂(c_0)={p_hat_c0:.10f} "
-            f"(Plan 45-02 invariant under hybrid; intermediate anchor at 0.05 "
-            f"does not perturb the c_0 value); got {v}"
-        )
-
-    def test_below_intermediate_strict_lift(self) -> None:
-        """interp(d_L=0.025; h=0.73) on production fixture equals the linear-interp
-        midpoint of (0.7931, 1.0) = 0.89655 AND strictly exceeds the pre-hybrid value.
-        """
-        import json
-        import pathlib
-
-        from master_thesis_code.bayesian_inference.simulation_detection_probability import (
-            _P_INTERMEDIATE_EMPIRICAL,
-            _P_MAX_EMPIRICAL_ANCHOR,
-            SimulationDetectionProbability,
-        )
-
-        prod_dir = pathlib.Path("simulations/injections")
-        if not prod_dir.is_dir() or not any(prod_dir.glob("injection_h_*.csv")):
-            pytest.skip("Production injection campaign not available.")
-
-        # Read pre-hybrid baseline; required for the strict-lift assertion.
-        pre_path = pathlib.Path(
-            "scripts/bias_investigation/outputs/phase45/pre_hybrid_interp_probe.json"
-        )
-        if not pre_path.exists():
-            pytest.fail(
-                "pre_hybrid_interp_probe.json missing; run Plan 45-04 Task 1 first: "
-                "uv run python -m scripts.bias_investigation.probe_interp_values "
-                "--output-name pre_hybrid_interp_probe.json --label pre-hybrid"
-            )
-        pre = json.loads(pre_path.read_text())
-        pre_value = next(
-            r["value"] for r in pre["rows"] if r["h"] == 0.73 and r["d_L_gpc"] == 0.025
-        )
-
-        pdet = SimulationDetectionProbability(
-            injection_data_dir=str(prod_dir),
-            snr_threshold=20.0,
-        )
-        v = float(
-            pdet.detection_probability_without_bh_mass_interpolated_zero_fill(
-                d_L=0.025, phi=0.0, theta=0.0, h=0.73
+    def test_above_dl_max_clamped_to_pedge(self, injection_dir: str) -> None:
+        """In the suppressing d_L>dl_max direction, the result should never
+        exceed the in-grid boundary value p_edge."""
+        pdet = self._build_pdet(injection_dir)
+        _, dl_max = self._grid_bounds(pdet, h=0.75)
+        p_edge = float(
+            pdet.detection_probability_without_bh_mass_interpolated_zero_fill(  # type: ignore[attr-defined]
+                d_L=dl_max, phi=0.0, theta=0.0, h=0.75
             )
         )
-        expected = 0.5 * (_P_MAX_EMPIRICAL_ANCHOR + _P_INTERMEDIATE_EMPIRICAL)
-        assert v == pytest.approx(expected, rel=1e-9), (
-            f"Plan 45-04 linear-interp midpoint identity on [0, 0.05]: "
-            f"interp(0.025; h=0.73) must equal 0.5*(0.7931+1.0)={expected}; got {v}"
-        )
-        assert v > pre_value, (
-            f"Plan 45-04 strict lift: post-hybrid interp(0.025; h=0.73)={v} must "
-            f"exceed pre-hybrid value {pre_value} from pre_hybrid_interp_probe.json"
-        )
+        for d_L in (dl_max * 1.1, dl_max * 1.5, dl_max * 5.0):
+            p = float(
+                pdet.detection_probability_without_bh_mass_interpolated_zero_fill(  # type: ignore[attr-defined]
+                    d_L=d_L, phi=0.0, theta=0.0, h=0.75
+                )
+            )
+            assert p <= p_edge + 1e-9
+            assert p >= 0.0
 
-    def test_above_intermediate_strict_lift(self) -> None:
-        """interp(d_L=0.075; h=0.73) on production fixture matches the linear-interp
-        prediction on segment [0.05, c_0] AND strictly exceeds pre-hybrid value.
-        """
-        import json
-        import pathlib
-
-        import numpy as np
-
-        from master_thesis_code.bayesian_inference.simulation_detection_probability import (
-            _D_INTERMEDIATE_ANCHOR_GPC,
-            _P_INTERMEDIATE_EMPIRICAL,
-            SimulationDetectionProbability,
-        )
-        from master_thesis_code.physical_relations import dist_vectorized
-
-        prod_dir = pathlib.Path("simulations/injections")
-        if not prod_dir.is_dir() or not any(prod_dir.glob("injection_h_*.csv")):
-            pytest.skip("Production injection campaign not available.")
-
-        pre_path = pathlib.Path(
-            "scripts/bias_investigation/outputs/phase45/pre_hybrid_interp_probe.json"
-        )
-        if not pre_path.exists():
-            pytest.fail("pre_hybrid_interp_probe.json missing; run Plan 45-04 Task 1.")
-        pre = json.loads(pre_path.read_text())
-        pre_value = next(
-            r["value"] for r in pre["rows"] if r["h"] == 0.73 and r["d_L_gpc"] == 0.075
-        )
-
-        pdet = SimulationDetectionProbability(
-            injection_data_dir=str(prod_dir),
-            snr_threshold=20.0,
-        )
-        h = 0.73
-        pdet._get_or_build_grid(h)
-        _, interp_1d = pdet._grid_cache[h]
-        grid_axis = interp_1d.grid[0]
-        c0 = float(grid_axis[2])  # hybrid layout (production fixture has c_0 > 0.05)
-
-        # Reproduce p̂(c_0) for the prediction.
-        pooled = pdet._pooled_df
-        z = pooled["z"].values
-        snr_raw = pooled["SNR"].values
-        dl_inj = pooled["luminosity_distance"].values
-        dl_target = dist_vectorized(z, h=h)
-        snr_rescaled = snr_raw * dl_inj / dl_target
-        dl_max = float(np.max(dl_target)) * 1.1
-        dl_edges = np.linspace(0, dl_max, 60 + 1)
-        total_counts, _ = np.histogram(dl_target, bins=dl_edges)
-        detected_counts, _ = np.histogram(dl_target[snr_rescaled >= 20.0], bins=dl_edges)
-        p_at = float(detected_counts[0]) / float(total_counts[0]) if total_counts[0] > 0 else 0.0
-
-        v = float(
-            pdet.detection_probability_without_bh_mass_interpolated_zero_fill(
-                d_L=0.075, phi=0.0, theta=0.0, h=h
+    def test_array_input_matches_scalar_input(self, injection_dir: str) -> None:
+        """Vectorized input should produce identical results to scalar."""
+        pdet = self._build_pdet(injection_dir)
+        dl_min, dl_max = self._grid_bounds(pdet, h=0.75)
+        dl_arr = np.array([dl_min - 0.005, 0.5 * (dl_min + dl_max), dl_max + 0.5])
+        result_vec = np.asarray(
+            pdet.detection_probability_without_bh_mass_interpolated_zero_fill(  # type: ignore[attr-defined]
+                d_L=dl_arr, phi=np.zeros(3), theta=np.zeros(3), h=0.75
             )
         )
-        expected = _P_INTERMEDIATE_EMPIRICAL + (p_at - _P_INTERMEDIATE_EMPIRICAL) * (
-            0.075 - _D_INTERMEDIATE_ANCHOR_GPC
-        ) / (c0 - _D_INTERMEDIATE_ANCHOR_GPC)
-        assert v == pytest.approx(expected, rel=1e-3), (
-            f"Plan 45-04 linear-interp on [0.05, c_0]: interp(0.075; h=0.73)={v} "
-            f"must match prediction {expected:.6f} (c_0={c0:.6f}, p̂(c_0)={p_at:.6f})"
-        )
-        assert v > pre_value, (
-            f"Plan 45-04 strict lift: post-hybrid interp(0.075; h=0.73)={v} must "
-            f"exceed pre-hybrid value {pre_value}"
-        )
-
-    def test_edge_case_small_c0_skips_intermediate(self, tmp_path: object) -> None:
-        """When dl_max(h) is small enough that c_0 ≤ 0.05, the intermediate
-        anchor must be SKIPPED (fallback to Plan 45-02 single-anchor layout)
-        to preserve grid monotonicity.
-        """
-        import numpy as np
-        import pandas as pd
-
-        from master_thesis_code.bayesian_inference.simulation_detection_probability import (
-            _D_INTERMEDIATE_ANCHOR_GPC,
-            SimulationDetectionProbability,
-        )
-
-        # Synthesize an injection campaign with d_L bounded so c_0 < 0.05.
-        # c_0 = dl_max / (2*N) with N=60 default; so we need dl_max < 6.0 Gpc.
-        # 1.0 * 1.1 = 1.1 Gpc → c_0 ≈ 0.00917 << 0.05.
-        rng = np.random.default_rng(42)
-        n = 200
-        df = pd.DataFrame(
-            {
-                "z": rng.uniform(0.01, 0.10, size=n),
-                "M": rng.uniform(1e6, 1e7, size=n),
-                "phiS": rng.uniform(0.0, 2.0 * np.pi, size=n),
-                "qS": rng.uniform(0.0, np.pi, size=n),
-                "SNR": rng.uniform(15.0, 40.0, size=n),
-                "h_inj": np.full(n, 0.73),
-                "luminosity_distance": rng.uniform(0.01, 1.0, size=n),
-            }
-        )
-        tmp_dir = str(tmp_path)
-        df.to_csv(f"{tmp_dir}/injection_h_0p73_task_0.csv", index=False)
-
-        pdet = SimulationDetectionProbability(
-            injection_data_dir=tmp_dir,
-            snr_threshold=20.0,
-        )
-        # Use a very high h so dl_max(h) shrinks and c_0 < 0.05.
-        h = 0.85
-        pdet._get_or_build_grid(h)
-        _, interp_1d = pdet._grid_cache[h]
-        grid_axis = interp_1d.grid[0]
-        # Intermediate must NOT be present in the grid when c_0 ≤ 0.05.
-        c0 = float(grid_axis[1])  # under fallback, grid[0]=0.0, grid[1]=c_0
-        assert c0 <= _D_INTERMEDIATE_ANCHOR_GPC, (
-            f"Test premise violated: synthetic fixture has c_0={c0} > 0.05; "
-            "the fallback branch wasn't exercised."
-        )
-        # Structural test: 0.05 must NOT appear in the grid axis (this is the
-        # fixture-independent invariant of the fallback branch).
-        assert _D_INTERMEDIATE_ANCHOR_GPC not in grid_axis.tolist(), (
-            f"Plan 45-04 fallback: when c_0 ≤ 0.05, the intermediate anchor "
-            f"must be skipped; grid={grid_axis.tolist()[:5]}..."
-        )
-        # No exception must be raised when querying past c_0 (regression
-        # against accidental strict-monotonicity violations on the grid).
-        v = float(
-            pdet.detection_probability_without_bh_mass_interpolated_zero_fill(
-                d_L=_D_INTERMEDIATE_ANCHOR_GPC, phi=0.0, theta=0.0, h=h
+        for i in range(3):
+            scalar = float(
+                pdet.detection_probability_without_bh_mass_interpolated_zero_fill(  # type: ignore[attr-defined]
+                    d_L=float(dl_arr[i]), phi=0.0, theta=0.0, h=0.75
+                )
             )
-        )
-        # Value must remain a valid probability (Phase 44 + Phase 45 invariant).
-        assert 0.0 <= v <= 1.0, (
-            f"Plan 45-04 fallback: interp(0.05) under c_0 ≤ 0.05 must remain in [0, 1]; got {v}"
-        )
+            assert abs(scalar - float(result_vec[i])) < 1e-9, (
+                f"mismatch at i={i}: scalar={scalar}, vec={result_vec[i]}"
+            )
