@@ -8,6 +8,17 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- Phase 47 H3 fix pre-implementation diagnostic
+  `scripts/bias_investigation/test_27_m_coordinate_mismatch.py`: builds two
+  `SimulationDetectionProbability` instances differing only in the M-axis
+  coordinate convention (current source-frame `M` vs proposed observer-frame
+  `M_z`), queries both per detection at sample integration z values, and
+  reports per-event Δp_det distributions and a heuristic predicted MAP shift.
+  On phase46-merged 1473 events at h=0.73 the proposed grid's M-axis extends
+  1.49× the current max (matching the expected M_z/M_source ratio at typical
+  z); 23% of events show |Δp_det| > 0.05 with mean Δp_det = -0.031
+  (proposed retrieves the correct M_z bin instead of the heavier-source bin
+  the current source-frame grid was hitting).
 - Phase 35: coordinate-bug baseline audit (`scripts/audit_coordinate_bug.py` CLI +
   `.planning/audit_coordinate_bug.{md,json,png}` artifacts). Pre-fix baseline:
   42 CRB events — 0 in ±5° ecliptic-equator band (expected ~8.7% under isotropic
@@ -29,6 +40,41 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   Step 2 principled-extrapolation implementation, Step 2 follow-up 1D alignment).
 
 ### Changed
+- `[PHYSICS]` Phase 47 H3 fix — numerator p_det query
+  observation→hypothesis + 2D grid M-axis observer-frame convention.
+  Two coupled changes that together fix the residual 2D-channel structural
+  bias remaining after the principled-bridge fix (commit `2b33cad`).
+  (i) `bayesian_inference/simulation_detection_probability.py:_get_or_build_grid`:
+  the 2D grid M-axis is now observer-frame `M_z = M_source · (1+z_inj)`
+  (multiplied at grid construction time, one-line change). The grid axis
+  thus matches the production query coordinate
+  (numerator: `host_M·(1+z)`; denominator: `M·(1+z)`) instead of binning
+  in source-frame `M_source` while queries pass `M_z` (a coordinate
+  mismatch that put queries ~50% higher than the bin labels at typical
+  z≈0.5).
+  (ii) `bayesian_inference/bayesian_statistics.py:1304-1306` numerator
+  integrand: changed the `p_det` query from `np.full_like(z, _det_M)`
+  (the *observation* — detection's ML observer-frame mass, constant
+  across the integration over candidate redshift z) to
+  `host_M · (1.0 + z)` (the *hypothesis* — the host candidate's
+  observer-frame mass at integration z). This matches the rest of the
+  integrand's hypothesis convention (cf. `mu_gal_frac` line) and the
+  denominator's `M·(1+z)` query. Phase 14's "approximation, not a bug"
+  justification at L1298–1300 was valid only while σ_boot was wide
+  enough (>~0.005) to mask the residual; under post-bridge σ_boot=0.0039
+  on phase46-merged 1473 events it drove a +3.6σ structural residual.
+  Removed the "known approximation" comment blocks at
+  `bayesian_statistics.py:1298–1303` and `:1357–1359`, and the
+  "this is a known approximation" note in
+  `simulation_detection_probability.py:619–623`. **All
+  `posteriors_with_bh_mass/` produced before this commit are stale.**
+  References: Mandel, Farr & Gair (2019), arXiv:1809.02063 §2 (selection
+  function evaluated at hypothesis); Maggiore (2008) Vol 1 §4.1.4
+  (`M_z = M_source · (1+z)`); Babak et al. (2017), arXiv:1703.09722 §III.
+  Property tests added (`TestPDetGridMassCoordinateFrame`):
+  M-axis is observer-frame M_z; query at M_z lands in the expected
+  built bin. Pre-implementation diagnostic and post-fix narrative in
+  `docs/H0_BIAS_RESOLUTION.md` §3.15.
 - `[PHYSICS]` `bayesian_inference/simulation_detection_probability.py`
   (`detection_probability_with_bh_mass_interpolated`, 2D channel): replaced raw
   scipy linear extrapolation + [0,1] clip with a principled

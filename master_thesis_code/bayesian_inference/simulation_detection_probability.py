@@ -304,11 +304,19 @@ class SimulationDetectionProbability:
         # Cache miss: build grids via SNR rescaling
         d_L_target, snr_rescaled = self._rescale_snr(h)
 
-        # Build a temporary DataFrame for the grid builders
+        # Build a temporary DataFrame for the grid builders.
+        # The 2D grid M-axis is observer-frame M_z = M_source · (1 + z_inj),
+        # the natural SNR-determining mass coordinate.  Production queries
+        # (numerator: ``host_M·(1+z)``; denominator: ``M·(1+z)``) all pass
+        # observer-frame M_z, so the grid axis matches the query coordinate.
+        # See ``docs/H0_BIAS_RESOLUTION.md`` §3.15 (H3 fix).
+        # Ref: Maggiore (2008) Vol 1 §4.1.4 (M_z = M_source · (1+z));
+        # Mandel, Farr & Gair (2019) arXiv:1809.02063 §2 (selection
+        # function evaluated at hypothesis observer-frame parameters).
         df_rescaled = pd.DataFrame(
             {
                 "luminosity_distance": d_L_target,
-                "M": self._M_arr,
+                "M": self._M_arr * (1.0 + self._z_arr),
                 "SNR": snr_rescaled,
             }
         )
@@ -338,7 +346,15 @@ class SimulationDetectionProbability:
         *,
         weights: npt.NDArray[np.float64] | None = None,
     ) -> RegularGridInterpolator:
-        """Build a 2D P_det(d_L, M) grid by marginalizing over sky angles.
+        """Build a 2D P_det(d_L, M_z) grid by marginalizing over sky angles.
+
+        The M axis of the grid is **observer-frame** M_z = M_source · (1 + z_inj),
+        the natural SNR-determining mass coordinate.  ``_get_or_build_grid``
+        applies the (1+z_inj) factor when constructing ``df`` so that the M
+        column passed here is already observer-frame.  Production queries
+        pass observer-frame M_z directly (``host_M·(1+z)`` in the numerator
+        integrand, ``M·(1+z)`` in the denominator); grid axis and queries
+        thus share a single coordinate convention.
 
         Uses the ``luminosity_distance`` column directly -- no z-to-d_L
         conversion needed.
@@ -354,14 +370,16 @@ class SimulationDetectionProbability:
         **not** affect the interpolation result.
 
         Args:
-            df: DataFrame with columns luminosity_distance, M, SNR.
+            df: DataFrame with columns luminosity_distance, M, SNR.  The
+                ``M`` column must be observer-frame M_z (per the convention
+                set in ``_get_or_build_grid``).
             snr_threshold: SNR detection threshold.
             h_val: Hubble parameter value for quality flag storage (optional).
             weights: Per-injection importance weights, shape (N,).  If None,
                 all weights are implicitly 1 (standard histogram estimator).
 
         Returns:
-            RegularGridInterpolator for P_det(d_L, M).
+            RegularGridInterpolator for P_det(d_L, M_z).
 
         References:
             Self-normalized IS estimator: Tiwari (2018), arXiv:1712.00482, Eq. 5-8.
@@ -617,10 +635,10 @@ class SimulationDetectionProbability:
         Sky angles (phi, theta) are accepted for API compatibility but are
         marginalized over internally (D-02).
 
-        The grid is in (d_L, M) space, so no ``dist_to_redshift`` inversion is
-        needed.  The observer-frame mass M_z is queried as-is (the grid was
-        built from source-frame M; this is a known approximation, see
-        :class:`SimulationDetectionProbability` docstring).
+        The grid is in (d_L, M_z) space — observer-frame M_z on both the
+        grid axis and the query argument.  See ``_build_grid_2d`` for the
+        coordinate convention; ``docs/H0_BIAS_RESOLUTION.md`` §3.15 for the
+        history of the convention fix.
 
         **Out-of-grid policy: principled monotonic-asymptotic extrapolation.**
 

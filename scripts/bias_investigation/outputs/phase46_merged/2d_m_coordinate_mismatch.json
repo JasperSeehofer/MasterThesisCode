@@ -1,0 +1,39 @@
+{
+  "snr_threshold": 20.0,
+  "h_truth": 0.73,
+  "n_events": 1549,
+  "crb_path": "simulations/cluster_run_phase46_merged_20260504/cramer_rao_bounds.csv",
+  "grid_M_range": {
+    "current": [
+      29793.77393610903,
+      1050728.6478474818
+    ],
+    "proposed": [
+      32878.91125233903,
+      1561990.4394887716
+    ],
+    "ratio_max": 1.4865783308456075
+  },
+  "delta_pdet_central": {
+    "mean": -0.030556951499807857,
+    "median": -0.007868944913499543,
+    "p25": -0.026266638328601325,
+    "p75": 0.0,
+    "frac_positive": 0.12588766946417043,
+    "frac_abs_gt_005": 0.2304712717882505
+  },
+  "delta_pdet_window_mean": {
+    "mean": -0.009516325110771329,
+    "median": -0.012680739354065195
+  },
+  "log_ratio_central": {
+    "mean": -0.9595501170803271,
+    "median": -0.011002089451989832,
+    "sum_over_N": -1486.3431313574267
+  },
+  "predicted_map_shift": {
+    "sigma_boot_post_bridge_2d": 0.0039,
+    "abs_delta_h_scale_estimate": 0.147284816726415,
+    "target_residual_closure": 0.0141
+  }
+}

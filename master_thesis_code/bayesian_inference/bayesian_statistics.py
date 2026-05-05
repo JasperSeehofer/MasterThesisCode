@@ -1295,14 +1295,16 @@ def single_host_likelihood(
             phi = np.full_like(z, host_phiS)
             theta = np.full_like(z, host_qS)
 
-            # NOTE: p_det uses the ML mass estimate (detection.M) rather than
-            # M_gal*(1+z) at trial z. This is a known approximation, not a bug,
-            # per Phase 14 analysis. The denominator uses M_gal*(1+z) correctly.
-            # TODO(STAT-03-bh): No zero_fill variant for with_bh_mass channel.
-            # detection_probability_with_bh_mass_interpolated_zero_fill not yet implemented.
-            # This creates a minor asymmetry vs the 1D channel — tracked in GitHub issue.
+            # p_det evaluated at the *hypothesis*: the host candidate's
+            # observer-frame M_z = host_M · (1+z) at integration redshift z.
+            # This matches the rest of the integrand's hypothesis convention
+            # (cf. `mu_gal_frac = host_M·(1+z)/_det_M` below) and the
+            # denominator's `M_z = M·(1+z)` convention.  See
+            # docs/H0_BIAS_RESOLUTION.md §3.15 (H3 fix, Phase 47).
+            # Ref: Mandel, Farr & Gair (2019), arXiv:1809.02063 §2
+            # (selection function evaluated at hypothesis parameters).
             p_det = detection_probability.detection_probability_with_bh_mass_interpolated(
-                d_L, np.full_like(z, _det_M), phi, theta, h=h
+                d_L, host_M * (1.0 + z), phi, theta, h=h
             )
 
             # 3D marginal Gaussian: p(phi, theta, d_L_frac)
@@ -1354,9 +1356,8 @@ def single_host_likelihood(
             M_z = M * (1 + z)
             phi = np.full_like(M, host_phiS)
             theta = np.full_like(M, host_qS)
-            # TODO(STAT-03-bh): No zero_fill variant for with_bh_mass channel.
-            # detection_probability_with_bh_mass_interpolated_zero_fill not yet implemented.
-            # This creates a minor asymmetry vs the 1D channel — tracked in GitHub issue.
+            # p_det in observer-frame M_z (consistent with grid axis and
+            # the numerator's host_M·(1+z) hypothesis).
             p_det = detection_probability.detection_probability_with_bh_mass_interpolated(
                 d_L, M_z, phi, theta, h=h
             )
