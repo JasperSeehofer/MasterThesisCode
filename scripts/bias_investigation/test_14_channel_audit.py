@@ -1,4 +1,15 @@
-"""Test 14 (Audit A2): 1D vs 2D channel structural audit.
+"""DEPRECATED 2026-05-05: this Phase-14 audit measures the 1D vs 2D anchor
+asymmetry that motivated Plan 45-06/45-07 (lift the 1D Wilson anchor; extend
+hybrid to 2D).  Both channels were superseded by the principled
+monotonic-asymptotic extrapolation scheme on 2026-05-05; the anchor
+constants imported below (``_P_MAX_EMPIRICAL_ANCHOR``,
+``_D_INTERMEDIATE_ANCHOR_GPC``, ``_P_INTERMEDIATE_EMPIRICAL``) no longer
+exist.  See ``.planning/2D-CHANNEL-AUDIT-20260505.md``.  The script will
+fail with ImportError until rewritten or removed.
+
+Original docstring follows.
+
+Test 14 (Audit A2): 1D vs 2D channel structural audit.
 
 Resolves concern #5 (with_bh_mass MAP=0.7450 closer to truth than the
 patched without_bh_mass MAP=0.7550) by measuring the effective `[0, c_0]`

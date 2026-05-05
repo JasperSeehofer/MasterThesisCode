@@ -251,7 +251,7 @@ def main() -> None:
         h_grid = np.asarray(h_values)
         # Reconstruct log_D from D_term: D_term = -N log D so log D = -D_term / N
         n_events = channel_data["n_events"]
-        D_term = np.asarray(channel_data["D_term_per_h"])
+        D_term = np.asarray(channel_data["D_term_per_h_legacy"])
         log_D = -D_term / n_events
 
         closure_results[label_short] = analyze_case(
