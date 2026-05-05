@@ -199,6 +199,53 @@ bias when truth sits at a grid point. The "G7a UNBIASED" verdict was a
 smoothing artifact. See `closure test fine grid` below for the actual
 verdict.
 
+### Multi-truth panel (partial, 4/7 truths) — 2026-05-05 11:54 — **post-Tier-3 residual surfaced in 2D**
+
+Partial verdict from `test_24_multi_truth_bias_sweep.py` on the first 4 truths
+of the full 7-truth panel run, evaluated on the **phase46-merged CRB** (1549
+SNR≥20 events = Phase 45 seed=200 ⊕ seed=300 extension 41 tasks). σ_boot via
+event resample (B=1000, RNG=42 default).
+
+Snapshot: `scripts/bias_investigation/outputs/phase45/multi_truth_sweep_partial4truths_20260505_115451.{json,png}`.
+
+| h_truth | N | 1D MAP | 1D bias | 1D σ_boot | 1D z | 2D MAP | 2D bias | 2D σ_boot | 2D z |
+|---------|---|--------|---------|-----------|------|--------|---------|-----------|------|
+| 0.60 | 903 | 0.6044 | +0.0044 | 0.0011 | +3.83 | 0.6149 | +0.0149 | 0.0003 | **+54.98** |
+| 0.65 | 1019 | 0.6560 | +0.0060 | 0.0030 | +2.02 | 0.6570 | +0.0070 | 0.0017 | +4.03 |
+| 0.70 | 1265 | 0.7067 | +0.0067 | 0.0049 | +1.37 | 0.6960 | −0.0040 | 0.0152 | −0.26 |
+| 0.73 | 1473 | 0.7279 | −0.0021 | 0.0033 | −0.64 | 0.7512 | +0.0212 | 0.0006 | **+37.08** |
+
+**Panel verdicts (4 truths):**
+- **1D channel**: weighted mean bias +0.0041, z_panel=4.10, χ²_red=7.0 →
+  `verdict_mean=FAIL`. Sign concordance PASS (3+/1−, p=0.62), no boundary rail,
+  per-event pos_frac mean=0.69 std=0.05 (PASS, dispersion not suspicious).
+- **2D channel**: weighted mean bias +0.0159, z_panel=65.5, χ²_red=1471 →
+  `verdict_mean=FAIL spectacularly`. Same sign distribution and pos_frac
+  pattern, but σ_boot is so tight (≤ 0.0006 at h=0.60 and 0.73) that the bias
+  blows up to extreme z values.
+
+**Reading honestly:** The Tier 3 D(h) double-counting fix (§3.13) eliminated
+the +0.020 to +0.025 bias seen at h=0.73 alone. With Phase 45's 424 events
+the residual was ≤ +2σ_boot (PASS at h=0.73, PASS at closure h=0.65). With
+the merged 1549-event sample the σ_boot tightened by ~√3.7 ≈ 1.9× while the
+**absolute bias did not shrink** — so what was 1–2σ at small N is now 4–55σ
+at large N. This is the signature of a *structural* (not statistical)
+residual that the Tier 3 fix did not fully address.
+
+**The 2D channel is the focus.** 1D z_panel=4.1 is bad but in marginal-FAIL
+territory; 2D z_panel=65 with χ²_red=1471 is unambiguously structural.
+Hypotheses (to be investigated cold next session): (a) σ_boot resamples
+events but does not capture seed-dependent MAP drift (`finding_seed_dependent_map`)
+or shared-injection-set pull; (b) residual D(h) coupling specific to the 2D
+joint posterior post-Tier-3; (c) BH-mass channel D(h)/normalization mismatch
+between `posteriors/` and `posteriors_with_bh_mass/`. See
+`.planning/HANDOFF-2D-BIAS-INVESTIGATION-20260505.md`.
+
+**Caveat:** partial 4/7 truths only. The remaining 3 (0.75, 0.80, 0.85) may
+shift the panel z if their biases are negative. Full panel ETA ~15:00 today.
+
+---
+
 ### Closure test at h_true=0.65 — fine grid (Audit A7-redux, 2026-05-04) — **FAIL**
 
 Cluster job 4200482 on `dev_cpu_il`, 4-task array chained (2-3 h-values per
