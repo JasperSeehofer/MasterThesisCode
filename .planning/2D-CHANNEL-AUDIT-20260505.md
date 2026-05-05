@@ -220,17 +220,67 @@ disagreement vs the asymptotic principled value 1.0 is the C0-correct
 linear interpolation between (dl_min, p_edge) and (0, 1) at intermediate
 d_L; the asymptote is only reached at d_L=0 itself.
 
-**Pending validation:** a closure-test re-run on h=0.73 phase46-merged
-posteriors is required to confirm the 2D bias drops to z ≤ 2 — that needs
-re-running the inference pipeline (~30 min CPU per h_trial × 21 h_trial
-points = ~10 hours). Two paths:
+**Validation: PARTIAL SUCCESS** (job 4229895 on cpu_il, ~15 min/task × 7
+parallel tasks, completed 2026-05-05 ~15:30).
 
-1. **Cluster:** queue an evaluate sbatch on `cpu_il` (avoiding `dev_cpu_il`
-   while the panel orchestrator is running). Wait for the queue.
-2. **Local single-h_value:** run `python -m master_thesis_code <workdir>
-   --evaluate --h_value 0.73` on the partial-panel CRB to spot-check that
-   the per-event L_i values change sensibly post-fix without committing
-   to the full 21-point sweep.
+Post-fix h=0.73 closure on phase46-merged (1473 events, principled p_det):
+
+| Channel | Pre-fix bias | Pre-fix σ_boot | Pre-fix z | Post-fix bias | Post-fix σ_boot | Post-fix z |
+|---|---|---|---|---|---|---|
+| 1D | −0.0021 | 0.0033 | −0.64 | **+0.0009** | 0.0046 | **+0.19** ✅ |
+| 2D | +0.0212 | 0.0006 | +37.08 | **+0.0141** | 0.0039 | **+3.60** ⚠️ |
+
+**1D channel: completely resolved** (z=+0.19, well within PASS bar).
+The principled bridge replacing the Wilson anchor brought 1D MAP to
+within 0.001 of truth. Output:
+`scripts/bias_investigation/outputs/phase46_merged/h0p73_postfix_verdict.json`.
+
+**2D channel: enormously improved but not fully closed** (z=+37 → +3.60,
+~10× reduction in z; bias ~halved 0.0212 → 0.0141). σ_boot widened
+0.0006 → 0.0039 — the pre-fix unphysically-tight σ_boot was *itself a
+symptom* of the discontinuity (boundary-crossing herded bootstrap MAPs
+near the same value). Fixing the discontinuity restored σ_boot to a
+physically reasonable scale for 1473 events.
+
+**Interpretation under σ_realization (the H1 lens):** the seed-dependent
+MAP drift is ≈0.02 (`finding_seed_dependent_map`). Post-fix 2D bias of
++0.0141 against that scale gives z ≈ 0.7 σ_realization — comfortably
+PASS. So the 2D residual answers PASS or FAIL depending on denominator
+choice. Step 3 (H1 realization-bootstrap) is now the decisive next
+probe. Before the principled fix it would have been confounded with the
+H2 mechanism; now H2 is mostly removed and the residual seed sensitivity
+can be measured cleanly.
+
+**Remaining 2D residual candidates** (in order of decreasing prior):
+- **M_z vs M_source frame mismatch** (`bayesian_statistics.py:1298-1300`):
+  the 2D grid is built from source-frame M but the integrand passes
+  observer-frame M_z directly. At z~0.5, M_z ≈ 1.5 · M_source — querying
+  the grid ~1.5× higher in M than where it was built. Documented as a
+  known approximation; could explain a residual scale ~0.01 in 2D bias.
+- **L_cat-with-bh entropy vs L_comp 3D entropy mismatch** (H3 in original
+  handoff): per-event combine `f_i · L_cat_with_bh + (1-f_i) · L_comp`
+  mixes a narrower 4D distribution with a wider 3D one; normalization
+  asymmetry could produce h-dependent bias.
+- **Shared-injection-set pull** (H4): pos_frac=0.70 still > 0.5 in 2D
+  post-fix. ~10× compute to test via injection-set bootstrap.
+
+**Phase 45 412-event closure (h=0.73 production) — NOT YET re-validated.**
+The principled scheme is more aggressive in d_L→0 than the Wilson anchor
+was. Prior PASS at z=+1.97 might shift. Cheap to test (single h_value,
+local CPU, ~5 min). Should run before declaring victory.
+
+### Status summary
+
+| Item | Status |
+|---|---|
+| Tier 3 fix intact (test_22) | ✅ PASS |
+| H2 mechanism confirmed (test_26) | ✅ Confirmed; documented |
+| Principled extrapolation 1D + 2D | ✅ Implemented, tested |
+| 1D h=0.73 phase46-merged closure | ✅ PASS (z=+0.19) |
+| 2D h=0.73 phase46-merged closure | ⚠️ z=+3.60 σ_boot (PASS at σ_realization scale) |
+| Phase 45 412-event closure preserved | 🔲 Not yet validated |
+| H1 realization-bootstrap (post-fix) | 🔲 Not yet run |
+| H3 M_z vs M_source investigation | 🔲 Lower priority unless H1 doesn't resolve the residual |
 
 **Proposed 1D follow-up (separate commit):** the 1D
 `detection_probability_without_bh_mass_interpolated_zero_fill` still uses
