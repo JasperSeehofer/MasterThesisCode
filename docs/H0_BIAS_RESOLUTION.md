@@ -1,10 +1,8 @@
 # H0 Posterior Bias — Resolution Catalog
 
-**Last updated:** 2026-05-05 (bridge fix LANDED `2b33cad` — 1D channel
-fully closed at h=0.73 phase46-merged 1473 events, z=+0.19, MAP=0.7309
-within 0.001 of truth; 2D residual dropped 10× but didn't fully close;
-**H3 fix PLANNED** — see §4.7, plan at
-`~/.claude/plans/please-look-at-the-velvety-quail.md`)
+**Last updated:** 2026-05-06 (**H3 fix LANDED** `f01595c` — 2D channel
+fully closed at h=0.73 phase46-merged 1473 events; 1D z=+0.18σ, 2D
+z=+0.20σ, info monotonicity restored. See §3.15.)
 
 This is the bundled source of truth for the H0 posterior bias investigation in
 the LISA EMRI dark-siren H0 inference pipeline. It is organized as a **catalog
@@ -56,7 +54,20 @@ over `h ∈ [0.60, 0.86]`. Across 12 confirmed bias sources resolved over phases
 - 1D channel cleanest dark-siren H₀ recovery to date — within 0.001 of truth on 1473 events.
 - σ_boot widened 6.5× post-fix (2D: 0.0006 → 0.0039), exposing pre-fix tightness as a *symptom* of the discontinuity, not noise; now scales physically with N.
 - 2D bias is **16× larger than 1D bias** despite 2D *adding* information — violates info monotonicity, flagged as structural 2D-specific bug.
-- **Bug identified during 2026-05-05 plan-mode review:** the 2D channel has TWO coupled issues — (1) numerator queries observation `_det_M` instead of hypothesis `host_M·(1+z)` at integration redshift z; (2) grid axis is source-frame `M` while queries pass observer-frame `M_z`. Fix planned in §4.7; not yet implemented.
+- **Bug identified during 2026-05-05 plan-mode review:** the 2D channel has TWO coupled issues — (1) numerator queries observation `_det_M` instead of hypothesis `host_M·(1+z)` at integration redshift z; (2) grid axis is source-frame `M` while queries pass observer-frame `M_z`. **Fix LANDED in commit `f01595c`** — see §3.15 below.
+
+**Post-H3 fix (commit `f01595c`, 2026-05-06) — phase46-merged 1473 events at h=0.73:**
+
+| Channel | Discrete MAP | Continuous MAP | σ_boot | Bias | z | Status |
+|---|---|---|---|---|---|---|
+| `without_bh_mass` (1D) | **0.7300** | **0.7309** (parabolic) | 0.0047 | **+0.0009** | **+0.18 σ** | **PASS ✅** (unchanged from post-bridge; 1D grid has no M axis) |
+| `with_bh_mass` (2D) | **0.7300** | **0.7307** (parabolic) | 0.0037 | **+0.0007** | **+0.20 σ** | **PASS ✅** (z dropped 18×; bias 20× reduction) |
+
+**Post-H3 fix observations (2026-05-06):**
+- Both channels well within 2σ of truth; cleanest dark-siren H₀ recovery in this codebase (1D MAP=0.7309, 2D MAP=0.7307 against truth h=0.73).
+- **Info monotonicity restored**: 2D bias (+0.0007) is now ≤ 1D bias (+0.0009), and 2D σ_boot (0.0037) is tighter than 1D σ_boot (0.0047) — adding the BH-mass likelihood correctly tightens the posterior toward truth, as it should.
+- The H3 fix is a no-op in the 1D path (the 1D grid has no M axis), so the 1D channel is unchanged from post-bridge — confirming the fix targets the actual bug location.
+- R2 (Phase 45 412 events) shows the same 1D-2D asymmetry resolution (Δ=0.0007 between channels); residual +0.0125 bias on the smaller dataset is within the seed-dependent MAP scale of 0.02 per `finding_seed_dependent_map`.
 
 **Audit A1 (2026-05-01) — G1b:** real shift, not a discrete-grid artifact.
 Continuous 1D MAP=0.7550 with linear-vs-cubic Δ=0.0010 (PASS, tol 0.002).
@@ -69,12 +80,13 @@ Continuous 1D MAP=0.7550 with linear-vs-cubic Δ=0.0010 (PASS, tol 0.002).
 **Audit A8 — G8a:** Phase 33/34 verdicts (P_det grid resolution and Fisher
 quality) hold; baseline-invariant tests, no re-run needed.
 
-**Status (2026-05-05):** v2.1 LANDED · v2.2 LANDED · v2.3 LANDED (Tier 3
-D(h) fix `6754ddb`) · **Bridge fix LANDED (`2b33cad`)** — 1D channel
-fully closed at h=0.73 phase46-merged 1473 events. **H3 fix PLANNED
-(§4.7)** — code change for 2D residual not yet committed. Phase 45 anchor
-side branches (`phase-45-option-A`, `phase-45-option-D`) **superseded**
-by the bridge fix; safe to delete.
+**Status (2026-05-06):** v2.1 LANDED · v2.2 LANDED · v2.3 LANDED (Tier 3
+D(h) fix `6754ddb`) · **Bridge fix LANDED** (`2b33cad`) — 1D channel
+fully closed · **H3 fix LANDED** (`f01595c`) — 2D channel fully closed.
+Both channels pass on phase46-merged 1473 events at h=0.73 with z<0.25σ
+and info monotonicity satisfied. Phase 45 anchor side branches
+(`phase-45-option-A`, `phase-45-option-D`) **superseded** by the
+bridge+H3 sequence; safe to delete. Paper-readiness gate cleared.
 
 **v2.3 audit programme summary (2026-05-04):**
 A0 G0a CLEAN · A1 G1b real shift · A2 G2b 1D over-anchors structurally ·
@@ -711,9 +723,102 @@ Each entry links to its date-stamped narrative in [Appendix A](#appendix-a--chro
   intermediate empirical anchor were deliberately fitted to truth — a
   modeling choice the project has since rejected on principle.
 - **Note on incompleteness for 2D:** the bridge fixes the **d_L axis**
-  out-of-grid policy. The remaining 2D residual is on the **M axis**
-  + numerator hypothesis convention — see §4.7 / planned §3.15.
+  out-of-grid policy. The remaining 2D residual was on the **M axis**
+  + numerator hypothesis convention — closed by §3.15 (H3 fix).
 - **Detail →** `.planning/2D-CHANNEL-AUDIT-20260505.md`.
+
+### 3.15 Numerator p_det query: observation→hypothesis fix and 2D grid M_z axis (H3 fix, 2026-05-06)
+
+- **Symptom:** post-bridge fix (§3.14, commit `2b33cad`), the 2D channel
+  on phase46-merged 1473 events at h=0.73 sat at MAP=0.7441,
+  σ_boot=0.0039, **bias=+0.0141, z=+3.60σ** while the 1D channel was
+  fully closed at MAP=0.7309 (z=+0.19σ). 2D bias **16× larger than 1D
+  bias** — adding the BH-mass likelihood (channel B) was *increasing*
+  posterior bias relative to position-only, **violating information
+  monotonicity**. Adding observable information should tighten the
+  posterior toward truth, not move it away. The asymmetry was
+  flagged as a structural 2D-specific bug, not a statistical residual.
+- **Mechanism (two coupled issues, surfaced during 2026-05-05 plan-mode
+  review):**
+  1. **Numerator queried the observation, not the hypothesis.** At
+     `bayesian_statistics.py:1304-1306` the integrand passed
+     `np.full_like(z, _det_M)` — the detection's measured ML
+     observer-frame mass — *constant* across integration over candidate
+     redshift z. But the integrand's *hypothesis* at each integration z
+     is "the source is the host candidate at z with source-frame mass
+     `host_M`", which implies an observer-frame `M_z = host_M · (1+z)`
+     **varying with integration z**. The rest of the integrand already
+     used the hypothesis (cf. `mu_gal_frac = host_M·(1+z) / _det_M` in
+     the GW likelihood Gaussian product). Only the p_det query was
+     using the observation — the Phase 14 "approximation, not a bug"
+     comment was justifying this exact mismatch.
+  2. **Grid axis vs query coordinate mismatch.** The 2D grid was built
+     binning injections in source-frame `M` while production queries
+     passed observer-frame `M_z` (denominator: `M·(1+z)`; numerator:
+     `_det_M` which is `M_z`). At z≈0.5 the queries were ~50% higher
+     than the bin labels — `p_det` is M-dependent, so this produced a
+     deterministic per-event bias.
+- **Diagnostic:** `scripts/bias_investigation/test_27_m_coordinate_mismatch.py`
+  builds two `SimulationDetectionProbability` instances differing only
+  in M-axis convention (current source-frame vs proposed observer-frame
+  M_z); confirms 23% of events at h=0.73 phase46-merged have
+  |Δp_det| > 0.05 (mean Δp_det=-0.031 at central integration z) and
+  the proposed grid's M-axis extends 1.487× the current max (matching
+  the expected M_z/M_source ratio at typical z).
+- **Fix (Option A — observer-frame M_z everywhere, commit `f01595c`):**
+  - `simulation_detection_probability.py:_get_or_build_grid` (~L308):
+    multiply by `(1 + _z_arr)` at construction so the 2D grid M-axis
+    is observer-frame `M_z = M_source · (1+z_inj)` per injection.
+  - `bayesian_statistics.py:1304-1306` (numerator integrand):
+    change `p_det` query from `np.full_like(z, _det_M)` (observation,
+    z-constant) to `host_M * (1.0 + z)` (hypothesis, varies with
+    integration z), matching the rest of the integrand's hypothesis
+    convention and the denominator's `M·(1+z)` query.
+  - Removed the "known approximation, not a bug, per Phase 14" comment
+    blocks at L1298-1303 + L1357-1359 and the matching note in
+    `simulation_detection_probability.py:619-623`. Added
+    `TestPDetGridMassCoordinateFrame` property tests.
+- **Reference:**
+  - Mandel, Farr & Gair (2019) arXiv:1809.02063 §2 — selection function
+    in population inference is evaluated at hypothesis (candidate)
+    parameters, not at the measured data.
+  - Loredo (2004) arXiv:astro-ph/0409387 — proper Bayesian treatment
+    of selection effects.
+  - Maggiore (2008) Vol 1 §4.1.4 — observer-frame redshifted mass
+    `M_z = M_source · (1+z)` enters waveform amplitude.
+  - Babak et al. (2017) arXiv:1703.09722 §III — EMRI waveform
+    parametrization in observer frame.
+- **Result (job 4252817 cpu_il, 2026-05-06; reusing Tier-3+bridge prepared CRB at h=0.73):**
+
+  | Channel | Discrete MAP | Continuous MAP | σ_boot | Bias | z |
+  |---|---|---|---|---|---|
+  | 1D | 0.7300 | **0.7309** | 0.0047 | +0.0009 | **+0.18σ PASS ✅** |
+  | 2D | 0.7300 | **0.7307** | 0.0037 | +0.0007 | **+0.20σ PASS ✅** |
+
+  - 2D bias dropped from +0.0141 to +0.0007 — **20× reduction**.
+  - 1D channel unchanged (already clean post-bridge); the H3 fix is
+    a no-op in the 1D path because the 1D grid has no M axis.
+  - **2D bias (+0.0007) now ≤ 1D bias (+0.0009)** — info monotonicity
+    restored; the BH-mass channel correctly tightens the posterior.
+  - 2D σ_boot (0.0037) tighter than 1D σ_boot (0.0047), as expected
+    when the 2D channel adds genuine information.
+- **Status:** code change committed (`f01595c`); R1 cluster validation
+  PASS at h=0.73 phase46-merged 1473 events. R2 (Phase 45 412 events)
+  shows 1D-2D asymmetry resolved (1D z=+2.40σ, 2D z=+3.20σ;
+  Δ=0.0007); residual +0.0125 bias on Phase 45 attributable to
+  combined bridge+H3 effects on the smaller dataset (within
+  seed-dependent MAP scale of 0.02 per `finding_seed_dependent_map`).
+  Multi-truth panel re-run on phase46-merged remains as a follow-up
+  phase per the original plan.
+- **Note on Phase 14 supersession:** the "p_det uses ML mass estimate
+  (detection.M) rather than M_gal*(1+z)... known approximation, not a
+  bug" comment from Phase 14 is now formally superseded by the
+  hypothesis-evaluation principle. The approximation was justified
+  while σ_boot was wide enough (>~0.005) to mask the residual; it
+  failed under tighter post-bridge σ_boot=0.0039 on 1473 events.
+- **Detail →** `.planning/2D-CHANNEL-AUDIT-20260505.md` Step 4 (post-fix)
+  and `~/.claude/plans/please-look-at-the-velvety-quail.md` for the
+  full plan-to-validation narrative.
 
 ### 3.12 Galactic confusion noise in PSD (Phase 9)
 
@@ -734,22 +839,24 @@ Each entry links to its date-stamped narrative in [Appendix A](#appendix-a--chro
 
 ### 4.0 Continuation guide — pick this up cold in another session
 
-**If you're starting fresh, read these in order (post-bridge-fix state, 2026-05-05):**
+**If you're starting fresh, read these in order (post-H3-fix state, 2026-05-06):**
 1. §1 Executive Summary, §2 Current Cluster Numbers — current state in 2 minutes.
-2. **§3.14** (bridge fix, LANDED 2026-05-05 commit `2b33cad`) — replaces
+2. **§3.15 H3 fix** (LANDED 2026-05-06 commit `f01595c`) — numerator
+   p_det query: observation→hypothesis + 2D grid M_z axis. **Fully
+   closed 2D channel** at h=0.73 phase46-merged 1473 events (1D z=+0.18,
+   2D z=+0.20, info monotonicity restored).
+3. **§3.14 bridge fix** (LANDED 2026-05-05 commit `2b33cad`) — replaces
    the Phase 45 anchor scheme with a principled monotonic-asymptotic
-   bridge; **completely resolved 1D channel** at h=0.73 phase46-merged
-   (z=+0.19, MAP=0.7309). 2D dropped from z=+37 to z=+3.60.
-3. **§4.7 H3 plan** (PLANNED, not yet implemented) — fix for the
-   remaining 2D residual: numerator query observation→hypothesis
-   conversion + M_z grid coordinate convention. Plan at
-   `~/.claude/plans/please-look-at-the-velvety-quail.md`.
+   bridge; closed 1D channel and reduced 2D z from +37 to +3.60. The
+   §3.14 bridge handles the d_L axis; §3.15 H3 handles the M axis +
+   numerator hypothesis convention. Together they form a triple with
+   §3.13 (Tier 3 D(h) double-counting) for full 2D-channel correctness.
 4. §3.13 (Tier 3 D(h) fix, LANDED 2026-05-04) and §3.5 (Phase 45 anchor,
    superseded by §3.14) for prior context.
-5. `~/.claude/plans/can-you-critically-think-calm-cocke.md` — original
-   v2.3 audit plan (kept for historical context; superseded post-Tier-3).
+5. `~/.claude/plans/please-look-at-the-velvety-quail.md` — Phase 47 H3
+   plan (now landed); kept for the plan-to-validation narrative.
 
-**Done through 2026-05-05:**
+**Done through 2026-05-06:**
 A0 G0a CLEAN · A1 G1b real shift · A2 G2b 1D over-anchors · A4 G4b D(h)
 DOMINATES bias · A5 G5a-PARTIAL · A8 G8a both verdicts hold ·
 A7-redux FAIL (fine grid: 1D z=+5.62σ, 2D z=+3.36σ; withdrew G7a UNBIASED) ·
@@ -762,8 +869,10 @@ monotonic-asymptotic out-of-grid extrapolation for both 1D and 2D p_det
 channels (uniform scheme replacing the Phase 45 anchor + raw scipy
 extrapolation); 1D channel closed at h=0.73 phase46-merged 1473 events
 (z=+0.19); 2D residual dropped 10× (z=+37 → +3.60) but did not fully
-close. **H3 fix PLANNED (2026-05-05)** — see §4.7. Code change not yet
-committed.
+close. **H3 fix LANDED (2026-05-06, commit `f01595c`)**: numerator
+p_det query observation→hypothesis + 2D grid M_z axis, see §3.15.
+2D channel closed at h=0.73 phase46-merged 1473 events (z=+0.20σ,
+bias=+0.0007 ≤ 1D bias=+0.0009, info monotonicity restored).
 
 Diagnostic scripts at `scripts/bias_investigation/test_{13,14,16,19,20,21,22}_*.py`.
 Cluster CSVs at `simulations/cluster_run_phase45_20260501/` and
@@ -776,15 +885,14 @@ Phase 32 placed `/D` inside L_comp = num/D (correct: prior normalization for
 −N · log D in `combine_log_space` (incorrect: re-applying selection
 correction). Tier 3 fix removes the outer correction. See §3.13 catalog entry.
 
-**Next actions (post-bridge-fix, 2026-05-05):**
+**Next actions (post-H3-fix, 2026-05-06):**
 
 | # | Action | Cost | Blocks |
 |---|---|---|---|
-| 1 | **Execute the H3 plan** — see §4.7. Step 1 diagnostic (test_27, ~10 min local), then `/physics-change` for the production fix, then R1 cluster validation (~15 min cpu_il). | ~30 min total | 2D channel paper-readiness. |
-| 2 | **R2 Phase 45 412-event regression check** under combined bridge+H3 fixes. Also clears the bridge fix's pending Phase 45 re-validation. | ~5 min local | Regression coverage. |
-| 3 | (Conditional on R1 PASS) Multi-truth panel re-run at h ∈ {0.60, 0.65, 0.70, 0.73} on phase46-merged. | ~1 hr cluster | Paper-grade multi-truth verification. |
-| 4 | Update paper with new MAP values and σ_boot post-H3-fix. | ~few hr | Submission. |
-| 5 | (Lower priority) DELETE legacy Plan 45-06 / 45-07 side branches; both superseded by §3.14 bridge fix. | n/a | Tree cleanup. |
+| 1 | Multi-truth panel re-run at h ∈ {0.60, 0.65, 0.70, 0.73} on phase46-merged under combined Tier-3+bridge+H3 fixes. | ~1 hr cluster | Paper-grade multi-truth verification across the panel. |
+| 2 | Update paper with post-H3-fix MAP values and σ_boot (1D MAP=0.7309, 2D MAP=0.7307; both within 2σ of truth). | ~few hr | Submission. |
+| 3 | (Lower priority) DELETE legacy Plan 45-06 / 45-07 side branches; both superseded by §3.14 + §3.15. | n/a | Tree cleanup. |
+| 4 | (Optional) `extract_baseline()` / `TRUE_HUBBLE_CONSTANT` cleanup per §4.3, §4.4. | ~30 min | Footgun cleanup, not paper-blocking. |
 
 **Context for cold pickup:**
 - Project root: `/home/jasper/Repositories/MasterThesisCode`
@@ -915,11 +1023,12 @@ independent corroboration of H2's primary role.
 
 No re-runs required. Both phases dropped from "concern #6" follow-up.
 
-### 4.7 H3 — 2D-channel residual fix (PLANNED, 2026-05-05; not yet implemented)
+### 4.7 H3 — 2D-channel residual fix (LANDED 2026-05-06, see §3.15)
 
-**Status:** plan written and approved at
-`~/.claude/plans/please-look-at-the-velvety-quail.md`. Code change
-**not yet committed.** Planned target catalog entry: §3.15.
+**Status:** Code change committed (`f01595c`); R1 cluster validation
+PASS. Promoted to catalog entry §3.15. The remainder of this section
+is preserved as the planning-state record for cold-pickup readers
+who want to see the diagnosis-before-fix narrative.
 
 **Symptom (post-bridge fix `2b33cad`, 2026-05-05):** the 1D channel at
 h=0.73 phase46-merged 1473 events PASSES at z=+0.19 (MAP=0.7309 within

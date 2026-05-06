@@ -1,0 +1,27 @@
+{
+  "h_truth": 0.73,
+  "commit": "f01595c",
+  "dataset": "cluster_run_closure_h0p73_h3_20260505 (1473 events, phase46-merged)",
+  "results": {
+    "1D": {
+      "n_events": 1473,
+      "n_h": 21,
+      "discrete_map": 0.73,
+      "continuous_map": 0.7308689128148288,
+      "bias": 0.000868912814828815,
+      "sigma_boot": 0.0047299995699349295,
+      "z": 0.18370251455239955,
+      "pos_frac": 0.7175831636116768
+    },
+    "2D": {
+      "n_events": 1473,
+      "n_h": 21,
+      "discrete_map": 0.73,
+      "continuous_map": 0.7307299923209047,
+      "bias": 0.0007299923209047599,
+      "sigma_boot": 0.003719039936340017,
+      "z": 0.19628515245877143,
+      "pos_frac": 0.7053632043448744
+    }
+  }
+}

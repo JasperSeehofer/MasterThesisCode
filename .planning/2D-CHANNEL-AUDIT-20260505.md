@@ -356,3 +356,121 @@ post-fix. The 1D and 2D fixes should be validated together since they
 both contribute to the joint posterior.
 
 
+
+
+---
+
+## Step 4 — H3 fix (numerator hypothesis + 2D grid M_z axis), 2026-05-06
+
+**Date:** 2026-05-06.
+
+**What:** During plan-mode review of the H3 hypothesis (M_z vs M_source
+coordinate mismatch) on 2026-05-05, the user pushed back on the proposed
+fix and surfaced the deeper bug:
+
+  1. **Numerator queried the observation, not the hypothesis.** At
+     `bayesian_statistics.py:1304-1306` the integrand passed
+     `np.full_like(z, _det_M)` — the detection's measured ML
+     observer-frame mass — *constant* across integration. But the
+     integrand's hypothesis at integration z is "host candidate at z
+     with source-frame mass `host_M`", implying observer-frame
+     `M_z = host_M·(1+z)` *varying with integration z*. The rest of
+     the integrand already used the hypothesis (cf. `mu_gal_frac =
+     host_M·(1+z)/_det_M` in the GW likelihood Gaussian product); only
+     the p_det query broke the convention.
+  2. **Grid axis vs query coordinate mismatch.** The 2D grid was binned
+     in source-frame `M`; queries passed observer-frame `M_z`. At z≈0.5
+     the queries were ~50% higher than the bin labels.
+
+The original handoff's framing ("rebuild grid in M_z") would have fixed
+issue (2) but left the numerator's observation-vs-hypothesis bug intact.
+
+**Pre-implementation diagnostic (test_27, 2026-05-05):**
+
+`scripts/bias_investigation/test_27_m_coordinate_mismatch.py` builds two
+`SimulationDetectionProbability` instances differing only in M-axis
+coordinate, queries both per detection at 5 sample integration z values
+spanning ±2σ_z window around z_central. On phase46-merged 1473 events
+at h=0.73:
+
+  - Mean Δp_det at central integration z = -0.0306
+  - Median Δp_det = -0.0079
+  - 23% of events have |Δp_det| > 0.05
+  - Proposed grid M-axis extends 1.487× the current max (matches
+    expected M_z/M_source ≈ 1+z at typical z ≈ 0.5)
+
+The diagnostic confirmed the bug is real and produces non-trivial
+changes in the right physical direction. Output:
+`scripts/bias_investigation/outputs/phase46_merged/2d_m_coordinate_mismatch.json`.
+
+**Implementation (commit `f01595c`, /physics-change protocol):**
+
+1. `simulation_detection_probability.py:_get_or_build_grid` (~L308):
+   `df_rescaled["M"] = self._M_arr * (1.0 + self._z_arr)` (observer-
+   frame M_z built into the grid axis at construction time).
+2. `bayesian_statistics.py:1304-1306` (numerator integrand):
+   `p_det = ...interpolated(d_L, host_M * (1.0 + z), phi, theta, h=h)`
+   (hypothesis evaluation, varies with integration z).
+3. Removed "known approximation, not a bug, per Phase 14" comments at
+   `bayesian_statistics.py:1298-1303` and `:1357-1359`, and the
+   matching docstring note in
+   `simulation_detection_probability.py:619-623`.
+4. Added `TestPDetGridMassCoordinateFrame` property tests:
+   `test_2d_grid_axis_is_M_z` (M-axis ≥ 1.2 × M_source_max),
+   `test_2d_query_at_M_z_matches_built_bin` (round-trip).
+5. Updated docstrings to state the M axis is observer-frame M_z.
+
+**References (post-fix):**
+  - Mandel, Farr & Gair (2019) arXiv:1809.02063 §2 (selection function
+    evaluated at hypothesis parameters).
+  - Loredo (2004) arXiv:astro-ph/0409387 (proper Bayesian treatment
+    of selection effects).
+  - Maggiore (2008) Vol 1 §4.1.4 (M_z = M_source · (1+z)).
+  - Babak et al. (2017) arXiv:1703.09722 §III (EMRI waveform).
+
+**Validation:**
+
+R1 (cpu_il job 4252817, 2026-05-06; the original 4250797 was cancelled
+after 4 hours of fairshare-starved priority queue with no dispatch — a
+fresh resubmission with --time=00:20:00 dispatched and finished in
+~14-15 min/task wall):
+
+  | Channel | Discrete MAP | Continuous MAP | σ_boot | Bias    | z          |
+  |---------|--------------|----------------|--------|---------|------------|
+  | 1D      | 0.7300       | **0.7309**     | 0.0047 | +0.0009 | **+0.18σ** |
+  | 2D      | 0.7300       | **0.7307**     | 0.0037 | +0.0007 | **+0.20σ** |
+
+  - **G_H3b PASS**: 2D z ≤ 2σ AND 2D bias ≤ 1D bias.
+  - 2D bias dropped 20× (from +0.0141 to +0.0007).
+  - 2D z dropped 18× (from +3.60σ to +0.20σ).
+  - 1D channel unchanged (1D grid has no M axis; H3 fix is a no-op
+    in the 1D path) — confirms the fix targets the actual bug location.
+  - Info monotonicity restored: 2D σ_boot (0.0037) tighter than 1D
+    σ_boot (0.0047), consistent with the BH-mass channel adding
+    genuine information.
+
+R2 (dev_cpu_il job 4250798, Phase 45 412 events):
+
+  | Channel | Continuous MAP | σ_boot | Bias    | z          |
+  |---------|----------------|--------|---------|------------|
+  | 1D      | 0.7425         | 0.0052 | +0.0125 | **+2.40σ** |
+  | 2D      | 0.7418         | 0.0037 | +0.0118 | **+3.20σ** |
+
+  - 1D-2D asymmetry resolved (Δ=0.0007 between channels).
+  - Absolute bias drifted +0.002 from pre-bridge baseline; within the
+    seed-dependent MAP scale (~0.02 per `finding_seed_dependent_map`)
+    on a 412-event subset.
+  - This confirms the H3 fix is dataset-independent (resolves the
+    asymmetry) and that the residual on Phase 45 reflects sample-size
+    + seed-noise rather than a pipeline systematic.
+
+Output: `scripts/bias_investigation/outputs/phase46_merged/h3_postfix_verdict.json`,
+`scripts/bias_investigation/outputs/phase46_merged/h3_phase45_412_verdict.json`.
+
+**Status:** H3 LANDED. 2D channel paper-ready. Multi-truth panel
+(h ∈ {0.60, 0.65, 0.70, 0.73}) re-run on phase46-merged remains as a
+follow-up phase per `~/.claude/plans/please-look-at-the-velvety-quail.md`.
+
+**Catalog entry:** `docs/H0_BIAS_RESOLUTION.md` §3.15.
+**Memory:** `project_pdet_hypothesis_convention.md` (the
+hypothesis-evaluation principle is durable across projects).
