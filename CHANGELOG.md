@@ -8,6 +8,18 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- Phase 48 production fine-grid h-sweep infrastructure for h=0.73:
+  `cluster/evaluate_production_h0p73_dense.sbatch` runs a 63-point
+  non-uniform grid (Δh=0.001 dense core across [0.710, 0.750] = 41
+  points; Δh=0.010 wings across [0.600, 0.700] and [0.760, 0.860] = 11
+  points each) on cpu_il, --array=0-6 stride-sliced, ~25 min wall.
+  `scripts/bias_investigation/test_28_production_finegrid_analyze.py`
+  reuses test_24's `load_per_h_likelihoods` + `parabolic_refine` and
+  adds a Δh-sensitivity diagnostic that re-computes MAP under sub-grids
+  {full 63-pt, dense-core-only, Δh=0.005, Δh=0.010} to confirm Δh is
+  not the resolution-limiting factor for MAP/σ_boot. Δh_core ≈ σ_boot/4
+  (post-H3-fix σ_boot ≈ 0.0037 2D / 0.0047 1D); 4-5 grid points within
+  ±σ_boot of MAP keeps parabolic refine well-conditioned.
 - Phase 47 H3 fix pre-implementation diagnostic
   `scripts/bias_investigation/test_27_m_coordinate_mismatch.py`: builds two
   `SimulationDetectionProbability` instances differing only in the M-axis
