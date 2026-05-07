@@ -81,9 +81,14 @@ source "$VENV_PATH/bin/activate"
 
 # ---------------------------------------------------------------------------
 # Archive old production-sweep posteriors (task 0 only, before any task writes)
+#
+# Gated on ARCHIVE_OLD=yes (default no) so re-running this sbatch over an
+# in-progress RUN_DIR (idempotent recovery from TIMEOUT) does NOT wipe the
+# already-completed posteriors.  Pass --export=ALL,RUN_DIR=...,ARCHIVE_OLD=yes
+# only when a true clean restart of an existing RUN_DIR is intended.
 # ---------------------------------------------------------------------------
 
-if [[ "$TASK_ID" -eq 0 ]]; then
+if [[ "$TASK_ID" -eq 0 && "${ARCHIVE_OLD:-no}" == "yes" ]]; then
     POSTERIORS_DIR="$RUN_DIR/simulations/posteriors"
     POSTERIORS_BH_DIR="$RUN_DIR/simulations/posteriors_with_bh_mass"
     ARCHIVE_BASE="$RUN_DIR/simulations/archive"
