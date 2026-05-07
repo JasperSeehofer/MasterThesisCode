@@ -141,6 +141,18 @@ echo "  Node:                   $(hostname)"
 echo ""
 
 for H_VALUE in "${TASK_H_VALUES[@]}"; do
+    # Idempotent skip: posterior file naming mirrors Python's
+    # str(float(h)).replace(".", "_"), which strips trailing zeros
+    # (0.7300 -> "h_0_73", 0.7340 -> "h_0_734", 0.6000 -> "h_0_6").
+    # Use python3 to compute the same fragment to avoid bash float foot-guns.
+    H_FILE_FRAG=$(LC_ALL=C python3 -c "print(str(float('$H_VALUE')).replace('.', '_'))")
+    POSTERIOR_FILE="$RUN_DIR/simulations/posteriors/h_${H_FILE_FRAG}.json"
+    POSTERIOR_FILE_BH="$RUN_DIR/simulations/posteriors_with_bh_mass/h_${H_FILE_FRAG}.json"
+    if [[ -f "$POSTERIOR_FILE" && -f "$POSTERIOR_FILE_BH" ]]; then
+        echo "--- Skipping h=$H_VALUE (both 1D + 2D posteriors already exist) ---"
+        echo ""
+        continue
+    fi
     echo "--- Bayesian Inference at h=$H_VALUE ---"
     python -m master_thesis_code "$RUN_DIR" \
         --evaluate \
