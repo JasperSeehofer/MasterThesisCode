@@ -332,9 +332,7 @@ class TestPDetGridMassCoordinateFrame:
         assert 0.0 <= result <= 1.0
         # And the grid evaluator at the bin center is identical to
         # the grid value at that bin index (no extrapolation kick-in).
-        bin_value = float(
-            interp_2d(np.array([[target_dl, target_M_z]]))[0]
-        )
+        bin_value = float(interp_2d(np.array([[target_dl, target_M_z]]))[0])
         assert abs(result - bin_value) < 1e-9 or 0.0 <= result <= 1.0
         # Cross-check that z_med used for sampling falls in the
         # plausible injection-z range.
@@ -374,9 +372,7 @@ class TestDetectionProbabilityWithBHMassPrincipledExtrapolation:
             float(M_centers[-1]),
         )
 
-    def test_in_grid_query_returns_value_in_unit_interval(
-        self, injection_dir: str
-    ) -> None:
+    def test_in_grid_query_returns_value_in_unit_interval(self, injection_dir: str) -> None:
         pdet = self._build_pdet(injection_dir)
         dl_min, dl_max, M_min, M_max = self._grid_bounds(pdet, h=0.75)
         # Mid-grid query
@@ -488,9 +484,7 @@ class TestDetectionProbabilityWithBHMassPrincipledExtrapolation:
             assert p <= p_edge_high + 1e-9
             assert p >= 0.0
 
-    def test_corner_returns_min_of_face_extrapolations(
-        self, injection_dir: str
-    ) -> None:
+    def test_corner_returns_min_of_face_extrapolations(self, injection_dir: str) -> None:
         """At a corner cell (both axes outside), the result should be the
         min of the two face extrapolations.  Since at least one axis is
         always suppressing for any corner, the corner should be at most
@@ -1023,9 +1017,7 @@ class TestZeroFillBoundaryConvention:
       posteriors"), against the project's principled-physics preference.
     """
 
-    def test_below_first_bin_follows_principled_bridge(
-        self, injection_dir: str
-    ) -> None:
+    def test_below_first_bin_follows_principled_bridge(self, injection_dir: str) -> None:
         """d_L below the first bin center follows the linear bridge from
         (dl_min, p_edge) to (0, 1).
         """
@@ -1168,8 +1160,6 @@ class TestZeroFillBoundaryConvention:
         )
 
 
-
-
 class TestDetectionProbabilityWithoutBHMassPrincipledExtrapolation:
     """Property-based tests for the 1D principled out-of-grid policy
     (replaces the Phase 45 anchor scheme; ``.planning/2D-CHANNEL-AUDIT-20260505.md``).
@@ -1199,9 +1189,7 @@ class TestDetectionProbabilityWithoutBHMassPrincipledExtrapolation:
         dl_centers = np.asarray(interp_1d.grid[0])
         return float(dl_centers[0]), float(dl_centers[-1])
 
-    def test_in_grid_query_returns_value_in_unit_interval(
-        self, injection_dir: str
-    ) -> None:
+    def test_in_grid_query_returns_value_in_unit_interval(self, injection_dir: str) -> None:
         pdet = self._build_pdet(injection_dir)
         dl_min, dl_max = self._grid_bounds(pdet, h=0.75)
         d_L = 0.5 * (dl_min + dl_max)
