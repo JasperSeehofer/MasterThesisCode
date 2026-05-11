@@ -64,6 +64,15 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   Step 2 principled-extrapolation implementation, Step 2 follow-up 1D alignment).
 
 ### Changed
+- Phase 48 figure refresh with production-sweep posteriors (1473 events,
+  63-point non-uniform h-grid) + phase46-merged 1549-event CRB:
+  `paper/figures/{h0_posterior_comparison,h0_posterior_kde,m_z_improvement,
+  posterior_convergence,single_event_likelihoods,snr_distribution}.pdf`,
+  thesis archive `results/figures_seed200/fig01–fig15.pdf`, GitHub Pages
+  interactives `interactive/{combined_posterior,fisher_ellipses,h0_convergence,
+  m_z_improvement,sky_map}.html` and updated `interactive/index.html`
+  footer (data lineage: production-sweep 63-pt h-grid, MAP=0.732 at
+  z≈+1σ for both channels). Paper PDF (`paper/main.pdf`, untracked) rebuilt.
 - `[PHYSICS]` Phase 47 H3 fix — numerator p_det query
   observation→hypothesis + 2D grid M-axis observer-frame convention.
   Two coupled changes that together fix the residual 2D-channel structural

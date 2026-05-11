@@ -137,10 +137,14 @@
     <footer>
       Figures generated from EMRI simulation data. Toggle legend entries,
       hover for values, zoom and pan to explore.<br>
-      Data version: 2026-05-04 (post-Tier-3 fix). Sky map and Fisher ellipses use the
+      Data version: 2026-05-07 (post-Phase-48 production sweep, after Tier-3 +
+      bridge + H3 fixes). Sky map and Fisher ellipses use the
       <em>phase46-merged</em> Cram&eacute;r&ndash;Rao bounds (1&nbsp;549 SNR&nbsp;&ge;&nbsp;20 EMRIs:
-      Phase 45 seed=200 &oplus; seed=300 extension). Posteriors are the 21-point
-      h&#8320;-fine-grid evaluation at h<sub>true</sub>&nbsp;=&nbsp;0.73.<br>
+      Phase 45 seed=200 &oplus; seed=300 extension). Posteriors are the 63-point
+      non-uniform h&#8320;-grid (&#x394;h=0.001 dense core in [0.710, 0.750] +
+      &#x394;h=0.010 wings spanning [0.600, 0.860]) evaluated on 1&nbsp;473 SNR&nbsp;&ge;&nbsp;20
+      events at h<sub>true</sub>&nbsp;=&nbsp;0.73; production-grade MAP&nbsp;=&nbsp;0.732
+      (1D z&nbsp;=&nbsp;+1.16&nbsp;&sigma;, 2D z&nbsp;=&nbsp;+0.97&nbsp;&sigma;).<br>
       Source code: <a href="https://github.com/jasper-seehofer/MasterThesisCode">github.com/jasper-seehofer/MasterThesisCode</a>
     </footer>
   </main>
