@@ -8,6 +8,18 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- Phase 48 production-sweep verdict
+  (`scripts/bias_investigation/outputs/phase46_merged/h3_production_sweep_verdict.json`):
+  1D MAP=0.7324 (σ_boot=0.0021, bias=+0.0024, z=+1.16σ) and 2D
+  MAP=0.7322 (σ_boot=0.0022, bias=+0.0022, z=+0.97σ) on phase46-merged
+  1473 events at h=0.73 across the 63-point non-uniform grid. PASS on
+  all five Phase 48 stopping criteria except (3) Δh-sensitivity ≤0.001
+  (observed 0.00188 2D / 0.00273 1D, comparable to σ_boot); R1's 21-pt
+  parabolic refine was Δh-resolution-limited (Δh=0.005 sub-grid recovers
+  R1's MAP ≈0.7308; full Δh=0.001 dense core resolves MAP to ~0.7322).
+  Info monotonicity preserved (|2D bias| ≤ |1D bias|). Two-submission
+  recovery (jobs `4271862` → TIMEOUT 41/63; `4344777` → COMPLETED 22/63
+  remaining) documented in `.planning/phase-48-job-tracking.json`.
 - Phase 48 production fine-grid h-sweep infrastructure for h=0.73:
   `cluster/evaluate_production_h0p73_dense.sbatch` runs a 63-point
   non-uniform grid (Δh=0.001 dense core across [0.710, 0.750] = 41

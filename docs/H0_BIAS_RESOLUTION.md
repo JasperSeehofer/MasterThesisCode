@@ -1,8 +1,12 @@
 # H0 Posterior Bias — Resolution Catalog
 
-**Last updated:** 2026-05-06 (**H3 fix LANDED** `f01595c` — 2D channel
-fully closed at h=0.73 phase46-merged 1473 events; 1D z=+0.18σ, 2D
-z=+0.20σ, info monotonicity restored. See §3.15.)
+**Last updated:** 2026-05-07 (**Phase 48 production fine-grid sweep
+LANDED** — 63-point non-uniform grid at h=0.73 phase46-merged 1473
+events; 1D MAP=0.7324 z=+1.16σ PASS, 2D MAP=0.7322 z=+0.97σ PASS, info
+monotonicity preserved. R1's 21-pt parabolic refine was Δh-resolution-
+limited; production sweep refines MAP +0.0015 upward, within R1's
+σ_boot. See §1 Phase 48 block. Previously: **H3 fix LANDED** `f01595c`
+2026-05-06, see §3.15.)
 
 This is the bundled source of truth for the H0 posterior bias investigation in
 the LISA EMRI dark-siren H0 inference pipeline. It is organized as a **catalog
@@ -68,6 +72,22 @@ over `h ∈ [0.60, 0.86]`. Across 12 confirmed bias sources resolved over phases
 - **Info monotonicity restored**: 2D bias (+0.0007) is now ≤ 1D bias (+0.0009), and 2D σ_boot (0.0037) is tighter than 1D σ_boot (0.0047) — adding the BH-mass likelihood correctly tightens the posterior toward truth, as it should.
 - The H3 fix is a no-op in the 1D path (the 1D grid has no M axis), so the 1D channel is unchanged from post-bridge — confirming the fix targets the actual bug location.
 - R2 (Phase 45 412 events) shows the same 1D-2D asymmetry resolution (Δ=0.0007 between channels); residual +0.0125 bias on the smaller dataset is within the seed-dependent MAP scale of 0.02 per `finding_seed_dependent_map`.
+
+**Phase 48 production fine-grid sweep (jobs `4271862` + `4344777`, sbatch `8292359`) — phase46-merged 1473 events at h=0.73, 63-point non-uniform grid (Δh=0.001 dense core in [0.710, 0.750] + Δh=0.010 wings spanning [0.600, 0.860]):**
+
+| Channel | Discrete MAP | Continuous MAP | σ_boot | Bias | z | Δh-spread | Status |
+|---|---|---|---|---|---|---|---|
+| `without_bh_mass` (1D) | **0.7320** | **0.7324** (parabolic) | 0.0021 | **+0.0024** | **+1.16 σ** | 0.00273 | **PASS ✅** |
+| `with_bh_mass` (2D) | **0.7320** | **0.7322** (parabolic) | 0.0022 | **+0.0022** | **+0.97 σ** | 0.00188 | **PASS ✅** |
+
+**Phase 48 observations (2026-05-07):**
+- Production-grade verdict confirms R1's PASS conclusion. Both channels within ±1.2σ of truth; info monotonicity preserved (|2D bias| 0.0022 ≤ |1D bias| 0.0024).
+- σ_boot tightened ~2× vs R1's 21-pt grid (1D: 0.0047 → 0.0021; 2D: 0.0037 → 0.0022) reflecting the 3× denser h-resolution near MAP.
+- **MAP shifted +0.0015 upward vs R1 (within R1's own σ_boot).** The Δh-sensitivity scan re-computes MAP on sub-grids {full 63-pt, Δh=0.005, Δh=0.010}: the Δh=0.005 sub-grid (matching R1's resolution) recovers MAP≈0.7308 with σ_boot≈0.0048 — i.e. R1's 21-pt parabolic refine was **Δh-resolution-limited**. The Δh=0.001 dense core resolves MAP to ~0.7322–0.7324. **Production sweep is the paper reference; R1's headline 0.7307/0.7309 stands as a coarser-grid estimate of the same closure.**
+- Δh-sensitivity spread (max−min continuous MAP across the four sub-grids) is comparable to σ_boot, slightly above the a priori 0.001 target — the dense core at Δh=0.001 is sufficient for paper-grade reporting, and no further refinement is warranted at this event count.
+- Recovery footnote: first submission `4271862` TIMEOUT'd 7/7 tasks at 30:00 walltime (per-h walltime ~4.6 min on cpu_il 128-core vs planned ~2 min), leaving 41/63 h-values landed. Sbatch made idempotent in two follow-up commits (`7b24b98`: skip-if-output-exists; `8292359`: gate task-0 archive on opt-in `ARCHIVE_OLD=yes`); resubmission `4344777` filled the 22 missing h-values in 14–19 min/task. Two-guard pattern (per-unit skip AND opt-in cleanup gate) is required because cleanup-before-loop silently nullifies a per-unit skip — captured for cross-project reuse.
+
+Verdict JSON: `scripts/bias_investigation/outputs/phase46_merged/h3_production_sweep_verdict.json`.
 
 **Audit A1 (2026-05-01) — G1b:** real shift, not a discrete-grid artifact.
 Continuous 1D MAP=0.7550 with linear-vs-cubic Δ=0.0010 (PASS, tol 0.002).

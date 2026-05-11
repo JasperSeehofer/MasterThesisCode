@@ -268,10 +268,15 @@ def main() -> None:
             f"{'PASS ✓' if info_mono else 'FAIL ✗'}"
         )
 
-    args.output.parent.mkdir(parents=True, exist_ok=True)
-    with open(args.output, "w") as f:
+    output_abs = args.output.resolve()
+    output_abs.parent.mkdir(parents=True, exist_ok=True)
+    with open(output_abs, "w") as f:
         json.dump(results, f, indent=2, default=float)
-    print(f"\nWrote {args.output.relative_to(PROJECT_ROOT)}")
+    try:
+        rel = output_abs.relative_to(PROJECT_ROOT)
+        print(f"\nWrote {rel}")
+    except ValueError:
+        print(f"\nWrote {output_abs}")
 
 
 if __name__ == "__main__":
