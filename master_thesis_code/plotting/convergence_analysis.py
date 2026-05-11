@@ -58,9 +58,24 @@ from master_thesis_code.plotting._metrics import (
 
 _LOGGER = logging.getLogger(__name__)
 
-# Inherited from paper_figures._CONVERGENCE_SUBSET_SIZES so the new
-# analysis lines up exactly with the legacy convergence plot.
-DEFAULT_SUBSET_SIZES: list[int] = [10, 20, 50, 100, 150, 200, 300, 400, 500]
+# Subset sizes for the M_z improvement convergence curve.  The list is
+# clipped at runtime to ``<= n_common`` (the count of events present in
+# both 1D and 2D posterior sets).  Original list capped at 500 (Phase 45
+# era); extended in Phase 48 to use the full phase46-merged 1473 events.
+DEFAULT_SUBSET_SIZES: list[int] = [
+    10,
+    20,
+    50,
+    100,
+    150,
+    200,
+    300,
+    400,
+    500,
+    750,
+    1000,
+    1400,
+]
 DEFAULT_BOOTSTRAP: int = 200
 DEFAULT_SEED: int = 20260410
 
