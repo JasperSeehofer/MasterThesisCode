@@ -1,0 +1,24 @@
+{
+  "phase": 49,
+  "description": "F1 fix (h-stable d_L bin edges) re-run of Phase 48 production sweep",
+  "fix_commit": "87ea7a8",
+  "submissions": [
+    {
+      "job_id": "4662333",
+      "submitted_at": "2026-05-12T14:12 CEST",
+      "git_head": "87ea7a8",
+      "array": "[0-13]",
+      "partition": "cpu_il",
+      "archive_old": "yes",
+      "expected_workload": "63 h-values / 14 tasks = 4.5 h/task; per-h walltime 4.6 min (Phase 48 measured) → ~21 min wall/task",
+      "outcome_pending": true
+    }
+  ],
+  "current_job_id": "4662333",
+  "run_dir": "/pfs/work9/workspace/scratch/st_ac147838-emri/run_production_h0p73_20260506",
+  "stale_posteriors_archived_to": "/pfs/work9/workspace/scratch/st_ac147838-emri/run_production_h0p73_20260506/simulations/archive/production_h0.73_<TIMESTAMP>/",
+  "next_step_after_complete": "rsync new posteriors back, re-run test_28 analyzer, verify spikes are gone in combined_posterior.json, refresh figures, docs+verdict commit",
+  "status_check_command": "ssh bwunicluster 'sacct -j 4662333 --format=JobID,JobName%30,State,Elapsed,Start | head -30'",
+  "rsync_command": "rsync -avz bwunicluster:/pfs/work9/workspace/scratch/st_ac147838-emri/run_production_h0p73_20260506/simulations/posteriors{,_with_bh_mass}/ simulations/cluster_run_production_h0p73_20260506/posteriors{,_with_bh_mass}/",
+  "verification_check": "After analyzer, the combined_posterior.json values around MAP should be smooth: adjacent Δh=0.001 bins should differ by ≪10× (pre-fix saw 0.0096 vs 0.2523 = 26× jump between adjacent bins)."
+}
