@@ -45,6 +45,22 @@ _DEFAULT_M_BINS: int = 40
 # Maximum number of cached grids (LRU eviction)
 _MAX_CACHE_SIZE: int = 20
 
+# Default prior support of the trial Hubble constant h (LamCDMScenario, see
+# cosmological_model.py:304-305).  Used to compute an h-stable luminosity-
+# distance histogram support so that bin edges do not drift with the trial
+# cosmology.  Pre-fix bug: per-h `dl_max = max(dl_vals)*1.1` made
+# individual injections cross bin boundaries as h shifted by 0.001,
+# producing coherent 5-25% jumps in p_det that summed to visible spikes
+# in Sigma log L_i.  See .planning/debug/posterior-noisy-peak.md and
+# .planning/debug/F1_literature_audit.md.
+_DEFAULT_H_PRIOR_MIN: float = 0.60
+_DEFAULT_H_PRIOR_MAX: float = 0.86
+
+# 10% headroom above the max d_L over the prior support, preserved from
+# the original per-h `* 1.1` factor for empty-bin coverage in the
+# principled-bridge extrapolation regime.
+_DL_PADDING_FACTOR: float = 1.1
+
 # ----------------------------------------------------------------------
 # Out-of-grid detection-probability behavior (1D and 2D channels).
 #
@@ -117,12 +133,18 @@ class SimulationDetectionProbability:
         *,
         dl_bins: int = _DEFAULT_DL_BINS,
         mass_bins: int = _DEFAULT_M_BINS,
+        h_prior_range: tuple[float, float] = (_DEFAULT_H_PRIOR_MIN, _DEFAULT_H_PRIOR_MAX),
         _force_unit_weights: bool = False,
     ) -> None:
         self._dl_bins = dl_bins
         self._mass_bins = mass_bins
         self._snr_threshold = snr_threshold
         self._force_unit_weights = _force_unit_weights
+        if h_prior_range[0] >= h_prior_range[1]:
+            msg = f"h_prior_range must satisfy lower < upper, got {h_prior_range}"
+            raise ValueError(msg)
+        self._h_prior_min: float = float(h_prior_range[0])
+        self._h_prior_max: float = float(h_prior_range[1])
 
         if h_grid is not None:
             warnings.warn(
@@ -212,6 +234,11 @@ class SimulationDetectionProbability:
             float, dict[str, npt.NDArray[np.float64] | npt.NDArray[np.bool_]]
         ] = {}
 
+        # h-stable bin support for p_det histogram estimators, computed
+        # once over the prior support [h_min, h_max].  See
+        # ``_compute_dl_global_max`` for the rationale and references.
+        self._dl_global_max: float = self._compute_dl_global_max()
+
     def __getstate__(self) -> dict[str, Any]:
         """Exclude heavy data from pickle that workers don't need.
 
@@ -282,6 +309,40 @@ class SimulationDetectionProbability:
             np.asarray(d_L_target, dtype=np.float64),
             np.asarray(snr_rescaled, dtype=np.float64),
         )
+
+    def _compute_dl_global_max(self) -> float:
+        """Maximum luminosity distance over the prior support of h-trials.
+
+        Returns a single ``d_L`` scalar that bounds the histogram support
+        used by ``_build_grid_2d`` and ``_build_grid_1d``.  The same
+        ``dl_edges`` array is then reused at every h-trial so the
+        histogram support does not drift as h changes — a necessary
+        condition for converged hierarchical-Bayes inference per
+        Farr (2019) and the fixed-injection / per-Lambda-reweighting
+        paradigm of Mandel-Farr-Gair (2019).
+
+        d_L is monotone-decreasing in h at fixed z (FLRW cosmology in
+        the LamCDM scenario), so the max d_L over h is attained at the
+        lower prior bound h = h_min.  A single evaluation at h_min on
+        the catalog redshifts ``self._z_arr`` is therefore sufficient.
+
+        Returns:
+            float: ``max_i (d_L(z_i, h_min)) * _DL_PADDING_FACTOR``,
+            with units of Gpc and a 10% headroom factor preserved from
+            the original per-h construction.
+
+        References:
+            Farr (2019), arXiv:1904.10879, Sec III (accuracy
+            requirements for empirically-measured selection functions).
+            Mandel, Farr & Gair (2019), arXiv:1809.02063, Eq. 18.
+            Gray et al. (2020), arXiv:1908.06050, gwcosmo MDC.
+            See ``.planning/debug/F1_literature_audit.md`` for the
+            project's literature audit and
+            ``.planning/debug/posterior-noisy-peak.md`` for the
+            pre-fix mechanism.
+        """
+        d_L_at_h_min = dist_vectorized(self._z_arr, h=self._h_prior_min)
+        return float(np.max(d_L_at_h_min)) * _DL_PADDING_FACTOR
 
     def _get_or_build_grid(
         self, h: float
@@ -400,8 +461,16 @@ class SimulationDetectionProbability:
         else:
             w = np.ones(n_events, dtype=np.float64)
 
-        # Define bin edges in d_L space (IDENTICAL to previous implementation)
-        dl_max = float(np.max(dl_vals)) * 1.1
+        # h-stable bin edges in d_L: support does NOT drift with the trial h.
+        # Pre-fix (per-h `dl_max = max(dl_vals)*1.1`) caused individual
+        # injections to cross bin boundaries as h shifted, producing 5-25%
+        # jumps in p_det that summed coherently across events into visible
+        # spikes in Sigma log L_i (see .planning/debug/posterior-noisy-peak.md).
+        # The M axis is observer-frame M_z (h-independent by construction)
+        # so its bin edges are already h-stable and unchanged here.
+        # Refs: Farr (2019) arXiv:1904.10879 Sec III; Mandel-Farr-Gair (2019)
+        # arXiv:1809.02063 Eq. 18; Gray et al. (2020) arXiv:1908.06050.
+        dl_max = self._dl_global_max
         dl_edges = np.linspace(0, dl_max, self._dl_bins + 1)
 
         M_min = float(np.min(M_vals)) * 0.9  # noqa: N806
@@ -537,7 +606,10 @@ class SimulationDetectionProbability:
         dl_vals = df["luminosity_distance"].values
         snr_vals = df["SNR"].values
 
-        dl_max = float(np.max(dl_vals)) * 1.1
+        # h-stable bin edges in d_L: same support at every trial h.  See
+        # the matching block in ``_build_grid_2d`` for full rationale and
+        # references (Farr 2019; Mandel-Farr-Gair 2019; Gray et al. 2020).
+        dl_max = self._dl_global_max
         dl_edges = np.linspace(0, dl_max, self._dl_bins + 1)
 
         total_counts, _ = np.histogram(dl_vals, bins=dl_edges)

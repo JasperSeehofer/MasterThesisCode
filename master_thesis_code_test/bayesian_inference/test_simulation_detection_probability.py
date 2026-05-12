@@ -1306,3 +1306,161 @@ class TestDetectionProbabilityWithoutBHMassPrincipledExtrapolation:
             assert abs(scalar - float(result_vec[i])) < 1e-9, (
                 f"mismatch at i={i}: scalar={scalar}, vec={result_vec[i]}"
             )
+
+
+# ----------------------------------------------------------------------
+# F1 (Phase 49) regression: h-stable bin edges for the p_det histogram.
+#
+# Pre-fix bug: `dl_max = max(dl_vals(h)) * 1.1` computed per-h made
+# individual injections cross integer-count bin boundaries as h shifted
+# by 0.001, producing 5-25% jumps in p_det at fixed (d_L, M_z) that
+# summed coherently across 1473 events into visible spikes in
+# Sigma log L_i.  See .planning/debug/posterior-noisy-peak.md.
+#
+# Fix F1 (in simulation_detection_probability.py): compute
+# DL_GLOBAL_MAX once over the prior support [h_min, h_max] and reuse
+# the same dl_edges at every h-trial.
+#
+# Refs: Farr (2019) arXiv:1904.10879 Sec III; Mandel-Farr-Gair (2019)
+# arXiv:1809.02063 Eq. 18; literature audit at
+# .planning/debug/F1_literature_audit.md.
+# ----------------------------------------------------------------------
+
+
+class TestPdetHStableBinEdges:
+    """Regression: histogram support for p_det must not depend on trial h."""
+
+    def _build_pdet(self, injection_dir: str) -> object:
+        from master_thesis_code.bayesian_inference.simulation_detection_probability import (
+            SimulationDetectionProbability,
+        )
+
+        return SimulationDetectionProbability(
+            injection_data_dir=injection_dir,
+            snr_threshold=20.0,
+            dl_bins=60,
+            mass_bins=40,
+        )
+
+    def test_dl_global_max_computed_at_h_prior_min(self, injection_dir: str) -> None:
+        """The cached global max equals the empirical max d_L at the lower
+        prior bound (which is where d_L is largest at fixed z).
+        """
+        pdet = self._build_pdet(injection_dir)
+        # Manually compute the expected value
+        z_arr = pdet._z_arr  # type: ignore[attr-defined]
+        expected = float(np.max(dist_vectorized(z_arr, h=pdet._h_prior_min))) * 1.1  # type: ignore[attr-defined]
+        assert abs(pdet._dl_global_max - expected) < 1e-12  # type: ignore[attr-defined]
+
+    def test_dl_edges_identical_across_two_trial_h(self, injection_dir: str) -> None:
+        """Building grids at h=0.731 and h=0.732 must produce identical
+        dl_edges (the bug was per-h drift of these edges).
+        """
+        pdet = self._build_pdet(injection_dir)
+        pdet._get_or_build_grid(0.731)  # type: ignore[attr-defined]
+        pdet._get_or_build_grid(0.732)  # type: ignore[attr-defined]
+        q731 = pdet._quality_flags[0.731]  # type: ignore[attr-defined]
+        q732 = pdet._quality_flags[0.732]  # type: ignore[attr-defined]
+        edges_731 = q731["dl_edges"]
+        edges_732 = q732["dl_edges"]
+        assert isinstance(edges_731, np.ndarray)
+        assert isinstance(edges_732, np.ndarray)
+        np.testing.assert_array_equal(
+            edges_731,
+            edges_732,
+            err_msg="dl_edges must be identical across trial h (F1 regression)",
+        )
+
+    def test_dl_edges_span_full_prior_support(self, injection_dir: str) -> None:
+        """The histogram support must extend up to the max d_L at the
+        lowest h in the prior — even when the current trial h has a
+        smaller actual max d_L.
+        """
+        pdet = self._build_pdet(injection_dir)
+        # Build a grid at the UPPER end of the prior (where the actual
+        # max d_L is smallest)
+        pdet._get_or_build_grid(0.80)  # type: ignore[attr-defined]
+        edges = pdet._quality_flags[0.80]["dl_edges"]  # type: ignore[attr-defined]
+        # The right edge of the support must equal _dl_global_max,
+        # which is computed at h_prior_min (=0.60 by default), not at
+        # h=0.80.
+        assert isinstance(edges, np.ndarray)
+        assert abs(float(edges[-1]) - pdet._dl_global_max) < 1e-12  # type: ignore[attr-defined]
+
+    def test_pdet_2d_smooth_in_h_at_fixed_query(self, injection_dir: str) -> None:
+        """At a fixed in-grid (d_L, M_z) query point, p_det must vary
+        smoothly across small Δh.  This is the regression for the
+        coherent bin-crossing spikes observed in Phase 48.
+        """
+        pdet = self._build_pdet(injection_dir)
+        # Probe at the centre of the dense core, at small Δh
+        h_grid = np.array([0.730, 0.731, 0.732, 0.733, 0.734])
+        # Pick a query point well within the support
+        d_L_query = 0.5  # Gpc
+        # M_z: pick an injection's observer-frame mass to ensure in-grid
+        M_z_query = float(np.median(pdet._M_arr * (1.0 + pdet._z_arr)))  # type: ignore[attr-defined]
+        p_vals: list[float] = []
+        for h in h_grid:
+            interp_2d, _ = pdet._get_or_build_grid(float(h))  # type: ignore[attr-defined]
+            p = float(interp_2d(np.array([[d_L_query, M_z_query]]))[0])
+            p_vals.append(p)
+        # Adjacent-h jumps must be smaller than the bin-crossing scale.
+        # Pre-fix, jumps were 0.05-0.25 at fixed query; post-fix they
+        # should be << 0.05 (small statistical drift of the SNR rescale).
+        diffs = np.abs(np.diff(p_vals))
+        max_jump = float(np.max(diffs))
+        assert max_jump < 0.05, (
+            f"p_det jumps {max_jump:.4f} between adjacent h-trials at "
+            f"(d_L={d_L_query}, M_z={M_z_query:.2e}); expected smooth "
+            f"variation. p_vals={p_vals}"
+        )
+
+    def test_pdet_1d_smooth_in_h_at_fixed_query(self, injection_dir: str) -> None:
+        """1D channel counterpart of the 2D smoothness regression."""
+        pdet = self._build_pdet(injection_dir)
+        h_grid = np.array([0.730, 0.731, 0.732, 0.733, 0.734])
+        d_L_query = 0.5  # Gpc, in-grid
+        p_vals: list[float] = []
+        for h in h_grid:
+            _, interp_1d = pdet._get_or_build_grid(float(h))  # type: ignore[attr-defined]
+            p = float(interp_1d(np.array([[d_L_query]]))[0])
+            p_vals.append(p)
+        diffs = np.abs(np.diff(p_vals))
+        max_jump = float(np.max(diffs))
+        assert max_jump < 0.05, (
+            f"1D p_det jumps {max_jump:.4f} between adjacent h-trials at "
+            f"d_L={d_L_query}; expected smooth variation. p_vals={p_vals}"
+        )
+
+    def test_h_prior_range_validation(self, injection_dir: str) -> None:
+        """Constructor rejects malformed h_prior_range."""
+        from master_thesis_code.bayesian_inference.simulation_detection_probability import (
+            SimulationDetectionProbability,
+        )
+
+        with pytest.raises(ValueError, match="h_prior_range"):
+            SimulationDetectionProbability(
+                injection_data_dir=injection_dir,
+                snr_threshold=20.0,
+                h_prior_range=(0.80, 0.60),  # inverted
+            )
+
+    def test_h_prior_range_override_affects_global_max(self, injection_dir: str) -> None:
+        """Tightening the lower h-prior bound reduces _dl_global_max."""
+        from master_thesis_code.bayesian_inference.simulation_detection_probability import (
+            SimulationDetectionProbability,
+        )
+
+        pdet_wide = SimulationDetectionProbability(
+            injection_data_dir=injection_dir,
+            snr_threshold=20.0,
+            h_prior_range=(0.50, 0.86),
+        )
+        pdet_narrow = SimulationDetectionProbability(
+            injection_data_dir=injection_dir,
+            snr_threshold=20.0,
+            h_prior_range=(0.70, 0.86),
+        )
+        # d_L is monotone-decreasing in h, so a higher lower bound on h
+        # gives a smaller max d_L over the prior.
+        assert pdet_narrow._dl_global_max < pdet_wide._dl_global_max
