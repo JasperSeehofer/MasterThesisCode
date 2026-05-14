@@ -1,0 +1,111 @@
+{
+  "h_truth": 0.73,
+  "commit": "f01595c",
+  "phase": "Phase 48 \u2014 production fine-grid sweep",
+  "posteriors_root": "simulations/cluster_run_production_h0p73_20260506",
+  "n_boot": 1000,
+  "rng_seed": 42,
+  "channels": {
+    "1D": {
+      "n_events": 1473,
+      "n_h": 63,
+      "h_grid_min": 0.6,
+      "h_grid_max": 0.86,
+      "discrete_map": 0.738,
+      "continuous_map": 0.73783798048251,
+      "bias": 0.007837980482510054,
+      "sigma_boot": 0.003889124201369669,
+      "z": 2.0153587483139983,
+      "pos_frac": 0.5994568906992532,
+      "boundary_rail": false,
+      "label": "1D",
+      "posteriors_dir": "simulations/cluster_run_production_h0p73_20260506/posteriors",
+      "delta_h_sensitivity_max_minus_min": 0.005736576935239213,
+      "delta_h_scan": {
+        "full_63pt": {
+          "n_h": 63,
+          "discrete_map": 0.738,
+          "continuous_map": 0.7378379804825101,
+          "sigma_boot": 0.0038758435820513385,
+          "bias": 0.007837980482510165,
+          "z": 2.022264396532178
+        },
+        "dense_core_only": {
+          "n_h": 41,
+          "discrete_map": 0.738,
+          "continuous_map": 0.7378379804825101,
+          "sigma_boot": 0.0038758435820513385,
+          "bias": 0.007837980482510165,
+          "z": 2.022264396532178
+        },
+        "delta_0p005": {
+          "n_h": 31,
+          "discrete_map": 0.745,
+          "continuous_map": 0.7435745574177494,
+          "sigma_boot": 0.0013015470542398402,
+          "bias": 0.013574557417749378,
+          "z": 10.429555638061435
+        },
+        "delta_0p010": {
+          "n_h": 27,
+          "discrete_map": 0.74,
+          "continuous_map": 0.7419476790678219,
+          "sigma_boot": 0.0020821460676366654,
+          "bias": 0.011947679067821904,
+          "z": 5.738156056161365
+        }
+      }
+    },
+    "2D": {
+      "n_events": 1473,
+      "n_h": 63,
+      "h_grid_min": 0.6,
+      "h_grid_max": 0.86,
+      "discrete_map": 0.738,
+      "continuous_map": 0.7377909540598064,
+      "bias": 0.007790954059806454,
+      "sigma_boot": 3.394259293856113e-05,
+      "z": 229.53326146616783,
+      "pos_frac": 0.5913102511880516,
+      "boundary_rail": false,
+      "label": "2D",
+      "posteriors_dir": "simulations/cluster_run_production_h0p73_20260506/posteriors_with_bh_mass",
+      "delta_h_sensitivity_max_minus_min": 0.005045263992473514,
+      "delta_h_scan": {
+        "full_63pt": {
+          "n_h": 63,
+          "discrete_map": 0.738,
+          "continuous_map": 0.7377909540598073,
+          "sigma_boot": 3.353522089144867e-05,
+          "bias": 0.007790954059807342,
+          "z": 232.32153696038426
+        },
+        "dense_core_only": {
+          "n_h": 41,
+          "discrete_map": 0.738,
+          "continuous_map": 0.7377909540598073,
+          "sigma_boot": 3.353522089144867e-05,
+          "bias": 0.007790954059807342,
+          "z": 232.32153696038426
+        },
+        "delta_0p005": {
+          "n_h": 31,
+          "discrete_map": 0.735,
+          "continuous_map": 0.7343651943186543,
+          "sigma_boot": 0.00036603737336697025,
+          "bias": 0.004365194318654342,
+          "z": 11.925542680249817
+        },
+        "delta_0p010": {
+          "n_h": 27,
+          "discrete_map": 0.73,
+          "continuous_map": 0.7327456900673338,
+          "sigma_boot": 0.002734965532355618,
+          "bias": 0.002745690067333828,
+          "z": 1.0039212687879737
+        }
+      }
+    }
+  },
+  "info_monotonicity_pass": true
+}

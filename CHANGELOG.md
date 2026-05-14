@@ -64,6 +64,22 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   Step 2 principled-extrapolation implementation, Step 2 follow-up 1D alignment).
 
 ### Changed
+- Phase 49 F1 cluster validation (job `4662333`) — **PARTIAL fix**, not
+  paper-grade. The h-stable bin-edge fix (commit `87ea7a8`) removed
+  one of two coherent-noise mechanisms (the rising flank of the
+  combined H₀ posterior is now mostly smooth and monotonic), but a
+  single sharp discontinuity remains at h=0.738→0.739 (1D drops 16×,
+  2D drops 32× across one Δh=0.001 bin) and MAP shifted +0.0056
+  further from truth than pre-F1 (1D MAP 0.7324→0.7378). Suspected
+  residual mechanism: SNR-threshold integer crossings of individual
+  injections (bin-edge-independent). The Farr 2019 fixed-injection +
+  analytic-reweighting form (gwcosmo / ICAROGW production pipelines)
+  would eliminate both mechanisms; queued as F4 in
+  `.planning/debug/posterior-noisy-peak.md`. Pre-F1 posteriors
+  archived on cluster (`archive/production_h0.73_20260512_175829/`);
+  post-F1 verdict at
+  `scripts/bias_investigation/outputs/phase46_merged/F1_post_fix_verdict_PARTIAL.json`.
+  **No figure refresh from these posteriors — not paper-ready.**
 - Phase 48 figure refresh with production-sweep posteriors (1473 events,
   63-point non-uniform h-grid) + phase46-merged 1549-event CRB:
   `paper/figures/{h0_posterior_comparison,h0_posterior_kde,m_z_improvement,

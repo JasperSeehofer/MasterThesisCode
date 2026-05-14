@@ -1,9 +1,9 @@
 ---
 slug: posterior-noisy-peak
-status: root-cause-found
+status: partial-fix-landed-second-mechanism-suspected
 trigger: "Why is the posterior so noisy around the peak? I would expect a continuous smooth peak, not the up and down spikes we actually see. please investigate."
 created: 2026-05-11T18:14:00Z
-updated: 2026-05-11T20:30:00Z
+updated: 2026-05-14T13:30:00Z
 ---
 
 # Posterior noisy / spiky around peak
@@ -156,3 +156,82 @@ A regression test against the current 1473-event production output will need to 
 - p_det(d_L=fixed, h) varies smoothly: max |Δp_det / Δh|·Δh < 1e-3 per Δh=0.001 step.
 
 **Status: AWAITING USER DECISION** — proceeding to fix requires `/physics-change` engagement. Surfacing to orchestrator.
+
+---
+
+## Follow-up — F1 LANDED but spikes NOT eliminated (2026-05-14)
+
+F1 (h-stable `dl_edges`) landed in `[PHYSICS]` commit `87ea7a8` on 2026-05-12; cluster validation job `4662333` completed 2026-05-13 (14 tasks × ~21 min wall on cpu_il, archive of pre-F1 posteriors preserved at `archive/production_h0.73_20260512_175829/`). Re-ran `test_28` analyzer + direct inspection of `combined_posterior{,_with_bh_mass}.json`.
+
+### Outcome: posterior shape changed, spikes NOT gone
+
+| Metric | Pre-F1 (Phase 48) | Post-F1 PARTIAL (Phase 49) | Notes |
+|---|---|---|---|
+| 1D continuous MAP | 0.7324 | **0.7378** (+0.0054) | Further from truth |
+| 2D continuous MAP | 0.7322 | **0.7378** (+0.0056) | Same |
+| 1D bias / z_boot | +0.0024 / +1.16σ | **+0.0078 / +2.02σ** | Worse |
+| 2D bias / z_boot | +0.0022 / +0.97σ | **+0.0078 / +229σ** | σ_boot collapsed to ≈0 (every bootstrap landed on same h=0.738) |
+| 1D σ_boot | 0.0021 | 0.0039 | Wider, more honest |
+| Max adjacent-bin ratio in dense core [0.725, 0.745] (1D) | ~11× (raw posterior values pre-fix) | **16×** | Comparable |
+| Max adjacent-bin ratio in dense core (2D) | ~10× | **51×** (0.738→0.739 drops from 0.577 to 0.018) | Worse |
+
+**Qualitative shape change**: the rising flank 0.730 → 0.738 is now mostly smooth and monotonic, but at the peak h=0.738 the posterior has a single huge discontinuity (1D: 0.148 → 0.009 across one Δh=0.001 step; 2D: 0.577 → 0.018, a 32× drop). The noise pattern is *different* from pre-F1 but the joint posterior is **not the smooth single-mode curve the user expects**.
+
+### Second mechanism: SNR-threshold integer crossings
+
+F1 addressed only one of two mechanisms by which finite-injection-sample noise enters `p_det(d_L; h)`. The remaining mechanism, **almost certainly dominant in the post-F1 spike pattern**:
+
+For each injection at fixed `(z_inj, SNR_raw, h_inj)`:
+- The rescaled SNR at trial cosmology h is `SNR(h) = SNR_raw · d_L(z_inj, h_inj) / d_L(z_inj, h)`.
+- As h shifts by Δh=0.001, `d_L(z_inj, h)` shifts smoothly by ~0.14% per step.
+- An injection whose `SNR(h)` is near the threshold (SNR=20) crosses the threshold at some specific h*. At h < h* it counts as "detected" in its bin; at h > h* it counts as "undetected".
+- **Each threshold-crossing flips its bin's `detected/total` ratio by 1/N_bin** — typically 5–25% jumps for low-count bins.
+
+This mechanism is **independent of bin edges** (F1's fix). It's a property of the histogram estimator itself: integer counts of "events passing a threshold" at finite resolution.
+
+The same coherent-summation pathology applies: all 1473 events query the same per-h `p_det` interpolator, so a single threshold-crossing nudges every event's `L_i(h)` identically, summing into `Σ log L_i` as a single ±1–3 jump across that h-step.
+
+### Why F1 was still the right first move
+
+- F1 implements the *minimum form* of the consensus practice (h-stable support), per the literature audit at `.planning/debug/F1_literature_audit.md`. It removes one mechanism cleanly; the source change is small, well-tested, and defensible on its own.
+- F1 is **necessary but not sufficient**. The full consensus practice (Farr 2019 / ICAROGW / gwcosmo) is **fixed injection set + analytic per-Λ reweighting**, which eliminates *both* mechanisms (bin edges AND threshold crossings) and matches what production pipelines actually do.
+- The literature audit already flagged this — Caveat 3: "F1 is the minimum form vs. the Farr 2019 fixed-injection + reweighting form that production pipelines use."
+
+### Proposed F4 — Farr 2019 reweighting
+
+Replace the histogram-binned estimator with a per-injection-weight estimator:
+
+```python
+# For trial h, instead of histogramming detected/total per bin:
+# 1. Compute per-injection weight w_i(h) accounting for the trial cosmology
+#    (typically: p_pop(theta_i | h) / p_inj(theta_i), where theta_i are the
+#    injection parameters and p_inj is the injection prior).
+# 2. p_det at any query x is a smooth weighted KDE/GP evaluation over the
+#    fixed injection set, NOT an h-rebuilt histogram.
+# Standard form: Farr 2019 Eq. 2-7; n_eff > 4*N_obs condition for accuracy.
+```
+
+This is a non-trivial refactor of `simulation_detection_probability.py`: it removes `RegularGridInterpolator` + histogram estimator and replaces it with a per-injection-weight evaluation. The injection generation pipeline (`scripts/inject_*.py`) must also be reviewed to ensure `p_inj` is recoverable from the injection metadata (it should be — the campaign uses a known prior).
+
+Cost: 1–2 day refactor + cluster re-validation. Benefit: consensus-grade smoothness; matches what reviewers will expect; eliminates the structural noise floor entirely.
+
+### Handoff for next session
+
+1. **Confirm SNR-threshold mechanism with a direct probe**: re-run `/tmp/diagnose_pdet_h.py`-style script (now F1 is landed) — does `p_det(d_L=0.5, h)` still show ±5–25% jumps at specific h-values? Where are those h-values? Cross-check against the injection set: which specific injections have `SNR(h) ≈ 20` at those h-values?
+
+2. **Decision point on F4**:
+   - (a) Implement Farr 2019 reweighting (full consensus form).
+   - (b) Apply a coarser-grain fix: smooth the histogram p_det with a small Gaussian kernel before interpolation (F2 from the original session). Cheap, partially effective, less principled. Worth considering as an intermediate if F4 is too costly.
+   - (c) Increase injection density at low d_L / near-threshold (F3): smaller per-bin integer increments → smaller jumps. Cheap on cluster wallclock; reduces but doesn't eliminate the floor.
+
+3. **DATA_INVENTORY tier**: pre-F1 posteriors are stale (archived on cluster); post-F1 posteriors at `simulations/cluster_run_production_h0p73_20260506/` are PARTIAL — not paper-grade. Will need re-evaluation after F4.
+
+4. **Pattern update**: the wiki entry `[[scientific-computing-validation#hyperparameter-dependent-discretization-in-monte-carlo-selection-functions-produces-coherent-noise]]` was filed treating F1 as the resolution. After F4, the pattern can be promoted to verified; until then the entry needs a note that F1 is necessary-but-not-sufficient and the SNR-threshold mechanism is a sibling case.
+
+### Files
+
+- `scripts/bias_investigation/outputs/phase46_merged/h3_production_sweep_verdict.json` — Phase 48 pre-F1 reference (restored from git).
+- `scripts/bias_investigation/outputs/phase46_merged/F1_post_fix_verdict_PARTIAL.json` — Phase 49 post-F1 verdict (this run).
+- `simulations/cluster_run_production_h0p73_20260506/posteriors{,_with_bh_mass}/` — post-F1 per-h posteriors (local).
+- `simulations/cluster_run_production_h0p73_20260506/combined_posterior{,_with_bh_mass}.json` — combined post-F1 posteriors (showing the 0.738 peak + adjacent discontinuity).
+- Cluster archive of pre-F1 posteriors: `archive/production_h0.73_20260512_175829/posteriors{,_with_bh_mass}/` (preserved by the `ARCHIVE_OLD=yes` re-run).
