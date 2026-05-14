@@ -1,9 +1,9 @@
 ---
 slug: posterior-noisy-peak
-status: partial-fix-landed-second-mechanism-suspected
+status: mechanism-attributed-F4-justified
 trigger: "Why is the posterior so noisy around the peak? I would expect a continuous smooth peak, not the up and down spikes we actually see. please investigate."
 created: 2026-05-11T18:14:00Z
-updated: 2026-05-14T13:30:00Z
+updated: 2026-05-14T16:30:00Z
 ---
 
 # Posterior noisy / spiky around peak
@@ -235,3 +235,90 @@ Cost: 1–2 day refactor + cluster re-validation. Benefit: consensus-grade smoot
 - `simulations/cluster_run_production_h0p73_20260506/posteriors{,_with_bh_mass}/` — post-F1 per-h posteriors (local).
 - `simulations/cluster_run_production_h0p73_20260506/combined_posterior{,_with_bh_mass}.json` — combined post-F1 posteriors (showing the 0.738 peak + adjacent discontinuity).
 - Cluster archive of pre-F1 posteriors: `archive/production_h0.73_20260512_175829/posteriors{,_with_bh_mass}/` (preserved by the `ARCHIVE_OLD=yes` re-run).
+
+---
+
+## Follow-up — mechanism diagnostic (test_29) refutes SNR-threshold-as-dominant (2026-05-14)
+
+The handoff hypothesized that **SNR-threshold integer crossings (B)** were the
+dominant residual mechanism behind the post-F1 spikes.  Diagnostic
+`scripts/bias_investigation/test_29_snr_threshold_crossings.py` directly
+measures the (n_total, n_detected) trajectory in each 2D bin across
+h ∈ [0.730, 0.745] at Δh=0.0005 and decomposes each `Δp_det` into:
+
+- **A-only**: injection's `d_L_target(z, h) = dist(z, h)` crosses a *fixed*
+  bin edge (F1 fixed the edges, but injections still move across them).
+  Contributes ``(n_det_prev + δn_det_A)/(n_total_prev + δn_total_A) − n_det_prev/n_total_prev``.
+- **B-only**: injection stays in its bin but its `SNR(h)` crosses 20,
+  flipping its `detected` flag.
+  Contributes ``δn_det_B / n_total_prev``.
+
+Both contributions are exact (no model fit); A + B reconstruct the
+observed `Δp_det` bit-for-bit.
+
+### Verdict
+
+48 query points sampling the detection region (d_L ∈ [0.08, 0.52] Gpc,
+M_z ∈ [1.5e5, 9e5] M⊙) produced **24 spikes with |Δp_det| > 0.002** across
+the h-grid.  Σ(Δp_det)² decomposition:
+
+| Mechanism | Σ(Δp)² share | Spike count (pure ≥ 90%) |
+|---|---|---|
+| **A — d_L motion across fixed edges** | **96.4 %** | 19 |
+| **B — SNR-threshold crossings** | 3.6 % | 5 |
+
+**Handoff hypothesis REFUTED**: B is not dominant; A is, by a factor of
+~25× in noise variance.  This is the same bin-crossing mechanism that
+operated pre-F1 (when both edges drifted AND injections moved) — F1
+closed only the *edge-drift* component, leaving the *injection-motion-
+across-fixed-edges* component intact.
+
+### Why this still justifies F4 (no change to action plan)
+
+The Farr (2019) reweighting form replaces the histogram entirely with a
+per-injection-weight estimator.  No bins ⇒ no bin-crossings of either
+kind.  F4 closes both A (96.4 %) and B (3.6 %) simultaneously.
+
+If F4 is infeasible, the **principled fallbacks address A first**, not
+B as the handoff suggested:
+
+- **F2 (Gaussian smoothing along d_L)**: smears bin-content
+  discontinuities; reduces A.
+- **F3 (denser injections)**: shrinks 1/N_bin step sizes; reduces both
+  A and B.
+
+### Recommended next move
+
+Proceed to **F4 plan** as the handoff anticipated, but with the
+attribution corrected.  The PHASE-49-F4-PLAN.md should cite the
+A-dominant variance decomposition as the motivating measurement rather
+than the SNR-threshold hypothesis.
+
+### Files added
+
+- `scripts/bias_investigation/test_29_snr_threshold_crossings.py` —
+  CPU-only diagnostic, ~10 s wall.
+- `scripts/bias_investigation/outputs/phase46_merged/test_29_snr_threshold_crossings.json` —
+  full attribution table for all 48 queries + 24 spikes.
+
+### Sample spike attribution (illustrative)
+
+| h transition | (d_L, M_z) | Δp_det | Δp from A | Δp from B |
+|---|---|---|---|---|
+| 0.7340→0.7345 (max-A) | (0.250, 7.0e5) | +0.5000 | +0.5000 | 0.0000 |
+| 0.7415→0.7420 (large-A) | (0.180, 1.5e5) | −1.0000 | −1.0000 | 0.0000 |
+| 0.7390→0.7395 (pure-B) | (0.320, 7.0e5) | +0.0588 | 0.0000 | +0.0588 |
+| 0.7315→0.7320 (pure-B) | (0.380, 5.5e5) | +0.1667 | 0.0000 | +0.1667 |
+
+The largest spikes are all A-driven and live in very-low-population bins
+(n_total ≤ 8); B-flips show moderate magnitudes (+0.06 to +0.17) in
+medium-population bins (n_total ≈ 12–20).
+
+### Pattern update
+
+The wiki entry `[[scientific-computing-validation#hyperparameter-dependent-discretization-in-monte-carlo-selection-functions-produces-coherent-noise]]`
+should now record that the mechanism is *injection-motion-across-bin-
+edges*, NOT primarily *threshold integer crossings*.  Both are
+sub-cases of the same "integer counting in finite samples produces
+coherent noise" family; the dominant sub-case depends on whether the
+samples themselves drift or stay fixed.
