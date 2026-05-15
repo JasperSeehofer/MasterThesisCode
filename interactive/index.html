@@ -132,19 +132,46 @@
           detections, with a per-N posterior overlay and a live improvement summary strip.
         </span>
       </li>
+      <li>
+        <a href="single_event_detail.html">Single-Event Detail Explorer</a>
+        <span class="description">
+          For one EMRI detection at a time, six interactive panels show all candidate host
+          galaxies with and without the BH-mass cut: per-galaxy weights, side-by-side comparison,
+          and the resulting per-event L(h) curves. Use the dropdown to switch between
+          representative events.
+        </span>
+      </li>
+      <li>
+        <a href="closure_test.html">Closure Test Overlay</a>
+        <span class="description">
+          Combined H&#8320; posteriors from independent runs with h<sub>true</sub> &isin;
+          {0.60, 0.65, 0.70, 0.73, 0.75} overlaid on a single axis &mdash; each posterior
+          should peak near its own injection truth. Demonstrates pipeline closure across
+          injection cosmologies.
+        </span>
+      </li>
+      <li>
+        <a href="catalog_completeness.html">Catalog Coverage & Host Counts</a>
+        <span class="description">
+          GLADE+ catalog coverage vs luminosity distance plus per-event candidate-host
+          counts. Visualises how the BH-mass cut reduces the host pool (median reduction
+          &asymp; 64 % across the 1473-event campaign).
+        </span>
+      </li>
     </ul>
 
     <footer>
       Figures generated from EMRI simulation data. Toggle legend entries,
       hover for values, zoom and pan to explore.<br>
-      Data version: 2026-05-07 (post-Phase-48 production sweep, after Tier-3 +
-      bridge + H3 fixes). Sky map and Fisher ellipses use the
-      <em>phase46-merged</em> Cram&eacute;r&ndash;Rao bounds (1&nbsp;549 SNR&nbsp;&ge;&nbsp;20 EMRIs:
-      Phase 45 seed=200 &oplus; seed=300 extension). Posteriors are the 63-point
-      non-uniform h&#8320;-grid (&#x394;h=0.001 dense core in [0.710, 0.750] +
-      &#x394;h=0.010 wings spanning [0.600, 0.860]) evaluated on 1&nbsp;473 SNR&nbsp;&ge;&nbsp;20
-      events at h<sub>true</sub>&nbsp;=&nbsp;0.73; production-grade MAP&nbsp;=&nbsp;0.732
-      (1D z&nbsp;=&nbsp;+1.16&nbsp;&sigma;, 2D z&nbsp;=&nbsp;+0.97&nbsp;&sigma;).<br>
+      Data version: 2026-05-15 refresh on phase46-merged Cram&eacute;r&ndash;Rao
+      bounds. Posterior figures use the unified canonical raw &Sigma;&thinsp;log&thinsp;L<sub>i</sub>
+      combination (Phase A; matches the test_28 verdict JSON cited throughout
+      <code>docs/H0_BIAS_RESOLUTION.md</code>). 63-point non-uniform h-grid
+      (&#x394;h=0.001 dense core in [0.710, 0.750] + &#x394;h=0.010 wings
+      spanning [0.600, 0.860]) evaluated on 1&nbsp;473 SNR&nbsp;&ge;&nbsp;20 events
+      at h<sub>true</sub>&nbsp;=&nbsp;0.73; discrete MAP&nbsp;=&nbsp;0.7380, continuous
+      MAP&nbsp;=&nbsp;0.7378 for both 1D and 2D channels (Phase-48 May&nbsp;7 verdict:
+      MAP&nbsp;0.732 at z&nbsp;=&nbsp;+1.16&thinsp;&sigma; / +0.97&thinsp;&sigma;).<br>
       Source code: <a href="https://github.com/jasper-seehofer/MasterThesisCode">github.com/jasper-seehofer/MasterThesisCode</a>
     </footer>
   </main>
