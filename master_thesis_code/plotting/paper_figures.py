@@ -15,7 +15,6 @@ All functions follow the project plotting convention: data in,
 ``(Figure, Axes)`` out.
 """
 
-import json
 from pathlib import Path
 from typing import Any
 
@@ -43,6 +42,7 @@ from master_thesis_code.plotting.convergence_analysis import (
 __all__ = [
     "_load_per_event_no_mass",
     "_load_per_event_with_mass_scalars",
+    "plot_closure_test_overlay",
     "plot_h0_posterior_comparison",
     "plot_h0_posterior_kde",
     "plot_posterior_convergence",
@@ -94,29 +94,73 @@ def _kde_smooth_posterior(
 
 
 def _load_combined_posterior(variant: str, data_dir: Path) -> dict[str, Any]:
-    """Load a toplevel combined posterior JSON.
+    """Load the canonical combined H0 posterior for *variant*.
+
+    Phase A unification (2026-05-15): paper figures now consume the canonical
+    raw ``Σ log L_i`` combination from
+    :func:`master_thesis_code.plotting._helpers.load_canonical_combined_posterior`
+    rather than the legacy physics-floor ``combined_posterior.json`` files at
+    the working-directory root. This ensures every H0-posterior figure shows
+    the same MAP (the canonical value quoted in
+    ``docs/H0_BIAS_RESOLUTION.md`` and the Phase 48 verdict JSON).
+
+    A back-compat fallback reads the legacy
+    ``combined_posterior[_with_bh_mass].json`` schema when the per-h
+    subdirectory is not present (used by unit-test fixtures and by older
+    cached results from physics-floor combines).
 
     Parameters
     ----------
     variant:
-        ``"posteriors"`` or ``"posteriors_with_bh_mass"``.
+        ``"posteriors"`` (1D channel) or ``"posteriors_with_bh_mass"`` (2D).
     data_dir:
-        Root directory containing the combined posterior JSONs.
+        Root directory containing ``posteriors/`` and
+        ``posteriors_with_bh_mass/`` subdirectories (canonical path), or
+        the legacy ``combined_posterior[_with_bh_mass].json`` files.
 
     Returns
     -------
-    dict with keys ``h_values``, ``posterior``, ``map_h``, etc.
+    dict with keys ``h_values``, ``posterior``, ``map_h`` (continuous, parabolic),
+    ``discrete_map``, ``n_events_used``, ``strategy``. Field names are kept
+    backwards-compatible with the legacy ``combined_posterior.json`` schema.
     """
-    if variant == "posteriors":
-        path = data_dir / "combined_posterior.json"
-    elif variant == "posteriors_with_bh_mass":
-        path = data_dir / "combined_posterior_with_bh_mass.json"
-    else:
+    if variant not in ("posteriors", "posteriors_with_bh_mass"):
         msg = f"Unknown variant: {variant}"
         raise ValueError(msg)
 
-    with open(path) as f:
-        return json.load(f)  # type: ignore[no-any-return]
+    # Canonical path: per-h JSONs in subdirectory.
+    posteriors_subdir = data_dir / variant
+    if posteriors_subdir.is_dir():
+        # Local import to avoid a circular dependency at module import time.
+        from master_thesis_code.plotting._helpers import load_canonical_combined_posterior
+
+        h_grid, posterior, meta = load_canonical_combined_posterior(data_dir, variant)
+        return {
+            "h_values": [float(h) for h in h_grid],
+            "posterior": [float(p) for p in posterior],
+            "map_h": meta["continuous_map"],
+            "discrete_map": meta["discrete_map"],
+            "n_events_used": meta["n_events_used"],
+            "strategy": meta["strategy"],
+            "variant": variant,
+        }
+
+    # Back-compat: legacy single-file JSON at data_dir root.
+    legacy_name = (
+        "combined_posterior.json"
+        if variant == "posteriors"
+        else "combined_posterior_with_bh_mass.json"
+    )
+    legacy_path = data_dir / legacy_name
+    if legacy_path.is_file():
+        import json as _json
+
+        with open(legacy_path) as f:
+            return _json.load(f)  # type: ignore[no-any-return]
+
+    raise FileNotFoundError(
+        f"Neither canonical {posteriors_subdir} nor legacy {legacy_path} exists."
+    )
 
 
 # Per-event loaders are imported from convergence_analysis (above) so
@@ -809,5 +853,76 @@ def plot_h0_posterior_kde(
     ax.set_ylim(-0.05, 1.15)
     ax.legend(loc="upper right")
 
+    fig.tight_layout()
+    return fig, ax
+
+
+# ---------------------------------------------------------------------------
+# Phase F1: Closure-test posterior overlay
+# ---------------------------------------------------------------------------
+
+
+def plot_closure_test_overlay(
+    h_runs: dict[float, Path],
+    *,
+    ax: Axes | None = None,
+) -> tuple[Figure, Axes]:
+    """Overlay combined H0 posteriors from injections at multiple truths.
+
+    Each run is loaded via the canonical raw Σ log L_i loader (Phase A),
+    peak-normalised, and plotted with a colour-coded curve plus a vertical
+    truth line at its injected h-value. Demonstrates pipeline closure:
+    every posterior should peak near its own truth.
+
+    Parameters
+    ----------
+    h_runs:
+        Dict mapping ``h_true`` (the injection truth) to the run directory
+        that contains the ``posteriors/`` subdirectory (1D channel; closure
+        runs may not have a 2D channel).
+    ax:
+        Existing axes; new figure when None.
+
+    Returns
+    -------
+    (fig, ax) following the project factory convention.
+    """
+    if ax is None:
+        fig, ax = get_figure(preset="double")
+    else:
+        from master_thesis_code.plotting._helpers import _fig_from_ax
+
+        fig = _fig_from_ax(ax)
+
+    from master_thesis_code.plotting._helpers import load_canonical_combined_posterior
+
+    sorted_truths = sorted(h_runs.keys())
+    colors = [CYCLE[i % len(CYCLE)] for i in range(len(sorted_truths))]
+
+    plotted = 0
+    for color, h_true in zip(colors, sorted_truths, strict=True):
+        run_dir = h_runs[h_true]
+        try:
+            h_grid, posterior, meta = load_canonical_combined_posterior(run_dir, "posteriors")
+        except FileNotFoundError:
+            continue
+        norm = posterior / posterior.max() if posterior.max() > 0 else posterior
+        label = (
+            rf"$h_\mathrm{{true}}={h_true:.2f}$ "
+            f"(MAP {meta['continuous_map']:.3f})"
+        )
+        ax.plot(h_grid, norm, color=color, linewidth=1.4, label=label)
+        ax.axvline(h_true, color=color, linewidth=0.7, linestyle=":")
+        plotted += 1
+
+    if plotted == 0:
+        raise FileNotFoundError("No closure-test runs could be loaded.")
+
+    ax.set_xlabel(r"$h$")
+    ax.set_ylabel("Posterior (peak-normalised)")
+    ax.set_xlim(0.55, 0.85)
+    ax.set_ylim(-0.05, 1.15)
+    ax.legend(loc="best", fontsize="small")
+    ax.set_title("Closure test: pipeline recovers each injection truth", fontsize="medium")
     fig.tight_layout()
     return fig, ax

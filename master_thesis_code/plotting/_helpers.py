@@ -1,7 +1,10 @@
 """Shared plotting utilities: figure creation and saving."""
 
+import json
+import logging
 import os
 from collections.abc import Sequence
+from pathlib import Path
 from typing import Any, Literal
 
 import matplotlib.pyplot as plt
@@ -11,6 +14,8 @@ from matplotlib.axes import Axes
 from matplotlib.cm import ScalarMappable
 from matplotlib.colorbar import Colorbar
 from matplotlib.figure import Figure
+
+_logger = logging.getLogger(__name__)
 
 # REVTeX two-column figure width presets (inches)
 _PRESETS: dict[str, tuple[float, float]] = {
@@ -206,3 +211,104 @@ def make_colorbar(
 ) -> Colorbar:
     """Add a colorbar to *ax* for *mappable*."""
     return fig.colorbar(mappable, ax=ax, label=label or "", **kwargs)
+
+
+# ---------------------------------------------------------------------------
+# Canonical combined posterior loader (Phase A)
+# ---------------------------------------------------------------------------
+
+CANONICAL_CACHE_FILENAME = "canonical_combined.json"
+
+
+def load_canonical_combined_posterior(
+    data_dir: Path,
+    variant: str,
+    *,
+    refresh: bool = False,
+) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64], dict[str, Any]]:
+    """Return ``(h_grid, combined_posterior, metadata)`` for plotting.
+
+    Uses the raw ``Σ log L_i`` combination from
+    :mod:`master_thesis_code.bayesian_inference.posterior_combination`
+    (see ``compute_canonical_combined_posterior``). This is the paper-grade
+    canonical reference used by the bias-investigation suite and quoted in
+    ``docs/H0_BIAS_RESOLUTION.md`` — every H0-posterior figure must consume
+    this loader so all figures agree on the MAP.
+
+    Parameters
+    ----------
+    data_dir:
+        Directory holding ``posteriors/`` and ``posteriors_with_bh_mass/``
+        subdirectories of per-h JSON files.
+    variant:
+        ``"posteriors"`` (1D channel) or ``"posteriors_with_bh_mass"`` (2D).
+    refresh:
+        If True, ignore any cached ``canonical_combined.json`` and recompute.
+
+    Returns
+    -------
+    h_grid:
+        Float64 array of sorted h-values.
+    posterior:
+        Peak-normalised linear posterior on ``h_grid``.
+    metadata:
+        Dict with keys ``n_events_used``, ``discrete_map``,
+        ``continuous_map``, ``strategy``, plus ``log_posterior``
+        (un-normalised Σ log L_i).
+    """
+    posteriors_dir = data_dir / variant
+    cache_path = posteriors_dir / CANONICAL_CACHE_FILENAME
+
+    if not refresh and cache_path.is_file():
+        with open(cache_path) as f:
+            cached = json.load(f)
+        h_grid = np.asarray(cached["h_values"], dtype=np.float64)
+        posterior = np.asarray(cached["posterior"], dtype=np.float64)
+        meta = {
+            "n_events_used": int(cached["n_events_used"]),
+            "discrete_map": float(cached["discrete_map"]),
+            "continuous_map": float(cached["continuous_map"]),
+            "strategy": str(cached["strategy"]),
+            "log_posterior": np.asarray(cached["log_posterior"], dtype=np.float64),
+        }
+        return h_grid, posterior, meta
+
+    if not posteriors_dir.is_dir():
+        raise FileNotFoundError(f"Posteriors directory not found: {posteriors_dir}")
+
+    # Local import to avoid a hard dependency from the plotting top-level
+    # module on the bayesian-inference layer (matplotlib-only environments
+    # used by interactive notebooks should still import _helpers cleanly).
+    from master_thesis_code.bayesian_inference.posterior_combination import (
+        compute_canonical_combined_posterior,
+    )
+
+    result = compute_canonical_combined_posterior(posteriors_dir)
+    if not result["h_values"]:
+        raise FileNotFoundError(
+            f"No usable h_*.json files in {posteriors_dir}; cannot build canonical posterior."
+        )
+
+    # Persist for fast reload next time. The JSON is small (<10 kB per variant).
+    try:
+        with open(cache_path, "w") as f:
+            json.dump(result, f, indent=2)
+    except OSError as e:
+        _logger.warning("Could not write canonical-posterior cache %s: %s", cache_path, e)
+
+    h_grid = np.asarray(result["h_values"], dtype=np.float64)
+    posterior = np.asarray(result["posterior"], dtype=np.float64)
+    n_used_raw = result["n_events_used"]
+    discrete_raw = result["discrete_map"]
+    continuous_raw = result["continuous_map"]
+    assert isinstance(n_used_raw, int)
+    assert isinstance(discrete_raw, float)
+    assert isinstance(continuous_raw, float)
+    meta = {
+        "n_events_used": n_used_raw,
+        "discrete_map": discrete_raw,
+        "continuous_map": continuous_raw,
+        "strategy": str(result["strategy"]),
+        "log_posterior": np.asarray(result["log_posterior"], dtype=np.float64),
+    }
+    return h_grid, posterior, meta

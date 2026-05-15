@@ -888,17 +888,23 @@ def generate_figures(output_dir: str) -> None:
     manifest: list[tuple[str, Callable[[], tuple[object, object] | None]]] = []
 
     # 1. H0 posterior (combined) -- needs posterior data
+    # Uses the canonical raw Σ log L_i loader (Phase A); see
+    # master_thesis_code/plotting/_helpers.py::load_canonical_combined_posterior
+    # so that fig01 agrees with paper_h0_posterior, fig08 left panel, and
+    # paper_m_z_improvement top-right on the MAP.
     def _gen_h0_posterior_combined() -> tuple[object, object] | None:
         if post_data is None:
             return None
         from master_thesis_code.plotting._colors import VARIANT_NO_MASS, VARIANT_WITH_MASS
+        from master_thesis_code.plotting._helpers import load_canonical_combined_posterior
         from master_thesis_code.plotting.bayesian_plots import plot_combined_posterior
 
-        h_vals, event_posts = post_data
-        log_posts = [np.log(np.maximum(p, 1e-300)) for p in event_posts]
-        log_combined = np.sum(log_posts, axis=0)
-        log_combined -= log_combined.max()
-        combined = np.exp(log_combined)
+        try:
+            h_vals, combined, _meta = load_canonical_combined_posterior(
+                Path(output_dir), "posteriors"
+            )
+        except FileNotFoundError:
+            return None
         fig, ax = plot_combined_posterior(
             h_vals,
             combined,
@@ -907,53 +913,66 @@ def generate_figures(output_dir: str) -> None:
             color=VARIANT_NO_MASS,
         )
         if post_data_with is not None:
-            h_w, ep_w = post_data_with
-            log_w = [np.log(np.maximum(p, 1e-300)) for p in ep_w]
-            log_comb_w = np.sum(log_w, axis=0)
-            log_comb_w -= log_comb_w.max()
-            comb_w = np.exp(log_comb_w)
-            plot_combined_posterior(
-                h_w,
-                comb_w,
-                0.73,
-                label=r"With $M_z$",
-                color=VARIANT_WITH_MASS,
-                show_references=False,
-                ax=ax,
-            )
+            try:
+                h_w, comb_w, _meta_w = load_canonical_combined_posterior(
+                    Path(output_dir), "posteriors_with_bh_mass"
+                )
+            except FileNotFoundError:
+                h_w, comb_w = None, None
+            if h_w is not None and comb_w is not None:
+                plot_combined_posterior(
+                    h_w,
+                    comb_w,
+                    0.73,
+                    label=r"With $M_z$",
+                    color=VARIANT_WITH_MASS,
+                    show_references=False,
+                    ax=ax,
+                )
         return fig, ax
 
     manifest.append(("fig01_h0_posterior_combined", _gen_h0_posterior_combined))
 
-    # 2. Individual event posteriors
+    # 2. Individual event posteriors -- per-event curves come from per-event
+    # arrays, but the combined overlay uses the canonical raw Σ log L_i loader
+    # for consistency with fig01.
     def _gen_event_posteriors() -> tuple[object, object] | None:
         if post_data is None:
             return None
         from master_thesis_code.plotting._colors import VARIANT_WITH_MASS
+        from master_thesis_code.plotting._helpers import load_canonical_combined_posterior
         from master_thesis_code.plotting.bayesian_plots import (
             plot_event_posteriors,
         )
 
         h_vals, event_posts = post_data
-        log_posts = [np.log(np.maximum(p, 1e-300)) for p in event_posts]
-        log_combined = np.sum(log_posts, axis=0)
-        log_combined -= log_combined.max()
-        combined = np.exp(log_combined)
-        fig, ax = plot_event_posteriors(h_vals, event_posts, 0.73, combined_posterior=combined)
-        # Overlay with-M_z combined posterior
-        if post_data_with is not None:
-            h_w, ep_w = post_data_with
-            log_w = [np.log(np.maximum(p, 1e-300)) for p in ep_w]
-            log_comb_w = np.sum(log_w, axis=0)
-            log_comb_w -= log_comb_w.max()
-            comb_w = np.exp(log_comb_w)
-            norm_w = np.trapezoid(comb_w, h_w)
-            if norm_w > 0:
-                comb_w /= norm_w
-            ax.plot(
-                h_w, comb_w, color=VARIANT_WITH_MASS, linewidth=2, label=r"Combined (with $M_z$)"
+        try:
+            _h_canon, combined, _meta = load_canonical_combined_posterior(
+                Path(output_dir), "posteriors"
             )
-            ax.legend(fontsize="small")
+        except FileNotFoundError:
+            return None
+        fig, ax = plot_event_posteriors(h_vals, event_posts, 0.73, combined_posterior=combined)
+        # Overlay with-M_z canonical combined posterior
+        if post_data_with is not None:
+            try:
+                h_w, comb_w, _meta_w = load_canonical_combined_posterior(
+                    Path(output_dir), "posteriors_with_bh_mass"
+                )
+            except FileNotFoundError:
+                h_w, comb_w = None, None
+            if h_w is not None and comb_w is not None:
+                norm_w = float(np.trapezoid(comb_w, h_w))
+                if norm_w > 0:
+                    comb_w = comb_w / norm_w
+                ax.plot(
+                    h_w,
+                    comb_w,
+                    color=VARIANT_WITH_MASS,
+                    linewidth=2,
+                    label=r"Combined (with $M_z$)",
+                )
+                ax.legend(fontsize="small")
         return fig, ax
 
     manifest.append(("fig02_event_posteriors", _gen_event_posteriors))
@@ -1018,11 +1037,13 @@ def generate_figures(output_dir: str) -> None:
 
     manifest.append(("fig07_corner_plot", _gen_corner_plot))
 
-    # 8. H0 convergence
+    # 8. H0 convergence -- left panel uses canonical raw Σ log L_i (Phase A)
+    # so that the MAP visible on fig08 matches fig01 / paper_h0_posterior.
     def _gen_h0_convergence() -> tuple[object, object] | None:
         if post_data is None:
             return None
         from master_thesis_code.constants import H as TRUE_H
+        from master_thesis_code.plotting._helpers import load_canonical_combined_posterior
         from master_thesis_code.plotting.convergence_analysis import (
             compute_m_z_improvement_bank,
         )
@@ -1036,6 +1057,21 @@ def generate_figures(output_dir: str) -> None:
             bootstrap_bank = compute_m_z_improvement_bank(Path(output_dir), h_true=float(TRUE_H))
         except (FileNotFoundError, ValueError, KeyError):
             bootstrap_bank = None
+        canonical_no_mass: tuple[np.ndarray, np.ndarray] | None = None
+        canonical_with_mass: tuple[np.ndarray, np.ndarray] | None = None
+        try:
+            h_c, p_c, _m = load_canonical_combined_posterior(Path(output_dir), "posteriors")
+            canonical_no_mass = (h_c, p_c)
+        except FileNotFoundError:
+            pass
+        if post_data_with is not None:
+            try:
+                h_c2, p_c2, _m2 = load_canonical_combined_posterior(
+                    Path(output_dir), "posteriors_with_bh_mass"
+                )
+                canonical_with_mass = (h_c2, p_c2)
+            except FileNotFoundError:
+                pass
         return plot_h0_convergence(
             h_vals,
             event_posts,
@@ -1043,6 +1079,8 @@ def generate_figures(output_dir: str) -> None:
             h_values_alt=h_alt,
             event_posteriors_alt=ep_alt,
             bootstrap_bank=bootstrap_bank,
+            canonical_no_mass=canonical_no_mass,
+            canonical_with_mass=canonical_with_mass,
         )
 
     manifest.append(("fig08_h0_convergence", _gen_h0_convergence))
@@ -1128,19 +1166,22 @@ def generate_figures(output_dir: str) -> None:
 
     manifest.append(("fig14_crb_coverage", _gen_crb_coverage))
 
-    # 15. Campaign dashboard (composite)
+    # 15. Campaign dashboard (composite) -- posterior subplot uses canonical
+    # raw Σ log L_i for consistency with fig01, fig08, paper_h0_posterior.
     def _gen_dashboard() -> tuple[object, object] | None:
         if crb_df is None or post_data is None:
             return None
         if not {"qS", "phiS", "SNR", "redshift"}.issubset(crb_df.columns):
             return None
+        from master_thesis_code.plotting._helpers import load_canonical_combined_posterior
         from master_thesis_code.plotting.dashboard_plots import plot_campaign_dashboard
 
-        h_vals, event_posts = post_data
-        log_posts = [np.log(np.maximum(p, 1e-300)) for p in event_posts]
-        log_combined = np.sum(log_posts, axis=0)
-        log_combined -= log_combined.max()
-        combined = np.exp(log_combined)
+        try:
+            h_vals, combined, _meta = load_canonical_combined_posterior(
+                Path(output_dir), "posteriors"
+            )
+        except FileNotFoundError:
+            return None
         return plot_campaign_dashboard(
             h_values=h_vals,
             posterior=combined,
@@ -1154,6 +1195,192 @@ def generate_figures(output_dir: str) -> None:
         )
 
     manifest.append(("fig15_campaign_dashboard", _gen_dashboard))
+
+    # 16. Catalog completeness + per-event coverage (Phase C)
+    def _gen_catalog_completeness() -> tuple[object, object] | None:
+        host_csv = Path(output_dir) / "diagnostics" / "host_counts.csv"
+        if not host_csv.is_file():
+            # Try to build it from inference logs on the fly.
+            try:
+                from master_thesis_code.analysis.parse_host_counts import build_host_count_csv
+
+                build_host_count_csv(Path(output_dir))
+            except FileNotFoundError:
+                return None
+        import pandas as pd
+
+        from master_thesis_code.plotting._helpers import get_figure
+        from master_thesis_code.plotting.catalog_plots import (
+            gehrels_2016_reference_completeness,
+            plot_event_catalog_coverage,
+            plot_glade_completeness,
+        )
+
+        host_counts = pd.read_csv(host_csv)
+        # Optional join to CRB CSV to obtain per-event d_L. The CSV index
+        # corresponds to event_idx by construction.
+        d_l_array: np.ndarray | None = None
+        if crb_df is not None and "luminosity_distance" in crb_df.columns:
+            dl_values = crb_df["luminosity_distance"].to_numpy(dtype=np.float64)
+            if len(dl_values) >= len(host_counts):
+                d_l_array = dl_values[: len(host_counts)]
+
+        # Empirical completeness proxy: per-d_L bin, fraction of events with
+        # at least one catalog host. Same axis as the schematic reference.
+        fig, axes = get_figure(nrows=1, ncols=2, preset="double")
+        ax_left, ax_right = axes[0], axes[1]
+        # Left panel: schematic GLADE+ completeness curve.
+        if d_l_array is not None:
+            d_l_grid = np.linspace(
+                max(d_l_array.min(), 1e-3), d_l_array.max(), 80, dtype=np.float64
+            )
+            ref = gehrels_2016_reference_completeness(d_l_grid)
+            # Empirical coverage curve over the same grid.
+            edges = np.linspace(d_l_grid.min(), d_l_grid.max(), 13)
+            centers = 0.5 * (edges[:-1] + edges[1:])
+            emp = np.zeros_like(centers)
+            for i in range(len(centers)):
+                mask = (d_l_array >= edges[i]) & (d_l_array < edges[i + 1])
+                if mask.any():
+                    emp[i] = float((host_counts["n_without_mass"].to_numpy()[mask] > 0).mean())
+            plot_glade_completeness(
+                centers,
+                emp,
+                reference_curve=np.interp(centers, d_l_grid, ref),
+                label="Empirical coverage (this campaign)",
+                reference_label="Schematic GLADE+ reference",
+                ax=ax_left,
+            )
+            ax_left.set_title("Catalog completeness", fontsize="medium")
+        else:
+            ax_left.text(0.5, 0.5, "No CRB d_L data", ha="center", va="center")
+        # Right panel: per-event host counts + reduction.
+        plot_event_catalog_coverage(host_counts, d_l_per_event=d_l_array, ax=ax_right)
+        ax_right.set_title("Host candidates per event", fontsize="medium")
+        fig.tight_layout()
+        return fig, axes
+
+    manifest.append(("fig16_catalog_completeness", _gen_catalog_completeness))
+
+    # 17. Detailed single-event multi-panel (Phase D)
+    # Works against any data directory whose 2D posteriors include the
+    # `galaxy_likelihoods` key. The cluster Phase 48 posteriors were stripped
+    # to save disk; in that case the figure transparently falls back to the
+    # nearest available unstripped data directory (`simulations/`).
+    def _gen_single_event_detail() -> tuple[object, object] | None:
+        from master_thesis_code.plotting.single_event_detail import (
+            plot_single_event_detail,
+            select_representative_event_id,
+        )
+
+        candidate_dirs = [Path(output_dir)]
+        # Look one and two levels up for an unstripped sibling dataset.
+        for parent_levels in (2, 3):
+            try:
+                candidate = Path(output_dir).resolve().parents[parent_levels - 1] / "simulations"
+                if candidate.is_dir():
+                    candidate_dirs.append(candidate)
+            except IndexError:
+                pass
+        chosen_dir: Path | None = None
+        for cand in candidate_dirs:
+            with_mass_dir = cand / "posteriors_with_bh_mass"
+            if not with_mass_dir.is_dir():
+                continue
+            # Detect whether the JSONs carry galaxy_likelihoods (unstripped).
+            sample_files = sorted(with_mass_dir.glob("h_*.json"))
+            if not sample_files:
+                continue
+            with open(sample_files[0]) as fh:
+                first = json.load(fh)
+            if "galaxy_likelihoods" in first and first["galaxy_likelihoods"]:
+                chosen_dir = cand
+                break
+        if chosen_dir is None:
+            _ROOT_LOGGER.info(
+                "fig17 skipped: no posteriors_with_bh_mass directory with galaxy_likelihoods found "
+                "(cluster Phase 48 data was stripped; sync a sibling dataset with the key intact)."
+            )
+            return None
+        try:
+            event_id = select_representative_event_id(chosen_dir, percentile=0.5)
+            return plot_single_event_detail(chosen_dir, event_id)
+        except (FileNotFoundError, KeyError, ValueError) as e:
+            _ROOT_LOGGER.warning("fig17 generation failed: %s", e)
+            return None
+
+    manifest.append(("fig17_single_event_detail", _gen_single_event_detail))
+
+    # 18. Closure-test posterior overlay (Phase F1)
+    def _gen_closure_test_overlay() -> tuple[object, object] | None:
+        from master_thesis_code.plotting.paper_figures import plot_closure_test_overlay
+
+        project_root = Path(__file__).resolve().parents[1]
+        sim_root = project_root / "simulations"
+        # Discover closure-test directories: `closure_h{0p60,0p65,0p70,0p73,0p75,...}/posteriors`
+        # plus the production h=0.73 run as the "self-consistency" point.
+        h_runs: dict[float, Path] = {}
+        for closure_dir in sorted(sim_root.glob("closure_h*")):
+            posts = closure_dir / "posteriors"
+            if not posts.is_dir():
+                continue
+            # Parse h_true from directory name: closure_h0p65 → 0.65
+            name = closure_dir.name
+            try:
+                tag = name.split("_h", 1)[1]
+                tag = tag.split("_", 1)[0]
+                h_str = tag.replace("p", ".")
+                h_true = float(h_str)
+            except (IndexError, ValueError):
+                continue
+            h_runs[h_true] = closure_dir
+        # Add the production h=0.73 run if not already covered.
+        prod_dir = Path(output_dir)
+        if (prod_dir / "posteriors").is_dir() and 0.73 not in h_runs:
+            h_runs[0.73] = prod_dir
+        if len(h_runs) < 2:
+            _ROOT_LOGGER.info("fig18 skipped: need ≥2 closure runs (have %d)", len(h_runs))
+            return None
+        try:
+            return plot_closure_test_overlay(h_runs)
+        except FileNotFoundError as e:
+            _ROOT_LOGGER.warning("fig18 generation failed: %s", e)
+            return None
+
+    manifest.append(("fig18_closure_test", _gen_closure_test_overlay))
+
+    # 19. Info monotonicity (Phase F2) — per-event HDI68 scatter (1D vs 2D)
+    def _gen_info_monotonicity() -> tuple[object, object] | None:
+        from master_thesis_code.plotting.evaluation_plots import plot_info_monotonicity
+
+        try:
+            return plot_info_monotonicity(Path(output_dir))
+        except (FileNotFoundError, ValueError) as e:
+            _ROOT_LOGGER.info("fig19 skipped: %s", e)
+            return None
+
+    manifest.append(("fig19_info_monotonicity", _gen_info_monotonicity))
+
+    # 20. P_det surface from injection campaign (Phase F3)
+    def _gen_pdet_surface() -> tuple[object, object] | None:
+        from master_thesis_code.plotting.evaluation_plots import plot_pdet_surface
+
+        # Prefer the project root's `simulations/injections/` campaign data;
+        # fall back to a sibling `injections/` under output_dir if present.
+        project_root = Path(__file__).resolve().parents[1]
+        candidates = [
+            project_root / "simulations" / "injections" / "injection_h_0p73_task_*.csv",
+            Path(output_dir) / "injections" / "injection_h_0p73_task_*.csv",
+        ]
+        for pat in candidates:
+            try:
+                return plot_pdet_surface(str(pat), snr_threshold=20.0)
+            except (FileNotFoundError, ValueError):
+                continue
+        _ROOT_LOGGER.info("fig20 skipped: no injection campaign CSVs available")
+        return None
+
+    manifest.append(("fig20_pdet_surface", _gen_pdet_surface))
 
     # 16. Paper figure: H0 posterior comparison (D-01, D-09)
     def _gen_paper_h0_posterior() -> tuple[object, object] | None:
@@ -1210,9 +1437,13 @@ def generate_figures(output_dir: str) -> None:
 
     manifest.append(("paper_h0_posterior_kde", _gen_paper_h0_posterior_kde))
 
-    # 21. Paper figure: M_z improvement panels (HDI68 + Δ(N) + K(N))
+    # 21. Paper figure: M_z improvement panels v2 (Phase E)
+    # Top-right panel switched from "representative single-bootstrap draw" to
+    # the canonical raw Σ log L_i joint posterior so it matches fig01/fig08/
+    # paper_h0_posterior. Plus a new host-count reduction violin panel.
     def _gen_paper_m_z_improvement() -> tuple[object, object] | None:
         from master_thesis_code.constants import H as TRUE_H
+        from master_thesis_code.plotting._helpers import load_canonical_combined_posterior
         from master_thesis_code.plotting.convergence_analysis import (
             compute_m_z_improvement_bank,
             plot_m_z_improvement_panels,
@@ -1224,7 +1455,35 @@ def generate_figures(output_dir: str) -> None:
             return None
         if bank is None:
             return None
-        return plot_m_z_improvement_panels(bank)
+        canon_no: tuple[np.ndarray, np.ndarray] | None = None
+        canon_w: tuple[np.ndarray, np.ndarray] | None = None
+        try:
+            h_n, p_n, _m = load_canonical_combined_posterior(Path(output_dir), "posteriors")
+            canon_no = (h_n, p_n)
+        except FileNotFoundError:
+            pass
+        try:
+            h_w, p_w, _m = load_canonical_combined_posterior(
+                Path(output_dir), "posteriors_with_bh_mass"
+            )
+            canon_w = (h_w, p_w)
+        except FileNotFoundError:
+            pass
+
+        # Optional host-count CSV from Phase B (parse_host_counts).
+        host_counts = None
+        host_csv = Path(output_dir) / "diagnostics" / "host_counts.csv"
+        if host_csv.is_file():
+            import pandas as pd
+
+            host_counts = pd.read_csv(host_csv)
+
+        return plot_m_z_improvement_panels(
+            bank,
+            canonical_combined_no_mass=canon_no,
+            canonical_combined_with_mass=canon_w,
+            host_counts=host_counts,
+        )
 
     manifest.append(("paper_m_z_improvement", _gen_paper_m_z_improvement))
 

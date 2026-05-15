@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 from enum import StrEnum
 from pathlib import Path
 
@@ -651,3 +652,189 @@ def combine_posteriors(
         json.dump(result, f, indent=2)
 
     return result
+
+
+# ---------------------------------------------------------------------------
+# Canonical combination (raw Σ log L) — paper-grade reference implementation
+# ---------------------------------------------------------------------------
+#
+# The functions below are the canonical "raw Σ log L" combination used by
+# the bias-investigation suite (test_24_multi_truth_bias_sweep.py,
+# test_28_production_finegrid_analyze.py) and quoted throughout
+# docs/H0_BIAS_RESOLUTION.md. They are the source-of-truth combination
+# for all plotting code; figures must consume these helpers rather than
+# `combine_posteriors` (which applies a `physics-floor` zero-handling
+# strategy that biases the MAP relative to raw Σ log L).
+
+
+_H_FILENAME_RE = re.compile(r"h_(\d+)_(\d+)\.json")
+
+
+def _h_from_filename(path: Path) -> float:
+    """Parse the h-value out of an ``h_<int>_<int>.json`` filename.
+
+    Returns ``nan`` if the filename does not match the expected pattern.
+    """
+    m = _H_FILENAME_RE.match(path.name)
+    if m is None:
+        return float("nan")
+    return float(f"{m.group(1)}.{m.group(2)}")
+
+
+def load_per_h_likelihoods(
+    directory: Path,
+) -> tuple[list[float], npt.NDArray[np.float64]]:
+    """Load per-event log-likelihoods across all h-value JSONs in *directory*.
+
+    Reads every ``h_*.json`` file, extracts the scalar per-event likelihood
+    for each integer event key, drops events that have missing data at any
+    h-value (``full_mask`` filter), and returns ``(h_values, log_L)`` where
+    ``log_L`` has shape ``(n_events_full, n_h_values)``.
+
+    This is the reference implementation used by the bias-investigation
+    suite and is the canonical loader for all paper-grade H0 posterior
+    figures.
+
+    Parameters
+    ----------
+    directory:
+        Path to a directory containing ``h_*.json`` files (typically
+        ``posteriors/`` or ``posteriors_with_bh_mass/``).
+
+    Returns
+    -------
+    h_values:
+        Sorted list of h-values (one per JSON file).
+    log_L:
+        Float64 array of shape ``(n_events, n_h_values)``; entries are
+        ``log(max(L_event_at_h, 1e-300))``. Events with NaN at any h are
+        excluded.
+    """
+    if not directory.exists():
+        return [], np.empty((0, 0), dtype=np.float64)
+    files = sorted(directory.glob("h_*.json"), key=_h_from_filename)
+    h_values: list[float] = [_h_from_filename(f) for f in files]
+    event_indices: set[int] = set()
+    per_h_data: list[dict[int, float]] = []
+    for f in files:
+        with open(f) as fh:
+            d = json.load(fh)
+        per_h: dict[int, float] = {}
+        for k, v in d.items():
+            try:
+                ev = int(k)
+            except (TypeError, ValueError):
+                continue
+            if isinstance(v, list):
+                if len(v) == 0:
+                    continue
+                val = v[0]
+            else:
+                val = v
+            event_indices.add(ev)
+            per_h[ev] = float(val)
+        per_h_data.append(per_h)
+    events_sorted = sorted(event_indices)
+    log_L = np.full((len(events_sorted), len(h_values)), np.nan, dtype=np.float64)
+    for j, per_h in enumerate(per_h_data):
+        for i, ev in enumerate(events_sorted):
+            if ev in per_h:
+                log_L[i, j] = float(np.log(max(per_h[ev], 1e-300)))
+    full_mask = ~np.isnan(log_L).any(axis=1)
+    log_L_filtered: npt.NDArray[np.float64] = log_L[full_mask]
+    return h_values, log_L_filtered
+
+
+def parabolic_refine_map(
+    h_grid: npt.NDArray[np.float64],
+    log_posterior: npt.NDArray[np.float64],
+) -> float:
+    """Refine the discrete MAP via 3-point parabolic interpolation.
+
+    Given a log-posterior on a discrete h-grid, fits a parabola through
+    the discrete argmax and its two neighbours and returns the analytic
+    vertex of the parabola. Falls back to the discrete argmax when the
+    peak is on the grid boundary or the parabola degenerates.
+
+    Parameters
+    ----------
+    h_grid:
+        Monotonically increasing h-values.
+    log_posterior:
+        Log-posterior values on ``h_grid``.
+
+    Returns
+    -------
+    float
+        Sub-grid continuous MAP estimate.
+    """
+    i = int(np.argmax(log_posterior))
+    if i <= 0 or i >= len(h_grid) - 1:
+        return float(h_grid[i])
+    h0, h1, h2 = float(h_grid[i - 1]), float(h_grid[i]), float(h_grid[i + 1])
+    y0, y1, y2 = (
+        float(log_posterior[i - 1]),
+        float(log_posterior[i]),
+        float(log_posterior[i + 1]),
+    )
+    denom = y0 - 2 * y1 + y2
+    if abs(denom) < 1e-12:
+        return h1
+    return float(h1 - 0.5 * (h2 - h0) * (y2 - y0) / (2 * denom))
+
+
+def compute_canonical_combined_posterior(
+    posteriors_dir: Path,
+) -> dict[str, object]:
+    """Compute the canonical joint H0 posterior from per-h JSONs.
+
+    Aggregates per-event log-likelihoods via raw ``Σ log L_i`` (no
+    physics-floor, no outer D(h) correction — the Tier 3 fix removed
+    the latter from ``combine_log_space``). This is the combination
+    quoted in Phase 48 verdict JSON and throughout
+    ``docs/H0_BIAS_RESOLUTION.md``.
+
+    Parameters
+    ----------
+    posteriors_dir:
+        Directory of ``h_*.json`` files (1D or 2D variant).
+
+    Returns
+    -------
+    dict with keys
+        - ``h_values``: list[float] — sorted h-grid
+        - ``posterior``: list[float] — peak-normalised posterior
+        - ``log_posterior``: list[float] — un-normalised Σ log L_i
+        - ``n_events_used``: int — events surviving the full-mask filter
+        - ``discrete_map``: float — argmax on the discrete grid
+        - ``continuous_map``: float — parabolic-refined sub-grid MAP
+        - ``strategy``: literal string ``"raw-sum-log"``
+    """
+    h_values, log_L = load_per_h_likelihoods(posteriors_dir)
+    if not h_values or log_L.size == 0:
+        return {
+            "h_values": [],
+            "posterior": [],
+            "log_posterior": [],
+            "n_events_used": 0,
+            "discrete_map": float("nan"),
+            "continuous_map": float("nan"),
+            "strategy": "raw-sum-log",
+        }
+    h_arr = np.asarray(h_values, dtype=np.float64)
+    log_joint = log_L.sum(axis=0)
+    # Peak-normalise the posterior in linear space for plotting convenience.
+    log_joint_shifted = log_joint - log_joint.max()
+    posterior = np.exp(log_joint_shifted)
+    discrete_argmax = int(np.argmax(log_joint))
+    discrete_map = float(h_arr[discrete_argmax])
+    continuous_map = parabolic_refine_map(h_arr, log_joint)
+    return {
+        "h_values": [float(h) for h in h_values],
+        "posterior": [float(p) for p in posterior],
+        "log_posterior": [float(p) for p in log_joint],
+        "n_events_used": int(log_L.shape[0]),
+        "discrete_map": discrete_map,
+        "continuous_map": continuous_map,
+        "strategy": "raw-sum-log",
+    }

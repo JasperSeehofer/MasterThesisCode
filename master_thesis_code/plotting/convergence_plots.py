@@ -68,11 +68,18 @@ def plot_h0_convergence(
     color: str | None = None,
     color_alt: str | None = None,
     bootstrap_bank: "ImprovementBank | None" = None,
+    canonical_no_mass: tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]] | None = None,
+    canonical_with_mass: tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]] | None = None,
     ax: None = None,  # noqa: ARG001 — reserved for API consistency
 ) -> tuple[Figure, npt.NDArray[np.object_]]:
     """Two-panel H0 convergence plot, optionally comparing two variants.
 
-    Left panel: combined posterior curves for increasing event counts.
+    Left panel: canonical combined posterior (raw Σ log L_i over ALL events),
+    when ``canonical_no_mass`` / ``canonical_with_mass`` are provided —
+    matches fig01 / paper_h0_posterior. Falls back to a single bootstrap
+    subset at the largest ``subset_sizes`` value when no canonical posterior
+    is supplied (legacy pre-Phase-A behaviour, useful for unit tests).
+
     Right panel: credible-interval width vs number of events with a
     1/sqrt(N) reference curve.
 
@@ -139,17 +146,24 @@ def plot_h0_convergence(
     # --- Primary variant ---
     ci_widths = _convergence_ci_widths(h_values, posteriors_list, sizes, rng, level)
 
-    # Show combined posterior at largest subset for left panel
-    rng_post = np.random.default_rng(seed)
-    indices = rng_post.choice(n_events, size=sizes[-1], replace=False)
-    log_posts = [np.log(np.maximum(posteriors_list[i], 1e-300)) for i in indices]
-    log_combined = np.sum(log_posts, axis=0)
-    log_combined -= log_combined.max()
-    combined = np.exp(log_combined)
-    norm = np.trapezoid(combined, h_values)
+    # Left panel posterior curve. Prefer the canonical global combined posterior
+    # (Phase A unification) over a random bootstrap subset, so this panel
+    # matches fig01_h0_posterior_combined / paper_h0_posterior on the MAP.
+    if canonical_no_mass is not None:
+        h_left, combined = canonical_no_mass
+        combined = combined.astype(np.float64, copy=True)
+    else:
+        rng_post = np.random.default_rng(seed)
+        indices = rng_post.choice(n_events, size=sizes[-1], replace=False)
+        log_posts = [np.log(np.maximum(posteriors_list[i], 1e-300)) for i in indices]
+        log_combined = np.sum(log_posts, axis=0)
+        log_combined -= log_combined.max()
+        combined = np.exp(log_combined)
+        h_left = h_values
+    norm = float(np.trapezoid(combined, h_left))
     if norm > 0:
         combined /= norm
-    ax_post.plot(h_values, combined, color=color, label=label)
+    ax_post.plot(h_left, combined, color=color, label=label)
 
     # Right panel: CI width vs N
     sizes_arr = np.asarray(sizes, dtype=np.float64)
@@ -168,17 +182,24 @@ def plot_h0_convergence(
             h_alt, posteriors_alt_list, sizes_alt, rng_alt, level
         )
 
-        # Combined posterior for left panel
-        rng_alt_post = np.random.default_rng(seed)
-        indices_alt = rng_alt_post.choice(n_alt, size=sizes_alt[-1], replace=False)
-        log_posts_alt = [np.log(np.maximum(posteriors_alt_list[i], 1e-300)) for i in indices_alt]
-        log_combined_alt = np.sum(log_posts_alt, axis=0)
-        log_combined_alt -= log_combined_alt.max()
-        combined_alt = np.exp(log_combined_alt)
-        norm_alt = np.trapezoid(combined_alt, h_alt)
+        # Left-panel posterior overlay — canonical when available, bootstrap subset otherwise
+        if canonical_with_mass is not None:
+            h_alt_left, combined_alt = canonical_with_mass
+            combined_alt = combined_alt.astype(np.float64, copy=True)
+        else:
+            rng_alt_post = np.random.default_rng(seed)
+            indices_alt = rng_alt_post.choice(n_alt, size=sizes_alt[-1], replace=False)
+            log_posts_alt = [
+                np.log(np.maximum(posteriors_alt_list[i], 1e-300)) for i in indices_alt
+            ]
+            log_combined_alt = np.sum(log_posts_alt, axis=0)
+            log_combined_alt -= log_combined_alt.max()
+            combined_alt = np.exp(log_combined_alt)
+            h_alt_left = h_alt
+        norm_alt = float(np.trapezoid(combined_alt, h_alt_left))
         if norm_alt > 0:
             combined_alt /= norm_alt
-        ax_post.plot(h_alt, combined_alt, color=color_alt, linestyle="--", label=label_alt)
+        ax_post.plot(h_alt_left, combined_alt, color=color_alt, linestyle="--", label=label_alt)
 
         sizes_alt_arr = np.asarray(sizes_alt, dtype=np.float64)
         ci_alt_arr = np.asarray(ci_widths_alt, dtype=np.float64)

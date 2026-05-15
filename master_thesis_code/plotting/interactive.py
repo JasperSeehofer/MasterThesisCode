@@ -13,15 +13,20 @@ The top-level :func:`generate_all_interactive` convenience function loads
 data from a working directory and writes all 4 HTML files.
 """
 
+import json
 import logging
 import os
 import re
-from typing import Any
+from pathlib import Path
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 import numpy.typing as npt
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
+
+if TYPE_CHECKING:
+    import pandas as pd
 
 from master_thesis_code.plotting._colors import (
     CYCLE,
@@ -1180,21 +1185,28 @@ def generate_all_interactive(output_dir: str, data_dir: str) -> list[str]:
     crb_df = _load_crb_data()
 
     # ------------------------------------------------------------------
-    # Figure 1: Combined H0 posterior
+    # Figure 1: Combined H0 posterior (canonical raw Σ log L_i; Phase A)
     # ------------------------------------------------------------------
     if post_data is not None:
-        h_values, event_posteriors = post_data
         try:
             from master_thesis_code.constants import H as TRUE_H
+            from master_thesis_code.plotting._helpers import (
+                load_canonical_combined_posterior,
+            )
 
-            # Combine all event posteriors (log-sum-exp)
-            log_posts = [np.log(np.maximum(p, 1e-300)) for p in event_posteriors]
-            log_combined = np.sum(log_posts, axis=0)
-            log_combined -= log_combined.max()
-            combined: npt.NDArray[np.float64] = np.exp(log_combined)
-            norm = np.trapezoid(combined, h_values)
+            posterior_base: Path | None = None
+            for search in _search_dirs:
+                if (search / "posteriors").is_dir():
+                    posterior_base = search
+                    break
+            if posterior_base is None:
+                raise FileNotFoundError("no posteriors/ subdirectory")
+            h_values, combined, _meta = load_canonical_combined_posterior(
+                posterior_base, "posteriors"
+            )
+            norm = float(np.trapezoid(combined, h_values))
             if norm > 0:
-                combined /= norm
+                combined = combined / norm
 
             fig1 = interactive_combined_posterior(h_values, combined, TRUE_H)
             path1 = os.path.join(output_dir, "combined_posterior.html")
@@ -1321,4 +1333,451 @@ def generate_all_interactive(output_dir: str, data_dir: str) -> list[str]:
     except Exception as exc:
         _LOGGER.warning("Skipping m_z_improvement.html: %s", exc)
 
+    # ------------------------------------------------------------------
+    # Figure 6: Single-event detail (Phase G)
+    # ------------------------------------------------------------------
+    try:
+        # Pick a data dir that has unstripped galaxy_likelihoods. First check
+        # the data_dir search list; only fall back to the project's
+        # `simulations/` tree if data_dir is itself inside that tree (avoids
+        # surprise discovery in test/tmp paths).
+        single_event_data_dir: Path | None = None
+        candidates = list(_search_dirs)
+        sim_root_seed = Path(__file__).resolve().parents[2] / "simulations"
+        try:
+            Path(data_dir).resolve().relative_to(sim_root_seed)
+            candidates.append(sim_root_seed)
+        except ValueError:
+            pass
+        for cand in candidates:
+            wmd = cand / "posteriors_with_bh_mass"
+            if not wmd.is_dir():
+                continue
+            sample = sorted(wmd.glob("h_*.json"))
+            if not sample:
+                continue
+            with open(sample[0]) as fh:
+                first = json.load(fh)
+            if "galaxy_likelihoods" in first and first["galaxy_likelihoods"]:
+                single_event_data_dir = cand
+                break
+        if single_event_data_dir is not None:
+            from master_thesis_code.plotting.single_event_detail import (
+                select_representative_event_id,
+            )
+
+            event_ids = [
+                select_representative_event_id(single_event_data_dir, percentile=p)
+                for p in (0.25, 0.50, 0.75)
+            ]
+            event_ids = sorted(set(event_ids))
+            fig6 = interactive_single_event_detail(single_event_data_dir, event_ids)
+            path6 = os.path.join(output_dir, "single_event_detail.html")
+            fig6.write_html(path6, include_plotlyjs="cdn")
+            written.append(path6)
+            _LOGGER.info("Written: %s", path6)
+        else:
+            _LOGGER.info(
+                "Skipping single_event_detail.html: no unstripped galaxy_likelihoods data found"
+            )
+    except Exception as exc:
+        _LOGGER.warning("Skipping single_event_detail.html: %s", exc)
+
+    # ------------------------------------------------------------------
+    # Figure 7: Closure-test overlay (Phase G)
+    # Only attempts discovery when the working data_dir is inside the
+    # project's `simulations/` tree (sibling closure runs there). Empty
+    # tmp paths in test fixtures are skipped.
+    # ------------------------------------------------------------------
+    try:
+        h_runs: dict[float, Path] = {}
+        sim_root = Path(__file__).resolve().parents[2] / "simulations"
+        # Guard: only proceed if data_dir is under the real simulations tree.
+        resolved_data = Path(data_dir).resolve()
+        try:
+            resolved_data.relative_to(sim_root)
+            in_sim_tree = True
+        except ValueError:
+            in_sim_tree = False
+        if not in_sim_tree:
+            raise FileNotFoundError("data_dir outside simulations/ — skipping closure overlay")
+        for closure_dir in sorted(sim_root.glob("closure_h*")):
+            if not (closure_dir / "posteriors").is_dir():
+                continue
+            try:
+                tag = closure_dir.name.split("_h", 1)[1].split("_", 1)[0]
+                h_runs[float(tag.replace("p", "."))] = closure_dir
+            except (IndexError, ValueError):
+                continue
+        # Add the production h=0.73 run.
+        for search in _search_dirs:
+            if (search / "posteriors").is_dir() and 0.73 not in h_runs:
+                h_runs[0.73] = search
+                break
+        if len(h_runs) >= 2:
+            fig7 = interactive_closure_test_overlay(h_runs)
+            path7 = os.path.join(output_dir, "closure_test.html")
+            fig7.write_html(path7, include_plotlyjs="cdn")
+            written.append(path7)
+            _LOGGER.info("Written: %s", path7)
+        else:
+            _LOGGER.info("Skipping closure_test.html: need ≥2 closure runs (have %d)", len(h_runs))
+    except Exception as exc:
+        _LOGGER.warning("Skipping closure_test.html: %s", exc)
+
+    # ------------------------------------------------------------------
+    # Figure 8: Catalog completeness + coverage (Phase G)
+    # ------------------------------------------------------------------
+    try:
+        host_csv: Path | None = None
+        for search in _search_dirs:
+            cand = search / "diagnostics" / "host_counts.csv"
+            if cand.is_file():
+                host_csv = cand
+                break
+        if host_csv is not None:
+            host_counts = pd.read_csv(host_csv)
+            d_l_per_event: npt.NDArray[np.float64] | None = None
+            if crb_df is not None and "luminosity_distance" in crb_df.columns:
+                dl_arr = crb_df["luminosity_distance"].to_numpy(dtype=np.float64)
+                if len(dl_arr) >= len(host_counts):
+                    d_l_per_event = dl_arr[: len(host_counts)]
+            fig8 = interactive_catalog_completeness(host_counts, d_l_per_event=d_l_per_event)
+            path8 = os.path.join(output_dir, "catalog_completeness.html")
+            fig8.write_html(path8, include_plotlyjs="cdn")
+            written.append(path8)
+            _LOGGER.info("Written: %s", path8)
+        else:
+            _LOGGER.info("Skipping catalog_completeness.html: no host_counts.csv in diagnostics")
+    except Exception as exc:
+        _LOGGER.warning("Skipping catalog_completeness.html: %s", exc)
+
     return written
+
+
+# ---------------------------------------------------------------------------
+# New interactive figures (Phase G)
+# ---------------------------------------------------------------------------
+
+
+def interactive_single_event_detail(
+    data_dir: Path,
+    event_ids: list[int],
+) -> "go.Figure":
+    """Plotly multi-event explorer with per-host weight tooltips.
+
+    For each event in *event_ids*, builds a 2×3 subplot layout (per-host
+    weights without/with BH mass + scatter, and L(h) panels), and adds an
+    event-picker dropdown that switches the visible trace set.
+
+    Parameters
+    ----------
+    data_dir:
+        Directory holding ``posteriors/`` and ``posteriors_with_bh_mass/``
+        with unstripped galaxy_likelihoods.
+    event_ids:
+        Integer event IDs to expose in the dropdown.
+    """
+    import plotly.graph_objects as go
+    from plotly.subplots import make_subplots
+
+    from master_thesis_code.plotting.single_event_detail import (
+        _load_event_likelihood_curve,
+        extract_galaxy_weights,
+    )
+
+    if not event_ids:
+        raise ValueError("event_ids cannot be empty")
+
+    fig = make_subplots(
+        rows=2,
+        cols=3,
+        subplot_titles=(
+            "Weights w/o M_z",
+            "Weights w/ M_z",
+            "Per-host scatter",
+            "L(h) w/o M_z",
+            "L(h) w/ M_z",
+            "L(h) overlay",
+        ),
+        horizontal_spacing=0.08,
+        vertical_spacing=0.14,
+    )
+
+    n_events = len(event_ids)
+    # 6 traces per event (2 bars + 1 scatter + 3 line plots). Track visibility
+    # by event for the dropdown.
+    traces_per_event = 6
+    for ev_idx, eid in enumerate(event_ids):
+        try:
+            df = extract_galaxy_weights(data_dir / "posteriors_with_bh_mass", eid)
+        except (FileNotFoundError, KeyError):
+            continue
+        df_no = df.sort_values("w_no", ascending=False).head(20).reset_index(drop=True)
+        df_w = df.sort_values("w_with", ascending=False).head(20).reset_index(drop=True)
+        visible = ev_idx == 0
+        # (1,1) bar without
+        fig.add_trace(
+            go.Bar(
+                x=list(range(len(df_no))),
+                y=df_no["w_no"].tolist(),
+                name=f"event {eid} (no M_z)",
+                marker_color=VARIANT_NO_MASS,
+                visible=visible,
+                hovertext=[
+                    f"galaxy {int(gid)}<br>w_no={w:.3f}<br>L_no={lv:.2e}"
+                    for gid, w, lv in zip(
+                        df_no["galaxy_id"], df_no["w_no"], df_no["L_no"], strict=False
+                    )
+                ],
+                hoverinfo="text",
+            ),
+            row=1,
+            col=1,
+        )
+        # (1,2) bar with
+        fig.add_trace(
+            go.Bar(
+                x=list(range(len(df_w))),
+                y=df_w["w_with"].tolist(),
+                name=f"event {eid} (with M_z)",
+                marker_color=VARIANT_WITH_MASS,
+                visible=visible,
+                hovertext=[
+                    f"galaxy {int(gid)}<br>w_with={w:.3f}<br>L_with={lv:.2e}"
+                    for gid, w, lv in zip(
+                        df_w["galaxy_id"], df_w["w_with"], df_w["L_with"], strict=False
+                    )
+                ],
+                hoverinfo="text",
+            ),
+            row=1,
+            col=2,
+        )
+        # (1,3) scatter
+        mask = (df["w_no"] > 0) | (df["w_with"] > 0)
+        ds = df[mask]
+        fig.add_trace(
+            go.Scatter(
+                x=ds["w_no"],
+                y=ds["w_with"],
+                mode="markers",
+                marker={"size": 6, "color": EDGE, "opacity": 0.65},
+                name=f"event {eid} (scatter)",
+                visible=visible,
+                hovertext=[f"galaxy {int(gid)}" for gid in ds["galaxy_id"]],
+                hoverinfo="text",
+            ),
+            row=1,
+            col=3,
+        )
+        # (2,1) L(h) without
+        curve_no = _load_event_likelihood_curve(data_dir / "posteriors", eid)
+        if curve_no is not None:
+            h_n, L_n = curve_no
+            fig.add_trace(
+                go.Scatter(
+                    x=h_n,
+                    y=L_n / max(L_n.max(), 1e-300),
+                    mode="lines",
+                    line={"color": VARIANT_NO_MASS, "width": 2},
+                    name=f"event {eid} L(h) no M_z",
+                    visible=visible,
+                ),
+                row=2,
+                col=1,
+            )
+        else:
+            fig.add_trace(go.Scatter(x=[], y=[], visible=visible), row=2, col=1)
+        # (2,2) L(h) with
+        curve_w = _load_event_likelihood_curve(data_dir / "posteriors_with_bh_mass", eid)
+        if curve_w is not None:
+            h_w, L_w = curve_w
+            fig.add_trace(
+                go.Scatter(
+                    x=h_w,
+                    y=L_w / max(L_w.max(), 1e-300),
+                    mode="lines",
+                    line={"color": VARIANT_WITH_MASS, "width": 2, "dash": "dash"},
+                    name=f"event {eid} L(h) with M_z",
+                    visible=visible,
+                ),
+                row=2,
+                col=2,
+            )
+        else:
+            fig.add_trace(go.Scatter(x=[], y=[], visible=visible), row=2, col=2)
+        # (2,3) overlay (compress both onto one panel)
+        if curve_no is not None and curve_w is not None:
+            h_n, L_n = curve_no
+            h_w, L_w = curve_w
+            fig.add_trace(
+                go.Scatter(
+                    x=h_n,
+                    y=L_n / max(L_n.max(), 1e-300),
+                    mode="lines",
+                    line={"color": VARIANT_NO_MASS},
+                    name=f"event {eid} overlay",
+                    visible=visible,
+                ),
+                row=2,
+                col=3,
+            )
+        else:
+            fig.add_trace(go.Scatter(x=[], y=[], visible=visible), row=2, col=3)
+
+    # Build dropdown buttons.
+    buttons = []
+    for i in range(n_events):
+        vis = [False] * (n_events * traces_per_event)
+        for k in range(traces_per_event):
+            vis[i * traces_per_event + k] = True
+        buttons.append(
+            {
+                "method": "update",
+                "label": f"event {event_ids[i]}",
+                "args": [
+                    {"visible": vis},
+                    {"title": f"Single-event detail — event {event_ids[i]}"},
+                ],
+            }
+        )
+    fig.update_layout(
+        title=f"Single-event detail — event {event_ids[0]}",
+        height=620,
+        updatemenus=[
+            {
+                "buttons": buttons,
+                "direction": "down",
+                "showactive": True,
+                "x": 0.0,
+                "xanchor": "left",
+                "y": 1.13,
+                "yanchor": "top",
+            }
+        ],
+        showlegend=False,
+    )
+    return fig
+
+
+def interactive_closure_test_overlay(
+    h_runs: dict[float, Path],
+) -> "go.Figure":
+    """Plotly version of fig18 — overlay posteriors from multiple injection truths."""
+    import plotly.graph_objects as go
+
+    from master_thesis_code.plotting._helpers import load_canonical_combined_posterior
+
+    fig = go.Figure()
+    for h_true in sorted(h_runs):
+        try:
+            h_grid, posterior, meta = load_canonical_combined_posterior(
+                h_runs[h_true], "posteriors"
+            )
+        except FileNotFoundError:
+            continue
+        norm = posterior / posterior.max() if posterior.max() > 0 else posterior
+        fig.add_trace(
+            go.Scatter(
+                x=h_grid,
+                y=norm,
+                mode="lines",
+                name=f"h_true={h_true:.2f} (MAP {meta['continuous_map']:.3f})",
+            )
+        )
+        fig.add_vline(x=h_true, line_dash="dot", line_width=1)
+    fig.update_layout(
+        title="Closure test: pipeline recovers each injection truth",
+        xaxis_title="h",
+        yaxis_title="Posterior (peak-normalised)",
+        xaxis_range=[0.55, 0.85],
+        yaxis_range=[-0.05, 1.15],
+    )
+    return fig
+
+
+def interactive_catalog_completeness(
+    host_counts: "pd.DataFrame",
+    *,
+    d_l_per_event: npt.NDArray[np.float64] | None = None,
+    n_bins: int = 12,
+) -> "go.Figure":
+    """Plotly counterpart to fig16: catalog coverage + host counts vs d_L."""
+    import plotly.graph_objects as go
+    from plotly.subplots import make_subplots
+
+    fig = make_subplots(
+        rows=1,
+        cols=2,
+        subplot_titles=("Host-candidate counts per event", "Catalog coverage"),
+        horizontal_spacing=0.12,
+    )
+
+    n_events = len(host_counts)
+    if d_l_per_event is not None and len(d_l_per_event) == n_events:
+        x_values = np.asarray(d_l_per_event, dtype=np.float64)
+        x_label = "d_L [Gpc]"
+    else:
+        x_values = host_counts["event_idx"].to_numpy(dtype=np.float64)
+        x_label = "Event index"
+
+    bin_edges = np.linspace(x_values.min(), x_values.max(), n_bins + 1)
+    centers = 0.5 * (bin_edges[:-1] + bin_edges[1:])
+    no_med = np.zeros(n_bins)
+    wm_med = np.zeros(n_bins)
+    coverage = np.zeros(n_bins)
+    for i in range(n_bins):
+        lo, hi = bin_edges[i], bin_edges[i + 1]
+        mask = (x_values >= lo) & (x_values < hi if i < n_bins - 1 else x_values <= hi)
+        if not mask.any():
+            continue
+        no_med[i] = float(np.median(host_counts["n_without_mass"].to_numpy()[mask]))
+        wm_med[i] = float(np.median(host_counts["n_with_mass"].to_numpy()[mask]))
+        coverage[i] = float((host_counts["n_without_mass"].to_numpy()[mask] > 0).mean())
+
+    fig.add_trace(
+        go.Scatter(
+            x=centers,
+            y=no_med,
+            mode="lines+markers",
+            name="median hosts (no M_z cut)",
+            line={"color": VARIANT_NO_MASS},
+        ),
+        row=1,
+        col=1,
+    )
+    fig.add_trace(
+        go.Scatter(
+            x=centers,
+            y=wm_med,
+            mode="lines+markers",
+            name="median hosts (with M_z cut)",
+            line={"color": VARIANT_WITH_MASS, "dash": "dash"},
+        ),
+        row=1,
+        col=1,
+    )
+    fig.add_trace(
+        go.Bar(
+            x=centers,
+            y=coverage,
+            name="catalog coverage",
+            marker_color=REFERENCE,
+        ),
+        row=1,
+        col=2,
+    )
+    fig.update_xaxes(title_text=x_label, row=1, col=1)
+    fig.update_xaxes(title_text=x_label, row=1, col=2)
+    fig.update_yaxes(title_text="N hosts (median)", type="log", row=1, col=1)
+    fig.update_yaxes(title_text="Coverage fraction", range=[0, 1.05], row=1, col=2)
+    med_red = float(host_counts["reduction_frac"].median())
+    fig.update_layout(
+        title=(
+            f"Catalog coverage and host-count reduction "
+            f"(N={n_events}, median reduction = {med_red:.0%})"
+        ),
+        height=400,
+    )
+    return fig

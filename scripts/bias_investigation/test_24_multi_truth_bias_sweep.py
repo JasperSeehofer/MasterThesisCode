@@ -51,7 +51,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import re
 import sys
 from pathlib import Path
 from typing import Any
@@ -98,59 +97,18 @@ def truth_to_dirname(h: float) -> str:
     return f"cluster_run_closure_h{s}_finegrid"
 
 
-def _h_from_filename(path: Path) -> float:
-    m = re.match(r"h_(\d+)_(\d+)\.json", path.name)
-    if m is None:
-        return float("nan")
-    return float(f"{m.group(1)}.{m.group(2)}")
-
-
-def load_per_h_likelihoods(directory: Path) -> tuple[list[float], np.ndarray]:
-    if not directory.exists():
-        return [], np.empty((0, 0))
-    files = sorted(directory.glob("h_*.json"), key=_h_from_filename)
-    h_values: list[float] = [_h_from_filename(f) for f in files]
-    event_indices: set[int] = set()
-    per_h_data: list[dict[int, float]] = []
-    for f in files:
-        with open(f) as fh:
-            d = json.load(fh)
-        per_h: dict[int, float] = {}
-        for k, v in d.items():
-            try:
-                ev = int(k)
-            except (TypeError, ValueError):
-                continue
-            if isinstance(v, list):
-                if len(v) == 0:
-                    continue
-                val = v[0]
-            else:
-                val = v
-            event_indices.add(ev)
-            per_h[ev] = float(val)
-        per_h_data.append(per_h)
-    events_sorted = sorted(event_indices)
-    log_L = np.full((len(events_sorted), len(h_values)), np.nan)
-    for j, per_h in enumerate(per_h_data):
-        for i, ev in enumerate(events_sorted):
-            if ev in per_h:
-                log_L[i, j] = float(np.log(max(per_h[ev], 1e-300)))
-    full_mask = ~np.isnan(log_L).any(axis=1)
-    log_L = log_L[full_mask]
-    return h_values, log_L
-
-
-def parabolic_refine(h_grid: np.ndarray, log_post: np.ndarray) -> float:
-    i = int(np.argmax(log_post))
-    if i <= 0 or i >= len(h_grid) - 1:
-        return float(h_grid[i])
-    h0, h1, h2 = h_grid[i - 1], h_grid[i], h_grid[i + 1]
-    y0, y1, y2 = log_post[i - 1], log_post[i], log_post[i + 1]
-    denom = y0 - 2 * y1 + y2
-    if abs(denom) < 1e-12:
-        return float(h1)
-    return float(h1 - 0.5 * (h2 - h0) * (y2 - y0) / (2 * denom))
+# Re-export the canonical implementations now lifted to
+# `master_thesis_code.bayesian_inference.posterior_combination`. Other bias-
+# investigation scripts (and test_28) import these from this module for
+# back-compat; the lifted versions are byte-equivalent (same algorithm, same
+# numerics) and now also feed the plotting pipeline.
+from master_thesis_code.bayesian_inference.posterior_combination import (
+    _h_from_filename,  # noqa: F401
+    load_per_h_likelihoods,
+)
+from master_thesis_code.bayesian_inference.posterior_combination import (
+    parabolic_refine_map as parabolic_refine,
+)
 
 
 def analyze_one_truth(
@@ -197,9 +155,7 @@ def analyze_one_truth(
     # MAP in one direction.  If pos_frac is similar across truths, the
     # same injections drive the per-truth bias — a shared-injection-set
     # signature (interpretation b in the docstring caveat).
-    per_event_map = np.array(
-        [parabolic_refine(h_grid, log_L[i]) for i in range(n_events)]
-    )
+    per_event_map = np.array([parabolic_refine(h_grid, log_L[i]) for i in range(n_events)])
     per_event_bias = per_event_map - h_truth
     per_event_pos_frac = float(np.mean(per_event_bias > 0))
     per_event_median_bias = float(np.median(per_event_bias))

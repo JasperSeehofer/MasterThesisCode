@@ -32,14 +32,18 @@ import os
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 import numpy.typing as npt
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 
+if TYPE_CHECKING:
+    import pandas as pd
+
 from master_thesis_code.plotting._colors import (
+    EDGE,
     REFERENCE,
     TRUTH,
     VARIANT_NO_MASS,
@@ -624,22 +628,47 @@ def compute_m_z_improvement_bank(
 
 def plot_m_z_improvement_panels(
     bank: ImprovementBank,
+    *,
+    canonical_combined_no_mass: tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]
+    | None = None,
+    canonical_combined_with_mass: tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]
+    | None = None,
+    host_counts: pd.DataFrame | None = None,
 ) -> tuple[Figure, Any]:
-    """Static three-panel figure of the M_z improvement analysis.
+    """Static multi-panel figure of the M_z improvement analysis.
 
-    Layout:
+    Layout (2x3 grid; bottom-right is auto-hidden when no host-count data
+    is supplied):
 
-    * Top-left:  HDI 68% width vs N for both variants, with bootstrap
-                 16–84 percentile band and a 1/sqrt(N) reference line.
-    * Top-right: Representative combined posterior at the largest N for
-                 both variants.
-    * Bottom:    Fractional tightening Δ(N) and effective event gain
-                 K(N), shared x-axis with the top-left panel.
+    * (1,1): HDI 68% width vs N for both variants, with bootstrap
+             16–84 percentile band and a 1/sqrt(N) reference line.
+    * (1,2): Canonical combined posterior for both variants — when
+             ``canonical_combined_*`` are provided this matches fig01,
+             paper_h0_posterior, fig08 left panel; otherwise falls back
+             to the legacy "representative posterior at largest N"
+             (a single bootstrap draw — used by old test fixtures).
+    * (1,3): Effective event gain K(N) = N_eff_no / N (was bottom-right).
+    * (2,1): Fractional tightening Δ(N).
+    * (2,2): Host-count reduction violin/histogram — present when a
+             host-count DataFrame is supplied (Phase B output); else
+             axis hidden.
+    * (2,3): Summary text — counts, median reduction, MAP recovery, etc.
 
     Parameters
     ----------
     bank:
         Result of :func:`compute_m_z_improvement_bank`.
+    canonical_combined_no_mass:
+        Optional ``(h_grid, posterior)`` for the canonical raw Σ log L_i
+        joint posterior (1D channel). When provided, overrides the
+        legacy single-bootstrap-draw shown in the top-right panel.
+    canonical_combined_with_mass:
+        Same as ``canonical_combined_no_mass`` for the 2D channel.
+    host_counts:
+        DataFrame from
+        :func:`master_thesis_code.analysis.parse_host_counts.parse_host_counts`
+        with per-event host counts and reduction fractions. When None,
+        the host-count panel and summary text are suppressed.
 
     Returns
     -------
@@ -661,11 +690,13 @@ def plot_m_z_improvement_panels(
     K_lo = np.asarray(bank.effective_event_gain["p16"], dtype=np.float64)
     K_hi = np.asarray(bank.effective_event_gain["p84"], dtype=np.float64)
 
-    fig, axes = get_figure(nrows=2, ncols=2, figsize=(7.0, 5.4))
+    fig, axes = get_figure(nrows=2, ncols=3, figsize=(10.5, 5.6))
     ax_w: Axes = axes[0, 0]
     ax_p: Axes = axes[0, 1]
+    ax_k: Axes = axes[0, 2]
     ax_d: Axes = axes[1, 0]
-    ax_k: Axes = axes[1, 1]
+    ax_hr: Axes = axes[1, 1]
+    ax_summary: Axes = axes[1, 2]
 
     # ---- Top-left: HDI68 width vs N ----
     ax_w.fill_between(sizes, w_no_lo, w_no_hi, color=VARIANT_NO_MASS, alpha=0.18, zorder=2)
@@ -709,8 +740,21 @@ def plot_m_z_improvement_panels(
     ax_w.legend(loc="upper right", fontsize=7)
     ax_w.set_title("Posterior tightening", fontsize=9)
 
-    # ---- Top-right: representative combined posterior at the largest N ----
-    if bank.representative_posteriors_no_mass and bank.representative_posteriors_with_mass:
+    # ---- Top-middle: canonical combined posterior (Phase A fix) ----
+    # Prefer the canonical raw Σ log L_i posterior over the legacy single-
+    # bootstrap-draw at largest N. This panel now matches fig01,
+    # paper_h0_posterior, and fig08 left panel.
+    posterior_title = "Combined posterior"
+    if canonical_combined_no_mass is not None and canonical_combined_with_mass is not None:
+        h_no, p_no = canonical_combined_no_mass
+        h_w, p_w = canonical_combined_with_mass
+        # Peak-normalise both for visual comparison.
+        p_no_n = p_no / p_no.max() if p_no.max() > 0 else p_no
+        p_w_n = p_w / p_w.max() if p_w.max() > 0 else p_w
+        ax_p.plot(h_no, p_no_n, "-", color=VARIANT_NO_MASS, linewidth=1.4, label=r"Without $M_z$")
+        ax_p.plot(h_w, p_w_n, "--", color=VARIANT_WITH_MASS, linewidth=1.4, label=r"With $M_z$")
+        posterior_title = "Canonical combined posterior (all N)"
+    elif bank.representative_posteriors_no_mass and bank.representative_posteriors_with_mass:
         last = -1
         n_show = bank.sizes[last]
         ax_p.plot(
@@ -729,19 +773,20 @@ def plot_m_z_improvement_panels(
             linewidth=1.2,
             label=r"With $M_z$",
         )
-        ax_p.axvline(
-            bank.h_true,
-            color=TRUTH,
-            linestyle=":",
-            linewidth=1.0,
-            label="Injected",
-        )
-        ax_p.set_xlabel(r"$h$")
-        ax_p.set_ylabel("Posterior (peak-norm.)")
-        ax_p.set_title(f"Combined posterior @ N = {n_show}", fontsize=9)
-        ax_p.legend(loc="upper right", fontsize=7)
-        ax_p.set_xlim(0.59, 0.87)
-        ax_p.set_ylim(-0.05, 1.15)
+        posterior_title = f"Representative posterior @ N = {n_show}"
+    ax_p.axvline(
+        bank.h_true,
+        color=TRUTH,
+        linestyle=":",
+        linewidth=1.0,
+        label="Injected",
+    )
+    ax_p.set_xlabel(r"$h$")
+    ax_p.set_ylabel("Posterior (peak-norm.)")
+    ax_p.set_title(posterior_title, fontsize=9)
+    ax_p.legend(loc="upper right", fontsize=7)
+    ax_p.set_xlim(0.59, 0.87)
+    ax_p.set_ylim(-0.05, 1.15)
 
     # ---- Bottom-left: fractional improvement Δ(N) ----
     ax_d.fill_between(sizes, frac_lo * 100.0, frac_hi * 100.0, color=VARIANT_WITH_MASS, alpha=0.25)
@@ -778,6 +823,97 @@ def plot_m_z_improvement_panels(
     ax_k.set_xlabel(r"Number of events $N_\mathrm{det}$")
     ax_k.set_ylabel(r"$K(N) = N_\mathrm{eff,without} / N$")
     ax_k.set_title("Effective event gain", fontsize=9)
+
+    # ---- Bottom-middle: host-count reduction violin ----
+    if host_counts is not None and len(host_counts) > 0:
+        red = host_counts["reduction_frac"].to_numpy(dtype=np.float64) * 100.0
+        parts = ax_hr.violinplot(red, vert=False, showmedians=True, widths=0.7)
+        # parts["bodies"] is a sequence of PolyCollection (one per dataset).
+        # mypy types violinplot's return as Collection[..]; cast to Iterable
+        # so we can apply the per-body styling.
+        from collections.abc import Iterable as _Iterable
+        from typing import cast as _cast
+
+        for body in _cast(_Iterable[Any], parts["bodies"]):
+            body.set_facecolor(VARIANT_WITH_MASS)
+            body.set_edgecolor(EDGE)
+            body.set_alpha(0.4)
+        for key in ("cmins", "cmaxes", "cbars", "cmedians"):
+            if key in parts:
+                parts[key].set_color(EDGE)
+                parts[key].set_linewidth(0.8)
+        ax_hr.set_xlabel(r"Host-candidate reduction from $M_z$ cut [%]")
+        ax_hr.set_yticks([])
+        ax_hr.set_xlim(-5, 105)
+        ax_hr.axvline(50, color=REFERENCE, linewidth=0.6, linestyle=":")
+        med = float(np.median(red))
+        ax_hr.set_title(rf"Reduction in candidate hosts (median = {med:.0f}%)", fontsize=9)
+    else:
+        ax_hr.axis("off")
+        ax_hr.text(
+            0.5,
+            0.5,
+            "Host-count CSV not provided",
+            ha="center",
+            va="center",
+            transform=ax_hr.transAxes,
+            fontsize=8,
+        )
+
+    # ---- Bottom-right: summary text ----
+    ax_summary.axis("off")
+    summary_lines: list[str] = []
+    if canonical_combined_no_mass is not None and canonical_combined_with_mass is not None:
+        h_no, p_no = canonical_combined_no_mass
+        h_w, p_w = canonical_combined_with_mass
+        map_no = float(h_no[int(np.argmax(p_no))])
+        map_w = float(h_w[int(np.argmax(p_w))])
+        summary_lines += [
+            f"Canonical MAP without $M_z$: {map_no:.4f}",
+            f"Canonical MAP with $M_z$:    {map_w:.4f}",
+            f"Truth h:                     {bank.h_true:.4f}",
+        ]
+    if bank.sizes:
+        n_max = bank.sizes[-1]
+        w_no_at_max = bank.metrics_no_mass["hdi68_width"]["median"][-1]
+        w_w_at_max = bank.metrics_with_mass["hdi68_width"]["median"][-1]
+        delta_at_max = bank.fractional_improvement["median"][-1] * 100.0
+        summary_lines += [
+            "",
+            f"N events (max bootstrap): {n_max}",
+            f"HDI68 width (without):    {w_no_at_max:.4f}",
+            f"HDI68 width (with):       {w_w_at_max:.4f}",
+            f"Δ(N_max):                 {delta_at_max:.1f} %",
+        ]
+    if host_counts is not None and len(host_counts) > 0:
+        n_ev = len(host_counts)
+        med_red = float(host_counts["reduction_frac"].median()) * 100.0
+        mean_no = float(host_counts["n_without_mass"].mean())
+        mean_w = float(host_counts["n_with_mass"].mean())
+        summary_lines += [
+            "",
+            f"Events (catalog parse):   {n_ev}",
+            f"Median host reduction:    {med_red:.0f} %",
+            f"Mean hosts (no cut):      {mean_no:.0f}",
+            f"Mean hosts (with M_z):    {mean_w:.0f}",
+        ]
+    if summary_lines:
+        ax_summary.text(
+            0.02,
+            0.98,
+            "\n".join(summary_lines),
+            transform=ax_summary.transAxes,
+            va="top",
+            ha="left",
+            fontsize=8,
+            family="monospace",
+            bbox={
+                "boxstyle": "round,pad=0.4",
+                "facecolor": "white",
+                "alpha": 0.9,
+                "edgecolor": EDGE,
+            },
+        )
 
     fig.tight_layout()
     return fig, axes
