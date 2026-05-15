@@ -243,8 +243,21 @@ class Model1CrossCheck:
             return self._log_probability(10 ** x[0], x[1])
 
         ndim = 2
-        nwalkers = 20
-        burn_in_steps = 1000
+        # nwalkers=50, burn_in_steps=10000 — hardens the (M, z) chain against
+        # the seed-dependent equilibrium drift documented in the CRB two-population
+        # diagnosis (2026-05-16, .planning/HANDOFF-PLOTTING-OVERHAUL-20260516.md §A).
+        # Measured integrated autocorrelation time τ_ACT ≈ 33 steps for both log10(M)
+        # and z; prior burn_in_steps=1000 ≈ 30·τ_ACT sat below the 50·τ_ACT safety
+        # margin recommended by Foreman-Mackey et al. (2013) §4. Per-task chains then
+        # used only the first ~25 of 4000 post-burn-in samples per task (4000 = 200·20
+        # samples per emcee batch; each task consumes ~25 events before exiting), so
+        # the burn-in equilibrium dominated the per-task (M, z) marginal — visible as
+        # the row-424 seam in the production CRB between seed200 (M≈4.6e5 mode) and
+        # seed300_extension (M≈2.2e5 mode). New values give 10000 ≈ 300·τ_ACT burn-in
+        # and 2.5× walker coverage; cross-seed median-M ratio measured 1.02 (post-fix)
+        # vs 0.91 (pre-fix, single-batch reproduction); cross-task std halved.
+        nwalkers = 50
+        burn_in_steps = 10000
         p0_mass = self._rng.random((nwalkers, 1)) * (
             np.log10(self.parameter_space.M.upper_limit)
             - np.log10(self.parameter_space.M.lower_limit)

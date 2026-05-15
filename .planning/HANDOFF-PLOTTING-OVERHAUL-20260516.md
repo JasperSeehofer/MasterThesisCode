@@ -128,9 +128,55 @@ has Δh=0.001 — the true 2D posterior is narrower than measurable.
 
 ## Action items (ordered by priority)
 
-### A. Pin down what differs between Phase 45 and seed300 extension (high — paper-relevant)
+### A. ~~Pin down what differs between Phase 45 and seed300 extension~~ — RESOLVED 2026-05-16
 
-**Goal:** explain the CRB two-population structure, decide whether to keep
+**Resolution:** the boundary at row 424 in `prepared_cramer_rao_bounds.csv` is
+the **seed200/seed300 concatenation seam**, not a code-difference between
+campaigns. Verified on cluster:
+
+- `run_20260401_seed200/simulations/cramer_rao_bounds.csv` (SNR_THR=15, 4497
+  raw events) → SNR≥20 subset = **424 events**, top-5 M = {463534 (×176),
+  318738 (52), 294877 (43), 342686 (39), 271107 (29)}. Matches production
+  rows 0–424 to the unit.
+- `run_20260504_seed300_extension/simulations/cramer_rao_bounds_simulation_*.csv`
+  (SNR_THR=20, all SNR≥20) → **1050 events**, top-5 M = {223872 (379),
+  463534 (317), 85539 (110), 108123 (51), 63238 (49)}. Matches production
+  rows 424+ closely; ~75 events unaccounted (likely small third extension).
+
+`git log -- master_thesis_code/cosmological_model.py` shows **no sampler
+changes** between Apr 7 and May 4. PE-01 (55a6d99) threads `h_inj` but is a
+no-op at h_inj=H=0.73 by construction.
+
+**Mechanism**: per-task emcee chains in `Model1CrossCheck.setup_emri_events_sampler`
+(nwalkers=20, burn_in=1000) **under-mix** the M1 mass prior. Each task
+converges to a seed-dependent sub-region of (M, z). Verified by per-task
+M-library inspection: within seed300 alone, tasks 10 & 20 are dominated by
+M≈4.6e5 while tasks 2, 5, 30, 40, 49 are dominated by M≈2.2e5. Same drift
+in seed200's surviving per-task survivors.
+
+**Impact on H0**: none. The d_L–z relation per event and event-by-event
+likelihoods are unaffected by the M-marginal heterogeneity. The bootstrap
+σ_boot is correct; the convergence-curve elbow at N≈420 is a concatenation-
+order artifact, NOT "data became more informative."
+
+**Paper policy adopted**: keep merged 1549-event CRB. Disclose in
+methods/appendix that the production CRB is `seed200(SNR≥20) ⊕
+seed300_extension(SNR≥20)` with concatenation in that order; document the
+per-task emcee under-mixing observation; show H0 MAP robustness across
+(merged, seed200-only, seed300-only) subsets.
+
+**Optional fix** (not blocking paper): increase `burn_in_steps=1000 → 10000`
+and `nwalkers=20 → 50` in `cosmological_model.py:setup_emri_events_sampler`.
+One-line config change, requires re-running CRB campaign on GPU. Only worth
+doing if reviewers flag the M-prior heterogeneity.
+
+Memory entry: `memory/project_crb_two_population.md`.
+
+---
+
+### A-bis. Original notes (superseded; kept for traceability)
+
+**Goal (original):** explain the CRB two-population structure, decide whether to keep
 the campaigns merged or split the analysis into A-only/B-only subsets.
 
 **Concrete steps:**
