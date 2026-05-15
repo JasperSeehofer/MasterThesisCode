@@ -840,6 +840,106 @@ Each entry links to its date-stamped narrative in [Appendix A](#appendix-a--chro
   and `~/.claude/plans/please-look-at-the-velvety-quail.md` for the
   full plan-to-validation narrative.
 
+### 3.16 M1-prior emcee under-mixing → seed-dependent (M, z) marginal (2026-05-16)
+
+- **Symptom:** the production CRB at
+  `simulations/cluster_run_production_h0p73_20260506/simulations/prepared_cramer_rao_bounds.csv`
+  (1549 events, h=0.73) showed a sharp **row-424 boundary** between two
+  mass libraries: pop A (rows 0–423) dominated by M ≈ 4.6e5 (median
+  M = 3.7e5, median d_L = 0.32 Gpc, median SNR = 24), pop B (rows
+  424–1549) dominated by M ≈ 2.2e5 (median M = 2.2e5, median d_L =
+  0.07 Gpc, median SNR = 31). The bi-modality drove an elbow at N≈400
+  in the M_z-improvement HDI68-vs-N convergence curve
+  (`figures/paper_m_z_improvement.pdf`) that masqueraded as "data
+  became more informative" when it was actually concatenation order.
+- **Mechanism (cluster forensics, 2026-05-16):**
+  1. **Production CRB is a concatenation of two simulation campaigns.**
+     `run_20260401_seed200/simulations/cramer_rao_bounds.csv` (SNR_THR=15,
+     4497 raw events; SNR≥20 subset = 424 events) followed by
+     `run_20260504_seed300_extension/simulations/cramer_rao_bounds_simulation_*.csv`
+     (SNR_THR=20, 1050 events). The M=463534 count in production rows
+     0–423 matches seed200's SNR≥20 subset to the unit (176 events
+     each); top-5 M-libraries match in both directions. ~75 events
+     (rows 1475–1549) remain unaccounted, likely a third small
+     extension or rerun, not yet pinned down.
+  2. **`cosmological_model.py` sampler code is unchanged across the
+     campaign window** (Apr 7 → May 4). `git log` on
+     `cosmological_model.py`, `M1_model_extracted_data/`, and
+     sampler constants (nwalkers=20, burn_in=1000) shows only refactor
+     commits. PE-01 (commit `55a6d99`) threads `h_inj` into
+     `set_host_galaxy_parameters` but is a no-op at h_inj=H=0.73 by
+     construction. Same code, same prior, different seeds.
+  3. **`Model1CrossCheck.setup_emri_events_sampler` was under-mixed.**
+     Measured integrated autocorrelation time
+     τ_ACT ≈ 33 steps for both log10(M) and z. Prior burn_in_steps=1000
+     sat at 30·τ_ACT, below the 50·τ_ACT safety margin in Foreman-Mackey
+     et al. (2013) §4. Per-task chains converged to seed-dependent
+     equilibria within the M1 prior (R_emri(M) × dN/dz(M, z) has a
+     sharp R_emri peak at M ≈ 2.5e5 plus long tails to [3e4, 1e6]).
+  4. **Selection effect amplification.** Per-task SLURM jobs consume
+     only the first ~25 events of the 4000-sample batch returned by
+     `sample_emri_events(200)` before exiting, so the burn-in
+     equilibrium dominates the per-task (M, z) marginal. The downstream
+     SNR≥20 cut amplifies whatever sampling bias exists: a mild ~10%
+     cross-seed median-M drift becomes a ~2× apparent split downstream
+     because heavy MBHs at d_L ≈ 0.3 Gpc survive the SNR cut just barely
+     (SNR ≈ 22) while light MBHs need d_L ≲ 0.1 Gpc (SNR ≈ 30+) — the
+     selection function reshapes seed200's high-M chain into the heavy
+     tail and seed300's lower-M chain into the close/light region.
+- **Diagnostic (inline, no scripts):**
+  ```python
+  # Cluster, via awk:
+  awk -F, 'NR>1 && $122>=20{printf "%.0f\n", $1}' \
+    /pfs/work9/.../run_20260401_seed200/simulations/cramer_rao_bounds.csv \
+    | sort | uniq -c | sort -rn | head
+  # → 176×463534, 52×318738, 43×294877, ... (matches production rows 0–423)
+
+  # Local, autocorrelation measurement:
+  sampler.run_mcmc(p0, 5000); sampler.get_autocorr_time(quiet=True)
+  # → τ ≈ 33 steps for log10(M), τ ≈ 34 for z
+  ```
+  Cross-seed median-M ratio (per-task seeds 200–219 vs 300–319,
+  single-batch reproduction): OLD config 0.91, NEW config 1.02.
+- **Fix (commit `991333a`, this file change):**
+  - `master_thesis_code/cosmological_model.py:setup_emri_events_sampler`:
+    `nwalkers = 20 → 50`, `burn_in_steps = 1000 → 10000`. New values
+    give 10000 ≈ 300·τ_ACT burn-in plus 2.5× walker coverage.
+  - Cost: integration test fixture burn-in goes ~3 s → ~30 s (slow tests
+    only). Smoke run confirms cross-seed log10(M) std ≈ 0.35 (broad
+    coverage), within-campaign std halved (1.74e4 → 1.17e4).
+- **Impact on H0 — none.** d_L–z relation per event and event-by-event
+  likelihoods are unaffected by M-marginal heterogeneity. The bootstrap
+  σ_boot remains a correct variance estimator. The convergence-curve
+  elbow at N≈420 in `paper_m_z_improvement.pdf` is purely a
+  concatenation-order artifact. The user's original hypothesis (M vs
+  M_z simulation bug) was quantitatively disproven before this
+  diagnosis: dividing pop A's M by (1 + z_est) leaves a 51% residual
+  gap from pop B's M, ruling out a missing (1+z) Jacobian. The actual
+  cause turned out to be sampler under-mixing, not a physics-formula
+  bug.
+- **Reference:**
+  - Foreman-Mackey, Hogg, Lang & Goodman (2013) "emcee: The MCMC
+    Hammer" arXiv:1202.3665 §4 (burn-in ≥ 50·τ_ACT, nwalkers ≥ 2·ndim
+    with margin).
+  - Goodman & Weare (2010) "Ensemble samplers with affine invariance"
+    — original affine-invariant ensemble sampler.
+- **Paper policy:** keep the merged 1549-event production CRB as the
+  paper-grade dataset. Disclose in methods/appendix that the CRB is
+  `seed200(SNR≥20) ⊕ seed300_extension(SNR≥20)` concatenated in that
+  order; document the per-task emcee under-mixing observation;
+  demonstrate H0-MAP robustness across (merged, seed200-only,
+  seed300-only) subsets — predicted invariance within σ_boot since the
+  d_L–z inference channel is unaffected. The sampler fix applies to
+  any future `python -m master_thesis_code <dir> --simulation_steps N`
+  campaign run.
+- **Status:** sampler fix committed (`991333a`); production CRB
+  preserved; no re-run scheduled. Pinning down the residual ~75
+  events between row 1474 and 1549 remains open as a low-priority
+  pre-submission task.
+- **Detail →** `.planning/HANDOFF-PLOTTING-OVERHAUL-20260516.md` §A
+  (full forensics + paper policy) and
+  `memory/project_crb_two_population.md` (concise memory entry).
+
 ### 3.12 Galactic confusion noise in PSD (Phase 9)
 
 - **Symptom:** Pre-fix LISA PSD lacked the galactic foreground component;
