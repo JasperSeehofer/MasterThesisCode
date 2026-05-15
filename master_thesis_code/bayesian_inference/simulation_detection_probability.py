@@ -61,6 +61,20 @@ _DEFAULT_H_PRIOR_MAX: float = 0.86
 # principled-bridge extrapolation regime.
 _DL_PADDING_FACTOR: float = 1.1
 
+# F4 (Phase 49): Nadaraya-Watson kernel p_det estimator.  The histogram
+# form p_det = N_det/N_total is a step function in (d_L, M_z, h); injection
+# d_L_k(h) crossing fixed bin edges as h shifts produces integer-count
+# discontinuities (96% of post-F1 Σ(Δp)², per
+# ``scripts/bias_investigation/test_29_snr_threshold_crossings.py``).
+# Replacement: kernel-weighted estimator
+#     p̂(d_L_q, M_q, h) = Σ_k K_k(h) · 1[SNR_k(h)≥thr] / Σ_k K_k(h)
+# with truncated Gaussian kernel K_k centered at (d_L_q, log M_q).  Bandwidths
+# from Scott's rule (N^(-1/(d+4)) with d=2 → N^(-1/6)) on the injection sample.
+# Refs: Nadaraya (1964); Watson (1964); Scott (1992) Ch. 6;
+# Farr (2019) arXiv:1904.10879 Sec III; Mandel-Farr-Gair (2019) Eq. 18.
+_KERNEL_TRUNCATION_SIGMA: float = 3.0  # cut kernel beyond 3σ in d_L (sparse search)
+_SCOTT_EXPONENT_2D: float = -1.0 / 6.0  # Scott's rule for d=2 dimensions
+
 # ----------------------------------------------------------------------
 # Out-of-grid detection-probability behavior (1D and 2D channels).
 #
@@ -134,12 +148,22 @@ class SimulationDetectionProbability:
         dl_bins: int = _DEFAULT_DL_BINS,
         mass_bins: int = _DEFAULT_M_BINS,
         h_prior_range: tuple[float, float] = (_DEFAULT_H_PRIOR_MIN, _DEFAULT_H_PRIOR_MAX),
+        bandwidth_scale: float = 1.0,
         _force_unit_weights: bool = False,
     ) -> None:
         self._dl_bins = dl_bins
         self._mass_bins = mass_bins
         self._snr_threshold = snr_threshold
         self._force_unit_weights = _force_unit_weights
+        # F4 (Phase 49): kernel-bandwidth tuning multiplier applied to Scott's
+        # rule.  1.0 = standard Scott's rule (theoretically optimal under
+        # Gaussian assumption).  Larger values oversmooth (reduce variance,
+        # increase bias); smaller values undersmooth (increase variance,
+        # restore step-like behavior).  See ``_compute_bandwidths``.
+        if bandwidth_scale <= 0.0:
+            msg = f"bandwidth_scale must be positive, got {bandwidth_scale}"
+            raise ValueError(msg)
+        self._bandwidth_scale: float = float(bandwidth_scale)
         if h_prior_range[0] >= h_prior_range[1]:
             msg = f"h_prior_range must satisfy lower < upper, got {h_prior_range}"
             raise ValueError(msg)
@@ -344,6 +368,32 @@ class SimulationDetectionProbability:
         d_L_at_h_min = dist_vectorized(self._z_arr, h=self._h_prior_min)
         return float(np.max(d_L_at_h_min)) * _DL_PADDING_FACTOR
 
+    def _compute_bandwidths(
+        self,
+        dl_vals: npt.NDArray[np.float64],
+        log_M_vals: npt.NDArray[np.float64],
+    ) -> tuple[float, float]:
+        """Kernel bandwidths for the Nadaraya-Watson p_det estimator.
+
+        Scott's rule for d=2: σ = bandwidth_scale · n^(-1/6) · std(x).
+        d_L axis is linear (Gpc); M axis is log10(M_z).
+
+        Args:
+            dl_vals: per-injection d_L_target(h) at the current trial h, in Gpc.
+            log_M_vals: per-injection log10(M_z) (observer-frame), dimensionless.
+
+        Returns:
+            (σ_dl in Gpc, σ_logM in dex).  Both ≥ a small numerical floor.
+
+        References:
+            Scott (1992), Multivariate Density Estimation, Ch. 6.
+        """
+        n = float(len(dl_vals))
+        scale = self._bandwidth_scale * n**_SCOTT_EXPONENT_2D
+        sigma_dl = max(scale * float(np.std(dl_vals, ddof=0)), 1e-12)
+        sigma_log_M = max(scale * float(np.std(log_M_vals, ddof=0)), 1e-12)
+        return sigma_dl, sigma_log_M
+
     def _get_or_build_grid(
         self, h: float
     ) -> tuple[RegularGridInterpolator, RegularGridInterpolator]:
@@ -407,163 +457,160 @@ class SimulationDetectionProbability:
         *,
         weights: npt.NDArray[np.float64] | None = None,
     ) -> RegularGridInterpolator:
-        """Build a 2D P_det(d_L, M_z) grid by marginalizing over sky angles.
+        """Build a 2D P_det(d_L, M_z) grid via the Nadaraya-Watson kernel estimator.
+
+        Replaces the prior histogram form ``p_det = N_det / N_total`` (which is
+        a step function in (d_L, M_z, h) and produces coherent integer-count
+        jumps as injection d_L_k(h) crosses fixed bin edges) with the smooth
+        kernel-weighted form
+
+            p̂(d_L_q, M_q, h) = Σ_k w_k · K_dl(d_L_k(h), d_L_q) · K_M(M_k, M_q)
+                                · 1[SNR_k(h)≥thr]
+                              / Σ_k w_k · K_dl(d_L_k(h), d_L_q) · K_M(M_k, M_q)
+
+        evaluated at every fixed grid center.  Kernels are Gaussian:
+        K_dl(x; x_q) = exp[-½((x − x_q)/σ_dl)²]; K_M uses log10(M).  Bandwidths
+        from Scott's rule (``_compute_bandwidths``).  Kernel is truncated at
+        ``_KERNEL_TRUNCATION_SIGMA`` along the d_L axis (sparse search via
+        sorted-injection ``np.searchsorted``) to keep build cost O(N_inj).
 
         The M axis of the grid is **observer-frame** M_z = M_source · (1 + z_inj),
         the natural SNR-determining mass coordinate.  ``_get_or_build_grid``
         applies the (1+z_inj) factor when constructing ``df`` so that the M
-        column passed here is already observer-frame.  Production queries
-        pass observer-frame M_z directly (``host_M·(1+z)`` in the numerator
-        integrand, ``M·(1+z)`` in the denominator); grid axis and queries
-        thus share a single coordinate convention.
+        column passed here is already observer-frame.  Production queries pass
+        observer-frame M_z directly; grid axis and queries share one convention.
 
-        Uses the ``luminosity_distance`` column directly -- no z-to-d_L
-        conversion needed.
+        When ``weights`` is provided, kernel weights compose multiplicatively
+        with the importance-sampling weights (self-normalized estimator):
+        ``p̂ = Σ_k w_IS K_k det_k / Σ_k w_IS K_k``.  When ``weights`` is None
+        (default), ``w_IS = 1`` for all k.
 
-        When ``weights`` is provided, uses the self-normalized importance
-        sampling estimator P_hat(B) = sum(w_det) / sum(w_total) per bin
-        instead of N_det / N_total.  When weights is None (default), falls
-        back to the standard unweighted estimator.
-
-        If ``h_val`` is provided, per-bin quality metadata (total counts,
-        detected counts, reliable mask, effective sample size) is stored in
-        ``self._quality_flags`` for diagnostic use.  This metadata does
-        **not** affect the interpolation result.
+        If ``h_val`` is provided, per-cell quality metadata is stored in
+        ``self._quality_flags`` for diagnostic use.  Under the kernel form the
+        previously-integer counts become continuous "effective" kernel mass;
+        the dict keys are preserved (``n_total``, ``n_detected``, ``reliable``,
+        ``n_eff``, ``dl_edges``, ``M_edges``) for backward compatibility.
 
         Args:
-            df: DataFrame with columns luminosity_distance, M, SNR.  The
-                ``M`` column must be observer-frame M_z (per the convention
-                set in ``_get_or_build_grid``).
+            df: DataFrame with columns luminosity_distance, M, SNR.  ``M`` is
+                observer-frame M_z (per the convention set in
+                ``_get_or_build_grid``).
             snr_threshold: SNR detection threshold.
             h_val: Hubble parameter value for quality flag storage (optional).
             weights: Per-injection importance weights, shape (N,).  If None,
-                all weights are implicitly 1 (standard histogram estimator).
+                all weights are implicitly 1.
 
         Returns:
-            RegularGridInterpolator for P_det(d_L, M_z).
+            RegularGridInterpolator for P_det(d_L, M_z) on the fixed centers.
 
         References:
-            Self-normalized IS estimator: Tiwari (2018), arXiv:1712.00482, Eq. 5-8.
-            Effective sample size: Kish (1965), Survey Sampling.
+            Nadaraya (1964), Watson (1964) — kernel regression estimator.
+            Scott (1992), Multivariate Density Estimation, Ch. 6 — bandwidth.
+            Farr (2019), arXiv:1904.10879 Sec III — per-injection p_det form.
+            Mandel-Farr-Gair (2019), arXiv:1809.02063 Eq. 18 — IS weight form.
+            Tiwari (2018), arXiv:1712.00482, Eq. 5-8 — self-normalized IS.
+            Kish (1965), Survey Sampling — effective sample size formula.
         """
-        dl_vals = df["luminosity_distance"].values
-        M_vals = df["M"].values  # noqa: N806
-        snr_vals = df["SNR"].values
+        # Eq. (A.19) in Gray et al. (2020), arXiv:1908.06050, replaced with
+        # the kernel-weighted Nadaraya-Watson form (see method docstring).
+        dl_vals = np.asarray(df["luminosity_distance"].values, dtype=np.float64)
+        M_vals = np.asarray(df["M"].values, dtype=np.float64)  # noqa: N806
+        snr_vals = np.asarray(df["SNR"].values, dtype=np.float64)
         n_events = len(df)
 
-        # Set up weights -- default to None (unweighted path)
-        use_weights = weights is not None
-        if use_weights:
-            w = np.asarray(weights, dtype=np.float64)
-            if len(w) != n_events:
-                msg = f"weights length {len(w)} != DataFrame length {n_events}"
+        if weights is not None:
+            w_is = np.asarray(weights, dtype=np.float64)
+            if len(w_is) != n_events:
+                msg = f"weights length {len(w_is)} != DataFrame length {n_events}"
                 raise ValueError(msg)
         else:
-            w = np.ones(n_events, dtype=np.float64)
+            w_is = np.ones(n_events, dtype=np.float64)
 
-        # h-stable bin edges in d_L: support does NOT drift with the trial h.
-        # Pre-fix (per-h `dl_max = max(dl_vals)*1.1`) caused individual
-        # injections to cross bin boundaries as h shifted, producing 5-25%
-        # jumps in p_det that summed coherently across events into visible
-        # spikes in Sigma log L_i (see .planning/debug/posterior-noisy-peak.md).
-        # The M axis is observer-frame M_z (h-independent by construction)
-        # so its bin edges are already h-stable and unchanged here.
-        # Refs: Farr (2019) arXiv:1904.10879 Sec III; Mandel-Farr-Gair (2019)
-        # arXiv:1809.02063 Eq. 18; Gray et al. (2020) arXiv:1908.06050.
+        # Fixed grid support (h-stable d_L; h-independent observer-frame M_z).
+        # The grid CENTERS define where p_det is evaluated; the edges are kept
+        # only for backward-compatible quality_flags reporting.
         dl_max = self._dl_global_max
-        dl_edges = np.linspace(0, dl_max, self._dl_bins + 1)
-
+        dl_edges = np.linspace(0.0, dl_max, self._dl_bins + 1)
         M_min = float(np.min(M_vals)) * 0.9  # noqa: N806
         M_max = float(np.max(M_vals)) * 1.1  # noqa: N806
         M_edges = np.geomspace(M_min, M_max, self._mass_bins + 1)  # noqa: N806
 
-        detected_mask = snr_vals >= snr_threshold
+        dl_centers = 0.5 * (dl_edges[:-1] + dl_edges[1:])
+        M_centers = np.sqrt(M_edges[:-1] * M_edges[1:])  # noqa: N806
 
-        if not use_weights:
-            # Original unweighted path -- preserves exact bit-for-bit output
-            total_counts, _, _ = np.histogram2d(
-                dl_vals,
-                M_vals,
-                bins=[dl_edges, M_edges],
+        log_M_vals = np.log10(M_vals)  # noqa: N806
+        log_M_centers = np.log10(M_centers)  # noqa: N806
+
+        sigma_dl, sigma_log_M = self._compute_bandwidths(dl_vals, log_M_vals)
+
+        # Sort by d_L for searchsorted-based 3σ truncation.
+        sort_idx = np.argsort(dl_vals, kind="mergesort")
+        dl_sorted = dl_vals[sort_idx]
+        log_M_sorted = log_M_vals[sort_idx]  # noqa: N806
+        w_sorted = w_is[sort_idx]
+        det_sorted = snr_vals[sort_idx] >= snr_threshold
+
+        p_det_grid = np.zeros((self._dl_bins, self._mass_bins), dtype=np.float64)
+        n_total_grid = np.zeros((self._dl_bins, self._mass_bins), dtype=np.float64)
+        n_det_grid = np.zeros((self._dl_bins, self._mass_bins), dtype=np.float64)
+        n_eff_grid = np.zeros((self._dl_bins, self._mass_bins), dtype=np.float64)
+
+        half_window = _KERNEL_TRUNCATION_SIGMA * sigma_dl
+        inv_two_sigma_dl_sq = 0.5 / (sigma_dl * sigma_dl)
+        inv_two_sigma_log_M_sq = 0.5 / (sigma_log_M * sigma_log_M)
+
+        for i, dl_q in enumerate(dl_centers):
+            lo = int(np.searchsorted(dl_sorted, dl_q - half_window, side="left"))
+            hi = int(np.searchsorted(dl_sorted, dl_q + half_window, side="right"))
+            if lo == hi:
+                continue
+            dl_loc = dl_sorted[lo:hi]
+            log_M_loc = log_M_sorted[lo:hi]  # noqa: N806
+            w_loc = w_sorted[lo:hi]
+            det_loc = det_sorted[lo:hi]
+
+            # d_L kernel weight (independent of M_q); fold in IS weight.
+            w_dl = np.exp(-inv_two_sigma_dl_sq * (dl_loc - dl_q) ** 2) * w_loc
+
+            # log-M kernel for all M centers at once: shape (N_loc, M_bins)
+            diff_log_M = log_M_loc[:, None] - log_M_centers[None, :]  # noqa: N806
+            w_log_M = np.exp(-inv_two_sigma_log_M_sq * diff_log_M**2)  # noqa: N806
+
+            kernel_w = w_dl[:, None] * w_log_M  # shape (N_loc, M_bins)
+
+            sum_w = kernel_w.sum(axis=0)
+            sum_w_det = (kernel_w * det_loc[:, None]).sum(axis=0)
+            sum_w_sq = (kernel_w**2).sum(axis=0)
+
+            p_det_grid[i, :] = np.divide(
+                sum_w_det,
+                sum_w,
+                out=np.zeros(self._mass_bins, dtype=np.float64),
+                where=sum_w > 0.0,
             )
-            detected_counts, _, _ = np.histogram2d(
-                dl_vals[detected_mask],
-                M_vals[detected_mask],
-                bins=[dl_edges, M_edges],
-            )
-            p_det_grid = np.divide(
-                detected_counts,
-                total_counts,
-                out=np.zeros_like(detected_counts, dtype=np.float64),
-                where=total_counts > 0,
-            )
-            # N_eff = n_total for unweighted case (identity)
-            n_eff_grid = total_counts.astype(np.float64)
-        else:
-            # Weighted IS estimator path
-            # Assign each injection to a bin using np.digitize
-            dl_bin_idx = np.digitize(dl_vals, dl_edges) - 1  # 0-based
-            M_bin_idx = np.digitize(M_vals, M_edges) - 1  # noqa: N806
-
-            # Clip to valid range (digitize can return out-of-range)
-            dl_bin_idx = np.clip(dl_bin_idx, 0, self._dl_bins - 1)
-            M_bin_idx = np.clip(M_bin_idx, 0, self._mass_bins - 1)
-
-            # Accumulate weighted sums per bin using np.add.at
-            total_weights = np.zeros((self._dl_bins, self._mass_bins), dtype=np.float64)
-            detected_weights = np.zeros((self._dl_bins, self._mass_bins), dtype=np.float64)
-            n_eff_grid = np.zeros((self._dl_bins, self._mass_bins), dtype=np.float64)
-
-            # Also track integer counts for quality flags
-            total_counts = np.zeros((self._dl_bins, self._mass_bins), dtype=np.float64)
-            detected_counts = np.zeros((self._dl_bins, self._mass_bins), dtype=np.float64)
-
-            np.add.at(total_weights, (dl_bin_idx, M_bin_idx), w)
-            np.add.at(total_counts, (dl_bin_idx, M_bin_idx), 1.0)
-
-            det_dl = dl_bin_idx[detected_mask]
-            det_M = M_bin_idx[detected_mask]
-            det_w = w[detected_mask]
-
-            np.add.at(detected_weights, (det_dl, det_M), det_w)
-            np.add.at(detected_counts, (det_dl, det_M), 1.0)
-
-            # P_det = sum(w_det) / sum(w_total), 0 where total=0
-            # Self-normalized IS estimator, Tiwari (2018) Eq. 5-8
-            p_det_grid = np.divide(
-                detected_weights,
-                total_weights,
-                out=np.zeros((self._dl_bins, self._mass_bins), dtype=np.float64),
-                where=total_weights > 0,
-            )
-
-            # Kish N_eff per bin: (sum w)^2 / sum(w^2)
-            # Kish (1965), Survey Sampling
-            sum_w2_grid = np.zeros((self._dl_bins, self._mass_bins), dtype=np.float64)
-            np.add.at(sum_w2_grid, (dl_bin_idx, M_bin_idx), w**2)
-            n_eff_grid = np.divide(
-                total_weights**2,
-                sum_w2_grid,
-                out=np.zeros((self._dl_bins, self._mass_bins), dtype=np.float64),
-                where=sum_w2_grid > 0,
+            n_total_grid[i, :] = sum_w
+            n_det_grid[i, :] = sum_w_det
+            # Kish (1965) effective sample size: (Σw)² / Σw²
+            n_eff_grid[i, :] = np.divide(
+                sum_w**2,
+                sum_w_sq,
+                out=np.zeros(self._mass_bins, dtype=np.float64),
+                where=sum_w_sq > 0.0,
             )
 
-        # Store quality flags (metadata only -- does not affect interpolation)
+        # Store quality flags (metadata only -- does not affect interpolation).
+        # Under the kernel form n_total / n_detected are continuous kernel-mass
+        # sums (not integer counts); the keys are preserved for backward
+        # compatibility with diagnostic scripts (test_14_channel_audit.py etc.).
         if h_val is not None:
             self._quality_flags[h_val] = {
-                "n_total": total_counts.copy(),
-                "n_detected": detected_counts.copy(),
-                "reliable": (total_counts >= 10),
+                "n_total": n_total_grid.copy(),
+                "n_detected": n_det_grid.copy(),
+                "reliable": (n_eff_grid >= 10.0),
                 "dl_edges": dl_edges.copy(),
                 "M_edges": M_edges.copy(),
                 "n_eff": n_eff_grid.copy(),
             }
-
-        # Use bin centers as grid coordinates
-        dl_centers = 0.5 * (dl_edges[:-1] + dl_edges[1:])
-        M_centers = np.sqrt(
-            M_edges[:-1] * M_edges[1:]
-        )  # geometric mean for log-spaced  # noqa: N806
 
         # fill_value=None → nearest-neighbor extrapolation outside grid.
         # fill_value=0.0 caused 44% of events to lose completeness correction
@@ -583,62 +630,83 @@ class SimulationDetectionProbability:
         *,
         h_val: float | None = None,
     ) -> RegularGridInterpolator:
-        """Build a 1D P_det(d_L) grid by marginalizing over M and sky angles.
+        """Build a 1D P_det(d_L) grid via the 1D Nadaraya-Watson kernel estimator.
 
-        The histogram edges are ``np.linspace(0, dl_max, N+1)`` so the first
-        bin covers ``[0, 2·c_0)`` with ``c_0 = dl_centers[0] = dl_max/(2N)``.
-        The grid is the raw histogram with bin centers in d_L; off-grid
-        extrapolation behaviour is implemented in
+        Replaces the prior 1D histogram form ``p_det = N_det / N_total`` with
+        the smooth kernel-weighted estimator (see ``_build_grid_2d`` for the
+        full motivation and references).  Uses the same d_L bandwidth as the
+        2D builder (Scott's rule on the injection sample) to keep the two
+        channels consistent.
+
+        Off-grid extrapolation is the responsibility of
         :meth:`detection_probability_without_bh_mass_interpolated_zero_fill`
-        as a principled scheme (linear bridge to the saturated asymptote
-        at d_L=0, slope-matched linear extrapolation toward 0 above
-        d_L_max), aligned with the 2D channel.
+        (principled linear bridge to p=1 at d_L=0, slope-matched extrapolation
+        above d_L_max), unchanged.
 
         Args:
-            df: DataFrame with columns luminosity_distance, SNR.
+            df: DataFrame with columns luminosity_distance, M, SNR.  ``M`` is
+                used only to compute the (h-independent) M-axis bandwidth that
+                the 2D builder shares; the 1D estimator marginalizes M.
             snr_threshold: SNR detection threshold.
             h_val: Hubble parameter value (used for diagnostic logging only).
 
         Returns:
-            RegularGridInterpolator for P_det(d_L) on the histogram bin
-            centers (length ``dl_bins``).
+            RegularGridInterpolator for P_det(d_L) on the fixed grid centers
+            (length ``dl_bins``).
         """
-        dl_vals = df["luminosity_distance"].values
-        snr_vals = df["SNR"].values
+        dl_vals = np.asarray(df["luminosity_distance"].values, dtype=np.float64)
+        M_vals = np.asarray(df["M"].values, dtype=np.float64)  # noqa: N806
+        snr_vals = np.asarray(df["SNR"].values, dtype=np.float64)
 
-        # h-stable bin edges in d_L: same support at every trial h.  See
-        # the matching block in ``_build_grid_2d`` for full rationale and
-        # references (Farr 2019; Mandel-Farr-Gair 2019; Gray et al. 2020).
+        # Fixed grid support — h-stable; see _build_grid_2d docstring for the
+        # rationale (Farr 2019; Mandel-Farr-Gair 2019; Gray et al. 2020).
         dl_max = self._dl_global_max
-        dl_edges = np.linspace(0, dl_max, self._dl_bins + 1)
+        dl_edges = np.linspace(0.0, dl_max, self._dl_bins + 1)
+        dl_centers = 0.5 * (dl_edges[:-1] + dl_edges[1:])
 
-        total_counts, _ = np.histogram(dl_vals, bins=dl_edges)
-        detected_mask = snr_vals >= snr_threshold
-        detected_counts, _ = np.histogram(dl_vals[detected_mask], bins=dl_edges)
+        # Reuse the 2D d_L bandwidth (Scott's rule on the full injection
+        # sample).  The M argument is required by ``_compute_bandwidths`` but
+        # is irrelevant for the 1D estimator's d_L kernel.
+        sigma_dl, _ = self._compute_bandwidths(dl_vals, np.log10(M_vals))
 
-        # Phase 44 reliability check: the first-bin estimate p̂(c_0) anchors
-        # the upper end of the [0, c_0) linear-interp segment after the
-        # Phase 45 empirical-anchor prepend below.  Wilson 95% CI half-width
-        # ≈ 1/sqrt(n); n=100 → ~0.05 absolute uncertainty on p̂(c_0).
-        if total_counts[0] < 100:
+        sort_idx = np.argsort(dl_vals, kind="mergesort")
+        dl_sorted = dl_vals[sort_idx]
+        det_sorted = snr_vals[sort_idx] >= snr_threshold
+
+        half_window = _KERNEL_TRUNCATION_SIGMA * sigma_dl
+        inv_two_sigma_dl_sq = 0.5 / (sigma_dl * sigma_dl)
+
+        p_det_1d = np.zeros(self._dl_bins, dtype=np.float64)
+        n_eff_first_bin = 0.0
+        for i, dl_q in enumerate(dl_centers):
+            lo = int(np.searchsorted(dl_sorted, dl_q - half_window, side="left"))
+            hi = int(np.searchsorted(dl_sorted, dl_q + half_window, side="right"))
+            if lo == hi:
+                continue
+            dl_loc = dl_sorted[lo:hi]
+            det_loc = det_sorted[lo:hi]
+            w_k = np.exp(-inv_two_sigma_dl_sq * (dl_loc - dl_q) ** 2)
+            sum_w = float(w_k.sum())
+            if sum_w > 0.0:
+                p_det_1d[i] = float((w_k * det_loc).sum()) / sum_w
+                if i == 0:
+                    sum_w_sq = float((w_k**2).sum())
+                    n_eff_first_bin = (sum_w * sum_w) / sum_w_sq if sum_w_sq > 0 else 0.0
+
+        # Reliability check: replaces the pre-F4 ``total_counts[0] < 100`` check
+        # with the Kish effective sample size at the first grid center.  At
+        # n_eff ≈ 100 the Wilson 95% CI half-width on p̂(c_0) is ≈ 1/sqrt(n_eff)
+        # ≈ 0.10, so warn below 100 effective injections (matching the prior
+        # threshold's spirit).
+        if n_eff_first_bin < 100.0:
             logger.warning(
-                "P_det 1D grid first bin [0, %.4f Gpc) has only %d injections "
-                "(h=%s).  p̂(c_0) (the upper anchor of the [0, c_0) linear-"
-                "interp segment) may be noisy.  Consider denser low-d_L "
+                "P_det 1D grid first center d_L=%.4f Gpc has Kish N_eff=%.1f "
+                "(h=%s).  p̂(c_0) may be noisy.  Consider denser low-d_L "
                 "injections.",
-                float(dl_edges[1]),
-                int(total_counts[0]),
+                float(dl_centers[0]),
+                n_eff_first_bin,
                 f"{h_val:.4f}" if h_val is not None else "?",
             )
-
-        p_det_1d = np.divide(
-            detected_counts,
-            total_counts,
-            out=np.zeros_like(detected_counts, dtype=np.float64),
-            where=total_counts > 0,
-        )
-
-        dl_centers = 0.5 * (dl_edges[:-1] + dl_edges[1:])
 
         # Eq. (A.19) in Gray et al. (2020), arXiv:1908.06050.
         # No anchors are prepended: out-of-grid extrapolation is the
@@ -665,15 +733,20 @@ class SimulationDetectionProbability:
         If the grid for this h has not been built yet, it will be built
         (triggering SNR rescaling and caching).
 
-        The returned dict contains:
+        The returned dict contains (F4 kernel-form semantics):
 
-        - ``n_total``: int array (dl_bins, M_bins) -- total injections per bin
-        - ``n_detected``: int array (dl_bins, M_bins) -- detected injections
-        - ``reliable``: bool array (dl_bins, M_bins) -- True where n_total >= 10
-        - ``dl_edges``: float array (dl_bins+1,) -- d_L bin edges in Gpc
-        - ``M_edges``: float array (M_bins+1,) -- mass bin edges in solar masses
+        - ``n_total``: float array (dl_bins, M_bins) -- kernel-weighted mass
+          (Σ_k K_k · w_IS_k) per cell.  Continuous "effective total"; replaces
+          the pre-F4 integer histogram counts.
+        - ``n_detected``: float array (dl_bins, M_bins) -- kernel-weighted
+          detected mass (Σ_k K_k · w_IS_k · 1[SNR_k≥thr]) per cell.
+        - ``reliable``: bool array (dl_bins, M_bins) -- True where n_eff >= 10
+          (Kish effective sample size threshold).
+        - ``dl_edges``: float array (dl_bins+1,) -- d_L grid support endpoints
+          in Gpc (kernel evaluated at centers; edges retained for back-compat).
+        - ``M_edges``: float array (M_bins+1,) -- M grid support endpoints.
         - ``n_eff``: float array (dl_bins, M_bins) -- Kish effective sample
-          size per bin (equals n_total when weights are uniform)
+          size per cell, (Σ w_k_eff)² / Σ (w_k_eff)² with w_k_eff = K_k · w_IS_k.
 
         Args:
             h: Hubble parameter value.

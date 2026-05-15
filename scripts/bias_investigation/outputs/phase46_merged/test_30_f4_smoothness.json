@@ -1,0 +1,9 @@
+{
+  "h_min": 0.73,
+  "h_max": 0.745,
+  "h_step": 0.0005,
+  "n_queries": 48,
+  "total_sigma_dp_sq": 0.0015640260664964573,
+  "worst_query_max_step": 0.01032640565447318,
+  "median_query_max_step": 0.0025089956089358045
+}

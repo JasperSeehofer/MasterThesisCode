@@ -1464,3 +1464,148 @@ class TestPdetHStableBinEdges:
         # d_L is monotone-decreasing in h, so a higher lower bound on h
         # gives a smaller max d_L over the prior.
         assert pdet_narrow._dl_global_max < pdet_wide._dl_global_max
+
+
+# ----------------------------------------------------------------------
+# F4 (Phase 49): Nadaraya-Watson kernel p_det estimator regression tests.
+#
+# Replaces histogram bin counts with kernel-weighted sums so that
+# injection d_L_k(h) crossing the (still fixed) bin edges no longer
+# produces integer-count jumps.  Diagnostic test_29 attributed 96% of
+# post-F1 spike variance to this "mechanism A" — see
+# .planning/PHASE-49-F4-PLAN.md and
+# scripts/bias_investigation/test_29_snr_threshold_crossings.py.
+#
+# Refs: Nadaraya (1964); Watson (1964); Scott (1992) Ch. 6;
+#       Farr (2019) arXiv:1904.10879 Sec III.
+# ----------------------------------------------------------------------
+
+
+class TestF4KernelEstimator:
+    """Regression tests for the F4 Nadaraya-Watson p_det estimator."""
+
+    def _build_pdet(
+        self,
+        injection_dir: str,
+        bandwidth_scale: float = 1.0,
+    ) -> object:
+        from master_thesis_code.bayesian_inference.simulation_detection_probability import (
+            SimulationDetectionProbability,
+        )
+
+        return SimulationDetectionProbability(
+            injection_data_dir=injection_dir,
+            snr_threshold=20.0,
+            dl_bins=60,
+            mass_bins=40,
+            bandwidth_scale=bandwidth_scale,
+        )
+
+    def test_bandwidth_scale_validated(self, injection_dir: str) -> None:
+        """Constructor rejects non-positive bandwidth_scale."""
+        from master_thesis_code.bayesian_inference.simulation_detection_probability import (
+            SimulationDetectionProbability,
+        )
+
+        with pytest.raises(ValueError, match="bandwidth_scale"):
+            SimulationDetectionProbability(
+                injection_data_dir=injection_dir,
+                snr_threshold=20.0,
+                bandwidth_scale=0.0,
+            )
+
+    def test_quality_flags_are_continuous(self, injection_dir: str) -> None:
+        """Under the kernel form, n_total/n_detected are float-valued kernel
+        mass (not integer counts).  Cells with multiple contributing
+        injections have non-integer kernel mass; this asserts the change of
+        semantics introduced by F4.
+        """
+        pdet = self._build_pdet(injection_dir)
+        flags = pdet.quality_flags(h=0.73)  # type: ignore[attr-defined]
+        n_total = np.asarray(flags["n_total"])
+        # Float dtype check
+        assert np.issubdtype(n_total.dtype, np.floating)
+        # At least one populated cell has non-integer kernel mass (pre-F4
+        # this array was integer-valued counts).
+        nonzero = n_total[n_total > 0.0]
+        assert nonzero.size > 0
+        non_integer_count = int(np.sum(np.abs(nonzero - np.round(nonzero)) > 1e-9))
+        assert non_integer_count > 0, (
+            "F4 kernel estimator should produce non-integer 'n_total' (kernel "
+            "mass) values; got all-integer values which suggests histogram "
+            "fallback."
+        )
+
+    def test_pdet_2d_continuous_across_fine_h_grid(self, injection_dir: str) -> None:
+        """F4 regression: at Δh=0.0005 (twice as fine as Phase 48 grid),
+        adjacent p_det jumps at a fixed in-grid query must be small.
+
+        Pre-F4 (post-F1) Σ(Δp)² = 1.49 over 48 query points × 30 h-steps,
+        with single-step max ≈ 0.05 (per test_29 verdict JSON).  F4 should
+        reduce this by ~30× to single-step max < 0.005.
+        """
+        pdet = self._build_pdet(injection_dir)
+        h_grid = np.arange(0.730, 0.745 + 1e-9, 0.0005)
+        # Probe at the centre of the dense detection core
+        d_L_query = 0.20  # Gpc (median injection d_L at h≈0.73)
+        M_z_query = float(np.median(pdet._M_arr * (1.0 + pdet._z_arr)))  # type: ignore[attr-defined]
+        p_vals: list[float] = []
+        for h in h_grid:
+            interp_2d, _ = pdet._get_or_build_grid(float(h))  # type: ignore[attr-defined]
+            p = float(interp_2d(np.array([[d_L_query, M_z_query]]))[0])
+            p_vals.append(p)
+        diffs = np.abs(np.diff(p_vals))
+        max_jump = float(np.max(diffs))
+        assert max_jump < 0.005, (
+            f"F4: adjacent p_det jumps {max_jump:.5f} at Δh=0.0005; expected "
+            f"< 0.005 under the kernel estimator. p_vals={p_vals}"
+        )
+
+    def test_pdet_1d_continuous_across_fine_h_grid(self, injection_dir: str) -> None:
+        """1D channel counterpart of the F4 fine-grid smoothness test."""
+        pdet = self._build_pdet(injection_dir)
+        h_grid = np.arange(0.730, 0.745 + 1e-9, 0.0005)
+        d_L_query = 0.20  # Gpc
+        p_vals: list[float] = []
+        for h in h_grid:
+            _, interp_1d = pdet._get_or_build_grid(float(h))  # type: ignore[attr-defined]
+            p = float(interp_1d(np.array([[d_L_query]]))[0])
+            p_vals.append(p)
+        diffs = np.abs(np.diff(p_vals))
+        max_jump = float(np.max(diffs))
+        assert max_jump < 0.005, (
+            f"F4 1D: adjacent p_det jumps {max_jump:.5f} at Δh=0.0005; "
+            f"expected < 0.005. p_vals={p_vals}"
+        )
+
+    def test_bandwidth_scale_propagates_to_compute_bandwidths(self, injection_dir: str) -> None:
+        """``bandwidth_scale`` linearly scales the Scott's-rule output: doubling
+        it should double σ_dl and σ_logM at the same injection sample.  This
+        is a unit-level check that the new constructor parameter is wired
+        through to the bandwidth helper.
+        """
+        pdet_a = self._build_pdet(injection_dir, bandwidth_scale=1.0)
+        pdet_b = self._build_pdet(injection_dir, bandwidth_scale=2.0)
+        # Use a shared sample (pdet_a's d_L_target at h=0.73)
+        dl_vals, _ = pdet_a._rescale_snr(0.73)  # type: ignore[attr-defined]
+        log_M_vals = np.log10(pdet_a._M_arr * (1.0 + pdet_a._z_arr))  # type: ignore[attr-defined]  # noqa: N806
+        s_dl_a, s_lm_a = pdet_a._compute_bandwidths(dl_vals, log_M_vals)  # type: ignore[attr-defined]
+        s_dl_b, s_lm_b = pdet_b._compute_bandwidths(dl_vals, log_M_vals)  # type: ignore[attr-defined]
+        assert abs(s_dl_b / s_dl_a - 2.0) < 1e-12
+        assert abs(s_lm_b / s_lm_a - 2.0) < 1e-12
+
+    def test_pdet_returns_unit_interval(self, injection_dir: str) -> None:
+        """Kernel estimator outputs must remain in [0, 1] at every cell."""
+        pdet = self._build_pdet(injection_dir)
+        flags = pdet.quality_flags(h=0.73)  # type: ignore[attr-defined]
+        interp_2d, interp_1d = pdet._get_or_build_grid(0.73)  # type: ignore[attr-defined]
+        p_grid = np.asarray(interp_2d.values)
+        assert np.all(p_grid >= 0.0)
+        assert np.all(p_grid <= 1.0)
+        p_1d = np.asarray(interp_1d.values)
+        assert np.all(p_1d >= 0.0)
+        assert np.all(p_1d <= 1.0)
+        # Quality-flag arithmetic: n_detected ≤ n_total per cell
+        n_total = np.asarray(flags["n_total"])
+        n_det = np.asarray(flags["n_detected"])
+        assert np.all(n_det <= n_total + 1e-12)

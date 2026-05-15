@@ -64,6 +64,32 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   Step 2 principled-extrapolation implementation, Step 2 follow-up 1D alignment).
 
 ### Changed
+- `[PHYSICS]` Phase 49 F4 — Nadaraya-Watson kernel `p_det` estimator
+  (`bayesian_inference/simulation_detection_probability.py:_build_grid_2d`,
+  `_build_grid_1d`). Replaces the histogram form `p_det = N_det/N_total`
+  with the smooth kernel-weighted estimator
+  `p̂(d_L_q, M_q, h) = Σ_k K_k · 1[SNR_k(h)≥thr] / Σ_k K_k` evaluated at
+  fixed grid centers. Kernels are Gaussian on `d_L` (linear, Gpc) and
+  `log10(M_z)` (log-scale, dex); bandwidths from Scott's rule
+  (`σ = bandwidth_scale · N^(-1/6) · std`) on the injection sample;
+  truncated at 3σ in `d_L` via sorted `np.searchsorted` for O(N_inj)
+  cost (~0.75s per grid build on 105 500 injections, 60×40 grid). New
+  constructor parameter `bandwidth_scale: float = 1.0` (validated > 0)
+  for tuning. Closes both residual spike mechanisms identified by
+  `test_29`: A (injection d_L motion across fixed bin edges, 96% of
+  pre-F4 Σ(Δp)²) and B (SNR-threshold integer crossings, 3.6%).
+  **Estimator-level smoothness:** Σ(Δp_det)² over 48 queries × 30 Δh=0.0005
+  steps dropped from 1.5434 (post-F1) to 0.0016 (post-F4) = 987×
+  reduction; worst single-step |Δp| dropped from ≈0.05 to 0.0103.
+  Public API unchanged (kernel selected automatically; `quality_flags`
+  keys preserved with continuous-mass semantics under the new form).
+  Verification: `scripts/bias_investigation/test_30_f4_estimator_smoothness.py`,
+  output at
+  `scripts/bias_investigation/outputs/phase46_merged/test_30_f4_smoothness.json`.
+  Cluster validation of production posteriors pending. Plan and physics
+  presentation at `.planning/PHASE-49-F4-PLAN.md`. Refs: Nadaraya (1964);
+  Watson (1964); Scott (1992) Ch. 6; Farr (2019) arXiv:1904.10879 Sec III;
+  Mandel-Farr-Gair (2019) arXiv:1809.02063 Eq. 18.
 - Phase 49 F1 cluster validation (job `4662333`) — **PARTIAL fix**, not
   paper-grade. The h-stable bin-edge fix (commit `87ea7a8`) removed
   one of two coherent-noise mechanisms (the rising flank of the

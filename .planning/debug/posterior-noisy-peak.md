@@ -1,9 +1,9 @@
 ---
 slug: posterior-noisy-peak
-status: mechanism-attributed-F4-justified
+status: F4-landed-cluster-validation-pending
 trigger: "Why is the posterior so noisy around the peak? I would expect a continuous smooth peak, not the up and down spikes we actually see. please investigate."
 created: 2026-05-11T18:14:00Z
-updated: 2026-05-14T16:30:00Z
+updated: 2026-05-15T19:30:00Z
 ---
 
 # Posterior noisy / spiky around peak
@@ -322,3 +322,68 @@ edges*, NOT primarily *threshold integer crossings*.  Both are
 sub-cases of the same "integer counting in finite samples produces
 coherent noise" family; the dominant sub-case depends on whether the
 samples themselves drift or stay fixed.
+
+## Follow-up — F4 LANDED (Nadaraya-Watson kernel estimator) (2026-05-15)
+
+### Outcome: estimator-level spikes ~eliminated
+
+F4 (Nadaraya-Watson kernel p_det estimator) replaced the histogram form
+`p_det = N_det/N_total` with the smooth kernel-weighted estimator
+`p̂ = Σ_k K_k · 1[SNR_k≥thr] / Σ_k K_k` evaluated at fixed grid centers.
+Bandwidths from Scott's rule (`σ = bandwidth_scale · n^(-1/6) · std`)
+on the injection sample.  Kernel truncated at 3σ in d_L (sparse search
+via sorted `np.searchsorted`) → O(N_inj) build per h-value, ~0.75s at
+105 500 injections / 60×40 grid.  Public API unchanged except for a
+new `bandwidth_scale: float = 1.0` constructor parameter.
+
+**Estimator-level smoothness diagnostic (`test_30_f4_smoothness.json`,
+2026-05-15):**
+
+| Metric | Pre-F4 (post-F1) | Post-F4 | Improvement |
+|---|---|---|---|
+| Σ(Δp_det)² over 48 queries × 30 Δh-steps | 1.5434 | 0.0016 | **987×** |
+| worst single-step \|Δp_det\| | ≈0.05 | 0.0103 | ~5× |
+
+Both A (d_L-motion across edges) and B (SNR-threshold crossings) close
+simultaneously because the kernel form has no bin edges and weights
+each injection's contribution smoothly by spatial proximity.
+
+### Code changes (commit `[PHYSICS] F4: …`)
+
+- `simulation_detection_probability.py`:
+  - `__init__`: new `bandwidth_scale: float = 1.0`, validated > 0.
+  - `_compute_bandwidths` (new): Scott's rule helper.
+  - `_build_grid_2d`, `_build_grid_1d`: histogram blocks → kernel-weighted
+    sum at fixed grid centers; same `RegularGridInterpolator` return
+    surface.  Quality-flag semantics preserved (keys unchanged) but
+    `n_total`/`n_detected` are now continuous kernel mass (float).
+- `test_simulation_detection_probability.py`: new `TestF4KernelEstimator`
+  class with 5 tests (bandwidth-scale validation + scaling, continuity
+  at Δh=0.0005, quality-flag continuity, unit-interval output).
+
+523 → 529 pytests pass; ruff clean; mypy clean.
+
+### Outstanding — cluster validation
+
+Production posterior validation (re-running the inference end-to-end
+with the F4 estimator) is the next step.  The expectation:
+
+- 1D and 2D combined posteriors smooth and unimodal (no discontinuity
+  at h=0.738→0.739 that survived F1).
+- MAP within 0.5σ of truth; σ_boot > 0.002 (no more pinned bootstrap).
+
+Job script reuse: `cluster/evaluate_closure_h065.sbatch` adapted for the
+production injection set should suffice — no new physics, just a
+re-evaluate run against the existing posteriors archive.
+
+### Pattern updates
+
+- Promote SCV "Hyperparameter-dependent discretization → coherent
+  noise" from `tentative` to `validated`: F1 (h-stable edges) + F4
+  (no edges at all) form a two-stage demonstration that bin-based
+  selection-function estimators are *intrinsically* fragile under
+  hyperparameter sweeps, and that the principled fix is to drop the
+  bins (Nadaraya-Watson / Farr 2019 per-injection form).
+- Add "Verify symptom-targeting fixes against the original diagnostic"
+  positive pattern: applied here twice (F1 ⇒ test_29 ⇒ F4; F4 ⇒ test_30
+  ⇒ ready-to-cluster-validate).
