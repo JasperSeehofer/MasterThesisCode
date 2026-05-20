@@ -39,6 +39,15 @@ if [[ -z "${RUN_DIR:-}" ]]; then
 fi
 
 # ---------------------------------------------------------------------------
+# Environment setup (must precede any python3 -c invocation — the bare
+# system python3 on compute nodes does not have numpy)
+# ---------------------------------------------------------------------------
+
+PROJECT_ROOT="${PROJECT_ROOT:-$HOME/MasterThesisCode}"
+source "$PROJECT_ROOT/cluster/modules.sh"
+source "$VENV_PATH/bin/activate"
+
+# ---------------------------------------------------------------------------
 # Build the 63-point non-uniform production grid.  H_TRUE=0.73 hardcoded.
 # Tier 1 (dense core): Δh=0.001 across [0.710, 0.750] → 41 points.
 # Tier 2 (left wing):  Δh=0.010 across [0.600, 0.700] → 11 points.
@@ -70,14 +79,6 @@ TASK_H_VALUES=()
 for ((i = TASK_ID; i < ${#H_VALUES_ALL[@]}; i += TASK_COUNT)); do
     TASK_H_VALUES+=("${H_VALUES_ALL[$i]}")
 done
-
-# ---------------------------------------------------------------------------
-# Environment setup
-# ---------------------------------------------------------------------------
-
-PROJECT_ROOT="${PROJECT_ROOT:-$HOME/MasterThesisCode}"
-source "$PROJECT_ROOT/cluster/modules.sh"
-source "$VENV_PATH/bin/activate"
 
 # ---------------------------------------------------------------------------
 # Archive old production-sweep posteriors (task 0 only, before any task writes)
