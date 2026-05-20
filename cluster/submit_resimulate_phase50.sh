@@ -65,6 +65,36 @@ DATESTAMP=$(date +%Y%m%d)
 RUN_DIR="$WORKSPACE/run_${DATESTAMP}_seed${SEED}_phase50"
 mkdir -p "$RUN_DIR/logs" "$RUN_DIR/simulations"
 
+# ---------------------------------------------------------------------------
+# Link the canonical injection dataset into RUN_DIR/simulations/injections.
+#
+# Phase 49 F4's SimulationDetectionProbability globs injection_h_*_task_*.csv
+# from RUN_DIR/simulations/injections at eval time.  Injection generation is a
+# one-time campaign (~105k events across h ∈ [0.6, 0.9]) and the canonical
+# pool lives at run_closure_h0p73_h3_20260505/.../injections (a symlink chain
+# into injection_20260331-204506_seed43).  Without this link, every eval task
+# crashes with `FileNotFoundError: No injection CSV files found`.
+#
+# Override via INJECTION_SOURCE=<abs-path> if a different canonical pool
+# becomes preferred.
+# ---------------------------------------------------------------------------
+
+INJECTION_SOURCE="${INJECTION_SOURCE:-$WORKSPACE/run_closure_h0p73_h3_20260505/simulations/injections}"
+INJECTION_LINK="$RUN_DIR/simulations/injections"
+
+if [[ ! -e "$INJECTION_SOURCE" ]]; then
+    echo "ERROR: Injection source not found: $INJECTION_SOURCE" >&2
+    echo "       Set INJECTION_SOURCE=<abs-path> to an injection CSV pool." >&2
+    exit 1
+fi
+
+if [[ -e "$INJECTION_LINK" ]]; then
+    echo "  Injections already linked: $(readlink -f "$INJECTION_LINK")"
+else
+    ln -s "$INJECTION_SOURCE" "$INJECTION_LINK"
+    echo "  Injections linked: $INJECTION_LINK -> $(readlink -f "$INJECTION_LINK")"
+fi
+
 # Capture campaign metadata at submission time for posterity
 cat > "$RUN_DIR/campaign_metadata.json" <<META
 {
