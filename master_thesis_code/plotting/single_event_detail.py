@@ -97,10 +97,8 @@ def extract_galaxy_weights(
     KeyError
         When the requested event_id is not present in the JSON.
     """
-    h_str = f"h_{int(h_value):d}_{int(round((h_value - int(h_value)) * 100)):02d}"
-    # The actual filename format is h_<int>_<int> with the second integer
-    # being the fractional part written as-is (no zero-padding). Match the
-    # bias-investigation convention by scanning the directory.
+    # Resolve by reading the stored "h" key — robust to filename precision
+    # changes (3-decimal legacy vs. 4-decimal post-fix).
     target = None
     for f in sorted(posteriors_with_mass_dir.glob("h_*.json")):
         with open(f) as fh:

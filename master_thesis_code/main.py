@@ -281,7 +281,7 @@ def _configure_logger(working_directory: str, log_level: int, h_value: float) ->
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     log_file_path = os.path.join(
         working_directory,
-        f"master_thesis_code_{timestamp}_h_{str(np.round(h_value, 3)).replace('.', '_')}.log",
+        f"master_thesis_code_{timestamp}_h_{str(np.round(h_value, 4)).replace('.', '_')}.log",
     )
     file_handler = logging.FileHandler(log_file_path)
     file_handler.setLevel(log_level)
@@ -595,8 +595,10 @@ def injection_campaign(
         use_gpu=use_gpu,
     )
 
-    # Resolve CSV path: replace {h_label} and {index} placeholders
-    h_label = str(round(h_value, 3)).replace(".", "p")
+    # Resolve CSV path: replace {h_label} and {index} placeholders. 4-decimal
+    # precision matches the posterior-filename convention; existing 3-decimal
+    # injection CSVs (e.g. h_0p73) still resolve since round(0.73, 4) == 0.73.
+    h_label = str(round(h_value, 4)).replace(".", "p")
     csv_path = INJECTION_CSV_PATH.format(h_label=h_label, index=simulation_index)
     os.makedirs(os.path.dirname(csv_path), exist_ok=True)
 

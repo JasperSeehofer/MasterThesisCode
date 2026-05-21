@@ -11,6 +11,7 @@ import pytest
 
 from master_thesis_code.bayesian_inference.posterior_combination import (
     CombinationStrategy,
+    _h_from_filename,
     apply_strategy,
     build_likelihood_array,
     combine_log_space,
@@ -508,3 +509,82 @@ class TestCampaignIntegration:
         assert len(data["posterior"]) == 15
         assert len(data["D_h_per_h"]) == 15
         assert data["n_events_excluded"] >= 17
+
+
+class TestPosteriorFilenamePrecision:
+    """Regression tests for the 4-decimal posterior filename convention.
+
+    The Phase-50 superdense grid uses Δh=0.0005 midpoints in [0.7205, 0.7395].
+    Until commit b82e121 the posterior writer rounded h to 3 decimals before
+    building the filename, so each superdense midpoint collided with a dense
+    Δh=0.001 neighbour (e.g. 0.7215 → "0_722" → overwrote dense 0.722). The
+    full 83-point grid must now produce 83 distinct filenames.
+    """
+
+    @staticmethod
+    def _filename_for(h: float) -> str:
+        """Match the writer in bayesian_statistics.save_posteriors()."""
+        return f"h_{str(np.round(h, 4)).replace('.', '_')}.json"
+
+    def test_superdense_midpoints_distinct_from_dense_neighbours(self) -> None:
+        # Dense Δh=0.001 grid across [0.710, 0.750]
+        dense = [round(0.710 + 0.001 * i, 4) for i in range(41)]
+        # Superdense midpoints Δh=0.0005 across (0.720, 0.740)
+        superdense = [round(0.7205 + 0.001 * i, 4) for i in range(20)]
+
+        dense_files = {self._filename_for(h) for h in dense}
+        superdense_files = {self._filename_for(h) for h in superdense}
+
+        assert len(dense_files) == 41
+        assert len(superdense_files) == 20
+        assert dense_files.isdisjoint(superdense_files), (
+            f"Dense/superdense filename collision: {sorted(dense_files & superdense_files)}"
+        )
+
+    def test_full_phase50_grid_produces_83_distinct_filenames(self) -> None:
+        left_wing = [round(0.600 + 0.010 * i, 4) for i in range(11)]
+        dense_core = [round(0.710 + 0.001 * i, 4) for i in range(41)]
+        superdense = [round(0.7205 + 0.001 * i, 4) for i in range(20)]
+        right_wing = [round(0.760 + 0.010 * i, 4) for i in range(11)]
+        full_grid = sorted(set(left_wing + dense_core + superdense + right_wing))
+        assert len(full_grid) == 83, f"grid is {len(full_grid)} pts, expected 83"
+
+        filenames = {self._filename_for(h) for h in full_grid}
+        assert len(filenames) == 83, (
+            "Filename writer collapsed distinct h-values onto shared filenames"
+        )
+
+    @pytest.mark.parametrize(
+        ("h", "expected_name"),
+        [
+            (0.6, "h_0_6.json"),
+            (0.73, "h_0_73.json"),
+            (0.722, "h_0_722.json"),
+            (0.7215, "h_0_7215.json"),
+            (0.7395, "h_0_7395.json"),
+            (0.86, "h_0_86.json"),
+        ],
+    )
+    def test_writer_examples(self, h: float, expected_name: str) -> None:
+        assert self._filename_for(h) == expected_name
+
+    @pytest.mark.parametrize(
+        ("filename", "expected_h"),
+        [
+            # New 4-decimal writes
+            ("h_0_7215.json", 0.7215),
+            ("h_0_7395.json", 0.7395),
+            ("h_0_7205.json", 0.7205),
+            # Legacy 3-decimal archives (must still parse correctly)
+            ("h_0_6.json", 0.6),
+            ("h_0_73.json", 0.73),
+            ("h_0_722.json", 0.722),
+            ("h_0_86.json", 0.86),
+        ],
+    )
+    def test_parser_accepts_both_legacy_and_4decimal(
+        self, filename: str, expected_h: float
+    ) -> None:
+        from pathlib import Path
+
+        assert _h_from_filename(Path(filename)) == pytest.approx(expected_h)

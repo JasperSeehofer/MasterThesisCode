@@ -632,15 +632,22 @@ class BayesianStatistics:
         if not os.path.isdir("simulations/posteriors_with_bh_mass"):
             os.makedirs("simulations/posteriors_with_bh_mass")
 
+        # 4-decimal precision required to distinguish Phase-50 superdense
+        # midpoints (Δh=0.0005, e.g. 0.7205 / 0.7215) from the dense Δh=0.001
+        # grid (0.720 / 0.721 / 0.722). Rounding to 3 decimals collapses each
+        # midpoint onto a neighbouring dense filename, so the second writer
+        # silently overwrites the first. Posteriors share filenames only when
+        # the underlying h-values agree to 4 decimals.
+        h_label = str(np.round(self.h, 4)).replace(".", "_")
         with open(
-            f"simulations/posteriors/h_{str(np.round(self.h, 3)).replace('.', '_')}.json",
+            f"simulations/posteriors/h_{h_label}.json",
             "w",
         ) as file:
             data = {str(key): value for key, value in self.posterior_data.items()}
             json.dump(data | {"h": self.h}, file)
 
         with open(
-            f"simulations/posteriors_with_bh_mass/h_{str(np.round(self.h, 3)).replace('.', '_')}.json",
+            f"simulations/posteriors_with_bh_mass/h_{h_label}.json",
             "w",
         ) as file:
             # update existing data

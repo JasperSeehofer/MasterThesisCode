@@ -15,7 +15,11 @@
 #SBATCH --partition=cpu_il
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=4
-#SBATCH --time=00:10:00
+# Walltime budget covers three sequential phases: combine (~10 min for 83
+# h-values × 2 variants on the Phase-50 grid), save_baseline + compare
+# (~1-2 min), and generate_figures (~5-10 min). Prior 10:00 limit timed
+# out in the combine phase alone on job 4753305.
+#SBATCH --time=00:45:00
 
 set -euo pipefail
 

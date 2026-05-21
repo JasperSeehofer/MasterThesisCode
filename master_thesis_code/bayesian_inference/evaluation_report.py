@@ -435,7 +435,7 @@ def generate_comparison_report(
     for h in all_h:
         b_lp = baseline_dict.get(h, float("nan"))
         c_lp = current_dict.get(h, float("nan"))
-        lines.append(f"| {h:.3f} | {b_lp:.3f} | {c_lp:.3f} |")
+        lines.append(f"| {h:.4f} | {b_lp:.3f} | {c_lp:.3f} |")
 
     lines += [
         "",
