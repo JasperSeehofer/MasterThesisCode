@@ -128,6 +128,11 @@ class Arguments:
         return int(self._parsed_arguments.pdet_mass_bins)
 
     @property
+    def pdet_estimator(self) -> str:
+        """P_det kernel-regression estimator ('local_linear' or 'nadaraya_watson')."""
+        return str(self._parsed_arguments.pdet_estimator)
+
+    @property
     def fisher_cond_threshold(self) -> float:
         """Condition number threshold for flagging near-singular covariance matrices."""
         return float(self._parsed_arguments.fisher_cond_threshold)
@@ -282,6 +287,17 @@ def _parse_arguments(arguments: list[str]) -> argparse.Namespace:
         type=int,
         default=40,
         help="Number of mass bins for P_det grid (default: 40).",
+    )
+    parser.add_argument(
+        "--pdet_estimator",
+        type=str,
+        choices=["local_linear", "nadaraya_watson"],
+        default="local_linear",
+        help=(
+            "P_det kernel-regression estimator. 'local_linear' (default, F4-v2) "
+            "corrects the d_L->0 boundary bias; 'nadaraya_watson' is the pre-F4-v2 "
+            "local-constant form, kept for regression/comparison (default: local_linear)."
+        ),
     )
     parser.add_argument(
         "--fisher_cond_threshold",

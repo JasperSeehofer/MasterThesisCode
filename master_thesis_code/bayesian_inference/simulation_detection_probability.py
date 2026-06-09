@@ -27,7 +27,7 @@ import logging
 import re
 import warnings
 from collections import OrderedDict
-from typing import Any
+from typing import Any, Literal
 
 import numpy as np
 import numpy.typing as npt
@@ -74,6 +74,69 @@ _DL_PADDING_FACTOR: float = 1.1
 # Farr (2019) arXiv:1904.10879 Sec III; Mandel-Farr-Gair (2019) Eq. 18.
 _KERNEL_TRUNCATION_SIGMA: float = 3.0  # cut kernel beyond 3σ in d_L (sparse search)
 _SCOTT_EXPONENT_2D: float = -1.0 / 6.0  # Scott's rule for d=2 dimensions
+
+# F4-v2 (2026-06): local-LINEAR regression in d_L replaces local-constant
+# (Nadaraya-Watson).  NW has O(h) boundary bias: at the d_L→0 edge the
+# one-sided kernel averages in far-field non-detections, collapsing p̂ to
+# ~0.5 where ground truth = 1.0 (every nearby source is detected).  This
+# biases D(h)=∫p_det dV_c/dz and pushes the H0 MAP high.  Local-linear is
+# design-adaptive: the slope term absorbs the local trend so a one-sided
+# boundary neighbourhood no longer drags the estimate (boundary bias
+# O(h)→O(h²), no variance penalty).  In a symmetric interior neighbourhood
+# the local-linear intercept reduces to the NW ratio, so the change is
+# confined to the boundary.  Refs: Fan (1992) JASA 87:998 (design-adaptive,
+# automatic boundary correction); Fan & Gijbels (1996) Local Polynomial
+# Modelling Ch. 3 Eq. (3.5-3.6); Wand & Jones (1995) Kernel Smoothing §5.3.
+_Estimator = Literal["local_linear", "nadaraya_watson"]
+_DEFAULT_ESTIMATOR: _Estimator = "local_linear"
+
+
+def _local_linear_p_det(
+    u: npt.NDArray[np.float64],
+    w: npt.NDArray[np.float64],
+    y: npt.NDArray[np.float64],
+) -> npt.NDArray[np.float64]:
+    """Local-linear-in-d_L detection probability at one query center.
+
+    Fits the weighted line ``p ≈ a + b·u`` (``u = d_L_k − d_L_q``) by weighted
+    least squares and returns the intercept ``a`` (the estimate at ``u=0``),
+    clipped to ``[0, 1]``.  Vectorized over an arbitrary trailing axis of
+    ``w`` and ``y`` (used for the per-M-center 2D build); ``u`` is shared
+    across that axis.
+
+    Eq. (3.5-3.6) in Fan & Gijbels (1996), *Local Polynomial Modelling*.
+
+    Args:
+        u: Local d_L residuals ``d_L_k − d_L_q`` [Gpc], shape ``(N_loc,)``.
+        w: Kernel weights, shape ``(N_loc,)`` or ``(N_loc, M)``.
+        y: Detection indicators in {0,1}, shape matching ``w``.
+
+    Returns:
+        Local-linear intercept(s) clipped to ``[0, 1]``; scalar-axis shape of
+        ``w`` minus the leading ``N_loc`` axis.
+    """
+    # Sums for the 2x2 weighted normal equations.  u broadcasts over the
+    # trailing (M-center) axis when w/y are 2D.
+    if w.ndim == 2:
+        u_col = u[:, None]
+    else:
+        u_col = u
+    s0 = w.sum(axis=0)
+    s1 = (w * u_col).sum(axis=0)
+    s2 = (w * u_col * u_col).sum(axis=0)
+    t0 = (w * y).sum(axis=0)
+    t1 = (w * u_col * y).sum(axis=0)
+
+    det = s0 * s2 - s1 * s1  # determinant of the 2x2 design [Gpc^2]
+    # Local-linear intercept a = (S2·T0 − S1·T1) / (S0·S2 − S1²).
+    # Singular guard: where det≈0 (degenerate one-point neighbourhood) fall
+    # back to the local-constant ratio T0/S0 (Nadaraya-Watson).
+    eps = np.finfo(np.float64).tiny
+    a_ll = np.divide(s2 * t0 - s1 * t1, det, out=np.zeros_like(s0), where=np.abs(det) > eps)
+    a_lc = np.divide(t0, s0, out=np.zeros_like(s0), where=s0 > 0.0)
+    a = np.where(np.abs(det) > eps, a_ll, a_lc)
+    return np.asarray(np.clip(a, 0.0, 1.0), dtype=np.float64)
+
 
 # ----------------------------------------------------------------------
 # Out-of-grid detection-probability behavior (1D and 2D channels).
@@ -149,12 +212,20 @@ class SimulationDetectionProbability:
         mass_bins: int = _DEFAULT_M_BINS,
         h_prior_range: tuple[float, float] = (_DEFAULT_H_PRIOR_MIN, _DEFAULT_H_PRIOR_MAX),
         bandwidth_scale: float = 1.0,
+        estimator: _Estimator = _DEFAULT_ESTIMATOR,
         _force_unit_weights: bool = False,
     ) -> None:
         self._dl_bins = dl_bins
         self._mass_bins = mass_bins
         self._snr_threshold = snr_threshold
         self._force_unit_weights = _force_unit_weights
+        # F4-v2: "local_linear" (default) corrects the d_L→0 boundary bias of
+        # the local-constant "nadaraya_watson" form.  The NW form is retained
+        # as an opt-in for regression testing / reproducing pre-F4-v2 values.
+        if estimator not in ("local_linear", "nadaraya_watson"):
+            msg = f"estimator must be 'local_linear' or 'nadaraya_watson', got {estimator!r}"
+            raise ValueError(msg)
+        self._estimator: _Estimator = estimator
         # F4 (Phase 49): kernel-bandwidth tuning multiplier applied to Scott's
         # rule.  1.0 = standard Scott's rule (theoretically optimal under
         # Gaussian assumption).  Larger values oversmooth (reduce variance,
@@ -582,12 +653,20 @@ class SimulationDetectionProbability:
             sum_w_det = (kernel_w * det_loc[:, None]).sum(axis=0)
             sum_w_sq = (kernel_w**2).sum(axis=0)
 
-            p_det_grid[i, :] = np.divide(
-                sum_w_det,
-                sum_w,
-                out=np.zeros(self._mass_bins, dtype=np.float64),
-                where=sum_w > 0.0,
-            )
+            if self._estimator == "local_linear":
+                # Local-linear in d_L (per M-center), local-constant in log M.
+                # Eq. (3.5-3.6) in Fan & Gijbels (1996), Local Polynomial Modelling.
+                u_dl = dl_loc - dl_q  # [Gpc]
+                det_col = np.broadcast_to(det_loc[:, None], kernel_w.shape).astype(np.float64)
+                p_det_grid[i, :] = _local_linear_p_det(u_dl, kernel_w, det_col)
+            else:
+                # Local-constant (Nadaraya-Watson): p̂ = Σ wₖ yₖ / Σ wₖ.
+                p_det_grid[i, :] = np.divide(
+                    sum_w_det,
+                    sum_w,
+                    out=np.zeros(self._mass_bins, dtype=np.float64),
+                    where=sum_w > 0.0,
+                )
             n_total_grid[i, :] = sum_w
             n_det_grid[i, :] = sum_w_det
             # Kish (1965) effective sample size: (Σw)² / Σw²
@@ -688,7 +767,14 @@ class SimulationDetectionProbability:
             w_k = np.exp(-inv_two_sigma_dl_sq * (dl_loc - dl_q) ** 2)
             sum_w = float(w_k.sum())
             if sum_w > 0.0:
-                p_det_1d[i] = float((w_k * det_loc).sum()) / sum_w
+                if self._estimator == "local_linear":
+                    # Local-linear in d_L — Eq. (3.5-3.6) in Fan & Gijbels (1996).
+                    # Corrects the d_L→0 boundary bias of the NW form below.
+                    u_dl = dl_loc - dl_q  # [Gpc]
+                    p_det_1d[i] = float(_local_linear_p_det(u_dl, w_k, det_loc.astype(np.float64)))
+                else:
+                    # Local-constant (Nadaraya-Watson): p̂ = Σ wₖ yₖ / Σ wₖ.
+                    p_det_1d[i] = float((w_k * det_loc).sum()) / sum_w
                 if i == 0:
                     sum_w_sq = float((w_k**2).sum())
                     n_eff_first_bin = (sum_w * sum_w) / sum_w_sq if sum_w_sq > 0 else 0.0

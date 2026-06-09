@@ -288,6 +288,7 @@ class BayesianStatistics:
         catalog_only: bool = False,
         pdet_dl_bins: int = 60,
         pdet_mass_bins: int = 40,
+        pdet_estimator: str = "local_linear",
         fisher_cond_threshold: float = 1e16,
     ) -> None:
         self.catalog_only = catalog_only
@@ -329,6 +330,7 @@ class BayesianStatistics:
             snr_threshold=SNR_THRESHOLD,
             dl_bins=pdet_dl_bins,
             mass_bins=pdet_mass_bins,
+            estimator=pdet_estimator,  # type: ignore[arg-type]
         )
         _LOGGER.debug("Detection probability functions created.")
 

@@ -117,6 +117,7 @@ def main() -> None:
             catalog_only=arguments.catalog_only,
             pdet_dl_bins=arguments.pdet_dl_bins,
             pdet_mass_bins=arguments.pdet_mass_bins,
+            pdet_estimator=arguments.pdet_estimator,
             fisher_cond_threshold=arguments.fisher_cond_threshold,
         )
 
@@ -743,6 +744,7 @@ def evaluate(
     catalog_only: bool = False,
     pdet_dl_bins: int = 60,
     pdet_mass_bins: int = 40,
+    pdet_estimator: str = "local_linear",
     fisher_cond_threshold: float = 1e16,
 ) -> None:
     from master_thesis_code.bayesian_inference.bayesian_statistics import BayesianStatistics
@@ -756,6 +758,7 @@ def evaluate(
         catalog_only=catalog_only,
         pdet_dl_bins=pdet_dl_bins,
         pdet_mass_bins=pdet_mass_bins,
+        pdet_estimator=pdet_estimator,
         fisher_cond_threshold=fisher_cond_threshold,
     )
 

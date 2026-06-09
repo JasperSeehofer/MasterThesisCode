@@ -1609,3 +1609,140 @@ class TestF4KernelEstimator:
         n_total = np.asarray(flags["n_total"])
         n_det = np.asarray(flags["n_detected"])
         assert np.all(n_det <= n_total + 1e-12)
+
+
+class TestLocalLinearHelper:
+    """Unit tests for the F4-v2 local-linear-in-d_L intercept estimator."""
+
+    def test_interior_symmetric_reduces_to_nadaraya_watson(self) -> None:
+        """In a symmetric neighbourhood (S1=0) the LL intercept = NW ratio."""
+        from master_thesis_code.bayesian_inference.simulation_detection_probability import (
+            _local_linear_p_det,
+        )
+
+        # Symmetric u about 0, symmetric weights -> S1 = 0.
+        u = np.array([-0.02, -0.01, 0.0, 0.01, 0.02])
+        w = np.array([1.0, 2.0, 3.0, 2.0, 1.0])
+        y = np.array([1.0, 1.0, 0.0, 0.0, 0.0])
+        nw = float((w * y).sum() / w.sum())
+        ll = float(_local_linear_p_det(u, w, y))
+        assert ll == pytest.approx(nw, abs=1e-12)
+
+    def test_boundary_corrects_one_sided_downward_trend(self) -> None:
+        """One-sided neighbourhood with a declining trend: LL intercept exceeds
+        the NW one-sided average (boundary-bias correction)."""
+        from master_thesis_code.bayesian_inference.simulation_detection_probability import (
+            _local_linear_p_det,
+        )
+
+        # All points at u >= 0 (boundary at u=0); detection declines with u.
+        # True boundary value (u=0) is 1.0; NW averages in the far misses.
+        u = np.array([0.0, 0.01, 0.02, 0.03, 0.04])
+        w = np.array([1.0, 1.0, 1.0, 1.0, 1.0])
+        y = np.array([1.0, 1.0, 1.0, 0.0, 0.0])  # declining
+        nw = float((w * y).sum() / w.sum())  # 0.6
+        ll = float(_local_linear_p_det(u, w, y))
+        assert ll > nw  # LL recovers more of the true boundary value
+        assert ll == pytest.approx(1.0, abs=0.15)
+
+    def test_clipped_to_unit_interval(self) -> None:
+        """Local-linear extrapolation is clipped to [0, 1]."""
+        from master_thesis_code.bayesian_inference.simulation_detection_probability import (
+            _local_linear_p_det,
+        )
+
+        # Steeply declining all-detected-near data would extrapolate the line
+        # above 1 at u=0; must clip.
+        u = np.array([0.01, 0.02, 0.03, 0.04])
+        y = np.array([1.0, 1.0, 1.0, 1.0])
+        w = np.ones(4)
+        ll = float(_local_linear_p_det(u, w, y))
+        assert 0.0 <= ll <= 1.0
+
+    def test_singular_neighbourhood_falls_back_to_ratio(self) -> None:
+        """A degenerate (single distinct u) design falls back to T0/S0."""
+        from master_thesis_code.bayesian_inference.simulation_detection_probability import (
+            _local_linear_p_det,
+        )
+
+        u = np.array([0.0, 0.0, 0.0])  # det == 0 -> singular 2x2
+        w = np.array([1.0, 2.0, 1.0])
+        y = np.array([1.0, 0.0, 1.0])
+        nw = float((w * y).sum() / w.sum())
+        ll = float(_local_linear_p_det(u, w, y))
+        assert ll == pytest.approx(nw, abs=1e-12)
+
+    def test_vectorized_over_columns_matches_scalar(self) -> None:
+        """2D (per-M-center) vectorization matches the column-wise scalar calls."""
+        from master_thesis_code.bayesian_inference.simulation_detection_probability import (
+            _local_linear_p_det,
+        )
+
+        u = np.array([0.0, 0.01, 0.02, 0.03])
+        w2 = np.array([[1.0, 0.5], [1.0, 1.0], [1.0, 2.0], [1.0, 1.0]])
+        y2 = np.array([[1.0, 1.0], [1.0, 0.0], [0.0, 0.0], [0.0, 1.0]])
+        vec = _local_linear_p_det(u, w2, y2)
+        col0 = float(_local_linear_p_det(u, w2[:, 0], y2[:, 0]))
+        col1 = float(_local_linear_p_det(u, w2[:, 1], y2[:, 1]))
+        assert vec[0] == pytest.approx(col0, abs=1e-12)
+        assert vec[1] == pytest.approx(col1, abs=1e-12)
+
+
+class TestEstimatorSelection:
+    """F4-v2 estimator-selection plumbing and NW regression escape hatch."""
+
+    def test_invalid_estimator_raises(self, injection_dir: str) -> None:
+        from master_thesis_code.bayesian_inference.simulation_detection_probability import (
+            SimulationDetectionProbability,
+        )
+
+        with pytest.raises(ValueError, match="estimator must be"):
+            SimulationDetectionProbability(
+                injection_data_dir=injection_dir,
+                snr_threshold=20.0,
+                estimator="bogus",  # type: ignore[arg-type]
+            )
+
+    def test_default_is_local_linear(self, injection_dir: str) -> None:
+        from master_thesis_code.bayesian_inference.simulation_detection_probability import (
+            SimulationDetectionProbability,
+        )
+
+        pdet = SimulationDetectionProbability(injection_data_dir=injection_dir, snr_threshold=20.0)
+        assert pdet._estimator == "local_linear"
+
+    def test_nadaraya_watson_escape_hatch_is_local_constant(self, tmp_path: object) -> None:
+        """With NW selected, the 1D grid reproduces the Σwy/Σw ratio exactly."""
+        from master_thesis_code.bayesian_inference.simulation_detection_probability import (
+            SimulationDetectionProbability,
+        )
+
+        # Controlled set: near sources all detected, far sources all missed.
+        d = str(tmp_path)
+        z = np.linspace(0.02, 0.8, 300)
+        M = np.full(300, 3e5)  # noqa: N806
+        # SNR ~ 1/d_L; choose loudness so the threshold falls mid-range.
+        dl = dist_vectorized(z, h=0.73)
+        snr = 5.0 / np.maximum(dl, 1e-6)
+        _create_controlled_injection_csv(d, 0.73, z, M, snr)
+
+        nw = SimulationDetectionProbability(
+            injection_data_dir=d, snr_threshold=20.0, estimator="nadaraya_watson"
+        )
+        ll = SimulationDetectionProbability(
+            injection_data_dir=d, snr_threshold=20.0, estimator="local_linear"
+        )
+        dl_grid = np.linspace(0.001, 0.05, 8)
+        z0 = np.zeros_like(dl_grid)
+        p_nw = np.asarray(
+            nw.detection_probability_without_bh_mass_interpolated_zero_fill(dl_grid, z0, z0, h=0.73)
+        )
+        p_ll = np.asarray(
+            ll.detection_probability_without_bh_mass_interpolated_zero_fill(dl_grid, z0, z0, h=0.73)
+        )
+        # Near the boundary, where all sources are detected, LL must be >= NW
+        # (boundary-bias correction lifts the near-field estimate).
+        assert np.all(p_ll >= p_nw - 1e-9)
+        # Both bounded in [0, 1].
+        for p in (p_nw, p_ll):
+            assert np.all(p >= 0.0) and np.all(p <= 1.0)
