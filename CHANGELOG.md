@@ -7,6 +7,25 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Changed
+- **[PHYSICS]** `bayesian_inference/simulation_detection_probability.py`: replaced
+  the local-linear / Nadaraya-Watson kernel-regression `p_det` estimator with the
+  **detection-horizon survival function** `p_det(d_L) = P(d_hor ≥ d_L)`, with the
+  per-injection horizon `d_hor = SNR · d_L / SNR_threshold`. Detection is a
+  deterministic optimal-SNR threshold and SNR ∝ 1/d_L, so `p_det` is *exactly* the
+  survival function of the (h-invariant) horizon distribution — monotone, `p(0)=1`
+  and `p(d_L > max d_hor)=0` by construction, bandwidth-free in d_L, built once
+  (no per-h regrid). The 2D channel conditions on observer-frame `M_z` with a
+  Gaussian kernel in `log10 M_z` only. Fixes the kernel's far-tail overshoot
+  (e.g. 1D `p_det(0.6 Gpc)` 0.0315 → 0.00055 where the truth → 0), which had
+  inflated/steepened the selection denominator `D(h)` and biased the 1D MAP up by
+  ~+0.02. Verified via the production `precompute_completion_denominator`: D(h)
+  decline 0.73→0.76 = −0.87% (was −3.9% under local-linear; matches the survival
+  prediction). Public API and the 6 `bayesian_statistics` call sites unchanged.
+  Ref: Finn & Chernoff (1993) arXiv:gr-qc/9301003; Finn (1996) arXiv:gr-qc/9601048
+  (`p_det = P(Θ > Θ_thr)`); Mandel–Farr–Gair (2019) arXiv:1809.02063;
+  Gray et al. (2020) arXiv:1908.06050.
+
 ### Added
 - Phase 48 production-sweep verdict
   (`scripts/bias_investigation/outputs/phase46_merged/h3_production_sweep_verdict.json`):

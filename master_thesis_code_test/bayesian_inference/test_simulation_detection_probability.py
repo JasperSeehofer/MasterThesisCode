@@ -340,11 +340,15 @@ class TestPDetGridMassCoordinateFrame:
 
 
 class TestDetectionProbabilityWithBHMassPrincipledExtrapolation:
-    """Property-based tests for the principled out-of-grid policy
-    (Step 2 fix, ``.planning/2D-CHANNEL-AUDIT-20260505.md``).
+    """Property-based tests for the 2D detection-horizon survival grid
+    (replaces the 2026-05-05 Option-A / corner=min extrapolation).
 
-    Verifies the asymptote table, C0 boundary continuity, the Option A
-    directional clamp, and the corner = min(faces) rule.
+    Verifies the SURVIVAL properties of ``p_det(d_L, M_z)``: result in [0, 1];
+    monotone non-increasing in d_L; p(d_L→0)→1; p(d_L > max horizon)=0;
+    M_z outside range → nearest; vectorized==scalar.
+
+    Finn & Chernoff (1993), arXiv:gr-qc/9301003; Finn (1996),
+    arXiv:gr-qc/9601048.
     """
 
     def _build_pdet(self, injection_dir: str) -> object:
@@ -385,13 +389,29 @@ class TestDetectionProbabilityWithBHMassPrincipledExtrapolation:
         )
         assert 0.0 <= p <= 1.0
 
-    def test_c0_continuity_at_dl_min_face(self, injection_dir: str) -> None:
-        """As d_L → dl_min from below, p_det should approach the in-grid
-        boundary value continuously (no step)."""
+    def test_monotone_non_increasing_in_dl(self, injection_dir: str) -> None:
+        """At fixed M_z the 2D survival is monotone non-increasing in d_L
+        (including beyond the grid), bounded in [0, 1]."""
+        pdet = self._build_pdet(injection_dir)
+        dl_min, dl_max, M_min, M_max = self._grid_bounds(pdet, h=0.75)
+        M_z = np.sqrt(M_min * M_max)
+        sweep = np.linspace(0.0, dl_max * 2.0, 200)
+        p_sweep = np.asarray(
+            pdet.detection_probability_with_bh_mass_interpolated(  # type: ignore[attr-defined]
+                sweep, np.full_like(sweep, M_z), np.zeros_like(sweep), np.zeros_like(sweep), h=0.75
+            )
+        )
+        assert np.all(p_sweep >= -1e-12) and np.all(p_sweep <= 1.0 + 1e-12)
+        assert np.all(np.diff(p_sweep) <= 1e-12), (
+            f"2D survival must be monotone non-increasing in d_L; got {p_sweep}"
+        )
+
+    def test_continuity_small_step_at_dl_min_face(self, injection_dir: str) -> None:
+        """Across the first d_L center the empirical survival has only a small
+        step (clamp-to-first-center; survival ≈ 1 near d_L=0)."""
         pdet = self._build_pdet(injection_dir)
         dl_min, _, M_min, M_max = self._grid_bounds(pdet, h=0.75)
         M_z = np.sqrt(M_min * M_max)
-        # Sample on both sides of dl_min
         eps = 1e-6
         p_inside = float(
             pdet.detection_probability_with_bh_mass_interpolated(  # type: ignore[attr-defined]
@@ -403,12 +423,11 @@ class TestDetectionProbabilityWithBHMassPrincipledExtrapolation:
                 dl_min - eps, M_z, 0.0, 0.0, h=0.75
             )
         )
-        # C0 continuity: |p_inside - p_outside| should be tiny
         assert abs(p_inside - p_outside) < 1e-3
 
-    def test_dl_below_min_floor_at_pedge(self, injection_dir: str) -> None:
-        """Option A: in the saturating d_L<dl_min direction, the result
-        should never drop below the in-grid boundary value p_edge."""
+    def test_dl_below_min_clamps_to_first_center(self, injection_dir: str) -> None:
+        """For d_L below the first center the result clamps to the first-center
+        survival (≈ 1) and never drops below it; stays in [p_edge, 1]."""
         pdet = self._build_pdet(injection_dir)
         dl_min, _, M_min, M_max = self._grid_bounds(pdet, h=0.75)
         M_z = np.sqrt(M_min * M_max)
@@ -417,112 +436,45 @@ class TestDetectionProbabilityWithBHMassPrincipledExtrapolation:
                 dl_min, M_z, 0.0, 0.0, h=0.75
             )
         )
-        # Probe several positions below dl_min; result must be >= p_edge.
         for d_L in (dl_min * 0.5, dl_min * 0.1, 1e-6):
             p = float(
                 pdet.detection_probability_with_bh_mass_interpolated(  # type: ignore[attr-defined]
                     d_L, M_z, 0.0, 0.0, h=0.75
                 )
             )
-            assert p >= p_edge - 1e-9, (
-                f"d_L={d_L}: p={p} dropped below p_edge={p_edge} (Option A floor violated)"
+            assert p == pytest.approx(p_edge, abs=1e-9), (
+                f"d_L={d_L}: expected clamp to first-center survival {p_edge}; got {p}"
             )
-            assert p <= 1.0 + 1e-9
+            assert 0.0 <= p <= 1.0 + 1e-9
 
-    def test_dl_above_max_decays_toward_zero(self, injection_dir: str) -> None:
-        """In the suppressing d_L>dl_max direction, the result should
-        never exceed the in-grid boundary value p_edge."""
+    def test_dl_above_max_is_zero(self, injection_dir: str) -> None:
+        """Above the last d_L center the 2D survival is exactly 0."""
         pdet = self._build_pdet(injection_dir)
         _, dl_max, M_min, M_max = self._grid_bounds(pdet, h=0.75)
         M_z = np.sqrt(M_min * M_max)
-        p_edge = float(
-            pdet.detection_probability_with_bh_mass_interpolated(  # type: ignore[attr-defined]
-                dl_max, M_z, 0.0, 0.0, h=0.75
-            )
-        )
-        # Probe positions above dl_max; result must be <= p_edge.
         for d_L in (dl_max * 1.1, dl_max * 1.5, dl_max * 5.0):
             p = float(
                 pdet.detection_probability_with_bh_mass_interpolated(  # type: ignore[attr-defined]
                     d_L, M_z, 0.0, 0.0, h=0.75
                 )
             )
-            assert p <= p_edge + 1e-9
-            assert p >= 0.0
+            assert p == 0.0, f"2D survival above last d_L center must be 0; got {p}"
 
-    def test_M_extremes_decay_toward_zero(self, injection_dir: str) -> None:  # noqa: N802
-        """Both M extremes are suppressing: results <= p_edge."""
+    def test_M_outside_range_uses_nearest_and_stays_bounded(  # noqa: N802
+        self, injection_dir: str
+    ) -> None:
+        """M_z outside the grid range → nearest (fill_value=None); result stays
+        in [0, 1]."""
         pdet = self._build_pdet(injection_dir)
         dl_min, dl_max, M_min, M_max = self._grid_bounds(pdet, h=0.75)
         d_L = 0.5 * (dl_min + dl_max)
-        # M < M_min
-        p_edge_low = float(
-            pdet.detection_probability_with_bh_mass_interpolated(  # type: ignore[attr-defined]
-                d_L, M_min, 0.0, 0.0, h=0.75
-            )
-        )
-        for M_z in (M_min * 0.5, M_min * 0.1):  # noqa: N806
+        for M_z in (M_min * 0.5, M_min * 0.1, M_max * 1.5, M_max * 5.0):  # noqa: N806
             p = float(
                 pdet.detection_probability_with_bh_mass_interpolated(  # type: ignore[attr-defined]
                     d_L, M_z, 0.0, 0.0, h=0.75
                 )
             )
-            assert p <= p_edge_low + 1e-9
-            assert p >= 0.0
-        # M > M_max
-        p_edge_high = float(
-            pdet.detection_probability_with_bh_mass_interpolated(  # type: ignore[attr-defined]
-                d_L, M_max, 0.0, 0.0, h=0.75
-            )
-        )
-        for M_z in (M_max * 1.5, M_max * 5.0):  # noqa: N806
-            p = float(
-                pdet.detection_probability_with_bh_mass_interpolated(  # type: ignore[attr-defined]
-                    d_L, M_z, 0.0, 0.0, h=0.75
-                )
-            )
-            assert p <= p_edge_high + 1e-9
-            assert p >= 0.0
-
-    def test_corner_returns_min_of_face_extrapolations(self, injection_dir: str) -> None:
-        """At a corner cell (both axes outside), the result should be the
-        min of the two face extrapolations.  Since at least one axis is
-        always suppressing for any corner, the corner should be at most
-        the minimum of the two face boundary values, asymptotically 0."""
-        pdet = self._build_pdet(injection_dir)
-        dl_min, dl_max, M_min, M_max = self._grid_bounds(pdet, h=0.75)
-
-        # Corner: d_L > dl_max AND M > M_max  (both suppressing)
-        p_corner = float(
-            pdet.detection_probability_with_bh_mass_interpolated(  # type: ignore[attr-defined]
-                dl_max * 1.5, M_max * 1.5, 0.0, 0.0, h=0.75
-            )
-        )
-        assert 0.0 <= p_corner <= 1.0
-        # Bound: corner <= p_edge of the corner of the grid
-        p_grid_corner = float(
-            pdet.detection_probability_with_bh_mass_interpolated(  # type: ignore[attr-defined]
-                dl_max, M_max, 0.0, 0.0, h=0.75
-            )
-        )
-        assert p_corner <= p_grid_corner + 1e-9
-
-        # Corner: d_L < dl_min AND M > M_max
-        # d_L<min wants asymptote 1, M>max wants asymptote 0.
-        # min rule → corner driven toward 0 by the M side.
-        p_corner_mixed = float(
-            pdet.detection_probability_with_bh_mass_interpolated(  # type: ignore[attr-defined]
-                dl_min * 0.5, M_max * 1.5, 0.0, 0.0, h=0.75
-            )
-        )
-        # Must be at most the p_edge value at the (dl_min, M_max) corner
-        p_edge_mixed = float(
-            pdet.detection_probability_with_bh_mass_interpolated(  # type: ignore[attr-defined]
-                dl_min, M_max, 0.0, 0.0, h=0.75
-            )
-        )
-        assert p_corner_mixed <= p_edge_mixed + 1e-9
-        assert 0.0 <= p_corner_mixed <= 1.0
+            assert 0.0 <= p <= 1.0
 
     def test_array_input_matches_scalar_input(self, injection_dir: str) -> None:
         """Vectorized input should produce identical results to scalar."""
@@ -777,9 +729,10 @@ class TestGridCaching:
         interp2 = pdet._grid_cache[0.70]
         assert interp1 is interp2
 
-    def test_lru_eviction(self, injection_dir: str) -> None:
+    def test_grid_is_h_invariant_single_build(self, injection_dir: str) -> None:
+        """The detection horizon is h-invariant, so the SAME single grid
+        object is returned for any h (built once; no per-h rebuild)."""
         from master_thesis_code.bayesian_inference.simulation_detection_probability import (
-            _MAX_CACHE_SIZE,
             SimulationDetectionProbability,
         )
 
@@ -787,13 +740,15 @@ class TestGridCaching:
             injection_data_dir=injection_dir,
             snr_threshold=20.0,
         )
-        # Fill cache beyond max size
-        for i in range(_MAX_CACHE_SIZE + 5):
-            h_val = 0.60 + i * 0.01
-            pdet._get_or_build_grid(h_val)
-
-        # Cache should not exceed max size
-        assert len(pdet._grid_cache) <= _MAX_CACHE_SIZE
+        grids = [pdet._get_or_build_grid(0.60 + i * 0.01) for i in range(25)]
+        # Every returned (interp_2d, interp_1d) tuple is the identical object.
+        first = grids[0]
+        for g in grids[1:]:
+            assert g is first, "grid must be h-invariant (single built-once object)"
+        # And the underlying interpolators are identical across h.
+        for g in grids[1:]:
+            assert g[0] is first[0]
+            assert g[1] is first[1]
 
 
 class TestConfigurableBins:
@@ -993,34 +948,30 @@ class TestZeroFillBoundaryConvention:
     detection_probability_without_bh_mass_interpolated_zero_fill.
 
     The function name retains the legacy ``_zero_fill`` suffix for
-    backward-compatibility with existing call sites; the policy is
-    no longer pure zero-fill.  As of 2026-05-05 (audit document
-    ``.planning/2D-CHANNEL-AUDIT-20260505.md``) the function uses a
-    principled monotonic-asymptotic extrapolation:
+    backward-compatibility with existing call sites; the policy is now the
+    EXACT detection-horizon survival function
+    ``p_det(d_L) = P(d_hor >= d_L)`` (see
+    ``simulation_detection_probability.py`` module docstring; Finn & Chernoff
+    (1993), arXiv:gr-qc/9301003; Finn (1996), arXiv:gr-qc/9601048).  The
+    survival is naturally boundary-correct, so the previous bridge /
+    slope-matched-clamp extrapolation machinery was removed:
 
-    * Saturating face (d_L < d_L_min): linear bridge from (d_L_min, p_edge)
-      to (0, 1) — reaches the asymptote at the natural physical scale d_L=0.
-    * Suppressing face (d_L > d_L_max): slope-matched linear extrapolation
-      from the boundary, clamped to [0, p_edge].
+    * As d_L → 0 the survival → 1 (every injection's horizon is >= 0).
+    * For d_L > max d_hor the survival is exactly 0.
+    * Monotone non-increasing in d_L by construction.
 
-    Earlier history this class encoded:
+    Earlier history this class encoded (all superseded by the survival form):
 
-    * Pre-Phase-44 the function zeroed any d_L < dl_centers[0] = dl_max/120.
-      Because dl_max(h) ∝ 1/h, this created a moving threshold c_0(h) ∝ 1/h
-      that produced a +145.7 log-unit MAP bias toward h_max for events with
-      d_L ≈ c_0.  The Phase 44 fix removed that left-side cutoff.
-    * Phase 45 (Plan 45-02 + Plan 45-04 hybrid) prepended fitted anchors
-      ``(0, 0.7931)`` and ``(0.05, 1.0)`` to lift the d_L→0 saturation
-      regime.  Replaced 2026-05-05 by the principled bridge construction
-      because the anchor values were fitted to production-truth
-      ("conservative Wilson LB chosen to not overshoot truth on production
-      posteriors"), against the project's principled-physics preference.
+    * Pre-Phase-44 the function zeroed any d_L < dl_centers[0] = dl_max/120
+      (a moving threshold c_0(h) ∝ 1/h).  Phase 44 removed that cutoff.
+    * Phase 45 prepended fitted anchors ``(0, 0.7931)`` / ``(0.05, 1.0)``;
+      2026-05-05 replaced them with a principled bridge; the survival form
+      now makes both unnecessary (p(0)=1 exactly, by construction).
     """
 
     def test_below_first_bin_follows_principled_bridge(self, injection_dir: str) -> None:
-        """d_L below the first bin center follows the linear bridge from
-        (dl_min, p_edge) to (0, 1).
-        """
+        """d_L below the first grid center: survival is monotone, lies in
+        ``[p_edge, 1]``, and → 1 as d_L → 0 (exact survival, no bridge fit)."""
         from master_thesis_code.bayesian_inference.simulation_detection_probability import (
             SimulationDetectionProbability,
         )
@@ -1033,34 +984,34 @@ class TestZeroFillBoundaryConvention:
         pdet._get_or_build_grid(h)
         _, interp_1d = pdet._grid_cache[h]
         grid_axis = interp_1d.grid[0]
-        # No more anchors; first grid coord is the histogram first bin
-        # center c_0, not 0.0.
+        # First grid coord is the first d_L bin center c_0, not 0.0.
         c0 = float(grid_axis[0])
         assert c0 > 0.0
 
-        d_query = 0.5 * c0
-        p_at = float(
+        p_edge = float(
             pdet.detection_probability_without_bh_mass_interpolated_zero_fill(
                 d_L=c0, phi=0.0, theta=0.0, h=h
             )
         )
-        p_below = float(
+        # Sweep below the first center toward 0: monotone non-increasing in
+        # d_L, in [p_edge, 1], → 1 at d_L = 0.
+        sweep = np.linspace(0.0, c0, 25)
+        p_sweep = np.asarray(
             pdet.detection_probability_without_bh_mass_interpolated_zero_fill(
-                d_L=d_query, phi=0.0, theta=0.0, h=h
+                d_L=sweep, phi=np.zeros_like(sweep), theta=np.zeros_like(sweep), h=h
             )
         )
-
-        # Bridge formula: p(dl) = 1 - (1 - p_edge) * (dl / dl_min)
-        # At d_query = c0/2 with p_edge = p_at: expected = 1 - (1 - p_at) * 0.5
-        expected = 1.0 - (1.0 - p_at) * (d_query / c0)
-        assert float(p_below) == pytest.approx(expected, rel=1e-6), (
-            f"Bridge: at d_L={d_query:.6f} (c_0={c0:.6f}), expected "
-            f"{expected:.6f}; got p_below={p_below}"
+        # Monotone non-increasing in d_L (survival).
+        assert np.all(np.diff(p_sweep) <= 1e-12), (
+            f"survival must be monotone non-increasing below c_0; got {p_sweep}"
         )
-        # Inside [p_edge, 1] by construction.
-        assert p_at - 1e-9 <= p_below <= 1.0 + 1e-9, (
-            f"Bridge result {p_below} outside [p_edge={p_at}, 1]"
+        # Every value in [p_edge, 1].
+        assert np.all(p_sweep >= p_edge - 1e-9), (
+            f"survival dropped below p_edge={p_edge}: {p_sweep}"
         )
+        assert np.all(p_sweep <= 1.0 + 1e-9)
+        # → 1 as d_L → 0 (exact).
+        assert p_sweep[0] == pytest.approx(1.0, abs=1e-9)
 
     def test_zero_fill_no_h_dependent_step_for_close_dL(self, injection_dir: str) -> None:
         """At fixed d_L just below the c_0(h=0.70) threshold, p_det varies smoothly with h."""
@@ -1161,13 +1112,14 @@ class TestZeroFillBoundaryConvention:
 
 
 class TestDetectionProbabilityWithoutBHMassPrincipledExtrapolation:
-    """Property-based tests for the 1D principled out-of-grid policy
-    (replaces the Phase 45 anchor scheme; ``.planning/2D-CHANNEL-AUDIT-20260505.md``).
+    """Property-based tests for the 1D detection-horizon survival function
+    (replaces the Phase 45 anchor scheme and the 2026-05-05 principled-bridge
+    extrapolation).  Verifies the SURVIVAL properties: result in [0, 1];
+    monotone non-increasing in d_L; p(d_L→0)→1; p(d_L > max horizon)=0;
+    vectorized==scalar.
 
-    Mirror of TestDetectionProbabilityWithBHMassPrincipledExtrapolation
-    specialized to the 1D channel.  Verifies the bridge construction in
-    the saturating direction, the slope-matched suppression in the
-    high-d_L direction, and C0 boundary continuity at both ends.
+    Finn & Chernoff (1993), arXiv:gr-qc/9301003; Finn (1996),
+    arXiv:gr-qc/9601048.
     """
 
     def _build_pdet(self, injection_dir: str) -> object:
@@ -1200,45 +1152,44 @@ class TestDetectionProbabilityWithoutBHMassPrincipledExtrapolation:
         )
         assert 0.0 <= p <= 1.0
 
-    def test_c0_continuity_at_dl_min_face(self, injection_dir: str) -> None:
-        """As d_L → dl_min from below, p_det should approach the in-grid
-        boundary value continuously (no step)."""
-        pdet = self._build_pdet(injection_dir)
-        dl_min, _ = self._grid_bounds(pdet, h=0.75)
-        eps = 1e-6
-        p_inside = float(
-            pdet.detection_probability_without_bh_mass_interpolated_zero_fill(  # type: ignore[attr-defined]
-                d_L=dl_min + eps, phi=0.0, theta=0.0, h=0.75
-            )
-        )
-        p_outside = float(
-            pdet.detection_probability_without_bh_mass_interpolated_zero_fill(  # type: ignore[attr-defined]
-                d_L=dl_min - eps, phi=0.0, theta=0.0, h=0.75
-            )
-        )
-        assert abs(p_inside - p_outside) < 1e-3
-
-    def test_c0_continuity_at_dl_max_face(self, injection_dir: str) -> None:
-        """As d_L → dl_max from above, p_det should approach the in-grid
-        boundary value continuously (no step)."""
+    def test_monotone_non_increasing_in_dl(self, injection_dir: str) -> None:
+        """The survival is monotone non-increasing in d_L over the full range
+        (including beyond the grid)."""
         pdet = self._build_pdet(injection_dir)
         _, dl_max = self._grid_bounds(pdet, h=0.75)
-        eps = 1e-6
-        p_inside = float(
+        sweep = np.linspace(0.0, dl_max * 2.0, 200)
+        p_sweep = np.asarray(
             pdet.detection_probability_without_bh_mass_interpolated_zero_fill(  # type: ignore[attr-defined]
-                d_L=dl_max - eps, phi=0.0, theta=0.0, h=0.75
+                d_L=sweep, phi=np.zeros_like(sweep), theta=np.zeros_like(sweep), h=0.75
             )
         )
-        p_outside = float(
-            pdet.detection_probability_without_bh_mass_interpolated_zero_fill(  # type: ignore[attr-defined]
-                d_L=dl_max + eps, phi=0.0, theta=0.0, h=0.75
-            )
+        assert np.all(p_sweep >= -1e-12) and np.all(p_sweep <= 1.0 + 1e-12)
+        assert np.all(np.diff(p_sweep) <= 1e-12), (
+            f"survival must be monotone non-increasing in d_L; got {p_sweep}"
         )
-        assert abs(p_inside - p_outside) < 1e-3
 
-    def test_bridge_reaches_unity_at_dl_zero(self, injection_dir: str) -> None:
-        """At d_L=0 the bridge gives exactly p_det=1 (saturated asymptote at
-        the natural physical scale)."""
+    def test_continuity_small_steps_at_boundaries(self, injection_dir: str) -> None:
+        """Across the first and last grid centers the empirical survival has
+        only small steps (a CDF is continuous in expectation; the empirical
+        one steps by <= a few injection weights)."""
+        pdet = self._build_pdet(injection_dir)
+        dl_min, dl_max = self._grid_bounds(pdet, h=0.75)
+        eps = 1e-6
+        for edge in (dl_min, dl_max):
+            p_inside = float(
+                pdet.detection_probability_without_bh_mass_interpolated_zero_fill(  # type: ignore[attr-defined]
+                    d_L=edge - eps, phi=0.0, theta=0.0, h=0.75
+                )
+            )
+            p_outside = float(
+                pdet.detection_probability_without_bh_mass_interpolated_zero_fill(  # type: ignore[attr-defined]
+                    d_L=edge + eps, phi=0.0, theta=0.0, h=0.75
+                )
+            )
+            assert abs(p_inside - p_outside) < 1e-3
+
+    def test_survival_reaches_unity_at_dl_zero(self, injection_dir: str) -> None:
+        """At d_L=0 the survival is exactly 1 (every horizon is >= 0)."""
         pdet = self._build_pdet(injection_dir)
         p = float(
             pdet.detection_probability_without_bh_mass_interpolated_zero_fill(  # type: ignore[attr-defined]
@@ -1247,9 +1198,9 @@ class TestDetectionProbabilityWithoutBHMassPrincipledExtrapolation:
         )
         assert p == pytest.approx(1.0, abs=1e-9)
 
-    def test_bridge_floor_at_pedge(self, injection_dir: str) -> None:
-        """In the saturating d_L<dl_min direction, the result should never
-        drop below the in-grid boundary value p_edge (Option A floor)."""
+    def test_survival_floor_below_first_center(self, injection_dir: str) -> None:
+        """Below the first grid center the survival never drops below the
+        boundary value (monotone) and stays in [p_edge, 1]."""
         pdet = self._build_pdet(injection_dir)
         dl_min, _ = self._grid_bounds(pdet, h=0.75)
         p_edge = float(
@@ -1263,29 +1214,21 @@ class TestDetectionProbabilityWithoutBHMassPrincipledExtrapolation:
                     d_L=d_L, phi=0.0, theta=0.0, h=0.75
                 )
             )
-            assert p >= p_edge - 1e-9, (
-                f"d_L={d_L}: p={p} dropped below p_edge={p_edge} (Option A floor violated)"
-            )
+            assert p >= p_edge - 1e-9, f"d_L={d_L}: survival p={p} dropped below p_edge={p_edge}"
             assert p <= 1.0 + 1e-9
 
-    def test_above_dl_max_clamped_to_pedge(self, injection_dir: str) -> None:
-        """In the suppressing d_L>dl_max direction, the result should never
-        exceed the in-grid boundary value p_edge."""
+    def test_zero_beyond_max_horizon(self, injection_dir: str) -> None:
+        """For d_L > max d_hor the survival is exactly 0 (no injection's
+        horizon reaches that distance)."""
         pdet = self._build_pdet(injection_dir)
-        _, dl_max = self._grid_bounds(pdet, h=0.75)
-        p_edge = float(
-            pdet.detection_probability_without_bh_mass_interpolated_zero_fill(  # type: ignore[attr-defined]
-                d_L=dl_max, phi=0.0, theta=0.0, h=0.75
-            )
-        )
-        for d_L in (dl_max * 1.1, dl_max * 1.5, dl_max * 5.0):
+        max_hor = float(np.max(pdet._d_hor_sorted))  # type: ignore[attr-defined]
+        for d_L in (max_hor * 1.01, max_hor * 1.5, max_hor * 5.0):
             p = float(
                 pdet.detection_probability_without_bh_mass_interpolated_zero_fill(  # type: ignore[attr-defined]
                     d_L=d_L, phi=0.0, theta=0.0, h=0.75
                 )
             )
-            assert p <= p_edge + 1e-9
-            assert p >= 0.0
+            assert p == 0.0, f"survival at d_L={d_L} > max horizon {max_hor} must be 0; got {p}"
 
     def test_array_input_matches_scalar_input(self, injection_dir: str) -> None:
         """Vectorized input should produce identical results to scalar."""
@@ -1309,26 +1252,21 @@ class TestDetectionProbabilityWithoutBHMassPrincipledExtrapolation:
 
 
 # ----------------------------------------------------------------------
-# F1 (Phase 49) regression: h-stable bin edges for the p_det histogram.
+# h-stable d_L support / bin edges for the p_det survival grid.
 #
-# Pre-fix bug: `dl_max = max(dl_vals(h)) * 1.1` computed per-h made
-# individual injections cross integer-count bin boundaries as h shifted
-# by 0.001, producing 5-25% jumps in p_det at fixed (d_L, M_z) that
-# summed coherently across 1473 events into visible spikes in
-# Sigma log L_i.  See .planning/debug/posterior-noisy-peak.md.
+# The original F1 bug was per-h drift of `dl_max = max(dl_vals(h)) * 1.1`.
+# Under the detection-horizon survival form the d_L support is
+# `max_k(SNR_k·d_L_k/threshold) * 1.1`, which is h-INVARIANT by
+# construction (the horizon does not depend on the trial h), so the
+# bin edges are identical at every h-trial and p_det is smooth in h.
 #
-# Fix F1 (in simulation_detection_probability.py): compute
-# DL_GLOBAL_MAX once over the prior support [h_min, h_max] and reuse
-# the same dl_edges at every h-trial.
-#
-# Refs: Farr (2019) arXiv:1904.10879 Sec III; Mandel-Farr-Gair (2019)
-# arXiv:1809.02063 Eq. 18; literature audit at
-# .planning/debug/F1_literature_audit.md.
+# Refs: Finn & Chernoff (1993), arXiv:gr-qc/9301003; Finn (1996),
+# arXiv:gr-qc/9601048; Mandel-Farr-Gair (2019) arXiv:1809.02063.
 # ----------------------------------------------------------------------
 
 
 class TestPdetHStableBinEdges:
-    """Regression: histogram support for p_det must not depend on trial h."""
+    """Regression: the d_L support / bin edges for p_det are h-invariant."""
 
     def _build_pdet(self, injection_dir: str) -> object:
         from master_thesis_code.bayesian_inference.simulation_detection_probability import (
@@ -1342,14 +1280,16 @@ class TestPdetHStableBinEdges:
             mass_bins=40,
         )
 
-    def test_dl_global_max_computed_at_h_prior_min(self, injection_dir: str) -> None:
-        """The cached global max equals the empirical max d_L at the lower
-        prior bound (which is where d_L is largest at fixed z).
+    def test_dl_global_max_is_padded_max_horizon(self, injection_dir: str) -> None:
+        """The cached global max equals the maximum detection horizon padded by
+        the 10% headroom factor: ``max_k(SNR_k·d_L_k/threshold) * 1.1``.  This
+        compact, h-invariant support replaces the old ``dist(z, h_min)``.
         """
         pdet = self._build_pdet(injection_dir)
-        # Manually compute the expected value
-        z_arr = pdet._z_arr  # type: ignore[attr-defined]
-        expected = float(np.max(dist_vectorized(z_arr, h=pdet._h_prior_min))) * 1.1  # type: ignore[attr-defined]
+        snr = pdet._snr_raw  # type: ignore[attr-defined]
+        dl = pdet._dl_raw  # type: ignore[attr-defined]
+        thr = pdet._snr_threshold  # type: ignore[attr-defined]
+        expected = float(np.max(snr * dl / thr)) * 1.1
         assert abs(pdet._dl_global_max - expected) < 1e-12  # type: ignore[attr-defined]
 
     def test_dl_edges_identical_across_two_trial_h(self, injection_dir: str) -> None:
@@ -1445,8 +1385,10 @@ class TestPdetHStableBinEdges:
                 h_prior_range=(0.80, 0.60),  # inverted
             )
 
-    def test_h_prior_range_override_affects_global_max(self, injection_dir: str) -> None:
-        """Tightening the lower h-prior bound reduces _dl_global_max."""
+    def test_dl_global_max_is_h_prior_independent(self, injection_dir: str) -> None:
+        """The d_L support is now derived from the h-INVARIANT detection horizon,
+        so changing h_prior_range no longer affects _dl_global_max (the old
+        ``dist(z, h_min)`` dependence is gone)."""
         from master_thesis_code.bayesian_inference.simulation_detection_probability import (
             SimulationDetectionProbability,
         )
@@ -1461,28 +1403,28 @@ class TestPdetHStableBinEdges:
             snr_threshold=20.0,
             h_prior_range=(0.70, 0.86),
         )
-        # d_L is monotone-decreasing in h, so a higher lower bound on h
-        # gives a smaller max d_L over the prior.
-        assert pdet_narrow._dl_global_max < pdet_wide._dl_global_max
+        # Horizon-based support is independent of the h prior range.
+        assert pdet_narrow._dl_global_max == pytest.approx(pdet_wide._dl_global_max, rel=1e-12)
 
 
 # ----------------------------------------------------------------------
-# F4 (Phase 49): Nadaraya-Watson kernel p_det estimator regression tests.
+# Detection-horizon survival p_det estimator regression tests (supersedes
+# the F4 Nadaraya-Watson / F4-v2 local-linear kernel estimators).
 #
-# Replaces histogram bin counts with kernel-weighted sums so that
-# injection d_L_k(h) crossing the (still fixed) bin edges no longer
-# produces integer-count jumps.  Diagnostic test_29 attributed 96% of
-# post-F1 spike variance to this "mechanism A" — see
-# .planning/PHASE-49-F4-PLAN.md and
-# scripts/bias_investigation/test_29_snr_threshold_crossings.py.
+# The detection horizon d_hor = SNR·d_L/threshold is h-invariant, so p_det
+# is the EXACT survival function of the horizon distribution and is, by
+# construction, smooth across trial h (identical at every h).  The
+# bandwidth_scale parameter still scales the observer-frame M_z kernel of
+# the 2D survival estimator.
 #
-# Refs: Nadaraya (1964); Watson (1964); Scott (1992) Ch. 6;
-#       Farr (2019) arXiv:1904.10879 Sec III.
+# Refs: Finn & Chernoff (1993), arXiv:gr-qc/9301003; Finn (1996),
+#       arXiv:gr-qc/9601048; Scott (1992) Ch. 6 (M_z bandwidth).
 # ----------------------------------------------------------------------
 
 
 class TestF4KernelEstimator:
-    """Regression tests for the F4 Nadaraya-Watson p_det estimator."""
+    """Regression tests for the detection-horizon survival p_det estimator
+    (smoothness across h, bandwidth wiring, [0, 1] bounds)."""
 
     def _build_pdet(
         self,
@@ -1514,27 +1456,26 @@ class TestF4KernelEstimator:
                 bandwidth_scale=0.0,
             )
 
-    def test_quality_flags_are_continuous(self, injection_dir: str) -> None:
-        """Under the kernel form, n_total/n_detected are float-valued kernel
-        mass (not integer counts).  Cells with multiple contributing
-        injections have non-integer kernel mass; this asserts the change of
-        semantics introduced by F4.
+    def test_quality_flags_are_integer_counts(self, injection_dir: str) -> None:
+        """Under the survival form, n_total/n_detected are float arrays holding
+        integer-valued injection counts per (dl-bin, M-bin) cell, and
+        n_detected <= n_total everywhere.
         """
         pdet = self._build_pdet(injection_dir)
         flags = pdet.quality_flags(h=0.73)  # type: ignore[attr-defined]
         n_total = np.asarray(flags["n_total"])
-        # Float dtype check
+        n_detected = np.asarray(flags["n_detected"])
+        # Float dtype (API back-compat) but integer-valued counts.
         assert np.issubdtype(n_total.dtype, np.floating)
-        # At least one populated cell has non-integer kernel mass (pre-F4
-        # this array was integer-valued counts).
         nonzero = n_total[n_total > 0.0]
         assert nonzero.size > 0
-        non_integer_count = int(np.sum(np.abs(nonzero - np.round(nonzero)) > 1e-9))
-        assert non_integer_count > 0, (
-            "F4 kernel estimator should produce non-integer 'n_total' (kernel "
-            "mass) values; got all-integer values which suggests histogram "
-            "fallback."
+        assert np.all(np.abs(nonzero - np.round(nonzero)) < 1e-9), (
+            "survival quality flags must be integer injection counts"
         )
+        # The counts sum to the total number of pooled injections.
+        assert float(n_total.sum()) == pytest.approx(float(pdet._n_inj))  # type: ignore[attr-defined]
+        # Detected count never exceeds total count per cell.
+        assert np.all(n_detected <= n_total + 1e-12)
 
     def test_pdet_2d_continuous_across_fine_h_grid(self, injection_dir: str) -> None:
         """F4 regression: at Δh=0.0005 (twice as fine as Phase 48 grid),
@@ -1611,85 +1552,10 @@ class TestF4KernelEstimator:
         assert np.all(n_det <= n_total + 1e-12)
 
 
-class TestLocalLinearHelper:
-    """Unit tests for the F4-v2 local-linear-in-d_L intercept estimator."""
-
-    def test_interior_symmetric_reduces_to_nadaraya_watson(self) -> None:
-        """In a symmetric neighbourhood (S1=0) the LL intercept = NW ratio."""
-        from master_thesis_code.bayesian_inference.simulation_detection_probability import (
-            _local_linear_p_det,
-        )
-
-        # Symmetric u about 0, symmetric weights -> S1 = 0.
-        u = np.array([-0.02, -0.01, 0.0, 0.01, 0.02])
-        w = np.array([1.0, 2.0, 3.0, 2.0, 1.0])
-        y = np.array([1.0, 1.0, 0.0, 0.0, 0.0])
-        nw = float((w * y).sum() / w.sum())
-        ll = float(_local_linear_p_det(u, w, y))
-        assert ll == pytest.approx(nw, abs=1e-12)
-
-    def test_boundary_corrects_one_sided_downward_trend(self) -> None:
-        """One-sided neighbourhood with a declining trend: LL intercept exceeds
-        the NW one-sided average (boundary-bias correction)."""
-        from master_thesis_code.bayesian_inference.simulation_detection_probability import (
-            _local_linear_p_det,
-        )
-
-        # All points at u >= 0 (boundary at u=0); detection declines with u.
-        # True boundary value (u=0) is 1.0; NW averages in the far misses.
-        u = np.array([0.0, 0.01, 0.02, 0.03, 0.04])
-        w = np.array([1.0, 1.0, 1.0, 1.0, 1.0])
-        y = np.array([1.0, 1.0, 1.0, 0.0, 0.0])  # declining
-        nw = float((w * y).sum() / w.sum())  # 0.6
-        ll = float(_local_linear_p_det(u, w, y))
-        assert ll > nw  # LL recovers more of the true boundary value
-        assert ll == pytest.approx(1.0, abs=0.15)
-
-    def test_clipped_to_unit_interval(self) -> None:
-        """Local-linear extrapolation is clipped to [0, 1]."""
-        from master_thesis_code.bayesian_inference.simulation_detection_probability import (
-            _local_linear_p_det,
-        )
-
-        # Steeply declining all-detected-near data would extrapolate the line
-        # above 1 at u=0; must clip.
-        u = np.array([0.01, 0.02, 0.03, 0.04])
-        y = np.array([1.0, 1.0, 1.0, 1.0])
-        w = np.ones(4)
-        ll = float(_local_linear_p_det(u, w, y))
-        assert 0.0 <= ll <= 1.0
-
-    def test_singular_neighbourhood_falls_back_to_ratio(self) -> None:
-        """A degenerate (single distinct u) design falls back to T0/S0."""
-        from master_thesis_code.bayesian_inference.simulation_detection_probability import (
-            _local_linear_p_det,
-        )
-
-        u = np.array([0.0, 0.0, 0.0])  # det == 0 -> singular 2x2
-        w = np.array([1.0, 2.0, 1.0])
-        y = np.array([1.0, 0.0, 1.0])
-        nw = float((w * y).sum() / w.sum())
-        ll = float(_local_linear_p_det(u, w, y))
-        assert ll == pytest.approx(nw, abs=1e-12)
-
-    def test_vectorized_over_columns_matches_scalar(self) -> None:
-        """2D (per-M-center) vectorization matches the column-wise scalar calls."""
-        from master_thesis_code.bayesian_inference.simulation_detection_probability import (
-            _local_linear_p_det,
-        )
-
-        u = np.array([0.0, 0.01, 0.02, 0.03])
-        w2 = np.array([[1.0, 0.5], [1.0, 1.0], [1.0, 2.0], [1.0, 1.0]])
-        y2 = np.array([[1.0, 1.0], [1.0, 0.0], [0.0, 0.0], [0.0, 1.0]])
-        vec = _local_linear_p_det(u, w2, y2)
-        col0 = float(_local_linear_p_det(u, w2[:, 0], y2[:, 0]))
-        col1 = float(_local_linear_p_det(u, w2[:, 1], y2[:, 1]))
-        assert vec[0] == pytest.approx(col0, abs=1e-12)
-        assert vec[1] == pytest.approx(col1, abs=1e-12)
-
-
 class TestEstimatorSelection:
-    """F4-v2 estimator-selection plumbing and NW regression escape hatch."""
+    """Estimator-selection plumbing.  The ``estimator`` parameter no longer
+    affects the d_L treatment (the detection-horizon survival is exact in
+    d_L); it is accepted for API compatibility and validation only."""
 
     def test_invalid_estimator_raises(self, injection_dir: str) -> None:
         from master_thesis_code.bayesian_inference.simulation_detection_probability import (
@@ -1711,8 +1577,10 @@ class TestEstimatorSelection:
         pdet = SimulationDetectionProbability(injection_data_dir=injection_dir, snr_threshold=20.0)
         assert pdet._estimator == "local_linear"
 
-    def test_nadaraya_watson_escape_hatch_is_local_constant(self, tmp_path: object) -> None:
-        """With NW selected, the 1D grid reproduces the Σwy/Σw ratio exactly."""
+    def test_estimator_does_not_affect_dl_survival(self, tmp_path: object) -> None:
+        """The survival in d_L is exact, so 'local_linear' and 'nadaraya_watson'
+        produce identical p_det(d_L) — the estimator no longer affects the d_L
+        treatment."""
         from master_thesis_code.bayesian_inference.simulation_detection_probability import (
             SimulationDetectionProbability,
         )
@@ -1721,7 +1589,6 @@ class TestEstimatorSelection:
         d = str(tmp_path)
         z = np.linspace(0.02, 0.8, 300)
         M = np.full(300, 3e5)  # noqa: N806
-        # SNR ~ 1/d_L; choose loudness so the threshold falls mid-range.
         dl = dist_vectorized(z, h=0.73)
         snr = 5.0 / np.maximum(dl, 1e-6)
         _create_controlled_injection_csv(d, 0.73, z, M, snr)
@@ -1740,9 +1607,116 @@ class TestEstimatorSelection:
         p_ll = np.asarray(
             ll.detection_probability_without_bh_mass_interpolated_zero_fill(dl_grid, z0, z0, h=0.73)
         )
-        # Near the boundary, where all sources are detected, LL must be >= NW
-        # (boundary-bias correction lifts the near-field estimate).
-        assert np.all(p_ll >= p_nw - 1e-9)
-        # Both bounded in [0, 1].
+        # Exact survival is estimator-independent in d_L.
+        np.testing.assert_allclose(p_nw, p_ll, rtol=1e-12, atol=1e-12)
         for p in (p_nw, p_ll):
             assert np.all(p >= 0.0) and np.all(p <= 1.0)
+
+
+class TestHorizonSurvival:
+    """Detection-horizon survival-function physics.
+
+    p_det = survival function of the detection horizon, P(d_hor >= d_L), with
+    d_hor = SNR·d_L/threshold.  Finn & Chernoff (1993), arXiv:gr-qc/9301003;
+    Finn (1996), arXiv:gr-qc/9601048.
+    """
+
+    def _build_controlled(self, tmp_path: object, snr_threshold: float = 20.0) -> object:
+        from master_thesis_code.bayesian_inference.simulation_detection_probability import (
+            SimulationDetectionProbability,
+        )
+
+        # Controlled injections with a known horizon distribution:
+        # d_hor = SNR · d_L / threshold spans a range of distances.
+        d = str(tmp_path)
+        rng = np.random.default_rng(7)
+        n = 500
+        z = rng.uniform(0.02, 0.9, n)
+        M = rng.uniform(1e5, 5e5, n)  # noqa: N806
+        dl = dist_vectorized(z, h=0.73)
+        # SNR ~ 1/d_L with varied loudness → varied horizons.
+        snr = rng.uniform(20.0, 120.0, n) / np.maximum(dl, 1e-6)
+        _create_controlled_injection_csv(d, 0.73, z, M, snr)
+        return SimulationDetectionProbability(injection_data_dir=d, snr_threshold=snr_threshold)
+
+    def test_survival_limits(self, tmp_path: object) -> None:
+        """p_det_1d(0.0)==1.0 exactly; p_det_1d(d_L > max d_hor)==0.0 exactly;
+        monotone non-increasing over a sweep."""
+        pdet = self._build_controlled(tmp_path)
+        max_hor = float(np.max(pdet._d_hor_sorted))  # type: ignore[attr-defined]
+
+        p0 = float(
+            pdet.detection_probability_without_bh_mass_interpolated_zero_fill(  # type: ignore[attr-defined]
+                d_L=0.0, phi=0.0, theta=0.0, h=0.73
+            )
+        )
+        assert p0 == 1.0
+
+        p_beyond = float(
+            pdet.detection_probability_without_bh_mass_interpolated_zero_fill(  # type: ignore[attr-defined]
+                d_L=max_hor * 1.01, phi=0.0, theta=0.0, h=0.73
+            )
+        )
+        assert p_beyond == 0.0
+
+        sweep = np.linspace(0.0, max_hor * 1.2, 250)
+        p_sweep = np.asarray(
+            pdet.detection_probability_without_bh_mass_interpolated_zero_fill(  # type: ignore[attr-defined]
+                d_L=sweep, phi=np.zeros_like(sweep), theta=np.zeros_like(sweep), h=0.73
+            )
+        )
+        assert np.all(np.diff(p_sweep) <= 1e-12)
+        assert np.all((p_sweep >= -1e-12) & (p_sweep <= 1.0 + 1e-12))
+
+    def test_h_invariance(self, tmp_path: object) -> None:
+        """1D and 2D p_det are identical across h (rtol 1e-9) at several
+        (d_L, M_z) — the horizon is h-invariant."""
+        pdet = self._build_controlled(tmp_path)
+        h_vals = (0.65, 0.73, 0.80)
+
+        dl_probe = np.array([0.05, 0.1, 0.2, 0.3])
+        z0 = np.zeros_like(dl_probe)
+        ref_1d = np.asarray(
+            pdet.detection_probability_without_bh_mass_interpolated_zero_fill(  # type: ignore[attr-defined]
+                dl_probe, z0, z0, h=h_vals[0]
+            )
+        )
+        for h in h_vals[1:]:
+            cur = np.asarray(
+                pdet.detection_probability_without_bh_mass_interpolated_zero_fill(  # type: ignore[attr-defined]
+                    dl_probe, z0, z0, h=h
+                )
+            )
+            np.testing.assert_allclose(cur, ref_1d, rtol=1e-9)
+
+        # 2D at several (d_L, M_z).
+        m_probe = np.array([2e5, 3e5, 4e5, 5e5])
+        ref_2d = np.asarray(
+            pdet.detection_probability_with_bh_mass_interpolated(  # type: ignore[attr-defined]
+                dl_probe, m_probe, z0, z0, h=h_vals[0]
+            )
+        )
+        for h in h_vals[1:]:
+            cur = np.asarray(
+                pdet.detection_probability_with_bh_mass_interpolated(  # type: ignore[attr-defined]
+                    dl_probe, m_probe, z0, z0, h=h
+                )
+            )
+            np.testing.assert_allclose(cur, ref_2d, rtol=1e-9)
+
+    def test_survival_matches_detected_fraction(self, tmp_path: object) -> None:
+        """On synthetic data, the 1D survival at a bulk d_L is within a loose
+        tolerance of the directly-counted fraction mean(d_hor >= d_L)."""
+        pdet = self._build_controlled(tmp_path)
+        # Directly-counted detected fraction from the stored horizon.
+        d_hor = np.asarray(pdet._d_hor_sorted)  # type: ignore[attr-defined]
+        for d_L in (0.05, 0.1, 0.2):
+            direct = float(np.mean(d_hor >= d_L))
+            p = float(
+                pdet.detection_probability_without_bh_mass_interpolated_zero_fill(  # type: ignore[attr-defined]
+                    d_L=d_L, phi=0.0, theta=0.0, h=0.73
+                )
+            )
+            # The accessor IS the exact survival, so they coincide to machine
+            # precision; assert within a loose tolerance per spec.
+            assert p == pytest.approx(direct, abs=1e-6)
