@@ -930,20 +930,30 @@ class BayesianStatistics:
             L_cat_without_bh_mass = 0.0
             L_cat_with_bh_mass = 0.0
         else:
-            # Gray et al. (2020), arXiv:1908.06050, Eq. 24-25: L_cat = (1/N) Σ_g [N_g / D_g]
-            # under uniform 1/N galaxy prior. Note: Σ N_g / Σ D_g ≠ (1/N) Σ (N_g/D_g) when D_g
-            # vary (e.g., N=2, N_1=1, D_1=1, N_2=1, D_2=2: old=2/3, new=3/4). See
-            # test_l_cat_equivalence.py for the counterexample and limiting-case checks.
+            # Eq. (A.9/A.10) in Gray et al. (2020), arXiv:1908.06050: the
+            # in-catalogue likelihood is a RATIO OF SUMS over catalog galaxies
+            # (single shared selection denominator Sum_g D_g), NOT a mean of
+            # per-galaxy self-normalized ratios (1/N) Sum_g (N_g/D_g).  The
+            # latter gives each galaxy its own selection normalization rather
+            # than one population-level beta(H0).
             all_results_without_bh = list(results_without_blackhole_mass) + list(
                 results_with_bh_mass
             )
-            ratios_without_bh = [r[0] / r[1] for r in all_results_without_bh if r[1] > 0]
-            L_cat_without_bh_mass = float(np.mean(ratios_without_bh)) if ratios_without_bh else 0.0
+            num_sum_without_bh = float(sum(r[0] for r in all_results_without_bh))
+            den_sum_without_bh = float(sum(r[1] for r in all_results_without_bh))
+            L_cat_without_bh_mass = (
+                num_sum_without_bh / den_sum_without_bh if den_sum_without_bh > 0 else 0.0
+            )
 
             if len(results_with_bh_mass) > 0:
-                # Gray et al. (2020), arXiv:1908.06050, Eq. 24-25: L_cat = (1/N) Σ_g [N_g / D_g]
-                ratios_with_bh = [r[2] / r[3] for r in results_with_bh_mass if r[3] > 0]
-                L_cat_with_bh_mass = float(np.mean(ratios_with_bh)) if ratios_with_bh else 0.0
+                # Eq. (A.9/A.10) in Gray et al. (2020), arXiv:1908.06050: ratio
+                # of sums (single shared selection denominator), not a mean of
+                # per-galaxy self-normalized ratios.
+                num_sum_with_bh = float(sum(r[2] for r in results_with_bh_mass))
+                den_sum_with_bh = float(sum(r[3] for r in results_with_bh_mass))
+                L_cat_with_bh_mass = (
+                    num_sum_with_bh / den_sum_with_bh if den_sum_with_bh > 0 else 0.0
+                )
             else:
                 L_cat_with_bh_mass = 0.0
 
@@ -1183,23 +1193,18 @@ def single_host_likelihood(
         phi = np.full_like(z, host_phiS)
         theta = np.full_like(z, host_qS)
 
-        # Gray et al. (2020), arXiv:1908.06050, Eq. A.19: shared p_det function
-        # with D(h) denominator (STAT-03 symmetry, commit a70d1a2).  Phase 44:
-        # NN-fill below first bin (real injection statistic), zero above
-        # injection horizon.
-        p_det = detection_probability.detection_probability_without_bh_mass_interpolated_zero_fill(
-            d_L, phi, theta, h=h
-        )
-        return (
-            p_det
-            * _mvn_pdf(
-                np.vstack([phi, theta, luminosity_distance_fraction]).T,
-                _mean_3d,
-                _cov_inv_3d,
-                _log_norm_3d,
-            )
-            * galaxy_redshift_normal_distribution.pdf(z)
-        )
+        # Eq. (A.10) in Gray et al. (2020), arXiv:1908.06050: the in-catalogue
+        # numerator carries the GW likelihood p(x_GW|z,Omega,H0) and the galaxy
+        # redshift uncertainty p(z) ONLY.  The detection probability
+        # p_det = p(D_GW|z,Omega,H0) appears solely in the denominator D_g (below);
+        # an extra p_det in the numerator is the Mandel-Farr-Gair (2019)
+        # "most common mistake" (arXiv:1809.02063) and biases H0 high.
+        return _mvn_pdf(
+            np.vstack([phi, theta, luminosity_distance_fraction]).T,
+            _mean_3d,
+            _cov_inv_3d,
+            _log_norm_3d,
+        ) * galaxy_redshift_normal_distribution.pdf(z)
 
     def denominator_integrant_without_bh_mass(z: npt.NDArray[np.float64]) -> Any:
         d_L = dist_vectorized(z, h=h)
@@ -1304,17 +1309,11 @@ def single_host_likelihood(
             phi = np.full_like(z, host_phiS)
             theta = np.full_like(z, host_qS)
 
-            # p_det evaluated at the *hypothesis*: the host candidate's
-            # observer-frame M_z = host_M · (1+z) at integration redshift z.
-            # This matches the rest of the integrand's hypothesis convention
-            # (cf. `mu_gal_frac = host_M·(1+z)/_det_M` below) and the
-            # denominator's `M_z = M·(1+z)` convention.  See
-            # docs/H0_BIAS_RESOLUTION.md §3.15 (H3 fix, Phase 47).
-            # Ref: Mandel, Farr & Gair (2019), arXiv:1809.02063 §2
-            # (selection function evaluated at hypothesis parameters).
-            p_det = detection_probability.detection_probability_with_bh_mass_interpolated(
-                d_L, host_M * (1.0 + z), phi, theta, h=h
-            )
+            # Eq. (A.10) in Gray et al. (2020), arXiv:1908.06050: the in-catalogue
+            # numerator carries the GW likelihood and mass/redshift priors ONLY.
+            # p_det = p(D_GW|...) is applied solely in the denominator (below);
+            # a numerator p_det is the Mandel-Farr-Gair (2019) "most common
+            # mistake" (arXiv:1809.02063) and biases H0 high.
 
             # 3D marginal Gaussian: p(phi, theta, d_L_frac)
             # The 3D marginal is the upper-left 3x3 block of the 4D covariance
@@ -1344,9 +1343,11 @@ def single_host_likelihood(
                 2 * np.pi * sigma2_sum
             )
 
+            # Eq. (A.10) in Gray et al. (2020): GW likelihood x mass-marginal x
+            # galaxy z-prior; p_det removed from the numerator (denominator-only).
             # Eq. (14.32) in derivations/dark_siren_likelihood.md
             # No /(1+z) factor: Jacobian absorbed by Gaussian rescaling (Eq. 14.21)
-            return p_det * gw_3d * mz_integral * galaxy_redshift_normal_distribution.pdf(z)
+            return gw_3d * mz_integral * galaxy_redshift_normal_distribution.pdf(z)
 
         single_host_likelihood_numerator_with_bh_mass = fixed_quad(
             numerator_integrant_with_bh_mass,

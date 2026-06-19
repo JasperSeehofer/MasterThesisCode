@@ -1,0 +1,47 @@
+{
+  "source_csv": "/home/jasper/Repositories/MasterThesisCode/simulations/diagnostics/event_likelihoods.csv",
+  "n_events": 937,
+  "n_h": 23,
+  "truth_h": 0.73,
+  "per_term_joint_map": {
+    "catalog_1d": 0.74,
+    "catalog_2d": 0.725,
+    "completion_alone": 0.8,
+    "combined_1d_actual_fi": 0.75,
+    "combined_2d_actual_fi": 0.7425
+  },
+  "f_i_mean": 0.6043664366492213,
+  "f_i_min": 0.2997445802983073,
+  "f_i_max": 1.0,
+  "map_vs_global_f": {
+    "0.0": 0.8,
+    "0.05": 0.7425,
+    "0.1": 0.7425,
+    "0.15": 0.7425,
+    "0.2": 0.745,
+    "0.25": 0.745,
+    "0.3": 0.745,
+    "0.35": 0.745,
+    "0.4": 0.745,
+    "0.45": 0.7475,
+    "0.5": 0.7475,
+    "0.55": 0.7475,
+    "0.6": 0.7475,
+    "0.65": 0.7475,
+    "0.7": 0.7475,
+    "0.75": 0.7475,
+    "0.8": 0.7475,
+    "0.85": 0.7475,
+    "0.9": 0.745,
+    "0.95": 0.745,
+    "1.0": 0.74
+  },
+  "magnitude_check": {
+    "h_eval": 0.73,
+    "median_L_cat": 281.93363184179793,
+    "median_L_comp": 323.39602636186265,
+    "median_ratio_Lcomp_over_Lcat": 0.7075144559629244,
+    "frac_events_Lcomp_gt_Lcat": 0.4375667022411953
+  },
+  "figure": "/home/jasper/Repositories/MasterThesisCode/scripts/bias_investigation/outputs/test_31_completion_characterization.pdf"
+}
