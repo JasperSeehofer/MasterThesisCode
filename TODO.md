@@ -1,5 +1,23 @@
 # TODO's
 
+## 🔆 Active / Next Session (2026-06-20)
+
+- [ ] **CLUSTER-VERIFY (P0, blocking L_cat merge)** — run the **multi-seed campaign** on bwUniCluster
+      to decide whether the residual H0 bias is a deterministic systematic vs single-seed scatter.
+      Branch `physics/lcat-gray-ratio-of-sums` (commit `816f904`, L_cat Gray A.9/A.10 fix — bias
+      halved 1D 0.750→0.740) is **NOT merged to `main`** until this confirms. User runs it when back
+      at the controlling machine: `for S in 500 600 700 800; do bash cluster/submit_resimulate_phase50.sh --seed $S; done`
+      (after `git checkout main && git pull && uv sync --extra gpu`). Then compare the 5 MAPs
+      (seed400=0.750 + the 4 new). See `docs/H0_BIAS_RESOLUTION.md` §3.17.
+- [ ] **MERGE L_cat fix** — once CLUSTER-VERIFY confirms, `/check` + merge `physics/lcat-gray-ratio-of-sums`
+      → `main`; if multi-seed shows the residual is pure scatter, the fix still stands on its own
+      (Gray-A.9/A.10 correctness) — merge regardless, but frame the residual accordingly.
+- [ ] **IN-DEPTH PIPELINE REVIEW (next focus, besides bias)** — 4 areas, see the handoff
+      `.planning/HANDOFF-PIPELINE-DEEP-REVIEW-*.md`: (1) simulation-pipeline correctness (papers/code/
+      physics/maths/parameter-space), (2) HPC performance of the Bayesian-inference pipeline,
+      (3) plotting + GitHub Pages creative/interactive upgrade, (4) strategic blind-spots /
+      "what this project would love to have".
+
 ## Execution Order
 
 ### Phase 1: Foundation (do first — prerequisites for everything) ✅
