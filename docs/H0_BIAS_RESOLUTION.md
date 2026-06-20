@@ -1,11 +1,16 @@
 # H0 Posterior Bias — Resolution Catalog
 
-**Last updated:** 2026-05-07 (**Phase 48 production fine-grid sweep
-LANDED** — 63-point non-uniform grid at h=0.73 phase46-merged 1473
-events; 1D MAP=0.7324 z=+1.16σ PASS, 2D MAP=0.7322 z=+0.97σ PASS, info
-monotonicity preserved. R1's 21-pt parabolic refine was Δh-resolution-
-limited; production sweep refines MAP +0.0015 upward, within R1's
-σ_boot. See §1 Phase 48 block. Previously: **H3 fix LANDED** `f01595c`
+**Last updated:** 2026-06-19 (**Post-survival-p_det residual CLOSED, see §3.17** —
+detection-horizon survival p_det landed `5e94139`; local seed400 1D MAP=0.750 /
+2D MAP=0.7375. Clean `--catalog_only` decomposition: 1D +0.020 splits ~evenly
+catalog +0.010 / completion +0.010. Fisher-frame suspect closed (non-cause),
+catalog-Jacobian refuted, normalization-mismatch ruled out. Completion term is
+faithful to Gray (2020); its volume-prior pull is anchored by the catalog term
+(MAP robust ~0.745–0.750 across completeness `f∈[0.1,0.9]`). No sign-correct
+fixable bug; residual at/below single-seed scatter — cluster 1473-ev runs gave
+0.7324. Multi-seed significance + Gray re-derivation audit in flight.
+Previously: **Phase 48 production fine-grid sweep** — 1473 events; 1D MAP=0.7324
+z=+1.16σ PASS, 2D MAP=0.7322 z=+0.97σ PASS. **H3 fix LANDED** `f01595c`
 2026-05-06, see §3.15.)
 
 This is the bundled source of truth for the H0 posterior bias investigation in
@@ -952,6 +957,170 @@ Each entry links to its date-stamped narrative in [Appendix A](#appendix-a--chro
   uncertainties broadened to physical values.
 - **Reference:** Babak et al. (2023) arXiv:2303.15929 Eq. 17.
 - **Detail →** [Appendix A · Phase 9](#phase-9--galactic-confusion-noise-2026-03-29).
+
+---
+
+### 3.17 Post-survival-p_det residual: completion-term characterization & closure (2026-06-19)
+
+After the detection-horizon **survival p_det** landed (`5e94139`, supersedes the
+Phase-45 kernel/anchor machinery in §3.5/§3.14), the local single-seed **seed400**
+baseline (937/936 events, commit `5e94139`) sits at **1D MAP = 0.750 (+0.020)**,
+**2D MAP = 0.7375 (+0.0075)**. This entry records the investigation that chased
+that residual to closure. **Outcome: no remaining sign-correct, fixable bug; the
+completion term is faithful to Gray et al. (2020); the residual is at/below
+single-seed scatter.**
+
+**Suspects ruled out this session (each with a sign or empirical check):**
+
+| Suspect | Verdict | Why |
+|---|---|---|
+| Fisher ecliptic/equatorial frame mismatch | **CLOSED — non-cause** | seed400 covariance is genuinely native-ecliptic (full construction chain verified; `migrate_crb_to_ecliptic.py` deliberately not run; survived 2 adversarial refutations). Rotating would *double-rotate*. Pre-Phase-36 mismatch does not apply to seed400. |
+| Catalog-term "missing dd_L/dz Jacobian" | **REFUTED** | `\|dd_L/dz\| ∝ 1/h` is a *decreasing* prefactor → biases h **low**; at the realistic host-z width (GLADE `REDSHIFT_MEASUREMENT_ERROR` median ≈ 0.035, not the 0.0015 floor) the convexity effect flips low. The GW MVN is a *likelihood* at `d_L(z,h)` → no Jacobian needed (standard dark-siren form). |
+| `L_cat`/`L_comp` normalization-measure mismatch | **RULED OUT** | At h=0.73 the two terms are on comparable scales (median ratio `L_comp/L_cat` = 0.71; effective completion weight in `p_i` = 41% ≈ nominal `(1−f_i)` = 40%). The `f_i` mixture is valid. |
+| C1 galaxy z-error `(1+z)³` (issue #7) | **inert** | Dead code in Pipeline B; production uses GLADE `REDSHIFT_MEASUREMENT_ERROR` + pec-vel floor 0.0015. |
+| C4 `OMEGA_M=0.25` (issue #6) | **inert** | Cancels in self-consistency (data + inference both Ωₘ=0.25); a Planck mismatch would bias *low* (wrong sign). |
+| C2 stellar→BH mass relation | **suppressor, not cause** | Explains 2D < 1D; deterministic σ_M/M~1e-7 over-corrects 2D. Adding realistic scatter would worsen 2D. |
+
+**Clean per-term decomposition (decisive experiment).** The previous diagnostics
+CSV was a *fragmented concat* of many `--evaluate` runs (3674 duplicate `(event,h)`
+rows, 9 distinct h-grids) — joint-MAP sums over it are invalid. Re-run cleanly:
+archive the FULL baseline, clear diagnostics, run `--evaluate` (FULL) vs
+`--evaluate --catalog_only` (`f_i=1`, `L_comp=0`) on the same 23-pt grid. From the
+trustworthy `combined_posterior.json` (cross-validated by the clean-CSV joint MAP):
+
+| Term | joint MAP | vs truth 0.73 |
+|---|---|---|
+| catalog 1D (`L_cat_no_bh` / `--catalog_only`) | 0.740 | +0.010 |
+| catalog 2D (`L_cat_with_bh`) | 0.725 | −0.005 |
+| completion alone (`L_comp`) | 0.800 | +0.070 |
+| **combined 1D** | 0.750 | +0.020 |
+| **combined 2D** | 0.7375–0.7425 | +0.0075…+0.0125 |
+
+⇒ the **1D +0.020 splits ~evenly**: catalog term +0.010 **and** completion-term
+mixing pull +0.010. In 2D the catalog term is slightly *low* (−0.005, mass dim
+over-corrects) and completion adds +0.0125. The **2D MAP is stochastic ~0.005
+between identical runs** (Monte-Carlo denominator, `bayesian_statistics.py:1361-1398`).
+
+**Completion-term characterization (the volume-prior pull).** `L_comp` alone is
+strongly biased high (0.800) — this is the *legitimate* `dV_c/dz` volume prior of
+the Gray completion term (uniform-in-comoving-volume hosts prefer high z ↔ high h).
+But the sharply-peaked catalog term **anchors** the 937-event joint product: the
+combined MAP is flat (~0.745–0.750) across assumed completeness `f ∈ [0.1, 0.9]`
+and only jumps to 0.800 at *exactly* `f=0` (catalog fully removed). So `L_comp`'s
++0.070 standalone bias is mostly *suppressed* by the catalog anchor, contributing
+only ~+0.010 to the combined posterior. **The combined estimator is robust to the
+completeness assumption.**
+
+- **Figure:** `scripts/bias_investigation/outputs/test_31_completion_characterization.pdf`
+  (panel a: joint posterior by term; panel b: MAP vs assumed completeness `f`).
+- **Generator / data:** `scripts/bias_investigation/test_31_completion_term_characterization.py`
+  + JSON summary alongside the figure.
+
+**Why no completion-term "fix" is warranted.** A literature audit against Gray
+et al. (2020) confirms the completion term is faithful (dV_c asymmetry correct —
+catalog galaxies sample volume implicitly; full-volume `D(h)` denominator correct;
+the historical D double-count is already disabled, §3.13). The two *genuine*
+Gray-deviations push the **wrong sign** for a high bias:
+- **Missing `(1+z)⁻¹` source-frame rate factor** (`p(z) ∝ dV_c/dz`, should be
+  `∝ dV_c/dz · (1+z)⁻¹`): fixing it nudges H0 **up** (worse). Correctness-only.
+- **Flat ~21% completeness extrapolation** (`glade_completeness.py:111`; should
+  decline to 0 per Gray Fig. 1): fixing it nudges H0 **up** (it currently *masks*
+  the bias). Correctness-only.
+
+**Statistical context — within-seed vs seed-to-seed (the decisive distinction).**
+A within-seed bootstrap (resample seed400's 937 events with replacement, B=2000,
+recompute the joint MAP) gives:
+- 1D: σ_boot = 0.0060, MAP = 0.750 → **+0.020 = +3.3 σ_boot** (0% of bootstraps reach 0.73).
+- 2D: σ_boot = 0.0046, MAP = 0.7425 → **+0.012 = +2.6 σ_boot** (2.4% reach 0.73).
+
+So the residual is **robust given seed400's specific events** — it is *not* finite-
+sample noise *within* this seed. BUT the bootstrap **cannot** probe **seed-to-seed**
+variation (different population/event realizations), which is the larger source
+(~0.017). The cluster fine-grid run with more events (phase46-merged, 1473 events)
+recovered **1D MAP = 0.7324** (§1, nearly unbiased) vs seed400's 0.750 — hinting
+seed400 is a somewhat-*high* single draw. **Therefore the only test that resolves
+"deterministic systematic vs high seed-draw" is a K≥5 multi-seed re-simulation +
+full grid on bwUniCluster** (`submit_resimulate_phase50.sh --seed {500,600,…}`;
+in flight, 2026-06-19). If the multi-seed MAPs scatter around 0.73 with seed400 a
+high outlier → statistical; if they cluster at ~0.750 → a residual systematic
+(then revisit the catalog-term +0.010, which has no verified cause).
+Generator: `scripts/bias_investigation/test_31...` (bootstrap inline in session log).
+
+**Status:** local single-seed deterministic-bug chase **closed for the completion
+term**; significance pending multi-seed (cluster seeds 500/600/700/800 in flight).
+
+**Gray-2020 re-derivation audit (2026-06-19) — reference EXONERATED, but the CODE
+departs from it in HIGH-biasing ways (NEW lead for the catalog-term +0.010).**
+A first-principles re-derivation + literature cross-check (MFG 2019 arXiv:1809.02063;
+Gair et al. 2023 "Hitchhiker's guide" arXiv:2212.08694 — the gwcosmo team's own
+clarification; Tian 2025; icarogw) found **no error in Gray et al. (2020)** (no
+erratum; Trott-Huterer's "intrinsic bias" refuted by Gair 2023 as a mock/analysis
+inconsistency). The residual arises where our **code departs from Gray/Gair**:
+
+| Code departure | Site | Correct form (Gair 2023) | Sign |
+|---|---|---|---|
+| **`p_det` in catalog *numerator*** | `:1190-1202` `N_g=∫p_det·p_GW·p_gal dz` | `p_det` denominator-only — MFG2019 "most common mistake" | **HIGH** |
+| **mean-of-ratios** | `:941` `(1/N)Σ(N_g/D_g)` (comment :934 admits ≠) | ratio-of-sums `ΣN_g/ΣD_g`, single shared β | **HIGH** |
+| completeness-fraction mixing weight | `:964,1069` `f_i=bare GLADE completeness` | detection-weighted `p(G\|D_GW,H0)` (Gray avoids the CFH18 fraction) | HIGH |
+| missing `(1+z)⁻¹` in `p(z)` | `physical_relations.py:442` `dV_c/dz` only | `(dV_c/dz)·(1+z)⁻¹` ("volume-TIME") | **LOW** (correctness only) |
+| ~~missing `dV_c/dz` in `L_cat`~~ | catalog integrand | **RESOLVED — not a discrepancy** | n/a |
+
+**EQUATION-LEVEL VERIFICATION (2026-06-19, read `1908.06050.pdf` pp.16-21 directly).**
+Gray **Eq. (A.9)/(A.10)** confirms the in-catalogue likelihood is a **ratio of sums**
+`Σᵢ∫p(x_GW)·p(s|z)·p(s|M)·p(zᵢ)dzᵢ / Σᵢ∫p(D_GW)·p(s|z)·p(s|M)·p(zᵢ)dzᵢ` with
+`p_det = p(D_GW|…)` **only in the denominator** and the **GW likelihood `p(x_GW)` (no
+`p_det`) in the numerator**. ⇒ discrepancy **#1 (spurious `p_det` in our numerator)** and
+**#2 (mean-of-ratios)** are **CONFIRMED against the actual equations**. `p(zᵢ)` is the
+galaxy *redshift-uncertainty* (Eq. A.10), **not** a volume prior ⇒ the `dV_c`-in-`L_cat`
+dispute is **RESOLVED: code is correct to omit `dV_c` from `L_cat`** (lit-audit right,
+re-deriv #2 wrong). Eq. (A.2): `p(z)` = "uniform in comoving volume-**time**" =
+`(dV_c/dz)·(1+z)⁻¹` ⇒ missing `(1+z)⁻¹` in `L_comp` confirmed (LOW sign). The
+mixing weight in Gray is `p(G|D_GW,H0)` (Eq. A.14, a detection-weighted membership
+integral), not a bare completeness fraction — a deeper CFH18-vs-Gray divergence.
+
+⚠️ **CAVEATS:** (1) #1/#2 are now equation-verified, but their **SIGN is argued, not
+measured** — this session already REFUTED two confident sign-claims (catalog Jacobian,
+completeness-decline), so MEASURE before believing. (2) Per the audit's caution +
+single-seed scatter (~0.017), no fix is "the fix" until the multi-seed (cluster) result.
+
+**FIX IMPLEMENTED & MEASURED (2026-06-20, branch `physics/lcat-gray-ratio-of-sums`).**
+`/physics-change`: aligned `L_cat` with Gray Eq. (A.9/A.10) in BOTH channels —
+(1) removed the spurious `p_det` from the catalog numerators (`bayesian_statistics.py`
+without-BH `:~1190`, with-BH `:~1352`); `p_det` now appears only in the denominators;
+(2) switched the `L_cat` aggregation from mean-of-ratios `(1/N)Σ(N_g/D_g)` to
+ratio-of-sums `(ΣN_g)/(ΣD_g)` (`:~933`, `:~944`). This **reverses the Phase-38 STAT-01
+choice**, which was a misreading (its `test_l_cat_equivalence.py` labeled ratio-of-sums
+"incorrect" — backwards from Gray's actual appendix; test re-labeled).
+
+**Measured on seed400 (the first session change to pass the empirical SIGN test):**
+| | catalog-only 1D | **full 1D** | **full 2D (headline)** |
+|---|---|---|---|
+| baseline | 0.740 (+0.010) | 0.750 (+0.020) | 0.7375 (+0.0075) |
+| Gray A.10 | 0.735 (+0.005) | **0.740 (+0.010)** | **0.7350 (+0.0050)** |
+| shift | −0.005 | **−0.010** | −0.0025 (within ~0.005 2D MC jitter) |
+
+⇒ **halves the 1D bias** (+0.020→+0.010), 2D toward truth. Triply grounded: Gray's
+actual Eq. A.9/A.10 + MFG2019/Gair2023 consensus + the measurement. `/check` green
+(568 pass incl. a ratio-of-sums regression guard); ruff/mypy clean.
+
+**Residual after this fix: 1D +0.010, 2D +0.005.** Candidates for the remainder:
+the completeness-fraction mixing weight (Gray uses detection-weighted `p(G|D_GW,H0)`
+Eq. A.14, code uses bare GLADE `f_i` — a larger CFH18-vs-Gray change), the `(1+z)⁻¹`
+volume-time factor (LOW sign, correctness), or single-seed scatter (multi-seed cluster
+seeds 500/600/700/800 in flight will resolve systematic-vs-scatter).
+
+**Reproduce:**
+```bash
+# archive FULL baseline + clear contaminated diagnostics, then:
+for h in 0.7 0.705 0.71 ... 0.8; do
+  uv run python -m master_thesis_code simulations --evaluate --catalog_only --h_value $h ; done
+uv run python -m master_thesis_code simulations --combine --strategy physics-floor   # -> catalog-only MAP
+# (repeat without --catalog_only for FULL; clear diagnostics between runs for clean per-term CSV)
+uv run python scripts/bias_investigation/test_31_completion_term_characterization.py   # figure + JSON
+```
+
+- **Memory:** `project_residual_bias_decomposition`, `project_fisher_frame_mismatch`,
+  `project_pdet_horizon_survival`.
 
 ---
 

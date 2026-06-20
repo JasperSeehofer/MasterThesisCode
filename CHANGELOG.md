@@ -25,6 +25,21 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   Ref: Finn & Chernoff (1993) arXiv:gr-qc/9301003; Finn (1996) arXiv:gr-qc/9601048
   (`p_det = P(Θ > Θ_thr)`); Mandel–Farr–Gair (2019) arXiv:1809.02063;
   Gray et al. (2020) arXiv:1908.06050.
+- **[PHYSICS]** `bayesian_inference/bayesian_statistics.py`: aligned the in-catalogue
+  likelihood `L_cat` with Gray et al. (2020) **Eq. (A.9/A.10)** (verified against the
+  paper appendix directly). (1) Removed the spurious `p_det` from the catalog-term
+  numerators in **both** channels — `p_det = p(D_GW|…)` now appears only in the
+  denominator `D_g`; an extra numerator `p_det` is the Mandel–Farr–Gair (2019)
+  "most common mistake". (2) Changed the `L_cat` aggregation from the mean of per-galaxy
+  self-normalized ratios `(1/N)Σ(N_g/D_g)` to the ratio of sums `(ΣN_g)/(ΣD_g)` with a
+  single shared selection denominator. This **reverses the Phase-38 STAT-01 choice**,
+  which was a misreading of Gray (its `test_l_cat_equivalence.py` had labeled the correct
+  ratio-of-sums form "incorrect" — re-labeled). Empirically confirmed on seed400: halves
+  the 1D MAP bias (0.750→0.740, +0.020→+0.010) and moves the 2D headline toward truth
+  (0.7375→0.7350). Residual after fix (1D +0.010 / 2D +0.005) → completeness-weight
+  `p(G|D,H0)` and/or single-seed scatter (multi-seed in flight). See
+  `docs/H0_BIAS_RESOLUTION.md` §3.17. Ref: Gray et al. (2020) arXiv:1908.06050 Eq.
+  A.9/A.10; Mandel, Farr & Gair (2019) arXiv:1809.02063.
 
 ### Added
 - Phase 48 production-sweep verdict
