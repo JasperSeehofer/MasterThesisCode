@@ -13,6 +13,12 @@
 #   BASE_SEED  -- base random seed (per-task seed derived from this)
 #   SIM_STEPS  -- number of simulation iterations per task
 #
+# Optional environment variables:
+#   H_VALUE    -- injected true Hubble constant for the simulated events
+#                 (default 0.73). Set != 0.73 for closure runs at a different
+#                 truth; threaded to --h_value so set_host_galaxy_parameters
+#                 places each event at d_L(z, H_VALUE).
+#
 # Note: --output and --error are NOT set here; submit_pipeline.sh passes them
 # via command line so that shell variables (e.g. %A, %a) are expanded correctly.
 
@@ -61,6 +67,9 @@ fi
 
 TASK_SEED=$((BASE_SEED + SLURM_ARRAY_TASK_ID))
 
+# Injected true Hubble constant (default 0.73; overridden for closure runs).
+H_VALUE="${H_VALUE:-0.73}"
+
 # ---------------------------------------------------------------------------
 # Run EMRI simulation
 # ---------------------------------------------------------------------------
@@ -69,6 +78,7 @@ echo "=== EMRI Simulation ==="
 echo "  Array Task ID: $SLURM_ARRAY_TASK_ID"
 echo "  Task Seed:     $TASK_SEED (BASE_SEED=$BASE_SEED + $SLURM_ARRAY_TASK_ID)"
 echo "  Sim Steps:     $SIM_STEPS"
+echo "  H_VALUE (truth): $H_VALUE"
 echo "  Run Dir:       $RUN_DIR"
 echo "  Node:          $(hostname)"
 echo "  GPU:           ${CUDA_VISIBLE_DEVICES:-not set}"
@@ -85,6 +95,7 @@ python -m master_thesis_code "$RUN_DIR" \
     --simulation_steps "$SIM_STEPS" \
     --simulation_index "$SLURM_ARRAY_TASK_ID" \
     --seed "$TASK_SEED" \
+    --h_value "$H_VALUE" \
     --use_gpu \
     --log_level INFO
 
