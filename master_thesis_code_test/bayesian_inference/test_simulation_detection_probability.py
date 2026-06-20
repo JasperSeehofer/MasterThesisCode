@@ -231,23 +231,25 @@ class TestDetectionProbabilityWithBHMass:
 
 
 class TestPDetGridMassCoordinateFrame:
-    """Phase 47 H3 fix: the 2D p_det grid M-axis is observer-frame M_z.
+    """Redshifted-mass convention (Design B): the 2D p_det grid M-axis is the
+    observer-frame M_z read DIRECTLY from the injection CSV "M" column.
 
-    The grid is built from injection campaign data with source-frame M
-    multiplied by (1 + z_inj) to give observer-frame M_z (the natural
-    SNR-determining mass coordinate).  Production queries pass M_z
-    (e.g., ``host_M * (1+z)`` in the numerator integrand,
-    ``M * (1+z)`` in the denominator).  See ``docs/H0_BIAS_RESOLUTION.md``
-    §3.15.
+    The detector-frame lift M_z = M_source·(1+z) is applied once, at injection
+    time (main.py:injection_campaign), so the CSV "M" column already stores M_z.
+    The grid therefore does NOT re-lift by (1+z) (that would double-count the
+    redshift).  Production queries still pass observer-frame M_z (``host_M*(1+z)``
+    in the numerator integrand, ``M*(1+z)`` in the denominator).  See
+    ``docs/H0_BIAS_RESOLUTION.md`` §3.15 (H3) and the redshifted-mass convention fix.
     """
 
-    def test_2d_grid_axis_is_M_z(self, injection_dir: str) -> None:  # noqa: N802
-        """The 2D grid M-axis range matches max/min of M_source · (1 + z_inj),
-        not max/min of M_source alone.
+    def test_2d_grid_axis_uses_csv_mass_without_relift(self, injection_dir: str) -> None:  # noqa: N802
+        """Design B: the grid M-axis equals log10 of the CSV "M" column directly,
+        with NO (1+z) re-lift (the CSV already stores observer-frame M_z).
 
-        Post-fix expectation: at injections spanning z ∈ [0.01, 1.0] with
-        M_source ∈ [1e5, 5e5], the M-axis upper bound is at ~2 · M_source_max
-        (observer-frame) rather than M_source_max (source-frame).
+        Pre-fix the grid lifted the source-frame ``_M_arr`` by (1+z) at build time
+        (``_log_M_z = log10(_M_arr*(1+z))``).  This regression guard asserts that
+        double-lift is gone: the lift now happens once, at injection time, so the
+        grid uses the CSV mass as-is.
         """
         from master_thesis_code.bayesian_inference.simulation_detection_probability import (
             SimulationDetectionProbability,
@@ -257,40 +259,27 @@ class TestPDetGridMassCoordinateFrame:
             injection_data_dir=injection_dir,
             snr_threshold=20.0,
         )
-        # Force grid build for a representative h.
+
+        # Key invariant: the observer-frame log-mass axis is log10 of the CSV "M"
+        # column with NO (1+z) re-lift (which would double-count the redshift).
+        np.testing.assert_allclose(
+            pdet._log_M_z,  # noqa: SLF001
+            np.log10(pdet._M_arr),  # noqa: SLF001
+            rtol=1e-12,
+            err_msg="p_det grid must use the CSV M_z directly, without re-lifting by (1+z)",
+        )
+
+        # The built grid's M-axis centers span the CSV M_z range — NOT M_z*(1+z).
+        # Under the old double-lift code, max center ≈ max(M_arr*(1+z)) would exceed
+        # 1.2·max(M_arr) for z up to ~1; Design B keeps it within the CSV range.
         pdet._get_or_build_grid(0.75)  # noqa: SLF001
         interp_2d, _ = pdet._grid_cache[0.75]  # noqa: SLF001
         M_centers = np.asarray(interp_2d.grid[1])  # noqa: N806
-
-        # _M_arr stores the source-frame mass from the injection CSV.
-        # The expected observer-frame M_z range is the source-frame _M_arr
-        # multiplied by (1 + z_inj) per injection.
-        z_arr = pdet._z_arr  # noqa: SLF001
-        M_arr_source = pdet._M_arr  # noqa: SLF001, N806 (source-frame from CSV)
-        M_z_inj = M_arr_source * (1.0 + z_arr)  # noqa: N806
-
-        # _build_grid_2d uses bin edges padded ±10%; bin centers (geometric
-        # mean for log-spaced M) lie strictly between min*0.9 and max*1.1.
-        # Hard distinguishability: M_z_max should be > M_source_max*1.1 by
-        # at least the min-z scaling factor.
-        M_source_max = float(np.max(M_arr_source))  # noqa: N806
-        M_z_max = float(np.max(M_z_inj))  # noqa: N806
-
-        # The upper bin center under M_source-axis would lie around
-        # M_source_max * 1.05 (within ±10% padded edges).  Under M_z-axis,
-        # the upper bin center lies around M_z_max * 1.05.  Ratio is
-        # roughly 1+z for the heaviest-z injection, and we have z up to 1.0.
-        assert M_z_max > 1.5 * M_source_max, (
-            f"sanity check: M_z_max={M_z_max:.3e} should exceed "
-            f"M_source_max={M_source_max:.3e} by 1.5× given z up to ~1"
-        )
-        # Distinguishing assertion: upper bin center reflects M_z scale.
-        # If grid were still source-frame, max bin center ≲ M_source_max * 1.1.
-        # Under M_z grid, max bin center > M_source_max * 1.1 (clearly above).
-        assert M_centers[-1] > 1.2 * M_source_max, (
-            f"upper M-axis bin center {M_centers[-1]:.3e} is below "
-            f"1.2 × M_source_max ({1.2 * M_source_max:.3e}) — grid "
-            f"appears to still be in source-frame, not observer-frame M_z"
+        M_arr_max = float(np.max(pdet._M_arr))  # noqa: SLF001, N806
+        assert float(np.max(M_centers)) <= 1.2 * M_arr_max, (
+            f"upper M-axis bin center {float(np.max(M_centers)):.3e} exceeds "
+            f"1.2 × max(_M_arr) ({1.2 * M_arr_max:.3e}) — grid appears to still "
+            f"re-lift the CSV mass by (1+z) (double-count)"
         )
 
     def test_2d_query_at_M_z_matches_built_bin(self, injection_dir: str) -> None:  # noqa: N802

@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 import numpy as np
 
 from master_thesis_code.galaxy_catalogue.handler import HostGalaxy
-from master_thesis_code.physical_relations import dist
+from master_thesis_code.physical_relations import dist, redshifted_mass
 
 
 def uniform(lower_limit: float, upper_limit: float, rng: np.random.Generator) -> float:
@@ -194,7 +194,14 @@ class ParameterSpace:
                 self.randomize_parameter(parameter=parameter, rng=rng)
 
     def set_host_galaxy_parameters(self, host_galaxy: HostGalaxy, h: float) -> None:
-        self.M.value = host_galaxy.M
+        # FEW (Pn5AAKWaveform) expects the DETECTOR-FRAME (redshifted) mass
+        # M_z = M_source·(1+z) in the M slot; redshift enters the mass, luminosity
+        # distance enters the amplitude.  The GLADE-derived catalog mass
+        # host_galaxy.M is source-frame, so it must be lifted by (1+z) before the
+        # waveform call so the stored CRB "M" column genuinely holds M_z (which the
+        # Bayesian inference assumes: det.M = M_z, bayesian_statistics.py:1335).
+        # Maggiore (2008) GW Vol. 1 §4.1.4; Babak et al. (2017) arXiv:1703.09722.
+        self.M.value = redshifted_mass(host_galaxy.M, host_galaxy.z)  # M_z = M·(1+z)
         self.phiS.value = host_galaxy.phiS
         self.qS.value = host_galaxy.qS
         # h_inj threaded explicitly per PE-01 (Phase 37); dark siren PE self-consistency at h_inj

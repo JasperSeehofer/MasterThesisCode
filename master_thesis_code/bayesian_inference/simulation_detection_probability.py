@@ -260,9 +260,13 @@ class SimulationDetectionProbability:
         # Finn & Chernoff (1993), arXiv:gr-qc/9301003; Finn (1996),
         # arXiv:gr-qc/9601048 (p_det = P(Theta > Theta_thr)).
         self._d_hor: npt.NDArray[np.float64] = self._snr_raw * self._dl_raw / self._snr_threshold
-        # Observer-frame log10 mass (M_z = M_source · (1 + z)) for the 2D
-        # survival kernel axis.  Maggiore (2008) Vol 1 §4.1.4.
-        self._log_M_z: npt.NDArray[np.float64] = np.log10(self._M_arr * (1.0 + self._z_arr))
+        # Observer-frame log10 mass (M_z) for the 2D survival kernel axis.  The
+        # injection CSV "M" column already stores the DETECTOR-FRAME mass
+        # M_z = M_source·(1+z) (lifted at injection time in
+        # main.py:injection_campaign), consistent with the event CRBs and the
+        # inference's det.M = M_z convention, so NO (1+z) re-lift is applied here.
+        # Maggiore (2008) GW Vol. 1 §4.1.4.
+        self._log_M_z: npt.NDArray[np.float64] = np.log10(self._M_arr)
 
         # Sort the horizon set ONCE for exact searchsorted-based survival.
         sort_idx = np.argsort(self._d_hor, kind="mergesort")

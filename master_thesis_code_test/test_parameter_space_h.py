@@ -49,6 +49,42 @@ def test_set_host_galaxy_parameters_h_ratio() -> None:
     )
 
 
+def test_set_host_galaxy_parameters_injects_redshifted_mass() -> None:
+    """Mass convention: set_host_galaxy_parameters injects the DETECTOR-FRAME
+    (redshifted) mass M_z = M_source * (1 + z) into the EMRI parameter space.
+
+    FEW (Pn5AAKWaveform) expects the detector-frame mass in the M slot; redshift
+    enters the mass, luminosity distance enters the amplitude (Maggiore 2008 Vol.1
+    §4.1.4; Babak et al. 2017 arXiv:1703.09722). The GLADE-derived catalog BH mass
+    is source-frame, so the simulation must lift it by (1+z) before the waveform
+    call. This makes the stored CRB "M" column genuinely hold M_z, which the
+    Bayesian inference already assumes (det.M = M_z; bayesian_statistics.py:1335).
+
+    Regression guard for the redshifted-mass convention fix (Design B): FAILS on
+    the pre-fix source-frame injection (M.value == host.M) and PASSES after.
+    """
+    M_source = 1e5
+    z = 0.1
+    host = HostGalaxy.from_attributes(phiS=0.0, qS=0.0, z=z, z_error=0.001, M=M_source, M_error=1e3)
+    ps = ParameterSpace()
+    ps.set_host_galaxy_parameters(host, h=0.73)
+
+    np.testing.assert_allclose(
+        ps.M.value,
+        M_source * (1 + z),
+        rtol=1e-12,
+        err_msg="set_host_galaxy_parameters must inject detector-frame M_z = M_source*(1+z)",
+    )
+
+    # Limiting case z -> 0: M_z -> M_source (no redshift, no lift).
+    host_local = HostGalaxy.from_attributes(
+        phiS=0.0, qS=0.0, z=0.0, z_error=0.001, M=M_source, M_error=1e3
+    )
+    ps_local = ParameterSpace()
+    ps_local.set_host_galaxy_parameters(host_local, h=0.73)
+    np.testing.assert_allclose(ps_local.M.value, M_source, rtol=1e-12)
+
+
 def test_set_host_galaxy_parameters_requires_h() -> None:
     """SC-2: calling set_host_galaxy_parameters without h raises TypeError.
 

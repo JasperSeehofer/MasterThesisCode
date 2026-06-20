@@ -12,6 +12,13 @@
 - [ ] **MERGE L_cat fix** — once CLUSTER-VERIFY confirms, `/check` + merge `physics/lcat-gray-ratio-of-sums`
       → `main`; if multi-seed shows the residual is pure scatter, the fix still stands on its own
       (Gray-A.9/A.10 correctness) — merge regardless, but frame the residual accordingly.
+- [ ] **BUNDLE redshifted-mass fix into the re-sim campaign (P0, branch `physics/mass-redshift-convention`)**
+      — `[PHYSICS]` Design B: inject detector-frame `M_z = M_source·(1+z)` into FEW (sim fed source-frame M;
+      FEW expects M_z). `/check` green, NOT merged. **RE-SIMULATE tier**: invalidates ALL existing CRBs +
+      injections (incl. seed400) — they were generated source-frame and cannot be back-corrected. Generate
+      the multi-seed campaign CRBs+injections WITH this branch merged in, then merge. Correctness fix — expected
+      H0 effect small/possibly adverse (NOT a bias fix). See `project_mass_convention_defect` memory +
+      `DATA_INVENTORY.md` Evaluation Log 2026-06-20. THEN pivot the bias hunt to the D(h)/L_comp term (1D channel).
 - [ ] **IN-DEPTH PIPELINE REVIEW (next focus, besides bias)** — 4 areas, see the handoff
       `.planning/HANDOFF-PIPELINE-DEEP-REVIEW-*.md`: (1) simulation-pipeline correctness (papers/code/
       physics/maths/parameter-space), (2) HPC performance of the Bayesian-inference pipeline,
