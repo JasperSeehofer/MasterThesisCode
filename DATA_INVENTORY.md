@@ -5,6 +5,23 @@ Tracks all simulation datasets and their evaluation status.
 
 ---
 
+## ⚠️ ALL PRIOR DATA RETIRED — 2026-06-20 (fresh production run in progress)
+
+As of **2026-06-20** the two bundled physics fixes are **merged into `main` (`af6014d`)**:
+- `[PHYSICS]` redshifted-mass convention (Design B, `0099ce2`) — **RE-SIMULATE tier**: changes the
+  injected waveform/SNR/Fisher AND the injection generation. Invalidates **every CRB and every injection
+  pool** ever produced (all source-frame; cannot be back-corrected).
+- `[PHYSICS]` L_cat Gray A.9/A.10 ratio-of-sums (`816f904`) — **RE-EVALUATE tier**: invalidates all posteriors.
+
+**Therefore every dataset listed below — all CRBs, the p_det injection pool(s), all `posteriors{,_with_bh_mass}/`,
+all diagnostics and figures — is STALE and RETIRED.** Do **not** use any of it for results. A fresh
+production run (regenerating injections AND events with the merged code) supersedes everything:
+- Scope: 4 independent seeds @ h_true=0.73 + 2 closure truths (0.67, 0.77); validate one seed end-to-end first.
+- Local stale working dirs archived under `simulations/_RETIRED_20260620_pre_massfix_lcat/`.
+- New entries will be appended to the Dataset Registry + Evaluation Log as the campaign lands.
+
+---
+
 ## Pipeline Change Checklist
 
 When any trigger file changes, mark affected datasets as stale and re-run the
@@ -198,3 +215,4 @@ Aggregated by `scripts/bias_investigation/test_24_multi_truth_bias_sweep.py` →
 | **2026-05-14 (Phase 49 F1 — PARTIAL)** | h=0.73 phase46-merged fine-grid sweep, post-F1 (`[PHYSICS]` `87ea7a8`) (job `4662333`) | `ef3d2c3` | 63-pt non-uniform same as Phase 48 | 1473 | **0.7378 (z=+2.02σ — bias +0.0054 worse vs pre-F1)** | **0.7378 (σ_boot collapsed to ≈0 → bootstrap pinned on single h=0.738 bin)** | **F1 PARTIAL — does not fully resolve the spikiness.** The rising flank 0.730→0.738 is now mostly monotonic/smooth (one noise mechanism removed), but a single huge discontinuity remains at h=0.738→0.739 (1D drops 16×, 2D drops 32×). MAP shifted +0.0056 further from truth than pre-F1. F1 fixed bin-edge drift (one mechanism); a second mechanism — **SNR-threshold integer crossings** of individual injections — remains independent of bin edges and is the suspected dominant residual noise source. The Farr 2019 fixed-injection + analytic-reweighting form (gwcosmo / ICAROGW production pipelines) would eliminate both mechanisms; queued as F4 in the debug session. Verdict: `scripts/bias_investigation/outputs/phase46_merged/F1_post_fix_verdict_PARTIAL.json`. Pre-F1 posteriors archived on cluster at `run_production_h0p73_20260506/simulations/archive/production_h0.73_20260512_175829/`. **Not paper-grade.** No figure refresh from these posteriors. |
 | 2026-05-04 (merge) | phase46-merged-20260504 | pending commit | n/a (CRB construction) | 924 (424+500) | — | — | Phase 45 ⊕ seed=300 partial (17/50 tasks); ~2.18× event count for tighter σ_boot |
 | *(pending)* | phase45 + full sim-seed300 merged | next | 38-pt | ~1100+ | — | — | After remaining seed=300 tasks land (~later tonight) |
+| **2026-06-20 (BRANCHES MERGED + ALL DATA RETIRED)** | mass-convention `0099ce2` + L_cat-gray `816f904` merged to main | `af6014d` | n/a | n/a | n/a | n/a | Both physics fixes merged (`/check` green: 569 pass, ruff+mypy clean). Stale multi-seed campaign (seeds 500/600/700/800, jobs 5084023–5084038) **cancelled** — it predated both fixes + reused source-frame injections. **All prior CRBs/injections/posteriors RETIRED** (see banner). Fresh run: regenerate injections + events with merged code; 4 seeds @0.73 + closure 0.67/0.77; validate one seed end-to-end first. |
