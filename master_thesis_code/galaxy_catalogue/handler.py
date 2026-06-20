@@ -632,22 +632,13 @@ class GalaxyCatalogueHandler:
             self.reduced_galaxy_catalog[InternalCatalogColumns.THETA_S] * np.pi / 180 - np.pi / 2
         ) * (-1)
 
-    def _map_BH_masses_to_redshifted_masses(self) -> None:
-        self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS] = self.reduced_galaxy_catalog[
-            InternalCatalogColumns.BH_MASS
-        ] * (1 + self.reduced_galaxy_catalog[InternalCatalogColumns.REDSHIFT])
-        self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS_ERROR] = np.sqrt(
-            (
-                self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS_ERROR]
-                * (1 + self.reduced_galaxy_catalog[InternalCatalogColumns.REDSHIFT])
-            )
-            ** 2
-            + (
-                self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS]
-                * self.reduced_galaxy_catalog[InternalCatalogColumns.REDSHIFT_ERROR]
-            )
-            ** 2
-        )
+    # NOTE (redshifted-mass convention, Design B): the catalog BH masses remain
+    # SOURCE-frame. The detector-frame lift M_z = M_source·(1+z) is applied once,
+    # at injection time (parameter_space.set_host_galaxy_parameters and
+    # main.py:injection_campaign), NOT to the whole catalog. The former
+    # `_map_BH_masses_to_redshifted_masses` catalog-lift helper was dead code and
+    # was removed: wiring it in would double-lift, since the inference already
+    # lifts each candidate host by (1+z) (bayesian_statistics.py:1335).
 
     def get_random_hosts(self, number_of_hosts: int) -> Iterable:
         random_hosts = self.reduced_galaxy_catalog.sample(number_of_hosts)

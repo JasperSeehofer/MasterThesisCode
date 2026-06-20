@@ -580,7 +580,7 @@ def injection_campaign(
         ParameterEstimation,
         WaveGeneratorType,
     )
-    from master_thesis_code.physical_relations import dist
+    from master_thesis_code.physical_relations import dist, redshifted_mass
 
     def _alarm_handler(signum: int, frame: object) -> None:
         raise TimeoutError("Computation exceeded 90s timeout")
@@ -652,8 +652,15 @@ def injection_campaign(
         # Randomize extrinsic parameters (sky angles, orbital phases, etc.)
         parameter_estimation.parameter_space.randomize_parameters(rng=rng)
 
-        # Set M from population model sample
-        parameter_estimation.parameter_space.M.value = sample.M
+        # Set M from population model sample. FEW expects the DETECTOR-FRAME
+        # (redshifted) mass M_z = M_source·(1+z); sample.M is source-frame, so lift
+        # it by (1+z) so the injection CSV "M" column holds M_z consistently with
+        # the event CRBs (parameter_space.set_host_galaxy_parameters) and the p_det
+        # grid axis (simulation_detection_probability.py:265, which no longer
+        # re-lifts). Maggiore (2008) GW Vol. 1 §4.1.4; Babak et al. (2017) arXiv:1703.09722.
+        parameter_estimation.parameter_space.M.value = redshifted_mass(
+            sample.M, sample.redshift
+        )  # M_z = M·(1+z)
 
         # Set luminosity distance with candidate h value (injection pipeline does not use
         # set_host_galaxy_parameters — it sets d_L directly since no host galaxy is needed).

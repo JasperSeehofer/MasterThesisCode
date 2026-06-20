@@ -149,7 +149,9 @@ def test_set_host_galaxy_parameters_updates_fields() -> None:
 
     assert ps.phiS.value == phi_s
     assert ps.qS.value == q_s
-    assert ps.M.value == M
+    # Redshifted-mass convention (Design B): the source-frame catalog mass M is
+    # lifted to the detector-frame M_z = M*(1+z) that FEW expects.
+    assert ps.M.value == M * (1 + z)
     expected_dist = dist(z, h=0.73)
     assert abs(ps.luminosity_distance.value - expected_dist) < 1e-10
 
@@ -167,7 +169,8 @@ def test_set_host_galaxy_parameters_overwrites_previous_values() -> None:
 
     assert ps.phiS.value == 2.5
     assert ps.qS.value == 1.0
-    assert ps.M.value == 9e5
+    # Redshifted-mass convention (Design B): M_z = M_source*(1+z); host2 z=0.5.
+    assert ps.M.value == 9e5 * 1.5
 
 
 def test_randomize_parameters_deterministic_with_same_seed() -> None:
