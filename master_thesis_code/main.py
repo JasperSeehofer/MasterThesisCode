@@ -658,9 +658,9 @@ def injection_campaign(
         # the event CRBs (parameter_space.set_host_galaxy_parameters) and the p_det
         # grid axis (simulation_detection_probability.py:265, which no longer
         # re-lifts). Maggiore (2008) GW Vol. 1 §4.1.4; Babak et al. (2017) arXiv:1703.09722.
-        parameter_estimation.parameter_space.M.value = redshifted_mass(
-            sample.M, sample.redshift
-        )  # M_z = M·(1+z)
+        # Eq. (4.7) in Maggiore (2008) GW Vol. 1 §4.1.4: M_z = M_source·(1+z)
+        redshifted_M = redshifted_mass(sample.M, sample.redshift)  # M_z = M·(1+z)
+        parameter_estimation.parameter_space.M.value = redshifted_M
 
         # Set luminosity distance with candidate h value (injection pipeline does not use
         # set_host_galaxy_parameters — it sets d_L directly since no host galaxy is needed).
@@ -722,7 +722,10 @@ def injection_campaign(
         results.append(
             {
                 "z": sample.redshift,
-                "M": sample.M,
+                # Store the DETECTOR-FRAME mass M_z (not source-frame sample.M) so the
+                # injection CSV "M" column matches the value FEW saw and the p_det grid
+                # axis expects (simulation_detection_probability.py no longer re-lifts).
+                "M": redshifted_M,
                 "phiS": parameter_estimation.parameter_space.phiS.value,
                 "qS": parameter_estimation.parameter_space.qS.value,
                 "SNR": float(snr),
