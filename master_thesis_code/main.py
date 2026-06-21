@@ -1460,6 +1460,58 @@ def generate_figures(output_dir: str) -> None:
 
     manifest.append(("fig21_selection_function", _gen_selection_function))
 
+    # 22. Population "where do the constraints come from" view (Phase 3, VR-NEW-04).
+    # Composite: SNR x z driver + Mollweide sky + de-emphasized color_by spaghetti
+    # + canonical stacked posterior. Assembled from EXISTING preloaded data only.
+    def _gen_population_view() -> tuple[object, object] | None:
+        if post_data is None or crb_df is None:
+            return None
+        required = {"qS", "phiS", "SNR", "redshift"}
+        if not required.issubset(crb_df.columns):
+            _ROOT_LOGGER.info("fig22 skipped: CRB missing one of %s", sorted(required))
+            return None
+        from master_thesis_code.plotting._helpers import load_canonical_combined_posterior
+        from master_thesis_code.plotting.population_plots import (
+            plot_population_constraint_view,
+        )
+
+        h_vals, event_posts = post_data
+        # Alignment guard: the per-event posterior count and the CRB row count
+        # come from different data sources and can diverge. Skip (log + None)
+        # rather than zip-truncate or index out of range (T-03-02 mitigation).
+        if len(event_posts) != len(crb_df):
+            _ROOT_LOGGER.info(
+                "fig22 skipped: event count %d != CRB row count %d",
+                len(event_posts),
+                len(crb_df),
+            )
+            return None
+        try:
+            _h_canon, combined, _meta = load_canonical_combined_posterior(
+                Path(output_dir), "posteriors"
+            )
+        except FileNotFoundError:
+            _ROOT_LOGGER.info("fig22 skipped: no canonical combined posterior")
+            return None
+        theta_s = crb_df["qS"].to_numpy(dtype=np.float64)
+        phi_s = crb_df["phiS"].to_numpy(dtype=np.float64)
+        snr = crb_df["SNR"].to_numpy(dtype=np.float64)
+        redshift = crb_df["redshift"].to_numpy(dtype=np.float64)
+        return plot_population_constraint_view(
+            h_vals,
+            event_posts,
+            combined,
+            0.73,
+            theta_s,
+            phi_s,
+            snr,
+            redshift,
+            color_by="snr",
+            snr_threshold=20.0,
+        )
+
+    manifest.append(("fig22_population_view", _gen_population_view))
+
     # 16. Paper figure: H0 posterior comparison (D-01, D-09)
     def _gen_paper_h0_posterior() -> tuple[object, object] | None:
         from master_thesis_code.plotting.paper_figures import plot_h0_posterior_comparison
