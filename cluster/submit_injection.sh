@@ -1,14 +1,28 @@
 #!/usr/bin/env bash
 # cluster/submit_injection.sh -- Submit injection campaign array jobs.
 #
-# Submits GPU array jobs for multiple h values to build a simulation-based
-# detection probability grid P_det(z, h). Each h value gets its own batch
-# of array tasks with isolated seed ranges.
+# Builds the simulation-based detection-probability pool consumed by
+# SimulationDetectionProbability (the detection-horizon SURVIVAL function).
 #
-# Usage:
-#   submit_injection.sh --tasks_per_h 20 --steps 500 --seed 12345
-#   submit_injection.sh --tasks_per_h 20 --steps 500 --seed 12345 \
-#       --h_values "0.60,0.65,0.70,0.73,0.80,0.85,0.90"
+# IMPORTANT — a SINGLE h suffices (default 0.73):
+#   The survival estimator uses the per-injection horizon d_hor = SNR*d_L/thr,
+#   which is h-INVARIANT (the 1/d_L amplitude scaling and the d_L assignment
+#   cancel) and pools ALL injections regardless of h_inj. The injected (M,z) are
+#   drawn from the h-independent rate model dN/dz*R(M), and M_z = M*(1+z) is
+#   h-free, so every h-node samples the SAME d_hor/M_z distribution. Running
+#   multiple h-values therefore adds NO per-h structure — it only accumulates
+#   more independent samples (equivalent to more --tasks_per_h at one h).
+#   The legacy multi-h default existed for the old per-h KDE estimator (Phase
+#   11.1) and is no longer needed. Total pooled samples = tasks_per_h * steps
+#   * (number of h-values); set --tasks_per_h to your sample budget. Each task
+#   is one emcee chain (~50% unique (M,z) due to MCMC autocorrelation — that is
+#   correct density representation, not a bug; do NOT deduplicate).
+#
+# Usage (single-h default, recommended):
+#   submit_injection.sh --tasks_per_h 80 --steps 900 --seed 12345
+# Multi-h (optional; only for more samples or the legacy per-h estimator):
+#   submit_injection.sh --tasks_per_h 80 --steps 900 --seed 12345 \
+#       --h_values "0.60,0.70,0.80,0.90"
 
 set -euo pipefail
 
@@ -23,12 +37,12 @@ Usage: submit_injection.sh --tasks_per_h N --steps S --seed SEED [--h_values "h1
   --tasks_per_h  Number of array tasks per h value (required)
   --steps        Successful injection events per task (required)
   --seed         Base random seed (required)
-  --h_values     Comma-separated h values (default: 0.60,0.65,0.70,0.73,0.80,0.85,0.90)
+  --h_values     Comma-separated h values (default: 0.73 — a single h; the
+                 survival p_det is h-invariant so multi-h only adds samples)
 
-Example:
-  submit_injection.sh --tasks_per_h 20 --steps 500 --seed 12345
-  # => 20 tasks * 500 events = 10,000 events per h value
-  # => 7 h values * 20 tasks = 140 total SLURM tasks
+Example (single-h default):
+  submit_injection.sh --tasks_per_h 80 --steps 900 --seed 12345
+  # => 80 tasks * 900 events = 72,000 pooled injection samples at h=0.73
 EOF
     exit 1
 }
@@ -36,7 +50,9 @@ EOF
 TASKS_PER_H=""
 STEPS=""
 SEED=""
-H_VALUES="0.60,0.65,0.70,0.73,0.80,0.85,0.90"
+# Single h by default: the detection-horizon survival p_det is h-invariant
+# (see header). Multi-h only accumulates more pooled samples, not per-h grids.
+H_VALUES="0.73"
 
 while [[ $# -gt 0 ]]; do
     case "$1" in

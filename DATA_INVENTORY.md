@@ -184,6 +184,16 @@ Aggregated by `scripts/bias_investigation/test_24_multi_truth_bias_sweep.py` →
 
 ## Injection Data
 
+> **2026-06-21 — the table below describes the RETIRED (source-frame) pool; superseded.** The fresh
+> M_z-convention pool is on the cluster at `injection_20260620-213449_seed43000/simulations/injections`
+> (560 files, **504,000 events**, 7 h-nodes 0.60–0.90 @ 72k each, M_z validated). **Methodology note:**
+> the detection-horizon survival p_det is **h-invariant** (`d_hor=SNR·d_L/thr` cancels h; `(M,z)` drawn
+> from the h-free rate model; `M_z=M·(1+z)` h-free) — so it pools all h and a **single h suffices**.
+> Verified the 7 h-nodes are independent (0 shared `(z,M)` across h) → pooling genuinely smooths p_det;
+> ~42% within-pool `(z,M)` repeats are emcee MCMC autocorrelation (correct density representation — do
+> NOT deduplicate), so effective sample size < 504k but the estimate is unbiased. `submit_injection.sh`
+> default changed to single-h (`0.73`) accordingly; multi-h is optional and only adds pooled samples.
+
 | Property | Value |
 |----------|-------|
 | **Location** | `simulations/injections/injection_h_<val>_task_<N>.csv` |
