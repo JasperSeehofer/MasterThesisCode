@@ -164,7 +164,9 @@ Plans:
   2. An `include_plotlyjs` strategy (`'directory'` or partial bundle) is chosen and applied so the GH-Pages output is self-contained at site level and archival-robust — verified by opening the generated HTML offline.
   3. Per-group traces replace the fragile visibility-vector bookkeeping in the dropdown/slider figures (`interactive_m_z_improvement`, `interactive_single_event_detail`).
   4. talk/web theme is wired into interactive generation and every interactive figure has a verified static PDF twin; `--generate_interactive` runs with no traceback against an existing data dir; check gate green.
-**Plans**: TBD
+**Plans**: 1 plan
+Plans:
+- [ ] 06-01-PLAN.md — Shared HORIZON go.layout.Template (from _colors + cividis) on all 8 factories; include_plotlyjs='directory' self-contained; per-group traces for the 2 dropdown/slider figures; talk/web theme wiring + 8 static-PDF-twin mapping + --generate_interactive smoke; green gate
 **UI hint**: yes
 
 ### Phase 7: Interactive Stretch — SIREN ATLAS & Event→Host Explorable
@@ -189,7 +191,7 @@ Plans:
 | 3. New Static Figures — Selection & Population | GSD | 1/1 | Complete ✅ | 2026-06-21 |
 | 4. New Figures (Data-Gated) — H₀ Forest & PP-Plot | GSD | 0/1 | Not started | - |
 | 5. Annotation & Decluttering Rollout | GSD | 0/TBD | Not started | - |
-| 6. Interactive Plotly Overhaul | GSD | 0/TBD | Not started | - |
+| 6. Interactive Plotly Overhaul | GSD | 0/1 | Not started | - |
 | 7. Interactive Stretch — SIREN ATLAS & Event→Host (DEFERRED) | GSD | 0/TBD | Not started | - |
 
 ## Coverage
