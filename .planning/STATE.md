@@ -7,10 +7,10 @@ last_updated: "2026-06-21T18:30:00.000Z"
 last_activity: 2026-06-21
 progress:
   total_phases: 7
-  completed_phases: 4
-  total_plans: 4
-  completed_plans: 4
-  percent: 57
+  completed_phases: 5
+  total_plans: 5
+  completed_plans: 5
+  percent: 71
 ---
 
 # Project State
@@ -24,11 +24,11 @@ See: .planning/PROJECT.md (updated 2026-04-21)
 
 ## Current Position
 
-Phase: 5 (Annotation & Decluttering Rollout) — ready to plan
+Phase: 6 (Interactive Plotly Overhaul) — ready to plan
 Plan: —
-Status: Phase 4 COMPLETE (data-gated forest + PP-plot scaffolded, 2 commits e5793ed..acad9cd)
-Progress: [################..............] 4/7 phases (foundation VR-F1..F4 shipped pre-roadmap)
-Last activity: 2026-06-21 — Phase 4 shipped: fig23 H0 forest/tension (literature table + DATA-GATED THIS_WORK_H0/load_this_work_h0) + fig24 bilby PP-plot/coverage (binomial bands + KS + DATA-GATED load_pp_ranks/make_synthetic_ranks); both render standalone; gate green (649 passed). DATA-GATES OPEN (auto-close on production posterior / real ranks). User chose continue-autonomously 4→6; taste defaults flagged for review.
+Status: Phase 5 COMPLETE (annotation/declutter sweep + corner modernization, 5 commits 43b559a..8d5ab0d)
+Progress: [####################..........] 5/7 phases (foundation VR-F1..F4 shipped pre-roadmap)
+Last activity: 2026-06-21 — Phase 5 shipped: tight_layout grep-gate ZERO; 2 3D scatters → 2D (Mollweide + marginal pair-panels); corner modernized (filled HORIZON contours, no new dep); LABELS unified + Mpc/Gpc reconciled (d_L_gpc key); active declarative titles + on-curve N^-1/2 labels; gate green (655 passed). Taste flags (active-title wordings, corner style) in 05 SUMMARY for user review.
 
 **v2.3 phase order (all GSD, never /physics-change):**
 1. Posterior Factory Consolidation — VR-CONS-01/02
