@@ -10,9 +10,11 @@ from matplotlib.colors import LogNorm, Normalize, TwoSlopeNorm
 from matplotlib.figure import Figure
 
 from master_thesis_code.plotting import apply_style, get_figure
+from master_thesis_code.plotting._colors import DIVERGING_CMAP, NO_DATA
 from master_thesis_code.plotting._helpers import (
     _fig_from_ax,
     compute_credible_interval,
+    credible_contour_levels,
     diverging_norm,
     make_heatmap_norm,
 )
@@ -200,3 +202,46 @@ class TestMakeHeatmapNorm:
         norm = make_heatmap_norm(data, mode="log")
         assert isinstance(norm, LogNorm)
         assert norm.vmin is not None and norm.vmin > 0
+
+
+class TestCredibleContourLevels:
+    """Unit tests for credible_contour_levels (2D analogue of compute_hdi_interval)."""
+
+    def _gaussian_2d(self, n: int = 401, span: float = 5.0) -> npt.NDArray[np.float64]:
+        ax = np.linspace(-span, span, n)
+        X, Y = np.meshgrid(ax, ax)
+        return np.exp(-0.5 * (X**2 + Y**2)).astype(np.float64)
+
+    def test_returns_descending_levels(self) -> None:
+        density = self._gaussian_2d()
+        levels = credible_contour_levels(density, levels=(0.68, 0.95))
+        assert len(levels) == 2
+        # Higher enclosed mass -> lower iso-density level.
+        assert levels[0] > levels[1]
+
+    def test_68_level_encloses_about_68_percent(self) -> None:
+        """On a clean 2D Gaussian, the 68% iso-level encloses ~0.68 of the mass."""
+        density = self._gaussian_2d()
+        levels = credible_contour_levels(density, levels=(0.68,))
+        total = float(density.sum())
+        enclosed = float(density[density >= levels[0]].sum()) / total
+        assert abs(enclosed - 0.68) < 0.02, f"enclosed {enclosed:.3f} not ~0.68"
+
+    def test_levels_are_floats(self) -> None:
+        density = self._gaussian_2d(n=101)
+        levels = credible_contour_levels(density)
+        assert all(isinstance(v, float) for v in levels)
+
+
+class TestDivergingRecipe:
+    """The diverging convention composes into a usable bias-map mappable."""
+
+    def test_diverging_cmap_set_bad_and_norm_compose(self) -> None:
+        cmap = plt.get_cmap(DIVERGING_CMAP).copy()
+        cmap.set_bad(NO_DATA)
+        norm = diverging_norm(vcenter=0.73, vmin=0.6, vmax=0.86)
+        # vcenter maps to the colormap midpoint (white for RdBu_r).
+        mid_rgba = cmap(norm(0.73))
+        assert abs(float(norm(0.73)) - 0.5) < 1e-9
+        # midpoint of RdBu_r is near-white -> all channels high.
+        assert min(mid_rgba[:3]) > 0.8

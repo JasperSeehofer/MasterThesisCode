@@ -328,6 +328,62 @@ def make_heatmap_norm(
     return Normalize(vmin=vmin, vmax=vmax)
 
 
+def credible_contour_levels(
+    density: npt.NDArray[np.float64],
+    levels: Sequence[float] = (0.68, 0.95),
+) -> list[float]:
+    """Iso-density levels enclosing the requested probability masses of a 2D map.
+
+    The 2D analogue of :func:`compute_hdi_interval`: to draw a 68% / 95% credible
+    region on a 2D posterior density, overlay ``ax.contour`` at the returned
+    iso-density values.  The region ``{density >= level}`` then encloses the
+    requested fraction of the total probability mass (highest-density region).
+
+    Algorithm: flatten, sort descending, accumulate normalized mass, and for each
+    requested enclosed-mass fraction return the density value at which the
+    cumulative mass first reaches that fraction.  Higher enclosed mass -> lower
+    iso-density level, so the returned list is in descending order for ascending
+    *levels*.
+
+    Usage (canonical 2D-posterior overlay, EDGE color + redundant linestyle)::
+
+        lv = credible_contour_levels(density, levels=(0.68, 0.95))
+        ax.contour(X, Y, density, levels=sorted(lv), colors=EDGE,
+                   linestyles=("--", ":"), linewidths=0.8)
+
+    Parameters
+    ----------
+    density:
+        2D probability density (need not be normalized; non-finite cells are
+        treated as zero mass).
+    levels:
+        Enclosed-mass fractions in (0, 1) (default 0.68, 0.95).
+
+    Returns
+    -------
+    list[float]
+        Iso-density level for each requested fraction, in input order.  Returns
+        an empty-mass fallback of zeros when the density sums to <= 0.
+    """
+    flat = np.asarray(density, dtype=np.float64).ravel()
+    flat = np.where(np.isfinite(flat), flat, 0.0)
+    total = float(flat.sum())
+    if total <= 0.0:
+        return [0.0 for _ in levels]
+
+    order = np.argsort(flat)[::-1]  # descending density
+    sorted_density = flat[order]
+    cum_mass = np.cumsum(sorted_density) / total
+
+    out: list[float] = []
+    for frac in levels:
+        idx = int(np.searchsorted(cum_mass, frac, side="left"))
+        if idx >= sorted_density.size:
+            idx = sorted_density.size - 1
+        out.append(float(sorted_density[idx]))
+    return out
+
+
 # ---------------------------------------------------------------------------
 # Canonical combined posterior loader (Phase A)
 # ---------------------------------------------------------------------------
