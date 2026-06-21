@@ -15,7 +15,12 @@ from matplotlib.figure import Figure
 from matplotlib.patches import Ellipse
 
 from master_thesis_code.plotting._colors import CMAP, EDGE
-from master_thesis_code.plotting._helpers import _fig_from_ax, get_figure, make_colorbar
+from master_thesis_code.plotting._helpers import (
+    _fig_from_ax,
+    get_figure,
+    make_colorbar,
+    make_heatmap_norm,
+)
 from master_thesis_code.plotting._labels import LABELS
 from master_thesis_code.plotting.fisher_plots import _ellipse_params
 
@@ -61,7 +66,21 @@ def plot_sky_localization_mollweide(
     lat = np.pi / 2.0 - theta_s
     lon = ((phi_s - np.pi + np.pi) % (2.0 * np.pi)) - np.pi
 
-    sc = ax.scatter(lon, lat, c=snr, cmap=CMAP, s=12, alpha=0.8, zorder=5, rasterized=True)
+    # Explicit SNR norm so the near-threshold cluster no longer washes out the
+    # dynamic range (the old default linear autoscale-from-zero crushed the
+    # contrast). SNR is strictly positive in practice -> LogNorm; fall back to a
+    # robust percentile clip if any non-positive value sneaks in. This is a
+    # NORMALIZATION fix, not a projection change: the map stays a Mollweide
+    # scatter -- a linear pcolormesh does not map trivially onto the curved
+    # Mollweide grid, and a scatter is the right primitive for discrete sources.
+    snr_norm = (
+        make_heatmap_norm(snr, mode="log")
+        if np.all(snr > 0)
+        else make_heatmap_norm(snr, mode="robust")
+    )
+    sc = ax.scatter(
+        lon, lat, c=snr, cmap=CMAP, norm=snr_norm, s=12, alpha=0.8, zorder=5, rasterized=True
+    )
     make_colorbar(sc, fig, ax, label=LABELS["SNR"])
 
     if covariances is not None:

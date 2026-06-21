@@ -13,6 +13,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import numpy.typing as npt
 from matplotlib.axes import Axes
+from matplotlib.colors import Normalize
 from matplotlib.figure import Figure
 from matplotlib.gridspec import GridSpec
 
@@ -468,6 +469,8 @@ def plot_pdet_surface(
     snr = df["SNR"].to_numpy(dtype=np.float64)
     detected = (snr >= snr_threshold).astype(np.float64)
 
+    # Bin EDGES (length n+1) -- reused directly by pcolormesh (which wants edges,
+    # not centers, so no off-by-one). M_bins is geometric -> true log spacing.
     d_l_bins = np.linspace(d_l.min(), d_l.max(), n_d_l_bins + 1)
     M_bins = np.geomspace(M.min(), M.max(), n_m_bins + 1)
 
@@ -476,21 +479,58 @@ def plot_pdet_surface(
     with np.errstate(invalid="ignore", divide="ignore"):
         P = np.where(H_all > 0, H_det / H_all, np.nan)
 
-    im = ax.imshow(
-        P.T,
-        origin="lower",
-        aspect="auto",
-        extent=(float(d_l_bins[0]), float(d_l_bins[-1]), 0.0, float(n_m_bins)),
-        cmap=CMAP,
-        vmin=0.0,
-        vmax=1.0,
+    # pcolormesh on the real (d_L, M) edges -> a true log mass y-axis (set below),
+    # replacing the old fake-index imshow + hand-formatted ticks. P_det is bounded
+    # [0, 1] and read linearly (the 0.5 horizon is the key feature), so use an
+    # explicit Normalize(0, 1); NaN bins (empty (d_L, M) cells) are masked and
+    # render as the set_bad no-data gray (never crashes the draw).
+    cmap = plt.get_cmap(CMAP).copy()
+    cmap.set_bad(NO_DATA)
+    P_masked = np.ma.masked_invalid(P.T)  # shape (n_m_bins, n_d_l_bins)
+    mesh = ax.pcolormesh(
+        d_l_bins,
+        M_bins,
+        P_masked,
+        cmap=cmap,
+        norm=Normalize(vmin=0.0, vmax=1.0),
+        shading="flat",
     )
-    # Use the log-mass tick labels.
-    ax.set_yticks(np.arange(n_m_bins + 1)[::2])
-    ax.set_yticklabels([f"{m:.1e}" for m in M_bins[::2]])
+    ax.set_yscale("log")
+
+    # P_det = 0.5 (and 0.9) detection-horizon contour on the bin CENTERS, in EDGE
+    # color, as a redundant grayscale-safe channel. Guard the all-NaN / too-few
+    # case (contour needs >= 2 finite rows and cols) and only request levels that
+    # actually fall inside the data range -- otherwise matplotlib draws an empty
+    # contour. When neither 0.5 nor 0.9 is attainable (e.g. a high-SNR-threshold
+    # slice whose P_det never reaches 0.5) the horizon is genuinely absent and we
+    # skip drawing rather than fabricate a line.
+    finite = np.isfinite(P)
+    if finite.any() and P.shape[0] >= 2 and P.shape[1] >= 2:
+        d_l_centers = 0.5 * (d_l_bins[:-1] + d_l_bins[1:])
+        M_centers = np.sqrt(M_bins[:-1] * M_bins[1:])  # geometric midpoints
+        with np.errstate(invalid="ignore"):
+            P_contour = np.where(finite, P, 0.0)
+        p_max = float(np.nanmax(P))
+        attainable = [lvl for lvl in (0.5, 0.9) if 0.0 < lvl < p_max]
+        if attainable:
+            cs = ax.contour(
+                d_l_centers,
+                M_centers,
+                P_contour.T,
+                levels=attainable,
+                colors=EDGE,
+                linewidths=1.0,
+            )
+            ax.clabel(cs, inline=True, fontsize=7, fmt="%.1f")
+
+    # d_L is in Gpc here: the injection-CSV luminosity_distance values span
+    # ~0.4..11 (c/H0 ~ 4.1 Gpc, so z~1.5 -> ~11 Gpc). This differs from
+    # LABELS["d_L"] (Mpc, used by the per-source recovery plots whose data is in
+    # Mpc), so fig20 carries its own correct Gpc label rather than routing
+    # through LABELS["d_L"].
     ax.set_xlabel(r"$d_L\,[\mathrm{Gpc}]$")
     ax.set_ylabel(LABELS["M"])
-    fig.colorbar(im, ax=ax, label=r"$P_\mathrm{det}(\mathrm{SNR}\geq " + f"{snr_threshold:g})$")
+    fig.colorbar(mesh, ax=ax, label=r"$P_\mathrm{det}(\mathrm{SNR}\geq " + f"{snr_threshold:g})$")
     ax.set_title(
         rf"Detection probability surface ($N_\mathrm{{inj}}={len(df)}$)",
         fontsize="medium",
