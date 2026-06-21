@@ -1,6 +1,25 @@
 # Milestones
 
-## v2.2 Pipeline Correctness (Active — started 2026-04-21)
+## v2.3 Visualization Redesign (HORIZON) (Active — started 2026-06-21)
+
+**Goal:** Implement the full figure/visualization redesign (`docs/VIZ_REDESIGN_PROPOSAL.md`) in the chosen HORIZON direction with Dark Siren Dispatch annotation discipline. Software/design work (plotting package + interactive HTML) — GSD, never physics.
+
+**Foundation already shipped** (GSD quick task `260621-npe`, branch `viz/horizon-quick-wins`): HORIZON palette v2 (killed two-blues), `apply_style(theme=...)` switch, area-norm PDFs + nested HDI + inline MAP on headline posteriors, fig01 overlay fix.
+
+**Remaining scope:** posterior-factory consolidation · cividis/heatmap modernization · 5 new field figures (H0 forest, PP-plot, selection-function explainer, population view, event→host explorable) · annotation+declutter rollout · interactive Plotly overhaul. Phases in `.planning/ROADMAP.md`.
+
+---
+
+## v2.2 Pipeline Correctness (PAUSED — started 2026-04-21, paused 2026-06-21)
+
+> **Paused**, not shipped. Active focus moved to v2.3 (viz). The remaining
+> correctness/bias work is gated on a fresh trusted production re-sim (see
+> `project_residual_bias_decomposition` memory + `docs/H0_BIAS_RESOLUTION.md`).
+> Phase artifacts preserved at `.planning/milestones/v2.2-phases/`; roadmap +
+> requirements snapshots at `.planning/milestones/v2.2-{ROADMAP,REQUIREMENTS}.md`.
+> Resume by restoring those and re-pointing STATE.md.
+
+**Phases completed:** 2/8 phases (35–36)
 
 **Phases completed:** 2/8 phases (35–36)
 

@@ -1,17 +1,16 @@
 ---
 gsd_state_version: 1.0
-milestone: v2.2
-milestone_name: milestone
-status: Phase 44 SHIPPED — MAP shifted 0.860 → 0.7650 on cluster (412 events). Residual +0.035 deferred to Phase 45.
-stopped_at: cluster re-eval complete (jobs 4160638/4160639); +0.035 residual bias above truth h=0.73 to be addressed in Phase 45
-last_updated: "2026-04-29T00:30:00.000Z"
-last_activity: 2026-04-29 — Phase 44 cluster re-eval complete; MAP=0.7650 on production seed200; +145.7 log-unit pathology eliminated; all 4 strategies agree; residual +0.035 → Phase 45
+milestone: v2.3
+milestone_name: Visualization Redesign (HORIZON)
+status: planning
+last_updated: "2026-06-21T16:15:11.217Z"
+last_activity: 2026-06-21
 progress:
-  total_phases: 9
-  completed_phases: 5
-  total_plans: 27
-  completed_plans: 25
-  percent: 93
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
@@ -25,25 +24,10 @@ See: .planning/PROJECT.md (updated 2026-04-21)
 
 ## Current Position
 
-Phase: 40 — COMPLETE (GAPS_FOUND); next = fix phase (VERIFY-03 bias + angle audit)
-Plan: 40-06 of 7 — COMPLETE
-Status: GAPS_FOUND — SC-3 MAP=0.86; fix phase required before Phase 41/42
-Last activity: 2026-04-24 — Phase 40 closed GAPS_FOUND; fix phase required before Phase 41/42
-
-**Milestone phase map:**
-
-| # | Phase | Routing | REQ-IDs (count) |
-|---|-------|---------|-----------------|
-| 35 | Coordinate Bug Characterization | GSD | COORD-01 (1) |
-| 36 | Coordinate Frame Fix | GPD | COORD-02, 03, 04 (3) |
-| 37 | Parameter Estimation Correctness | GSD+GPD | COORD-05, PE-01..05 (6) |
-| 38 | Statistical Correctness | GSD+GPD | STAT-01..04 (4) |
-| 39 | HPC & Visualization Safe Wins | GSD+GPD | HPC-01..05, VIZ-01..02 (7) |
-| 40 | Verification Gate | GSD+GPD | VERIFY-01..05 (5) |
-| 41 | Stage 1 Injection Campaign | GSD (conditional) | CAMP-01 (1) |
-| 42 | Stage 2 Sky-Dependent Injection | GSD (conditional) | CAMP-02 (1) |
-
-**Abort gate:** Phase 40 VERIFY-02 — if re-evaluated MAP at h=0.73 shifts >5% from v2.1 baseline MAP=0.73, pause before CAMP-* phases.
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-06-21 — Milestone v2.3 started
 
 ## Performance Metrics
 

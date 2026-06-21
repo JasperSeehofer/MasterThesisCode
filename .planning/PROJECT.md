@@ -82,7 +82,28 @@ cosmology, galaxy redshift uncertainty (1+z)³ scaling.
 - ✓ P_det grid resolution validated (60-bin configurable, full 38-point cluster sweep, zero delta vs 30-bin) — v2.1 Phase 33
 - ✓ Fisher matrix quality gates (`allow_singular=True` removed, condition-number gate, `fisher_quality.csv`, `plot_fisher_diagnostics`) — v2.1 Phase 34
 
-## Current Milestone: v2.2 Pipeline Correctness
+## Current Milestone: v2.3 Visualization Redesign (HORIZON)
+
+**Goal:** Implement the full figure/visualization redesign (`docs/VIZ_REDESIGN_PROPOSAL.md`) in the chosen HORIZON design direction with Dark Siren Dispatch annotation discipline — modern, field-aware, publication- and web-ready figures. Software/design work in the plotting package + interactive HTML only (no physics formula/constant/waveform change); GSD, never `/physics-change`.
+
+**Target features:**
+- Consolidate the quadruplicate/quintuplicate combined-H0-posterior code paths into ONE canonical factory (regression anchor: `test_canonical_map_consistency`)
+- Colormap + heatmap modernization: cividis default, explicit `LogNorm`/robust-clip + `set_bad` on heatmaps, `pcolormesh` + true log axes for the sky map & pdet surface, diverging `vik`+`TwoSlopeNorm` for bias maps, semantic contour overlays
+- Five new field-expected figures: H0 forest/tension plot, bilby-style PP-plot/coverage, selection-function/horizon explainer, "where-the-constraints-come-from" population view, event→host→posterior explorable
+- Annotation + decluttering rollout: active titles, direct labels replacing legends, named reference rules, scaling-law labels; strip the 5 `tight_layout()` calls; restore convention-violating factories; 3D→2D; unify `LABELS`; Mpc/Gpc fix; ChainConsumer/arviz-style corner plot
+- Interactive overhaul: one shared Plotly `go.layout.Template` (HORIZON), self-contained `include_plotlyjs` strategy, per-group traces, talk/web theme; Observable Framework (SIREN ATLAS) as a follow-on
+
+**Already shipped (foundation, quick task `260621-npe`, branch `viz/horizon-quick-wins`):** HORIZON palette v2 (killed two-blues), `apply_style(theme="paper"|"talk"|"web")`, area-normalized PDFs + nested 68/95% HDI + inline MAP on headline posteriors, fig01 overlay fix.
+
+**Spec artifact:** `docs/VIZ_REDESIGN_PROPOSAL.md` (4 directions, per-figure table, 9 headline changes, 5 new figures, implementation sketch). Produced by a 13-agent research+design workflow 2026-06-21.
+
+**Constraints:** keep factory-function architecture + `apply_style()`; no throwaway scripts; REVTeX vector-PDF, colorblind- AND grayscale-safe, self-contained GH-Pages HTML; complete type annotations; per-commit check gate.
+
+**Note:** v2.2 Pipeline Correctness is PAUSED (not shipped) — remaining bias/correctness work gated on a fresh trusted production re-sim; artifacts at `.planning/milestones/v2.2-*`.
+
+---
+
+## (Paused) Milestone: v2.2 Pipeline Correctness
 
 **Goal:** Fix all 10 findings from the 2026-04-21 pre-batch audit — two critical coordinate-frame bugs (no equatorial→ecliptic rotation + singular BallTree embedding at ecliptic equator), plus L_cat drift from Gray Eq. 24-25, P_det extrapolation asymmetry, h-hardcode in Fisher CRBs, uniform derivative_epsilon, and latent correctness hygiene — before investing new cluster compute on the next simulation batch and extended P_det injection run.
 
@@ -202,4 +223,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-23 — v2.2 Phases 35–39 complete (coord frame, PE correctness, statistical correctness, HPC/viz safe wins); Phase 40 Verification Gate next*
+*Last updated: 2026-06-21 — Milestone switched to v2.3 Visualization Redesign (HORIZON); v2.2 Pipeline Correctness PAUSED (artifacts archived at .planning/milestones/v2.2-*); viz quick-wins foundation shipped (quick task 260621-npe)*
