@@ -133,7 +133,9 @@ Plans:
   2. The PP-plot/coverage factory renders bilby-style nested grey 1/2/3σ binomial bands + per-parameter cumulative lines + KS p-values, validated on SYNTHETIC injection-recovery ranks; a unit test asserts well-calibrated synthetic ranks fall inside the bands.
   3. Both factories follow the `(fig, ax)` contract + `apply_style()`, carry complete type annotations, and produce vector REVTeX-width PDFs that pass CB + grayscale reads.
   4. The roadmap/STATE records the data-gate: finalize the this-work forest number + real PP-plot ranks once the cluster posterior is trusted; check gate green on the scaffolded versions.
-**Plans**: TBD
+**Plans**: 1 plan
+Plans:
+- [ ] 04-01-PLAN.md — Scaffold forest_plot.py (literature table + bold this-work row + Planck/SH0ES bands + THIS_WORK_H0 data-gate) + pp_plot.py (bilby nested binomial bands + per-param cumulative lines + KS p + synthetic-rank data-gate); fig23/fig24 manifest wiring; tests per factory; green gate
 **UI hint**: yes
 
 ### Phase 5: Annotation & Decluttering Rollout
@@ -183,7 +185,7 @@ Plans:
 | 1. Posterior Factory Consolidation | GSD | 1/1 | Complete ✅ | 2026-06-21 |
 | 2. Colormap & Heatmap Modernization | GSD | 0/1 | Not started | - |
 | 3. New Static Figures — Selection & Population | GSD | 1/1 | Complete ✅ | 2026-06-21 |
-| 4. New Figures (Data-Gated) — H₀ Forest & PP-Plot | GSD | 0/TBD | Not started | - |
+| 4. New Figures (Data-Gated) — H₀ Forest & PP-Plot | GSD | 0/1 | Not started | - |
 | 5. Annotation & Decluttering Rollout | GSD | 0/TBD | Not started | - |
 | 6. Interactive Plotly Overhaul | GSD | 0/TBD | Not started | - |
 | 7. Interactive Stretch — SIREN ATLAS & Event→Host (DEFERRED) | GSD | 0/TBD | Not started | - |
