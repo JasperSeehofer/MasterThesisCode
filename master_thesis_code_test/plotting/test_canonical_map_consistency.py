@@ -200,6 +200,135 @@ class TestCanonicalMapAgreesAcrossFigurePaths:
         np.testing.assert_array_equal(np.asarray(c["posterior"]), b_p)
 
 
+def _line0_map(ax: object) -> float:
+    """Extract the MAP of the FIRST plotted posterior line on *ax*.
+
+    The canonical factory plots the posterior curve as ``ax.lines[0]`` (the
+    reference / truth ``axvline`` calls come afterwards), so the first line is
+    always the headline posterior curve.
+    """
+    line = ax.lines[0]  # type: ignore[attr-defined]
+    h_line = np.asarray(line.get_xdata(), dtype=np.float64)
+    y_line = np.asarray(line.get_ydata(), dtype=np.float64)
+    return float(h_line[int(np.argmax(y_line))])
+
+
+class TestRenderedMapAgreesAcrossFigurePaths:
+    """Every consolidated render path must report the canonical MAP.
+
+    Phase 01 (v2.3 HORIZON): all five combined-H0-posterior render paths
+    delegate to :func:`master_thesis_code.plotting.bayesian_plots.plot_combined_posterior`.
+    This class pins the contract at the *rendered curve* level — it extracts
+    the MAP from the first plotted line of each returned Axes and asserts it
+    equals the canonical discrete MAP to within one grid step. It guards
+    against the copy-paste-drift bug returning through a divergent render
+    body (as opposed to the loader contract, covered above).
+    """
+
+    @staticmethod
+    def _canonical(tmp_path: Path) -> tuple[np.ndarray, np.ndarray, float]:
+        """Write synthetic posteriors and return (h, posterior, discrete_map)."""
+        rng = np.random.default_rng(2026_06_21)
+        h_grid = np.linspace(0.60, 0.86, 27, dtype=np.float64)
+        for variant in ("posteriors", "posteriors_with_bh_mass"):
+            _write_synthetic_posteriors(
+                tmp_path,
+                n_events=80,
+                h_grid=h_grid,
+                map_h=0.74,
+                width=0.04,
+                variant=variant,
+                rng=np.random.default_rng(rng.integers(0, 2**31)),
+            )
+        result = compute_canonical_combined_posterior(tmp_path / "posteriors")
+        discrete_map = result["discrete_map"]
+        posterior = result["posterior"]
+        h_values = result["h_values"]
+        assert isinstance(discrete_map, float)
+        assert isinstance(posterior, list)
+        assert isinstance(h_values, list)
+        return (
+            np.asarray(h_values, dtype=np.float64),
+            np.asarray(posterior, dtype=np.float64),
+            discrete_map,
+        )
+
+    def test_combined_posterior_rendered_map_matches_canonical(self, tmp_path: Path) -> None:
+        import matplotlib.pyplot as plt
+
+        from master_thesis_code.plotting.bayesian_plots import plot_combined_posterior
+
+        h, posterior, discrete_map = self._canonical(tmp_path)
+        fig, ax = plot_combined_posterior(h, posterior, 0.73)
+        assert _line0_map(ax) == discrete_map
+        plt.close(fig)
+
+    def test_paper_comparison_rendered_map_matches_canonical(self, tmp_path: Path) -> None:
+        import matplotlib.pyplot as plt
+
+        from master_thesis_code.plotting.paper_figures import plot_h0_posterior_comparison
+
+        _h, _posterior, discrete_map = self._canonical(tmp_path)
+        fig, ax = plot_h0_posterior_comparison(tmp_path)
+        # One grid step (Δh ≈ 0.01) tolerance.
+        assert abs(_line0_map(ax) - discrete_map) < 0.012
+        plt.close(fig)
+
+    def test_paper_kde_rendered_map_matches_canonical(self, tmp_path: Path) -> None:
+        import matplotlib.pyplot as plt
+
+        from master_thesis_code.plotting.paper_figures import plot_h0_posterior_kde
+
+        _h, _posterior, discrete_map = self._canonical(tmp_path)
+        fig, ax = plot_h0_posterior_kde(tmp_path)
+        # KDE smooths sub-grid — one-grid-spacing (Δh ≈ 0.01) tolerance, like
+        # the KDE-drift warning in plot_h0_posterior_kde.
+        assert abs(_line0_map(ax) - discrete_map) < 0.02
+        plt.close(fig)
+
+    def test_convergence_panel_rendered_map_matches_canonical(self, tmp_path: Path) -> None:
+        import matplotlib.pyplot as plt
+
+        from master_thesis_code.plotting.convergence_analysis import (
+            compute_m_z_improvement_bank,
+            plot_m_z_improvement_panels,
+        )
+
+        h, posterior, discrete_map = self._canonical(tmp_path)
+        bank = compute_m_z_improvement_bank(
+            tmp_path, subset_sizes=[10, 40], n_bootstrap=4, h_true=0.73, use_cache=False
+        )
+        assert bank is not None
+        fig, axes = plot_m_z_improvement_panels(
+            bank,
+            canonical_combined_no_mass=(h, posterior),
+            canonical_combined_with_mass=(h, posterior),
+        )
+        # Top-middle panel is fig.axes[1].
+        assert abs(_line0_map(fig.axes[1]) - discrete_map) < 0.012
+        plt.close(fig)
+
+    def test_fig08_left_rendered_map_matches_canonical(self, tmp_path: Path) -> None:
+        import matplotlib.pyplot as plt
+
+        from master_thesis_code.plotting.convergence_plots import plot_h0_convergence
+
+        h, posterior, discrete_map = self._canonical(tmp_path)
+        # Minimal per-event posteriors so the CI-width (right) panel still draws;
+        # the left panel uses the canonical override.
+        event_posteriors = [posterior.copy() for _ in range(10)]
+        fig, axes = plot_h0_convergence(
+            h,
+            event_posteriors,
+            true_h=0.73,
+            subset_sizes=[5, 10],
+            canonical_no_mass=(h, posterior),
+        )
+        # axes[0] is ax_post (left panel).
+        assert abs(_line0_map(axes[0]) - discrete_map) < 0.012
+        plt.close(fig)
+
+
 class TestParabolicRefine:
     def test_parabolic_refine_matches_quadratic_peak(self) -> None:
         h = np.array([0.7, 0.72, 0.74, 0.76, 0.78], dtype=np.float64)

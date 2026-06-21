@@ -77,6 +77,15 @@ def plot_combined_posterior(
     annotate_map: bool = True,
     show_truth: bool = True,
     color: str | None = None,
+    linestyle: str = "-",
+    linewidth: float | None = None,
+    truth_linestyle: str = "dashed",
+    truth_label: str | None = None,
+    xlim: tuple[float, float] | None = None,
+    ylim: tuple[float, float] | None = None,
+    ylabel: str | None = None,
+    kde: bool = False,
+    legend: bool = True,
     ax: Axes | None = None,
 ) -> tuple[Figure, Axes]:
     """Plot a single combined Hubble constant posterior.
@@ -87,6 +96,13 @@ def plot_combined_posterior(
     "Dispatch" number-on-the-curve discipline). The HDI bounds come from the
     shared :func:`compute_hdi_interval` helper (LIGO/Virgo minimal-credible
     convention), replacing the older cumsum-index CI machinery.
+
+    This is the **single canonical combined-H0-posterior factory** (v2.3
+    HORIZON Phase 01). Every combined-posterior render path — fig01 (manifest),
+    ``paper_h0_posterior``/``paper_h0_posterior_kde``, the M_z improvement
+    top-middle panel, and the fig08 left panel — delegates here so every
+    recolor/annotation edit lands in one place and the quadruplicate-drift
+    hazard (different MAPs from copy-pasted plotting code) cannot return.
 
     Parameters
     ----------
@@ -117,6 +133,33 @@ def plot_combined_posterior(
         a multi-variant comparison shows a single truth line.
     color:
         Curve and HDI shading color.  Defaults to ``VARIANT_NO_MASS``.
+    linestyle:
+        Linestyle of the posterior curve (default ``"-"``). Secondary overlay
+        variants pass ``"--"`` for the redundant color+linestyle encoding.
+    linewidth:
+        Posterior curve linewidth. ``None`` (default) inherits the stylesheet
+        default; callers pass e.g. ``1.4`` for the KDE / panel curves.
+    truth_linestyle:
+        Linestyle for the injected-``h`` truth line (default ``"dashed"``).
+        Paper figures pass ``":"``; the fig08 left panel passes ``"dashed"``.
+    truth_label:
+        Legend label for the truth line. ``None`` (default) yields
+        ``f"True $h = {true_h}$"``; callers pass ``"Injected"`` / ``"Truth"``.
+    xlim:
+        Optional ``(low, high)`` x-axis limits. ``None`` leaves them auto.
+    ylim:
+        Optional ``(low, high)`` y-axis limits. ``None`` leaves them auto.
+    ylabel:
+        Y-axis label override. ``None`` (default) uses ``p(h|data)``; the
+        fig08 left panel passes ``"Posterior density"``.
+    kde:
+        If ``True``, Gaussian-KDE-smooth ``(h_values, posterior)`` (Scott's
+        rule) BEFORE normalizing/plotting, and compute the HDI/MAP from the
+        smoothed curve so the rendered MAP matches what the panel shows.
+        Default ``False`` leaves the discrete grid untouched.
+    legend:
+        If ``True`` (default), call ``ax.legend()``. Overlay callers pass
+        ``False`` so the surrounding figure owns a single legend.
     ax:
         Optional pre-existing Axes to draw on.
     """
@@ -128,10 +171,23 @@ def plot_combined_posterior(
     if color is None:
         color = VARIANT_NO_MASS
 
+    # KDE smoothing (path 3): smooth onto a fine grid BEFORE normalize/HDI/MAP
+    # so the rendered curve, its shaded HDI, and the inline MAP all agree. The
+    # import is local to avoid a circular dependency — paper_figures imports
+    # from convergence_analysis, and bayesian_plots must not import
+    # paper_figures at module top.
+    if kde:
+        from master_thesis_code.plotting.paper_figures import _kde_smooth_posterior
+
+        h_values, posterior = _kde_smooth_posterior(h_values, posterior)
+
     normalized = _normalize_posterior(posterior, h_values, normalize)
 
     # Main posterior curve (plain line; no per-point markers)
-    ax.plot(h_values, normalized, label=label, color=color)
+    plot_kwargs: dict[str, object] = {"label": label, "color": color, "linestyle": linestyle}
+    if linewidth is not None:
+        plot_kwargs["linewidth"] = linewidth
+    ax.plot(h_values, normalized, **plot_kwargs)  # type: ignore[arg-type]
 
     # --- Nested HDI bands via the shared HDI helper (one CI definition) ---
     # 68% HDI is needed for both the bands and the inline MAP annotation.
@@ -209,11 +265,17 @@ def plot_combined_posterior(
     # Truth line (suppressed on secondary overlay curves to avoid duplicate
     # legend entries / overlapping reference lines in multi-variant comparisons)
     if show_truth:
-        ax.axvline(true_h, color=TRUTH, linestyle="dashed", label=f"True $h = {true_h}$")
+        truth_lbl = truth_label if truth_label is not None else f"True $h = {true_h}$"
+        ax.axvline(true_h, color=TRUTH, linestyle=truth_linestyle, label=truth_lbl)
 
     ax.set_xlabel(LABELS["h"])
-    ax.set_ylabel(r"$p(h|\mathrm{data})$")
-    ax.legend()
+    ax.set_ylabel(ylabel if ylabel is not None else r"$p(h|\mathrm{data})$")
+    if xlim is not None:
+        ax.set_xlim(*xlim)
+    if ylim is not None:
+        ax.set_ylim(*ylim)
+    if legend:
+        ax.legend()
     return fig, ax
 
 
