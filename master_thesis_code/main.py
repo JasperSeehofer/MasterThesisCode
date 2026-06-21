@@ -920,8 +920,12 @@ def generate_figures(output_dir: str) -> None:
             )
         except FileNotFoundError:
             return None
-        # fig01 is a two-variant overlay -> peak-normalized, no shaded HDI bands
-        # (viz-redesign §1.3: never shade a band under a many-variant overlay).
+        # fig01 is a two-variant overlay. §1.3-vs-VR-F3 reconciliation:
+        # normalize="density" honors VR-F3 (honest area-normalized PDF), while
+        # show_credible=False honors §1.3 (never shade an HDI band under a
+        # many-variant overlay — the single-variant paper figures carry the
+        # bands). These two requirements pull on the *band*, not on the
+        # normalization, so both can be satisfied at once.
         # The headline variant (Without M_z) carries the single MAP annotation,
         # truth line, and Planck/SH0ES references; the secondary variant
         # suppresses all of these so the legend/annotations are not duplicated.
@@ -930,6 +934,7 @@ def generate_figures(output_dir: str) -> None:
             combined,
             0.73,
             label=r"Without $M_z$",
+            normalize="density",
             color=VARIANT_NO_MASS,
             show_credible=False,
         )
@@ -946,6 +951,7 @@ def generate_figures(output_dir: str) -> None:
                     comb_w,
                     0.73,
                     label=r"With $M_z$",
+                    normalize="density",
                     color=VARIANT_WITH_MASS,
                     show_credible=False,
                     show_references=False,
