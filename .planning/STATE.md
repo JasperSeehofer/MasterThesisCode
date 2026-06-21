@@ -2,11 +2,11 @@
 gsd_state_version: 1.0
 milestone: v2.3
 milestone_name: Visualization Redesign (HORIZON)
-status: planning
-last_updated: "2026-06-21T16:15:11.217Z"
+status: roadmapped
+last_updated: "2026-06-21T18:30:00.000Z"
 last_activity: 2026-06-21
 progress:
-  total_phases: 0
+  total_phases: 7
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -20,14 +20,26 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-21)
 
 **Core value:** Measure H₀ from simulated EMRI dark siren events with galaxy catalog completeness correction, producing publication-ready results.
-**Current focus:** Fix phase — VERIFY-03 SC-3 bias (angle audit + D(h) in --combine)
+**Current focus:** v2.3 Visualization Redesign (HORIZON) — roadmap defined (7 phases); Phase 1 (Posterior Factory Consolidation) ready to plan. v2.2 PAUSED (snapshots in .planning/milestones/v2.2-*).
 
 ## Current Position
 
-Phase: Not started (defining requirements)
+Phase: Not started — Phase 1 (Posterior Factory Consolidation) ready to plan
 Plan: —
-Status: Defining requirements
-Last activity: 2026-06-21 — Milestone v2.3 started
+Status: Roadmapped (7 phases, all [GSD] software/design — no physics)
+Progress: [..............................] 0/7 phases (foundation VR-F1..F4 shipped pre-roadmap)
+Last activity: 2026-06-21 — v2.3 ROADMAP.md written; STATE total_phases=7; REQUIREMENTS traceability filled
+
+**v2.3 phase order (all GSD, never /physics-change):**
+1. Posterior Factory Consolidation — VR-CONS-01/02
+2. Colormap & Heatmap Modernization — VR-CMAP-01..05
+3. New Static Figures (Selection & Population) — VR-NEW-03/04
+4. New Figures (Data-Gated: H0 Forest & PP-Plot) — VR-NEW-01/02 [scaffold now, finalize on production posterior]
+5. Annotation & Decluttering Rollout — VR-ANNO-01..07
+6. Interactive Plotly Overhaul — VR-INT-01..04
+7. Interactive Stretch (SIREN ATLAS + event→host explorable) — VR-INT-05 + VR-NEW-05 [DEFERRED]
+
+Data gate: VR-NEW-01/02 (Phase 4) finalize their this-work numbers once a trusted production/seed500 posterior lands; scaffolded on literature + synthetic ranks until then.
 
 ## Performance Metrics
 

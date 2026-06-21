@@ -1,140 +1,101 @@
-# Requirements — v2.2 Pipeline Correctness
+# Requirements — v2.3 Visualization Redesign (HORIZON)
 
-**Defined:** 2026-04-21
+**Defined:** 2026-06-21
 **Core Value:** Measure H₀ from simulated EMRI dark siren events with galaxy catalog completeness correction, producing publication-ready results.
 
-## v2.2 Requirements
+## v2.3 Requirements
 
-Fix all 10 findings from the 2026-04-21 pre-batch audit — two critical coordinate-frame bugs, statistical drift from Gray et al., P_det extrapolation asymmetry, h-hardcode in Fisher CRBs, uniform derivative_epsilon, and latent correctness hygiene — before investing new cluster compute on the next simulation batch and extended P_det injection run. Plan artifact: `~/.claude/plans/i-want-a-last-elegant-feather.md`.
+Implement the full figure/visualization redesign (`docs/VIZ_REDESIGN_PROPOSAL.md`) in the chosen **HORIZON** design direction with **Dark Siren Dispatch** annotation discipline — modern, field-aware, publication- and web-ready figures. SOFTWARE/design work in the plotting package + interactive HTML only: no physics formula/constant/waveform change, GSD never `/physics-change`. Honor the factory-function architecture + `apply_style()`, REVTeX vector-PDF, colorblind- AND grayscale-safe, self-contained GH-Pages HTML, complete type annotations, and a per-commit check gate (ruff+mypy+pytest "not gpu and not slow").
 
-### Coordinate Frame Correctness
+### Foundation (shipped — quick task `260621-npe`, branch `viz/horizon-quick-wins`)
 
-- [x] **COORD-01**: Failing-test-first characterization exists: round-trip tests for equatorial↔ecliptic and polar↔latitude conventions, plus baseline counts of events in ±5° ecliptic-equator band from existing CRB CSV
-- [x] **COORD-02**: BallTree embedding uses correct polar-to-Cartesian formula `(sin θ cos φ, sin θ sin φ, cos θ)` where θ is polar angle ∈ [0, π]; applied consistently in both `setup_galaxy_catalog_balltree` and `get_possible_hosts_from_ball_tree`
-- [x] **COORD-02b**: 4D BallTree (`setup_4d_galaxy_catalog_balltree` / `find_closest_galaxy_to_coordinates`) uses spherical embedding on the sky sub-space — `_polar_to_cartesian(θ, φ)` on the (θ, φ) axes plus normalized z and normalized log M — instead of the flat `θ / π` + `φ / 2π` embedding that exhibits the same latitude-vs-polar bug as COORD-02
-- [x] **COORD-03**: GLADE catalog angles are rotated from equatorial J2000 (RA, Dec) to ecliptic SSB (φ, θ_polar) via `astropy.coordinates.SkyCoord.transform_to(BarycentricTrueEcliptic())` during catalog ingestion; docstring documents the stored frame
-- [x] **COORD-04**: Sky candidate-host search radius derived from 2×2 sky covariance eigendecomposition (including |sin θ| Jacobian on φ-component) rather than axis-aligned `max(σ_φ, σ_θ)`
-- [x] **COORD-05**: `_map_angles_to_spherical_coordinates` guarded against double-application via idempotency assertion on raw input range
+- [x] **VR-F1**: `_colors.py` v2 HORIZON palette — navy `#1B2A4A` (Without M_z) / gold `#E8A317` (With M_z) / vermillion `#C2451E` truth / `PLANCK`+`SH0ES` band colors; two-blues collision removed; CB- and grayscale-safe
+- [x] **VR-F2**: `apply_style(theme="paper"|"talk"|"web")` switch; paper default byte-identical to prior output
+- [x] **VR-F3**: Headline posteriors render as area-normalized PDFs with shaded nested 68/95% HDI (via `compute_hdi_interval`) + inline `MAP ±` annotation
+- [x] **VR-F4**: fig01 two-variant overlay deduplicated (single MAP/truth, no muddy bands per §1.3)
 
-### Statistical Correctness
+### Posterior Factory Consolidation
 
-- [x] **STAT-01**: L_cat form reconciled with Gray et al. (2020) Eq. 24-25: either proven analytically equivalent to `(1/N) Σ_g N_g/D_g` under the code's implicit uniform 1/N galaxy prior (with docstring derivation + unit test), or replaced with the canonical form via `/physics-change` protocol
-- [x] **STAT-02**: Unit test with 3 synthetic galaxies reproduces both L_cat forms and asserts their agreement (or documents divergence with quantitative reason)
-- [x] **STAT-03**: P_det extrapolation is symmetric between numerator (`single_host_likelihood` integrand) and denominator (`precompute_completion_denominator`); either both use zero-fill or both use NN-fill
-- [x] **STAT-04**: Per-event diagnostic logs the fraction of quadrature weight landing outside the P_det injection grid, for both numerator and denominator integrals; warning fires if >5% for any event
+- [ ] **VR-CONS-01**: The four/five duplicate combined-H0-posterior code paths collapse into ONE canonical factory; `paper_figures` wrappers + `main.py` manifest delegate to it while preserving `(data_dir) -> (fig, ax)` signatures. Paths: fig01 (`main.py:_gen_h0_posterior_combined`), `paper_figures.plot_h0_posterior_comparison`, `plot_h0_posterior_kde`, `convergence_analysis.plot_m_z_improvement_panels` top panel, fig08-left (verify). No data-plumbing rewrite; canonical loaders untouched
+- [ ] **VR-CONS-02**: All consolidated paths agree on the MAP (regression anchor `test_canonical_map_consistency` extended); fig01 wired to the area-norm headline treatment; theme passes through
 
-### Parameter Estimation Correctness
+### Colormap & Heatmap Modernization
 
-- [x] **PE-01**: `ParameterSpace.set_host_galaxy_parameters(host, h)` threads `h` explicitly through `dist()`; default h removed; regression test confirms 2× d_L ratio between h=0.5 and h=1.0
-- [x] **PE-02**: `derivative_epsilon` is per-parameter: relative (fractional-of-value) for scale parameters (M, mu, d_L, p0), absolute for angles (qS, phiS, qK, phiK, Phi_*) and eccentricity-like parameters (e0, x0, a); validated against Fisher determinant stability on one representative event
-- [x] **PE-03**: `LamCDMScenario.Omega_m` limits correctly ordered (`lower_limit < upper_limit`) with physically sensible range
-- [x] **PE-04**: SNR threshold has a single source of truth (`SNR_THRESHOLD` constant); `Model1CrossCheck`, pre-screen coefficient, evaluation filter, and injection quality gate all read from it
-- [x] **PE-05**: `SPEED_OF_LIGHT_KM_S = C / 1000` derived from `C`, not hardcoded; eliminates 0.07% inconsistency in `comoving_volume_element`
+- [ ] **VR-CMAP-01**: `_colors.CMAP` default switched to `cividis` (perceptually-uniform, CB-safe); audit all `image.cmap`/explicit-cmap call sites
+- [ ] **VR-CMAP-02**: Every heatmap sets an explicit norm (`LogNorm` or robust percentile clip) and a `set_bad` no-data color; no silent autoscale washing out dynamic range
+- [ ] **VR-CMAP-03**: Sky map (fig05) and pdet surface (fig20) switch from fake-index `imshow` to `pcolormesh` with true (log where appropriate) axes — fixes the wasted-dynamic-range viridis sky scatter
+- [ ] **VR-CMAP-04**: Bias/residual maps use a diverging map (`cmcrameri vik`) with `TwoSlopeNorm(vcenter=0.73)`; sequential maps stay sequential
+- [ ] **VR-CMAP-05**: Semantic contour overlays added where they aid reading: `P_det = 0.5` detection-horizon contour on pdet maps; 68/95% credible contours on 2D posteriors
 
-### HPC Hygiene (Safe Wins)
+### New Field-Expected Figures (on existing data plumbing — no new pipeline)
 
-- [x] **HPC-01**: `parameter_estimation.py` is CPU-importable via `_get_xp(use_gpu)` shim; all `cp.*` calls gated; module passes `pytest -m "not gpu"` without `cupy` installed
-- [x] **HPC-02**: `_crb_flush_interval` set to 25 (SIGTERM flush retained for tail safety); expected Lustre I/O reduction 5–20 s per SLURM array task
-- [x] **HPC-03**: FFT cache is only cleared on explicit memory-pressure signal in `memory_management.py`, not per Fisher iteration; expected 20–100 ms savings per event
-- [x] **HPC-04**: Dead `_crop_frequency_domain` removed from `parameter_estimation.py`
-- [x] **HPC-05**: `flip_hx=True` in `waveform_generator.py` verified against current `fastlisaresponse` version; obsolete flag removed with `/physics-change` if so, documented if correct
+- [ ] **VR-NEW-01**: H0 forest / tension plot — this EMRI result vs Planck/SH0ES/DESI/TRGB/lensing/GW170817/LVK dark+combined; grouped early-vs-late, full-height reference bands, bold result row. *Final this-work number is DATA-GATED on the production posterior; scaffold with a placeholder + literature values now.*
+- [ ] **VR-NEW-02**: PP-plot / coverage — bilby-style nested grey 1/2/3σ binomial bands, per-parameter cumulative lines, KS p-values. Referee-mandatory calibration proof. *DATA-GATED: needs injection-recovery rank data; scaffold the factory + test on synthetic ranks now.*
+- [ ] **VR-NEW-03**: Selection-function / detection-horizon explainer — `p_det(d_L)` survival curve + `(M, d_L)` p_det heatmap with 0.5/0.9 horizon contour + injected-population overlay
+- [ ] **VR-NEW-04**: "Where do the constraints come from" population view — driver SNR×z histogram linked to the sky map + de-emphasized per-event spaghetti + stacked posterior rebuilt from the selected events (surfaces `fig02`'s never-enabled `color_by`)
+- [ ] **VR-NEW-05**: Event → host → posterior explorable (interactive hero scene; sky patch with GLADE+ candidate hosts re-weighting under an h-slider, single-event posterior rebuilt as a sum of per-galaxy contributions). *Stretch / may be a follow-on.*
 
-### Visualization (Safe Wins)
+### Annotation & Decluttering Rollout
 
-- [x] **VIZ-01**: Production figures generated with `apply_style(use_latex=True)` when TeX is available; graceful fallback to mathtext when not; applied in `main.py:generate_figures`
-- [x] **VIZ-02**: Static `plot_h0_convergence` displays bootstrap HDI band (16/84 percentile shading) via existing `convergence_analysis.compute_m_z_improvement_bank`
+- [ ] **VR-ANNO-01**: Annotation layer across the figure set — active declarative titles stating the finding, direct end-of-line color-matched labels replacing legend boxes where it reads better, named reference rules, scaling-law labels (e.g. the `N^-1/2` convergence law)
+- [ ] **VR-ANNO-02**: Per-point markers dropped on smooth/near-delta curves across the package
+- [ ] **VR-ANNO-03**: The 5 `fig.tight_layout()` calls that fight the stylesheet's `constrained_layout` removed
+- [ ] **VR-ANNO-04**: Convention-violating factories restored to the `(fig, ax)`-return + `get_figure`-preset contract (e.g. `fisher_quality_diagnostic`, hardcoded-figsize factories)
+- [ ] **VR-ANNO-05**: The two 3D-scatter anti-patterns replaced with 2D marginal/corner/Mollweide views
+- [ ] **VR-ANNO-06**: All axis/legend text routed through the single `LABELS` provider; Mpc/Gpc unit inconsistency reconciled
+- [ ] **VR-ANNO-07**: Corner plot modernized — filled/gradient contours (ChainConsumer/arviz-style) replacing the dated thin-orange/green-crosshair look
 
-### Verification Gate
+### Interactive Overhaul (Plotly → GH Pages)
 
-- [x] **VERIFY-01**: Full regression suite passes on CPU (`uv run pytest -m "not gpu"`), including new coordinate round-trip tests
-- [x] **VERIFY-02
-**: Existing CRBs re-evaluated under fixed frame + fixed L_cat + fixed P_det + eigenvalue sky radius; posterior MAP at h=0.73 within 1% bias; abort new compute if MAP shifts >5% from v2.1 baseline
-- [x] **VERIFY-03
-**: 27-value h-sweep re-evaluated; convergence figure regenerated; M_z improvement interactive updated
-- [x] **VERIFY-04
-**: Anisotropy audit: H₀ MAP binned by `|qS − π/2|` quartiles shows no systematic trend — >1σ shift is a Stage-2 trigger for Phase 42 (not a blocker)
-- [x] **VERIFY-05
-**: P_det quadrature-weight-outside-grid diagnostic (STAT-04) logged for every event in the re-evaluation; summary statistic reported
+- [ ] **VR-INT-01**: One shared `go.layout.Template` applied across all 8 Plotly factories, matching the HORIZON palette/typography
+- [ ] **VR-INT-02**: `include_plotlyjs` strategy chosen for self-contained-at-site-level + archival-robust output (e.g. `'directory'` or partial bundle)
+- [ ] **VR-INT-03**: Per-group traces replace the fragile visibility-vector bookkeeping
+- [ ] **VR-INT-04**: talk/web theme wired into interactive generation; every interactive degrades to its static PDF twin
+- [ ] **VR-INT-05**: Observable Framework single-snapshot → two-renderer architecture (SIREN ATLAS, the long-term web foundation). *Follow-on / stretch — out of scope unless prior phases land early.*
 
-### Staged Cluster Campaign
+## Out of Scope (this milestone)
 
-- [x] **CAMP-01**: Stage 1 — if VERIFY-05 reports >5% mean extrapolation weight per event, submit densified M×z×d_L injection grid (1.5× in each axis, extended d_L upper bound) to bwUniCluster gpu_h100; re-evaluate posteriors; compare to VERIFY-02
- baseline
-- [x] **CAMP-02**: Stage 2 — if VERIFY-04
- or Stage 1 reveals residual sky anisotropy, submit sky-dependent P_det injection campaign with (qS, phiS) as additional grid axes (6×12 sky grid); otherwise document that isotropic P_det marginalization is verified sufficient
-
-## Future Requirements (deferred past v2.2)
-
-### Remaining Physics Bugs
-
-- **PHYS-01**: wCDM params `w_0`, `w_a` silently ignored in `dist()` (kwargs accepted but LCDM `hyp2f1` used unconditionally)
-- **PHYS-02**: Pipeline A (`bayesian_inference.py`) hardcodes 10% σ(d_L) instead of per-source CRB
-- **PHYS-03**: WMAP-era cosmology constants (`Omega_m=0.25`, `H=0.73`) — Planck 2018 best-fit differs (`Omega_m=0.3153`, `H=0.6736`)
-- **PHYS-04**: Galaxy redshift uncertainty scaling `(1+z)^3` has no reference; standard forms scale as `(1+z)`
-
-### Deferred Visualization (full overhaul)
-
-- **VIZ-FUT-01**: Galaxy-density Mollweide with Fisher ellipses overlaid (paper-central figure)
-- **VIZ-FUT-02**: P_det as pcolormesh heatmap with contours and scatter overlay of observed events
-- **VIZ-FUT-03**: Ridgeline/violin posterior stack vs SNR threshold or event count
-
-### Deferred HPC (not safe-win)
-
-- **HPC-FUT-01**: CUDA-stream stencil waveform pipelining (est. 10–30% Fisher wall-time reduction); requires bit-identical validation
-
-## Out of Scope
-
-| Feature | Reason |
-|---------|--------|
-| Full re-simulation campaign | User decision: re-evaluate existing CRBs under fixed frame, no re-sim needed |
-| wCDM equation of state | Known bug PHYS-01, explicitly deferred |
-| Pipeline A fixes | Pipeline B is production; A is cross-check only |
-| WMAP cosmology update | PHYS-03, explicitly deferred |
-| Full visualization overhaul | User decision: safe wins only in v2.2 |
-| CUDA-stream refactor | User decision: safe HPC wins only in v2.2 |
+- Any physics formula/constant/waveform/PSD change (would route to GPD `/physics-change`)
+- Data-pipeline / simulation / cluster changes
+- Resuming v2.2 Pipeline Correctness (paused; gated on a fresh trusted production re-sim)
 
 ## Traceability
 
+Roadmap: `.planning/ROADMAP.md` (created 2026-06-21, 7 phases, all [GSD] — no physics).
+Every not-yet-shipped requirement maps to exactly one phase. The VR-F* foundation was
+shipped in quick task `260621-npe` and is not re-planned.
+
 | Requirement | Phase | Routing | Status |
 |-------------|-------|---------|--------|
-| COORD-01 | Phase 35 | GSD | Done |
-| COORD-02 | Phase 36 | GPD | Done |
-| COORD-02b | Phase 36 | GPD | Done |
-| COORD-03 | Phase 36 | GPD | Done |
-| COORD-04 | Phase 36 | GPD | Done |
-| COORD-05 | Phase 37 | GSD | Done |
-| STAT-01 | Phase 38 | GSD (if proof) / GPD (if fix) | Done |
-| STAT-02 | Phase 38 | GSD | Done |
-| STAT-03 | Phase 38 | GPD | Done |
-| STAT-04 | Phase 38 | GSD | Done |
-| PE-01 | Phase 37 | GPD | Done |
-| PE-02 | Phase 37 | GPD | Done |
-| PE-03 | Phase 37 | GSD | Done |
-| PE-04 | Phase 37 | GSD | Done |
-| PE-05 | Phase 37 | GSD | Done |
-| HPC-01 | Phase 39 | GSD | Done |
-| HPC-02 | Phase 39 | GSD | Done |
-| HPC-03 | Phase 39 | GSD | Done |
-| HPC-04 | Phase 39 | GSD | Done |
-| HPC-05 | Phase 39 | GSD (verify) / GPD (if removed) | Done (KEEP) |
-| VIZ-01 | Phase 39 | GSD | Done |
-| VIZ-02 | Phase 39 | GSD | Done |
-| VERIFY-01 | Phase 40 | GSD | Done — PASS 544 tests |
-| VERIFY-02 | Phase 40 | GPD (runs physics-changed code) | Done — PASS 0.00% MAP shift |
-| VERIFY-03 | Phase 40 | GSD | GAPS_FOUND (SC-3 FAIL — fix phase required) |
-| VERIFY-04 | Phase 40 | GSD | STAGE-2-TRIGGER (deferred per user decision Q3) |
-| VERIFY-05 | Phase 40 | GSD | PHASE-41-TRIGGER-BORDERLINE (accepted per user decision Q2) |
-| CAMP-01 | Phase 41 | GSD (conditional on VERIFY-05) | Skipped (user decision Q2 — borderline accepted) |
-| CAMP-02 | Phase 42 | GSD (conditional on VERIFY-04 / CAMP-01) | Deferred (user decision Q3 — pending fix-phase) |
+| VR-F1 | Foundation (260621-npe) | GSD | Done |
+| VR-F2 | Foundation (260621-npe) | GSD | Done |
+| VR-F3 | Foundation (260621-npe) | GSD | Done |
+| VR-F4 | Foundation (260621-npe) | GSD | Done |
+| VR-CONS-01 | Phase 1 — Posterior Factory Consolidation | GSD | Pending |
+| VR-CONS-02 | Phase 1 — Posterior Factory Consolidation | GSD | Pending |
+| VR-CMAP-01 | Phase 2 — Colormap & Heatmap Modernization | GSD | Pending |
+| VR-CMAP-02 | Phase 2 — Colormap & Heatmap Modernization | GSD | Pending |
+| VR-CMAP-03 | Phase 2 — Colormap & Heatmap Modernization | GSD | Pending |
+| VR-CMAP-04 | Phase 2 — Colormap & Heatmap Modernization | GSD | Pending |
+| VR-CMAP-05 | Phase 2 — Colormap & Heatmap Modernization | GSD | Pending |
+| VR-NEW-03 | Phase 3 — New Static Figures (Selection & Population) | GSD | Pending |
+| VR-NEW-04 | Phase 3 — New Static Figures (Selection & Population) | GSD | Pending |
+| VR-NEW-01 | Phase 4 — New Figures (Data-Gated) | GSD | Pending (DATA-GATED) |
+| VR-NEW-02 | Phase 4 — New Figures (Data-Gated) | GSD | Pending (DATA-GATED) |
+| VR-ANNO-01 | Phase 5 — Annotation & Decluttering Rollout | GSD | Pending |
+| VR-ANNO-02 | Phase 5 — Annotation & Decluttering Rollout | GSD | Pending |
+| VR-ANNO-03 | Phase 5 — Annotation & Decluttering Rollout | GSD | Pending |
+| VR-ANNO-04 | Phase 5 — Annotation & Decluttering Rollout | GSD | Pending |
+| VR-ANNO-05 | Phase 5 — Annotation & Decluttering Rollout | GSD | Pending |
+| VR-ANNO-06 | Phase 5 — Annotation & Decluttering Rollout | GSD | Pending |
+| VR-ANNO-07 | Phase 5 — Annotation & Decluttering Rollout | GSD | Pending |
+| VR-INT-01 | Phase 6 — Interactive Plotly Overhaul | GSD | Pending |
+| VR-INT-02 | Phase 6 — Interactive Plotly Overhaul | GSD | Pending |
+| VR-INT-03 | Phase 6 — Interactive Plotly Overhaul | GSD | Pending |
+| VR-INT-04 | Phase 6 — Interactive Plotly Overhaul | GSD | Pending |
+| VR-INT-05 | Phase 7 — Interactive Stretch | GSD | Pending (STRETCH/DEFERRED) |
+| VR-NEW-05 | Phase 7 — Interactive Stretch | GSD | Pending (STRETCH/DEFERRED) |
 
-**Coverage:**
-- v2.2 requirements: 29 total
-- Mapped to phases: 29 ✓ (100%)
-- Unmapped: 0
-
-**Physics-gate REQ-IDs** (trigger `/physics-change` protocol when executed): COORD-02, COORD-02b, COORD-03, COORD-04, PE-01, PE-02, STAT-03, STAT-01 (conditional on fix), HPC-05 (conditional on removal), VERIFY-02 (as runner of physics-changed code).
-
----
-*Requirements defined: 2026-04-21*
-*Last updated: 2026-04-23 — Phase 39 complete: HPC-01..HPC-05, VIZ-01, VIZ-02 checkboxes flipped; traceability status Pending → Done (HPC-05 followed KEEP path, no /physics-change triggered)*
-*Last updated: 2026-04-24 — Phase 40 complete (GAPS_FOUND): VERIFY-01..05 processed; COORD-01/05, STAT-01..04, PE-01..05 traceability updated Done; fix phase required for VERIFY-03 SC-3 before Phase 41/42*
+**Coverage:** 24/24 not-yet-shipped requirements mapped to exactly one phase. No orphans,
+no duplicates. 4 shipped (VR-F1..F4). 2 data-gated (VR-NEW-01/02). 2 stretch/deferred
+(VR-INT-05, VR-NEW-05).
