@@ -118,7 +118,9 @@ Plans:
   2. A population-view factory renders the driver SNR×z histogram linked to the sky map + de-emphasized per-event spaghetti + a stacked posterior rebuilt from the selected events — surfacing fig02's never-enabled `color_by`.
   3. Both follow the `data in → (fig, ax) out` contract + `apply_style()` + `get_figure` presets (no hardcoded figsize), carry complete type annotations, and produce vector REVTeX-width PDFs.
   4. Both pass a CB + grayscale safety read; check gate green.
-**Plans**: TBD
+**Plans**: 1 plan
+Plans:
+- [ ] 03-01-PLAN.md — selection_plots.py (survival curve + fig20 pdet heatmap horizon-contour composite) + population_plots.py (SNR×z driver + Mollweide sky + de-emphasized color_by spaghetti + canonical stacked posterior) + fig21/fig22 manifest wiring + fig02 surfaces color_by; tests per factory; green gate
 **UI hint**: yes
 
 ### Phase 4: New Figures (Data-Gated) — H₀ Forest & PP-Plot
@@ -180,7 +182,7 @@ Plans:
 |-------|---------|----------------|--------|-----------|
 | 1. Posterior Factory Consolidation | GSD | 1/1 | Complete ✅ | 2026-06-21 |
 | 2. Colormap & Heatmap Modernization | GSD | 0/1 | Not started | - |
-| 3. New Static Figures — Selection & Population | GSD | 0/TBD | Not started | - |
+| 3. New Static Figures — Selection & Population | GSD | 0/1 | Planned | - |
 | 4. New Figures (Data-Gated) — H₀ Forest & PP-Plot | GSD | 0/TBD | Not started | - |
 | 5. Annotation & Decluttering Rollout | GSD | 0/TBD | Not started | - |
 | 6. Interactive Plotly Overhaul | GSD | 0/TBD | Not started | - |
