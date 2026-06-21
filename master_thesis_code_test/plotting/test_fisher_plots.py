@@ -160,6 +160,27 @@ def test_plot_fisher_corner_multi_event(
     plt.close(fig_multi)
 
 
+def test_plot_fisher_corner_filled_contours_render(
+    sample_covariance_matrix: np.ndarray,
+) -> None:
+    """VR-ANNO-07: the modernized filled-contour corner renders and keeps the contract.
+
+    The new corner kwargs (fill_contours / smooth / levels / HORIZON colors /
+    plot_datapoints=False) must not raise and must still return (Figure, ndarray)
+    of shape (n, n). A visual-style assertion is not feasible in a unit test.
+    """
+    fig, axes = plot_fisher_corner(
+        sample_covariance_matrix, _SAMPLE_PARAM_VALUES, params=["M", "mu", "a"]
+    )
+    assert isinstance(fig, Figure)
+    assert isinstance(axes, np.ndarray)
+    assert axes.shape == (3, 3)
+    # Filled credible regions add contourf collections to the off-diagonal panels.
+    off_diag = axes[1, 0]
+    assert len(off_diag.collections) > 0
+    plt.close(fig)
+
+
 # ---------------------------------------------------------------------------
 # Fisher quality diagnostic (VR-ANNO-04): factory returns (fig, axes), caller saves
 # ---------------------------------------------------------------------------

@@ -14,7 +14,15 @@ from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 from matplotlib.patches import Ellipse
 
-from master_thesis_code.plotting._colors import CMAP, CYCLE, EDGE, REFERENCE, TRUTH
+from master_thesis_code.plotting._colors import (
+    CMAP,
+    CYCLE,
+    EDGE,
+    REFERENCE,
+    TRUTH,
+    VARIANT_NO_MASS,
+    VARIANT_WITH_MASS,
+)
 from master_thesis_code.plotting._data import (
     EXTRINSIC,
     INTRINSIC,
@@ -422,33 +430,63 @@ def plot_fisher_corner(
 
     n = len(params)
 
-    # corner.corner uses tight_layout internally which conflicts with
-    # constrained_layout; disable it explicitly
+    # HORIZON-modernized contour recipe (VR-ANNO-07). corner.corner draws its own
+    # figure and calls tight_layout internally, which conflicts with the
+    # stylesheet's constrained_layout; the rc_context wrapper disables
+    # constrained_layout ONLY for corner's self-managed figure. This is the
+    # documented, accepted handling for corner's own layout — it is NOT a stray
+    # fig.tight_layout() call (the grep gate for `fig.tight_layout(` does not
+    # match it) and is intentionally retained.
+    #
+    # Filled-contour navy look (ChainConsumer/arviz-style) using corner's own
+    # kwargs only — no new dependency. The near-black EDGE contour line keeps the
+    # filled regions readable in grayscale and for the colorblind (redundant to
+    # the navy fill). Levels are the 2D enclosed-mass 1/2/3-sigma set.
+    # NOTE: with smooth1d set, corner draws the 1D marginals as Line2D curves
+    # (not stepped histogram patches), so hist_kwargs must NOT pass `edgecolor`
+    # (Line2D rejects it). The 2D-panel edge readability — the grayscale/CB
+    # redundant channel — comes from contour_kwargs colors=EDGE instead.
+    corner_kwargs = {
+        "fill_contours": True,
+        "plot_datapoints": False,
+        "plot_density": False,
+        "smooth": 1.0,
+        "smooth1d": 1.0,
+        "levels": (0.393, 0.865, 0.989),
+        "contour_kwargs": {"colors": EDGE, "linewidths": 0.8},
+        "contourf_kwargs": {"alpha": 0.7},
+    }
     with matplotlib.rc_context({"figure.constrained_layout.use": False}):
         fig = corner.corner(
             samples,
             labels=labels,
             truths=list(sub_mean),
             truth_color=TRUTH,
-            color=CYCLE[0],
+            color=VARIANT_NO_MASS,
             quantiles=[0.16, 0.5, 0.84],
             show_titles=True,
             title_fmt=".3f",
-            hist_kwargs={"edgecolor": EDGE},
+            hist_kwargs={"color": VARIANT_NO_MASS},
+            **corner_kwargs,
         )
 
         if overlay_events is not None:
+            # First overlay reads as a second filled family in HORIZON gold; any
+            # further overlays fall back to the category cycle.
+            overlay_colors = [VARIANT_WITH_MASS, *CYCLE]
             for ev_idx, (ev_cov, ev_vals) in enumerate(overlay_events[:4]):
                 ev_sub_cov = ev_cov[np.ix_(indices, indices)]
                 ev_sub_mean = ev_vals[indices]
                 overlay_samples = rng.multivariate_normal(
                     ev_sub_mean, ev_sub_cov, size=n_samples, check_valid="warn"
                 )
+                ev_color = overlay_colors[ev_idx % len(overlay_colors)]
                 corner.corner(
                     overlay_samples,
                     fig=fig,
-                    color=CYCLE[(ev_idx + 1) % len(CYCLE)],
-                    hist_kwargs={"edgecolor": EDGE},
+                    color=ev_color,
+                    hist_kwargs={"color": ev_color},
+                    **corner_kwargs,
                 )
 
     axes: npt.NDArray[np.object_] = np.array(fig.axes, dtype=object).reshape(n, n)
