@@ -7,10 +7,10 @@ last_updated: "2026-06-21T18:30:00.000Z"
 last_activity: 2026-06-21
 progress:
   total_phases: 7
-  completed_phases: 2
-  total_plans: 2
-  completed_plans: 2
-  percent: 29
+  completed_phases: 3
+  total_plans: 3
+  completed_plans: 3
+  percent: 43
 ---
 
 # Project State
@@ -24,11 +24,11 @@ See: .planning/PROJECT.md (updated 2026-04-21)
 
 ## Current Position
 
-Phase: 3 (New Static Figures — Selection & Population) — ready to plan
+Phase: 4 (New Figures, Data-Gated — H0 Forest & PP-Plot) — ready to plan
 Plan: —
-Status: Phase 2 COMPLETE (colormap/heatmap modernization shipped, 4 commits 6192594..512f66f)
-Progress: [########......................] 2/7 phases (foundation VR-F1..F4 shipped pre-roadmap)
-Last activity: 2026-06-21 — Phase 2 shipped: cividis house cmap + NO_DATA/DIVERGING_CMAP + norm/contour helpers; explicit norm+set_bad on every heatmap; fig20 pcolormesh+log axis+horizon contour; fig05 SNR norm; gate green (618 passed). VR-CMAP-05 credible-contour + VR-CMAP-04 bias-map consumer recorded for Phase 5/when-built.
+Status: Phase 3 COMPLETE (new static figures shipped, 3 commits 13d200b..30bce20)
+Progress: [############..................] 3/7 phases (foundation VR-F1..F4 shipped pre-roadmap)
+Last activity: 2026-06-21 — Phase 3 shipped: fig21 selection-function explainer + fig22 population view (new composite modules selection_plots.py + population_plots.py reusing tested panels); fig02 color_by surfaced; gate green (630 passed). DATA NOTE: fig21/fig22 manifest PDFs await an aligned CRB+posteriors dataset (production/seed500); factories verified against real-but-bridged data. OPEN (user): confirm composite panel layouts (§5.3/§5.4) + which scalar drives color_by, before Phase 5 annotation.
 
 **v2.3 phase order (all GSD, never /physics-change):**
 1. Posterior Factory Consolidation — VR-CONS-01/02

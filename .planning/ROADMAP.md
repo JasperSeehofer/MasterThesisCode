@@ -69,7 +69,7 @@ complete type annotations, and passes the per-commit check gate (ruff + mypy + p
 
 - [x] **Phase 1: Posterior Factory Consolidation** [GSD] — Collapse the 4–5 duplicate combined-H₀-posterior paths into ONE canonical factory; regression-anchor on MAP agreement ✅ 2026-06-21 (b3ee7dc..1a43709)
 - [x] **Phase 2: Colormap & Heatmap Modernization** [GSD] — cividis default + explicit norms + `set_bad` + true `pcolormesh` axes + diverging bias maps + semantic contours ✅ 2026-06-21 (6192594..512f66f)
-- [ ] **Phase 3: New Static Figures — Selection & Population** [GSD] — Detection-horizon explainer + "where the constraints come from" population view (no data gate)
+- [x] **Phase 3: New Static Figures — Selection & Population** [GSD] — Detection-horizon explainer + "where the constraints come from" population view (no data gate) ✅ 2026-06-21 (13d200b..30bce20)
 - [ ] **Phase 4: New Figures (Data-Gated) — H₀ Forest & PP-Plot** [GSD] — Scaffold the forest/tension + bilby-style PP-plot factories on placeholder/synthetic data; flag final numbers as data-gated
 - [ ] **Phase 5: Annotation & Decluttering Rollout** [GSD] — Active titles + direct labels + named rules + scaling-law labels; strip `tight_layout`; restore factory contracts; 3D→2D; unify `LABELS`; Mpc/Gpc; modern corner plot
 - [ ] **Phase 6: Interactive Plotly Overhaul** [GSD] — One shared `go.layout.Template`; self-contained `include_plotlyjs` strategy; per-group traces; talk/web theme + static PDF twin parity
@@ -182,7 +182,7 @@ Plans:
 |-------|---------|----------------|--------|-----------|
 | 1. Posterior Factory Consolidation | GSD | 1/1 | Complete ✅ | 2026-06-21 |
 | 2. Colormap & Heatmap Modernization | GSD | 0/1 | Not started | - |
-| 3. New Static Figures — Selection & Population | GSD | 0/1 | Planned | - |
+| 3. New Static Figures — Selection & Population | GSD | 1/1 | Complete ✅ | 2026-06-21 |
 | 4. New Figures (Data-Gated) — H₀ Forest & PP-Plot | GSD | 0/TBD | Not started | - |
 | 5. Annotation & Decluttering Rollout | GSD | 0/TBD | Not started | - |
 | 6. Interactive Plotly Overhaul | GSD | 0/TBD | Not started | - |
