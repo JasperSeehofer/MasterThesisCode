@@ -554,9 +554,8 @@ def plot_pdet_surface(
     # d_L is in Gpc here: the injection-CSV luminosity_distance values span
     # ~0.4..11 (c/H0 ~ 4.1 Gpc, so z~1.5 -> ~11 Gpc). This differs from
     # LABELS["d_L"] (Mpc, used by the per-source recovery plots whose data is in
-    # Mpc), so fig20 carries its own correct Gpc label rather than routing
-    # through LABELS["d_L"].
-    ax.set_xlabel(r"$d_L\,[\mathrm{Gpc}]$")
+    # Mpc), so fig20 routes through LABELS["d_L_gpc"] (the unit-explicit Gpc key).
+    ax.set_xlabel(LABELS["d_L_gpc"])
     ax.set_ylabel(LABELS["M"])
     fig.colorbar(mesh, ax=ax, label=r"$P_\mathrm{det}(\mathrm{SNR}\geq " + f"{snr_threshold:g})$")
     ax.set_title(

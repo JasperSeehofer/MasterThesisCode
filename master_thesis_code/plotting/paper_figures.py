@@ -38,6 +38,7 @@ from master_thesis_code.plotting._helpers import (
     compute_credible_interval,
     get_figure,
 )
+from master_thesis_code.plotting._labels import LABELS
 from master_thesis_code.plotting.convergence_analysis import (
     _load_per_event_no_mass,
     _load_per_event_with_mass_scalars,
@@ -679,7 +680,7 @@ def plot_snr_distribution(
             else:
                 ax_scat.scatter(d_l[detected], snr_det, color=CYCLE[0], s=8, alpha=0.6)
             ax_scat.axhline(snr_threshold, color=MEAN, linestyle="--", linewidth=1.0, alpha=0.7)
-            ax_scat.set_xlabel(r"$d_L$ [Gpc]")
+            ax_scat.set_xlabel(LABELS["d_L_gpc"])
             ax_scat.set_ylabel("SNR")
         else:
             ax_scat.text(

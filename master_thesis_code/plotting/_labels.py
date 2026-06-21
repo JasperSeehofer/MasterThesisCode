@@ -7,6 +7,20 @@ Usage (Phase 17 bulk migration)::
 
     from master_thesis_code.plotting._labels import LABELS
     ax.set_xlabel(LABELS["d_L"])
+
+Distance-unit reconciliation (VR-ANNO-06)
+-----------------------------------------
+Two unit-explicit luminosity-distance keys coexist because the package plots
+``d_L`` data in two genuinely different units:
+
+- ``d_L`` (Mpc): per-source recovery / Cramer-Rao plots, where ``luminosity_distance``
+  is stored in Mpc.
+- ``d_L_gpc`` (Gpc): pooled injection-CSV values (selection, fisher diagnostic
+  scatter, paper closure, fig20), where ``luminosity_distance`` is stored in Gpc.
+
+Both are physically correct for their data; the unit MUST always be stated, so
+every distance axis routes through one of these two keys rather than a bare,
+unit-ambiguous literal. No data value is converted by these labels.
 """
 
 LABELS: dict[str, str] = {
@@ -19,6 +33,7 @@ LABELS: dict[str, str] = {
     "Y0": r"$Y_0$",
     # --- Extrinsic / sky parameters ---
     "d_L": r"$d_L \, [\mathrm{Mpc}]$",
+    "d_L_gpc": r"$d_L \, [\mathrm{Gpc}]$",
     "qS": r"$\theta_S \, [\mathrm{rad}]$",
     "phiS": r"$\phi_S \, [\mathrm{rad}]$",
     "qK": r"$\theta_K \, [\mathrm{rad}]$",

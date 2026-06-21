@@ -102,7 +102,7 @@ def plot_glade_completeness(
             linewidth=1.2,
             label=reference_label,
         )
-    ax.set_xlabel(r"$d_L\,[\mathrm{Gpc}]$")
+    ax.set_xlabel(LABELS["d_L_gpc"])
     ax.set_ylabel("Completeness")
     ax.set_ylim(-0.05, 1.05)
     ax.legend(fontsize="small", loc="best")
@@ -145,7 +145,7 @@ def plot_event_catalog_coverage(
     n_events = len(host_counts)
     if d_l_per_event is not None and len(d_l_per_event) == n_events:
         x_values = np.asarray(d_l_per_event, dtype=np.float64)
-        x_label = r"$d_L\,[\mathrm{Gpc}]$"
+        x_label = LABELS["d_L_gpc"]
     else:
         x_values = host_counts["event_idx"].to_numpy(dtype=np.float64)
         x_label = "Event index"

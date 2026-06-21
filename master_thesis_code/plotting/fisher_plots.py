@@ -619,8 +619,9 @@ def plot_fisher_diagnostics(
         cbar = fig.colorbar(sc, ax=ax_scatter, pad=0.02)
         cbar.set_label(r"$\log_{10}(\max(\kappa_{3d}, \kappa_{4d}))$", fontsize="x-small")
 
-    ax_scatter.set_xlabel(r"$d_L$ [Gpc]")
-    ax_scatter.set_ylabel(r"$M$ [$M_\odot$]")
+    # Injection-CSV d_L is in Gpc here -> route through the unit-explicit key.
+    ax_scatter.set_xlabel(LABELS["d_L_gpc"])
+    ax_scatter.set_ylabel(LABELS["M"])
     ax_scatter.set_title("Parameter space scatter", fontsize="small")
     ax_scatter.legend(fontsize="x-small", loc="upper right")
 

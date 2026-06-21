@@ -34,6 +34,7 @@ from matplotlib.figure import Figure
 
 from master_thesis_code.plotting._colors import REFERENCE, VARIANT_NO_MASS
 from master_thesis_code.plotting._helpers import get_figure
+from master_thesis_code.plotting._labels import LABELS
 from master_thesis_code.plotting.evaluation_plots import plot_pdet_surface
 
 
@@ -163,9 +164,8 @@ def plot_selection_function_explainer(
     ax_left.axhline(0.5, color=REFERENCE, linestyle="--", linewidth=0.8, label="0.5 horizon")
     ax_left.set_ylim(-0.02, 1.02)
     # d_L is in Gpc here (injection CSV convention; see plot_pdet_surface) —
-    # carry the Gpc label literally rather than routing through LABELS["d_L"]
-    # which is Mpc.
-    ax_left.set_xlabel(r"$d_L\,[\mathrm{Gpc}]$")
+    # route through the unit-explicit Gpc key (LABELS["d_L"] is Mpc).
+    ax_left.set_xlabel(LABELS["d_L_gpc"])
     ax_left.set_ylabel(r"$P_\mathrm{det}$")
     ax_left.legend(loc="upper right", fontsize="small")
 
