@@ -74,6 +74,30 @@ _PLANCK_H_RANGE: tuple[float, float] = (0.6736 - 0.0054, 0.6736 + 0.0054)
 _SHOES_H_RANGE: tuple[float, float] = (0.7304 - 0.0104, 0.7304 + 0.0104)
 
 
+def _write_html_self_contained(fig: go.Figure, path: str) -> None:
+    """Write *fig* to *path* as a self-contained, offline-robust HTML file.
+
+    Uses ``include_plotlyjs="directory"`` so Plotly drops a single
+    ``plotly.min.js`` into the HTML's directory on the first write and every HTML
+    references it relatively. The entire output folder (e.g. the GitHub-Pages
+    ``interactive/`` directory) is then self-contained, works offline, and is
+    archival-robust. Routing every write through this ONE helper keeps the export
+    strategy in a single place (VR-INT-02).
+
+    The rejected ``"cdn"`` strategy was online-only / fragile for archival; the
+    full-inline (``True``) strategy re-embeds ~3 MB of JS into every file (site
+    bloat across 8 HTML files). ``"directory"`` shares one ``plotly.min.js``.
+
+    Parameters
+    ----------
+    fig:
+        The Plotly figure to export.
+    path:
+        Destination HTML path. ``plotly.min.js`` is written next to it.
+    """
+    fig.write_html(path, include_plotlyjs="directory")
+
+
 def _hex_to_rgba(hex_color: str, alpha: float) -> str:
     """Convert a ``#rrggbb`` hex color to a Plotly ``rgba(r,g,b,a)`` string.
 
@@ -1137,7 +1161,15 @@ def interactive_m_z_improvement(
 
 
 def generate_all_interactive(output_dir: str, data_dir: str) -> list[str]:
-    """Load data from *data_dir* and write all 4 interactive HTML figures to *output_dir*.
+    """Load data from *data_dir* and write all interactive HTML figures to *output_dir*.
+
+    Up to 8 interactive HTML figures are written. Each is exported via
+    :func:`_write_html_self_contained` (``include_plotlyjs="directory"``), so a
+    single ``plotly.min.js`` lands in *output_dir* and every HTML references it
+    relatively -- the whole folder is self-contained, offline, and archival-robust
+    (no CDN dependency). For GitHub Pages, the per-figure HTML and the shared
+    ``plotly.min.js`` must deploy together under ``interactive/`` (the existing
+    deploy already publishes the whole folder, so no build-script change here).
 
     Gracefully skips figures when required data is missing -- logs a warning and
     continues to the next figure.
@@ -1145,7 +1177,7 @@ def generate_all_interactive(output_dir: str, data_dir: str) -> list[str]:
     Parameters
     ----------
     output_dir:
-        Directory where HTML files are written.
+        Directory where HTML files (and the shared ``plotly.min.js``) are written.
     data_dir:
         Working directory containing CRB CSVs and posterior JSON subdirectories.
 
@@ -1241,7 +1273,7 @@ def generate_all_interactive(output_dir: str, data_dir: str) -> list[str]:
 
             fig1 = interactive_combined_posterior(h_values, combined, TRUE_H)
             path1 = os.path.join(output_dir, "combined_posterior.html")
-            fig1.write_html(path1, include_plotlyjs="cdn")
+            _write_html_self_contained(fig1, path1)
             written.append(path1)
             _LOGGER.info("Written: %s", path1)
         except Exception as exc:
@@ -1276,7 +1308,7 @@ def generate_all_interactive(output_dir: str, data_dir: str) -> list[str]:
                 theta_s, phi_s, snr_vals, redshifts=redshift_vals, distances=dist_vals
             )
             path2 = os.path.join(output_dir, "sky_map.html")
-            fig2.write_html(path2, include_plotlyjs="cdn")
+            _write_html_self_contained(fig2, path2)
             written.append(path2)
             _LOGGER.info("Written: %s", path2)
         except Exception as exc:
@@ -1311,7 +1343,7 @@ def generate_all_interactive(output_dir: str, data_dir: str) -> list[str]:
             if events_list:
                 fig3 = interactive_fisher_ellipses(events_list)
                 path3 = os.path.join(output_dir, "fisher_ellipses.html")
-                fig3.write_html(path3, include_plotlyjs="cdn")
+                _write_html_self_contained(fig3, path3)
                 written.append(path3)
                 _LOGGER.info("Written: %s", path3)
             else:
@@ -1332,7 +1364,7 @@ def generate_all_interactive(output_dir: str, data_dir: str) -> list[str]:
 
                 fig4 = interactive_h0_convergence(h_values, event_posteriors, true_h=TRUE_H)
                 path4 = os.path.join(output_dir, "h0_convergence.html")
-                fig4.write_html(path4, include_plotlyjs="cdn")
+                _write_html_self_contained(fig4, path4)
                 written.append(path4)
                 _LOGGER.info("Written: %s", path4)
             except Exception as exc:
@@ -1356,7 +1388,7 @@ def generate_all_interactive(output_dir: str, data_dir: str) -> list[str]:
         if bank is not None:
             fig5 = interactive_m_z_improvement(bank)
             path5 = os.path.join(output_dir, "m_z_improvement.html")
-            fig5.write_html(path5, include_plotlyjs="cdn")
+            _write_html_self_contained(fig5, path5)
             written.append(path5)
             _LOGGER.info("Written: %s", path5)
         else:
@@ -1404,7 +1436,7 @@ def generate_all_interactive(output_dir: str, data_dir: str) -> list[str]:
             event_ids = sorted(set(event_ids))
             fig6 = interactive_single_event_detail(single_event_data_dir, event_ids)
             path6 = os.path.join(output_dir, "single_event_detail.html")
-            fig6.write_html(path6, include_plotlyjs="cdn")
+            _write_html_self_contained(fig6, path6)
             written.append(path6)
             _LOGGER.info("Written: %s", path6)
         else:
@@ -1448,7 +1480,7 @@ def generate_all_interactive(output_dir: str, data_dir: str) -> list[str]:
         if len(h_runs) >= 2:
             fig7 = interactive_closure_test_overlay(h_runs)
             path7 = os.path.join(output_dir, "closure_test.html")
-            fig7.write_html(path7, include_plotlyjs="cdn")
+            _write_html_self_contained(fig7, path7)
             written.append(path7)
             _LOGGER.info("Written: %s", path7)
         else:
@@ -1475,7 +1507,7 @@ def generate_all_interactive(output_dir: str, data_dir: str) -> list[str]:
                     d_l_per_event = dl_arr[: len(host_counts)]
             fig8 = interactive_catalog_completeness(host_counts, d_l_per_event=d_l_per_event)
             path8 = os.path.join(output_dir, "catalog_completeness.html")
-            fig8.write_html(path8, include_plotlyjs="cdn")
+            _write_html_self_contained(fig8, path8)
             written.append(path8)
             _LOGGER.info("Written: %s", path8)
         else:

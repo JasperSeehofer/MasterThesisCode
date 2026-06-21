@@ -1,6 +1,7 @@
 """Tests for interactive Plotly figure factory functions."""
 
 import os
+import re
 import tempfile
 
 import numpy as np
@@ -273,12 +274,63 @@ class TestInteractiveH0Convergence:
 # ---------------------------------------------------------------------------
 
 
+def _write_synthetic_crb_csv(data_dir: str) -> str:
+    """Write a minimal cramer_rao_bounds.csv so the sky map HTML is emitted.
+
+    Returns the CSV path. Only the sky-map factory's required columns
+    (``qS``, ``phiS``, ``SNR``) are provided so the synthetic data dir yields
+    at least one HTML without needing a full posteriors tree.
+    """
+    rng = np.random.default_rng(123)
+    n = 12
+    rows = [
+        "qS,phiS,SNR",
+        *(
+            f"{float(rng.uniform(0.1, np.pi - 0.1))},"
+            f"{float(rng.uniform(0.0, 2 * np.pi))},"
+            f"{float(rng.uniform(20.0, 90.0))}"
+            for _ in range(n)
+        ),
+    ]
+    csv_path = os.path.join(data_dir, "cramer_rao_bounds.csv")
+    with open(csv_path, "w") as fh:
+        fh.write("\n".join(rows) + "\n")
+    return csv_path
+
+
 class TestGenerateAllInteractive:
     def test_empty_data_returns_empty_list(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             output_dir = os.path.join(tmpdir, "interactive_out")
             result = generate_all_interactive(output_dir=output_dir, data_dir=tmpdir)
         assert result == []
+
+    def test_plotly_js_written_to_output_dir(self) -> None:
+        """include_plotlyjs='directory' drops a local plotly*.js into output_dir."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            _write_synthetic_crb_csv(tmpdir)
+            output_dir = os.path.join(tmpdir, "interactive_out")
+            result = generate_all_interactive(output_dir=output_dir, data_dir=tmpdir)
+            assert result, "expected at least one HTML from the synthetic CRB csv"
+            js_files = [f for f in os.listdir(output_dir) if "plotly" in f and f.endswith(".js")]
+            assert js_files, f"no local plotly*.js bundle in {output_dir}: {os.listdir(output_dir)}"
+
+    def test_generated_html_is_offline_no_cdn(self) -> None:
+        """Each HTML references the local plotly script and contains no CDN URL."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            _write_synthetic_crb_csv(tmpdir)
+            output_dir = os.path.join(tmpdir, "interactive_out")
+            result = generate_all_interactive(output_dir=output_dir, data_dir=tmpdir)
+            assert result
+            for html_path in result:
+                with open(html_path) as fh:
+                    html_text = fh.read()
+                # Local reference present (relative plotly script), no CDN URL.
+                assert "plotly" in html_text
+                assert "cdn.plot.ly" not in html_text
+                assert "https://cdn" not in html_text
+                # No absolute http(s) URL pointing at a remote plotly bundle.
+                assert not re.search(r"https?://[^\"']*plotly[^\"']*\.js", html_text)
 
     def test_output_dir_created(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
