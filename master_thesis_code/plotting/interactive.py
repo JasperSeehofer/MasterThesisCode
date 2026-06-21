@@ -6,11 +6,19 @@ Provides browser-explorable versions of 4 key thesis figures:
 - Fisher matrix error ellipses
 - H0 convergence
 
-All factory functions return ``plotly.graph_objects.Figure`` instances.
-Call ``fig.write_html(path, include_plotlyjs="cdn")`` to export.
+All factory functions return ``plotly.graph_objects.Figure`` instances and apply
+the shared HORIZON template (:data:`master_thesis_code.plotting._plotly_theme.HORIZON_TEMPLATE`)
+so the web layer uses the SAME hex tokens and cividis colorscale as the static
+HORIZON figures (single source of truth: ``_colors``).
+
+Export uses ``include_plotlyjs="directory"`` (see
+:func:`generate_all_interactive`): Plotly writes a single ``plotly.min.js`` into
+the output directory once and every HTML references it relatively, so the whole
+``interactive/`` folder is self-contained, works offline, and is archival-robust.
+The rejected ``"cdn"`` strategy was online-only and fragile for archival.
 
 The top-level :func:`generate_all_interactive` convenience function loads
-data from a working directory and writes all 4 HTML files.
+data from a working directory and writes all interactive HTML files.
 """
 
 import json
@@ -31,13 +39,19 @@ if TYPE_CHECKING:
 from master_thesis_code.plotting._colors import (
     CYCLE,
     EDGE,
+    PLANCK,
     REFERENCE,
+    SH0ES,
     TRUTH,
     VARIANT_NO_MASS,
     VARIANT_WITH_MASS,
 )
 from master_thesis_code.plotting._data import PARAMETER_NAMES
 from master_thesis_code.plotting._labels import LABELS
+from master_thesis_code.plotting._plotly_theme import (
+    CIVIDIS_COLORSCALE as _CIVIDIS_COLORSCALE,
+)
+from master_thesis_code.plotting._plotly_theme import HORIZON_TEMPLATE
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -58,6 +72,26 @@ _DEFAULT_PAIRS: list[tuple[str, str]] = [
 # Planck 2018 and SH0ES reference h ranges (dimensionless h = H0/100)
 _PLANCK_H_RANGE: tuple[float, float] = (0.6736 - 0.0054, 0.6736 + 0.0054)
 _SHOES_H_RANGE: tuple[float, float] = (0.7304 - 0.0104, 0.7304 + 0.0104)
+
+
+def _hex_to_rgba(hex_color: str, alpha: float) -> str:
+    """Convert a ``#rrggbb`` hex color to a Plotly ``rgba(r,g,b,a)`` string.
+
+    Parameters
+    ----------
+    hex_color:
+        A ``#rrggbb`` color (e.g. a HORIZON token imported from ``_colors``).
+    alpha:
+        Opacity in ``[0, 1]``.
+
+    Returns
+    -------
+    str
+        ``"rgba(r,g,b,alpha)"``.
+    """
+    h = hex_color.lstrip("#")
+    r, g, b = int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)
+    return f"rgba({r},{g},{b},{alpha})"
 
 
 def _strip_latex(label: str) -> str:
@@ -181,10 +215,8 @@ def interactive_combined_posterior(
     trace_name = label or "Posterior"
     fig = go.Figure()
 
-    # Convert hex color to rgba string for fill
-    _hex = CYCLE[0].lstrip("#")
-    _r, _g, _b = int(_hex[0:2], 16), int(_hex[2:4], 16), int(_hex[4:6], 16)
-    _fill_color = f"rgba({_r},{_g},{_b},0.15)"
+    # HORIZON headline series color (navy). Fill = navy at low alpha.
+    _fill_color = _hex_to_rgba(VARIANT_NO_MASS, 0.15)
 
     # Main posterior trace
     fig.add_trace(
@@ -193,7 +225,7 @@ def interactive_combined_posterior(
             y=posterior.tolist(),
             mode="lines",
             name=trace_name,
-            line={"color": CYCLE[0], "width": 2},
+            line={"color": VARIANT_NO_MASS, "width": 2},
             fill="tozeroy",
             fillcolor=_fill_color,
             hovertemplate="h = %{x:.4f}<br>Density = %{y:.4f}<extra></extra>",
@@ -208,7 +240,7 @@ def interactive_combined_posterior(
             fig.add_vrect(
                 x0=lo,
                 x1=hi,
-                fillcolor=CYCLE[0],
+                fillcolor=VARIANT_NO_MASS,
                 opacity=0.15 if level == 0.95 else 0.25,
                 line_width=0,
                 annotation_text=label_ci,
@@ -219,11 +251,11 @@ def interactive_combined_posterior(
                 showlegend=True,
             )
 
-    # Reference bands
+    # Reference bands (reserved cosmology-band colors -- never a data series).
     if show_references:
         for (rlo, rhi), rname, rcolor in (
-            (_PLANCK_H_RANGE, "Planck 2018", REFERENCE),
-            (_SHOES_H_RANGE, "SH0ES", CYCLE[4]),
+            (_PLANCK_H_RANGE, "Planck 2018", PLANCK),
+            (_SHOES_H_RANGE, "SH0ES", SH0ES),
         ):
             fig.add_vrect(
                 x0=rlo,
@@ -248,6 +280,7 @@ def interactive_combined_posterior(
     )
 
     fig.update_layout(
+        template=HORIZON_TEMPLATE,
         title="Combined H\u2080 Posterior",
         xaxis_title=_strip_latex(LABELS["h"]),
         yaxis_title="Posterior density",
@@ -314,8 +347,10 @@ def interactive_sky_map(
             lon=lon.tolist(),
             mode="markers",
             marker={
+                # cividis colorscale from the HORIZON template's sequential ramp
+                # (built from _colors.CMAP) -- replaces the old default-Plotly ramp.
                 "color": snr.tolist(),
-                "colorscale": "Viridis",
+                "colorscale": _CIVIDIS_COLORSCALE,
                 "showscale": True,
                 "colorbar": {"title": "SNR"},
                 "size": 8,
@@ -340,6 +375,7 @@ def interactive_sky_map(
         lonaxis_gridwidth=0.5,
     )
     fig.update_layout(
+        template=HORIZON_TEMPLATE,
         title="EMRI Sky Localization Map",
         margin={"l": 0, "r": 0, "t": 40, "b": 0},
     )
@@ -445,7 +481,7 @@ def interactive_fisher_ellipses(
         fig.update_xaxes(title_text=x_label, row=1, col=col)
         fig.update_yaxes(title_text=y_label, row=1, col=col)
 
-    fig.update_layout(title="Fisher Matrix Error Ellipses")
+    fig.update_layout(template=HORIZON_TEMPLATE, title="Fisher Matrix Error Ellipses")
     return fig
 
 
@@ -578,7 +614,7 @@ def interactive_h0_convergence(
     fig.update_yaxes(title_text="Posterior density", row=1, col=1)
     fig.update_xaxes(title_text="Number of events", row=1, col=2)
     fig.update_yaxes(title_text=f"{int(level * 100)}% CI width", row=1, col=2)
-    fig.update_layout(title="H\u2080 Posterior Convergence")
+    fig.update_layout(template=HORIZON_TEMPLATE, title="H\u2080 Posterior Convergence")
     return fig
 
 
@@ -590,12 +626,6 @@ def interactive_h0_convergence(
 # Lazy import target — keeps the heavy bank module out of the import
 # graph for users that only want a basic interactive plot.
 _BANK_IMPORT = "master_thesis_code.plotting.convergence_analysis"
-
-
-def _hex_to_rgba(hex_color: str, alpha: float) -> str:
-    h = hex_color.lstrip("#")
-    r, g, b = int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)
-    return f"rgba({r},{g},{b},{alpha})"
 
 
 def interactive_m_z_improvement(
@@ -1063,6 +1093,7 @@ def interactive_m_z_improvement(
     fig.update_yaxes(title_text="Posterior (peak-norm.)", row=1, col=2)
 
     fig.update_layout(
+        template=HORIZON_TEMPLATE,
         title={
             "text": "M<sub>z</sub> improvement explorer — does adding the BH-mass channel tighten H<sub>0</sub>?",
             "x": 0.5,
@@ -1643,6 +1674,7 @@ def interactive_single_event_detail(
             }
         )
     fig.update_layout(
+        template=HORIZON_TEMPLATE,
         title=f"Single-event detail — event {event_ids[0]}",
         height=620,
         updatemenus=[
@@ -1688,6 +1720,7 @@ def interactive_closure_test_overlay(
         )
         fig.add_vline(x=h_true, line_dash="dot", line_width=1)
     fig.update_layout(
+        template=HORIZON_TEMPLATE,
         title="Closure test: pipeline recovers each injection truth",
         xaxis_title="h",
         yaxis_title="Posterior (peak-normalised)",
@@ -1774,6 +1807,7 @@ def interactive_catalog_completeness(
     fig.update_yaxes(title_text="Coverage fraction", range=[0, 1.05], row=1, col=2)
     med_red = float(host_counts["reduction_frac"].median())
     fig.update_layout(
+        template=HORIZON_TEMPLATE,
         title=(
             f"Catalog coverage and host-count reduction "
             f"(N={n_events}, median reduction = {med_red:.0%})"

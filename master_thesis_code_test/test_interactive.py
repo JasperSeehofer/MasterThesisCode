@@ -10,6 +10,14 @@ import pytest
 plotly = pytest.importorskip("plotly")
 import plotly.graph_objects as go  # noqa: E402
 
+from master_thesis_code.plotting._colors import (  # noqa: E402
+    VARIANT_NO_MASS,
+    VARIANT_WITH_MASS,
+)
+from master_thesis_code.plotting._plotly_theme import (  # noqa: E402
+    HORIZON_TEMPLATE,
+    horizon_plotly_template,
+)
 from master_thesis_code.plotting.interactive import (  # noqa: E402
     _strip_latex,
     generate_all_interactive,
@@ -57,6 +65,61 @@ def _make_param_values(seed: int = 0) -> npt.NDArray[np.float64]:
     vals[8] = abs(vals[8]) % (2 * np.pi)  # phiS
     result: npt.NDArray[np.float64] = vals.astype(np.float64)
     return result
+
+
+# ---------------------------------------------------------------------------
+# HORIZON Plotly template tests (VR-INT-01)
+# ---------------------------------------------------------------------------
+
+
+class TestHorizonPlotlyTemplate:
+    def test_colorway_navy_gold_first(self) -> None:
+        """colorway[0:2] are the HORIZON navy/gold tokens imported from _colors."""
+        tmpl = horizon_plotly_template()
+        assert tuple(tmpl.layout.colorway[:2]) == (VARIANT_NO_MASS, VARIANT_WITH_MASS)
+        assert (VARIANT_NO_MASS, VARIANT_WITH_MASS) == ("#1B2A4A", "#E8A317")
+
+    def test_sequential_colorscale_is_cividis_not_viridis(self) -> None:
+        """Sequential ramp derives from cividis (not Plotly default Viridis)."""
+        tmpl = horizon_plotly_template()
+        seq = tmpl.layout.colorscale.sequential
+        assert len(seq) > 0
+        # cividis endpoints: dark navy-blue at t=0, bright yellow at t=1.
+        first_t, first_rgb = seq[0]
+        last_t, last_rgb = seq[-1]
+        assert first_t == 0.0
+        assert last_t == 1.0
+        # cividis dark end ~ rgb(0,34,78); Viridis dark end ~ rgb(68,1,84).
+        assert first_rgb == "rgb(0,34,78)"
+        # cividis bright end ~ rgb(254,232,56); never a green-yellow Viridis end.
+        assert last_rgb == "rgb(254,232,56)"
+
+    def test_combined_posterior_carries_template_colorway(self) -> None:
+        """The factory applies the template (colorway present, not None)."""
+        h_values = _make_h_values()
+        posterior = _make_posterior(h_values)
+        fig = interactive_combined_posterior(h_values, posterior, true_h=0.73)
+        cw = fig.layout.template.layout.colorway
+        assert cw is not None
+        assert tuple(cw[:2]) == (VARIANT_NO_MASS, VARIANT_WITH_MASS)
+
+    def test_sky_map_carries_template_colorway(self) -> None:
+        """A second factory also carries the shared template colorway."""
+        rng = np.random.default_rng(7)
+        n = 30
+        theta_s = rng.uniform(0.0, np.pi, n).astype(np.float64)
+        phi_s = rng.uniform(0.0, 2 * np.pi, n).astype(np.float64)
+        snr = rng.uniform(20.0, 90.0, n).astype(np.float64)
+        fig = interactive_sky_map(theta_s, phi_s, snr)
+        cw = fig.layout.template.layout.colorway
+        assert cw is not None
+        assert tuple(cw[:2]) == (VARIANT_NO_MASS, VARIANT_WITH_MASS)
+
+    def test_module_singleton_matches_factory(self) -> None:
+        """HORIZON_TEMPLATE singleton carries the same colorway as a fresh build."""
+        assert tuple(HORIZON_TEMPLATE.layout.colorway[:2]) == tuple(
+            horizon_plotly_template().layout.colorway[:2]
+        )
 
 
 # ---------------------------------------------------------------------------
