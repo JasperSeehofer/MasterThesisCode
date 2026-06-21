@@ -8,7 +8,7 @@ import subprocess
 import warnings
 from collections.abc import Iterator
 from time import time
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 import numpy as np
 
@@ -1690,7 +1690,7 @@ def generate_figures(output_dir: str) -> None:
     )
 
 
-def generate_interactive_figures(data_dir: str) -> None:
+def generate_interactive_figures(data_dir: str, *, theme: Literal["talk", "web"] = "web") -> None:
     """Load saved simulation data and produce interactive Plotly HTML figures.
 
     Called by ``--generate_interactive <dir>``.  Writes HTML files to
@@ -1701,12 +1701,15 @@ def generate_interactive_figures(data_dir: str) -> None:
     data_dir:
         Working directory containing CRB CSVs and posterior JSON subdirectories.
         HTML output is written to ``<data_dir>/interactive/``.
+    theme:
+        Output target for the interactive web layer (default ``"web"``); passed
+        through to :func:`generate_all_interactive`.
     """
     from master_thesis_code.plotting.interactive import generate_all_interactive
 
     output_dir = os.path.join(data_dir, "interactive")
     _ROOT_LOGGER.info("Generating interactive figures to %s", output_dir)
-    written = generate_all_interactive(output_dir=output_dir, data_dir=data_dir)
+    written = generate_all_interactive(output_dir=output_dir, data_dir=data_dir, theme=theme)
     if written:
         _ROOT_LOGGER.info(
             "Interactive figure generation complete: %d file(s) written", len(written)

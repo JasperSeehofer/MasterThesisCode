@@ -17,9 +17,11 @@ from master_thesis_code.plotting._colors import (  # noqa: E402
 )
 from master_thesis_code.plotting._plotly_theme import (  # noqa: E402
     HORIZON_TEMPLATE,
+    WEB_FONT_SIZE,  # noqa: E402
     horizon_plotly_template,
 )
 from master_thesis_code.plotting.interactive import (  # noqa: E402
+    _STATIC_TWINS,
     _strip_latex,
     generate_all_interactive,
     interactive_combined_posterior,
@@ -516,3 +518,73 @@ class TestPerGroupTraces:
         bank = _make_synthetic_bank()
         fig = interactive_m_z_improvement(bank)
         assert isinstance(fig, go.Figure)
+
+
+# ---------------------------------------------------------------------------
+# Theme wiring + static-twin mapping tests (VR-INT-04)
+# ---------------------------------------------------------------------------
+
+
+class TestThemeAndStaticTwins:
+    def test_generate_applies_web_theme_font(self) -> None:
+        """The web theme (HORIZON web-scaled font) is in force on interactive output."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            _write_synthetic_crb_csv(tmpdir)
+            output_dir = os.path.join(tmpdir, "interactive_out")
+            # theme="web" must run without exception and emit at least one HTML.
+            result = generate_all_interactive(output_dir=output_dir, data_dir=tmpdir, theme="web")
+            assert result
+
+        # The HORIZON template carries the web-scaled font size (not paper default),
+        # which is what drives every interactive figure's typography.
+        from master_thesis_code.plotting.interactive import interactive_sky_map
+
+        rng = np.random.default_rng(3)
+        sky = interactive_sky_map(
+            rng.uniform(0.1, 3.0, 5).astype(np.float64),
+            rng.uniform(0.0, 6.0, 5).astype(np.float64),
+            rng.uniform(20.0, 80.0, 5).astype(np.float64),
+        )
+        assert sky.layout.template.layout.font.size == WEB_FONT_SIZE
+
+    def test_static_twins_cover_all_eight(self) -> None:
+        """_STATIC_TWINS maps exactly the 8 interactive factories."""
+        expected = {
+            "interactive_combined_posterior",
+            "interactive_sky_map",
+            "interactive_fisher_ellipses",
+            "interactive_h0_convergence",
+            "interactive_m_z_improvement",
+            "interactive_single_event_detail",
+            "interactive_closure_test_overlay",
+            "interactive_catalog_completeness",
+        }
+        assert set(_STATIC_TWINS) == expected
+
+    @pytest.mark.parametrize("interactive_name", sorted(_STATIC_TWINS))
+    def test_static_twin_importable_and_callable(self, interactive_name: str) -> None:
+        """Each interactive factory's static twin imports and is callable."""
+        import importlib
+
+        twin_spec = _STATIC_TWINS[interactive_name]
+        module_path, func_name = twin_spec.split(":")
+        module = importlib.import_module(module_path)
+        func = getattr(module, func_name)
+        assert callable(func)
+
+    @pytest.mark.parametrize("interactive_name", sorted(_STATIC_TWINS))
+    def test_interactive_factory_exists(self, interactive_name: str) -> None:
+        """Each interactive_* key in the mapping exists as a module function."""
+        import master_thesis_code.plotting.interactive as interactive_mod
+
+        func = getattr(interactive_mod, interactive_name, None)
+        assert callable(func), f"{interactive_name} missing from interactive.py"
+
+    def test_smoke_generate_no_exception(self) -> None:
+        """generate_all_interactive runs over synthetic data with no exception."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            _write_synthetic_crb_csv(tmpdir)
+            output_dir = os.path.join(tmpdir, "interactive_out")
+            result = generate_all_interactive(output_dir=output_dir, data_dir=tmpdir)
+            assert isinstance(result, list)
+            assert result  # at least the sky map

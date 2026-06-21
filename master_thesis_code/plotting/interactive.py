@@ -26,7 +26,7 @@ import logging
 import os
 import re
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal
 
 import numpy as np
 import numpy.typing as npt
@@ -54,6 +54,36 @@ from master_thesis_code.plotting._plotly_theme import (
 from master_thesis_code.plotting._plotly_theme import HORIZON_TEMPLATE
 
 _LOGGER = logging.getLogger(__name__)
+
+# Machine-checkable mapping: every interactive factory degrades to its static
+# PDF twin (VR-INT-04). Values are "module:function" strings so the twin can be
+# imported and asserted callable in tests; all 8 twins exist (none missing).
+_STATIC_TWINS: dict[str, str] = {
+    "interactive_combined_posterior": (
+        "master_thesis_code.plotting.bayesian_plots:plot_combined_posterior"
+    ),
+    "interactive_sky_map": (
+        "master_thesis_code.plotting.sky_plots:plot_sky_localization_mollweide"
+    ),
+    "interactive_fisher_ellipses": (
+        "master_thesis_code.plotting.fisher_plots:plot_fisher_ellipses"
+    ),
+    "interactive_h0_convergence": (
+        "master_thesis_code.plotting.convergence_plots:plot_h0_convergence"
+    ),
+    "interactive_m_z_improvement": (
+        "master_thesis_code.plotting.convergence_analysis:plot_m_z_improvement_panels"
+    ),
+    "interactive_single_event_detail": (
+        "master_thesis_code.plotting.single_event_detail:plot_single_event_detail"
+    ),
+    "interactive_closure_test_overlay": (
+        "master_thesis_code.plotting.paper_figures:plot_closure_test_overlay"
+    ),
+    "interactive_catalog_completeness": (
+        "master_thesis_code.plotting.catalog_plots:plot_event_catalog_coverage"
+    ),
+}
 
 # ---------------------------------------------------------------------------
 # Private helpers
@@ -1209,7 +1239,12 @@ def interactive_m_z_improvement(
 # ---------------------------------------------------------------------------
 
 
-def generate_all_interactive(output_dir: str, data_dir: str) -> list[str]:
+def generate_all_interactive(
+    output_dir: str,
+    data_dir: str,
+    *,
+    theme: Literal["talk", "web"] = "web",
+) -> list[str]:
     """Load data from *data_dir* and write all interactive HTML figures to *output_dir*.
 
     Up to 8 interactive HTML figures are written. Each is exported via
@@ -1229,6 +1264,13 @@ def generate_all_interactive(output_dir: str, data_dir: str) -> list[str]:
         Directory where HTML files (and the shared ``plotly.min.js``) are written.
     data_dir:
         Working directory containing CRB CSVs and posterior JSON subdirectories.
+    theme:
+        Output target for the web layer (default ``"web"``). The Plotly figures
+        always carry the web-scaled HORIZON template (see
+        :mod:`master_thesis_code.plotting._plotly_theme`); :func:`apply_style` is
+        also called once with this theme so any matplotlib static twins rendered
+        alongside use the same (1.8x) scale. ``apply_style`` is matplotlib-only,
+        so the Plotly typography comes from the template, not from this call.
 
     Returns
     -------
@@ -1239,6 +1281,12 @@ def generate_all_interactive(output_dir: str, data_dir: str) -> list[str]:
     from pathlib import Path
 
     import pandas as pd
+
+    from master_thesis_code.plotting._style import apply_style
+
+    # Wire the web/talk theme: matplotlib sizing for any static twins rendered
+    # alongside; the Plotly figures already carry the web-scaled HORIZON template.
+    apply_style(theme=theme)
 
     os.makedirs(output_dir, exist_ok=True)
 
