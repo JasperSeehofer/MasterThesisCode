@@ -3,6 +3,7 @@
 import numpy as np
 import numpy.typing as npt
 from matplotlib.axes import Axes
+from matplotlib.collections import PolyCollection
 from matplotlib.figure import Figure
 
 from master_thesis_code.plotting.bayesian_plots import (
@@ -49,6 +50,58 @@ def test_plot_combined_posterior_density_normalization(
     )
     assert isinstance(fig, Figure)
     assert isinstance(ax, Axes)
+
+
+def test_plot_combined_posterior_density_integrates_to_one() -> None:
+    """normalize='density' draws an area-normalized PDF (integrates to ~1)."""
+    h = np.linspace(0.55, 0.95, 200)
+    posterior = np.exp(-0.5 * ((h - 0.73) / 0.03) ** 2)
+    fig, ax = plot_combined_posterior(
+        h, posterior, true_h=0.73, normalize="density", show_references=False
+    )
+    # The first line drawn is the main posterior curve.
+    line = ax.get_lines()[0]
+    x = np.asarray(line.get_xdata(), dtype=np.float64)
+    y = np.asarray(line.get_ydata(), dtype=np.float64)
+    area = float(np.trapezoid(y, x))
+    assert abs(area - 1.0) < 1e-2
+    assert isinstance(fig, Figure)
+
+
+def test_plot_combined_posterior_hdi_bands_are_nested() -> None:
+    """show_credible shades two nested HDI regions (>=2 PolyCollections)."""
+    h = np.linspace(0.55, 0.95, 200)
+    posterior = np.exp(-0.5 * ((h - 0.73) / 0.03) ** 2)
+    fig, ax = plot_combined_posterior(
+        h, posterior, true_h=0.73, normalize="density", show_credible=True
+    )
+    polys = [c for c in ax.collections if isinstance(c, PolyCollection)]
+    assert len(polys) >= 2
+    assert isinstance(fig, Figure)
+
+
+def test_plot_combined_posterior_inline_map_annotation() -> None:
+    """annotate_map=True adds an inline MAP +/- HDI text annotation."""
+    h = np.linspace(0.55, 0.95, 200)
+    posterior = np.exp(-0.5 * ((h - 0.73) / 0.03) ** 2)
+    fig, ax = plot_combined_posterior(
+        h, posterior, true_h=0.73, normalize="density", annotate_map=True
+    )
+    texts = [t.get_text() for t in ax.texts]
+    assert any("MAP" in t for t in texts), f"no MAP annotation found in {texts}"
+    assert isinstance(fig, Figure)
+
+
+def test_plot_combined_posterior_default_normalize_is_peak() -> None:
+    """Default normalize stays 'peak' so multi-variant overlay callers are unchanged."""
+    h = np.linspace(0.55, 0.95, 200)
+    posterior = np.exp(-0.5 * ((h - 0.73) / 0.03) ** 2)
+    fig, ax = plot_combined_posterior(
+        h, posterior, true_h=0.73, show_references=False, annotate_map=False
+    )
+    y = np.asarray(ax.get_lines()[0].get_ydata(), dtype=np.float64)
+    assert abs(float(np.max(y)) - 1.0) < 1e-6
+    assert isinstance(fig, Figure)
 
 
 def test_plot_combined_posterior_references(

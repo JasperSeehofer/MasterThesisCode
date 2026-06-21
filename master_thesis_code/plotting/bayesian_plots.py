@@ -20,11 +20,17 @@ from master_thesis_code.plotting._colors import (
     CYCLE,
     EDGE,
     MEAN,
+    PLANCK,
     REFERENCE,
+    SH0ES,
     TRUTH,
     VARIANT_NO_MASS,
 )
-from master_thesis_code.plotting._helpers import _fig_from_ax, get_figure
+from master_thesis_code.plotting._helpers import (
+    _fig_from_ax,
+    compute_hdi_interval,
+    get_figure,
+)
 from master_thesis_code.plotting._labels import LABELS
 
 
@@ -68,10 +74,18 @@ def plot_combined_posterior(
     normalize: str = "peak",
     show_credible: bool = True,
     show_references: bool = True,
+    annotate_map: bool = True,
     color: str | None = None,
     ax: Axes | None = None,
 ) -> tuple[Figure, Axes]:
     """Plot a single combined Hubble constant posterior.
+
+    Headline single-posterior treatment (viz-redesign §1.3, §3.2): an
+    area-normalizable PDF with nested 68%/95% highest-density-interval (HDI)
+    shading and an inline ``MAP +x/-y`` annotation on the curve (the
+    "Dispatch" number-on-the-curve discipline). The HDI bounds come from the
+    shared :func:`compute_hdi_interval` helper (LIGO/Virgo minimal-credible
+    convention), replacing the older cumsum-index CI machinery.
 
     Parameters
     ----------
@@ -85,13 +99,19 @@ def plot_combined_posterior(
         Optional curve label for the legend.
     normalize:
         ``"peak"`` (default) normalizes so the maximum equals 1.
-        ``"density"`` normalizes so the integral equals 1.
+        ``"density"`` normalizes so the integral equals 1. The headline
+        area-normalized PDF is selected by passing ``"density"``; the default
+        stays ``"peak"`` so multi-variant overlay callers are unchanged.
     show_credible:
-        If ``True`` (default), shade 68% and 95% credible intervals.
+        If ``True`` (default), shade nested 68% and 95% HDI regions.
     show_references:
         If ``True`` (default), show Planck and SH0ES reference bands.
+    annotate_map:
+        If ``True`` (default), add an inline ``MAP = .. +.. /-..`` text
+        annotation near the peak. Suppress (``False``) for multi-variant
+        overlays where several MAP labels would collide.
     color:
-        Curve and CI shading color.  Defaults to ``VARIANT_NO_MASS``.
+        Curve and HDI shading color.  Defaults to ``VARIANT_NO_MASS``.
     ax:
         Optional pre-existing Axes to draw on.
     """
@@ -105,44 +125,23 @@ def plot_combined_posterior(
 
     normalized = _normalize_posterior(posterior, h_values, normalize)
 
-    # Main posterior curve
+    # Main posterior curve (plain line; no per-point markers)
     ax.plot(h_values, normalized, label=label, color=color)
 
-    # --- Credible intervals (D-01) ---
+    # --- Nested HDI bands via the shared HDI helper (one CI definition) ---
+    # 68% HDI is needed for both the bands and the inline MAP annotation.
+    lo68, hi68 = compute_hdi_interval(h_values, posterior, level=0.683)
     if show_credible:
-        cumsum = np.cumsum(normalized)
-        cumsum = cumsum / cumsum[-1]  # CDF
-        quantiles = [0.025, 0.16, 0.84, 0.975]
-        indices = [int(np.searchsorted(cumsum, q)) for q in quantiles]
-        # Clamp to valid range
-        indices = [min(i, len(h_values) - 1) for i in indices]
-        h_q = [h_values[i] for i in indices]
+        lo95, hi95 = compute_hdi_interval(h_values, posterior, level=0.954)
+        # 95% region (lighter), then nested 68% region (darker) on top.
+        if not (np.isnan(lo95) or np.isnan(hi95)):
+            mask_95 = ((h_values >= lo95) & (h_values <= hi95)).tolist()
+            ax.fill_between(h_values, 0, normalized, where=mask_95, alpha=0.15, color=color)
+        if not (np.isnan(lo68) or np.isnan(hi68)):
+            mask_68 = ((h_values >= lo68) & (h_values <= hi68)).tolist()
+            ax.fill_between(h_values, 0, normalized, where=mask_68, alpha=0.30, color=color)
 
-        # 95% region
-        mask_95 = (h_values >= h_q[0]) & (h_values <= h_q[3])
-        ax.fill_between(
-            h_values,
-            0,
-            normalized,
-            where=mask_95,
-            alpha=0.15,
-            color=color,
-        )
-        # 68% region
-        mask_68 = (h_values >= h_q[1]) & (h_values <= h_q[2])
-        ax.fill_between(
-            h_values,
-            0,
-            normalized,
-            where=mask_68,
-            alpha=0.3,
-            color=color,
-        )
-        # Thin boundary lines at interval edges
-        for h_edge in h_q:
-            ax.axvline(h_edge, color=color, linewidth=0.5, alpha=0.5)
-
-    # --- Reference bands (D-02) ---
+    # --- Reference bands (D-02) — reserved PLANCK/SH0ES band colors ---
     if show_references:
         # Planck: h = 0.674 +/- 0.005
         planck_h, planck_sigma = 0.674, 0.005
@@ -150,10 +149,10 @@ def plot_combined_posterior(
             planck_h - planck_sigma,
             planck_h + planck_sigma,
             alpha=0.15,
-            color=CYCLE[6],
+            color=PLANCK,
             zorder=0,
         )
-        ax.axvline(planck_h, color=CYCLE[6], linewidth=0.8, linestyle="--")
+        ax.axvline(planck_h, color=PLANCK, linewidth=0.8, linestyle="--")
         ax.text(
             planck_h,
             0.95,
@@ -162,7 +161,7 @@ def plot_combined_posterior(
             ha="center",
             va="top",
             fontsize=6,
-            color=CYCLE[6],
+            color=PLANCK,
         )
 
         # SH0ES: h = 0.73 +/- 0.01
@@ -171,10 +170,10 @@ def plot_combined_posterior(
             shoes_h - shoes_sigma,
             shoes_h + shoes_sigma,
             alpha=0.15,
-            color=CYCLE[0],
+            color=SH0ES,
             zorder=0,
         )
-        ax.axvline(shoes_h, color=CYCLE[0], linewidth=0.8, linestyle="--")
+        ax.axvline(shoes_h, color=SH0ES, linewidth=0.8, linestyle="--")
         ax.text(
             shoes_h,
             0.95,
@@ -183,7 +182,23 @@ def plot_combined_posterior(
             ha="center",
             va="top",
             fontsize=6,
-            color=CYCLE[0],
+            color=SH0ES,
+        )
+
+    # --- Inline MAP +/- 68% HDI annotation (Dispatch number-on-the-curve) ---
+    if annotate_map and not (np.isnan(lo68) or np.isnan(hi68)):
+        map_idx = int(np.argmax(normalized))
+        map_h = float(h_values[map_idx])
+        map_y = float(normalized[map_idx])
+        ax.annotate(
+            rf"MAP $= {map_h:.3f}^{{+{hi68 - map_h:.3f}}}_{{-{map_h - lo68:.3f}}}$",
+            xy=(map_h, map_y),
+            xytext=(0.0, 6.0),
+            textcoords="offset points",
+            ha="center",
+            va="bottom",
+            fontsize=7,
+            color=color,
         )
 
     # Truth line

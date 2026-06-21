@@ -145,6 +145,71 @@ class TestKDESmoothing:
         plt.close(fig)
 
 
+class TestHeadlinePosteriorNormalization:
+    """Area-normalized PDF + nested HDI + inline MAP for headline posteriors."""
+
+    def _write_legacy_posteriors(self, tmp_path: Path) -> None:
+        """Write legacy combined_posterior[_with_bh_mass].json fixtures."""
+        h_vals = np.linspace(0.60, 0.90, 31).tolist()
+        posterior = np.exp(-0.5 * ((np.array(h_vals) - 0.73) / 0.04) ** 2).tolist()
+        data = {"h_values": h_vals, "posterior": posterior, "map_h": 0.73}
+        (tmp_path / "combined_posterior.json").write_text(json.dumps(data))
+        (tmp_path / "combined_posterior_with_bh_mass.json").write_text(json.dumps(data))
+
+    def test_h0_comparison_is_area_normalized(self, tmp_path: Path) -> None:
+        """plot_h0_posterior_comparison draws area-normalized PDFs (integrate ~1)."""
+        from matplotlib.figure import Figure
+
+        from master_thesis_code.plotting.paper_figures import plot_h0_posterior_comparison
+
+        self._write_legacy_posteriors(tmp_path)
+        fig, ax = plot_h0_posterior_comparison(data_dir=tmp_path)
+        assert isinstance(fig, Figure)
+        # First two lines are the two variant curves.
+        lines = ax.get_lines()
+        x = np.asarray(lines[0].get_xdata(), dtype=np.float64)
+        y = np.asarray(lines[0].get_ydata(), dtype=np.float64)
+        area = float(np.trapezoid(y, x))
+        assert abs(area - 1.0) < 1e-2
+        plt.close(fig)
+
+    def test_h0_comparison_ylabel_not_peak_normalized(self, tmp_path: Path) -> None:
+        """The y-axis label no longer says 'peak-normalized' (it's a PDF now)."""
+        from master_thesis_code.plotting.paper_figures import plot_h0_posterior_comparison
+
+        self._write_legacy_posteriors(tmp_path)
+        fig, ax = plot_h0_posterior_comparison(data_dir=tmp_path)
+        assert "peak-normalized" not in ax.get_ylabel().lower()
+        plt.close(fig)
+
+    def test_h0_comparison_has_hdi_bands(self, tmp_path: Path) -> None:
+        """Nested HDI bands are shaded under each variant (>=2 fill collections)."""
+        from matplotlib.collections import PolyCollection
+
+        from master_thesis_code.plotting.paper_figures import plot_h0_posterior_comparison
+
+        self._write_legacy_posteriors(tmp_path)
+        fig, ax = plot_h0_posterior_comparison(data_dir=tmp_path)
+        polys = [c for c in ax.collections if isinstance(c, PolyCollection)]
+        assert len(polys) >= 2
+        plt.close(fig)
+
+    def test_h0_kde_is_area_normalized(self, tmp_path: Path) -> None:
+        """plot_h0_posterior_kde draws an area-normalized KDE curve (integrate ~1)."""
+        from master_thesis_code.plotting.paper_figures import plot_h0_posterior_kde
+
+        self._write_legacy_posteriors(tmp_path)
+        fig, ax = plot_h0_posterior_kde(data_dir=tmp_path)
+        # Find the KDE smooth line: the line with the most points (fine grid).
+        lines = ax.get_lines()
+        kde_line = max(lines, key=lambda ln: len(np.asarray(ln.get_xdata())))
+        x = np.asarray(kde_line.get_xdata(), dtype=np.float64)
+        y = np.asarray(kde_line.get_ydata(), dtype=np.float64)
+        area = float(np.trapezoid(y, x))
+        assert abs(area - 1.0) < 5e-2
+        plt.close(fig)
+
+
 class TestPosteriorConvergenceDualVariant:
     """Tests for plot_posterior_convergence showing both analysis variants."""
 

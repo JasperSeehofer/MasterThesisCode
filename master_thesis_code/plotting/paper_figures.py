@@ -33,7 +33,11 @@ from master_thesis_code.plotting._colors import (
     VARIANT_NO_MASS,
     VARIANT_WITH_MASS,
 )
-from master_thesis_code.plotting._helpers import compute_credible_interval, get_figure
+from master_thesis_code.plotting._helpers import (
+    compute_credible_interval,
+    compute_hdi_interval,
+    get_figure,
+)
 from master_thesis_code.plotting.convergence_analysis import (
     _load_per_event_no_mass,
     _load_per_event_with_mass_scalars,
@@ -86,6 +90,61 @@ def _kde_smooth_posterior(
     h_fine = np.linspace(float(h_values[0]), float(h_values[-1]), n_fine)
     kde_fine = kde(h_fine)
     return h_fine, kde_fine
+
+
+def _shade_nested_hdi(
+    ax: Axes,
+    h_values: npt.NDArray[np.float64],
+    curve: npt.NDArray[np.float64],
+    raw_posterior: npt.NDArray[np.float64],
+    color: str,
+) -> tuple[float, float]:
+    """Shade nested 68%/95% HDI regions under *curve* and return the 68% HDI.
+
+    The HDI bounds are computed on *raw_posterior* (the un-normalized density)
+    via the shared :func:`compute_hdi_interval` helper, then the area under the
+    plotted *curve* between those bounds is filled (graded alpha 0.30 / 0.15,
+    single variant hue).
+
+    Returns ``(lo68, hi68)`` so the caller can place an inline MAP annotation;
+    ``(nan, nan)`` when the posterior is degenerate.
+    """
+    lo95, hi95 = compute_hdi_interval(h_values, raw_posterior, level=0.954)
+    lo68, hi68 = compute_hdi_interval(h_values, raw_posterior, level=0.683)
+    if not (np.isnan(lo95) or np.isnan(hi95)):
+        mask_95 = ((h_values >= lo95) & (h_values <= hi95)).tolist()
+        ax.fill_between(h_values, 0, curve, where=mask_95, alpha=0.15, color=color, zorder=1)
+    if not (np.isnan(lo68) or np.isnan(hi68)):
+        mask_68 = ((h_values >= lo68) & (h_values <= hi68)).tolist()
+        ax.fill_between(h_values, 0, curve, where=mask_68, alpha=0.30, color=color, zorder=1)
+    return lo68, hi68
+
+
+def _annotate_inline_map(
+    ax: Axes,
+    h_values: npt.NDArray[np.float64],
+    curve: npt.NDArray[np.float64],
+    lo68: float,
+    hi68: float,
+    color: str,
+) -> None:
+    """Place an inline ``MAP = .. +.. /-..`` annotation near the curve peak."""
+    if np.isnan(lo68) or np.isnan(hi68):
+        return
+    idx = int(np.argmax(curve))
+    map_h = float(h_values[idx])
+    map_y = float(curve[idx])
+    ax.annotate(
+        rf"MAP $= {map_h:.3f}^{{+{hi68 - map_h:.3f}}}_{{-{map_h - lo68:.3f}}}$",
+        xy=(map_h, map_y),
+        xytext=(0.0, 6.0),
+        textcoords="offset points",
+        ha="center",
+        va="bottom",
+        fontsize=7,
+        color=color,
+        zorder=5,
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -195,51 +254,35 @@ def plot_h0_posterior_comparison(
     post_no = np.array(p_no["posterior"])
     post_with = np.array(p_with["posterior"])
 
-    # Peak-normalize
-    post_no_norm = post_no / np.max(post_no)
-    post_with_norm = post_with / np.max(post_with)
+    # Area-normalize to honest PDFs (integrate to 1). Redundant encoding:
+    # navy SOLID (without M_z) vs gold DASHED (with M_z) — color + linestyle.
+    area_no = float(np.trapezoid(post_no, h_no))
+    area_with = float(np.trapezoid(post_with, h_with))
+    pdf_no = post_no / area_no if area_no > 0 else post_no
+    pdf_with = post_with / area_with if area_with > 0 else post_with
 
     fig, ax = get_figure(preset="single")
 
-    # Plot with markers to honestly show grid resolution
-    ax.plot(
-        h_no,
-        post_no_norm,
-        "o-",
-        color=VARIANT_NO_MASS,
-        label=r"Without $M_z$",
-        markersize=4,
-        zorder=3,
-    )
-    ax.plot(
-        h_with,
-        post_with_norm,
-        "s--",
-        color=VARIANT_WITH_MASS,
-        label=r"With $M_z$",
-        markersize=4,
-        zorder=3,
-    )
+    # Plain lines (no per-point markers); linestyle distinguishes the variants.
+    ax.plot(h_no, pdf_no, "-", color=VARIANT_NO_MASS, label=r"Without $M_z$", zorder=3)
+    ax.plot(h_with, pdf_with, "--", color=VARIANT_WITH_MASS, label=r"With $M_z$", zorder=3)
 
-    # 68% CI shading via shared CDF utility
-    for h_arr, post_arr, color in [
-        (h_no, post_no, VARIANT_NO_MASS),
-        (h_with, post_with, VARIANT_WITH_MASS),
-    ]:
-        lo, hi = compute_credible_interval(h_arr, post_arr)
-        if not (np.isnan(lo) or np.isnan(hi)):
-            ax.axvspan(lo, hi, alpha=0.12, color=color, zorder=1)
+    # Nested 68/95% HDI shading under each variant curve.
+    lo68_no, hi68_no = _shade_nested_hdi(ax, h_no, pdf_no, post_no, VARIANT_NO_MASS)
+    _shade_nested_hdi(ax, h_with, pdf_with, post_with, VARIANT_WITH_MASS)
+
+    # Inline MAP +/- 68% HDI annotation for the headline (no-mass) variant.
+    _annotate_inline_map(ax, h_no, pdf_no, lo68_no, hi68_no, VARIANT_NO_MASS)
 
     # Truth line
     ax.axvline(0.73, color=TRUTH, linestyle=":", linewidth=1.2, label="Injected", zorder=2)
 
     ax.set_xlabel(r"$h$")
-    ax.set_ylabel("Posterior (peak-normalized)")
+    ax.set_ylabel(r"$p(h \mid \mathrm{data})$")
     ax.set_xlim(0.59, 0.87)
-    ax.set_ylim(-0.05, 1.15)
     ax.legend(loc="upper right")
 
-    fig.tight_layout()
+    # constrained_layout is on (mplstyle); do NOT also call tight_layout (§1.8).
     return fig, ax
 
 
@@ -787,38 +830,19 @@ def plot_h0_posterior_kde(
             discrete_map_with,
         )
 
-    # Peak-normalize for display
-    post_no_norm = post_no / np.max(post_no) if np.max(post_no) > 0 else post_no
-    post_with_norm = post_with / np.max(post_with) if np.max(post_with) > 0 else post_with
-    kde_no_norm = kde_no / np.max(kde_no) if np.max(kde_no) > 0 else kde_no
-    kde_with_norm = kde_with / np.max(kde_with) if np.max(kde_with) > 0 else kde_with
+    # Area-normalize the KDE curves to honest PDFs (integrate to 1).
+    area_kde_no = float(np.trapezoid(kde_no, h_fine_no))
+    area_kde_with = float(np.trapezoid(kde_with, h_fine_with))
+    pdf_kde_no = kde_no / area_kde_no if area_kde_no > 0 else kde_no
+    pdf_kde_with = kde_with / area_kde_with if area_kde_with > 0 else kde_with
 
     fig, ax = get_figure(preset="single")
 
-    # Discrete markers (subdued alpha)
-    ax.plot(
-        h_no,
-        post_no_norm,
-        "o",
-        color=VARIANT_NO_MASS,
-        alpha=0.4,
-        markersize=3,
-        zorder=2,
-    )
-    ax.plot(
-        h_with,
-        post_with_norm,
-        "s",
-        color=VARIANT_WITH_MASS,
-        alpha=0.4,
-        markersize=3,
-        zorder=2,
-    )
-
-    # KDE smooth lines (solid, full alpha)
+    # KDE smooth lines only (drop the per-point discrete markers).
+    # Redundant encoding: navy SOLID vs gold DASHED.
     ax.plot(
         h_fine_no,
-        kde_no_norm,
+        pdf_kde_no,
         "-",
         color=VARIANT_NO_MASS,
         linewidth=1.4,
@@ -827,7 +851,7 @@ def plot_h0_posterior_kde(
     )
     ax.plot(
         h_fine_with,
-        kde_with_norm,
+        pdf_kde_with,
         "--",
         color=VARIANT_WITH_MASS,
         linewidth=1.4,
@@ -835,25 +859,22 @@ def plot_h0_posterior_kde(
         zorder=3,
     )
 
-    # 68% CI shading on KDE-smoothed values
-    for h_fine, kde_fine, color in [
-        (h_fine_no, kde_no, VARIANT_NO_MASS),
-        (h_fine_with, kde_with, VARIANT_WITH_MASS),
-    ]:
-        lo, hi = compute_credible_interval(h_fine, kde_fine)
-        if not (np.isnan(lo) or np.isnan(hi)):
-            ax.axvspan(lo, hi, alpha=0.12, color=color, zorder=1)
+    # Nested 68/95% HDI shading from the KDE curves.
+    lo68_no, hi68_no = _shade_nested_hdi(ax, h_fine_no, pdf_kde_no, kde_no, VARIANT_NO_MASS)
+    _shade_nested_hdi(ax, h_fine_with, pdf_kde_with, kde_with, VARIANT_WITH_MASS)
+
+    # Inline MAP +/- 68% HDI annotation for the headline (no-mass) variant.
+    _annotate_inline_map(ax, h_fine_no, pdf_kde_no, lo68_no, hi68_no, VARIANT_NO_MASS)
 
     # Truth line
     ax.axvline(0.73, color=TRUTH, linestyle=":", linewidth=1.2, label="Injected", zorder=4)
 
     ax.set_xlabel(r"$h$")
-    ax.set_ylabel("Posterior (peak-normalized)")
+    ax.set_ylabel(r"$p(h \mid \mathrm{data})$")
     ax.set_xlim(0.59, 0.87)
-    ax.set_ylim(-0.05, 1.15)
     ax.legend(loc="upper right")
 
-    fig.tight_layout()
+    # constrained_layout is on (mplstyle); do NOT also call tight_layout (§1.8).
     return fig, ax
 
 
