@@ -722,21 +722,33 @@ def plot_m_z_improvement_panels(
     if len(sizes) > 1 and not np.isnan(w_no_med[0]) and w_no_med[0] > 0:
         n0 = sizes[0]
         ref_line = w_no_med[0] * np.sqrt(n0 / sizes)
+        # Scaling law: draw the reference unlabeled (no legend entry) and annotate
+        # it DIRECTLY at the end of the curve so the law reads at the line itself
+        # (VR-ANNO-01). Wording unified with convergence_plots: $\propto N^{-1/2}$.
         ax_w.plot(
             sizes,
             ref_line,
             ":",
             color=REFERENCE,
             linewidth=1.0,
-            label=r"$\propto N^{-1/2}$",
+            label="_nolegend_",
             zorder=1,
+        )
+        ax_w.annotate(
+            r"$\propto N^{-1/2}$",
+            xy=(sizes[-1], ref_line[-1]),
+            xytext=(4, 0),
+            textcoords="offset points",
+            color=REFERENCE,
+            fontsize=7,
+            va="center",
         )
     ax_w.set_xscale("log")
     ax_w.set_yscale("log")
     ax_w.set_ylabel(r"68% HDI width of $h$")
     ax_w.set_xlabel(r"Number of events $N_\mathrm{det}$")
     ax_w.legend(loc="upper right", fontsize=7)
-    ax_w.set_title("Posterior tightening", fontsize=9)
+    ax_w.set_title(r"Posterior $h$ uncertainty shrinks as $N^{-1/2}$", fontsize=9)
 
     # ---- Top-middle: canonical combined posterior (Phase A fix) ----
     # Prefer the canonical raw Σ log L_i posterior over the legacy single-

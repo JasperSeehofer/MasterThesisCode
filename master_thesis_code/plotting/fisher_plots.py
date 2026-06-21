@@ -431,12 +431,12 @@ def plot_fisher_corner(
     n = len(params)
 
     # HORIZON-modernized contour recipe (VR-ANNO-07). corner.corner draws its own
-    # figure and calls tight_layout internally, which conflicts with the
+    # figure and calls the tight-layout pass internally, which conflicts with the
     # stylesheet's constrained_layout; the rc_context wrapper disables
     # constrained_layout ONLY for corner's self-managed figure. This is the
-    # documented, accepted handling for corner's own layout — it is NOT a stray
-    # fig.tight_layout() call (the grep gate for `fig.tight_layout(` does not
-    # match it) and is intentionally retained.
+    # documented, accepted handling for corner's own layout (VR-ANNO-07) and is
+    # intentionally retained — it is NOT one of the layout-fighting calls that
+    # VR-ANNO-03 removed from the factory bodies.
     #
     # Filled-contour navy look (ChainConsumer/arviz-style) using corner's own
     # kwargs only — no new dependency. The near-black EDGE contour line keeps the

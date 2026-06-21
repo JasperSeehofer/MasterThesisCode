@@ -244,6 +244,8 @@ def plot_h0_posterior_comparison(
     )
 
     ax.legend(loc="upper right")
+    # Active declarative title stating the finding (VR-ANNO-01).
+    ax.set_title(r"Adding the redshifted BH mass tightens the $H_0$ posterior", fontsize="medium")
 
     # constrained_layout is on (mplstyle); do NOT also call tight_layout (§1.8).
     return fig, ax
@@ -564,7 +566,10 @@ def plot_posterior_convergence(
         zorder=3,
     )
 
-    # N^{-1/2} reference line anchored to the largest N median of no-mass variant
+    # N^{-1/2} reference line anchored to the largest N median of no-mass variant.
+    # Drawn unlabeled + annotated directly on the curve so the scaling law reads at
+    # the line (VR-ANNO-01); wording unified with the convergence factories
+    # ($\propto N^{-1/2}$).
     if len(used_sizes) > 0 and not np.isnan(y_med[-1]):
         n_ref = x[-1]
         y_ref = y_med[-1]
@@ -576,8 +581,17 @@ def plot_posterior_convergence(
             "--",
             color=REFERENCE,
             linewidth=1.0,
-            label=r"$\propto N_\mathrm{det}^{-1/2}$",
+            label="_nolegend_",
             zorder=2,
+        )
+        ax.annotate(
+            r"$\propto N^{-1/2}$",
+            xy=(x_line[-1], y_line[-1]),
+            xytext=(4, 0),
+            textcoords="offset points",
+            color=REFERENCE,
+            fontsize=7,
+            va="center",
         )
 
     ax.set_xscale("log")
@@ -586,6 +600,8 @@ def plot_posterior_convergence(
     ax.set_ylabel(r"$1\sigma$ width of $h$ posterior")
     ax.minorticks_on()
     ax.legend(loc="upper right")
+    # Active declarative title stating the scaling-law finding (VR-ANNO-01).
+    ax.set_title(r"$H_0$ uncertainty shrinks as $N^{-1/2}$ with the event count", fontsize="medium")
 
     return fig, ax
 
@@ -838,6 +854,8 @@ def plot_h0_posterior_kde(
     )
 
     ax.legend(loc="upper right")
+    # Active declarative title stating the finding (VR-ANNO-01).
+    ax.set_title(r"Adding the redshifted BH mass tightens the $H_0$ posterior", fontsize="medium")
 
     # constrained_layout is on (mplstyle); do NOT also call tight_layout (§1.8).
     return fig, ax

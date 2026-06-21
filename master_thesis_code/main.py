@@ -959,6 +959,13 @@ def generate_figures(output_dir: str) -> None:
                     show_truth=False,
                     ax=ax,
                 )
+        # Active declarative title stating the finding (VR-ANNO-01). Named Planck/
+        # SH0ES reference rules are already labeled at the line by the canonical
+        # plot_combined_posterior factory (bayesian_plots).
+        ax.set_title(
+            r"Adding the redshifted BH mass tightens the $H_0$ posterior",
+            fontsize="medium",
+        )
         return fig, ax
 
     manifest.append(("fig01_h0_posterior_combined", _gen_h0_posterior_combined))

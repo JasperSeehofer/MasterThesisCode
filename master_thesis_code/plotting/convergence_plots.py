@@ -17,7 +17,13 @@ from astropy.stats import binom_conf_interval
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 
-from master_thesis_code.plotting._colors import CYCLE, TRUTH, VARIANT_NO_MASS, VARIANT_WITH_MASS
+from master_thesis_code.plotting._colors import (
+    CYCLE,
+    REFERENCE,
+    TRUTH,
+    VARIANT_NO_MASS,
+    VARIANT_WITH_MASS,
+)
 from master_thesis_code.plotting._helpers import _fig_from_ax, compute_credible_interval, get_figure
 from master_thesis_code.plotting._labels import LABELS
 
@@ -253,16 +259,28 @@ def plot_h0_convergence(
             )
             ax_ci.fill_between(b_sizes, w_with_lo, w_with_hi, color=color_alt, alpha=0.2, zorder=2)
 
-    # 1/sqrt(N) reference curve scaled to match first point of primary
+    # N^{-1/2} reference curve scaled to match first point of primary. Drawn
+    # unlabeled and annotated DIRECTLY at the end of the curve so the scaling law
+    # reads at the line (VR-ANNO-01); wording unified with convergence_analysis
+    # ($\propto N^{-1/2}$).
     if len(sizes) > 1 and ci_widths[0] > 0:
         ref = ci_widths[0] * np.sqrt(sizes_arr[0]) / np.sqrt(sizes_arr)
         ax_ci.plot(
             sizes_arr,
             ref,
             ":",
-            color=CYCLE[5],
+            color=REFERENCE,
             alpha=0.6,
-            label=r"$1/\sqrt{N}$ ref",
+            label="_nolegend_",
+        )
+        ax_ci.annotate(
+            r"$\propto N^{-1/2}$",
+            xy=(sizes_arr[-1], ref[-1]),
+            xytext=(4, 0),
+            textcoords="offset points",
+            color=REFERENCE,
+            fontsize=7,
+            va="center",
         )
 
     # Left panel styling
