@@ -92,6 +92,26 @@ def test_plot_combined_posterior_inline_map_annotation() -> None:
     assert isinstance(fig, Figure)
 
 
+def test_plot_combined_posterior_show_truth_toggle() -> None:
+    """show_truth gates the injected-h truth line + its legend entry (overlay dedup)."""
+    h = np.linspace(0.55, 0.95, 200)
+    posterior = np.exp(-0.5 * ((h - 0.73) / 0.03) ** 2)
+
+    _fig_on, ax_on = plot_combined_posterior(
+        h, posterior, true_h=0.73, show_truth=True, show_references=False
+    )
+    labels_on = [str(line.get_label()) for line in ax_on.get_lines()]
+    assert any("True" in lbl for lbl in labels_on), f"truth line missing: {labels_on}"
+
+    _fig_off, ax_off = plot_combined_posterior(
+        h, posterior, true_h=0.73, show_truth=False, show_references=False
+    )
+    labels_off = [str(line.get_label()) for line in ax_off.get_lines()]
+    assert not any("True" in lbl for lbl in labels_off), (
+        f"truth line should be suppressed: {labels_off}"
+    )
+
+
 def test_plot_combined_posterior_default_normalize_is_peak() -> None:
     """Default normalize stays 'peak' so multi-variant overlay callers are unchanged."""
     h = np.linspace(0.55, 0.95, 200)

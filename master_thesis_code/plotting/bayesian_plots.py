@@ -75,6 +75,7 @@ def plot_combined_posterior(
     show_credible: bool = True,
     show_references: bool = True,
     annotate_map: bool = True,
+    show_truth: bool = True,
     color: str | None = None,
     ax: Axes | None = None,
 ) -> tuple[Figure, Axes]:
@@ -110,6 +111,10 @@ def plot_combined_posterior(
         If ``True`` (default), add an inline ``MAP = .. +.. /-..`` text
         annotation near the peak. Suppress (``False``) for multi-variant
         overlays where several MAP labels would collide.
+    show_truth:
+        If ``True`` (default), draw the dashed injected-``h`` truth line and
+        its legend entry. Suppress (``False``) on secondary overlay curves so
+        a multi-variant comparison shows a single truth line.
     color:
         Curve and HDI shading color.  Defaults to ``VARIANT_NO_MASS``.
     ax:
@@ -201,8 +206,10 @@ def plot_combined_posterior(
             color=color,
         )
 
-    # Truth line
-    ax.axvline(true_h, color=TRUTH, linestyle="dashed", label=f"True $h = {true_h}$")
+    # Truth line (suppressed on secondary overlay curves to avoid duplicate
+    # legend entries / overlapping reference lines in multi-variant comparisons)
+    if show_truth:
+        ax.axvline(true_h, color=TRUTH, linestyle="dashed", label=f"True $h = {true_h}$")
 
     ax.set_xlabel(LABELS["h"])
     ax.set_ylabel(r"$p(h|\mathrm{data})$")

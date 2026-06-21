@@ -920,12 +920,18 @@ def generate_figures(output_dir: str) -> None:
             )
         except FileNotFoundError:
             return None
+        # fig01 is a two-variant overlay -> peak-normalized, no shaded HDI bands
+        # (viz-redesign §1.3: never shade a band under a many-variant overlay).
+        # The headline variant (Without M_z) carries the single MAP annotation,
+        # truth line, and Planck/SH0ES references; the secondary variant
+        # suppresses all of these so the legend/annotations are not duplicated.
         fig, ax = plot_combined_posterior(
             h_vals,
             combined,
             0.73,
             label=r"Without $M_z$",
             color=VARIANT_NO_MASS,
+            show_credible=False,
         )
         if post_data_with is not None:
             try:
@@ -941,7 +947,10 @@ def generate_figures(output_dir: str) -> None:
                     0.73,
                     label=r"With $M_z$",
                     color=VARIANT_WITH_MASS,
+                    show_credible=False,
                     show_references=False,
+                    annotate_map=False,
+                    show_truth=False,
                     ax=ax,
                 )
         return fig, ax
