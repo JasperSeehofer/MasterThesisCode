@@ -103,7 +103,9 @@ Plans:
   3. fig05 and fig20 render via `pcolormesh` with true (log where appropriate) axes — no fake-index `imshow`, and fig20's Mpc/Gpc tick labels are physically correct.
   4. Bias/residual maps use a diverging map (`cmcrameri vik`) with `TwoSlopeNorm(vcenter=0.73)`; sequential maps stay sequential.
   5. Semantic contour overlays render where they aid reading: `P_det = 0.5` horizon contour on pdet maps, 68/95% credible contours on 2D posteriors; check gate green.
-**Plans**: TBD
+**Plans**: 1 plan
+Plans:
+- [ ] 02-01-PLAN.md — cividis default + NO_DATA/DIVERGING constants + diverging_norm/make_heatmap_norm/credible-contour helpers; explicit norm + set_bad on every heatmap; fig20 pcolormesh true-log axes + Mpc/Gpc fix + 0.5/0.9 horizon contour; fig05 SNR norm fix; clean call-site sweep + green gate
 **UI hint**: yes
 
 ### Phase 3: New Static Figures — Selection & Population
@@ -177,7 +179,7 @@ Plans:
 | Phase | Routing | Plans Complete | Status | Completed |
 |-------|---------|----------------|--------|-----------|
 | 1. Posterior Factory Consolidation | GSD | 1/1 | Complete ✅ | 2026-06-21 |
-| 2. Colormap & Heatmap Modernization | GSD | 0/TBD | Not started | - |
+| 2. Colormap & Heatmap Modernization | GSD | 0/1 | Not started | - |
 | 3. New Static Figures — Selection & Population | GSD | 0/TBD | Not started | - |
 | 4. New Figures (Data-Gated) — H₀ Forest & PP-Plot | GSD | 0/TBD | Not started | - |
 | 5. Annotation & Decluttering Rollout | GSD | 0/TBD | Not started | - |
