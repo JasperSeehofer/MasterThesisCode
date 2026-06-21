@@ -4,13 +4,20 @@ Extracted from ``Model1CrossCheck`` and ``DetectionProbability`` in
 ``cosmological_model.py``.
 """
 
+import matplotlib.pyplot as plt
 import numpy as np
 import numpy.typing as npt
 from matplotlib.axes import Axes
+from matplotlib.colors import Normalize
 from matplotlib.figure import Figure
 
-from master_thesis_code.plotting._colors import CMAP, CYCLE, EDGE
-from master_thesis_code.plotting._helpers import _fig_from_ax, get_figure, make_colorbar
+from master_thesis_code.plotting._colors import CMAP, CYCLE, EDGE, NO_DATA
+from master_thesis_code.plotting._helpers import (
+    _fig_from_ax,
+    get_figure,
+    make_colorbar,
+    make_heatmap_norm,
+)
 from master_thesis_code.plotting._labels import LABELS
 
 
@@ -56,14 +63,20 @@ def _plot_detection_heatmap(
     if contour_levels is None:
         contour_levels = [0.5, 0.9]
 
+    # P_det is bounded [0, 1] and read linearly (the 0.5 horizon is the key
+    # feature), so keep an EXPLICIT Normalize(0, 1) rather than autoscale --
+    # LogNorm would distort the 0.5 reading. NaN bins (empty regions) are masked
+    # so they render as the set_bad no-data gray, not the lowest color.
+    cmap = plt.get_cmap(CMAP).copy()
+    cmap.set_bad(NO_DATA)
+    prob_masked = np.ma.masked_invalid(prob)
     cs = ax.contourf(
         x,
         y,
-        prob,
+        prob_masked,
         levels=np.linspace(0, 1, 51),
-        cmap=CMAP,
-        vmin=0,
-        vmax=1,
+        cmap=cmap,
+        norm=Normalize(vmin=0.0, vmax=1.0),
     )
 
     # Contour lines at specified probability thresholds
@@ -133,7 +146,19 @@ def plot_emri_distribution(
     else:
         fig = _fig_from_ax(ax)
 
-    cs = ax.contourf(redshifts, masses, distribution, cmap=CMAP, levels=30)
+    # Robust percentile-clip norm so a few high-density cells do not flatten the
+    # bulk of the distribution; NaN/empty regions render as the no-data gray.
+    cmap = plt.get_cmap(CMAP).copy()
+    cmap.set_bad(NO_DATA)
+    dist_masked = np.ma.masked_invalid(distribution)
+    cs = ax.contourf(
+        redshifts,
+        masses,
+        dist_masked,
+        cmap=cmap,
+        levels=30,
+        norm=make_heatmap_norm(np.asarray(distribution, dtype=np.float64), mode="robust"),
+    )
     fig.colorbar(cs, ax=ax)
     ax.set_yscale("log")
     ax.set_xlabel(LABELS["z"])
@@ -175,7 +200,19 @@ def plot_emri_sampling(
     else:
         fig = _fig_from_ax(ax)
 
-    h = ax.hist2d(redshifts, masses, bins=[redshift_bins, mass_bins], cmap=CMAP)
+    # Counts span orders of magnitude -> LogNorm over the positive counts only
+    # (make_heatmap_norm masks zeros/NaN so LogNorm never sees <= 0). Empty
+    # (zero-count) bins fall out of the log range and render as the no-data gray.
+    cmap = plt.get_cmap(CMAP).copy()
+    cmap.set_bad(NO_DATA)
+    counts, _, _ = np.histogram2d(redshifts, masses, bins=[redshift_bins, mass_bins])
+    h = ax.hist2d(
+        redshifts,
+        masses,
+        bins=[redshift_bins, mass_bins],
+        cmap=cmap,
+        norm=make_heatmap_norm(counts.astype(np.float64), mode="log"),
+    )
     fig.colorbar(h[3], ax=ax)
     ax.set_yscale("log")
     ax.set_xlabel(LABELS["z"])

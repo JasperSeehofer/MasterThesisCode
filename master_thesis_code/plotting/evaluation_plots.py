@@ -21,12 +21,18 @@ from master_thesis_code.plotting._colors import (
     CYCLE,
     EDGE,
     MEAN,
+    NO_DATA,
     REFERENCE,
     TRUTH,
     VARIANT_WITH_MASS,
 )
 from master_thesis_code.plotting._data import label_key
-from master_thesis_code.plotting._helpers import _fig_from_ax, compute_hdi_interval, get_figure
+from master_thesis_code.plotting._helpers import (
+    _fig_from_ax,
+    compute_hdi_interval,
+    get_figure,
+    make_heatmap_norm,
+)
 from master_thesis_code.plotting._labels import LABELS
 
 _DEFAULT_RECOVERY_PARAMS: list[str] = ["M", "mu", "luminosity_distance", "a", "e0", "qS"]
@@ -44,7 +50,19 @@ def plot_mean_cramer_rao_bounds(
     else:
         fig = _fig_from_ax(ax)
 
-    im = ax.imshow(covariance_matrix, cmap=CMAP, aspect="auto")
+    # Covariance entries span orders of magnitude -> robust percentile-clip norm
+    # so a single large diagonal element does not flatten the off-diagonals; NaN
+    # entries render as the no-data gray. (The diverging correlation-matrix
+    # reframe is a Phase-5 concern; here the sequential covariance map only needs
+    # an explicit norm + set_bad.)
+    cmap = plt.get_cmap(CMAP).copy()
+    cmap.set_bad(NO_DATA)
+    im = ax.imshow(
+        covariance_matrix,
+        cmap=cmap,
+        aspect="auto",
+        norm=make_heatmap_norm(np.asarray(covariance_matrix, dtype=np.float64), mode="robust"),
+    )
     tick_labels = [LABELS.get(label_key(p), p) for p in parameter_names]
     ax.set_xticks(range(len(parameter_names)))
     ax.set_yticks(range(len(parameter_names)))
@@ -85,7 +103,18 @@ def plot_sky_localization_3d(
     """3D scatter plot of sky-localization uncertainty."""
     fig = plt.figure(figsize=(10, 8))
     ax = fig.add_subplot(111, projection="3d")
-    sc = ax.scatter(theta, phi, sky_error, c=sky_error, cmap=CMAP, alpha=0.6)
+    # Explicit robust norm for color consistency with the other sequential maps
+    # (the 3D->2D replacement is Phase 5 / VR-ANNO-05; here only the norm is made
+    # explicit so the color scale is not a silent autoscale).
+    sc = ax.scatter(
+        theta,
+        phi,
+        sky_error,
+        c=sky_error,
+        cmap=CMAP,
+        alpha=0.6,
+        norm=make_heatmap_norm(np.asarray(sky_error, dtype=np.float64), mode="robust"),
+    )
     ax.set_xlabel("theta")
     ax.set_ylabel("phi")
     ax.set_zlabel("Sky localization error")
@@ -107,7 +136,18 @@ def plot_detection_contour(
         fig = _fig_from_ax(ax)
 
     mass_bins = np.geomspace(masses.min(), masses.max(), bins)
-    h = ax.hist2d(redshifts, masses, bins=[bins, mass_bins], cmap=CMAP)  # type: ignore[arg-type]
+    # Counts span orders of magnitude -> LogNorm over positive counts only
+    # (zeros/NaN masked by make_heatmap_norm); empty bins render as no-data gray.
+    cmap = plt.get_cmap(CMAP).copy()
+    cmap.set_bad(NO_DATA)
+    counts, _, _ = np.histogram2d(redshifts, masses, bins=[bins, mass_bins])
+    h = ax.hist2d(
+        redshifts,
+        masses,
+        bins=[bins, mass_bins],  # type: ignore[arg-type]
+        cmap=cmap,
+        norm=make_heatmap_norm(counts.astype(np.float64), mode="log"),
+    )
     fig.colorbar(h[3], ax=ax)
     ax.set_yscale("log")
     ax.set_xlabel(LABELS["z"])
