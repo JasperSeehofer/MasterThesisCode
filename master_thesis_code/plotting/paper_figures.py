@@ -25,6 +25,7 @@ from matplotlib.figure import Figure
 
 from master_thesis_code.constants import SNR_THRESHOLD
 from master_thesis_code.plotting._colors import (
+    CMAP,
     CYCLE,
     EDGE,
     MEAN,
@@ -672,7 +673,9 @@ def plot_snr_distribution(
                     d_l[detected],
                     snr_det,
                     c=z[detected],
-                    cmap="viridis",
+                    # Route the sequential redshift coloring through the house
+                    # cmap (D-CMAP-05) -- drops the orphan "viridis".
+                    cmap=CMAP,
                     s=8,
                     alpha=0.6,
                 )

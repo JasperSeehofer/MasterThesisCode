@@ -1,13 +1,16 @@
 """Tests for the centralized color palette and label constants."""
 
+import matplotlib.pyplot as plt
 from matplotlib.colors import LinearSegmentedColormap
 
 from master_thesis_code.plotting._colors import (
     ACCENT,
     CMAP,
     CYCLE,
+    DIVERGING_CMAP,
     EDGE,
     MEAN,
+    NO_DATA,
     PLANCK,
     REFERENCE,
     SEQUENTIAL_BLUES,
@@ -91,8 +94,24 @@ def test_cycle_entries_are_hex_strings() -> None:
         )
 
 
-def test_cmap_is_viridis() -> None:
-    assert CMAP == "viridis"
+def test_cmap_is_cividis() -> None:
+    """HORIZON v2.3: the house sequential cmap migrated viridis -> cividis."""
+    assert CMAP == "cividis"
+
+
+def test_no_data_is_hex() -> None:
+    """NO_DATA is the gray rendered by every heatmap's set_bad for empty bins."""
+    assert isinstance(NO_DATA, str)
+    assert NO_DATA == "#D9D9D9"
+    assert NO_DATA.startswith("#") and len(NO_DATA) == 7
+
+
+def test_diverging_cmap_is_registered_and_distinct() -> None:
+    """DIVERGING_CMAP names a registered matplotlib cmap and differs from CMAP."""
+    assert isinstance(DIVERGING_CMAP, str) and DIVERGING_CMAP
+    # plt.get_cmap raises for an unregistered name; success == registered.
+    assert plt.get_cmap(DIVERGING_CMAP) is not None
+    assert DIVERGING_CMAP != CMAP
 
 
 def test_accent_is_hex() -> None:

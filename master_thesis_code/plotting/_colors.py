@@ -18,17 +18,23 @@ Reserved band colors:
     bands (early- vs late-universe H0 tension context). They must NEVER be used
     for a data series -- a data color and a context-band color must never collide.
 
-Scope note:
-    CMAP stays "viridis" in this quick slice. The cividis migration (recoloring
-    every heatmap) is a separate, larger-scope item deferred to the full
-    viz-redesign milestone (proposal §6a).
+Scope note (HORIZON v2.3, Phase 2 -- Colormap & Heatmap Modernization):
+    CMAP is now "cividis" (proposal §6a). cividis is perceptually uniform AND
+    deuteranopia-safe (a redesign of viridis by Nuñez, Anderton & Renslow 2018,
+    doi:10.1371/journal.pone.0199239), so the sequential heatmaps read with full
+    dynamic range and survive color-blind / grayscale reproduction. The viridis
+    migration is no longer deferred -- it lands here, package-wide. Every
+    sequential heatmap routes through CMAP; every heatmap calls
+    ``cmap.set_bad(NO_DATA)`` so empty / NaN bins read as no-data, not blank.
 
 Exported names (consumed by ~13 plotting modules -- all kept exported):
     TRUTH, MEAN, EDGE, REFERENCE, ACCENT     -- semantic role colors
     VARIANT_NO_MASS, VARIANT_WITH_MASS       -- headline comparison series
     PLANCK, SH0ES                            -- reserved cosmology-band colors
     CYCLE                                     -- ordered 7-color Okabe-Ito cycle
-    CMAP                                      -- default colormap name (str)
+    CMAP                                      -- default sequential colormap name (str)
+    DIVERGING_CMAP                            -- diverging colormap name for bias maps (str)
+    NO_DATA                                   -- gray for set_bad / no-data bins (str)
     SEQUENTIAL_BLUES                          -- truncated Blues cmap object
 
 Cycle source: Wong (2011) Nature Methods, doi:10.1038/nmeth.1618 (Okabe-Ito;
@@ -73,6 +79,22 @@ SEQUENTIAL_BLUES: LinearSegmentedColormap = LinearSegmentedColormap.from_list(
     "Blues_trunc", _blues_base(np.linspace(0.1, 0.85, 256))
 )
 
-# --- Default colormap name (kept as viridis; cividis migration deferred §6a) ---
-# Use SEQUENTIAL_BLUES object directly for 2D/heatmap plots in future phases.
-CMAP: str = "viridis"
+# --- Default sequential colormap (cividis: perceptually uniform + CB-safe) ---
+# cividis is the deuteranopia-optimized redesign of viridis
+# (Nuñez, Anderton & Renslow 2018, doi:10.1371/journal.pone.0199239). Every
+# sequential heatmap in the package routes through this name.
+CMAP: str = "cividis"
+
+# --- No-data color for set_bad (every heatmap masks NaN/empty bins to this) ---
+# HORIZON palette token (proposal §3.2). Heatmaps do
+# ``cmap = plt.get_cmap(CMAP).copy(); cmap.set_bad(NO_DATA)`` so empty bins read
+# as neutral gray instead of vanishing into the lowest colormap color.
+NO_DATA: str = "#D9D9D9"
+
+# --- Diverging colormap for bias / residual maps centered on a reference ---
+# Built-in matplotlib diverging cmap -- NO new runtime dependency. Pair with
+# _helpers.diverging_norm(vcenter=0.73) so the H0 truth sits at the white
+# midpoint. UPGRADE PATH: cmcrameri's "vik" is the preferred perceptually
+# uniform diverging map; when a real bias map is built, ``uv add cmcrameri``
+# and swap DIVERGING_CMAP = "cmc.vik". Do NOT add cmcrameri until then.
+DIVERGING_CMAP: str = "RdBu_r"

@@ -16,7 +16,7 @@ from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 from matplotlib.patches import Ellipse
 
-from master_thesis_code.plotting._colors import CYCLE, EDGE, REFERENCE, TRUTH
+from master_thesis_code.plotting._colors import CMAP, CYCLE, EDGE, REFERENCE, TRUTH
 from master_thesis_code.plotting._data import (
     EXTRINSIC,
     INTRINSIC,
@@ -601,7 +601,10 @@ def plot_fisher_diagnostics(
             flagged_M,
             c=np.log10(np.maximum(cond_max, 1.0)),
             s=60,
-            cmap="plasma",
+            # Sequential conditioning-number scatter -> route through the house
+            # cmap (D-CMAP-04); drops the orphan "plasma" so every sequential
+            # map shares cividis (presentation-only recolor, no value change).
+            cmap=CMAP,
             edgecolors=EDGE,
             linewidths=0.8,
             label="Flagged events",

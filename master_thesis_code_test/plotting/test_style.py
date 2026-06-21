@@ -183,7 +183,7 @@ def test_rcparams_snapshot() -> None:
         "legend.framealpha": 0.8,
         "legend.edgecolor": "0.8",
         "agg.path.chunksize": 10000,
-        "image.cmap": "viridis",
+        "image.cmap": "cividis",
         "figure.constrained_layout.use": True,
     }
 

@@ -6,10 +6,16 @@ import matplotlib.pyplot as plt
 import numpy as np
 import numpy.typing as npt
 from matplotlib.axes import Axes
+from matplotlib.colors import LogNorm, Normalize, TwoSlopeNorm
 from matplotlib.figure import Figure
 
 from master_thesis_code.plotting import apply_style, get_figure
-from master_thesis_code.plotting._helpers import _fig_from_ax, compute_credible_interval
+from master_thesis_code.plotting._helpers import (
+    _fig_from_ax,
+    compute_credible_interval,
+    diverging_norm,
+    make_heatmap_norm,
+)
 
 
 def test_get_figure_preset_single_width() -> None:
@@ -131,3 +137,66 @@ class TestComputeCredibleInterval:
         assert abs(ci_width - expected) < 0.005, (
             f"Expected 95% CI width ~{expected:.4f}, got {ci_width:.4f}"
         )
+
+
+class TestDivergingNorm:
+    """Unit tests for diverging_norm (TwoSlopeNorm wrapper)."""
+
+    def test_returns_twoslopenorm_with_vcenter(self) -> None:
+        norm = diverging_norm(vcenter=0.73)
+        assert isinstance(norm, TwoSlopeNorm)
+        assert norm.vcenter == 0.73
+
+    def test_vcenter_stays_inside_explicit_bounds(self) -> None:
+        norm = diverging_norm(vcenter=0.73, vmin=0.6, vmax=0.9)
+        assert norm.vmin is not None and norm.vmax is not None
+        assert norm.vmin < norm.vcenter < norm.vmax
+
+    def test_out_of_range_vcenter_is_nudged_to_midpoint(self) -> None:
+        """vcenter below vmin would crash TwoSlopeNorm; diverging_norm nudges it."""
+        norm = diverging_norm(vcenter=0.73, vmin=0.8, vmax=0.9)
+        assert norm.vmin is not None and norm.vmax is not None
+        assert norm.vmin < norm.vcenter < norm.vmax
+
+    def test_composes_into_midpoint_mapping(self) -> None:
+        """A residual array spanning 0.6..0.86 maps vcenter 0.73 to the colormap midpoint."""
+        norm = diverging_norm(vcenter=0.73, vmin=0.6, vmax=0.86)
+        assert abs(float(norm(0.73)) - 0.5) < 1e-9
+
+
+class TestMakeHeatmapNorm:
+    """Unit tests for make_heatmap_norm (robust / log norm builder)."""
+
+    def test_robust_uses_finite_percentiles(self) -> None:
+        data = np.array([[1.0, 2.0, np.nan], [3.0, 4.0, 5.0]])
+        norm = make_heatmap_norm(data, mode="robust", low=0.0, high=100.0)
+        assert isinstance(norm, Normalize)
+        assert norm.vmin is not None and norm.vmax is not None
+        assert math.isclose(norm.vmin, 1.0, rel_tol=1e-9)
+        assert math.isclose(norm.vmax, 5.0, rel_tol=1e-9)
+
+    def test_robust_ignores_nan(self) -> None:
+        """NaN must not poison the percentile clip."""
+        data = np.array([10.0, 20.0, 30.0, np.nan])
+        norm = make_heatmap_norm(data, mode="robust", low=0.0, high=100.0)
+        assert norm.vmin is not None and norm.vmax is not None
+        assert np.isfinite(norm.vmin) and np.isfinite(norm.vmax)
+
+    def test_log_over_positive_values_only(self) -> None:
+        norm = make_heatmap_norm(np.array([1.0, 10.0, 100.0]), mode="log")
+        assert isinstance(norm, LogNorm)
+        assert norm.vmin is not None and norm.vmin > 0
+
+    def test_log_does_not_crash_on_zeros_negatives_nan(self) -> None:
+        """Zeros / negatives / NaN must be masked before LogNorm (no ValueError)."""
+        data = np.array([0.0, -5.0, np.nan, 2.0, 8.0])
+        norm = make_heatmap_norm(data, mode="log")
+        assert isinstance(norm, LogNorm)
+        assert norm.vmin is not None and norm.vmin > 0
+        assert norm.vmax is not None and norm.vmax >= norm.vmin
+
+    def test_log_all_nonpositive_falls_back_to_safe_range(self) -> None:
+        data = np.array([0.0, -1.0, -2.0])
+        norm = make_heatmap_norm(data, mode="log")
+        assert isinstance(norm, LogNorm)
+        assert norm.vmin is not None and norm.vmin > 0
