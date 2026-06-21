@@ -149,7 +149,9 @@ Plans:
   3. Convention-violating factories (`fisher_quality_diagnostic`, hardcoded-figsize factories) return `(fig, ax)` and use `get_figure` presets; the two 3D-scatter anti-patterns are replaced with 2D marginal/corner/Mollweide views.
   4. All axis/legend text routes through the single `LABELS` provider, the Mpc/Gpc unit inconsistency is reconciled, and the corner plot is modernized with filled/gradient contours (ChainConsumer/arviz-style) replacing the thin-orange/green-crosshair look.
   5. Check gate green; regenerated paper PDFs stay vector and ≥7pt.
-**Plans**: TBD
+**Plans**: 1 plan
+Plans:
+- [ ] 05-01-PLAN.md — Strip layout-fighting tight_layout + drop smooth-curve markers; restore (fig,ax) contracts + 3D→2D; route axis text through LABELS + Mpc/Gpc reconcile; modernize corner to filled HORIZON contours; apply active-title/named-rule/N^-1/2 annotation layer
 **UI hint**: yes
 
 ### Phase 6: Interactive Plotly Overhaul
