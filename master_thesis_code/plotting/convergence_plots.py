@@ -123,6 +123,10 @@ def plot_h0_convergence(
     tuple[Figure, NDArray[object]]
         Figure and array of two Axes ``[ax_posterior, ax_ci_width]``.
     """
+    # Local import to avoid a module-level circular dependency
+    # (convergence_plots <-> convergence_analysis <-> paper_figures <-> bayesian_plots).
+    from master_thesis_code.plotting.bayesian_plots import plot_combined_posterior
+
     if color is None:
         color = VARIANT_NO_MASS
     if color_alt is None:
@@ -160,10 +164,25 @@ def plot_h0_convergence(
         log_combined -= log_combined.max()
         combined = np.exp(log_combined)
         h_left = h_values
-    norm = float(np.trapezoid(combined, h_left))
-    if norm > 0:
-        combined /= norm
-    ax_post.plot(h_left, combined, color=color, label=label)
+    # Route the left-panel posterior through the canonical factory (the
+    # factory area-normalizes once via normalize="density"). The panel keeps
+    # its own truth axvline + legend below, so factory truth/legend/refs are off.
+    plot_combined_posterior(
+        h_left,
+        combined,
+        true_h if true_h is not None else 0.73,
+        label=label,
+        normalize="density",
+        color=color,
+        linestyle="-",
+        show_credible=False,
+        show_references=False,
+        annotate_map=False,
+        show_truth=False,
+        ylabel="Posterior density",
+        legend=False,
+        ax=ax_post,
+    )
 
     # Right panel: CI width vs N
     sizes_arr = np.asarray(sizes, dtype=np.float64)
@@ -196,10 +215,22 @@ def plot_h0_convergence(
             log_combined_alt -= log_combined_alt.max()
             combined_alt = np.exp(log_combined_alt)
             h_alt_left = h_alt
-        norm_alt = float(np.trapezoid(combined_alt, h_alt_left))
-        if norm_alt > 0:
-            combined_alt /= norm_alt
-        ax_post.plot(h_alt_left, combined_alt, color=color_alt, linestyle="--", label=label_alt)
+        plot_combined_posterior(
+            h_alt_left,
+            combined_alt,
+            true_h if true_h is not None else 0.73,
+            label=label_alt,
+            normalize="density",
+            color=color_alt,
+            linestyle="--",
+            show_credible=False,
+            show_references=False,
+            annotate_map=False,
+            show_truth=False,
+            ylabel="Posterior density",
+            legend=False,
+            ax=ax_post,
+        )
 
         sizes_alt_arr = np.asarray(sizes_alt, dtype=np.float64)
         ci_alt_arr = np.asarray(ci_widths_alt, dtype=np.float64)

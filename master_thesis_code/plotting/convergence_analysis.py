@@ -746,13 +746,50 @@ def plot_m_z_improvement_panels(
     # paper_h0_posterior, and fig08 left panel.
     posterior_title = "Combined posterior"
     if canonical_combined_no_mass is not None and canonical_combined_with_mass is not None:
+        # Local import to avoid a module-level circular dependency
+        # (convergence_analysis <-> paper_figures <-> bayesian_plots).
+        from master_thesis_code.plotting.bayesian_plots import plot_combined_posterior
+
         h_no, p_no = canonical_combined_no_mass
         h_w, p_w = canonical_combined_with_mass
-        # Peak-normalise both for visual comparison.
-        p_no_n = p_no / p_no.max() if p_no.max() > 0 else p_no
-        p_w_n = p_w / p_w.max() if p_w.max() > 0 else p_w
-        ax_p.plot(h_no, p_no_n, "-", color=VARIANT_NO_MASS, linewidth=1.4, label=r"Without $M_z$")
-        ax_p.plot(h_w, p_w_n, "--", color=VARIANT_WITH_MASS, linewidth=1.4, label=r"With $M_z$")
+        # Route both variants through the canonical factory (peak-norm); the
+        # panel keeps its own single "Injected" axvline, title, and small-font
+        # legend, so the factory's truth/legend/refs are all suppressed.
+        plot_combined_posterior(
+            h_no,
+            p_no,
+            bank.h_true,
+            label=r"Without $M_z$",
+            normalize="peak",
+            color=VARIANT_NO_MASS,
+            linestyle="-",
+            linewidth=1.4,
+            show_credible=False,
+            show_references=False,
+            annotate_map=False,
+            show_truth=False,
+            xlim=(0.59, 0.87),
+            ylim=(-0.05, 1.15),
+            ylabel="Posterior (peak-norm.)",
+            legend=False,
+            ax=ax_p,
+        )
+        plot_combined_posterior(
+            h_w,
+            p_w,
+            bank.h_true,
+            label=r"With $M_z$",
+            normalize="peak",
+            color=VARIANT_WITH_MASS,
+            linestyle="--",
+            linewidth=1.4,
+            show_credible=False,
+            show_references=False,
+            annotate_map=False,
+            show_truth=False,
+            legend=False,
+            ax=ax_p,
+        )
         posterior_title = "Canonical combined posterior (all N)"
     elif bank.representative_posteriors_no_mass and bank.representative_posteriors_with_mass:
         last = -1
