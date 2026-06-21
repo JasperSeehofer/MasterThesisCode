@@ -72,8 +72,8 @@ complete type annotations, and passes the per-commit check gate (ruff + mypy + p
 - [x] **Phase 3: New Static Figures — Selection & Population** [GSD] — Detection-horizon explainer + "where the constraints come from" population view (no data gate) ✅ 2026-06-21 (13d200b..30bce20)
 - [x] **Phase 4: New Figures (Data-Gated) — H₀ Forest & PP-Plot** [GSD] — Scaffold the forest/tension + bilby-style PP-plot factories on placeholder/synthetic data; flag final numbers as data-gated ✅ 2026-06-21 (e5793ed..acad9cd) [DATA-GATES OPEN]
 - [x] **Phase 5: Annotation & Decluttering Rollout** [GSD] — Active titles + direct labels + named rules + scaling-law labels; strip `tight_layout`; restore factory contracts; 3D→2D; unify `LABELS`; Mpc/Gpc; modern corner plot ✅ 2026-06-21 (43b559a..8d5ab0d)
-- [ ] **Phase 6: Interactive Plotly Overhaul** [GSD] — One shared `go.layout.Template`; self-contained `include_plotlyjs` strategy; per-group traces; talk/web theme + static PDF twin parity
-- [ ] **Phase 7: Interactive Stretch — SIREN ATLAS & Event→Host Explorable** [GSD] [STRETCH/DEFERRED] — Observable Framework two-renderer shell + hero event→host→posterior explorable
+- [x] **Phase 6: Interactive Plotly Overhaul** [GSD] — One shared `go.layout.Template`; self-contained `include_plotlyjs` strategy; per-group traces; talk/web theme + static PDF twin parity ✅ 2026-06-21 (837bfe6..0a4153d)
+- [~] **Phase 7: Interactive Stretch — SIREN ATLAS & Event→Host Explorable** [GSD] [STRETCH/DEFERRED — formally deferred 2026-06-21 per user scope 4→6; follow-on milestone] — Observable Framework two-renderer shell + hero event→host→posterior explorable
 
 ## Phase Details
 

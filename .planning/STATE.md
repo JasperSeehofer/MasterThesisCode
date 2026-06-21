@@ -7,10 +7,10 @@ last_updated: "2026-06-21T18:30:00.000Z"
 last_activity: 2026-06-21
 progress:
   total_phases: 7
-  completed_phases: 5
-  total_plans: 5
-  completed_plans: 5
-  percent: 71
+  completed_phases: 6
+  total_plans: 6
+  completed_plans: 6
+  percent: 86
 ---
 
 # Project State
@@ -24,11 +24,22 @@ See: .planning/PROJECT.md (updated 2026-04-21)
 
 ## Current Position
 
-Phase: 6 (Interactive Plotly Overhaul) — ready to plan
+Phase: MILESTONE SCOPE COMPLETE (Phases 1–6 shipped; Phase 7 DEFERRED stretch)
 Plan: —
-Status: Phase 5 COMPLETE (annotation/declutter sweep + corner modernization, 5 commits 43b559a..8d5ab0d)
-Progress: [####################..........] 5/7 phases (foundation VR-F1..F4 shipped pre-roadmap)
-Last activity: 2026-06-21 — Phase 5 shipped: tight_layout grep-gate ZERO; 2 3D scatters → 2D (Mollweide + marginal pair-panels); corner modernized (filled HORIZON contours, no new dep); LABELS unified + Mpc/Gpc reconciled (d_L_gpc key); active declarative titles + on-curve N^-1/2 labels; gate green (655 passed). Taste flags (active-title wordings, corner style) in 05 SUMMARY for user review.
+Status: Phase 6 COMPLETE (interactive Plotly overhaul, 4 commits 837bfe6..0a4153d). v2.3 planned scope done.
+Progress: [########################......] 6/7 phases (Phase 7 = deferred stretch; foundation VR-F1..F4 shipped pre-roadmap)
+Last activity: 2026-06-21 — Phase 6 shipped: shared HORIZON go.layout.Template (_plotly_theme.py, single-source hex) on all 8 Plotly factories; include_plotlyjs='directory' self-contained offline HTML; per-group trace toggling (m_z_improvement, single_event_detail); web theme + _STATIC_TWINS map; gate green (687 passed). MILESTONE v2.3 planned scope (P1–P6) COMPLETE.
+
+## v2.3 Milestone — Done / Open
+
+**DONE (branch viz/horizon-quick-wins, ~40 commits, all gates green, 687 tests):** foundation + P1 consolidation + P2 colormaps + P3 new static figs + P4 forest/PP-plot (data-gated) + P5 annotation/declutter/corner + P6 interactive.
+
+**OPEN:**
+- **Phase 7 DEFERRED** (stretch): VR-INT-05 Observable/SIREN ATLAS two-renderer + VR-NEW-05 event→host explorable. Formally deferred per user scope (4→6); revisit as a follow-on.
+- **DATA-GATES** (auto-close on trusted production posterior + real injection-recovery ranks): fig23 forest this-work number (THIS_WORK_H0/load_this_work_h0), fig24 PP-plot real ranks (load_pp_ranks), fig21/fig22 final manifest render (need aligned CRB+posteriors). Tied to seed500 cluster run + SSH re-auth (Thread B).
+- **TASTE flags for user review** (in phase SUMMARYs): fig21/fig22 panel layouts + color_by scalar (§5.3/§5.4); active-title wordings (P5); corner style + ± title-glyph render in vector PDF; two-variant band-fill style on paper comparison figs.
+- **Branch unpushed**; no PR yet.
+- **/wiki-debrief** pending: multiple reusable lessons flagged across phases.
 
 **v2.3 phase order (all GSD, never /physics-change):**
 1. Posterior Factory Consolidation — VR-CONS-01/02
