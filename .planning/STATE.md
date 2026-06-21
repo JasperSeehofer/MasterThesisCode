@@ -185,6 +185,7 @@ Next command: Plan fix phase (VERIFY-03 SC-3 angle audit + D(h) in --combine dia
 | 2026-04-07 | Evaluation pipeline performance | de86052..a0de491 (7 commits) | Pool spawn 12 min→1.7 min, total 7:16 per h-value. forkserver+preload, numpy arrays, SNR filter, cpu_il partition. |
 | 2026-04-07 | Add interactive Plotly figures to GitHub Pages | 8b47b5f..33e1c86 (2 commits) | 4 Plotly HTML figures (posterior, sky map, Fisher ellipses, convergence), --generate_interactive CLI flag, CI Pages deployment, landing page. |
 | 2026-04-09 | Add with-BH-mass variant to plot_posterior_convergence | 1af4487 | Both variants shown on convergence plot; outdated delta-function assumption removed. |
+| 2026-06-21 | HORIZON viz quick-wins slice (260621-npe) | d12539a, 28a23e4, b95cd1f, 1255107 | Figure redesign Tasks 1–3 of chosen HORIZON+Dispatch direction: _colors.py v2 (kill two-blues → navy/gold/vermillion + PLANCK/SH0ES bands), apply_style(theme=paper/talk/web) with byte-identical paper default, area-normalized PDFs + nested 68/95% HDI + inline MAP in headline posteriors, + fig01 overlay polish. Task 4 (consolidate quadruplicate posterior paths) deferred to full milestone. Gate green (589 passed). Proposal: docs/VIZ_REDESIGN_PROPOSAL.md. |
 
 **Planned Phase:** 35 (Coordinate Bug Characterization) — 3 plans — 2026-04-21T21:29:40.875Z
 | Phase 36 P03 | 230 | 4 tasks | 4 files |
