@@ -345,3 +345,174 @@ class TestGenerateAllInteractive:
         assert isinstance(result, list)
         for path in result:
             assert isinstance(path, str)
+
+
+# ---------------------------------------------------------------------------
+# Per-group trace toggling tests (VR-INT-03)
+# ---------------------------------------------------------------------------
+
+
+def _write_single_event_fixture(data_dir: str, event_ids: list[int]) -> None:
+    """Write synthetic posteriors/ + posteriors_with_bh_mass/ JSON for events.
+
+    Each event gets a couple of candidate hosts in galaxy_likelihoods (2D
+    channel) and a scalar per-event likelihood in the 1D channel, on a small
+    h-grid, so interactive_single_event_detail can build real traces.
+    """
+    import json
+
+    h_grid = [0.70, 0.73, 0.76]
+    wm_dir = os.path.join(data_dir, "posteriors_with_bh_mass")
+    no_dir = os.path.join(data_dir, "posteriors")
+    os.makedirs(wm_dir, exist_ok=True)
+    os.makedirs(no_dir, exist_ok=True)
+    for hi, h in enumerate(h_grid):
+        # galaxy_likelihoods: event_key -> [[gid, [num_no, den_no, num_w, den_w]], ...]
+        gal = {
+            str(eid): [
+                [eid * 10 + 1, [1.0 + hi, 2.0, 0.5 + hi, 1.0]],
+                [eid * 10 + 2, [0.5, 2.0, 0.2, 1.0]],
+            ]
+            for eid in event_ids
+        }
+        wm_payload: dict[str, object] = {"h": h, "galaxy_likelihoods": gal}
+        for eid in event_ids:
+            wm_payload[str(eid)] = [float(1.0 + 0.1 * hi + 0.01 * eid)]
+        with open(os.path.join(wm_dir, f"h_{str(h).replace('.', '_')}.json"), "w") as fh:
+            json.dump(wm_payload, fh)
+        no_payload: dict[str, object] = {"h": h}
+        for eid in event_ids:
+            no_payload[str(eid)] = [float(1.0 + 0.05 * hi + 0.01 * eid)]
+        with open(os.path.join(no_dir, f"h_{str(h).replace('.', '_')}.json"), "w") as fh:
+            json.dump(no_payload, fh)
+
+
+def _make_synthetic_bank(n_sizes: int = 4) -> object:
+    """Build a minimal ImprovementBank for interactive_m_z_improvement."""
+    from master_thesis_code.plotting.convergence_analysis import ImprovementBank
+
+    sizes = [1, 5, 10, 25][:n_sizes]
+    h_grid = np.linspace(0.6, 0.85, 40, dtype=np.float64)
+
+    def _triplet() -> dict[str, list[float]]:
+        return {
+            "median": [float(1.0 / (i + 1)) for i in range(len(sizes))],
+            "p16": [float(0.8 / (i + 1)) for i in range(len(sizes))],
+            "p84": [float(1.2 / (i + 1)) for i in range(len(sizes))],
+        }
+
+    metric_keys = ["hdi68_width", "rel_precision", "kl_from_uniform", "bias_pct"]
+    metrics = {k: _triplet() for k in metric_keys}
+    rep = [np.exp(-0.5 * ((h_grid - 0.73) / 0.02) ** 2) for _ in sizes]
+    return ImprovementBank(
+        h_grid=h_grid,
+        h_true=0.73,
+        sizes=sizes,
+        n_bootstrap=4,
+        seed=0,
+        metrics_no_mass={k: dict(v) for k, v in metrics.items()},
+        metrics_with_mass={k: dict(v) for k, v in metrics.items()},
+        fractional_improvement=_triplet(),
+        effective_event_gain=_triplet(),
+        jsd_bits=_triplet(),
+        representative_posteriors_no_mass=list(rep),
+        representative_posteriors_with_mass=list(rep),
+        n_events_no_mass=max(sizes),
+        n_events_with_mass=max(sizes),
+    )
+
+
+class TestPerGroupTraces:
+    def test_single_event_traces_carry_event_legendgroup(self) -> None:
+        from pathlib import Path
+
+        from master_thesis_code.plotting.interactive import interactive_single_event_detail
+
+        event_ids = [3, 7, 11]
+        with tempfile.TemporaryDirectory() as tmpdir:
+            _write_single_event_fixture(tmpdir, event_ids)
+            fig = interactive_single_event_detail(Path(tmpdir), event_ids)
+        # Every trace carries an event legendgroup.
+        groups = {tr.legendgroup for tr in fig.data}
+        for eid in event_ids:
+            assert f"event_{eid}" in groups
+        assert all(
+            isinstance(tr.legendgroup, str) and tr.legendgroup.startswith("event_")
+            for tr in fig.data
+        )
+
+    def test_single_event_dropdown_toggles_one_group(self) -> None:
+        from pathlib import Path
+
+        from master_thesis_code.plotting.interactive import interactive_single_event_detail
+
+        event_ids = [3, 7, 11]
+        with tempfile.TemporaryDirectory() as tmpdir:
+            _write_single_event_fixture(tmpdir, event_ids)
+            fig = interactive_single_event_detail(Path(tmpdir), event_ids)
+        n_traces = len(fig.data)
+        buttons = fig.layout.updatemenus[0].buttons
+        assert len(buttons) == len(event_ids)
+        for button, eid in zip(buttons, event_ids, strict=True):
+            vis = button.args[0]["visible"]
+            # Length-equals-total-traces invariant.
+            assert len(vis) == n_traces
+            # Exactly this event's group is visible; computed from membership.
+            expected = [tr.legendgroup == f"event_{eid}" for tr in fig.data]
+            assert list(vis) == expected
+            assert any(vis)
+
+    def test_single_event_initial_one_group_visible(self) -> None:
+        from pathlib import Path
+
+        from master_thesis_code.plotting.interactive import interactive_single_event_detail
+
+        event_ids = [3, 7, 11]
+        with tempfile.TemporaryDirectory() as tmpdir:
+            _write_single_event_fixture(tmpdir, event_ids)
+            fig = interactive_single_event_detail(Path(tmpdir), event_ids)
+        visible_groups = {tr.legendgroup for tr in fig.data if tr.visible is not False}
+        assert visible_groups == {"event_3"}
+
+    def test_m_z_metric_traces_carry_meta_group(self) -> None:
+        from master_thesis_code.plotting.interactive import interactive_m_z_improvement
+
+        bank = _make_synthetic_bank()
+        fig = interactive_m_z_improvement(bank)
+        # Each metric block's traces share a per-metric meta group.
+        meta_groups = {
+            tr.meta["group"] for tr in fig.data if isinstance(tr.meta, dict) and "group" in tr.meta
+        }
+        for key in ("hdi68_width", "rel_precision", "kl_from_uniform", "bias_pct"):
+            assert f"metric_{key}" in meta_groups
+        assert "ref" in meta_groups
+        assert "panel_b" in meta_groups
+        assert "panel_c" in meta_groups
+
+    def test_m_z_dropdown_computed_from_group_membership(self) -> None:
+        from master_thesis_code.plotting.interactive import interactive_m_z_improvement
+
+        bank = _make_synthetic_bank()
+        fig = interactive_m_z_improvement(bank)
+        n_traces = len(fig.data)
+        buttons = fig.layout.updatemenus[0].buttons
+        metric_keys = ["hdi68_width", "rel_precision", "kl_from_uniform", "bias_pct"]
+        assert len(buttons) == len(metric_keys)
+        for button, key in zip(buttons, metric_keys, strict=True):
+            vis = list(button.args[0]["visible"])
+            # Length-equals-total-traces invariant (self-correcting on add).
+            assert len(vis) == n_traces
+            always_on = {"panel_b", "panel_c"}
+            show_ref = key == "hdi68_width"
+            expected = []
+            for tr in fig.data:
+                g = tr.meta.get("group") if isinstance(tr.meta, dict) else None
+                expected.append(g == f"metric_{key}" or g in always_on or (g == "ref" and show_ref))
+            assert vis == expected
+
+    def test_m_z_returns_figure(self) -> None:
+        from master_thesis_code.plotting.interactive import interactive_m_z_improvement
+
+        bank = _make_synthetic_bank()
+        fig = interactive_m_z_improvement(bank)
+        assert isinstance(fig, go.Figure)

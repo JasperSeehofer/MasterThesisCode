@@ -74,6 +74,49 @@ _PLANCK_H_RANGE: tuple[float, float] = (0.6736 - 0.0054, 0.6736 + 0.0054)
 _SHOES_H_RANGE: tuple[float, float] = (0.7304 - 0.0104, 0.7304 + 0.0104)
 
 
+def _trace_group(trace: Any, key: str) -> Any:
+    """Return *trace*'s group identifier under *key* (``legendgroup`` or meta key).
+
+    For ``key == "legendgroup"`` returns ``trace.legendgroup``. Otherwise treats
+    *key* as a key inside ``trace.meta`` (a dict) and returns ``trace.meta[key]``
+    (or ``None`` when meta is absent / not a dict / key missing).
+    """
+    if key == "legendgroup":
+        return trace.legendgroup
+    meta = trace.meta
+    if isinstance(meta, dict):
+        return meta.get(key)
+    return None
+
+
+def _visibility_for_group(fig: go.Figure, group: str, *, key: str = "legendgroup") -> list[bool]:
+    """Return a full-length visibility vector selecting traces in *group*.
+
+    Iterates over ``fig.data`` and sets ``True`` for each trace whose group
+    identifier (under *key*) equals *group*, ``False`` otherwise. The returned
+    vector always has length ``len(fig.data)`` (the length-equals-total-traces
+    invariant), so the dropdown visibility is COMPUTED from group membership
+    rather than hand-maintained index arithmetic (VR-INT-03). Adding a trace
+    cannot silently misalign the vector.
+
+    Parameters
+    ----------
+    fig:
+        The figure whose traces carry group tags.
+    group:
+        The group value to select.
+    key:
+        Where the group tag lives: ``"legendgroup"`` (default) reads
+        ``trace.legendgroup``; any other value reads ``trace.meta[key]``.
+
+    Returns
+    -------
+    list[bool]
+        ``len(fig.data)`` booleans -- ``True`` where the trace's group == *group*.
+    """
+    return [_trace_group(trace, key) == group for trace in fig.data]
+
+
 def _write_html_self_contained(fig: go.Figure, path: str) -> None:
     """Write *fig* to *path* as a self-contained, offline-robust HTML file.
 
@@ -752,20 +795,19 @@ def interactive_m_z_improvement(
         vertical_spacing=0.22,
     )
 
-    # Per-metric trace blocks (each block = 5 traces: no-band-low,
-    # no-band-high (with fill), no-median, with-band-low,
-    # with-band-high (with fill), with-median).  We use Plotly's
-    # "tonexty" fill convention: low trace first, high trace second
-    # with fill="tonexty".  That's 6 traces per metric.
-    n_traces_per_metric = 6
-    metric_trace_offset: dict[str, int] = {}
-
+    # Per-metric trace blocks (6 traces each: no-band-low, no-band-high (fill),
+    # no-median, with-band-low, with-band-high (fill), with-median).  We use
+    # Plotly's "tonexty" fill convention: low trace first, high trace second with
+    # fill="tonexty".  Every trace in a block is tagged meta={"group":
+    # f"metric_{key}"} so the dropdown visibility is COMPUTED from group
+    # membership (via _visibility_for_group), not a hand-maintained boolean
+    # vector with a magic n_traces_per_metric offset (VR-INT-03).
     for m_idx, opt in enumerate(metric_options):
         med_no, p16_no, p84_no = opt["no"]
         med_w, p16_w, p84_w = opt["with"]
 
         visible = m_idx == 0
-        metric_trace_offset[opt["key"]] = m_idx * n_traces_per_metric
+        mgroup = {"group": f"metric_{opt['key']}"}
 
         # without — band low, band high (fill), median
         fig.add_trace(
@@ -777,6 +819,7 @@ def interactive_m_z_improvement(
                 showlegend=False,
                 hoverinfo="skip",
                 visible=visible,
+                meta=mgroup,
             ),
             row=1,
             col=1,
@@ -794,6 +837,7 @@ def interactive_m_z_improvement(
                 showlegend=False,
                 hoverinfo="skip",
                 visible=visible,
+                meta=mgroup,
             ),
             row=1,
             col=1,
@@ -810,6 +854,7 @@ def interactive_m_z_improvement(
                 hovertemplate="N = %{x}<br>median = %{y:.4f}<extra>Without M_z</extra>",
                 visible=visible,
                 showlegend=True,
+                meta=mgroup,
             ),
             row=1,
             col=1,
@@ -825,6 +870,7 @@ def interactive_m_z_improvement(
                 showlegend=False,
                 hoverinfo="skip",
                 visible=visible,
+                meta=mgroup,
             ),
             row=1,
             col=1,
@@ -842,6 +888,7 @@ def interactive_m_z_improvement(
                 showlegend=False,
                 hoverinfo="skip",
                 visible=visible,
+                meta=mgroup,
             ),
             row=1,
             col=1,
@@ -858,6 +905,7 @@ def interactive_m_z_improvement(
                 hovertemplate="N = %{x}<br>median = %{y:.4f}<extra>With M_z</extra>",
                 visible=visible,
                 showlegend=True,
+                meta=mgroup,
             ),
             row=1,
             col=1,
@@ -865,7 +913,7 @@ def interactive_m_z_improvement(
 
     # 1/sqrt(N) reference (anchored to the without-M_z largest-N median
     # of the FIRST metric — only sensible for the width metric, hidden
-    # otherwise via the dropdown).
+    # otherwise via the dropdown). Tagged meta group "ref".
     first_med_no = metric_options[0]["no"][0]
     if len(sizes) > 1 and not np.isnan(first_med_no[-1]) and first_med_no[-1] > 0:
         n_ref = sizes_arr[-1]
@@ -883,11 +931,11 @@ def interactive_m_z_improvement(
             opacity=0.7,
             hovertemplate="N = %{x}<br>1/sqrt(N) = %{y:.4f}<extra></extra>",
             visible=True,
+            meta={"group": "ref"},
         ),
         row=1,
         col=1,
     )
-    ref_trace_index = len(metric_options) * n_traces_per_metric
 
     # ----- Panel B: representative posteriors at slider N (frames) -----
     # Initial N = last (largest) size
@@ -905,6 +953,7 @@ def interactive_m_z_improvement(
             line={"color": VARIANT_NO_MASS, "width": 2},
             hovertemplate="h = %{x:.4f}<br>density = %{y:.3f}<extra>Without M_z</extra>",
             showlegend=False,
+            meta={"group": "panel_b"},
         ),
         row=1,
         col=2,
@@ -919,12 +968,15 @@ def interactive_m_z_improvement(
             line={"color": VARIANT_WITH_MASS, "width": 2, "dash": "dash"},
             hovertemplate="h = %{x:.4f}<br>density = %{y:.3f}<extra>With M_z</extra>",
             showlegend=False,
+            meta={"group": "panel_b"},
         ),
         row=1,
         col=2,
     )
-    panel_b_no_idx = ref_trace_index + 1
-    panel_b_with_idx = ref_trace_index + 2
+    # Derive the panel-B trace indices from group membership (meta group
+    # "panel_b") -- the frames target these by index, computed not hardcoded.
+    panel_b_indices = [i for i, tr in enumerate(fig.data) if _trace_group(tr, "group") == "panel_b"]
+    panel_b_no_idx, panel_b_with_idx = panel_b_indices[0], panel_b_indices[1]
 
     # ----- Panel C: text annotation (subplot 2,1) -----
     # We use a hidden scatter so the subplot has axes; the actual text
@@ -937,6 +989,7 @@ def interactive_m_z_improvement(
             marker={"color": "rgba(0,0,0,0)"},
             showlegend=False,
             hoverinfo="skip",
+            meta={"group": "panel_c"},
         ),
         row=2,
         col=1,
@@ -1059,23 +1112,19 @@ def interactive_m_z_improvement(
     ]
 
     # ----- Dropdown for the metric in panel A -----
-    n_metrics = len(metric_options)
-    n_metric_traces = n_metrics * n_traces_per_metric
+    # Visibility is COMPUTED from trace meta-group membership (not a hand-built
+    # boolean vector / magic offset): the selected metric's traces, plus the
+    # always-on panel-B/panel-C groups, plus the 1/sqrt(N) ref only for the width
+    # metric. The vector always has length len(fig.data) (VR-INT-03).
     dropdown_buttons: list[dict[str, Any]] = []
-    for m_idx, opt in enumerate(metric_options):
-        # Visibility vector covers ALL traces in the figure.
-        visible_vec: list[bool] = []
-        # Metric trace blocks
-        for j in range(n_metrics):
-            for _k in range(n_traces_per_metric):
-                visible_vec.append(j == m_idx)
-        # 1/sqrt(N) reference: only meaningful for hdi68_width
-        visible_vec.append(opt["key"] == "hdi68_width")
-        # Panel B traces (always visible)
-        visible_vec.append(True)
-        visible_vec.append(True)
-        # Panel C dummy
-        visible_vec.append(True)
+    always_on = {"panel_b", "panel_c"}
+    for opt in metric_options:
+        selected_group = f"metric_{opt['key']}"
+        show_ref = opt["key"] == "hdi68_width"
+        visible_vec = []
+        for tr in fig.data:
+            g = _trace_group(tr, "group")
+            visible_vec.append(g == selected_group or g in always_on or (g == "ref" and show_ref))
 
         dropdown_buttons.append(
             {
@@ -1567,24 +1616,31 @@ def interactive_single_event_detail(
         vertical_spacing=0.14,
     )
 
-    n_events = len(event_ids)
-    # 6 traces per event (2 bars + 1 scatter + 3 line plots). Track visibility
-    # by event for the dropdown.
-    traces_per_event = 6
-    for ev_idx, eid in enumerate(event_ids):
+    # Every trace for event `eid` is tagged legendgroup=f"event_{eid}" so the
+    # dropdown visibility is COMPUTED from group membership (via
+    # _visibility_for_group) rather than i*traces_per_event + k index arithmetic.
+    # Events with missing curves simply add fewer traces -- no fixed
+    # traces_per_event assumption (VR-INT-03).
+    rendered_event_ids: list[int] = []
+    for eid in event_ids:
         try:
             df = extract_galaxy_weights(data_dir / "posteriors_with_bh_mass", eid)
         except (FileNotFoundError, KeyError):
             continue
+        group = f"event_{eid}"
+        meta = {"event_id": eid}
+        visible = not rendered_event_ids  # first rendered event visible
+        rendered_event_ids.append(eid)
         df_no = df.sort_values("w_no", ascending=False).head(20).reset_index(drop=True)
         df_w = df.sort_values("w_with", ascending=False).head(20).reset_index(drop=True)
-        visible = ev_idx == 0
         # (1,1) bar without
         fig.add_trace(
             go.Bar(
                 x=list(range(len(df_no))),
                 y=df_no["w_no"].tolist(),
                 name=f"event {eid} (no M_z)",
+                legendgroup=group,
+                meta=meta,
                 marker_color=VARIANT_NO_MASS,
                 visible=visible,
                 hovertext=[
@@ -1604,6 +1660,8 @@ def interactive_single_event_detail(
                 x=list(range(len(df_w))),
                 y=df_w["w_with"].tolist(),
                 name=f"event {eid} (with M_z)",
+                legendgroup=group,
+                meta=meta,
                 marker_color=VARIANT_WITH_MASS,
                 visible=visible,
                 hovertext=[
@@ -1627,6 +1685,8 @@ def interactive_single_event_detail(
                 mode="markers",
                 marker={"size": 6, "color": EDGE, "opacity": 0.65},
                 name=f"event {eid} (scatter)",
+                legendgroup=group,
+                meta=meta,
                 visible=visible,
                 hovertext=[f"galaxy {int(gid)}" for gid in ds["galaxy_id"]],
                 hoverinfo="text",
@@ -1645,13 +1705,19 @@ def interactive_single_event_detail(
                     mode="lines",
                     line={"color": VARIANT_NO_MASS, "width": 2},
                     name=f"event {eid} L(h) no M_z",
+                    legendgroup=group,
+                    meta=meta,
                     visible=visible,
                 ),
                 row=2,
                 col=1,
             )
         else:
-            fig.add_trace(go.Scatter(x=[], y=[], visible=visible), row=2, col=1)
+            fig.add_trace(
+                go.Scatter(x=[], y=[], legendgroup=group, meta=meta, visible=visible),
+                row=2,
+                col=1,
+            )
         # (2,2) L(h) with
         curve_w = _load_event_likelihood_curve(data_dir / "posteriors_with_bh_mass", eid)
         if curve_w is not None:
@@ -1663,13 +1729,19 @@ def interactive_single_event_detail(
                     mode="lines",
                     line={"color": VARIANT_WITH_MASS, "width": 2, "dash": "dash"},
                     name=f"event {eid} L(h) with M_z",
+                    legendgroup=group,
+                    meta=meta,
                     visible=visible,
                 ),
                 row=2,
                 col=2,
             )
         else:
-            fig.add_trace(go.Scatter(x=[], y=[], visible=visible), row=2, col=2)
+            fig.add_trace(
+                go.Scatter(x=[], y=[], legendgroup=group, meta=meta, visible=visible),
+                row=2,
+                col=2,
+            )
         # (2,3) overlay (compress both onto one panel)
         if curve_no is not None and curve_w is not None:
             h_n, L_n = curve_no
@@ -1681,33 +1753,37 @@ def interactive_single_event_detail(
                     mode="lines",
                     line={"color": VARIANT_NO_MASS},
                     name=f"event {eid} overlay",
+                    legendgroup=group,
+                    meta=meta,
                     visible=visible,
                 ),
                 row=2,
                 col=3,
             )
         else:
-            fig.add_trace(go.Scatter(x=[], y=[], visible=visible), row=2, col=3)
+            fig.add_trace(
+                go.Scatter(x=[], y=[], legendgroup=group, meta=meta, visible=visible),
+                row=2,
+                col=3,
+            )
 
-    # Build dropdown buttons.
+    # Build dropdown buttons -- visibility COMPUTED from legendgroup membership.
     buttons = []
-    for i in range(n_events):
-        vis = [False] * (n_events * traces_per_event)
-        for k in range(traces_per_event):
-            vis[i * traces_per_event + k] = True
+    for eid in rendered_event_ids:
         buttons.append(
             {
                 "method": "update",
-                "label": f"event {event_ids[i]}",
+                "label": f"event {eid}",
                 "args": [
-                    {"visible": vis},
-                    {"title": f"Single-event detail — event {event_ids[i]}"},
+                    {"visible": _visibility_for_group(fig, f"event_{eid}")},
+                    {"title": f"Single-event detail — event {eid}"},
                 ],
             }
         )
+    title_eid = rendered_event_ids[0] if rendered_event_ids else event_ids[0]
     fig.update_layout(
         template=HORIZON_TEMPLATE,
-        title=f"Single-event detail — event {event_ids[0]}",
+        title=f"Single-event detail — event {title_eid}",
         height=620,
         updatemenus=[
             {
