@@ -1412,6 +1412,29 @@ def generate_figures(output_dir: str) -> None:
 
     manifest.append(("fig20_pdet_surface", _gen_pdet_surface))
 
+    # 21. Selection-function / detection-horizon explainer (Phase 3, VR-NEW-03).
+    # Composite: 1D p_det(d_L) survival marginal + 2D p_det(d_L, M_z) heatmap.
+    # Data resolution mirrors _gen_pdet_surface EXACTLY (same injection CSVs).
+    def _gen_selection_function() -> tuple[object, object] | None:
+        from master_thesis_code.plotting.selection_plots import (
+            plot_selection_function_explainer,
+        )
+
+        project_root = Path(__file__).resolve().parents[1]
+        candidates = [
+            project_root / "simulations" / "injections" / "injection_h_0p73_task_*.csv",
+            Path(output_dir) / "injections" / "injection_h_0p73_task_*.csv",
+        ]
+        for pat in candidates:
+            try:
+                return plot_selection_function_explainer(str(pat), snr_threshold=20.0)
+            except (FileNotFoundError, ValueError):
+                continue
+        _ROOT_LOGGER.info("fig21 skipped: no injection campaign CSVs available")
+        return None
+
+    manifest.append(("fig21_selection_function", _gen_selection_function))
+
     # 16. Paper figure: H0 posterior comparison (D-01, D-09)
     def _gen_paper_h0_posterior() -> tuple[object, object] | None:
         from master_thesis_code.plotting.paper_figures import plot_h0_posterior_comparison
