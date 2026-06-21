@@ -7,10 +7,10 @@ last_updated: "2026-06-21T18:30:00.000Z"
 last_activity: 2026-06-21
 progress:
   total_phases: 7
-  completed_phases: 1
-  total_plans: 1
-  completed_plans: 1
-  percent: 14
+  completed_phases: 2
+  total_plans: 2
+  completed_plans: 2
+  percent: 29
 ---
 
 # Project State
@@ -24,11 +24,11 @@ See: .planning/PROJECT.md (updated 2026-04-21)
 
 ## Current Position
 
-Phase: 2 (Colormap & Heatmap Modernization) — ready to plan
+Phase: 3 (New Static Figures — Selection & Population) — ready to plan
 Plan: —
-Status: Phase 1 COMPLETE (posterior consolidation shipped, 4 commits b3ee7dc..1a43709)
-Progress: [####..........................] 1/7 phases (foundation VR-F1..F4 shipped pre-roadmap)
-Last activity: 2026-06-21 — Phase 1 shipped: one canonical plot_combined_posterior factory; all 6 combined-posterior paths delegate; cross-path MAP regression pinned; gate green (594 passed)
+Status: Phase 2 COMPLETE (colormap/heatmap modernization shipped, 4 commits 6192594..512f66f)
+Progress: [########......................] 2/7 phases (foundation VR-F1..F4 shipped pre-roadmap)
+Last activity: 2026-06-21 — Phase 2 shipped: cividis house cmap + NO_DATA/DIVERGING_CMAP + norm/contour helpers; explicit norm+set_bad on every heatmap; fig20 pcolormesh+log axis+horizon contour; fig05 SNR norm; gate green (618 passed). VR-CMAP-05 credible-contour + VR-CMAP-04 bias-map consumer recorded for Phase 5/when-built.
 
 **v2.3 phase order (all GSD, never /physics-change):**
 1. Posterior Factory Consolidation — VR-CONS-01/02

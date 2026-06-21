@@ -68,7 +68,7 @@ complete type annotations, and passes the per-commit check gate (ruff + mypy + p
 - Decimal phases (2.1, 2.2): Urgent insertions (marked with INSERTED)
 
 - [x] **Phase 1: Posterior Factory Consolidation** [GSD] — Collapse the 4–5 duplicate combined-H₀-posterior paths into ONE canonical factory; regression-anchor on MAP agreement ✅ 2026-06-21 (b3ee7dc..1a43709)
-- [ ] **Phase 2: Colormap & Heatmap Modernization** [GSD] — cividis default + explicit norms + `set_bad` + true `pcolormesh` axes + diverging bias maps + semantic contours
+- [x] **Phase 2: Colormap & Heatmap Modernization** [GSD] — cividis default + explicit norms + `set_bad` + true `pcolormesh` axes + diverging bias maps + semantic contours ✅ 2026-06-21 (6192594..512f66f)
 - [ ] **Phase 3: New Static Figures — Selection & Population** [GSD] — Detection-horizon explainer + "where the constraints come from" population view (no data gate)
 - [ ] **Phase 4: New Figures (Data-Gated) — H₀ Forest & PP-Plot** [GSD] — Scaffold the forest/tension + bilby-style PP-plot factories on placeholder/synthetic data; flag final numbers as data-gated
 - [ ] **Phase 5: Annotation & Decluttering Rollout** [GSD] — Active titles + direct labels + named rules + scaling-law labels; strip `tight_layout`; restore factory contracts; 3D→2D; unify `LABELS`; Mpc/Gpc; modern corner plot
