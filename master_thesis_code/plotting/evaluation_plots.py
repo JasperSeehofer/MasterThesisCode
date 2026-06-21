@@ -32,6 +32,7 @@ from master_thesis_code.plotting._helpers import (
     _fig_from_ax,
     compute_hdi_interval,
     get_figure,
+    make_colorbar,
     make_heatmap_norm,
 )
 from master_thesis_code.plotting._labels import LABELS
@@ -101,25 +102,50 @@ def plot_sky_localization_3d(
     phi: npt.NDArray[np.float64],
     sky_error: npt.NDArray[np.float64],
 ) -> tuple[Figure, Any]:
-    """3D scatter plot of sky-localization uncertainty."""
-    fig = plt.figure(figsize=(10, 8))
-    ax = fig.add_subplot(111, projection="3d")
+    """Sky-localization uncertainty on a 2D Mollweide projection.
+
+    VR-ANNO-05: replaces the former 3D scatter (a perspective-distorted,
+    grayscale-hostile anti-pattern) with a flat all-sky Mollweide map that
+    matches :func:`master_thesis_code.plotting.sky_plots.plot_sky_localization_mollweide`.
+    Source positions are colored by their sky-localization error through the
+    house sequential cmap with an explicit robust norm.  The function name and
+    ``(Figure, Any)`` return are kept so existing wiring is unaffected.
+
+    Parameters
+    ----------
+    theta:
+        Source colatitude in radians, range ``[0, pi]``.
+    phi:
+        Source longitude in radians, range ``[0, 2*pi]``.
+    sky_error:
+        Sky-localization error (steradians) for each source; drives the color.
+
+    Returns
+    -------
+    tuple[Figure, Any]
+        Figure and the 2D Mollweide Axes.
+    """
+    fig, ax = get_figure(preset="double", subplot_kw={"projection": "mollweide"})
+
+    # Colatitude -> latitude; longitude wrapped to [-pi, pi] for the Mollweide.
+    lat = np.pi / 2.0 - theta
+    lon = ((phi + np.pi) % (2.0 * np.pi)) - np.pi
+
     # Explicit robust norm for color consistency with the other sequential maps
-    # (the 3D->2D replacement is Phase 5 / VR-ANNO-05; here only the norm is made
-    # explicit so the color scale is not a silent autoscale).
+    # (replaces matplotlib's silent autoscale-from-zero).
     sc = ax.scatter(
-        theta,
-        phi,
-        sky_error,
+        lon,
+        lat,
         c=sky_error,
         cmap=CMAP,
-        alpha=0.6,
+        alpha=0.7,
+        s=12,
+        zorder=5,
+        rasterized=True,
         norm=make_heatmap_norm(np.asarray(sky_error, dtype=np.float64), mode="robust"),
     )
-    ax.set_xlabel("theta")
-    ax.set_ylabel("phi")
-    ax.set_zlabel("Sky localization error")
-    fig.colorbar(sc, ax=ax, label="Error")
+    make_colorbar(sc, fig, ax, label=r"Sky-localization error $[\mathrm{sr}]$")
+    ax.grid(True, alpha=0.3)
     return fig, ax
 
 
@@ -212,7 +238,10 @@ def plot_injected_vs_recovered(
 
     n_params = len(parameters)
     nrows = ceil(n_params / ncols)
-    fig = plt.figure(figsize=(7.0, 2.8 * nrows))
+    # Route the figure-creation primitive through get_figure (VR-ANNO-04). The
+    # dynamic row-count drives the figsize, which get_figure forwards to subplots;
+    # the bare axes it returns is discarded and the panel GridSpec is added below.
+    fig, _ = get_figure(figsize=(7.0, 2.8 * nrows))
     gs = GridSpec(
         nrows * 2,
         ncols,

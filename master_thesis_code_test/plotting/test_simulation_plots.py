@@ -60,7 +60,7 @@ def test_plot_lisa_psd_decompose() -> None:
 
 
 def test_plot_cramer_rao_coverage() -> None:
-    fig, ax = plot_cramer_rao_coverage(
+    fig, axes = plot_cramer_rao_coverage(
         M=np.array([1e5, 2e5, 3e5]),
         qS=np.array([0.5, 1.0, 1.5]),
         phiS=np.array([0.1, 0.5, 1.0]),
@@ -69,3 +69,21 @@ def test_plot_cramer_rao_coverage() -> None:
         phiS_limits=(0.0, 2 * np.pi),
     )
     assert isinstance(fig, Figure)
+
+
+def test_plot_cramer_rao_coverage_is_2d_not_3d() -> None:
+    """VR-ANNO-05: the coverage figure must use 2D marginal panels, not a 3D scatter."""
+    from mpl_toolkits.mplot3d import Axes3D
+
+    fig, axes = plot_cramer_rao_coverage(
+        M=np.array([1e5, 2e5, 3e5]),
+        qS=np.array([0.5, 1.0, 1.5]),
+        phiS=np.array([0.1, 0.5, 1.0]),
+        M_limits=(1e4, 1e6),
+        qS_limits=(0.0, np.pi),
+        phiS_limits=(0.0, 2 * np.pi),
+    )
+    # axes is an array of 2D marginal panels — none may be a 3D axes.
+    for ax in np.asarray(axes).flatten():
+        assert not isinstance(ax, Axes3D)
+        assert ax.name != "3d"

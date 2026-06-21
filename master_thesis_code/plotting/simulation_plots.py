@@ -8,7 +8,6 @@ calls the factory functions in :meth:`on_simulation_end`.
 import os
 from typing import Any
 
-import matplotlib.pyplot as plt
 import numpy as np
 import numpy.typing as npt
 from matplotlib.axes import Axes
@@ -229,18 +228,58 @@ def plot_cramer_rao_coverage(
     phiS_limits: tuple[float, float],
     *,
     ax: Any | None = None,
-) -> tuple[Figure, Any]:
-    """3D scatter plot of parameter-space coverage from detected events."""
-    fig = plt.figure(figsize=(16, 9))
-    ax3d = fig.add_subplot(111, projection="3d")
-    ax3d.scatter3D(M, qS, phiS)
-    ax3d.set_xlabel("M")
-    ax3d.set_ylabel("qS")
-    ax3d.set_zlabel("phiS")
-    ax3d.set_xlim(*M_limits)
-    ax3d.set_ylim(*qS_limits)
-    ax3d.set_zlim(*phiS_limits)
-    return fig, ax3d
+) -> tuple[Figure, npt.NDArray[np.object_]]:
+    """Parameter-space coverage as three 2D marginal scatter panels.
+
+    VR-ANNO-05: replaces the former 3D scatter (a perspective-distorted,
+    grayscale-hostile anti-pattern) with the three pairwise 2D projections of
+    the ``(M, qS, phiS)`` coverage — ``M-qS``, ``M-phiS`` and ``qS-phiS`` — which
+    read accurately in print and at any aspect ratio.  Axis labels route through
+    :data:`~master_thesis_code.plotting._labels.LABELS` and the supplied limits
+    are honored on the matching axes.
+
+    Parameters
+    ----------
+    M, qS, phiS:
+        Per-event black-hole mass, sky colatitude and longitude.
+    M_limits, qS_limits, phiS_limits:
+        ``(lo, hi)`` axis bounds for the respective parameters.
+    ax:
+        Ignored (a three-panel layout is always created internally).
+
+    Returns
+    -------
+    tuple[Figure, npt.NDArray[np.object_]]
+        Figure and a flat array of the three marginal Axes
+        ``[ax_M_qS, ax_M_phiS, ax_qS_phiS]``.
+    """
+    fig, axes = get_figure(nrows=1, ncols=3, preset="double")
+    axes_arr: npt.NDArray[np.object_] = np.asarray(axes).flatten()
+    ax_m_qs: Axes = axes_arr[0]
+    ax_m_phis: Axes = axes_arr[1]
+    ax_qs_phis: Axes = axes_arr[2]
+
+    scatter_kw: dict[str, Any] = {"s": 9, "color": EDGE, "alpha": 0.5, "linewidths": 0}
+
+    ax_m_qs.scatter(M, qS, **scatter_kw)
+    ax_m_qs.set_xlabel(LABELS["M"])
+    ax_m_qs.set_ylabel(LABELS["qS"])
+    ax_m_qs.set_xlim(*M_limits)
+    ax_m_qs.set_ylim(*qS_limits)
+
+    ax_m_phis.scatter(M, phiS, **scatter_kw)
+    ax_m_phis.set_xlabel(LABELS["M"])
+    ax_m_phis.set_ylabel(LABELS["phiS"])
+    ax_m_phis.set_xlim(*M_limits)
+    ax_m_phis.set_ylim(*phiS_limits)
+
+    ax_qs_phis.scatter(qS, phiS, **scatter_kw)
+    ax_qs_phis.set_xlabel(LABELS["qS"])
+    ax_qs_phis.set_ylabel(LABELS["phiS"])
+    ax_qs_phis.set_xlim(*qS_limits)
+    ax_qs_phis.set_ylim(*phiS_limits)
+
+    return fig, axes_arr
 
 
 class PlottingCallback:

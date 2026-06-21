@@ -665,10 +665,13 @@ class BayesianStatistics:
         # Write Fisher quality CSV (per D-12)
         self._write_fisher_quality_csv()
 
-        # Generate Fisher quality diagnostic plot (per D-06, D-07)
+        # Generate Fisher quality diagnostic plot (per D-06, D-07).
+        # The factory now returns (fig, axes) per the (fig, ax) contract
+        # (VR-ANNO-04); saving is the caller's responsibility.
+        from master_thesis_code.plotting._helpers import save_figure
         from master_thesis_code.plotting.fisher_plots import plot_fisher_diagnostics
 
-        plot_fisher_diagnostics(
+        fig, _axes = plot_fisher_diagnostics(
             cond_3d=self._cond_3d,
             cond_4d=self._cond_4d,
             excluded_mask=self._excluded_mask,
@@ -680,6 +683,7 @@ class BayesianStatistics:
             threshold=self._fisher_cond_threshold,
             output_dir="simulations",
         )
+        save_figure(fig, os.path.join("simulations", "fisher_quality_diagnostic"))
 
     def _write_fisher_quality_csv(self) -> None:
         """Write per-event Fisher matrix condition numbers and exclusion flags to CSV.

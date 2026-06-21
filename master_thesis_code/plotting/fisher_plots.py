@@ -5,8 +5,6 @@ uncertainty distributions.  All functions follow the project convention:
 data in, ``(fig, ax)`` out.  None call ``plt.show()`` or ``plt.savefig()``.
 """
 
-import os
-
 import corner
 import matplotlib
 import numpy as np
@@ -23,7 +21,7 @@ from master_thesis_code.plotting._data import (
     PARAMETER_NAMES,
     label_key,
 )
-from master_thesis_code.plotting._helpers import _fig_from_ax, get_figure, save_figure
+from master_thesis_code.plotting._helpers import _fig_from_ax, get_figure
 from master_thesis_code.plotting._labels import LABELS
 from master_thesis_code.plotting._style import apply_style
 
@@ -473,14 +471,16 @@ def plot_fisher_diagnostics(
     det_index_to_slot: dict[int, int],
     threshold: float,
     output_dir: str,
-) -> None:
+) -> tuple[Figure, npt.NDArray[np.object_]]:
     """Generate a two-panel Fisher quality diagnostic plot.
 
     Panel 1 (left): Eigenvalue spectrum for flagged events (or annotation if none).
     Panel 2 (right): Parameter scatter of all events in (d_L, M) space coloured
     by max(cond_3d, cond_4d); flagged events highlighted with larger markers.
 
-    Saved as ``fisher_quality_diagnostic.pdf`` in *output_dir*.
+    Follows the package ``(fig, ax)`` factory contract (VR-ANNO-04): the figure
+    is **returned**, not saved. The caller is responsible for persisting it via
+    :func:`~master_thesis_code.plotting._helpers.save_figure`.
 
     Parameters
     ----------
@@ -503,7 +503,14 @@ def plot_fisher_diagnostics(
     threshold:
         Condition-number threshold used for exclusion.
     output_dir:
-        Directory in which to save the plot.
+        Retained for call-site compatibility; saving is now the caller's
+        responsibility (VR-ANNO-04), so this argument is no longer used here.
+
+    Returns
+    -------
+    tuple[Figure, npt.NDArray[np.object_]]
+        Figure and a flat array of the two diagnostic Axes
+        ``[ax_eigenvalue, ax_scatter]``.
     """
     apply_style()
     fig, axes = get_figure(nrows=1, ncols=2, preset="double")
@@ -617,4 +624,4 @@ def plot_fisher_diagnostics(
     ax_scatter.set_title("Parameter space scatter", fontsize="small")
     ax_scatter.legend(fontsize="x-small", loc="upper right")
 
-    save_figure(fig, os.path.join(output_dir, "fisher_quality_diagnostic"))
+    return fig, axes_arr

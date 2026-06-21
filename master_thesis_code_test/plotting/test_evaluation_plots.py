@@ -173,8 +173,20 @@ def test_plot_sky_localization_3d() -> None:
     sky_error = rng.random(10)
     fig, ax = plot_sky_localization_3d(theta, phi, sky_error)
     assert isinstance(fig, Figure)
-    # ax is Axes3D, not regular Axes — just check it exists
     assert ax is not None
+
+
+def test_plot_sky_localization_3d_is_2d_mollweide_not_axes3d() -> None:
+    """VR-ANNO-05: the sky-localization figure is a 2D Mollweide, not a 3D scatter."""
+    from mpl_toolkits.mplot3d import Axes3D
+
+    rng = np.random.default_rng(42)
+    theta = np.linspace(0, np.pi, 10)
+    phi = np.linspace(0, 2 * np.pi, 10)
+    sky_error = rng.random(10)
+    fig, ax = plot_sky_localization_3d(theta, phi, sky_error)
+    assert not isinstance(ax, Axes3D)
+    assert ax.name == "mollweide"
 
 
 def test_plot_detection_contour(

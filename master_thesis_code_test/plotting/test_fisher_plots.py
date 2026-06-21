@@ -10,6 +10,7 @@ from master_thesis_code.plotting._data import PARAMETER_NAMES
 from master_thesis_code.plotting.fisher_plots import (
     plot_characteristic_strain,
     plot_fisher_corner,
+    plot_fisher_diagnostics,
     plot_fisher_ellipses,
     plot_parameter_uncertainties,
 )
@@ -157,3 +158,47 @@ def test_plot_fisher_corner_multi_event(
     n_artists_multi = len(fig_multi.get_children())
     assert n_artists_multi >= n_artists_single
     plt.close(fig_multi)
+
+
+# ---------------------------------------------------------------------------
+# Fisher quality diagnostic (VR-ANNO-04): factory returns (fig, axes), caller saves
+# ---------------------------------------------------------------------------
+
+
+def test_plot_fisher_diagnostics_returns_fig_axes_no_save(tmp_path: object) -> None:
+    """plot_fisher_diagnostics returns (Figure, ndarray[Axes]) and writes no file."""
+    from pathlib import Path
+
+    n_det = 8
+    rng = np.random.default_rng(0)
+    cond_3d = rng.uniform(1.0, 1e3, n_det)
+    cond_4d = rng.uniform(1.0, 1e4, n_det)
+    excluded = np.zeros(n_det, dtype=bool)
+    excluded[2] = True
+    excluded[5] = True
+    eigen_3d = {2: np.array([1e-3, 1.0, 10.0]), 5: np.array([1e-2, 0.5, 5.0])}
+    eigen_4d = {2: np.array([1e-4, 0.1, 1.0, 10.0]), 5: np.array([1e-3, 0.2, 2.0, 20.0])}
+    det_d_L = rng.uniform(0.5, 5.0, n_det)
+    det_M = rng.uniform(1e5, 1e6, n_det)
+    det_index_to_slot = {i: i for i in range(n_det)}
+
+    out_dir = Path(str(tmp_path))
+    result = plot_fisher_diagnostics(
+        cond_3d=cond_3d,
+        cond_4d=cond_4d,
+        excluded_mask=excluded,
+        eigen_3d=eigen_3d,
+        eigen_4d=eigen_4d,
+        det_d_L=det_d_L,
+        det_M=det_M,
+        det_index_to_slot=det_index_to_slot,
+        threshold=1e3,
+        output_dir=str(out_dir),
+    )
+    assert isinstance(result, tuple)
+    fig, axes = result
+    assert isinstance(fig, Figure)
+    assert isinstance(axes, np.ndarray)
+    # The factory must NOT save internally — no PDF written to output_dir.
+    assert not list(out_dir.glob("*.pdf"))
+    plt.close(fig)
