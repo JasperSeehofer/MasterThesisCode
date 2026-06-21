@@ -703,9 +703,8 @@ def plot_m_z_improvement_panels(
     ax_w.plot(
         sizes,
         w_no_med,
-        "o-",
+        "-",
         color=VARIANT_NO_MASS,
-        markersize=4,
         linewidth=1.2,
         label=r"Without $M_z$",
         zorder=3,
@@ -714,9 +713,8 @@ def plot_m_z_improvement_panels(
     ax_w.plot(
         sizes,
         w_with_med,
-        "s--",
+        "--",
         color=VARIANT_WITH_MASS,
-        markersize=4,
         linewidth=1.2,
         label=r"With $M_z$",
         zorder=3,
@@ -830,9 +828,8 @@ def plot_m_z_improvement_panels(
     ax_d.plot(
         sizes,
         frac_med * 100.0,
-        "o-",
+        "-",
         color=VARIANT_WITH_MASS,
-        markersize=4,
         linewidth=1.2,
     )
     ax_d.axhline(0.0, color="black", linewidth=0.6, alpha=0.5)
@@ -850,9 +847,8 @@ def plot_m_z_improvement_panels(
         ax_k.plot(
             sizes[valid],
             K_med[valid],
-            "s-",
+            "-",
             color=VARIANT_WITH_MASS,
-            markersize=4,
             linewidth=1.2,
         )
     ax_k.axhline(1.0, color="black", linewidth=0.6, alpha=0.5)
@@ -952,5 +948,4 @@ def plot_m_z_improvement_panels(
             },
         )
 
-    fig.tight_layout()
     return fig, axes

@@ -1312,7 +1312,6 @@ def generate_figures(output_dir: str) -> None:
         # Right panel: per-event host counts + reduction.
         plot_event_catalog_coverage(host_counts, d_l_per_event=d_l_array, ax=ax_right)
         ax_right.set_title("Host candidates per event", fontsize="medium")
-        fig.tight_layout()
         return fig, axes
 
     manifest.append(("fig16_catalog_completeness", _gen_catalog_completeness))

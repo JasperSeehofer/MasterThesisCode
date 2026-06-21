@@ -405,7 +405,6 @@ def plot_info_monotonicity(
         rf"Info monotonicity ({n_below}/{n_total} = {n_below / n_total:.0%} tightened by $M_z$)",
         fontsize="medium",
     )
-    fig.tight_layout()
     return fig, ax
 
 

@@ -375,7 +375,6 @@ def plot_single_event_detail(
         ax_lh_xy.set_title(r"$L(h)$ overlay", fontsize="medium")
 
     fig.suptitle(f"Event {event_id} — single-event marginalisation detail", fontsize="large")
-    fig.tight_layout(rect=(0.0, 0.0, 1.0, 0.96))
     return fig, axes
 
 

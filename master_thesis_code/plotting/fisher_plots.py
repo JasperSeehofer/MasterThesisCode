@@ -150,7 +150,6 @@ def plot_fisher_ellipses(
         cur_ax.set_xlabel(LABELS[label_key(name_x)])
         cur_ax.set_ylabel(LABELS[label_key(name_y)])
 
-    fig.tight_layout()
     return fig, axes_flat
 
 
@@ -618,5 +617,4 @@ def plot_fisher_diagnostics(
     ax_scatter.set_title("Parameter space scatter", fontsize="small")
     ax_scatter.legend(fontsize="x-small", loc="upper right")
 
-    fig.tight_layout()
     save_figure(fig, os.path.join(output_dir, "fisher_quality_diagnostic"))

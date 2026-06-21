@@ -187,7 +187,7 @@ def plot_h0_convergence(
     # Right panel: CI width vs N
     sizes_arr = np.asarray(sizes, dtype=np.float64)
     ci_arr = np.asarray(ci_widths, dtype=np.float64)
-    ax_ci.plot(sizes_arr, ci_arr, "o-", color=color, label=label)
+    ax_ci.plot(sizes_arr, ci_arr, "-", color=color, label=label)
 
     # --- Alternative variant (if provided) ---
     if event_posteriors_alt is not None:
@@ -234,7 +234,7 @@ def plot_h0_convergence(
 
         sizes_alt_arr = np.asarray(sizes_alt, dtype=np.float64)
         ci_alt_arr = np.asarray(ci_widths_alt, dtype=np.float64)
-        ax_ci.plot(sizes_alt_arr, ci_alt_arr, "s--", color=color_alt, label=label_alt)
+        ax_ci.plot(sizes_alt_arr, ci_alt_arr, "--", color=color_alt, label=label_alt)
 
     # --- Optional bootstrap HDI band on the right panel (VIZ-02) ---
     if bootstrap_bank is not None:
@@ -277,7 +277,6 @@ def plot_h0_convergence(
     ax_ci.set_ylabel(rf"{int(level * 100)}\% CI width")
     ax_ci.legend(fontsize="small")
 
-    fig.tight_layout()
     return fig, np.array([ax_post, ax_ci], dtype=object)
 
 

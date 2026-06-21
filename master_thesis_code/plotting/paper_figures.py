@@ -347,14 +347,12 @@ def plot_single_event_likelihoods(
         # No-mass likelihood
         lik_no = events_no[eid]
         lik_no_norm = lik_no / np.max(lik_no) if np.max(lik_no) > 0 else lik_no
-        ax_no.plot(h_no, lik_no_norm, "o-", color=VARIANT_NO_MASS, markersize=2.5, linewidth=1.0)
+        ax_no.plot(h_no, lik_no_norm, "-", color=VARIANT_NO_MASS, linewidth=1.0)
 
         # With-mass likelihood
         lik_with = events_with[eid]
         lik_with_norm = lik_with / np.max(lik_with) if np.max(lik_with) > 0 else lik_with
-        ax_with.plot(
-            h_with, lik_with_norm, "s-", color=VARIANT_WITH_MASS, markersize=2.5, linewidth=1.0
-        )
+        ax_with.plot(h_with, lik_with_norm, "-", color=VARIANT_WITH_MASS, linewidth=1.0)
 
         # Row label
         ax_no.set_ylabel(f"{label}\n(event {eid})")
@@ -378,7 +376,6 @@ def plot_single_event_likelihoods(
     axes[-1, 1].set_xlabel(r"$h$")
 
     fig.align_ylabels(axes[:, 0])
-    fig.tight_layout(h_pad=0.3)
 
     return fig, axes
 
@@ -589,7 +586,6 @@ def plot_posterior_convergence(
     ax.minorticks_on()
     ax.legend(loc="upper right")
 
-    fig.tight_layout()
     return fig, ax
 
 
@@ -696,7 +692,6 @@ def plot_snr_distribution(
                 fontsize=10,
             )
 
-        fig.tight_layout(w_pad=1.0)
         return fig, axes
 
     # ------ Placeholder path (no CRB data locally) ------
@@ -914,5 +909,4 @@ def plot_closure_test_overlay(
     ax.set_ylim(-0.05, 1.15)
     ax.legend(loc="best", fontsize="small")
     ax.set_title("Closure test: pipeline recovers each injection truth", fontsize="medium")
-    fig.tight_layout()
     return fig, ax
