@@ -170,6 +170,35 @@ def test_plot_event_posteriors_color_by_snr(
     assert isinstance(ax, Axes)
 
 
+def test_plot_event_posteriors_color_by_adds_colorbar(
+    sample_h_values: npt.NDArray[np.float64],
+) -> None:
+    """color_by="snr" maps the per-event scalar to color.
+
+    Asserts the figure gains exactly one colorbar whose norm spans
+    ``[min(color_values), max(color_values)]`` — i.e. the per-event SNR is
+    actually mapped to the color channel (Phase-3 SC-2: surfacing the latent
+    color_by). The plain smoke test only checks the ``(fig, ax)`` return; this
+    one proves the color channel is exercised end-to-end.
+    """
+    rng = np.random.default_rng(7)
+    posteriors = [rng.random(50) for _ in range(6)]
+    color_values = np.array([12.0, 18.0, 23.0, 31.0, 44.0, 58.0])
+    fig, _ = plot_event_posteriors(
+        sample_h_values,
+        posteriors,
+        true_h=0.73,
+        color_by="snr",
+        color_values=color_values,
+    )
+    # Exactly one colorbar was added (matplotlib labels its axes "<colorbar>").
+    cbars = [a for a in fig.axes if a.get_label() == "<colorbar>"]
+    assert len(cbars) == 1, f"expected exactly one colorbar, found {len(cbars)}"
+    cbar_norm = cbars[0]._colorbar.norm  # type: ignore[attr-defined]
+    assert np.isclose(cbar_norm.vmin, float(color_values.min()))
+    assert np.isclose(cbar_norm.vmax, float(color_values.max()))
+
+
 def test_plot_event_posteriors_combined(
     sample_h_values: npt.NDArray[np.float64],
     sample_posterior: npt.NDArray[np.float64],

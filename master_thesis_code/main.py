@@ -982,7 +982,32 @@ def generate_figures(output_dir: str) -> None:
             )
         except FileNotFoundError:
             return None
-        fig, ax = plot_event_posteriors(h_vals, event_posts, 0.73, combined_posterior=combined)
+        # Surface the (already implemented + tested) color_by="snr" path: color
+        # each per-event posterior by its achieved SNR when the CRB SNR column
+        # aligns one-to-one with the per-event posterior count. The two data
+        # sources (per-event JSONs vs the pooled CRB CSV) can diverge in length,
+        # so only enable color_by on an exact match — never guess an alignment.
+        color_by: str | None = None
+        color_values: np.ndarray | None = None
+        if crb_df is not None and "SNR" in crb_df.columns:
+            snr_vals = crb_df["SNR"].to_numpy(dtype=np.float64)
+            if len(snr_vals) == len(event_posts):
+                color_by = "snr"
+                color_values = snr_vals
+            else:
+                _ROOT_LOGGER.info(
+                    "fig02 color_by skipped: SNR length %d != event count %d",
+                    len(snr_vals),
+                    len(event_posts),
+                )
+        fig, ax = plot_event_posteriors(
+            h_vals,
+            event_posts,
+            0.73,
+            color_by=color_by,
+            color_values=color_values,
+            combined_posterior=combined,
+        )
         # Overlay with-M_z canonical combined posterior
         if post_data_with is not None:
             try:
