@@ -1530,6 +1530,27 @@ def generate_figures(output_dir: str) -> None:
 
     manifest.append(("fig23_h0_forest", _gen_h0_forest))
 
+    # 24. Bilby-style PP-plot / coverage figure (Phase 4, VR-NEW-02). Renders
+    # standalone on SYNTHETIC calibrated ranks; the DATA-GATE loader auto-closes
+    # if a real injection-recovery campaign dropped
+    # <output_dir>/injection_recovery/ranks.json, else falls back to synthetic.
+    # Always renders (never returns None).
+    def _gen_pp_coverage() -> tuple[object, object] | None:
+        from master_thesis_code.plotting.pp_plot import load_pp_ranks, plot_pp_coverage
+
+        try:
+            ranks = load_pp_ranks(Path(output_dir))
+        except Exception:  # noqa: BLE001 — never let the gate abort the figure
+            from master_thesis_code.plotting.pp_plot import (
+                DEFAULT_PP_PARAMS,
+                make_synthetic_ranks,
+            )
+
+            ranks = make_synthetic_ranks(200, DEFAULT_PP_PARAMS, calibrated=True)
+        return plot_pp_coverage(ranks)
+
+    manifest.append(("fig24_pp_coverage", _gen_pp_coverage))
+
     # 16. Paper figure: H0 posterior comparison (D-01, D-09)
     def _gen_paper_h0_posterior() -> tuple[object, object] | None:
         from master_thesis_code.plotting.paper_figures import plot_h0_posterior_comparison
