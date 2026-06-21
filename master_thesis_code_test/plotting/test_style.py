@@ -113,6 +113,44 @@ def test_apply_style_default_unchanged() -> None:
     assert matplotlib.rcParams["legend.fontsize"] == 7.0
 
 
+def test_apply_style_paper_is_default_baseline() -> None:
+    """theme='paper' (the default) is byte-identical to the base sheet — no overrides."""
+    apply_style(theme="paper")
+    assert matplotlib.rcParams["font.size"] == 8.0
+    assert matplotlib.rcParams["axes.titlesize"] == 9.0
+    assert matplotlib.rcParams["lines.linewidth"] == 1.5
+    assert matplotlib.rcParams["text.usetex"] is False
+
+
+def test_apply_style_talk_scales_fonts() -> None:
+    """theme='talk' scales fonts and line weights up; reset back to paper is clean."""
+    apply_style(theme="talk")
+    assert matplotlib.rcParams["font.size"] > 8.0
+    assert matplotlib.rcParams["axes.titlesize"] > 9.0
+    assert matplotlib.rcParams["lines.linewidth"] > 1.5
+    # Idempotent reset: re-applying the default restores the base sheet.
+    apply_style()
+    assert matplotlib.rcParams["font.size"] == 8.0
+    assert matplotlib.rcParams["lines.linewidth"] == 1.5
+
+
+def test_apply_style_accepts_web_theme() -> None:
+    """theme='web' runs, sets the Agg backend, and scales fonts up."""
+    apply_style(theme="web")
+    assert matplotlib.get_backend().lower() == "agg"
+    assert matplotlib.rcParams["font.size"] > 8.0
+    apply_style()  # reset for downstream tests
+
+
+def test_apply_style_talk_with_latex() -> None:
+    """use_latex still works under a non-paper theme (latex block layers on top)."""
+    apply_style(theme="talk", use_latex=True)
+    assert matplotlib.rcParams["text.usetex"] is True
+    assert "serif" in matplotlib.rcParams["font.family"]
+    apply_style()  # reset
+    assert matplotlib.rcParams["text.usetex"] is False
+
+
 def test_rcparams_snapshot() -> None:
     """Regression test: pin all 18 emri_thesis.mplstyle rcParams.
 
