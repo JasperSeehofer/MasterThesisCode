@@ -8,9 +8,13 @@ from master_thesis_code.plotting._colors import (
     CYCLE,
     EDGE,
     MEAN,
+    PLANCK,
     REFERENCE,
     SEQUENTIAL_BLUES,
+    SH0ES,
     TRUTH,
+    VARIANT_NO_MASS,
+    VARIANT_WITH_MASS,
 )
 from master_thesis_code.plotting._labels import LABELS
 
@@ -19,6 +23,49 @@ from master_thesis_code.plotting._labels import LABELS
 
 def test_truth_is_nonempty_hex() -> None:
     assert isinstance(TRUTH, str) and TRUTH.startswith("#") and len(TRUTH) == 7
+
+
+def test_truth_is_horizon_vermillion() -> None:
+    """HORIZON v2: truth/injected rule is warm vermillion, reserved for that role."""
+    assert TRUTH == "#C2451E"
+
+
+def test_variant_no_mass_is_horizon_navy() -> None:
+    """Without-M_z headline series is HORIZON observatory navy."""
+    assert VARIANT_NO_MASS == "#1B2A4A"
+    assert VARIANT_NO_MASS.startswith("#") and len(VARIANT_NO_MASS) == 7
+
+
+def test_variant_with_mass_is_horizon_gold() -> None:
+    """With-M_z series is HORIZON signal gold (strong lightness contrast vs navy)."""
+    assert VARIANT_WITH_MASS == "#E8A317"
+    assert VARIANT_WITH_MASS.startswith("#") and len(VARIANT_WITH_MASS) == 7
+
+
+def test_variant_and_reference_colors_are_pairwise_distinct() -> None:
+    """Regression guard against the two-blues / reference collision (kill #56B4E9)."""
+    distinct = {VARIANT_NO_MASS, VARIANT_WITH_MASS, REFERENCE}
+    assert len(distinct) == 3, (
+        f"VARIANT_NO_MASS, VARIANT_WITH_MASS, REFERENCE must be pairwise distinct; "
+        f"got {VARIANT_NO_MASS=}, {VARIANT_WITH_MASS=}, {REFERENCE=}"
+    )
+
+
+def test_planck_band_color_is_hex() -> None:
+    assert PLANCK == "#3E7CB1"
+    assert PLANCK.startswith("#") and len(PLANCK) == 7
+
+
+def test_sh0es_band_color_is_hex() -> None:
+    assert SH0ES == "#9A6FB0"
+    assert SH0ES.startswith("#") and len(SH0ES) == 7
+
+
+def test_band_colors_distinct_from_data_series() -> None:
+    """Reserved band colors must never coincide with a data-series or truth color."""
+    band = {PLANCK, SH0ES}
+    series = {VARIANT_NO_MASS, VARIANT_WITH_MASS, TRUTH}
+    assert band.isdisjoint(series), "PLANCK/SH0ES collide with a data-series/truth color"
 
 
 def test_mean_is_nonempty_hex() -> None:
