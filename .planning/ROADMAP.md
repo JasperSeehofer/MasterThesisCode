@@ -87,7 +87,9 @@ complete type annotations, and passes the per-commit check gate (ruff + mypy + p
   2. `test_canonical_map_consistency` is extended to cover all consolidated paths and passes — every path reports the same MAP to tolerance.
   3. fig01 is wired to the area-normalized headline treatment (VR-F3) with the `theme=` switch passing through; regenerating it via `--generate_figures` against `simulations/_archive_v2_1_baseline/posteriors/` produces a PDF with no traceback.
   4. The check gate (ruff + mypy + pytest `"not gpu and not slow"`) is green; the regenerated paper PDF stays vector and ≥7pt.
-**Plans**: TBD
+**Plans**: 1 plan
+Plans:
+- [ ] 01-01-PLAN.md — Make plot_combined_posterior the single canonical H₀-posterior factory; delegate paper_figures + convergence panels + fig01/fig08; extend the cross-path rendered-MAP regression; green gate + archive regen
 **UI hint**: yes
 
 ### Phase 2: Colormap & Heatmap Modernization
@@ -174,7 +176,7 @@ complete type annotations, and passes the per-commit check gate (ruff + mypy + p
 
 | Phase | Routing | Plans Complete | Status | Completed |
 |-------|---------|----------------|--------|-----------|
-| 1. Posterior Factory Consolidation | GSD | 0/TBD | Not started | - |
+| 1. Posterior Factory Consolidation | GSD | 0/1 | Planned | - |
 | 2. Colormap & Heatmap Modernization | GSD | 0/TBD | Not started | - |
 | 3. New Static Figures — Selection & Population | GSD | 0/TBD | Not started | - |
 | 4. New Figures (Data-Gated) — H₀ Forest & PP-Plot | GSD | 0/TBD | Not started | - |
