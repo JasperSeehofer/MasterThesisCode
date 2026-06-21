@@ -7,10 +7,10 @@ last_updated: "2026-06-21T18:30:00.000Z"
 last_activity: 2026-06-21
 progress:
   total_phases: 7
-  completed_phases: 3
-  total_plans: 3
-  completed_plans: 3
-  percent: 43
+  completed_phases: 4
+  total_plans: 4
+  completed_plans: 4
+  percent: 57
 ---
 
 # Project State
@@ -24,11 +24,11 @@ See: .planning/PROJECT.md (updated 2026-04-21)
 
 ## Current Position
 
-Phase: 4 (New Figures, Data-Gated — H0 Forest & PP-Plot) — ready to plan
+Phase: 5 (Annotation & Decluttering Rollout) — ready to plan
 Plan: —
-Status: Phase 3 COMPLETE (new static figures shipped, 3 commits 13d200b..30bce20)
-Progress: [############..................] 3/7 phases (foundation VR-F1..F4 shipped pre-roadmap)
-Last activity: 2026-06-21 — Phase 3 shipped: fig21 selection-function explainer + fig22 population view (new composite modules selection_plots.py + population_plots.py reusing tested panels); fig02 color_by surfaced; gate green (630 passed). DATA NOTE: fig21/fig22 manifest PDFs await an aligned CRB+posteriors dataset (production/seed500); factories verified against real-but-bridged data. OPEN (user): confirm composite panel layouts (§5.3/§5.4) + which scalar drives color_by, before Phase 5 annotation.
+Status: Phase 4 COMPLETE (data-gated forest + PP-plot scaffolded, 2 commits e5793ed..acad9cd)
+Progress: [################..............] 4/7 phases (foundation VR-F1..F4 shipped pre-roadmap)
+Last activity: 2026-06-21 — Phase 4 shipped: fig23 H0 forest/tension (literature table + DATA-GATED THIS_WORK_H0/load_this_work_h0) + fig24 bilby PP-plot/coverage (binomial bands + KS + DATA-GATED load_pp_ranks/make_synthetic_ranks); both render standalone; gate green (649 passed). DATA-GATES OPEN (auto-close on production posterior / real ranks). User chose continue-autonomously 4→6; taste defaults flagged for review.
 
 **v2.3 phase order (all GSD, never /physics-change):**
 1. Posterior Factory Consolidation — VR-CONS-01/02
