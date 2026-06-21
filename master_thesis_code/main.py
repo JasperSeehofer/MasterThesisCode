@@ -1512,6 +1512,24 @@ def generate_figures(output_dir: str) -> None:
 
     manifest.append(("fig22_population_view", _gen_population_view))
 
+    # 23. H0 forest / tension plot (Phase 4, VR-NEW-01). Needs NO simulation
+    # data — it renders standalone on the curated literature table + a
+    # PLACEHOLDER this-work row. It still calls the DATA-GATE loader so the gate
+    # auto-closes if a production posterior is present; any failure falls back to
+    # the placeholder, so this figure ALWAYS renders (never returns None).
+    def _gen_h0_forest() -> tuple[object, object] | None:
+        from master_thesis_code.plotting.forest_plot import load_this_work_h0, plot_h0_forest
+
+        try:
+            this_work = load_this_work_h0(Path(output_dir))
+        except Exception:  # noqa: BLE001 — never let the gate abort the figure
+            from master_thesis_code.plotting.forest_plot import THIS_WORK_H0
+
+            this_work = THIS_WORK_H0
+        return plot_h0_forest(this_work=this_work)
+
+    manifest.append(("fig23_h0_forest", _gen_h0_forest))
+
     # 16. Paper figure: H0 posterior comparison (D-01, D-09)
     def _gen_paper_h0_posterior() -> tuple[object, object] | None:
         from master_thesis_code.plotting.paper_figures import plot_h0_posterior_comparison
