@@ -26,15 +26,15 @@ during the injection campaign.  The legacy SNR-rescaling helper
 directly) but the survival estimator does not require it.
 
 References:
-    Finn & Chernoff (1993), arXiv:gr-qc/9301003 — detection horizon / SNR
-        threshold for inspirals.
-    Finn (1996), arXiv:gr-qc/9601048 — p_det = P(Theta > Theta_thr) as a
-        survival function of the orientation/distance factor.
-    Gray et al. (2020), arXiv:1908.06050, Section III.B-C — selection
-        function structure for the numerator/denominator.
-    Mandel, Farr & Gair (2019), arXiv:1809.02063 — fixed-injection selection
-        function evaluated at hypothesis observer-frame parameters.
-    SNR ~ 1/d_L: Hogg (1999), arXiv:astro-ph/9905116, Eq. (16).
+    - Finn & Chernoff (1993), arXiv:gr-qc/9301003 — detection horizon / SNR
+      threshold for inspirals.
+    - Finn (1996), arXiv:gr-qc/9601048 — p_det = P(Theta > Theta_thr) as a
+      survival function of the orientation/distance factor.
+    - Gray et al. (2020), arXiv:1908.06050, Section III.B-C — selection
+      function structure for the numerator/denominator.
+    - Mandel, Farr & Gair (2019), arXiv:1809.02063 — fixed-injection selection
+      function evaluated at hypothesis observer-frame parameters.
+    - SNR ~ 1/d_L: Hogg (1999), arXiv:astro-ph/9905116, Eq. (16).
 """
 
 # ASSERT_CONVENTION: natural_units=SI, distance=Gpc, mass=solar_masses,
