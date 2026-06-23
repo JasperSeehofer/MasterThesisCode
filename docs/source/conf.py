@@ -16,7 +16,6 @@ extensions = [
     "sphinx.ext.napoleon",
     "sphinx.ext.viewcode",
     "sphinx.ext.mathjax",
-    "sphinx.ext.intersphinx",
     "sphinx_copybutton",
 ]
 
@@ -51,13 +50,15 @@ autodoc_mock_imports = [
     "GPUtil",
 ]
 
-# Intersphinx: cross-link to external docs
-intersphinx_mapping = {
-    "python": ("https://docs.python.org/3.13", None),
-    "numpy": ("https://numpy.org/doc/stable", None),
-    "scipy": ("https://docs.scipy.org/doc/scipy", None),
-    "astropy": ("https://docs.astropy.org/en/stable", None),
-}
+# Intersphinx is intentionally NOT enabled. The CI runner has no reliable
+# outbound network to fetch external objects.inv inventories, and the `docs`
+# job builds with -W (warnings-as-errors), so a single "failed to reach any of
+# the inventories" warning fails the build and blocks the GitHub Pages deploy.
+# That warning is untyped and cannot be silenced via suppress_warnings. Without
+# intersphinx, external types in the API docs simply render unlinked (no
+# warnings, since nitpicky is off), and the build no longer depends on network.
+# Re-add `sphinx.ext.intersphinx` + an intersphinx_mapping for a local/networked
+# build if external cross-links are wanted.
 
 html_theme = "furo"
 html_static_path = ["_static"]
