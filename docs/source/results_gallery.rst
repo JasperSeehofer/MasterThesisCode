@@ -105,7 +105,7 @@ Parameter estimation
    **fig14 — CRB coverage.** Cramér–Rao bound coverage across the detected events.
 
 Instrument & signals
--------------------
+--------------------
 
 .. figure:: figures/fig10_lisa_psd.png
    :width: 90%
@@ -122,7 +122,7 @@ Instrument & signals
    signals against the LISA sensitivity.
 
 Campaign summary
----------------
+----------------
 
 .. figure:: figures/fig15_campaign_dashboard.png
    :width: 90%
