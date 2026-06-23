@@ -10,6 +10,12 @@ EMRI Bayesian H₀ Inference — Documentation
    limitations
 
 .. toctree::
+   :maxdepth: 1
+   :caption: Results
+
+   results_gallery
+
+.. toctree::
    :maxdepth: 2
    :caption: API Reference
 

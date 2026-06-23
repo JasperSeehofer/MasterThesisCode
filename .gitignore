@@ -25,6 +25,8 @@ saved_figures/
 *.png
 # Exception: committed baseline audit histograms in .planning/
 !.planning/*.png
+# Exception: committed documentation gallery figures (served on GitHub Pages)
+!docs/source/figures/*.png
 
 # Run metadata (per-run)
 run_metadata.json

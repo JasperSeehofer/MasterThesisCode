@@ -41,7 +41,26 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   `docs/H0_BIAS_RESOLUTION.md` §3.17. Ref: Gray et al. (2020) arXiv:1908.06050 Eq.
   A.9/A.10; Mandel, Farr & Gair (2019) arXiv:1809.02063.
 
+### Fixed
+- `__main__.py`: force a clean process exit (`logging.shutdown()` + flush +
+  `os._exit(0)`) at the `python -m master_thesis_code` entrypoint. The
+  `--generate_figures` command enables matplotlib LaTeX rendering
+  (`text.usetex=True`) — the only command that does — whose `latex`/`dvipng`
+  helper subprocesses left the interpreter blocked during teardown on the
+  cluster: the combine job wrote all 15 figures in ~2 min, then idled ~43 min
+  until SLURM killed it at walltime (`TIMEOUT`, e.g. job 5148384), wasting the
+  node and poisoning the job exit state. Scoped to the CLI entrypoint so
+  library/test callers of `main.main()` are unaffected (`os._exit` would
+  otherwise terminate a hosting pytest process).
+
 ### Added
+- Results gallery on the documentation site / GitHub Pages
+  (`docs/source/results_gallery.rst`, linked from the `index.rst` toctree): a
+  grouped, captioned gallery of the 15 production figures (fig01–fig15) from the
+  `run_20260620_seed500_phase50` campaign (1385 detections, 83-point H₀ grid;
+  combined MAP h=0.737 1D / 0.732 2D). Figures are committed as web PNGs under
+  `docs/source/figures/` (with a `.gitignore` negation for the global `*.png`
+  rule).
 - Phase 48 production-sweep verdict
   (`scripts/bias_investigation/outputs/phase46_merged/h3_production_sweep_verdict.json`):
   1D MAP=0.7324 (σ_boot=0.0021, bias=+0.0024, z=+1.16σ) and 2D
