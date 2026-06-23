@@ -20,11 +20,18 @@ from master_thesis_code.plotting._colors import (
     CYCLE,
     EDGE,
     MEAN,
+    METHOD,
+    PLANCK_BAND,
+    PRIOR,
     REFERENCE,
+    SHOES_BAND,
     TRUTH,
-    VARIANT_NO_MASS,
 )
-from master_thesis_code.plotting._helpers import _fig_from_ax, get_figure
+from master_thesis_code.plotting._helpers import (
+    _fig_from_ax,
+    compute_hdi_interval,
+    get_figure,
+)
 from master_thesis_code.plotting._labels import LABELS
 
 
@@ -68,10 +75,19 @@ def plot_combined_posterior(
     normalize: str = "peak",
     show_credible: bool = True,
     show_references: bool = True,
+    show_prior: bool = True,
     color: str | None = None,
+    linestyle: str = "-",
     ax: Axes | None = None,
 ) -> tuple[Figure, Axes]:
-    """Plot a single combined Hubble constant posterior.
+    """Plot a combined Hubble-constant posterior (Observatory style).
+
+    The two pipeline variants share one hue and are separated by *linestyle*
+    (solid = Without M_z, dashed = With M_z).  The contextual elements -- the
+    flat prior, the nested 50/68/95% HDI shading, the Planck/SH0ES reference
+    bands, the injected-truth line, the km/s/Mpc top axis, and the MAP title --
+    are drawn once, on the *primary* call (``ax is None``); an overlay call
+    (``ax`` given) only adds its curve.
 
     Parameters
     ----------
@@ -80,118 +96,105 @@ def plot_combined_posterior(
     posterior:
         Posterior probability at each *h_values* point.
     true_h:
-        True (injected) value of h for the reference line.
+        Injected value of h, drawn as the truth line.
     label:
-        Optional curve label for the legend.
+        Curve label for the legend.
     normalize:
-        ``"peak"`` (default) normalizes so the maximum equals 1.
-        ``"density"`` normalizes so the integral equals 1.
+        ``"peak"`` (default) normalizes so the maximum equals 1; ``"density"``
+        normalizes so the integral equals 1.
     show_credible:
-        If ``True`` (default), shade 68% and 95% credible intervals.
+        Shade the nested 50/68/95% HDI under the (primary) curve.
     show_references:
-        If ``True`` (default), show Planck and SH0ES reference bands.
+        Draw the Planck and SH0ES reference bands (primary call only).
+    show_prior:
+        Draw the flat H0 prior overlay (primary call only).
     color:
-        Curve and CI shading color.  Defaults to ``VARIANT_NO_MASS``.
+        Curve color.  Defaults to the dark-siren blue ``METHOD["dark"]``.
+    linestyle:
+        Curve linestyle (``"-"`` solid, ``"--"`` dashed).
     ax:
-        Optional pre-existing Axes to draw on.
+        Optional pre-existing Axes to overlay on.  When given, only the curve
+        is drawn (contextual elements are skipped).
     """
+    is_primary = ax is None
     if ax is None:
         fig, ax = get_figure(preset="single")
     else:
         fig = _fig_from_ax(ax)
 
     if color is None:
-        color = VARIANT_NO_MASS
+        color = METHOD["dark"]
 
     normalized = _normalize_posterior(posterior, h_values, normalize)
 
-    # Main posterior curve
-    ax.plot(h_values, normalized, label=label, color=color)
+    # --- Reference bands (Planck pink, SH0ES cyan), behind everything ---
+    if is_primary and show_references:
+        ax.axvspan(0.669, 0.679, color=PLANCK_BAND, alpha=0.18, lw=0, zorder=0, label="Planck")
+        ax.axvspan(0.720, 0.740, color=SHOES_BAND, alpha=0.18, lw=0, zorder=0, label="SH0ES")
 
-    # --- Credible intervals (D-01) ---
-    if show_credible:
-        cumsum = np.cumsum(normalized)
-        cumsum = cumsum / cumsum[-1]  # CDF
-        quantiles = [0.025, 0.16, 0.84, 0.975]
-        indices = [int(np.searchsorted(cumsum, q)) for q in quantiles]
-        # Clamp to valid range
-        indices = [min(i, len(h_values) - 1) for i in indices]
-        h_q = [h_values[i] for i in indices]
-
-        # 95% region
-        mask_95 = (h_values >= h_q[0]) & (h_values <= h_q[3])
-        ax.fill_between(
-            h_values,
-            0,
-            normalized,
-            where=mask_95,
-            alpha=0.15,
-            color=color,
-        )
-        # 68% region
-        mask_68 = (h_values >= h_q[1]) & (h_values <= h_q[2])
-        ax.fill_between(
-            h_values,
-            0,
-            normalized,
-            where=mask_68,
-            alpha=0.3,
-            color=color,
-        )
-        # Thin boundary lines at interval edges
-        for h_edge in h_q:
-            ax.axvline(h_edge, color=color, linewidth=0.5, alpha=0.5)
-
-    # --- Reference bands (D-02) ---
-    if show_references:
-        # Planck: h = 0.674 +/- 0.005
-        planck_h, planck_sigma = 0.674, 0.005
-        ax.axvspan(
-            planck_h - planck_sigma,
-            planck_h + planck_sigma,
-            alpha=0.15,
-            color=CYCLE[6],
-            zorder=0,
-        )
-        ax.axvline(planck_h, color=CYCLE[6], linewidth=0.8, linestyle="--")
-        ax.text(
-            planck_h,
-            0.95,
-            "Planck",
-            transform=ax.get_xaxis_transform(),
-            ha="center",
-            va="top",
-            fontsize=6,
-            color=CYCLE[6],
+    # --- Flat H0 prior (peak-normalized -> constant 1.0 over the support) ---
+    if is_primary and show_prior:
+        ax.plot(
+            [float(h_values.min()), float(h_values.max())],
+            [1.0, 1.0],
+            color=PRIOR,
+            linestyle=(0, (4, 3)),
+            linewidth=0.8,
+            zorder=1,
+            label="flat prior",
         )
 
-        # SH0ES: h = 0.73 +/- 0.01
-        shoes_h, shoes_sigma = 0.73, 0.01
-        ax.axvspan(
-            shoes_h - shoes_sigma,
-            shoes_h + shoes_sigma,
-            alpha=0.15,
-            color=CYCLE[0],
-            zorder=0,
-        )
-        ax.axvline(shoes_h, color=CYCLE[0], linewidth=0.8, linestyle="--")
-        ax.text(
-            shoes_h,
-            0.95,
-            "SH0ES",
-            transform=ax.get_xaxis_transform(),
-            ha="center",
-            va="top",
-            fontsize=6,
-            color=CYCLE[0],
-        )
+    # --- Nested 50/68/95% HDI shading under the primary curve ---
+    if is_primary and show_credible:
+        for level, alpha in ((0.954, 0.12), (0.683, 0.22), (0.500, 0.34)):
+            lo, hi = compute_hdi_interval(h_values, normalized, level)
+            mask = (h_values >= lo) & (h_values <= hi)
+            ax.fill_between(
+                h_values, 0.0, normalized, where=mask.tolist(), color=color, alpha=alpha, lw=0
+            )
 
-    # Truth line
-    ax.axvline(true_h, color=TRUTH, linestyle="dashed", label=f"True $h = {true_h}$")
+    # --- Main posterior curve ---
+    ax.plot(
+        h_values,
+        normalized,
+        color=color,
+        linestyle=linestyle,
+        linewidth=1.6 if is_primary else 1.3,
+        label=label,
+        zorder=4,
+    )
 
-    ax.set_xlabel(LABELS["h"])
-    ax.set_ylabel(r"$p(h|\mathrm{data})$")
-    ax.legend()
+    if is_primary:
+        # Injected truth.
+        ax.axvline(
+            true_h,
+            color=TRUTH,
+            linestyle="dashed",
+            linewidth=1.0,
+            zorder=3,
+            label=rf"truth $h={true_h:g}$",
+        )
+        # Secondary top axis in km/s/Mpc (H0 = 100 h).
+        sec = ax.secondary_xaxis(
+            "top",
+            functions=(
+                lambda h: np.asarray(h, dtype=np.float64) * 100.0,
+                lambda hh: np.asarray(hh, dtype=np.float64) / 100.0,
+            ),
+        )
+        sec.set_xlabel(r"$H_0\ [\mathrm{km\,s^{-1}\,Mpc^{-1}}]$")
+        # Title: MAP with 68% HDI (kept inside math mode so '%' renders under
+        # both mathtext and usetex).
+        map_h = float(h_values[int(np.argmax(normalized))])
+        lo68, hi68 = compute_hdi_interval(h_values, normalized, 0.683)
+        ax.set_title(
+            rf"$h = {map_h:.3f}^{{+{hi68 - map_h:.3f}}}_{{-{map_h - lo68:.3f}}}\,(68\,\%)$"
+        )
+        ax.set_ylim(bottom=0.0)
+        ax.set_xlabel(LABELS["h"])
+        ax.set_ylabel(r"$p(h\,|\,\mathrm{data})$")
+
+    ax.legend(loc="upper left", fontsize=6)
     return fig, ax
 
 

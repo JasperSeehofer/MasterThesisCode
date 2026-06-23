@@ -910,7 +910,7 @@ def generate_figures(output_dir: str) -> None:
     def _gen_h0_posterior_combined() -> tuple[object, object] | None:
         if post_data is None:
             return None
-        from master_thesis_code.plotting._colors import VARIANT_NO_MASS, VARIANT_WITH_MASS
+        from master_thesis_code.plotting._colors import VARIANT_STYLE
         from master_thesis_code.plotting._helpers import load_canonical_combined_posterior
         from master_thesis_code.plotting.bayesian_plots import plot_combined_posterior
 
@@ -925,7 +925,8 @@ def generate_figures(output_dir: str) -> None:
             combined,
             0.73,
             label=r"Without $M_z$",
-            color=VARIANT_NO_MASS,
+            color=VARIANT_STYLE["no_mass"][0],
+            linestyle=VARIANT_STYLE["no_mass"][1],
         )
         if post_data_with is not None:
             try:
@@ -940,7 +941,8 @@ def generate_figures(output_dir: str) -> None:
                     comb_w,
                     0.73,
                     label=r"With $M_z$",
-                    color=VARIANT_WITH_MASS,
+                    color=VARIANT_STYLE["with_mass"][0],
+                    linestyle=VARIANT_STYLE["with_mass"][1],
                     show_references=False,
                     ax=ax,
                 )

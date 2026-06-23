@@ -48,8 +48,9 @@ axes.prop_cycle: cycler(color=["#E69F00", "#56B4E9", "#009E73", "#F0E442", "#007
 # Rendering performance
 agg.path.chunksize: 10000
 
-# Default colormap
-image.cmap: viridis
+# Default colormap — Atlas: perceptually-uniform, CVD-safe, greyscale-robust.
+# (batlow when cmcrameri is installed; factories use _colors.SEQUENTIAL_CMAP.)
+image.cmap: cividis
 
 # Tight layout
 figure.constrained_layout.use: True

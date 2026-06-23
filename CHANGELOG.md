@@ -40,6 +40,13 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   `p(G|D,H0)` and/or single-seed scatter (multi-seed in flight). See
   `docs/H0_BIAS_RESOLUTION.md` §3.17. Ref: Gray et al. (2020) arXiv:1908.06050 Eq.
   A.9/A.10; Mandel, Farr & Gair (2019) arXiv:1809.02063.
+- **[viz]** `plotting/bayesian_plots.py::plot_combined_posterior` (fig01)
+  reworked to the "Observatory" grammar: the two mass-convention variants now
+  share one blue separated by linestyle (solid Without M_z / dashed With M_z),
+  with nested 50/68/95% HDI shading, a flat-prior overlay, Planck (pink) + SH0ES
+  (cyan) reference bands as swatch labels, a km/s/Mpc secondary top axis, and a
+  MAP title. `emri_thesis.mplstyle` default `image.cmap` viridis → cividis
+  (Atlas: perceptually-uniform, CVD-safe).
 
 ### Fixed
 - `__main__.py`: force a clean process exit (`logging.shutdown()` + flush +
@@ -54,6 +61,13 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   otherwise terminate a hosting pytest process).
 
 ### Added
+- Visualization redesign — Observatory + Atlas foundation (see
+  `docs/VIZ_REDESIGN_PROPOSAL.md`: 4 named design directions, a per-figure
+  current→proposed table, 8 new-figure ideas). New `_colors.py` v2 tokens:
+  `METHOD` (method→color map), `VARIANT_STYLE` (one hue + linestyle per
+  variant), `PLANCK_BAND`/`SHOES_BAND`/`PRIOR`, and `SEQUENTIAL_CMAP`/
+  `DIVERGING_CMAP`/`CYCLIC_CMAP` (optional `cmcrameri` batlow/vik/romaO with a
+  cividis/RdBu/twilight fallback).
 - Results gallery on the documentation site / GitHub Pages
   (`docs/source/results_gallery.rst`, linked from the `index.rst` toctree): a
   grouped, captioned gallery of the 15 production figures (fig01–fig15) from the
