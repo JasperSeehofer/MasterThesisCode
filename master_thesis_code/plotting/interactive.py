@@ -31,7 +31,11 @@ if TYPE_CHECKING:
 from master_thesis_code.plotting._colors import (
     CYCLE,
     EDGE,
+    METHOD,
+    PLANCK_BAND,
+    PRIOR,
     REFERENCE,
+    SHOES_BAND,
     TRUTH,
     VARIANT_NO_MASS,
     VARIANT_WITH_MASS,
@@ -142,6 +146,43 @@ def _credible_interval_width(
     return hi - lo
 
 
+# Target H0-precision band widths (dimensionless h CI width), mirroring the
+# static fig08 convergence reference bands (convergence_plots.py).
+_PLANCK_TARGET_WIDTH: float = 0.010
+_SHOES_TARGET_WIDTH: float = 0.020
+
+
+def _batlow_colorscale(n: int = 16) -> list[list[float | str]]:
+    """Build a Plotly colorscale (list of ``[stop, hex]``) from cmcrameri batlow.
+
+    Falls back to a perceptually-uniform matplotlib built-in (``cividis``) when
+    cmcrameri is not installed so the no-dependency path still renders.
+
+    Parameters
+    ----------
+    n:
+        Number of colour stops to sample (default 16).
+
+    Returns
+    -------
+    list[list[float | str]]
+        Plotly-compatible colorscale, e.g. ``[[0.0, "#011959"], ...]``.
+    """
+    import matplotlib as mpl
+
+    try:
+        import cmcrameri.cm as cmc
+
+        cmap = cmc.batlow
+    except ImportError:
+        cmap = mpl.colormaps["cividis"]
+    stops: list[list[float | str]] = []
+    for i in range(n):
+        frac = i / (n - 1)
+        stops.append([frac, mpl.colors.to_hex(cmap(frac))])
+    return stops
+
+
 # ---------------------------------------------------------------------------
 # Public factory functions
 # ---------------------------------------------------------------------------
@@ -155,81 +196,115 @@ def interactive_combined_posterior(
     label: str | None = None,
     show_credible: bool = True,
     show_references: bool = True,
+    posterior_with_mass: npt.NDArray[np.float64] | None = None,
+    bootstrap_draws: list[npt.NDArray[np.float64]] | None = None,
 ) -> go.Figure:
-    """Interactive combined H0 posterior figure.
+    """Interactive combined H0 posterior figure (Observatory + Atlas design).
 
     Parameters
     ----------
     h_values:
         Grid of h = H0/100 values.
     posterior:
-        Posterior density evaluated on *h_values*.
+        Combined posterior density evaluated on *h_values* (the "Without M_z"
+        / dark-siren variant; drawn solid blue).
     true_h:
         True (injected) h value; shown as a vertical line.
     label:
-        Optional trace name override.
+        Optional trace name override for the primary posterior.
     show_credible:
-        If True, add 68% and 95% credible interval shading.
+        If True, add nested 50/68/95% HDI interval shading.
     show_references:
-        If True, add Planck and SH0ES reference bands.
+        If True, add Planck (pink) and SH0ES (cyan) shaded reference bands.
+    posterior_with_mass:
+        Optional "With M_z" variant posterior. Drawn as the SAME blue hue
+        differing only by dashed linestyle (LVK sensitivity convention).
+    bootstrap_draws:
+        Optional list of bootstrap posterior draws on *h_values*. When given
+        (and non-empty), an animated "HOPs" Play button cycles the draws via
+        Plotly frames; gated off gracefully otherwise.
 
     Returns
     -------
     go.Figure
         Plotly figure.
     """
-    trace_name = label or "Posterior"
+    trace_name = label or "Without M\u2082 (dark siren)"
     fig = go.Figure()
 
-    # Convert hex color to rgba string for fill
-    _hex = CYCLE[0].lstrip("#")
-    _r, _g, _b = int(_hex[0:2], 16), int(_hex[2:4], 16), int(_hex[4:6], 16)
-    _fill_color = f"rgba({_r},{_g},{_b},0.15)"
+    _fill_color = _hex_to_rgba(METHOD["dark"], 0.15)
 
-    # Main posterior trace
+    # --- Flat prior overlay (grey dashed horizontal) ---------------------
+    # The flat H0 prior is uniform over the grid; we draw it at the mean
+    # posterior height so the prior->posterior update is visible.
+    prior_level = float(np.mean(posterior))
+    fig.add_trace(
+        go.Scatter(
+            x=[float(h_values[0]), float(h_values[-1])],
+            y=[prior_level, prior_level],
+            mode="lines",
+            name="Flat prior",
+            line={"color": PRIOR, "width": 1.5, "dash": "dash"},
+            hovertemplate="Flat prior<extra></extra>",
+        )
+    )
+
+    # --- Nested 50/68/95% HDI shading ------------------------------------
+    if show_credible:
+        for level, opacity in ((0.95, 0.12), (0.68, 0.20), (0.50, 0.30)):
+            lo, hi = _credible_interval_bounds(h_values, posterior, level)
+            mask = (h_values >= lo) & (h_values <= hi)
+            fig.add_trace(
+                go.Scatter(
+                    x=h_values[mask].tolist(),
+                    y=posterior[mask].tolist(),
+                    mode="lines",
+                    line={"color": "rgba(0,0,0,0)"},
+                    fill="tozeroy",
+                    fillcolor=_hex_to_rgba(METHOD["dark"], opacity),
+                    name=f"{int(level * 100)}% HDI",
+                    legendgroup="hdi",
+                    hoverinfo="skip",
+                )
+            )
+
+    # --- Main posterior trace (Without M_z = solid blue) -----------------
     fig.add_trace(
         go.Scatter(
             x=h_values.tolist(),
             y=posterior.tolist(),
             mode="lines",
             name=trace_name,
-            line={"color": CYCLE[0], "width": 2},
-            fill="tozeroy",
+            line={"color": METHOD["dark"], "width": 2},
             fillcolor=_fill_color,
             hovertemplate="h = %{x:.4f}<br>Density = %{y:.4f}<extra></extra>",
         )
     )
 
-    # Credible intervals
-    if show_credible:
-        for level, alpha_hex in ((0.95, "33"), (0.68, "55")):
-            lo, hi = _credible_interval_bounds(h_values, posterior, level)
-            label_ci = f"{int(level * 100)}% CI"
-            fig.add_vrect(
-                x0=lo,
-                x1=hi,
-                fillcolor=CYCLE[0],
-                opacity=0.15 if level == 0.95 else 0.25,
-                line_width=0,
-                annotation_text=label_ci,
-                annotation_position="top left",
-                annotation_font_size=11,
-                name=label_ci,
-                legendgroup=label_ci,
-                showlegend=True,
+    # --- With M_z variant: SAME blue, dashed -----------------------------
+    if posterior_with_mass is not None:
+        fig.add_trace(
+            go.Scatter(
+                x=h_values.tolist(),
+                y=np.asarray(posterior_with_mass, dtype=np.float64).tolist(),
+                mode="lines",
+                name="With M\u2082 (dark siren)",
+                line={"color": METHOD["dark"], "width": 2, "dash": "dash"},
+                hovertemplate="h = %{x:.4f}<br>Density = %{y:.4f}<extra>With M_z</extra>",
             )
+        )
 
-    # Reference bands
+    # --- Reference bands: Planck (pink) + SH0ES (cyan) -------------------
     if show_references:
         for (rlo, rhi), rname, rcolor in (
-            (_PLANCK_H_RANGE, "Planck 2018", REFERENCE),
-            (_SHOES_H_RANGE, "SH0ES", CYCLE[4]),
+            (_PLANCK_H_RANGE, "Planck 2018", PLANCK_BAND),
+            (_SHOES_H_RANGE, "SH0ES", SHOES_BAND),
         ):
             fig.add_vrect(
                 x0=rlo,
                 x1=rhi,
                 fillcolor=rcolor,
-                opacity=0.2,
+                opacity=0.22,
                 line_color=rcolor,
                 line_width=1,
                 name=rname,
@@ -237,15 +312,85 @@ def interactive_combined_posterior(
                 showlegend=True,
             )
 
-    # Truth line
+    # --- Truth line (combined/headline black) ----------------------------
     fig.add_vline(
         x=true_h,
-        line_color=TRUTH,
-        line_dash="dash",
+        line_color=METHOD["combined"],
+        line_dash="dot",
         line_width=2,
         annotation_text="Truth",
         annotation_position="top right",
     )
+
+    # --- Optional HOPs (hypothetical outcome plots) Play button ----------
+    if bootstrap_draws:
+        frames: list[go.Frame] = []
+        n_main = len(fig.data)  # index of the bootstrap overlay trace to add
+        for d_idx, draw in enumerate(bootstrap_draws):
+            frames.append(
+                go.Frame(
+                    name=f"draw{d_idx}",
+                    data=[
+                        go.Scatter(
+                            x=h_values.tolist(),
+                            y=np.asarray(draw, dtype=np.float64).tolist(),
+                        )
+                    ],
+                    traces=[n_main],
+                )
+            )
+        # Seed the animated overlay trace with the first draw.
+        first = np.asarray(bootstrap_draws[0], dtype=np.float64)
+        fig.add_trace(
+            go.Scatter(
+                x=h_values.tolist(),
+                y=first.tolist(),
+                mode="lines",
+                name="Bootstrap draw",
+                line={"color": METHOD["spectral"], "width": 1.5},
+                opacity=0.85,
+                hovertemplate="bootstrap h = %{x:.4f}<extra></extra>",
+            )
+        )
+        fig.frames = frames
+        fig.update_layout(
+            updatemenus=[
+                {
+                    "type": "buttons",
+                    "showactive": False,
+                    "x": 0.0,
+                    "xanchor": "left",
+                    "y": 1.12,
+                    "yanchor": "top",
+                    "buttons": [
+                        {
+                            "label": "\u25b6 Play (HOPs)",
+                            "method": "animate",
+                            "args": [
+                                None,
+                                {
+                                    "frame": {"duration": 400, "redraw": True},
+                                    "fromcurrent": True,
+                                    "transition": {"duration": 0},
+                                },
+                            ],
+                        },
+                        {
+                            "label": "\u25a0 Stop",
+                            "method": "animate",
+                            "args": [
+                                [None],
+                                {
+                                    "frame": {"duration": 0, "redraw": False},
+                                    "mode": "immediate",
+                                    "transition": {"duration": 0},
+                                },
+                            ],
+                        },
+                    ],
+                }
+            ],
+        )
 
     fig.update_layout(
         title="Combined H\u2080 Posterior",
@@ -253,6 +398,177 @@ def interactive_combined_posterior(
         yaxis_title="Posterior density",
         legend={"orientation": "v"},
         hovermode="x unified",
+    )
+    return fig
+
+
+def interactive_h0_tension_explorer(
+    h_values: npt.NDArray[np.float64],
+    event_posteriors: list[npt.NDArray[np.float64]],
+    true_h: float,
+    *,
+    subset_sizes: list[int] | None = None,
+    seed: int = 42,
+) -> go.Figure:
+    """Self-contained Plotly H0-in-context tension explorer (NF-8).
+
+    Shows the combined H0 posterior against the Planck-pink and SH0ES-cyan
+    tension bands, with a native Plotly slider that scrubs the number of
+    stacked events ``N``. As ``N`` grows the posterior sharpens, letting the
+    viewer watch the measurement move into (or between) the tension anchors.
+
+    Parameters
+    ----------
+    h_values:
+        Grid of h = H0/100 values shared across all event posteriors.
+    event_posteriors:
+        Per-event posterior arrays evaluated on *h_values*.
+    true_h:
+        True (injected) h value; drawn as a vertical reference line.
+    subset_sizes:
+        Stacked-event counts to expose on the slider. Defaults to a log-ish
+        ladder capped at the available number of events.
+    seed:
+        RNG seed for reproducible (cumulative) event ordering.
+
+    Returns
+    -------
+    go.Figure
+        Plotly figure with a native event-count slider and tension bands.
+    """
+    n_events = len(event_posteriors)
+    if subset_sizes is None:
+        sizes = [s for s in _DEFAULT_SUBSETS if s <= n_events]
+        if not sizes or sizes[-1] != n_events:
+            sizes = [*sizes, n_events]
+        sizes = sorted(set(sizes))
+    else:
+        sizes = sorted({min(s, n_events) for s in subset_sizes})
+
+    # A single fixed random ordering so larger N nests the smaller subsets.
+    rng = np.random.default_rng(seed)
+    order = rng.permutation(n_events)
+
+    def _combined(n: int) -> npt.NDArray[np.float64]:
+        idx = order[:n]
+        log_post = [np.log(np.maximum(event_posteriors[int(i)], 1e-300)) for i in idx]
+        log_c = np.sum(log_post, axis=0)
+        log_c -= log_c.max()
+        c: npt.NDArray[np.float64] = np.exp(log_c).astype(np.float64)
+        norm = float(np.trapezoid(c, h_values))
+        if norm > 0:
+            c = c / norm
+        return c
+
+    init_n = sizes[-1]
+    init_c = _combined(init_n)
+
+    fig = go.Figure()
+
+    # Tension bands (full height).
+    for (rlo, rhi), rname, rcolor in (
+        (_PLANCK_H_RANGE, "Planck 2018", PLANCK_BAND),
+        (_SHOES_H_RANGE, "SH0ES", SHOES_BAND),
+    ):
+        fig.add_vrect(
+            x0=rlo,
+            x1=rhi,
+            fillcolor=rcolor,
+            opacity=0.22,
+            line_color=rcolor,
+            line_width=1,
+            name=rname,
+            legendgroup=rname,
+            showlegend=True,
+        )
+
+    fig.add_vline(
+        x=true_h,
+        line_color=METHOD["combined"],
+        line_dash="dot",
+        line_width=2,
+        annotation_text="Truth",
+        annotation_position="top right",
+    )
+
+    # Animated combined-posterior trace (seeded with the largest N).
+    fig.add_trace(
+        go.Scatter(
+            x=h_values.tolist(),
+            y=init_c.tolist(),
+            mode="lines",
+            name="Combined posterior",
+            line={"color": METHOD["dark"], "width": 2.5},
+            fill="tozeroy",
+            fillcolor=_hex_to_rgba(METHOD["dark"], 0.15),
+            hovertemplate="h = %{x:.4f}<br>Density = %{y:.4f}<extra></extra>",
+        )
+    )
+
+    frames: list[go.Frame] = [
+        go.Frame(
+            name=str(n),
+            data=[go.Scatter(x=h_values.tolist(), y=_combined(n).tolist())],
+            traces=[len(fig.data) - 1],
+        )
+        for n in sizes
+    ]
+    fig.frames = frames
+
+    slider_steps = [
+        {
+            "method": "animate",
+            "label": str(n),
+            "args": [
+                [str(n)],
+                {
+                    "mode": "immediate",
+                    "frame": {"duration": 0, "redraw": True},
+                    "transition": {"duration": 0},
+                },
+            ],
+        }
+        for n in sizes
+    ]
+
+    fig.update_layout(
+        title="H₀ in context — stack events and watch the tension",
+        xaxis_title=_strip_latex(LABELS["h"]),
+        yaxis_title="Posterior density",
+        xaxis_range=[0.55, 0.85],
+        hovermode="x unified",
+        sliders=[
+            {
+                "active": len(sizes) - 1,
+                "currentvalue": {"prefix": "Stacked events N = ", "font": {"size": 14}},
+                "pad": {"t": 50, "b": 10},
+                "steps": slider_steps,
+            }
+        ],
+        updatemenus=[
+            {
+                "type": "buttons",
+                "showactive": False,
+                "x": 0.0,
+                "xanchor": "left",
+                "y": 1.12,
+                "yanchor": "top",
+                "buttons": [
+                    {
+                        "label": "▶ Play",
+                        "method": "animate",
+                        "args": [
+                            None,
+                            {
+                                "frame": {"duration": 600, "redraw": True},
+                                "fromcurrent": True,
+                                "transition": {"duration": 0},
+                            },
+                        ],
+                    }
+                ],
+            }
+        ],
     )
     return fig
 
@@ -315,7 +631,7 @@ def interactive_sky_map(
             mode="markers",
             marker={
                 "color": snr.tolist(),
-                "colorscale": "Viridis",
+                "colorscale": _batlow_colorscale(),
                 "showscale": True,
                 "colorbar": {"title": "SNR"},
                 "size": 8,
@@ -412,7 +728,9 @@ def interactive_fisher_ellipses(
                 x_ellipse = (cx + x_rot).tolist()
                 y_ellipse = (cy + y_rot).tolist()
 
-                show_legend = level_idx == 0 and pair_idx == 0
+                # Consistent 1\u03c3/2\u03c3 legend: one entry per sigma level (shown
+                # only on the first event + first pair), grouped by level.
+                show_legend = ev_idx == 0 and pair_idx == 0
                 alpha = 0.35 / level
 
                 fig.add_trace(
@@ -423,9 +741,9 @@ def interactive_fisher_ellipses(
                         fill="toself",
                         fillcolor=color,
                         opacity=alpha,
-                        line={"color": color, "width": 1},
-                        name=f"Event {ev_idx} ({level:.0f}\u03c3)",
-                        legendgroup=f"event_{ev_idx}",
+                        line={"color": color, "width": 1, "shape": "linear"},
+                        name=f"{level:.0f}\u03c3",
+                        legendgroup=f"sigma_{level:.0f}",
                         showlegend=show_legend,
                         hovertemplate=(
                             f"Event {ev_idx}, {level:.0f}\u03c3<br>"
@@ -573,6 +891,27 @@ def interactive_h0_convergence(
             col=2,
         )
 
+    # Planck / SH0ES target-precision reference bands (horizontal), matching
+    # the static fig08 convergence figure so the curve can be read against
+    # "how many events to reach Planck/SH0ES-level precision".
+    _bw = 0.0008  # visual half-thickness of the horizontal swatch
+    for target, band_color, band_name in (
+        (_PLANCK_TARGET_WIDTH, PLANCK_BAND, "Planck precision"),
+        (_SHOES_TARGET_WIDTH, SHOES_BAND, "SH0ES precision"),
+    ):
+        fig.add_hrect(
+            y0=target - _bw,
+            y1=target + _bw,
+            fillcolor=band_color,
+            opacity=0.30,
+            line_width=0,
+            name=band_name,
+            legendgroup=band_name,
+            showlegend=True,
+            row=1,
+            col=2,
+        )
+
     h_label = _strip_latex(LABELS["h"])
     fig.update_xaxes(title_text=h_label, row=1, col=1)
     fig.update_yaxes(title_text="Posterior density", row=1, col=1)
@@ -639,8 +978,13 @@ def interactive_m_z_improvement(
     # Each metric has three traces: lower band, upper band (transparent
     # fill between), and the median line.  We pre-build all of them and
     # toggle visibility via an updatemenu.
-    fill_no = _hex_to_rgba(VARIANT_NO_MASS, 0.18)
-    fill_with = _hex_to_rgba(VARIANT_WITH_MASS, 0.25)
+    # Locked palette: both variants share ONE blue hue (METHOD["dark"]) and
+    # differ only by linestyle (solid = Without M_z, dashed = With M_z). The
+    # bootstrap 16-84 bands reuse the same hue at two alpha levels.
+    variant_no = METHOD["dark"]
+    variant_with = METHOD["dark"]
+    fill_no = _hex_to_rgba(variant_no, 0.18)
+    fill_with = _hex_to_rgba(variant_with, 0.28)
 
     def _series(
         name: str, source: dict[str, list[float]]
@@ -751,7 +1095,7 @@ def interactive_m_z_improvement(
                 mode="lines+markers",
                 name="Without M_z",
                 legendgroup="no",
-                line={"color": VARIANT_NO_MASS, "width": 2},
+                line={"color": variant_no, "width": 2},
                 marker={"size": 7, "symbol": "circle"},
                 hovertemplate="N = %{x}<br>median = %{y:.4f}<extra>Without M_z</extra>",
                 visible=visible,
@@ -799,7 +1143,7 @@ def interactive_m_z_improvement(
                 mode="lines+markers",
                 name="With M_z",
                 legendgroup="with",
-                line={"color": VARIANT_WITH_MASS, "width": 2, "dash": "dash"},
+                line={"color": variant_with, "width": 2, "dash": "dash"},
                 marker={"size": 7, "symbol": "square"},
                 hovertemplate="N = %{x}<br>median = %{y:.4f}<extra>With M_z</extra>",
                 visible=visible,
@@ -848,7 +1192,7 @@ def interactive_m_z_improvement(
             mode="lines",
             name="Without M_z (posterior)",
             legendgroup="no",
-            line={"color": VARIANT_NO_MASS, "width": 2},
+            line={"color": variant_no, "width": 2},
             hovertemplate="h = %{x:.4f}<br>density = %{y:.3f}<extra>Without M_z</extra>",
             showlegend=False,
         ),
@@ -862,7 +1206,7 @@ def interactive_m_z_improvement(
             mode="lines",
             name="With M_z (posterior)",
             legendgroup="with",
-            line={"color": VARIANT_WITH_MASS, "width": 2, "dash": "dash"},
+            line={"color": variant_with, "width": 2, "dash": "dash"},
             hovertemplate="h = %{x:.4f}<br>density = %{y:.3f}<extra>With M_z</extra>",
             showlegend=False,
         ),
@@ -1208,7 +1552,48 @@ def generate_all_interactive(output_dir: str, data_dir: str) -> list[str]:
             if norm > 0:
                 combined = combined / norm
 
-            fig1 = interactive_combined_posterior(h_values, combined, TRUE_H)
+            # Optional "With M_z" variant (same blue, dashed) when available.
+            combined_wm: npt.NDArray[np.float64] | None = None
+            if (posterior_base / "posteriors_with_bh_mass").is_dir():
+                try:
+                    _hv_wm, comb_wm, _m_wm = load_canonical_combined_posterior(
+                        posterior_base, "posteriors_with_bh_mass"
+                    )
+                    nwm = float(np.trapezoid(comb_wm, _hv_wm))
+                    if nwm > 0 and np.array_equal(_hv_wm, h_values):
+                        combined_wm = comb_wm / nwm
+                except (FileNotFoundError, ValueError, KeyError):
+                    combined_wm = None
+
+            # Optional HOPs bootstrap draws over the per-event posteriors.
+            boot_draws: list[npt.NDArray[np.float64]] | None = None
+            if post_data is not None:
+                _hv_ev, ev_posts = post_data
+                if np.array_equal(_hv_ev, h_values) and len(ev_posts) >= 2:
+                    rng_b = np.random.default_rng(0)
+                    n_ev = len(ev_posts)
+                    draws: list[npt.NDArray[np.float64]] = []
+                    for _b in range(12):
+                        sel = rng_b.integers(0, n_ev, size=n_ev)
+                        log_c = np.sum(
+                            [np.log(np.maximum(ev_posts[int(i)], 1e-300)) for i in sel],
+                            axis=0,
+                        )
+                        log_c -= log_c.max()
+                        c = np.exp(log_c)
+                        nb = float(np.trapezoid(c, h_values))
+                        if nb > 0:
+                            c = c / nb
+                        draws.append(c)
+                    boot_draws = draws
+
+            fig1 = interactive_combined_posterior(
+                h_values,
+                combined,
+                TRUE_H,
+                posterior_with_mass=combined_wm,
+                bootstrap_draws=boot_draws,
+            )
             path1 = os.path.join(output_dir, "combined_posterior.html")
             fig1.write_html(path1, include_plotlyjs="cdn")
             written.append(path1)
@@ -1310,6 +1695,27 @@ def generate_all_interactive(output_dir: str, data_dir: str) -> list[str]:
             _LOGGER.warning("Not enough posterior data for convergence -- skipping")
     else:
         _LOGGER.warning("No posterior data -- skipping h0_convergence.html")
+
+    # ------------------------------------------------------------------
+    # Figure 4b: H0 tension explorer (NF-8)
+    # ------------------------------------------------------------------
+    if post_data is not None:
+        h_values, event_posteriors = post_data
+        if len(event_posteriors) >= 2:
+            try:
+                from master_thesis_code.constants import H as TRUE_H
+
+                fig_te = interactive_h0_tension_explorer(h_values, event_posteriors, TRUE_H)
+                path_te = os.path.join(output_dir, "h0_tension_explorer.html")
+                fig_te.write_html(path_te, include_plotlyjs="cdn")
+                written.append(path_te)
+                _LOGGER.info("Written: %s", path_te)
+            except Exception as exc:
+                _LOGGER.warning("Skipping h0_tension_explorer.html: %s", exc)
+        else:
+            _LOGGER.warning("Not enough posterior data for tension explorer -- skipping")
+    else:
+        _LOGGER.warning("No posterior data -- skipping h0_tension_explorer.html")
 
     # ------------------------------------------------------------------
     # Figure 5: M_z improvement explorer
@@ -1670,6 +2076,8 @@ def interactive_closure_test_overlay(
     from master_thesis_code.plotting._helpers import load_canonical_combined_posterior
 
     fig = go.Figure()
+    truths: list[float] = []
+    maps: list[float] = []
     for h_true in sorted(h_runs):
         try:
             h_grid, posterior, meta = load_canonical_combined_posterior(
@@ -1678,15 +2086,74 @@ def interactive_closure_test_overlay(
         except FileNotFoundError:
             continue
         norm = posterior / posterior.max() if posterior.max() > 0 else posterior
+        map_h = float(meta["continuous_map"])
+        truths.append(float(h_true))
+        maps.append(map_h)
         fig.add_trace(
             go.Scatter(
                 x=h_grid,
                 y=norm,
                 mode="lines",
-                name=f"h_true={h_true:.2f} (MAP {meta['continuous_map']:.3f})",
+                line={"color": METHOD["dark"], "width": 2},
+                name=f"h_true={h_true:.2f} (MAP {map_h:.3f})",
             )
         )
-        fig.add_vline(x=h_true, line_dash="dot", line_width=1)
+        fig.add_vline(x=h_true, line_dash="dot", line_width=1, line_color=METHOD["combined"])
+
+    # --- MAP-vs-truth diagonal inset (coverage teaser) -------------------
+    # Gated on having at least two closure runs with a recovered MAP.
+    if len(truths) >= 2:
+        lo = min(min(truths), min(maps))
+        hi = max(max(truths), max(maps))
+        pad = 0.02 * (hi - lo) if hi > lo else 0.01
+        diag = [lo - pad, hi + pad]
+        fig.add_trace(
+            go.Scatter(
+                x=diag,
+                y=diag,
+                mode="lines",
+                line={"color": PRIOR, "dash": "dash", "width": 1},
+                name="MAP = truth",
+                xaxis="x2",
+                yaxis="y2",
+                showlegend=False,
+                hoverinfo="skip",
+            )
+        )
+        fig.add_trace(
+            go.Scatter(
+                x=truths,
+                y=maps,
+                mode="markers",
+                marker={
+                    "color": METHOD["spectral"],
+                    "size": 8,
+                    "line": {"color": EDGE, "width": 1},
+                },
+                name="recovered MAP",
+                xaxis="x2",
+                yaxis="y2",
+                showlegend=False,
+                hovertemplate="h_true=%{x:.3f}<br>MAP=%{y:.3f}<extra></extra>",
+            )
+        )
+        fig.update_layout(
+            xaxis2={
+                "domain": [0.66, 0.98],
+                "anchor": "y2",
+                "range": diag,
+                "title": {"text": "h_true", "font": {"size": 10}},
+                "showgrid": True,
+            },
+            yaxis2={
+                "domain": [0.58, 0.97],
+                "anchor": "x2",
+                "range": diag,
+                "title": {"text": "MAP h", "font": {"size": 10}},
+                "showgrid": True,
+            },
+        )
+
     fig.update_layout(
         title="Closure test: pipeline recovers each injection truth",
         xaxis_title="h",

@@ -886,6 +886,23 @@ def generate_figures(output_dir: str) -> None:
         save_figure(fig, path, formats=("pdf",))  # type: ignore[arg-type]
         _check_file_size(f"{path}.pdf", name)
 
+    def _load_injection_data() -> tuple[np.ndarray, np.ndarray] | None:
+        """Pool the injection CSVs ``(z, SNR)`` from ``<output_dir>/injections``
+        for the selection-function figures (fig04/fig09).  Returns ``(z, SNR)``
+        over all injected events (detected and sub-threshold), or ``None`` when
+        no injection pool is linked into the run.
+        """
+        inj_dir = os.path.join(output_dir, "injections")
+        csvs = sorted(glob.glob(os.path.join(inj_dir, "injection_*.csv")))
+        if not csvs:
+            return None
+        frames = [pd.read_csv(f, usecols=["z", "SNR"]) for f in csvs]
+        df = pd.concat(frames, ignore_index=True)
+        return (
+            df["z"].to_numpy(dtype=np.float64),
+            df["SNR"].to_numpy(dtype=np.float64),
+        )
+
     # ------------------------------------------------------------------
     # Pre-load shared data
     # ------------------------------------------------------------------
@@ -1006,15 +1023,15 @@ def generate_figures(output_dir: str) -> None:
 
     # 4. Detection yield -- needs redshift column in CRB
     def _gen_detection_yield() -> tuple[object, object] | None:
-        if crb_df is None or "redshift" not in crb_df.columns:
-            return None
+        from master_thesis_code.constants import SNR_THRESHOLD
         from master_thesis_code.plotting.evaluation_plots import plot_detection_yield
 
-        detected_z = crb_df["redshift"].to_numpy(dtype=np.float64)
-        # Reworked factory gates to None when injected == detected (no separate
-        # injected sample locally); a real injected-vs-detected yield needs the
-        # injection-campaign CSVs.
-        return plot_detection_yield(detected_z, detected_z)
+        inj = _load_injection_data()
+        if inj is None:
+            return None
+        injected_z, snr = inj
+        detected_z = injected_z[snr >= float(SNR_THRESHOLD)]
+        return plot_detection_yield(injected_z, detected_z)
 
     manifest.append(("fig04_detection_yield", _gen_detection_yield))
 
@@ -1107,16 +1124,15 @@ def generate_figures(output_dir: str) -> None:
 
     # 9. Detection efficiency
     def _gen_detection_efficiency() -> tuple[object, object] | None:
-        if crb_df is None or "redshift" not in crb_df.columns or "SNR" not in crb_df.columns:
-            return None
+        from master_thesis_code.constants import SNR_THRESHOLD
         from master_thesis_code.plotting.evaluation_plots import plot_detection_efficiency
 
-        z = crb_df["redshift"].to_numpy(dtype=np.float64)
-        snr = crb_df["SNR"].to_numpy(dtype=np.float64)
-        detected = snr >= 20.0
-        # Reworked factory gates to None when every event is detected (the CRB
-        # CSV is post-cut, so the real selection function needs injections).
-        return plot_detection_efficiency(z, detected)
+        inj = _load_injection_data()
+        if inj is None:
+            return None
+        injected_z, snr = inj
+        detected = snr >= float(SNR_THRESHOLD)
+        return plot_detection_efficiency(injected_z, detected)
 
     manifest.append(("fig09_detection_efficiency", _gen_detection_efficiency))
 

@@ -59,6 +59,14 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   characteristic-strain figure with an example EMRI track), fig14 (mplot3d → 2D
   pairwise hexbin density). Retired the redundant fig15 campaign dashboard; the
   `main.py` manifest was re-pointed to the restyled factories.
+- **[viz]** Interactives (`plotting/interactive.py`) restyled to Observatory+Atlas
+  (flat prior + nested HDI + a HOPs Play button on the combined posterior, batlow
+  sky map, Planck/SH0ES target-width bands on convergence, palette alignment) plus a
+  NEW `interactive_h0_tension_explorer` (NF-8) — combined posterior vs Planck/SH0ES
+  bands with an event-stacking slider. fig04/fig09 (detection yield / efficiency)
+  unlocked: the generators now pool the injection CSVs
+  (`<run>/simulations/injections`, z + SNR) for a real injected-vs-detected
+  selection function (504k injected, SNR ≥ 20 detected) instead of gating to None.
 
 ### Fixed
 - `__main__.py`: force a clean process exit (`logging.shutdown()` + flush +

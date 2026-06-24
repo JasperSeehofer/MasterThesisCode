@@ -65,6 +65,21 @@ Detection catalogue & cosmology
    catalogue (grey histogram) with the cumulative fraction and the detection
    threshold rule.
 
+.. figure:: figures/fig04_detection_yield.png
+   :width: 90%
+   :alt: Detection yield
+
+   **fig04 — Detection yield.** Injected vs. detected redshift distribution from the
+   injection campaign (504k injected; SNR ≥ 20 detected) with the per-bin detection
+   fraction.
+
+.. figure:: figures/fig09_detection_efficiency.png
+   :width: 90%
+   :alt: Detection efficiency
+
+   **fig09 — Detection efficiency.** Empirical detection probability vs. redshift
+   from the injection pool with a smooth selection-function fit.
+
 .. figure:: figures/fig05_sky_localization.png
    :width: 90%
    :alt: Sky localization
