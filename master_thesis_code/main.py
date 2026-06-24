@@ -1008,9 +1008,12 @@ def generate_figures(output_dir: str) -> None:
     def _gen_detection_yield() -> tuple[object, object] | None:
         if crb_df is None or "redshift" not in crb_df.columns:
             return None
-        from master_thesis_code.plotting.simulation_plots import plot_detection_yield
+        from master_thesis_code.plotting.evaluation_plots import plot_detection_yield
 
         detected_z = crb_df["redshift"].to_numpy(dtype=np.float64)
+        # Reworked factory gates to None when injected == detected (no separate
+        # injected sample locally); a real injected-vs-detected yield needs the
+        # injection-campaign CSVs.
         return plot_detection_yield(detected_z, detected_z)
 
     manifest.append(("fig04_detection_yield", _gen_detection_yield))
@@ -1106,18 +1109,20 @@ def generate_figures(output_dir: str) -> None:
     def _gen_detection_efficiency() -> tuple[object, object] | None:
         if crb_df is None or "redshift" not in crb_df.columns or "SNR" not in crb_df.columns:
             return None
-        from master_thesis_code.plotting.convergence_plots import plot_detection_efficiency
+        from master_thesis_code.plotting.evaluation_plots import plot_detection_efficiency
 
         z = crb_df["redshift"].to_numpy(dtype=np.float64)
         snr = crb_df["SNR"].to_numpy(dtype=np.float64)
         detected = snr >= 20.0
+        # Reworked factory gates to None when every event is detected (the CRB
+        # CSV is post-cut, so the real selection function needs injections).
         return plot_detection_efficiency(z, detected)
 
     manifest.append(("fig09_detection_efficiency", _gen_detection_efficiency))
 
     # 10. LISA PSD with noise decomposition
     def _gen_lisa_psd() -> tuple[object, object] | None:
-        from master_thesis_code.plotting.simulation_plots import plot_lisa_psd
+        from master_thesis_code.plotting.model_plots import plot_lisa_psd
 
         freqs = np.geomspace(1e-5, 1.0, 1000)
         return plot_lisa_psd(freqs, decompose=True)
@@ -1157,7 +1162,7 @@ def generate_figures(output_dir: str) -> None:
 
     # 13. Characteristic strain
     def _gen_characteristic_strain() -> tuple[object, object] | None:
-        from master_thesis_code.plotting.fisher_plots import plot_characteristic_strain
+        from master_thesis_code.plotting.model_plots import plot_characteristic_strain
 
         return plot_characteristic_strain()
 
@@ -1167,51 +1172,25 @@ def generate_figures(output_dir: str) -> None:
     def _gen_crb_coverage() -> tuple[object, object] | None:
         if crb_df is None or not {"M", "qS", "phiS"}.issubset(crb_df.columns):
             return None
-        from master_thesis_code.plotting.simulation_plots import plot_cramer_rao_coverage
+        from master_thesis_code.plotting.fisher_plots import plot_crb_coverage
 
         M = crb_df["M"].to_numpy(dtype=np.float64)
         qS = crb_df["qS"].to_numpy(dtype=np.float64)
         phiS = crb_df["phiS"].to_numpy(dtype=np.float64)
-        return plot_cramer_rao_coverage(
-            M,
-            qS,
-            phiS,
-            M_limits=(float(M.min()), float(M.max())),
-            qS_limits=(float(qS.min()), float(qS.max())),
-            phiS_limits=(float(phiS.min()), float(phiS.max())),
-        )
+        return plot_crb_coverage(M, qS, phiS)
 
     manifest.append(("fig14_crb_coverage", _gen_crb_coverage))
 
-    # 15. Campaign dashboard (composite) -- posterior subplot uses canonical
-    # raw Σ log L_i for consistency with fig01, fig08, paper_h0_posterior.
-    def _gen_dashboard() -> tuple[object, object] | None:
-        if crb_df is None or post_data is None:
-            return None
-        if not {"qS", "phiS", "SNR", "redshift"}.issubset(crb_df.columns):
-            return None
-        from master_thesis_code.plotting._helpers import load_canonical_combined_posterior
-        from master_thesis_code.plotting.dashboard_plots import plot_campaign_dashboard
+    # 15. H0-in-context forest plot (Di Valentino-style). Replaces the retired
+    # campaign dashboard, which only re-rendered fig01/03/04/05 at thumbnail
+    # scale with no new information and colliding labels. Ships with a default
+    # literature dataset (Planck 2018 / SH0ES / GWTC-3) plus this work's MAP/HDI.
+    def _gen_h0_forest() -> tuple[object, object] | None:
+        from master_thesis_code.plotting.validation_plots import plot_h0_forest
 
-        try:
-            h_vals, combined, _meta = load_canonical_combined_posterior(
-                Path(output_dir), "posteriors"
-            )
-        except FileNotFoundError:
-            return None
-        return plot_campaign_dashboard(
-            h_values=h_vals,
-            posterior=combined,
-            true_h=0.73,
-            snr_values=crb_df["SNR"].to_numpy(dtype=np.float64),
-            injected_redshifts=crb_df["redshift"].to_numpy(dtype=np.float64),
-            detected_redshifts=crb_df["redshift"].to_numpy(dtype=np.float64),
-            theta_s=crb_df["qS"].to_numpy(dtype=np.float64),
-            phi_s=crb_df["phiS"].to_numpy(dtype=np.float64),
-            sky_snr=crb_df["SNR"].to_numpy(dtype=np.float64),
-        )
+        return plot_h0_forest()
 
-    manifest.append(("fig15_campaign_dashboard", _gen_dashboard))
+    manifest.append(("fig15_h0_forest", _gen_h0_forest))
 
     # 16. Catalog completeness + per-event coverage (Phase C)
     def _gen_catalog_completeness() -> tuple[object, object] | None:

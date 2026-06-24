@@ -12,18 +12,16 @@ import numpy as np
 import numpy.typing as npt
 from matplotlib.axes import Axes
 from matplotlib.cm import ScalarMappable
-from matplotlib.colors import Normalize
+from matplotlib.colors import Colormap, Normalize
 from matplotlib.figure import Figure
 
 from master_thesis_code.plotting._colors import (
-    CMAP,
-    CYCLE,
     EDGE,
-    MEAN,
+    GREY_BAD,
     METHOD,
     PLANCK_BAND,
     PRIOR,
-    REFERENCE,
+    SEQUENTIAL_CMAP,
     SHOES_BAND,
     TRUTH,
 )
@@ -31,8 +29,25 @@ from master_thesis_code.plotting._helpers import (
     _fig_from_ax,
     compute_hdi_interval,
     get_figure,
+    make_colorbar,
 )
 from master_thesis_code.plotting._labels import LABELS
+
+
+def _resolve_cmap(name: str) -> Colormap:
+    """Resolve a palette colormap token to a registered ``Colormap`` object.
+
+    The Atlas tokens in ``_colors`` use bare ``cmcrameri`` names (e.g.
+    ``"batlow"``), but ``cmcrameri`` registers them under a ``cmc.`` prefix.
+    Try the prefixed name first, then the bare name (covers the built-in
+    fallback such as ``"cividis"`` when ``cmcrameri`` is absent).
+    """
+    for candidate in (f"cmc.{name}", name):
+        try:
+            return plt.get_cmap(candidate)
+        except (KeyError, ValueError):
+            continue
+    return plt.get_cmap(name)
 
 
 def _normalize_posterior(
@@ -224,15 +239,19 @@ def plot_event_posteriors(
     color_by:
         If set, color each posterior by a metadata value. One of
         ``"snr"``, ``"redshift"``, ``"dl_error"``.  Requires
-        *color_values* to be provided.
+        *color_values* to be provided.  Uses the Atlas sequential colormap
+        (``SEQUENTIAL_CMAP``, batlow) -- appropriate for SNR/redshift, which
+        are positive-definite ordered quantities.
     color_values:
         Array of metadata values (same length as *posteriors*) used for
         the colormap when *color_by* is set.
     combined_posterior:
-        If provided, overlaid as a thick line on top of individual
-        posteriors.
+        If provided, drawn as the black (``METHOD["combined"]``) headline
+        curve on top of the per-event ensemble.
     normalize:
-        ``"peak"`` or ``"density"``.
+        ``"peak"`` (default -- every per-event curve peaks at 1 so the
+        narrow, informative shapes stay visible against the broad ones) or
+        ``"density"``.
     title:
         Kept for backward compatibility; only set on the axes if
         explicitly provided by the caller (non-default).
@@ -251,7 +270,7 @@ def plot_event_posteriors(
     else:
         post_list = [np.asarray(p, dtype=np.float64) for p in posteriors]
 
-    # Color mapping setup
+    # --- Color mapping setup (Atlas sequential colormap) ---
     colorbar_label_map: dict[str, str] = {
         "snr": LABELS["SNR"],
         "redshift": LABELS["z"],
@@ -259,46 +278,80 @@ def plot_event_posteriors(
     }
     cmap_obj = None
     norm_obj = None
+    draw_order = list(range(len(post_list)))
     if color_by is not None:
         if color_values is None:
             msg = "color_values must be provided when color_by is set"
+            raise ValueError(msg)
+        if len(color_values) != len(post_list):
+            msg = (
+                f"color_values length {len(color_values)} does not match "
+                f"number of posteriors {len(post_list)}"
+            )
             raise ValueError(msg)
         norm_obj = Normalize(
             vmin=float(np.min(color_values)),
             vmax=float(np.max(color_values)),
         )
-        cmap_obj = plt.get_cmap(CMAP)
+        cmap_obj = _resolve_cmap(SEQUENTIAL_CMAP)
+        # Draw low values first so the most informative (high-SNR) curves sit
+        # on top of the ensemble.
+        draw_order = list(np.argsort(np.asarray(color_values, dtype=np.float64)))
 
-    # Plot individual posteriors
-    for i, post in enumerate(post_list):
-        normed = _normalize_posterior(post, h_values, normalize)
+    # --- Per-event curves (each peak-normalized to expose its shape) ---
+    # The ensemble can hold >1000 thin lines; rasterize it so the vector PDF
+    # stays small while the combined headline below stays crisp vector art.
+    for i in draw_order:
+        normed = _normalize_posterior(post_list[i], h_values, normalize)
         if color_by is not None and cmap_obj is not None and norm_obj is not None:
             color = cmap_obj(norm_obj(float(color_values[i])))  # type: ignore[index]
-            ax.plot(h_values, normed, alpha=0.5, linewidth=0.5, color=color)
+            ax.plot(
+                h_values, normed, alpha=0.55, linewidth=0.6, color=color, zorder=2, rasterized=True
+            )
         else:
-            ax.plot(h_values, normed, alpha=0.3, linewidth=0.5, color=CYCLE[0])
+            ax.plot(
+                h_values,
+                normed,
+                alpha=0.35,
+                linewidth=0.5,
+                color=GREY_BAD,
+                zorder=2,
+                rasterized=True,
+            )
 
-    # Colorbar
+    # --- Colorbar (only when color-encoded) ---
     if color_by is not None and cmap_obj is not None and norm_obj is not None:
         sm = ScalarMappable(cmap=cmap_obj, norm=norm_obj)
         sm.set_array([])
         cb_label = colorbar_label_map.get(color_by, color_by)
-        fig.colorbar(sm, ax=ax, label=cb_label)
+        make_colorbar(sm, fig, ax, label=cb_label)
 
-    # Combined posterior overlay
+    # --- Combined posterior: black headline on top of the ensemble ---
     if combined_posterior is not None:
         normed_combined = _normalize_posterior(combined_posterior, h_values, normalize)
         ax.plot(
             h_values,
             normed_combined,
-            color=EDGE,
-            linewidth=2.0,
+            color=METHOD["combined"],
+            linewidth=1.8,
             label="Combined",
+            zorder=5,
         )
 
-    ax.axvline(true_h, color=TRUTH, linestyle="dashed")
+    # --- Injected truth ---
+    ax.axvline(
+        true_h,
+        color=TRUTH,
+        linestyle="dashed",
+        linewidth=1.0,
+        zorder=4,
+        label=rf"truth $h={true_h:g}$",
+    )
+    ax.set_xlim(float(h_values.min()), float(h_values.max()))
+    ax.set_ylim(bottom=0.0)
     ax.set_xlabel(LABELS["h"])
-    ax.set_ylabel(r"$p(h|\mathrm{data})$")
+    ax.set_ylabel(r"$p(h\,|\,\mathrm{data})$")
+    ax.legend(loc="upper left", fontsize=6)
 
     # Only set title if caller explicitly passed a non-default value
     if title != "Individual event posteriors":
@@ -397,28 +450,60 @@ def plot_snr_distribution(
     else:
         fig = _fig_from_ax(ax)
 
-    # Left y-axis: histogram
-    ax.hist(snr_values, bins=bins, edgecolor=EDGE, alpha=0.7, color=CYCLE[0])
+    accent = METHOD["spectral"]  # orange -- the CDF / accent role
 
-    # Right y-axis: CDF step function
+    # --- Left y-axis: neutral grey histogram ---
+    ax.hist(
+        snr_values,
+        bins=bins,
+        color=GREY_BAD,
+        edgecolor=EDGE,
+        linewidth=0.4,
+        alpha=0.85,
+        zorder=2,
+    )
+
+    # --- Right y-axis: accent-color CDF (twin axis kept) ---
     ax2 = ax.twinx()
     sorted_snr = np.sort(snr_values)
     cdf = np.arange(1, len(sorted_snr) + 1) / len(sorted_snr)
-    ax2.step(sorted_snr, cdf, color=MEAN, where="post", linewidth=1.5)
-    ax2.set_ylabel("Cumulative fraction")
+    ax2.step(sorted_snr, cdf, color=accent, where="post", linewidth=1.5, zorder=3)
+    ax2.set_ylabel("Cumulative fraction", color=accent)
     ax2.set_ylim(0, 1)
+    ax2.tick_params(axis="y", colors=accent)
 
-    # Threshold annotation
-    ax.axvline(snr_threshold, color=REFERENCE, linestyle="--", linewidth=1)
+    # --- Threshold as a labeled vertical rule ---
+    ax.axvline(
+        snr_threshold,
+        color=EDGE,
+        linestyle=(0, (4, 3)),
+        linewidth=1.0,
+        zorder=4,
+        label=rf"$\rho_\mathrm{{thr}}={snr_threshold:g}$",
+    )
+
+    # --- "% above threshold" callout in axes-fraction coords so it is never
+    # clipped against the data range (the old data-coord placement clipped). ---
     frac_above = float(np.mean(snr_values >= snr_threshold))
-    ax.annotate(
+    ax.text(
+        0.97,
+        0.97,
         f"{frac_above:.0%} above threshold",
-        xy=(snr_threshold, 0),
-        xytext=(snr_threshold * 1.1, ax.get_ylim()[1] * 0.8),
-        fontsize=8,
-        arrowprops={"arrowstyle": "->", "color": REFERENCE},
+        transform=ax.transAxes,
+        ha="right",
+        va="top",
+        fontsize=7,
+        bbox={
+            "boxstyle": "round,pad=0.3",
+            "facecolor": "white",
+            "edgecolor": EDGE,
+            "linewidth": 0.5,
+            "alpha": 0.85,
+        },
+        zorder=6,
     )
 
     ax.set_xlabel(LABELS["SNR"])
     ax.set_ylabel("Count")
+    ax.legend(loc="center right", fontsize=6)
     return fig, ax

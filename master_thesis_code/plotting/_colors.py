@@ -78,7 +78,7 @@ PRIOR: str = "#9e9e9e"  # neutral grey, dashed -- flat H0 prior
 # to perceptually-uniform, CVD-safe matplotlib built-ins when it is absent so
 # the no-dep path still renders.
 try:
-    import cmcrameri.cm  # type: ignore[import-not-found]  # noqa: F401  (registers batlow/vik/romaO)
+    import cmcrameri.cm  # noqa: F401  -- registers 'batlow', 'vik', 'romaO', ...
 
     _HAS_CRAMERI = True
 except ImportError:

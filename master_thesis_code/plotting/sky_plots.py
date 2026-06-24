@@ -8,16 +8,34 @@ All functions follow the project convention: data in, ``(fig, ax)`` out.
 None call ``plt.show()`` or ``plt.savefig()``.
 """
 
+import matplotlib.pyplot as plt
 import numpy as np
 import numpy.typing as npt
 from matplotlib.axes import Axes
+from matplotlib.colors import Colormap
 from matplotlib.figure import Figure
 from matplotlib.patches import Ellipse
 
-from master_thesis_code.plotting._colors import CMAP, EDGE
+from master_thesis_code.plotting._colors import EDGE, GREY_BAD, SEQUENTIAL_CMAP
 from master_thesis_code.plotting._helpers import _fig_from_ax, get_figure, make_colorbar
 from master_thesis_code.plotting._labels import LABELS
 from master_thesis_code.plotting.fisher_plots import _ellipse_params
+
+
+def _resolve_cmap(name: str) -> Colormap:
+    """Resolve a palette colormap token to a registered ``Colormap`` object.
+
+    The Atlas tokens in ``_colors`` use bare ``cmcrameri`` names (e.g.
+    ``"batlow"``), but ``cmcrameri`` registers them under a ``cmc.`` prefix.
+    Try the prefixed name first, then the bare name (covers the built-in
+    fallback such as ``"cividis"`` when ``cmcrameri`` is absent).
+    """
+    for candidate in (f"cmc.{name}", name):
+        try:
+            return plt.get_cmap(candidate)
+        except (KeyError, ValueError):
+            continue
+    return plt.get_cmap(name)
 
 
 def plot_sky_localization_mollweide(
@@ -61,7 +79,18 @@ def plot_sky_localization_mollweide(
     lat = np.pi / 2.0 - theta_s
     lon = ((phi_s - np.pi + np.pi) % (2.0 * np.pi)) - np.pi
 
-    sc = ax.scatter(lon, lat, c=snr, cmap=CMAP, s=12, alpha=0.8, zorder=5, rasterized=True)
+    # Batlow (SEQUENTIAL_CMAP) for the SNR encoding; markers rasterized so the
+    # PDF stays small even with thousands of EMRI sources.
+    sc = ax.scatter(
+        lon,
+        lat,
+        c=snr,
+        cmap=_resolve_cmap(SEQUENTIAL_CMAP),
+        s=12,
+        alpha=0.8,
+        zorder=5,
+        rasterized=True,
+    )
     make_colorbar(sc, fig, ax, label=LABELS["SNR"])
 
     if covariances is not None:
@@ -80,4 +109,7 @@ def plot_sky_localization_mollweide(
             ax.add_patch(ellipse)
 
     ax.grid(True, alpha=0.3)
+    # Lighten the degree graticule labels so the SNR scatter reads as the
+    # foreground; the longitude/latitude ticks are reference scaffolding.
+    ax.tick_params(colors=GREY_BAD, labelsize="small")
     return fig, ax

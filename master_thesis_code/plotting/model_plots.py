@@ -9,7 +9,7 @@ import numpy.typing as npt
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 
-from master_thesis_code.plotting._colors import CMAP, CYCLE, EDGE
+from master_thesis_code.plotting._colors import CMAP, CYCLE, EDGE, METHOD, REFERENCE
 from master_thesis_code.plotting._helpers import _fig_from_ax, get_figure, make_colorbar
 from master_thesis_code.plotting._labels import LABELS
 
@@ -269,3 +269,191 @@ def plot_detection_probability_zM(
         detected_mask=detected_mask,
         ax=ax,
     )
+
+
+# ---------------------------------------------------------------------------
+# LISA noise / sensitivity (Observatory style)
+# ---------------------------------------------------------------------------
+#
+# The total A-channel PSD splits as  S_n = S_inst + S_gal.  Both fig10 (PSD)
+# and fig13 (characteristic strain) decompose the same physics; each component
+# is given its OWN linestyle so the figures survive greyscale printing and CVD:
+#   total       -> solid, near-black (EDGE)
+#   instrument  -> dashed, sky-blue (REFERENCE)
+#   confusion   -> dash-dot, dark-siren blue (METHOD["dark"])
+# A single shared style table keeps the two figures visually consistent.
+# Matplotlib accepts either a named style ("-") or an (offset, on-off dash)
+# tuple as a linestyle; the on-off sequence encodes each noise component.
+_LineStyle = str | tuple[int, tuple[int, ...]]
+_NOISE_STYLE: dict[str, tuple[str, _LineStyle, str]] = {
+    # key -> (color, linestyle, math label)
+    "total": (EDGE, "-", r"$S_n(f)$ total"),
+    "instrument": (REFERENCE, (0, (5, 2)), r"$S_\mathrm{inst}(f)$"),
+    "confusion": (METHOD["dark"], (0, (3, 1, 1, 1)), r"$S_\mathrm{gal}(f)$"),
+}
+
+
+def _lisa_psd_components(
+    frequencies: npt.NDArray[np.float64],
+) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64], npt.NDArray[np.float64]]:
+    """Return ``(total, instrument, confusion)`` A-channel PSD on *frequencies*.
+
+    The confusion (galactic foreground) term is recovered as the difference of
+    the total and instrument-only PSDs and clipped at zero to suppress
+    numerical noise where the foreground is negligible.
+    """
+    # Deferred import: LISA_configuration pulls cupy at module top level and is
+    # not importable on a CPU-only box without the guarded try/except.
+    from master_thesis_code.LISA_configuration import LisaTdiConfiguration
+
+    lisa_total = LisaTdiConfiguration(include_confusion_noise=True)
+    lisa_inst = LisaTdiConfiguration(include_confusion_noise=False)
+
+    psd_total = np.asarray(
+        lisa_total.power_spectral_density_a_channel(frequencies), dtype=np.float64
+    )
+    psd_inst = np.asarray(lisa_inst.power_spectral_density_a_channel(frequencies), dtype=np.float64)
+    psd_confusion = np.maximum(psd_total - psd_inst, 0.0)
+    return psd_total, psd_inst, psd_confusion
+
+
+def plot_lisa_psd(
+    frequencies: npt.NDArray[np.float64],
+    psd_values: dict[str, npt.NDArray[np.float64]] | None = None,
+    *,
+    decompose: bool = False,
+    ax: Axes | None = None,
+) -> tuple[Figure, Axes]:
+    r"""Plot the LISA A-channel power spectral density :math:`S_n(f)`.
+
+    With ``decompose=True`` the total PSD is broken into its instrument and
+    galactic-confusion contributions, each carrying its own linestyle (not just
+    colour) so the decomposition reads in greyscale.  REVTeX single-column.
+
+    Parameters
+    ----------
+    frequencies:
+        Frequency array in Hz (log-spaced).
+    psd_values:
+        Backward-compatible mode: mapping ``channel -> PSD array`` plotted as
+        plain solid curves.  Ignored when *decompose* is ``True``.
+    decompose:
+        If ``True``, compute and overlay the total / instrument / confusion
+        curves via :class:`LisaTdiConfiguration`.
+    ax:
+        Optional pre-existing Axes.
+    """
+    if ax is None:
+        fig, ax = get_figure(preset="single")
+    else:
+        fig = _fig_from_ax(ax)
+
+    if decompose:
+        psd_total, psd_inst, psd_confusion = _lisa_psd_components(frequencies)
+        for key, psd, lw in (
+            ("total", psd_total, 1.8),
+            ("instrument", psd_inst, 1.3),
+            ("confusion", psd_confusion, 1.3),
+        ):
+            color, linestyle, math_label = _NOISE_STYLE[key]
+            ax.plot(
+                frequencies,
+                psd,
+                color=color,
+                linestyle=linestyle,
+                linewidth=lw,
+                label=math_label,
+            )
+    elif psd_values is not None:
+        for label, psd in psd_values.items():
+            ax.plot(
+                frequencies,
+                psd,
+                color=EDGE,
+                linestyle="-",
+                linewidth=1.0,
+                label=f"$S_{{{label}}}(f)$",
+            )
+
+    ax.set_xlabel(LABELS["f"])
+    ax.set_ylabel(LABELS["PSD"])
+    ax.set_xscale("log")
+    ax.set_yscale("log")
+    ax.legend(fontsize=7, loc="upper center")
+    return fig, ax
+
+
+def plot_characteristic_strain(
+    *,
+    f_min: float = 1e-5,
+    f_max: float = 1.0,
+    n_points: int = 1000,
+    emri_amplitude: float = 1e-20,
+    emri_f_ref: float = 1e-2,
+    ax: Axes | None = None,
+) -> tuple[Figure, Axes]:
+    r"""Plot the LISA characteristic-strain sensitivity :math:`h_c(f)`.
+
+    This is the single canonical sensitivity figure (it supersedes the older
+    PSD/strain duplication).  Characteristic strain
+    :math:`h_c = \sqrt{f\,S_n(f)}` is shown for the total, instrument-only and
+    galactic-confusion noise -- each with its own linestyle, matching
+    :func:`plot_lisa_psd` -- together with a representative inspiral EMRI track
+    (:math:`h \propto f^{-7/6}`) to set the scale.  REVTeX single-column.
+
+    Parameters
+    ----------
+    f_min, f_max:
+        Frequency bounds in Hz.
+    n_points:
+        Number of log-spaced frequency samples.
+    emri_amplitude:
+        Strain amplitude of the example EMRI track at *emri_f_ref*.
+    emri_f_ref:
+        Reference frequency (Hz) at which the example track equals
+        *emri_amplitude*.
+    ax:
+        Optional pre-existing Axes.
+    """
+    if ax is None:
+        fig, ax = get_figure(preset="single")
+    else:
+        fig = _fig_from_ax(ax)
+
+    freqs = np.geomspace(f_min, f_max, n_points)
+    psd_total, psd_inst, psd_confusion = _lisa_psd_components(freqs)
+
+    # Characteristic strain h_c = sqrt(f * S_n(f)).
+    h_total = np.sqrt(freqs * psd_total)
+    h_inst = np.sqrt(freqs * psd_inst)
+    h_confusion = np.sqrt(freqs * psd_confusion)
+
+    for key, h_c, lw in (
+        ("total", h_total, 1.8),
+        ("instrument", h_inst, 1.3),
+        ("confusion", h_confusion, 1.3),
+    ):
+        color, linestyle, _ = _NOISE_STYLE[key]
+        # Re-label in strain terms (h_c) rather than PSD (S_n).
+        strain_label = {
+            "total": r"$h_c$ total",
+            "instrument": r"$h_\mathrm{inst}$",
+            "confusion": r"$h_\mathrm{gal}$",
+        }[key]
+        ax.loglog(freqs, h_c, color=color, linestyle=linestyle, linewidth=lw, label=strain_label)
+
+    # Representative EMRI inspiral track: leading-order h_c ~ f^{-7/6}.
+    h_emri = emri_amplitude * (freqs / emri_f_ref) ** (-7.0 / 6.0)
+    ax.loglog(
+        freqs,
+        h_emri,
+        color=METHOD["spectral"],
+        linestyle="-",
+        linewidth=1.3,
+        label="example EMRI",
+    )
+
+    ax.set_xlabel(LABELS["f"])
+    ax.set_ylabel(r"$h_c(f)$")
+    ax.legend(fontsize=7, loc="upper right")
+    return fig, ax

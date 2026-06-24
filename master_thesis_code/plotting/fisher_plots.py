@@ -9,14 +9,24 @@ import os
 
 import corner
 import matplotlib
+import matplotlib.pyplot as plt
 import numpy as np
 import numpy.typing as npt
 import pandas as pd
 from matplotlib.axes import Axes
+from matplotlib.colors import Colormap
 from matplotlib.figure import Figure
 from matplotlib.patches import Ellipse
+from matplotlib.ticker import ScalarFormatter
 
-from master_thesis_code.plotting._colors import CYCLE, EDGE, REFERENCE, TRUTH
+from master_thesis_code.plotting._colors import (
+    CYCLE,
+    EDGE,
+    METHOD,
+    REFERENCE,
+    SEQUENTIAL_CMAP,
+    TRUTH,
+)
 from master_thesis_code.plotting._data import (
     EXTRINSIC,
     INTRINSIC,
@@ -26,6 +36,70 @@ from master_thesis_code.plotting._data import (
 from master_thesis_code.plotting._helpers import _fig_from_ax, get_figure, save_figure
 from master_thesis_code.plotting._labels import LABELS
 from master_thesis_code.plotting._style import apply_style
+
+
+def _fmt_g(value: float) -> str:
+    """Format a float as a compact mathtext-safe number.
+
+    Uses ``%g`` with three significant figures and rewrites the Python
+    ``e±NN`` exponent into a mathtext ``\\times 10^{N}`` group so the result
+    is a valid single math token (no text-mode ``e`` glyph).
+    """
+    s = f"{value:.3g}"
+    if "e" in s or "E" in s:
+        mantissa, exp = s.lower().split("e")
+        return rf"{mantissa}\times 10^{{{int(exp)}}}"
+    return s
+
+
+def _resolve_cmap(name: str) -> Colormap:
+    """Resolve a palette colormap token to a registered ``Colormap`` object.
+
+    The Atlas tokens in ``_colors`` use bare ``cmcrameri`` names (e.g.
+    ``"batlow"``), but ``cmcrameri`` registers them under a ``cmc.`` prefix.
+    Try the prefixed name first, then the bare name (covers the built-in
+    fallback such as ``"cividis"`` when ``cmcrameri`` is absent).
+    """
+    for candidate in (f"cmc.{name}", name):
+        try:
+            return plt.get_cmap(candidate)
+        except (KeyError, ValueError):
+            continue
+    return plt.get_cmap(name)
+
+
+def _offset_scalar_formatter(ax: Axes, axis: str, label: str) -> None:
+    """Apply a ScalarFormatter whose common offset/scale lands in the axis label.
+
+    Matplotlib's default places the shared exponent/offset as a tiny
+    annotation that overlaps the neighbouring ticks of an adjacent subplot.
+    We force scientific notation, hide that floating annotation, and append
+    the resulting ``[x 10^p]`` factor to *label* so the magnitude is read
+    off the axis title instead of colliding with the ticks.
+
+    Parameters
+    ----------
+    ax:
+        Axes whose *axis* spine is reformatted.
+    axis:
+        Either ``"x"`` or ``"y"``.
+    label:
+        Base axis label (LaTeX/mathtext); the offset factor is appended.
+    """
+    fmt = ScalarFormatter(useMathText=True)
+    fmt.set_scientific(True)
+    fmt.set_powerlimits((-2, 3))
+    target = ax.xaxis if axis == "x" else ax.yaxis
+    target.set_major_formatter(fmt)
+    # Force a draw so the formatter computes its order-of-magnitude offset.
+    ax.figure.canvas.draw()
+    offset_text = target.get_offset_text().get_text()
+    target.get_offset_text().set_visible(False)
+    full = f"{label} {offset_text}" if offset_text else label
+    if axis == "x":
+        ax.set_xlabel(full)
+    else:
+        ax.set_ylabel(full)
 
 # ---------------------------------------------------------------------------
 # Private helper
@@ -115,13 +189,21 @@ def plot_fisher_ellipses(
     else:
         event_list = [(covariance, param_values)]
 
+    # Single accent (dark-siren blue): the 1-sigma and 2-sigma contours share
+    # one hue and differ only by fill alpha; the truth crosshair is TRUTH green.
+    accent = METHOD["dark"]
+    # Map each sigma level to a fill alpha (inner, denser; outer, fainter).
+    levels_sorted = sorted(sigma_levels)
+    alpha_for: dict[float, float] = {}
+    for k, lvl in enumerate(levels_sorted):
+        alpha_for[lvl] = 0.32 if k == 0 else 0.16
+
     for pair_idx, (name_x, name_y) in enumerate(pairs):
         cur_ax: Axes = axes_flat[pair_idx]
         idx_x = PARAMETER_NAMES.index(name_x)
         idx_y = PARAMETER_NAMES.index(name_y)
 
-        for ev_idx, (cov, vals) in enumerate(event_list):
-            color = CYCLE[ev_idx % len(CYCLE)]
+        for _ev_idx, (cov, vals) in enumerate(event_list):
             cx = float(vals[idx_x])
             cy = float(vals[idx_y])
 
@@ -129,28 +211,44 @@ def plot_fisher_ellipses(
             indices = [idx_x, idx_y]
             cov_2x2 = cov[np.ix_(indices, indices)]
 
+            # Outer ring first so the denser inner fill sits on top.
             for level in sorted(sigma_levels, reverse=True):
                 w, h, angle = _ellipse_params(cov_2x2, level)
-                alpha = 0.4 / level
                 ellipse = Ellipse(
                     xy=(cx, cy),
                     width=w,
                     height=h,
                     angle=angle,
-                    facecolor=color,
-                    edgecolor=EDGE,
-                    linewidth=1.5,
-                    alpha=alpha,
+                    facecolor=accent,
+                    edgecolor=accent,
+                    linewidth=1.0,
+                    alpha=alpha_for.get(level, 0.16),
+                    label=rf"${level:g}\sigma$" if pair_idx == 0 else "_nolegend_",
                 )
                 cur_ax.add_patch(ellipse)
 
-            # Auto-scale to ellipse extents
+            # Truth crosshair in TRUTH green.
+            cur_ax.axvline(cx, color=TRUTH, linestyle=(0, (4, 3)), linewidth=0.8, zorder=4)
+            cur_ax.axhline(cy, color=TRUTH, linestyle=(0, (4, 3)), linewidth=0.8, zorder=4)
+            cur_ax.plot(
+                cx,
+                cy,
+                marker="+",
+                color=TRUTH,
+                markersize=7,
+                markeredgewidth=1.4,
+                zorder=5,
+                label="truth" if pair_idx == 0 else "_nolegend_",
+            )
+
+            # Auto-scale to ellipse extents.
             cur_ax.autoscale_view()
 
-        cur_ax.set_xlabel(LABELS[label_key(name_x)])
-        cur_ax.set_ylabel(LABELS[label_key(name_y)])
+        # Offset/scientific notation parked in the axis label, not over ticks.
+        _offset_scalar_formatter(cur_ax, "x", LABELS[label_key(name_x)])
+        _offset_scalar_formatter(cur_ax, "y", LABELS[label_key(name_y)])
 
-    fig.tight_layout()
+    axes_flat[0].legend(loc="upper right", fontsize=6, framealpha=0.9)
     return fig, axes_flat
 
 
@@ -293,14 +391,26 @@ def _plot_violin(
 
     frac_array = np.array(all_frac)  # shape: (n_events, 14)
 
-    # Parameter order: INTRINSIC then EXTRINSIC
+    # Parameter order: INTRINSIC then EXTRINSIC. Group is encoded by *position*
+    # (the two blocks are separated along x) and by a single locked-palette hue
+    # pair (dark-siren blue for intrinsic, spectral orange for extrinsic).
     ordered_params = INTRINSIC + EXTRINSIC
     ordered_indices = [PARAMETER_NAMES.index(p) for p in ordered_params]
     ordered_data = [frac_array[:, i] for i in ordered_indices]
+    positions = list(range(len(ordered_params)))
 
-    parts = ax.violinplot(ordered_data, positions=range(len(ordered_params)), showmedians=True)
+    # showextrema/showmedians off: nested quantile markers are drawn manually
+    # so we control the [0.16, 0.5, 0.84] band explicitly.
+    parts = ax.violinplot(
+        ordered_data,
+        positions=positions,
+        showmedians=False,
+        showextrema=False,
+    )
 
-    # Color violin bodies by group
+    group_hue: tuple[str, str] = (METHOD["dark"], METHOD["spectral"])
+
+    # Color violin bodies by group.
     # violinplot "bodies" is a list of PolyCollection; cast to satisfy mypy
     from collections.abc import Sequence as _Seq
     from typing import cast
@@ -309,18 +419,56 @@ def _plot_violin(
     if raw_bodies is not None:
         body_list = cast(_Seq[object], raw_bodies)
         for i, poly in enumerate(body_list):
-            color = CYCLE[0] if i < len(INTRINSIC) else CYCLE[1]
+            color = group_hue[0] if i < len(INTRINSIC) else group_hue[1]
             poly.set_facecolor(color)  # type: ignore[attr-defined]
-            poly.set_alpha(0.7)  # type: ignore[attr-defined]
+            poly.set_edgecolor(EDGE)  # type: ignore[attr-defined]
+            poly.set_linewidth(0.6)  # type: ignore[attr-defined]
+            poly.set_alpha(0.55)  # type: ignore[attr-defined]
 
-    # Separator between intrinsic and extrinsic
+    # Nested quantile markers per violin: 16th/84th as a thick whisker, the
+    # median as a white-edged tick.
+    q16 = np.array([np.quantile(d, 0.16) for d in ordered_data])
+    q50 = np.array([np.quantile(d, 0.50) for d in ordered_data])
+    q84 = np.array([np.quantile(d, 0.84) for d in ordered_data])
+    ax.vlines(positions, q16, q84, color=EDGE, linewidth=2.2, zorder=3)
+    ax.scatter(
+        positions,
+        q50,
+        marker="o",
+        s=14,
+        color="white",
+        edgecolors=EDGE,
+        linewidths=0.8,
+        zorder=4,
+    )
+
+    # Separator between intrinsic and extrinsic (position-based grouping cue).
     sep_x = len(INTRINSIC) - 0.5
-    ax.axvline(sep_x, color=REFERENCE, linestyle="--", linewidth=0.8)
+    ax.axvline(sep_x, color=REFERENCE, linestyle=(0, (4, 3)), linewidth=0.8)
+    ymax = float(np.max(frac_array))
+    ax.text(
+        (len(INTRINSIC) - 1) / 2.0,
+        ymax,
+        "intrinsic",
+        ha="center",
+        va="bottom",
+        fontsize=6,
+        color=group_hue[0],
+    )
+    ax.text(
+        len(INTRINSIC) + (len(EXTRINSIC) - 1) / 2.0,
+        ymax,
+        "extrinsic",
+        ha="center",
+        va="bottom",
+        fontsize=6,
+        color=group_hue[1],
+    )
 
     ax.set_yscale("log")
-    ax.set_xticks(range(len(ordered_params)))
+    ax.set_xticks(positions)
     ax.set_xticklabels([LABELS[label_key(p)] for p in ordered_params], rotation=45, ha="right")
-    ax.set_ylabel(r"$\sigma_i / |x_i|$")
+    ax.set_ylabel(r"fractional uncertainty $\sigma_i / |x_i|$ (log)")
 
     return fig, ax
 
@@ -369,11 +517,20 @@ def _plot_bar(
 _DEFAULT_CORNER_PARAMS: list[str] = ["M", "mu", "a", "luminosity_distance", "qS", "phiS"]
 
 
+# 2D contour levels at exactly 1-sigma and 2-sigma for a bivariate Gaussian:
+# the enclosed mass of the n-sigma iso-probability ellipse is 1 - exp(-n^2 / 2).
+_SIGMA_1_2_LEVELS: tuple[float, float] = (
+    1.0 - float(np.exp(-0.5)),  # 1-sigma  ~ 0.393
+    1.0 - float(np.exp(-2.0)),  # 2-sigma  ~ 0.865
+)
+
+
 def plot_fisher_corner(
     covariance: npt.NDArray[np.float64],
     param_values: npt.NDArray[np.float64],
     params: list[str] | None = None,
     *,
+    truths: npt.NDArray[np.float64] | None = None,
     overlay_events: list[tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]] | None = None,
     n_samples: int = 5000,
     seed: int = 42,
@@ -382,7 +539,12 @@ def plot_fisher_corner(
     """Plot a corner (triangle) plot from Fisher-matrix covariance.
 
     Generates multivariate Gaussian samples from the covariance matrix
-    and delegates to :func:`corner.corner` for the triangle plot.
+    and delegates to :func:`corner.corner`.  Because the Fisher posterior is
+    an *analytic* Gaussian, KDE/Gaussian smoothing is switched off
+    (``smooth=None``, ``smooth1d=None``) so the rendered contours are not
+    artificially broadened.  The 2-D panels show iso-probability contours at
+    exactly 1-sigma and 2-sigma; the 1-D panels carry quantile titles for the
+    [0.16, 0.5, 0.84] credible band.
 
     Parameters
     ----------
@@ -393,6 +555,11 @@ def plot_fisher_corner(
     params : list[str] | None
         Subset of parameter names to show.  Defaults to
         ``["M", "mu", "a", "luminosity_distance", "qS", "phiS"]``.
+    truths : npt.NDArray[np.float64] | None
+        Truth values for the selected *params* (one per param).  When
+        ``None``, the truth line is drawn at *param_values*.  Any non-finite
+        entry is replaced with ``np.nan`` so :func:`corner.corner` suppresses
+        the marker for parameters that lack a truth.
     overlay_events : list[tuple[npt.NDArray, npt.NDArray]] | None
         Additional events to overlay, each ``(covariance, param_values)``.
         At most 4 events are shown, each in a distinct color.
@@ -420,6 +587,13 @@ def plot_fisher_corner(
     # Build labels from the label mapping
     labels = [LABELS[label_key(p)] for p in params]
 
+    # Truths: suppress (np.nan) any param lacking a finite truth value so the
+    # corner marker is not drawn for it.
+    truth_source = sub_mean if truths is None else np.asarray(truths, dtype=np.float64)
+    truth_vals: npt.NDArray[np.float64] = np.where(
+        np.isfinite(truth_source), truth_source, np.nan
+    ).astype(np.float64)
+
     rng = np.random.default_rng(seed)
     samples = rng.multivariate_normal(sub_mean, sub_cov, size=n_samples, check_valid="warn")
 
@@ -431,12 +605,20 @@ def plot_fisher_corner(
         fig = corner.corner(
             samples,
             labels=labels,
-            truths=list(sub_mean),
+            truths=list(truth_vals),
             truth_color=TRUTH,
-            color=CYCLE[0],
+            color=METHOD["dark"],
+            # Analytic Gaussian -> no KDE/Gaussian smoothing.
+            smooth=None,
+            smooth1d=None,
+            # 2-D iso-probability contours at 1-sigma and 2-sigma.
+            levels=_SIGMA_1_2_LEVELS,
+            plot_density=False,
+            fill_contours=True,
             quantiles=[0.16, 0.5, 0.84],
-            show_titles=True,
-            title_fmt=".3f",
+            # Titles are re-built below as single-math-group strings to avoid
+            # the mixed text/math tofu artefact; corner's own titles are off.
+            show_titles=False,
             hist_kwargs={"edgecolor": EDGE},
         )
 
@@ -451,10 +633,42 @@ def plot_fisher_corner(
                     overlay_samples,
                     fig=fig,
                     color=CYCLE[(ev_idx + 1) % len(CYCLE)],
+                    smooth=None,
+                    smooth1d=None,
+                    levels=_SIGMA_1_2_LEVELS,
+                    plot_density=False,
+                    fill_contours=False,
                     hist_kwargs={"edgecolor": EDGE},
                 )
 
     axes: npt.NDArray[np.object_] = np.array(fig.axes, dtype=object).reshape(n, n)
+
+    # Quantile titles, built as a SINGLE math group per diagonal panel.
+    # corner's default title mixes a text-mode " = " between two math groups,
+    # which renders as missing-glyph tofu at the small per-cell font; a single
+    # math expression avoids that entirely.  Quantiles are the analytic
+    # [0.16, 0.5, 0.84] of the Gaussian: median = mean, +/- = sigma * z, with
+    # z(0.84) ~ 0.9945 (we use sigma directly as the 1-sigma 16/84 half-width).
+    sub_sigma = np.sqrt(np.clip(np.diag(sub_cov), 0.0, None))
+    for i in range(n):
+        med = float(sub_mean[i])
+        sig = float(sub_sigma[i])
+        # Brace every component so an inner ``\times 10^{N}`` superscript does
+        # not collide with the outer +/- super/subscripts.
+        title = rf"$ {{{_fmt_g(med)}}}_{{-{{{_fmt_g(sig)}}}}}^{{+{{{_fmt_g(sig)}}}}} $"
+        # The corner figure is large (~2*n inches); a too-small title font makes
+        # the half-size sub/superscripts fall below the rasteriser threshold and
+        # render as tofu.  Scale the title with the figure so it stays legible.
+        axes[i, i].set_title(title, fontsize=11)
+        # Hide the redundant per-axis ``x 10^b`` offset annotation (its
+        # magnitude is implicit in the labelled axis range).
+        axes[i, i].xaxis.get_offset_text().set_visible(False)
+
+    # Also hide offset text on the 2-D panels for a clean grid.
+    for sub_ax in axes.flatten():
+        sub_ax.xaxis.get_offset_text().set_visible(False)
+        sub_ax.yaxis.get_offset_text().set_visible(False)
+
     return fig, axes
 
 
@@ -617,3 +831,83 @@ def plot_fisher_diagnostics(
 
     fig.tight_layout()
     save_figure(fig, os.path.join(output_dir, "fisher_quality_diagnostic"))
+
+
+# ---------------------------------------------------------------------------
+# CRB parameter-space coverage (fig14) -- 2D small-multiple replacement
+# ---------------------------------------------------------------------------
+
+
+def plot_crb_coverage(
+    M: npt.NDArray[np.float64],
+    qS: npt.NDArray[np.float64],
+    phiS: npt.NDArray[np.float64],
+    *,
+    gridsize: int = 30,
+    ax: None = None,
+) -> tuple[Figure, npt.NDArray[np.object_]]:
+    """Plot detected-event parameter-space coverage as 2D hexbin small-multiples.
+
+    Replaces the legacy single ``mplot3d`` scatter (which is hard to read in a
+    paper) with three flat pairwise panels -- ``(M, qS)``, ``(M, phiS)`` and
+    ``(qS, phiS)`` -- each a hexbin density map in the sequential Atlas
+    colormap.  The mass axis carries scientific-notation offset parked in the
+    axis label (not over the ticks).  Sized to the REVTeX two-column width.
+
+    Parameters
+    ----------
+    M:
+        BH masses of detected events, shape ``(n_det,)``.
+    qS:
+        Sky-localisation polar angle (theta_S), shape ``(n_det,)``.
+    phiS:
+        Sky-localisation azimuth (phi_S), shape ``(n_det,)``.
+    gridsize:
+        Hexbin grid resolution (number of hexagons across).
+    ax:
+        Ignored; a 1x3 grid is created internally.
+
+    Returns
+    -------
+    tuple[Figure, npt.NDArray[np.object_]]
+        Figure and 1-D ndarray of the three pairwise Axes.
+    """
+    pairs: list[tuple[str, npt.NDArray[np.float64], str, npt.NDArray[np.float64]]] = [
+        ("M", M, "qS", qS),
+        ("M", M, "phiS", phiS),
+        ("qS", qS, "phiS", phiS),
+    ]
+
+    fig, axes = get_figure(nrows=1, ncols=3, preset="double", squeeze=False)
+    axes_flat: npt.NDArray[np.object_] = np.asarray(axes).flatten()
+
+    last_hb = None
+    for idx, (name_x, vx, name_y, vy) in enumerate(pairs):
+        cur_ax: Axes = axes_flat[idx]
+        hb = cur_ax.hexbin(
+            vx,
+            vy,
+            gridsize=gridsize,
+            cmap=_resolve_cmap(SEQUENTIAL_CMAP),
+            mincnt=1,
+            linewidths=0.2,
+            edgecolors=EDGE,
+        )
+        last_hb = hb
+
+        # Park the M-axis order-of-magnitude in the label, not over the ticks.
+        if name_x == "M":
+            _offset_scalar_formatter(cur_ax, "x", LABELS[label_key(name_x)])
+        else:
+            cur_ax.set_xlabel(LABELS[label_key(name_x)])
+        if name_y == "M":
+            _offset_scalar_formatter(cur_ax, "y", LABELS[label_key(name_y)])
+        else:
+            cur_ax.set_ylabel(LABELS[label_key(name_y)])
+
+    # One shared colourbar (counts) across the small-multiple row.
+    if last_hb is not None:
+        cbar = fig.colorbar(last_hb, ax=list(axes_flat), pad=0.02, fraction=0.046)
+        cbar.set_label("detections per bin")
+
+    return fig, axes_flat

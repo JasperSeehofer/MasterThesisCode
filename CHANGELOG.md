@@ -47,6 +47,18 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   (cyan) reference bands as swatch labels, a km/s/Mpc secondary top axis, and a
   MAP title. `emri_thesis.mplstyle` default `image.cmap` viridis → cividis
   (Atlas: perceptually-uniform, CVD-safe).
+- **[viz]** Full Observatory+Atlas restyle of the remaining figure suite (see
+  `docs/VIZ_REDESIGN_PROPOSAL.md`): fig02 (per-event coloured by SNR via batlow,
+  black combined headline), fig03 (fixed the clipped threshold annotation, grey
+  hist + accent CDF), fig05 (sky → batlow), fig06 (offset notation off the ticks,
+  truth crosshair), fig07 (analytic Fisher contours, KDE smoothing off), fig08
+  (single CI-width-vs-N panel + Planck/SH0ES target bands + 1/√N guide, variants
+  by linestyle), fig10 (PSD decomposition by linestyle), fig11 (fixed the d_L Gpc
+  unit mislabel, direct-labelled h-curves), fig12 (locked-palette
+  intrinsic/extrinsic groups + nested quantile markers), fig13 (single
+  characteristic-strain figure with an example EMRI track), fig14 (mplot3d → 2D
+  pairwise hexbin density). Retired the redundant fig15 campaign dashboard; the
+  `main.py` manifest was re-pointed to the restyled factories.
 
 ### Fixed
 - `__main__.py`: force a clean process exit (`logging.shutdown()` + flush +
@@ -61,6 +73,12 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   otherwise terminate a hosting pytest process).
 
 ### Added
+- New `plotting/validation_plots.py`: `plot_h0_forest` (NF-1, the H₀-in-context
+  forest plot vs Planck 2018 / SH0ES / GWTC-3 dark sirens, now shipped as fig15)
+  and `plot_pp_coverage` (NF-2, a P–P / coverage factory ready for an
+  injection-recovery campaign).
+- `cmcrameri` dependency — Crameri scientific colormaps (batlow / vik / romaO)
+  for the Atlas field and validation figures.
 - Visualization redesign — Observatory + Atlas foundation (see
   `docs/VIZ_REDESIGN_PROPOSAL.md`: 4 named design directions, a per-figure
   current→proposed table, 8 new-figure ideas). New `_colors.py` v2 tokens:

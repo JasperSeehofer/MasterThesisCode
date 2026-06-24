@@ -12,18 +12,17 @@ from master_thesis_code.plotting.convergence_plots import (
 
 
 class TestPlotH0Convergence:
-    """Tests for the H0 convergence two-panel plot."""
+    """Tests for the single-panel H0 CI-width convergence plot."""
 
     def test_basic_return_type(
         self,
         sample_event_posteriors: tuple[npt.NDArray[np.float64], list[npt.NDArray[np.float64]]],
     ) -> None:
-        """Returns (Figure, ndarray of 2 Axes)."""
+        """Returns (Figure, single Axes)."""
         h_values, posteriors = sample_event_posteriors
-        fig, axes = plot_h0_convergence(h_values, posteriors[:5])
+        fig, ax = plot_h0_convergence(h_values, posteriors[:5])
         assert isinstance(fig, Figure)
-        assert isinstance(axes, np.ndarray)
-        assert axes.shape == (2,)
+        assert hasattr(ax, "set_xlabel")
 
     def test_seed_reproducible(
         self,
@@ -31,11 +30,11 @@ class TestPlotH0Convergence:
     ) -> None:
         """Same seed produces identical CI width arrays."""
         h_values, posteriors = sample_event_posteriors
-        _, axes1 = plot_h0_convergence(h_values, posteriors, seed=123)
-        _, axes2 = plot_h0_convergence(h_values, posteriors, seed=123)
-        # Right panel (CI width) should have identical data
-        lines1 = axes1[1].get_lines()
-        lines2 = axes2[1].get_lines()
+        _, ax1 = plot_h0_convergence(h_values, posteriors, seed=123)
+        _, ax2 = plot_h0_convergence(h_values, posteriors, seed=123)
+        # The primary CI-width line should have identical data
+        lines1 = ax1.get_lines()
+        lines2 = ax2.get_lines()
         assert len(lines1) > 0
         np.testing.assert_array_equal(lines1[0].get_ydata(), lines2[0].get_ydata())
 
@@ -45,37 +44,43 @@ class TestPlotH0Convergence:
     ) -> None:
         """Custom subset_sizes accepted without error."""
         h_values, posteriors = sample_event_posteriors
-        fig, axes = plot_h0_convergence(h_values, posteriors, subset_sizes=[1, 3, 5])
+        fig, _ = plot_h0_convergence(h_values, posteriors, subset_sizes=[1, 3, 5])
         assert isinstance(fig, Figure)
 
-    def test_truth_line(
+    def test_target_precision_bands(
         self,
         sample_event_posteriors: tuple[npt.NDArray[np.float64], list[npt.NDArray[np.float64]]],
     ) -> None:
-        """Truth line appears as vertical lines on left panel."""
-        h_values, posteriors = sample_event_posteriors
-        _, axes = plot_h0_convergence(h_values, posteriors[:5], true_h=0.73)
-        # Left panel should have at least one vertical line
-        ax_post = axes[0]
-        vlines = [line for line in ax_post.get_lines() if len(set(line.get_xdata())) == 1]
-        assert len(vlines) >= 1
+        """Planck and SH0ES horizontal target-precision bands are drawn.
 
-    def test_plot_h0_convergence_without_bootstrap_bank_has_no_fill_between(self) -> None:
-        """VIZ-02 backward-compat: no band PolyCollection when bootstrap_bank=None."""
+        ``axhspan`` adds a ``Rectangle`` patch per band (on top of the axes
+        background patch), so expect at least two extra rectangles.
+        """
+        from matplotlib.patches import Rectangle
+
+        h_values, posteriors = sample_event_posteriors
+        _, ax = plot_h0_convergence(h_values, posteriors[:5], true_h=0.73)
+        rects = [a for a in ax.get_children() if isinstance(a, Rectangle)]
+        # axes background patch + 2 target-precision swatches
+        assert len(rects) >= 3
+
+    def test_plot_h0_convergence_without_bootstrap_bank_band(self) -> None:
+        """VIZ-02 backward-compat: no per-variant fill_between PolyCollection
+        when bootstrap_bank=None (the target-precision bands are axhspan
+        Rectangles, not PolyCollections)."""
         import matplotlib.pyplot as plt
 
         h_values = np.linspace(0.5, 1.0, 100)
         event_posteriors = [np.ones(100) for _ in range(10)]
-        fig, axes = plot_h0_convergence(h_values, event_posteriors)
-        ax_ci = axes[1]
-        poly_artists = [a for a in ax_ci.get_children() if isinstance(a, PolyCollection)]
-        assert len(poly_artists) == 0, "No PolyCollection expected without bootstrap_bank"
+        fig, ax = plot_h0_convergence(h_values, event_posteriors)
+        poly_artists = [a for a in ax.get_children() if isinstance(a, PolyCollection)]
+        assert len(poly_artists) == 0, "No fill_between PolyCollection expected without bank"
         plt.close(fig)
 
     def test_plot_h0_convergence_with_bootstrap_bank_adds_fill_between(self) -> None:
-        """VIZ-02: passing a bootstrap_bank adds at least one fill_between
-        PolyCollection on the right panel (axes[1]) for BOTH variants (no-mass
-        and with-mass) when event_posteriors_alt is supplied."""
+        """VIZ-02: passing a bootstrap_bank adds per-variant fill_between
+        PolyCollections (no-mass and with-mass) when event_posteriors_alt is
+        supplied (the target-precision bands are separate axhspan Rectangles)."""
         import matplotlib.pyplot as plt
 
         from master_thesis_code.plotting.convergence_analysis import ImprovementBank
@@ -118,17 +123,16 @@ class TestPlotH0Convergence:
             # cache_meta omitted — has default_factory
         )
 
-        fig, axes = plot_h0_convergence(
+        fig, ax = plot_h0_convergence(
             h_values,
             event_posteriors,
             event_posteriors_alt=event_posteriors_alt,
             bootstrap_bank=bank,
         )
-        ax_ci = axes[1]
-        poly_artists = [a for a in ax_ci.get_children() if isinstance(a, PolyCollection)]
-        # Two fill_between calls expected (no-mass + with-mass); a conservative
-        # lower bound of 1 still flags the total absence of the band block.
-        assert len(poly_artists) >= 1, "At least one PolyCollection (fill_between) expected"
+        poly_artists = [a for a in ax.get_children() if isinstance(a, PolyCollection)]
+        # Two per-variant bootstrap fill_between bands (no-mass + with-mass);
+        # the target-precision bands are axhspan Rectangles, not PolyCollections.
+        assert len(poly_artists) >= 1, "Per-variant bootstrap fill_between bands expected"
         plt.close(fig)
 
 

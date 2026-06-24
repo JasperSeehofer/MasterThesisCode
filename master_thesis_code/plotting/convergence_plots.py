@@ -2,9 +2,11 @@
 
 Factory functions for two key thesis diagnostic plots:
 
-- **H0 convergence** (two-panel): posterior curves narrowing with increasing
-  event count (left) and credible-interval width vs N with 1/sqrt(N)
-  reference (right).
+- **H0 convergence** (single-panel): credible-interval width vs number of
+  events, with a 1/sqrt(N) statistical guide and horizontal Planck/SH0ES
+  target-precision reference bands.  The two pipeline variants share one
+  hue and are separated by linestyle (``VARIANT_STYLE``).  The posterior
+  panel that used to sit on the left was dropped (redundant with fig01).
 - **Detection efficiency**: binned detection fraction with Wilson score
   confidence intervals.
 """
@@ -17,7 +19,13 @@ from astropy.stats import binom_conf_interval
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 
-from master_thesis_code.plotting._colors import CYCLE, TRUTH, VARIANT_NO_MASS, VARIANT_WITH_MASS
+from master_thesis_code.plotting._colors import (
+    CYCLE,
+    PLANCK_BAND,
+    PRIOR,
+    SHOES_BAND,
+    VARIANT_STYLE,
+)
 from master_thesis_code.plotting._helpers import _fig_from_ax, compute_credible_interval, get_figure
 from master_thesis_code.plotting._labels import LABELS
 
@@ -27,6 +35,15 @@ if TYPE_CHECKING:
 
 # Default subset sizes for convergence analysis
 _DEFAULT_SUBSETS: list[int] = [1, 5, 10, 25, 50, 100]
+
+# Target H0-precision bands, expressed as a credible-interval WIDTH in
+# dimensionless h.  These mirror the full-height tension bands on the
+# posterior figures (fig01): Planck 0.669-0.679 (width 0.010) and SH0ES
+# 0.720-0.740 (width 0.020).  Drawn here as horizontal reference bands so
+# the convergence curve can be read against "how many events to reach
+# Planck/SH0ES-level precision".
+_PLANCK_TARGET_WIDTH: float = 0.010
+_SHOES_TARGET_WIDTH: float = 0.020
 
 
 def _convergence_ci_widths(
@@ -57,7 +74,7 @@ def plot_h0_convergence(
     h_values: npt.NDArray[np.float64],
     event_posteriors: list[npt.NDArray[np.float64]] | npt.NDArray[np.float64],
     *,
-    true_h: float | None = None,
+    true_h: float | None = None,  # noqa: ARG001 — accepted for call-site compat (was left-panel truth)
     subset_sizes: list[int] | None = None,
     seed: int = 42,
     level: float = 0.68,
@@ -65,23 +82,28 @@ def plot_h0_convergence(
     event_posteriors_alt: list[npt.NDArray[np.float64]] | None = None,
     label: str = r"Without $M_z$",
     label_alt: str = r"With $M_z$",
-    color: str | None = None,
-    color_alt: str | None = None,
+    color: str | None = None,  # noqa: ARG001 — variants now share one hue (VARIANT_STYLE)
+    color_alt: str | None = None,  # noqa: ARG001 — kept for call-site compatibility
     bootstrap_bank: "ImprovementBank | None" = None,
-    canonical_no_mass: tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]] | None = None,
-    canonical_with_mass: tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]] | None = None,
-    ax: None = None,  # noqa: ARG001 — reserved for API consistency
-) -> tuple[Figure, npt.NDArray[np.object_]]:
-    """Two-panel H0 convergence plot, optionally comparing two variants.
+    canonical_no_mass: tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]] | None = None,  # noqa: ARG001 — left posterior panel dropped (redundant with fig01)
+    canonical_with_mass: tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]] | None = None,  # noqa: ARG001 — left posterior panel dropped (redundant with fig01)
+    ax: Axes | None = None,
+) -> tuple[Figure, Axes]:
+    """Single-panel H0 convergence plot: credible-interval width vs N.
 
-    Left panel: canonical combined posterior (raw Σ log L_i over ALL events),
-    when ``canonical_no_mass`` / ``canonical_with_mass`` are provided —
-    matches fig01 / paper_h0_posterior. Falls back to a single bootstrap
-    subset at the largest ``subset_sizes`` value when no canonical posterior
-    is supplied (legacy pre-Phase-A behaviour, useful for unit tests).
+    The redundant posterior panel (formerly the left subplot, duplicating
+    fig01) has been dropped.  This factory now produces a single
+    credible-interval-width-versus-event-count curve in the
+    "Observatory + Atlas" grammar:
 
-    Right panel: credible-interval width vs number of events with a
-    1/sqrt(N) reference curve.
+    * The two pipeline variants share one hue (the dark-siren blue) and are
+      separated only by linestyle (``VARIANT_STYLE``: ``no_mass`` solid,
+      ``with_mass`` dashed) -- colorblind- and greyscale-safe.
+    * A ``1/sqrt(N)`` statistical guide, anchored to the first point of the
+      primary variant, shows the ideal Poisson tightening.
+    * Two horizontal target-precision reference bands mark the Planck and
+      SH0ES credible-interval widths, so the reader can see at a glance how
+      many events are needed to reach each measurement's precision.
 
     Parameters
     ----------
@@ -90,7 +112,8 @@ def plot_h0_convergence(
     event_posteriors:
         Per-event posterior arrays evaluated on *h_values*.
     true_h:
-        If given, draw a vertical truth line on the left panel.
+        Ignored.  Retained for call-site compatibility (was the left-panel
+        truth line, which lived on the now-removed posterior panel).
     subset_sizes:
         Number of events in each subset.  Capped at ``len(event_posteriors)``.
     seed:
@@ -102,31 +125,31 @@ def plot_h0_convergence(
     event_posteriors_alt:
         Per-event posteriors for the alternative variant.
     label:
-        Legend label for the primary variant.
+        Legend label for the primary (without-mass) variant.
     label_alt:
-        Legend label for the alternative variant.
+        Legend label for the alternative (with-mass) variant.
     color:
-        Curve color for the primary variant.
+        Ignored.  Variants now share one hue and differ by linestyle.
     color_alt:
-        Curve color for the alternative variant.
+        Ignored.  Retained for call-site compatibility.
     bootstrap_bank:
         Optional :class:`ImprovementBank` from
-        :func:`compute_m_z_improvement_bank`.  When provided, the right
-        panel draws a 16/84 percentile HDI band around the CI-width
-        curve, per variant (primary, alt).  Default ``None`` preserves
-        the pre-VIZ-02 behavior (no band).
+        :func:`compute_m_z_improvement_bank`.  When provided, the curve
+        draws a 16/84 percentile band around the CI-width line, per
+        variant.  Default ``None`` draws no band.
+    canonical_no_mass, canonical_with_mass:
+        Ignored.  Retained for call-site compatibility (fed the removed
+        posterior panel).
     ax:
-        Ignored (two-panel layout always created internally).
+        Optional pre-existing Axes to draw on.
 
     Returns
     -------
-    tuple[Figure, NDArray[object]]
-        Figure and array of two Axes ``[ax_posterior, ax_ci_width]``.
+    tuple[Figure, Axes]
+        Figure and the single credible-interval-width Axes.
     """
-    if color is None:
-        color = VARIANT_NO_MASS
-    if color_alt is None:
-        color_alt = VARIANT_WITH_MASS
+    primary_color, primary_ls = VARIANT_STYLE["no_mass"]
+    alt_color, alt_ls = VARIANT_STYLE["with_mass"]
 
     posteriors_list: list[npt.NDArray[np.float64]] = list(event_posteriors)
     n_events = len(posteriors_list)
@@ -139,38 +162,30 @@ def plot_h0_convergence(
     else:
         sizes = [min(s, n_events) for s in subset_sizes]
 
-    fig, (ax_post, ax_ci) = get_figure(nrows=1, ncols=2, preset="double")
+    if ax is None:
+        fig, ax = get_figure(preset="single")
+    else:
+        fig = _fig_from_ax(ax)
 
     rng = np.random.default_rng(seed)
 
-    # --- Primary variant ---
+    # --- Primary variant (without M_z) ---
     ci_widths = _convergence_ci_widths(h_values, posteriors_list, sizes, rng, level)
-
-    # Left panel posterior curve. Prefer the canonical global combined posterior
-    # (Phase A unification) over a random bootstrap subset, so this panel
-    # matches fig01_h0_posterior_combined / paper_h0_posterior on the MAP.
-    if canonical_no_mass is not None:
-        h_left, combined = canonical_no_mass
-        combined = combined.astype(np.float64, copy=True)
-    else:
-        rng_post = np.random.default_rng(seed)
-        indices = rng_post.choice(n_events, size=sizes[-1], replace=False)
-        log_posts = [np.log(np.maximum(posteriors_list[i], 1e-300)) for i in indices]
-        log_combined = np.sum(log_posts, axis=0)
-        log_combined -= log_combined.max()
-        combined = np.exp(log_combined)
-        h_left = h_values
-    norm = float(np.trapezoid(combined, h_left))
-    if norm > 0:
-        combined /= norm
-    ax_post.plot(h_left, combined, color=color, label=label)
-
-    # Right panel: CI width vs N
     sizes_arr = np.asarray(sizes, dtype=np.float64)
     ci_arr = np.asarray(ci_widths, dtype=np.float64)
-    ax_ci.plot(sizes_arr, ci_arr, "o-", color=color, label=label)
+    ax.plot(
+        sizes_arr,
+        ci_arr,
+        marker="o",
+        linestyle=primary_ls,
+        color=primary_color,
+        markersize=4,
+        linewidth=1.4,
+        label=label,
+        zorder=4,
+    )
 
-    # --- Alternative variant (if provided) ---
+    # --- Alternative variant (with M_z), if provided ---
     if event_posteriors_alt is not None:
         h_alt = h_values_alt if h_values_alt is not None else h_values
         posteriors_alt_list: list[npt.NDArray[np.float64]] = list(event_posteriors_alt)
@@ -181,37 +196,27 @@ def plot_h0_convergence(
         ci_widths_alt = _convergence_ci_widths(
             h_alt, posteriors_alt_list, sizes_alt, rng_alt, level
         )
-
-        # Left-panel posterior overlay — canonical when available, bootstrap subset otherwise
-        if canonical_with_mass is not None:
-            h_alt_left, combined_alt = canonical_with_mass
-            combined_alt = combined_alt.astype(np.float64, copy=True)
-        else:
-            rng_alt_post = np.random.default_rng(seed)
-            indices_alt = rng_alt_post.choice(n_alt, size=sizes_alt[-1], replace=False)
-            log_posts_alt = [
-                np.log(np.maximum(posteriors_alt_list[i], 1e-300)) for i in indices_alt
-            ]
-            log_combined_alt = np.sum(log_posts_alt, axis=0)
-            log_combined_alt -= log_combined_alt.max()
-            combined_alt = np.exp(log_combined_alt)
-            h_alt_left = h_alt
-        norm_alt = float(np.trapezoid(combined_alt, h_alt_left))
-        if norm_alt > 0:
-            combined_alt /= norm_alt
-        ax_post.plot(h_alt_left, combined_alt, color=color_alt, linestyle="--", label=label_alt)
-
         sizes_alt_arr = np.asarray(sizes_alt, dtype=np.float64)
         ci_alt_arr = np.asarray(ci_widths_alt, dtype=np.float64)
-        ax_ci.plot(sizes_alt_arr, ci_alt_arr, "s--", color=color_alt, label=label_alt)
+        ax.plot(
+            sizes_alt_arr,
+            ci_alt_arr,
+            marker="s",
+            linestyle=alt_ls,
+            color=alt_color,
+            markersize=4,
+            linewidth=1.4,
+            label=label_alt,
+            zorder=4,
+        )
 
-    # --- Optional bootstrap HDI band on the right panel (VIZ-02) ---
+    # --- Optional bootstrap 16/84 percentile band (VIZ-02) ---
     if bootstrap_bank is not None:
         b_sizes = np.asarray(bootstrap_bank.sizes, dtype=np.float64)
         # Primary variant (no mass)
         w_no_lo = np.asarray(bootstrap_bank.metrics_no_mass["hdi68_width"]["p16"], dtype=np.float64)
         w_no_hi = np.asarray(bootstrap_bank.metrics_no_mass["hdi68_width"]["p84"], dtype=np.float64)
-        ax_ci.fill_between(b_sizes, w_no_lo, w_no_hi, color=color, alpha=0.2, zorder=2)
+        ax.fill_between(b_sizes, w_no_lo, w_no_hi, color=primary_color, alpha=0.18, lw=0, zorder=2)
         # Alt variant (with mass) — only if alt posteriors were provided
         if event_posteriors_alt is not None:
             w_with_lo = np.asarray(
@@ -220,34 +225,53 @@ def plot_h0_convergence(
             w_with_hi = np.asarray(
                 bootstrap_bank.metrics_with_mass["hdi68_width"]["p84"], dtype=np.float64
             )
-            ax_ci.fill_between(b_sizes, w_with_lo, w_with_hi, color=color_alt, alpha=0.2, zorder=2)
+            ax.fill_between(
+                b_sizes, w_with_lo, w_with_hi, color=alt_color, alpha=0.18, lw=0, zorder=2
+            )
 
-    # 1/sqrt(N) reference curve scaled to match first point of primary
+    # --- 1/sqrt(N) statistical guide, anchored to the primary first point ---
     if len(sizes) > 1 and ci_widths[0] > 0:
         ref = ci_widths[0] * np.sqrt(sizes_arr[0]) / np.sqrt(sizes_arr)
-        ax_ci.plot(
+        ax.plot(
             sizes_arr,
             ref,
-            ":",
-            color=CYCLE[5],
-            alpha=0.6,
-            label=r"$1/\sqrt{N}$ ref",
+            linestyle=(0, (1, 2)),
+            color=PRIOR,
+            linewidth=1.0,
+            alpha=0.9,
+            zorder=1,
+            label=r"$\propto 1/\sqrt{N}$",
         )
 
-    # Left panel styling
-    ax_post.set_xlabel(LABELS["h"])
-    ax_post.set_ylabel("Posterior density")
-    if true_h is not None:
-        ax_post.axvline(true_h, color=TRUTH, linestyle="--", label="Truth")
-    ax_post.legend(fontsize="small")
+    # --- Horizontal target-precision reference bands (Planck / SH0ES) ---
+    # Drawn behind the curves as thin horizontal bands at the target CI width.
+    _bandwidth = 0.0008  # visual half-thickness of the horizontal swatch in h-width units
+    ax.axhspan(
+        _PLANCK_TARGET_WIDTH - _bandwidth,
+        _PLANCK_TARGET_WIDTH + _bandwidth,
+        color=PLANCK_BAND,
+        alpha=0.30,
+        lw=0,
+        zorder=0,
+        label="Planck precision",
+    )
+    ax.axhspan(
+        _SHOES_TARGET_WIDTH - _bandwidth,
+        _SHOES_TARGET_WIDTH + _bandwidth,
+        color=SHOES_BAND,
+        alpha=0.30,
+        lw=0,
+        zorder=0,
+        label="SH0ES precision",
+    )
 
-    # Right panel styling
-    ax_ci.set_xlabel("Number of events")
-    ax_ci.set_ylabel(rf"{int(level * 100)}\% CI width")
-    ax_ci.legend(fontsize="small")
+    ax.set_xscale("log")
+    ax.set_yscale("log")
+    ax.set_xlabel(r"Number of events $N_\mathrm{det}$")
+    ax.set_ylabel(rf"{int(level * 100)}\% CI width of {LABELS['h']}")
+    ax.legend(loc="upper right", fontsize=6)
 
-    fig.tight_layout()
-    return fig, np.array([ax_post, ax_ci], dtype=object)
+    return fig, ax
 
 
 def plot_detection_efficiency(

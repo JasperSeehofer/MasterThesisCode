@@ -13,6 +13,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import numpy.typing as npt
 from matplotlib.axes import Axes
+from matplotlib.colors import Colormap
 from matplotlib.figure import Figure
 from matplotlib.gridspec import GridSpec
 
@@ -21,7 +22,9 @@ from master_thesis_code.plotting._colors import (
     CYCLE,
     EDGE,
     MEAN,
+    METHOD,
     REFERENCE,
+    SEQUENTIAL_CMAP,
     TRUTH,
     VARIANT_WITH_MASS,
 )
@@ -30,6 +33,22 @@ from master_thesis_code.plotting._helpers import _fig_from_ax, compute_hdi_inter
 from master_thesis_code.plotting._labels import LABELS
 
 _DEFAULT_RECOVERY_PARAMS: list[str] = ["M", "mu", "luminosity_distance", "a", "e0", "qS"]
+
+
+def _resolve_cmap(name: str) -> Colormap:
+    """Resolve a palette colormap token to a registered ``Colormap`` object.
+
+    The Atlas tokens in ``_colors`` use bare ``cmcrameri`` names (e.g.
+    ``"batlow"``), but ``cmcrameri`` registers them under a ``cmc.`` prefix.
+    Try the prefixed name first, then the bare name (covers the built-in
+    fallback such as ``"cividis"`` when ``cmcrameri`` is absent).
+    """
+    for candidate in (f"cmc.{name}", name):
+        try:
+            return plt.get_cmap(candidate)
+        except (KeyError, ValueError):
+            continue
+    return plt.get_cmap(name)
 
 
 def plot_mean_cramer_rao_bounds(
@@ -459,3 +478,309 @@ def plot_pdet_surface(
     # project mplstyle) handles colorbar packing and conflicts with a
     # post-hoc tight_layout call.
     return fig, ax
+
+
+# ---------------------------------------------------------------------------
+# fig04: detection yield (injected vs detected redshift + detection fraction)
+# ---------------------------------------------------------------------------
+
+
+def plot_detection_yield(
+    injected_redshifts: npt.NDArray[np.float64] | None,
+    detected_redshifts: npt.NDArray[np.float64] | None,
+    *,
+    bins: int = 30,
+    ax: Axes | None = None,
+) -> tuple[Figure, Axes] | None:
+    """Injected-vs-detected redshift yield with the true detection fraction.
+
+    The full injected sample is drawn as an open (step) histogram and the
+    detected sub-sample as a filled histogram in the shared dark-siren hue;
+    the per-bin detection fraction ``N_det / N_inj`` is overlaid on a twin
+    axis. This is a *selection* diagnostic: it only carries meaning when the
+    injected and detected samples are genuinely distinct populations.
+
+    The injection campaign that supplies the full (sub-threshold-inclusive)
+    sample is not stored alongside the production run, so this figure GATES:
+    it returns ``None`` whenever the injected sample is absent, empty, or
+    identical to the detected sample (which would force a meaningless
+    fraction of ~1 everywhere).
+
+    Parameters
+    ----------
+    injected_redshifts:
+        Redshifts of *all* injected events (detected and not). ``None`` or an
+        empty array triggers the data gate.
+    detected_redshifts:
+        Redshifts of the events that passed the SNR threshold. ``None`` or an
+        empty array triggers the data gate.
+    bins:
+        Number of shared histogram bins.
+    ax:
+        Optional pre-existing Axes to draw on.
+
+    Returns
+    -------
+    tuple[Figure, Axes] | None
+        Figure and the primary (left) Axes, or ``None`` when the injected
+        sample required for a meaningful yield is unavailable.
+    """
+    # --- Data gate: the injection campaign is not local -------------------
+    if injected_redshifts is None or detected_redshifts is None:
+        return None
+    if injected_redshifts.size == 0 or detected_redshifts.size == 0:
+        return None
+    # A detected==injected pasted array yields fraction ~1 in every bin and
+    # tells us nothing about selection; treat it as a missing injected sample.
+    if injected_redshifts.size == detected_redshifts.size and np.array_equal(
+        np.sort(injected_redshifts), np.sort(detected_redshifts)
+    ):
+        return None
+
+    if ax is None:
+        fig, ax = get_figure(preset="single")
+    else:
+        fig = _fig_from_ax(ax)
+
+    dark = METHOD["dark"]
+
+    # Shared bin edges spanning both populations.
+    lo = min(float(injected_redshifts.min()), float(detected_redshifts.min()))
+    hi = max(float(injected_redshifts.max()), float(detected_redshifts.max()))
+    bin_edges_arr = np.linspace(lo, hi, bins + 1)
+    bin_edges: list[float] = bin_edges_arr.tolist()
+    bin_centers = 0.5 * (bin_edges_arr[:-1] + bin_edges_arr[1:])
+
+    # Left y-axis: injected (open outline) + detected (filled), one hue.
+    ax.hist(
+        injected_redshifts,
+        bins=bin_edges,
+        histtype="step",
+        color=dark,
+        linewidth=1.4,
+        zorder=3,
+        label="Injected",
+    )
+    ax.hist(
+        detected_redshifts,
+        bins=bin_edges,
+        color=dark,
+        alpha=0.30,
+        linewidth=0,
+        zorder=2,
+        label="Detected",
+    )
+
+    # Right y-axis: true per-bin detection fraction.
+    counts_inj, _ = np.histogram(injected_redshifts, bins=bin_edges_arr)
+    counts_det, _ = np.histogram(detected_redshifts, bins=bin_edges_arr)
+    with np.errstate(invalid="ignore", divide="ignore"):
+        fraction = np.where(counts_inj > 0, counts_det / counts_inj, np.nan)
+
+    ax2 = ax.twinx()
+    ax2.plot(
+        bin_centers,
+        fraction,
+        color=MEAN,
+        linewidth=1.6,
+        marker="o",
+        markersize=2.5,
+        zorder=4,
+        label="Detection fraction",
+    )
+    ax2.set_ylabel("Detection fraction")
+    ax2.set_ylim(0.0, 1.05)
+
+    # Combined legend (both axes), small to fit a single-column figure.
+    lines1, labels1 = ax.get_legend_handles_labels()
+    lines2, labels2 = ax2.get_legend_handles_labels()
+    ax.legend(lines1 + lines2, labels1 + labels2, loc="upper right", fontsize=6)
+
+    overall = float(detected_redshifts.size) / float(injected_redshifts.size)
+    # Keep '%' inside math mode and escape it so it renders under both
+    # mathtext and usetex (mirrors plot_combined_posterior's title).
+    ax.set_title(
+        rf"Detection yield ($N_\mathrm{{det}}/N_\mathrm{{inj}} = {overall * 100:.1f}\,\%$)"
+    )
+    ax.set_xlabel(LABELS["z"])
+    ax.set_ylabel("Count")
+    return fig, ax
+
+
+# ---------------------------------------------------------------------------
+# fig09: detection efficiency / selection function (smooth p_det vs z)
+# ---------------------------------------------------------------------------
+
+
+def plot_detection_efficiency(
+    injected: npt.NDArray[np.float64] | None,
+    detected: npt.NDArray[np.bool_] | None,
+    *,
+    bins: int = 20,
+    xlabel: str | None = None,
+    ax: Axes | None = None,
+) -> tuple[Figure, Axes] | None:
+    """Selection function: a smooth detection probability ``p_det`` vs redshift.
+
+    The raw per-bin efficiency ``N_det / N_inj`` is shown as faint points and
+    a sequential-colormap-shaded band, then summarised by a smooth, monotone
+    selection curve (a logistic-style fit) so the figure reads as a *selection
+    function* rather than a noisy step histogram. Single-column aspect.
+
+    A genuine efficiency curve needs a mix of detected and non-detected
+    injections. The production run only persists the *detected* Cramer-Rao
+    rows (every injection there has ``detected = True``), and the injection
+    campaign that holds the sub-threshold draws is not local, so this figure
+    GATES: it returns ``None`` whenever the detection labels are absent or
+    contain no non-detections (which would pin the curve at 1.0 everywhere).
+
+    Parameters
+    ----------
+    injected:
+        Independent variable (redshift) for every injection. ``None`` or an
+        empty array triggers the data gate.
+    detected:
+        Boolean mask, ``True`` for injections that passed the SNR threshold.
+        ``None``, or a mask that is entirely ``True``/``False``, triggers the
+        data gate.
+    bins:
+        Number of equal-width redshift bins used for the empirical points.
+    xlabel:
+        X-axis label. Falls back to ``LABELS["z"]`` when not given.
+    ax:
+        Optional pre-existing Axes.
+
+    Returns
+    -------
+    tuple[Figure, Axes] | None
+        Figure and Axes with the selection-function curve, or ``None`` when
+        a meaningful efficiency cannot be computed from local data.
+    """
+    # --- Data gate: need a mix of detected and non-detected injections ----
+    if injected is None or detected is None:
+        return None
+    if injected.size == 0 or detected.size == 0 or injected.size != detected.size:
+        return None
+    n_det_total = int(np.count_nonzero(detected))
+    if n_det_total == 0 or n_det_total == detected.size:
+        # All-True (production CRB) or all-False -> no selection information.
+        return None
+
+    if ax is None:
+        fig, ax = get_figure(preset="single")
+    else:
+        fig = _fig_from_ax(ax)
+
+    cmap = _resolve_cmap(SEQUENTIAL_CMAP)
+
+    edges = np.linspace(float(injected.min()), float(injected.max()), bins + 1)
+    centers = 0.5 * (edges[:-1] + edges[1:])
+
+    n_inj: npt.NDArray[np.float64] = np.histogram(injected, bins=edges)[0].astype(np.float64)
+    n_det: npt.NDArray[np.float64] = np.histogram(injected[detected], bins=edges)[0].astype(
+        np.float64
+    )
+    mask = n_inj > 0
+    efficiency = np.where(mask, n_det / n_inj, np.nan)
+
+    # Binomial standard error per bin for the faint empirical band.
+    with np.errstate(invalid="ignore", divide="ignore"):
+        sigma = np.where(
+            mask, np.sqrt(np.clip(efficiency * (1.0 - efficiency), 0.0, None) / n_inj), np.nan
+        )
+
+    # Empirical points + shaded uncertainty (sequential cmap -> P_det role).
+    band_color = cmap(0.35)
+    point_color = cmap(0.7)
+    ax.fill_between(
+        centers,
+        efficiency - sigma,
+        efficiency + sigma,
+        where=mask.tolist(),
+        color=band_color,
+        alpha=0.35,
+        linewidth=0,
+        zorder=1,
+    )
+    ax.scatter(
+        centers[mask],
+        efficiency[mask],
+        s=12,
+        color=point_color,
+        edgecolor=EDGE,
+        linewidths=0.3,
+        zorder=2,
+        label="Empirical",
+    )
+
+    # Smooth selection function: monotone logistic fit p_det(z) = 1/(1+e^{k(z-z0)}).
+    z_fit = np.linspace(float(injected.min()), float(injected.max()), 200)
+    p_smooth = _fit_selection_function(centers[mask], efficiency[mask], n_inj[mask], z_fit)
+    ax.plot(
+        z_fit,
+        p_smooth,
+        color=cmap(0.0),
+        linewidth=1.8,
+        zorder=3,
+        label=r"Selection function $p_\mathrm{det}(z)$",
+    )
+
+    ax.set_xlabel(xlabel if xlabel is not None else LABELS["z"])
+    ax.set_ylabel(r"$p_\mathrm{det}$")
+    ax.set_ylim(-0.05, 1.05)
+    ax.legend(loc="upper right", fontsize=6)
+    return fig, ax
+
+
+def _fit_selection_function(
+    z: npt.NDArray[np.float64],
+    p: npt.NDArray[np.float64],
+    weights: npt.NDArray[np.float64],
+    z_eval: npt.NDArray[np.float64],
+) -> npt.NDArray[np.float64]:
+    """Weighted logistic fit of a (decreasing) selection function ``p_det(z)``.
+
+    Fits ``p(z) = 1 / (1 + exp(k * (z - z0)))`` by weighted least squares and
+    evaluates it on *z_eval*. Falls back to a clipped linear interpolation if
+    the fit fails to converge or there are too few usable bins.
+
+    Parameters
+    ----------
+    z, p:
+        Bin-centre redshifts and empirical efficiencies of the fitted bins.
+    weights:
+        Per-bin injection counts (used as least-squares weights).
+    z_eval:
+        Redshift grid on which to evaluate the smooth curve.
+
+    Returns
+    -------
+    npt.NDArray[np.float64]
+        Smooth ``p_det`` evaluated on *z_eval*, clipped to ``[0, 1]``.
+    """
+    from scipy.optimize import curve_fit
+
+    def _logistic(zz: npt.NDArray[np.float64], k: float, z0: float) -> npt.NDArray[np.float64]:
+        return 1.0 / (1.0 + np.exp(k * (zz - z0)))
+
+    finite = np.isfinite(p) & np.isfinite(z)
+    z_f = z[finite]
+    p_f = np.clip(p[finite], 1e-6, 1.0 - 1e-6)
+    w_f = weights[finite]
+    if z_f.size >= 3:
+        try:
+            popt, _ = curve_fit(
+                _logistic,
+                z_f,
+                p_f,
+                p0=[10.0, float(np.median(z_f))],
+                sigma=1.0 / np.sqrt(np.clip(w_f, 1.0, None)),
+                maxfev=10000,
+            )
+            return np.clip(_logistic(z_eval, float(popt[0]), float(popt[1])), 0.0, 1.0)
+        except (RuntimeError, ValueError):
+            pass
+    # Fallback: clipped linear interpolation over the finite bins.
+    if z_f.size >= 2:
+        return np.clip(np.interp(z_eval, z_f, p_f), 0.0, 1.0)
+    return np.full_like(z_eval, float(np.mean(p_f)) if p_f.size else np.nan)
