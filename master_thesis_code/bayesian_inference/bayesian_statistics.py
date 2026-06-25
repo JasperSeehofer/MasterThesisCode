@@ -10,6 +10,7 @@ Output is written to ``simulations/posteriors/`` as JSON.
 """
 
 import csv
+import functools
 import json
 import logging
 import math
@@ -21,6 +22,7 @@ from typing import Any
 import numpy as np
 import numpy.typing as npt
 import pandas as pd
+from numpy.polynomial.legendre import leggauss
 from scipy.integrate import dblquad, fixed_quad, quad
 from scipy.stats import multivariate_normal, norm
 
@@ -57,6 +59,18 @@ _LOGGER = logging.getLogger()
 DEFAULT_GALAXY_Z_ERROR = 0.0015
 GALAXY_LIKELIHOODS = "galaxy_likelihoods"
 ADDITIONAL_GALAXIES_WITHOUT_BH_MASS = "additional_galaxies_without_bh_mass"
+
+# Deterministic Gauss-Legendre quadrature for the with-BH-mass selection denominator
+# (replaces the former Monte-Carlo importance sampler). Node counts are chosen so the
+# 2D (z, M) integral converges to <1e-3 relative — far below the ~1% noise of the old
+# MC — while the per-axis order stays below the 1D channel's FIXED_QUAD_N=50 (the 2D
+# denominator integrand is lower-degree per axis). See _selection_denominator_with_bh_mass().
+DENOMINATOR_QUAD_N_Z = 32
+DENOMINATOR_QUAD_N_M = 24
+# Lower-M node clip: the p_det mass axis is a positive geomspace, but the large
+# M_BH-M_stellar scatter can push host_M - 4*sigma_M <= 0. Clip the lower M node to
+# this fraction of host_M to stay on the positive, physical mass axis.
+DENOMINATOR_QUAD_M_FLOOR_FRACTION = 1e-3
 
 FRACTIONAL_LUMINOSITY_DISTANCE_ERROR_THRESHOLD = 0.10
 
@@ -1113,6 +1127,125 @@ def use_detection(detection: Detection) -> bool:
     return False
 
 
+@functools.cache
+def _cached_leggauss(n: int) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
+    """Gauss-Legendre nodes and weights on ``[-1, 1]``, cached by order ``n``.
+
+    The returned arrays are shared across callers and must not be mutated.
+
+    Args:
+        n: Number of Gauss-Legendre nodes.
+
+    Returns:
+        Tuple ``(nodes, weights)`` on the reference interval ``[-1, 1]``.
+    """
+    nodes, weights = leggauss(n)
+    return nodes, weights
+
+
+def _selection_denominator_with_bh_mass(
+    detection_probability: SimulationDetectionProbability,
+    galaxy_redshift_normal_distribution: Any,
+    galaxy_mass_normal_distribution: Any,
+    host_M: float,
+    host_M_error: float,
+    host_phiS: float,
+    host_qS: float,
+    h: float,
+    z_lower_limit: float,
+    z_upper_limit: float,
+    sigma_multiplier: float,
+    n_z: int = DENOMINATOR_QUAD_N_Z,
+    n_M: int = DENOMINATOR_QUAD_N_M,
+) -> float:
+    r"""Deterministic 2D Gauss-Legendre quadrature of the with-BH-mass selection denominator.
+
+    Computes
+
+    .. math::
+
+        D_g = \iint p_\mathrm{det}\big(d_L(z, h),\, M(1+z),\, \phi, \theta\big)\,
+              \mathcal{N}(z; \hat z, \sigma_z)\,\mathcal{N}(M; \hat M, \sigma_M)\; dz\, dM
+
+    by a tensor-product Gauss-Legendre rule on the +/- ``sigma_multiplier``-sigma window
+    in both ``z`` and ``M``. This replaces an unseeded Monte-Carlo importance sampler
+    whose ~1% per-(host, H0) noise imprinted a white-noise comb on the with-BH-mass H0
+    posterior; the numerator and the without-BH-mass channel already use this same
+    Gauss-Legendre family (``scipy.integrate.fixed_quad``).
+
+    ``p_det`` is non-Gaussian in ``M`` (a grid-interpolated survival function), so —
+    unlike the numerator — the mass integral has no analytic Gaussian-product closed
+    form and is integrated numerically. ``d_L(z)`` depends only on ``z`` and is computed
+    once per ``z``-node, then broadcast over ``M`` (the ``hyp2f1`` bottleneck).
+
+    Args:
+        detection_probability: Simulation-based detection-probability interpolator.
+        galaxy_redshift_normal_distribution: ``scipy.stats.norm`` over the host redshift.
+        galaxy_mass_normal_distribution: ``scipy.stats.norm`` over the host BH mass.
+        host_M: Host BH mass [M_sun].
+        host_M_error: Host BH mass uncertainty [M_sun].
+        host_phiS: Host sky-position phi.
+        host_qS: Host sky-position theta.
+        h: Dimensionless Hubble constant.
+        z_lower_limit: Lower redshift integration limit (host_z - n*sigma_z).
+        z_upper_limit: Upper redshift integration limit (host_z + n*sigma_z).
+        sigma_multiplier: Window half-width in sigma for the mass axis.
+        n_z: Gauss-Legendre order on the redshift axis.
+        n_M: Gauss-Legendre order on the mass axis.
+
+    Returns:
+        The selection-denominator integral ``D_g`` (dimensionless, in ``[0, 1]``).
+
+    References:
+        Press et al., *Numerical Recipes* 3rd ed. (2007), Sec. 4.6 (Gauss-Legendre);
+        tensor product via Fubini. Selection denominator: Gray et al. (2020),
+        arXiv:1908.06050, Eq. A.19.
+    """
+    z_nodes_unit, z_weights = _cached_leggauss(n_z)
+    M_nodes_unit, M_weights = _cached_leggauss(n_M)
+
+    # Affine map [-1, 1] -> integration window; the half-width is the per-axis Jacobian.
+    z_half = 0.5 * (z_upper_limit - z_lower_limit)
+    z_mid = 0.5 * (z_upper_limit + z_lower_limit)
+    z_nodes = z_mid + z_half * z_nodes_unit
+
+    # Clip the lower M node to a positive floor: large sigma_M can push the lower node
+    # off the positive geomspace p_det mass axis (negative M is unphysical).
+    M_upper_limit = host_M + sigma_multiplier * host_M_error
+    M_lower_limit = max(
+        host_M - sigma_multiplier * host_M_error,
+        DENOMINATOR_QUAD_M_FLOOR_FRACTION * host_M,
+    )
+    M_half = 0.5 * (M_upper_limit - M_lower_limit)
+    M_mid = 0.5 * (M_upper_limit + M_lower_limit)
+    M_nodes = M_mid + M_half * M_nodes_unit
+
+    # Per-z-node quantities (the hyp2f1 luminosity distance is computed once per z-node,
+    # not per (z, M) tensor point).
+    d_L_nodes = dist_vectorized(z_nodes, h=h)
+    g_z = galaxy_redshift_normal_distribution.pdf(z_nodes)
+    g_M = galaxy_mass_normal_distribution.pdf(M_nodes)
+
+    # Tensor grid (n_z, n_M); a single vectorized p_det lookup over all nodes.
+    M_z_grid = M_nodes[None, :] * (1.0 + z_nodes[:, None])
+    d_L_grid = np.broadcast_to(d_L_nodes[:, None], M_z_grid.shape)
+    phi_grid = np.full(M_z_grid.shape, host_phiS)
+    theta_grid = np.full(M_z_grid.shape, host_qS)
+    p_det_flat = detection_probability.detection_probability_with_bh_mass_interpolated(
+        np.ascontiguousarray(d_L_grid).ravel(),
+        np.ascontiguousarray(M_z_grid).ravel(),
+        phi_grid.ravel(),
+        theta_grid.ravel(),
+        h=h,
+    )
+    p_det_grid = np.asarray(p_det_flat, dtype=np.float64).reshape(n_z, n_M)
+
+    # D_g = J_z J_M sum_i sum_j w_z[i] g_z[i] p_det[i, j] w_M[j] g_M[j]
+    z_factor = z_weights * g_z
+    M_factor = M_weights * g_M
+    return float(z_half * M_half * (z_factor @ p_det_grid @ M_factor))
+
+
 def single_host_likelihood_grid(
     possible_host: HostGalaxy,
     detection: Detection,
@@ -1357,46 +1490,25 @@ def single_host_likelihood(
         )[0]
 
         # Eq. (14.33) in derivations/dark_siren_likelihood.md
-        # Denominator: p_det(d_L, M_z, phi, theta) * p_gal(z) * p_gal(M)
-        # No GW likelihood, no mz_integral, no /(1+z) -- confirmed correct by Phase 14
-        def denominator_integrant_with_bh_mass_vectorized(
-            M: npt.NDArray[np.float64], z: npt.NDArray[np.float64]
-        ) -> Any:
-            d_L = dist_vectorized(z, h=h)
-            M_z = M * (1 + z)
-            phi = np.full_like(M, host_phiS)
-            theta = np.full_like(M, host_qS)
-            # p_det in observer-frame M_z (consistent with grid axis and
-            # the numerator's host_M·(1+z) hypothesis).
-            p_det = detection_probability.detection_probability_with_bh_mass_interpolated(
-                d_L, M_z, phi, theta, h=h
-            )
-            return (
-                p_det
-                * galaxy_redshift_normal_distribution.pdf(z)
-                * galaxy_mass_normal_distribution.pdf(M)
-            )
-
-        # MC importance sampling for 2D denominator integral over (z, M).
-        # Proposal distribution: q(z, M) = p_gal(z) * p_gal(M).
-        # After cancellation, weights = p_det (each in [0, 1]).
-        # Relative MC error ~ std(p_det) / (sqrt(N) * mean(p_det)) ~ 1% for N=10000.
-        # Numerator uses fixed_quad (1D over z, mass analytically marginalized) --
-        # the quadrature-vs-MC asymmetry is a numerical choice, not a physics error.
-        N_SAMPLES = 10_000
-        z_samples = galaxy_redshift_normal_distribution.rvs(size=N_SAMPLES)
-        M_samples = galaxy_mass_normal_distribution.rvs(size=N_SAMPLES)
-
-        numerator_integrant_from_samples = denominator_integrant_with_bh_mass_vectorized(
-            M_samples, z_samples
+        # Selection denominator D_g = ∫∫ p_det(d_L(z,h), M(1+z), φ, θ) N(z) N(M) dz dM,
+        # evaluated by DETERMINISTIC 2D tensor-product Gauss-Legendre quadrature.
+        # Replaces a former unseeded Monte-Carlo importance sampler whose ~1%
+        # per-(host, H0) noise produced a white-noise comb in the with-BH-mass H0
+        # posterior. p_det is non-Gaussian in M, so (unlike the numerator) the mass
+        # integral is numerical; same Gauss-Legendre family as the numerator/1D channel.
+        single_host_likelihood_denominator_with_bh_mass = _selection_denominator_with_bh_mass(
+            detection_probability,
+            galaxy_redshift_normal_distribution,
+            galaxy_mass_normal_distribution,
+            host_M,
+            host_M_error,
+            host_phiS,
+            host_qS,
+            h,
+            denominator_integration_lower_redshift_limit,
+            denominator_integration_upper_redshift_limit,
+            integration_limit_sigma_multiplier,
         )
-
-        sampling_pdf = galaxy_redshift_normal_distribution.pdf(
-            z_samples
-        ) * galaxy_mass_normal_distribution.pdf(M_samples)
-        weights = numerator_integrant_from_samples / sampling_pdf
-
-        single_host_likelihood_denominator_with_bh_mass = np.mean(weights)
 
         return [
             single_host_likelihood_numerator_without_bh_mass,
