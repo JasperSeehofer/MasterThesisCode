@@ -153,16 +153,36 @@ def precompute_completion_denominator(
 ) -> dict[float, float]:
     """Precompute the completion-term denominator D(h) for each h value.
 
-    Gray et al. (2020), arXiv:1908.06050, Eq. A.19:
-    Denominator integrates P_det * dVc/dz over the full detectable volume.
+    Gray et al. (2020), arXiv:1908.06050, Eqs. 33 / A.19: the out-of-catalogue
+    selection denominator integrates the detection probability against the EMRI
+    population prior over the detectable volume.
 
     .. math::
 
         D(h) = \\int_{z_{\\min}}^{z_{\\max}(h)} P_{\\det}(d_L(z,h))
-               \\frac{dV_c}{dz\\,d\\Omega}\\, dz
+               \\,\\frac{1}{1+z}\\,\\frac{dV_c}{dz\\,d\\Omega}\\, dz
 
     where ``z_max(h)`` is the redshift corresponding to the P_det grid's
-    maximum ``d_L`` at the given h.
+    maximum ``d_L`` at the given h, and ``1/(1+z)`` is the source-to-detector
+    time dilation (matching ``comp_num`` and the event sampler
+    :func:`master_thesis_code.emri_rate.p_pop_unnormalized`).
+
+    Modeling assumptions (the out-of-catalogue / completion population):
+        * **Constant comoving number density** for the missing galaxies: the
+          galaxy number density ``n_gal(z)`` and the mass-integrated rate
+          ``\\int dM R_EMRI(z,M)`` are taken z-independent (the latter holds
+          exactly under the ``p0=1`` surrogate). They are then overall constants
+          that **cancel** in ``L_comp = comp_num / D(h)`` and need not appear
+          explicitly. Departures (clustering, rate/MF evolution) are second order.
+        * **Full-volume denominator (no (1-f) weight).** Strictly, the missing
+          population is ``(1-f(z)) n_gal dVc`` (Gray Eqs. 31-32); D(h) here omits
+          the ``(1-f(z))`` factor and integrates the full detectable volume, so it
+          includes the complete low-z volume (f≈1) that should contribute ~0 to
+          the missing population. This is a deliberate simplification, accurate
+          when ``f(z)`` varies slowly across the dominant window; it makes
+          ``f_i = completeness(z_det)`` (used as the catalog/dark mixing weight in
+          :meth:`p_Di`) an approximation to the selection-weighted weight
+          ``beta_G / (beta_G + beta_Gbar)``. See :meth:`p_Di` for that combination.
 
     Args:
         h_values: List of Hubble parameter values to evaluate.
@@ -1178,7 +1198,17 @@ class BayesianStatistics:
         # --- Combination: Gray et al. (2020), arXiv:1908.06050, Eq. 9 ---
         # p_i = f_i * L_cat + (1 - f_i) * L_comp
         # L_comp uses "without BH mass" Gaussian for both variants
-        # (uncataloged host has no galaxy mass information)
+        # (uncataloged host has no galaxy mass information).
+        #
+        # MIXING WEIGHT (design choice): f_i = completeness(z_det) is used as the
+        # catalog/dark mixing weight. Strictly, the Gray Eq. 9 weights are the
+        # SELECTION-weighted catalog probabilities beta_G/(beta_G+beta_Gbar) with
+        # beta_Gbar = INTEGRAL (1-f) n_gal P_det dVc. Under the constant-comoving-
+        # density assumption (see precompute_completion_denominator) and slowly-
+        # varying f(z)/P_det across the dominant window, that ratio reduces to
+        # f_i = completeness(z_det). This is the standard narrow-window approximation;
+        # a full selection-weighted mixing weight (with the (1-f) n_gal denominator)
+        # is a documented future refinement, not applied here.
         combined_without_bh_mass = float(f_i * L_cat_without_bh_mass + (1 - f_i) * L_comp)
         combined_with_bh_mass = float(f_i * L_cat_with_bh_mass + (1 - f_i) * L_comp)
 
