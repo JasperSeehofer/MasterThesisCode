@@ -56,6 +56,11 @@ FRACTIONAL_MEASURED_MASS_ERROR: float = 1e-8  # fractional error on measured red
 SKY_LOCALIZATION_ERROR: float = 2 / 180 * np.pi  # rad, EMRI sky localization error (2 degrees)
 GALAXY_CATALOG_REDSHIFT_LOWER_LIMIT: float = 0.00001  # minimum redshift for galaxy catalog
 GALAXY_CATALOG_REDSHIFT_UPPER_LIMIT: float = 0.55  # maximum redshift for galaxy catalog
+# Redshift-horizon margin for the in-catalog host draw (draw_uniform_hosts). The
+# EMRI detection horizon is z ≈ 0.18 and the injection campaign already uses
+# z_cut = 0.5, so z < 0.5 is safely beyond the horizon -> the truncation is EXACT
+# (p_det = 0 beyond) and only removes never-detectable host candidates.
+HOST_DRAW_Z_MAX: float = 0.5
 LUMINOSITY_DISTANCE_THRESHOLD_GPC: float = 1.55  # Gpc, LISA detection horizon for EMRIs
 LUMINOSITY_DISTANCE_PRESCREEN_GPC: float = 2.0  # Gpc, generous pre-screen cutoff (see main.py)
 

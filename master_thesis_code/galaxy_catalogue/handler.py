@@ -13,6 +13,7 @@ import pandas as pd
 from astropy.coordinates import BarycentricTrueEcliptic, SkyCoord
 from sklearn.neighbors import BallTree
 
+from master_thesis_code.constants import HOST_DRAW_Z_MAX
 from master_thesis_code.physical_relations import (
     dist,
     dist_to_redshift_error_proagation,
@@ -480,6 +481,68 @@ class GalaxyCatalogueHandler:
         closest_galaxy = self.reduced_galaxy_catalog.iloc[index[0][0]]
 
         return HostGalaxy(closest_galaxy)
+
+    def draw_uniform_hosts(
+        self,
+        number_of_hosts: int,
+        rng: np.random.Generator,
+        z_max: float = HOST_DRAW_Z_MAX,
+    ) -> list[HostGalaxy]:
+        """Draw host galaxies uniformly at random from the in-catalog volume z < z_max.
+
+        This is the self-consistent generative model for the equal-weight in-catalog
+        likelihood term used by the current dark-siren inference: every catalog galaxy
+        with redshift below ``z_max`` is an equally probable host, i.e. P(g) = const
+        over the ``z < z_max`` catalog. Each returned :class:`HostGalaxy` carries the
+        redshift, sky angles, BH mass, and per-quantity errors straight from its catalog
+        row — there is NO nearest-neighbour snap (contrast
+        :meth:`find_closest_galaxy_to_coordinates`) and NO overwrite of the catalog
+        quantities.
+
+        Sampling is WITH REPLACEMENT: hosts are i.i.d. draws from the uniform
+        distribution over the eligible rows, so the same galaxy may be returned more
+        than once. The truncation ``z < z_max`` is exact for the inference because the
+        EMRI detection horizon (z ≈ 0.18) lies far below ``z_max`` = 0.5, so the removed
+        galaxies have p_det = 0 and never contribute a detectable event.
+
+        Args:
+            number_of_hosts: Number of host galaxies to draw (i.i.d., with replacement).
+            rng: Seeded random generator. Threading the simulation-wide ``rng`` makes
+                the host selection reproducible under ``--seed``.
+            z_max: Exclusive upper redshift bound for eligible hosts. Defaults to
+                :data:`~master_thesis_code.constants.HOST_DRAW_Z_MAX`.
+
+        Returns:
+            ``number_of_hosts`` hosts, each built exactly like
+            :meth:`find_closest_galaxy_to_coordinates` builds its result (so z / sky /
+            M / errors come straight from the catalog row).
+
+        Raises:
+            ValueError: If no catalog galaxy satisfies ``z < z_max``.
+
+        References:
+            Chen, Fishbach & Holz, "A Hitchhiker's Guide to ...", arXiv:2212.08694
+            Eq. (9): equal-weight in-catalog term P(g) = const.
+        """
+        # Eq. (9) in Chen et al. (2024), arXiv:2212.08694: equal-weight in-catalog
+        # term P(g) = const over the z < z_max catalog (research option A).
+        eligible_catalog = self.reduced_galaxy_catalog[
+            self.reduced_galaxy_catalog[InternalCatalogColumns.REDSHIFT] < z_max
+        ]
+        n_eligible = len(eligible_catalog)
+        if n_eligible == 0:
+            raise ValueError(
+                f"No galaxy in the reduced catalog has redshift < z_max = {z_max}; "
+                "cannot draw uniform in-catalog hosts."
+            )
+
+        # Uniform i.i.d. draw WITH REPLACEMENT over the eligible rows: each eligible
+        # galaxy carries probability 1 / n_eligible (= const), the generative model
+        # for the equal-weight in-catalog likelihood. Positional integers index the
+        # eligible subset so each HostGalaxy is built from a genuine catalog row,
+        # exactly as find_closest_galaxy_to_coordinates does (no snap, no overwrite).
+        positions: npt.NDArray[np.int64] = rng.integers(0, n_eligible, size=number_of_hosts)
+        return [HostGalaxy(eligible_catalog.iloc[int(position)]) for position in positions]
 
     def get_host_galaxy_by_index(self, index: int) -> HostGalaxy:
         return HostGalaxy(self.reduced_galaxy_catalog.loc[index])

@@ -339,6 +339,11 @@ def data_simulation(
 
     _callbacks: list[SimulationCallback] = callbacks or []
 
+    # Normalize the rng once so the uniform host draw (draw_uniform_hosts) and
+    # parameter randomization share a single, reproducible generator under --seed.
+    if rng is None:
+        rng = np.random.default_rng()
+
     def _alarm_handler(signum: int, frame: object) -> None:
         raise TimeoutError("Computation exceeded 90s timeout")
 
@@ -370,6 +375,7 @@ def data_simulation(
         cb.on_simulation_start(simulation_steps)
 
     from master_thesis_code.constants import (
+        HOST_DRAW_Z_MAX,
         LUMINOSITY_DISTANCE_PRESCREEN_GPC,
         PRE_SCREEN_SNR_FACTOR,
     )
@@ -391,8 +397,13 @@ def data_simulation(
         try:
             host_galaxy = next(host_galaxies)
         except StopIteration:
-            parameter_samples = cosmological_model.sample_emri_events(200)
-            host_galaxies = iter(galaxy_catalog.get_hosts_from_parameter_samples(parameter_samples))
+            # Direct uniform draw from the z < z_max catalog (the self-consistent
+            # generative model for the equal-weight in-catalog inference term),
+            # replacing the ill-defined "sample (M,z) then snap to nearest catalog
+            # galaxy" assignment. Eq. (9) in Chen et al. (2024), arXiv:2212.08694.
+            host_galaxies = iter(
+                galaxy_catalog.draw_uniform_hosts(200, rng=rng, z_max=HOST_DRAW_Z_MAX)
+            )
             host_galaxy = next(host_galaxies)
         assert isinstance(host_galaxy, HostGalaxy)
 
