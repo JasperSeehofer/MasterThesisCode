@@ -88,7 +88,27 @@ class HostGalaxy:
         z_error: float,
         M: float,
         M_error: float,
+        catalog_index: int | None = None,
     ) -> "HostGalaxy":
+        """Build a :class:`HostGalaxy` from explicit attribute values.
+
+        Args:
+            phiS: Ecliptic azimuthal sky angle (rad).
+            qS: Ecliptic polar sky angle (rad, in ``[0, pi]``).
+            z: Host redshift.
+            z_error: 1-sigma redshift uncertainty.
+            M: Source-frame MBH mass (solar masses).
+            M_error: 1-sigma MBH mass uncertainty (solar masses).
+            catalog_index: Catalog row index. Use ``-1`` to flag an
+                out-of-catalog (dark) host that was drawn from the
+                missing-galaxy population rather than read off a catalog row
+                (see :mod:`master_thesis_code.dark_siren_injection`). Defaults
+                to ``None`` (legacy behaviour for synthetic in-memory hosts).
+
+        Returns:
+            A :class:`HostGalaxy` whose :attr:`catalog_index` is set to
+            ``catalog_index``.
+        """
         parameters = pd.Series(
             {
                 InternalCatalogColumns.PHI_S: phiS,
@@ -99,6 +119,9 @@ class HostGalaxy:
                 InternalCatalogColumns.BH_MASS_ERROR: M_error,
             }
         )
+        # HostGalaxy.__init__ reads ``catalog_index`` from the Series name, so
+        # set the name to thread the requested index (e.g. -1 for a dark host).
+        parameters.name = catalog_index
         return HostGalaxy(parameters)
 
     def draw_z_and_mass_from_gaussian(self) -> None:

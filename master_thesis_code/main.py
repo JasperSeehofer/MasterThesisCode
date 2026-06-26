@@ -380,6 +380,31 @@ def data_simulation(
         LUMINOSITY_DISTANCE_PRESCREEN_GPC,
         PRE_SCREEN_SNR_FACTOR,
     )
+    from master_thesis_code.dark_siren_injection import (
+        compute_global_catalog_fraction,
+        draw_mixture_hosts,
+    )
+    from master_thesis_code.galaxy_catalogue.glade_completeness import GladeCatalogCompleteness
+
+    # CHANGE 4b: split injected hosts into an in-catalog fraction F and an
+    # out-of-catalog (dark) fraction 1-F so the injected population matches the
+    # inference mixture f*L_cat + (1-f)*L_comp (Gray et al. 2020 Eq. 9; Chen et
+    # al. 2024 arXiv:2212.08694 self-consistency). F is the completeness f(z)
+    # marginalised over the source-frame redshift population prior; it is
+    # precomputed ONCE per run at the injection cosmology h_value with the SAME
+    # completeness object the inference uses.
+    completeness = GladeCatalogCompleteness()
+    global_catalog_fraction = compute_global_catalog_fraction(
+        completeness, h=h_value, z_max=HOST_DRAW_Z_MAX
+    )
+    _ROOT_LOGGER.info(
+        "CHANGE 4b dark-event injection: global in-catalog fraction F = %.4f "
+        "(h_inj=%.4f, z_max=%.3f); injecting (1-F) = %.4f dark hosts.",
+        global_catalog_fraction,
+        h_value,
+        HOST_DRAW_Z_MAX,
+        1.0 - global_catalog_fraction,
+    )
 
     counter = 0
     iteration = 0
@@ -398,17 +423,28 @@ def data_simulation(
         try:
             host_galaxy = next(host_galaxies)
         except StopIteration:
-            # Rate-weighted draw from the z < z_max catalog: P(g) ∝ w(g) =
-            # R_eff_per_mbh(M_g) / (1 + z_g) (effective per-MBH EMRI rate ×
-            # source-frame time dilation). This is the self-consistent generative
-            # model for the rate-weighted in-catalog inference term —
+            # CHANGE 4b refill: each of the 200 hosts is independently in-catalog
+            # with probability F (rate-weighted draw from the z < z_max catalog:
+            # P(g) ∝ w(g) = R_eff_per_mbh(M_g) / (1 + z_g), the self-consistent
+            # generative model for the in-catalog inference term —
             # bayesian_statistics.p_Di reweights the catalog likelihood by the
-            # SAME w(g). The per-MBH rate (not the volume density R_EMRI) is
-            # correct because each catalog galaxy is one realised MBH.
+            # SAME w(g)) or out-of-catalog/dark with probability 1-F (drawn from
+            # the missing-galaxy population, NOT in the catalog). Together the
+            # injected population matches the inference mixture
+            # f*L_cat + (1-f)*L_comp. A dark host carries catalog_index = -1.
             # Babak et al. (2017), arXiv:1703.09722 (per-MBH rate, via emri_rate);
-            # Gray et al. (2020), arXiv:1908.06050 (galaxy weighting).
+            # Gray et al. (2020), arXiv:1908.06050 (galaxy weighting + completeness);
+            # Chen et al. (2024), arXiv:2212.08694 (in/out-of-catalog mixture).
             host_galaxies = iter(
-                galaxy_catalog.draw_rate_weighted_hosts(200, rng=rng, z_max=HOST_DRAW_Z_MAX)
+                draw_mixture_hosts(
+                    200,
+                    rng,
+                    galaxy_catalog,
+                    completeness,
+                    global_catalog_fraction,
+                    h=h_value,
+                    z_max=HOST_DRAW_Z_MAX,
+                )
             )
             host_galaxy = next(host_galaxies)
         assert isinstance(host_galaxy, HostGalaxy)
@@ -539,6 +575,10 @@ def data_simulation(
             cramer_rao_bound_dictionary=cramer_rao_bounds,
             snr=snr,
             host_galaxy_index=host_galaxy.catalog_index,
+            # CHANGE 4b: record whether this injected host was in-catalog or dark
+            # (catalog_index = -1) so the realised in-catalog fraction ≈ F is
+            # recoverable from the saved Cramér-Rao bounds.
+            in_catalog=host_galaxy.catalog_index != -1,
             simulation_index=simulation_index,
         )
         counter += 1

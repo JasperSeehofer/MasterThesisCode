@@ -455,7 +455,13 @@ class ParameterEstimation:
         snr: float,
         simulation_index: int,
         host_galaxy_index: int = -1,
+        in_catalog: bool = True,
     ) -> None:
+        # in_catalog flags whether the injected host came from the galaxy
+        # catalog (rate-weighted draw) or from the out-of-catalog/dark
+        # population (master_thesis_code.dark_siren_injection). Recorded so the
+        # realised in-catalog fraction can be checked against the run-level F
+        # (a dark host also carries host_galaxy_index = -1).
         row = (
             self.parameter_space._parameters_to_dict()
             | cramer_rao_bound_dictionary
@@ -465,6 +471,7 @@ class ParameterEstimation:
                 "SNR": snr,
                 "generation_time": self.waveform_generation_time,
                 "host_galaxy_index": host_galaxy_index,
+                "in_catalog": in_catalog,
                 "_simulation_index": simulation_index,
             }
         )
