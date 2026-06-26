@@ -45,6 +45,7 @@ from master_thesis_code.galaxy_catalogue.glade_completeness import GladeCatalogC
 from master_thesis_code.galaxy_catalogue.handler import (
     GalaxyCatalogueHandler,
     HostGalaxy,
+    InternalCatalogColumns,
 )
 from master_thesis_code.physical_relations import (
     comoving_volume_element,
@@ -253,6 +254,216 @@ def precompute_completion_denominator(
     return D_h_table
 
 
+def precompute_missing_completion_denominator(
+    h_values: list[float],
+    detection_probability_obj: SimulationDetectionProbability,
+    completeness: GladeCatalogCompleteness,
+    *,
+    quad_n: int = _DH_QUAD_ORDER,
+) -> dict[float, float]:
+    r"""Precompute the missing-volume selection integral ``beta_Gbar(h)``.
+
+    The ``(1-f(z))`` companion of :func:`precompute_completion_denominator`
+    (which returns the **unchanged** full-volume ``D(h) = beta_G + beta_Gbar``).
+    Gray et al. (2020), arXiv:1908.06050, Eq. (33): the out-of-catalogue
+    selection integral weights the full detection denominator by the
+    *incompleteness* ``1 - f(z)``, i.e. it integrates only over the galaxies the
+    catalogue is missing:
+
+    .. math::
+
+        \beta_{\bar G}(h) = \int_{z_{\min}}^{z_{\max}(h)} \bigl(1 - f(z)\bigr)\,
+            P_{\det}(d_L(z,h))\,\frac{1}{1+z}\,\frac{dV_c}{dz}\, dz .
+
+    The in-catalogue selection normalisation is then
+    ``beta_G(h) = D(h) - beta_Gbar(h) = INTEGRAL f(z) P_det (1/(1+z)) dVc``.
+    ``f(z) = completeness.get_completeness_at_redshift(z, h)`` is the SAME
+    completeness call the generator uses
+    (:func:`master_thesis_code.dark_siren_injection.compute_global_catalog_fraction`
+    and ``_draw_dark_redshifts``), so the inference completion population and the
+    injected dark population are bit-for-bit identical.
+
+    Args:
+        h_values: Hubble parameter values to evaluate.
+        detection_probability_obj: Same object passed to
+            :func:`precompute_completion_denominator` (provides ``get_dl_max``
+            and ``detection_probability_without_bh_mass_interpolated_zero_fill``).
+        completeness: Catalogue completeness ``f(z)`` (Gray Eq. 9). Evaluated
+            sky-marginalised, identically to the generator.
+        quad_n: Gauss-Legendre quadrature order (default
+            :data:`_DH_QUAD_ORDER`), matching ``D(h)``.
+
+    Returns:
+        Dict mapping ``h -> beta_Gbar(h)`` in units of Mpc^3/sr (same as
+        ``D(h)``).
+
+    References:
+        Gray et al. (2020), arXiv:1908.06050, Eq. (33) — out-of-catalogue
+            selection denominator (here the missing ``(1-f)`` fraction).
+    """
+    beta_Gbar_table: dict[float, float] = {}
+
+    for h in h_values:
+        dl_max = detection_probability_obj.get_dl_max(h)
+        z_max = dist_to_redshift(dl_max, h=h)
+        z_min = 1e-6
+
+        def _missing_denom_integrand(
+            z: npt.NDArray[np.float64],
+            _h: float = h,
+        ) -> npt.NDArray[np.float64]:
+            d_L: npt.NDArray[np.float64] = np.asarray(
+                dist_vectorized(z, h=_h), dtype=np.float64
+            )  # Gpc
+            phi = np.zeros_like(z)  # sky-marginalized; matches D(h)
+            theta = np.zeros_like(z)
+            p_det = detection_probability_obj.detection_probability_without_bh_mass_interpolated_zero_fill(
+                d_L, phi, theta, h=_h
+            )
+            dVc: npt.NDArray[np.float64] = np.atleast_1d(
+                np.asarray(comoving_volume_element(z, h=_h), dtype=np.float64)
+            )
+            # Incompleteness weight (1 - f(z)). Eq. (33) in Gray et al. (2020),
+            # arXiv:1908.06050; f(z) is the SAME call the generator uses
+            # (dark_siren_injection), closing the sim/inference loop. The 1/(1+z)
+            # time dilation and dVc match D(h) exactly so beta_G = D - beta_Gbar.
+            f_z = np.clip(
+                np.asarray(completeness.get_completeness_at_redshift(z, _h), dtype=np.float64),
+                0.0,
+                1.0,
+            )
+            return (1.0 - f_z) * np.asarray(p_det, dtype=np.float64) * dVc / (1.0 + z)
+
+        beta_Gbar: float = fixed_quad(_missing_denom_integrand, z_min, z_max, n=quad_n)[0]
+        beta_Gbar_table[h] = beta_Gbar
+        _LOGGER.info(
+            "beta_Gbar(h=%.4f) = %.6e  [z_max=%.4f]",
+            h,
+            beta_Gbar,
+            z_max,
+        )
+
+    return beta_Gbar_table
+
+
+def precompute_global_catalog_selection(
+    h_values: list[float],
+    galaxy_catalog: GalaxyCatalogueHandler,
+    detection_probability_obj: SimulationDetectionProbability,
+    *,
+    with_bh_mass: bool,
+) -> dict[float, float]:
+    r"""Precompute the GLOBAL in-catalogue selection denominator (Option A).
+
+    The partition-norm restructure forms the in-catalogue likelihood as
+    ``L_cat = (sum_local w_g N_g) / (sum_global w_g D_g)`` where the SELECTION
+    denominator runs over the FULL catalogue out to the detection horizon
+    ``z_max(h)``, NOT the per-event candidate ball. Globalising the denominator
+    makes ``L_cat`` scale-free, so the per-galaxy <-> per-volume number-density
+    factor ``n_gal`` cancels against the continuous
+    ``beta_G(h) = D(h) - beta_Gbar(h)`` and no calibration constant is needed
+    (Gray et al. 2020, arXiv:1908.06050, Eq. 29: the discrete catalogue sum is
+    the Monte-Carlo realisation of ``beta_G = INTEGRAL f P_det dVc/(1+z)``).
+
+    .. math::
+
+        \Sigma_{\mathrm{global}}(h) = \sum_{g:\, z_g < z_{\max}(h)}
+            w_g\, P_{\det}\bigl(d_L(z_g, h)\bigr),
+        \qquad w_g = \frac{R_\mathrm{eff}(M_g)}{1 + z_g}.
+
+    The weight ``w_g`` is IDENTICAL to the rate-weighted host draw
+    (:meth:`~master_thesis_code.galaxy_catalogue.handler.GalaxyCatalogueHandler.draw_rate_weighted_hosts`)
+    and the in-catalogue likelihood weight (:func:`_rate_weight`). ``P_det`` is
+    evaluated SKY-MARGINALISED (``phi = theta = 0``), on the same footing as the
+    completion ``D(h)`` / ``beta_Gbar`` (the per-galaxy sky dependence is
+    deferred to the pixelated-completeness change). ``D_g ~= P_det(z_g)`` uses
+    the narrow galaxy-redshift-PDF limit. The sum is event-INDEPENDENT, so it is
+    precomputed once per ``h`` like ``D(h)``.
+
+    Args:
+        h_values: Hubble parameter values to evaluate.
+        galaxy_catalog: Loaded catalogue handler (its ``reduced_galaxy_catalog``
+            is summed over; same rows the rate-weighted draw uses).
+        detection_probability_obj: Detection probability (provides ``get_dl_max``
+            and the 3D / 4D ``P_det`` accessors).
+        with_bh_mass: ``False`` uses the 3D (sky+distance) ``P_det`` (the
+            without-BH-mass channel); ``True`` uses the 4D
+            (sky+distance+observer-frame mass ``M_z = M_g(1+z_g)``) ``P_det``,
+            the global companion of the with-BH-mass catalogue sum.
+
+    Returns:
+        Dict mapping ``h -> sum_global w_g D_g(h)`` (dimensionless rate-weighted
+        detection count).
+
+    References:
+        Gray et al. (2020), arXiv:1908.06050, Eq. (29) — ``beta_G`` selection
+            integral (here its discrete catalogue realisation).
+        Babak et al. (2017), arXiv:1703.09722 — per-MBH rate ``R_eff``
+            (:func:`master_thesis_code.emri_rate.R_eff_per_mbh`).
+    """
+    catalog = galaxy_catalog.reduced_galaxy_catalog
+    z_all = np.asarray(
+        catalog[InternalCatalogColumns.REDSHIFT].to_numpy(dtype=np.float64),
+        dtype=np.float64,
+    )
+    M_all = np.asarray(
+        catalog[InternalCatalogColumns.BH_MASS].to_numpy(dtype=np.float64),
+        dtype=np.float64,
+    )
+
+    global_table: dict[float, float] = {}
+    for h in h_values:
+        z_max = dist_to_redshift(detection_probability_obj.get_dl_max(h), h=h)
+        # Eligible galaxies: inside the detectable volume (z < z_max(h)) with a
+        # finite source-frame mass. Galaxies beyond z_max(h) have P_det ~= 0 and
+        # do not contribute to the selection normalisation.
+        eligible = (z_all < z_max) & np.isfinite(M_all) & (M_all > 0.0)
+        z_g = z_all[eligible]
+        M_g = M_all[eligible]
+        if z_g.size == 0:
+            global_table[h] = 0.0
+            _LOGGER.warning(
+                "Global catalog selection (with_bh=%s): no eligible galaxy z<%.4f.",
+                with_bh_mass,
+                z_max,
+            )
+            continue
+
+        # w_g = R_eff_per_mbh(M_g)/(1+z_g): the EXACT rate weight the draw and the
+        # in-catalogue likelihood use (Babak et al. 2017; Gray et al. 2020).
+        w_g = np.asarray(R_eff_per_mbh(M_g), dtype=np.float64) / (1.0 + z_g)
+        d_L_g = np.asarray(dist_vectorized(z_g, h=h), dtype=np.float64)  # Gpc
+        phi = np.zeros_like(z_g)  # sky-marginalized, matching D(h)
+        theta = np.zeros_like(z_g)
+        if with_bh_mass:
+            M_z_g = M_g * (1.0 + z_g)  # observer-frame mass (P_det grid axis)
+            p_det = np.asarray(
+                detection_probability_obj.detection_probability_with_bh_mass_interpolated(
+                    d_L_g, M_z_g, phi, theta, h=h
+                ),
+                dtype=np.float64,
+            )
+        else:
+            p_det = np.asarray(
+                detection_probability_obj.detection_probability_without_bh_mass_interpolated_zero_fill(
+                    d_L_g, phi, theta, h=h
+                ),
+                dtype=np.float64,
+            )
+        global_table[h] = float(np.sum(w_g * p_det))
+        _LOGGER.info(
+            "Global catalog selection (with_bh=%s) sum_w_Dg(h=%.4f) = %.6e  "
+            "[%d eligible galaxies, z_max=%.4f]",
+            with_bh_mass,
+            h,
+            global_table[h],
+            z_g.size,
+            z_max,
+        )
+
+    return global_table
+
+
 # Module-level globals used by child_process_init for multiprocessing worker state
 redshift_upper_integration_limit: float = 0.0
 redshift_lower_integration_limit: float = 0.0
@@ -458,6 +669,48 @@ class BayesianStatistics:
         )
         _LOGGER.info("D(h) precomputed for %d h-value(s).", len(_D_h_table))
 
+        # Gray et al. (2020), arXiv:1908.06050, Eq. 9:
+        # Completeness function f(z, h) for weighting catalog vs completion terms.
+        completeness = GladeCatalogCompleteness()
+
+        # Partition-norm precomputes (Option A) -- ADDITIVE: computed and logged
+        # here but NOT yet consumed by p_Di. The restructure that uses them (move
+        # (1-f) inside the completion integral, globalize the catalog selection
+        # denominator, drop the scalar mixing weight) lands as a separate
+        # [PHYSICS] commit. beta_Gbar(h) = INTEGRAL (1-f) P_det dVc/(1+z)
+        # (Gray Eq. 33); beta_G(h) = D(h) - beta_Gbar(h) (Gray Eq. 29); and the
+        # global in-catalogue selection sums sum_global w_g D_g for both channels.
+        _beta_Gbar_table = precompute_missing_completion_denominator(
+            h_values=[h_value],
+            detection_probability_obj=detection_probability,
+            completeness=completeness,
+        )
+        _beta_G_table = {h: _D_h_table[h] - _beta_Gbar_table[h] for h in _D_h_table}
+        _global_cat_denom_no_bh = precompute_global_catalog_selection(
+            h_values=[h_value],
+            galaxy_catalog=galaxy_catalog,
+            detection_probability_obj=detection_probability,
+            with_bh_mass=False,
+        )
+        _global_cat_denom_with_bh = precompute_global_catalog_selection(
+            h_values=[h_value],
+            galaxy_catalog=galaxy_catalog,
+            detection_probability_obj=detection_probability,
+            with_bh_mass=True,
+        )
+        _w_G_preview = (
+            _beta_G_table[h_value] / _D_h_table[h_value]
+            if _D_h_table.get(h_value, 0.0) > 0.0
+            else float("nan")
+        )
+        _LOGGER.info(
+            "Partition-norm precompute (not yet consumed): w_G=beta_G/D(h)=%.4f, "
+            "sum_w_Dg(no_bh)=%.4e, sum_w_Dg(with_bh)=%.4e",
+            _w_G_preview,
+            _global_cat_denom_no_bh.get(h_value, float("nan")),
+            _global_cat_denom_with_bh.get(h_value, float("nan")),
+        )
+
         _LOGGER.debug("Pre-computing Gaussian arrays for GW likelihoods...")
         _t0 = time.perf_counter()
 
@@ -644,6 +897,12 @@ class BayesianStatistics:
         self._det_phi = _det_phi
         self._det_theta = _det_theta
         self._D_h_table = _D_h_table
+        # Partition-norm precompute tables (Option A) -- stored for the
+        # restructure commit; not yet read by p_Di.
+        self._beta_Gbar_table = _beta_Gbar_table
+        self._beta_G_table = _beta_G_table
+        self._global_cat_denom_no_bh = _global_cat_denom_no_bh
+        self._global_cat_denom_with_bh = _global_cat_denom_with_bh
         self._excluded_mask = _excluded_mask
         self._cond_3d = _cond_3d
         self._cond_4d = _cond_4d
@@ -656,10 +915,6 @@ class BayesianStatistics:
             time.perf_counter() - _t0,
             n_det,
         )
-
-        # Gray et al. (2020), arXiv:1908.06050, Eq. 9:
-        # Completeness function f(z, h) for weighting catalog vs completion terms
-        completeness = GladeCatalogCompleteness()
 
         self.h = h_value
 
