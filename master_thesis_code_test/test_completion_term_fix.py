@@ -278,7 +278,8 @@ class TestLcompRatioBounded:
             dVc = np.atleast_1d(np.asarray(comoving_volume_element(z, h=h), dtype=np.float64))
             # Gray et al. (2020), arXiv:1908.06050, Eq. 32: GW likelihood x volume
             # prior ONLY -- no P_det in the numerator (it lives in D(h), Eq. 33).
-            result: npt.NDArray[np.float64] = p_gw * dVc
+            # 1/(1+z): source->detector time dilation, matching production comp_num and D(h).
+            result: npt.NDArray[np.float64] = p_gw * dVc / (1.0 + z)
             return result
 
         N_i: float = fixed_quad(numerator_integrand, z_lower, z_upper, n=50)[0]
@@ -316,6 +317,24 @@ class TestCompletionNumeratorNoPdet:
             "completion numerator must NOT multiply p_gw by p_det -- that is the "
             "Mandel-Farr-Gair (2019) 'most common mistake' (arXiv:1809.02063)"
         )
+
+    def test_completion_integrands_have_time_dilation(self) -> None:
+        """Both completion integrands carry the 1/(1+z) source->detector time dilation.
+
+        comp_num (p_Di) and D(h) (precompute_completion_denominator) must share the
+        same population prior R_EMRI(z,M)/(1+z) * dVc/dz; the 1/(1+z) factor matches
+        the event sampler (emri_rate.p_pop_unnormalized). Gray et al. (2020) Eq. 32/33.
+        """
+        import inspect
+
+        from master_thesis_code.bayesian_inference import bayesian_statistics
+
+        comp_src = inspect.getsource(bayesian_statistics.BayesianStatistics.p_Di)
+        assert "p_gw * dVc / (1.0 + z)" in comp_src, (
+            "completion numerator must include the 1/(1+z) time dilation"
+        )
+        dh_src = inspect.getsource(bayesian_statistics.precompute_completion_denominator)
+        assert "/ (1.0 + z)" in dh_src, "D(h) integrand must include the 1/(1+z) time dilation"
 
 
 # ======================================================================
@@ -401,7 +420,8 @@ class TestRegressionLocalDenominator:
                 d_L, np.zeros_like(z), np.zeros_like(z), h=h
             )
             dVc = np.atleast_1d(np.asarray(comoving_volume_element(z, h=h), dtype=np.float64))
-            return np.asarray(p_det, dtype=np.float64) * dVc
+            # 1/(1+z): source->detector time dilation, matching production D(h).
+            return np.asarray(p_det, dtype=np.float64) * dVc / (1.0 + z)
 
         D_local: float = fixed_quad(local_denom_integrand, z_lower, z_upper, n=100)[0]
 
@@ -431,7 +451,8 @@ class TestRegressionLocalDenominator:
                 d_L, np.zeros_like(z), np.zeros_like(z), h=h
             )
             dVc = np.atleast_1d(np.asarray(comoving_volume_element(z, h=h), dtype=np.float64))
-            return np.asarray(p_det, dtype=np.float64) * dVc
+            # 1/(1+z): source->detector time dilation, matching production D(h).
+            return np.asarray(p_det, dtype=np.float64) * dVc / (1.0 + z)
 
         D_manual: float = fixed_quad(manual_integrand, z_min, z_max, n=100)[0]
 

@@ -198,7 +198,13 @@ def precompute_completion_denominator(
             dVc: npt.NDArray[np.float64] = np.atleast_1d(
                 np.asarray(comoving_volume_element(z, h=_h), dtype=np.float64)
             )
-            return np.asarray(p_det, dtype=np.float64) * dVc
+            # Population prior R_EMRI(z,M)/(1+z) * dVc/dz (emri_rate.p_pop_unnormalized):
+            # the 1/(1+z) is the source->detector time dilation. The mass-integrated
+            # rate INTEGRAL dM R_EMRI(z,M) is z-independent under the p0=1 surrogate, so it
+            # is an overall constant that cancels in L_comp = comp_num/D(h); only 1/(1+z)
+            # survives here. Babak et al. (2017), arXiv:1703.09722 (rate); Mandel-Farr-Gair
+            # (2019), arXiv:1809.02063 (detector-frame rate density).
+            return np.asarray(p_det, dtype=np.float64) * dVc / (1.0 + z)
 
         D_h: float = fixed_quad(_denom_integrand, z_min, z_max, n=quad_n)[0]
         D_h_table[h] = D_h
@@ -1116,10 +1122,13 @@ class BayesianStatistics:
                 )
 
                 # Eq. (32) in Gray et al. (2020), arXiv:1908.06050: GW likelihood
-                # x comoving-volume prior ONLY. No P_det here -- it belongs solely
-                # in the denominator D(h) (Eq. 33). L_comp = num/D(h) is then the
+                # x population prior ONLY. No P_det here -- it belongs solely in the
+                # denominator D(h) (Eq. 33). L_comp = num/D(h) is then the
                 # <p_GW>/<p_det> form, structurally identical to L_cat (Eq. A.9/A.10).
-                return p_gw * dVc
+                # The 1/(1+z) source->detector time dilation matches D(h) and the
+                # event sampler (emri_rate.p_pop_unnormalized); the mass-integrated
+                # rate is z-independent (p0=1 surrogate) and cancels in num/D(h).
+                return p_gw * dVc / (1.0 + z)
 
             comp_numerator: float = fixed_quad(
                 completion_numerator_integrand, z_lower, z_upper, n=FIXED_QUAD_N
