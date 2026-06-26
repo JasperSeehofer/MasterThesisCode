@@ -23,6 +23,8 @@ Covered (all CPU-only, synthetic, deterministic under a fixed seed):
     - ``F=1 ->`` all in-catalog, ``F=0 ->`` all dark.
 """
 
+from collections.abc import Callable
+
 import numpy as np
 import numpy.typing as npt
 import pytest
@@ -66,7 +68,7 @@ def _expected_redshift_cdf(
     z_min: float,
     z_max: float,
     n: int = 20000,
-):
+) -> Callable[[npt.NDArray[np.float64]], npt.NDArray[np.float64]]:
     """Target dark-host redshift CDF ``∝ (1-f(z))/(1+z) * dVc/dz``."""
     z = np.linspace(z_min, z_max, n, dtype=np.float64)
     f = np.clip(np.asarray(completeness.get_completeness_at_redshift(z, h), dtype=np.float64), 0, 1)
@@ -76,12 +78,14 @@ def _expected_redshift_cdf(
     cdf /= cdf[-1]
 
     def _cdf(query: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
-        return np.interp(query, z, cdf)
+        return np.asarray(np.interp(query, z, cdf), dtype=np.float64)
 
     return _cdf
 
 
-def _expected_log_mass_cdf(m_min: float, m_max: float, n: int = 20000):
+def _expected_log_mass_cdf(
+    m_min: float, m_max: float, n: int = 20000
+) -> Callable[[npt.NDArray[np.float64]], npt.NDArray[np.float64]]:
     """Target dark-host ``log10 M`` CDF ``∝ phi_MBH(M) * R_eff(M)`` (per dex)."""
     log_m = np.linspace(np.log10(m_min), np.log10(m_max), n, dtype=np.float64)
     mass = 10.0**log_m
@@ -92,7 +96,7 @@ def _expected_log_mass_cdf(m_min: float, m_max: float, n: int = 20000):
     cdf /= cdf[-1]
 
     def _cdf(query: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
-        return np.interp(query, log_m, cdf)
+        return np.asarray(np.interp(query, log_m, cdf), dtype=np.float64)
 
     return _cdf
 

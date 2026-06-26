@@ -27,7 +27,7 @@ def _dVc_dz(z: float) -> float:
 def _inner_mass_integral(z: float) -> float:
     """int_{log10 1e4}^{log10 1e7} dlog10M R_EMRI(z, M) [Mpc^-3 Gyr^-1]."""
     value, _ = quad(lambda x: float(er.R_EMRI(z, 10.0**x)), 4.0, 7.0)
-    return value
+    return float(value)
 
 
 def _dN_dz(z: float, time_dilation: bool = True, volume: bool = True) -> float:
@@ -43,7 +43,7 @@ def _dN_dz(z: float, time_dilation: bool = True, volume: bool = True) -> float:
 def _intrinsic_rate(time_dilation: bool = True, volume: bool = True) -> float:
     """N_intrinsic [yr^-1] = 1e-9 * int_0^4.5 dz (dVc/dz)/(1+z) int dlog10M R_EMRI."""
     value, _ = quad(lambda z: _dN_dz(z, time_dilation, volume), 0.0, 4.5)
-    return 1e-9 * value
+    return 1e-9 * float(value)
 
 
 # ── T1 — mass function (Eq. 5), exact ────────────────────────────────────────
