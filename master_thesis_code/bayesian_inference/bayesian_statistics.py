@@ -16,6 +16,7 @@ import math
 import multiprocessing as mp
 import os
 import time
+from collections.abc import Sequence
 from typing import Any
 
 import numpy as np
@@ -39,6 +40,7 @@ from master_thesis_code.datamodels.detection import (
     Detection,
     _sky_localization_uncertainty,
 )
+from master_thesis_code.emri_rate import R_eff_per_mbh
 from master_thesis_code.galaxy_catalogue.glade_completeness import GladeCatalogCompleteness
 from master_thesis_code.galaxy_catalogue.handler import (
     GalaxyCatalogueHandler,
@@ -62,6 +64,83 @@ FRACTIONAL_LUMINOSITY_DISTANCE_ERROR_THRESHOLD = 0.10
 
 # Fixed-quad order for D(h) precomputation
 _DH_QUAD_ORDER: int = 100
+
+
+def weighted_ratio_of_sums(
+    numerators: Sequence[float],
+    denominators: Sequence[float],
+    weights: Sequence[float],
+) -> float:
+    r"""Weighted in-catalog ratio-of-sums likelihood ``(Σ w·N) / (Σ w·D)``.
+
+    Generalizes the equal-weight Gray et al. (2020) in-catalog term
+    ``L_cat = (Σ_g N_g) / (Σ_g D_g)`` (Eq. A.9/A.10) by weighting each candidate
+    host galaxy ``g`` by an astrophysical rate prior ``w(g)``:
+
+    .. math::
+
+        L_\mathrm{cat} = \frac{\sum_g w(g)\,N_g}{\sum_g w(g)\,D_g}.
+
+    The weight enters numerator and denominator identically, so
+
+    * any overall rescaling of ``w`` cancels (SCALING INVARIANCE), and
+    * constant weights reproduce the plain ratio of sums exactly (the
+      equal-weight Change-2 limit).
+
+    This is the inference-side counterpart of the rate-weighted host draw
+    :meth:`~master_thesis_code.galaxy_catalogue.handler.GalaxyCatalogueHandler.draw_rate_weighted_hosts`.
+
+    Args:
+        numerators: Per-host likelihood numerators ``N_g`` (host-aligned).
+        denominators: Per-host selection denominators ``D_g`` (host-aligned,
+            same order as ``numerators``).
+        weights: Per-host rate weights ``w(g)`` (host-aligned, same order as
+            ``numerators`` / ``denominators``).
+
+    Returns:
+        The weighted ratio of sums, or ``0.0`` when the weighted denominator
+        ``Σ w·D`` is non-positive (matching the unweighted guard).
+
+    References:
+        Gray et al. (2020), arXiv:1908.06050, Eqs. (A.9)/(A.10) — in-catalog
+            ratio-of-sums likelihood, here weighted by a galaxy rate prior.
+    """
+    # Σ w·N / Σ w·D — the weight cancels overall normalization (incl. C_NORM),
+    # leaving only the relative galaxy weighting (Gray et al. 2020, arXiv:1908.06050).
+    w = np.asarray(weights, dtype=np.float64)
+    num = np.asarray(numerators, dtype=np.float64)
+    den = np.asarray(denominators, dtype=np.float64)
+    weighted_den_sum = float(np.sum(w * den))
+    if weighted_den_sum <= 0.0:
+        return 0.0
+    weighted_num_sum = float(np.sum(w * num))
+    return weighted_num_sum / weighted_den_sum
+
+
+def _rate_weight(host: HostGalaxy) -> float:
+    r"""Per-MBH EMRI-rate host weight ``w(g) = R_eff_per_mbh(M_g) / (1 + z_g)``.
+
+    IDENTICAL to the weight used by the rate-weighted simulation host draw
+    (:meth:`~master_thesis_code.galaxy_catalogue.handler.GalaxyCatalogueHandler.draw_rate_weighted_hosts`),
+    closing the generative loop. ``host.M`` is the SOURCE-FRAME catalog BH mass
+    (the detector-frame lift ``M_z = M·(1+z)`` is applied only inside
+    :func:`single_host_likelihood`, never to ``host.M``), so this evaluates
+    ``R_eff`` at the same mass the draw uses.
+
+    Args:
+        host: Candidate host galaxy (carries source-frame ``M`` and redshift ``z``).
+
+    Returns:
+        The scalar per-MBH rate weight ``R_eff_per_mbh(host.M) / (1 + host.z)``.
+
+    References:
+        Babak et al. (2017), arXiv:1703.09722 — effective per-MBH EMRI rate
+            (:func:`master_thesis_code.emri_rate.R_eff_per_mbh`).
+        Gray et al. (2020), arXiv:1908.06050 — galaxy weighting of the in-catalog
+            dark-siren likelihood.
+    """
+    # host.M is SOURCE-FRAME (see handler NOTE on the redshifted-mass convention).
+    return float(R_eff_per_mbh(host.M)) / (1.0 + host.z)
 
 
 def precompute_completion_denominator(
@@ -930,29 +1009,43 @@ class BayesianStatistics:
             L_cat_without_bh_mass = 0.0
             L_cat_with_bh_mass = 0.0
         else:
+            # Per-MBH EMRI-rate weighting w(g) = R_eff_per_mbh(M_g) / (1 + z_g),
+            # IDENTICAL to the simulation host draw (draw_rate_weighted_hosts):
+            # P(g) ∝ w(g). host.M is the SOURCE-FRAME catalog BH mass (the same
+            # quantity the draw uses; the detector-frame lift M_z = M·(1+z) lives
+            # only inside single_host_likelihood, never on host.M). The overall
+            # normalization (including emri_rate.C_NORM) multiplies numerator and
+            # denominator equally and CANCELS in weighted_ratio_of_sums; only the
+            # R_eff(M) shape and the mild 1/(1+z) survive. Gray et al. (2020),
+            # arXiv:1908.06050 (galaxy weighting); Babak et al. (2017),
+            # arXiv:1703.09722 (per-MBH rate, via emri_rate).
+            weights_with_bh = [_rate_weight(host) for host in possible_host_galaxies_with_bh_mass]
+            # all_results_without_bh below is ordered reduced + with_bh, so its
+            # weights MUST follow the SAME host order.
+            weights_without_bh = [
+                _rate_weight(host) for host in possible_host_galaxies_reduced
+            ] + weights_with_bh
+
             # Eq. (A.9/A.10) in Gray et al. (2020), arXiv:1908.06050: the
-            # in-catalogue likelihood is a RATIO OF SUMS over catalog galaxies
-            # (single shared selection denominator Sum_g D_g), NOT a mean of
-            # per-galaxy self-normalized ratios (1/N) Sum_g (N_g/D_g).  The
-            # latter gives each galaxy its own selection normalization rather
-            # than one population-level beta(H0).
+            # in-catalogue likelihood is a (now rate-WEIGHTED) RATIO OF SUMS over
+            # catalog galaxies (single shared selection denominator Σ_g w_g D_g),
+            # NOT a mean of per-galaxy self-normalized ratios (1/N) Σ_g (N_g/D_g).
             all_results_without_bh = list(results_without_blackhole_mass) + list(
                 results_with_bh_mass
             )
-            num_sum_without_bh = float(sum(r[0] for r in all_results_without_bh))
-            den_sum_without_bh = float(sum(r[1] for r in all_results_without_bh))
-            L_cat_without_bh_mass = (
-                num_sum_without_bh / den_sum_without_bh if den_sum_without_bh > 0 else 0.0
+            L_cat_without_bh_mass = weighted_ratio_of_sums(
+                [r[0] for r in all_results_without_bh],
+                [r[1] for r in all_results_without_bh],
+                weights_without_bh,
             )
 
             if len(results_with_bh_mass) > 0:
-                # Eq. (A.9/A.10) in Gray et al. (2020), arXiv:1908.06050: ratio
-                # of sums (single shared selection denominator), not a mean of
-                # per-galaxy self-normalized ratios.
-                num_sum_with_bh = float(sum(r[2] for r in results_with_bh_mass))
-                den_sum_with_bh = float(sum(r[3] for r in results_with_bh_mass))
-                L_cat_with_bh_mass = (
-                    num_sum_with_bh / den_sum_with_bh if den_sum_with_bh > 0 else 0.0
+                # Eq. (A.9/A.10) in Gray et al. (2020), arXiv:1908.06050: rate-
+                # weighted ratio of sums (single shared selection denominator).
+                L_cat_with_bh_mass = weighted_ratio_of_sums(
+                    [r[2] for r in results_with_bh_mass],
+                    [r[3] for r in results_with_bh_mass],
+                    weights_with_bh,
                 )
             else:
                 L_cat_with_bh_mass = 0.0

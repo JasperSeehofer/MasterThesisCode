@@ -14,6 +14,7 @@ from astropy.coordinates import BarycentricTrueEcliptic, SkyCoord
 from sklearn.neighbors import BallTree
 
 from master_thesis_code.constants import HOST_DRAW_Z_MAX
+from master_thesis_code.emri_rate import R_eff_per_mbh
 from master_thesis_code.physical_relations import (
     dist,
     dist_to_redshift_error_proagation,
@@ -542,6 +543,112 @@ class GalaxyCatalogueHandler:
         # eligible subset so each HostGalaxy is built from a genuine catalog row,
         # exactly as find_closest_galaxy_to_coordinates does (no snap, no overwrite).
         positions: npt.NDArray[np.int64] = rng.integers(0, n_eligible, size=number_of_hosts)
+        return [HostGalaxy(eligible_catalog.iloc[int(position)]) for position in positions]
+
+    def draw_rate_weighted_hosts(
+        self,
+        number_of_hosts: int,
+        rng: np.random.Generator,
+        z_max: float = HOST_DRAW_Z_MAX,
+    ) -> list[HostGalaxy]:
+        r"""Draw in-catalog hosts with probability ∝ the per-MBH EMRI-rate weight.
+
+        This is the rate-weighted generative model (research "version B") that
+        supersedes the equal-weight draw of :meth:`draw_uniform_hosts`. Every
+        catalog galaxy with redshift below ``z_max`` is a candidate host, but the
+        selection probability is now proportional to the per-MBH EMRI-rate weight
+
+        .. math::
+
+            P(g) \propto w(g) = \frac{R_\mathrm{eff}(M_g)}{1 + z_g},
+
+        where :math:`R_\mathrm{eff}(M_g)` is the *effective per-MBH* EMRI rate
+        (:func:`master_thesis_code.emri_rate.R_eff_per_mbh`; Babak et al. 2017,
+        Eqs. 23, 26-27, 30-31, 34) evaluated at the SOURCE-FRAME catalog BH mass
+        ``M_g`` — the exact column :attr:`HostGalaxy.M` reads — and ``1/(1+z_g)``
+        is the source-to-detector time dilation. The *per-MBH* rate (NOT the
+        comoving volume density :func:`~master_thesis_code.emri_rate.R_EMRI`) is
+        the correct weight here because each catalog galaxy is ONE realised MBH:
+        the mass function ``dn/dlog10 M`` is already sampled by the catalog
+        itself, so only the per-object rate shape and the mild redshift dilation
+        reweight the hosts. The overall normalization (including
+        ``emri_rate.C_NORM``) cancels in ``p = w / Σ w`` and is irrelevant.
+
+        The SAME weight ``w(g)`` reweights the in-catalog likelihood term of the
+        Bayesian inference (``bayesian_statistics.p_Di``), so the draw and the
+        inference share one population model (self-consistency).
+
+        Sampling is WITH REPLACEMENT via :meth:`numpy.random.Generator.choice`
+        with the normalized weights, so the same galaxy may be returned more than
+        once. As in :meth:`draw_uniform_hosts`, each returned :class:`HostGalaxy`
+        carries z / sky / M / errors straight from its catalog row — there is NO
+        nearest-neighbour snap and NO overwrite of catalog quantities. The
+        truncation ``z < z_max`` is exact for the inference because the EMRI
+        detection horizon (z ≈ 0.18) lies far below ``z_max`` = 0.5.
+
+        Args:
+            number_of_hosts: Number of host galaxies to draw (i.i.d., with
+                replacement).
+            rng: Seeded random generator. Threading the simulation-wide ``rng``
+                makes the rate-weighted host selection reproducible under
+                ``--seed``.
+            z_max: Exclusive upper redshift bound for eligible hosts. Defaults to
+                :data:`~master_thesis_code.constants.HOST_DRAW_Z_MAX`.
+
+        Returns:
+            ``number_of_hosts`` hosts, each built exactly like
+            :meth:`draw_uniform_hosts` (z / sky / M / errors come straight from
+            the catalog row), drawn with probability
+            ``P(g) ∝ R_eff_per_mbh(M_g) / (1 + z_g)``.
+
+        Raises:
+            ValueError: If no catalog galaxy satisfies ``z < z_max``, or if the
+                total weight ``Σ w(g)`` over the eligible rows is non-positive.
+
+        References:
+            Babak et al. (2017), arXiv:1703.09722, Eqs. (23), (26)-(27),
+                (30)-(31), (34) — effective per-MBH EMRI rate ``R_eff(M)`` (see
+                :mod:`master_thesis_code.emri_rate`).
+            Gray et al. (2020), arXiv:1908.06050 — galaxy weighting of the
+                in-catalog dark-siren likelihood by an astrophysical rate prior.
+        """
+        # w(g) = R_eff_per_mbh(M_g) / (1 + z_g): per-MBH effective EMRI rate
+        # (Babak et al. 2017, arXiv:1703.09722) × source-frame time dilation. The
+        # IDENTICAL weight reweights the inference in-catalog term
+        # (bayesian_statistics.p_Di). Gray et al. (2020), arXiv:1908.06050.
+        eligible_catalog = self.reduced_galaxy_catalog[
+            self.reduced_galaxy_catalog[InternalCatalogColumns.REDSHIFT] < z_max
+        ]
+        n_eligible = len(eligible_catalog)
+        if n_eligible == 0:
+            raise ValueError(
+                f"No galaxy in the reduced catalog has redshift < z_max = {z_max}; "
+                "cannot draw rate-weighted in-catalog hosts."
+            )
+
+        # SOURCE-FRAME catalog BH mass (the column HostGalaxy.M reads) and catalog
+        # redshift. R_eff_per_mbh is strictly positive, so all weights are positive
+        # for z >= 0; the non-positive-total guard below is defensive.
+        masses = eligible_catalog[InternalCatalogColumns.BH_MASS].to_numpy(dtype=np.float64)
+        redshifts = eligible_catalog[InternalCatalogColumns.REDSHIFT].to_numpy(dtype=np.float64)
+        weights: npt.NDArray[np.float64] = np.asarray(R_eff_per_mbh(masses), dtype=np.float64) / (
+            1.0 + redshifts
+        )
+        total_weight = float(weights.sum())
+        if not (total_weight > 0.0):
+            raise ValueError(
+                "Total rate weight Σ w(g) over the eligible catalog is non-positive "
+                f"({total_weight}); cannot form the host-selection probability."
+            )
+
+        # P(g) = w(g) / Σ w(g); draw WITH REPLACEMENT. Positional integers index the
+        # eligible subset so each HostGalaxy is built from a genuine catalog row,
+        # exactly as draw_uniform_hosts / find_closest_galaxy_to_coordinates do
+        # (no snap, no overwrite).
+        probabilities: npt.NDArray[np.float64] = weights / total_weight
+        positions: npt.NDArray[np.int64] = rng.choice(
+            n_eligible, size=number_of_hosts, replace=True, p=probabilities
+        )
         return [HostGalaxy(eligible_catalog.iloc[int(position)]) for position in positions]
 
     def get_host_galaxy_by_index(self, index: int) -> HostGalaxy:

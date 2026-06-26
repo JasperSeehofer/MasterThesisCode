@@ -94,11 +94,21 @@ class TestCatalogOnlyBypass:
         mock_completeness = MagicMock()
         mock_p_det = MagicMock()
 
+        # Host galaxies need numeric source-frame M and redshift z: p_Di now
+        # rate-weights the in-catalog term by w(g) = R_eff_per_mbh(M_g)/(1+z_g)
+        # (Change 3), so _rate_weight(host) reads host.M and host.z.
+        mock_host = MagicMock()
+        mock_host.M = 1e6
+        mock_host.z = 0.1
+        mock_host_with_bh = MagicMock()
+        mock_host_with_bh.M = 1e6
+        mock_host_with_bh.z = 0.1
+
         # Call p_Di through the class
         result = BayesianStatistics.p_Di(
             instance,
-            possible_host_galaxies=[MagicMock()],
-            possible_host_galaxies_with_bh_mass=[MagicMock()],
+            possible_host_galaxies=[mock_host],
+            possible_host_galaxies_with_bh_mass=[mock_host_with_bh],
             detection_index=0,
             pool=mock_pool,
             completeness=mock_completeness,

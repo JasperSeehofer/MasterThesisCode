@@ -339,8 +339,9 @@ def data_simulation(
 
     _callbacks: list[SimulationCallback] = callbacks or []
 
-    # Normalize the rng once so the uniform host draw (draw_uniform_hosts) and
-    # parameter randomization share a single, reproducible generator under --seed.
+    # Normalize the rng once so the rate-weighted host draw
+    # (draw_rate_weighted_hosts) and parameter randomization share a single,
+    # reproducible generator under --seed.
     if rng is None:
         rng = np.random.default_rng()
 
@@ -397,12 +398,17 @@ def data_simulation(
         try:
             host_galaxy = next(host_galaxies)
         except StopIteration:
-            # Direct uniform draw from the z < z_max catalog (the self-consistent
-            # generative model for the equal-weight in-catalog inference term),
-            # replacing the ill-defined "sample (M,z) then snap to nearest catalog
-            # galaxy" assignment. Eq. (9) in Chen et al. (2024), arXiv:2212.08694.
+            # Rate-weighted draw from the z < z_max catalog: P(g) ∝ w(g) =
+            # R_eff_per_mbh(M_g) / (1 + z_g) (effective per-MBH EMRI rate ×
+            # source-frame time dilation). This is the self-consistent generative
+            # model for the rate-weighted in-catalog inference term —
+            # bayesian_statistics.p_Di reweights the catalog likelihood by the
+            # SAME w(g). The per-MBH rate (not the volume density R_EMRI) is
+            # correct because each catalog galaxy is one realised MBH.
+            # Babak et al. (2017), arXiv:1703.09722 (per-MBH rate, via emri_rate);
+            # Gray et al. (2020), arXiv:1908.06050 (galaxy weighting).
             host_galaxies = iter(
-                galaxy_catalog.draw_uniform_hosts(200, rng=rng, z_max=HOST_DRAW_Z_MAX)
+                galaxy_catalog.draw_rate_weighted_hosts(200, rng=rng, z_max=HOST_DRAW_Z_MAX)
             )
             host_galaxy = next(host_galaxies)
         assert isinstance(host_galaxy, HostGalaxy)
