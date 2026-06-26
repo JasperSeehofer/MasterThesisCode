@@ -309,9 +309,10 @@ class TestCompletionNumeratorNoPdet:
 
         src = inspect.getsource(bayesian_statistics.BayesianStatistics.p_Di)
         assert "def completion_numerator_integrand" in src
-        assert "return p_gw * dVc" in src, (
-            "completion numerator must be p_gw * dVc (Gray Eq. 32: no P_det in the "
-            "numerator; P_det belongs solely in the denominator D(h), Eq. 33)"
+        assert "(1.0 - f_z) * p_gw * dVc" in src, (
+            "completion numerator B_num must be (1-f(z)) * p_gw * dVc/(1+z) (Gray "
+            "Eq. 32: GW likelihood x (1-f) population prior; NO P_det in the "
+            "numerator -- it belongs solely in the denominator D(h), Eq. 33)"
         )
         assert "p_gw * p_det" not in src, (
             "completion numerator must NOT multiply p_gw by p_det -- that is the "

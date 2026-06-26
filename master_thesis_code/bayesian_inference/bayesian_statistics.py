@@ -118,6 +118,30 @@ def weighted_ratio_of_sums(
     return weighted_num_sum / weighted_den_sum
 
 
+def weighted_sum(values: Sequence[float], weights: Sequence[float]) -> float:
+    r"""Rate-weighted sum ``Σ_g w_g · v_g`` (the in-catalogue numerator building block).
+
+    The partition-norm in-catalogue likelihood is
+    ``L_cat = (Σ_local w_g N_g) / (Σ_global w_g D_g)`` (Gray et al. 2020,
+    arXiv:1908.06050, Eqs. A.10 / 29) where the GW-likelihood numerator sum runs
+    over the local candidate ball but the SELECTION denominator runs over the full
+    catalogue (:func:`precompute_global_catalog_selection`). This helper returns
+    the weighted sum of either; an empty input yields ``0.0``.
+
+    Args:
+        values: Per-host values ``v_g`` (host-aligned).
+        weights: Per-host rate weights ``w_g`` (same order as *values*).
+
+    Returns:
+        ``Σ_g w_g · v_g`` (``0.0`` for empty inputs).
+    """
+    if len(values) == 0:
+        return 0.0
+    return float(
+        np.sum(np.asarray(weights, dtype=np.float64) * np.asarray(values, dtype=np.float64))
+    )
+
+
 def _rate_weight(host: HostGalaxy) -> float:
     r"""Per-MBH EMRI-rate host weight ``w(g) = R_eff_per_mbh(M_g) / (1 + z_g)``.
 
@@ -168,22 +192,27 @@ def precompute_completion_denominator(
     time dilation (matching ``comp_num`` and the event sampler
     :func:`master_thesis_code.emri_rate.p_pop_unnormalized`).
 
-    Modeling assumptions (the out-of-catalogue / completion population):
-        * **Constant comoving number density** for the missing galaxies: the
-          galaxy number density ``n_gal(z)`` and the mass-integrated rate
-          ``\\int dM R_EMRI(z,M)`` are taken z-independent (the latter holds
-          exactly under the ``p0=1`` surrogate). They are then overall constants
-          that **cancel** in ``L_comp = comp_num / D(h)`` and need not appear
-          explicitly. Departures (clustering, rate/MF evolution) are second order.
-        * **Full-volume denominator (no (1-f) weight).** Strictly, the missing
-          population is ``(1-f(z)) n_gal dVc`` (Gray Eqs. 31-32); D(h) here omits
-          the ``(1-f(z))`` factor and integrates the full detectable volume, so it
-          includes the complete low-z volume (f≈1) that should contribute ~0 to
-          the missing population. This is a deliberate simplification, accurate
-          when ``f(z)`` varies slowly across the dominant window; it makes
-          ``f_i = completeness(z_det)`` (used as the catalog/dark mixing weight in
-          :meth:`p_Di`) an approximation to the selection-weighted weight
-          ``beta_G / (beta_G + beta_Gbar)``. See :meth:`p_Di` for that combination.
+    Role in the partition-norm likelihood:
+        ``D(h)`` is the FULL-volume selection normalisation
+        ``D(h) = beta_G(h) + beta_Gbar(h)`` -- the denominator of the single
+        per-event ratio ``p_i = (beta_G L_cat + B_num) / D(h)`` (:meth:`p_Di`).
+        It carries **no** ``(1-f)`` factor: the incompleteness lives in its
+        missing-volume partner
+        :func:`precompute_missing_completion_denominator`
+        (``beta_Gbar = INTEGRAL (1-f) P_det dVc/(1+z)``), and the in-catalogue
+        share is recovered by ``beta_G = D(h) - beta_Gbar``. The selection-weighted
+        catalog membership weight ``w_G = beta_G/D(h) = beta_G/(beta_G+beta_Gbar)``
+        (Gray Eq. 29) is now computed EXACTLY -- it replaced the earlier scalar
+        narrow-window approximation ``completeness(z_det)``.
+
+    Modeling assumption (still in force): **constant comoving number density**
+        for the missing galaxies -- the galaxy number density ``n_gal(z)`` and the
+        mass-integrated rate ``INTEGRAL dM R_EMRI(z,M)`` are taken z-independent
+        (the latter exact under the ``p0=1`` surrogate), so they are overall
+        constants that **cancel** between the discrete catalogue sums and the
+        continuous integrals (Option A; see
+        :func:`precompute_global_catalog_selection`). Departures (clustering,
+        rate/MF evolution) are second order.
 
     Args:
         h_values: List of Hubble parameter values to evaluate.
@@ -673,13 +702,12 @@ class BayesianStatistics:
         # Completeness function f(z, h) for weighting catalog vs completion terms.
         completeness = GladeCatalogCompleteness()
 
-        # Partition-norm precomputes (Option A) -- ADDITIVE: computed and logged
-        # here but NOT yet consumed by p_Di. The restructure that uses them (move
-        # (1-f) inside the completion integral, globalize the catalog selection
-        # denominator, drop the scalar mixing weight) lands as a separate
-        # [PHYSICS] commit. beta_Gbar(h) = INTEGRAL (1-f) P_det dVc/(1+z)
-        # (Gray Eq. 33); beta_G(h) = D(h) - beta_Gbar(h) (Gray Eq. 29); and the
-        # global in-catalogue selection sums sum_global w_g D_g for both channels.
+        # Partition-norm precomputes (Option A), consumed by p_Di's single ratio
+        # p_i = (beta_G L_cat + B_num)/D(h). beta_Gbar(h) = INTEGRAL (1-f) P_det
+        # dVc/(1+z) (Gray et al. 2020, arXiv:1908.06050, Eq. 33);
+        # beta_G(h) = D(h) - beta_Gbar(h) (Eq. 29); and the global in-catalogue
+        # selection sums sum_global w_g D_g for both channels (Eq. 29 discrete
+        # realisation) that make L_cat scale-free so n_gal cancels.
         _beta_Gbar_table = precompute_missing_completion_denominator(
             h_values=[h_value],
             detection_probability_obj=detection_probability,
@@ -704,8 +732,7 @@ class BayesianStatistics:
             else float("nan")
         )
         _LOGGER.info(
-            "Partition-norm precompute (not yet consumed): w_G=beta_G/D(h)=%.4f, "
-            "sum_w_Dg(no_bh)=%.4e, sum_w_Dg(with_bh)=%.4e",
+            "Partition-norm: w_G=beta_G/D(h)=%.4f, sum_w_Dg(no_bh)=%.4e, sum_w_Dg(with_bh)=%.4e",
             _w_G_preview,
             _global_cat_denom_no_bh.get(h_value, float("nan")),
             _global_cat_denom_with_bh.get(h_value, float("nan")),
@@ -1074,9 +1101,10 @@ class BayesianStatistics:
         fieldnames = [
             "event_idx",
             "h",
-            "f_i",
+            "w_G",
             "L_cat_no_bh",
             "L_cat_with_bh",
+            "B_num",
             "L_comp",
             "combined_no_bh",
             "combined_with_bh",
@@ -1283,46 +1311,48 @@ class BayesianStatistics:
             additional_likelihoods
         )
 
-        # --- Catalog term (L_cat): existing galaxy-sum likelihood ---
-        # Gray et al. (2020), arXiv:1908.06050, Eqs. 24-25
+        # --- In-catalogue weighted sums (Gray et al. 2020, Eqs. 24-25, A.9/A.10) ---
+        # Per-MBH EMRI-rate weight w(g) = R_eff_per_mbh(M_g)/(1+z_g), IDENTICAL to
+        # the simulation host draw (draw_rate_weighted_hosts): P(g) ∝ w(g). host.M is
+        # the SOURCE-FRAME catalog BH mass (the detector-frame lift M_z = M·(1+z)
+        # lives only inside single_host_likelihood, never on host.M). The overall
+        # normalization (including emri_rate.C_NORM) cancels in every ratio below.
+        # all_results_without_bh is ordered reduced + with_bh, so its weights MUST
+        # follow the SAME host order. Babak et al. (2017), arXiv:1703.09722 (rate).
         if len(results_without_blackhole_mass) == 0 and len(results_with_bh_mass) == 0:
             _LOGGER.warning(f"Detection {detection_index}: no catalog results found")
-            L_cat_without_bh_mass = 0.0
-            L_cat_with_bh_mass = 0.0
+            weights_with_bh: list[float] = []
+            weights_without_bh: list[float] = []
+            all_results_without_bh: list[Any] = []
         else:
-            # Per-MBH EMRI-rate weighting w(g) = R_eff_per_mbh(M_g) / (1 + z_g),
-            # IDENTICAL to the simulation host draw (draw_rate_weighted_hosts):
-            # P(g) ∝ w(g). host.M is the SOURCE-FRAME catalog BH mass (the same
-            # quantity the draw uses; the detector-frame lift M_z = M·(1+z) lives
-            # only inside single_host_likelihood, never on host.M). The overall
-            # normalization (including emri_rate.C_NORM) multiplies numerator and
-            # denominator equally and CANCELS in weighted_ratio_of_sums; only the
-            # R_eff(M) shape and the mild 1/(1+z) survive. Gray et al. (2020),
-            # arXiv:1908.06050 (galaxy weighting); Babak et al. (2017),
-            # arXiv:1703.09722 (per-MBH rate, via emri_rate).
             weights_with_bh = [_rate_weight(host) for host in possible_host_galaxies_with_bh_mass]
-            # all_results_without_bh below is ordered reduced + with_bh, so its
-            # weights MUST follow the SAME host order.
             weights_without_bh = [
                 _rate_weight(host) for host in possible_host_galaxies_reduced
             ] + weights_with_bh
-
-            # Eq. (A.9/A.10) in Gray et al. (2020), arXiv:1908.06050: the
-            # in-catalogue likelihood is a (now rate-WEIGHTED) RATIO OF SUMS over
-            # catalog galaxies (single shared selection denominator Σ_g w_g D_g),
-            # NOT a mean of per-galaxy self-normalized ratios (1/N) Σ_g (N_g/D_g).
             all_results_without_bh = list(results_without_blackhole_mass) + list(
                 results_with_bh_mass
             )
+
+        # --- Per-event likelihood: Gray et al. (2020), arXiv:1908.06050, Eq. 9 + 29 ---
+        # Single selection-normalized ratio
+        #     p_i = (beta_G(h) * L_cat + B_num(h)) / D(h)
+        # equivalently w_G*L_cat + (1-w_G)*L_comp with the EXACT event-INDEPENDENT
+        # selection weight w_G = beta_G/D(h) = beta_G/(beta_G+beta_Gbar) (Eq. 29),
+        # which REPLACES the old scalar mixing weight completeness(z_det). The
+        # incompleteness (1-f(z)) lives INSIDE the completion numerator B_num and
+        # denominator beta_Gbar; there is NO scalar (1-f_i) prefactor (keeping one on
+        # top of the inside-(1-f) would compute (1-f)^2 and double-count).
+        if self.catalog_only:
+            # Pure-catalog cross-check (validation mode): the per-event in-catalogue
+            # likelihood is the self-normalized LOCAL ratio of sums, no completion.
+            # Unchanged from the convex-mix era (f_i=1, L_comp=0 => p_i = L_cat), so
+            # this mode stays byte-identical.
             L_cat_without_bh_mass = weighted_ratio_of_sums(
                 [r[0] for r in all_results_without_bh],
                 [r[1] for r in all_results_without_bh],
                 weights_without_bh,
             )
-
             if len(results_with_bh_mass) > 0:
-                # Eq. (A.9/A.10) in Gray et al. (2020), arXiv:1908.06050: rate-
-                # weighted ratio of sums (single shared selection denominator).
                 L_cat_with_bh_mass = weighted_ratio_of_sums(
                     [r[2] for r in results_with_bh_mass],
                     [r[3] for r in results_with_bh_mass],
@@ -1330,24 +1360,51 @@ class BayesianStatistics:
                 )
             else:
                 L_cat_with_bh_mass = 0.0
-
-        # --- Completion term: Gray et al. (2020), arXiv:1908.06050, Eqs. 31-32 ---
-        # When catalog_only=True, skip the completion integral entirely:
-        # set f_i=1.0 (pure catalog), L_comp=0.0
-        if self.catalog_only:
-            f_i = 1.0
+            combined_without_bh_mass = float(L_cat_without_bh_mass)
+            combined_with_bh_mass = float(L_cat_with_bh_mass)
+            w_G = 1.0
+            B_num = 0.0
             L_comp = 0.0
         else:
-            # L_comp = integral[p_GW * P_det * dVc/dz dz] / integral[P_det * dVc/dz dz]
-            # Uses "without BH mass" 3D Gaussian for both variants
-            # (uncataloged host has no galaxy mass information)
+            D_h: float = self._D_h_table.get(self.h, 0.0)
+            beta_G: float = self._beta_G_table.get(self.h, 0.0)
+            beta_Gbar: float = self._beta_Gbar_table.get(self.h, 0.0)
+            global_denom_no_bh: float = self._global_cat_denom_no_bh.get(self.h, 0.0)
+            global_denom_with_bh: float = self._global_cat_denom_with_bh.get(self.h, 0.0)
 
-            # Completeness at the detected redshift for the trial h
-            # Gray et al. (2020), arXiv:1908.06050, Eq. 9: f_i evaluated at z(d_L_det, h)
-            z_det = dist_to_redshift(self.detection.d_L, h=self.h)
-            f_i = float(completeness.get_completeness_at_redshift(z_det, self.h))
+            # L_cat = (Σ_local w_g N_g) / (Σ_GLOBAL w_g D_g): GW-likelihood numerator
+            # over the local candidate ball (p_GW self-truncates, so the local sum is
+            # effectively the global in-catalogue numerator), SELECTION denominator
+            # over the full catalogue out to z_max(h) (Eq. 29, precomputed in
+            # precompute_global_catalog_selection). Globalising the denominator makes
+            # L_cat scale-free, so beta_G*L_cat reconstructs the in-catalogue
+            # numerator with the per-galaxy<->per-volume n_gal factor CANCELLED
+            # (Option A; without it beta_G^global/beta_G^local would bias H0).
+            cat_num_sum_no_bh = weighted_sum(
+                [r[0] for r in all_results_without_bh], weights_without_bh
+            )
+            L_cat_without_bh_mass = (
+                cat_num_sum_no_bh / global_denom_no_bh if global_denom_no_bh > 0 else 0.0
+            )
+            if len(results_with_bh_mass) > 0:
+                cat_num_sum_with_bh = weighted_sum(
+                    [r[2] for r in results_with_bh_mass], weights_with_bh
+                )
+                L_cat_with_bh_mass = (
+                    cat_num_sum_with_bh / global_denom_with_bh if global_denom_with_bh > 0 else 0.0
+                )
+            else:
+                L_cat_with_bh_mass = 0.0
 
-            # Integration limits: same 4-sigma range as catalog term numerator
+            # B_num(h) = INTEGRAL (1-f(z)) p_GW(z) (1/(1+z)) dVc/dz dz : the completion
+            # numerator with the incompleteness weight (1-f(z)). Gray et al. (2020),
+            # arXiv:1908.06050, Eq. 32 -- GW likelihood × population prior ONLY; the
+            # (1-f) is the smooth-completeness form of the catalog-edge lower limit
+            # and is EXACTLY the dark population the generator draws
+            # (dark_siren_injection._draw_dark_redshifts). f(z) is evaluated on the
+            # quadrature grid (NOT at z_det); p_det stays solely in the denominator
+            # D(h) (Mandel-Farr-Gair 2019, arXiv:1809.02063). 1/(1+z) matches D(h),
+            # beta_Gbar, and the event sampler (emri_rate.p_pop_unnormalized).
             integration_limit_sigma_multiplier = 4.0
             z_upper = dist_to_redshift(
                 self.detection.d_L
@@ -1362,14 +1419,6 @@ class BayesianStatistics:
             z_lower = max(z_lower, 1e-6)  # avoid z=0 singularity in volume element
 
             FIXED_QUAD_N = 50
-
-            # Completion term numerator integrand
-            # Gray et al. (2020), arXiv:1908.06050, Eq. 32: the out-of-catalogue
-            # numerator carries the GW likelihood p_GW(x|z,Omega,h) * dVc/dz ONLY.
-            # P_det = p(D_GW|...) appears solely in the denominator D(h) (Eq. 33);
-            # an extra P_det here is the Mandel-Farr-Gair (2019) "most common
-            # mistake" (arXiv:1809.02063) -- the same fix commit 816f904 applied
-            # to the in-catalogue numerator (Eq. A.10), here completed for L_comp.
             _comp_slot = self._det_index_to_slot[detection_index]
             _comp_mean_3d = self._means_3d[_comp_slot]
             _comp_cov_inv_3d = self._cov_inv_3d[_comp_slot]
@@ -1395,29 +1444,23 @@ class BayesianStatistics:
                 dVc: npt.NDArray[np.float64] = np.atleast_1d(
                     np.asarray(comoving_volume_element(z, h=self.h), dtype=np.float64)
                 )
+                # Eq. (32) in Gray et al. (2020), arXiv:1908.06050, with the
+                # incompleteness weight (1-f(z)): GW likelihood × (1-f) population
+                # prior. f(z) is the SAME completeness call the generator uses, so
+                # B_num integrates exactly the injected dark density.
+                f_z: npt.NDArray[np.float64] = np.clip(
+                    np.asarray(
+                        completeness.get_completeness_at_redshift(z, self.h),
+                        dtype=np.float64,
+                    ),
+                    0.0,
+                    1.0,
+                )
+                return (1.0 - f_z) * p_gw * dVc / (1.0 + z)
 
-                # Eq. (32) in Gray et al. (2020), arXiv:1908.06050: GW likelihood
-                # x population prior ONLY. No P_det here -- it belongs solely in the
-                # denominator D(h) (Eq. 33). L_comp = num/D(h) is then the
-                # <p_GW>/<p_det> form, structurally identical to L_cat (Eq. A.9/A.10).
-                # The 1/(1+z) source->detector time dilation matches D(h) and the
-                # event sampler (emri_rate.p_pop_unnormalized); the mass-integrated
-                # rate is z-independent (p0=1 surrogate) and cancels in num/D(h).
-                return p_gw * dVc / (1.0 + z)
-
-            comp_numerator: float = fixed_quad(
-                completion_numerator_integrand, z_lower, z_upper, n=FIXED_QUAD_N
-            )[0]
-
-            # Gray et al. (2020), arXiv:1908.06050, Eq. 31:
-            # D(h) = ∫ p_det · dV_c/dz dz normalizes p_galaxy ∝ p_det · dV_c
-            # to a probability density, making L_comp = num/D the per-event
-            # likelihood CONDITIONAL on detection (not an outer selection
-            # correction).  Tier 3 audit (2026-05-04) confirmed that combining
-            # this with combine_log_space's old −N log D outer subtraction
-            # double-counted D and biased MAP by +0.020 to +0.025; outer
-            # subtraction is now disabled in posterior_combination.combine_log_space.
-            comp_denominator: float = self._D_h_table.get(self.h, 0.0)
+            B_num = float(
+                fixed_quad(completion_numerator_integrand, z_lower, z_upper, n=FIXED_QUAD_N)[0]
+            )
 
             # Grid coverage flag: warn if numerator 4-sigma window exceeds P_det grid
             d_L_upper = self.detection.d_L + 4.0 * self.detection.d_L_uncertainty
@@ -1430,51 +1473,38 @@ class BayesianStatistics:
                     dl_max_grid,
                 )
 
-            if comp_denominator > 0:
-                L_comp = float(comp_numerator / comp_denominator)
-                # Diagnostic: N_i(h)/D(h) ratio should be < 1
-                if L_comp > 1.0:
-                    _LOGGER.warning(
-                        "Detection %d: N_i/D(h) = %.4e > 1.0 (unexpected)",
-                        detection_index,
-                        L_comp,
-                    )
+            # Single ratio p_i = (beta_G*L_cat + B_num)/D(h). w_G = beta_G/D(h) is the
+            # event-independent selection-weighted catalog membership probability
+            # (Eq. 29). Tier 3 audit (2026-05-04): the outer -N log D subtraction in
+            # combine_log_space stays disabled (D(h) normalizes here, per-event).
+            if D_h > 0:
+                w_G = beta_G / D_h
+                combined_without_bh_mass = float((beta_G * L_cat_without_bh_mass + B_num) / D_h)
+                combined_with_bh_mass = float((beta_G * L_cat_with_bh_mass + B_num) / D_h)
             else:
                 _LOGGER.warning(f"Detection {detection_index}: D(h) is zero, using L_cat only")
-                L_comp = 0.0
-                f_i = 1.0  # fall back to catalog-only
+                w_G = 1.0
+                combined_without_bh_mass = float(L_cat_without_bh_mass)
+                combined_with_bh_mass = float(L_cat_with_bh_mass)
+            # Diagnostic-only completion likelihood L_comp = B_num/beta_Gbar (the
+            # single ratio never divides by beta_Gbar, which -> 0 as f -> 1).
+            L_comp = float(B_num / beta_Gbar) if beta_Gbar > 0 else 0.0
 
         _LOGGER.debug(
-            f"Detection {detection_index}: f_i={f_i:.4f}, "
+            f"Detection {detection_index}: w_G={w_G:.4f}, "
             f"L_cat_no_bh={L_cat_without_bh_mass:.6e}, "
-            f"L_cat_with_bh={L_cat_with_bh_mass:.6e}, L_comp={L_comp:.6e}"
+            f"L_cat_with_bh={L_cat_with_bh_mass:.6e}, B_num={B_num:.6e}, L_comp={L_comp:.6e}"
         )
-
-        # --- Combination: Gray et al. (2020), arXiv:1908.06050, Eq. 9 ---
-        # p_i = f_i * L_cat + (1 - f_i) * L_comp
-        # L_comp uses "without BH mass" Gaussian for both variants
-        # (uncataloged host has no galaxy mass information).
-        #
-        # MIXING WEIGHT (design choice): f_i = completeness(z_det) is used as the
-        # catalog/dark mixing weight. Strictly, the Gray Eq. 9 weights are the
-        # SELECTION-weighted catalog probabilities beta_G/(beta_G+beta_Gbar) with
-        # beta_Gbar = INTEGRAL (1-f) n_gal P_det dVc. Under the constant-comoving-
-        # density assumption (see precompute_completion_denominator) and slowly-
-        # varying f(z)/P_det across the dominant window, that ratio reduces to
-        # f_i = completeness(z_det). This is the standard narrow-window approximation;
-        # a full selection-weighted mixing weight (with the (1-f) n_gal denominator)
-        # is a documented future refinement, not applied here.
-        combined_without_bh_mass = float(f_i * L_cat_without_bh_mass + (1 - f_i) * L_comp)
-        combined_with_bh_mass = float(f_i * L_cat_with_bh_mass + (1 - f_i) * L_comp)
 
         # Record diagnostic row for every event
         self._diagnostic_rows.append(
             {
                 "event_idx": detection_index,
                 "h": self.h,
-                "f_i": f_i,
+                "w_G": w_G,
                 "L_cat_no_bh": L_cat_without_bh_mass,
                 "L_cat_with_bh": L_cat_with_bh_mass,
+                "B_num": B_num,
                 "L_comp": L_comp,
                 "combined_no_bh": combined_without_bh_mass,
                 "combined_with_bh": combined_with_bh_mass,
