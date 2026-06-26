@@ -1083,8 +1083,12 @@ class BayesianStatistics:
             FIXED_QUAD_N = 50
 
             # Completion term numerator integrand
-            # Gray et al. (2020), arXiv:1908.06050, Eq. 31:
-            #   p_GW(x|z, Omega_det, h) * P_det(d_L(z,h)) * dVc/dz
+            # Gray et al. (2020), arXiv:1908.06050, Eq. 32: the out-of-catalogue
+            # numerator carries the GW likelihood p_GW(x|z,Omega,h) * dVc/dz ONLY.
+            # P_det = p(D_GW|...) appears solely in the denominator D(h) (Eq. 33);
+            # an extra P_det here is the Mandel-Farr-Gair (2019) "most common
+            # mistake" (arXiv:1809.02063) -- the same fix commit 816f904 applied
+            # to the in-catalogue numerator (Eq. A.10), here completed for L_comp.
             _comp_slot = self._det_index_to_slot[detection_index]
             _comp_mean_3d = self._means_3d[_comp_slot]
             _comp_cov_inv_3d = self._cov_inv_3d[_comp_slot]
@@ -1107,18 +1111,15 @@ class BayesianStatistics:
                     _comp_cov_inv_3d,
                     _comp_log_norm_3d,
                 )
-                # Gray et al. (2020), arXiv:1908.06050, Eq. A.19: shared p_det
-                # function for L_comp numerator and D(h) denominator (STAT-03
-                # symmetry, commit a70d1a2).  Phase 44: NN-fill below first bin
-                # (real injection statistic), zero above injection horizon.
-                p_det = detection_probability_obj.detection_probability_without_bh_mass_interpolated_zero_fill(
-                    d_L, phi, theta, h=self.h
-                )
                 dVc: npt.NDArray[np.float64] = np.atleast_1d(
                     np.asarray(comoving_volume_element(z, h=self.h), dtype=np.float64)
                 )
 
-                return p_gw * p_det * dVc
+                # Eq. (32) in Gray et al. (2020), arXiv:1908.06050: GW likelihood
+                # x comoving-volume prior ONLY. No P_det here -- it belongs solely
+                # in the denominator D(h) (Eq. 33). L_comp = num/D(h) is then the
+                # <p_GW>/<p_det> form, structurally identical to L_cat (Eq. A.9/A.10).
+                return p_gw * dVc
 
             comp_numerator: float = fixed_quad(
                 completion_numerator_integrand, z_lower, z_upper, n=FIXED_QUAD_N

@@ -242,10 +242,18 @@ class TestCatalogOnlyUnchanged:
 
 
 class TestLcompRatioBounded:
-    """L_comp = N_i(h)/D(h) must be in [0, ~1] since D(h) covers the full volume."""
+    """L_comp = N_i(h)/D(h): N_i over the local 4-sigma window, D(h) over the full volume.
+
+    Gray et al. (2020) Eq. 32: the completion NUMERATOR carries the GW likelihood
+    and the comoving-volume prior ONLY -- no P_det (that lives solely in D(h),
+    Eq. 33), giving L_comp = <p_GW>/<p_det>, the same form as L_cat. For a narrow
+    GW window relative to the full detectable volume L_comp stays well below 1
+    here, but that is because the local window is narrow vs D(h), NOT because of a
+    (spurious) P_det factor in the numerator.
+    """
 
     def test_lcomp_ratio_bounded(self) -> None:
-        """Compute N_i and D for a mock event and verify N_i/D <= 1."""
+        """Compute N_i and D for a mock event; N_i uses the corrected (no-P_det) form."""
         h = 0.73
         d_L_det = 0.5  # Gpc
         sigma_d_L = 0.05  # Gpc
@@ -267,11 +275,10 @@ class TestLcompRatioBounded:
             p_gw = (1.0 / (sigma_frac * np.sqrt(2 * np.pi))) * np.exp(
                 -0.5 * ((d_L_frac - 1.0) / sigma_frac) ** 2
             )
-            p_det = mock_pdet.detection_probability_without_bh_mass_interpolated(
-                d_L, np.zeros_like(z), np.zeros_like(z), h=h
-            )
             dVc = np.atleast_1d(np.asarray(comoving_volume_element(z, h=h), dtype=np.float64))
-            result: npt.NDArray[np.float64] = p_gw * np.asarray(p_det, dtype=np.float64) * dVc
+            # Gray et al. (2020), arXiv:1908.06050, Eq. 32: GW likelihood x volume
+            # prior ONLY -- no P_det in the numerator (it lives in D(h), Eq. 33).
+            result: npt.NDArray[np.float64] = p_gw * dVc
             return result
 
         N_i: float = fixed_quad(numerator_integrand, z_lower, z_upper, n=50)[0]
@@ -284,6 +291,31 @@ class TestLcompRatioBounded:
         # L_comp should be much less than 1 since the Gaussian is narrow
         # relative to the full volume
         assert L_comp < 1.0, f"L_comp = {L_comp:.4e} > 1.0 (D(h) should dominate)"
+
+
+class TestCompletionNumeratorNoPdet:
+    """Regression: the completion numerator must NOT contain P_det (Gray Eq. 32).
+
+    The in-catalog numerator was made P_det-free in commit 816f904 (Mandel-Farr-Gair
+    "most common mistake"); this guard ensures the completion numerator stays
+    consistent (p_det denominator-only) so L_cat and L_comp are the same estimator.
+    """
+
+    def test_completion_numerator_integrand_has_no_pdet(self) -> None:
+        import inspect
+
+        from master_thesis_code.bayesian_inference import bayesian_statistics
+
+        src = inspect.getsource(bayesian_statistics.BayesianStatistics.p_Di)
+        assert "def completion_numerator_integrand" in src
+        assert "return p_gw * dVc" in src, (
+            "completion numerator must be p_gw * dVc (Gray Eq. 32: no P_det in the "
+            "numerator; P_det belongs solely in the denominator D(h), Eq. 33)"
+        )
+        assert "p_gw * p_det" not in src, (
+            "completion numerator must NOT multiply p_gw by p_det -- that is the "
+            "Mandel-Farr-Gair (2019) 'most common mistake' (arXiv:1809.02063)"
+        )
 
 
 # ======================================================================

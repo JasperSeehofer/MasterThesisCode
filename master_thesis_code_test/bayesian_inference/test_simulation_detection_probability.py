@@ -1075,12 +1075,16 @@ class TestZeroFillBoundaryConvention:
             )
 
     def test_zero_fill_symmetry_invariant(self) -> None:
-        """STAT-03 contract: numerator and denominator paths in L_comp/L_cat must
-        share the same p_det function (commit a70d1a2).  Phase 44 preserves this
-        by editing the function body, not the call sites.
+        """Selection-denominator p_det sites all use the zero-fill variant.
 
-        This test catches accidental divergence (e.g. someone replacing one site
-        with the non-zero-fill variant for "performance").
+        Originally a STAT-03 "shared p_det between numerator and denominator"
+        contract (commit a70d1a2). That symmetry was SUPERSEDED: per Gray et al.
+        (2020) Eqs. 32 / A.10 and Mandel-Farr-Gair (2019), p_det = p(D_GW|...)
+        belongs in the selection DENOMINATOR only -- the in-catalog numerator
+        (commit 816f904) and the completion numerator (Gray Eq. 32, the p_det
+        removed in this change) carry NO p_det. This guard now ensures the
+        remaining (denominator / selection) sites use the zero-fill variant
+        consistently, catching an accidental swap to the non-zero-fill variant.
         """
         import inspect
 
@@ -1088,15 +1092,15 @@ class TestZeroFillBoundaryConvention:
 
         src = inspect.getsource(bs)
         n_calls = src.count("detection_probability_without_bh_mass_interpolated_zero_fill")
-        # 6 expected: precompute_completion_denominator (1) +
-        # p_Di.completion_numerator_integrand (1) +
-        # single_host_likelihood (numerator + denominator = 2) +
-        # single_host_likelihood_integration_testing (numerator + denominator = 2)
-        # = 6 production sites.  Plus 1 docstring/comment reference allowed.
-        assert n_calls >= 6, (
-            f"Expected >= 6 zero_fill call sites in bayesian_statistics.py "
-            f"(Phase 38 STAT-03 invariant, commit a70d1a2), got {n_calls}.  "
-            f"Numerator/denominator symmetry may be broken."
+        # 5 expected: 1 docstring reference + 4 call sites --
+        #   precompute_completion_denominator / D(h) (1, selection denominator) +
+        #   single_host_likelihood denominator (1; its numerator has NO p_det, 816f904) +
+        #   single_host_likelihood_integration_testing numerator + denominator (2).
+        # The completion numerator no longer calls p_det (Gray Eq. 32, this change).
+        assert n_calls >= 5, (
+            f"Expected >= 5 zero_fill references in bayesian_statistics.py "
+            f"(selection-denominator p_det sites), got {n_calls}.  A selection "
+            f"site may have been swapped to the non-zero-fill variant."
         )
 
 
