@@ -211,6 +211,65 @@ def test_build_m_th_map_synthetic_catalog(tmp_path) -> None:  # type: ignore[no-
     assert float(m_th[finite][0]) == pytest.approx(np.median(b_full))
 
 
+def test_builder_pixel_matches_ang2pix_cross_frame(tmp_path) -> None:  # type: ignore[no-untyped-def]
+    """The builder's (RA/Dec->ecliptic lat) pixel == ang2pix's (pi/2 - theta) pixel.
+
+    Guards the frame-consistency CHAIN: the builder indexes m_th via
+    lonlat_to_healpix(ecl.lon, ecl.lat), while ang2pix (used by B_num at the event
+    direction) uses lat = pi/2 - theta on the ecliptic colatitude. A future
+    convention slip in EITHER would silently mis-assign the event pixel and bias H0
+    -- the existing sample_sky_in_pixels<->ang2pix round trip cannot catch it (both
+    use the same pi/2-theta convention). Here the two paths are computed
+    independently and must agree.
+    """
+    import astropy.units as u
+    import pandas as pd
+    from astropy.coordinates import BarycentricTrueEcliptic, SkyCoord
+
+    nside = 2
+    # Well-separated equatorial positions incl. near the pole; >=10 galaxies each.
+    positions = [(10.0, 20.0), (200.0, -40.0), (300.0, 75.0), (123.0, -55.0)]
+    rows = []
+    for ra, dec in positions:
+        for b in np.linspace(17.0, 20.0, 12):
+            rows.append((ra, dec, float(b), 0.05, 0.001, 0.3, 0.1))
+    csv = tmp_path / "synthetic_reduced.csv"
+    pd.DataFrame(rows).to_csv(csv, header=False, index=False)
+
+    m_th = build_m_th_map(catalog_path=str(csv), nside=nside, min_galaxies=10)
+    pc = PixelCompleteness(m_th, nside=nside)
+    builder_pixels = set(np.flatnonzero(np.isfinite(m_th)).tolist())
+
+    # Independently: transform each (RA,Dec) -> ecliptic -> ang2pix(phi, pi/2-theta).
+    ang2pix_pixels = set()
+    for ra, dec in positions:
+        ecl = SkyCoord(ra=ra * u.deg, dec=dec * u.deg, frame="icrs").transform_to(
+            BarycentricTrueEcliptic(equinox="J2000")
+        )
+        phi = float(ecl.lon.to(u.rad).value)
+        theta = float(np.pi / 2.0 - ecl.lat.to(u.rad).value)  # colatitude
+        ang2pix_pixels.add(pc.ang2pix(phi, theta))
+
+    assert len(ang2pix_pixels) == len(positions), "positions must fall in distinct pixels"
+    assert builder_pixels == ang2pix_pixels, (
+        f"builder pixels {sorted(builder_pixels)} != ang2pix pixels {sorted(ang2pix_pixels)}"
+    )
+
+
+def test_ang2pix_colatitude_convention_at_poles() -> None:
+    """theta is a colatitude: theta=0 -> north ecliptic pole, theta=pi -> south."""
+    import astropy.units as u
+
+    pc = _uniform_map(19.0, nside=NSIDE)
+    # theta = 0 must map to a pixel whose center is at the north pole (lat ~ +90).
+    north = pc.ang2pix(0.0, 0.0)
+    south = pc.ang2pix(0.0, np.pi)
+    lat_north = pc._healpix.healpix_to_lonlat(np.array([north]))[1].to(u.deg).value[0]
+    lat_south = pc._healpix.healpix_to_lonlat(np.array([south]))[1].to(u.deg).value[0]
+    assert lat_north > 80.0, f"theta=0 should be the north pole, got lat={lat_north:.1f}"
+    assert lat_south < -80.0, f"theta=pi should be the south pole, got lat={lat_south:.1f}"
+
+
 def test_from_cache_or_build_is_byte_identical(tmp_path) -> None:  # type: ignore[no-untyped-def]
     """C1: the cached map reloads byte-identically and yields identical f (both sides)."""
     import pandas as pd

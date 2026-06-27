@@ -18,17 +18,31 @@ shared-map requirement (inference using a DIFFERENT m_th map than the injection)
 bias H0 -- the single H0-bias path the derivation identifies
 (.planning/derivation-change5-healpix-estimator/DERIVATION.md Sec. 4).
 
+Scope of THIS test (what it does and does NOT validate):
+* It validates the INFERENCE side -- B_num at the event pixel (Change 5.3) + f_bar in
+  beta_Gbar (Change 5.2) + ONE shared frozen f map (C1) -- CONDITIONAL on a correctly
+  distributed injection. It injects the real population's true ``(z, pixel)`` joint
+  directly (``_inject_events``); it deliberately does NOT call the production
+  ``draw_dark_hosts`` / ``_draw_dark_hosts_pixelated`` sampler.
+* The FIX-A ``W_k`` dark-host sampler (Change 5.5) is therefore validated SEPARATELY,
+  end-to-end, in test_dark_event_injection.py
+  (test_pixelated_dark_draw_*): that the sampler reproduces the JOINT
+  ``p(z, k) ∝ (1 - f_k(z)) p_pop(z)`` -- pixel pick frequency tracks
+  ``W_k = INTEGRAL (1 - f_k) p_pop dz`` (dark hosts cluster in low-completeness / ZoA
+  directions) and ``z|k*`` follows the pixel's incompleteness-weighted population.
+  This JOINT (z, Omega) correlation is the load-bearing FIX-A correction (DERIVATION
+  Sec. 3, "the only surviving correction"); it is INVARIANT under the z-marginal
+  (the old isotropic draw shares the same ``(1-f_bar)p_pop`` z-marginal), so the
+  marginal cannot witness it -- which is exactly why FIX-A is validated at the joint
+  distribution level, not via this closure's marginal recovery.
+
 Findings encoded here (see the derivation Sec. 4-5):
-* The per-pixel structure recovers H0 at the fiducial h=0.70 to |median bias| < 0.008.
+* The per-pixel inference recovers H0 at the fiducial h=0.70 to |median bias| < 0.008.
 * H0 unbiasedness comes from injection<->inference SELF-CONSISTENCY (the same frozen
   ``f_k``), NOT from ``f_model = f_real`` -- so a SHARED-map analysis is unbiased even
   though the estimator is conservative.
-* A C1 violation (different m_th on the two sides) biases H0 by ~0.1.
-* The FIX-A ``W_k`` dark-host sampler (Change 5.5) is validated separately
-  (test_dark_event_injection / test_pixel_completeness + the analytic z-marginal
-  identity): its z-marginal equals ``(1-f_bar)p_pop``, so its H0-bias impact is
-  sub-leading; its role is the per-direction sky distribution, exercised by the
-  pixel-tagged events here.
+* A C1 violation (a DIFFERENT m_th map on the two sides) biases H0 by ~0.1 -- the
+  single H0-bias path the derivation identifies (negative control below).
 
 Off-center h recovery and the scalar-f regression are covered by
 test_partition_norm_closure.py (Task A). Marked ``slow``.
