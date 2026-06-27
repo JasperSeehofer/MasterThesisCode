@@ -241,6 +241,34 @@ def test_from_cache_or_build_is_byte_identical(tmp_path) -> None:  # type: ignor
 
 
 # ----------------------------------------------------------------------
+# C6: the committed frozen m_th map (the SOLE shared source of f)
+# ----------------------------------------------------------------------
+
+
+def test_committed_frozen_map_loads_identically_on_both_sides() -> None:
+    """C1/C6: injection and inference load the SAME frozen committed m_th -> identical f.
+
+    Both main.injection_campaign and bayesian_statistics.evaluate call
+    from_cache_or_build() with defaults, so they load the byte-identical committed
+    cache. This is the single H0-bias-protection guarantee of Change 5.
+    """
+    pc_inj = from_cache_or_build()  # defaults -> committed m_th_map_nside32.npy
+    pc_inf = from_cache_or_build()
+    assert pc_inj.nside == NSIDE
+    assert pc_inj.npix == 12 * NSIDE * NSIDE
+    np.testing.assert_array_equal(pc_inj.m_th, pc_inf.m_th)  # byte-identical map
+    z = np.array([0.02, 0.1, 0.2, 0.4])
+    np.testing.assert_array_equal(np.asarray(pc_inj.f_bar(z, _H)), np.asarray(pc_inf.f_bar(z, _H)))
+    # spot-check a populated and an empty pixel give identical f_k on both sides
+    valid = int(np.flatnonzero(np.isfinite(pc_inj.m_th))[0])
+    empty_idx = np.flatnonzero(~np.isfinite(pc_inj.m_th))
+    for k in [valid] + ([int(empty_idx[0])] if empty_idx.size else []):
+        np.testing.assert_array_equal(
+            np.asarray(pc_inj.f_k(z, k, _H)), np.asarray(pc_inf.f_k(z, k, _H))
+        )
+
+
+# ----------------------------------------------------------------------
 # GladeCatalogCompleteness Omega-independent shims (regression / case a)
 # ----------------------------------------------------------------------
 

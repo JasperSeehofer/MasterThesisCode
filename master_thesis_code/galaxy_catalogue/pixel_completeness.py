@@ -93,7 +93,13 @@ HEALPIX_ORDER: str = "ring"  # pixel ordering (fixed; both sides must agree)
 EMPTY_PIXEL_MIN_GALAXIES: int = 10  # < this many non-null-B galaxies => f_k == 0 (ZoA)
 
 # Frozen cached per-pixel median apparent-B-magnitude map (the SOLE source of f; C1).
-M_TH_CACHE_PATH: str = f"./master_thesis_code/galaxy_catalogue/m_th_map_nside{NSIDE}.npy"
+# Resolved relative to THIS package file (committed package data), so it is found
+# byte-identically regardless of the process working directory (eval temp dirs, the
+# cluster job CWD, tests) -- the same frozen map on both the injection and inference
+# sides is the C1 requirement.
+M_TH_CACHE_PATH: str = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)), f"m_th_map_nside{NSIDE}.npy"
+)
 
 # Memory bound for the f_bar / W_k vectorized reductions (chunk sizes).
 _FBAR_Z_CHUNK: int = 256  # redshift rows per f_bar chunk
@@ -114,13 +120,13 @@ class CompletenessModel(Protocol):
 
     def f_bar(
         self, z: float | npt.NDArray[np.floating[Any]], h: float = ...
-    ) -> float | npt.NDArray[np.float64]:
+    ) -> float | npt.NDArray[np.floating[Any]]:
         """Sky-averaged completeness ``f_bar(z, h)``."""
         ...
 
     def f_k(
         self, z: float | npt.NDArray[np.floating[Any]], k: int, h: float = ...
-    ) -> float | npt.NDArray[np.float64]:
+    ) -> float | npt.NDArray[np.floating[Any]]:
         """Per-pixel completeness ``f_k(z, h)`` at pixel ``k``."""
         ...
 
