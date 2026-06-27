@@ -80,6 +80,12 @@ def _run_p_Di(
     ]
 
     mock_completeness = MagicMock()
+    # Change 5.3: B_num evaluates the per-pixel completeness f_k at the event pixel
+    # (constant f here -> Omega-independent, the Task-A limiting case).
+    mock_completeness.ang2pix.return_value = 0
+    mock_completeness.f_k.side_effect = lambda z, k, h: np.full_like(
+        np.asarray(z, dtype=np.float64), f_const
+    )
     mock_completeness.get_completeness_at_redshift.side_effect = lambda z, h: np.full_like(
         np.asarray(z, dtype=np.float64), f_const
     )

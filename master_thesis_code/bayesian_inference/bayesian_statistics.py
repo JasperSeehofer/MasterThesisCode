@@ -41,11 +41,14 @@ from master_thesis_code.datamodels.detection import (
     _sky_localization_uncertainty,
 )
 from master_thesis_code.emri_rate import R_eff_per_mbh
-from master_thesis_code.galaxy_catalogue.glade_completeness import GladeCatalogCompleteness
 from master_thesis_code.galaxy_catalogue.handler import (
     GalaxyCatalogueHandler,
     HostGalaxy,
     InternalCatalogColumns,
+)
+from master_thesis_code.galaxy_catalogue.pixel_completeness import (
+    CompletenessModel,
+    from_cache_or_build,
 )
 from master_thesis_code.physical_relations import (
     comoving_volume_element,
@@ -286,7 +289,7 @@ def precompute_completion_denominator(
 def precompute_missing_completion_denominator(
     h_values: list[float],
     detection_probability_obj: SimulationDetectionProbability,
-    completeness: GladeCatalogCompleteness,
+    completeness: CompletenessModel,
     *,
     quad_n: int = _DH_QUAD_ORDER,
 ) -> dict[float, float]:
@@ -698,9 +701,12 @@ class BayesianStatistics:
         )
         _LOGGER.info("D(h) precomputed for %d h-value(s).", len(_D_h_table))
 
-        # Gray et al. (2020), arXiv:1908.06050, Eq. 9:
-        # Completeness function f(z, h) for weighting catalog vs completion terms.
-        completeness = GladeCatalogCompleteness()
+        # Gray et al. (2020), arXiv:1908.06050, Eq. 9 + Gray-Messenger-Veitch 2022,
+        # arXiv:2111.04629 (Change 5): per-HEALPix-pixel completeness f_k(z,Omega,h),
+        # loaded from the SAME frozen cached m_th map the EMRI injection uses (C1
+        # consistency; main.py:injection_campaign). f_bar weights beta_Gbar, f_k(event
+        # pixel) weights the completion numerator B_num below.
+        completeness = from_cache_or_build()
 
         # Partition-norm precomputes (Option A), consumed by p_Di's single ratio
         # p_i = (beta_G L_cat + B_num)/D(h). beta_Gbar(h) = INTEGRAL (1-f) P_det
@@ -1126,7 +1132,7 @@ class BayesianStatistics:
         galaxy_catalog: GalaxyCatalogueHandler,
         redshift_upper_limit: float,
         pool: mp.pool.Pool,
-        completeness: GladeCatalogCompleteness,
+        completeness: CompletenessModel,
         detection_probability_obj: SimulationDetectionProbability,
     ) -> None:
         count = 0
@@ -1229,7 +1235,7 @@ class BayesianStatistics:
         possible_host_galaxies_with_bh_mass: list[HostGalaxy],
         detection_index: int,
         pool: mp.pool.Pool,
-        completeness: GladeCatalogCompleteness,
+        completeness: CompletenessModel,
         detection_probability_obj: SimulationDetectionProbability,
     ) -> tuple[float, float]:
         # start parallel computation
@@ -1424,6 +1430,13 @@ class BayesianStatistics:
             _comp_cov_inv_3d = self._cov_inv_3d[_comp_slot]
             _comp_log_norm_3d = float(self._log_norm_3d[_comp_slot])
             _comp_det_d_L = self._det_d_L[_comp_slot]
+            # Change 5.3: the completion numerator weights the incompleteness at the
+            # EVENT's sky pixel, (1 - f_{k(Omega_e)}(z)). p_GW delta-collapses the sky
+            # integral, so f is evaluated at the single pixel containing the detection
+            # direction (ecliptic phi/theta). Gray-Messenger-Veitch 2022,
+            # arXiv:2111.04629, Eq. (5) (out-of-catalog branch). Computed once per
+            # event; Omega-independent completeness gives the identical Task-A B_num.
+            _event_pixel = completeness.ang2pix(self.detection.phi, self.detection.theta)
 
             def completion_numerator_integrand(
                 z: npt.NDArray[np.float64],
@@ -1444,13 +1457,16 @@ class BayesianStatistics:
                 dVc: npt.NDArray[np.float64] = np.atleast_1d(
                     np.asarray(comoving_volume_element(z, h=self.h), dtype=np.float64)
                 )
-                # Eq. (32) in Gray et al. (2020), arXiv:1908.06050, with the
-                # incompleteness weight (1-f(z)): GW likelihood × (1-f) population
-                # prior. f(z) is the SAME completeness call the generator uses, so
-                # B_num integrates exactly the injected dark density.
+                # Eq. (32) in Gray et al. (2020), arXiv:1908.06050, with the per-pixel
+                # incompleteness weight (1-f_{k(Omega_e)}(z)): GW likelihood × (1-f_k)
+                # population prior, f_k evaluated at the EVENT pixel (Change 5.3,
+                # Gray-Messenger-Veitch 2022 Eq. 5). f_k is the SAME completeness call
+                # the generator uses (dark_siren_injection W_k sampler, restricted to
+                # this pixel up to p_pop->p_GW), so B_num integrates exactly the
+                # injected dark density at the event direction.
                 f_z: npt.NDArray[np.float64] = np.clip(
                     np.asarray(
-                        completeness.get_completeness_at_redshift(z, self.h),
+                        completeness.f_k(z, _event_pixel, self.h),
                         dtype=np.float64,
                     ),
                     0.0,

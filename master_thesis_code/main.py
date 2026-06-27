@@ -384,16 +384,17 @@ def data_simulation(
         compute_global_catalog_fraction,
         draw_mixture_hosts,
     )
-    from master_thesis_code.galaxy_catalogue.glade_completeness import GladeCatalogCompleteness
+    from master_thesis_code.galaxy_catalogue.pixel_completeness import from_cache_or_build
 
-    # CHANGE 4b: split injected hosts into an in-catalog fraction F and an
+    # CHANGE 4b/5: split injected hosts into an in-catalog fraction F and an
     # out-of-catalog (dark) fraction 1-F so the injected population matches the
     # inference mixture f*L_cat + (1-f)*L_comp (Gray et al. 2020 Eq. 9; Chen et
-    # al. 2024 arXiv:2212.08694 self-consistency). F is the completeness f(z)
+    # al. 2024 arXiv:2212.08694 self-consistency). F is the completeness f_bar(z)
     # marginalised over the source-frame redshift population prior; it is
-    # precomputed ONCE per run at the injection cosmology h_value with the SAME
-    # completeness object the inference uses.
-    completeness = GladeCatalogCompleteness()
+    # precomputed ONCE per run at the injection cosmology h_value. The completeness
+    # object is the per-pixel PixelCompleteness loaded from the SAME frozen cached
+    # m_th map the inference uses (C1 byte-identity; bayesian_statistics.evaluate).
+    completeness = from_cache_or_build()
     global_catalog_fraction = compute_global_catalog_fraction(
         completeness, h=h_value, z_max=HOST_DRAW_Z_MAX
     )
