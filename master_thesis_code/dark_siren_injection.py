@@ -111,6 +111,14 @@ class _CompletenessModel(Protocol):
         h: float = ...,
     ) -> float | npt.NDArray[np.floating[Any]]: ...
 
+    def f_bar(
+        self,
+        z: float | npt.NDArray[np.floating[Any]],
+        h: float = ...,
+    ) -> float | npt.NDArray[np.floating[Any]]:
+        """Sky-averaged completeness ``f_bar(z, h)`` (Change 5.4)."""
+        ...
+
 
 class _RateWeightedHostSource(Protocol):
     """Structural type for the in-catalog rate-weighted host source.
@@ -211,9 +219,9 @@ def compute_global_catalog_fraction(
                  {\int_{z_\mathrm{min}}^{z_\mathrm{max}} p_\mathrm{pop}(z)\,dz},
         \qquad p_\mathrm{pop}(z) \propto \frac{1}{1+z}\,\frac{dV_c}{dz},
 
-    where ``f(z) = completeness.get_completeness_at_redshift(z, h)`` is the SAME
-    completeness the inference uses for the per-event mixing weight (Gray et al.
-    2020, Eq. 9). The mass-integrated EMRI rate is redshift independent and
+    where ``f_bar(z, h) = completeness.f_bar(z, h)`` is the SKY-AVERAGED
+    completeness the inference's ``beta_Gbar`` uses (Gray et al. 2020, Eq. 9;
+    Gray-Messenger-Veitch 2022, Eq. 3). The mass-integrated EMRI rate is redshift independent and
     cancels between numerator and denominator, so it is omitted from
     ``p_pop(z)``. ``F`` is precomputed once per run and used as the per-event
     ``Bernoulli(F)`` in/out-of-catalog split probability.
@@ -244,7 +252,11 @@ def compute_global_catalog_fraction(
         Chen, Fishbach & Holz (2024), arXiv:2212.08694.
     """
     z_grid = np.linspace(z_min, z_max, n_grid, dtype=np.float64)
-    f_z = np.asarray(completeness.get_completeness_at_redshift(z_grid, h), dtype=np.float64)
+    # Change 5.4: F is the direction-AND-population-averaged in-catalog fraction, so
+    # it uses the sky-averaged completeness f_bar(z,h) = (1/Npix) sum_k f_k (Gray
+    # 2020 Eq. 9; Gray-Messenger-Veitch 2022 Eq. 3). f_bar is the SAME object the
+    # inference's beta_Gbar uses (bayesian_statistics), closing the sim/inference loop.
+    f_z = np.asarray(completeness.f_bar(z_grid, h), dtype=np.float64)
     f_z = np.clip(f_z, 0.0, 1.0)
     p_pop = _redshift_population_weight(z_grid, h)
 

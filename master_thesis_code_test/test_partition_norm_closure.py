@@ -89,6 +89,14 @@ class _ZCompleteness:
     ) -> FloatArr:
         return np.clip(self._f(np.asarray(z, dtype=np.float64)), 0.0, 1.0)
 
+    def f_bar(self, z: float | FloatArr, h: float = 0.0) -> FloatArr:
+        # Omega-independent stub: the sky-average equals f(z) (Change 5.2/5.4).
+        return self.get_completeness_at_redshift(z, h)
+
+    def f_k(self, z: float | FloatArr, k: int, h: float = 0.0) -> FloatArr:
+        # Omega-independent stub: every pixel shares the same f(z) (Change 5.3).
+        return self.get_completeness_at_redshift(z, h)
+
 
 class _ClosureCatalog:
     """Minimal catalog handler exposing ``reduced_galaxy_catalog`` (z, M columns)."""

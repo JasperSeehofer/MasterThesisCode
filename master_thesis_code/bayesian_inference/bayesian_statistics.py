@@ -355,12 +355,17 @@ def precompute_missing_completion_denominator(
             dVc: npt.NDArray[np.float64] = np.atleast_1d(
                 np.asarray(comoving_volume_element(z, h=_h), dtype=np.float64)
             )
-            # Incompleteness weight (1 - f(z)). Eq. (33) in Gray et al. (2020),
-            # arXiv:1908.06050; f(z) is the SAME call the generator uses
-            # (dark_siren_injection), closing the sim/inference loop. The 1/(1+z)
-            # time dilation and dVc match D(h) exactly so beta_G = D - beta_Gbar.
+            # Incompleteness weight (1 - f_bar(z,h)). Eq. (33) in Gray et al.
+            # (2020), arXiv:1908.06050, with the SKY-AVERAGED completeness
+            # f_bar = (1/Npix) sum_k f_k (Gray-Messenger-Veitch 2022 Eq. 3, Change
+            # 5.2): beta_Gbar is the SKY-INTEGRATED missing-volume selection, so the
+            # sky-uniform p_det pulls out and only the Omega-marginal f_bar enters.
+            # f_bar is the SAME object the generator's F uses, closing the
+            # sim/inference loop. The 1/(1+z) and dVc match D(h) so beta_G =
+            # D - beta_Gbar. (Valid because p_det is sky-uniform; if real LISA sky
+            # dependence is restored this must become sum_k f_k p_det(z,Omega_k).)
             f_z = np.clip(
-                np.asarray(completeness.get_completeness_at_redshift(z, _h), dtype=np.float64),
+                np.asarray(completeness.f_bar(z, _h), dtype=np.float64),
                 0.0,
                 1.0,
             )
