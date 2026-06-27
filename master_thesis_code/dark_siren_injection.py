@@ -56,7 +56,7 @@ References:
 """
 
 import logging
-from typing import Any, Protocol
+from typing import Any, Protocol, runtime_checkable
 
 import numpy as np
 import numpy.typing as npt
@@ -118,6 +118,40 @@ class _CompletenessModel(Protocol):
     ) -> float | npt.NDArray[np.floating[Any]]:
         """Sky-averaged completeness ``f_bar(z, h)`` (Change 5.4)."""
         ...
+
+
+@runtime_checkable
+class _PixelDarkSampler(Protocol):
+    """Per-pixel completeness interface used by the FIX-A joint dark draw.
+
+    Satisfied by
+    :class:`~master_thesis_code.galaxy_catalogue.pixel_completeness.PixelCompleteness`
+    but NOT by the Omega-independent
+    :class:`~master_thesis_code.galaxy_catalogue.glade_completeness.GladeCatalogCompleteness`,
+    so :func:`draw_dark_hosts` dispatches to the per-pixel ``W_k`` sampler only
+    when the completeness carries genuine sky structure; the Omega-independent
+    case falls back to the legacy isotropic draw (the EXACT limiting case (a),
+    DERIVATION Sec. 5a).  ``@runtime_checkable`` so the dispatch is an
+    ``isinstance`` membership test on the method set.
+    """
+
+    @property
+    def npix(self) -> int: ...
+
+    def f_k(
+        self, z: float | npt.NDArray[np.floating[Any]], k: int, h: float = ...
+    ) -> float | npt.NDArray[np.float64]: ...
+
+    def pixel_dark_weights(
+        self,
+        z_grid: npt.NDArray[np.float64],
+        p_pop: npt.NDArray[np.float64],
+        h: float,
+    ) -> npt.NDArray[np.float64]: ...
+
+    def sample_sky_in_pixels(
+        self, pix: npt.NDArray[np.int_], rng: np.random.Generator
+    ) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]: ...
 
 
 class _RateWeightedHostSource(Protocol):
@@ -281,14 +315,15 @@ def _draw_dark_redshifts(
     size: int,
     n_grid: int = _DEFAULT_Z_GRID_POINTS,
 ) -> npt.NDArray[np.float64]:
-    r"""Sample dark-host redshifts ``∝ (1 - f(z)) / (1 + z) * dVc/dz``.
+    r"""Sample dark-host redshifts ``∝ (1 - f_bar(z)) / (1 + z) * dVc/dz``.
 
-    This is the missing-galaxy (out-of-catalog) redshift density: the source
-    population prior ``p_pop(z) ∝ dVc/dz / (1+z)`` weighted by the
-    *incompleteness* ``1 - f(z)``.
+    The Omega-INDEPENDENT (limiting case a) missing-galaxy redshift density: the
+    source population prior ``p_pop(z) ∝ dVc/dz / (1+z)`` weighted by the
+    sky-averaged *incompleteness* ``1 - f_bar(z)``. The per-pixel (FIX-A) draw is
+    :func:`_draw_dark_hosts_pixelated`.
     """
     z_grid = np.linspace(z_min, z_max, n_grid, dtype=np.float64)
-    f_z = np.asarray(completeness.get_completeness_at_redshift(z_grid, h), dtype=np.float64)
+    f_z = np.asarray(completeness.f_bar(z_grid, h), dtype=np.float64)
     f_z = np.clip(f_z, 0.0, 1.0)
     density = (1.0 - f_z) * _redshift_population_weight(z_grid, h)
     return _inverse_cdf_sample(rng, z_grid, density, size)
@@ -335,6 +370,62 @@ def _draw_isotropic_sky(
     return phiS, qS
 
 
+def _draw_dark_hosts_pixelated(
+    number_of_hosts: int,
+    rng: np.random.Generator,
+    completeness: _PixelDarkSampler,
+    h: float,
+    z_min: float,
+    z_max: float,
+    n_grid: int,
+) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64], npt.NDArray[np.float64]]:
+    r"""FIX-A joint ``(z, Omega, pixel)`` dark-host draw (Change 5.5).
+
+    The dark density ``p_dark(z, Omega) ∝ (1 - f_k(z)) p_pop(z) p(Omega)`` does NOT
+    factorize -- dark hosts concentrate where ``f_k`` is small (Gray-Messenger-
+    Veitch 2022, arXiv:2111.04629, Sec. V; DERIVATION Sec. 3):
+
+    1. ``W_k   = INTEGRAL (1 - f_k(z)) p_pop(z) dz``   (one 1-D quad per pixel)
+    2. ``k*   ∝ W_k``                                  (categorical over pixels)
+    3. ``z|k* ∝ (1 - f_{k*}(z)) p_pop(z)``             (1-D inverse-CDF, that column)
+    4. ``(phi, theta)`` uniform within pixel ``k*``    (equal-area HEALPix cell)
+
+    This reproduces ``p(z, k) ∝ (1 - f_k(z)) p_pop(z)`` exactly and recovers
+    ``p(Omega)`` by uniform-in-pixel sampling; the ``∝ W_k`` pixel weighting IS the
+    density weighting FIX-A demands. Returns ``(z, phiS, qS)``; masses are drawn
+    separately (``w_g ⊥ (z, Omega)``).
+
+    Returns:
+        ``(redshifts, phiS, qS)`` arrays of length ``number_of_hosts`` (qS is the
+        polar angle / colatitude in ``[0, pi]``).
+    """
+    z_grid = np.linspace(z_min, z_max, n_grid, dtype=np.float64)
+    p_pop = _redshift_population_weight(z_grid, h)
+
+    # 1. + 2. per-pixel weight W_k and pixel selection k* ∝ W_k.
+    w_k = completeness.pixel_dark_weights(z_grid, p_pop, h)
+    total = float(np.sum(w_k))
+    if not (total > 0.0):
+        raise ValueError(
+            f"Dark-host pixel weights integrate to a non-positive total ({total}); "
+            "cannot draw dark hosts (is the completeness 1 everywhere?)."
+        )
+    pix_choices = rng.choice(completeness.npix, size=number_of_hosts, p=w_k / total)
+
+    # 3. z | k* ∝ (1 - f_{k*}(z)) p_pop(z), grouped by unique pixel to reuse the
+    # per-pixel completeness column.
+    redshifts = np.empty(number_of_hosts, dtype=np.float64)
+    for k in np.unique(pix_choices):
+        mask = pix_choices == k
+        f_k_z = np.clip(np.asarray(completeness.f_k(z_grid, int(k), h), dtype=np.float64), 0.0, 1.0)
+        density = (1.0 - f_k_z) * p_pop
+        redshifts[mask] = _inverse_cdf_sample(rng, z_grid, density, int(np.count_nonzero(mask)))
+
+    # 4. sky uniform within the chosen pixel.
+    phiS, qS = completeness.sample_sky_in_pixels(pix_choices, rng)
+    return redshifts, phiS, qS
+
+
 def draw_dark_hosts(
     number_of_hosts: int,
     rng: np.random.Generator,
@@ -349,17 +440,24 @@ def draw_dark_hosts(
 ) -> list[HostGalaxy]:
     r"""Draw ``number_of_hosts`` out-of-catalog (dark) EMRI hosts.
 
-    Each host's redshift, source-frame MBH mass, and sky position are drawn
-    independently from the missing-galaxy population (``z`` and ``M`` factorise
-    because the population density is mass-redshift separable under the
-    ``p0 = 1`` surrogate):
+    The MBH mass is always drawn from the per-dex EMRI-rate marginal
+    (``log10 M ∝ mbh_mass_function(M) * R_eff_per_mbh(M)``; ``w_g ⊥ (z, Omega)``).
+    The ``(z, sky)`` draw depends on whether the completeness carries sky
+    structure:
 
-    * ``z ∝ (1 - f(z)) / (1 + z) * dVc/dz`` over ``[z_min, z_max]`` (1-D
-      inverse-CDF), where ``f(z)`` is the catalog completeness;
-    * ``log10 M ∝ mbh_mass_function(M) * R_eff_per_mbh(M)`` over
-      ``[M_min, M_max]`` (1-D inverse-CDF, per-dex marginal);
-    * sky isotropic (``phiS`` uniform on ``[0, 2pi)``,
-      ``qS = arccos(U[-1, 1])``).
+    * **Per-pixel completeness (Change 5.5 / FIX-A)** -- when ``completeness`` is a
+      :class:`_PixelDarkSampler` (e.g. ``PixelCompleteness``), ``(z, Omega)`` are
+      drawn JOINTLY from ``p_dark(z, Omega) ∝ (1 - f_k(z)) p_pop(z) p(Omega)`` via
+      the ``W_k`` sampler (:func:`_draw_dark_hosts_pixelated`): pick pixel
+      ``k* ∝ W_k = INTEGRAL (1 - f_k) p_pop dz``, then ``z|k* ∝ (1 - f_{k*}(z))
+      p_pop(z)``, then sky uniform within pixel ``k*``. Dark hosts concentrate in
+      low-completeness (incl. Zone-of-Avoidance ``f_k == 0``) directions, matching
+      the inference's per-pixel ``B_num``.
+    * **Omega-independent completeness (limiting case a)** -- otherwise ``z`` is the
+      1-D inverse-CDF of ``(1 - f_bar(z)) / (1 + z) * dVc/dz`` and the sky is
+      isotropic (``phiS`` uniform on ``[0, 2pi)``, ``qS = arccos(U[-1, 1])``). This
+      is EXACTLY the per-pixel draw when ``f_k`` has no sky dependence (every
+      ``W_k`` equal => uniform pixel pick + isotropic sky; DERIVATION Sec. 5a).
 
     There is NO catalog snap and NO catalog lookup -- the returned values are
     the drawn ones. Each host is a
@@ -391,11 +489,19 @@ def draw_dark_hosts(
     if number_of_hosts <= 0:
         return []
 
-    redshifts = _draw_dark_redshifts(
-        rng, completeness, h, z_min, z_max, number_of_hosts, z_grid_points
-    )
+    if isinstance(completeness, _PixelDarkSampler):
+        # FIX-A joint (z, Omega, pixel) draw (Change 5.5): dark hosts cluster in
+        # low-f_k directions, matching the inference completion term per pixel.
+        redshifts, phiS, qS = _draw_dark_hosts_pixelated(
+            number_of_hosts, rng, completeness, h, z_min, z_max, z_grid_points
+        )
+    else:
+        # Omega-independent fallback (limiting case a): 1-D z draw + isotropic sky.
+        redshifts = _draw_dark_redshifts(
+            rng, completeness, h, z_min, z_max, number_of_hosts, z_grid_points
+        )
+        phiS, qS = _draw_isotropic_sky(rng, number_of_hosts)
     masses = _draw_dark_masses(rng, M_min, M_max, number_of_hosts, m_grid_points)
-    phiS, qS = _draw_isotropic_sky(rng, number_of_hosts)
 
     hosts: list[HostGalaxy] = []
     for index in range(number_of_hosts):
