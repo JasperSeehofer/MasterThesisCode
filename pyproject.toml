@@ -16,6 +16,7 @@ dependencies = [
     "astropy>=6.1.7",
     "corner>=2.2.3",
     "cmcrameri>=1.9",
+    "astropy-healpix>=1.1.3",
 ]
 
 [project.urls]

@@ -138,6 +138,11 @@ class HostGalaxy:
 class CatalogueColumns(Enum):
     RIGHT_ASCENSION = 8  # in deg
     DECLINATION = 9  # in deg
+    # Change 5 (pixelated completeness): apparent B-band magnitude (GLADE+ raw
+    # 0-based col 10; NGC4736 = 8.8 verified). Feeds the per-HEALPix-pixel
+    # magnitude-threshold completeness estimator (Gray-Messenger-Veitch 2022,
+    # arXiv:2111.04629). MUST stay ascending-by-value (usecols/names alignment).
+    APPARENT_B_MAG = 10  # in mag (apparent B-band; null for ~25-39% of rows)
     REDSHIFT = 27
     REDSHIFT_PECULIAR_VELOCITY_ERROR = 30
     REDSHIFT_MEASUREMENT_ERROR = 31
@@ -150,6 +155,7 @@ class CatalogueColumns(Enum):
 class InternalCatalogColumns:
     PHI_S = "RIGHT_ASCENSION"
     THETA_S = "DECLINATION"
+    B_MAG = "APPARENT_B_MAG"  # Change 5: apparent B-band magnitude (per-pixel m_th)
     REDSHIFT = "REDSHIFT"
     REDSHIFT_ERROR = "REDSHIFT_MEASUREMENT_ERROR"
     BH_MASS = "STELLAR_MASS"
