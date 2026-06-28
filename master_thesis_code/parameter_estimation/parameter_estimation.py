@@ -8,6 +8,7 @@ all 14 EMRI parameters.
 """
 
 import logging
+import os
 import time
 import types
 import warnings
@@ -125,7 +126,12 @@ class ParameterEstimation:
         self.lisa_configuration = LisaTdiConfiguration()
         self._psd_cache: dict[int, tuple[Any, Any, int, int]] = {}
         self._crb_buffer: list[dict] = []
-        self._crb_flush_interval: int = 25  # ROADMAP SC-2: batch CRB writes to reduce Lustre I/O
+        # ROADMAP SC-2: batch CRB writes to reduce Lustre I/O. Flush every 5 (was 25):
+        # caps worst-case loss on a hard kill (SLURM TIMEOUT/preemption on short
+        # partitions) to <= interval-1 detections per task. Combined with append-mode
+        # flushing (flush_pending_results), this is LOWER total I/O than the old
+        # every-25 read-modify-write, so it improves both robustness and Lustre load.
+        self._crb_flush_interval: int = 5
         _LOGGER.info("parameter estimation initialized.")
 
     def _get_cached_psd(self, n: int) -> tuple[Any, Any, int, int]:
@@ -480,11 +486,21 @@ class ParameterEstimation:
             self.flush_pending_results()
 
     def flush_pending_results(self) -> None:
-        """Write all buffered Cramér-Rao bound rows to disk and clear the buffer.
+        """Append all buffered Cramér-Rao bound rows to disk and clear the buffer.
 
-        Call this at the end of a simulation run to ensure no results are lost.
-        Rows are grouped by simulation index so a single read/write per file replaces
-        one read/write per detection (the previous behaviour).
+        Call this at the end of a simulation run to ensure no results are lost, and
+        periodically (every ``_crb_flush_interval`` detections) during the run.
+
+        Rows are grouped by simulation index (in practice always the same within a
+        job) and APPENDED to each file (``mode="a"``), writing only the buffered rows
+        rather than re-reading and rewriting the whole growing CSV. Each array task
+        writes its OWN file, so there are no concurrent writers and append is safe.
+        Append makes each flush O(buffer) instead of O(total), so frequent flushing
+        (small ``_crb_flush_interval``) costs LESS Lustre I/O than the old every-25
+        read-modify-write while bounding hard-kill data loss. The header is written
+        only when the file does not yet exist (or is empty); the per-detection row
+        dict is constructed identically every time, so columns stay aligned across
+        appends.
         """
         if not self._crb_buffer:
             return
@@ -495,13 +511,9 @@ class ParameterEstimation:
             by_index.setdefault(idx, []).append(row)
         for sim_idx, rows in by_index.items():
             file_path = CRAMER_RAO_BOUNDS_PATH.replace("$index", str(sim_idx))
-            try:
-                existing = pd.read_csv(file_path)
-            except FileNotFoundError:
-                existing = pd.DataFrame(columns=list(rows[0].keys()))
-            combined = pd.concat([existing, pd.DataFrame(rows)], ignore_index=True)
-            combined.to_csv(file_path, index=False)
-            _LOGGER.info(f"Flushed {len(rows)} Cramér-Rao bounds to {file_path}")
+            write_header = (not os.path.exists(file_path)) or os.path.getsize(file_path) == 0
+            pd.DataFrame(rows).to_csv(file_path, mode="a", header=write_header, index=False)
+            _LOGGER.info(f"Appended {len(rows)} Cramér-Rao bounds to {file_path}")
         self._crb_buffer.clear()
 
     def SNR_analysis(self) -> None:
