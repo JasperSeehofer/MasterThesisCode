@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 from scipy.stats import truncnorm
 
+from master_thesis_code.constants import ECLIPTIC_FRAME_TAG
 from master_thesis_code.physical_relations import dist
 
 _LOGGER = logging.getLogger(__name__)
@@ -94,12 +95,17 @@ class Detection:
     WL_uncertainty: float = 0.0  # Gpc, weak-lensing contribution to d_L uncertainty
 
     def __init__(self, parameters: pd.Series) -> None:
-        _expected = "ecliptic_BarycentricTrue_J2000"
+        _expected = ECLIPTIC_FRAME_TAG
         for col in ("_coord_frame", "_cov_frame"):
             if col not in parameters.index:
                 raise ValueError(
-                    f"Detection: '{col}' missing from CRB row — "
-                    "run migrate_crb_to_ecliptic.py before evaluation"
+                    f"Detection: '{col}' missing from CRB row. Fresh runs are stamped "
+                    "at simulation time (parameter_estimation.save_cramer_rao_bound) and "
+                    "need NOTHING further. If this is a fresh post-COORD-03 CRB it is "
+                    "already ecliptic — stamp the markers WITHOUT rotating "
+                    "(`migrate_crb_to_ecliptic.py --stamp-only`). Run a ROTATING migration "
+                    "ONLY for genuine legacy pre-COORD-03 (commit b460297) equatorial CRBs. "
+                    "See .planning/FRAME-AUDIT.md."
                 )
             if parameters[col] != _expected:
                 raise ValueError(
