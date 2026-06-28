@@ -69,6 +69,26 @@ def test_save_cramer_rao_bound_creates_csv(
     assert len(df) == 1
 
 
+def test_save_cramer_rao_bound_stamps_ecliptic_frame_markers(
+    tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Fresh CRBs are born self-describing: the simulation stamps the ecliptic frame
+    markers at write time so the Detection guard passes WITHOUT any migration
+    (no double-rotation risk). See .planning/FRAME-AUDIT.md."""
+    from master_thesis_code.constants import ECLIPTIC_FRAME_TAG
+
+    csv_path = str(tmp_path / "crb_simulation_$index.csv")
+    monkeypatch.setattr(pe_module, "CRAMER_RAO_BOUNDS_PATH", csv_path)
+
+    pe = _make_minimal_pe(tmp_path)
+    pe.save_cramer_rao_bound(cramer_rao_bound_dictionary={}, snr=25.0, simulation_index=0)
+
+    df = pd.read_csv(csv_path.replace("$index", "0"))
+    assert "_coord_frame" in df.columns and "_cov_frame" in df.columns
+    assert (df["_coord_frame"] == ECLIPTIC_FRAME_TAG).all()
+    assert (df["_cov_frame"] == ECLIPTIC_FRAME_TAG).all()
+
+
 def test_save_cramer_rao_bound_appends(
     tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

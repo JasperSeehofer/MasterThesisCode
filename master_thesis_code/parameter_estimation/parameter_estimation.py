@@ -30,6 +30,7 @@ except ImportError:
 
 from master_thesis_code.constants import (
     CRAMER_RAO_BOUNDS_PATH,
+    ECLIPTIC_FRAME_TAG,
     ESA_TDI_CHANNELS,
     MAXIMAL_FREQUENCY,
     MINIMAL_FREQUENCY,
@@ -478,6 +479,15 @@ class ParameterEstimation:
                 "generation_time": self.waveform_generation_time,
                 "host_galaxy_index": host_galaxy_index,
                 "in_catalog": in_catalog,
+                # Frame provenance: qS/phiS and the Fisher covariance are ecliptic
+                # BarycentricTrueEcliptic(J2000) by construction — the waveform
+                # (ResponseWrapper, is_ecliptic_latitude=False) is differentiated
+                # w.r.t. ecliptic angles and the host comes from the ecliptic-rotated
+                # catalog. Stamping the tag here makes fresh CRBs self-describing so
+                # the Detection guard passes WITHOUT any migration (NEVER rotate a
+                # fresh run). See .planning/FRAME-AUDIT.md.
+                "_coord_frame": ECLIPTIC_FRAME_TAG,
+                "_cov_frame": ECLIPTIC_FRAME_TAG,
                 "_simulation_index": simulation_index,
             }
         )
