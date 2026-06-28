@@ -151,10 +151,16 @@ class CatalogueColumns(Enum):
     STELLAR_MASS_ABSOULTE_ERROR = 36  # in 10^10 solar masses
 
 
-# IMPORTANT: needs to be in the correct order as above.
+# In-memory column keys for the loaded catalog. The sky columns use the
+# frame-NEUTRAL physics symbols PHI_S/THETA_S, NOT "RIGHT_ASCENSION"/"DECLINATION":
+# read_reduced_galaxy_catalog renames the raw equatorial RA/Dec columns to these,
+# and _rotate_equatorial_to_ecliptic (COORD-03) rotates them IN PLACE to ecliptic.
+# So after handler init these hold ecliptic φ (rad) and polar angle θ ∈ [0, π] (rad),
+# BarycentricTrueEcliptic(J2000). The remaining keys below are CatalogueColumns names.
+# See .planning/FRAME-AUDIT.md.
 class InternalCatalogColumns:
-    PHI_S = "RIGHT_ASCENSION"
-    THETA_S = "DECLINATION"
+    PHI_S = "PHI_S"  # sky azimuth φ: equatorial RA on read, ecliptic longitude after rotation
+    THETA_S = "THETA_S"  # sky polar angle θ ∈ [0, π]; ecliptic colatitude after rotation
     B_MAG = "APPARENT_B_MAG"  # Change 5: apparent B-band magnitude (per-pixel m_th)
     REDSHIFT = "REDSHIFT"
     REDSHIFT_ERROR = "REDSHIFT_MEASUREMENT_ERROR"
@@ -309,17 +315,30 @@ class GalaxyCatalogueHandler:
             catalog.at[index, CatalogueColumns.REDSHIFT_MEASUREMENT_ERROR.name] = new_redshift_error
 
     def read_reduced_galaxy_catalog(self) -> pd.DataFrame:
-        return pd.read_csv(
+        """Load the reduced catalog (RAW equatorial ICRS degrees, pre-rotation).
+
+        The on-disk sky columns are GLADE equatorial RA/Dec (deg). They are renamed
+        to the frame-NEUTRAL symbols ``PHI_S``/``THETA_S`` so that the in-place
+        equatorial→ecliptic rotation (``_rotate_equatorial_to_ecliptic``, COORD-03)
+        does not leave a column literally named "RIGHT_ASCENSION" holding an ecliptic
+        longitude. After that rotation these columns hold ecliptic φ (rad) and polar
+        angle θ ∈ [0, π] (rad). See .planning/FRAME-AUDIT.md.
+        """
+        catalog = pd.read_csv(
             REDUCED_CATALOGUE_FILE_PATH,
             names=[column.name for column in CatalogueColumns if column.value not in [30, 34]],
         )
+        return catalog.rename(
+            columns={
+                CatalogueColumns.RIGHT_ASCENSION.name: InternalCatalogColumns.PHI_S,
+                CatalogueColumns.DECLINATION.name: InternalCatalogColumns.THETA_S,
+            }
+        )
 
     def setup_galaxy_catalog_balltree(self) -> None:
-        # expects the reduced galaxy catalog to be setup already
-        # Columns were historically named RA/Dec (GLADE equatorial) but after
-        # Plan 36-01 (_rotate_equatorial_to_ecliptic), they hold ecliptic polar-
-        # angle pairs (θ_polar ∈ [0, π], φ ∈ [0, 2π)). The column constants
-        # PHI_S / THETA_S are kept for backward compatibility; see CONTEXT.md D-13.
+        # expects the reduced galaxy catalog to be setup already. The PHI_S/THETA_S
+        # columns hold ECLIPTIC angles after _rotate_equatorial_to_ecliptic (COORD-03):
+        # θ_polar ∈ [0, π], φ ∈ [0, 2π). See .planning/FRAME-AUDIT.md.
         phi = self.reduced_galaxy_catalog[InternalCatalogColumns.PHI_S].values
         theta = self.reduced_galaxy_catalog[InternalCatalogColumns.THETA_S].values
 
@@ -996,10 +1015,6 @@ def _polar_to_cartesian(
     """
     # Eq. (standard spherical polar); .planning/phases/36-coordinate-frame-fix/36-CONTEXT.md D-17
     return np.vstack((np.sin(theta) * np.cos(phi), np.sin(theta) * np.sin(phi), np.cos(theta))).T
-
-
-def _polar_angle_to_declination(polar_angle: float) -> float:
-    return np.pi / 2 - polar_angle
 
 
 def _empiric_stellar_mass_to_BH_mass_relation(
