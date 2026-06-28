@@ -23,9 +23,15 @@
 # via command line so that shell variables (e.g. %A, %a) are expanded correctly.
 
 #SBATCH --job-name=emri-simulate
-#SBATCH --partition=gpu_h100
+# gpu_h100_short (28 H100 GPUs, 30-min wall): tasks are TIME-capped (they run to the
+# wall and merge tolerates the timeout via afterany), so a 30-min wall just halves
+# each task's event yield -- compensated by doubling --tasks. Short jobs backfill
+# constantly and are never blocked behind multi-day jobs, so they start far sooner
+# than the contended gpu_h100 partition. Same H100 hardware -> identical per-event
+# CRBs; only the per-task event count changes.
+#SBATCH --partition=gpu_h100_short
 #SBATCH --gres=gpu:1
-#SBATCH --time=01:00:00
+#SBATCH --time=00:30:00
 #SBATCH --ntasks=1
 
 set -euo pipefail
