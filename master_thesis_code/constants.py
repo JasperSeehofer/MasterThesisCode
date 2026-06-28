@@ -70,6 +70,17 @@ CRAMER_RAO_BOUNDS_OUTPUT_PATH: str = "simulations/cramer_rao_bounds.csv"
 SNR_ANALYSIS_PATH: str = "simulations/snr_analysis.csv"
 PREPARED_CRAMER_RAO_BOUNDS_PATH: str = "simulations/prepared_cramer_rao_bounds.csv"
 
+# ── Coordinate-frame provenance tag (the SINGLE source of truth) ──────────────
+# Every sky angle (qS/phiS) and sky covariance in this pipeline is in the
+# barycentric ecliptic frame BarycentricTrueEcliptic(J2000) AFTER the one-and-only
+# rotation at GLADE ingestion (handler._rotate_equatorial_to_ecliptic, COORD-03,
+# commit b460297). A fresh simulation run is ECLIPTIC-NATIVE and must NEVER be
+# rotated again; the rotating scripts/migrate_crb_to_ecliptic.py is for LEGACY
+# pre-COORD-03 equatorial CRBs ONLY. The simulation stamps this tag into the
+# `_coord_frame`/`_cov_frame` CRB columns at write time so the data is
+# self-describing and the evaluation guard passes natively (see .planning/FRAME-AUDIT.md).
+ECLIPTIC_FRAME_TAG: str = "ecliptic_BarycentricTrue_J2000"
+
 # Injection campaign paths (for simulation-based detection probability)
 INJECTION_DATA_DIR: str = "simulations/injections"
 INJECTION_CSV_PATH: str = "simulations/injections/injection_h_{h_label}_task_{index}.csv"
