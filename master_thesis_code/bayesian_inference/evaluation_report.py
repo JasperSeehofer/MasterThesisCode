@@ -513,31 +513,46 @@ def generate_diagnostic_summary(
     """
     df = pd.read_csv(diagnostic_csv_path)
 
-    # --- Per-event f_i statistics (use mean across h-values per event) ---
-    event_fi = df.groupby("event_idx")["f_i"].mean()
-    mean_f_i = float(event_fi.mean())
-    median_f_i = float(event_fi.median())
-    min_f_i = float(event_fi.min())
-    max_f_i = float(event_fi.max())
+    # Schema resolution (robust to the partition-norm restructure, commit f1232de):
+    # the per-event catalog-membership weight f_i was DROPPED in favour of the
+    # event-independent mixing weight w_G = beta_G/D(h). Resolve whichever is
+    # present so this diagnostic NEVER crashes the combine step on either schema
+    # (the stale-f_i KeyError previously failed the whole combine job).
+    weight_col = next((c for c in ("f_i", "w_G") if c in df.columns), None)
+    lcat_col = next((c for c in ("L_cat_no_bh", "L_cat") if c in df.columns), None)
+    has_lcomp = "L_comp" in df.columns
+
+    # --- Per-event catalog-weight statistics (mean across h-values per event) ---
+    if weight_col is not None:
+        event_fi = df.groupby("event_idx")[weight_col].mean()
+        mean_f_i = float(event_fi.mean())
+        median_f_i = float(event_fi.median())
+        min_f_i = float(event_fi.min())
+        max_f_i = float(event_fi.max())
+    else:
+        _LOGGER.warning("Diagnostic CSV has no f_i/w_G column; skipping catalog-weight stats.")
+        mean_f_i = median_f_i = min_f_i = max_f_i = float("nan")
 
     # --- L_comp statistics ---
-    mean_L_comp = float(df["L_comp"].mean())
-    median_L_comp = float(df["L_comp"].median())
+    mean_L_comp = float(df["L_comp"].mean()) if has_lcomp else float("nan")
+    median_L_comp = float(df["L_comp"].median()) if has_lcomp else float("nan")
 
-    # --- L_comp weight in combination: (1-f_i)*L_comp vs f_i*L_cat ---
-    df_normal = df[df["f_i"] < 1.0].copy()
-    if len(df_normal) > 0:
-        df_normal.loc[:, "L_comp_weight"] = (1 - df_normal["f_i"]) * df_normal["L_comp"]
-        df_normal.loc[:, "L_cat_weight"] = df_normal["f_i"] * df_normal["L_cat_no_bh"]
-        total_combined = df_normal["L_comp_weight"] + df_normal["L_cat_weight"]
-        safe_mask = total_combined > 0
-        mean_L_comp_frac = (
-            float((df_normal.loc[safe_mask, "L_comp_weight"] / total_combined[safe_mask]).mean())
-            if safe_mask.any()
-            else 0.0
-        )
-    else:
-        mean_L_comp_frac = 0.0
+    # --- L_comp weight in combination: (1-w)*L_comp vs w*L_cat ---
+    mean_L_comp_frac = 0.0
+    if weight_col is not None and lcat_col is not None and has_lcomp:
+        df_normal = df[df[weight_col] < 1.0].copy()
+        if len(df_normal) > 0:
+            df_normal.loc[:, "L_comp_weight"] = (1 - df_normal[weight_col]) * df_normal["L_comp"]
+            df_normal.loc[:, "L_cat_weight"] = df_normal[weight_col] * df_normal[lcat_col]
+            total_combined = df_normal["L_comp_weight"] + df_normal["L_cat_weight"]
+            safe_mask = total_combined > 0
+            mean_L_comp_frac = (
+                float(
+                    (df_normal.loc[safe_mask, "L_comp_weight"] / total_combined[safe_mask]).mean()
+                )
+                if safe_mask.any()
+                else 0.0
+            )
 
     # --- Fraction of events where L_comp pulls toward lower h ---
     # Compare L_comp at lowest h vs highest h per event
@@ -547,7 +562,7 @@ def generate_diagnostic_summary(
     n_events_compared = 0
     h_low = 0.0
     h_high = 0.0
-    if len(h_values_sorted) >= 2:
+    if has_lcomp and len(h_values_sorted) >= 2:
         h_low = h_values_sorted[0]
         h_high = h_values_sorted[-1]
         # Find the two h-values closest to 0.66 and 0.73 if available
