@@ -1452,6 +1452,47 @@ def generate_figures(output_dir: str) -> None:
 
     manifest.append(("fig20_pdet_surface", _gen_pdet_surface))
 
+    # 21-23. Per-pixel HEALPix catalog completeness (Change 5, GMV-2022). These use
+    # ONLY the committed frozen m_th map (no run data), so they always render and
+    # show the pixelation/ZoA the inference's completeness actually uses.
+    def _gen_completeness_mth_skymap() -> tuple[object, object] | None:
+        try:
+            from master_thesis_code.galaxy_catalogue.pixel_completeness import from_cache_or_build
+            from master_thesis_code.plotting.completeness_plots import plot_completeness_sky_map
+
+            return plot_completeness_sky_map(from_cache_or_build(), quantity="m_th")
+        except (FileNotFoundError, ValueError):
+            _ROOT_LOGGER.info("fig21 skipped: no m_th map / catalog available")
+            return None
+
+    manifest.append(("fig21_completeness_mth_skymap", _gen_completeness_mth_skymap))
+
+    def _gen_completeness_fk_skymap() -> tuple[object, object] | None:
+        try:
+            from master_thesis_code.galaxy_catalogue.pixel_completeness import from_cache_or_build
+            from master_thesis_code.plotting.completeness_plots import plot_completeness_sky_map
+
+            return plot_completeness_sky_map(from_cache_or_build(), quantity="f_k", z=0.05)
+        except (FileNotFoundError, ValueError):
+            _ROOT_LOGGER.info("fig22 skipped: no m_th map / catalog available")
+            return None
+
+    manifest.append(("fig22_completeness_fk_skymap_z0p05", _gen_completeness_fk_skymap))
+
+    def _gen_sky_averaged_completeness() -> tuple[object, object] | None:
+        try:
+            from master_thesis_code.galaxy_catalogue.pixel_completeness import from_cache_or_build
+            from master_thesis_code.plotting.completeness_plots import (
+                plot_sky_averaged_completeness,
+            )
+
+            return plot_sky_averaged_completeness(from_cache_or_build())
+        except (FileNotFoundError, ValueError):
+            _ROOT_LOGGER.info("fig23 skipped: no m_th map / catalog available")
+            return None
+
+    manifest.append(("fig23_sky_averaged_completeness", _gen_sky_averaged_completeness))
+
     # 16. Paper figure: H0 posterior comparison (D-01, D-09)
     def _gen_paper_h0_posterior() -> tuple[object, object] | None:
         from master_thesis_code.plotting.paper_figures import plot_h0_posterior_comparison

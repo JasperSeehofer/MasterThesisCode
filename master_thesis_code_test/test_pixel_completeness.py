@@ -100,6 +100,20 @@ def test_f_bar_equals_mean_of_f_k() -> None:
     np.testing.assert_allclose(f_bar, f_mean, rtol=0, atol=1e-13)
 
 
+def test_f_map_matches_per_pixel_f_k() -> None:
+    """f_map(z) returns the per-pixel f_k for every pixel; empty pixels == 0."""
+    pc = _mixed_map()
+    z = 0.08
+    fmap = pc.f_map(z, _H)
+    assert fmap.shape == (pc.npix,)
+    per_pixel = np.array([float(pc.f_k(z, k, _H)) for k in range(pc.npix)])
+    np.testing.assert_allclose(fmap, per_pixel, rtol=0, atol=1e-13)
+    # f_map averaged over all pixels equals f_bar (GMV Eq. 3).
+    assert abs(float(fmap.mean()) - float(pc.f_bar(z, _H))) < 1e-13
+    # Pixel 0 is empty (-inf m_th) in _mixed_map -> f_k == 0 there.
+    assert fmap[0] == 0.0
+
+
 def test_uniform_map_collapses_to_scalar_completeness() -> None:
     """All m_th equal => f_bar == f_k(any k) == a single f(z) (limiting case a)."""
     pc = _uniform_map(19.5)

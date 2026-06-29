@@ -249,6 +249,23 @@ class PixelCompleteness:
             return float(out[0])
         return out
 
+    def f_map(
+        self,
+        z: float,
+        h: float = H,
+    ) -> npt.NDArray[np.float64]:
+        r"""Full per-pixel completeness map ``f_k(z, h)`` over all ``npix`` pixels.
+
+        Convenience reduction (no new physics): returns the same ``f_k`` values as
+        :meth:`f_k` but for every pixel at once, with empty/ZoA pixels = 0. Used for
+        whole-sky visualisation and any all-pixel reduction. Shape ``(npix,)``.
+        """
+        out = np.zeros(self.npix, dtype=np.float64)
+        if np.any(self._valid):
+            z_arr = np.asarray([float(z)], dtype=np.float64)
+            out[self._valid] = self._f_from_mth(self._m_th_valid, z_arr, h)[0]
+        return out
+
     def f_bar(
         self,
         z: float | npt.NDArray[np.floating[Any]],
