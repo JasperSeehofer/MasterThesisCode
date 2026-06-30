@@ -27,10 +27,18 @@ M_max = 10**6
 Z_draw = 1.5
 
 
+# Stellar-mass -> central-BH-mass relation. Reines & Volonteri (2015), ApJ 813, 82,
+# arXiv:1508.06274, Eq. (5) (broad-line AGN, M_BH-M_*,total):
+#   log10(M_BH/Msun) = (7.45 +/- 0.08) + (1.05 +/- 0.11) * log10(M_*/1e11 Msun)
+# Constants are stored in natural-log units of ln(M_BH) (hence the * ln(10) factors).
 alpha = 7.45 * np.log(10)
 beta = 1.05
 d_alpha = 0.08 * np.log(10)
 d_beta = 0.11
+# Intrinsic scatter epsilon_0 = 0.24 dex (Reines & Volonteri 2015, Sec. 4.1): the true rms of
+# log10(M_BH) at fixed M_* once the calibration's virial measurement error (0.50 dex) is removed.
+# This is the DOMINANT M_BH-prediction uncertainty; it was previously omitted from BH_mass_error.
+sigma_int = 0.24 * np.log(10)
 
 
 @dataclass
@@ -1034,19 +1042,29 @@ def _empiric_stellar_mass_to_BH_mass_relation(
     stellar_mass: float, stellar_mass_error: float
 ) -> tuple[float, float]:
     BH_mass = np.exp(alpha + beta * np.log(stellar_mass / 10))
+    # Error budget in ln(M_BH): intrinsic scatter (DOMINANT) + fit-parameter uncertainties +
+    # propagated stellar-mass error. Reines & Volonteri (2015), arXiv:1508.06274, Sec. 4.1.
+    # d(ln M_BH)/d(M_*) = beta / M_* -- the 1e11 pivot is a constant, so the previous extra
+    # "/ 10" on the stellar-mass term was a bug (understated that term by 100x in variance).
     BH_mass_error = BH_mass * np.sqrt(
-        d_alpha**2
+        sigma_int**2
+        + d_alpha**2
         + (np.log(stellar_mass / 10) * d_beta) ** 2
-        + (beta / stellar_mass / 10 * stellar_mass_error) ** 2
+        + (beta / stellar_mass * stellar_mass_error) ** 2
     )
     return (BH_mass, BH_mass_error)
 
 
 def _empiric_MBH_to_M_stellar_relation(MBH_mass: float, MBH_mass_error: float) -> list:
     stellar_mass = 10 * np.exp((np.log(MBH_mass) - alpha) / beta)
+    # Inverse error budget in ln(M_*): from ln(M_*) = ln(10) + (ln(M_BH) - alpha)/beta,
+    # d(ln M_*)/d(ln M_BH) = 1/beta (the M_BH-error term is /beta, NOT *beta as before), and the
+    # intrinsic scatter propagates as sigma_int/beta. Reines & Volonteri (2015), arXiv:1508.06274.
+    # NOTE: this inverse is currently unused (no call sites); fixed for correctness.
     stellar_mass_error = stellar_mass * np.sqrt(
-        (d_alpha / beta) ** 2
-        + (beta * MBH_mass_error / MBH_mass) ** 2
+        (sigma_int / beta) ** 2
+        + (d_alpha / beta) ** 2
+        + (MBH_mass_error / (MBH_mass * beta)) ** 2
         + ((np.log(MBH_mass) - alpha) / beta**2) ** 2 * d_beta**2
     )
     return [stellar_mass, stellar_mass_error]

@@ -8,6 +8,20 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Changed
+- **[PHYSICS]** `galaxy_catalogue/handler.py`: corrected the host stellar-mass → BH-mass
+  **error budget**. The relation is identified+cited as **Reines & Volonteri (2015)**
+  (arXiv:1508.06274, Eq. 5; broad-line AGN M_BH–M_*,total; α=7.45, β=1.05) — *not* McConnell
+  & Ma 2013. Two fixes to `BH_mass_error`: (1) **added the relation intrinsic scatter**
+  ε₀ = 0.24 dex (`sigma_int`), previously omitted — it is the *dominant* term, so host-mass
+  errors were ~3× too tight at the pivot (fractional CV 0.18 → 0.59), making the with-BH-mass
+  (2-D) inference channel over-confident; (2) **fixed an operator-precedence bug** in the
+  stellar-mass-error term (`beta / stellar_mass / 10` → `beta / stellar_mass`; d ln M_BH/d M_*
+  = β/M_*, the 1e11 pivot is constant), which understated that term 100× in variance. Also
+  corrected the (currently unused) inverse relation's M_BH-error term (β → 1/β) and added its
+  scatter. Regression test `test_mass_relation.py`. This quantifies the σ_z/σ_M forecast: the
+  realistic σ_M floor (≈60–200%) ≫ the ~1–2% the 2-D channel needs → no H₀ rescue. Follow-up:
+  a log-normal host-mass model (the linear-Gaussian leaks ~5% to M<0 at this scatter).
+  Ref: Reines & Volonteri (2015) arXiv:1508.06274 §4.1; Greene+2020 arXiv:1911.09678.
 - **[PHYSICS]** `bayesian_inference/simulation_detection_probability.py`: replaced
   the local-linear / Nadaraya-Watson kernel-regression `p_det` estimator with the
   **detection-horizon survival function** `p_det(d_L) = P(d_hor ≥ d_L)`, with the
