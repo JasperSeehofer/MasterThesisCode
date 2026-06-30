@@ -111,9 +111,18 @@ class HostGalaxy:
 
 
 class CatalogueColumns(Enum):
+    # NB: entries MUST stay in ascending column-value order (pandas read_csv applies
+    # `names` to the `usecols` columns in ascending file order in parse_to_reduced_catalog).
     RIGHT_ASCENSION = 8  # in deg
     DECLINATION = 9  # in deg
-    REDSHIFT = 27
+    # CMB-frame redshift z_cmb (GLADE+ 0-based col 28). Previously col 27 (z_helio,
+    # heliocentric): feeding the heliocentric value into d_L(z; H0) left the solar-motion
+    # dipole (v_sun ~ 369.8 km/s) uncorrected in cz = H0*d_L — a coherent H0 systematic
+    # (per-event up to +/-2.47% at z~0.05; ~+0.15% net over the detected sample). z_cmb
+    # removes the solar dipole and, where GLADE+ flags it (col 29 == 1), is additionally
+    # peculiar-velocity corrected, with the PV-correction error in col 30 (added in
+    # quadrature below). Ref: Dálya et al. 2022, arXiv:2110.06184. See issue #15.
+    REDSHIFT = 28
     REDSHIFT_PECULIAR_VELOCITY_ERROR = 30
     REDSHIFT_MEASUREMENT_ERROR = 31
     REDSHIFT_FLAG = 34  # flag whether redshift is measured or estimated from distance
