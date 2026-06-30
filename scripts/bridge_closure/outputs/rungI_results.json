@@ -1,0 +1,30 @@
+{
+  "standard": [
+    {
+      "sigma_z": 0.002,
+      "h_refined": 0.7438028187580551,
+      "bias": 0.013802818758055113,
+      "railed": false
+    },
+    {
+      "sigma_z": 0.035,
+      "h_refined": 0.6,
+      "bias": -0.13,
+      "railed": true
+    }
+  ],
+  "consistent_denom": [
+    {
+      "sigma_z": 0.001,
+      "h_refined": 0.87,
+      "bias": 0.14,
+      "railed": true
+    },
+    {
+      "sigma_z": 0.035,
+      "h_refined": 0.87,
+      "bias": 0.14,
+      "railed": true
+    }
+  ]
+}

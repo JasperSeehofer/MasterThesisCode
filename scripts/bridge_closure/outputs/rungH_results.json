@@ -1,0 +1,18 @@
+{
+  "results": [
+    {
+      "name": "INCONSISTENT (true_z=z_g)",
+      "scatter": false,
+      "h_refined": 0.87,
+      "bias": 0.14,
+      "railed": true
+    },
+    {
+      "name": "CONSISTENT (true_z=z_g+N(0,sigma_z))",
+      "scatter": true,
+      "h_refined": 0.87,
+      "bias": 0.14,
+      "railed": true
+    }
+  ]
+}

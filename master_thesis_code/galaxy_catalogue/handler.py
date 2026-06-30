@@ -146,7 +146,8 @@ class CatalogueColumns(Enum):
     REDSHIFT = 27
     REDSHIFT_PECULIAR_VELOCITY_ERROR = 30
     REDSHIFT_MEASUREMENT_ERROR = 31
-    REDSHIFT_FLAG = 34  # flag whether redshift is measured or estimated from distance
+    REDSHIFT_FLAG = 34  # measurement flag: 0=none, 1=PHOTOMETRIC z, 2=lum. distance,
+    # 3=SPECTROSCOPIC z (Dálya et al. 2022, arXiv:2110.06184). NB flag 1 ≠ spectroscopic.
     STELLAR_MASS = 35  # in 10^10 solar masses
     STELLAR_MASS_ABSOULTE_ERROR = 36  # in 10^10 solar masses
 
@@ -280,7 +281,19 @@ class GalaxyCatalogueHandler:
                 _LOGGER.info(f"Progress: {progress}")
                 next_progress_threshold += 5
 
-            # 1, 3 are measured redshifts, 2 is estimated from distance
+            # GLADE+ redshift/distance measurement flag (Dálya et al. 2022,
+            # arXiv:2110.06184, raw col 35): 0 = none, 1 = PHOTOMETRIC redshift,
+            # 2 = luminosity distance, 3 = SPECTROSCOPIC redshift. We keep 1 and 3
+            # (any measured redshift, excluding distance-only 2).
+            # ⚠ CAVEAT: flag 1 (photometric) DOMINATES the catalogue (~62%) and
+            # carries a LARGE redshift error (σ_z ≈ 0.035, ~10–18× the EMRI GW
+            # redshift precision σ_z^GW ≈ 0.037·z ≈ 0.002 at z≈0.05), whereas flag 3
+            # (spectroscopic) has σ_z ≈ 0.0017. The photometric hosts make the
+            # in-catalogue H0 likelihood photo-z-DOMINATED, which biases the dark-
+            # siren H0 posterior to the grid edge (the seed-600 "railing").
+            # See scripts/bridge_closure/BRIDGE-FINDINGS.md and
+            # memory h0-railing-rootcause-photoz. Restricting to flag 3 alone is NOT
+            # a valid fix on its own (it must be matched by the injection/host draw).
             chunk = chunk[
                 (chunk[CatalogueColumns.REDSHIFT_FLAG.name] == 1)
                 | (chunk[CatalogueColumns.REDSHIFT_FLAG.name] == 3)
