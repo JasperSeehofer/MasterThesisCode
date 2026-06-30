@@ -28,6 +28,8 @@ and the per-test JSON outputs under
 
 ## 1. Executive Summary
 
+**Last updated:** 2026-06-30 (**In-catalogue photo-z RAILING root-caused → INFORMATION-STARVATION verdict, see §3.18; heliocentric→CMB-frame host-redshift bug FIXED, see §3.19 / issue #15 / PR #17.**) — A self-consistent **seed-600** dark-event run (3375 → 3361 events after SNR≥20 + σ_dL/d_L<0.10, truth h=0.73) rails the H₀ posterior to the **upper grid edge, MAP = 0.86 (+0.13, ≈+18 %)** — far above the ≤+0.02 residual closed in §3.17, and 99.2 % in-catalogue. A "bridge-the-closure" rung ladder (A–I) adds one real-pipeline ingredient at a time and isolates the cause to exactly ONE: convolving each host with its GLADE redshift PDF at the **real σ_z ≈ 0.035 ≈ 17× the GW precision** (σ_z^GW ≈ 0.002 at z≈0.05; σ_z/z ≈ 0.7); delta-z hosts recover 0.725 and every other ingredient recovers when added alone. The driver is that **GLADE flag-1 hosts are PHOTOMETRIC** (median σ_z = 0.0346) not spectroscopic (0.0017) — the `{1,3}` retention is correct (flag-2 d_L→z is properly excluded) but the photometric class dominates the host sample. A full candidate ladder of normalisation fixes was derived and **FALSIFIED**: STANDARD rails down to 0.600, every numerator-only clean (regularised kernel / volume de-count) rails up to 0.870, the local consistent-denominator fails the σ_z→0 gate, and the sole survivor — the global photo-z-smeared same-kernel denominator **D_sm** — passes the gate (~0.74) and de-biases the global density gradient but **does NOT recover a peaked H₀** (multi-seed std ~0.1 that does not shrink with n_events; per-seed posteriors peak at 0.64/0.64/0.69/0.87, never 0.73, several multimodal; `E[h]≈0.735` is a grid-midpoint artifact). **VERDICT: the in-catalogue photometric channel at GLADE's regime (σ_z/z≈0.7, z≈0.05, p_det≈1) is INFORMATION-STARVED** — no normalisation recovers a peaked H₀ (the only untested route, the full hierarchical cross-event MC (★), is predicted null via 1/N_gal suppression). **Recommendation: pivot the H₀ headline to a spectroscopic-host forecast arm (recovers h≈0.725) plus a rigorously-characterized GLADE-photometric limitation.** Orthogonally, the §3.18 data-usage audit found the parser feeds **heliocentric** z (0-based col 27) into d_L(z;H0) with no frame/PV value correction; the one-line **CMB-frame fix** (read z_cmb, col 28) landed under /physics-change (commit `7021f6f`, issue #15, PR #17) — per-event envelope ±2.47 % at z=0.05 but net ensemble bias only **+0.15 %**, ≈120× smaller than the railing and provably separate from it (host-PV follow-up filed as issue #16). See companion ledgers `docs/BIAS_RESOLUTION_ATTEMPTS_REPORT.md` and `docs/PIPELINE_BUGS_REPORT.md`.
+
 EMRI dark-siren H0 inference: the simulation injects events at `h_true = 0.73`
 (`H` in `master_thesis_code/constants.py:25`); the inference recovers a posterior
 over `h ∈ [0.60, 0.86]`. Across 12 confirmed bias sources resolved over phases
@@ -1121,6 +1123,216 @@ uv run python scripts/bias_investigation/test_31_completion_term_characterizatio
 
 - **Memory:** `project_residual_bias_decomposition`, `project_fisher_frame_mismatch`,
   `project_pdet_horizon_survival`.
+
+---
+
+### 3.18 In-catalogue photo-z railing & the information-starvation limit (2026-06-29 → 2026-06-30) → MAP rails to 0.86 (+0.13, ≈+18 %)
+
+*(By raw impact this is the largest single in-catalogue systematic in the catalog — appended chronologically. It does not "close" via a normalisation fix; the entry records a characterized methodological limit, so the **Fix** field is a **Verdict**.)*
+
+- **Symptom:** On a **self-consistent seed-600 dark-event run** (`/tmp/seed600_local/simulations/`,
+  3375 detections → **3361** after the inference cuts SNR≥20 and σ_dL/d_L<0.10; truth H₀/100 = 0.73)
+  the H₀ posterior **rails to the upper grid edge, cluster MAP = 0.86** (+0.13, ≈+18 %) — far above
+  the ≤+0.02 residual that §3.13/§3.14/§3.15/§3.17 had driven toward truth on the seed200⊕seed300
+  production CRB. **99.2 % of detections are in-catalogue** (nearby, median z≈0.046), so the bias
+  lives in the in-catalogue term `β_G·L_cat/D(h)`, not the completion/dark channel. The railing is
+  **sky-position-independent** and reproduces in a **no-sky closure** — a normalisation / prior-domination
+  problem, not a sky-matching artefact.
+
+- **Mechanism (bridge "rung ladder" — root cause isolated to ONE ingredient):** Starting from the
+  closure that recovers 0.73, each real-pipeline ingredient was swapped in one at a time
+  (each rung reuses the SAME production functions: `precompute_completion_denominator`,
+  `precompute_missing_completion_denominator`, `precompute_global_catalog_selection`):
+
+  | Rung | Ingredient swapped synthetic→real | MAP | rails? |
+  |------|-----------------------------------|-----|--------|
+  | R0 | synthetic baseline | 0.735 | no (harness reproduces closure) |
+  | A | real σ_dL distribution, N=3361 | 0.729 | no — **measurement side does NOT rail** |
+  | B | real GLADE n(z) shape (no sky, 1-D) | 0.734 | no — density shape alone does NOT rail |
+  | C-real | real catalogue + sky + 3-D MVN (full Fisher cov) | 0.725 | no |
+  | C-iso | same, but galaxy sky positions SHUFFLED | 0.855 | **yes** (broken host↔sky matching) |
+  | D | C-real + real pixelated f_k + B_num | 0.735 | no — completion does NOT rail |
+  | E | C-real + real survival p_det | 0.725 | no — selection p_det does NOT rail |
+  | F | fully faithful (p_det + f_k + B_num) | 0.735 | no (with delta-z hosts) |
+  | G | F + 1.5σ radius + **host-z convolution at real GLADE σ_z=0.035** | **0.857** | **yes — REPRODUCES the pipeline (0.86)** |
+
+  The decisive ingredient is **Rung G**: `single_host_likelihood` convolves each candidate's GW
+  contribution with `N(z_g, σ_z_g)`. Sweeping σ_z (fully faithful) shows the bias is a sensitive,
+  sign-included function of σ_z:
+
+  | σ_z | MAP | bias |
+  |-----|-----|------|
+  | 0 (delta-z / spec-z idealisation) | 0.725 | −0.005 |
+  | ≈0.002 (×0.05, true spec-z) | 0.600 | −0.130 |
+  | ≈0.009 (×0.25) | 0.870 | +0.140 |
+  | ≈0.018 (×0.5) | 0.870 | +0.140 |
+  | **≈0.035 (×1.0, REAL GLADE)** | **0.857** | **+0.127** |
+
+  **Root cause = GLADE flag-1 hosts are PHOTOMETRIC.** σ_z ≈ 0.035 is ≈**17×** the GW redshift
+  precision (σ_z^GW ≈ 0.037·z ≈ 0.002 at z≈0.05); **σ_z/z ≈ 0.7**. The parse (`handler.py:284-300`)
+  correctly keeps `flag∈{1,3}` and excludes flag-2 (the genuinely circular d_L→z class), but GLADE's
+  measurement flag is **1 = photometric, 3 = spectroscopic** (the in-code comment "1,3 are measured
+  redshifts" obscured this) — so the host sample is dominated by the large-σ_z photometric class:
+
+  | flag | meaning | σ_z median | σ_z 90th |
+  |------|---------|-----------|----------|
+  | 1 | photometric | **0.0346** | 0.0482 |
+  | 3 | spectroscopic | **0.0017** | 0.0036 |
+
+  This is a **data-usage / regime finding, not a parse/index bug** (column indices verified vs
+  Dálya+ 2022). With σ_z ≫ σ_z^GW the in-cat numerator `N_g = ∫ p_GW(d_L(z,h))·N(z;z_g,σ_z) dz`
+  is dominated by the broad host-z PDF, so the candidate sum tracks the catalogue **redshift-density
+  n(z) over the σ_z window** rather than the sharp GW distance — i.e. the catalogue density gradient,
+  not the GW measurement, drives H₀ to the grid edge. The structural obstruction is that
+  **p_det ≈ 1 across the entire in-catalogue redshift range** (hosts at z≈0.046 ≪ the GW horizon),
+  so there is **no local selection gradient** for any single global selection scalar `D(h)` to track.
+
+- **Diagnostic:** `scripts/bridge_closure/_bridge_lib.py` (+ `_bridge_sky.py`) harness driving
+  `rung_{A..G}_*.py`; figures + JSON in `scripts/bridge_closure/outputs/` (`rungA..rungI .pdf`,
+  `*_results.json`); root-cause write-up `scripts/bridge_closure/BRIDGE-FINDINGS.md`. Normalisation
+  candidate search via `scripts/bridge_closure/_rungI_verify_B.py` (no-sky rung_I closure, truth
+  h=0.73, n_gal=12k, n_ev=250). Likelihood-vs-posterior / dV_c-once audit in
+  `.planning/derivation-photoz-incatalog/CATALOG-INTERPRETATION.md`.
+
+- **Fix / Verdict — NO normalisation recovers a peaked H₀ (the in-catalogue photometric channel is INFORMATION-STARVED):**
+  A full candidate ladder of fixes was derived, prototyped and **empirically falsified** on the
+  rung_I closure (all pass the σ_z→0 gate, all fail the de-rail step):
+
+  | Candidate | σ_z=0.002 (gate) | σ_z=0.035 (de-rail) | verdict |
+  |---|---|---|---|
+  | STANDARD (frozen global Option-A denom) | 0.7438 peaked | **0.6000** rail DOWN | baseline |
+  | Angle A/C — per-galaxy regularised kernel `N·p_bg/Z_g` (clean dV_c) | 0.7478 peaked | **0.8700** rail UP | disqualified |
+  | Angle B — global volume de-count `g=p_bg/(S p_bg)` | 0.7439 peaked | **0.8700** rail UP | disqualified |
+  | Local consistent-denominator (same kernel num+denom) | **0.8700** rail | 0.8700 rail | gate FAIL |
+
+  The truth (0.73) sits **strictly between** the two rails: standard rails down to 0.600, every
+  numerator-only clean rails up to 0.870. The only candidate that survived literature comparison +
+  derivation + the σ_z→0 gate + adversarial verification was the **global photo-z-smeared same-kernel
+  selection** `D_sm(h) = Σ_g w_g ∫ p_det^GW(d_L(z,h))·p_red(z|z_cat_g) dz` (same kernel in numerator
+  and denominator, over the full catalogue; gate proof confirmed in `DERIVATION-HIERARCHICAL.md`).
+  Its verdict is **DE-BIAS-BUT-NO-PEAK**:
+
+  | D_sm test | result |
+  |---|---|
+  | Gate σ_z=0.002, multi-seed | D_sm ≈ standard (median ~0.73) — **PASS** |
+  | Single-seed σ_z=0.035 (seed 1) | 0.693 interior — looked like a win, **was a favourable draw** |
+  | Multi-seed σ_z=0.035, n_ev=250 | 6 interior / 4 rail-up (0.87) / 2 rail-down (0.60); std **0.11** |
+  | More events n_ev=2000 | std **0.097 — did NOT shrink** (scatter is not event noise) |
+  | Lever `d/dh log(D_sm/D)@0.73`, n_gal 12k→400k | **+0.19 ± 0.014 → ±0.007**, D_sm/D≈0.920 — deterministic already at 12k (not catalogue under-sampling) |
+  | Per-seed posterior shape (n_ev=2000) | peaks at 0.64 / 0.64 / 0.69 / 0.87 — **never 0.73**, several multimodal |
+
+  D_sm's lever is real and deterministic (edge-galaxy-dominated global denominator cancels the global
+  density-gradient rail), but a single global per-h scalar **cannot track the LOCAL numerator gradient
+  at z*(h)**, and with σ_z ≫ σ_z^GW there is no per-event localization to track anyway. `E[h]≈0.735`
+  is an **artifact** (the grid [0.60,0.87] midpoint is 0.735 ≈ truth, so any flat posterior gives it
+  trivially) — the flat/multimodal **shape** is the real readout.
+
+  **Verdict:** in-catalogue photometric dark sirens at GLADE's regime (σ_z/z≈0.7, z≈0.05, p_det≈1)
+  are **information-starved** — a demonstrated methodological result, not an assertion. **Recommended
+  project direction: pivot the H₀ headline to a spectroscopic-host forecast arm** (self-consistent
+  spec-z hosts recover h≈0.725) **plus a rigorously-characterized GLADE-photometric limitation.**
+
+- **Evidence:** seed-600 pipeline MAP = 0.86 (+0.13); bridge Rung G at real GLADE σ_z reproduces it
+  (0.857, +0.127); delta-z recovers (0.725); every other ingredient recovers when added alone. Spec-z
+  filtering as a pure inference-side `flag==3` cut **FAILS** (still rails to 0.870) because events were
+  injected from the photo-z-dominated catalogue → host mismatch; a self-consistent spec-z arm requires
+  re-injection from spec-z hosts (loses most events) but then recovers. dV_c-once / likelihood-vs-posterior
+  interpretation settled: GLADE+ flag-1 photo-z is an ANN empirical estimate (Bilicki+ 2016 WISE×SCOSPZ),
+  **not distance-derived and non-circular**; the per-host `N(z;z_g,σ_z)` is a **likelihood** → apply the
+  comoving-volume factor `p_bg ∝ (dV_c/dz)/(1+z)` exactly **once** (Gair+ 2023 Eq. 16). This methodology
+  is valid and feeds the forecast arm.
+
+- **Limitations / open items:**
+  - **Remaining untested:** the full hierarchical cross-event Monte-Carlo `(★)` (genuine global
+    same-kernel ratio with photo-z-consistent re-injection and ensemble coherence). `DERIVATION-HIERARCHICAL.md`
+    + the verifier predict it is **null** at p_det≈1 via the 1/N_gal "space is big" suppression
+    (cross-event coherence vanishes); optional for definitive closure, **low expected value**.
+  - **Num/denom σ_z asymmetry** (secondary defect): the in-cat numerator marginalises the host photo-z
+    (`bayesian_statistics.py:1641-1646`) but the global selection denominator evaluates `p_det` at the
+    point z_g with no smearing (`:472-490`) — the same σ_z is handled inconsistently across num/denom;
+    the dV_c-once fix alone does not resolve it.
+  - **Closure half-inconsistency:** events are injected at the host's TRUE z while inference convolves
+    the REPORTED z_g; this must be reconciled before any fixed-catalogue normalisation can be unbiased.
+  - This entry **reframes** the small ≤+0.02 residual chase (§3.17): on the photo-z-faithful
+    self-consistent run the dominant in-catalogue systematic is the +0.13 railing, which is **not** a
+    normalisation bug and could not have been closed by the §3.13/§3.14/§3.15 chain.
+
+- **Reference:** Dálya et al. 2022, GLADE+, arXiv:2110.06184 Sec. 4 (flag definitions: 1=photometric
+  z→d_L, 2=d_L→z, 3=spectroscopic; photo-z bands, σ_z/(1+z)≈0.033); Bilicki et al. 2016, WISE×SCOSPZ,
+  ApJS 225, 5 (ANNz empirical NN trained on GAMA-II spec-z); Gray/Gair et al. 2023, GWcosmo,
+  arXiv:2308.02281 Eq. 2.9 + footnote 10 (posterior shortcut valid only as σ_z→0); Gair et al. 2023,
+  "Hitchhiker's Guide to the Galaxy Catalog Approach", arXiv:2212.08694 Eq. 16-17 + "Inconsistency 1"
+  (regularised posterior, dV_c counted once; double-count → H₀ low). Session commits: `0bd1f73`
+  (comparison), `bd66f5b` (catalog-interpretation), `415500b` (derivation), `5ef8c6e` (D_sm prototype),
+  `a8cbab0` (increment-3 verdict). Companion reports: `docs/BIAS_RESOLUTION_ATTEMPTS_REPORT.md`
+  (the full attempt-by-attempt ledger) and `docs/PIPELINE_BUGS_REPORT.md` (the data-usage / parser
+  findings).
+
+- **Detail →** `.planning/derivation-photoz-incatalog/INCREMENT3-DSM-VERDICT.md` (decisive D_sm result
+  + all diagnostic numbers), `NORMALISATION-FIX.md` (numerator-only negative result), `CATALOG-INTERPRETATION.md`
+  (likelihood-vs-posterior, dV_c-once, data-usage defects), `DERIVATION-HIERARCHICAL.md` (D_sm candidate
+  + gate proof + (★) prediction), `COMPARISON.md` / `GAP-ANALYSIS.md` (method-by-method lit comparison);
+  `scripts/bridge_closure/BRIDGE-FINDINGS.md` + `outputs/`.
+
+---
+
+### 3.19 Heliocentric vs CMB-frame host redshift (companion sub-entry to §3.18) — issue #15 / PR #17 → net +0.15 % (per-event envelope ±2.47 %)
+
+*(Short companion entry. Surfaced during the §3.18 data-usage audit; an independent, orthogonal systematic — not a contributor to the railing.)*
+
+- **Symptom:** Code-audit finding (no symptom in the posterior, by design — the effect largely
+  sky-averages). The catalogue parser feeds the **heliocentric** redshift value into the dark-siren
+  `dist(z) → d_L(z; H0)` relation with **no frame / peculiar-velocity value correction**, leaving the
+  solar-motion dipole (v_sun ≈ 369.8 km/s) entirely uncorrected in `cz = H0·d_L`.
+
+- **Mechanism:** `CatalogueColumns.REDSHIFT = 27` (0-based) at `handler.py:146`, assigned to
+  `HostGalaxy.z` (`:66`), flows into `d_L(z; H0)`. The CMB-frame redshift `z_cmb` (0-based **28**,
+  already populated in raw GLADE+ by Dálya+) is never read; the pec-vel column (0-based 30) is used
+  ONLY to inflate the redshift **error** in quadrature (`:302-307`), never to correct the **value**.
+  Because `cz = H0·d_L` at low z, a redshift offset maps directly to an H₀ offset:
+  `δH0/H0 = (v_sun/c)·cos θ_apex / z`.
+
+- **Diagnostic:** `.planning/derivation-photoz-incatalog/FRAME-SYSTEMATIC.md`. Detected-host sky
+  positions taken from `simulations/cramer_rao_bounds.csv` (N=3375, ecliptic qS/phiS, frame
+  `ecliptic_BarycentricTrue_J2000`), converted to Galactic via astropy; redshifts inverted through
+  `FlatLambdaCDM(H0=73, Om0=0.25)`.
+
+- **Fix:** **One-line value change `REDSHIFT = 27 → 28`** (read z_cmb instead of z_helio), routed
+  through `/physics-change` with a `[PHYSICS]` commit (`7021f6f`; issue #15; PR #17 to main). The
+  second-order host peculiar-velocity treatment (value-correction via reconstructed PV field vs
+  marginalisation as σ_v≈150–500 km/s added in quadrature) is filed separately as **issue #16**.
+  *Execution-time caveat:* confirm z_cmb still sits at 0-based 28 in the reduced
+  `reduced_galaxy_catalogue.csv` before editing (the field identities are certain; only the positional
+  index in the reduced file needs a check; if dropped during reduction, regenerate retaining col 28).
+
+- **Evidence:** `v_sun/c = 369.8/299792.458 = 1.2335e-3`. **Per-event envelope** at z=0.05 along the
+  apex line: `δH0/H0 = (v_sun/c)/z = 0.0247 = ±2.47 %`. **Net ensemble bias** (detected-host sample,
+  rigorous per-event `mean(β·cos/z)`): **+0.151 %** (`<cos θ_apex> = +0.0245`, std 0.612, N=3375 — the
+  dipole largely sky-averages); simplified `(β·<cos>)/z_typ` (z_typ=0.046) = +0.065 %. Full-catalogue
+  bound (200k random sample, EQUATORIAL on disk): `<cos>=+0.135 → +0.33 %` (a bound, not the detection
+  bias). Residual bulk-flow term up to ~1.3 % if the host distribution is anisotropic; random PV
+  scatter (σ_v≈300 km/s → σ_z=1.0e-3 → 2.00 % per-event) averages down as 1/√N → 0.034 % over the
+  detected ensemble.
+
+- **Limitations / separation from §3.18:** **The frame systematic is orthogonal to the railing and
+  cannot cause it.** Net frame bias (+0.15 %) is ≈**120×** smaller than the +18 % railing (18/0.151 ≈ 119);
+  the railing is sky-position-INDEPENDENT and reproduces in a no-sky closure, whereas the frame error
+  is intrinsically direction-dependent (∝ cos θ_apex) and vanishes without sky directions. They are
+  independent degrees of freedom. **Severity: LOW-to-MODERATE for the final H₀ but a genuine, citable,
+  cheap-to-fix coherent systematic** (standard practice in every GW H₀ analysis); a referee will expect
+  it controlled or bounded.
+
+- **Reference:** GLADE+ column description https://glade.elte.hu/ and Dálya et al. 2022, arXiv:2110.06184
+  Sec. 4 (z_cmb = 1-based col 29 = 0-based 28); Howlett & Davis 2020 (arXiv:1909.00587), Nicolaou et al.
+  2020 (arXiv:1909.09609) — PV treatment; solar/CMB dipole v_sun = 369.8 km/s toward galactic
+  l=264.0, b=48.3 (Planck 2018). Commit `c42f558` (frame derivation/verification doc), `7021f6f`
+  (the [PHYSICS] fix). Companion reports: `docs/PIPELINE_BUGS_REPORT.md` (data-usage / parser bug
+  register) and `docs/BIAS_RESOLUTION_ATTEMPTS_REPORT.md`.
+
+- **Detail →** `.planning/derivation-photoz-incatalog/FRAME-SYSTEMATIC.md` (full quantification +
+  verified GLADE+ column map + sky-averaging analysis); `CATALOG-INTERPRETATION.md` §6.1 (frame flagged
+  among other data-usage issues). Relates to Known Bug #9 (non-standard z-error scaling) and the
+  hardcoded pec-vel-error default 0.0015 at `handler.py:302`.
 
 ---
 
