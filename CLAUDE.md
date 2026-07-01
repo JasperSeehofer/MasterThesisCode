@@ -188,6 +188,7 @@ workflow gates.
 | Before any `git commit` (after `/check` passes) | `/pre-commit-docs` | Verify CHANGELOG, TODO, CLAUDE.md, README are consistent with staged changes. |
 | User asks "what should I work on?" or "what bugs remain?" | `/known-bugs` | Show current bug status with priorities. |
 | User wants to run the simulation or evaluation pipeline | `/run-pipeline` | Use instead of ad-hoc bash commands. |
+| About to submit, monitor, or retrieve **anything on bwUniCluster** | `/cluster` | **Consult first.** Run `ssh bwunicluster 'bash -s' < cluster/preflight.sh` and require `VERDICT: READY ✓` before submitting. |
 
 ### Physics-change trigger files
 
@@ -234,6 +235,24 @@ All public and private functions/methods must have complete type annotations on 
 ## HPC / GPU Best Practices
 
 This code runs on a GPU cluster (CuPy/CUDA) but must also be importable and testable on a CPU-only development machine. The patterns below are mandatory.
+
+### Cluster interaction — entry point (read first)
+
+**Before doing ANY work involving bwUniCluster** (submitting/monitoring/retrieving
+jobs, checking cluster state, launching sims/injections/evaluations, or running
+cluster tests), the session MUST route through the cluster guidance — do not
+improvise SSH/SLURM commands from memory:
+
+1. **Read `.claude/skills/cluster/SKILL.md`** (the operational guide) — canonical
+   paths, gotchas, submit/monitor/retrieve recipes. Or invoke it via `/cluster`.
+2. **Run the preflight** and require `VERDICT: READY ✓`:
+   `ssh bwunicluster 'bash -s' < cluster/preflight.sh`
+3. **To launch or write a job**, follow `cluster/LAUNCHING_JOBS.md` and copy
+   `cluster/JOB_TEMPLATE.sbatch`. Test small first (`--tasks 2 --steps 10`).
+
+There is **ONE repo** on the cluster (`~/MasterThesisCode`); never create separate
+clones/worktrees for parallel or "frozen" work — branch + tag instead. Dataset
+locations/provenance: `cluster/datasets.yaml`; staleness tiers: `DATA_INVENTORY.md`.
 
 ### Array namespace pattern
 
