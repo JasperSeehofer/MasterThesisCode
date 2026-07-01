@@ -175,6 +175,35 @@ class InternalCatalogColumns:
     REDSHIFT_ERROR = "REDSHIFT_MEASUREMENT_ERROR"
     BH_MASS = "STELLAR_MASS"
     BH_MASS_ERROR = "STELLAR_MASS_ABSOULTE_ERROR"
+    # GLADE+ redshift measurement flag, RETAINED as the trailing reduced-catalog
+    # column (Dálya et al. 2022, arXiv:2110.06184): 1 = PHOTOMETRIC z (σ_z ≈ 0.035),
+    # 3 = SPECTROSCOPIC z (σ_z ≈ 0.0017). Only {1, 3} survive the parse filter.
+    # Used to split single-event H0 posteriors by host redshift provenance (paper
+    # figure F4: photo-z hosts give flat/railing posteriors, spec-z hosts inform).
+    REDSHIFT_FLAG = "REDSHIFT_FLAG"
+
+
+def _reduced_catalog_column_names() -> list[str]:
+    """On-disk column names of the headerless reduced-catalog CSV, in file order.
+
+    Single source of truth shared by the writer (``parse_to_reduced_catalog``) and
+    every reader (``read_reduced_galaxy_catalog``,
+    ``parse_to_reduced_catalog_with_reduced_errors``, and
+    ``pixel_completeness.build_m_th_map``). The order is all
+    :class:`CatalogueColumns` except the dropped peculiar-velocity error (raw col
+    30) and the redshift flag (raw col 34), followed by the RETAINED redshift flag
+    as the TRAILING column. Keeping the flag last preserves the historical column
+    order of the leading fields so existing positional readers stay aligned.
+
+    Returns:
+        Column names as written to / read from disk, e.g.
+        ``[RIGHT_ASCENSION, DECLINATION, APPARENT_B_MAG, REDSHIFT,
+        REDSHIFT_MEASUREMENT_ERROR, STELLAR_MASS, STELLAR_MASS_ABSOULTE_ERROR,
+        REDSHIFT_FLAG]``.
+    """
+    names = [column.name for column in CatalogueColumns if column.value not in [30, 34]]
+    names.append(CatalogueColumns.REDSHIFT_FLAG.name)
+    return names
 
 
 @dataclass
@@ -315,19 +344,25 @@ class GalaxyCatalogueHandler:
                 + chunk[CatalogueColumns.REDSHIFT_PECULIAR_VELOCITY_ERROR.name] ** 2
             )
 
-            chunk = chunk.drop(
-                columns=[
-                    CatalogueColumns.REDSHIFT_PECULIAR_VELOCITY_ERROR.name,
-                    CatalogueColumns.REDSHIFT_FLAG.name,
-                ]
-            )
+            # Drop the peculiar-velocity error (already folded into the redshift
+            # error above) but RETAIN the redshift flag. Store it as the integer
+            # flag (1 = photometric, 3 = spectroscopic) so it round-trips as "1"/"3"
+            # rather than "1.0"/"3.0"; the {1, 3} filter above guarantees no NaNs.
+            chunk = chunk.drop(columns=[CatalogueColumns.REDSHIFT_PECULIAR_VELOCITY_ERROR.name])
+            chunk[CatalogueColumns.REDSHIFT_FLAG.name] = chunk[
+                CatalogueColumns.REDSHIFT_FLAG.name
+            ].astype(int)
+
+            # Reorder so the retained flag is the TRAILING column, preserving the
+            # historical order of the leading fields (positional-reader alignment).
+            chunk = chunk[_reduced_catalog_column_names()]
 
             chunk.to_csv(REDUCED_CATALOGUE_FILE_PATH, header=False, mode="a", index=False)
 
     def parse_to_reduced_catalog_with_reduced_errors(self) -> None:
         catalog = pd.read_csv(
             REDUCED_CATALOGUE_FILE_PATH,
-            names=[column.name for column in CatalogueColumns if column.value not in [30, 34]],
+            names=_reduced_catalog_column_names(),
         )
         for index, row in catalog.iterrows():
             redshift = row[CatalogueColumns.REDSHIFT.name]
@@ -347,7 +382,7 @@ class GalaxyCatalogueHandler:
         """
         catalog = pd.read_csv(
             REDUCED_CATALOGUE_FILE_PATH,
-            names=[column.name for column in CatalogueColumns if column.value not in [30, 34]],
+            names=_reduced_catalog_column_names(),
         )
         return catalog.rename(
             columns={

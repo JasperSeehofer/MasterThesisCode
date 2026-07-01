@@ -210,11 +210,13 @@ def test_build_m_th_map_synthetic_catalog(tmp_path) -> None:  # type: ignore[no-
     nside = 1  # 12 pixels
     # 12 galaxies at one sky position (one pixel) + 3 at another (below the floor).
     b_full = np.arange(10.0, 22.0)  # 12 values, median = 15.5
+    # Reduced-catalog schema: (RA, Dec, B_mag, z, z_err, M, M_err, redshift_flag).
+    # The trailing flag (1 = photometric) is retained on disk; the builder ignores it.
     rows = []
     for b in b_full:
-        rows.append((10.0, 20.0, b, 0.05, 0.001, 0.3, 0.1))  # same (RA, Dec)
+        rows.append((10.0, 20.0, b, 0.05, 0.001, 0.3, 0.1, 1))  # same (RA, Dec)
     for b in [12.0, 13.0, 14.0]:
-        rows.append((200.0, -40.0, b, 0.05, 0.001, 0.3, 0.1))  # different pixel
+        rows.append((200.0, -40.0, b, 0.05, 0.001, 0.3, 0.1, 1))  # different pixel
     csv = tmp_path / "synthetic_reduced.csv"
     pd.DataFrame(rows).to_csv(csv, header=False, index=False)
 
@@ -246,7 +248,8 @@ def test_builder_pixel_matches_ang2pix_cross_frame(tmp_path) -> None:  # type: i
     rows = []
     for ra, dec in positions:
         for b in np.linspace(17.0, 20.0, 12):
-            rows.append((ra, dec, float(b), 0.05, 0.001, 0.3, 0.1))
+            # Trailing redshift flag (1 = photometric) matches the reduced schema.
+            rows.append((ra, dec, float(b), 0.05, 0.001, 0.3, 0.1, 1))
     csv = tmp_path / "synthetic_reduced.csv"
     pd.DataFrame(rows).to_csv(csv, header=False, index=False)
 
@@ -292,8 +295,18 @@ def test_from_cache_or_build_is_byte_identical(tmp_path) -> None:  # type: ignor
     rng = np.random.default_rng(3)
     rows = []
     for _ in range(40):
+        # Trailing redshift flag (1 = photometric) matches the reduced schema.
         rows.append(
-            (rng.uniform(0, 360), rng.uniform(-80, 80), rng.uniform(15, 21), 0.05, 0.001, 0.3, 0.1)
+            (
+                rng.uniform(0, 360),
+                rng.uniform(-80, 80),
+                rng.uniform(15, 21),
+                0.05,
+                0.001,
+                0.3,
+                0.1,
+                1,
+            )
         )
     csv = tmp_path / "synthetic_reduced.csv"
     pd.DataFrame(rows).to_csv(csv, header=False, index=False)
