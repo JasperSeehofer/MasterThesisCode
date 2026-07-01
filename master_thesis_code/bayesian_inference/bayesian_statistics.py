@@ -171,12 +171,61 @@ def _rate_weight(host: HostGalaxy) -> float:
     return float(R_eff_per_mbh(host.M)) / (1.0 + host.z)
 
 
+def _sky_aware_selection_available(
+    completeness: CompletenessModel | None,
+    detection_probability_obj: SimulationDetectionProbability,
+) -> bool:
+    r"""True iff both objects support the sky-resolved selection path (Change 1-4).
+
+    Requires the detection-probability object to expose the ecliptic-latitude
+    band survival (:meth:`survival_per_band`, :meth:`band_edges_sin_beta`) AND a
+    per-pixel completeness (:meth:`pixel_centers`).  When either is absent
+    (e.g. a mock ``p_det`` or the all-sky :class:`GladeCatalogCompleteness`), the
+    selection integrals fall back to the EXACT sky-marginalised formulas -- which
+    is also the ``n_sky_bands == 1`` isotropic limit (test T1).
+    """
+    return (
+        completeness is not None
+        and hasattr(completeness, "pixel_centers")
+        and hasattr(completeness, "f_pixels")
+        and hasattr(detection_probability_obj, "survival_per_band")
+        and hasattr(detection_probability_obj, "band_edges_sin_beta")
+    )
+
+
+def _sky_band_pixel_map(
+    completeness: CompletenessModel,
+    detection_probability_obj: SimulationDetectionProbability,
+) -> tuple[npt.NDArray[np.int_], int, int]:
+    r"""Assign every HEALPix pixel centre to a ``p_det`` ecliptic-latitude band.
+
+    Uses the SAME equal-|sin beta| band edges as the injection ``p_det`` build
+    (:meth:`SimulationDetectionProbability.band_edges_sin_beta`) so the sky
+    marginal is invariant (test T3).  ``beta = pi/2 - theta`` =>
+    ``|sin beta| = |cos theta|``.  The sky prior is uniform ``1/Npix`` (equal-area
+    pixels): pixels are counted, NOT galaxy-weighted (guardrail).
+
+    Returns
+    -------
+    (band_of_pixel, n_bands, npix)
+    """
+    phi_k, theta_k = completeness.pixel_centers()  # type: ignore[attr-defined]
+    sin_beta_abs = np.abs(np.cos(np.asarray(theta_k, dtype=np.float64)))  # |sin beta|
+    edges = np.asarray(detection_probability_obj.band_edges_sin_beta(), dtype=np.float64)
+    n_bands = int(edges.size - 1)
+    band_of_pixel = np.clip(
+        np.searchsorted(edges, sin_beta_abs, side="right") - 1, 0, n_bands - 1
+    ).astype(np.int_)
+    return band_of_pixel, n_bands, int(sin_beta_abs.size)
+
+
 def precompute_completion_denominator(
     h_values: list[float],
     detection_probability_obj: SimulationDetectionProbability,
     Omega_m: float,
     Omega_DE: float,
     *,
+    completeness: CompletenessModel | None = None,
     quad_n: int = _DH_QUAD_ORDER,
 ) -> dict[float, float]:
     """Precompute the completion-term denominator D(h) for each h value.
@@ -231,6 +280,21 @@ def precompute_completion_denominator(
     """
     D_h_table: dict[float, float] = {}
 
+    # Change 2: sky-resolved full-volume selection.  When the sky-aware path is
+    # available, D(h) = INTEGRAL (1/Npix) sum_k p_det(d_L(z,h), Omega_k) dVc/(1+z) dz
+    # is evaluated efficiently as sum_b (n_pix_b/Npix) S_b(d_L(z,h)) -- p_det
+    # depends on Omega only through band(beta) (equal-solid-angle sky sum).
+    # Gray, Gerosa et al. (2023), arXiv:2308.02281, Eq. (2.3) -- per-pixel GW
+    # selection sum; Mandel-Farr-Gair (2019), arXiv:1809.02063, Eq. 6.
+    _sky_aware = _sky_aware_selection_available(completeness, detection_probability_obj)
+    if _sky_aware:
+        assert completeness is not None
+        _band_of_pixel, _n_bands, _npix = _sky_band_pixel_map(
+            completeness, detection_probability_obj
+        )
+        # c_b = n_pix_b / Npix : uniform-sky (equal-area) fraction per band.
+        _c_b = np.bincount(_band_of_pixel, minlength=_n_bands).astype(np.float64) / float(_npix)
+
     for h in h_values:
         dl_max = detection_probability_obj.get_dl_max(h)
         z_max = dist_to_redshift(dl_max, h=h)
@@ -243,11 +307,22 @@ def precompute_completion_denominator(
             d_L: npt.NDArray[np.float64] = np.asarray(
                 dist_vectorized(z, h=_h), dtype=np.float64
             )  # Gpc
-            phi = np.zeros_like(z)  # marginalized; value does not matter
-            theta = np.zeros_like(z)
-            p_det = detection_probability_obj.detection_probability_without_bh_mass_interpolated_zero_fill(
-                d_L, phi, theta, h=_h
-            )
+            if _sky_aware:
+                # (1/Npix) sum_k p_det(Omega_k) = sum_b (n_pix_b/Npix) S_b(d_L).
+                # Gray 2023 arXiv:2308.02281 Eq. 2.3 (per-pixel selection sum).
+                s_band = np.asarray(
+                    detection_probability_obj.survival_per_band(d_L), dtype=np.float64
+                )  # (n_bands, Z)
+                p_det: npt.NDArray[np.float64] = _c_b @ s_band  # (Z,)
+            else:
+                phi = np.zeros_like(z)  # marginalized; value does not matter
+                theta = np.zeros_like(z)
+                p_det = np.asarray(
+                    detection_probability_obj.detection_probability_without_bh_mass_interpolated_zero_fill(
+                        d_L, phi, theta, h=_h
+                    ),
+                    dtype=np.float64,
+                )
             dVc: npt.NDArray[np.float64] = np.atleast_1d(
                 np.asarray(comoving_volume_element(z, h=_h), dtype=np.float64)
             )
@@ -335,6 +410,23 @@ def precompute_missing_completion_denominator(
     """
     beta_Gbar_table: dict[float, float] = {}
 
+    # Change 3: sky-resolved missing-completion selection.  When the sky-aware
+    # path is available this evaluates the caveat's own prescription
+    # beta_Gbar(h) = INTEGRAL (1/Npix) sum_k (1 - f_k(z,h)) p_det(d_L(z,h), Omega_k)
+    #                dVc/(1+z) dz
+    # efficiently as sum_b S1mf_b(z) S_b(d_L), with the per-band incompleteness
+    # sum S1mf_b(z) = (1/Npix) sum_{k in band b}(1 - f_k(z)).  ZoA/empty pixels
+    # (f_k=0) contribute the FULL p_det(Omega_k) -- exactly where dark hosts
+    # concentrate.  Gray et al. (2020), arXiv:1908.06050, Eq. (33);
+    # Gray-Messenger-Veitch (2022), arXiv:2111.04629, Eq. (5).
+    _sky_aware = _sky_aware_selection_available(completeness, detection_probability_obj)
+    if _sky_aware:
+        _band_of_pixel, _n_bands, _npix = _sky_band_pixel_map(
+            completeness, detection_probability_obj
+        )
+        # Boolean (n_bands, npix) membership for the per-band pixel reduction.
+        _band_membership = _band_of_pixel[None, :] == np.arange(_n_bands)[:, None]
+
     for h in h_values:
         dl_max = detection_probability_obj.get_dl_max(h)
         z_max = dist_to_redshift(dl_max, h=h)
@@ -347,29 +439,43 @@ def precompute_missing_completion_denominator(
             d_L: npt.NDArray[np.float64] = np.asarray(
                 dist_vectorized(z, h=_h), dtype=np.float64
             )  # Gpc
-            phi = np.zeros_like(z)  # sky-marginalized; matches D(h)
-            theta = np.zeros_like(z)
-            p_det = detection_probability_obj.detection_probability_without_bh_mass_interpolated_zero_fill(
-                d_L, phi, theta, h=_h
-            )
             dVc: npt.NDArray[np.float64] = np.atleast_1d(
                 np.asarray(comoving_volume_element(z, h=_h), dtype=np.float64)
             )
-            # Incompleteness weight (1 - f_bar(z,h)). Eq. (33) in Gray et al.
-            # (2020), arXiv:1908.06050, with the SKY-AVERAGED completeness
-            # f_bar = (1/Npix) sum_k f_k (Gray-Messenger-Veitch 2022 Eq. 3, Change
-            # 5.2): beta_Gbar is the SKY-INTEGRATED missing-volume selection, so the
-            # sky-uniform p_det pulls out and only the Omega-marginal f_bar enters.
-            # f_bar is the SAME object the generator's F uses, closing the
-            # sim/inference loop. The 1/(1+z) and dVc match D(h) so beta_G =
-            # D - beta_Gbar. (Valid because p_det is sky-uniform; if real LISA sky
-            # dependence is restored this must become sum_k f_k p_det(z,Omega_k).)
+            if _sky_aware:
+                # Per-pixel (1 - f_k(z)) summed per band, divided by Npix, then
+                # weighted by that band's survival S_b(d_L).  Sky-uniform prior
+                # 1/Npix (equal-area pixels). Gray 2023 arXiv:2308.02281 Eq. 2.3;
+                # GMV 2022 arXiv:2111.04629 Eq. 5.
+                f_pix = np.clip(
+                    np.asarray(completeness.f_pixels(z, _h), dtype=np.float64),  # type: ignore[attr-defined]
+                    0.0,
+                    1.0,
+                )  # (Z, npix)
+                one_minus_f = 1.0 - f_pix  # (Z, npix)
+                # S1mf_b(z) = (1/Npix) sum_{k in band b}(1 - f_k(z)) -> (n_bands, Z)
+                s1mf_b = (_band_membership.astype(np.float64) @ one_minus_f.T) / float(_npix)
+                s_band = np.asarray(
+                    detection_probability_obj.survival_per_band(d_L), dtype=np.float64
+                )  # (n_bands, Z)
+                integrand = np.einsum("bz,bz->z", s1mf_b, s_band)
+                return np.asarray(integrand, dtype=np.float64) * dVc / (1.0 + z)
+            # Isotropic fallback: (1 - f_bar(z)) <p_det>_iso (the exact
+            # n_sky_bands==1 limit).  Valid because p_det is sky-uniform here.
+            phi = np.zeros_like(z)  # sky-marginalized; matches D(h)
+            theta = np.zeros_like(z)
+            p_det = np.asarray(
+                detection_probability_obj.detection_probability_without_bh_mass_interpolated_zero_fill(
+                    d_L, phi, theta, h=_h
+                ),
+                dtype=np.float64,
+            )
             f_z = np.clip(
                 np.asarray(completeness.f_bar(z, _h), dtype=np.float64),
                 0.0,
                 1.0,
             )
-            return (1.0 - f_z) * np.asarray(p_det, dtype=np.float64) * dVc / (1.0 + z)
+            return (1.0 - f_z) * p_det * dVc / (1.0 + z)
 
         beta_Gbar: float = fixed_quad(_missing_denom_integrand, z_min, z_max, n=quad_n)[0]
         beta_Gbar_table[h] = beta_Gbar
@@ -447,6 +553,29 @@ def precompute_global_catalog_selection(
         catalog[InternalCatalogColumns.BH_MASS].to_numpy(dtype=np.float64),
         dtype=np.float64,
     )
+    # Change 4: each galaxy's REAL ecliptic sky (PHI_S/THETA_S are ecliptic
+    # longitude/colatitude after COORD-03). The catalog galaxies ARE the
+    # Monte-Carlo sky sampling of the in-catalog channel (they trace LSS), so
+    # feeding Omega_g into p_det is the correct MC estimator of
+    # beta_G = INTEGRAL f p_det dVc/(1+z). Gray et al. (2020), arXiv:1908.06050,
+    # Eq. 8 (antenna response varies over sky); Gray 2023 arXiv:2308.02281 Eq. 2.3.
+    _has_sky_cols = (InternalCatalogColumns.PHI_S in catalog.columns) and (
+        InternalCatalogColumns.THETA_S in catalog.columns
+    )
+    # Sky-aware only for the 3D (without-BH-mass) channel; the 4D with-BH-mass
+    # sky x M_z survival is statistics-starved, so it stays ISOTROPIC (below).
+    _sky_aware = (
+        (not with_bh_mass)
+        and _has_sky_cols
+        and hasattr(detection_probability_obj, "detection_probability_without_bh_mass_sky")
+    )
+    if _sky_aware:
+        # Only the ecliptic COLATITUDE is needed (azimuthal symmetry of the
+        # orbit-averaged response, Cutler 1998); phi is not used.
+        theta_all = np.asarray(
+            catalog[InternalCatalogColumns.THETA_S].to_numpy(dtype=np.float64),
+            dtype=np.float64,
+        )
 
     global_table: dict[float, float] = {}
     for h in h_values:
@@ -470,20 +599,49 @@ def precompute_global_catalog_selection(
         # in-catalogue likelihood use (Babak et al. 2017; Gray et al. 2020).
         w_g = np.asarray(R_eff_per_mbh(M_g), dtype=np.float64) / (1.0 + z_g)
         d_L_g = np.asarray(dist_vectorized(z_g, h=h), dtype=np.float64)  # Gpc
-        phi = np.zeros_like(z_g)  # sky-marginalized, matching D(h)
-        theta = np.zeros_like(z_g)
         if with_bh_mass:
+            # FLAG (user-approved, statistics-starved): the with-BH-mass 4D
+            # sky x M_z survival is too noisy at NSIDE resolution, so this branch
+            # stays ISOTROPIC (phi=theta=0, sky-marginalised 2D accessor). The
+            # residual sky-selection systematic (<~1%) applies to the with-BH-mass
+            # posterior ONLY, not the primary result. PHYSICS-CHANGE-PROTOCOL §9.3.
             M_z_g = M_g * (1.0 + z_g)  # observer-frame mass (P_det grid axis)
+            phi_iso = np.zeros_like(z_g)
+            theta_iso = np.zeros_like(z_g)
             p_det = np.asarray(
                 detection_probability_obj.detection_probability_with_bh_mass_interpolated(
-                    d_L_g, M_z_g, phi, theta, h=h
+                    d_L_g, M_z_g, phi_iso, theta_iso, h=h
                 ),
                 dtype=np.float64,
             )
+        elif _sky_aware:
+            # Sky-resolved p_det at each galaxy's real ecliptic latitude, using the
+            # IDENTICAL flat per-band survival that D(h) and beta_Gbar use (NOT the
+            # interpolated accessor) so p_det(Omega) is ONE shared object across all
+            # selection integrals. Otherwise the p_det convention would not cancel in
+            # beta_G/Sigma_global and would rescale the in-catalogue channel weight,
+            # reintroducing the sky bias. Same equal-|sin beta| edges + side="right"
+            # band assignment as _sky_band_pixel_map (test T3 / T8).
+            # Gray et al. (2020), arXiv:1908.06050, Eq. 8; Cutler 1998 arXiv:gr-qc/9703068.
+            theta_g = theta_all[eligible]
+            sin_beta_g = np.abs(np.cos(theta_g))  # |sin beta| = |cos theta|
+            _edges = np.asarray(
+                detection_probability_obj.band_edges_sin_beta(), dtype=np.float64
+            )
+            _n_bands = int(_edges.size - 1)
+            band_g = np.clip(
+                np.searchsorted(_edges, sin_beta_g, side="right") - 1, 0, _n_bands - 1
+            )
+            s_band = np.asarray(
+                detection_probability_obj.survival_per_band(d_L_g), dtype=np.float64
+            )  # (n_bands, n_gal)
+            p_det = s_band[band_g, np.arange(band_g.size)]
         else:
+            phi_iso = np.zeros_like(z_g)  # isotropic fallback (matches D(h))
+            theta_iso = np.zeros_like(z_g)
             p_det = np.asarray(
                 detection_probability_obj.detection_probability_without_bh_mass_interpolated_zero_fill(
-                    d_L_g, phi, theta, h=h
+                    d_L_g, phi_iso, theta_iso, h=h
                 ),
                 dtype=np.float64,
             )
@@ -695,23 +853,26 @@ class BayesianStatistics:
         # Validate P_det grid coverage for observed events
         detection_probability.validate_coverage(h_value, self.cramer_rao_bounds)
 
-        # Gray et al. (2020), arXiv:1908.06050, Eq. A.19:
-        # Precompute completion-term denominator D(h) over full detectable volume.
-        # D(h) is event-independent; compute once per h-value.
+        # Gray et al. (2020), arXiv:1908.06050, Eq. 9 + Gray-Messenger-Veitch 2022,
+        # arXiv:2111.04629 (Change 5): per-HEALPix-pixel completeness f_k(z,Omega,h),
+        # loaded from the SAME frozen cached m_th map the EMRI injection uses (C1
+        # consistency; main.py:injection_campaign). f_bar weights beta_Gbar, f_k(event
+        # pixel) weights the completion numerator B_num below.  Built BEFORE D(h) so
+        # the sky-resolved selection (Change 2-4) can share its pixel grid.
+        completeness = from_cache_or_build()
+
+        # Gray et al. (2020), arXiv:1908.06050, Eq. A.19 + Gray 2023 arXiv:2308.02281
+        # Eq. 2.3 (Change 2): sky-resolved completion-term denominator D(h) over the
+        # full detectable volume, D(h) = INTEGRAL (1/Npix) sum_k p_det(d_L,Omega_k)
+        # dVc/(1+z). D(h) is event-independent; compute once per h-value.
         _D_h_table = precompute_completion_denominator(
             h_values=[h_value],
             detection_probability_obj=detection_probability,
             Omega_m=self.Omega_m,
             Omega_DE=self.Omega_DE,
+            completeness=completeness,
         )
         _LOGGER.info("D(h) precomputed for %d h-value(s).", len(_D_h_table))
-
-        # Gray et al. (2020), arXiv:1908.06050, Eq. 9 + Gray-Messenger-Veitch 2022,
-        # arXiv:2111.04629 (Change 5): per-HEALPix-pixel completeness f_k(z,Omega,h),
-        # loaded from the SAME frozen cached m_th map the EMRI injection uses (C1
-        # consistency; main.py:injection_campaign). f_bar weights beta_Gbar, f_k(event
-        # pixel) weights the completion numerator B_num below.
-        completeness = from_cache_or_build()
 
         # Partition-norm precomputes (Option A), consumed by p_Di's single ratio
         # p_i = (beta_G L_cat + B_num)/D(h). beta_Gbar(h) = INTEGRAL (1-f) P_det

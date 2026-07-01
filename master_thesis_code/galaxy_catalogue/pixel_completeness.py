@@ -71,6 +71,7 @@ from master_thesis_code.constants import GPC_TO_MPC, OMEGA_DE, OMEGA_M, H
 from master_thesis_code.galaxy_catalogue.handler import (
     REDUCED_CATALOGUE_FILE_PATH,
     CatalogueColumns,
+    _reduced_catalog_column_names,
 )
 from master_thesis_code.physical_relations import dist_vectorized
 
@@ -311,6 +312,57 @@ class PixelCompleteness:
         lat = (np.pi / 2.0 - float(theta)) * u.rad
         return int(self._healpix.lonlat_to_healpix(lon, lat))
 
+    def pixel_centers(self) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
+        r"""Ecliptic centres of every HEALPix pixel: ``(phi_k, theta_k)`` [rad].
+
+        Pure geometry (the inverse of :meth:`ang2pix`; mirrors
+        :meth:`sample_sky_in_pixels` with the cell-centre offset ``dx=dy=0.5``,
+        the ``astropy_healpix`` default).  ``phi_k`` is the ecliptic azimuth
+        (longitude) and ``theta_k = pi/2 - lat_k`` the ecliptic colatitude, the
+        SAME BarycentricTrueEcliptic(J2000) frame the response and the catalog
+        share.  No physical value is computed here (Change 6, software).
+
+        Returns
+        -------
+        (phi_k, theta_k) : tuple of ndarray, each shape ``(npix,)``
+            Pixel-centre ecliptic azimuth and colatitude in radians, indexed by
+            HEALPix pixel ``k = 0 .. npix-1``.
+        """
+        lon, lat = self._healpix.healpix_to_lonlat(np.arange(self.npix))
+        phi_k = np.asarray(lon.to(u.rad).value, dtype=np.float64)
+        theta_k = np.asarray(np.pi / 2.0 - lat.to(u.rad).value, dtype=np.float64)
+        return phi_k, theta_k
+
+    def f_pixels(
+        self,
+        z: float | npt.NDArray[np.floating[Any]],
+        h: float = H,
+    ) -> npt.NDArray[np.float64]:
+        r"""Per-pixel completeness for an array of redshifts: shape ``(Z, npix)``.
+
+        Vectorised generalisation of :meth:`f_map` over a redshift array (no new
+        physics: identical ``f_k`` values, empty/ZoA pixels = 0).  Used by the
+        sky-resolved missing-completion selection integral ``beta_Gbar`` to form
+        the per-band incompleteness sums ``sum_{k in band}(1 - f_k(z))``.
+
+        Parameters
+        ----------
+        z : float or ndarray
+            Redshift(s).
+        h : float
+            Dimensionless Hubble parameter.
+
+        Returns
+        -------
+        ndarray, shape ``(Z, npix)``
+            ``f_k(z, h)`` for every pixel, with empty/ZoA pixels exactly ``0``.
+        """
+        z_arr = np.atleast_1d(np.asarray(z, dtype=np.float64))
+        out = np.zeros((z_arr.size, self.npix), dtype=np.float64)
+        if np.any(self._valid):
+            out[:, self._valid] = self._f_from_mth(self._m_th_valid, z_arr, h)
+        return out
+
     def sample_sky_in_pixels(
         self, pix: npt.NDArray[np.int_], rng: np.random.Generator
     ) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
@@ -390,9 +442,10 @@ def build_m_th_map(
     import pandas as pd
 
     healpix = HEALPix(nside=nside, order=order)
-    # Column order on disk matches CatalogueColumns minus the dropped 30/34
-    # (handler.read_reduced_galaxy_catalog): RA, Dec, APPARENT_B_MAG, z, ...
-    on_disk_names = [c.name for c in CatalogueColumns if c.value not in (30, 34)]
+    # On-disk column order (handler.read_reduced_galaxy_catalog): RA, Dec,
+    # APPARENT_B_MAG, z, ..., with the RETAINED redshift flag as trailing column.
+    # Use the shared source of truth so positional alignment survives schema edits.
+    on_disk_names = _reduced_catalog_column_names()
     use_cols = [
         CatalogueColumns.RIGHT_ASCENSION.name,
         CatalogueColumns.DECLINATION.name,

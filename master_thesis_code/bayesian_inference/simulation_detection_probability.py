@@ -60,6 +60,20 @@ logger = logging.getLogger(__name__)
 _DEFAULT_DL_BINS: int = 60
 _DEFAULT_M_BINS: int = 40
 
+# ── Change 1: ecliptic-latitude sky bands for the response-anisotropy axis ──
+# The LISA orbit-averaged response depends on the source ecliptic latitude
+# beta = pi/2 - qS (best near the ecliptic plane, weakest at the poles), and is
+# azimuthally symmetric after multi-year averaging (Cutler 1998,
+# arXiv:gr-qc/9703068; arXiv:1201.3684).  Route A re-bins the EXISTING isotropic
+# injection horizons by |sin beta| into equal-solid-angle (equal-|sin beta|)
+# bands and builds one detection-horizon survival per band -- no separation
+# ansatz, no new simulation (PHYSICS-CHANGE-PROTOCOL Change 1).
+_DEFAULT_N_SKY_BANDS: int = 6
+# Under-populated polar-band guard (analogous to the 2D grid n_total>=10 check):
+# a band with fewer injections than this falls back to the pooled (isotropic)
+# horizon so a noise-starved band never distorts the survival.
+_MIN_BAND_INJECTIONS: int = 10
+
 # Maximum number of cached grids (legacy LRU eviction parameter).  The
 # detection horizon is h-invariant so a single grid now serves every h; the
 # constant is retained for backward-compatible imports.
@@ -153,12 +167,17 @@ class SimulationDetectionProbability:
         h_prior_range: tuple[float, float] = (_DEFAULT_H_PRIOR_MIN, _DEFAULT_H_PRIOR_MAX),
         bandwidth_scale: float = 1.0,
         estimator: _Estimator = _DEFAULT_ESTIMATOR,
+        n_sky_bands: int = _DEFAULT_N_SKY_BANDS,
         _force_unit_weights: bool = False,
     ) -> None:
         self._dl_bins = dl_bins
         self._mass_bins = mass_bins
         self._snr_threshold = snr_threshold
         self._force_unit_weights = _force_unit_weights
+        if int(n_sky_bands) < 1:
+            msg = f"n_sky_bands must be >= 1, got {n_sky_bands}"
+            raise ValueError(msg)
+        self._n_sky_bands: int = int(n_sky_bands)
         # Estimator no longer affects the d_L treatment (survival is exact);
         # retained for API compat and the NW regression escape hatch.
         if estimator not in ("local_linear", "nadaraya_watson"):
@@ -236,8 +255,11 @@ class SimulationDetectionProbability:
             ", ".join(f"{h:.2f}" for h in self._h_values_found),
         )
 
-        # Validate required columns
-        required_cols = {"z", "M", "SNR", "h_inj", "luminosity_distance"}
+        # Validate required columns.  "qS" (ecliptic colatitude) is now required:
+        # it carries the response-anisotropy (ecliptic-latitude) axis of p_det
+        # (Change 1).  It is already written by every injection campaign
+        # (main.py:602), so this is a no-op for the canonical CSVs.
+        required_cols = {"z", "M", "SNR", "h_inj", "luminosity_distance", "qS"}
         missing = required_cols - set(self._pooled_df.columns)
         if missing:
             msg = f"Injection CSV missing required columns: {missing}"
@@ -275,6 +297,13 @@ class SimulationDetectionProbability:
         # right gives the count of injections with d_hor >= threshold.
         self._n_inj: int = len(self._d_hor_sorted)
 
+        # ── Change 1: ecliptic-latitude sky bands ──
+        # Ecliptic colatitude qS = theta; latitude beta = pi/2 - qS, so the
+        # equal-solid-angle variable is |sin beta| = |cos qS| (Cutler 1998,
+        # arXiv:gr-qc/9703068 -- azimuthally symmetric orbit-averaged response).
+        self._qS_arr: npt.NDArray[np.float64] = self._pooled_df["qS"].values.astype(np.float64)
+        self._build_sky_bands()
+
         # Cache holder for the (single, h-invariant) survival interpolators.
         self._grid_cache: OrderedDict[
             float,
@@ -311,6 +340,10 @@ class SimulationDetectionProbability:
         state["_dl_raw"] = None
         state["_d_hor"] = None
         state["_log_M_z"] = None
+        # Raw per-injection latitude not needed post-build; the per-band SORTED
+        # horizons (``_d_hor_sorted_by_band``) ARE retained -- the sky accessor
+        # and ``survival_per_band`` use them directly in workers.
+        state["_qS_arr"] = None
         return state
 
     def __setstate__(self, state: dict[str, Any]) -> None:
@@ -447,6 +480,199 @@ class SimulationDetectionProbability:
         count_ge = self._n_inj - idx_below
         surv = count_ge.astype(np.float64) / float(self._n_inj)
         return np.asarray(np.clip(surv, 0.0, 1.0), dtype=np.float64)
+
+    # ------------------------------------------------------------------
+    # Sky-band survival (Change 1: ecliptic-latitude response anisotropy)
+    # ------------------------------------------------------------------
+
+    def _build_sky_bands(self) -> None:
+        r"""Bin injections into equal-|sin beta| bands and sort each band's horizon.
+
+        Route A (PHYSICS-CHANGE-PROTOCOL Change 1): the sky dependence is
+        MEASURED, not modelled.  ``beta = pi/2 - qS`` is the ecliptic latitude;
+        ``u = |sin beta| = |cos qS|`` is uniform on ``[0, 1]`` for an isotropic
+        sky, so equal-width ``u`` bands are equal-solid-angle bands.  Each
+        injection is assigned to one band and each band gets its OWN sorted
+        detection horizon, giving a per-band survival
+        ``S_b(d_L) = P(d_hor >= d_L | band b)``.  Under-populated polar bands
+        (< ``_MIN_BAND_INJECTIONS``) fall back to the pooled horizon.
+
+        # Empirical per-band detection-horizon survival; azimuthal symmetry of
+        # the LISA orbit-averaged response R = R(beta) (Cutler 1998,
+        # arXiv:gr-qc/9703068; arXiv:1201.3684). 1/d_L amplitude scaling exact
+        # (Hogg 1999, arXiv:astro-ph/9905116, Eq. 16). No separation ansatz.
+        """
+        nband = self._n_sky_bands
+        sin_beta_abs = np.abs(np.cos(self._qS_arr))  # |sin beta| in [0, 1]
+        # Equal-|sin beta| (equal-solid-angle) band edges and centres.
+        self._band_edges: npt.NDArray[np.float64] = np.linspace(0.0, 1.0, nband + 1)
+        self._band_centers: npt.NDArray[np.float64] = 0.5 * (
+            self._band_edges[:-1] + self._band_edges[1:]
+        )
+        band_of_inj = np.clip(
+            np.searchsorted(self._band_edges, sin_beta_abs, side="right") - 1,
+            0,
+            nband - 1,
+        )
+        self._d_hor_sorted_by_band: list[npt.NDArray[np.float64]] = []
+        self._n_inj_by_band: list[int] = []
+        self._band_underpopulated: list[bool] = []
+        for b in range(nband):
+            mask = band_of_inj == b
+            n_b = int(np.count_nonzero(mask))
+            if n_b < _MIN_BAND_INJECTIONS:
+                # Fall back to the pooled (isotropic) horizon for this band.
+                self._d_hor_sorted_by_band.append(self._d_hor_sorted)
+                self._n_inj_by_band.append(self._n_inj)
+                self._band_underpopulated.append(True)
+                logger.warning(
+                    "Sky band %d/%d (|sin beta| in [%.3f, %.3f]) under-populated "
+                    "(%d < %d injections); falling back to the pooled isotropic horizon.",
+                    b,
+                    nband,
+                    self._band_edges[b],
+                    self._band_edges[b + 1],
+                    n_b,
+                    _MIN_BAND_INJECTIONS,
+                )
+            else:
+                self._d_hor_sorted_by_band.append(np.sort(self._d_hor[mask], kind="mergesort"))
+                self._n_inj_by_band.append(n_b)
+                self._band_underpopulated.append(False)
+        logger.info(
+            "Sky bands built: %d equal-|sin beta| bands, per-band injection counts %s.",
+            nband,
+            self._n_inj_by_band,
+        )
+
+    def band_edges_sin_beta(self) -> npt.NDArray[np.float64]:
+        """Equal-|sin beta| band edges (length ``n_sky_bands + 1``) in ``[0, 1]``.
+
+        The SAME edges the inference must use to bin pixels into bands so the
+        sky marginal is invariant (PHYSICS-CHANGE-PROTOCOL test T3).
+        """
+        return self._band_edges.copy()
+
+    def band_centers_sin_beta(self) -> npt.NDArray[np.float64]:
+        """Band centres in ``|sin beta|`` (length ``n_sky_bands``)."""
+        return self._band_centers.copy()
+
+    def _survival_at_band(
+        self, band_idx: int, query: npt.NDArray[np.float64]
+    ) -> npt.NDArray[np.float64]:
+        """Exact survival ``P(d_hor >= d_L | band)`` for a single band."""
+        d_hor_sorted = self._d_hor_sorted_by_band[band_idx]
+        n_b = self._n_inj_by_band[band_idx]
+        idx_below = np.searchsorted(d_hor_sorted, query, side="left")
+        surv = (n_b - idx_below).astype(np.float64) / float(n_b)
+        return np.asarray(np.clip(surv, 0.0, 1.0), dtype=np.float64)
+
+    def survival_per_band(self, d_L: float | npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
+        r"""Per-band detection-horizon survival ``S_b(d_L)``; shape ``(n_sky_bands, Nq)``.
+
+        The building block of the sky-resolved selection integrals: the
+        inference forms the sky sum ``(1/Npix) sum_k p_det(d_L, Omega_k)`` as
+        ``sum_b (n_pix_b/Npix) S_b(d_L)`` (each pixel takes its band's flat
+        survival), and the missing-completion integral weights ``S_b`` by the
+        per-band incompleteness ``(1/Npix) sum_{k in b}(1 - f_k(z))``.
+
+        Parameters
+        ----------
+        d_L : float or ndarray
+            Luminosity distance query points [Gpc].
+
+        Returns
+        -------
+        ndarray, shape ``(n_sky_bands, Nq)``
+            Band-resolved survival in ``[0, 1]``.
+        """
+        q = np.atleast_1d(np.asarray(d_L, dtype=np.float64))
+        out = np.empty((self._n_sky_bands, q.size), dtype=np.float64)
+        for b in range(self._n_sky_bands):
+            out[b, :] = self._survival_at_band(b, q)
+        return out
+
+    def _interp_survival_in_sin_beta(
+        self,
+        dl_arr: npt.NDArray[np.float64],
+        sin_beta_abs: npt.NDArray[np.float64],
+    ) -> npt.NDArray[np.float64]:
+        """Survival interpolated linearly in ``|sin beta|`` across band centres.
+
+        Avoids step artefacts at band boundaries; nearest-band clamp outside the
+        centre range.  ``dl_arr`` and ``sin_beta_abs`` are the same shape.
+        """
+        s_all = self.survival_per_band(dl_arr)  # (nband, N)
+        centers = self._band_centers
+        n_query = dl_arr.size
+        if self._n_sky_bands == 1:
+            return np.asarray(np.clip(s_all[0, :], 0.0, 1.0), dtype=np.float64)
+        idx_hi = np.clip(
+            np.searchsorted(centers, sin_beta_abs, side="left"),
+            1,
+            self._n_sky_bands - 1,
+        )
+        idx_lo = idx_hi - 1
+        c_lo = centers[idx_lo]
+        c_hi = centers[idx_hi]
+        # Clamp weight to [0, 1] => nearest-band value for u outside centre span.
+        w = np.clip((sin_beta_abs - c_lo) / (c_hi - c_lo), 0.0, 1.0)
+        cols = np.arange(n_query)
+        s_lo = s_all[idx_lo, cols]
+        s_hi = s_all[idx_hi, cols]
+        result = (1.0 - w) * s_lo + w * s_hi
+        return np.asarray(np.clip(result, 0.0, 1.0), dtype=np.float64)
+
+    def detection_probability_without_bh_mass_sky(
+        self,
+        d_L: float | npt.NDArray[np.float64],
+        phi: float | npt.NDArray[np.float64],
+        theta: float | npt.NDArray[np.float64],
+        *,
+        h: float,
+    ) -> float | npt.NDArray[np.float64]:
+        r"""Sky-resolved detection probability ``p_det(d_L | Omega)`` (Change 1).
+
+        Maps the ecliptic sky direction ``(phi, theta)`` to the ecliptic
+        latitude band via ``|sin beta| = |cos theta|`` (``beta = pi/2 - theta``)
+        and returns that band's detection-horizon survival, interpolated
+        linearly in ``|sin beta|`` across band centres.  ``phi`` is accepted but
+        unused (azimuthal symmetry of the orbit-averaged response, Cutler 1998,
+        arXiv:gr-qc/9703068).
+
+        # p_det = P(d_hor >= d_L | ecliptic-latitude band); empirical per-band
+        # survival, azimuthally symmetric (Cutler 1998, arXiv:gr-qc/9703068).
+
+        Reduces to the pooled isotropic survival when ``n_sky_bands == 1`` (the
+        regression fallback; PHYSICS-CHANGE-PROTOCOL test T1).
+
+        Parameters
+        ----------
+        d_L : float or ndarray
+            Luminosity distance [Gpc].
+        phi : float or ndarray
+            Ecliptic azimuth [rad] (unused; azimuthal symmetry).
+        theta : float or ndarray
+            Ecliptic colatitude [rad]; ``beta = pi/2 - theta``.
+        h : float
+            Dimensionless Hubble parameter (horizon is h-invariant).
+
+        Returns
+        -------
+        float or ndarray
+            Detection probability in ``[0, 1]``.
+        """
+        self._get_or_build_grid(h)  # parity: register the (h-invariant) grid/flags
+        dl_arr = np.atleast_1d(np.asarray(d_L, dtype=np.float64))
+        theta_arr = np.atleast_1d(np.asarray(theta, dtype=np.float64))
+        dl_b, theta_b = np.broadcast_arrays(dl_arr, theta_arr)
+        dl_b = np.ascontiguousarray(dl_b, dtype=np.float64)
+        sin_beta_abs = np.abs(np.cos(theta_b))  # |sin beta| = |cos theta|
+        result = self._interp_survival_in_sin_beta(dl_b.ravel(), sin_beta_abs.ravel())
+        result = result.reshape(dl_b.shape)
+        if np.ndim(d_L) == 0 and np.ndim(theta) == 0:
+            return float(result.reshape(-1)[0])
+        return np.asarray(result, dtype=np.float64)
 
     def _get_or_build_grid(
         self, h: float

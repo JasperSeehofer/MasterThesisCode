@@ -8,6 +8,23 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Changed
+- **[PHYSICS]** sky-aware selection function (closes the p_sample≠p_comp sky/selection
+  paper-blocker; audit `.planning/PSAMPLE-PCOMP-AUDIT-20260701.md` R1). The generator draws +
+  SNR-selects an anisotropic real sky through the sky-dependent LISA response, but the inference
+  selection evaluated an **isotropic** `p_det` (φ=θ=0). Now: `simulation_detection_probability.py`
+  builds an **ecliptic-latitude-band** detection-horizon survival `p_det(d_L|β)` re-binned from the
+  **existing** injections (no new campaign; LISA's annual orbit ⇒ azimuthal symmetry `R=R(β)`,
+  Cutler 1998 arXiv:gr-qc/9703068); `bayesian_statistics.py` `D(h)`, `β_Ḡ`, and the global catalog
+  denominator become per-pixel/per-band sums `(1/N_pix)Σ_k(…)p_det(Ω_k)` (Gray 2023 arXiv:2308.02281
+  Eq. 2.3; GMV 2022 arXiv:2111.04629 Eq. 5; MFG 2019 arXiv:1809.02063 Eq. 6), with each catalog
+  galaxy evaluated at its real ecliptic latitude via the **same flat per-band** survival (one shared
+  `p_det(Ω)` object across all integrals — guardrail). The with-BH-mass 4D branch stays isotropic +
+  flagged (statistics-starved). Isotropic limit recovers the old code bit-for-bit (regression T1=0.0);
+  partition `D=β_G+β_Ḡ` (T2); anisotropic closure witnesses + removes the sky bias (T6, 75×). New
+  `test_sky_selection.py` (T1–T8). **Measured H₀ impact ≲1%, sign-indeterminate** (GLADE ZoA is
+  Galactic-plane-aligned ≈60° to the ecliptic ⇒ `Cov[p_det,p_sky]≈0`); reported as a bounded
+  systematic, a formal-correctness / self-consistency closure. Derivation:
+  `.planning/derivation-sky-selection/PHYSICS-CHANGE-PROTOCOL.md`.
 - **[PHYSICS]** `galaxy_catalogue/handler.py`: corrected the host stellar-mass → BH-mass
   **error budget**. The relation is identified+cited as **Reines & Volonteri (2015)**
   (arXiv:1508.06274, Eq. 5; broad-line AGN M_BH–M_*,total; α=7.45, β=1.05) — *not* McConnell
