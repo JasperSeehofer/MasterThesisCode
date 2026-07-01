@@ -625,13 +625,9 @@ def precompute_global_catalog_selection(
             # Gray et al. (2020), arXiv:1908.06050, Eq. 8; Cutler 1998 arXiv:gr-qc/9703068.
             theta_g = theta_all[eligible]
             sin_beta_g = np.abs(np.cos(theta_g))  # |sin beta| = |cos theta|
-            _edges = np.asarray(
-                detection_probability_obj.band_edges_sin_beta(), dtype=np.float64
-            )
+            _edges = np.asarray(detection_probability_obj.band_edges_sin_beta(), dtype=np.float64)
             _n_bands = int(_edges.size - 1)
-            band_g = np.clip(
-                np.searchsorted(_edges, sin_beta_g, side="right") - 1, 0, _n_bands - 1
-            )
+            band_g = np.clip(np.searchsorted(_edges, sin_beta_g, side="right") - 1, 0, _n_bands - 1)
             s_band = np.asarray(
                 detection_probability_obj.survival_per_band(d_L_g), dtype=np.float64
             )  # (n_bands, n_gal)
@@ -1594,8 +1590,18 @@ class BayesianStatistics:
             _comp_slot = self._det_index_to_slot[detection_index]
             _comp_mean_3d = self._means_3d[_comp_slot]
             _comp_cov_inv_3d = self._cov_inv_3d[_comp_slot]
-            _comp_log_norm_3d = float(self._log_norm_3d[_comp_slot])
             _comp_det_d_L = self._det_d_L[_comp_slot]
+            # [PHYSICS] De-rail fix (2026-07-01): the completion numerator marginalises
+            # the GW likelihood over the UNKNOWN dark-host sky direction with the
+            # isotropic prior 1/(4π) — NOT the peak sky density. The isotropic
+            # sky-marginal of the 3D GW Gaussian is a 1D Gaussian in d_L_fraction with
+            # variance Σ[2,2] (Σ = cov = inv(cov_inv)) and mean mean_3d[2] (=1). This
+            # makes B_num's sky treatment consistent with the completion denominator
+            # D(h) = ∫ (1/Npix) Σ_k p_det(Ω_k) · dVc/(1+z) dz (sky-averaged p_det).
+            # Eq. (32) in Gray et al. (2020), arXiv:1908.06050.
+            _comp_cov_3d = np.linalg.inv(_comp_cov_inv_3d)
+            _comp_sigma_dLfrac = float(np.sqrt(_comp_cov_3d[2, 2]))
+            _comp_mean_dLfrac = float(_comp_mean_3d[2])
             # Change 5.3: the completion numerator weights the incompleteness at the
             # EVENT's sky pixel, (1 - f_{k(Omega_e)}(z)). p_GW delta-collapses the sky
             # integral, so f is evaluated at the single pixel containing the detection
@@ -1611,15 +1617,15 @@ class BayesianStatistics:
                     dist_vectorized(z, h=self.h), dtype=np.float64
                 )  # Gpc
                 d_L_fraction = d_L / _comp_det_d_L  # dimensionless
-                phi = np.full_like(z, self.detection.phi)
-                theta = np.full_like(z, self.detection.theta)
-
-                p_gw: npt.NDArray[np.float64] = _mvn_pdf(
-                    np.vstack([phi, theta, d_L_fraction]).T,
-                    _comp_mean_3d,
-                    _comp_cov_inv_3d,
-                    _comp_log_norm_3d,
-                )
+                # [PHYSICS] isotropic-sky-marginalised GW likelihood (see the precompute
+                # above): (1/4π) · N(d_L_fraction; 1, σ_marg). Replaces the peak sky
+                # density _mvn_pdf([φ_det, θ_det, d_L_fraction], …), which over-counted
+                # the completion term by ~4π·(peak sky density) (~5000× at σ_sky≈2°) and
+                # pinned the H0 posterior to the grid edge.
+                # Eq. (32) in Gray et al. (2020), arXiv:1908.06050.
+                p_gw: npt.NDArray[np.float64] = norm.pdf(
+                    d_L_fraction, loc=_comp_mean_dLfrac, scale=_comp_sigma_dLfrac
+                ) / (4.0 * np.pi)
                 dVc: npt.NDArray[np.float64] = np.atleast_1d(
                     np.asarray(comoving_volume_element(z, h=self.h), dtype=np.float64)
                 )
