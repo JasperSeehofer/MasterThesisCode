@@ -281,18 +281,28 @@ orchestrator must pass investigator agents **only the §B2 neutral brief + code 
 conclusions, and withhold comparison until synthesis.
 
 ### E3. Suggested prompt for the next session (lean; does not restate our conclusion)
-> "Run the independent verification commissioned in
-> `.planning/HANDOFF-INDEPENDENT-VERIFICATION-20260701.md` (Part B), in a git worktree off HEAD.
-> Enforce the independence guardrails: spawn every investigator agent (via workflows) with ONLY the
-> neutral problem statement in §B2 plus code access — do NOT pass them this project's memory,
-> `.planning` reports, `docs/` conclusions, or any verdict. Treat all of our prior results as
-> untested claims to audit before use (§B6). Have the agents work from first principles and try to
-> FALSIFY the possibility that the railing is irreducible. Only in the final synthesis phase compare
-> their independent findings to our stored conclusions and deliver the report per §B5."
+> "You are running an independent verification of a LISA EMRI dark-siren H₀ pipeline. Read
+> `.planning/HANDOFF-INDEPENDENT-VERIFICATION-20260701.md` and execute **Part B** (on a clean
+> checkout of HEAD — no worktree needed on a fresh clone; use a worktree only if sharing the repo
+> with other work). **Independence is the point:** spawn every investigator agent (via workflows)
+> with **only the §B2 neutral brief + code access** — never the `.planning/`/`docs/` conclusions or
+> our verdicts; treat every prior result of ours as an **untested claim to audit before use** (§B6),
+> and **blind the injected H₀** to the agents where feasible (§B1). Have the agents work from first
+> principles and genuinely **try to produce a peaked, non-railing posterior / find a de-railing
+> bug** — i.e. falsify the (withheld) 'irreducible railing' claim. **Prioritize the
+> temporal/regression archaeology — *why were past results sensible and what changed?* (§B3.3 /
+> D3)** — that is the central doubt. Run the hypothesis tournament wide and use **≥2 independent
+> from-scratch reproductions** for consensus (§E4). Start with **synthetic-mock tests** (repo-only);
+> real-catalogue reproduction needs the copied local data and should be throttled (§E4/E5). Only in
+> the final **synthesis** compare the agents' findings to our stored conclusions; deliver the report
+> per §B5 (HOLD/WRONG/INCOMPLETE + decisive tests)."
 
-**Max-blindness alternative (first pass):** give *only* the §B2 neutral brief as the prompt, let it
-form hypotheses cold, then hand it this handoff's Evidence Locker for the deeper phases. Cleaner
-independence; it re-derives some structure.
+**Fresh-machine bonus:** `MEMORY.md` lives in `~/.claude/`, not the repo, so on a *new* machine it is
+absent and the orchestrator is naturally uncontaminated by our stored conclusions; only the in-repo
+`.planning/`/`docs/` conclusions remain (guardrail handles them). **Max-blindness alternative (first
+pass):** give *only* the §B2 neutral brief as the prompt, let the session form hypotheses cold, then
+hand it this handoff's Evidence Locker for the deeper phases — cleanest independence, at the cost of
+re-deriving some structure.
 
 ### E4. Parallelism within the commission + compute/device guidance
 **Parallelize the thinking, throttle the running.**
