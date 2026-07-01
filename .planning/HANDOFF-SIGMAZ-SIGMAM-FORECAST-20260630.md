@@ -97,3 +97,43 @@ already settled separately). Two viable routes:
 4. Identify the (σ_z, σ_M) contour for a target σ(H₀)/H₀; relate to real survey capabilities
    (spec-z surveys, future photo-z, EMRI BH-mass Fisher errors from the simulation CRBs).
 5. If promising, validate one cell with the sky-faithful production pipeline (Route B).
+
+---
+
+## 7. STATUS — first steps DONE + verified (2026-06-30, later session)
+
+Route A is **built, swept, adversarially verified, and documented.** See memory
+`sigma-z-sigma-M-forecast` and the full write-up `docs/SIGMA_Z_SIGMA_M_FORECAST.md`.
+
+- **Engine:** `scripts/bridge_closure/sigma_z_sigma_M_forecast.py` (+ `_forecast_plot.py`).
+  Self-consistent closure; posterior-width AND RMSE-to-truth reporting; the σ_M /
+  with-BH-mass channel mirrors production `single_host_likelihood` (H3 (1+z) convention,
+  mass-blind shared denominator → pure-numerator gain); exact `d_L=dist(z,1)/h` + candidate
+  collapse → ~50× speedup; multiprocessing sweep; `--population synthetic|real_nz`.
+- **Figure (F5):** `docs/figures/sigma_z_sigma_M_precision_heatmap.png` (3 panels:
+  1-D, 2-D + frontier σ_M=σ_z/(1+z) + 2%/5% contours, gain).
+- **Result:** 1-D useful (<5%) only σ_z≲1e-3, railed (~26-30%) for σ_z≥0.015; **2-D
+  tolerates ~50× larger σ_z but only at σ_M≲1-2%** (the convergence hypothesis CONFIRMED),
+  with at-GLADE useful boundary σ_M≈1.2-1.7%. **Realism:** the stellar→BH-mass scatter
+  (~0.3-0.5 dex = fractional 0.78-1.66) is ~50-170× too large → the 2-D channel does NOT
+  rescue GLADE in practice (verdict conservative; idealisations all favour 2-D).
+- **Verified** (3-lens workflow wf_2a0b32ad-6d9): faithfulness SOUND; statistics/physics
+  minor only. Caveats baked into the doc §4: don't quote sub-~1.4% absolute (σ²-floor +
+  h-grid step); absolute % at N=400 ∝ N^{−1/2} (re-quote at realistic N); 3 idealisations.
+
+**Re-runs DONE.** 32-seed synthetic (numbers match 8-seed to ≲1%; figure + §6 table refreshed)
++ 16-seed real-GLADE-n(z) (`outputs/sigma_z_sigma_M_forecast_realnz.json`,
+`docs/figures/sigma_z_sigma_M_precision_heatmap_realnz.png`). **The real-n(z) pass changed the
+picture (the frontier IS population-dependent — see write-up §4.6):** under the real GLADE n(z)
+the 1-D channel is MORE tolerant (useful to σ_z≈0.015) but rails hard at σ_z≈0.025-0.05, and
+GLADE's actual σ_z≈0.035 rails regardless of σ_M (dense-catalogue mass+photo-z confusers); the
+realistic mass-channel gain is ~1-3× (not the synthetic's ~60×). The synthetic is the IDEALISED
+lever bound; the real-n(z) is the realistic limit; both agree at realistic large σ_M and the
+core info-starvation conclusion is strengthened. This cross-checks the seed-600 real-pipeline
+rail at σ_z=0.035.
+
+**Open for the paper:** decide which is the headline figure (recommend: synthetic for the clean
+mechanism/idealised lever + real-n(z) for the realistic limit, both shown). Route B
+(production-pipeline validation of one cell, sky-faithful) is the next escalation if a paper-grade
+absolute number at a realistic N is wanted; absolute precision still needs a defensible N
+(the EMRI yield is model-uncertain) and the ~1.4% floor caveat.

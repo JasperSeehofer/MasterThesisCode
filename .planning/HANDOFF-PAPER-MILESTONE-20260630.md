@@ -1,5 +1,19 @@
 # HANDOFF — Paper milestone: dark-siren H₀ feasibility (story + σ_z/σ_M heatmap)
 
+> **PROGRESS (2026-06-30, later session): Figure F5 (σ_z/σ_M feasibility heatmap) is BUILT,
+> SWEPT, ADVERSARIALLY VERIFIED, and DOCUMENTED.** Engine
+> `scripts/bridge_closure/sigma_z_sigma_M_forecast.py`; figure
+> `docs/figures/sigma_z_sigma_M_precision_heatmap.png`; write-up
+> `docs/SIGMA_Z_SIGMA_M_FORECAST.md`; memory `sigma-z-sigma-M-forecast`; companion handoff
+> `HANDOFF-SIGMAZ-SIGMAM-FORECAST-20260630.md` §7. Result: 1-D info-starved (useful only at
+> σ_z≲1e-3); the **with-BH-mass (2-D) channel converges ~50× faster** (the §1.3 hypothesis
+> CONFIRMED) but only at σ_M≲1-2%, ~50-170× below the stellar→BH-mass scatter → no GLADE
+> rescue. **This also ANSWERS blind-spot §5.1 (σ_M railing analog):** the large-σ_M 2-D corner
+> simply collapses to the 1-D channel (no separate rail). 32-seed + real-n(z) re-runs in flight.
+> **Remaining milestone tracks: F4 spec-z-tag decomposition (§3.3, the money figure); the
+> §3.1 correctness fixes for a final current-state run; the §4 mass-relation research; the
+> §5.2 p_sample≠p_comp paper-blocker; paper drafting (§2).**
+
 **Created 2026-06-30. Start a FRESH session for this milestone (clean context).**
 Suggested kickoff: `/gpd:new-milestone` (physics paper) or `/gsd:new-milestone`, then plan the tracks below.
 This is the master handoff; the σ_z/σ_M heatmap implementation specifics live in the companion
@@ -84,7 +98,23 @@ this number):
   events are flat/railing. Confirm the final stacked posterior's shape is driven by the spec-z subset.
 - This is BOTH an analysis and figure F4, and it directly proves the paper's central claim.
 
-## 4. Research track (GPD) — stellar-mass → BH-mass relation (NEVER verified)
+## 4. Research track (GPD) — stellar-mass → BH-mass relation — ✅ DONE (2026-06-30)
+
+> **DONE** (workflow `wf_689bad79-8be`, literature-fetched). Assessment:
+> `docs/MASS_RELATION_ASSESSMENT.md`; memory `mass-relation-reines-volonteri`. Findings:
+> **(1)** Source CONFIRMED EXACT = **Reines & Volonteri 2015** AGN M_BH–M_*,total (Eq. 5,
+> α=7.45±0.08 β=1.05±0.11), the *correct* relation (GLADE total mass; reaches low mass) — NOT
+> McConnell & Ma 2013 (M_bulge, 8.46). **(2)** The code OMITS the relation's **intrinsic scatter
+> (ε₀=0.24 dex; total predictive rms 0.55 dex)** — the dominant term — so host-mass errors are
+> ~3-7× too tight. **(3)** Plus a `/10` operator-precedence bug (forward `:1040`, 100× variance
+> understatement) and a wrong/scatter-missing inverse (`:1049`, **dead code**). **(4)** EMRI hosts
+> are inside-to-edge of R&V's calibration (mild extrapolation; scatter grows at low mass —
+> Greene+2020). **F5 link:** the realistic σ_M floor (60-200%) is 30-100× the 1-2% the 2-D channel
+> needs and is irreducible → *no H₀ rescue* (confirms/deepens F5; at 0.55 dex the linear-Gaussian
+> mass model breaks → log-normal needed). **NEXT:** the 3 fixes are `[PHYSICS]` (handler.py) —
+> bring under the protocol for user approval; file GitHub issues when reachable.
+
+(original task list, now answered above:)
 - **Current code** (`handler.py`): `M_BH = exp(α + β·ln(M*/10))`, with `α = 7.45·ln10`, `β = 1.05`,
   fit errors `d_α = 0.08·ln10`, `d_β = 0.11` (`:30-33`); function `_empiric_stellar_mass_to_BH_mass_relation`
   (`:1033`), applied in `_map_stellar_masses_to_BH_masses` (`:801`); M* is in 10¹⁰ M_⊙ (so `/10` → 10¹¹ M_⊙).
