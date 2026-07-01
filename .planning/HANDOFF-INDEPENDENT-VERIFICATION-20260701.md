@@ -256,3 +256,40 @@ trusting it."* For each, the specific thing to check:
 - The **honest current expectation** (to be tested, not assumed by Part B): a full production re-run
   still rails, because the fixes this session are each ≲1% while the rail is +13–18%, and the driver
   (host photo-z σ_z≈0.035 ≫ GW precision) is untouched. **Part B exists precisely to challenge this.**
+
+---
+
+## PART E — Sequencing & how to prompt the next session
+
+### E1. Serialize; freeze the code during the commission
+Do **Part B first, alone**; do **not** run Part A pipeline fixes in parallel. Reasons: (1) the
+commission must audit + reproduce against a **frozen codebase** — parallel edits make it a moving
+target and muddy the temporal/regression archaeology (the key tool for the "was it a bug?" doubt);
+(2) the verdict is **upstream** — if it finds a de-railing bug the priorities invert, so Part A done
+now may be wasted/misframed; (3) bias hygiene — an untouched codebase keeps the audit independent.
+- **Safe to parallelize (optional, low value):** pure ops that don't touch the audited branch —
+  merge PR #17 to `main`, file GitHub issues. NOT the pipeline fixes; NOT the paper *results*.
+- **Better use of spare capacity:** deepen the commission (add D7 external-code cross-check, more
+  seeds for D2 calibration) rather than splitting focus.
+- **Run it in an isolated worktree off HEAD:** `git worktree add ../verify-worktree b828ab0` — frozen
+  snapshot, clean main branch, report lands in `.planning/`.
+
+### E2. Independence is enforced at the AGENT level (memory auto-loads into the orchestrator)
+A fresh session auto-loads `MEMORY.md` (our conclusions), so the orchestrator can't be fully blind —
+but workflow/Task **subagents get fresh context and see only the prompt passed to them**. So the
+orchestrator must pass investigator agents **only the §B2 neutral brief + code access**, never our
+conclusions, and withhold comparison until synthesis.
+
+### E3. Suggested prompt for the next session (lean; does not restate our conclusion)
+> "Run the independent verification commissioned in
+> `.planning/HANDOFF-INDEPENDENT-VERIFICATION-20260701.md` (Part B), in a git worktree off HEAD.
+> Enforce the independence guardrails: spawn every investigator agent (via workflows) with ONLY the
+> neutral problem statement in §B2 plus code access — do NOT pass them this project's memory,
+> `.planning` reports, `docs/` conclusions, or any verdict. Treat all of our prior results as
+> untested claims to audit before use (§B6). Have the agents work from first principles and try to
+> FALSIFY the possibility that the railing is irreducible. Only in the final synthesis phase compare
+> their independent findings to our stored conclusions and deliver the report per §B5."
+
+**Max-blindness alternative (first pass):** give *only* the §B2 neutral brief as the prompt, let it
+form hypotheses cold, then hand it this handoff's Evidence Locker for the deeper phases. Cleaner
+independence; it re-derives some structure.
