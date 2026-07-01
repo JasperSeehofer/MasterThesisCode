@@ -308,6 +308,18 @@ independence; it re-derives some structure.
   (~3–5 GB RAM). Fanning many at once will OOM. Cap real-catalogue runs to ~2–4 concurrent (or
   serialize); keep the many *synthetic-mock* runs (light) fully parallel.
 
+### E5. Data portability (running the commission on another non-cluster machine)
+- **Portable via git (nothing to copy):** all code/tests/docs + the committed
+  `master_thesis_code/galaxy_catalogue/m_th_map_nside32.npy` (sole `f` source).
+- **The decisive/synthetic-mock work needs ONLY the git repo + `uv sync`** — fully portable.
+- **Local-only (NOT in git) — copy only if reproducing/auditing the REAL results:**
+  - `/tmp/seed600_local/simulations/` (**~991 MB**: seed-600 CRBs + the 560-CSV / 504k injection
+    pool) — **NOT regenerable** (GPU-sim output). **Must copy.** Then repoint the repo-root
+    `simulations` symlink to wherever it lands.
+  - `GLADE+.txt` (6.0 GB) — copy or re-download (`elysium.elte.hu/~dalyag/GLADE+.txt`).
+  - `reduced_galaxy_catalogue.csv` (1.6 GB) — do NOT copy; auto-rebuilds from GLADE+.txt (~2 min).
+- **Cluster-only:** a fresh GPU EMRI simulation.
+
 **Device:** THIS dev box (CPU-only) suffices for the DECISIVE parts — the railing lives in the CPU
 **inference**, so the audit, from-scratch reproductions, injection–recovery, and calibration all run
 on **synthetic mocks / synthetic CRBs** (inject known d_L/M + Gaussian errors; skip the waveform):
