@@ -138,6 +138,11 @@ class Arguments:
         return float(self._parsed_arguments.fisher_cond_threshold)
 
     @property
+    def normalization_mode(self) -> str:
+        """In-catalogue L_cat normalization ('global'/'local_ratio'/'volume_deconv')."""
+        return str(self._parsed_arguments.normalization_mode)
+
+    @property
     def catalog_only(self) -> bool:
         """Skip completion integral: set f_i=1, L_comp=0 (catalog-only diagnostic)."""
         return bool(self._parsed_arguments.catalog_only)
@@ -304,6 +309,21 @@ def _parse_arguments(arguments: list[str]) -> argparse.Namespace:
         type=float,
         default=1e16,
         help="Condition number threshold for excluding near-singular covariance matrices (default: 1e16).",
+    )
+    parser.add_argument(
+        "--normalization_mode",
+        type=str,
+        choices=["global", "local_ratio", "volume_deconv"],
+        default="volume_deconv",
+        help=(
+            "In-catalogue L_cat normalization (commission de-rail study). "
+            "'volume_deconv' (default): Gray A.9/A.10 local ratio-of-sums with the host-z "
+            "prior deconvolved through the comoving-volume element dV_c/(1+z) -- de-railed "
+            "AND statistically calibrated (D2 P-P). 'local_ratio': the same local ratio with "
+            "a bare-Gaussian host-z prior (de-railed but ~2-3%% low-biased). 'global': the "
+            "pre-fix global-denominator single ratio (rails to a grid edge on photo-z data). "
+            "See .planning/INDEPENDENT-VERIFICATION-REPORT-20260701.md sec 7."
+        ),
     )
     parsed_arguments: argparse.Namespace = parser.parse_args(arguments)
     return parsed_arguments

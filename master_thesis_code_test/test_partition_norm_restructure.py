@@ -31,15 +31,23 @@ def _run_p_Di(
     beta_Gbar: float,
     global_no_bh: float,
     global_with_bh: float,
+    norm_mode: str = "global",
 ) -> dict[str, Any]:
     """Run p_Di's partition branch with controlled tables; return its diagnostic row.
 
     beta_G is set to D_h - beta_Gbar (as evaluate() does). Two hosts (one reduced,
     one with-BH-mass), both M=1e6, z=0.1, so each carries the same rate weight
     w0 = R_eff_per_mbh(1e6)/1.1.
+
+    ``norm_mode`` selects the in-catalogue L_cat normalization (commission de-rail
+    study): "global" (partition-norm single ratio) vs "local_ratio"/"volume_deconv"
+    (Gray A.9/A.10 local ratio-of-sums). The kernel difference between local_ratio and
+    volume_deconv lives inside single_host_likelihood (mocked here), so at the p_Di
+    level the two share the same ratio-of-sums normalization.
     """
     instance = object.__new__(BayesianStatistics)
     instance.h = _H
+    instance._normalization_mode = norm_mode
     instance.catalog_only = False
     instance.posterior_data = {}
     instance.posterior_data_with_bh_mass = {
@@ -179,3 +187,52 @@ def test_w_G_equals_beta_G_over_D() -> None:
     beta_G = D_h - beta_Gbar
     assert row["w_G"] == pytest.approx(beta_G / D_h)
     assert row["w_G"] == pytest.approx(beta_G / (beta_G + beta_Gbar))
+
+
+# --- Commission de-rail study: in-catalogue normalization modes (fixes #2 / #1) ---
+# Mocked starmap results (see _run_p_Di): without-BH host -> [N=0.3, D=0.2];
+# with-BH host -> [N_nobh=0.5, D_nobh=0.3, N_bh=0.4, D_bh=0.2]. Equal rate weights.
+
+
+def test_local_ratio_mode_is_gray_ratio_of_sums() -> None:
+    """ "local_ratio" (de-rail fix #2): L_cat = (Sum w N_g)/(Sum w D_g), Gray A.9/A.10.
+
+    Equal weights cancel, so L_cat_no_bh = (0.3+0.5)/(0.2+0.3) = 1.6 and
+    L_cat_with_bh = 0.4/0.2 = 2.0 -- independent of the GLOBAL denominators.
+    """
+    row = _run_p_Di(
+        f_const=0.5,
+        D_h=1.0e9,
+        beta_Gbar=0.5e9,
+        global_no_bh=2.0,
+        global_with_bh=1.5,
+        norm_mode="local_ratio",
+    )
+    assert row["L_cat_no_bh"] == pytest.approx((0.3 + 0.5) / (0.2 + 0.3))
+    assert row["L_cat_with_bh"] == pytest.approx(0.4 / 0.2)
+
+
+def test_volume_deconv_shares_ratio_of_sums_normalization() -> None:
+    """ "volume_deconv" (fix #1) uses the SAME local ratio-of-sums at the p_Di level.
+
+    The volume-prior deconvolution changes the per-host N_g/D_g INSIDE
+    single_host_likelihood (mocked here), not the p_Di normalization, so with identical
+    mocked N_g/D_g the L_cat matches "local_ratio" and differs from "global".
+    """
+    kw = dict(f_const=0.5, D_h=1.0e9, beta_Gbar=0.5e9, global_no_bh=2.0, global_with_bh=1.5)
+    row_vol = _run_p_Di(norm_mode="volume_deconv", **kw)
+    row_loc = _run_p_Di(norm_mode="local_ratio", **kw)
+    row_glob = _run_p_Di(norm_mode="global", **kw)
+    assert row_vol["L_cat_no_bh"] == pytest.approx(row_loc["L_cat_no_bh"])
+    assert row_vol["L_cat_with_bh"] == pytest.approx(row_loc["L_cat_with_bh"])
+    # global uses the GLOBAL denominator (Sum w N / global_no_bh), a different value.
+    assert row_glob["L_cat_no_bh"] != pytest.approx(row_loc["L_cat_no_bh"])
+
+
+def test_unknown_normalization_mode_rejected() -> None:
+    """evaluate() rejects an unknown normalization_mode early (guards typos)."""
+    instance = object.__new__(BayesianStatistics)
+    with pytest.raises(ValueError, match="unknown normalization_mode"):
+        # The guard fires right after catalog_only is set, before any catalog/model use,
+        # so passing None for those is safe -- the bogus mode raises first.
+        BayesianStatistics.evaluate(instance, None, None, 0.73, normalization_mode="bogus")  # type: ignore[arg-type]

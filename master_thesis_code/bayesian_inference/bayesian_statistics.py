@@ -766,6 +766,9 @@ class BayesianStatistics:
     additional_galaxies_without_bh_mass: dict[str, dict[str, list[float]]]
     posterior_data: dict[int, list[float]]
     posterior_data_with_bh_mass: dict[int | str, Any]
+    # In-catalogue normalization (set by evaluate()); "global" preserves the current
+    # partition-norm single ratio. See evaluate() for "local_ratio"/"volume_deconv".
+    _normalization_mode: str = "global"
 
     def __init__(self) -> None:
         self.h_values = []
@@ -797,8 +800,19 @@ class BayesianStatistics:
         pdet_mass_bins: int = 40,
         pdet_estimator: str = "local_linear",
         fisher_cond_threshold: float = 1e16,
+        normalization_mode: str = "global",
     ) -> None:
         self.catalog_only = catalog_only
+        # In-catalogue normalization for the non-catalog_only Gray single ratio
+        # (commission de-rail study, 2026-07-01):
+        #   "global"        -> current partition-norm: L_cat = (Σ_local w_g N_g)/(Σ_GLOBAL w_g D_g)
+        #   "local_ratio"   -> Gray A.9/A.10 literal:  L_cat = (Σ_local w_g N_g)/(Σ_local w_g D_g)   [fix #2]
+        #   "volume_deconv" -> local ratio with the host-z Gaussian deconvolved through the
+        #                      comoving-volume prior dVc/(1+z) (per-galaxy renormalised)          [fix #1]
+        # The kernel (bare vs volume-deconvolved) is threaded into single_host_likelihood.
+        if normalization_mode not in ("global", "local_ratio", "volume_deconv"):
+            raise ValueError(f"unknown normalization_mode: {normalization_mode!r}")
+        self._normalization_mode = normalization_mode
         self._diagnostic_rows = []
         if catalog_only:
             _LOGGER.info("catalog_only mode: f_i=1, L_comp=0 (skipping completion integral)")
@@ -1432,6 +1446,7 @@ class BayesianStatistics:
                     detection_index,
                     self.h,
                     True,
+                    self._normalization_mode,
                 )
                 for host in possible_host_galaxies_with_bh_mass
             ],
@@ -1451,6 +1466,7 @@ class BayesianStatistics:
                     detection_index,
                     self.h,
                     False,
+                    self._normalization_mode,
                 )
                 for host in possible_host_galaxies_reduced
             ],
@@ -1540,29 +1556,52 @@ class BayesianStatistics:
             global_denom_no_bh: float = self._global_cat_denom_no_bh.get(self.h, 0.0)
             global_denom_with_bh: float = self._global_cat_denom_with_bh.get(self.h, 0.0)
 
-            # L_cat = (Σ_local w_g N_g) / (Σ_GLOBAL w_g D_g): GW-likelihood numerator
-            # over the local candidate ball (p_GW self-truncates, so the local sum is
-            # effectively the global in-catalogue numerator), SELECTION denominator
-            # over the full catalogue out to z_max(h) (Eq. 29, precomputed in
-            # precompute_global_catalog_selection). Globalising the denominator makes
-            # L_cat scale-free, so beta_G*L_cat reconstructs the in-catalogue
-            # numerator with the per-galaxy<->per-volume n_gal factor CANCELLED
-            # (Option A; without it beta_G^global/beta_G^local would bias H0).
-            cat_num_sum_no_bh = weighted_sum(
-                [r[0] for r in all_results_without_bh], weights_without_bh
-            )
-            L_cat_without_bh_mass = (
-                cat_num_sum_no_bh / global_denom_no_bh if global_denom_no_bh > 0 else 0.0
-            )
-            if len(results_with_bh_mass) > 0:
-                cat_num_sum_with_bh = weighted_sum(
-                    [r[2] for r in results_with_bh_mass], weights_with_bh
+            # In-catalogue term L_cat. Two normalizations (commission de-rail study):
+            #   "global" (default): L_cat = (Σ_local w_g N_g) / (Σ_GLOBAL w_g D_g) -- the
+            #     partition-norm single ratio; the SELECTION denominator runs over the full
+            #     catalogue (Eq. 29, precompute_global_catalog_selection), making L_cat
+            #     scale-free so beta_G*L_cat reconstructs the in-catalogue numerator with the
+            #     per-galaxy<->per-volume n_gal factor cancelled (Option A). The commission
+            #     found this normalization pins the mode to the grid edge (report bug #2).
+            #   "local_ratio"/"volume_deconv": L_cat = (Σ_local w_g N_g)/(Σ_local w_g D_g) --
+            #     the Gray A.9/A.10 literal local self-normalized ratio-of-sums (numerator and
+            #     per-host selection denominator over the SAME candidate ball). This is the
+            #     de-rail fix (#2); "volume_deconv" additionally uses the volume-deconvolved
+            #     host-z prior inside N_g/D_g (#1, threaded via single_host_likelihood).
+            #   Gray et al. (2020), arXiv:1908.06050, Eqs. A.9 / A.10 / 29.
+            if self._normalization_mode == "global":
+                cat_num_sum_no_bh = weighted_sum(
+                    [r[0] for r in all_results_without_bh], weights_without_bh
                 )
-                L_cat_with_bh_mass = (
-                    cat_num_sum_with_bh / global_denom_with_bh if global_denom_with_bh > 0 else 0.0
+                L_cat_without_bh_mass = (
+                    cat_num_sum_no_bh / global_denom_no_bh if global_denom_no_bh > 0 else 0.0
                 )
+                if len(results_with_bh_mass) > 0:
+                    cat_num_sum_with_bh = weighted_sum(
+                        [r[2] for r in results_with_bh_mass], weights_with_bh
+                    )
+                    L_cat_with_bh_mass = (
+                        cat_num_sum_with_bh / global_denom_with_bh
+                        if global_denom_with_bh > 0
+                        else 0.0
+                    )
+                else:
+                    L_cat_with_bh_mass = 0.0
             else:
-                L_cat_with_bh_mass = 0.0
+                # local self-normalized ratio-of-sums (Gray A.9/A.10) -- de-rail fix #2/#1
+                L_cat_without_bh_mass = weighted_ratio_of_sums(
+                    [r[0] for r in all_results_without_bh],
+                    [r[1] for r in all_results_without_bh],
+                    weights_without_bh,
+                )
+                if len(results_with_bh_mass) > 0:
+                    L_cat_with_bh_mass = weighted_ratio_of_sums(
+                        [r[2] for r in results_with_bh_mass],
+                        [r[3] for r in results_with_bh_mass],
+                        weights_with_bh,
+                    )
+                else:
+                    L_cat_with_bh_mass = 0.0
 
             # B_num(h) = INTEGRAL (1-f(z)) p_GW(z) (1/(1+z)) dVc/dz dz : the completion
             # numerator with the incompleteness weight (1-f(z)). Gray et al. (2020),
@@ -1749,6 +1788,7 @@ def single_host_likelihood(
     detection_index: int,
     h: float,
     evaluate_with_bh_mass: bool,
+    normalization_mode: str = "global",
 ) -> list[float]:
     global redshift_upper_integration_limit
     global redshift_lower_integration_limit
@@ -1789,6 +1829,42 @@ def single_host_likelihood(
     # construct normal distribution for redshift and mass for host galaxy
     galaxy_redshift_normal_distribution = norm(loc=host_z, scale=host_z_error)
 
+    # [PHYSICS] De-rail fix #1 (commission, 2026-07-01): in-catalogue host-redshift prior.
+    # "global"/"local_ratio" use the BARE photo-z Gaussian N(z; z_g, sigma_z) (unchanged
+    # behaviour). "volume_deconv" DECONVOLVES the photo-z through the comoving-volume prior:
+    #     p_g(z) = N(z; z_g, sigma_z) * w_pop(z) / Z_g ,  w_pop(z) = dVc/dz * (1+z)^-1 ,
+    #     Z_g = INTEGRAL N(z; z_g, sigma_z) w_pop(z) dz  (per-galaxy renormalisation),
+    # so the in-catalogue numerator AND denominator share the SAME z-prior that the
+    # selection denominator D(h) = INTEGRAL (1/Npix) sum_k p_det * dVc/(1+z) dz already
+    # carries. Removes the missing dd_L/dz-Jacobian Jensen bias (commission report bug #1).
+    # Gray et al. (2020), arXiv:1908.06050, Eqs. A.10 / 33.
+    _use_volume_deconv = normalization_mode == "volume_deconv"
+    _z_prior_norm = 1.0
+    if _use_volume_deconv:
+
+        def _z_prior_unnorm(z: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
+            w_pop = np.asarray(comoving_volume_element(z, h=h), dtype=np.float64) / (1.0 + z)
+            base = np.asarray(galaxy_redshift_normal_distribution.pdf(z), dtype=np.float64)
+            return base * w_pop
+
+        _z_prior_norm = float(
+            fixed_quad(
+                _z_prior_unnorm,
+                denominator_integration_lower_redshift_limit,
+                denominator_integration_upper_redshift_limit,
+                n=FIXED_QUAD_N,
+            )[0]
+        )
+        if _z_prior_norm <= 0.0:
+            _z_prior_norm = 1.0
+
+    def galaxy_redshift_prior_pdf(z: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
+        base = np.asarray(galaxy_redshift_normal_distribution.pdf(z), dtype=np.float64)
+        if _use_volume_deconv:
+            w_pop = np.asarray(comoving_volume_element(z, h=h), dtype=np.float64) / (1.0 + z)
+            return base * w_pop / _z_prior_norm
+        return base
+
     # Sky localization weight (phi, theta) is inside the GW likelihood Gaussian.
     # Verified correct by Phase 14 derivation (Sec. 2.7): the 3D/4D GW Gaussian
     # naturally encodes the sky position weight -- this is NOT a source of error.
@@ -1810,7 +1886,7 @@ def single_host_likelihood(
             _mean_3d,
             _cov_inv_3d,
             _log_norm_3d,
-        ) * galaxy_redshift_normal_distribution.pdf(z)
+        ) * galaxy_redshift_prior_pdf(z)
 
     def denominator_integrant_without_bh_mass(z: npt.NDArray[np.float64]) -> Any:
         d_L = dist_vectorized(z, h=h)
@@ -1823,7 +1899,7 @@ def single_host_likelihood(
         p_det = detection_probability.detection_probability_without_bh_mass_interpolated_zero_fill(
             d_L, phi, theta, h=h
         )
-        return p_det * galaxy_redshift_normal_distribution.pdf(z)
+        return p_det * galaxy_redshift_prior_pdf(z)
 
     (
         single_host_likelihood_numerator_without_bh_mass,
@@ -1953,7 +2029,7 @@ def single_host_likelihood(
             # galaxy z-prior; p_det removed from the numerator (denominator-only).
             # Eq. (14.32) in derivations/dark_siren_likelihood.md
             # No /(1+z) factor: Jacobian absorbed by Gaussian rescaling (Eq. 14.21)
-            return gw_3d * mz_integral * galaxy_redshift_normal_distribution.pdf(z)
+            return gw_3d * mz_integral * galaxy_redshift_prior_pdf(z)
 
         single_host_likelihood_numerator_with_bh_mass = fixed_quad(
             numerator_integrant_with_bh_mass,
@@ -1977,11 +2053,7 @@ def single_host_likelihood(
             p_det = detection_probability.detection_probability_with_bh_mass_interpolated(
                 d_L, M_z, phi, theta, h=h
             )
-            return (
-                p_det
-                * galaxy_redshift_normal_distribution.pdf(z)
-                * galaxy_mass_normal_distribution.pdf(M)
-            )
+            return p_det * galaxy_redshift_prior_pdf(z) * galaxy_mass_normal_distribution.pdf(M)
 
         # MC importance sampling for 2D denominator integral over (z, M).
         # Proposal distribution: q(z, M) = p_gal(z) * p_gal(M).

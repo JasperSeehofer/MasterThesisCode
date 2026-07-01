@@ -119,6 +119,7 @@ def main() -> None:
             pdet_mass_bins=arguments.pdet_mass_bins,
             pdet_estimator=arguments.pdet_estimator,
             fisher_cond_threshold=arguments.fisher_cond_threshold,
+            normalization_mode=arguments.normalization_mode,
         )
 
     if arguments.snr_analysis:
@@ -814,6 +815,7 @@ def evaluate(
     pdet_mass_bins: int = 40,
     pdet_estimator: str = "local_linear",
     fisher_cond_threshold: float = 1e16,
+    normalization_mode: str = "volume_deconv",
 ) -> None:
     from master_thesis_code.bayesian_inference.bayesian_statistics import BayesianStatistics
 
@@ -828,6 +830,7 @@ def evaluate(
         pdet_mass_bins=pdet_mass_bins,
         pdet_estimator=pdet_estimator,
         fisher_cond_threshold=fisher_cond_threshold,
+        normalization_mode=normalization_mode,
     )
 
 

@@ -8,6 +8,21 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Changed
+- **[PHYSICS]** de-rail the in-catalogue H₀ likelihood normalization (commission
+  `.planning/INDEPENDENT-VERIFICATION-REPORT-20260701.md` §7). `bayesian_statistics.py`: new
+  `normalization_mode ∈ {global, local_ratio, volume_deconv}` on `evaluate()` /
+  `single_host_likelihood`. The pre-fix `global` partition-norm single ratio
+  `L_cat=(Σ_local w_g N_g)/(Σ_global w_g D_g)` pins the photo-z H₀ posterior to a grid edge on real
+  seed600 data (MAP 0.86 pre-4π, 0.60 after the 1/(4π) completion fix `cb16142`). `local_ratio`
+  reverts to the Gray A.9/A.10 local self-normalized ratio-of-sums (de-rails to a peaked 0.73);
+  `volume_deconv` additionally deconvolves the host-z prior through the comoving-volume element
+  `dV_c/(1+z)` (per-galaxy renormalized), consistent with `D(h)`. A from-scratch P–P/coverage test
+  (`results/commission_20260701/scratch/d2/`) shows the bare-Gaussian host-z numerator is
+  mis-calibrated (≈0% coverage, σ_z² Eddington-in-z bias) and the volume-weighted numerator is
+  calibrated; the real-data de-rail matrix (`redteam/derail_matrix_results.json`, 0.86→0.60→0.73)
+  and the +0.010 MAP shift agree. **Production CLI default → `volume_deconv`** (`--normalization_mode`);
+  the library `BayesianStatistics.evaluate` default stays `global` (byte-identical — all tests
+  unchanged). Gray et al. (2020) arXiv:1908.06050 Eqs. A.9 / A.10 / 33.
 - **[PHYSICS]** sky-aware selection function (closes the p_sample≠p_comp sky/selection
   paper-blocker; audit `.planning/PSAMPLE-PCOMP-AUDIT-20260701.md` R1). The generator draws +
   SNR-selects an anisotropic real sky through the sky-dependent LISA response, but the inference
