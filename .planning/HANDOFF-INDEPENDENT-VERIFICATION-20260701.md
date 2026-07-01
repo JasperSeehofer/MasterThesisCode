@@ -293,3 +293,26 @@ conclusions, and withhold comparison until synthesis.
 **Max-blindness alternative (first pass):** give *only* the §B2 neutral brief as the prompt, let it
 form hypotheses cold, then hand it this handoff's Evidence Locker for the deeper phases. Cleaner
 independence; it re-derives some structure.
+
+### E4. Parallelism within the commission + compute/device guidance
+**Parallelize the thinking, throttle the running.**
+- **More parallelism (also improves rigor via consensus):** fan the **hypothesis tournament** wide
+  (one agent per candidate cause: photo-z; normalization bug; grid/prior artifact; selection bug;
+  project-introduced regression; 0.70↔0.73 bookkeeping; cross-match bug; d_L→z inversion — ~8–12
+  agents, one discriminating test each); run **2–3 *independent* minimal reproductions** (different
+  agents build from-scratch estimators, blind to each other — all railing on photo-z is far stronger
+  than one); **more audit lenses** (numerics/units, frames/coordinates, GPU/array-semantics on top of
+  physics/stats/software); parallelize the **evidence-locker audits** (one agent per prior experiment)
+  and the three minimal-repro cases (spec-z/photo-z/real) once the estimator exists.
+- **Throttle the compute-heavy runs:** each real-catalogue eval loads the ~22.6M-row catalogue
+  (~3–5 GB RAM). Fanning many at once will OOM. Cap real-catalogue runs to ~2–4 concurrent (or
+  serialize); keep the many *synthetic-mock* runs (light) fully parallel.
+
+**Device:** THIS dev box (CPU-only) suffices for the DECISIVE parts — the railing lives in the CPU
+**inference**, so the audit, from-scratch reproductions, injection–recovery, and calibration all run
+on **synthetic mocks / synthetic CRBs** (inject known d_L/M + Gaussian errors; skip the waveform):
+pure CPU + numpy, moderate RAM, fully parallel. **Cluster needed ONLY for:** (1) a *true* full-pipeline
+end-to-end run — the EMRI **simulation** is GPU (`few`); the inference-side D1 (synthetic CRBs → real
+inference) is the important discriminator and is CPU-feasible; (2) fast heavy parallel evals over the
+real 22.6M-row catalogue. A higher-RAM/more-core machine is a nice-to-have for real-catalogue
+throughput, **not required** (throttle instead); it cannot substitute for the GPU sim.
