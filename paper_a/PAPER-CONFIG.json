@@ -79,7 +79,7 @@
       "label": "app:voldeconv"
     },
     {
-      "heading": "Mapping to Gray et al. (2020) Eqs. A.9/A.10",
+      "heading": "Mapping to Gray et al. (2020) Eqs. A9/A10",
       "content": "\\input{sections/appendix_gray_mapping}",
       "label": "app:gray"
     },
