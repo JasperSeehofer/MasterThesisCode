@@ -1,0 +1,100 @@
+The two-dimensional analysis channel of Section~\ref{sec:estimators} supplements the
+luminosity distance with the redshifted host black-hole mass $M_z = M(1+z)$, and therefore
+marginalises over the true mass $M$ of every candidate host given its catalogue estimate
+$M_g$ and scatter $\sigma_M$. The bare implementation performs this marginal with the
+measurement likelihood alone, $\mathcal{N}(M;M_g,\sigma_M^2)$ --- the mass-channel analogue
+of the bare-Gaussian redshift kernel of Appendix~\ref{sec:app:voldeconv}. In the hierarchical
+likelihood, however, the host prior belongs inside the marginal
+\citep[eq.~A10 of][]{Gray:2019ksv}: the probability that a galaxy of true mass $M$ hosts the
+event carries the per-MBH EMRI rate $R_{\mathrm{eff}}(M)$ \citep{Babak:2017tow}, which falls as
+$\mathrm{d}\log_{10}R_{\mathrm{eff}}/\mathrm{d}\log_{10}M \approx -0.43$ per dex over the
+catalogue mass range. % src: docs/derivations/G2d_host_mass_rate_prior.md §1
+Omitting it treats all true masses within the measurement scatter as a priori equally likely
+to host an EMRI, which they are not. Because the resulting bias scales as $\sigma_M^2$
+(below), a caveat quantified at the GLADE+ scatter would not transfer across a forecast sweep
+in $(\sigma_z,\sigma_M)$; we therefore correct the prior rather than quote the bias.
+
+The prior-consistent per-galaxy mass prior is the exact analogue of the volume-deconvolved
+redshift prior of Appendix~\ref{sec:app:voldeconv},
+\begin{equation}
+  p_g(M) \;=\; \frac{\mathcal{N}\!\left(M;\,M_g,\,\sigma_M^2\right)\,R_{\mathrm{eff}}(M)}{Z_M},
+  \qquad
+  Z_M \;=\; \int \mathcal{N}\!\left(M';\,M_g,\,\sigma_M^2\right)\,R_{\mathrm{eff}}(M')\,\mathrm{d}M' .
+  \label{eq:eddm:prior}
+\end{equation}
+Expanding $\ln R_{\mathrm{eff}}$ to first order about the catalogue value, with local
+logarithmic slope $\alpha_g = \mathrm{d}\ln R_{\mathrm{eff}}/\mathrm{d}\ln M\,|_{M_g}$, and
+using the fact that a Gaussian times an exponential tilt is exactly a shifted Gaussian,
+equation~\eqref{eq:eddm:prior} becomes
+\begin{equation}
+  p_g(M) \;=\; \mathcal{N}\!\left(M;\,M_g^{\mathrm{eff}},\,\sigma_M^2\right),
+  \qquad
+  M_g^{\mathrm{eff}} = M_g\left(1 + \alpha_g\,\sigma_{\mathrm{rel}}^2\right),
+  \qquad
+  \sigma_{\mathrm{rel}} = \sigma_M/M_g ,
+  \label{eq:eddm:tilt}
+\end{equation}
+with no further approximation beyond the log-linear expansion. This is the classical
+Eddington correction \citep{MISSING:Eddington1913}: the true mass lies
+systematically on the downhill side of the noisy estimate.
+% MISSING CITATION: Eddington 1913, MNRAS 73, 359, "On a formula for correcting statistics
+% for the effects of a known error of observation"
+
+The tilted form of equation~\eqref{eq:eddm:tilt} fails precisely in the GLADE+ regime. The
+median relative mass scatter of the candidate hosts is
+$\sigma_{\mathrm{rel}} \approx 0.98$, % src: .planning/gate/G7row9_eddington_m_impact.json (shift_stats.median_sigma_rel)
+and $R_{\mathrm{eff}}(M)$ is not monotonic: near the low-mass roll-off of the rate model it
+\emph{rises} with $M$. There the local slope at $M_g$ misrepresents the average of the rate
+over the prior's support and can get the sign of the shift wrong: at
+$M_g = 10^{5}\,\mathrm{M}_\odot$ and $\sigma_{\mathrm{rel}} = 0.55$ the local slope predicts a
+downward shift while the exact posterior mean of equation~\eqref{eq:eddm:prior} moves
+\emph{up} by ${\approx}\,3.7$ per cent. % src: docs/derivations/G2d_host_mass_rate_prior.md §4
+We therefore moment-match rather than tilt: the implemented prior is the Gaussian carrying
+the \emph{exact} first moment of equation~\eqref{eq:eddm:prior}, computed per galaxy by
+401-point trapezoidal quadrature over $\pm 5\sigma_M$ ($\alpha_g$ by central finite
+difference with $\epsilon = 1$ per cent; $\sigma_{\mathrm{rel}}$ clipped at 2), with
+$\sigma_M$ retained as the width. % src: docs/derivations/G2d_host_mass_rate_prior.md §3–§4
+This preserves the analytic Gaussian marginal of the numerator; the residual error is the
+Gaussian-shape approximation to the skew of equation~\eqref{eq:eddm:prior}, which is second
+order and width-conservative. Regression tests pin the shifted mean against an independent
+20\,001-point quadrature to better than $0.5$ per cent of $M_g$ at
+$\sigma_{\mathrm{rel}} \in \{0.2, 0.55, 0.76, 1.0\}$ and
+$M_g \in \{10^{5}, 3\times10^{5}, 8\times10^{5}\}\,\mathrm{M}_\odot$, covering both
+slope-sign regimes and the $\sigma_M \to 0$ limit. % src: docs/derivations/G2d_host_mass_rate_prior.md §4
+
+As in the redshift channel, the prior must be counted exactly once. In the numerator the
+mass prior enters the analytic redshifted-mass-fraction marginal only through the location
+$M_g(1+z)/\hat{M}_z$, so the correction is a single redshift-independent substitution
+$M_g \to M_g^{\mathrm{eff}}$ (with $M_g^{\mathrm{eff}}$ the moment-matched mean). In the
+Monte-Carlo selection denominator the mass proposal is drawn from the same moment-matched
+prior, so the importance weights remain the detection probability $p_{\mathrm{det}}$
+unchanged: numerator and denominator carry the identical mass prior. The correction is
+applied only in the prior-consistent estimator configurations; the legacy bare-kernel modes
+retain the bare Gaussian for diagnostic reproduction of the uncorrected estimators. Two
+limits provide immediate checks: for $\sigma_M \to 0$,
+$M_g^{\mathrm{eff}} \to M_g$ and the bare Gaussian is recovered, so the spectroscopic-quality
+mass regime of a future forecast sweep is automatically bias-free; for a flat rate
+($\alpha_g = 0$) there is no shift. As an external triangulation, shifting the catalogue
+masses by equation~\eqref{eq:eddm:tilt} in the uncorrected code reproduces the corrected
+posterior to second order. % src: docs/derivations/G2d_host_mass_rate_prior.md §5
+
+On the GLADE+ event set of Section~\ref{sec:realdata} (with the SNR-scale caveat stated
+there), the correction shifts the candidate host masses by a median
+$\Delta\ln M = -0.123$ (10th--90th percentile $-0.207$ to $-0.101$), with median
+$\alpha_g = -0.130$. % src: .planning/gate/G7row9_eddington_m_impact.json (shift_stats)
+The one-dimensional (distance-only) posterior is unaffected: the MAP stays at $h=0.73$ and
+the mean moves by $-5\times10^{-5}$. % src: .planning/gate/G7row9_eddington_m_impact.json (delta.d_mean_1d)
+In the two-dimensional channel the posterior mean moves from $0.790$ to $0.770$, a $-0.020$
+shift toward the injected truth $h = 0.73$, and the probability mass at the $h = 0.86$ grid
+edge drops from $0.216$ to $0.023$; the MAP is unchanged at the resolution of the coarse
+seven-point $h$ grid used for this comparison, and part of the mean shift reflects the
+suppression of that edge mass. % src: .planning/gate/G7row9_eddington_m_impact.json (baseline/eddington_shifted 2d, delta)
+
+Three related ingredients deliberately remain at next order: the sum-level rate weight
+$w_g = R_{\mathrm{eff}}(M_g)/(1+z_g)$ stays point-evaluated at the catalogue values (the same
+status as in the redshift channel); the candidate-host search still queries the catalogue at
+$M_g$, its $\pm1.5\sigma_M$ window comfortably containing the $|\Delta\ln M| \lesssim 0.25$
+shifts (the prior belongs in the likelihood, not in the search); % src: docs/derivations/G2d_host_mass_rate_prior.md §6
+and the catalogue mass function $\mathrm{d}n_{\mathrm{cat}}/\mathrm{d}M$ is not separately
+modelled, since no model input exists for it --- the implemented weight captures the rate
+slope, which is the dominant model-available gradient.

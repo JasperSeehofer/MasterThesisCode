@@ -1,0 +1,33 @@
+{
+  "version": 1,
+  "paper_title": "Photometric-redshift prior consistency and calibration in galaxy-catalogue dark-siren Hubble-constant inference",
+  "journal": "mnras",
+  "created_at": "2026-07-02T17:44:04.095943+00:00",
+  "artifacts": [
+    {
+      "artifact_id": "tex-paper",
+      "category": "tex",
+      "path": "main.tex",
+      "sha256": "730acfa1da56e7c8fecc45f27549cc7fb9d4267a22337792b6c2cb01305fbd51",
+      "produced_by": "build_paper:render_tex",
+      "sources": [],
+      "metadata": {
+        "journal": "mnras",
+        "section_count": 10,
+        "appendix_count": 5,
+        "figure_count": 0
+      }
+    },
+    {
+      "artifact_id": "bib-references",
+      "category": "bib",
+      "path": "references.bib",
+      "sha256": "a0aa3831df0d02662c3d6b1f3a179c9c2324feae9f4b7c801bdd12cabef37ee3",
+      "produced_by": "build_paper:write_bibliography",
+      "sources": [],
+      "metadata": {
+        "entry_source": "bib_data"
+      }
+    }
+  ]
+}

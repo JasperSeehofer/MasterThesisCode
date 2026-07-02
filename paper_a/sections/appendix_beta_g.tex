@@ -1,0 +1,111 @@
+% Appendix: Discrete-sum check of the catalogue selection normalization
+% Body only — \section{} and \label{sec:app:betag} are emitted by the builder.
+% Primary sources: .planning/gate/G1_beta_g_check.md, .planning/gate/G1_beta_g_check.json
+The \texttt{global} variant of the in-catalogue likelihood
+(Sections~\ref{sec:pitfall} and~\ref{sec:estimators}) normalizes every
+event by a single catalogue-wide selection sum rather than by a local,
+per-event one. Its validity rests on an implicit bridge between a
+discrete and a continuous object: the rate-weighted sum over the actual
+GLADE+ catalogue \citep{Dalya:2021ewn},
+\begin{equation}
+  \Sigma_{\mathrm{glob}}(h) \;=\;
+  \sum_{g\,:\,z_g < z_{\max}(h)} w_g\,
+  p_{\mathrm{det}}\!\big(d_L(z_g, h)\big),
+  \qquad
+  w_g = \frac{R_{\mathrm{eff}}(M_g)}{1+z_g},
+  \label{eq:app:sigmaglob}
+\end{equation}
+with $w_g$ the per-galaxy EMRI-rate weight of
+Section~\ref{sec:framework} \citep{Babak:2017tow} and $z_{\max}(h)$ the
+redshift reach of the population model, must track the continuous
+in-catalogue selection integral $\beta_G(h) = D(h) - \beta_{\bar G}(h)$
+up to an $h$-independent constant. If the catalogue were a
+Monte-Carlo draw from a galaxy field of constant comoving number
+density $\bar n_{\mathrm{gal}}$, one would have
+\begin{equation}
+  \Sigma_{\mathrm{glob}}(h) \;\approx\; C\,\beta_G(h),
+  \qquad
+  C = \bar n_{\mathrm{gal}}\,\big\langle R_{\mathrm{eff}} \big\rangle ,
+  \label{eq:app:bridge}
+\end{equation}
+and the constant $C$ would cancel in the normalized posterior (see
+Appendix~\ref{sec:app:gray} for the correspondence with the
+catalogue-sum equations of \citealt{Gray:2019ksv}). Because this
+cancellation is delicate, we test it by evaluating both sides of
+Eq.~\eqref{eq:app:bridge} directly.
+
+\medskip
+\noindent\textit{Protocol.} Both sides are computed with identical
+pipeline components: the injection-calibrated $p_{\mathrm{det}}$ built
+from the seed600 injection pool with six sky bands at the nominal
+threshold $\rho_{\mathrm{thr}} = 20$
+% src: .planning/gate/G1_beta_g_check.json (n_sky_bands, snr_threshold)
+(the pre-recalibration SNR scale; see Section~\ref{sec:realdata}), and
+the per-pixel completeness $f_k$ entering $\beta_{\bar G}(h)$. The
+discrete sum runs over the full reduced GLADE+ catalogue; the
+continuous integrals $D(h)$ and $\beta_{\bar G}(h)$ are those of the
+production likelihood. We evaluate the ratio
+$\Sigma_{\mathrm{glob}}(h)/\beta_G(h)$ on $14$ values of $h$ in
+$[0.60, 0.86]$ and normalize its shape at $h_{\mathrm{ref}} = 0.72$,
+% src: .planning/gate/G1_beta_g_check.json (h grid, h_ref)
+the grid point nearest the fiducial value. Only the $h$-shape of this
+ratio is meaningful: any $h$-independent factor cancels, whereas an
+$h$-dependent one multiplicatively distorts the in-catalogue channel.
+
+\medskip
+\noindent\textit{The expected $h^3$ factor.} The raw ratio is not
+flat: it grows by a factor $2.48$ across the grid, an end-to-end tilt
+of $+93$ per cent.
+% src: .planning/gate/G1_beta_g_check.json (end_to_end_tilt_raw = 0.9285; ratio 8.957 -> 22.197)
+The dominant contribution is expected. The catalogue is a
+\emph{fixed} set of galaxies, so the comoving number density it
+implies is not constant in $h$: distances scale as $1/h$, hence
+$\bar n_{\mathrm{gal}}(h) \propto 1/V_c \propto h^3$, and
+$(0.86/0.60)^3 = 2.94$ accounts for the bulk of the growth.
+% src: .planning/gate/G1_beta_g_check.md (finding 1)
+This factor is common to the numerator and denominator sums of
+$L_{\mathrm{cat}}$ and cancels exactly in their ratio; it is therefore
+not by itself a defect. It does, however, falsify the stronger
+assumption that $\bar n_{\mathrm{gal}}$ is an overall constant: only
+the \emph{ratio} cancellation is exact.
+
+\medskip
+\noindent\textit{The residual tilt.} After dividing out
+$(h/h_{\mathrm{ref}})^3$, a smooth, monotonic residual remains
+(Fig.~\ref{fig:betag}): the corrected shape falls from $1.085$ at
+$h = 0.60$ to $0.913$ at $h = 0.86$, an end-to-end tilt of $-17.2$ per
+cent ($+8.7$ to $-8.7$ per cent about $h_{\mathrm{ref}}$).
+% src: .planning/gate/G1_beta_g_check.json (shape_h3_corrected endpoints; end_to_end_tilt_h3_corrected = -0.1719)
+This is a genuine $h$-dependent mismatch between the discrete,
+completeness-weighted content of the catalogue and the continuous
+completeness-model integral, and unlike the $h^3$ factor it does
+\emph{not} cancel: in \texttt{global} mode it multiplies the
+in-catalogue channel $\beta_G L_{\mathrm{cat}}$ once per event, so the
+tilt accumulates coherently over the $N \simeq 500$ events of the
+sample
+% src: .planning/gate/G1_beta_g_check.md (finding 3)
+--- corroborating the railing behaviour of this mode seen in
+Section~\ref{sec:realdata}. The local estimators are structurally
+immune: \texttt{local\_ratio} and \texttt{volume\_deconv} never
+evaluate $\Sigma_{\mathrm{glob}}$ (their $L_{\mathrm{cat}}$ is a local
+self-normalized ratio in which ball-common factors cancel), and their
+mixture weight $w_G = \beta_G/D$ is a ratio of two continuous
+integrals.
+
+\medskip
+\noindent\textit{Origin and consequence.} Candidate origins of the
+residual are (a)~the modelled completeness $f(z,\Omega,h)$ versus the
+catalogue's true incompleteness as $z_{\max}(h)$ sweeps outward,
+(b)~genuine inhomogeneity of the galaxy density (large-scale structure
+and depth-dependent selection) versus the constant-comoving-density
+assumption, and (c)~the surrogate of a mass-integrated rate constant
+across the catalogue.
+% src: .planning/gate/G1_beta_g_check.md (finding 2)
+Disentangling these (e.g.\ by re-running with $f \equiv 1$ or on a
+redshift-restricted subsample) is left to future work; for the present
+analysis the decomposition in Fig.~\ref{fig:betag} suffices. The raw
+factor $\sim\!2.5$ that cancels and the residual $-17$ per cent that
+does not are, together, the anatomy of why global-denominator
+normalizations of galaxy-catalogue dark-siren likelihoods are fragile:
+we accordingly exclude the \texttt{global} mode from all quoted
+results.

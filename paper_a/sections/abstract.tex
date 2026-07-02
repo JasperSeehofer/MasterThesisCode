@@ -1,0 +1,35 @@
+% Abstract body only --- plain paragraph, no environment; the builder wraps it.
+% Written LAST, after all sections; every number below is quoted from the
+% section files and carries its original artifact source.
+Galaxy-catalogue (`dark-siren') inference of the Hubble constant
+marginalizes gravitational-wave host redshifts over a flux-limited
+catalogue, adding a completion term for the hosts the survey misses.
+The method's known-truth validations are almost entirely
+spectroscopic, while the catalogues actually used are photometric:
+$\sigma_z/z \sim 0.7$ in the GLADE+ regime probed here. % src: .planning/gate/G5a_gwcosmo_inspection.md (sigma_z/z ~ 0.7, EMRI/GLADE+ regime)
+We report the failure and repair of an independently implemented
+estimator of this family, using a simulated LISA
+extreme-mass-ratio-inspiral campaign injected at
+$h \equiv H_0/(100~\mathrm{km\,s^{-1}\,Mpc^{-1}}) = 0.73$ % src: master_thesis_code/constants.py (H = 0.73)
+and analysed against the real GLADE+ catalogue.  The posterior rails,
+placing essentially all its mass at the upper edge of the
+$h \in [0.60, 0.86]$ grid, $h = 0.86$. % src: results/commission_20260701/redteam/crux_results.json (prod: MAP 0.86, edge_mass 1.0); derail_matrix_results.json (h_values)
+We show the rail is a curable prior-consistency artifact of the
+completion-term normalization, not photometric information starvation:
+restoring only the isotropic $1/(4\pi)$ completion sky marginal flips
+the rail to the opposite edge, $h = 0.60$, exposing two opposing
+mis-normalizations; % src: results/commission_20260701/redteam/derail_matrix_results.json (prod_global: MAP 0.60)
+restoring numerator--denominator prior consistency, by a local
+ratio-of-sums or by comoving-volume deconvolution of the host-redshift
+kernel, de-rails the posterior onto an interior peak at the injected
+truth, $h = 0.73$, on identical data. % src: results/commission_20260701/redteam/derail_matrix_results.json (local_ratio MAP 0.73, volume_deconv MAP 0.73)
+On synthetic universes with known truth, the bare-Gaussian kernel
+carries a bias scaling as $\sigma_z^2$ that collapses frequentist
+coverage to nearly zero, whereas the volume-deconvolved kernel is
+calibrated close to nominal. % src: results/commission_20260701/scratch/d2/NOTE_calibration_findings.md (RESULTs 1-2: coverage 0-3 per cent bare vs near-nominal volume)
+No published pipeline has a known-truth calibration test in the
+catalogue-dominated, $\sigma_z/z \sim 0.7$ regime % src: .planning/gate/G5a_gwcosmo_inspection.md (sec 5); .planning/gate/G5b_chimera_icarogw_inspection.md (VERDICT)
+that LISA-era dark sirens paired with photometric catalogues will
+occupy; prior-consistent normalization and coverage tests at
+photometric width are prerequisites for catalogue dark-siren
+cosmology.

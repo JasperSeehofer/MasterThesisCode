@@ -1,0 +1,200 @@
+% Section body only --- the builder emits \section{Introduction}\label{sec:intro}.
+% Primary sources: results/commission_20260701/redteam/derail_matrix_results.json,
+%                  results/commission_20260701/redteam/crux_results.json,
+%                  results/commission_20260701/redteam/crux_realdata.md,
+%                  .planning/gate/G5a_gwcosmo_inspection.md,
+%                  .planning/gate/G5b_chimera_icarogw_inspection.md
+The Hubble constant is at present the most contested number in
+cosmology: early-Universe inference from the cosmic microwave
+background \citep{Planck:2018vyg} and late-Universe distance-ladder
+measurements \citep{Riess:2021jrx} disagree at the level of several
+standard deviations, and the discrepancy has resisted a decade of
+systematic scrutiny \citep{MISSING:DiValentino2021-hubble-tension-review}.
+% MISSING CITATION: Di Valentino et al. 2021, "In the realm of the Hubble tension — a review of solutions", arXiv:2103.01183
+Gravitational-wave standard sirens offer an arbitration channel with
+independent systematics: the waveform of a compact-binary inspiral
+encodes the source's luminosity distance directly, with no distance
+ladder \citep{Schutz:1986gp}.  When an electromagnetic counterpart
+identifies the host galaxy, a single event already yields an
+informative measurement \citep{Abbott:2017xzu}, and samples of a few
+tens of counterpart events have been forecast to arbitrate the
+tension \citep{Chen:2017rfc}.
+
+Most gravitational-wave detections, however, have no counterpart.
+The \emph{dark-siren} programme replaces the missing host
+identification by a marginalization over a galaxy catalogue: every
+galaxy consistent with the gravitational-wave localization volume
+proposes a redshift, the correct proposals accumulate coherently
+across events, and the incoherent ones average away
+\citep{Schutz:1986gp,MISSING:DelPozzo2012-statistical-dark-siren}.
+% MISSING CITATION: Del Pozzo 2012, "Inference of the cosmological parameters from gravitational waves: application to second generation interferometers", arXiv:1108.1317
+The modern formulation of the method --- explicit in-catalogue and
+out-of-catalogue hypotheses, a completion term for the galaxies the
+survey misses, and selection normalizations for both channels --- is
+due to \citet{Gray:2019ksv}, was developed through the
+\textsc{gwcosmo} pipeline
+\citep{MISSING:Gray2022-pixelated,MISSING:Gray2023-los-zprior},
+% MISSING CITATION: Gray et al. 2022, "Pixelated approach to galaxy catalogue incompleteness: improving the dark siren measurement of the Hubble constant", arXiv:2111.04629
+% MISSING CITATION: Gray et al. 2023, "Joint cosmological and gravitational-wave population inference using dark sirens and galaxy catalogues", arXiv:2308.02281
+and underpins the flagship application to the GWTC-3 event catalogue
+\citep{MISSING:LVK2021-gwtc3-cosmology};
+% MISSING CITATION: Abbott et al. (LVK) 2021, "Constraints on the cosmic expansion history from GWTC-3", arXiv:2111.03604
+\citet{Gair:2022zsa} give a pedagogical synthesis.  Independent
+implementations of the same physics now exist in \textsc{chimera}
+\citep{MISSING:Borghi2024-chimera}, \textsc{icarogw}
+\citep{MISSING:Mastrogiovanni2023-icarogw}, and
+\textsc{DarkSirensStat} \citep{MISSING:Finke2021-darksirensstat}.
+% MISSING CITATION: Borghi et al. 2024, "Cosmology and astrophysics with standard sirens and galaxy catalogs in view of future gravitational wave observations" (CHIMERA), arXiv:2312.05302
+% MISSING CITATION: Mastrogiovanni et al. 2023, "ICAROGW: a python package for inference of astrophysical population properties of noisy, heterogeneous and incomplete observations", arXiv:2305.17973
+% MISSING CITATION: Finke et al. 2021, "Cosmology with LIGO/Virgo dark sirens: Hubble parameter and modified gravitational wave propagation", arXiv:2101.12660
+The same machinery is expected to carry the space-borne programme:
+LISA extreme-mass-ratio inspirals (EMRIs) will supply precisely
+measured luminosity distances at cosmological depth
+\citep{Babak:2017tow,LISA:2024hlh}, and dark-siren Hubble-constant
+forecasts built on them already exist \citep{Laghi:2021pqk}.
+
+The galaxy catalogues these analyses actually have at their disposal
+are a different matter from the ones the method was validated on.
+GLADE+ \citep{Dalya:2021ewn}, the workhorse catalogue of the
+LIGO--Virgo--KAGRA dark-siren analyses, draws a substantial fraction
+of its redshifts from photometric surveys, and at the depths where
+gravitational-wave hosts live the relative redshift uncertainty of
+those entries approaches order unity --- $\sigma_z/z \sim 0.7$ in the
+regime probed by the analysis of this paper.
+% src: .planning/gate/G5a_gwcosmo_inspection.md (sigma_z/z ~ 0.7, EMRI/GLADE+ regime)
+The known-truth validations of the galaxy-catalogue method, by
+contrast, live almost entirely in the spectroscopic limit: the mock
+data challenge that established the \citet{Gray:2019ksv} framework
+used galaxies with no redshift uncertainty at all, and subsequent
+photometric-redshift studies on real data
+\citep{MISSING:Turski2023-photoz} could quantify
+information loss but not bias, because real data come without a
+truth.
+% MISSING CITATION: Turski et al. 2023, "Impact of modelling galaxy redshift uncertainties on the gravitational-wave dark standard siren measurement of the Hubble constant", arXiv:2302.12037
+Section~\ref{sec:codes} documents this validation gap in detail.  It
+is exactly the gap that the coming era of Rubin--LSST and
+Euclid-scale photometric catalogues, and of LISA-era dark sirens,
+will occupy.
+
+This paper reports what happened when a complete, independently
+implemented estimator of the \citet{Gray:2019ksv} family met that
+regime.  In a simulated EMRI campaign evaluated against the real
+GLADE+ galaxy field, the Hubble-constant posterior \emph{railed}:
+essentially all of its mass piled onto the boundary of the prior
+support --- a posterior that looks maximally decisive while being
+maximally wrong.  Two natural readings suggest themselves.  The
+first is information starvation: photometric redshift errors of
+order unity have simply erased the catalogue's redshift information,
+and no estimator could do better.  The second is a parochial
+implementation bug, of interest only to the authors.  This paper
+shows that both readings fail.  The rail is a \emph{prior-consistency
+artifact} of the completion-term normalization --- a superposition of
+normalization defects, each an individually plausible reading of the
+published equations, whose effects are second order in the redshift
+kernel width and therefore invisible in the spectroscopic regime
+where the method's validations live, but leading order at photometric
+widths.  On identical data, identical events, and an identical
+catalogue, the pre-fix estimator rails at the upper edge of the
+$h \in [0.60, 0.86]$ grid, at $h = 0.86$;
+% src: results/commission_20260701/redteam/crux_results.json (prod); derail_matrix_results.json (h_values)
+restoring only the isotropic $1/(4\pi)$ completion sky marginal
+flips the rail to the opposite edge, $h = 0.60$ --- the fingerprint
+of two opposing mis-normalizations, one masking the other;
+% src: results/commission_20260701/redteam/derail_matrix_results.json (prod_global)
+and restoring prior consistency between numerator and selection
+normalization, by either of two principled routes, de-rails the
+posterior onto an interior peak at the injected simulation truth,
+$h = 0.73$.
+% src: results/commission_20260701/redteam/derail_matrix_results.json (local_ratio, volume_deconv); master_thesis_code/constants.py (H = 0.73)
+An estimator that rails silently at the edge of its prior under
+realistic photometric errors --- while calibrating perfectly on the
+spectroscopic-quality inputs used to validate it --- is a field-level
+hazard for every independently implemented dark-siren pipeline, not a
+code anecdote.
+
+The contributions of the paper are:
+\begin{enumerate}
+  \item \textbf{Diagnosis} (Section~\ref{sec:pitfall}).  We decompose
+    the railed posterior into three distinct normalization defects:
+    an Eddington--Malmquist-type prior inconsistency in the
+    photometric host-redshift kernel, which biases $h$ low
+    quadratically in $\sigma_z$; a completion-term sky factor
+    evaluated at the peak density of the localization Gaussian
+    instead of its isotropic $1/(4\pi)$ marginal, which over-weights
+    the out-of-catalogue channel by orders of magnitude
+    (Appendix~\ref{sec:app:sky}); and an $h$-dependent tilt in the
+    global selection-sum normalization, which multiplies every event
+    coherently (Appendix~\ref{sec:app:betag}).  All three violate a
+    single requirement: every population measure must be counted
+    exactly once, identically in the numerator and in the selection
+    normalization.
+  \item \textbf{Two principled estimators}
+    (Section~\ref{sec:estimators}).  We construct two prior-consistent
+    repairs: a local ratio-of-sums normalization adjacent to the
+    published form of \citet{Gray:2019ksv}
+    (Appendix~\ref{sec:app:gray}), and a comoving-volume
+    deconvolution of the photometric host-redshift kernel
+    (Appendix~\ref{sec:app:voldeconv}), extended to the host-mass
+    channel of our two-parameter analysis
+    (Appendix~\ref{sec:app:eddm}).
+  \item \textbf{Synthetic calibration} (Section~\ref{sec:coverage}).
+    An independent probability--probability and coverage harness,
+    which re-derives the estimator from the written formulas without
+    importing the production code, shows that the bare-Gaussian
+    kernel collapses to near-zero frequentist coverage on synthetic
+    universes while the volume-deconvolved kernel is calibrated close
+    to nominal.
+  \item \textbf{Real-data de-rail} (Section~\ref{sec:realdata}).  On
+    identical real GLADE+ data, swapping only the estimator carries
+    the posterior through the arc above --- rail, opposite-edge rail,
+    interior peak at the injected truth --- and a two-factor ablation
+    separates the roles of the kernel and the denominator.
+    Section~\ref{sec:postmortem} explains why the earlier
+    ``information starvation'' reading of the same data was a
+    misdiagnosis.
+  \item \textbf{External-code relevance} (Section~\ref{sec:codes}).
+    We audit the published implementations at pinned versions.  The
+    specific normalization inconsistency behind the rail is
+    structurally excluded from \textsc{gwcosmo} by construction, and
+    the volume-weighted redshift kernel we arrive at independently
+    coincides with the published practice of \textsc{chimera},
+    \textsc{icarogw}, and \textsc{DarkSirensStat}.  The bare-kernel
+    assumption, however, is present by declaration in
+    \textsc{gwcosmo}, and no known-truth validation of any published
+    pipeline exists at $\sigma_z/z \sim 0.7$.
+    % src: .planning/gate/G5a_gwcosmo_inspection.md; .planning/gate/G5b_chimera_icarogw_inspection.md
+\end{enumerate}
+
+Two scope statements apply throughout.  First, the events are
+simulated: the gravitational-wave campaign is a mock EMRI population
+injected at $h = 0.73$
+% src: master_thesis_code/constants.py (H = 0.73, fiducial simulation value)
+and analysed against the real GLADE+ galaxy field, so every claim in
+this paper concerns estimator calibration against a known truth,
+never a measurement of the actual expansion rate.  Second, the event
+sample carries a known selection-scale caveat, stated where the data
+are introduced (Section~\ref{sec:realdata}): it affects the depth and
+loudness of the mock population but not the estimator-comparison
+logic, and forecast-grade EMRI constraints are deferred to a
+companion paper.
+
+The paper is organized as follows.  Section~\ref{sec:framework}
+assembles the complete single-event likelihood, fixes notation, and
+defines prior consistency.  Section~\ref{sec:pitfall} dissects the
+three normalization defects and derives their observable signatures.
+Section~\ref{sec:estimators} constructs the two prior-consistent
+estimators and motivates the adopted default.
+Section~\ref{sec:coverage} presents the synthetic calibration
+evidence, and Section~\ref{sec:realdata} the de-rail demonstration
+and ablation on GLADE+.  Section~\ref{sec:postmortem} revisits the
+information-starvation misdiagnosis, Section~\ref{sec:codes} relates
+our findings to the published pipelines, and Section~\ref{sec:budget}
+quantifies the remaining systematic-error budget.
+Section~\ref{sec:conclusions} concludes.  The appendices contain the
+exact completion-term sky marginal (Appendix~\ref{sec:app:sky}), the
+volume deconvolution and the Eddington-in-$z$ law
+(Appendix~\ref{sec:app:voldeconv}), the term-by-term mapping onto the
+equations of \citet{Gray:2019ksv} (Appendix~\ref{sec:app:gray}), the
+rate-weighted host-mass prior (Appendix~\ref{sec:app:eddm}), and the
+discrete-sum check of the catalogue selection normalization
+(Appendix~\ref{sec:app:betag}).

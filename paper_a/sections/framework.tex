@@ -1,0 +1,335 @@
+% Section body only — the builder emits \section{...}\label{sec:framework}.
+% Primary sources: docs/derivations/G2c_gray_a9_a10_mapping.md,
+%                  docs/derivations/G2a_completion_sky_marginal_4pi.md,
+%                  docs/derivations/G2b_host_z_volume_prior.md,
+%                  derivations/dark_siren_likelihood.md
+The estimator analysed in this paper is the galaxy-catalogue
+(``dark-siren'') Hubble-constant likelihood of \citet{Gray:2019ksv},
+as implemented for a simulated LISA extreme-mass-ratio-inspiral (EMRI)
+campaign \citep{Laghi:2021pqk} evaluated against the GLADE+ catalogue
+\citep{Dalya:2021ewn}.  This section assembles the
+complete single-event likelihood and fixes the notation used
+throughout the paper; Section~\ref{sec:pitfall} then isolates the
+normalization choices hidden inside it, and
+Appendix~\ref{sec:app:gray} gives the term-by-term mapping onto the
+published equations of \citet{Gray:2019ksv}.
+
+\subsection{Notation, cosmology, and single-event data}
+\label{sec:framework:notation}
+
+We write the Hubble constant through the dimensionless parameter
+$h \equiv H_0 / (100~\mathrm{km\,s^{-1}\,Mpc^{-1}})$.  All redshifts
+$z$ are CMB-frame redshifts, and $\sigma_z$ denotes the (per-galaxy)
+photometric redshift uncertainty.  We assume a flat $\Lambda$CDM
+background, in which the luminosity distance is
+\begin{equation}
+  d_L(z, h) \;=\; \frac{c\,(1+z)}{H_0} \int_0^z
+  \frac{\mathrm{d}z'}{E(z')},
+  \qquad
+  E(z) = \sqrt{\Omega_\mathrm{m}(1+z)^3 + \Omega_\Lambda},
+  \label{eq:dl}
+\end{equation}
+with $\Omega_\Lambda = 1 - \Omega_\mathrm{m}$ \citep{Hogg:1999ad}.
+Because the data are drawn from a simulated EMRI campaign (on the real
+GLADE+ galaxy field), all statements about recovering $h$ refer to
+estimator calibration against the injected simulation truth,
+$h = 0.73$,
+% src: master_thesis_code/constants.py (H = 0.73, fiducial simulation value)
+never to a measurement of the actual expansion rate.
+
+Each detected event $i$ contributes data $x_i$ and a detection
+indicator $D_i$ (the event's signal-to-noise ratio exceeds the
+detection threshold $\rho_\mathrm{thr} = 20$).
+% src: master_thesis_code/constants.py (SNR_THRESHOLD = 20)
+With a prior $\pi(h)$ (uniform here), the posterior over $h$ from
+$N_\mathrm{det}$ events is
+\begin{equation}
+  p\big(h \mid \{x_i\}\big) \;\propto\; \pi(h)
+  \prod_{i=1}^{N_\mathrm{det}} p_i(h),
+  \qquad
+  p_i(h) \equiv p(x_i \mid D_i, h).
+  \label{eq:posterior}
+\end{equation}
+
+The per-event measurement is summarized by a Gaussian likelihood
+obtained from the Cram\'er--Rao bound of a 14-parameter EMRI Fisher
+analysis
+% src: master_thesis_code/datamodels/parameter_space.py (14 Parameter fields)
+\citep{Vallisneri:2007ev}, projected onto the three parameters that
+carry cosmological information: the ecliptic sky coordinates
+$(\phi, \theta)$ and the luminosity-distance fraction
+$u \equiv d_L / \hat d_L$, where $\hat d_L$ is the event's
+maximum-likelihood distance.  Writing $\hat\mu_i = (\hat\phi_i,
+\hat\theta_i, 1)$ for the maximum-likelihood point and $\Sigma_i$ for
+the projected covariance,
+\begin{equation}
+  p\big(x_i \mid z, \Omega, h\big) \;\simeq\;
+  \mathcal{N}_3\!\big( (\phi, \theta, u(z,h));\; \hat\mu_i,\, \Sigma_i \big),
+  \qquad
+  u(z,h) = \frac{d_L(z,h)}{\hat d_L},
+  \label{eq:gwlike}
+\end{equation}
+% src: docs/derivations/G2a_completion_sky_marginal_4pi.md §1
+where $\Omega = (\phi,\theta)$ denotes sky position.  Equation
+\eqref{eq:gwlike} is how $h$ enters the inference: for each trial $h$,
+the map \eqref{eq:dl} converts a candidate redshift into a distance
+fraction at which the Gaussian is evaluated.  One convention matters
+for everything that follows: the Fisher matrix is computed with
+respect to the bare coordinates $(\phi,\theta)$, so
+\eqref{eq:gwlike} is a probability density with respect to
+$\mathrm{d}\phi\,\mathrm{d}\theta\,\mathrm{d}u$, \emph{not} with
+respect to the solid-angle measure
+$\mathrm{d}\Omega = \sin\theta\,\mathrm{d}\theta\,\mathrm{d}\phi$;
+sky integrals against isotropic priors must therefore carry the
+$\sin\theta$ Jacobian explicitly (Appendix~\ref{sec:app:sky}).
+
+\subsection{Hypothesis decomposition}
+\label{sec:framework:decomposition}
+
+Following \citet{Gray:2019ksv}, the likelihood marginalizes over the
+two exhaustive hypotheses $G$ (the true host galaxy is contained in
+the flux-limited catalogue) and $\bar G$ (it is not):
+\begin{equation}
+  p_i(h) \;=\;
+  p(x_i \mid G, D_i, h)\, p(G \mid D_i, h)
+  \;+\;
+  p(x_i \mid \bar G, D_i, h)\, p(\bar G \mid D_i, h).
+  \label{eq:mixture}
+\end{equation}
+% src: docs/derivations/G2c_gray_a9_a10_mapping.md §0 (Gray main-text Eq. 9)
+We refer to the second term as the \emph{completion term}: it restores
+the contribution of hosts the catalogue is missing.  The four
+ingredients of \eqref{eq:mixture} --- the in-catalogue likelihood, the
+completion term, and the two hypothesis weights --- are constructed in
+the next three subsections and reassembled in
+equation~\eqref{eq:assembled}.
+
+\subsection{In-catalogue term}
+\label{sec:framework:incat}
+
+The in-catalogue likelihood is a rate-weighted ratio of sums over
+candidate host galaxies $g$,
+\begin{equation}
+  L_\mathrm{cat}(h) \;\equiv\; p(x_i \mid G, D_i, h)
+  \;=\;
+  \frac{\displaystyle\sum_{g \in \mathcal{G}_i} w_g\, N_g(h)}
+       {\displaystyle\sum_{g \in \mathcal{G}_i^{\mathrm{sel}}} w_g\, D_g(h)},
+  \qquad
+  w_g = \frac{R_\mathrm{eff}(M_g)}{1 + z_g},
+  \label{eq:lcat}
+\end{equation}
+% src: docs/derivations/G2c_gray_a9_a10_mapping.md §2, §4
+where $M_g$ and $z_g$ are the catalogued massive-black-hole (MBH) host
+mass and redshift of galaxy $g$, and the weight $w_g$ instantiates the
+generic host weights $p(s\mid z)\,p(s\mid M)$ of \citet{Gray:2019ksv}
+with the per-MBH EMRI rate $R_\mathrm{eff}(M)$ of \citet{Babak:2017tow}
+and the detector-frame time dilation $1/(1+z)$.  The numerator sum
+runs over the galaxies $\mathcal{G}_i$ inside the event's
+three-dimensional localisation region (galaxies outside it are
+exponentially suppressed by equation~\eqref{eq:gwlike}); the choice of
+the \emph{denominator} set $\mathcal{G}_i^{\mathrm{sel}}$ --- the same local
+set, or the entire catalogue as in the published form of
+\citet{Gray:2019ksv} --- is one of the two normalization choices at
+the heart of this paper (Sections~\ref{sec:pitfall}
+and~\ref{sec:estimators}).
+
+The per-host numerator and selection factors are one-dimensional
+redshift integrals against a host-redshift kernel $p_g(z)$,
+\begin{align}
+  N_g(h) &= \int \mathrm{d}z\;
+  \mathcal{N}_3\!\big( (\phi_g, \theta_g, u(z,h));\; \hat\mu_i, \Sigma_i \big)\;
+  p_g(z),
+  \label{eq:ng}\\
+  D_g(h) &= \int \mathrm{d}z\;
+  p_\mathrm{det}\!\big(d_L(z,h), \Omega_g\big)\;
+  p_g(z),
+  \label{eq:dg}
+\end{align}
+% src: docs/derivations/G2c_gray_a9_a10_mapping.md §2 (N_g, D_g rows); derivations/dark_siren_likelihood.md Eq. (14.12)
+evaluated over the redshift support of their integrands (the event's
+$\pm 4\sigma_{d_L}$ distance image and the host's $\pm 4\sigma_z$
+window, respectively), with $p_\mathrm{det}$ the detection probability
+defined in Section~\ref{sec:framework:selection}.  The detection
+probability appears in $D_g$ but never multiplies the measurement
+Gaussian in $N_g$: selection effects are corrected in denominators
+only \citep{Mandel:2018mve}.
+
+The kernel $p_g(z)$ encodes what the catalogue's photometric redshift
+$z_g \pm \sigma_{z,g}$ says about the host's true redshift.  We write
+it in the general form
+\begin{equation}
+  p_g(z) \;=\;
+  \frac{\mathcal{N}\big(z_g;\, z,\, \sigma_{z,g}\big)\;\Pi(z)}{Z_g},
+  \qquad
+  Z_g = \int \mathrm{d}z'\;
+  \mathcal{N}\big(z_g;\, z',\, \sigma_{z,g}\big)\;\Pi(z'),
+  \label{eq:kernel}
+\end{equation}
+% src: docs/derivations/G2b_host_z_volume_prior.md Eq. (1.4)
+where $\mathcal{N}(z_g; z, \sigma_{z,g})$ is the likelihood of the
+catalogued value given a true redshift $z$, $\Pi(z)$ is a population
+prior on host redshifts, and $Z_g$ normalizes each galaxy to unit
+prior mass.  The bare choice $\Pi \equiv 1$ (kernel $=$ the catalogue
+Gaussian itself) is the literal reading of the redshift distribution
+$p(z_i)$ that \citet{Gray:2019ksv} treat as externally given; the
+alternative, fixing $\Pi$ to the population prior of
+equation~\eqref{eq:wpop} below, is the deconvolved kernel introduced
+in Section~\ref{sec:estimators}.  For spectroscopic precision
+($\sigma_z \to 0$) the kernel collapses to $\delta(z - z_g)$ and the
+choice of $\Pi$ is irrelevant; at GLADE+ photometric widths it is
+leading order (Section~\ref{sec:pitfall}).
+
+An optional MBH-mass channel augments \eqref{eq:gwlike} with a fourth
+coordinate, the redshifted-mass fraction $M_z/\hat M_z$ where
+$M_z = M(1+z)$ and $M$ is the source-frame host MBH mass.  The
+$M_z$ direction is marginalized analytically against a per-galaxy
+host-mass kernel $p_g(M)$ using the standard conditional-Gaussian
+decomposition \citep{MISSING:Bishop2006-PRML},
+% MISSING CITATION: C. M. Bishop, "Pattern Recognition and Machine Learning", Springer 2006, Eqs. (2.81)-(2.82)
+and the corresponding selection factor integrates
+$p_\mathrm{det}(d_L, M_z, \Omega_g)$ over the same kernels.  This
+channel has no analogue in \citet{Gray:2019ksv}; its construction and
+its rate-weighted mass prior are given in
+Appendix~\ref{sec:app:eddm}.
+
+\subsection{Completion term}
+\label{sec:framework:completion}
+
+Out-of-catalogue hosts are described by the population prior alone:
+isotropic on the sky, $p(\Omega) = 1/4\pi$, and uniform in comoving
+volume and source time, which in terms of the comoving volume element
+per unit solid angle $\mathrm{d}V_\mathrm{c}/(\mathrm{d}z\,\mathrm{d}\Omega)$
+reads
+\begin{equation}
+  w_\mathrm{pop}(z) \;\equiv\;
+  \frac{1}{1+z}\,
+  \frac{\mathrm{d}V_\mathrm{c}}{\mathrm{d}z\,\mathrm{d}\Omega}.
+  \label{eq:wpop}
+\end{equation}
+% src: docs/derivations/G2b_host_z_volume_prior.md Eq. (1.3); docs/derivations/G2a_completion_sky_marginal_4pi.md Eq. (4)
+Let $f(z, \Omega) \in [0,1]$ denote the (rate-weighted) completeness
+of the catalogue, evaluated per HEALPix pixel, $f_k(z)$ for pixel $k$
+\citep{MISSING:Gray2022-pixelated}.
+% MISSING CITATION: R. Gray, C. Messenger, J. Veitch, "A Pixelated Approach to Galaxy Catalogue Incompleteness: Improving the Dark Siren Measurement of the Hubble Constant", MNRAS 512 (2022) 1127, arXiv:2111.04629
+The numerator of the completion term is then the population-weighted,
+incompleteness-weighted, sky-marginalized measurement likelihood
+\begin{equation}
+  B_\mathrm{num}(h) \;=\;
+  \int_{z_-}^{z_+} \mathrm{d}z\;
+  \big[1 - f_{k(\Omega_i)}(z)\big]\;
+  \frac{\sin\hat\theta_i}{4\pi}\,
+  \mathcal{N}\!\big(u(z,h);\, 1,\, \Sigma_{i,uu}\big)\;
+  w_\mathrm{pop}(z),
+  \label{eq:bnum}
+\end{equation}
+% src: docs/derivations/G2a_completion_sky_marginal_4pi.md §2 Eq. (5) and §3 Eq. (10)
+where $[z_-, z_+]$ is the redshift image of the event's
+$\pm 4\sigma_{d_L}$ distance support, $k(\Omega_i)$ is the pixel
+containing the event's line of sight, and $\Sigma_{i,uu}$ is the
+\emph{marginal} distance-fraction variance of $\Sigma_i$.  The factor
+$(\sin\hat\theta_i / 4\pi)\,\mathcal{N}(u; 1, \Sigma_{i,uu})$ is the
+exact narrow-beam marginal of the coordinate-density Gaussian
+\eqref{eq:gwlike} over the isotropic sky prior --- not the Gaussian's
+peak density; Section~\ref{sec:pitfall} shows that this distinction
+alone changes the completion term by orders of magnitude, and
+Appendix~\ref{sec:app:sky} derives the marginal and quantifies its
+accuracy.  As in equation~\eqref{eq:ng}, no $p_\mathrm{det}$ factor
+appears: the completion numerator is a likelihood numerator, and
+selection lives in the denominators below.
+
+\subsection{Selection normalization and the assembled likelihood}
+\label{sec:framework:selection}
+
+The detection probability $p_\mathrm{det}(d_L, \Omega)$ [and
+$p_\mathrm{det}(d_L, M_z, \Omega)$ for the mass channel] is the
+probability that an EMRI at that distance and sky position exceeds
+$\rho_\mathrm{thr}$; it is calibrated from a dedicated injection
+campaign run through the identical simulation pipeline, so that the
+selection function of the inference matches that of the event
+generator by construction.  Its integrals against the population
+prior define the selection normalizations
+\begin{align}
+  D(h) &= \int_{z_\mathrm{min}}^{z_\mathrm{max}(h)} \mathrm{d}z\;
+  \Big\langle p_\mathrm{det}\big(d_L(z,h), \Omega\big)
+  \Big\rangle_{\Omega}\;
+  w_\mathrm{pop}(z),
+  \label{eq:Dh}\\
+  \beta_{\bar G}(h) &= \int_{z_\mathrm{min}}^{z_\mathrm{max}(h)} \mathrm{d}z\;
+  \Big\langle \big[1 - f(z,\Omega)\big]\,
+  p_\mathrm{det}\big(d_L(z,h), \Omega\big) \Big\rangle_{\Omega}\;
+  w_\mathrm{pop}(z),
+  \label{eq:betabar}
+\end{align}
+% src: docs/derivations/G2c_gray_a9_a10_mapping.md §2 (D(h) and beta_Gbar rows)
+where $\langle\cdot\rangle_\Omega$ is the isotropic sky average and
+$z_\mathrm{max}(h)$ is the redshift horizon of the analysis
+($p_\mathrm{det}$ vanishes beyond the injection horizon).  $D(h)$ is
+the full-volume selection integral; $\beta_{\bar G}(h)$ its
+out-of-catalogue restriction; and the \emph{catalogue selection
+normalization}
+\begin{equation}
+  \beta_G(h) \;=\; D(h) - \beta_{\bar G}(h)
+  \label{eq:betag}
+\end{equation}
+is the in-catalogue complement.  The hypothesis weights of
+equation~\eqref{eq:mixture} are then
+$p(G \mid D_i, h) = w_G(h) \equiv \beta_G(h)/D(h)$ and
+$p(\bar G \mid D_i, h) = 1 - w_G(h) = \beta_{\bar G}(h)/D(h)$, and the
+completion-term likelihood is
+$p(x_i \mid \bar G, D_i, h) = B_\mathrm{num}(h)/\beta_{\bar G}(h)$.
+Substituting into \eqref{eq:mixture}, the factors of
+$\beta_{\bar G}$ cancel and the implemented per-event likelihood is
+the single ratio
+\begin{equation}
+  p_i(h) \;=\;
+  \frac{\beta_G(h)\, L_\mathrm{cat}(h) \;+\; B_\mathrm{num}(h)}{D(h)},
+  \label{eq:assembled}
+\end{equation}
+% src: docs/derivations/G2c_gray_a9_a10_mapping.md §1
+an exact algebraic rearrangement of \eqref{eq:mixture} that remains
+finite in the complete-catalogue limit $f \to 1$
+($\beta_{\bar G} \to 0$).  Both channels of the numerator carry the
+same units ($\mathrm{Mpc^3\,sr^{-2}}$, from one population-volume
+integral times one per-steradian GW density), so the two are
+commensurable, and the residual constant left after dividing by
+$D(h)$ is common to all $h$ and cancels when the posterior
+\eqref{eq:posterior} is normalized.
+% src: docs/derivations/G2a_completion_sky_marginal_4pi.md §6 (units of B_num and beta_G L_cat)
+
+\subsection{Where prior consistency enters}
+\label{sec:framework:consistency}
+
+The population prior enters the likelihood in two guises.  It appears
+\emph{explicitly}, as the measure $w_\mathrm{pop}(z)\,\mathrm{d}z$ of
+every continuous integral --- the completion numerator
+\eqref{eq:bnum} and the selection normalizations
+\eqref{eq:Dh}--\eqref{eq:betabar}.  And it appears \emph{implicitly},
+through whatever the in-catalogue kernel \eqref{eq:kernel} asserts
+about where hosts live in redshift.  \emph{Prior consistency} is the
+requirement that these two roles agree:
+(i)~within each per-host ratio, the identical kernel $p_g(z)$ must
+multiply the measurement factor in $N_g$
+[equation~\eqref{eq:ng}] and the selection factor in $D_g$
+[equation~\eqref{eq:dg}]; and
+(ii)~across the catalogue and completion channels, every redshift
+integral in the estimator must carry the population measure exactly
+once --- never zero times, never twice.
+% src: docs/derivations/G2b_host_z_volume_prior.md §3 ("dV_c counted once" rule)
+Requirement (i) is satisfied by construction in
+equation~\eqref{eq:lcat}.  Requirement (ii) constrains the pair
+$\big(\Pi,\, \mathcal{G}_i^{\rm sel}\big)$: with the bare kernel
+$\Pi \equiv 1$, the in-catalogue channel implicitly asserts a host
+population that is uniform in $z$ while the completion and selection
+integrals assert one uniform in comoving volume, and the mixture in
+equation~\eqref{eq:assembled} weighs two mutually inconsistent priors
+against each other through the $h$-dependent weight
+$w_G(h) = \beta_G(h)/D(h)$ of equation~\eqref{eq:betag}.  The same requirement
+applies verbatim to the mass channel: the host-mass kernel $p_g(M)$
+must carry the rate prior $R_\mathrm{eff}(M)$ consistently between
+its numerator and selection integrals (Appendix~\ref{sec:app:eddm}).
+For narrow kernels the violation is second order, which is why it
+escaped notice in spectroscopic-catalogue applications; at
+photometric widths it is not.  Section~\ref{sec:pitfall} demonstrates
+that this seemingly formal bookkeeping choice is the difference
+between a posterior railed at the prior boundary and a calibrated
+one.

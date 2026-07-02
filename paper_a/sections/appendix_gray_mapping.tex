@@ -1,0 +1,170 @@
+% Appendix body only — the builder emits \section{...}\label{sec:app:gray}.
+% Primary source: docs/derivations/G2c_gray_a9_a10_mapping.md (commission task G2c)
+This appendix records the term-by-term audit of the likelihood
+assembled in Section~\ref{sec:framework} against the published
+equations of \citet{Gray:2019ksv}, whose appendix equations we cite as
+A9, A10, etc.  The comparison was carried out against the equations as
+published, not against secondary descriptions of them, and its outcome
+is summarized in Table~\ref{tab:gray:mapping}: the assembled per-event
+likelihood is an exact algebraic rearrangement of the published
+hypothesis mixture, the audit found no algebraic discrepancy, and
+every remaining difference is a deliberate, documented deviation ---
+the most consequential being the localization-ball selection
+denominator of \texttt{local\_ratio}.
+% src: docs/derivations/G2c_gray_a9_a10_mapping.md (VERDICT)
+
+\subsection{Exact correspondences}
+\label{sec:app:gray:exact}
+
+The hypothesis mixture of equation~\eqref{eq:mixture} is Gray
+et~al.'s eq.~9.  Their eq.~A14 defines the catalogue-membership weight
+$p(G \mid D_i, h)$ as a ratio of selection integrals; pre-integrating
+their hard apparent-magnitude threshold (Schechter-function magnitude
+and mass integrals) turns it into the smooth incompleteness weight
+$1 - f(z,\Omega)$, applied per HEALPix pixel
+\citep{MISSING:Gray2022-pixelated}.
+% MISSING CITATION: R. Gray, C. Messenger, J. Veitch, "A pixelated approach to galaxy catalogue incompleteness: improving the dark siren measurement of the Hubble constant", MNRAS 512 (2022) 1127, arXiv:2111.04629
+Under that rewriting, the numerator of eq.~A14 is
+$\beta_G(h)$ [equation~\eqref{eq:betag}] and its denominator is
+$D(h)$ [equation~\eqref{eq:Dh}]; eq.~A15 is the complement
+$1 - w_G$; and the out-of-catalogue numerator and selection integrals,
+eqs~A17 and A18, are $B_\mathrm{num}(h)$
+[equation~\eqref{eq:bnum}] and $\beta_{\bar G}(h)$
+[equation~\eqref{eq:betabar}], whose ratio is the completion-term
+likelihood of eq.~A19.  Substituting all five identifications into
+the mixture cancels the factors of $\beta_{\bar G}$ and yields the
+single ratio of equation~\eqref{eq:assembled} --- an identical
+rearrangement, not an approximation, and one that remains finite in
+the complete-catalogue limit $f \to 1$, where eq.~A19 becomes $0/0$.
+% src: docs/derivations/G2c_gray_a9_a10_mapping.md §1
+Throughout, the selection rule of \citet{Mandel:2018mve} is preserved:
+$p_\mathrm{det}$ enters only the denominators $D_g$, $D$,
+$\beta_{\bar G}$ (and the global catalogue sum discussed below), never
+a measurement numerator.
+
+\begin{table}
+  \caption{Term-by-term mapping of the implemented estimator onto
+  \citet{Gray:2019ksv}.  ``Exact'' means an algebraic identity up to
+  the smooth-completeness rewriting of the magnitude threshold;
+  ``---'' means no published counterpart exists.}
+  \label{tab:gray:mapping}
+  \begin{tabular}{lll}
+    \hline
+    This work & \citet{Gray:2019ksv} & Status \\
+    \hline
+    $p_i(h)$, eq.~\eqref{eq:assembled} & eq.~9 & exact rearrangement \\
+    $w_G = \beta_G/D$, eq.~\eqref{eq:betag} & eqs~A14--A15 & exact; smooth $f$ \\
+    $D(h)$, eq.~\eqref{eq:Dh} & denom.\ of eq.~A14 & exact \\
+    $\beta_{\bar G}(h)$, eq.~\eqref{eq:betabar} & eq.~A18 & threshold $\to$ smooth $1-f$ \\
+    $B_\mathrm{num}(h)$, eq.~\eqref{eq:bnum} & eq.~A17 & exact sky marginal \\
+    $B_\mathrm{num}/\beta_{\bar G}$ & eq.~A19 & implied; never divided \\
+    $L_\mathrm{cat}$, eq.~\eqref{eq:est:lcat} & eqs~A9--A10 & denom.\ set deviates (cf.~A20) \\
+    $N_g$, $D_g$, eqs~\eqref{eq:est:Ng}--\eqref{eq:est:Dg} & integrands of eq.~A10 & exact \\
+    bare $p_g(z)$ [$\Pi \equiv 1$, eq.~\eqref{eq:kernel}] & $p(z_i)$ in eq.~A10 & literal \\
+    deconvolved $p_g(z)$, eq.~\eqref{eq:est:pgz} & --- & Appendix~\ref{sec:app:voldeconv} \\
+    $w_g = R_\mathrm{eff}(M_g)/(1+z_g)$ & $p(s\mid z)\,p(s\mid M)$; eqs~A3--A4 & instantiated \\
+    MBH-mass channel & --- & Appendix~\ref{sec:app:eddm} \\
+    \hline
+  \end{tabular}
+\end{table}
+
+\subsection{The local selection denominator: nearest analogue eq.~A20}
+\label{sec:app:gray:local}
+
+In the notation of Section~\ref{sec:framework}, the in-catalogue
+likelihood of Gray et~al.\ with per-galaxy redshift uncertainty, their
+eq.~A10, reads
+\begin{equation}
+  p(x_i \mid G, D_i, h)
+  \;=\;
+  \frac{\displaystyle\sum_{g=1}^{N_\mathrm{gal}} \int \mathrm{d}z\;
+        p\big(x_i \mid z, \Omega_g, h\big)\, p(s \mid z)\,
+        p(s \mid M_g)\; p_g(z)}
+       {\displaystyle\sum_{g=1}^{N_\mathrm{gal}} \int \mathrm{d}z\;
+        p\big(D_i \mid z, \Omega_g, h\big)\, p(s \mid z)\,
+        p(s \mid M_g)\; p_g(z)},
+  \label{eq:gray:a10}
+\end{equation}
+% src: docs/derivations/G2c_gray_a9_a10_mapping.md §0 (A10 transcription)
+where $p(s\mid z)$ and $p(s\mid M)$ are their generic host-probability
+weights (their masses derive from apparent magnitudes,
+$M(z_i, m_i, H_0)$; here $M_g$ is the catalogued MBH mass) and
+\emph{both} sums run over the entire catalogue of $N_\mathrm{gal}$
+galaxies --- no restriction to a localization region appears in the
+published equation.  Restricting the numerator sum to the ball
+$\mathcal{B}$ is numerically inert, since the measurement Gaussian
+suppresses galaxies outside it exponentially; the faithful discrete
+transcription of eq.~\eqref{eq:gray:a10} is therefore the
+\emph{global} variant of Section~\ref{sec:pitfall}, which keeps the
+denominator summed over the full catalogue.  Multiplying that discrete
+sum by the continuous $\beta_G(h)$ in equation~\eqref{eq:assembled}
+implicitly requires the two to agree in $h$-dependence up to a
+constant; on GLADE+ this fails at the $-17$ per cent level end-to-end
+across the posterior grid (Appendix~\ref{sec:app:betag}),
+% src: .planning/gate/G1_beta_g_check.json (end_to_end_tilt_h3_corrected = -0.172)
+and the discrete denominator additionally evaluates $p_\mathrm{det}$
+at the catalogued $z_g$ while the numerator integrates over the
+photometric kernel --- an asymmetric treatment of the redshift
+smearing that is precisely the prior inconsistency of
+Section~\ref{sec:pitfall}.
+% src: docs/derivations/G2c_gray_a9_a10_mapping.md §6 (C6) and §4.1
+
+The \texttt{local\_ratio} estimator [equation~\eqref{eq:est:lcat}]
+instead evaluates both sums over the same ball with the same weights
+and the same kernel.  This is \emph{not} eq.~A10; its nearest
+published analogue is Gray et~al.'s catalogue-patch case, their
+eq.~A20, in which the in-catalogue term is the regular ratio of sums
+with the sky integrals limited to a patch.  The deviation identifies
+the patch event-by-event with the three-dimensional localization ball
+(sky \emph{and} distance) rather than a fixed RA/Dec.\ patch, and it
+omits eq.~A20's explicit term for the sky remainder
+$\Omega_\mathrm{rest}$, whose role --- hosts outside the patch --- is
+played approximately by the completion channel, since $D(h)$ and
+$\beta_{\bar G}(h)$ are built over the full sky and volume.
+% src: docs/derivations/G2c_gray_a9_a10_mapping.md §4.2, §5 (D7)
+The deviation is principled on three grounds: within the ball every
+per-galaxy constant (number-density calibration, rate normalization)
+cancels row by row, so no bridge between the discrete catalogue and a
+continuous density model is invoked anywhere; numerator and
+denominator treat the photometric kernel identically, restoring the
+symmetry that the global sum breaks; and the resulting configuration
+passes the coverage test of Section~\ref{sec:coverage}, where the
+literal global transcription yields approximately zero empirical
+coverage on photometric-redshift catalogues.
+% src: docs/derivations/G2c_gray_a9_a10_mapping.md §4.1 (~0% P–P coverage of "global")
+
+\subsection{Constructs beyond the published equations}
+\label{sec:app:gray:beyond}
+
+Four ingredients map to no equation in \citet{Gray:2019ksv} and are
+cited here as project constructions.  (i)~The volume-deconvolved
+kernel of equation~\eqref{eq:est:pgz} with its per-galaxy
+normalization $Z_g$: eq.~A10 treats $p(z_i)$ as externally given, and
+the mock catalogues of \citet{Gray:2019ksv} had zero redshift error;
+the likelihood-times-prior construction parallels the line-of-sight
+redshift priors of later \textsc{gwcosmo} releases
+\citep{MISSING:Gray2023-los-zprior}.
+% MISSING CITATION: Gray et al. 2023, "Joint cosmological and gravitational-wave population inference using dark sirens and galaxy catalogues", arXiv:2308.02281
+(ii)~The local selection denominator, as above.  (iii)~The MBH-mass
+channel in its entirety (Appendix~\ref{sec:app:eddm}): Gray et~al.'s
+masses enter only through population priors in the selection
+normalization, never as a per-galaxy mass-likelihood channel.
+(iv)~The factorized product
+$[1 - f_{k(\Omega_i)}(z)] \times (\sin\hat\theta_i/4\pi)\,
+\mathcal{N}(u; 1, \Sigma_{i,uu})$ inside equation~\eqref{eq:bnum}:
+each factor is published [eq.~A17 and the pixelated completeness of
+\citealt{MISSING:Gray2022-pixelated}], but eq.~A17
+strictly requires a single sky integral weighting both factors; the
+factorization is exact only where $f$ is constant across the GW sky
+support, an excellent approximation at the median localization of
+$0.2\,\mathrm{deg}^2$, far below the completeness pixel scale.
+% src: docs/derivations/G2a_completion_sky_marginal_4pi.md §4 (median 0.2 deg²); docs/derivations/G2c_gray_a9_a10_mapping.md §5 (D5)
+
+One approximation deserves explicit statement: the rate weight $w_g$
+is evaluated at the catalogued $(M_g, z_g)$ and held outside the
+redshift integrals of equation~\eqref{eq:gray:a10}, whereas eq.~A10
+carries $p(s \mid z_i)$ inside $\int \mathrm{d}z_i$.  For narrow
+kernels the difference is second order; at GLADE+ photometric widths
+it is not guaranteed to be, and we state it here as a known
+approximation of the implementation rather than silently absorb it.
+% src: docs/derivations/G2c_gray_a9_a10_mapping.md §5 (D1 sub-deviation)

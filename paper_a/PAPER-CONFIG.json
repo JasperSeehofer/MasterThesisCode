@@ -1,0 +1,97 @@
+{
+  "title": "Photometric-redshift prior consistency and calibration in galaxy-catalogue dark-siren Hubble-constant inference",
+  "authors": [
+    {
+      "name": "Jasper Seehofer",
+      "affiliation": "Institute for Theoretical Physics, Ruprecht-Karls University Heidelberg"
+    },
+    {
+      "name": "TBD",
+      "affiliation": "TBD"
+    }
+  ],
+  "abstract": "% Abstract body only --- plain paragraph, no environment; the builder wraps it.\n% Written LAST, after all sections; every number below is quoted from the\n% section files and carries its original artifact source.\nGalaxy-catalogue (`dark-siren') inference of the Hubble constant\nmarginalizes gravitational-wave host redshifts over a flux-limited\ncatalogue, adding a completion term for the hosts the survey misses.\nThe method's known-truth validations are almost entirely\nspectroscopic, while the catalogues actually used are photometric:\n$\\sigma_z/z \\sim 0.7$ in the GLADE+ regime probed here. % src: .planning/gate/G5a_gwcosmo_inspection.md (sigma_z/z ~ 0.7, EMRI/GLADE+ regime)\nWe report the failure and repair of an independently implemented\nestimator of this family, using a simulated LISA\nextreme-mass-ratio-inspiral campaign injected at\n$h \\equiv H_0/(100~\\mathrm{km\\,s^{-1}\\,Mpc^{-1}}) = 0.73$ % src: master_thesis_code/constants.py (H = 0.73)\nand analysed against the real GLADE+ catalogue.  The posterior rails,\nplacing essentially all its mass at the upper edge of the\n$h \\in [0.60, 0.86]$ grid, $h = 0.86$. % src: results/commission_20260701/redteam/crux_results.json (prod: MAP 0.86, edge_mass 1.0); derail_matrix_results.json (h_values)\nWe show the rail is a curable prior-consistency artifact of the\ncompletion-term normalization, not photometric information starvation:\nrestoring only the isotropic $1/(4\\pi)$ completion sky marginal flips\nthe rail to the opposite edge, $h = 0.60$, exposing two opposing\nmis-normalizations; % src: results/commission_20260701/redteam/derail_matrix_results.json (prod_global: MAP 0.60)\nrestoring numerator--denominator prior consistency, by a local\nratio-of-sums or by comoving-volume deconvolution of the host-redshift\nkernel, de-rails the posterior onto an interior peak at the injected\ntruth, $h = 0.73$, on identical data. % src: results/commission_20260701/redteam/derail_matrix_results.json (local_ratio MAP 0.73, volume_deconv MAP 0.73)\nOn synthetic universes with known truth, the bare-Gaussian kernel\ncarries a bias scaling as $\\sigma_z^2$ that collapses frequentist\ncoverage to nearly zero, whereas the volume-deconvolved kernel is\ncalibrated close to nominal. % src: results/commission_20260701/scratch/d2/NOTE_calibration_findings.md (RESULTs 1-2: coverage 0-3 per cent bare vs near-nominal volume)\nNo published pipeline has a known-truth calibration test in the\ncatalogue-dominated, $\\sigma_z/z \\sim 0.7$ regime % src: .planning/gate/G5a_gwcosmo_inspection.md (sec 5); .planning/gate/G5b_chimera_icarogw_inspection.md (VERDICT)\nthat LISA-era dark sirens paired with photometric catalogues will\noccupy; prior-consistent normalization and coverage tests at\nphotometric width are prerequisites for catalogue dark-siren\ncosmology.",
+  "sections": [
+    {
+      "heading": "Introduction",
+      "content": "\\input{sections/introduction}",
+      "label": "intro"
+    },
+    {
+      "heading": "The galaxy-catalogue dark-siren likelihood",
+      "content": "\\input{sections/framework}",
+      "label": "framework"
+    },
+    {
+      "heading": "The normalization pitfall",
+      "content": "\\input{sections/pitfall}",
+      "label": "pitfall"
+    },
+    {
+      "heading": "Prior-consistent estimators",
+      "content": "\\input{sections/estimators}",
+      "label": "estimators"
+    },
+    {
+      "heading": "Calibration on synthetic universes",
+      "content": "\\input{sections/coverage}",
+      "label": "coverage"
+    },
+    {
+      "heading": "Application to GLADE+: de-railing the posterior",
+      "content": "\\input{sections/realdata}",
+      "label": "realdata"
+    },
+    {
+      "heading": "Why information starvation was a misdiagnosis",
+      "content": "\\input{sections/postmortem}",
+      "label": "postmortem"
+    },
+    {
+      "heading": "Relation to existing pipelines",
+      "content": "\\input{sections/codes}",
+      "label": "codes"
+    },
+    {
+      "heading": "Systematic-error budget",
+      "content": "\\input{sections/budget}",
+      "label": "budget"
+    },
+    {
+      "heading": "Conclusions",
+      "content": "\\input{sections/conclusions}",
+      "label": "conclusions"
+    }
+  ],
+  "figures": [],
+  "acknowledgments": "TBD — funding, compute (bwUniCluster 3.0 / bwHPC), and collaborators.",
+  "bib_file": "references",
+  "journal": "mnras",
+  "appendix_sections": [
+    {
+      "heading": "Completion-term sky marginal over the isotropic prior",
+      "content": "\\input{sections/appendix_sky_marginal}",
+      "label": "app:sky"
+    },
+    {
+      "heading": "Volume deconvolution and the Eddington-in-z law",
+      "content": "\\input{sections/appendix_volume_deconv}",
+      "label": "app:voldeconv"
+    },
+    {
+      "heading": "Mapping to Gray et al. (2020) Eqs. A.9/A.10",
+      "content": "\\input{sections/appendix_gray_mapping}",
+      "label": "app:gray"
+    },
+    {
+      "heading": "Rate-weighted host-mass prior (Eddington-in-M)",
+      "content": "\\input{sections/appendix_eddington_m}",
+      "label": "app:eddm"
+    },
+    {
+      "heading": "Discrete-sum check of the catalogue selection normalization",
+      "content": "\\input{sections/appendix_beta_g}",
+      "label": "app:betag"
+    }
+  ]
+}

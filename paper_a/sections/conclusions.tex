@@ -1,0 +1,85 @@
+% Section body only --- the builder emits \section{Conclusions}\label{sec:conclusions}.
+% NO NEW RESULTS: every number below is quoted from an earlier section and carries its original artifact source.
+
+We have traced the complete failure-and-repair arc of an independently
+implemented galaxy-catalogue dark-siren estimator of the
+\citet{Gray:2019ksv} family in a regime its published validations never
+covered: host redshifts of photometric quality, $\sigma_z/z \sim 0.7$
+% src: .planning/gate/G5a_gwcosmo_inspection.md (sigma_z/z ~ 0.7, EMRI/GLADE+ regime)
+in the GLADE+ catalogue \citep{Dalya:2021ewn}.  The railed
+Hubble-constant posterior is the superposition of three normalization
+defects --- an Eddington--Malmquist prior inconsistency of the bare
+photometric host-redshift kernel, a completion-term sky factor
+evaluated at the peak of the localization Gaussian instead of its
+isotropic $1/(4\pi)$ marginal, and an $h$-dependent tilt of the global
+selection sum --- all violating one invariant: every population measure
+counted exactly once, identically in each numerator and its selection
+normalization (Section~\ref{sec:pitfall}).  Two prior-consistent
+repairs cure it (Section~\ref{sec:estimators}): the local
+ratio-of-sums and the comoving-volume deconvolution of the host
+redshift (and host mass) kernels.  On synthetic universes with known
+truth, the bare kernel collapses to near-zero frequentist coverage
+through a rigid $-0.024$ bias in $h$ scaling as $\sigma_z^2$, while
+the volume kernel is calibrated close to nominal
+(Section~\ref{sec:coverage}).
+% src: results/commission_20260701/scratch/d2/NOTE_calibration_findings.md (RESULTs 1-2)
+On identical real GLADE+ data the pre-fix estimator rails at
+$h = 0.86$, the $1/(4\pi)$-only fix flips the rail to $0.60$, and
+either repair de-rails the posterior onto an interior peak at the
+injected truth $h = 0.73$ (Section~\ref{sec:realdata}).
+% src: results/commission_20260701/redteam/crux_results.json (prod); derail_matrix_results.json (prod_global, local_ratio, volume_deconv)
+The earlier reading of the same data as photometric information
+starvation is thereby refuted: prior-inconsistent estimators convert
+photometric scatter into coherent, $N$-amplified bias --- a property of
+the estimators, never of the data (Section~\ref{sec:postmortem}).
+
+For catalogue dark sirens at photometric-redshift-dominated depths the
+lessons are two, of different scope (Section~\ref{sec:codes}).  The
+rail itself is a hazard of independent implementation --- structurally
+excluded from \textsc{gwcosmo}, absent from the other published
+pipelines --- but the LISA and next-generation-detector era will
+multiply independent implementations, and the consistency invariant is
+cheap to state and to check.  The bare-kernel Eddington bias, by
+contrast, is live in the flagship pipeline by an assumption no code
+enforces, and no published pipeline has a known-truth calibration test
+at $\sigma_z/z \sim 0.7$ in a catalogue-information-dominated analysis
+--- precisely the regime that LISA-era dark sirens paired with
+Rubin--LSST- and Euclid-scale photometric catalogues will occupy.
+Known-truth coverage tests at full photometric width, of which the
+released harness is one example, deserve the same standing as the
+spectroscopic mock data challenges that established the method.
+
+The limitations are explicit.  The events are simulated, injected at
+$h = 0.73$
+% src: master_thesis_code/constants.py (H = 0.73)
+and analysed against the real GLADE+ field, so every claim concerns
+estimator calibration, never a measurement of nature's expansion rate.
+The seed600 sample was selected at the pre-$\mathrm{d}t^2$
+signal-to-noise scale --- a self-consistent mock universe, valid for
+the estimator comparison, but a population louder and shallower
+($z \lesssim 0.11$) than a true threshold-20 EMRI campaign
+(Sections~\ref{sec:realdata} and~\ref{sec:budget}).
+% src: .planning/gate/G8_inner_product_finding.md (physical SNR >= 200, depth z <= 0.11)
+Both railed modes sit on grid endpoints, so their unconstrained maxima
+may lie outside $[0.60, 0.86]$.
+% src: results/commission_20260701/redteam/derail_matrix_results.json (h_values grid endpoints)
+And the post-repair systematic budget
+of Section~\ref{sec:budget} is dominated by quoted model-scope
+choices, of which only the fixed matter-density fiducial reaches the
+per-cent level ($\approx +1.5$--$3$ per cent on $H_0$ if the truth
+were the Planck value).
+% src: .planning/gate/G7_systematics_budget.md (row 6 + detail table)
+
+Three steps follow.  The full-scale confirmation --- the
+volume-deconvolved default over all 3375 events and the complete
+$h$-grid --- is running at the time of writing
+(Section~\ref{sec:realdata}).
+% src: .planning/HANDOFF-DERAIL-CLUSTER-CONFIRM-20260702.md (cluster jobs 5698617/5698618)
+A multi-seed production campaign at the corrected signal-to-noise
+scale will re-measure the campaign-time rows of the budget and supply
+the deeper, completion-dominated population that a forecast requires.
+On that population, the companion paper (Paper~B) will deliver the
+forecast-grade EMRI dark-siren $H_0$ constraint
+\citep{Babak:2017tow,LISA:2024hlh} --- with the calibrated estimator,
+in exactly the regime where the normalization discipline established
+here is the difference between a railed posterior and a measurement.
