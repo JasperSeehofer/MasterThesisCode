@@ -44,13 +44,17 @@ correction: the true mass is systematically on the downhill side of the noisy es
 - α_g by central finite difference of `R_eff_per_mbh` at M_g (ε = 1%); σ_rel clipped at 2.
 - `global` / `local_ratio` modes keep the bare Gaussian (legacy/diagnostic reproduction).
 
-## 4. Residual of the log-linear model (stated, tested)
+## 4. IMPLEMENTATION CORRECTION (found by the regression tests): exact moment matching
 
-The neglected curvature contributes at O(σ_rel⁴ · d²lnR_eff/d(lnM)²). R_eff is close to a power
-law over most of the catalogue mass range; curvature concentrates in the low-mass `kappa_cap`
-roll-off. The regression test pins the tilted-Gaussian M-marginal against an exact numerical
-quadrature of (1) at σ_rel ∈ {0.2, 0.55, 0.76} for representative masses and asserts the stated
-tolerance, so the approximation quality is continuously enforced, not assumed.
+The log-linear (tilted-Gaussian) form of §2 FAILS at GLADE's σ_rel ≈ 1 near the `kappa_cap`
+low-mass roll-off, where R_eff RISES with M: the local slope at M_g gets the shift's SIGN wrong
+(e.g. M_g = 10⁵ M☉, σ_rel = 0.55: local slope says down, exact posterior mean moves UP ~+3.7%).
+The implemented form is therefore the EXACT posterior mean of (1) by per-galaxy quadrature
+(`eddington_shifted_host_mass`, 401-point trapezoid over ±5σ), i.e. a moment-matched Gaussian
+prior: exact first moment, analytic marginal preserved, σ_M kept (conservative width). Residual:
+the Gaussian-shape approximation of (1)'s skew — second-order and width-conservative. Tests pin
+the helper against an independent 20001-point quadrature at σ_rel ∈ {0.2, 0.55, 0.76, 1.0} ×
+M_g ∈ {10⁵, 3·10⁵, 8·10⁵} to <0.5% of M_g, plus both slope-sign regimes and the σ→0 limit.
 
 ## 5. Limiting cases
 

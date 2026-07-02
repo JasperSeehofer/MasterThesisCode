@@ -71,6 +71,43 @@ FRACTIONAL_LUMINOSITY_DISTANCE_ERROR_THRESHOLD = 0.10
 _DH_QUAD_ORDER: int = 100
 
 
+def eddington_shifted_host_mass(host_M: float, host_M_error: float) -> float:
+    """Effective host mass under the rate-weighted (Eddington-in-M) prior.
+
+    The per-galaxy mass prior N(M; M_g, sigma_M^2) * R_eff(M) / Z_M is, under a
+    locally log-linear R_eff (exponential-tilt identity), EXACTLY the shifted
+    Gaussian N(M; M_g (1 + alpha sigma_rel^2), sigma_M^2) with
+    alpha = dln R_eff / dln M |_{M_g} and sigma_rel = sigma_M / M_g.
+    Classic Eddington (1913) correction; derivation and curvature-residual
+    control in docs/derivations/G2d_host_mass_rate_prior.md (G7 row 9).
+
+    Args:
+        host_M: Catalogue (source-frame) host BH mass estimate [M_sun].
+        host_M_error: 1-sigma mass uncertainty [M_sun].
+
+    Returns:
+        The shifted effective mass M_g^eff [M_sun]; equals host_M when the
+        uncertainty is zero/invalid (bare-Gaussian limit).
+    """
+    if host_M <= 0.0 or host_M_error <= 0.0 or not math.isfinite(host_M_error):
+        return host_M
+    # EXACT posterior mean of N(M; M_g, sigma^2) * R_eff(M) / Z_M by quadrature
+    # (moment matching). The local-slope (log-linear tilt) form gets the SIGN
+    # wrong near the kappa_cap low-mass roll-off at GLADE's sigma_rel ~ 1, where
+    # R_eff RISES with M — caught by the G2d regression tests.
+    sigma = min(host_M_error, 2.0 * host_M)
+    lo = max(host_M - 5.0 * sigma, 1e3)
+    hi = host_M + 5.0 * sigma
+    M_grid = np.linspace(lo, hi, 401)
+    w = np.exp(-0.5 * ((M_grid - host_M) / sigma) ** 2) * np.asarray(
+        R_eff_per_mbh(M_grid), dtype=np.float64
+    )
+    Z = float(np.trapezoid(w, M_grid))
+    if not math.isfinite(Z) or Z <= 0.0:
+        return host_M
+    return float(np.trapezoid(M_grid * w, M_grid) / Z)
+
+
 def weighted_ratio_of_sums(
     numerators: Sequence[float],
     denominators: Sequence[float],
@@ -2012,7 +2049,19 @@ def single_host_likelihood(
         )
 
     if evaluate_with_bh_mass:
-        galaxy_mass_normal_distribution = norm(loc=host_M, scale=host_M_error)
+        # [PHYSICS] G2d Eddington-in-M: in the calibrated kernels the host-mass
+        # prior is the rate-weighted N(M; M_g, sigma_M) R_eff(M) / Z_M, which under
+        # a locally log-linear R_eff is EXACTLY the shifted Gaussian
+        # N(M; M_g (1 + alpha sigma_rel^2), sigma_M). Applied identically in the
+        # numerator (mu_gal_frac) and the denominator sampler (proposal = prior,
+        # so the importance weights stay p_det) — "counted exactly once" in M.
+        # Empirical impact at GLADE sigma_M: 2D-channel mean shifts -0.020 in h
+        # (.planning/gate/G7row9_eddington_m_impact.json). Derivation + residual
+        # control: docs/derivations/G2d_host_mass_rate_prior.md.
+        _host_M_eff = (
+            eddington_shifted_host_mass(host_M, host_M_error) if _use_volume_deconv else host_M
+        )
+        galaxy_mass_normal_distribution = norm(loc=_host_M_eff, scale=host_M_error)
 
         # Pre-computed conditional distribution parameters for analytic M_z marginalization
         # Eqs. (14.23)-(14.28) in derivations/dark_siren_likelihood.md
@@ -2049,7 +2098,8 @@ def single_host_likelihood(
             # Galaxy mass in M_z_frac coordinates: M_z_frac = M_gal * (1+z) / M_z_det
             # Eq. (14.22) in derivations/dark_siren_likelihood.md
             # NOTE: (1+z) here is CORRECT -- it is the coordinate transform, not a Jacobian
-            mu_gal_frac = host_M * (1 + z) / _det_M
+            # _host_M_eff carries the G2d Eddington-in-M rate-prior shift (see above).
+            mu_gal_frac = _host_M_eff * (1 + z) / _det_M
             sigma_gal_frac = host_M_error * (1 + z) / _det_M
 
             # Analytic Gaussian product integral:
