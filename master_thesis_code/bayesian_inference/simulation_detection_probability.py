@@ -486,7 +486,7 @@ class SimulationDetectionProbability:
     # ------------------------------------------------------------------
 
     def _build_sky_bands(self) -> None:
-        r"""Bin injections into equal-|sin beta| bands and sort each band's horizon.
+        r"""Bin injections into equal-``|sin beta|`` bands and sort each band's horizon.
 
         Route A (PHYSICS-CHANGE-PROTOCOL Change 1): the sky dependence is
         MEASURED, not modelled.  ``beta = pi/2 - qS`` is the ecliptic latitude;
@@ -546,7 +546,7 @@ class SimulationDetectionProbability:
         )
 
     def band_edges_sin_beta(self) -> npt.NDArray[np.float64]:
-        """Equal-|sin beta| band edges (length ``n_sky_bands + 1``) in ``[0, 1]``.
+        """Equal-``|sin beta|`` band edges (length ``n_sky_bands + 1``) in ``[0, 1]``.
 
         The SAME edges the inference must use to bin pixels into bands so the
         sky marginal is invariant (PHYSICS-CHANGE-PROTOCOL test T3).
