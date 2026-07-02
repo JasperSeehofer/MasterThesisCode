@@ -20,6 +20,22 @@ production run (regenerating injections AND events with the merged code) superse
 - Local stale working dirs archived under `simulations/_RETIRED_20260620_pre_massfix_lcat/`.
 - New entries will be appended to the Dataset Registry + Evaluation Log as the campaign lands.
 
+### Cluster workspace lifetime (`emri`)
+
+| checked | expiry | action |
+|---|---|---|
+| 2026-07-02 | ~~2026-07-19~~ → **2026-08-31** (`ws_extend emri 60`; **1 extension left**) | re-check before the multi-seed campaign; if it runs past late August, use the last extension or migrate results to persistent storage first |
+
+### De-rail evidence backup (2026-07-02)
+
+The 2026-07-01 de-rail demonstration ran in ephemeral `/tmp/seed600_local/` (not in git).
+Durable copies now exist:
+- **Repo:** `results/commission_20260701/redteam/posteriors_per_mode/` — per-mode combined
+  posteriors (prod 0.86 / prod_global 0.60 / local_ratio 0.73 / volume_deconv 0.73 / catonly 0.73)
+  + `crux_results{,_fixed}.json` (commit `1f0e371`).
+- **Home:** `~/data-backups/seed600_local_derail_20260702/` (3.8 GB: full working dirs incl. the
+  474 MB with-BH-mass per-event posteriors, the 494-event CRB subsample, the fixed 8-col catalogue copy).
+
 ---
 
 ## Pipeline Change Checklist
