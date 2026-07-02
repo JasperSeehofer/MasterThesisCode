@@ -16,13 +16,22 @@ the campaign. Owner: Jasper. Status legend: ☐ open · ☑ done · ⏳ blocked-
 
 ## 1. Blockers found during prep (fix BEFORE submitting the campaign)
 
-- ☐ **[HIGH — issue #19] `LUMINOSITY_DISTANCE_PRESCREEN_GPC = 2.0` is stale.**
-  Calibrated on retired pre-dt² injection data ("no detectable EMRI beyond 1.66 Gpc");
-  at physical SNR the horizon is z ≲ 1.5 (d_L ~ 11 Gpc). Running the campaign with it
-  silently truncates the detectable population (DEBUG-level log only).
-  Fix via `/physics-change`: derive from the M1 rate model's z_max at the smallest
-  grid h (× margin), or minimally bump to ≳ 16 Gpc and re-measure from the first
-  post-fix injection pool. **Do not submit the campaign before this lands.**
+- ☑ **[HIGH — issue #19] stale d_L pre-screen FIXED** (2026-07-02, `/physics-change`,
+  user-approved): `luminosity_distance_prescreen_gpc(z_max, h)` = 1.05 × d_L(rate-model
+  z_max; runtime h), computed once per run; WARNING on hit. Worse than reported: the old
+  2.0 Gpc cutoff was already inside the z ≤ 0.5 host-draw volume (d_L(0.5)=2.74 Gpc).
+  ☐ remaining: re-measure `PRESCREEN_DL_MARGIN` (placeholder 1.05) on post-dt² injection
+  data — same smoke run as the SNR-factor check below; issue #19 stays open for this.
+- ☐ **[DESIGN — decide before submit] `HOST_DRAW_Z_MAX = 0.5` is horizon-stale too.**
+  Its justification comment ("detection horizon z ≈ 0.18, so z < 0.5 is safely beyond →
+  truncation EXACT, p_det = 0 beyond") is pre-dt² reasoning; at physical SNR, p_det > 0
+  well beyond z = 0.5, so the z-cut now truncates *detectable* population. The sign-off
+  expects the campaign population to deepen to z ≲ 1.5 — that requires raising
+  HOST_DRAW_Z_MAX with GLADE completeness machinery beyond z = 0.5 (becomes binding) and
+  `GALAXY_CATALOG_REDSHIFT_UPPER_LIMIT = 0.55` alongside. Sim+inference use the cut
+  consistently, so this is a population-scope *decision*, not a silent bug — but the
+  campaign's science reach (event yield, forecast depth) hinges on it. Needs its own
+  issue + user decision + `/physics-change`.
 - ☐ **`PRE_SCREEN_SNR_FACTOR = 0.3` empirical re-check** (sign-off campaign-time action).
   Ratio-based, survives the dt² rescaling in principle, but the false-negative rate must
   be re-measured at the new depth (longer, more-redshifted waveforms): in the smoke run,

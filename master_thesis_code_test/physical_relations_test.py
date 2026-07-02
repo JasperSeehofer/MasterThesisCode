@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from master_thesis_code.constants import OMEGA_DE, OMEGA_M, W_0, W_A, H
+from master_thesis_code.constants import HOST_DRAW_Z_MAX, OMEGA_DE, OMEGA_M, W_0, W_A, H
 from master_thesis_code.physical_relations import (
     convert_redshifted_mass_to_true_mass,
     convert_true_mass_to_redshifted_mass,
@@ -12,6 +12,7 @@ from master_thesis_code.physical_relations import (
     dist_vectorized,
     get_redshift_outer_bounds,
     hubble_function,
+    luminosity_distance_prescreen_gpc,
 )
 
 
@@ -172,3 +173,43 @@ def test_dist_hubble_scaling_approximate() -> None:
     actual_ratio = d1 / d2
     # Tolerance of 2% to account for non-linear corrections at z=0.1
     assert abs(actual_ratio - expected_ratio) < 0.02
+
+
+# --- luminosity_distance_prescreen_gpc (issue #19) ---------------------------------
+# Regression context: the retired constant LUMINOSITY_DISTANCE_PRESCREEN_GPC = 2.0
+# was calibrated on pre-dt^2 (SNR/10-scale) injection data ("no detectable EMRI
+# beyond 1.66 Gpc") and lay INSIDE the z <= HOST_DRAW_Z_MAX = 0.5 host-draw volume,
+# silently cutting in-population events. The bound is now derived from the
+# population reach at the runtime h.
+
+
+def test_retired_2gpc_prescreen_truncated_host_population() -> None:
+    """The old fixed 2.0 Gpc cutoff lay inside the z <= 0.5 host-draw volume."""
+    assert dist(HOST_DRAW_Z_MAX, h=H) > 2.0
+
+
+def test_prescreen_bound_contains_population_reach() -> None:
+    """Limiting case: bound >= d_L(z_max, h) for all grid h values, so the
+    pre-screen is inert for in-population events (no valid event can be cut)."""
+    z_max = 1.5
+    for h in (0.60, 0.73, 0.86):
+        assert luminosity_distance_prescreen_gpc(z_max, h=h) >= dist(z_max, h=h)
+
+
+def test_prescreen_bound_value_at_fiducial() -> None:
+    """Pin the derived bound at the fiducial cosmology:
+    1.05 * d_L(1.5, h=0.73, Omega_m=0.2726) = 1.05 * 10.6862 Gpc."""
+    assert luminosity_distance_prescreen_gpc(1.5, h=0.73) == pytest.approx(11.2205, abs=0.001)
+
+
+def test_prescreen_bound_increases_when_h_decreases() -> None:
+    """d_L ~ 1/h at fixed z, so the bound must widen for smaller h."""
+    assert luminosity_distance_prescreen_gpc(1.5, h=0.60) > luminosity_distance_prescreen_gpc(
+        1.5, h=0.86
+    )
+
+
+def test_prescreen_bound_zero_redshift_limit() -> None:
+    """Analytic limit: dist(0) = 0, so the bound vanishes at z_max = 0
+    (up to float residue of the hypergeometric evaluation, ~1e-15 Gpc)."""
+    assert luminosity_distance_prescreen_gpc(0.0, h=0.73) == pytest.approx(0.0, abs=1e-12)
