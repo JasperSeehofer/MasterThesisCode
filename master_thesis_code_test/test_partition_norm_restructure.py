@@ -12,6 +12,9 @@ tables and pool results, so the algebraic identity and the f->1 / f->0 limits ar
 checked directly. CPU-only (no GPU marker).
 """
 
+import contextlib
+import inspect
+import warnings
 from typing import Any
 from unittest.mock import MagicMock
 
@@ -236,3 +239,33 @@ def test_unknown_normalization_mode_rejected() -> None:
         # The guard fires right after catalog_only is set, before any catalog/model use,
         # so passing None for those is safe -- the bogus mode raises first.
         BayesianStatistics.evaluate(instance, None, None, 0.73, normalization_mode="bogus")  # type: ignore[arg-type]
+
+
+def test_default_normalization_mode_is_volume_deconv() -> None:
+    """The library default is the P-P-calibrated estimator, matching the CLI default.
+
+    'global' (~0% coverage on photo-z catalogues) must be an explicit opt-in only.
+    """
+    sig = inspect.signature(BayesianStatistics.evaluate)
+    assert sig.parameters["normalization_mode"].default == "volume_deconv"
+    assert BayesianStatistics._normalization_mode == "volume_deconv"
+
+
+def test_global_mode_emits_calibration_warning() -> None:
+    """Explicitly requesting the legacy 'global' mode warns about mis-calibration."""
+    instance = object.__new__(BayesianStatistics)
+    with pytest.warns(UserWarning, match="mis-calibrated"):
+        # The warning fires right after the mode guard; the bare instance then hits
+        # AttributeError at the h-bounds check, which is irrelevant to this test.
+        with contextlib.suppress(AttributeError):
+            BayesianStatistics.evaluate(instance, None, None, 0.73, normalization_mode="global")  # type: ignore[arg-type]
+
+
+def test_calibrated_modes_do_not_warn() -> None:
+    """'volume_deconv' and 'local_ratio' run without a calibration warning."""
+    for mode in ("volume_deconv", "local_ratio"):
+        instance = object.__new__(BayesianStatistics)
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            with contextlib.suppress(AttributeError):
+                BayesianStatistics.evaluate(instance, None, None, 0.73, normalization_mode=mode)  # type: ignore[arg-type]

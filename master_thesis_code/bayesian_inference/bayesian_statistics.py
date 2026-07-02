@@ -16,6 +16,7 @@ import math
 import multiprocessing as mp
 import os
 import time
+import warnings
 from collections.abc import Sequence
 from typing import Any
 
@@ -766,9 +767,9 @@ class BayesianStatistics:
     additional_galaxies_without_bh_mass: dict[str, dict[str, list[float]]]
     posterior_data: dict[int, list[float]]
     posterior_data_with_bh_mass: dict[int | str, Any]
-    # In-catalogue normalization (set by evaluate()); "global" preserves the current
-    # partition-norm single ratio. See evaluate() for "local_ratio"/"volume_deconv".
-    _normalization_mode: str = "global"
+    # In-catalogue normalization (set by evaluate()); "volume_deconv" is the
+    # calibrated default. See evaluate() for "global"/"local_ratio".
+    _normalization_mode: str = "volume_deconv"
 
     def __init__(self) -> None:
         self.h_values = []
@@ -800,18 +801,29 @@ class BayesianStatistics:
         pdet_mass_bins: int = 40,
         pdet_estimator: str = "local_linear",
         fisher_cond_threshold: float = 1e16,
-        normalization_mode: str = "global",
+        normalization_mode: str = "volume_deconv",
     ) -> None:
         self.catalog_only = catalog_only
         # In-catalogue normalization for the non-catalog_only Gray single ratio
         # (commission de-rail study, 2026-07-01):
-        #   "global"        -> current partition-norm: L_cat = (Σ_local w_g N_g)/(Σ_GLOBAL w_g D_g)
+        #   "global"        -> legacy partition-norm:  L_cat = (Σ_local w_g N_g)/(Σ_GLOBAL w_g D_g)
         #   "local_ratio"   -> Gray A.9/A.10 literal:  L_cat = (Σ_local w_g N_g)/(Σ_local w_g D_g)   [fix #2]
         #   "volume_deconv" -> local ratio with the host-z Gaussian deconvolved through the
         #                      comoving-volume prior dVc/(1+z) (per-galaxy renormalised)          [fix #1]
         # The kernel (bare vs volume-deconvolved) is threaded into single_host_likelihood.
+        # Default "volume_deconv": Gray et al. (2020) arXiv:1908.06050 Eqs. A.9/A.10 + volume-
+        # consistent host-z prior; P-P-calibrated (INDEPENDENT-VERIFICATION-REPORT-20260701 §7).
         if normalization_mode not in ("global", "local_ratio", "volume_deconv"):
             raise ValueError(f"unknown normalization_mode: {normalization_mode!r}")
+        if normalization_mode == "global":
+            warnings.warn(
+                "normalization_mode='global' is mis-calibrated for photometric-redshift "
+                "catalogues (~0% P-P coverage; posterior rails to the grid edge — see "
+                ".planning/INDEPENDENT-VERIFICATION-REPORT-20260701.md §7). Use the default "
+                "'volume_deconv' unless deliberately reproducing the railed baseline.",
+                UserWarning,
+                stacklevel=2,
+            )
         self._normalization_mode = normalization_mode
         self._diagnostic_rows = []
         if catalog_only:

@@ -8,6 +8,15 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Changed
+- **[PHYSICS] BREAKING — library default `normalization_mode` flipped `'global'` → `'volume_deconv'`**
+  (`BayesianStatistics.evaluate()`), aligning the library with the CLI default and the
+  P–P-calibrated estimator (Gray et al. 2020 arXiv:1908.06050 Eqs. A.9/A.10 + volume-consistent
+  host-z prior; verification report §7). Requesting `'global'` explicitly now emits a
+  `UserWarning`: it is mis-calibrated for photometric-redshift catalogues (~0% coverage, posterior
+  rails to the grid edge) and remains available only to reproduce the railed baseline.
+  **Migration:** code calling `evaluate()` without `normalization_mode` now gets calibrated
+  `volume_deconv` posteriors instead of railed `global` ones; pass `normalization_mode="global"`
+  to reproduce pre-fix results.
 - **[PHYSICS]** de-rail the in-catalogue H₀ likelihood normalization (commission
   `.planning/INDEPENDENT-VERIFICATION-REPORT-20260701.md` §7). `bayesian_statistics.py`: new
   `normalization_mode ∈ {global, local_ratio, volume_deconv}` on `evaluate()` /
@@ -21,8 +30,9 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   mis-calibrated (≈0% coverage, σ_z² Eddington-in-z bias) and the volume-weighted numerator is
   calibrated; the real-data de-rail matrix (`redteam/derail_matrix_results.json`, 0.86→0.60→0.73)
   and the +0.010 MAP shift agree. **Production CLI default → `volume_deconv`** (`--normalization_mode`);
-  the library `BayesianStatistics.evaluate` default stays `global` (byte-identical — all tests
-  unchanged). Gray et al. (2020) arXiv:1908.06050 Eqs. A.9 / A.10 / 33.
+  the library `BayesianStatistics.evaluate` default initially stayed `global` (superseded by the
+  entry above: library default now also `volume_deconv`). Gray et al. (2020) arXiv:1908.06050
+  Eqs. A.9 / A.10 / 33.
 - **[PHYSICS]** sky-aware selection function (closes the p_sample≠p_comp sky/selection
   paper-blocker; audit `.planning/PSAMPLE-PCOMP-AUDIT-20260701.md` R1). The generator draws +
   SNR-selects an anisotropic real sky through the sky-dependent LISA response, but the inference
