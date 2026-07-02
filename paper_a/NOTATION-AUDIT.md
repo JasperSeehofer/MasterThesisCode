@@ -1,266 +1,224 @@
-# NOTATION AUDIT — Paper A (MNRAS manuscript, `paper_a/`)
+# NOTATION AUDIT — Paper A (MNRAS)
 
-Date: 2026-07-02
-Scope: all files in `paper_a/sections/*.tex` + `main.tex`.
-Contract checked: `h = H0/100`, `z` CMB-frame, `beta_G`, `p_det`, `dV_c/dz`,
-plus `\mathrm{d}` differentials and `\left`/`\right` pairing.
+- **Date:** 2026-07-02
+- **Base:** branch `paper/paper-a-draft`, draft commit `efe4b54` (audited working tree includes the concurrent bibliographer pass that resolved `MISSING:` citation keys; line numbers below refer to the post-audit working tree)
+- **Scope:** all 16 files in `paper_a/sections/*.tex`; `main.tex` is GENERATED and was inspected read-only
+- **Contract (owned by `sections/framework.tex`):** `h = H0/(100 km s^-1 Mpc^-1)`; `z` CMB-frame redshift; `sigma_z` photometric redshift uncertainty; `d_L` luminosity distance; `M` host MBH mass; `G`/`bar G` in-/out-of-catalogue hypotheses (Gray et al. 2020); `p_det` detection probability; `beta_G(h)` catalogue selection normalization; `dV_c/dz` comoving volume element.
 
-Severity legend: **CRITICAL** = same symbol denotes inequivalent quantities in
-displayed equations / contract broken in a way that changes meaning;
-**MAJOR** = will confuse a careful reader or referee, needs a real edit;
-**MINOR** = cosmetic or style inconsistency.
+Severity scale: **CRITICAL** = same symbol used for two different quantities, or notation-contract violation; **MAJOR** = load-bearing symbol used but never defined, or one quantity under two symbols; **MINOR** = formatting/typography.
 
 ---
 
 ## 1. Symbol table
 
-Location key: intro = introduction.tex, fw = framework.tex, pit = pitfall.tex,
-est = estimators.tex, cov = coverage.tex, rd = realdata.tex, pm = postmortem.tex,
-codes = codes.tex, bud = budget.tex, conc = conclusions.tex,
-A = appendix_sky_marginal, B = appendix_volume_deconv, C = appendix_gray_mapping,
-D = appendix_eddington_m, E = appendix_beta_g. Line numbers are approximate.
+First-definition location for every math symbol used in the paper. "Restated" = an equivalent re-definition elsewhere (checked consistent unless flagged in §2).
 
 ### Cosmology and global parameters
 
-| Symbol | Meaning | Defined | Also used | Notes |
-|---|---|---|---|---|
-| $h \equiv H_0/(100\,\mathrm{km\,s^{-1}\,Mpc^{-1}})$ | dimensionless Hubble constant | abstract:13, fw:21 | everywhere | CONTRACT OK |
-| $H_0$ | Hubble constant | via $h$ definition | abstract, intro, codes, est, B | OK |
-| $H(z)$ | Hubble rate | never (standard) | est:64, B:61 | acceptable |
-| $z$ | CMB-frame redshift | fw:21–23 ("All redshifts $z$ are CMB-frame") | everywhere | CONTRACT: see Finding F10 (budget admits Sec. 6 baselines are heliocentric) |
-| $\sigma_z$ | per-galaxy photometric redshift scatter | fw:22 | pit, est, cov, B, codes | fw eq. (kernel) instead writes $\sigma_{z,g}$ — F15 |
-| $\sigma_{z,g}$ | same as $\sigma_z$ | fw eq:kernel (l.162) | fw only | F15: two symbols for one quantity |
-| $d_L(z,h)$ | luminosity distance | fw eq:dl (l.26) | everywhere | bud:43 extends silently to $d_L(z; h, \Omega_m)$ |
-| $\hat d_L$ | maximum-likelihood distance | fw:61 | pit, A | OK |
-| $E(z)$ | $\sqrt{\Omega_m(1+z)^3+\Omega_\Lambda}$ / $H(z)/H_0$ | fw eq:dl; redefined est:64, B:61 | pit, B | equivalent definitions, duplicated |
-| $E'(z)$ | $\mathrm{d}E/\mathrm{d}z$ | B eq:app:eddz (l.85) | B | OK |
-| $\Omega_\mathrm{m}$, $\Omega_\Lambda$ | density parameters | fw eq:dl, fw:32 | pit, cov, B, bud | fiducial value 0.2726 appears only in bud; synthetic suites use 0.30 — F22 |
-| $I(z)$ | $\int_0^z \mathrm{d}z'/E(z')$ | B:61 | B | see F4 (distance-shape aliases) |
-| $\mathcal{D}(z)$ | $(1+z)\int_0^z \mathrm{d}z'/E(z')$ | est:64 | est only | F4: same as B's $f(z)$ and $\propto$ cov's $A(z)$ |
-| $f(z) \equiv (1+z)I(z)$ | dimensionless distance | B:94 | B eq:app:dhlaw | **F3: collides with completeness $f$** |
-| $A(z)$ | $d_L = A(z)/h$ amplitude | cov:12 | cov | F4 alias |
-| $c$ | speed of light | never (standard) | fw eq:dl, est:64 | acceptable |
-| $w_0$, $w_a$ | dark-energy parameters | never (standard) | bud:24 | acceptable |
-
-### Event data and GW likelihood
-
-| Symbol | Meaning | Defined | Also used | Notes |
-|---|---|---|---|---|
-| $i$ | event index | fw:40 | everywhere | OK |
-| $x_i$ | event data | fw:40 | fw | F8: est/A call the same thing $x_{\rm GW}$ |
-| $x_{\rm GW}$ | event data | est:22 (points back to Sec. 2) | est eq:est:Ng, A:14 | F8 |
-| $D_i$ | detection indicator | fw:40–41 | fw, C | letter D heavily overloaded — F5 note |
-| $\rho_\mathrm{thr}$ | SNR detection threshold (=20) | fw:42 | E:41 | OK |
-| $(\phi,\theta)$ | ecliptic azimuth/polar sky coords | fw:60, A:10 | pit, A | OK |
-| $\Omega = (\phi,\theta)$ | sky position | fw:73 | fw, est ($\Omega_g$), A ($\mathrm{d}\Omega$) | F23: A instead uses $\omega=(\phi,\theta)$, keeping $\Omega$ for solid angle |
-| $\omega = (\phi,\theta)$ | sky part of coordinates | A:45 | A | F23 |
-| $u \equiv d_L/\hat d_L$ | distance fraction | fw:61, A:11 | pit, A | OK |
-| $u(z,h)$ | $d_L(z,h)/\hat d_L$ | fw eq:gwlike | fw, A | OK |
-| $\hat\mu_i = (\hat\phi_i,\hat\theta_i,1)$ | ML point | fw:62 | fw | A:16 calls it $\mu$ (index dropped) — F23 |
-| $\Sigma_i$ / $\Sigma$ | projected 3×3 covariance | fw:63 / A:19, pit:46 | fw, pit, A | Σ also = catalogue sums Σ_global — F6 note |
-| $\Sigma_{i,uu}$ | marginal distance-fraction variance | fw:228 | fw eq:bnum, C:154 | **F5: same quantity is $\Sigma_{22}$ (pit) and $\Sigma_{uu}$ (A)** |
-| $\Sigma_{22}$ | ditto | pit:54 | pit eq:pitfall:skymarg | F5: 0-based index leak; 1-based reading of (φ,θ,u) gives the θθ element |
-| $\Sigma_{uu}$ | ditto | A:55 | A | F5 |
-| $(\Sigma^{-1})_{uu}$ | conditional-variance inverse element | A:56 | A | OK |
-| $\mu_{\omega\mid u}$, $\Sigma_{\omega\mid u}$ | sky conditional moments | A eq:app:sky:factor | A | OK |
-| $\sigma_\phi,\sigma_\theta$ | sky-localization widths | pit:54 | A:80 | OK |
-| $\sigma_{d_L}$ | GW distance uncertainty | never formally | fw:149 ($\pm4\sigma_{d_L}$), pit:54, A:55 | F22 |
-| $\mathcal{N}_3, \mathcal{N}_2, \mathcal{N}_1, \mathcal{N}$ | multivariate/scalar normal | est:30 declares $\mathcal{N}(x;\mu,\sigma^2)$ | everywhere | **F2: third argument is σ² in est/pit/D but σ in cov/B; σ_{z,g} ambiguous in fw** |
-| $p_{\rm GW}$ | GW distance likelihood (harness) | cov:21 | cov | distinct from $\bar p_{\rm GW}$; OK |
-| $\bar p_{\rm GW}(u)$ | isotropic sky marginal of GW likelihood | pit eq:pitfall:skymarg, A eq:app:sky:marginal | pit, A | duplicated definition (F17), consistent |
-| $\hat\theta$ / $\hat\theta_i$ | estimated polar angle | pit:54 / fw eq:bnum | A | index dropped in pit/A; OK |
-| $\rho$ | (SNR, implicit in $\rho_{\rm thr}$) | — | — | only used as $\rho_{\rm thr}$; OK |
-| $\kappa$ | Fisher condition number | never | bud:20 | F22 |
-| $(M, e_0, p_0)$ | EMRI mass, eccentricity, semi-latus rectum | never | bud:30 | F22 |
-| $\beta$ | ecliptic latitude (sky bands) | never | rd:9 ($|\sin\beta|$) | **F13: undefined + collides with $\beta_G$ family** |
-
-### Hypotheses, likelihood terms, selection
-
-| Symbol | Meaning | Defined | Also used | Notes |
-|---|---|---|---|---|
-| $G$, $\bar G$ | in-/out-of-catalogue hypotheses | fw:90–91 | everywhere | OK |
-| $p_i(h) \equiv p(x_i\mid D_i,h)$ | per-event likelihood | fw eq:posterior | fw eq:assembled, cov | OK |
-| $\pi(h)$ | prior on $h$ | fw:44 | fw | OK |
-| $N_\mathrm{det}$ | number of detected events | fw eq:posterior | fw | F14: pit/pm/E use bare $N$ for the same |
-| $N$ | event count | — | pit:76, pm, E:85 | F14 |
-| $L_\mathrm{cat}(h)$ | in-catalogue likelihood | fw eq:lcat; redefined est eq:est:lcat | pit, E | duplicated definition; denominator set differs in notation — F9 |
-| $\mathcal{G}_i$, $\mathcal{G}_i^{\rm sel}$ | numerator/denominator galaxy sets | fw eq:lcat (l.115–130) | fw only | **F9: est uses $\mathcal{B}$ instead** |
-| $\mathcal{B}$ | 3-D localization ball (sum domain) | est:22 | est eq:est:lcat | F9 |
-| $g$ | galaxy index | fw:112 | everywhere | **F12: also $g(z)$ shape function** |
-| $g(z)$ | $w_{\rm pop}$ shape, $w_{\rm pop}=h^{-3}g(z)$ | est:43, B:63 | est, B | F12 |
-| $w_g = R_\mathrm{eff}(M_g)/(1+z_g)$ | per-galaxy rate weight | fw eq:lcat, est:22, E eq:app:sigmaglob | C, D | consistent; visually close to $w_G$ — F24 |
-| $w_G(h) = \beta_G/D$ | in-catalogue hypothesis weight | fw:276 | fw, rd:10, E:92 | F24 |
-| $M_g$, $z_g$ | catalogued MBH mass, redshift | fw:123 | everywhere | OK |
-| $R_\mathrm{eff}(M)$ | per-MBH EMRI rate | fw:125 | est, C, D, E | OK |
-| $p(s\mid z)$, $p(s\mid M)$ | Gray host-probability weights | fw:124 (cited) | est, C eq:gray:a10 | F25: $s$ also Eddington slope $s(z)$ |
-| $N_g(h)$, $D_g(h)$ | per-host numerator / selection integrals | fw eq:ng, eq:dg; redefined est eq:est:Ng, eq:est:Dg | C | duplicated with different integrand notation (F17) |
-| $p_\mathrm{det}$ | detection probability | fw:243 | everywhere | CONTRACT OK (lowercase, denominators only) |
-| $p_g(z)$ | host-redshift kernel | fw eq:kernel (general, $\Pi$); est eq:est:pgz; B eq:app:pgz | cov | consistent as special cases; B adds truncated window |
-| $\Pi(z)$ | population prior placeholder | fw eq:kernel | fw | OK |
-| $Z_g$ | per-galaxy kernel normalization | fw eq:kernel, est eq:est:pgz, cov:28, B eq:app:pgz | — | consistent; integration limits differ (documented in B) |
-| $w_\mathrm{pop}(z)$ | population redshift measure | fw eq:wpop; pit eq:pitfall:wpop; est eq:est:wpop; B eq:app:wpop | cov, pm | **F1 (CRITICAL): fw defines per steradian, others total — 4π mismatch** |
-| $f(z,\Omega)$, $f_k(z)$ | rate-weighted completeness (pixel $k$) | fw:210–212 | pit, cov:75, A, C, E | F3: collides with $f(z)=(1+z)I(z)$ in B |
-| $k(\Omega_i)$ | pixel containing event LOS | fw:227 | fw | OK |
-| $B_\mathrm{num}(h)$ | completion-term numerator | fw eq:bnum; A eq:app:sky:bnum | pit, C | duplicated (F17), consistent given fw's per-sr $w_{\rm pop}$ |
-| $[z_-,z_+]$ | redshift image of $\pm4\sigma_{d_L}$ support | fw:226 | A | OK |
-| $D(h)$ | full-volume selection integral | fw eq:Dh; cov eq:cov:singlehost | est, rd, E | letter D overloaded ($D_i$, $D_g$, $D(h)$, $\mathcal{D}(z)$) — note under F5/F4 |
-| $\beta_{\bar G}(h)$ | out-of-catalogue selection integral | fw eq:betabar | A, C, E | OK |
-| $\beta_G(h) = D - \beta_{\bar G}$ | catalogue selection normalization | fw eq:betag | everywhere | CONTRACT OK |
-| $\langle\cdot\rangle_\Omega$ | isotropic sky average | fw:264 | fw | OK |
-| $z_\mathrm{min}$, $z_\mathrm{max}(h)$ | analysis redshift limits | $z_{\max}$: fw:265, E:19; $z_{\min}$: never | fw eq:Dh, eq:betabar | F22: $z_{\min}$ undefined |
-| $\Sigma_\mathrm{global}(h)$ | discrete global selection sum | pit eq:pitfall:sigmaglobal | pm (Table) | **F6: E calls it $\Sigma_{\rm glob}$ and adds $z_g<z_{\max}(h)$ restriction** |
-| $\Sigma_\mathrm{glob}(h)$ | ditto | E eq:app:sigmaglob | E | F6 |
-| $C$ | $h$-independent bridge constant | pit:70; E eq:app:bridge ($=\bar n_{\rm gal}\langle R_{\rm eff}\rangle$) | pit, E | **F7: collides with Eddington coefficient $C(\bar z)$ in the same section** |
-| $\bar n_\mathrm{gal}$ / $n_\mathrm{gal}(h)$ | comoving galaxy number density | E:24 / pit:72 | — | barred and unbarred variants — fold into F6 |
-| $V_c$ | comoving volume | pit:72, E:64 | — | subscript style varies ($V_{\mathrm{c}}$ vs $V_c$) — F20 |
-
-### Eddington-in-z / Eddington-in-M machinery
-
-| Symbol | Meaning | Defined | Also used | Notes |
-|---|---|---|---|---|
-| $s(z) \equiv \mathrm{d}\ln w_{\rm pop}/\mathrm{d}z$ | log-slope of population measure | pit eq:pitfall:eddz; est eq:est:eddz; B eq:app:eddz (explicit form) | — | triplicated (F17), consistent; F25 collision with host indicator $s$ |
-| $\delta z_\mathrm{Edd} = \sigma_z^2 s(z_g)$ | Eddington redshift shift | pit eq:pitfall:eddz | B:93 | OK |
-| $\langle z\rangle$ | recentred kernel mean | est eq:est:eddz, B eq:app:eddz | — | OK |
-| $\Delta h$ | Hubble bias | pit eq:pitfall:hbias | est, cov, B | OK |
-| $C(\bar z)$ | Eddington bias coefficient | pit eq:pitfall:hbias; est eq:est:eddh; B eq:app:dhlaw | — | triplicated with **three different inner derivatives**: $\mathrm{d}\ln d_L/\mathrm{d}z$ (pit), $\mathrm{d}\ln\mathcal{D}/\mathrm{d}z$ (est), $\mathrm{d}\ln f/\mathrm{d}z$ (B) — F4; collides with bridge $C$ — F7 |
-| $C_\mathrm{meas}$ | measured coefficient | est:64, B:123 | tab:app:eddz | OK |
-| $\bar z$, $\bar z_{\rm eff}$ | representative detected-host redshift | pit:31, B:130 | est | OK |
-| $z_t$, $\hat z$ | true / assumed host redshift | B:94–96 | B | OK |
-| $d_L^\star$ | GW-fixed distance | B:94 | B | local, OK |
-| $\Delta h_{\rm sub}$ | floor-subtracted bias | B tab caption | B | implicit but clear |
-| $\Phi$ | standard normal CDF | never | B:45 | F22 |
-| $\mathcal{R}(z)$ | comoving source-frame rate density | B:18 | B | OK, distinct from $R_{\rm eff}$ |
-| $M_z = M(1+z)$ | redshifted MBH mass | fw:184, D:2 | D | OK |
-| $\hat M_z$ | ML redshifted mass | fw:184 (implicit) | D:68 | OK |
-| $M$ | source-frame MBH mass | fw:184 | D | also bare $M$ in bud:30 tuple |
-| $p_g(M)$ | host-mass kernel | est eq:est:pgM; D eq:eddm:prior | fw:186 | est version has dummy-variable capture — F16 |
-| $Z_M$ | mass-kernel normalization | est eq:est:pgM, D eq:eddm:prior | — | F16 |
-| $\sigma_M$ | catalogue mass scatter | est:71, D:4 | — | OK |
-| $\alpha_g$ | $\mathrm{d}\ln R_{\rm eff}/\mathrm{d}\ln M|_{M_g}$ | est:79, D:26 | — | consistent |
-| $\sigma_\mathrm{rel} = \sigma_M/M_g$ | relative mass scatter | est:79, D:34 | — | consistent |
-| $M_g^\mathrm{eff}$ | shifted/moment-matched mean | est:79, D eq:eddm:tilt | — | consistent |
-| $\Delta\ln M$ | mass shift | D:83 | — | OK |
-| $\mathrm{d}n_\mathrm{cat}/\mathrm{d}M$ | catalogue mass function | D:98 | D | local, OK |
-
-### Coverage-harness locals (coverage.tex)
-
-| Symbol | Meaning | Defined | Notes |
+| Symbol | Meaning | Defined at | Notes |
 |---|---|---|---|
-| $h_\mathrm{true}$ | injected truth | cov tab:pp-clean, cov:57 | OK |
-| $\mathrm{num}(h)$, $\mathrm{num}_{\rm bare}$, $\mathrm{num}_{\rm vol}$ | numerator variants | cov eq:cov:singlehost/bare/vol | local, OK |
-| $\sigma_{d_L}/d_L$ | fractional distance error | cov tab caption | OK |
+| $h$ | $H_0/(100\,\mathrm{km\,s^{-1}\,Mpc^{-1}})$ | framework.tex:20–21 | contract ✓; also abstract.tex:13 |
+| $H_0$ | Hubble constant | framework.tex:21 | only via $h$; never written "H0" |
+| $z$ | CMB-frame redshift | framework.tex:21–22 | contract ✓ |
+| $\sigma_z$ | per-galaxy photometric redshift uncertainty | framework.tex:22–23 | contract ✓; indexed variant $\sigma_{z,g}$ — see M5 |
+| $d_L(z,h)$ | luminosity distance | framework.tex:26 (eq:dl) | contract ✓ |
+| $E(z)$ | $H(z)/H_0$ | framework.tex:29 (eq:dl) | restated estimators.tex:64, appendix_volume_deconv.tex:60 (consistent) |
+| $\Omega_\mathrm{m},\ \Omega_\Lambda$ | density parameters | framework.tex:29, 32 | |
+| $E'(z)$ | $\mathrm{d}E/\mathrm{d}z$ | appendix_volume_deconv.tex:85 | |
+| $I(z)$ | $\int_0^z \mathrm{d}z'/E(z')$ | appendix_volume_deconv.tex:61 | |
+| $\mathcal{D}(z)$ | dimensionless distance $(1+z)I(z)$ | estimators.tex:64 | post-fix also appendix_volume_deconv.tex:93 (was $f(z)$ — see C5, fixed) |
+| $A(z)$ | tabulated amplitude, $d_L = A(z)/h$ | coverage.tex:12 | harness-local; $= (c/100\,\mathrm{km\,s^{-1}\,Mpc^{-1}})\,\mathcal{D}(z)$ |
+| $h'$ | $h$ matching $d_L$ at wrong $\Omega_\mathrm{m}$ | budget.tex:43 | inline definition |
+| $h_\mathrm{true}$ | injected truth (synthetic suite) | coverage.tex:12 | also appendix_volume_deconv.tex:117 |
+| $h_\mathrm{ref}$ | shape-normalization point 0.72 | appendix_beta_g.tex:49 | |
+
+### Events, data, and measurement model
+
+| Symbol | Meaning | Defined at | Notes |
+|---|---|---|---|
+| $i$ | event index | framework.tex:40 | |
+| $x_i$ | per-event GW data | framework.tex:40 | duplicate symbol $x_\mathrm{GW}$ — see M3 |
+| $D_i$ | detection indicator | framework.tex:40–41 | |
+| $\rho_\mathrm{thr}$ | SNR detection threshold ($=20$) | framework.tex:42 | reused appendix_beta_g.tex:41 ✓ |
+| $\pi(h)$ | prior on $h$ | framework.tex:44 | |
+| $N_\mathrm{det}$ | number of detected events | framework.tex:45 | bare $N$ used for event counts in pitfall.tex:76, postmortem.tex — minor drift |
+| $p_i(h)$ | per-event likelihood $p(x_i \mid D_i, h)$ | framework.tex:50 (eq:posterior) | |
+| $(\phi,\theta)$ | ecliptic azimuth / polar angle | framework.tex:59–60 | appendix_sky_marginal.tex:10–11 ✓ |
+| $u$ | distance fraction $d_L/\hat d_L$ | framework.tex:61 | ✓ everywhere |
+| $\hat d_L$ | maximum-likelihood distance | framework.tex:61–62 | |
+| $\hat\mu_i$ | ML point $(\hat\phi_i, \hat\theta_i, 1)$ | framework.tex:62–63 | unindexed $\mu$ in appendix_sky_marginal.tex:16 (generic event) |
+| $\Sigma_i$ | projected 3×3 covariance | framework.tex:63 | unindexed $\Sigma$ in pitfall.tex:46, appendix_sky_marginal.tex:19 |
+| $\Sigma_{i,uu}$ | marginal distance-fraction variance | framework.tex:227 | unindexed $\Sigma_{uu}$: appendix_sky_marginal.tex:55, pitfall.tex:52 (post-fix; was $\Sigma_{22}$ — see M2, fixed) |
+| $\sigma_{d_L}$ | per-event distance uncertainty | first use framework.tex:150 | never explicitly defined — see M7 |
+| $\sigma_\phi, \sigma_\theta$ | sky-localization widths | pitfall.tex:52 | appendix_sky_marginal.tex:59 ✓ |
+| $\Omega$ | sky position $(\phi,\theta)$ | framework.tex:73 | $\Omega_g$ galaxy sky position (estimators.tex:22) |
+| $\mathrm{d}\Omega$ | solid-angle measure $\sin\theta\,\mathrm{d}\theta\,\mathrm{d}\phi$ | framework.tex:82 | |
+| $\omega$ | sky pair $(\phi,\theta)$ (split of $x$) | appendix_sky_marginal.tex:45 | appendix-local |
+| $\mu_{\omega\mid u}, \Sigma_{\omega\mid u}$ | sky-conditional moments | appendix_sky_marginal.tex:50 | |
+| $\mathcal{N}_3, \mathcal{N}_2, \mathcal{N}_1$ | 3-/2-/1-D normal densities | framework.tex:67; appendix_sky_marginal.tex:49–50 | unsubscripted $\mathcal{N}$ also used for 1-D — minor |
+| $\mathcal{N}(x;\mu,\sigma^2)$ | normal density, **variance** third argument | estimators.tex:30 | now uniform paper-wide after fixes (F3) |
+| $\bar p_\mathrm{GW}(u)$ | isotropic narrow-beam sky marginal | pitfall.tex:48 (eq:pitfall:skymarg); appendix_sky_marginal.tex:63, 70 | consistent |
+| $p_\mathrm{GW}$ | GW distance likelihood (harness) | coverage.tex:21 | |
+| $\Delta\Omega$ | sky-localization area | appendix_sky_marginal.tex:79 | |
+| $\beta$ | ecliptic latitude (in $\lvert\sin\beta\rvert$ bands) | realdata.tex:9 | **never defined** — see M6 |
+| $\kappa$ | Fisher condition number | budget.tex:20 | implicit inline definition |
+
+### Catalogue, hypotheses, and likelihood structure
+
+| Symbol | Meaning | Defined at | Notes |
+|---|---|---|---|
+| $G,\ \bar G$ | in-/out-of-catalogue hypotheses | framework.tex:90–91 | contract ✓ |
+| $g$ | galaxy index | framework.tex:111 | collides with shape function $g(z)$ — see C4 |
+| $L_\mathrm{cat}(h)$ | in-catalogue likelihood | framework.tex:113 (eq:lcat) | restated estimators.tex:8 (eq:est:lcat), consistent |
+| $\mathcal{G}_i,\ \mathcal{G}_i^{\mathrm{sel}}$ | numerator / denominator galaxy sets | framework.tex:115–116 | vs $\mathcal{B}$ in estimators — see M4 |
+| $\mathcal{B}$ | 3-D localization ball | estimators.tex:22 | see M4 |
+| $w_g$ | rate weight $R_\mathrm{eff}(M_g)/(1+z_g)$ | framework.tex:118 | restated estimators.tex:22, appendix_beta_g.tex:15 ✓ |
+| $M_g,\ z_g$ | catalogued MBH mass / redshift | framework.tex:122 | |
+| $R_\mathrm{eff}(M)$ | per-MBH EMRI rate (Babak et al. 2017) | framework.tex:126 | |
+| $N_g(h)$ | per-host numerator integral | framework.tex:139 (eq:ng) | restated estimators.tex:15 (eq:est:Ng) ✓ |
+| $D_g(h)$ | per-host selection integral | framework.tex:143 (eq:dg) | restated estimators.tex:18 (eq:est:Dg) ✓ |
+| $p_\mathrm{det}$ | detection probability | framework.tex:152, 241–243 | contract ✓ (formatting unified, F1) |
+| $p_g(z)$ | host-redshift kernel | framework.tex:157–162 (eq:kernel) | volume instantiation estimators.tex:37 (eq:est:pgz), appendix_volume_deconv.tex:30 (eq:app:pgz) |
+| $\sigma_{z,g}$ | per-galaxy scatter (indexed $\sigma_z$) | framework.tex:158 | see M5 |
+| $\Pi(z)$ | population prior placeholder in kernel | framework.tex:170 | $\Pi\equiv 1$ bare; $\Pi = w_\mathrm{pop}$ deconvolved |
+| $Z_g$ | per-galaxy kernel normalization | framework.tex:164 (eq:kernel) | restated estimators.tex:39, coverage.tex:28, appendix_volume_deconv.tex:32 ✓ |
+| $M_z,\ \hat M_z$ | redshifted MBH mass $M(1+z)$, its ML value | framework.tex:183–184 | contract ✓ ($M$ source-frame) |
+| $p_g(M)$ | host-mass kernel | framework.tex:186 | instantiated estimators.tex:74 (eq:est:pgM), appendix_eddington_m.tex:20 (eq:eddm:prior) ✓ |
+| $p(\Omega) = 1/4\pi$ | isotropic sky prior | framework.tex:198 | |
+| $w_\mathrm{pop}(z)$ | population redshift measure | framework.tex:203 (eq:wpop) | **conflicting definitions** — see C1 |
+| $\mathrm{d}V_\mathrm{c}/(\mathrm{d}z\,\mathrm{d}\Omega)$ | comoving volume element per solid angle | framework.tex:201 | typography unified to $V_\mathrm{c}$ (F2) |
+| $f(z,\Omega),\ f_k(z)$ | rate-weighted completeness (pixel $k$) | framework.tex:209–210 | collision with $f(z)=(1+z)I(z)$ resolved (C5, fixed); arity drift $f(z,\Omega,h)$ appendix_beta_g.tex:97 — minor |
+| $k(\Omega_i)$ | pixel containing event line of sight | framework.tex:225 | |
+| $B_\mathrm{num}(h)$ | completion-term numerator | framework.tex:215 (eq:bnum) | ✓ pitfall, appendix_sky |
+| $z_-,\ z_+$ | redshift image of $\pm4\sigma_{d_L}$ support | framework.tex:225 | ✓ appendix_sky_marginal.tex:35 |
+| $D(h)$ | full-volume selection integral | framework.tex:250 (eq:Dh) | |
+| $z_\mathrm{min},\ z_\mathrm{max}(h)$ | analysis redshift limits | framework.tex:250 | $z_\mathrm{min}$ never specified (minor); $z_\mathrm{max}$ glossed differently in appendix_beta_g.tex:19 (minor) |
+| $\langle\cdot\rangle_\Omega$ | isotropic sky average | framework.tex:262 | |
+| $\beta_{\bar G}(h)$ | out-of-catalogue selection normalization | framework.tex:255 (eq:betabar) | |
+| $\beta_G(h)$ | catalogue selection normalization | framework.tex:269 (eq:betag) | contract ✓ |
+| $w_G(h)$ | hypothesis weight $\beta_G/D$ | framework.tex:274 | budget.tex:26 writes $w_G(z)$ — minor argument drift |
+
+### Pitfall / estimator / calibration constructs
+
+| Symbol | Meaning | Defined at | Notes |
+|---|---|---|---|
+| $\delta z_\mathrm{Edd}$ | Eddington redshift shift $\sigma_z^2 s(z_g)$ | pitfall.tex:16 (eq:pitfall:eddz) | ✓ appendix_volume_deconv.tex:92 |
+| $s(z)$ | $\mathrm{d}\ln w_\mathrm{pop}/\mathrm{d}z$ | pitfall.tex:18 | collides with Gray's host indicator $s$ — see C3 |
+| $\Delta h$ | bias in $h$ | pitfall.tex:24 (eq:pitfall:hbias) | |
+| $C(\bar z)$ | Eddington bias coefficient | pitfall.tex:25 | collides with bridge constant $C$ — see C2 |
+| $\bar z$ | representative detected-host redshift | pitfall.tex:29–31 | ✓ estimators.tex:64 |
+| $\bar z_\mathrm{eff}$ | effective redshift matching $C_\mathrm{meas}$ | appendix_volume_deconv.tex:129 | |
+| $C_\mathrm{meas}$ | measured Eddington coefficient | estimators.tex:64 | ✓ appendix_volume_deconv.tex:122 |
+| $\Delta h_\mathrm{sub}$ | floor-subtracted bias | appendix_volume_deconv.tex:143 | table-local |
+| $\Sigma_\mathrm{global}(h)$ | discrete global selection sum | pitfall.tex:64 (eq:pitfall:sigmaglobal) | duplicate labelled definition appendix_beta_g.tex:10–17 (eq:app:sigmaglob, adds explicit $z_g < z_\mathrm{max}(h)$ cutoff); symbol unified (M1, fixed) |
+| $C$ | bridge constant $\Sigma_\mathrm{global}\approx C\beta_G$ | pitfall.tex:70; appendix_beta_g.tex:28 | see C2 |
+| $n_\mathrm{gal},\ \bar n_\mathrm{gal}$ | (mean) comoving galaxy number density | pitfall.tex:70; appendix_beta_g.tex:24 | |
+| $\langle R_\mathrm{eff}\rangle$ | averaged rate (measure unspecified) | appendix_beta_g.tex:28 | minor undefined average |
+| $x_\mathrm{GW}$ | event GW data ($= x_i$) | estimators.tex:22; appendix_sky_marginal.tex:14 | see M3 |
+| $g(z)$ | $h$-independent shape of $w_\mathrm{pop}$ | estimators.tex:43; appendix_volume_deconv.tex:62 | see C4 |
+| $\sigma_M$ | host-mass measurement scatter | estimators.tex:71 | ✓ appendix_eddington_m.tex:4 |
+| $Z_M$ | mass-kernel normalization | estimators.tex:76 (eq:est:pgM) | ✓ appendix_eddington_m.tex:22 |
+| $\alpha_g$ | $\mathrm{d}\ln R_\mathrm{eff}/\mathrm{d}\ln M\vert_{M_g}$ | estimators.tex:79 | ✓ appendix_eddington_m.tex:26 |
+| $\sigma_\mathrm{rel}$ | $\sigma_M/M_g$ | estimators.tex:79 | ✓ appendix_eddington_m.tex:34 |
+| $M_g^\mathrm{eff}$ | Eddington-shifted mass | estimators.tex:79 | ✓ appendix_eddington_m.tex:32 (eq:eddm:tilt) |
+| $\Delta\ln M$ | applied mass shift | appendix_eddington_m.tex:83 | |
+| $\mathrm{num}_\mathrm{bare},\ \mathrm{num}_\mathrm{vol}$ | kernel-specific numerators | coverage.tex:23, 25 (eq:cov:bare/vol) | harness-local |
+| $\mathcal{R}(z)$ | comoving source-frame rate density | appendix_volume_deconv.tex:18 | |
+| $z_t$ | true host redshift | appendix_volume_deconv.tex:93 | |
+| $N_\mathrm{gal}$ | total catalogue size (Gray eq. A10) | appendix_gray_mapping.tex:79 | |
+| $p(s\mid z),\ p(s\mid M)$ | Gray's host-probability weights | framework.tex:124; appendix_gray_mapping.tex:88 | quoted notation; see C3 |
+| $\Omega_\mathrm{rest}$ | Gray's sky remainder (eq. A20) | appendix_gray_mapping.tex:120 | quoted notation |
 
 ---
 
 ## 2. Findings
 
-### CRITICAL
+### CRITICAL (same symbol, two meanings / contract violation)
 
-**F1 — `w_pop` is defined with two inequivalent measures (4π mismatch), and the framework definition deviates from the notation contract.**
-- framework.tex eq:wpop (l.203–208): $w_\mathrm{pop}(z) \equiv \frac{1}{1+z}\,\frac{\mathrm{d}V_\mathrm{c}}{\mathrm{d}z\,\mathrm{d}\Omega}$ — **per unit solid angle**.
-- pitfall.tex eq:pitfall:wpop (l.8), estimators.tex eq:est:wpop (l.32), appendix_volume_deconv.tex eq:app:wpop (l.25): $w_{\rm pop}(z) \equiv \frac{1}{1+z}\,\frac{\mathrm{d}V_c}{\mathrm{d}z}$ — **total (full-sky)**.
-- These differ by 4π under the same symbol. The notation contract specifies `dV_c/dz`. The framework version is the one wired into the units argument of eq:assembled (Mpc³ sr⁻²) and into eq:bnum/eq:app:sky:bnum, so the fix is not a blind find-and-replace: either (a) rename the framework object (e.g. $w_\mathrm{pop}^{\,\Omega}$ or fold the $1/4\pi$ explicitly) and keep $w_{\rm pop} = (1+z)^{-1}\mathrm{d}V_c/\mathrm{d}z$ everywhere else, or (b) adopt the per-steradian object globally and say so once. In a paper whose headline defect is a mis-handled $1/(4\pi)$, an internal 4π ambiguity in the central symbol is the first thing a referee will probe.
+| ID | Finding | Locations | Status |
+|---|---|---|---|
+| **C1** | **$w_\mathrm{pop}(z)$ has two conflicting definitions.** Framework (notation owner) defines it *per steradian*: $w_\mathrm{pop} \equiv \frac{1}{1+z}\frac{\mathrm{d}V_\mathrm{c}}{\mathrm{d}z\,\mathrm{d}\Omega}$ (framework.tex:203–206, eq:wpop; consistently used in eq:bnum and appendix_sky_marginal.tex:38). Three other sections define the *same symbol* without the $\mathrm{d}\Omega$: $w_\mathrm{pop} \equiv \frac{1}{1+z}\frac{\mathrm{d}V_\mathrm{c}}{\mathrm{d}z}$ (pitfall.tex:8 eq:pitfall:wpop; estimators.tex:32 eq:est:wpop; appendix_volume_deconv.tex:25 eq:app:wpop). The two differ by the solid-angle measure (a factor $4\pi$ after isotropic averaging). In the per-galaxy kernels the constant cancels against $Z_g$, but in $B_\mathrm{num}$, $D(h)$, $\beta_{\bar G}$ it is load-bearing; this is also a contract touch-point ("dV_c/dz comoving volume element"). **Recommended repair:** keep the framework per-steradian definition once, and state in pitfall/estimators/voldeconv that the full-sky element differs by a constant that cancels in every ratio where it appears. | framework.tex:203 vs pitfall.tex:8, estimators.tex:32, appendix_volume_deconv.tex:25 | **FLAGGED — not auto-fixable** (requires a physics-content decision per usage; Physics Change Protocol if any integral is touched) |
+| **C2** | **$C$ used for two different quantities**, both in pitfall.tex: the Eddington bias coefficient $C(\bar z)$ (pitfall.tex:25 eq:pitfall:hbias; estimators.tex:61; appendix_volume_deconv.tex:102) and the $h$-independent bridge constant in $\Sigma_\mathrm{global}(h)\approx C\,\beta_G(h)$ (pitfall.tex:70; appendix_beta_g.tex:26–28, where $C = \bar n_\mathrm{gal}\langle R_\mathrm{eff}\rangle$). Recommend renaming the bridge constant (e.g. $K$ or $C_\mathrm{cat}$). | pitfall.tex:25 vs pitfall.tex:70; appendix_beta_g.tex:28 | FLAGGED — rename requires editorial choice |
+| **C3** | **$s$ used for two different quantities**, both in estimators.tex: the log-slope $s(z)\equiv\mathrm{d}\ln w_\mathrm{pop}/\mathrm{d}z$ (pitfall.tex:18; estimators.tex:52; appendix_volume_deconv.tex:80) and Gray et al.'s host indicator in $p(s\mid z)\,p(s\mid M)$ (framework.tex:124; estimators.tex:22; appendix_gray_mapping.tex:88). The indicator is quoted notation from the cited paper, so the slope is the safer rename (or add a disambiguating footnote at framework.tex:124). | estimators.tex:22 vs :52 | FLAGGED — rename requires editorial choice |
+| **C4** | **$g$ used for two different quantities**: the galaxy index (framework.tex:111 ff., ubiquitous) and the shape function $g(z)$ in $w_\mathrm{pop}(z;h)=h^{-3}g(z)$ (estimators.tex:43; appendix_volume_deconv.tex:62–63). Recommend $\tilde g(z)$ or $w_0(z)$ for the shape function. | estimators.tex:43; appendix_volume_deconv.tex:62 | FLAGGED — rename requires editorial choice |
+| **C5** | **$f$ used for two different quantities**: catalogue completeness $f(z,\Omega)$/$f_k(z)$ (framework.tex:209) and the dimensionless distance $f(z)\equiv(1+z)I(z)$ in appendix_volume_deconv (old lines 93–104), which was moreover the same quantity as estimators' $\mathcal{D}(z)$ (also a (b)-type duplicate). | appendix_volume_deconv.tex:93, 99, 103 | **FIXED** — renamed to $\mathcal{D}(z)$ (fix F6) |
 
-### MAJOR
+### MAJOR (quantity under two symbols / undefined load-bearing symbol)
 
-**F2 — Gaussian third-argument convention is inconsistent (variance vs standard deviation).**
-- Declared convention (estimators.tex l.30): "$\mathcal{N}(x;\mu,\sigma^2)$ denotes a normal density" — variance.
-- Variance used: pitfall.tex l.6 ($\mathcal{N}(z;z_g,\sigma_z^2)$), estimators eq:est:pgz/pgM, appendix_eddington_m eq:eddm:prior/tilt, all covariance-matrix uses ($\Sigma_i$, $\Sigma_{uu}$).
-- Standard deviation used: coverage.tex eq:cov:bare, eq:cov:vol, l.28 ($\mathcal{N}(z; z_g, \sigma_z)$ — four instances); appendix_volume_deconv l.13, eq:app:pgz ($\mathcal{N}(z_g;z,\sigma_z)$ — three instances); framework eq:kernel writes $\sigma_{z,g}$ (ambiguous).
-- Fix: normalize to $\sigma^2$ everywhere (coverage: 4 edits; volume_deconv: 3 edits; framework eq:kernel: write $\sigma_{z,g}^2$).
-- Secondary: argument order flips between $\mathcal{N}(z_g; z, \cdot)$ (likelihood reading — fw, est, B) and $\mathcal{N}(z; z_g, \cdot)$ (density reading — pit, cov). Symmetric in the Gaussian so not wrong, but pick one and state it.
+| ID | Finding | Locations | Status |
+|---|---|---|---|
+| **M1** | Same quantity, two symbols: the discrete global selection sum was $\Sigma_\mathrm{global}(h)$ in pitfall.tex:64 (eq:pitfall:sigmaglobal) but $\Sigma_\mathrm{glob}(h)$ in appendix_beta_g.tex (eq:app:sigmaglob and 3 further uses). | appendix_beta_g.tex:11, 26, 48, 90 | **FIXED** — unified to $\Sigma_\mathrm{global}$ (fix F5). Residual note: the object is still *defined twice* in two labelled equations (eq:pitfall:sigmaglobal, eq:app:sigmaglob — the appendix version adds the explicit $z_g<z_\mathrm{max}(h)$ cutoff); eq:app:sigmaglob is never cross-referenced. Consider making the appendix reference the pitfall equation. |
+| **M2** | Same quantity, three symbols: the marginal fractional-distance variance was $\Sigma_{i,uu}$ (framework.tex:227), $\Sigma_{22}$ (pitfall.tex old:50–54), and $\Sigma_{uu}$ (appendix_sky_marginal.tex:55). | pitfall.tex:48, 52 | **FIXED** — pitfall unified to $\Sigma_{uu}$ (fix F4). The remaining indexed/unindexed pair ($\Sigma_{i,uu}$ vs $\Sigma_{uu}$) follows the paper's event-index-dropping convention and is acceptable. |
+| **M3** | Same quantity, two symbols: per-event GW data is $x_i$ (framework.tex:40, eq:gwlike) but $x_\mathrm{GW}$ in estimators.tex:16, 22 (eq:est:Ng) and appendix_sky_marginal.tex:14 (eq:app:sky:gauss) — estimators.tex:22 even cross-references Section 2, where the symbol is $x_i$. Recommend unifying on $x_i$ (or defining $x_\mathrm{GW}\equiv x_i$ once). | estimators.tex:16, 22; appendix_sky_marginal.tex:14 | FLAGGED — symbol choice is editorial (index-free form may be deliberate) |
+| **M4** | Same quantity, two symbols: the localization-region galaxy set is $\mathcal{G}_i$ (numerator) / $\mathcal{G}_i^{\mathrm{sel}}$ (denominator choice) in framework.tex:115–116, 130, but $g\in\mathcal{B}$ (ball) in estimators.tex:9–10, 22 (eq:est:lcat). The split is arguably deliberate ($\mathcal{G}_i^{\mathrm{sel}}$ is the free choice; $\mathcal{B}$ its local instantiation), but the correspondence $\mathcal{G}_i^{\mathrm{sel}}=\mathcal{G}_i=\{g\in\mathcal{B}\}$ is never stated. One linking sentence in estimators §4.1 would close it. | framework.tex:115–116 vs estimators.tex:22 | FLAGGED |
+| **M5** | Same quantity, two symbols: per-galaxy photometric scatter is $\sigma_{z,g}$ in framework.tex:158–169 (eq:kernel) but $\sigma_z$ (declared "per-galaxy" at framework.tex:22–23) everywhere else, including the restatements of the same kernel (estimators.tex:37, appendix_volume_deconv.tex:30, coverage.tex:23–28). Recommend a "galaxy index dropped where unambiguous" clause at framework.tex:23, or using $\sigma_{z,g}$ in the estimator equations. | framework.tex:158–169 vs estimators.tex:30 ff. | FLAGGED |
+| **M6** | Symbol used but never defined: $\beta$ = ecliptic latitude in "six equal-$\lvert\sin\beta\rvert$ sky bands" (realdata.tex:9). Load-bearing for reproducing the $p_\mathrm{det}$ estimate, and visually collides with the $\beta_G$/$\beta_{\bar G}$ family. Needs "ecliptic latitude $\beta$" in prose (not an auto-fixable formatting change). | realdata.tex:9 | FLAGGED |
+| **M7** | Symbol used but never explicitly defined: $\sigma_{d_L}$ (event distance uncertainty), first used framework.tex:150 ("$\pm4\sigma_{d_L}$ distance image") and only pinned implicitly through $\Sigma_{uu}=\sigma_{d_L}^2/\hat d_L^{\,2}$ (pitfall.tex:52; appendix_sky_marginal.tex:55). One clause at first use suffices. | framework.tex:150 | FLAGGED |
 
-**F3 — Symbol `f` denotes two different quantities.**
-- $f(z,\Omega)$, $f_k(z)$ = rate-weighted catalogue completeness (framework l.210, used in pitfall, coverage l.75, appendices A/C/E).
-- $f(z) \equiv (1+z)I(z)$ = dimensionless distance shape (appendix_volume_deconv l.94, inside eq:app:dhlaw via $\mathrm{d}\ln f/\mathrm{d}z$).
-- Fix: rename the appendix-B distance function to $\mathcal{D}(z)$ (already defined in estimators.tex l.64 as exactly $(1+z)\int_0^z\mathrm{d}z'/E(z')$), which also resolves half of F4.
+### MINOR (formatting / typography) — fixed
 
-**F4 — The distance-shape function appears under four notations.**
-Same (or trivially proportional) quantity: $\mathrm{d}\ln d_L/\mathrm{d}z$ (pitfall eq:pitfall:hbias), $\mathcal{D}(z)$ (estimators eq:est:eddh), $f(z)=(1+z)I(z)$ (appendix_volume_deconv eq:app:dhlaw), $A(z)$ with $d_L = A(z)/h$ (coverage l.12, dimensionful). The three $C(\bar z)$ definitions (pit/est/B) are numerically identical but a reader must prove it. Fix: define $\mathcal{D}(z)$ once in framework, use it in all three $C(\bar z)$ equations; keep $A(z) = (c/100\,\mathrm{km\,s^{-1}\,Mpc^{-1}})\,\mathcal{D}(z)$ with the relation stated in coverage.
+See §4 for the complete edit list.
 
-**F5 — Marginal distance-fraction variance appears under three symbols, one with a 0-based index leak.**
-- $\Sigma_{i,uu}$ (framework eq:bnum, l.228), $\Sigma_{22}$ (pitfall eq:pitfall:skymarg, l.50/54), $\Sigma_{uu}$ (appendix_sky_marginal l.49–75).
-- $\Sigma_{22}$ is code-style 0-based indexing of $(\phi,\theta,u)$: in the 1-based convention of the manuscript's matrices the $u$-element is $\Sigma_{33}$; a reader will parse $\Sigma_{22}$ as the θθ element. Fix: use $\Sigma_{uu}$ (with event index where needed: $\Sigma_{i,uu}$) in all three places.
+1. `\rm` vs `\mathrm` in math (77 sites; e.g. $p_{\rm det}$ vs $p_\mathrm{det}$, $w_\mathrm{pop}$, $L_\mathrm{cat}$, $B_\mathrm{num}$, $\Omega_\mathrm{m}$, deg/sr/rad units) — unified to `\mathrm`.
+2. $V_c$ (italic subscript) vs framework's $V_\mathrm{c}$ (9 sites) — unified to $V_\mathrm{c}$.
+3. Gaussian third argument: std vs variance. The paper's declared convention is $\mathcal{N}(x;\mu,\sigma^2)$ (estimators.tex:30), matching the variance slot $\Sigma_{uu}$ in eq:bnum/eq:pitfall:skymarg; framework eq:kernel (3 sites), appendix_volume_deconv (4 sites) and coverage (3 sites) carried an un-squared $\sigma$ in the same slot — unified to $\sigma^2$ (no numerical content changed; the intended distribution is the same Gaussian). |
+4. $2^\circ$ (appendix_sky_marginal) vs $2\degr$ (pitfall) — unified to MNRAS `\degr`.
+5. Spelling: dominant convention is Oxford (-ize with "analysed"); outliers "localisation" (framework) and "marginalises" (appendix_eddington_m) — unified to "localization"/"marginalizes".
 
-**F6 — Global catalogue sum: `\Sigma_global` vs `\Sigma_glob`, with silently differing definitions.**
-- pitfall eq:pitfall:sigmaglobal: $\Sigma_{\mathrm{global}}(h) = \sum_g w_g\, p_{\mathrm{det}}(d_L(z_g,h))$ (unrestricted sum).
-- appendix_beta_g eq:app:sigmaglob: $\Sigma_{\mathrm{glob}}(h) = \sum_{g:\,z_g<z_{\max}(h)} w_g\, p_{\mathrm{det}}(...)$ (restricted).
-- Same object, two names, and the restriction $z_g < z_{\max}(h)$ appears only in the appendix. Unify the symbol and carry the restriction (or state it is implied by $p_{\rm det}=0$ beyond the horizon) in both places. Note also the overload of $\Sigma$ with the covariance matrices $\Sigma_i$; consider $S_{\rm glob}(h)$.
+### MINOR — flagged, not fixed
 
-**F7 — Letter `C` denotes two different quantities within pitfall.tex.**
-- $C(\bar z)$ = Eddington bias coefficient (eq:pitfall:hbias, l.27; also est eq:est:eddh, B eq:app:dhlaw, $C_{\rm meas}$).
-- $C$ = $h$-independent bridge constant in $\Sigma_{\rm global}\approx C\,\beta_G$ (pitfall l.70–72; appendix_beta_g eq:app:bridge, $C=\bar n_{\rm gal}\langle R_{\rm eff}\rangle$; also fig:betag caption).
-- Both appear in the same section. Fix: rename the bridge constant (e.g. $K$ or $C_{\rm cat}$) in pitfall l.70, fig:betag caption, and appendix_beta_g.
+1. Gaussian argument order: likelihood form $\mathcal{N}(z_g; z, \sigma_z^2)$ (framework, estimators, voldeconv) vs $\mathcal{N}(z; z_g, \sigma_z^2)$ (pitfall.tex:6; coverage.tex:23–28). Numerically identical by symmetry; harmonization would touch prose that distinguishes "likelihood of the catalogued value" from "density for $z$", so it is left editorial.
+2. Unsubscripted $\mathcal{N}$ for 1-D Gaussians (framework eq:kernel, eq:bnum) vs dimension-subscripted $\mathcal{N}_1$ (appendix_sky_marginal).
+3. Differential placement: $\int\mathrm{d}z\,f(z)$ (framework, estimators) vs $\int f(z)\,\mathrm{d}z$ (coverage, appendix_volume_deconv $Z_g$, appendix_eddington_m $Z_M$) — both styles occur even for the same quantity ($Z_g$). All differentials do use `\mathrm{d}` (contract-conform); only placement varies.
+4. Equation-reference style: "equation~\eqref{}" (framework) vs "Eq.~\eqref{}" (pitfall, appendices); appendix_volume_deconv.tex:145 uses `Eq.~\ref{eq:app:dhlaw}` (the only parenthesis-free `\ref` to an equation, inside a caption where `\eqref` would double the parentheses — left as is).
+5. Gray equation citing: body uses "eq.~A10 / eqs~A9–A10" (no dots); GENERATED main.tex appendix title says "Eqs. A.9/A.10" (dotted). Fix belongs in the builder config, not the sections.
+6. $w_G(h)$ (framework.tex:274) vs "$w_G(z)$ split" (budget.tex:26) — same symbol with a different argument; the budget usage means the weight as a function of population depth.
+7. $z_\mathrm{max}(h)$ glossed as "redshift horizon of the analysis" (framework.tex:264) vs "redshift reach of the population model" (appendix_beta_g.tex:19–20).
+8. Completeness arity drift: $f(z,\Omega)$ (framework.tex:209) vs $f(z,\Omega,h)$ (appendix_beta_g.tex:97).
+9. Undefined-but-peripheral: $z_\mathrm{min}$ (framework.tex:250, never specified), $\langle R_\mathrm{eff}\rangle$ (appendix_beta_g.tex:28, averaging measure unspecified).
+10. Symbol-family overloads that remain distinguishable and are accepted: $D_i$/$D(h)$/$D_g(h)$/$\mathcal{D}(z)$; $N$/$N_\mathrm{det}$/$N_\mathrm{gal}$/$N_g$/$\mathcal{N}$; unindexed $\mu,\Sigma$ for generic events in the appendices.
+11. eq:app:sigmaglob is labelled but never referenced (harmless; related to the duplicate definition noted in M1).
+12. Noted in passing (numbers, not notation — for CONSISTENCY-AUDIT): coverage.tex:15 states grid spacing $0.004$ while the fig:pp caption (coverage.tex:67) states "$h$-grid step $0.001$"; realdata.tex:73 still carries the `$\text{[PENDING]}$` cluster-confirmation placeholder.
 
-**F9 — In-catalogue sum domain: $\mathcal{G}_i / \mathcal{G}_i^{\rm sel}$ (framework) vs $\mathcal{B}$ (estimators).**
-framework eq:lcat sums over galaxy sets $\mathcal{G}_i$ (numerator) and $\mathcal{G}_i^{\rm sel}$ (denominator); estimators eq:est:lcat sums over "$g \in \mathcal{B}$" where $\mathcal{B}$ is the localization *ball* (a region, used as an index set). Since the local-vs-global denominator set is the central estimator distinction of the paper, define once: $\mathcal{G}_i = \{g : (\Omega_g, z_g) \in \mathcal{B}_i\}$ and write both equations over $\mathcal{G}_i$ (and $\mathcal{G}^{\rm sel} \in \{\mathcal{G}_i, \mathcal{G}_{\rm all}\}$).
+### Contract compliance (d)
 
-**F10 — Contract "z is CMB-frame" is contradicted for the headline real-data baselines.**
-framework l.21–23 asserts "All redshifts $z$ are CMB-frame redshifts", but budget.tex l.29/46 states the committed baselines of Section 6 (realdata) used *heliocentric* redshifts (catalogue rebuilt later; net effect +0.15 per cent on $H_0$). realdata.tex itself never mentions this. Fix: qualify the framework sentence ("CMB-frame throughout, except the archived Section 6 baselines, which predate the rebuild — see Section 8/Table 3") or add the caveat where the seed600 data are introduced (realdata §6.1).
-
-**F11 — Same missing reference requested under multiple citation keys (will produce duplicate bib entries).**
-- Eddington 1913 under 4 keys: `MISSING:Eddington1913-correcting-statistics` (pitfall), `MISSING:Eddington1913-statistical-bias` (estimators), `MISSING:Eddington1913-bias` (coverage, appendix_volume_deconv), `MISSING:Eddington1913-noise-bias-correction` (appendix_eddington_m).
-- Turski et al. 2023 under 3 keys: `-photoz-uncertainties` (introduction), `-photometric-redshift-dark-sirens` (postmortem), `-photoz` (codes).
-- Gray et al. 2022 pixelated under 3 keys: `MISSING:Gray2022-pixelated-completeness` (intro, fw, C), `MISSING:Gray2022-pixelated` (codes), and `MISSING:Gray2023-pixelated` (appendix_sky l.111 — wrong year, and its inline comment gives the *wrong arXiv number* 2308.02281, which is the LOS z-prior paper, not the pixelated paper 2111.04629).
-- Gray et al. 2023 LOS under 2 keys: `MISSING:Gray2023-gwcosmo-los-zprior` (intro, est, C) vs `MISSING:Gray2023-los-zprior` (codes).
-Fix: one canonical key per work; correct the year/arXiv in appendix_sky_marginal.tex l.111.
-
-### MINOR
-
-**F8 — Event data: $x_i$ (framework) vs $x_{\rm GW}$ (estimators eq:est:Ng, appendix_sky l.14).** Same quantity, two symbols; estimators even cross-references "Section 2" where the symbol is $x_i$. Suggest $x_i$ throughout.
-
-**F12 — $g$ is both the galaxy index (subscripts everywhere) and the shape function $g(z)$ in $w_{\rm pop}(z;h)=h^{-3}g(z)$** (estimators l.43; appendix_volume_deconv l.63, in the same paragraph as $p_g$, $Z_g$). Suggest $\tilde w(z)$ or $\varphi(z)$.
-
-**F13 — $\beta$ (ecliptic latitude) undefined** in realdata l.9 ("six equal-$|\sin\beta|$ sky bands") and visually adjacent to $\beta_G$, $\beta_{\bar G}$. Add "with $\beta$ the ecliptic latitude".
-
-**F14 — Bare $N$ for the event count** (pitfall l.76 "$N\approx500$", postmortem "N-amplified", appendix_beta_g l.85 "$N \simeq 500$") although framework defines $N_{\rm det}$; $N$ also risks collision with $N_g(h)$ and $\mathcal{N}$. Use $N_{\rm det}$.
-
-**F15 — $\sigma_{z,g}$ vs $\sigma_z$** for the per-galaxy photometric scatter: framework eq:kernel uses the per-galaxy subscript, every other section uses plain $\sigma_z$ (declared "(per-galaxy)" in fw l.22). Pick one; if $\sigma_z$ is kept, drop the ",g" in eq:kernel.
-
-**F16 — Dummy-variable capture in estimators eq:est:pgM:** $Z_M = \int \mathrm{d}M\;\mathcal{N}(M;M_g,\sigma_M^2)\,R_{\rm eff}(M)$ reuses $M$, which is free on the left-hand side $p_g(M)$. The appendix version (eq:eddm:prior) correctly uses $M'$. Change the estimators integrand to $M'$.
-
-**F17 — Systematic duplication of displayed definitions is the vector for F1/F2/F4/F5:** $w_{\rm pop}$ is defined 4 times (eq:wpop, eq:pitfall:wpop, eq:est:wpop, eq:app:wpop), $s(z)$ 3 times, the Eddington shift 3 times (eq:pitfall:eddz, eq:est:eddz, eq:app:eddz), the $\Delta h$ law 3 times (eq:pitfall:hbias, eq:est:eddh, eq:app:dhlaw), $p_g(z)$ 3 times, $L_{\rm cat}$, $N_g/D_g$, $B_{\rm num}$, and the sky marginal twice each. Every duplicate drifted somewhere. Suggest: define once, cross-reference elsewhere ("cf. eq. (7)"), or add a build-time consistency pass after edits.
-
-**F18 — Equation-reference style is mixed:** "equation~\eqref" (framework, estimators, coverage, sky, eddington_m), "Eq.~\eqref" (pitfall, postmortem, volume_deconv, beta_g), "eq.~\eqref" (gray_mapping, which mixes both forms internally), and one "Eq.~\ref" (volume_deconv table caption — renders without parentheses). MNRAS style is lowercase "equation (N)"; normalize.
-
-**F19 — Degree notation inconsistent:** `$2\degr$` (pitfall l.54) vs `$2^\circ$` (appendix_sky l.132) for the same 2° sky error; `{\rm deg}^2` (appendix_sky) vs `\mathrm{deg}^2` (pitfall).
-
-**F20 — `{\rm ...}` vs `\mathrm{...}` in math mode:** estimators (19), appendix_volume_deconv (19), appendix_sky (12), realdata (3), budget (3), codes (1), framework (1) use deprecated `{\rm }`; all other files use `\mathrm{}` exclusively. Also $\mathrm{d}V_\mathrm{c}$ (fw, pit) vs $\mathrm{d}V_c$ (est, B, E) — upright vs italic subscript c. Cosmetic (renders identically) but normalize before submission.
-
-**F21 — "per cent" style:** `per~cent` (pitfall ×9, postmortem ×1) vs `per cent` (all other files). MNRAS accepts "per cent"; unify (non-breaking space is fine, but be consistent). The `\%` uses in coverage are inside a table header — acceptable.
-
-**F22 — Symbols used but never defined (each needs a half-sentence gloss):** $z_{\rm min}$ (framework eq:Dh/eq:betabar lower limit — value/meaning never given, unlike $z_{\max}(h)$); $\kappa$ (budget l.20, Fisher condition number); $M, e_0, p_0$ (budget l.30 timeout-binning tuple — EMRI mass, initial eccentricity, initial semi-latus rectum); $\sigma_{d_L}$ (framework l.149, pitfall l.54 — GW distance uncertainty, deducible but never introduced); $\Phi$ (appendix_volume_deconv l.45 — standard normal CDF). Also: the production fiducial $\Omega_{\rm m}=0.2726$ first appears in budget.tex although framework §2.1 introduces the ΛCDM background — state it there.
-
-**F23 — Sky-vector notation drift between framework and appendix A:** framework sets $\Omega=(\phi,\theta)$ and $\hat\mu_i$; appendix_sky uses $\omega=(\phi,\theta)$ (reserving $\Omega$ for solid angle) and drops the hat/index on $\mu$, $\Sigma$. Internally consistent but the mapping is never stated; one sentence ("we write $\omega$ for the sky pair, reserving $\Omega$ for solid angle; event index suppressed") would fix it — or adopt $\omega$ in framework too, since framework itself also uses $\mathrm{d}\Omega$ as solid-angle measure in the same paragraph where $\Omega$ is a coordinate pair.
-
-**F24 — $w_g$ vs $w_G$:** per-galaxy rate weight vs in-catalogue hypothesis weight differ only in subscript case and co-occur (framework §2.5, realdata l.10, appendix_beta_g). Consider $P_G(h)$ or $w_{\rm cat}(h)$ for the hypothesis weight.
-
-**F25 — $s$ is both Gray's host indicator ($p(s\mid z)\,p(s\mid M)$: framework l.124, estimators l.22, gray_mapping eq:gray:a10) and the Eddington slope $s(z)$ (pitfall/estimators/volume_deconv).** Contexts are distant, but both are load-bearing; a footnote at the first $s(z)$ definition or renaming the slope to $s_{\rm pop}(z)$ would remove the ambiguity.
+| Contract item | Status |
+|---|---|
+| $h \equiv H_0/(100\,\mathrm{km\,s^{-1}\,Mpc^{-1}})$ | ✓ defined framework.tex:20–21; used consistently; no bare "H0" anywhere |
+| $z$ CMB-frame | ✓ framework.tex:21–22 (budget.tex:29 correctly discusses the heliocentric→CMB rebuild as a systematic) |
+| $\sigma_z$ photometric redshift uncertainty | ✓ framework.tex:22–23; indexed variant drift → M5 |
+| $d_L$ luminosity distance | ✓ framework.tex:26 |
+| $M$ host MBH mass | ✓ framework.tex:184 (source-frame; $M_z=M(1+z)$ detector-frame) |
+| $G/\bar G$ hypotheses | ✓ framework.tex:90–91 |
+| $p_\mathrm{det}$ | ✓ after F1 (was split $p_{\rm det}$/$p_\mathrm{det}$ across 7 files) |
+| $\beta_G(h)$ | ✓ framework.tex:269 |
+| $\mathrm{d}V_\mathrm{c}/\mathrm{d}z$ | **partially violated** via the $w_\mathrm{pop}$ per-steradian vs full-sky split → C1 |
+| GLADE+ typography | ✓ "GLADE+" throughout; the two bare "GLADE" mentions (codes.tex:33 = DarkSirensStat's actual catalogue; pitfall.tex:39 "GLADE-like") are semantically correct and untouched |
 
 ---
 
-## 3. Contract compliance summary
+## 3. Equation hygiene
 
-| Contract item | Status | Notes |
+- **`\left`/`\right` pairing:** balanced in every file (appendix_eddington_m 4/4, pitfall 2/2, estimators 1/1, appendix_volume_deconv 1/1, appendix_sky_marginal 1/1 — the apparent extra `\left` there is `\leftrightarrow` at line 106).
+- **Differentials:** every differential in every integral uses `\mathrm{d}` (`\mathrm{d}z`, `\mathrm{d}z'`, `\mathrm{d}M`, `\mathrm{d}\Omega`, `\mathrm{d}t^2`); no bare italic-$d$ differentials found. Placement (leading vs trailing) varies — minor flag §2.
+- **Cross-references:** all `\ref`/`\eqref` targets resolve against section labels plus the GENERATED main.tex labels; no dangling references. No equation is referenced without carrying a label; all `equation`/`align` environments are labelled (align rows each carry a label). One labelled equation is never referenced (eq:app:sigmaglob).
+- **Tables/figures:** every `table`/`figure` label (tab:pp-clean, tab:derail, tab:partialfix, tab:budget, tab:gray:mapping, tab:app:eddz, fig:betag, fig:pp, fig:derail, fig:ablation) is referenced at least once.
+
+---
+
+## 4. Fixes applied
+
+All fixes are mechanical harmonizations (formatting/typography or within-paper symbol unification with a uniquely determined target); no physics content, numbers, or prose meaning changed. 108 replacements, uncommitted in the working tree.
+
+| # | Fix | Files (count) |
 |---|---|---|
-| $h = H_0/100\,\mathrm{km\,s^{-1}\,Mpc^{-1}}$ | **PASS** | defined in abstract and framework §2.1; used consistently; no bare `H` in the manuscript |
-| $z$ CMB-frame | **PASS with exception** | asserted globally in framework; contradicted for the Section 6 baselines by budget.tex (F10) — needs an explicit caveat |
-| $\beta_G$ | **PASS** | eq:betag; used consistently ($\beta_G$, $\beta_{\bar G}$, $w_G=\beta_G/D$); watch undefined latitude $\beta$ (F13) |
-| $p_{\rm det}$ | **PASS** | always lowercase $p_{\rm det}$; denominators-only rule stated and respected in every equation |
-| $\mathrm{d}V_c/\mathrm{d}z$ | **FAIL in framework** | framework eq:wpop uses $\mathrm{d}V_c/(\mathrm{d}z\,\mathrm{d}\Omega)$; all other sections use the contract form (F1) |
+| F1 | `{\rm X}` → `\mathrm{X}` in math mode ($p_\mathrm{det}$, $w_\mathrm{pop}$, $L_\mathrm{cat}$, $B_\mathrm{num}$, $x_\mathrm{GW}$, $R_\mathrm{eff}$, $\Omega_\mathrm{m}$, $h_\mathrm{true}$, $C_\mathrm{meas}$, $\sigma_\mathrm{rel}$, $M_g^\mathrm{eff}$, $\mathcal{G}_i^{\mathrm{sel}}$, $\Omega_\mathrm{pix}$, $\bar p_\mathrm{GW}$, $\delta z_\mathrm{Edd}$, $z_\mathrm{med}$, $\bar z_\mathrm{eff}$, $\Delta h_\mathrm{sub}$, units deg/sr/rad) | estimators (30), appendix_volume_deconv (22), appendix_sky_marginal (15), realdata (4), budget (4), framework (1), codes (1) — **77 total** |
+| F2 | $V_c$ → $V_\mathrm{c}$ (framework/pitfall convention) | appendix_volume_deconv (3), coverage (2), estimators (1), codes (1), appendix_sky_marginal (1), appendix_beta_g (1) — **9 total** |
+| F3 | Gaussian third argument unified to **variance** per the declared convention $\mathcal{N}(x;\mu,\sigma^2)$ (estimators.tex:30): framework eq:kernel $\sigma_{z,g}\to\sigma_{z,g}^2$ (3); appendix_volume_deconv $\sigma_z\to\sigma_z^2$ in eq:app:pgz and the bare-kernel reference (4); coverage eq:cov:bare/vol and $Z_g$ (3) | framework (3), appendix_volume_deconv (4), coverage (3) — **10 total** |
+| F4 | pitfall.tex $\Sigma_{22}\to\Sigma_{uu}$ (matches appendix_sky_marginal and framework's $\Sigma_{i,uu}$) | pitfall (2) |
+| F5 | appendix_beta_g $\Sigma_\mathrm{glob}\to\Sigma_\mathrm{global}$ (matches pitfall eq:pitfall:sigmaglobal) | appendix_beta_g (4) |
+| F6 | appendix_volume_deconv $f(z)\equiv(1+z)I(z)\to\mathcal{D}(z)$ (definition sentence + twice in eq:app:dhlaw) — removes the collision with completeness $f$ and matches estimators.tex:64 | appendix_volume_deconv (3) |
+| F7 | $2^\circ \to 2\degr$ (MNRAS style, matches pitfall.tex:52) | appendix_sky_marginal (1) |
+| F8 | Spelling unified to the paper's dominant Oxford convention: "localisation"→"localization" (framework.tex:126), "marginalises"→"marginalizes" (appendix_eddington_m.tex:3) | framework (1), appendix_eddington_m (1) |
 
-## 4. Equation formatting summary
-
-- **`\mathrm{d}` differentials: PASS.** Every integral and derivative in all 16 files uses upright `\mathrm{d}`; no italic-d differentials found (checked all `\int`, `\frac{d...}`, `d\ln` sites).
-- **`\left`/`\right` pairing: PASS.** All pairs balanced per file (appendix_eddington_m 4/4, pitfall 2/2, estimators 1/1, volume_deconv 1/1, sky_marginal 1/1 — the apparent extra `\left` there is the substring of `\leftrightarrow` on l.106, a false positive).
-- Residual formatting nits: one `Eq.~\ref` instead of `\eqref` (F18); `{\rm}` vs `\mathrm{}` split (F20); `\degr` vs `^\circ` (F19); `per~cent` vs `per cent` (F21).
-
-## 5. Suggested priority order
-
-1. F1 (w_pop 4π) — touches framework/pitfall/estimators/coverage/appendices; decide the convention first.
-2. F10 (CMB-frame caveat) + F13 (define latitude β) — realdata/framework, quick.
-3. F2 (Gaussian σ vs σ²) — 8 mechanical edits.
-4. F3+F4 (rename appendix-B f(z) → 𝒟(z); unify C(z̄) definitions).
-5. F5 (Σ_22 → Σ_uu), F6 (Σ_glob), F7 (bridge constant C → K).
-6. F9 (𝒢 vs ℬ), F11 (citation keys) — before the bibliographer pass.
-7. Minor sweep: F8, F12–F25.
+**Not fixed (require author/physics decision):** C1 ($w_\mathrm{pop}$ measure split — Physics Change Protocol territory), C2–C4 (renames of $C$, $s$, $g(z)$), M3–M7 (symbol unifications/definitions needing prose), and all flagged minors above.

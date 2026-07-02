@@ -10,9 +10,7 @@ The in-catalogue numerator marginalizes each candidate host's unknown true redsh
 \end{equation}
 the uniform-in-comoving-volume host prior with cosmological time dilation \citep{Gray:2019ksv,Mandel:2018mve}. The numerator is therefore prior-inconsistent with its own denominator: the population prior is counted once on one side of the likelihood ratio and zero times on the other.
 
-The consequence is the classical Eddington--Malmquist bias transcribed to redshift space \citep{MISSING:Eddington1913,MISSING:Malmquist1922-stellar-statistics}.
-% MISSING CITATION: Eddington 1913, "On a formula for correcting statistics for the effects of a known error of observation", MNRAS 73, 359
-% MISSING CITATION: Malmquist 1922, "On some relations in stellar statistics", Medd. Lunds Astron. Obs. Ser. I, 100, 1
+The consequence is the classical Eddington--Malmquist bias transcribed to redshift space \citep{Eddington1913,Malmquist1922}.
 Because the measure~\eqref{eq:pitfall:wpop} rises steeply with $z$---there is more volume, hence there are more potential hosts, behind an observed redshift than in front of it---a galaxy observed at $z_g$ is more probably a higher-redshift galaxy scattered down than a lower-redshift galaxy scattered up. Omitting the prior under-estimates every host redshift, at leading order by
 \begin{equation}
   \delta z_{\mathrm{Edd}} = \sigma_z^{2}\, s(z_g),
@@ -47,11 +45,11 @@ The completion term requires the GW measurement likelihood marginalized over the
 \begin{equation}
   \bar{p}_{\mathrm{GW}}(u)
   = \frac{\sin\hat{\theta}}{4\pi}\,
-  \mathcal{N}\!\left(u;\,1,\,\Sigma_{22}\right),
+  \mathcal{N}\!\left(u;\,1,\,\Sigma_{uu}\right),
   \label{eq:pitfall:skymarg}
 \end{equation}
 % src: docs/derivations/G2a_completion_sky_marginal_4pi.md Eq. (10)
-with $\hat{\theta}$ the estimated polar angle and $\Sigma_{22} = \sigma_{d_L}^2/\hat{d}_L^{\,2}$ the \emph{marginal} fractional-distance variance. The peak evaluation replaces the prefactor of Eq.~\eqref{eq:pitfall:skymarg} by $\approx (2\pi\sigma_\phi\sigma_\theta)^{-1}$, where $\sigma_\phi,\sigma_\theta$ are the sky-localization widths---an over-weighting of $B_{\mathrm{num}}$ by $2/(\sigma_\phi\sigma_\theta) \approx 1.6\times10^{3}$ at a $2\degr$ sky error % src: docs/derivations/G2a_completion_sky_marginal_4pi.md section 7 item 5
+with $\hat{\theta}$ the estimated polar angle and $\Sigma_{uu} = \sigma_{d_L}^2/\hat{d}_L^{\,2}$ the \emph{marginal} fractional-distance variance. The peak evaluation replaces the prefactor of Eq.~\eqref{eq:pitfall:skymarg} by $\approx (2\pi\sigma_\phi\sigma_\theta)^{-1}$, where $\sigma_\phi,\sigma_\theta$ are the sky-localization widths---an over-weighting of $B_{\mathrm{num}}$ by $2/(\sigma_\phi\sigma_\theta) \approx 1.6\times10^{3}$ at a $2\degr$ sky error % src: docs/derivations/G2a_completion_sky_marginal_4pi.md section 7 item 5
 and $\approx 1.8\times10^{5}$ at the median EMRI localization of $0.2\,\mathrm{deg}^2$ in our simulated campaign. % src: docs/derivations/G2a_completion_sky_marginal_4pi.md sections 4 and 7
 Crucially, this factor multiplies $B_{\mathrm{num}}$ alone, not the in-catalogue term $\beta_G L_{\mathrm{cat}}$, so it does not cancel in the per-event mixture $p_i(h) = [\beta_G(h) L_{\mathrm{cat}}(h) + B_{\mathrm{num}}(h)]/D(h)$: it silently converts the estimator into a completion-dominated one, with the catalogue information suppressed by three to five orders of magnitude.
 

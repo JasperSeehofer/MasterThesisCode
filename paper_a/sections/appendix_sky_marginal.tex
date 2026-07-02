@@ -11,7 +11,7 @@ in the coordinates $x = (\phi, \theta, u)$, where $(\phi,\theta)$ are the
 ecliptic azimuth and polar angle and $u \equiv d_L/\hat d_L$ is the luminosity
 distance in units of its point estimate $\hat d_L$:
 \begin{equation}
-  p(x_{\rm GW} \mid \phi, \theta, d_L)
+  p(x_\mathrm{GW} \mid \phi, \theta, d_L)
   \simeq \mathcal{N}_3\big((\phi,\theta,u);\,\mu,\,\Sigma\big),
   \qquad \mu = (\hat\phi, \hat\theta, 1),
   \label{eq:app:sky:gauss}
@@ -32,10 +32,10 @@ With the uniform sky prior $p(\Omega) = 1/(4\pi)$ and the redshift prior
 uniform in comoving volume--time \citep{Gray:2019ksv}, the completion-term
 numerator is
 \begin{equation}
-  B_{\rm num}(h) = \int_{z_-}^{z_+} \mathrm{d}z\, \big[1 - f_k(z)\big]
+  B_\mathrm{num}(h) = \int_{z_-}^{z_+} \mathrm{d}z\, \big[1 - f_k(z)\big]
   \left[ \int_{S^2} \frac{\mathrm{d}\Omega}{4\pi}\,
   \mathcal{N}_3\big((\phi,\theta,u(z,h));\,\mu,\Sigma\big) \right]
-  \frac{\mathrm{d}V_c}{\mathrm{d}z\,\mathrm{d}\Omega}\, \frac{1}{1+z},
+  \frac{\mathrm{d}V_\mathrm{c}}{\mathrm{d}z\,\mathrm{d}\Omega}\, \frac{1}{1+z},
   \label{eq:app:sky:bnum}
 \end{equation}
 where $f_k(z)$ is the catalogue completeness in the event's sky pixel,
@@ -60,14 +60,14 @@ width on top of a $\sim 1/(2\pi\sigma_\phi\sigma_\theta)$ peak prefactor.
 Since $\mathcal{N}_2$ integrates to unity under
 $\mathrm{d}\phi\,\mathrm{d}\theta$, the sky integral in
 equation~\eqref{eq:app:sky:bnum} reduces exactly to
-$\bar p_{\rm GW}(u) = (4\pi)^{-1}\,\mathcal{N}_1(u;1,\Sigma_{uu})\,
+$\bar p_\mathrm{GW}(u) = (4\pi)^{-1}\,\mathcal{N}_1(u;1,\Sigma_{uu})\,
 \mathbb{E}_{\mathcal{N}_2}[\sin\theta]$. Extending the narrow sky Gaussian to
 the plane gives
 $\mathbb{E}_{\mathcal{N}_2}[\sin\theta] = \sin(\mu_{\theta|u})\,
 \exp[-(\Sigma_{\omega|u})_{\theta\theta}/2]$, so the exact narrow-beam
 isotropic sky marginal is
 \begin{equation}
-  \bar p_{\rm GW}(u)
+  \bar p_\mathrm{GW}(u)
   = \frac{\sin(\mu_{\theta|u})\,
     \mathrm{e}^{-(\Sigma_{\omega|u})_{\theta\theta}/2}}{4\pi}\,
     \mathcal{N}_1\big(u;\,1,\,\Sigma_{uu}\big)
@@ -76,8 +76,8 @@ isotropic sky marginal is
   \label{eq:app:sky:marginal}
 \end{equation}
 At the median sky-localization error of the simulated campaign,
-$\Delta\Omega \approx 0.2\,{\rm deg}^2 = 6.1\times10^{-5}\,{\rm sr}$
-($\sigma_\theta \approx \sigma_\phi \approx 3.3\times10^{-3}\,{\rm rad}$), % src: docs/derivations/G2a_completion_sky_marginal_4pi.md §4
+$\Delta\Omega \approx 0.2\,\mathrm{deg}^2 = 6.1\times10^{-5}\,\mathrm{sr}$
+($\sigma_\theta \approx \sigma_\phi \approx 3.3\times10^{-3}\,\mathrm{rad}$), % src: docs/derivations/G2a_completion_sky_marginal_4pi.md §4
 the residual approximations are all negligible: truncating the Gaussian
 support to the coordinate chart costs
 $\mathcal{O}\big(\mathrm{e}^{-\hat\theta^2/2\sigma_\theta^2}\big)$; the
@@ -92,8 +92,8 @@ That factor is where the deviation occurred: the marginal was first
 implemented with $\sin\hat\theta \to 1$. Because
 equation~\eqref{eq:app:sky:gauss} is a coordinate density while the isotropic
 prior is per-steradian, the exact marginal retains the Jacobian evaluated
-under the beam; dropping it over-weights $B_{\rm num}$ relative to the
-in-catalogue term $\beta_G L_{\rm cat}$ by $1/\sin\hat\theta$ per event ---
+under the beam; dropping it over-weights $B_\mathrm{num}$ relative to the
+in-catalogue term $\beta_G L_\mathrm{cat}$ by $1/\sin\hat\theta$ per event ---
 median $\approx 1.15$ and mean $\pi/2 \approx 1.57$ for isotropically % src: docs/derivations/G2a_completion_sky_marginal_4pi.md §4–§5
 distributed events, unbounded only toward the ecliptic poles, where events are
 in any case excluded by the Fisher condition-number gate. The factor is
@@ -103,12 +103,12 @@ per-event likelihood; it does not cancel in the normalized posterior. Neither
 dimensional analysis nor a re-reading of the Gaussian rescues it: interpreting
 the sky Gaussian as a per-steradian density instead displaces the same
 $\sin\theta$ inconsistency into the in-catalogue branch, and the
-${\rm rad}^2 \leftrightarrow {\rm sr}$ identification under which
-$B_{\rm num}$ and $\beta_G L_{\rm cat}$ are dimensionally commensurable is
+$\mathrm{rad}^2 \leftrightarrow \mathrm{sr}$ identification under which
+$B_\mathrm{num}$ and $\beta_G L_\mathrm{cat}$ are dimensionally commensurable is
 precisely where an $\mathcal{O}(1)$ dimensionless Jacobian hides. The
 pixelated formulation of the completeness framework, by contrast, is immune by
 construction: equal-area sky pixels implement the $\sin\theta$ measure exactly
-\citep{MISSING:Gray2022-pixelated}. % MISSING CITATION: Gray et al. 2022, "A pixelated approach to galaxy catalogue incompleteness: improving the dark siren measurement of the Hubble constant", MNRAS 512, 1127, arXiv:2111.04629
+\citep{Gray:2021sew}.
 The omission is sub-leading --- three orders of magnitude below the
 peak-density error of Section~\ref{sec:pitfall} --- and was found by this
 derivation and corrected in the analysis code used for all results in this
@@ -118,7 +118,7 @@ Equation~\eqref{eq:app:sky:marginal} passes four limiting cases. For a
 complete catalogue, $f_k \to 1$, the integrand of
 equation~\eqref{eq:app:sky:bnum} vanishes and the likelihood reduces to the
 pure in-catalogue form of \citet{Gray:2019ksv}. For an empty catalogue,
-$f_k \to 0$, $B_{\rm num}$ reduces to the catalogue-free volume-prior
+$f_k \to 0$, $B_\mathrm{num}$ reduces to the catalogue-free volume-prior
 likelihood --- the GW distance shell weighted by the comoving-volume prior. As
 the sky localization sharpens, equation~\eqref{eq:app:sky:marginal} stays
 finite and constant --- a perfectly localized event retains only the prior
@@ -129,8 +129,8 @@ $\sigma_{d_L} \to 0$, $\mathcal{N}_1 \to \delta(u-1)$ and the result remains
 finite, the $\mathrm{d}z/\mathrm{d}u$ Jacobian emerging automatically because
 the quadrature is carried out in $z$. The magnitude ratio between the replaced
 and corrected evaluations, $4\pi/(2\pi\sigma_\phi\sigma_\theta) =
-2/(\sigma_\phi\sigma_\theta)$, is $\approx 1.6\times10^{3}$ at a $2^\circ$ sky
-error and $\approx 1.8\times10^{5}$ at the median $0.2\,{\rm deg}^2$ % src: docs/derivations/G2a_completion_sky_marginal_4pi.md §7 item 5
+2/(\sigma_\phi\sigma_\theta)$, is $\approx 1.6\times10^{3}$ at a $2\degr$ sky
+error and $\approx 1.8\times10^{5}$ at the median $0.2\,\mathrm{deg}^2$ % src: docs/derivations/G2a_completion_sky_marginal_4pi.md §7 item 5
 localization: this is the $10^{3}$--$10^{5}$ over-weighting of the completion
 term whose removal drives the de-railing of the posterior demonstrated in
 Sections~\ref{sec:pitfall} and \ref{sec:realdata}.

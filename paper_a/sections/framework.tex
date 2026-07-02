@@ -125,7 +125,7 @@ generic host weights $p(s\mid z)\,p(s\mid M)$ of \citet{Gray:2019ksv}
 with the per-MBH EMRI rate $R_\mathrm{eff}(M)$ of \citet{Babak:2017tow}
 and the detector-frame time dilation $1/(1+z)$.  The numerator sum
 runs over the galaxies $\mathcal{G}_i$ inside the event's
-three-dimensional localisation region (galaxies outside it are
+three-dimensional localization region (galaxies outside it are
 exponentially suppressed by equation~\eqref{eq:gwlike}); the choice of
 the \emph{denominator} set $\mathcal{G}_i^{\mathrm{sel}}$ --- the same local
 set, or the entire catalogue as in the published form of
@@ -159,14 +159,14 @@ $z_g \pm \sigma_{z,g}$ says about the host's true redshift.  We write
 it in the general form
 \begin{equation}
   p_g(z) \;=\;
-  \frac{\mathcal{N}\big(z_g;\, z,\, \sigma_{z,g}\big)\;\Pi(z)}{Z_g},
+  \frac{\mathcal{N}\big(z_g;\, z,\, \sigma_{z,g}^2\big)\;\Pi(z)}{Z_g},
   \qquad
   Z_g = \int \mathrm{d}z'\;
-  \mathcal{N}\big(z_g;\, z',\, \sigma_{z,g}\big)\;\Pi(z'),
+  \mathcal{N}\big(z_g;\, z',\, \sigma_{z,g}^2\big)\;\Pi(z'),
   \label{eq:kernel}
 \end{equation}
 % src: docs/derivations/G2b_host_z_volume_prior.md Eq. (1.4)
-where $\mathcal{N}(z_g; z, \sigma_{z,g})$ is the likelihood of the
+where $\mathcal{N}(z_g; z, \sigma_{z,g}^2)$ is the likelihood of the
 catalogued value given a true redshift $z$, $\Pi(z)$ is a population
 prior on host redshifts, and $Z_g$ normalizes each galaxy to unit
 prior mass.  The bare choice $\Pi \equiv 1$ (kernel $=$ the catalogue
@@ -184,8 +184,7 @@ coordinate, the redshifted-mass fraction $M_z/\hat M_z$ where
 $M_z = M(1+z)$ and $M$ is the source-frame host MBH mass.  The
 $M_z$ direction is marginalized analytically against a per-galaxy
 host-mass kernel $p_g(M)$ using the standard conditional-Gaussian
-decomposition \citep{MISSING:Bishop2006-PRML},
-% MISSING CITATION: C. M. Bishop, "Pattern Recognition and Machine Learning", Springer 2006, Eqs. (2.81)-(2.82)
+decomposition \citep{Bishop2006},
 and the corresponding selection factor integrates
 $p_\mathrm{det}(d_L, M_z, \Omega_g)$ over the same kernels.  This
 channel has no analogue in \citet{Gray:2019ksv}; its construction and
@@ -209,8 +208,7 @@ reads
 % src: docs/derivations/G2b_host_z_volume_prior.md Eq. (1.3); docs/derivations/G2a_completion_sky_marginal_4pi.md Eq. (4)
 Let $f(z, \Omega) \in [0,1]$ denote the (rate-weighted) completeness
 of the catalogue, evaluated per HEALPix pixel, $f_k(z)$ for pixel $k$
-\citep{MISSING:Gray2022-pixelated}.
-% MISSING CITATION: R. Gray, C. Messenger, J. Veitch, "A Pixelated Approach to Galaxy Catalogue Incompleteness: Improving the Dark Siren Measurement of the Hubble Constant", MNRAS 512 (2022) 1127, arXiv:2111.04629
+\citep{Gray:2021sew}.
 The numerator of the completion term is then the population-weighted,
 incompleteness-weighted, sky-marginalized measurement likelihood
 \begin{equation}
@@ -317,7 +315,7 @@ once --- never zero times, never twice.
 % src: docs/derivations/G2b_host_z_volume_prior.md §3 ("dV_c counted once" rule)
 Requirement (i) is satisfied by construction in
 equation~\eqref{eq:lcat}.  Requirement (ii) constrains the pair
-$\big(\Pi,\, \mathcal{G}_i^{\rm sel}\big)$: with the bare kernel
+$\big(\Pi,\, \mathcal{G}_i^\mathrm{sel}\big)$: with the bare kernel
 $\Pi \equiv 1$, the in-catalogue channel implicitly asserts a host
 population that is uniform in $z$ while the completion and selection
 integrals assert one uniform in comoving volume, and the mixture in
