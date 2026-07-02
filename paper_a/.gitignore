@@ -1,0 +1,8 @@
+main.pdf
+*.aux
+*.log
+*.out
+*.bbl
+*.blg
+build*.log
+bib.log
