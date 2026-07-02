@@ -1,0 +1,131 @@
+{
+  "version": 1,
+  "round": 1,
+  "stage_id": "reader",
+  "stage_kind": "reader",
+  "manuscript_path": "paper_a/main.tex",
+  "manuscript_sha256": "af60a4304bfca7e325a5934f291509e93439a954df61afe0c76f78094d4dc7e1",
+  "claims_reviewed": ["CLM-001", "CLM-002", "CLM-003", "CLM-004", "CLM-005", "CLM-006", "CLM-007", "CLM-008", "CLM-009", "CLM-010", "CLM-011", "CLM-012", "CLM-013", "CLM-014", "CLM-015", "CLM-016", "CLM-017", "CLM-018", "CLM-019", "CLM-020", "CLM-021"],
+  "summary": "Main claim: the railed Hubble-constant posterior of an independently implemented Gray-et-al.-family galaxy-catalogue dark-siren estimator (simulated LISA EMRI campaign at injected h=0.73 against the real GLADE+ catalogue) is a curable prior-consistency artifact of the completion-term normalization, not photometric information starvation -- restoring the isotropic 1/(4pi) sky marginal flips the rail from h=0.86 to h=0.60, and either prior-consistent repair (local ratio-of-sums or comoving-volume kernel deconvolution) de-rails the posterior to an interior peak at the injected truth on identical data, while synthetic known-truth tests show the bare-Gaussian kernel carries an Eddington-type sigma_z^2 bias that collapses frequentist coverage. The paper's logic is a coherent diagnose-predict-test arc (three defects -> sign-flip prediction -> de-rail matrix + ablation -> coverage calibration -> field-level audit) with unusually disciplined scope statements and per-number artifact sourcing. Strongest suspected narrative weaknesses: (1) the manuscript is literally incomplete -- the full-grid, full-sample confirmation of the headline de-rail is an explicit [RESULT PENDING] placeholder; (2) regime bookkeeping: the abstract frames the work as probing the sigma_z/z ~ 0.7 regime, but the paper's own coverage calibration lives at sigma_z/z ~ 0.1-0.2 (sigma_z=0.035, median detected z~0.3) and the real-data section states most GLADE+ hosts in the sample carry near-spectroscopic uncertainties, so the headline regime is probed only by a subset and never receives a coverage test at that ratio; (3) an apparent internal tension in the real-data section between 'for 3331 of 3355 events the in-catalogue completion numerator evaluates to zero' and the same section's conclusion that 'the in-catalogue information was present all along'.",
+  "strengths": [
+    "Disciplined scope statements: the paper repeatedly and prominently states that events are simulated, that every claim concerns estimator calibration against a known injected truth, and it discloses the dt^2 SNR-scale defect of the seed600 sample rather than hiding it.",
+    "A falsifiable sign-flip prediction (up-rail -> down-rail -> interior peak) stated before the test and then observed on identical data, with a two-factor ablation cleanly separating kernel consistency (the de-railing factor) from the global-vs-local denominator (the residual +0.03).",
+    "Independent, deterministic, released P-P/coverage harness (no production-code imports, paired per-realization seeds, regression-pinned), giving the calibration claim a defensible independence argument.",
+    "Quantitative mechanism verification: the Eddington-in-z sigma_z^2 law is checked against measured biases across a factor 11 in sigma_z^2 with a stable implied coefficient, not just asserted.",
+    "Term-by-term mapping onto the published Gray et al. equations with every deviation declared as deliberate rather than silently absorbed, plus an honest partial-fix matrix in the postmortem including its own failed repairs.",
+    "A systematic-error budget with explicit dispositions (fixed / quoted / campaign) and magnitudes, including items unfavourable to the authors (timeout selection, Omega_m fiducial)."
+  ],
+  "findings": [
+    {
+      "issue_id": "REF-R001",
+      "claim_ids": ["CLM-017", "CLM-003"],
+      "severity": "major",
+      "summary": "The manuscript contains an explicit [RESULT PENDING] placeholder for the full-scale confirmation (all 3375 events, 38-value grid, volume_deconv default); the headline de-rail evidence therefore currently rests entirely on a 494-event subsample and a seven-point grid.",
+      "rationale": "This is an acknowledged, intentional placeholder (cluster jobs 5698617/5698618 queued), not a hidden omission, and the paper is honest that the matrix rests on the subsample. But a manuscript cannot go to referees with a pending central-confirmation slot, and if the full-grid result were not peaked near 0.73 the de-rail narrative would need revision. Recorded as pending evidence, not as misconduct.",
+      "evidence_refs": ["paper_a/sections/realdata.tex#the-de-rail-matrix", ".planning/HANDOFF-DERAIL-CLUSTER-CONFIRM-20260702.md"],
+      "manuscript_locations": ["paper_a/sections/realdata.tex:73", "paper_a/sections/conclusions.tex:73-77"],
+      "support_status": "unclear",
+      "blocking": true,
+      "required_action": "Fill the placeholder with the actual full-grid combined-posterior result before any submission decision; if the result deviates from the expected interior peak near 0.73, revise the de-rail claims accordingly."
+    },
+    {
+      "issue_id": "REF-R002",
+      "claim_ids": ["CLM-011", "CLM-013", "CLM-004"],
+      "severity": "major",
+      "summary": "Regime bookkeeping between the headline sigma_z/z ~ 0.7 framing and the evidence actually presented: the abstract says 'sigma_z/z ~ 0.7 in the GLADE+ regime probed here', but the coverage calibration runs at sigma_z = 0.035 with median detected z ~ 0.3 (sigma_z/z ~ 0.12, spanning ~0.1-0.2 over the detected population), and the real-data section states most GLADE+ hosts in the sample carry near-spectroscopic redshift uncertainties.",
+      "rationale": "The validation gap the paper identifies (no known-truth calibration at sigma_z/z ~ 0.7, catalogue-dominated) is precise, but the paper's own known-truth coverage test does not occupy that regime either: it demonstrates calibration at photometric absolute width sigma_z = 0.035 at redshifts where the ratio is ~0.1-0.2. The sigma_z/z ~ 0.7 figure is realized only for the low-z photometric subset (e.g. z_g = 0.05 with sigma_z = 0.035) inside a sample dominated by near-spectroscopic hosts. Abstract and conclusions juxtapose the gap statement with the paper's coverage tests in a way that invites reading the harness as closing the sigma_z/z ~ 0.7 gap, which is stronger than what is shown. This is central to the significance framing, so it cannot be deferred as presentation polish.",
+      "evidence_refs": ["paper_a/sections/abstract.tex", "paper_a/sections/coverage.tex#sec:coverage:harness", "paper_a/sections/realdata.tex", "paper_a/sections/conclusions.tex"],
+      "manuscript_locations": ["paper_a/sections/abstract.tex:7-9", "paper_a/sections/coverage.tex:12-13", "paper_a/sections/realdata.tex:71", "paper_a/sections/conclusions.tex:44-50"],
+      "support_status": "partially_supported",
+      "blocking": true,
+      "required_action": "State explicitly, in the abstract and wherever the sigma_z/z ~ 0.7 gap is invoked, which sigma_z/z each piece of evidence occupies (coverage tests: absolute sigma_z = 0.035 at sigma_z/z ~ 0.1-0.2; real-data sample: mixed, mostly near-spectroscopic, photometric subset reaching ~0.7), and either add a coverage run at sigma_z/z ~ 0.7 or narrow the closing-the-gap language to 'a first step at photometric absolute width'."
+    },
+    {
+      "issue_id": "REF-R003",
+      "claim_ids": ["CLM-004", "CLM-013"],
+      "severity": "major",
+      "summary": "The abstract's unqualified 'the volume-deconvolved kernel is calibrated close to nominal' is supported only in the clean single-host limit; inside the full completion machinery the corrected estimator's synthetic coverage is 0.40/0.54/0.82 with a residual -0.013 bias and a compressed MAP-vs-truth slope of ~0.35 shared by all non-railing variants.",
+      "rationale": "Section 5.3 discloses these residuals and attributes them to the synthetic's completeness/interloper modelling, declaring the clean single-host test 'the decisive calibration verdict' -- but that decisiveness is asserted, not demonstrated. Since the real-data configuration is completion-dominated (w_G = 0.8175 but the completion channel carries most of the constraint per Section 6), calibration of the full machinery, not just the single-host limit, is what the real-data claim needs. The abstract-level claim should be scoped.",
+      "evidence_refs": ["paper_a/sections/coverage.tex#sec:coverage:full", "paper_a/sections/abstract.tex"],
+      "manuscript_locations": ["paper_a/sections/coverage.tex:75-77", "paper_a/sections/abstract.tex:26-29"],
+      "support_status": "partially_supported",
+      "blocking": false,
+      "required_action": "Scope the calibration claim in the abstract/conclusions to the clean single-host limit, or provide evidence (not attribution) that the full-machinery residuals are properties of the synthetic's completeness/interloper modelling rather than of the estimator."
+    },
+    {
+      "issue_id": "REF-R004",
+      "claim_ids": ["CLM-003", "CLM-010"],
+      "severity": "major",
+      "summary": "Apparent internal tension in Section 6: 'for 3331 of the 3355 events the in-catalogue completion numerator evaluates to zero at working precision' sits in the same section as 'the in-catalogue information was present all along' and a catalogue-only configuration (completion term discarded) that peaks at 0.73.",
+      "rationale": "If the in-catalogue channel is zero for 99.3 per cent of events, it is unclear what carries the catalogue-only constraint, unless (a) the 494-event subsample was chosen to have non-zero in-catalogue terms, (b) 'in-catalogue completion numerator' denotes a different object than the in-catalogue likelihood term (the phrase is ambiguous -- it reads as a hybrid of the two channels), or (c) the zeroing applies only in a particular configuration. As written, the statement appears to undercut the central 'information was present all along' narrative and needs disambiguation before technical review can adjudicate it.",
+      "evidence_refs": ["paper_a/sections/realdata.tex#the-de-rail-matrix"],
+      "manuscript_locations": ["paper_a/sections/realdata.tex:54", "paper_a/sections/postmortem.tex:11"],
+      "support_status": "unclear",
+      "blocking": true,
+      "required_action": "Define precisely which quantity evaluates to zero for 3331/3355 events and in which configuration, state how the 494-event subsample was selected relative to that zeroing, and reconcile the statement with the catalogue-only row of Table 2."
+    },
+    {
+      "issue_id": "REF-R005",
+      "claim_ids": ["CLM-003", "CLM-016"],
+      "severity": "minor",
+      "summary": "The abstract and conclusions quote 'interior peak at the injected truth, h = 0.73' without noting that the de-rail matrix uses a seven-point grid that contains 0.73 as a grid point with +-0.03 neighbours, so peak-location agreement is demonstrated only at that resolution.",
+      "rationale": "The body is candid ('computational economy', 'coarse seven-point grid', full 38-point confirmation pending), and the posterior means (0.730, 0.740) add support beyond the MAP. But the abstract-level phrasing implies a precision the grid cannot deliver until the pending full-grid run lands.",
+      "evidence_refs": ["paper_a/sections/realdata.tex#the-de-rail-matrix", "paper_a/sections/abstract.tex"],
+      "manuscript_locations": ["paper_a/sections/realdata.tex:18", "paper_a/sections/abstract.tex:22-25"],
+      "support_status": "partially_supported",
+      "blocking": false,
+      "required_action": "Either qualify the abstract claim with the grid resolution, or update it with the full 38-point-grid result once available (which also resolves REF-R001)."
+    },
+    {
+      "issue_id": "REF-R006",
+      "claim_ids": ["CLM-011", "CLM-012"],
+      "severity": "minor",
+      "summary": "The negative universal novelty claim ('no published pipeline has a known-truth calibration test at sigma_z/z ~ 0.7, catalogue-dominated') survives only under its precise two-condition conjunction, and the paper itself cites CHIMERA's known-truth photometric mocks (sigma_z = 0.05(1+z), broadened-but-unbiased H0) that approach the gap.",
+      "rationale": "Section 8 draws the boundary carefully (CHIMERA's mocks are known-truth and photometric but at sigma_z/z below ~0.5 and arguably not catalogue-information-dominated), but the abstract and conclusions restate the claim without the full conjunction. Negative-existence claims across a field are fragile and rest here on the authors' own four-pipeline pinned-version audit; the literature stage must verify no other known-truth photometric calibration exists (including post-audit gwcosmo LOS work and any mock data challenges).",
+      "evidence_refs": ["paper_a/sections/codes.tex", "paper_a/sections/abstract.tex"],
+      "manuscript_locations": ["paper_a/sections/codes.tex:36", "paper_a/sections/codes.tex:42", "paper_a/sections/abstract.tex:30-35"],
+      "support_status": "unclear",
+      "blocking": false,
+      "required_action": "Restate the novelty claim with its full conjunction (known-truth AND catalogue-information-dominated AND sigma_z/z ~ 0.7) everywhere it appears; literature stage to independently verify the negative claim."
+    },
+    {
+      "issue_id": "REF-R007",
+      "claim_ids": ["CLM-014"],
+      "severity": "minor",
+      "summary": "The framework section declares 'All redshifts z are CMB-frame redshifts', but the budget section discloses that the committed baselines of Section 6 used heliocentric redshifts (measured net effect ~ +0.15 per cent on H0).",
+      "rationale": "The discrepancy is disclosed and quantified as negligible against the Delta-MAP ~ 0.1 effects at issue, but the framework's blanket convention statement is contradicted by the actual data underlying the headline tables; a one-line qualification in Section 2 or 6 would fix it.",
+      "evidence_refs": ["paper_a/sections/framework.tex#sec:framework:notation", "paper_a/sections/budget.tex"],
+      "manuscript_locations": ["paper_a/sections/framework.tex:21-23", "paper_a/sections/budget.tex:29", "paper_a/sections/budget.tex:46"],
+      "support_status": "partially_supported",
+      "blocking": false,
+      "required_action": "Qualify the CMB-frame convention statement to note that the Section 6 baselines predate the catalogue rebuild and used heliocentric redshifts, with the quoted +0.15 per cent effect."
+    },
+    {
+      "issue_id": "REF-R008",
+      "claim_ids": [],
+      "severity": "minor",
+      "summary": "Submission placeholders remain: author 'TBD', affiliation 'TBD', and acknowledgements 'TBD --- funding, compute ... collaborators'.",
+      "rationale": "Purely administrative, but the manuscript cannot be submitted with these in place; recording so the pre-submission checklist catches them.",
+      "evidence_refs": ["paper_a/main.tex"],
+      "manuscript_locations": ["paper_a/main.tex:13-17", "paper_a/main.tex:85-86"],
+      "support_status": "unclear",
+      "blocking": false,
+      "required_action": "Fill author list, affiliations, and acknowledgements before submission."
+    },
+    {
+      "issue_id": "REF-R009",
+      "claim_ids": ["CLM-001", "CLM-010"],
+      "severity": "suggestion",
+      "summary": "Minor grid inconsistency across sections: the de-rail matrix uses h in [0.60, 0.86] (rail at 0.86) while the postmortem's full-sample bare run uses a 0.01-spaced grid on [0.60, 0.87] (rail at 0.87); Table 4's caption discloses the mixed provenance but the abstract quotes only the [0.60, 0.86] grid.",
+      "rationale": "Both rails are edge results and the paper explicitly warns that unconstrained maxima may lie outside the grid, so no substantive issue -- but harmonizing or footnoting the two grids would remove a small reader stumble.",
+      "evidence_refs": ["paper_a/sections/postmortem.tex", "paper_a/sections/realdata.tex#tab:derail"],
+      "manuscript_locations": ["paper_a/sections/postmortem.tex:3", "paper_a/sections/postmortem.tex:15"],
+      "support_status": "supported",
+      "blocking": false,
+      "required_action": "Add a one-line note reconciling the [0.60, 0.86] seven-point diagnostic grid with the [0.60, 0.87] 0.01-spaced full-sample grid."
+    }
+  ],
+  "proof_audits": [],
+  "confidence": "medium",
+  "recommendation_ceiling": "major_revision"
+}

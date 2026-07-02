@@ -1,0 +1,359 @@
+{
+  "version": 1,
+  "round": 1,
+  "stage_id": "math",
+  "stage_kind": "math",
+  "manuscript_path": "paper_a/main.tex",
+  "manuscript_sha256": "af60a4304bfca7e325a5934f291509e93439a954df61afe0c76f78094d4dc7e1",
+  "claims_reviewed": [
+    "CLM-001",
+    "CLM-002",
+    "CLM-003",
+    "CLM-004",
+    "CLM-005",
+    "CLM-006",
+    "CLM-007",
+    "CLM-008",
+    "CLM-009",
+    "CLM-010",
+    "CLM-013",
+    "CLM-014",
+    "CLM-015",
+    "CLM-016",
+    "CLM-017",
+    "CLM-019",
+    "CLM-020"
+  ],
+  "summary": "Key equations checked: the paper's central mathematics is sound and, unusually, almost every quoted number was independently re-derivable or traceable. (1) The assembled likelihood p_i = [beta_G L_cat + B_num]/D was verified as an exact algebraic rearrangement of the two-hypothesis mixture, finite as f->1, with the 1/(4pi) and h^-3 common factors cancelling as claimed and both numerator channels carrying Mpc^3 sr^-2 as stated. (2) The Eddington-in-z law was re-derived (q = 2/(IE) - E'/E - 1/(1+z); Delta_h = -h (dlnD/dz) sigma_z^2 q) and its numbers recomputed from scratch: q(0.05)=38.1, K(0.25)=20.1, K(0.30)=13.4, K(0.05)=569, scaling ratios 1:4.8:10.0 vs sigma_z^2 = 1:5.44:11.1, K_meas 17.1-19.6, leading-order shifts +0.0467/+0.0953 -- all match the manuscript to quoted precision. (3) The sky-marginal factorization (marginal Sigma_uu, E[sin theta] = sin(mu) e^{-s^2/2}, over-weight 2/(sigma_phi sigma_theta) = 1.6e3 at 2 deg and 1.8e5 at 0.2 deg^2, median 1.15/mean pi/2 of 1/sin theta) was recomputed and is exact within its declared approximations; all four stated limits check. (4) The Eddington-in-M shifted Gaussian was re-derived (shift sigma_M^2 alpha_g/M_g = M_g alpha_g sigma_rel^2, exact under the linear-in-M expansion of ln R_eff). (5) Every de-rail-matrix, ablation, catalogue-only, beta_G-tilt, and Eddington-M number was traced into its JSON artifact and matches. Cross-checks and limits: spectroscopic limits, f->1/f->0, sigma_sky->0, sigma_dL->0 all verified. The one substantive failure found is the Section 6 '3331 of 3355 events have zero in-catalogue completion numerator' sentence (Stage 1's REF-R004): direct inspection of the diagnostic code at the commission-base tag shows the quoted log value 'numerator=0.000' is the fraction of quadrature weight OUTSIDE the p_det grid (i.e. zero off-grid weight, full coverage), not a zero numerator value; the sentence is a misreading of a warning log, is unsupported, contradicts the same section's 'all 3355 events fall inside the p_det grid' and w_G = 0.8175, and its removal actually dissolves the internal tension Stage 1 flagged -- the in-catalogue numerators were never zero and the catalogue-only row is consistent. Approximation notes: the population-averaged K(zbar) is acknowledged but not derived (zbar_eff fitted post hoc); the -0.002 sigma_z-independent floor is subtracted empirically without a model; the w_g-outside-the-integral approximation is declared but sits in tension with the mapping table's 'exact' label; the Eddington-M quadrature domain at sigma_rel ~ 1 (negative-mass support) is unstated. Unchecked: Gray A14-A19 transcription fidelity against the published paper (rests on the external derivation doc), end-to-end production-code implementation of eq:assembled, the pp_coverage harness internals (numbers traced to clean_pp_summary.json only), and the [RESULT PENDING] full-grid confirmation.",
+  "strengths": [
+    "Independent recomputation confirms the Eddington-in-z coefficients to three significant figures (q(0.05)=38.11 vs 38.1; K(0.25)=20.12 vs 20.1; K(0.30)=13.35 vs 13.4; K(0.05)=568.6 vs 569), the sigma_z^2 scaling ratios, and the exact-vs-leading-order shift table; this is a genuinely verified mechanism, not a plausibility argument.",
+    "The sky-marginal appendix is mathematically exact within declared, quantified approximations: the Gaussian conditional decomposition correctly carries the marginal (not conditional) distance variance, E[sin theta] = sin(mu) e^{-s^2/2} is an exact identity under the plane extension, and the 1.6e3/1.8e5 over-weight factors and 1.15/pi-over-2 Jacobian statistics all recompute.",
+    "The assembled-likelihood rearrangement is an exact identity with correct cancellation bookkeeping (1/(4pi), h^-3, beta_Gbar) and consistent units across both numerator channels; the f->1 finiteness claim is correct where Gray's A19 form is 0/0.",
+    "Every headline number in the de-rail matrix, ablation cube, beta_G tilt table, and Eddington-M impact statement traces exactly to its named artifact (derail_matrix_results.json, G3_ablation_cube.json, G1_beta_g_check.json, G7row9_eddington_m_impact.json, crux_results.json), including the 98/68/77 per cent mass fractions in figure captions.",
+    "Approximations are mostly declared rather than hidden: the w_g placement, the leading-order-vs-exact deconvolution regime boundary (sigma_z q > 1 at GLADE-like z_g), the K population-averaging caveat, and the moment-matching fallback where the log-linear tilt predicts the wrong sign are all stated in the text."
+  ],
+  "findings": [
+    {
+      "issue_id": "REF-M001",
+      "claim_ids": [
+        "CLM-001",
+        "CLM-003",
+        "CLM-010"
+      ],
+      "severity": "major",
+      "summary": "The Section 6 sentence 'for 3331 of the 3355 events the in-catalogue completion numerator evaluates to zero at working precision (more than 5 per cent of the quadrature weight falls outside the p_det grid)' misreads a diagnostic log and is false as written; this adjudicates Stage 1's REF-R004.",
+      "rationale": "The STAT-04 diagnostic in bayesian_statistics.py (identical at the commission-base tag that produced the crux logs, lines 1889-1894 there) logs 'Event %d: >5%% quadrature weight outside P_det grid -- numerator=%.3f, denominator=%.3f', where the printed values are the FRACTIONS of quadrature weight outside the p_det grid for the numerator and denominator integration windows. The red-team note (crux_realdata.md) read '3331/3355 events emit numerator=0.000' as 'the in-catalogue completion numerator is ~0', but numerator=0.000 means zero off-grid weight, i.e. the numerator window is FULLY covered by the grid; the warning fired because the per-galaxy selection-window (galaxy +/-4 sigma_z mapped to d_L) fraction exceeded 5 per cent, where p_det is zero-filled above the injection horizon by design. The manuscript sentence therefore (a) asserts the opposite of what the log shows, (b) contradicts the same section's statement that all 3355 events fall inside the p_det grid (realdata.tex:9), and (c) is in unresolved tension with w_G = 0.8175 and with the catalogue-only row of Table 2 peaking at 0.73. Correcting it dissolves the apparent internal contradiction Stage 1 flagged: the in-catalogue numerators were never zero, so 'the in-catalogue information was present all along' is consistent with the artifacts. However, the sentence's inference -- 'the completion machinery, not the host matches, carries most of the constraint' -- loses its stated evidence and must be re-supported or removed.",
+      "evidence_refs": [
+        "master_thesis_code/bayesian_inference/bayesian_statistics.py:1996-2049",
+        "results/commission_20260701/redteam/crux_realdata.md",
+        "results/commission_20260701/redteam/crux_results.json"
+      ],
+      "manuscript_locations": [
+        "paper_a/sections/realdata.tex:54",
+        "paper_a/sections/realdata.tex:9",
+        "paper_a/sections/realdata.tex:10"
+      ],
+      "support_status": "unsupported",
+      "blocking": true,
+      "required_action": "Rewrite the sentence to state what the diagnostic actually measured (for 3331/3355 events at least one candidate host's selection-integral window extends beyond the p_det grid by >5 per cent of its quadrature weight, where p_det is zero-filled above the injection horizon), or delete it. If the completion-dominance claim is retained, support it with a direct per-event decomposition of the log-likelihood h-dependence into catalogue and completion channels; reconcile with w_G = 0.8175 and the catalogue-only row."
+    },
+    {
+      "issue_id": "REF-M002",
+      "claim_ids": [
+        "CLM-017",
+        "CLM-003"
+      ],
+      "severity": "major",
+      "summary": "The full-grid, full-sample confirmation of the headline de-rail is an explicit [RESULT PENDING] placeholder; mathematically, all interior-peak evidence currently rests on a 494-event subsample over a seven-point grid whose resolution near the truth is +/-0.03.",
+      "rationale": "Same evidentiary gap as Stage 1's REF-R001, restated from the math side: the de-rail matrix numbers themselves were verified against derail_matrix_results.json and are internally consistent (posterior means 0.7298/0.7398 add sub-grid information beyond the MAP), but a seven-point grid with 0.73 as a grid point cannot distinguish an interior peak at 0.73 from one at, say, 0.74-0.75, and the 3375-event/38-point run that would settle this is pending. No stage recommendation above major_revision is possible while a central result slot is empty.",
+      "evidence_refs": [
+        "results/commission_20260701/redteam/derail_matrix_results.json",
+        ".planning/HANDOFF-DERAIL-CLUSTER-CONFIRM-20260702.md"
+      ],
+      "manuscript_locations": [
+        "paper_a/sections/realdata.tex:73"
+      ],
+      "support_status": "unclear",
+      "blocking": true,
+      "required_action": "Fill the placeholder with the completed full-grid combined-posterior result and revise the de-rail claims if the interior peak deviates from the expected location."
+    },
+    {
+      "issue_id": "REF-M003",
+      "claim_ids": [
+        "CLM-009",
+        "CLM-005"
+      ],
+      "severity": "minor",
+      "summary": "The beta_G tilt percentages mix two conventions and one endpoint is misquoted: 'end-to-end tilt of -17.2 per cent' is the difference of h_ref-normalized shape endpoints (1.0854 - 0.9135 = 0.172), not a multiplicative change (which is -15.8 per cent), and '+8.7 per cent at h = 0.60' should be +8.5 per cent (JSON shape 1.08540).",
+      "rationale": "Recomputed from G1_beta_g_check.json: raw ratio 8.9567 -> 22.1973 (factor 2.478, matching '2.48'); h^3-corrected shape 1.08540 -> 0.91348, i.e. endpoints +8.54 and -8.65 per cent about h_ref and a multiplicative end-to-end change of -15.8 per cent. The quoted -17.2 matches the JSON's end_to_end_tilt_h3_corrected only under the endpoint-difference convention, which the manuscript never defines; the same convention issue affects the raw '+93 per cent' (multiplicative would be +148 per cent). None of this changes the qualitative conclusion (a real, smooth, monotonic h-tilt that does not cancel), but the numbers as printed are not reproducible without the undefined convention and one endpoint is off by 0.2 percentage points.",
+      "evidence_refs": [
+        ".planning/gate/G1_beta_g_check.json"
+      ],
+      "manuscript_locations": [
+        "paper_a/sections/pitfall.tex:71",
+        "paper_a/sections/appendix_beta_g.tex:74-79",
+        "paper_a/sections/appendix_beta_g.tex:57-59"
+      ],
+      "support_status": "partially_supported",
+      "blocking": false,
+      "required_action": "Define the tilt convention (difference of h_ref-normalized shape endpoints, in percentage points) once in Appendix E, correct '+8.7' to '+8.5' at h = 0.60, and either relabel the raw '+93 per cent' consistently or quote the multiplicative factor only."
+    },
+    {
+      "issue_id": "REF-M004",
+      "claim_ids": [
+        "CLM-015"
+      ],
+      "severity": "minor",
+      "summary": "The Eddington-in-M implementation integrates N(M; M_g, sigma_M^2) R_eff(M) by quadrature over +/-5 sigma_M with median sigma_rel ~ 0.98, so a substantial part of the window lies at M <= 0 where R_eff is undefined; the manuscript never states how the unphysical domain is handled, and the 'width-conservative' claim for retaining sigma_M is asserted rather than shown.",
+      "rationale": "At sigma_rel ~ 1 the Gaussian carries O(15 per cent) of its mass at negative M and the +/-5 sigma_M window extends far below zero; the exact first moment therefore depends materially on the (unstated) clamp or extension of R_eff there. The sigma_rel clipping at 2 and the 0.5 per cent regression pinning against independent quadrature are stated and reassuring, but the domain convention belongs in the text since it is part of the definition of the moment being matched. Separately, 'the residual is the neglected skew, second order and width-conservative' is a plausible but underived statement about a strongly non-Gaussian regime (the paper itself shows the log-linear expansion fails there).",
+      "evidence_refs": [
+        ".planning/gate/G7row9_eddington_m_impact.json",
+        "docs/derivations/G2d_host_mass_rate_prior.md"
+      ],
+      "manuscript_locations": [
+        "paper_a/sections/appendix_eddington_m.tex:50-61"
+      ],
+      "support_status": "partially_supported",
+      "blocking": false,
+      "required_action": "State the quadrature domain convention at M <= 0 (clamp of R_eff or truncation) in Appendix D, and either justify 'width-conservative' with one line (e.g. the tilted-posterior variance bound used) or soften it to an observed property of the regression grid."
+    },
+    {
+      "issue_id": "REF-M005",
+      "claim_ids": [
+        "CLM-019"
+      ],
+      "severity": "minor",
+      "summary": "The h^-3 neutrality lemma is exact, but the corollary drawn from it -- 'the de-railing it produces on GLADE+ cannot be manufactured by the fix itself' -- outruns what the lemma proves.",
+      "rationale": "Verified: w_pop(z;h) = h^-3 wtilde(z) with wtilde proportional to I^2/[E(1+z)] follows from dV_c/dz, and the h^-3 prefactor cancels exactly in p_g(z) = N w_pop/Z_g, so the deconvolved kernel is exactly h-independent given flat LambdaCDM with fixed Omega_m. But an h-independent per-galaxy reweighting still changes the h-posterior through the data -- that is precisely its intended effect -- so h-neutrality alone cannot certify that the interior peak is not an artifact of the reweighting; a maliciously chosen h-independent kernel could move the posterior anywhere. What actually rules out manufacture is the synthetic known-truth calibration of Section 5 plus the agreement of two structurally different repairs. The lemma excludes only the specific artifact channel of a spurious global h-scaling per event (which over N events would be enormous), and the sentence should say so.",
+      "evidence_refs": [
+        "paper_a/sections/appendix_volume_deconv.tex"
+      ],
+      "manuscript_locations": [
+        "paper_a/sections/estimators.tex:88",
+        "paper_a/sections/estimators.tex:43"
+      ],
+      "support_status": "partially_supported",
+      "blocking": false,
+      "required_action": "Narrow the corollary to what the lemma proves (no explicit h-dependence enters L_cat through the kernel normalization; any posterior change is a pure data reweighting) and attribute the no-manufacture conclusion to the synthetic calibration and the two-estimator agreement."
+    },
+    {
+      "issue_id": "REF-M006",
+      "claim_ids": [
+        "CLM-020"
+      ],
+      "severity": "minor",
+      "summary": "Table C1 labels the N_g/D_g row 'exact' against the integrands of Gray eq. A10, while Section C3 declares that w_g is evaluated at the catalogue (M_g, z_g) and held outside the redshift integral, whereas A10 carries p(s|z_i) inside the integral -- an internal labeling tension.",
+      "rationale": "The rearrangement identity itself is airtight and the deviation is honestly declared in the text ('a known approximation of the implementation'), but a reader of the table alone would conclude the integrands match exactly, which the paper's own Section C3 denies at GLADE+ photometric widths ('not guaranteed to be second order'). The 'exact' status should be qualified in the table the way the L_cat row already is.",
+      "evidence_refs": [
+        "docs/derivations/G2c_gray_a9_a10_mapping.md"
+      ],
+      "manuscript_locations": [
+        "paper_a/sections/appendix_gray_mapping.tex:61",
+        "paper_a/sections/appendix_gray_mapping.tex:161-168"
+      ],
+      "support_status": "partially_supported",
+      "blocking": false,
+      "required_action": "Change the N_g/D_g table row status to 'exact up to w_g held outside the z-integral (Section C3)' or equivalent."
+    },
+    {
+      "issue_id": "REF-M007",
+      "claim_ids": [
+        "CLM-004"
+      ],
+      "severity": "minor",
+      "summary": "The calibration mathematics verified in Section 5 covers the clean single-host limit (eq. cov:singlehost with no completion term), not the assembled likelihood (eq:assembled); the full-machinery synthetic shows a residual -0.013 bias and a compressed MAP-vs-truth slope ~0.35 that are attributed to the synthetic's completeness/interloper modelling without derivation.",
+      "rationale": "Math-side restatement of Stage 1's REF-R003: the kernel-level claim (bare vs volume) is decisively established in the single-host limit, where I verified the estimator equations are the exact single-host reduction of Section 2. But the estimator whose de-rail is the headline result is the assembled mixture, and its only known-truth calibration evidence carries unexplained residuals. Attribution to the synthetic's modelling is plausible (the slope compression is shared by all non-railing variants, which does point away from the kernel) but remains an assertion; the 'decisive calibration verdict' designation for the clean test is a choice, not a theorem.",
+      "evidence_refs": [
+        "results/commission_20260701/scratch/d2/NOTE_calibration_findings.md",
+        "results/commission_20260701/scratch/d2/clean_pp_summary.json"
+      ],
+      "manuscript_locations": [
+        "paper_a/sections/coverage.tex:75-77"
+      ],
+      "support_status": "partially_supported",
+      "blocking": false,
+      "required_action": "Scope the abstract/conclusion calibration claim to the single-host limit, or add a diagnostic (e.g. completeness-model ablation in the synthetic) showing the full-machinery residuals move with the synthetic's completeness/interloper modelling and not with the estimator."
+    }
+  ],
+  "proof_audits": [
+    {
+      "claim_id": "CLM-006",
+      "theorem_assumptions_checked": [],
+      "theorem_parameters_checked": [],
+      "proof_locations": [
+        "paper_a/sections/estimators.tex:5-24",
+        "paper_a/sections/estimators.tex:27-43",
+        "paper_a/sections/estimators.tex:86-88"
+      ],
+      "uncovered_assumptions": [],
+      "uncovered_parameters": [],
+      "coverage_gaps": [
+        "This is a construction/definition claim audited at the specification level: the displayed equations and the code default flag were verified, but the production implementation of eq:est:lcat and eq:est:pgz (quadrature internals, localization-ball window construction) was not line-audited in this stage, consistent with the unchecked areas declared in the summary; implementation fidelity rests on the artifact trail (the regression pinnings cited in the appendices and the internal consistency of derail_matrix_results.json).",
+        "The blanket 'prior-consistent' label for local_ratio holds only under requirement (i) of the paper's own two-part prior-consistency definition (framework Section 2.6): requirement (ii) is violated because local_ratio retains the bare host-redshift kernel N(z_g; z, sigma_z^2) in L_cat while the completion channel carries the population measure w_pop -- a mismatch estimators.tex Section 4.5 itself concedes -- so the claim's unqualified 'prior-consistent' over-states what the construction achieves (PROOF-REDTEAM.md, CLM-006 gap a).",
+        "The supporting lemma 'every per-galaxy constant cancels row by row' is false for genuinely per-galaxy factors in a ratio of sums: for two galaxies with distinct per-galaxy constants c_1 != c_2, (c_1 a_1 + c_2 a_2)/(c_1 b_1 + c_2 b_2) does not reduce to (a_1 + a_2)/(b_1 + b_2), so only ball-common factors cancel -- consistent with the manuscript's own Z_g remark and appendix_beta_g's precise 'ball-common factors cancel' phrasing, both of which contradict the row-by-row wording (PROOF-REDTEAM.md, CLM-006 gap b)."
+      ],
+      "alignment_status": "partially_aligned",
+      "notes": "The constructions match what is claimed of them at every checked point. (1) local_ratio: equation eq:est:lcat as displayed has numerator and selection denominator running over the SAME localization-ball galaxy set with the SAME weights w_g and the SAME kernel p_g(z), so every per-galaxy constant cancels row by row exactly as claimed; the contrast with the global variant (full-catalogue denominator, which requires the discrete sum to track beta_G(h) up to an h-independent constant) is correctly drawn and its -17 per cent failure on GLADE+ is the separately verified Appendix E result. (2) volume_deconv: eq:est:pgz defines p_g(z) proportional to N(z_g; z, sigma_z^2) w_pop(z)/Z_g and the text places it identically in the numerator (eq:est:Ng) and denominator (eq:est:Dg), so the population measure enters exactly once on each side -- prior consistency by construction, as claimed; its two load-bearing properties (exact h^-3 neutrality via cancellation against Z_g, and the spectroscopic limit p_g -> delta(z - z_g)) were independently verified under the CLM-019 audit. (3) 'Adopted as the library default for every headline result': verified directly in code -- bayesian_statistics.py sets _normalization_mode = 'volume_deconv' as the class default (line 809) and as the evaluate()/worker signature default (lines 843, 1857) -- and every headline table number was traced to volume_deconv entries of derail_matrix_results.json during the de-rail-matrix check. No misalignment found between the claim text and the constructions."
+    },
+    {
+      "claim_id": "CLM-007",
+      "theorem_assumptions_checked": [
+        "flat LambdaCDM background with Omega_L = 1 - Omega_m",
+        "redshift-independent comoving source-frame rate density R(z)",
+        "Gaussian photometric-redshift likelihood N(z_g; z, sigma_z^2)",
+        "first-order expansion of ln w_pop about z_g valid (sigma_z q(z_g) << 1) for the leading-order form",
+        "GW data fix the luminosity distance d_L, so the posterior peaks where the model distance at the assumed host redshift matches the measured one"
+      ],
+      "theorem_parameters_checked": [
+        "sigma_z",
+        "z_g",
+        "zbar (representative detected-host redshift)",
+        "q(z)",
+        "K(zbar)",
+        "h"
+      ],
+      "proof_locations": [
+        "paper_a/sections/appendix_volume_deconv.tex:73-136",
+        "paper_a/sections/estimators.tex:45-66",
+        "paper_a/sections/pitfall.tex:13-39"
+      ],
+      "uncovered_assumptions": [],
+      "uncovered_parameters": [],
+      "coverage_gaps": [
+        "The Delta_h law is derived by a single-host distance-matching heuristic that ignores the h-dependence of the selection denominator D(h) and the MAP-vs-mean distinction; the population averaging of K over the detected distribution is acknowledged ('K must properly be averaged... convex') but never derived, so zbar_eff = 0.25-0.27 is fitted post hoc from K_meas rather than predicted from the detected population.",
+        "The sigma_z-independent estimator floor of -0.002 is subtracted empirically without a model, and the smallest-sigma_z row (0.005) is floor-dominated, so the quadratic law is verified over three, not four, scatter values."
+      ],
+      "alignment_status": "partially_aligned",
+      "notes": "All quantitative content independently recomputed and confirmed: q = 2/(IE) - E'/E - 1/(1+z) re-derived from w_pop = (dV_c/dz)/(1+z); q(0.05) = 38.11 vs quoted 38.1; K(0.25) = 20.12, K(0.30) = 13.35, K(0.05) = 568.6 vs quoted 20.1/13.4/569; low-z limit q ~ 2/z checks; sign of Delta_h (H0 low) correct; scaling ratios 1:4.77:10.0 vs sigma_z^2 = 1:5.44:11.1 and K_meas 19.6/17.1/17.6 all reproduce; expansion parameters sigma_z q = 0.19/0.57/1.33/1.91 and exact-vs-leading shifts +0.0325/+0.0467, +0.0535/+0.0953 reproduce. The claim as stated (law + measured K constant to +-8 per cent + non-perturbative regime at z_g = 0.05) is established; the gaps above are honestly disclosed in the text but remain underived."
+    },
+    {
+      "claim_id": "CLM-008",
+      "theorem_assumptions_checked": [
+        "the GW likelihood is a trivariate Gaussian in the bare coordinates (phi, theta, u)",
+        "the Gaussian is a probability density with respect to the coordinate measure dphi dtheta du, not the solid-angle measure",
+        "narrow beam: sky-localization widths sigma_phi, sigma_theta << 1 rad and the beam is away from the ecliptic poles",
+        "isotropic out-of-catalogue sky prior p(Omega) = 1/(4pi)",
+        "completeness f approximately constant across the GW sky support (for the factorized completion numerator)"
+      ],
+      "theorem_parameters_checked": [
+        "theta_hat",
+        "sigma_phi",
+        "sigma_theta",
+        "Sigma_uu",
+        "u"
+      ],
+      "proof_locations": [
+        "paper_a/sections/appendix_sky_marginal.tex:55-99",
+        "paper_a/sections/appendix_sky_marginal.tex:101-125",
+        "paper_a/sections/appendix_sky_marginal.tex:127-146"
+      ],
+      "uncovered_assumptions": [],
+      "uncovered_parameters": [],
+      "coverage_gaps": [],
+      "alignment_status": "aligned",
+      "notes": "Derivation verified step by step: the Gaussian conditional decomposition correctly assigns the MARGINAL variance Sigma_uu to the u-factor (the load-bearing distinction from the pre-fix conditional width); E_{N2}[sin theta] = sin(mu_theta|u) exp(-Sigma_theta_theta|u/2) is exact for the plane-extended Gaussian (Im E[e^{i theta}]); the error terms are quantified and recompute (sigma_theta^2/2 = 5.4e-6 vs quoted 5.6e-6 at 0.2 deg^2). Recomputed over-weight ratios: 2/(sigma_phi sigma_theta) = 1642 at 2 deg and 1.84e5 at the median localization, matching 1.6e3/1.8e5; recomputed 1/sin theta statistics for isotropic events: median 1.155, mean pi/2, matching. All four limits (f->1, f->0, sigma_sky->0 finiteness vs the divergent peak-density evaluation, sigma_dL->0) verified. The over-weight ratio quoted with '~' neglects the sqrt(1-rho^2) correlation factor and sin theta_hat, which is appropriate at its order-of-magnitude precision."
+    },
+    {
+      "claim_id": "CLM-013",
+      "theorem_assumptions_checked": [],
+      "theorem_parameters_checked": [],
+      "proof_locations": [
+        "paper_a/sections/abstract.tex:30-35",
+        "paper_a/sections/introduction.tex:100-104",
+        "paper_a/sections/conclusions.tex:36-51",
+        "paper_a/sections/coverage.tex",
+        "paper_a/sections/realdata.tex",
+        "paper_a/sections/codes.tex:9-26"
+      ],
+      "uncovered_assumptions": [],
+      "uncovered_parameters": [],
+      "coverage_gaps": [
+        "The universal quantifier 'every independently implemented dark-siren pipeline' is supported by one demonstrated instance (this pipeline) plus a structural mechanism argument; the paper's own four-pipeline survey (Section 8) finds the rail structurally excluded from gwcosmo and absent from CHIMERA, icarogw, and DarkSirensStat, so the universality holds only as a forward-looking exposure statement about a defect class, not as a demonstrated property of any existing external pipeline. The conclusions scope this correctly ('a hazard of independent implementation ... the LISA and next-generation-detector era will multiply independent implementations'); the introduction's 'for every independently implemented pipeline' is stronger than the demonstrated n = 1 evidence base.",
+        "The evidentiary chain beneath the significance claim inherits two open gaps recorded elsewhere in this stage: the full-grid confirmation of the headline de-rail is an explicit [RESULT PENDING] placeholder (REF-M002), and the decisive known-truth calibration covers the clean single-host limit rather than the assembled likelihood (REF-M007). The 'prerequisites' clause is a normative recommendation whose factual predicate (no published pipeline has a known-truth calibration test at sigma_z/z ~ 0.7 in a catalogue-information-dominated analysis) was traced to the G5 inspection artifacts as cited, but was not independently re-established against the published literature by this stage."
+      ],
+      "alignment_status": "partially_aligned",
+      "notes": "The mechanism half of the claim is established: 'rails silently under realistic photometric errors while calibrating perfectly on spectroscopic-quality validation inputs' is exactly what the verified Eddington-in-z law (bias quadratic in sigma_z, hence vanishing on spectroscopic-width input; CLM-007 audit), the Section 5 known-truth coverage results, and the Section 6 de-rail matrix jointly show, and the sigma_z^2 scaling behind the 'silent on spectroscopic validation' property was independently recomputed in this stage. The significance half is an extrapolation: from one pipeline that exhibited the rail and four surveyed pipelines that do not, to a hazard statement quantified over all future independent implementations. Read as a risk statement about a silent defect class that spectroscopic-quality validation cannot catch, it is well supported by the demonstrated mechanism; read literally as a universally quantified sentence, it outruns the evidence, and the introduction should adopt the conclusions' narrower scoping. This is a wording-strength issue on a significance claim, not a mathematical error; no new blocking finding is warranted beyond the gaps already recorded."
+    },
+    {
+      "claim_id": "CLM-015",
+      "theorem_assumptions_checked": [
+        "Gaussian mass-measurement likelihood N(M; M_g, sigma_M^2)",
+        "log-linear expansion of ln R_eff about M_g (for the exact-shifted-Gaussian form only)",
+        "a Gaussian times an exponential tilt is exactly a shifted Gaussian of unchanged width"
+      ],
+      "theorem_parameters_checked": [
+        "M_g",
+        "sigma_M",
+        "sigma_rel",
+        "alpha_g"
+      ],
+      "proof_locations": [
+        "paper_a/sections/appendix_eddington_m.tex:17-39",
+        "paper_a/sections/appendix_eddington_m.tex:41-61",
+        "paper_a/sections/appendix_eddington_m.tex:63-77"
+      ],
+      "uncovered_assumptions": [],
+      "uncovered_parameters": [],
+      "coverage_gaps": [
+        "The quadrature domain at M <= 0 is unstated: with median sigma_rel ~ 0.98 the +/-5 sigma_M window extends far into negative mass where R_eff(M) is undefined, so the 'exact first moment' being matched depends on an undeclared clamp/truncation convention (REF-M004).",
+        "The 'second order and width-conservative' characterization of the neglected skew is asserted, not derived, in a regime the paper itself shows is beyond the log-linear expansion.",
+        "The wrong-sign example (M_g = 1e5 Msun, sigma_rel = 0.55, exact mean up ~3.7 per cent against a downhill local slope) is traced to the derivation doc but not re-derivable from the manuscript alone."
+      ],
+      "alignment_status": "partially_aligned",
+      "notes": "The core identity was re-derived: linear-in-M expansion of ln R_eff with slope alpha_g/M_g gives N(M; M_g, sigma_M^2) e^{(alpha_g/M_g) M} proportional to N(M; M_g + sigma_M^2 alpha_g/M_g, sigma_M^2), i.e. M_g_eff = M_g(1 + alpha_g sigma_rel^2) exactly -- the claim's 'exactly a shifted Gaussian' is correct as conditioned. The two stated limits (sigma_M -> 0 recovers bare; alpha_g = 0 no shift) follow immediately. Empirical impact numbers verified against G7row9_eddington_m_impact.json: 1D mean shift -5.2e-5, 2D mean 0.7897 -> 0.7697, 2D edge mass 0.2159 -> 0.0229, median sigma_rel 0.9847, median dlnM -0.123, median alpha -0.130. The claim honestly acknowledges the tilted form fails at GLADE+ scatter and substitutes moment matching; the residual gaps are definitional (domain) and rhetorical (width-conservative), not sign or magnitude errors."
+    },
+    {
+      "claim_id": "CLM-019",
+      "theorem_assumptions_checked": [
+        "flat LambdaCDM, so E(z) = H(z)/H0 is independent of h and d_L(z, h) = A(z)/h factorizes",
+        "w_pop(z; h) = h^-3 wtilde(z) with wtilde(z) proportional to I^2(z)/[E(z)(1+z)]"
+      ],
+      "theorem_parameters_checked": [
+        "h",
+        "z"
+      ],
+      "proof_locations": [
+        "paper_a/sections/appendix_volume_deconv.tex:60-67",
+        "paper_a/sections/estimators.tex:43"
+      ],
+      "uncovered_assumptions": [],
+      "uncovered_parameters": [],
+      "coverage_gaps": [
+        "The conclusion clause 'the de-railing it produces on GLADE+ cannot be manufactured by the fix itself' outruns the lemma: the h^-3 cancellation proves the kernel p_g(z) is exactly h-independent, which excludes only the spurious-global-h-scaling artifact channel; an h-independent per-galaxy reweighting still changes the h-posterior through the data (that is its purpose), so the no-manufacture conclusion actually rests on the Section 5 synthetic calibration and the two-estimator agreement, not on the lemma (REF-M005)."
+      ],
+      "alignment_status": "partially_aligned",
+      "notes": "The lemma itself is verified exactly: dV_c/dz = 4pi (c/H0)^3 I^2(z)/E(z) gives w_pop = h^-3 wtilde with wtilde proportional to I^2/[E(1+z)] (recomputed), wtilde is h-independent for fixed Omega_m, and p_g(z) = N wtilde / integral(N wtilde) is exactly h-independent after the trivial numerator/denominator cancellation against Z_g. The spectroscopic limit p_g -> delta(z - z_g) also checks. Only the interpretive corollary is over-broad."
+    },
+    {
+      "claim_id": "CLM-020",
+      "theorem_assumptions_checked": [
+        "the hypotheses G and Gbar are exhaustive and exclusive",
+        "the hard apparent-magnitude threshold of Gray A14/A18 may be rewritten as the smooth per-pixel incompleteness weight 1 - f(z, Omega)",
+        "hypothesis weights w_G = beta_G/D and completion likelihood B_num/beta_Gbar as identified from Gray A14--A19"
+      ],
+      "theorem_parameters_checked": [
+        "h",
+        "f (completeness)",
+        "beta_G",
+        "beta_Gbar",
+        "D(h)"
+      ],
+      "proof_locations": [
+        "paper_a/sections/framework.tex:243-305",
+        "paper_a/sections/appendix_gray_mapping.tex:16-42",
+        "paper_a/sections/appendix_gray_mapping.tex:70-133"
+      ],
+      "uncovered_assumptions": [],
+      "uncovered_parameters": [],
+      "coverage_gaps": [
+        "Transcription fidelity of the A14-A19 identifications against the published Gray et al. (2020) equations is not verifiable from the manuscript artifact set; it rests on the external derivation document (docs/derivations/G2c_gray_a9_a10_mapping.md). The structure is consistent with the published paper as background knowledge, but this stage did not re-audit the published equations line by line.",
+        "The smooth-completeness rewriting (hard threshold -> 1 - f) is a modeling substitution declared as an assumption, not an algebraic step; the claim text correctly scopes the 'exact rearrangement' with 'up to' this rewriting, so this is a conditioning, not an error.",
+        "Table C1 labels the N_g/D_g integrand row 'exact' while Section C3 declares the w_g-held-outside-the-z-integral approximation, an internal labeling tension (REF-M006)."
+      ],
+      "alignment_status": "partially_aligned",
+      "notes": "The rearrangement identity itself was verified directly: substituting p(G|D,h) = beta_G/D, p(Gbar|D,h) = beta_Gbar/D, p(x|Gbar,D,h) = B_num/beta_Gbar into the mixture cancels beta_Gbar and yields [beta_G L_cat + B_num]/D exactly; finiteness at f -> 1 (where A19 is 0/0) checks; unit commensurability of the two numerator channels (Mpc^3 sr^-2) and the common 1/(4pi) and h^-3 cancellations were verified. The localization-ball denominator is correctly declared as a deviation with A20 as nearest analogue rather than claimed as A10."
+    }
+  ],
+  "confidence": "medium",
+  "recommendation_ceiling": "major_revision"
+}

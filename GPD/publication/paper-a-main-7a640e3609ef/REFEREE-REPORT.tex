@@ -1,0 +1,390 @@
+% template_version: 1
+% LaTeX companion to REFEREE-REPORT.md (round 1). Keep recommendation, issue
+% counts, issue IDs, and section ordering aligned with the Markdown report.
+
+\documentclass[11pt]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage[dvipsnames]{xcolor}
+\usepackage{hyperref}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{tabularx}
+\usepackage{array}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+\usepackage[most]{tcolorbox}
+
+\definecolor{ReportInk}{HTML}{12263A}
+\definecolor{ReportCrimson}{HTML}{9B2226}
+\definecolor{ReportGold}{HTML}{C76D1D}
+\definecolor{ReportSage}{HTML}{5E7D64}
+\definecolor{ReportStone}{HTML}{F6F1EA}
+\definecolor{ReportLine}{HTML}{D9D2C8}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=ReportCrimson,
+  urlcolor=ReportCrimson,
+  citecolor=ReportCrimson,
+  pdftitle={Referee Report: Photometric-redshift prior consistency and calibration in galaxy-catalogue dark-siren Hubble-constant inference},
+  pdfauthor={gpd-referee}
+}
+
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.55em}
+\setlist[itemize]{leftmargin=1.4em, itemsep=0.35em, topsep=0.35em}
+\setlist[enumerate]{leftmargin=1.6em, itemsep=0.35em, topsep=0.35em}
+\renewcommand{\arraystretch}{1.2}
+
+\titleformat{\section}{\Large\bfseries\color{ReportInk}}{\thesection}{0.6em}{}
+\titleformat{\subsection}{\large\bfseries\color{ReportInk}}{\thesubsection}{0.6em}{}
+\titlespacing*{\section}{0pt}{1.4em}{0.6em}
+\titlespacing*{\subsection}{0pt}{1.0em}{0.4em}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\textsc{Mock Referee Report}}
+\fancyhead[R]{\textcolor{ReportCrimson}{Paper A / dark-siren prior consistency}}
+\fancyfoot[C]{\thepage}
+\setlength{\headheight}{14pt}
+
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+
+\newcommand{\RecommendationBadge}[2]{%
+  \tcbox[
+    on line,
+    box align=base,
+    colback=#1!12,
+    colframe=#1,
+    arc=2pt,
+    boxrule=0.8pt,
+    left=7pt,
+    right=7pt,
+    top=4pt,
+    bottom=4pt
+  ]{\textbf{\textsc{#2}}}%
+}
+
+\newtcolorbox{SummaryBox}{
+  enhanced, breakable,
+  colback=ReportStone, colframe=ReportInk,
+  boxrule=0.8pt, arc=2pt,
+  left=12pt, right=12pt, top=10pt, bottom=10pt
+}
+
+\newtcolorbox{StrengthBox}{
+  enhanced, breakable,
+  colback=ReportSage!10, colframe=ReportSage,
+  colbacktitle=ReportSage, coltitle=white,
+  title={Strengths},
+  boxrule=0.8pt, arc=2pt,
+  left=12pt, right=12pt, top=10pt, bottom=10pt
+}
+
+\newtcolorbox{MajorIssueBox}[1]{
+  enhanced, breakable,
+  colback=white, colframe=ReportCrimson,
+  colbacktitle=ReportCrimson, coltitle=white,
+  title={#1},
+  boxrule=0.9pt, arc=2pt,
+  left=12pt, right=12pt, top=10pt, bottom=10pt
+}
+
+\newtcolorbox{MinorIssueBox}[1]{
+  enhanced, breakable,
+  colback=white, colframe=ReportGold,
+  colbacktitle=ReportGold, coltitle=white,
+  title={#1},
+  boxrule=0.9pt, arc=2pt,
+  left=12pt, right=12pt, top=10pt, bottom=10pt
+}
+
+\begin{document}
+
+{\color{ReportCrimson}\rule{\linewidth}{1.1pt}}
+
+\begin{center}
+  {\Huge\bfseries\color{ReportInk} Referee Report\par}
+  \vspace{0.45em}
+  {\Large Photometric-redshift prior consistency and calibration in galaxy-catalogue dark-siren Hubble-constant inference\par}
+  \vspace{0.35em}
+  {\normalsize \texttt{paper\_a/main.tex} (sha256 \texttt{af60a430\ldots4dc7e1})\par}
+  \vspace{0.8em}
+  \RecommendationBadge{ReportCrimson}{Major Revision}
+\end{center}
+
+\vspace{0.8em}
+
+\begin{tcolorbox}[
+  enhanced, colback=white, colframe=ReportLine,
+  boxrule=0.7pt, arc=2pt,
+  left=12pt, right=12pt, top=10pt, bottom=10pt
+]
+\begin{tabularx}{\linewidth}{@{}p{0.23\linewidth}Y p{0.23\linewidth}Y@{}}
+\textbf{Scope} & Manuscript (staged panel, final adjudication) & \textbf{Target journal} & MNRAS \\
+\textbf{Reviewed} & 2026-07-02T20:52:13Z & \textbf{Confidence} & medium \\
+\textbf{Major issues} & 9 (7 blocking) & \textbf{Minor issues} & 14 (+3 suggestions) \\
+\textbf{Round} & Initial review (round 1) & \textbf{Reviewer} & gpd-referee \\
+\end{tabularx}
+\end{tcolorbox}
+
+\begin{SummaryBox}
+\textbf{Summary}
+
+The paper diagnoses and repairs a railed Hubble-constant posterior in an independently implemented Gray-family galaxy-catalogue dark-siren estimator (simulated LISA EMRI campaign, injected $h = 0.73$, real GLADE+ catalogue). Its diagnostic arc is strong: three normalization defects under one prior-consistency invariant; a falsifiable sign-flip prediction (rail at $0.86 \to$ flip to $0.60 \to$ interior peak at $0.73$) observed on identical data; a two-factor ablation separating kernel consistency from the denominator choice; and an Eddington-in-$z$ $\sigma_z^2$ bias law, verified across a factor 11 in $\sigma_z^2$, that collapses frequentist coverage for the bare-Gaussian kernel while the volume-deconvolved kernel calibrates close to nominal in the clean single-host limit. The mathematics is unusually well verified: two independent panel passes recomputed essentially every quoted coefficient and found no mathematical error.
+
+Three problem classes cap the recommendation. (1) The manuscript is literally incomplete: the full-scale confirmation of the headline de-rail is an explicit \texttt{[RESULT PENDING]} placeholder (realdata.tex:73); the demonstration rests on a 494-event subsample and a seven-point grid whose injected truth coincides with the grid midpoint. (2) Claim scope exceeds evidence in the significance backbone: the abstract designates $\sigma_z/z \sim 0.7$ as ``the regime probed here'' while the coverage evidence lives at $\sigma_z/z \sim 0.1$--$0.2$; the introduction misattributes $\sigma_z^2$ suppression to all three defects; one Section~6 sentence (``3331 of 3355 \ldots numerator evaluates to zero'') is a demonstrable misreading of a diagnostic log; and the same-round proof red-team fails closed (\texttt{gaps\_found}). (3) The literature positioning must be rebuilt: Cross-Parkin et al.\ 2025 --- published, uncited, known-truth, photometric, volume-prior --- falsifies the introduction's implicit universal, and the citation horizon ends mid-2023.
+
+None of the required repairs replaces the central result: the rail-is-a-curable-artifact conclusion, the Eddington-in-$z$ law, the coverage-collapse demonstration, and the prior-consistency invariant all survive, and the negative novelty claim survives adversarial search under its full three-part conjunction. The narrowed, completed paper is a genuine MNRAS methods contribution. Major revision, not rejection.
+\end{SummaryBox}
+
+\begin{StrengthBox}
+\begin{enumerate}
+  \item A falsifiable diagnostic chain stated before the test and observed on identical data, with a clean two-factor ablation (kernel consistency de-rails; the local denominator removes the residual $+0.03$, consistent with the independently measured $-17$ per cent global tilt).
+  \item Mechanism-level verification: $q(0.05)=38.1$, $K(0.25)=20.1$, $K_\mathrm{meas}=17$--$20$ stable to $\pm 8$ per cent across a factor 11 in $\sigma_z^2$; the non-perturbative regime identified and handled by exact quadrature.
+  \item An independent, deterministic, released P--P/coverage harness (no production-code imports, paired seeds, regression-pinned) --- a community tool, not just supporting evidence.
+  \item Exact term-by-term mapping onto Gray et al.\ (2020), finite at $f \to 1$, with every deviation declared deliberate.
+  \item Unusual claim hygiene: per-number artifact sourcing, disclosed unfavourable items (d$t^2$ SNR-scale defect, timeout selection, $\Omega_m$ fiducial), explicit simulated-events scope statements.
+  \item The pinned-version four-pipeline audit, honest in both directions (rail structurally excluded from \textsc{gwcosmo}; bare kernel nonetheless live there by unenforced declaration).
+\end{enumerate}
+\end{StrengthBox}
+
+\section*{Major Issues}
+
+\begin{MajorIssueBox}{REF-R001: Headline confirmation is an explicit [RESULT PENDING] placeholder (blocking)}
+\textbf{Dimension:} completeness
+
+\textbf{Location:} \texttt{paper\_a/sections/realdata.tex:73}; \texttt{conclusions.tex:73--77}
+
+\textbf{Description:} The full-scale confirmation (all 3375 seed600 events, complete 38-value $h$ grid, volume-deconvolved default) is unfilled; all interior-peak evidence rests on a 494-event subsample over a seven-point grid ($\pm 0.03$ resolution near the truth). Merges REF-M002, REF-S002.
+
+\textbf{Impact:} The central real-data demonstration cannot be finally adjudicated; if the full-grid posterior is not peaked near 0.73, the de-rail narrative must be revised.
+
+\textbf{Suggested fix:} Fill the placeholder with the completed full-grid combined-posterior result (cluster jobs 5698617/5698618) before any submission decision; re-check the abstract against it.
+\end{MajorIssueBox}
+
+\begin{MajorIssueBox}{REF-R002: Abstract designates a regime ($\sigma_z/z \sim 0.7$) no evidence bundle occupies (blocking)}
+\textbf{Dimension:} significance
+
+\textbf{Location:} \texttt{abstract.tex:7--9, 30--35}; \texttt{coverage.tex:12--13}; \texttt{realdata.tex:71}; \texttt{conclusions.tex:44--50}
+
+\textbf{Description:} The coverage calibration runs at $\sigma_z = 0.035$, median detected $z \sim 0.3$ ($\sigma_z/z \sim 0.1$--$0.2$, perturbative regime $\sigma_z q \sim 0.2$); the real-data sample is mostly near-spectroscopic. At the designated order-unity ratio the effect is non-perturbative ($\sigma_z q = 1.33$ at $z_g = 0.05$, the paper's own Appendix~B) and is never coverage-tested by anyone, including this paper. Merges REF-P001, REF-S001.
+
+\textbf{Impact:} The central selling point (probing the order-unity validation gap) is not what the paper delivers; the gap it names remains open for its own harness too.
+
+\textbf{Suggested fix:} Add a non-perturbative coverage run (hosts $z \sim 0.05$--$0.1$, $\sigma_z \sim 0.035$, catalogue-dominated), or scope abstract/introduction/conclusions to state which $\sigma_z/z$ each evidence bundle occupies and that the order-unity regime remains untested for every pipeline including this one.
+\end{MajorIssueBox}
+
+\begin{MajorIssueBox}{REF-M001: The ``3331 of 3355 events'' sentence is false as written (blocking)}
+\textbf{Dimension:} correctness
+
+\textbf{Location:} \texttt{realdata.tex:54}
+
+\textbf{Description:} The quoted log value ``numerator=0.000'' is the \emph{fraction of quadrature weight outside the $p_\mathrm{det}$ grid} (zero means full coverage), not a vanishing in-catalogue numerator; the sentence contradicts \texttt{realdata.tex:9} (all events inside the grid), $w_G = 0.8175$, and the catalogue-only row of Table~2. Merges REF-R004, REF-P003.
+
+\textbf{Impact:} The inference that the completion machinery carries most of the post-fix constraint is unsupported; the paper's own numbers show the opposite (catalogue-only mean 0.737 vs full 0.740). Correcting it \emph{strengthens} ``the in-catalogue information was present all along''.
+
+\textbf{Suggested fix:} Rewrite to what the diagnostic measured; recast channel dominance as pre-fix ($10^3$--$10^5$ $B_\mathrm{num}$ inflation) vs post-fix (catalogue channel dominates); support any retained completion-dominance claim with a per-event channel decomposition.
+\end{MajorIssueBox}
+
+\begin{MajorIssueBox}{REF-L001: Cross-Parkin et al.\ 2025 uncited; validation-gap narrative falsified as stated (blocking)}
+\textbf{Dimension:} literature\_context
+
+\textbf{Location:} \texttt{introduction.tex:57--64}; \texttt{abstract.tex}; \texttt{codes.tex}; \texttt{conclusions.tex}
+
+\textbf{Description:} Cross-Parkin et al.\ 2025 (PASA, arXiv:2502.17747) is a published known-truth photometric-redshift dark-siren bias study (Gray-family, comoving-volume prior, ensemble bias tests, outlier models, unbiased $H_0$ at $\sigma_z/z \lesssim 0.08$). It falsifies the introduction's implicit universal and strains the abstract's ``almost entirely spectroscopic''. The gap claim survives under its full three-part conjunction; their result corroborates the paper's repair.
+
+\textbf{Impact:} The paper claims more novelty than it owns until the framing --- the significance backbone --- is rebuilt.
+
+\textbf{Suggested fix:} Cite the work; rewrite the validation-gap narrative as a three-way taxonomy; restate the surviving gap precisely; re-derive the abstract's significance sentences from the narrowed claim.
+\end{MajorIssueBox}
+
+\begin{MajorIssueBox}{REF-L002: Citation horizon ends mid-2023; the negative claim lacks its adjacent-work map (blocking)}
+\textbf{Dimension:} literature\_context
+
+\textbf{Location:} \texttt{codes.tex:4--9, 39--43}
+
+\textbf{Description:} At least five 2025--2026 works in the immediate niche are unexamined (gwcosmo Blinded MDC I; Borghi et al.\ 2026; the audited-but-uncited CHIMERA v2 code paper; Alfradique et al.\ 2025; VanWyngarden et al.\ 2025). All were verified as not filling the gap.
+
+\textbf{Impact:} A negative universal at MNRAS needs ``here is the complete map and the cell is empty''; referees will name these works.
+
+\textbf{Suggested fix:} Add a compact adjacent-known-truth-studies passage to Section~8 stating, for each, why it does not occupy the catalogue-dominated $\sigma_z/z \sim 0.7$ regime.
+\end{MajorIssueBox}
+
+\begin{MajorIssueBox}{REF-P004: Mechanism sentence physically wrong for two of the three defects (blocking)}
+\textbf{Dimension:} correctness
+
+\textbf{Location:} \texttt{introduction.tex:81--87} (also 100--104; \texttt{abstract.tex:7--9})
+
+\textbf{Description:} ``Effects are second order in the redshift kernel width'' holds only for the kernel defect: the peak-density over-weight $2/(\sigma_\phi \sigma_\theta)$ contains no $\sigma_z$, and the $-17$ per cent global tilt is measured at the $\sigma_z = 0$ configuration. Their historical invisibility is a validation-configuration property (complete-catalogue mocks, code-vs-code common modes), which Section~8 documents correctly.
+
+\textbf{Impact:} The misattribution props up the hazard claim's generality; ``calibrating perfectly on spectroscopic-quality validation inputs'' is demonstrated only for the kernel defect.
+
+\textbf{Suggested fix:} Rewrite: $\sigma_z^2$ suppression for Defect~1 alone; configuration-based invisibility for Defects~2 and~3; qualify the ``calibrating perfectly'' clause.
+\end{MajorIssueBox}
+
+\begin{MajorIssueBox}{REF-X001: Proof red-team fails closed --- remaining theorem-scoping repairs (blocking)}
+\textbf{Dimension:} technical\_soundness
+
+\textbf{Location:} \texttt{review/PROOF-REDTEAM.md}; \texttt{estimators.tex} (secs.~4.1, 4.5); \texttt{appendix\_sky\_marginal.tex:95--99}; \texttt{framework.tex} vs \texttt{appendix\_beta\_g.tex}; \texttt{introduction.tex:100--104}
+
+\textbf{Description:} The same-round adversarial proof audit reports \texttt{gaps\_found}: (a) the ``prior-consistent'' label for \texttt{local\_ratio} satisfies only requirement~(i) of the paper's own definition, and the ``every per-galaxy constant cancels row by row'' lemma is false as phrased; (b) the sky-marginal bound $\lesssim 10^{-5}$ drops the sub-percent $h$-smooth drift qualifier; (c) completeness notation $f(z,\Omega)$ vs $f(z,\Omega,h)$ is inconsistent; (d) the literal universal ``every independently implemented dark-siren pipeline'' is contradicted by the paper's own audit. (CLM-015 clamp and CLM-019 corollary are ledgered as REF-M004, REF-M005.) No mathematical counterexample was found.
+
+\textbf{Impact:} A non-passing proof red-team forecloses any favorable recommendation; theorem clauses that outrun their proofs are never compatible with minor revision.
+
+\textbf{Suggested fix:} Execute PROOF-REDTEAM.md follow-ups 1--6 verbatim; re-run the red-team to \texttt{status: passed}.
+\end{MajorIssueBox}
+
+\begin{MajorIssueBox}{REF-R003: ``Calibrated close to nominal'' scoped only by the clean single-host limit (major, non-blocking)}
+\textbf{Dimension:} completeness
+
+\textbf{Location:} \texttt{coverage.tex:75--77}; \texttt{abstract.tex:26--29}; \texttt{conclusions.tex:48--50}
+
+\textbf{Description:} Full-machinery synthetic coverage is $0.40/0.54/0.82$ with residual $-0.013$ bias and MAP-vs-truth slope $\approx 0.35$; the attribution to the synthetic's completeness/interloper modelling is asserted without an ablation, and the real-data injected truth coincides with the grid midpoint, so truth recovery and mid-grid shrinkage are degenerate there. Merges REF-M007, REF-P002, REF-S006.
+
+\textbf{Impact:} The adopted estimator would not pass, at nominal, the very coverage test the paper prescribes as a field prerequisite; a referee can turn the paper's standard against it.
+
+\textbf{Suggested fix:} Scope the claim to the clean single-host limit at abstract/conclusion level; add a completeness/interloper ablation or one off-centre-truth full-machinery injection; note the midpoint coincidence.
+\end{MajorIssueBox}
+
+\begin{MajorIssueBox}{REF-S004: Significance framing weights the self-inflicted arc over the field-live result (major, non-blocking)}
+\textbf{Dimension:} significance
+
+\textbf{Location:} \texttt{abstract.tex:14--25}; \texttt{introduction.tex:100--104}; \texttt{conclusions.tex:36--47}
+
+\textbf{Description:} Two of the three defects are implementation errors structurally excluded from all four audited pipelines --- the rail arc is prophylactic. The field-live result (bare-kernel Eddington bias in \textsc{gwcosmo} by unenforced declaration, coverage collapse) is the actual venue case; \texttt{codes.tex} states the split correctly, the abstract leads with the rail.
+
+\textbf{Impact:} As framed, a referee can ask whether the core is a code post-mortem; rebalanced, the paper clears the MNRAS bar comfortably.
+
+\textbf{Suggested fix:} Lead with the bias law, coverage collapse, and validation gap; present the rail arc as the exposing case study; scope the hazard sentence to the ex-ante reading.
+\end{MajorIssueBox}
+
+\section*{Minor Issues}
+
+\begin{MinorIssueBox}{REF-R005 -- REF-R008, REF-L003 -- REF-L004, REF-M003 -- REF-M006, REF-P005 -- REF-P007, REF-S005}
+\begin{itemize}
+  \item \textbf{REF-R005} (clarity; \texttt{abstract.tex:22--25}): interior-peak claim lacks the seven-point-grid ($\pm 0.03$) qualifier. Fix: qualify or update with the full-grid result.
+  \item \textbf{REF-R006} (literature; \texttt{abstract.tex}, \texttt{conclusions.tex}): negative novelty claim restated without its full three-part conjunction. Fix: restate everywhere.
+  \item \textbf{REF-R007} (clarity; \texttt{framework.tex:21--23}): ``All redshifts are CMB-frame'' contradicted by heliocentric Section~6 baselines ($+0.15$ per cent). Fix: one-line qualification.
+  \item \textbf{REF-L003} (literature; \texttt{codes.tex:36}): Borghi 2024 / Cross-Parkin 2025 boundary not quantified in the paper's own $\sigma_z/z$ metric. Fix: quantify; state recovery-vs-coverage distinction.
+  \item \textbf{REF-L004} (literature; \texttt{introduction.tex:29--41}): flagship application dated (GWTC-3); Palmese-line photometric work omitted. Fix: cite GWTC-4.0 cosmology and Palmese et al.\ 2023.
+  \item \textbf{REF-M003} (correctness; \texttt{appendix\_beta\_g.tex:74--79}): tilt convention undefined; ``$+8.7$'' should be $+8.5$; $-17.2$ is endpoint-difference (multiplicative $-15.8$). Fix: define convention, correct endpoint.
+  \item \textbf{REF-M004} (technical soundness; \texttt{appendix\_eddington\_m.tex:50--61}): $M \le 0$ quadrature clamp ($M \ge \max(M_g - 5\sigma_M, 10^3\,\mathrm{M}_\odot)$) undisclosed; ``width-conservative'' asserted. Fix: disclose and bound.
+  \item \textbf{REF-M005} (technical soundness; \texttt{estimators.tex}, adopted-default paragraph): $h$-neutrality corollary outruns the lemma. Fix: narrow per red-team follow-up~3.
+  \item \textbf{REF-M006} (clarity; \texttt{appendix\_gray\_mapping.tex:61}): Table~C1 ``exact'' vs declared $w_g$ approximation. Fix: qualify the row.
+  \item \textbf{REF-P005} (significance; \texttt{realdata.tex:12--14}): catalogue dominance is a pre-d$t^2$ depth artifact; LISA-era designation assumes LSST/Euclid-depth catalogues. Fix: one sentence.
+  \item \textbf{REF-P006} (completeness; \texttt{pitfall.tex:96--105}): up-rail sign empirical, presented as predicted. Fix: derive or declare.
+  \item \textbf{REF-P007} (technical soundness; \texttt{framework.tex:159--183}): Gaussian photo-$z$ assumption unscoped at order-unity $\sigma_z/z$. Fix: one scope sentence separating invariant from quantification.
+  \item \textbf{REF-S005} (significance; \texttt{conclusions.tex:57--61}): ``LISA-era'' framing borrows realism the testbed lacks. Fix: audit occurrences.
+  \item \textbf{REF-R008} (presentation; \texttt{main.tex:13--17, 85--86}): author/affiliation/acknowledgements placeholders. Fix: fill before submission.
+\end{itemize}
+\end{MinorIssueBox}
+
+\section*{Suggestions}
+\begin{itemize}
+  \item \textbf{REF-R009} Reconcile the $[0.60, 0.86]$ diagnostic grid with the $[0.60, 0.87]$ full-sample grid (one line, \texttt{postmortem.tex}).
+  \item \textbf{REF-L005} Cite MacLeod \& Hogan 2008 and Del Pozzo, Sesana \& Klein 2018 in the EMRI lineage sentence.
+  \item \textbf{REF-L006} Prune the 9 orphan bibliography entries; resolve the Babak:2023lro texkey/year inconsistency.
+\end{itemize}
+
+\section*{Detailed Evaluation}
+
+\begin{longtable}{@{}p{0.18\linewidth}p{0.17\linewidth}>{\raggedright\arraybackslash}p{0.59\linewidth}@{}}
+\toprule
+\textbf{Dimension} & \textbf{Rating} & \textbf{Assessment} \\
+\midrule
+\endhead
+Novelty & ADEQUATE & Eddington-in-$z$ $H_0$-bias law, coverage-collapse demonstration, and sign-flip diagnostic have no published counterpart (adversarial search through 2026); framing must be rebuilt around Cross-Parkin 2025 and the narrowed conjunction. \\
+Correctness & MOSTLY CORRECT & Two independent recomputation passes reproduced every checked number; one false Section~6 sentence (REF-M001), one mechanism misattribution (REF-P004), tilt-convention mismatch (REF-M003). \\
+Clarity & GOOD & Coherent diagnose-predict-test arc; exemplary per-number sourcing; notation inconsistencies ($f$ arguments, CMB/heliocentric, tilt convention). \\
+Completeness & GAPS & [RESULT PENDING] slot; designated regime never coverage-tested; full-machinery residuals unresolved; up-rail sign empirical. \\
+Significance & MEDIUM & Conditionally MNRAS-worthy: the transferable half (live bias, methodology, invariant, audit) carries the case; the rail arc is prophylactic. \\
+Reproducibility & MOSTLY & Released deterministic harness, artifact trail, valid manifests; pending run, undisclosed clamp, undefined convention. \\
+Literature Context & INCOMPLETE & Weakest dimension: uncited on-point 2025 study, mid-2023 horizon, audited-but-uncited v2 code paper. \\
+Presentation Quality & NEEDS POLISHING & MNRAS-appropriate; placeholders and minor labeling tensions remain. \\
+Technical Soundness & MOSTLY SOUND & d$t^2$ argument adjudicated sound; Gaussian photo-$z$ unscoped; ``decisive verdict'' asserted; theorem clauses outrun proofs. \\
+Publishability & Major revision & Narrowed and completed, a publishable MNRAS methods paper; as staged, not submittable. \\
+\bottomrule
+\end{longtable}
+
+\section*{Physics Checklist}
+
+\begin{tabularx}{\linewidth}{@{}p{0.38\linewidth}p{0.18\linewidth}Y@{}}
+\toprule
+\textbf{Check} & \textbf{Status} & \textbf{Notes} \\
+\midrule
+Dimensional analysis & pass & Both numerator channels $\mathrm{Mpc}^3\,\mathrm{sr}^{-2}$; $1/(4\pi)$, $h^{-3}$ bookkeeping verified \\
+Limiting cases & pass & $f\to1$, $f\to0$, $\sigma_\mathrm{sky}\to0$, $\sigma_{d_L}\to0$, $\sigma_z\to0$, $\sigma_M\to0$ verified \\
+Symmetry preservation & pass & Isotropic-prior marginal handled exactly \\
+Conservation laws & unchecked & Probability-measure-counted-once invariant audited instead \\
+Error bars present & pass (gaps) & Coverage/bias tables with realization counts; full-machinery residuals unresolved \\
+Approximations justified & fail (partial) & Gaussian photo-$z$ unscoped; $M$-domain clamp undisclosed; sky bound overstated \\
+Convergence demonstrated & pass (note) & Deterministic quadrature, regression-pinned; $\pm 0.03$ grid resolution open \\
+Literature comparison & fail & Uncited 2025--2026 known-truth studies \\
+Reproducible & pass (gaps) & Seeded released harness; pending run outstanding \\
+\bottomrule
+\end{tabularx}
+
+\section*{Action Matrix}
+
+\begin{longtable}{@{}p{0.12\linewidth}p{0.10\linewidth}p{0.26\linewidth}>{\raggedright\arraybackslash}p{0.34\linewidth}p{0.08\linewidth}@{}}
+\toprule
+\textbf{ID} & \textbf{Severity} & \textbf{File} & \textbf{Required change} & \textbf{Effort} \\
+\midrule
+\endhead
+REF-R001 & major & sections/realdata.tex & Fill the [RESULT PENDING] full-grid MAP; revise claims if not near 0.73 & small \\
+REF-R002 & major & sections/abstract.tex & Regime bookkeeping explicit, or add non-perturbative coverage run & medium \\
+REF-M001 & major & sections/realdata.tex & Rewrite the 3331/3355 sentence per the corrected log reading & small \\
+REF-L001 & major & sections/introduction.tex & Cite Cross-Parkin 2025; three-way validation taxonomy & medium \\
+REF-L002 & major & sections/codes.tex & Adjacent 2025--2026 known-truth-studies passage & medium \\
+REF-P004 & major & sections/introduction.tex & Correct the mechanism attribution sentence & small \\
+REF-X001 & major & sections/estimators.tex (+3) & Execute PROOF-REDTEAM follow-ups 1--6; re-run to passed & medium \\
+REF-R003 & major & sections/abstract.tex & Scope calibration claim; ablation or off-centre injection & medium \\
+REF-S004 & major & sections/abstract.tex & Rebalance: bias law leads, rail as case study & medium \\
+REF-R005 & minor & sections/abstract.tex & Grid-resolution qualifier & trivial \\
+REF-R006 & minor & sections/abstract.tex & Full three-part conjunction everywhere & trivial \\
+REF-R007 & minor & sections/framework.tex & Qualify CMB-frame convention & trivial \\
+REF-L003 & minor & sections/codes.tex & Quantify counterexample-candidate boundary & small \\
+REF-L004 & minor & sections/introduction.tex & GWTC-4.0 + Palmese citations & trivial \\
+REF-M003 & minor & sections/appendix\_beta\_g.tex & Define tilt convention; correct $+8.5$ & trivial \\
+REF-M004 & minor & sections/appendix\_eddington\_m.tex & Disclose and bound the $M$-domain clamp & small \\
+REF-M005 & minor & sections/estimators.tex & Narrow the $h$-neutrality corollary & trivial \\
+REF-M006 & minor & sections/appendix\_gray\_mapping.tex & Qualify Table~C1 ``exact'' row & trivial \\
+REF-P005 & minor & sections/realdata.tex & Regime-provenance sentence for d$t^2$ & trivial \\
+REF-P006 & minor & sections/pitfall.tex & Derive or declare the up-rail sign & small \\
+REF-P007 & minor & sections/framework.tex & Scope the Gaussian photo-$z$ assumption & trivial \\
+REF-S005 & minor & sections/conclusions.tex & Audit ``LISA-era'' occurrences & trivial \\
+REF-R008 & minor & main.tex & Fill author/affiliation/acknowledgements & trivial \\
+REF-R009 & sugg. & sections/postmortem.tex & Reconcile the two $h$-grids & trivial \\
+REF-L005 & sugg. & sections/introduction.tex & EMRI lineage citations & trivial \\
+REF-L006 & sugg. & references.bib & Prune orphans; fix Babak texkey & trivial \\
+\bottomrule
+\end{longtable}
+
+\section*{Confidence Matrix}
+
+\begin{tabularx}{\linewidth}{@{}p{0.26\linewidth}p{0.16\linewidth}Y@{}}
+\toprule
+\textbf{Dimension} & \textbf{Confidence} & \textbf{Notes} \\
+\midrule
+Correctness & HIGH & Two independent recomputation passes; REF-M001 verified at code level \\
+Novelty & MEDIUM & Rests on adversarial 2025--2026 search; negative-existence claims never fully certifiable \\
+Reproducibility & MEDIUM & Harness verified at spec level; production implementation not line-audited by the panel \\
+Publishability & MEDIUM & Conditional on the pending full-grid result landing as expected \\
+\bottomrule
+\end{tabularx}
+
+\vfill
+
+{\color{ReportCrimson}\rule{\linewidth}{1.1pt}}
+
+\small
+\textit{This is an AI-generated mock referee report (staged six-agent panel, final adjudication, round 1). It supplements but does not replace expert peer review. Proof red-team status: gaps\_found --- recommendation floor major\_revision applied.}
+
+\end{document}

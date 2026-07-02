@@ -1,0 +1,94 @@
+{
+  "version": 1,
+  "round": 1,
+  "stage_id": "literature",
+  "stage_kind": "literature",
+  "manuscript_path": "paper_a/main.tex",
+  "manuscript_sha256": "af60a4304bfca7e325a5934f291509e93439a954df61afe0c76f78094d4dc7e1",
+  "claims_reviewed": ["CLM-004", "CLM-005", "CLM-006", "CLM-007", "CLM-011", "CLM-012", "CLM-013", "CLM-020"],
+  "summary": "Claimed advance: diagnosis and prior-consistent repair of a railed dark-siren H0 posterior (three normalization defects, a falsifiable sign-flip chain, an Eddington-in-z sigma_z^2 bias law with known-truth coverage evidence), plus the field-level negative claim that no published pipeline has a known-truth calibration test in the catalogue-information-dominated sigma_z/z ~ 0.7 regime. Independent verification (including targeted search of 2025-2026 literature past the manuscript's citation horizon): the negative claim SURVIVES under its full three-part conjunction. Checked and excluded: Gray et al. 2020 (sigma_z = 0 MDC), Gray et al. 2022/2023 (real-data, code-vs-code), Turski et al. 2023 (real data, no truth), Borghi et al. 2024 / CHIMERA (known-truth photometric mocks at sigma_z = 0.05(1+z), population-typical sigma_z/z well below 0.7, single-realization unbiasedness rather than coverage), Laghi et al. 2021 (Delta z = 0.0015, no completeness correction; verified from the paper), the 2025 gwcosmo Blinded MDC (ApJ, spectral sirens only; verified), Borghi et al. 2026 'Echoes from the dark' (A&A 706, A199; spectroscopic-only sigma_z = 0.001(1+z), photometric explicitly deferred to future work), Cross-Parkin et al. 2025 (PASA; photometric-like sigma_z <= 1e-2, sigma_z/z <~ 0.08), and Alfradique et al. 2025 / VanWyngarden et al. 2025 (weighting/incompleteness, not the z-prior question). The Eddington-in-z Delta h ~ -K sigma_z^2 law for dark-siren H0 and the coverage-collapse demonstration appear genuinely new; the volume kernel itself is correctly not claimed as novel (the paper credits CHIMERA/icarogw/DarkSirensStat practice). However, the literature positioning needs real repair: Cross-Parkin et al. 2025 is a published, uncited, known-truth photometric-redshift dark-siren bias study (Gray-family estimator via the Gair et al. 2023 code, comoving-volume prior on photo-z posteriors, 200x200-realization ensemble bias tests, outlier models, incompleteness subsampling, unbiased H0) that falsifies the introduction's implicit universal that photometric-redshift studies exist only on real data where bias cannot be tested, and strains the abstract's 'known-truth validations are almost entirely spectroscopic'; it simultaneously corroborates the paper's own volume-kernel calibration claim and narrows (without closing) the gap statement to the order-unity sigma_z/z, catalogue-dominated regime. The manuscript's citation horizon otherwise ends mid-2023 plus pinned-code audits: GWTC-4.0 cosmology (2025) supersedes the 'flagship GWTC-3 application' framing, the CHIMERA v2 code paper is uncited although the audit pins tag v2.2, and adjacent 2025-2026 known-truth studies that a referee will name are unmentioned. All repairs are well-defined, but they touch the abstract, introduction, codes section, and conclusions - the paper's significance backbone - so the positioning repair is substantial rather than cosmetic.",
+  "strengths": [
+    "The pinned-version code-and-paper audit behind CLM-012 (gwcosmo 5a4f8c2/v1.0.0, CHIMERA v1.0.0/v2.2, icarogw f8277b7, DarkSirensStat head) is unusually rigorous for a literature-positioning claim: line-numbered code quotes matched to published equations, with every deviation declared; my spot checks against the published papers found no mischaracterization.",
+    "Novelty discipline: the volume-deconvolved kernel is explicitly presented as coinciding with published practice of three pipelines rather than as new, and the local ratio-of-sums is mapped term-by-term onto Gray et al. (2020) Eqs. A9/A10 with the deviation (localization-ball denominator, nearest analogue A20) declared.",
+    "The negative universal claim is stated in the abstract and conclusions with its full three-part conjunction (known-truth AND catalogue-dominated AND sigma_z/z ~ 0.7), and it survived independent adversarial search including 2025-2026 literature beyond the manuscript's own citation list.",
+    "The Eddington-in-z sigma_z^2 H0-bias law, the coverage-collapse demonstration at photometric absolute width, and the sign-flip de-rail diagnostic have no published counterpart that I could locate; the closest works (Borghi et al. 2024; Cross-Parkin et al. 2025) probe lower sigma_z/z and find exactly the broadened-but-unbiased behaviour the paper predicts for prior-consistent estimators, which corroborates rather than preempts the contribution.",
+    "The paper's characterization of Turski et al. (2023) (width-inflation on real data, information wash-out, no bias measurement possible) and of the Gray et al. (2020) MDC (zero redshift error) is accurate per the papers' own text."
+  ],
+  "findings": [
+    {
+      "issue_id": "REF-L001",
+      "claim_ids": ["CLM-011", "CLM-013"],
+      "severity": "major",
+      "summary": "Cross-Parkin et al. 2025 (PASA, 'Dark sirens and the impact of redshift precision', arXiv:2502.17747) is a published known-truth photometric-redshift dark-siren bias study and is uncited; the introduction's framing sentence ('subsequent photometric-redshift studies on real data could quantify information loss but not bias, because real data come without a truth') is falsified as an implicit universal, and the abstract's 'known-truth validations are almost entirely spectroscopic' is strained.",
+      "rationale": "Cross-Parkin et al. use the Gair et al. (2023) Gray-family code, apply a uniform-in-comoving-volume prior to photometric redshift likelihoods (their Eqs. 9/11 - exactly this paper's prior-consistent kernel), run 200 realizations x 200 events with ensemble bias tests, include catastrophic-outlier models and incompleteness subsampling, and report unbiased H0 at sigma_z up to 1e-2 (sigma_z/z <~ 0.08 for hosts at z in [0.15, 0.7]). This does NOT occupy the sigma_z/z ~ 0.7 catalogue-dominated regime, so CLM-011 survives under its full conjunction - but the manuscript cannot state its validation-gap narrative as if no known-truth photometric study exists. Citing it is also strictly favourable: their unbiased result with the volume prior independently corroborates CLM-004/CLM-006, and their spectroscopic-vs-photometric precision trade-off strengthens the motivation.",
+      "evidence_refs": ["arXiv:2502.17747 (PASA 2025, Cross-Parkin, Howlett, Davis & Khetan)", "paper_a/sections/introduction.tex#validation-gap-paragraph", "paper_a/sections/abstract.tex", "paper_a/sections/codes.tex"],
+      "manuscript_locations": ["paper_a/sections/introduction.tex:57-64", "paper_a/sections/abstract.tex:4-9", "paper_a/sections/codes.tex:39-43", "paper_a/sections/conclusions.tex:44-50"],
+      "support_status": "partially_supported",
+      "blocking": true,
+      "required_action": "Cite Cross-Parkin et al. 2025 and rewrite the validation-gap narrative as a three-way taxonomy (spectroscopic known-truth: Gray 2020, Laghi 2021, Borghi et al. 2026; photometric known-truth at moderate sigma_z/z: Borghi 2024, Cross-Parkin 2025 - both prior-consistent, both unbiased; photometric real-data: Turski 2023, Palmese 2023), then restate the surviving gap precisely as the absence of known-truth calibration at order-unity sigma_z/z in a catalogue-information-dominated analysis. Adjust the abstract sentence 'almost entirely spectroscopic' accordingly."
+    },
+    {
+      "issue_id": "REF-L002",
+      "claim_ids": ["CLM-011", "CLM-012", "CLM-013"],
+      "severity": "major",
+      "summary": "The field-level gap statement is argued against a literature snapshot that effectively ends mid-2023 (plus the pinned-code audits); at least five 2025-2026 works in the immediate niche are unexamined in the manuscript, and a referee testing the negative claim will name them.",
+      "rationale": "Verified as NOT filling the gap, but requiring explicit positioning: (i) the gwcosmo-team Blinded Mock Data Challenge I (ApJ 2025, 10.3847/1538-4357/adda3a) - known-truth, but spectral-siren mass-spectrum method, no galaxy-catalogue photo-z; (ii) Borghi, Moresco, Tagliazucchi & Cuomo 2026, 'Echoes from the dark' (A&A 706, A199; arXiv:2509.18243) - CHIMERA-team known-truth incompleteness study, spectroscopic-only (sigma_z = 0.001(1+z)), which explicitly defers photometric redshifts to future work and therefore directly corroborates the manuscript's gap claim; (iii) the CHIMERA v2 code paper (Tagliazucchi et al. 2025), uncited although codes.tex pins and audits tag v2.2; (iv) Alfradique, Bom & Castro 2025 (arXiv:2503.18887) - known-truth mock bias study of statistical dark sirens (weighting/incompleteness, not the z-prior); (v) VanWyngarden et al. 2025 (arXiv:2511.04786, mock incompleteness). Naming and bounding these adjacent known-truth studies converts the negative claim from 'we found nothing' to 'here is the complete map of known-truth tests and none occupies the regime', which is what a negative universal needs at MNRAS.",
+      "evidence_refs": ["doi:10.3847/1538-4357/adda3a (Blinded MDC I, spectral sirens only)", "arXiv:2509.18243 (A&A 706, A199, 2026; spectroscopic-only, photometric deferred)", "arXiv:2503.18887", "arXiv:2511.04786", "paper_a/sections/codes.tex"],
+      "manuscript_locations": ["paper_a/sections/codes.tex:4-9", "paper_a/sections/codes.tex:39-43"],
+      "support_status": "partially_supported",
+      "blocking": true,
+      "required_action": "Add a compact 'adjacent known-truth studies' passage to Section 8 citing the Blinded MDC I, Borghi et al. 2026, Tagliazucchi et al. 2025 (the audited v2 code paper), and Alfradique et al. 2025, stating for each why it does not occupy the catalogue-dominated sigma_z/z ~ 0.7 regime; note that Borghi et al. 2026 explicitly defer photometric redshifts, which supports the gap claim."
+    },
+    {
+      "issue_id": "REF-L003",
+      "claim_ids": ["CLM-011"],
+      "severity": "minor",
+      "summary": "The boundary against CHIMERA's known-truth photometric mocks (Borghi et al. 2024) is described qualitatively but never quantified in the manuscript's own sigma_z/z metric, leaving the nearest published counterexample-candidate bounded only implicitly.",
+      "rationale": "Borghi et al. 2024 use sigma_z = 0.05(1+z) on known-truth mocks with a complete catalogue (hence catalogue-information-dominated). At their typical detected-host redshifts the ratio is sigma_z/z ~ 0.15-0.5, crossing ~0.7 only for the lowest-z tail; and their photometric test is single-realization posterior unbiasedness, not multi-realization coverage. Both discriminators (population-typical ratio and coverage-vs-recovery) are what keep CLM-011 true, but neither is stated where the CHIMERA forecast is discussed (codes.tex line 36), so the negative claim's survival looks like an assertion rather than an argument. This interacts with the reader stage's REF-R002 regime-bookkeeping finding: once the paper states which sigma_z/z each piece of ITS OWN evidence occupies, the same table should place CHIMERA and Cross-Parkin.",
+      "evidence_refs": ["arXiv:2312.05302 (Borghi et al. 2024, Eq. 22 and Sec. 5)", "paper_a/sections/codes.tex", ".planning/gate/G5b_chimera_icarogw_inspection.md#sec-1.4"],
+      "manuscript_locations": ["paper_a/sections/codes.tex:36"],
+      "support_status": "partially_supported",
+      "blocking": false,
+      "required_action": "Add one or two sentences quantifying the sigma_z/z range of the Borghi et al. 2024 (and Cross-Parkin et al. 2025) known-truth photometric mocks and noting the recovery-vs-coverage distinction, so the two-condition boundary of the negative claim is explicit."
+    },
+    {
+      "issue_id": "REF-L004",
+      "claim_ids": ["CLM-013"],
+      "severity": "minor",
+      "summary": "Dated and incomplete real-data anchoring: the 'flagship application' is cited as GWTC-3 although the LVK GWTC-4.0 cosmology paper (arXiv:2509.04348, 2025) exists, and the photometric-dark-sirens-on-real-data narrative cites only Turski et al. 2023, omitting the Palmese-line photometric dark-siren H0 measurements.",
+      "rationale": "For a mid-2026 MNRAS submission, referees from the LVK cosmology community will immediately note the missing GWTC-4.0 cosmology reference (141 dark sirens, GLADE+), and workers on photometric dark sirens will expect Palmese et al. 2023 (ApJ 943, 56; GWTC-3 dark sirens with DES/DESI photometric redshift PDFs) where the introduction discusses photometric catalogues in real analyses; a DES Y6 x GWTC-4 measurement (arXiv:2602.04766, 2026) now also exists. None of these affects the novelty claims - they are real-data analyses without known truth - but their absence weakens the paper's claim to know the field it is warning.",
+      "evidence_refs": ["arXiv:2509.04348 (GWTC-4.0 cosmology)", "Palmese et al. 2023, ApJ 943, 56", "arXiv:2602.04766", "paper_a/sections/introduction.tex"],
+      "manuscript_locations": ["paper_a/sections/introduction.tex:29-41", "paper_a/sections/introduction.tex:57-64"],
+      "support_status": "partially_supported",
+      "blocking": false,
+      "required_action": "Update the flagship-application sentence to include the GWTC-4.0 cosmology analysis, and add Palmese et al. 2023 (optionally the DES Y6 x GWTC-4 measurement) alongside Turski et al. 2023 as photometric-redshift dark-siren practice on real data."
+    },
+    {
+      "issue_id": "REF-L005",
+      "claim_ids": ["CLM-013"],
+      "severity": "suggestion",
+      "summary": "The EMRI statistical-siren lineage starts at Babak et al. 2017 / Laghi et al. 2021, omitting MacLeod & Hogan 2008 (the original EMRI statistical-redshift H0 proposal) and Del Pozzo, Sesana & Klein 2018, the direct ancestors Laghi et al. themselves build on (including the Delta z = 0.0015 redshift-error convention).",
+      "rationale": "Minor genealogy gap; MNRAS referees in the LISA cosmology community will expect these. Verified from the Laghi et al. 2021 text that its redshift-error treatment follows Del Pozzo et al. 2018, which also confirms that the paper's EMRI-forecast baseline lives in the near-spectroscopic regime, consistent with the manuscript's gap claim.",
+      "evidence_refs": ["arXiv:2102.01708 (Laghi et al. 2021, Sec. 2 and 3.3)", "paper_a/sections/introduction.tex"],
+      "manuscript_locations": ["paper_a/sections/introduction.tex:42-46"],
+      "support_status": "supported",
+      "blocking": false,
+      "required_action": "Cite MacLeod & Hogan 2008 and Del Pozzo, Sesana & Klein 2018 in the EMRI dark-siren lineage sentence."
+    },
+    {
+      "issue_id": "REF-L006",
+      "claim_ids": [],
+      "severity": "suggestion",
+      "summary": "Bibliography hygiene items already flagged by the manuscript's own audit remain open: 9 uncited orphan entries seeded from Paper B (Katz:2021yft, Chua:2020stf, Katz:2022yqe, Reines:2015moa, Tiwari:2017ndi, Farr:2019rap, Cornish:2017oic, Hinshaw:2012aka, DES:2024tys) and the Babak:2023lro texkey/year inconsistency (arXiv:2108.01167 is 2021; INSPIRE texkey Babak:2021mhe).",
+      "rationale": "Tracked in paper_a/BIBLIOGRAPHY-AUDIT.json and paper_a/CITATION-AUDIT.md; the cited-entry metadata itself checks out (spot-verified: Gray:2019ksv, Turski:2023lxq, Borghi:2023opd, Dalya:2021ewn, Laghi:2021pqk all resolve to the correct works, and the Cook2006 erratum is correctly annotated with the calibration property unaffected). Purely mechanical cleanup before submission.",
+      "evidence_refs": ["paper_a/BIBLIOGRAPHY-AUDIT.json", "paper_a/CITATION-AUDIT.md", "paper_a/references.bib"],
+      "manuscript_locations": ["paper_a/references.bib:53-88"],
+      "support_status": "supported",
+      "blocking": false,
+      "required_action": "Prune the 9 orphan entries and either rekey Babak:2023lro to Babak:2021mhe or record the deliberate key choice."
+    }
+  ],
+  "proof_audits": [],
+  "confidence": "medium",
+  "recommendation_ceiling": "major_revision"
+}

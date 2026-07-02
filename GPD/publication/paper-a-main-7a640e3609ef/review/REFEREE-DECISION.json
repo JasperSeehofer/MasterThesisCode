@@ -1,0 +1,36 @@
+{
+  "manuscript_path": "paper_a/main.tex",
+  "target_journal": "mnras",
+  "final_recommendation": "major_revision",
+  "final_confidence": "medium",
+  "stage_artifacts": [
+    "GPD/publication/paper-a-main-7a640e3609ef/review/STAGE-reader.json",
+    "GPD/publication/paper-a-main-7a640e3609ef/review/STAGE-literature.json",
+    "GPD/publication/paper-a-main-7a640e3609ef/review/STAGE-math.json",
+    "GPD/publication/paper-a-main-7a640e3609ef/review/STAGE-physics.json",
+    "GPD/publication/paper-a-main-7a640e3609ef/review/STAGE-interestingness.json"
+  ],
+  "central_claims_supported": true,
+  "claim_scope_proportionate_to_evidence": false,
+  "physical_assumptions_justified": true,
+  "proof_audit_coverage_complete": false,
+  "theorem_proof_alignment_adequate": false,
+  "unsupported_claims_are_central": false,
+  "reframing_possible_without_new_results": true,
+  "mathematical_correctness": "adequate",
+  "novelty": "adequate",
+  "significance": "adequate",
+  "venue_fit": "adequate",
+  "literature_positioning": "weak",
+  "unresolved_major_issues": 9,
+  "unresolved_minor_issues": 14,
+  "blocking_issue_ids": [
+    "REF-R001",
+    "REF-R002",
+    "REF-M001",
+    "REF-L001",
+    "REF-L002",
+    "REF-P004",
+    "REF-X001"
+  ]
+}
