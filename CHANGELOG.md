@@ -8,6 +8,14 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Changed
+- **Inference is now deterministic (G4):** the with-BH-mass MC denominator draws from a
+  per-host stream derived from `(base_seed, detection_index, host_z, host_M)`;
+  `--seed` reaches the inference layer via `evaluate(..., base_seed=...)` (default 0).
+  Previously unseeded ~1% MC noise made 2D-channel posteriors non-reproducible run-to-run.
+- **Fisher condition-number gate (G10):** `kappa > FISHER_CONDITION_NUMBER_MAX = 1e14`
+  now skips the event (was log-only); singular matrices are caught by the same gate.
+- **Completion-term solid-angle Jacobian (G2a):** `B_num` sky marginal is
+  `(sin θ_det/4π)·N(d_L_frac; 1, Σ[2,2])`; `volume_deconv` `Z_g`/`D_g` window clamped to z ≥ 0.
 - **[PHYSICS] BREAKING — missing `dt²` DFT normalization restored in the LISA inner product**
   (`parameter_estimation.scalar_product_of_functions`). The raw `rfft` output was integrated
   against the physical PSD without the `h̃(f) = dt·X` correspondence, making every SNR exactly

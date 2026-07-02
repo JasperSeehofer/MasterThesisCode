@@ -770,6 +770,8 @@ class BayesianStatistics:
     # In-catalogue normalization (set by evaluate()); "volume_deconv" is the
     # calibrated default. See evaluate() for "global"/"local_ratio".
     _normalization_mode: str = "volume_deconv"
+    # G4: base seed for the deterministic with-BH-mass MC denominator streams.
+    _base_seed: int = 0
 
     def __init__(self) -> None:
         self.h_values = []
@@ -802,8 +804,12 @@ class BayesianStatistics:
         pdet_estimator: str = "local_linear",
         fisher_cond_threshold: float = 1e16,
         normalization_mode: str = "volume_deconv",
+        base_seed: int = 0,
     ) -> None:
         self.catalog_only = catalog_only
+        # G4: deterministic seed for the with-BH-mass MC denominator (threaded to
+        # single_host_likelihood workers; per-call streams derived per host).
+        self._base_seed = int(base_seed) if base_seed is not None else 0
         # In-catalogue normalization for the non-catalog_only Gray single ratio
         # (commission de-rail study, 2026-07-01):
         #   "global"        -> legacy partition-norm:  L_cat = (Σ_local w_g N_g)/(Σ_GLOBAL w_g D_g)
@@ -1462,6 +1468,7 @@ class BayesianStatistics:
                     self.h,
                     True,
                     self._normalization_mode,
+                    self._base_seed,
                 )
                 for host in possible_host_galaxies_with_bh_mass
             ],
@@ -1482,6 +1489,7 @@ class BayesianStatistics:
                     self.h,
                     False,
                     self._normalization_mode,
+                    self._base_seed,
                 )
                 for host in possible_host_galaxies_reduced
             ],
@@ -1809,7 +1817,8 @@ def single_host_likelihood(
     detection_index: int,
     h: float,
     evaluate_with_bh_mass: bool,
-    normalization_mode: str = "global",
+    normalization_mode: str = "volume_deconv",
+    base_seed: int = 0,
 ) -> list[float]:
     global redshift_upper_integration_limit
     global redshift_lower_integration_limit
@@ -2088,9 +2097,24 @@ def single_host_likelihood(
         # Relative MC error ~ std(p_det) / (sqrt(N) * mean(p_det)) ~ 1% for N=10000.
         # Numerator uses fixed_quad (1D over z, mass analytically marginalized) --
         # the quadrature-vs-MC asymmetry is a numerical choice, not a physics error.
+        # G4 gate: DETERMINISTIC importance sampling. The stream is derived from
+        # (base_seed, detection_index, host_z, host_M), so identical inputs give
+        # identical likelihoods regardless of worker scheduling, and --seed
+        # reaches the inference layer (previously unseeded: ~1% MC noise made
+        # posteriors non-reproducible run-to-run).
+        _mc_rng = np.random.default_rng(
+            np.random.SeedSequence(
+                entropy=int(base_seed) & 0xFFFFFFFF,
+                spawn_key=(
+                    int(detection_index) & 0xFFFFFFFF,
+                    int(abs(host_z) * 1e8) & 0xFFFFFFFF,
+                    int(abs(host_M)) & 0xFFFFFFFF,
+                ),
+            )
+        )
         N_SAMPLES = 10_000
-        z_samples = galaxy_redshift_normal_distribution.rvs(size=N_SAMPLES)
-        M_samples = galaxy_mass_normal_distribution.rvs(size=N_SAMPLES)
+        z_samples = galaxy_redshift_normal_distribution.rvs(size=N_SAMPLES, random_state=_mc_rng)
+        M_samples = galaxy_mass_normal_distribution.rvs(size=N_SAMPLES, random_state=_mc_rng)
 
         numerator_integrant_from_samples = denominator_integrant_with_bh_mass_vectorized(
             M_samples, z_samples

@@ -282,6 +282,18 @@ def test_default_normalization_mode_is_volume_deconv() -> None:
     assert BayesianStatistics._normalization_mode == "volume_deconv"
 
 
+def test_base_seed_threaded_to_workers() -> None:
+    """G4 reproducibility: evaluate() exposes base_seed (default 0 = deterministic)
+    and single_host_likelihood accepts it (the MC denominator stream derives from
+    (base_seed, detection_index, host_z, host_M))."""
+    from master_thesis_code.bayesian_inference.bayesian_statistics import single_host_likelihood
+
+    assert inspect.signature(BayesianStatistics.evaluate).parameters["base_seed"].default == 0
+    assert BayesianStatistics._base_seed == 0
+    shl_params = inspect.signature(single_host_likelihood).parameters
+    assert "base_seed" in shl_params and shl_params["base_seed"].default == 0
+
+
 def test_global_mode_emits_calibration_warning() -> None:
     """Explicitly requesting the legacy 'global' mode warns about mis-calibration."""
     instance = object.__new__(BayesianStatistics)

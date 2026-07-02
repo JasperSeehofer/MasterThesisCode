@@ -120,6 +120,8 @@ def main() -> None:
             pdet_estimator=arguments.pdet_estimator,
             fisher_cond_threshold=arguments.fisher_cond_threshold,
             normalization_mode=arguments.normalization_mode,
+            # G4: --seed now reaches the inference layer (deterministic MC denominator).
+            base_seed=seed,
         )
 
     if arguments.snr_analysis:
@@ -830,6 +832,7 @@ def evaluate(
     pdet_estimator: str = "local_linear",
     fisher_cond_threshold: float = 1e16,
     normalization_mode: str = "volume_deconv",
+    base_seed: int | None = None,
 ) -> None:
     from master_thesis_code.bayesian_inference.bayesian_statistics import BayesianStatistics
 
@@ -845,6 +848,7 @@ def evaluate(
         pdet_estimator=pdet_estimator,
         fisher_cond_threshold=fisher_cond_threshold,
         normalization_mode=normalization_mode,
+        base_seed=base_seed if base_seed is not None else 0,
     )
 
 
