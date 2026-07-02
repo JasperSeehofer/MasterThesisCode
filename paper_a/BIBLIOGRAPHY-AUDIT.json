@@ -1,0 +1,748 @@
+{
+  "generated_at": "2026-07-02T19:26:10.837854+00:00",
+  "total_sources": 39,
+  "resolved_sources": 39,
+  "partial_sources": 0,
+  "unverified_sources": 9,
+  "failed_sources": 0,
+  "entries": [
+    {
+      "key": "Schutz:1986gp",
+      "source_type": "paper",
+      "reference_id": null,
+      "title": "{Determining the Hubble Constant from Gravitational Wave Observations}",
+      "resolution_status": "provided",
+      "verification_status": "verified",
+      "verification_sources": [
+        "Paper B bibliographer session (entry seeded from paper/references.bib, INSPIRE-verified)"
+      ],
+      "canonical_identifiers": [
+        "doi:10.1038/323310a0"
+      ],
+      "missing_core_fields": [],
+      "enriched_fields": [],
+      "warnings": [],
+      "errors": []
+    },
+    {
+      "key": "Gray:2019ksv",
+      "source_type": "paper",
+      "reference_id": null,
+      "title": "{Cosmological inference using gravitational wave standard sirens: A mock data challenge}",
+      "resolution_status": "provided",
+      "verification_status": "verified",
+      "verification_sources": [
+        "Paper B bibliographer session (entry seeded from paper/references.bib, INSPIRE-verified)"
+      ],
+      "canonical_identifiers": [
+        "doi:10.1103/PhysRevD.101.122001",
+        "arxiv:1908.06050"
+      ],
+      "missing_core_fields": [],
+      "enriched_fields": [],
+      "warnings": [],
+      "errors": []
+    },
+    {
+      "key": "Laghi:2021pqk",
+      "source_type": "paper",
+      "reference_id": null,
+      "title": "{Gravitational-wave cosmology with extreme mass-ratio inspirals}",
+      "resolution_status": "provided",
+      "verification_status": "verified",
+      "verification_sources": [
+        "Paper B bibliographer session (entry seeded from paper/references.bib, INSPIRE-verified)"
+      ],
+      "canonical_identifiers": [
+        "doi:10.1093/mnras/stab2741",
+        "arxiv:2102.01708"
+      ],
+      "missing_core_fields": [],
+      "enriched_fields": [],
+      "warnings": [],
+      "errors": []
+    },
+    {
+      "key": "Babak:2017tow",
+      "source_type": "paper",
+      "reference_id": null,
+      "title": "{Science with the space-based interferometer LISA. V: Extreme mass-ratio inspirals}",
+      "resolution_status": "provided",
+      "verification_status": "verified",
+      "verification_sources": [
+        "Paper B bibliographer session (entry seeded from paper/references.bib, INSPIRE-verified)"
+      ],
+      "canonical_identifiers": [
+        "doi:10.1103/PhysRevD.95.103012",
+        "arxiv:1703.09722"
+      ],
+      "missing_core_fields": [],
+      "enriched_fields": [],
+      "warnings": [],
+      "errors": []
+    },
+    {
+      "key": "Katz:2021yft",
+      "source_type": "paper",
+      "reference_id": null,
+      "title": "{GPU-accelerated massive black hole binary parameter estimation with LISA}",
+      "resolution_status": "provided",
+      "verification_status": "unverified",
+      "verification_sources": [],
+      "canonical_identifiers": [
+        "doi:10.1103/PhysRevD.104.064047",
+        "arxiv:2104.04582"
+      ],
+      "missing_core_fields": [],
+      "enriched_fields": [],
+      "warnings": [
+        "Uncited orphan entry (seeded from Paper B bibliography); prune before submission"
+      ],
+      "errors": []
+    },
+    {
+      "key": "Chua:2020stf",
+      "source_type": "paper",
+      "reference_id": null,
+      "title": "{Rapid generation of fully relativistic extreme-mass-ratio-inspiral waveform templates for LISA data analysis}",
+      "resolution_status": "provided",
+      "verification_status": "unverified",
+      "verification_sources": [],
+      "canonical_identifiers": [
+        "doi:10.1103/PhysRevLett.126.051102",
+        "arxiv:2008.06071"
+      ],
+      "missing_core_fields": [],
+      "enriched_fields": [],
+      "warnings": [
+        "Uncited orphan entry (seeded from Paper B bibliography); prune before submission"
+      ],
+      "errors": []
+    },
+    {
+      "key": "Katz:2022yqe",
+      "source_type": "paper",
+      "reference_id": null,
+      "title": "{fastlisaresponse: A GPU-accelerated LISA response function}",
+      "resolution_status": "provided",
+      "verification_status": "unverified",
+      "verification_sources": [],
+      "canonical_identifiers": [
+        "arxiv:2204.06633"
+      ],
+      "missing_core_fields": [],
+      "enriched_fields": [],
+      "warnings": [
+        "Uncited orphan entry (seeded from Paper B bibliography); prune before submission"
+      ],
+      "errors": []
+    },
+    {
+      "key": "Dalya:2021ewn",
+      "source_type": "paper",
+      "reference_id": null,
+      "title": "{GLADE+: an extended galaxy catalogue for multimessenger searches with advanced gravitational-wave detectors}",
+      "resolution_status": "provided",
+      "verification_status": "verified",
+      "verification_sources": [
+        "Paper B bibliographer session (entry seeded from paper/references.bib, INSPIRE-verified)"
+      ],
+      "canonical_identifiers": [
+        "doi:10.1093/mnras/stac1443",
+        "arxiv:2110.06184"
+      ],
+      "missing_core_fields": [],
+      "enriched_fields": [],
+      "warnings": [],
+      "errors": []
+    },
+    {
+      "key": "LISA:2024hlh",
+      "source_type": "paper",
+      "reference_id": null,
+      "title": "{New horizons for fundamental physics with LISA}",
+      "resolution_status": "provided",
+      "verification_status": "verified",
+      "verification_sources": [
+        "Paper B bibliographer session (entry seeded from paper/references.bib, INSPIRE-verified)"
+      ],
+      "canonical_identifiers": [
+        "doi:10.1007/s41114-022-00036-9",
+        "arxiv:2205.01597"
+      ],
+      "missing_core_fields": [],
+      "enriched_fields": [],
+      "warnings": [],
+      "errors": []
+    },
+    {
+      "key": "Chen:2017rfc",
+      "source_type": "paper",
+      "reference_id": null,
+      "title": "{A two per cent Hubble constant measurement from standard sirens within five years}",
+      "resolution_status": "provided",
+      "verification_status": "verified",
+      "verification_sources": [
+        "Paper B bibliographer session (entry seeded from paper/references.bib, INSPIRE-verified)"
+      ],
+      "canonical_identifiers": [
+        "doi:10.1038/s41586-018-0606-0",
+        "arxiv:1712.06531"
+      ],
+      "missing_core_fields": [],
+      "enriched_fields": [],
+      "warnings": [],
+      "errors": []
+    },
+    {
+      "key": "Gair:2022zsa",
+      "source_type": "paper",
+      "reference_id": null,
+      "title": "{The Hitchhiker's guide to the galaxy catalog approach for dark siren cosmology}",
+      "resolution_status": "provided",
+      "verification_status": "verified",
+      "verification_sources": [
+        "Paper B bibliographer session (entry seeded from paper/references.bib, INSPIRE-verified)"
+      ],
+      "canonical_identifiers": [
+        "doi:10.3847/1538-3881/acca78",
+        "arxiv:2212.08694"
+      ],
+      "missing_core_fields": [],
+      "enriched_fields": [],
+      "warnings": [],
+      "errors": []
+    },
+    {
+      "key": "Reines:2015moa",
+      "source_type": "paper",
+      "reference_id": null,
+      "title": "{Relations between Central Black Hole Mass and Total Galaxy Stellar Mass in the Local Universe}",
+      "resolution_status": "provided",
+      "verification_status": "unverified",
+      "verification_sources": [],
+      "canonical_identifiers": [
+        "doi:10.1088/0004-637X/813/2/82",
+        "arxiv:1508.06274"
+      ],
+      "missing_core_fields": [],
+      "enriched_fields": [],
+      "warnings": [
+        "Uncited orphan entry (seeded from Paper B bibliography); prune before submission"
+      ],
+      "errors": []
+    },
+    {
+      "key": "Vallisneri:2007ev",
+      "source_type": "paper",
+      "reference_id": null,
+      "title": "{Use and abuse of the Fisher information matrix in the assessment of gravitational-wave parameter-estimation prospects}",
+      "resolution_status": "provided",
+      "verification_status": "verified",
+      "verification_sources": [
+        "Paper B bibliographer session (entry seeded from paper/references.bib, INSPIRE-verified)"
+      ],
+      "canonical_identifiers": [
+        "doi:10.1103/PhysRevD.77.042001",
+        "arxiv:gr-qc/0703086"
+      ],
+      "missing_core_fields": [],
+      "enriched_fields": [],
+      "warnings": [],
+      "errors": []
+    },
+    {
+      "key": "Hogg:1999ad",
+      "source_type": "paper",
+      "reference_id": null,
+      "title": "{Distance measures in cosmology}",
+      "resolution_status": "provided",
+      "verification_status": "verified",
+      "verification_sources": [
+        "Paper B bibliographer session (entry seeded from paper/references.bib, INSPIRE-verified)"
+      ],
+      "canonical_identifiers": [
+        "arxiv:astro-ph/9905116"
+      ],
+      "missing_core_fields": [],
+      "enriched_fields": [],
+      "warnings": [],
+      "errors": []
+    },
+    {
+      "key": "Babak:2023lro",
+      "source_type": "paper",
+      "reference_id": null,
+      "title": "{LISA Sensitivity and SNR Calculations}",
+      "resolution_status": "provided",
+      "verification_status": "verified",
+      "verification_sources": [
+        "Paper B bibliographer session (entry seeded from paper/references.bib, INSPIRE-verified)"
+      ],
+      "canonical_identifiers": [
+        "arxiv:2108.01167"
+      ],
+      "missing_core_fields": [],
+      "enriched_fields": [],
+      "warnings": [
+        "Texkey year suffix inconsistent with content (arXiv:2108.01167 is 2021; INSPIRE texkey is Babak:2021mhe); key kept for existing citations"
+      ],
+      "errors": []
+    },
+    {
+      "key": "Abbott:2017xzu",
+      "source_type": "paper",
+      "reference_id": null,
+      "title": "{A gravitational-wave standard siren measurement of the Hubble constant}",
+      "resolution_status": "provided",
+      "verification_status": "verified",
+      "verification_sources": [
+        "Paper B bibliographer session (entry seeded from paper/references.bib, INSPIRE-verified)"
+      ],
+      "canonical_identifiers": [
+        "doi:10.1038/nature24471",
+        "arxiv:1710.05835"
+      ],
+      "missing_core_fields": [],
+      "enriched_fields": [],
+      "warnings": [],
+      "errors": []
+    },
+    {
+      "key": "Riess:2021jrx",
+      "source_type": "paper",
+      "reference_id": null,
+      "title": "{A Comprehensive Measurement of the Local Value of the Hubble Constant with 1 km s$^{-1}$ Mpc$^{-1}$ Uncertainty from the Hubble Space Telescope and the SH0ES Team}",
+      "resolution_status": "provided",
+      "verification_status": "verified",
+      "verification_sources": [
+        "Paper B bibliographer session (entry seeded from paper/references.bib, INSPIRE-verified)"
+      ],
+      "canonical_identifiers": [
+        "doi:10.3847/2041-8213/ac5c5b",
+        "arxiv:2112.04510"
+      ],
+      "missing_core_fields": [],
+      "enriched_fields": [],
+      "warnings": [],
+      "errors": []
+    },
+    {
+      "key": "Planck:2018vyg",
+      "source_type": "paper",
+      "reference_id": null,
+      "title": "{Planck 2018 results. VI. Cosmological parameters}",
+      "resolution_status": "provided",
+      "verification_status": "verified",
+      "verification_sources": [
+        "Paper B bibliographer session (entry seeded from paper/references.bib, INSPIRE-verified)"
+      ],
+      "canonical_identifiers": [
+        "doi:10.1051/0004-6361/201833910",
+        "arxiv:1807.06209"
+      ],
+      "missing_core_fields": [],
+      "enriched_fields": [],
+      "warnings": [],
+      "errors": []
+    },
+    {
+      "key": "Mandel:2018mve",
+      "source_type": "paper",
+      "reference_id": null,
+      "title": "{Extracting distribution parameters from multiple uncertain observations with selection biases}",
+      "resolution_status": "provided",
+      "verification_status": "verified",
+      "verification_sources": [
+        "Paper B bibliographer session (entry seeded from paper/references.bib, INSPIRE-verified)"
+      ],
+      "canonical_identifiers": [
+        "doi:10.1093/mnras/stz896",
+        "arxiv:1809.02063"
+      ],
+      "missing_core_fields": [],
+      "enriched_fields": [],
+      "warnings": [],
+      "errors": []
+    },
+    {
+      "key": "Tiwari:2017ndi",
+      "source_type": "paper",
+      "reference_id": null,
+      "title": "{Estimation of the sensitive volume for gravitational-wave source populations using weighted Monte Carlo integration}",
+      "resolution_status": "provided",
+      "verification_status": "unverified",
+      "verification_sources": [],
+      "canonical_identifiers": [
+        "doi:10.1088/1361-6382/aac89d",
+        "arxiv:1712.00482"
+      ],
+      "missing_core_fields": [],
+      "enriched_fields": [],
+      "warnings": [
+        "Uncited orphan entry (seeded from Paper B bibliography); prune before submission"
+      ],
+      "errors": []
+    },
+    {
+      "key": "Farr:2019rap",
+      "source_type": "paper",
+      "reference_id": null,
+      "title": "{Accuracy requirements for empirically measured selection functions}",
+      "resolution_status": "provided",
+      "verification_status": "unverified",
+      "verification_sources": [],
+      "canonical_identifiers": [
+        "doi:10.3847/2515-5172/ab1d5f"
+      ],
+      "missing_core_fields": [],
+      "enriched_fields": [],
+      "warnings": [
+        "Uncited orphan entry (seeded from Paper B bibliography); prune before submission"
+      ],
+      "errors": []
+    },
+    {
+      "key": "Cornish:2017oic",
+      "source_type": "paper",
+      "reference_id": null,
+      "title": "{Galactic binary science with the new LISA design}",
+      "resolution_status": "provided",
+      "verification_status": "unverified",
+      "verification_sources": [],
+      "canonical_identifiers": [
+        "doi:10.1088/1742-6596/840/1/012024",
+        "arxiv:1703.09858"
+      ],
+      "missing_core_fields": [],
+      "enriched_fields": [],
+      "warnings": [
+        "Uncited orphan entry (seeded from Paper B bibliography); prune before submission"
+      ],
+      "errors": []
+    },
+    {
+      "key": "Hinshaw:2012aka",
+      "source_type": "paper",
+      "reference_id": null,
+      "title": "{Nine-Year Wilkinson Microwave Anisotropy Probe (WMAP) Observations: Cosmological Parameter Results}",
+      "resolution_status": "provided",
+      "verification_status": "unverified",
+      "verification_sources": [],
+      "canonical_identifiers": [
+        "doi:10.1088/0067-0049/208/2/19",
+        "arxiv:1212.5226"
+      ],
+      "missing_core_fields": [],
+      "enriched_fields": [],
+      "warnings": [
+        "Uncited orphan entry (seeded from Paper B bibliography); prune before submission"
+      ],
+      "errors": []
+    },
+    {
+      "key": "Wilson:1927",
+      "source_type": "paper",
+      "reference_id": null,
+      "title": "{Probable Inference, the Law of Succession, and Statistical Inference}",
+      "resolution_status": "provided",
+      "verification_status": "verified",
+      "verification_sources": [
+        "Paper B bibliographer session (entry seeded from paper/references.bib, INSPIRE-verified)"
+      ],
+      "canonical_identifiers": [
+        "doi:10.1080/01621459.1927.10502953"
+      ],
+      "missing_core_fields": [],
+      "enriched_fields": [],
+      "warnings": [],
+      "errors": []
+    },
+    {
+      "key": "DES:2024tys",
+      "source_type": "paper",
+      "reference_id": null,
+      "title": "{The Dark Energy Survey: Cosmology Results with $\\sim$1500 New High-redshift Type Ia Supernovae Using the Full 5-Year Dataset}",
+      "resolution_status": "provided",
+      "verification_status": "unverified",
+      "verification_sources": [],
+      "canonical_identifiers": [
+        "doi:10.3847/2041-8213/ad6f9f",
+        "arxiv:2401.02929"
+      ],
+      "missing_core_fields": [],
+      "enriched_fields": [],
+      "warnings": [
+        "Uncited orphan entry (seeded from Paper B bibliography); prune before submission"
+      ],
+      "errors": []
+    },
+    {
+      "key": "Barausse:2012fy",
+      "source_type": "paper",
+      "reference_id": null,
+      "title": "{The evolution of massive black holes and their spins in their galactic hosts}",
+      "resolution_status": "provided",
+      "verification_status": "verified",
+      "verification_sources": [
+        "INSPIRE-HEP API (texkey match)"
+      ],
+      "canonical_identifiers": [
+        "doi:10.1111/j.1365-2966.2012.21057.x",
+        "arxiv:1201.5888"
+      ],
+      "missing_core_fields": [],
+      "enriched_fields": [],
+      "warnings": [],
+      "errors": []
+    },
+    {
+      "key": "Bishop2006",
+      "source_type": "paper",
+      "reference_id": null,
+      "title": "{Pattern Recognition and Machine Learning}",
+      "resolution_status": "provided",
+      "verification_status": "verified",
+      "verification_sources": [
+        "Springer catalogue",
+        "Microsoft Research book page"
+      ],
+      "canonical_identifiers": [],
+      "missing_core_fields": [],
+      "enriched_fields": [],
+      "warnings": [
+        "No canonical identifier available"
+      ],
+      "errors": []
+    },
+    {
+      "key": "Borghi:2023opd",
+      "source_type": "paper",
+      "reference_id": null,
+      "title": "{Cosmology and Astrophysics with Standard Sirens and Galaxy Catalogs in View of Future Gravitational Wave Observations}",
+      "resolution_status": "provided",
+      "verification_status": "verified",
+      "verification_sources": [
+        "INSPIRE-HEP API (texkey match)"
+      ],
+      "canonical_identifiers": [
+        "doi:10.3847/1538-4357/ad20eb",
+        "arxiv:2312.05302"
+      ],
+      "missing_core_fields": [],
+      "enriched_fields": [],
+      "warnings": [],
+      "errors": []
+    },
+    {
+      "key": "Cook2006",
+      "source_type": "paper",
+      "reference_id": null,
+      "title": "{Validation of Software for Bayesian Models Using Posterior Quantiles}",
+      "resolution_status": "provided",
+      "verification_status": "verified",
+      "verification_sources": [
+        "Taylor & Francis DOI 10.1198/106186006X136976",
+        "Columbia University PDF"
+      ],
+      "canonical_identifiers": [
+        "doi:10.1198/106186006X136976"
+      ],
+      "missing_core_fields": [],
+      "enriched_fields": [],
+      "warnings": [
+        "Published correction exists (Gelman 2017, DOI 10.1080/10618600.2017.1377082); the cited calibration property is unaffected"
+      ],
+      "errors": []
+    },
+    {
+      "key": "DelPozzo:2011vcw",
+      "source_type": "paper",
+      "reference_id": null,
+      "title": "{Inference of the cosmological parameters from gravitational waves: application to second generation interferometers}",
+      "resolution_status": "provided",
+      "verification_status": "verified",
+      "verification_sources": [
+        "INSPIRE-HEP API (texkey match)"
+      ],
+      "canonical_identifiers": [
+        "doi:10.1103/PhysRevD.86.043011",
+        "arxiv:1108.1317"
+      ],
+      "missing_core_fields": [],
+      "enriched_fields": [],
+      "warnings": [],
+      "errors": []
+    },
+    {
+      "key": "DiValentino:2021izs",
+      "source_type": "paper",
+      "reference_id": null,
+      "title": "{In the realm of the Hubble tension---a review of solutions}",
+      "resolution_status": "provided",
+      "verification_status": "verified",
+      "verification_sources": [
+        "INSPIRE-HEP API (texkey match)"
+      ],
+      "canonical_identifiers": [
+        "doi:10.1088/1361-6382/ac086d",
+        "arxiv:2103.01183"
+      ],
+      "missing_core_fields": [],
+      "enriched_fields": [],
+      "warnings": [],
+      "errors": []
+    },
+    {
+      "key": "Eddington1913",
+      "source_type": "paper",
+      "reference_id": null,
+      "title": "{On a Formula for Correcting Statistics for the Effects of a Known Probable Error of Observation}",
+      "resolution_status": "provided",
+      "verification_status": "verified",
+      "verification_sources": [
+        "ADS bibcode 1913MNRAS..73..359E",
+        "OUP journal page"
+      ],
+      "canonical_identifiers": [
+        "doi:10.1093/mnras/73.5.359"
+      ],
+      "missing_core_fields": [],
+      "enriched_fields": [],
+      "warnings": [],
+      "errors": []
+    },
+    {
+      "key": "Finke:2021aom",
+      "source_type": "paper",
+      "reference_id": null,
+      "title": "{Cosmology with LIGO/Virgo dark sirens: Hubble parameter and modified gravitational wave propagation}",
+      "resolution_status": "provided",
+      "verification_status": "verified",
+      "verification_sources": [
+        "INSPIRE-HEP API (texkey match)"
+      ],
+      "canonical_identifiers": [
+        "doi:10.1088/1475-7516/2021/08/026",
+        "arxiv:2101.12660"
+      ],
+      "missing_core_fields": [],
+      "enriched_fields": [],
+      "warnings": [],
+      "errors": []
+    },
+    {
+      "key": "Gray:2021sew",
+      "source_type": "paper",
+      "reference_id": null,
+      "title": "{A pixelated approach to galaxy catalogue incompleteness: improving the dark siren measurement of the Hubble constant}",
+      "resolution_status": "provided",
+      "verification_status": "verified",
+      "verification_sources": [
+        "INSPIRE-HEP API (texkey match)"
+      ],
+      "canonical_identifiers": [
+        "doi:10.1093/mnras/stac366",
+        "arxiv:2111.04629"
+      ],
+      "missing_core_fields": [],
+      "enriched_fields": [],
+      "warnings": [],
+      "errors": []
+    },
+    {
+      "key": "Gray:2023wgj",
+      "source_type": "paper",
+      "reference_id": null,
+      "title": "{Joint cosmological and gravitational-wave population inference using dark sirens and galaxy catalogues}",
+      "resolution_status": "provided",
+      "verification_status": "verified",
+      "verification_sources": [
+        "INSPIRE-HEP API (texkey match)"
+      ],
+      "canonical_identifiers": [
+        "doi:10.1088/1475-7516/2023/12/023",
+        "arxiv:2308.02281"
+      ],
+      "missing_core_fields": [],
+      "enriched_fields": [],
+      "warnings": [],
+      "errors": []
+    },
+    {
+      "key": "LIGOScientific:2021aug",
+      "source_type": "paper",
+      "reference_id": null,
+      "title": "{Constraints on the Cosmic Expansion History from GWTC-3}",
+      "resolution_status": "provided",
+      "verification_status": "verified",
+      "verification_sources": [
+        "INSPIRE-HEP API (texkey match)"
+      ],
+      "canonical_identifiers": [
+        "doi:10.3847/1538-4357/ac74bb",
+        "arxiv:2111.03604"
+      ],
+      "missing_core_fields": [],
+      "enriched_fields": [],
+      "warnings": [],
+      "errors": []
+    },
+    {
+      "key": "Malmquist1922",
+      "source_type": "paper",
+      "reference_id": null,
+      "title": "{On Some Relations in Stellar Statistics}",
+      "resolution_status": "provided",
+      "verification_status": "verified",
+      "verification_sources": [
+        "ADS bibcode 1922MeLuF.100....1M"
+      ],
+      "canonical_identifiers": [],
+      "missing_core_fields": [],
+      "enriched_fields": [],
+      "warnings": [
+        "No canonical identifier available"
+      ],
+      "errors": []
+    },
+    {
+      "key": "Mastrogiovanni:2023zbw",
+      "source_type": "paper",
+      "reference_id": null,
+      "title": "{ICAROGW: A python package for inference of astrophysical population properties of noisy, heterogeneous, and incomplete observations}",
+      "resolution_status": "provided",
+      "verification_status": "verified",
+      "verification_sources": [
+        "INSPIRE-HEP API (texkey match)"
+      ],
+      "canonical_identifiers": [
+        "doi:10.1051/0004-6361/202347007",
+        "arxiv:2305.17973"
+      ],
+      "missing_core_fields": [],
+      "enriched_fields": [],
+      "warnings": [],
+      "errors": []
+    },
+    {
+      "key": "Turski:2023lxq",
+      "source_type": "paper",
+      "reference_id": null,
+      "title": "{Impact of modelling galaxy redshift uncertainties on the gravitational-wave dark standard siren measurement of the Hubble constant}",
+      "resolution_status": "provided",
+      "verification_status": "verified",
+      "verification_sources": [
+        "INSPIRE-HEP API (texkey match)"
+      ],
+      "canonical_identifiers": [
+        "doi:10.1093/mnras/stad3110",
+        "arxiv:2302.12037"
+      ],
+      "missing_core_fields": [],
+      "enriched_fields": [],
+      "warnings": [],
+      "errors": []
+    }
+  ]
+}

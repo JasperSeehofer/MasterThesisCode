@@ -1,0 +1,324 @@
+{
+  "paper_title": "Photometric-redshift prior consistency and calibration in galaxy-catalogue dark-siren Hubble-constant inference",
+  "date": "2026-07-02",
+  "contact": "jasperseehofermusic@gmail.com",
+  "environment": {
+    "python_version": "3.13.12",
+    "package_manager": "uv",
+    "virtual_environment": ".venv",
+    "required_packages": [
+      {
+        "package": "numpy",
+        "version": "2.4.3",
+        "purpose": "Array operations and linear algebra"
+      },
+      {
+        "package": "scipy",
+        "version": "1.17.1",
+        "purpose": "Integration, special functions, statistics (cosmology tables, HPD levels)"
+      },
+      {
+        "package": "matplotlib",
+        "version": "3.10.8",
+        "purpose": "All paper figures (Agg backend, emri_thesis.mplstyle)"
+      },
+      {
+        "package": "pandas",
+        "version": "3.0.1",
+        "purpose": "Cramer-Rao bounds CSV and galaxy-catalogue handling"
+      }
+    ],
+    "lock_file": "uv.lock",
+    "system_requirements": {
+      "operating_systems": [
+        "Arch Linux (dev machine)",
+        "RHEL 9.x (bwUniCluster 3.0 login node, paper build only)"
+      ],
+      "architectures": [
+        "x86_64"
+      ],
+      "compiler": "",
+      "gpu": "None required for paper artifacts (CUDA 12 is only needed for the upstream EMRI simulation pipeline)"
+    }
+  },
+  "input_data": [
+    {
+      "name": "GLADE+ reduced galaxy catalogue (z_helio variant, 8-column)",
+      "source": "master_thesis_code/galaxy_catalogue/reduced_galaxy_catalogue.csv.zhelio_20260702",
+      "version_or_date": "2026-07-02",
+      "download_url": "http://glade.elte.hu/ (upstream GLADE+; reduced extract produced by master_thesis_code/galaxy_catalogue)",
+      "checksum_sha256": "7d2042d6a9a406f5aa788d169fa8d6fbe3d52ab1ad5986966c04cd331824f2de",
+      "license": "GLADE+ is publicly available for scientific use (Dalya et al. 2022)",
+      "transformations": "8-column reduced GLADE+ extract with heliocentric redshifts; the variant used by all committed seed600 baselines"
+    },
+    {
+      "name": "seed600 prepared Cramer-Rao bounds (EMRI campaign, 3375 events)",
+      "source": "bwUniCluster workspace $(ws_find emri)/run_20260628_seed600/simulations/prepared_cramer_rao_bounds.csv; local mirror ~/data-backups/seed600_local_derail_20260702/crux_ws/simulations/",
+      "version_or_date": "2026-06-28 (seed600 simulation campaign, commit 61cdd02 lineage)",
+      "download_url": "",
+      "checksum_sha256": "67fef3c752fe4b3acc86a900c3bddfd527b2747157ca3baff37995deeb2cef3d",
+      "license": "Project-generated simulation product",
+      "transformations": "Per-event Fisher/Cramer-Rao table; the 494-event GLADE+ subsample used by the de-rail matrix is drawn from it"
+    },
+    {
+      "name": "G1 beta_G discrete-sum gate artifact",
+      "source": ".planning/gate/G1_beta_g_check.json",
+      "version_or_date": "2026-07-01",
+      "download_url": "",
+      "checksum_sha256": "0f3d153bf571ee0b911ae70c752ec0e6215244eece1276caf2f05ad4117f39ac",
+      "license": "Project-generated",
+      "transformations": "None (read directly by fig_beta_g.py)"
+    },
+    {
+      "name": "G3 ablation-cube gate artifact",
+      "source": ".planning/gate/G3_ablation_cube.json",
+      "version_or_date": "2026-07-01",
+      "download_url": "",
+      "checksum_sha256": "eebfa0aa6517f5abe6c23cf67db0b6fd91f455979cc940721645681a55895de5",
+      "license": "Project-generated",
+      "transformations": "None (read directly by fig_ablation.py)"
+    },
+    {
+      "name": "De-rail matrix results (real seed600 GLADE+ subsample, 5 normalization modes)",
+      "source": "results/commission_20260701/redteam/derail_matrix_results.json",
+      "version_or_date": "2026-07-02 (commit 67d039f)",
+      "download_url": "",
+      "checksum_sha256": "0c4618bce14eeb2689cea2fdda3a6199d701b7fc3ebb971b3ceb7bf16023eb68",
+      "license": "Project-generated",
+      "transformations": "Per-mode combined posteriors also under results/commission_20260701/redteam/posteriors_per_mode/<mode>/ (read by fig_derail_matrix.py)"
+    }
+  ],
+  "generated_data": [
+    {
+      "name": "fig_pp_coverage_data.json (P-P values + coverage summary, bare vs volume kernel)",
+      "script": "paper_a/figures/scripts/fig_pp_coverage.py",
+      "parameters": {
+        "seed": "20260701",
+        "n_realizations": "250",
+        "n_events": "250",
+        "sigma_z": "0.035",
+        "sigma_dl_frac": "0.05",
+        "injected_truths": "0.66, 0.72, 0.78",
+        "kernels": "bare, volume",
+        "h_grid": "0.60:0.86:0.001",
+        "omega_m": "0.3",
+        "d50_gpc": "1.85",
+        "w_pdet_gpc": "0.3"
+      },
+      "size": "43 KB",
+      "checksum_sha256": "e3323da67b58cfaa6baff256cca173d6c3323ea964c8b510e2927845ca730755"
+    }
+  ],
+  "external_dependencies": [
+    {
+      "resource": "GLADE+ galaxy catalogue (upstream)",
+      "access_method": "http://glade.elte.hu/",
+      "restrictions": "open"
+    },
+    {
+      "resource": "TeX Live (>= 2020) with the vendored mnras.cls/mnras.bst for the PDF build",
+      "access_method": "bwUniCluster 3.0 login node (or any TeX Live install); see paper_a/Makefile header",
+      "restrictions": "bwHPC account required for the cluster route; none for a local TeX Live"
+    }
+  ],
+  "execution_steps": [
+    {
+      "name": "fig-beta-g",
+      "command": ".venv/bin/python paper_a/figures/scripts/fig_beta_g.py",
+      "outputs": [
+        "paper_a/figures/fig_beta_g.pdf"
+      ],
+      "stochastic": false,
+      "expected_wall_time": "< 1 min",
+      "parallel_group": "figures"
+    },
+    {
+      "name": "fig-derail-matrix",
+      "command": ".venv/bin/python paper_a/figures/scripts/fig_derail_matrix.py",
+      "outputs": [
+        "paper_a/figures/fig_derail_matrix.pdf"
+      ],
+      "stochastic": false,
+      "expected_wall_time": "< 1 min",
+      "parallel_group": "figures"
+    },
+    {
+      "name": "fig-ablation",
+      "command": ".venv/bin/python paper_a/figures/scripts/fig_ablation.py",
+      "outputs": [
+        "paper_a/figures/fig_ablation.pdf"
+      ],
+      "stochastic": false,
+      "expected_wall_time": "< 1 min",
+      "parallel_group": "figures"
+    },
+    {
+      "name": "fig-pp-coverage",
+      "command": ".venv/bin/python paper_a/figures/scripts/fig_pp_coverage.py",
+      "outputs": [
+        "paper_a/figures/fig_pp_coverage.pdf",
+        "paper_a/figures/data/fig_pp_coverage_data.json"
+      ],
+      "stochastic": true,
+      "expected_wall_time": "~30-60 min (single core; 250 realizations x 3 truths x 2 kernels)",
+      "parallel_group": ""
+    },
+    {
+      "name": "build-pdf",
+      "command": "make -C paper_a  # requires TeX Live; on the dev box: rsync to bwunicluster:paper_a_build/ and make there (see paper_a/Makefile header)",
+      "outputs": [
+        "paper_a/main.pdf"
+      ],
+      "stochastic": false,
+      "expected_wall_time": "~2 min",
+      "parallel_group": ""
+    }
+  ],
+  "expected_results": [
+    {
+      "quantity": "MAP h, production pre-4pi baseline (railed)",
+      "expected_value": "0.86",
+      "tolerance": "exact grid node (edge mass ~ 1.0)",
+      "script": "paper_a/figures/scripts/fig_derail_matrix.py",
+      "figure_or_table": "fig:derail"
+    },
+    {
+      "quantity": "MAP h, 4pi-only completion fix (prod_global, sign-flipped rail)",
+      "expected_value": "0.60",
+      "tolerance": "exact grid node (edge mass ~ 1.0)",
+      "script": "paper_a/figures/scripts/fig_derail_matrix.py",
+      "figure_or_table": "fig:derail"
+    },
+    {
+      "quantity": "MAP h, local_ratio and volume_deconv prior-consistent estimators",
+      "expected_value": "0.73 (= injected truth)",
+      "tolerance": "exact grid node; local_ratio interior mass 0.98, volume_deconv mean +0.010 above local_ratio",
+      "script": "paper_a/figures/scripts/fig_derail_matrix.py",
+      "figure_or_table": "fig:derail"
+    },
+    {
+      "quantity": "90 per cent HPD coverage, volume-deconvolved kernel, h_true = 0.72",
+      "expected_value": "0.848",
+      "tolerance": "+/- 0.05 (binomial, 250 realizations)",
+      "script": "paper_a/figures/scripts/fig_pp_coverage.py",
+      "figure_or_table": "fig:pp"
+    },
+    {
+      "quantity": "90 per cent HPD coverage, bare-Gaussian kernel, h_true = 0.72",
+      "expected_value": "0.072",
+      "tolerance": "+/- 0.05 (binomial, 250 realizations; near-zero coverage is the qualitative claim)",
+      "script": "paper_a/figures/scripts/fig_pp_coverage.py",
+      "figure_or_table": "fig:pp"
+    }
+  ],
+  "output_files": [
+    {
+      "path": "paper_a/figures/fig_beta_g.pdf",
+      "description": "beta_G discrete-sum consistency check (fig:betag)",
+      "approximate_size": "21 KB",
+      "checksum_sha256": "79a73550a98bb2e73aec4123e6d078b34c7b48567c7d87d2b12fbbdcebd976bd",
+      "approximate_checksum": false
+    },
+    {
+      "path": "paper_a/figures/fig_derail_matrix.pdf",
+      "description": "Flagship de-rail posterior matrix (fig:derail)",
+      "approximate_size": "20 KB",
+      "checksum_sha256": "7eb9c78b291c24624c65d5659e8452647bd9085ee0eab763e4b25e9290b13f82",
+      "approximate_checksum": false
+    },
+    {
+      "path": "paper_a/figures/fig_ablation.pdf",
+      "description": "G3 ablation-cube two-factor decomposition (fig:ablation)",
+      "approximate_size": "21 KB",
+      "checksum_sha256": "b1891b86fffc29af329d363e96706118f240126f3ef828a43fa563036bc1abfb",
+      "approximate_checksum": false
+    },
+    {
+      "path": "paper_a/figures/fig_pp_coverage.pdf",
+      "description": "P-P / coverage plot, bare vs volume kernel (fig:pp)",
+      "approximate_size": "51 KB",
+      "checksum_sha256": "f54567be017729394ad025a587d7bb94355c7c9621541729db1c965999069072",
+      "approximate_checksum": false
+    },
+    {
+      "path": "paper_a/main.pdf",
+      "description": "Compiled 21-page MNRAS manuscript (0 LaTeX errors, 0 undefined references)",
+      "approximate_size": "643 KB",
+      "checksum_sha256": "74a333391f5a87540bc7f405481c75d8d87de4a2c11aa75d3ee838a046966643",
+      "approximate_checksum": false
+    }
+  ],
+  "resource_requirements": [
+    {
+      "step": "fig-beta-g",
+      "cpu_cores": 1,
+      "memory_gb": 2.0,
+      "gpu": "",
+      "wall_time": "< 1 min",
+      "notes": "Reads committed gate JSON only"
+    },
+    {
+      "step": "fig-derail-matrix",
+      "cpu_cores": 1,
+      "memory_gb": 2.0,
+      "gpu": "",
+      "wall_time": "< 1 min",
+      "notes": "Reads committed per-mode posteriors"
+    },
+    {
+      "step": "fig-ablation",
+      "cpu_cores": 1,
+      "memory_gb": 2.0,
+      "gpu": "",
+      "wall_time": "< 1 min",
+      "notes": "Reads committed gate JSON only"
+    },
+    {
+      "step": "fig-pp-coverage",
+      "cpu_cores": 1,
+      "memory_gb": 4.0,
+      "gpu": "",
+      "wall_time": "~30-60 min",
+      "notes": "Synthetic-universe calibration harness; single-process"
+    },
+    {
+      "step": "build-pdf",
+      "cpu_cores": 1,
+      "memory_gb": 2.0,
+      "gpu": "",
+      "wall_time": "~2 min",
+      "notes": "pdflatex x3 + bibtex; TeX Live >= 2020"
+    }
+  ],
+  "minimum_viable": "1 core, 4 GB RAM, ~1 h for all figures; any TeX Live >= 2020 for the PDF",
+  "recommended": "4 cores, 8 GB RAM; figures other than fig-pp-coverage are instant",
+  "random_seeds": [
+    {
+      "computation": "fig-pp-coverage",
+      "seed": "20260701",
+      "purpose": "Base seed for the synthetic-universe P-P harness; per-realization child seeds are derived deterministically and shared between the bare and volume kernels so the comparison is exactly paired"
+    }
+  ],
+  "seeding_strategy": "The only stochastic paper step (fig-pp-coverage) fixes base seed 20260701 in the figure script; per-realization child seeds are derived deterministically and reused across kernels. Upstream simulation data (seed600 CRB) was produced with the repository's --seed CLI convention (BASE_SEED + SLURM_ARRAY_TASK_ID), recorded per run in run_metadata.json.",
+  "known_platform_differences": [
+    {
+      "platform": "any (matplotlib PDF output)",
+      "issue": "Matplotlib embeds creation timestamps in PDF metadata, so regenerated figure files are not byte-identical to the recorded checksums.",
+      "workaround": "Set SOURCE_DATE_EPOCH for byte-stable output, or compare figure content numerically via expected_results and fig_pp_coverage_data.json."
+    },
+    {
+      "platform": "TeX Live version differences",
+      "issue": "main.pdf bytes depend on the TeX Live version (build tested on the bwUniCluster login node, TeX Live 2020).",
+      "workaround": "Check for 0 LaTeX errors / 0 undefined references and 21 pages instead of byte identity."
+    }
+  ],
+  "verification_steps": [
+    "Rerun the four figure scripts from the repository root with .venv/bin/python and confirm each exits 0 and regenerates its PDF.",
+    "Compare the regenerated paper_a/figures/data/fig_pp_coverage_data.json coverage table against the expected_results tolerances (volume kernel near-nominal, bare kernel near-zero coverage).",
+    "Confirm the MAP values read at run time from derail_matrix_results.json and G3_ablation_cube.json match the values quoted in the manuscript sections (0.86 / 0.60 / 0.73 / 0.73).",
+    "Rebuild paper_a/main.pdf via make -C paper_a and check 0 LaTeX errors and 0 undefined references at 21 pages."
+  ],
+  "manifest_created": "2026-07-02T19:27:30Z",
+  "last_verified": "2026-07-02T19:27:30Z",
+  "last_verified_platform": "Arch Linux x86_64, Python 3.13.12, uv-managed .venv (figure inputs + checksums verified; PDF build verified on bwUniCluster login node TeX Live)"
+}
