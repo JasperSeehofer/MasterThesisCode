@@ -22,9 +22,16 @@ def _old_peak_sky_factor(mean: np.ndarray, cov: np.ndarray) -> float:
 
 
 def _new_marginal_sky_factor(mean: np.ndarray, cov: np.ndarray) -> float:
-    """NEW behaviour: isotropic sky-marginal = (1/4pi) * N(d_L_frac; mean[2], sqrt(cov[2,2]))."""
+    """NEW behaviour: isotropic sky-marginal = (sin θ_det/4π) · N(d_L_frac; mean[2], √cov[2,2]).
+
+    The sin(θ_det) is the solid-angle Jacobian: the Fisher Gaussian is a density in
+    the bare (φ_S, q_S) coordinates, so the dΩ = sinθ dθ dφ marginal picks up sinθ
+    at the narrow beam position (G2a derivation note, Eq. 10).
+    """
     sigma_dLfrac = float(np.sqrt(cov[2, 2]))
-    return float(norm.pdf(mean[2], loc=mean[2], scale=sigma_dLfrac) / (4.0 * np.pi))
+    return float(
+        norm.pdf(mean[2], loc=mean[2], scale=sigma_dLfrac) * np.sin(mean[1]) / (4.0 * np.pi)
+    )
 
 
 def test_completion_sky_marginal_reduces_magnitude() -> None:
@@ -40,10 +47,26 @@ def test_completion_sky_marginal_reduces_magnitude() -> None:
     assert old > 0.0 and new > 0.0  # sign preserved
     assert new < old  # the fix reduces the completion magnitude
     ratio = old / new
-    # Analytic identity for a factorised Gaussian: old/new = 2 / (sigma_phi * sigma_theta).
-    expected_ratio = 2.0 / (sigma_sky * sigma_sky)
+    # Analytic identity for a factorised Gaussian:
+    # old/new = 2 / (sin(theta_det) * sigma_phi * sigma_theta).
+    expected_ratio = 2.0 / (np.sin(mean[1]) * sigma_sky * sigma_sky)
     assert np.isclose(ratio, expected_ratio, rtol=0.05)
     assert ratio > 1000.0  # ~1640x at sigma_sky = 2 deg -> completion WAS dominating
+
+
+def test_sky_marginal_carries_solid_angle_jacobian() -> None:
+    # [PHYSICS] G2a fix: the isotropic marginal scales as sin(theta_det) — maximal
+    # for equatorial events, suppressed toward the poles (the coordinate-space
+    # (phi, q) density concentrates area near the poles; the physical per-solid-angle
+    # prior does not).
+    sigma_dLfrac = 0.037
+    cov = np.diag([0.035**2, 0.035**2, sigma_dLfrac**2])
+    equatorial = _new_marginal_sky_factor(np.array([0.5, np.pi / 2, 1.0]), cov)
+    midlat = _new_marginal_sky_factor(np.array([0.5, np.pi / 6, 1.0]), cov)
+    assert np.isclose(midlat / equatorial, np.sin(np.pi / 6), rtol=1e-9)
+    # theta = pi/2 reproduces the pre-Jacobian 1/(4pi) normalisation exactly.
+    bare = float(norm.pdf(1.0, loc=1.0, scale=sigma_dLfrac) / (4.0 * np.pi))
+    assert np.isclose(equatorial, bare, rtol=1e-12)
 
 
 def test_completion_vanishes_for_complete_catalogue() -> None:

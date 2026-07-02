@@ -1672,14 +1672,20 @@ class BayesianStatistics:
                 )  # Gpc
                 d_L_fraction = d_L / _comp_det_d_L  # dimensionless
                 # [PHYSICS] isotropic-sky-marginalised GW likelihood (see the precompute
-                # above): (1/4π) · N(d_L_fraction; 1, σ_marg). Replaces the peak sky
-                # density _mvn_pdf([φ_det, θ_det, d_L_fraction], …), which over-counted
+                # above): (sin θ_det/4π) · N(d_L_fraction; 1, σ_marg). Replaces the peak
+                # sky density _mvn_pdf([φ_det, θ_det, d_L_fraction], …), which over-counted
                 # the completion term by ~4π·(peak sky density) (~5000× at σ_sky≈2°) and
                 # pinned the H0 posterior to the grid edge.
-                # Eq. (32) in Gray et al. (2020), arXiv:1908.06050.
-                p_gw: npt.NDArray[np.float64] = norm.pdf(
-                    d_L_fraction, loc=_comp_mean_dLfrac, scale=_comp_sigma_dLfrac
-                ) / (4.0 * np.pi)
+                # The sin(θ_det) is the solid-angle Jacobian: the Fisher Gaussian is a
+                # density in the bare coordinates (φ_S, q_S), so its isotropic marginal
+                # over dΩ = sinθ dθ dφ picks up sinθ at the (narrow) beam position.
+                # Eq. (32) in Gray et al. (2020), arXiv:1908.06050; derivation:
+                # docs/derivations/G2a_completion_sky_marginal_4pi.md Eq. (10).
+                p_gw: npt.NDArray[np.float64] = (
+                    norm.pdf(d_L_fraction, loc=_comp_mean_dLfrac, scale=_comp_sigma_dLfrac)
+                    * np.sin(self.detection.theta)
+                    / (4.0 * np.pi)
+                )
                 dVc: npt.NDArray[np.float64] = np.atleast_1d(
                     np.asarray(comoving_volume_element(z, h=self.h), dtype=np.float64)
                 )
@@ -1837,8 +1843,12 @@ def single_host_likelihood(
     denominator_integration_upper_redshift_limit = (
         host_z + integration_limit_sigma_multiplier * host_z_error
     )
-    denominator_integration_lower_redshift_limit = (
-        host_z - integration_limit_sigma_multiplier * host_z_error
+    # [PHYSICS] clamp to z >= 0: for low-z photo-z hosts (z_g < 4 sigma_z) the window
+    # would extend to unphysical z < 0 where comoving_volume_element still returns
+    # positive values, silently adding prior mass to Z_g / D_g (G2b derivation note,
+    # docs/derivations/G2b_host_z_volume_prior.md). Matches B_num's and D(h)'s z_min.
+    denominator_integration_lower_redshift_limit = max(
+        host_z - integration_limit_sigma_multiplier * host_z_error, 1e-6
     )
 
     # construct normal distribution for redshift and mass for host galaxy
