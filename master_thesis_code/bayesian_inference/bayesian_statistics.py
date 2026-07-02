@@ -810,10 +810,13 @@ class BayesianStatistics:
         #   "local_ratio"   -> Gray A.9/A.10 literal:  L_cat = (Σ_local w_g N_g)/(Σ_local w_g D_g)   [fix #2]
         #   "volume_deconv" -> local ratio with the host-z Gaussian deconvolved through the
         #                      comoving-volume prior dVc/(1+z) (per-galaxy renormalised)          [fix #1]
+        #   "volume_global" -> DIAGNOSTIC ONLY (G3 ablation cube): fix #1's volume kernel with
+        #                      the legacy GLOBAL denominator — isolates the marginal effect of
+        #                      each fix ingredient. Not for production results.
         # The kernel (bare vs volume-deconvolved) is threaded into single_host_likelihood.
         # Default "volume_deconv": Gray et al. (2020) arXiv:1908.06050 Eqs. A.9/A.10 + volume-
         # consistent host-z prior; P-P-calibrated (INDEPENDENT-VERIFICATION-REPORT-20260701 §7).
-        if normalization_mode not in ("global", "local_ratio", "volume_deconv"):
+        if normalization_mode not in ("global", "local_ratio", "volume_deconv", "volume_global"):
             raise ValueError(f"unknown normalization_mode: {normalization_mode!r}")
         if normalization_mode == "global":
             warnings.warn(
@@ -1581,7 +1584,7 @@ class BayesianStatistics:
             #     de-rail fix (#2); "volume_deconv" additionally uses the volume-deconvolved
             #     host-z prior inside N_g/D_g (#1, threaded via single_host_likelihood).
             #   Gray et al. (2020), arXiv:1908.06050, Eqs. A.9 / A.10 / 29.
-            if self._normalization_mode == "global":
+            if self._normalization_mode in ("global", "volume_global"):
                 cat_num_sum_no_bh = weighted_sum(
                     [r[0] for r in all_results_without_bh], weights_without_bh
                 )
@@ -1850,7 +1853,9 @@ def single_host_likelihood(
     # selection denominator D(h) = INTEGRAL (1/Npix) sum_k p_det * dVc/(1+z) dz already
     # carries. Removes the missing dd_L/dz-Jacobian Jensen bias (commission report bug #1).
     # Gray et al. (2020), arXiv:1908.06050, Eqs. A.10 / 33.
-    _use_volume_deconv = normalization_mode == "volume_deconv"
+    # "volume_global" (diagnostic, G3 ablation cube) uses the SAME volume kernel
+    # with the legacy global denominator selected in p_Di.
+    _use_volume_deconv = normalization_mode in ("volume_deconv", "volume_global")
     _z_prior_norm = 1.0
     if _use_volume_deconv:
 

@@ -241,6 +241,37 @@ def test_unknown_normalization_mode_rejected() -> None:
         BayesianStatistics.evaluate(instance, None, None, 0.73, normalization_mode="bogus")  # type: ignore[arg-type]
 
 
+def test_volume_global_diagnostic_mode_uses_global_denominator() -> None:
+    """'volume_global' (G3 ablation-cube diagnostic) takes the GLOBAL L_cat branch.
+
+    At the p_Di level it must be identical to 'global' (the volume-kernel
+    difference lives inside single_host_likelihood, mocked here); it exists to
+    isolate fix #1's kernel from fix #2's denominator in the ablation cube.
+    """
+    kw = dict(f_const=0.5, D_h=1.0e9, beta_Gbar=0.5e9, global_no_bh=2.0, global_with_bh=1.5)
+    row_vg = _run_p_Di(norm_mode="volume_global", **kw)
+    row_glob = _run_p_Di(norm_mode="global", **kw)
+    row_loc = _run_p_Di(norm_mode="local_ratio", **kw)
+    assert row_vg["L_cat_no_bh"] == pytest.approx(row_glob["L_cat_no_bh"])
+    assert row_vg["L_cat_with_bh"] == pytest.approx(row_glob["L_cat_with_bh"])
+    assert row_vg["L_cat_no_bh"] != pytest.approx(row_loc["L_cat_no_bh"])
+
+
+def test_volume_global_mode_accepted_by_guard() -> None:
+    """evaluate() accepts the diagnostic 'volume_global' mode (no ValueError)."""
+    instance = object.__new__(BayesianStatistics)
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")  # must not trigger the 'global' calibration warning
+        with contextlib.suppress(AttributeError):
+            BayesianStatistics.evaluate(
+                instance,
+                None,  # type: ignore[arg-type]
+                None,  # type: ignore[arg-type]
+                0.73,
+                normalization_mode="volume_global",
+            )
+
+
 def test_default_normalization_mode_is_volume_deconv() -> None:
     """The library default is the P-P-calibrated estimator, matching the CLI default.
 
