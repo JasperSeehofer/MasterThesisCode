@@ -3,6 +3,7 @@ from dataclasses import dataclass, field
 
 import numpy as np
 
+from master_thesis_code.exceptions import ParameterOutOfBoundsError
 from master_thesis_code.galaxy_catalogue.handler import HostGalaxy
 from master_thesis_code.physical_relations import dist, redshifted_mass
 
@@ -192,6 +193,24 @@ class ParameterSpace:
         for parameter in vars(self).values():
             if isinstance(parameter, Parameter) and not parameter.is_fixed:
                 self.randomize_parameter(parameter=parameter, rng=rng)
+        self._check_separatrix_guard()
+
+    def _check_separatrix_guard(self) -> None:
+        """Reject draws too close to the plunge separatrix (G9 gate guard).
+
+        The Schwarzschild separatrix is p_sep(e) = 6 + 2e (conservative for
+        prograde Kerr, where p_sep is smaller); FEW waveforms are unphysical for
+        p0 near/below it. Current bounds (p0 >= 10, e0 <= 0.7) satisfy this with
+        margin >= 2.6, so this never fires today -- it protects against future
+        bound changes silently entering the plunge regime.
+        Stein & Warburton (2020), arXiv:1912.07609 (separatrix).
+        """
+        p_sep = 6.0 + 2.0 * self.e0.value
+        if self.p0.value < p_sep + 0.5:
+            raise ParameterOutOfBoundsError(
+                f"p0={self.p0.value:.3f} within 0.5 of the separatrix "
+                f"p_sep(e0={self.e0.value:.3f})={p_sep:.3f}; adjust parameter bounds."
+            )
 
     def set_host_galaxy_parameters(self, host_galaxy: HostGalaxy, h: float) -> None:
         # FEW (Pn5AAKWaveform) expects the DETECTOR-FRAME (redshifted) mass

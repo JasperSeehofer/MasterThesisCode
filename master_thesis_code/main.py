@@ -347,7 +347,7 @@ def data_simulation(
         rng = np.random.default_rng()
 
     def _alarm_handler(signum: int, frame: object) -> None:
-        raise TimeoutError("Computation exceeded 90s timeout")
+        raise TimeoutError("Computation exceeded the alarm timeout")
 
     signal.signal(signal.SIGALRM, _alarm_handler)
 
@@ -534,7 +534,12 @@ def data_simulation(
             )
             continue
         except TimeoutError:
-            _ROOT_LOGGER.warning("Waveform/SNR computation timed out (>90s). Skipping event...")
+            # G9 gate: log the full parameter set so timeout selection can be
+            # binned by (M, mu, e0, p0, ...) — see .planning/gate/G9_timeout_scan.md
+            _ROOT_LOGGER.warning(
+                "Waveform/SNR computation timed out (>90s). Skipping event... params=%s",
+                parameter_estimation.parameter_space._parameters_to_dict(),
+            )
             continue
 
         passed = snr >= cosmological_model.snr_threshold
@@ -566,7 +571,10 @@ def data_simulation(
             _ROOT_LOGGER.warning(f"CRB computation failed: {e}. Skipping event...")
             continue
         except TimeoutError:
-            _ROOT_LOGGER.warning("Cramér-Rao bound computation timed out (>90s). Skipping event...")
+            _ROOT_LOGGER.warning(
+                "Cramér-Rao bound computation timed out (>90s). Skipping event... params=%s",
+                parameter_estimation.parameter_space._parameters_to_dict(),
+            )
             continue
         except (ZeroDivisionError, RuntimeError, ValueError) as e:
             _ROOT_LOGGER.warning(
@@ -642,7 +650,7 @@ def injection_campaign(
     from master_thesis_code.physical_relations import dist, redshifted_mass
 
     def _alarm_handler(signum: int, frame: object) -> None:
-        raise TimeoutError("Computation exceeded 90s timeout")
+        raise TimeoutError("Computation exceeded the alarm timeout")
 
     signal.signal(signal.SIGALRM, _alarm_handler)
 
@@ -774,7 +782,13 @@ def injection_campaign(
             )
             continue
         except TimeoutError:
-            _ROOT_LOGGER.warning("Waveform/SNR computation timed out (>90s). Skipping event...")
+            # G9 gate: the injection alarm budget is _TIMEOUT_S = 30 s, NOT 90 s
+            # (the old message was wrong); params logged for timeout binning.
+            _ROOT_LOGGER.warning(
+                "Injection waveform/SNR computation timed out (>%ss). Skipping event... params=%s",
+                _TIMEOUT_S,
+                parameter_estimation.parameter_space._parameters_to_dict(),
+            )
             continue
 
         # Store ALL events regardless of SNR (per D-03: do NOT threshold)
