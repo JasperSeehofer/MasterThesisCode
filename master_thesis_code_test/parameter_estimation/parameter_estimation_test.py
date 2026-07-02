@@ -390,6 +390,19 @@ class TestCRBSafety:
 
         assert "Fisher matrix condition number: kappa =" in caplog.text
 
+    def test_ill_conditioned_fisher_raises(self, tmp_path: pathlib.Path) -> None:
+        """G10 gate: kappa > FISHER_CONDITION_NUMBER_MAX skips the event."""
+        from master_thesis_code.exceptions import ParameterEstimationError
+
+        pe = _make_minimal_pe(tmp_path)
+        # kappa = 1e15 > 1e14 threshold (diag matrix, still invertible).
+        bad_fisher = np.eye(14)
+        bad_fisher[0, 0] = 1e15
+        pe.compute_fisher_information_matrix = MagicMock(return_value=bad_fisher)
+
+        with pytest.raises(ParameterEstimationError, match="condition number"):
+            pe.compute_Cramer_Rao_bounds()
+
     def test_negative_crb_diagonal_raises_parameter_estimation_error(
         self, tmp_path: pathlib.Path
     ) -> None:
@@ -415,12 +428,17 @@ class TestCRBSafety:
         finally:
             pe_module.np.linalg.inv = original_inv
 
-    def test_singular_matrix_raises_linalg_error(self, tmp_path: pathlib.Path) -> None:
+    def test_singular_matrix_caught_by_condition_gate(self, tmp_path: pathlib.Path) -> None:
+        """A singular Fisher (kappa = inf) is now rejected by the G10 gate BEFORE
+        np.linalg.inv runs (previously it surfaced as LinAlgError from inv);
+        the main loop catches ParameterEstimationError and skips the event."""
+        from master_thesis_code.exceptions import ParameterEstimationError
+
         pe = _make_minimal_pe(tmp_path)
 
         pe.compute_fisher_information_matrix = MagicMock(return_value=np.zeros((14, 14)))
 
-        with pytest.raises(np.linalg.LinAlgError):
+        with pytest.raises(ParameterEstimationError, match="condition number"):
             pe.compute_Cramer_Rao_bounds()
 
 

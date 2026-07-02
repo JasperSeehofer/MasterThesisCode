@@ -32,6 +32,7 @@ from master_thesis_code.constants import (
     CRAMER_RAO_BOUNDS_PATH,
     ECLIPTIC_FRAME_TAG,
     ESA_TDI_CHANNELS,
+    FISHER_CONDITION_NUMBER_MAX,
     MAXIMAL_FREQUENCY,
     MINIMAL_FREQUENCY,
     SNR_ANALYSIS_PATH,
@@ -421,6 +422,20 @@ class ParameterEstimation:
         # D-03: Log condition number before inversion
         condition_number = np.linalg.cond(fisher_np)
         _LOGGER.info(f"Fisher matrix condition number: kappa = {condition_number:.2e}")
+
+        # G10 gate: hard condition-number threshold. float64 has ~16 significant
+        # digits; kappa > 1e14 leaves < 2 digits in the inverse — the CRB values
+        # would be numerical noise. Previously log-only; the event is now skipped
+        # like the negative-diagonal case (the main loop catches and continues).
+        if condition_number > FISHER_CONDITION_NUMBER_MAX:
+            _LOGGER.warning(
+                f"Fisher matrix ill-conditioned: kappa = {condition_number:.2e} > "
+                f"{FISHER_CONDITION_NUMBER_MAX:.0e}. Skipping event."
+            )
+            raise ParameterEstimationError(
+                f"Fisher condition number {condition_number:.2e} exceeds "
+                f"{FISHER_CONDITION_NUMBER_MAX:.0e}"
+            )
 
         # D-04a: np.linalg.inv raises LinAlgError for singular matrices
         cramer_rao_bounds = np.linalg.inv(fisher_np)

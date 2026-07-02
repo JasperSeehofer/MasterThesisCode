@@ -47,6 +47,9 @@ MINIMAL_FREQUENCY: float = 1e-5
 MAXIMAL_FREQUENCY: float = 1
 SNR_THRESHOLD: float = 20
 PRE_SCREEN_SNR_FACTOR: float = 0.3  # pre-screen heuristic (main.py simulation loop)
+# G10 gate: Fisher matrices with kappa above this are numerical noise after
+# inversion (float64 ~16 digits; 1e14 leaves <2). Event is skipped, not stored.
+FISHER_CONDITION_NUMBER_MAX: float = 1e14
 
 # galaxy catalog and EMRI detection
 GALAXY_REDSHIFT_ERROR_COEFFICIENT: float = 0.013  # Galaxy.redshift_uncertainty ∝ 0.013*(1+z)^3
