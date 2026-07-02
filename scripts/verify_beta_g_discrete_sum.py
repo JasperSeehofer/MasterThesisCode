@@ -53,8 +53,9 @@ _LOGGER = logging.getLogger(__name__)
 
 # Fiducial cosmology of the inference (constants.py) — the check is at fixed
 # Omega_m; the ratio shape is insensitive to the exact value.
-_OMEGA_M = 0.25
-_OMEGA_DE = 0.75
+from master_thesis_code.constants import OMEGA_DE as _OMEGA_DE  # noqa: E402
+from master_thesis_code.constants import OMEGA_M as _OMEGA_M  # noqa: E402
+
 _H_FIDUCIAL = 0.73
 
 

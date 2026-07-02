@@ -57,12 +57,16 @@ SPIN_A_M1: float = 0.98  # near-extremal MBH spin "a98", Table I col. 3
 #
 # Calibration (pipeline cosmology h=0.73, Omega_m=0.25, Omega_de=0.75;
 # spec Item 6 integral to z=4.5, log10 M in [4, 7]):
-#   N_intrinsic(C_NORM=1) = 6.281029e+02 yr^-1
-#   C_NORM = 1600 / 6.281029e+02 = 2.54735
+#   N_intrinsic(C_NORM=1) = 5.818516e+02 yr^-1   [at OMEGA_M = 0.2726, G11]
+#   C_NORM = 1600 / 5.818516e+02 = 2.749842
+#   (pre-G11 history: 6.281029e+02 -> 2.54735 at the old OMEGA_M = 0.25; the
+#   calibration integral runs over comoving volume, so C_NORM moves with the
+#   fiducial cosmology and is re-pinned to the Table-I 1600/yr whenever
+#   OMEGA_M changes.)
 # This lands inside the physically required band [0.3, 3] (it must equal the
 # plausible [W(0.98)]^-0.83 * <p0> ~ O(1-2)); a value outside that band would
 # signal a units/frame bug. MODELING CHOICE — see module docstring.
-C_NORM: float = 2.547353
+C_NORM: float = 2.749842
 
 
 def mbh_mass_function(M: float | npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:

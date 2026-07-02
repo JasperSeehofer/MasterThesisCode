@@ -26,8 +26,16 @@ H: float = 0.73  # dimensionless h = H₀ / (100 km/s/Mpc), fiducial simulation 
 TRUE_HUBBLE_CONSTANT: float = 0.7  # dimensionless h, fiducial value for Bayesian inference
 
 # cosmological parameters fiducial values
-OMEGA_M: float = 0.25
-OMEGA_DE: float = 0.75
+# [PHYSICS] G11: matched to the M1 EMRI population model's cosmology — the
+# Barausse (2012) semi-analytic MBH model underlying Babak et al. (2017) M1
+# assumes flat LambdaCDM with Omega_DM = 0.227, Omega_b = 0.0456
+# (=> Omega_m = 0.2726), H0 = 70.4 km/s/Mpc (arXiv:1201.5888, end of Intro).
+# The extracted M1 horizon/rate/dN-dz data (M1_model_extracted_data/) live in
+# that cosmology; sampling them with a different Omega_m would be inconsistent.
+# The "true universe is Planck (0.3153)" case is quoted as a systematic in
+# .planning/gate/G7_systematics_budget.md, NOT absorbed into the fiducial.
+OMEGA_M: float = 0.2726
+OMEGA_DE: float = 0.7274
 W_0: float = -1.0
 W_A: float = 0.0
 

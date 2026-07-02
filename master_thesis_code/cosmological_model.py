@@ -326,7 +326,8 @@ class LamCDMScenario:
             lower_limit=0.04,
             unit="s*Mpc/km",
             randomize_by_distribution=uniform,
-            fiducial_value=0.25,
+            # G11: M1 population-model cosmology (Barausse 2012, arXiv:1201.5888)
+            fiducial_value=0.2726,
         )
 
 
@@ -334,8 +335,9 @@ class DarkEnergyScenario:
     w_0: CosmologicalParameter
     w_a: CosmologicalParameter
     h: float = 0.73
-    Omega_m: float = 0.25
-    Omega_DE: float = 0.75
+    # G11: M1 population-model cosmology (Barausse 2012, arXiv:1201.5888)
+    Omega_m: float = 0.2726
+    Omega_DE: float = 0.7274
 
     def __init__(self) -> None:
         self.w_0 = CosmologicalParameter(
