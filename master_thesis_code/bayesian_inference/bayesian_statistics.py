@@ -77,7 +77,7 @@ def eddington_shifted_host_mass(host_M: float, host_M_error: float) -> float:
     The per-galaxy mass prior N(M; M_g, sigma_M^2) * R_eff(M) / Z_M is, under a
     locally log-linear R_eff (exponential-tilt identity), EXACTLY the shifted
     Gaussian N(M; M_g (1 + alpha sigma_rel^2), sigma_M^2) with
-    alpha = dln R_eff / dln M |_{M_g} and sigma_rel = sigma_M / M_g.
+    ``alpha = dln R_eff / dln M |_{M_g}`` and sigma_rel = sigma_M / M_g.
     Classic Eddington (1913) correction; derivation and curvature-residual
     control in docs/derivations/G2d_host_mass_rate_prior.md (G7 row 9).
 

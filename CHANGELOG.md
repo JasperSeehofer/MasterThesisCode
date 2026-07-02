@@ -155,6 +155,13 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   otherwise terminate a hosting pytest process).
 
 ### Added
+- **`master_thesis_code.validation` subpackage (G4b):** the 2026-07-01 commission's
+  independent P–P/coverage calibration harness (investigator d2) promoted from
+  `results/commission_20260701/scratch/d2/` into first-class, tested package code.
+  `pp_coverage.py` runs a pure numpy/scipy synthetic-universe coverage test
+  (flat-ΛCDM tables, Malmquist selection, single-host dark-siren H₀ estimator with
+  switchable host-z kernel: 'bare' Gaussian vs calibrated 'volume' dV_c/dz/(1+z));
+  intended for per-seed coverage runs during the Phase-2 campaign.
 - New `plotting/validation_plots.py`: `plot_h0_forest` (NF-1, the H₀-in-context
   forest plot vs Planck 2018 / SH0ES / GWTC-3 dark sirens, now shipped as fig15)
   and `plot_pp_coverage` (NF-2, a P–P / coverage factory ready for an

@@ -135,6 +135,7 @@ The codebase has two distinct pipelines:
 - **`bayesian_inference/detection_probability.py`** — `DetectionProbability` class: KDE-based detection probability with `RegularGridInterpolator` look-ups. Used by Pipeline B.
 - **`cosmological_model.py`** — `Model1CrossCheck` wraps the EMRI event rate model; `LamCDMScenario`, `DarkEnergyScenario` parameter spaces. Backward-compat re-exports of `BayesianStatistics` and `DetectionProbability`.
 - **`galaxy_catalogue/handler.py`** — interfaces with the GLADE galaxy catalog (BallTree-based lookups)
+- **`validation/pp_coverage.py`** — synthetic-universe P–P/coverage calibration harness (G4b): flat-ΛCDM tables, Malmquist selection, single-host dark-siren H₀ estimator with switchable host-z kernel ('bare' vs calibrated 'volume'). Run per-seed during campaigns.
 - **`constants.py`** — all physical constants and simulation configuration. Key: `H=0.73`, `SNR_THRESHOLD=20`
 - **`plotting/`** — all visualization code lives here. Factory functions (`data in, (fig, ax) out`) in topic modules (`bayesian_plots.py`, `evaluation_plots.py`, `model_plots.py`, `catalog_plots.py`, etc.). `_style.py` sets Agg backend + loads `emri_thesis.mplstyle`. `_helpers.py` provides `save_figure()` and `get_figure()`.
 - **`callbacks.py`** — `SimulationCallback` Protocol for decoupling the simulation loop from visualization; `PlottingCallback` in `plotting/simulation_plots.py` collects data and produces plots in `on_simulation_end`
