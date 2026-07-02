@@ -367,7 +367,9 @@ class ParameterEstimation:
 
         # Integrand (n_channels, n_freqs); sum over channels then integrate over frequency.
         integrant = (a_ffts * b_ffts_cc) / psd_crop
-        result = 4.0 * float(self._xp.trapz(integrant.sum(axis=0).real, x=fs_crop))
+        # numpy 2.x renamed trapz -> trapezoid (cupy keeps trapz); resolve whichever exists.
+        trapezoid = getattr(self._xp, "trapezoid", None) or self._xp.trapz
+        result = 4.0 * float(trapezoid(integrant.sum(axis=0).real, x=fs_crop))
         return result
 
     def compute_fisher_information_matrix(self) -> Any:
