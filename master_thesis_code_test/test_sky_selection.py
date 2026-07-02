@@ -33,6 +33,7 @@ References:
 import os
 import tempfile
 from pathlib import Path
+from typing import cast
 
 import numpy as np
 import pandas as pd
@@ -47,8 +48,15 @@ from master_thesis_code.bayesian_inference.bayesian_statistics import (
 from master_thesis_code.bayesian_inference.simulation_detection_probability import (
     SimulationDetectionProbability,
 )
-from master_thesis_code.galaxy_catalogue.handler import InternalCatalogColumns
-from master_thesis_code.galaxy_catalogue.pixel_completeness import from_cache_or_build
+from master_thesis_code.galaxy_catalogue.handler import (
+    GalaxyCatalogueHandler,
+    InternalCatalogColumns,
+)
+from master_thesis_code.galaxy_catalogue.pixel_completeness import (
+    CompletenessModel,
+    PixelCompleteness,
+    from_cache_or_build,
+)
 from master_thesis_code.physical_relations import (
     comoving_volume_element,
     dist_to_redshift,
@@ -75,7 +83,7 @@ _needs_injections = pytest.mark.skipif(
 
 
 @pytest.fixture(scope="module")
-def completeness() -> object:
+def completeness() -> PixelCompleteness:
     return from_cache_or_build()
 
 
@@ -133,7 +141,7 @@ def _make_catalog(seed: int, n: int, *, with_sky: bool) -> _FakeCatalog:
 
 @_needs_injections
 def test_T1_D_regression_nband1_equals_isotropic(  # noqa: N802
-    pdet_iso: SimulationDetectionProbability, completeness: object
+    pdet_iso: SimulationDetectionProbability, completeness: PixelCompleteness
 ) -> None:
     """D(h) via the sky path with n_sky_bands=1 == the isotropic D(h) to ~1e-12."""
     d_sky = precompute_completion_denominator(
@@ -147,7 +155,7 @@ def test_T1_D_regression_nband1_equals_isotropic(  # noqa: N802
 
 @_needs_injections
 def test_T1_beta_gbar_regression_nband1_equals_isotropic(  # noqa: N802
-    pdet_iso: SimulationDetectionProbability, completeness: object
+    pdet_iso: SimulationDetectionProbability, completeness: PixelCompleteness
 ) -> None:
     """beta_Gbar via the sky path (n_sky_bands=1) == the isotropic f_bar path to ~1e-12."""
     bg_sky = precompute_missing_completion_denominator([_H], pdet_iso, completeness)[_H]
@@ -165,7 +173,7 @@ def test_T1_beta_gbar_regression_nband1_equals_isotropic(  # noqa: N802
             dtype=np.float64,
         )
         dVc = np.atleast_1d(np.asarray(comoving_volume_element(z, h=_H), dtype=np.float64))  # noqa: N806
-        f_z = np.clip(np.asarray(completeness.f_bar(z, _H), dtype=np.float64), 0.0, 1.0)  # type: ignore[attr-defined]
+        f_z = np.clip(np.asarray(completeness.f_bar(z, _H), dtype=np.float64), 0.0, 1.0)
         return (1.0 - f_z) * p_det * dVc / (1.0 + z)
 
     bg_iso = fixed_quad(_iso_integrand, 1e-6, z_max, n=100)[0]
@@ -179,8 +187,12 @@ def test_T1_sigma_global_regression_nband1_equals_isotropic(  # noqa: N802
     """Sigma_global with real galaxy sky (n_sky_bands=1) == the isotropic sum to ~1e-12."""
     cat_sky = _make_catalog(seed=3, n=400, with_sky=True)
     cat_iso = _make_catalog(seed=3, n=400, with_sky=False)
-    sig_sky = precompute_global_catalog_selection([_H], cat_sky, pdet_iso, with_bh_mass=False)[_H]
-    sig_iso = precompute_global_catalog_selection([_H], cat_iso, pdet_iso, with_bh_mass=False)[_H]
+    sig_sky = precompute_global_catalog_selection(
+        [_H], cast(GalaxyCatalogueHandler, cat_sky), pdet_iso, with_bh_mass=False
+    )[_H]
+    sig_iso = precompute_global_catalog_selection(
+        [_H], cast(GalaxyCatalogueHandler, cat_iso), pdet_iso, with_bh_mass=False
+    )[_H]
     assert sig_sky == pytest.approx(sig_iso, rel=1e-12, abs=0.0)
 
 
@@ -191,7 +203,7 @@ def test_T1_sigma_global_regression_nband1_equals_isotropic(  # noqa: N802
 
 @_needs_injections
 def test_T2_partition_D_equals_betaG_plus_betaGbar(  # noqa: N802
-    pdet_sky: SimulationDetectionProbability, completeness: object
+    pdet_sky: SimulationDetectionProbability, completeness: PixelCompleteness
 ) -> None:
     """D(h) == beta_G(h) + beta_Gbar(h) with beta_G the INDEPENDENT f-weighted sum.
 
@@ -204,7 +216,7 @@ def test_T2_partition_D_equals_betaG_plus_betaGbar(  # noqa: N802
     beta_gbar = precompute_missing_completion_denominator([_H], pdet_sky, completeness)[_H]
 
     # Independent beta_G(h) = INTEGRAL (1/Npix) sum_k f_k p_det(Omega_k) dVc/(1+z).
-    phi_k, theta_k = completeness.pixel_centers()  # type: ignore[attr-defined]
+    phi_k, theta_k = completeness.pixel_centers()
     u_k = np.abs(np.cos(np.asarray(theta_k, dtype=np.float64)))
     edges = pdet_sky.band_edges_sin_beta()
     n_bands = edges.size - 1
@@ -218,13 +230,13 @@ def test_T2_partition_D_equals_betaG_plus_betaGbar(  # noqa: N802
         f_pix = np.clip(
             np.asarray(completeness.f_pixels(z, _H), dtype=np.float64),
             0.0,
-            1.0,  # type: ignore[attr-defined]
+            1.0,
         )  # (Z, npix)
         sf_b = (membership @ f_pix.T) / float(npix)  # (n_bands, Z)
         s_band = np.asarray(pdet_sky.survival_per_band(d_L), dtype=np.float64)
         integrand = np.einsum("bz,bz->z", sf_b, s_band)
         dVc = np.atleast_1d(np.asarray(comoving_volume_element(z, h=_H), dtype=np.float64))  # noqa: N806
-        return integrand * dVc / (1.0 + z)
+        return np.asarray(integrand * dVc / (1.0 + z))
 
     beta_g = fixed_quad(_betaG_integrand, 1e-6, z_max, n=100)[0]
     assert d_h == pytest.approx(beta_g + beta_gbar, rel=1e-12, abs=0.0)
@@ -255,14 +267,14 @@ def test_T3_injection_weighted_band_average_equals_pooled(  # noqa: N802
 
 @_needs_injections
 def test_T3_pixel_weighted_band_average_approximates_pooled(  # noqa: N802
-    pdet_sky: SimulationDetectionProbability, completeness: object
+    pdet_sky: SimulationDetectionProbability, completeness: PixelCompleteness
 ) -> None:
     """The equal-area (pixel-count) band average is close to the pooled survival.
 
     Not exact (pixel-count vs injection-count per band differ by pixelization +
     Poisson noise), but small for isotropic injections in equal-solid-angle bands.
     """
-    phi_k, theta_k = completeness.pixel_centers()  # type: ignore[attr-defined]
+    phi_k, theta_k = completeness.pixel_centers()
     u_k = np.abs(np.cos(np.asarray(theta_k, dtype=np.float64)))
     edges = pdet_sky.band_edges_sin_beta()
     n_bands = edges.size - 1
@@ -309,7 +321,7 @@ def test_T4_north_south_survival_symmetry(  # noqa: N802
 
 
 @_needs_injections
-def test_T5_band_count_convergence(completeness: object) -> None:  # noqa: N802
+def test_T5_band_count_convergence(completeness: PixelCompleteness) -> None:  # noqa: N802
     """D(h) and beta_Gbar(h) are stable as n_sky_bands = 4 -> 6 -> 8."""
     d_vals = {}
     bg_vals = {}
@@ -419,8 +431,10 @@ def test_T6_anisotropic_closure_debiases_H0() -> None:  # noqa: N802
     hs = np.linspace(0.64, 0.82, 19)
     hs_list = hs.tolist()
 
-    bg_sky = precompute_missing_completion_denominator(hs_list, pdet, comp)
-    bg_iso = precompute_missing_completion_denominator(hs_list, pdet, _IsoShim(comp))
+    bg_sky = precompute_missing_completion_denominator(hs_list, pdet, cast(CompletenessModel, comp))
+    bg_iso = precompute_missing_completion_denominator(
+        hs_list, pdet, cast(CompletenessModel, _IsoShim(comp))
+    )
 
     # TRUE selection: MC over dark-host sky ~ (1-f_k), response per real pixel.
     theta_pix = comp._theta
@@ -445,7 +459,7 @@ def test_T6_anisotropic_closure_debiases_H0() -> None:  # noqa: N802
             )
             val = ((1.0 - f_pix) * s).mean(axis=1)
             dVc = np.atleast_1d(np.asarray(comoving_volume_element(z, h=h), dtype=np.float64))  # noqa: N806
-            return val * dVc / (1.0 + z)
+            return np.asarray(val * dVc / (1.0 + z))
 
         return float(fixed_quad(_integ, 1e-6, z_max, n=32)[0])
 
@@ -454,7 +468,7 @@ def test_T6_anisotropic_closure_debiases_H0() -> None:  # noqa: N802
     # Selection SHAPE discrepancy (normalized at h_true) -- the H0-carrying axis.
     def _norm(tab: dict[float, float]) -> np.ndarray:
         v = np.array([tab[h] for h in hs_list])
-        return v / v[int(np.argmin(np.abs(hs - _H)))]
+        return np.asarray(v / v[int(np.argmin(np.abs(hs - _H)))])
 
     shape_err_sky = float(np.max(np.abs(_norm(bg_sky) - _norm(d_true))))
     shape_err_iso = float(np.max(np.abs(_norm(bg_iso) - _norm(d_true))))
@@ -490,7 +504,7 @@ def test_T6_anisotropic_closure_debiases_H0() -> None:  # noqa: N802
         d_lz = dist_vectorized(z_g, h=h)
         n_term = np.exp(-0.5 * ((d_l_obs[:, None] - d_lz[None, :]) / sig[:, None]) ** 2)
         z_term = np.exp(-0.5 * ((z_g[None, :] - z_cat[:, None]) / sz[:, None]) ** 2)
-        return np.trapezoid(n_term * z_term, z_g, axis=1)
+        return np.asarray(np.trapezoid(n_term * z_term, z_g, axis=1))
 
     def _posterior_mean(sel: dict[float, float]) -> float:
         logp = np.array(
@@ -574,7 +588,9 @@ def test_T8_global_selection_uses_flat_band_pdet_convention(  # noqa: N802
     from master_thesis_code.physical_relations import dist_to_redshift, dist_vectorized
 
     cat = _make_catalog(seed=7, n=4000, with_sky=True)
-    sig = precompute_global_catalog_selection([_H], cat, pdet_sky, with_bh_mass=False)[_H]
+    sig = precompute_global_catalog_selection(
+        [_H], cast(GalaxyCatalogueHandler, cat), pdet_sky, with_bh_mass=False
+    )[_H]
 
     df = cat.reduced_galaxy_catalog
     z = df[InternalCatalogColumns.REDSHIFT].to_numpy(dtype=float)
@@ -595,9 +611,7 @@ def test_T8_global_selection_uses_flat_band_pdet_convention(  # noqa: N802
 
     # The INTERPOLATED convention (the pre-fix bug) genuinely differs at Nband=6.
     p_interp = np.asarray(
-        pdet_sky.detection_probability_without_bh_mass_sky(
-            d_L, np.zeros_like(theta), theta, h=_H
-        ),
+        pdet_sky.detection_probability_without_bh_mass_sky(d_L, np.zeros_like(theta), theta, h=_H),
         dtype=float,
     )
     sig_interp = float(np.sum(w * p_interp))
