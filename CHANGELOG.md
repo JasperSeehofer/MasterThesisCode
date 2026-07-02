@@ -8,6 +8,16 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Changed
+- **[PHYSICS] BREAKING — missing `dt²` DFT normalization restored in the LISA inner product**
+  (`parameter_estimation.scalar_product_of_functions`). The raw `rfft` output was integrated
+  against the physical PSD without the `h̃(f) = dt·X` correspondence, making every SNR exactly
+  `dt=10`× too small and every Cramér–Rao σ 10× too large (the "SNR ≥ 20" catalogues were
+  physical-SNR ≥ 200 populations confined to z ≤ 0.11, vs the Babak et al. 2017 M1 horizon
+  z ≈ 1.5–3.8). Verified five ways (analytic monochromatic, FFT-free Parseval, broadband
+  independent FFT, lisatools' `dt*rfft` convention, astrophysical horizon):
+  `docs/derivations/G8_dt2_inner_product_derivation.md`. **All pre-fix SNR/CRB data remains
+  RETIRED; the Phase-2 campaign runs with physical SNR semantics** (deeper population, more
+  events; PRE_SCREEN_SNR_FACTOR and timeout budgets to be re-checked at the new scale).
 - **[PHYSICS] BREAKING — library default `normalization_mode` flipped `'global'` → `'volume_deconv'`**
   (`BayesianStatistics.evaluate()`), aligning the library with the CLI default and the
   P–P-calibrated estimator (Gray et al. 2020 arXiv:1908.06050 Eqs. A.9/A.10 + volume-consistent

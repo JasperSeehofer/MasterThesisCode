@@ -369,7 +369,13 @@ class ParameterEstimation:
         integrant = (a_ffts * b_ffts_cc) / psd_crop
         # numpy 2.x renamed trapz -> trapezoid (cupy keeps trapz); resolve whichever exists.
         trapezoid = getattr(self._xp, "trapezoid", None) or self._xp.trapz
-        result = 4.0 * float(trapezoid(integrant.sum(axis=0).real, x=fs_crop))
+        # [PHYSICS] dt^2: the continuous Fourier transform relates to the raw DFT as
+        # h~(f_k) = dt * X_k, so the physical inner product (Finn 1992, PRD 46 5236,
+        # Eq. 2.3) carries dt^2 relative to the bare-rfft integrand. Verified against
+        # the analytic monochromatic value A^2 T / S_n(f0), an FFT-free Parseval
+        # reference, and lisatools' dt*rfft convention.
+        # Derivation + evidence: docs/derivations/G8_dt2_inner_product_derivation.md
+        result = 4.0 * self.dt**2 * float(trapezoid(integrant.sum(axis=0).real, x=fs_crop))
         return result
 
     def compute_fisher_information_matrix(self) -> Any:

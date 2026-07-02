@@ -1,5 +1,9 @@
 # G8 — Inner-product magnitude finding (2026-07-02)
 
+## STATUS: FIXED (user-approved [PHYSICS] commit; see
+## docs/derivations/G8_dt2_inner_product_derivation.md for the full case).
+## The historical analysis below describes the PRE-fix behaviour.
+
 ## Verdict: DEVIATION FOUND — missing dt² DFT normalization
 
 `scalar_product_of_functions` (`parameter_estimation/parameter_estimation.py:317-373`) computes
