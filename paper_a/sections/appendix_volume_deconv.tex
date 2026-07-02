@@ -59,8 +59,9 @@ photometric error bar.
 % src: docs/derivations/G2b_host_z_volume_prior.md §3.2
 (ii)~\emph{Exact $h$-independence:} writing $E(z) = H(z)/H_0$,
 $I(z) = \int_0^z \mathrm{d}z'/E(z')$, one has
-$w_\mathrm{pop}(z; h) = h^{-3} g(z)$ with
-$g(z) \propto I^2(z)/[E(z)(1+z)]$, so the $h^{-3}$ prefactor cancels between
+$w_\mathrm{pop}(z; h) = h^{-3}\, \tilde{w}(z)$ with the
+$h$-independent shape function
+$\tilde{w}(z) \propto I^2(z)/[E(z)(1+z)]$, so the $h^{-3}$ prefactor cancels between
 the numerator of Eq.~\eqref{eq:app:pgz} and $Z_g$: the deconvolution injects
 no spurious $h$-dependence, only the redshift \emph{shape} of the prior acts.
 % src: docs/derivations/G2b_host_z_volume_prior.md Eq. (1.5)
@@ -75,38 +76,38 @@ Eq.~\eqref{eq:app:pgz}. Expanding $\ln w_\mathrm{pop}$ about $z_g$ and
 completing the square, the true posterior is, to leading order, a Gaussian of
 unchanged width recentred at
 \begin{equation}
-  \langle z \rangle = z_g + \sigma_z^2\, s(z_g) + \mathcal{O}(\sigma_z^4),
+  \langle z \rangle = z_g + \sigma_z^2\, q(z_g) + \mathcal{O}(\sigma_z^4),
   \quad
-  s(z) \equiv \frac{\mathrm{d}\ln w_\mathrm{pop}}{\mathrm{d}z}
+  q(z) \equiv \frac{\mathrm{d}\ln w_\mathrm{pop}}{\mathrm{d}z}
   = \frac{2}{I E} - \frac{E'}{E} - \frac{1}{1+z},
   \label{eq:app:eddz}
 \end{equation}
 % src: docs/derivations/G2b_host_z_volume_prior.md Eqs. (2.1)-(2.2)
 with $E'(z) = 3\Omega_\mathrm{m}(1+z)^2/(2E)$ for flat $\Lambda$CDM; at low
-redshift $s \approx 2/z$. This is the classical Eddington--Malmquist
+redshift $q \approx 2/z$. This is the classical Eddington--Malmquist
 correction transcribed to redshift
 \citep{Eddington1913}:
 because $w_\mathrm{pop}$ rises steeply with $z$, a galaxy observed at $z_g$ is
 more probably a higher-redshift galaxy scattered down than the reverse, and
 the bare kernel under-estimates every host redshift by
-$\delta z_\mathrm{Edd} = \sigma_z^2 s$. The GW data fix
+$\delta z_\mathrm{Edd} = \sigma_z^2 q$. The GW data fix
 $d_L^\star \propto \mathcal{D}(z_t)/h$ with $\mathcal{D}(z) \equiv (1+z)I(z)$ and $z_t$ the true
 host redshift; matching the model distance at the assumed redshift
-$\hat z \simeq z_g$ instead of $z_t \simeq z_g + \sigma_z^2 s$ biases the
+$\hat z \simeq z_g$ instead of $z_t \simeq z_g + \sigma_z^2 q$ biases the
 peak by
 \begin{equation}
   \Delta h \;\simeq\; -\,h\,
   \left.\frac{\mathrm{d}\ln \mathcal{D}}{\mathrm{d}z}\right|_{\bar z}
-  \sigma_z^2\, s(\bar z)
-  \;\equiv\; -\,C(\bar z)\,\sigma_z^2 ,
+  \sigma_z^2\, q(\bar z)
+  \;\equiv\; -\,K(\bar z)\,\sigma_z^2 ,
   \qquad
   \frac{\mathrm{d}\ln \mathcal{D}}{\mathrm{d}z} = \frac{1}{1+z} + \frac{1}{IE},
   \label{eq:app:dhlaw}
 \end{equation}
 % src: docs/derivations/G2b_host_z_volume_prior.md Eq. (2.3)
-evaluated at a representative detected-host redshift $\bar z$ ($C$ must
+evaluated at a representative detected-host redshift $\bar z$ ($K$ must
 properly be averaged over the detected population; it is convex, growing as
-$z^{-2}$ towards low $z$, so the average exceeds $C(z_\mathrm{med})$). The bias
+$z^{-2}$ towards low $z$, so the average exceeds $K(z_\mathrm{med})$). The bias
 is negative --- $H_0$ low --- and strictly $\propto \sigma_z^2$ at leading
 order.
 
@@ -119,15 +120,15 @@ $\sigma_z$-independent residual floor of $\approx -0.002$; after subtracting
 it, the biases scale as $1 : 4.8 : 10.0$ against
 $\sigma_z^2 = 1 : 5.44 : 11.1$ --- the quadratic law holds to
 $\sim$10 per cent --- and the implied coefficient
-$C_\mathrm{meas} = -\Delta h/\sigma_z^2 \approx 17$--$20$ is constant to
+$K_\mathrm{meas} = -\Delta h/\sigma_z^2 \approx 17$--$20$ is constant to
 $\pm 8$ per cent across a factor 11 in $\sigma_z^2$.
 % src: docs/derivations/G2b_host_z_volume_prior.md §2.3
 Evaluating Eq.~\eqref{eq:app:dhlaw} at $\Omega_\mathrm{m}=0.3$ gives
-$C = 20.1,\ 18.4,\ 13.4,\ 8.9$ at $\bar z = 0.25,\ 0.26,\ 0.30,\ 0.357$
+$K = 20.1,\ 18.4,\ 13.4,\ 8.9$ at $\bar z = 0.25,\ 0.26,\ 0.30,\ 0.357$
 % src: docs/derivations/G2b_host_z_volume_prior.md §2.3 table (C(zbar) column)
 (the last being the redshift of the suite's median detected distance), so
-$C_\mathrm{meas}$ corresponds to $\bar z_\mathrm{eff} \approx 0.25$--$0.27$ ---
-inside the detected distribution and, as the convexity of $C(z)$ requires,
+$K_\mathrm{meas}$ corresponds to $\bar z_\mathrm{eff} \approx 0.25$--$0.27$ ---
+inside the detected distribution and, as the convexity of $K(z)$ requires,
 below the median $0.30$--$0.36$. Taken at the median literally, the
 leading-order amplitude agrees within $\sim$30--50 per cent; allowing the
 population average over the realistic detected spread
@@ -140,13 +141,13 @@ $z \approx 0.15$--$0.45$, it agrees within its own accuracy.
   kernel on the single-host synthetic suite ($h_\mathrm{true}=0.72$,
   $\Omega_\mathrm{m}=0.3$), the same after subtracting the
   $\sigma_z$-independent estimator floor $\approx -0.002$, and the implied
-  Eddington coefficient $C_\mathrm{meas} = -\Delta h_\mathrm{sub}/\sigma_z^2$
+  Eddington coefficient $K_\mathrm{meas} = -\Delta h_\mathrm{sub}/\sigma_z^2$
   (Eq.~\ref{eq:app:dhlaw}). The $\sigma_z = 0.005$ row is floor-dominated,
-  as the law predicts ($C\sigma_z^2 \approx 4\times10^{-4}$ there).}
+  as the law predicts ($K\sigma_z^2 \approx 4\times10^{-4}$ there).}
   \label{tab:app:eddz}
   \begin{tabular}{cccc}
     \hline
-    $\sigma_z$ & $\Delta h$ & floor-subtracted & $C_\mathrm{meas}$ \\
+    $\sigma_z$ & $\Delta h$ & floor-subtracted & $K_\mathrm{meas}$ \\
     \hline
     % src: docs/derivations/G2b_host_z_volume_prior.md §2.3 table
     0.005 & $-0.0016$ & $+0.0004$ & (floor-dominated) \\
@@ -159,8 +160,8 @@ $z \approx 0.15$--$0.45$, it agrees within its own accuracy.
 
 \paragraph*{Why the exact deconvolution, not the leading-order shift.}
 For a GLADE+-like host at $z_g = 0.05$, Eq.~\eqref{eq:app:eddz} gives
-$s = 38.1$ and $C(0.05) = 569$; the expansion parameter is
-$\sigma_z s = 0.19,\ 0.57,\ 1.33,\ 1.91$ at
+$q = 38.1$ and $K(0.05) = 569$; the expansion parameter is
+$\sigma_z q = 0.19,\ 0.57,\ 1.33,\ 1.91$ at
 $\sigma_z = 0.005,\ 0.015,\ 0.035,\ 0.050$, so perturbation theory is valid
 only for $\sigma_z \lesssim 0.015$.
 % src: docs/derivations/G2b_host_z_volume_prior.md §2.3 (z_g = 0.05 case)
@@ -173,7 +174,7 @@ the shift saturates below the quadratic law but remains comparable to $z_g$
 itself, a $\gtrsim 60$ per cent fractional redshift error per host. The
 implementation therefore performs the exact quadrature deconvolution of
 Eq.~\eqref{eq:app:pgz} rather than the shift
-$z_g \to z_g + \sigma_z^2 s$. Two subleading asymmetries are accepted: the
+$z_g \to z_g + \sigma_z^2 q$. Two subleading asymmetries are accepted: the
 prior is evaluated (not zeroed) where the GW numerator window exceeds the
 normalization window, an impropriety bounded by the $6.3\times10^{-5}$
 Gaussian $>\!4\sigma$ tail;

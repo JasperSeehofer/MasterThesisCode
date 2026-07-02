@@ -6,20 +6,20 @@ The failure modes catalogued in Section~\ref{sec:pitfall} share one structural d
 The in-catalogue likelihood of \citet{Gray:2019ksv} (their eqs~A9--A10) is a ratio of catalogue sums: per-galaxy gravitational-wave (GW) likelihood integrals over the host-redshift density in the numerator, the matching per-galaxy selection integrals in the denominator. The first estimator evaluates this ratio self-consistently over the event's localization region,
 \begin{equation}
   L_\mathrm{cat}(h) \;=\;
-  \frac{\sum_{g \in \mathcal{B}} w_g\, N_g(h)}
-       {\sum_{g \in \mathcal{B}} w_g\, D_g(h)},
+  \frac{\sum_{g \in \mathcal{G}_i} w_g\, N_g(h)}
+       {\sum_{g \in \mathcal{G}_i} w_g\, D_g(h)},
   \label{eq:est:lcat}
 \end{equation}
 with per-galaxy numerator and denominator
 \begin{align}
   N_g(h) &= \int \mathrm{d}z\;
-    p\big(x_\mathrm{GW} \mid d_L(z,h),\, \Omega_g\big)\; p_g(z),
+    p\big(x_i \mid d_L(z,h),\, \Omega_g\big)\; p_g(z),
   \label{eq:est:Ng}\\
   D_g(h) &= \int \mathrm{d}z\;
     p_\mathrm{det}\big(d_L(z,h),\, \Omega_g\big)\; p_g(z),
   \label{eq:est:Dg}
 \end{align}
-where $\mathcal{B}$ is the event's three-dimensional localization ball (sky \emph{and} distance), $x_\mathrm{GW}$ the event's GW data (Section~\ref{sec:framework}), $\Omega_g$ the galaxy's sky position, $p_g(z)$ the per-galaxy host-redshift density (Section~\ref{sec:est:voldeconv}), and $w_g = R_\mathrm{eff}(M_g)/(1+z_g)$ the per-galaxy rate weight: the per-black-hole EMRI rate $R_\mathrm{eff}$ of the population model of \citet{Babak:2017tow}, evaluated at the catalogue mass $M_g$ and divided by $(1+z_g)$, with $z_g$ the catalogue redshift, for source-to-detector time dilation --- instantiating the host-probability factors $p(s\mid z)\,p(s\mid M)$ of \citet{Gray:2019ksv}. The ratio $L_\mathrm{cat}(h)$ enters the per-event likelihood multiplied by the catalogue selection normalization $\beta_G(h)$ of Section~\ref{sec:framework}.
+where $\mathcal{G}_i$ is the set of galaxies inside the event's three-dimensional localization ball (sky \emph{and} distance) --- the numerator galaxy set of Section~\ref{sec:framework}, adopted here for the denominator as well, $\mathcal{G}_i^{\mathrm{sel}} = \mathcal{G}_i$ --- $x_i$ the event's GW data (Section~\ref{sec:framework}), $\Omega_g$ the galaxy's sky position, $p_g(z)$ the per-galaxy host-redshift density (Section~\ref{sec:est:voldeconv}), and $w_g = R_\mathrm{eff}(M_g)/(1+z_g)$ the per-galaxy rate weight: the per-black-hole EMRI rate $R_\mathrm{eff}$ of the population model of \citet{Babak:2017tow}, evaluated at the catalogue mass $M_g$ and divided by $(1+z_g)$, with $z_g$ the catalogue redshift, for source-to-detector time dilation --- instantiating the host-probability factors $p(s\mid z)\,p(s\mid M)$ of \citet{Gray:2019ksv}. The ratio $L_\mathrm{cat}(h)$ enters the per-event likelihood multiplied by the catalogue selection normalization $\beta_G(h)$ of Section~\ref{sec:framework}.
 
 The structural point is that numerator and denominator of equation~\eqref{eq:est:lcat} run over the \emph{same} galaxy set with the \emph{same} weights and the \emph{same} kernel $p_g(z)$: every per-galaxy constant --- number-density calibration, rate normalization, completeness weighting --- cancels row by row, and no bridge between the discrete catalogue and a continuous density model is required. The global variant, by contrast, is the literal transcription of Gray et~al.'s eq.~A10 (denominator summed over the full catalogue) and implicitly requires the discrete catalogue sum to track the continuous $\beta_G(h)$ up to an $h$-independent constant; on GLADE+ \citep{Dalya:2021ewn} that assumption fails at the $-17$ per cent level end-to-end across the posterior grid (Appendix~\ref{sec:app:betag}), % src: .planning/gate/G1_beta_g_check.md (end_to_end_tilt_h3_corrected = -0.172)
 a tilt that multiplies the in-catalogue term once per event and accumulates coherently over the sample. Restricting both sums to the localization region is a deliberate deviation from eq.~A10, whose nearest published analogue is the catalogue-patch case of \citet{Gray:2019ksv} (their eq.~A20); the exact mapping, and what the deviation does and does not change, is documented in Appendix~\ref{sec:app:gray}.
@@ -40,16 +40,16 @@ the comoving volume element \citep{Hogg:1999ad} times cosmological time dilation
   \label{eq:est:pgz}
 \end{equation}
 used identically in the numerator~\eqref{eq:est:Ng} and denominator~\eqref{eq:est:Dg}. Equation~\eqref{eq:est:wpop} is the same population measure that the completion term and every selection integral of Section~\ref{sec:framework} already carry: with equation~\eqref{eq:est:pgz}, every redshift integral in the estimator carries $w_\mathrm{pop}(z)\,\mathrm{d}z$ exactly once --- never zero times (the bare kernel) and never twice. The per-galaxy normalization $Z_g$ makes each galaxy contribute one unit of prior mass, so galaxies are weighted by $w_g$ and by fit to the data, not by how much comoving volume happens to lie under their photometric error bar. This likelihood-times-prior construction has no counterpart in \citet{Gray:2019ksv}, whose mock catalogues had zero redshift error; it parallels the line-of-sight redshift priors of later \textsc{gwcosmo} releases \citep{Gray:2023wgj}.
-Two properties matter in practice. First, writing $w_\mathrm{pop}(z; h) = h^{-3} g(z)$ shows the $h^{-3}$ prefactor cancels exactly against $Z_g$: the deconvolution injects \emph{no} $h$-dependence into $L_\mathrm{cat}$, only its redshift shape acts. Secondly, as $\sigma_z \to 0$ equation~\eqref{eq:est:pgz} reduces to $\delta(z - z_g)$, recovering the bare kernel continuously in the spectroscopic limit. % src: docs/derivations/G2b_host_z_volume_prior.md (Eq. 1.5 and limiting case)
+Two properties matter in practice. First, writing $w_\mathrm{pop}(z; h) = h^{-3}\, \tilde{w}(z)$, with $\tilde{w}(z)$ an $h$-independent shape function, shows the $h^{-3}$ prefactor cancels exactly against $Z_g$: the deconvolution injects \emph{no} $h$-dependence into $L_\mathrm{cat}$, only its redshift shape acts. Secondly, as $\sigma_z \to 0$ equation~\eqref{eq:est:pgz} reduces to $\delta(z - z_g)$, recovering the bare kernel continuously in the spectroscopic limit. % src: docs/derivations/G2b_host_z_volume_prior.md (Eq. 1.5 and limiting case)
 
 \subsubsection{The Eddington-in-$z$ law: what the bare kernel costs}
 \label{sec:est:eddz}
 
 Omitting $w_\mathrm{pop}$ is not a neutral convention. Expanding $\ln w_\mathrm{pop}$ to first order about $z_g$ inside equation~\eqref{eq:est:pgz} and completing the square shows that the deconvolved posterior is, to leading order, the bare Gaussian recentred at
 \begin{equation}
-  \langle z \rangle \;=\; z_g + \sigma_z^2\, s(z_g) + \mathcal{O}(\sigma_z^4),
+  \langle z \rangle \;=\; z_g + \sigma_z^2\, q(z_g) + \mathcal{O}(\sigma_z^4),
   \qquad
-  s(z) \equiv \frac{\mathrm{d} \ln w_\mathrm{pop}}{\mathrm{d}z}.
+  q(z) \equiv \frac{\mathrm{d} \ln w_\mathrm{pop}}{\mathrm{d}z}.
   \label{eq:est:eddz}
 \end{equation}
 The shift arises because $w_\mathrm{pop}$ rises steeply with $z$: a galaxy observed at $z_g$ is more probably a higher-redshift galaxy scattered down than the reverse. This is the classical correction of \citet{Eddington1913}, transcribed to redshift;
@@ -57,13 +57,13 @@ the bare kernel omits the shift and under-states every host redshift. Since the 
 \begin{equation}
   \Delta h \;\simeq\; -\,h\,
   \left.\frac{\mathrm{d}\ln \mathcal{D}}{\mathrm{d}z}\right|_{\bar z}
-  \sigma_z^2\, s(\bar z)
-  \;\equiv\; -\,C(\bar z)\,\sigma_z^2,
+  \sigma_z^2\, q(\bar z)
+  \;\equiv\; -\,K(\bar z)\,\sigma_z^2,
   \label{eq:est:eddh}
 \end{equation}
-where $\mathcal{D}(z) \equiv (1+z)\int_0^z \mathrm{d}z'/E(z')$ is the dimensionless distance function, $d_L = (c/100~\mathrm{km\,s^{-1}\,Mpc^{-1}})\,\mathcal{D}(z)/h$, $E(z) = H(z)/H_0$, and $\bar z$ is a representative detected-host redshift: $H_0$ is biased \emph{low}, quadratically in $\sigma_z$. The law is verified quantitatively on synthetic single-host tests: measured biases $\Delta h = -0.0016$, $-0.0064$, $-0.023$, $-0.046$ at $\sigma_z = 0.005$, $0.015$, $0.035$, $0.050$ follow the $\sigma_z^2$ scaling to ${\sim}10$ per cent after subtracting a $\sigma_z$-independent estimator floor of $\approx -0.002$, with an implied coefficient $C_\mathrm{meas} \approx 17$--$20$, constant to $\pm 8$ per cent across a factor 11 in $\sigma_z^2$ and matching the prediction of equation~\eqref{eq:est:eddh} at an effective $\bar z \approx 0.25$--$0.27$, inside the detected population (Appendix~\ref{sec:app:voldeconv}). % src: docs/derivations/G2b_host_z_volume_prior.md sec. 2.3
+where $\mathcal{D}(z) \equiv (1+z)\int_0^z \mathrm{d}z'/E(z')$ is the dimensionless distance function, $d_L = (c/100~\mathrm{km\,s^{-1}\,Mpc^{-1}})\,\mathcal{D}(z)/h$, $E(z) = H(z)/H_0$, and $\bar z$ is a representative detected-host redshift: $H_0$ is biased \emph{low}, quadratically in $\sigma_z$. The law is verified quantitatively on synthetic single-host tests: measured biases $\Delta h = -0.0016$, $-0.0064$, $-0.023$, $-0.046$ at $\sigma_z = 0.005$, $0.015$, $0.035$, $0.050$ follow the $\sigma_z^2$ scaling to ${\sim}10$ per cent after subtracting a $\sigma_z$-independent estimator floor of $\approx -0.002$, with an implied coefficient $K_\mathrm{meas} \approx 17$--$20$, constant to $\pm 8$ per cent across a factor 11 in $\sigma_z^2$ and matching the prediction of equation~\eqref{eq:est:eddh} at an effective $\bar z \approx 0.25$--$0.27$, inside the detected population (Appendix~\ref{sec:app:voldeconv}). % src: docs/derivations/G2b_host_z_volume_prior.md sec. 2.3
 
-The implementation deconvolves exactly --- quadrature of the full product in equation~\eqref{eq:est:pgz} --- rather than applying the leading-order recentring of equation~\eqref{eq:est:eddz}, because for GLADE+-like hosts the shift is non-perturbative: at $z_g = 0.05$ the expansion parameter $\sigma_z\, s(z_g)$ exceeds unity for $\sigma_z \gtrsim 0.035$, and at $\sigma_z = 0.05$ the exact posterior-mean shift is $+0.054$ against the quadratic law's $+0.095$ --- saturated below the leading order, yet still ${\gtrsim}60$ per cent of $z_g$ itself. % src: docs/derivations/G2b_host_z_volume_prior.md sec. 2.3 (z_g = 0.05 table)
+The implementation deconvolves exactly --- quadrature of the full product in equation~\eqref{eq:est:pgz} --- rather than applying the leading-order recentring of equation~\eqref{eq:est:eddz}, because for GLADE+-like hosts the shift is non-perturbative: at $z_g = 0.05$ the expansion parameter $\sigma_z\, q(z_g)$ exceeds unity for $\sigma_z \gtrsim 0.035$, and at $\sigma_z = 0.05$ the exact posterior-mean shift is $+0.054$ against the quadratic law's $+0.095$ --- saturated below the leading order, yet still ${\gtrsim}60$ per cent of $z_g$ itself. % src: docs/derivations/G2b_host_z_volume_prior.md sec. 2.3 (z_g = 0.05 table)
 
 \subsection{The rate-weighted host-mass prior: Eddington-in-$M$}
 \label{sec:est:eddm}
@@ -83,6 +83,6 @@ The implementation therefore uses the exact first moment of equation~\eqref{eq:e
 \subsection{The adopted default}
 \label{sec:est:default}
 
-The library default, used for every headline result in this paper, is \texttt{volume\_deconv}: the deconvolved kernels of equations~\eqref{eq:est:pgz} and \eqref{eq:est:pgM} inside the local ratio of sums of equation~\eqref{eq:est:lcat}. Three reasons. First, it is the only configuration in which the same population prior multiplies the same measurement likelihood on both sides of every ratio --- prior consistency by construction, not by empirical repair --- and the unique choice consistent with the event-rate model that generates the simulated hosts. Secondly, \texttt{local\_ratio} alone cures the normalization artifact but retains the bare redshift kernel and with it the $-C\sigma_z^2$ law of equation~\eqref{eq:est:eddh}, which at $\sigma_z = 0.035$ already costs $-0.023$ in $h$ % src: docs/derivations/G2b_host_z_volume_prior.md sec. 2.3
+The library default, used for every headline result in this paper, is \texttt{volume\_deconv}: the deconvolved kernels of equations~\eqref{eq:est:pgz} and \eqref{eq:est:pgM} inside the local ratio of sums of equation~\eqref{eq:est:lcat}. Three reasons. First, it is the only configuration in which the same population prior multiplies the same measurement likelihood on both sides of every ratio --- prior consistency by construction, not by empirical repair --- and the unique choice consistent with the event-rate model that generates the simulated hosts. Secondly, \texttt{local\_ratio} alone cures the normalization artifact but retains the bare redshift kernel and with it the $-K\sigma_z^2$ law of equation~\eqref{eq:est:eddh}, which at $\sigma_z = 0.035$ already costs $-0.023$ in $h$ % src: docs/derivations/G2b_host_z_volume_prior.md sec. 2.3
 and drives the empirical probability--probability coverage of the bare kernel to approximately zero (Section~\ref{sec:coverage}); % src: .planning/gate/G7_systematics_budget.md row 2
 because the bias is quadratic in $\sigma_z$, a calibration demonstrated at one photometric quality would not transfer across the $(\sigma_z, \sigma_M)$ regimes a forecast must span --- the same reason the mass channel was fixed rather than caveated. Thirdly, the deconvolution is exactly $h$-neutral (the $h^{-3}$ cancellation above), so the de-railing it produces on GLADE+ data (Section~\ref{sec:realdata}) cannot be manufactured by the fix itself. \texttt{local\_ratio} is retained as a cross-check closer to the published form: the agreement of the two estimators' interior posterior peaks on the same data (Section~\ref{sec:realdata}) shows the recovery is a property of prior consistency, not of one kernel.

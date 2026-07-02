@@ -222,3 +222,79 @@ All fixes are mechanical harmonizations (formatting/typography or within-paper s
 | F8 | Spelling unified to the paper's dominant Oxford convention: "localisation"→"localization" (framework.tex:126), "marginalises"→"marginalizes" (appendix_eddington_m.tex:3) | framework (1), appendix_eddington_m (1) |
 
 **Not fixed (require author/physics decision):** C1 ($w_\mathrm{pop}$ measure split — Physics Change Protocol territory), C2–C4 (renames of $C$, $s$, $g(z)$), M3–M7 (symbol unifications/definitions needing prose), and all flagged minors above.
+
+---
+
+## 5. Harmonization pass (post-bcb1cb5)
+
+- **Date:** 2026-07-02, second pass (base: clean tree at `bcb1cb5`)
+- **Scope:** resolves C1–C4, M1 (residual), M3–M7 per the editorial decisions; no physics content changed — every touched equation was cross-checked against `docs/derivations/G2a_completion_sky_marginal_4pi.md` and `docs/derivations/G2b_host_z_volume_prior.md` before and after the edit and remains mathematically identical (symbols renamed, or the constant $4\pi$ regrouped explicitly). `main.tex` (GENERATED) untouched. Line numbers refer to the post-pass working tree.
+
+### C1 — $w_\mathrm{pop}$ unified to the FULL-SKY convention: $w_\mathrm{pop}(z) \equiv (\mathrm{d}V_\mathrm{c}/\mathrm{d}z)/(1+z)$
+
+The framework/appendix-A per-steradian object $[\mathrm{d}V_\mathrm{c}/(\mathrm{d}z\,\mathrm{d}\Omega)]/(1+z)$ is now written $w_\mathrm{pop}(z)/(4\pi)$ everywhere, with isotropy stated once at the definition. The pitfall/estimators/voldeconv full-sky definitions (pitfall.tex:8, estimators.tex:32, appendix_volume_deconv.tex:25) are now the paper-wide convention and were not touched.
+
+| File:line | Change | Equivalence check vs derivation |
+|---|---|---|
+| framework.tex:200–207 (eq:wpop) | definition rewritten full-sky, $\mathrm{d}V_\mathrm{c}/\mathrm{d}z$; prose "per unit solid angle" dropped | matches G2b Eq. (1.3) literally |
+| framework.tex:211–213 | added: "For an isotropic population the per-steradian host density is $w_\mathrm{pop}(z)/(4\pi)$…" (the single isotropy statement) | — |
+| framework.tex:225 (eq:bnum) | $w_\mathrm{pop}(z) \to w_\mathrm{pop}(z)/(4\pi)$ | integrand $= [1-f_k]\frac{\sin\hat\theta_i}{4\pi}\mathcal{N}(u;1,\Sigma_{i,uu})\cdot\frac{\mathrm{d}V_\mathrm{c}/( \mathrm{d}z\,\mathrm{d}\Omega)}{1+z}$ — identical to G2a Eqs. (5)+(10) |
+| framework.tex:258 (eq:Dh) | $w_\mathrm{pop}(z) \to w_\mathrm{pop}(z)/(4\pi)$ | $D(h)=\int \mathrm{d}z\,\langle p_\mathrm{det}\rangle_\Omega\,\frac{\mathrm{d}V_\mathrm{c}/(\mathrm{d}z\,\mathrm{d}\Omega)}{1+z}$ — identical to G2a §2 ($\mathrm{Mpc^3\,sr^{-1}}$) |
+| framework.tex:263 (eq:betabar) | $w_\mathrm{pop}(z) \to w_\mathrm{pop}(z)/(4\pi)$ | same as eq:Dh with $[1-f]$ weight — value unchanged |
+| framework.tex:269–273 | added sentence: the constant $1/(4\pi)$ is common to $B_\mathrm{num}$, $D$, $\beta_{\bar G}$ and cancels in the assembled likelihood | $\beta_G = D - \beta_{\bar G}$ (eq:betag), $w_G=\beta_G/D$, $p_i$ (eq:assembled) all invariant |
+| framework.tex:311–312 | consistency-section measure statement annotated "(in its per-steradian form $w_\mathrm{pop}/4\pi$)" | — |
+| appendix_sky_marginal.tex:38 (eq:app:sky:bnum) | trailing measure $\frac{\mathrm{d}V_\mathrm{c}}{\mathrm{d}z\,\mathrm{d}\Omega}\frac{1}{1+z} \to \frac{w_\mathrm{pop}(z)}{4\pi}$ | identity $w_\mathrm{pop}/(4\pi)=[\mathrm{d}V_\mathrm{c}/(\mathrm{d}z\,\mathrm{d}\Omega)]/(1+z)$ stated inline; identical to G2a Eq. (5) |
+| appendix_sky_marginal.tex:42–52 | prose rewritten: identity above + explicit note that TWO distinct $1/(4\pi)$ factors appear (sky prior inside the bracket = the factor at stake; measure conversion = common constant that cancels) | — |
+
+**Silent-absorption audit (required by the C1 instruction):** every occurrence of $4\pi$ in framework.tex and appendix_sky_marginal.tex was enumerated before the edit; all were the isotropic *sky-prior* $1/(4\pi)$ (in $p(\Omega)$, in $\langle\cdot\rangle_\Omega$, or in the narrow-beam marginal $\sin\hat\theta/4\pi$). **No downstream equation had silently absorbed the measure $4\pi$** — the pre-edit per-steradian $w_\mathrm{pop}$ meant no compensating prefactor existed anywhere — so the pass required **no prefactor corrections beyond pure regrouping**. Invariance of $q(z)=\mathrm{d}\ln w_\mathrm{pop}/\mathrm{d}z$ (constant drops in the log-derivative; explicit form in eq:app:eddz unchanged, = G2b Eq. (2.2)) and of $\tilde w(z)$ (defined with $\propto$) under the convention flip was checked. coverage.tex:12 ($w_\mathrm{pop}\propto(\mathrm{d}V_\mathrm{c}/\mathrm{d}z)/(1+z)$, citing Section 2) now matches the owner definition exactly.
+
+### C2 — Eddington bias coefficient $C(\bar z) \to K(\bar z)$ (grep-verified: $K$ previously unused as a math symbol); measured variant $C_\mathrm{meas} \to K_\mathrm{meas}$. Bridge constant in $\Sigma_\mathrm{global}\approx C\beta_G$ keeps $C$ (pitfall.tex:68, 81; appendix_beta_g.tex:27, 32).
+
+- pitfall.tex:25 (eq:pitfall:hbias), 29 (now "Eddington bias coefficient $K(\bar z)$" — names the object at definition), 34
+- estimators.tex:61 (eq:est:eddh), 64 ($K_\mathrm{meas}$), 86 ($-K\sigma_z^2$ law)
+- appendix_volume_deconv.tex:102 (eq:app:dhlaw), 108, 110, 123, 127, 130, 131, 144–146 (table caption, twice), 150 (table header), 163 ($K(0.05)=569$)
+
+### C3 — log-slope $s(z) = \mathrm{d}\ln w_\mathrm{pop}/\mathrm{d}z \to q(z)$ (grep-verified: $q$ previously unused; $\kappa$ taken by the Fisher condition number, budget.tex:20). Gray's host indicator $s$ in $p(s\mid z)\,p(s\mid M)$ untouched (framework.tex:124, estimators.tex:22, appendix_gray_mapping.tex).
+
+- pitfall.tex:16, 18 (eq:pitfall:eddz), 24 (eq:pitfall:hbias), 37
+- estimators.tex:50, 52 (eq:est:eddz), 60 (eq:est:eddh), 66
+- appendix_volume_deconv.tex:79, 81 (eq:app:eddz), 87 ($q\approx 2/z$), 93, 96, 101 (eq:app:dhlaw), 163 ($q=38.1$), 164 ($\sigma_z q$ row), 177
+
+### C4 — shape function $g(z) \to \tilde{w}(z)$ (grep-verified: $\tilde w$ previously unused). Galaxy index $g$ untouched.
+
+- estimators.tex:43 — $w_\mathrm{pop}(z;h)=h^{-3}\,\tilde w(z)$, "with $\tilde w(z)$ an $h$-independent shape function" added
+- appendix_volume_deconv.tex:62–64 — same, $\tilde w(z)\propto I^2(z)/[E(z)(1+z)]$ (the $\propto$ keeps the statement exact under the C1 full-sky convention)
+
+### M1 residual — duplicate labelled definition of $\Sigma_\mathrm{global}$
+
+- appendix_beta_g.tex:9–11 — appendix display now introduced as "[Eq.~\eqref{eq:pitfall:sigmaglobal}, reproduced here for convenience with its redshift cutoff explicit]"; duplicate label `eq:app:sigmaglob` **dropped** (it was referenced nowhere — both residual issues resolved at once; pitfall.tex:63–66 remains the sole labelled definition)
+
+### M3 — event data unified to $x_i$ (framework owner); $x_\mathrm{GW}$ eliminated
+
+- estimators.tex:16 (eq:est:Ng), 22 (prose)
+- appendix_sky_marginal.tex:14 (eq:app:sky:gauss; appendix's unindexed $\mu$, $\Sigma$ retained per the paper's index-dropping convention — accepted minor #10)
+
+### M4 — localization set unified to $\mathcal{G}_i$; $\mathcal{B}$ eliminated
+
+- estimators.tex:9–10 (eq:est:lcat sums), 22 — identification stated once at first use: "$\mathcal{G}_i$ … the numerator galaxy set of Section 2, adopted here for the denominator as well, $\mathcal{G}_i^{\mathrm{sel}} = \mathcal{G}_i$"
+- appendix_gray_mapping.tex:93–94 — "the ball $\mathcal{B}$" → "the localization set $\mathcal{G}_i$"
+
+### M5 — $\sigma_{z,g}$ vs $\sigma_z$ convention clause
+
+- framework.tex:160–162 — at $\sigma_{z,g}$'s first use: "; we write $\sigma_z$ for a generic per-galaxy scatter when the galaxy label is irrelevant". All downstream $\sigma_z$ uses left as-is.
+
+### M6 — ecliptic latitude $\beta$ defined
+
+- realdata.tex:9 — "…six equal-$|\sin\beta|$ sky bands, where $\beta$ denotes the ecliptic latitude (unrelated to the selection normalizations $\beta_G$, $\beta_{\bar G}$)"
+
+### M7 — $\sigma_{d_L}$ defined at first use
+
+- framework.tex:150–152 — "…where $\sigma_{d_L}$ is the event's $1\sigma$ GW luminosity-distance uncertainty from its Fisher analysis…"
+
+### Verification
+
+1. **Straggler grep (whole `sections/` tree, math mode):** zero remaining $x_\mathrm{GW}$, $\mathcal{B}$, Eddington-$C$ ($C(\bar z)$/$C_\mathrm{meas}$/$C(z)$/$C\sigma_z^2$), slope-$s$ ($s(z)$/$s(\bar z)$/$\sigma_z^2 s$/$\sigma_z s$), shape-$g$ ($h^{-3}g(z)$), or per-steradian $w_\mathrm{pop}$; the surviving $C$'s are the bridge constant only, the surviving $s$'s Gray's indicator only, the surviving $\mathrm{d}V_\mathrm{c}/(\mathrm{d}z\,\mathrm{d}\Omega)$ the single intentional identity at appendix_sky_marginal.tex:44.
+2. **Cross-references:** 300 `\ref`/`\eqref` against 88 labels (sections + generated main.tex) — all resolve; zero unreferenced equation labels remain (eq:app:sigmaglob removed, eq:pitfall:sigmaglobal now also referenced from Appendix D).
+3. **Prefactor corrections beyond regrouping:** none required (see the C1 silent-absorption audit above).
+
+**Edit count:** 59 replacement/insertion sites across 8 files (framework 9, pitfall 8, estimators 14, appendix_sky_marginal 4, appendix_volume_deconv 20, appendix_beta_g 2, appendix_gray_mapping 1, realdata 1), applied as 41 atomic edits; uncommitted in the working tree per instruction.

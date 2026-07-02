@@ -11,7 +11,7 @@ in the coordinates $x = (\phi, \theta, u)$, where $(\phi,\theta)$ are the
 ecliptic azimuth and polar angle and $u \equiv d_L/\hat d_L$ is the luminosity
 distance in units of its point estimate $\hat d_L$:
 \begin{equation}
-  p(x_\mathrm{GW} \mid \phi, \theta, d_L)
+  p(x_i \mid \phi, \theta, d_L)
   \simeq \mathcal{N}_3\big((\phi,\theta,u);\,\mu,\,\Sigma\big),
   \qquad \mu = (\hat\phi, \hat\theta, 1),
   \label{eq:app:sky:gauss}
@@ -35,12 +35,22 @@ numerator is
   B_\mathrm{num}(h) = \int_{z_-}^{z_+} \mathrm{d}z\, \big[1 - f_k(z)\big]
   \left[ \int_{S^2} \frac{\mathrm{d}\Omega}{4\pi}\,
   \mathcal{N}_3\big((\phi,\theta,u(z,h));\,\mu,\Sigma\big) \right]
-  \frac{\mathrm{d}V_\mathrm{c}}{\mathrm{d}z\,\mathrm{d}\Omega}\, \frac{1}{1+z},
+  \frac{w_\mathrm{pop}(z)}{4\pi},
   \label{eq:app:sky:bnum}
 \end{equation}
 where $f_k(z)$ is the catalogue completeness in the event's sky pixel,
-$u(z,h) = d_L(z,h)/\hat d_L$, and the $1/(1+z)$ converts to the detector-frame
-rate \citep{Mandel:2018mve}.
+$u(z,h) = d_L(z,h)/\hat d_L$, and
+$w_\mathrm{pop}(z)/(4\pi) =
+[\mathrm{d}V_\mathrm{c}/(\mathrm{d}z\,\mathrm{d}\Omega)]/(1+z)$ is the
+per-steradian form of the full-sky population measure of
+equation~\eqref{eq:wpop}, whose $1/(1+z)$ converts the source-frame
+rate to the detector frame \citep{Mandel:2018mve}. Two distinct
+factors of $1/(4\pi)$ thus appear: the isotropic sky-prior
+normalization inside the square bracket, which is the factor at stake
+in this appendix, and the constant measure conversion in
+$w_\mathrm{pop}/(4\pi)$, which is common to $B_\mathrm{num}$, $D(h)$,
+and $\beta_{\bar G}(h)$ and cancels in every ratio of
+Section~\ref{sec:framework}.
 
 Splitting $x = (\omega, u)$ with $\omega = (\phi,\theta)$, the Gaussian
 factorizes exactly into a $u$-marginal times a sky conditional,

@@ -6,14 +6,15 @@ The \texttt{global} variant of the in-catalogue likelihood
 event by a single catalogue-wide selection sum rather than by a local,
 per-event one. Its validity rests on an implicit bridge between a
 discrete and a continuous object: the rate-weighted sum over the actual
-GLADE+ catalogue \citep{Dalya:2021ewn},
+GLADE+ catalogue \citep{Dalya:2021ewn}
+[Eq.~\eqref{eq:pitfall:sigmaglobal}, reproduced here for convenience
+with its redshift cutoff explicit],
 \begin{equation}
   \Sigma_{\mathrm{global}}(h) \;=\;
   \sum_{g\,:\,z_g < z_{\max}(h)} w_g\,
   p_{\mathrm{det}}\!\big(d_L(z_g, h)\big),
   \qquad
   w_g = \frac{R_{\mathrm{eff}}(M_g)}{1+z_g},
-  \label{eq:app:sigmaglob}
 \end{equation}
 with $w_g$ the per-galaxy EMRI-rate weight of
 Section~\ref{sec:framework} \citep{Babak:2017tow} and $z_{\max}(h)$ the

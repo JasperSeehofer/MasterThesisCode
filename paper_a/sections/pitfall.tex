@@ -13,28 +13,28 @@ the uniform-in-comoving-volume host prior with cosmological time dilation \citep
 The consequence is the classical Eddington--Malmquist bias transcribed to redshift space \citep{Eddington1913,Malmquist1922}.
 Because the measure~\eqref{eq:pitfall:wpop} rises steeply with $z$---there is more volume, hence there are more potential hosts, behind an observed redshift than in front of it---a galaxy observed at $z_g$ is more probably a higher-redshift galaxy scattered down than a lower-redshift galaxy scattered up. Omitting the prior under-estimates every host redshift, at leading order by
 \begin{equation}
-  \delta z_{\mathrm{Edd}} = \sigma_z^{2}\, s(z_g),
+  \delta z_{\mathrm{Edd}} = \sigma_z^{2}\, q(z_g),
   \qquad
-  s(z) \equiv \frac{\mathrm{d}\ln w_{\mathrm{pop}}}{\mathrm{d}z},
+  q(z) \equiv \frac{\mathrm{d}\ln w_{\mathrm{pop}}}{\mathrm{d}z},
   \label{eq:pitfall:eddz}
 \end{equation}
 % src: docs/derivations/G2b_host_z_volume_prior.md Eq. (2.1)
 and, propagated through the distance--redshift relation, it biases the Hubble constant low by
 \begin{equation}
-  \Delta h \simeq -\,h \left.\frac{\mathrm{d}\ln d_L}{\mathrm{d}z}\right|_{\bar{z}} \sigma_z^{2}\, s(\bar{z})
-  \;\equiv\; -\,C(\bar{z})\,\sigma_z^{2},
+  \Delta h \simeq -\,h \left.\frac{\mathrm{d}\ln d_L}{\mathrm{d}z}\right|_{\bar{z}} \sigma_z^{2}\, q(\bar{z})
+  \;\equiv\; -\,K(\bar{z})\,\sigma_z^{2},
   \label{eq:pitfall:hbias}
 \end{equation}
 % src: docs/derivations/G2b_host_z_volume_prior.md Eq. (2.3); d ln d_L/dz = d ln[(1+z)I(z)]/dz is h-independent
-where $\bar{z}$ is a representative detected-host redshift; the derivation, the population-averaging of $C(\bar z)$, and the exact-quadrature cure are given in Appendix~\ref{sec:app:voldeconv}.
+where $\bar{z}$ is a representative detected-host redshift; the derivation, the population-averaging of the Eddington bias coefficient $K(\bar z)$, and the exact-quadrature cure are given in Appendix~\ref{sec:app:voldeconv}.
 
 Equation~\eqref{eq:pitfall:hbias} is quantitatively verified. In single-host synthetic tests (flat $\Lambda$CDM, $\Omega_{\mathrm{m}}=0.3$, true $h=0.72$, complete catalogue) the measured maximum-a-posteriori biases are % src: docs/derivations/G2b_host_z_volume_prior.md preamble + section 2.3
 $\Delta h = -0.0016$, $-0.0064$, $-0.023$ and $-0.046$ at $\sigma_z = 0.005$, $0.015$, $0.035$ and $0.050$; % src: docs/derivations/G2b_host_z_volume_prior.md section 2.3
 after subtracting a $\sigma_z$-independent estimator floor of $\approx -0.002$ they scale as $1:4.8:10.0$ against $\sigma_z^2 = 1:5.44:11.1$, i.e.\ the quadratic law holds to $\sim$10~per~cent, % src: docs/derivations/G2b_host_z_volume_prior.md section 2.3
-and the implied coefficient $-\Delta h/\sigma_z^2 \approx 17$--$20$ matches $C(\bar z)$ at $\bar z \approx 0.25$--$0.27$, inside the synthetic detected population. % src: docs/derivations/G2b_host_z_volume_prior.md section 2.3
+and the implied coefficient $-\Delta h/\sigma_z^2 \approx 17$--$20$ matches $K(\bar z)$ at $\bar z \approx 0.25$--$0.27$, inside the synthetic detected population. % src: docs/derivations/G2b_host_z_volume_prior.md section 2.3
 The same offset, rigid across realizations, collapses empirical P--P coverage to $\approx 0$--3~per~cent at every injected truth (Section~\ref{sec:coverage}). % src: .planning/INDEPENDENT-VERIFICATION-REPORT-20260701.md section 7.1
 
-For a GLADE-like catalogue the effect is not even perturbative. At a host redshift $z_g = 0.05$ the expansion parameter of Eq.~\eqref{eq:pitfall:eddz} is $\sigma_z\, s(z_g) = 1.33$ already at $\sigma_z = 0.035$, % src: docs/derivations/G2b_host_z_volume_prior.md section 2.3
+For a GLADE-like catalogue the effect is not even perturbative. At a host redshift $z_g = 0.05$ the expansion parameter of Eq.~\eqref{eq:pitfall:eddz} is $\sigma_z\, q(z_g) = 1.33$ already at $\sigma_z = 0.035$, % src: docs/derivations/G2b_host_z_volume_prior.md section 2.3
 and the exact posterior-mean redshift shift, while saturating below the quadratic law ($+0.0325$ exact versus $+0.0467$ at leading order for $\sigma_z=0.035$), remains $\gtrsim 60$~per~cent of $z_g$ itself. % src: docs/derivations/G2b_host_z_volume_prior.md section 2.3 table
 A kernel that mis-locates every host by over half its redshift does not average out over events; it coherently distorts the entire in-catalogue channel.
 

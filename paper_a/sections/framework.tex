@@ -147,16 +147,19 @@ redshift integrals against a host-redshift kernel $p_g(z)$,
 \end{align}
 % src: docs/derivations/G2c_gray_a9_a10_mapping.md §2 (N_g, D_g rows); derivations/dark_siren_likelihood.md Eq. (14.12)
 evaluated over the redshift support of their integrands (the event's
-$\pm 4\sigma_{d_L}$ distance image and the host's $\pm 4\sigma_z$
-window, respectively), with $p_\mathrm{det}$ the detection probability
+$\pm 4\sigma_{d_L}$ distance image, where $\sigma_{d_L}$ is the
+event's $1\sigma$ GW luminosity-distance uncertainty from its Fisher
+analysis, and the host's $\pm 4\sigma_z$ window, respectively), with
+$p_\mathrm{det}$ the detection probability
 defined in Section~\ref{sec:framework:selection}.  The detection
 probability appears in $D_g$ but never multiplies the measurement
 Gaussian in $N_g$: selection effects are corrected in denominators
 only \citep{Mandel:2018mve}.
 
 The kernel $p_g(z)$ encodes what the catalogue's photometric redshift
-$z_g \pm \sigma_{z,g}$ says about the host's true redshift.  We write
-it in the general form
+$z_g \pm \sigma_{z,g}$ says about the host's true redshift; we write
+$\sigma_z$ for a generic per-galaxy scatter when the galaxy label is
+irrelevant.  The kernel takes the general form
 \begin{equation}
   p_g(z) \;=\;
   \frac{\mathcal{N}\big(z_g;\, z,\, \sigma_{z,g}^2\big)\;\Pi(z)}{Z_g},
@@ -197,15 +200,17 @@ Appendix~\ref{sec:app:eddm}.
 Out-of-catalogue hosts are described by the population prior alone:
 isotropic on the sky, $p(\Omega) = 1/4\pi$, and uniform in comoving
 volume and source time, which in terms of the comoving volume element
-per unit solid angle $\mathrm{d}V_\mathrm{c}/(\mathrm{d}z\,\mathrm{d}\Omega)$
-reads
+$\mathrm{d}V_\mathrm{c}/\mathrm{d}z$ reads
 \begin{equation}
   w_\mathrm{pop}(z) \;\equiv\;
   \frac{1}{1+z}\,
-  \frac{\mathrm{d}V_\mathrm{c}}{\mathrm{d}z\,\mathrm{d}\Omega}.
+  \frac{\mathrm{d}V_\mathrm{c}}{\mathrm{d}z}.
   \label{eq:wpop}
 \end{equation}
 % src: docs/derivations/G2b_host_z_volume_prior.md Eq. (1.3); docs/derivations/G2a_completion_sky_marginal_4pi.md Eq. (4)
+For an isotropic population the per-steradian host density is
+$w_\mathrm{pop}(z)/(4\pi)$, and it is in this per-steradian form that
+the measure enters every sky-resolved integral below.
 Let $f(z, \Omega) \in [0,1]$ denote the (rate-weighted) completeness
 of the catalogue, evaluated per HEALPix pixel, $f_k(z)$ for pixel $k$
 \citep{Gray:2021sew}.
@@ -217,7 +222,7 @@ incompleteness-weighted, sky-marginalized measurement likelihood
   \big[1 - f_{k(\Omega_i)}(z)\big]\;
   \frac{\sin\hat\theta_i}{4\pi}\,
   \mathcal{N}\!\big(u(z,h);\, 1,\, \Sigma_{i,uu}\big)\;
-  w_\mathrm{pop}(z),
+  \frac{w_\mathrm{pop}(z)}{4\pi},
   \label{eq:bnum}
 \end{equation}
 % src: docs/derivations/G2a_completion_sky_marginal_4pi.md §2 Eq. (5) and §3 Eq. (10)
@@ -250,18 +255,23 @@ prior define the selection normalizations
   D(h) &= \int_{z_\mathrm{min}}^{z_\mathrm{max}(h)} \mathrm{d}z\;
   \Big\langle p_\mathrm{det}\big(d_L(z,h), \Omega\big)
   \Big\rangle_{\Omega}\;
-  w_\mathrm{pop}(z),
+  \frac{w_\mathrm{pop}(z)}{4\pi},
   \label{eq:Dh}\\
   \beta_{\bar G}(h) &= \int_{z_\mathrm{min}}^{z_\mathrm{max}(h)} \mathrm{d}z\;
   \Big\langle \big[1 - f(z,\Omega)\big]\,
   p_\mathrm{det}\big(d_L(z,h), \Omega\big) \Big\rangle_{\Omega}\;
-  w_\mathrm{pop}(z),
+  \frac{w_\mathrm{pop}(z)}{4\pi},
   \label{eq:betabar}
 \end{align}
 % src: docs/derivations/G2c_gray_a9_a10_mapping.md §2 (D(h) and beta_Gbar rows)
 where $\langle\cdot\rangle_\Omega$ is the isotropic sky average and
 $z_\mathrm{max}(h)$ is the redshift horizon of the analysis
-($p_\mathrm{det}$ vanishes beyond the injection horizon).  $D(h)$ is
+($p_\mathrm{det}$ vanishes beyond the injection horizon).  The
+constant $1/(4\pi)$ converting the full-sky measure \eqref{eq:wpop} to
+its per-steradian form is kept explicit here and in
+equation~\eqref{eq:bnum}; it is common to $B_\mathrm{num}$, $D$, and
+$\beta_{\bar G}$ and cancels in the assembled likelihood below.
+$D(h)$ is
 the full-volume selection integral; $\beta_{\bar G}(h)$ its
 out-of-catalogue restriction; and the \emph{catalogue selection
 normalization}
@@ -298,7 +308,8 @@ $D(h)$ is common to all $h$ and cancels when the posterior
 \label{sec:framework:consistency}
 
 The population prior enters the likelihood in two guises.  It appears
-\emph{explicitly}, as the measure $w_\mathrm{pop}(z)\,\mathrm{d}z$ of
+\emph{explicitly}, as the measure $w_\mathrm{pop}(z)\,\mathrm{d}z$ (in
+its per-steradian form $w_\mathrm{pop}/4\pi$) of
 every continuous integral --- the completion numerator
 \eqref{eq:bnum} and the selection normalizations
 \eqref{eq:Dh}--\eqref{eq:betabar}.  And it appears \emph{implicitly},
