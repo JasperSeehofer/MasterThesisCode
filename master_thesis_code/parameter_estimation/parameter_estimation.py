@@ -8,6 +8,7 @@ all 14 EMRI parameters.
 """
 
 import logging
+import os
 import time
 import types
 import warnings
@@ -29,7 +30,9 @@ except ImportError:
 
 from master_thesis_code.constants import (
     CRAMER_RAO_BOUNDS_PATH,
+    ECLIPTIC_FRAME_TAG,
     ESA_TDI_CHANNELS,
+    FISHER_CONDITION_NUMBER_MAX,
     MAXIMAL_FREQUENCY,
     MINIMAL_FREQUENCY,
     SNR_ANALYSIS_PATH,
@@ -125,7 +128,12 @@ class ParameterEstimation:
         self.lisa_configuration = LisaTdiConfiguration()
         self._psd_cache: dict[int, tuple[Any, Any, int, int]] = {}
         self._crb_buffer: list[dict] = []
-        self._crb_flush_interval: int = 25  # ROADMAP SC-2: batch CRB writes to reduce Lustre I/O
+        # ROADMAP SC-2: batch CRB writes to reduce Lustre I/O. Flush every 5 (was 25):
+        # caps worst-case loss on a hard kill (SLURM TIMEOUT/preemption on short
+        # partitions) to <= interval-1 detections per task. Combined with append-mode
+        # flushing (flush_pending_results), this is LOWER total I/O than the old
+        # every-25 read-modify-write, so it improves both robustness and Lustre load.
+        self._crb_flush_interval: int = 5
         _LOGGER.info("parameter estimation initialized.")
 
     def _get_cached_psd(self, n: int) -> tuple[Any, Any, int, int]:
@@ -360,7 +368,15 @@ class ParameterEstimation:
 
         # Integrand (n_channels, n_freqs); sum over channels then integrate over frequency.
         integrant = (a_ffts * b_ffts_cc) / psd_crop
-        result = 4.0 * float(self._xp.trapz(integrant.sum(axis=0).real, x=fs_crop))
+        # numpy 2.x renamed trapz -> trapezoid (cupy keeps trapz); resolve whichever exists.
+        trapezoid = getattr(self._xp, "trapezoid", None) or self._xp.trapz
+        # [PHYSICS] dt^2: the continuous Fourier transform relates to the raw DFT as
+        # h~(f_k) = dt * X_k, so the physical inner product (Finn 1992, PRD 46 5236,
+        # Eq. 2.3) carries dt^2 relative to the bare-rfft integrand. Verified against
+        # the analytic monochromatic value A^2 T / S_n(f0), an FFT-free Parseval
+        # reference, and lisatools' dt*rfft convention.
+        # Derivation + evidence: docs/derivations/G8_dt2_inner_product_derivation.md
+        result = 4.0 * self.dt**2 * float(trapezoid(integrant.sum(axis=0).real, x=fs_crop))
         return result
 
     def compute_fisher_information_matrix(self) -> Any:
@@ -406,6 +422,20 @@ class ParameterEstimation:
         # D-03: Log condition number before inversion
         condition_number = np.linalg.cond(fisher_np)
         _LOGGER.info(f"Fisher matrix condition number: kappa = {condition_number:.2e}")
+
+        # G10 gate: hard condition-number threshold. float64 has ~16 significant
+        # digits; kappa > 1e14 leaves < 2 digits in the inverse — the CRB values
+        # would be numerical noise. Previously log-only; the event is now skipped
+        # like the negative-diagonal case (the main loop catches and continues).
+        if condition_number > FISHER_CONDITION_NUMBER_MAX:
+            _LOGGER.warning(
+                f"Fisher matrix ill-conditioned: kappa = {condition_number:.2e} > "
+                f"{FISHER_CONDITION_NUMBER_MAX:.0e}. Skipping event."
+            )
+            raise ParameterEstimationError(
+                f"Fisher condition number {condition_number:.2e} exceeds "
+                f"{FISHER_CONDITION_NUMBER_MAX:.0e}"
+            )
 
         # D-04a: np.linalg.inv raises LinAlgError for singular matrices
         cramer_rao_bounds = np.linalg.inv(fisher_np)
@@ -455,7 +485,13 @@ class ParameterEstimation:
         snr: float,
         simulation_index: int,
         host_galaxy_index: int = -1,
+        in_catalog: bool = True,
     ) -> None:
+        # in_catalog flags whether the injected host came from the galaxy
+        # catalog (rate-weighted draw) or from the out-of-catalog/dark
+        # population (master_thesis_code.dark_siren_injection). Recorded so the
+        # realised in-catalog fraction can be checked against the run-level F
+        # (a dark host also carries host_galaxy_index = -1).
         row = (
             self.parameter_space._parameters_to_dict()
             | cramer_rao_bound_dictionary
@@ -465,6 +501,16 @@ class ParameterEstimation:
                 "SNR": snr,
                 "generation_time": self.waveform_generation_time,
                 "host_galaxy_index": host_galaxy_index,
+                "in_catalog": in_catalog,
+                # Frame provenance: qS/phiS and the Fisher covariance are ecliptic
+                # BarycentricTrueEcliptic(J2000) by construction — the waveform
+                # (ResponseWrapper, is_ecliptic_latitude=False) is differentiated
+                # w.r.t. ecliptic angles and the host comes from the ecliptic-rotated
+                # catalog. Stamping the tag here makes fresh CRBs self-describing so
+                # the Detection guard passes WITHOUT any migration (NEVER rotate a
+                # fresh run). See .planning/FRAME-AUDIT.md.
+                "_coord_frame": ECLIPTIC_FRAME_TAG,
+                "_cov_frame": ECLIPTIC_FRAME_TAG,
                 "_simulation_index": simulation_index,
             }
         )
@@ -473,11 +519,21 @@ class ParameterEstimation:
             self.flush_pending_results()
 
     def flush_pending_results(self) -> None:
-        """Write all buffered Cramér-Rao bound rows to disk and clear the buffer.
+        """Append all buffered Cramér-Rao bound rows to disk and clear the buffer.
 
-        Call this at the end of a simulation run to ensure no results are lost.
-        Rows are grouped by simulation index so a single read/write per file replaces
-        one read/write per detection (the previous behaviour).
+        Call this at the end of a simulation run to ensure no results are lost, and
+        periodically (every ``_crb_flush_interval`` detections) during the run.
+
+        Rows are grouped by simulation index (in practice always the same within a
+        job) and APPENDED to each file (``mode="a"``), writing only the buffered rows
+        rather than re-reading and rewriting the whole growing CSV. Each array task
+        writes its OWN file, so there are no concurrent writers and append is safe.
+        Append makes each flush O(buffer) instead of O(total), so frequent flushing
+        (small ``_crb_flush_interval``) costs LESS Lustre I/O than the old every-25
+        read-modify-write while bounding hard-kill data loss. The header is written
+        only when the file does not yet exist (or is empty); the per-detection row
+        dict is constructed identically every time, so columns stay aligned across
+        appends.
         """
         if not self._crb_buffer:
             return
@@ -488,13 +544,9 @@ class ParameterEstimation:
             by_index.setdefault(idx, []).append(row)
         for sim_idx, rows in by_index.items():
             file_path = CRAMER_RAO_BOUNDS_PATH.replace("$index", str(sim_idx))
-            try:
-                existing = pd.read_csv(file_path)
-            except FileNotFoundError:
-                existing = pd.DataFrame(columns=list(rows[0].keys()))
-            combined = pd.concat([existing, pd.DataFrame(rows)], ignore_index=True)
-            combined.to_csv(file_path, index=False)
-            _LOGGER.info(f"Flushed {len(rows)} Cramér-Rao bounds to {file_path}")
+            write_header = (not os.path.exists(file_path)) or os.path.getsize(file_path) == 0
+            pd.DataFrame(rows).to_csv(file_path, mode="a", header=write_header, index=False)
+            _LOGGER.info(f"Appended {len(rows)} Cramér-Rao bounds to {file_path}")
         self._crb_buffer.clear()
 
     def SNR_analysis(self) -> None:

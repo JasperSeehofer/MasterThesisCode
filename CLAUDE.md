@@ -53,16 +53,7 @@ Note: `fastemriwaveforms` installs as the `few` Python package — `import few`,
 
 ### Reproducible simulation runs
 
-Pass `--seed <int>` to fix the random state. When omitted, a random seed is chosen,
-logged, and recorded in `run_metadata.json` in the working directory.
-
-```bash
-uv run python -m master_thesis_code <working_dir> --simulation_steps 100 --seed 42
-```
-
-`run_metadata.json` records `git_commit`, `timestamp`, `random_seed`, and all CLI
-arguments alongside every simulation output so results can always be tied back to
-the exact code and parameters that produced them.
+Pass `--seed <int>` to fix the random state; when omitted, a random seed is chosen, logged, and recorded — with `git_commit`, `timestamp`, and all CLI args — in `run_metadata.json` in the working directory, so any result ties back to the exact code and parameters that produced it. Cluster per-task seeding (`BASE_SEED + SLURM_ARRAY_TASK_ID`) is owned by the `/cluster` skill.
 
 ## Dev Workflow
 
@@ -113,16 +104,7 @@ python -m master_thesis_code <working_dir> --snr_analysis
 
 ## Cluster Deployment
 
-The `cluster/` directory contains everything needed to run EMRI simulations on bwUniCluster 3.0 (KIT). See `cluster/README.md` for the full quickstart guide.
-
-### Key CLI Flags
-
-| Flag | Where | Purpose |
-|------|-------|---------|
-| `--use_gpu` | `arguments.py` | Enable GPU acceleration (always used on cluster) |
-| `--num_workers N` | `arguments.py` | Multiprocessing pool size for Bayesian inference; defaults to `os.sched_getaffinity(0) - 2` |
-| `--simulation_index I` | `arguments.py` | Maps to `SLURM_ARRAY_TASK_ID`; indexes per-task output files |
-| `--seed S` | `arguments.py` | Random seed; on cluster, per-task seed = `BASE_SEED + SLURM_ARRAY_TASK_ID` |
+All bwUniCluster 3.0 (KIT) operations — submit/monitor/retrieve, SLURM/CLI flags, preflight, and dataset provenance — are owned by the `cluster` skill, the single source of operational truth. **Use the `/cluster` skill (`.claude/skills/cluster/SKILL.md`)** instead of duplicating flags and recipes here; see also `cluster/README.md`.
 
 ## Architecture
 
@@ -153,6 +135,7 @@ The codebase has two distinct pipelines:
 - **`bayesian_inference/detection_probability.py`** — `DetectionProbability` class: KDE-based detection probability with `RegularGridInterpolator` look-ups. Used by Pipeline B.
 - **`cosmological_model.py`** — `Model1CrossCheck` wraps the EMRI event rate model; `LamCDMScenario`, `DarkEnergyScenario` parameter spaces. Backward-compat re-exports of `BayesianStatistics` and `DetectionProbability`.
 - **`galaxy_catalogue/handler.py`** — interfaces with the GLADE galaxy catalog (BallTree-based lookups)
+- **`validation/pp_coverage.py`** — synthetic-universe P–P/coverage calibration harness (G4b): flat-ΛCDM tables, Malmquist selection, single-host dark-siren H₀ estimator with switchable host-z kernel ('bare' vs calibrated 'volume'). Run per-seed during campaigns.
 - **`constants.py`** — all physical constants and simulation configuration. Key: `H=0.73`, `SNR_THRESHOLD=20`
 - **`plotting/`** — all visualization code lives here. Factory functions (`data in, (fig, ax) out`) in topic modules (`bayesian_plots.py`, `evaluation_plots.py`, `model_plots.py`, `catalog_plots.py`, etc.). `_style.py` sets Agg backend + loads `emri_thesis.mplstyle`. `_helpers.py` provides `save_figure()` and `get_figure()`.
 - **`callbacks.py`** — `SimulationCallback` Protocol for decoupling the simulation loop from visualization; `PlottingCallback` in `plotting/simulation_plots.py` collects data and produces plots in `on_simulation_end`
@@ -188,6 +171,7 @@ workflow gates.
 | Before any `git commit` (after `/check` passes) | `/pre-commit-docs` | Verify CHANGELOG, TODO, CLAUDE.md, README are consistent with staged changes. |
 | User asks "what should I work on?" or "what bugs remain?" | `/known-bugs` | Show current bug status with priorities. |
 | User wants to run the simulation or evaluation pipeline | `/run-pipeline` | Use instead of ad-hoc bash commands. |
+| About to submit, monitor, or retrieve **anything on bwUniCluster** | `/cluster` | **Consult first.** Run `ssh bwunicluster 'bash -s' < cluster/preflight.sh` and require `VERDICT: READY ✓` before submitting. |
 
 ### Physics-change trigger files
 
@@ -233,33 +217,7 @@ All public and private functions/methods must have complete type annotations on 
 
 ## HPC / GPU Best Practices
 
-This code runs on a GPU cluster (CuPy/CUDA) but must also be importable and testable on a CPU-only development machine. The patterns below are mandatory.
-
-### Array namespace pattern
-
-Never call `cp.*` or `np.*` directly inside a computation function. Resolve the array module once using the `_get_xp` helper and use it as `xp` throughout:
-
-```python
-try:
-    import cupy as cp
-    _CUPY_AVAILABLE = True
-except ImportError:
-    cp = None  # type: ignore[assignment]
-    _CUPY_AVAILABLE = False
-
-def _get_xp(use_gpu: bool) -> types.ModuleType:
-    if use_gpu and _CUPY_AVAILABLE:
-        return cp  # type: ignore[return-value]
-    return np
-```
-
-### Rules
-
-- **GPU imports must always be guarded.** Never place `import cupy as cp` at module top level unconditionally. Known issues in `decorators.py`, `memory_management.py`, `LISA_configuration.py`, `parameter_estimation.py` — fix when touched.
-- **Vectorize array operations.** Never iterate over array elements in a hot path. Use vectorized `xp.*` operations (e.g., `xp.trapz(integrant / psd, x=fs)` instead of a Python loop).
-- **Avoid GPU-to-CPU transfers in hot paths.** Do not call `cp.asnumpy()` or `.get()` inside functions called thousands of times. Keep data on GPU until a single scalar result.
-- **GPU memory management.** Free GPU memory after each full simulation step (`cp.get_default_memory_pool().free_all_blocks()`). Do not call inside inner loops — the CuPy allocator reuses blocks.
-- **USE_GPU flag.** Must never be hardcoded `True`. Must come from `--use_gpu` CLI argument and be threaded into every constructor. No module-level constant should control GPU behavior.
+Mandatory GPU-cluster + CPU-testability patterns — the array-namespace `xp` pattern, guarded `cupy` imports, hot-path vectorization, GPU memory management, the `USE_GPU`-from-CLI rule, and the bwUniCluster entry point — live in **`.claude/rules/hpc-gpu.md`**, auto-loaded when editing `master_thesis_code/**/*.py`. See [[scientific-computing-validation]] for the promoted cross-project form.
 
 ---
 
@@ -287,46 +245,7 @@ pytest -m "not gpu and not slow"   # fast subset only
 
 ## Math/Physics Validation Workflow
 
-Errors in physics formulas produce subtly wrong results with no crash. A strict protocol applies.
-
-### What counts as a physics change
-
-A change is a **physics change** if it touches any of:
-- A formula (integrals, inner products, distance-redshift relations, posteriors, likelihoods)
-- A physical or cosmological constant: `C`, `G`, `H`, `OMEGA_M`, `W_0`, `W_A`, `SNR_THRESHOLD`, `TRUE_HUBBLE_CONSTANT`, PSD coefficients in `LISA_configuration.py`, `derivative_epsilon` in `ParameterSpace`
-- Waveform parameters passed to `few` or `ResponseWrapper`
-- Frequency limits in `scalar_product_of_functions`
-- Galaxy distribution or mass function model
-
-A change is a **software change** if it is limited to: refactoring, type annotations, test additions, logging, or import cleanup — with no change to any computed numerical value. When in doubt, treat it as a physics change.
-
-### Protocol — before writing any code, Claude presents
-
-1. **Old formula** — exact expression, file:line
-2. **New formula** — proposed replacement
-3. **Reference** — citation (DOI/arXiv + equation number) or step-by-step derivation
-4. **Dimensional analysis** — units of inputs and output, consistency check
-5. **Limiting case** — at least one analytical limit where the result is known
-
-The user approves or rejects. Claude then implements.
-
-### Post-implementation checks
-
-After implementing an approved change, Claude reports:
-- Sign convention consistency
-- Dimensional consistency
-- A reference comment added directly above the changed line:
-  ```python
-  # Eq. (X.Y) in Author et al. (YYYY), arXiv:XXXX.XXXXX
-  ```
-
-### Git convention for physics changes
-
-Prefix the commit subject line with `[PHYSICS]`:
-
-```
-[PHYSICS] fix luminosity distance prefactor in dist()
-```
+The physics-change protocol — what counts as a physics change, the before-writing presentation gate (old formula, new formula, reference, dimensional analysis, limiting case), the post-implementation checks, and the `[PHYSICS]` commit convention — lives in **`.claude/rules/physics-validation.md`**, auto-loaded when editing physics-trigger files. It is the detail behind the `/physics-change` hard gate (see the Skill-Driven Workflows table above). See [[scientific-computing-validation]] for the promoted cross-project form.
 
 <!-- GSD:project-start source:PROJECT.md -->
 ## Project

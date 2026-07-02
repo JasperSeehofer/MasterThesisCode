@@ -69,6 +69,26 @@ def test_save_cramer_rao_bound_creates_csv(
     assert len(df) == 1
 
 
+def test_save_cramer_rao_bound_stamps_ecliptic_frame_markers(
+    tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Fresh CRBs are born self-describing: the simulation stamps the ecliptic frame
+    markers at write time so the Detection guard passes WITHOUT any migration
+    (no double-rotation risk). See .planning/FRAME-AUDIT.md."""
+    from master_thesis_code.constants import ECLIPTIC_FRAME_TAG
+
+    csv_path = str(tmp_path / "crb_simulation_$index.csv")
+    monkeypatch.setattr(pe_module, "CRAMER_RAO_BOUNDS_PATH", csv_path)
+
+    pe = _make_minimal_pe(tmp_path)
+    pe.save_cramer_rao_bound(cramer_rao_bound_dictionary={}, snr=25.0, simulation_index=0)
+
+    df = pd.read_csv(csv_path.replace("$index", "0"))
+    assert "_coord_frame" in df.columns and "_cov_frame" in df.columns
+    assert (df["_coord_frame"] == ECLIPTIC_FRAME_TAG).all()
+    assert (df["_cov_frame"] == ECLIPTIC_FRAME_TAG).all()
+
+
 def test_save_cramer_rao_bound_appends(
     tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -370,6 +390,19 @@ class TestCRBSafety:
 
         assert "Fisher matrix condition number: kappa =" in caplog.text
 
+    def test_ill_conditioned_fisher_raises(self, tmp_path: pathlib.Path) -> None:
+        """G10 gate: kappa > FISHER_CONDITION_NUMBER_MAX skips the event."""
+        from master_thesis_code.exceptions import ParameterEstimationError
+
+        pe = _make_minimal_pe(tmp_path)
+        # kappa = 1e15 > 1e14 threshold (diag matrix, still invertible).
+        bad_fisher = np.eye(14)
+        bad_fisher[0, 0] = 1e15
+        pe.compute_fisher_information_matrix = MagicMock(return_value=bad_fisher)
+
+        with pytest.raises(ParameterEstimationError, match="condition number"):
+            pe.compute_Cramer_Rao_bounds()
+
     def test_negative_crb_diagonal_raises_parameter_estimation_error(
         self, tmp_path: pathlib.Path
     ) -> None:
@@ -395,12 +428,17 @@ class TestCRBSafety:
         finally:
             pe_module.np.linalg.inv = original_inv
 
-    def test_singular_matrix_raises_linalg_error(self, tmp_path: pathlib.Path) -> None:
+    def test_singular_matrix_caught_by_condition_gate(self, tmp_path: pathlib.Path) -> None:
+        """A singular Fisher (kappa = inf) is now rejected by the G10 gate BEFORE
+        np.linalg.inv runs (previously it surfaced as LinAlgError from inv);
+        the main loop catches ParameterEstimationError and skips the event."""
+        from master_thesis_code.exceptions import ParameterEstimationError
+
         pe = _make_minimal_pe(tmp_path)
 
         pe.compute_fisher_information_matrix = MagicMock(return_value=np.zeros((14, 14)))
 
-        with pytest.raises(np.linalg.LinAlgError):
+        with pytest.raises(ParameterEstimationError, match="condition number"):
             pe.compute_Cramer_Rao_bounds()
 
 

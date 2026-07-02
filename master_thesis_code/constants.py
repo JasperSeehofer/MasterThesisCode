@@ -26,8 +26,16 @@ H: float = 0.73  # dimensionless h = H₀ / (100 km/s/Mpc), fiducial simulation 
 TRUE_HUBBLE_CONSTANT: float = 0.7  # dimensionless h, fiducial value for Bayesian inference
 
 # cosmological parameters fiducial values
-OMEGA_M: float = 0.25
-OMEGA_DE: float = 0.75
+# [PHYSICS] G11: matched to the M1 EMRI population model's cosmology — the
+# Barausse (2012) semi-analytic MBH model underlying Babak et al. (2017) M1
+# assumes flat LambdaCDM with Omega_DM = 0.227, Omega_b = 0.0456
+# (=> Omega_m = 0.2726), H0 = 70.4 km/s/Mpc (arXiv:1201.5888, end of Intro).
+# The extracted M1 horizon/rate/dN-dz data (M1_model_extracted_data/) live in
+# that cosmology; sampling them with a different Omega_m would be inconsistent.
+# The "true universe is Planck (0.3153)" case is quoted as a systematic in
+# .planning/gate/G7_systematics_budget.md, NOT absorbed into the fiducial.
+OMEGA_M: float = 0.2726
+OMEGA_DE: float = 0.7274
 W_0: float = -1.0
 W_A: float = 0.0
 
@@ -47,6 +55,9 @@ MINIMAL_FREQUENCY: float = 1e-5
 MAXIMAL_FREQUENCY: float = 1
 SNR_THRESHOLD: float = 20
 PRE_SCREEN_SNR_FACTOR: float = 0.3  # pre-screen heuristic (main.py simulation loop)
+# G10 gate: Fisher matrices with kappa above this are numerical noise after
+# inversion (float64 ~16 digits; 1e14 leaves <2). Event is skipped, not stored.
+FISHER_CONDITION_NUMBER_MAX: float = 1e14
 
 # galaxy catalog and EMRI detection
 GALAXY_REDSHIFT_ERROR_COEFFICIENT: float = 0.013  # Galaxy.redshift_uncertainty ∝ 0.013*(1+z)^3
@@ -56,6 +67,11 @@ FRACTIONAL_MEASURED_MASS_ERROR: float = 1e-8  # fractional error on measured red
 SKY_LOCALIZATION_ERROR: float = 2 / 180 * np.pi  # rad, EMRI sky localization error (2 degrees)
 GALAXY_CATALOG_REDSHIFT_LOWER_LIMIT: float = 0.00001  # minimum redshift for galaxy catalog
 GALAXY_CATALOG_REDSHIFT_UPPER_LIMIT: float = 0.55  # maximum redshift for galaxy catalog
+# Redshift-horizon margin for the in-catalog host draw (draw_uniform_hosts). The
+# EMRI detection horizon is z ≈ 0.18 and the injection campaign already uses
+# z_cut = 0.5, so z < 0.5 is safely beyond the horizon -> the truncation is EXACT
+# (p_det = 0 beyond) and only removes never-detectable host candidates.
+HOST_DRAW_Z_MAX: float = 0.5
 LUMINOSITY_DISTANCE_THRESHOLD_GPC: float = 1.55  # Gpc, LISA detection horizon for EMRIs
 LUMINOSITY_DISTANCE_PRESCREEN_GPC: float = 2.0  # Gpc, generous pre-screen cutoff (see main.py)
 
@@ -64,6 +80,17 @@ CRAMER_RAO_BOUNDS_PATH: str = "simulations/cramer_rao_bounds_simulation_$index.c
 CRAMER_RAO_BOUNDS_OUTPUT_PATH: str = "simulations/cramer_rao_bounds.csv"
 SNR_ANALYSIS_PATH: str = "simulations/snr_analysis.csv"
 PREPARED_CRAMER_RAO_BOUNDS_PATH: str = "simulations/prepared_cramer_rao_bounds.csv"
+
+# ── Coordinate-frame provenance tag (the SINGLE source of truth) ──────────────
+# Every sky angle (qS/phiS) and sky covariance in this pipeline is in the
+# barycentric ecliptic frame BarycentricTrueEcliptic(J2000) AFTER the one-and-only
+# rotation at GLADE ingestion (handler._rotate_equatorial_to_ecliptic, COORD-03,
+# commit b460297). A fresh simulation run is ECLIPTIC-NATIVE and must NEVER be
+# rotated again; the rotating scripts/migrate_crb_to_ecliptic.py is for LEGACY
+# pre-COORD-03 equatorial CRBs ONLY. The simulation stamps this tag into the
+# `_coord_frame`/`_cov_frame` CRB columns at write time so the data is
+# self-describing and the evaluation guard passes natively (see .planning/FRAME-AUDIT.md).
+ECLIPTIC_FRAME_TAG: str = "ecliptic_BarycentricTrue_J2000"
 
 # Injection campaign paths (for simulation-based detection probability)
 INJECTION_DATA_DIR: str = "simulations/injections"

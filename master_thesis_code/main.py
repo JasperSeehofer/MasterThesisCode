@@ -119,6 +119,9 @@ def main() -> None:
             pdet_mass_bins=arguments.pdet_mass_bins,
             pdet_estimator=arguments.pdet_estimator,
             fisher_cond_threshold=arguments.fisher_cond_threshold,
+            normalization_mode=arguments.normalization_mode,
+            # G4: --seed now reaches the inference layer (deterministic MC denominator).
+            base_seed=seed,
         )
 
     if arguments.snr_analysis:
@@ -339,8 +342,14 @@ def data_simulation(
 
     _callbacks: list[SimulationCallback] = callbacks or []
 
+    # Normalize the rng once so the rate-weighted host draw
+    # (draw_rate_weighted_hosts) and parameter randomization share a single,
+    # reproducible generator under --seed.
+    if rng is None:
+        rng = np.random.default_rng()
+
     def _alarm_handler(signum: int, frame: object) -> None:
-        raise TimeoutError("Computation exceeded 90s timeout")
+        raise TimeoutError("Computation exceeded the alarm timeout")
 
     signal.signal(signal.SIGALRM, _alarm_handler)
 
@@ -370,8 +379,35 @@ def data_simulation(
         cb.on_simulation_start(simulation_steps)
 
     from master_thesis_code.constants import (
+        HOST_DRAW_Z_MAX,
         LUMINOSITY_DISTANCE_PRESCREEN_GPC,
         PRE_SCREEN_SNR_FACTOR,
+    )
+    from master_thesis_code.dark_siren_injection import (
+        compute_global_catalog_fraction,
+        draw_mixture_hosts,
+    )
+    from master_thesis_code.galaxy_catalogue.pixel_completeness import from_cache_or_build
+
+    # CHANGE 4b/5: split injected hosts into an in-catalog fraction F and an
+    # out-of-catalog (dark) fraction 1-F so the injected population matches the
+    # inference mixture f*L_cat + (1-f)*L_comp (Gray et al. 2020 Eq. 9; Chen et
+    # al. 2024 arXiv:2212.08694 self-consistency). F is the completeness f_bar(z)
+    # marginalised over the source-frame redshift population prior; it is
+    # precomputed ONCE per run at the injection cosmology h_value. The completeness
+    # object is the per-pixel PixelCompleteness loaded from the SAME frozen cached
+    # m_th map the inference uses (C1 byte-identity; bayesian_statistics.evaluate).
+    completeness = from_cache_or_build()
+    global_catalog_fraction = compute_global_catalog_fraction(
+        completeness, h=h_value, z_max=HOST_DRAW_Z_MAX
+    )
+    _ROOT_LOGGER.info(
+        "CHANGE 4b dark-event injection: global in-catalog fraction F = %.4f "
+        "(h_inj=%.4f, z_max=%.3f); injecting (1-F) = %.4f dark hosts.",
+        global_catalog_fraction,
+        h_value,
+        HOST_DRAW_Z_MAX,
+        1.0 - global_catalog_fraction,
     )
 
     counter = 0
@@ -391,8 +427,29 @@ def data_simulation(
         try:
             host_galaxy = next(host_galaxies)
         except StopIteration:
-            parameter_samples = cosmological_model.sample_emri_events(200)
-            host_galaxies = iter(galaxy_catalog.get_hosts_from_parameter_samples(parameter_samples))
+            # CHANGE 4b refill: each of the 200 hosts is independently in-catalog
+            # with probability F (rate-weighted draw from the z < z_max catalog:
+            # P(g) ∝ w(g) = R_eff_per_mbh(M_g) / (1 + z_g), the self-consistent
+            # generative model for the in-catalog inference term —
+            # bayesian_statistics.p_Di reweights the catalog likelihood by the
+            # SAME w(g)) or out-of-catalog/dark with probability 1-F (drawn from
+            # the missing-galaxy population, NOT in the catalog). Together the
+            # injected population matches the inference mixture
+            # f*L_cat + (1-f)*L_comp. A dark host carries catalog_index = -1.
+            # Babak et al. (2017), arXiv:1703.09722 (per-MBH rate, via emri_rate);
+            # Gray et al. (2020), arXiv:1908.06050 (galaxy weighting + completeness);
+            # Chen et al. (2024), arXiv:2212.08694 (in/out-of-catalog mixture).
+            host_galaxies = iter(
+                draw_mixture_hosts(
+                    200,
+                    rng,
+                    galaxy_catalog,
+                    completeness,
+                    global_catalog_fraction,
+                    h=h_value,
+                    z_max=HOST_DRAW_Z_MAX,
+                )
+            )
             host_galaxy = next(host_galaxies)
         assert isinstance(host_galaxy, HostGalaxy)
 
@@ -479,7 +536,12 @@ def data_simulation(
             )
             continue
         except TimeoutError:
-            _ROOT_LOGGER.warning("Waveform/SNR computation timed out (>90s). Skipping event...")
+            # G9 gate: log the full parameter set so timeout selection can be
+            # binned by (M, mu, e0, p0, ...) — see .planning/gate/G9_timeout_scan.md
+            _ROOT_LOGGER.warning(
+                "Waveform/SNR computation timed out (>90s). Skipping event... params=%s",
+                parameter_estimation.parameter_space._parameters_to_dict(),
+            )
             continue
 
         passed = snr >= cosmological_model.snr_threshold
@@ -511,7 +573,10 @@ def data_simulation(
             _ROOT_LOGGER.warning(f"CRB computation failed: {e}. Skipping event...")
             continue
         except TimeoutError:
-            _ROOT_LOGGER.warning("Cramér-Rao bound computation timed out (>90s). Skipping event...")
+            _ROOT_LOGGER.warning(
+                "Cramér-Rao bound computation timed out (>90s). Skipping event... params=%s",
+                parameter_estimation.parameter_space._parameters_to_dict(),
+            )
             continue
         except (ZeroDivisionError, RuntimeError, ValueError) as e:
             _ROOT_LOGGER.warning(
@@ -522,6 +587,10 @@ def data_simulation(
             cramer_rao_bound_dictionary=cramer_rao_bounds,
             snr=snr,
             host_galaxy_index=host_galaxy.catalog_index,
+            # CHANGE 4b: record whether this injected host was in-catalog or dark
+            # (catalog_index = -1) so the realised in-catalog fraction ≈ F is
+            # recoverable from the saved Cramér-Rao bounds.
+            in_catalog=host_galaxy.catalog_index != -1,
             simulation_index=simulation_index,
         )
         counter += 1
@@ -583,7 +652,7 @@ def injection_campaign(
     from master_thesis_code.physical_relations import dist, redshifted_mass
 
     def _alarm_handler(signum: int, frame: object) -> None:
-        raise TimeoutError("Computation exceeded 90s timeout")
+        raise TimeoutError("Computation exceeded the alarm timeout")
 
     signal.signal(signal.SIGALRM, _alarm_handler)
 
@@ -715,7 +784,13 @@ def injection_campaign(
             )
             continue
         except TimeoutError:
-            _ROOT_LOGGER.warning("Waveform/SNR computation timed out (>90s). Skipping event...")
+            # G9 gate: the injection alarm budget is _TIMEOUT_S = 30 s, NOT 90 s
+            # (the old message was wrong); params logged for timeout binning.
+            _ROOT_LOGGER.warning(
+                "Injection waveform/SNR computation timed out (>%ss). Skipping event... params=%s",
+                _TIMEOUT_S,
+                parameter_estimation.parameter_space._parameters_to_dict(),
+            )
             continue
 
         # Store ALL events regardless of SNR (per D-03: do NOT threshold)
@@ -756,6 +831,8 @@ def evaluate(
     pdet_mass_bins: int = 40,
     pdet_estimator: str = "local_linear",
     fisher_cond_threshold: float = 1e16,
+    normalization_mode: str = "volume_deconv",
+    base_seed: int | None = None,
 ) -> None:
     from master_thesis_code.bayesian_inference.bayesian_statistics import BayesianStatistics
 
@@ -770,6 +847,8 @@ def evaluate(
         pdet_mass_bins=pdet_mass_bins,
         pdet_estimator=pdet_estimator,
         fisher_cond_threshold=fisher_cond_threshold,
+        normalization_mode=normalization_mode,
+        base_seed=base_seed if base_seed is not None else 0,
     )
 
 
@@ -1393,6 +1472,47 @@ def generate_figures(output_dir: str) -> None:
         return None
 
     manifest.append(("fig20_pdet_surface", _gen_pdet_surface))
+
+    # 21-23. Per-pixel HEALPix catalog completeness (Change 5, GMV-2022). These use
+    # ONLY the committed frozen m_th map (no run data), so they always render and
+    # show the pixelation/ZoA the inference's completeness actually uses.
+    def _gen_completeness_mth_skymap() -> tuple[object, object] | None:
+        try:
+            from master_thesis_code.galaxy_catalogue.pixel_completeness import from_cache_or_build
+            from master_thesis_code.plotting.completeness_plots import plot_completeness_sky_map
+
+            return plot_completeness_sky_map(from_cache_or_build(), quantity="m_th")
+        except (FileNotFoundError, ValueError):
+            _ROOT_LOGGER.info("fig21 skipped: no m_th map / catalog available")
+            return None
+
+    manifest.append(("fig21_completeness_mth_skymap", _gen_completeness_mth_skymap))
+
+    def _gen_completeness_fk_skymap() -> tuple[object, object] | None:
+        try:
+            from master_thesis_code.galaxy_catalogue.pixel_completeness import from_cache_or_build
+            from master_thesis_code.plotting.completeness_plots import plot_completeness_sky_map
+
+            return plot_completeness_sky_map(from_cache_or_build(), quantity="f_k", z=0.05)
+        except (FileNotFoundError, ValueError):
+            _ROOT_LOGGER.info("fig22 skipped: no m_th map / catalog available")
+            return None
+
+    manifest.append(("fig22_completeness_fk_skymap_z0p05", _gen_completeness_fk_skymap))
+
+    def _gen_sky_averaged_completeness() -> tuple[object, object] | None:
+        try:
+            from master_thesis_code.galaxy_catalogue.pixel_completeness import from_cache_or_build
+            from master_thesis_code.plotting.completeness_plots import (
+                plot_sky_averaged_completeness,
+            )
+
+            return plot_sky_averaged_completeness(from_cache_or_build())
+        except (FileNotFoundError, ValueError):
+            _ROOT_LOGGER.info("fig23 skipped: no m_th map / catalog available")
+            return None
+
+    manifest.append(("fig23_sky_averaged_completeness", _gen_sky_averaged_completeness))
 
     # 16. Paper figure: H0 posterior comparison (D-01, D-09)
     def _gen_paper_h0_posterior() -> tuple[object, object] | None:

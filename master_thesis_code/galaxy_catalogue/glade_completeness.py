@@ -187,6 +187,37 @@ class GladeCatalogCompleteness:
             return float(frac_clipped.flat[0])
         return frac_clipped
 
+    # ------------------------------------------------------------------
+    # Change 5: Omega-independent shims for the per-pixel completeness API.
+    # This (digitized all-sky Dalya) curve has NO sky dependence, so its
+    # sky-average f_bar and every per-pixel f_k equal the all-sky completeness,
+    # and the whole sky is a single pixel (ang2pix -> 0). These make the class a
+    # drop-in :class:`CompletenessModel` for the Omega-INDEPENDENT regression /
+    # limiting case (a) of the pixelated completeness (Change 5); see
+    # .planning/derivation-change5-healpix-estimator/DERIVATION.md Sec. 5(a).
+    # ------------------------------------------------------------------
+
+    def f_bar(
+        self,
+        z: float | npt.NDArray[np.floating[Any]],
+        h: float = H,
+    ) -> float | npt.NDArray[np.floating[Any]]:
+        """Sky-averaged completeness; for the all-sky curve this is ``f(z)``."""
+        return self.get_completeness_at_redshift(z, h)
+
+    def f_k(
+        self,
+        z: float | npt.NDArray[np.floating[Any]],
+        k: int,
+        h: float = H,
+    ) -> float | npt.NDArray[np.floating[Any]]:
+        """Per-pixel completeness; Omega-independent, so identical for every ``k``."""
+        return self.get_completeness_at_redshift(z, h)
+
+    def ang2pix(self, phi: float, theta: float) -> int:
+        """The all-sky curve has a single pixel covering the whole sky."""
+        return 0
+
 
 # ======================================================================
 # Digitized completeness data from Dalya et al. (2022) Fig. 2

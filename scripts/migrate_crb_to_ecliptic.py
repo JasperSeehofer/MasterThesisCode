@@ -1,25 +1,41 @@
-"""Migrate CRB CSVs from equatorial ICRS to BarycentricTrueEcliptic J2000.
+"""Stamp / migrate CRB CSV coordinate-frame provenance.
 
-The EMRI simulation stored sky angles qS (polar) and phiS (azimuth) in
-equatorial ICRS.  Since Phase 36, galaxy_catalogue/handler.py builds its
-BallTree in BarycentricTrueEcliptic J2000 — so evaluation requires ecliptic
-angles.  This script applies the identical rotation to stored CRB CSVs.
+CRITICAL — read .planning/FRAME-AUDIT.md first. There is exactly ONE rotation in
+the pipeline, at GLADE ingestion (handler._rotate_equatorial_to_ecliptic, COORD-03,
+commit b460297, 2026-04-22). After it, EVERYTHING is ecliptic
+BarycentricTrueEcliptic(J2000): the catalog, the BallTrees, and — because the host
+comes from the rotated catalog and the waveform is differentiated w.r.t. ecliptic
+angles — the simulated qS/phiS AND their Fisher covariance.
 
-Idempotency guards:
-  - Already fully migrated (_coord_frame AND _cov_frame both present): skip.
-  - Pos-only migrated (_coord_frame present, _cov_frame absent): rotate the
-    Fisher covariance block only.  Equatorial positions are read from the
-    .bak_equatorial backup (always present for pos-only files).
-  - Unmigrated: full migration (rotate positions + covariance).
+Therefore a FRESH (post-COORD-03) CRB is ALREADY ECLIPTIC and must NEVER be rotated.
+Rotating it is a double-rotation (~0.07-0.2 deg, up to ~6 deg off the true host, plus a
+spurious position-dependent Jacobian on an already-ecliptic covariance). Fresh runs are
+now stamped at write time (parameter_estimation.save_cramer_rao_bound), so this script is
+needed only to (a) STAMP a legacy/unmarked but already-ecliptic CRB, or (b) ROTATE a
+genuine pre-COORD-03 equatorial legacy CRB.
 
-Always writes a `.bak_equatorial` backup before modifying the file.
+Because unmarked ecliptic-native and unmarked equatorial CSVs are byte-indistinguishable,
+this script REFUSES to act on unmarked data unless the operator states intent explicitly:
+
+  --stamp-only         Add _coord_frame/_cov_frame markers WITHOUT rotating. Use for a
+                       post-COORD-03 ecliptic-native CRB that simply lacks the markers.
+  --assume-equatorial  Treat the input as genuine pre-COORD-03 EQUATORIAL data and rotate
+                       positions + covariance to ecliptic (the legacy migration). Verify
+                       the source git_commit predates b460297 first.
+
+States handled:
+  - Already fully marked (_coord_frame AND _cov_frame present): skip (idempotent).
+  - Pos-only marked (_coord_frame present, _cov_frame absent): rotate the Fisher covariance
+    block only (legacy intermediate state); equatorial positions from the backup.
+  - Unmarked + --stamp-only: add markers, no rotation.
+  - Unmarked + --assume-equatorial: full rotation (positions + covariance), then mark.
+  - Unmarked + neither: REFUSE (ambiguous) and explain.
+
+A `.bak_premigration` backup is written before any rotation (never on --stamp-only).
 
 Usage:
-    uv run python scripts/migrate_crb_to_ecliptic.py <csv-or-directory> [--dry-run]
-
-    Dry-run prints what would change without writing anything.
-    When given a directory, recurses and transforms every
-    *cramer_rao_bounds*.csv that has not yet been fully migrated.
+    uv run python scripts/migrate_crb_to_ecliptic.py <csv-or-directory> --stamp-only [--dry-run]
+    uv run python scripts/migrate_crb_to_ecliptic.py <legacy-csv> --assume-equatorial [--dry-run]
 """
 
 from __future__ import annotations
@@ -37,17 +53,37 @@ import numpy.typing as npt
 import pandas as pd
 from astropy.coordinates import BarycentricTrueEcliptic, SkyCoord
 
-_COORD_FRAME = "ecliptic_BarycentricTrue_J2000"
-_COV_FRAME = "ecliptic_BarycentricTrue_J2000"
+from master_thesis_code.constants import ECLIPTIC_FRAME_TAG
+
+_COORD_FRAME = ECLIPTIC_FRAME_TAG
+_COV_FRAME = ECLIPTIC_FRAME_TAG
+
+# Backup written before any ROTATION (never on --stamp-only). Frame-neutral name:
+# the backed-up data may be equatorial (legacy) or ecliptic (mis-invoked), so the
+# old ".bak_equatorial" name lied about its contents. Legacy backups are still read.
+_BACKUP_SUFFIX = ".bak_premigration"
+_LEGACY_BACKUP_SUFFIX = ".bak_equatorial"
 
 # Parameter ordering matches ParameterSpace._parameters_to_dict().
 # The Fisher covariance is stored as delta_{params[row]}_delta_{params[col]}
 # for the lower triangle (row >= col).
 _PARAM_SYMBOLS: list[str] = [
-    "M", "mu", "a", "p0", "e0", "x0", "luminosity_distance",
-    "qS", "phiS", "qK", "phiK", "Phi_phi0", "Phi_theta0", "Phi_r0",
+    "M",
+    "mu",
+    "a",
+    "p0",
+    "e0",
+    "x0",
+    "luminosity_distance",
+    "qS",
+    "phiS",
+    "qK",
+    "phiK",
+    "Phi_phi0",
+    "Phi_theta0",
+    "Phi_r0",
 ]
-_QS_IDX = _PARAM_SYMBOLS.index("qS")    # 7
+_QS_IDX = _PARAM_SYMBOLS.index("qS")  # 7
 _PHIS_IDX = _PARAM_SYMBOLS.index("phiS")  # 8
 _N_PARAMS = len(_PARAM_SYMBOLS)  # 14
 
@@ -174,14 +210,36 @@ def _rotate_covariance_block(
     return df
 
 
-def migrate_csv(path: Path, *, dry_run: bool = False) -> dict[str, object]:
-    """Migrate *path* to ecliptic coordinates and rotate the Fisher covariance.
+def _resolve_backup(path: Path) -> Path:
+    """Backup path for rotation; honour a legacy ``.bak_equatorial`` if it exists."""
+    legacy = path.with_suffix(path.suffix + _LEGACY_BACKUP_SUFFIX)
+    if legacy.exists():
+        return legacy
+    return path.with_suffix(path.suffix + _BACKUP_SUFFIX)
 
-    Three states handled:
-      1. Fully migrated (_coord_frame AND _cov_frame present)  → skip.
-      2. Pos-only migrated (_coord_frame present, _cov_frame absent) → covariance
-         rotation only; equatorial positions from .bak_equatorial backup.
-      3. Unmigrated → full migration (position rotation + covariance rotation).
+
+def _stamp_markers(path: Path, df: pd.DataFrame, *, dry_run: bool) -> dict[str, object]:
+    """Add ecliptic frame markers WITHOUT rotating (post-COORD-03 ecliptic-native data)."""
+    if dry_run:
+        print(f"DRY   {path}  ({len(df)} rows)  stamp-only (no rotation)")
+        return {"status": "would_stamp", "rows": len(df), "path": str(path)}
+    df = df.copy()
+    df["_coord_frame"] = _COORD_FRAME
+    df["_cov_frame"] = _COV_FRAME
+    df.to_csv(path, index=False)
+    print(f"STAMP {path}  ({len(df)} rows → markers added, NOT rotated)")
+    return {"status": "stamped", "rows": len(df), "path": str(path)}
+
+
+def migrate_csv(path: Path, *, dry_run: bool = False, mode: str = "refuse") -> dict[str, object]:
+    """Stamp or rotate *path*'s coordinate-frame provenance.
+
+    ``mode`` declares operator intent for UNMARKED data (see module docstring):
+      - ``"refuse"``  (default): raise on unmarked data — the frame is ambiguous.
+      - ``"stamp"``   (--stamp-only): add markers, NO rotation (ecliptic-native).
+      - ``"rotate"``  (--assume-equatorial): rotate positions + covariance (legacy).
+
+    Already-marked files are skipped (idempotent) in every mode.
 
     Returns dict with keys: status, rows, path.
     """
@@ -190,22 +248,42 @@ def migrate_csv(path: Path, *, dry_run: bool = False) -> dict[str, object]:
     has_coord = "_coord_frame" in df.columns
     has_cov = "_cov_frame" in df.columns
 
-    # State 1: fully migrated
+    # State 1: fully marked — idempotent skip regardless of mode.
     if has_coord and has_cov:
-        print(f"SKIP  {path}  (fully migrated: _coord_frame + _cov_frame present)")
+        print(f"SKIP  {path}  (already marked: _coord_frame + _cov_frame present)")
         return {"status": "skipped", "rows": len(df), "path": str(path)}
 
     if "qS" not in df.columns or "phiS" not in df.columns:
         raise ValueError(f"{path}: missing qS or phiS column — not a CRB CSV?")
 
-    backup = path.with_suffix(path.suffix + ".bak_equatorial")
+    # Unmarked data: act only on explicit intent.
+    if mode == "refuse":
+        raise ValueError(
+            f"{path}: unmarked CRB — frame is AMBIGUOUS (could be ecliptic-native or "
+            "legacy equatorial) and this script will NOT guess. A fresh post-COORD-03 "
+            "(commit b460297) run is ALREADY ecliptic: re-run with --stamp-only to add "
+            "markers WITHOUT rotating. Use --assume-equatorial ONLY for genuine legacy "
+            "pre-COORD-03 equatorial CRBs (verify the source git_commit first). "
+            "See .planning/FRAME-AUDIT.md."
+        )
 
-    # State 2: pos-only migrated — rotate covariance using backup equatorial positions
+    if mode == "stamp":
+        # --stamp-only: ecliptic-native data missing only the provenance markers.
+        if has_coord or has_cov:
+            raise ValueError(
+                f"{path}: partially marked; --stamp-only expects a fully unmarked CSV."
+            )
+        return _stamp_markers(path, df, dry_run=dry_run)
+
+    # mode == "rotate": legacy equatorial → ecliptic (the original migration).
+    backup = _resolve_backup(path)
+
+    # State 2: pos-only marked — rotate covariance using backup equatorial positions.
     if has_coord and not has_cov:
         if not backup.exists():
             raise FileNotFoundError(
-                f"{path}: pos-only migrated but .bak_equatorial backup not found — "
-                "cannot recover equatorial positions for Jacobian computation"
+                f"{path}: pos-only marked but no backup ({_BACKUP_SUFFIX} / "
+                f"{_LEGACY_BACKUP_SUFFIX}) found — cannot recover equatorial positions."
             )
         bak_df = pd.read_csv(backup)
         q_eq = bak_df["qS"].values.astype(np.float64)
@@ -223,7 +301,7 @@ def migrate_csv(path: Path, *, dry_run: bool = False) -> dict[str, object]:
         print(f"COV   {path}  ({len(df)} rows → covariance rotated to {_COV_FRAME})")
         return {"status": "cov_rotated", "rows": len(df), "path": str(path)}
 
-    # State 3: unmigrated — full migration
+    # State 3: fully unmarked — full migration (--assume-equatorial).
     q_eq = df["qS"].values.astype(np.float64)
     phi_eq = df["phiS"].values.astype(np.float64)
 
@@ -275,8 +353,11 @@ def migrate_csv(path: Path, *, dry_run: bool = False) -> dict[str, object]:
 
 
 def _find_csvs(root: Path) -> list[Path]:
+    skip = (_BACKUP_SUFFIX, _LEGACY_BACKUP_SUFFIX)
     return sorted(
-        p for p in root.rglob("*cramer_rao_bounds*.csv") if not p.name.endswith(".bak_equatorial")
+        p
+        for p in root.rglob("*cramer_rao_bounds*.csv")
+        if not any(p.name.endswith(s) for s in skip)
     )
 
 
@@ -288,7 +369,25 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument(
         "--dry-run", action="store_true", help="Print what would change without writing"
     )
+    intent = parser.add_mutually_exclusive_group()
+    intent.add_argument(
+        "--stamp-only",
+        action="store_true",
+        help="Add ecliptic markers WITHOUT rotating (post-COORD-03 ecliptic-native CRB)",
+    )
+    intent.add_argument(
+        "--assume-equatorial",
+        action="store_true",
+        help="Rotate positions + covariance to ecliptic (LEGACY pre-COORD-03 equatorial CRB)",
+    )
     args = parser.parse_args(argv)
+
+    if args.stamp_only:
+        mode = "stamp"
+    elif args.assume_equatorial:
+        mode = "rotate"
+    else:
+        mode = "refuse"
 
     target = Path(args.target)
     csvs = _find_csvs(target) if target.is_dir() else [target]
@@ -297,14 +396,16 @@ def main(argv: list[str] | None = None) -> None:
         print(f"No *cramer_rao_bounds*.csv files found under {target}")
         sys.exit(0)
 
-    results = [migrate_csv(p, dry_run=args.dry_run) for p in csvs]
+    results = [migrate_csv(p, dry_run=args.dry_run, mode=mode) for p in csvs]
     transformed = sum(1 for r in results if r["status"] == "transformed")
     cov_rotated = sum(1 for r in results if r["status"] == "cov_rotated")
+    stamped = sum(1 for r in results if r["status"] == "stamped")
     skipped = sum(1 for r in results if r["status"] == "skipped")
     print(
-        f"\nDone: {transformed} fully transformed, "
+        f"\nDone: {transformed} rotated (full), "
         f"{cov_rotated} covariance-rotated, "
-        f"{skipped} skipped (already ecliptic)"
+        f"{stamped} stamped (no rotation), "
+        f"{skipped} skipped (already marked)"
     )
 
 

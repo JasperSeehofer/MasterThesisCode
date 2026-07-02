@@ -8,6 +8,80 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Changed
+- **Inference is now deterministic (G4):** the with-BH-mass MC denominator draws from a
+  per-host stream derived from `(base_seed, detection_index, host_z, host_M)`;
+  `--seed` reaches the inference layer via `evaluate(..., base_seed=...)` (default 0).
+  Previously unseeded ~1% MC noise made 2D-channel posteriors non-reproducible run-to-run.
+- **Fisher condition-number gate (G10):** `kappa > FISHER_CONDITION_NUMBER_MAX = 1e14`
+  now skips the event (was log-only); singular matrices are caught by the same gate.
+- **Completion-term solid-angle Jacobian (G2a):** `B_num` sky marginal is
+  `(sin θ_det/4π)·N(d_L_frac; 1, Σ[2,2])`; `volume_deconv` `Z_g`/`D_g` window clamped to z ≥ 0.
+- **[PHYSICS] BREAKING — missing `dt²` DFT normalization restored in the LISA inner product**
+  (`parameter_estimation.scalar_product_of_functions`). The raw `rfft` output was integrated
+  against the physical PSD without the `h̃(f) = dt·X` correspondence, making every SNR exactly
+  `dt=10`× too small and every Cramér–Rao σ 10× too large (the "SNR ≥ 20" catalogues were
+  physical-SNR ≥ 200 populations confined to z ≤ 0.11, vs the Babak et al. 2017 M1 horizon
+  z ≈ 1.5–3.8). Verified five ways (analytic monochromatic, FFT-free Parseval, broadband
+  independent FFT, lisatools' `dt*rfft` convention, astrophysical horizon):
+  `docs/derivations/G8_dt2_inner_product_derivation.md`. **All pre-fix SNR/CRB data remains
+  RETIRED; the Phase-2 campaign runs with physical SNR semantics** (deeper population, more
+  events; PRE_SCREEN_SNR_FACTOR and timeout budgets to be re-checked at the new scale).
+- **[PHYSICS] BREAKING — library default `normalization_mode` flipped `'global'` → `'volume_deconv'`**
+  (`BayesianStatistics.evaluate()`), aligning the library with the CLI default and the
+  P–P-calibrated estimator (Gray et al. 2020 arXiv:1908.06050 Eqs. A.9/A.10 + volume-consistent
+  host-z prior; verification report §7). Requesting `'global'` explicitly now emits a
+  `UserWarning`: it is mis-calibrated for photometric-redshift catalogues (~0% coverage, posterior
+  rails to the grid edge) and remains available only to reproduce the railed baseline.
+  **Migration:** code calling `evaluate()` without `normalization_mode` now gets calibrated
+  `volume_deconv` posteriors instead of railed `global` ones; pass `normalization_mode="global"`
+  to reproduce pre-fix results.
+- **[PHYSICS]** de-rail the in-catalogue H₀ likelihood normalization (commission
+  `.planning/INDEPENDENT-VERIFICATION-REPORT-20260701.md` §7). `bayesian_statistics.py`: new
+  `normalization_mode ∈ {global, local_ratio, volume_deconv}` on `evaluate()` /
+  `single_host_likelihood`. The pre-fix `global` partition-norm single ratio
+  `L_cat=(Σ_local w_g N_g)/(Σ_global w_g D_g)` pins the photo-z H₀ posterior to a grid edge on real
+  seed600 data (MAP 0.86 pre-4π, 0.60 after the 1/(4π) completion fix `cb16142`). `local_ratio`
+  reverts to the Gray A.9/A.10 local self-normalized ratio-of-sums (de-rails to a peaked 0.73);
+  `volume_deconv` additionally deconvolves the host-z prior through the comoving-volume element
+  `dV_c/(1+z)` (per-galaxy renormalized), consistent with `D(h)`. A from-scratch P–P/coverage test
+  (`results/commission_20260701/scratch/d2/`) shows the bare-Gaussian host-z numerator is
+  mis-calibrated (≈0% coverage, σ_z² Eddington-in-z bias) and the volume-weighted numerator is
+  calibrated; the real-data de-rail matrix (`redteam/derail_matrix_results.json`, 0.86→0.60→0.73)
+  and the +0.010 MAP shift agree. **Production CLI default → `volume_deconv`** (`--normalization_mode`);
+  the library `BayesianStatistics.evaluate` default initially stayed `global` (superseded by the
+  entry above: library default now also `volume_deconv`). Gray et al. (2020) arXiv:1908.06050
+  Eqs. A.9 / A.10 / 33.
+- **[PHYSICS]** sky-aware selection function (closes the p_sample≠p_comp sky/selection
+  paper-blocker; audit `.planning/PSAMPLE-PCOMP-AUDIT-20260701.md` R1). The generator draws +
+  SNR-selects an anisotropic real sky through the sky-dependent LISA response, but the inference
+  selection evaluated an **isotropic** `p_det` (φ=θ=0). Now: `simulation_detection_probability.py`
+  builds an **ecliptic-latitude-band** detection-horizon survival `p_det(d_L|β)` re-binned from the
+  **existing** injections (no new campaign; LISA's annual orbit ⇒ azimuthal symmetry `R=R(β)`,
+  Cutler 1998 arXiv:gr-qc/9703068); `bayesian_statistics.py` `D(h)`, `β_Ḡ`, and the global catalog
+  denominator become per-pixel/per-band sums `(1/N_pix)Σ_k(…)p_det(Ω_k)` (Gray 2023 arXiv:2308.02281
+  Eq. 2.3; GMV 2022 arXiv:2111.04629 Eq. 5; MFG 2019 arXiv:1809.02063 Eq. 6), with each catalog
+  galaxy evaluated at its real ecliptic latitude via the **same flat per-band** survival (one shared
+  `p_det(Ω)` object across all integrals — guardrail). The with-BH-mass 4D branch stays isotropic +
+  flagged (statistics-starved). Isotropic limit recovers the old code bit-for-bit (regression T1=0.0);
+  partition `D=β_G+β_Ḡ` (T2); anisotropic closure witnesses + removes the sky bias (T6, 75×). New
+  `test_sky_selection.py` (T1–T8). **Measured H₀ impact ≲1%, sign-indeterminate** (GLADE ZoA is
+  Galactic-plane-aligned ≈60° to the ecliptic ⇒ `Cov[p_det,p_sky]≈0`); reported as a bounded
+  systematic, a formal-correctness / self-consistency closure. Derivation:
+  `.planning/derivation-sky-selection/PHYSICS-CHANGE-PROTOCOL.md`.
+- **[PHYSICS]** `galaxy_catalogue/handler.py`: corrected the host stellar-mass → BH-mass
+  **error budget**. The relation is identified+cited as **Reines & Volonteri (2015)**
+  (arXiv:1508.06274, Eq. 5; broad-line AGN M_BH–M_*,total; α=7.45, β=1.05) — *not* McConnell
+  & Ma 2013. Two fixes to `BH_mass_error`: (1) **added the relation intrinsic scatter**
+  ε₀ = 0.24 dex (`sigma_int`), previously omitted — it is the *dominant* term, so host-mass
+  errors were ~3× too tight at the pivot (fractional CV 0.18 → 0.59), making the with-BH-mass
+  (2-D) inference channel over-confident; (2) **fixed an operator-precedence bug** in the
+  stellar-mass-error term (`beta / stellar_mass / 10` → `beta / stellar_mass`; d ln M_BH/d M_*
+  = β/M_*, the 1e11 pivot is constant), which understated that term 100× in variance. Also
+  corrected the (currently unused) inverse relation's M_BH-error term (β → 1/β) and added its
+  scatter. Regression test `test_mass_relation.py`. This quantifies the σ_z/σ_M forecast: the
+  realistic σ_M floor (≈60–200%) ≫ the ~1–2% the 2-D channel needs → no H₀ rescue. Follow-up:
+  a log-normal host-mass model (the linear-Gaussian leaks ~5% to M<0 at this scatter).
+  Ref: Reines & Volonteri (2015) arXiv:1508.06274 §4.1; Greene+2020 arXiv:1911.09678.
 - **[PHYSICS]** `bayesian_inference/simulation_detection_probability.py`: replaced
   the local-linear / Nadaraya-Watson kernel-regression `p_det` estimator with the
   **detection-horizon survival function** `p_det(d_L) = P(d_hor ≥ d_L)`, with the
@@ -81,6 +155,13 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   otherwise terminate a hosting pytest process).
 
 ### Added
+- **`master_thesis_code.validation` subpackage (G4b):** the 2026-07-01 commission's
+  independent P–P/coverage calibration harness (investigator d2) promoted from
+  `results/commission_20260701/scratch/d2/` into first-class, tested package code.
+  `pp_coverage.py` runs a pure numpy/scipy synthetic-universe coverage test
+  (flat-ΛCDM tables, Malmquist selection, single-host dark-siren H₀ estimator with
+  switchable host-z kernel: 'bare' Gaussian vs calibrated 'volume' dV_c/dz/(1+z));
+  intended for per-seed coverage runs during the Phase-2 campaign.
 - New `plotting/validation_plots.py`: `plot_h0_forest` (NF-1, the H₀-in-context
   forest plot vs Planck 2018 / SH0ES / GWTC-3 dark sirens, now shipped as fig15)
   and `plot_pp_coverage` (NF-2, a P–P / coverage factory ready for an

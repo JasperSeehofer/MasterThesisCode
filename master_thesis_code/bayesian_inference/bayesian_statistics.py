@@ -16,6 +16,8 @@ import math
 import multiprocessing as mp
 import os
 import time
+import warnings
+from collections.abc import Sequence
 from typing import Any
 
 import numpy as np
@@ -39,10 +41,15 @@ from master_thesis_code.datamodels.detection import (
     Detection,
     _sky_localization_uncertainty,
 )
-from master_thesis_code.galaxy_catalogue.glade_completeness import GladeCatalogCompleteness
+from master_thesis_code.emri_rate import R_eff_per_mbh
 from master_thesis_code.galaxy_catalogue.handler import (
     GalaxyCatalogueHandler,
     HostGalaxy,
+    InternalCatalogColumns,
+)
+from master_thesis_code.galaxy_catalogue.pixel_completeness import (
+    CompletenessModel,
+    from_cache_or_build,
 )
 from master_thesis_code.physical_relations import (
     comoving_volume_element,
@@ -64,26 +71,238 @@ FRACTIONAL_LUMINOSITY_DISTANCE_ERROR_THRESHOLD = 0.10
 _DH_QUAD_ORDER: int = 100
 
 
+def eddington_shifted_host_mass(host_M: float, host_M_error: float) -> float:
+    """Effective host mass under the rate-weighted (Eddington-in-M) prior.
+
+    The per-galaxy mass prior N(M; M_g, sigma_M^2) * R_eff(M) / Z_M is, under a
+    locally log-linear R_eff (exponential-tilt identity), EXACTLY the shifted
+    Gaussian N(M; M_g (1 + alpha sigma_rel^2), sigma_M^2) with
+    ``alpha = dln R_eff / dln M |_{M_g}`` and sigma_rel = sigma_M / M_g.
+    Classic Eddington (1913) correction; derivation and curvature-residual
+    control in docs/derivations/G2d_host_mass_rate_prior.md (G7 row 9).
+
+    Args:
+        host_M: Catalogue (source-frame) host BH mass estimate [M_sun].
+        host_M_error: 1-sigma mass uncertainty [M_sun].
+
+    Returns:
+        The shifted effective mass M_g^eff [M_sun]; equals host_M when the
+        uncertainty is zero/invalid (bare-Gaussian limit).
+    """
+    if host_M <= 0.0 or host_M_error <= 0.0 or not math.isfinite(host_M_error):
+        return host_M
+    # EXACT posterior mean of N(M; M_g, sigma^2) * R_eff(M) / Z_M by quadrature
+    # (moment matching). The local-slope (log-linear tilt) form gets the SIGN
+    # wrong near the kappa_cap low-mass roll-off at GLADE's sigma_rel ~ 1, where
+    # R_eff RISES with M — caught by the G2d regression tests.
+    sigma = min(host_M_error, 2.0 * host_M)
+    lo = max(host_M - 5.0 * sigma, 1e3)
+    hi = host_M + 5.0 * sigma
+    M_grid = np.linspace(lo, hi, 401)
+    w = np.exp(-0.5 * ((M_grid - host_M) / sigma) ** 2) * np.asarray(
+        R_eff_per_mbh(M_grid), dtype=np.float64
+    )
+    Z = float(np.trapezoid(w, M_grid))
+    if not math.isfinite(Z) or Z <= 0.0:
+        return host_M
+    return float(np.trapezoid(M_grid * w, M_grid) / Z)
+
+
+def weighted_ratio_of_sums(
+    numerators: Sequence[float],
+    denominators: Sequence[float],
+    weights: Sequence[float],
+) -> float:
+    r"""Weighted in-catalog ratio-of-sums likelihood ``(Σ w·N) / (Σ w·D)``.
+
+    Generalizes the equal-weight Gray et al. (2020) in-catalog term
+    ``L_cat = (Σ_g N_g) / (Σ_g D_g)`` (Eq. A.9/A.10) by weighting each candidate
+    host galaxy ``g`` by an astrophysical rate prior ``w(g)``:
+
+    .. math::
+
+        L_\mathrm{cat} = \frac{\sum_g w(g)\,N_g}{\sum_g w(g)\,D_g}.
+
+    The weight enters numerator and denominator identically, so
+
+    * any overall rescaling of ``w`` cancels (SCALING INVARIANCE), and
+    * constant weights reproduce the plain ratio of sums exactly (the
+      equal-weight Change-2 limit).
+
+    This is the inference-side counterpart of the rate-weighted host draw
+    :meth:`~master_thesis_code.galaxy_catalogue.handler.GalaxyCatalogueHandler.draw_rate_weighted_hosts`.
+
+    Args:
+        numerators: Per-host likelihood numerators ``N_g`` (host-aligned).
+        denominators: Per-host selection denominators ``D_g`` (host-aligned,
+            same order as ``numerators``).
+        weights: Per-host rate weights ``w(g)`` (host-aligned, same order as
+            ``numerators`` / ``denominators``).
+
+    Returns:
+        The weighted ratio of sums, or ``0.0`` when the weighted denominator
+        ``Σ w·D`` is non-positive (matching the unweighted guard).
+
+    References:
+        Gray et al. (2020), arXiv:1908.06050, Eqs. (A.9)/(A.10) — in-catalog
+            ratio-of-sums likelihood, here weighted by a galaxy rate prior.
+    """
+    # Σ w·N / Σ w·D — the weight cancels overall normalization (incl. C_NORM),
+    # leaving only the relative galaxy weighting (Gray et al. 2020, arXiv:1908.06050).
+    w = np.asarray(weights, dtype=np.float64)
+    num = np.asarray(numerators, dtype=np.float64)
+    den = np.asarray(denominators, dtype=np.float64)
+    weighted_den_sum = float(np.sum(w * den))
+    if weighted_den_sum <= 0.0:
+        return 0.0
+    weighted_num_sum = float(np.sum(w * num))
+    return weighted_num_sum / weighted_den_sum
+
+
+def weighted_sum(values: Sequence[float], weights: Sequence[float]) -> float:
+    r"""Rate-weighted sum ``Σ_g w_g · v_g`` (the in-catalogue numerator building block).
+
+    The partition-norm in-catalogue likelihood is
+    ``L_cat = (Σ_local w_g N_g) / (Σ_global w_g D_g)`` (Gray et al. 2020,
+    arXiv:1908.06050, Eqs. A.10 / 29) where the GW-likelihood numerator sum runs
+    over the local candidate ball but the SELECTION denominator runs over the full
+    catalogue (:func:`precompute_global_catalog_selection`). This helper returns
+    the weighted sum of either; an empty input yields ``0.0``.
+
+    Args:
+        values: Per-host values ``v_g`` (host-aligned).
+        weights: Per-host rate weights ``w_g`` (same order as *values*).
+
+    Returns:
+        ``Σ_g w_g · v_g`` (``0.0`` for empty inputs).
+    """
+    if len(values) == 0:
+        return 0.0
+    return float(
+        np.sum(np.asarray(weights, dtype=np.float64) * np.asarray(values, dtype=np.float64))
+    )
+
+
+def _rate_weight(host: HostGalaxy) -> float:
+    r"""Per-MBH EMRI-rate host weight ``w(g) = R_eff_per_mbh(M_g) / (1 + z_g)``.
+
+    IDENTICAL to the weight used by the rate-weighted simulation host draw
+    (:meth:`~master_thesis_code.galaxy_catalogue.handler.GalaxyCatalogueHandler.draw_rate_weighted_hosts`),
+    closing the generative loop. ``host.M`` is the SOURCE-FRAME catalog BH mass
+    (the detector-frame lift ``M_z = M·(1+z)`` is applied only inside
+    :func:`single_host_likelihood`, never to ``host.M``), so this evaluates
+    ``R_eff`` at the same mass the draw uses.
+
+    Args:
+        host: Candidate host galaxy (carries source-frame ``M`` and redshift ``z``).
+
+    Returns:
+        The scalar per-MBH rate weight ``R_eff_per_mbh(host.M) / (1 + host.z)``.
+
+    References:
+        Babak et al. (2017), arXiv:1703.09722 — effective per-MBH EMRI rate
+            (:func:`master_thesis_code.emri_rate.R_eff_per_mbh`).
+        Gray et al. (2020), arXiv:1908.06050 — galaxy weighting of the in-catalog
+            dark-siren likelihood.
+    """
+    # host.M is SOURCE-FRAME (see handler NOTE on the redshifted-mass convention).
+    return float(R_eff_per_mbh(host.M)) / (1.0 + host.z)
+
+
+def _sky_aware_selection_available(
+    completeness: CompletenessModel | None,
+    detection_probability_obj: SimulationDetectionProbability,
+) -> bool:
+    r"""True iff both objects support the sky-resolved selection path (Change 1-4).
+
+    Requires the detection-probability object to expose the ecliptic-latitude
+    band survival (:meth:`survival_per_band`, :meth:`band_edges_sin_beta`) AND a
+    per-pixel completeness (:meth:`pixel_centers`).  When either is absent
+    (e.g. a mock ``p_det`` or the all-sky :class:`GladeCatalogCompleteness`), the
+    selection integrals fall back to the EXACT sky-marginalised formulas -- which
+    is also the ``n_sky_bands == 1`` isotropic limit (test T1).
+    """
+    return (
+        completeness is not None
+        and hasattr(completeness, "pixel_centers")
+        and hasattr(completeness, "f_pixels")
+        and hasattr(detection_probability_obj, "survival_per_band")
+        and hasattr(detection_probability_obj, "band_edges_sin_beta")
+    )
+
+
+def _sky_band_pixel_map(
+    completeness: CompletenessModel,
+    detection_probability_obj: SimulationDetectionProbability,
+) -> tuple[npt.NDArray[np.int_], int, int]:
+    r"""Assign every HEALPix pixel centre to a ``p_det`` ecliptic-latitude band.
+
+    Uses the SAME equal-|sin beta| band edges as the injection ``p_det`` build
+    (:meth:`SimulationDetectionProbability.band_edges_sin_beta`) so the sky
+    marginal is invariant (test T3).  ``beta = pi/2 - theta`` =>
+    ``|sin beta| = |cos theta|``.  The sky prior is uniform ``1/Npix`` (equal-area
+    pixels): pixels are counted, NOT galaxy-weighted (guardrail).
+
+    Returns
+    -------
+    (band_of_pixel, n_bands, npix)
+    """
+    phi_k, theta_k = completeness.pixel_centers()  # type: ignore[attr-defined]
+    sin_beta_abs = np.abs(np.cos(np.asarray(theta_k, dtype=np.float64)))  # |sin beta|
+    edges = np.asarray(detection_probability_obj.band_edges_sin_beta(), dtype=np.float64)
+    n_bands = int(edges.size - 1)
+    band_of_pixel = np.clip(
+        np.searchsorted(edges, sin_beta_abs, side="right") - 1, 0, n_bands - 1
+    ).astype(np.int_)
+    return band_of_pixel, n_bands, int(sin_beta_abs.size)
+
+
 def precompute_completion_denominator(
     h_values: list[float],
     detection_probability_obj: SimulationDetectionProbability,
     Omega_m: float,
     Omega_DE: float,
     *,
+    completeness: CompletenessModel | None = None,
     quad_n: int = _DH_QUAD_ORDER,
 ) -> dict[float, float]:
     """Precompute the completion-term denominator D(h) for each h value.
 
-    Gray et al. (2020), arXiv:1908.06050, Eq. A.19:
-    Denominator integrates P_det * dVc/dz over the full detectable volume.
+    Gray et al. (2020), arXiv:1908.06050, Eqs. 33 / A.19: the out-of-catalogue
+    selection denominator integrates the detection probability against the EMRI
+    population prior over the detectable volume.
 
     .. math::
 
         D(h) = \\int_{z_{\\min}}^{z_{\\max}(h)} P_{\\det}(d_L(z,h))
-               \\frac{dV_c}{dz\\,d\\Omega}\\, dz
+               \\,\\frac{1}{1+z}\\,\\frac{dV_c}{dz\\,d\\Omega}\\, dz
 
     where ``z_max(h)`` is the redshift corresponding to the P_det grid's
-    maximum ``d_L`` at the given h.
+    maximum ``d_L`` at the given h, and ``1/(1+z)`` is the source-to-detector
+    time dilation (matching ``comp_num`` and the event sampler
+    :func:`master_thesis_code.emri_rate.p_pop_unnormalized`).
+
+    Role in the partition-norm likelihood:
+        ``D(h)`` is the FULL-volume selection normalisation
+        ``D(h) = beta_G(h) + beta_Gbar(h)`` -- the denominator of the single
+        per-event ratio ``p_i = (beta_G L_cat + B_num) / D(h)`` (:meth:`p_Di`).
+        It carries **no** ``(1-f)`` factor: the incompleteness lives in its
+        missing-volume partner
+        :func:`precompute_missing_completion_denominator`
+        (``beta_Gbar = INTEGRAL (1-f) P_det dVc/(1+z)``), and the in-catalogue
+        share is recovered by ``beta_G = D(h) - beta_Gbar``. The selection-weighted
+        catalog membership weight ``w_G = beta_G/D(h) = beta_G/(beta_G+beta_Gbar)``
+        (Gray Eq. 29) is now computed EXACTLY -- it replaced the earlier scalar
+        narrow-window approximation ``completeness(z_det)``.
+
+    Modeling assumption (still in force): **constant comoving number density**
+        for the missing galaxies -- the galaxy number density ``n_gal(z)`` and the
+        mass-integrated rate ``INTEGRAL dM R_EMRI(z,M)`` are taken z-independent
+        (the latter exact under the ``p0=1`` surrogate), so they are overall
+        constants that **cancel** between the discrete catalogue sums and the
+        continuous integrals (Option A; see
+        :func:`precompute_global_catalog_selection`). Departures (clustering,
+        rate/MF evolution) are second order.
 
     Args:
         h_values: List of Hubble parameter values to evaluate.
@@ -99,6 +318,21 @@ def precompute_completion_denominator(
     """
     D_h_table: dict[float, float] = {}
 
+    # Change 2: sky-resolved full-volume selection.  When the sky-aware path is
+    # available, D(h) = INTEGRAL (1/Npix) sum_k p_det(d_L(z,h), Omega_k) dVc/(1+z) dz
+    # is evaluated efficiently as sum_b (n_pix_b/Npix) S_b(d_L(z,h)) -- p_det
+    # depends on Omega only through band(beta) (equal-solid-angle sky sum).
+    # Gray, Gerosa et al. (2023), arXiv:2308.02281, Eq. (2.3) -- per-pixel GW
+    # selection sum; Mandel-Farr-Gair (2019), arXiv:1809.02063, Eq. 6.
+    _sky_aware = _sky_aware_selection_available(completeness, detection_probability_obj)
+    if _sky_aware:
+        assert completeness is not None
+        _band_of_pixel, _n_bands, _npix = _sky_band_pixel_map(
+            completeness, detection_probability_obj
+        )
+        # c_b = n_pix_b / Npix : uniform-sky (equal-area) fraction per band.
+        _c_b = np.bincount(_band_of_pixel, minlength=_n_bands).astype(np.float64) / float(_npix)
+
     for h in h_values:
         dl_max = detection_probability_obj.get_dl_max(h)
         z_max = dist_to_redshift(dl_max, h=h)
@@ -111,15 +345,32 @@ def precompute_completion_denominator(
             d_L: npt.NDArray[np.float64] = np.asarray(
                 dist_vectorized(z, h=_h), dtype=np.float64
             )  # Gpc
-            phi = np.zeros_like(z)  # marginalized; value does not matter
-            theta = np.zeros_like(z)
-            p_det = detection_probability_obj.detection_probability_without_bh_mass_interpolated_zero_fill(
-                d_L, phi, theta, h=_h
-            )
+            if _sky_aware:
+                # (1/Npix) sum_k p_det(Omega_k) = sum_b (n_pix_b/Npix) S_b(d_L).
+                # Gray 2023 arXiv:2308.02281 Eq. 2.3 (per-pixel selection sum).
+                s_band = np.asarray(
+                    detection_probability_obj.survival_per_band(d_L), dtype=np.float64
+                )  # (n_bands, Z)
+                p_det: npt.NDArray[np.float64] = _c_b @ s_band  # (Z,)
+            else:
+                phi = np.zeros_like(z)  # marginalized; value does not matter
+                theta = np.zeros_like(z)
+                p_det = np.asarray(
+                    detection_probability_obj.detection_probability_without_bh_mass_interpolated_zero_fill(
+                        d_L, phi, theta, h=_h
+                    ),
+                    dtype=np.float64,
+                )
             dVc: npt.NDArray[np.float64] = np.atleast_1d(
                 np.asarray(comoving_volume_element(z, h=_h), dtype=np.float64)
             )
-            return np.asarray(p_det, dtype=np.float64) * dVc
+            # Population prior R_EMRI(z,M)/(1+z) * dVc/dz (emri_rate.p_pop_unnormalized):
+            # the 1/(1+z) is the source->detector time dilation. The mass-integrated
+            # rate INTEGRAL dM R_EMRI(z,M) is z-independent under the p0=1 surrogate, so it
+            # is an overall constant that cancels in L_comp = comp_num/D(h); only 1/(1+z)
+            # survives here. Babak et al. (2017), arXiv:1703.09722 (rate); Mandel-Farr-Gair
+            # (2019), arXiv:1809.02063 (detector-frame rate density).
+            return np.asarray(p_det, dtype=np.float64) * dVc / (1.0 + z)
 
         D_h: float = fixed_quad(_denom_integrand, z_min, z_max, n=quad_n)[0]
         D_h_table[h] = D_h
@@ -146,6 +397,300 @@ def precompute_completion_denominator(
             _LOGGER.warning("D(h) is nearly identical for all h — h-dependence may not be captured")
 
     return D_h_table
+
+
+def precompute_missing_completion_denominator(
+    h_values: list[float],
+    detection_probability_obj: SimulationDetectionProbability,
+    completeness: CompletenessModel,
+    *,
+    quad_n: int = _DH_QUAD_ORDER,
+) -> dict[float, float]:
+    r"""Precompute the missing-volume selection integral ``beta_Gbar(h)``.
+
+    The ``(1-f(z))`` companion of :func:`precompute_completion_denominator`
+    (which returns the **unchanged** full-volume ``D(h) = beta_G + beta_Gbar``).
+    Gray et al. (2020), arXiv:1908.06050, Eq. (33): the out-of-catalogue
+    selection integral weights the full detection denominator by the
+    *incompleteness* ``1 - f(z)``, i.e. it integrates only over the galaxies the
+    catalogue is missing:
+
+    .. math::
+
+        \beta_{\bar G}(h) = \int_{z_{\min}}^{z_{\max}(h)} \bigl(1 - f(z)\bigr)\,
+            P_{\det}(d_L(z,h))\,\frac{1}{1+z}\,\frac{dV_c}{dz}\, dz .
+
+    The in-catalogue selection normalisation is then
+    ``beta_G(h) = D(h) - beta_Gbar(h) = INTEGRAL f(z) P_det (1/(1+z)) dVc``.
+    ``f(z) = completeness.get_completeness_at_redshift(z, h)`` is the SAME
+    completeness call the generator uses
+    (:func:`master_thesis_code.dark_siren_injection.compute_global_catalog_fraction`
+    and ``_draw_dark_redshifts``), so the inference completion population and the
+    injected dark population are bit-for-bit identical.
+
+    Args:
+        h_values: Hubble parameter values to evaluate.
+        detection_probability_obj: Same object passed to
+            :func:`precompute_completion_denominator` (provides ``get_dl_max``
+            and ``detection_probability_without_bh_mass_interpolated_zero_fill``).
+        completeness: Catalogue completeness ``f(z)`` (Gray Eq. 9). Evaluated
+            sky-marginalised, identically to the generator.
+        quad_n: Gauss-Legendre quadrature order (default
+            :data:`_DH_QUAD_ORDER`), matching ``D(h)``.
+
+    Returns:
+        Dict mapping ``h -> beta_Gbar(h)`` in units of Mpc^3/sr (same as
+        ``D(h)``).
+
+    References:
+        Gray et al. (2020), arXiv:1908.06050, Eq. (33) — out-of-catalogue
+            selection denominator (here the missing ``(1-f)`` fraction).
+    """
+    beta_Gbar_table: dict[float, float] = {}
+
+    # Change 3: sky-resolved missing-completion selection.  When the sky-aware
+    # path is available this evaluates the caveat's own prescription
+    # beta_Gbar(h) = INTEGRAL (1/Npix) sum_k (1 - f_k(z,h)) p_det(d_L(z,h), Omega_k)
+    #                dVc/(1+z) dz
+    # efficiently as sum_b S1mf_b(z) S_b(d_L), with the per-band incompleteness
+    # sum S1mf_b(z) = (1/Npix) sum_{k in band b}(1 - f_k(z)).  ZoA/empty pixels
+    # (f_k=0) contribute the FULL p_det(Omega_k) -- exactly where dark hosts
+    # concentrate.  Gray et al. (2020), arXiv:1908.06050, Eq. (33);
+    # Gray-Messenger-Veitch (2022), arXiv:2111.04629, Eq. (5).
+    _sky_aware = _sky_aware_selection_available(completeness, detection_probability_obj)
+    if _sky_aware:
+        _band_of_pixel, _n_bands, _npix = _sky_band_pixel_map(
+            completeness, detection_probability_obj
+        )
+        # Boolean (n_bands, npix) membership for the per-band pixel reduction.
+        _band_membership = _band_of_pixel[None, :] == np.arange(_n_bands)[:, None]
+
+    for h in h_values:
+        dl_max = detection_probability_obj.get_dl_max(h)
+        z_max = dist_to_redshift(dl_max, h=h)
+        z_min = 1e-6
+
+        def _missing_denom_integrand(
+            z: npt.NDArray[np.float64],
+            _h: float = h,
+        ) -> npt.NDArray[np.float64]:
+            d_L: npt.NDArray[np.float64] = np.asarray(
+                dist_vectorized(z, h=_h), dtype=np.float64
+            )  # Gpc
+            dVc: npt.NDArray[np.float64] = np.atleast_1d(
+                np.asarray(comoving_volume_element(z, h=_h), dtype=np.float64)
+            )
+            if _sky_aware:
+                # Per-pixel (1 - f_k(z)) summed per band, divided by Npix, then
+                # weighted by that band's survival S_b(d_L).  Sky-uniform prior
+                # 1/Npix (equal-area pixels). Gray 2023 arXiv:2308.02281 Eq. 2.3;
+                # GMV 2022 arXiv:2111.04629 Eq. 5.
+                f_pix = np.clip(
+                    np.asarray(completeness.f_pixels(z, _h), dtype=np.float64),  # type: ignore[attr-defined]
+                    0.0,
+                    1.0,
+                )  # (Z, npix)
+                one_minus_f = 1.0 - f_pix  # (Z, npix)
+                # S1mf_b(z) = (1/Npix) sum_{k in band b}(1 - f_k(z)) -> (n_bands, Z)
+                s1mf_b = (_band_membership.astype(np.float64) @ one_minus_f.T) / float(_npix)
+                s_band = np.asarray(
+                    detection_probability_obj.survival_per_band(d_L), dtype=np.float64
+                )  # (n_bands, Z)
+                integrand = np.einsum("bz,bz->z", s1mf_b, s_band)
+                return np.asarray(integrand, dtype=np.float64) * dVc / (1.0 + z)
+            # Isotropic fallback: (1 - f_bar(z)) <p_det>_iso (the exact
+            # n_sky_bands==1 limit).  Valid because p_det is sky-uniform here.
+            phi = np.zeros_like(z)  # sky-marginalized; matches D(h)
+            theta = np.zeros_like(z)
+            p_det = np.asarray(
+                detection_probability_obj.detection_probability_without_bh_mass_interpolated_zero_fill(
+                    d_L, phi, theta, h=_h
+                ),
+                dtype=np.float64,
+            )
+            f_z = np.clip(
+                np.asarray(completeness.f_bar(z, _h), dtype=np.float64),
+                0.0,
+                1.0,
+            )
+            return (1.0 - f_z) * p_det * dVc / (1.0 + z)
+
+        beta_Gbar: float = fixed_quad(_missing_denom_integrand, z_min, z_max, n=quad_n)[0]
+        beta_Gbar_table[h] = beta_Gbar
+        _LOGGER.info(
+            "beta_Gbar(h=%.4f) = %.6e  [z_max=%.4f]",
+            h,
+            beta_Gbar,
+            z_max,
+        )
+
+    return beta_Gbar_table
+
+
+def precompute_global_catalog_selection(
+    h_values: list[float],
+    galaxy_catalog: GalaxyCatalogueHandler,
+    detection_probability_obj: SimulationDetectionProbability,
+    *,
+    with_bh_mass: bool,
+) -> dict[float, float]:
+    r"""Precompute the GLOBAL in-catalogue selection denominator (Option A).
+
+    The partition-norm restructure forms the in-catalogue likelihood as
+    ``L_cat = (sum_local w_g N_g) / (sum_global w_g D_g)`` where the SELECTION
+    denominator runs over the FULL catalogue out to the detection horizon
+    ``z_max(h)``, NOT the per-event candidate ball. Globalising the denominator
+    makes ``L_cat`` scale-free, so the per-galaxy <-> per-volume number-density
+    factor ``n_gal`` cancels against the continuous
+    ``beta_G(h) = D(h) - beta_Gbar(h)`` and no calibration constant is needed
+    (Gray et al. 2020, arXiv:1908.06050, Eq. 29: the discrete catalogue sum is
+    the Monte-Carlo realisation of ``beta_G = INTEGRAL f P_det dVc/(1+z)``).
+
+    .. math::
+
+        \Sigma_{\mathrm{global}}(h) = \sum_{g:\, z_g < z_{\max}(h)}
+            w_g\, P_{\det}\bigl(d_L(z_g, h)\bigr),
+        \qquad w_g = \frac{R_\mathrm{eff}(M_g)}{1 + z_g}.
+
+    The weight ``w_g`` is IDENTICAL to the rate-weighted host draw
+    (:meth:`~master_thesis_code.galaxy_catalogue.handler.GalaxyCatalogueHandler.draw_rate_weighted_hosts`)
+    and the in-catalogue likelihood weight (:func:`_rate_weight`). ``P_det`` is
+    evaluated SKY-MARGINALISED (``phi = theta = 0``), on the same footing as the
+    completion ``D(h)`` / ``beta_Gbar`` (the per-galaxy sky dependence is
+    deferred to the pixelated-completeness change). ``D_g ~= P_det(z_g)`` uses
+    the narrow galaxy-redshift-PDF limit. The sum is event-INDEPENDENT, so it is
+    precomputed once per ``h`` like ``D(h)``.
+
+    Args:
+        h_values: Hubble parameter values to evaluate.
+        galaxy_catalog: Loaded catalogue handler (its ``reduced_galaxy_catalog``
+            is summed over; same rows the rate-weighted draw uses).
+        detection_probability_obj: Detection probability (provides ``get_dl_max``
+            and the 3D / 4D ``P_det`` accessors).
+        with_bh_mass: ``False`` uses the 3D (sky+distance) ``P_det`` (the
+            without-BH-mass channel); ``True`` uses the 4D
+            (sky+distance+observer-frame mass ``M_z = M_g(1+z_g)``) ``P_det``,
+            the global companion of the with-BH-mass catalogue sum.
+
+    Returns:
+        Dict mapping ``h -> sum_global w_g D_g(h)`` (dimensionless rate-weighted
+        detection count).
+
+    References:
+        Gray et al. (2020), arXiv:1908.06050, Eq. (29) — ``beta_G`` selection
+            integral (here its discrete catalogue realisation).
+        Babak et al. (2017), arXiv:1703.09722 — per-MBH rate ``R_eff``
+            (:func:`master_thesis_code.emri_rate.R_eff_per_mbh`).
+    """
+    catalog = galaxy_catalog.reduced_galaxy_catalog
+    z_all = np.asarray(
+        catalog[InternalCatalogColumns.REDSHIFT].to_numpy(dtype=np.float64),
+        dtype=np.float64,
+    )
+    M_all = np.asarray(
+        catalog[InternalCatalogColumns.BH_MASS].to_numpy(dtype=np.float64),
+        dtype=np.float64,
+    )
+    # Change 4: each galaxy's REAL ecliptic sky (PHI_S/THETA_S are ecliptic
+    # longitude/colatitude after COORD-03). The catalog galaxies ARE the
+    # Monte-Carlo sky sampling of the in-catalog channel (they trace LSS), so
+    # feeding Omega_g into p_det is the correct MC estimator of
+    # beta_G = INTEGRAL f p_det dVc/(1+z). Gray et al. (2020), arXiv:1908.06050,
+    # Eq. 8 (antenna response varies over sky); Gray 2023 arXiv:2308.02281 Eq. 2.3.
+    _has_sky_cols = (InternalCatalogColumns.PHI_S in catalog.columns) and (
+        InternalCatalogColumns.THETA_S in catalog.columns
+    )
+    # Sky-aware only for the 3D (without-BH-mass) channel; the 4D with-BH-mass
+    # sky x M_z survival is statistics-starved, so it stays ISOTROPIC (below).
+    _sky_aware = (
+        (not with_bh_mass)
+        and _has_sky_cols
+        and hasattr(detection_probability_obj, "detection_probability_without_bh_mass_sky")
+    )
+    if _sky_aware:
+        # Only the ecliptic COLATITUDE is needed (azimuthal symmetry of the
+        # orbit-averaged response, Cutler 1998); phi is not used.
+        theta_all = np.asarray(
+            catalog[InternalCatalogColumns.THETA_S].to_numpy(dtype=np.float64),
+            dtype=np.float64,
+        )
+
+    global_table: dict[float, float] = {}
+    for h in h_values:
+        z_max = dist_to_redshift(detection_probability_obj.get_dl_max(h), h=h)
+        # Eligible galaxies: inside the detectable volume (z < z_max(h)) with a
+        # finite source-frame mass. Galaxies beyond z_max(h) have P_det ~= 0 and
+        # do not contribute to the selection normalisation.
+        eligible = (z_all < z_max) & np.isfinite(M_all) & (M_all > 0.0)
+        z_g = z_all[eligible]
+        M_g = M_all[eligible]
+        if z_g.size == 0:
+            global_table[h] = 0.0
+            _LOGGER.warning(
+                "Global catalog selection (with_bh=%s): no eligible galaxy z<%.4f.",
+                with_bh_mass,
+                z_max,
+            )
+            continue
+
+        # w_g = R_eff_per_mbh(M_g)/(1+z_g): the EXACT rate weight the draw and the
+        # in-catalogue likelihood use (Babak et al. 2017; Gray et al. 2020).
+        w_g = np.asarray(R_eff_per_mbh(M_g), dtype=np.float64) / (1.0 + z_g)
+        d_L_g = np.asarray(dist_vectorized(z_g, h=h), dtype=np.float64)  # Gpc
+        if with_bh_mass:
+            # FLAG (user-approved, statistics-starved): the with-BH-mass 4D
+            # sky x M_z survival is too noisy at NSIDE resolution, so this branch
+            # stays ISOTROPIC (phi=theta=0, sky-marginalised 2D accessor). The
+            # residual sky-selection systematic (<~1%) applies to the with-BH-mass
+            # posterior ONLY, not the primary result. PHYSICS-CHANGE-PROTOCOL §9.3.
+            M_z_g = M_g * (1.0 + z_g)  # observer-frame mass (P_det grid axis)
+            phi_iso = np.zeros_like(z_g)
+            theta_iso = np.zeros_like(z_g)
+            p_det = np.asarray(
+                detection_probability_obj.detection_probability_with_bh_mass_interpolated(
+                    d_L_g, M_z_g, phi_iso, theta_iso, h=h
+                ),
+                dtype=np.float64,
+            )
+        elif _sky_aware:
+            # Sky-resolved p_det at each galaxy's real ecliptic latitude, using the
+            # IDENTICAL flat per-band survival that D(h) and beta_Gbar use (NOT the
+            # interpolated accessor) so p_det(Omega) is ONE shared object across all
+            # selection integrals. Otherwise the p_det convention would not cancel in
+            # beta_G/Sigma_global and would rescale the in-catalogue channel weight,
+            # reintroducing the sky bias. Same equal-|sin beta| edges + side="right"
+            # band assignment as _sky_band_pixel_map (test T3 / T8).
+            # Gray et al. (2020), arXiv:1908.06050, Eq. 8; Cutler 1998 arXiv:gr-qc/9703068.
+            theta_g = theta_all[eligible]
+            sin_beta_g = np.abs(np.cos(theta_g))  # |sin beta| = |cos theta|
+            _edges = np.asarray(detection_probability_obj.band_edges_sin_beta(), dtype=np.float64)
+            _n_bands = int(_edges.size - 1)
+            band_g = np.clip(np.searchsorted(_edges, sin_beta_g, side="right") - 1, 0, _n_bands - 1)
+            s_band = np.asarray(
+                detection_probability_obj.survival_per_band(d_L_g), dtype=np.float64
+            )  # (n_bands, n_gal)
+            p_det = s_band[band_g, np.arange(band_g.size)]
+        else:
+            phi_iso = np.zeros_like(z_g)  # isotropic fallback (matches D(h))
+            theta_iso = np.zeros_like(z_g)
+            p_det = np.asarray(
+                detection_probability_obj.detection_probability_without_bh_mass_interpolated_zero_fill(
+                    d_L_g, phi_iso, theta_iso, h=h
+                ),
+                dtype=np.float64,
+            )
+        global_table[h] = float(np.sum(w_g * p_det))
+        _LOGGER.info(
+            "Global catalog selection (with_bh=%s) sum_w_Dg(h=%.4f) = %.6e  "
+            "[%d eligible galaxies, z_max=%.4f]",
+            with_bh_mass,
+            h,
+            global_table[h],
+            z_g.size,
+            z_max,
+        )
+
+    return global_table
 
 
 # Module-level globals used by child_process_init for multiprocessing worker state
@@ -259,6 +804,11 @@ class BayesianStatistics:
     additional_galaxies_without_bh_mass: dict[str, dict[str, list[float]]]
     posterior_data: dict[int, list[float]]
     posterior_data_with_bh_mass: dict[int | str, Any]
+    # In-catalogue normalization (set by evaluate()); "volume_deconv" is the
+    # calibrated default. See evaluate() for "global"/"local_ratio".
+    _normalization_mode: str = "volume_deconv"
+    # G4: base seed for the deterministic with-BH-mass MC denominator streams.
+    _base_seed: int = 0
 
     def __init__(self) -> None:
         self.h_values = []
@@ -290,8 +840,37 @@ class BayesianStatistics:
         pdet_mass_bins: int = 40,
         pdet_estimator: str = "local_linear",
         fisher_cond_threshold: float = 1e16,
+        normalization_mode: str = "volume_deconv",
+        base_seed: int = 0,
     ) -> None:
         self.catalog_only = catalog_only
+        # G4: deterministic seed for the with-BH-mass MC denominator (threaded to
+        # single_host_likelihood workers; per-call streams derived per host).
+        self._base_seed = int(base_seed) if base_seed is not None else 0
+        # In-catalogue normalization for the non-catalog_only Gray single ratio
+        # (commission de-rail study, 2026-07-01):
+        #   "global"        -> legacy partition-norm:  L_cat = (Σ_local w_g N_g)/(Σ_GLOBAL w_g D_g)
+        #   "local_ratio"   -> Gray A.9/A.10 literal:  L_cat = (Σ_local w_g N_g)/(Σ_local w_g D_g)   [fix #2]
+        #   "volume_deconv" -> local ratio with the host-z Gaussian deconvolved through the
+        #                      comoving-volume prior dVc/(1+z) (per-galaxy renormalised)          [fix #1]
+        #   "volume_global" -> DIAGNOSTIC ONLY (G3 ablation cube): fix #1's volume kernel with
+        #                      the legacy GLOBAL denominator — isolates the marginal effect of
+        #                      each fix ingredient. Not for production results.
+        # The kernel (bare vs volume-deconvolved) is threaded into single_host_likelihood.
+        # Default "volume_deconv": Gray et al. (2020) arXiv:1908.06050 Eqs. A.9/A.10 + volume-
+        # consistent host-z prior; P-P-calibrated (INDEPENDENT-VERIFICATION-REPORT-20260701 §7).
+        if normalization_mode not in ("global", "local_ratio", "volume_deconv", "volume_global"):
+            raise ValueError(f"unknown normalization_mode: {normalization_mode!r}")
+        if normalization_mode == "global":
+            warnings.warn(
+                "normalization_mode='global' is mis-calibrated for photometric-redshift "
+                "catalogues (~0% P-P coverage; posterior rails to the grid edge — see "
+                ".planning/INDEPENDENT-VERIFICATION-REPORT-20260701.md §7). Use the default "
+                "'volume_deconv' unless deliberately reproducing the railed baseline.",
+                UserWarning,
+                stacklevel=2,
+            )
+        self._normalization_mode = normalization_mode
         self._diagnostic_rows = []
         if catalog_only:
             _LOGGER.info("catalog_only mode: f_i=1, L_comp=0 (skipping completion integral)")
@@ -342,16 +921,62 @@ class BayesianStatistics:
         # Validate P_det grid coverage for observed events
         detection_probability.validate_coverage(h_value, self.cramer_rao_bounds)
 
-        # Gray et al. (2020), arXiv:1908.06050, Eq. A.19:
-        # Precompute completion-term denominator D(h) over full detectable volume.
-        # D(h) is event-independent; compute once per h-value.
+        # Gray et al. (2020), arXiv:1908.06050, Eq. 9 + Gray-Messenger-Veitch 2022,
+        # arXiv:2111.04629 (Change 5): per-HEALPix-pixel completeness f_k(z,Omega,h),
+        # loaded from the SAME frozen cached m_th map the EMRI injection uses (C1
+        # consistency; main.py:injection_campaign). f_bar weights beta_Gbar, f_k(event
+        # pixel) weights the completion numerator B_num below.  Built BEFORE D(h) so
+        # the sky-resolved selection (Change 2-4) can share its pixel grid.
+        completeness = from_cache_or_build()
+
+        # Gray et al. (2020), arXiv:1908.06050, Eq. A.19 + Gray 2023 arXiv:2308.02281
+        # Eq. 2.3 (Change 2): sky-resolved completion-term denominator D(h) over the
+        # full detectable volume, D(h) = INTEGRAL (1/Npix) sum_k p_det(d_L,Omega_k)
+        # dVc/(1+z). D(h) is event-independent; compute once per h-value.
         _D_h_table = precompute_completion_denominator(
             h_values=[h_value],
             detection_probability_obj=detection_probability,
             Omega_m=self.Omega_m,
             Omega_DE=self.Omega_DE,
+            completeness=completeness,
         )
         _LOGGER.info("D(h) precomputed for %d h-value(s).", len(_D_h_table))
+
+        # Partition-norm precomputes (Option A), consumed by p_Di's single ratio
+        # p_i = (beta_G L_cat + B_num)/D(h). beta_Gbar(h) = INTEGRAL (1-f) P_det
+        # dVc/(1+z) (Gray et al. 2020, arXiv:1908.06050, Eq. 33);
+        # beta_G(h) = D(h) - beta_Gbar(h) (Eq. 29); and the global in-catalogue
+        # selection sums sum_global w_g D_g for both channels (Eq. 29 discrete
+        # realisation) that make L_cat scale-free so n_gal cancels.
+        _beta_Gbar_table = precompute_missing_completion_denominator(
+            h_values=[h_value],
+            detection_probability_obj=detection_probability,
+            completeness=completeness,
+        )
+        _beta_G_table = {h: _D_h_table[h] - _beta_Gbar_table[h] for h in _D_h_table}
+        _global_cat_denom_no_bh = precompute_global_catalog_selection(
+            h_values=[h_value],
+            galaxy_catalog=galaxy_catalog,
+            detection_probability_obj=detection_probability,
+            with_bh_mass=False,
+        )
+        _global_cat_denom_with_bh = precompute_global_catalog_selection(
+            h_values=[h_value],
+            galaxy_catalog=galaxy_catalog,
+            detection_probability_obj=detection_probability,
+            with_bh_mass=True,
+        )
+        _w_G_preview = (
+            _beta_G_table[h_value] / _D_h_table[h_value]
+            if _D_h_table.get(h_value, 0.0) > 0.0
+            else float("nan")
+        )
+        _LOGGER.info(
+            "Partition-norm: w_G=beta_G/D(h)=%.4f, sum_w_Dg(no_bh)=%.4e, sum_w_Dg(with_bh)=%.4e",
+            _w_G_preview,
+            _global_cat_denom_no_bh.get(h_value, float("nan")),
+            _global_cat_denom_with_bh.get(h_value, float("nan")),
+        )
 
         _LOGGER.debug("Pre-computing Gaussian arrays for GW likelihoods...")
         _t0 = time.perf_counter()
@@ -539,6 +1164,12 @@ class BayesianStatistics:
         self._det_phi = _det_phi
         self._det_theta = _det_theta
         self._D_h_table = _D_h_table
+        # Partition-norm precompute tables (Option A) -- stored for the
+        # restructure commit; not yet read by p_Di.
+        self._beta_Gbar_table = _beta_Gbar_table
+        self._beta_G_table = _beta_G_table
+        self._global_cat_denom_no_bh = _global_cat_denom_no_bh
+        self._global_cat_denom_with_bh = _global_cat_denom_with_bh
         self._excluded_mask = _excluded_mask
         self._cond_3d = _cond_3d
         self._cond_4d = _cond_4d
@@ -551,10 +1182,6 @@ class BayesianStatistics:
             time.perf_counter() - _t0,
             n_det,
         )
-
-        # Gray et al. (2020), arXiv:1908.06050, Eq. 9:
-        # Completeness function f(z, h) for weighting catalog vs completion terms
-        completeness = GladeCatalogCompleteness()
 
         self.h = h_value
 
@@ -714,9 +1341,10 @@ class BayesianStatistics:
         fieldnames = [
             "event_idx",
             "h",
-            "f_i",
+            "w_G",
             "L_cat_no_bh",
             "L_cat_with_bh",
+            "B_num",
             "L_comp",
             "combined_no_bh",
             "combined_with_bh",
@@ -738,7 +1366,7 @@ class BayesianStatistics:
         galaxy_catalog: GalaxyCatalogueHandler,
         redshift_upper_limit: float,
         pool: mp.pool.Pool,
-        completeness: GladeCatalogCompleteness,
+        completeness: CompletenessModel,
         detection_probability_obj: SimulationDetectionProbability,
     ) -> None:
         count = 0
@@ -841,7 +1469,7 @@ class BayesianStatistics:
         possible_host_galaxies_with_bh_mass: list[HostGalaxy],
         detection_index: int,
         pool: mp.pool.Pool,
-        completeness: GladeCatalogCompleteness,
+        completeness: CompletenessModel,
         detection_probability_obj: SimulationDetectionProbability,
     ) -> tuple[float, float]:
         # start parallel computation
@@ -876,6 +1504,8 @@ class BayesianStatistics:
                     detection_index,
                     self.h,
                     True,
+                    self._normalization_mode,
+                    self._base_seed,
                 )
                 for host in possible_host_galaxies_with_bh_mass
             ],
@@ -895,6 +1525,8 @@ class BayesianStatistics:
                     detection_index,
                     self.h,
                     False,
+                    self._normalization_mode,
+                    self._base_seed,
                 )
                 for host in possible_host_galaxies_reduced
             ],
@@ -923,57 +1555,123 @@ class BayesianStatistics:
             additional_likelihoods
         )
 
-        # --- Catalog term (L_cat): existing galaxy-sum likelihood ---
-        # Gray et al. (2020), arXiv:1908.06050, Eqs. 24-25
+        # --- In-catalogue weighted sums (Gray et al. 2020, Eqs. 24-25, A.9/A.10) ---
+        # Per-MBH EMRI-rate weight w(g) = R_eff_per_mbh(M_g)/(1+z_g), IDENTICAL to
+        # the simulation host draw (draw_rate_weighted_hosts): P(g) ∝ w(g). host.M is
+        # the SOURCE-FRAME catalog BH mass (the detector-frame lift M_z = M·(1+z)
+        # lives only inside single_host_likelihood, never on host.M). The overall
+        # normalization (including emri_rate.C_NORM) cancels in every ratio below.
+        # all_results_without_bh is ordered reduced + with_bh, so its weights MUST
+        # follow the SAME host order. Babak et al. (2017), arXiv:1703.09722 (rate).
         if len(results_without_blackhole_mass) == 0 and len(results_with_bh_mass) == 0:
             _LOGGER.warning(f"Detection {detection_index}: no catalog results found")
-            L_cat_without_bh_mass = 0.0
-            L_cat_with_bh_mass = 0.0
+            weights_with_bh: list[float] = []
+            weights_without_bh: list[float] = []
+            all_results_without_bh: list[Any] = []
         else:
-            # Eq. (A.9/A.10) in Gray et al. (2020), arXiv:1908.06050: the
-            # in-catalogue likelihood is a RATIO OF SUMS over catalog galaxies
-            # (single shared selection denominator Sum_g D_g), NOT a mean of
-            # per-galaxy self-normalized ratios (1/N) Sum_g (N_g/D_g).  The
-            # latter gives each galaxy its own selection normalization rather
-            # than one population-level beta(H0).
+            weights_with_bh = [_rate_weight(host) for host in possible_host_galaxies_with_bh_mass]
+            weights_without_bh = [
+                _rate_weight(host) for host in possible_host_galaxies_reduced
+            ] + weights_with_bh
             all_results_without_bh = list(results_without_blackhole_mass) + list(
                 results_with_bh_mass
             )
-            num_sum_without_bh = float(sum(r[0] for r in all_results_without_bh))
-            den_sum_without_bh = float(sum(r[1] for r in all_results_without_bh))
-            L_cat_without_bh_mass = (
-                num_sum_without_bh / den_sum_without_bh if den_sum_without_bh > 0 else 0.0
-            )
 
+        # --- Per-event likelihood: Gray et al. (2020), arXiv:1908.06050, Eq. 9 + 29 ---
+        # Single selection-normalized ratio
+        #     p_i = (beta_G(h) * L_cat + B_num(h)) / D(h)
+        # equivalently w_G*L_cat + (1-w_G)*L_comp with the EXACT event-INDEPENDENT
+        # selection weight w_G = beta_G/D(h) = beta_G/(beta_G+beta_Gbar) (Eq. 29),
+        # which REPLACES the old scalar mixing weight completeness(z_det). The
+        # incompleteness (1-f(z)) lives INSIDE the completion numerator B_num and
+        # denominator beta_Gbar; there is NO scalar (1-f_i) prefactor (keeping one on
+        # top of the inside-(1-f) would compute (1-f)^2 and double-count).
+        if self.catalog_only:
+            # Pure-catalog cross-check (validation mode): the per-event in-catalogue
+            # likelihood is the self-normalized LOCAL ratio of sums, no completion.
+            # Unchanged from the convex-mix era (f_i=1, L_comp=0 => p_i = L_cat), so
+            # this mode stays byte-identical.
+            L_cat_without_bh_mass = weighted_ratio_of_sums(
+                [r[0] for r in all_results_without_bh],
+                [r[1] for r in all_results_without_bh],
+                weights_without_bh,
+            )
             if len(results_with_bh_mass) > 0:
-                # Eq. (A.9/A.10) in Gray et al. (2020), arXiv:1908.06050: ratio
-                # of sums (single shared selection denominator), not a mean of
-                # per-galaxy self-normalized ratios.
-                num_sum_with_bh = float(sum(r[2] for r in results_with_bh_mass))
-                den_sum_with_bh = float(sum(r[3] for r in results_with_bh_mass))
-                L_cat_with_bh_mass = (
-                    num_sum_with_bh / den_sum_with_bh if den_sum_with_bh > 0 else 0.0
+                L_cat_with_bh_mass = weighted_ratio_of_sums(
+                    [r[2] for r in results_with_bh_mass],
+                    [r[3] for r in results_with_bh_mass],
+                    weights_with_bh,
                 )
             else:
                 L_cat_with_bh_mass = 0.0
-
-        # --- Completion term: Gray et al. (2020), arXiv:1908.06050, Eqs. 31-32 ---
-        # When catalog_only=True, skip the completion integral entirely:
-        # set f_i=1.0 (pure catalog), L_comp=0.0
-        if self.catalog_only:
-            f_i = 1.0
+            combined_without_bh_mass = float(L_cat_without_bh_mass)
+            combined_with_bh_mass = float(L_cat_with_bh_mass)
+            w_G = 1.0
+            B_num = 0.0
             L_comp = 0.0
         else:
-            # L_comp = integral[p_GW * P_det * dVc/dz dz] / integral[P_det * dVc/dz dz]
-            # Uses "without BH mass" 3D Gaussian for both variants
-            # (uncataloged host has no galaxy mass information)
+            D_h: float = self._D_h_table.get(self.h, 0.0)
+            beta_G: float = self._beta_G_table.get(self.h, 0.0)
+            beta_Gbar: float = self._beta_Gbar_table.get(self.h, 0.0)
+            global_denom_no_bh: float = self._global_cat_denom_no_bh.get(self.h, 0.0)
+            global_denom_with_bh: float = self._global_cat_denom_with_bh.get(self.h, 0.0)
 
-            # Completeness at the detected redshift for the trial h
-            # Gray et al. (2020), arXiv:1908.06050, Eq. 9: f_i evaluated at z(d_L_det, h)
-            z_det = dist_to_redshift(self.detection.d_L, h=self.h)
-            f_i = float(completeness.get_completeness_at_redshift(z_det, self.h))
+            # In-catalogue term L_cat. Two normalizations (commission de-rail study):
+            #   "global" (default): L_cat = (Σ_local w_g N_g) / (Σ_GLOBAL w_g D_g) -- the
+            #     partition-norm single ratio; the SELECTION denominator runs over the full
+            #     catalogue (Eq. 29, precompute_global_catalog_selection), making L_cat
+            #     scale-free so beta_G*L_cat reconstructs the in-catalogue numerator with the
+            #     per-galaxy<->per-volume n_gal factor cancelled (Option A). The commission
+            #     found this normalization pins the mode to the grid edge (report bug #2).
+            #   "local_ratio"/"volume_deconv": L_cat = (Σ_local w_g N_g)/(Σ_local w_g D_g) --
+            #     the Gray A.9/A.10 literal local self-normalized ratio-of-sums (numerator and
+            #     per-host selection denominator over the SAME candidate ball). This is the
+            #     de-rail fix (#2); "volume_deconv" additionally uses the volume-deconvolved
+            #     host-z prior inside N_g/D_g (#1, threaded via single_host_likelihood).
+            #   Gray et al. (2020), arXiv:1908.06050, Eqs. A.9 / A.10 / 29.
+            if self._normalization_mode in ("global", "volume_global"):
+                cat_num_sum_no_bh = weighted_sum(
+                    [r[0] for r in all_results_without_bh], weights_without_bh
+                )
+                L_cat_without_bh_mass = (
+                    cat_num_sum_no_bh / global_denom_no_bh if global_denom_no_bh > 0 else 0.0
+                )
+                if len(results_with_bh_mass) > 0:
+                    cat_num_sum_with_bh = weighted_sum(
+                        [r[2] for r in results_with_bh_mass], weights_with_bh
+                    )
+                    L_cat_with_bh_mass = (
+                        cat_num_sum_with_bh / global_denom_with_bh
+                        if global_denom_with_bh > 0
+                        else 0.0
+                    )
+                else:
+                    L_cat_with_bh_mass = 0.0
+            else:
+                # local self-normalized ratio-of-sums (Gray A.9/A.10) -- de-rail fix #2/#1
+                L_cat_without_bh_mass = weighted_ratio_of_sums(
+                    [r[0] for r in all_results_without_bh],
+                    [r[1] for r in all_results_without_bh],
+                    weights_without_bh,
+                )
+                if len(results_with_bh_mass) > 0:
+                    L_cat_with_bh_mass = weighted_ratio_of_sums(
+                        [r[2] for r in results_with_bh_mass],
+                        [r[3] for r in results_with_bh_mass],
+                        weights_with_bh,
+                    )
+                else:
+                    L_cat_with_bh_mass = 0.0
 
-            # Integration limits: same 4-sigma range as catalog term numerator
+            # B_num(h) = INTEGRAL (1-f(z)) p_GW(z) (1/(1+z)) dVc/dz dz : the completion
+            # numerator with the incompleteness weight (1-f(z)). Gray et al. (2020),
+            # arXiv:1908.06050, Eq. 32 -- GW likelihood × population prior ONLY; the
+            # (1-f) is the smooth-completeness form of the catalog-edge lower limit
+            # and is EXACTLY the dark population the generator draws
+            # (dark_siren_injection._draw_dark_redshifts). f(z) is evaluated on the
+            # quadrature grid (NOT at z_det); p_det stays solely in the denominator
+            # D(h) (Mandel-Farr-Gair 2019, arXiv:1809.02063). 1/(1+z) matches D(h),
+            # beta_Gbar, and the event sampler (emri_rate.p_pop_unnormalized).
             integration_limit_sigma_multiplier = 4.0
             z_upper = dist_to_redshift(
                 self.detection.d_L
@@ -988,15 +1686,28 @@ class BayesianStatistics:
             z_lower = max(z_lower, 1e-6)  # avoid z=0 singularity in volume element
 
             FIXED_QUAD_N = 50
-
-            # Completion term numerator integrand
-            # Gray et al. (2020), arXiv:1908.06050, Eq. 31:
-            #   p_GW(x|z, Omega_det, h) * P_det(d_L(z,h)) * dVc/dz
             _comp_slot = self._det_index_to_slot[detection_index]
             _comp_mean_3d = self._means_3d[_comp_slot]
             _comp_cov_inv_3d = self._cov_inv_3d[_comp_slot]
-            _comp_log_norm_3d = float(self._log_norm_3d[_comp_slot])
             _comp_det_d_L = self._det_d_L[_comp_slot]
+            # [PHYSICS] De-rail fix (2026-07-01): the completion numerator marginalises
+            # the GW likelihood over the UNKNOWN dark-host sky direction with the
+            # isotropic prior 1/(4π) — NOT the peak sky density. The isotropic
+            # sky-marginal of the 3D GW Gaussian is a 1D Gaussian in d_L_fraction with
+            # variance Σ[2,2] (Σ = cov = inv(cov_inv)) and mean mean_3d[2] (=1). This
+            # makes B_num's sky treatment consistent with the completion denominator
+            # D(h) = ∫ (1/Npix) Σ_k p_det(Ω_k) · dVc/(1+z) dz (sky-averaged p_det).
+            # Eq. (32) in Gray et al. (2020), arXiv:1908.06050.
+            _comp_cov_3d = np.linalg.inv(_comp_cov_inv_3d)
+            _comp_sigma_dLfrac = float(np.sqrt(_comp_cov_3d[2, 2]))
+            _comp_mean_dLfrac = float(_comp_mean_3d[2])
+            # Change 5.3: the completion numerator weights the incompleteness at the
+            # EVENT's sky pixel, (1 - f_{k(Omega_e)}(z)). p_GW delta-collapses the sky
+            # integral, so f is evaluated at the single pixel containing the detection
+            # direction (ecliptic phi/theta). Gray-Messenger-Veitch 2022,
+            # arXiv:2111.04629, Eq. (5) (out-of-catalog branch). Computed once per
+            # event; Omega-independent completeness gives the identical Task-A B_num.
+            _event_pixel = completeness.ang2pix(self.detection.phi, self.detection.theta)
 
             def completion_numerator_integrand(
                 z: npt.NDArray[np.float64],
@@ -1005,41 +1716,44 @@ class BayesianStatistics:
                     dist_vectorized(z, h=self.h), dtype=np.float64
                 )  # Gpc
                 d_L_fraction = d_L / _comp_det_d_L  # dimensionless
-                phi = np.full_like(z, self.detection.phi)
-                theta = np.full_like(z, self.detection.theta)
-
-                p_gw: npt.NDArray[np.float64] = _mvn_pdf(
-                    np.vstack([phi, theta, d_L_fraction]).T,
-                    _comp_mean_3d,
-                    _comp_cov_inv_3d,
-                    _comp_log_norm_3d,
-                )
-                # Gray et al. (2020), arXiv:1908.06050, Eq. A.19: shared p_det
-                # function for L_comp numerator and D(h) denominator (STAT-03
-                # symmetry, commit a70d1a2).  Phase 44: NN-fill below first bin
-                # (real injection statistic), zero above injection horizon.
-                p_det = detection_probability_obj.detection_probability_without_bh_mass_interpolated_zero_fill(
-                    d_L, phi, theta, h=self.h
+                # [PHYSICS] isotropic-sky-marginalised GW likelihood (see the precompute
+                # above): (sin θ_det/4π) · N(d_L_fraction; 1, σ_marg). Replaces the peak
+                # sky density _mvn_pdf([φ_det, θ_det, d_L_fraction], …), which over-counted
+                # the completion term by ~4π·(peak sky density) (~5000× at σ_sky≈2°) and
+                # pinned the H0 posterior to the grid edge.
+                # The sin(θ_det) is the solid-angle Jacobian: the Fisher Gaussian is a
+                # density in the bare coordinates (φ_S, q_S), so its isotropic marginal
+                # over dΩ = sinθ dθ dφ picks up sinθ at the (narrow) beam position.
+                # Eq. (32) in Gray et al. (2020), arXiv:1908.06050; derivation:
+                # docs/derivations/G2a_completion_sky_marginal_4pi.md Eq. (10).
+                p_gw: npt.NDArray[np.float64] = (
+                    norm.pdf(d_L_fraction, loc=_comp_mean_dLfrac, scale=_comp_sigma_dLfrac)
+                    * np.sin(self.detection.theta)
+                    / (4.0 * np.pi)
                 )
                 dVc: npt.NDArray[np.float64] = np.atleast_1d(
                     np.asarray(comoving_volume_element(z, h=self.h), dtype=np.float64)
                 )
+                # Eq. (32) in Gray et al. (2020), arXiv:1908.06050, with the per-pixel
+                # incompleteness weight (1-f_{k(Omega_e)}(z)): GW likelihood × (1-f_k)
+                # population prior, f_k evaluated at the EVENT pixel (Change 5.3,
+                # Gray-Messenger-Veitch 2022 Eq. 5). f_k is the SAME completeness call
+                # the generator uses (dark_siren_injection W_k sampler, restricted to
+                # this pixel up to p_pop->p_GW), so B_num integrates exactly the
+                # injected dark density at the event direction.
+                f_z: npt.NDArray[np.float64] = np.clip(
+                    np.asarray(
+                        completeness.f_k(z, _event_pixel, self.h),
+                        dtype=np.float64,
+                    ),
+                    0.0,
+                    1.0,
+                )
+                return (1.0 - f_z) * p_gw * dVc / (1.0 + z)
 
-                return p_gw * p_det * dVc
-
-            comp_numerator: float = fixed_quad(
-                completion_numerator_integrand, z_lower, z_upper, n=FIXED_QUAD_N
-            )[0]
-
-            # Gray et al. (2020), arXiv:1908.06050, Eq. 31:
-            # D(h) = ∫ p_det · dV_c/dz dz normalizes p_galaxy ∝ p_det · dV_c
-            # to a probability density, making L_comp = num/D the per-event
-            # likelihood CONDITIONAL on detection (not an outer selection
-            # correction).  Tier 3 audit (2026-05-04) confirmed that combining
-            # this with combine_log_space's old −N log D outer subtraction
-            # double-counted D and biased MAP by +0.020 to +0.025; outer
-            # subtraction is now disabled in posterior_combination.combine_log_space.
-            comp_denominator: float = self._D_h_table.get(self.h, 0.0)
+            B_num = float(
+                fixed_quad(completion_numerator_integrand, z_lower, z_upper, n=FIXED_QUAD_N)[0]
+            )
 
             # Grid coverage flag: warn if numerator 4-sigma window exceeds P_det grid
             d_L_upper = self.detection.d_L + 4.0 * self.detection.d_L_uncertainty
@@ -1052,41 +1766,38 @@ class BayesianStatistics:
                     dl_max_grid,
                 )
 
-            if comp_denominator > 0:
-                L_comp = float(comp_numerator / comp_denominator)
-                # Diagnostic: N_i(h)/D(h) ratio should be < 1
-                if L_comp > 1.0:
-                    _LOGGER.warning(
-                        "Detection %d: N_i/D(h) = %.4e > 1.0 (unexpected)",
-                        detection_index,
-                        L_comp,
-                    )
+            # Single ratio p_i = (beta_G*L_cat + B_num)/D(h). w_G = beta_G/D(h) is the
+            # event-independent selection-weighted catalog membership probability
+            # (Eq. 29). Tier 3 audit (2026-05-04): the outer -N log D subtraction in
+            # combine_log_space stays disabled (D(h) normalizes here, per-event).
+            if D_h > 0:
+                w_G = beta_G / D_h
+                combined_without_bh_mass = float((beta_G * L_cat_without_bh_mass + B_num) / D_h)
+                combined_with_bh_mass = float((beta_G * L_cat_with_bh_mass + B_num) / D_h)
             else:
                 _LOGGER.warning(f"Detection {detection_index}: D(h) is zero, using L_cat only")
-                L_comp = 0.0
-                f_i = 1.0  # fall back to catalog-only
+                w_G = 1.0
+                combined_without_bh_mass = float(L_cat_without_bh_mass)
+                combined_with_bh_mass = float(L_cat_with_bh_mass)
+            # Diagnostic-only completion likelihood L_comp = B_num/beta_Gbar (the
+            # single ratio never divides by beta_Gbar, which -> 0 as f -> 1).
+            L_comp = float(B_num / beta_Gbar) if beta_Gbar > 0 else 0.0
 
         _LOGGER.debug(
-            f"Detection {detection_index}: f_i={f_i:.4f}, "
+            f"Detection {detection_index}: w_G={w_G:.4f}, "
             f"L_cat_no_bh={L_cat_without_bh_mass:.6e}, "
-            f"L_cat_with_bh={L_cat_with_bh_mass:.6e}, L_comp={L_comp:.6e}"
+            f"L_cat_with_bh={L_cat_with_bh_mass:.6e}, B_num={B_num:.6e}, L_comp={L_comp:.6e}"
         )
-
-        # --- Combination: Gray et al. (2020), arXiv:1908.06050, Eq. 9 ---
-        # p_i = f_i * L_cat + (1 - f_i) * L_comp
-        # L_comp uses "without BH mass" Gaussian for both variants
-        # (uncataloged host has no galaxy mass information)
-        combined_without_bh_mass = float(f_i * L_cat_without_bh_mass + (1 - f_i) * L_comp)
-        combined_with_bh_mass = float(f_i * L_cat_with_bh_mass + (1 - f_i) * L_comp)
 
         # Record diagnostic row for every event
         self._diagnostic_rows.append(
             {
                 "event_idx": detection_index,
                 "h": self.h,
-                "f_i": f_i,
+                "w_G": w_G,
                 "L_cat_no_bh": L_cat_without_bh_mass,
                 "L_cat_with_bh": L_cat_with_bh_mass,
+                "B_num": B_num,
                 "L_comp": L_comp,
                 "combined_no_bh": combined_without_bh_mass,
                 "combined_with_bh": combined_with_bh_mass,
@@ -1143,6 +1854,8 @@ def single_host_likelihood(
     detection_index: int,
     h: float,
     evaluate_with_bh_mass: bool,
+    normalization_mode: str = "volume_deconv",
+    base_seed: int = 0,
 ) -> list[float]:
     global redshift_upper_integration_limit
     global redshift_lower_integration_limit
@@ -1176,12 +1889,54 @@ def single_host_likelihood(
     denominator_integration_upper_redshift_limit = (
         host_z + integration_limit_sigma_multiplier * host_z_error
     )
-    denominator_integration_lower_redshift_limit = (
-        host_z - integration_limit_sigma_multiplier * host_z_error
+    # [PHYSICS] clamp to z >= 0: for low-z photo-z hosts (z_g < 4 sigma_z) the window
+    # would extend to unphysical z < 0 where comoving_volume_element still returns
+    # positive values, silently adding prior mass to Z_g / D_g (G2b derivation note,
+    # docs/derivations/G2b_host_z_volume_prior.md). Matches B_num's and D(h)'s z_min.
+    denominator_integration_lower_redshift_limit = max(
+        host_z - integration_limit_sigma_multiplier * host_z_error, 1e-6
     )
 
     # construct normal distribution for redshift and mass for host galaxy
     galaxy_redshift_normal_distribution = norm(loc=host_z, scale=host_z_error)
+
+    # [PHYSICS] De-rail fix #1 (commission, 2026-07-01): in-catalogue host-redshift prior.
+    # "global"/"local_ratio" use the BARE photo-z Gaussian N(z; z_g, sigma_z) (unchanged
+    # behaviour). "volume_deconv" DECONVOLVES the photo-z through the comoving-volume prior:
+    #     p_g(z) = N(z; z_g, sigma_z) * w_pop(z) / Z_g ,  w_pop(z) = dVc/dz * (1+z)^-1 ,
+    #     Z_g = INTEGRAL N(z; z_g, sigma_z) w_pop(z) dz  (per-galaxy renormalisation),
+    # so the in-catalogue numerator AND denominator share the SAME z-prior that the
+    # selection denominator D(h) = INTEGRAL (1/Npix) sum_k p_det * dVc/(1+z) dz already
+    # carries. Removes the missing dd_L/dz-Jacobian Jensen bias (commission report bug #1).
+    # Gray et al. (2020), arXiv:1908.06050, Eqs. A.10 / 33.
+    # "volume_global" (diagnostic, G3 ablation cube) uses the SAME volume kernel
+    # with the legacy global denominator selected in p_Di.
+    _use_volume_deconv = normalization_mode in ("volume_deconv", "volume_global")
+    _z_prior_norm = 1.0
+    if _use_volume_deconv:
+
+        def _z_prior_unnorm(z: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
+            w_pop = np.asarray(comoving_volume_element(z, h=h), dtype=np.float64) / (1.0 + z)
+            base = np.asarray(galaxy_redshift_normal_distribution.pdf(z), dtype=np.float64)
+            return base * w_pop
+
+        _z_prior_norm = float(
+            fixed_quad(
+                _z_prior_unnorm,
+                denominator_integration_lower_redshift_limit,
+                denominator_integration_upper_redshift_limit,
+                n=FIXED_QUAD_N,
+            )[0]
+        )
+        if _z_prior_norm <= 0.0:
+            _z_prior_norm = 1.0
+
+    def galaxy_redshift_prior_pdf(z: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
+        base = np.asarray(galaxy_redshift_normal_distribution.pdf(z), dtype=np.float64)
+        if _use_volume_deconv:
+            w_pop = np.asarray(comoving_volume_element(z, h=h), dtype=np.float64) / (1.0 + z)
+            return base * w_pop / _z_prior_norm
+        return base
 
     # Sky localization weight (phi, theta) is inside the GW likelihood Gaussian.
     # Verified correct by Phase 14 derivation (Sec. 2.7): the 3D/4D GW Gaussian
@@ -1204,7 +1959,7 @@ def single_host_likelihood(
             _mean_3d,
             _cov_inv_3d,
             _log_norm_3d,
-        ) * galaxy_redshift_normal_distribution.pdf(z)
+        ) * galaxy_redshift_prior_pdf(z)
 
     def denominator_integrant_without_bh_mass(z: npt.NDArray[np.float64]) -> Any:
         d_L = dist_vectorized(z, h=h)
@@ -1217,7 +1972,7 @@ def single_host_likelihood(
         p_det = detection_probability.detection_probability_without_bh_mass_interpolated_zero_fill(
             d_L, phi, theta, h=h
         )
-        return p_det * galaxy_redshift_normal_distribution.pdf(z)
+        return p_det * galaxy_redshift_prior_pdf(z)
 
     (
         single_host_likelihood_numerator_without_bh_mass,
@@ -1294,7 +2049,19 @@ def single_host_likelihood(
         )
 
     if evaluate_with_bh_mass:
-        galaxy_mass_normal_distribution = norm(loc=host_M, scale=host_M_error)
+        # [PHYSICS] G2d Eddington-in-M: in the calibrated kernels the host-mass
+        # prior is the rate-weighted N(M; M_g, sigma_M) R_eff(M) / Z_M, which under
+        # a locally log-linear R_eff is EXACTLY the shifted Gaussian
+        # N(M; M_g (1 + alpha sigma_rel^2), sigma_M). Applied identically in the
+        # numerator (mu_gal_frac) and the denominator sampler (proposal = prior,
+        # so the importance weights stay p_det) — "counted exactly once" in M.
+        # Empirical impact at GLADE sigma_M: 2D-channel mean shifts -0.020 in h
+        # (.planning/gate/G7row9_eddington_m_impact.json). Derivation + residual
+        # control: docs/derivations/G2d_host_mass_rate_prior.md.
+        _host_M_eff = (
+            eddington_shifted_host_mass(host_M, host_M_error) if _use_volume_deconv else host_M
+        )
+        galaxy_mass_normal_distribution = norm(loc=_host_M_eff, scale=host_M_error)
 
         # Pre-computed conditional distribution parameters for analytic M_z marginalization
         # Eqs. (14.23)-(14.28) in derivations/dark_siren_likelihood.md
@@ -1331,7 +2098,8 @@ def single_host_likelihood(
             # Galaxy mass in M_z_frac coordinates: M_z_frac = M_gal * (1+z) / M_z_det
             # Eq. (14.22) in derivations/dark_siren_likelihood.md
             # NOTE: (1+z) here is CORRECT -- it is the coordinate transform, not a Jacobian
-            mu_gal_frac = host_M * (1 + z) / _det_M
+            # _host_M_eff carries the G2d Eddington-in-M rate-prior shift (see above).
+            mu_gal_frac = _host_M_eff * (1 + z) / _det_M
             sigma_gal_frac = host_M_error * (1 + z) / _det_M
 
             # Analytic Gaussian product integral:
@@ -1347,7 +2115,7 @@ def single_host_likelihood(
             # galaxy z-prior; p_det removed from the numerator (denominator-only).
             # Eq. (14.32) in derivations/dark_siren_likelihood.md
             # No /(1+z) factor: Jacobian absorbed by Gaussian rescaling (Eq. 14.21)
-            return gw_3d * mz_integral * galaxy_redshift_normal_distribution.pdf(z)
+            return gw_3d * mz_integral * galaxy_redshift_prior_pdf(z)
 
         single_host_likelihood_numerator_with_bh_mass = fixed_quad(
             numerator_integrant_with_bh_mass,
@@ -1371,11 +2139,7 @@ def single_host_likelihood(
             p_det = detection_probability.detection_probability_with_bh_mass_interpolated(
                 d_L, M_z, phi, theta, h=h
             )
-            return (
-                p_det
-                * galaxy_redshift_normal_distribution.pdf(z)
-                * galaxy_mass_normal_distribution.pdf(M)
-            )
+            return p_det * galaxy_redshift_prior_pdf(z) * galaxy_mass_normal_distribution.pdf(M)
 
         # MC importance sampling for 2D denominator integral over (z, M).
         # Proposal distribution: q(z, M) = p_gal(z) * p_gal(M).
@@ -1383,9 +2147,24 @@ def single_host_likelihood(
         # Relative MC error ~ std(p_det) / (sqrt(N) * mean(p_det)) ~ 1% for N=10000.
         # Numerator uses fixed_quad (1D over z, mass analytically marginalized) --
         # the quadrature-vs-MC asymmetry is a numerical choice, not a physics error.
+        # G4 gate: DETERMINISTIC importance sampling. The stream is derived from
+        # (base_seed, detection_index, host_z, host_M), so identical inputs give
+        # identical likelihoods regardless of worker scheduling, and --seed
+        # reaches the inference layer (previously unseeded: ~1% MC noise made
+        # posteriors non-reproducible run-to-run).
+        _mc_rng = np.random.default_rng(
+            np.random.SeedSequence(
+                entropy=int(base_seed) & 0xFFFFFFFF,
+                spawn_key=(
+                    int(detection_index) & 0xFFFFFFFF,
+                    int(abs(host_z) * 1e8) & 0xFFFFFFFF,
+                    int(abs(host_M)) & 0xFFFFFFFF,
+                ),
+            )
+        )
         N_SAMPLES = 10_000
-        z_samples = galaxy_redshift_normal_distribution.rvs(size=N_SAMPLES)
-        M_samples = galaxy_mass_normal_distribution.rvs(size=N_SAMPLES)
+        z_samples = galaxy_redshift_normal_distribution.rvs(size=N_SAMPLES, random_state=_mc_rng)
+        M_samples = galaxy_mass_normal_distribution.rvs(size=N_SAMPLES, random_state=_mc_rng)
 
         numerator_integrant_from_samples = denominator_integrant_with_bh_mass_vectorized(
             M_samples, z_samples

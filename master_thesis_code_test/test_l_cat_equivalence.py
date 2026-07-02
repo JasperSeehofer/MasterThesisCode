@@ -101,16 +101,20 @@ def test_lcat_ratio_of_sums_is_canonical() -> None:
 def test_production_uses_ratio_of_sums() -> None:
     """Regression guard: the production L_cat aggregation must be ratio-of-sums.
 
-    Verifies the source computes ``sum(r[0]) / sum(r[1])`` (Gray A.9/A.10) and
-    NOT ``np.mean([r[0]/r[1] ...])`` (the superseded Phase-38 mean-of-ratios).
+    Verifies the source computes a (rate-WEIGHTED, CHANGE 3) ratio of sums
+    ``(Σ w·N) / (Σ w·D)`` via the ``weighted_ratio_of_sums`` helper (Gray
+    A.9/A.10) and NOT ``np.mean([r[0]/r[1] ...])`` (the superseded Phase-38
+    mean-of-ratios). The constant-weight limit of ``weighted_ratio_of_sums``
+    reproduces the plain ``sum(r[0]) / sum(r[1])`` form (pinned independently in
+    test_rate_weighted_catalog.py::test_wros_constant_weight_limit_equals_plain_ratio).
     """
     import inspect
 
     from master_thesis_code.bayesian_inference import bayesian_statistics
 
     src = inspect.getsource(bayesian_statistics.BayesianStatistics.p_Di)
-    assert "num_sum_without_bh" in src and "den_sum_without_bh" in src, (
-        "L_cat aggregation should use ratio-of-sums (num_sum/den_sum), Gray Eq. A.9/A.10"
+    assert "weighted_ratio_of_sums" in src, (
+        "L_cat aggregation should use the (weighted) ratio-of-sums helper, Gray Eq. A.9/A.10"
     )
     assert "np.mean(ratios_without_bh)" not in src, (
         "L_cat must not use the superseded mean-of-ratios form"

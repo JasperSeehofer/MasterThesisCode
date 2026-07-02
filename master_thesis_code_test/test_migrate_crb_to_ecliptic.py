@@ -81,7 +81,7 @@ def _make_synthetic_csv(tmp_path: Path, n: int = 5) -> tuple[Path, pd.DataFrame]
 
 def test_angles_match_reference_transform(tmp_path: Path) -> None:
     path, original = _make_synthetic_csv(tmp_path)
-    migrate_csv(path)
+    migrate_csv(path, mode="rotate")
 
     migrated = pd.read_csv(path)
     phi_ref, q_ref = _reference_transform(
@@ -95,7 +95,7 @@ def test_angles_match_reference_transform(tmp_path: Path) -> None:
 
 def test_coord_frame_column_added(tmp_path: Path) -> None:
     path, _ = _make_synthetic_csv(tmp_path)
-    migrate_csv(path)
+    migrate_csv(path, mode="rotate")
 
     df = pd.read_csv(path)
     assert "_coord_frame" in df.columns
@@ -104,7 +104,7 @@ def test_coord_frame_column_added(tmp_path: Path) -> None:
 
 def test_cov_frame_column_added(tmp_path: Path) -> None:
     path, _ = _make_synthetic_csv(tmp_path)
-    migrate_csv(path)
+    migrate_csv(path, mode="rotate")
 
     df = pd.read_csv(path)
     assert "_cov_frame" in df.columns
@@ -113,7 +113,7 @@ def test_cov_frame_column_added(tmp_path: Path) -> None:
 
 def test_other_columns_unchanged(tmp_path: Path) -> None:
     path, original = _make_synthetic_csv(tmp_path)
-    migrate_csv(path)
+    migrate_csv(path, mode="rotate")
 
     migrated = pd.read_csv(path)
     # Exclude sky angles (rotated), Fisher columns (rotated), and frame tags (added)
@@ -144,7 +144,7 @@ def test_covariance_block_rotated(tmp_path: Path) -> None:
     phi_eq = original["phiS"].values.astype(np.float64)
     J_all = _compute_ecliptic_jacobian(q_eq, phi_eq)
 
-    migrate_csv(path)
+    migrate_csv(path, mode="rotate")
     migrated = pd.read_csv(path)
 
     qs_i = _PARAM_SYMBOLS.index("qS")
@@ -178,7 +178,7 @@ def test_covariance_block_rotated(tmp_path: Path) -> None:
 def test_covariance_non_sky_diagonal_unchanged(tmp_path: Path) -> None:
     """Non-sky diagonal CRB entries must not change under sky-angle rotation."""
     path, original = _make_synthetic_csv(tmp_path)
-    migrate_csv(path)
+    migrate_csv(path, mode="rotate")
     migrated = pd.read_csv(path)
 
     non_sky = [p for p in _PARAM_SYMBOLS if p not in ("qS", "phiS")]
@@ -198,7 +198,7 @@ def test_partial_migration_cov_only(tmp_path: Path) -> None:
     path, original = _make_synthetic_csv(tmp_path)
 
     # Simulate state 2: migrate positions but NOT covariance (old script behaviour)
-    backup = path.with_suffix(path.suffix + ".bak_equatorial")
+    backup = path.with_suffix(path.suffix + ".bak_premigration")
     import shutil
 
     shutil.copy2(path, backup)  # backup holds original equatorial positions
@@ -213,7 +213,7 @@ def test_partial_migration_cov_only(tmp_path: Path) -> None:
     df["_coord_frame"] = "ecliptic_BarycentricTrue_J2000"
     df.to_csv(path, index=False)
 
-    result = migrate_csv(path)
+    result = migrate_csv(path, mode="rotate")
 
     assert result["status"] == "cov_rotated"
     migrated = pd.read_csv(path)
@@ -231,10 +231,10 @@ def test_partial_migration_cov_only(tmp_path: Path) -> None:
 
 def test_backup_written(tmp_path: Path) -> None:
     path, original = _make_synthetic_csv(tmp_path)
-    migrate_csv(path)
+    migrate_csv(path, mode="rotate")
 
-    backup = path.with_suffix(path.suffix + ".bak_equatorial")
-    assert backup.exists(), "*.bak_equatorial backup should be created"
+    backup = path.with_suffix(path.suffix + ".bak_premigration")
+    assert backup.exists(), "*.bak_premigration backup should be created"
 
     backup_df = pd.read_csv(backup)
     pd.testing.assert_frame_equal(
@@ -247,9 +247,9 @@ def test_backup_written(tmp_path: Path) -> None:
 
 def test_idempotency_guard_skips_fully_migrated(tmp_path: Path) -> None:
     path, _ = _make_synthetic_csv(tmp_path)
-    migrate_csv(path)
+    migrate_csv(path, mode="rotate")
 
-    result = migrate_csv(path)
+    result = migrate_csv(path, mode="rotate")
     assert result["status"] == "skipped"
 
 
@@ -257,7 +257,54 @@ def test_dry_run_does_not_modify(tmp_path: Path) -> None:
     path, original = _make_synthetic_csv(tmp_path)
     original_bytes = path.read_bytes()
 
-    migrate_csv(path, dry_run=True)
+    migrate_csv(path, dry_run=True, mode="rotate")
 
     assert path.read_bytes() == original_bytes, "dry-run must not modify the file"
-    assert not path.with_suffix(path.suffix + ".bak_equatorial").exists()
+    assert not path.with_suffix(path.suffix + ".bak_premigration").exists()
+
+
+# ---------------------------------------------------------------------------
+# Frame-disambiguation safety net (refuse-by-default / --stamp-only)
+# ---------------------------------------------------------------------------
+
+
+def test_refuse_unmarked_by_default(tmp_path: Path) -> None:
+    """Default mode must REFUSE unmarked data (frame ambiguous) — never auto-rotate."""
+    import pytest
+
+    path, _ = _make_synthetic_csv(tmp_path)
+    with pytest.raises(ValueError, match="AMBIGUOUS"):
+        migrate_csv(path)  # mode defaults to "refuse"
+    # File untouched, no backup created.
+    assert "_coord_frame" not in pd.read_csv(path).columns
+    assert not path.with_suffix(path.suffix + ".bak_premigration").exists()
+
+
+def test_stamp_only_adds_markers_without_rotating(tmp_path: Path) -> None:
+    """--stamp-only marks ecliptic-native data WITHOUT touching positions/covariance."""
+    path, original = _make_synthetic_csv(tmp_path)
+
+    result = migrate_csv(path, mode="stamp")
+    assert result["status"] == "stamped"
+
+    stamped = pd.read_csv(path)
+    assert (stamped["_coord_frame"] == "ecliptic_BarycentricTrue_J2000").all()
+    assert (stamped["_cov_frame"] == "ecliptic_BarycentricTrue_J2000").all()
+    # Positions are unchanged (NO rotation — a rotation would shift by ~0.1 rad,
+    # far above the ~1e-16 CSV text round-trip noise).
+    np.testing.assert_allclose(stamped["phiS"].values, original["phiS"].values, atol=1e-12)
+    np.testing.assert_allclose(stamped["qS"].values, original["qS"].values, atol=1e-12)
+    # Covariance unchanged.
+    np.testing.assert_allclose(
+        stamped["delta_qS_delta_qS"].values, original["delta_qS_delta_qS"].values, atol=1e-12
+    )
+    # Stamp-only never writes a backup (the data was already correct).
+    assert not path.with_suffix(path.suffix + ".bak_premigration").exists()
+
+
+def test_stamp_only_skips_already_marked(tmp_path: Path) -> None:
+    """Stamping an already-marked file is an idempotent skip."""
+    path, _ = _make_synthetic_csv(tmp_path)
+    migrate_csv(path, mode="stamp")
+    result = migrate_csv(path, mode="stamp")
+    assert result["status"] == "skipped"

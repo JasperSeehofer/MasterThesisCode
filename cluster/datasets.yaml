@@ -1,0 +1,90 @@
+# cluster/datasets.yaml — semantic registry of the pipeline's datasets.
+#
+# WHY: the pipeline has three data stages that must stay aligned. This file is
+# the human/agent-readable MAP of "which run produced what, where it lives, and
+# whether it still matches the current code". Ground truth (files on disk) comes
+# from `cluster/preflight.sh`; this file adds the SEMANTICS preflight can't infer
+# (which pool feeds which p_det, which CRB feeds which posterior, retirement).
+#
+# Pipeline stages / provenance chain:
+#   injection pool  --(P_det survival function)-->  \
+#   GPU simulation  --(Cramer-Rao bounds CSV)----->  }--> Bayesian inference --> posteriors (H0)
+#   GLADE catalog   --(host cross-match)---------->  /
+#
+# ALIGNMENT RULE: a dataset is "aligned" with the current code only if the
+# git_commit that produced it (run_metadata.json) is an ancestor of, or equal to,
+# the commit you are evaluating with — AND no Pipeline-Change trigger file changed
+# since (see DATA_INVENTORY.md "Pipeline Change Checklist"). When in doubt, re-run.
+# To check a run's commit:  grep git_commit <run_dir>/run_metadata*.json
+#
+# Keep this file short and factual (no H0 verdicts). Full history + retirement
+# rationale live in DATA_INVENTORY.md. Update when a new campaign lands.
+
+meta:
+  workspace: /pfs/work9/workspace/scratch/st_ac147838-emri   # ws_find emri
+  dev_box_repo: /home/jasper/Repositories/MasterThesisCode
+  commission_base: {tag: commission-base, commit: b593f02, branch: physics/photoz-joint-normalisation}
+  expected_catalog_cols: 8            # reduced_galaxy_catalogue.csv (redshift-flag retained, 479afdd+)
+  retirement_banner: "DATA_INVENTORY.md — all pre-2026-06-20 (pre mass-convention + L_cat fixes) CRBs/injections/posteriors are RETIRED"
+  updated: 2026-07-01
+
+# --- STAGE 1: injection pools (feed the P_det detection-probability estimator) ---
+# p_det is h-invariant (detection-horizon survival), so a single-h pool suffices;
+# multi-h pools just add pooled samples. See project memory / submit_injection.sh.
+injections:
+  - id: seed43000_Mz
+    path: "$WS/injection_20260620-213449_seed43000/simulations/injections"
+    files: 560
+    mass_convention: M_z            # detector-frame, post mass-convention fix
+    note: "current M_z pool (~504k events, 7 h-nodes 0.60-0.90); h-invariant p_det"
+    status: post-massfix
+  - id: seed700
+    path: "$WS/injection_20260628-184208_seed700/simulations/injections"
+    files: 80
+    status: post-massfix, partial/unverified
+  - id: seed43_legacy
+    path: "$WS/injection_20260331-204506_seed43/simulations/injections"
+    files: 519
+    mass_convention: source-frame   # pre-fix
+    status: RETIRED (source-frame; was the old symlinked default)
+
+# --- STAGE 2: Cramer-Rao bounds (from GPU EMRI simulation) -----------------------
+# cramer_rao_bounds.csv = raw merge; prepared_cramer_rao_bounds.csv = SNR-filtered.
+crbs:
+  - id: seed400_phase50
+    path: "$WS/run_20260516_seed400_phase50/simulations/{cramer_rao_bounds,prepared_cramer_rao_bounds}.csv"
+    status: pre-massfix (retired per banner; verify commit vs code before use)
+  - id: seed500_phase50
+    path: "$WS/run_20260620_seed500_phase50/simulations/..."
+    status: massfix-boundary (verify run_metadata git_commit)
+  - id: seed600
+    path: "$WS/run_20260628_seed600/simulations/..."
+    status: post-massfix (verify commit vs commission-base)
+  - id: seed600_local_devbox
+    path: "/tmp/seed600_local/simulations"      # DEV BOX, not cluster
+    note: "seed-600 CRBs + injection pool used by the bridge closure; NOT regenerable (GPU output)"
+    status: local-only
+
+# --- STAGE 3: posteriors (H0) from Bayesian inference ----------------------------
+# Each run_dir has posteriors/ (position-only, channel A) and
+# posteriors_with_bh_mass/ (position+mass, channel B), + combined_posterior.json.
+posteriors:
+  - id: seed400_phase50
+    path: "$WS/run_20260516_seed400_phase50/simulations/posteriors{,_with_bh_mass}"
+    grid_points: 83
+    combined: yes
+  - id: seed500_phase50
+    path: "$WS/run_20260620_seed500_phase50/simulations/posteriors{,_with_bh_mass}"
+    grid_points: 83
+    combined: yes
+  - id: seed600
+    path: "$WS/run_20260628_seed600/simulations/posteriors{,_with_bh_mass}"
+    grid_points: 38
+    combined: yes
+    note: "Evidence Locker 'seed-600 production run' referenced by the verification handoff (§B6)"
+
+# --- Not-yet-run / expected outputs of the current commission --------------------
+# The independent-verification commission (physics/photoz-joint-normalisation) works
+# mostly on SYNTHETIC mocks (CPU, repo-only, no catalog). Cluster is needed only for
+# (1) a true GPU EMRI simulation and (2) heavy parallel real-catalogue evals
+# (throttle to ~2-4 concurrent — each loads the ~1.6 GB catalog, ~3-5 GB RAM).

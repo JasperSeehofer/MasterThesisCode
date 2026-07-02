@@ -32,7 +32,7 @@ class TestCatalogOnlyFlag:
 
 
 class TestCatalogOnlyBypass:
-    """Test that catalog_only=True sets f_i=1.0 and L_comp=0.0 in p_Di."""
+    """Test that catalog_only=True sets w_G=1.0 and L_comp=0.0 in p_Di."""
 
     @pytest.fixture()
     def mock_bayesian_stats(self) -> "BayesianStatistics":
@@ -75,7 +75,7 @@ class TestCatalogOnlyBypass:
     def test_catalog_only_skips_completion_integral(
         self, mock_bayesian_stats: "BayesianStatistics"
     ) -> None:
-        """When catalog_only=True, f_i should be 1.0 and L_comp should be 0.0."""
+        """When catalog_only=True, w_G should be 1.0 and L_comp should be 0.0."""
         import multiprocessing as mp
 
         from master_thesis_code.bayesian_inference.bayesian_statistics import BayesianStatistics
@@ -94,26 +94,37 @@ class TestCatalogOnlyBypass:
         mock_completeness = MagicMock()
         mock_p_det = MagicMock()
 
+        # Host galaxies need numeric source-frame M and redshift z: p_Di now
+        # rate-weights the in-catalog term by w(g) = R_eff_per_mbh(M_g)/(1+z_g)
+        # (Change 3), so _rate_weight(host) reads host.M and host.z.
+        mock_host = MagicMock()
+        mock_host.M = 1e6
+        mock_host.z = 0.1
+        mock_host_with_bh = MagicMock()
+        mock_host_with_bh.M = 1e6
+        mock_host_with_bh.z = 0.1
+
         # Call p_Di through the class
         result = BayesianStatistics.p_Di(
             instance,
-            possible_host_galaxies=[MagicMock()],
-            possible_host_galaxies_with_bh_mass=[MagicMock()],
+            possible_host_galaxies=[mock_host],
+            possible_host_galaxies_with_bh_mass=[mock_host_with_bh],
             detection_index=0,
             pool=mock_pool,
             completeness=mock_completeness,
             detection_probability_obj=mock_p_det,
         )
 
-        # With catalog_only=True, f_i=1.0, so combined = 1.0 * L_cat + 0.0 * L_comp = L_cat
+        # With catalog_only=True, w_G=1.0, so combined = L_cat (no completion term).
         # The completion integral should NOT have been computed
-        # Verify completeness was never called (no f_i lookup needed)
+        # Verify completeness was never called (no f(z) lookup needed)
         mock_completeness.get_completeness_at_redshift.assert_not_called()
 
         # Check diagnostic row was recorded
         assert len(instance._diagnostic_rows) == 1
         row = instance._diagnostic_rows[0]
-        assert row["f_i"] == 1.0
+        assert row["w_G"] == 1.0
+        assert row["B_num"] == 0.0
         assert row["L_comp"] == 0.0
 
 
@@ -125,9 +136,10 @@ class TestDiagnosticCsv:
         expected_columns = {
             "event_idx",
             "h",
-            "f_i",
+            "w_G",
             "L_cat_no_bh",
             "L_cat_with_bh",
+            "B_num",
             "L_comp",
             "combined_no_bh",
             "combined_with_bh",
@@ -147,9 +159,10 @@ class TestDiagnosticCsv:
             {
                 "event_idx": 0,
                 "h": 0.73,
-                "f_i": 0.85,
+                "w_G": 0.85,
                 "L_cat_no_bh": 1.23e-5,
                 "L_cat_with_bh": 2.34e-5,
+                "B_num": 7.0e-6,
                 "L_comp": 3.45e-6,
                 "combined_no_bh": 1.1e-5,
                 "combined_with_bh": 2.1e-5,
@@ -157,9 +170,10 @@ class TestDiagnosticCsv:
             {
                 "event_idx": 1,
                 "h": 0.73,
-                "f_i": 1.0,
+                "w_G": 1.0,
                 "L_cat_no_bh": 4.56e-5,
                 "L_cat_with_bh": 5.67e-5,
+                "B_num": 0.0,
                 "L_comp": 0.0,
                 "combined_no_bh": 4.56e-5,
                 "combined_with_bh": 5.67e-5,
@@ -179,15 +193,16 @@ class TestDiagnosticCsv:
         assert set(rows[0].keys()) == {
             "event_idx",
             "h",
-            "f_i",
+            "w_G",
             "L_cat_no_bh",
             "L_cat_with_bh",
+            "B_num",
             "L_comp",
             "combined_no_bh",
             "combined_with_bh",
         }
         assert rows[0]["event_idx"] == "0"
-        assert rows[1]["f_i"] == "1.0"
+        assert rows[1]["w_G"] == "1.0"
 
     def test_write_diagnostic_csv_append_mode(self, tmp_path: "os.PathLike[str]") -> None:
         """Test that subsequent writes append without duplicating headers."""
@@ -201,9 +216,10 @@ class TestDiagnosticCsv:
             {
                 "event_idx": 0,
                 "h": 0.70,
-                "f_i": 0.9,
+                "w_G": 0.9,
                 "L_cat_no_bh": 1e-5,
                 "L_cat_with_bh": 2e-5,
+                "B_num": 3e-6,
                 "L_comp": 3e-6,
                 "combined_no_bh": 1e-5,
                 "combined_with_bh": 2e-5,
@@ -217,9 +233,10 @@ class TestDiagnosticCsv:
             {
                 "event_idx": 0,
                 "h": 0.73,
-                "f_i": 0.85,
+                "w_G": 0.85,
                 "L_cat_no_bh": 4e-5,
                 "L_cat_with_bh": 5e-5,
+                "B_num": 6e-6,
                 "L_comp": 6e-6,
                 "combined_no_bh": 4e-5,
                 "combined_with_bh": 5e-5,

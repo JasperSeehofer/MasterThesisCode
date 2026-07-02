@@ -13,6 +13,8 @@ import pandas as pd
 from astropy.coordinates import BarycentricTrueEcliptic, SkyCoord
 from sklearn.neighbors import BallTree
 
+from master_thesis_code.constants import HOST_DRAW_Z_MAX
+from master_thesis_code.emri_rate import R_eff_per_mbh
 from master_thesis_code.physical_relations import (
     dist,
     dist_to_redshift_error_proagation,
@@ -25,10 +27,18 @@ M_max = 10**6
 Z_draw = 1.5
 
 
+# Stellar-mass -> central-BH-mass relation. Reines & Volonteri (2015), ApJ 813, 82,
+# arXiv:1508.06274, Eq. (5) (broad-line AGN, M_BH-M_*,total):
+#   log10(M_BH/Msun) = (7.45 +/- 0.08) + (1.05 +/- 0.11) * log10(M_*/1e11 Msun)
+# Constants are stored in natural-log units of ln(M_BH) (hence the * ln(10) factors).
 alpha = 7.45 * np.log(10)
 beta = 1.05
 d_alpha = 0.08 * np.log(10)
 d_beta = 0.11
+# Intrinsic scatter epsilon_0 = 0.24 dex (Reines & Volonteri 2015, Sec. 4.1): the true rms of
+# log10(M_BH) at fixed M_* once the calibration's virial measurement error (0.50 dex) is removed.
+# This is the DOMINANT M_BH-prediction uncertainty; it was previously omitted from BH_mass_error.
+sigma_int = 0.24 * np.log(10)
 
 
 @dataclass
@@ -86,7 +96,27 @@ class HostGalaxy:
         z_error: float,
         M: float,
         M_error: float,
+        catalog_index: int | None = None,
     ) -> "HostGalaxy":
+        """Build a :class:`HostGalaxy` from explicit attribute values.
+
+        Args:
+            phiS: Ecliptic azimuthal sky angle (rad).
+            qS: Ecliptic polar sky angle (rad, in ``[0, pi]``).
+            z: Host redshift.
+            z_error: 1-sigma redshift uncertainty.
+            M: Source-frame MBH mass (solar masses).
+            M_error: 1-sigma MBH mass uncertainty (solar masses).
+            catalog_index: Catalog row index. Use ``-1`` to flag an
+                out-of-catalog (dark) host that was drawn from the
+                missing-galaxy population rather than read off a catalog row
+                (see :mod:`master_thesis_code.dark_siren_injection`). Defaults
+                to ``None`` (legacy behaviour for synthetic in-memory hosts).
+
+        Returns:
+            A :class:`HostGalaxy` whose :attr:`catalog_index` is set to
+            ``catalog_index``.
+        """
         parameters = pd.Series(
             {
                 InternalCatalogColumns.PHI_S: phiS,
@@ -97,6 +127,9 @@ class HostGalaxy:
                 InternalCatalogColumns.BH_MASS_ERROR: M_error,
             }
         )
+        # HostGalaxy.__init__ reads ``catalog_index`` from the Series name, so
+        # set the name to thread the requested index (e.g. -1 for a dark host).
+        parameters.name = catalog_index
         return HostGalaxy(parameters)
 
     def draw_z_and_mass_from_gaussian(self) -> None:
@@ -111,24 +144,75 @@ class HostGalaxy:
 
 
 class CatalogueColumns(Enum):
+    # NB: entries MUST stay in ascending column-value order (pandas read_csv applies
+    # `names` to the `usecols` columns in ascending file order in parse_to_reduced_catalog).
     RIGHT_ASCENSION = 8  # in deg
     DECLINATION = 9  # in deg
-    REDSHIFT = 27
+    # Change 5 (pixelated completeness): apparent B-band magnitude (GLADE+ raw
+    # 0-based col 10; NGC4736 = 8.8 verified). Feeds the per-HEALPix-pixel
+    # magnitude-threshold completeness estimator (Gray-Messenger-Veitch 2022,
+    # arXiv:2111.04629). MUST stay ascending-by-value (usecols/names alignment).
+    APPARENT_B_MAG = 10  # in mag (apparent B-band; null for ~25-39% of rows)
+    # CMB-frame redshift z_cmb (GLADE+ 0-based col 28). Previously col 27 (z_helio,
+    # heliocentric): feeding the heliocentric value into d_L(z; H0) left the solar-motion
+    # dipole (v_sun ~ 369.8 km/s) uncorrected in cz = H0*d_L — a coherent H0 systematic
+    # (per-event up to +/-2.47% at z~0.05; ~+0.15% net over the detected sample). z_cmb
+    # removes the solar dipole and, where GLADE+ flags it (col 29 == 1), is additionally
+    # peculiar-velocity corrected, with the PV-correction error in col 30 (added in
+    # quadrature below). Ref: Dálya et al. 2022, arXiv:2110.06184. See issue #15.
+    REDSHIFT = 28
     REDSHIFT_PECULIAR_VELOCITY_ERROR = 30
     REDSHIFT_MEASUREMENT_ERROR = 31
-    REDSHIFT_FLAG = 34  # flag whether redshift is measured or estimated from distance
+    REDSHIFT_FLAG = 34  # measurement flag: 0=none, 1=PHOTOMETRIC z, 2=lum. distance,
+    # 3=SPECTROSCOPIC z (Dálya et al. 2022, arXiv:2110.06184). NB flag 1 ≠ spectroscopic.
     STELLAR_MASS = 35  # in 10^10 solar masses
     STELLAR_MASS_ABSOULTE_ERROR = 36  # in 10^10 solar masses
 
 
-# IMPORTANT: needs to be in the correct order as above.
+# In-memory column keys for the loaded catalog. The sky columns use the
+# frame-NEUTRAL physics symbols PHI_S/THETA_S, NOT "RIGHT_ASCENSION"/"DECLINATION":
+# read_reduced_galaxy_catalog renames the raw equatorial RA/Dec columns to these,
+# and _rotate_equatorial_to_ecliptic (COORD-03) rotates them IN PLACE to ecliptic.
+# So after handler init these hold ecliptic φ (rad) and polar angle θ ∈ [0, π] (rad),
+# BarycentricTrueEcliptic(J2000). The remaining keys below are CatalogueColumns names.
+# See .planning/FRAME-AUDIT.md.
 class InternalCatalogColumns:
-    PHI_S = "RIGHT_ASCENSION"
-    THETA_S = "DECLINATION"
+    PHI_S = "PHI_S"  # sky azimuth φ: equatorial RA on read, ecliptic longitude after rotation
+    THETA_S = "THETA_S"  # sky polar angle θ ∈ [0, π]; ecliptic colatitude after rotation
+    B_MAG = "APPARENT_B_MAG"  # Change 5: apparent B-band magnitude (per-pixel m_th)
     REDSHIFT = "REDSHIFT"
     REDSHIFT_ERROR = "REDSHIFT_MEASUREMENT_ERROR"
     BH_MASS = "STELLAR_MASS"
     BH_MASS_ERROR = "STELLAR_MASS_ABSOULTE_ERROR"
+    # GLADE+ redshift measurement flag, RETAINED as the trailing reduced-catalog
+    # column (Dálya et al. 2022, arXiv:2110.06184): 1 = PHOTOMETRIC z (σ_z ≈ 0.035),
+    # 3 = SPECTROSCOPIC z (σ_z ≈ 0.0017). Only {1, 3} survive the parse filter.
+    # Used to split single-event H0 posteriors by host redshift provenance (paper
+    # figure F4: photo-z hosts give flat/railing posteriors, spec-z hosts inform).
+    REDSHIFT_FLAG = "REDSHIFT_FLAG"
+
+
+def _reduced_catalog_column_names() -> list[str]:
+    """On-disk column names of the headerless reduced-catalog CSV, in file order.
+
+    Single source of truth shared by the writer (``parse_to_reduced_catalog``) and
+    every reader (``read_reduced_galaxy_catalog``,
+    ``parse_to_reduced_catalog_with_reduced_errors``, and
+    ``pixel_completeness.build_m_th_map``). The order is all
+    :class:`CatalogueColumns` except the dropped peculiar-velocity error (raw col
+    30) and the redshift flag (raw col 34), followed by the RETAINED redshift flag
+    as the TRAILING column. Keeping the flag last preserves the historical column
+    order of the leading fields so existing positional readers stay aligned.
+
+    Returns:
+        Column names as written to / read from disk, e.g.
+        ``[RIGHT_ASCENSION, DECLINATION, APPARENT_B_MAG, REDSHIFT,
+        REDSHIFT_MEASUREMENT_ERROR, STELLAR_MASS, STELLAR_MASS_ABSOULTE_ERROR,
+        REDSHIFT_FLAG]``.
+    """
+    names = [column.name for column in CatalogueColumns if column.value not in [30, 34]]
+    names.append(CatalogueColumns.REDSHIFT_FLAG.name)
+    return names
 
 
 @dataclass
@@ -243,7 +327,19 @@ class GalaxyCatalogueHandler:
                 _LOGGER.info(f"Progress: {progress}")
                 next_progress_threshold += 5
 
-            # 1, 3 are measured redshifts, 2 is estimated from distance
+            # GLADE+ redshift/distance measurement flag (Dálya et al. 2022,
+            # arXiv:2110.06184, raw col 35): 0 = none, 1 = PHOTOMETRIC redshift,
+            # 2 = luminosity distance, 3 = SPECTROSCOPIC redshift. We keep 1 and 3
+            # (any measured redshift, excluding distance-only 2).
+            # ⚠ CAVEAT: flag 1 (photometric) DOMINATES the catalogue (~62%) and
+            # carries a LARGE redshift error (σ_z ≈ 0.035, ~10–18× the EMRI GW
+            # redshift precision σ_z^GW ≈ 0.037·z ≈ 0.002 at z≈0.05), whereas flag 3
+            # (spectroscopic) has σ_z ≈ 0.0017. The photometric hosts make the
+            # in-catalogue H0 likelihood photo-z-DOMINATED, which biases the dark-
+            # siren H0 posterior to the grid edge (the seed-600 "railing").
+            # See scripts/bridge_closure/BRIDGE-FINDINGS.md and
+            # memory h0-railing-rootcause-photoz. Restricting to flag 3 alone is NOT
+            # a valid fix on its own (it must be matched by the injection/host draw).
             chunk = chunk[
                 (chunk[CatalogueColumns.REDSHIFT_FLAG.name] == 1)
                 | (chunk[CatalogueColumns.REDSHIFT_FLAG.name] == 3)
@@ -257,19 +353,25 @@ class GalaxyCatalogueHandler:
                 + chunk[CatalogueColumns.REDSHIFT_PECULIAR_VELOCITY_ERROR.name] ** 2
             )
 
-            chunk = chunk.drop(
-                columns=[
-                    CatalogueColumns.REDSHIFT_PECULIAR_VELOCITY_ERROR.name,
-                    CatalogueColumns.REDSHIFT_FLAG.name,
-                ]
-            )
+            # Drop the peculiar-velocity error (already folded into the redshift
+            # error above) but RETAIN the redshift flag. Store it as the integer
+            # flag (1 = photometric, 3 = spectroscopic) so it round-trips as "1"/"3"
+            # rather than "1.0"/"3.0"; the {1, 3} filter above guarantees no NaNs.
+            chunk = chunk.drop(columns=[CatalogueColumns.REDSHIFT_PECULIAR_VELOCITY_ERROR.name])
+            chunk[CatalogueColumns.REDSHIFT_FLAG.name] = chunk[
+                CatalogueColumns.REDSHIFT_FLAG.name
+            ].astype(int)
+
+            # Reorder so the retained flag is the TRAILING column, preserving the
+            # historical order of the leading fields (positional-reader alignment).
+            chunk = chunk[_reduced_catalog_column_names()]
 
             chunk.to_csv(REDUCED_CATALOGUE_FILE_PATH, header=False, mode="a", index=False)
 
     def parse_to_reduced_catalog_with_reduced_errors(self) -> None:
         catalog = pd.read_csv(
             REDUCED_CATALOGUE_FILE_PATH,
-            names=[column.name for column in CatalogueColumns if column.value not in [30, 34]],
+            names=_reduced_catalog_column_names(),
         )
         for index, row in catalog.iterrows():
             redshift = row[CatalogueColumns.REDSHIFT.name]
@@ -278,17 +380,30 @@ class GalaxyCatalogueHandler:
             catalog.at[index, CatalogueColumns.REDSHIFT_MEASUREMENT_ERROR.name] = new_redshift_error
 
     def read_reduced_galaxy_catalog(self) -> pd.DataFrame:
-        return pd.read_csv(
+        """Load the reduced catalog (RAW equatorial ICRS degrees, pre-rotation).
+
+        The on-disk sky columns are GLADE equatorial RA/Dec (deg). They are renamed
+        to the frame-NEUTRAL symbols ``PHI_S``/``THETA_S`` so that the in-place
+        equatorial→ecliptic rotation (``_rotate_equatorial_to_ecliptic``, COORD-03)
+        does not leave a column literally named "RIGHT_ASCENSION" holding an ecliptic
+        longitude. After that rotation these columns hold ecliptic φ (rad) and polar
+        angle θ ∈ [0, π] (rad). See .planning/FRAME-AUDIT.md.
+        """
+        catalog = pd.read_csv(
             REDUCED_CATALOGUE_FILE_PATH,
-            names=[column.name for column in CatalogueColumns if column.value not in [30, 34]],
+            names=_reduced_catalog_column_names(),
+        )
+        return catalog.rename(
+            columns={
+                CatalogueColumns.RIGHT_ASCENSION.name: InternalCatalogColumns.PHI_S,
+                CatalogueColumns.DECLINATION.name: InternalCatalogColumns.THETA_S,
+            }
         )
 
     def setup_galaxy_catalog_balltree(self) -> None:
-        # expects the reduced galaxy catalog to be setup already
-        # Columns were historically named RA/Dec (GLADE equatorial) but after
-        # Plan 36-01 (_rotate_equatorial_to_ecliptic), they hold ecliptic polar-
-        # angle pairs (θ_polar ∈ [0, π], φ ∈ [0, 2π)). The column constants
-        # PHI_S / THETA_S are kept for backward compatibility; see CONTEXT.md D-13.
+        # expects the reduced galaxy catalog to be setup already. The PHI_S/THETA_S
+        # columns hold ECLIPTIC angles after _rotate_equatorial_to_ecliptic (COORD-03):
+        # θ_polar ∈ [0, π], φ ∈ [0, 2π). See .planning/FRAME-AUDIT.md.
         phi = self.reduced_galaxy_catalog[InternalCatalogColumns.PHI_S].values
         theta = self.reduced_galaxy_catalog[InternalCatalogColumns.THETA_S].values
 
@@ -480,6 +595,174 @@ class GalaxyCatalogueHandler:
         closest_galaxy = self.reduced_galaxy_catalog.iloc[index[0][0]]
 
         return HostGalaxy(closest_galaxy)
+
+    def draw_uniform_hosts(
+        self,
+        number_of_hosts: int,
+        rng: np.random.Generator,
+        z_max: float = HOST_DRAW_Z_MAX,
+    ) -> list[HostGalaxy]:
+        """Draw host galaxies uniformly at random from the in-catalog volume z < z_max.
+
+        This is the self-consistent generative model for the equal-weight in-catalog
+        likelihood term used by the current dark-siren inference: every catalog galaxy
+        with redshift below ``z_max`` is an equally probable host, i.e. P(g) = const
+        over the ``z < z_max`` catalog. Each returned :class:`HostGalaxy` carries the
+        redshift, sky angles, BH mass, and per-quantity errors straight from its catalog
+        row — there is NO nearest-neighbour snap (contrast
+        :meth:`find_closest_galaxy_to_coordinates`) and NO overwrite of the catalog
+        quantities.
+
+        Sampling is WITH REPLACEMENT: hosts are i.i.d. draws from the uniform
+        distribution over the eligible rows, so the same galaxy may be returned more
+        than once. The truncation ``z < z_max`` is exact for the inference because the
+        EMRI detection horizon (z ≈ 0.18) lies far below ``z_max`` = 0.5, so the removed
+        galaxies have p_det = 0 and never contribute a detectable event.
+
+        Args:
+            number_of_hosts: Number of host galaxies to draw (i.i.d., with replacement).
+            rng: Seeded random generator. Threading the simulation-wide ``rng`` makes
+                the host selection reproducible under ``--seed``.
+            z_max: Exclusive upper redshift bound for eligible hosts. Defaults to
+                :data:`~master_thesis_code.constants.HOST_DRAW_Z_MAX`.
+
+        Returns:
+            ``number_of_hosts`` hosts, each built exactly like
+            :meth:`find_closest_galaxy_to_coordinates` builds its result (so z / sky /
+            M / errors come straight from the catalog row).
+
+        Raises:
+            ValueError: If no catalog galaxy satisfies ``z < z_max``.
+
+        References:
+            Chen, Fishbach & Holz, "A Hitchhiker's Guide to ...", arXiv:2212.08694
+            Eq. (9): equal-weight in-catalog term P(g) = const.
+        """
+        # Eq. (9) in Chen et al. (2024), arXiv:2212.08694: equal-weight in-catalog
+        # term P(g) = const over the z < z_max catalog (research option A).
+        eligible_catalog = self.reduced_galaxy_catalog[
+            self.reduced_galaxy_catalog[InternalCatalogColumns.REDSHIFT] < z_max
+        ]
+        n_eligible = len(eligible_catalog)
+        if n_eligible == 0:
+            raise ValueError(
+                f"No galaxy in the reduced catalog has redshift < z_max = {z_max}; "
+                "cannot draw uniform in-catalog hosts."
+            )
+
+        # Uniform i.i.d. draw WITH REPLACEMENT over the eligible rows: each eligible
+        # galaxy carries probability 1 / n_eligible (= const), the generative model
+        # for the equal-weight in-catalog likelihood. Positional integers index the
+        # eligible subset so each HostGalaxy is built from a genuine catalog row,
+        # exactly as find_closest_galaxy_to_coordinates does (no snap, no overwrite).
+        positions: npt.NDArray[np.int64] = rng.integers(0, n_eligible, size=number_of_hosts)
+        return [HostGalaxy(eligible_catalog.iloc[int(position)]) for position in positions]
+
+    def draw_rate_weighted_hosts(
+        self,
+        number_of_hosts: int,
+        rng: np.random.Generator,
+        z_max: float = HOST_DRAW_Z_MAX,
+    ) -> list[HostGalaxy]:
+        r"""Draw in-catalog hosts with probability ∝ the per-MBH EMRI-rate weight.
+
+        This is the rate-weighted generative model (research "version B") that
+        supersedes the equal-weight draw of :meth:`draw_uniform_hosts`. Every
+        catalog galaxy with redshift below ``z_max`` is a candidate host, but the
+        selection probability is now proportional to the per-MBH EMRI-rate weight
+
+        .. math::
+
+            P(g) \propto w(g) = \frac{R_\mathrm{eff}(M_g)}{1 + z_g},
+
+        where :math:`R_\mathrm{eff}(M_g)` is the *effective per-MBH* EMRI rate
+        (:func:`master_thesis_code.emri_rate.R_eff_per_mbh`; Babak et al. 2017,
+        Eqs. 23, 26-27, 30-31, 34) evaluated at the SOURCE-FRAME catalog BH mass
+        ``M_g`` — the exact column :attr:`HostGalaxy.M` reads — and ``1/(1+z_g)``
+        is the source-to-detector time dilation. The *per-MBH* rate (NOT the
+        comoving volume density :func:`~master_thesis_code.emri_rate.R_EMRI`) is
+        the correct weight here because each catalog galaxy is ONE realised MBH:
+        the mass function ``dn/dlog10 M`` is already sampled by the catalog
+        itself, so only the per-object rate shape and the mild redshift dilation
+        reweight the hosts. The overall normalization (including
+        ``emri_rate.C_NORM``) cancels in ``p = w / Σ w`` and is irrelevant.
+
+        The SAME weight ``w(g)`` reweights the in-catalog likelihood term of the
+        Bayesian inference (``bayesian_statistics.p_Di``), so the draw and the
+        inference share one population model (self-consistency).
+
+        Sampling is WITH REPLACEMENT via :meth:`numpy.random.Generator.choice`
+        with the normalized weights, so the same galaxy may be returned more than
+        once. As in :meth:`draw_uniform_hosts`, each returned :class:`HostGalaxy`
+        carries z / sky / M / errors straight from its catalog row — there is NO
+        nearest-neighbour snap and NO overwrite of catalog quantities. The
+        truncation ``z < z_max`` is exact for the inference because the EMRI
+        detection horizon (z ≈ 0.18) lies far below ``z_max`` = 0.5.
+
+        Args:
+            number_of_hosts: Number of host galaxies to draw (i.i.d., with
+                replacement).
+            rng: Seeded random generator. Threading the simulation-wide ``rng``
+                makes the rate-weighted host selection reproducible under
+                ``--seed``.
+            z_max: Exclusive upper redshift bound for eligible hosts. Defaults to
+                :data:`~master_thesis_code.constants.HOST_DRAW_Z_MAX`.
+
+        Returns:
+            ``number_of_hosts`` hosts, each built exactly like
+            :meth:`draw_uniform_hosts` (z / sky / M / errors come straight from
+            the catalog row), drawn with probability
+            ``P(g) ∝ R_eff_per_mbh(M_g) / (1 + z_g)``.
+
+        Raises:
+            ValueError: If no catalog galaxy satisfies ``z < z_max``, or if the
+                total weight ``Σ w(g)`` over the eligible rows is non-positive.
+
+        References:
+            Babak et al. (2017), arXiv:1703.09722, Eqs. (23), (26)-(27),
+                (30)-(31), (34) — effective per-MBH EMRI rate ``R_eff(M)`` (see
+                :mod:`master_thesis_code.emri_rate`).
+            Gray et al. (2020), arXiv:1908.06050 — galaxy weighting of the
+                in-catalog dark-siren likelihood by an astrophysical rate prior.
+        """
+        # w(g) = R_eff_per_mbh(M_g) / (1 + z_g): per-MBH effective EMRI rate
+        # (Babak et al. 2017, arXiv:1703.09722) × source-frame time dilation. The
+        # IDENTICAL weight reweights the inference in-catalog term
+        # (bayesian_statistics.p_Di). Gray et al. (2020), arXiv:1908.06050.
+        eligible_catalog = self.reduced_galaxy_catalog[
+            self.reduced_galaxy_catalog[InternalCatalogColumns.REDSHIFT] < z_max
+        ]
+        n_eligible = len(eligible_catalog)
+        if n_eligible == 0:
+            raise ValueError(
+                f"No galaxy in the reduced catalog has redshift < z_max = {z_max}; "
+                "cannot draw rate-weighted in-catalog hosts."
+            )
+
+        # SOURCE-FRAME catalog BH mass (the column HostGalaxy.M reads) and catalog
+        # redshift. R_eff_per_mbh is strictly positive, so all weights are positive
+        # for z >= 0; the non-positive-total guard below is defensive.
+        masses = eligible_catalog[InternalCatalogColumns.BH_MASS].to_numpy(dtype=np.float64)
+        redshifts = eligible_catalog[InternalCatalogColumns.REDSHIFT].to_numpy(dtype=np.float64)
+        weights: npt.NDArray[np.float64] = np.asarray(R_eff_per_mbh(masses), dtype=np.float64) / (
+            1.0 + redshifts
+        )
+        total_weight = float(weights.sum())
+        if not (total_weight > 0.0):
+            raise ValueError(
+                "Total rate weight Σ w(g) over the eligible catalog is non-positive "
+                f"({total_weight}); cannot form the host-selection probability."
+            )
+
+        # P(g) = w(g) / Σ w(g); draw WITH REPLACEMENT. Positional integers index the
+        # eligible subset so each HostGalaxy is built from a genuine catalog row,
+        # exactly as draw_uniform_hosts / find_closest_galaxy_to_coordinates do
+        # (no snap, no overwrite).
+        probabilities: npt.NDArray[np.float64] = weights / total_weight
+        positions: npt.NDArray[np.int64] = rng.choice(
+            n_eligible, size=number_of_hosts, replace=True, p=probabilities
+        )
+        return [HostGalaxy(eligible_catalog.iloc[int(position)]) for position in positions]
 
     def get_host_galaxy_by_index(self, index: int) -> HostGalaxy:
         return HostGalaxy(self.reduced_galaxy_catalog.loc[index])
@@ -799,27 +1082,33 @@ def _polar_to_cartesian(
     return np.vstack((np.sin(theta) * np.cos(phi), np.sin(theta) * np.sin(phi), np.cos(theta))).T
 
 
-def _polar_angle_to_declination(polar_angle: float) -> float:
-    return np.pi / 2 - polar_angle
-
-
 def _empiric_stellar_mass_to_BH_mass_relation(
     stellar_mass: float, stellar_mass_error: float
 ) -> tuple[float, float]:
     BH_mass = np.exp(alpha + beta * np.log(stellar_mass / 10))
+    # Error budget in ln(M_BH): intrinsic scatter (DOMINANT) + fit-parameter uncertainties +
+    # propagated stellar-mass error. Reines & Volonteri (2015), arXiv:1508.06274, Sec. 4.1.
+    # d(ln M_BH)/d(M_*) = beta / M_* -- the 1e11 pivot is a constant, so the previous extra
+    # "/ 10" on the stellar-mass term was a bug (understated that term by 100x in variance).
     BH_mass_error = BH_mass * np.sqrt(
-        d_alpha**2
+        sigma_int**2
+        + d_alpha**2
         + (np.log(stellar_mass / 10) * d_beta) ** 2
-        + (beta / stellar_mass / 10 * stellar_mass_error) ** 2
+        + (beta / stellar_mass * stellar_mass_error) ** 2
     )
     return (BH_mass, BH_mass_error)
 
 
 def _empiric_MBH_to_M_stellar_relation(MBH_mass: float, MBH_mass_error: float) -> list:
     stellar_mass = 10 * np.exp((np.log(MBH_mass) - alpha) / beta)
+    # Inverse error budget in ln(M_*): from ln(M_*) = ln(10) + (ln(M_BH) - alpha)/beta,
+    # d(ln M_*)/d(ln M_BH) = 1/beta (the M_BH-error term is /beta, NOT *beta as before), and the
+    # intrinsic scatter propagates as sigma_int/beta. Reines & Volonteri (2015), arXiv:1508.06274.
+    # NOTE: this inverse is currently unused (no call sites); fixed for correctness.
     stellar_mass_error = stellar_mass * np.sqrt(
-        (d_alpha / beta) ** 2
-        + (beta * MBH_mass_error / MBH_mass) ** 2
+        (sigma_int / beta) ** 2
+        + (d_alpha / beta) ** 2
+        + (MBH_mass_error / (MBH_mass * beta)) ** 2
         + ((np.log(MBH_mass) - alpha) / beta**2) ** 2 * d_beta**2
     )
     return [stellar_mass, stellar_mass_error]

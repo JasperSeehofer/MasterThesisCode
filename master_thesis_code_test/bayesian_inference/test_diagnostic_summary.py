@@ -37,6 +37,55 @@ def _make_diagnostic_csv(
     return csv_path
 
 
+# Current (partition-norm restructure, commit f1232de) schema: f_i -> w_G, plus B_num.
+# This is what BayesianStatistics._write_diagnostic_csv writes today.
+_CSV_COLUMNS_WG = [
+    "event_idx",
+    "h",
+    "w_G",
+    "L_cat_no_bh",
+    "L_cat_with_bh",
+    "B_num",
+    "L_comp",
+    "combined_no_bh",
+    "combined_with_bh",
+]
+
+
+def test_w_G_schema_does_not_crash_combine(tmp_path: Path) -> None:
+    """The partition-norm diagnostic CSV (w_G, no f_i) must not raise.
+
+    Regression: the stale ``df["f_i"]`` reference previously crashed the WHOLE
+    combine job with KeyError on the current schema. The summary must resolve
+    w_G as the catalog-membership weight and complete (see evaluation_report.py).
+    """
+    rows = [
+        {
+            "event_idx": ev,
+            "h": h,
+            "w_G": 0.44,
+            "L_cat_no_bh": 1.2,
+            "L_cat_with_bh": 1.1,
+            "B_num": 0.3,
+            "L_comp": 0.5,
+            "combined_no_bh": 0.9,
+            "combined_with_bh": 0.8,
+        }
+        for ev in range(4)
+        for h in (0.66, 0.70, 0.73)
+    ]
+    df = pd.DataFrame(rows, columns=_CSV_COLUMNS_WG)
+    csv_path = tmp_path / "event_likelihoods.csv"
+    df.to_csv(csv_path, index=False)
+
+    result = generate_diagnostic_summary(csv_path, tmp_path / "out", label="current")
+
+    # w_G is resolved as the catalog-membership weight (event-independent = 0.44).
+    assert result["mean_f_i"] == 0.44
+    assert result["median_f_i"] == 0.44
+    assert (tmp_path / "out" / "diagnostic_summary_current.json").exists()
+
+
 # ---------------------------------------------------------------------------
 # Test 1: Catalog-only scenario (all f_i=1.0, L_comp=0.0)
 # ---------------------------------------------------------------------------

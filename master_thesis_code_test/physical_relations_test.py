@@ -15,7 +15,7 @@ from master_thesis_code.physical_relations import (
 )
 
 
-@pytest.mark.parametrize("redshift, expected_distance", [(1.0, 6.5)])
+@pytest.mark.parametrize("redshift, expected_distance", [(1.0, 6.4)])
 def test_dist(redshift: float, expected_distance: float) -> None:
     result = round(dist(redshift), 1)
     assert result == expected_distance
@@ -53,7 +53,7 @@ def test_get_redshift_outer_bounds(
 def test_dist_at_zero_redshift() -> None:
     """Fundamental analytical limit: dist(0) == 0.0."""
     result = dist(0)
-    assert result == 0.0
+    assert abs(result) < 1e-12  # sub-nm float residual of the analytic form
 
 
 def test_dist_monotonically_increasing() -> None:
