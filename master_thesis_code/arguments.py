@@ -148,6 +148,16 @@ class Arguments:
         return bool(self._parsed_arguments.catalog_only)
 
     @property
+    def allow_low_pdet_coverage(self) -> bool:
+        """Escape hatch for the hard P_det grid-coverage / shallow-pool gate."""
+        return bool(self._parsed_arguments.allow_low_pdet_coverage)
+
+    @property
+    def prescreen_audit(self) -> bool:
+        """Bypass the quick-SNR early skip while logging (quick, full) SNR pairs."""
+        return bool(self._parsed_arguments.prescreen_audit)
+
+    @property
     def combine(self) -> bool:
         """Indicates whether to combine per-event posteriors into joint H0 posterior."""
         return bool(self._parsed_arguments.combine)
@@ -280,6 +290,27 @@ def _parse_arguments(arguments: list[str]) -> argparse.Namespace:
         action="store_true",
         default=False,
         help="Skip completion integral in evaluation: set f_i=1, L_comp=0 (catalog-only diagnostic).",
+    )
+    parser.add_argument(
+        "--allow_low_pdet_coverage",
+        action="store_true",
+        default=False,
+        help=(
+            "Proceed despite <95%% P_det grid coverage or a shallow injection pool "
+            "(stale-pool gate). Only for deliberate re-evaluations of archived "
+            "shallow baselines."
+        ),
+    )
+    parser.add_argument(
+        "--prescreen_audit",
+        action="store_true",
+        default=False,
+        help=(
+            "Audit mode for the quick-SNR pre-screen: compute the full SNR even "
+            "when the quick gate would skip, and log PRESCREEN_AUDIT lines with "
+            "(quick_snr, full_snr, params). Smoke-test use only (issue #19 / "
+            "PRE_SCREEN_SNR_FACTOR re-validation)."
+        ),
     )
     parser.add_argument(
         "--pdet_dl_bins",

@@ -1713,3 +1713,165 @@ class TestHorizonSurvival:
             # The accessor IS the exact survival, so they coincide to machine
             # precision; assert within a loose tolerance per spec.
             assert p == pytest.approx(direct, abs=1e-6)
+
+
+class TestStalePoolGates:
+    """Depth/provenance gates (readiness sweep A2-STALE-POOL-GATE, 2026-07-03)."""
+
+    def test_shallow_pool_raises_with_expected_z_max(self, tmp_path: object) -> None:
+        """A z <= 1.0 pool must be rejected when the host draw expects z_max = 1.5."""
+        from master_thesis_code.bayesian_inference.simulation_detection_probability import (
+            SimulationDetectionProbability,
+        )
+
+        d = str(tmp_path)
+        _create_synthetic_injection_csv(d, h_value=0.73, seed=42)  # z in [0.01, 1.0]
+        with pytest.raises(ValueError, match="SHALLOW"):
+            SimulationDetectionProbability(d, snr_threshold=20.0, expected_z_max=1.5)
+
+    def test_shallow_pool_escape_hatch(self, tmp_path: object) -> None:
+        """allow_shallow_pool=True permits deliberate shallow-baseline re-evals."""
+        from master_thesis_code.bayesian_inference.simulation_detection_probability import (
+            SimulationDetectionProbability,
+        )
+
+        d = str(tmp_path)
+        _create_synthetic_injection_csv(d, h_value=0.73, seed=42)
+        sdp = SimulationDetectionProbability(
+            d, snr_threshold=20.0, expected_z_max=1.5, allow_shallow_pool=True
+        )
+        assert sdp is not None
+
+    def test_no_expected_z_max_no_gate(self, tmp_path: object) -> None:
+        """Default expected_z_max=None leaves synthetic/test pools ungated."""
+        from master_thesis_code.bayesian_inference.simulation_detection_probability import (
+            SimulationDetectionProbability,
+        )
+
+        d = str(tmp_path)
+        _create_synthetic_injection_csv(d, h_value=0.73, seed=42)
+        assert SimulationDetectionProbability(d, snr_threshold=20.0) is not None
+
+    def test_deep_pool_passes_gate(self, tmp_path: object) -> None:
+        """A pool spanning the host-draw depth passes the gate."""
+        from master_thesis_code.bayesian_inference.simulation_detection_probability import (
+            SimulationDetectionProbability,
+        )
+
+        d = str(tmp_path)
+        z = np.linspace(0.02, 1.48, 100)
+        _create_controlled_injection_csv(d, 0.73, z, np.full(100, 3e5), np.linspace(50.0, 5.0, 100))
+        sdp = SimulationDetectionProbability(d, snr_threshold=20.0, expected_z_max=1.5)
+        assert sdp is not None
+
+    def test_mixed_z_cut_provenance_raises(self, tmp_path: object) -> None:
+        """Two files with different z_cut stamps = mixed eras -> hard error."""
+        from master_thesis_code.bayesian_inference.simulation_detection_probability import (
+            SimulationDetectionProbability,
+        )
+
+        d = str(tmp_path)
+        z = np.linspace(0.02, 1.48, 50)
+        for z_cut, suffix in ((0.5, "task_001"), (1.5, "task_002")):
+            n = len(z)
+            df = pd.DataFrame(
+                {
+                    "z": z,
+                    "M": np.full(n, 3e5),
+                    "phiS": np.zeros(n),
+                    "qS": np.zeros(n),
+                    "SNR": np.linspace(50.0, 5.0, n),
+                    "h_inj": 0.73,
+                    "luminosity_distance": dist_vectorized(z, h=0.73),
+                    "z_cut": z_cut,
+                    "code_rev": "deadbeef",
+                }
+            )
+            df.to_csv(f"{d}/injection_h_0p73_{suffix}.csv", index=False)
+        with pytest.raises(ValueError, match="mixes provenance"):
+            SimulationDetectionProbability(d, snr_threshold=20.0)
+
+    def test_partial_provenance_raises(self, tmp_path: object) -> None:
+        """One stamped + one legacy (unstamped) file = partial-rsync signature."""
+        from master_thesis_code.bayesian_inference.simulation_detection_probability import (
+            SimulationDetectionProbability,
+        )
+
+        d = str(tmp_path)
+        z = np.linspace(0.02, 1.48, 50)
+        n = len(z)
+        base = {
+            "z": z,
+            "M": np.full(n, 3e5),
+            "phiS": np.zeros(n),
+            "qS": np.zeros(n),
+            "SNR": np.linspace(50.0, 5.0, n),
+            "h_inj": 0.73,
+            "luminosity_distance": dist_vectorized(z, h=0.73),
+        }
+        pd.DataFrame(base).to_csv(f"{d}/injection_h_0p73_task_001.csv", index=False)
+        pd.DataFrame({**base, "z_cut": 1.5, "code_rev": "deadbeef"}).to_csv(
+            f"{d}/injection_h_0p73_task_002.csv", index=False
+        )
+        with pytest.raises(ValueError, match="mixes provenance"):
+            SimulationDetectionProbability(d, snr_threshold=20.0)
+
+    def test_uniform_provenance_passes(self, tmp_path: object) -> None:
+        """Consistently stamped pool constructs cleanly and passes the depth gate."""
+        from master_thesis_code.bayesian_inference.simulation_detection_probability import (
+            SimulationDetectionProbability,
+        )
+
+        d = str(tmp_path)
+        z = np.linspace(0.02, 1.48, 50)
+        n = len(z)
+        for suffix in ("task_001", "task_002"):
+            df = pd.DataFrame(
+                {
+                    "z": z,
+                    "M": np.full(n, 3e5),
+                    "phiS": np.zeros(n),
+                    "qS": np.zeros(n),
+                    "SNR": np.linspace(50.0, 5.0, n),
+                    "h_inj": 0.73,
+                    "luminosity_distance": dist_vectorized(z, h=0.73),
+                    "z_cut": 1.5,
+                    "code_rev": "deadbeef",
+                }
+            )
+            df.to_csv(f"{d}/injection_h_0p73_{suffix}.csv", index=False)
+        sdp = SimulationDetectionProbability(d, snr_threshold=20.0, expected_z_max=1.5)
+        assert sdp is not None
+
+
+class TestMzEdgeClamp:
+    """M_z outside the grid must clamp to the edge, not linear-extrapolate."""
+
+    def test_out_of_range_mz_equals_edge_value(self, tmp_path: object) -> None:
+        from master_thesis_code.bayesian_inference.simulation_detection_probability import (
+            SimulationDetectionProbability,
+        )
+
+        d = str(tmp_path)
+        z = np.linspace(0.02, 1.0, 200)
+        M = np.linspace(1e5, 5e5, 200)  # noqa: N806
+        _create_controlled_injection_csv(d, 0.73, z, M, np.linspace(80.0, 5.0, 200))
+        sdp = SimulationDetectionProbability(d, snr_threshold=20.0)
+        interp_2d, _ = sdp._get_or_build_grid(0.73)
+        m_lo = float(interp_2d.grid[1][0])
+        m_hi = float(interp_2d.grid[1][-1])
+        d_q = 0.3  # well inside the d_L grid
+        p_at_hi_edge = sdp.detection_probability_with_bh_mass_interpolated(
+            d_q, m_hi, 0.0, 0.0, h=0.73
+        )
+        p_beyond_hi = sdp.detection_probability_with_bh_mass_interpolated(
+            d_q, 10.0 * m_hi, 0.0, 0.0, h=0.73
+        )
+        p_at_lo_edge = sdp.detection_probability_with_bh_mass_interpolated(
+            d_q, m_lo, 0.0, 0.0, h=0.73
+        )
+        p_below_lo = sdp.detection_probability_with_bh_mass_interpolated(
+            d_q, 0.1 * m_lo, 0.0, 0.0, h=0.73
+        )
+        assert p_beyond_hi == pytest.approx(p_at_hi_edge, rel=1e-12)
+        assert p_below_lo == pytest.approx(p_at_lo_edge, rel=1e-12)

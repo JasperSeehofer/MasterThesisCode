@@ -201,7 +201,6 @@ class Model1CrossCheck:
         self.parameter_space.luminosity_distance.upper_limit = dist(
             redshift=self.max_redshift, h=H_MIN / 100.0
         )
-        self.luminostity_detection_threshold = 1.55  # as in Hitchikers Guide
 
     def emri_distribution(self, M: float, redshift: float) -> float:
         return self.dN_dz_of_mass(M, redshift) * self.R_emri(M)

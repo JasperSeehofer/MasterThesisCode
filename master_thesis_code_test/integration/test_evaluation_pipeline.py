@@ -39,7 +39,10 @@ def _create_synthetic_injection_csvs(directory: str) -> None:
     for h_value in [0.70, 0.73, 0.80]:
         n = 200
         h_label = f"{h_value:.2f}".replace(".", "p")
-        z = rng.uniform(0.01, 1.0, size=n)
+        # Span the campaign host-draw depth (HOST_DRAW_Z_MAX = 1.5) so the
+        # production stale-pool depth gate passes, and stamp provenance
+        # columns exactly like the production injection writer does.
+        z = rng.uniform(0.01, 1.5, size=n)
         df = pd.DataFrame(
             {
                 "z": z,
@@ -53,6 +56,8 @@ def _create_synthetic_injection_csvs(directory: str) -> None:
                 ),
                 "h_inj": h_value,
                 "luminosity_distance": z * 4.0,
+                "z_cut": 1.5,
+                "code_rev": "fixture",
             }
         )
         df.to_csv(f"{directory}/injection_h_{h_label}_task_001.csv", index=False)

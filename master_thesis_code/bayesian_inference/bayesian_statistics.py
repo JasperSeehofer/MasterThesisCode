@@ -31,6 +31,7 @@ from master_thesis_code.bayesian_inference.simulation_detection_probability impo
 )
 from master_thesis_code.constants import (
     CRAMER_RAO_BOUNDS_OUTPUT_PATH,
+    HOST_DRAW_Z_MAX,
     INJECTION_DATA_DIR,
     PREPARED_CRAMER_RAO_BOUNDS_PATH,
     SIGMA_V_PEC_KM_S,
@@ -844,6 +845,7 @@ class BayesianStatistics:
         fisher_cond_threshold: float = 1e16,
         normalization_mode: str = "volume_deconv",
         base_seed: int = 0,
+        allow_low_pdet_coverage: bool = False,
     ) -> None:
         self.catalog_only = catalog_only
         # G4: deterministic seed for the with-BH-mass MC denominator (threaded to
@@ -912,6 +914,11 @@ class BayesianStatistics:
             dl_bins=pdet_dl_bins,
             mass_bins=pdet_mass_bins,
             estimator=pdet_estimator,  # type: ignore[arg-type]
+            # Stale-pool gate (issue #20): the pool must span the host-draw
+            # volume; a z_cut = 0.5-era pool at depth 1.5 yields p_det = 0
+            # for essentially all events — silent garbage posteriors.
+            expected_z_max=HOST_DRAW_Z_MAX,
+            allow_shallow_pool=allow_low_pdet_coverage,
         )
         _LOGGER.debug("Detection probability functions created.")
 
@@ -920,8 +927,19 @@ class BayesianStatistics:
         detection_probability._get_or_build_grid(h_value)
         _LOGGER.debug("P_det grid pre-warmed for h=%.4f.", h_value)
 
-        # Validate P_det grid coverage for observed events
-        detection_probability.validate_coverage(h_value, self.cramer_rao_bounds)
+        # Validate P_det grid coverage for observed events — HARD gate
+        # (readiness sweep A2-STALE-POOL-GATE, 2026-07-03): a warning buried
+        # in one of 38 per-task logs does not stop a campaign from burning
+        # its cpu-h budget on p_det = 0 posteriors.
+        coverage_fraction = detection_probability.validate_coverage(h_value, self.cramer_rao_bounds)
+        if coverage_fraction < 0.95 and not allow_low_pdet_coverage:
+            msg = (
+                f"P_det grid covers only {coverage_fraction:.1%} of events' "
+                "4-sigma d_L windows (< 95%). The injection pool is likely stale "
+                "or too shallow for this event set. Regenerate the pool, or pass "
+                "--allow_low_pdet_coverage to proceed deliberately."
+            )
+            raise RuntimeError(msg)
 
         # Gray et al. (2020), arXiv:1908.06050, Eq. 9 + Gray-Messenger-Veitch 2022,
         # arXiv:2111.04629 (Change 5): per-HEALPix-pixel completeness f_k(z,Omega,h),

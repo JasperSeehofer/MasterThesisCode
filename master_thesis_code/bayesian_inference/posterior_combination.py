@@ -570,6 +570,7 @@ def combine_posteriors(
             SimulationDetectionProbability,
         )
         from master_thesis_code.constants import (  # noqa: PLC0415
+            HOST_DRAW_Z_MAX,
             INJECTION_DATA_DIR,
             OMEGA_DE,
             OMEGA_M,
@@ -579,6 +580,10 @@ def combine_posteriors(
         detection_probability = SimulationDetectionProbability(
             injection_data_dir=INJECTION_DATA_DIR,
             snr_threshold=SNR_THRESHOLD,
+            # Same stale-pool depth gate as BayesianStatistics.evaluate — the
+            # combine path recomputes D(h) from the pool and had NO check at
+            # all (readiness sweep A2-STALE-POOL-GATE, 2026-07-03).
+            expected_z_max=HOST_DRAW_Z_MAX,
         )
         for h in h_values:
             detection_probability._get_or_build_grid(h)

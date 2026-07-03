@@ -111,7 +111,12 @@ class ParameterSpace:
             symbol="luminosity_distance",
             unit="Gpc",
             lower_limit=0.0,
-            upper_limit=7,
+            # dist(HOST_DRAW_Z_MAX=1.5, h=H_MIN/100=0.60) = 13.0015 Gpc — the
+            # campaign population reach at the lowest grid h. Model1CrossCheck
+            # recomputes this exactly; the literal here protects bare
+            # ParameterSpace() constructions from a sub-horizon cap (the old
+            # 7 Gpc default silently rejected z >~ 0.9 events).
+            upper_limit=13.1,
             derivative_epsilon=1e-4,  # ~3e-4 × 1 Gpc ≈ 3e-4; use 1e-4 Gpc (= 0.1 Mpc)
         )
     )  # luminosity distance

@@ -52,6 +52,17 @@ def main() -> None:
     if arguments.combine:
         from master_thesis_code.bayesian_inference.posterior_combination import combine_posteriors
 
+        # Provenance for the fast-path combine stage (readiness sweep TC-10):
+        # the early return below skips _write_run_metadata, so the combine
+        # stage previously recorded no git_commit/args at all. Distinct
+        # filename avoids colliding with simulation task metadata.
+        _write_run_metadata(
+            arguments.working_directory,
+            arguments.seed,
+            arguments,
+            filename="run_metadata_combine.json",
+        )
+
         for variant_dir in ["posteriors", "posteriors_with_bh_mass"]:
             posteriors_dir = os.path.join(arguments.working_directory, variant_dir)
             if os.path.isdir(posteriors_dir):
@@ -106,6 +117,7 @@ def main() -> None:
             arguments.h_value,
             rng=rng,
             use_gpu=arguments.use_gpu,
+            prescreen_audit=arguments.prescreen_audit,
         )
 
     if arguments.evaluate:
@@ -122,6 +134,7 @@ def main() -> None:
             normalization_mode=arguments.normalization_mode,
             # G4: --seed now reaches the inference layer (deterministic MC denominator).
             base_seed=seed,
+            allow_low_pdet_coverage=arguments.allow_low_pdet_coverage,
         )
 
     if arguments.snr_analysis:
@@ -236,7 +249,9 @@ def _get_git_commit() -> str:
         return "unknown"
 
 
-def _write_run_metadata(working_directory: str, seed: int, arguments: Arguments) -> None:
+def _write_run_metadata(
+    working_directory: str, seed: int, arguments: Arguments, filename: str | None = None
+) -> None:
     metadata = {
         "git_commit": _get_git_commit(),
         "timestamp": datetime.datetime.now().isoformat(),
@@ -265,11 +280,12 @@ def _write_run_metadata(working_directory: str, seed: int, arguments: Arguments)
     if slurm_info:
         metadata["slurm"] = slurm_info
 
-    index = arguments.simulation_index
-    if index > 0 or "SLURM_ARRAY_TASK_ID" in os.environ:
-        filename = f"run_metadata_{index}.json"
-    else:
-        filename = "run_metadata.json"
+    if filename is None:
+        index = arguments.simulation_index
+        if index > 0 or "SLURM_ARRAY_TASK_ID" in os.environ:
+            filename = f"run_metadata_{index}.json"
+        else:
+            filename = "run_metadata.json"
     metadata_path = os.path.join(working_directory, filename)
     with open(metadata_path, "w") as f:
         json.dump(metadata, f, indent=2)
@@ -332,6 +348,7 @@ def data_simulation(
     rng: np.random.Generator | None = None,
     *,
     use_gpu: bool = False,
+    prescreen_audit: bool = False,
 ) -> None:
     # conditional imports because they require GPU
     from master_thesis_code.memory_management import MemoryManagement
@@ -499,8 +516,13 @@ def data_simulation(
 
             # SNR scales as √T for stationary sources; EMRIs chirp so the
             # 1-yr / 5-yr ratio can be even lower.  Factor 0.3 is a conservative
-            # compromise between the √T bound (0.447) and chirp margin.
-            if quick_snr < cosmological_model.snr_threshold * PRE_SCREEN_SNR_FACTOR:
+            # compromise between the √T bound (0.447) and chirp margin —
+            # calibrated pre-dt² at z <= 0.5; the smoke run re-measures the
+            # false-negative rate at depth 1.5 via --prescreen_audit.
+            _quick_gate_failed = (
+                quick_snr < cosmological_model.snr_threshold * PRE_SCREEN_SNR_FACTOR
+            )
+            if _quick_gate_failed and not prescreen_audit:
                 signal.alarm(0)
                 _ROOT_LOGGER.info(
                     f"Quick SNR threshold check failed: {np.round(quick_snr, 3)} < {cosmological_model.snr_threshold * PRE_SCREEN_SNR_FACTOR}."
@@ -511,6 +533,23 @@ def data_simulation(
             snr = parameter_estimation.compute_signal_to_noise_ratio()
             signal.alarm(0)
             warnings.resetwarnings()
+            if prescreen_audit:
+                # Greppable audit record for the smoke run (issue #19 +
+                # PRE_SCREEN_SNR_FACTOR re-validation): quick/full SNR pairs
+                # with the parameters that drive waveform cost. A false
+                # negative is full_snr >= threshold while the quick gate
+                # would have skipped.
+                _ROOT_LOGGER.info(
+                    "PRESCREEN_AUDIT quick_snr=%.4f full_snr=%.4f gate_would_skip=%s "
+                    "d_L=%.4f M=%.6e e0=%.4f p0=%.4f",
+                    quick_snr,
+                    float(snr),
+                    _quick_gate_failed,
+                    parameter_estimation.parameter_space.luminosity_distance.value,
+                    parameter_estimation.parameter_space.M.value,
+                    parameter_estimation.parameter_space.e0.value,
+                    parameter_estimation.parameter_space.p0.value,
+                )
         except Warning as e:
             if "Mass ratio" in str(e):
                 _ROOT_LOGGER.warning(
@@ -631,7 +670,7 @@ def data_simulation(
 _INJECTION_COLUMNS = ["z", "M", "phiS", "qS", "SNR", "h_inj", "luminosity_distance"]
 
 
-def _flush_injection_results(results: list[dict[str, float]], csv_path: str) -> None:
+def _flush_injection_results(results: list[dict[str, float | str]], csv_path: str) -> None:
     """Write injection results to CSV (overwrites previous flush)."""
     import pandas as pd
 
@@ -695,7 +734,7 @@ def injection_campaign(
         f"index={simulation_index}, output={csv_path}"
     )
 
-    results: list[dict[str, float]] = []
+    results: list[dict[str, float | str]] = []
     counter = 0
     iteration = 0
     parameter_samples_iter: Iterator[ParameterSample] = iter([])
@@ -706,11 +745,24 @@ def injection_campaign(
     # pre-#20 hardcoded 0.5 capped the grid while hosts now reach z = 1.5).
     z_cut = HOST_DRAW_Z_MAX
     skipped_high_z = 0
-    _EMCEE_BATCH = 1000  # large batch to amortize MCMC overhead (93.5% z-rejected)
+    skipped_high_mz = 0
+    timeout_count = 0
+    # Provenance stamped into every injection row (stale-pool gate,
+    # readiness sweep A2, 2026-07-03): h_inj alone cannot discriminate
+    # pre-/post-dt² or shallow/deep pools (0.73 in every era).
+    code_rev = _get_git_commit()
+    _EMCEE_BATCH = 1000  # large batch to amortize MCMC overhead (z-rejection ~0 now
+    # that z_cut = HOST_DRAW_Z_MAX matches the sampler depth; the pre-#20 93.5%
+    # figure was measured at z_cut = 0.5)
     _LOG_INTERVAL = 100  # log every N successful events
     _GPU_FREE_INTERVAL = 50  # free GPU memory every N waveform computations
     _FLUSH_INTERVAL = 2000  # flush to disk every N events
-    _TIMEOUT_S = 30  # SNR-only is fast; 30s is generous
+    # Aligned with the main simulation loop's 90 s alarm (readiness sweep A1,
+    # 2026-07-03): the injection SNR uses the FULL 5-yr generator and depth 1.5
+    # lifts M_z into corners never timing-profiled at the old 30 s budget;
+    # timed-out events are DROPPED from the pool, so a timeout-rate correlation
+    # with (d_L, M_z) would bias the p_det grid. Smoke test bins the counter.
+    _TIMEOUT_S = 90
 
     while counter < simulation_steps:
         # Sample events from population model
@@ -721,10 +773,10 @@ def injection_campaign(
             parameter_samples_iter = iter(samples_list)
             sample = next(parameter_samples_iter)
 
-        # Importance sampling: skip events beyond the detection horizon.
-        # All 24/69500 detections in the initial campaign were at z < 0.18.
-        # Events at z > z_cut have P_det ≈ 0 and waste GPU time on waveforms
-        # that will never produce detectable SNR.
+        # Population-depth consistency cut: z_cut = HOST_DRAW_Z_MAX so the
+        # P_det grid spans exactly the host-draw volume. NOT a p_det = 0
+        # claim — post-dt² the horizon reaches z ~ 1.5+ (issue #20 retired
+        # the pre-dt² "24/69500 detections at z < 0.18" justification).
         if sample.redshift > z_cut:
             skipped_high_z += 1
             continue
@@ -751,6 +803,17 @@ def injection_campaign(
         # re-lifts). Maggiore (2008) GW Vol. 1 §4.1.4; Babak et al. (2017) arXiv:1703.09722.
         # Eq. (4.7) in Maggiore (2008) GW Vol. 1 §4.1.4: M_z = M_source·(1+z)
         redshifted_M = redshifted_mass(sample.M, sample.redshift)  # M_z = M·(1+z)
+
+        # Symmetric M_z truncation (readiness sweep A3, 2026-07-03): the CRB
+        # path structurally excludes M_z > M.upper_limit (Fisher stencil raises
+        # ParameterOutOfBoundsError at value + 2ε), so the p_det pool must
+        # exclude the same corner or the selection function includes a
+        # population the event set cannot contain. Rate-suppressed (mass
+        # function dies above ~4e6 M_sun source-frame), expected count ~0 —
+        # the counter makes that measurable.
+        if redshifted_M > parameter_estimation.parameter_space.M.upper_limit:
+            skipped_high_mz += 1
+            continue
         parameter_estimation.parameter_space.M.value = redshifted_M
 
         # Set luminosity distance with candidate h value (injection pipeline does not use
@@ -806,11 +869,14 @@ def injection_campaign(
             )
             continue
         except TimeoutError:
-            # G9 gate: the injection alarm budget is _TIMEOUT_S = 30 s, NOT 90 s
-            # (the old message was wrong); params logged for timeout binning.
+            # G9 gate: params logged for timeout binning (smoke test checks
+            # for (d_L, M_z) correlation before full-campaign sizing).
+            timeout_count += 1
             _ROOT_LOGGER.warning(
-                "Injection waveform/SNR computation timed out (>%ss). Skipping event... params=%s",
+                "Injection waveform/SNR computation timed out (>%ss, %d total). "
+                "Skipping event... params=%s",
                 _TIMEOUT_S,
+                timeout_count,
                 parameter_estimation.parameter_space._parameters_to_dict(),
             )
             continue
@@ -828,6 +894,10 @@ def injection_campaign(
                 "SNR": float(snr),
                 "h_inj": h_value,
                 "luminosity_distance": luminosity_distance,
+                # Provenance (stale-pool gate): z_cut discriminates pool depth
+                # eras, code_rev ties rows to the generating commit.
+                "z_cut": z_cut,
+                "code_rev": code_rev,
             }
         )
         counter += 1
@@ -839,7 +909,11 @@ def injection_campaign(
 
     # Final write
     _flush_injection_results(results, csv_path)
-    _ROOT_LOGGER.info(f"Injection campaign complete: {len(results)} events stored to {csv_path}")
+    _ROOT_LOGGER.info(
+        f"Injection campaign complete: {len(results)} events stored to {csv_path} "
+        f"(skipped: {skipped_high_z} high-z, {skipped_high_mz} M_z > bound, "
+        f"{timeout_count} timeouts @ {_TIMEOUT_S}s)"
+    )
 
 
 def evaluate(
@@ -855,6 +929,7 @@ def evaluate(
     fisher_cond_threshold: float = 1e16,
     normalization_mode: str = "volume_deconv",
     base_seed: int | None = None,
+    allow_low_pdet_coverage: bool = False,
 ) -> None:
     from master_thesis_code.bayesian_inference.bayesian_statistics import BayesianStatistics
 
@@ -871,6 +946,7 @@ def evaluate(
         fisher_cond_threshold=fisher_cond_threshold,
         normalization_mode=normalization_mode,
         base_seed=base_seed if base_seed is not None else 0,
+        allow_low_pdet_coverage=allow_low_pdet_coverage,
     )
 
 

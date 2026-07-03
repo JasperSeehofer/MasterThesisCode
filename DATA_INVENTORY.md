@@ -53,6 +53,20 @@ corresponding tier before reporting results.
 
 ---
 
+## ⚠️ Injection pools RETIRED — 2026-07-03 (depth-1.5 campaign prep)
+
+All pre-dt² / z_cut = 0.5 injection pools are **RETIRED** by the issue-#20 depth change:
+local `simulations/injections/` (80 files) moved to
+`simulations/injections_RETIRED_predt2_zcut0p5_20260703/`; cluster pools
+(`seed43000_Mz`, `seed700`) marked retired in `cluster/datasets.yaml`. The campaign
+regenerates a single-h (h_ref = 0.73) pool at z_cut = 1.5 with the **same filenames** —
+never mix the eras. Guards: injection rows now carry `z_cut` + `code_rev` provenance
+columns; `SimulationDetectionProbability` rejects shallow/mixed pools
+(`expected_z_max`, readiness sweep A2-STALE-POOL-GATE); `--evaluate` hard-fails below
+95% P_det grid coverage (`--allow_low_pdet_coverage` to override deliberately).
+
+---
+
 ## Galaxy Catalogue (reduced GLADE+)
 
 The single on-disk input the whole pipeline shares — previously untracked here.
