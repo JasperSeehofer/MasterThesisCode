@@ -508,6 +508,7 @@ def combine_posteriors(
     strategy: str,
     output_dir: str,
     d_h_table: dict[float, float] | None = None,
+    allow_shallow_pool: bool = False,
 ) -> dict[str, object]:
     """Combine per-event posteriors into a joint posterior.
 
@@ -584,6 +585,9 @@ def combine_posteriors(
             # combine path recomputes D(h) from the pool and had NO check at
             # all (readiness sweep A2-STALE-POOL-GATE, 2026-07-03).
             expected_z_max=HOST_DRAW_Z_MAX,
+            # Deliberate shallow-baseline re-evaluations (e.g. the frozen
+            # seed600 PV test) thread the same escape the evaluate path has.
+            allow_shallow_pool=allow_shallow_pool,
         )
         for h in h_values:
             detection_probability._get_or_build_grid(h)

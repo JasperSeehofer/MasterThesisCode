@@ -71,6 +71,7 @@ def main() -> None:
                     posteriors_dir=posteriors_dir,
                     strategy=arguments.strategy,
                     output_dir=os.path.join(arguments.working_directory, variant_dir),
+                    allow_shallow_pool=arguments.allow_low_pdet_coverage,
                 )
             else:
                 _ROOT_LOGGER.warning(f"Posteriors directory not found: {posteriors_dir}")
