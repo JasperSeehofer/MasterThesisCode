@@ -83,3 +83,24 @@ def test_medium_config_calibration_band() -> None:
     assert 0.5 <= volume["coverage"]["68"] <= 0.85
     assert bare["coverage"]["68"] < volume["coverage"]["68"]
     assert abs(volume["map_bias"]) < abs(bare["map_bias"])
+
+
+def test_tiny_config_exact_value_pins(tiny_bare: dict, tiny_volume: dict) -> None:
+    """Exact-float regression pins of the harness output (both kernels).
+
+    Unlike the determinism test (which compares two same-code runs), these
+    pins freeze the CURRENT numerical behaviour so any host-z kernel change
+    (e.g. a peculiar-velocity sigma_z term) shows up as a deliberate pin
+    update in the same diff.
+    """
+    bare = tiny_bare["results"]["0.7200"]
+    assert bare["map_mean"] == pytest.approx(0.6965000000000001, rel=1e-12)
+    assert bare["map_bias"] == pytest.approx(-0.023499999999999854, rel=1e-9)
+    assert bare["coverage"]["68"] == pytest.approx(0.25, rel=1e-12)
+    assert bare["rail_fraction"] == 0.0
+
+    volume = tiny_volume["results"]["0.7200"]
+    assert volume["map_mean"] == pytest.approx(0.7185000000000001, rel=1e-12)
+    assert volume["map_bias"] == pytest.approx(-0.0014999999999998348, rel=1e-6)
+    assert volume["coverage"]["68"] == pytest.approx(0.625, rel=1e-12)
+    assert volume["rail_fraction"] == 0.0
