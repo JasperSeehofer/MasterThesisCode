@@ -21,8 +21,10 @@
 
 set -u
 
+# PROJECT_ROOT can be overridden so the script may run from a copy outside
+# the repo (e.g. staged on the workspace when $HOME git sync is unavailable).
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+PROJECT_ROOT="${PROJECT_ROOT:-$(dirname "$SCRIPT_DIR")}"
 cd "$PROJECT_ROOT"
 
 WS="${WORKSPACE:-$(ws_find emri 2>/dev/null)}"
