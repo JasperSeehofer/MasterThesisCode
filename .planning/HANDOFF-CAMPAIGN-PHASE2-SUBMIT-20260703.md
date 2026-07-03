@@ -12,27 +12,26 @@ walltime anchors, and the exact ordering. Base yourself on main after PR #21.
   1D MAP 0.745, edge mass <1e-75; artifacts `results/commission_20260701/redteam/combined_posterior_voldeconv_fullgrid{,_with_bh_mass}.json`).
 - Cluster: no jobs in queue; repo parked at `physics/derail-completion-4pi` @ `6d4c4e1` —
   the baseline-consistency hold is LIFTED; workspace `emri` valid to 2026-08-31.
-- ☐ **PR #21 merged?** (`gh pr view 21`) — CI green 2026-07-03; if still open, user merges first.
+- ☑ **PR #21 MERGED** (user, 2026-07-03 07:34Z) — pre-screen fix + runbook are on main.
 
-## 1. USER DECISIONS (2026-07-03, recorded in this session; comment/close on the issues when landing)
+## 1. USER DECISIONS (2026-07-03, user comments on the issues are authoritative)
 
-1. **Issue #20 — `HOST_DRAW_Z_MAX = 1.5`** (full rate-model depth, per gate sign-off).
-   Raise `GALAXY_CATALOG_REDSHIFT_UPPER_LIMIT` (0.55 → ~1.55) alongside.
-2. **Issue #16 — value-correct host peculiar velocities NOW (option a)** — chosen precisely
-   because it is re-simulate tier (post-campaign adoption would retire the data). Use the
-   GLADE+-provided PV-corrected redshifts where flagged (issue cites flag col 29 / error
-   col 30 in raw GLADE+ — VERIFY indices against `galaxy_catalogue/handler.py` and
-   `.planning/derivation-photoz-incatalog/FRAME-SYSTEMATIC.md` §3); treat the error column
-   as the uncertainty of the *applied* correction (today: error-inflation only,
-   `handler.py:302-307`). Residual coherent bulk-flow stays a budget row.
+1. **Issue #20 — `HOST_DRAW_Z_MAX = 1.5`** ("first go for z=1.5 and then see the results and
+   HPC performance"). Raise `GALAXY_CATALOG_REDSHIFT_UPPER_LIMIT` (0.55 → ~1.55) alongside.
+2. **Issue #16 — REVISED (user, 07:43Z): MARGINALIZE PV for this campaign** (option b:
+   σ_v ≈ 200 km/s converted to redshift error, added in quadrature to host σ_z — standard
+   gwcosmo/icarogw practice; inference-side, re-evaluate tier, so it does NOT gate or
+   invalidate sims) **+ a PARALLEL local isolated test of true PV-field value-correction**
+   (see §7b). #16 stays OPEN pending the test; coherent bulk-flow remains a budget row.
 
-Both fold into ONE catalogue rebuild + ONE `/physics-change` set on a fresh branch off main
-(suggest `physics/campaign-depth-pv`): constants + rebuild GLADE+ reduction (depth ≤~1.55,
-z_cmb frame, PV-corrected z, 8-col schema) + completeness-machinery validation at z > 0.5
+`/physics-change` set on a fresh branch off main (suggest `physics/campaign-depth-pv`):
+constants (`HOST_DRAW_Z_MAX`, `GALAXY_CATALOG_REDSHIFT_UPPER_LIMIT`) + σ_v marginalization
+in the host-z kernel + catalogue rebuild (depth ≤~1.55, z_cmb frame, 8-col schema — NO PV
+value-correction in the campaign catalogue) + completeness-machinery validation at z > 0.5
 (per-pixel Schechter m_th machinery becomes BINDING — GLADE+ completeness < 0.5 out there;
 that is the catalogue-dominated regime Paper A claims, so this is a feature, but validate).
 GLADE+.txt exists ONLY on the dev box (cluster cannot rebuild). Trigger files ⇒ `/physics-change`
-hard gate; `[PHYSICS]` commits; close #20 + #16 with commit refs; #19 stays open for §4.
+hard gate; `[PHYSICS]` commits; close #20 with commit ref; #19 stays open for §4.
 
 ## 2. Final readiness sweep (AFTER §1 lands — it changes the constants being audited)
 
@@ -84,6 +83,16 @@ at the typical event z (e.g. σ_z ∈ {0.10, 0.15, 0.25}), both kernels, ≥250 
 paired seeds. Verdict = volume-kernel 50/68/90 coverage at order-unity ratio.
 **Safe to run while sims queue: simulations are estimator-independent** — a bad coverage
 verdict changes inference mode/paper framing only; cancel only eval stages if needed.
+
+## 7b. PARALLEL: isolated PV value-correction impact test (issue #16, local)
+
+On frozen existing data (seed600 CRB + catalogue — campaign-independent): build a
+PV-corrected catalogue variant (GLADE+ PV-corrected z where flagged — flag col 29 / error
+col 30 per issue #16, VERIFY indices vs `handler.py`; corrections exist mainly at low z,
+which is where PV matters), run the production `evaluate` on identical events against
+corrected vs uncorrected catalogues, and report the posterior MAP/mean shift + a bound on
+the coherent bulk-flow term. Outcome feeds the systematics budget and decides whether any
+FUTURE campaign needs value-correction (re-simulate tier); closes or re-scopes #16.
 
 ## 8. Paper A hooks (do not lose)
 
