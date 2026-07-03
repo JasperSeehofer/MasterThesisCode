@@ -660,7 +660,7 @@ def injection_campaign(
         rng: Random number generator for reproducibility.
         use_gpu: Whether to use GPU acceleration.
     """
-    from master_thesis_code.constants import INJECTION_CSV_PATH
+    from master_thesis_code.constants import HOST_DRAW_Z_MAX, INJECTION_CSV_PATH
     from master_thesis_code.galaxy_catalogue.handler import ParameterSample
     from master_thesis_code.memory_management import MemoryManagement
     from master_thesis_code.parameter_estimation.parameter_estimation import (
@@ -700,7 +700,11 @@ def injection_campaign(
     iteration = 0
     parameter_samples_iter: Iterator[ParameterSample] = iter([])
 
-    z_cut = 0.5  # generous margin above max observed detection z ≈ 0.18
+    # [PHYSICS] Injection population depth = host-draw depth (issue #20): the
+    # P_det grid built from these injections must span the full host-draw
+    # volume, otherwise the selection function is blind above z_cut (the
+    # pre-#20 hardcoded 0.5 capped the grid while hosts now reach z = 1.5).
+    z_cut = HOST_DRAW_Z_MAX
     skipped_high_z = 0
     _EMCEE_BATCH = 1000  # large batch to amortize MCMC overhead (93.5% z-rejected)
     _LOG_INTERVAL = 100  # log every N successful events
@@ -1520,12 +1524,14 @@ def generate_figures(output_dir: str) -> None:
 
     def _gen_sky_averaged_completeness() -> tuple[object, object] | None:
         try:
+            from master_thesis_code.constants import HOST_DRAW_Z_MAX
             from master_thesis_code.galaxy_catalogue.pixel_completeness import from_cache_or_build
             from master_thesis_code.plotting.completeness_plots import (
                 plot_sky_averaged_completeness,
             )
 
-            return plot_sky_averaged_completeness(from_cache_or_build())
+            # Track the campaign depth so the figure shows the full host volume.
+            return plot_sky_averaged_completeness(from_cache_or_build(), z_max=HOST_DRAW_Z_MAX)
         except (FileNotFoundError, ValueError):
             _ROOT_LOGGER.info("fig23 skipped: no m_th map / catalog available")
             return None

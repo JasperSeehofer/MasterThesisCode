@@ -42,16 +42,16 @@ def test_radian_to_degree() -> None:
 def test_host_draw_depth_pin() -> None:
     """Pin the campaign population depth — any change is a /physics-change.
 
-    Pre-#20 value: 0.5 (pre-dt² horizon justification). The Phase-2 campaign
-    decision (issue #20, 2026-07-03) deliberately flips this to 1.5 in a
-    [PHYSICS] commit that updates this pin in the same diff.
+    Phase-2 campaign value: 1.5 (issue #20, user decision 2026-07-03),
+    replacing the pre-dt² 0.5. Flipped from 0.5 in the same [PHYSICS] diff
+    that changed the constant, per the physics-change protocol.
     """
-    assert HOST_DRAW_Z_MAX == 0.5
+    assert HOST_DRAW_Z_MAX == 1.5
 
 
 def test_galaxy_catalog_depth_pin() -> None:
     """Pin the documented catalogue depth bound (currently unwired in code)."""
-    assert GALAXY_CATALOG_REDSHIFT_UPPER_LIMIT == 0.55
+    assert GALAXY_CATALOG_REDSHIFT_UPPER_LIMIT == 1.55
 
 
 def test_host_draw_within_population_model() -> None:

@@ -66,12 +66,21 @@ FRACTIONAL_BLACK_HOLE_MASS_CATALOG_ERROR: float = 0.1  # fractional BH mass cata
 FRACTIONAL_MEASURED_MASS_ERROR: float = 1e-8  # fractional error on measured redshifted mass
 SKY_LOCALIZATION_ERROR: float = 2 / 180 * np.pi  # rad, EMRI sky localization error (2 degrees)
 GALAXY_CATALOG_REDSHIFT_LOWER_LIMIT: float = 0.00001  # minimum redshift for galaxy catalog
-GALAXY_CATALOG_REDSHIFT_UPPER_LIMIT: float = 0.55  # maximum redshift for galaxy catalog
-# Redshift-horizon margin for the in-catalog host draw (draw_uniform_hosts). The
-# EMRI detection horizon is z ≈ 0.18 and the injection campaign already uses
-# z_cut = 0.5, so z < 0.5 is safely beyond the horizon -> the truncation is EXACT
-# (p_det = 0 beyond) and only removes never-detectable host candidates.
-HOST_DRAW_Z_MAX: float = 0.5
+# Documented catalogue depth bound. NOTE: currently UNWIRED — the reduced
+# catalogue CSV is written full-depth (no z cut in parse_to_reduced_catalog)
+# and the effective load-time depth is Model1CrossCheck.max_redshift via
+# _get_pruned_galaxy_catalog. Kept as documentation of the depth the pipeline
+# is validated for; raised alongside HOST_DRAW_Z_MAX (issue #20).
+GALAXY_CATALOG_REDSHIFT_UPPER_LIMIT: float = 1.55  # maximum redshift for galaxy catalog
+# [PHYSICS] Campaign population depth for the in-catalog host draw (issue #20,
+# user decision 2026-07-03: "first go for z=1.5 and then see the results and
+# HPC performance"). The pre-dt² justification ("horizon z ≈ 0.18, truncation
+# EXACT") is retired: after the dt² fix the EMRI horizon reaches z ~ 1.5+, so
+# this is a deliberate population-model choice matching
+# Model1CrossCheck.max_redshift = 1.5 (cosmological_model.py), NOT a claim
+# that p_det = 0 beyond. The injection-campaign z_cut derives from this
+# constant (main.py) so the P_det grid always spans the host-draw volume.
+HOST_DRAW_Z_MAX: float = 1.5
 LUMINOSITY_DISTANCE_THRESHOLD_GPC: float = 1.55  # Gpc, LISA detection horizon for EMRIs
 # Multiplicative safety margin on the population-derived d_L pre-screen bound
 # (physical_relations.luminosity_distance_prescreen_gpc). Placeholder pending

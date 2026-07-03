@@ -615,9 +615,11 @@ class GalaxyCatalogueHandler:
 
         Sampling is WITH REPLACEMENT: hosts are i.i.d. draws from the uniform
         distribution over the eligible rows, so the same galaxy may be returned more
-        than once. The truncation ``z < z_max`` is exact for the inference because the
-        EMRI detection horizon (z ≈ 0.18) lies far below ``z_max`` = 0.5, so the removed
-        galaxies have p_det = 0 and never contribute a detectable event.
+        than once. The truncation ``z < z_max`` is a deliberate population-depth
+        choice matching ``Model1CrossCheck.max_redshift`` (issue #20): after the
+        dt² fix the EMRI horizon reaches z ~ 1.5+, so p_det is NOT assumed zero
+        beyond ``z_max`` — the injection-campaign ``z_cut`` derives from the same
+        constant so draw, injections, and inference share one depth.
 
         Args:
             number_of_hosts: Number of host galaxies to draw (i.i.d., with replacement).
@@ -696,8 +698,9 @@ class GalaxyCatalogueHandler:
         once. As in :meth:`draw_uniform_hosts`, each returned :class:`HostGalaxy`
         carries z / sky / M / errors straight from its catalog row — there is NO
         nearest-neighbour snap and NO overwrite of catalog quantities. The
-        truncation ``z < z_max`` is exact for the inference because the EMRI
-        detection horizon (z ≈ 0.18) lies far below ``z_max`` = 0.5.
+        truncation ``z < z_max`` is a deliberate population-depth choice
+        matching ``Model1CrossCheck.max_redshift`` (issue #20; see
+        :meth:`draw_uniform_hosts` for the shared-depth rationale).
 
         Args:
             number_of_hosts: Number of host galaxies to draw (i.i.d., with

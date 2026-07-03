@@ -19,7 +19,7 @@ import numpy as np
 import numpy.typing as npt
 from scipy.stats import truncnorm
 
-from master_thesis_code.constants import SNR_THRESHOLD
+from master_thesis_code.constants import H_MIN, HOST_DRAW_Z_MAX, SNR_THRESHOLD
 from master_thesis_code.datamodels.detection import (
     Detection as Detection,
 )
@@ -183,7 +183,24 @@ class Model1CrossCheck:
         self.parameter_space.e0.upper_limit = 0.2
 
         self.max_redshift = 1.5
-        self.parameter_space.luminosity_distance.upper_limit = dist(redshift=self.max_redshift)
+        # The d_L pre-screen derivation (physical_relations.
+        # luminosity_distance_prescreen_gpc) and the host draws rely on the
+        # population model being at least as deep as the host-draw volume.
+        if HOST_DRAW_Z_MAX > self.max_redshift:
+            raise ValueError(
+                f"HOST_DRAW_Z_MAX = {HOST_DRAW_Z_MAX} exceeds the population-model "
+                f"depth max_redshift = {self.max_redshift}; the host draw would "
+                "sample beyond the event population."
+            )
+        # [PHYSICS] Parameter-space d_L cap at the LOWEST campaign h, not the
+        # fiducial h: d_L(z, h) ~ 1/h, so a cap of dist(1.5, h=0.73) = 10.686 Gpc
+        # silently drops z ≳ 1.35 events in closure runs at h_true = 0.67
+        # (dist(1.5, 0.67) = 11.643 Gpc) via ParameterOutOfBoundsError.
+        # H_MIN/100 = 0.60 is the lower edge of the inference grid, so the cap
+        # contains the full population for every campaign truth value.
+        self.parameter_space.luminosity_distance.upper_limit = dist(
+            redshift=self.max_redshift, h=H_MIN / 100.0
+        )
         self.luminostity_detection_threshold = 1.55  # as in Hitchikers Guide
 
     def emri_distribution(self, M: float, redshift: float) -> float:
