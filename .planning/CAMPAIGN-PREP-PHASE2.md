@@ -86,6 +86,24 @@ railed baseline. After combine `5698618` completes and results are retrieved+ver
 - ☐ **Smoke test first**: `--tasks 2 --steps 10` (cluster skill golden rule) + the §1
   pre-screen measurements, THEN full submission.
 
+## 4b. PRE-REGISTERED "bias resolved" criterion (fixed 2026-07-03, BEFORE submission)
+
+Defined before any campaign data exists, per the referee's asserted-decisiveness
+critique (report either outcome):
+
+1. **Multi-seed accuracy (primary)**: over the 4 seeds at h_true = 0.73, the
+   per-seed volume_deconv 1D MAP sample must satisfy
+   |mean(MAP) − 0.73| < 2·SEM (SEM = std(MAP)/√4). Same check for posterior means.
+2. **Closure**: each closure run (0.67, 0.77) recovers its truth inside its own
+   68% HPD interval (both channels).
+3. **Calibration**: per-seed `pp_coverage` (G4b, volume kernel) at the campaign's
+   photometric width stays near-nominal — cov68 within ±0.10 of 0.68 at n=250
+   realizations (binomial σ≈0.03; the 2026-07-03 σ_z/z scan bounds validity at
+   σ_z/z ≲ 0.8).
+4. **Verdict language**: all three pass → "bias resolved at the campaign's
+   statistical precision"; any fail → report the measured residual with its
+   multi-seed uncertainty — no stronger claim.
+
 ## 5. Paper hooks
 
 - Paper A (`paper_a/`, drafting in flight): consumes the seed600 confirmation (§0) into
