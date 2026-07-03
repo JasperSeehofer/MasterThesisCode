@@ -67,6 +67,18 @@ columns; `SimulationDetectionProbability` rejects shallow/mixed pools
 
 ---
 
+## Phase-2 Campaign (2026-07-03 → , tag `campaign-phase2-base` = `b6bf57d`)
+
+| Item | Value |
+|---|---|
+| **Injection pool** | `$WS/injection_pool_depth15_50k` — 500 files / 50 000 events, z_cut = 1.5, single h_ref = 0.73, provenance-stamped (see `cluster/datasets.yaml` `depth15_campaign`) |
+| **Design** | 4 seeds @ h_true = 0.73 (BASE_SEED 1000/2000/3000/4000) + closure 0.67 (5000) / 0.77 (6000); `--tasks 100 --steps 40` (~4k detections/seed target); volume_deconv; 41-value hybrid h-grid; per-task eval seeds `SEED·1000 + task` |
+| **Smoke** | run_20260703_seed900 (jobs 5740080-83) — sim/merge validated; prescreen audit 543 pairs → quick gate DISABLED (`b6bf57d`); anchors: ~42 s/detection (GPU), injections 3-6.6 s/event |
+| **Submitted** | seed1000: jobs 5743694-97 (2026-07-03 ~12:45Z). Remaining seeds staggered against the ~300-job submit cap |
+| **Criterion** | pre-registered in `.planning/CAMPAIGN-PREP-PHASE2.md` §4b BEFORE submission |
+
+---
+
 ## Galaxy Catalogue (reduced GLADE+)
 
 The single on-disk input the whole pipeline shares — previously untracked here.

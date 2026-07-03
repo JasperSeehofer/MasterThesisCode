@@ -33,11 +33,20 @@ meta:
 # multi-h pools just add pooled samples. See project memory / submit_injection.sh.
 injections:
   - id: depth15_campaign
-    path: "(pending) $WS/injection_<date>_seed<seed>/simulations/injections"
+    path: "$WS/injection_pool_depth15_50k"
     z_cut: 1.5
     h_ref: 0.73
-    status: pending-regeneration
-    note: "depth-1.5 single-h campaign pool (issue #20) — regenerate before campaign evals"
+    files: 500
+    events: 50000
+    status: "CURRENT (campaign canonical)"
+    note: >
+      Depth-1.5 single-h campaign pool (issue #20), generated 2026-07-03 as two
+      250x100 batches (job 5741287 seeds 47000-47249 @ da88c50, job 5742478
+      seeds 47300-47549 @ b6bf57d; batch-2 filenames offset +250 in the merged
+      symlink dir). code_rev differs between batches — injection semantics are
+      identical across those commits (the diff touched only the sim-loop quick
+      gate), so the loader's mixed-code_rev WARNING is expected and benign.
+      Rows carry z_cut/code_rev provenance columns (stale-pool gate).
   - id: seed43000_Mz
     path: "$WS/injection_20260620-213449_seed43000/simulations/injections"
     files: 560
