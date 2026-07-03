@@ -26,22 +26,30 @@ meta:
   commission_base: {tag: commission-base, commit: b593f02, branch: physics/photoz-joint-normalisation}
   expected_catalog_cols: 8            # reduced_galaxy_catalogue.csv (redshift-flag retained, 479afdd+)
   retirement_banner: "DATA_INVENTORY.md — all pre-2026-06-20 (pre mass-convention + L_cat fixes) CRBs/injections/posteriors are RETIRED"
-  updated: 2026-07-01
+  updated: 2026-07-03
 
 # --- STAGE 1: injection pools (feed the P_det detection-probability estimator) ---
 # p_det is h-invariant (detection-horizon survival), so a single-h pool suffices;
 # multi-h pools just add pooled samples. See project memory / submit_injection.sh.
 injections:
+  - id: depth15_campaign
+    path: "(pending) $WS/injection_<date>_seed<seed>/simulations/injections"
+    z_cut: 1.5
+    h_ref: 0.73
+    status: pending-regeneration
+    note: "depth-1.5 single-h campaign pool (issue #20) — regenerate before campaign evals"
   - id: seed43000_Mz
     path: "$WS/injection_20260620-213449_seed43000/simulations/injections"
     files: 560
     mass_convention: M_z            # detector-frame, post mass-convention fix
-    note: "current M_z pool (~504k events, 7 h-nodes 0.60-0.90); h-invariant p_det"
-    status: post-massfix
+    note: "was the current M_z pool (~504k events, 7 h-nodes 0.60-0.90); h-invariant p_det"
+    status: RETIRED
+    retirement_reason: "pre-dt2, z_cut=0.5 — superseded by the depth-1.5 single-h pool (issue #20, 2026-07-03)"
   - id: seed700
     path: "$WS/injection_20260628-184208_seed700/simulations/injections"
     files: 80
-    status: post-massfix, partial/unverified
+    status: "RETIRED (was: post-massfix, partial/unverified)"
+    retirement_reason: "pre-dt2, z_cut=0.5 — superseded by the depth-1.5 single-h pool (issue #20, 2026-07-03)"
   - id: seed43_legacy
     path: "$WS/injection_20260331-204506_seed43/simulations/injections"
     files: 519

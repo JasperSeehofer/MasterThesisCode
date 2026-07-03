@@ -230,14 +230,28 @@ grep -l "Traceback" $RUN_DIR/logs/*.err
 After a campaign with partial failures, resubmit only the failed tasks:
 
 ```bash
-bash cluster/resubmit_failed.sh JOB_ID $RUN_DIR BASE_SEED SIM_STEPS
+bash cluster/resubmit_failed.sh [--include-timeout] [--force] JOB_ID $RUN_DIR BASE_SEED SIM_STEPS [H_VALUE]
 ```
 
-This queries `sacct` for tasks with state `FAILED`, `TIMEOUT`, `NODE_FAIL`, or
+This queries `sacct` for tasks with state `FAILED`, `NODE_FAIL`, or
 `OUT_OF_MEMORY`, cleans up their partial output files, and resubmits only those
-array indices. After the resubmitted tasks complete, you need to manually
-resubmit the merge and evaluate steps -- the script prints the exact `sbatch`
-command to run.
+array indices. Notes:
+
+- `TIMEOUT` is **not** included by default: it is the expected terminal state
+  on `gpu_h100_short`, where tasks are time-capped by design. Pass
+  `--include-timeout` to resubmit timed-out tasks anyway (the script warns).
+- `H_VALUE` (injected truth) is optional: if omitted it is recovered from the
+  surviving `run_metadata_*.json` files in the run directory; an explicit value
+  that conflicts with the recovered metadata aborts; only if neither source
+  exists does it fall back to `0.73` with a prominent warning.
+- The script refuses to run if `$RUN_DIR/simulations/cramer_rao_bounds.csv`
+  already exists — the merge step appends to an existing merged CSV, so
+  resubmitting an already-merged task would duplicate events. Archive/remove
+  the merged CSVs (and `prepared_cramer_rao_bounds.csv`) or `scancel` the
+  pending merge first, or pass `--force`.
+
+After the resubmitted tasks complete, you need to manually resubmit the merge
+and evaluate steps -- the script prints the exact `sbatch` command to run.
 
 ### Log file locations
 

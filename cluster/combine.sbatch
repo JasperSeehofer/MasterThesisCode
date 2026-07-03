@@ -12,14 +12,15 @@
 # via command line so that shell variables are expanded correctly.
 
 #SBATCH --job-name=emri-combine
-#SBATCH --partition=cpu_il
+#SBATCH --partition=cpu,cpu_il
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=4
-# Walltime budget covers three sequential phases: combine (~10 min for 83
-# h-values × 2 variants on the Phase-50 grid), save_baseline + compare
-# (~1-2 min), and generate_figures (~5-10 min). Prior 10:00 limit timed
-# out in the combine phase alone on job 4753305.
-#SBATCH --time=00:45:00
+# Walltime: combine posteriors ~20 min + save_baseline/compare ~1-2 min at
+# 3355 events / 38-41 h-values × 2 variants (anchor: job 5735965, 2026-07-03 —
+# it was the FIGURES phase that killed the previous 45-min budget). Figures are
+# OFF by default per the 2026-07-03 ops decision (RENDER_FIGURES=0; render
+# locally from the rsynced posteriors). 90 min covers a 2-4x campaign yield.
+#SBATCH --time=01:30:00
 
 set -euo pipefail
 
@@ -41,11 +42,18 @@ if [[ -z "${RUN_DIR:-}" ]]; then
 fi
 
 # ---------------------------------------------------------------------------
-# Symlink simulations/ so relative paths resolve correctly
+# Private per-run CWD (TC-03) so relative paths resolve correctly.
+# Combine code reads simulations/... relative to CWD, and other pipeline code
+# reads the catalogue via ./master_thesis_code/galaxy_catalogue/ (handler.py:24).
+# A private CWD replaces the shared $PROJECT_ROOT/simulations symlink, so
+# concurrent runs with different RUN_DIRs cannot cross-contaminate.
 # ---------------------------------------------------------------------------
 
-cd "$PROJECT_ROOT"
-ln -sfn "$RUN_DIR/simulations" "$PROJECT_ROOT/simulations"
+JOB_CWD="$RUN_DIR/cwd"
+mkdir -p "$JOB_CWD"
+ln -sfn "$RUN_DIR/simulations" "$JOB_CWD/simulations"
+ln -sfn "$PROJECT_ROOT/master_thesis_code" "$JOB_CWD/master_thesis_code"
+cd "$JOB_CWD"
 
 # ---------------------------------------------------------------------------
 # Combine posteriors
@@ -85,6 +93,17 @@ cp "$PROJECT_ROOT/.planning/debug/baseline.json" "$RUN_DIR/baseline.json" 2>/dev
 # Copy comparison report too
 cp "$PROJECT_ROOT/.planning/debug/comparison_"*.md "$RUN_DIR/" 2>/dev/null || true
 echo "Baseline + comparison report copied to $RUN_DIR/"
+
+# ---------------------------------------------------------------------------
+# Figures are OFF by default (2026-07-03 ops decision): the figures phase is
+# what killed the 45-min combine job 5735965, and figures are rendered locally
+# from the rsynced posteriors anyway. Set RENDER_FIGURES=1 to opt back in.
+# ---------------------------------------------------------------------------
+
+if [[ "${RENDER_FIGURES:-0}" != "1" ]]; then
+  echo "Figures skipped (RENDER_FIGURES=0; render locally from rsynced posteriors)"
+  exit 0
+fi
 
 # ---------------------------------------------------------------------------
 # Archive old figures (if any exist from a previous run)

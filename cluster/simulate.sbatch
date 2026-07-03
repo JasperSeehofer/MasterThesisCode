@@ -91,11 +91,15 @@ echo "  GPU:           ${CUDA_VISIBLE_DEVICES:-not set}"
 echo ""
 
 # Simulation code uses relative paths (e.g. simulations/cramer_rao_bounds_*.csv)
-# from CWD, but also expects the galaxy catalog at ./master_thesis_code/galaxy_catalogue/.
-# Solution: run from the project root and symlink simulations/ → $RUN_DIR/simulations/
-# so output lands in the run directory.
-cd "$PROJECT_ROOT"
-ln -sfn "$RUN_DIR/simulations" "$PROJECT_ROOT/simulations"
+# from CWD, and reads the galaxy catalog via ./master_thesis_code/galaxy_catalogue/
+# (handler.py:24). Use a PRIVATE per-run CWD (TC-03) instead of re-pointing the
+# shared $PROJECT_ROOT/simulations symlink, so concurrent runs with different
+# RUN_DIRs cannot cross-contaminate.
+JOB_CWD="$RUN_DIR/cwd"
+mkdir -p "$JOB_CWD"
+ln -sfn "$RUN_DIR/simulations" "$JOB_CWD/simulations"
+ln -sfn "$PROJECT_ROOT/master_thesis_code" "$JOB_CWD/master_thesis_code"
+cd "$JOB_CWD"
 
 python -m master_thesis_code "$RUN_DIR" \
     --simulation_steps "$SIM_STEPS" \

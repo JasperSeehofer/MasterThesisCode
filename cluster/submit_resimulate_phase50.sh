@@ -69,17 +69,26 @@ mkdir -p "$RUN_DIR/logs" "$RUN_DIR/simulations"
 # Link the canonical injection dataset into RUN_DIR/simulations/injections.
 #
 # Phase 49 F4's SimulationDetectionProbability globs injection_h_*_task_*.csv
-# from RUN_DIR/simulations/injections at eval time.  Injection generation is a
-# one-time campaign (~105k events across h ∈ [0.6, 0.9]) and the canonical
-# pool lives at run_closure_h0p73_h3_20260505/.../injections (a symlink chain
-# into injection_20260331-204506_seed43).  Without this link, every eval task
-# crashes with `FileNotFoundError: No injection CSV files found`.
+# from RUN_DIR/simulations/injections at eval time.  Without this link, every
+# eval task crashes with `FileNotFoundError: No injection CSV files found`.
 #
-# Override via INJECTION_SOURCE=<abs-path> if a different canonical pool
-# becomes preferred.
+# A2-STALE-POOL-GATE (c): INJECTION_SOURCE has NO default anymore. The former
+# default (run_closure_h0p73_h3_20260505 -> injection_20260331-204506_seed43)
+# is RETIRED — pre-dt2, z_cut=0.5, source-frame masses; superseded by the
+# depth-1.5 single-h pool (issue #20, 2026-07-03). Set it explicitly:
+#   INJECTION_SOURCE=<abs-path> bash cluster/submit_resimulate_phase50.sh ...
+# Pool provenance/retirement status: cluster/datasets.yaml.
 # ---------------------------------------------------------------------------
 
-INJECTION_SOURCE="${INJECTION_SOURCE:-$WORKSPACE/run_closure_h0p73_h3_20260505/simulations/injections}"
+if [[ -z "${INJECTION_SOURCE:-}" ]]; then
+    echo "ERROR: INJECTION_SOURCE is not set — it no longer has a default." >&2
+    echo "       The former default pool ($WORKSPACE/run_closure_h0p73_h3_20260505/simulations/injections)" >&2
+    echo "       is RETIRED: pre-dt2, z_cut=0.5 — superseded by the depth-1.5" >&2
+    echo "       single-h pool (issue #20, 2026-07-03; see cluster/datasets.yaml)." >&2
+    echo "       Set INJECTION_SOURCE=<abs-path> to a current injection CSV pool." >&2
+    exit 1
+fi
+
 INJECTION_LINK="$RUN_DIR/simulations/injections"
 
 if [[ ! -e "$INJECTION_SOURCE" ]]; then

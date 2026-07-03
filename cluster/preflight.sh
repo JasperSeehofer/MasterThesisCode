@@ -89,6 +89,19 @@ if [ -f "$CATALOG" ]; then
     COLS=$(head -1 "$CATALOG" 2>/dev/null | awk -F, '{print NF}')
     FLAG="OK"; [ "$COLS" != "$EXPECT_COLS" ] && { FLAG="SCHEMA-DRIFT (expected $EXPECT_COLS)"; note_problem "catalog schema $COLS != $EXPECT_COLS"; }
     echo "        reduced_galaxy_catalogue.csv: $SZ  cols=$COLS  [$FLAG]"
+    # Provenance probe (TC-11): z_helio and z_cmb catalogues are BOTH 8-col and
+    # full-depth — column count cannot discriminate. Fingerprint the first data
+    # row's 4th field (redshift; the file has no header) instead. O(1), no scan.
+    ROW1_Z=$(head -1 "$CATALOG" 2>/dev/null | awk -F, '{print $4}')
+    EXPECT_ROW1_Z="${EMRI_CATALOG_ROW1_Z:-0.001733}"
+    if [ "$ROW1_Z" = "$EXPECT_ROW1_Z" ]; then
+        echo "        provenance: row1 z=$ROW1_Z — z_cmb frame ✓"
+    elif [ "$ROW1_Z" = "0.000990570495285" ]; then
+        echo "        provenance: row1 z=$ROW1_Z — STALE z_helio catalogue ✗"
+        note_problem "STALE z_helio catalogue (row1 z=$ROW1_Z, expected $EXPECT_ROW1_Z)"
+    else
+        echo "        provenance: row1 z=$ROW1_Z — WARNING: unknown catalogue revision (expected $EXPECT_ROW1_Z)"
+    fi
 else
     echo "        reduced_galaxy_catalogue.csv: ABSENT"
     echo "        (auto-rebuilds from GLADE+.txt if present; else stage from dev box via rsync)"
@@ -151,6 +164,25 @@ if [ -n "$WS_PATH" ]; then
         [ "$crb$prp$p1$p2" = "--00" ] && continue
         echo "          $(basename "$R"): $crb $prp post=$p1/$p2 $cb"
     done
+    # A2-STALE-POOL-GATE (c): flag pre-depth-1.5 injection pools. Injection CSVs
+    # are written by main.py:_flush_injection_results with header columns
+    # ["z","M","phiS","qS","SNR","h_inj","luminosity_distance"] (main.py:631);
+    # the awk below locates the "z" column by header name, not by guessing.
+    # Cheap probe: one representative file (all files in a pool share z_cut).
+    INJ_LINK="$REPO/simulations/injections"
+    if [ -d "$INJ_LINK" ]; then
+        SAMPLE_CSV=$(find -L "$INJ_LINK" -maxdepth 1 -name 'injection_h_*.csv' 2>/dev/null | head -1)
+        if [ -n "$SAMPLE_CSV" ]; then
+            MAXZ=$(awk -F, 'NR==1{for(i=1;i<=NF;i++) if($i=="z") c=i; next} c && $c+0>m {m=$c+0} END{if(c) printf "%.4f", m; else print "no-z-col"}' "$SAMPLE_CSV")
+            if [ "$MAXZ" = "no-z-col" ]; then
+                echo "        injection pool depth probe: no 'z' header in $(basename "$SAMPLE_CSV") — cannot probe (depth is gated in Python)"
+            elif awk -v z="$MAXZ" 'BEGIN{exit !(z < 1.0)}'; then
+                echo "        WARNING: shallow (pre-depth-1.5) injection pool detected (max z=$MAXZ in $(basename "$SAMPLE_CSV"))"
+            else
+                echo "        injection pool depth probe: max z=$MAXZ ($(basename "$SAMPLE_CSV")) — depth-1.5 compatible"
+            fi
+        fi
+    fi
     echo "        (semantic map + provenance: cluster/datasets.yaml ; retirement status: DATA_INVENTORY.md)"
 fi
 
