@@ -243,8 +243,8 @@
     {
       "path": "paper_a/main.pdf",
       "description": "Compiled 21-page MNRAS manuscript (0 LaTeX errors, 0 undefined references)",
-      "approximate_size": "643 KB",
-      "checksum_sha256": "74a333391f5a87540bc7f405481c75d8d87de4a2c11aa75d3ee838a046966643",
+      "approximate_size": "644 KB",
+      "checksum_sha256": "abd174931e4d01ebeb1267f727fcdc41f3f40c438ef12e77ece697d1646476ed",
       "approximate_checksum": false
     }
   ],
