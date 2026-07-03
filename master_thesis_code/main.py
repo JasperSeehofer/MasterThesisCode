@@ -380,14 +380,15 @@ def data_simulation(
 
     from master_thesis_code.constants import (
         HOST_DRAW_Z_MAX,
-        LUMINOSITY_DISTANCE_PRESCREEN_GPC,
         PRE_SCREEN_SNR_FACTOR,
+        PRESCREEN_DL_MARGIN,
     )
     from master_thesis_code.dark_siren_injection import (
         compute_global_catalog_fraction,
         draw_mixture_hosts,
     )
     from master_thesis_code.galaxy_catalogue.pixel_completeness import from_cache_or_build
+    from master_thesis_code.physical_relations import luminosity_distance_prescreen_gpc
 
     # CHANGE 4b/5: split injected hosts into an in-catalog fraction F and an
     # out-of-catalog (dark) fraction 1-F so the injected population matches the
@@ -408,6 +409,23 @@ def data_simulation(
         h_value,
         HOST_DRAW_Z_MAX,
         1.0 - global_catalog_fraction,
+    )
+
+    # Population-derived d_L pre-screen (issue #19): the M1 rate model samples
+    # z <= max_redshift, so no valid event lies beyond d_L(max_redshift; h_value).
+    # At physical SNR semantics (G8 dt² fix) the EMRI detection horizon exceeds
+    # this reach — the pre-screen is inert for in-population events and only
+    # guards pathological draws. Margin pending post-dt² injection re-measurement.
+    # Babak et al. (2017), arXiv:1703.09722; Hogg (1999), arXiv:astro-ph/9905116 Eq. (16).
+    d_L_prescreen_gpc = luminosity_distance_prescreen_gpc(
+        cosmological_model.max_redshift, h=h_value
+    )
+    _ROOT_LOGGER.info(
+        "d_L pre-screen bound: %.3f Gpc (z_max=%.2f, h=%.4f, margin=%.2f).",
+        d_L_prescreen_gpc,
+        cosmological_model.max_redshift,
+        h_value,
+        PRESCREEN_DL_MARGIN,
     )
 
     counter = 0
@@ -457,18 +475,18 @@ def data_simulation(
 
         parameter_estimation.parameter_space.set_host_galaxy_parameters(host_galaxy, h=h_value)
 
-        # Distance pre-screen: skip events far beyond LISA's EMRI detection horizon
-        # (~1.55 Gpc) before generating any waveform.  The 2.0 Gpc cutoff includes
-        # generous margin for orientation-dependent SNR boosts.  No detectable EMRI
-        # (SNR >= 20) has ever been observed beyond d_L ~ 1.66 Gpc in injection data
-        # (165 000 events).  P_det is already 0 at these distances, so this cut
-        # does not affect the Bayesian inference.
+        # Distance pre-screen: skip pathological events beyond the population's
+        # maximum reach (d_L_prescreen_gpc, derived above from the rate model's
+        # z_max at the runtime h) before generating any waveform. Inert for
+        # in-population events by construction — a hit here indicates a bad
+        # draw, hence WARNING, not DEBUG (issue #19).
         d_L = parameter_estimation.parameter_space.luminosity_distance.value
-        if d_L > LUMINOSITY_DISTANCE_PRESCREEN_GPC:
-            _ROOT_LOGGER.debug(
-                "Skipping event: d_L = %.2f Gpc > %.1f Gpc pre-screen cutoff.",
+        if d_L > d_L_prescreen_gpc:
+            _ROOT_LOGGER.warning(
+                "Skipping event: d_L = %.2f Gpc > %.3f Gpc population-derived "
+                "pre-screen bound (pathological draw?).",
                 d_L,
-                LUMINOSITY_DISTANCE_PRESCREEN_GPC,
+                d_L_prescreen_gpc,
             )
             continue
 

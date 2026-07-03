@@ -17,6 +17,7 @@ from master_thesis_code.constants import (
     KM_TO_M,
     OMEGA_DE,
     OMEGA_M,
+    PRESCREEN_DL_MARGIN,
     SPEED_OF_LIGHT_KM_S,
     W_0,
     W_A,
@@ -152,6 +153,46 @@ def dist_vectorized(
     result = C / H_0 * (1 + redshift) * integral - offset_for_root_finding
 
     return result
+
+
+def luminosity_distance_prescreen_gpc(
+    z_max: float,
+    h: float,
+    Omega_m: float = OMEGA_M,
+    Omega_de: float = OMEGA_DE,
+    margin: float = PRESCREEN_DL_MARGIN,
+) -> float:
+    """Population-derived luminosity-distance pre-screen bound in Gpc.
+
+    The simulation loop skips events with :math:`d_L` above this bound before
+    generating any waveform. The bound is the luminosity distance of the rate
+    model's maximum sampled redshift, inflated by a small safety margin, so no
+    in-population event can be cut — at physical SNR semantics (G8 dt² fix) the
+    EMRI detection horizon (z ≈ 1.5–3.8) exceeds the population reach, making
+    the pre-screen inert for valid events; it only guards pathological draws.
+
+    Supersedes the retired ``LUMINOSITY_DISTANCE_PRESCREEN_GPC = 2.0``, which
+    was calibrated on pre-dt² (SNR/10-scale) injection data and lay inside the
+    z ≤ 0.5 host-draw volume (issue #19). The margin is a placeholder until
+    re-measured on post-dt² injection data.
+
+    Args:
+        z_max: Maximum redshift sampled by the population model
+            (``Model1CrossCheck.max_redshift``).
+        h: Dimensionless Hubble parameter of the current run.
+        Omega_m: Matter density parameter.
+        Omega_de: Dark energy density parameter.
+        margin: Multiplicative safety margin (≥ 1).
+
+    Returns:
+        Pre-screen bound in Gpc; 0.0 exactly at ``z_max = 0``.
+
+    References:
+        Babak et al. (2017), arXiv:1703.09722 (M1 population; EMRI horizon);
+        Hogg (1999), arXiv:astro-ph/9905116 Eq. (16) via :func:`dist`.
+    """
+    # d_L(z_max; h) × margin — Hogg (1999), arXiv:astro-ph/9905116 Eq. (16)
+    return margin * dist(z_max, h=h, Omega_m=Omega_m, Omega_de=Omega_de)
 
 
 def dist_derivative(

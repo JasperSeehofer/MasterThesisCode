@@ -73,7 +73,12 @@ GALAXY_CATALOG_REDSHIFT_UPPER_LIMIT: float = 0.55  # maximum redshift for galaxy
 # (p_det = 0 beyond) and only removes never-detectable host candidates.
 HOST_DRAW_Z_MAX: float = 0.5
 LUMINOSITY_DISTANCE_THRESHOLD_GPC: float = 1.55  # Gpc, LISA detection horizon for EMRIs
-LUMINOSITY_DISTANCE_PRESCREEN_GPC: float = 2.0  # Gpc, generous pre-screen cutoff (see main.py)
+# Multiplicative safety margin on the population-derived d_L pre-screen bound
+# (physical_relations.luminosity_distance_prescreen_gpc). Placeholder pending
+# re-measurement on post-dt^2 injection data — issue #19. Replaces the retired
+# LUMINOSITY_DISTANCE_PRESCREEN_GPC = 2.0, which was calibrated on pre-dt^2
+# (SNR/10-scale) injections and lay inside the z <= 0.5 host-draw volume.
+PRESCREEN_DL_MARGIN: float = 1.05
 
 # saving Cramer-Rao bounds for marginalization.
 CRAMER_RAO_BOUNDS_PATH: str = "simulations/cramer_rao_bounds_simulation_$index.csv"

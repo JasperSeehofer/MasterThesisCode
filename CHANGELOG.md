@@ -154,6 +154,18 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   library/test callers of `main.main()` are unaffected (`os._exit` would
   otherwise terminate a hosting pytest process).
 
+### Fixed (campaign prep)
+- **[PHYSICS] population-derived d_L pre-screen replaces the stale 2.0 Gpc cutoff (issue #19):**
+  `LUMINOSITY_DISTANCE_PRESCREEN_GPC = 2.0` was calibrated on retired pre-dt² (SNR/10-scale)
+  injection data ("no detectable EMRI beyond 1.66 Gpc") and lay *inside* the z ≤ 0.5 host-draw
+  volume — d_L(0.5; h=0.73) = 2.74 Gpc — silently cutting in-population events at DEBUG level.
+  The simulation loop now computes `physical_relations.luminosity_distance_prescreen_gpc(z_max, h)`
+  = `PRESCREEN_DL_MARGIN (1.05) × d_L(rate-model z_max; runtime h)` once per run (11.22 Gpc at the
+  fiducial cosmology): inert for in-population events by construction, so a hit now logs at
+  WARNING (pathological draw). Margin is a placeholder until re-measured on post-dt² injection
+  data (`.planning/CAMPAIGN-PREP-PHASE2.md` §1). Refs: Babak et al. (2017) arXiv:1703.09722;
+  Hogg (1999) arXiv:astro-ph/9905116 Eq. (16).
+
 ### Added
 - **`master_thesis_code.validation` subpackage (G4b):** the 2026-07-01 commission's
   independent P–P/coverage calibration harness (investigator d2) promoted from
