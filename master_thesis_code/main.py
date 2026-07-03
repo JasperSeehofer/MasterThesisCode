@@ -239,9 +239,16 @@ def _compare_baseline(working_directory: str, baseline_path: str, label: str = "
 
 
 def _get_git_commit() -> str:
+    # Anchor at the package's real location, NOT the process CWD: cluster jobs
+    # run from a private $RUN_DIR/cwd (not a git repo), which would silently
+    # yield "unknown". realpath resolves the cwd's master_thesis_code symlink
+    # back to the checkout.
+    repo_root = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
     try:
         return (
-            subprocess.check_output(["git", "rev-parse", "HEAD"], stderr=subprocess.DEVNULL)
+            subprocess.check_output(
+                ["git", "rev-parse", "HEAD"], stderr=subprocess.DEVNULL, cwd=repo_root
+            )
             .decode()
             .strip()
         )
@@ -667,7 +674,20 @@ def data_simulation(
         cb.on_simulation_end(counter, iteration)
 
 
-_INJECTION_COLUMNS = ["z", "M", "phiS", "qS", "SNR", "h_inj", "luminosity_distance"]
+# NOTE (W-PRE-12): this list is the injection CSV schema — pd.DataFrame(...,
+# columns=...) SILENTLY DROPS any row key missing here. Keep in sync with the
+# row dict built in injection_campaign.
+_INJECTION_COLUMNS = [
+    "z",
+    "M",
+    "phiS",
+    "qS",
+    "SNR",
+    "h_inj",
+    "luminosity_distance",
+    "z_cut",
+    "code_rev",
+]
 
 
 def _flush_injection_results(results: list[dict[str, float | str]], csv_path: str) -> None:
