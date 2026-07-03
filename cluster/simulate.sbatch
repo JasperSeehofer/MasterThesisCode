@@ -18,6 +18,10 @@
 #                 (default 0.73). Set != 0.73 for closure runs at a different
 #                 truth; threaded to --h_value so set_host_galaxy_parameters
 #                 places each event at d_L(z, H_VALUE).
+#   PRESCREEN_AUDIT -- set to 1 to pass --prescreen_audit (smoke-run only:
+#                 bypasses the quick-SNR skip and logs PRESCREEN_AUDIT
+#                 quick/full SNR pairs for the issue-#19 /
+#                 PRE_SCREEN_SNR_FACTOR re-measurement).
 #
 # Note: --output and --error are NOT set here; submit_pipeline.sh passes them
 # via command line so that shell variables (e.g. %A, %a) are expanded correctly.
@@ -101,13 +105,21 @@ ln -sfn "$RUN_DIR/simulations" "$JOB_CWD/simulations"
 ln -sfn "$PROJECT_ROOT/master_thesis_code" "$JOB_CWD/master_thesis_code"
 cd "$JOB_CWD"
 
+# Smoke-run audit toggle (see header): appends --prescreen_audit when set.
+AUDIT_FLAG=()
+if [[ "${PRESCREEN_AUDIT:-0}" == "1" ]]; then
+    AUDIT_FLAG=(--prescreen_audit)
+    echo "  PRESCREEN_AUDIT=1: quick-SNR gate bypassed, audit pairs logged"
+fi
+
 python -m master_thesis_code "$RUN_DIR" \
     --simulation_steps "$SIM_STEPS" \
     --simulation_index "$SLURM_ARRAY_TASK_ID" \
     --seed "$TASK_SEED" \
     --h_value "$H_VALUE" \
     --use_gpu \
-    --log_level INFO
+    --log_level INFO \
+    ${AUDIT_FLAG[@]+"${AUDIT_FLAG[@]}"}
 
 echo ""
 echo "=== Task $SLURM_ARRAY_TASK_ID completed (seed=$TASK_SEED) ==="
