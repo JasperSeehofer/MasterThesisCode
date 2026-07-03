@@ -54,7 +54,14 @@ DEFAULT_SIMULATION_PATH: str = "simulations/simulation"
 MINIMAL_FREQUENCY: float = 1e-5
 MAXIMAL_FREQUENCY: float = 1
 SNR_THRESHOLD: float = 20
-PRE_SCREEN_SNR_FACTOR: float = 0.3  # pre-screen heuristic (main.py simulation loop)
+# [PHYSICS] Quick-SNR pre-screen factor. 0.0 = DISABLED (2026-07-03 decision):
+# the depth-1.5 smoke audit (job 5740080, 543 pairs via --prescreen_audit)
+# measured a 0.55% false-negative rate — full 5-yr SNR up to 44 at 1-yr quick
+# SNR 0.25 (late-plunging sources) — so no positive factor is safe and a lossy
+# gate is a selection-function inconsistency vs the gate-free injection pool.
+# The historical 0.3 (sqrt(T) bound 0.447 + chirp margin) was calibrated
+# pre-dt² at z <= 0.5 and is retired.
+PRE_SCREEN_SNR_FACTOR: float = 0.0
 # G10 gate: Fisher matrices with kappa above this are numerical noise after
 # inversion (float64 ~16 digits; 1e14 leaves <2). Event is skipped, not stored.
 FISHER_CONDITION_NUMBER_MAX: float = 1e14

@@ -517,16 +517,22 @@ def data_simulation(
         try:
             warnings.filterwarnings("error")
             signal.alarm(90)
-            quick_snr = parameter_estimation.compute_signal_to_noise_ratio(
-                use_snr_check_generator=True
-            )
-
-            # SNR scales as √T for stationary sources; EMRIs chirp so the
-            # 1-yr / 5-yr ratio can be even lower.  Factor 0.3 is a conservative
-            # compromise between the √T bound (0.447) and chirp margin —
-            # calibrated pre-dt² at z <= 0.5; the smoke run re-measures the
-            # false-negative rate at depth 1.5 via --prescreen_audit.
-            _quick_gate_failed = (
+            # [PHYSICS] Quick-SNR pre-screen DISABLED for the depth-1.5 campaign
+            # (PRE_SCREEN_SNR_FACTOR = 0.0): the 2026-07-03 smoke audit (job
+            # 5740080, 543 (quick, full) pairs at depth 1.5) measured 3 false
+            # negatives with full SNR >= 20 at quick SNR as low as 0.25 —
+            # sources plunging in years 2-5 accumulate SNR the 1-yr check
+            # generator cannot see, so NO positive factor is safe. A lossy gate
+            # here is a selection-function inconsistency against the gate-free
+            # injection pool. The quick waveform is skipped entirely when the
+            # factor is 0 (audit mode still computes it for pair logging).
+            _quick_gate_enabled = PRE_SCREEN_SNR_FACTOR > 0.0
+            quick_snr = float("nan")
+            if _quick_gate_enabled or prescreen_audit:
+                quick_snr = parameter_estimation.compute_signal_to_noise_ratio(
+                    use_snr_check_generator=True
+                )
+            _quick_gate_failed = _quick_gate_enabled and (
                 quick_snr < cosmological_model.snr_threshold * PRE_SCREEN_SNR_FACTOR
             )
             if _quick_gate_failed and not prescreen_audit:
