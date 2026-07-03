@@ -8,6 +8,26 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Changed
+- **[PHYSICS] Campaign population deepened to z = 1.5 (issue #20, decision 2026-07-03):**
+  `HOST_DRAW_Z_MAX` 0.5 → 1.5 (pre-dt² "horizon z ≈ 0.18, truncation exact" justification
+  retired); `injection_campaign` `z_cut` now derives from `HOST_DRAW_Z_MAX` (was hardcoded
+  0.5 — would have left the P_det grid blind above z = 0.5); parameter-space d_L cap computed
+  at the lowest campaign h (0.60 → 13.0 Gpc) instead of fiducial h = 0.73 (10.686 Gpc), which
+  silently dropped z ≳ 1.35 events in h_true = 0.67 closure sims; explicit
+  `HOST_DRAW_Z_MAX ≤ max_redshift` ordering guard. `GALAXY_CATALOG_REDSHIFT_UPPER_LIMIT`
+  0.55 → 1.55 (documented as unwired — the reduced CSV is full-depth, load-time depth is
+  `Model1CrossCheck.max_redshift`). Completeness machinery validated over z ∈ [0.5, 1.5]
+  (finite/bounded/monotone; frozen-map f̄(1.0) ≈ 0 — pure-completion regime). Pre-dt²
+  injection pools remain RETIRED; regeneration at depth 1.5 is part of the Phase-2 campaign.
+- **[PHYSICS] Residual host peculiar-velocity dispersion marginalized into the host-z kernel
+  (issue #16, decision 2026-07-03):** `single_host_likelihood` now uses
+  σ_z,eff² = σ_z,cat² + ((1+z_g)·σ_v/c)² with `SIGMA_V_PEC_KM_S = 200` (Davis et al. 2011
+  Eqs. 1/A1 for the (1+z) factor; Mastrogiovanni et al. 2023 §IV quadrature convention;
+  Laghi et al. 2021's 500 km/s kept as a systematics-budget row). Inference-side only —
+  no re-simulation; distinct from the GLADE+ PV-correction error already folded into the
+  catalogue z_error at parse time. `pp_coverage` gains an inert `--sigma-z-pv` knob
+  (default 0.0; committed anchor runs bit-identical). Issue #16 stays open for the isolated
+  PV value-correction impact test.
 - **Inference is now deterministic (G4):** the with-BH-mass MC denominator draws from a
   per-host stream derived from `(base_seed, detection_index, host_z, host_M)`;
   `--seed` reaches the inference layer via `evaluate(..., base_seed=...)` (default 0).
