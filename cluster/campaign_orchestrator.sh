@@ -38,8 +38,15 @@ SUB_LOG="$WS/campaign_orchestrator_submissions.log"
 PIPELINES=("2000:0.73" "3000:0.73" "4000:0.73" "5000:0.67" "6000:0.77")
 
 # Submit the next 143-job pipeline only below this expanded-array queue depth.
-MAX_PENDING=250
+# Conservative: the per-user cap sits somewhere in (294, 544]; 150 + 143 stays
+# clear even at the low end.
+MAX_PENDING=150
 POLL_S=300
+# 2026-07-03: the $HOME Lustre filesystem intermittently returns EIO on reads
+# of recently-written files (git pull unpack failures, one failed read of
+# submit_pipeline.sh). Probe readability before each attempt and retry the
+# SAME seed with backoff — never advance past a failed seed.
+MAX_ATTEMPTS_PER_SEED=500
 
 log() { echo "[$(date '+%F %T')] $*" >> "$MAIN_LOG"; }
 
@@ -61,30 +68,53 @@ for spec in "${PIPELINES[@]}"; do
         continue
     fi
 
-    # Wait for queue headroom (squeue -r expands array elements, matching how
-    # the submit cap counts).
+    attempt=0
     while :; do
-        n=$(squeue -u "$USER" -h -r 2>/dev/null | wc -l)
-        [[ "$n" -lt "$MAX_PENDING" ]] && break
-        sleep "$POLL_S"
-    done
+        attempt=$((attempt + 1))
+        if [[ "$attempt" -gt "$MAX_ATTEMPTS_PER_SEED" ]]; then
+            log "seed $seed: gave up after $MAX_ATTEMPTS_PER_SEED attempts — manual submission needed"
+            break
+        fi
 
-    log "seed $seed (h_true=$ht): submitting at queue depth $n"
-    if bash cluster/submit_pipeline.sh \
-            --tasks 100 --steps 40 --seed "$seed" \
-            --h_true "$ht" --injection_pool "$POOL" >> "$SUB_LOG" 2>&1; then
-        log "seed $seed: submitted OK"
-    else
-        log "seed $seed: SUBMISSION FAILED (see $SUB_LOG) — continuing to next after one retry window"
-        sleep "$POLL_S"
+        # Wait for queue headroom (squeue -r expands array elements, matching
+        # how the submit cap counts).
+        n=$(squeue -u "$USER" -h -r 2>/dev/null | wc -l)
+        if [[ -z "$n" || "$n" -ge "$MAX_PENDING" ]]; then
+            sleep "$POLL_S"
+            continue
+        fi
+
+        # $HOME EIO probe: all files the submission path reads.
+        if ! cat cluster/submit_pipeline.sh cluster/simulate.sbatch \
+                 cluster/merge.sbatch cluster/evaluate.sbatch \
+                 cluster/combine.sbatch cluster/modules.sh \
+                 > /dev/null 2>&1; then
+            log "seed $seed: \$HOME read probe FAILED (attempt $attempt) — backing off"
+            sleep "$POLL_S"
+            continue
+        fi
+
+        log "seed $seed (h_true=$ht): submitting at queue depth $n (attempt $attempt)"
         if bash cluster/submit_pipeline.sh \
                 --tasks 100 --steps 40 --seed "$seed" \
                 --h_true "$ht" --injection_pool "$POOL" >> "$SUB_LOG" 2>&1; then
-            log "seed $seed: retry submitted OK"
-        else
-            log "seed $seed: retry FAILED — manual submission needed"
+            log "seed $seed: submitted OK"
+            break
         fi
-    fi
+
+        log "seed $seed: submission attempt $attempt FAILED (see $SUB_LOG) — cleaning any empty run dir, retrying"
+        # Defensive: a failure after submit_pipeline's mkdir would poison the
+        # idempotency check on restart. Remove run dirs for this seed that
+        # contain no job logs yet.
+        for d in "$WS"/run_*_seed"${seed}" "$WS"/run_*_seed"${seed}"_*; do
+            [[ -d "$d" ]] || continue
+            if ! compgen -G "$d/logs/*" > /dev/null; then
+                log "seed $seed: removing unsubmitted run dir $d"
+                rm -rf "$d"
+            fi
+        done
+        sleep "$POLL_S"
+    done
     sleep 60
 done
 
