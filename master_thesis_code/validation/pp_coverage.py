@@ -191,6 +191,13 @@ class PPCoverageConfig:
     n_realizations: int = 120
     n_events: int = 250
     sigma_z: float = 0.035
+    # Flat peculiar-velocity redshift-error term, added in quadrature to
+    # sigma_z for BOTH the generative truth scatter and the inference kernel
+    # (the calibrated case). Default 0.0 keeps the committed anchor runs
+    # bit-identical. Issue #16: the production kernel uses
+    # (1+z) * SIGMA_V_PEC_KM_S / c; this harness knob is flat because its
+    # sigma_z is flat too.
+    sigma_z_pv: float = 0.0
     sigma_dl_frac: float = 0.05
     injected_truths: list[float] = field(default_factory=lambda: [0.62, 0.72, 0.84])
     seed: int = 20260701
@@ -223,7 +230,9 @@ def _run_realization(
 
     so only the host-z kernel differs between the two estimator variants.
     """
-    sigma_z = config.sigma_z
+    # One effective sigma for the truth-scatter draw AND the kernel keeps the
+    # generative model and the inference consistent (calibrated case).
+    sigma_z = float(np.hypot(config.sigma_z, config.sigma_z_pv))
     z_host = _sample_detected_redshifts(h_true, config.n_events, rng)
     dL_host = comoving_amplitude_of_z(z_host) / h_true
     dL_obs = np.clip(dL_host + rng.normal(0.0, config.sigma_dl_frac * dL_host), 1e-3, None)
@@ -326,6 +335,7 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument("--n-realizations", type=int, default=120)
     parser.add_argument("--n-events", type=int, default=250)
     parser.add_argument("--sigma-z", type=float, default=0.035)
+    parser.add_argument("--sigma-z-pv", type=float, default=0.0)
     parser.add_argument("--sigma-dl-frac", type=float, default=0.05)
     parser.add_argument("--truths", type=float, nargs="+", default=[0.62, 0.72, 0.84])
     parser.add_argument("--seed", type=int, default=20260701)
@@ -337,6 +347,7 @@ def main(argv: list[str] | None = None) -> None:
         n_realizations=args.n_realizations,
         n_events=args.n_events,
         sigma_z=args.sigma_z,
+        sigma_z_pv=args.sigma_z_pv,
         sigma_dl_frac=args.sigma_dl_frac,
         injected_truths=list(args.truths),
         seed=args.seed,

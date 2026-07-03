@@ -65,6 +65,19 @@ FRACTIONAL_LUMINOSITY_ERROR: float = 0.1  # fractional error on measured luminos
 FRACTIONAL_BLACK_HOLE_MASS_CATALOG_ERROR: float = 0.1  # fractional BH mass catalog uncertainty
 FRACTIONAL_MEASURED_MASS_ERROR: float = 1e-8  # fractional error on measured redshifted mass
 SKY_LOCALIZATION_ERROR: float = 2 / 180 * np.pi  # rad, EMRI sky localization error (2 degrees)
+# [PHYSICS] Residual host peculiar-velocity dispersion, marginalized into the
+# host-z kernel at inference time (issue #16 decision 2026-07-03):
+# sigma_z_pv = (1 + z_g) * SIGMA_V_PEC_KM_S / c, added in quadrature to the
+# catalogue sigma_z in bayesian_statistics.single_host_likelihood.
+# (1+z) factor: Davis et al. (2011), arXiv:1012.2912, Eqs. (1)/(A1); quadrature
+# convention: Mastrogiovanni et al. (2023), arXiv:2305.10488, Sec. IV.
+# 200 km/s follows Fishbach et al. (2019), arXiv:1807.05667, Sec. 2.2 and
+# Chen et al. (2018), arXiv:1712.06531; the LISA-EMRI precedent (Laghi et al.
+# 2021, arXiv:2102.01708, Sec. 4) uses 500 km/s — kept as a systematics-budget
+# row, not the default. Distinct from (residual on top of) the GLADE+
+# PV-CORRECTION error already folded into the catalogue z_error at parse time
+# (handler.parse_to_reduced_catalog, 0.0015 floor for rows without it).
+SIGMA_V_PEC_KM_S: float = 200.0
 GALAXY_CATALOG_REDSHIFT_LOWER_LIMIT: float = 0.00001  # minimum redshift for galaxy catalog
 # Documented catalogue depth bound. NOTE: currently UNWIRED — the reduced
 # catalogue CSV is written full-depth (no z cut in parse_to_reduced_catalog)

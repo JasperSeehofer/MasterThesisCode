@@ -151,12 +151,17 @@ def test_kernel_pin_low_z_window_clamp() -> None:
     assert w_den == pytest.approx(PIN_CLAMP_W_DEN, rel=1e-9)
 
 
-# ── Pinned values (captured from the code as of the commit adding this file) ──
-PIN_VD_NUM = 1622.0066615957417
-PIN_VD_DEN = 0.9153058114326034
-PIN_LR_NUM = 1607.5871614112384
-PIN_LR_DEN = 0.9152832361769563
-PIN_VD_BH_NUM = 4574.227429970933
-PIN_VD_BH_DEN = 0.913118914446828
-PIN_CLAMP_DEN = 0.9958992939448512
-PIN_CLAMP_W_DEN = 0.24151081256750923
+# ── Pinned values ─────────────────────────────────────────────────────────────
+# Updated in the [PHYSICS] issue-#16 commit: the host-z kernel now uses
+# sigma_z_eff = sqrt(sigma_z_cat^2 + ((1+z_g) SIGMA_V_PEC_KM_S / c)^2), which
+# at z_g = 0.1, sigma_z_cat = 0.0015 widens the kernel by ~11% (sigma_z_pv =
+# 7.34e-4) and shifts these integrals by 0.2-0.5%. Pre-change values are in
+# the parent commit of that diff (physics-change protocol).
+PIN_VD_NUM = 1629.3700900543863
+PIN_VD_DEN = 0.9152972692189939
+PIN_LR_NUM = 1611.8260385718838
+PIN_LR_DEN = 0.9152831657144014
+PIN_VD_BH_NUM = 4594.733503494528
+PIN_VD_BH_DEN = 0.9130872910698521
+PIN_CLAMP_DEN = 0.995760331092859
+PIN_CLAMP_W_DEN = 0.2283619655845074

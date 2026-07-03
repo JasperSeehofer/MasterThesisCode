@@ -33,7 +33,9 @@ from master_thesis_code.constants import (
     CRAMER_RAO_BOUNDS_OUTPUT_PATH,
     INJECTION_DATA_DIR,
     PREPARED_CRAMER_RAO_BOUNDS_PATH,
+    SIGMA_V_PEC_KM_S,
     SNR_THRESHOLD,
+    SPEED_OF_LIGHT_KM_S,
     H,
 )
 from master_thesis_code.cosmological_model import LamCDMScenario, Model1CrossCheck
@@ -1880,6 +1882,25 @@ def single_host_likelihood(
 
     integration_limit_sigma_multiplier = 4.0
 
+    # [PHYSICS] Issue #16 (user decision 2026-07-03): marginalize the residual
+    # host peculiar-velocity dispersion into the host-z kernel.
+    #   sigma_z_pv = (1 + z_g) * sigma_v / c
+    # Davis et al. (2011), arXiv:1012.2912, Eqs. (1)/(A1) for the (1+z) factor
+    # (z_obs = z_cos + (1 + z_cos) v_pec / c); added in quadrature to the
+    # catalogue redshift error per standard practice (Mastrogiovanni et al.
+    # 2023, arXiv:2305.10488, Sec. IV; EMRI precedent with the (1+z) factor:
+    # Laghi et al. 2021, arXiv:2102.01708). The catalogue z_error already
+    # carries GLADE+'s PV-CORRECTION error (or the 0.0015 parse-time floor);
+    # SIGMA_V_PEC_KM_S is the residual (uncorrected/nonlinear) dispersion on
+    # top of it. Applied ONCE here: every downstream consumer (window bounds,
+    # Z_g renormalization, prior pdf, D_g, MC proposal + sampling_pdf) flows
+    # through this single sigma and the one norm() object below, so the term
+    # cannot double-count inside the likelihood. The ball-tree candidate
+    # window and catalogue pruning (handler.py) intentionally keep the bare
+    # catalogue z_error — a ±1σ, second-order candidate-list effect.
+    sigma_z_pv = (1.0 + host_z) * SIGMA_V_PEC_KM_S / SPEED_OF_LIGHT_KM_S
+    host_z_error_eff = float(np.sqrt(host_z_error**2 + sigma_z_pv**2))
+
     numerator_integration_upper_redshift_limit = dist_to_redshift(
         _det_d_L + integration_limit_sigma_multiplier * _det_d_L_unc, h=h
     )
@@ -1887,18 +1908,18 @@ def single_host_likelihood(
         _det_d_L - integration_limit_sigma_multiplier * _det_d_L_unc, h=h
     )
     denominator_integration_upper_redshift_limit = (
-        host_z + integration_limit_sigma_multiplier * host_z_error
+        host_z + integration_limit_sigma_multiplier * host_z_error_eff
     )
     # [PHYSICS] clamp to z >= 0: for low-z photo-z hosts (z_g < 4 sigma_z) the window
     # would extend to unphysical z < 0 where comoving_volume_element still returns
     # positive values, silently adding prior mass to Z_g / D_g (G2b derivation note,
     # docs/derivations/G2b_host_z_volume_prior.md). Matches B_num's and D(h)'s z_min.
     denominator_integration_lower_redshift_limit = max(
-        host_z - integration_limit_sigma_multiplier * host_z_error, 1e-6
+        host_z - integration_limit_sigma_multiplier * host_z_error_eff, 1e-6
     )
 
     # construct normal distribution for redshift and mass for host galaxy
-    galaxy_redshift_normal_distribution = norm(loc=host_z, scale=host_z_error)
+    galaxy_redshift_normal_distribution = norm(loc=host_z, scale=host_z_error_eff)
 
     # [PHYSICS] De-rail fix #1 (commission, 2026-07-01): in-catalogue host-redshift prior.
     # "global"/"local_ratio" use the BARE photo-z Gaussian N(z; z_g, sigma_z) (unchanged
@@ -2210,7 +2231,12 @@ def single_host_likelihood_integration_testing(
     ABS_ERROR = 1e-20
 
     # construct normal distribution for redshift and mass for host galaxy
-    galaxy_redshift_normal_distribution = norm(loc=possible_host.z, scale=possible_host.z_error)
+    # [PHYSICS] Issue #16: mirror the production kernel's residual-PV quadrature
+    # (see single_host_likelihood) so the integration-testing twin stays a
+    # faithful cross-check of the production path.
+    _sigma_z_pv = (1.0 + possible_host.z) * SIGMA_V_PEC_KM_S / SPEED_OF_LIGHT_KM_S
+    _z_error_eff = float(np.sqrt(possible_host.z_error**2 + _sigma_z_pv**2))
+    galaxy_redshift_normal_distribution = norm(loc=possible_host.z, scale=_z_error_eff)
 
     # Sky localization weight (phi, theta) is inside the GW likelihood Gaussian.
     # Verified correct by Phase 14 derivation (Sec. 2.7) -- not a source of error.
