@@ -535,7 +535,7 @@ def interactive_h0_tension_explorer(
         title="H₀ in context — stack events and watch the tension",
         xaxis_title=_strip_latex(LABELS["h"]),
         yaxis_title="Posterior density",
-        xaxis_range=[0.55, 0.85],
+        xaxis_range=[0.55, 0.88],  # cover the full 0.60-0.86 production h-grid (review PLT-05)
         hovermode="x unified",
         sliders=[
             {
@@ -2158,7 +2158,7 @@ def interactive_closure_test_overlay(
         title="Closure test: pipeline recovers each injection truth",
         xaxis_title="h",
         yaxis_title="Posterior (peak-normalised)",
-        xaxis_range=[0.55, 0.85],
+        xaxis_range=[0.55, 0.88],  # cover the full 0.60-0.86 production h-grid (review PLT-05)
         yaxis_range=[-0.05, 1.15],
     )
     return fig

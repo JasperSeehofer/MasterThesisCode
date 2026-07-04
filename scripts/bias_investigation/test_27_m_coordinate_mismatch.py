@@ -55,10 +55,7 @@ logging.basicConfig(level=logging.WARNING, format="%(levelname)s: %(message)s")
 
 OUTPUT_DIR = PROJECT_ROOT / "scripts" / "bias_investigation" / "outputs" / "phase46_merged"
 PHASE46_CRB = (
-    PROJECT_ROOT
-    / "simulations"
-    / "cluster_run_phase46_merged_20260504"
-    / "cramer_rao_bounds.csv"
+    PROJECT_ROOT / "simulations" / "cluster_run_phase46_merged_20260504" / "cramer_rao_bounds.csv"
 )
 SNR_THRESHOLD = 20.0
 H_TRUTH = 0.73
@@ -129,9 +126,7 @@ def main() -> None:
     )
 
     print("Building proposed SDP (Option A: M-axis = M_z = M_source·(1+z_inj)) ...")
-    sdp_proposed = build_proposed_sdp(
-        str(PROJECT_ROOT / INJECTION_DATA_DIR), SNR_THRESHOLD
-    )
+    sdp_proposed = build_proposed_sdp(str(PROJECT_ROOT / INJECTION_DATA_DIR), SNR_THRESHOLD)
 
     M_min_curr, M_max_curr = grid_M_range(sdp_current, H_TRUTH)  # noqa: N806
     M_min_prop, M_max_prop = grid_M_range(sdp_proposed, H_TRUTH)  # noqa: N806
@@ -155,7 +150,9 @@ def main() -> None:
     host_M_proxy = M_meas / (1.0 + z_central)  # noqa: N806
 
     # Sample integration z values: ±2σ_z window around z_central.
-    # σ_z ≈ 0.013·(1+z)^3 per datamodels/galaxy.py:64.
+    # σ_z ≈ 0.013·(1+z)^3 (historical Pipeline-A galaxy model, removed with
+    # datamodels/galaxy.py in the 2026-07-04 dead-code cleanup; production z-errors
+    # come from the GLADE+ catalogue + the σ_v PV term in bayesian_statistics).
     sigma_z = 0.013 * (1.0 + z_central) ** 3  # noqa
     z_offsets = np.array([-2.0, -1.0, 0.0, 1.0, 2.0])
     # Per-detection integration grid: shape (n_events, n_offsets)
@@ -196,9 +193,9 @@ def main() -> None:
     # (The denominator's p_det also changes; assuming partial cancellation
     # in the ratio, we estimate the leading effect from the numerator.)
     eps = 1e-8
-    log_ratio_central = np.log(
-        np.maximum(pdet_proposed_central, eps)
-    ) - np.log(np.maximum(pdet_current_central, eps))
+    log_ratio_central = np.log(np.maximum(pdet_proposed_central, eps)) - np.log(
+        np.maximum(pdet_current_central, eps)
+    )
 
     # Aggregate predicted MAP shift via Laplace approximation:
     # log P(h|D) ≈ Σ log L_i(h) + ... with Σ peaked near h_truth.
@@ -225,13 +222,13 @@ def main() -> None:
     print("\n=== Per-event Δp_det at integration centre (current → proposed) ===")
     print(f"  mean Δp_det               : {float(np.mean(delta_pdet_central)):+.4f}")
     print(f"  median Δp_det             : {float(np.median(delta_pdet_central)):+.4f}")
-    print(f"  Δp_det 25–75 percentile   : "
-          f"[{float(np.percentile(delta_pdet_central, 25)):+.4f}, "
-          f"{float(np.percentile(delta_pdet_central, 75)):+.4f}]")
-    print(f"  fraction with Δp_det > 0  : "
-          f"{float(np.mean(delta_pdet_central > 0)):.3f}")
-    print(f"  fraction with |Δp_det|>0.05: "
-          f"{float(np.mean(np.abs(delta_pdet_central) > 0.05)):.3f}")
+    print(
+        f"  Δp_det 25–75 percentile   : "
+        f"[{float(np.percentile(delta_pdet_central, 25)):+.4f}, "
+        f"{float(np.percentile(delta_pdet_central, 75)):+.4f}]"
+    )
+    print(f"  fraction with Δp_det > 0  : {float(np.mean(delta_pdet_central > 0)):.3f}")
+    print(f"  fraction with |Δp_det|>0.05: {float(np.mean(np.abs(delta_pdet_central) > 0.05)):.3f}")
 
     print("\n=== Per-event log(p_det_proposed / p_det_current) at central z ===")
     print(f"  mean log-ratio            : {mean_log_ratio:+.4f}")

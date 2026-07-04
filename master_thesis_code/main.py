@@ -1076,6 +1076,10 @@ def generate_figures(output_dir: str) -> None:
 
     import pandas as pd
 
+    # Injected-truth H0 for the figure truth-lines: use the fiducial constant rather
+    # than a hardcoded 0.73 literal so every truth marker agrees if H changes
+    # (review PLT-03/04). The nested generators below close over this.
+    from master_thesis_code.constants import H as TRUTH_H
     from master_thesis_code.plotting._data import PARAMETER_NAMES, reconstruct_covariance
     from master_thesis_code.plotting._helpers import save_figure
     from master_thesis_code.plotting._style import apply_style
@@ -1112,7 +1116,7 @@ def generate_figures(output_dir: str) -> None:
             from master_thesis_code.physical_relations import dist_to_redshift
 
             df["redshift"] = df["luminosity_distance"].apply(
-                lambda d: dist_to_redshift(float(d), h=0.73)
+                lambda d: dist_to_redshift(float(d), h=TRUTH_H)
             )
         return df
 
@@ -1204,7 +1208,7 @@ def generate_figures(output_dir: str) -> None:
         fig, ax = plot_combined_posterior(
             h_vals,
             combined,
-            0.73,
+            TRUTH_H,
             label=r"Without $M_z$",
             color=VARIANT_STYLE["no_mass"][0],
             linestyle=VARIANT_STYLE["no_mass"][1],
@@ -1220,7 +1224,7 @@ def generate_figures(output_dir: str) -> None:
                 plot_combined_posterior(
                     h_w,
                     comb_w,
-                    0.73,
+                    TRUTH_H,
                     label=r"With $M_z$",
                     color=VARIANT_STYLE["with_mass"][0],
                     linestyle=VARIANT_STYLE["with_mass"][1],
@@ -1250,7 +1254,7 @@ def generate_figures(output_dir: str) -> None:
             )
         except FileNotFoundError:
             return None
-        fig, ax = plot_event_posteriors(h_vals, event_posts, 0.73, combined_posterior=combined)
+        fig, ax = plot_event_posteriors(h_vals, event_posts, TRUTH_H, combined_posterior=combined)
         # Overlay with-M_z canonical combined posterior
         if post_data_with is not None:
             try:

@@ -204,7 +204,7 @@ def test_raises_when_no_eligible_galaxy() -> None:
 
 
 def test_default_z_max_is_host_draw_constant() -> None:
-    """The default z_max is the HOST_DRAW_Z_MAX constant (0.5)."""
+    """The default z_max is the HOST_DRAW_Z_MAX constant (1.5, depth-1.5 campaign)."""
     z = np.concatenate([np.linspace(0.02, 0.45, 10), np.array([HOST_DRAW_Z_MAX + 0.1])])
     handler = _make_handler(z)
     hosts = handler.draw_uniform_hosts(200, rng=np.random.default_rng(5))
