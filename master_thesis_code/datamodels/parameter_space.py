@@ -57,7 +57,15 @@ class ParameterSpace:
             lower_limit=1e4,
             upper_limit=1e7,
             randomize_by_distribution=log_uniform,
-            derivative_epsilon=1.0,  # ~3e-4 × 3e3 SM (log-uniform midpoint ~3e3 SM)
+            # A tiny ABSOLUTE step (1 M_sun) on a ~1e5-1e6 M_sun mass: the EMRI phase is
+            # extremely M-sensitive, so the finite-difference step must keep ∂Φ/∂M·(2ε)
+            # well under a radian — the Vallisneri ε_mach^(1/4)·|x| heuristic (~60-100
+            # M_sun here) assumes f varies on scale |x|, which is false for an
+            # oscillatory waveform. (Prior comment mis-stated the log-uniform midpoint
+            # as ~3e3 M_sun; the [1e4,1e7] geometric midpoint is 10^5.5 ≈ 3e5. Any change
+            # to this value needs a Fisher step-halving convergence study + /physics-change
+            # — review PHY-09.)
+            derivative_epsilon=1.0,
         )
     )  # mass of the MBH (massive black hole) in solar masses
 
