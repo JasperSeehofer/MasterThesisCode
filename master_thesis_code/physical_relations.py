@@ -1,7 +1,13 @@
-"""Cosmological distance functions for a flat wCDM universe.
+"""Cosmological distance functions for a flat cosmology.
 
 Provides luminosity distance, redshift inversion, and derived quantities used
 throughout the EMRI simulation and Bayesian H₀ inference pipelines.
+
+Note: the analytic luminosity distance (``dist`` and friends) is **ΛCDM-only**
+(hypergeometric form); it raises ``NotImplementedError`` on genuine wCDM inputs
+(``w_0 != -1`` or ``w_a != 0``). ``hubble_function`` does implement the full CPL
+``E(z)``. A wCDM luminosity distance would require numerical quadrature and must go
+through ``/physics-change`` (GitHub #4).
 """
 
 from functools import lru_cache
@@ -26,6 +32,25 @@ from master_thesis_code.constants import (
 )
 
 
+def _reject_unsupported_wcdm(w_0: float, w_a: float) -> None:
+    """Guard: the analytic distance is ΛCDM-only (hyp2f1), so fail loudly on genuine
+    wCDM inputs instead of silently returning the ΛCDM result (review PHY-01, GitHub #4).
+
+    ``dist``/``cached_dist``/``dist_vectorized`` accept ``w_0``/``w_a`` for signature
+    compatibility but ``lambda_cdm_analytic_distance`` ignores them. Every production
+    call uses the defaults ``w_0 = -1``, ``w_a = 0`` (verified by grep), so this guard
+    changes no computed value; it only prevents a silent wrong answer. A real wCDM
+    implementation (numerical quadrature of ``1/E(z)`` with the CPL ``hubble_function``)
+    must go through ``/physics-change``.
+    """
+    if w_0 != -1.0 or w_a != 0.0:
+        msg = (
+            f"analytic luminosity distance is ΛCDM-only (w_0=-1, w_a=0); got "
+            f"w_0={w_0}, w_a={w_a}. wCDM requires numerical quadrature of 1/E(z)."
+        )
+        raise NotImplementedError(msg)
+
+
 def dist(
     redshift: float,
     h: float = H,
@@ -35,7 +60,7 @@ def dist(
     w_a: float = W_A,
     offset_for_root_finding: float = 0.0,
 ) -> float:
-    """Luminosity distance in Gpc for a flat wCDM cosmology.
+    """Luminosity distance in Gpc for a flat ΛCDM cosmology.
 
     Uses the analytic hypergeometric form of the comoving distance integral:
 
@@ -68,6 +93,7 @@ def dist(
         >>> dist(0.0)
         0.0
     """
+    _reject_unsupported_wcdm(w_0, w_a)
     H_0 = h * 100.0 * KM_TO_M / GPC_TO_MPC ** (-1)  # Hubble constant in m/s*Gpc
 
     # use analytic version of the integral
@@ -107,6 +133,7 @@ def cached_dist(
     Returns:
         Luminosity distance in Gpc.
     """
+    _reject_unsupported_wcdm(w_0, w_a)
     H_0 = h * 100.0 * KM_TO_M / GPC_TO_MPC ** (-1)  # Hubble constant in m/s*Gpc
 
     # use analytic version of the integral
@@ -144,6 +171,7 @@ def dist_vectorized(
     Returns:
         Array of luminosity distances in Gpc, same shape as *redshift*.
     """
+    _reject_unsupported_wcdm(w_0, w_a)
     H_0 = h * 100.0 * KM_TO_M / GPC_TO_MPC ** (-1)  # Hubble constant in m/s*Gpc
 
     # use analytic version of the integral
@@ -226,10 +254,20 @@ def dist_derivative(
     """
     H_0 = h * 100.0 * KM_TO_M / GPC_TO_MPC ** (-1)  # Hubble constant in m/s*Gpc
 
-    first_term = C / H_0 * (1 + redshift) / hubble_function(redshift)
+    # Forward the cosmology so a non-default Omega_m / w_0 / w_a is honoured rather
+    # than silently replaced by module defaults (review PHY-02). hubble_function
+    # implements the full CPL E(z); value-neutral for the ΛCDM production defaults.
+    first_term = (
+        C
+        / H_0
+        * (1 + redshift)
+        / hubble_function(redshift, Omega_m=Omega_m, Omega_de=Omega_de, w_0=w_0, w_a=w_a)
+    )
 
     zs = np.linspace(0, redshift, 1000)
-    hubble_function_values = hubble_function(zs)
+    hubble_function_values = hubble_function(
+        zs, Omega_m=Omega_m, Omega_de=Omega_de, w_0=w_0, w_a=w_a
+    )
 
     # integral
     second_term = C / H_0 * float(np.trapezoid(1 / hubble_function_values, zs))
