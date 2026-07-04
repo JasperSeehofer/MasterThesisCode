@@ -162,6 +162,38 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   (`<run>/simulations/injections`, z + SNR) for a real injected-vs-detected
   selection function (504k injected, SNR ≥ 20 detected) instead of gating to None.
 
+### Fixed (2026-07-04 code review — all campaign-neutral)
+- **Simulation-loop robustness** (`main.py`): the 90s SIGALRM is now cancelled in a
+  `try/finally` on every path (no stale alarm can fire in inter-iteration code and kill
+  an unattended task); warnings-as-errors is scoped with `warnings.catch_warnings()` so it
+  can't leak across iterations or grow the filter list unboundedly; per-(stage, exception)
+  skip counters make CRB-stage drop rates auditable; `injection_campaign` gained a SIGTERM
+  flush handler (wall-cap kill now loses ≤ one flush interval, not up to 1999 SNRs).
+- **Provenance** (`main.py`, `arguments.py`): `run_metadata` now serialises the full parsed
+  argument namespace (`Arguments.to_dict()`) so inference-critical flags (`normalization_mode`,
+  `pdet_*`, `catalog_only`, …) are captured; `Arguments.seed` is cached so it can't return a
+  fresh random value on repeated access.
+- **wCDM guard** (`physical_relations.py`, GitHub #4): `dist`/`cached_dist`/`dist_vectorized`
+  raise `NotImplementedError` on `w_0 ≠ -1` or `w_a ≠ 0` instead of silently returning the
+  ΛCDM result; `dist_derivative` now forwards its cosmology args.
+- **Safety**: `LISA_configuration.power_spectral_density` raises on an unknown TDI channel
+  instead of returning a silent all-zero PSD (unreachable in production).
+- Figure truth-lines and the CRB-derived redshift use `constants.H` instead of a hardcoded
+  `0.73`; the interactive tension-explorer x-axis no longer clips `h = 0.86`.
+
+### Removed (2026-07-04 code review)
+- Pipeline-A dead code (Pipeline A itself was deleted in `c1571a2`): `datamodels/galaxy.py`
+  (synthetic `GalaxyCatalog`) + its lone benchmark; the galaxy.py-only constants
+  (`TRUE_HUBBLE_CONSTANT`, `GALAXY_REDSHIFT_ERROR_COEFFICIENT`, `FRACTIONAL_LUMINOSITY_ERROR`,
+  `FRACTIONAL_BLACK_HOLE_MASS_CATALOG_ERROR`, `LUMINOSITY_DISTANCE_THRESHOLD_GPC`);
+  `handler.parse_to_reduced_catalog_with_reduced_errors` (a no-op); the
+  `single_host_likelihood_grid` debug stub; `DarkEnergyScenario.de_equation` (dead + wrong);
+  `scripts/quick_snr_calibration.py`.
+
+### Added (2026-07-04 code review)
+- `test_handler_catalog_io.py`: end-to-end GLADE+ reduced-catalogue writer/reader contract
+  test (was previously untested).
+
 ### Fixed
 - `__main__.py`: force a clean process exit (`logging.shutdown()` + flush +
   `os._exit(0)`) at the `python -m master_thesis_code` entrypoint. The
