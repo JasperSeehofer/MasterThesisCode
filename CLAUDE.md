@@ -121,19 +121,18 @@ The codebase has two distinct pipelines:
 ### 2. Bayesian Inference Pipeline
 `main.py:evaluate()` -> `BayesianStatistics.evaluate()`:
 - Loads saved Cramer-Rao bounds from CSV
-- Uses `BayesianInference` (in `bayesian_inference/bayesian_inference_mwe.py`) to compute the posterior over H0
-- `GalaxyCatalog` models the galaxy distribution and mass distribution using normal/truncnorm distributions
+- Uses `BayesianStatistics` (in `bayesian_inference/bayesian_statistics.py`) to compute the posterior over H0
+- `GalaxyCatalogueHandler` (`galaxy_catalogue/handler.py`) resolves candidate hosts from the GLADE+ reduced catalogue; `SimulationDetectionProbability` supplies p_det
 
 ### Key Module Responsibilities
 
-- **`parameter_estimation/parameter_estimation.py`** — waveform generation via `few`, Fisher matrix computation (forward-difference derivatives; 5-point stencil method exists but is not yet called — see Known Bug 4), SNR and Cramer-Rao bounds. The `scalar_product_of_functions` inner product is the computational bottleneck (PSD loop).
+- **`parameter_estimation/parameter_estimation.py`** — waveform generation via `few`, Fisher matrix computation (5-point stencil derivatives, default since Phase 10), SNR and Cramer-Rao bounds. The `scalar_product_of_functions` inner product is the computational bottleneck (PSD loop).
 - **`LISA_configuration.py`** — LISA antenna patterns (F+, Fx), PSD, SSB<->detector frame transformations
 - **`datamodels/parameter_space.py`** — 14-parameter EMRI space with randomization and bounds
-- **`bayesian_inference/bayesian_inference.py`** — Pipeline A (dev cross-check): `BayesianInference`, erf-based detection probability, hardcoded 10% sigma(d_L), synthetic `GalaxyCatalog`. Not used by `--evaluate`.
-- **`bayesian_inference/bayesian_inference_mwe.py`** — thin re-export shim; `__main__` block runs Pipeline A standalone
-- **`bayesian_inference/bayesian_statistics.py`** — Pipeline B (production): `BayesianStatistics`, `single_host_likelihood`, multiprocessing workers, helper functions. Invoked by `--evaluate`.
-- **`bayesian_inference/detection_probability.py`** — `DetectionProbability` class: KDE-based detection probability with `RegularGridInterpolator` look-ups. Used by Pipeline B.
-- **`cosmological_model.py`** — `Model1CrossCheck` wraps the EMRI event rate model; `LamCDMScenario`, `DarkEnergyScenario` parameter spaces. Backward-compat re-exports of `BayesianStatistics` and `DetectionProbability`.
+- **`bayesian_inference/bayesian_statistics.py`** — Pipeline B (production, the only H0 pipeline): `BayesianStatistics`, `single_host_likelihood`, multiprocessing workers, helper functions. Invoked by `--evaluate`. (Pipeline A — the old `bayesian_inference.py`/`bayesian_inference_mwe.py` dev cross-check — was removed in commit `c1571a2`, 2026-05-01.)
+- **`bayesian_inference/simulation_detection_probability.py`** — `SimulationDetectionProbability`: survival-estimator detection probability built from the injection pool, with `RegularGridInterpolator` look-ups. Used by Pipeline B. (Replaced the removed KDE-based `detection_probability.py`.)
+- **`bayesian_inference/posterior_combination.py`** — combines per-h-value per-event posterior JSONs into the joint H0 posterior (`--combine`); zero-handling strategies and the canonical Σ log L reference implementation.
+- **`cosmological_model.py`** — `Model1CrossCheck` wraps the EMRI event rate model; `LamCDMScenario`, `DarkEnergyScenario` parameter spaces. Backward-compat re-export of `BayesianStatistics`.
 - **`galaxy_catalogue/handler.py`** — interfaces with the GLADE galaxy catalog (BallTree-based lookups)
 - **`validation/pp_coverage.py`** — synthetic-universe P–P/coverage calibration harness (G4b): flat-ΛCDM tables, Malmquist selection, single-host dark-siren H₀ estimator with switchable host-z kernel ('bare' vs calibrated 'volume'). Run per-seed during campaigns.
 - **`constants.py`** — all physical constants and simulation configuration. Key: `H=0.73`, `SNR_THRESHOLD=20`
@@ -143,15 +142,15 @@ The codebase has two distinct pipelines:
 ### Known Bugs to Be Aware Of
 
 #### Code health
-1. **`LISA_configuration.py` unconditional `import cupy`**: still at module top level — any module that imports `LisaTdiConfiguration` is un-importable on CPU-only machines without the guarded `try/except`. Fix when that file is next touched.
+~~1. **`LISA_configuration.py` unconditional `import cupy`**~~ [FIXED, commit `4894648`]: the cupy import is guarded with `try/except ImportError` + `_CUPY_AVAILABLE` in `LISA_configuration.py`, `parameter_estimation.py`, `memory_management.py`, and `decorators.py`. All source modules are CPU-importable.
 
 #### Physics / mathematics (Physics Change Protocol required)
 ~~4. **`parameter_estimation.py:336` Fisher matrix uses O(e) forward difference** [HIGH]~~ [FIXED Phase 10]: `use_five_point_stencil=True` is now default. Ref: Vallisneri (2008) arXiv:gr-qc/0703086.
 ~~5. **`LISA_configuration.py` galactic confusion noise absent from PSD** [MEDIUM]~~ [FIXED Phase 9]: `_confusion_noise()` added to `LisaTdiConfiguration`. Ref: Babak et al. (2023) arXiv:2303.15929 Eq. (17).
-6. **`physical_relations.py:72` wCDM params w0, wa silently ignored** [MEDIUM]: `dist()` accepts them but passes to a hardcoded-LCDM hypergeometric function.
-7. **`bayesian_inference/bayesian_inference.py` hardcoded 10% distance error** [MEDIUM]: uses `FRACTIONAL_LUMINOSITY_ERROR` instead of per-source Cramer-Rao bound from CSV.
-8. **`constants.py:29-30` outdated WMAP-era cosmology** [LOW]: Omega_m = 0.25, H = 0.73; Planck 2018 best-fit is Omega_m = 0.3153, H = 0.6736.
-9. **`datamodels/galaxy.py:64` galaxy redshift uncertainty non-standard scaling** [LOW]: `0.013 * (1+z)^3` has no reference; standard forms scale as (1+z).
+6. **`physical_relations.py` wCDM params w0, wa silently ignored** [MEDIUM] — GitHub #4: `dist()` accepts them but passes to a hardcoded-ΛCDM hypergeometric function. The review PR (2026-07-04) adds a `NotImplementedError` guard so non-default `w_0`/`w_a` raise instead of silently returning ΛCDM.
+~~7. **`bayesian_inference/bayesian_inference.py` hardcoded 10% distance error**~~ [MOOT — Pipeline A removed in `c1571a2`]. Production Pipeline B uses per-source Cramér-Rao bounds from the CSV. GitHub #5 closed.
+~~8. **`constants.py` WMAP-era cosmology**~~ [RESOLVED as design choice — G11]: fiducial `OMEGA_M=0.2726`, H0=70.4 km/s/Mpc deliberately match the Barausse (2012) M1 EMRI-population cosmology (arXiv:1201.5888) for a self-consistent mock universe; the Planck-2018 mismatch is a tracked systematic in `.planning/gate/G7_systematics_budget.md`, not a bug. GitHub #6 closed.
+9. **`datamodels/galaxy.py:66` galaxy redshift uncertainty non-standard scaling** [LOW] — GitHub #7: `0.013 * (1+z)^3` has no reference; **this file is dead** (imported only by `test_benchmarks.py`; production uses `galaxy_catalogue/handler.py`). Slated for deletion in the review PR.
 
 ---
 
@@ -183,7 +182,6 @@ Any edit to these files that modifies a computed value (not just refactoring/typ
 - `LISA_configuration.py`
 - `parameter_estimation/parameter_estimation.py`
 - `datamodels/galaxy.py`
-- `bayesian_inference/bayesian_inference.py`
 - `bayesian_inference/bayesian_statistics.py`
 - `bayesian_inference/simulation_detection_probability.py`
 - `cosmological_model.py`
