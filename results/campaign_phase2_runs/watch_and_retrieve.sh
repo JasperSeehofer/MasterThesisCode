@@ -22,8 +22,11 @@ while :; do
         ' 2>&1
     } >> "$DEST/status.log"
 
+    # Match any 2026-07 submit-day datestamp: the orchestrator can lawfully delay a
+    # seed up to ~41 h under queue-cap pressure, so seeds 5000/6000 may land on run
+    # dirs dated 07-07+ that the old fixed 07-03..07-06 globs missed (review CLU-07).
     ssh -o ConnectTimeout=30 -o BatchMode=yes bwunicluster \
-        "ls -d $WS/run_20260703_seed* $WS/run_20260704_seed* $WS/run_20260705_seed* $WS/run_20260706_seed* 2>/dev/null" \
+        "ls -d $WS/run_202607*_seed* 2>/dev/null" \
         2>/dev/null | while read -r d; do
         [ -n "$d" ] || continue
         name=$(basename "$d")

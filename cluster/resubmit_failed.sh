@@ -161,7 +161,9 @@ FAILED_TASKS=$(sacct --array --jobs="$JOB_ID" \
     --format=JobID%30 \
     --noheader --parsable2 \
     | grep -oP '^\d+_\K\d+' \
-    | sort -n | uniq)
+    | sort -n | uniq || true)
+# `|| true`: under `set -euo pipefail` a zero-match grep exits 1 and would abort the
+# script before the friendly empty-result branch below (review finding CLU-03).
 
 if [[ -z "$FAILED_TASKS" ]]; then
     echo "No failed tasks found for job $JOB_ID."
