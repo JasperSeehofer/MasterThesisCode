@@ -47,7 +47,7 @@ def _get_xp(use_gpu: bool) -> types.ModuleType:
 
 ### Rules
 
-- **GPU imports must always be guarded.** Never place `import cupy as cp` at module top level unconditionally. Known issues in `decorators.py`, `memory_management.py`, `LISA_configuration.py`, `parameter_estimation.py` — fix when touched.
+- **GPU imports must always be guarded.** Never place `import cupy as cp` at module top level unconditionally. All source modules are compliant as of commit `4894648` (`decorators.py`, `memory_management.py`, `LISA_configuration.py`, `parameter_estimation.py` all use the guarded `try/except ImportError` + `_CUPY_AVAILABLE` pattern) — keep new modules compliant.
 - **Vectorize array operations.** Never iterate over array elements in a hot path. Use vectorized `xp.*` operations (e.g., `xp.trapz(integrant / psd, x=fs)` instead of a Python loop).
 - **Avoid GPU-to-CPU transfers in hot paths.** Do not call `cp.asnumpy()` or `.get()` inside functions called thousands of times. Keep data on GPU until a single scalar result.
 - **GPU memory management.** Free GPU memory after each full simulation step (`cp.get_default_memory_pool().free_all_blocks()`). Do not call inside inner loops — the CuPy allocator reuses blocks.

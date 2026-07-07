@@ -373,9 +373,6 @@ class DarkEnergyScenario:
             fiducial_value=0.0,
         )
 
-    def de_equation(self, z: float) -> float:
-        return float(self.w_0 + z / (1 + z) / self.w_a)  # type: ignore[operator]
-
 
 def gaussian(
     x: float | npt.NDArray[np.float64], mu: float, sigma: float, a: float
@@ -388,4 +385,4 @@ def gaussian(
 # The re-exports caused a circular import that crashed multiprocessing workers
 # in the evaluation pipeline. Import directly from:
 #   master_thesis_code.bayesian_inference.bayesian_statistics
-#   master_thesis_code.bayesian_inference.detection_probability
+#   master_thesis_code.bayesian_inference.simulation_detection_probability

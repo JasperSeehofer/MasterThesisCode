@@ -9,14 +9,6 @@ Parameter Space
    :undoc-members:
    :show-inheritance:
 
-Galaxy Catalog
---------------
-
-.. automodule:: master_thesis_code.datamodels.galaxy
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 Detection (Cramér-Rao)
 -----------------------
 

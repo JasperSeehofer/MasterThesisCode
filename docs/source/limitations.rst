@@ -47,7 +47,7 @@ or **pending fix** (acknowledged issue not yet addressed).
 Limitation 1 — Comoving volume formula ``[FIXED]``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-**File:** ``master_thesis_code/datamodels/galaxy.py``, ``master_thesis_code/physical_relations.py``
+**File:** ``master_thesis_code/physical_relations.py``
 
 The function computes the comoving volume *element* :math:`dV_c/dz`, not total volume :math:`V_c`.
 The exponent 2 and :math:`4\pi` prefactor were correct for the element, but the formula was
@@ -124,19 +124,14 @@ the fiducial point should be updated.
 Reference: [Planck2018]_, Table 2.
 
 
-Limitation 8 — Galaxy redshift uncertainty has non-standard scaling ``[design choice · LOW]``
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Limitation 8 — Galaxy redshift uncertainty has non-standard scaling ``[RESOLVED — file removed]``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-**File:** ``master_thesis_code/datamodels/galaxy.py:64``
-
-.. code-block:: python
-
-   redshift_uncertainty = min(0.013 * (1 + redshift) ** 3, 0.015)
-
-The :math:`(1+z)^3` scaling grows rapidly and hits the cap of 0.015 at :math:`z \approx 0.14`, so all
-galaxies above that redshift are assigned identical uncertainty. Standard photometric
-redshift errors scale as :math:`\sigma_z \approx 0.05(1+z)`; spectroscopic errors as
-:math:`\sigma_z \approx 0.001(1+z)`. No reference for the cubic form is provided.
+The offending scaling lived in the dead ``master_thesis_code/datamodels/galaxy.py`` module
+(``redshift_uncertainty = min(0.013 * (1 + redshift) ** 3, 0.015)``), which was imported only by
+a benchmark test and never by the production pipeline. The 2026-07-04 code review removed the
+module outright (GitHub #7), so the non-standard :math:`(1+z)^3` form no longer appears in the
+codebase. Production redshift uncertainties come from ``galaxy_catalogue/handler.py``.
 
 
 What Is Mathematically Correct

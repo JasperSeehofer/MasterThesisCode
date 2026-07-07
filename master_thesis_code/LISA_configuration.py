@@ -78,7 +78,11 @@ class LisaTdiConfiguration:
             return self.power_spectral_density_a_channel(frequencies)
         elif channel.upper() == "T":
             return self.power_spectral_density_t_channel(frequencies)
-        return np.zeros_like(frequencies)
+        # Fail loudly instead of returning a silent all-zero PSD, which would produce
+        # inf/nan inner products downstream (review HPC-06). Unreachable in production
+        # (callers iterate ESA_TDI_CHANNELS = "AE"), so this changes no computed value.
+        msg = f"Unknown TDI channel: {channel!r}; expected 'A', 'E', or 'T'."
+        raise ValueError(msg)
 
     # Eq. (3) in Cornish & Robson (2017), arXiv:1703.09858
     # LDC parameterization with continuous T_obs dependence

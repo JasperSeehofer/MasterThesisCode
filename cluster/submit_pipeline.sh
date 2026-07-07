@@ -98,8 +98,10 @@ fi
 # ---------------------------------------------------------------------------
 
 EVAL_SBATCH="$CLUSTER_DIR/evaluate.sbatch"
-H_GRID=$(grep -m1 '^H_VALUES=(' "$EVAL_SBATCH" | sed -E 's/^H_VALUES=\(//; s/\)[[:space:]]*$//')
-N_H=$(echo "$H_GRID" | grep -oE '[0-9]+\.[0-9]+' | wc -l | tr -d ' ')
+# `|| true`: a grep miss under `set -euo pipefail` would abort before the diagnostic
+# guard below fires (review finding CLU-03).
+H_GRID=$(grep -m1 '^H_VALUES=(' "$EVAL_SBATCH" | sed -E 's/^H_VALUES=\(//; s/\)[[:space:]]*$//' || true)
+N_H=$(echo "$H_GRID" | grep -oE '[0-9]+\.[0-9]+' | wc -l | tr -d ' ' || true)
 
 if [[ -z "$N_H" || "$N_H" -eq 0 ]]; then
     echo "ERROR: Could not parse H_VALUES from $EVAL_SBATCH (got 0 values)." >&2

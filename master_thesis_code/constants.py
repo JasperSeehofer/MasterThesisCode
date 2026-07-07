@@ -23,7 +23,6 @@ H0: float = 73e3  # m / (s * Mpc), Hubble constant in SI-adjacent units
 H_MIN: float = 60.0  # lower limit for dimensionless h
 H_MAX: float = 86.0  # upper limit for dimensionless h
 H: float = 0.73  # dimensionless h = H₀ / (100 km/s/Mpc), fiducial simulation value
-TRUE_HUBBLE_CONSTANT: float = 0.7  # dimensionless h, fiducial value for Bayesian inference
 
 # cosmological parameters fiducial values
 # [PHYSICS] G11: matched to the M1 EMRI population model's cosmology — the
@@ -67,9 +66,6 @@ PRE_SCREEN_SNR_FACTOR: float = 0.0
 FISHER_CONDITION_NUMBER_MAX: float = 1e14
 
 # galaxy catalog and EMRI detection
-GALAXY_REDSHIFT_ERROR_COEFFICIENT: float = 0.013  # Galaxy.redshift_uncertainty ∝ 0.013*(1+z)^3
-FRACTIONAL_LUMINOSITY_ERROR: float = 0.1  # fractional error on measured luminosity distance
-FRACTIONAL_BLACK_HOLE_MASS_CATALOG_ERROR: float = 0.1  # fractional BH mass catalog uncertainty
 FRACTIONAL_MEASURED_MASS_ERROR: float = 1e-8  # fractional error on measured redshifted mass
 SKY_LOCALIZATION_ERROR: float = 2 / 180 * np.pi  # rad, EMRI sky localization error (2 degrees)
 # [PHYSICS] Residual host peculiar-velocity dispersion, marginalized into the
@@ -101,7 +97,6 @@ GALAXY_CATALOG_REDSHIFT_UPPER_LIMIT: float = 1.55  # maximum redshift for galaxy
 # that p_det = 0 beyond. The injection-campaign z_cut derives from this
 # constant (main.py) so the P_det grid always spans the host-draw volume.
 HOST_DRAW_Z_MAX: float = 1.5
-LUMINOSITY_DISTANCE_THRESHOLD_GPC: float = 1.55  # Gpc, LISA detection horizon for EMRIs
 # Multiplicative safety margin on the population-derived d_L pre-screen bound
 # (physical_relations.luminosity_distance_prescreen_gpc). Placeholder pending
 # re-measurement on post-dt^2 injection data — issue #19. Replaces the retired

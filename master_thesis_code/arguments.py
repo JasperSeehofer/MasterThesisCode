@@ -16,6 +16,7 @@ class Arguments:
 
     def __init__(self, parsed_arguments: argparse.Namespace):
         self._parsed_arguments = parsed_arguments
+        self._resolved_seed: int | None = None
         self._working_directory_replaced: bool = False
         self._log_level_replaced: bool = False
         self._working_directory: str = parsed_arguments.working_directory
@@ -100,11 +101,25 @@ class Arguments:
 
     @property
     def seed(self) -> int:
-        """Random seed for reproducibility. A random seed is chosen if not provided."""
-        raw = self._parsed_arguments.seed
-        if raw is None:
-            return random.randint(0, 2**31 - 1)
-        return int(raw)
+        """Random seed for reproducibility. A random seed is chosen ONCE if not
+        provided, then cached so repeated access (e.g. the combine-metadata path)
+        returns the same value rather than a fresh draw (review REP-03)."""
+        if self._resolved_seed is None:
+            raw = self._parsed_arguments.seed
+            self._resolved_seed = random.randint(0, 2**31 - 1) if raw is None else int(raw)
+        return self._resolved_seed
+
+    def to_dict(self) -> dict[str, object]:
+        """Full parsed-argument namespace as a JSON-serialisable dict.
+
+        Serialising the whole namespace means ``run_metadata`` captures EVERY flag —
+        including the inference-critical ones (``normalization_mode``, ``pdet_*``,
+        ``catalog_only``, ``fisher_cond_threshold``, ``allow_low_pdet_coverage``) that
+        a hand-maintained key list silently omitted (review REP-02). ``seed`` here is
+        the RAW CLI value (``None`` when unset), distinct from the resolved
+        ``random_seed`` recorded alongside it.
+        """
+        return dict(vars(self._parsed_arguments))
 
     @property
     def save_baseline(self) -> bool:

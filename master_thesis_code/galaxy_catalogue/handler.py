@@ -15,10 +15,7 @@ from sklearn.neighbors import BallTree
 
 from master_thesis_code.constants import HOST_DRAW_Z_MAX
 from master_thesis_code.emri_rate import R_eff_per_mbh
-from master_thesis_code.physical_relations import (
-    dist,
-    dist_to_redshift_error_proagation,
-)
+from master_thesis_code.physical_relations import dist
 
 _LOGGER = logging.getLogger()
 REDUCED_CATALOGUE_FILE_PATH = "./master_thesis_code/galaxy_catalogue/reduced_galaxy_catalogue.csv"
@@ -196,8 +193,7 @@ def _reduced_catalog_column_names() -> list[str]:
     """On-disk column names of the headerless reduced-catalog CSV, in file order.
 
     Single source of truth shared by the writer (``parse_to_reduced_catalog``) and
-    every reader (``read_reduced_galaxy_catalog``,
-    ``parse_to_reduced_catalog_with_reduced_errors``, and
+    every reader (``read_reduced_galaxy_catalog`` and
     ``pixel_completeness.build_m_th_map``). The order is all
     :class:`CatalogueColumns` except the dropped peculiar-velocity error (raw col
     30) and the redshift flag (raw col 34), followed by the RETAINED redshift flag
@@ -367,17 +363,6 @@ class GalaxyCatalogueHandler:
             chunk = chunk[_reduced_catalog_column_names()]
 
             chunk.to_csv(REDUCED_CATALOGUE_FILE_PATH, header=False, mode="a", index=False)
-
-    def parse_to_reduced_catalog_with_reduced_errors(self) -> None:
-        catalog = pd.read_csv(
-            REDUCED_CATALOGUE_FILE_PATH,
-            names=_reduced_catalog_column_names(),
-        )
-        for index, row in catalog.iterrows():
-            redshift = row[CatalogueColumns.REDSHIFT.name]
-            redshift_error = row[CatalogueColumns.REDSHIFT_MEASUREMENT_ERROR.name]
-            new_redshift_error = dist_to_redshift_error_proagation(redshift, redshift_error)
-            catalog.at[index, CatalogueColumns.REDSHIFT_MEASUREMENT_ERROR.name] = new_redshift_error
 
     def read_reduced_galaxy_catalog(self) -> pd.DataFrame:
         """Load the reduced catalog (RAW equatorial ICRS degrees, pre-rotation).

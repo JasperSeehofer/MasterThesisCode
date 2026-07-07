@@ -705,8 +705,8 @@ detection_probability: Any = None
 # Gray et al. (2020), arXiv:1908.06050, Eq. A.19:
 # Precomputed completion-term denominator D(h) for each h in the evaluation grid
 D_h_table: dict[float, float] = {}
-# Legacy global kept for single_host_likelihood_integration_testing() and
-# single_host_likelihood_grid() — not used by the optimized production path.
+# Legacy global kept for single_host_likelihood_integration_testing() (the dev-only
+# cross-check twin) — not used by the optimized production path.
 detection_likelihood_gaussians_by_detection_index: Any = None
 
 # Pre-computed Gaussian arrays (replace frozen scipy multivariate_normal objects)
@@ -1842,26 +1842,6 @@ def use_detection(detection: Detection) -> bool:
         f"Detection skipped: distance_relative_error {distance_relative_error} > {FRACTIONAL_LUMINOSITY_DISTANCE_ERROR_THRESHOLD}, sky_localization_uncertainty {sky_localization_uncertainty}"
     )
     return False
-
-
-def single_host_likelihood_grid(
-    possible_host: HostGalaxy,
-    detection: Detection,
-    detection_index: int,
-    h: float,
-    evaluate_with_bh_mass: bool,
-) -> list[float]:
-    global redshift_upper_integration_limit
-    global redshift_lower_integration_limit
-    global bh_mass_upper_integration_limit
-    global bh_mass_lower_integration_limit
-    global detection_probability
-    global detection_likelihood_gaussians_by_detection_index
-
-    # find sharpest peak
-    print(possible_host.z, possible_host.z_error)
-    print(detection.d_L, detection.d_L_uncertainty)
-    return []
 
 
 def single_host_likelihood(

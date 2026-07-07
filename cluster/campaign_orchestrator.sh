@@ -17,7 +17,7 @@
 #   cd ~/MasterThesisCode && nohup bash cluster/campaign_orchestrator.sh \
 #       > /dev/null 2>&1 & disown
 # Status:  tail $(ws_find emri)/campaign_orchestrator.log
-# Stop:    pkill -f campaign_orchestrator.sh
+# Stop:    pkill -f 'campaign_orchestrator[.]sh'   # bracket idiom: don't match the ssh wrapper shell
 
 set -u
 
