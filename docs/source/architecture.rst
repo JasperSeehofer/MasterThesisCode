@@ -83,9 +83,6 @@ Module Responsibilities
        injection campaign results.
    * - ``bayesian_inference/posterior_combination.py``
      - Combines per-event posteriors into the population-level H₀ posterior.
-   * - ``datamodels/galaxy.py``
-     - ``Galaxy`` and ``GalaxyCatalog`` dataclasses; comoving volume, redshift/mass
-       distributions.
    * - ``datamodels/detection.py``
      - ``Detection`` dataclass parsed from Cramér-Rao CSV output.
    * - ``cosmological_model.py``
