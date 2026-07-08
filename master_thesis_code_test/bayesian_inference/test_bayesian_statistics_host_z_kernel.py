@@ -15,6 +15,9 @@ import numpy as np
 import pytest
 
 import master_thesis_code.bayesian_inference.bayesian_statistics as bs
+from master_thesis_code_test.bayesian_inference.test_bh_denominator_semianalytic import (
+    make_grid2d_pdet,
+)
 
 # Synthetic detection: z ~ 0.1 event at h = 0.73 with 5% distance error.
 _DET_D_L = 0.47  # Gpc
@@ -29,6 +32,9 @@ class _StubDetectionProbability:
 
     def __init__(self) -> None:
         self._dl_centers = np.linspace(0.01, 60.0, 300)
+        # Real 2-D interp for the with-BH-mass path (the semi-analytic denominator
+        # reads its M_z knots and needs a genuinely piecewise-linear p_det).
+        self._grid2d = make_grid2d_pdet("peaked")
 
     def detection_probability_without_bh_mass_interpolated_zero_fill(
         self,
@@ -47,15 +53,13 @@ class _StubDetectionProbability:
         theta: np.ndarray,
         h: float,
     ) -> np.ndarray:
-        d = np.asarray(d_L, dtype=np.float64)
-        m = np.asarray(M_z, dtype=np.float64)
-        return np.exp(-d / 5.0) * np.exp(-((np.log10(m) - 5.5) ** 2))
+        return self._grid2d.detection_probability_with_bh_mass_interpolated(d_L, M_z, phi, theta, h)
 
     def _get_or_build_grid(self, h: float) -> tuple:
         class _Interp:
             grid = (self._dl_centers,)
 
-        return None, _Interp()
+        return self._grid2d._interp, _Interp()
 
 
 def _install_worker_globals() -> None:
@@ -162,6 +166,11 @@ PIN_VD_DEN = 0.9152972692189939
 PIN_LR_NUM = 1611.8260385718838
 PIN_LR_DEN = 0.9152831657144014
 PIN_VD_BH_NUM = 4594.733503494528
-PIN_VD_BH_DEN = 0.9130872910698521
+# Re-pinned in the [PHYSICS] 2026-07-08 commit: the with-BH-mass denominator is now
+# the exact semi-analytic erf-sum (windowed) instead of the 10k-sample MC. The value
+# moves from the MC's noisy 0.9131 to the deterministic 0.9427 (this stub's exact
+# window-integral). Correctness of the estimator is proven independently in
+# test_bh_denominator_semianalytic (erf-sum vs adaptive quad).
+PIN_VD_BH_DEN = 0.942697375911772
 PIN_CLAMP_DEN = 0.995760331092859
 PIN_CLAMP_W_DEN = 0.2283619655845074

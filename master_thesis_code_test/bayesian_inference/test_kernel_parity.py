@@ -38,6 +38,9 @@ import numpy.typing as npt
 import pytest
 
 import master_thesis_code.bayesian_inference.bayesian_statistics as bs
+from master_thesis_code_test.bayesian_inference.test_bh_denominator_semianalytic import (
+    make_grid2d_pdet,
+)
 
 _GOLDEN_PATH = Path(__file__).resolve().parent / "golden" / "kernel_parity_pins.json"
 
@@ -58,6 +61,11 @@ class _StubDetectionProbability:
 
     def __init__(self) -> None:
         self._dl_centers: npt.NDArray[np.float64] = np.linspace(0.01, 120.0, 400)
+        # Real 2-D RegularGridInterpolator p_det for the with-BH-mass path: the
+        # semi-analytic denominator reads its M_z knots (interp_2d.grid[1]) and
+        # relies on the interpolant being piecewise-linear in M_z (a smooth
+        # analytic stub has no grid and would break the erf-sum's premise).
+        self._grid2d = make_grid2d_pdet("peaked")
 
     def detection_probability_without_bh_mass_interpolated_zero_fill(
         self,
@@ -76,23 +84,16 @@ class _StubDetectionProbability:
         theta: npt.NDArray[np.float64],
         h: float,
     ) -> npt.NDArray[np.float64]:
-        d = np.asarray(d_L, dtype=np.float64)
-        m = np.asarray(M_z, dtype=np.float64)
-        # Real interpolators return 0 outside their (positive-mass) grid; guard
-        # against non-positive M_z draws (wide-photo-z + large mass-error hosts
-        # can sample M < 0) so the stub never emits log10(NaN).
-        out = np.zeros_like(d)
-        pos = m > 0.0
-        out[pos] = np.exp(-d[pos] / 5.0) * np.exp(-((np.log10(m[pos]) - 5.5) ** 2))
-        return out
+        return self._grid2d.detection_probability_with_bh_mass_interpolated(d_L, M_z, phi, theta, h)
 
-    def _get_or_build_grid(self, h: float) -> tuple[None, Any]:
+    def _get_or_build_grid(self, h: float) -> tuple[Any, Any]:
         centers = self._dl_centers
 
         class _Interp:
             grid = (centers,)
 
-        return None, _Interp()
+        # (2-D interp for the erf-sum, 1-D-grid stub for the STAT-04 diagnostic).
+        return self._grid2d._interp, _Interp()
 
 
 # ── Synthetic detections (module-global slot state) ─────────────────────────
