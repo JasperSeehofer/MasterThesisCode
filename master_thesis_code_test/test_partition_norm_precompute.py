@@ -225,3 +225,83 @@ def test_global_selection_empty_catalog_returns_zero() -> None:
     mock_pdet = _make_constant_pdet(dl_max=5.0, value=1.0)
     result = precompute_global_catalog_selection([_H], catalog, mock_pdet, with_bh_mass=False)
     assert result[_H] == 0.0
+
+
+# ======================================================================
+# z_max_cap (issue #30) — consistent selection-domain truncation knob
+# ======================================================================
+
+
+def test_z_max_cap_above_horizon_is_a_noop() -> None:
+    """A cap above the p_det horizon changes nothing (today's production regime).
+
+    At current constants the cap passed by ``evaluate`` (max_redshift = 1.5)
+    sits above the horizon z_max(h) <= ~1.33, so all selection integrals must be
+    bit-identical with and without it.
+    """
+    mock_pdet = _make_mock_pdet(dl_max=5.0)
+    z_horizon = dist_to_redshift(5.0, h=_H)
+    D_uncapped = precompute_completion_denominator(
+        [_H], mock_pdet, Omega_m=_OMEGA_M, Omega_DE=_OMEGA_DE
+    )
+    D_capped = precompute_completion_denominator(
+        [_H], mock_pdet, Omega_m=_OMEGA_M, Omega_DE=_OMEGA_DE, z_max_cap=z_horizon + 0.5
+    )
+    assert D_capped[_H] == D_uncapped[_H]
+
+    c = 0.40
+    completeness = _constant_completeness(100.0 * c)
+    bgbar_uncapped = precompute_missing_completion_denominator(
+        [_H], mock_pdet, completeness=completeness
+    )
+    bgbar_capped = precompute_missing_completion_denominator(
+        [_H], mock_pdet, completeness=completeness, z_max_cap=z_horizon + 0.5
+    )
+    assert bgbar_capped[_H] == bgbar_uncapped[_H]
+
+
+def test_z_max_cap_binds_consistently_across_selection_integrals() -> None:
+    """A binding cap truncates D(h) and beta_Gbar(h) on the SAME domain.
+
+    The point of issue #30: an analysis truncation must move ALL selection
+    integrals together, so ``beta_Gbar = (1-f) D`` (constant f) remains an exact
+    identity on the capped domain and ``beta_G = D - beta_Gbar`` stays a
+    partition of one volume.
+    """
+    mock_pdet = _make_mock_pdet(dl_max=5.0)
+    z_horizon = dist_to_redshift(5.0, h=_H)
+    z_cap = 0.5 * z_horizon
+
+    D = precompute_completion_denominator([_H], mock_pdet, Omega_m=_OMEGA_M, Omega_DE=_OMEGA_DE)
+    D_capped = precompute_completion_denominator(
+        [_H], mock_pdet, Omega_m=_OMEGA_M, Omega_DE=_OMEGA_DE, z_max_cap=z_cap
+    )
+    assert 0.0 < D_capped[_H] < D[_H]
+
+    c = 0.40
+    bgbar_capped = precompute_missing_completion_denominator(
+        [_H], mock_pdet, completeness=_constant_completeness(100.0 * c), z_max_cap=z_cap
+    )
+    # Identity on the capped domain, NOT the horizon domain.
+    assert bgbar_capped[_H] == pytest.approx((1.0 - c) * D_capped[_H], rel=1e-9)
+
+
+def test_z_max_cap_binds_global_catalog_selection() -> None:
+    """A binding cap drops catalogue galaxies between the cap and the horizon."""
+    dl_max = 5.0
+    z_horizon = dist_to_redshift(dl_max, h=_H)
+    z_cap = 0.5 * z_horizon
+    # One galaxy inside the cap, one between cap and horizon (eligible without
+    # the cap, excluded with it).
+    z = [0.5 * z_cap, 0.5 * (z_cap + z_horizon)]
+    M = [1.0e5, 5.0e5]
+    catalog = cast(GalaxyCatalogueHandler, _FakeCatalogDF(z, M))
+    mock_pdet = _make_constant_pdet(dl_max=dl_max, value=1.0)
+
+    uncapped = precompute_global_catalog_selection([_H], catalog, mock_pdet, with_bh_mass=False)
+    capped = precompute_global_catalog_selection(
+        [_H], catalog, mock_pdet, with_bh_mass=False, z_max_cap=z_cap
+    )
+    expected_capped = float(R_eff_per_mbh(np.asarray([M[0]]))[0] / (1.0 + z[0]))
+    assert capped[_H] == pytest.approx(expected_capped, rel=1e-9)
+    assert capped[_H] < uncapped[_H]

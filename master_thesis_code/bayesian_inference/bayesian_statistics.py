@@ -366,6 +366,7 @@ def precompute_completion_denominator(
     *,
     completeness: CompletenessModel | None = None,
     quad_n: int = _DH_QUAD_ORDER,
+    z_max_cap: float | None = None,
 ) -> dict[float, float]:
     """Precompute the completion-term denominator D(h) for each h value.
 
@@ -437,6 +438,16 @@ def precompute_completion_denominator(
     for h in h_values:
         dl_max = detection_probability_obj.get_dl_max(h)
         z_max = dist_to_redshift(dl_max, h=h)
+        # [PHYSICS] Selection-domain cap (issue #30): keep the selection integrals
+        # on the SAME z-domain as the numerator-side candidate window (p_D caps its
+        # BallTree z-window at max_redshift), so an analysis truncation moves
+        # numerator and denominator TOGETHER and beta_G = D - beta_Gbar remains an
+        # identity on one domain. No-op at current constants: the p_det horizon
+        # z_max(h) <= ~1.33 for h in [0.60, 0.86] < max_redshift = 1.5.
+        # Mandel, Farr & Gair (2019), arXiv:1809.02063 (selection function must
+        # match the event-inclusion criterion).
+        if z_max_cap is not None:
+            z_max = min(z_max, z_max_cap)
         z_min = 1e-6
 
         def _denom_integrand(
@@ -506,6 +517,7 @@ def precompute_missing_completion_denominator(
     completeness: CompletenessModel,
     *,
     quad_n: int = _DH_QUAD_ORDER,
+    z_max_cap: float | None = None,
 ) -> dict[float, float]:
     r"""Precompute the missing-volume selection integral ``beta_Gbar(h)``.
 
@@ -569,6 +581,10 @@ def precompute_missing_completion_denominator(
     for h in h_values:
         dl_max = detection_probability_obj.get_dl_max(h)
         z_max = dist_to_redshift(dl_max, h=h)
+        # [PHYSICS] Selection-domain cap (issue #30) — same domain as D(h); see
+        # precompute_completion_denominator. No-op at current constants.
+        if z_max_cap is not None:
+            z_max = min(z_max, z_max_cap)
         z_min = 1e-6
 
         def _missing_denom_integrand(
@@ -634,6 +650,7 @@ def precompute_global_catalog_selection(
     detection_probability_obj: SimulationDetectionProbability,
     *,
     with_bh_mass: bool,
+    z_max_cap: float | None = None,
 ) -> dict[float, float]:
     r"""Precompute the GLOBAL in-catalogue selection denominator (Option A).
 
@@ -719,6 +736,10 @@ def precompute_global_catalog_selection(
     global_table: dict[float, float] = {}
     for h in h_values:
         z_max = dist_to_redshift(detection_probability_obj.get_dl_max(h), h=h)
+        # [PHYSICS] Selection-domain cap (issue #30) — same domain as D(h); see
+        # precompute_completion_denominator. No-op at current constants.
+        if z_max_cap is not None:
+            z_max = min(z_max, z_max_cap)
         # Eligible galaxies: inside the detectable volume (z < z_max(h)) with a
         # finite source-frame mass. Galaxies beyond z_max(h) have P_det ~= 0 and
         # do not contribute to the selection normalisation.
@@ -1078,6 +1099,7 @@ class BayesianStatistics:
             Omega_m=self.Omega_m,
             Omega_DE=self.Omega_DE,
             completeness=completeness,
+            z_max_cap=REDSHIFT_UPPER_LIMIT,
         )
         _LOGGER.info("D(h) precomputed for %d h-value(s).", len(_D_h_table))
 
@@ -1091,6 +1113,7 @@ class BayesianStatistics:
             h_values=_h_list,
             detection_probability_obj=detection_probability,
             completeness=completeness,
+            z_max_cap=REDSHIFT_UPPER_LIMIT,
         )
         _beta_G_table = {h: _D_h_table[h] - _beta_Gbar_table[h] for h in _D_h_table}
         _global_cat_denom_no_bh = precompute_global_catalog_selection(
@@ -1098,12 +1121,14 @@ class BayesianStatistics:
             galaxy_catalog=galaxy_catalog,
             detection_probability_obj=detection_probability,
             with_bh_mass=False,
+            z_max_cap=REDSHIFT_UPPER_LIMIT,
         )
         _global_cat_denom_with_bh = precompute_global_catalog_selection(
             h_values=_h_list,
             galaxy_catalog=galaxy_catalog,
             detection_probability_obj=detection_probability,
             with_bh_mass=True,
+            z_max_cap=REDSHIFT_UPPER_LIMIT,
         )
         for _h_prev in _h_list:
             _w_G_preview = (

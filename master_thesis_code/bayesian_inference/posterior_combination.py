@@ -597,6 +597,13 @@ def combine_posteriors(
             detection_probability_obj=detection_probability,
             Omega_m=OMEGA_M,
             Omega_DE=OMEGA_DE,
+            # Selection-domain cap (issue #30). This fast path has no
+            # cosmological model; HOST_DRAW_Z_MAX is the population depth,
+            # guarded <= Model1CrossCheck.max_redshift and equal to the
+            # evaluate-side cap at current constants (both 1.5; no-op today).
+            # The combine's D(h) is diagnostic-only (combine_log_space ignores
+            # log_D_h), so any residual cap difference cannot move the posterior.
+            z_max_cap=HOST_DRAW_Z_MAX,
         )
 
     D_h_array = np.array([d_h_table[h] for h in h_values], dtype=np.float64)
