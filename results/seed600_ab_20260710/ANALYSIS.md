@@ -1,4 +1,4 @@
-# seed600 frozen-venue A/B — ANALYSIS (2026-07-10 → 07-11 overnight)
+# seed600 frozen-venue A/B — ANALYSIS (2026-07-10 evening)
 
 Handoff item L-B; plan of record [L2]. Inputs identical across all three code eras
 (see README.md): seed600 prepared CRBs (3,375 rows), 80-CSV shallow pool
