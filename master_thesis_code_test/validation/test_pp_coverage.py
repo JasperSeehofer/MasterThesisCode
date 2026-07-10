@@ -8,6 +8,7 @@ coverage sits in a generous nominal band with the bare kernel below it.
 """
 
 import dataclasses
+import math
 
 import pytest
 
@@ -20,6 +21,14 @@ TINY = PPCoverageConfig(
     injected_truths=[0.72],
     seed=42,
     kernel="bare",
+)
+
+TINY_DEEPVENUE = PPCoverageConfig(
+    n_realizations=6,
+    n_events=30,
+    injected_truths=[0.72],
+    seed=20260711,
+    kernel="volume",
 )
 
 
@@ -83,6 +92,69 @@ def test_medium_config_calibration_band() -> None:
     assert 0.5 <= volume["coverage"]["68"] <= 0.85
     assert bare["coverage"]["68"] < volume["coverage"]["68"]
     assert abs(volume["map_bias"]) < abs(bare["map_bias"])
+
+
+def test_z_support_none_golden_pin() -> None:
+    """Golden pin measured at HEAD; the z_support=None path MUST stay bit-identical
+
+    after the truncated-mode change (issue #29 harness validation, pin-first per
+    ed46390).
+    """
+    config = PPCoverageConfig(
+        n_realizations=2,
+        n_events=25,
+        injected_truths=[0.72],
+        seed=20260710,
+        kernel="volume",
+    )
+    entry = run_coverage(config)["results"]["0.7200"]
+    assert entry["map_mean"] == pytest.approx(0.7260000000000001, rel=1e-12)
+    assert entry["map_std"] == pytest.approx(0.0020000000000000018, rel=1e-12)
+    assert entry["map_bias"] == pytest.approx(0.006000000000000116, rel=1e-12)
+    assert entry["coverage"]["50"] == 1.0
+    assert entry["coverage"]["68"] == 1.0
+    assert entry["coverage"]["90"] == 1.0
+    assert entry["rail_fraction"] == 0.0
+
+
+def test_z_support_at_zmax_pop_matches_untruncated_limiting_case() -> None:
+    """z_support >= Z_MAX_POP (0.95) is the untruncated limiting case.
+
+    z_host is sampled in [Z_MIN, Z_MAX_POP], so setting z_support at the
+    population ceiling routes zero events into the completion branch: the
+    ``results`` block matches the z_support=None run exactly and
+    completion_fraction is 0.0 (issue #29 harness validation).
+    """
+    untruncated = run_coverage(TINY_DEEPVENUE)
+    truncated = run_coverage(dataclasses.replace(TINY_DEEPVENUE, z_support=0.95))
+    assert truncated["results"] == untruncated["results"]
+    assert truncated["results"]["0.7200"]["completion_fraction"] == 0.0
+
+
+def test_small_z_support_completion_fraction_near_one_and_posterior_finite() -> None:
+    """At deep truncation (z_support=0.05) almost all hosts are zero-host events.
+
+    The pure-completion B_num/D posterior must stay finite/normalizable (no
+    NaN/inf) and its MAP must remain on the H0 grid.
+    """
+    config = dataclasses.replace(TINY_DEEPVENUE, z_support=0.05)
+    entry = run_coverage(config)["results"]["0.7200"]
+    assert entry["completion_fraction"] > 0.9
+    assert math.isfinite(entry["map_mean"])
+    assert math.isfinite(entry["map_std"])
+    assert all(math.isfinite(v) for v in entry["coverage"].values())
+    assert TINY_DEEPVENUE.h_min <= entry["map_mean"] <= TINY_DEEPVENUE.h_max
+
+
+def test_z_support_monotonic_completion_fraction() -> None:
+    """completion_fraction is strictly in (0,1) and increases as z_support decreases."""
+    cf_moderate = run_coverage(dataclasses.replace(TINY_DEEPVENUE, z_support=0.35))["results"][
+        "0.7200"
+    ]["completion_fraction"]
+    cf_deeper = run_coverage(dataclasses.replace(TINY_DEEPVENUE, z_support=0.2))["results"][
+        "0.7200"
+    ]["completion_fraction"]
+    assert 0.0 < cf_moderate < cf_deeper < 1.0
 
 
 def test_tiny_config_exact_value_pins(tiny_bare: dict, tiny_volume: dict) -> None:
