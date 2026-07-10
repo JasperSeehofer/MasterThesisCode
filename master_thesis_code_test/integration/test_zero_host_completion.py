@@ -8,15 +8,17 @@ joint likelihood. On the depth-1.5 Phase-2 campaign this dropped 58% of all
 events and railed the combined posterior (seed1000 diagnosis, 2026-07-10;
 ``results/campaign_phase2_runs/run_20260703_seed1000/FINDINGS_COMBINE_20260710.md``).
 
-This module pins that behavior. It reuses the deterministic synthetic pipeline
-of ``test_pipeline_parity`` and forces the zero-host path for one chosen event
-by wrapping the catalogue lookup.
+Since the [PHYSICS] fallback commit, a zero-host event contributes the
+pure-completion likelihood ``p_i = B_num/D`` (Gray et al. 2020,
+arXiv:1908.06050, Eqs. 29+32 — the exact ``L_cat -> 0`` limit of the mixture),
+and this module pins THAT behavior. It reuses the deterministic synthetic
+pipeline of ``test_pipeline_parity`` and forces the zero-host path for one
+chosen event by wrapping the catalogue lookup.
 
 Regression discipline (physics-change protocol): the first commit of this file
-asserts the OLD behavior (silent skip -> empty entry); the [PHYSICS] fallback
-commit flips the assertions to the NEW behavior (pure-completion likelihood
-``p_i = B_num/D``, Gray et al. 2020 arXiv:1908.06050 Eqs. 29+32) so the diff
-makes the behavioral change explicit.
+(``ed46390``) asserted the OLD behavior (silent skip -> empty entry); the
+[PHYSICS] fallback commit flipped the assertions, so the behavioral change is
+explicit in the diff.
 """
 
 import csv
@@ -107,35 +109,46 @@ def _run_evaluate(
 
 
 @pytest.mark.slow
-def test_zero_host_event_is_silently_skipped_legacy(
+def test_zero_host_event_pure_completion_fallback(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
     cosmological_model: "Model1CrossCheck",
 ) -> None:
-    """OLD behavior pin: a zero-host event leaves an empty entry at every h.
+    """NEW behavior (issue #29): a zero-host event contributes p_i = B_num/D.
 
-    This is the silent-drop defect of issue #29 (bayesian_statistics.py
-    ``if possible_hosts is None: continue``): the event key exists (initialised
-    to ``[]``) but receives no likelihood, so the combine's full-mask
-    intersection excludes it — a hidden, catalogue-support-conditioned
-    selection of the event sample.
+    The pure-completion value is cross-checked INDEPENDENTLY of the fallback
+    code path: in a reference run where the same event resolves hosts normally,
+    the diagnostics row records w_G and L_comp, and the Gray et al. (2020)
+    mixture identity gives ``B_num/D = (1 - w_G) * L_comp`` (B_num, w_G, D are
+    host-independent). The fallback value must reproduce that number.
     """
     np.random.seed(42)
-    result = _run_evaluate(tmp_path, monkeypatch, cosmological_model, _ZERO_HOST_EVENT)
+    reference = _run_evaluate(tmp_path / "ref", monkeypatch, cosmological_model, None)
+    np.random.seed(42)
+    result = _run_evaluate(tmp_path / "zh", monkeypatch, cosmological_model, _ZERO_HOST_EVENT)
 
-    # The dropped event: entry exists, stays empty, lands empty in the JSON too.
-    assert result["1d"][_ZERO_HOST_EVENT] == []
-    assert result["2d"][_ZERO_HOST_EVENT] == []
-    assert result["written_1d"][str(_ZERO_HOST_EVENT)] == []
-    # No diagnostics row is written for the dropped event.
-    assert _ZERO_HOST_EVENT not in result["diagnostics"]
+    # The zero-host event now carries exactly one positive likelihood per channel.
+    assert len(result["1d"][_ZERO_HOST_EVENT]) == 1
+    assert len(result["2d"][_ZERO_HOST_EVENT]) == 1
+    fallback_1d = result["1d"][_ZERO_HOST_EVENT][0]
+    fallback_2d = result["2d"][_ZERO_HOST_EVENT][0]
+    assert fallback_1d > 0.0
+    assert result["written_1d"][str(_ZERO_HOST_EVENT)] == [fallback_1d]
 
-    # All other events evaluate normally: exactly one positive likelihood.
-    for idx in range(_N_EVENTS):
-        if idx == _ZERO_HOST_EVENT:
-            continue
-        assert len(result["1d"][idx]) == 1 and result["1d"][idx][0] > 0.0
-        assert len(result["2d"][idx]) == 1
+    # Both channels reduce to the SAME pure-completion value (L_cat = 0 in both).
+    assert fallback_1d == fallback_2d
+
+    # Diagnostics: the event is recorded with a vanished in-catalogue term.
+    diag = result["diagnostics"][_ZERO_HOST_EVENT]
+    assert diag["L_cat_no_bh"] == 0.0
+    assert diag["L_cat_with_bh"] == 0.0
+    assert diag["combined_no_bh"] == pytest.approx(fallback_1d, rel=1e-15)
+
+    # Independent value cross-check via the reference run's mixture identity:
+    # fallback == B_num/D == (1 - w_G) * L_comp of the SAME event with hosts.
+    ref_diag = reference["diagnostics"][_ZERO_HOST_EVENT]
+    expected_pure_completion = (1.0 - ref_diag["w_G"]) * ref_diag["L_comp"]
+    assert fallback_1d == pytest.approx(expected_pure_completion, rel=1e-9)
 
 
 @pytest.mark.slow

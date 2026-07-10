@@ -1529,6 +1529,7 @@ class BayesianStatistics:
         detection_probability_obj: SimulationDetectionProbability,
     ) -> None:
         count = 0
+        _n_zero_host = 0
         _det_times: list[float] = []
         self.posterior_data_with_bh_mass[GALAXY_LIKELIHOODS] = {}
         self.posterior_data_with_bh_mass[ADDITIONAL_GALAXIES_WITHOUT_BH_MASS] = {}
@@ -1574,12 +1575,36 @@ class BayesianStatistics:
             )
 
             if possible_hosts is None:
-                _LOGGER.debug("no possible hosts found...")
-                continue
-            possible_hosts, possible_hosts_with_bh_mass = possible_hosts  # type: ignore[assignment]
-            _LOGGER.info(
-                f"possible hosts found {len(possible_hosts)}/{len(possible_hosts_with_bh_mass)}..."
-            )
+                if self.catalog_only:
+                    # The catalog-only cross-check has no completion term, so a
+                    # zero-host event carries no information in this mode — keep
+                    # the legacy skip (mode stays byte-identical).
+                    _LOGGER.debug("no possible hosts found (catalog_only): skipping event")
+                    continue
+                # [PHYSICS] Zero-host pure-completion fallback (issue #29): an event
+                # whose localization volume contains no catalogue galaxy still
+                # contributes the pure-completion likelihood p_i = B_num(h)/D(h) —
+                # the exact L_cat -> 0 limit of the mixture
+                # p_i = (beta_G L_cat + B_num)/D computed in p_Di. The pre-2026-07-10
+                # `continue` silently conditioned the event sample on catalogue
+                # support (58% of depth-1.5 campaign events dropped) and railed the
+                # combined posterior; see FINDINGS_COMBINE_20260710.md.
+                # Eqs. (29)+(32) in Gray et al. (2020), arXiv:1908.06050;
+                # Eq. (5) in Gray, Messenger & Veitch (2022), arXiv:2111.04629;
+                # docs/derivations/G2a_completion_sky_marginal_4pi.md, limiting case 2.
+                _n_zero_host += 1
+                _LOGGER.warning(
+                    "Detection %d: no catalogue hosts in the localization volume — "
+                    "pure-completion fallback p_i = B_num/D (issue #29)",
+                    int(index),
+                )
+                candidate_hosts: list[HostGalaxy] = []
+                candidate_hosts_with_bh_mass: list[HostGalaxy] = []
+            else:
+                candidate_hosts, candidate_hosts_with_bh_mass = possible_hosts
+                _LOGGER.info(
+                    f"possible hosts found {len(candidate_hosts)}/{len(candidate_hosts_with_bh_mass)}..."
+                )
 
             """
             if len(possible_hosts_with_bh_mass) == 0:
@@ -1596,8 +1621,8 @@ class BayesianStatistics:
             """
 
             event_likelihood, event_likelihood_with_bh_mass = self.p_Di(
-                possible_host_galaxies=possible_hosts,  # type: ignore[arg-type]
-                possible_host_galaxies_with_bh_mass=possible_hosts_with_bh_mass,
+                possible_host_galaxies=candidate_hosts,
+                possible_host_galaxies_with_bh_mass=candidate_hosts_with_bh_mass,
                 detection_index=index,
                 pool=pool,
                 completeness=completeness,
@@ -1621,6 +1646,18 @@ class BayesianStatistics:
             _LOGGER.debug(
                 f"event likelihood: {event_likelihood}\nevent likelihood with bh mass: {event_likelihood_with_bh_mass}"
             )
+
+        # Host-lookup yield metric (issue #29 process fix): the zero-host rate is a
+        # first-class health signal — 58-60% on the depth-1.5 campaign was visible
+        # in per-event lines but tracked by nothing.
+        _LOGGER.info(
+            "Host-lookup yield at h=%.4f: %d/%d events with catalogue hosts, "
+            "%d pure-completion (zero-host) fallbacks",
+            self.h,
+            count - _n_zero_host,
+            count,
+            _n_zero_host,
+        )
 
     def p_Di(
         self,
