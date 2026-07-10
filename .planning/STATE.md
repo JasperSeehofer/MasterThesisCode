@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-04-21)
 Phase: 40 — COMPLETE (GAPS_FOUND); next = fix phase (VERIFY-03 bias + angle audit)
 Plan: 40-06 of 7 — COMPLETE
 Status: GAPS_FOUND — SC-3 MAP=0.86; fix phase required before Phase 41/42
-Last activity: 2026-07-10 — Completed quick task 260710-sjm: pp_coverage z_support mode (L-A) — fallback estimator BIASED HIGH at deep incompleteness
+Last activity: 2026-07-11 — Completed quick task 260711-07n: pp_coverage full-Gray-mixture (EXP-41/N-1) — mixture does NOT restore calibration, WORSE than clean limit; conditioned inverse biased too
 
 **Milestone phase map:**
 
@@ -186,6 +186,7 @@ Next command: Plan fix phase (VERIFY-03 SC-3 angle audit + D(h) in --combine dia
 | 2026-04-07 | Add interactive Plotly figures to GitHub Pages | 8b47b5f..33e1c86 (2 commits) | 4 Plotly HTML figures (posterior, sky map, Fisher ellipses, convergence), --generate_interactive CLI flag, CI Pages deployment, landing page. |
 | 2026-04-09 | Add with-BH-mass variant to plot_posterior_convergence | 1af4487 | Both variants shown on convergence plot; outdated delta-function assumption removed. |
 | 2026-07-10 | 260710-sjm pp_coverage z_support deep-incompleteness mode (L-A, verified) | fa50ad5..cfce571 + results commit | #29 fallback analog B_num/D in the G4b harness; pin-first, bit-identical None path, 8-cell sweep. **VERDICT: BIASED HIGH at comp_frac>0.2** (cov68 collapses, +0.7–5.4% H0; controls calibrated). EXP-40 prediction: seed1000 risk flips to biased-high. |
+| 2026-07-11 | 260711-07n pp_coverage full-Gray-mixture branch (EXP-41 / handoff N-1) | 0f6f914, 995e781 | Gray Eqs. 29+32 mixture `(β_G·L_cat_i + B_num)/D` + conditioned inverse + per-branch tilt diagnostics (N-2a/b); two_branch default bit-identical (golden pin unchanged). **VERDICT: STILL BIASED — gray WORSE than clean limit** (worst +0.123 in h at zs=0.2/σ_z=0.035 vs +0.032 two-branch; 12/12 cells fail both criteria); conditioned does NOT rescue (+0.005…+0.044) ⇒ defect is not merely w_G bookkeeping. `results/pp_coverage_graymix_20260711/SUMMARY.md`. |
 
 **Planned Phase:** 35 (Coordinate Bug Characterization) — 3 plans — 2026-04-21T21:29:40.875Z
 | Phase 36 P03 | 230 | 4 tasks | 4 files |
