@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-04-21)
 Phase: 40 — COMPLETE (GAPS_FOUND); next = fix phase (VERIFY-03 bias + angle audit)
 Plan: 40-06 of 7 — COMPLETE
 Status: GAPS_FOUND — SC-3 MAP=0.86; fix phase required before Phase 41/42
-Last activity: 2026-07-11 — Completed quick task 260711-117: exact membership-truncated-kernel mode — σ_z-dependent deep bias mechanism IDENTIFIED (kernel support leak); σ_z-independent +0.003 floor remains (N-3 next)
+Last activity: 2026-07-11 — Completed quick task 260711-1ps: N-3 prior tilt NEGLIGIBLE (≤0.05% per 10% misspec), floor PERSISTENT → p_det-inside-numerator probe next
 
 **Milestone phase map:**
 
@@ -188,6 +188,7 @@ Next command: Plan fix phase (VERIFY-03 SC-3 angle audit + D(h) in --combine dia
 | 2026-07-10 | 260710-sjm pp_coverage z_support deep-incompleteness mode (L-A, verified) | fa50ad5..cfce571 + results commit | #29 fallback analog B_num/D in the G4b harness; pin-first, bit-identical None path, 8-cell sweep. **VERDICT: BIASED HIGH at comp_frac>0.2** (cov68 collapses, +0.7–5.4% H0; controls calibrated). EXP-40 prediction: seed1000 risk flips to biased-high. |
 | 2026-07-11 | 260711-07n pp_coverage full-Gray-mixture branch (EXP-41 / handoff N-1) | 0f6f914, 995e781 | Gray Eqs. 29+32 mixture `(β_G·L_cat_i + B_num)/D` + conditioned inverse + per-branch tilt diagnostics (N-2a/b); two_branch default bit-identical (golden pin unchanged). **VERDICT: STILL BIASED — gray WORSE than clean limit** (worst +0.123 in h at zs=0.2/σ_z=0.035 vs +0.032 two-branch; 12/12 cells fail both criteria); conditioned does NOT rescue (+0.005…+0.044) ⇒ defect is not merely w_G bookkeeping. `results/pp_coverage_graymix_20260711/SUMMARY.md`. |
 | 2026-07-11 | 260711-117 pp_coverage exact membership-truncated-kernel mode + σ_z ladder + observed-membership probes (N-2c/d) | 6a3c8ab, b794fa4 | **MECHANISM IDENTIFIED (dominant part):** exact mode (host kernel truncated at zs over common D, MFG-consistent) removes the ENTIRE σ_z-dependent bias — ladder: two_branch +0.0033→+0.0368 over σ_z 0.002→0.035, exact FLAT +0.002…+0.005, modes converge σ_z→0. Residual σ_z-independent completion-branch floor +0.002…+0.005 (→ N-3). N-2d: hard clamp misspecified under observed-z membership → production candidate needs SOFT (photo-z-marginalized) membership. `results/pp_coverage_exactmode_20260711/SUMMARY.md`. |
+| 2026-07-11 | 260711-1ps N-3 prior-tilt probe + floor discriminator | e5b8383, c78c2f5, 724fc29 | **Prior-sensitivity NEGLIGIBLE:** Δh(10% prior tilt) ≤ +0.05% of truth (two_branch), ≤ +0.015% (exact) — deep regime NOT population-prior-driven (ratio structure self-cancels); D1 headline number measured. **Floor PERSISTENT:** +0.0026/+0.0046 (truths 0.62/0.72) invariant under h_step 0.004→0.001 + n_z_quad 320 ⇒ genuine composition residual, not discretization. `results/pp_coverage_priortilt_20260711/SUMMARY.md`. |
 
 **Planned Phase:** 35 (Coordinate Bug Characterization) — 3 plans — 2026-04-21T21:29:40.875Z
 | Phase 36 P03 | 230 | 4 tasks | 4 files |
