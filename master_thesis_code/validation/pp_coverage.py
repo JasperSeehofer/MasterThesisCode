@@ -37,6 +37,18 @@ arXiv:1908.06050, Eqs. 29+32) mixture that production commit ``8db6c6e``
 ``.planning/HANDOFF-LOCAL-NO-CLUSTER-20260710.md`` (item L-A) and
 ``results/pp_coverage_deepvenue_20260710/RUNBOOK.md``.
 
+Mixture modes (``PPCoverageConfig.mixture_mode``, EXP-41 / handoff item N-1,
+``.planning/HANDOFF-DEEP-BIAS-MECHANISM-20260710.md``): ``"two_branch"``
+(default) keeps the clean limit above bit-identically; ``"gray"`` gives
+host-found events the full Gray et al. (2020, Eqs. 29+32) mixture
+``(beta_G * L_cat_i + B_num) / D`` with the per-host selection denominator
+``D_g_i`` of Eqs. A.9/A.10 (the production commit ``713fbd1`` analog) while
+zero-host events keep the pure-completion ``B_num/D`` branch;
+``"conditioned"`` is the membership-conditioned inverse (N-2b probe):
+host events ``N_i / beta_G``, zero-host events ``B_num / beta_Gbar``. The
+``membership_on_observed`` flag (N-2d probe) decides catalogue membership on
+the observed ``z_gal`` instead of the true ``z_host``.
+
 Units: ``h`` in [100 km/s/Mpc]; distances in Gpc. Cosmology: flat LambdaCDM.
 """
 
@@ -202,6 +214,21 @@ class PPCoverageConfig:
             pure-completion likelihood B_num/D (issue #29 analog). None
             (default) => no truncation, bit-identical to the pre-2026-07-10
             harness.
+        mixture_mode: Estimator composition under z_support truncation.
+            "two_branch" (default, pre-2026-07-11 behaviour): in-catalogue
+            events use the bare kernel numerator N_i/D, zero-host events
+            B_num/D. "gray": in-catalogue events use the full Gray et al.
+            (2020, arXiv:1908.06050, Eqs. 29+32) mixture
+            (beta_G * L_cat_i + B_num)/D with L_cat_i = N_i/D_g_i and the
+            per-host selection denominator D_g_i of Eqs. A.9/A.10 (production
+            commit 713fbd1 analog); zero-host events keep B_num/D.
+            "conditioned": membership-conditioned inverse (N-2b probe) —
+            in-catalogue N_i/beta_G, zero-host B_num/beta_Gbar. Modes other
+            than "two_branch" require z_support (ValueError otherwise).
+        membership_on_observed: Decide catalogue membership on the OBSERVED
+            z_gal (< z_support) instead of the true z_host (production's
+            BallTree sees measured redshifts; N-2d probe). Default False keeps
+            the true-z routing bit-identical.
     """
 
     n_realizations: int = 120
@@ -223,10 +250,59 @@ class PPCoverageConfig:
     h_step: float = 0.004
     n_z_quad: int = 160
     z_support: float | None = None
+    mixture_mode: Literal["two_branch", "gray", "conditioned"] = "two_branch"
+    membership_on_observed: bool = False
 
     def h_grid(self) -> npt.NDArray[np.float64]:
         """Return the H0 evaluation grid."""
         return np.arange(self.h_min, self.h_max + 0.5 * self.h_step, self.h_step)
+
+
+def _completion_numerator(
+    dL_obs_i: float,
+    sig_dl_i: float,
+    z_support: float,
+    h_grid: npt.NDArray[np.float64],
+    n_z_quad: int,
+) -> npt.NDArray[np.float64]:
+    """Pure-completion numerator B_num(h) above the catalogue support edge.
+
+    B_num(h) = int p_GW(A(z)/h) w_pop(z) dz over
+    [max(Z_MIN, z_support, z_GW_lo), min(Z_MAX_POP, z_GW_hi)] — no kernel
+    padding (there is no kernel here), capped at Z_MAX_POP (issue #30
+    parallel; matches D(h)) and sharing D(h)'s exact unnormalized measure
+    (no extra h-dependent normalization). The GW window is the +-5 sigma d_L
+    support mapped through the h-grid edges. Returns the 1e-300 floor when
+    the window is empty.
+
+    Args:
+        dL_obs_i: Observed GW luminosity distance [Gpc].
+        sig_dl_i: Absolute d_L uncertainty [Gpc].
+        z_support: Catalogue support ceiling (lower edge of the completion
+            volume).
+        h_grid: H0 evaluation grid.
+        n_z_quad: Redshift quadrature points.
+
+    Returns:
+        B_num evaluated on ``h_grid`` (shape ``(nh,)``).
+    """
+    z_lo_b = max(
+        Z_MIN,
+        z_support,
+        float(z_of_comoving_amplitude(np.asarray((dL_obs_i - 5 * sig_dl_i) * h_grid.min()))),
+    )
+    z_hi_b = min(
+        Z_MAX_POP,
+        float(z_of_comoving_amplitude(np.asarray((dL_obs_i + 5 * sig_dl_i) * h_grid.max()))),
+    )
+    if z_hi_b <= z_lo_b:
+        return np.full(h_grid.size, 1e-300)
+    zq_b = np.linspace(z_lo_b, z_hi_b, n_z_quad)
+    wq_b = np.gradient(zq_b)
+    dLg_b = comoving_amplitude_of_z(zq_b)[:, None] / h_grid[None, :]  # (nz, nh)
+    pGW_b = _norm_pdf(dLg_b, dL_obs_i, sig_dl_i)  # (nz, nh)
+    wpop_b = population_weight_of_z(zq_b)  # unnormalized
+    return np.asarray((wq_b * wpop_b) @ pGW_b, dtype=np.float64)  # (nh,)
 
 
 def _run_realization(
@@ -235,7 +311,16 @@ def _run_realization(
     log_Dh: npt.NDArray[np.float64],
     config: PPCoverageConfig,
     rng: np.random.Generator,
-) -> tuple[npt.NDArray[np.float64], int]:
+    beta_G: npt.NDArray[np.float64] | None = None,
+    beta_Gbar: npt.NDArray[np.float64] | None = None,
+) -> tuple[
+    npt.NDArray[np.float64],
+    int,
+    npt.NDArray[np.float64],
+    npt.NDArray[np.float64],
+    int,
+    int,
+]:
     """Simulate one realization and return the accumulated log-likelihood on ``h_grid``.
 
     Clean single-host limit (fully complete catalogue, one candidate host per
@@ -255,13 +340,39 @@ def _run_realization(
     in ``bayesian_statistics.py``; see also Gray, Messenger & Veitch (2022,
     arXiv:2111.04629, Eq. 5) and
     ``docs/derivations/G2a_completion_sky_marginal_4pi.md`` limiting case 2.
-    The completion integral is capped at ``Z_MAX_POP`` (the issue #30
-    parallel), matching the shared D(h) domain, and shares D(h)'s exact
-    unnormalized measure (no extra h-dependent normalization).
+    With ``config.membership_on_observed`` the split uses the observed
+    ``z_gal`` instead of the true ``z_host`` (N-2d probe).
+
+    Mixture modes (``config.mixture_mode``, require ``z_support``):
+
+    - ``"gray"``: in-catalogue events get the full Gray et al. (2020, Eqs.
+      29+32) mixture ``(beta_G * L_cat_i + B_num) / D`` with
+      ``L_cat_i = N_i / D_g_i``; ``N_i`` is the two_branch kernel numerator
+      and ``D_g_i = int p_det(A(z)/h) K_i(z) dz`` the per-host selection
+      denominator over the SAME normalized kernel (Eqs. A.9/A.10; production
+      commit ``713fbd1`` analog). The kernel is NOT truncated at z_support
+      (production-faithful leak). Zero-host events keep ``B_num/D``.
+    - ``"conditioned"``: membership-conditioned inverse (N-2b probe) —
+      in-catalogue ``N_i / beta_G``, zero-host ``B_num / beta_Gbar``.
+
+    Args:
+        h_true: Injected truth.
+        h_grid: H0 evaluation grid.
+        log_Dh: Log of the shared selection denominator D(h) on ``h_grid``.
+        config: Harness configuration.
+        rng: Realization RNG.
+        beta_G: In-catalogue selection integral on ``h_grid`` (required for
+            mixture modes other than "two_branch").
+        beta_Gbar: Out-of-catalogue selection integral ``D - beta_G``
+            (required for "conditioned").
 
     Returns:
         Tuple of (accumulated log-likelihood on ``h_grid``, number of
-        zero-host events in this realization).
+        zero-host events, host-branch log-likelihood, completion-branch
+        log-likelihood, number of host-branch events, number of
+        completion-branch events). The host/completion accumulators are
+        diagnostics; ``logL`` is their sum and keeps the exact pre-existing
+        float ops in the exact event order (two_branch bit-identity).
     """
     # One effective sigma for the truth-scatter draw AND the kernel keeps the
     # generative model and the inference consistent (calibrated case).
@@ -272,38 +383,46 @@ def _run_realization(
     sig_dl = config.sigma_dl_frac * dL_obs
     z_gal = np.clip(z_host + rng.normal(0.0, sigma_z, config.n_events), Z_MIN, None)
 
+    if config.mixture_mode != "two_branch":
+        if beta_G is None or beta_Gbar is None:
+            raise ValueError(
+                f"mixture_mode={config.mixture_mode!r} requires precomputed beta_G/beta_Gbar"
+            )
+        beta_G_h: npt.NDArray[np.float64] = beta_G
+        log_beta_G: npt.NDArray[np.float64] = np.log(np.clip(beta_G, 1e-300, None))
+        log_beta_Gbar: npt.NDArray[np.float64] = np.log(np.clip(beta_Gbar, 1e-300, None))
+    else:  # unused sentinels; two_branch never touches them
+        beta_G_h = np.zeros(0)
+        log_beta_G = np.zeros(0)
+        log_beta_Gbar = np.zeros(0)
+
     logL = np.zeros(h_grid.size)
+    logL_host = np.zeros(h_grid.size)
+    logL_completion = np.zeros(h_grid.size)
     n_zero_host = 0
+    n_host = 0
+    n_comp = 0
     for i in range(config.n_events):
-        if config.z_support is not None and z_host[i] >= config.z_support:
+        if config.z_support is not None:
             zs: float = config.z_support
-            n_zero_host += 1
-            # Pure-completion branch: no kernel padding (there is no kernel
-            # here), capped at Z_MAX_POP (issue #30 parallel; matches D(h)).
-            z_lo_b = max(
-                Z_MIN,
-                zs,
-                float(
-                    z_of_comoving_amplitude(np.asarray((dL_obs[i] - 5 * sig_dl[i]) * h_grid.min()))
-                ),
-            )
-            z_hi_b = min(
-                Z_MAX_POP,
-                float(
-                    z_of_comoving_amplitude(np.asarray((dL_obs[i] + 5 * sig_dl[i]) * h_grid.max()))
-                ),
-            )
-            if z_hi_b <= z_lo_b:
-                num_b = np.full(h_grid.size, 1e-300)
-            else:
-                zq_b = np.linspace(z_lo_b, z_hi_b, config.n_z_quad)
-                wq_b = np.gradient(zq_b)
-                dLg_b = comoving_amplitude_of_z(zq_b)[:, None] / h_grid[None, :]  # (nz, nh)
-                pGW_b = _norm_pdf(dLg_b, float(dL_obs[i]), float(sig_dl[i]))  # (nz, nh)
-                wpop_b = population_weight_of_z(zq_b)  # unnormalized
-                num_b = (wq_b * wpop_b) @ pGW_b  # (nh,)
-            logL += np.log(np.clip(num_b, 1e-300, None)) - log_Dh
-            continue
+            member_z = float(z_gal[i]) if config.membership_on_observed else float(z_host[i])
+            if member_z >= zs:
+                # Zero-host / out-of-catalogue event.
+                n_zero_host += 1
+                num_b = _completion_numerator(
+                    float(dL_obs[i]), float(sig_dl[i]), zs, h_grid, config.n_z_quad
+                )
+                if config.mixture_mode == "conditioned":
+                    # Membership-conditioned inverse: B_num / beta_Gbar.
+                    term_b = np.log(np.clip(num_b, 1e-300, None)) - log_beta_Gbar
+                else:
+                    # two_branch AND gray share the pure-completion B_num/D
+                    # branch (Gray et al. 2020 Eqs. 29+32, L_cat -> 0 limit).
+                    term_b = np.log(np.clip(num_b, 1e-300, None)) - log_Dh
+                logL += term_b
+                logL_completion += term_b
+                n_comp += 1
+                continue
         z_lo = max(
             Z_MIN,
             float(z_of_comoving_amplitude(np.asarray((dL_obs[i] - 5 * sig_dl[i]) * h_grid.min())))
@@ -323,8 +442,32 @@ def _run_realization(
             kernel_z = kernel_z * population_weight_of_z(zq)
             kernel_z = kernel_z / max(float(np.trapezoid(kernel_z, zq)), 1e-300)
         num = (wq * kernel_z) @ pGW  # (nh,)
-        logL += np.log(np.clip(num, 1e-300, None)) - log_Dh
-    return logL, n_zero_host
+        if config.mixture_mode == "gray" and config.z_support is not None:
+            # Full Gray (2020) mixture: (beta_G * L_cat_i + B_num) / D with
+            # L_cat_i = N_i / D_g_i over the SAME normalized kernel K_i
+            # (Eqs. A.9/A.10; production commit 713fbd1 analog). The kernel
+            # is NOT truncated at z_support (production-faithful leak).
+            D_g_i = (wq * kernel_z) @ detection_probability(dLg)  # (nh,)
+            L_cat_i = num / np.clip(D_g_i, 1e-300, None)
+            B_num_i = _completion_numerator(
+                float(dL_obs[i]),
+                float(sig_dl[i]),
+                float(config.z_support),
+                h_grid,
+                config.n_z_quad,
+            )
+            mixture = beta_G_h * L_cat_i + B_num_i  # linear space, per event
+            term = np.log(np.clip(mixture, 1e-300, None)) - log_Dh
+        elif config.mixture_mode == "conditioned" and config.z_support is not None:
+            # Membership-conditioned inverse: N_i / beta_G (no B_num, no
+            # D_g_i ratio).
+            term = np.log(np.clip(num, 1e-300, None)) - log_beta_G
+        else:
+            term = np.log(np.clip(num, 1e-300, None)) - log_Dh
+        logL += term
+        logL_host += term
+        n_host += 1
+    return logL, n_zero_host, logL_host, logL_completion, n_host, n_comp
 
 
 def run_coverage(config: PPCoverageConfig) -> dict[str, Any]:
@@ -339,10 +482,18 @@ def run_coverage(config: PPCoverageConfig) -> dict[str, Any]:
         and ``"results"`` — one entry per injected truth (stringified H0)
         containing ``coverage`` (fractions at 50/68/90% HPD),
         ``rail_fraction``, ``map_mean``, ``map_std``, ``map_median``,
-        ``map_bias`` (map_mean - truth), and ``completion_fraction`` (mean
+        ``map_bias`` (map_mean - truth), ``completion_fraction`` (mean
         fraction of events routed into the ``z_support`` zero-host
         pure-completion branch per realization; 0.0 when ``z_support`` is
-        None or >= ``Z_MAX_POP``).
+        None or >= ``Z_MAX_POP``), and the per-branch tilt diagnostics
+        ``dlogL_dh_host_mean`` / ``dlogL_dh_completion_mean`` (mean over
+        realizations of d(logL_branch)/dh at the grid node nearest h_true;
+        None — JSON null — when a branch had no events in any realization).
+
+    Raises:
+        ValueError: If ``config.mixture_mode`` is not "two_branch" and
+            ``config.z_support`` is None (the Gray mixture is only defined
+            with a catalogue-support edge).
     """
     h_grid = config.h_grid()
     # Selection denominator D(h) = int p_det(A(z)/h) w_pop(z) dz (shared).
@@ -356,6 +507,31 @@ def run_coverage(config: PPCoverageConfig) -> dict[str, Any]:
     )
     log_Dh = np.log(Dh)
 
+    # In-catalogue selection integral beta_G(h) = int_{Z_MIN}^{zs} p_det w_pop
+    # dz, precomputed once like log_Dh (only for mixture modes) on D(h)'s OWN
+    # node convention (np.linspace(..., 3000)) so that at z_support >=
+    # Z_MAX_POP beta_G == Dh exactly (limiting-case identity).
+    beta_G: npt.NDArray[np.float64] | None = None
+    beta_Gbar: npt.NDArray[np.float64] | None = None
+    if config.mixture_mode != "two_branch":
+        if config.z_support is None:
+            raise ValueError(
+                "mixture_mode='gray'/'conditioned' requires z_support: the Gray "
+                "mixture is only defined with a catalogue-support edge."
+            )
+        zbg = np.linspace(Z_MIN, min(config.z_support, Z_MAX_POP), 3000)
+        beta_G = np.asarray(
+            np.trapezoid(
+                detection_probability(comoving_amplitude_of_z(zbg)[:, None] / h_grid[None, :])
+                * population_weight_of_z(zbg)[:, None],
+                zbg,
+                axis=0,
+            ),
+            dtype=np.float64,
+        )
+        # Out-of-catalogue selection integral int_{zs}^{Z_MAX_POP} p_det w_pop dz.
+        beta_Gbar = np.asarray(Dh - beta_G, dtype=np.float64)
+
     master = np.random.default_rng(config.seed)
     results: dict[str, Any] = {}
     levels = {"50": 0.50, "68": 0.68, "90": 0.90}
@@ -364,10 +540,19 @@ def run_coverage(config: PPCoverageConfig) -> dict[str, Any]:
         rail = 0
         maps: list[float] = []
         completion_fractions: list[float] = []
+        host_tilts: list[float] = []
+        comp_tilts: list[float] = []
+        it_true = int(np.argmin(np.abs(h_grid - h_true)))
         for _ in range(config.n_realizations):
             rng = np.random.default_rng(int(master.integers(1 << 62)))
-            logL, n_zero_host = _run_realization(h_true, h_grid, log_Dh, config, rng)
+            logL, n_zero_host, logL_host, logL_completion, n_host, n_comp = _run_realization(
+                h_true, h_grid, log_Dh, config, rng, beta_G=beta_G, beta_Gbar=beta_Gbar
+            )
             completion_fractions.append(n_zero_host / config.n_events)
+            if n_host > 0:
+                host_tilts.append(float(np.gradient(logL_host, h_grid)[it_true]))
+            if n_comp > 0:
+                comp_tilts.append(float(np.gradient(logL_completion, h_grid)[it_true]))
             post = np.exp(logL - logL.max())
             post /= np.trapezoid(post, h_grid)
             mi = int(np.argmax(post))
@@ -387,6 +572,10 @@ def run_coverage(config: PPCoverageConfig) -> dict[str, Any]:
             "map_median": float(np.median(maps)),
             "map_bias": float(np.mean(maps)) - h_true,
             "completion_fraction": float(np.mean(completion_fractions)),
+            # None (JSON null) is the deliberate empty sentinel — NEVER NaN
+            # (NaN != NaN would break full-dict equality comparisons).
+            "dlogL_dh_host_mean": float(np.mean(host_tilts)) if host_tilts else None,
+            "dlogL_dh_completion_mean": (float(np.mean(comp_tilts)) if comp_tilts else None),
         }
     return {"config": asdict(config), "results": results}
 
@@ -419,6 +608,24 @@ def main(argv: list[str] | None = None) -> None:
         "analog). Default None disables truncation (bit-identical to the "
         "pre-2026-07-10 harness).",
     )
+    parser.add_argument(
+        "--mixture-mode",
+        choices=["two_branch", "gray", "conditioned"],
+        default="two_branch",
+        help="Estimator composition under z_support truncation: 'two_branch' "
+        "(default; in-catalogue events bare N_i/D, zero-host B_num/D — the "
+        "pre-2026-07-11 behaviour), 'gray' (in-catalogue events get the full "
+        "Gray et al. 2020 Eqs. 29+32 mixture (beta_G*L_cat_i + B_num)/D with "
+        "the per-host D_g_i of Eqs. A.9/A.10; zero-host unchanged), or "
+        "'conditioned' (membership-conditioned inverse: N_i/beta_G and "
+        "B_num/beta_Gbar). Modes other than 'two_branch' require --z-support.",
+    )
+    parser.add_argument(
+        "--membership-on-observed",
+        action="store_true",
+        help="Decide catalogue membership on the OBSERVED z_gal (< z_support) "
+        "instead of the true z_host (N-2d membership-determination probe).",
+    )
     args = parser.parse_args(argv)
 
     config = PPCoverageConfig(
@@ -431,6 +638,8 @@ def main(argv: list[str] | None = None) -> None:
         seed=args.seed,
         kernel=args.kernel,
         z_support=args.z_support,
+        mixture_mode=args.mixture_mode,
+        membership_on_observed=args.membership_on_observed,
     )
     out = run_coverage(config)
     args.output.write_text(json.dumps(out, indent=2))

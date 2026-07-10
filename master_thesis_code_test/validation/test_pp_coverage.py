@@ -157,6 +157,92 @@ def test_z_support_monotonic_completion_fraction() -> None:
     assert 0.0 < cf_moderate < cf_deeper < 1.0
 
 
+def test_gray_mode_requires_z_support() -> None:
+    """mixture_mode='gray' without a catalogue support edge is undefined."""
+    config = dataclasses.replace(TINY_DEEPVENUE, mixture_mode="gray")
+    with pytest.raises(ValueError, match="z_support"):
+        run_coverage(config)
+
+
+def test_gray_zmax_limiting_case() -> None:
+    """gray + z_support at the population ceiling: all events take the mixture branch.
+
+    completion_fraction is 0 (no zero-host events), the completion-tilt
+    diagnostic is the None sentinel, and the posterior stays finite with the
+    MAP on the H0 grid.
+    """
+    config = dataclasses.replace(TINY_DEEPVENUE, z_support=0.95, mixture_mode="gray")
+    entry = run_coverage(config)["results"]["0.7200"]
+    assert entry["completion_fraction"] == 0.0
+    assert entry["dlogL_dh_completion_mean"] is None
+    assert entry["dlogL_dh_host_mean"] is not None
+    assert math.isfinite(entry["map_mean"])
+    assert math.isfinite(entry["map_std"])
+    assert all(math.isfinite(v) for v in entry["coverage"].values())
+    assert TINY_DEEPVENUE.h_min <= entry["map_mean"] <= TINY_DEEPVENUE.h_max
+
+
+def test_gray_shallow_venue_close_to_two_branch() -> None:
+    """Shallow venue (p_det ~= 1 over the in-catalogue support): gray ~ two_branch.
+
+    SOFT bound, NOT an exact identity: the gray host term p_i = (beta_G *
+    N_i/D_g_i + B_num)/D differs from the two_branch N_i/D by construction;
+    this is a sanity check that the D_g_i per-host denominator + admixture do
+    not blow the estimator up (map_mean within ~3 grid steps).
+    z_support=0.1 (p_det at the edge = 1.00000 for h=0.72) rather than 0.05 so
+    that several in-catalogue events actually exercise the mixture branch on
+    the tiny config (7 events vs 1 at 0.05, measured).
+    """
+    two_branch = run_coverage(dataclasses.replace(TINY_DEEPVENUE, z_support=0.1))
+    gray = run_coverage(dataclasses.replace(TINY_DEEPVENUE, z_support=0.1, mixture_mode="gray"))
+    tb_map = two_branch["results"]["0.7200"]["map_mean"]
+    gray_map = gray["results"]["0.7200"]["map_mean"]
+    assert abs(gray_map - tb_map) < 0.012
+
+
+def test_conditioned_zmax_matches_two_branch_untruncated() -> None:
+    """conditioned + z_support=0.95 reproduces the untruncated two_branch run.
+
+    Exact identity in exact arithmetic: beta_G is computed on D(h)'s own node
+    grid, so beta_G == Dh at z_support >= Z_MAX_POP, and N_i reuses the
+    two_branch host quadrature, hence N_i/beta_G == num/Dh.
+    """
+    untruncated = run_coverage(TINY_DEEPVENUE)
+    conditioned = run_coverage(
+        dataclasses.replace(TINY_DEEPVENUE, z_support=0.95, mixture_mode="conditioned")
+    )
+    u = untruncated["results"]["0.7200"]
+    c = conditioned["results"]["0.7200"]
+    assert c["map_mean"] == pytest.approx(u["map_mean"], rel=1e-6)
+    assert c["map_std"] == pytest.approx(u["map_std"], rel=1e-6, abs=1e-12)
+    assert c["coverage"] == u["coverage"]
+    assert c["completion_fraction"] == 0.0
+
+
+def test_membership_on_observed_changes_completion_fraction() -> None:
+    """Observed-z membership (N-2d probe) reroutes boundary events.
+
+    With sigma_z scatter at a moderate z_support, deciding membership on the
+    observed z_gal instead of the true z_host flips some events across the
+    support edge, so the mean completion_fraction differs (statistical
+    assertion, not an exact value).
+    """
+    base = dataclasses.replace(TINY_DEEPVENUE, z_support=0.3)
+    cf_true = run_coverage(base)["results"]["0.7200"]["completion_fraction"]
+    cf_obs = run_coverage(dataclasses.replace(base, membership_on_observed=True))["results"][
+        "0.7200"
+    ]["completion_fraction"]
+    assert 0.0 < cf_true < 1.0
+    assert 0.0 < cf_obs < 1.0
+    assert cf_obs != cf_true
+
+
+def test_gray_determinism_same_seed() -> None:
+    """Two gray-mode runs with the same seed are bit-identical."""
+    config = dataclasses.replace(TINY_DEEPVENUE, z_support=0.3, mixture_mode="gray")
+    assert run_coverage(config) == run_coverage(config)
+
+
 def test_tiny_config_exact_value_pins(tiny_bare: dict, tiny_volume: dict) -> None:
     """Exact-float regression pins of the harness output (both kernels).
 
