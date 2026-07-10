@@ -1,0 +1,65 @@
+{
+  "config": {
+    "n_realizations": 120,
+    "n_events": 250,
+    "sigma_z": 0.015,
+    "sigma_z_pv": 0.0,
+    "sigma_dl_frac": 0.05,
+    "injected_truths": [
+      0.62,
+      0.72,
+      0.84
+    ],
+    "seed": 20260701,
+    "kernel": "volume",
+    "h_min": 0.6,
+    "h_max": 0.86,
+    "h_step": 0.004,
+    "n_z_quad": 160,
+    "z_support": 1.0
+  },
+  "results": {
+    "0.6200": {
+      "h_true": 0.62,
+      "coverage": {
+        "50": 0.7,
+        "68": 0.7,
+        "90": 0.9
+      },
+      "rail_fraction": 0.0,
+      "map_mean": 0.6180666666666664,
+      "map_std": 0.0035396170539888794,
+      "map_median": 0.62,
+      "map_bias": -0.0019333333333335645,
+      "completion_fraction": 0.0
+    },
+    "0.7200": {
+      "h_true": 0.72,
+      "coverage": {
+        "50": 0.625,
+        "68": 0.6666666666666666,
+        "90": 0.9
+      },
+      "rail_fraction": 0.0,
+      "map_mean": 0.7184666666666667,
+      "map_std": 0.003730355955610078,
+      "map_median": 0.7200000000000001,
+      "map_bias": -0.0015333333333332755,
+      "completion_fraction": 0.0
+    },
+    "0.8400": {
+      "h_true": 0.84,
+      "coverage": {
+        "50": 0.5916666666666667,
+        "68": 0.725,
+        "90": 0.9416666666666667
+      },
+      "rail_fraction": 0.0,
+      "map_mean": 0.8385666666666668,
+      "map_std": 0.003925840320520213,
+      "map_median": 0.8400000000000002,
+      "map_bias": -0.0014333333333331755,
+      "completion_fraction": 0.0
+    }
+  }
+}
