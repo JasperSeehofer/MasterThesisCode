@@ -23,9 +23,13 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   `scipy.stats.norm` frozen-distribution construction replaced by an operation-order-identical
   explicit Gaussian; event-level `dist_to_redshift` window calls hoisted; the erf-sum
   denominator's per-host 2,560-point `p_det` interpolation batched into a single call.
-  **Bit-for-bit value-preserving** (not a physics change): gated by
-  `test_kernel_batch_equivalence.py` (exact `==` over the 22-regime parity grid × 7-host
-  heterogeneous batches) and the unchanged committed kernel/pipeline parity goldens.
+  **Value-preserving** (not a physics change): bit-exact in the differential gate
+  (`test_kernel_batch_equivalence.py`, exact `==` over the 22-regime parity grid × 7-host
+  heterogeneous batches) and under the unchanged committed kernel/pipeline parity goldens.
+  End-to-end on real seed400 data (986 events, h=0.73, seed 0) the batch path reproduces
+  the pre-refactor outputs to: 1D channel **byte-identical**; 2D channel 560 of 2,960,440
+  per-host values drift ≤9.8e-15 (float-path reassociation at large batch sizes), moving
+  4 of 986 per-event likelihoods by ≤1.4e-16 — 5+ orders below the rel=1e-9 parity contract.
 - **[PHYSICS] Spline-table luminosity distance** (commit `afc59e9`): `dist_vectorized` /
   `dist_to_redshift` use a lazily-built clamped-cubic-spline table of the h-independent
   I(z) integral (512 knots, exact 1/h scaling; hyp2f1/fsolve fallback off-fiducial).

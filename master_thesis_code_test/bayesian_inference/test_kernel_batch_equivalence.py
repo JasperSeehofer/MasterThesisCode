@@ -14,6 +14,14 @@ contamination, broadcasting bugs, and reduction-order drift).
 If this test ever fails after an intentional change to the *scalar* kernel,
 the batch kernel must be updated in the same commit — the two are one
 implementation with two entry points.
+
+Scope note (measured 2026-07-10 on real seed400 data, 986 events, h=0.73):
+bit equality holds exactly at these small batch sizes, but at production chunk
+sizes (hundreds-to-thousands of hosts) float-path reassociation (BLAS/SIMD
+stride effects) perturbs a sparse subset of per-host values — 560 of ~3.0M
+values at ≤9.8e-15, moving 4 of 986 per-event likelihoods by ≤1.4e-16, with
+the 1D channel byte-identical. That end-to-end drift is 5+ orders below the
+rel=1e-9 pipeline-parity contract, which is the governing gate at scale.
 """
 
 from typing import Any
