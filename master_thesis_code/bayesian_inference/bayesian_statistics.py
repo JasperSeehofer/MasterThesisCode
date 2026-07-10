@@ -944,7 +944,21 @@ class BayesianStatistics:
         normalization_mode: str = "volume_deconv",
         base_seed: int = 0,
         allow_low_pdet_coverage: bool = False,
+        h_values: Sequence[float] | None = None,
     ) -> None:
+        # h-grid fusion (opt-in): when h_values is given it supersedes h_value
+        # and ALL h-invariant setup — catalogue/BallTree (passed in), injection
+        # pooling + p_det grid, completeness, Fisher staging, worker pool — is
+        # paid once for the whole grid. The D(h)/beta/global-selection
+        # precomputes are h-list-native already. Per-h outputs (posterior
+        # JSONs, event-likelihood diagnostics) are written as each h completes,
+        # preserving per-h failure granularity. The single-h path (h_values
+        # None) is byte-compatible with the pre-fusion behaviour.
+        _h_list: list[float] = (
+            [float(h_value)] if h_values is None else [float(x) for x in h_values]
+        )
+        if not _h_list:
+            raise ValueError("h_values must contain at least one value")
         self.catalog_only = catalog_only
         # G4: deterministic seed for the with-BH-mass MC denominator (threaded to
         # single_host_likelihood workers; per-call streams derived per host).
@@ -976,11 +990,14 @@ class BayesianStatistics:
         self._diagnostic_rows = []
         if catalog_only:
             _LOGGER.info("catalog_only mode: f_i=1, L_comp=0 (skipping completion integral)")
-        _LOGGER.info(f"Computing posteriors for h = {h_value}...")
-        if (h_value < self.cosmological_model.h.lower_limit) or (
-            h_value > self.cosmological_model.h.upper_limit
-        ):
-            raise ValueError("Hubble constant out of bounds.")
+        _LOGGER.info(
+            f"Computing posteriors for h = {_h_list[0] if len(_h_list) == 1 else _h_list}..."
+        )
+        for _h_check in _h_list:
+            if (_h_check < self.cosmological_model.h.lower_limit) or (
+                _h_check > self.cosmological_model.h.upper_limit
+            ):
+                raise ValueError("Hubble constant out of bounds.")
 
         _LOGGER.debug(f"Loaded {len(self.cramer_rao_bounds)} detections...")
         # Filter detections: SNR threshold + relative d_L error
@@ -1022,22 +1039,26 @@ class BayesianStatistics:
 
         # Pre-warm P_det grid cache for target h -- avoids N workers each building
         # the same grid independently after pool spawn
-        detection_probability._get_or_build_grid(h_value)
-        _LOGGER.debug("P_det grid pre-warmed for h=%.4f.", h_value)
+        for _h_warm in _h_list:
+            detection_probability._get_or_build_grid(_h_warm)
+            _LOGGER.debug("P_det grid pre-warmed for h=%.4f.", _h_warm)
 
         # Validate P_det grid coverage for observed events — HARD gate
         # (readiness sweep A2-STALE-POOL-GATE, 2026-07-03): a warning buried
         # in one of 38 per-task logs does not stop a campaign from burning
-        # its cpu-h budget on p_det = 0 posteriors.
-        coverage_fraction = detection_probability.validate_coverage(h_value, self.cramer_rao_bounds)
-        if coverage_fraction < 0.95 and not allow_low_pdet_coverage:
-            msg = (
-                f"P_det grid covers only {coverage_fraction:.1%} of events' "
-                "4-sigma d_L windows (< 95%). The injection pool is likely stale "
-                "or too shallow for this event set. Regenerate the pool, or pass "
-                "--allow_low_pdet_coverage to proceed deliberately."
+        # its cpu-h budget on p_det = 0 posteriors. Grid mode gates on every h.
+        for _h_cov in _h_list:
+            coverage_fraction = detection_probability.validate_coverage(
+                _h_cov, self.cramer_rao_bounds
             )
-            raise RuntimeError(msg)
+            if coverage_fraction < 0.95 and not allow_low_pdet_coverage:
+                msg = (
+                    f"P_det grid covers only {coverage_fraction:.1%} of events' "
+                    "4-sigma d_L windows (< 95%). The injection pool is likely stale "
+                    "or too shallow for this event set. Regenerate the pool, or pass "
+                    "--allow_low_pdet_coverage to proceed deliberately."
+                )
+                raise RuntimeError(msg)
 
         # Gray et al. (2020), arXiv:1908.06050, Eq. 9 + Gray-Messenger-Veitch 2022,
         # arXiv:2111.04629 (Change 5): per-HEALPix-pixel completeness f_k(z,Omega,h),
@@ -1052,7 +1073,7 @@ class BayesianStatistics:
         # full detectable volume, D(h) = INTEGRAL (1/Npix) sum_k p_det(d_L,Omega_k)
         # dVc/(1+z). D(h) is event-independent; compute once per h-value.
         _D_h_table = precompute_completion_denominator(
-            h_values=[h_value],
+            h_values=_h_list,
             detection_probability_obj=detection_probability,
             Omega_m=self.Omega_m,
             Omega_DE=self.Omega_DE,
@@ -1067,34 +1088,35 @@ class BayesianStatistics:
         # selection sums sum_global w_g D_g for both channels (Eq. 29 discrete
         # realisation) that make L_cat scale-free so n_gal cancels.
         _beta_Gbar_table = precompute_missing_completion_denominator(
-            h_values=[h_value],
+            h_values=_h_list,
             detection_probability_obj=detection_probability,
             completeness=completeness,
         )
         _beta_G_table = {h: _D_h_table[h] - _beta_Gbar_table[h] for h in _D_h_table}
         _global_cat_denom_no_bh = precompute_global_catalog_selection(
-            h_values=[h_value],
+            h_values=_h_list,
             galaxy_catalog=galaxy_catalog,
             detection_probability_obj=detection_probability,
             with_bh_mass=False,
         )
         _global_cat_denom_with_bh = precompute_global_catalog_selection(
-            h_values=[h_value],
+            h_values=_h_list,
             galaxy_catalog=galaxy_catalog,
             detection_probability_obj=detection_probability,
             with_bh_mass=True,
         )
-        _w_G_preview = (
-            _beta_G_table[h_value] / _D_h_table[h_value]
-            if _D_h_table.get(h_value, 0.0) > 0.0
-            else float("nan")
-        )
-        _LOGGER.info(
-            "Partition-norm: w_G=beta_G/D(h)=%.4f, sum_w_Dg(no_bh)=%.4e, sum_w_Dg(with_bh)=%.4e",
-            _w_G_preview,
-            _global_cat_denom_no_bh.get(h_value, float("nan")),
-            _global_cat_denom_with_bh.get(h_value, float("nan")),
-        )
+        for _h_prev in _h_list:
+            _w_G_preview = (
+                _beta_G_table[_h_prev] / _D_h_table[_h_prev]
+                if _D_h_table.get(_h_prev, 0.0) > 0.0
+                else float("nan")
+            )
+            _LOGGER.info(
+                "Partition-norm: w_G=beta_G/D(h)=%.4f, sum_w_Dg(no_bh)=%.4e, sum_w_Dg(with_bh)=%.4e",
+                _w_G_preview,
+                _global_cat_denom_no_bh.get(_h_prev, float("nan")),
+                _global_cat_denom_with_bh.get(_h_prev, float("nan")),
+            )
 
         _LOGGER.debug("Pre-computing Gaussian arrays for GW likelihoods...")
         _t0 = time.perf_counter()
@@ -1301,8 +1323,6 @@ class BayesianStatistics:
             n_det,
         )
 
-        self.h = h_value
-
         if num_workers is None:
             try:
                 available_cpus = len(os.sched_getaffinity(0))
@@ -1365,49 +1385,70 @@ class BayesianStatistics:
                 num_workers,
                 time.perf_counter() - _t0,
             )
-            self.p_D(
-                galaxy_catalog=galaxy_catalog,
-                redshift_upper_limit=REDSHIFT_UPPER_LIMIT,
-                pool=pool,
-                completeness=completeness,
-                detection_probability_obj=detection_probability,
-            )
-        _LOGGER.info(f"posteriors comupted for h = {self.h}")
+            # Per-h evaluation loop (one iteration in single-h mode). Setup
+            # above — data, p_det grids, completeness, D(h)/beta/global tables,
+            # Fisher staging, worker pool — is h-invariant and shared; each
+            # iteration resets the per-h accumulators, runs the detection loop,
+            # and writes that h's outputs immediately (per-h failure
+            # granularity is preserved in grid mode).
+            for _h_run in _h_list:
+                self.h = _h_run
+                if h_values is not None:
+                    # Grid mode: per-h accumulators so each JSON carries exactly
+                    # one likelihood per event (the canonical production shape).
+                    # Single-h mode intentionally keeps the legacy semantics:
+                    # repeated evaluate() calls on one instance accumulate one
+                    # value per h into posterior_data (integration-test harness
+                    # contract; production single-h runs are fresh processes).
+                    self.posterior_data = {}
+                    self.posterior_data_with_bh_mass = {}
+                    self._diagnostic_rows = []
 
-        if not os.path.isdir("simulations/posteriors"):
-            os.makedirs("simulations/posteriors")
-        if not os.path.isdir("simulations/posteriors_with_bh_mass"):
-            os.makedirs("simulations/posteriors_with_bh_mass")
+                self.p_D(
+                    galaxy_catalog=galaxy_catalog,
+                    redshift_upper_limit=REDSHIFT_UPPER_LIMIT,
+                    pool=pool,
+                    completeness=completeness,
+                    detection_probability_obj=detection_probability,
+                )
+                _LOGGER.info(f"posteriors comupted for h = {self.h}")
 
-        # 4-decimal precision required to distinguish Phase-50 superdense
-        # midpoints (Δh=0.0005, e.g. 0.7205 / 0.7215) from the dense Δh=0.001
-        # grid (0.720 / 0.721 / 0.722). Rounding to 3 decimals collapses each
-        # midpoint onto a neighbouring dense filename, so the second writer
-        # silently overwrites the first. Posteriors share filenames only when
-        # the underlying h-values agree to 4 decimals.
-        h_label = str(np.round(self.h, 4)).replace(".", "_")
-        with open(
-            f"simulations/posteriors/h_{h_label}.json",
-            "w",
-        ) as file:
-            data = {str(key): value for key, value in self.posterior_data.items()}
-            json.dump(data | {"h": self.h}, file)
+                if not os.path.isdir("simulations/posteriors"):
+                    os.makedirs("simulations/posteriors")
+                if not os.path.isdir("simulations/posteriors_with_bh_mass"):
+                    os.makedirs("simulations/posteriors_with_bh_mass")
 
-        with open(
-            f"simulations/posteriors_with_bh_mass/h_{h_label}.json",
-            "w",
-        ) as file:
-            # update existing data
+                # 4-decimal precision required to distinguish Phase-50 superdense
+                # midpoints (Δh=0.0005, e.g. 0.7205 / 0.7215) from the dense Δh=0.001
+                # grid (0.720 / 0.721 / 0.722). Rounding to 3 decimals collapses each
+                # midpoint onto a neighbouring dense filename, so the second writer
+                # silently overwrites the first. Posteriors share filenames only when
+                # the underlying h-values agree to 4 decimals.
+                h_label = str(np.round(self.h, 4)).replace(".", "_")
+                with open(
+                    f"simulations/posteriors/h_{h_label}.json",
+                    "w",
+                ) as file:
+                    data = {str(key): value for key, value in self.posterior_data.items()}
+                    json.dump(data | {"h": self.h}, file)
 
-            data = {str(key): value for key, value in self.posterior_data_with_bh_mass.items()}
-            json.dump(data | {"h": self.h}, file)
+                with open(
+                    f"simulations/posteriors_with_bh_mass/h_{h_label}.json",
+                    "w",
+                ) as file:
+                    # update existing data
 
-        # Write per-event diagnostic CSV
-        if self._diagnostic_rows:
-            diagnostic_csv_path = "simulations/diagnostics/event_likelihoods.csv"
-            self._write_diagnostic_csv(diagnostic_csv_path)
+                    data = {
+                        str(key): value for key, value in self.posterior_data_with_bh_mass.items()
+                    }
+                    json.dump(data | {"h": self.h}, file)
 
-        # Write Fisher quality CSV (per D-12)
+                # Write per-event diagnostic CSV (append-mode, rows are h-tagged)
+                if self._diagnostic_rows:
+                    diagnostic_csv_path = "simulations/diagnostics/event_likelihoods.csv"
+                    self._write_diagnostic_csv(diagnostic_csv_path)
+
+        # Write Fisher quality CSV (per D-12) — h-invariant, once per run
         self._write_fisher_quality_csv()
 
         # Generate Fisher quality diagnostic plot (per D-06, D-07)

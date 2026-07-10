@@ -8,6 +8,15 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Performance (perf/eval-vectorization)
+- **Fused h-grid evaluation (opt-in):** new `--h_values 0.70,0.705,...` CLI flag /
+  `BayesianStatistics.evaluate(h_values=[...])` — one process evaluates the whole h-list,
+  paying the h-invariant setup (catalogue + BallTree, injection pool + P_det grid,
+  completeness, D(h)/β/global-selection tables, Fisher staging, worker pool) once instead of
+  once per h. Per-h posterior JSONs are written as each h completes (per-h failure granularity
+  preserved); outputs are exactly equal to independent single-h runs (gated by
+  `test_fused_h_grid_matches_sequential`, exact `==`). The single-h default path is
+  byte-compatible and untouched — existing cluster scripts are unaffected until a fused
+  sibling script is deliberately introduced post-campaign.
 - **Host-batched likelihood kernel:** `single_host_likelihood_batch` — the vectorized twin of
   `single_host_likelihood` — computes all candidate hosts of a detection in one array pass;
   `p_Di` now dispatches one chunk per worker instead of one starmap task per host. Per-host

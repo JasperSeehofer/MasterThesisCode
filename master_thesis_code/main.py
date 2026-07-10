@@ -122,6 +122,10 @@ def main() -> None:
         )
 
     if arguments.evaluate:
+        # --h_values (fused h-grid pass) supersedes --h_value when given.
+        _h_values: list[float] | None = None
+        if arguments.h_values is not None:
+            _h_values = [float(tok) for tok in arguments.h_values.split(",") if tok.strip()]
         evaluate(
             cosmological_model,
             galaxy_catalog,
@@ -136,6 +140,7 @@ def main() -> None:
             # G4: --seed now reaches the inference layer (deterministic MC denominator).
             base_seed=seed,
             allow_low_pdet_coverage=arguments.allow_low_pdet_coverage,
+            h_values=_h_values,
         )
 
     if arguments.snr_analysis:
@@ -1017,6 +1022,7 @@ def evaluate(
     normalization_mode: str = "volume_deconv",
     base_seed: int | None = None,
     allow_low_pdet_coverage: bool = False,
+    h_values: list[float] | None = None,
 ) -> None:
     from master_thesis_code.bayesian_inference.bayesian_statistics import BayesianStatistics
 
@@ -1034,6 +1040,7 @@ def evaluate(
         normalization_mode=normalization_mode,
         base_seed=base_seed if base_seed is not None else 0,
         allow_low_pdet_coverage=allow_low_pdet_coverage,
+        h_values=h_values,
     )
 
 

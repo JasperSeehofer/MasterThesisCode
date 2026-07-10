@@ -51,12 +51,8 @@ _REL_TOL = 1e-9
 _ABS_TOL = 1e-30
 
 
-def _run_pipeline(
-    tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
-    cosmological_model: "Model1CrossCheck",
-) -> dict[str, dict[str, list[float]]]:
-    """Run evaluate() over the H0 grid; return per-event 1D and 2D likelihoods."""
+def _setup_sim_env(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Stage fixture CSVs + injections in tmp_path and point the module at them."""
     sim_dir = tmp_path / "simulations"
     sim_dir.mkdir()
     shutil.copy(
@@ -80,6 +76,15 @@ def _run_pipeline(
     monkeypatch.setattr(bs, "INJECTION_DATA_DIR", str(injection_dir))
     monkeypatch.chdir(tmp_path)
     monkeypatch.setattr(os, "sched_getaffinity", lambda _pid: set(range(4)))
+
+
+def _run_pipeline(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    cosmological_model: "Model1CrossCheck",
+) -> dict[str, dict[str, list[float]]]:
+    """Run evaluate() over the H0 grid; return per-event 1D and 2D likelihoods."""
+    _setup_sim_env(tmp_path, monkeypatch)
 
     from master_thesis_code.bayesian_inference.bayesian_statistics import BayesianStatistics
 
@@ -147,4 +152,68 @@ def test_pipeline_parity(
             for i, (g, e) in enumerate(zip(got_vals, exp_vals, strict=True)):
                 assert g == pytest.approx(e, rel=_REL_TOL, abs=_ABS_TOL), (
                     f"{channel}[{idx}] h={_H_GRID[i]}: {g} != {e}"
+                )
+
+
+@pytest.mark.slow
+def test_fused_h_grid_matches_sequential(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    cosmological_model: "Model1CrossCheck",
+) -> None:
+    """One fused evaluate(h_values=grid) pass == N sequential single-h passes.
+
+    The fused mode shares all h-invariant setup (p_det grid, completeness,
+    D(h)/beta tables, Fisher staging, worker pool) across the grid; per-h
+    outputs must be numerically IDENTICAL (exact ==) to independent single-h
+    evaluations, and each per-h JSON must carry exactly one likelihood per
+    event (the canonical production shape).
+    """
+    np.random.seed(42)
+    _setup_sim_env(tmp_path, monkeypatch)
+
+    from master_thesis_code.bayesian_inference.bayesian_statistics import BayesianStatistics
+
+    galaxy_catalog = build_galaxy_catalog_for_n_detections(5)
+
+    # Sequential reference: legacy accumulation, one value per h per event.
+    sequential = BayesianStatistics()
+    for h in _H_GRID:
+        sequential.evaluate(
+            galaxy_catalog=galaxy_catalog,
+            cosmological_model=cosmological_model,
+            h_value=float(h),
+        )
+    seq_1d = {k: list(v) for k, v in sequential.posterior_data.items() if isinstance(k, int)}
+    seq_2d = {
+        k: list(v)
+        for k, v in sequential.posterior_data_with_bh_mass.items()
+        if isinstance(k, int) and isinstance(v, list)
+    }
+
+    # Fused run: fresh instance, one pass over the whole grid.
+    fused = BayesianStatistics()
+    fused.evaluate(
+        galaxy_catalog=galaxy_catalog,
+        cosmological_model=cosmological_model,
+        h_value=float(_H_GRID[0]),  # superseded by h_values
+        h_values=[float(h) for h in _H_GRID],
+    )
+
+    for i, h in enumerate(_H_GRID):
+        h_label = str(np.round(h, 4)).replace(".", "_")
+        for channel, seq_ch in (("posteriors", seq_1d), ("posteriors_with_bh_mass", seq_2d)):
+            json_path = tmp_path / "simulations" / channel / f"h_{h_label}.json"
+            assert json_path.exists(), f"fused mode did not write {json_path}"
+            with open(json_path) as f:
+                data = json.load(f)
+            assert data["h"] == float(h)
+            for idx, seq_vals in seq_ch.items():
+                fused_vals = data[str(idx)]
+                assert len(fused_vals) == 1, (
+                    f"{channel} h={h}: expected exactly one likelihood per event, "
+                    f"got {len(fused_vals)}"
+                )
+                assert fused_vals[0] == seq_vals[i], (
+                    f"{channel}[{idx}] h={h}: fused {fused_vals[0]!r} != sequential {seq_vals[i]!r}"
                 )

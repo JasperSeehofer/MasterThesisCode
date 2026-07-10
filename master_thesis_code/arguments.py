@@ -61,6 +61,12 @@ class Arguments:
         return float(self._parsed_arguments.h_value)
 
     @property
+    def h_values(self) -> str | None:
+        """Comma-separated h-grid for a fused evaluation pass (supersedes h_value)."""
+        value = self._parsed_arguments.h_values
+        return str(value) if value is not None else None
+
+    @property
     def snr_analysis(self) -> bool:
         """Indicates whether the snr analysis should be run."""
         return bool(self._parsed_arguments.snr_analysis)
@@ -229,6 +235,18 @@ def _parse_arguments(arguments: list[str]) -> argparse.Namespace:
     )
     parser.add_argument("--evaluate", action="store_true")
     parser.add_argument("--h_value", help="Hubble constant value.", type=float, default=H)
+    parser.add_argument(
+        "--h_values",
+        type=str,
+        default=None,
+        help=(
+            "Comma-separated Hubble constant values for a fused evaluation pass "
+            "(e.g. '0.70,0.705,0.71'). Supersedes --h_value: all h-invariant setup "
+            "(catalogue, BallTree, injection pool, P_det grid, Fisher staging, worker "
+            "pool) is paid once, and per-h posterior JSONs are written as each h "
+            "completes. Default: single-h evaluation via --h_value."
+        ),
+    )
     parser.add_argument("--snr_analysis", action="store_true")
     parser.add_argument(
         "--injection_campaign",
