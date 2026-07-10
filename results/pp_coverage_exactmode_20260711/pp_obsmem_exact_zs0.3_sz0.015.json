@@ -1,0 +1,73 @@
+{
+  "config": {
+    "n_realizations": 120,
+    "n_events": 250,
+    "sigma_z": 0.015,
+    "sigma_z_pv": 0.0,
+    "sigma_dl_frac": 0.05,
+    "injected_truths": [
+      0.62,
+      0.72,
+      0.84
+    ],
+    "seed": 20260701,
+    "kernel": "volume",
+    "h_min": 0.6,
+    "h_max": 0.86,
+    "h_step": 0.004,
+    "n_z_quad": 160,
+    "z_support": 0.3,
+    "mixture_mode": "exact",
+    "membership_on_observed": true
+  },
+  "results": {
+    "0.6200": {
+      "h_true": 0.62,
+      "coverage": {
+        "50": 0.7,
+        "68": 0.7,
+        "90": 0.875
+      },
+      "rail_fraction": 0.0,
+      "map_mean": 0.6204666666666666,
+      "map_std": 0.004477598562721867,
+      "map_median": 0.62,
+      "map_bias": 0.00046666666666661527,
+      "completion_fraction": 0.22290000000000004,
+      "dlogL_dh_host_mean": -639.6905495484,
+      "dlogL_dh_completion_mean": 672.9740849438784
+    },
+    "0.7200": {
+      "h_true": 0.72,
+      "coverage": {
+        "50": 0.4,
+        "68": 0.6583333333333333,
+        "90": 0.8
+      },
+      "rail_fraction": 0.0,
+      "map_mean": 0.7215000000000001,
+      "map_std": 0.00506129100790171,
+      "map_median": 0.7200000000000001,
+      "map_bias": 0.0015000000000001679,
+      "completion_fraction": 0.39103333333333334,
+      "dlogL_dh_host_mean": -497.22179337543645,
+      "dlogL_dh_completion_mean": 572.898240083255
+    },
+    "0.8400": {
+      "h_true": 0.84,
+      "coverage": {
+        "50": 0.4,
+        "68": 0.5333333333333333,
+        "90": 0.7666666666666667
+      },
+      "rail_fraction": 0.0,
+      "map_mean": 0.8424666666666667,
+      "map_std": 0.006432901539913564,
+      "map_median": 0.8440000000000002,
+      "map_bias": 0.002466666666666728,
+      "completion_fraction": 0.5493666666666667,
+      "dlogL_dh_host_mean": -346.6953592940398,
+      "dlogL_dh_completion_mean": 416.2446388748639
+    }
+  }
+}
