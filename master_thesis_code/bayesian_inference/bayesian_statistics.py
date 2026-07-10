@@ -24,7 +24,7 @@ import numpy as np
 import numpy.typing as npt
 import pandas as pd
 from scipy.integrate import dblquad, fixed_quad, quad
-from scipy.special import ndtr
+from scipy.special import ndtr, roots_legendre
 from scipy.stats import multivariate_normal, norm
 
 from master_thesis_code.bayesian_inference.simulation_detection_probability import (
@@ -80,6 +80,96 @@ _DH_QUAD_ORDER: int = 100
 # p_det d_L-grid kinks, which n=64 pushes to <= 2.8e-4 worst-case (spec-z hosts
 # 1e-8..1e-5) -- far below the ~1-5% MC noise it replaces.
 _BH_DENOM_QUAD_ORDER: int = 64
+
+# Gauss-Legendre nodes/weights shared by the batched host kernel. Identical to
+# what scipy.integrate.fixed_quad uses internally (its _cached_roots_legendre is
+# a cache around scipy.special.roots_legendre), so the batched quadrature
+# reproduces fixed_quad bit-for-bit per host row.
+_HOST_QUAD_N: int = 50
+_GL_NODES_50, _GL_WEIGHTS_50 = roots_legendre(_HOST_QUAD_N)
+_GL_NODES_64, _GL_WEIGHTS_64 = roots_legendre(_BH_DENOM_QUAD_ORDER)
+
+# Normalisation constant of the standard normal pdf; same value scipy.stats.norm
+# divides by (scipy.stats._continuous_distns._norm_pdf_C).
+_NORM_PDF_C: float = float(np.sqrt(2 * np.pi))
+
+# Upper bound on hosts per batched-kernel chunk (see _starmap_host_batches).
+_MAX_BATCH_CHUNK: int = 2048
+
+
+def _gaussian_pdf(
+    x: npt.NDArray[np.float64],
+    loc: npt.NDArray[np.float64],
+    scale: npt.NDArray[np.float64],
+) -> npt.NDArray[np.float64]:
+    """Gaussian pdf replicating ``scipy.stats.norm(loc, scale).pdf(x)`` exactly.
+
+    Reproduces scipy's operation order — ``y = (x - loc)/scale`` then
+    ``exp(-y**2/2.0)/sqrt(2*pi)/scale`` — so results are bit-identical to the
+    frozen-distribution path while skipping its per-construction ``rv_frozen``
+    machinery (the profiled ~15-18% ``_construct_doc``/argument-parsing waste).
+    All arguments broadcast.
+
+    Args:
+        x: Evaluation points.
+        loc: Gaussian mean(s).
+        scale: Gaussian standard deviation(s), > 0.
+
+    Returns:
+        Pdf values, broadcast shape of the inputs.
+    """
+    y = (x - loc) / scale
+    result: npt.NDArray[np.float64] = np.exp(-(y**2) / 2.0) / _NORM_PDF_C / scale
+    return result
+
+
+def _batched_gl_nodes(
+    a: npt.NDArray[np.float64],
+    b: npt.NDArray[np.float64],
+    nodes: npt.NDArray[np.float64],
+) -> npt.NDArray[np.float64]:
+    """Map Gauss-Legendre reference nodes onto per-row integration windows.
+
+    Replicates ``scipy.integrate.fixed_quad``'s affine node map
+    ``y = (b - a)*(x + 1)/2.0 + a`` with a leading batch axis: for windows
+    ``[a_i, b_i]`` returns the ``(n, len(nodes))`` node array whose row ``i``
+    is bit-identical to the nodes fixed_quad would use for ``[a_i, b_i]``.
+
+    Args:
+        a: Lower window bounds, shape ``(n,)``.
+        b: Upper window bounds, shape ``(n,)``.
+        nodes: Gauss-Legendre reference nodes on ``[-1, 1]``.
+
+    Returns:
+        Node array of shape ``(n, len(nodes))``.
+    """
+    result: npt.NDArray[np.float64] = (b - a)[:, None] * (nodes + 1)[None, :] / 2.0 + a[:, None]
+    return result
+
+
+def _batched_gl_reduce(
+    a: npt.NDArray[np.float64],
+    b: npt.NDArray[np.float64],
+    weights: npt.NDArray[np.float64],
+    values: npt.NDArray[np.float64],
+) -> npt.NDArray[np.float64]:
+    """Per-row Gauss-Legendre reduction replicating ``fixed_quad``'s sum.
+
+    Computes ``(b - a)/2.0 * sum(w * values, axis=-1)`` per row — the same
+    expression (and float reduction order, contiguous last axis) that
+    ``fixed_quad`` evaluates for a single window.
+
+    Args:
+        a: Lower window bounds, shape ``(n,)``.
+        b: Upper window bounds, shape ``(n,)``.
+        weights: Gauss-Legendre weights, shape ``(k,)``.
+        values: Integrand values at the mapped nodes, shape ``(n, k)``.
+
+    Returns:
+        Integral per row, shape ``(n,)``.
+    """
+    result: npt.NDArray[np.float64] = (b - a) / 2.0 * np.sum(weights * values, axis=-1)
+    return result
 
 
 def eddington_shifted_host_mass(host_M: float, host_M_error: float) -> float:
@@ -1515,50 +1605,26 @@ class BayesianStatistics:
             f"reduced possible hosts galaxies to unique, removed {len(possible_host_galaxies) - len(possible_host_galaxies_reduced)} galaxies."
         )
 
-        chunksize = math.ceil(len(possible_host_galaxies_reduced) / pool._processes)  # type: ignore[attr-defined]
-        chunksize_with_bh_mass = math.ceil(
-            len(possible_host_galaxies_with_bh_mass) / pool._processes  # type: ignore[attr-defined]
-        )
-        results_with_bh_mass = pool.starmap(
-            single_host_likelihood,
-            [
-                (
-                    host.phiS,
-                    host.qS,
-                    host.z,
-                    host.z_error,
-                    host.M,
-                    host.M_error,
-                    detection_index,
-                    self.h,
-                    True,
-                    self._normalization_mode,
-                    self._base_seed,
-                )
-                for host in possible_host_galaxies_with_bh_mass
-            ],
-            chunksize=chunksize_with_bh_mass,
+        # Host-batched dispatch: one vectorized single_host_likelihood_batch task
+        # per worker chunk instead of one scalar single_host_likelihood task per
+        # host. Same chunk count as the old chunksize=ceil(n/processes) policy,
+        # same per-host values (see test_kernel_batch_equivalence.py).
+        results_with_bh_mass = _starmap_host_batches(
+            pool,
+            possible_host_galaxies_with_bh_mass,
+            detection_index,
+            self.h,
+            True,
+            self._normalization_mode,
         )
 
-        results_without_blackhole_mass = pool.starmap(
-            single_host_likelihood,
-            [
-                (
-                    host.phiS,
-                    host.qS,
-                    host.z,
-                    host.z_error,
-                    host.M,
-                    host.M_error,
-                    detection_index,
-                    self.h,
-                    False,
-                    self._normalization_mode,
-                    self._base_seed,
-                )
-                for host in possible_host_galaxies_reduced
-            ],
-            chunksize=chunksize,
+        results_without_blackhole_mass = _starmap_host_batches(
+            pool,
+            possible_host_galaxies_reduced,
+            detection_index,
+            self.h,
+            False,
+            self._normalization_mode,
         )
         end = time.time()
         _LOGGER.info(f"parallel computing took: {end - start}s")
@@ -1929,6 +1995,75 @@ def _bh_mass_denominator_inner_m_integral(
     return np.asarray(val, dtype=np.float64)
 
 
+def _bh_mass_denominator_inner_m_integral_batch(
+    z: npt.NDArray[np.float64],
+    detection_probability: Any,
+    host_phiS: npt.NDArray[np.float64],
+    host_qS: npt.NDArray[np.float64],
+    host_M_eff: npt.NDArray[np.float64],
+    host_M_error: npt.NDArray[np.float64],
+    h: float,
+) -> npt.NDArray[np.float64]:
+    """Host-batched twin of :func:`_bh_mass_denominator_inner_m_integral`.
+
+    Evaluates the exact erf-sum inner mass integral for ``n`` hosts at once:
+    ``z`` has shape ``(n, n_z)`` (per-host outer-quadrature nodes) and the host
+    parameters have shape ``(n,)``. Row ``i`` of the result is bit-identical to
+    the scalar function called with ``z[i]`` and host ``i``'s parameters — the
+    arithmetic per (host, node, knot) element is unchanged; only a leading host
+    axis is added, and the single ``p_det`` interpolator call covers all
+    ``n * n_z * K`` points at once (amortising ``_find_indices``).
+
+    Args:
+        z: Redshift nodes, shape ``(n, n_z)``.
+        detection_probability: ``SimulationDetectionProbability`` instance.
+        host_phiS: Host ecliptic azimuths, shape ``(n,)``.
+        host_qS: Host ecliptic polar angles, shape ``(n,)``.
+        host_M_eff: Effective (Eddington-shifted) host masses, shape ``(n,)``.
+        host_M_error: Host mass 1-sigma errors, shape ``(n,)``.
+        h: Dimensionless Hubble parameter.
+
+    Returns:
+        Inner-integral values ``g(z)``, shape ``(n, n_z)``.
+    """
+    n, n_z = z.shape
+    interp_2d, _ = detection_probability._get_or_build_grid(h)
+    m_centers = np.asarray(interp_2d.grid[1], dtype=np.float64)  # M_z grid knots
+    n_k = m_centers.size
+    d_L = dist_vectorized(z.reshape(-1), h=h)  # (n*n_z,)
+
+    # p_det at every (host_i, z_j, M_center_k) -> (n, n_z, K), one interpolator call.
+    dl_zz = np.repeat(d_L, n_k)
+    mm = np.tile(m_centers, n * n_z)
+    phi = np.repeat(host_phiS, n_z * n_k)
+    theta = np.repeat(host_qS, n_z * n_k)
+    p = np.asarray(
+        detection_probability.detection_probability_with_bh_mass_interpolated(
+            dl_zz, mm, phi, theta, h=h
+        ),
+        dtype=np.float64,
+    ).reshape(n, n_z, n_k)
+
+    mu = host_M_eff[:, None, None]
+    sigma = host_M_error[:, None, None]
+    # Knot positions in rest-frame M (M_z = M(1+z)); increasing in k for z >= 0.
+    m_knots = m_centers[None, None, :] / (1.0 + z[:, :, None])  # (n, n_z, K)
+    a = (m_knots - mu) / sigma
+    big_phi = ndtr(a)  # standard-normal CDF (identical to norm.cdf)
+    small_phi = np.exp(-0.5 * a * a) / np.sqrt(2.0 * np.pi)  # standard-normal pdf
+    # Constant-clamp tails (p_det flat below the first / above the last knot).
+    val = p[:, :, 0] * big_phi[:, :, 0] + p[:, :, -1] * (1.0 - big_phi[:, :, -1])
+    # Interior linear segments: int (c0 + c1 M) N dM, c1 = per-segment slope.
+    d_big = big_phi[:, :, 1:] - big_phi[:, :, :-1]  # (n, n_z, K-1)
+    int_m_n = mu * d_big - sigma * (small_phi[:, :, 1:] - small_phi[:, :, :-1])  # ∫ M N dM
+    dm = m_knots[:, :, 1:] - m_knots[:, :, :-1]
+    slope = (p[:, :, 1:] - p[:, :, :-1]) / dm
+    val = val + np.sum(
+        p[:, :, :-1] * d_big + slope * (int_m_n - m_knots[:, :, :-1] * d_big), axis=2
+    )
+    return np.asarray(val, dtype=np.float64)
+
+
 def single_host_likelihood(
     host_phiS: float,
     host_qS: float,
@@ -2269,6 +2404,369 @@ def single_host_likelihood(
         quadrature_weight_outside_grid_numerator,
         quadrature_weight_outside_grid_denominator,
     ]
+
+
+def single_host_likelihood_batch(
+    host_phiS: npt.NDArray[np.float64],
+    host_qS: npt.NDArray[np.float64],
+    host_z: npt.NDArray[np.float64],
+    host_z_error: npt.NDArray[np.float64],
+    host_M: npt.NDArray[np.float64],
+    host_M_error: npt.NDArray[np.float64],
+    detection_index: int,
+    h: float,
+    evaluate_with_bh_mass: bool,
+    normalization_mode: str = "volume_deconv",
+) -> npt.NDArray[np.float64]:
+    """Host-batched twin of :func:`single_host_likelihood`.
+
+    Computes the per-host likelihood integrals for ``n`` candidate hosts of one
+    detection in a single vectorized pass. Row ``i`` of the result equals
+    ``single_host_likelihood(...)`` called with host ``i``'s scalars — the same
+    physics, the same quadrature (fixed_quad's exact affine node map and
+    reduction, see :func:`_batched_gl_nodes`/:func:`_batched_gl_reduce`), the
+    same Gaussian pdf operation order (:func:`_gaussian_pdf`) — with the host
+    loop moved from Python/starmap into the array axis. Eliminated per-host
+    costs: ``scipy.stats.norm`` frozen-distribution construction, the
+    event-level ``dist_to_redshift`` window calls (now once per batch), and
+    per-host ``p_det`` interpolator calls (now one call over all hosts' nodes).
+
+    Reads the ``child_process_init`` worker globals (the subset the scalar
+    kernel actually uses). ``base_seed`` is intentionally absent: it was a
+    dead parameter of the scalar signature (vestigial from the removed MC
+    denominator).
+
+    Args:
+        host_phiS: Host ecliptic azimuths, shape ``(n,)``.
+        host_qS: Host ecliptic polar angles, shape ``(n,)``.
+        host_z: Host redshifts, shape ``(n,)``.
+        host_z_error: Host redshift 1-sigma errors, shape ``(n,)``.
+        host_M: Host BH masses [M_sun], shape ``(n,)``.
+        host_M_error: Host BH mass 1-sigma errors, shape ``(n,)``.
+        detection_index: CRB row index of the detection.
+        h: Dimensionless Hubble parameter.
+        evaluate_with_bh_mass: Include the with-BH-mass channel.
+        normalization_mode: In-catalogue normalization mode (see ``p_Di``).
+
+    Returns:
+        Array of shape ``(n, 6)`` when ``evaluate_with_bh_mass`` else
+        ``(n, 4)``; columns match the scalar kernel's return list.
+    """
+    global detection_probability
+    global means_3d, cov_inv_3d, log_norm_3d
+    global means_4d
+    global det_index_to_slot
+    global sigma2_cond_arr, proj_arr
+    global det_d_L_arr, det_d_L_unc_arr, det_M_arr
+
+    n = int(host_z.size)
+    if n == 0:
+        return np.empty((0, 6 if evaluate_with_bh_mass else 4), dtype=np.float64)
+
+    slot = det_index_to_slot[detection_index]
+    _det_d_L = float(det_d_L_arr[slot])
+    _det_d_L_unc = float(det_d_L_unc_arr[slot])
+    _det_M = float(det_M_arr[slot])
+    _mean_3d = means_3d[slot]
+    _cov_inv_3d = cov_inv_3d[slot]
+    _log_norm_3d = float(log_norm_3d[slot])
+
+    integration_limit_sigma_multiplier = 4.0
+
+    # Residual peculiar-velocity dispersion folded into the host-z kernel —
+    # identical formula and references as the scalar kernel (issue #16).
+    sigma_z_pv = (1.0 + host_z) * SIGMA_V_PEC_KM_S / SPEED_OF_LIGHT_KM_S
+    host_z_error_eff = np.sqrt(host_z_error**2 + sigma_z_pv**2)
+
+    # Numerator window depends only on the event (and h): computed once per batch.
+    numerator_integration_upper_redshift_limit = dist_to_redshift(
+        _det_d_L + integration_limit_sigma_multiplier * _det_d_L_unc, h=h
+    )
+    numerator_integration_lower_redshift_limit = dist_to_redshift(
+        _det_d_L - integration_limit_sigma_multiplier * _det_d_L_unc, h=h
+    )
+    den_hi = host_z + integration_limit_sigma_multiplier * host_z_error_eff
+    # z >= 0 clamp: same G2b rationale as the scalar kernel.
+    den_lo = np.maximum(host_z - integration_limit_sigma_multiplier * host_z_error_eff, 1e-6)
+
+    _use_volume_deconv = normalization_mode in ("volume_deconv", "volume_global")
+
+    # Per-host denominator quadrature nodes (fixed_quad affine map, n=50).
+    y_den = _batched_gl_nodes(den_lo, den_hi, _GL_NODES_50)  # (n, 50)
+    gauss_den = _gaussian_pdf(y_den, host_z[:, None], host_z_error_eff[:, None])
+
+    z_prior_norm = np.ones(n, dtype=np.float64)
+    w_pop_den: npt.NDArray[np.float64] | None = None
+    if _use_volume_deconv:
+        y_den_flat = y_den.reshape(-1)
+        w_pop_den = (
+            np.asarray(comoving_volume_element(y_den_flat, h=h), dtype=np.float64)
+            / (1.0 + y_den_flat)
+        ).reshape(n, _HOST_QUAD_N)
+        z_prior_norm = _batched_gl_reduce(den_lo, den_hi, _GL_WEIGHTS_50, gauss_den * w_pop_den)
+        z_prior_norm = np.where(z_prior_norm <= 0.0, 1.0, z_prior_norm)
+
+    # Shared numerator nodes (event-level window -> identical for every host).
+    y_num = (
+        numerator_integration_upper_redshift_limit - numerator_integration_lower_redshift_limit
+    ) * (_GL_NODES_50 + 1) / 2.0 + numerator_integration_lower_redshift_limit  # (50,)
+    d_L_num = dist_vectorized(y_num, h=h)
+    luminosity_distance_fraction = d_L_num / _det_d_L  # (50,)
+
+    w_pop_num: npt.NDArray[np.float64] | None = None
+    if _use_volume_deconv:
+        w_pop_num = np.asarray(comoving_volume_element(y_num, h=h), dtype=np.float64) / (
+            1.0 + y_num
+        )
+
+    def _z_prior_pdf_at(
+        z_nodes: npt.NDArray[np.float64], w_pop: npt.NDArray[np.float64] | None
+    ) -> npt.NDArray[np.float64]:
+        """Per-host z-prior pdf at ``(n, k)`` nodes; mirrors galaxy_redshift_prior_pdf."""
+        base = _gaussian_pdf(z_nodes, host_z[:, None], host_z_error_eff[:, None])
+        if _use_volume_deconv:
+            assert w_pop is not None
+            return base * w_pop / z_prior_norm[:, None]
+        return base
+
+    prior_num = _z_prior_pdf_at(
+        np.broadcast_to(y_num[None, :], (n, _HOST_QUAD_N)),
+        None if w_pop_num is None else w_pop_num[None, :],
+    )  # (n, 50)
+    # (n, 50); same values the scalar integrand recomputes at y_den
+    if _use_volume_deconv and w_pop_den is not None:
+        prior_den = gauss_den * w_pop_den / z_prior_norm[:, None]
+    else:
+        prior_den = gauss_den
+
+    # 3D GW likelihood at the shared numerator nodes, batched over hosts.
+    x_obs = np.empty((n, _HOST_QUAD_N, 3), dtype=np.float64)
+    x_obs[:, :, 0] = host_phiS[:, None]
+    x_obs[:, :, 1] = host_qS[:, None]
+    x_obs[:, :, 2] = luminosity_distance_fraction[None, :]
+    gw_3d = _mvn_pdf(x_obs.reshape(n * _HOST_QUAD_N, 3), _mean_3d, _cov_inv_3d, _log_norm_3d)
+    gw_3d = gw_3d.reshape(n, _HOST_QUAD_N)
+
+    numerator_without_bh_mass = _batched_gl_reduce(
+        np.full(n, numerator_integration_lower_redshift_limit),
+        np.full(n, numerator_integration_upper_redshift_limit),
+        _GL_WEIGHTS_50,
+        gw_3d * prior_num,
+    )
+
+    # 3D denominator: batched p_det lookup over all hosts' nodes at once.
+    d_L_den = dist_vectorized(y_den.reshape(-1), h=h)
+    p_det_den = np.asarray(
+        detection_probability.detection_probability_without_bh_mass_interpolated_zero_fill(
+            d_L_den,
+            np.repeat(host_phiS, _HOST_QUAD_N),
+            np.repeat(host_qS, _HOST_QUAD_N),
+            h=h,
+        ),
+        dtype=np.float64,
+    ).reshape(n, _HOST_QUAD_N)
+    denominator_without_bh_mass = _batched_gl_reduce(
+        den_lo, den_hi, _GL_WEIGHTS_50, p_det_den * prior_den
+    )
+
+    # STAT-04 off-grid quadrature-weight diagnostics (same expressions as scalar).
+    _, _interp_1d = detection_probability._get_or_build_grid(h)
+    _dl_centers = _interp_1d.grid[0]
+    _dl_grid_min = float(_dl_centers[0])
+    _dl_grid_max = float(_dl_centers[-1])
+
+    # Numerator side is event-level: identical for every host of this batch.
+    _dl_lower_num = float(
+        dist_vectorized(np.array([numerator_integration_lower_redshift_limit]), h=h)[0]
+    )
+    _dl_upper_num = float(
+        dist_vectorized(np.array([numerator_integration_upper_redshift_limit]), h=h)[0]
+    )
+    _window_num = _dl_upper_num - _dl_lower_num
+    if _window_num > 0.0:
+        _below_min_num = max(0.0, min(_dl_upper_num, _dl_grid_min) - _dl_lower_num) / _window_num
+        _above_max_num = max(0.0, _dl_upper_num - max(_dl_lower_num, _dl_grid_max)) / _window_num
+        _w_num_scalar = float(np.clip(_below_min_num + _above_max_num, 0.0, 1.0))
+    else:
+        _w_num_scalar = 0.0
+    quadrature_weight_outside_grid_numerator = np.full(n, _w_num_scalar, dtype=np.float64)
+
+    # Denominator side is per-host.
+    _dl_lower_den = dist_vectorized(den_lo, h=h)
+    _dl_upper_den = dist_vectorized(den_hi, h=h)
+    _window_den = _dl_upper_den - _dl_lower_den
+    with np.errstate(divide="ignore", invalid="ignore"):
+        _below_min_den = (
+            np.maximum(0.0, np.minimum(_dl_upper_den, _dl_grid_min) - _dl_lower_den) / _window_den
+        )
+        _above_max_den = (
+            np.maximum(0.0, _dl_upper_den - np.maximum(_dl_lower_den, _dl_grid_max)) / _window_den
+        )
+        quadrature_weight_outside_grid_denominator = np.where(
+            _window_den > 0.0,
+            np.clip(_below_min_den + _above_max_den, 0.0, 1.0),
+            0.0,
+        )
+
+    for _flagged in np.flatnonzero(
+        (quadrature_weight_outside_grid_numerator > 0.05)
+        | (quadrature_weight_outside_grid_denominator > 0.05)
+    ):
+        _LOGGER.warning(
+            "Event %d: >5%% quadrature weight outside P_det grid — "
+            "numerator=%.3f, denominator=%.3f",
+            detection_index,
+            quadrature_weight_outside_grid_numerator[_flagged],
+            quadrature_weight_outside_grid_denominator[_flagged],
+        )
+
+    if not evaluate_with_bh_mass:
+        return np.column_stack(
+            [
+                numerator_without_bh_mass,
+                denominator_without_bh_mass,
+                quadrature_weight_outside_grid_numerator,
+                quadrature_weight_outside_grid_denominator,
+            ]
+        )
+
+    # --- with-BH-mass channel ---
+    # G2d Eddington-in-M shift: scalar helper kept per host (data-dependent
+    # early returns/clamps; negligible cost) — bit-identical to the scalar path.
+    if _use_volume_deconv:
+        host_M_eff = np.array(
+            [
+                eddington_shifted_host_mass(float(m), float(dm_))
+                for m, dm_ in zip(host_M, host_M_error)
+            ],
+            dtype=np.float64,
+        )
+    else:
+        host_M_eff = np.asarray(host_M, dtype=np.float64)
+
+    _sigma2_cond = float(sigma2_cond_arr[slot])
+    _proj = proj_arr[slot]
+    _mu_obs_4d = means_4d[slot]
+
+    # Conditional mean of M_z_frac given (phi, theta, d_L_frac); Eq. (14.23)-(14.28).
+    mu_cond = (
+        _mu_obs_4d[3] + (x_obs.reshape(n * _HOST_QUAD_N, 3) - _mu_obs_4d[:3]) @ _proj
+    ).reshape(n, _HOST_QUAD_N)
+    mu_gal_frac = host_M_eff[:, None] * (1 + y_num)[None, :] / _det_M
+    sigma_gal_frac = host_M_error[:, None] * (1 + y_num)[None, :] / _det_M
+
+    # Analytic Gaussian product integral, Eq. (14.31).
+    sigma2_sum = _sigma2_cond + sigma_gal_frac**2
+    mz_integral = np.exp(-0.5 * (mu_cond - mu_gal_frac) ** 2 / sigma2_sum) / np.sqrt(
+        2 * np.pi * sigma2_sum
+    )
+
+    numerator_with_bh_mass = _batched_gl_reduce(
+        np.full(n, numerator_integration_lower_redshift_limit),
+        np.full(n, numerator_integration_upper_redshift_limit),
+        _GL_WEIGHTS_50,
+        gw_3d * mz_integral * prior_num,
+    )
+
+    # Semi-analytic denominator (glz64): batched erf-sum inner-M + GL outer-z.
+    y_bh = _batched_gl_nodes(den_lo, den_hi, _GL_NODES_64)  # (n, 64)
+    inner_m = _bh_mass_denominator_inner_m_integral_batch(
+        y_bh, detection_probability, host_phiS, host_qS, host_M_eff, host_M_error, h
+    )
+    w_pop_bh: npt.NDArray[np.float64] | None = None
+    if _use_volume_deconv:
+        y_bh_flat = y_bh.reshape(-1)
+        w_pop_bh = (
+            np.asarray(comoving_volume_element(y_bh_flat, h=h), dtype=np.float64)
+            / (1.0 + y_bh_flat)
+        ).reshape(n, _BH_DENOM_QUAD_ORDER)
+    prior_bh = _z_prior_pdf_at(y_bh, w_pop_bh)
+    denominator_with_bh_mass = _batched_gl_reduce(
+        den_lo, den_hi, _GL_WEIGHTS_64, inner_m * prior_bh
+    )
+
+    return np.column_stack(
+        [
+            numerator_without_bh_mass,
+            denominator_without_bh_mass,
+            numerator_with_bh_mass,
+            denominator_with_bh_mass,
+            quadrature_weight_outside_grid_numerator,
+            quadrature_weight_outside_grid_denominator,
+        ]
+    )
+
+
+def _hosts_to_arrays(
+    hosts: list[HostGalaxy],
+) -> tuple[
+    npt.NDArray[np.float64],
+    npt.NDArray[np.float64],
+    npt.NDArray[np.float64],
+    npt.NDArray[np.float64],
+    npt.NDArray[np.float64],
+    npt.NDArray[np.float64],
+]:
+    """Column-major float64 arrays (phiS, qS, z, z_error, M, M_error) for a host list."""
+    return (
+        np.array([host.phiS for host in hosts], dtype=np.float64),
+        np.array([host.qS for host in hosts], dtype=np.float64),
+        np.array([host.z for host in hosts], dtype=np.float64),
+        np.array([host.z_error for host in hosts], dtype=np.float64),
+        np.array([host.M for host in hosts], dtype=np.float64),
+        np.array([host.M_error for host in hosts], dtype=np.float64),
+    )
+
+
+def _starmap_host_batches(
+    pool: mp.pool.Pool,
+    hosts: list[HostGalaxy],
+    detection_index: int,
+    h: float,
+    evaluate_with_bh_mass: bool,
+    normalization_mode: str,
+) -> list[list[float]]:
+    """Dispatch the batched host kernel over worker processes.
+
+    Splits ``hosts`` into at most ``pool._processes`` contiguous chunks (order
+    preserved) and runs :func:`single_host_likelihood_batch` on each chunk in
+    parallel. Returns one ``list[float]`` per host in the original order —
+    exactly the structure the per-host ``single_host_likelihood`` starmap
+    produced.
+
+    Args:
+        pool: Multiprocessing pool initialised via ``child_process_init``.
+        hosts: Candidate hosts for the detection.
+        detection_index: CRB row index of the detection.
+        h: Dimensionless Hubble parameter.
+        evaluate_with_bh_mass: Include the with-BH-mass channel.
+        normalization_mode: In-catalogue normalization mode.
+
+    Returns:
+        Per-host result rows in input order.
+    """
+    n = len(hosts)
+    if n == 0:
+        return []
+    arrays = _hosts_to_arrays(hosts)
+    # One chunk per worker, but never more than _MAX_BATCH_CHUNK hosts per
+    # chunk: the with-BH erf-sum block allocates ~(chunk, 64, 40) float64
+    # intermediates (~300-400 MB/worker at 1080 hosts), so few-worker runs on
+    # events with tens of thousands of candidates must split further. Chunk
+    # boundaries do not affect values (order-preserving; gated by
+    # test_starmap_host_batches_ordering_and_chunking).
+    n_chunks = min(n, max(pool._processes, math.ceil(n / _MAX_BATCH_CHUNK)))  # type: ignore[attr-defined]
+    chunk_indices = np.array_split(np.arange(n), n_chunks)
+    jobs = [
+        tuple(a[idx] for a in arrays)
+        + (detection_index, h, evaluate_with_bh_mass, normalization_mode)
+        for idx in chunk_indices
+    ]
+    chunk_results = pool.starmap(single_host_likelihood_batch, jobs)
+    rows: list[list[float]] = []
+    for chunk in chunk_results:
+        rows.extend(chunk.tolist())
+    return rows
 
 
 def single_host_likelihood_integration_testing(

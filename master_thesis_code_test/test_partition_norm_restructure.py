@@ -84,10 +84,11 @@ def _run_p_Di(
     mock_pool = MagicMock()
     mock_pool._processes = 1
     # First starmap -> with-BH results [num_no_bh, den, num_with_bh, den_with_bh];
-    # second -> without-BH results [num_no_bh, den].
+    # second -> without-BH results [num_no_bh, den]. The batched dispatch
+    # (_starmap_host_batches) returns one (n_hosts, n_cols) array per chunk.
     mock_pool.starmap.side_effect = [
-        [[0.5, 0.3, 0.4, 0.2]],
-        [[0.3, 0.2]],
+        [np.array([[0.5, 0.3, 0.4, 0.2]])],
+        [np.array([[0.3, 0.2]])],
     ]
 
     mock_completeness = MagicMock()

@@ -7,6 +7,28 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Performance (perf/eval-vectorization)
+- **Host-batched likelihood kernel:** `single_host_likelihood_batch` — the vectorized twin of
+  `single_host_likelihood` — computes all candidate hosts of a detection in one array pass;
+  `p_Di` now dispatches one chunk per worker instead of one starmap task per host. Per-host
+  `scipy.stats.norm` frozen-distribution construction replaced by an operation-order-identical
+  explicit Gaussian; event-level `dist_to_redshift` window calls hoisted; the erf-sum
+  denominator's per-host 2,560-point `p_det` interpolation batched into a single call.
+  **Bit-for-bit value-preserving** (not a physics change): gated by
+  `test_kernel_batch_equivalence.py` (exact `==` over the 22-regime parity grid × 7-host
+  heterogeneous batches) and the unchanged committed kernel/pipeline parity goldens.
+- **[PHYSICS] Spline-table luminosity distance** (commit `afc59e9`): `dist_vectorized` /
+  `dist_to_redshift` use a lazily-built clamped-cubic-spline table of the h-independent
+  I(z) integral (512 knots, exact 1/h scaling; hyp2f1/fsolve fallback off-fiducial).
+  Parity 3.1e-10 vs the analytic form — below the 1e-9 per-host pins; removes `hyp2f1`
+  from the evaluation hot path (GPU-unblocker).
+- **[PHYSICS] Exact semi-analytic with-BH-mass selection denominator** (commit `713fbd1`,
+  "glz64"): p_det is piecewise-linear in M_z, so the inner M-integral has a closed-form
+  erf-sum (zero M-quadrature error); outer z-integral is 64-pt Gauss-Legendre over the same
+  host window as the 3D denominator and Z_g normalisation. Replaces the 10k-sample MC —
+  deterministic, ≈200× more accurate, and fixes the MC's untruncated z<0 tail bias (up to
+  +54% on low-z wide-photo-z hosts). Full seed400 eval: 255 s → 89 s (2.86×) with the d_L table.
+
 ### Changed
 - **[PHYSICS] Campaign population deepened to z = 1.5 (issue #20, decision 2026-07-03):**
   `HOST_DRAW_Z_MAX` 0.5 → 1.5 (pre-dt² "horizon z ≈ 0.18, truncation exact" justification
