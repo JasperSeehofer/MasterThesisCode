@@ -8,11 +8,13 @@ coverage sits in a generous nominal band with the bare kernel below it.
 """
 
 import dataclasses
+import json
 import math
+from pathlib import Path
 
 import pytest
 
-from master_thesis_code.validation.pp_coverage import PPCoverageConfig, run_coverage
+from master_thesis_code.validation.pp_coverage import PPCoverageConfig, main, run_coverage
 
 TINY = PPCoverageConfig(
     n_realizations=8,
@@ -262,3 +264,79 @@ def test_tiny_config_exact_value_pins(tiny_bare: dict, tiny_volume: dict) -> Non
     assert volume["map_bias"] == pytest.approx(-0.0014999999999998348, rel=1e-6)
     assert volume["coverage"]["68"] == pytest.approx(0.625, rel=1e-12)
     assert volume["rail_fraction"] == 0.0
+
+
+def test_exact_mode_requires_z_support() -> None:
+    """mixture_mode='exact' without a catalogue support edge is undefined."""
+    config = dataclasses.replace(TINY_DEEPVENUE, mixture_mode="exact")
+    with pytest.raises(ValueError, match="z_support"):
+        run_coverage(config)
+
+
+def test_exact_zmax_matches_two_branch_map() -> None:
+    """exact + z_support at the population ceiling matches the untruncated MAP.
+
+    completion_fraction is exactly 0 (z_host is sampled in [Z_MIN, Z_MAX_POP]
+    = [1e-4, 0.95], so no event routes to the completion branch at
+    z_support=0.95). The MAP is NOT bit-identical: exact clamps the host
+    quadrature at z_hi -> min(z_hi, 0.95) while two_branch clamps to
+    _Z_GRID[-1] = 1.5; the [0.95, 1.5] kernel mass is negligible because
+    Z_MAX_POP = 0.95 caps the population, so the MAPs agree to well within
+    the measured tolerance below.
+    """
+    untruncated = run_coverage(TINY_DEEPVENUE)["results"]["0.7200"]
+    exact = run_coverage(dataclasses.replace(TINY_DEEPVENUE, z_support=0.95, mixture_mode="exact"))[
+        "results"
+    ]["0.7200"]
+    assert exact["completion_fraction"] == 0.0
+    # Measured at implementation time: map_mean identical to float precision
+    # on the tiny config (difference 0.0); assert with a tight rel tolerance.
+    assert exact["map_mean"] == pytest.approx(untruncated["map_mean"], rel=1e-12)
+
+
+def test_exact_deep_truncation_finite_and_completion_matches_two_branch() -> None:
+    """Deep truncation (z_support=0.2): finite posterior, identical event routing.
+
+    The membership draws are consumed from the RNG stream BEFORE the branch
+    dispatch, so exact and two_branch route bit-identically at the same
+    config/seed: completion_fraction must be EXACTLY equal (not approx).
+    """
+    tb = run_coverage(dataclasses.replace(TINY_DEEPVENUE, z_support=0.2))["results"]["0.7200"]
+    ex = run_coverage(dataclasses.replace(TINY_DEEPVENUE, z_support=0.2, mixture_mode="exact"))[
+        "results"
+    ]["0.7200"]
+    assert ex["completion_fraction"] == tb["completion_fraction"]
+    assert 0.0 < ex["completion_fraction"] < 1.0
+    assert math.isfinite(ex["map_mean"])
+    assert math.isfinite(ex["map_std"])
+    assert all(math.isfinite(v) for v in ex["coverage"].values())
+    assert TINY_DEEPVENUE.h_min <= ex["map_mean"] <= TINY_DEEPVENUE.h_max
+
+
+def test_exact_determinism_same_seed() -> None:
+    """Two exact-mode runs with the same seed are bit-identical."""
+    config = dataclasses.replace(TINY_DEEPVENUE, z_support=0.2, mixture_mode="exact")
+    assert run_coverage(config) == run_coverage(config)
+
+
+def test_n_z_quad_cli_flag_threads_into_config(tmp_path: Path) -> None:
+    """--n-z-quad threads into config.n_z_quad in the written JSON."""
+    out = tmp_path / "r.json"
+    main(
+        [
+            "--n-realizations",
+            "2",
+            "--n-events",
+            "10",
+            "--truths",
+            "0.72",
+            "--seed",
+            "20260711",
+            "--n-z-quad",
+            "480",
+            "--output",
+            str(out),
+        ]
+    )
+    data = json.loads(out.read_text())
+    assert data["config"]["n_z_quad"] == 480

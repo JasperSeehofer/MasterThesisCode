@@ -45,7 +45,16 @@ host-found events the full Gray et al. (2020, Eqs. 29+32) mixture
 ``D_g_i`` of Eqs. A.9/A.10 (the production commit ``713fbd1`` analog) while
 zero-host events keep the pure-completion ``B_num/D`` branch;
 ``"conditioned"`` is the membership-conditioned inverse (N-2b probe):
-host events ``N_i / beta_G``, zero-host events ``B_num / beta_Gbar``. The
+host events ``N_i / beta_G``, zero-host events ``B_num / beta_Gbar``;
+``"exact"`` (quick task 260711-117) is the membership-truncated exact
+kernel: under this harness's generative model detection is conditioned once
+via ``1/D(h)`` with NO p_det inside the numerator (Mandel, Farr & Gair 2019,
+arXiv:1809.02063) and catalogue membership ``G = 1[z_true < z_support]`` is
+part of the observed data, so the exact host-event numerator is the
+volume-kernel integral TRUNCATED at the support edge ``z_support`` (no
+beta_G, no D_g_i) while zero-host events keep ``B_num/D`` — the two branches
+tile ``[0, Z_MAX_POP]`` exactly (the support split of the Gray et al. 2020,
+arXiv:1908.06050, Eqs. 29+32 completion mixture). The
 ``membership_on_observed`` flag (N-2d probe) decides catalogue membership on
 the observed ``z_gal`` instead of the true ``z_host``.
 
@@ -223,7 +232,21 @@ class PPCoverageConfig:
             per-host selection denominator D_g_i of Eqs. A.9/A.10 (production
             commit 713fbd1 analog); zero-host events keep B_num/D.
             "conditioned": membership-conditioned inverse (N-2b probe) —
-            in-catalogue N_i/beta_G, zero-host B_num/beta_Gbar. Modes other
+            in-catalogue N_i/beta_G, zero-host B_num/beta_Gbar.
+            "exact": membership-truncated exact kernel (260711-117).
+            Derivation: under the harness generative model detection is
+            conditioned once via 1/D(h) with NO p_det inside the numerator
+            (Mandel, Farr & Gair 2019, arXiv:1809.02063), and catalogue
+            membership G = 1[z_true < z_support] is part of the observed
+            data; conditioning the host-z kernel on G truncates its support
+            at z_support, so the exact host-event likelihood is the
+            volume-kernel numerator integrated over
+            [z_lo, min(z_hi, z_support)] divided by the shared D(h) — no
+            beta_G weight, no per-host D_g_i. Zero-host events keep B_num/D,
+            so the two branches tile [0, Z_MAX_POP] exactly (the support
+            split of the Gray et al. 2020, arXiv:1908.06050, Eqs. 29+32
+            completion mixture). This removes the above-edge kernel leak
+            that the two_branch/gray host numerators carry. Modes other
             than "two_branch" require z_support (ValueError otherwise).
         membership_on_observed: Decide catalogue membership on the OBSERVED
             z_gal (< z_support) instead of the true z_host (production's
@@ -250,7 +273,7 @@ class PPCoverageConfig:
     h_step: float = 0.004
     n_z_quad: int = 160
     z_support: float | None = None
-    mixture_mode: Literal["two_branch", "gray", "conditioned"] = "two_branch"
+    mixture_mode: Literal["two_branch", "gray", "conditioned", "exact"] = "two_branch"
     membership_on_observed: bool = False
 
     def h_grid(self) -> npt.NDArray[np.float64]:
@@ -354,6 +377,17 @@ def _run_realization(
       (production-faithful leak). Zero-host events keep ``B_num/D``.
     - ``"conditioned"``: membership-conditioned inverse (N-2b probe) —
       in-catalogue ``N_i / beta_G``, zero-host ``B_num / beta_Gbar``.
+    - ``"exact"``: membership-truncated exact kernel (260711-117) —
+      in-catalogue events integrate the SAME volume-kernel numerator but
+      truncated at the catalogue support edge (``z_hi -> min(z_hi,
+      z_support)``), divided by the shared ``D(h)`` (no ``beta_G``, no
+      ``D_g_i``). Under the harness generative model detection is
+      conditioned once via ``1/D(h)`` with no p_det inside the numerator
+      (Mandel, Farr & Gair 2019, arXiv:1809.02063) and membership
+      ``G = 1[z_true < z_support]`` is observed data, which removes the
+      above-edge kernel leak the two_branch/gray numerators carry.
+      Zero-host events keep ``B_num/D``, so the two branches tile
+      ``[0, Z_MAX_POP]`` exactly (Gray et al. 2020 support split).
 
     Args:
         h_true: Injected truth.
@@ -383,7 +417,7 @@ def _run_realization(
     sig_dl = config.sigma_dl_frac * dL_obs
     z_gal = np.clip(z_host + rng.normal(0.0, sigma_z, config.n_events), Z_MIN, None)
 
-    if config.mixture_mode != "two_branch":
+    if config.mixture_mode in ("gray", "conditioned"):
         if beta_G is None or beta_Gbar is None:
             raise ValueError(
                 f"mixture_mode={config.mixture_mode!r} requires precomputed beta_G/beta_Gbar"
@@ -391,7 +425,7 @@ def _run_realization(
         beta_G_h: npt.NDArray[np.float64] = beta_G
         log_beta_G: npt.NDArray[np.float64] = np.log(np.clip(beta_G, 1e-300, None))
         log_beta_Gbar: npt.NDArray[np.float64] = np.log(np.clip(beta_Gbar, 1e-300, None))
-    else:  # unused sentinels; two_branch never touches them
+    else:  # unused sentinels; two_branch and exact never touch them
         beta_G_h = np.zeros(0)
         log_beta_G = np.zeros(0)
         log_beta_Gbar = np.zeros(0)
@@ -433,6 +467,28 @@ def _run_realization(
             float(z_of_comoving_amplitude(np.asarray((dL_obs[i] + 5 * sig_dl[i]) * h_grid.max())))
             + 4 * sigma_z,
         )
+        if config.mixture_mode == "exact":
+            # Membership-truncated exact kernel (Mandel-Farr-Gair 2019,
+            # arXiv:1809.02063: detection conditioned once via 1/D(h), no
+            # p_det in the numerator; catalogue membership
+            # G = 1[z_true < z_support] is part of the observed data). The
+            # exact host-event numerator integrates the volume kernel only
+            # over the in-catalogue support [z_lo, min(z_hi, zs)], removing
+            # the above-edge kernel leak that the two_branch / gray
+            # numerators carry. Zero-host events keep B_num/D, so the two
+            # branches tile [0, Z_MAX_POP] exactly (Gray et al. 2020,
+            # arXiv:1908.06050, Eqs. 29+32 support split). z_support is
+            # guaranteed not None here (run_coverage raises otherwise).
+            assert config.z_support is not None
+            z_hi = min(z_hi, float(config.z_support))
+            if z_hi <= z_lo:
+                # Empty truncated window -> the 1e-300 completion-style floor.
+                num_floor = np.full(h_grid.size, 1e-300, dtype=np.float64)
+                term = np.log(np.clip(num_floor, 1e-300, None)) - log_Dh
+                logL += term
+                logL_host += term
+                n_host += 1
+                continue
         zq = np.linspace(z_lo, z_hi, config.n_z_quad)
         wq = np.gradient(zq)
         dLg = comoving_amplitude_of_z(zq)[:, None] / h_grid[None, :]  # (nz, nh)
@@ -492,8 +548,9 @@ def run_coverage(config: PPCoverageConfig) -> dict[str, Any]:
 
     Raises:
         ValueError: If ``config.mixture_mode`` is not "two_branch" and
-            ``config.z_support`` is None (the Gray mixture is only defined
-            with a catalogue-support edge).
+            ``config.z_support`` is None (the Gray mixture and the
+            membership-truncated exact kernel are only defined with a
+            catalogue-support edge).
     """
     h_grid = config.h_grid()
     # Selection denominator D(h) = int p_det(A(z)/h) w_pop(z) dz (shared).
@@ -513,12 +570,16 @@ def run_coverage(config: PPCoverageConfig) -> dict[str, Any]:
     # Z_MAX_POP beta_G == Dh exactly (limiting-case identity).
     beta_G: npt.NDArray[np.float64] | None = None
     beta_Gbar: npt.NDArray[np.float64] | None = None
-    if config.mixture_mode != "two_branch":
-        if config.z_support is None:
-            raise ValueError(
-                "mixture_mode='gray'/'conditioned' requires z_support: the Gray "
-                "mixture is only defined with a catalogue-support edge."
-            )
+    if config.mixture_mode != "two_branch" and config.z_support is None:
+        raise ValueError(
+            "mixture_mode='gray'/'conditioned'/'exact' requires z_support: the Gray "
+            "mixture and the membership-truncated exact kernel are only defined with "
+            "a catalogue-support edge."
+        )
+    if config.mixture_mode in ("gray", "conditioned"):
+        # exact needs neither beta_G nor beta_Gbar (no mixture weight, no
+        # conditioned denominators): only gray/conditioned compute them.
+        assert config.z_support is not None  # guarded above
         zbg = np.linspace(Z_MIN, min(config.z_support, Z_MAX_POP), 3000)
         beta_G = np.asarray(
             np.trapezoid(
@@ -610,15 +671,27 @@ def main(argv: list[str] | None = None) -> None:
     )
     parser.add_argument(
         "--mixture-mode",
-        choices=["two_branch", "gray", "conditioned"],
+        choices=["two_branch", "gray", "conditioned", "exact"],
         default="two_branch",
         help="Estimator composition under z_support truncation: 'two_branch' "
         "(default; in-catalogue events bare N_i/D, zero-host B_num/D — the "
         "pre-2026-07-11 behaviour), 'gray' (in-catalogue events get the full "
         "Gray et al. 2020 Eqs. 29+32 mixture (beta_G*L_cat_i + B_num)/D with "
-        "the per-host D_g_i of Eqs. A.9/A.10; zero-host unchanged), or "
+        "the per-host D_g_i of Eqs. A.9/A.10; zero-host unchanged), "
         "'conditioned' (membership-conditioned inverse: N_i/beta_G and "
-        "B_num/beta_Gbar). Modes other than 'two_branch' require --z-support.",
+        "B_num/beta_Gbar), or 'exact' (in-catalogue events use the "
+        "volume-kernel numerator TRUNCATED at z_support — the "
+        "membership-truncated exact kernel, no beta_G, no D_g_i; zero-host "
+        "events keep B_num/D). Modes other than 'two_branch' require "
+        "--z-support.",
+    )
+    parser.add_argument(
+        "--n-z-quad",
+        type=int,
+        default=160,
+        help="Per-event redshift quadrature points (config.n_z_quad). Raise for "
+        "small-sigma_z runs so the host-z Gaussian kernel is sampled by >=4 "
+        "points per sigma_z (e.g. --n-z-quad 480 at sigma_z=0.002).",
     )
     parser.add_argument(
         "--membership-on-observed",
@@ -637,6 +710,7 @@ def main(argv: list[str] | None = None) -> None:
         injected_truths=list(args.truths),
         seed=args.seed,
         kernel=args.kernel,
+        n_z_quad=args.n_z_quad,
         z_support=args.z_support,
         mixture_mode=args.mixture_mode,
         membership_on_observed=args.membership_on_observed,
