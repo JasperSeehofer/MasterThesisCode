@@ -58,6 +58,14 @@ arXiv:1908.06050, Eqs. 29+32 completion mixture). The
 ``membership_on_observed`` flag (N-2d probe) decides catalogue membership on
 the observed ``z_gal`` instead of the true ``z_host``.
 
+Prior-tilt probe (``PPCoverageConfig.inference_wpop_tilt``, handoff item N-3,
+``.planning/HANDOFF-DEEP-BIAS-MECHANISM-20260710.md``): multiplies ONLY the
+INFERENCE-side population weight w_pop(z) by ``exp(gamma * z)`` — the
+generative truth draw (``_sample_detected_redshifts``) is never tilted — so
+the harness measures inference-prior *misspecification* against a fixed
+truth. The gate is strict (``gamma == 0.0`` returns the untilted weight
+object unchanged), keeping the default path bit-identical.
+
 Units: ``h`` in [100 km/s/Mpc]; distances in Gpc. Cosmology: flat LambdaCDM.
 """
 
@@ -136,6 +144,31 @@ def population_weight_of_z(z: npt.NDArray[np.float64]) -> npt.NDArray[np.float64
         Unnormalized population weight at each redshift.
     """
     return np.interp(z, _Z_GRID, _W_POP)
+
+
+def _inference_population_weight(
+    z: npt.NDArray[np.float64], tilt: float
+) -> npt.NDArray[np.float64]:
+    """Inference-side population weight w_pop(z) * exp(tilt * z) (N-3 prior-tilt probe).
+
+    ``tilt == 0.0`` returns ``population_weight_of_z(z)`` UNCHANGED (strict gate ->
+    bit-identical default path, all golden pins hold). ``tilt != 0.0`` multiplies by
+    ``exp(tilt * z)`` — the prior-misspecification perturbation applied to INFERENCE-side
+    w_pop only. The generative truth draw (``_sample_detected_redshifts``) never calls this
+    and is therefore never tilted, so the probe measures inference-prior misspecification
+    against a fixed truth.
+
+    Args:
+        z: Redshift values.
+        tilt: Exponential tilt coefficient gamma [1/z].
+
+    Returns:
+        Tilted (or, at ``tilt == 0.0``, untilted) unnormalized population weight.
+    """
+    w = population_weight_of_z(z)
+    if tilt == 0.0:
+        return w
+    return np.asarray(w * np.exp(tilt * np.asarray(z)), dtype=np.float64)
 
 
 def detection_probability(d_L: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
@@ -217,6 +250,11 @@ class PPCoverageConfig:
         h_max: Upper edge of the H0 grid.
         h_step: H0 grid spacing.
         n_z_quad: Per-event redshift quadrature points.
+        inference_wpop_tilt: N-3 prior-tilt probe gamma [1/z]: multiplies the
+            INFERENCE-side w_pop by exp(gamma * z) at every inference call
+            site (host kernel, B_num, D(h), beta_G), gated strictly on
+            != 0.0; the generative truth draw is untouched. Default 0.0 is
+            bit-identical to the untilted harness.
         z_support: Catalogue support ceiling: true hosts with z_host <
             z_support are in the catalogue (existing single-host kernel
             branch); z_host >= z_support are zero-host events using the
@@ -272,6 +310,7 @@ class PPCoverageConfig:
     h_max: float = 0.860
     h_step: float = 0.004
     n_z_quad: int = 160
+    inference_wpop_tilt: float = 0.0
     z_support: float | None = None
     mixture_mode: Literal["two_branch", "gray", "conditioned", "exact"] = "two_branch"
     membership_on_observed: bool = False
@@ -287,6 +326,7 @@ def _completion_numerator(
     z_support: float,
     h_grid: npt.NDArray[np.float64],
     n_z_quad: int,
+    tilt: float,
 ) -> npt.NDArray[np.float64]:
     """Pure-completion numerator B_num(h) above the catalogue support edge.
 
@@ -305,6 +345,7 @@ def _completion_numerator(
             volume).
         h_grid: H0 evaluation grid.
         n_z_quad: Redshift quadrature points.
+        tilt: Inference-side w_pop tilt gamma (N-3 probe); 0.0 is untilted.
 
     Returns:
         B_num evaluated on ``h_grid`` (shape ``(nh,)``).
@@ -324,7 +365,7 @@ def _completion_numerator(
     wq_b = np.gradient(zq_b)
     dLg_b = comoving_amplitude_of_z(zq_b)[:, None] / h_grid[None, :]  # (nz, nh)
     pGW_b = _norm_pdf(dLg_b, dL_obs_i, sig_dl_i)  # (nz, nh)
-    wpop_b = population_weight_of_z(zq_b)  # unnormalized
+    wpop_b = _inference_population_weight(zq_b, tilt)  # unnormalized
     return np.asarray((wq_b * wpop_b) @ pGW_b, dtype=np.float64)  # (nh,)
 
 
@@ -444,7 +485,12 @@ def _run_realization(
                 # Zero-host / out-of-catalogue event.
                 n_zero_host += 1
                 num_b = _completion_numerator(
-                    float(dL_obs[i]), float(sig_dl[i]), zs, h_grid, config.n_z_quad
+                    float(dL_obs[i]),
+                    float(sig_dl[i]),
+                    zs,
+                    h_grid,
+                    config.n_z_quad,
+                    config.inference_wpop_tilt,
                 )
                 if config.mixture_mode == "conditioned":
                     # Membership-conditioned inverse: B_num / beta_Gbar.
@@ -495,7 +541,7 @@ def _run_realization(
         pGW = _norm_pdf(dLg, float(dL_obs[i]), float(sig_dl[i]))  # (nz, nh)
         kernel_z = _norm_pdf(zq, float(z_gal[i]), sigma_z)  # (nz,)
         if config.kernel == "volume":
-            kernel_z = kernel_z * population_weight_of_z(zq)
+            kernel_z = kernel_z * _inference_population_weight(zq, config.inference_wpop_tilt)
             kernel_z = kernel_z / max(float(np.trapezoid(kernel_z, zq)), 1e-300)
         num = (wq * kernel_z) @ pGW  # (nh,)
         if config.mixture_mode == "gray" and config.z_support is not None:
@@ -511,6 +557,7 @@ def _run_realization(
                 float(config.z_support),
                 h_grid,
                 config.n_z_quad,
+                config.inference_wpop_tilt,
             )
             mixture = beta_G_h * L_cat_i + B_num_i  # linear space, per event
             term = np.log(np.clip(mixture, 1e-300, None)) - log_Dh
@@ -555,7 +602,7 @@ def run_coverage(config: PPCoverageConfig) -> dict[str, Any]:
     h_grid = config.h_grid()
     # Selection denominator D(h) = int p_det(A(z)/h) w_pop(z) dz (shared).
     zint = np.linspace(Z_MIN, Z_MAX_POP, 3000)
-    wpop = population_weight_of_z(zint)
+    wpop = _inference_population_weight(zint, config.inference_wpop_tilt)
     Dh = np.trapezoid(
         detection_probability(comoving_amplitude_of_z(zint)[:, None] / h_grid[None, :])
         * wpop[:, None],
@@ -584,7 +631,7 @@ def run_coverage(config: PPCoverageConfig) -> dict[str, Any]:
         beta_G = np.asarray(
             np.trapezoid(
                 detection_probability(comoving_amplitude_of_z(zbg)[:, None] / h_grid[None, :])
-                * population_weight_of_z(zbg)[:, None],
+                * _inference_population_weight(zbg, config.inference_wpop_tilt)[:, None],
                 zbg,
                 axis=0,
             ),
@@ -699,6 +746,21 @@ def main(argv: list[str] | None = None) -> None:
         help="Decide catalogue membership on the OBSERVED z_gal (< z_support) "
         "instead of the true z_host (N-2d membership-determination probe).",
     )
+    parser.add_argument(
+        "--inference-wpop-tilt",
+        type=float,
+        default=0.0,
+        help="N-3 prior-tilt probe gamma: multiplies the INFERENCE-side w_pop "
+        "by exp(gamma*z) at every inference call site; the generative truth "
+        "draw is untouched. Default 0.0 is bit-identical to the untilted "
+        "harness.",
+    )
+    parser.add_argument(
+        "--h-step",
+        type=float,
+        default=0.004,
+        help="H0 grid spacing config.h_step; lower for finer floor-discriminator grids.",
+    )
     args = parser.parse_args(argv)
 
     config = PPCoverageConfig(
@@ -710,7 +772,9 @@ def main(argv: list[str] | None = None) -> None:
         injected_truths=list(args.truths),
         seed=args.seed,
         kernel=args.kernel,
+        h_step=args.h_step,
         n_z_quad=args.n_z_quad,
+        inference_wpop_tilt=args.inference_wpop_tilt,
         z_support=args.z_support,
         mixture_mode=args.mixture_mode,
         membership_on_observed=args.membership_on_observed,

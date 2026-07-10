@@ -319,6 +319,97 @@ def test_exact_determinism_same_seed() -> None:
     assert run_coverage(config) == run_coverage(config)
 
 
+def test_tilt_zero_bit_identical() -> None:
+    """inference_wpop_tilt=0.0 (default) is bit-identical (strict != 0.0 gate).
+
+    A truncated/completion-dominated run with an EXPLICIT tilt of 0.0 equals
+    the same run with the default config (full-dict equality), and the
+    committed golden-pin config still yields its pinned map_mean — guarding
+    the N-3 tilt knob against silent numerical drift on the default path.
+    """
+    base = dataclasses.replace(TINY_DEEPVENUE, z_support=0.2)
+    explicit = dataclasses.replace(base, inference_wpop_tilt=0.0)
+    assert run_coverage(explicit) == run_coverage(base)
+
+    pin_config = PPCoverageConfig(
+        n_realizations=2,
+        n_events=25,
+        injected_truths=[0.72],
+        seed=20260710,
+        kernel="volume",
+    )
+    entry = run_coverage(pin_config)["results"]["0.7200"]
+    assert entry["map_mean"] == pytest.approx(0.7260000000000001, rel=1e-12)
+
+
+def test_tilt_nonzero_changes_results() -> None:
+    """gamma != 0 changes the results at a completion-dominated config.
+
+    Statistical inequality (results dicts differ), not an exact value — the
+    tilt reweights the inference-side w_pop by exp(gamma*z) while the truth
+    draw stays fixed, so the posterior must move.
+    """
+    base = dataclasses.replace(TINY_DEEPVENUE, z_support=0.2, mixture_mode="exact")
+    tilted = dataclasses.replace(base, inference_wpop_tilt=0.2)
+    assert run_coverage(tilted)["results"] != run_coverage(base)["results"]
+
+
+def test_tilt_determinism_same_seed() -> None:
+    """Two gamma != 0 runs with the same seed are bit-identical."""
+    config = dataclasses.replace(
+        TINY_DEEPVENUE, z_support=0.2, mixture_mode="exact", inference_wpop_tilt=0.2
+    )
+    assert run_coverage(config) == run_coverage(config)
+
+
+def test_h_step_cli_flag_threads_and_changes_grid_size(tmp_path: Path) -> None:
+    """--h-step threads into config.h_step and refines the H0 grid."""
+    out = tmp_path / "r.json"
+    main(
+        [
+            "--n-realizations",
+            "2",
+            "--n-events",
+            "10",
+            "--truths",
+            "0.72",
+            "--seed",
+            "20260711",
+            "--h-step",
+            "0.002",
+            "--output",
+            str(out),
+        ]
+    )
+    data = json.loads(out.read_text())
+    assert data["config"]["h_step"] == 0.002
+    assert (
+        PPCoverageConfig(h_step=0.002).h_grid().size > PPCoverageConfig(h_step=0.004).h_grid().size
+    )
+
+
+def test_tilt_monotonic_map_mean() -> None:
+    """map_mean responds strictly monotonically to gamma in {-0.1, 0, +0.1}.
+
+    Direction is MEASURED, not assumed: assert the three values are strictly
+    ascending OR strictly descending on a tiny completion-dominated config
+    (z_support=0.2, exact mode). h_step=0.001 because the default 0.004 grid
+    quantizes the small gamma=+-0.1 MAP shift to exact ties on the tiny
+    config (measured); the run is fully deterministic, so the measured strict
+    ordering (ascending at implementation time) is reproducible.
+    """
+    base = dataclasses.replace(TINY_DEEPVENUE, z_support=0.2, mixture_mode="exact", h_step=0.001)
+    maps = [
+        run_coverage(dataclasses.replace(base, inference_wpop_tilt=g))["results"]["0.7200"][
+            "map_mean"
+        ]
+        for g in (-0.1, 0.0, 0.1)
+    ]
+    increasing = maps[0] < maps[1] < maps[2]
+    decreasing = maps[0] > maps[1] > maps[2]
+    assert increasing or decreasing
+
+
 def test_n_z_quad_cli_flag_threads_into_config(tmp_path: Path) -> None:
     """--n-z-quad threads into config.n_z_quad in the written JSON."""
     out = tmp_path / "r.json"
