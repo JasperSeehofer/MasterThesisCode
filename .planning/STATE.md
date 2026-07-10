@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-04-21)
 Phase: 40 — COMPLETE (GAPS_FOUND); next = fix phase (VERIFY-03 bias + angle audit)
 Plan: 40-06 of 7 — COMPLETE
 Status: GAPS_FOUND — SC-3 MAP=0.86; fix phase required before Phase 41/42
-Last activity: 2026-04-24 — Phase 40 closed GAPS_FOUND; fix phase required before Phase 41/42
+Last activity: 2026-07-10 — Completed quick task 260710-sjm: pp_coverage z_support mode (L-A) — fallback estimator BIASED HIGH at deep incompleteness
 
 **Milestone phase map:**
 
@@ -185,6 +185,7 @@ Next command: Plan fix phase (VERIFY-03 SC-3 angle audit + D(h) in --combine dia
 | 2026-04-07 | Evaluation pipeline performance | de86052..a0de491 (7 commits) | Pool spawn 12 min→1.7 min, total 7:16 per h-value. forkserver+preload, numpy arrays, SNR filter, cpu_il partition. |
 | 2026-04-07 | Add interactive Plotly figures to GitHub Pages | 8b47b5f..33e1c86 (2 commits) | 4 Plotly HTML figures (posterior, sky map, Fisher ellipses, convergence), --generate_interactive CLI flag, CI Pages deployment, landing page. |
 | 2026-04-09 | Add with-BH-mass variant to plot_posterior_convergence | 1af4487 | Both variants shown on convergence plot; outdated delta-function assumption removed. |
+| 2026-07-10 | 260710-sjm pp_coverage z_support deep-incompleteness mode (L-A, verified) | fa50ad5..cfce571 + results commit | #29 fallback analog B_num/D in the G4b harness; pin-first, bit-identical None path, 8-cell sweep. **VERDICT: BIASED HIGH at comp_frac>0.2** (cov68 collapses, +0.7–5.4% H0; controls calibrated). EXP-40 prediction: seed1000 risk flips to biased-high. |
 
 **Planned Phase:** 35 (Coordinate Bug Characterization) — 3 plans — 2026-04-21T21:29:40.875Z
 | Phase 36 P03 | 230 | 4 tasks | 4 files |
