@@ -27,6 +27,16 @@ Key commission finding reproduced by this harness: with photo-z scatter
 that collapses coverage to ~0-3%, while the volume-weighted kernel is
 calibrated (coverage ~= nominal, bias ~= 0).
 
+Catalogue-support-truncated mode (``PPCoverageConfig.z_support``): splits the
+detected population by true host redshift so hosts with ``z_host >=
+z_support`` become zero-host events driven by the pure-completion likelihood
+B_num(h)/D(h) — the ``L_cat -> 0`` limit of the Gray et al. (2020,
+arXiv:1908.06050, Eqs. 29+32) mixture that production commit ``8db6c6e``
+(issue #29) installed in ``bayesian_statistics.py``. ``z_support=None``
+(default) reproduces the pre-2026-07-10 harness bit-identically. See
+``.planning/HANDOFF-LOCAL-NO-CLUSTER-20260710.md`` (item L-A) and
+``results/pp_coverage_deepvenue_20260710/RUNBOOK.md``.
+
 Units: ``h`` in [100 km/s/Mpc]; distances in Gpc. Cosmology: flat LambdaCDM.
 """
 
@@ -186,6 +196,12 @@ class PPCoverageConfig:
         h_max: Upper edge of the H0 grid.
         h_step: H0 grid spacing.
         n_z_quad: Per-event redshift quadrature points.
+        z_support: Catalogue support ceiling: true hosts with z_host <
+            z_support are in the catalogue (existing single-host kernel
+            branch); z_host >= z_support are zero-host events using the
+            pure-completion likelihood B_num/D (issue #29 analog). None
+            (default) => no truncation, bit-identical to the pre-2026-07-10
+            harness.
     """
 
     n_realizations: int = 120
@@ -206,6 +222,7 @@ class PPCoverageConfig:
     h_max: float = 0.860
     h_step: float = 0.004
     n_z_quad: int = 160
+    z_support: float | None = None
 
     def h_grid(self) -> npt.NDArray[np.float64]:
         """Return the H0 evaluation grid."""
@@ -218,7 +235,7 @@ def _run_realization(
     log_Dh: npt.NDArray[np.float64],
     config: PPCoverageConfig,
     rng: np.random.Generator,
-) -> npt.NDArray[np.float64]:
+) -> tuple[npt.NDArray[np.float64], int]:
     """Simulate one realization and return the accumulated log-likelihood on ``h_grid``.
 
     Clean single-host limit (fully complete catalogue, one candidate host per
@@ -229,6 +246,22 @@ def _run_realization(
         D(h)          = int p_det(A(z)/h) w_pop(z) dz
 
     so only the host-z kernel differs between the two estimator variants.
+
+    Catalogue-support-truncated mode (``config.z_support`` not None): true
+    hosts with ``z_host >= z_support`` are treated as zero-host events and
+    use the pure-completion likelihood B_num(h)/D(h) instead — the
+    ``L_cat -> 0`` limit of the Gray et al. (2020, arXiv:1908.06050, Eqs.
+    29+32) mixture that production commit ``8db6c6e`` (issue #29) installed
+    in ``bayesian_statistics.py``; see also Gray, Messenger & Veitch (2022,
+    arXiv:2111.04629, Eq. 5) and
+    ``docs/derivations/G2a_completion_sky_marginal_4pi.md`` limiting case 2.
+    The completion integral is capped at ``Z_MAX_POP`` (the issue #30
+    parallel), matching the shared D(h) domain, and shares D(h)'s exact
+    unnormalized measure (no extra h-dependent normalization).
+
+    Returns:
+        Tuple of (accumulated log-likelihood on ``h_grid``, number of
+        zero-host events in this realization).
     """
     # One effective sigma for the truth-scatter draw AND the kernel keeps the
     # generative model and the inference consistent (calibrated case).
@@ -240,7 +273,37 @@ def _run_realization(
     z_gal = np.clip(z_host + rng.normal(0.0, sigma_z, config.n_events), Z_MIN, None)
 
     logL = np.zeros(h_grid.size)
+    n_zero_host = 0
     for i in range(config.n_events):
+        if config.z_support is not None and z_host[i] >= config.z_support:
+            zs: float = config.z_support
+            n_zero_host += 1
+            # Pure-completion branch: no kernel padding (there is no kernel
+            # here), capped at Z_MAX_POP (issue #30 parallel; matches D(h)).
+            z_lo_b = max(
+                Z_MIN,
+                zs,
+                float(
+                    z_of_comoving_amplitude(np.asarray((dL_obs[i] - 5 * sig_dl[i]) * h_grid.min()))
+                ),
+            )
+            z_hi_b = min(
+                Z_MAX_POP,
+                float(
+                    z_of_comoving_amplitude(np.asarray((dL_obs[i] + 5 * sig_dl[i]) * h_grid.max()))
+                ),
+            )
+            if z_hi_b <= z_lo_b:
+                num_b = np.full(h_grid.size, 1e-300)
+            else:
+                zq_b = np.linspace(z_lo_b, z_hi_b, config.n_z_quad)
+                wq_b = np.gradient(zq_b)
+                dLg_b = comoving_amplitude_of_z(zq_b)[:, None] / h_grid[None, :]  # (nz, nh)
+                pGW_b = _norm_pdf(dLg_b, float(dL_obs[i]), float(sig_dl[i]))  # (nz, nh)
+                wpop_b = population_weight_of_z(zq_b)  # unnormalized
+                num_b = (wq_b * wpop_b) @ pGW_b  # (nh,)
+            logL += np.log(np.clip(num_b, 1e-300, None)) - log_Dh
+            continue
         z_lo = max(
             Z_MIN,
             float(z_of_comoving_amplitude(np.asarray((dL_obs[i] - 5 * sig_dl[i]) * h_grid.min())))
@@ -261,7 +324,7 @@ def _run_realization(
             kernel_z = kernel_z / max(float(np.trapezoid(kernel_z, zq)), 1e-300)
         num = (wq * kernel_z) @ pGW  # (nh,)
         logL += np.log(np.clip(num, 1e-300, None)) - log_Dh
-    return logL
+    return logL, n_zero_host
 
 
 def run_coverage(config: PPCoverageConfig) -> dict[str, Any]:
@@ -275,8 +338,11 @@ def run_coverage(config: PPCoverageConfig) -> dict[str, Any]:
         JSON-serializable dict with keys ``"config"`` (the config as a dict)
         and ``"results"`` — one entry per injected truth (stringified H0)
         containing ``coverage`` (fractions at 50/68/90% HPD),
-        ``rail_fraction``, ``map_mean``, ``map_std``, ``map_median`` and
-        ``map_bias`` (map_mean - truth).
+        ``rail_fraction``, ``map_mean``, ``map_std``, ``map_median``,
+        ``map_bias`` (map_mean - truth), and ``completion_fraction`` (mean
+        fraction of events routed into the ``z_support`` zero-host
+        pure-completion branch per realization; 0.0 when ``z_support`` is
+        None or >= ``Z_MAX_POP``).
     """
     h_grid = config.h_grid()
     # Selection denominator D(h) = int p_det(A(z)/h) w_pop(z) dz (shared).
@@ -297,9 +363,11 @@ def run_coverage(config: PPCoverageConfig) -> dict[str, Any]:
         cov = {name: 0 for name in levels}
         rail = 0
         maps: list[float] = []
+        completion_fractions: list[float] = []
         for _ in range(config.n_realizations):
             rng = np.random.default_rng(int(master.integers(1 << 62)))
-            logL = _run_realization(h_true, h_grid, log_Dh, config, rng)
+            logL, n_zero_host = _run_realization(h_true, h_grid, log_Dh, config, rng)
+            completion_fractions.append(n_zero_host / config.n_events)
             post = np.exp(logL - logL.max())
             post /= np.trapezoid(post, h_grid)
             mi = int(np.argmax(post))
@@ -318,6 +386,7 @@ def run_coverage(config: PPCoverageConfig) -> dict[str, Any]:
             "map_std": float(np.std(maps)),
             "map_median": float(np.median(maps)),
             "map_bias": float(np.mean(maps)) - h_true,
+            "completion_fraction": float(np.mean(completion_fractions)),
         }
     return {"config": asdict(config), "results": results}
 
@@ -341,6 +410,15 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument("--seed", type=int, default=20260701)
     parser.add_argument("--kernel", choices=["bare", "volume"], default="volume")
     parser.add_argument("--output", type=Path, default=Path("pp_coverage_results.json"))
+    parser.add_argument(
+        "--z-support",
+        type=float,
+        default=None,
+        help="Catalogue support ceiling: true hosts with z_host >= z_support become "
+        "zero-host events using the pure-completion likelihood B_num/D (issue #29 "
+        "analog). Default None disables truncation (bit-identical to the "
+        "pre-2026-07-10 harness).",
+    )
     args = parser.parse_args(argv)
 
     config = PPCoverageConfig(
@@ -352,6 +430,7 @@ def main(argv: list[str] | None = None) -> None:
         injected_truths=list(args.truths),
         seed=args.seed,
         kernel=args.kernel,
+        z_support=args.z_support,
     )
     out = run_coverage(config)
     args.output.write_text(json.dumps(out, indent=2))
@@ -360,7 +439,8 @@ def main(argv: list[str] | None = None) -> None:
             f"h_true={key} [{config.kernel:6s}] "
             f"cov50={r['coverage']['50']:.2f} cov68={r['coverage']['68']:.2f} "
             f"cov90={r['coverage']['90']:.2f} rail={r['rail_fraction']:.2f} "
-            f"MAP={r['map_mean']:.4f} bias={r['map_bias']:+.4f}"
+            f"MAP={r['map_mean']:.4f} bias={r['map_bias']:+.4f} "
+            f"completion_fraction={r['completion_fraction']:.2f}"
         )
     print(f"Wrote {args.output}")
 
