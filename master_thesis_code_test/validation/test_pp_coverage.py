@@ -85,6 +85,29 @@ def test_medium_config_calibration_band() -> None:
     assert abs(volume["map_bias"]) < abs(bare["map_bias"])
 
 
+def test_z_support_none_golden_pin() -> None:
+    """Golden pin measured at HEAD; the z_support=None path MUST stay bit-identical
+
+    after the truncated-mode change (issue #29 harness validation, pin-first per
+    ed46390).
+    """
+    config = PPCoverageConfig(
+        n_realizations=2,
+        n_events=25,
+        injected_truths=[0.72],
+        seed=20260710,
+        kernel="volume",
+    )
+    entry = run_coverage(config)["results"]["0.7200"]
+    assert entry["map_mean"] == pytest.approx(0.7260000000000001, rel=1e-12)
+    assert entry["map_std"] == pytest.approx(0.0020000000000000018, rel=1e-12)
+    assert entry["map_bias"] == pytest.approx(0.006000000000000116, rel=1e-12)
+    assert entry["coverage"]["50"] == 1.0
+    assert entry["coverage"]["68"] == 1.0
+    assert entry["coverage"]["90"] == 1.0
+    assert entry["rail_fraction"] == 0.0
+
+
 def test_tiny_config_exact_value_pins(tiny_bare: dict, tiny_volume: dict) -> None:
     """Exact-float regression pins of the harness output (both kernels).
 
