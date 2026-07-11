@@ -51,7 +51,7 @@ residual is slightly LARGER than the measured +0.013. Consequences:
 | Ω_m era mismatch (seed600 venue only) | both | **−0.08% measured** (Δh̄ = −0.00059; venue z_median 0.046, z_max 0.12 — far shallower than the assumed z~0.3–0.5) | QUANTIFIED [L3] 2026-07-10 — NEGLIGIBLE; era-corrected residual +0.0138 (raw +0.0132); `results/seed600_omega_m_era_20260710/` |
 | Ω_m Planck-vs-M1 (real data only) | both | +1.5–2.5% | QUOTED model-scope (G7 row 6); zero in Ω_m-consistent closures |
 | w_G(h)=β_G/D(h) slope on deep venues | both | ~26% of seed1000 1D rail tilt | NEW (FINDINGS_COMBINE_20260710) — **estimator-level synthetic confirmation 2026-07-10 (L-A)**: completion-dominated ensembles biased HIGH (B_num/D increasing in h), see next row |
-| Zero-host silent drop / pure-completion fallback calibration | both | **L-A synthetic: +0.7…+5.4% HIGH bias + coverage collapse at comp_frac 0.22–0.85** (controls calibrated; comp_frac≈0 exact) | **#29 fix landed; L-A VERDICT (2026-07-10): the fallback estimator is NOT calibrated at deep incompleteness** — EXP-40 must check for interior-but-biased-HIGH, not just de-rail; `results/pp_coverage_deepvenue_20260710/SUMMARY.md`. **MECHANISM DECOMPOSED 2026-07-11 ([L7])**: dominant part = membership-support kernel leak (σ_z-dependent; removed by the exact truncated-kernel mode); full Gray mixture makes it WORSE, not better; small σ_z-independent floor remains (noise-model candidate). |
+| Zero-host silent drop / pure-completion fallback calibration | both | **L-A synthetic: +0.7…+5.4% HIGH bias + coverage collapse at comp_frac 0.22–0.85** (controls calibrated; comp_frac≈0 exact) | **#29 fix landed; L-A VERDICT (2026-07-10): the fallback estimator is NOT calibrated at deep incompleteness** — EXP-40 must check for interior-but-biased-HIGH, not just de-rail; `results/pp_coverage_deepvenue_20260710/SUMMARY.md`. **MECHANISM DECOMPOSED 2026-07-11 ([L7])**: dominant part = membership-support kernel leak (σ_z-dependent; removed by the exact truncated-kernel mode); full Gray mixture makes it WORSE, not better; small σ_z-independent floor = inference noise-model approximation (σ(dL_obs)-vs-σ(dL_true) + p_det-inside, the two halves of the latent-threshold exact conditional — 260711-hx1 CONFIRMED, ~85–90% removed by both together; tiny 2nd-order residual ≈15× below σ_boot). **FLOOR DECOMPOSITION COMPLETE.** |
 | Effective-catalogue depth (M_BH prune) | both | structural | **#30 — design decision** |
 
 ## 3. What runs LOCALLY NOW (consistent data only)
@@ -127,15 +127,25 @@ residual is slightly LARGER than the measured +0.013. Consequences:
    (c) **N-3 prior sensitivity NEGLIGIBLE** (`results/pp_coverage_priortilt_20260711/`): a 10%
    inference-side w_pop misspecification moves h by ≤ +0.05% (two_branch) / +0.015% (exact) —
    the deep regime is NOT population-prior-driven (ratio structure self-cancels). D1 evidence.
-   (d) **Residual floor** +0.002…+0.005, σ_z-independent, prior-insensitive, grid/quadrature-
-   robust (1ps), and NOT the latent-detection p_det-inside factor (27m REFUTED it: deep cells
-   unchanged, controls flip −0.003→+0.004…+0.006 — the formally exact conditional measures worse
-   because the σ(dL_obs)-vs-σ(dL_true) O(σ_f²) approximation stops cancelling;
-   `results/pp_coverage_pdetnum_20260711/`). Sharpened candidate: z-dependent inference σ inside
-   the integral (2×2 with the p_det flag) + n_events scaling check — next session. Floor is
-   at/below campaign per-seed σ_boot (~0.005): practically subdominant for Paper B closure.
-   EXP-40 watch (cluster): interior-but-biased-HIGH in both regimes; production post-#29 mixture
-   may overshoot MORE than a pure two-branch split (harness gray result).
+   (d) **Residual floor CONFIRMED + DECOMPOSED (260711-hx1 DONE, `77ee9d1`+`03438d8`,
+   `results/pp_coverage_noisemodel_20260711/`):** the +0.002…+0.005, σ_z-independent,
+   prior-insensitive, grid-robust floor IS (mostly) the inference **noise-model approximation** —
+   the JOINT σ(dL_obs)-vs-σ(dL_true) width mismatch (constant σ_f·dL_obs vs the generative
+   σ_f·dL_true) + the latent-detection p_det-inside factor, the two halves of the single exact
+   conditional for this latent-thresholded model. `--sigma-model-in-likelihood` (z-dependent
+   σ_f·A(z)/h with 1/σ(z) norm) **+ `--pdet-in-numerator`** removes ~85–90%: MAP bias
+   +0.002…+0.005 → ≤ +0.0008 on the deep cells AND nulls the −0.002…−0.004 control offset, cov68
+   nominal at campaign n. Neither half alone works (model-σ alone over-corrects negative; p_det
+   alone was the 27m refutation — they must be applied TOGETHER). n_events scaling (250/1000/4000)
+   ADJUDICATED the floor's nature: const-σ floor is **FLAT in n with cov68 COLLAPSING**
+   (h=0.72 0.63→0.38→0.12) ⇒ a real ASYMPTOTIC model bias, NOT a finite-sample MAP-skew. A tiny
+   **second-order residual** (~+0.0005, ≈15× below campaign σ_boot) survives even the fully-consistent
+   estimator, visible only at n=4000. Fine-grid confirm (h_step 0.004≡0.001, ±0.0001) ⇒ not
+   quantization. Floor is at/below campaign per-seed σ_boot (~0.005): practically subdominant for
+   Paper B closure. **Production input (user-gated /physics-change):** the correct move is a
+   self-consistent distance-error model + p_det-inside for latent-thresholded detection — do NOT
+   add p_det alone. EXP-40 watch (cluster): interior-but-biased-HIGH in both regimes; production
+   post-#29 mixture (const-σ, no-p_det-inside) carries BOTH the leak and the floor same-signed HIGH.
 
 ## 4. What WAITS for the cluster
 
