@@ -171,17 +171,25 @@ def _inference_population_weight(
     return np.asarray(w * np.exp(tilt * np.asarray(z)), dtype=np.float64)
 
 
-def detection_probability(d_L: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
+def detection_probability(
+    d_L: npt.NDArray[np.float64],
+    d50: float = D50_GPC,
+    w_pdet: float = W_PDET_GPC,
+) -> npt.NDArray[np.float64]:
     """Smooth Malmquist detection probability p_det(d_L).
 
     Args:
         d_L: Luminosity distance values in Gpc.
+        d50: 50% detection-probability luminosity distance [Gpc]. Defaults to
+            the module ``D50_GPC`` (1.85, the commission venue); lower values
+            model a shallower detection horizon (N-4 venue-depth probe).
+        w_pdet: Detection roll-off width [Gpc]. Defaults to ``W_PDET_GPC``.
 
     Returns:
-        Detection probability in [0, 1] (50% at ``D50_GPC``).
+        Detection probability in [0, 1] (50% at ``d50``).
     """
     return np.asarray(
-        0.5 * erfc((np.asarray(d_L) - D50_GPC) / (np.sqrt(2.0) * W_PDET_GPC)),
+        0.5 * erfc((np.asarray(d_L) - d50) / (np.sqrt(2.0) * w_pdet)),
         dtype=np.float64,
     )
 
@@ -199,12 +207,18 @@ def _norm_pdf(
 
 
 def _sample_detected_redshifts(
-    h_true: float, n: int, rng: np.random.Generator, ngrid: int = 2000
+    h_true: float,
+    n: int,
+    rng: np.random.Generator,
+    ngrid: int = 2000,
+    d50: float = D50_GPC,
+    w_pdet: float = W_PDET_GPC,
 ) -> npt.NDArray[np.float64]:
     """Draw host redshifts from the detected population w_pop(z) * p_det(d_L(z, h))."""
     zg = np.linspace(Z_MIN, Z_MAX_POP, ngrid)
     pdf = np.clip(
-        population_weight_of_z(zg) * detection_probability(comoving_amplitude_of_z(zg) / h_true),
+        population_weight_of_z(zg)
+        * detection_probability(comoving_amplitude_of_z(zg) / h_true, d50, w_pdet),
         0.0,
         None,
     )
@@ -353,6 +367,13 @@ class PPCoverageConfig:
     membership_on_observed: bool = False
     pdet_in_numerator: bool = False
     sigma_dl_model_in_likelihood: bool = False
+    # Detection-horizon knobs (N-4 shallow-venue depth probe). Defaults =
+    # module D50_GPC/W_PDET_GPC (the commission venue, z_median ~ 0.3); lower
+    # d50_gpc models a shallower venue (e.g. d50_gpc=0.25 -> z_median ~ 0.046,
+    # the seed600 shallow regime). Used by detection_probability everywhere the
+    # generative population, D(h), beta_G and the p_det factors are built.
+    d50_gpc: float = D50_GPC
+    w_pdet_gpc: float = W_PDET_GPC
 
     def h_grid(self) -> npt.NDArray[np.float64]:
         """Return the H0 evaluation grid."""
@@ -369,6 +390,8 @@ def _completion_numerator(
     pdet_in_numerator: bool = False,
     sigma_dl_frac: float = 0.05,
     sigma_dl_model_in_likelihood: bool = False,
+    d50: float = D50_GPC,
+    w_pdet: float = W_PDET_GPC,
 ) -> npt.NDArray[np.float64]:
     """Pure-completion numerator B_num(h) above the catalogue support edge.
 
@@ -426,7 +449,7 @@ def _completion_numerator(
     if pdet_in_numerator:
         # Latent-detection exact inverse: detection is decided on the true z,
         # so p_det(A(z)/h) stays inside the numerator (260711-27m probe).
-        pGW_b = pGW_b * detection_probability(dLg_b)  # (nz, nh)
+        pGW_b = pGW_b * detection_probability(dLg_b, d50, w_pdet)  # (nz, nh)
     wpop_b = _inference_population_weight(zq_b, tilt)  # unnormalized
     return np.asarray((wq_b * wpop_b) @ pGW_b, dtype=np.float64)  # (nh,)
 
@@ -514,7 +537,9 @@ def _run_realization(
     # One effective sigma for the truth-scatter draw AND the kernel keeps the
     # generative model and the inference consistent (calibrated case).
     sigma_z = float(np.hypot(config.sigma_z, config.sigma_z_pv))
-    z_host = _sample_detected_redshifts(h_true, config.n_events, rng)
+    z_host = _sample_detected_redshifts(
+        h_true, config.n_events, rng, d50=config.d50_gpc, w_pdet=config.w_pdet_gpc
+    )
     dL_host = comoving_amplitude_of_z(z_host) / h_true
     dL_obs = np.clip(dL_host + rng.normal(0.0, config.sigma_dl_frac * dL_host), 1e-3, None)
     sig_dl = config.sigma_dl_frac * dL_obs
@@ -556,6 +581,8 @@ def _run_realization(
                     config.pdet_in_numerator,
                     config.sigma_dl_frac,
                     config.sigma_dl_model_in_likelihood,
+                    config.d50_gpc,
+                    config.w_pdet_gpc,
                 )
                 if config.mixture_mode == "conditioned":
                     # Membership-conditioned inverse: B_num / beta_Gbar.
@@ -613,7 +640,7 @@ def _run_realization(
             # Latent-detection exact inverse (260711-27m probe): detection is
             # decided on the true z, so p_det(A(z)/h) stays inside the host
             # numerator too (numerator-only — gray-mode D_g_i is unchanged).
-            pGW = pGW * detection_probability(dLg)  # (nz, nh)
+            pGW = pGW * detection_probability(dLg, config.d50_gpc, config.w_pdet_gpc)  # (nz, nh)
         kernel_z = _norm_pdf(zq, float(z_gal[i]), sigma_z)  # (nz,)
         if config.kernel == "volume":
             kernel_z = kernel_z * _inference_population_weight(zq, config.inference_wpop_tilt)
@@ -624,7 +651,9 @@ def _run_realization(
             # L_cat_i = N_i / D_g_i over the SAME normalized kernel K_i
             # (Eqs. A.9/A.10; production commit 713fbd1 analog). The kernel
             # is NOT truncated at z_support (production-faithful leak).
-            D_g_i = (wq * kernel_z) @ detection_probability(dLg)  # (nh,)
+            D_g_i = (wq * kernel_z) @ detection_probability(
+                dLg, config.d50_gpc, config.w_pdet_gpc
+            )  # (nh,)
             L_cat_i = num / np.clip(D_g_i, 1e-300, None)
             B_num_i = _completion_numerator(
                 float(dL_obs[i]),
@@ -636,6 +665,8 @@ def _run_realization(
                 config.pdet_in_numerator,
                 config.sigma_dl_frac,
                 config.sigma_dl_model_in_likelihood,
+                config.d50_gpc,
+                config.w_pdet_gpc,
             )
             mixture = beta_G_h * L_cat_i + B_num_i  # linear space, per event
             term = np.log(np.clip(mixture, 1e-300, None)) - log_Dh
@@ -682,7 +713,11 @@ def run_coverage(config: PPCoverageConfig) -> dict[str, Any]:
     zint = np.linspace(Z_MIN, Z_MAX_POP, 3000)
     wpop = _inference_population_weight(zint, config.inference_wpop_tilt)
     Dh = np.trapezoid(
-        detection_probability(comoving_amplitude_of_z(zint)[:, None] / h_grid[None, :])
+        detection_probability(
+            comoving_amplitude_of_z(zint)[:, None] / h_grid[None, :],
+            config.d50_gpc,
+            config.w_pdet_gpc,
+        )
         * wpop[:, None],
         zint,
         axis=0,
@@ -708,7 +743,11 @@ def run_coverage(config: PPCoverageConfig) -> dict[str, Any]:
         zbg = np.linspace(Z_MIN, min(config.z_support, Z_MAX_POP), 3000)
         beta_G = np.asarray(
             np.trapezoid(
-                detection_probability(comoving_amplitude_of_z(zbg)[:, None] / h_grid[None, :])
+                detection_probability(
+                    comoving_amplitude_of_z(zbg)[:, None] / h_grid[None, :],
+                    config.d50_gpc,
+                    config.w_pdet_gpc,
+                )
                 * _inference_population_weight(zbg, config.inference_wpop_tilt)[:, None],
                 zbg,
                 axis=0,
@@ -835,6 +874,21 @@ def main(argv: list[str] | None = None) -> None:
         "data-thresholded detection). Default off is bit-identical.",
     )
     parser.add_argument(
+        "--d50-gpc",
+        type=float,
+        default=D50_GPC,
+        help="50%% detection-horizon luminosity distance [Gpc] (N-4 shallow-venue "
+        "depth probe). Default 1.85 = commission venue (z_median ~ 0.3). Lower values "
+        "model a shallower venue: d50-gpc 0.25 -> z_median ~ 0.046 (seed600 regime).",
+    )
+    parser.add_argument(
+        "--w-pdet-gpc",
+        type=float,
+        default=W_PDET_GPC,
+        help="Detection roll-off width [Gpc] (default 0.30). Scale with --d50-gpc to "
+        "keep a comparable fractional horizon sharpness in shallow-venue runs.",
+    )
+    parser.add_argument(
         "--sigma-model-in-likelihood",
         action="store_true",
         help="σ(dL_obs)-vs-σ(dL_true) noise-model floor probe (260711-hx1): "
@@ -880,6 +934,8 @@ def main(argv: list[str] | None = None) -> None:
         membership_on_observed=args.membership_on_observed,
         pdet_in_numerator=args.pdet_in_numerator,
         sigma_dl_model_in_likelihood=args.sigma_model_in_likelihood,
+        d50_gpc=args.d50_gpc,
+        w_pdet_gpc=args.w_pdet_gpc,
     )
     out = run_coverage(config)
     args.output.write_text(json.dumps(out, indent=2))
