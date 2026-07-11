@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-04-21)
 Phase: 40 — COMPLETE (GAPS_FOUND); next = fix phase (VERIFY-03 bias + angle audit)
 Plan: 40-06 of 7 — COMPLETE
 Status: GAPS_FOUND — SC-3 MAP=0.86; fix phase required before Phase 41/42
-Last activity: 2026-07-11 — Completed quick task 260711-1ps: N-3 prior tilt NEGLIGIBLE (≤0.05% per 10% misspec), floor PERSISTENT → p_det-inside-numerator probe next
+Last activity: 2026-07-11 — Completed quick task 260711-27m (session wrap): p_det-inside hypothesis REFUTED; deep-bias story = dominant kernel-support leak (fixed by exact mode) + small O(σ_f²)-scale floor (noise-model candidate, next session)
 
 **Milestone phase map:**
 
@@ -189,6 +189,7 @@ Next command: Plan fix phase (VERIFY-03 SC-3 angle audit + D(h) in --combine dia
 | 2026-07-11 | 260711-07n pp_coverage full-Gray-mixture branch (EXP-41 / handoff N-1) | 0f6f914, 995e781 | Gray Eqs. 29+32 mixture `(β_G·L_cat_i + B_num)/D` + conditioned inverse + per-branch tilt diagnostics (N-2a/b); two_branch default bit-identical (golden pin unchanged). **VERDICT: STILL BIASED — gray WORSE than clean limit** (worst +0.123 in h at zs=0.2/σ_z=0.035 vs +0.032 two-branch; 12/12 cells fail both criteria); conditioned does NOT rescue (+0.005…+0.044) ⇒ defect is not merely w_G bookkeeping. `results/pp_coverage_graymix_20260711/SUMMARY.md`. |
 | 2026-07-11 | 260711-117 pp_coverage exact membership-truncated-kernel mode + σ_z ladder + observed-membership probes (N-2c/d) | 6a3c8ab, b794fa4 | **MECHANISM IDENTIFIED (dominant part):** exact mode (host kernel truncated at zs over common D, MFG-consistent) removes the ENTIRE σ_z-dependent bias — ladder: two_branch +0.0033→+0.0368 over σ_z 0.002→0.035, exact FLAT +0.002…+0.005, modes converge σ_z→0. Residual σ_z-independent completion-branch floor +0.002…+0.005 (→ N-3). N-2d: hard clamp misspecified under observed-z membership → production candidate needs SOFT (photo-z-marginalized) membership. `results/pp_coverage_exactmode_20260711/SUMMARY.md`. |
 | 2026-07-11 | 260711-1ps N-3 prior-tilt probe + floor discriminator | e5b8383, c78c2f5, 724fc29 | **Prior-sensitivity NEGLIGIBLE:** Δh(10% prior tilt) ≤ +0.05% of truth (two_branch), ≤ +0.015% (exact) — deep regime NOT population-prior-driven (ratio structure self-cancels); D1 headline number measured. **Floor PERSISTENT:** +0.0026/+0.0046 (truths 0.62/0.72) invariant under h_step 0.004→0.001 + n_z_quad 320 ⇒ genuine composition residual, not discretization. `results/pp_coverage_priortilt_20260711/SUMMARY.md`. |
+| 2026-07-11 | 260711-27m p_det-in-numerator floor probe (inline, lean) | 0d08992, 52be115 | **Hypothesis REFUTED:** the floor is NOT the latent-detection p_det-inside factor — deep cells unchanged, controls flip −0.003→+0.004…+0.006 with degraded cov68 (the formally exact conditional measures worse; a second O(σ_f²) approximation stops cancelling). **Sharpened candidate:** σ(dL_obs)-vs-σ(dL_true) noise model (matches all floor properties). Floor ≤ campaign σ_boot — practically subdominant. `results/pp_coverage_pdetnum_20260711/SUMMARY.md`. |
 
 **Planned Phase:** 35 (Coordinate Bug Characterization) — 3 plans — 2026-04-21T21:29:40.875Z
 | Phase 36 P03 | 230 | 4 tasks | 4 files |
