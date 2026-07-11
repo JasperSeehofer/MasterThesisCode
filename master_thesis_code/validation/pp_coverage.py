@@ -308,6 +308,25 @@ class PPCoverageConfig:
             every mixture_mode, and the zero-host completion integral B_num)
             are multiplied by p_det(A(z)/h) on the quadrature grid. Default
             False keeps every existing mode bit-identical.
+        sigma_dl_model_in_likelihood: σ(dL_obs)-vs-σ(dL_true) noise-model probe
+            (quick task 260711-hx1, floor mechanism). The generative distance
+            noise is drawn with σ = sigma_dl_frac * dL_true (line
+            ``dL_obs = dL_host + N(0, sigma_dl_frac * dL_host)``), so the noise
+            width scales with the TRUE distance and varies along the redshift
+            integral. The default inference likelihood approximates this with a
+            CONSTANT, observed-distance width ``sig_dl_i = sigma_dl_frac *
+            dL_obs`` — an O(sigma_dl_frac**2) mismatch that leaves a small
+            σ_z-independent residual. When True, the GW-likelihood factor is
+            evaluated with the z-dependent model/true-distance width
+            ``sigma_dl_frac * A(z)/h`` (shape ``(nz, nh)``), carrying its own
+            1/σ(z) normalization via ``_norm_pdf`` — i.e.
+            ``N(dL_obs; A(z)/h, sigma_dl_frac * A(z)/h)``. Applies to the host
+            kernel numerator (every mixture_mode) and the completion B_num; the
+            p_det SELECTION integrals (``D(h)``, gray ``D_g_i``) are unchanged
+            (they integrate p_det, not the GW likelihood). Combined with
+            ``pdet_in_numerator=True`` this is the fully-consistent exact
+            conditional for the latent-thresholded generative model. Default
+            False keeps every existing mode bit-identical.
     """
 
     n_realizations: int = 120
@@ -333,6 +352,7 @@ class PPCoverageConfig:
     mixture_mode: Literal["two_branch", "gray", "conditioned", "exact"] = "two_branch"
     membership_on_observed: bool = False
     pdet_in_numerator: bool = False
+    sigma_dl_model_in_likelihood: bool = False
 
     def h_grid(self) -> npt.NDArray[np.float64]:
         """Return the H0 evaluation grid."""
@@ -347,6 +367,8 @@ def _completion_numerator(
     n_z_quad: int,
     tilt: float,
     pdet_in_numerator: bool = False,
+    sigma_dl_frac: float = 0.05,
+    sigma_dl_model_in_likelihood: bool = False,
 ) -> npt.NDArray[np.float64]:
     """Pure-completion numerator B_num(h) above the catalogue support edge.
 
@@ -370,6 +392,13 @@ def _completion_numerator(
             latent-detection exact-inverse factor (260711-27m probe; see
             ``PPCoverageConfig.pdet_in_numerator``). Default False is
             bit-identical to the pre-probe behaviour.
+        sigma_dl_frac: Fractional d_L uncertainty σ_f; only used when
+            ``sigma_dl_model_in_likelihood`` is True (to form σ_f·A(z)/h).
+        sigma_dl_model_in_likelihood: Use the z-dependent model/true-distance
+            GW-likelihood width σ_f·A(z)/h (with its 1/σ(z) normalization)
+            instead of the constant ``sig_dl_i = σ_f·dL_obs`` (260711-hx1 probe;
+            see ``PPCoverageConfig.sigma_dl_model_in_likelihood``). Default
+            False is bit-identical to the pre-probe behaviour.
 
     Returns:
         B_num evaluated on ``h_grid`` (shape ``(nh,)``).
@@ -388,7 +417,12 @@ def _completion_numerator(
     zq_b = np.linspace(z_lo_b, z_hi_b, n_z_quad)
     wq_b = np.gradient(zq_b)
     dLg_b = comoving_amplitude_of_z(zq_b)[:, None] / h_grid[None, :]  # (nz, nh)
-    pGW_b = _norm_pdf(dLg_b, dL_obs_i, sig_dl_i)  # (nz, nh)
+    # Model/true-distance width σ_f·A(z)/h (z-dependent, 1/σ(z) via _norm_pdf)
+    # vs the constant observed-distance σ_f·dL_obs (260711-hx1 floor probe).
+    sig_b: npt.NDArray[np.float64] | float = (
+        sigma_dl_frac * dLg_b if sigma_dl_model_in_likelihood else sig_dl_i
+    )
+    pGW_b = _norm_pdf(dLg_b, dL_obs_i, sig_b)  # (nz, nh)
     if pdet_in_numerator:
         # Latent-detection exact inverse: detection is decided on the true z,
         # so p_det(A(z)/h) stays inside the numerator (260711-27m probe).
@@ -520,6 +554,8 @@ def _run_realization(
                     config.n_z_quad,
                     config.inference_wpop_tilt,
                     config.pdet_in_numerator,
+                    config.sigma_dl_frac,
+                    config.sigma_dl_model_in_likelihood,
                 )
                 if config.mixture_mode == "conditioned":
                     # Membership-conditioned inverse: B_num / beta_Gbar.
@@ -567,7 +603,12 @@ def _run_realization(
         zq = np.linspace(z_lo, z_hi, config.n_z_quad)
         wq = np.gradient(zq)
         dLg = comoving_amplitude_of_z(zq)[:, None] / h_grid[None, :]  # (nz, nh)
-        pGW = _norm_pdf(dLg, float(dL_obs[i]), float(sig_dl[i]))  # (nz, nh)
+        # Model/true-distance width σ_f·A(z)/h (z-dependent, 1/σ(z) via _norm_pdf)
+        # vs the constant observed-distance σ_f·dL_obs (260711-hx1 floor probe).
+        sig_gw: npt.NDArray[np.float64] | float = (
+            config.sigma_dl_frac * dLg if config.sigma_dl_model_in_likelihood else float(sig_dl[i])
+        )
+        pGW = _norm_pdf(dLg, float(dL_obs[i]), sig_gw)  # (nz, nh)
         if config.pdet_in_numerator:
             # Latent-detection exact inverse (260711-27m probe): detection is
             # decided on the true z, so p_det(A(z)/h) stays inside the host
@@ -593,6 +634,8 @@ def _run_realization(
                 config.n_z_quad,
                 config.inference_wpop_tilt,
                 config.pdet_in_numerator,
+                config.sigma_dl_frac,
+                config.sigma_dl_model_in_likelihood,
             )
             mixture = beta_G_h * L_cat_i + B_num_i  # linear space, per event
             term = np.log(np.clip(mixture, 1e-300, None)) - log_Dh
@@ -792,6 +835,18 @@ def main(argv: list[str] | None = None) -> None:
         "data-thresholded detection). Default off is bit-identical.",
     )
     parser.add_argument(
+        "--sigma-model-in-likelihood",
+        action="store_true",
+        help="σ(dL_obs)-vs-σ(dL_true) noise-model floor probe (260711-hx1): "
+        "evaluate the GW-likelihood factor with the z-dependent model/true-distance "
+        "width σ_f·A(z)/h (carrying its own 1/σ(z) normalization) instead of the "
+        "constant observed-distance σ_f·dL_obs. Applies to the host kernel numerator "
+        "(every mixture_mode) and the completion B_num; the p_det selection integrals "
+        "(D(h), gray D_g_i) are unchanged. Combined with --pdet-in-numerator it is the "
+        "fully-consistent exact conditional for the latent-thresholded model. Default "
+        "off is bit-identical.",
+    )
+    parser.add_argument(
         "--inference-wpop-tilt",
         type=float,
         default=0.0,
@@ -824,6 +879,7 @@ def main(argv: list[str] | None = None) -> None:
         mixture_mode=args.mixture_mode,
         membership_on_observed=args.membership_on_observed,
         pdet_in_numerator=args.pdet_in_numerator,
+        sigma_dl_model_in_likelihood=args.sigma_model_in_likelihood,
     )
     out = run_coverage(config)
     args.output.write_text(json.dumps(out, indent=2))
