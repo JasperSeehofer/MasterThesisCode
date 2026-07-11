@@ -1,0 +1,76 @@
+{
+  "config": {
+    "n_realizations": 120,
+    "n_events": 250,
+    "sigma_z": 0.015,
+    "sigma_z_pv": 0.0,
+    "sigma_dl_frac": 0.05,
+    "injected_truths": [
+      0.62,
+      0.72,
+      0.84
+    ],
+    "seed": 20260701,
+    "kernel": "volume",
+    "h_min": 0.6,
+    "h_max": 0.86,
+    "h_step": 0.004,
+    "n_z_quad": 160,
+    "inference_wpop_tilt": 0.0,
+    "z_support": 0.2,
+    "mixture_mode": "exact",
+    "membership_on_observed": false,
+    "pdet_in_numerator": true,
+    "sigma_dl_model_in_likelihood": true
+  },
+  "results": {
+    "0.6200": {
+      "h_true": 0.62,
+      "coverage": {
+        "50": 0.6583333333333333,
+        "68": 0.7416666666666667,
+        "90": 0.875
+      },
+      "rail_fraction": 0.008333333333333333,
+      "map_mean": 0.6192333333333333,
+      "map_std": 0.006778315097098662,
+      "map_median": 0.62,
+      "map_bias": -0.0007666666666666933,
+      "completion_fraction": 0.7088666666666666,
+      "dlogL_dh_host_mean": -263.2380711373609,
+      "dlogL_dh_completion_mean": 242.08987847375357
+    },
+    "0.7200": {
+      "h_true": 0.72,
+      "coverage": {
+        "50": 0.45,
+        "68": 0.7,
+        "90": 0.9166666666666666
+      },
+      "rail_fraction": 0.0,
+      "map_mean": 0.7198,
+      "map_std": 0.00832426172902639,
+      "map_median": 0.7200000000000001,
+      "map_bias": -0.00019999999999997797,
+      "completion_fraction": 0.7867333333333334,
+      "dlogL_dh_host_mean": -150.21540696089207,
+      "dlogL_dh_completion_mean": 146.48999244690725
+    },
+    "0.8400": {
+      "h_true": 0.84,
+      "coverage": {
+        "50": 0.5083333333333333,
+        "68": 0.675,
+        "90": 0.8083333333333333
+      },
+      "rail_fraction": 0.10833333333333334,
+      "map_mean": 0.8402,
+      "map_std": 0.01084250893474385,
+      "map_median": 0.8400000000000002,
+      "map_bias": 0.00019999999999997797,
+      "completion_fraction": 0.8475333333333334,
+      "dlogL_dh_host_mean": -92.75838749754476,
+      "dlogL_dh_completion_mean": 98.28432739318029
+    }
+  }
+}

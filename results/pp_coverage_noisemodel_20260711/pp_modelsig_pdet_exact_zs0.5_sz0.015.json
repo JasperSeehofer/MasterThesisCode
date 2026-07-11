@@ -1,0 +1,76 @@
+{
+  "config": {
+    "n_realizations": 120,
+    "n_events": 250,
+    "sigma_z": 0.015,
+    "sigma_z_pv": 0.0,
+    "sigma_dl_frac": 0.05,
+    "injected_truths": [
+      0.62,
+      0.72,
+      0.84
+    ],
+    "seed": 20260701,
+    "kernel": "volume",
+    "h_min": 0.6,
+    "h_max": 0.86,
+    "h_step": 0.004,
+    "n_z_quad": 160,
+    "inference_wpop_tilt": 0.0,
+    "z_support": 0.5,
+    "mixture_mode": "exact",
+    "membership_on_observed": false,
+    "pdet_in_numerator": true,
+    "sigma_dl_model_in_likelihood": true
+  },
+  "results": {
+    "0.6200": {
+      "h_true": 0.62,
+      "coverage": {
+        "50": 0.7833333333333333,
+        "68": 0.7833333333333333,
+        "90": 0.95
+      },
+      "rail_fraction": 0.0,
+      "map_mean": 0.6198999999999999,
+      "map_std": 0.003481857741685228,
+      "map_median": 0.62,
+      "map_bias": -0.00010000000000010001,
+      "completion_fraction": 0.0,
+      "dlogL_dh_host_mean": -13.336310478244918,
+      "dlogL_dh_completion_mean": null
+    },
+    "0.7200": {
+      "h_true": 0.72,
+      "coverage": {
+        "50": 0.55,
+        "68": 0.5666666666666667,
+        "90": 0.875
+      },
+      "rail_fraction": 0.0,
+      "map_mean": 0.7205,
+      "map_std": 0.003849242349692559,
+      "map_median": 0.7200000000000001,
+      "map_bias": 0.000500000000000056,
+      "completion_fraction": 0.0002666666666666667,
+      "dlogL_dh_host_mean": 23.841879988555544,
+      "dlogL_dh_completion_mean": 43.386431935230355
+    },
+    "0.8400": {
+      "h_true": 0.84,
+      "coverage": {
+        "50": 0.5583333333333333,
+        "68": 0.6583333333333333,
+        "90": 0.9333333333333333
+      },
+      "rail_fraction": 0.0,
+      "map_mean": 0.8404333333333334,
+      "map_std": 0.003607245794539408,
+      "map_median": 0.8400000000000002,
+      "map_bias": 0.00043333333333339663,
+      "completion_fraction": 0.008466666666666667,
+      "dlogL_dh_host_mean": -21.714930108459146,
+      "dlogL_dh_completion_mean": 50.563901190833974
+    }
+  }
+}
