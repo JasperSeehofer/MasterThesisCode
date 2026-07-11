@@ -175,6 +175,17 @@ residual is slightly LARGER than the measured +0.013. Consequences:
    A single z≥0-truncation-aware / photo-z-marginalized volume kernel would address BOTH the deep
    membership-support leak (L7 (i)) AND this shallow σ_z/z effect (user-gated /physics-change).
 
+9. **[L9] DONE 2026-07-12 (N-5, optional 2D-channel subsample check; G7row9 494-event driver at HEAD,
+   `.planning/gate/G7row9_N5_postDgfix_SUMMARY.md`): the 494-event seed600 2D subsample is
+   well-behaved under current code — no additional 2D subsample/grid pathology.** edge_mass
+   0.216→0.003, mean 0.790→0.768 (pre-fix 2D railing toward 0.86 GONE); subsample 2D sits +0.0135
+   above the full-venue 0.7546 = subsample-selection offset, NOT a code defect; 1D subsample 0.745
+   reproduces the venue +0.013. NB the pre-fix artifact is NOT a clean D_g-only baseline (its 1D 0.730
+   predates #29/z-clamp) — clean D_g attribution stays in the L-B full-venue A/B (0.787→0.7546).
+   **Bonus: post-D_g-fix Eddington-in-M Δ2D = −0.0022 (was −0.020) ⇒ `bayesian_statistics.py:2400-2401`
+   comment + quoted value now STALE (flag, don't edit — physics-trigger file).** Local 2D work
+   exhausted; venue-level +0.025 2D residual remains campaign-gated (D4).
+
 ## 4. What WAITS for the cluster
 
 - **[C1] #29 validation on the deep venue**: re-evaluate seed1000 with the fallback → measure

@@ -152,11 +152,26 @@ def main() -> None:
                 float(h),
                 num_workers=args.workers,
                 normalization_mode="volume_deconv",
+                # This driver targets the ARCHIVED seed600 shallow venue (494-event
+                # subsample; events at z < 0.12, injection pool z_max = 0.5). The
+                # SimulationDetectionProbability guard compares the pool against the
+                # campaign-depth expected_z_max = 1.35 and would raise on this pool,
+                # even though it fully covers the shallow host-draw volume. Same
+                # deliberate archived-baseline re-run precedent as the seed600 A/B
+                # (--allow_low_pdet_coverage; results/seed600_ab_20260710/ANALYSIS.md).
+                allow_low_pdet_coverage=True,
             )
             print(f"[{variant}] h={h} done in {time.time() - th:.0f}s", flush=True)
         entry: dict = {}
         for label, d in (("1d", pdir), ("2d", wdir)):
-            combine_posteriors(posteriors_dir=d, strategy="physics-floor", output_dir=d)
+            combine_posteriors(
+                posteriors_dir=d,
+                strategy="physics-floor",
+                output_dir=d,
+                # Same archived-shallow-venue rationale as the evaluate() call above:
+                # combine_posteriors rebuilds the D(h) survival grid from the same pool.
+                allow_shallow_pool=True,
+            )
             entry[label] = summarize(json.load(open(f"{d}/combined_posterior.json")))
         results[variant] = entry
         print(
