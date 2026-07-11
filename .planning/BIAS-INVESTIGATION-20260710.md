@@ -48,7 +48,7 @@ residual is slightly LARGER than the measured +0.013. Consequences:
 | Eddington-in-M (G7 row 9) | 2D only | **−0.020 mean** | implemented `4d780f0` — verified in the PV-test numbers ([L4]) |
 | with-BH-mass MC denominator D_g defect | 2D only | **−0.032 venue mean measured** (0.787→0.7546 on seed600 A/B) | FIXED `713fbd1` (perf branch, PR #31) — explained 57% of the +0.057 2D residual; remaining 2D residual +0.025 |
 | PV value-correction | 1D | −0.014 worst-case (seed600) | applied in z_cmb catalogue; marginalized σ_v=200 `8568d9f`; #16 CLOSED |
-| Ω_m era mismatch (seed600 venue only) | both | **−0.08% measured** (Δh̄ = −0.00059; venue z_median 0.046, z_max 0.12 — far shallower than the assumed z~0.3–0.5) | QUANTIFIED [L3] 2026-07-10 — NEGLIGIBLE; era-corrected residual +0.0138 (raw +0.0132); `results/seed600_omega_m_era_20260710/` |
+| Ω_m era mismatch (seed600 venue only) | both | **−0.08% measured** (Δh̄ = −0.00059; venue z_median 0.046, z_max 0.12 — far shallower than the assumed z~0.3–0.5) | QUANTIFIED [L3] 2026-07-10 — NEGLIGIBLE; era-corrected residual +0.0138 (raw +0.0132) → **EXPLAINED [L8] 2026-07-11 (N-4): σ_z/z-at-low-z truncated-volume-kernel Eddington effect, estimator-intrinsic; reproduced +0.030 in a venue-matched harness at z_med 0.044; seed600 attribution pending its low-z σ_z model**; `results/seed600_omega_m_era_20260710/` + `results/pp_coverage_shallowvenue_20260711/` |
 | Ω_m Planck-vs-M1 (real data only) | both | +1.5–2.5% | QUOTED model-scope (G7 row 6); zero in Ω_m-consistent closures |
 | w_G(h)=β_G/D(h) slope on deep venues | both | ~26% of seed1000 1D rail tilt | NEW (FINDINGS_COMBINE_20260710) — **estimator-level synthetic confirmation 2026-07-10 (L-A)**: completion-dominated ensembles biased HIGH (B_num/D increasing in h), see next row |
 | Zero-host silent drop / pure-completion fallback calibration | both | **L-A synthetic: +0.7…+5.4% HIGH bias + coverage collapse at comp_frac 0.22–0.85** (controls calibrated; comp_frac≈0 exact) | **#29 fix landed; L-A VERDICT (2026-07-10): the fallback estimator is NOT calibrated at deep incompleteness** — EXP-40 must check for interior-but-biased-HIGH, not just de-rail; `results/pp_coverage_deepvenue_20260710/SUMMARY.md`. **MECHANISM DECOMPOSED 2026-07-11 ([L7])**: dominant part = membership-support kernel leak (σ_z-dependent; removed by the exact truncated-kernel mode); full Gray mixture makes it WORSE, not better; small σ_z-independent floor = inference noise-model approximation (σ(dL_obs)-vs-σ(dL_true) + p_det-inside, the two halves of the latent-threshold exact conditional — 260711-hx1 CONFIRMED, ~85–90% removed by both together; tiny 2nd-order residual ≈15× below σ_boot). **FLOOR DECOMPOSITION COMPLETE.** |
@@ -146,6 +146,24 @@ residual is slightly LARGER than the measured +0.013. Consequences:
    self-consistent distance-error model + p_det-inside for latent-thresholded detection — do NOT
    add p_det alone. EXP-40 watch (cluster): interior-but-biased-HIGH in both regimes; production
    post-#29 mixture (const-σ, no-p_det-inside) carries BOTH the leak and the floor same-signed HIGH.
+8. **[L8] DONE 2026-07-11 (N-4, quick task 260711-iic, `baeaa1c`+`4f603af`,
+   `results/pp_coverage_shallowvenue_20260711/`): the SEPARATE shallow-venue 1D residual
+   (seed600 comp_frac 0.4%, z_med 0.046, era-corrected +0.0138 / raw +0.0132) is
+   ESTIMATOR-INTRINSIC — a σ_z/z-at-low-z truncated-volume-kernel Eddington effect.**
+   (a) Venue depth ladder (calibrated volume kernel, NO truncation, `--d50-gpc`): calibrated
+   at the commission depth (z_med 0.28, bias −0.002) → strong POSITIVE bias as the venue
+   shallows (+0.011 at z_med 0.056, **+0.030 at z_med 0.044 = seed600 depth**), cov68 collapses.
+   (b) σ_z sweep at the shallow rung: the bias VANISHES at σ_z ≤ 0.015 (calibrated, −0.002) and
+   appears only at σ_z=0.035 (σ_z/z ≈ 0.8) ⇒ the host-z kernel N(z;z_gal,σ_z) truncates at the
+   physical z ≥ 0 boundary and the volume/Eddington-in-z correction (derived for an un-truncated
+   kernel) stops cancelling. (b) Jackknife on the on-disk seed600 `run_live` per-event JSONs
+   (no re-eval, production `apply_strategy`+`combine_log_space`): reproduces the raw +0.0132; the
+   residual is BROAD/SYSTEMATIC (62% of events tilt high, Gini 0.65, and trimming the highest-|tilt|
+   events GROWS the residual) — NOT a heavy-tailed outlier subset, matching a per-event depth effect.
+   **Load-bearing caveat:** full seed600 attribution needs its low-z redshift-error model
+   (σ_z/z ~ O(1)?); cross-seed systematic-vs-scatter needs the campaign (do NOT force locally).
+   A single z≥0-truncation-aware / photo-z-marginalized volume kernel would address BOTH the deep
+   membership-support leak (L7 (i)) AND this shallow σ_z/z effect (user-gated /physics-change).
 
 ## 4. What WAITS for the cluster
 
