@@ -97,6 +97,35 @@ Eddington bias spread across the shallow population).
    force it locally (handoff constraint). (a)+(b) establish the mechanism and that it is
    broad within seed600; the campaign establishes whether the OFFSET reproduces across seeds.
 
+## ADDENDUM 2026-07-12 — load-bearing caveat CLOSED: seed600's low-z σ_z IS photo-z (σ_z/z ~ O(1))
+
+The item-2 load-bearing input ("seed600's effective redshift-uncertainty at z ≈ 0.046") is now
+measured directly on the reduced GLADE+ catalogue seed600 evaluated (no re-eval; inline column
+inspection), and cross-checked against the likelihood code. **The N-4 mechanism applies to seed600.**
+
+**Measurement** (reduced catalogue, z-shell 0.03–0.06 around z_med 0.046, n = 767 552 galaxies):
+
+| population | fraction | σ_z median | σ_z/z median |
+|---|---|---|---|
+| all in shell | — | 0.0344 | **0.65** |
+| flag=1 photometric | **0.897** | 0.0345 | 0.669 |
+| flag=3 spectroscopic | 0.103 | 0.0014 | 0.033 |
+
+σ_z ≈ 0.0344 is an almost exact match to the harness's flat σ_z = 0.035 rung (Set B) that produced
++0.030. σ_z/z ≈ 0.65 is squarely in the O(1) regime the mechanism requires; the spec-z minority sits
+at σ_z/z ≈ 0.033 (the "vanishes" regime) and is the calibrated counterweight the jackknife saw.
+
+**Code trace (airtight):** the likelihood host-z kernel width IS the catalogue σ_z —
+`bayesian_statistics.py:2243` `norm(loc=host_z, scale=host_z_error_eff)`,
+`host_z_error_eff = sqrt(catalogue_σ_z² + σ_z_pv²)` — and `:2234-2239` applies the `[PHYSICS]`
+z ≥ 0 clamp explicitly "for low-z photo-z hosts (z_g < 4·σ_z)". At z_g = 0.046, 4·σ_z = 0.14 > z_g,
+so the clamp is ACTIVE for these hosts: the host-z kernel truncates against z ≥ 0 and the
+un-truncated-derived volume/Eddington correction stops cancelling — exactly the (a)/(b) mechanism.
+
+**Verdict:** the shallow +0.0132 IS (substantially) the σ_z/z-at-low-z truncated-volume-kernel
+Eddington effect. N-4 is now "attributed to seed600," not just "reproduced." Remaining open item is
+cross-seed systematic-vs-scatter, which needs the multi-seed campaign (do NOT force locally).
+
 ## Carried caveats
 
 1. **1D-channel only** (the 2D +0.025 is N-5, not covered here).
