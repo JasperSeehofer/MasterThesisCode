@@ -12,9 +12,15 @@ import json
 import math
 from pathlib import Path
 
+import numpy as np
 import pytest
 
-from master_thesis_code.validation.pp_coverage import PPCoverageConfig, main, run_coverage
+from master_thesis_code.validation.pp_coverage import (
+    PPCoverageConfig,
+    _completion_numerator,
+    main,
+    run_coverage,
+)
 
 TINY = PPCoverageConfig(
     n_realizations=8,
@@ -431,3 +437,62 @@ def test_n_z_quad_cli_flag_threads_into_config(tmp_path: Path) -> None:
     )
     data = json.loads(out.read_text())
     assert data["config"]["n_z_quad"] == 480
+
+
+def test_pdet_in_numerator_changes_results() -> None:
+    """pdet_in_numerator=True changes the deep-venue exact-mode results.
+
+    The completion branch integrates deep into the p_det roll-off, so the
+    latent-detection factor must move the posterior there (260711-27m probe).
+    """
+    base = dataclasses.replace(TINY_DEEPVENUE, z_support=0.2, mixture_mode="exact")
+    off = run_coverage(base)["results"]["0.7200"]
+    on = run_coverage(dataclasses.replace(base, pdet_in_numerator=True))["results"]["0.7200"]
+    # Compare the continuous per-branch tilt diagnostics, not the MAP: the
+    # coarse default grid quantizes small ensemble shifts to exact MAP ties
+    # on tiny configs (measured in quick task 260711-1ps).
+    assert on["dlogL_dh_completion_mean"] != off["dlogL_dh_completion_mean"]
+    assert on["dlogL_dh_host_mean"] != off["dlogL_dh_host_mean"]
+
+
+def test_pdet_in_numerator_determinism() -> None:
+    """Same seed with pdet_in_numerator=True gives bit-identical results."""
+    config = dataclasses.replace(
+        TINY_DEEPVENUE, z_support=0.2, mixture_mode="exact", pdet_in_numerator=True
+    )
+    assert run_coverage(config) == run_coverage(config)
+
+
+def test_pdet_in_numerator_noop_at_pdet_one_limit() -> None:
+    """The p_det -> 1 limit: the factor is a numerical no-op far inside D50.
+
+    Function-level limiting case on the completion numerator: a near-field
+    window (d_L <= ~0.27 Gpc, p_det >= 0.9999 across the whole quadrature)
+    must give flag-on == flag-off to <~1e-3 relative.
+    """
+    h_grid = PPCoverageConfig().h_grid()
+    off = _completion_numerator(0.15, 0.0075, 0.02, h_grid, 160, 0.0, False)
+    on = _completion_numerator(0.15, 0.0075, 0.02, h_grid, 160, 0.0, True)
+    assert np.allclose(on, off, rtol=1e-3)
+
+
+def test_pdet_in_numerator_cli_flag_threads_into_config(tmp_path: Path) -> None:
+    """--pdet-in-numerator threads into config.pdet_in_numerator in the JSON."""
+    out = tmp_path / "r.json"
+    main(
+        [
+            "--n-realizations",
+            "2",
+            "--n-events",
+            "10",
+            "--truths",
+            "0.72",
+            "--seed",
+            "20260711",
+            "--pdet-in-numerator",
+            "--output",
+            str(out),
+        ]
+    )
+    data = json.loads(out.read_text())
+    assert data["config"]["pdet_in_numerator"] is True

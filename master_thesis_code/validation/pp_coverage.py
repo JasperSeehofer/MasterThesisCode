@@ -290,6 +290,24 @@ class PPCoverageConfig:
             z_gal (< z_support) instead of the true z_host (production's
             BallTree sees measured redshifts; N-2d probe). Default False keeps
             the true-z routing bit-identical.
+        pdet_in_numerator: Latent-detection exact-inverse probe (quick task
+            260711-27m, floor mechanism). The harness generative model decides
+            detection on the TRUE z (``_sample_detected_redshifts`` draws z
+            from w_pop * p_det BEFORE the dL_obs/z_gal noise draws), so
+            detection is independent of the data given z and the exact
+            conditional keeps p_det(A(z)/h) INSIDE the numerator integrals:
+
+                p(data, G | detected, h)
+                    = int 1_G(z) p_GW(dL_obs|z,h) [N(z; z_gal, sigma_z)]
+                      p_det(A(z)/h) w_pop(z) dz / D(h).
+
+            The Mandel, Farr & Gair (2019, arXiv:1809.02063) no-p_det-inside
+            form applies when detection is a deterministic function of the
+            OBSERVED data; for latent-thresholded detection the factor stays
+            inside. When True, both branch numerators (host kernel integral in
+            every mixture_mode, and the zero-host completion integral B_num)
+            are multiplied by p_det(A(z)/h) on the quadrature grid. Default
+            False keeps every existing mode bit-identical.
     """
 
     n_realizations: int = 120
@@ -314,6 +332,7 @@ class PPCoverageConfig:
     z_support: float | None = None
     mixture_mode: Literal["two_branch", "gray", "conditioned", "exact"] = "two_branch"
     membership_on_observed: bool = False
+    pdet_in_numerator: bool = False
 
     def h_grid(self) -> npt.NDArray[np.float64]:
         """Return the H0 evaluation grid."""
@@ -327,6 +346,7 @@ def _completion_numerator(
     h_grid: npt.NDArray[np.float64],
     n_z_quad: int,
     tilt: float,
+    pdet_in_numerator: bool = False,
 ) -> npt.NDArray[np.float64]:
     """Pure-completion numerator B_num(h) above the catalogue support edge.
 
@@ -346,6 +366,10 @@ def _completion_numerator(
         h_grid: H0 evaluation grid.
         n_z_quad: Redshift quadrature points.
         tilt: Inference-side w_pop tilt gamma (N-3 probe); 0.0 is untilted.
+        pdet_in_numerator: Multiply the integrand by p_det(A(z)/h) — the
+            latent-detection exact-inverse factor (260711-27m probe; see
+            ``PPCoverageConfig.pdet_in_numerator``). Default False is
+            bit-identical to the pre-probe behaviour.
 
     Returns:
         B_num evaluated on ``h_grid`` (shape ``(nh,)``).
@@ -365,6 +389,10 @@ def _completion_numerator(
     wq_b = np.gradient(zq_b)
     dLg_b = comoving_amplitude_of_z(zq_b)[:, None] / h_grid[None, :]  # (nz, nh)
     pGW_b = _norm_pdf(dLg_b, dL_obs_i, sig_dl_i)  # (nz, nh)
+    if pdet_in_numerator:
+        # Latent-detection exact inverse: detection is decided on the true z,
+        # so p_det(A(z)/h) stays inside the numerator (260711-27m probe).
+        pGW_b = pGW_b * detection_probability(dLg_b)  # (nz, nh)
     wpop_b = _inference_population_weight(zq_b, tilt)  # unnormalized
     return np.asarray((wq_b * wpop_b) @ pGW_b, dtype=np.float64)  # (nh,)
 
@@ -491,6 +519,7 @@ def _run_realization(
                     h_grid,
                     config.n_z_quad,
                     config.inference_wpop_tilt,
+                    config.pdet_in_numerator,
                 )
                 if config.mixture_mode == "conditioned":
                     # Membership-conditioned inverse: B_num / beta_Gbar.
@@ -539,6 +568,11 @@ def _run_realization(
         wq = np.gradient(zq)
         dLg = comoving_amplitude_of_z(zq)[:, None] / h_grid[None, :]  # (nz, nh)
         pGW = _norm_pdf(dLg, float(dL_obs[i]), float(sig_dl[i]))  # (nz, nh)
+        if config.pdet_in_numerator:
+            # Latent-detection exact inverse (260711-27m probe): detection is
+            # decided on the true z, so p_det(A(z)/h) stays inside the host
+            # numerator too (numerator-only — gray-mode D_g_i is unchanged).
+            pGW = pGW * detection_probability(dLg)  # (nz, nh)
         kernel_z = _norm_pdf(zq, float(z_gal[i]), sigma_z)  # (nz,)
         if config.kernel == "volume":
             kernel_z = kernel_z * _inference_population_weight(zq, config.inference_wpop_tilt)
@@ -558,6 +592,7 @@ def _run_realization(
                 h_grid,
                 config.n_z_quad,
                 config.inference_wpop_tilt,
+                config.pdet_in_numerator,
             )
             mixture = beta_G_h * L_cat_i + B_num_i  # linear space, per event
             term = np.log(np.clip(mixture, 1e-300, None)) - log_Dh
@@ -747,6 +782,16 @@ def main(argv: list[str] | None = None) -> None:
         "instead of the true z_host (N-2d membership-determination probe).",
     )
     parser.add_argument(
+        "--pdet-in-numerator",
+        action="store_true",
+        help="Latent-detection exact-inverse probe (260711-27m): multiply both "
+        "branch numerators (host kernel integral and completion B_num) by "
+        "p_det(A(z)/h) — the factor the exact conditional keeps inside when "
+        "detection is decided on the latent true z rather than the observed "
+        "data (Mandel-Farr-Gair 2019, arXiv:1809.02063, applies only to "
+        "data-thresholded detection). Default off is bit-identical.",
+    )
+    parser.add_argument(
         "--inference-wpop-tilt",
         type=float,
         default=0.0,
@@ -778,6 +823,7 @@ def main(argv: list[str] | None = None) -> None:
         z_support=args.z_support,
         mixture_mode=args.mixture_mode,
         membership_on_observed=args.membership_on_observed,
+        pdet_in_numerator=args.pdet_in_numerator,
     )
     out = run_coverage(config)
     args.output.write_text(json.dumps(out, indent=2))
