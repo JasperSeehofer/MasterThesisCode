@@ -1,0 +1,78 @@
+{
+  "config": {
+    "n_realizations": 120,
+    "n_events": 250,
+    "sigma_z": 0.005,
+    "sigma_z_pv": 0.0,
+    "sigma_dl_frac": 0.05,
+    "injected_truths": [
+      0.62,
+      0.73,
+      0.84
+    ],
+    "seed": 20260701,
+    "kernel": "volume",
+    "h_min": 0.6,
+    "h_max": 0.86,
+    "h_step": 0.004,
+    "n_z_quad": 320,
+    "inference_wpop_tilt": 0.0,
+    "z_support": null,
+    "mixture_mode": "two_branch",
+    "membership_on_observed": false,
+    "pdet_in_numerator": false,
+    "sigma_dl_model_in_likelihood": false,
+    "d50_gpc": 0.23,
+    "w_pdet_gpc": 0.0373
+  },
+  "results": {
+    "0.6200": {
+      "h_true": 0.62,
+      "coverage": {
+        "50": 0.4166666666666667,
+        "68": 0.625,
+        "90": 0.8416666666666667
+      },
+      "rail_fraction": 0.0,
+      "map_mean": 0.6160333333333333,
+      "map_std": 0.005549674665139295,
+      "map_median": 0.616,
+      "map_bias": -0.003966666666666674,
+      "completion_fraction": 0.0,
+      "dlogL_dh_host_mean": -126.3592161118068,
+      "dlogL_dh_completion_mean": null
+    },
+    "0.7300": {
+      "h_true": 0.73,
+      "coverage": {
+        "50": 0.3333333333333333,
+        "68": 0.5333333333333333,
+        "90": 0.8166666666666667
+      },
+      "rail_fraction": 0.0,
+      "map_mean": 0.7265,
+      "map_std": 0.0056347138347923285,
+      "map_median": 0.7280000000000001,
+      "map_bias": -0.0034999999999999476,
+      "completion_fraction": 0.0,
+      "dlogL_dh_host_mean": -44.416791387701416,
+      "dlogL_dh_completion_mean": null
+    },
+    "0.8400": {
+      "h_true": 0.84,
+      "coverage": {
+        "50": 0.5416666666666666,
+        "68": 0.6583333333333333,
+        "90": 0.9
+      },
+      "rail_fraction": 0.0,
+      "map_mean": 0.8357666666666669,
+      "map_std": 0.005423303626224727,
+      "map_median": 0.8360000000000002,
+      "map_bias": -0.004233333333333089,
+      "completion_fraction": 0.0,
+      "dlogL_dh_host_mean": -114.54478519285031,
+      "dlogL_dh_completion_mean": null
+    }
+  }
+}

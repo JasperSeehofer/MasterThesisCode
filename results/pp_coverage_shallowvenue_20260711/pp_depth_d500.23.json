@@ -1,0 +1,78 @@
+{
+  "config": {
+    "n_realizations": 120,
+    "n_events": 250,
+    "sigma_z": 0.035,
+    "sigma_z_pv": 0.0,
+    "sigma_dl_frac": 0.05,
+    "injected_truths": [
+      0.62,
+      0.73,
+      0.84
+    ],
+    "seed": 20260701,
+    "kernel": "volume",
+    "h_min": 0.6,
+    "h_max": 0.86,
+    "h_step": 0.004,
+    "n_z_quad": 160,
+    "inference_wpop_tilt": 0.0,
+    "z_support": null,
+    "mixture_mode": "two_branch",
+    "membership_on_observed": false,
+    "pdet_in_numerator": false,
+    "sigma_dl_model_in_likelihood": false,
+    "d50_gpc": 0.23,
+    "w_pdet_gpc": 0.0373
+  },
+  "results": {
+    "0.6200": {
+      "h_true": 0.62,
+      "coverage": {
+        "50": 0.2833333333333333,
+        "68": 0.5,
+        "90": 0.7833333333333333
+      },
+      "rail_fraction": 0.058333333333333334,
+      "map_mean": 0.6547999999999999,
+      "map_std": 0.03196915179773571,
+      "map_median": 0.654,
+      "map_bias": 0.03479999999999994,
+      "completion_fraction": 0.0,
+      "dlogL_dh_host_mean": 23.415128950271917,
+      "dlogL_dh_completion_mean": null
+    },
+    "0.7300": {
+      "h_true": 0.73,
+      "coverage": {
+        "50": 0.39166666666666666,
+        "68": 0.575,
+        "90": 0.8
+      },
+      "rail_fraction": 0.0,
+      "map_mean": 0.7602666666666666,
+      "map_std": 0.035178528805066465,
+      "map_median": 0.7560000000000001,
+      "map_bias": 0.030266666666666664,
+      "completion_fraction": 0.0,
+      "dlogL_dh_host_mean": 20.52039697455824,
+      "dlogL_dh_completion_mean": null
+    },
+    "0.8400": {
+      "h_true": 0.84,
+      "coverage": {
+        "50": 0.44166666666666665,
+        "68": 0.7916666666666666,
+        "90": 0.9833333333333333
+      },
+      "rail_fraction": 0.44166666666666665,
+      "map_mean": 0.8435,
+      "map_std": 0.021011504785077486,
+      "map_median": 0.8520000000000002,
+      "map_bias": 0.0035000000000000586,
+      "completion_fraction": 0.0,
+      "dlogL_dh_host_mean": 13.824668567302457,
+      "dlogL_dh_completion_mean": null
+    }
+  }
+}

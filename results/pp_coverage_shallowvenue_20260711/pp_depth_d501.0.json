@@ -1,0 +1,78 @@
+{
+  "config": {
+    "n_realizations": 120,
+    "n_events": 250,
+    "sigma_z": 0.035,
+    "sigma_z_pv": 0.0,
+    "sigma_dl_frac": 0.05,
+    "injected_truths": [
+      0.62,
+      0.73,
+      0.84
+    ],
+    "seed": 20260701,
+    "kernel": "volume",
+    "h_min": 0.6,
+    "h_max": 0.86,
+    "h_step": 0.004,
+    "n_z_quad": 160,
+    "inference_wpop_tilt": 0.0,
+    "z_support": null,
+    "mixture_mode": "two_branch",
+    "membership_on_observed": false,
+    "pdet_in_numerator": false,
+    "sigma_dl_model_in_likelihood": false,
+    "d50_gpc": 1.0,
+    "w_pdet_gpc": 0.162
+  },
+  "results": {
+    "0.6200": {
+      "h_true": 0.62,
+      "coverage": {
+        "50": 0.55,
+        "68": 0.6833333333333333,
+        "90": 0.825
+      },
+      "rail_fraction": 0.058333333333333334,
+      "map_mean": 0.6167333333333332,
+      "map_std": 0.009507657732352154,
+      "map_median": 0.616,
+      "map_bias": -0.003266666666666751,
+      "completion_fraction": 0.0,
+      "dlogL_dh_host_mean": -31.452575913786248,
+      "dlogL_dh_completion_mean": null
+    },
+    "0.7300": {
+      "h_true": 0.73,
+      "coverage": {
+        "50": 0.48333333333333334,
+        "68": 0.6916666666666667,
+        "90": 0.8916666666666667
+      },
+      "rail_fraction": 0.0,
+      "map_mean": 0.7278000000000001,
+      "map_std": 0.01036468362598043,
+      "map_median": 0.7280000000000001,
+      "map_bias": -0.0021999999999998687,
+      "completion_fraction": 0.0,
+      "dlogL_dh_host_mean": -1.0955004809304105,
+      "dlogL_dh_completion_mean": null
+    },
+    "0.8400": {
+      "h_true": 0.84,
+      "coverage": {
+        "50": 0.475,
+        "68": 0.675,
+        "90": 0.9
+      },
+      "rail_fraction": 0.0,
+      "map_mean": 0.8363666666666667,
+      "map_std": 0.00952184622620822,
+      "map_median": 0.8360000000000002,
+      "map_bias": -0.0036333333333332662,
+      "completion_fraction": 0.0,
+      "dlogL_dh_host_mean": -28.966289602417298,
+      "dlogL_dh_completion_mean": null
+    }
+  }
+}
