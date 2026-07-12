@@ -32,3 +32,28 @@ concrete formula is on record before code lands.
 5. Campaign (cluster) is the final cross-seed adjudicator (D1 evidence also lands here).
 
 Scoping reference: `.planning/PRODUCTION-KERNEL-FIX-SCOPING-20260712.md`.
+
+## PROD — Part 1 `volume_trunc` OUTCOME (2026-07-12, executed): ❌ FALSIFIED
+
+Part 1 (`volume_trunc` = unified numerator support + z-floor 0) was implemented and
+run through its decisive seed600 494-event A/B gate (commit `c4a1c7d`). **It made the
+shallow bias WORSE, not better** — 1D mean 0.745 → **0.800**, MAP 0.73 → 0.80, posterior
+collapses onto h=0.80 (Δ +0.055, wrong direction, ~4× the +0.013 residual). Baseline
+`volume_deconv` reproduced the reference exactly (1D 0.745 / 2D 0.768), so the result
+is the kernel, not the harness. Mechanism (`results/volume_trunc_ab_20260712/FINDING.md`):
+(1) the shared `fixed_quad(n=50)` aliases the narrow GW peak over the wide host window
+(n=50 → 0.0 vs exact 0.24–0.65), h-dependently; (2) the exact host-window numerator also
+tilts high in the shallow regime. Both push H0 high.
+
+**Consequences / open decisions for the user:**
+- The **numerator-window unification is NOT the +0.013 shallow lever** and, as specified,
+  is numerically broken. Part 1 as-designed is rejected — do NOT deploy to the campaign.
+- `volume_trunc` is retained as an EXPERIMENTAL/FALSIFIED mode (not CLI-wired); `volume_deconv`
+  remains the golden default (byte-identical, untouched).
+- The staged plan's premise (start with the numerator window) is invalidated. The shallow
+  +0.0132 attribution stands ([L8]) but its cure lies elsewhere. **Next direction (user-gated,
+  needs its own /physics-change):** scoping Candidate B (photo-z-marginalized soft membership)
+  + the [L7] distance-error coupling — with the new hard constraint that ANY wide-window
+  numerator integral must use a **peak-aware / adaptive / high-order** quadrature (the narrow
+  GW peak must be resolved), which is a larger change than Part 1 scoped. Whether to pursue a
+  quadrature-robust reimplementation of the numerator window, or abandon it, is the user's call.
