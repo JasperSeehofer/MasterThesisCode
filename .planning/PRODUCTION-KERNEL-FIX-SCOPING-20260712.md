@@ -195,6 +195,39 @@ the prior shape.
 
 ---
 
+## 7b. Part 1 implementation spec (`volume_trunc`) — APPROVED 2026-07-12, ready to execute
+
+User approved Part 1's formula + staged approach + mode name `volume_trunc` (2026-07-12).
+Precise, code-level plan (nailed down by reading the production kernels):
+
+- **Scope is SHALLOW-only.** `volume_trunc` = z≥0 floor truncation + unified numerator support.
+  It is a **no-op on the deep venue by construction** (z_lo = z_g−4σ > 0 there), so it does NOT
+  fix the deep L-7 membership leak — that is a SEPARATE `z_support`-edge (high-z) truncation
+  coupled to the completion term (a later part). Do not conflate.
+- **The substantive change is the numerator support**, not the z-floor. Production already
+  truncates `Z_g`/`D_g` at `1e-6≈0` (`:2593`, `:2238`). `volume_trunc` additionally:
+  (i) `den_lo = max(z_g−4σ_eff, 0.0)` (vs `1e-6`; near-no-op since w_pop∝z²→0);
+  (ii) integrate `N_g` over the **per-host galaxy window** `[z_lo, z_hi]` (vs today's shared
+  event-level GW window `[num_lo, num_hi]`), with the SAME `Z_g` normalization — so `Z_g`, `N_g`,
+  `D_g` share one support. Optional cap `z_hi = min(z_g+4σ_eff, z_max)` (rarely binds; defer if
+  z_max not a worker global).
+- **Batched-kernel impact (`single_host_likelihood_batch`, `:2512-`):** today `y_num`, `d_L_num`,
+  `luminosity_distance_fraction`, `gw_3d` are computed once per batch on the shared GW window
+  (`:2612-2658`). Under `volume_trunc` the numerator window becomes per-host `[den_lo, den_hi]`, so
+  those become `(n, 50)` — the shared-node optimization is lost for the numerator (denominator path
+  already per-host). Keep the `volume_deconv` path byte-identical (branch on the mode); keep
+  `single_host_likelihood` ≡ `single_host_likelihood_batch` (`test_kernel_batch_equivalence`).
+- **Wire:** add `"volume_trunc"` to the valid-modes set (`:999`); add a `_use_volume_trunc` gate;
+  reuse the volume-deconv weight machinery (same `w_pop`), differing only in the numerator window +
+  z_lo floor.
+- **Regression/limits:** existing `volume_deconv` pins must stay UNCHANGED (golden guard); add
+  `volume_trunc` pins + a σ_z→0 test (→ spec-z limit) + reuse the h-independence check.
+- **DECISIVE EMPIRICAL GATE (genuine uncertainty — must run, cannot derive):** seed600 494-event
+  A/B, `volume_trunc` vs `volume_deconv` (reuse the N-5 driver harness). Success = the shallow 1D
+  mean moves 0.745 → toward 0.73 with no pathology. If it does NOT move, the +0.013 driver is
+  elsewhere (numerator-window is not the lever) — a real finding, report it. Deep-venue
+  no-regression is by construction locally; the campaign is the cross-seed adjudicator.
+
 ## 8. Process from here (NOT this session)
 
 `/gpd:derive-equation` (truncated-normal × volume prior, soft membership, distance-error coupling)
