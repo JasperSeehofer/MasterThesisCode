@@ -7,6 +7,22 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Research (host-z kernel — bias investigation)
+- **`volume_trunc` host-z kernel (Part 1) — implemented and empirically FALSIFIED
+  (experimental, not for production).** New isolated `normalization_mode="volume_trunc"`:
+  the calibrated volume kernel with the in-catalogue numerator integrated over the per-host
+  galaxy window `[z_g−4σ, z_g+4σ]` (shared with `Z_g`/`D_g`) and the lower z-limit floored at
+  0 instead of 1e-6. The default `volume_deconv`/`local_ratio` paths are **byte-identical**
+  (kernel-parity golden regenerated with additions only; `single_host_likelihood_batch`
+  bit-identical to the scalar kernel on all `volume_trunc` cases; full CPU suite green). The
+  decisive seed600 494-event shallow-venue A/B (`scripts/volume_trunc_ab.py`) **rejected** it:
+  it worsens the shallow bias (1D mean 0.745 → 0.800, posterior collapses onto h=0.80) because
+  `fixed_quad(n=50)` aliases the narrow GW peak over the wide host window and the exact
+  host-window numerator also tilts high. The mode is retained as an experimental/falsified
+  diagnostic (not CLI-wired); `volume_deconv` stays the golden production default. Finding +
+  reproducible diagnostic: `results/volume_trunc_ab_20260712/`. Ref: Gray et al. (2020)
+  arXiv:1908.06050 Eq. A.10; `docs/derivations/G2b_host_z_volume_prior.md` §1.4.
+
 ### Performance (perf/eval-vectorization)
 - **Fused h-grid evaluation (opt-in):** new `--h_values 0.70,0.705,...` CLI flag /
   `BayesianStatistics.evaluate(h_values=[...])` — one process evaluates the whole h-list,
