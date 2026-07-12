@@ -996,7 +996,22 @@ class BayesianStatistics:
         # The kernel (bare vs volume-deconvolved) is threaded into single_host_likelihood.
         # Default "volume_deconv": Gray et al. (2020) arXiv:1908.06050 Eqs. A.9/A.10 + volume-
         # consistent host-z prior; P-P-calibrated (INDEPENDENT-VERIFICATION-REPORT-20260701 §7).
-        if normalization_mode not in ("global", "local_ratio", "volume_deconv", "volume_global"):
+        #   "volume_trunc" -> EXPERIMENTAL / FALSIFIED (Part 1, 2026-07-12): the volume kernel with
+        #                     the in-catalogue NUMERATOR integrated over the per-host galaxy window
+        #                     [z_g-4sigma, z_g+4sigma] (shared with Z_g / D_g) and the lower z-limit
+        #                     floored at 0 instead of 1e-6. No-op on the deep venue by construction.
+        #                     DO NOT USE FOR PRODUCTION: the seed600 shallow A/B FALSIFIED it — it
+        #                     worsens the shallow bias (1D mean 0.745 -> 0.800), because fixed_quad
+        #                     n=50 aliases the narrow GW peak over the wide host window AND the exact
+        #                     numerator tilts high. Kept as a diagnostic + reproducible record.
+        #                     results/volume_trunc_ab_20260712/FINDING.md; scoping §7b (Gray A.10 + G2b §1.4).
+        if normalization_mode not in (
+            "global",
+            "local_ratio",
+            "volume_deconv",
+            "volume_global",
+            "volume_trunc",
+        ):
             raise ValueError(f"unknown normalization_mode: {normalization_mode!r}")
         if normalization_mode == "global":
             warnings.warn(
@@ -2203,6 +2218,20 @@ def single_host_likelihood(
 
     integration_limit_sigma_multiplier = 4.0
 
+    # [PHYSICS] volume_trunc (Part 1, 2026-07-12): shallow-venue host-z kernel
+    # correction. It reuses the volume-deconvolved kernel machinery (same w_pop)
+    # but (i) floors the lower z-limit at 0 instead of 1e-6 and (ii) integrates
+    # the in-catalogue NUMERATOR over the per-host galaxy window
+    # [z_g-4sigma, z_g+4sigma] (shared with Z_g and D_g) instead of the
+    # event-level GW window, so N_g, D_g and Z_g share ONE truncated support.
+    # No-op on the deep venue by construction (z_g-4sigma > 0 there). Gray et al.
+    # (2020) arXiv:1908.06050 Eq. A.10; docs/derivations/G2b_host_z_volume_prior.md
+    # §1.4; .planning/PRODUCTION-KERNEL-FIX-SCOPING-20260712.md §7b.
+    # EXPERIMENTAL / FALSIFIED — the seed600 A/B rejected this (worsens shallow bias:
+    # fixed_quad n=50 aliases the narrow GW peak over the wide host window; exact
+    # numerator also tilts high). Not for production. results/volume_trunc_ab_20260712/.
+    _use_volume_trunc = normalization_mode == "volume_trunc"
+
     # [PHYSICS] Issue #16 (user decision 2026-07-03): marginalize the residual
     # host peculiar-velocity dispersion into the host-z kernel.
     #   sigma_z_pv = (1 + z_g) * sigma_v / c
@@ -2235,8 +2264,11 @@ def single_host_likelihood(
     # would extend to unphysical z < 0 where comoving_volume_element still returns
     # positive values, silently adding prior mass to Z_g / D_g (G2b derivation note,
     # docs/derivations/G2b_host_z_volume_prior.md). Matches B_num's and D(h)'s z_min.
+    # volume_trunc floors at exactly 0 (w_pop ∝ z² → 0 there, so this is a near-no-op
+    # relative to 1e-6; the substantive volume_trunc change is the numerator window).
+    _z_lower_floor = 0.0 if _use_volume_trunc else 1e-6
     denominator_integration_lower_redshift_limit = max(
-        host_z - integration_limit_sigma_multiplier * host_z_error_eff, 1e-6
+        host_z - integration_limit_sigma_multiplier * host_z_error_eff, _z_lower_floor
     )
 
     # construct normal distribution for redshift and mass for host galaxy
@@ -2253,7 +2285,13 @@ def single_host_likelihood(
     # Gray et al. (2020), arXiv:1908.06050, Eqs. A.10 / 33.
     # "volume_global" (diagnostic, G3 ablation cube) uses the SAME volume kernel
     # with the legacy global denominator selected in p_Di.
-    _use_volume_deconv = normalization_mode in ("volume_deconv", "volume_global")
+    # "volume_trunc" (shallow-venue Part 1) shares this volume-kernel weight and
+    # differs only in the numerator integration support + z-floor (see above).
+    _use_volume_deconv = normalization_mode in (
+        "volume_deconv",
+        "volume_global",
+        "volume_trunc",
+    )
     _z_prior_norm = 1.0
     if _use_volume_deconv:
 
@@ -2316,13 +2354,23 @@ def single_host_likelihood(
         )
         return p_det * galaxy_redshift_prior_pdf(z)
 
+    # volume_trunc integrates the numerator over the per-host galaxy window (shared
+    # with Z_g and D_g) so the truncated host-z prior spans ONE support; the default
+    # modes keep the event-level GW window [d_L(z_det ± 4σ)].
+    if _use_volume_trunc:
+        numerator_quad_lower = denominator_integration_lower_redshift_limit
+        numerator_quad_upper = denominator_integration_upper_redshift_limit
+    else:
+        numerator_quad_lower = numerator_integration_lower_redshift_limit
+        numerator_quad_upper = numerator_integration_upper_redshift_limit
+
     (
         single_host_likelihood_numerator_without_bh_mass,
         single_host_likelihood_numerator_without_bh_mass_error,
     ) = fixed_quad(
         numerator_integrant_without_bh_mass,
-        numerator_integration_lower_redshift_limit,
-        numerator_integration_upper_redshift_limit,
+        numerator_quad_lower,
+        numerator_quad_upper,
         n=FIXED_QUAD_N,
     )
     (
@@ -2460,8 +2508,8 @@ def single_host_likelihood(
 
         single_host_likelihood_numerator_with_bh_mass = fixed_quad(
             numerator_integrant_with_bh_mass,
-            numerator_integration_lower_redshift_limit,
-            numerator_integration_upper_redshift_limit,
+            numerator_quad_lower,
+            numerator_quad_upper,
             n=FIXED_QUAD_N,
         )[0]
 
@@ -2589,10 +2637,15 @@ def single_host_likelihood_batch(
         _det_d_L - integration_limit_sigma_multiplier * _det_d_L_unc, h=h
     )
     den_hi = host_z + integration_limit_sigma_multiplier * host_z_error_eff
-    # z >= 0 clamp: same G2b rationale as the scalar kernel.
-    den_lo = np.maximum(host_z - integration_limit_sigma_multiplier * host_z_error_eff, 1e-6)
+    # z >= 0 clamp: same G2b rationale as the scalar kernel. volume_trunc floors at
+    # exactly 0 (w_pop ∝ z² → 0 there) instead of 1e-6.
+    _use_volume_trunc = normalization_mode == "volume_trunc"
+    _z_lower_floor = 0.0 if _use_volume_trunc else 1e-6
+    den_lo = np.maximum(
+        host_z - integration_limit_sigma_multiplier * host_z_error_eff, _z_lower_floor
+    )
 
-    _use_volume_deconv = normalization_mode in ("volume_deconv", "volume_global")
+    _use_volume_deconv = normalization_mode in ("volume_deconv", "volume_global", "volume_trunc")
 
     # Per-host denominator quadrature nodes (fixed_quad affine map, n=50).
     y_den = _batched_gl_nodes(den_lo, den_hi, _GL_NODES_50)  # (n, 50)
@@ -2609,18 +2662,42 @@ def single_host_likelihood_batch(
         z_prior_norm = _batched_gl_reduce(den_lo, den_hi, _GL_WEIGHTS_50, gauss_den * w_pop_den)
         z_prior_norm = np.where(z_prior_norm <= 0.0, 1.0, z_prior_norm)
 
-    # Shared numerator nodes (event-level window -> identical for every host).
-    y_num = (
-        numerator_integration_upper_redshift_limit - numerator_integration_lower_redshift_limit
-    ) * (_GL_NODES_50 + 1) / 2.0 + numerator_integration_lower_redshift_limit  # (50,)
-    d_L_num = dist_vectorized(y_num, h=h)
-    luminosity_distance_fraction = d_L_num / _det_d_L  # (50,)
+    # Numerator quadrature nodes, all shaped (n, 50). Default modes share ONE
+    # event-level window across every host (the shared-node optimization — the
+    # per-host arrays are broadcast views of the shared (50,) nodes). volume_trunc
+    # integrates the numerator over each host's galaxy window [den_lo, den_hi]
+    # (== the denominator nodes y_den), so the numerator becomes genuinely
+    # per-host; the shared-node optimization is dropped for the numerator only
+    # (the denominator path is already per-host). y_num_nodes carries (1 + z) for
+    # the with-BH-mass mass-fraction coordinate transform below.
+    if _use_volume_trunc:
+        y_num_nodes = y_den  # (n, 50)
+        d_L_num = dist_vectorized(y_num_nodes.reshape(-1), h=h).reshape(n, _HOST_QUAD_N)
+        luminosity_distance_fraction = d_L_num / _det_d_L  # (n, 50)
+        num_reduce_lo = den_lo
+        num_reduce_hi = den_hi
+    else:
+        y_num_1d = (
+            numerator_integration_upper_redshift_limit - numerator_integration_lower_redshift_limit
+        ) * (_GL_NODES_50 + 1) / 2.0 + numerator_integration_lower_redshift_limit  # (50,)
+        y_num_nodes = np.broadcast_to(y_num_1d[None, :], (n, _HOST_QUAD_N))  # (n, 50)
+        d_L_num = dist_vectorized(y_num_1d, h=h)  # (50,)
+        luminosity_distance_fraction = np.broadcast_to(
+            (d_L_num / _det_d_L)[None, :], (n, _HOST_QUAD_N)
+        )  # (n, 50)
+        num_reduce_lo = np.full(n, numerator_integration_lower_redshift_limit)
+        num_reduce_hi = np.full(n, numerator_integration_upper_redshift_limit)
 
     w_pop_num: npt.NDArray[np.float64] | None = None
     if _use_volume_deconv:
-        w_pop_num = np.asarray(comoving_volume_element(y_num, h=h), dtype=np.float64) / (
-            1.0 + y_num
-        )
+        if _use_volume_trunc:
+            # Numerator nodes == denominator nodes -> reuse the denominator w_pop.
+            w_pop_num = w_pop_den
+        else:
+            w_pop_num_1d = np.asarray(comoving_volume_element(y_num_1d, h=h), dtype=np.float64) / (
+                1.0 + y_num_1d
+            )
+            w_pop_num = np.broadcast_to(w_pop_num_1d[None, :], (n, _HOST_QUAD_N))  # (n, 50)
 
     def _z_prior_pdf_at(
         z_nodes: npt.NDArray[np.float64], w_pop: npt.NDArray[np.float64] | None
@@ -2632,10 +2709,7 @@ def single_host_likelihood_batch(
             return base * w_pop / z_prior_norm[:, None]
         return base
 
-    prior_num = _z_prior_pdf_at(
-        np.broadcast_to(y_num[None, :], (n, _HOST_QUAD_N)),
-        None if w_pop_num is None else w_pop_num[None, :],
-    )  # (n, 50)
+    prior_num = _z_prior_pdf_at(y_num_nodes, w_pop_num)  # (n, 50)
     # (n, 50); same values the scalar integrand recomputes at y_den
     if _use_volume_deconv and w_pop_den is not None:
         prior_den = gauss_den * w_pop_den / z_prior_norm[:, None]
@@ -2646,13 +2720,13 @@ def single_host_likelihood_batch(
     x_obs = np.empty((n, _HOST_QUAD_N, 3), dtype=np.float64)
     x_obs[:, :, 0] = host_phiS[:, None]
     x_obs[:, :, 1] = host_qS[:, None]
-    x_obs[:, :, 2] = luminosity_distance_fraction[None, :]
+    x_obs[:, :, 2] = luminosity_distance_fraction  # (n, 50)
     gw_3d = _mvn_pdf(x_obs.reshape(n * _HOST_QUAD_N, 3), _mean_3d, _cov_inv_3d, _log_norm_3d)
     gw_3d = gw_3d.reshape(n, _HOST_QUAD_N)
 
     numerator_without_bh_mass = _batched_gl_reduce(
-        np.full(n, numerator_integration_lower_redshift_limit),
-        np.full(n, numerator_integration_upper_redshift_limit),
+        num_reduce_lo,
+        num_reduce_hi,
         _GL_WEIGHTS_50,
         gw_3d * prior_num,
     )
@@ -2755,8 +2829,11 @@ def single_host_likelihood_batch(
     mu_cond = (
         _mu_obs_4d[3] + (x_obs.reshape(n * _HOST_QUAD_N, 3) - _mu_obs_4d[:3]) @ _proj
     ).reshape(n, _HOST_QUAD_N)
-    mu_gal_frac = host_M_eff[:, None] * (1 + y_num)[None, :] / _det_M
-    sigma_gal_frac = host_M_error[:, None] * (1 + y_num)[None, :] / _det_M
+    # (1 + z) mass-fraction coordinate transform at the numerator nodes y_num_nodes
+    # (n, 50): broadcast of the shared window for the default modes, the per-host
+    # galaxy window for volume_trunc.
+    mu_gal_frac = host_M_eff[:, None] * (1 + y_num_nodes) / _det_M
+    sigma_gal_frac = host_M_error[:, None] * (1 + y_num_nodes) / _det_M
 
     # Analytic Gaussian product integral, Eq. (14.31).
     sigma2_sum = _sigma2_cond + sigma_gal_frac**2
@@ -2765,8 +2842,8 @@ def single_host_likelihood_batch(
     )
 
     numerator_with_bh_mass = _batched_gl_reduce(
-        np.full(n, numerator_integration_lower_redshift_limit),
-        np.full(n, numerator_integration_upper_redshift_limit),
+        num_reduce_lo,
+        num_reduce_hi,
         _GL_WEIGHTS_50,
         gw_3d * mz_integral * prior_num,
     )

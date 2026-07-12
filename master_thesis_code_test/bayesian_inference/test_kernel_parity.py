@@ -272,6 +272,59 @@ def _case_grid() -> dict[str, dict[str, Any]]:
                 evaluate_with_bh_mass=wbh,
             )
 
+    # -- volume_trunc (shallow-venue Part 1): numerator integrated over the
+    #    per-host galaxy window (== Z_g / D_g support), lower z-floor at 0. Same
+    #    regimes as volume_deconv so the batch==scalar guard and the golden pins
+    #    cover the divergent-window behaviour (spec-z, wide photo-z, offset host,
+    #    the low-z clamp where the numerator/host windows diverge most, and the
+    #    far event), in both the 3D and 4D-with-BH-mass channels.
+    for wbh in (False, True):
+        tag = f"vt_{'4d' if wbh else '3d'}"
+        add(
+            f"near_specz_match_{tag}",
+            detection_index=0,
+            host_z=0.10,
+            host_z_error=0.0015,
+            normalization_mode="volume_trunc",
+            evaluate_with_bh_mass=wbh,
+        )
+        add(
+            f"near_photoz_match_{tag}",
+            detection_index=0,
+            host_z=0.10,
+            host_z_error=0.03,
+            normalization_mode="volume_trunc",
+            evaluate_with_bh_mass=wbh,
+        )
+        add(
+            f"near_offset_{tag}",
+            detection_index=0,
+            host_z=0.085,
+            host_z_error=0.01,
+            normalization_mode="volume_trunc",
+            evaluate_with_bh_mass=wbh,
+        )
+        add(
+            f"far_photoz_offset_{tag}",
+            detection_index=1,
+            host_z=0.46,
+            host_z_error=0.03,
+            host_M=8.0e5,
+            host_M_error=2.0e5,
+            normalization_mode="volume_trunc",
+            evaluate_with_bh_mass=wbh,
+        )
+    # Low-z clamp: z_g < 4 sigma_z so den_lo hits the z-floor (0 under volume_trunc)
+    # and the numerator window == host window (diverges most from the GW window).
+    add(
+        "lowz_clamp_vt_3d",
+        detection_index=0,
+        host_z=0.004,
+        host_z_error=0.0015,
+        normalization_mode="volume_trunc",
+        evaluate_with_bh_mass=False,
+    )
+
     return cases
 
 

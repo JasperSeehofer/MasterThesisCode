@@ -155,6 +155,71 @@ def test_kernel_pin_low_z_window_clamp() -> None:
     assert w_den == pytest.approx(PIN_CLAMP_W_DEN, rel=1e-9)
 
 
+def test_kernel_pin_volume_trunc_without_bh_mass() -> None:
+    """volume_trunc (Part 1): numerator over the per-host galaxy window, z-floor 0.
+
+    Spec-z-like host: the host window is narrow and contains the matched event,
+    so the shared-support numerator lands within rel~1e-4 of volume_deconv here
+    (the shallow-venue divergence is exercised on the seed600 A/B, not this pin).
+    """
+    num, den, w_num, w_den = _run_case(0.10, 0.0015, "volume_trunc", False)
+    assert num == pytest.approx(PIN_VT_NUM, rel=1e-9)
+    assert den == pytest.approx(PIN_VT_DEN, rel=1e-9)
+    assert w_num == 0.0
+    assert w_den == 0.0
+
+
+def test_kernel_pin_volume_trunc_with_bh_mass() -> None:
+    """volume_trunc with-BH-mass path (deterministic semi-analytic denominator)."""
+    vals = _run_case(0.10, 0.0015, "volume_trunc", True)
+    assert vals[0] == pytest.approx(PIN_VT_NUM, rel=1e-9)
+    assert vals[1] == pytest.approx(PIN_VT_DEN, rel=1e-9)
+    assert vals[2] == pytest.approx(PIN_VT_BH_NUM, rel=1e-9)
+    assert vals[3] == pytest.approx(PIN_VT_BH_DEN, rel=1e-9)
+    assert vals[4] == 0.0
+    assert vals[5] == 0.0
+
+
+def test_volume_trunc_sigma_z_to_zero_spec_limit() -> None:
+    """Limiting case (scoping §6 gate 1): as sigma_z -> 0, p_g -> delta(z - z_g),
+    so the volume_trunc likelihood ratio N_g/D_g converges to the bare
+    spectroscopic (local_ratio) ratio for a matched host. Assert the relative gap
+    shrinks monotonically over a decreasing sigma_z sequence and is < 5e-3 at the
+    tightest rung.
+    """
+    host_z = 0.10  # matched to the stub event (d_L = 0.47 Gpc, z ~ 0.1 at h = 0.73)
+    sigmas = [0.005, 0.002, 0.001, 0.0005]
+    gaps = []
+    for sz in sigmas:
+        num_vt, den_vt, _, _ = _run_case(host_z, sz, "volume_trunc", False)
+        num_lr, den_lr, _, _ = _run_case(host_z, sz, "local_ratio", False)
+        l_vt = num_vt / den_vt
+        l_lr = num_lr / den_lr
+        gaps.append(abs(l_vt - l_lr) / l_lr)
+    # Strictly convergent toward the spec-z limit.
+    assert all(gaps[i + 1] < gaps[i] for i in range(len(gaps) - 1)), gaps
+    assert gaps[-1] < 5e-3, gaps
+
+
+def test_volume_trunc_prior_shape_h_independent() -> None:
+    """h-independence of the volume prior shape (scoping §6 gate 6, G2b §1.5).
+
+    volume_trunc reuses volume_deconv's weight w_pop(z, h) = dV_c/dz / (1 + z).
+    Because dV_c/dz factorizes as h^-3 * g(z), the h-dependence is z-separable and
+    cancels against the per-galaxy normalization Z_g(h), leaving p_g(z) identical
+    across trial h. Verify the separability directly on comoving_volume_element:
+    its ratio at two h values is constant in z (to machine precision).
+    """
+    from master_thesis_code.physical_relations import comoving_volume_element
+
+    z = np.linspace(0.01, 0.6, 32)
+    ratio = np.asarray(comoving_volume_element(z, h=0.60), dtype=np.float64) / np.asarray(
+        comoving_volume_element(z, h=0.85), dtype=np.float64
+    )
+    spread = float((ratio.max() - ratio.min()) / ratio.mean())
+    assert spread < 1e-12, spread
+
+
 # ── Pinned values ─────────────────────────────────────────────────────────────
 # Updated in the [PHYSICS] issue-#16 commit: the host-z kernel now uses
 # sigma_z_eff = sqrt(sigma_z_cat^2 + ((1+z_g) SIGMA_V_PEC_KM_S / c)^2), which
@@ -174,3 +239,14 @@ PIN_VD_BH_NUM = 4594.733503494528
 PIN_VD_BH_DEN = 0.942697375911772
 PIN_CLAMP_DEN = 0.995760331092859
 PIN_CLAMP_W_DEN = 0.2283619655845074
+
+# volume_trunc (Part 1, 2026-07-12): the in-catalogue numerator is integrated over
+# the per-host galaxy window [z_g - 4σ, z_g + 4σ] (shared with Z_g / D_g) and the
+# lower z-limit floors at 0. For this spec-z-like host the denominator/normalization
+# are unchanged (z_g - 4σ > 0, so no z-floor difference; D_g/Z_g byte-identical to
+# volume_deconv → PIN_VT_DEN == PIN_VD_DEN), and the numerator lands within ~7e-6 of
+# PIN_VD_NUM because the narrow host kernel is fully inside the GW window.
+PIN_VT_NUM = 1629.2569194481669
+PIN_VT_DEN = 0.9152972692191218
+PIN_VT_BH_NUM = 4594.415433322439
+PIN_VT_BH_DEN = 0.942697375911772
