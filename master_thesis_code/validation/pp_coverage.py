@@ -374,6 +374,12 @@ class PPCoverageConfig:
     # generative population, D(h), beta_G and the p_det factors are built.
     d50_gpc: float = D50_GPC
     w_pdet_gpc: float = W_PDET_GPC
+    # Clamp the observed photo-z z_gal at Z_MIN in the generative model (H1
+    # clamp-isolation diagnostic, 2026-07-13). Default True keeps the committed
+    # anchor runs bit-identical. Setting False lets z_gal go below Z_MIN (raw
+    # unclamped photo-z), isolating whether the shallow-venue high bias is driven
+    # by the boundary clamp on the measurement rather than the kernel itself.
+    clamp_zgal: bool = True
 
     def h_grid(self) -> npt.NDArray[np.float64]:
         """Return the H0 evaluation grid."""
@@ -543,7 +549,11 @@ def _run_realization(
     dL_host = comoving_amplitude_of_z(z_host) / h_true
     dL_obs = np.clip(dL_host + rng.normal(0.0, config.sigma_dl_frac * dL_host), 1e-3, None)
     sig_dl = config.sigma_dl_frac * dL_obs
-    z_gal = np.clip(z_host + rng.normal(0.0, sigma_z, config.n_events), Z_MIN, None)
+    z_gal_raw = z_host + rng.normal(0.0, sigma_z, config.n_events)
+    # H1 clamp-isolation diagnostic: default clamps z_gal at Z_MIN (committed
+    # behaviour); when disabled, z_gal keeps its raw (possibly < Z_MIN) value so
+    # the kernel/quadrature sees the unclamped measurement.
+    z_gal = np.clip(z_gal_raw, Z_MIN, None) if config.clamp_zgal else z_gal_raw
 
     if config.mixture_mode in ("gray", "conditioned"):
         if beta_G is None or beta_Gbar is None:
