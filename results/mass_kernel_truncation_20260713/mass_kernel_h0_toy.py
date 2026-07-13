@@ -51,7 +51,10 @@ def _mass_kernel(M_grid: np.ndarray, M_g: float, arm: str) -> np.ndarray:
 
 def run(sigma_z: float, sigma_mz: float, n_events: int, seed: int) -> dict:
     rng = np.random.default_rng(seed)
-    h_grid = np.linspace(0.60, 0.86, 105)
+    # Wide grid so neither arm rails at loose photo-z (the common-mode z-bias can
+    # push both means high); the production-minus-correct diff stays clean as long
+    # as neither posterior is clipped at an edge (check correct_mean << 1.20).
+    h_grid = np.linspace(0.50, 1.20, 220)
     M_grid = np.logspace(np.log10(M_MIN), np.log10(M_MAX), 400)
     sigma_dl = 0.05
     nzq = 60

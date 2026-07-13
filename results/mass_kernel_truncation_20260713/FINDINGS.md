@@ -52,19 +52,30 @@ cancels. Multi-seed (n_events=1500):
 | photo-z σ_z/z | mass-kernel H0 shift (production − correct) | control (correct arm) |
 |---|---|---|
 | 0.05 (near spec-z) | +0.0004 (mass channel barely used) | +0.003 (~clean → framework validated) |
-| 0.15 | **+0.0027 ± 0.0002** | +0.022 |
-| 0.30 | **+0.0089 ± 0.0008** | +0.075 |
+| 0.15 | **+0.0025 ± 0.0006** | +0.754 mean (bias +0.024) |
+| 0.30 | **+0.0081 ± 0.0021** | +0.809 |
+| 0.50 | **+0.0165 ± 0.0055** | +0.912 |
+| 0.75 | **+0.0214 ± 0.0078** | +1.074 |
 
-- **Sign: HIGH** (production > correct) in every non-railing case — resolves the
-  sign puzzle (a naive point-estimate argument gives LOW; the full marginalisation,
-  which sees the truncated kernel's *shape*, gives HIGH).
-- **Magnitude grows with photo-z leverage**: looser photo-z → the mass channel
-  carries more of the z-constraint → larger mass-kernel bias. The real GLADE regime
-  is loose (σ_z/z ~ 0.65), so the real effect is ≥ the +0.009 measured at σ_z/z=0.30
-  (the toy rails at very wide σ_z, so the exact real number isn't pinned here).
-- **Control validated**: at near-spec-z the correct arm is ~unbiased (+0.003) and
-  the mass diff ~0 — the estimator framework is sound; the growing control bias with
-  σ_z/z is the *redshift*-kernel effect (H1), cleanly separated (common-mode).
+(Wide h-grid [0.50,1.20] so neither arm rails; 3 seeds, n=1200. The large control
+means at loose photo-z are the common-mode z-marginalisation bias — identical in both
+arms, cancels in the diff. Diff is ~3σ significant throughout.)
+
+- **Sign: HIGH** (production > correct) everywhere — resolves the sign puzzle (a naive
+  point-estimate argument gives LOW; the full marginalisation, which sees the
+  truncated kernel's *shape*, gives HIGH).
+- **Magnitude grows strongly with photo-z leverage** (looser photo-z → the mass
+  channel carries more of the z-constraint): **+0.016 to +0.02 at the real shallow-shell
+  leverage σ_z/z ~ 0.5–0.65** ([L8]). That is a LARGE fraction of the +0.025 2D
+  residual — plausibly the dominant part of the extra 2D-over-1D bias.
+- **Control validated**: at near-spec-z the correct arm is ~unbiased (+0.003) and the
+  mass diff ~0 — the estimator framework is sound.
+
+**Combined with the H1 clamp finding** (`results/h1_zclamp_20260713/`): the redshift
+half of the shallow bias is largely a *harness artifact* (production photo-z are not
+clamped), so production's 1D shallow bias is likely small — which makes the **mass
+kernel the primary, production-relevant driver of the 2D +0.025 residual**, and the
+mass-kernel fix (below) the load-bearing production change.
 
 ## 4. Unified picture (why 2D bias > 1D bias)
 
