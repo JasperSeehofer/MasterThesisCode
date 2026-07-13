@@ -325,6 +325,75 @@ def _case_grid() -> dict[str, dict[str, Any]]:
         evaluate_with_bh_mass=False,
     )
 
+    # -- mass_trunc (EXP-45): truncated lognormal x R_eff host-mass prior in the 4D
+    #    channel. The 3D channel MUST be byte-identical to volume_deconv (no mass
+    #    term) -- pinned here as a guard. The 4D cases span the regimes where the
+    #    truncation bites: large sigma_M/M, and host masses near the [M_MIN, M_MAX]
+    #    bounds (where the untruncated linear Gaussian leaks most).
+    for wbh in (False, True):
+        tag = f"mt_{'4d' if wbh else '3d'}"
+        add(
+            f"near_specz_match_{tag}",
+            detection_index=0,
+            host_z=0.10,
+            host_z_error=0.0015,
+            normalization_mode="mass_trunc",
+            evaluate_with_bh_mass=wbh,
+        )
+        add(
+            f"near_photoz_match_{tag}",
+            detection_index=0,
+            host_z=0.10,
+            host_z_error=0.03,
+            normalization_mode="mass_trunc",
+            evaluate_with_bh_mass=wbh,
+        )
+        add(
+            f"far_photoz_offset_{tag}",
+            detection_index=1,
+            host_z=0.46,
+            host_z_error=0.03,
+            host_M=8.0e5,
+            host_M_error=2.0e5,
+            normalization_mode="mass_trunc",
+            evaluate_with_bh_mass=wbh,
+        )
+    # Large mass error (sigma_M/M ~ 0.75) -- the real GLADE regime the toy flagged.
+    add(
+        "near_bigMerr_mt_4d",
+        detection_index=0,
+        host_z=0.11,
+        host_z_error=0.05,
+        host_M=2.0e5,
+        host_M_error=1.5e5,
+        normalization_mode="mass_trunc",
+        evaluate_with_bh_mass=True,
+    )
+    # Host mass near the lower bound (M ~ 1.5 M_MIN): the linear Gaussian leaks
+    # below M_MIN; the truncated prior renormalises there.
+    add(
+        "near_lowmass_bound_mt_4d",
+        detection_index=0,
+        host_z=0.10,
+        host_z_error=0.02,
+        host_M=1.5e4,
+        host_M_error=1.0e4,
+        normalization_mode="mass_trunc",
+        evaluate_with_bh_mass=True,
+    )
+    # Host mass near the upper bound (M ~ 0.7 M_MAX): the R_eff-weighted EMRI hosts
+    # cluster here (toy: 65% in the M_MAX zone), so it drives the 2D bias.
+    add(
+        "far_highmass_bound_mt_4d",
+        detection_index=1,
+        host_z=0.50,
+        host_z_error=0.02,
+        host_M=7.0e6,
+        host_M_error=4.0e6,
+        normalization_mode="mass_trunc",
+        evaluate_with_bh_mass=True,
+    )
+
     return cases
 
 

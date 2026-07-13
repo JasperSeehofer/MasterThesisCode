@@ -24,7 +24,7 @@ import numpy as np
 import numpy.typing as npt
 import pandas as pd
 from scipy.integrate import dblquad, fixed_quad, quad
-from scipy.special import ndtr, roots_legendre
+from scipy.special import ndtr, roots_hermite, roots_legendre
 from scipy.stats import multivariate_normal, norm
 
 from master_thesis_code.bayesian_inference.simulation_detection_probability import (
@@ -88,6 +88,26 @@ _BH_DENOM_QUAD_ORDER: int = 64
 _HOST_QUAD_N: int = 50
 _GL_NODES_50, _GL_WEIGHTS_50 = roots_legendre(_HOST_QUAD_N)
 _GL_NODES_64, _GL_WEIGHTS_64 = roots_legendre(_BH_DENOM_QUAD_ORDER)
+
+# --- mass_trunc host-mass kernel (EXP-45, 2026-07-13) --------------------------
+# The 2D (with-BH-mass) channel's `mass_trunc` mode replaces the linear-Gaussian
+# G2d moment match (eddington_shifted_host_mass) with the TRUE per-galaxy host-mass
+# prior: the Reines & Volonteri (2015) lognormal measurement error x the Babak
+# et al. (2017) R_eff population weight, TRUNCATED + renormalised on the physical
+# EMRI mass window [M_MIN, M_MAX] (the ParameterSpace.M bound; asserted against it
+# in the kernel tests to guard drift). Two quadratures:
+#   * Gauss-Hermite (weight e^{-t^2}) resolves the NARROW GW M_z peak in the
+#     numerator mass-marginal -- placing nodes ON the peak, the exact fix for the
+#     fixed_quad(50) aliasing that FALSIFIED volume_trunc (results/volume_trunc_ab_*).
+#   * Gauss-Legendre in ln M integrates the SMOOTH normalisation Z_M and the
+#     selection-denominator inner-M integral over the wide window.
+_MASS_TRUNC_M_MIN: float = 1.0e4
+_MASS_TRUNC_M_MAX: float = 1.0e7
+_MASS_TRUNC_SIGMA_LNM_FLOOR: float = 1.0e-6
+_MASS_TRUNC_GH_ORDER: int = 24
+_MASS_TRUNC_GL_ORDER: int = 64
+_MT_GH_NODES, _MT_GH_WEIGHTS = roots_hermite(_MASS_TRUNC_GH_ORDER)  # int e^{-t^2} g(t) dt
+_MT_GL_NODES, _MT_GL_WEIGHTS = roots_legendre(_MASS_TRUNC_GL_ORDER)  # [-1, 1]
 
 # Normalisation constant of the standard normal pdf; same value scipy.stats.norm
 # divides by (scipy.stats._continuous_distns._norm_pdf_C).
@@ -207,6 +227,234 @@ def eddington_shifted_host_mass(host_M: float, host_M_error: float) -> float:
     if not math.isfinite(Z) or Z <= 0.0:
         return host_M
     return float(np.trapezoid(M_grid * w, M_grid) / Z)
+
+
+def _mass_trunc_lnM_weight(
+    M: npt.NDArray[np.float64],
+    host_M: float | npt.NDArray[np.float64],
+    sigma_lnM: float | npt.NDArray[np.float64],
+) -> npt.NDArray[np.float64]:
+    r"""Unnormalised truncated host-mass prior as a density w.r.t. ``d ln M``.
+
+    Returns ``LN(M; M_g, sigma_lnM) * R_eff(M) * M`` (the trailing ``* M`` converts
+    the density in ``M`` into a density in ``ln M``, so ``Z_M = int w d ln M``):
+
+    .. math::
+
+        w(\ln M) = \frac{R_\mathrm{eff}(M)}{\sigma_{\ln M}\sqrt{2\pi}}
+                   \exp\!\Big[-\tfrac12\big(\tfrac{\ln M-\ln M_g}{\sigma_{\ln M}}\big)^2\Big].
+
+    The caller applies the ``[M_MIN, M_MAX]`` truncation mask (this function does
+    not). ``M``, ``host_M``, ``sigma_lnM`` broadcast against each other.
+
+    References:
+        Reines & Volonteri (2015), arXiv:1508.06274, Sec. 4.1 (0.24 dex lognormal
+        scatter -> Gaussian in ln M_BH); Babak et al. (2017), arXiv:1703.09722
+        (per-MBH R_eff population weight).
+    """
+    ln_ratio = (np.log(M) - np.log(host_M)) / sigma_lnM
+    weight: npt.NDArray[np.float64] = (
+        np.exp(-0.5 * ln_ratio * ln_ratio)
+        * np.asarray(R_eff_per_mbh(M), dtype=np.float64)
+        / (sigma_lnM * np.sqrt(2.0 * np.pi))
+    )
+    return weight
+
+
+def _mass_trunc_sigma_lnM(
+    host_M: float | npt.NDArray[np.float64], host_M_error: float | npt.NDArray[np.float64]
+) -> npt.NDArray[np.float64]:
+    r"""Recover the lognormal width ``sigma_lnM = host_M_error / host_M``.
+
+    The catalogue stores the *linear* 1-sigma ``host_M_error = M_g * sigma_lnM``
+    (``handler._empiric_stellar_mass_to_BH_mass_relation``), i.e. the first-order
+    linearisation of the Reines & Volonteri lognormal error. Dividing recovers the
+    underlying log-space width the ``mass_trunc`` kernel uses. Floored at
+    ``_MASS_TRUNC_SIGMA_LNM_FLOOR`` so ``sigma -> 0`` yields the spec-mass limit.
+    """
+    return np.maximum(
+        np.asarray(host_M_error, dtype=np.float64) / np.asarray(host_M, dtype=np.float64),
+        _MASS_TRUNC_SIGMA_LNM_FLOOR,
+    )
+
+
+_MASS_TRUNC_LNM_HALF_WIDTH: float = 10.0  # +/- N sigma_lnM lnM integration window
+
+
+def _mass_trunc_lnM_window(
+    host_M: float | npt.NDArray[np.float64], sigma_lnM: float | npt.NDArray[np.float64]
+) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
+    r"""Per-host ``[ln_lo, ln_hi]`` integration window: the prior peak +/- N sigma_lnM,
+    clipped to ``[ln M_MIN, ln M_MAX]``.
+
+    The truncated lognormal x R_eff prior is negligible (``exp(-N^2/2)``) outside
+    ``ln M_g +/- N sigma_lnM``, so centring the ``ln M`` quadrature on the peak (i)
+    respects the ``[M_MIN, M_MAX]`` truncation and (ii) RESOLVES the peak for ANY
+    ``sigma_lnM`` -- a full-window Gauss-Legendre would miss a narrow spike (the
+    same peak-aliasing that falsified volume_trunc). The centre is clipped so the
+    window stays valid even for a host mass at/beyond a bound. Returns two arrays
+    broadcasting to the shape of ``host_M`` / ``sigma_lnM``.
+    """
+    ln_min = math.log(_MASS_TRUNC_M_MIN)
+    ln_max = math.log(_MASS_TRUNC_M_MAX)
+    ln_mg = np.clip(np.log(np.asarray(host_M, dtype=np.float64)), ln_min, ln_max)
+    half_w = _MASS_TRUNC_LNM_HALF_WIDTH * np.asarray(sigma_lnM, dtype=np.float64)
+    return np.maximum(ln_min, ln_mg - half_w), np.minimum(ln_max, ln_mg + half_w)
+
+
+def _mass_trunc_log_normalisation(
+    host_M: float | npt.NDArray[np.float64], sigma_lnM: float | npt.NDArray[np.float64]
+) -> npt.NDArray[np.float64]:
+    r"""Per-host normalisation ``Z_M = int LN(M;M_g,sigma) R_eff(M) dM`` (truncated).
+
+    Gauss-Legendre in ``u = ln M`` over the peak-aware window
+    (:func:`_mass_trunc_lnM_window`). ``host_M`` / ``sigma_lnM`` are scalar or shape
+    ``(n,)``; the result carries a trailing size matching their broadcast shape
+    (a length-1 array for scalar input -- callers take ``.item()``).
+    """
+    ln_lo, ln_hi = _mass_trunc_lnM_window(host_M, sigma_lnM)  # (...,)
+    half = 0.5 * (ln_hi - ln_lo)
+    mid = 0.5 * (ln_hi + ln_lo)
+    M_nodes = np.exp(mid[..., None] + half[..., None] * _MT_GL_NODES)  # (..., G)
+    hM = np.asarray(host_M, dtype=np.float64)[..., None]  # (..., 1)
+    sg = np.asarray(sigma_lnM, dtype=np.float64)[..., None]  # (..., 1)
+    w = _mass_trunc_lnM_weight(M_nodes, hM, sg)  # (..., G)
+    z_m: npt.NDArray[np.float64] = half * np.sum(w * _MT_GL_WEIGHTS, axis=-1)  # (...,)
+    return z_m
+
+
+def _mass_trunc_mz_integral(
+    mu_cond: npt.NDArray[np.float64],
+    sigma_cond: float,
+    one_plus_z: npt.NDArray[np.float64],
+    det_M: float,
+    host_M: float | npt.NDArray[np.float64],
+    sigma_lnM: float | npt.NDArray[np.float64],
+    Z_M: float | npt.NDArray[np.float64],
+) -> npt.NDArray[np.float64]:
+    r"""Mass-marginal factor of the with-BH-mass numerator, ``mass_trunc`` kernel.
+
+    Replaces the analytic Gaussian-product ``mz_integral`` (linear-Gaussian mass
+    prior) with
+
+    .. math::
+
+        \int \mathcal{N}\big(a;\mu_\mathrm{cond},\sigma_\mathrm{cond}\big)\,p_M(M)\,dM,
+        \qquad a = M(1+z)/M_\mathrm{det},
+
+    where ``p_M`` is the truncated lognormal x R_eff prior. The GW factor is a sharp
+    Gaussian in ``a``; substituting ``a = mu_cond + sqrt(2) sigma_cond t`` gives the
+    exact Gauss-Hermite form (A&S 25.4.46) -- nodes land ON the GW peak, so no
+    aliasing over the wide mass window:
+
+    .. math::
+
+        \mathrm{mz} = \frac{1}{\sqrt\pi}\sum_k w_k^\mathrm{GH}\,p_M(M_k)\,
+                      \frac{M_\mathrm{det}}{1+z},\quad
+        M_k = \big(\mu_\mathrm{cond}+\sqrt2\,\sigma_\mathrm{cond}\,t_k\big)\frac{M_\mathrm{det}}{1+z}.
+
+    ``mu_cond`` / ``one_plus_z`` are the per-z-node arrays ``(..., K)``; ``host_M`` /
+    ``sigma_lnM`` / ``Z_M`` are scalar (scalar path) or ``(n,)`` (batch, leading
+    axis = ``mu_cond.shape[:-1]``). Returns ``(..., K)``.
+    """
+    a = mu_cond[..., None] + np.sqrt(2.0) * sigma_cond * _MT_GH_NODES  # (..., K, G)
+    opz = one_plus_z[..., None]  # (..., K, 1)
+    M = a * det_M / opz  # (..., K, G) rest-frame mass at each GH node
+    inside = (M >= _MASS_TRUNC_M_MIN) & (M <= _MASS_TRUNC_M_MAX)
+    M_safe = np.where(inside, M, _MASS_TRUNC_M_MIN)  # keep logs finite; masked below
+    # Host params -> (..., 1, 1) to broadcast against M of shape (..., K, G).
+    hM = np.asarray(host_M, dtype=np.float64).reshape(np.shape(host_M) + (1, 1))
+    sg = np.asarray(sigma_lnM, dtype=np.float64).reshape(np.shape(sigma_lnM) + (1, 1))
+    ZM = np.asarray(Z_M, dtype=np.float64).reshape(np.shape(Z_M) + (1, 1))
+    # p_M(M) as a density in M: LN*R_eff/Z_M = (lnM-weight)/(M Z_M); 0 outside window.
+    p_M = np.where(inside, _mass_trunc_lnM_weight(M_safe, hM, sg) / (M_safe * ZM), 0.0)
+    p_a = p_M * det_M / opz  # push forward to the a coordinate (|dM/da|)
+    mz: npt.NDArray[np.float64] = (p_a @ _MT_GH_WEIGHTS) / np.sqrt(np.pi)  # (..., K)
+    return mz
+
+
+def _mass_trunc_denominator_inner_m_integral(
+    z: npt.NDArray[np.float64],
+    detection_probability: Any,
+    host_phiS: float,
+    host_qS: float,
+    host_M: float,
+    sigma_lnM: float,
+    Z_M: float,
+    h: float,
+) -> npt.NDArray[np.float64]:
+    r"""Inner mass integral of the with-BH-mass selection denominator, ``mass_trunc``.
+
+    Returns, per redshift ``z_j``,
+    ``g(z) = int p_det(d_L(z), M(1+z)) p_M(M) dM`` with the truncated lognormal x
+    R_eff prior. Gauss-Legendre in ``ln M`` over the peak-aware window
+    (:func:`_mass_trunc_lnM_window`, the SAME support as ``Z_M``); the erf-sum
+    closed form (Gaussian-prior only) does not apply. p_det is evaluated at
+    ``(d_L(z), M(1+z))`` via the same interpolator the erf-sum path uses.
+    """
+    z_arr = np.atleast_1d(np.asarray(z, dtype=np.float64))  # (n_z,)
+    ln_lo, ln_hi = _mass_trunc_lnM_window(host_M, sigma_lnM)  # scalars
+    half = 0.5 * (ln_hi - ln_lo)
+    mid = 0.5 * (ln_hi + ln_lo)
+    M_nodes = np.exp(mid + half * _MT_GL_NODES)  # (G,)
+    n_z, n_g = z_arr.size, M_nodes.size
+    d_L = dist_vectorized(z_arr, h=h)  # (n_z,)
+    m_z = M_nodes[None, :] * (1.0 + z_arr)[:, None]  # (n_z, G) detector-frame mass
+    p = np.asarray(
+        detection_probability.detection_probability_with_bh_mass_interpolated(
+            np.repeat(d_L, n_g),
+            m_z.reshape(-1),
+            np.full(n_z * n_g, host_phiS),
+            np.full(n_z * n_g, host_qS),
+            h=h,
+        ),
+        dtype=np.float64,
+    ).reshape(n_z, n_g)
+    w = _mass_trunc_lnM_weight(M_nodes, host_M, sigma_lnM) / Z_M  # (G,) normalised p_M dlnM
+    inner_m: npt.NDArray[np.float64] = half * ((p * w[None, :]) @ _MT_GL_WEIGHTS)  # (n_z,)
+    return inner_m
+
+
+def _mass_trunc_denominator_inner_m_integral_batch(
+    z: npt.NDArray[np.float64],
+    detection_probability: Any,
+    host_phiS: npt.NDArray[np.float64],
+    host_qS: npt.NDArray[np.float64],
+    host_M: npt.NDArray[np.float64],
+    sigma_lnM: npt.NDArray[np.float64],
+    Z_M: npt.NDArray[np.float64],
+    h: float,
+) -> npt.NDArray[np.float64]:
+    """Host-batched twin of :func:`_mass_trunc_denominator_inner_m_integral`.
+
+    ``z`` has shape ``(n, n_z)``; host parameters have shape ``(n,)``. Row ``i`` is
+    bit-identical to the scalar function called with ``z[i]`` and host ``i``'s
+    parameters -- one ``p_det`` interpolator call covers all ``n * n_z * G`` points.
+    Per-host peak-aware ``ln M`` window (same as ``Z_M``).
+    """
+    n, n_z = z.shape
+    ln_lo, ln_hi = _mass_trunc_lnM_window(host_M, sigma_lnM)  # (n,), (n,)
+    half = 0.5 * (ln_hi - ln_lo)  # (n,)
+    mid = 0.5 * (ln_hi + ln_lo)  # (n,)
+    M_nodes = np.exp(mid[:, None] + half[:, None] * _MT_GL_NODES)  # (n, G)
+    n_g = M_nodes.shape[1]
+    d_L = dist_vectorized(z.reshape(-1), h=h)  # (n*n_z,)
+    m_z = M_nodes[:, None, :] * (1.0 + z[:, :, None])  # (n, n_z, G)
+    p = np.asarray(
+        detection_probability.detection_probability_with_bh_mass_interpolated(
+            np.repeat(d_L, n_g),
+            m_z.reshape(-1),
+            np.repeat(host_phiS, n_z * n_g),
+            np.repeat(host_qS, n_z * n_g),
+            h=h,
+        ),
+        dtype=np.float64,
+    ).reshape(n, n_z, n_g)
+    w = (
+        _mass_trunc_lnM_weight(M_nodes, host_M[:, None], sigma_lnM[:, None]) / Z_M[:, None]
+    )  # (n, G) normalised p_M dlnM
+    inner_m: npt.NDArray[np.float64] = half[:, None] * ((p * w[:, None, :]) @ _MT_GL_WEIGHTS)
+    return inner_m  # (n, n_z)
 
 
 def weighted_ratio_of_sums(
@@ -1005,12 +1253,21 @@ class BayesianStatistics:
         #                     n=50 aliases the narrow GW peak over the wide host window AND the exact
         #                     numerator tilts high. Kept as a diagnostic + reproducible record.
         #                     results/volume_trunc_ab_20260712/FINDING.md; scoping §7b (Gray A.10 + G2b §1.4).
+        #   "mass_trunc"   -> EXPERIMENTAL (EXP-45, 2026-07-13): the volume_deconv host-z kernel PLUS
+        #                     the 2D (with-BH-mass) host-mass prior replaced by the truncated
+        #                     lognormal x R_eff prior on [M_MIN, M_MAX] (Gauss-Hermite numerator,
+        #                     Gauss-Legendre-in-lnM denominator), superseding the linear-Gaussian G2d
+        #                     moment match. Tests the host-mass-kernel truncation as the 2D +0.025
+        #                     residual driver (results/mass_kernel_truncation_20260713/FINDINGS.md).
+        #                     1D channel is byte-identical to volume_deconv (no mass term). Gated
+        #                     behind the flag until the seed600 A/B; volume_deconv stays the default.
         if normalization_mode not in (
             "global",
             "local_ratio",
             "volume_deconv",
             "volume_global",
             "volume_trunc",
+            "mass_trunc",
         ):
             raise ValueError(f"unknown normalization_mode: {normalization_mode!r}")
         if normalization_mode == "global":
@@ -2232,6 +2489,12 @@ def single_host_likelihood(
     # numerator also tilts high). Not for production. results/volume_trunc_ab_20260712/.
     _use_volume_trunc = normalization_mode == "volume_trunc"
 
+    # [PHYSICS] mass_trunc (EXP-45, 2026-07-13): truncated lognormal x R_eff host-mass
+    # prior in the 2D channel (see module-level _MASS_TRUNC_* + _mass_trunc_* helpers).
+    # Shares the volume_deconv host-z kernel; differs ONLY in the with-BH-mass
+    # mass-marginal (numerator + selection denominator). No effect without BH mass.
+    _use_mass_trunc = normalization_mode == "mass_trunc"
+
     # [PHYSICS] Issue #16 (user decision 2026-07-03): marginalize the residual
     # host peculiar-velocity dispersion into the host-z kernel.
     #   sigma_z_pv = (1 + z_g) * sigma_v / c
@@ -2287,10 +2550,13 @@ def single_host_likelihood(
     # with the legacy global denominator selected in p_Di.
     # "volume_trunc" (shallow-venue Part 1) shares this volume-kernel weight and
     # differs only in the numerator integration support + z-floor (see above).
+    # "mass_trunc" shares the SAME volume-deconvolved host-z kernel (only the
+    # with-BH-mass mass-marginal differs), so it joins this set.
     _use_volume_deconv = normalization_mode in (
         "volume_deconv",
         "volume_global",
         "volume_trunc",
+        "mass_trunc",
     )
     _z_prior_norm = 1.0
     if _use_volume_deconv:
@@ -2448,9 +2714,19 @@ def single_host_likelihood(
         # Empirical impact at GLADE sigma_M: 2D-channel mean shifts -0.020 in h
         # (.planning/gate/G7row9_eddington_m_impact.json). Derivation + residual
         # control: docs/derivations/G2d_host_mass_rate_prior.md.
+        # mass_trunc computes the FULL truncated lognormal x R_eff mass marginal, so
+        # it needs neither the G2d point shift nor the linear sigma_M; every other
+        # calibrated mode uses the moment-matched effective mass.
         _host_M_eff = (
-            eddington_shifted_host_mass(host_M, host_M_error) if _use_volume_deconv else host_M
+            eddington_shifted_host_mass(host_M, host_M_error)
+            if (_use_volume_deconv and not _use_mass_trunc)
+            else host_M
         )
+        if _use_mass_trunc:
+            # sigma_lnM (recovered from the stored linear error) + per-host Z_M for
+            # the truncated lognormal x R_eff prior (see _mass_trunc_* helpers).
+            _sigma_lnM = float(_mass_trunc_sigma_lnM(host_M, host_M_error))
+            _Z_M = _mass_trunc_log_normalisation(host_M, _sigma_lnM).item()
 
         # Pre-computed conditional distribution parameters for analytic M_z marginalization
         # Eqs. (14.23)-(14.28) in derivations/dark_siren_likelihood.md
@@ -2484,21 +2760,28 @@ def single_host_likelihood(
             x_obs = np.vstack([phi, theta, luminosity_distance_fraction]).T  # (N, 3)
             mu_cond = _mu_obs_4d[3] + (x_obs - _mu_obs_4d[:3]) @ _proj  # (N,)
 
-            # Galaxy mass in M_z_frac coordinates: M_z_frac = M_gal * (1+z) / M_z_det
-            # Eq. (14.22) in derivations/dark_siren_likelihood.md
-            # NOTE: (1+z) here is CORRECT -- it is the coordinate transform, not a Jacobian
-            # _host_M_eff carries the G2d Eddington-in-M rate-prior shift (see above).
-            mu_gal_frac = _host_M_eff * (1 + z) / _det_M
-            sigma_gal_frac = host_M_error * (1 + z) / _det_M
+            if _use_mass_trunc:
+                # Truncated lognormal x R_eff mass marginal via Gauss-Hermite on the
+                # narrow GW M_z peak (EXP-45). Supersedes the analytic Gaussian product.
+                mz_integral = _mass_trunc_mz_integral(
+                    mu_cond, math.sqrt(_sigma2_cond), 1.0 + z, _det_M, host_M, _sigma_lnM, _Z_M
+                )
+            else:
+                # Galaxy mass in M_z_frac coordinates: M_z_frac = M_gal * (1+z) / M_z_det
+                # Eq. (14.22) in derivations/dark_siren_likelihood.md
+                # NOTE: (1+z) here is CORRECT -- it is the coordinate transform, not a Jacobian
+                # _host_M_eff carries the G2d Eddington-in-M rate-prior shift (see above).
+                mu_gal_frac = _host_M_eff * (1 + z) / _det_M
+                sigma_gal_frac = host_M_error * (1 + z) / _det_M
 
-            # Analytic Gaussian product integral:
-            # ∫ N(x; μ_cond, σ²_cond) · N(x; μ_gal, σ²_gal) dx
-            #   = N(μ_cond; μ_gal, σ²_cond + σ²_gal)
-            # Eq. (14.31) in derivations/dark_siren_likelihood.md
-            sigma2_sum = _sigma2_cond + sigma_gal_frac**2
-            mz_integral = np.exp(-0.5 * (mu_cond - mu_gal_frac) ** 2 / sigma2_sum) / np.sqrt(
-                2 * np.pi * sigma2_sum
-            )
+                # Analytic Gaussian product integral:
+                # ∫ N(x; μ_cond, σ²_cond) · N(x; μ_gal, σ²_gal) dx
+                #   = N(μ_cond; μ_gal, σ²_cond + σ²_gal)
+                # Eq. (14.31) in derivations/dark_siren_likelihood.md
+                sigma2_sum = _sigma2_cond + sigma_gal_frac**2
+                mz_integral = np.exp(-0.5 * (mu_cond - mu_gal_frac) ** 2 / sigma2_sum) / np.sqrt(
+                    2 * np.pi * sigma2_sum
+                )
 
             # Eq. (A.10) in Gray et al. (2020): GW likelihood x mass-marginal x
             # galaxy z-prior; p_det removed from the numerator (denominator-only).
@@ -2529,9 +2812,17 @@ def single_host_likelihood(
         # this window (Z_g), so D_g is a proper window-averaged p_det in [0, 1].
         # Owen (1980) first-moment identity; Gray et al. (2020), arXiv:1908.06050 Eq. A.19.
         def denominator_integrant_with_bh_mass(z: npt.NDArray[np.float64]) -> Any:
-            inner_m = _bh_mass_denominator_inner_m_integral(
-                z, detection_probability, host_phiS, host_qS, _host_M_eff, host_M_error, h
-            )
+            if _use_mass_trunc:
+                # Same truncated lognormal x R_eff prior as the numerator, so N_g and
+                # D_g share ONE mass prior (Gauss-Legendre in ln M; the erf-sum closed
+                # form is Gaussian-prior-only and does not apply).
+                inner_m = _mass_trunc_denominator_inner_m_integral(
+                    z, detection_probability, host_phiS, host_qS, host_M, _sigma_lnM, _Z_M, h
+                )
+            else:
+                inner_m = _bh_mass_denominator_inner_m_integral(
+                    z, detection_probability, host_phiS, host_qS, _host_M_eff, host_M_error, h
+                )
             return inner_m * galaxy_redshift_prior_pdf(z)
 
         single_host_likelihood_denominator_with_bh_mass = fixed_quad(
@@ -2640,12 +2931,20 @@ def single_host_likelihood_batch(
     # z >= 0 clamp: same G2b rationale as the scalar kernel. volume_trunc floors at
     # exactly 0 (w_pop ∝ z² → 0 there) instead of 1e-6.
     _use_volume_trunc = normalization_mode == "volume_trunc"
+    # mass_trunc (EXP-45): truncated lognormal x R_eff host-mass prior in the 2D
+    # channel; shares the volume_deconv host-z kernel (see scalar path).
+    _use_mass_trunc = normalization_mode == "mass_trunc"
     _z_lower_floor = 0.0 if _use_volume_trunc else 1e-6
     den_lo = np.maximum(
         host_z - integration_limit_sigma_multiplier * host_z_error_eff, _z_lower_floor
     )
 
-    _use_volume_deconv = normalization_mode in ("volume_deconv", "volume_global", "volume_trunc")
+    _use_volume_deconv = normalization_mode in (
+        "volume_deconv",
+        "volume_global",
+        "volume_trunc",
+        "mass_trunc",
+    )
 
     # Per-host denominator quadrature nodes (fixed_quad affine map, n=50).
     y_den = _batched_gl_nodes(den_lo, den_hi, _GL_NODES_50)  # (n, 50)
@@ -2810,7 +3109,9 @@ def single_host_likelihood_batch(
     # --- with-BH-mass channel ---
     # G2d Eddington-in-M shift: scalar helper kept per host (data-dependent
     # early returns/clamps; negligible cost) — bit-identical to the scalar path.
-    if _use_volume_deconv:
+    # mass_trunc uses neither the point shift nor the linear sigma_M (it integrates
+    # the full truncated lognormal x R_eff prior), so skip the per-host quadrature.
+    if _use_volume_deconv and not _use_mass_trunc:
         host_M_eff = np.array(
             [
                 eddington_shifted_host_mass(float(m), float(dm_))
@@ -2820,6 +3121,12 @@ def single_host_likelihood_batch(
         )
     else:
         host_M_eff = np.asarray(host_M, dtype=np.float64)
+
+    if _use_mass_trunc:
+        # Per-host sigma_lnM (recovered from the stored linear error) and Z_M for the
+        # truncated lognormal x R_eff prior; (n,)-vectorised, bit-identical to scalar.
+        sigma_lnM = _mass_trunc_sigma_lnM(host_M, host_M_error)  # (n,)
+        Z_M = _mass_trunc_log_normalisation(host_M, sigma_lnM)  # (n,)
 
     _sigma2_cond = float(sigma2_cond_arr[slot])
     _proj = proj_arr[slot]
@@ -2832,14 +3139,21 @@ def single_host_likelihood_batch(
     # (1 + z) mass-fraction coordinate transform at the numerator nodes y_num_nodes
     # (n, 50): broadcast of the shared window for the default modes, the per-host
     # galaxy window for volume_trunc.
-    mu_gal_frac = host_M_eff[:, None] * (1 + y_num_nodes) / _det_M
-    sigma_gal_frac = host_M_error[:, None] * (1 + y_num_nodes) / _det_M
+    if _use_mass_trunc:
+        # Truncated lognormal x R_eff mass marginal via Gauss-Hermite on the narrow
+        # GW M_z peak (EXP-45); (n, 50) matches the analytic branch shape.
+        mz_integral = _mass_trunc_mz_integral(
+            mu_cond, math.sqrt(_sigma2_cond), 1.0 + y_num_nodes, _det_M, host_M, sigma_lnM, Z_M
+        )
+    else:
+        mu_gal_frac = host_M_eff[:, None] * (1 + y_num_nodes) / _det_M
+        sigma_gal_frac = host_M_error[:, None] * (1 + y_num_nodes) / _det_M
 
-    # Analytic Gaussian product integral, Eq. (14.31).
-    sigma2_sum = _sigma2_cond + sigma_gal_frac**2
-    mz_integral = np.exp(-0.5 * (mu_cond - mu_gal_frac) ** 2 / sigma2_sum) / np.sqrt(
-        2 * np.pi * sigma2_sum
-    )
+        # Analytic Gaussian product integral, Eq. (14.31).
+        sigma2_sum = _sigma2_cond + sigma_gal_frac**2
+        mz_integral = np.exp(-0.5 * (mu_cond - mu_gal_frac) ** 2 / sigma2_sum) / np.sqrt(
+            2 * np.pi * sigma2_sum
+        )
 
     numerator_with_bh_mass = _batched_gl_reduce(
         num_reduce_lo,
@@ -2850,9 +3164,16 @@ def single_host_likelihood_batch(
 
     # Semi-analytic denominator (glz64): batched erf-sum inner-M + GL outer-z.
     y_bh = _batched_gl_nodes(den_lo, den_hi, _GL_NODES_64)  # (n, 64)
-    inner_m = _bh_mass_denominator_inner_m_integral_batch(
-        y_bh, detection_probability, host_phiS, host_qS, host_M_eff, host_M_error, h
-    )
+    if _use_mass_trunc:
+        # Same truncated lognormal x R_eff prior as the numerator (GL in ln M); shares
+        # the mass prior between N_g and D_g. Row i bit-identical to the scalar path.
+        inner_m = _mass_trunc_denominator_inner_m_integral_batch(
+            y_bh, detection_probability, host_phiS, host_qS, host_M, sigma_lnM, Z_M, h
+        )
+    else:
+        inner_m = _bh_mass_denominator_inner_m_integral_batch(
+            y_bh, detection_probability, host_phiS, host_qS, host_M_eff, host_M_error, h
+        )
     w_pop_bh: npt.NDArray[np.float64] | None = None
     if _use_volume_deconv:
         y_bh_flat = y_bh.reshape(-1)

@@ -7,6 +7,32 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Research (host-mass kernel — bias investigation)
+- **`mass_trunc` host-mass kernel (EXP-45) — implemented, numerically sound, and
+  EXONERATED as the 2D bias driver (experimental, not for production).** New isolated
+  `normalization_mode="mass_trunc"` [PHYSICS]: the 2D (with-BH-mass) channel's host-mass
+  prior replaced from the linear-Gaussian G2d moment match (`eddington_shifted_host_mass`)
+  to the **truncated lognormal × R_eff prior** on `[M_MIN, M_MAX]` — the true Reines &
+  Volonteri (2015) lognormal error × the Babak et al. (2017) R_eff population weight,
+  renormalised on the physical EMRI mass window. Numerator uses **Gauss-Hermite** on the
+  narrow GW M_z peak (the peak-aware fix for the `fixed_quad` aliasing that falsified
+  `volume_trunc`); selection denominator uses **Gauss-Legendre in ln M** over a per-host
+  peak-aware window (the erf-sum closed form is Gaussian-prior-only). The 1D channel and
+  the `volume_deconv`/`local_ratio`/`volume_trunc` paths are **byte-identical** (kernel-parity
+  golden regenerated additions-only; `single_host_likelihood_batch` bit-identical to the
+  scalar kernel on all 9 new `mass_trunc` cases; limiting cases in
+  `test_mass_trunc_kernel.py`; full CPU suite green). The decisive seed600 494-event
+  shallow-venue A/B (`scripts/mass_trunc_ab.py`) found **Δ2D mean = +0.0029** (small, WRONG
+  sign) and **Δ1D = 0 exactly** → the mass-kernel truncation is NOT the 2D +0.025 residual
+  driver: the isolated single-host toy over-stated it by omitting the selection denominator,
+  which cancels the numerator shift in the full ratio-of-sums pipeline. The linear-Gaussian
+  G2d approximation is thereby empirically validated as adequate for the 2D channel (agrees
+  with the exact kernel to ~0.003 in H₀). Retained as an experimental/exonerated diagnostic
+  (not CLI-wired); `volume_deconv` stays the golden production default. Finding +
+  reproducible driver: `results/mass_trunc_ab_20260713/`; toy motivation:
+  `results/mass_kernel_truncation_20260713/`. Refs: Reines & Volonteri (2015) arXiv:1508.06274
+  §4.1; Babak et al. (2017) arXiv:1703.09722; Abramowitz & Stegun 25.4.46.
+
 ### Research (host-z kernel — bias investigation)
 - **`volume_trunc` host-z kernel (Part 1) — implemented and empirically FALSIFIED
   (experimental, not for production).** New isolated `normalization_mode="volume_trunc"`:
