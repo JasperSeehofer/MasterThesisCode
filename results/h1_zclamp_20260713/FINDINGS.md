@@ -36,24 +36,27 @@ correction is a *red herring* here: it is present in both clamp-on and clamp-off
 (same kernel, same truncated integration window `[Z_MIN, z_hi]`); only the generative
 clamp differs.
 
-## Production relevance (OPEN — the decisive question)
+## Production relevance — LARGELY SETTLED: the real catalogue is NOT clamped
 
-Whether production shares this bias depends on how real low-z photo-z behave near 0:
+Direct inspection of the reduced catalogue redshift column (2M rows, z<0.10 shell,
+n=871k) settles it:
 
-- The reduced catalogue redshift is **not hard-clamped**: min −0.000318, only 17 of
-  500k ≤ 0, 124 < 0.001. So the catalogue does not artificially pile low-z photo-z at
-  a boundary the way the harness clamp does.
-- BUT the shallow shell is 89.7% photometric with σ_z/z ~ 0.65 ([L8]); if those
-  photo-z were produced by a pipeline that floors negatives at 0 (common for photo-z
-  codes), production would carry the same censoring the harness models. If instead the
-  reported z are best-estimate spec-z-anchored or raw (allowing small negatives),
-  production is closer to the unbiased clamp-OFF case.
+- **No pileup / floor at 0.** The z histogram near 0 is smooth and monotonically
+  rising (counts across [0, 0.02] in 0.0025 steps: 1637, 4114, 5492, 5378, 6330,
+  7480, 9022, 12516). A hard floor would produce a spike at 0 — there is none
+  (`n(z==0)=0`, `n(z<0)=20`/2M, min −0.000318). The photo-z are effectively RAW /
+  uncensored, i.e. the harness **clamp-OFF** case — which is unbiased (−0.005).
+- Only **3.7%** of low-z hosts have `z < σ_z` (kernel crosses 0); σ_z/z median 0.218
+  over the full z<0.10 shell (`z_error` median 0.034, confirming the σ_z scale).
 
-**Next step to settle it:** inspect the actual low-z (z≲0.1) photometric hosts in the
-reduced catalogue — is there a pileup / hard floor near 0 in the photo-z (as opposed
-to the true-redshift) column, and does `z_error` reflect a censored distribution? That
-determines whether the H1 production fix (censored-measurement likelihood) is needed
-or moot.
+**Conclusion:** production does NOT reproduce the harness's generative clamp, so the
+harness's +0.030 shallow bias is **substantially a harness artifact**, not a faithful
+model of production's low-z behaviour. This **weakens [L8]'s attribution** of the
+seed600 +0.013 1D residual to the σ_z/z truncated-kernel effect, and suggests the
+**redshift half of the production kernel fix is likely largely unnecessary** (the
+censored-measurement issue bites only the ~3.7% boundary-crossing hosts, not the bulk).
+The seed600 +0.013 1D residual now needs a different explanation (or is closer to
+single-seed scatter than a shallow-truncation systematic) — reopened, campaign-gated.
 
 ## Relation to the mass channel (H2)
 
@@ -67,9 +70,11 @@ but not identical.
 
 ## Caveat
 
-This is the synthetic harness. It shows the harness's +0.030 is a clamp artifact and
-identifies the exact mechanism; it does NOT by itself prove production is or isn't
-biased — that needs the catalogue photo-z inspection above. If production's low-z
-photo-z are effectively censored, the seed600 +0.013 1D residual is (partly) this
-effect and the censored-measurement fix applies; if not, the shallow production bias
-may be smaller than [L8] implied.
+The clamp isolation is in the synthetic harness; the catalogue inspection is a
+distributional check, not an end-to-end production A/B. It establishes that the
+DOMINANT harness shallow mechanism (the generative clamp) is unrepresentative of the
+smooth real catalogue, so the +0.030 does not transfer to production wholesale. It
+does NOT prove production has exactly zero 1D shallow bias — a residual from the ~3.7%
+boundary-crossing hosts, or an unrelated effect, could remain. But it removes the
+main quantitative basis for a redshift-kernel production fix and reopens the seed600
++0.013 attribution. The mass-channel (H2) bias is independent of this and stands.
