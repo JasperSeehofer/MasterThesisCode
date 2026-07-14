@@ -206,3 +206,13 @@ residual is slightly LARGER than the measured +0.013. Consequences:
 - Every quoted number carries {CRB set, pool id+depth, catalogue version, code commit,
   normalization_mode} — no cross-era mixing.
 - DATA_INVENTORY: add seed600 Ω_m-era note + seed1000 combine/rail entry when this lands.
+- **NEGATIVE conclusions ("X is NOT the driver") are venue-scoped, not universal.** A
+  falsification/exoneration measured on ONE venue is provisional pending cross-venue
+  (campaign) confirmation. Two negatives so far — `volume_trunc` FALSIFIED (2026-07-12)
+  and `mass_trunc` EXONERATED (2026-07-13) — BOTH rest on the SAME seed600 494-event
+  shallow subsample; a shared venue idiosyncrasy would fool both. State the dataset in
+  the conclusion, and separate the CLEAN quantity (an A/B *delta*, same events both arms)
+  from any CROSS-VENUE extrapolation (e.g. "does not explain the full-venue +0.025" —
+  the A/Bs run on the SUBSAMPLE, 2D mean 0.768 / residual +0.038, not the full-venue
+  0.7546 / +0.025). Anti-repetition ledger: do NOT re-cite either exoneration as
+  universal; the definitive test is the campaign (D4/§4b).

@@ -100,11 +100,35 @@ level. Per the deep-bias ledger it stays **campaign-gated (D4)** — the definit
 test is the multi-seed campaign on the real (non-subsample) venue, not further
 single-venue kernel surgery.
 
-## Caveats
+## Caveats — dataset scope (read before citing the "exoneration")
 
-- One venue (seed600 shallow, 494-event subsample). The sign/magnitude of the
-  mass-kernel effect is venue-dependent; a deeper venue with a different host-mass /
-  photo-z leverage could differ. The *exoneration as the +0.025 driver* is specific
-  to this venue but is the venue where the residual lives.
-- `mass_trunc` also validated the toy's core claim in ISOLATION is real — it is the
-  pipeline coupling (denominator) that neutralises it, not an error in the toy.
+This A/B ran on **exactly one dataset**: the archived seed600 494-event shallow-venue
+subsample (CRBs `~/data-backups/seed600_local_derail_20260702/crux_ws`, backup
+injection pool 81 CSVs, reduced GLADE+ catalogue, code
+`physics/zero-host-completion-fallback`, modes `volume_deconv` / `mass_trunc`). The
+conclusion is scoped to it. Specifically:
+
+- **What is measured cleanly and is dataset-robust:** the *kernel delta*
+  `Δ2D_mean = +0.0029` and `Δ1D = 0` (same events, same everything, only the mass
+  kernel changes) — this is a controlled A/B, so the delta is trustworthy on THIS venue.
+- **What is a cross-venue extrapolation (weaker):** "mass_trunc does not explain the
+  2D +0.025 residual." The A/B is on the **494-event SUBSAMPLE** whose 2D mean is 0.768
+  (residual ≈ +0.038 vs 0.73); the **+0.025** figure is the **FULL-venue** number
+  (2D mean 0.7546, [L9]/[L-B]) — a *different* dataset the A/B never ran. The mass
+  kernel moves the subsample by only +0.003, so it is implausible it explains +0.025
+  on the full venue either, but that step is an inference, not a direct measurement.
+- **Shared-venue risk (both exonerations):** `volume_trunc` (falsified) and `mass_trunc`
+  (exonerated) were BOTH tested only on this one seed600 shallow subsample. A shared
+  idiosyncrasy of this venue would fool both identically. Neither has cross-venue
+  confirmation. Per §5 of the plan of record, absolute bias conclusions require the
+  Ω_m-consistent campaign seeds — this venue is **A/B-only**.
+- **The real confirmation is campaign-gated (D4).** Treat this as: "on the venue where
+  the residual is studied, the mass-kernel truncation is not the lever, and the sign
+  is wrong" — provisional pending the multi-seed campaign, not a universal fact.
+
+Additional notes:
+- Venue-dependence: the mass-kernel effect scales with the host-mass and photo-z
+  leverage; a deeper venue could differ in magnitude (the sign puzzle is a full-pipeline
+  cancellation, so a large flip is unlikely but untested).
+- `mass_trunc` also confirms the toy's core claim IS real in ISOLATION — it is the
+  pipeline coupling (selection denominator) that neutralises it, not an error in the toy.
