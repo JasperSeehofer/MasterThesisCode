@@ -57,3 +57,7 @@ cluster/vpn.sh
 .claude/agents/
 .commission*.yaml
 .cartographer-notes.md
+
+# Internal notes (kept local, not part of the public docs set)
+docs/coauthor_meeting_*.md
+docs/reviews/
