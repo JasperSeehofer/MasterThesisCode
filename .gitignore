@@ -49,3 +49,11 @@ paper/*.synctex(busy)
 
 # Credentials
 cluster/vpn.sh
+
+# Internal agent/workflow state (kept local, out of the public tree)
+.planning/
+.gpd/
+.gardener-notes.md
+.claude/agents/
+.commission*.yaml
+.cartographer-notes.md
