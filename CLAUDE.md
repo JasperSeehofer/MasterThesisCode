@@ -2,6 +2,17 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## AI-assisted development — authorship & scientific ownership
+
+This repository is developed with AI coding assistance (Claude Code) under an explicit discipline:
+**the author (Jasper Seehofer) owns every scientific decision.** AI assistance is confined to
+implementation and is gated by the project's `physics-change` protocol — no formula, physical
+constant, waveform parameter, or model choice is changed without a documented derivation,
+dimensional analysis, limiting-case check, literature reference, and a regression test (see
+`.claude/skills/physics-change/` and `.claude/rules/physics-validation.md`). The physics, the
+interpretation, and the "why does this result appear" analysis are the author's; the tooling
+documented below encodes the guard-rails that keep the AI-assisted parts verifiable and honest.
+
 ## Environment Setup
 
 This project uses [uv](https://docs.astral.sh/uv/) for Python dependency management.
@@ -65,7 +76,8 @@ uv run ruff format master_thesis_code/        # format
 uv run mypy master_thesis_code/               # type check
 ```
 
-Pre-commit hooks run ruff and mypy automatically on every `git commit`.
+Pre-commit hooks run ruff, ruff-format, and mypy automatically on every `git commit` (whole-tree;
+there is **no** pytest hook — run `uv run pytest -m "not gpu and not slow"` manually before committing).
 To run all hooks on all files manually:
 ```bash
 uv run pre-commit run --all-files
