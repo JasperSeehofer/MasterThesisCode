@@ -1,1 +1,0 @@
-/home/jasper/.claude/agent-store/gsd-assumptions-analyzer.md
