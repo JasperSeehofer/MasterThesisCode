@@ -8,6 +8,11 @@ Dark siren inference of the Hubble constant H₀ from Extreme Mass Ratio Inspira
 gravitational wave events detected by the LISA space detector, using Bayesian analysis
 with the GLADE+ galaxy catalog.
 
+> **Development note.** This code is AI-*assisted* and human-*verified*. The author owns all
+> scientific decisions; every change to physics is gated by a documented verification protocol
+> (dimensional analysis, limiting-case checks, literature references, regression tests). See the
+> `physics-change` protocol in [`CLAUDE.md`](CLAUDE.md).
+
 ## Installation
 
 This project uses [uv](https://docs.astral.sh/uv/) for dependency management.
@@ -210,8 +215,6 @@ For the H₀ posterior bias investigation timeline, see [`docs/H0_BIAS_RESOLUTIO
 
 ## Citation
 
-If you use this code, please cite:
-
-> [Paper reference TBD — will be updated upon arXiv submission]
-
-See also [`CITATION.cff`](CITATION.cff) for machine-readable citation metadata.
+A manuscript is **in preparation (2026)**. Until the arXiv submission, please cite the repository
+directly via [`CITATION.cff`](CITATION.cff) (machine-readable citation metadata); the citation block
+here will be updated with the paper reference on submission.

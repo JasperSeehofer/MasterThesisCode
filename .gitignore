@@ -49,3 +49,16 @@ paper/*.synctex(busy)
 
 # Credentials
 cluster/vpn.sh
+
+# --- Internal agent/workflow state (kept local by design) ---
+# Durable project state is TRACKED in ROADMAP.md, STATE.md, and docs/ (a transparency virtue).
+# The noisy, ephemeral working state below is intentionally local-only; it syncs across the
+# author's machines via the same discipline, not by cluttering the public tree.
+.planning/
+.gpd/
+.gardener-notes.md
+.claude/agents/
+.commission*.yaml
+.cartographer-notes.md
+docs/coauthor_meeting_*.md
+docs/reviews/
