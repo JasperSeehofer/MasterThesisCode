@@ -508,6 +508,7 @@ def combine_posteriors(
     strategy: str,
     output_dir: str,
     d_h_table: dict[float, float] | None = None,
+    allow_shallow_pool: bool = False,
 ) -> dict[str, object]:
     """Combine per-event posteriors into a joint posterior.
 
@@ -570,6 +571,7 @@ def combine_posteriors(
             SimulationDetectionProbability,
         )
         from master_thesis_code.constants import (  # noqa: PLC0415
+            HOST_DRAW_Z_MAX,
             INJECTION_DATA_DIR,
             OMEGA_DE,
             OMEGA_M,
@@ -579,6 +581,13 @@ def combine_posteriors(
         detection_probability = SimulationDetectionProbability(
             injection_data_dir=INJECTION_DATA_DIR,
             snr_threshold=SNR_THRESHOLD,
+            # Same stale-pool depth gate as BayesianStatistics.evaluate — the
+            # combine path recomputes D(h) from the pool and had NO check at
+            # all (readiness sweep A2-STALE-POOL-GATE, 2026-07-03).
+            expected_z_max=HOST_DRAW_Z_MAX,
+            # Deliberate shallow-baseline re-evaluations (e.g. the frozen
+            # seed600 PV test) thread the same escape the evaluate path has.
+            allow_shallow_pool=allow_shallow_pool,
         )
         for h in h_values:
             detection_probability._get_or_build_grid(h)
@@ -588,6 +597,13 @@ def combine_posteriors(
             detection_probability_obj=detection_probability,
             Omega_m=OMEGA_M,
             Omega_DE=OMEGA_DE,
+            # Selection-domain cap (issue #30). This fast path has no
+            # cosmological model; HOST_DRAW_Z_MAX is the population depth,
+            # guarded <= Model1CrossCheck.max_redshift and equal to the
+            # evaluate-side cap at current constants (both 1.5; no-op today).
+            # The combine's D(h) is diagnostic-only (combine_log_space ignores
+            # log_D_h), so any residual cap difference cannot move the posterior.
+            z_max_cap=HOST_DRAW_Z_MAX,
         )
 
     D_h_array = np.array([d_h_table[h] for h in h_values], dtype=np.float64)

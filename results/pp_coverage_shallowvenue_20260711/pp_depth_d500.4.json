@@ -1,0 +1,78 @@
+{
+  "config": {
+    "n_realizations": 120,
+    "n_events": 250,
+    "sigma_z": 0.035,
+    "sigma_z_pv": 0.0,
+    "sigma_dl_frac": 0.05,
+    "injected_truths": [
+      0.62,
+      0.73,
+      0.84
+    ],
+    "seed": 20260701,
+    "kernel": "volume",
+    "h_min": 0.6,
+    "h_max": 0.86,
+    "h_step": 0.004,
+    "n_z_quad": 160,
+    "inference_wpop_tilt": 0.0,
+    "z_support": null,
+    "mixture_mode": "two_branch",
+    "membership_on_observed": false,
+    "pdet_in_numerator": false,
+    "sigma_dl_model_in_likelihood": false,
+    "d50_gpc": 0.4,
+    "w_pdet_gpc": 0.0648
+  },
+  "results": {
+    "0.6200": {
+      "h_true": 0.62,
+      "coverage": {
+        "50": 0.5,
+        "68": 0.7416666666666667,
+        "90": 0.9583333333333334
+      },
+      "rail_fraction": 0.18333333333333332,
+      "map_mean": 0.6216999999999999,
+      "map_std": 0.017478844355391477,
+      "map_median": 0.62,
+      "map_bias": 0.0016999999999999238,
+      "completion_fraction": 0.0,
+      "dlogL_dh_host_mean": -0.3518566588619862,
+      "dlogL_dh_completion_mean": null
+    },
+    "0.7300": {
+      "h_true": 0.73,
+      "coverage": {
+        "50": 0.49166666666666664,
+        "68": 0.6666666666666666,
+        "90": 0.9083333333333333
+      },
+      "rail_fraction": 0.0,
+      "map_mean": 0.7322333333333333,
+      "map_std": 0.022296761100113992,
+      "map_median": 0.7320000000000001,
+      "map_bias": 0.0022333333333333094,
+      "completion_fraction": 0.0,
+      "dlogL_dh_host_mean": 6.899204412425295,
+      "dlogL_dh_completion_mean": null
+    },
+    "0.8400": {
+      "h_true": 0.84,
+      "coverage": {
+        "50": 0.4,
+        "68": 0.6666666666666666,
+        "90": 0.9333333333333333
+      },
+      "rail_fraction": 0.16666666666666666,
+      "map_mean": 0.8360666666666668,
+      "map_std": 0.01837377357963127,
+      "map_median": 0.8360000000000002,
+      "map_bias": -0.003933333333333122,
+      "completion_fraction": 0.0,
+      "dlogL_dh_host_mean": -6.326485292345764,
+      "dlogL_dh_completion_mean": null
+    }
+  }
+}

@@ -213,3 +213,22 @@ def test_prescreen_bound_zero_redshift_limit() -> None:
     """Analytic limit: dist(0) = 0, so the bound vanishes at z_max = 0
     (up to float residue of the hypergeometric evaluation, ~1e-15 Gpc)."""
     assert luminosity_distance_prescreen_gpc(0.0, h=0.73) == pytest.approx(0.0, abs=1e-12)
+
+
+def test_dist_depth_anchor_old_host_draw() -> None:
+    """Pin d_L at the pre-#20 host-draw depth (z = 0.5, fiducial cosmology)."""
+    assert dist(0.5, h=0.73) == pytest.approx(2.7428208171409043, rel=1e-12)
+
+
+def test_dist_depth_anchor_campaign() -> None:
+    """Pin d_L at the Phase-2 campaign depth (z = 1.5): the population-reach
+    anchor for the pre-screen and the parameter-space d_L bound."""
+    assert dist(1.5, h=0.73) == pytest.approx(10.686188506544777, rel=1e-12)
+
+
+def test_dist_campaign_depth_exceeds_fiducial_cap_at_low_h() -> None:
+    """At closure-truth h = 0.67 the campaign-depth d_L (11.643 Gpc) exceeds
+    dist(1.5, h=0.73) = 10.686 Gpc — the parameter-space upper bound must
+    therefore be computed at the lowest campaign h, not the fiducial h."""
+    assert dist(1.5, h=0.67) == pytest.approx(11.643160611608486, rel=1e-12)
+    assert dist(1.5, h=0.67) > dist(1.5, h=0.73)

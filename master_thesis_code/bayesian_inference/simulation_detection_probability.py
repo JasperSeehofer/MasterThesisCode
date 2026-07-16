@@ -169,6 +169,8 @@ class SimulationDetectionProbability:
         estimator: _Estimator = _DEFAULT_ESTIMATOR,
         n_sky_bands: int = _DEFAULT_N_SKY_BANDS,
         _force_unit_weights: bool = False,
+        expected_z_max: float | None = None,
+        allow_shallow_pool: bool = False,
     ) -> None:
         self._dl_bins = dl_bins
         self._mass_bins = mass_bins
@@ -258,7 +260,7 @@ class SimulationDetectionProbability:
         # Validate required columns.  "qS" (ecliptic colatitude) is now required:
         # it carries the response-anisotropy (ecliptic-latitude) axis of p_det
         # (Change 1).  It is already written by every injection campaign
-        # (main.py:602), so this is a no-op for the canonical CSVs.
+        # (main.py:injection_campaign), so this is a no-op for the canonical CSVs.
         required_cols = {"z", "M", "SNR", "h_inj", "luminosity_distance", "qS"}
         missing = required_cols - set(self._pooled_df.columns)
         if missing:
@@ -275,6 +277,54 @@ class SimulationDetectionProbability:
         self._dl_raw: npt.NDArray[np.float64] = self._pooled_df[
             "luminosity_distance"
         ].values.astype(np.float64)
+
+        # ── Depth / provenance gates (issue #20 stale-pool hazard, 2026-07-03) ──
+        # Deepening the host draw (HOST_DRAW_Z_MAX -> 1.5) outdates every
+        # z_cut = 0.5-era pool: deep hosts reach d_L ~ 13 Gpc while a shallow
+        # pool's survival grid tops out below ~1 Gpc, so p_det = 0 for
+        # essentially all events — silently valid-looking garbage posteriors.
+        # The regenerated campaign writes the SAME filenames, so a partial
+        # rsync / leftover task file mixes eras undetectably by name alone.
+        # Production constructors pass expected_z_max=HOST_DRAW_Z_MAX;
+        # tests and synthetic pools leave it None (no depth gate).
+        if "z_cut" in self._pooled_df.columns:
+            n_missing = int(self._pooled_df["z_cut"].isna().sum())
+            z_cuts = sorted(float(z) for z in self._pooled_df["z_cut"].dropna().unique())
+            if n_missing > 0 or len(z_cuts) > 1:
+                msg = (
+                    f"Injection pool mixes provenance: z_cut values {z_cuts} plus "
+                    f"{n_missing} rows lacking the column (legacy files). Leftover "
+                    "task files from a retired pool or a partial rsync poison the "
+                    f"survival grid — purge/archive '{injection_data_dir}' and use "
+                    "one consistently-generated pool."
+                )
+                raise ValueError(msg)
+        else:
+            logger.warning(
+                "Injection pool has no provenance columns (z_cut/code_rev) — "
+                "pre-2026-07-03 writer. Depth is still gated below if "
+                "expected_z_max is set."
+            )
+        if "code_rev" in self._pooled_df.columns and self._pooled_df["code_rev"].nunique() > 1:
+            logger.warning(
+                "Injection pool spans %d code revisions (%s) — legitimate for "
+                "straggler resubmits after a non-physics fix, but verify none of "
+                "them changed SNR semantics.",
+                self._pooled_df["code_rev"].nunique(),
+                ", ".join(str(c)[:8] for c in self._pooled_df["code_rev"].unique()),
+            )
+        if expected_z_max is not None:
+            pool_z_max = float(np.max(self._z_arr)) if len(self._z_arr) else 0.0
+            if pool_z_max < 0.9 * float(expected_z_max) and not allow_shallow_pool:
+                msg = (
+                    f"Injection pool is SHALLOW: max injected z = {pool_z_max:.3f} "
+                    f"< 0.9 x expected_z_max = {0.9 * float(expected_z_max):.3f}. "
+                    "The survival grid cannot cover the host-draw volume "
+                    f"(HOST_DRAW_Z_MAX-era depth mismatch). Regenerate the pool at "
+                    f"the campaign depth, or pass allow_shallow_pool=True (e.g. for "
+                    "a deliberate re-evaluation of an archived shallow baseline)."
+                )
+                raise ValueError(msg)
 
         # h-invariant detection horizon for each injection.
         # p_det = survival function of the detection horizon, P(d_hor >= d_L),
@@ -761,7 +811,8 @@ class SimulationDetectionProbability:
         # Exact survival at each center (monotone by construction).
         p_det_1d = self._survival_at(dl_centers)
 
-        # fill_value=None → nearest extrapolation; the public accessors below
+        # fill_value=None → LINEAR extrapolation outside the grid (scipy
+        # semantics); harmless here because the public accessors below
         # override out-of-grid behavior with the EXACT searchsorted survival.
         return RegularGridInterpolator(
             (dl_centers,),
@@ -876,10 +927,10 @@ class SimulationDetectionProbability:
 
         p_det_grid = np.clip(p_det_grid, 0.0, 1.0)
 
-        # fill_value=None → nearest-neighbor extrapolation outside grid.  Used
-        # because high-SNR events' integration bounds can exceed the grid;
-        # the public 2D accessor clamps d_L below first center / above last
-        # center to keep monotonicity and boundedness.
+        # fill_value=None → LINEAR extrapolation outside the grid (scipy
+        # semantics, NOT nearest).  Tolerated only because the public 2D
+        # accessor clamps BOTH axes before querying: d_L below first center /
+        # above last center, and M_z to the grid edges (true nearest).
         return RegularGridInterpolator(
             (dl_centers, M_centers),
             p_det_grid,
@@ -995,7 +1046,9 @@ class SimulationDetectionProbability:
         * d_L below the first center → clamp to the first center (survival ≈ 1
           there, since the grid starts near d_L = 0).
         * d_L above the last center → 0 (no injection's horizon reaches there).
-        * M_z outside the grid range → nearest (``fill_value=None``).
+        * M_z outside the grid range → clamped to the nearest grid edge.
+          (``fill_value=None`` alone would LINEARLY extrapolate — made-up but
+          plausible-looking values; the explicit clip enforces true nearest.)
 
         The result is monotone non-increasing in d_L and bounded in [0, 1].
 
@@ -1030,10 +1083,14 @@ class SimulationDetectionProbability:
         dl_max = float(dl_centers[-1])
 
         # d_L below first center → clamp to first center (survival ≈ 1 there);
-        # d_L above last center → 0.  M_z outside range → nearest via
-        # fill_value=None on the interpolator.
+        # d_L above last center → 0.  M_z outside range → clamp to the grid
+        # edge (true nearest): RegularGridInterpolator with fill_value=None
+        # would silently LINEAR-extrapolate outside the M_z axis, inventing
+        # p_det values beyond the injected mass support (readiness sweep
+        # A2-EXTRAP, 2026-07-03).
         dl_query = np.clip(dl_arr, dl_min, dl_max)
-        result = np.clip(interp_2d(np.column_stack([dl_query, M_arr])), 0.0, 1.0)
+        M_query = np.clip(M_arr, float(M_centers[0]), float(M_centers[-1]))  # noqa: N806
+        result = np.clip(interp_2d(np.column_stack([dl_query, M_query])), 0.0, 1.0)
 
         # Above the last center the survival is exactly 0.
         result = np.where(dl_arr > dl_max, 0.0, result)

@@ -57,7 +57,15 @@ class ParameterSpace:
             lower_limit=1e4,
             upper_limit=1e7,
             randomize_by_distribution=log_uniform,
-            derivative_epsilon=1.0,  # ~3e-4 × 3e3 SM (log-uniform midpoint ~3e3 SM)
+            # A tiny ABSOLUTE step (1 M_sun) on a ~1e5-1e6 M_sun mass: the EMRI phase is
+            # extremely M-sensitive, so the finite-difference step must keep ∂Φ/∂M·(2ε)
+            # well under a radian — the Vallisneri ε_mach^(1/4)·|x| heuristic (~60-100
+            # M_sun here) assumes f varies on scale |x|, which is false for an
+            # oscillatory waveform. (Prior comment mis-stated the log-uniform midpoint
+            # as ~3e3 M_sun; the [1e4,1e7] geometric midpoint is 10^5.5 ≈ 3e5. Any change
+            # to this value needs a Fisher step-halving convergence study + /physics-change
+            # — review PHY-09.)
+            derivative_epsilon=1.0,
         )
     )  # mass of the MBH (massive black hole) in solar masses
 
@@ -111,7 +119,12 @@ class ParameterSpace:
             symbol="luminosity_distance",
             unit="Gpc",
             lower_limit=0.0,
-            upper_limit=7,
+            # dist(HOST_DRAW_Z_MAX=1.5, h=H_MIN/100=0.60) = 13.0015 Gpc — the
+            # campaign population reach at the lowest grid h. Model1CrossCheck
+            # recomputes this exactly; the literal here protects bare
+            # ParameterSpace() constructions from a sub-horizon cap (the old
+            # 7 Gpc default silently rejected z >~ 0.9 events).
+            upper_limit=13.1,
             derivative_epsilon=1e-4,  # ~3e-4 × 1 Gpc ≈ 3e-4; use 1e-4 Gpc (= 0.1 Mpc)
         )
     )  # luminosity distance

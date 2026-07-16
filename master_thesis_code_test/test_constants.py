@@ -3,7 +3,9 @@
 import numpy as np
 
 from master_thesis_code.constants import (
+    GALAXY_CATALOG_REDSHIFT_UPPER_LIMIT,
     GPC_TO_MPC,
+    HOST_DRAW_Z_MAX,
     KM_TO_M,
     OMEGA_DE,
     OMEGA_M,
@@ -35,3 +37,25 @@ def test_km_to_m() -> None:
 def test_radian_to_degree() -> None:
     """360 degrees = 2π radians."""
     assert abs(RADIAN_TO_DEGREE * 2 * np.pi - 360.0) < 1e-10
+
+
+def test_host_draw_depth_pin() -> None:
+    """Pin the campaign population depth — any change is a /physics-change.
+
+    Phase-2 campaign value: 1.5 (issue #20, user decision 2026-07-03),
+    replacing the pre-dt² 0.5. Flipped from 0.5 in the same [PHYSICS] diff
+    that changed the constant, per the physics-change protocol.
+    """
+    assert HOST_DRAW_Z_MAX == 1.5
+
+
+def test_galaxy_catalog_depth_pin() -> None:
+    """Pin the documented catalogue depth bound (currently unwired in code)."""
+    assert GALAXY_CATALOG_REDSHIFT_UPPER_LIMIT == 1.55
+
+
+def test_host_draw_within_population_model() -> None:
+    """Ordering constraint: the host draw must not exceed the population model
+    depth (Model1CrossCheck.max_redshift = 1.5, cosmological_model.py) — the
+    d_L pre-screen derivation relies on this ordering."""
+    assert HOST_DRAW_Z_MAX <= 1.5

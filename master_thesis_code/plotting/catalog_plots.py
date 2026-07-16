@@ -1,7 +1,6 @@
 """Factory functions for galaxy catalog plots.
 
-Extracted from ``GalaxyCatalogueHandler.visualize_galaxy_catalog()`` in
-``handler.py`` and ``GalaxyCatalog`` plotting methods.
+Extracted from ``GalaxyCatalogueHandler.visualize_galaxy_catalog()`` in ``handler.py``.
 """
 
 import numpy as np
@@ -74,7 +73,7 @@ def plot_glade_completeness(
     Parameters
     ----------
     distance_range:
-        Bin centres in luminosity distance, in Mpc.
+        Bin centres in luminosity distance, in Gpc (matches the axis label).
     completeness:
         Empirical completeness fraction in ``[0, 1]`` on ``distance_range``.
     reference_curve:

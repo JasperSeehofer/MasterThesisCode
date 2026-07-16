@@ -18,7 +18,7 @@ from astropy_healpix import HEALPix
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 
-from master_thesis_code.constants import H
+from master_thesis_code.constants import HOST_DRAW_Z_MAX, H
 from master_thesis_code.galaxy_catalogue.pixel_completeness import PixelCompleteness
 from master_thesis_code.plotting._colors import REFERENCE, SEQUENTIAL_CMAP, VARIANT_NO_MASS
 from master_thesis_code.plotting._helpers import _fig_from_ax, get_figure
@@ -121,7 +121,7 @@ def plot_sky_averaged_completeness(
     comp: PixelCompleteness,
     *,
     h: float = H,
-    z_max: float = 0.5,
+    z_max: float = HOST_DRAW_Z_MAX,
     n_z: int = 120,
     ax: Axes | None = None,
 ) -> tuple[Figure, Axes]:

@@ -23,7 +23,7 @@ import numpy.typing as npt
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 
-from master_thesis_code.constants import SNR_THRESHOLD
+from master_thesis_code.constants import SNR_THRESHOLD, H
 from master_thesis_code.plotting._colors import (
     CYCLE,
     EDGE,
@@ -231,7 +231,7 @@ def plot_h0_posterior_comparison(
             ax.axvspan(lo, hi, alpha=0.12, color=color, zorder=1)
 
     # Truth line
-    ax.axvline(0.73, color=TRUTH, linestyle=":", linewidth=1.2, label="Injected", zorder=2)
+    ax.axvline(H, color=TRUTH, linestyle=":", linewidth=1.2, label="Injected", zorder=2)
 
     ax.set_xlabel(r"$h$")
     ax.set_ylabel("Posterior (peak-normalized)")
@@ -355,8 +355,8 @@ def plot_single_event_likelihoods(
         ax_no.set_ylabel(f"{label}\n(event {eid})")
 
         # Truth lines
-        ax_no.axvline(0.73, color=TRUTH, linestyle=":", linewidth=0.8, alpha=0.7)
-        ax_with.axvline(0.73, color=TRUTH, linestyle=":", linewidth=0.8, alpha=0.7)
+        ax_no.axvline(H, color=TRUTH, linestyle=":", linewidth=0.8, alpha=0.7)
+        ax_with.axvline(H, color=TRUTH, linestyle=":", linewidth=0.8, alpha=0.7)
 
         ax_no.set_ylim(-0.05, 1.15)
         ax_with.set_ylim(-0.05, 1.15)
@@ -845,7 +845,7 @@ def plot_h0_posterior_kde(
             ax.axvspan(lo, hi, alpha=0.12, color=color, zorder=1)
 
     # Truth line
-    ax.axvline(0.73, color=TRUTH, linestyle=":", linewidth=1.2, label="Injected", zorder=4)
+    ax.axvline(H, color=TRUTH, linestyle=":", linewidth=1.2, label="Injected", zorder=4)
 
     ax.set_xlabel(r"$h$")
     ax.set_ylabel("Posterior (peak-normalized)")

@@ -86,6 +86,54 @@ railed baseline. After combine `5698618` completes and results are retrieved+ver
 - ☐ **Smoke test first**: `--tasks 2 --steps 10` (cluster skill golden rule) + the §1
   pre-screen measurements, THEN full submission.
 
+## 4b. PRE-REGISTERED "bias resolved" criterion (fixed 2026-07-03, BEFORE submission)
+
+Defined before any campaign data exists, per the referee's asserted-decisiveness
+critique (report either outcome):
+
+1. **Multi-seed accuracy (primary)**: over the 4 seeds at h_true = 0.73, the
+   per-seed volume_deconv 1D MAP sample must satisfy
+   |mean(MAP) − 0.73| < 2·SEM (SEM = std(MAP)/√4). Same check for posterior means.
+2. **Closure**: each closure run (0.67, 0.77) recovers its truth inside its own
+   68% HPD interval (both channels).
+3. **Calibration**: per-seed `pp_coverage` (G4b, volume kernel) at the campaign's
+   photometric width stays near-nominal — cov68 within ±0.10 of 0.68 at n=250
+   realizations (binomial σ≈0.03; the 2026-07-03 σ_z/z scan bounds validity at
+   σ_z/z ≲ 0.8).
+4. **Verdict language**: all three pass → "bias resolved at the campaign's
+   statistical precision"; any fail → report the measured residual with its
+   multi-seed uncertainty — no stronger claim.
+
+## 4c. Unattended weekend operation (2026-07-03 → Monday 07-07)
+
+Three self-driving layers (no live SSH dependency — every connection is per-poll):
+
+1. **Cluster login node**: `$WS/campaign_orchestrator.sh` (pid in
+   `$WS/campaign_orchestrator.log`) submits seeds 2000/3000/4000 @ 0.73 +
+   5000 @ 0.67 + 6000 @ 0.77 (`--tasks 100 --steps 40`, pool
+   `$WS/injection_pool_depth15_50k`) whenever queue depth < 150; retries the
+   same seed through the ongoing $HOME Lustre EIO flakiness (read-probe +
+   5-min backoff); idempotent on restart.
+2. **Dev box**: `results/campaign_phase2_runs/watch_and_retrieve.sh`
+   (detached) rsyncs every run dir + orchestrator logs back every 30 min →
+   `results/campaign_phase2_runs/{status.log,rsync.log,run_*/}`. The §7b PV
+   test queue (`results/pv_correction_test_20260703/run_queue.log`) finishes
+   Thursday evening.
+3. **Claude session watchers** (if the session survives): smoke-chain combine,
+   pipeline-1 sim array.
+
+**Monday checklist** (if anything stalled):
+- `tail $WS/campaign_orchestrator.log` + `pgrep -f "campaign_orchestrator[.]sh"`
+  — restart with: `cd $WS && PROJECT_ROOT=$HOME/MasterThesisCode setsid --fork
+  bash campaign_orchestrator.sh` (idempotent).
+- Cluster repo is PINNED at `b233375` (= tag code-wise): $HOME EIO blocks git
+  pulls (`unpack-objects failed`); commits after it are docs/ops-only. Re-sync
+  when the filesystem heals; report persistent EIO to the bwHPC hotline.
+- Straggler arrays: `bash cluster/resubmit_failed.sh <SIM_JOBID> <RUN_DIR>
+  <BASE_SEED> <STEPS>` (TIMEOUT excluded by default — expected on
+  gpu_h100_short).
+- `results/campaign_phase2_runs/status.log` is the weekend flight recorder.
+
 ## 5. Paper hooks
 
 - Paper A (`paper_a/`, drafting in flight): consumes the seed600 confirmation (§0) into

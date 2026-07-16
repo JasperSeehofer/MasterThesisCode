@@ -69,6 +69,25 @@ def test_f_k_decreases_to_zero_at_high_redshift() -> None:
     assert f[-1] < 0.05
 
 
+def test_campaign_depth_machinery_valid_to_z_1p5() -> None:
+    """Issue #20 validation: the per-pixel Schechter machinery stays finite,
+    bounded, and monotone over the deepened host volume z ∈ [0.5, 1.5].
+
+    Out there GLADE+ completeness is far below 0.5 (pure-completion regime):
+    x_th grows to ~1e2 and gammaincc must underflow smoothly to 0 with no
+    NaN/overflow, on both a synthetic map and the committed frozen map.
+    """
+    z = np.linspace(0.5, 1.5, 40)
+    for pc in (_mixed_map(), from_cache_or_build()):
+        f_bar = np.asarray(pc.f_bar(z, _H))
+        assert np.all(np.isfinite(f_bar))
+        assert np.all((f_bar >= 0.0) & (f_bar <= 1.0))
+        assert np.all(np.diff(f_bar) <= 1e-12)
+    # Frozen GLADE+ map: the deepened shell is pure completion (f ~ 0).
+    frozen = from_cache_or_build()
+    assert float(np.asarray(frozen.f_bar(np.array([1.0]), _H))[0]) < 1e-6
+
+
 def test_f_k_in_unit_interval() -> None:
     """0 <= f_k <= 1 for every pixel (valid and empty) over a z range."""
     pc = _mixed_map()

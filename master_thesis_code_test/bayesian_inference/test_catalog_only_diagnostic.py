@@ -85,10 +85,12 @@ class TestCatalogOnlyBypass:
         # Create mock pool that returns known galaxy likelihoods
         mock_pool = MagicMock(spec=mp.pool.Pool)
         mock_pool._processes = 1
-        # results_with_bh_mass: each result is [numerator_no_bh, denominator, numerator_with_bh, denominator_with_bh]
+        # results_with_bh_mass: each per-host row is [numerator_no_bh, denominator,
+        # numerator_with_bh, denominator_with_bh]. The batched dispatch
+        # (_starmap_host_batches) returns one (n_hosts, n_cols) array per chunk.
         mock_pool.starmap.side_effect = [
-            [[0.5, 0.3, 0.4, 0.2]],  # with BH mass results
-            [[0.3, 0.2]],  # without BH mass results
+            [np.array([[0.5, 0.3, 0.4, 0.2]])],  # with BH mass results
+            [np.array([[0.3, 0.2]])],  # without BH mass results
         ]
 
         mock_completeness = MagicMock()

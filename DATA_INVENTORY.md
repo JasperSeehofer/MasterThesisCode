@@ -35,6 +35,10 @@ Durable copies now exist:
   + `crux_results{,_fixed}.json` (commit `1f0e371`).
 - **Home:** `~/data-backups/seed600_local_derail_20260702/` (3.8 GB: full working dirs incl. the
   474 MB with-BH-mass per-event posteriors, the 494-event CRB subsample, the fixed 8-col catalogue copy).
+- **⚠ Ω_m era mismatch (registered 2026-07-10):** the underlying seed600 CRBs were simulated at
+  Ω_m = 0.25 (pre-G11) but every post-`bdf5339` evaluation infers at Ω_m = 0.2726 → the venue is
+  biased LOW ≈0.3–0.8% (z-graded). **A/B-code-comparison venue only** — see the 2026-07-10
+  provenance row in the Evaluation Log and `.planning/BIAS-INVESTIGATION-20260710.md` §1.
 
 ---
 
@@ -50,6 +54,49 @@ corresponding tier before reporting results.
 | **Re-migrate** (coord frame invalid) | `galaxy_catalogue/handler.py` BallTree frame or angle convention · `scripts/migrate_crb_to_ecliptic.py` transform | Re-apply migration; mark `_coord_frame` entries stale |
 | **Re-evaluate** (posterior invalid) | `bayesian_inference/bayesian_statistics.py` · `bayesian_inference/simulation_detection_probability.py` (p_det grid build OR extrapolation policy) · `single_host_likelihood` · D(h) normalisation · injection files · h-grid in `cluster/evaluate.sbatch` | Re-run `evaluate.sbatch`; old `posteriors/` are **stale** |
 | **Re-figure** (figures invalid) | Any plotting code · `--generate_figures` pipeline | Re-run `--generate_figures`; old PDFs are **stale** |
+
+---
+
+## ⚠️ Injection pools RETIRED — 2026-07-03 (depth-1.5 campaign prep)
+
+All pre-dt² / z_cut = 0.5 injection pools are **RETIRED** by the issue-#20 depth change:
+local `simulations/injections/` (80 files) moved to
+`simulations/injections_RETIRED_predt2_zcut0p5_20260703/`; cluster pools
+(`seed43000_Mz`, `seed700`) marked retired in `cluster/datasets.yaml`. The campaign
+regenerates a single-h (h_ref = 0.73) pool at z_cut = 1.5 with the **same filenames** —
+never mix the eras. Guards: injection rows now carry `z_cut` + `code_rev` provenance
+columns; `SimulationDetectionProbability` rejects shallow/mixed pools
+(`expected_z_max`, readiness sweep A2-STALE-POOL-GATE); `--evaluate` hard-fails below
+95% P_det grid coverage (`--allow_low_pdet_coverage` to override deliberately).
+
+---
+
+## Phase-2 Campaign (2026-07-03 → , tag `campaign-phase2-base` = `b6bf57d`)
+
+| Item | Value |
+|---|---|
+| **Injection pool** | `$WS/injection_pool_depth15_50k` — 500 files / 50 000 events, z_cut = 1.5, single h_ref = 0.73, provenance-stamped (see `cluster/datasets.yaml` `depth15_campaign`) |
+| **Design** | 4 seeds @ h_true = 0.73 (BASE_SEED 1000/2000/3000/4000) + closure 0.67 (5000) / 0.77 (6000); `--tasks 100 --steps 40` (~4k detections/seed target); volume_deconv; 41-value hybrid h-grid; per-task eval seeds `SEED·1000 + task` |
+| **Smoke** | run_20260703_seed900 (jobs 5740080-83) — sim/merge validated; prescreen audit 543 pairs → quick gate DISABLED (`b6bf57d`); anchors: ~42 s/detection (GPU), injections 3-6.6 s/event |
+| **Submitted** | seed1000: jobs 5743694-97 (2026-07-03 ~12:45Z). Remaining seeds staggered against the ~300-job submit cap |
+| **Criterion** | pre-registered in `.planning/CAMPAIGN-PREP-PHASE2.md` §4b BEFORE submission |
+
+---
+
+## Galaxy Catalogue (reduced GLADE+)
+
+The single on-disk input the whole pipeline shares — previously untracked here.
+
+| Property | Value |
+|----------|-------|
+| **File** | `master_thesis_code/galaxy_catalogue/reduced_galaxy_catalogue.csv` (headerless, **1.68 GB**, 22 641 048 rows) |
+| **Schema** | **8 columns** (order = `_reduced_catalog_column_names()`): RA_deg, Dec_deg, B_mag, **z_cmb**, z_error (PV-correction error folded in quadrature, 0.0015 floor), stellar_mass, stellar_mass_err, z_flag (1=photo-z, 3=spec-z; trailing) |
+| **Frame** | **z_cmb** (CMB frame) since `18e9608` (2026-07-02 rebuild; 99.9% rows shifted, median \|Δz\| 6e-4 — `.planning/gate/GATE_SIGNOFF.md:27`) |
+| **Depth** | **Full-depth** (no z cut in the writer; max z ≈ 7.03). Effective load-time depth = `Model1CrossCheck.max_redshift` = 1.5 via `_get_pruned_galaxy_catalog`. `GALAXY_CATALOG_REDSHIFT_UPPER_LIMIT` is documentation-only |
+| **Rebuild** | `results/commission_20260701/scratch/rebuild_catalog.py` from repo root; **move the old CSV aside first** (writer appends, `mode="a"`); ~77 s full GLADE+ pass on the dev box |
+| **Source** | `master_thesis_code/galaxy_catalogue/GLADE+.txt` (6.4 GB, dev box ONLY — cluster cannot rebuild; staging is rsync of the reduced CSV per `/cluster` skill) |
+| **Superseded** | `.zhelio_20260702` (z_helio 8-col, 2026-07-01), `.stale6col_mar28` (6-col) — backups next to the live file, RETIRED |
+| **Coupled artifact** | `m_th_map_nside32.npy` (frozen per-pixel m_th, C1: byte-identical on injection + inference sides). Built from the full flag-{1,3} catalogue → **unchanged by the 2026-07-03 depth constants** (no CSV rebuild occurred); MUST be regenerated atomically on both sides if the CSV content ever changes |
 
 ---
 
@@ -242,3 +289,6 @@ Aggregated by `scripts/bias_investigation/test_24_multi_truth_bias_sweep.py` →
 | 2026-05-04 (merge) | phase46-merged-20260504 | pending commit | n/a (CRB construction) | 924 (424+500) | — | — | Phase 45 ⊕ seed=300 partial (17/50 tasks); ~2.18× event count for tighter σ_boot |
 | *(pending)* | phase45 + full sim-seed300 merged | next | 38-pt | ~1100+ | — | — | After remaining seed=300 tasks land (~later tonight) |
 | **2026-06-20 (BRANCHES MERGED + ALL DATA RETIRED)** | mass-convention `0099ce2` + L_cat-gray `816f904` merged to main | `af6014d` | n/a | n/a | n/a | n/a | Both physics fixes merged (`/check` green: 569 pass, ruff+mypy clean). Stale multi-seed campaign (seeds 500/600/700/800, jobs 5084023–5084038) **cancelled** — it predated both fixes + reused source-frame injections. **All prior CRBs/injections/posteriors RETIRED** (see banner). Fresh run: regenerate injections + events with merged code; 4 seeds @0.73 + closure 0.67/0.77; validate one seed end-to-end first. |
+| **2026-07-10 (seed1000 local combine — RAILED, campaign NO-GO)** | Phase-2 `run_20260703_seed1000` (3,470 CRB rows; depth15 pool via now-broken symlinks; cluster eval jobs 5743696+) | eval `b233375`; combine at a `b233375` worktree (`combine_local_20260710.py`; D(h) diagnostic reconstructed from eval logs, ~1e-4) | 40-pt 0.60–0.86 (h=0.705 hole: task 16 hung) | 3,454 evaluated; **only 1,462 with likelihoods** | **0.6000 (lower grid EDGE)** | **0.6000 (lower grid EDGE)** | First campaign posterior — **unusable as H₀ measurement**. 58% of events silently zero-host-dropped (issue #29); effective mass-pruned catalogue is 99.98% z<0.3 (issue #30). Verified diagnosis: `FINDINGS_COMBINE_20260710.md` (in the run dir). **Do NOT relaunch seeds 2000–6000 until re-validated with the fixes below.** |
+| **2026-07-10 (pipeline change — Re-evaluate)** | `[PHYSICS]` `8db6c6e` zero-host pure-completion fallback (#29) + `f29a5e7` selection-integral z-caps (#30 groundwork), branch `physics/zero-host-completion-fallback` | `8db6c6e`+`f29a5e7` | n/a | n/a | n/a | n/a | Zero-host events now contribute `p_i = B_num/D` (Gray Eqs. 29+32; was: silent drop since 2024). **All `posteriors{,_with_bh_mass}/` from venues with ANY zero-host events are STALE for this change** — in practice every depth-1.5 campaign venue (seed900: 60% drops; seed1000: 58%) and marginally seed600-era venues (few drops). Shallow seed400 perf venues unaffected in the hosts-present values (fallback adds events, never changes them; pipeline+kernel goldens unchanged except the documented synthetic-fixture cap re-pin). Deep-venue validation = seed1000 re-eval on cluster return, THEN campaign relaunch. |
+| **2026-07-10 (provenance note — seed600 Ω_m era mismatch)** | `run_20260628_seed600` CRBs (evidence-locker seed600; PV-test + de-rail venues) | sim era pre-G11 | n/a | n/a | n/a | n/a | seed600 was **simulated at Ω_m = 0.25** (pre-`bdf5339`); all post-G11 evaluations infer at **Ω_m = 0.2726** → generation-vs-inference mismatch biases the venue LOW by ≈0.3–0.8% (z-graded). seed600 is therefore an **A/B-code-comparison venue only**; do not quote absolute closure residuals from it without the era term. The only Ω_m-consistent closure venues are the Phase-2 campaign seeds. See `.planning/BIAS-INVESTIGATION-20260710.md` §1. |

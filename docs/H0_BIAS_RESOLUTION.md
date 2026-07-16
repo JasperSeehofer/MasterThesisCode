@@ -372,7 +372,10 @@ Each entry links to its date-stamped narrative in [Appendix A](#appendix-a--chro
   RA/Dec while EMRI sky angles `qS, phiS` were defined in ecliptic. The angular
   mismatch is up to the obliquity 23.4° while the BallTree median search
   radius is only 1.76°. Pre-fix, ~15 of 60 events landed on spurious near-host
-  matches; the rest had "no possible hosts" → contributed only via L_comp.
+  matches; the rest had "no possible hosts" → **silently dropped from the joint
+  likelihood entirely** (CORRECTED 2026-07-10: this line originally claimed they
+  "contributed only via L_comp" — no completion-only fallback existed in any
+  code era until `8db6c6e`; see §3.20).
   The bug had two surfaces:
   - **Phase 36 (`b460297`)**: GLADE ingestion was rotated equatorial → ecliptic
     via `astropy.coordinates.BarycentricTrueEcliptic(J2000)` along with
@@ -1333,6 +1336,60 @@ uv run python scripts/bias_investigation/test_31_completion_term_characterizatio
   verified GLADE+ column map + sky-averaging analysis); `CATALOG-INTERPRETATION.md` §6.1 (frame flagged
   among other data-usage issues). Relates to Known Bug #9 (non-standard z-error scaling) and the
   hardcoded pec-vel-error default 0.0015 at `handler.py:302`.
+
+### 3.20 Zero-host events silently dropped from the joint likelihood (2026-07-10) → deep-venue rail to h=0.60 — FIXED
+
+- **Symptom:** The first Phase-2 campaign combine (seed1000, depth-1.5 pool,
+  40-value grid 0.60–0.86, eval @ `b233375`) railed to the LOWER grid edge in
+  BOTH channels (MAP h=0.6000, −44.5 decades/0.01h in 1D), with only 1,462 of
+  3,454 quality-filtered events carrying any likelihood.
+- **Mechanism (two coupled parts, issues #29/#30):**
+  1. `if possible_hosts is None: continue` (thesis-era `19f9b88`, 2024-03-28,
+     carried verbatim to the campaign commit) silently dropped any event whose
+     BallTree lookup found zero catalogue galaxies — the event contributed NO
+     factor to the joint likelihood, logged at DEBUG only. This conditions the
+     event sample on catalogue support: on the deep venue 58% of events dropped
+     (z ≥ 0.42 → ~90% drop; zone of avoidance |b|<10° at z<0.3 → ~92% drop),
+     leaving a shallow high-latitude subsample whose per-event L(h) tilts low
+     (z-graded, Spearman −0.84; w_G(h) slope ~26% + L_cat tilt ~74% of the rail).
+  2. The effective host-lookup catalogue is 99.98% z<0.3 — only 165 galaxies
+     all-sky at z ≥ 0.5 — because the EMRI M_BH ∈ [10^4.5, 10^6] M☉ prune
+     (Reines–Volonteri mapping) selects dwarf hosts while GLADE+ beyond z~0.3
+     is flux-limited to massive galaxies. Host lookups therefore CANNOT resolve
+     hosts at the depth-1.5 population's redshifts, so the drop was systematic,
+     not incidental.
+- **Falsified prior record:** the pre-fix statement in §3.2 (and the original
+  2026-05-01 text of this document) that zero-host events "contributed only via
+  L_comp" was WRONG for every code era — no completion-only fallback ever
+  existed; they contributed nothing. §3.2's text is corrected in place.
+- **Fix (user-approved /physics-change, 2026-07-10):**
+  - `8db6c6e` **[PHYSICS]** — zero-host events now contribute the
+    pure-completion likelihood `p_i = B_num(h)/D(h)`, the exact `L_cat → 0`
+    limit of the production mixture `p_i = (β_G·L_cat + B_num)/D` (Gray et al.
+    2020, arXiv:1908.06050, Eqs. 29+32; Gray-Messenger-Veitch 2022,
+    arXiv:2111.04629, Eq. 5; `docs/derivations/G2a_completion_sky_marginal_4pi.md`
+    limiting case 2). Skip promoted to WARNING + per-h host-lookup yield metric.
+    `catalog_only` mode keeps the legacy skip (no completion term there).
+    Gate: `test_zero_host_completion.py` (old behavior pinned at `ed46390`,
+    flipped in the fix commit; independent value cross-check via the mixture
+    identity `B_num/D = (1−w_G)·L_comp`; hosts-present events bit-unchanged).
+  - `f29a5e7` **[PHYSICS]** — selection integrals D(h), β_Ḡ(h), Σ_global capped
+    at `min(z_max(h), max_redshift)` so the (already-capped) numerator candidate
+    window and the selection domain move TOGETHER (Mandel-Farr-Gair 2019,
+    arXiv:1809.02063); truncating the analysis depth is now a single safe knob
+    (`Model1CrossCheck.max_redshift`). No-op at current constants (real-pool
+    horizon z_max(h) ≤ ~1.33 < 1.5); binds only in the synthetic test fixture
+    (fake d_L=4z pool) → pipeline golden re-pinned with the documented
+    event-independent D(h)-domain fingerprint.
+- **Expected effect (PREDICTION, to be validated on cluster return):** the
+  restored 1,992 pure-completion events tilt anti-rail (+, toward high h — the
+  completion term's measured direction on the survivors), so the deep venue
+  should de-rail; the actual seed1000 re-evaluation with `8db6c6e` is the
+  validation gate before relaunching campaign seeds 2000–6000.
+- **Detail →** `results/campaign_phase2_runs/run_20260703_seed1000/FINDINGS_COMBINE_20260710.md`
+  (32-agent adversarially verified diagnosis, 26/28 claims confirmed);
+  `.planning/BIAS-INVESTIGATION-20260710.md` (plan of record: consistent-data
+  rules, seed600 Ω_m-era mismatch, suspect ledger); issues #29, #30.
 
 ---
 

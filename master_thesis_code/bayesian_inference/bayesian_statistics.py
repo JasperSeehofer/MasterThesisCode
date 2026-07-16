@@ -24,6 +24,7 @@ import numpy as np
 import numpy.typing as npt
 import pandas as pd
 from scipy.integrate import dblquad, fixed_quad, quad
+from scipy.special import ndtr, roots_hermite, roots_legendre
 from scipy.stats import multivariate_normal, norm
 
 from master_thesis_code.bayesian_inference.simulation_detection_probability import (
@@ -31,9 +32,12 @@ from master_thesis_code.bayesian_inference.simulation_detection_probability impo
 )
 from master_thesis_code.constants import (
     CRAMER_RAO_BOUNDS_OUTPUT_PATH,
+    HOST_DRAW_Z_MAX,
     INJECTION_DATA_DIR,
     PREPARED_CRAMER_RAO_BOUNDS_PATH,
+    SIGMA_V_PEC_KM_S,
     SNR_THRESHOLD,
+    SPEED_OF_LIGHT_KM_S,
     H,
 )
 from master_thesis_code.cosmological_model import LamCDMScenario, Model1CrossCheck
@@ -69,6 +73,123 @@ FRACTIONAL_LUMINOSITY_DISTANCE_ERROR_THRESHOLD = 0.10
 
 # Fixed-quad order for D(h) precomputation
 _DH_QUAD_ORDER: int = 100
+
+# Gauss-Legendre order for the outer z-integral of the with-BH-mass selection
+# denominator (the "glz64" semi-analytic estimator). The inner M-integral is
+# exact (erf-sum); the only residual error is the outer z-quadrature over the
+# p_det d_L-grid kinks, which n=64 pushes to <= 2.8e-4 worst-case (spec-z hosts
+# 1e-8..1e-5) -- far below the ~1-5% MC noise it replaces.
+_BH_DENOM_QUAD_ORDER: int = 64
+
+# Gauss-Legendre nodes/weights shared by the batched host kernel. Identical to
+# what scipy.integrate.fixed_quad uses internally (its _cached_roots_legendre is
+# a cache around scipy.special.roots_legendre), so the batched quadrature
+# reproduces fixed_quad bit-for-bit per host row.
+_HOST_QUAD_N: int = 50
+_GL_NODES_50, _GL_WEIGHTS_50 = roots_legendre(_HOST_QUAD_N)
+_GL_NODES_64, _GL_WEIGHTS_64 = roots_legendre(_BH_DENOM_QUAD_ORDER)
+
+# --- mass_trunc host-mass kernel (EXP-45, 2026-07-13) --------------------------
+# The 2D (with-BH-mass) channel's `mass_trunc` mode replaces the linear-Gaussian
+# G2d moment match (eddington_shifted_host_mass) with the TRUE per-galaxy host-mass
+# prior: the Reines & Volonteri (2015) lognormal measurement error x the Babak
+# et al. (2017) R_eff population weight, TRUNCATED + renormalised on the physical
+# EMRI mass window [M_MIN, M_MAX] (the ParameterSpace.M bound; asserted against it
+# in the kernel tests to guard drift). Two quadratures:
+#   * Gauss-Hermite (weight e^{-t^2}) resolves the NARROW GW M_z peak in the
+#     numerator mass-marginal -- placing nodes ON the peak, the exact fix for the
+#     fixed_quad(50) aliasing that FALSIFIED volume_trunc (results/volume_trunc_ab_*).
+#   * Gauss-Legendre in ln M integrates the SMOOTH normalisation Z_M and the
+#     selection-denominator inner-M integral over the wide window.
+_MASS_TRUNC_M_MIN: float = 1.0e4
+_MASS_TRUNC_M_MAX: float = 1.0e7
+_MASS_TRUNC_SIGMA_LNM_FLOOR: float = 1.0e-6
+_MASS_TRUNC_GH_ORDER: int = 24
+_MASS_TRUNC_GL_ORDER: int = 64
+_MT_GH_NODES, _MT_GH_WEIGHTS = roots_hermite(_MASS_TRUNC_GH_ORDER)  # int e^{-t^2} g(t) dt
+_MT_GL_NODES, _MT_GL_WEIGHTS = roots_legendre(_MASS_TRUNC_GL_ORDER)  # [-1, 1]
+
+# Normalisation constant of the standard normal pdf; same value scipy.stats.norm
+# divides by (scipy.stats._continuous_distns._norm_pdf_C).
+_NORM_PDF_C: float = float(np.sqrt(2 * np.pi))
+
+# Upper bound on hosts per batched-kernel chunk (see _starmap_host_batches).
+_MAX_BATCH_CHUNK: int = 2048
+
+
+def _gaussian_pdf(
+    x: npt.NDArray[np.float64],
+    loc: npt.NDArray[np.float64],
+    scale: npt.NDArray[np.float64],
+) -> npt.NDArray[np.float64]:
+    """Gaussian pdf replicating ``scipy.stats.norm(loc, scale).pdf(x)`` exactly.
+
+    Reproduces scipy's operation order — ``y = (x - loc)/scale`` then
+    ``exp(-y**2/2.0)/sqrt(2*pi)/scale`` — so results are bit-identical to the
+    frozen-distribution path while skipping its per-construction ``rv_frozen``
+    machinery (the profiled ~15-18% ``_construct_doc``/argument-parsing waste).
+    All arguments broadcast.
+
+    Args:
+        x: Evaluation points.
+        loc: Gaussian mean(s).
+        scale: Gaussian standard deviation(s), > 0.
+
+    Returns:
+        Pdf values, broadcast shape of the inputs.
+    """
+    y = (x - loc) / scale
+    result: npt.NDArray[np.float64] = np.exp(-(y**2) / 2.0) / _NORM_PDF_C / scale
+    return result
+
+
+def _batched_gl_nodes(
+    a: npt.NDArray[np.float64],
+    b: npt.NDArray[np.float64],
+    nodes: npt.NDArray[np.float64],
+) -> npt.NDArray[np.float64]:
+    """Map Gauss-Legendre reference nodes onto per-row integration windows.
+
+    Replicates ``scipy.integrate.fixed_quad``'s affine node map
+    ``y = (b - a)*(x + 1)/2.0 + a`` with a leading batch axis: for windows
+    ``[a_i, b_i]`` returns the ``(n, len(nodes))`` node array whose row ``i``
+    is bit-identical to the nodes fixed_quad would use for ``[a_i, b_i]``.
+
+    Args:
+        a: Lower window bounds, shape ``(n,)``.
+        b: Upper window bounds, shape ``(n,)``.
+        nodes: Gauss-Legendre reference nodes on ``[-1, 1]``.
+
+    Returns:
+        Node array of shape ``(n, len(nodes))``.
+    """
+    result: npt.NDArray[np.float64] = (b - a)[:, None] * (nodes + 1)[None, :] / 2.0 + a[:, None]
+    return result
+
+
+def _batched_gl_reduce(
+    a: npt.NDArray[np.float64],
+    b: npt.NDArray[np.float64],
+    weights: npt.NDArray[np.float64],
+    values: npt.NDArray[np.float64],
+) -> npt.NDArray[np.float64]:
+    """Per-row Gauss-Legendre reduction replicating ``fixed_quad``'s sum.
+
+    Computes ``(b - a)/2.0 * sum(w * values, axis=-1)`` per row — the same
+    expression (and float reduction order, contiguous last axis) that
+    ``fixed_quad`` evaluates for a single window.
+
+    Args:
+        a: Lower window bounds, shape ``(n,)``.
+        b: Upper window bounds, shape ``(n,)``.
+        weights: Gauss-Legendre weights, shape ``(k,)``.
+        values: Integrand values at the mapped nodes, shape ``(n, k)``.
+
+    Returns:
+        Integral per row, shape ``(n,)``.
+    """
+    result: npt.NDArray[np.float64] = (b - a) / 2.0 * np.sum(weights * values, axis=-1)
+    return result
 
 
 def eddington_shifted_host_mass(host_M: float, host_M_error: float) -> float:
@@ -106,6 +227,234 @@ def eddington_shifted_host_mass(host_M: float, host_M_error: float) -> float:
     if not math.isfinite(Z) or Z <= 0.0:
         return host_M
     return float(np.trapezoid(M_grid * w, M_grid) / Z)
+
+
+def _mass_trunc_lnM_weight(
+    M: npt.NDArray[np.float64],
+    host_M: float | npt.NDArray[np.float64],
+    sigma_lnM: float | npt.NDArray[np.float64],
+) -> npt.NDArray[np.float64]:
+    r"""Unnormalised truncated host-mass prior as a density w.r.t. ``d ln M``.
+
+    Returns ``LN(M; M_g, sigma_lnM) * R_eff(M) * M`` (the trailing ``* M`` converts
+    the density in ``M`` into a density in ``ln M``, so ``Z_M = int w d ln M``):
+
+    .. math::
+
+        w(\ln M) = \frac{R_\mathrm{eff}(M)}{\sigma_{\ln M}\sqrt{2\pi}}
+                   \exp\!\Big[-\tfrac12\big(\tfrac{\ln M-\ln M_g}{\sigma_{\ln M}}\big)^2\Big].
+
+    The caller applies the ``[M_MIN, M_MAX]`` truncation mask (this function does
+    not). ``M``, ``host_M``, ``sigma_lnM`` broadcast against each other.
+
+    References:
+        Reines & Volonteri (2015), arXiv:1508.06274, Sec. 4.1 (0.24 dex lognormal
+        scatter -> Gaussian in ln M_BH); Babak et al. (2017), arXiv:1703.09722
+        (per-MBH R_eff population weight).
+    """
+    ln_ratio = (np.log(M) - np.log(host_M)) / sigma_lnM
+    weight: npt.NDArray[np.float64] = (
+        np.exp(-0.5 * ln_ratio * ln_ratio)
+        * np.asarray(R_eff_per_mbh(M), dtype=np.float64)
+        / (sigma_lnM * np.sqrt(2.0 * np.pi))
+    )
+    return weight
+
+
+def _mass_trunc_sigma_lnM(
+    host_M: float | npt.NDArray[np.float64], host_M_error: float | npt.NDArray[np.float64]
+) -> npt.NDArray[np.float64]:
+    r"""Recover the lognormal width ``sigma_lnM = host_M_error / host_M``.
+
+    The catalogue stores the *linear* 1-sigma ``host_M_error = M_g * sigma_lnM``
+    (``handler._empiric_stellar_mass_to_BH_mass_relation``), i.e. the first-order
+    linearisation of the Reines & Volonteri lognormal error. Dividing recovers the
+    underlying log-space width the ``mass_trunc`` kernel uses. Floored at
+    ``_MASS_TRUNC_SIGMA_LNM_FLOOR`` so ``sigma -> 0`` yields the spec-mass limit.
+    """
+    return np.maximum(
+        np.asarray(host_M_error, dtype=np.float64) / np.asarray(host_M, dtype=np.float64),
+        _MASS_TRUNC_SIGMA_LNM_FLOOR,
+    )
+
+
+_MASS_TRUNC_LNM_HALF_WIDTH: float = 10.0  # +/- N sigma_lnM lnM integration window
+
+
+def _mass_trunc_lnM_window(
+    host_M: float | npt.NDArray[np.float64], sigma_lnM: float | npt.NDArray[np.float64]
+) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
+    r"""Per-host ``[ln_lo, ln_hi]`` integration window: the prior peak +/- N sigma_lnM,
+    clipped to ``[ln M_MIN, ln M_MAX]``.
+
+    The truncated lognormal x R_eff prior is negligible (``exp(-N^2/2)``) outside
+    ``ln M_g +/- N sigma_lnM``, so centring the ``ln M`` quadrature on the peak (i)
+    respects the ``[M_MIN, M_MAX]`` truncation and (ii) RESOLVES the peak for ANY
+    ``sigma_lnM`` -- a full-window Gauss-Legendre would miss a narrow spike (the
+    same peak-aliasing that falsified volume_trunc). The centre is clipped so the
+    window stays valid even for a host mass at/beyond a bound. Returns two arrays
+    broadcasting to the shape of ``host_M`` / ``sigma_lnM``.
+    """
+    ln_min = math.log(_MASS_TRUNC_M_MIN)
+    ln_max = math.log(_MASS_TRUNC_M_MAX)
+    ln_mg = np.clip(np.log(np.asarray(host_M, dtype=np.float64)), ln_min, ln_max)
+    half_w = _MASS_TRUNC_LNM_HALF_WIDTH * np.asarray(sigma_lnM, dtype=np.float64)
+    return np.maximum(ln_min, ln_mg - half_w), np.minimum(ln_max, ln_mg + half_w)
+
+
+def _mass_trunc_log_normalisation(
+    host_M: float | npt.NDArray[np.float64], sigma_lnM: float | npt.NDArray[np.float64]
+) -> npt.NDArray[np.float64]:
+    r"""Per-host normalisation ``Z_M = int LN(M;M_g,sigma) R_eff(M) dM`` (truncated).
+
+    Gauss-Legendre in ``u = ln M`` over the peak-aware window
+    (:func:`_mass_trunc_lnM_window`). ``host_M`` / ``sigma_lnM`` are scalar or shape
+    ``(n,)``; the result carries a trailing size matching their broadcast shape
+    (a length-1 array for scalar input -- callers take ``.item()``).
+    """
+    ln_lo, ln_hi = _mass_trunc_lnM_window(host_M, sigma_lnM)  # (...,)
+    half = 0.5 * (ln_hi - ln_lo)
+    mid = 0.5 * (ln_hi + ln_lo)
+    M_nodes = np.exp(mid[..., None] + half[..., None] * _MT_GL_NODES)  # (..., G)
+    hM = np.asarray(host_M, dtype=np.float64)[..., None]  # (..., 1)
+    sg = np.asarray(sigma_lnM, dtype=np.float64)[..., None]  # (..., 1)
+    w = _mass_trunc_lnM_weight(M_nodes, hM, sg)  # (..., G)
+    z_m: npt.NDArray[np.float64] = half * np.sum(w * _MT_GL_WEIGHTS, axis=-1)  # (...,)
+    return z_m
+
+
+def _mass_trunc_mz_integral(
+    mu_cond: npt.NDArray[np.float64],
+    sigma_cond: float,
+    one_plus_z: npt.NDArray[np.float64],
+    det_M: float,
+    host_M: float | npt.NDArray[np.float64],
+    sigma_lnM: float | npt.NDArray[np.float64],
+    Z_M: float | npt.NDArray[np.float64],
+) -> npt.NDArray[np.float64]:
+    r"""Mass-marginal factor of the with-BH-mass numerator, ``mass_trunc`` kernel.
+
+    Replaces the analytic Gaussian-product ``mz_integral`` (linear-Gaussian mass
+    prior) with
+
+    .. math::
+
+        \int \mathcal{N}\big(a;\mu_\mathrm{cond},\sigma_\mathrm{cond}\big)\,p_M(M)\,dM,
+        \qquad a = M(1+z)/M_\mathrm{det},
+
+    where ``p_M`` is the truncated lognormal x R_eff prior. The GW factor is a sharp
+    Gaussian in ``a``; substituting ``a = mu_cond + sqrt(2) sigma_cond t`` gives the
+    exact Gauss-Hermite form (A&S 25.4.46) -- nodes land ON the GW peak, so no
+    aliasing over the wide mass window:
+
+    .. math::
+
+        \mathrm{mz} = \frac{1}{\sqrt\pi}\sum_k w_k^\mathrm{GH}\,p_M(M_k)\,
+                      \frac{M_\mathrm{det}}{1+z},\quad
+        M_k = \big(\mu_\mathrm{cond}+\sqrt2\,\sigma_\mathrm{cond}\,t_k\big)\frac{M_\mathrm{det}}{1+z}.
+
+    ``mu_cond`` / ``one_plus_z`` are the per-z-node arrays ``(..., K)``; ``host_M`` /
+    ``sigma_lnM`` / ``Z_M`` are scalar (scalar path) or ``(n,)`` (batch, leading
+    axis = ``mu_cond.shape[:-1]``). Returns ``(..., K)``.
+    """
+    a = mu_cond[..., None] + np.sqrt(2.0) * sigma_cond * _MT_GH_NODES  # (..., K, G)
+    opz = one_plus_z[..., None]  # (..., K, 1)
+    M = a * det_M / opz  # (..., K, G) rest-frame mass at each GH node
+    inside = (M >= _MASS_TRUNC_M_MIN) & (M <= _MASS_TRUNC_M_MAX)
+    M_safe = np.where(inside, M, _MASS_TRUNC_M_MIN)  # keep logs finite; masked below
+    # Host params -> (..., 1, 1) to broadcast against M of shape (..., K, G).
+    hM = np.asarray(host_M, dtype=np.float64).reshape(np.shape(host_M) + (1, 1))
+    sg = np.asarray(sigma_lnM, dtype=np.float64).reshape(np.shape(sigma_lnM) + (1, 1))
+    ZM = np.asarray(Z_M, dtype=np.float64).reshape(np.shape(Z_M) + (1, 1))
+    # p_M(M) as a density in M: LN*R_eff/Z_M = (lnM-weight)/(M Z_M); 0 outside window.
+    p_M = np.where(inside, _mass_trunc_lnM_weight(M_safe, hM, sg) / (M_safe * ZM), 0.0)
+    p_a = p_M * det_M / opz  # push forward to the a coordinate (|dM/da|)
+    mz: npt.NDArray[np.float64] = (p_a @ _MT_GH_WEIGHTS) / np.sqrt(np.pi)  # (..., K)
+    return mz
+
+
+def _mass_trunc_denominator_inner_m_integral(
+    z: npt.NDArray[np.float64],
+    detection_probability: Any,
+    host_phiS: float,
+    host_qS: float,
+    host_M: float,
+    sigma_lnM: float,
+    Z_M: float,
+    h: float,
+) -> npt.NDArray[np.float64]:
+    r"""Inner mass integral of the with-BH-mass selection denominator, ``mass_trunc``.
+
+    Returns, per redshift ``z_j``,
+    ``g(z) = int p_det(d_L(z), M(1+z)) p_M(M) dM`` with the truncated lognormal x
+    R_eff prior. Gauss-Legendre in ``ln M`` over the peak-aware window
+    (:func:`_mass_trunc_lnM_window`, the SAME support as ``Z_M``); the erf-sum
+    closed form (Gaussian-prior only) does not apply. p_det is evaluated at
+    ``(d_L(z), M(1+z))`` via the same interpolator the erf-sum path uses.
+    """
+    z_arr = np.atleast_1d(np.asarray(z, dtype=np.float64))  # (n_z,)
+    ln_lo, ln_hi = _mass_trunc_lnM_window(host_M, sigma_lnM)  # scalars
+    half = 0.5 * (ln_hi - ln_lo)
+    mid = 0.5 * (ln_hi + ln_lo)
+    M_nodes = np.exp(mid + half * _MT_GL_NODES)  # (G,)
+    n_z, n_g = z_arr.size, M_nodes.size
+    d_L = dist_vectorized(z_arr, h=h)  # (n_z,)
+    m_z = M_nodes[None, :] * (1.0 + z_arr)[:, None]  # (n_z, G) detector-frame mass
+    p = np.asarray(
+        detection_probability.detection_probability_with_bh_mass_interpolated(
+            np.repeat(d_L, n_g),
+            m_z.reshape(-1),
+            np.full(n_z * n_g, host_phiS),
+            np.full(n_z * n_g, host_qS),
+            h=h,
+        ),
+        dtype=np.float64,
+    ).reshape(n_z, n_g)
+    w = _mass_trunc_lnM_weight(M_nodes, host_M, sigma_lnM) / Z_M  # (G,) normalised p_M dlnM
+    inner_m: npt.NDArray[np.float64] = half * ((p * w[None, :]) @ _MT_GL_WEIGHTS)  # (n_z,)
+    return inner_m
+
+
+def _mass_trunc_denominator_inner_m_integral_batch(
+    z: npt.NDArray[np.float64],
+    detection_probability: Any,
+    host_phiS: npt.NDArray[np.float64],
+    host_qS: npt.NDArray[np.float64],
+    host_M: npt.NDArray[np.float64],
+    sigma_lnM: npt.NDArray[np.float64],
+    Z_M: npt.NDArray[np.float64],
+    h: float,
+) -> npt.NDArray[np.float64]:
+    """Host-batched twin of :func:`_mass_trunc_denominator_inner_m_integral`.
+
+    ``z`` has shape ``(n, n_z)``; host parameters have shape ``(n,)``. Row ``i`` is
+    bit-identical to the scalar function called with ``z[i]`` and host ``i``'s
+    parameters -- one ``p_det`` interpolator call covers all ``n * n_z * G`` points.
+    Per-host peak-aware ``ln M`` window (same as ``Z_M``).
+    """
+    n, n_z = z.shape
+    ln_lo, ln_hi = _mass_trunc_lnM_window(host_M, sigma_lnM)  # (n,), (n,)
+    half = 0.5 * (ln_hi - ln_lo)  # (n,)
+    mid = 0.5 * (ln_hi + ln_lo)  # (n,)
+    M_nodes = np.exp(mid[:, None] + half[:, None] * _MT_GL_NODES)  # (n, G)
+    n_g = M_nodes.shape[1]
+    d_L = dist_vectorized(z.reshape(-1), h=h)  # (n*n_z,)
+    m_z = M_nodes[:, None, :] * (1.0 + z[:, :, None])  # (n, n_z, G)
+    p = np.asarray(
+        detection_probability.detection_probability_with_bh_mass_interpolated(
+            np.repeat(d_L, n_g),
+            m_z.reshape(-1),
+            np.repeat(host_phiS, n_z * n_g),
+            np.repeat(host_qS, n_z * n_g),
+            h=h,
+        ),
+        dtype=np.float64,
+    ).reshape(n, n_z, n_g)
+    w = (
+        _mass_trunc_lnM_weight(M_nodes, host_M[:, None], sigma_lnM[:, None]) / Z_M[:, None]
+    )  # (n, G) normalised p_M dlnM
+    inner_m: npt.NDArray[np.float64] = half[:, None] * ((p * w[:, None, :]) @ _MT_GL_WEIGHTS)
+    return inner_m  # (n, n_z)
 
 
 def weighted_ratio_of_sums(
@@ -265,6 +614,7 @@ def precompute_completion_denominator(
     *,
     completeness: CompletenessModel | None = None,
     quad_n: int = _DH_QUAD_ORDER,
+    z_max_cap: float | None = None,
 ) -> dict[float, float]:
     """Precompute the completion-term denominator D(h) for each h value.
 
@@ -336,6 +686,16 @@ def precompute_completion_denominator(
     for h in h_values:
         dl_max = detection_probability_obj.get_dl_max(h)
         z_max = dist_to_redshift(dl_max, h=h)
+        # [PHYSICS] Selection-domain cap (issue #30): keep the selection integrals
+        # on the SAME z-domain as the numerator-side candidate window (p_D caps its
+        # BallTree z-window at max_redshift), so an analysis truncation moves
+        # numerator and denominator TOGETHER and beta_G = D - beta_Gbar remains an
+        # identity on one domain. No-op at current constants: the p_det horizon
+        # z_max(h) <= ~1.33 for h in [0.60, 0.86] < max_redshift = 1.5.
+        # Mandel, Farr & Gair (2019), arXiv:1809.02063 (selection function must
+        # match the event-inclusion criterion).
+        if z_max_cap is not None:
+            z_max = min(z_max, z_max_cap)
         z_min = 1e-6
 
         def _denom_integrand(
@@ -405,6 +765,7 @@ def precompute_missing_completion_denominator(
     completeness: CompletenessModel,
     *,
     quad_n: int = _DH_QUAD_ORDER,
+    z_max_cap: float | None = None,
 ) -> dict[float, float]:
     r"""Precompute the missing-volume selection integral ``beta_Gbar(h)``.
 
@@ -468,6 +829,10 @@ def precompute_missing_completion_denominator(
     for h in h_values:
         dl_max = detection_probability_obj.get_dl_max(h)
         z_max = dist_to_redshift(dl_max, h=h)
+        # [PHYSICS] Selection-domain cap (issue #30) — same domain as D(h); see
+        # precompute_completion_denominator. No-op at current constants.
+        if z_max_cap is not None:
+            z_max = min(z_max, z_max_cap)
         z_min = 1e-6
 
         def _missing_denom_integrand(
@@ -533,6 +898,7 @@ def precompute_global_catalog_selection(
     detection_probability_obj: SimulationDetectionProbability,
     *,
     with_bh_mass: bool,
+    z_max_cap: float | None = None,
 ) -> dict[float, float]:
     r"""Precompute the GLOBAL in-catalogue selection denominator (Option A).
 
@@ -618,6 +984,10 @@ def precompute_global_catalog_selection(
     global_table: dict[float, float] = {}
     for h in h_values:
         z_max = dist_to_redshift(detection_probability_obj.get_dl_max(h), h=h)
+        # [PHYSICS] Selection-domain cap (issue #30) — same domain as D(h); see
+        # precompute_completion_denominator. No-op at current constants.
+        if z_max_cap is not None:
+            z_max = min(z_max, z_max_cap)
         # Eligible galaxies: inside the detectable volume (z < z_max(h)) with a
         # finite source-frame mass. Galaxies beyond z_max(h) have P_det ~= 0 and
         # do not contribute to the selection normalisation.
@@ -702,8 +1072,8 @@ detection_probability: Any = None
 # Gray et al. (2020), arXiv:1908.06050, Eq. A.19:
 # Precomputed completion-term denominator D(h) for each h in the evaluation grid
 D_h_table: dict[float, float] = {}
-# Legacy global kept for single_host_likelihood_integration_testing() and
-# single_host_likelihood_grid() — not used by the optimized production path.
+# Legacy global kept for single_host_likelihood_integration_testing() (the dev-only
+# cross-check twin) — not used by the optimized production path.
 detection_likelihood_gaussians_by_detection_index: Any = None
 
 # Pre-computed Gaussian arrays (replace frozen scipy multivariate_normal objects)
@@ -842,7 +1212,22 @@ class BayesianStatistics:
         fisher_cond_threshold: float = 1e16,
         normalization_mode: str = "volume_deconv",
         base_seed: int = 0,
+        allow_low_pdet_coverage: bool = False,
+        h_values: Sequence[float] | None = None,
     ) -> None:
+        # h-grid fusion (opt-in): when h_values is given it supersedes h_value
+        # and ALL h-invariant setup — catalogue/BallTree (passed in), injection
+        # pooling + p_det grid, completeness, Fisher staging, worker pool — is
+        # paid once for the whole grid. The D(h)/beta/global-selection
+        # precomputes are h-list-native already. Per-h outputs (posterior
+        # JSONs, event-likelihood diagnostics) are written as each h completes,
+        # preserving per-h failure granularity. The single-h path (h_values
+        # None) is byte-compatible with the pre-fusion behaviour.
+        _h_list: list[float] = (
+            [float(h_value)] if h_values is None else [float(x) for x in h_values]
+        )
+        if not _h_list:
+            raise ValueError("h_values must contain at least one value")
         self.catalog_only = catalog_only
         # G4: deterministic seed for the with-BH-mass MC denominator (threaded to
         # single_host_likelihood workers; per-call streams derived per host).
@@ -859,7 +1244,31 @@ class BayesianStatistics:
         # The kernel (bare vs volume-deconvolved) is threaded into single_host_likelihood.
         # Default "volume_deconv": Gray et al. (2020) arXiv:1908.06050 Eqs. A.9/A.10 + volume-
         # consistent host-z prior; P-P-calibrated (INDEPENDENT-VERIFICATION-REPORT-20260701 §7).
-        if normalization_mode not in ("global", "local_ratio", "volume_deconv", "volume_global"):
+        #   "volume_trunc" -> EXPERIMENTAL / FALSIFIED (Part 1, 2026-07-12): the volume kernel with
+        #                     the in-catalogue NUMERATOR integrated over the per-host galaxy window
+        #                     [z_g-4sigma, z_g+4sigma] (shared with Z_g / D_g) and the lower z-limit
+        #                     floored at 0 instead of 1e-6. No-op on the deep venue by construction.
+        #                     DO NOT USE FOR PRODUCTION: the seed600 shallow A/B FALSIFIED it — it
+        #                     worsens the shallow bias (1D mean 0.745 -> 0.800), because fixed_quad
+        #                     n=50 aliases the narrow GW peak over the wide host window AND the exact
+        #                     numerator tilts high. Kept as a diagnostic + reproducible record.
+        #                     results/volume_trunc_ab_20260712/FINDING.md; scoping §7b (Gray A.10 + G2b §1.4).
+        #   "mass_trunc"   -> EXPERIMENTAL (EXP-45, 2026-07-13): the volume_deconv host-z kernel PLUS
+        #                     the 2D (with-BH-mass) host-mass prior replaced by the truncated
+        #                     lognormal x R_eff prior on [M_MIN, M_MAX] (Gauss-Hermite numerator,
+        #                     Gauss-Legendre-in-lnM denominator), superseding the linear-Gaussian G2d
+        #                     moment match. Tests the host-mass-kernel truncation as the 2D +0.025
+        #                     residual driver (results/mass_kernel_truncation_20260713/FINDINGS.md).
+        #                     1D channel is byte-identical to volume_deconv (no mass term). Gated
+        #                     behind the flag until the seed600 A/B; volume_deconv stays the default.
+        if normalization_mode not in (
+            "global",
+            "local_ratio",
+            "volume_deconv",
+            "volume_global",
+            "volume_trunc",
+            "mass_trunc",
+        ):
             raise ValueError(f"unknown normalization_mode: {normalization_mode!r}")
         if normalization_mode == "global":
             warnings.warn(
@@ -874,11 +1283,14 @@ class BayesianStatistics:
         self._diagnostic_rows = []
         if catalog_only:
             _LOGGER.info("catalog_only mode: f_i=1, L_comp=0 (skipping completion integral)")
-        _LOGGER.info(f"Computing posteriors for h = {h_value}...")
-        if (h_value < self.cosmological_model.h.lower_limit) or (
-            h_value > self.cosmological_model.h.upper_limit
-        ):
-            raise ValueError("Hubble constant out of bounds.")
+        _LOGGER.info(
+            f"Computing posteriors for h = {_h_list[0] if len(_h_list) == 1 else _h_list}..."
+        )
+        for _h_check in _h_list:
+            if (_h_check < self.cosmological_model.h.lower_limit) or (
+                _h_check > self.cosmological_model.h.upper_limit
+            ):
+                raise ValueError("Hubble constant out of bounds.")
 
         _LOGGER.debug(f"Loaded {len(self.cramer_rao_bounds)} detections...")
         # Filter detections: SNR threshold + relative d_L error
@@ -910,16 +1322,36 @@ class BayesianStatistics:
             dl_bins=pdet_dl_bins,
             mass_bins=pdet_mass_bins,
             estimator=pdet_estimator,  # type: ignore[arg-type]
+            # Stale-pool gate (issue #20): the pool must span the host-draw
+            # volume; a z_cut = 0.5-era pool at depth 1.5 yields p_det = 0
+            # for essentially all events — silent garbage posteriors.
+            expected_z_max=HOST_DRAW_Z_MAX,
+            allow_shallow_pool=allow_low_pdet_coverage,
         )
         _LOGGER.debug("Detection probability functions created.")
 
         # Pre-warm P_det grid cache for target h -- avoids N workers each building
         # the same grid independently after pool spawn
-        detection_probability._get_or_build_grid(h_value)
-        _LOGGER.debug("P_det grid pre-warmed for h=%.4f.", h_value)
+        for _h_warm in _h_list:
+            detection_probability._get_or_build_grid(_h_warm)
+            _LOGGER.debug("P_det grid pre-warmed for h=%.4f.", _h_warm)
 
-        # Validate P_det grid coverage for observed events
-        detection_probability.validate_coverage(h_value, self.cramer_rao_bounds)
+        # Validate P_det grid coverage for observed events — HARD gate
+        # (readiness sweep A2-STALE-POOL-GATE, 2026-07-03): a warning buried
+        # in one of 38 per-task logs does not stop a campaign from burning
+        # its cpu-h budget on p_det = 0 posteriors. Grid mode gates on every h.
+        for _h_cov in _h_list:
+            coverage_fraction = detection_probability.validate_coverage(
+                _h_cov, self.cramer_rao_bounds
+            )
+            if coverage_fraction < 0.95 and not allow_low_pdet_coverage:
+                msg = (
+                    f"P_det grid covers only {coverage_fraction:.1%} of events' "
+                    "4-sigma d_L windows (< 95%). The injection pool is likely stale "
+                    "or too shallow for this event set. Regenerate the pool, or pass "
+                    "--allow_low_pdet_coverage to proceed deliberately."
+                )
+                raise RuntimeError(msg)
 
         # Gray et al. (2020), arXiv:1908.06050, Eq. 9 + Gray-Messenger-Veitch 2022,
         # arXiv:2111.04629 (Change 5): per-HEALPix-pixel completeness f_k(z,Omega,h),
@@ -934,11 +1366,12 @@ class BayesianStatistics:
         # full detectable volume, D(h) = INTEGRAL (1/Npix) sum_k p_det(d_L,Omega_k)
         # dVc/(1+z). D(h) is event-independent; compute once per h-value.
         _D_h_table = precompute_completion_denominator(
-            h_values=[h_value],
+            h_values=_h_list,
             detection_probability_obj=detection_probability,
             Omega_m=self.Omega_m,
             Omega_DE=self.Omega_DE,
             completeness=completeness,
+            z_max_cap=REDSHIFT_UPPER_LIMIT,
         )
         _LOGGER.info("D(h) precomputed for %d h-value(s).", len(_D_h_table))
 
@@ -949,34 +1382,38 @@ class BayesianStatistics:
         # selection sums sum_global w_g D_g for both channels (Eq. 29 discrete
         # realisation) that make L_cat scale-free so n_gal cancels.
         _beta_Gbar_table = precompute_missing_completion_denominator(
-            h_values=[h_value],
+            h_values=_h_list,
             detection_probability_obj=detection_probability,
             completeness=completeness,
+            z_max_cap=REDSHIFT_UPPER_LIMIT,
         )
         _beta_G_table = {h: _D_h_table[h] - _beta_Gbar_table[h] for h in _D_h_table}
         _global_cat_denom_no_bh = precompute_global_catalog_selection(
-            h_values=[h_value],
+            h_values=_h_list,
             galaxy_catalog=galaxy_catalog,
             detection_probability_obj=detection_probability,
             with_bh_mass=False,
+            z_max_cap=REDSHIFT_UPPER_LIMIT,
         )
         _global_cat_denom_with_bh = precompute_global_catalog_selection(
-            h_values=[h_value],
+            h_values=_h_list,
             galaxy_catalog=galaxy_catalog,
             detection_probability_obj=detection_probability,
             with_bh_mass=True,
+            z_max_cap=REDSHIFT_UPPER_LIMIT,
         )
-        _w_G_preview = (
-            _beta_G_table[h_value] / _D_h_table[h_value]
-            if _D_h_table.get(h_value, 0.0) > 0.0
-            else float("nan")
-        )
-        _LOGGER.info(
-            "Partition-norm: w_G=beta_G/D(h)=%.4f, sum_w_Dg(no_bh)=%.4e, sum_w_Dg(with_bh)=%.4e",
-            _w_G_preview,
-            _global_cat_denom_no_bh.get(h_value, float("nan")),
-            _global_cat_denom_with_bh.get(h_value, float("nan")),
-        )
+        for _h_prev in _h_list:
+            _w_G_preview = (
+                _beta_G_table[_h_prev] / _D_h_table[_h_prev]
+                if _D_h_table.get(_h_prev, 0.0) > 0.0
+                else float("nan")
+            )
+            _LOGGER.info(
+                "Partition-norm: w_G=beta_G/D(h)=%.4f, sum_w_Dg(no_bh)=%.4e, sum_w_Dg(with_bh)=%.4e",
+                _w_G_preview,
+                _global_cat_denom_no_bh.get(_h_prev, float("nan")),
+                _global_cat_denom_with_bh.get(_h_prev, float("nan")),
+            )
 
         _LOGGER.debug("Pre-computing Gaussian arrays for GW likelihoods...")
         _t0 = time.perf_counter()
@@ -1183,8 +1620,6 @@ class BayesianStatistics:
             n_det,
         )
 
-        self.h = h_value
-
         if num_workers is None:
             try:
                 available_cpus = len(os.sched_getaffinity(0))
@@ -1247,49 +1682,70 @@ class BayesianStatistics:
                 num_workers,
                 time.perf_counter() - _t0,
             )
-            self.p_D(
-                galaxy_catalog=galaxy_catalog,
-                redshift_upper_limit=REDSHIFT_UPPER_LIMIT,
-                pool=pool,
-                completeness=completeness,
-                detection_probability_obj=detection_probability,
-            )
-        _LOGGER.info(f"posteriors comupted for h = {self.h}")
+            # Per-h evaluation loop (one iteration in single-h mode). Setup
+            # above — data, p_det grids, completeness, D(h)/beta/global tables,
+            # Fisher staging, worker pool — is h-invariant and shared; each
+            # iteration resets the per-h accumulators, runs the detection loop,
+            # and writes that h's outputs immediately (per-h failure
+            # granularity is preserved in grid mode).
+            for _h_run in _h_list:
+                self.h = _h_run
+                if h_values is not None:
+                    # Grid mode: per-h accumulators so each JSON carries exactly
+                    # one likelihood per event (the canonical production shape).
+                    # Single-h mode intentionally keeps the legacy semantics:
+                    # repeated evaluate() calls on one instance accumulate one
+                    # value per h into posterior_data (integration-test harness
+                    # contract; production single-h runs are fresh processes).
+                    self.posterior_data = {}
+                    self.posterior_data_with_bh_mass = {}
+                    self._diagnostic_rows = []
 
-        if not os.path.isdir("simulations/posteriors"):
-            os.makedirs("simulations/posteriors")
-        if not os.path.isdir("simulations/posteriors_with_bh_mass"):
-            os.makedirs("simulations/posteriors_with_bh_mass")
+                self.p_D(
+                    galaxy_catalog=galaxy_catalog,
+                    redshift_upper_limit=REDSHIFT_UPPER_LIMIT,
+                    pool=pool,
+                    completeness=completeness,
+                    detection_probability_obj=detection_probability,
+                )
+                _LOGGER.info(f"posteriors comupted for h = {self.h}")
 
-        # 4-decimal precision required to distinguish Phase-50 superdense
-        # midpoints (Δh=0.0005, e.g. 0.7205 / 0.7215) from the dense Δh=0.001
-        # grid (0.720 / 0.721 / 0.722). Rounding to 3 decimals collapses each
-        # midpoint onto a neighbouring dense filename, so the second writer
-        # silently overwrites the first. Posteriors share filenames only when
-        # the underlying h-values agree to 4 decimals.
-        h_label = str(np.round(self.h, 4)).replace(".", "_")
-        with open(
-            f"simulations/posteriors/h_{h_label}.json",
-            "w",
-        ) as file:
-            data = {str(key): value for key, value in self.posterior_data.items()}
-            json.dump(data | {"h": self.h}, file)
+                if not os.path.isdir("simulations/posteriors"):
+                    os.makedirs("simulations/posteriors")
+                if not os.path.isdir("simulations/posteriors_with_bh_mass"):
+                    os.makedirs("simulations/posteriors_with_bh_mass")
 
-        with open(
-            f"simulations/posteriors_with_bh_mass/h_{h_label}.json",
-            "w",
-        ) as file:
-            # update existing data
+                # 4-decimal precision required to distinguish Phase-50 superdense
+                # midpoints (Δh=0.0005, e.g. 0.7205 / 0.7215) from the dense Δh=0.001
+                # grid (0.720 / 0.721 / 0.722). Rounding to 3 decimals collapses each
+                # midpoint onto a neighbouring dense filename, so the second writer
+                # silently overwrites the first. Posteriors share filenames only when
+                # the underlying h-values agree to 4 decimals.
+                h_label = str(np.round(self.h, 4)).replace(".", "_")
+                with open(
+                    f"simulations/posteriors/h_{h_label}.json",
+                    "w",
+                ) as file:
+                    data = {str(key): value for key, value in self.posterior_data.items()}
+                    json.dump(data | {"h": self.h}, file)
 
-            data = {str(key): value for key, value in self.posterior_data_with_bh_mass.items()}
-            json.dump(data | {"h": self.h}, file)
+                with open(
+                    f"simulations/posteriors_with_bh_mass/h_{h_label}.json",
+                    "w",
+                ) as file:
+                    # update existing data
 
-        # Write per-event diagnostic CSV
-        if self._diagnostic_rows:
-            diagnostic_csv_path = "simulations/diagnostics/event_likelihoods.csv"
-            self._write_diagnostic_csv(diagnostic_csv_path)
+                    data = {
+                        str(key): value for key, value in self.posterior_data_with_bh_mass.items()
+                    }
+                    json.dump(data | {"h": self.h}, file)
 
-        # Write Fisher quality CSV (per D-12)
+                # Write per-event diagnostic CSV (append-mode, rows are h-tagged)
+                if self._diagnostic_rows:
+                    diagnostic_csv_path = "simulations/diagnostics/event_likelihoods.csv"
+                    self._write_diagnostic_csv(diagnostic_csv_path)
+
+        # Write Fisher quality CSV (per D-12) — h-invariant, once per run
         self._write_fisher_quality_csv()
 
         # Generate Fisher quality diagnostic plot (per D-06, D-07)
@@ -1370,6 +1826,7 @@ class BayesianStatistics:
         detection_probability_obj: SimulationDetectionProbability,
     ) -> None:
         count = 0
+        _n_zero_host = 0
         _det_times: list[float] = []
         self.posterior_data_with_bh_mass[GALAXY_LIKELIHOODS] = {}
         self.posterior_data_with_bh_mass[ADDITIONAL_GALAXIES_WITHOUT_BH_MASS] = {}
@@ -1415,12 +1872,36 @@ class BayesianStatistics:
             )
 
             if possible_hosts is None:
-                _LOGGER.debug("no possible hosts found...")
-                continue
-            possible_hosts, possible_hosts_with_bh_mass = possible_hosts  # type: ignore[assignment]
-            _LOGGER.info(
-                f"possible hosts found {len(possible_hosts)}/{len(possible_hosts_with_bh_mass)}..."
-            )
+                if self.catalog_only:
+                    # The catalog-only cross-check has no completion term, so a
+                    # zero-host event carries no information in this mode — keep
+                    # the legacy skip (mode stays byte-identical).
+                    _LOGGER.debug("no possible hosts found (catalog_only): skipping event")
+                    continue
+                # [PHYSICS] Zero-host pure-completion fallback (issue #29): an event
+                # whose localization volume contains no catalogue galaxy still
+                # contributes the pure-completion likelihood p_i = B_num(h)/D(h) —
+                # the exact L_cat -> 0 limit of the mixture
+                # p_i = (beta_G L_cat + B_num)/D computed in p_Di. The pre-2026-07-10
+                # `continue` silently conditioned the event sample on catalogue
+                # support (58% of depth-1.5 campaign events dropped) and railed the
+                # combined posterior; see FINDINGS_COMBINE_20260710.md.
+                # Eqs. (29)+(32) in Gray et al. (2020), arXiv:1908.06050;
+                # Eq. (5) in Gray, Messenger & Veitch (2022), arXiv:2111.04629;
+                # docs/derivations/G2a_completion_sky_marginal_4pi.md, limiting case 2.
+                _n_zero_host += 1
+                _LOGGER.warning(
+                    "Detection %d: no catalogue hosts in the localization volume — "
+                    "pure-completion fallback p_i = B_num/D (issue #29)",
+                    int(index),
+                )
+                candidate_hosts: list[HostGalaxy] = []
+                candidate_hosts_with_bh_mass: list[HostGalaxy] = []
+            else:
+                candidate_hosts, candidate_hosts_with_bh_mass = possible_hosts
+                _LOGGER.info(
+                    f"possible hosts found {len(candidate_hosts)}/{len(candidate_hosts_with_bh_mass)}..."
+                )
 
             """
             if len(possible_hosts_with_bh_mass) == 0:
@@ -1437,8 +1918,8 @@ class BayesianStatistics:
             """
 
             event_likelihood, event_likelihood_with_bh_mass = self.p_Di(
-                possible_host_galaxies=possible_hosts,  # type: ignore[arg-type]
-                possible_host_galaxies_with_bh_mass=possible_hosts_with_bh_mass,
+                possible_host_galaxies=candidate_hosts,
+                possible_host_galaxies_with_bh_mass=candidate_hosts_with_bh_mass,
                 detection_index=index,
                 pool=pool,
                 completeness=completeness,
@@ -1462,6 +1943,18 @@ class BayesianStatistics:
             _LOGGER.debug(
                 f"event likelihood: {event_likelihood}\nevent likelihood with bh mass: {event_likelihood_with_bh_mass}"
             )
+
+        # Host-lookup yield metric (issue #29 process fix): the zero-host rate is a
+        # first-class health signal — 58-60% on the depth-1.5 campaign was visible
+        # in per-event lines but tracked by nothing.
+        _LOGGER.info(
+            "Host-lookup yield at h=%.4f: %d/%d events with catalogue hosts, "
+            "%d pure-completion (zero-host) fallbacks",
+            self.h,
+            count - _n_zero_host,
+            count,
+            _n_zero_host,
+        )
 
     def p_Di(
         self,
@@ -1487,50 +1980,26 @@ class BayesianStatistics:
             f"reduced possible hosts galaxies to unique, removed {len(possible_host_galaxies) - len(possible_host_galaxies_reduced)} galaxies."
         )
 
-        chunksize = math.ceil(len(possible_host_galaxies_reduced) / pool._processes)  # type: ignore[attr-defined]
-        chunksize_with_bh_mass = math.ceil(
-            len(possible_host_galaxies_with_bh_mass) / pool._processes  # type: ignore[attr-defined]
-        )
-        results_with_bh_mass = pool.starmap(
-            single_host_likelihood,
-            [
-                (
-                    host.phiS,
-                    host.qS,
-                    host.z,
-                    host.z_error,
-                    host.M,
-                    host.M_error,
-                    detection_index,
-                    self.h,
-                    True,
-                    self._normalization_mode,
-                    self._base_seed,
-                )
-                for host in possible_host_galaxies_with_bh_mass
-            ],
-            chunksize=chunksize_with_bh_mass,
+        # Host-batched dispatch: one vectorized single_host_likelihood_batch task
+        # per worker chunk instead of one scalar single_host_likelihood task per
+        # host. Same chunk count as the old chunksize=ceil(n/processes) policy,
+        # same per-host values (see test_kernel_batch_equivalence.py).
+        results_with_bh_mass = _starmap_host_batches(
+            pool,
+            possible_host_galaxies_with_bh_mass,
+            detection_index,
+            self.h,
+            True,
+            self._normalization_mode,
         )
 
-        results_without_blackhole_mass = pool.starmap(
-            single_host_likelihood,
-            [
-                (
-                    host.phiS,
-                    host.qS,
-                    host.z,
-                    host.z_error,
-                    host.M,
-                    host.M_error,
-                    detection_index,
-                    self.h,
-                    False,
-                    self._normalization_mode,
-                    self._base_seed,
-                )
-                for host in possible_host_galaxies_reduced
-            ],
-            chunksize=chunksize,
+        results_without_blackhole_mass = _starmap_host_batches(
+            pool,
+            possible_host_galaxies_reduced,
+            detection_index,
+            self.h,
+            False,
+            self._normalization_mode,
         )
         end = time.time()
         _LOGGER.info(f"parallel computing took: {end - start}s")
@@ -1824,24 +2293,150 @@ def use_detection(detection: Detection) -> bool:
     return False
 
 
-def single_host_likelihood_grid(
-    possible_host: HostGalaxy,
-    detection: Detection,
-    detection_index: int,
+def _bh_mass_denominator_inner_m_integral(
+    z: npt.NDArray[np.float64],
+    detection_probability: Any,
+    host_phiS: float,
+    host_qS: float,
+    host_M_eff: float,
+    host_M_error: float,
     h: float,
-    evaluate_with_bh_mass: bool,
-) -> list[float]:
-    global redshift_upper_integration_limit
-    global redshift_lower_integration_limit
-    global bh_mass_upper_integration_limit
-    global bh_mass_lower_integration_limit
-    global detection_probability
-    global detection_likelihood_gaussians_by_detection_index
+) -> npt.NDArray[np.float64]:
+    r"""Exact inner mass integral of the with-BH-mass selection denominator.
 
-    # find sharpest peak
-    print(possible_host.z, possible_host.z_error)
-    print(detection.d_L, detection.d_L_uncertainty)
-    return []
+    Returns, per redshift ``z_j``,
+
+    .. math::
+
+        g(z) = \int p_\mathrm{det}\big(d_L(z),\, M(1+z)\big)\,
+               \mathcal{N}(M;\, M_g^\mathrm{eff},\, \sigma_M)\, dM .
+
+    ``p_det`` is bilinearly interpolated (``method="linear"``) and constant-clamped
+    in ``M_z`` outside the injection grid (``simulation_detection_probability``
+    clips ``M_z`` to ``[M_centers[0], M_centers[-1]]``), so at fixed ``d_L(z)`` it
+    is *exactly* piecewise-linear in ``M_z`` between the interpolator's ``M_z``
+    knots.  The integral of a piecewise-linear function against a Gaussian is the
+    closed-form erf-sum over the knots ``M_k = M_center_k / (1 + z)``:
+
+    .. math::
+
+        \int_{M_k}^{M_{k+1}} (c_0 + c_1 M)\,\mathcal{N}(M;\mu,\sigma)\,dM
+        = c_0\,\Delta\Phi + c_1\,(\mu\,\Delta\Phi - \sigma\,\Delta\phi),
+
+    with ``c_1`` the per-segment slope, plus constant-clamp tails
+    ``p_0\,\Phi(a_0) + p_{-1}(1-\Phi(a_{-1}))``, ``a_k = (M_k-\mu)/\sigma``.  This
+    is exact for the interpolant (zero ``M``-quadrature error) and replaces the
+    10k-sample Monte-Carlo that carried ~1-5% noise.  The ``M_z`` knots are read
+    from the live interpolator, so the integral automatically tracks any change
+    to the injection-grid resolution.
+
+    Reference:
+        Owen (1980), *A table of normal integrals*, Commun. Statist. B9(4),
+        389-419 (Gaussian zeroth/first-moment identities).
+    """
+    z_arr = np.atleast_1d(np.asarray(z, dtype=np.float64))
+    interp_2d, _ = detection_probability._get_or_build_grid(h)
+    m_centers = np.asarray(interp_2d.grid[1], dtype=np.float64)  # M_z grid knots
+    n_k = m_centers.size
+    d_L = dist_vectorized(z_arr, h=h)
+
+    # p_det at every (z_j, M_center_k) -> (n_z, K), one interpolator call.
+    dl_zz = np.repeat(d_L, n_k)
+    mm = np.tile(m_centers, z_arr.size)
+    phi = np.full_like(dl_zz, host_phiS)
+    theta = np.full_like(dl_zz, host_qS)
+    p = np.asarray(
+        detection_probability.detection_probability_with_bh_mass_interpolated(
+            dl_zz, mm, phi, theta, h=h
+        ),
+        dtype=np.float64,
+    ).reshape(z_arr.size, n_k)
+
+    mu = host_M_eff
+    sigma = host_M_error
+    # Knot positions in rest-frame M (M_z = M(1+z)); increasing in k for z >= 0.
+    m_knots = m_centers[None, :] / (1.0 + z_arr[:, None])  # (n_z, K)
+    a = (m_knots - mu) / sigma
+    big_phi = ndtr(a)  # standard-normal CDF (identical to norm.cdf)
+    small_phi = np.exp(-0.5 * a * a) / np.sqrt(2.0 * np.pi)  # standard-normal pdf
+    # Constant-clamp tails (p_det flat below the first / above the last knot).
+    val = p[:, 0] * big_phi[:, 0] + p[:, -1] * (1.0 - big_phi[:, -1])
+    # Interior linear segments: int (c0 + c1 M) N dM, c1 = per-segment slope.
+    d_big = big_phi[:, 1:] - big_phi[:, :-1]  # (n_z, K-1)
+    int_m_n = mu * d_big - sigma * (small_phi[:, 1:] - small_phi[:, :-1])  # ∫ M N dM
+    dm = m_knots[:, 1:] - m_knots[:, :-1]
+    slope = (p[:, 1:] - p[:, :-1]) / dm
+    val = val + np.sum(p[:, :-1] * d_big + slope * (int_m_n - m_knots[:, :-1] * d_big), axis=1)
+    return np.asarray(val, dtype=np.float64)
+
+
+def _bh_mass_denominator_inner_m_integral_batch(
+    z: npt.NDArray[np.float64],
+    detection_probability: Any,
+    host_phiS: npt.NDArray[np.float64],
+    host_qS: npt.NDArray[np.float64],
+    host_M_eff: npt.NDArray[np.float64],
+    host_M_error: npt.NDArray[np.float64],
+    h: float,
+) -> npt.NDArray[np.float64]:
+    """Host-batched twin of :func:`_bh_mass_denominator_inner_m_integral`.
+
+    Evaluates the exact erf-sum inner mass integral for ``n`` hosts at once:
+    ``z`` has shape ``(n, n_z)`` (per-host outer-quadrature nodes) and the host
+    parameters have shape ``(n,)``. Row ``i`` of the result is bit-identical to
+    the scalar function called with ``z[i]`` and host ``i``'s parameters — the
+    arithmetic per (host, node, knot) element is unchanged; only a leading host
+    axis is added, and the single ``p_det`` interpolator call covers all
+    ``n * n_z * K`` points at once (amortising ``_find_indices``).
+
+    Args:
+        z: Redshift nodes, shape ``(n, n_z)``.
+        detection_probability: ``SimulationDetectionProbability`` instance.
+        host_phiS: Host ecliptic azimuths, shape ``(n,)``.
+        host_qS: Host ecliptic polar angles, shape ``(n,)``.
+        host_M_eff: Effective (Eddington-shifted) host masses, shape ``(n,)``.
+        host_M_error: Host mass 1-sigma errors, shape ``(n,)``.
+        h: Dimensionless Hubble parameter.
+
+    Returns:
+        Inner-integral values ``g(z)``, shape ``(n, n_z)``.
+    """
+    n, n_z = z.shape
+    interp_2d, _ = detection_probability._get_or_build_grid(h)
+    m_centers = np.asarray(interp_2d.grid[1], dtype=np.float64)  # M_z grid knots
+    n_k = m_centers.size
+    d_L = dist_vectorized(z.reshape(-1), h=h)  # (n*n_z,)
+
+    # p_det at every (host_i, z_j, M_center_k) -> (n, n_z, K), one interpolator call.
+    dl_zz = np.repeat(d_L, n_k)
+    mm = np.tile(m_centers, n * n_z)
+    phi = np.repeat(host_phiS, n_z * n_k)
+    theta = np.repeat(host_qS, n_z * n_k)
+    p = np.asarray(
+        detection_probability.detection_probability_with_bh_mass_interpolated(
+            dl_zz, mm, phi, theta, h=h
+        ),
+        dtype=np.float64,
+    ).reshape(n, n_z, n_k)
+
+    mu = host_M_eff[:, None, None]
+    sigma = host_M_error[:, None, None]
+    # Knot positions in rest-frame M (M_z = M(1+z)); increasing in k for z >= 0.
+    m_knots = m_centers[None, None, :] / (1.0 + z[:, :, None])  # (n, n_z, K)
+    a = (m_knots - mu) / sigma
+    big_phi = ndtr(a)  # standard-normal CDF (identical to norm.cdf)
+    small_phi = np.exp(-0.5 * a * a) / np.sqrt(2.0 * np.pi)  # standard-normal pdf
+    # Constant-clamp tails (p_det flat below the first / above the last knot).
+    val = p[:, :, 0] * big_phi[:, :, 0] + p[:, :, -1] * (1.0 - big_phi[:, :, -1])
+    # Interior linear segments: int (c0 + c1 M) N dM, c1 = per-segment slope.
+    d_big = big_phi[:, :, 1:] - big_phi[:, :, :-1]  # (n, n_z, K-1)
+    int_m_n = mu * d_big - sigma * (small_phi[:, :, 1:] - small_phi[:, :, :-1])  # ∫ M N dM
+    dm = m_knots[:, :, 1:] - m_knots[:, :, :-1]
+    slope = (p[:, :, 1:] - p[:, :, :-1]) / dm
+    val = val + np.sum(
+        p[:, :, :-1] * d_big + slope * (int_m_n - m_knots[:, :, :-1] * d_big), axis=2
+    )
+    return np.asarray(val, dtype=np.float64)
 
 
 def single_host_likelihood(
@@ -1880,6 +2475,45 @@ def single_host_likelihood(
 
     integration_limit_sigma_multiplier = 4.0
 
+    # [PHYSICS] volume_trunc (Part 1, 2026-07-12): shallow-venue host-z kernel
+    # correction. It reuses the volume-deconvolved kernel machinery (same w_pop)
+    # but (i) floors the lower z-limit at 0 instead of 1e-6 and (ii) integrates
+    # the in-catalogue NUMERATOR over the per-host galaxy window
+    # [z_g-4sigma, z_g+4sigma] (shared with Z_g and D_g) instead of the
+    # event-level GW window, so N_g, D_g and Z_g share ONE truncated support.
+    # No-op on the deep venue by construction (z_g-4sigma > 0 there). Gray et al.
+    # (2020) arXiv:1908.06050 Eq. A.10; docs/derivations/G2b_host_z_volume_prior.md
+    # §1.4; .planning/PRODUCTION-KERNEL-FIX-SCOPING-20260712.md §7b.
+    # EXPERIMENTAL / FALSIFIED — the seed600 A/B rejected this (worsens shallow bias:
+    # fixed_quad n=50 aliases the narrow GW peak over the wide host window; exact
+    # numerator also tilts high). Not for production. results/volume_trunc_ab_20260712/.
+    _use_volume_trunc = normalization_mode == "volume_trunc"
+
+    # [PHYSICS] mass_trunc (EXP-45, 2026-07-13): truncated lognormal x R_eff host-mass
+    # prior in the 2D channel (see module-level _MASS_TRUNC_* + _mass_trunc_* helpers).
+    # Shares the volume_deconv host-z kernel; differs ONLY in the with-BH-mass
+    # mass-marginal (numerator + selection denominator). No effect without BH mass.
+    _use_mass_trunc = normalization_mode == "mass_trunc"
+
+    # [PHYSICS] Issue #16 (user decision 2026-07-03): marginalize the residual
+    # host peculiar-velocity dispersion into the host-z kernel.
+    #   sigma_z_pv = (1 + z_g) * sigma_v / c
+    # Davis et al. (2011), arXiv:1012.2912, Eqs. (1)/(A1) for the (1+z) factor
+    # (z_obs = z_cos + (1 + z_cos) v_pec / c); added in quadrature to the
+    # catalogue redshift error per standard practice (Mastrogiovanni et al.
+    # 2023, arXiv:2305.10488, Sec. IV; EMRI precedent with the (1+z) factor:
+    # Laghi et al. 2021, arXiv:2102.01708). The catalogue z_error already
+    # carries GLADE+'s PV-CORRECTION error (or the 0.0015 parse-time floor);
+    # SIGMA_V_PEC_KM_S is the residual (uncorrected/nonlinear) dispersion on
+    # top of it. Applied ONCE here: every downstream consumer (window bounds,
+    # Z_g renormalization, prior pdf, D_g, MC proposal + sampling_pdf) flows
+    # through this single sigma and the one norm() object below, so the term
+    # cannot double-count inside the likelihood. The ball-tree candidate
+    # window and catalogue pruning (handler.py) intentionally keep the bare
+    # catalogue z_error — a ±1σ, second-order candidate-list effect.
+    sigma_z_pv = (1.0 + host_z) * SIGMA_V_PEC_KM_S / SPEED_OF_LIGHT_KM_S
+    host_z_error_eff = float(np.sqrt(host_z_error**2 + sigma_z_pv**2))
+
     numerator_integration_upper_redshift_limit = dist_to_redshift(
         _det_d_L + integration_limit_sigma_multiplier * _det_d_L_unc, h=h
     )
@@ -1887,18 +2521,21 @@ def single_host_likelihood(
         _det_d_L - integration_limit_sigma_multiplier * _det_d_L_unc, h=h
     )
     denominator_integration_upper_redshift_limit = (
-        host_z + integration_limit_sigma_multiplier * host_z_error
+        host_z + integration_limit_sigma_multiplier * host_z_error_eff
     )
     # [PHYSICS] clamp to z >= 0: for low-z photo-z hosts (z_g < 4 sigma_z) the window
     # would extend to unphysical z < 0 where comoving_volume_element still returns
     # positive values, silently adding prior mass to Z_g / D_g (G2b derivation note,
     # docs/derivations/G2b_host_z_volume_prior.md). Matches B_num's and D(h)'s z_min.
+    # volume_trunc floors at exactly 0 (w_pop ∝ z² → 0 there, so this is a near-no-op
+    # relative to 1e-6; the substantive volume_trunc change is the numerator window).
+    _z_lower_floor = 0.0 if _use_volume_trunc else 1e-6
     denominator_integration_lower_redshift_limit = max(
-        host_z - integration_limit_sigma_multiplier * host_z_error, 1e-6
+        host_z - integration_limit_sigma_multiplier * host_z_error_eff, _z_lower_floor
     )
 
     # construct normal distribution for redshift and mass for host galaxy
-    galaxy_redshift_normal_distribution = norm(loc=host_z, scale=host_z_error)
+    galaxy_redshift_normal_distribution = norm(loc=host_z, scale=host_z_error_eff)
 
     # [PHYSICS] De-rail fix #1 (commission, 2026-07-01): in-catalogue host-redshift prior.
     # "global"/"local_ratio" use the BARE photo-z Gaussian N(z; z_g, sigma_z) (unchanged
@@ -1911,7 +2548,16 @@ def single_host_likelihood(
     # Gray et al. (2020), arXiv:1908.06050, Eqs. A.10 / 33.
     # "volume_global" (diagnostic, G3 ablation cube) uses the SAME volume kernel
     # with the legacy global denominator selected in p_Di.
-    _use_volume_deconv = normalization_mode in ("volume_deconv", "volume_global")
+    # "volume_trunc" (shallow-venue Part 1) shares this volume-kernel weight and
+    # differs only in the numerator integration support + z-floor (see above).
+    # "mass_trunc" shares the SAME volume-deconvolved host-z kernel (only the
+    # with-BH-mass mass-marginal differs), so it joins this set.
+    _use_volume_deconv = normalization_mode in (
+        "volume_deconv",
+        "volume_global",
+        "volume_trunc",
+        "mass_trunc",
+    )
     _z_prior_norm = 1.0
     if _use_volume_deconv:
 
@@ -1974,13 +2620,23 @@ def single_host_likelihood(
         )
         return p_det * galaxy_redshift_prior_pdf(z)
 
+    # volume_trunc integrates the numerator over the per-host galaxy window (shared
+    # with Z_g and D_g) so the truncated host-z prior spans ONE support; the default
+    # modes keep the event-level GW window [d_L(z_det ± 4σ)].
+    if _use_volume_trunc:
+        numerator_quad_lower = denominator_integration_lower_redshift_limit
+        numerator_quad_upper = denominator_integration_upper_redshift_limit
+    else:
+        numerator_quad_lower = numerator_integration_lower_redshift_limit
+        numerator_quad_upper = numerator_integration_upper_redshift_limit
+
     (
         single_host_likelihood_numerator_without_bh_mass,
         single_host_likelihood_numerator_without_bh_mass_error,
     ) = fixed_quad(
         numerator_integrant_without_bh_mass,
-        numerator_integration_lower_redshift_limit,
-        numerator_integration_upper_redshift_limit,
+        numerator_quad_lower,
+        numerator_quad_upper,
         n=FIXED_QUAD_N,
     )
     (
@@ -2058,10 +2714,19 @@ def single_host_likelihood(
         # Empirical impact at GLADE sigma_M: 2D-channel mean shifts -0.020 in h
         # (.planning/gate/G7row9_eddington_m_impact.json). Derivation + residual
         # control: docs/derivations/G2d_host_mass_rate_prior.md.
+        # mass_trunc computes the FULL truncated lognormal x R_eff mass marginal, so
+        # it needs neither the G2d point shift nor the linear sigma_M; every other
+        # calibrated mode uses the moment-matched effective mass.
         _host_M_eff = (
-            eddington_shifted_host_mass(host_M, host_M_error) if _use_volume_deconv else host_M
+            eddington_shifted_host_mass(host_M, host_M_error)
+            if (_use_volume_deconv and not _use_mass_trunc)
+            else host_M
         )
-        galaxy_mass_normal_distribution = norm(loc=_host_M_eff, scale=host_M_error)
+        if _use_mass_trunc:
+            # sigma_lnM (recovered from the stored linear error) + per-host Z_M for
+            # the truncated lognormal x R_eff prior (see _mass_trunc_* helpers).
+            _sigma_lnM = float(_mass_trunc_sigma_lnM(host_M, host_M_error))
+            _Z_M = _mass_trunc_log_normalisation(host_M, _sigma_lnM).item()
 
         # Pre-computed conditional distribution parameters for analytic M_z marginalization
         # Eqs. (14.23)-(14.28) in derivations/dark_siren_likelihood.md
@@ -2095,21 +2760,28 @@ def single_host_likelihood(
             x_obs = np.vstack([phi, theta, luminosity_distance_fraction]).T  # (N, 3)
             mu_cond = _mu_obs_4d[3] + (x_obs - _mu_obs_4d[:3]) @ _proj  # (N,)
 
-            # Galaxy mass in M_z_frac coordinates: M_z_frac = M_gal * (1+z) / M_z_det
-            # Eq. (14.22) in derivations/dark_siren_likelihood.md
-            # NOTE: (1+z) here is CORRECT -- it is the coordinate transform, not a Jacobian
-            # _host_M_eff carries the G2d Eddington-in-M rate-prior shift (see above).
-            mu_gal_frac = _host_M_eff * (1 + z) / _det_M
-            sigma_gal_frac = host_M_error * (1 + z) / _det_M
+            if _use_mass_trunc:
+                # Truncated lognormal x R_eff mass marginal via Gauss-Hermite on the
+                # narrow GW M_z peak (EXP-45). Supersedes the analytic Gaussian product.
+                mz_integral = _mass_trunc_mz_integral(
+                    mu_cond, math.sqrt(_sigma2_cond), 1.0 + z, _det_M, host_M, _sigma_lnM, _Z_M
+                )
+            else:
+                # Galaxy mass in M_z_frac coordinates: M_z_frac = M_gal * (1+z) / M_z_det
+                # Eq. (14.22) in derivations/dark_siren_likelihood.md
+                # NOTE: (1+z) here is CORRECT -- it is the coordinate transform, not a Jacobian
+                # _host_M_eff carries the G2d Eddington-in-M rate-prior shift (see above).
+                mu_gal_frac = _host_M_eff * (1 + z) / _det_M
+                sigma_gal_frac = host_M_error * (1 + z) / _det_M
 
-            # Analytic Gaussian product integral:
-            # ∫ N(x; μ_cond, σ²_cond) · N(x; μ_gal, σ²_gal) dx
-            #   = N(μ_cond; μ_gal, σ²_cond + σ²_gal)
-            # Eq. (14.31) in derivations/dark_siren_likelihood.md
-            sigma2_sum = _sigma2_cond + sigma_gal_frac**2
-            mz_integral = np.exp(-0.5 * (mu_cond - mu_gal_frac) ** 2 / sigma2_sum) / np.sqrt(
-                2 * np.pi * sigma2_sum
-            )
+                # Analytic Gaussian product integral:
+                # ∫ N(x; μ_cond, σ²_cond) · N(x; μ_gal, σ²_gal) dx
+                #   = N(μ_cond; μ_gal, σ²_cond + σ²_gal)
+                # Eq. (14.31) in derivations/dark_siren_likelihood.md
+                sigma2_sum = _sigma2_cond + sigma_gal_frac**2
+                mz_integral = np.exp(-0.5 * (mu_cond - mu_gal_frac) ** 2 / sigma2_sum) / np.sqrt(
+                    2 * np.pi * sigma2_sum
+                )
 
             # Eq. (A.10) in Gray et al. (2020): GW likelihood x mass-marginal x
             # galaxy z-prior; p_det removed from the numerator (denominator-only).
@@ -2119,63 +2791,46 @@ def single_host_likelihood(
 
         single_host_likelihood_numerator_with_bh_mass = fixed_quad(
             numerator_integrant_with_bh_mass,
-            numerator_integration_lower_redshift_limit,
-            numerator_integration_upper_redshift_limit,
+            numerator_quad_lower,
+            numerator_quad_upper,
             n=FIXED_QUAD_N,
         )[0]
 
         # Eq. (14.33) in derivations/dark_siren_likelihood.md
-        # Denominator: p_det(d_L, M_z, phi, theta) * p_gal(z) * p_gal(M)
-        # No GW likelihood, no mz_integral, no /(1+z) -- confirmed correct by Phase 14
-        def denominator_integrant_with_bh_mass_vectorized(
-            M: npt.NDArray[np.float64], z: npt.NDArray[np.float64]
-        ) -> Any:
-            d_L = dist_vectorized(z, h=h)
-            M_z = M * (1 + z)
-            phi = np.full_like(M, host_phiS)
-            theta = np.full_like(M, host_qS)
-            # p_det in observer-frame M_z (consistent with grid axis and
-            # the numerator's host_M·(1+z) hypothesis).
-            p_det = detection_probability.detection_probability_with_bh_mass_interpolated(
-                d_L, M_z, phi, theta, h=h
-            )
-            return p_det * galaxy_redshift_prior_pdf(z) * galaxy_mass_normal_distribution.pdf(M)
+        # Denominator D_g = INTEGRAL p_gal(z) [ INTEGRAL p_det(d_L(z), M(1+z)) N(M) dM ] dz.
+        # No GW likelihood, no mz_integral, no /(1+z) -- confirmed correct by Phase 14.
+        #
+        # [PHYSICS] 2026-07-08: EXACT semi-analytic estimator ("glz64"), replacing the
+        # 10k-sample MC. p_det is piecewise-linear in M_z on the injection grid, so the
+        # inner M-integral is closed form (erf-sum, zero M-quadrature error;
+        # _bh_mass_denominator_inner_m_integral), and the outer z-integral is
+        # Gauss-Legendre over the SAME host window [den_lo, den_hi] as the 3D
+        # denominator and the Z_g normalisation. Deterministic, ~200x more accurate
+        # than the MC (its ~1-5% noise removed) and ~4.5x faster. The MC sampled the
+        # UNTRUNCATED z-Gaussian and over-counted the beyond-window / z<0 tail (~0.5%
+        # for wide photo-z hosts); the host prior N(z; z_g, sigma_z) is normalised over
+        # this window (Z_g), so D_g is a proper window-averaged p_det in [0, 1].
+        # Owen (1980) first-moment identity; Gray et al. (2020), arXiv:1908.06050 Eq. A.19.
+        def denominator_integrant_with_bh_mass(z: npt.NDArray[np.float64]) -> Any:
+            if _use_mass_trunc:
+                # Same truncated lognormal x R_eff prior as the numerator, so N_g and
+                # D_g share ONE mass prior (Gauss-Legendre in ln M; the erf-sum closed
+                # form is Gaussian-prior-only and does not apply).
+                inner_m = _mass_trunc_denominator_inner_m_integral(
+                    z, detection_probability, host_phiS, host_qS, host_M, _sigma_lnM, _Z_M, h
+                )
+            else:
+                inner_m = _bh_mass_denominator_inner_m_integral(
+                    z, detection_probability, host_phiS, host_qS, _host_M_eff, host_M_error, h
+                )
+            return inner_m * galaxy_redshift_prior_pdf(z)
 
-        # MC importance sampling for 2D denominator integral over (z, M).
-        # Proposal distribution: q(z, M) = p_gal(z) * p_gal(M).
-        # After cancellation, weights = p_det (each in [0, 1]).
-        # Relative MC error ~ std(p_det) / (sqrt(N) * mean(p_det)) ~ 1% for N=10000.
-        # Numerator uses fixed_quad (1D over z, mass analytically marginalized) --
-        # the quadrature-vs-MC asymmetry is a numerical choice, not a physics error.
-        # G4 gate: DETERMINISTIC importance sampling. The stream is derived from
-        # (base_seed, detection_index, host_z, host_M), so identical inputs give
-        # identical likelihoods regardless of worker scheduling, and --seed
-        # reaches the inference layer (previously unseeded: ~1% MC noise made
-        # posteriors non-reproducible run-to-run).
-        _mc_rng = np.random.default_rng(
-            np.random.SeedSequence(
-                entropy=int(base_seed) & 0xFFFFFFFF,
-                spawn_key=(
-                    int(detection_index) & 0xFFFFFFFF,
-                    int(abs(host_z) * 1e8) & 0xFFFFFFFF,
-                    int(abs(host_M)) & 0xFFFFFFFF,
-                ),
-            )
-        )
-        N_SAMPLES = 10_000
-        z_samples = galaxy_redshift_normal_distribution.rvs(size=N_SAMPLES, random_state=_mc_rng)
-        M_samples = galaxy_mass_normal_distribution.rvs(size=N_SAMPLES, random_state=_mc_rng)
-
-        numerator_integrant_from_samples = denominator_integrant_with_bh_mass_vectorized(
-            M_samples, z_samples
-        )
-
-        sampling_pdf = galaxy_redshift_normal_distribution.pdf(
-            z_samples
-        ) * galaxy_mass_normal_distribution.pdf(M_samples)
-        weights = numerator_integrant_from_samples / sampling_pdf
-
-        single_host_likelihood_denominator_with_bh_mass = np.mean(weights)
+        single_host_likelihood_denominator_with_bh_mass = fixed_quad(
+            denominator_integrant_with_bh_mass,
+            denominator_integration_lower_redshift_limit,
+            denominator_integration_upper_redshift_limit,
+            n=_BH_DENOM_QUAD_ORDER,
+        )[0]
 
         return [
             single_host_likelihood_numerator_without_bh_mass,
@@ -2191,6 +2846,428 @@ def single_host_likelihood(
         quadrature_weight_outside_grid_numerator,
         quadrature_weight_outside_grid_denominator,
     ]
+
+
+def single_host_likelihood_batch(
+    host_phiS: npt.NDArray[np.float64],
+    host_qS: npt.NDArray[np.float64],
+    host_z: npt.NDArray[np.float64],
+    host_z_error: npt.NDArray[np.float64],
+    host_M: npt.NDArray[np.float64],
+    host_M_error: npt.NDArray[np.float64],
+    detection_index: int,
+    h: float,
+    evaluate_with_bh_mass: bool,
+    normalization_mode: str = "volume_deconv",
+) -> npt.NDArray[np.float64]:
+    """Host-batched twin of :func:`single_host_likelihood`.
+
+    Computes the per-host likelihood integrals for ``n`` candidate hosts of one
+    detection in a single vectorized pass. Row ``i`` of the result equals
+    ``single_host_likelihood(...)`` called with host ``i``'s scalars — the same
+    physics, the same quadrature (fixed_quad's exact affine node map and
+    reduction, see :func:`_batched_gl_nodes`/:func:`_batched_gl_reduce`), the
+    same Gaussian pdf operation order (:func:`_gaussian_pdf`) — with the host
+    loop moved from Python/starmap into the array axis. Eliminated per-host
+    costs: ``scipy.stats.norm`` frozen-distribution construction, the
+    event-level ``dist_to_redshift`` window calls (now once per batch), and
+    per-host ``p_det`` interpolator calls (now one call over all hosts' nodes).
+
+    Reads the ``child_process_init`` worker globals (the subset the scalar
+    kernel actually uses). ``base_seed`` is intentionally absent: it was a
+    dead parameter of the scalar signature (vestigial from the removed MC
+    denominator).
+
+    Args:
+        host_phiS: Host ecliptic azimuths, shape ``(n,)``.
+        host_qS: Host ecliptic polar angles, shape ``(n,)``.
+        host_z: Host redshifts, shape ``(n,)``.
+        host_z_error: Host redshift 1-sigma errors, shape ``(n,)``.
+        host_M: Host BH masses [M_sun], shape ``(n,)``.
+        host_M_error: Host BH mass 1-sigma errors, shape ``(n,)``.
+        detection_index: CRB row index of the detection.
+        h: Dimensionless Hubble parameter.
+        evaluate_with_bh_mass: Include the with-BH-mass channel.
+        normalization_mode: In-catalogue normalization mode (see ``p_Di``).
+
+    Returns:
+        Array of shape ``(n, 6)`` when ``evaluate_with_bh_mass`` else
+        ``(n, 4)``; columns match the scalar kernel's return list.
+    """
+    global detection_probability
+    global means_3d, cov_inv_3d, log_norm_3d
+    global means_4d
+    global det_index_to_slot
+    global sigma2_cond_arr, proj_arr
+    global det_d_L_arr, det_d_L_unc_arr, det_M_arr
+
+    n = int(host_z.size)
+    if n == 0:
+        return np.empty((0, 6 if evaluate_with_bh_mass else 4), dtype=np.float64)
+
+    slot = det_index_to_slot[detection_index]
+    _det_d_L = float(det_d_L_arr[slot])
+    _det_d_L_unc = float(det_d_L_unc_arr[slot])
+    _det_M = float(det_M_arr[slot])
+    _mean_3d = means_3d[slot]
+    _cov_inv_3d = cov_inv_3d[slot]
+    _log_norm_3d = float(log_norm_3d[slot])
+
+    integration_limit_sigma_multiplier = 4.0
+
+    # Residual peculiar-velocity dispersion folded into the host-z kernel —
+    # identical formula and references as the scalar kernel (issue #16).
+    sigma_z_pv = (1.0 + host_z) * SIGMA_V_PEC_KM_S / SPEED_OF_LIGHT_KM_S
+    host_z_error_eff = np.sqrt(host_z_error**2 + sigma_z_pv**2)
+
+    # Numerator window depends only on the event (and h): computed once per batch.
+    numerator_integration_upper_redshift_limit = dist_to_redshift(
+        _det_d_L + integration_limit_sigma_multiplier * _det_d_L_unc, h=h
+    )
+    numerator_integration_lower_redshift_limit = dist_to_redshift(
+        _det_d_L - integration_limit_sigma_multiplier * _det_d_L_unc, h=h
+    )
+    den_hi = host_z + integration_limit_sigma_multiplier * host_z_error_eff
+    # z >= 0 clamp: same G2b rationale as the scalar kernel. volume_trunc floors at
+    # exactly 0 (w_pop ∝ z² → 0 there) instead of 1e-6.
+    _use_volume_trunc = normalization_mode == "volume_trunc"
+    # mass_trunc (EXP-45): truncated lognormal x R_eff host-mass prior in the 2D
+    # channel; shares the volume_deconv host-z kernel (see scalar path).
+    _use_mass_trunc = normalization_mode == "mass_trunc"
+    _z_lower_floor = 0.0 if _use_volume_trunc else 1e-6
+    den_lo = np.maximum(
+        host_z - integration_limit_sigma_multiplier * host_z_error_eff, _z_lower_floor
+    )
+
+    _use_volume_deconv = normalization_mode in (
+        "volume_deconv",
+        "volume_global",
+        "volume_trunc",
+        "mass_trunc",
+    )
+
+    # Per-host denominator quadrature nodes (fixed_quad affine map, n=50).
+    y_den = _batched_gl_nodes(den_lo, den_hi, _GL_NODES_50)  # (n, 50)
+    gauss_den = _gaussian_pdf(y_den, host_z[:, None], host_z_error_eff[:, None])
+
+    z_prior_norm = np.ones(n, dtype=np.float64)
+    w_pop_den: npt.NDArray[np.float64] | None = None
+    if _use_volume_deconv:
+        y_den_flat = y_den.reshape(-1)
+        w_pop_den = (
+            np.asarray(comoving_volume_element(y_den_flat, h=h), dtype=np.float64)
+            / (1.0 + y_den_flat)
+        ).reshape(n, _HOST_QUAD_N)
+        z_prior_norm = _batched_gl_reduce(den_lo, den_hi, _GL_WEIGHTS_50, gauss_den * w_pop_den)
+        z_prior_norm = np.where(z_prior_norm <= 0.0, 1.0, z_prior_norm)
+
+    # Numerator quadrature nodes, all shaped (n, 50). Default modes share ONE
+    # event-level window across every host (the shared-node optimization — the
+    # per-host arrays are broadcast views of the shared (50,) nodes). volume_trunc
+    # integrates the numerator over each host's galaxy window [den_lo, den_hi]
+    # (== the denominator nodes y_den), so the numerator becomes genuinely
+    # per-host; the shared-node optimization is dropped for the numerator only
+    # (the denominator path is already per-host). y_num_nodes carries (1 + z) for
+    # the with-BH-mass mass-fraction coordinate transform below.
+    if _use_volume_trunc:
+        y_num_nodes = y_den  # (n, 50)
+        d_L_num = dist_vectorized(y_num_nodes.reshape(-1), h=h).reshape(n, _HOST_QUAD_N)
+        luminosity_distance_fraction = d_L_num / _det_d_L  # (n, 50)
+        num_reduce_lo = den_lo
+        num_reduce_hi = den_hi
+    else:
+        y_num_1d = (
+            numerator_integration_upper_redshift_limit - numerator_integration_lower_redshift_limit
+        ) * (_GL_NODES_50 + 1) / 2.0 + numerator_integration_lower_redshift_limit  # (50,)
+        y_num_nodes = np.broadcast_to(y_num_1d[None, :], (n, _HOST_QUAD_N))  # (n, 50)
+        d_L_num = dist_vectorized(y_num_1d, h=h)  # (50,)
+        luminosity_distance_fraction = np.broadcast_to(
+            (d_L_num / _det_d_L)[None, :], (n, _HOST_QUAD_N)
+        )  # (n, 50)
+        num_reduce_lo = np.full(n, numerator_integration_lower_redshift_limit)
+        num_reduce_hi = np.full(n, numerator_integration_upper_redshift_limit)
+
+    w_pop_num: npt.NDArray[np.float64] | None = None
+    if _use_volume_deconv:
+        if _use_volume_trunc:
+            # Numerator nodes == denominator nodes -> reuse the denominator w_pop.
+            w_pop_num = w_pop_den
+        else:
+            w_pop_num_1d = np.asarray(comoving_volume_element(y_num_1d, h=h), dtype=np.float64) / (
+                1.0 + y_num_1d
+            )
+            w_pop_num = np.broadcast_to(w_pop_num_1d[None, :], (n, _HOST_QUAD_N))  # (n, 50)
+
+    def _z_prior_pdf_at(
+        z_nodes: npt.NDArray[np.float64], w_pop: npt.NDArray[np.float64] | None
+    ) -> npt.NDArray[np.float64]:
+        """Per-host z-prior pdf at ``(n, k)`` nodes; mirrors galaxy_redshift_prior_pdf."""
+        base = _gaussian_pdf(z_nodes, host_z[:, None], host_z_error_eff[:, None])
+        if _use_volume_deconv:
+            assert w_pop is not None
+            return base * w_pop / z_prior_norm[:, None]
+        return base
+
+    prior_num = _z_prior_pdf_at(y_num_nodes, w_pop_num)  # (n, 50)
+    # (n, 50); same values the scalar integrand recomputes at y_den
+    if _use_volume_deconv and w_pop_den is not None:
+        prior_den = gauss_den * w_pop_den / z_prior_norm[:, None]
+    else:
+        prior_den = gauss_den
+
+    # 3D GW likelihood at the shared numerator nodes, batched over hosts.
+    x_obs = np.empty((n, _HOST_QUAD_N, 3), dtype=np.float64)
+    x_obs[:, :, 0] = host_phiS[:, None]
+    x_obs[:, :, 1] = host_qS[:, None]
+    x_obs[:, :, 2] = luminosity_distance_fraction  # (n, 50)
+    gw_3d = _mvn_pdf(x_obs.reshape(n * _HOST_QUAD_N, 3), _mean_3d, _cov_inv_3d, _log_norm_3d)
+    gw_3d = gw_3d.reshape(n, _HOST_QUAD_N)
+
+    numerator_without_bh_mass = _batched_gl_reduce(
+        num_reduce_lo,
+        num_reduce_hi,
+        _GL_WEIGHTS_50,
+        gw_3d * prior_num,
+    )
+
+    # 3D denominator: batched p_det lookup over all hosts' nodes at once.
+    d_L_den = dist_vectorized(y_den.reshape(-1), h=h)
+    p_det_den = np.asarray(
+        detection_probability.detection_probability_without_bh_mass_interpolated_zero_fill(
+            d_L_den,
+            np.repeat(host_phiS, _HOST_QUAD_N),
+            np.repeat(host_qS, _HOST_QUAD_N),
+            h=h,
+        ),
+        dtype=np.float64,
+    ).reshape(n, _HOST_QUAD_N)
+    denominator_without_bh_mass = _batched_gl_reduce(
+        den_lo, den_hi, _GL_WEIGHTS_50, p_det_den * prior_den
+    )
+
+    # STAT-04 off-grid quadrature-weight diagnostics (same expressions as scalar).
+    _, _interp_1d = detection_probability._get_or_build_grid(h)
+    _dl_centers = _interp_1d.grid[0]
+    _dl_grid_min = float(_dl_centers[0])
+    _dl_grid_max = float(_dl_centers[-1])
+
+    # Numerator side is event-level: identical for every host of this batch.
+    _dl_lower_num = float(
+        dist_vectorized(np.array([numerator_integration_lower_redshift_limit]), h=h)[0]
+    )
+    _dl_upper_num = float(
+        dist_vectorized(np.array([numerator_integration_upper_redshift_limit]), h=h)[0]
+    )
+    _window_num = _dl_upper_num - _dl_lower_num
+    if _window_num > 0.0:
+        _below_min_num = max(0.0, min(_dl_upper_num, _dl_grid_min) - _dl_lower_num) / _window_num
+        _above_max_num = max(0.0, _dl_upper_num - max(_dl_lower_num, _dl_grid_max)) / _window_num
+        _w_num_scalar = float(np.clip(_below_min_num + _above_max_num, 0.0, 1.0))
+    else:
+        _w_num_scalar = 0.0
+    quadrature_weight_outside_grid_numerator = np.full(n, _w_num_scalar, dtype=np.float64)
+
+    # Denominator side is per-host.
+    _dl_lower_den = dist_vectorized(den_lo, h=h)
+    _dl_upper_den = dist_vectorized(den_hi, h=h)
+    _window_den = _dl_upper_den - _dl_lower_den
+    with np.errstate(divide="ignore", invalid="ignore"):
+        _below_min_den = (
+            np.maximum(0.0, np.minimum(_dl_upper_den, _dl_grid_min) - _dl_lower_den) / _window_den
+        )
+        _above_max_den = (
+            np.maximum(0.0, _dl_upper_den - np.maximum(_dl_lower_den, _dl_grid_max)) / _window_den
+        )
+        quadrature_weight_outside_grid_denominator = np.where(
+            _window_den > 0.0,
+            np.clip(_below_min_den + _above_max_den, 0.0, 1.0),
+            0.0,
+        )
+
+    for _flagged in np.flatnonzero(
+        (quadrature_weight_outside_grid_numerator > 0.05)
+        | (quadrature_weight_outside_grid_denominator > 0.05)
+    ):
+        _LOGGER.warning(
+            "Event %d: >5%% quadrature weight outside P_det grid — "
+            "numerator=%.3f, denominator=%.3f",
+            detection_index,
+            quadrature_weight_outside_grid_numerator[_flagged],
+            quadrature_weight_outside_grid_denominator[_flagged],
+        )
+
+    if not evaluate_with_bh_mass:
+        return np.column_stack(
+            [
+                numerator_without_bh_mass,
+                denominator_without_bh_mass,
+                quadrature_weight_outside_grid_numerator,
+                quadrature_weight_outside_grid_denominator,
+            ]
+        )
+
+    # --- with-BH-mass channel ---
+    # G2d Eddington-in-M shift: scalar helper kept per host (data-dependent
+    # early returns/clamps; negligible cost) — bit-identical to the scalar path.
+    # mass_trunc uses neither the point shift nor the linear sigma_M (it integrates
+    # the full truncated lognormal x R_eff prior), so skip the per-host quadrature.
+    if _use_volume_deconv and not _use_mass_trunc:
+        host_M_eff = np.array(
+            [
+                eddington_shifted_host_mass(float(m), float(dm_))
+                for m, dm_ in zip(host_M, host_M_error)
+            ],
+            dtype=np.float64,
+        )
+    else:
+        host_M_eff = np.asarray(host_M, dtype=np.float64)
+
+    if _use_mass_trunc:
+        # Per-host sigma_lnM (recovered from the stored linear error) and Z_M for the
+        # truncated lognormal x R_eff prior; (n,)-vectorised, bit-identical to scalar.
+        sigma_lnM = _mass_trunc_sigma_lnM(host_M, host_M_error)  # (n,)
+        Z_M = _mass_trunc_log_normalisation(host_M, sigma_lnM)  # (n,)
+
+    _sigma2_cond = float(sigma2_cond_arr[slot])
+    _proj = proj_arr[slot]
+    _mu_obs_4d = means_4d[slot]
+
+    # Conditional mean of M_z_frac given (phi, theta, d_L_frac); Eq. (14.23)-(14.28).
+    mu_cond = (
+        _mu_obs_4d[3] + (x_obs.reshape(n * _HOST_QUAD_N, 3) - _mu_obs_4d[:3]) @ _proj
+    ).reshape(n, _HOST_QUAD_N)
+    # (1 + z) mass-fraction coordinate transform at the numerator nodes y_num_nodes
+    # (n, 50): broadcast of the shared window for the default modes, the per-host
+    # galaxy window for volume_trunc.
+    if _use_mass_trunc:
+        # Truncated lognormal x R_eff mass marginal via Gauss-Hermite on the narrow
+        # GW M_z peak (EXP-45); (n, 50) matches the analytic branch shape.
+        mz_integral = _mass_trunc_mz_integral(
+            mu_cond, math.sqrt(_sigma2_cond), 1.0 + y_num_nodes, _det_M, host_M, sigma_lnM, Z_M
+        )
+    else:
+        mu_gal_frac = host_M_eff[:, None] * (1 + y_num_nodes) / _det_M
+        sigma_gal_frac = host_M_error[:, None] * (1 + y_num_nodes) / _det_M
+
+        # Analytic Gaussian product integral, Eq. (14.31).
+        sigma2_sum = _sigma2_cond + sigma_gal_frac**2
+        mz_integral = np.exp(-0.5 * (mu_cond - mu_gal_frac) ** 2 / sigma2_sum) / np.sqrt(
+            2 * np.pi * sigma2_sum
+        )
+
+    numerator_with_bh_mass = _batched_gl_reduce(
+        num_reduce_lo,
+        num_reduce_hi,
+        _GL_WEIGHTS_50,
+        gw_3d * mz_integral * prior_num,
+    )
+
+    # Semi-analytic denominator (glz64): batched erf-sum inner-M + GL outer-z.
+    y_bh = _batched_gl_nodes(den_lo, den_hi, _GL_NODES_64)  # (n, 64)
+    if _use_mass_trunc:
+        # Same truncated lognormal x R_eff prior as the numerator (GL in ln M); shares
+        # the mass prior between N_g and D_g. Row i bit-identical to the scalar path.
+        inner_m = _mass_trunc_denominator_inner_m_integral_batch(
+            y_bh, detection_probability, host_phiS, host_qS, host_M, sigma_lnM, Z_M, h
+        )
+    else:
+        inner_m = _bh_mass_denominator_inner_m_integral_batch(
+            y_bh, detection_probability, host_phiS, host_qS, host_M_eff, host_M_error, h
+        )
+    w_pop_bh: npt.NDArray[np.float64] | None = None
+    if _use_volume_deconv:
+        y_bh_flat = y_bh.reshape(-1)
+        w_pop_bh = (
+            np.asarray(comoving_volume_element(y_bh_flat, h=h), dtype=np.float64)
+            / (1.0 + y_bh_flat)
+        ).reshape(n, _BH_DENOM_QUAD_ORDER)
+    prior_bh = _z_prior_pdf_at(y_bh, w_pop_bh)
+    denominator_with_bh_mass = _batched_gl_reduce(
+        den_lo, den_hi, _GL_WEIGHTS_64, inner_m * prior_bh
+    )
+
+    return np.column_stack(
+        [
+            numerator_without_bh_mass,
+            denominator_without_bh_mass,
+            numerator_with_bh_mass,
+            denominator_with_bh_mass,
+            quadrature_weight_outside_grid_numerator,
+            quadrature_weight_outside_grid_denominator,
+        ]
+    )
+
+
+def _hosts_to_arrays(
+    hosts: list[HostGalaxy],
+) -> tuple[
+    npt.NDArray[np.float64],
+    npt.NDArray[np.float64],
+    npt.NDArray[np.float64],
+    npt.NDArray[np.float64],
+    npt.NDArray[np.float64],
+    npt.NDArray[np.float64],
+]:
+    """Column-major float64 arrays (phiS, qS, z, z_error, M, M_error) for a host list."""
+    return (
+        np.array([host.phiS for host in hosts], dtype=np.float64),
+        np.array([host.qS for host in hosts], dtype=np.float64),
+        np.array([host.z for host in hosts], dtype=np.float64),
+        np.array([host.z_error for host in hosts], dtype=np.float64),
+        np.array([host.M for host in hosts], dtype=np.float64),
+        np.array([host.M_error for host in hosts], dtype=np.float64),
+    )
+
+
+def _starmap_host_batches(
+    pool: mp.pool.Pool,
+    hosts: list[HostGalaxy],
+    detection_index: int,
+    h: float,
+    evaluate_with_bh_mass: bool,
+    normalization_mode: str,
+) -> list[list[float]]:
+    """Dispatch the batched host kernel over worker processes.
+
+    Splits ``hosts`` into at most ``pool._processes`` contiguous chunks (order
+    preserved) and runs :func:`single_host_likelihood_batch` on each chunk in
+    parallel. Returns one ``list[float]`` per host in the original order —
+    exactly the structure the per-host ``single_host_likelihood`` starmap
+    produced.
+
+    Args:
+        pool: Multiprocessing pool initialised via ``child_process_init``.
+        hosts: Candidate hosts for the detection.
+        detection_index: CRB row index of the detection.
+        h: Dimensionless Hubble parameter.
+        evaluate_with_bh_mass: Include the with-BH-mass channel.
+        normalization_mode: In-catalogue normalization mode.
+
+    Returns:
+        Per-host result rows in input order.
+    """
+    n = len(hosts)
+    if n == 0:
+        return []
+    arrays = _hosts_to_arrays(hosts)
+    # One chunk per worker, but never more than _MAX_BATCH_CHUNK hosts per
+    # chunk: the with-BH erf-sum block allocates ~(chunk, 64, 40) float64
+    # intermediates (~300-400 MB/worker at 1080 hosts), so few-worker runs on
+    # events with tens of thousands of candidates must split further. Chunk
+    # boundaries do not affect values (order-preserving; gated by
+    # test_starmap_host_batches_ordering_and_chunking).
+    n_chunks = min(n, max(pool._processes, math.ceil(n / _MAX_BATCH_CHUNK)))  # type: ignore[attr-defined]
+    chunk_indices = np.array_split(np.arange(n), n_chunks)
+    jobs = [
+        tuple(a[idx] for a in arrays)
+        + (detection_index, h, evaluate_with_bh_mass, normalization_mode)
+        for idx in chunk_indices
+    ]
+    chunk_results = pool.starmap(single_host_likelihood_batch, jobs)
+    rows: list[list[float]] = []
+    for chunk in chunk_results:
+        rows.extend(chunk.tolist())
+    return rows
 
 
 def single_host_likelihood_integration_testing(
@@ -2210,7 +3287,12 @@ def single_host_likelihood_integration_testing(
     ABS_ERROR = 1e-20
 
     # construct normal distribution for redshift and mass for host galaxy
-    galaxy_redshift_normal_distribution = norm(loc=possible_host.z, scale=possible_host.z_error)
+    # [PHYSICS] Issue #16: mirror the production kernel's residual-PV quadrature
+    # (see single_host_likelihood) so the integration-testing twin stays a
+    # faithful cross-check of the production path.
+    _sigma_z_pv = (1.0 + possible_host.z) * SIGMA_V_PEC_KM_S / SPEED_OF_LIGHT_KM_S
+    _z_error_eff = float(np.sqrt(possible_host.z_error**2 + _sigma_z_pv**2))
+    galaxy_redshift_normal_distribution = norm(loc=possible_host.z, scale=_z_error_eff)
 
     # Sky localization weight (phi, theta) is inside the GW likelihood Gaussian.
     # Verified correct by Phase 14 derivation (Sec. 2.7) -- not a source of error.

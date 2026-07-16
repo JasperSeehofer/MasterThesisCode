@@ -15,10 +15,7 @@ from sklearn.neighbors import BallTree
 
 from master_thesis_code.constants import HOST_DRAW_Z_MAX
 from master_thesis_code.emri_rate import R_eff_per_mbh
-from master_thesis_code.physical_relations import (
-    dist,
-    dist_to_redshift_error_proagation,
-)
+from master_thesis_code.physical_relations import dist
 
 _LOGGER = logging.getLogger()
 REDUCED_CATALOGUE_FILE_PATH = "./master_thesis_code/galaxy_catalogue/reduced_galaxy_catalogue.csv"
@@ -196,8 +193,7 @@ def _reduced_catalog_column_names() -> list[str]:
     """On-disk column names of the headerless reduced-catalog CSV, in file order.
 
     Single source of truth shared by the writer (``parse_to_reduced_catalog``) and
-    every reader (``read_reduced_galaxy_catalog``,
-    ``parse_to_reduced_catalog_with_reduced_errors``, and
+    every reader (``read_reduced_galaxy_catalog`` and
     ``pixel_completeness.build_m_th_map``). The order is all
     :class:`CatalogueColumns` except the dropped peculiar-velocity error (raw col
     30) and the redshift flag (raw col 34), followed by the RETAINED redshift flag
@@ -367,17 +363,6 @@ class GalaxyCatalogueHandler:
             chunk = chunk[_reduced_catalog_column_names()]
 
             chunk.to_csv(REDUCED_CATALOGUE_FILE_PATH, header=False, mode="a", index=False)
-
-    def parse_to_reduced_catalog_with_reduced_errors(self) -> None:
-        catalog = pd.read_csv(
-            REDUCED_CATALOGUE_FILE_PATH,
-            names=_reduced_catalog_column_names(),
-        )
-        for index, row in catalog.iterrows():
-            redshift = row[CatalogueColumns.REDSHIFT.name]
-            redshift_error = row[CatalogueColumns.REDSHIFT_MEASUREMENT_ERROR.name]
-            new_redshift_error = dist_to_redshift_error_proagation(redshift, redshift_error)
-            catalog.at[index, CatalogueColumns.REDSHIFT_MEASUREMENT_ERROR.name] = new_redshift_error
 
     def read_reduced_galaxy_catalog(self) -> pd.DataFrame:
         """Load the reduced catalog (RAW equatorial ICRS degrees, pre-rotation).
@@ -615,9 +600,11 @@ class GalaxyCatalogueHandler:
 
         Sampling is WITH REPLACEMENT: hosts are i.i.d. draws from the uniform
         distribution over the eligible rows, so the same galaxy may be returned more
-        than once. The truncation ``z < z_max`` is exact for the inference because the
-        EMRI detection horizon (z ≈ 0.18) lies far below ``z_max`` = 0.5, so the removed
-        galaxies have p_det = 0 and never contribute a detectable event.
+        than once. The truncation ``z < z_max`` is a deliberate population-depth
+        choice matching ``Model1CrossCheck.max_redshift`` (issue #20): after the
+        dt² fix the EMRI horizon reaches z ~ 1.5+, so p_det is NOT assumed zero
+        beyond ``z_max`` — the injection-campaign ``z_cut`` derives from the same
+        constant so draw, injections, and inference share one depth.
 
         Args:
             number_of_hosts: Number of host galaxies to draw (i.i.d., with replacement).
@@ -696,8 +683,9 @@ class GalaxyCatalogueHandler:
         once. As in :meth:`draw_uniform_hosts`, each returned :class:`HostGalaxy`
         carries z / sky / M / errors straight from its catalog row — there is NO
         nearest-neighbour snap and NO overwrite of catalog quantities. The
-        truncation ``z < z_max`` is exact for the inference because the EMRI
-        detection horizon (z ≈ 0.18) lies far below ``z_max`` = 0.5.
+        truncation ``z < z_max`` is a deliberate population-depth choice
+        matching ``Model1CrossCheck.max_redshift`` (issue #20; see
+        :meth:`draw_uniform_hosts` for the shared-depth rationale).
 
         Args:
             number_of_hosts: Number of host galaxies to draw (i.i.d., with

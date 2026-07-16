@@ -1,0 +1,76 @@
+{
+  "config": {
+    "n_realizations": 120,
+    "n_events": 250,
+    "sigma_z": 0.035,
+    "sigma_z_pv": 0.0,
+    "sigma_dl_frac": 0.05,
+    "injected_truths": [
+      0.62,
+      0.72,
+      0.84
+    ],
+    "seed": 20260701,
+    "kernel": "volume",
+    "h_min": 0.6,
+    "h_max": 0.86,
+    "h_step": 0.004,
+    "n_z_quad": 160,
+    "inference_wpop_tilt": 0.0,
+    "z_support": 0.5,
+    "mixture_mode": "exact",
+    "membership_on_observed": false,
+    "pdet_in_numerator": true,
+    "sigma_dl_model_in_likelihood": true
+  },
+  "results": {
+    "0.6200": {
+      "h_true": 0.62,
+      "coverage": {
+        "50": 0.6416666666666667,
+        "68": 0.8083333333333333,
+        "90": 0.925
+      },
+      "rail_fraction": 0.0,
+      "map_mean": 0.6199,
+      "map_std": 0.006054474929064181,
+      "map_median": 0.62,
+      "map_bias": -9.999999999998899e-05,
+      "completion_fraction": 0.0,
+      "dlogL_dh_host_mean": -6.470888246872866,
+      "dlogL_dh_completion_mean": null
+    },
+    "0.7200": {
+      "h_true": 0.72,
+      "coverage": {
+        "50": 0.49166666666666664,
+        "68": 0.725,
+        "90": 0.8666666666666667
+      },
+      "rail_fraction": 0.0,
+      "map_mean": 0.7207000000000001,
+      "map_std": 0.006706464543011224,
+      "map_median": 0.7200000000000001,
+      "map_bias": 0.000700000000000145,
+      "completion_fraction": 0.0002666666666666667,
+      "dlogL_dh_host_mean": 14.52789265003317,
+      "dlogL_dh_completion_mean": 43.386431935230355
+    },
+    "0.8400": {
+      "h_true": 0.84,
+      "coverage": {
+        "50": 0.55,
+        "68": 0.6916666666666667,
+        "90": 0.925
+      },
+      "rail_fraction": 0.0,
+      "map_mean": 0.8407666666666668,
+      "map_std": 0.006245976482682455,
+      "map_median": 0.8400000000000002,
+      "map_bias": 0.0007666666666668043,
+      "completion_fraction": 0.008466666666666667,
+      "dlogL_dh_host_mean": -34.586803682764575,
+      "dlogL_dh_completion_mean": 50.563901190833974
+    }
+  }
+}

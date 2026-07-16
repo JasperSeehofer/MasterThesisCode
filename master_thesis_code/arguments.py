@@ -16,6 +16,7 @@ class Arguments:
 
     def __init__(self, parsed_arguments: argparse.Namespace):
         self._parsed_arguments = parsed_arguments
+        self._resolved_seed: int | None = None
         self._working_directory_replaced: bool = False
         self._log_level_replaced: bool = False
         self._working_directory: str = parsed_arguments.working_directory
@@ -60,6 +61,12 @@ class Arguments:
         return float(self._parsed_arguments.h_value)
 
     @property
+    def h_values(self) -> str | None:
+        """Comma-separated h-grid for a fused evaluation pass (supersedes h_value)."""
+        value = self._parsed_arguments.h_values
+        return str(value) if value is not None else None
+
+    @property
     def snr_analysis(self) -> bool:
         """Indicates whether the snr analysis should be run."""
         return bool(self._parsed_arguments.snr_analysis)
@@ -100,11 +107,25 @@ class Arguments:
 
     @property
     def seed(self) -> int:
-        """Random seed for reproducibility. A random seed is chosen if not provided."""
-        raw = self._parsed_arguments.seed
-        if raw is None:
-            return random.randint(0, 2**31 - 1)
-        return int(raw)
+        """Random seed for reproducibility. A random seed is chosen ONCE if not
+        provided, then cached so repeated access (e.g. the combine-metadata path)
+        returns the same value rather than a fresh draw (review REP-03)."""
+        if self._resolved_seed is None:
+            raw = self._parsed_arguments.seed
+            self._resolved_seed = random.randint(0, 2**31 - 1) if raw is None else int(raw)
+        return self._resolved_seed
+
+    def to_dict(self) -> dict[str, object]:
+        """Full parsed-argument namespace as a JSON-serialisable dict.
+
+        Serialising the whole namespace means ``run_metadata`` captures EVERY flag —
+        including the inference-critical ones (``normalization_mode``, ``pdet_*``,
+        ``catalog_only``, ``fisher_cond_threshold``, ``allow_low_pdet_coverage``) that
+        a hand-maintained key list silently omitted (review REP-02). ``seed`` here is
+        the RAW CLI value (``None`` when unset), distinct from the resolved
+        ``random_seed`` recorded alongside it.
+        """
+        return dict(vars(self._parsed_arguments))
 
     @property
     def save_baseline(self) -> bool:
@@ -146,6 +167,16 @@ class Arguments:
     def catalog_only(self) -> bool:
         """Skip completion integral: set f_i=1, L_comp=0 (catalog-only diagnostic)."""
         return bool(self._parsed_arguments.catalog_only)
+
+    @property
+    def allow_low_pdet_coverage(self) -> bool:
+        """Escape hatch for the hard P_det grid-coverage / shallow-pool gate."""
+        return bool(self._parsed_arguments.allow_low_pdet_coverage)
+
+    @property
+    def prescreen_audit(self) -> bool:
+        """Bypass the quick-SNR early skip while logging (quick, full) SNR pairs."""
+        return bool(self._parsed_arguments.prescreen_audit)
 
     @property
     def combine(self) -> bool:
@@ -204,6 +235,18 @@ def _parse_arguments(arguments: list[str]) -> argparse.Namespace:
     )
     parser.add_argument("--evaluate", action="store_true")
     parser.add_argument("--h_value", help="Hubble constant value.", type=float, default=H)
+    parser.add_argument(
+        "--h_values",
+        type=str,
+        default=None,
+        help=(
+            "Comma-separated Hubble constant values for a fused evaluation pass "
+            "(e.g. '0.70,0.705,0.71'). Supersedes --h_value: all h-invariant setup "
+            "(catalogue, BallTree, injection pool, P_det grid, Fisher staging, worker "
+            "pool) is paid once, and per-h posterior JSONs are written as each h "
+            "completes. Default: single-h evaluation via --h_value."
+        ),
+    )
     parser.add_argument("--snr_analysis", action="store_true")
     parser.add_argument(
         "--injection_campaign",
@@ -280,6 +323,27 @@ def _parse_arguments(arguments: list[str]) -> argparse.Namespace:
         action="store_true",
         default=False,
         help="Skip completion integral in evaluation: set f_i=1, L_comp=0 (catalog-only diagnostic).",
+    )
+    parser.add_argument(
+        "--allow_low_pdet_coverage",
+        action="store_true",
+        default=False,
+        help=(
+            "Proceed despite <95%% P_det grid coverage or a shallow injection pool "
+            "(stale-pool gate). Only for deliberate re-evaluations of archived "
+            "shallow baselines."
+        ),
+    )
+    parser.add_argument(
+        "--prescreen_audit",
+        action="store_true",
+        default=False,
+        help=(
+            "Audit mode for the quick-SNR pre-screen: compute the full SNR even "
+            "when the quick gate would skip, and log PRESCREEN_AUDIT lines with "
+            "(quick_snr, full_snr, params). Smoke-test use only (issue #19 / "
+            "PRE_SCREEN_SNR_FACTOR re-validation)."
+        ),
     )
     parser.add_argument(
         "--pdet_dl_bins",

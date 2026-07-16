@@ -52,6 +52,17 @@ def main() -> None:
     if arguments.combine:
         from master_thesis_code.bayesian_inference.posterior_combination import combine_posteriors
 
+        # Provenance for the fast-path combine stage (readiness sweep TC-10):
+        # the early return below skips _write_run_metadata, so the combine
+        # stage previously recorded no git_commit/args at all. Distinct
+        # filename avoids colliding with simulation task metadata.
+        _write_run_metadata(
+            arguments.working_directory,
+            arguments.seed,
+            arguments,
+            filename="run_metadata_combine.json",
+        )
+
         for variant_dir in ["posteriors", "posteriors_with_bh_mass"]:
             posteriors_dir = os.path.join(arguments.working_directory, variant_dir)
             if os.path.isdir(posteriors_dir):
@@ -60,6 +71,7 @@ def main() -> None:
                     posteriors_dir=posteriors_dir,
                     strategy=arguments.strategy,
                     output_dir=os.path.join(arguments.working_directory, variant_dir),
+                    allow_shallow_pool=arguments.allow_low_pdet_coverage,
                 )
             else:
                 _ROOT_LOGGER.warning(f"Posteriors directory not found: {posteriors_dir}")
@@ -106,9 +118,14 @@ def main() -> None:
             arguments.h_value,
             rng=rng,
             use_gpu=arguments.use_gpu,
+            prescreen_audit=arguments.prescreen_audit,
         )
 
     if arguments.evaluate:
+        # --h_values (fused h-grid pass) supersedes --h_value when given.
+        _h_values: list[float] | None = None
+        if arguments.h_values is not None:
+            _h_values = [float(tok) for tok in arguments.h_values.split(",") if tok.strip()]
         evaluate(
             cosmological_model,
             galaxy_catalog,
@@ -122,6 +139,8 @@ def main() -> None:
             normalization_mode=arguments.normalization_mode,
             # G4: --seed now reaches the inference layer (deterministic MC denominator).
             base_seed=seed,
+            allow_low_pdet_coverage=arguments.allow_low_pdet_coverage,
+            h_values=_h_values,
         )
 
     if arguments.snr_analysis:
@@ -226,9 +245,16 @@ def _compare_baseline(working_directory: str, baseline_path: str, label: str = "
 
 
 def _get_git_commit() -> str:
+    # Anchor at the package's real location, NOT the process CWD: cluster jobs
+    # run from a private $RUN_DIR/cwd (not a git repo), which would silently
+    # yield "unknown". realpath resolves the cwd's master_thesis_code symlink
+    # back to the checkout.
+    repo_root = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
     try:
         return (
-            subprocess.check_output(["git", "rev-parse", "HEAD"], stderr=subprocess.DEVNULL)
+            subprocess.check_output(
+                ["git", "rev-parse", "HEAD"], stderr=subprocess.DEVNULL, cwd=repo_root
+            )
             .decode()
             .strip()
         )
@@ -236,22 +262,17 @@ def _get_git_commit() -> str:
         return "unknown"
 
 
-def _write_run_metadata(working_directory: str, seed: int, arguments: Arguments) -> None:
+def _write_run_metadata(
+    working_directory: str, seed: int, arguments: Arguments, filename: str | None = None
+) -> None:
     metadata = {
         "git_commit": _get_git_commit(),
         "timestamp": datetime.datetime.now().isoformat(),
         "random_seed": seed,
-        "cli_args": {
-            "simulation_steps": arguments.simulation_steps,
-            "simulation_index": arguments.simulation_index,
-            "evaluate": arguments.evaluate,
-            "h_value": arguments.h_value,
-            "snr_analysis": arguments.snr_analysis,
-            "use_gpu": arguments.use_gpu,
-            "num_workers": arguments.num_workers,
-            "combine": arguments.combine,
-            "strategy": arguments.strategy,
-        },
+        # Full parsed namespace so every flag is captured — including the
+        # inference-critical knobs (normalization_mode, pdet_*, catalog_only, ...)
+        # that a hand-maintained subset silently dropped (review REP-02).
+        "cli_args": arguments.to_dict(),
     }
     slurm_vars = [
         "SLURM_JOB_ID",
@@ -265,11 +286,12 @@ def _write_run_metadata(working_directory: str, seed: int, arguments: Arguments)
     if slurm_info:
         metadata["slurm"] = slurm_info
 
-    index = arguments.simulation_index
-    if index > 0 or "SLURM_ARRAY_TASK_ID" in os.environ:
-        filename = f"run_metadata_{index}.json"
-    else:
-        filename = "run_metadata.json"
+    if filename is None:
+        index = arguments.simulation_index
+        if index > 0 or "SLURM_ARRAY_TASK_ID" in os.environ:
+            filename = f"run_metadata_{index}.json"
+        else:
+            filename = "run_metadata.json"
     metadata_path = os.path.join(working_directory, filename)
     with open(metadata_path, "w") as f:
         json.dump(metadata, f, indent=2)
@@ -332,6 +354,7 @@ def data_simulation(
     rng: np.random.Generator | None = None,
     *,
     use_gpu: bool = False,
+    prescreen_audit: bool = False,
 ) -> None:
     # conditional imports because they require GPU
     from master_thesis_code.memory_management import MemoryManagement
@@ -430,6 +453,11 @@ def data_simulation(
 
     counter = 0
     iteration = 0
+    # Per-(stage, exception-class) skip tally so any parameter-correlated drop rate
+    # is quantifiable rather than silently swallowed (review SIM-03). CRB-stage drops
+    # in particular happen AFTER the SNR>=threshold cut, so a correlated CRB failure
+    # would be a selection-function inconsistency against the gate-free injection pool.
+    skip_counts: dict[str, int] = {}
     host_galaxies: Iterator[HostGalaxy] = iter([])
 
     while counter < simulation_steps:
@@ -491,27 +519,59 @@ def data_simulation(
             continue
 
         try:
-            warnings.filterwarnings("error")
             signal.alarm(90)
-            quick_snr = parameter_estimation.compute_signal_to_noise_ratio(
-                use_snr_check_generator=True
-            )
-
-            # SNR scales as √T for stationary sources; EMRIs chirp so the
-            # 1-yr / 5-yr ratio can be even lower.  Factor 0.3 is a conservative
-            # compromise between the √T bound (0.447) and chirp margin.
-            if quick_snr < cosmological_model.snr_threshold * PRE_SCREEN_SNR_FACTOR:
-                signal.alarm(0)
-                _ROOT_LOGGER.info(
-                    f"Quick SNR threshold check failed: {np.round(quick_snr, 3)} < {cosmological_model.snr_threshold * PRE_SCREEN_SNR_FACTOR}."
+            # warnings-as-errors is scoped to the waveform/SNR computation via
+            # catch_warnings() so it is restored on EVERY exit path (success,
+            # exception, or the quick-gate continue) and cannot leak into the
+            # inter-iteration host-refill code (review SIM-02). The alarm is
+            # cancelled in the finally block below (review SIM-01).
+            with warnings.catch_warnings():
+                warnings.simplefilter("error")
+                # [PHYSICS] Quick-SNR pre-screen DISABLED for the depth-1.5 campaign
+                # (PRE_SCREEN_SNR_FACTOR = 0.0): the 2026-07-03 smoke audit (job
+                # 5740080, 543 (quick, full) pairs at depth 1.5) measured 3 false
+                # negatives with full SNR >= 20 at quick SNR as low as 0.25 —
+                # sources plunging in years 2-5 accumulate SNR the 1-yr check
+                # generator cannot see, so NO positive factor is safe. A lossy gate
+                # here is a selection-function inconsistency against the gate-free
+                # injection pool. The quick waveform is skipped entirely when the
+                # factor is 0 (audit mode still computes it for pair logging).
+                _quick_gate_enabled = PRE_SCREEN_SNR_FACTOR > 0.0
+                quick_snr = float("nan")
+                if _quick_gate_enabled or prescreen_audit:
+                    quick_snr = parameter_estimation.compute_signal_to_noise_ratio(
+                        use_snr_check_generator=True
+                    )
+                _quick_gate_failed = _quick_gate_enabled and (
+                    quick_snr < cosmological_model.snr_threshold * PRE_SCREEN_SNR_FACTOR
                 )
-                for cb in _callbacks:
-                    cb.on_snr_computed(counter, quick_snr * np.sqrt(5), False)
-                continue
-            snr = parameter_estimation.compute_signal_to_noise_ratio()
-            signal.alarm(0)
-            warnings.resetwarnings()
+                if _quick_gate_failed and not prescreen_audit:
+                    _ROOT_LOGGER.info(
+                        f"Quick SNR threshold check failed: {np.round(quick_snr, 3)} < {cosmological_model.snr_threshold * PRE_SCREEN_SNR_FACTOR}."
+                    )
+                    for cb in _callbacks:
+                        cb.on_snr_computed(counter, quick_snr * np.sqrt(5), False)
+                    continue
+                snr = parameter_estimation.compute_signal_to_noise_ratio()
+            if prescreen_audit:
+                # Greppable audit record for the smoke run (issue #19 +
+                # PRE_SCREEN_SNR_FACTOR re-validation): quick/full SNR pairs
+                # with the parameters that drive waveform cost. A false
+                # negative is full_snr >= threshold while the quick gate
+                # would have skipped.
+                _ROOT_LOGGER.info(
+                    "PRESCREEN_AUDIT quick_snr=%.4f full_snr=%.4f gate_would_skip=%s "
+                    "d_L=%.4f M=%.6e e0=%.4f p0=%.4f",
+                    quick_snr,
+                    float(snr),
+                    _quick_gate_failed,
+                    parameter_estimation.parameter_space.luminosity_distance.value,
+                    parameter_estimation.parameter_space.M.value,
+                    parameter_estimation.parameter_space.e0.value,
+                    parameter_estimation.parameter_space.p0.value,
+                )
         except Warning as e:
+            skip_counts["snr:Warning"] = skip_counts.get("snr:Warning", 0) + 1
             if "Mass ratio" in str(e):
                 _ROOT_LOGGER.warning(
                     "Caught warning that mass ratio is out of bounds. Continue with new parameters..."
@@ -521,39 +581,51 @@ def data_simulation(
                 _ROOT_LOGGER.warning(f"{str(e)}. Continue with new parameters...")
                 continue
         except ParameterOutOfBoundsError as e:
+            skip_counts["snr:ParameterOutOfBoundsError"] = (
+                skip_counts.get("snr:ParameterOutOfBoundsError", 0) + 1
+            )
             _ROOT_LOGGER.warning(
                 f"Caught ParameterOutOfBoundsError during parameter estimation: {str(e)}. Continue with new parameters..."
             )
             continue
         except AssertionError as e:
+            skip_counts["snr:AssertionError"] = skip_counts.get("snr:AssertionError", 0) + 1
             _ROOT_LOGGER.warning(
                 f"caught AssertionError: {str(e)}. Continue with new parameters..."
             )
             continue
         except RuntimeError as e:
+            skip_counts["snr:RuntimeError"] = skip_counts.get("snr:RuntimeError", 0) + 1
             _ROOT_LOGGER.warning(
                 f"Caught RuntimeError during waveform generation : {str(e)} .\n Continue with new parameters..."
             )
             continue
         except ValueError as e:
             if "EllipticK" in str(e):
+                skip_counts["snr:ValueError:EllipticK"] = (
+                    skip_counts.get("snr:ValueError:EllipticK", 0) + 1
+                )
                 _ROOT_LOGGER.warning(
                     "Caught EllipticK error from waveform generator. Continue with new parameters..."
                 )
                 continue
             elif "Brent root solver does not converge" in str(e):
+                skip_counts["snr:ValueError:Brent"] = skip_counts.get("snr:ValueError:Brent", 0) + 1
                 _ROOT_LOGGER.warning(
                     "Caught brent root solver error because it did not converge. Continue with new parameters..."
                 )
                 continue
             else:
-                raise ValueError(e)
+                # SIM-07: re-raise the original (bare raise preserves type + traceback).
+                raise
         except ZeroDivisionError:
+            skip_counts["snr:ZeroDivisionError"] = skip_counts.get("snr:ZeroDivisionError", 0) + 1
             _ROOT_LOGGER.warning(
                 "Caught ZeroDivisionError during trajectory integration. Continue with new parameters..."
             )
             continue
         except TimeoutError:
+            skip_counts["snr:TimeoutError"] = skip_counts.get("snr:TimeoutError", 0) + 1
             # G9 gate: log the full parameter set so timeout selection can be
             # binned by (M, mu, e0, p0, ...) — see .planning/gate/G9_timeout_scan.md
             _ROOT_LOGGER.warning(
@@ -561,6 +633,11 @@ def data_simulation(
                 parameter_estimation.parameter_space._parameters_to_dict(),
             )
             continue
+        finally:
+            # Always cancel the pending alarm — including on the quick-gate continue
+            # and every exception path — so no stale SIGALRM fires in inter-iteration
+            # code outside any try (review SIM-01).
+            signal.alarm(0)
 
         passed = snr >= cosmological_model.snr_threshold
         for cb in _callbacks:
@@ -578,29 +655,46 @@ def data_simulation(
         try:
             signal.alarm(90)
             cramer_rao_bounds = parameter_estimation.compute_Cramer_Rao_bounds()
-            signal.alarm(0)
         except ParameterOutOfBoundsError:
+            skip_counts["crb:ParameterOutOfBoundsError"] = (
+                skip_counts.get("crb:ParameterOutOfBoundsError", 0) + 1
+            )
             _ROOT_LOGGER.warning(
                 "Caught ParameterOutOfBoundsError in dervative. Continue with new parameters..."
             )
             continue
         except np.linalg.LinAlgError:
+            skip_counts["crb:LinAlgError"] = skip_counts.get("crb:LinAlgError", 0) + 1
             _ROOT_LOGGER.warning("Fisher matrix is singular (LinAlgError). Skipping event...")
             continue
         except ParameterEstimationError as e:
+            skip_counts["crb:ParameterEstimationError"] = (
+                skip_counts.get("crb:ParameterEstimationError", 0) + 1
+            )
             _ROOT_LOGGER.warning(f"CRB computation failed: {e}. Skipping event...")
             continue
         except TimeoutError:
+            skip_counts["crb:TimeoutError"] = skip_counts.get("crb:TimeoutError", 0) + 1
             _ROOT_LOGGER.warning(
                 "Cramér-Rao bound computation timed out (>90s). Skipping event... params=%s",
                 parameter_estimation.parameter_space._parameters_to_dict(),
             )
             continue
         except (ZeroDivisionError, RuntimeError, ValueError) as e:
+            # CRB-stage drops happen AFTER the SNR>=threshold cut — log params so a
+            # parameter-correlated failure rate is measurable (review SIM-03).
+            skip_counts[f"crb:{type(e).__name__}"] = (
+                skip_counts.get(f"crb:{type(e).__name__}", 0) + 1
+            )
             _ROOT_LOGGER.warning(
-                f"Caught {type(e).__name__} during CRB computation: {e}. Skipping event..."
+                "Caught %s during CRB computation: %s. Skipping event... params=%s",
+                type(e).__name__,
+                e,
+                parameter_estimation.parameter_space._parameters_to_dict(),
             )
             continue
+        finally:
+            signal.alarm(0)  # review SIM-01: cancel on every path
         parameter_estimation.save_cramer_rao_bound(
             cramer_rao_bound_dictionary=cramer_rao_bounds,
             snr=snr,
@@ -624,14 +718,38 @@ def data_simulation(
 
     parameter_estimation.flush_pending_results()
 
+    # Per-class skip tally (review SIM-03): CRB-stage drops occur after the SNR cut,
+    # so a nonzero, parameter-correlated crb:* count is a selection-function signal to
+    # bin against (d_L, M_z, SNR) before trusting the sample completeness.
+    if skip_counts:
+        _ROOT_LOGGER.info(
+            "Skip tally over %d attempts (%d successful): %s",
+            iteration,
+            counter,
+            ", ".join(f"{k}={v}" for k, v in sorted(skip_counts.items())),
+        )
+
     for cb in _callbacks:
         cb.on_simulation_end(counter, iteration)
 
 
-_INJECTION_COLUMNS = ["z", "M", "phiS", "qS", "SNR", "h_inj", "luminosity_distance"]
+# NOTE (W-PRE-12): this list is the injection CSV schema — pd.DataFrame(...,
+# columns=...) SILENTLY DROPS any row key missing here. Keep in sync with the
+# row dict built in injection_campaign.
+_INJECTION_COLUMNS = [
+    "z",
+    "M",
+    "phiS",
+    "qS",
+    "SNR",
+    "h_inj",
+    "luminosity_distance",
+    "z_cut",
+    "code_rev",
+]
 
 
-def _flush_injection_results(results: list[dict[str, float]], csv_path: str) -> None:
+def _flush_injection_results(results: list[dict[str, float | str]], csv_path: str) -> None:
     """Write injection results to CSV (overwrites previous flush)."""
     import pandas as pd
 
@@ -660,7 +778,7 @@ def injection_campaign(
         rng: Random number generator for reproducibility.
         use_gpu: Whether to use GPU acceleration.
     """
-    from master_thesis_code.constants import INJECTION_CSV_PATH
+    from master_thesis_code.constants import HOST_DRAW_Z_MAX, INJECTION_CSV_PATH
     from master_thesis_code.galaxy_catalogue.handler import ParameterSample
     from master_thesis_code.memory_management import MemoryManagement
     from master_thesis_code.parameter_estimation.parameter_estimation import (
@@ -695,18 +813,50 @@ def injection_campaign(
         f"index={simulation_index}, output={csv_path}"
     )
 
-    results: list[dict[str, float]] = []
+    results: list[dict[str, float | str]] = []
     counter = 0
     iteration = 0
     parameter_samples_iter: Iterator[ParameterSample] = iter([])
 
-    z_cut = 0.5  # generous margin above max observed detection z ≈ 0.18
+    # [PHYSICS] Injection population depth = host-draw depth (issue #20): the
+    # P_det grid built from these injections must span the full host-draw
+    # volume, otherwise the selection function is blind above z_cut (the
+    # pre-#20 hardcoded 0.5 capped the grid while hosts now reach z = 1.5).
+    z_cut = HOST_DRAW_Z_MAX
     skipped_high_z = 0
-    _EMCEE_BATCH = 1000  # large batch to amortize MCMC overhead (93.5% z-rejected)
+    skipped_high_mz = 0
+    timeout_count = 0
+    # Provenance stamped into every injection row (stale-pool gate,
+    # readiness sweep A2, 2026-07-03): h_inj alone cannot discriminate
+    # pre-/post-dt² or shallow/deep pools (0.73 in every era).
+    code_rev = _get_git_commit()
+    _EMCEE_BATCH = 1000  # large batch to amortize MCMC overhead (z-rejection ~0 now
+    # that z_cut = HOST_DRAW_Z_MAX matches the sampler depth; the pre-#20 93.5%
+    # figure was measured at z_cut = 0.5)
     _LOG_INTERVAL = 100  # log every N successful events
     _GPU_FREE_INTERVAL = 50  # free GPU memory every N waveform computations
     _FLUSH_INTERVAL = 2000  # flush to disk every N events
-    _TIMEOUT_S = 30  # SNR-only is fast; 30s is generous
+    # Aligned with the main simulation loop's 90 s alarm (readiness sweep A1,
+    # 2026-07-03): the injection SNR uses the FULL 5-yr generator and depth 1.5
+    # lifts M_z into corners never timing-profiled at the old 30 s budget;
+    # timed-out events are DROPPED from the pool, so a timeout-rate correlation
+    # with (d_L, M_z) would bias the p_det grid. Smoke test bins the counter.
+    _TIMEOUT_S = 90
+
+    def _sigterm_handler(signum: int, frame: object) -> None:
+        # SLURM sends SIGTERM at the wall-time cap. Flush the events accumulated
+        # since the last periodic flush so up to _FLUSH_INTERVAL full-5yr-generator
+        # SNR evaluations (the dominant GPU cost) are not lost (review SIM-04). Mirrors
+        # data_simulation's SIGTERM flush; the CRB-side loss bound was already 5 rows.
+        _ROOT_LOGGER.warning(
+            "SIGTERM received (wall-time cap?) — flushing %d injection rows to %s",
+            len(results),
+            csv_path,
+        )
+        _flush_injection_results(results, csv_path)
+        raise SystemExit(0)
+
+    signal.signal(signal.SIGTERM, _sigterm_handler)
 
     while counter < simulation_steps:
         # Sample events from population model
@@ -717,10 +867,10 @@ def injection_campaign(
             parameter_samples_iter = iter(samples_list)
             sample = next(parameter_samples_iter)
 
-        # Importance sampling: skip events beyond the detection horizon.
-        # All 24/69500 detections in the initial campaign were at z < 0.18.
-        # Events at z > z_cut have P_det ≈ 0 and waste GPU time on waveforms
-        # that will never produce detectable SNR.
+        # Population-depth consistency cut: z_cut = HOST_DRAW_Z_MAX so the
+        # P_det grid spans exactly the host-draw volume. NOT a p_det = 0
+        # claim — post-dt² the horizon reaches z ~ 1.5+ (issue #20 retired
+        # the pre-dt² "24/69500 detections at z < 0.18" justification).
         if sample.redshift > z_cut:
             skipped_high_z += 1
             continue
@@ -747,6 +897,17 @@ def injection_campaign(
         # re-lifts). Maggiore (2008) GW Vol. 1 §4.1.4; Babak et al. (2017) arXiv:1703.09722.
         # Eq. (4.7) in Maggiore (2008) GW Vol. 1 §4.1.4: M_z = M_source·(1+z)
         redshifted_M = redshifted_mass(sample.M, sample.redshift)  # M_z = M·(1+z)
+
+        # Symmetric M_z truncation (readiness sweep A3, 2026-07-03): the CRB
+        # path structurally excludes M_z > M.upper_limit (Fisher stencil raises
+        # ParameterOutOfBoundsError at value + 2ε), so the p_det pool must
+        # exclude the same corner or the selection function includes a
+        # population the event set cannot contain. Rate-suppressed (mass
+        # function dies above ~4e6 M_sun source-frame), expected count ~0 —
+        # the counter makes that measurable.
+        if redshifted_M > parameter_estimation.parameter_space.M.upper_limit:
+            skipped_high_mz += 1
+            continue
         parameter_estimation.parameter_space.M.value = redshifted_M
 
         # Set luminosity distance with candidate h value (injection pipeline does not use
@@ -756,13 +917,13 @@ def injection_campaign(
 
         # Compute SNR only (no Fisher matrix, no CRB)
         try:
-            warnings.filterwarnings("error")
             signal.alarm(_TIMEOUT_S)
-            snr = parameter_estimation.compute_signal_to_noise_ratio()
-            signal.alarm(0)
-            warnings.resetwarnings()
+            # warnings-as-errors scoped so it is restored on every exit path and
+            # cannot leak into the next iteration's population sampling (review SIM-02).
+            with warnings.catch_warnings():
+                warnings.simplefilter("error")
+                snr = parameter_estimation.compute_signal_to_noise_ratio()
         except Warning as e:
-            signal.alarm(0)
             if "Mass ratio" in str(e):
                 _ROOT_LOGGER.warning(
                     "Caught warning that mass ratio is out of bounds. Continue with new parameters..."
@@ -772,19 +933,16 @@ def injection_campaign(
                 _ROOT_LOGGER.warning(f"{str(e)}. Continue with new parameters...")
                 continue
         except ParameterOutOfBoundsError as e:
-            signal.alarm(0)
             _ROOT_LOGGER.warning(
                 f"Caught ParameterOutOfBoundsError: {str(e)}. Continue with new parameters..."
             )
             continue
         except RuntimeError as e:
-            signal.alarm(0)
             _ROOT_LOGGER.warning(
                 f"Caught RuntimeError during waveform generation: {str(e)}. Continue..."
             )
             continue
         except ValueError as e:
-            signal.alarm(0)
             if "EllipticK" in str(e):
                 _ROOT_LOGGER.warning("Caught EllipticK error from waveform generator. Continue...")
                 continue
@@ -796,20 +954,24 @@ def injection_campaign(
             else:
                 raise
         except ZeroDivisionError:
-            signal.alarm(0)
             _ROOT_LOGGER.warning(
                 "Caught ZeroDivisionError during trajectory integration. Continue..."
             )
             continue
         except TimeoutError:
-            # G9 gate: the injection alarm budget is _TIMEOUT_S = 30 s, NOT 90 s
-            # (the old message was wrong); params logged for timeout binning.
+            # G9 gate: params logged for timeout binning (smoke test checks
+            # for (d_L, M_z) correlation before full-campaign sizing).
+            timeout_count += 1
             _ROOT_LOGGER.warning(
-                "Injection waveform/SNR computation timed out (>%ss). Skipping event... params=%s",
+                "Injection waveform/SNR computation timed out (>%ss, %d total). "
+                "Skipping event... params=%s",
                 _TIMEOUT_S,
+                timeout_count,
                 parameter_estimation.parameter_space._parameters_to_dict(),
             )
             continue
+        finally:
+            signal.alarm(0)  # cancel on every path (review SIM-01/SIM-02)
 
         # Store ALL events regardless of SNR (per D-03: do NOT threshold)
         results.append(
@@ -824,6 +986,10 @@ def injection_campaign(
                 "SNR": float(snr),
                 "h_inj": h_value,
                 "luminosity_distance": luminosity_distance,
+                # Provenance (stale-pool gate): z_cut discriminates pool depth
+                # eras, code_rev ties rows to the generating commit.
+                "z_cut": z_cut,
+                "code_rev": code_rev,
             }
         )
         counter += 1
@@ -835,7 +1001,11 @@ def injection_campaign(
 
     # Final write
     _flush_injection_results(results, csv_path)
-    _ROOT_LOGGER.info(f"Injection campaign complete: {len(results)} events stored to {csv_path}")
+    _ROOT_LOGGER.info(
+        f"Injection campaign complete: {len(results)} events stored to {csv_path} "
+        f"(skipped: {skipped_high_z} high-z, {skipped_high_mz} M_z > bound, "
+        f"{timeout_count} timeouts @ {_TIMEOUT_S}s)"
+    )
 
 
 def evaluate(
@@ -851,6 +1021,8 @@ def evaluate(
     fisher_cond_threshold: float = 1e16,
     normalization_mode: str = "volume_deconv",
     base_seed: int | None = None,
+    allow_low_pdet_coverage: bool = False,
+    h_values: list[float] | None = None,
 ) -> None:
     from master_thesis_code.bayesian_inference.bayesian_statistics import BayesianStatistics
 
@@ -867,6 +1039,8 @@ def evaluate(
         fisher_cond_threshold=fisher_cond_threshold,
         normalization_mode=normalization_mode,
         base_seed=base_seed if base_seed is not None else 0,
+        allow_low_pdet_coverage=allow_low_pdet_coverage,
+        h_values=h_values,
     )
 
 
@@ -909,6 +1083,10 @@ def generate_figures(output_dir: str) -> None:
 
     import pandas as pd
 
+    # Injected-truth H0 for the figure truth-lines: use the fiducial constant rather
+    # than a hardcoded 0.73 literal so every truth marker agrees if H changes
+    # (review PLT-03/04). The nested generators below close over this.
+    from master_thesis_code.constants import H as TRUTH_H
     from master_thesis_code.plotting._data import PARAMETER_NAMES, reconstruct_covariance
     from master_thesis_code.plotting._helpers import save_figure
     from master_thesis_code.plotting._style import apply_style
@@ -945,7 +1123,7 @@ def generate_figures(output_dir: str) -> None:
             from master_thesis_code.physical_relations import dist_to_redshift
 
             df["redshift"] = df["luminosity_distance"].apply(
-                lambda d: dist_to_redshift(float(d), h=0.73)
+                lambda d: dist_to_redshift(float(d), h=TRUTH_H)
             )
         return df
 
@@ -1037,7 +1215,7 @@ def generate_figures(output_dir: str) -> None:
         fig, ax = plot_combined_posterior(
             h_vals,
             combined,
-            0.73,
+            TRUTH_H,
             label=r"Without $M_z$",
             color=VARIANT_STYLE["no_mass"][0],
             linestyle=VARIANT_STYLE["no_mass"][1],
@@ -1053,7 +1231,7 @@ def generate_figures(output_dir: str) -> None:
                 plot_combined_posterior(
                     h_w,
                     comb_w,
-                    0.73,
+                    TRUTH_H,
                     label=r"With $M_z$",
                     color=VARIANT_STYLE["with_mass"][0],
                     linestyle=VARIANT_STYLE["with_mass"][1],
@@ -1083,7 +1261,7 @@ def generate_figures(output_dir: str) -> None:
             )
         except FileNotFoundError:
             return None
-        fig, ax = plot_event_posteriors(h_vals, event_posts, 0.73, combined_posterior=combined)
+        fig, ax = plot_event_posteriors(h_vals, event_posts, TRUTH_H, combined_posterior=combined)
         # Overlay with-M_z canonical combined posterior
         if post_data_with is not None:
             try:
@@ -1520,12 +1698,14 @@ def generate_figures(output_dir: str) -> None:
 
     def _gen_sky_averaged_completeness() -> tuple[object, object] | None:
         try:
+            from master_thesis_code.constants import HOST_DRAW_Z_MAX
             from master_thesis_code.galaxy_catalogue.pixel_completeness import from_cache_or_build
             from master_thesis_code.plotting.completeness_plots import (
                 plot_sky_averaged_completeness,
             )
 
-            return plot_sky_averaged_completeness(from_cache_or_build())
+            # Track the campaign depth so the figure shows the full host volume.
+            return plot_sky_averaged_completeness(from_cache_or_build(), z_max=HOST_DRAW_Z_MAX)
         except (FileNotFoundError, ValueError):
             _ROOT_LOGGER.info("fig23 skipped: no m_th map / catalog available")
             return None

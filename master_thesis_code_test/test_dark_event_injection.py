@@ -374,12 +374,19 @@ def test_pixelated_dark_draw_pixel_frequency_tracks_W_k() -> None:
     pc = _pixel_completeness_gradient()
     rng = np.random.default_rng(202)
     n = 40000
-    hosts = draw_dark_hosts(n, rng, pc, _M_MIN, _M_MAX, h=H)
+    # Explicit shallow window: the sampler is depth-agnostic, but the W_k
+    # contrast between pixels lives at low z where f_k differs. At the
+    # campaign depth (HOST_DRAW_Z_MAX = 1.5) the volume integral is dominated
+    # by the f ~ 0 shell, W_k becomes near-uniform, and the occupancy/W_k
+    # Pearson r drowns in multinomial noise — a power issue, not a sampler
+    # bug. z_max = 0.5 preserves the discriminating power of this check.
+    z_max = 0.5
+    hosts = draw_dark_hosts(n, rng, pc, _M_MIN, _M_MAX, h=H, z_max=z_max)
     pix = np.array([pc.ang2pix(float(h.phiS), float(h.qS)) for h in hosts])
     observed = np.bincount(pix, minlength=pc.npix).astype(np.float64)
 
     # Expected per-pixel weight (the categorical the sampler draws from).
-    z_grid = np.linspace(1e-6, HOST_DRAW_Z_MAX, 4096)
+    z_grid = np.linspace(1e-6, z_max, 4096)
     dVc = np.asarray(comoving_volume_element(z_grid, h=H), dtype=np.float64)
     p_pop = dVc / (1.0 + z_grid)
     w_k = pc.pixel_dark_weights(z_grid, p_pop, H)

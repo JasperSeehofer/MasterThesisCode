@@ -16,15 +16,17 @@ There are **two distinct directories**, and confusing them causes most failures:
 | **RUN_DIR** | this run's **output** (logs, CSVs, posteriors) | `$WORKSPACE/run_YYYYMMDD_seedS/` |
 
 The package uses **relative paths from the current working directory**:
-- it reads the catalog from `./master_thesis_code/galaxy_catalogue/`,
+- it reads the catalog from `./master_thesis_code/galaxy_catalogue/` (handler.py:24),
 - it reads/writes `./simulations/…`.
 
-So every job does the same dance: **`cd $PROJECT_ROOT`** then
-**`ln -sfn $RUN_DIR/simulations $PROJECT_ROOT/simulations`** — run from the code,
-but redirect `./simulations` to this run's output. Output therefore lands in
-`$RUN_DIR/simulations/`. (Because there is one shared symlink, avoid running two
-jobs from the same PROJECT_ROOT with different RUN_DIRs *interactively* at once;
-SLURM tasks each re-point it at start, and all point to the same RUN_DIR per job.)
+So every batch job runs from a **private per-run CWD** (TC-03): it `cd`s into
+`$RUN_DIR/cwd/`, which holds two symlinks —
+`simulations → $RUN_DIR/simulations` and
+`master_thesis_code → $PROJECT_ROOT/master_thesis_code`. Code and catalog come
+from the one repo; output lands in `$RUN_DIR/simulations/`. Because each run
+owns its CWD, **concurrent runs with different RUN_DIRs are safe** — there is
+no shared `$PROJECT_ROOT/simulations` symlink to fight over anymore.
+(`merge.sbatch` needs no CWD tricks — it uses absolute `--workdir` paths.)
 
 **Env threading:** submit wrappers pass everything the sbatch needs via
 `sbatch --export=ALL,RUN_DIR=…,BASE_SEED=…`. The sbatch validates them and falls
@@ -38,11 +40,11 @@ job `source cluster/modules.sh` (which also exports `$WORKSPACE`, `$PROJECT_ROOT
 
 ## 2. Partition cheat-sheet
 
-| Partition | Use | Limits |
+| Partition | Use | Limits / anchors (2026-07-03) |
 |---|---|---|
 | `gpu_h100_short` | production GPU sim (tasks are time-capped, backfills fast) | 30-min wall, 1 GPU/task |
-| `gpu_a100_short` | GPU smoke tests | 5-min wall |
-| `cpu_il` | inference / merge / combine | up to 128 cpus, ~15 min/h-value |
+| `gpu_a100_short` | injection campaigns (`inject.sbatch`) + GPU smoke tests | `inject.sbatch` requests a 30-min wall; the smoke test uses 5 min |
+| `cpu,cpu_il` | inference / merge / combine | evaluate: **56–76 min per h-value @ 3355 events / 16 cpus** (jobs 5732036, volume_deconv; 6h pre-smoke budget, re-size after smoke); combine: **~20 min posteriors** + 90-min budget (job 5735965 anchor); figures rendered locally (`RENDER_FIGURES=0`) |
 | `dev_gpu_h100` / `dev_*` | quick queue for testing | short wall, fast start |
 
 Seed convention everywhere: **per-task seed = `BASE_SEED + SLURM_ARRAY_TASK_ID`**
@@ -57,12 +59,19 @@ Run all of these **from `~/MasterThesisCode` after `source cluster/modules.sh`.*
 ### 3a. Simulation → CRB (+ auto merge → evaluate → combine)
 One command chains simulate (GPU) → merge (CPU) → evaluate (CPU) → combine:
 ```bash
-bash cluster/submit_pipeline.sh --tasks 100 --steps 50 --seed 42
+bash cluster/submit_pipeline.sh --tasks 100 --steps 50 --seed 42 \
+    --injection_pool "$WORKSPACE/injection_<date>_seed<seed>/simulations/injections"
 # creates $WORKSPACE/run_YYYYMMDD_seed42/ ; prints all job IDs + a sacct line
 ```
 - `--tasks` = GPU array size, `--steps` = EMRI iterations/task, `--seed` = base seed.
+- `--injection_pool` (required unless `--no_injections`) links the pool's
+  `injection_h_*.csv` into `RUN_DIR/simulations/injections/` at submit time, so
+  evaluate's p_det grid uses exactly the intended pool (see `cluster/datasets.yaml`).
+- `--h_true V` sets the injected truth for closure runs (default 0.73); a
+  non-default truth is embedded in the run-dir name (`run_YYYYMMDD_seedS_h0p67`).
 - Dependency chain: simulate → merge (`afterany`, tolerates task timeouts) →
-  evaluate (`afterok`, 38-point h-grid 0.60–0.86) → combine (`afterok`).
+  evaluate (`afterok`, h-grid parsed from `evaluate.sbatch` — currently 41
+  points 0.60–0.86) → combine (`afterok`).
 - **Test small first:** `--tasks 2 --steps 10`.
 
 ### 3b. Injection campaign → P_det pool
@@ -79,7 +88,8 @@ bash cluster/submit_injection.sh --tasks_per_h 80 --steps 900 --seed 12345
 Usually part of 3a, but to (re-)evaluate an existing run:
 ```bash
 RUN=$WORKSPACE/run_20260516_seed400_phase50
-sbatch --parsable --array=0-37 \
+# --array must match the H_VALUES count in evaluate.sbatch (currently 41 → 0-40)
+sbatch --parsable --array=0-40 \
   --output="$RUN/logs/evaluate_%A_%a.out" --error="$RUN/logs/evaluate_%A_%a.err" \
   --export=ALL,RUN_DIR="$RUN" cluster/evaluate.sbatch
 # then combine:
@@ -166,13 +176,25 @@ inline wrapper that makes `RUN_DIR` and passes `--export`.
 ## 6. Re-run safety & idempotency
 
 - **Skip-if-output** per unit (evaluate/combine already do this): guard on the
-  target file so resubmits don't redo finished work.
-- **Archive-then-write**: `evaluate.sbatch` task 0 archives existing
-  `posteriors*/` to `simulations/archive/eval_<ts>/` before a fresh sweep — so a
+  target file so resubmits don't redo finished work. `evaluate.sbatch` exits 0
+  per-task if its `h_<label>.json` posteriors already exist.
+- **Archive-then-write**: `submit_pipeline.sh` archives existing `posteriors*/`
+  to `simulations/archive/eval_<ts>/` **at submit time on the login node**
+  (moved out of evaluate.sbatch task 0, which raced with sibling tasks) — so a
   re-eval never silently overwrites without a copy.
 - **`afterany` vs `afterok`**: merge follows simulate with `afterany` (GPU tasks
   are time-capped and "time out" by design); evaluate/combine use `afterok`.
-- **Resubmit only failures:** `bash cluster/resubmit_failed.sh <JOBID> <RUN_DIR> <BASE_SEED> <STEPS>`.
+- **Resubmit only failures:**
+  `bash cluster/resubmit_failed.sh [--include-timeout] [--force] <JOBID> <RUN_DIR> <BASE_SEED> <STEPS> [H_VALUE]`.
+  - Default states: `FAILED,NODE_FAIL,OUT_OF_MEMORY`. `--include-timeout` adds
+    `TIMEOUT` — opt-in because TIMEOUT is the *expected* terminal state on
+    `gpu_h100_short` (time-capped by design).
+  - `H_VALUE` is optional: recovered from `run_metadata_*.json` if omitted
+    (conflicting explicit values abort); falls back to 0.73 with a loud warning
+    only if neither source exists.
+  - The script **refuses to run** if `simulations/cramer_rao_bounds.csv` already
+    exists (merge appends → duplicate events); archive/remove the merged CSVs or
+    `scancel` the pending merge first, or pass `--force`.
 - A failed parent leaves children `DependencyNeverSatisfied` (zombie) — preflight
   flags them; clear with `scancel`.
 

@@ -23,7 +23,6 @@ H0: float = 73e3  # m / (s * Mpc), Hubble constant in SI-adjacent units
 H_MIN: float = 60.0  # lower limit for dimensionless h
 H_MAX: float = 86.0  # upper limit for dimensionless h
 H: float = 0.73  # dimensionless h = H₀ / (100 km/s/Mpc), fiducial simulation value
-TRUE_HUBBLE_CONSTANT: float = 0.7  # dimensionless h, fiducial value for Bayesian inference
 
 # cosmological parameters fiducial values
 # [PHYSICS] G11: matched to the M1 EMRI population model's cosmology — the
@@ -54,25 +53,50 @@ DEFAULT_SIMULATION_PATH: str = "simulations/simulation"
 MINIMAL_FREQUENCY: float = 1e-5
 MAXIMAL_FREQUENCY: float = 1
 SNR_THRESHOLD: float = 20
-PRE_SCREEN_SNR_FACTOR: float = 0.3  # pre-screen heuristic (main.py simulation loop)
+# [PHYSICS] Quick-SNR pre-screen factor. 0.0 = DISABLED (2026-07-03 decision):
+# the depth-1.5 smoke audit (job 5740080, 543 pairs via --prescreen_audit)
+# measured a 0.55% false-negative rate — full 5-yr SNR up to 44 at 1-yr quick
+# SNR 0.25 (late-plunging sources) — so no positive factor is safe and a lossy
+# gate is a selection-function inconsistency vs the gate-free injection pool.
+# The historical 0.3 (sqrt(T) bound 0.447 + chirp margin) was calibrated
+# pre-dt² at z <= 0.5 and is retired.
+PRE_SCREEN_SNR_FACTOR: float = 0.0
 # G10 gate: Fisher matrices with kappa above this are numerical noise after
 # inversion (float64 ~16 digits; 1e14 leaves <2). Event is skipped, not stored.
 FISHER_CONDITION_NUMBER_MAX: float = 1e14
 
 # galaxy catalog and EMRI detection
-GALAXY_REDSHIFT_ERROR_COEFFICIENT: float = 0.013  # Galaxy.redshift_uncertainty ∝ 0.013*(1+z)^3
-FRACTIONAL_LUMINOSITY_ERROR: float = 0.1  # fractional error on measured luminosity distance
-FRACTIONAL_BLACK_HOLE_MASS_CATALOG_ERROR: float = 0.1  # fractional BH mass catalog uncertainty
 FRACTIONAL_MEASURED_MASS_ERROR: float = 1e-8  # fractional error on measured redshifted mass
 SKY_LOCALIZATION_ERROR: float = 2 / 180 * np.pi  # rad, EMRI sky localization error (2 degrees)
+# [PHYSICS] Residual host peculiar-velocity dispersion, marginalized into the
+# host-z kernel at inference time (issue #16 decision 2026-07-03):
+# sigma_z_pv = (1 + z_g) * SIGMA_V_PEC_KM_S / c, added in quadrature to the
+# catalogue sigma_z in bayesian_statistics.single_host_likelihood.
+# (1+z) factor: Davis et al. (2011), arXiv:1012.2912, Eqs. (1)/(A1); quadrature
+# convention: Mastrogiovanni et al. (2023), arXiv:2305.10488, Sec. IV.
+# 200 km/s follows Fishbach et al. (2019), arXiv:1807.05667, Sec. 2.2 and
+# Chen et al. (2018), arXiv:1712.06531; the LISA-EMRI precedent (Laghi et al.
+# 2021, arXiv:2102.01708, Sec. 4) uses 500 km/s — kept as a systematics-budget
+# row, not the default. Distinct from (residual on top of) the GLADE+
+# PV-CORRECTION error already folded into the catalogue z_error at parse time
+# (handler.parse_to_reduced_catalog, 0.0015 floor for rows without it).
+SIGMA_V_PEC_KM_S: float = 200.0
 GALAXY_CATALOG_REDSHIFT_LOWER_LIMIT: float = 0.00001  # minimum redshift for galaxy catalog
-GALAXY_CATALOG_REDSHIFT_UPPER_LIMIT: float = 0.55  # maximum redshift for galaxy catalog
-# Redshift-horizon margin for the in-catalog host draw (draw_uniform_hosts). The
-# EMRI detection horizon is z ≈ 0.18 and the injection campaign already uses
-# z_cut = 0.5, so z < 0.5 is safely beyond the horizon -> the truncation is EXACT
-# (p_det = 0 beyond) and only removes never-detectable host candidates.
-HOST_DRAW_Z_MAX: float = 0.5
-LUMINOSITY_DISTANCE_THRESHOLD_GPC: float = 1.55  # Gpc, LISA detection horizon for EMRIs
+# Documented catalogue depth bound. NOTE: currently UNWIRED — the reduced
+# catalogue CSV is written full-depth (no z cut in parse_to_reduced_catalog)
+# and the effective load-time depth is Model1CrossCheck.max_redshift via
+# _get_pruned_galaxy_catalog. Kept as documentation of the depth the pipeline
+# is validated for; raised alongside HOST_DRAW_Z_MAX (issue #20).
+GALAXY_CATALOG_REDSHIFT_UPPER_LIMIT: float = 1.55  # maximum redshift for galaxy catalog
+# [PHYSICS] Campaign population depth for the in-catalog host draw (issue #20,
+# user decision 2026-07-03: "first go for z=1.5 and then see the results and
+# HPC performance"). The pre-dt² justification ("horizon z ≈ 0.18, truncation
+# EXACT") is retired: after the dt² fix the EMRI horizon reaches z ~ 1.5+, so
+# this is a deliberate population-model choice matching
+# Model1CrossCheck.max_redshift = 1.5 (cosmological_model.py), NOT a claim
+# that p_det = 0 beyond. The injection-campaign z_cut derives from this
+# constant (main.py) so the P_det grid always spans the host-draw volume.
+HOST_DRAW_Z_MAX: float = 1.5
 # Multiplicative safety margin on the population-derived d_L pre-screen bound
 # (physical_relations.luminosity_distance_prescreen_gpc). Placeholder pending
 # re-measurement on post-dt^2 injection data — issue #19. Replaces the retired

@@ -7,7 +7,104 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Research (host-mass kernel — bias investigation)
+- **`mass_trunc` host-mass kernel (EXP-45) — implemented, numerically sound, and
+  EXONERATED as the 2D bias driver (experimental, not for production).** New isolated
+  `normalization_mode="mass_trunc"` [PHYSICS]: the 2D (with-BH-mass) channel's host-mass
+  prior replaced from the linear-Gaussian G2d moment match (`eddington_shifted_host_mass`)
+  to the **truncated lognormal × R_eff prior** on `[M_MIN, M_MAX]` — the true Reines &
+  Volonteri (2015) lognormal error × the Babak et al. (2017) R_eff population weight,
+  renormalised on the physical EMRI mass window. Numerator uses **Gauss-Hermite** on the
+  narrow GW M_z peak (the peak-aware fix for the `fixed_quad` aliasing that falsified
+  `volume_trunc`); selection denominator uses **Gauss-Legendre in ln M** over a per-host
+  peak-aware window (the erf-sum closed form is Gaussian-prior-only). The 1D channel and
+  the `volume_deconv`/`local_ratio`/`volume_trunc` paths are **byte-identical** (kernel-parity
+  golden regenerated additions-only; `single_host_likelihood_batch` bit-identical to the
+  scalar kernel on all 9 new `mass_trunc` cases; limiting cases in
+  `test_mass_trunc_kernel.py`; full CPU suite green). The decisive seed600 494-event
+  shallow-venue A/B (`scripts/mass_trunc_ab.py`) found **Δ2D mean = +0.0029** (small, WRONG
+  sign) and **Δ1D = 0 exactly** → the mass-kernel truncation is NOT the 2D +0.025 residual
+  driver: the isolated single-host toy over-stated it by omitting the selection denominator,
+  which cancels the numerator shift in the full ratio-of-sums pipeline. The linear-Gaussian
+  G2d approximation is thereby empirically validated as adequate for the 2D channel (agrees
+  with the exact kernel to ~0.003 in H₀). Retained as an experimental/exonerated diagnostic
+  (not CLI-wired); `volume_deconv` stays the golden production default. Finding +
+  reproducible driver: `results/mass_trunc_ab_20260713/`; toy motivation:
+  `results/mass_kernel_truncation_20260713/`. Refs: Reines & Volonteri (2015) arXiv:1508.06274
+  §4.1; Babak et al. (2017) arXiv:1703.09722; Abramowitz & Stegun 25.4.46.
+
+### Research (host-z kernel — bias investigation)
+- **`volume_trunc` host-z kernel (Part 1) — implemented and empirically FALSIFIED
+  (experimental, not for production).** New isolated `normalization_mode="volume_trunc"`:
+  the calibrated volume kernel with the in-catalogue numerator integrated over the per-host
+  galaxy window `[z_g−4σ, z_g+4σ]` (shared with `Z_g`/`D_g`) and the lower z-limit floored at
+  0 instead of 1e-6. The default `volume_deconv`/`local_ratio` paths are **byte-identical**
+  (kernel-parity golden regenerated with additions only; `single_host_likelihood_batch`
+  bit-identical to the scalar kernel on all `volume_trunc` cases; full CPU suite green). The
+  decisive seed600 494-event shallow-venue A/B (`scripts/volume_trunc_ab.py`) **rejected** it:
+  it worsens the shallow bias (1D mean 0.745 → 0.800, posterior collapses onto h=0.80) because
+  `fixed_quad(n=50)` aliases the narrow GW peak over the wide host window and the exact
+  host-window numerator also tilts high. The mode is retained as an experimental/falsified
+  diagnostic (not CLI-wired); `volume_deconv` stays the golden production default. Finding +
+  reproducible diagnostic: `results/volume_trunc_ab_20260712/`. Ref: Gray et al. (2020)
+  arXiv:1908.06050 Eq. A.10; `docs/derivations/G2b_host_z_volume_prior.md` §1.4.
+
+### Performance (perf/eval-vectorization)
+- **Fused h-grid evaluation (opt-in):** new `--h_values 0.70,0.705,...` CLI flag /
+  `BayesianStatistics.evaluate(h_values=[...])` — one process evaluates the whole h-list,
+  paying the h-invariant setup (catalogue + BallTree, injection pool + P_det grid,
+  completeness, D(h)/β/global-selection tables, Fisher staging, worker pool) once instead of
+  once per h. Per-h posterior JSONs are written as each h completes (per-h failure granularity
+  preserved); outputs are exactly equal to independent single-h runs (gated by
+  `test_fused_h_grid_matches_sequential`, exact `==`). The single-h default path is
+  byte-compatible and untouched — existing cluster scripts are unaffected until a fused
+  sibling script is deliberately introduced post-campaign.
+- **Host-batched likelihood kernel:** `single_host_likelihood_batch` — the vectorized twin of
+  `single_host_likelihood` — computes all candidate hosts of a detection in one array pass;
+  `p_Di` now dispatches one chunk per worker instead of one starmap task per host. Per-host
+  `scipy.stats.norm` frozen-distribution construction replaced by an operation-order-identical
+  explicit Gaussian; event-level `dist_to_redshift` window calls hoisted; the erf-sum
+  denominator's per-host 2,560-point `p_det` interpolation batched into a single call.
+  **Value-preserving** (not a physics change): bit-exact in the differential gate
+  (`test_kernel_batch_equivalence.py`, exact `==` over the 22-regime parity grid × 7-host
+  heterogeneous batches) and under the unchanged committed kernel/pipeline parity goldens.
+  End-to-end on real seed400 data (986 events, h=0.73, seed 0) the batch path reproduces
+  the pre-refactor outputs to: 1D channel **byte-identical**; 2D channel 560 of 2,960,440
+  per-host values drift ≤9.8e-15 (float-path reassociation at large batch sizes), moving
+  4 of 986 per-event likelihoods by ≤1.4e-16 — 5+ orders below the rel=1e-9 parity contract.
+- **[PHYSICS] Spline-table luminosity distance** (commit `afc59e9`): `dist_vectorized` /
+  `dist_to_redshift` use a lazily-built clamped-cubic-spline table of the h-independent
+  I(z) integral (512 knots, exact 1/h scaling; hyp2f1/fsolve fallback off-fiducial).
+  Parity 3.1e-10 vs the analytic form — below the 1e-9 per-host pins; removes `hyp2f1`
+  from the evaluation hot path (GPU-unblocker).
+- **[PHYSICS] Exact semi-analytic with-BH-mass selection denominator** (commit `713fbd1`,
+  "glz64"): p_det is piecewise-linear in M_z, so the inner M-integral has a closed-form
+  erf-sum (zero M-quadrature error); outer z-integral is 64-pt Gauss-Legendre over the same
+  host window as the 3D denominator and Z_g normalisation. Replaces the 10k-sample MC —
+  deterministic, ≈200× more accurate, and fixes the MC's untruncated z<0 tail bias (up to
+  +54% on low-z wide-photo-z hosts). Full seed400 eval: 255 s → 89 s (2.86×) with the d_L table.
+
 ### Changed
+- **[PHYSICS] Campaign population deepened to z = 1.5 (issue #20, decision 2026-07-03):**
+  `HOST_DRAW_Z_MAX` 0.5 → 1.5 (pre-dt² "horizon z ≈ 0.18, truncation exact" justification
+  retired); `injection_campaign` `z_cut` now derives from `HOST_DRAW_Z_MAX` (was hardcoded
+  0.5 — would have left the P_det grid blind above z = 0.5); parameter-space d_L cap computed
+  at the lowest campaign h (0.60 → 13.0 Gpc) instead of fiducial h = 0.73 (10.686 Gpc), which
+  silently dropped z ≳ 1.35 events in h_true = 0.67 closure sims; explicit
+  `HOST_DRAW_Z_MAX ≤ max_redshift` ordering guard. `GALAXY_CATALOG_REDSHIFT_UPPER_LIMIT`
+  0.55 → 1.55 (documented as unwired — the reduced CSV is full-depth, load-time depth is
+  `Model1CrossCheck.max_redshift`). Completeness machinery validated over z ∈ [0.5, 1.5]
+  (finite/bounded/monotone; frozen-map f̄(1.0) ≈ 0 — pure-completion regime). Pre-dt²
+  injection pools remain RETIRED; regeneration at depth 1.5 is part of the Phase-2 campaign.
+- **[PHYSICS] Residual host peculiar-velocity dispersion marginalized into the host-z kernel
+  (issue #16, decision 2026-07-03):** `single_host_likelihood` now uses
+  σ_z,eff² = σ_z,cat² + ((1+z_g)·σ_v/c)² with `SIGMA_V_PEC_KM_S = 200` (Davis et al. 2011
+  Eqs. 1/A1 for the (1+z) factor; Mastrogiovanni et al. 2023 §IV quadrature convention;
+  Laghi et al. 2021's 500 km/s kept as a systematics-budget row). Inference-side only —
+  no re-simulation; distinct from the GLADE+ PV-correction error already folded into the
+  catalogue z_error at parse time. `pp_coverage` gains an inert `--sigma-z-pv` knob
+  (default 0.0; committed anchor runs bit-identical). Issue #16 stays open for the isolated
+  PV value-correction impact test.
 - **Inference is now deterministic (G4):** the with-BH-mass MC denominator draws from a
   per-host stream derived from `(base_seed, detection_index, host_z, host_M)`;
   `--seed` reaches the inference layer via `evaluate(..., base_seed=...)` (default 0).
@@ -141,6 +238,38 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   unlocked: the generators now pool the injection CSVs
   (`<run>/simulations/injections`, z + SNR) for a real injected-vs-detected
   selection function (504k injected, SNR ≥ 20 detected) instead of gating to None.
+
+### Fixed (2026-07-04 code review — all campaign-neutral)
+- **Simulation-loop robustness** (`main.py`): the 90s SIGALRM is now cancelled in a
+  `try/finally` on every path (no stale alarm can fire in inter-iteration code and kill
+  an unattended task); warnings-as-errors is scoped with `warnings.catch_warnings()` so it
+  can't leak across iterations or grow the filter list unboundedly; per-(stage, exception)
+  skip counters make CRB-stage drop rates auditable; `injection_campaign` gained a SIGTERM
+  flush handler (wall-cap kill now loses ≤ one flush interval, not up to 1999 SNRs).
+- **Provenance** (`main.py`, `arguments.py`): `run_metadata` now serialises the full parsed
+  argument namespace (`Arguments.to_dict()`) so inference-critical flags (`normalization_mode`,
+  `pdet_*`, `catalog_only`, …) are captured; `Arguments.seed` is cached so it can't return a
+  fresh random value on repeated access.
+- **wCDM guard** (`physical_relations.py`, GitHub #4): `dist`/`cached_dist`/`dist_vectorized`
+  raise `NotImplementedError` on `w_0 ≠ -1` or `w_a ≠ 0` instead of silently returning the
+  ΛCDM result; `dist_derivative` now forwards its cosmology args.
+- **Safety**: `LISA_configuration.power_spectral_density` raises on an unknown TDI channel
+  instead of returning a silent all-zero PSD (unreachable in production).
+- Figure truth-lines and the CRB-derived redshift use `constants.H` instead of a hardcoded
+  `0.73`; the interactive tension-explorer x-axis no longer clips `h = 0.86`.
+
+### Removed (2026-07-04 code review)
+- Pipeline-A dead code (Pipeline A itself was deleted in `c1571a2`): `datamodels/galaxy.py`
+  (synthetic `GalaxyCatalog`) + its lone benchmark; the galaxy.py-only constants
+  (`TRUE_HUBBLE_CONSTANT`, `GALAXY_REDSHIFT_ERROR_COEFFICIENT`, `FRACTIONAL_LUMINOSITY_ERROR`,
+  `FRACTIONAL_BLACK_HOLE_MASS_CATALOG_ERROR`, `LUMINOSITY_DISTANCE_THRESHOLD_GPC`);
+  `handler.parse_to_reduced_catalog_with_reduced_errors` (a no-op); the
+  `single_host_likelihood_grid` debug stub; `DarkEnergyScenario.de_equation` (dead + wrong);
+  `scripts/quick_snr_calibration.py`.
+
+### Added (2026-07-04 code review)
+- `test_handler_catalog_io.py`: end-to-end GLADE+ reduced-catalogue writer/reader contract
+  test (was previously untested).
 
 ### Fixed
 - `__main__.py`: force a clean process exit (`logging.shutdown()` + flush +

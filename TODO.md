@@ -74,7 +74,7 @@ reference, dimensional analysis, limiting case).
       Fix: `cv_grid = 4π · (c/H₀)³ · I(z)² / E(z)`. Ref: Hogg (1999) arXiv:astro-ph/9905116 Eq. (27).
       Also renamed all methods from `comoving_volume` → `comoving_volume_element` for clarity.
 
-- [ ] **PHYS-2 [P0, S]** Fix `setup_galaxy_mass_distribution` NormalDist branch in `datamodels/galaxy.py:292`
+- [x] **PHYS-2 [P0, S]** ~~Fix `setup_galaxy_mass_distribution` NormalDist branch in `datamodels/galaxy.py:292`~~ MOOT — `datamodels/galaxy.py` (Pipeline-A synthetic catalog) deleted in the 2026-07-04 code review; production uses `galaxy_catalogue/handler.py`.
       Sigma uses hardcoded `10**5.5` instead of `galaxy.central_black_hole_mass`.
       `append_galaxy_to_galaxy_mass_distribution` (line 230) already uses the correct value.
       The truncnorm branch also doesn't pass `loc`/`scale` to scipy (inherits defaults
@@ -94,13 +94,13 @@ reference, dimensional analysis, limiting case).
       with `delta_luminosity_distance_delta_luminosity_distance` from the `Detection` dataclass.
       Requires threading per-detection error information from `EMRIDetection` into `BayesianInference`.
 
-- [ ] **PHYS-6 [P2, S]** Fix or document silent wCDM fallback in `physical_relations.py:72`
-      `w_0`, `w_a` params are accepted but `lambda_cdm_analytic_distance` ignores them entirely.
-      Either (a) remove args and document ΛCDM assumption, or
-      (b) fall back to numerical integration via `hubble_function()` when `w_0 ≠ -1` or `w_a ≠ 0`.
-      Ref: Hogg (1999) arXiv:astro-ph/9905116 Eq. (14–16).
+- [x] **PHYS-6 [P2, S]** ~~Fix or document silent wCDM fallback in `physical_relations.py:72`~~
+      DONE (2026-07-04, commit `8c789a6`, GitHub #4): `dist`/`cached_dist`/`dist_vectorized`
+      now raise `NotImplementedError` on `w_0 ≠ -1` or `w_a ≠ 0` instead of silently returning
+      the ΛCDM result. A real wCDM numerical implementation remains option (b), deferred to
+      `/physics-change`.
 
-- [ ] **PHYS-7 [P2, S]** Document or fix galaxy redshift uncertainty in `datamodels/galaxy.py:64`
+- [x] **PHYS-7 [P2, S]** ~~Document or fix galaxy redshift uncertainty in `datamodels/galaxy.py:64`~~ MOOT — `datamodels/galaxy.py` deleted in the 2026-07-04 code review (dead Pipeline-A code); production z-errors come from the GLADE+ catalogue + the σ_v PV term.
       Current `0.013 * (1+z)³` caps at z ≈ 0.048, meaning almost all galaxies (z up to 0.55)
       use the capped value of 0.015. Standard forms: photometric `σ_z = 0.05(1+z)`,
       spectroscopic `σ_z = 0.001(1+z)`. Add citation or switch to standard form.

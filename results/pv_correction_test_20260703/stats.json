@@ -1,0 +1,65 @@
+{
+  "raw_catalogue": "/home/jasper/Repositories/MasterThesisCode/master_thesis_code/galaxy_catalogue/GLADE+.txt",
+  "live_reduced_catalogue": "/home/jasper/Repositories/MasterThesisCode/master_thesis_code/galaxy_catalogue/reduced_galaxy_catalogue.csv",
+  "output_variant": "/home/jasper/Repositories/MasterThesisCode/results/pv_correction_test_20260703/reduced_galaxy_catalogue_noPVcorr.csv",
+  "dipole": {
+    "v_sun_km_s": 369.82,
+    "apex_galactic_l_deg": 264.021,
+    "apex_galactic_b_deg": 48.253,
+    "reference": "Planck 2018 I, arXiv:1807.06205"
+  },
+  "pv_error_fill": 0.0015,
+  "expected_rows": 22641048,
+  "n_rows_total": 22641048,
+  "n_flagged": 709117,
+  "n_flag0": 21931931,
+  "n_flag0_validated": 21925647,
+  "n_flagged_no_zhelio": 0,
+  "transform_validation_residuals": {
+    "mult_plus": {
+      "median": 5.284762301016599e-05,
+      "p99": 0.00019841296307276934,
+      "max": 0.005774156656116247
+    },
+    "mult_minus": {
+      "median": 0.001661590184085071,
+      "p99": 0.005420626141130924,
+      "max": 0.02551984414458275
+    },
+    "add_plus": {
+      "median": 6.645492248935625e-05,
+      "p99": 0.0017680722521618009,
+      "max": 0.014414500445127487
+    },
+    "add_minus": {
+      "median": 0.0015160643961280584,
+      "p99": 0.0036789143923670053,
+      "max": 0.016879498958587646
+    },
+    "mult_sr_plus": {
+      "median": 5.289939872454852e-05,
+      "p99": 0.00019799538131337613,
+      "max": 0.005780244246125221
+    }
+  },
+  "chosen_convention": "mult_plus",
+  "chosen_median_residual": 5.284762301016599e-05,
+  "pv_correction_magnitude_flagged_rows": {
+    "description": "|z_glade_corrected - z_frame_only(chosen)| over flag2==1 rows",
+    "n": 709117,
+    "median": 0.000629903981462121,
+    "p90": 0.001894984394311905,
+    "p99": 0.0031148847192525864,
+    "max": 0.051913633942604065
+  },
+  "flagged_rows_redshift_range": {
+    "z_cmb_min": -0.0003180217391073,
+    "z_cmb_max": 0.109335
+  },
+  "live_reduced_rows": 22641048,
+  "row_parity_ok": true,
+  "variant_rows_written": 22641048,
+  "variant_row_parity_ok": true,
+  "status": "OK",
+  "runtime_s": 86.5
+}
