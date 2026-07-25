@@ -44,9 +44,16 @@ machines. Detailed, ephemeral working notes are kept out of the repository by de
 
 ## Next
 
-- Scope and plan the **Gray-mixture / L_cat-h-dependence estimator upgrade** (issue #30 escape
-  hatch) — now the primary path after the z_cut scan verdict. Key evidence to explain: 82% of the
-  rail tilt is the host-found L_cat term; subset-vs-truncation contrast implicates the
-  h-dependence of w_G = β_G/D and the L_cat normalization.
+- **Rail mechanism identified (2026-07-25): host misassociation.** Two independent
+  investigations (empirical per-event decomposition, validated to ≤4.5e-13 against cluster
+  diagnostics; structural audit vs Gray A9/Gair 2023/gwcosmo v2) show 91–100% of each rail
+  event's tilt is the numerator GW-likelihood × host-z overlap: candidate balls contain only
+  foreground galaxies (preferred h* ≈ 0.42–0.48, below the grid). volume_deconv is exonerated
+  (exactly h-invariant); the ball-local selection denominator is a real-but-secondary
+  discrepancy vs the references (1–14%). See `results/lcat_h_dependence_20260725/SYNTHESIS.md`.
+- Decide and implement the **estimator redesign** (author physics decision, /physics-change):
+  the fix domain is per-event catalogue-vs-dark weighting (Gray membership mixture /
+  non-self-normalized catalogue mass) so impostor-only balls defer to the completion term.
+  Campaign relaunch stays NO-GO until a redesigned estimator closes on the deep venue.
 - Workspace note: `ws_extend` used the **last** available extension (expires 2026-09-23) — copy
   finals off before then.
