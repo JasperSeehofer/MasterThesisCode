@@ -162,10 +162,15 @@ class Model1CrossCheck:
     snr_threshold: float = SNR_THRESHOLD
     detection_fraction = DetectionFraction()
 
-    def __init__(self, rng: np.random.Generator | None = None) -> None:
+    def __init__(
+        self,
+        rng: np.random.Generator | None = None,
+        max_redshift_override: float | None = None,
+    ) -> None:
         if rng is None:
             rng = np.random.default_rng()
         self._rng = rng
+        self._max_redshift_override = max_redshift_override
         self.parameter_space = ParameterSpace()
         self._apply_model_assumptions()
         self.setup_emri_events_sampler()
@@ -182,15 +187,39 @@ class Model1CrossCheck:
 
         self.parameter_space.e0.upper_limit = 0.2
 
-        self.max_redshift = 1.5
+        # `--max_redshift` (issue #30 depth-truncation study) overrides the
+        # built-in depth. Applied HERE (constructor time), before the
+        # HOST_DRAW_Z_MAX guard and the luminosity_distance.upper_limit
+        # derivation below -- both depend on max_redshift and must see the
+        # override, not the stale 1.5 default (a post-construction attribute
+        # set would skip both; see MAX_REDSHIFT_SEMANTICS.md sec 1).
+        self.max_redshift = (
+            1.5 if self._max_redshift_override is None else self._max_redshift_override
+        )
         # The d_L pre-screen derivation (physical_relations.
         # luminosity_distance_prescreen_gpc) and the host draws rely on the
         # population model being at least as deep as the host-draw volume.
         if HOST_DRAW_Z_MAX > self.max_redshift:
-            raise ValueError(
-                f"HOST_DRAW_Z_MAX = {HOST_DRAW_Z_MAX} exceeds the population-model "
-                f"depth max_redshift = {self.max_redshift}; the host draw would "
-                "sample beyond the event population."
+            if self._max_redshift_override is None:
+                raise ValueError(
+                    f"HOST_DRAW_Z_MAX = {HOST_DRAW_Z_MAX} exceeds the population-model "
+                    f"depth max_redshift = {self.max_redshift}; the host draw would "
+                    "sample beyond the event population."
+                )
+            # An explicit --max_redshift override shallower than HOST_DRAW_Z_MAX
+            # is exactly the issue #30 depth-truncation study (0.3/0.4/0.5 on
+            # already-generated CRB data) -- --evaluate never draws hosts, so
+            # the invariant above does not apply. Warn instead of raising, since
+            # this SAME instance must not also be used for --simulation_steps or
+            # --injection_campaign (those DO draw hosts and would violate it).
+            _LOGGER.warning(
+                "max_redshift override (%.4f) < HOST_DRAW_Z_MAX (%.4f): this "
+                "Model1CrossCheck instance must be used for --evaluate only "
+                "(depth-truncation study), NOT for --simulation_steps or "
+                "--injection_campaign, which draw hosts out to HOST_DRAW_Z_MAX "
+                "and would sample beyond the truncated population.",
+                self.max_redshift,
+                HOST_DRAW_Z_MAX,
             )
         # [PHYSICS] Parameter-space d_L cap at the LOWEST campaign h, not the
         # fiducial h: d_L(z, h) ~ 1/h, so a cap of dist(1.5, h=0.73) = 10.686 Gpc
