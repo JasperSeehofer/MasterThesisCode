@@ -141,6 +141,7 @@ def main() -> None:
             base_seed=seed,
             allow_low_pdet_coverage=arguments.allow_low_pdet_coverage,
             h_values=_h_values,
+            smear_global_selection=arguments.smear_global_selection,
         )
 
     if arguments.snr_analysis:
@@ -1023,6 +1024,7 @@ def evaluate(
     base_seed: int | None = None,
     allow_low_pdet_coverage: bool = False,
     h_values: list[float] | None = None,
+    smear_global_selection: bool = False,
 ) -> None:
     from master_thesis_code.bayesian_inference.bayesian_statistics import BayesianStatistics
 
@@ -1041,6 +1043,7 @@ def evaluate(
         base_seed=base_seed if base_seed is not None else 0,
         allow_low_pdet_coverage=allow_low_pdet_coverage,
         h_values=h_values,
+        smear_global_selection=smear_global_selection,
     )
 
 

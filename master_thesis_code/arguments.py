@@ -164,6 +164,11 @@ class Arguments:
         return str(self._parsed_arguments.normalization_mode)
 
     @property
+    def smear_global_selection(self) -> bool:
+        """Opt-in sigma_z-smeared Sigma_glob (num/denom symmetry, issue #30 R4)."""
+        return bool(self._parsed_arguments.smear_global_selection)
+
+    @property
     def catalog_only(self) -> bool:
         """Skip completion integral: set f_i=1, L_comp=0 (catalog-only diagnostic)."""
         return bool(self._parsed_arguments.catalog_only)
@@ -405,6 +410,19 @@ def _parse_arguments(arguments: list[str]) -> argparse.Namespace:
             "volume_deconv host-z kernel; empty balls reduce continuously to B_num/D). "
             "See .planning/INDEPENDENT-VERIFICATION-REPORT-20260701.md sec 7 and "
             "results/lcat_h_dependence_20260725/DERIVATION_ESTIMATOR_REDESIGN.md."
+        ),
+    )
+    parser.add_argument(
+        "--smear_global_selection",
+        action="store_true",
+        help=(
+            "Opt-in [PHYSICS] refinement of the global in-catalogue selection sum "
+            "Sigma_glob: replace the point evaluation P_det(d_L(z_g;h)) per galaxy "
+            "with the expectation over the SAME volume-deconvolved host-z kernel "
+            "the in-catalogue numerator uses (num/denom sigma_z symmetry, issue #30 "
+            "estimator redesign risk R4). Off by default (point evaluation, "
+            "byte-identical legacy behavior). Relevant to normalization modes that "
+            "consume Sigma_glob ('global', 'absolute_marginal')."
         ),
     )
     parser.add_argument(

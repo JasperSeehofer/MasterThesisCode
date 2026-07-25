@@ -892,6 +892,109 @@ def precompute_missing_completion_denominator(
     return beta_Gbar_table
 
 
+def _smeared_global_pdet_expectation(
+    z_g: npt.NDArray[np.float64],
+    M_g: npt.NDArray[np.float64],
+    z_err_g: npt.NDArray[np.float64],
+    theta_g: npt.NDArray[np.float64] | None,
+    h: float,
+    detection_probability_obj: SimulationDetectionProbability,
+    *,
+    with_bh_mass: bool,
+    sky_aware: bool,
+    n_quad: int = 50,
+    chunk_size: int = 200_000,
+) -> npt.NDArray[np.float64]:
+    r"""Per-galaxy sigma_z-smeared selection weight ``E_{z~kernel_g}[P_det(d_L(z;h))]``.
+
+    [PHYSICS] num/denom sigma_z symmetry (issue #30 estimator redesign, risk R4):
+    ``Sigma_global``'s point evaluation ``P_det(d_L(z_g;h))`` is replaced by the
+    expectation over the SAME volume-deconvolved host-z kernel the in-catalogue
+    numerator ``N_g`` uses (``single_host_likelihood``):
+
+    .. math::
+
+        p_g(z) \propto \mathcal{N}(z; z_g, \sigma_{\mathrm{eff},g})\,
+        \frac{dV_c/dz}{1+z},\qquad
+        \sigma_{\mathrm{eff},g}^2 = \sigma_{z,g}^2
+            + \bigl((1+z_g)\,\sigma_{v,\mathrm{pec}}/c\bigr)^2,
+
+    integrated by Gauss-Legendre (n=50, the numerator's ``FIXED_QUAD_N``) over
+    ``[max(z_g - 4 sigma_eff, 1e-6), z_g + 4 sigma_eff]`` — window, floor, and
+    PV-inflation all mirrored from the numerator kernel. The NORMALIZED kernel is
+    exactly h-invariant (``dV_c/dz = h^{-3} f(z)`` cancels in the per-galaxy
+    normalization), so smearing changes only the ``P_det`` realization, never the
+    kernel itself. Limiting case ``sigma_eff -> 0``: the kernel collapses to
+    ``delta(z - z_g)`` and the point-evaluated form is recovered exactly.
+
+    With-BH-mass channel: the observer-frame mass tracks the smeared redshift,
+    ``M_z(z) = M_g (1+z)`` (consistent z-propagation). The galaxy MASS-ERROR
+    kernel of the numerator is intentionally NOT mirrored here (pre-existing
+    point-``M_g`` treatment retained; tracked separately under issue #24).
+
+    References:
+        results/lcat_h_dependence_20260725/DERIVATION_ESTIMATOR_REDESIGN.md
+            §3.3 (measured n_bar_w residual) + §7 risk R4 (this remediation).
+        Gray et al. (2020), arXiv:1908.06050, Eqs. A.10/33 (kernel form, as in
+            the numerator).
+    """
+    x_nodes, x_weights = roots_legendre(n_quad)
+    x_nodes = np.asarray(x_nodes, dtype=np.float64)
+    x_weights = np.asarray(x_weights, dtype=np.float64)
+    out = np.empty_like(z_g)
+    sigma_z_pv = (1.0 + z_g) * SIGMA_V_PEC_KM_S / SPEED_OF_LIGHT_KM_S
+    # Tiny floor keeps the affine window non-degenerate; at 1e-10 the kernel is
+    # numerically a delta and the expectation equals the point evaluation.
+    sigma_eff = np.maximum(np.sqrt(z_err_g**2 + sigma_z_pv**2), 1e-10)
+    for start in range(0, z_g.size, chunk_size):
+        sl = slice(start, min(start + chunk_size, z_g.size))
+        zc = z_g[sl]
+        se = sigma_eff[sl]
+        lo = np.maximum(zc - 4.0 * se, 1e-6)  # numerator's z-floor (1e-6)
+        hi = np.maximum(zc + 4.0 * se, lo + 1e-12)
+        c = 0.5 * (hi + lo)
+        s = 0.5 * (hi - lo)
+        z_nodes = c[:, None] + s[:, None] * x_nodes[None, :]  # (n, K)
+        gauss = np.exp(-0.5 * ((z_nodes - zc[:, None]) / se[:, None]) ** 2)
+        w_pop = np.asarray(
+            comoving_volume_element(z_nodes.ravel(), h=h), dtype=np.float64
+        ).reshape(z_nodes.shape) / (1.0 + z_nodes)
+        kern = gauss * w_pop * (s[:, None] * x_weights[None, :])
+        norm_g = np.sum(kern, axis=1)
+        norm_g = np.where(norm_g > 0.0, norm_g, 1.0)
+        d_L_nodes = np.asarray(dist_vectorized(z_nodes.ravel(), h=h), dtype=np.float64)
+        zeros = np.zeros_like(d_L_nodes)
+        if with_bh_mass:
+            M_z_nodes = (M_g[sl][:, None] * (1.0 + z_nodes)).ravel()
+            p_nodes = np.asarray(
+                detection_probability_obj.detection_probability_with_bh_mass_interpolated(
+                    d_L_nodes, M_z_nodes, zeros, zeros, h=h
+                ),
+                dtype=np.float64,
+            )
+        elif sky_aware and theta_g is not None:
+            sin_beta = np.abs(np.cos(theta_g[sl]))
+            _edges = np.asarray(
+                detection_probability_obj.band_edges_sin_beta(), dtype=np.float64
+            )
+            _n_bands = int(_edges.size - 1)
+            band = np.clip(np.searchsorted(_edges, sin_beta, side="right") - 1, 0, _n_bands - 1)
+            s_band = np.asarray(
+                detection_probability_obj.survival_per_band(d_L_nodes), dtype=np.float64
+            )  # (n_bands, n*K)
+            band_rep = np.repeat(band, n_quad)
+            p_nodes = s_band[band_rep, np.arange(band_rep.size)]
+        else:
+            p_nodes = np.asarray(
+                detection_probability_obj.detection_probability_without_bh_mass_interpolated_zero_fill(
+                    d_L_nodes, zeros, zeros, h=h
+                ),
+                dtype=np.float64,
+            )
+        out[sl] = np.sum(kern * p_nodes.reshape(z_nodes.shape), axis=1) / norm_g
+    return out
+
+
 def precompute_global_catalog_selection(
     h_values: list[float],
     galaxy_catalog: GalaxyCatalogueHandler,
@@ -899,6 +1002,7 @@ def precompute_global_catalog_selection(
     *,
     with_bh_mass: bool,
     z_max_cap: float | None = None,
+    smear_sigma_z: bool = False,
 ) -> dict[float, float]:
     r"""Precompute the GLOBAL in-catalogue selection denominator (Option A).
 
@@ -957,6 +1061,17 @@ def precompute_global_catalog_selection(
         catalog[InternalCatalogColumns.BH_MASS].to_numpy(dtype=np.float64),
         dtype=np.float64,
     )
+    if smear_sigma_z:
+        if InternalCatalogColumns.REDSHIFT_ERROR not in catalog.columns:
+            raise ValueError(
+                "smear_sigma_z=True requires the catalogue REDSHIFT_MEASUREMENT_ERROR column"
+            )
+        z_err_all = np.asarray(
+            catalog[InternalCatalogColumns.REDSHIFT_ERROR].to_numpy(dtype=np.float64),
+            dtype=np.float64,
+        )
+    else:
+        z_err_all = np.zeros_like(z_all)  # unused on the point-evaluated path
     # Change 4: each galaxy's REAL ecliptic sky (PHI_S/THETA_S are ecliptic
     # longitude/colatitude after COORD-03). The catalog galaxies ARE the
     # Monte-Carlo sky sampling of the in-catalog channel (they trace LSS), so
@@ -1007,7 +1122,24 @@ def precompute_global_catalog_selection(
         # in-catalogue likelihood use (Babak et al. 2017; Gray et al. 2020).
         w_g = np.asarray(R_eff_per_mbh(M_g), dtype=np.float64) / (1.0 + z_g)
         d_L_g = np.asarray(dist_vectorized(z_g, h=h), dtype=np.float64)  # Gpc
-        if with_bh_mass:
+        if smear_sigma_z:
+            # [PHYSICS] num/denom sigma_z symmetry (issue #30 redesign, risk R4):
+            # E_{z~kernel_g}[P_det] over the numerator's volume-deconvolved host-z
+            # kernel replaces the point evaluation P_det(d_L(z_g;h)). Opt-in via
+            # --smear_global_selection; sigma_eff -> 0 recovers the point form.
+            # DERIVATION_ESTIMATOR_REDESIGN.md §3.3/§7-R4; Gray et al. (2020),
+            # arXiv:1908.06050, Eqs. A.10/33 (kernel as in the numerator N_g).
+            p_det = _smeared_global_pdet_expectation(
+                z_g,
+                M_g,
+                z_err_all[eligible],
+                theta_all[eligible] if _sky_aware else None,
+                h,
+                detection_probability_obj,
+                with_bh_mass=with_bh_mass,
+                sky_aware=_sky_aware,
+            )
+        elif with_bh_mass:
             # FLAG (user-approved, statistics-starved): the with-BH-mass 4D
             # sky x M_z survival is too noisy at NSIDE resolution, so this branch
             # stays ISOTROPIC (phi=theta=0, sky-marginalised 2D accessor). The
@@ -1214,6 +1346,7 @@ class BayesianStatistics:
         base_seed: int = 0,
         allow_low_pdet_coverage: bool = False,
         h_values: Sequence[float] | None = None,
+        smear_global_selection: bool = False,
     ) -> None:
         # h-grid fusion (opt-in): when h_values is given it supersedes h_value
         # and ALL h-invariant setup — catalogue/BallTree (passed in), injection
@@ -1412,6 +1545,7 @@ class BayesianStatistics:
             detection_probability_obj=detection_probability,
             with_bh_mass=False,
             z_max_cap=REDSHIFT_UPPER_LIMIT,
+            smear_sigma_z=smear_global_selection,
         )
         _global_cat_denom_with_bh = precompute_global_catalog_selection(
             h_values=_h_list,
@@ -1419,6 +1553,7 @@ class BayesianStatistics:
             detection_probability_obj=detection_probability,
             with_bh_mass=True,
             z_max_cap=REDSHIFT_UPPER_LIMIT,
+            smear_sigma_z=smear_global_selection,
         )
         for _h_prev in _h_list:
             _w_G_preview = (
