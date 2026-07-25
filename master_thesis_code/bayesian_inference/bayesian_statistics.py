@@ -1253,6 +1253,23 @@ class BayesianStatistics:
         #                     n=50 aliases the narrow GW peak over the wide host window AND the exact
         #                     numerator tilts high. Kept as a diagnostic + reproducible record.
         #                     results/volume_trunc_ab_20260712/FINDING.md; scoping §7b (Gray A.10 + G2b §1.4).
+        #   "absolute_marginal" -> the absolute-mass per-event host marginal (issue #30 estimator
+        #                     redesign, Variant 1): p_i = (A_i + B_num)/D with the ABSOLUTE
+        #                     catalogue mass A_i = (Sigma_ball w_g N_g)/n_bar_w and the
+        #                     rate-weight density calibration n_bar_w = Sigma_glob(h)/beta_G(h).
+        #                     Algebraically identical to "volume_global" (A_i/D = w_G * L_cat_global
+        #                     exactly), but FIRST-CLASS: derived from the exhaustive per-event
+        #                     host marginal rather than as an ablation diagnostic. Replaces the
+        #                     self-normalized ratio-of-sums, whose event-local per-galaxy->per-volume
+        #                     conversion Sigma_ball w_g D_g lets impostor-only candidate balls carry
+        #                     O(1) weight against the completion term (the deep-venue rail;
+        #                     results/lcat_h_dependence_20260725/DERIVATION_ESTIMATOR_REDESIGN.md).
+        #                     Empty balls flow through A_i = 0 -> p_i = B_num/D continuously (the
+        #                     issue-#29 fallback emerges as a limit, not a branch). Uses the
+        #                     volume_deconv host-z kernel. NOT the default until the validation
+        #                     gates (DERIVATION_ESTIMATOR_REDESIGN.md section 6) pass.
+        #                     Eq. (15) in Chen, Fishbach & Holz (2018), arXiv:1712.06531;
+        #                     Eq. (2.4) in Gray et al. (2023), arXiv:2308.02281.
         #   "mass_trunc"   -> EXPERIMENTAL (EXP-45, 2026-07-13): the volume_deconv host-z kernel PLUS
         #                     the 2D (with-BH-mass) host-mass prior replaced by the truncated
         #                     lognormal x R_eff prior on [M_MIN, M_MAX] (Gauss-Hermite numerator,
@@ -1268,6 +1285,7 @@ class BayesianStatistics:
             "volume_global",
             "volume_trunc",
             "mass_trunc",
+            "absolute_marginal",
         ):
             raise ValueError(f"unknown normalization_mode: {normalization_mode!r}")
         if normalization_mode == "global":
@@ -2087,20 +2105,36 @@ class BayesianStatistics:
             global_denom_no_bh: float = self._global_cat_denom_no_bh.get(self.h, 0.0)
             global_denom_with_bh: float = self._global_cat_denom_with_bh.get(self.h, 0.0)
 
-            # In-catalogue term L_cat. Two normalizations (commission de-rail study):
-            #   "global" (default): L_cat = (Σ_local w_g N_g) / (Σ_GLOBAL w_g D_g) -- the
-            #     partition-norm single ratio; the SELECTION denominator runs over the full
-            #     catalogue (Eq. 29, precompute_global_catalog_selection), making L_cat
-            #     scale-free so beta_G*L_cat reconstructs the in-catalogue numerator with the
-            #     per-galaxy<->per-volume n_gal factor cancelled (Option A). The commission
-            #     found this normalization pins the mode to the grid edge (report bug #2).
+            # In-catalogue term L_cat. Normalization modes:
+            #   "global"/"volume_global"/"absolute_marginal":
+            #     L_cat = (Σ_local w_g N_g) / (Σ_GLOBAL w_g D_g) -- the partition-norm single
+            #     ratio; the SELECTION denominator runs over the full catalogue (Eq. 29,
+            #     precompute_global_catalog_selection), making L_cat scale-free so
+            #     beta_G*L_cat reconstructs the in-catalogue numerator with the
+            #     per-galaxy<->per-volume n_gal factor cancelled (Option A).
+            #     "absolute_marginal" (issue #30 estimator redesign, Variant 1) is this same
+            #     branch adopted as a FIRST-CLASS mode, derived from the exhaustive per-event
+            #     host marginal: beta_G*L_cat_global = A_i = (Σ_ball w_g N_g)/n_bar_w with
+            #     n_bar_w = Σ_glob(h)/beta_G(h) the catalogue-estimated rate-weight density,
+            #     so the assembly below reads p_i = (A_i + B_num)/D exactly.
+            #     Eq. (15) in Chen, Fishbach & Holz (2018), arXiv:1712.06531;
+            #     Eq. (2.4) in Gray et al. (2023), arXiv:2308.02281.
+            #     HISTORY NOTE: the 2026-07-01/02 commission finding that the global
+            #     normalization "pins the mode to the grid edge" predates BOTH the G2a
+            #     completion-sky-marginal fix and the issue-#29 zero-host fallback -- it
+            #     evaluated the global catalogue term inside a broken mixture and is
+            #     CONFOUNDED; no verdict on the current stack contradicts this branch
+            #     (results/lcat_h_dependence_20260725/DERIVATION_ESTIMATOR_REDESIGN.md §0).
             #   "local_ratio"/"volume_deconv": L_cat = (Σ_local w_g N_g)/(Σ_local w_g D_g) --
             #     the Gray A.9/A.10 literal local self-normalized ratio-of-sums (numerator and
-            #     per-host selection denominator over the SAME candidate ball). This is the
-            #     de-rail fix (#2); "volume_deconv" additionally uses the volume-deconvolved
-            #     host-z prior inside N_g/D_g (#1, threaded via single_host_likelihood).
+            #     per-host selection denominator over the SAME candidate ball). This was the
+            #     2026-07-01 de-rail fix (#2); "volume_deconv" additionally uses the
+            #     volume-deconvolved host-z prior inside N_g/D_g (#1, threaded via
+            #     single_host_likelihood). Its event-local per-galaxy->per-volume conversion
+            #     Σ_ball w_g D_g is scale-inconsistent with the marginal and lets
+            #     impostor-only balls carry O(1) weight (the deep-venue rail, issue #30).
             #   Gray et al. (2020), arXiv:1908.06050, Eqs. A.9 / A.10 / 29.
-            if self._normalization_mode in ("global", "volume_global"):
+            if self._normalization_mode in ("global", "volume_global", "absolute_marginal"):
                 cat_num_sum_no_bh = weighted_sum(
                     [r[0] for r in all_results_without_bh], weights_without_bh
                 )
@@ -2240,9 +2274,7 @@ class BayesianStatistics:
                 B_num = 0.0
             else:
                 B_num = float(
-                    fixed_quad(completion_numerator_integrand, z_lower, z_upper, n=FIXED_QUAD_N)[
-                        0
-                    ]
+                    fixed_quad(completion_numerator_integrand, z_lower, z_upper, n=FIXED_QUAD_N)[0]
                 )
 
             # Grid coverage flag: warn if numerator 4-sigma window exceeds P_det grid
@@ -2260,6 +2292,11 @@ class BayesianStatistics:
             # event-independent selection-weighted catalog membership probability
             # (Eq. 29). Tier 3 audit (2026-05-04): the outer -N log D subtraction in
             # combine_log_space stays disabled (D(h) normalizes here, per-event).
+            # Under "absolute_marginal" this line IS the marginal p_i = (A_i + B_num)/D
+            # (A_i = beta_G*L_cat_global; empty ball -> A_i = 0 -> p_i = B_num/D, the
+            # issue-#29 fallback as a continuous limit of the same expression).
+            # Eq. (15) in Chen, Fishbach & Holz (2018), arXiv:1712.06531;
+            # Eq. (2.4) in Gray et al. (2023), arXiv:2308.02281.
             if D_h > 0:
                 w_G = beta_G / D_h
                 combined_without_bh_mass = float((beta_G * L_cat_without_bh_mass + B_num) / D_h)
@@ -2573,11 +2610,15 @@ def single_host_likelihood(
     # differs only in the numerator integration support + z-floor (see above).
     # "mass_trunc" shares the SAME volume-deconvolved host-z kernel (only the
     # with-BH-mass mass-marginal differs), so it joins this set.
+    # "absolute_marginal" (issue #30 Variant 1) keeps the volume_deconv kernel
+    # unchanged (the kernel is exactly h-invariant, D1 §2 fact 2); only the p_Di
+    # assembly differs. DERIVATION_ESTIMATOR_REDESIGN.md §3.1.
     _use_volume_deconv = normalization_mode in (
         "volume_deconv",
         "volume_global",
         "volume_trunc",
         "mass_trunc",
+        "absolute_marginal",
     )
     _z_prior_norm = 1.0
     if _use_volume_deconv:
@@ -2965,6 +3006,7 @@ def single_host_likelihood_batch(
         "volume_global",
         "volume_trunc",
         "mass_trunc",
+        "absolute_marginal",
     )
 
     # Per-host denominator quadrature nodes (fixed_quad affine map, n=50).

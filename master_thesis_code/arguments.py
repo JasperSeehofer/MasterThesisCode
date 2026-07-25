@@ -390,7 +390,7 @@ def _parse_arguments(arguments: list[str]) -> argparse.Namespace:
     parser.add_argument(
         "--normalization_mode",
         type=str,
-        choices=["global", "local_ratio", "volume_deconv"],
+        choices=["global", "local_ratio", "volume_deconv", "absolute_marginal"],
         default="volume_deconv",
         help=(
             "In-catalogue L_cat normalization (commission de-rail study). "
@@ -399,7 +399,12 @@ def _parse_arguments(arguments: list[str]) -> argparse.Namespace:
             "AND statistically calibrated (D2 P-P). 'local_ratio': the same local ratio with "
             "a bare-Gaussian host-z prior (de-railed but ~2-3%% low-biased). 'global': the "
             "pre-fix global-denominator single ratio (rails to a grid edge on photo-z data). "
-            "See .planning/INDEPENDENT-VERIFICATION-REPORT-20260701.md sec 7."
+            "'absolute_marginal': the absolute-mass per-event host marginal "
+            "p_i = (A_i + B_num)/D with A_i = (Sum_ball w_g N_g)/n_bar_w, "
+            "n_bar_w = Sigma_glob/beta_G (issue #30 estimator redesign, Variant 1; "
+            "volume_deconv host-z kernel; empty balls reduce continuously to B_num/D). "
+            "See .planning/INDEPENDENT-VERIFICATION-REPORT-20260701.md sec 7 and "
+            "results/lcat_h_dependence_20260725/DERIVATION_ESTIMATOR_REDESIGN.md."
         ),
     )
     parser.add_argument(
