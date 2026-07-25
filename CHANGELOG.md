@@ -90,6 +90,29 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   knob used by the issue #30 z_cut truncation scan (`docs/H0_BIAS_RESOLUTION.md` §3.21;
   `DATA_INVENTORY.md` 2026-07-25 z_cut row); WARNs if set shallower than
   `HOST_DRAW_Z_MAX`. Evaluate-only; does not affect simulation/injection.
+### Research (pp_coverage harness — absolute-mass marginal, Variant 1 validation gate 1)
+- **`mixture_mode="absolute"` added to `master_thesis_code/validation/pp_coverage.py`
+  — harness analog of the absolute-mass marginal
+  (`results/lcat_h_dependence_20260725/DERIVATION_ESTIMATOR_REDESIGN.md` Variant 1,
+  Eq. 2), and calibration campaign against the current default (`two_branch`) across
+  three regimes (complete-catalogue shallow, intermediate, and deep completion-governed
+  cells, 71-85% completion fraction).** Host events get `[N_i(h) + B_num_i(h)]/D(h)` with
+  no self-normalization of the catalogue term (no `beta_G` weight, no per-host `D_g_i`
+  division — the harness's continuum-population idealization collapses production's
+  `n_bar_w(h) = Sigma_glob(h)/beta_G(h)` calibration constant to 1 identically). Existing
+  modes (`two_branch`/`gray`/`conditioned`/`exact`) are byte-identical (regression rerun
+  of `results/pp_coverage_deepvenue_20260710/pp_zs0.3_sz0.035_volume.json` reproduces
+  every shared field bit-for-bit). **Finding: `absolute` mode shows NO measurable
+  coverage or MAP-bias improvement over `two_branch` in any of the three cells tested**
+  (n_realizations=500 each) — including the deep cell. Root cause: this harness's
+  `z_support` truncation mechanism has no impostor-candidate-ball analog (every event has
+  exactly one candidate, its own noisy observed redshift), so it cannot exercise Variant
+  1's impostor-suppression mechanism; the harness's coverage failures in the completion-
+  governed cells are driven by something else (most likely the `B_num` completion-term
+  model fidelity), which `absolute` mode does not touch. This is an explicit
+  harness-fidelity limitation, not a refutation of Variant 1 — production-code validation
+  (derivation Sec 6 gates 2-3: seed600/seed1000 re-evaluations) is still required.
+  Results: `results/pp_coverage_absolute_20260726/` (SUMMARY.md, RUNBOOK.md, raw JSONs).
 
 ### Research (host-mass kernel — bias investigation)
 - **`mass_trunc` host-mass kernel (EXP-45) — implemented, numerically sound, and

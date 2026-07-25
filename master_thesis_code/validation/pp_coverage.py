@@ -57,6 +57,32 @@ tile ``[0, Z_MAX_POP]`` exactly (the support split of the Gray et al. 2020,
 arXiv:1908.06050, Eqs. 29+32 completion mixture). The
 ``membership_on_observed`` flag (N-2d probe) decides catalogue membership on
 the observed ``z_gal`` instead of the true ``z_host``.
+``"absolute"`` (2026-07-26, harness analog of
+``results/lcat_h_dependence_20260725/DERIVATION_ESTIMATOR_REDESIGN.md``
+Variant 1, Eq. (2)) is the absolute-mass marginal: host events get
+``p_i(h) = [N_i(h) + B_num_i(h)] / D(h)`` with NO self-normalization of the
+catalogue term by any per-event or per-host selection denominator (neither
+``D_g_i`` as in "gray" nor ``beta_G`` as a multiplicative weight). This is
+the harness realization of production's ``A_i(h) = Sigma_ball w_g N_g(h) /
+n_bar_w(h)`` with ``n_bar_w(h) = Sigma_glob(h) / beta_G(h)``: because the
+harness's synthetic "catalogue" is a smooth one-candidate-per-event
+continuum population (not a discrete multi-galaxy table sharing a Sigma_glob
+distinct from beta_G), the continuum idealization ``Sigma_glob(h) ==
+beta_G(h)`` collapses ``n_bar_w(h)`` to 1 identically, and
+``A_i(h) = N_i(h)`` exactly (the ``beta_G`` factor that "gray" mode applies
+to ``L_cat_i`` cancels against the same ``beta_G`` inside ``n_bar_w``). Both
+terms are summed for EVERY host-found event (not just the zero-host
+fallback) using the SAME ``B_num_i`` completion integral zero-host events
+use, so the zero-host branch (``B_num/D``, shared with "two_branch"/"gray")
+is the continuous ``N_i -> 0`` limit of this formula, not a separate branch.
+HARNESS-FIDELITY CAVEAT: this harness structurally cannot construct genuine
+impostor-only candidate balls (multiple false candidates carrying zero
+true-host mass) because each event has exactly one candidate (its own noisy
+``z_gal``) rather than a shared multi-galaxy catalogue queried by many
+events; it therefore cannot exercise Variant 1's core impostor-suppression
+claim (derivation Sec 3.4(b)). It CAN test Variant 1's other two claims: the
+continuous zero-host/near-zero-host fallback limit and the unbiased
+complete-catalogue limit.
 
 Prior-tilt probe (``PPCoverageConfig.inference_wpop_tilt``, handoff item N-3,
 ``.planning/HANDOFF-DEEP-BIAS-MECHANISM-20260710.md``): multiplies ONLY the
@@ -298,8 +324,18 @@ class PPCoverageConfig:
             so the two branches tile [0, Z_MAX_POP] exactly (the support
             split of the Gray et al. 2020, arXiv:1908.06050, Eqs. 29+32
             completion mixture). This removes the above-edge kernel leak
-            that the two_branch/gray host numerators carry. Modes other
-            than "two_branch" require z_support (ValueError otherwise).
+            that the two_branch/gray host numerators carry.
+            "absolute" (2026-07-26): the absolute-mass marginal (harness
+            analog of DERIVATION_ESTIMATOR_REDESIGN.md Variant 1, Eq. 2):
+            host events get [N_i(h) + B_num_i(h)]/D(h) — the catalogue
+            numerator N_i enters WITHOUT any self-normalization (no beta_G
+            weight, no D_g_i division), summed directly with the SAME
+            B_num_i completion integral zero-host events use. Zero-host
+            events keep B_num/D (the continuous N_i -> 0 limit). See the
+            module-docstring "absolute" paragraph for the harness-fidelity
+            caveat (no impostor-ball mechanism exists in this harness).
+            Modes other than "two_branch" require z_support (ValueError
+            otherwise).
         membership_on_observed: Decide catalogue membership on the OBSERVED
             z_gal (< z_support) instead of the true z_host (production's
             BallTree sees measured redshifts; N-2d probe). Default False keeps
@@ -363,7 +399,7 @@ class PPCoverageConfig:
     n_z_quad: int = 160
     inference_wpop_tilt: float = 0.0
     z_support: float | None = None
-    mixture_mode: Literal["two_branch", "gray", "conditioned", "exact"] = "two_branch"
+    mixture_mode: Literal["two_branch", "gray", "conditioned", "exact", "absolute"] = "two_branch"
     membership_on_observed: bool = False
     pdet_in_numerator: bool = False
     sigma_dl_model_in_likelihood: bool = False
@@ -520,6 +556,15 @@ def _run_realization(
       above-edge kernel leak the two_branch/gray numerators carry.
       Zero-host events keep ``B_num/D``, so the two branches tile
       ``[0, Z_MAX_POP]`` exactly (Gray et al. 2020 support split).
+    - ``"absolute"``: absolute-mass marginal (harness analog of
+      ``results/lcat_h_dependence_20260725/DERIVATION_ESTIMATOR_REDESIGN.md``
+      Variant 1, Eq. 2) — host events get ``[N_i(h) + B_num_i(h)] / D(h)``:
+      the two_branch kernel numerator ``N_i`` summed DIRECTLY with the same
+      ``B_num_i`` completion integral zero-host events use, with NO per-event
+      self-normalization (no ``beta_G`` weight, no ``D_g_i`` division).
+      Zero-host events keep ``B_num/D`` (the continuous ``N_i -> 0`` limit of
+      the same formula). See the module docstring for the harness-fidelity
+      caveat (no impostor-ball mechanism in this harness).
 
     Args:
         h_true: Injected truth.
@@ -598,8 +643,9 @@ def _run_realization(
                     # Membership-conditioned inverse: B_num / beta_Gbar.
                     term_b = np.log(np.clip(num_b, 1e-300, None)) - log_beta_Gbar
                 else:
-                    # two_branch AND gray share the pure-completion B_num/D
-                    # branch (Gray et al. 2020 Eqs. 29+32, L_cat -> 0 limit).
+                    # two_branch, gray AND absolute share the pure-completion
+                    # B_num/D branch (Gray et al. 2020 Eqs. 29+32, L_cat -> 0
+                    # / N_i -> 0 limit).
                     term_b = np.log(np.clip(num_b, 1e-300, None)) - log_Dh
                 logL += term_b
                 logL_completion += term_b
@@ -680,6 +726,28 @@ def _run_realization(
             )
             mixture = beta_G_h * L_cat_i + B_num_i  # linear space, per event
             term = np.log(np.clip(mixture, 1e-300, None)) - log_Dh
+        elif config.mixture_mode == "absolute" and config.z_support is not None:
+            # Absolute-mass marginal (DERIVATION_ESTIMATOR_REDESIGN.md
+            # Variant 1, Eq. 2): A_i(h) = N_i(h) with NO self-normalization
+            # (no beta_G weight, no D_g_i division — n_bar_w collapses to 1
+            # in this harness's continuum-population idealization, see
+            # module docstring). Summed directly with the SAME B_num_i
+            # completion integral zero-host events use.
+            B_num_i_abs = _completion_numerator(
+                float(dL_obs[i]),
+                float(sig_dl[i]),
+                float(config.z_support),
+                h_grid,
+                config.n_z_quad,
+                config.inference_wpop_tilt,
+                config.pdet_in_numerator,
+                config.sigma_dl_frac,
+                config.sigma_dl_model_in_likelihood,
+                config.d50_gpc,
+                config.w_pdet_gpc,
+            )
+            mixture_abs = num + B_num_i_abs  # linear space, absolute mass
+            term = np.log(np.clip(mixture_abs, 1e-300, None)) - log_Dh
         elif config.mixture_mode == "conditioned" and config.z_support is not None:
             # Membership-conditioned inverse: N_i / beta_G (no B_num, no
             # D_g_i ratio).
@@ -742,9 +810,9 @@ def run_coverage(config: PPCoverageConfig) -> dict[str, Any]:
     beta_Gbar: npt.NDArray[np.float64] | None = None
     if config.mixture_mode != "two_branch" and config.z_support is None:
         raise ValueError(
-            "mixture_mode='gray'/'conditioned'/'exact' requires z_support: the Gray "
-            "mixture and the membership-truncated exact kernel are only defined with "
-            "a catalogue-support edge."
+            "mixture_mode='gray'/'conditioned'/'exact'/'absolute' requires z_support: "
+            "the Gray mixture, the membership-truncated exact kernel, and the "
+            "absolute-mass marginal are only defined with a catalogue-support edge."
         )
     if config.mixture_mode in ("gray", "conditioned"):
         # exact needs neither beta_G nor beta_Gbar (no mixture weight, no
@@ -845,7 +913,7 @@ def main(argv: list[str] | None = None) -> None:
     )
     parser.add_argument(
         "--mixture-mode",
-        choices=["two_branch", "gray", "conditioned", "exact"],
+        choices=["two_branch", "gray", "conditioned", "exact", "absolute"],
         default="two_branch",
         help="Estimator composition under z_support truncation: 'two_branch' "
         "(default; in-catalogue events bare N_i/D, zero-host B_num/D — the "
@@ -853,11 +921,14 @@ def main(argv: list[str] | None = None) -> None:
         "Gray et al. 2020 Eqs. 29+32 mixture (beta_G*L_cat_i + B_num)/D with "
         "the per-host D_g_i of Eqs. A.9/A.10; zero-host unchanged), "
         "'conditioned' (membership-conditioned inverse: N_i/beta_G and "
-        "B_num/beta_Gbar), or 'exact' (in-catalogue events use the "
+        "B_num/beta_Gbar), 'exact' (in-catalogue events use the "
         "volume-kernel numerator TRUNCATED at z_support — the "
         "membership-truncated exact kernel, no beta_G, no D_g_i; zero-host "
-        "events keep B_num/D). Modes other than 'two_branch' require "
-        "--z-support.",
+        "events keep B_num/D), or 'absolute' (the absolute-mass marginal: "
+        "in-catalogue events get (N_i + B_num_i)/D with NO self-normalization "
+        "of N_i, harness analog of "
+        "results/lcat_h_dependence_20260725/DERIVATION_ESTIMATOR_REDESIGN.md "
+        "Variant 1). Modes other than 'two_branch' require --z-support.",
     )
     parser.add_argument(
         "--n-z-quad",

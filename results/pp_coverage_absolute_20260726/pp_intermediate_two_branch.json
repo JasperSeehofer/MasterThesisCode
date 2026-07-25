@@ -1,0 +1,79 @@
+{
+  "config": {
+    "n_realizations": 500,
+    "n_events": 250,
+    "sigma_z": 0.035,
+    "sigma_z_pv": 0.0,
+    "sigma_dl_frac": 0.05,
+    "injected_truths": [
+      0.62,
+      0.72,
+      0.84
+    ],
+    "seed": 20260701,
+    "kernel": "volume",
+    "h_min": 0.6,
+    "h_max": 0.86,
+    "h_step": 0.004,
+    "n_z_quad": 160,
+    "inference_wpop_tilt": 0.0,
+    "z_support": 0.3,
+    "mixture_mode": "two_branch",
+    "membership_on_observed": false,
+    "pdet_in_numerator": false,
+    "sigma_dl_model_in_likelihood": false,
+    "d50_gpc": 1.85,
+    "w_pdet_gpc": 0.3,
+    "clamp_zgal": true
+  },
+  "results": {
+    "0.6200": {
+      "h_true": 0.62,
+      "coverage": {
+        "50": 0.052,
+        "68": 0.102,
+        "90": 0.242
+      },
+      "rail_fraction": 0.0,
+      "map_mean": 0.6356879999999999,
+      "map_std": 0.006165602646943773,
+      "map_median": 0.636,
+      "map_bias": 0.015687999999999924,
+      "completion_fraction": 0.21568800000000002,
+      "dlogL_dh_host_mean": -13.825219310781918,
+      "dlogL_dh_completion_mean": 409.9355874661848
+    },
+    "0.7200": {
+      "h_true": 0.72,
+      "coverage": {
+        "50": 0.002,
+        "68": 0.014,
+        "90": 0.058
+      },
+      "rail_fraction": 0.0,
+      "map_mean": 0.74324,
+      "map_std": 0.007629311895577484,
+      "map_median": 0.7440000000000001,
+      "map_bias": 0.02324000000000004,
+      "completion_fraction": 0.39399199999999995,
+      "dlogL_dh_host_mean": 4.843403568691708,
+      "dlogL_dh_completion_mean": 400.6727409405388
+    },
+    "0.8400": {
+      "h_true": 0.84,
+      "coverage": {
+        "50": 0.004,
+        "68": 0.006,
+        "90": 0.012
+      },
+      "rail_fraction": 0.874,
+      "map_mean": 0.859224,
+      "map_std": 0.0023060407628660885,
+      "map_median": 0.8600000000000002,
+      "map_bias": 0.01922400000000002,
+      "completion_fraction": 0.5522879999999999,
+      "dlogL_dh_host_mean": 10.68802313380521,
+      "dlogL_dh_completion_mean": 289.1069592734128
+    }
+  }
+}
