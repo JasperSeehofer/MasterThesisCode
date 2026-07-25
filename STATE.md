@@ -4,7 +4,7 @@ A short, human-readable snapshot of where the project is, for continuity across 
 machines. Detailed, ephemeral working notes are kept out of the repository by design (see the
 `.gitignore` note on internal planning state); this file is the curated, durable surface.
 
-**Last updated:** 2026-07-16
+**Last updated:** 2026-07-25
 
 ## What works today
 
@@ -18,9 +18,17 @@ machines. Detailed, ephemeral working notes are kept out of the repository by de
 
 ## Current focus
 
-- **Empirical H₀ closure** on the deep injection pool — a cluster run to confirm the pipeline's
-  H₀ MAP / bias / coverage on the z ≤ 1.5 population. The code is verified sound; the empirical
-  result is data-gated on cluster availability.
+- **Deep-venue rail (issue #30)** — the EXP-40 re-evaluation (`run_20260719_seed1000_exp40`,
+  main @ ba2b381, #29 fallback active) confirmed the seed1000 posterior still rails at the lower
+  grid edge (MAP h=0.60, both channels). Post-fix diagnostics re-attribute the rail: ~82% of the
+  tilt is the host-found `L_cat` term (the 57.7% completion-fallback events are nearly h-inert),
+  and z ≤ 0.3 subsets still rail — weakening pure depth truncation, strengthening the
+  L_cat/Gray-mixture estimator path. See
+  `results/campaign_phase2_runs/run_20260719_seed1000_exp40/FINDINGS_EXP40_20260725.md`.
+- **In flight:** consistently truncated re-evals (`--max_redshift`, with the B_num completion
+  numerator domain-matched to D(h) — `[PHYSICS]` 7d3573d + 276c8c7 on `feat/max-redshift-cli`)
+  at z_cut ∈ {0.2, 0.3, 0.5} on the same seed1000 CRB (`run_20260725_seed1000_zcut*`).
+  Campaign relaunch remains NO-GO until a truncated eval closes or the estimator is upgraded.
 
 ## Known open questions (tracked honestly)
 
@@ -33,4 +41,9 @@ machines. Detailed, ephemeral working notes are kept out of the repository by de
 
 ## Next
 
-- Run the deep-pool cluster closure job; fold the result into the manuscript (in preparation).
+- Read out the z_cut-truncated re-evals: if even truncated z_cut=0.3 rails, depth truncation is
+  dead at the effective catalogue depth and the Gray-mixture / L_cat-h-dependence estimator
+  upgrade becomes the primary path; if a z_cut closes near 0.73, decide the Paper-B depth framing
+  (issue #30 decision D1) and relaunch the campaign seeds accordingly.
+- Workspace note: `ws_extend` used the **last** available extension (expires 2026-09-23) — copy
+  finals off before then.
