@@ -90,6 +90,50 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   knob used by the issue #30 z_cut truncation scan (`docs/H0_BIAS_RESOLUTION.md` §3.21;
   `DATA_INVENTORY.md` 2026-07-25 z_cut row); WARNs if set shallower than
   `HOST_DRAW_Z_MAX`. Evaluate-only; does not affect simulation/injection.
+### Research (pp_coverage harness — catalogue / impostor-ball universe)
+- **`catalogue_mode` + `mixture_mode` `"lcat"`/`"generator_marginal"` in
+  `master_thesis_code/validation/pp_coverage.py` [PHYSICS]** (derivation:
+  `results/pp_impostor_harness_20260726/DERIVATION_HARNESS_ANALOG.md`). The harness could
+  previously only build universes with EXACTLY ONE candidate host per event, so it
+  structurally could not test any estimator that must CHOOSE among candidates — the reason
+  the `mixture_mode="absolute"` campaign (above) found nothing. `catalogue_mode=True`
+  replaces the generative model with a discrete, frozen, shared galaxy catalogue
+  (`n_gal(z) ∝ dV_c/dz`, per-galaxy rate weight `w(z)=1/(1+z)`, hard completeness edge
+  `f̄(z)=1[z<z_support]`, photo-z scattered catalogue redshifts) plus hard sky-localization
+  caps of solid-angle fraction `sky_frac` positioned so the true host is uniform inside them
+  (making the flat in-cap sky likelihood exact). Candidate balls therefore contain genuine
+  foreground/background impostors, and impostor-only balls when the host is above the
+  completeness edge. Host draw density is `n_gal·w·p_det = w_pop·p_det`, i.e. identical to
+  the continuum harness's `_sample_detected_redshifts` (KS-tested), so catalogue mode is a
+  controlled extension rather than a different experiment. Three estimators share
+  `p_i = [in-catalogue term + B_num,i]/Den` and differ only in the scaling of the discrete
+  ball sum: `lcat` (legacy self-normalized Gray-A9 ratio-of-sums = production
+  `volume_deconv`), `absolute` (production `absolute_marginal`, Option-A `n̄_w = Σ_glob/β_G`)
+  and `generator_marginal` (production FIX-3, `n̂_w = W_cat/V_f`, `D_gen = Σ_glob/n̂_w + β_Ḡ`).
+  The harness's `p_det(d_L)` is an exact deterministic function of distance, so production's
+  FIX-2 z-resolved survival is **vacuous** here (the harness is already in FIX-2's fixed
+  state) — documented, not silently omitted. Derived checks: absolute-scale tiling identity
+  `E[A_i] = ∫f̄ w_pop p_GW dz` (so `A_i + B_num` is `z_support`-independent), degree-one
+  homogeneity in `w_pop` (whence production's `h⁻³` cancels), exact `absolute` ≡
+  `generator_marginal` identity at `z_support ≥ Z_MAX_POP`, and continuous empty-ball
+  reduction to `B_num/Den`. CLI: `--catalogue-mode`, `--n-galaxies`, `--sky-frac`,
+  `--resample-catalogue-per-realization`. All pre-existing modes
+  (`two_branch`/`gray`/`conditioned`/`exact`/`absolute` in the single-candidate universe) are
+  untouched and their golden pins still hold. Tests:
+  `master_thesis_code_test/validation/test_pp_coverage_catalogue.py` (18 CPU-only tests).
+  **Smoke finding** (200 realizations/cell, `results/pp_impostor_harness_20260726/SMOKE_SUMMARY.md`;
+  NOT a gate): on identical paired universes carrying 2.5–2.9 candidates per ball at ~78 %
+  impostors, both absolute-mass modes beat legacy `lcat` in every cell (MAP bias +0.0232 vs
+  +0.0349 at h=0.72; cov68 0.465 vs 0.415; HIGH rail 0.640 vs 0.775 at h=0.84) — the first
+  harness evidence for V1's impostor-suppression claim, which the one-candidate harness
+  structurally could not obtain. `absolute` and `generator_marginal` agree to 4 decimals
+  (predicted: the harness catalogue is Option-A compliant by construction, `n̄_w/n̂_w ∈
+  [0.92, 0.99]`), so the harness cannot adjudicate FIX-3 vs V1. A `z_support` sweep shows the
+  residual HIGH bias is monotone in the completion fraction and **consistent with zero once the
+  completion fraction reaches zero** — at 14 candidates/ball with 93 % impostors (bias −0.0006 ±
+  0.002) and at 41 candidates with 97.6 % impostors (+0.0024) — exonerating both the discrete
+  catalogue term and the selection normalization and leaving `B_num` as the sole carrier.
+
 ### Research (pp_coverage harness — absolute-mass marginal, Variant 1 validation gate 1)
 - **`mixture_mode="absolute"` added to `master_thesis_code/validation/pp_coverage.py`
   — harness analog of the absolute-mass marginal

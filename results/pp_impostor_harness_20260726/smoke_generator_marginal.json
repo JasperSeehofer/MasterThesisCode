@@ -1,0 +1,96 @@
+{
+  "config": {
+    "n_realizations": 200,
+    "n_events": 120,
+    "sigma_z": 0.035,
+    "sigma_z_pv": 0.0,
+    "sigma_dl_frac": 0.05,
+    "injected_truths": [
+      0.62,
+      0.72,
+      0.84
+    ],
+    "seed": 20260726,
+    "kernel": "volume",
+    "h_min": 0.6,
+    "h_max": 0.86,
+    "h_step": 0.004,
+    "n_z_quad": 160,
+    "inference_wpop_tilt": 0.0,
+    "z_support": 0.3,
+    "mixture_mode": "generator_marginal",
+    "membership_on_observed": false,
+    "catalogue_mode": true,
+    "n_galaxies": 200000,
+    "sky_frac": 0.0002,
+    "resample_catalogue_per_realization": false,
+    "pdet_in_numerator": false,
+    "sigma_dl_model_in_likelihood": false,
+    "d50_gpc": 1.85,
+    "w_pdet_gpc": 0.3,
+    "clamp_zgal": true
+  },
+  "results": {
+    "0.6200": {
+      "h_true": 0.62,
+      "coverage": {
+        "50": 0.42,
+        "68": 0.625,
+        "90": 0.81
+      },
+      "rail_fraction": 0.035,
+      "map_mean": 0.63264,
+      "map_std": 0.019478973278897443,
+      "map_median": 0.632,
+      "map_bias": 0.012639999999999985,
+      "completion_fraction": 0.20941666666666667,
+      "dlogL_dh_host_mean": null,
+      "dlogL_dh_completion_mean": null,
+      "empty_ball_fraction": 0.024208333333333335,
+      "mean_ball_size": 2.876416666666667,
+      "host_in_ball_fraction": 0.7905833333333334,
+      "impostor_fraction": 0.7246549974146987
+    },
+    "0.7200": {
+      "h_true": 0.72,
+      "coverage": {
+        "50": 0.3,
+        "68": 0.465,
+        "90": 0.68
+      },
+      "rail_fraction": 0.0,
+      "map_mean": 0.74318,
+      "map_std": 0.029143225627922546,
+      "map_median": 0.7400000000000001,
+      "map_bias": 0.02317999999999998,
+      "completion_fraction": 0.38895833333333335,
+      "dlogL_dh_host_mean": null,
+      "dlogL_dh_completion_mean": null,
+      "empty_ball_fraction": 0.043291666666666666,
+      "mean_ball_size": 2.7229583333333336,
+      "host_in_ball_fraction": 0.6110416666666666,
+      "impostor_fraction": 0.7752454112625
+    },
+    "0.8400": {
+      "h_true": 0.84,
+      "coverage": {
+        "50": 0.2,
+        "68": 0.35,
+        "90": 0.665
+      },
+      "rail_fraction": 0.645,
+      "map_mean": 0.85012,
+      "map_std": 0.018074999308437072,
+      "map_median": 0.8600000000000002,
+      "map_bias": 0.010120000000000018,
+      "completion_fraction": 0.555875,
+      "dlogL_dh_host_mean": null,
+      "dlogL_dh_completion_mean": null,
+      "empty_ball_fraction": 0.06333333333333332,
+      "mean_ball_size": 2.5453749999999995,
+      "host_in_ball_fraction": 0.44412499999999994,
+      "impostor_fraction": 0.8253332922950755
+    }
+  },
+  "wall_seconds": 54.05104351043701
+}

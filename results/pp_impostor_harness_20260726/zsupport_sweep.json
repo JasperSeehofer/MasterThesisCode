@@ -1,0 +1,113 @@
+{
+  "config": {
+    "n_realizations": 100,
+    "n_events": 120,
+    "sigma_z": 0.035,
+    "sigma_z_pv": 0.0,
+    "sigma_dl_frac": 0.05,
+    "injected_truths": [
+      0.72
+    ],
+    "seed": 20260726,
+    "kernel": "volume",
+    "h_min": 0.6,
+    "h_max": 0.86,
+    "h_step": 0.004,
+    "n_z_quad": 160,
+    "inference_wpop_tilt": 0.0,
+    "z_support": 0.3,
+    "mixture_mode": "generator_marginal",
+    "membership_on_observed": false,
+    "catalogue_mode": true,
+    "n_galaxies": 200000,
+    "sky_frac": 0.0002,
+    "resample_catalogue_per_realization": false,
+    "pdet_in_numerator": false,
+    "sigma_dl_model_in_likelihood": false,
+    "d50_gpc": 1.85,
+    "w_pdet_gpc": 0.3,
+    "clamp_zgal": true
+  },
+  "sweep": {
+    "0.15": {
+      "h_true": 0.72,
+      "coverage": {
+        "50": 0.28,
+        "68": 0.41,
+        "90": 0.65
+      },
+      "rail_fraction": 0.13,
+      "map_mean": 0.76884,
+      "map_std": 0.05592650892018923,
+      "map_median": 0.7640000000000001,
+      "map_bias": 0.048839999999999995,
+      "completion_fraction": 0.9060000000000001,
+      "dlogL_dh_host_mean": null,
+      "dlogL_dh_completion_mean": null,
+      "empty_ball_fraction": 0.6786666666666666,
+      "mean_ball_size": 0.3869166666666666,
+      "host_in_ball_fraction": 0.09399999999999999,
+      "impostor_fraction": 0.758744820667691
+    },
+    "0.30": {
+      "h_true": 0.72,
+      "coverage": {
+        "50": 0.37,
+        "68": 0.45,
+        "90": 0.67
+      },
+      "rail_fraction": 0.0,
+      "map_mean": 0.74084,
+      "map_std": 0.028217980083627556,
+      "map_median": 0.7400000000000001,
+      "map_bias": 0.02084000000000008,
+      "completion_fraction": 0.3964999999999999,
+      "dlogL_dh_host_mean": null,
+      "dlogL_dh_completion_mean": null,
+      "empty_ball_fraction": 0.044833333333333336,
+      "mean_ball_size": 2.6921666666666675,
+      "host_in_ball_fraction": 0.6035,
+      "impostor_fraction": 0.7756847694815082
+    },
+    "0.60": {
+      "h_true": 0.72,
+      "coverage": {
+        "50": 0.44,
+        "68": 0.7,
+        "90": 0.94
+      },
+      "rail_fraction": 0.0,
+      "map_mean": 0.7193600000000001,
+      "map_std": 0.02062790343200202,
+      "map_median": 0.7160000000000001,
+      "map_bias": -0.0006399999999998629,
+      "completion_fraction": 0.0,
+      "dlogL_dh_host_mean": null,
+      "dlogL_dh_completion_mean": null,
+      "empty_ball_fraction": 0.0,
+      "mean_ball_size": 14.311833333333334,
+      "host_in_ball_fraction": 1.0,
+      "impostor_fraction": 0.9300897625590333
+    },
+    "0.95": {
+      "h_true": 0.72,
+      "coverage": {
+        "50": 0.44,
+        "68": 0.63,
+        "90": 0.86
+      },
+      "rail_fraction": 0.0,
+      "map_mean": 0.72236,
+      "map_std": 0.022069671497328653,
+      "map_median": 0.7240000000000001,
+      "map_bias": 0.0023600000000000287,
+      "completion_fraction": 0.0,
+      "dlogL_dh_host_mean": null,
+      "dlogL_dh_completion_mean": null,
+      "empty_ball_fraction": 0.0,
+      "mean_ball_size": 41.055166666666665,
+      "host_in_ball_fraction": 1.0,
+      "impostor_fraction": 0.9756375652578794
+    }
+  }
+}
