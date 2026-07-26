@@ -1924,6 +1924,7 @@ class BayesianStatistics:
                 pool=pool,
                 completeness=completeness,
                 detection_probability_obj=detection_probability_obj,
+                redshift_upper_limit=redshift_upper_limit,
             )
 
             self.posterior_data[index].append(event_likelihood)
@@ -1964,6 +1965,7 @@ class BayesianStatistics:
         pool: mp.pool.Pool,
         completeness: CompletenessModel,
         detection_probability_obj: SimulationDetectionProbability,
+        redshift_upper_limit: float = HOST_DRAW_Z_MAX,
     ) -> tuple[float, float]:
         # start parallel computation
         _LOGGER.info(f"start parallel computation with: {pool}")
@@ -2153,6 +2155,15 @@ class BayesianStatistics:
                 h=self.h,
             )
             z_lower = max(z_lower, 1e-6)  # avoid z=0 singularity in volume element
+            # Domain-matched to D(h): Eq. (32) in Gray et al. (2020), arXiv:1908.06050;
+            # analysis-depth cap per f29a5e7. B_num shares the SAME functional form as
+            # D(h)/beta_Gbar(h)/Sigma_global(h) (all `(1-f) p_det|p_GW dVc/(1+z)`), and
+            # all three are already capped at `min(z_max(h), max_redshift)`
+            # (z_max_cap, see precompute_completion_denominator and the
+            # candidate-host window cap in p_D). Without this cap, B_num integrated
+            # population density beyond the analysis depth while its own denominator
+            # D(h) did not -- mismatched domains in the same ratio p_i = B_num/D(h).
+            z_upper = min(z_upper, redshift_upper_limit)
 
             FIXED_QUAD_N = 50
             _comp_slot = self._det_index_to_slot[detection_index]
@@ -2220,9 +2231,17 @@ class BayesianStatistics:
                 )
                 return (1.0 - f_z) * p_gw * dVc / (1.0 + z)
 
-            B_num = float(
-                fixed_quad(completion_numerator_integrand, z_lower, z_upper, n=FIXED_QUAD_N)[0]
-            )
+            if z_lower >= z_upper:
+                # The event's entire 4-sigma window lies beyond the analysis depth
+                # (redshift_upper_limit): no population support survives the cap, so
+                # the completion numerator vanishes rather than integrating an
+                # inverted [z_lower, z_upper] interval (which would return a
+                # negative fixed_quad result, not 0).
+                B_num = 0.0
+            else:
+                B_num = float(
+                    fixed_quad(completion_numerator_integrand, z_lower, z_upper, n=FIXED_QUAD_N)[0]
+                )
 
             # Grid coverage flag: warn if numerator 4-sigma window exceeds P_det grid
             d_L_upper = self.detection.d_L + 4.0 * self.detection.d_L_uncertainty

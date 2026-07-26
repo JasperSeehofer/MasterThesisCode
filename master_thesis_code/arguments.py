@@ -188,6 +188,19 @@ class Arguments:
         """Zero-handling strategy for posterior combination."""
         return str(self._parsed_arguments.strategy)
 
+    @property
+    def max_redshift(self) -> float | None:
+        """Analysis-depth truncation override for Model1CrossCheck.max_redshift.
+
+        None (default) leaves the constructor's built-in depth (1.5) untouched --
+        byte-identical to pre-flag behavior. When given, overrides the population
+        depth cap used by the numerator candidate-host window AND the selection
+        integrals D(h)/beta_Gbar(h)/Sigma_global(h)/B_num (issue #30 depth-truncation
+        study; see results/campaign_phase2_runs/MAX_REDSHIFT_SEMANTICS.md).
+        """
+        val: float | None = self._parsed_arguments.max_redshift
+        return val
+
     @staticmethod
     def create(sys_args: list[str] = sys.argv[1:]) -> "Arguments":
         parsed_arguments = _parse_arguments(sys_args)
@@ -387,6 +400,19 @@ def _parse_arguments(arguments: list[str]) -> argparse.Namespace:
             "a bare-Gaussian host-z prior (de-railed but ~2-3%% low-biased). 'global': the "
             "pre-fix global-denominator single ratio (rails to a grid edge on photo-z data). "
             "See .planning/INDEPENDENT-VERIFICATION-REPORT-20260701.md sec 7."
+        ),
+    )
+    parser.add_argument(
+        "--max_redshift",
+        type=float,
+        default=None,
+        help=(
+            "Analysis-depth truncation override for Model1CrossCheck.max_redshift "
+            "(default: None, leaves the built-in depth of 1.5 unchanged -- a no-op "
+            "for the current population, since z_max(h) <= ~1.33). Caps the "
+            "candidate-host window, D(h)/beta_Gbar(h)/Sigma_global(h), and the "
+            "B_num completion numerator at min(z_max(h), max_redshift) (issue #30 "
+            "depth-truncation study)."
         ),
     )
     parsed_arguments: argparse.Namespace = parser.parse_args(arguments)

@@ -18,6 +18,12 @@
 # Required environment variables (set by submit_pipeline.sh):
 #   RUN_DIR -- workspace directory containing prepared Cramer-Rao bounds
 #
+# Optional environment variables:
+#   MAX_REDSHIFT -- analysis-depth truncation override (issue #30 depth-
+#     truncation study), passed through as --max_redshift. Unset/empty means
+#     the pipeline's built-in default (1.5, a no-op for the current
+#     population) -- byte-identical to before this variable existed.
+#
 # Note: --output and --error are NOT set here; submit_pipeline.sh passes them
 # via command line so that shell variables are expanded correctly.
 
@@ -96,6 +102,7 @@ echo "  H value:    $H_VALUE (task $SLURM_ARRAY_TASK_ID of ${#H_VALUES[@]})"
 echo "  Node:       $(hostname)"
 echo "  CPUs alloc: ${SLURM_CPUS_PER_TASK:-unknown}"
 echo "  Workers:    auto-detected from cgroup (SLURM_CPUS_PER_TASK - 2)"
+echo "  Max z:      ${MAX_REDSHIFT:-<default>} (issue #30 depth-truncation study)"
 echo ""
 
 # Evaluation code reads simulations/prepared_cramer_rao_bounds.csv relative to
@@ -109,6 +116,14 @@ ln -sfn "$RUN_DIR/simulations" "$JOB_CWD/simulations"
 ln -sfn "$PROJECT_ROOT/master_thesis_code" "$JOB_CWD/master_thesis_code"
 cd "$JOB_CWD"
 
+# Optional --max_redshift pass-through (issue #30 depth-truncation study):
+# unset/empty MAX_REDSHIFT leaves the array empty, so the python invocation
+# below is byte-identical to before this option existed.
+EXTRA_ARGS=()
+if [[ -n "${MAX_REDSHIFT:-}" ]]; then
+    EXTRA_ARGS+=(--max_redshift "$MAX_REDSHIFT")
+fi
+
 # P_det grid resolution: explicit flags for reproducibility (Phase 33).
 # Seeding (TC-05): per-task seed = EVAL_SEED + task id (EVAL_SEED exported by
 # submit_pipeline.sh from the campaign seed; standalone fallback 777000).
@@ -120,7 +135,8 @@ python -m master_thesis_code "$RUN_DIR" \
     --simulation_index "$SLURM_ARRAY_TASK_ID" \
     --pdet_dl_bins 60 \
     --pdet_mass_bins 40 \
-    --log_level INFO
+    --log_level INFO \
+    "${EXTRA_ARGS[@]}"
 
 echo ""
 echo "=== Evaluation Complete (h=$H_VALUE) ==="

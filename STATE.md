@@ -4,7 +4,7 @@ A short, human-readable snapshot of where the project is, for continuity across 
 machines. Detailed, ephemeral working notes are kept out of the repository by design (see the
 `.gitignore` note on internal planning state); this file is the curated, durable surface.
 
-**Last updated:** 2026-07-16
+**Last updated:** 2026-07-25
 
 ## What works today
 
@@ -18,9 +18,20 @@ machines. Detailed, ephemeral working notes are kept out of the repository by de
 
 ## Current focus
 
-- **Empirical H₀ closure** on the deep injection pool — a cluster run to confirm the pipeline's
-  H₀ MAP / bias / coverage on the z ≤ 1.5 population. The code is verified sound; the empirical
-  result is data-gated on cluster availability.
+- **Deep-venue rail (issue #30)** — the EXP-40 re-evaluation (`run_20260719_seed1000_exp40`,
+  main @ ba2b381, #29 fallback active) confirmed the seed1000 posterior still rails at the lower
+  grid edge (MAP h=0.60, both channels). Post-fix diagnostics re-attribute the rail: ~82% of the
+  tilt is the host-found `L_cat` term (the 57.7% completion-fallback events are nearly h-inert),
+  and z ≤ 0.3 subsets still rail — weakening pure depth truncation, strengthening the
+  L_cat/Gray-mixture estimator path. See
+  `results/campaign_phase2_runs/run_20260719_seed1000_exp40/FINDINGS_EXP40_20260725.md`.
+- **z_cut truncation scan (2026-07-25): ALL RAIL.** Consistently truncated re-evals
+  (`--max_redshift` with B_num domain-matched to D(h) — `[PHYSICS]` 7d3573d + 276c8c7 on
+  `feat/max-redshift-cli`) at z_cut ∈ {0.2, 0.3, 0.5} on the same seed1000 CRB all rail at
+  h = 0.60 in both channels — **depth truncation (issue #30 option b) is empirically dead**.
+  The untruncated z ≤ 0.2 *subset* closes at 0.729 while the truncated z_cut = 0.2 re-eval
+  rails, isolating the rail in the h-dependence of the truncated selection/normalization
+  structure (w_G = β_G/D) interacting with L_cat. Campaign relaunch remains NO-GO.
 
 ## Known open questions (tracked honestly)
 
@@ -33,4 +44,16 @@ machines. Detailed, ephemeral working notes are kept out of the repository by de
 
 ## Next
 
-- Run the deep-pool cluster closure job; fold the result into the manuscript (in preparation).
+- **Rail mechanism identified (2026-07-25): host misassociation.** Two independent
+  investigations (empirical per-event decomposition, validated to ≤4.5e-13 against cluster
+  diagnostics; structural audit vs Gray A9/Gair 2023/gwcosmo v2) show 91–100% of each rail
+  event's tilt is the numerator GW-likelihood × host-z overlap: candidate balls contain only
+  foreground galaxies (preferred h* ≈ 0.42–0.48, below the grid). volume_deconv is exonerated
+  (exactly h-invariant); the ball-local selection denominator is a real-but-secondary
+  discrepancy vs the references (1–14%). See `results/lcat_h_dependence_20260725/SYNTHESIS.md`.
+- Decide and implement the **estimator redesign** (author physics decision, /physics-change):
+  the fix domain is per-event catalogue-vs-dark weighting (Gray membership mixture /
+  non-self-normalized catalogue mass) so impostor-only balls defer to the completion term.
+  Campaign relaunch stays NO-GO until a redesigned estimator closes on the deep venue.
+- Workspace note: `ws_extend` used the **last** available extension (expires 2026-09-23) — copy
+  finals off before then.
