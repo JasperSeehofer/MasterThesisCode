@@ -132,6 +132,16 @@ fi
 if [[ "${SMEAR_GLOBAL_SELECTION:-}" == "yes" ]]; then
     EXTRA_ARGS+=(--smear_global_selection)
 fi
+# Optional --allow_low_pdet_coverage (flag; set ALLOW_LOW_PDET_COVERAGE=yes):
+# deliberate re-evaluation of an archived SHALLOW injection pool (e.g. the
+# seed600 z<=0.5 baseline) past the depth gate.
+if [[ "${ALLOW_LOW_PDET_COVERAGE:-}" == "yes" ]]; then
+    EXTRA_ARGS+=(--allow_low_pdet_coverage)
+fi
+# Optional --pdet_z_resolved (flag; set PDET_Z_RESOLVED=yes):
+if [[ "${PDET_Z_RESOLVED:-}" == "yes" ]]; then
+    EXTRA_ARGS+=(--pdet_z_resolved)
+fi
 
 # P_det grid resolution: explicit flags for reproducibility (Phase 33).
 # Seeding (TC-05): per-task seed = EVAL_SEED + task id (EVAL_SEED exported by
