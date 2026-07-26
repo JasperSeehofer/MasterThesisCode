@@ -116,6 +116,22 @@ The author reviewed this readout and ratified:
    review (math + physics + anti-tuning audit) of the estimator chain,
    ordered by the author 2026-07-26.
 
+## Post-redteam rescoping (2026-07-26, evening — supersedes the numbers above where they conflict)
+
+The independent adversarial review (`results/redteam_20260726/CONSOLIDATED_VERDICT.md`)
+cleared the anti-tuning question but found the 41-pt grid does not resolve
+the posterior peak (one node with p/p_max > 1e-3; parabola neighbours ~200 ln
+down). Therefore: the sub-grid MAPs, the −0.00030 ± 0.00035 bias, and the
+σ ≈ 2.6e-4 curvature widths quoted above are **parabolic extrapolations, not
+measurements**. The grid-supported statement is: **MAP node = 0.730 in 4/4
+valid venues, both channels ⇒ |bias| ≲ 0.0025**. Dense-core grid runs
+(spacing 1e-4, out-of-sample seeds 2000/3000) ordered to measure the peak.
+The closure is carried by ~133 exact-host golden events (calibrated pulls:
+mean +0.06, std 0.94) and validates host association + generator
+consistency; completeness-machinery claims rest on the separate E1/P–P
+gates. All precision claims are mock-internal (point/point pairing deletes
+peculiar-velocity and z-floor errors present in real data).
+
 ## Log-hygiene note (non-blocking)
 
 "quadrature weight outside P_det grid" warning spam scales with h-grid index
