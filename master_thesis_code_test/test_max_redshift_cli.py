@@ -201,10 +201,18 @@ def test_selection_integral_cap_noop_at_default_max_redshift() -> None:
     pdet = _SmoothMockPdet()
     h_values = [0.73]
     d_uncapped = precompute_completion_denominator(
-        h_values, pdet, Omega_m=0.25, Omega_DE=0.75, z_max_cap=None  # type: ignore[arg-type]
+        h_values,
+        pdet,  # type: ignore[arg-type]
+        Omega_m=0.25,
+        Omega_DE=0.75,
+        z_max_cap=None,
     )
     d_at_default_depth = precompute_completion_denominator(
-        h_values, pdet, Omega_m=0.25, Omega_DE=0.75, z_max_cap=1.5  # type: ignore[arg-type]
+        h_values,
+        pdet,  # type: ignore[arg-type]
+        Omega_m=0.25,
+        Omega_DE=0.75,
+        z_max_cap=1.5,
     )
     assert d_uncapped[0.73] == pytest.approx(d_at_default_depth[0.73], rel=1e-12)
 
@@ -219,15 +227,31 @@ def test_selection_integral_cap_binds_and_shrinks_domain() -> None:
     pdet = _SmoothMockPdet()
     h_values = [0.73]
     d_uncapped = precompute_completion_denominator(
-        h_values, pdet, Omega_m=0.25, Omega_DE=0.75, z_max_cap=None  # type: ignore[arg-type]
+        h_values,
+        pdet,  # type: ignore[arg-type]
+        Omega_m=0.25,
+        Omega_DE=0.75,
+        z_max_cap=None,
     )[0.73]
     d_at_03 = precompute_completion_denominator(
-        h_values, pdet, Omega_m=0.25, Omega_DE=0.75, z_max_cap=0.3  # type: ignore[arg-type]
+        h_values,
+        pdet,  # type: ignore[arg-type]
+        Omega_m=0.25,
+        Omega_DE=0.75,
+        z_max_cap=0.3,
     )[0.73]
     d_at_04 = precompute_completion_denominator(
-        h_values, pdet, Omega_m=0.25, Omega_DE=0.75, z_max_cap=0.4  # type: ignore[arg-type]
+        h_values,
+        pdet,  # type: ignore[arg-type]
+        Omega_m=0.25,
+        Omega_DE=0.75,
+        z_max_cap=0.4,
     )[0.73]
     d_at_05 = precompute_completion_denominator(
-        h_values, pdet, Omega_m=0.25, Omega_DE=0.75, z_max_cap=0.5  # type: ignore[arg-type]
+        h_values,
+        pdet,  # type: ignore[arg-type]
+        Omega_m=0.25,
+        Omega_DE=0.75,
+        z_max_cap=0.5,
     )[0.73]
     assert 0.0 < d_at_03 < d_at_04 < d_at_05 < d_uncapped

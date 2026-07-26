@@ -2240,9 +2240,7 @@ class BayesianStatistics:
                 B_num = 0.0
             else:
                 B_num = float(
-                    fixed_quad(completion_numerator_integrand, z_lower, z_upper, n=FIXED_QUAD_N)[
-                        0
-                    ]
+                    fixed_quad(completion_numerator_integrand, z_lower, z_upper, n=FIXED_QUAD_N)[0]
                 )
 
             # Grid coverage flag: warn if numerator 4-sigma window exceeds P_det grid
