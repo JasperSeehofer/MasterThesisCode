@@ -606,6 +606,36 @@ def _sky_band_pixel_map(
     return band_of_pixel, n_bands, int(sin_beta_abs.size)
 
 
+def _zres_z_kwargs(
+    detection_probability_obj: Any,
+    z: float | npt.NDArray[np.float64],
+) -> dict[str, Any]:
+    r"""FIX-2 pass-through: the conditioning redshift for z-resolved p_det queries.
+
+    [PHYSICS] z-resolved detection survival (E1 FIX-2): when the detection-
+    probability object is built with ``pdet_z_resolved=True``, every 3D
+    (without-BH-mass) survival query must be conditioned on the redshift the
+    caller is already holding — ``S(d_L(z;h) | z)`` replaces the pooled
+    ``S(d_L(z;h))`` COHERENTLY across all selection integrals (D, beta_Gbar,
+    Sigma_glob incl. the smeared branch, per-host D_g, sky-band variants).
+    When the flag is off (or a mock p_det without the attribute is used), the
+    call is byte-identical to the pre-FIX-2 form (no ``z`` keyword passed).
+
+    References:
+        Finn & Chernoff (1993), arXiv:gr-qc/9301003; Finn (1996),
+            arXiv:gr-qc/9601048 — horizon-survival p_det.
+        Mandel, Farr & Gair (2019), arXiv:1809.02063 — selection evaluated at
+            the population AT HYPOTHESIS, which specifies z.
+        results/lcat_h_dependence_20260725/DERIVATION_ZRESOLVED_SURVIVAL.md
+            §5.1 (consumer coherence rule: pass the z you are already holding).
+    """
+    # `is True` (not truthiness): MagicMock test doubles auto-create truthy
+    # attributes; only the real boolean property may activate the pass-through.
+    if getattr(detection_probability_obj, "z_resolved", False) is True:
+        return {"z": z}
+    return {}
+
+
 def precompute_completion_denominator(
     h_values: list[float],
     detection_probability_obj: SimulationDetectionProbability,
@@ -708,8 +738,12 @@ def precompute_completion_denominator(
             if _sky_aware:
                 # (1/Npix) sum_k p_det(Omega_k) = sum_b (n_pix_b/Npix) S_b(d_L).
                 # Gray 2023 arXiv:2308.02281 Eq. 2.3 (per-pixel selection sum).
+                # FIX-2: S_b(d_L | z) at the quadrature node's own z.
                 s_band = np.asarray(
-                    detection_probability_obj.survival_per_band(d_L), dtype=np.float64
+                    detection_probability_obj.survival_per_band(
+                        d_L, **_zres_z_kwargs(detection_probability_obj, z)
+                    ),
+                    dtype=np.float64,
                 )  # (n_bands, Z)
                 p_det: npt.NDArray[np.float64] = _c_b @ s_band  # (Z,)
             else:
@@ -717,7 +751,7 @@ def precompute_completion_denominator(
                 theta = np.zeros_like(z)
                 p_det = np.asarray(
                     detection_probability_obj.detection_probability_without_bh_mass_interpolated_zero_fill(
-                        d_L, phi, theta, h=_h
+                        d_L, phi, theta, h=_h, **_zres_z_kwargs(detection_probability_obj, z)
                     ),
                     dtype=np.float64,
                 )
@@ -858,8 +892,12 @@ def precompute_missing_completion_denominator(
                 one_minus_f = 1.0 - f_pix  # (Z, npix)
                 # S1mf_b(z) = (1/Npix) sum_{k in band b}(1 - f_k(z)) -> (n_bands, Z)
                 s1mf_b = (_band_membership.astype(np.float64) @ one_minus_f.T) / float(_npix)
+                # FIX-2: S_b(d_L | z) at the quadrature node's own z.
                 s_band = np.asarray(
-                    detection_probability_obj.survival_per_band(d_L), dtype=np.float64
+                    detection_probability_obj.survival_per_band(
+                        d_L, **_zres_z_kwargs(detection_probability_obj, z)
+                    ),
+                    dtype=np.float64,
                 )  # (n_bands, Z)
                 integrand = np.einsum("bz,bz->z", s1mf_b, s_band)
                 return np.asarray(integrand, dtype=np.float64) * dVc / (1.0 + z)
@@ -869,7 +907,7 @@ def precompute_missing_completion_denominator(
             theta = np.zeros_like(z)
             p_det = np.asarray(
                 detection_probability_obj.detection_probability_without_bh_mass_interpolated_zero_fill(
-                    d_L, phi, theta, h=_h
+                    d_L, phi, theta, h=_h, **_zres_z_kwargs(detection_probability_obj, z)
                 ),
                 dtype=np.float64,
             )
@@ -1128,15 +1166,26 @@ def _smeared_global_pdet_expectation(
             _edges = np.asarray(detection_probability_obj.band_edges_sin_beta(), dtype=np.float64)
             _n_bands = int(_edges.size - 1)
             band = np.clip(np.searchsorted(_edges, sin_beta, side="right") - 1, 0, _n_bands - 1)
+            # FIX-2: the smear kernel and the conditioning coordinate are the
+            # SAME z (packet §5.1): E_{z~kernel_g}[S(d_L(z;h) | z, band)] —
+            # the expectation stays outside.
             s_band = np.asarray(
-                detection_probability_obj.survival_per_band(d_L_nodes), dtype=np.float64
+                detection_probability_obj.survival_per_band(
+                    d_L_nodes,
+                    **_zres_z_kwargs(detection_probability_obj, z_nodes.ravel()),
+                ),
+                dtype=np.float64,
             )  # (n_bands, n*K)
             band_rep = np.repeat(band, n_quad)
             p_nodes = s_band[band_rep, np.arange(band_rep.size)]
         else:
             p_nodes = np.asarray(
                 detection_probability_obj.detection_probability_without_bh_mass_interpolated_zero_fill(
-                    d_L_nodes, zeros, zeros, h=h
+                    d_L_nodes,
+                    zeros,
+                    zeros,
+                    h=h,
+                    **_zres_z_kwargs(detection_probability_obj, z_nodes.ravel()),
                 ),
                 dtype=np.float64,
             )
@@ -1317,8 +1366,13 @@ def precompute_global_catalog_selection(
             _edges = np.asarray(detection_probability_obj.band_edges_sin_beta(), dtype=np.float64)
             _n_bands = int(_edges.size - 1)
             band_g = np.clip(np.searchsorted(_edges, sin_beta_g, side="right") - 1, 0, _n_bands - 1)
+            # FIX-2: the galaxy's own z_g is the conditioning point (packet
+            # §5.1): S(d_L(z_g;h) | z_g, band).
             s_band = np.asarray(
-                detection_probability_obj.survival_per_band(d_L_g), dtype=np.float64
+                detection_probability_obj.survival_per_band(
+                    d_L_g, **_zres_z_kwargs(detection_probability_obj, z_g)
+                ),
+                dtype=np.float64,
             )  # (n_bands, n_gal)
             p_det = s_band[band_g, np.arange(band_g.size)]
         else:
@@ -1326,7 +1380,11 @@ def precompute_global_catalog_selection(
             theta_iso = np.zeros_like(z_g)
             p_det = np.asarray(
                 detection_probability_obj.detection_probability_without_bh_mass_interpolated_zero_fill(
-                    d_L_g, phi_iso, theta_iso, h=h
+                    d_L_g,
+                    phi_iso,
+                    theta_iso,
+                    h=h,
+                    **_zres_z_kwargs(detection_probability_obj, z_g),
                 ),
                 dtype=np.float64,
             )
@@ -1508,6 +1566,7 @@ class BayesianStatistics:
         h_values: Sequence[float] | None = None,
         smear_global_selection: bool = False,
         dgen_catalog_selection: str = "4d_exact",
+        pdet_z_resolved: bool = False,
     ) -> None:
         # h-grid fusion (opt-in): when h_values is given it supersedes h_value
         # and ALL h-invariant setup — catalogue/BallTree (passed in), injection
@@ -1682,6 +1741,9 @@ class BayesianStatistics:
             # for essentially all events — silent garbage posteriors.
             expected_z_max=HOST_DRAW_Z_MAX,
             allow_shallow_pool=allow_low_pdet_coverage,
+            # FIX-2 (opt-in): z-resolved detection survival S(d_L | z); every
+            # 3D consumer below passes its own z via _zres_z_kwargs.
+            pdet_z_resolved=pdet_z_resolved,
         )
         _LOGGER.debug("Detection probability functions created.")
 
@@ -3138,8 +3200,9 @@ def single_host_likelihood(
         # with D(h) denominator (STAT-03 symmetry, commit a70d1a2).  Phase 44:
         # NN-fill below first bin (real injection statistic), zero above
         # injection horizon.
+        # FIX-2: per-host D_g conditions on the node z (packet §5.1).
         p_det = detection_probability.detection_probability_without_bh_mass_interpolated_zero_fill(
-            d_L, phi, theta, h=h
+            d_L, phi, theta, h=h, **_zres_z_kwargs(detection_probability, z)
         )
         return p_det * galaxy_redshift_prior_pdf(z)
 
@@ -3541,9 +3604,9 @@ def single_host_likelihood_batch(
         # DERIVATION_GENERATOR_CONSISTENT_NORM.md §4.3 (G-iii).
         y_num_nodes = host_z[:, None]  # (n, 1)
         d_L_num_point = np.asarray(dist_vectorized(host_z, h=h), dtype=np.float64)  # (n,)
-        luminosity_distance_fraction: npt.NDArray[np.floating[Any]] = (
-            d_L_num_point / _det_d_L
-        )[:, None]  # (n, 1)
+        luminosity_distance_fraction: npt.NDArray[np.floating[Any]] = (d_L_num_point / _det_d_L)[
+            :, None
+        ]  # (n, 1)
         num_reduce_lo = np.zeros(n)  # unused on the point path
         num_reduce_hi = np.zeros(n)  # unused on the point path
     elif _use_volume_trunc:
@@ -3628,6 +3691,8 @@ def single_host_likelihood_batch(
             np.repeat(host_phiS, _HOST_QUAD_N),
             np.repeat(host_qS, _HOST_QUAD_N),
             h=h,
+            # FIX-2: per-host D_g conditions on the node z (packet §5.1).
+            **_zres_z_kwargs(detection_probability, y_den.reshape(-1)),
         ),
         dtype=np.float64,
     ).reshape(n, _HOST_QUAD_N)
@@ -3901,7 +3966,11 @@ def single_host_likelihood_integration_testing(
         # NN-fill below first bin, zero above injection horizon.
         return float(
             detection_probability.detection_probability_without_bh_mass_interpolated_zero_fill(
-                d_L, possible_host.phiS, possible_host.qS, h=h
+                d_L,
+                possible_host.phiS,
+                possible_host.qS,
+                h=h,
+                **_zres_z_kwargs(detection_probability, z),
             )
             * detection_likelihood_gaussians_by_detection_index[detection_index][0].pdf(
                 [possible_host.phiS, possible_host.qS, luminosity_distance_fraction]
@@ -3916,7 +3985,11 @@ def single_host_likelihood_integration_testing(
         # NN-fill below first bin, zero above injection horizon.
         return float(
             detection_probability.detection_probability_without_bh_mass_interpolated_zero_fill(
-                d_L, possible_host.phiS, possible_host.qS, h=h
+                d_L,
+                possible_host.phiS,
+                possible_host.qS,
+                h=h,
+                **_zres_z_kwargs(detection_probability, z),
             )
             * galaxy_redshift_normal_distribution.pdf(z)
         )

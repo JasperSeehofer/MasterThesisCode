@@ -154,6 +154,11 @@ class Arguments:
         return str(self._parsed_arguments.pdet_estimator)
 
     @property
+    def pdet_z_resolved(self) -> bool:
+        """FIX-2: z-resolved detection survival S(d_L | z) (default off = pooled)."""
+        return bool(self._parsed_arguments.pdet_z_resolved)
+
+    @property
     def fisher_cond_threshold(self) -> float:
         """Condition number threshold for flagging near-singular covariance matrices."""
         return float(self._parsed_arguments.fisher_cond_threshold)
@@ -384,6 +389,22 @@ def _parse_arguments(arguments: list[str]) -> argparse.Namespace:
             "P_det kernel-regression estimator. 'local_linear' (default, F4-v2) "
             "corrects the d_L->0 boundary bias; 'nadaraya_watson' is the pre-F4-v2 "
             "local-constant form, kept for regression/comparison (default: local_linear)."
+        ),
+    )
+    parser.add_argument(
+        "--pdet_z_resolved",
+        action="store_true",
+        default=False,
+        help=(
+            "Opt-in [PHYSICS] FIX-2: z-resolved detection survival. Every 3D "
+            "(without-BH-mass) selection query uses the z-CONDITIONAL survival "
+            "S(d_L | z) = P(d_hor >= d_L | z) (Gaussian kernel in u = ln(1+z), "
+            "Scott d=1 bandwidth, Abramson-adaptive; exact suffix-survival in "
+            "d_L) instead of the pooled S(d_L). The 2D M_z-conditioned grid "
+            "keeps its current form. Off by default (pooled, byte-identical "
+            "legacy behavior). Ships/gates jointly with the FIX-3 "
+            "generator_marginal normalization (stacked prediction, packet §6). "
+            "results/lcat_h_dependence_20260725/DERIVATION_ZRESOLVED_SURVIVAL.md."
         ),
     )
     parser.add_argument(

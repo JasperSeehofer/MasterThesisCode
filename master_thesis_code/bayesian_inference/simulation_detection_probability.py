@@ -96,6 +96,23 @@ _DL_PADDING_FACTOR: float = 1.1
 # kernel: the survival function is exact in d_L.
 _SCOTT_EXPONENT_2D: float = -1.0 / 6.0  # N^(-1/(d+4)) with d=1 → N^(-1/6)
 
+# ── FIX-2: z-resolved detection survival S(d_L | z) ──
+# Scott's rule exponent for the 1-dimensional u = ln(1+z) kernel of the
+# z-resolved survival estimator: sigma_u = N^(-1/(d+4)) std(u) with d = 1.
+# NOTE: this is the textbook d=1 value; the pre-existing _SCOTT_EXPONENT_2D
+# above is arithmetically the d=2 exponent (its comment says d=1) — both give
+# the same D-slopes to 0.015 (DERIVATION_ZRESOLVED_SURVIVAL.md §3.3), the
+# textbook value is adopted here and the discrepancy documented.
+# Scott (1992), Multivariate Density Estimation, Ch. 6.
+_SCOTT_EXPONENT_1D: float = -1.0 / 5.0
+# Number of u = ln(1+z) kernel nodes for the (u x d_L) survival table
+# (convergence verified by the packet's bandwidth/binning sweep).
+_ZRES_U_NODES: int = 121
+# Pilot-KDE histogram resolution for the Abramson (1982) sqrt-law adaptive
+# bandwidth (variance-stabilising, no tunable threshold).
+_ZRES_PILOT_BINS: int = 400
+_ZRES_PILOT_DENSITY_FLOOR: float = 1e-12
+
 # Estimator selector retained for API compatibility.  The detection-horizon
 # survival function is exact in d_L, so this parameter no longer affects the
 # d_L treatment; it is accepted only so existing call sites and the NW
@@ -148,6 +165,14 @@ class SimulationDetectionProbability:
         _force_unit_weights: Internal flag for testing. When True, passes
             explicit ``weights=np.ones(N)`` to ``_build_grid_2d`` to verify
             IS estimator backward compatibility.
+        pdet_z_resolved: FIX-2 (default False = pooled, byte-identical to
+            pre-FIX-2 behaviour).  When True, every 3D (without-BH-mass)
+            survival query returns the z-CONDITIONAL survival
+            ``S(d_L | z) = P(d_hor >= d_L | z)`` (Gaussian kernel in
+            ``u = ln(1+z)``, Scott d=1 bandwidth, Abramson-adaptive; exact
+            suffix-survival in d_L per node) and the 3D accessors REQUIRE the
+            ``z`` keyword.  The 2D (M_z-conditioned) grid keeps its current
+            form.  DERIVATION_ZRESOLVED_SURVIVAL.md.
 
     References:
         Finn & Chernoff (1993), arXiv:gr-qc/9301003.
@@ -171,6 +196,7 @@ class SimulationDetectionProbability:
         _force_unit_weights: bool = False,
         expected_z_max: float | None = None,
         allow_shallow_pool: bool = False,
+        pdet_z_resolved: bool = False,
     ) -> None:
         self._dl_bins = dl_bins
         self._mass_bins = mass_bins
@@ -354,6 +380,28 @@ class SimulationDetectionProbability:
         self._qS_arr: npt.NDArray[np.float64] = self._pooled_df["qS"].values.astype(np.float64)
         self._build_sky_bands()
 
+        # ── FIX-2 (opt-in, --pdet_z_resolved): z-resolved detection survival ──
+        # S(d_L | z) = P(d_hor >= d_L | z), Gaussian kernel in u = ln(1+z)
+        # (Scott d=1 bandwidth, Abramson sqrt-law adaptive), exact
+        # suffix-survival in d_L per kernel node.  Default OFF: the pooled
+        # survival above is byte-identical to pre-FIX-2 behaviour.
+        # results/lcat_h_dependence_20260725/DERIVATION_ZRESOLVED_SURVIVAL.md
+        # Eq. (4)-(5); Finn & Chernoff (1993), arXiv:gr-qc/9301003; Finn
+        # (1996), arXiv:gr-qc/9601048; Mandel, Farr & Gair (2019),
+        # arXiv:1809.02063 (selection at hypothesis specifies z).
+        self._z_resolved: bool = bool(pdet_z_resolved)
+        self._zres_degenerate: bool = False
+        self._zres_u_nodes: npt.NDArray[np.float64] | None = None
+        self._zres_suffix_w: npt.NDArray[np.float64] | None = None
+        self._zres_total_w: npt.NDArray[np.float64] | None = None
+        self._zres_ess: npt.NDArray[np.float64] | None = None
+        self._zres_band_suffix_w: list[npt.NDArray[np.float64]] | None = None
+        self._zres_band_total_w: list[npt.NDArray[np.float64]] | None = None
+        self._zres_band_ess: list[npt.NDArray[np.float64]] | None = None
+        self._zres_band_fallback: npt.NDArray[np.bool_] | None = None
+        if self._z_resolved:
+            self._build_zres_survival()
+
         # Cache holder for the (single, h-invariant) survival interpolators.
         self._grid_cache: OrderedDict[
             float,
@@ -532,6 +580,291 @@ class SimulationDetectionProbability:
         return np.asarray(np.clip(surv, 0.0, 1.0), dtype=np.float64)
 
     # ------------------------------------------------------------------
+    # FIX-2: z-resolved detection survival S(d_L | z)
+    # ------------------------------------------------------------------
+
+    @property
+    def z_resolved(self) -> bool:
+        """True iff the z-resolved (FIX-2) survival estimator is active."""
+        return self._z_resolved
+
+    def _build_zres_survival(self) -> None:
+        r"""Build the z-conditional survival tables ``S(d_L | z)`` (FIX-2).
+
+        Estimator (DERIVATION_ZRESOLVED_SURVIVAL.md, Eq. (4)-(5)):
+
+        .. math::
+
+            S(d_L | z) = \frac{\sum_k K((u_k - u)/\sigma_k)\,
+                                 \mathbb{1}[d_{hor,k} \ge d_L]}
+                              {\sum_k K((u_k - u)/\sigma_k)},
+            \qquad u = \ln(1+z),
+
+        with Gaussian ``K``, global width ``sigma_u = bandwidth_scale ·
+        N^{-1/5} · std(u)`` (Scott 1992, Ch. 6, d=1) and per-injection
+        Abramson (1982) square-root-law adaptive factors ``sigma_k = sigma_u ·
+        sqrt(g_hat / f_hat(u_k))`` from the pool's own pilot KDE.  Exact
+        suffix-count survival in ``d_L`` per kernel node — the identical
+        computational pattern as the M_z-kernel ``_build_grid_2d``.
+
+        The kernel coordinate ``u = ln(1+z)`` is derived, not chosen: the
+        detector-frame lifts ``M_z = M(1+z)``, ``f_obs = f_src/(1+z)`` are
+        multiplicative in (1+z), so a z-shift is a TRANSLATION in u, and a
+        single-bandwidth kernel is correct precisely in that coordinate
+        (packet §3.2).  Everything here is h-free: ``d_hor_k`` and ``u_k``
+        come from the injections; only the query ``d_L(z;h)`` moves with h,
+        so the tables are built once per run.
+
+        Starved-regime policy: the Abramson law widens the kernel where the
+        pool is sparse (low z), degrading CONTINUOUSLY toward the pooled
+        survival — no threshold constants.  Sky-band × z cells whose kernel
+        ESS falls below the repo's existing reliability floor
+        (``_MIN_BAND_INJECTIONS``) fall back to the z-only (band-marginal)
+        conditional, NOT the fully pooled survival (packet §7).
+
+        References:
+            Finn & Chernoff (1993), arXiv:gr-qc/9301003; Finn (1996),
+            arXiv:gr-qc/9601048 — horizon-survival framework.
+            Mandel, Farr & Gair (2019), arXiv:1809.02063 — selection at
+            hypothesis: the population at hypothesis specifies z, so the
+            detection kernel is P(det | z, h), not the z-marginal.
+            Scott (1992), Multivariate Density Estimation, Ch. 6.
+            Abramson (1982), Ann. Statist. 10:1217.
+            results/lcat_h_dependence_20260725/DERIVATION_ZRESOLVED_SURVIVAL.md.
+        """
+        n = self._n_inj
+        u = np.log1p(self._z_arr)
+        std_u = float(np.std(u, ddof=0))
+        if n < 2 or std_u <= 0.0:
+            # Degenerate u-distribution: stratification is unidentifiable;
+            # the z-conditional survival IS the pooled survival (limiting
+            # case (i) of the packet, exact).
+            self._zres_degenerate = True
+            logger.info(
+                "z-resolved survival: degenerate u = ln(1+z) distribution "
+                "(N=%d, std=%.3e) — falling back to the pooled survival.",
+                n,
+                std_u,
+            )
+            return
+
+        # Scott's rule, d=1 (sigma_u = N^(-1/5) std(u)); bandwidth_scale is
+        # the pre-existing sensitivity knob (default 1).
+        # Scott (1992), Multivariate Density Estimation, Ch. 6.
+        sigma_u = self._bandwidth_scale * float(n) ** _SCOTT_EXPONENT_1D * std_u
+        u_max = float(np.max(u))
+
+        # Pilot KDE for the Abramson sqrt-law: histogram density convolved
+        # with a Gaussian of width sigma_u (packet zres_survival construction).
+        edges = np.linspace(0.0, max(u_max, sigma_u), _ZRES_PILOT_BINS + 1)
+        centers = 0.5 * (edges[:-1] + edges[1:])
+        du = float(edges[1] - edges[0])
+        hist, _ = np.histogram(u, bins=edges, density=True)
+        # Cap the tap count (np.convolve 'same' needs len(taps) <= len(hist)):
+        # for very large bandwidths (sigma_u >> support) the pilot is ~flat
+        # and lambda -> 1 regardless.
+        kh = int(min(np.ceil(4.0 * sigma_u / du), (_ZRES_PILOT_BINS - 1) // 2))
+        taps = np.exp(-0.5 * (np.arange(-kh, kh + 1) * du / sigma_u) ** 2)
+        pilot = np.convolve(hist, taps / taps.sum(), mode="same")
+        pilot = np.clip(pilot, _ZRES_PILOT_DENSITY_FLOOR, None)
+        f_at = np.interp(u, centers, pilot)
+        g_mean = float(np.exp(np.mean(np.log(f_at))))
+        # Abramson (1982), Ann. Statist. 10:1217 — square-root law:
+        # sigma_k = sigma_u * (g_hat / f_hat(u_k))^(1/2).
+        lam = np.sqrt(g_mean / f_at)
+        sigma_i = sigma_u * lam  # per-injection adaptive bandwidth
+
+        u_nodes = np.linspace(0.0, u_max, _ZRES_U_NODES)
+        self._zres_u_nodes = u_nodes
+
+        # Order injections by d_hor ascending (same values as _d_hor_sorted)
+        # so a suffix-cumsum of kernel weights gives the weighted survival at
+        # any d_L via np.searchsorted — the _build_grid_2d pattern with
+        # (log10 M_z, sigma_lm) -> (ln(1+z), sigma_u).
+        sort_idx = np.argsort(self._d_hor, kind="mergesort")
+        u_sorted = u[sort_idx]
+        sig_sorted = sigma_i[sort_idx]
+
+        def _suffix_tables(
+            u_sub: npt.NDArray[np.float64],
+            sig_sub: npt.NDArray[np.float64],
+        ) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64], npt.NDArray[np.float64]]:
+            """(suffix_w, total_w, ess) for one d_hor-sorted injection subset."""
+            diff = (u_sub[:, None] - u_nodes[None, :]) / sig_sub[:, None]
+            w = np.exp(-0.5 * diff * diff)  # (n_sub, n_nodes)
+            total = w.sum(axis=0)
+            sq = np.einsum("ij,ij->j", w, w)
+            with np.errstate(divide="ignore", invalid="ignore"):
+                ess = np.where(sq > 0.0, total * total / sq, 0.0)
+            # Numerically-empty node guard (cannot happen with the Abramson
+            # widening on a non-degenerate pool, but keep S well-defined):
+            # fall back to uniform weights = pooled survival at that node.
+            empty = total <= 0.0
+            if np.any(empty):
+                w[:, empty] = 1.0
+                total = w.sum(axis=0)
+                ess[empty] = float(len(u_sub))
+            suffix = np.cumsum(w[::-1, :], axis=0)[::-1, :]
+            return suffix, total, ess
+
+        self._zres_suffix_w, self._zres_total_w, self._zres_ess = _suffix_tables(
+            u_sorted, sig_sorted
+        )
+
+        # Per sky-band z-conditionals S(d_L | z, band b): Eq. (4) restricted
+        # to band-b injections, with the per-(band, node) ESS floor fallback
+        # to the z-only conditional (packet §7).
+        nband = self._n_sky_bands
+        sin_beta_abs = np.abs(np.cos(self._qS_arr))
+        band_of_inj = np.clip(
+            np.searchsorted(self._band_edges, sin_beta_abs, side="right") - 1,
+            0,
+            nband - 1,
+        )
+        band_suffix: list[npt.NDArray[np.float64]] = []
+        band_total: list[npt.NDArray[np.float64]] = []
+        band_ess: list[npt.NDArray[np.float64]] = []
+        fallback = np.zeros((nband, u_nodes.size), dtype=np.bool_)
+        for b in range(nband):
+            if self._band_underpopulated[b]:
+                # The pooled sky-band build already fell back to the full
+                # pool for this band; its z-conditional IS the z-only one.
+                band_suffix.append(self._zres_suffix_w)
+                band_total.append(self._zres_total_w)
+                band_ess.append(self._zres_ess)
+                continue
+            mask = band_of_inj == b
+            d_hor_b = self._d_hor[mask]
+            order_b = np.argsort(d_hor_b, kind="mergesort")
+            sfx, tot, ess_b = _suffix_tables(u[mask][order_b], sigma_i[mask][order_b])
+            band_suffix.append(sfx)
+            band_total.append(tot)
+            band_ess.append(ess_b)
+            # ESS floor: repo's existing reliability convention (n >= 10,
+            # _MIN_BAND_INJECTIONS), reused unchanged (packet §7).
+            fallback[b, :] = ess_b < float(_MIN_BAND_INJECTIONS)
+        self._zres_band_suffix_w = band_suffix
+        self._zres_band_total_w = band_total
+        self._zres_band_ess = band_ess
+        self._zres_band_fallback = fallback
+
+        logger.info(
+            "z-resolved survival built: %d u-nodes on [0, %.4f], sigma_u=%.5f "
+            "(Scott d=1, scale %.3g), Abramson lambda in [%.3g, %.3g], node ESS "
+            "min/median = %.0f/%.0f, sky-band cells below ESS floor: %d/%d.",
+            u_nodes.size,
+            u_max,
+            sigma_u,
+            self._bandwidth_scale,
+            float(np.min(lam)),
+            float(np.max(lam)),
+            float(np.min(self._zres_ess)),
+            float(np.median(self._zres_ess)),
+            int(np.sum(fallback)),
+            int(fallback.size),
+        )
+
+    def _zres_node_pos(
+        self, z: npt.NDArray[np.float64]
+    ) -> tuple[npt.NDArray[np.int_], npt.NDArray[np.float64]]:
+        """u-node bracket (k0, frac) for query redshifts (clamped to the node span)."""
+        assert self._zres_u_nodes is not None
+        u_nodes = self._zres_u_nodes
+        u = np.log1p(np.maximum(np.asarray(z, dtype=np.float64), 0.0))
+        pos = np.interp(u, u_nodes, np.arange(u_nodes.size, dtype=np.float64))
+        k0 = np.clip(np.floor(pos).astype(np.int_), 0, u_nodes.size - 2)
+        frac = np.clip(pos - k0, 0.0, 1.0)
+        return k0, frac
+
+    def _zres_survival_at(
+        self,
+        query: npt.NDArray[np.float64],
+        z: npt.NDArray[np.float64],
+    ) -> npt.NDArray[np.float64]:
+        r"""Exact-in-d_L z-conditional survival ``S(d_L | z)`` (FIX-2, Eq. (4)).
+
+        Linear interpolation in S across the two bracketing u-nodes (like the
+        |sin beta| band interpolation); EXACT suffix-count survival in d_L at
+        each node.  Guarantees by construction: S(0|z)=1, S(d_L > max
+        d_hor|z)=0, monotone non-increasing in d_L, bounded [0, 1].
+
+        Args:
+            query: d_L query points [Gpc], 1-D.
+            z: redshifts conditioning each query point (same shape).
+
+        Returns:
+            Survival values in [0, 1], same shape as ``query``.
+        """
+        if self._zres_degenerate:
+            return self._survival_at(query)
+        assert self._zres_suffix_w is not None and self._zres_total_w is not None
+        k0, frac = self._zres_node_pos(z)
+        idx = np.searchsorted(self._d_hor_sorted, query, side="left")
+        inside = idx < self._n_inj
+        idx_c = np.minimum(idx, self._n_inj - 1)
+        s0 = np.where(inside, self._zres_suffix_w[idx_c, k0] / self._zres_total_w[k0], 0.0)
+        s1 = np.where(inside, self._zres_suffix_w[idx_c, k0 + 1] / self._zres_total_w[k0 + 1], 0.0)
+        surv = (1.0 - frac) * s0 + frac * s1
+        return np.asarray(np.clip(surv, 0.0, 1.0), dtype=np.float64)
+
+    def _zres_survival_at_band(
+        self,
+        band_idx: int,
+        query: npt.NDArray[np.float64],
+        z: npt.NDArray[np.float64],
+    ) -> npt.NDArray[np.float64]:
+        """Per-band z-conditional survival ``S(d_L | z, band b)`` with ESS fallback.
+
+        Eq. (4) restricted to band-b injections; a (band, u-node) cell below
+        the ESS floor uses the z-only (band-marginal) conditional instead —
+        NOT the fully pooled survival (packet §7 policy).
+        """
+        if self._zres_degenerate:
+            return self._survival_at_band(band_idx, query)
+        assert (
+            self._zres_band_suffix_w is not None
+            and self._zres_band_total_w is not None
+            and self._zres_band_fallback is not None
+            and self._zres_suffix_w is not None
+            and self._zres_total_w is not None
+        )
+        k0, frac = self._zres_node_pos(z)
+        # Global (z-only) node values — the fallback target.
+        idx_g = np.searchsorted(self._d_hor_sorted, query, side="left")
+        inside_g = idx_g < self._n_inj
+        idx_gc = np.minimum(idx_g, self._n_inj - 1)
+        # Band node values.
+        d_hor_sorted_b = self._d_hor_sorted_by_band[band_idx]
+        n_b = len(d_hor_sorted_b)
+        sfx_b = self._zres_band_suffix_w[band_idx]
+        tot_b = self._zres_band_total_w[band_idx]
+        idx_b = np.searchsorted(d_hor_sorted_b, query, side="left")
+        inside_b = idx_b < n_b
+        idx_bc = np.minimum(idx_b, n_b - 1)
+        fb = self._zres_band_fallback[band_idx]
+        out = np.zeros_like(np.asarray(query, dtype=np.float64))
+        for k, w_k in ((k0, 1.0 - frac), (k0 + 1, frac)):
+            s_band = np.where(inside_b, sfx_b[idx_bc, k] / tot_b[k], 0.0)
+            s_glob = np.where(inside_g, self._zres_suffix_w[idx_gc, k] / self._zres_total_w[k], 0.0)
+            out = out + w_k * np.where(fb[k], s_glob, s_band)
+        return np.asarray(np.clip(out, 0.0, 1.0), dtype=np.float64)
+
+    def _require_zres_z(
+        self,
+        z: float | npt.NDArray[np.float64] | None,
+        shape: tuple[int, ...],
+    ) -> npt.NDArray[np.float64]:
+        """Validate + broadcast the conditioning redshift for a flag-on query."""
+        if z is None:
+            msg = (
+                "pdet_z_resolved is active: every 3D p_det query must pass the "
+                "conditioning redshift z (coherent-consumer guard, FIX-2)."
+            )
+            raise ValueError(msg)
+        z_arr = np.atleast_1d(np.asarray(z, dtype=np.float64))
+        return np.ascontiguousarray(np.broadcast_to(z_arr, shape), dtype=np.float64)
+
+    # ------------------------------------------------------------------
     # Sky-band survival (Change 1: ecliptic-latitude response anisotropy)
     # ------------------------------------------------------------------
 
@@ -617,7 +950,11 @@ class SimulationDetectionProbability:
         surv = (n_b - idx_below).astype(np.float64) / float(n_b)
         return np.asarray(np.clip(surv, 0.0, 1.0), dtype=np.float64)
 
-    def survival_per_band(self, d_L: float | npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
+    def survival_per_band(
+        self,
+        d_L: float | npt.NDArray[np.float64],
+        z: float | npt.NDArray[np.float64] | None = None,
+    ) -> npt.NDArray[np.float64]:
         r"""Per-band detection-horizon survival ``S_b(d_L)``; shape ``(n_sky_bands, Nq)``.
 
         The building block of the sky-resolved selection integrals: the
@@ -626,10 +963,18 @@ class SimulationDetectionProbability:
         survival), and the missing-completion integral weights ``S_b`` by the
         per-band incompleteness ``(1/Npix) sum_{k in b}(1 - f_k(z))``.
 
+        When the FIX-2 z-resolved estimator is active (``pdet_z_resolved``),
+        ``z`` is REQUIRED and each band returns the z-conditional
+        ``S(d_L | z, band b)`` (with the per-cell ESS-floor fallback to the
+        z-only conditional, packet §7).
+
         Parameters
         ----------
         d_L : float or ndarray
             Luminosity distance query points [Gpc].
+        z : float or ndarray, optional
+            Conditioning redshift per query point (FIX-2 only; required when
+            ``z_resolved`` is True, ignored otherwise).
 
         Returns
         -------
@@ -638,6 +983,11 @@ class SimulationDetectionProbability:
         """
         q = np.atleast_1d(np.asarray(d_L, dtype=np.float64))
         out = np.empty((self._n_sky_bands, q.size), dtype=np.float64)
+        if self._z_resolved:
+            z_arr = self._require_zres_z(z, q.shape)
+            for b in range(self._n_sky_bands):
+                out[b, :] = self._zres_survival_at_band(b, q, z_arr)
+            return out
         for b in range(self._n_sky_bands):
             out[b, :] = self._survival_at_band(b, q)
         return out
@@ -646,13 +996,14 @@ class SimulationDetectionProbability:
         self,
         dl_arr: npt.NDArray[np.float64],
         sin_beta_abs: npt.NDArray[np.float64],
+        z: npt.NDArray[np.float64] | None = None,
     ) -> npt.NDArray[np.float64]:
         """Survival interpolated linearly in ``|sin beta|`` across band centres.
 
         Avoids step artefacts at band boundaries; nearest-band clamp outside the
         centre range.  ``dl_arr`` and ``sin_beta_abs`` are the same shape.
         """
-        s_all = self.survival_per_band(dl_arr)  # (nband, N)
+        s_all = self.survival_per_band(dl_arr, z)  # (nband, N)
         centers = self._band_centers
         n_query = dl_arr.size
         if self._n_sky_bands == 1:
@@ -680,6 +1031,7 @@ class SimulationDetectionProbability:
         theta: float | npt.NDArray[np.float64],
         *,
         h: float,
+        z: float | npt.NDArray[np.float64] | None = None,
     ) -> float | npt.NDArray[np.float64]:
         r"""Sky-resolved detection probability ``p_det(d_L | Omega)`` (Change 1).
 
@@ -718,7 +1070,10 @@ class SimulationDetectionProbability:
         dl_b, theta_b = np.broadcast_arrays(dl_arr, theta_arr)
         dl_b = np.ascontiguousarray(dl_b, dtype=np.float64)
         sin_beta_abs = np.abs(np.cos(theta_b))  # |sin beta| = |cos theta|
-        result = self._interp_survival_in_sin_beta(dl_b.ravel(), sin_beta_abs.ravel())
+        z_flat: npt.NDArray[np.float64] | None = None
+        if self._z_resolved:
+            z_flat = self._require_zres_z(z, dl_b.shape).ravel()
+        result = self._interp_survival_in_sin_beta(dl_b.ravel(), sin_beta_abs.ravel(), z_flat)
         result = result.reshape(dl_b.shape)
         if np.ndim(d_L) == 0 and np.ndim(theta) == 0:
             return float(result.reshape(-1)[0])
@@ -989,6 +1344,16 @@ class SimulationDetectionProbability:
             "M_edges": M_edges.copy(),
             "n_eff": n_total.copy(),
         }
+        # FIX-2 diagnostics: per-u-node kernel ESS of the z-resolved survival
+        # (packet §7 "report per-node ESS alongside").
+        if (
+            self._z_resolved
+            and not self._zres_degenerate
+            and self._zres_ess is not None
+            and self._zres_u_nodes is not None
+        ):
+            self._quality_flags[h]["zres_u_nodes"] = self._zres_u_nodes.copy()
+            self._quality_flags[h]["zres_ess"] = self._zres_ess.copy()
 
     def quality_flags(self, h: float) -> dict[str, npt.NDArray[np.float64] | npt.NDArray[np.bool_]]:
         """Return per-bin quality metadata for the given h value.
@@ -1187,6 +1552,7 @@ class SimulationDetectionProbability:
         theta: float | npt.NDArray[np.float64],
         *,
         h: float,
+        z: float | npt.NDArray[np.float64] | None = None,
     ) -> float | npt.NDArray[np.float64]:
         """Detection probability marginalized over BH mass (exact survival).
 
@@ -1231,7 +1597,14 @@ class SimulationDetectionProbability:
         self._get_or_build_grid(h)
 
         dl_arr = np.atleast_1d(np.asarray(d_L, dtype=np.float64))
-        result = self._survival_at(dl_arr)
+        if self._z_resolved:
+            # FIX-2: z-conditional survival S(d_L | z), Eq. (2)/(4) in
+            # DERIVATION_ZRESOLVED_SURVIVAL.md.  Finn & Chernoff (1993),
+            # arXiv:gr-qc/9301003; Mandel-Farr-Gair (2019), arXiv:1809.02063.
+            z_arr = self._require_zres_z(z, dl_arr.shape)
+            result = self._zres_survival_at(dl_arr, z_arr)
+        else:
+            result = self._survival_at(dl_arr)
 
         if np.ndim(d_L) == 0:
             return float(result[0])
@@ -1244,6 +1617,7 @@ class SimulationDetectionProbability:
         theta: float | npt.NDArray[np.float64],
         *,
         h: float,
+        z: float | npt.NDArray[np.float64] | None = None,
     ) -> float | npt.NDArray[np.float64]:
         """Detection probability marginalized over BH mass (exact survival).
 
@@ -1279,7 +1653,13 @@ class SimulationDetectionProbability:
         self._get_or_build_grid(h)
 
         dl_arr = np.atleast_1d(np.asarray(d_L, dtype=np.float64))
-        result = self._survival_at(dl_arr)
+        if self._z_resolved:
+            # FIX-2: z-conditional survival S(d_L | z) — identical to the
+            # _zero_fill accessor (the two accessors coincide).
+            z_arr = self._require_zres_z(z, dl_arr.shape)
+            result = self._zres_survival_at(dl_arr, z_arr)
+        else:
+            result = self._survival_at(dl_arr)
 
         if np.ndim(d_L) == 0:
             return float(result[0])
