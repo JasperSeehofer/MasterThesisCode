@@ -126,9 +126,7 @@ def _manual_smeared_sum(
         d_L_nodes = np.asarray(dist_vectorized(z_nodes, h=h), dtype=np.float64)
         p_nodes = np.clip(1.0 - d_L_nodes / dl_max, 0.0, 1.0)
         expectation = float(np.sum(kern * p_nodes) / np.sum(kern))
-        w_g = float(np.asarray(R_eff_per_mbh(np.asarray([M_g])), dtype=np.float64)[0]) / (
-            1.0 + z_g
-        )
+        w_g = float(np.asarray(R_eff_per_mbh(np.asarray([M_g])), dtype=np.float64)[0]) / (1.0 + z_g)
         total += w_g * expectation
     return total
 

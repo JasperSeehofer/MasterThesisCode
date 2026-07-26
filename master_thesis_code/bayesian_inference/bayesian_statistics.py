@@ -968,11 +968,11 @@ def compute_catalog_draw_weight_total(
         ratio it enters).
 
     References:
-        results/lcat_h_dependence_20260725/DERIVATION_GENERATOR_CONSISTENT_NORM.md
-            §2.3 Eq. (4) (spec; W_cat anchor: 6.3477e8 over 9,060,017 pruned rows).
-        master_thesis_code/galaxy_catalogue/handler.py, draw_rate_weighted_hosts
-            (the generator draw this normalizer replicates).
-        Babak et al. (2017), arXiv:1703.09722 — per-MBH rate ``R_eff``.
+        - results/lcat_h_dependence_20260725/DERIVATION_GENERATOR_CONSISTENT_NORM.md
+          §2.3 Eq. (4) (spec; W_cat anchor: 6.3477e8 over 9,060,017 pruned rows).
+        - master_thesis_code/galaxy_catalogue/handler.py, draw_rate_weighted_hosts
+          (the generator draw this normalizer replicates).
+        - Babak et al. (2017), arXiv:1703.09722 — per-MBH rate ``R_eff``.
     """
     catalog = galaxy_catalog.reduced_galaxy_catalog
     z_all = np.asarray(
@@ -1056,11 +1056,11 @@ def precompute_completeness_population_volume(
         ``V_f(0.73) = 2.3237e8`` (generator_norm_Vf_tables.json).
 
     References:
-        results/lcat_h_dependence_20260725/DERIVATION_GENERATOR_CONSISTENT_NORM.md
-            §2.2-§2.3, Eq. (4) (spec and numeric anchors).
-        master_thesis_code/dark_siren_injection.py,
-            compute_global_catalog_fraction — the generator integral replicated.
-        Gray et al. (2020), arXiv:1908.06050, Eq. (9) — completeness ``f(z)``.
+        - results/lcat_h_dependence_20260725/DERIVATION_GENERATOR_CONSISTENT_NORM.md
+          §2.2-§2.3, Eq. (4) (spec and numeric anchors).
+        - master_thesis_code/dark_siren_injection.py,
+          compute_global_catalog_fraction — the generator integral replicated.
+        - Gray et al. (2020), arXiv:1908.06050, Eq. (9) — completeness ``f(z)``.
     """
     V_f_table: dict[float, float] = {}
     z_grid = np.linspace(z_min, z_max, n_grid, dtype=np.float64)
