@@ -1,0 +1,10 @@
+Loading bwUniCluster modules...
+  Loaded: compiler/gnu/14.2
+  Loaded: devel/cuda/12.8
+  Loaded: devel/python/3.13.3-gnu-14.2
+  Workspace: /pfs/work9/workspace/scratch/st_ac147838-emri
+=== pp-fullpower task=14 mode=generator_marginal zs=0.95 sky=2e-4 h=0.84 seed=20260727014 node=uc2n786.localdomain ===
+=== branch: feat/pp-impostor-harness @ 44ee912 ===
+h_true=0.8400 [volume] cov50=0.43 cov68=0.56 cov90=0.83 rail=0.14 MAP=0.8392 bias=-0.0008 completion_fraction=0.00
+Wrote /pfs/work9/workspace/scratch/st_ac147838-emri/pp_fullpower_20260727/pp_cat_genmarg_zs0.95_sky2e-4_h0.84.json
+=== done: task=14 -> /pfs/work9/workspace/scratch/st_ac147838-emri/pp_fullpower_20260727/pp_cat_genmarg_zs0.95_sky2e-4_h0.84.json ===
