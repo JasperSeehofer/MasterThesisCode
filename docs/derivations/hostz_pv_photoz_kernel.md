@@ -1,9 +1,13 @@
 # Host-z PV/photo-z kernel for real-data mode (issue #40b) — DERIVATION SKELETON
 
-**Status: DRAFT SKELETON — physics content to be derived and ratified by the
-author (physics-change protocol). Nothing in this document is implemented;
+**Status: DRAFT DERIVATION (2026-07-26) — §3 filled per author delegation;
+five [RATIFY] points await the author's formula-level sign-off
+(physics-change protocol) before ANY implementation. Nothing is implemented;
 `--host_z_kernel` currently exposes only the existing `point` and
-`volume_deconv` kernels (issue #40a decomposition flag).**
+`volume_deconv` kernels (issue #40a decomposition flag). Implementation
+note: the §3.1 width changes touch `host_z_error_eff`, which enters
+denominator windows and Z_g on the PRODUCTION mock path too — golden
+regeneration will be a reviewed value-update step.**
 
 **Scope.** Derive the in-catalogue numerator host-redshift kernel for
 *real-data* mode — where the observed catalogue redshift carries
@@ -21,9 +25,16 @@ this derivation lands.
 
 From the redteam consolidated verdict and P-2 (2026-07-26):
 
-- The δ-kernel host-z numerator inside `generator_marginal` carries **~95%**
-  of the −898.8 ln cure and is the dominant driver of the measured
-  σ_h ≈ 2×10⁻⁴ widths.
+- The δ-kernel host-z numerator inside `generator_marginal` carries
+  **~85–87% of the ln movement** (MEASURED 2026-07-26 by the three-way
+  per-leg A/B enabled by the #40a flag — refining the redteam's ~95%
+  estimate; `results/lcat_h_dependence_20260725/threeway_ab/THREEWAY_AB_READOUT.md`)
+  and is the dominant driver of the measured σ_h ≈ 2×10⁻⁴ widths. Refinement:
+  the normalization legs ALONE de-rail the 1D channel (truth MAP); the
+  δ-kernel buys peak depth — EXCEPT the 2D channel, where only the δ-kernel
+  brings the MAP to truth (kernel numerator leaves +29 ln at 0.80). The 2D
+  mass-marginal treatment is therefore a first-class dependency of this
+  derivation, not an afterthought.
 - Neglected host-z error terms vs the retained σ_dL/d_L = 0.54%:
   PV at 200 km/s → **1.25%** median (2.3× larger); GLADE+ parse-time z-floor
   0.0015 → **2.67%** median (4.9× larger).
@@ -80,45 +91,118 @@ h-dependent**; (ii) it belongs in the **per-galaxy numerator sum**; (iii) the
 **selection/normalization keeps the smooth dV_c/dz prior**, not the
 discrete-galaxy kernel.
 
-## 3. The derivation to be done (AUTHOR)
+## 3. The derivation (DRAFT 2026-07-26 — recommended resolution, AWAITING
+## AUTHOR RATIFICATION; audit evidence in
+## `results/lcat_h_dependence_20260725/threeway_ab/GLADE_PV_AUDIT.md`)
 
-**3.1 Kernel form.** Write $p(z_g \mid z)$ for real data as [AUTHOR: choose
-and justify — Gaussian $\mathcal N(z_g; z, \sigma_{\rm eff}(z))$ with
-$\sigma_{\rm eff}^2 = \sigma_{z,\rm cat}^2 + \sigma_{z,\rm pv}^2$, vs
-per-flag mixture, vs fat-tailed form]. State the PV term
-$\sigma_{z,\rm pv} = (1+z)\,\sigma_v/c$ and the chosen $\sigma_v$ with the
-double-counting audit against GLADE+'s BORG PV correction (§2) and against
-issue #16's already-implemented residual term.
+Author delegation 2026-07-26: "go with what you recommend and what is
+scientifically correct" — the recommendation below is drafted accordingly;
+each **[RATIFY]** point is the formula-level sign-off the physics-change
+protocol still requires before implementation.
 
-**3.2 Numerator.** $N_g = \int dz\, p(x_{\rm GW} \mid z, \Omega_g[, M], h)\,
-p_g(z)$ with $p_g(z) \propto p(z_g \mid z)\, w_{\rm pop}(z)$, $Z_g$
-renormalized — i.e. the G2b structure with the ratified kernel. [AUTHOR:
-confirm the volume-deconvolution weight $w_{\rm pop} = dV_c/dz\,(1+z)^{-1}$
-survives unchanged for the real-data kernel.]
+**3.1 Kernel form — Gaussian with per-host, flag-resolved σ_eff (answer to
+Q1: (a) structurally, with the (c) per-flag width audit REQUIRED, and (b) as
+a robustness ablation only).**
 
-**3.3 Selection/normalization leg.** The mock's generator-consistent
-normalization (n̂_w, D_gen, point-evaluated Σ_glob) is derived from the
-*generator's* recipe. Real data has no generator. [AUTHOR: derive the
-real-data selection normalization — presumably the absolute_marginal /
-Mandel-Farr-Gair α(h) form with the smooth dV_c/dz prior; decide whether
-Σ_glob must be kernel-smeared (the existing `--smear_global_selection`
-machinery) for num/denom symmetry.]
+$$p(z_g \mid z) = \mathcal N\!\left(z_g;\, z,\, \sigma_{\rm eff}\right),
+\qquad \sigma_{\rm eff}^2 = \sigma_{z,\rm meas}^2 + \sigma_{z,\rm pv}^2 ,$$
 
-**3.4 Dimensional analysis.** [AUTHOR: units table — kernel is a density in
-z (dimensionless argument), N_g carries the GW-likelihood units unchanged,
-$Z_g$ dimensionless normalization.]
+with the PV term counted **exactly once** per host, resolved by the GLADE+
+PV-correction flag (paper col 30, 1-based; currently NOT parsed — must be
+added):
+
+- **BORG-corrected hosts** (z ≤ 0.05 ∩ 2M++ ∩ B-band — the EMRI venue):
+  GLADE+'s reported PV error is already the total
+  $\sigma_{\rm tot}^2 = \sigma_{\rm borg}^2 + \sigma_{\rm vir}^2$ (Dálya et
+  al. 2022 §2.2, Eq. 1 — the non-linear virial residual is INCLUDED). The
+  parse-time quadrature (handler.py) correctly folds it into the stored
+  z_error; the correct additional likelihood residual is therefore
+  **σ_v = 0** (trusting the catalogue) or a conservative
+  **σ_v = 150 km/s** (Carrick et al. 2015 §4.2.1, verified) — NOT the
+  current 200 km/s, which double-counts σ_vir.
+- **Uncorrected hosts**: apply ONE full-dispersion term
+  $\sigma_{z,\rm pv} = (1+z)\,\sigma_v/c$ with **σ_v ≈ 500 km/s** (Laghi et
+  al. 2021, verified; Del Pozzo et al. 2018 lineage), REPLACING the uncited
+  parse-time 0.0015 fill (which is a full-PV stand-in in disguise,
+  ≈430–450 km/s).
+- **Photo-z hosts** (flag 1, σ_z ≈ 0.035): unchanged — the PV term is a
+  2% width effect at all z (both scale as (1+z)); immaterial.
+- **Fat tails** (Turski et al. 2023 modified Lorentzian): robustness
+  ablation in validation §4, not the baseline — GLADE+'s BORG-corrected
+  spec-z errors are Gaussian-characterized in the source paper, and the
+  fat-tail evidence in Turski concerns photo-z catalogues.
+
+**Defect this fixes (measured, audit §Layer 3):** the current stack applies
+the parse-time floor ⊕ 200 km/s on top of catalogue σ_tot, inflating the
+spec-z (golden-event) kernel width by ~+40% over the defensible value. The
+current SIGMA_V_PEC_KM_S = 200 km/s rationale ("residual nonlinear
+dispersion on top") is invalid for BORG-corrected hosts — σ_vir already
+covers it.
+
+**[RATIFY-1]** corrected-host residual: 0 vs 150 km/s (recommendation:
+**150 km/s**, conservative, cited, and robust to GLADE+ underestimating
+σ_vir for unresolved halo masses).
+**[RATIFY-2]** uncorrected-host σ_v = 500 km/s replacing the 0.0015 fill.
+**[RATIFY-3]** parse the PV-correction flag; verify on the cluster copy of
+GLADE+.txt that col-31 nulls coincide with flag = 0 (audit's one
+locally-unverifiable assumption) BEFORE implementation.
+
+**3.2 Numerator.** Unchanged G2b structure with the §3.1 width:
+$N_g = \int dz\; p(x_{\rm GW} \mid z, \Omega_g[, M], h)\; p_g(z)$,
+$p_g(z) = \mathcal N(z_g; z, \sigma_{\rm eff})\, w_{\rm pop}(z)/Z_g$,
+$w_{\rm pop} = \frac{dV_c}{dz}(1+z)^{-1}$. The volume-deconvolution weight
+survives unchanged: it derives from the population prior (G2b §1), which is
+independent of the *measurement* kernel width; only σ_eff changes.
+**[RATIFY-4]**.
+
+**3.3 Selection/normalization leg.** Real data has no generator, so the
+generator-consistent leg (n̂_w = W_cat/V_f, D_gen) does not apply. The
+real-data leg is the absolute-marginal/α(h) form (Mandel, Farr & Gair 2019:
+one selection factor; Chen, Fishbach & Holz 2018 Eq. 15 structure) with the
+smooth dV_c/dz prior in the out-of-catalogue term — consistent with every
+verified literature source (§2: the discrete-galaxy kernel enters the
+NUMERATOR only; selection keeps the smooth prior; do not double-apply).
+Σ_glob smearing: NOT required for consistency — the selection integrand is
+smooth on the σ_z scale (the Jacobian/volume factors vary slowly over
+Δz ≈ 2×10⁻³), so kernel-smearing Σ_glob is an O((σ_z/z)²) correction; keep
+`--smear_global_selection` available as the diagnostic it already is.
+**[RATIFY-5]** (real-data mode = `absolute_marginal` normalization +
+`volume_deconv` numerator kernel with §3.1 widths; note the #40a flag
+already makes this combination expressible).
+
+**3.4 Dimensional analysis.** z, σ_z, σ_v/c: dimensionless. $p(z_g|z)$:
+density in z, units [z]⁻¹ = dimensionless. $w_{\rm pop}$: Mpc³ per unit z;
+$Z_g = \int \mathcal N\, w_{\rm pop}\, dz$: Mpc³; $p_g = \mathcal N\,
+w_{\rm pop}/Z_g$: [z]⁻¹ — dimensionless density, as required. $N_g$ carries
+the GW-likelihood units unchanged. σ_pv term: (1+z)·[km/s]/[km/s] —
+dimensionless. Consistent.
 
 **3.5 Limiting cases (minimum set).**
 - σ_eff → 0 recovers the δ-kernel/point numerator exactly (already pinned by
   `test_volume_deconv_numerator_collapses_to_point_as_sigma_to_zero`).
-- σ_v → 0, σ_z,cat → 0: same limit through the PV term alone.
-- z ≫ σ_eff (deep venue): kernel → Gaussian, volume weight locally flat →
-  recovers the bare-Gaussian kernel (G2b §; existing behavior).
-- h-independence: kernel must be exactly h-invariant (D1 §2 fact 2 analog).
+- σ_v → 0, σ_z,meas → 0: same limit through the PV term alone.
+- Corrected host with σ_v(residual) = 0 and catalogue σ_tot → the pure
+  catalogue-width Gaussian (no repo-added broadening) — new test required.
+- z ≫ σ_eff (deep venue): volume weight locally flat → bare-Gaussian kernel
+  (G2b; existing behavior).
+- h-independence: σ_eff contains no h anywhere — structurally exact.
+- Photo-z host: flag-resolved widths change the kernel by < 2% — new
+  tolerance test.
 
-**3.6 Predicted impact (pre-register before any A/B).** From P-2: expect
-σ_h inflation ×3.3–×6.8 on the golden set; MAP shift prediction [AUTHOR:
-derive sign/size or pre-register "no detectable bias" with a threshold].
+**3.6 Predicted impact (pre-registered BEFORE any A/B with the ratified
+kernel).**
+- Mock golden set, kernel restored (P-2, optimistic host-known limit):
+  σ_h ×3.3 (PV only) to ×6.8 (PV + floor) vs the point/point width. With the
+  §3.1 de-double-counted widths the inflation must land BELOW the P-2
+  figures (P-2 used the current, ~40% too wide, spec-z kernel):
+  **prediction: ×2.5–×5.5**, i.e. σ_h ≈ 5×10⁻⁴–1.1×10⁻³ per deep venue.
+- Bias: no detectable MAP shift at the |Δh| ≤ 5×10⁻⁴ level (the kernel is
+  symmetric in z_g and h-invariant; the volume deconvolution already removes
+  the Jensen/Eddington asymmetry per G2b). A measured shift beyond this
+  falsifies the h-invariance/symmetry argument and re-opens §3.2.
+- Spec-z kernel width itself: −40% vs current volume_deconv for
+  BORG-corrected hosts (direct, testable at the kernel level without a
+  posterior run).
 
 ## 4. Validation plan (after ratification)
 
