@@ -87,3 +87,22 @@ Retrieval: rsync per-run `simulations/posteriors*/combined_posterior.json` + log
   before the harness can gate catalogue-association estimators.
 - Issues #23/#24/#25/#26/#27 remain open; #36 (combine n_events_empty cosmetic).
 - Old empty injection dirs on the workspace (2026-03-31 era) can be cleaned.
+
+## SUBMITTED 2026-07-26 (this session — read out only)
+
+Five-seed production-stack campaign (generator_marginal + --pdet_z_resolved, 41-pt grid):
+
+| Seed | RUN_DIR | eval job | combine job |
+|---|---|---|---|
+| 1000 | run_20260726_seed1000_prodstack | 6044799 | 6044800 |
+| 900 | run_20260726_seed900_prodstack | 6044801 | 6044802 |
+| 2000 | run_20260726_seed2000_prodstack | 6044803 | 6044804 |
+| 3000 | run_20260726_seed3000_prodstack | 6044805 | 6044806 |
+| 90000 | run_20260726_seed90000_prodstack | 6044807 | 6044808 |
+
+Code @ 6dae9d3. Read out combined_posterior.json per run/channel against the
+pre-registered multi-seed criteria above (bias t-test; width χ²; per-venue sanity).
+seed600 gate verdict: SEED600_GATE_REGISTRATION.md (MAP PASS; n_used deviation =
+diagnosed benign risk-4 edge case, 3/3355 shallow-only — deep venues measured
+0 hard zeros on 3454 events). Watch for FAILED eval tasks and zombie
+DependencyNeverSatisfied combines, not just combine states.
