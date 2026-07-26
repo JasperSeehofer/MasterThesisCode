@@ -24,7 +24,7 @@ production run (regenerating injections AND events with the merged code) superse
 
 | checked | expiry | action |
 |---|---|---|
-| 2026-07-02 | ~~2026-07-19~~ → **2026-08-31** (`ws_extend emri 60`; **1 extension left**) | re-check before the multi-seed campaign; if it runs past late August, use the last extension or migrate results to persistent storage first |
+| 2026-07-25 | ~~2026-08-31~~ → **2026-09-23** (`ws_extend emri 60`; **0 extensions left — LAST one used**) | no further extensions possible: copy all final results off the workspace to persistent storage BEFORE 2026-09-23 |
 
 ### De-rail evidence backup (2026-07-02)
 
