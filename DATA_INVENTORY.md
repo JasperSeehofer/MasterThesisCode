@@ -90,13 +90,13 @@ The single on-disk input the whole pipeline shares — previously untracked here
 | Property | Value |
 |----------|-------|
 | **File** | `master_thesis_code/galaxy_catalogue/reduced_galaxy_catalogue.csv` (headerless, **1.68 GB**, 22 641 048 rows) |
-| **Schema** | **8 columns** (order = `_reduced_catalog_column_names()`): RA_deg, Dec_deg, B_mag, **z_cmb**, z_error (PV-correction error folded in quadrature, 0.0015 floor), stellar_mass, stellar_mass_err, z_flag (1=photo-z, 3=spec-z; trailing) |
+| **Schema** | **8 columns** (order = `_reduced_catalog_column_names()`): RA_deg, Dec_deg, B_mag, **z_cmb**, z_error (**per-PV-class since 2026-07-27**, issue #40b RATIFIED: corrected rows = meas ⊕ catalogue σ_tot ⊕ (1+z)·150 km/s/c; uncorrected/flag-null rows = meas ⊕ (1+z)·500 km/s/c; NO 0.0015 floor; runtime `SIGMA_V_PEC_KM_S` retired to 0.0), stellar_mass, stellar_mass_err, z_flag (1=photo-z, 3=spec-z; trailing) |
 | **Frame** | **z_cmb** (CMB frame) since `18e9608` (2026-07-02 rebuild; 99.9% rows shifted, median \|Δz\| 6e-4 — `.planning/gate/GATE_SIGNOFF.md:27`) |
 | **Depth** | **Full-depth** (no z cut in the writer; max z ≈ 7.03). Effective load-time depth = `Model1CrossCheck.max_redshift` = 1.5 via `_get_pruned_galaxy_catalog`. `GALAXY_CATALOG_REDSHIFT_UPPER_LIMIT` is documentation-only |
 | **Rebuild** | `results/commission_20260701/scratch/rebuild_catalog.py` from repo root; **move the old CSV aside first** (writer appends, `mode="a"`); ~77 s full GLADE+ pass on the dev box |
 | **Source** | `master_thesis_code/galaxy_catalogue/GLADE+.txt` (6.4 GB, dev box ONLY — cluster cannot rebuild; staging is rsync of the reduced CSV per `/cluster` skill) |
-| **Superseded** | `.zhelio_20260702` (z_helio 8-col, 2026-07-01), `.stale6col_mar28` (6-col) — backups next to the live file, RETIRED |
-| **Coupled artifact** | `m_th_map_nside32.npy` (frozen per-pixel m_th, C1: byte-identical on injection + inference sides). Built from the full flag-{1,3} catalogue → **unchanged by the 2026-07-03 depth constants** (no CSV rebuild occurred); MUST be regenerated atomically on both sides if the CSV content ever changes |
+| **Superseded** | `.pre40b_20260727` (double-counted PV widths, 2026-07-02 build), `.zhelio_20260702` (z_helio 8-col, 2026-07-01), `.stale6col_mar28` (6-col) — backups next to the live file, RETIRED |
+| **Coupled artifact** | `m_th_map_nside32.npy` (frozen per-pixel m_th, C1: byte-identical on injection + inference sides). Built from the full flag-{1,3} catalogue; MUST be regenerated atomically on both sides if the CSV content ever changes. **2026-07-27 z_error-only rebuild: map re-derived from the new CSV and verified BYTE-IDENTICAL** (depends only on B_mag + sky position), so the frozen artifact stands |
 
 ---
 
