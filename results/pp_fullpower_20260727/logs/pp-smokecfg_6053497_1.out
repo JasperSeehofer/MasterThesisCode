@@ -1,0 +1,26 @@
+Loading bwUniCluster modules...
+  Loaded: compiler/gnu/14.2
+  Loaded: devel/cuda/12.8
+  Loaded: devel/python/3.13.3-gnu-14.2
+  Workspace: /pfs/work9/workspace/scratch/st_ac147838-emri
+=== pp-smokecfg task=1 mode=lcat zs=0.30 sky=2e-4 h=0.72 seed=20260727101 node=uc2n836.localdomain ===
+=== branch: feat/pp-impostor-harness @ 44ee912 ===
+h_true=0.7200 [volume] cov50=0.22 cov68=0.34 cov90=0.57 rail=0.02 MAP=0.7560 bias=+0.0360 completion_fraction=0.39
+Wrote /pfs/work9/workspace/scratch/st_ac147838-emri/pp_fullpower_20260727/pp_cat_lcat_zs0.30_sky2e-4_h0.72.json
+=== done: task=1 -> /pfs/work9/workspace/scratch/st_ac147838-emri/pp_fullpower_20260727/pp_cat_lcat_zs0.30_sky2e-4_h0.72.json ===
+
+============================= JOB FEEDBACK =============================
+
+NodeName=uc2n836
+Job ID: 6053501
+Array Job ID: 6053497_1
+Cluster: uc3
+User/Group: st_ac147838/st_us-403333
+State: COMPLETED (exit code 0)
+Nodes: 1
+Cores per node: 4
+CPU Utilized: 00:02:14
+CPU Efficiency: 22.48% of 00:09:56 core-walltime
+Job Wall-clock time: 00:02:29
+Memory Utilized: 59.91 MB
+Memory Efficiency: 0.75% of 7.81 GB (1.95 GB/core)

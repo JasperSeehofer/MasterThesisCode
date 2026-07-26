@@ -1,0 +1,53 @@
+{
+  "config": {
+    "n_realizations": 2000,
+    "n_events": 120,
+    "sigma_z": 0.035,
+    "sigma_z_pv": 0.0,
+    "sigma_dl_frac": 0.05,
+    "injected_truths": [
+      0.72
+    ],
+    "seed": 20260727101,
+    "kernel": "volume",
+    "h_min": 0.6,
+    "h_max": 0.86,
+    "h_step": 0.004,
+    "n_z_quad": 160,
+    "inference_wpop_tilt": 0.0,
+    "z_support": 0.3,
+    "mixture_mode": "lcat",
+    "membership_on_observed": false,
+    "catalogue_mode": true,
+    "n_galaxies": 200000,
+    "sky_frac": 0.0002,
+    "resample_catalogue_per_realization": false,
+    "pdet_in_numerator": false,
+    "sigma_dl_model_in_likelihood": false,
+    "d50_gpc": 1.85,
+    "w_pdet_gpc": 0.3,
+    "clamp_zgal": true
+  },
+  "results": {
+    "0.7200": {
+      "h_true": 0.72,
+      "coverage": {
+        "50": 0.223,
+        "68": 0.342,
+        "90": 0.567
+      },
+      "rail_fraction": 0.0155,
+      "map_mean": 0.756046,
+      "map_std": 0.03736423268314234,
+      "map_median": 0.7520000000000001,
+      "map_bias": 0.03604600000000002,
+      "completion_fraction": 0.388325,
+      "dlogL_dh_host_mean": null,
+      "dlogL_dh_completion_mean": null,
+      "empty_ball_fraction": 0.044325,
+      "mean_ball_size": 2.7458,
+      "host_in_ball_fraction": 0.6116750000000001,
+      "impostor_fraction": 0.7768988386383462
+    }
+  }
+}

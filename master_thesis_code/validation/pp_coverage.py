@@ -57,6 +57,107 @@ tile ``[0, Z_MAX_POP]`` exactly (the support split of the Gray et al. 2020,
 arXiv:1908.06050, Eqs. 29+32 completion mixture). The
 ``membership_on_observed`` flag (N-2d probe) decides catalogue membership on
 the observed ``z_gal`` instead of the true ``z_host``.
+``"absolute"`` (2026-07-26, harness analog of
+``results/lcat_h_dependence_20260725/DERIVATION_ESTIMATOR_REDESIGN.md``
+Variant 1, Eq. (2)) is the absolute-mass marginal: host events get
+``p_i(h) = [N_i(h) + B_num_i(h)] / D(h)`` with NO self-normalization of the
+catalogue term by any per-event or per-host selection denominator (neither
+``D_g_i`` as in "gray" nor ``beta_G`` as a multiplicative weight). This is
+the harness realization of production's ``A_i(h) = Sigma_ball w_g N_g(h) /
+n_bar_w(h)`` with ``n_bar_w(h) = Sigma_glob(h) / beta_G(h)``: because the
+harness's synthetic "catalogue" is a smooth one-candidate-per-event
+continuum population (not a discrete multi-galaxy table sharing a Sigma_glob
+distinct from beta_G), the continuum idealization ``Sigma_glob(h) ==
+beta_G(h)`` collapses ``n_bar_w(h)`` to 1 identically, and
+``A_i(h) = N_i(h)`` exactly (the ``beta_G`` factor that "gray" mode applies
+to ``L_cat_i`` cancels against the same ``beta_G`` inside ``n_bar_w``). Both
+terms are summed for EVERY host-found event (not just the zero-host
+fallback) using the SAME ``B_num_i`` completion integral zero-host events
+use, so the zero-host branch (``B_num/D``, shared with "two_branch"/"gray")
+is the continuous ``N_i -> 0`` limit of this formula, not a separate branch.
+HARNESS-FIDELITY CAVEAT: this harness structurally cannot construct genuine
+impostor-only candidate balls (multiple false candidates carrying zero
+true-host mass) because each event has exactly one candidate (its own noisy
+``z_gal``) rather than a shared multi-galaxy catalogue queried by many
+events; it therefore cannot exercise Variant 1's core impostor-suppression
+claim (derivation Sec 3.4(b)). It CAN test Variant 1's other two claims: the
+continuous zero-host/near-zero-host fallback limit and the unbiased
+complete-catalogue limit.
+
+Catalogue / impostor-ball universe (``PPCoverageConfig.catalogue_mode``,
+2026-07-26) — see ``results/pp_impostor_harness_20260726/
+DERIVATION_HARNESS_ANALOG.md`` for the full derivation and the
+production<->harness correspondence table. Every mode described above builds a
+universe in which each detected event has EXACTLY ONE candidate host (its own
+noisy observed redshift), so no estimator that must CHOOSE among candidates can
+be exercised. ``catalogue_mode=True`` replaces that generative model with a
+discrete, frozen, shared galaxy catalogue plus hard sky localization balls:
+
+* ``n_galaxies`` galaxies are drawn once per run with true redshifts from the
+  comoving-volume galaxy number density ``n_gal(z) propto dV_c/dz =
+  (1+z) w_pop(z)`` on ``[Z_MIN, Z_MAX_POP]`` and directions uniform on the
+  sphere.
+* A galaxy is CATALOGUED iff ``z_true < z_support`` (the harness's sky-averaged
+  completeness ``fbar(z) = 1[z < z_support]``); catalogued galaxies carry a
+  noisy observed redshift ``z_obs = z_true + N(0, sigma_z)``.
+* An EMRI host is drawn from ALL galaxies with rate weight
+  ``w_g = 1/(1+z_g)`` (so the host redshift density is
+  ``n_gal(z) w(z) = w_pop(z)``, identical to the continuum harness) and
+  detected with probability ``p_det(A(z)/h_true)``.
+* The GW sky datum is a hard cap of solid-angle fraction ``sky_frac =
+  dOmega/4pi``, positioned so the true host is UNIFORM inside it (making the
+  flat in-cap sky likelihood exact). The candidate ball is every CATALOGUED
+  galaxy inside the cap — the true host if it is catalogued, plus genuine
+  foreground/background impostors, or impostors only when the host is not
+  catalogued.
+
+Catalogue-mode estimators (``mixture_mode``): ``"lcat"`` (the legacy
+self-normalized Gray-A9 ratio-of-sums that production's ``volume_deconv``
+implements), ``"absolute"`` (production ``absolute_marginal``, V1) and
+``"generator_marginal"`` (the production stack of
+``results/lcat_h_dependence_20260725/DERIVATION_GENERATOR_CONSISTENT_NORM.md``
+and ``DERIVATION_ZRESOLVED_SURVIVAL.md``). All three share the same per-event
+form ``p_i = [in-catalogue term + B_num,i] / denominator`` and differ ONLY in
+how the discrete catalogue sum is put on the same absolute scale as the
+continuum completion term:
+
+===================  ==========================================  ==================
+mixture_mode         in-catalogue term                            denominator
+===================  ==========================================  ==================
+``lcat``             ``beta_G(h) * (Sum_ball w N)/(Sum_ball w D_g)``  ``D = beta_G + beta_Gbar``
+``absolute``         ``(Sum_ball w N) / (n_bar_w(h) * sky_frac)``     ``D = beta_G + beta_Gbar``
+``generator_marginal`` ``(Sum_ball w N) / (n_hat_w * sky_frac)``      ``D_gen = Sigma_glob/n_hat_w + beta_Gbar``
+===================  ==========================================  ==================
+
+with ``n_bar_w(h) = Sigma_glob(h)/beta_G(h)`` (production's Option-A
+calibration) and ``n_hat_w = W_cat / V_f`` (production's generator-consistent
+draw-side rate-weight density; h-independent in this harness because the
+common ``h^-3`` of the comoving volume cancels between every numerator and
+denominator term — all four terms are homogeneous of degree one in
+``w_pop``). The ``sky_frac`` factor is the harness's explicit analog of
+production's pixel solid angles: it converts the all-sky rate-weight density
+``n_hat_w`` into the expected in-cap density, so that
+``E[in-catalogue term] = int fbar(z) w_pop(z) p_GW(z;h) dz`` tiles exactly
+against ``B_num,i = int (1-fbar) w_pop p_GW dz``.
+
+Remaining simplifications (the harness is NOT production; see the derivation
+note section 6 for the full list). (i) The z-resolved-survival fix
+(``DERIVATION_ZRESOLVED_SURVIVAL.md``) is VACUOUS here: this harness's
+``p_det(A(z)/h)`` is an exact deterministic function of ``d_L``, so the
+harness's survival is already the z-conditional ``S(d_L|z)`` — there is no
+detector-frame-mass lift and hence no pooled-vs-conditional discrepancy to
+repair. The harness therefore sits in FIX-2's FIXED state by construction.
+(ii) The harness catalogue is drawn from exactly the population the estimator
+models, so production's Option-A identity ``Sigma_glob = n_hat_w * beta_G``
+holds up to Poisson noise and the sigma_z kernel asymmetry; ``absolute`` and
+``generator_marginal`` therefore nearly coincide here, and the harness cannot
+adjudicate FIX-3 on its own. What the harness CAN adjudicate is the
+misassociation mechanism that motivated V1: ``lcat`` vs the two absolute-mass
+forms on identical impostor-bearing universes. (iii) No mass dimension, no
+pixelated completeness, no GW sky-likelihood shape (hard cap only), and the
+per-galaxy redshift kernel is NOT truncated at the completeness edge — the
+production-faithful "above-edge leak" that ``mixture_mode="exact"`` studies for
+the single-candidate universe.
 
 Prior-tilt probe (``PPCoverageConfig.inference_wpop_tilt``, handoff item N-3,
 ``.planning/HANDOFF-DEEP-BIAS-MECHANISM-20260710.md``): multiplies ONLY the
@@ -146,6 +247,45 @@ def population_weight_of_z(z: npt.NDArray[np.float64]) -> npt.NDArray[np.float64
     return np.interp(z, _Z_GRID, _W_POP)
 
 
+def galaxy_number_weight_of_z(z: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
+    """Galaxy NUMBER weight n_gal(z) propto dV_c/dz (unnormalized, catalogue mode).
+
+    The harness's galaxies have constant comoving number density, so their
+    redshift density is the bare comoving volume element ``dV_c/dz``; the
+    ``1/(1+z)`` of the RATE weight ``w_pop(z) = dV_c/dz / (1+z)`` is the
+    per-galaxy EMRI rate suppression (observer-frame time dilation), carried
+    separately by :func:`host_rate_weight_of_z`. Hence
+    ``n_gal(z) * w(z) == w_pop(z)`` identically, which is what makes the
+    catalogue-mode host draw share its redshift density with the continuum
+    harness's :func:`_sample_detected_redshifts`.
+
+    Args:
+        z: Redshift values.
+
+    Returns:
+        Unnormalized galaxy number weight at each redshift.
+    """
+    return np.asarray(
+        (1.0 + np.asarray(z, dtype=np.float64)) * population_weight_of_z(z), dtype=np.float64
+    )
+
+
+def host_rate_weight_of_z(z: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
+    """Per-galaxy EMRI rate weight w(z) = 1/(1+z) (observer-frame time dilation).
+
+    Harness analog of production's ``w_g = R_eff_per_mbh(M_g)/(1+z_g)``
+    (``bayesian_statistics._rate_weight``) with the mass factor dropped: this
+    harness has no mass dimension, so every galaxy has the same intrinsic rate.
+
+    Args:
+        z: Redshift values.
+
+    Returns:
+        Rate weight at each redshift.
+    """
+    return np.asarray(1.0 / (1.0 + np.asarray(z, dtype=np.float64)), dtype=np.float64)
+
+
 def _inference_population_weight(
     z: npt.NDArray[np.float64], tilt: float
 ) -> npt.NDArray[np.float64]:
@@ -169,6 +309,26 @@ def _inference_population_weight(
     if tilt == 0.0:
         return w
     return np.asarray(w * np.exp(tilt * np.asarray(z)), dtype=np.float64)
+
+
+def _inference_galaxy_number_weight(
+    z: npt.NDArray[np.float64], tilt: float
+) -> npt.NDArray[np.float64]:
+    """Inference-side galaxy number weight ``(1+z) * w_pop_tilted(z)`` (catalogue mode).
+
+    Keeps the ``n_gal * w == w_pop`` identity exact under the N-3 prior tilt.
+
+    Args:
+        z: Redshift values.
+        tilt: Exponential tilt coefficient gamma [1/z] (0.0 = untilted).
+
+    Returns:
+        Unnormalized galaxy number weight.
+    """
+    return np.asarray(
+        (1.0 + np.asarray(z, dtype=np.float64)) * _inference_population_weight(z, tilt),
+        dtype=np.float64,
+    )
 
 
 def detection_probability(
@@ -298,8 +458,35 @@ class PPCoverageConfig:
             so the two branches tile [0, Z_MAX_POP] exactly (the support
             split of the Gray et al. 2020, arXiv:1908.06050, Eqs. 29+32
             completion mixture). This removes the above-edge kernel leak
-            that the two_branch/gray host numerators carry. Modes other
-            than "two_branch" require z_support (ValueError otherwise).
+            that the two_branch/gray host numerators carry.
+            "absolute" (2026-07-26): the absolute-mass marginal (harness
+            analog of DERIVATION_ESTIMATOR_REDESIGN.md Variant 1, Eq. 2):
+            host events get [N_i(h) + B_num_i(h)]/D(h) — the catalogue
+            numerator N_i enters WITHOUT any self-normalization (no beta_G
+            weight, no D_g_i division), summed directly with the SAME
+            B_num_i completion integral zero-host events use. Zero-host
+            events keep B_num/D (the continuous N_i -> 0 limit). See the
+            module-docstring "absolute" paragraph for the harness-fidelity
+            caveat (no impostor-ball mechanism exists in this harness).
+            "lcat" and "generator_marginal" (2026-07-26) are CATALOGUE-MODE
+            ONLY (require ``catalogue_mode=True``): "lcat" is the legacy
+            self-normalized Gray-A9 ratio-of-sums (production
+            ``volume_deconv``) and "generator_marginal" the
+            generator-consistent normalization
+            (``DERIVATION_GENERATOR_CONSISTENT_NORM.md`` Eqs. 3-5).
+            "absolute" works in BOTH universes (see the module docstring
+            correspondence table for its catalogue-mode form).
+            Modes other than "two_branch" require z_support (ValueError
+            otherwise).
+        catalogue_mode: Use the discrete-catalogue / impostor-ball generative
+            model (see the module docstring). Requires ``z_support`` and
+            ``mixture_mode`` in {"lcat", "absolute", "generator_marginal"}.
+        n_galaxies: Galaxies in the synthetic catalogue (catalogue mode).
+        sky_frac: GW sky-localization cap solid-angle fraction dOmega/(4 pi);
+            the expected candidate-ball occupancy is
+            ``n_galaxies * sky_frac * (catalogued fraction)``.
+        resample_catalogue_per_realization: Redraw the catalogue per
+            realization instead of freezing one shared table for the run.
         membership_on_observed: Decide catalogue membership on the OBSERVED
             z_gal (< z_support) instead of the true z_host (production's
             BallTree sees measured redshifts; N-2d probe). Default False keeps
@@ -363,8 +550,25 @@ class PPCoverageConfig:
     n_z_quad: int = 160
     inference_wpop_tilt: float = 0.0
     z_support: float | None = None
-    mixture_mode: Literal["two_branch", "gray", "conditioned", "exact"] = "two_branch"
+    mixture_mode: Literal[
+        "two_branch", "gray", "conditioned", "exact", "absolute", "lcat", "generator_marginal"
+    ] = "two_branch"
     membership_on_observed: bool = False
+    # --- Catalogue / impostor-ball universe (2026-07-26) ------------------
+    # catalogue_mode=True replaces the one-candidate-per-event generative model
+    # with a discrete frozen galaxy catalogue plus hard sky-localization balls,
+    # so estimators that must CHOOSE among candidate hosts can be exercised.
+    # Requires z_support (the completeness edge fbar(z) = 1[z < z_support]) and
+    # mixture_mode in {"lcat", "absolute", "generator_marginal"}. Default False
+    # keeps every pre-existing mode and golden pin bit-identical.
+    catalogue_mode: bool = False
+    n_galaxies: int = 200_000
+    # Sky-localization cap solid-angle fraction dOmega/(4 pi).
+    sky_frac: float = 1.0e-4
+    # Redraw the galaxy catalogue for every realization (independent universes)
+    # instead of freezing one shared catalogue for the whole run (production-
+    # faithful: production has ONE GLADE+ table). Default False.
+    resample_catalogue_per_realization: bool = False
     pdet_in_numerator: bool = False
     sigma_dl_model_in_likelihood: bool = False
     # Detection-horizon knobs (N-4 shallow-venue depth probe). Defaults =
@@ -520,6 +724,15 @@ def _run_realization(
       above-edge kernel leak the two_branch/gray numerators carry.
       Zero-host events keep ``B_num/D``, so the two branches tile
       ``[0, Z_MAX_POP]`` exactly (Gray et al. 2020 support split).
+    - ``"absolute"``: absolute-mass marginal (harness analog of
+      ``results/lcat_h_dependence_20260725/DERIVATION_ESTIMATOR_REDESIGN.md``
+      Variant 1, Eq. 2) — host events get ``[N_i(h) + B_num_i(h)] / D(h)``:
+      the two_branch kernel numerator ``N_i`` summed DIRECTLY with the same
+      ``B_num_i`` completion integral zero-host events use, with NO per-event
+      self-normalization (no ``beta_G`` weight, no ``D_g_i`` division).
+      Zero-host events keep ``B_num/D`` (the continuous ``N_i -> 0`` limit of
+      the same formula). See the module docstring for the harness-fidelity
+      caveat (no impostor-ball mechanism in this harness).
 
     Args:
         h_true: Injected truth.
@@ -598,8 +811,9 @@ def _run_realization(
                     # Membership-conditioned inverse: B_num / beta_Gbar.
                     term_b = np.log(np.clip(num_b, 1e-300, None)) - log_beta_Gbar
                 else:
-                    # two_branch AND gray share the pure-completion B_num/D
-                    # branch (Gray et al. 2020 Eqs. 29+32, L_cat -> 0 limit).
+                    # two_branch, gray AND absolute share the pure-completion
+                    # B_num/D branch (Gray et al. 2020 Eqs. 29+32, L_cat -> 0
+                    # / N_i -> 0 limit).
                     term_b = np.log(np.clip(num_b, 1e-300, None)) - log_Dh
                 logL += term_b
                 logL_completion += term_b
@@ -680,6 +894,28 @@ def _run_realization(
             )
             mixture = beta_G_h * L_cat_i + B_num_i  # linear space, per event
             term = np.log(np.clip(mixture, 1e-300, None)) - log_Dh
+        elif config.mixture_mode == "absolute" and config.z_support is not None:
+            # Absolute-mass marginal (DERIVATION_ESTIMATOR_REDESIGN.md
+            # Variant 1, Eq. 2): A_i(h) = N_i(h) with NO self-normalization
+            # (no beta_G weight, no D_g_i division — n_bar_w collapses to 1
+            # in this harness's continuum-population idealization, see
+            # module docstring). Summed directly with the SAME B_num_i
+            # completion integral zero-host events use.
+            B_num_i_abs = _completion_numerator(
+                float(dL_obs[i]),
+                float(sig_dl[i]),
+                float(config.z_support),
+                h_grid,
+                config.n_z_quad,
+                config.inference_wpop_tilt,
+                config.pdet_in_numerator,
+                config.sigma_dl_frac,
+                config.sigma_dl_model_in_likelihood,
+                config.d50_gpc,
+                config.w_pdet_gpc,
+            )
+            mixture_abs = num + B_num_i_abs  # linear space, absolute mass
+            term = np.log(np.clip(mixture_abs, 1e-300, None)) - log_Dh
         elif config.mixture_mode == "conditioned" and config.z_support is not None:
             # Membership-conditioned inverse: N_i / beta_G (no B_num, no
             # D_g_i ratio).
@@ -690,6 +926,454 @@ def _run_realization(
         logL_host += term
         n_host += 1
     return logL, n_zero_host, logL_host, logL_completion, n_host, n_comp
+
+
+# ----------------------------------------------------------------------------
+# Catalogue / impostor-ball universe (2026-07-26).
+#
+# Derivation: results/pp_impostor_harness_20260726/DERIVATION_HARNESS_ANALOG.md.
+# Nothing below ever reads an injected truth: the estimator sees only the
+# catalogue table (observed redshifts + directions), the completeness edge
+# z_support, the event's (d_L_obs, cap centre) and the hypothesis h.
+# ----------------------------------------------------------------------------
+
+CATALOGUE_MIXTURE_MODES: tuple[str, ...] = ("lcat", "absolute", "generator_marginal")
+
+
+@dataclass
+class SyntheticCatalogue:
+    """Frozen discrete galaxy catalogue plus its precomputed selection scalars.
+
+    Attributes:
+        z_true: True redshifts of ALL galaxies (catalogued or not), shape (N,).
+        direction: Unit direction vectors of all galaxies, shape (N, 3).
+        catalogued: Boolean mask ``z_true < z_support`` (the harness's
+            sky-averaged completeness ``fbar(z) = 1[z < z_support]``).
+        cat_index: Indices of catalogued galaxies into the full arrays.
+        z_obs: Observed (photo-z scattered) redshifts of the CATALOGUED
+            galaxies, shape (N_cat,) — the only redshift information the
+            estimator ever sees.
+        inv_norm: Per-catalogued-galaxy ``1/Z_g`` with
+            ``Z_g = int n_gal(z) N(z_obs,g; z, sigma_z) dz`` over the
+            population support, i.e. the normalizer of the galaxy's true-z
+            posterior ``p(z|z_obs,g) propto n_gal(z) N(z_obs,g; z, sigma_z)``.
+        tree: KD-tree over the catalogued galaxies' 3D unit vectors (the
+            harness analog of production's BallTree sky index).
+        chord_radius: Euclidean chord radius corresponding to the cap
+            half-angle of ``sky_frac``.
+        w_cat: ``W_cat = Sum_g int dmu_g`` — total draw-eligible catalogue rate
+            weight (h-independent scalar).
+        v_f: ``V_f = int fbar(z) w_pop(z) dz`` — the completeness-weighted
+            population rate-weight volume (h-independent in this harness).
+        n_hat_w: ``W_cat / V_f`` — the generator-consistent draw-side
+            rate-weight density.
+        sigma_glob: ``Sigma_glob(h) = Sum_g int dmu_g p_det(A(z)/h)`` on the
+            h grid, shape (nh,).
+        host_draw_p: Normalized host-draw probability per galaxy at the
+            injected truth (rate weight times detection probability); set by
+            :func:`_catalogue_host_draw_probabilities`.
+    """
+
+    z_true: npt.NDArray[np.float64]
+    direction: npt.NDArray[np.float64]
+    catalogued: npt.NDArray[np.bool_]
+    cat_index: npt.NDArray[np.int64]
+    z_obs: npt.NDArray[np.float64]
+    inv_norm: npt.NDArray[np.float64]
+    tree: Any
+    chord_radius: float
+    w_cat: float
+    v_f: float
+    n_hat_w: float
+    sigma_glob: npt.NDArray[np.float64]
+
+
+def _sample_galaxy_redshifts(
+    n: int, rng: np.random.Generator, tilt: float, ngrid: int = 4000
+) -> npt.NDArray[np.float64]:
+    """Draw galaxy true redshifts from the comoving number density n_gal(z).
+
+    Args:
+        n: Number of galaxies.
+        rng: Random generator.
+        tilt: N-3 prior tilt (applied to the generative galaxy density so that
+            the tilted inference weight remains the correct model; 0.0 default).
+        ngrid: Inverse-CDF grid resolution.
+
+    Returns:
+        Redshifts on ``[Z_MIN, Z_MAX_POP]``, shape ``(n,)``.
+    """
+    zg = np.linspace(Z_MIN, Z_MAX_POP, ngrid)
+    pdf = np.clip(_inference_galaxy_number_weight(zg, tilt), 0.0, None)
+    cdf = np.concatenate([np.array([0.0]), np.cumsum(0.5 * (pdf[1:] + pdf[:-1]) * np.diff(zg))])
+    cdf /= cdf[-1]
+    return np.asarray(np.interp(rng.random(n), cdf, zg), dtype=np.float64)
+
+
+def _random_unit_vectors(n: int, rng: np.random.Generator) -> npt.NDArray[np.float64]:
+    """Draw ``n`` directions uniform on the unit sphere, shape ``(n, 3)``."""
+    v = rng.normal(size=(n, 3))
+    return np.asarray(v / np.linalg.norm(v, axis=1, keepdims=True), dtype=np.float64)
+
+
+def _perturb_within_cap(
+    axis: npt.NDArray[np.float64], cos_theta_c: float, rng: np.random.Generator
+) -> npt.NDArray[np.float64]:
+    """Draw directions uniform inside the cap of half-angle ``theta_c`` about ``axis``.
+
+    Used to place the GW localization cap CENTRE relative to the true host
+    direction: if the centre is uniform in the cap about the host, then the
+    host is uniform in the cap about the centre (the cap is a symmetric
+    relation), which makes the flat in-cap sky likelihood
+    ``p(sky data | direction) propto 1[direction in cap]`` exact rather than an
+    approximation. No truth leaks into the estimator: only the cap centre is
+    passed on.
+
+    Args:
+        axis: Unit vectors to perturb about, shape ``(n, 3)``.
+        cos_theta_c: Cosine of the cap half-angle.
+        rng: Random generator.
+
+    Returns:
+        Unit vectors, shape ``(n, 3)``.
+    """
+    n = axis.shape[0]
+    cos_psi: npt.NDArray[np.float64] = np.asarray(
+        cos_theta_c + (1.0 - cos_theta_c) * rng.random(n), dtype=np.float64
+    )
+    sin_psi: npt.NDArray[np.float64] = np.sqrt(np.clip(1.0 - cos_psi**2, 0.0, None))
+    phi = 2.0 * np.pi * rng.random(n)
+    # Build an orthonormal basis (axis, e1, e2) per row.
+    helper = np.tile(np.array([0.0, 0.0, 1.0]), (n, 1))
+    near_pole = np.abs(axis[:, 2]) > 0.9
+    helper[near_pole] = np.array([1.0, 0.0, 0.0])
+    e1 = np.cross(axis, helper)
+    e1 = e1 / np.linalg.norm(e1, axis=1, keepdims=True)
+    e2 = np.cross(axis, e1)
+    out = (
+        cos_psi[:, None] * axis
+        + (sin_psi * np.cos(phi))[:, None] * e1
+        + (sin_psi * np.sin(phi))[:, None] * e2
+    )
+    return np.asarray(out / np.linalg.norm(out, axis=1, keepdims=True), dtype=np.float64)
+
+
+def _posterior_normalizers(
+    z_obs: npt.NDArray[np.float64], sigma_z: float, tilt: float, ngrid: int = 3000
+) -> npt.NDArray[np.float64]:
+    """Compute ``Z_g = int_{Z_MIN}^{Z_MAX_POP} n_gal(z) N(z_obs,g; z, sigma_z) dz``.
+
+    Evaluated on a ``z_obs`` lookup grid and interpolated (``Z(z_obs)`` is a
+    smooth function of the observed redshift).
+
+    Args:
+        z_obs: Observed catalogue redshifts, shape ``(N_cat,)``.
+        sigma_z: Photo-z scatter.
+        tilt: N-3 inference prior tilt.
+        ngrid: Quadrature / lookup resolution.
+
+    Returns:
+        ``Z_g`` per galaxy, shape ``(N_cat,)``.
+    """
+    zq = np.linspace(Z_MIN, Z_MAX_POP, ngrid)
+    wq = np.gradient(zq)
+    ngal = _inference_galaxy_number_weight(zq, tilt)
+    lo = float(min(Z_MIN, z_obs.min())) - 6.0 * sigma_z
+    hi = float(max(Z_MAX_POP, z_obs.max())) + 6.0 * sigma_z
+    obs_grid = np.linspace(lo, hi, ngrid)
+    kern = _norm_pdf(zq[None, :], obs_grid[:, None], sigma_z)  # (ngrid_obs, ngrid_z)
+    table = kern @ (wq * ngal)  # (ngrid_obs,)
+    return np.asarray(np.interp(z_obs, obs_grid, table), dtype=np.float64)
+
+
+def _smeared_catalogue_density(
+    z_obs: npt.NDArray[np.float64],
+    inv_norm: npt.NDArray[np.float64],
+    sigma_z: float,
+    z_eval: npt.NDArray[np.float64],
+) -> npt.NDArray[np.float64]:
+    """Evaluate ``Khat(z) = Sum_g N(z; z_obs,g, sigma_z) / Z_g`` on ``z_eval``.
+
+    Computed by linearly (cloud-in-cell) depositing ``z_obs`` with weights
+    ``1/Z_g`` on a uniform grid of spacing ``sigma_z/16`` and convolving with
+    the Gaussian kernel: O(dz^2) pointwise accuracy at O(N + M K) cost instead
+    of the O(N * M) direct sum. CIC rather than nearest-node deposition is
+    required — nearest-node is only first order and leaves a ~2e-3 pointwise
+    error at this spacing (measured).
+
+    Args:
+        z_obs: Observed catalogue redshifts, shape ``(N_cat,)``.
+        inv_norm: Per-galaxy ``1/Z_g``, shape ``(N_cat,)``.
+        sigma_z: Photo-z scatter.
+        z_eval: Redshifts at which to evaluate, shape ``(M,)``.
+
+    Returns:
+        ``Khat`` on ``z_eval``, shape ``(M,)``.
+    """
+    lo = float(min(z_obs.min(), z_eval.min())) - 6.0 * sigma_z
+    hi = float(max(z_obs.max(), z_eval.max())) + 6.0 * sigma_z
+    dz = sigma_z / 16.0
+    nbin = int(np.ceil((hi - lo) / dz)) + 1
+    grid = lo + dz * np.arange(nbin)
+    pos = (z_obs - lo) / dz
+    i0 = np.clip(np.floor(pos).astype(np.int64), 0, nbin - 2)
+    frac = pos - i0
+    binned = np.zeros(nbin, dtype=np.float64)
+    np.add.at(binned, i0, inv_norm * (1.0 - frac))
+    np.add.at(binned, i0 + 1, inv_norm * frac)
+    half = int(np.ceil(6.0 * sigma_z / dz))
+    offsets = np.asarray(dz * np.arange(-half, half + 1), dtype=np.float64)
+    kern = _norm_pdf(offsets, 0.0, sigma_z)
+    dens = np.convolve(binned, kern, mode="same")
+    return np.asarray(np.interp(z_eval, grid, dens), dtype=np.float64)
+
+
+def _build_catalogue(
+    config: PPCoverageConfig,
+    h_grid: npt.NDArray[np.float64],
+    rng: np.random.Generator,
+) -> SyntheticCatalogue:
+    """Build one frozen synthetic galaxy catalogue and its selection precomputes.
+
+    Args:
+        config: Harness configuration (``catalogue_mode`` semantics).
+        h_grid: H0 evaluation grid.
+        rng: Random generator for the catalogue draw.
+
+    Returns:
+        The catalogue with ``W_cat``, ``V_f``, ``n_hat_w`` and
+        ``Sigma_glob(h)`` precomputed.
+
+    Raises:
+        ValueError: If ``config.z_support`` is None, or the catalogue is empty.
+    """
+    from scipy.spatial import cKDTree  # local import: only catalogue mode needs it
+
+    if config.z_support is None:
+        raise ValueError("catalogue_mode requires z_support (the completeness edge fbar).")
+    sigma_z = float(np.hypot(config.sigma_z, config.sigma_z_pv))
+    zs = float(config.z_support)
+
+    z_true = _sample_galaxy_redshifts(config.n_galaxies, rng, config.inference_wpop_tilt)
+    direction = _random_unit_vectors(config.n_galaxies, rng)
+    catalogued = np.asarray(z_true < zs, dtype=np.bool_)
+    cat_index = np.asarray(np.flatnonzero(catalogued), dtype=np.int64)
+    if cat_index.size == 0:
+        raise ValueError(
+            f"catalogue_mode: no galaxy has z_true < z_support={zs}; raise n_galaxies or z_support."
+        )
+    z_obs_raw = z_true[cat_index] + rng.normal(0.0, sigma_z, cat_index.size)
+    z_obs = np.clip(z_obs_raw, Z_MIN, None) if config.clamp_zgal else z_obs_raw
+
+    inv_norm = 1.0 / np.clip(
+        _posterior_normalizers(z_obs, sigma_z, config.inference_wpop_tilt), 1e-300, None
+    )
+
+    cos_theta_c = 1.0 - 2.0 * config.sky_frac
+    chord_radius = float(2.0 * np.sin(0.5 * np.arccos(np.clip(cos_theta_c, -1.0, 1.0))))
+    tree = cKDTree(direction[cat_index])
+
+    # Global (all-sky) catalogue selection precomputes, on D(h)'s own node
+    # convention so that at z_support >= Z_MAX_POP the limiting identities hold.
+    zint = np.linspace(Z_MIN, Z_MAX_POP, 3000)
+    wint = np.gradient(zint)
+    khat = _smeared_catalogue_density(z_obs, inv_norm, sigma_z, zint)
+    rho_cat = _inference_population_weight(zint, config.inference_wpop_tilt) * khat
+    w_cat = float(np.sum(wint * rho_cat))
+    pdet_grid = detection_probability(
+        comoving_amplitude_of_z(zint)[:, None] / h_grid[None, :],
+        config.d50_gpc,
+        config.w_pdet_gpc,
+    )  # (nz, nh)
+    sigma_glob = np.asarray((wint * rho_cat) @ pdet_grid, dtype=np.float64)  # (nh,)
+
+    zvf = np.linspace(Z_MIN, min(zs, Z_MAX_POP), 3000)
+    v_f = float(np.trapezoid(_inference_population_weight(zvf, config.inference_wpop_tilt), zvf))
+
+    return SyntheticCatalogue(
+        z_true=z_true,
+        direction=direction,
+        catalogued=catalogued,
+        cat_index=cat_index,
+        z_obs=np.asarray(z_obs, dtype=np.float64),
+        inv_norm=np.asarray(inv_norm, dtype=np.float64),
+        tree=tree,
+        chord_radius=chord_radius,
+        w_cat=w_cat,
+        v_f=v_f,
+        n_hat_w=w_cat / max(v_f, 1e-300),
+        sigma_glob=sigma_glob,
+    )
+
+
+def _run_realization_catalogue(
+    h_true: float,
+    h_grid: npt.NDArray[np.float64],
+    log_Dh: npt.NDArray[np.float64],
+    config: PPCoverageConfig,
+    rng: np.random.Generator,
+    catalogue: SyntheticCatalogue,
+    beta_G: npt.NDArray[np.float64],
+    beta_Gbar: npt.NDArray[np.float64],
+) -> tuple[npt.NDArray[np.float64], dict[str, float]]:
+    """Simulate one catalogue-mode realization; return log-likelihood + diagnostics.
+
+    Per-event likelihood (see the module docstring correspondence table and
+    ``results/pp_impostor_harness_20260726/DERIVATION_HARNESS_ANALOG.md``):
+
+        p_i(h) = [ T_i(h) + B_num,i(h) ] / Den(h)
+
+    with the ball measure ``dmu_g(z) = [n_gal(z) N(z_obs,g; z, sigma_z)/Z_g]
+    w(z) dz`` and
+
+        Sum_ball w N (h) = Sum_{g in ball} int dmu_g(z) p_GW(dL_obs,i | A(z)/h)
+        Sum_ball w D_g(h) = Sum_{g in ball} int dmu_g(z) p_det(A(z)/h)
+
+        lcat:               T_i = beta_G(h) * (Sum_ball w N)/(Sum_ball w D_g)
+                            Den  = D(h) = beta_G + beta_Gbar
+        absolute:           T_i = (Sum_ball w N) / (n_bar_w(h) * sky_frac)
+                            n_bar_w(h) = Sigma_glob(h)/beta_G(h),  Den = D(h)
+        generator_marginal: T_i = (Sum_ball w N) / (n_hat_w * sky_frac)
+                            n_hat_w = W_cat/V_f,
+                            Den = D_gen(h) = Sigma_glob(h)/n_hat_w + beta_Gbar(h)
+
+    An empty ball gives ``T_i = 0`` in every mode, so ``B_num/Den`` is the
+    continuous limit rather than a separate branch.
+
+    Args:
+        h_true: Injected truth (used ONLY by the generative model).
+        h_grid: H0 evaluation grid.
+        log_Dh: ``log D(h)`` on the grid.
+        config: Harness configuration.
+        rng: Realization RNG.
+        catalogue: The (frozen or per-realization) synthetic catalogue.
+        beta_G: In-catalogue selection integral on ``h_grid``.
+        beta_Gbar: Out-of-catalogue selection integral ``D - beta_G``.
+
+    Returns:
+        Tuple of the accumulated log-likelihood on ``h_grid`` and a dict of
+        realization diagnostics (``completion_fraction`` = fraction of events
+        whose true host is NOT in the catalogue, ``empty_ball_fraction``,
+        ``mean_ball_size``, ``host_in_ball_fraction``, ``impostor_fraction``).
+    """
+    sigma_z = float(np.hypot(config.sigma_z, config.sigma_z_pv))
+    zs = float(config.z_support) if config.z_support is not None else Z_MAX_POP
+    mode = config.mixture_mode
+
+    # --- generative model -------------------------------------------------
+    w_host = host_rate_weight_of_z(catalogue.z_true)
+    p_draw = w_host * detection_probability(
+        comoving_amplitude_of_z(catalogue.z_true) / h_true, config.d50_gpc, config.w_pdet_gpc
+    )
+    p_draw = np.clip(p_draw, 0.0, None)
+    p_draw = p_draw / p_draw.sum()
+    host_idx = rng.choice(catalogue.z_true.size, size=config.n_events, p=p_draw)
+    z_host = catalogue.z_true[host_idx]
+    dL_host = comoving_amplitude_of_z(z_host) / h_true
+    dL_obs = np.clip(dL_host + rng.normal(0.0, config.sigma_dl_frac * dL_host), 1e-3, None)
+    sig_dl = config.sigma_dl_frac * dL_obs
+    cos_theta_c = 1.0 - 2.0 * config.sky_frac
+    cap_centre = _perturb_within_cap(catalogue.direction[host_idx], cos_theta_c, rng)
+    balls: list[list[int]] = catalogue.tree.query_ball_point(cap_centre, catalogue.chord_radius)
+
+    # Membership of the true host in the CATALOGUE (not in the ball).
+    host_catalogued = catalogue.catalogued[host_idx]
+    # Position of the host inside the catalogued arrays, -1 when not catalogued.
+    cat_pos = np.full(catalogue.z_true.size, -1, dtype=np.int64)
+    cat_pos[catalogue.cat_index] = np.arange(catalogue.cat_index.size, dtype=np.int64)
+    host_cat_pos = cat_pos[host_idx]
+
+    # Option-A calibration n_bar_w(h) = Sigma_glob(h)/beta_G(h) ("absolute");
+    # generator-consistent n_hat_w = W_cat/V_f ("generator_marginal").
+    n_bar_w: npt.NDArray[np.float64] = catalogue.sigma_glob / np.clip(beta_G, 1e-300, None)
+    if mode == "generator_marginal":
+        d_gen = catalogue.sigma_glob / catalogue.n_hat_w + beta_Gbar
+        log_den = np.log(np.clip(d_gen, 1e-300, None))
+        scale = catalogue.n_hat_w * config.sky_frac  # in-catalogue term divisor
+    else:  # "absolute" and "lcat" share D(h) = beta_G + beta_Gbar
+        log_den = log_Dh
+        scale = float("nan")  # unused
+
+    logL = np.zeros(h_grid.size)
+    n_empty = 0
+    ball_sizes: list[int] = []
+    n_host_in_ball = 0
+    n_impostor = 0
+    n_ball_total = 0
+    for i in range(config.n_events):
+        ball = np.asarray(balls[i], dtype=np.int64)
+        ball_sizes.append(int(ball.size))
+        n_ball_total += int(ball.size)
+        in_ball = bool(host_cat_pos[i] >= 0 and np.any(ball == host_cat_pos[i]))
+        n_host_in_ball += int(in_ball)
+        n_impostor += int(ball.size) - int(in_ball)
+
+        z_lo = max(
+            Z_MIN,
+            float(z_of_comoving_amplitude(np.asarray((dL_obs[i] - 5 * sig_dl[i]) * h_grid.min())))
+            - 4 * sigma_z,
+        )
+        z_hi = min(
+            Z_MAX_POP,
+            float(z_of_comoving_amplitude(np.asarray((dL_obs[i] + 5 * sig_dl[i]) * h_grid.max())))
+            + 4 * sigma_z,
+        )
+        B_num_i = _completion_numerator(
+            float(dL_obs[i]),
+            float(sig_dl[i]),
+            zs,
+            h_grid,
+            config.n_z_quad,
+            config.inference_wpop_tilt,
+            config.pdet_in_numerator,
+            config.sigma_dl_frac,
+            config.sigma_dl_model_in_likelihood,
+            config.d50_gpc,
+            config.w_pdet_gpc,
+        )
+        if ball.size == 0 or z_hi <= z_lo:
+            n_empty += int(ball.size == 0)
+            logL += np.log(np.clip(B_num_i, 1e-300, None)) - log_den
+            continue
+
+        zq = np.linspace(z_lo, z_hi, config.n_z_quad)
+        wq = np.gradient(zq)
+        dLg = comoving_amplitude_of_z(zq)[:, None] / h_grid[None, :]  # (nz, nh)
+        sig_gw: npt.NDArray[np.float64] | float = (
+            config.sigma_dl_frac * dLg if config.sigma_dl_model_in_likelihood else float(sig_dl[i])
+        )
+        pGW = _norm_pdf(dLg, float(dL_obs[i]), sig_gw)  # (nz, nh)
+        if config.pdet_in_numerator:
+            pGW = pGW * detection_probability(dLg, config.d50_gpc, config.w_pdet_gpc)
+        # Ball rate-weight measure density: n_gal(z) * Sum_g N(z; z_obs,g,
+        # sigma_z)/Z_g * w(z) == w_pop(z) * Khat_ball(z).
+        khat_ball = np.sum(
+            _norm_pdf(zq[None, :], catalogue.z_obs[ball][:, None], sigma_z)
+            * catalogue.inv_norm[ball][:, None],
+            axis=0,
+        )  # (nz,)
+        rho_ball = _inference_population_weight(zq, config.inference_wpop_tilt) * khat_ball
+        sum_wN = np.asarray((wq * rho_ball) @ pGW, dtype=np.float64)  # (nh,)
+
+        if mode == "lcat":
+            pdet_q = detection_probability(dLg, config.d50_gpc, config.w_pdet_gpc)  # (nz, nh)
+            sum_wD = np.asarray((wq * rho_ball) @ pdet_q, dtype=np.float64)  # (nh,)
+            term_cat = beta_G * (sum_wN / np.clip(sum_wD, 1e-300, None))
+        elif mode == "absolute":
+            term_cat = sum_wN / np.clip(n_bar_w * config.sky_frac, 1e-300, None)
+        else:  # generator_marginal
+            term_cat = sum_wN / max(scale, 1e-300)
+        logL += np.log(np.clip(term_cat + B_num_i, 1e-300, None)) - log_den
+
+    n = float(config.n_events)
+    diagnostics = {
+        "completion_fraction": float(np.sum(~host_catalogued) / n),
+        "empty_ball_fraction": n_empty / n,
+        "mean_ball_size": float(np.mean(ball_sizes)),
+        "host_in_ball_fraction": n_host_in_ball / n,
+        "impostor_fraction": (n_impostor / n_ball_total) if n_ball_total > 0 else 0.0,
+    }
+    return logL, diagnostics
 
 
 def run_coverage(config: PPCoverageConfig) -> dict[str, Any]:
@@ -742,13 +1426,31 @@ def run_coverage(config: PPCoverageConfig) -> dict[str, Any]:
     beta_Gbar: npt.NDArray[np.float64] | None = None
     if config.mixture_mode != "two_branch" and config.z_support is None:
         raise ValueError(
-            "mixture_mode='gray'/'conditioned'/'exact' requires z_support: the Gray "
-            "mixture and the membership-truncated exact kernel are only defined with "
-            "a catalogue-support edge."
+            "mixture_mode='gray'/'conditioned'/'exact'/'absolute'/'lcat'/"
+            "'generator_marginal' requires z_support: the Gray mixture, the "
+            "membership-truncated exact kernel, the absolute-mass marginal and the "
+            "catalogue-mode estimators are only defined with a catalogue-support edge."
         )
-    if config.mixture_mode in ("gray", "conditioned"):
+    if config.catalogue_mode and config.mixture_mode not in CATALOGUE_MIXTURE_MODES:
+        raise ValueError(
+            f"catalogue_mode=True supports mixture_mode in {CATALOGUE_MIXTURE_MODES}, "
+            f"got {config.mixture_mode!r}."
+        )
+    if not config.catalogue_mode and config.mixture_mode in ("lcat", "generator_marginal"):
+        raise ValueError(
+            f"mixture_mode={config.mixture_mode!r} is catalogue-mode only "
+            "(it needs a discrete multi-galaxy candidate ball): set catalogue_mode=True."
+        )
+    if config.catalogue_mode and config.kernel != "volume":
+        raise ValueError(
+            "catalogue_mode derives its per-galaxy redshift kernel from the catalogue's "
+            "own generative model (n_gal(z) prior x photo-z Gaussian); kernel='bare' is "
+            "not defined there. Use kernel='volume' (the default)."
+        )
+    if config.catalogue_mode or config.mixture_mode in ("gray", "conditioned"):
         # exact needs neither beta_G nor beta_Gbar (no mixture weight, no
-        # conditioned denominators): only gray/conditioned compute them.
+        # conditioned denominators): only gray/conditioned and the
+        # catalogue-mode estimators compute them.
         assert config.z_support is not None  # guarded above
         zbg = np.linspace(Z_MIN, min(config.z_support, Z_MAX_POP), 3000)
         beta_G = np.asarray(
@@ -768,6 +1470,13 @@ def run_coverage(config: PPCoverageConfig) -> dict[str, Any]:
         beta_Gbar = np.asarray(Dh - beta_G, dtype=np.float64)
 
     master = np.random.default_rng(config.seed)
+
+    # Catalogue mode: one frozen shared catalogue for the whole run (production
+    # has ONE GLADE+ table), unless resample_catalogue_per_realization is set.
+    catalogue: SyntheticCatalogue | None = None
+    if config.catalogue_mode and not config.resample_catalogue_per_realization:
+        catalogue = _build_catalogue(config, h_grid, np.random.default_rng(config.seed + 1))
+
     results: dict[str, Any] = {}
     levels = {"50": 0.50, "68": 0.68, "90": 0.90}
     for h_true in config.injected_truths:
@@ -777,17 +1486,32 @@ def run_coverage(config: PPCoverageConfig) -> dict[str, Any]:
         completion_fractions: list[float] = []
         host_tilts: list[float] = []
         comp_tilts: list[float] = []
+        cat_diag: list[dict[str, float]] = []
         it_true = int(np.argmin(np.abs(h_grid - h_true)))
         for _ in range(config.n_realizations):
             rng = np.random.default_rng(int(master.integers(1 << 62)))
-            logL, n_zero_host, logL_host, logL_completion, n_host, n_comp = _run_realization(
-                h_true, h_grid, log_Dh, config, rng, beta_G=beta_G, beta_Gbar=beta_Gbar
-            )
-            completion_fractions.append(n_zero_host / config.n_events)
-            if n_host > 0:
-                host_tilts.append(float(np.gradient(logL_host, h_grid)[it_true]))
-            if n_comp > 0:
-                comp_tilts.append(float(np.gradient(logL_completion, h_grid)[it_true]))
+            if config.catalogue_mode:
+                assert beta_G is not None and beta_Gbar is not None  # guarded above
+                cat = (
+                    _build_catalogue(config, h_grid, rng)
+                    if config.resample_catalogue_per_realization
+                    else catalogue
+                )
+                assert cat is not None
+                logL, diag = _run_realization_catalogue(
+                    h_true, h_grid, log_Dh, config, rng, cat, beta_G, beta_Gbar
+                )
+                cat_diag.append(diag)
+                completion_fractions.append(diag["completion_fraction"])
+            else:
+                logL, n_zero_host, logL_host, logL_completion, n_host, n_comp = _run_realization(
+                    h_true, h_grid, log_Dh, config, rng, beta_G=beta_G, beta_Gbar=beta_Gbar
+                )
+                completion_fractions.append(n_zero_host / config.n_events)
+                if n_host > 0:
+                    host_tilts.append(float(np.gradient(logL_host, h_grid)[it_true]))
+                if n_comp > 0:
+                    comp_tilts.append(float(np.gradient(logL_completion, h_grid)[it_true]))
             post = np.exp(logL - logL.max())
             post /= np.trapezoid(post, h_grid)
             mi = int(np.argmax(post))
@@ -812,6 +1536,14 @@ def run_coverage(config: PPCoverageConfig) -> dict[str, Any]:
             "dlogL_dh_host_mean": float(np.mean(host_tilts)) if host_tilts else None,
             "dlogL_dh_completion_mean": (float(np.mean(comp_tilts)) if comp_tilts else None),
         }
+        if cat_diag:
+            for key in (
+                "empty_ball_fraction",
+                "mean_ball_size",
+                "host_in_ball_fraction",
+                "impostor_fraction",
+            ):
+                results[f"{h_true:.4f}"][key] = float(np.mean([d[key] for d in cat_diag]))
     return {"config": asdict(config), "results": results}
 
 
@@ -845,7 +1577,15 @@ def main(argv: list[str] | None = None) -> None:
     )
     parser.add_argument(
         "--mixture-mode",
-        choices=["two_branch", "gray", "conditioned", "exact"],
+        choices=[
+            "two_branch",
+            "gray",
+            "conditioned",
+            "exact",
+            "absolute",
+            "lcat",
+            "generator_marginal",
+        ],
         default="two_branch",
         help="Estimator composition under z_support truncation: 'two_branch' "
         "(default; in-catalogue events bare N_i/D, zero-host B_num/D — the "
@@ -853,11 +1593,47 @@ def main(argv: list[str] | None = None) -> None:
         "Gray et al. 2020 Eqs. 29+32 mixture (beta_G*L_cat_i + B_num)/D with "
         "the per-host D_g_i of Eqs. A.9/A.10; zero-host unchanged), "
         "'conditioned' (membership-conditioned inverse: N_i/beta_G and "
-        "B_num/beta_Gbar), or 'exact' (in-catalogue events use the "
+        "B_num/beta_Gbar), 'exact' (in-catalogue events use the "
         "volume-kernel numerator TRUNCATED at z_support — the "
         "membership-truncated exact kernel, no beta_G, no D_g_i; zero-host "
-        "events keep B_num/D). Modes other than 'two_branch' require "
-        "--z-support.",
+        "events keep B_num/D), or 'absolute' (the absolute-mass marginal: "
+        "in-catalogue events get (N_i + B_num_i)/D with NO self-normalization "
+        "of N_i, harness analog of "
+        "results/lcat_h_dependence_20260725/DERIVATION_ESTIMATOR_REDESIGN.md "
+        "Variant 1), 'lcat' / 'generator_marginal' (CATALOGUE MODE ONLY: the "
+        "legacy self-normalized Gray-A9 ratio-of-sums, and the "
+        "generator-consistent normalization of "
+        "results/lcat_h_dependence_20260725/DERIVATION_GENERATOR_CONSISTENT_NORM.md). "
+        "Modes other than 'two_branch' require --z-support.",
+    )
+    parser.add_argument(
+        "--catalogue-mode",
+        action="store_true",
+        help="Use the discrete-catalogue / impostor-ball generative model: a frozen "
+        "shared galaxy table plus hard sky-localization caps, so estimators that must "
+        "CHOOSE among candidate hosts can be exercised. Requires --z-support and "
+        "--mixture-mode in {lcat, absolute, generator_marginal}. See "
+        "results/pp_impostor_harness_20260726/DERIVATION_HARNESS_ANALOG.md.",
+    )
+    parser.add_argument(
+        "--n-galaxies",
+        type=int,
+        default=200_000,
+        help="Galaxies in the synthetic catalogue (catalogue mode; default 200000).",
+    )
+    parser.add_argument(
+        "--sky-frac",
+        type=float,
+        default=1.0e-4,
+        help="GW sky-localization cap solid-angle fraction dOmega/(4 pi) (catalogue "
+        "mode; default 1e-4). Expected ball occupancy = n_galaxies * sky_frac * "
+        "catalogued fraction.",
+    )
+    parser.add_argument(
+        "--resample-catalogue-per-realization",
+        action="store_true",
+        help="Redraw the galaxy catalogue every realization (independent universes) "
+        "instead of freezing one shared table for the run (production-faithful default).",
     )
     parser.add_argument(
         "--n-z-quad",
@@ -946,6 +1722,10 @@ def main(argv: list[str] | None = None) -> None:
         sigma_dl_model_in_likelihood=args.sigma_model_in_likelihood,
         d50_gpc=args.d50_gpc,
         w_pdet_gpc=args.w_pdet_gpc,
+        catalogue_mode=args.catalogue_mode,
+        n_galaxies=args.n_galaxies,
+        sky_frac=args.sky_frac,
+        resample_catalogue_per_realization=args.resample_catalogue_per_realization,
     )
     out = run_coverage(config)
     args.output.write_text(json.dumps(out, indent=2))
