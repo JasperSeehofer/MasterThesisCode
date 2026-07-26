@@ -1,0 +1,50 @@
+{
+ "373": {
+  "S_L_measured": 3.2796587985101437,
+  "S_L_predicted_overlap_model": 0.9382562319118933
+ },
+ "880": {
+  "S_L_measured": -32.03540256404588,
+  "S_L_predicted_overlap_model": -21.43861950064626
+ },
+ "3112": {
+  "S_L_measured": -0.062291198885218044,
+  "S_L_predicted_overlap_model": -1.0288488142236505
+ },
+ "2556": {
+  "S_L_measured": -50.93304814825479,
+  "S_L_predicted_overlap_model": -39.91876007626721
+ },
+ "899": {
+  "S_L_measured": -5.046372256361589,
+  "S_L_predicted_overlap_model": -5.32083252939237
+ },
+ "1404": {
+  "S_L_measured": -20.938711463160974,
+  "S_L_predicted_overlap_model": -16.947763572817163
+ },
+ "3070": {
+  "S_L_measured": -43.32810322763994,
+  "S_L_predicted_overlap_model": -24.11361540404167
+ },
+ "1384": {
+  "S_L_measured": 0.8286440003080291,
+  "S_L_predicted_overlap_model": -1.2400577696487551
+ },
+ "1708": {
+  "S_L_measured": 25.302457700897683,
+  "S_L_predicted_overlap_model": 24.037899459019844
+ },
+ "3344": {
+  "S_L_measured": -43.62948682139902,
+  "S_L_predicted_overlap_model": -34.46495293800663
+ },
+ "775": {
+  "S_L_measured": -46.03864703277769,
+  "S_L_predicted_overlap_model": -33.24768495464019
+ },
+ "1580": {
+  "S_L_measured": -54.57369209809227,
+  "S_L_predicted_overlap_model": -41.206156660928905
+ }
+}
