@@ -163,6 +163,26 @@ statistics) — to be pre-registered before the next campaign, not applied
 retroactively to this one. The valid-4 verdict (which the redteam rescoped
 to |bias| ≲ 0.0025 grid-supported) is unchanged by this readout.
 
+## Dense-core measurement (2026-07-26, late — jobs 6051317–6051321, issue #38)
+
+41-pt grids at 1e-4 spacing (0.7280–0.7320), out-of-sample venues, production
+stack. The peak is now RESOLVED (16–18 nodes above 1e-3·p_max; lnP drop
+ratios d2/d1 ≈ 4.1–5.1, Gaussian-consistent; seed2000-base ratio inflated
+only because the peak falls between nodes):
+
+| Venue | base MAP | base σ | bh_mass MAP | bh_mass σ |
+|---|---|---|---|---|
+| seed2000 | 0.72976 | 0.00025 | 0.72990 | 0.00024 |
+| seed3000 | 0.72979 | 0.00022 | 0.72988 | 0.00021 |
+
+These are **measurements, not extrapolations** — and they confirm the
+coarse-grid parabolic values (0.7300/0.7297, σ 2.3–2.6e-4) to ≲1σ. Per-venue
+offset from truth: −0.0002 to −0.0003 (base), −0.0001 (bh_mass), i.e. ≈1σ_venue;
+with two venues this is not a detectable bias (combined ≈ −0.0002 ± 0.0002).
+Redteam rescope R1 is hereby discharged for these venues: the production
+stack's measured per-venue width is σ ≈ 2.1–2.5e-4 and the measured MAP sits
+within ~1σ of truth. (Precision remains mock-internal per rescope R3.)
+
 ## Log-hygiene note (non-blocking)
 
 "quadrature weight outside P_det grid" warning spam scales with h-grid index
