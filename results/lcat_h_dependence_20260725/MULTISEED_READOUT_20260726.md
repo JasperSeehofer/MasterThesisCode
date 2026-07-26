@@ -94,6 +94,28 @@ seed900 being a defective outlier, not with a width-model failure (the 4-seed
   bias at the 4×10⁻⁴ level** and **valid curvature widths** — the first
   configuration in the campaign history to pass both.
 
+## Author ratification (2026-07-26, post-readout)
+
+The author reviewed this readout and ratified:
+
+1. **Seed900 is dropped from the registered set** on the diagnosed
+   input-provenance defect (wrong injection pool → survival-estimator
+   ESS-floor breakdown). The **valid-4 readout (seeds 1000/2000/3000/90000)
+   is adopted as the campaign verdict**: bias PASS, width PASS, sanity PASS,
+   both channels. This is a post-hoc exclusion and is disclosed as such; the
+   defect is in the venue input, established from build-log ESS diagnostics
+   and pool provenance, not from the posterior value.
+2. **Seed900 re-run ordered** (non-blocking robustness check): new run dir
+   with injections re-pointed at the canonical `injection_pool_depth15_50k`
+   pool (generator-consistency to be confirmed at submission), restoring the
+   registered n=5 test and strengthening the marginal base-channel width χ².
+3. **Production adoption approved**: flip repo defaults to
+   `generator_marginal + pdet_z_resolved` (via /physics-change), lift the
+   campaign NO-GO on the valid-4 basis, merge the PR chain. Adoption of the
+   *merge to main* is additionally gated on an independent adversarial
+   review (math + physics + anti-tuning audit) of the estimator chain,
+   ordered by the author 2026-07-26.
+
 ## Log-hygiene note (non-blocking)
 
 "quadrature weight outside P_det grid" warning spam scales with h-grid index
