@@ -1,6 +1,15 @@
 # H0 Posterior Bias — Resolution Catalog
 
-**Last updated:** 2026-06-19 (**Post-survival-p_det residual CLOSED, see §3.17** —
+**Last updated:** 2026-07-26 (**Deep-venue rail (issue #30) re-attributed to HOST
+MISASSOCIATION and closed at truth via a generator-consistent estimator redesign,
+see §3.21 / §3.22** — the seed1000 EXP-40 re-evaluation showed 82–83% of the tilt
+lives in the host-found in-catalogue likelihood term, not the completion term or
+depth truncation (§3.21); the absolute-mass marginal estimator (`[PHYSICS]` `49b9ade`)
+removes that mechanism but relocates the rail HIGH; the follow-on
+generator-consistent selection normalization + z-resolved detection survival
+(`[PHYSICS]` `8fbb21e` + `a608c4f`) closes the deep venue at MAP h=0.7300 = truth in
+both channels (§3.22), pending the pre-registered multi-seed χ² and seed600
+third-arm gates. Previously: **Post-survival-p_det residual CLOSED, see §3.17** —
 detection-horizon survival p_det landed `5e94139`; local seed400 1D MAP=0.750 /
 2D MAP=0.7375. Clean `--catalog_only` decomposition: 1D +0.020 splits ~evenly
 catalog +0.010 / completion +0.010. Fisher-frame suspect closed (non-cause),
@@ -28,7 +37,26 @@ and the per-test JSON outputs under
 
 ## 1. Executive Summary
 
-**Last updated:** 2026-06-30 (**In-catalogue photo-z RAILING root-caused → INFORMATION-STARVATION verdict, see §3.18; heliocentric→CMB-frame host-redshift bug FIXED, see §3.19 / issue #15 / PR #17.**) — A self-consistent **seed-600** dark-event run (3375 → 3361 events after SNR≥20 + σ_dL/d_L<0.10, truth h=0.73) rails the H₀ posterior to the **upper grid edge, MAP = 0.86 (+0.13, ≈+18 %)** — far above the ≤+0.02 residual closed in §3.17, and 99.2 % in-catalogue. A "bridge-the-closure" rung ladder (A–I) adds one real-pipeline ingredient at a time and isolates the cause to exactly ONE: convolving each host with its GLADE redshift PDF at the **real σ_z ≈ 0.035 ≈ 17× the GW precision** (σ_z^GW ≈ 0.002 at z≈0.05; σ_z/z ≈ 0.7); delta-z hosts recover 0.725 and every other ingredient recovers when added alone. The driver is that **GLADE flag-1 hosts are PHOTOMETRIC** (median σ_z = 0.0346) not spectroscopic (0.0017) — the `{1,3}` retention is correct (flag-2 d_L→z is properly excluded) but the photometric class dominates the host sample. A full candidate ladder of normalisation fixes was derived and **FALSIFIED**: STANDARD rails down to 0.600, every numerator-only clean (regularised kernel / volume de-count) rails up to 0.870, the local consistent-denominator fails the σ_z→0 gate, and the sole survivor — the global photo-z-smeared same-kernel denominator **D_sm** — passes the gate (~0.74) and de-biases the global density gradient but **does NOT recover a peaked H₀** (multi-seed std ~0.1 that does not shrink with n_events; per-seed posteriors peak at 0.64/0.64/0.69/0.87, never 0.73, several multimodal; `E[h]≈0.735` is a grid-midpoint artifact). **VERDICT: the in-catalogue photometric channel at GLADE's regime (σ_z/z≈0.7, z≈0.05, p_det≈1) is INFORMATION-STARVED** — no normalisation recovers a peaked H₀ (the only untested route, the full hierarchical cross-event MC (★), is predicted null via 1/N_gal suppression). **Recommendation: pivot the H₀ headline to a spectroscopic-host forecast arm (recovers h≈0.725) plus a rigorously-characterized GLADE-photometric limitation.** Orthogonally, the §3.18 data-usage audit found the parser feeds **heliocentric** z (0-based col 27) into d_L(z;H0) with no frame/PV value correction; the one-line **CMB-frame fix** (read z_cmb, col 28) landed under /physics-change (commit `7021f6f`, issue #15, PR #17) — per-event envelope ±2.47 % at z=0.05 but net ensemble bias only **+0.15 %**, ≈120× smaller than the railing and provably separate from it (host-PV follow-up filed as issue #16). See companion ledgers `docs/BIAS_RESOLUTION_ATTEMPTS_REPORT.md` and `docs/PIPELINE_BUGS_REPORT.md`.
+**Last updated:** 2026-07-26 (**Deep-venue campaign rail (issue #30), see §3.21 / §3.22.**)
+— The Phase-2 campaign's seed1000 deep venue (post-§3.20 zero-host fallback) rails to
+h=0.60; two independent investigations (D1 empirical decomposition, D2 structural audit
+vs Gray 2020/Gair 2023/gwcosmo v2) show 82–83% of the tilt is a **host-misassociation**
+effect — self-normalized in-catalogue likelihood assigns O(1) weight to candidate balls
+containing only foreground impostor galaxies (preferred h*≈0.42–0.48, below the grid) —
+not the completion term or a normalization bug (§3.21). The derived **absolute-mass
+marginal estimator** (`[PHYSICS]` `49b9ade`) removes that mechanism but exposes a second,
+previously-masked catalogue↔population calibration defect and relocates the rail to
+h=0.86. A **generator-consistent selection normalization** (`[PHYSICS]` `8fbb21e`) plus
+**z-resolved detection survival** (`[PHYSICS]` `a608c4f`) together close the seed1000 deep
+venue at **MAP h = 0.7300 = truth in both channels** (§3.22), with the fix-3 packet's own
+pre-registered +52…+92 ln HIGH-rail prediction formally falsified in the de-railing
+direction. Standing caveats: the curvature-derived posterior width is unvalidated pending
+a pre-registered multi-seed χ² test, the seed600 shallow-venue third-arm A/B gate had not
+been read out at the time of writing, and the point/point σ_z pairing is generator-exact
+only for the mock injection catalogue (real GLADE+ data needs the photo-z kernel
+reinstated). **Previously (2026-06-30): In-catalogue photo-z RAILING root-caused →
+INFORMATION-STARVATION verdict, see §3.18; heliocentric→CMB-frame host-redshift bug
+FIXED, see §3.19 / issue #15 / PR #17.** — A self-consistent **seed-600** dark-event run (3375 → 3361 events after SNR≥20 + σ_dL/d_L<0.10, truth h=0.73) rails the H₀ posterior to the **upper grid edge, MAP = 0.86 (+0.13, ≈+18 %)** — far above the ≤+0.02 residual closed in §3.17, and 99.2 % in-catalogue. A "bridge-the-closure" rung ladder (A–I) adds one real-pipeline ingredient at a time and isolates the cause to exactly ONE: convolving each host with its GLADE redshift PDF at the **real σ_z ≈ 0.035 ≈ 17× the GW precision** (σ_z^GW ≈ 0.002 at z≈0.05; σ_z/z ≈ 0.7); delta-z hosts recover 0.725 and every other ingredient recovers when added alone. The driver is that **GLADE flag-1 hosts are PHOTOMETRIC** (median σ_z = 0.0346) not spectroscopic (0.0017) — the `{1,3}` retention is correct (flag-2 d_L→z is properly excluded) but the photometric class dominates the host sample. A full candidate ladder of normalisation fixes was derived and **FALSIFIED**: STANDARD rails down to 0.600, every numerator-only clean (regularised kernel / volume de-count) rails up to 0.870, the local consistent-denominator fails the σ_z→0 gate, and the sole survivor — the global photo-z-smeared same-kernel denominator **D_sm** — passes the gate (~0.74) and de-biases the global density gradient but **does NOT recover a peaked H₀** (multi-seed std ~0.1 that does not shrink with n_events; per-seed posteriors peak at 0.64/0.64/0.69/0.87, never 0.73, several multimodal; `E[h]≈0.735` is a grid-midpoint artifact). **VERDICT: the in-catalogue photometric channel at GLADE's regime (σ_z/z≈0.7, z≈0.05, p_det≈1) is INFORMATION-STARVED** — no normalisation recovers a peaked H₀ (the only untested route, the full hierarchical cross-event MC (★), is predicted null via 1/N_gal suppression). **Recommendation: pivot the H₀ headline to a spectroscopic-host forecast arm (recovers h≈0.725) plus a rigorously-characterized GLADE-photometric limitation.** Orthogonally, the §3.18 data-usage audit found the parser feeds **heliocentric** z (0-based col 27) into d_L(z;H0) with no frame/PV value correction; the one-line **CMB-frame fix** (read z_cmb, col 28) landed under /physics-change (commit `7021f6f`, issue #15, PR #17) — per-event envelope ±2.47 % at z=0.05 but net ensemble bias only **+0.15 %**, ≈120× smaller than the railing and provably separate from it (host-PV follow-up filed as issue #16). See companion ledgers `docs/BIAS_RESOLUTION_ATTEMPTS_REPORT.md` and `docs/PIPELINE_BUGS_REPORT.md`.
 
 EMRI dark-siren H0 inference: the simulation injects events at `h_true = 0.73`
 (`H` in `master_thesis_code/constants.py:25`); the inference recovers a posterior
@@ -1390,6 +1418,246 @@ uv run python scripts/bias_investigation/test_31_completion_term_characterizatio
   (32-agent adversarially verified diagnosis, 26/28 claims confirmed);
   `.planning/BIAS-INVESTIGATION-20260710.md` (plan of record: consistent-data
   rules, seed600 Ω_m-era mismatch, suspect ledger); issues #29, #30.
+
+### 3.21 Host misassociation → estimator redesign (V1 absolute-mass marginal) (2026-07-19 → 2026-07-25) → mechanism identified, redesign lands but relocates the rail (superseded by §3.22)
+
+- **Symptom:** the EXP-40 re-evaluation of the seed1000 deep venue
+  (`run_20260719_seed1000_exp40`, main @ `ba2b381`, #29 fallback active) still
+  rails to the LOWER grid edge in both channels (MAP h=0.60, n_used=3454/3454).
+  Decomposition (`FINDINGS_EXP40_20260725.md`): 57.7% of events (1992/3454)
+  are #29 pure-completion fallbacks but contribute only ~1% of the tilt
+  (h-inert, 59 log-e span across the whole grid); the host-found subset alone
+  (1462 events) reproduces the pre-fix rail slope almost exactly. Global vs
+  per-event decomposition: 16.3–20.4% global `w_G(h)=β_G/D` slope, 82.3–78.7%
+  host-found `L_cat` term, ~1% fallback. Host-found z≤0.3 subsets still rail
+  (3.1 dec/0.01h). The z_cut truncation scan (`--max_redshift` 0.2/0.3/0.5 on
+  the same seed1000 CRB) rails at all three depths — issue #30 option (b)
+  (depth truncation) is declared empirically dead.
+- **Mechanism:** D1 (`D1_EMPIRICAL_DECOMPOSITION.md`) instrumented 12 events
+  across the 41-value h-grid (validated to ≤4.5e-13 vs shipped diagnostics)
+  and found 91–100% of each rail event's tilt lives in the numerator
+  GW-likelihood × host-redshift overlap: every rail event's candidate ball has
+  preferred `h*_g = 0.73·d_L(z_g;0.73)/d_L_det` with median 0.42–0.48
+  (foreground impostors only, relative to the GW distance); non-rail events
+  have `h*_med ∈ [0.60, 0.89]`. A zero-free-parameter overlap model predicts
+  the sign for 11/12 events and the magnitude to ~20–45%. D2's structural
+  audit (`D2_STRUCTURAL_AUDIT.md`) against Gray 2020 Appendix A9, Gray et al.
+  2023 (gwcosmo v2), and Gair et al. 2023 (all read from arXiv TeX) confirmed
+  the `volume_deconv` kernel is exactly h-invariant (`Z_g ∝ h⁻³` to 1e-15,
+  exonerated) and identified a real-but-secondary defect: the ball-restricted
+  selection denominator `Σ_ball w_g D_g` (vs the references' full-catalogue
+  sum), measured share 1–14% of tilt, opposite sign from the main rail.
+  D2's ranked local-denominator hypotheses P1/P2/P3 were refuted or
+  unsupported as the dominant mechanism by D1's measurements. Root cause
+  (`SYNTHESIS.md`): `L_cat` is a self-normalized ratio-of-sums over the
+  candidate ball; when the ball holds no plausible true host it still returns
+  an O(1) likelihood shaped by the impostors, and the catalogue-vs-dark
+  weighting (`β_G·L_cat` vs `B_num`) is global, so the event can never defer
+  to the completion term.
+- **Fix (derivation, user-approved `/physics-change`):**
+  `DERIVATION_ESTIMATOR_REDESIGN.md` derives the exhaustive per-event host
+  marginal `p_i(h) = [A_i(h) + B_num,i(h)]/D(h)` with
+  `A_i = Σ_{g∈ball} w_g N_g(h) / n̄_w(h)`, `n̄_w(h) = Σ_glob(h)/β_G(h)`
+  ("Variant 1", absolute-mass marginal; Chen–Fishbach–Holz 2018
+  arXiv:1712.06531 Eq. 3–4, Fishbach et al. 2019 arXiv:1807.05667 Eq. 1/3–5,
+  gwcosmo v2 arXiv:2308.02281 Eq. 2.4/2.9–2.10/2.14–15, Gray 2020 A9–A12). V1
+  is algebraically identical to the pipeline's existing dormant
+  `"volume_global"` mode; the 2026-07-01/02 commission rejection of that mode
+  predates both the G2a completion-sky fix and the #29 fallback and is
+  therefore confounded. A rival "Variant 2" (per-event membership-odds
+  mixture keeping self-normalized `L_cat`) was derived to the same protocol
+  depth and rejected: it is not a likelihood derivable from the marginal
+  (double-uses the data), fails the `f→1` limiting case, and leaves a
+  depth-graded residual rail on mixed-membership events (measured −13.2,
+  −8.0/−8.5 ln/h on instrumented events) vs V1's max `|S_V1|=1.18` across all
+  12 events. Landed as **`[PHYSICS]` `49b9ade`** (`absolute_marginal` mode,
+  opt-in via `--normalization_mode`).
+- **Evidence:** the seed1000 7-point probe (`v1_probe/`, 3454 events) under
+  `absolute_marginal` reports "Combined 3454 events (excluded 0, empty 0)
+  with strategy 'physics-floor': MAP h=0.8600" in BOTH channels — the LOW
+  rail (0.60) is replaced by a HIGH rail (0.86), not closure. The seed600
+  shallow-venue A/B gate (`SEED600_GATE_REGISTRATION.md`) measured V1-alone
+  FAILS: 1D MAP 0.775 (+0.030 vs the `volume_deconv` arm's 0.745) and 2D MAP
+  rails to 0.86 — attributed post-hoc to the same `n̄_w` calibration defect
+  and with-BH mass-composition violation that FIX-3 (§3.22) removes.
+- **Limitations / open items:** V1 alone does not close the deep venue — it
+  relocates the rail from LOW to HIGH, exposing a second, previously-masked
+  systematic (the catalogue↔population calibration constant
+  `n̄_w = Σ_glob/β_G` rests on an Option-A constant-comoving-density identity
+  that the real catalogue's z-composition measurably violates; see §3.22).
+  V1's own limiting-case analysis predicts the shallow-venue MAP is
+  *unchanged* only insofar as the catalogue term dominates in both forms —
+  the seed600 measurement falsifies that prediction once the with-BH
+  channel's mass composition is engaged. The opt-in σ_z-smeared `Σ_glob`
+  (**`[PHYSICS]` `f9c58f4`**, symmetry motivated by the num/denom σ_z
+  asymmetry flagged in §3.18) was landed alongside under an
+  overnight-autonomy grant and measured to remove only ~20% of the residual
+  `n̄_w` slope defect (+0.067/h of a +0.38/h target) — later superseded
+  (moot) once §3.22's generator-consistent normalization removes `n̄_w`
+  entirely.
+- **Reference:** Chen, Fishbach & Holz (2018), Nature 562:545, arXiv:1712.06531
+  Eq. 3–4, 15; Fishbach et al. (2019), ApJL 871:L13, arXiv:1807.05667 Eq. 1,
+  3–5, A4; Gray et al. (2023) gwcosmo v2, arXiv:2308.02281 Eq. 2.4, 2.9–2.10,
+  2.14–15; Gray et al. (2020), PRD 101:122001, arXiv:1908.06050 Appendix
+  A9–A12 (equation numbering per D2's TeX equation-environment count, content
+  verbatim); Gair et al. (2023), AJ 166:22, arXiv:2212.08694; Mandel, Farr &
+  Gair (2019), MNRAS 486:1086, arXiv:1809.02063. Commits `49b9ade` (`[PHYSICS]`
+  `absolute_marginal`), `f9c58f4` (`[PHYSICS]` opt-in σ_z-smeared `Σ_glob`),
+  `7d3573d` (`[PHYSICS]` B_num analysis-depth cap), `276c8c7`
+  (`--max_redshift` CLI, PR #37). Issue #30 (2026-07-25 comments).
+- **Detail →** `results/lcat_h_dependence_20260725/{SYNTHESIS.md,
+  D1_EMPIRICAL_DECOMPOSITION.md, D2_STRUCTURAL_AUDIT.md,
+  DERIVATION_ESTIMATOR_REDESIGN.md, OVERNIGHT_REPORT_20260726.md,
+  SEED600_GATE_REGISTRATION.md}`;
+  `results/campaign_phase2_runs/run_20260719_seed1000_exp40/FINDINGS_EXP40_20260725.md`;
+  `DATA_INVENTORY.md` Evaluation Log rows 2026-07-25/26.
+
+### 3.22 Generator-consistent normalization + z-resolved survival → deep-venue closure at truth (2026-07-26) → FIXED (pending multi-seed validation)
+
+- **Symptom:** after V1 (§3.21) the deep venue rails HIGH (h=0.86) instead of
+  LOW; separately, a completion-only (fallback) subset statistic
+  `Σ log(B_num/D)` on the same venue peaks anomalously at
+  **h = 0.6118 ± 0.0176** (≈6.5σ below truth), raising the question of
+  whether the completion term itself is defective.
+- **Mechanism / exoneration of the completion term**
+  (`completion_bias/E1_COMPLETION_BIAS.md`): a decisive self-consistency
+  Monte Carlo — synthetic dark events drawn from the estimator's own
+  generator density, detected with its own survival, scored with a
+  verbatim copy of the production `B_num` — closes at truth
+  (`B/β_Ḡ = 0.7366 ± 0.0155`) when scored with the *subset-conditioned*
+  statistic `B_num/β_Ḡ`, while the *production* per-event statistic
+  `B_num/D` pushes the same synthetic ensemble HIGH (rails ≥0.86) when read
+  naively as a fallback-only closure. A membership-clean real-data subset
+  test (`d_L > d_L(0.45,0.73)`) reproduces the model MC to 4 decimals (0.6329
+  real vs 0.6328 MC). Conclusion: the 0.612 anomaly is a **subset-conditioning
+  artifact** of testing fallback-only closure with an unconditioned statistic
+  (fallback membership is itself h-informative), not a defect in the
+  completion integral; the real deep-venue data are statistically
+  indistinguishable from self-consistent synthetic dark events. Three
+  quantified components explain the 0.6118 value (M-A subset-normalization
+  +0.12, M-B empty-ball membership reshaping −0.11, M-C zone-of-avoidance
+  per-pixel completeness weighting −0.13, M-D pooled-survival horizon
+  mismatch −0.02…−0.05); the same investigation identifies two host-channel
+  systematics as FIX candidates.
+- **Fix 1 — FIX-3, generator-consistent selection normalization
+  (`[PHYSICS]` `8fbb21e`, mode `generator_marginal`):**
+  `DERIVATION_GENERATOR_CONSISTENT_NORM.md` re-derives the per-event marginal
+  directly from the injection generator's own recipe (`Bernoulli(F)`
+  catalogue/dark channel split, catalogue draw normalizer
+  `W_cat = Σ_{g: z_g<1.5} w_g`, completeness-weighted population volume
+  `V_f(h)`), replacing V1's calibration constant `n̄_w = Σ_glob/β_G` (an
+  approximate, catalogue-realizes-population identity the real catalogue
+  violates by 33% in value and 0.39/h in log-slope) with the exact
+  `n̂_w(h) = W_cat/V_f(h)`, and replacing `D` with
+  `D_gen(h) = Σ_glob(h)/n̂_w(h) + β_Ḡ(h)`. Two free but fully-derived
+  (non-tuned) author decisions: the p_det convention inside `D_gen`'s
+  catalogue term (shared-3D vs generator-exact-4D) and the σ_z pairing
+  (point/point vs kernel/smeared, chosen point/point as generator-exact for
+  this mock). The packet's own linear-extrapolation pre-registration
+  predicted the fix would **NOT** de-rail (predicted 1D gap 0.73→0.86 ≈ +92 ln
+  (3D) / +52 ln (4D), vs the pre-fix +54.2 ln) — flagged explicitly as "the
+  deep-venue HIGH rail is therefore NOT primarily
+  composition-normalization-sourced" and handed the residual to FIX-2.
+- **Fix 1 gate result — prediction falsified, favorably:** the seed1000
+  7-point probe (`v1_probe_genmarg/PROBE_RESULTS.md`) measured **1D MAP =
+  0.73 (truth) and 2D MAP = 0.73 (truth)** in both channels — not the
+  predicted +52…+92 ln HIGH gap, but a sharp truth peak with a −898.8 ln (1D)
+  / −735.4 ln (2D) gap away from 0.86. Every normalization-substitution
+  quantity the packet predicted matched to 3–4 significant figures
+  (`n̂_w(0.73)=2.7317`, `d ln n̂_w/dh=+4.1116` vs predicted `3/h=+4.1096`,
+  `d ln D_gen/dh=−1.490`, `P̂(cat|det)=0.1133`); the entire deviation from the
+  pre-registered prediction is attributed to the point/point σ_z pairing
+  decision: with `N_g` point-evaluated on scatter-free mock redshifts,
+  catalogue-matched events become sharply h-informative (`d_L(z_g;h)` pinned
+  against the observed `d_L` at Fisher precision) in a way the
+  kernel-smoothed extrapolation could not represent (measured A-dominated
+  slope at truth −2.87 vs −0.23±0.05 predicted under the kernel-N_g
+  convention). Per the packet's own pre-registered falsification criterion
+  ("a measured gap far BELOW the prediction falsifies the §6.4
+  attribution"), this result formally falsifies FIX-3's own claim that the
+  rail is not composition-normalization-sourced — the full
+  generator-consistent estimator (normalization + point/point pairing
+  together) cures the deep venue by itself.
+- **Fix 2 — FIX-2, z-resolved detection survival (`[PHYSICS]` `a608c4f`,
+  `--pdet_z_resolved`):** `DERIVATION_ZRESOLVED_SURVIVAL.md` replaces the
+  pooled detection-horizon survival `S(d_L) = P(d_hor ≥ d_L)` inside every
+  selection integral (`D`, `β_Ḡ`, `Σ_glob`, per-host `D_g`) with the
+  z-conditional `S(d_L|z)`, kernel-estimated in `u=ln(1+z)` (Scott
+  bandwidth, Abramson-adaptive) on the same injection pool; motivated
+  because the pooled survival overestimates the pool's true SNR≥20 rate at
+  fixed z by +30–45% relative across z ∈ [0.1, 0.65] (median detection
+  horizon drifts 0.89→1.59 Gpc, ×1.8, from z≈0.18 to z≈0.9, driven by the
+  detector-frame mass lift `M_z=M(1+z)`). An earlier estimate in E1
+  (`d log D_zres/dh = −0.56`) was identified in this packet as a 0.05-z
+  hard-bin artifact and refined to **−1.26** with a bandwidth-insensitive
+  kernel estimator (−1.246…−1.260 across a ×4 bandwidth sweep) — a −0.26/h
+  shared per-event tilt, not the order-of-magnitude-dominant term the
+  earlier estimate implied. `B_num` and all likelihood numerators are
+  untouched (no p_det in the numerator, MFG convention). Pre-registered
+  prediction: stacked on FIX-3 (3D), gap +92 → −21 ln; FIX-2 alone on the
+  (pre-FIX-3) `absolute_marginal` baseline, gap +54.2 → −69 ln.
+- **Fix 2 gate result:** two probes on the seed1000 venue
+  (`zres_probe_20260726/PROBE_RESULTS.md`). Probe A (`generator_marginal +
+  --pdet_z_resolved` stacked): **1D and 2D MAP = 0.73 (truth)** in both
+  channels — the FIX-3 truth peak is PRESERVED, not displaced, and the
+  anti-0.86 margin deepens (1D gap −994.8 ln, 2D −831.4 ln, vs FIX-3-alone's
+  −898.8/−735.4). Probe B (FIX-2 alone on the unchanged pre-FIX-3
+  `absolute_marginal` baseline, isolating the survival-shape mechanism):
+  measured 1D gap 0.73→0.86 = **−68.75 ln** vs the packet's own
+  pre-registered −69 ln prediction — hit to within 0.3 ln, confirming the
+  survival-shape mechanism quantitatively on real data, even though the
+  packet's original −21 ln stacked-gap target (computed against the
+  falsified +92 ln FIX-3-alone baseline) is itself obsolete as a gate.
+- **Dense-core refinement and standing width caveat:** a 13-point dense grid
+  around h=0.73 (`densecore_probe/`) gives a sub-grid parabolic MAP **≈
+  0.7304** in both channels (curvature σ ≈ 0.00025–0.0003; 1D log-posterior
+  −206/−151 at ±0.005 from the peak), consistent with the coarse-grid
+  MAP=0.7300 (`posteriors/comparison_table.md`, all four combine strategies
+  agree, 3454/3454 events used, 0 zero-likelihood events at any tested h).
+  **This curvature-derived width is explicitly NOT validated:**
+  `RUNBOOK_NEXT_SESSION.md` flags "history of over-tight widths as symptoms
+  (§3.14)" and requires a pre-registered multi-seed χ² test (seeds
+  900/1000/2000/3000/90000) before the width can be quoted; if χ² ≫ 9.5
+  (4 dof), the empirical seed-to-seed scatter, not the curvature σ, must be
+  reported as the uncertainty. This gate had not yet run at the time of
+  writing.
+- **Standing gate not yet closed:** the seed600 shallow-venue must-not-change
+  gate's *third arm* (`generator_marginal + --pdet_z_resolved`, the
+  production candidate; jobs 6044088/6044089) is pre-registered in
+  `SEED600_GATE_REGISTRATION.md` (tolerance
+  `|ΔMAP| ≤ max(0.010, 2·σ_boot) ≈ 0.012`, interior MAP, identical
+  n_used=3353/3355, no new zero-likelihood events) but its verdict was, at
+  the time of writing, still being appended by a separate agent — **do not
+  quote a pass/fail here; consult that file directly.** (V1-alone, §3.21,
+  already failed this gate on the 2D channel; the production third-arm stack
+  is a different estimator with its own independent readout.)
+- **Reference:** Fishbach et al. (2019), ApJL 871:L13, arXiv:1807.05667
+  (generator/mixture structure, shared with §3.21); Gray et al. (2020), PRD
+  101:122001, arXiv:1908.06050 Appendix A9 (full-catalogue selection
+  denominator, the identity `D_gen` restores); Mandel, Farr & Gair (2019),
+  MNRAS 486:1086, arXiv:1809.02063 (`P(det|x)=1` convention, unchanged); Gair
+  et al. (2023), AJ 166:22, arXiv:2212.08694 (photo-z kernel; point/point
+  noted as valid only for this mock, real data needs the kernel back).
+  Commits: `8fbb21e` (`[PHYSICS]` `generator_marginal`, FIX-3), `a608c4f`
+  (`[PHYSICS]` z-resolved detection survival, FIX-2), `fb361e8` (docs: FIX-3
+  packet + probe results), `b9a097e` (results: FIX-2 probes), `ce26b6d`
+  (docs(state): 2026-07-26 milestone), `ca0ee3c` (results: seed600 gate
+  pre-registration), `f9a2a71` (results: runbook + multi-seed criteria).
+  Issue #30 (2026-07-25/26 comments).
+- **Standing caveats carried forward (do not soften):** (1) the
+  curvature-derived width σ≈0.0003 is unvalidated pending the multi-seed χ²
+  test above; (2) the point/point σ_z pairing is generator-exact ONLY for
+  this mock catalogue (the mock's catalogue redshifts are drawn and detected
+  verbatim, with no photo-z scatter in the generative model) — real GLADE+
+  data requires the photo-z kernel to be reinstated, and the mode choice
+  must be re-derived for that case before any real-data claim
+  (`RUNBOOK_NEXT_SESSION.md` "Open ends").
+- **Detail →** `results/lcat_h_dependence_20260725/{OVERNIGHT_REPORT_20260726.md,
+  completion_bias/E1_COMPLETION_BIAS.md, DERIVATION_GENERATOR_CONSISTENT_NORM.md,
+  DERIVATION_ZRESOLVED_SURVIVAL.md, v1_probe_genmarg/PROBE_RESULTS.md,
+  zres_probe_20260726/PROBE_RESULTS.md, densecore_probe/,
+  SEED600_GATE_REGISTRATION.md, RUNBOOK_NEXT_SESSION.md}`; `STATE.md`
+  "Milestone 2026-07-26"; `DATA_INVENTORY.md` Evaluation Log.
 
 ---
 

@@ -1,5 +1,19 @@
 # H0 Railing — Bias-Resolution Attempts Report
 
+> **Status note (2026-07-26, added post-hoc — do not edit the body below):** this
+> report's INFORMATION-STARVATION verdict was reached on the seed-600 shallow venue and
+> concerned the in-catalogue photometric channel specifically. It is **superseded as the
+> "current status" of the H0 railing** by the deep-venue (seed1000, Phase-2 campaign)
+> investigation documented in `docs/H0_BIAS_RESOLUTION.md` §3.21–§3.22: the deep-venue
+> rail was root-caused to a **host-misassociation estimator defect** (a self-normalized
+> in-catalogue likelihood assigning O(1) weight to candidate balls containing only
+> foreground-impostor galaxies), not to a fundamental information limit of photometric
+> dark sirens, and a generator-consistent estimator redesign (`[PHYSICS]` `8fbb21e` +
+> `a608c4f`) closes that venue at MAP h = 0.7300 = truth in both channels. Consult
+> `docs/H0_BIAS_RESOLUTION.md` §3.21–§3.22 for the current status; this document is
+> retained unmodified as the historical record of the June 2026 photometric-normalisation
+> search it describes.
+
 **Scope:** a standalone record of the *changes we tried* to resolve the H0
 posterior **railing** in the LISA EMRI dark-siren pipeline, in the order they were
 attempted, each with its motivation, result, and supporting tables/figures. This
