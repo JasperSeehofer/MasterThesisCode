@@ -112,6 +112,18 @@ _ROWS = [
         mstar_err="0.04",
     ),  # dropped (flag 2)
     dict(
+        ra="55.0",
+        dec="12.0",
+        bmag="17.5",
+        z="0.06",
+        pv_flag="1",
+        pv_err="null",
+        z_err="0.03",
+        flag="1",
+        mstar="0.8",
+        mstar_err="0.08",
+    ),  # survives (photo; flagged corrected but NULL PV error -> full term)
+    dict(
         ra="40.0",
         dec="5.0",
         bmag="16.0",
@@ -147,7 +159,7 @@ def test_only_flag_1_and_3_rows_survive(
 ) -> None:
     _handler, reduced = reduced_csv
     df = pd.read_csv(reduced, names=_reduced_catalog_column_names())
-    assert len(df) == 3
+    assert len(df) == 4
     assert set(df[CatalogueColumns.REDSHIFT_FLAG.name]) == {1, 3}
 
 
@@ -190,6 +202,8 @@ def test_redshift_error_folds_pv_per_class_counted_once(
     assert by_z[0.03] == pytest.approx(math.sqrt(0.001**2 + _full(0.03) ** 2))
     # spec row, PV-corrected: sqrt(z_err^2 + pv_err^2 + residual^2)
     assert by_z[0.08] == pytest.approx(math.sqrt(0.0015**2 + 0.0005**2 + _res(0.08) ** 2))
+    # flagged-corrected but NULL PV error (RATIFY-3 check outcome): full term
+    assert by_z[0.06] == pytest.approx(math.sqrt(0.03**2 + _full(0.06) ** 2))
 
 
 def test_read_renames_sky_columns_to_frame_neutral_symbols(

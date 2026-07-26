@@ -361,15 +361,22 @@ class GalaxyCatalogueHandler:
             #    §4.2.1).
             #  - Uncorrected rows: ONE full-dispersion term (1+z)*500 km/s / c
             #    (Laghi et al. 2021, arXiv:2102.01708, Sec. 3), REPLACING the former
-            #    uncited 0.0015 fill; the catalogue PV column is ignored for this
-            #    class (expected null — verified against the raw catalogue, see the
-            #    derivation's RATIFY-3 check).
+            #    uncited 0.0015 fill.
+            # RATIFY-3 check on the raw catalogue (2026-07-27): the flag is 1 /
+            # 0 / null; 119,299 rows within the {1,3} parse filter are flagged
+            # corrected but report NO PV error (99.7% photometric, median
+            # z = 0.055, 374 spec-z). A row therefore counts as corrected only
+            # if it is BOTH flagged AND carries a reported sigma_tot; flagged-
+            # but-null rows take the conservative full-dispersion term (for the
+            # dominant photo-z members the PV term is a ~2% width effect either
+            # way). Null-flag rows (~19M, the bulk) are uncorrected by
+            # construction.
             # (1+z) factor: Davis et al. (2011), arXiv:1012.2912, Eqs. (1)/(A1).
             # The former inference-time 200 km/s quadrature is retired
             # (SIGMA_V_PEC_KM_S = 0.0 default) — see constants.py.
             _pv_corrected = (
                 chunk[CatalogueColumns.REDSHIFT_PECULIAR_VELOCITY_CORRECTION_FLAG.name] == 1
-            )
+            ) & chunk[CatalogueColumns.REDSHIFT_PECULIAR_VELOCITY_ERROR.name].notna()
             _one_plus_z = 1.0 + chunk[CatalogueColumns.REDSHIFT.name]
             _sigma_z_pv_class = (
                 _one_plus_z
