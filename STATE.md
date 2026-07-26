@@ -42,7 +42,20 @@ machines. Detailed, ephemeral working notes are kept out of the repository by de
 - Standing modelling choices are documented in `docs/source/limitations.rst` (flat-ΛCDM distance
   integrals, cosmology-constant vintage matched to the mock universe, redshift-uncertainty scaling).
 
-## Next
+## Milestone 2026-07-26: the deep venue closes at truth
+
+- **`generator_marginal` + `--pdet_z_resolved`** (branch `physics/absolute-mass-marginal`,
+  `[PHYSICS]` commits `8fbb21e` + `a608c4f`): seed1000 MAP = **0.7300 = truth in both
+  channels**, sharp broad-based peak, 1017 tests green. Fully derivation-backed chain
+  (generator-consistent normalization n̂_w = W_cat/V_f + D_gen; z-resolved survival
+  S(d_L|z) in u = ln(1+z); point/point pairing verified against the generator — the mock
+  draws catalogue z verbatim). Two-sided mechanism validation: FIX-2-alone measured
+  −68.75 ln vs −69 predicted. No truth-referencing constants anywhere. For REAL data the
+  photo-z kernel must return (point/point is generator-exact for the mock only).
+- Remaining gates: dense-core peak width/σ(h) (running), re-registered seed600 shallow
+  gate, 41-pt full grid, multi-seed (900/1000/2000/3000/90000) residual-bias measurement.
+
+## Next (2026-07-25 scoping, kept for the record — resolved by the milestone above)
 
 - **Rail mechanism identified (2026-07-25): host misassociation.** Two independent
   investigations (empirical per-event decomposition, validated to ≤4.5e-13 against cluster
