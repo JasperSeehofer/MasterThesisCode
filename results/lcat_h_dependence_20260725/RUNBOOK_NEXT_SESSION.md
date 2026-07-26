@@ -102,6 +102,14 @@ Five-seed production-stack campaign (generator_marginal + --pdet_z_resolved, 41-
 
 Code @ 6dae9d3. Read out combined_posterior.json per run/channel against the
 pre-registered multi-seed criteria above (bias t-test; width χ²; per-venue sanity).
+
+**READ OUT 2026-07-26** → `MULTISEED_READOUT_20260726.md`. Summary: 4/5 venues
+PASS all criteria (4-seed bias −0.0003 ± 0.0004, width χ² valid); seed900
+rails at 0.86 = criterion-3 FAIL, diagnosed as invalid injection-pool
+provenance (bespoke ~204-injection pool instead of canonical depth15_50k →
+survival-estimator ESS-floor breakdown, 57.6% cells under floor). Registered
+5-seed verdict: QUALIFIED FAIL pending author decision on seed900 pool fix +
+re-run. #30 stays open; NO-GO not lifted.
 seed600 gate verdict: SEED600_GATE_REGISTRATION.md (MAP PASS; n_used deviation =
 diagnosed benign risk-4 edge case, 3/3355 shallow-only — deep venues measured
 0 hard zeros on 3454 events). Watch for FAILED eval tasks and zombie
