@@ -94,7 +94,7 @@ def resolve_host_z_kernel(host_z_kernel: str, normalization_mode: str) -> str:
     Returns:
         ``"point"`` (delta kernel at the catalogue z_g) or ``"volume_deconv"``
         (the mode's own quadrature kernel — volume-deconvolved in the
-        *_marginal modes, bare Gaussian in "global"/"local_ratio").
+        ``*_marginal`` modes, bare Gaussian in "global"/"local_ratio").
     """
     if host_z_kernel not in HOST_Z_KERNEL_CHOICES:
         raise ValueError(
