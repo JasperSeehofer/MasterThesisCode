@@ -1,13 +1,27 @@
 # Host-z PV/photo-z kernel for real-data mode (issue #40b) — DERIVATION SKELETON
 
-**Status: DRAFT DERIVATION (2026-07-26) — §3 filled per author delegation;
-five [RATIFY] points await the author's formula-level sign-off
-(physics-change protocol) before ANY implementation. Nothing is implemented;
-`--host_z_kernel` currently exposes only the existing `point` and
-`volume_deconv` kernels (issue #40a decomposition flag). Implementation
-note: the §3.1 width changes touch `host_z_error_eff`, which enters
-denominator windows and Z_g on the PRODUCTION mock path too — golden
-regeneration will be a reviewed value-update step.**
+**Status: RATIFIED (2026-07-26) — all five [RATIFY] gates approved by the
+author with the stated recommendations ("all approved with your
+recommendations"): (1) corrected-host residual σ_v = 150 km/s; (2)
+uncorrected-host σ_v = 500 km/s replacing the 0.0015 fill; (3) parse the
+PV-correction flag, WITH the empirical precondition that the null↔flag
+coincidence be verified on the raw GLADE+.txt BEFORE the implementation
+merges (raw catalogue re-download in progress 2026-07-26 — the original was
+deleted from every machine); (4) w_pop unchanged; (5) real-data mode =
+absolute_marginal normalization + broadened volume_deconv numerator,
+explicitly 1D-complete / 2D-OPEN (three-way A/B: the 2D channel needs its
+own mass-marginal derivation).**
+
+**Implementation decision (post-ratification):** per-class PV terms are
+applied at PARSE time — the (1+z)·σ_v/c term is computed per row (z known at
+parse) and folded into the stored z_error with the class resolved by the
+PV-correction flag; the runtime `SIGMA_V_PEC_KM_S` quadrature in
+`bayesian_statistics.py` is removed (counted-once invariant, single
+application site). The reduced-catalogue schema stays 8 columns (no flag
+column stored); the reduced CSV must be REGENERATED from GLADE+.txt and
+re-staged to the cluster. The width changes touch `host_z_error_eff`
+(denominator windows, Z_g) on the production mock path — golden
+regeneration is a reviewed value-update step of this change.
 
 **Scope.** Derive the in-catalogue numerator host-redshift kernel for
 *real-data* mode — where the observed catalogue redshift carries
@@ -91,14 +105,13 @@ h-dependent**; (ii) it belongs in the **per-galaxy numerator sum**; (iii) the
 **selection/normalization keeps the smooth dV_c/dz prior**, not the
 discrete-galaxy kernel.
 
-## 3. The derivation (DRAFT 2026-07-26 — recommended resolution, AWAITING
-## AUTHOR RATIFICATION; audit evidence in
+## 3. The derivation (RATIFIED 2026-07-26 — all five gates approved with
+## the stated recommendations; audit evidence in
 ## `results/lcat_h_dependence_20260725/threeway_ab/GLADE_PV_AUDIT.md`)
 
-Author delegation 2026-07-26: "go with what you recommend and what is
-scientifically correct" — the recommendation below is drafted accordingly;
-each **[RATIFY]** point is the formula-level sign-off the physics-change
-protocol still requires before implementation.
+Author delegation 2026-07-26 ("go with what you recommend and what is
+scientifically correct"), followed by explicit per-gate ratification of the
+drafted recommendations ("all approved with your recommendations").
 
 **3.1 Kernel form — Gaussian with per-host, flag-resolved σ_eff (answer to
 Q1: (a) structurally, with the (c) per-flag width audit REQUIRED, and (b) as
@@ -139,11 +152,11 @@ current SIGMA_V_PEC_KM_S = 200 km/s rationale ("residual nonlinear
 dispersion on top") is invalid for BORG-corrected hosts — σ_vir already
 covers it.
 
-**[RATIFY-1]** corrected-host residual: 0 vs 150 km/s (recommendation:
+**[RATIFY-1 — RATIFIED 2026-07-26: 150 km/s]** corrected-host residual: 0 vs 150 km/s (recommendation:
 **150 km/s**, conservative, cited, and robust to GLADE+ underestimating
 σ_vir for unresolved halo masses).
-**[RATIFY-2]** uncorrected-host σ_v = 500 km/s replacing the 0.0015 fill.
-**[RATIFY-3]** parse the PV-correction flag; verify on the cluster copy of
+**[RATIFY-2 — RATIFIED 2026-07-26]** uncorrected-host σ_v = 500 km/s replacing the 0.0015 fill.
+**[RATIFY-3 — RATIFIED 2026-07-26; null↔flag check still REQUIRED pre-merge]** parse the PV-correction flag; verify on the cluster copy of
 GLADE+.txt that col-31 nulls coincide with flag = 0 (audit's one
 locally-unverifiable assumption) BEFORE implementation.
 
@@ -153,7 +166,7 @@ $p_g(z) = \mathcal N(z_g; z, \sigma_{\rm eff})\, w_{\rm pop}(z)/Z_g$,
 $w_{\rm pop} = \frac{dV_c}{dz}(1+z)^{-1}$. The volume-deconvolution weight
 survives unchanged: it derives from the population prior (G2b §1), which is
 independent of the *measurement* kernel width; only σ_eff changes.
-**[RATIFY-4]**.
+**[RATIFY-4 — RATIFIED 2026-07-26]**.
 
 **3.3 Selection/normalization leg.** Real data has no generator, so the
 generator-consistent leg (n̂_w = W_cat/V_f, D_gen) does not apply. The
@@ -166,7 +179,7 @@ NUMERATOR only; selection keeps the smooth prior; do not double-apply).
 smooth on the σ_z scale (the Jacobian/volume factors vary slowly over
 Δz ≈ 2×10⁻³), so kernel-smearing Σ_glob is an O((σ_z/z)²) correction; keep
 `--smear_global_selection` available as the diagnostic it already is.
-**[RATIFY-5]** (real-data mode = `absolute_marginal` normalization +
+**[RATIFY-5 — RATIFIED 2026-07-26, 1D-complete/2D-open]** (real-data mode = `absolute_marginal` normalization +
 `volume_deconv` numerator kernel with §3.1 widths; note the #40a flag
 already makes this combination expressible).
 
