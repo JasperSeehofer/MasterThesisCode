@@ -526,16 +526,22 @@ def test_invalid_dgen_catalog_selection_rejected() -> None:
         )
 
 
-def test_cli_exposes_generator_marginal_and_default_unchanged() -> None:
-    args = Arguments.create(["wd", "--evaluate", "--normalization_mode", "generator_marginal"])
-    assert args.normalization_mode == "generator_marginal"
+def test_cli_exposes_generator_marginal_as_default() -> None:
+    """generator_marginal is the production default since 2026-07-26;
+    volume_deconv stays selectable as the legacy mode."""
+    args = Arguments.create(["wd", "--evaluate", "--normalization_mode", "volume_deconv"])
+    assert args.normalization_mode == "volume_deconv"
     args_default = Arguments.create(["wd", "--evaluate"])
-    assert args_default.normalization_mode == "volume_deconv"
+    assert args_default.normalization_mode == "generator_marginal"
+    assert args_default.pdet_z_resolved is True
+    args_legacy = Arguments.create(["wd", "--evaluate", "--no-pdet_z_resolved"])
+    assert args_legacy.pdet_z_resolved is False
 
 
-def test_library_defaults_unchanged() -> None:
+def test_library_defaults_production_stack() -> None:
     sig = inspect.signature(BayesianStatistics.evaluate)
-    assert sig.parameters["normalization_mode"].default == "volume_deconv"
+    assert sig.parameters["normalization_mode"].default == "generator_marginal"
+    assert sig.parameters["pdet_z_resolved"].default is True
     assert sig.parameters["dgen_catalog_selection"].default == "4d_exact"
-    assert BayesianStatistics._normalization_mode == "volume_deconv"
+    assert BayesianStatistics._normalization_mode == "generator_marginal"
     assert BayesianStatistics._dgen_catalog_selection == "4d_exact"

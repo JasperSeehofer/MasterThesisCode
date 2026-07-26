@@ -1513,9 +1513,12 @@ class BayesianStatistics:
     additional_galaxies_without_bh_mass: dict[str, dict[str, list[float]]]
     posterior_data: dict[int, list[float]]
     posterior_data_with_bh_mass: dict[int | str, Any]
-    # In-catalogue normalization (set by evaluate()); "volume_deconv" is the
-    # calibrated default. See evaluate() for "global"/"local_ratio".
-    _normalization_mode: str = "volume_deconv"
+    # In-catalogue normalization (set by evaluate()); "generator_marginal" is the
+    # production default since 2026-07-26 (author-ratified adoption,
+    # results/lcat_h_dependence_20260725/MULTISEED_READOUT_20260726.md;
+    # derivation: DERIVATION_GENERATOR_CONSISTENT_NORM.md). See evaluate() for
+    # the legacy modes ("volume_deconv"/"global"/"local_ratio").
+    _normalization_mode: str = "generator_marginal"
     # G4: base seed for the deterministic with-BH-mass MC denominator streams.
     _base_seed: int = 0
     # generator_marginal precomputes (set by evaluate() when the mode is active):
@@ -1560,13 +1563,15 @@ class BayesianStatistics:
         pdet_mass_bins: int = 40,
         pdet_estimator: str = "local_linear",
         fisher_cond_threshold: float = 1e16,
-        normalization_mode: str = "volume_deconv",
+        # [PHYSICS] production defaults since 2026-07-26 (author-ratified,
+        # results/lcat_h_dependence_20260725/MULTISEED_READOUT_20260726.md).
+        normalization_mode: str = "generator_marginal",
         base_seed: int = 0,
         allow_low_pdet_coverage: bool = False,
         h_values: Sequence[float] | None = None,
         smear_global_selection: bool = False,
         dgen_catalog_selection: str = "4d_exact",
-        pdet_z_resolved: bool = False,
+        pdet_z_resolved: bool = True,
     ) -> None:
         # h-grid fusion (opt-in): when h_values is given it supersedes h_value
         # and ALL h-invariant setup — catalogue/BallTree (passed in), injection
@@ -3012,7 +3017,8 @@ def single_host_likelihood(
     detection_index: int,
     h: float,
     evaluate_with_bh_mass: bool,
-    normalization_mode: str = "volume_deconv",
+    # [PHYSICS] production default since 2026-07-26 (MULTISEED_READOUT_20260726.md)
+    normalization_mode: str = "generator_marginal",
     base_seed: int = 0,
 ) -> list[float]:
     global redshift_upper_integration_limit
@@ -3476,7 +3482,8 @@ def single_host_likelihood_batch(
     detection_index: int,
     h: float,
     evaluate_with_bh_mass: bool,
-    normalization_mode: str = "volume_deconv",
+    # [PHYSICS] production default since 2026-07-26 (MULTISEED_READOUT_20260726.md)
+    normalization_mode: str = "generator_marginal",
 ) -> npt.NDArray[np.float64]:
     """Host-batched twin of :func:`single_host_likelihood`.
 

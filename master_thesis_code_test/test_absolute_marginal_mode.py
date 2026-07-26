@@ -355,16 +355,18 @@ def test_absolute_marginal_accepted_without_warning() -> None:
             )
 
 
-def test_cli_exposes_absolute_marginal_and_default_unchanged() -> None:
-    """--normalization_mode accepts 'absolute_marginal'; default stays volume_deconv."""
+def test_cli_exposes_absolute_marginal_and_default_is_production() -> None:
+    """--normalization_mode accepts 'absolute_marginal'; the default is the
+    production 'generator_marginal' (flipped 2026-07-26)."""
     args = Arguments.create(["wd", "--evaluate", "--normalization_mode", "absolute_marginal"])
     assert args.normalization_mode == "absolute_marginal"
     args_default = Arguments.create(["wd", "--evaluate"])
-    assert args_default.normalization_mode == "volume_deconv"
+    assert args_default.normalization_mode == "generator_marginal"
 
 
-def test_library_default_unchanged() -> None:
-    """The evaluate() default and class default stay 'volume_deconv'."""
+def test_library_default_is_production() -> None:
+    """The evaluate() default and class default are 'generator_marginal'
+    (production since 2026-07-26)."""
     sig = inspect.signature(BayesianStatistics.evaluate)
-    assert sig.parameters["normalization_mode"].default == "volume_deconv"
-    assert BayesianStatistics._normalization_mode == "volume_deconv"
+    assert sig.parameters["normalization_mode"].default == "generator_marginal"
+    assert BayesianStatistics._normalization_mode == "generator_marginal"

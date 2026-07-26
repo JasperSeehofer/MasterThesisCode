@@ -393,17 +393,21 @@ def _parse_arguments(arguments: list[str]) -> argparse.Namespace:
     )
     parser.add_argument(
         "--pdet_z_resolved",
-        action="store_true",
-        default=False,
+        # [PHYSICS] production default since 2026-07-26 (author-ratified adoption,
+        # results/lcat_h_dependence_20260725/MULTISEED_READOUT_20260726.md):
+        # multi-seed verification passed bias + width criteria on 4 deep venues.
+        action=argparse.BooleanOptionalAction,
+        default=True,
         help=(
-            "Opt-in [PHYSICS] FIX-2: z-resolved detection survival. Every 3D "
-            "(without-BH-mass) selection query uses the z-CONDITIONAL survival "
-            "S(d_L | z) = P(d_hor >= d_L | z) (Gaussian kernel in u = ln(1+z), "
-            "Scott d=1 bandwidth, Abramson-adaptive; exact suffix-survival in "
-            "d_L) instead of the pooled S(d_L). The 2D M_z-conditioned grid "
-            "keeps its current form. Off by default (pooled, byte-identical "
-            "legacy behavior). Ships/gates jointly with the FIX-3 "
-            "generator_marginal normalization (stacked prediction, packet §6). "
+            "[PHYSICS] FIX-2: z-resolved detection survival (production default). "
+            "Every 3D (without-BH-mass) selection query uses the z-CONDITIONAL "
+            "survival S(d_L | z) = P(d_hor >= d_L | z) (Gaussian kernel in "
+            "u = ln(1+z), Scott d=1 bandwidth, Abramson-adaptive; exact "
+            "suffix-survival in d_L) instead of the pooled S(d_L). The 2D "
+            "M_z-conditioned grid keeps its current form. Use "
+            "--no-pdet_z_resolved for the pooled legacy behavior. Ships/gates "
+            "jointly with the generator_marginal normalization (stacked "
+            "prediction, packet §6). "
             "results/lcat_h_dependence_20260725/DERIVATION_ZRESOLVED_SURVIVAL.md."
         ),
     )
@@ -423,10 +427,14 @@ def _parse_arguments(arguments: list[str]) -> argparse.Namespace:
             "absolute_marginal",
             "generator_marginal",
         ],
-        default="volume_deconv",
+        # [PHYSICS] production default since 2026-07-26 (author-ratified adoption,
+        # results/lcat_h_dependence_20260725/MULTISEED_READOUT_20260726.md;
+        # derivation: DERIVATION_GENERATOR_CONSISTENT_NORM.md).
+        default="generator_marginal",
         help=(
-            "In-catalogue L_cat normalization (commission de-rail study). "
-            "'volume_deconv' (default): Gray A.9/A.10 local ratio-of-sums with the host-z "
+            "In-catalogue L_cat normalization. 'generator_marginal' (default, "
+            "production since 2026-07-26): see below. "
+            "'volume_deconv' (pre-2026-07-26 default): Gray A.9/A.10 local ratio-of-sums with the host-z "
             "prior deconvolved through the comoving-volume element dV_c/(1+z) -- de-railed "
             "AND statistically calibrated (D2 P-P). 'local_ratio': the same local ratio with "
             "a bare-Gaussian host-z prior (de-railed but ~2-3%% low-biased). 'global': the "
