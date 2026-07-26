@@ -66,6 +66,45 @@ from master_thesis_code.physical_relations import (
 _LOGGER = logging.getLogger()
 
 DEFAULT_GALAXY_Z_ERROR = 0.0015
+
+# Issue #40(a) decomposition flag (redteam F2/F3): the in-catalogue NUMERATOR
+# host-z kernel, historically bundled into normalization_mode. "auto" preserves
+# that bundling exactly (delta kernel iff generator_marginal); "point" /
+# "volume_deconv" force the numerator kernel independently of the
+# normalization leg (n_hat_w / D_gen machinery, which stays mode-selected).
+HOST_Z_KERNEL_CHOICES = ("auto", "point", "volume_deconv")
+
+
+def resolve_host_z_kernel(host_z_kernel: str, normalization_mode: str) -> str:
+    """Resolve the numerator host-z kernel selection to 'point' or 'volume_deconv'.
+
+    Decomposition flag for issue #40(a): makes the delta-kernel (point/point)
+    in-catalogue numerator separately selectable from the normalization leg.
+    ``"auto"`` reproduces the historical bundling — the delta kernel if and
+    only if ``normalization_mode == "generator_marginal"`` — so the production
+    default path is unchanged. Explicit ``"point"`` / ``"volume_deconv"``
+    override the numerator kernel only; the selection-normalization machinery
+    (``n_hat_w``/``D_gen`` vs ``n_bar_w``/``D``) remains governed by
+    ``normalization_mode``.
+
+    Args:
+        host_z_kernel: One of ``HOST_Z_KERNEL_CHOICES``.
+        normalization_mode: The in-catalogue normalization mode (see ``p_Di``).
+
+    Returns:
+        ``"point"`` (delta kernel at the catalogue z_g) or ``"volume_deconv"``
+        (the mode's own quadrature kernel — volume-deconvolved in the
+        *_marginal modes, bare Gaussian in "global"/"local_ratio").
+    """
+    if host_z_kernel not in HOST_Z_KERNEL_CHOICES:
+        raise ValueError(
+            f"unknown host_z_kernel: {host_z_kernel!r} (expected one of {HOST_Z_KERNEL_CHOICES})"
+        )
+    if host_z_kernel == "auto":
+        return "point" if normalization_mode == "generator_marginal" else "volume_deconv"
+    return host_z_kernel
+
+
 GALAXY_LIKELIHOODS = "galaxy_likelihoods"
 ADDITIONAL_GALAXIES_WITHOUT_BH_MASS = "additional_galaxies_without_bh_mass"
 
@@ -1519,6 +1558,9 @@ class BayesianStatistics:
     # derivation: DERIVATION_GENERATOR_CONSISTENT_NORM.md). See evaluate() for
     # the legacy modes ("volume_deconv"/"global"/"local_ratio").
     _normalization_mode: str = "generator_marginal"
+    # Issue #40(a): numerator host-z kernel decomposition flag (set by
+    # evaluate()); "auto" reproduces the historical mode bundling exactly.
+    _host_z_kernel: str = "auto"
     # G4: base seed for the deterministic with-BH-mass MC denominator streams.
     _base_seed: int = 0
     # generator_marginal precomputes (set by evaluate() when the mode is active):
@@ -1572,6 +1614,10 @@ class BayesianStatistics:
         smear_global_selection: bool = False,
         dgen_catalog_selection: str = "4d_exact",
         pdet_z_resolved: bool = True,
+        # Issue #40(a): numerator host-z kernel decomposition flag; "auto"
+        # preserves the historical bundling (delta kernel iff
+        # generator_marginal) — production default path unchanged.
+        host_z_kernel: str = "auto",
     ) -> None:
         # h-grid fusion (opt-in): when h_values is given it supersedes h_value
         # and ALL h-invariant setup — catalogue/BallTree (passed in), injection
@@ -1678,6 +1724,18 @@ class BayesianStatistics:
                 f"unknown dgen_catalog_selection: {dgen_catalog_selection!r} "
                 "(expected '4d_exact' or '3d_shared')"
             )
+        # Issue #40(a): validate the kernel choice up front (raises on unknown);
+        # the resolved value is recomputed identically inside the worker kernels.
+        _resolved_kernel = resolve_host_z_kernel(host_z_kernel, normalization_mode)
+        if host_z_kernel != "auto":
+            _LOGGER.info(
+                "host_z_kernel=%r overrides the mode-bundled numerator kernel "
+                "(resolved: %s numerator with %s normalization) — diagnostic "
+                "decomposition, issue #40(a)",
+                host_z_kernel,
+                _resolved_kernel,
+                normalization_mode,
+            )
         if normalization_mode == "generator_marginal" and smear_global_selection:
             # The mode is DEFINED with the point/point sigma_z pairing (generator-
             # exact, derivation §4.3): a smeared Sigma_glob would silently break
@@ -1698,6 +1756,7 @@ class BayesianStatistics:
                 stacklevel=2,
             )
         self._normalization_mode = normalization_mode
+        self._host_z_kernel = host_z_kernel
         self._dgen_catalog_selection = dgen_catalog_selection
         self._diagnostic_rows = []
         if catalog_only:
@@ -2448,6 +2507,7 @@ class BayesianStatistics:
             self.h,
             True,
             self._normalization_mode,
+            self._host_z_kernel,
         )
 
         results_without_blackhole_mass = _starmap_host_batches(
@@ -2457,6 +2517,7 @@ class BayesianStatistics:
             self.h,
             False,
             self._normalization_mode,
+            self._host_z_kernel,
         )
         end = time.time()
         _LOGGER.info(f"parallel computing took: {end - start}s")
@@ -3020,6 +3081,10 @@ def single_host_likelihood(
     # [PHYSICS] production default since 2026-07-26 (MULTISEED_READOUT_20260726.md)
     normalization_mode: str = "generator_marginal",
     base_seed: int = 0,
+    # Issue #40(a): numerator host-z kernel decomposition flag; "auto" == the
+    # historical bundling (delta kernel iff generator_marginal). No value
+    # change on the default path.
+    host_z_kernel: str = "auto",
 ) -> list[float]:
     global redshift_upper_integration_limit
     global redshift_lower_integration_limit
@@ -3076,7 +3141,9 @@ def single_host_likelihood(
     # (diagnostic only in this mode; the assembly never divides by it).
     # DERIVATION_GENERATOR_CONSISTENT_NORM.md §4.3 (G-iii); Mandel, Farr & Gair
     # (2019), arXiv:1809.02063 (P(det|x)=1 for detected data in numerators).
-    _use_generator_point = normalization_mode == "generator_marginal"
+    # Issue #40(a): the delta-kernel numerator is now selectable independently
+    # of the normalization leg via host_z_kernel ("auto" == this bundling).
+    _use_generator_point = resolve_host_z_kernel(host_z_kernel, normalization_mode) == "point"
 
     # [PHYSICS] Issue #16 (user decision 2026-07-03): marginalize the residual
     # host peculiar-velocity dispersion into the host-z kernel.
@@ -3484,6 +3551,9 @@ def single_host_likelihood_batch(
     evaluate_with_bh_mass: bool,
     # [PHYSICS] production default since 2026-07-26 (MULTISEED_READOUT_20260726.md)
     normalization_mode: str = "generator_marginal",
+    # Issue #40(a): numerator host-z kernel decomposition flag ("auto" == the
+    # historical bundling; see the scalar kernel and resolve_host_z_kernel).
+    host_z_kernel: str = "auto",
 ) -> npt.NDArray[np.float64]:
     """Host-batched twin of :func:`single_host_likelihood`.
 
@@ -3514,6 +3584,8 @@ def single_host_likelihood_batch(
         h: Dimensionless Hubble parameter.
         evaluate_with_bh_mass: Include the with-BH-mass channel.
         normalization_mode: In-catalogue normalization mode (see ``p_Di``).
+        host_z_kernel: Numerator host-z kernel selection (issue #40a);
+            ``"auto"`` reproduces the historical mode bundling.
 
     Returns:
         Array of shape ``(n, 6)`` when ``evaluate_with_bh_mass`` else
@@ -3561,8 +3633,9 @@ def single_host_likelihood_batch(
     _use_mass_trunc = normalization_mode == "mass_trunc"
     # generator_marginal (E1 FIX-3): point/point sigma_z pairing — the numerator
     # is the GW likelihood POINT-evaluated at the catalogue z_g (delta kernel);
-    # see the scalar kernel for the physics comment and references.
-    _use_generator_point = normalization_mode == "generator_marginal"
+    # see the scalar kernel for the physics comment and references. Issue
+    # #40(a): selectable independently via host_z_kernel ("auto" == bundling).
+    _use_generator_point = resolve_host_z_kernel(host_z_kernel, normalization_mode) == "point"
     _z_lower_floor = 0.0 if _use_volume_trunc else 1e-6
     den_lo = np.maximum(
         host_z - integration_limit_sigma_multiplier * host_z_error_eff, _z_lower_floor
@@ -3895,6 +3968,7 @@ def _starmap_host_batches(
     h: float,
     evaluate_with_bh_mass: bool,
     normalization_mode: str,
+    host_z_kernel: str = "auto",
 ) -> list[list[float]]:
     """Dispatch the batched host kernel over worker processes.
 
@@ -3911,6 +3985,7 @@ def _starmap_host_batches(
         h: Dimensionless Hubble parameter.
         evaluate_with_bh_mass: Include the with-BH-mass channel.
         normalization_mode: In-catalogue normalization mode.
+        host_z_kernel: Numerator host-z kernel selection (issue #40a).
 
     Returns:
         Per-host result rows in input order.
@@ -3929,7 +4004,7 @@ def _starmap_host_batches(
     chunk_indices = np.array_split(np.arange(n), n_chunks)
     jobs = [
         tuple(a[idx] for a in arrays)
-        + (detection_index, h, evaluate_with_bh_mass, normalization_mode)
+        + (detection_index, h, evaluate_with_bh_mass, normalization_mode, host_z_kernel)
         for idx in chunk_indices
     ]
     chunk_results = pool.starmap(single_host_likelihood_batch, jobs)

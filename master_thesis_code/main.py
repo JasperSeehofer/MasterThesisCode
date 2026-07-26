@@ -143,6 +143,7 @@ def main() -> None:
             h_values=_h_values,
             smear_global_selection=arguments.smear_global_selection,
             pdet_z_resolved=arguments.pdet_z_resolved,
+            host_z_kernel=arguments.host_z_kernel,
         )
 
     if arguments.snr_analysis:
@@ -1028,6 +1029,7 @@ def evaluate(
     h_values: list[float] | None = None,
     smear_global_selection: bool = False,
     pdet_z_resolved: bool = True,
+    host_z_kernel: str = "auto",
 ) -> None:
     from master_thesis_code.bayesian_inference.bayesian_statistics import BayesianStatistics
 
@@ -1048,6 +1050,7 @@ def evaluate(
         h_values=h_values,
         smear_global_selection=smear_global_selection,
         pdet_z_resolved=pdet_z_resolved,
+        host_z_kernel=host_z_kernel,
     )
 
 

@@ -174,6 +174,11 @@ class Arguments:
         return bool(self._parsed_arguments.smear_global_selection)
 
     @property
+    def host_z_kernel(self) -> str:
+        """Numerator host-z kernel decomposition flag (issue #40a): 'auto'/'point'/'volume_deconv'."""
+        return str(self._parsed_arguments.host_z_kernel)
+
+    @property
     def catalog_only(self) -> bool:
         """Skip completion integral: set f_i=1, L_comp=0 (catalog-only diagnostic)."""
         return bool(self._parsed_arguments.catalog_only)
@@ -416,6 +421,24 @@ def _parse_arguments(arguments: list[str]) -> argparse.Namespace:
         type=float,
         default=1e16,
         help="Condition number threshold for excluding near-singular covariance matrices (default: 1e16).",
+    )
+    parser.add_argument(
+        "--host_z_kernel",
+        type=str,
+        choices=["auto", "point", "volume_deconv"],
+        default="auto",
+        help=(
+            "Issue #40(a) decomposition flag (redteam F2/F3): selects the "
+            "in-catalogue NUMERATOR host-z kernel independently of the "
+            "normalization leg. 'auto' (default) preserves the historical "
+            "bundling — the delta-kernel (point/point) numerator iff "
+            "--normalization_mode=generator_marginal, else the quadrature "
+            "kernel. 'point'/'volume_deconv' force the numerator kernel for "
+            "per-leg attribution A/Bs; the n_hat_w/D_gen normalization "
+            "machinery stays governed by --normalization_mode. The real-data "
+            "PV/photo-z kernel is a pending derivation "
+            "(docs/derivations/hostz_pv_photoz_kernel.md, issue #40b)."
+        ),
     )
     parser.add_argument(
         "--normalization_mode",

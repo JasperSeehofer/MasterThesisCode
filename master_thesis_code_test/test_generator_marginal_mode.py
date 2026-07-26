@@ -545,3 +545,87 @@ def test_library_defaults_production_stack() -> None:
     assert sig.parameters["dgen_catalog_selection"].default == "4d_exact"
     assert BayesianStatistics._normalization_mode == "generator_marginal"
     assert BayesianStatistics._dgen_catalog_selection == "4d_exact"
+
+
+# ── Issue #40(a): host_z_kernel numerator decomposition flag ─────────────────
+
+
+def test_host_z_kernel_auto_matches_historical_bundling_bitwise() -> None:
+    """'auto' (default) reproduces the mode-bundled kernel bit-for-bit:
+    generator_marginal default == explicit 'point'; volume_deconv default ==
+    explicit 'volume_deconv'."""
+    _install_worker_globals()
+    kw_gm = _gen_case()
+    r_auto = bs.single_host_likelihood(**kw_gm)
+    r_point = bs.single_host_likelihood(**kw_gm, host_z_kernel="point")
+    assert r_auto == r_point
+    kw_vd = dict(_case_grid()["near_photoz_match_vd_4d"])
+    r_vd_auto = bs.single_host_likelihood(**kw_vd)
+    r_vd_expl = bs.single_host_likelihood(**kw_vd, host_z_kernel="volume_deconv")
+    assert r_vd_auto == r_vd_expl
+
+
+def test_host_z_kernel_decouples_numerator_from_normalization() -> None:
+    """The decomposition works both ways at the kernel level (where the two
+    modes differ ONLY in the numerator kernel substitution):
+    generator_marginal + 'volume_deconv' == volume_deconv, and
+    volume_deconv + 'point' == generator_marginal — all columns, bitwise."""
+    _install_worker_globals()
+    kw_vd = dict(_case_grid()["near_photoz_match_vd_4d"])
+    kw_gm = _gen_case()
+    r_vd = bs.single_host_likelihood(**kw_vd)
+    r_gm = bs.single_host_likelihood(**kw_gm)
+    r_gm_kernel = bs.single_host_likelihood(**kw_gm, host_z_kernel="volume_deconv")
+    r_vd_point = bs.single_host_likelihood(**kw_vd, host_z_kernel="point")
+    assert r_gm_kernel == r_vd
+    assert r_vd_point == r_gm
+    # sanity: the decoupled results genuinely differ from their mode defaults
+    assert r_gm_kernel[0] != r_gm[0]
+    assert r_vd_point[0] != r_vd[0]
+
+
+def test_host_z_kernel_batch_matches_scalar_override() -> None:
+    """Batched kernel honors the flag identically to the scalar kernel."""
+    _install_worker_globals()
+    kw = _gen_case()
+    scalar = np.array(
+        [bs.single_host_likelihood(**kw, host_z_kernel="volume_deconv")], dtype=np.float64
+    )
+    _install_worker_globals()
+    batch = bs.single_host_likelihood_batch(
+        np.full(1, kw["host_phiS"]),
+        np.full(1, kw["host_qS"]),
+        np.full(1, kw["host_z"]),
+        np.full(1, kw["host_z_error"]),
+        np.full(1, kw["host_M"]),
+        np.full(1, kw["host_M_error"]),
+        detection_index=kw["detection_index"],
+        h=kw["h"],
+        evaluate_with_bh_mass=True,
+        normalization_mode="generator_marginal",
+        host_z_kernel="volume_deconv",
+    )
+    assert (batch == scalar).all()
+
+
+def test_host_z_kernel_rejects_unknown_value() -> None:
+    """Unknown kernel names fail loudly at resolution time (e.g. the pending
+    real-data 'pv_photoz' kernel, issue #40b — not yet derived)."""
+    with pytest.raises(ValueError, match="host_z_kernel"):
+        bs.resolve_host_z_kernel("pv_photoz", "generator_marginal")
+    _install_worker_globals()
+    kw = _gen_case()
+    with pytest.raises(ValueError, match="host_z_kernel"):
+        bs.single_host_likelihood(**kw, host_z_kernel="pv_photoz")
+
+
+def test_cli_exposes_host_z_kernel_with_auto_default() -> None:
+    """CLI: --host_z_kernel defaults to 'auto' (production path unchanged);
+    'point'/'volume_deconv' selectable; library defaults match."""
+    args_default = Arguments.create(["wd", "--evaluate"])
+    assert args_default.host_z_kernel == "auto"
+    args_point = Arguments.create(["wd", "--evaluate", "--host_z_kernel", "point"])
+    assert args_point.host_z_kernel == "point"
+    sig = inspect.signature(BayesianStatistics.evaluate)
+    assert sig.parameters["host_z_kernel"].default == "auto"
+    assert BayesianStatistics._host_z_kernel == "auto"
