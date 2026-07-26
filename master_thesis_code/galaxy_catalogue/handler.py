@@ -13,7 +13,12 @@ import pandas as pd
 from astropy.coordinates import BarycentricTrueEcliptic, SkyCoord
 from sklearn.neighbors import BallTree
 
-from master_thesis_code.constants import HOST_DRAW_Z_MAX
+from master_thesis_code.constants import (
+    HOST_DRAW_Z_MAX,
+    SIGMA_V_PV_RESIDUAL_CORRECTED_KM_S,
+    SIGMA_V_PV_UNCORRECTED_KM_S,
+    SPEED_OF_LIGHT_KM_S,
+)
 from master_thesis_code.emri_rate import R_eff_per_mbh
 from master_thesis_code.physical_relations import dist
 
@@ -158,6 +163,11 @@ class CatalogueColumns(Enum):
     # peculiar-velocity corrected, with the PV-correction error in col 30 (added in
     # quadrature below). Ref: Dálya et al. 2022, arXiv:2110.06184. See issue #15.
     REDSHIFT = 28
+    # PV-correction flag (GLADE+ raw 0-based col 29): 1 = z_cmb is additionally
+    # peculiar-velocity corrected (BORG, z<~0.05 ∩ 2M++ ∩ B-band), 0 = not.
+    # Consumed at parse time to resolve the per-class PV width (issue #40b,
+    # RATIFIED 2026-07-26); dropped before writing the reduced catalogue.
+    REDSHIFT_PECULIAR_VELOCITY_CORRECTION_FLAG = 29
     REDSHIFT_PECULIAR_VELOCITY_ERROR = 30
     REDSHIFT_MEASUREMENT_ERROR = 31
     REDSHIFT_FLAG = 34  # measurement flag: 0=none, 1=PHOTOMETRIC z, 2=lum. distance,
@@ -195,9 +205,9 @@ def _reduced_catalog_column_names() -> list[str]:
     Single source of truth shared by the writer (``parse_to_reduced_catalog``) and
     every reader (``read_reduced_galaxy_catalog`` and
     ``pixel_completeness.build_m_th_map``). The order is all
-    :class:`CatalogueColumns` except the dropped peculiar-velocity error (raw col
-    30) and the redshift flag (raw col 34), followed by the RETAINED redshift flag
-    as the TRAILING column. Keeping the flag last preserves the historical column
+    :class:`CatalogueColumns` except the dropped PV-correction flag (raw col 29),
+    peculiar-velocity error (raw col 30) and the redshift flag (raw col 34),
+    followed by the RETAINED redshift flag as the TRAILING column. Keeping the flag last preserves the historical column
     order of the leading fields so existing positional readers stay aligned.
 
     Returns:
@@ -206,7 +216,7 @@ def _reduced_catalog_column_names() -> list[str]:
         REDSHIFT_MEASUREMENT_ERROR, STELLAR_MASS, STELLAR_MASS_ABSOULTE_ERROR,
         REDSHIFT_FLAG]``.
     """
-    names = [column.name for column in CatalogueColumns if column.value not in [30, 34]]
+    names = [column.name for column in CatalogueColumns if column.value not in [29, 30, 34]]
     names.append(CatalogueColumns.REDSHIFT_FLAG.name)
     return names
 
@@ -341,19 +351,63 @@ class GalaxyCatalogueHandler:
                 | (chunk[CatalogueColumns.REDSHIFT_FLAG.name] == 3)
             ]
 
-            chunk = chunk.fillna({CatalogueColumns.REDSHIFT_PECULIAR_VELOCITY_ERROR.name: 0.0015})
-
-            # propagating errors of redshift
+            # [PHYSICS] Peculiar velocity counted EXACTLY ONCE, per PV-correction
+            # class (issue #40b, RATIFIED 2026-07-26;
+            # docs/derivations/hostz_pv_photoz_kernel.md §3.1):
+            #  - BORG-corrected rows (raw col 29 == 1): the catalogue PV error is
+            #    already sigma_tot = sigma_borg (+) sigma_vir (Dálya et al. 2022,
+            #    arXiv:2110.06184, §2.2 Eq. 1) — folded in, plus the reconstruction
+            #    residual (1+z)*150 km/s / c (Carrick et al. 2015, arXiv:1504.04627,
+            #    §4.2.1).
+            #  - Uncorrected rows: ONE full-dispersion term (1+z)*500 km/s / c
+            #    (Laghi et al. 2021, arXiv:2102.01708, Sec. 3), REPLACING the former
+            #    uncited 0.0015 fill.
+            # RATIFY-3 check on the raw catalogue (2026-07-27): the flag is 1 /
+            # 0 / null; 119,299 rows within the {1,3} parse filter are flagged
+            # corrected but report NO PV error (99.7% photometric, median
+            # z = 0.055, 374 spec-z). A row therefore counts as corrected only
+            # if it is BOTH flagged AND carries a reported sigma_tot; flagged-
+            # but-null rows take the conservative full-dispersion term (for the
+            # dominant photo-z members the PV term is a ~2% width effect either
+            # way). Null-flag rows (~19M, the bulk) are uncorrected by
+            # construction.
+            # (1+z) factor: Davis et al. (2011), arXiv:1012.2912, Eqs. (1)/(A1).
+            # The former inference-time 200 km/s quadrature is retired
+            # (SIGMA_V_PEC_KM_S = 0.0 default) — see constants.py.
+            _pv_corrected = (
+                chunk[CatalogueColumns.REDSHIFT_PECULIAR_VELOCITY_CORRECTION_FLAG.name] == 1
+            ) & chunk[CatalogueColumns.REDSHIFT_PECULIAR_VELOCITY_ERROR.name].notna()
+            _one_plus_z = 1.0 + chunk[CatalogueColumns.REDSHIFT.name]
+            _sigma_z_pv_class = (
+                _one_plus_z
+                * np.where(
+                    _pv_corrected,
+                    SIGMA_V_PV_RESIDUAL_CORRECTED_KM_S,
+                    SIGMA_V_PV_UNCORRECTED_KM_S,
+                )
+                / SPEED_OF_LIGHT_KM_S
+            )
+            _sigma_pv_catalogue = np.where(
+                _pv_corrected,
+                chunk[CatalogueColumns.REDSHIFT_PECULIAR_VELOCITY_ERROR.name].fillna(0.0),
+                0.0,
+            )
             chunk[CatalogueColumns.REDSHIFT_MEASUREMENT_ERROR.name] = np.sqrt(
                 chunk[CatalogueColumns.REDSHIFT_MEASUREMENT_ERROR.name] ** 2
-                + chunk[CatalogueColumns.REDSHIFT_PECULIAR_VELOCITY_ERROR.name] ** 2
+                + _sigma_pv_catalogue**2
+                + _sigma_z_pv_class**2
             )
 
-            # Drop the peculiar-velocity error (already folded into the redshift
-            # error above) but RETAIN the redshift flag. Store it as the integer
-            # flag (1 = photometric, 3 = spectroscopic) so it round-trips as "1"/"3"
+            # Drop the PV columns (folded into the redshift error above) but
+            # RETAIN the redshift flag. Store it as the integer flag
+            # (1 = photometric, 3 = spectroscopic) so it round-trips as "1"/"3"
             # rather than "1.0"/"3.0"; the {1, 3} filter above guarantees no NaNs.
-            chunk = chunk.drop(columns=[CatalogueColumns.REDSHIFT_PECULIAR_VELOCITY_ERROR.name])
+            chunk = chunk.drop(
+                columns=[
+                    CatalogueColumns.REDSHIFT_PECULIAR_VELOCITY_CORRECTION_FLAG.name,
+                    CatalogueColumns.REDSHIFT_PECULIAR_VELOCITY_ERROR.name,
+                ]
+            )
             chunk[CatalogueColumns.REDSHIFT_FLAG.name] = chunk[
                 CatalogueColumns.REDSHIFT_FLAG.name
             ].astype(int)

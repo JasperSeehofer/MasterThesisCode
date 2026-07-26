@@ -188,7 +188,12 @@ def test_volume_trunc_sigma_z_to_zero_spec_limit() -> None:
     tightest rung.
     """
     host_z = 0.10  # matched to the stub event (d_L = 0.47 Gpc, z ~ 0.1 at h = 0.73)
-    sigmas = [0.005, 0.002, 0.001, 0.0005]
+    # Rungs stop at 1e-3: since the counted-once PV change (issue #40b,
+    # SIGMA_V_PEC_KM_S default 0.0) sigma_eff equals the bare sigma_z, and below
+    # ~1e-3 the n=50 host-window quadrature aliases the narrowing kernel (the
+    # known volume_trunc aliasing mode) — a resolution artifact, not a physics
+    # limit failure. Previously the runtime PV term floored sigma_eff at ~7.3e-4.
+    sigmas = [0.005, 0.002, 0.001]
     gaps = []
     for sz in sigmas:
         num_vt, den_vt, _, _ = _run_case(host_z, sz, "volume_trunc", False)
@@ -221,24 +226,24 @@ def test_volume_trunc_prior_shape_h_independent() -> None:
 
 
 # ── Pinned values ─────────────────────────────────────────────────────────────
-# Updated in the [PHYSICS] issue-#16 commit: the host-z kernel now uses
-# sigma_z_eff = sqrt(sigma_z_cat^2 + ((1+z_g) SIGMA_V_PEC_KM_S / c)^2), which
-# at z_g = 0.1, sigma_z_cat = 0.0015 widens the kernel by ~11% (sigma_z_pv =
-# 7.34e-4) and shifts these integrals by 0.2-0.5%. Pre-change values are in
-# the parent commit of that diff (physics-change protocol).
-PIN_VD_NUM = 1629.3700900543863
-PIN_VD_DEN = 0.9152972692189939
-PIN_LR_NUM = 1611.8260385718838
-PIN_LR_DEN = 0.9152831657144014
-PIN_VD_BH_NUM = 4594.733503494528
-# Re-pinned in the [PHYSICS] 2026-07-08 commit: the with-BH-mass denominator is now
-# the exact semi-analytic erf-sum (windowed) instead of the 10k-sample MC. The value
-# moves from the MC's noisy 0.9131 to the deterministic 0.9427 (this stub's exact
-# window-integral). Correctness of the estimator is proven independently in
-# test_bh_denominator_semianalytic (erf-sum vs adaptive quad).
-PIN_VD_BH_DEN = 0.942697375911772
-PIN_CLAMP_DEN = 0.995760331092859
-PIN_CLAMP_W_DEN = 0.2283619655845074
+# Re-pinned in the [PHYSICS] counted-once PV commit (issue #40b, RATIFIED
+# 2026-07-26; docs/derivations/hostz_pv_photoz_kernel.md): SIGMA_V_PEC_KM_S
+# defaults to 0.0 — the PV dispersion now lives in the parse-time per-class
+# catalogue z_error, so sigma_z_eff here equals the bare test sigma_z_cat.
+# The kernel narrows by the former ~11% issue-#16 broadening (sigma_z_pv was
+# 7.34e-4 at z_g = 0.1) and the integrals move 0.2-0.5%; the clamp canary
+# w_den moves 0.228 -> 0.242. Pre-change values are in the parent commit of
+# this diff (physics-change protocol). [History: issue-#16 commit added the
+# runtime broadening; [PHYSICS] 2026-07-08 replaced the MC BH denominator by
+# the exact erf-sum — see test_bh_denominator_semianalytic.]
+PIN_VD_NUM = 1622.0066615458952
+PIN_VD_DEN = 0.9153058114327306
+PIN_LR_NUM = 1607.5871613613651
+PIN_LR_DEN = 0.9152832361770838
+PIN_VD_BH_NUM = 4574.22742983034
+PIN_VD_BH_DEN = 0.9427033282673192
+PIN_CLAMP_DEN = 0.9958992939449592
+PIN_CLAMP_W_DEN = 0.24151081257029428
 
 # volume_trunc (Part 1, 2026-07-12): the in-catalogue numerator is integrated over
 # the per-host galaxy window [z_g - 4σ, z_g + 4σ] (shared with Z_g / D_g) and the
@@ -246,7 +251,7 @@ PIN_CLAMP_W_DEN = 0.2283619655845074
 # are unchanged (z_g - 4σ > 0, so no z-floor difference; D_g/Z_g byte-identical to
 # volume_deconv → PIN_VT_DEN == PIN_VD_DEN), and the numerator lands within ~7e-6 of
 # PIN_VD_NUM because the narrow host kernel is fully inside the GW window.
-PIN_VT_NUM = 1629.2569194481669
-PIN_VT_DEN = 0.9152972692191218
-PIN_VT_BH_NUM = 4594.415433322439
-PIN_VT_BH_DEN = 0.942697375911772
+PIN_VT_NUM = 1621.8905890993271
+PIN_VT_DEN = 0.9153058114327306
+PIN_VT_BH_NUM = 4573.901034625918
+PIN_VT_BH_DEN = 0.9427033282673192

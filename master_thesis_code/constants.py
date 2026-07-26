@@ -68,19 +68,31 @@ FISHER_CONDITION_NUMBER_MAX: float = 1e14
 # galaxy catalog and EMRI detection
 FRACTIONAL_MEASURED_MASS_ERROR: float = 1e-8  # fractional error on measured redshifted mass
 SKY_LOCALIZATION_ERROR: float = 2 / 180 * np.pi  # rad, EMRI sky localization error (2 degrees)
-# [PHYSICS] Residual host peculiar-velocity dispersion, marginalized into the
-# host-z kernel at inference time (issue #16 decision 2026-07-03):
-# sigma_z_pv = (1 + z_g) * SIGMA_V_PEC_KM_S / c, added in quadrature to the
-# catalogue sigma_z in bayesian_statistics.single_host_likelihood.
-# (1+z) factor: Davis et al. (2011), arXiv:1012.2912, Eqs. (1)/(A1); quadrature
-# convention: Mastrogiovanni et al. (2023), arXiv:2305.10488, Sec. IV.
-# 200 km/s follows Fishbach et al. (2019), arXiv:1807.05667, Sec. 2.2 and
-# Chen et al. (2018), arXiv:1712.06531; the LISA-EMRI precedent (Laghi et al.
-# 2021, arXiv:2102.01708, Sec. 4) uses 500 km/s — kept as a systematics-budget
-# row, not the default. Distinct from (residual on top of) the GLADE+
-# PV-CORRECTION error already folded into the catalogue z_error at parse time
-# (handler.parse_to_reduced_catalog, 0.0015 floor for rows without it).
-SIGMA_V_PEC_KM_S: float = 200.0
+# [PHYSICS] Host peculiar-velocity dispersion — counted EXACTLY ONCE, at
+# catalogue parse time, per PV-correction class (issue #40b, RATIFIED
+# 2026-07-26; docs/derivations/hostz_pv_photoz_kernel.md §3.1). The stored
+# reduced-catalogue z_error already contains sigma_z_pv = (1 + z_g) * sigma_v / c
+# in quadrature ((1+z) factor: Davis et al. 2011, arXiv:1012.2912, Eqs. (1)/(A1);
+# quadrature convention: Mastrogiovanni et al. 2023, arXiv:2305.10488, Sec. IV):
+#
+# BORG-PV-corrected rows (GLADE+ raw col 29 == 1): the catalogue-reported PV
+# error is already sigma_tot^2 = sigma_borg^2 + sigma_vir^2 (Dálya et al. 2022,
+# arXiv:2110.06184, §2.2 Eq. 1 — nonlinear virial residual INCLUDED); on top,
+# only the reconstruction residual applies:
+# Carrick et al. (2015), arXiv:1504.04627, §4.2.1 ("We take sigma_v = 150 km/s").
+SIGMA_V_PV_RESIDUAL_CORRECTED_KM_S: float = 150.0
+# Uncorrected rows: ONE full-dispersion term (replaces the former uncited
+# 0.0015 parse-time fill, which was a ~430-450 km/s full-PV stand-in in
+# disguise). LISA-EMRI precedent: Laghi et al. (2021), arXiv:2102.01708,
+# Sec. 3 (500 km/s rms; Del Pozzo et al. 2018 lineage).
+SIGMA_V_PV_UNCORRECTED_KM_S: float = 500.0
+# Inference-time residual knob ON TOP of the parse-time terms above. Default
+# 0.0 since the counted-once change (the former 200 km/s runtime addition —
+# Fishbach et al. 2019, arXiv:1807.05667, Sec. 2.2 — double-counted sigma_vir
+# for BORG-corrected hosts; GLADE_PV_AUDIT.md Layer 3). Kept as a
+# systematics-budget ablation knob (the application sites in
+# bayesian_statistics.py are unchanged and tests monkeypatch it).
+SIGMA_V_PEC_KM_S: float = 0.0
 GALAXY_CATALOG_REDSHIFT_LOWER_LIMIT: float = 0.00001  # minimum redshift for galaxy catalog
 # Documented catalogue depth bound. NOTE: currently UNWIRED — the reduced
 # catalogue CSV is written full-depth (no z cut in parse_to_reduced_catalog)

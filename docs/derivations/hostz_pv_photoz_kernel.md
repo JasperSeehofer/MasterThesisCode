@@ -156,7 +156,14 @@ covers it.
 **150 km/s**, conservative, cited, and robust to GLADE+ underestimating
 σ_vir for unresolved halo masses).
 **[RATIFY-2 — RATIFIED 2026-07-26]** uncorrected-host σ_v = 500 km/s replacing the 0.0015 fill.
-**[RATIFY-3 — RATIFIED 2026-07-26; null↔flag check still REQUIRED pre-merge]** parse the PV-correction flag; verify on the cluster copy of
+**[RATIFY-3 — RATIFIED 2026-07-26; null↔flag check RUN 2026-07-27 on the
+re-downloaded raw catalogue (23,181,758 rows): uncorrected-with-value
+violations = 0; the flag is 1/0/null with null dominating (~19M rows,
+uncorrected by construction); one violation subclass found — 119,299 rows
+flagged corrected but with NULL PV error (99.7% photometric, median
+z = 0.055, only 374 spec-z). Resolution: "corrected" requires flag == 1 AND
+a reported σ_tot; flagged-but-null rows take the conservative full
+500 km/s term (numerically a ~2% width effect for their photo-z majority).]** parse the PV-correction flag; verify on the cluster copy of
 GLADE+.txt that col-31 nulls coincide with flag = 0 (audit's one
 locally-unverifiable assumption) BEFORE implementation.
 
