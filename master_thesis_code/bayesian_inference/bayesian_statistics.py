@@ -65,6 +65,38 @@ from master_thesis_code.physical_relations import (
 
 _LOGGER = logging.getLogger()
 
+# Per-process dedup state for the out-of-grid quadrature warning: the check runs
+# per (event, host) and produced O(10^5) identical lines per task on large
+# campaigns, so we warn once per event and count suppressed repeats instead.
+_quadrature_outside_grid_warned_events: set[int] = set()
+_quadrature_outside_grid_suppressed_repeats: int = 0
+
+
+def _warn_quadrature_weight_outside_grid(
+    detection_index: int,
+    weight_outside_numerator: float,
+    weight_outside_denominator: float,
+) -> None:
+    """Emit the >5% out-of-grid quadrature warning at most once per event.
+
+    Subsequent occurrences for the same event (per worker process) only
+    increment ``_quadrature_outside_grid_suppressed_repeats``. Logging-only:
+    the returned diagnostic weights are unaffected.
+    """
+    global _quadrature_outside_grid_suppressed_repeats
+    if detection_index in _quadrature_outside_grid_warned_events:
+        _quadrature_outside_grid_suppressed_repeats += 1
+        return
+    _quadrature_outside_grid_warned_events.add(detection_index)
+    _LOGGER.warning(
+        "Event %d: >5%% quadrature weight outside P_det grid — "
+        "numerator=%.3f, denominator=%.3f (repeats for this event suppressed)",
+        detection_index,
+        weight_outside_numerator,
+        weight_outside_denominator,
+    )
+
+
 DEFAULT_GALAXY_Z_ERROR = 0.0015
 GALAXY_LIKELIHOODS = "galaxy_likelihoods"
 ADDITIONAL_GALAXIES_WITHOUT_BH_MASS = "additional_galaxies_without_bh_mass"
@@ -3303,9 +3335,7 @@ def single_host_likelihood(
         quadrature_weight_outside_grid_numerator > 0.05
         or quadrature_weight_outside_grid_denominator > 0.05
     ):
-        _LOGGER.warning(
-            "Event %d: >5%% quadrature weight outside P_det grid — "
-            "numerator=%.3f, denominator=%.3f",
+        _warn_quadrature_weight_outside_grid(
             detection_index,
             quadrature_weight_outside_grid_numerator,
             quadrature_weight_outside_grid_denominator,
@@ -3750,12 +3780,10 @@ def single_host_likelihood_batch(
         (quadrature_weight_outside_grid_numerator > 0.05)
         | (quadrature_weight_outside_grid_denominator > 0.05)
     ):
-        _LOGGER.warning(
-            "Event %d: >5%% quadrature weight outside P_det grid — "
-            "numerator=%.3f, denominator=%.3f",
+        _warn_quadrature_weight_outside_grid(
             detection_index,
-            quadrature_weight_outside_grid_numerator[_flagged],
-            quadrature_weight_outside_grid_denominator[_flagged],
+            float(quadrature_weight_outside_grid_numerator[_flagged]),
+            float(quadrature_weight_outside_grid_denominator[_flagged]),
         )
 
     if not evaluate_with_bh_mass:
