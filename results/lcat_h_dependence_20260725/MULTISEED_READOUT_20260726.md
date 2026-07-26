@@ -132,6 +132,37 @@ consistency; completeness-machinery claims rest on the separate E1/P–P
 gates. All precision claims are mock-internal (point/point pairing deletes
 peculiar-velocity and z-floor errors present in real data).
 
+## Seed900 fixpool re-run readout (2026-07-26, late — jobs 6051189/6051190)
+
+The canonical-pool re-run (`run_20260726_seed900_fixpool`) completed clean:
+survival build now healthy (node ESS min/median = 211/3944, 0/726 cells
+below floor — identical to seed90000), 41/41 tasks + combine exit 0, n_used
+= 20/20, no hard zeros. Result: base channel MAP = **0.60 (lower rail,
+p = 0.124 vs 0.072 at 0.74)**; bh_mass MAP = 0.85. The posterior is
+near-flat/multimodal.
+
+**Mechanism (measured, per-event diagnostics):** total
+lnP(0.60) − lnP(0.73) = **+1.24 ln** spread across events (largest single
+contribution +0.88; all others |ΔlnL| ≤ 0.65) — no pathological event, no
+misassociation signature. Control seed90000 (same n=20, same pool):
+lnP(0.73) − lnP(0.60) = +19.6 ln, of which **two events carry +9.2 and
++1.8 ln** and the remaining 18 are flat. This reproduces, out-of-sample,
+the redteam's golden-event structure: the estimator's information is
+concentrated in rare exact-host events; seed900's 20-draw contains none,
+so its posterior is uninformative and its argmax is noise.
+
+**Disposition:** the earlier HIGH rail (0.86) was the ESS-floor defect; the
+present LOW "rail" (0.60) is a ~1-ln fluctuation on a flat posterior — not
+a bias measurement in either direction. Seed900 remains excluded from the
+bias statistics, now on measured information content (not only provenance).
+The registered criterion 3 ("interior MAP, no rails") is **ill-posed for
+zero-golden-event venues**: a flat posterior has no meaningful MAP. Future
+campaign registrations should add an information floor (e.g. require
+max lnP − edge lnP above a pre-set threshold for a venue to enter the MAP
+statistics) — to be pre-registered before the next campaign, not applied
+retroactively to this one. The valid-4 verdict (which the redteam rescoped
+to |bias| ≲ 0.0025 grid-supported) is unchanged by this readout.
+
 ## Log-hygiene note (non-blocking)
 
 "quadrature weight outside P_det grid" warning spam scales with h-grid index
