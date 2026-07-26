@@ -141,6 +141,8 @@ def main() -> None:
             base_seed=seed,
             allow_low_pdet_coverage=arguments.allow_low_pdet_coverage,
             h_values=_h_values,
+            smear_global_selection=arguments.smear_global_selection,
+            pdet_z_resolved=arguments.pdet_z_resolved,
         )
 
     if arguments.snr_analysis:
@@ -1019,10 +1021,13 @@ def evaluate(
     pdet_mass_bins: int = 40,
     pdet_estimator: str = "local_linear",
     fisher_cond_threshold: float = 1e16,
-    normalization_mode: str = "volume_deconv",
+    # [PHYSICS] production default since 2026-07-26 (MULTISEED_READOUT_20260726.md)
+    normalization_mode: str = "generator_marginal",
     base_seed: int | None = None,
     allow_low_pdet_coverage: bool = False,
     h_values: list[float] | None = None,
+    smear_global_selection: bool = False,
+    pdet_z_resolved: bool = True,
 ) -> None:
     from master_thesis_code.bayesian_inference.bayesian_statistics import BayesianStatistics
 
@@ -1041,6 +1046,8 @@ def evaluate(
         base_seed=base_seed if base_seed is not None else 0,
         allow_low_pdet_coverage=allow_low_pdet_coverage,
         h_values=h_values,
+        smear_global_selection=smear_global_selection,
+        pdet_z_resolved=pdet_z_resolved,
     )
 
 

@@ -7,6 +7,90 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Research (estimator redesign — issue #30 / E1 FIX-2)
+- **Z-resolved detection survival `S(d_L|z)` [PHYSICS]** (commit `a608c4f`; approved packet:
+  `results/lcat_h_dependence_20260725/DERIVATION_ZRESOLVED_SURVIVAL.md`). Replaces the
+  POOLED detection-horizon survival `S(d_L) = P(d_hor ≥ d_L)` inside every selection
+  integral (`D`, `β_Ḡ`, `Σ_glob`, per-host selection denominators) with the z-CONDITIONAL
+  `S(d_L|z)`, kernel-estimated in `u = ln(1+z)` (Scott bandwidth, Abramson-adaptive,
+  h-invariant build — only the query `d_L(z;h)` moves with h). Motivated by a measured
+  +30–45% relative overestimate of the pool's true SNR≥20 rate at fixed z across
+  z ∈ [0.1, 0.65] under the pooled estimator (detection horizon drifts ×1.8 from
+  z≈0.18 to z≈0.9, driven by the detector-frame mass lift `M_z = M(1+z)`). `B_num` and
+  all likelihood numerators are untouched (no p_det in the numerator; MFG convention).
+  Opt-in via `--pdet_z_resolved`; production default (pooled survival) unchanged. Stacked
+  on `generator_marginal` (below), preserves that mode's truth-peak closure on the
+  seed1000 deep venue (MAP 0.7300 = truth, both channels) and deepens the margin against
+  the h=0.86 grid edge; alone on `absolute_marginal`, reproduces its own pre-registered
+  −69 ln prediction to within 0.3 ln on real data
+  (`results/lcat_h_dependence_20260725/zres_probe_20260726/PROBE_RESULTS.md`). See
+  `docs/H0_BIAS_RESOLUTION.md` §3.22.
+
+### Research (estimator redesign — issue #30 / E1 FIX-3)
+- **`generator_marginal` normalization mode [PHYSICS]** — the generator-consistent
+  selection normalization (approved packet:
+  `results/lcat_h_dependence_20260725/DERIVATION_GENERATOR_CONSISTENT_NORM.md`).
+  Two substitutions relative to `absolute_marginal`: the Option-A calibration
+  `n_bar_w = Σ_glob/β_G` is replaced by the draw-side density `n̂_w = W_cat/V_f(h)`
+  (no P_det inside; `W_cat` = draw-eligible catalogue rate-weight total,
+  `V_f(h)` = completeness-weighted population volume — both new precomputes
+  validated against the packet's numeric anchors, W_cat rel 2e-16 / V_f rel 3e-11),
+  and the master denominator becomes `D_gen = Σ_glob_wbh/n̂_w + β_Ḡ` (4D-exact
+  catalogue selection; `3d_shared` reachable via `dgen_catalog_selection` as a
+  documented diagnostic). σ_z pairing is **point/point** (generator-exact; premise
+  hard-verified in the generator code: hosts are drawn and detected at their verbatim
+  catalogue z): the in-catalogue numerator `N_g` is the GW likelihood point-evaluated
+  at `z_g`; `--smear_global_selection` is rejected in this mode. Empty balls reduce
+  continuously to `B_num/D_gen`. All existing modes byte-identical (kernel golden
+  pins untouched; batch == scalar bit-for-bit in the new mode). CLI:
+  `--normalization_mode generator_marginal`. Tests: `test_generator_marginal_mode.py`
+  (assembly, Option-A row-wise reduction to `absolute_marginal`, h³ identity
+  `d ln n̂_w/dh = 3/h`, empty-ball continuity, σ→0 kernel collapse); validation
+  script: `scripts/check_generator_norm_precomputes.py`.
+
+### Research (estimator redesign — issue #30 / V1)
+- **`absolute_marginal` normalization mode [PHYSICS]** (commit `49b9ade`; approved packet:
+  `results/lcat_h_dependence_20260725/DERIVATION_ESTIMATOR_REDESIGN.md`, "Variant 1"). The
+  in-catalogue term is replaced by the exhaustive per-event host marginal
+  `p_i(h) = [A_i(h) + B_num,i(h)]/D(h)`, `A_i = Σ_{g∈ball} w_g N_g(h) / n̄_w(h)`,
+  `n̄_w(h) = Σ_glob(h)/β_G(h)`, in place of the self-normalized ratio-of-sums
+  `L_cat = Σ_ball w N / Σ_ball w D` — removing the host-misassociation mechanism by which
+  a candidate ball containing only foreground-impostor galaxies could still carry O(1)
+  in-catalogue weight (see `results/lcat_h_dependence_20260725/{D1_EMPIRICAL_DECOMPOSITION.md,
+  D2_STRUCTURAL_AUDIT.md,SYNTHESIS.md}`). Algebraically identical to the pipeline's
+  pre-existing (dormant) `volume_global` mode; the empty-ball `#29` fallback now emerges as
+  the continuous `A_i → 0` limit rather than a separate branch. Opt-in via
+  `--normalization_mode absolute_marginal`; production default `volume_deconv` unchanged.
+  A rival per-event membership-mixture ("Variant 2") was derived to the same protocol depth
+  and rejected as not a likelihood derivable from the marginal (documented in the same
+  packet, not implemented). Does not by itself close the deep venue (seed1000 probe rails
+  HIGH to h=0.86, exposing the calibration defect `generator_marginal` (above) removes); the
+  shallow seed600 A/B gate measured this mode alone FAILS on the 2D channel
+  (`results/lcat_h_dependence_20260725/SEED600_GATE_REGISTRATION.md`). See
+  `docs/H0_BIAS_RESOLUTION.md` §3.21.
+- **Opt-in σ_z-smeared `Σ_glob` [PHYSICS]** (commit `f9c58f4`, issue #30 R4). Symmetrizes the
+  σ_z kernel between the in-catalogue numerator (already smeared) and the global catalogue
+  selection sum `Σ_glob` (previously point-evaluated), addressing the num/denom σ_z
+  asymmetry flagged in `docs/H0_BIAS_RESOLUTION.md` §3.18. Opt-in via
+  `--smear_global_selection`; production default unchanged. Measured to remove only ~20% of
+  the `n̄_w` residual slope defect (+0.067/h of a +0.38/h target); superseded/moot once
+  `generator_marginal` (above) removes `n̄_w` entirely (`--smear_global_selection` is
+  rejected when `generator_marginal` is selected). Landed under an overnight-autonomy grant;
+  retained as a diagnostic flag. See `docs/H0_BIAS_RESOLUTION.md` §3.21.
+
+### Research (estimator redesign — issue #30 prep)
+- **B_num completion-numerator analysis-depth cap [PHYSICS]** (commit `7d3573d`). The
+  completion-term numerator `B_num`'s upper redshift limit is now
+  `min(z_upper, redshift_upper_limit)`, domain-matching it to the sibling selection
+  integrals `D(h)`/`β_Ḡ(h)`/`Σ_global(h)` (Gray et al. 2020 Eq. 32) — the one integral the
+  earlier `f29a5e7` z-cap sweep missed. No-op at the default analysis depth except for the
+  farthest events whose 4σ window extends past the cap (population has no support there).
+- **`--max_redshift` CLI / `MAX_REDSHIFT` env** (commit `276c8c7`, branch
+  `feat/max-redshift-cli`; PR #37). Exposes the evaluate-time analysis-depth truncation
+  knob used by the issue #30 z_cut truncation scan (`docs/H0_BIAS_RESOLUTION.md` §3.21;
+  `DATA_INVENTORY.md` 2026-07-25 z_cut row); WARNs if set shallower than
+  `HOST_DRAW_Z_MAX`. Evaluate-only; does not affect simulation/injection.
+
 ### Research (host-mass kernel — bias investigation)
 - **`mass_trunc` host-mass kernel (EXP-45) — implemented, numerically sound, and
   EXONERATED as the 2D bias driver (experimental, not for production).** New isolated

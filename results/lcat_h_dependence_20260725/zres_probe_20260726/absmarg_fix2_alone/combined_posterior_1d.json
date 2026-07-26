@@ -1,0 +1,25 @@
+{
+  "h_values": [
+    0.6,
+    0.73,
+    0.86
+  ],
+  "posterior": [
+    2.1447818258786257e-34,
+    1.0,
+    1.3873292243901752e-30
+  ],
+  "strategy": "physics-floor",
+  "n_events_total": 3454,
+  "n_events_used": 3454,
+  "n_events_excluded": 0,
+  "n_events_empty": 0,
+  "map_h": 0.73,
+  "map_posterior": 1.0,
+  "variant": "posteriors",
+  "D_h_per_h": [
+    1177712861.432123,
+    956169808.5039057,
+    792219700.3666767
+  ]
+}

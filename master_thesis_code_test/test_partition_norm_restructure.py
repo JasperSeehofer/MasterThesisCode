@@ -279,8 +279,10 @@ def test_default_normalization_mode_is_volume_deconv() -> None:
     'global' (~0% coverage on photo-z catalogues) must be an explicit opt-in only.
     """
     sig = inspect.signature(BayesianStatistics.evaluate)
-    assert sig.parameters["normalization_mode"].default == "volume_deconv"
-    assert BayesianStatistics._normalization_mode == "volume_deconv"
+    # Production default flipped to generator_marginal 2026-07-26 (author-
+    # ratified, results/lcat_h_dependence_20260725/MULTISEED_READOUT_20260726.md).
+    assert sig.parameters["normalization_mode"].default == "generator_marginal"
+    assert BayesianStatistics._normalization_mode == "generator_marginal"
 
 
 def test_base_seed_threaded_to_workers() -> None:

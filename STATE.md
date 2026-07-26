@@ -4,7 +4,7 @@ A short, human-readable snapshot of where the project is, for continuity across 
 machines. Detailed, ephemeral working notes are kept out of the repository by design (see the
 `.gitignore` note on internal planning state); this file is the curated, durable surface.
 
-**Last updated:** 2026-07-25
+**Last updated:** 2026-07-26
 
 ## What works today
 
@@ -17,6 +17,34 @@ machines. Detailed, ephemeral working notes are kept out of the repository by de
   evaluation (~3.8× faster).
 
 ## Current focus
+
+- **Campaign NO-GO LIFTED (2026-07-26), on the valid-4 basis.** The five-seed production-stack
+  campaign (jobs 6044799–6044808, code @ `6dae9d3`, `generator_marginal` + `--pdet_z_resolved`,
+  41-pt grid) passed all pre-registered criteria on seeds 1000/2000/3000/90000: bias
+  −0.0003 ± 0.0004 (base channel), width χ²=8.0/3.7 both VALID, MAPs interior, both channels
+  clean. seed900 was **dropped from the registered set (author-ratified)** for a diagnosed
+  input-provenance defect — see below — not an estimator failure. See
+  `results/lcat_h_dependence_20260725/MULTISEED_READOUT_20260726.md` (incl. "Author
+  ratification" section).
+- **Production defaults flipped** (`[PHYSICS]` `ce6338e`): `--normalization_mode` default is
+  now `generator_marginal`, `--pdet_z_resolved` defaults to `True`
+  (`--no-pdet_z_resolved` for legacy pooled behaviour). Library defaults match. 1017 tests green.
+- **seed900 root cause:** `$WS/run_20260703_seed900/simulations/injections` was mis-populated
+  with a bespoke 204-injection pool (`injection_20260703-112746_seed46910`) instead of the
+  canonical `injection_pool_depth15_50k` (50k events); the prodstack run inherited the broken
+  symlink, undersampling the z-resolved survival estimator (ESS min/median 6/55, 57.6% of
+  sky-band cells below the ESS floor) and railing the venue to 0.86. Fix submitted 2026-07-26:
+  `run_20260726_seed900_fixpool`, eval job 6051189, combine 6051190, canonical pool relinked
+  and provenance-verified (500 CSVs, era-consistent).
+- **Merge to main is additionally gated** on an independent adversarial review (math + physics +
+  anti-tuning audit) of the estimator chain, ordered by the author 2026-07-26 — in progress,
+  `results/redteam_20260726/` pending. Issue #30 is **closed**; the gate remaining before
+  merge/manuscript is the redteam verdict (+ the seed900 fixpool restoring the registered n=5
+  test, non-blocking robustness check).
+- **P–P impostor-capable harness extension** in progress on branch `feat/pp-impostor-harness`
+  (verification hardening, non-blocking).
+
+### Resolved (2026-07-25 investigation, superseded by the 2026-07-26 milestone below)
 
 - **Deep-venue rail (issue #30)** — the EXP-40 re-evaluation (`run_20260719_seed1000_exp40`,
   main @ ba2b381, #29 fallback active) confirmed the seed1000 posterior still rails at the lower
@@ -31,7 +59,8 @@ machines. Detailed, ephemeral working notes are kept out of the repository by de
   h = 0.60 in both channels — **depth truncation (issue #30 option b) is empirically dead**.
   The untruncated z ≤ 0.2 *subset* closes at 0.729 while the truncated z_cut = 0.2 re-eval
   rails, isolating the rail in the h-dependence of the truncated selection/normalization
-  structure (w_G = β_G/D) interacting with L_cat. Campaign relaunch remains NO-GO.
+  structure (w_G = β_G/D) interacting with L_cat. Both findings were resolved by the
+  `generator_marginal` + `--pdet_z_resolved` estimator redesign below.
 
 ## Known open questions (tracked honestly)
 
@@ -42,7 +71,33 @@ machines. Detailed, ephemeral working notes are kept out of the repository by de
 - Standing modelling choices are documented in `docs/source/limitations.rst` (flat-ΛCDM distance
   integrals, cosmology-constant vintage matched to the mock universe, redshift-uncertainty scaling).
 
-## Next
+## Milestone 2026-07-26: the deep venue closes at truth
+
+- **`generator_marginal` + `--pdet_z_resolved`** (branch `physics/absolute-mass-marginal`,
+  `[PHYSICS]` commits `8fbb21e` + `a608c4f`): seed1000 MAP = **0.7300 = truth in both
+  channels**, sharp broad-based peak, 1017 tests green. Fully derivation-backed chain
+  (generator-consistent normalization n̂_w = W_cat/V_f + D_gen; z-resolved survival
+  S(d_L|z) in u = ln(1+z); point/point pairing verified against the generator — the mock
+  draws catalogue z verbatim). Two-sided mechanism validation: FIX-2-alone measured
+  −68.75 ln vs −69 predicted. No truth-referencing constants anywhere. For REAL data the
+  photo-z kernel must return (point/point is generator-exact for the mock only).
+- Remaining gates at the time of writing: dense-core peak width/σ(h) (done, χ² VALID above),
+  re-registered seed600 shallow gate (PASS, `SEED600_GATE_REGISTRATION.md`), 41-pt full grid
+  (done), multi-seed (900/1000/2000/3000/90000) residual-bias measurement (done — valid-4 PASS,
+  seed900 dropped for provenance defect, see "Current focus" above). Outstanding before merge:
+  the independent adversarial (redteam) review.
+
+## Next (2026-07-26)
+
+- **Redteam adversarial review** (math + physics + anti-tuning audit of the estimator chain) —
+  in progress, `results/redteam_20260726/` pending. Merge-to-main is gated on its verdict.
+- **seed900 fixpool re-run** — `run_20260726_seed900_fixpool`, eval job 6051189, combine 6051190
+  submitted 2026-07-26; restores the registered n=5 multi-seed test (non-blocking robustness
+  check, campaign verdict already stands on the valid-4 basis).
+- **P–P impostor-capable harness extension** on branch `feat/pp-impostor-harness` — in progress.
+- Workspace note (below) still applies: copy finals off before 2026-09-23.
+
+## Prior scoping (2026-07-25, kept for the record — resolved by the milestone above)
 
 - **Rail mechanism identified (2026-07-25): host misassociation.** Two independent
   investigations (empirical per-event decomposition, validated to ≤4.5e-13 against cluster

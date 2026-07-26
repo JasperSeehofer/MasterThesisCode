@@ -65,10 +65,20 @@ echo "  Node:     $(hostname)"
 echo "  Strategy: physics-floor"
 echo ""
 
+# Optional --allow_low_pdet_coverage pass-through (shallow archived pools,
+# e.g. the seed600 z<=0.5 baseline): the combine step reconstructs the D(h)
+# diagnostic via SimulationDetectionProbability and hits the same depth gate
+# as evaluate.sbatch. Unset/empty = byte-identical.
+EXTRA_ARGS=()
+if [[ "${ALLOW_LOW_PDET_COVERAGE:-}" == "yes" ]]; then
+    EXTRA_ARGS+=(--allow_low_pdet_coverage)
+fi
+
 python -m master_thesis_code "$RUN_DIR/simulations" \
     --combine \
     --strategy physics-floor \
-    --log_level INFO
+    --log_level INFO \
+    "${EXTRA_ARGS[@]}"
 
 echo ""
 echo "=== Combination Complete ==="

@@ -154,6 +154,11 @@ class Arguments:
         return str(self._parsed_arguments.pdet_estimator)
 
     @property
+    def pdet_z_resolved(self) -> bool:
+        """FIX-2: z-resolved detection survival S(d_L | z) (default off = pooled)."""
+        return bool(self._parsed_arguments.pdet_z_resolved)
+
+    @property
     def fisher_cond_threshold(self) -> float:
         """Condition number threshold for flagging near-singular covariance matrices."""
         return float(self._parsed_arguments.fisher_cond_threshold)
@@ -162,6 +167,11 @@ class Arguments:
     def normalization_mode(self) -> str:
         """In-catalogue L_cat normalization ('global'/'local_ratio'/'volume_deconv')."""
         return str(self._parsed_arguments.normalization_mode)
+
+    @property
+    def smear_global_selection(self) -> bool:
+        """Opt-in sigma_z-smeared Sigma_glob (num/denom symmetry, issue #30 R4)."""
+        return bool(self._parsed_arguments.smear_global_selection)
 
     @property
     def catalog_only(self) -> bool:
@@ -382,6 +392,26 @@ def _parse_arguments(arguments: list[str]) -> argparse.Namespace:
         ),
     )
     parser.add_argument(
+        "--pdet_z_resolved",
+        # [PHYSICS] production default since 2026-07-26 (author-ratified adoption,
+        # results/lcat_h_dependence_20260725/MULTISEED_READOUT_20260726.md):
+        # multi-seed verification passed bias + width criteria on 4 deep venues.
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help=(
+            "[PHYSICS] FIX-2: z-resolved detection survival (production default). "
+            "Every 3D (without-BH-mass) selection query uses the z-CONDITIONAL "
+            "survival S(d_L | z) = P(d_hor >= d_L | z) (Gaussian kernel in "
+            "u = ln(1+z), Scott d=1 bandwidth, Abramson-adaptive; exact "
+            "suffix-survival in d_L) instead of the pooled S(d_L). The 2D "
+            "M_z-conditioned grid keeps its current form. Use "
+            "--no-pdet_z_resolved for the pooled legacy behavior. Ships/gates "
+            "jointly with the generator_marginal normalization (stacked "
+            "prediction, packet §6). "
+            "results/lcat_h_dependence_20260725/DERIVATION_ZRESOLVED_SURVIVAL.md."
+        ),
+    )
+    parser.add_argument(
         "--fisher_cond_threshold",
         type=float,
         default=1e16,
@@ -390,16 +420,54 @@ def _parse_arguments(arguments: list[str]) -> argparse.Namespace:
     parser.add_argument(
         "--normalization_mode",
         type=str,
-        choices=["global", "local_ratio", "volume_deconv"],
-        default="volume_deconv",
+        choices=[
+            "global",
+            "local_ratio",
+            "volume_deconv",
+            "absolute_marginal",
+            "generator_marginal",
+        ],
+        # [PHYSICS] production default since 2026-07-26 (author-ratified adoption,
+        # results/lcat_h_dependence_20260725/MULTISEED_READOUT_20260726.md;
+        # derivation: DERIVATION_GENERATOR_CONSISTENT_NORM.md).
+        default="generator_marginal",
         help=(
-            "In-catalogue L_cat normalization (commission de-rail study). "
-            "'volume_deconv' (default): Gray A.9/A.10 local ratio-of-sums with the host-z "
+            "In-catalogue L_cat normalization. 'generator_marginal' (default, "
+            "production since 2026-07-26): see below. "
+            "'volume_deconv' (pre-2026-07-26 default): Gray A.9/A.10 local ratio-of-sums with the host-z "
             "prior deconvolved through the comoving-volume element dV_c/(1+z) -- de-railed "
             "AND statistically calibrated (D2 P-P). 'local_ratio': the same local ratio with "
             "a bare-Gaussian host-z prior (de-railed but ~2-3%% low-biased). 'global': the "
             "pre-fix global-denominator single ratio (rails to a grid edge on photo-z data). "
-            "See .planning/INDEPENDENT-VERIFICATION-REPORT-20260701.md sec 7."
+            "'absolute_marginal': the absolute-mass per-event host marginal "
+            "p_i = (A_i + B_num)/D with A_i = (Sum_ball w_g N_g)/n_bar_w, "
+            "n_bar_w = Sigma_glob/beta_G (issue #30 estimator redesign, Variant 1; "
+            "volume_deconv host-z kernel; empty balls reduce continuously to B_num/D). "
+            "'generator_marginal': the generator-consistent normalization (E1 FIX-3): "
+            "p_i = (Sum_ball w_g N_g / n_hat_w + B_num)/D_gen with the DRAW-SIDE "
+            "calibration n_hat_w = W_cat/V_f(h) (no P_det inside) and "
+            "D_gen = Sigma_glob_wbh/n_hat_w + beta_Gbar (4D-exact catalogue selection); "
+            "point/point sigma_z pairing (N_g point-evaluated at the catalogue z_g; "
+            "incompatible with --smear_global_selection); empty balls reduce "
+            "continuously to B_num/D_gen. "
+            "See .planning/INDEPENDENT-VERIFICATION-REPORT-20260701.md sec 7, "
+            "results/lcat_h_dependence_20260725/DERIVATION_ESTIMATOR_REDESIGN.md and "
+            "results/lcat_h_dependence_20260725/DERIVATION_GENERATOR_CONSISTENT_NORM.md."
+        ),
+    )
+    parser.add_argument(
+        "--smear_global_selection",
+        action="store_true",
+        help=(
+            "Opt-in [PHYSICS] refinement of the global in-catalogue selection sum "
+            "Sigma_glob: replace the point evaluation P_det(d_L(z_g;h)) per galaxy "
+            "with the expectation over the SAME volume-deconvolved host-z kernel "
+            "the in-catalogue numerator uses (num/denom sigma_z symmetry, issue #30 "
+            "estimator redesign risk R4). Off by default (point evaluation, "
+            "byte-identical legacy behavior). Relevant to normalization modes that "
+            "consume Sigma_glob ('global', 'absolute_marginal'). Incompatible with "
+            "'generator_marginal' (that mode is defined with the point/point "
+            "sigma_z pairing and rejects this flag)."
         ),
     )
     parser.add_argument(
