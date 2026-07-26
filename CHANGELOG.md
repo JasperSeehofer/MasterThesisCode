@@ -7,6 +7,28 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Research (estimator redesign — issue #30 / E1 FIX-3)
+- **`generator_marginal` normalization mode [PHYSICS]** — the generator-consistent
+  selection normalization (approved packet:
+  `results/lcat_h_dependence_20260725/DERIVATION_GENERATOR_CONSISTENT_NORM.md`).
+  Two substitutions relative to `absolute_marginal`: the Option-A calibration
+  `n_bar_w = Σ_glob/β_G` is replaced by the draw-side density `n̂_w = W_cat/V_f(h)`
+  (no P_det inside; `W_cat` = draw-eligible catalogue rate-weight total,
+  `V_f(h)` = completeness-weighted population volume — both new precomputes
+  validated against the packet's numeric anchors, W_cat rel 2e-16 / V_f rel 3e-11),
+  and the master denominator becomes `D_gen = Σ_glob_wbh/n̂_w + β_Ḡ` (4D-exact
+  catalogue selection; `3d_shared` reachable via `dgen_catalog_selection` as a
+  documented diagnostic). σ_z pairing is **point/point** (generator-exact; premise
+  hard-verified in the generator code: hosts are drawn and detected at their verbatim
+  catalogue z): the in-catalogue numerator `N_g` is the GW likelihood point-evaluated
+  at `z_g`; `--smear_global_selection` is rejected in this mode. Empty balls reduce
+  continuously to `B_num/D_gen`. All existing modes byte-identical (kernel golden
+  pins untouched; batch == scalar bit-for-bit in the new mode). CLI:
+  `--normalization_mode generator_marginal`. Tests: `test_generator_marginal_mode.py`
+  (assembly, Option-A row-wise reduction to `absolute_marginal`, h³ identity
+  `d ln n̂_w/dh = 3/h`, empty-ball continuity, σ→0 kernel collapse); validation
+  script: `scripts/check_generator_norm_precomputes.py`.
+
 ### Research (host-mass kernel — bias investigation)
 - **`mass_trunc` host-mass kernel (EXP-45) — implemented, numerically sound, and
   EXONERATED as the 2D bias driver (experimental, not for production).** New isolated

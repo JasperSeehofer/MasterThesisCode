@@ -395,7 +395,13 @@ def _parse_arguments(arguments: list[str]) -> argparse.Namespace:
     parser.add_argument(
         "--normalization_mode",
         type=str,
-        choices=["global", "local_ratio", "volume_deconv", "absolute_marginal"],
+        choices=[
+            "global",
+            "local_ratio",
+            "volume_deconv",
+            "absolute_marginal",
+            "generator_marginal",
+        ],
         default="volume_deconv",
         help=(
             "In-catalogue L_cat normalization (commission de-rail study). "
@@ -408,8 +414,16 @@ def _parse_arguments(arguments: list[str]) -> argparse.Namespace:
             "p_i = (A_i + B_num)/D with A_i = (Sum_ball w_g N_g)/n_bar_w, "
             "n_bar_w = Sigma_glob/beta_G (issue #30 estimator redesign, Variant 1; "
             "volume_deconv host-z kernel; empty balls reduce continuously to B_num/D). "
-            "See .planning/INDEPENDENT-VERIFICATION-REPORT-20260701.md sec 7 and "
-            "results/lcat_h_dependence_20260725/DERIVATION_ESTIMATOR_REDESIGN.md."
+            "'generator_marginal': the generator-consistent normalization (E1 FIX-3): "
+            "p_i = (Sum_ball w_g N_g / n_hat_w + B_num)/D_gen with the DRAW-SIDE "
+            "calibration n_hat_w = W_cat/V_f(h) (no P_det inside) and "
+            "D_gen = Sigma_glob_wbh/n_hat_w + beta_Gbar (4D-exact catalogue selection); "
+            "point/point sigma_z pairing (N_g point-evaluated at the catalogue z_g; "
+            "incompatible with --smear_global_selection); empty balls reduce "
+            "continuously to B_num/D_gen. "
+            "See .planning/INDEPENDENT-VERIFICATION-REPORT-20260701.md sec 7, "
+            "results/lcat_h_dependence_20260725/DERIVATION_ESTIMATOR_REDESIGN.md and "
+            "results/lcat_h_dependence_20260725/DERIVATION_GENERATOR_CONSISTENT_NORM.md."
         ),
     )
     parser.add_argument(
@@ -422,7 +436,9 @@ def _parse_arguments(arguments: list[str]) -> argparse.Namespace:
             "the in-catalogue numerator uses (num/denom sigma_z symmetry, issue #30 "
             "estimator redesign risk R4). Off by default (point evaluation, "
             "byte-identical legacy behavior). Relevant to normalization modes that "
-            "consume Sigma_glob ('global', 'absolute_marginal')."
+            "consume Sigma_glob ('global', 'absolute_marginal'). Incompatible with "
+            "'generator_marginal' (that mode is defined with the point/point "
+            "sigma_z pairing and rejects this flag)."
         ),
     )
     parser.add_argument(

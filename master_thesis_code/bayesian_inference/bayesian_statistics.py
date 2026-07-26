@@ -892,6 +892,157 @@ def precompute_missing_completion_denominator(
     return beta_Gbar_table
 
 
+def compute_catalog_draw_weight_total(
+    galaxy_catalog: GalaxyCatalogueHandler,
+    z_max: float = HOST_DRAW_Z_MAX,
+) -> float:
+    r"""Total draw-eligible catalogue rate weight ``W_cat`` (h-independent scalar).
+
+    .. math::
+
+        W_\mathrm{cat} = \sum_{g:\, z_g < z_\mathrm{max}} w_g,
+        \qquad w_g = \frac{R_\mathrm{eff}(M_g)}{1 + z_g},
+
+    over the SAME pruned catalogue rows and the SAME eligibility mask
+    (``z_g < HOST_DRAW_Z_MAX``, no other cut) that the generator's in-catalogue
+    host draw normalizes over — this is exactly ``total_weight`` in
+    :meth:`~master_thesis_code.galaxy_catalogue.handler.GalaxyCatalogueHandler.draw_rate_weighted_hosts`.
+    It is the draw-side companion normalizer of the completeness-weighted
+    population volume :func:`precompute_completeness_population_volume`; their
+    ratio ``n_hat_w = W_cat / V_f(h)`` is the generator-consistent rate-weight
+    density that replaces the Option-A calibration ``n_bar_w = Sigma_glob/beta_G``
+    in the ``generator_marginal`` normalization mode.
+
+    ``W_cat`` carries NO ``P_det`` and NO ``h`` dependence: it normalizes the
+    draw, not the detection (domain note in the derivation packet §3.2). Any
+    analysis-depth cap (issue-#30 ``z_max_cap``) must be applied to ``z_max``
+    HERE and in ``V_f`` together with the candidate window (f29a5e7 principle:
+    numerator and denominator move together).
+
+    Args:
+        galaxy_catalog: Loaded catalogue handler (its ``reduced_galaxy_catalog``
+            is summed over; same rows the rate-weighted draw uses).
+        z_max: Exclusive upper redshift bound of the draw eligibility. Defaults
+            to :data:`~master_thesis_code.constants.HOST_DRAW_Z_MAX`.
+
+    Returns:
+        ``W_cat`` in ``yr^-1`` (the ``emri_rate.C_NORM`` scale cancels in every
+        ratio it enters).
+
+    References:
+        results/lcat_h_dependence_20260725/DERIVATION_GENERATOR_CONSISTENT_NORM.md
+            §2.3 Eq. (4) (spec; W_cat anchor: 6.3477e8 over 9,060,017 pruned rows).
+        master_thesis_code/galaxy_catalogue/handler.py, draw_rate_weighted_hosts
+            (the generator draw this normalizer replicates).
+        Babak et al. (2017), arXiv:1703.09722 — per-MBH rate ``R_eff``.
+    """
+    catalog = galaxy_catalog.reduced_galaxy_catalog
+    z_all = np.asarray(
+        catalog[InternalCatalogColumns.REDSHIFT].to_numpy(dtype=np.float64),
+        dtype=np.float64,
+    )
+    M_all = np.asarray(
+        catalog[InternalCatalogColumns.BH_MASS].to_numpy(dtype=np.float64),
+        dtype=np.float64,
+    )
+    # Draw eligibility: z_g < z_max ONLY — the exact mask of
+    # draw_rate_weighted_hosts (no mass mask; the catalogue is already pruned).
+    eligible = z_all < z_max
+    z_g = z_all[eligible]
+    M_g = M_all[eligible]
+    if z_g.size == 0:
+        raise ValueError(
+            f"No galaxy in the reduced catalog has redshift < z_max = {z_max}; "
+            "cannot form the draw-side rate-weight total W_cat."
+        )
+    # w_g = R_eff_per_mbh(M_g)/(1+z_g): IDENTICAL to draw_rate_weighted_hosts,
+    # _rate_weight and precompute_global_catalog_selection.
+    # Eq. (4) in DERIVATION_GENERATOR_CONSISTENT_NORM.md §2.3.
+    w_g = np.asarray(R_eff_per_mbh(M_g), dtype=np.float64) / (1.0 + z_g)
+    W_cat = float(np.sum(w_g))
+    _LOGGER.info(
+        "Catalog draw-weight total W_cat = %.6e yr^-1 over %d eligible galaxies (z < %.4f)",
+        W_cat,
+        z_g.size,
+        z_max,
+    )
+    return W_cat
+
+
+def precompute_completeness_population_volume(
+    h_values: list[float],
+    completeness: CompletenessModel,
+    *,
+    z_min: float = 1e-6,
+    z_max: float = HOST_DRAW_Z_MAX,
+    n_grid: int = 4096,
+) -> dict[float, float]:
+    r"""Completeness-weighted population volume ``V_f(h)`` (per steradian).
+
+    .. math::
+
+        V_f(h) = \int_{z_\mathrm{min}}^{z_\mathrm{max}} \bar f(z, h)\,
+                 \frac{1}{1+z}\,\frac{dV_c}{dz\,d\Omega}\, dz ,
+
+    the SAME integral the generator's in-catalogue mixture fraction ``F`` uses
+    (``F = V_f / V_tot``, :func:`master_thesis_code.dark_siren_injection.compute_global_catalog_fraction`),
+    with the SAME sky-averaged completeness ``f_bar`` and the SAME trapezoid
+    quadrature convention (linspace grid, ``_DEFAULT_Z_GRID_POINTS = 4096``
+    nodes there; the completeness curve is piecewise linear, so the trapezoid
+    rule is exact-in-shape and more robust than Gauss-Legendre on the kinks).
+    Under the frozen pixel ``m_th`` map ``f_bar`` is h-invariant, so
+    ``V_f(h) = V_f(0.73) (0.73/h)^3`` exactly (``dV_c/dz`` carries the ``h^-3``);
+    the table is still evaluated per-h so a future h-dependent completeness
+    model flows through unchanged (derivation packet §2.2 note).
+
+    Role: ``n_hat_w(h) = W_cat / V_f(h)`` is the generator draw-side rate-weight
+    density of the ``generator_marginal`` mode — the calibration contains NO
+    ``P_det``, so the Option-A identity ``Sigma_glob = n_hat_w * beta_G`` is
+    never invoked (the whole point of the mode).
+
+    Args:
+        h_values: Hubble parameter values to evaluate.
+        completeness: Catalogue completeness model (``f_bar`` accessor), the
+            SAME frozen-cache object the generator uses (C1 consistency).
+        z_min: Lower integration bound (matches the generator's
+            ``_DEFAULT_Z_MIN = 1e-6``).
+        z_max: Upper integration bound — the DRAW depth
+            :data:`~master_thesis_code.constants.HOST_DRAW_Z_MAX`, NOT the
+            detection horizon ``z_max(h)`` (domain note, derivation §3.2). An
+            issue-#30 depth cap must move this together with ``W_cat``.
+        n_grid: Trapezoid grid nodes (default 4096, the generator convention).
+
+    Returns:
+        Dict mapping ``h -> V_f(h)`` in ``Mpc^3 sr^-1`` (same measure as
+        ``D(h)``/``beta_Gbar(h)``). Validation anchor:
+        ``V_f(0.73) = 2.3237e8`` (generator_norm_Vf_tables.json).
+
+    References:
+        results/lcat_h_dependence_20260725/DERIVATION_GENERATOR_CONSISTENT_NORM.md
+            §2.2-§2.3, Eq. (4) (spec and numeric anchors).
+        master_thesis_code/dark_siren_injection.py,
+            compute_global_catalog_fraction — the generator integral replicated.
+        Gray et al. (2020), arXiv:1908.06050, Eq. (9) — completeness ``f(z)``.
+    """
+    V_f_table: dict[float, float] = {}
+    z_grid = np.linspace(z_min, z_max, n_grid, dtype=np.float64)
+    for h in h_values:
+        f_z = np.clip(np.asarray(completeness.f_bar(z_grid, h), dtype=np.float64), 0.0, 1.0)
+        # (1/(1+z)) dVc/dz: the generator's _redshift_population_weight (the
+        # mass-integrated rate is z-independent under p0=1 and cancels).
+        # Eq. (4) in DERIVATION_GENERATOR_CONSISTENT_NORM.md §2.3.
+        w_pop = np.asarray(comoving_volume_element(z_grid, h=h), dtype=np.float64) / (1.0 + z_grid)
+        V_f = float(np.trapezoid(f_z * w_pop, z_grid))
+        if not (V_f > 0.0):
+            raise ValueError(
+                f"Completeness population volume V_f(h={h}) = {V_f} is non-positive; "
+                "cannot form the draw-side rate-weight density n_hat_w."
+            )
+        V_f_table[h] = V_f
+        _LOGGER.info("V_f(h=%.4f) = %.6e Mpc^3/sr  [z in (%.1e, %.4f)]", h, V_f, z_min, z_max)
+    return V_f_table
+
+
 def _smeared_global_pdet_expectation(
     z_g: npt.NDArray[np.float64],
     M_g: npt.NDArray[np.float64],
@@ -956,9 +1107,9 @@ def _smeared_global_pdet_expectation(
         s = 0.5 * (hi - lo)
         z_nodes = c[:, None] + s[:, None] * x_nodes[None, :]  # (n, K)
         gauss = np.exp(-0.5 * ((z_nodes - zc[:, None]) / se[:, None]) ** 2)
-        w_pop = np.asarray(
-            comoving_volume_element(z_nodes.ravel(), h=h), dtype=np.float64
-        ).reshape(z_nodes.shape) / (1.0 + z_nodes)
+        w_pop = np.asarray(comoving_volume_element(z_nodes.ravel(), h=h), dtype=np.float64).reshape(
+            z_nodes.shape
+        ) / (1.0 + z_nodes)
         kern = gauss * w_pop * (s[:, None] * x_weights[None, :])
         norm_g = np.sum(kern, axis=1)
         norm_g = np.where(norm_g > 0.0, norm_g, 1.0)
@@ -974,9 +1125,7 @@ def _smeared_global_pdet_expectation(
             )
         elif sky_aware and theta_g is not None:
             sin_beta = np.abs(np.cos(theta_g[sl]))
-            _edges = np.asarray(
-                detection_probability_obj.band_edges_sin_beta(), dtype=np.float64
-            )
+            _edges = np.asarray(detection_probability_obj.band_edges_sin_beta(), dtype=np.float64)
             _n_bands = int(_edges.size - 1)
             band = np.clip(np.searchsorted(_edges, sin_beta, side="right") - 1, 0, _n_bands - 1)
             s_band = np.asarray(
@@ -1311,6 +1460,16 @@ class BayesianStatistics:
     _normalization_mode: str = "volume_deconv"
     # G4: base seed for the deterministic with-BH-mass MC denominator streams.
     _base_seed: int = 0
+    # generator_marginal precomputes (set by evaluate() when the mode is active):
+    # W_cat = draw-eligible catalogue rate-weight total (yr^-1, h-independent),
+    # _V_f_table[h] = completeness-weighted population volume (Mpc^3/sr).
+    # n_hat_w = W_cat/V_f(h) replaces the Option-A n_bar_w = Sigma_glob/beta_G.
+    _W_cat: float = 0.0
+    # Author decision 1 of the derivation packet §7: which catalogue-selection
+    # sum enters D_gen. "4d_exact" (primary, generator-exact per (G-ii)) uses
+    # Sigma_glob_wbh (each galaxy's actual M_z inside the 4D p_det); "3d_shared"
+    # (documented diagnostic) uses the pooled-3D Sigma_glob shared with beta_Gbar.
+    _dgen_catalog_selection: str = "4d_exact"
 
     def __init__(self) -> None:
         self.h_values = []
@@ -1330,6 +1489,7 @@ class BayesianStatistics:
         self.w_a = self.cosmological_model.w_a
         self.catalog_only: bool = False
         self._diagnostic_rows: list[dict[str, object]] = []
+        self._V_f_table: dict[float, float] = {}
 
     def evaluate(
         self,
@@ -1347,6 +1507,7 @@ class BayesianStatistics:
         allow_low_pdet_coverage: bool = False,
         h_values: Sequence[float] | None = None,
         smear_global_selection: bool = False,
+        dgen_catalog_selection: str = "4d_exact",
     ) -> None:
         # h-grid fusion (opt-in): when h_values is given it supersedes h_value
         # and ALL h-invariant setup — catalogue/BallTree (passed in), injection
@@ -1411,6 +1572,32 @@ class BayesianStatistics:
         #                     residual driver (results/mass_kernel_truncation_20260713/FINDINGS.md).
         #                     1D channel is byte-identical to volume_deconv (no mass term). Gated
         #                     behind the flag until the seed600 A/B; volume_deconv stays the default.
+        #   "generator_marginal" -> [PHYSICS] the generator-consistent selection normalization
+        #                     (E1 FIX-3, approved 2026-07-26): the exact per-event marginal under
+        #                     the injection pipeline's own generative recipe. Two substitutions
+        #                     relative to "absolute_marginal" (nothing else changes):
+        #                       n_bar_w = Sigma_glob/beta_G  ->  n_hat_w = W_cat/V_f(h)
+        #                       D = beta_G + beta_Gbar       ->  D_gen = Sigma_glob_sel/n_hat_w + beta_Gbar
+        #                     with W_cat the draw-eligible catalogue rate-weight total (the
+        #                     generator draw's own normalizer) and V_f(h) the completeness-weighted
+        #                     population volume (the generator's F = V_f/V_tot integral). The
+        #                     Option-A constant-comoving-density identity is never invoked: no
+        #                     model integral is compared against a discrete catalogue sum. The
+        #                     sigma_z pairing is point/point (generator-exact, premise verified:
+        #                     draw_rate_weighted_hosts copies catalogue rows verbatim and
+        #                     set_host_galaxy_parameters uses host_z unscattered;
+        #                     handler.draw_z_and_mass_from_gaussian is dead code): the in-catalogue
+        #                     numerator N_g is the GW likelihood POINT-evaluated at the catalogue
+        #                     z_g (delta kernel) and Sigma_glob stays point-evaluated
+        #                     (--smear_global_selection is rejected in this mode). D_gen's
+        #                     catalogue term uses Sigma_glob_wbh ("4d_exact", generator-exact per
+        #                     (G-ii)); the "3d_shared" pooled-survival variant is reachable via
+        #                     dgen_catalog_selection as a documented diagnostic. Empty balls
+        #                     reduce continuously to B_num/D_gen.
+        #                     results/lcat_h_dependence_20260725/DERIVATION_GENERATOR_CONSISTENT_NORM.md
+        #                     Eqs. (3)-(5); Mandel, Farr & Gair (2019), arXiv:1809.02063 (single
+        #                     selection factor alpha(h)); Fishbach et al. (2019), arXiv:1807.05667,
+        #                     Eqs. (3)-(5) (mixture structure).
         if normalization_mode not in (
             "global",
             "local_ratio",
@@ -1419,8 +1606,24 @@ class BayesianStatistics:
             "volume_trunc",
             "mass_trunc",
             "absolute_marginal",
+            "generator_marginal",
         ):
             raise ValueError(f"unknown normalization_mode: {normalization_mode!r}")
+        if dgen_catalog_selection not in ("4d_exact", "3d_shared"):
+            raise ValueError(
+                f"unknown dgen_catalog_selection: {dgen_catalog_selection!r} "
+                "(expected '4d_exact' or '3d_shared')"
+            )
+        if normalization_mode == "generator_marginal" and smear_global_selection:
+            # The mode is DEFINED with the point/point sigma_z pairing (generator-
+            # exact, derivation §4.3): a smeared Sigma_glob would silently break
+            # the approved pairing, so reject the combination loudly.
+            raise ValueError(
+                "normalization_mode='generator_marginal' uses the point/point "
+                "sigma_z pairing (generator-exact); --smear_global_selection is "
+                "incompatible with it. Drop the flag (or use 'absolute_marginal' "
+                "for the kernel/smeared pairing)."
+            )
         if normalization_mode == "global":
             warnings.warn(
                 "normalization_mode='global' is mis-calibrated for photometric-redshift "
@@ -1431,6 +1634,7 @@ class BayesianStatistics:
                 stacklevel=2,
             )
         self._normalization_mode = normalization_mode
+        self._dgen_catalog_selection = dgen_catalog_selection
         self._diagnostic_rows = []
         if catalog_only:
             _LOGGER.info("catalog_only mode: f_i=1, L_comp=0 (skipping completion integral)")
@@ -1555,6 +1759,37 @@ class BayesianStatistics:
             z_max_cap=REDSHIFT_UPPER_LIMIT,
             smear_sigma_z=smear_global_selection,
         )
+        # generator_marginal precomputes: the draw-side calibration pair
+        # (W_cat, V_f(h)). Domain = min(draw depth, analysis cap) so an
+        # issue-#30 depth truncation moves W_cat/V_f together with the
+        # candidate window (derivation §3.2 domain note; f29a5e7 principle).
+        # Eqs. (3)-(5) in DERIVATION_GENERATOR_CONSISTENT_NORM.md.
+        if normalization_mode == "generator_marginal":
+            _draw_domain_z_max = min(HOST_DRAW_Z_MAX, REDSHIFT_UPPER_LIMIT)
+            self._W_cat = compute_catalog_draw_weight_total(
+                galaxy_catalog, z_max=_draw_domain_z_max
+            )
+            self._V_f_table = precompute_completeness_population_volume(
+                _h_list,
+                completeness,
+                z_max=_draw_domain_z_max,
+            )
+            for _h_gen in _h_list:
+                _n_hat_w = self._W_cat / self._V_f_table[_h_gen]
+                _sigma_sel = (
+                    _global_cat_denom_with_bh[_h_gen]
+                    if dgen_catalog_selection == "4d_exact"
+                    else _global_cat_denom_no_bh[_h_gen]
+                )
+                _D_gen_prev = _sigma_sel / _n_hat_w + _beta_Gbar_table[_h_gen]
+                _LOGGER.info(
+                    "generator_marginal(h=%.4f): n_hat_w=%.4f, D_gen=%.6e (%s), P_cat_det=%.4f",
+                    _h_gen,
+                    _n_hat_w,
+                    _D_gen_prev,
+                    dgen_catalog_selection,
+                    (_sigma_sel / _n_hat_w) / _D_gen_prev if _D_gen_prev > 0 else float("nan"),
+                )
         for _h_prev in _h_list:
             _w_G_preview = (
                 _beta_G_table[_h_prev] / _D_h_table[_h_prev]
@@ -2239,6 +2474,8 @@ class BayesianStatistics:
             beta_Gbar: float = self._beta_Gbar_table.get(self.h, 0.0)
             global_denom_no_bh: float = self._global_cat_denom_no_bh.get(self.h, 0.0)
             global_denom_with_bh: float = self._global_cat_denom_with_bh.get(self.h, 0.0)
+            # generator_marginal draw-side calibration (0.0 outside that mode).
+            n_hat_w: float = 0.0
 
             # In-catalogue term L_cat. Normalization modes:
             #   "global"/"volume_global"/"absolute_marginal":
@@ -2269,7 +2506,40 @@ class BayesianStatistics:
             #     Σ_ball w_g D_g is scale-inconsistent with the marginal and lets
             #     impostor-only balls carry O(1) weight (the deep-venue rail, issue #30).
             #   Gray et al. (2020), arXiv:1908.06050, Eqs. A.9 / A.10 / 29.
-            if self._normalization_mode in ("global", "volume_global", "absolute_marginal"):
+            #   "generator_marginal": A_i = (Σ_ball w_g N_g) / n_hat_w with the DRAW-SIDE
+            #     calibration n_hat_w = W_cat/V_f(h) — no P_det inside the conversion, so the
+            #     Option-A identity Sigma_glob = n_hat_w*beta_G is never invoked. ONE n_hat_w
+            #     for both channels (the conversion is population-side, channel-independent;
+            #     derivation §4.2 — this also removes the per-channel Option-A substitution
+            #     n_bar_w_wbh = Sigma_glob_wbh/beta_G).
+            #     Eqs. (3)-(4) in DERIVATION_GENERATOR_CONSISTENT_NORM.md;
+            #     Mandel, Farr & Gair (2019), arXiv:1809.02063 (selection convention).
+            if self._normalization_mode == "generator_marginal":
+                _V_f_h: float = self._V_f_table.get(self.h, 0.0)
+                # n_hat_w = W_cat / V_f(h)  [yr^-1 sr Mpc^-3, same units as n_bar_w]
+                # Eq. (4) in DERIVATION_GENERATOR_CONSISTENT_NORM.md §2.3.
+                n_hat_w = self._W_cat / _V_f_h if _V_f_h > 0.0 else 0.0
+                if n_hat_w <= 0.0:
+                    _LOGGER.warning(
+                        "Detection %s: n_hat_w <= 0 (W_cat=%.3e, V_f=%.3e) — "
+                        "catalogue term dropped",
+                        detection_index,
+                        self._W_cat,
+                        _V_f_h,
+                    )
+                cat_num_sum_no_bh = weighted_sum(
+                    [r[0] for r in all_results_without_bh], weights_without_bh
+                )
+                # A_i = (Σ_ball w_g N_g) / n_hat_w; empty ball -> A_i = 0 exactly.
+                L_cat_without_bh_mass = cat_num_sum_no_bh / n_hat_w if n_hat_w > 0.0 else 0.0
+                if len(results_with_bh_mass) > 0:
+                    cat_num_sum_with_bh = weighted_sum(
+                        [r[2] for r in results_with_bh_mass], weights_with_bh
+                    )
+                    L_cat_with_bh_mass = cat_num_sum_with_bh / n_hat_w if n_hat_w > 0.0 else 0.0
+                else:
+                    L_cat_with_bh_mass = 0.0
+            elif self._normalization_mode in ("global", "volume_global", "absolute_marginal"):
                 cat_num_sum_no_bh = weighted_sum(
                     [r[0] for r in all_results_without_bh], weights_without_bh
                 )
@@ -2432,7 +2702,45 @@ class BayesianStatistics:
             # issue-#29 fallback as a continuous limit of the same expression).
             # Eq. (15) in Chen, Fishbach & Holz (2018), arXiv:1712.06531;
             # Eq. (2.4) in Gray et al. (2023), arXiv:2308.02281.
-            if D_h > 0:
+            if self._normalization_mode == "generator_marginal":
+                # [PHYSICS] Generator-consistent master denominator (E1 FIX-3):
+                #     D_gen(h) = Sigma_glob_sel(h)/n_hat_w(h) + beta_Gbar(h)
+                # replaces D = beta_G + beta_Gbar. Sigma_glob_sel is the with-BH
+                # catalogue-selection sum Sigma_glob_wbh under the primary
+                # "4d_exact" convention (generator-exact per (G-ii): each galaxy
+                # detects at its actual M_z) or the pooled-3D Sigma_glob under
+                # the "3d_shared" diagnostic; ONE D_gen serves both posterior
+                # channels either way (derivation §4.2/§7 decision 1). The
+                # marginal is p_i = (A_i + B_num)/D_gen; empty balls flow through
+                # A_i = 0 -> p_i = B_num/D_gen continuously (issue-#29 fallback
+                # as a limit, not a branch). In the p_det -> 1 limit
+                # Sigma_glob -> W_cat, hence D_gen -> V_f + beta_Gbar = D and the
+                # current estimator is recovered algebraically (derivation §5d).
+                # Eqs. (3)+(5) in DERIVATION_GENERATOR_CONSISTENT_NORM.md;
+                # Chen, Fishbach & Holz (2018), arXiv:1712.06531, Eq. (15);
+                # Gray et al. (2023), arXiv:2308.02281, Eq. (2.4).
+                _sigma_glob_sel: float = (
+                    global_denom_with_bh
+                    if self._dgen_catalog_selection == "4d_exact"
+                    else global_denom_no_bh
+                )
+                _a_cat: float = _sigma_glob_sel / n_hat_w if n_hat_w > 0.0 else 0.0
+                D_gen: float = _a_cat + beta_Gbar
+                if D_gen > 0:
+                    # Diagnostic: P_hat(cat|det,h) = (Sigma_glob_sel/n_hat_w)/D_gen —
+                    # the generator-consistent detected-catalogue share (replaces
+                    # the w_G = beta_G/D diagnostic; derivation §4.4).
+                    w_G = _a_cat / D_gen
+                    combined_without_bh_mass = float((L_cat_without_bh_mass + B_num) / D_gen)
+                    combined_with_bh_mass = float((L_cat_with_bh_mass + B_num) / D_gen)
+                else:
+                    _LOGGER.warning(
+                        f"Detection {detection_index}: D_gen(h) is zero, using A_i only"
+                    )
+                    w_G = 1.0
+                    combined_without_bh_mass = float(L_cat_without_bh_mass)
+                    combined_with_bh_mass = float(L_cat_with_bh_mass)
+            elif D_h > 0:
                 w_G = beta_G / D_h
                 combined_without_bh_mass = float((beta_G * L_cat_without_bh_mass + B_num) / D_h)
                 combined_with_bh_mass = float((beta_G * L_cat_with_bh_mass + B_num) / D_h)
@@ -2688,6 +2996,20 @@ def single_host_likelihood(
     # mass-marginal (numerator + selection denominator). No effect without BH mass.
     _use_mass_trunc = normalization_mode == "mass_trunc"
 
+    # [PHYSICS] generator_marginal (E1 FIX-3, approved 2026-07-26): point/point
+    # sigma_z pairing. The generator draws hosts at their catalogue z verbatim and
+    # detects at d_L(z_g; h_inj) — no sigma_z scatter anywhere on the production
+    # path (draw_rate_weighted_hosts copies rows; set_host_galaxy_parameters uses
+    # host_z unscattered; draw_z_and_mass_from_gaussian is dead code), so the
+    # generator-exact in-catalogue numerator is the GW likelihood POINT-evaluated
+    # at z_g: N_g = p(x | z_g, Omega_g[, M]) — the delta-kernel limit of the
+    # volume-deconvolved host-z kernel (which is byte-identical in every other
+    # mode). The per-host selection denominator D_g keeps the kernel machinery
+    # (diagnostic only in this mode; the assembly never divides by it).
+    # DERIVATION_GENERATOR_CONSISTENT_NORM.md §4.3 (G-iii); Mandel, Farr & Gair
+    # (2019), arXiv:1809.02063 (P(det|x)=1 for detected data in numerators).
+    _use_generator_point = normalization_mode == "generator_marginal"
+
     # [PHYSICS] Issue #16 (user decision 2026-07-03): marginalize the residual
     # host peculiar-velocity dispersion into the host-z kernel.
     #   sigma_z_pv = (1 + z_g) * sigma_v / c
@@ -2748,12 +3070,16 @@ def single_host_likelihood(
     # "absolute_marginal" (issue #30 Variant 1) keeps the volume_deconv kernel
     # unchanged (the kernel is exactly h-invariant, D1 §2 fact 2); only the p_Di
     # assembly differs. DERIVATION_ESTIMATOR_REDESIGN.md §3.1.
+    # "generator_marginal" joins this set for the DENOMINATOR/Z_g machinery only
+    # (byte-identical to absolute_marginal there); its NUMERATOR is the
+    # point-evaluated delta kernel (see _use_generator_point above).
     _use_volume_deconv = normalization_mode in (
         "volume_deconv",
         "volume_global",
         "volume_trunc",
         "mass_trunc",
         "absolute_marginal",
+        "generator_marginal",
     )
     _z_prior_norm = 1.0
     if _use_volume_deconv:
@@ -2827,15 +3153,30 @@ def single_host_likelihood(
         numerator_quad_lower = numerator_integration_lower_redshift_limit
         numerator_quad_upper = numerator_integration_upper_redshift_limit
 
-    (
-        single_host_likelihood_numerator_without_bh_mass,
-        single_host_likelihood_numerator_without_bh_mass_error,
-    ) = fixed_quad(
-        numerator_integrant_without_bh_mass,
-        numerator_quad_lower,
-        numerator_quad_upper,
-        n=FIXED_QUAD_N,
-    )
+    if _use_generator_point:
+        # [PHYSICS] delta-kernel numerator: N_g = p(x | z_g, Omega_g) — the GW
+        # 3D Gaussian point-evaluated at the catalogue redshift (the volume
+        # weight normalizes away in the delta limit: w_pop(z_g)/w_pop(z_g) = 1).
+        # DERIVATION_GENERATOR_CONSISTENT_NORM.md §4.3 (fully generator-exact).
+        _z_point = np.array([host_z], dtype=np.float64)
+        _d_L_point = np.asarray(dist_vectorized(_z_point, h=h), dtype=np.float64)
+        _ldf_point = _d_L_point / _det_d_L
+        _phi_point = np.full_like(_z_point, host_phiS)
+        _theta_point = np.full_like(_z_point, host_qS)
+        _x_obs_point = np.vstack([_phi_point, _theta_point, _ldf_point]).T
+        single_host_likelihood_numerator_without_bh_mass = float(
+            _mvn_pdf(_x_obs_point, _mean_3d, _cov_inv_3d, _log_norm_3d)[0]
+        )
+    else:
+        (
+            single_host_likelihood_numerator_without_bh_mass,
+            single_host_likelihood_numerator_without_bh_mass_error,
+        ) = fixed_quad(
+            numerator_integrant_without_bh_mass,
+            numerator_quad_lower,
+            numerator_quad_upper,
+            n=FIXED_QUAD_N,
+        )
     (
         single_host_likelihood_denominator_without_bh_mass,
         single_host_likelihood_denominator_without_bh_mass_error,
@@ -2986,12 +3327,29 @@ def single_host_likelihood(
             # No /(1+z) factor: Jacobian absorbed by Gaussian rescaling (Eq. 14.21)
             return gw_3d * mz_integral * galaxy_redshift_prior_pdf(z)
 
-        single_host_likelihood_numerator_with_bh_mass = fixed_quad(
-            numerator_integrant_with_bh_mass,
-            numerator_quad_lower,
-            numerator_quad_upper,
-            n=FIXED_QUAD_N,
-        )[0]
+        if _use_generator_point:
+            # [PHYSICS] delta-kernel with-BH numerator: gw_3d(z_g) * mz(z_g).
+            # The galaxy MASS-error kernel is intentionally retained (pre-existing
+            # point-M treatment tracked under issue #24; only the z-kernel
+            # collapses per (G-iii)). DERIVATION_GENERATOR_CONSISTENT_NORM.md §4.3.
+            _gw_3d_point = _mvn_pdf(_x_obs_point, _mean_3d, _cov_inv_3d, _log_norm_3d)
+            _mu_cond_point = _mu_obs_4d[3] + (_x_obs_point - _mu_obs_4d[:3]) @ _proj
+            # mass_trunc is a distinct mode; the generator point path always uses
+            # the analytic Gaussian product (Eq. 14.31) at z = z_g.
+            _mu_gal_frac_point = _host_M_eff * (1 + _z_point) / _det_M
+            _sigma_gal_frac_point = host_M_error * (1 + _z_point) / _det_M
+            _sigma2_sum_point = _sigma2_cond + _sigma_gal_frac_point**2
+            _mz_point = np.exp(
+                -0.5 * (_mu_cond_point - _mu_gal_frac_point) ** 2 / _sigma2_sum_point
+            ) / np.sqrt(2 * np.pi * _sigma2_sum_point)
+            single_host_likelihood_numerator_with_bh_mass = float((_gw_3d_point * _mz_point)[0])
+        else:
+            single_host_likelihood_numerator_with_bh_mass = fixed_quad(
+                numerator_integrant_with_bh_mass,
+                numerator_quad_lower,
+                numerator_quad_upper,
+                n=FIXED_QUAD_N,
+            )[0]
 
         # Eq. (14.33) in derivations/dark_siren_likelihood.md
         # Denominator D_g = INTEGRAL p_gal(z) [ INTEGRAL p_det(d_L(z), M(1+z)) N(M) dM ] dz.
@@ -3131,17 +3489,25 @@ def single_host_likelihood_batch(
     # mass_trunc (EXP-45): truncated lognormal x R_eff host-mass prior in the 2D
     # channel; shares the volume_deconv host-z kernel (see scalar path).
     _use_mass_trunc = normalization_mode == "mass_trunc"
+    # generator_marginal (E1 FIX-3): point/point sigma_z pairing — the numerator
+    # is the GW likelihood POINT-evaluated at the catalogue z_g (delta kernel);
+    # see the scalar kernel for the physics comment and references.
+    _use_generator_point = normalization_mode == "generator_marginal"
     _z_lower_floor = 0.0 if _use_volume_trunc else 1e-6
     den_lo = np.maximum(
         host_z - integration_limit_sigma_multiplier * host_z_error_eff, _z_lower_floor
     )
 
+    # generator_marginal joins the volume_deconv set for the DENOMINATOR/Z_g
+    # machinery only (byte-identical to absolute_marginal there); its numerator
+    # is point-evaluated (see _use_generator_point).
     _use_volume_deconv = normalization_mode in (
         "volume_deconv",
         "volume_global",
         "volume_trunc",
         "mass_trunc",
         "absolute_marginal",
+        "generator_marginal",
     )
 
     # Per-host denominator quadrature nodes (fixed_quad affine map, n=50).
@@ -3167,7 +3533,20 @@ def single_host_likelihood_batch(
     # per-host; the shared-node optimization is dropped for the numerator only
     # (the denominator path is already per-host). y_num_nodes carries (1 + z) for
     # the with-BH-mass mass-fraction coordinate transform below.
-    if _use_volume_trunc:
+    if _use_generator_point:
+        # [PHYSICS] delta-kernel numerator (generator_marginal): a single "node"
+        # column at the catalogue z_g keeps the downstream (n, k) machinery
+        # shared; no quadrature reduce is applied (see below). Scalar-twin ops:
+        # dist at host_z, fraction against the event d_L.
+        # DERIVATION_GENERATOR_CONSISTENT_NORM.md §4.3 (G-iii).
+        y_num_nodes = host_z[:, None]  # (n, 1)
+        d_L_num_point = np.asarray(dist_vectorized(host_z, h=h), dtype=np.float64)  # (n,)
+        luminosity_distance_fraction: npt.NDArray[np.floating[Any]] = (
+            d_L_num_point / _det_d_L
+        )[:, None]  # (n, 1)
+        num_reduce_lo = np.zeros(n)  # unused on the point path
+        num_reduce_hi = np.zeros(n)  # unused on the point path
+    elif _use_volume_trunc:
         y_num_nodes = y_den  # (n, 50)
         d_L_num = dist_vectorized(y_num_nodes.reshape(-1), h=h).reshape(n, _HOST_QUAD_N)
         luminosity_distance_fraction = d_L_num / _det_d_L  # (n, 50)
@@ -3186,7 +3565,7 @@ def single_host_likelihood_batch(
         num_reduce_hi = np.full(n, numerator_integration_upper_redshift_limit)
 
     w_pop_num: npt.NDArray[np.float64] | None = None
-    if _use_volume_deconv:
+    if _use_volume_deconv and not _use_generator_point:
         if _use_volume_trunc:
             # Numerator nodes == denominator nodes -> reuse the denominator w_pop.
             w_pop_num = w_pop_den
@@ -3206,27 +3585,40 @@ def single_host_likelihood_batch(
             return base * w_pop / z_prior_norm[:, None]
         return base
 
-    prior_num = _z_prior_pdf_at(y_num_nodes, w_pop_num)  # (n, 50)
+    # Point mode has no numerator z-kernel: prior_num stays None (delta kernel).
+    prior_num: npt.NDArray[np.float64] | None = (
+        None if _use_generator_point else _z_prior_pdf_at(y_num_nodes, w_pop_num)
+    )  # (n, 50) in the quadrature modes
     # (n, 50); same values the scalar integrand recomputes at y_den
     if _use_volume_deconv and w_pop_den is not None:
         prior_den = gauss_den * w_pop_den / z_prior_norm[:, None]
     else:
         prior_den = gauss_den
 
-    # 3D GW likelihood at the shared numerator nodes, batched over hosts.
-    x_obs = np.empty((n, _HOST_QUAD_N, 3), dtype=np.float64)
+    # 3D GW likelihood at the numerator nodes, batched over hosts.
+    # k_num = 1 in the generator point mode (single delta-kernel column);
+    # _HOST_QUAD_N in every quadrature mode (value-identical to the pre-change
+    # constant-shape code there).
+    _k_num = int(y_num_nodes.shape[1])
+    x_obs = np.empty((n, _k_num, 3), dtype=np.float64)
     x_obs[:, :, 0] = host_phiS[:, None]
     x_obs[:, :, 1] = host_qS[:, None]
-    x_obs[:, :, 2] = luminosity_distance_fraction  # (n, 50)
-    gw_3d = _mvn_pdf(x_obs.reshape(n * _HOST_QUAD_N, 3), _mean_3d, _cov_inv_3d, _log_norm_3d)
-    gw_3d = gw_3d.reshape(n, _HOST_QUAD_N)
+    x_obs[:, :, 2] = luminosity_distance_fraction  # (n, k_num)
+    gw_3d = _mvn_pdf(x_obs.reshape(n * _k_num, 3), _mean_3d, _cov_inv_3d, _log_norm_3d)
+    gw_3d = gw_3d.reshape(n, _k_num)
 
-    numerator_without_bh_mass = _batched_gl_reduce(
-        num_reduce_lo,
-        num_reduce_hi,
-        _GL_WEIGHTS_50,
-        gw_3d * prior_num,
-    )
+    if _use_generator_point:
+        # [PHYSICS] N_g = p(x | z_g, Omega_g): point value, no reduce.
+        # DERIVATION_GENERATOR_CONSISTENT_NORM.md §4.3.
+        numerator_without_bh_mass = gw_3d[:, 0]
+    else:
+        assert prior_num is not None
+        numerator_without_bh_mass = _batched_gl_reduce(
+            num_reduce_lo,
+            num_reduce_hi,
+            _GL_WEIGHTS_50,
+            gw_3d * prior_num,
+        )
 
     # 3D denominator: batched p_det lookup over all hosts' nodes at once.
     d_L_den = dist_vectorized(y_den.reshape(-1), h=h)
@@ -3331,9 +3723,9 @@ def single_host_likelihood_batch(
     _mu_obs_4d = means_4d[slot]
 
     # Conditional mean of M_z_frac given (phi, theta, d_L_frac); Eq. (14.23)-(14.28).
-    mu_cond = (
-        _mu_obs_4d[3] + (x_obs.reshape(n * _HOST_QUAD_N, 3) - _mu_obs_4d[:3]) @ _proj
-    ).reshape(n, _HOST_QUAD_N)
+    mu_cond = (_mu_obs_4d[3] + (x_obs.reshape(n * _k_num, 3) - _mu_obs_4d[:3]) @ _proj).reshape(
+        n, _k_num
+    )
     # (1 + z) mass-fraction coordinate transform at the numerator nodes y_num_nodes
     # (n, 50): broadcast of the shared window for the default modes, the per-host
     # galaxy window for volume_trunc.
@@ -3353,12 +3745,19 @@ def single_host_likelihood_batch(
             2 * np.pi * sigma2_sum
         )
 
-    numerator_with_bh_mass = _batched_gl_reduce(
-        num_reduce_lo,
-        num_reduce_hi,
-        _GL_WEIGHTS_50,
-        gw_3d * mz_integral * prior_num,
-    )
+    if _use_generator_point:
+        # [PHYSICS] with-BH point numerator: gw_3d(z_g) * mz(z_g); the galaxy
+        # mass-error kernel is retained (issue #24), only the z-kernel collapses.
+        # DERIVATION_GENERATOR_CONSISTENT_NORM.md §4.3.
+        numerator_with_bh_mass = (gw_3d * mz_integral)[:, 0]
+    else:
+        assert prior_num is not None
+        numerator_with_bh_mass = _batched_gl_reduce(
+            num_reduce_lo,
+            num_reduce_hi,
+            _GL_WEIGHTS_50,
+            gw_3d * mz_integral * prior_num,
+        )
 
     # Semi-analytic denominator (glz64): batched erf-sum inner-M + GL outer-z.
     y_bh = _batched_gl_nodes(den_lo, den_hi, _GL_NODES_64)  # (n, 64)
