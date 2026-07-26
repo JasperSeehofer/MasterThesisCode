@@ -8,9 +8,11 @@ folded redshift error, and a column-order drift has bitten this project before (
 ``.stale6col_mar28`` / ``.zhelio_20260702`` variants at the repo root).
 
 The full GLADE+ parse pipeline is exercised on a tiny synthetic raw file:
-flag filtering ({1, 3} survive), the peculiar-velocity error NaN→0.0015 floor + quadrature
-fold into the redshift error, the trailing integer redshift flag, the column reorder, and
-the PHI_S/THETA_S rename on read.
+flag filtering ({1, 3} survive), the per-PV-class quadrature fold into the redshift
+error (issue #40b, RATIFIED 2026-07-26: BORG-corrected rows fold the catalogue PV
+error + the (1+z)·150 km/s/c reconstruction residual; uncorrected rows one
+(1+z)·500 km/s/c full-dispersion term, no 0.0015 fill), the trailing integer
+redshift flag, the column reorder, and the PHI_S/THETA_S rename on read.
 """
 
 import math
@@ -20,6 +22,11 @@ import numpy as np
 import pandas as pd
 import pytest
 
+from master_thesis_code.constants import (
+    SIGMA_V_PV_RESIDUAL_CORRECTED_KM_S,
+    SIGMA_V_PV_UNCORRECTED_KM_S,
+    SPEED_OF_LIGHT_KM_S,
+)
 from master_thesis_code.galaxy_catalogue import handler as handler_module
 from master_thesis_code.galaxy_catalogue.handler import (
     CatalogueColumns,
@@ -36,6 +43,7 @@ _USED = {
     CatalogueColumns.DECLINATION.value: "dec",
     CatalogueColumns.APPARENT_B_MAG.value: "bmag",
     CatalogueColumns.REDSHIFT.value: "z",
+    CatalogueColumns.REDSHIFT_PECULIAR_VELOCITY_CORRECTION_FLAG.value: "pv_flag",
     CatalogueColumns.REDSHIFT_PECULIAR_VELOCITY_ERROR.value: "pv_err",
     CatalogueColumns.REDSHIFT_MEASUREMENT_ERROR.value: "z_err",
     CatalogueColumns.REDSHIFT_FLAG.value: "flag",
@@ -52,13 +60,15 @@ def _raw_row(**cells: str) -> str:
 
 
 # flag 1 (photo) and 3 (spec) survive; 0 (none) and 2 (distance-only) are dropped.
-# Row "spec_nan" uses "null" for the PV error → pandas NaN → 0.0015 floor.
+# Row "spec_nan" uses "null" for the PV error (uncorrected class: the column is
+# ignored and the one full-dispersion term applies — no fill).
 _ROWS = [
     dict(
         ra="10.0",
         dec="20.0",
         bmag="15.0",
         z="0.05",
+        pv_flag="1",
         pv_err="0.001",
         z_err="0.02",
         flag="1",
@@ -70,6 +80,7 @@ _ROWS = [
         dec="-10.0",
         bmag="14.0",
         z="0.03",
+        pv_flag="0",
         pv_err="null",
         z_err="0.001",
         flag="3",
@@ -81,6 +92,7 @@ _ROWS = [
         dec="0.0",
         bmag="18.0",
         z="0.10",
+        pv_flag="0",
         pv_err="0.001",
         z_err="0.05",
         flag="0",
@@ -92,6 +104,7 @@ _ROWS = [
         dec="1.0",
         bmag="17.0",
         z="0.20",
+        pv_flag="0",
         pv_err="0.001",
         z_err="0.05",
         flag="2",
@@ -103,6 +116,7 @@ _ROWS = [
         dec="5.0",
         bmag="16.0",
         z="0.08",
+        pv_flag="1",
         pv_err="0.0005",
         z_err="0.0015",
         flag="3",
@@ -148,9 +162,12 @@ def test_on_disk_column_order_and_field_count(
     assert all(line.split(",")[-1] in {"1", "3"} for line in lines)
 
 
-def test_redshift_error_folds_pv_in_quadrature_with_nan_floor(
+def test_redshift_error_folds_pv_per_class_counted_once(
     reduced_csv: tuple[GalaxyCatalogueHandler, Path],
 ) -> None:
+    """Per-PV-class widths (issue #40b): corrected rows fold catalogue PV error +
+    the (1+z)*150 km/s/c residual; uncorrected rows get ONE (1+z)*500 km/s/c term
+    (no 0.0015 fill, catalogue PV column ignored for that class)."""
     _handler, reduced = reduced_csv
     df = pd.read_csv(reduced, names=_reduced_catalog_column_names())
     by_z = {
@@ -160,12 +177,19 @@ def test_redshift_error_folds_pv_in_quadrature_with_nan_floor(
             df[CatalogueColumns.REDSHIFT_MEASUREMENT_ERROR.name],
         )
     }
-    # photo row: sqrt(0.02^2 + 0.001^2)
-    assert by_z[0.05] == pytest.approx(math.sqrt(0.02**2 + 0.001**2))
-    # spec-NaN row: pv NaN → 0.0015 floor, sqrt(0.001^2 + 0.0015^2)
-    assert by_z[0.03] == pytest.approx(math.sqrt(0.001**2 + 0.0015**2))
-    # spec row: sqrt(0.0015^2 + 0.0005^2)
-    assert by_z[0.08] == pytest.approx(math.sqrt(0.0015**2 + 0.0005**2))
+
+    def _res(z: float) -> float:
+        return (1.0 + z) * SIGMA_V_PV_RESIDUAL_CORRECTED_KM_S / SPEED_OF_LIGHT_KM_S
+
+    def _full(z: float) -> float:
+        return (1.0 + z) * SIGMA_V_PV_UNCORRECTED_KM_S / SPEED_OF_LIGHT_KM_S
+
+    # photo row, PV-corrected: sqrt(z_err^2 + pv_err^2 + residual^2)
+    assert by_z[0.05] == pytest.approx(math.sqrt(0.02**2 + 0.001**2 + _res(0.05) ** 2))
+    # spec-NaN row, UNcorrected: one full-dispersion term, NO 0.0015 fill
+    assert by_z[0.03] == pytest.approx(math.sqrt(0.001**2 + _full(0.03) ** 2))
+    # spec row, PV-corrected: sqrt(z_err^2 + pv_err^2 + residual^2)
+    assert by_z[0.08] == pytest.approx(math.sqrt(0.0015**2 + 0.0005**2 + _res(0.08) ** 2))
 
 
 def test_read_renames_sky_columns_to_frame_neutral_symbols(
