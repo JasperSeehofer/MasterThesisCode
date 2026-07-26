@@ -123,6 +123,15 @@ EXTRA_ARGS=()
 if [[ -n "${MAX_REDSHIFT:-}" ]]; then
     EXTRA_ARGS+=(--max_redshift "$MAX_REDSHIFT")
 fi
+# Optional --normalization_mode pass-through (issue #30 estimator A/B):
+# unset/empty keeps the CLI default (volume_deconv) — byte-identical.
+if [[ -n "${NORMALIZATION_MODE:-}" ]]; then
+    EXTRA_ARGS+=(--normalization_mode "$NORMALIZATION_MODE")
+fi
+# Optional --smear_global_selection (flag; set SMEAR_GLOBAL_SELECTION=yes):
+if [[ "${SMEAR_GLOBAL_SELECTION:-}" == "yes" ]]; then
+    EXTRA_ARGS+=(--smear_global_selection)
+fi
 
 # P_det grid resolution: explicit flags for reproducibility (Phase 33).
 # Seeding (TC-05): per-task seed = EVAL_SEED + task id (EVAL_SEED exported by
