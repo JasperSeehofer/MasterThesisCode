@@ -60,6 +60,15 @@ the weight identically in both arms (clamped queries are insensitive to
 the u-axis by construction — plausibly THE parity breaker: if the clamp
 dominates, most catalogue queries never feel the conditioning).
 
+> **[SUPERSEDED 2026-07-28 — P1 audit executed]** The follow-up above ran:
+> `P1_PARITY_AUDIT.md` (this dir). Hypothesis (iv) REFUTED (clamped queries
+> carry ~75–90 % of the conditioning movement); the ×3–5 shortfall was a
+> probe axis-translation error + 6 % baseline value error; the −6.5±4 gate
+> is RETIRED and consequence 2 below (clamp-suppression narrative + the
+> "(d1) at full size post-campaign" prediction) is WITHDRAWN — the
+> replacement pre-registered prediction is in the audit §6 and
+> `docs/campaign_redesign_51_design.md` §6.
+
 ## Consequences
 
 1. **(d1) measured ≈ null in production.** The 2D residual's owner
