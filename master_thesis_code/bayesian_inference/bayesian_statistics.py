@@ -620,6 +620,10 @@ def _mass_trunc_denominator_inner_m_integral(
     n_z, n_g = z_arr.size, M_nodes.size
     d_L = dist_vectorized(z_arr, h=h)  # (n_z,)
     m_z = M_nodes[None, :] * (1.0 + z_arr)[:, None]  # (n_z, G) detector-frame mass
+    # [PHYSICS] FIX-3 §7.1 pointwise switch (fix3_zmz_catalog_selection.md
+    # §3.5 table row 3): each GL node holds its z, so the joint conditional
+    # S(d_L(z) | z, M(1+z)) is queried per node when the flag is on; the
+    # kwarg is absent (byte-identical) when it is off.
     p = np.asarray(
         detection_probability.detection_probability_with_bh_mass_interpolated(
             np.repeat(d_L, n_g),
@@ -627,6 +631,7 @@ def _mass_trunc_denominator_inner_m_integral(
             np.full(n_z * n_g, host_phiS),
             np.full(n_z * n_g, host_qS),
             h=h,
+            **_wbh_z_kwargs(detection_probability, np.repeat(z_arr, n_g)),
         ),
         dtype=np.float64,
     ).reshape(n_z, n_g)
@@ -660,6 +665,8 @@ def _mass_trunc_denominator_inner_m_integral_batch(
     n_g = M_nodes.shape[1]
     d_L = dist_vectorized(z.reshape(-1), h=h)  # (n*n_z,)
     m_z = M_nodes[:, None, :] * (1.0 + z[:, :, None])  # (n, n_z, G)
+    # [PHYSICS] FIX-3 §7.1 pointwise switch — identical convention to the
+    # scalar twin (bit-parity): z per query node when the flag is on.
     p = np.asarray(
         detection_probability.detection_probability_with_bh_mass_interpolated(
             np.repeat(d_L, n_g),
@@ -667,6 +674,7 @@ def _mass_trunc_denominator_inner_m_integral_batch(
             np.repeat(host_phiS, n_z * n_g),
             np.repeat(host_qS, n_z * n_g),
             h=h,
+            **_wbh_z_kwargs(detection_probability, np.repeat(z.reshape(-1), n_g)),
         ),
         dtype=np.float64,
     ).reshape(n, n_z, n_g)
@@ -852,6 +860,36 @@ def _zres_z_kwargs(
     # `is True` (not truthiness): MagicMock test doubles auto-create truthy
     # attributes; only the real boolean property may activate the pass-through.
     if getattr(detection_probability_obj, "z_resolved", False) is True:
+        return {"z": z}
+    return {}
+
+
+def _wbh_z_kwargs(
+    detection_probability_obj: Any,
+    z: float | npt.NDArray[np.float64],
+) -> dict[str, Any]:
+    r"""FIX-3 §7.1 pass-through: conditioning redshift for with-BH p_det queries.
+
+    [PHYSICS] joint z x M_z-resolved with-BH detection survival
+    (docs/derivations/fix3_zmz_catalog_selection.md [RATIFY-Z5]): when the
+    detection-probability object is built with ``pdet_wbh_z_resolved=True``,
+    EVERY with-BH (2D) survival query must be conditioned on the redshift the
+    caller is already holding — ``S(d_L(z;h) | z, M_z)`` replaces the
+    pooled-in-z ``S(d_L(z;h) | M_z)`` ATOMICALLY across all with-BH selection
+    legs (Sigma_glob_wbh incl. the smeared branch, per-host erf-sum and
+    mass_trunc inner-M integrals).  When the flag is off (or a mock p_det
+    without the attribute is used), the call is byte-identical to the
+    pre-FIX-3 form (no ``z`` keyword passed).
+
+    References:
+        Mandel, Farr & Gair (2019), arXiv:1809.02063 — selection at the
+            population AT HYPOTHESIS, which specifies (z, M_z) jointly.
+        docs/derivations/fix3_zmz_catalog_selection.md §3.3 ("pass the z you
+            are already holding") and §3.5 (atomic-switch rule).
+    """
+    # `is True` (not truthiness): MagicMock test doubles auto-create truthy
+    # attributes; only the real boolean property may activate the pass-through.
+    if getattr(detection_probability_obj, "wbh_z_resolved", False) is True:
         return {"z": z}
     return {}
 
@@ -1375,9 +1413,18 @@ def _smeared_global_pdet_expectation(
         zeros = np.zeros_like(d_L_nodes)
         if with_bh_mass:
             M_z_nodes = (M_g[sl][:, None] * (1.0 + z_nodes)).ravel()
+            # [PHYSICS] FIX-3 §7.1 one-z rule (fix3_zmz_catalog_selection.md
+            # §3.3): under sigma_z smearing the smear z, the joint-conditioning
+            # z, and the (1+z) mass lift ride the SAME z per query node —
+            # counted once (project_pdet_hypothesis_convention).
             p_nodes = np.asarray(
                 detection_probability_obj.detection_probability_with_bh_mass_interpolated(
-                    d_L_nodes, M_z_nodes, zeros, zeros, h=h
+                    d_L_nodes,
+                    M_z_nodes,
+                    zeros,
+                    zeros,
+                    h=h,
+                    **_wbh_z_kwargs(detection_probability_obj, z_nodes.ravel()),
                 ),
                 dtype=np.float64,
             )
@@ -1566,9 +1613,19 @@ def precompute_global_catalog_selection(
             M_z_g = M_g * (1.0 + z_g)  # observer-frame mass (P_det grid axis)
             phi_iso = np.zeros_like(z_g)
             theta_iso = np.zeros_like(z_g)
+            # [PHYSICS] FIX-3 §7.1 [RATIFY-Z1/Z5]: Sigma_glob_wbh's averaging
+            # measure is the CATALOGUE's joint (z_g, M_z,g) — when the flag is
+            # on the galaxy's own z_g conditions the query, S(d_L(z_g;h) |
+            # z_g, M_g(1+z_g)); sky stays isotropic (unchanged decision).
+            # docs/derivations/fix3_zmz_catalog_selection.md §3.1 (K1)/(K2).
             p_det = np.asarray(
                 detection_probability_obj.detection_probability_with_bh_mass_interpolated(
-                    d_L_g, M_z_g, phi_iso, theta_iso, h=h
+                    d_L_g,
+                    M_z_g,
+                    phi_iso,
+                    theta_iso,
+                    h=h,
+                    **_wbh_z_kwargs(detection_probability_obj, z_g),
                 ),
                 dtype=np.float64,
             )
@@ -1798,6 +1855,11 @@ class BayesianStatistics:
         smear_global_selection: bool = False,
         dgen_catalog_selection: str = "4d_exact",
         pdet_z_resolved: bool = True,
+        # FIX-3 §7.1 (default OFF, byte-identical): joint z x M_z-resolved
+        # with-BH detection survival; requires pdet_z_resolved=True
+        # (RATIFY-Z7 guard in SimulationDetectionProbability).
+        # docs/derivations/fix3_zmz_catalog_selection.md.
+        pdet_wbh_z_resolved: bool = False,
         # Issue #40(a): numerator host-z kernel decomposition flag; "auto"
         # preserves the historical bundling (delta kernel iff
         # generator_marginal) — production default path unchanged.
@@ -2013,6 +2075,10 @@ class BayesianStatistics:
             # FIX-2 (opt-in): z-resolved detection survival S(d_L | z); every
             # 3D consumer below passes its own z via _zres_z_kwargs.
             pdet_z_resolved=pdet_z_resolved,
+            # FIX-3 §7.1 (opt-in): joint z x M_z with-BH survival; every
+            # with-BH consumer passes its own z via _wbh_z_kwargs
+            # (atomic-switch rule, fix3_zmz_catalog_selection.md §3.5).
+            pdet_wbh_z_resolved=pdet_wbh_z_resolved,
         )
         _LOGGER.debug("Detection probability functions created.")
 
@@ -3179,22 +3245,35 @@ def _bh_mass_denominator_inner_m_integral(
         389-419 (Gaussian zeroth/first-moment identities).
     """
     z_arr = np.atleast_1d(np.asarray(z, dtype=np.float64))
-    interp_2d, _ = detection_probability._get_or_build_grid(h)
-    m_centers = np.asarray(interp_2d.grid[1], dtype=np.float64)  # M_z grid knots
-    n_k = m_centers.size
     d_L = dist_vectorized(z_arr, h=h)
+    if getattr(detection_probability, "wbh_z_resolved", False) is True:
+        # [PHYSICS] FIX-3 §7.1 erf-sum path (fix3_zmz_catalog_selection.md
+        # §3.3-C convention 2, choice (a)): the joint-grid knot values at
+        # (d_L(z_j), z_j, m_k), lifted to M_z knots 10^{m_k}, with the
+        # interpolant treated as PIECEWISE-LINEAR IN M_z between them — the
+        # closed-form erf-sum below stays exact for that interpolant.
+        m_centers, p = detection_probability.wbh_joint_knot_values(
+            np.asarray(d_L, dtype=np.float64), z_arr
+        )
+        m_centers = np.asarray(m_centers, dtype=np.float64)
+        p = np.asarray(p, dtype=np.float64)  # (n_z, K)
+        n_k = m_centers.size
+    else:
+        interp_2d, _ = detection_probability._get_or_build_grid(h)
+        m_centers = np.asarray(interp_2d.grid[1], dtype=np.float64)  # M_z grid knots
+        n_k = m_centers.size
 
-    # p_det at every (z_j, M_center_k) -> (n_z, K), one interpolator call.
-    dl_zz = np.repeat(d_L, n_k)
-    mm = np.tile(m_centers, z_arr.size)
-    phi = np.full_like(dl_zz, host_phiS)
-    theta = np.full_like(dl_zz, host_qS)
-    p = np.asarray(
-        detection_probability.detection_probability_with_bh_mass_interpolated(
-            dl_zz, mm, phi, theta, h=h
-        ),
-        dtype=np.float64,
-    ).reshape(z_arr.size, n_k)
+        # p_det at every (z_j, M_center_k) -> (n_z, K), one interpolator call.
+        dl_zz = np.repeat(d_L, n_k)
+        mm = np.tile(m_centers, z_arr.size)
+        phi = np.full_like(dl_zz, host_phiS)
+        theta = np.full_like(dl_zz, host_qS)
+        p = np.asarray(
+            detection_probability.detection_probability_with_bh_mass_interpolated(
+                dl_zz, mm, phi, theta, h=h
+            ),
+            dtype=np.float64,
+        ).reshape(z_arr.size, n_k)
 
     mu = host_M_eff
     sigma = host_M_error
@@ -3246,22 +3325,33 @@ def _bh_mass_denominator_inner_m_integral_batch(
         Inner-integral values ``g(z)``, shape ``(n, n_z)``.
     """
     n, n_z = z.shape
-    interp_2d, _ = detection_probability._get_or_build_grid(h)
-    m_centers = np.asarray(interp_2d.grid[1], dtype=np.float64)  # M_z grid knots
-    n_k = m_centers.size
     d_L = dist_vectorized(z.reshape(-1), h=h)  # (n*n_z,)
+    if getattr(detection_probability, "wbh_z_resolved", False) is True:
+        # [PHYSICS] FIX-3 §7.1 erf-sum path — identical convention to the
+        # scalar twin (bit-parity): joint-grid knot values per (host, z-node),
+        # piecewise-linear in M_z between the lifted knots (§3.3-C choice (a)).
+        m_centers, p_flat = detection_probability.wbh_joint_knot_values(
+            np.asarray(d_L, dtype=np.float64), z.reshape(-1)
+        )
+        m_centers = np.asarray(m_centers, dtype=np.float64)
+        n_k = m_centers.size
+        p = np.asarray(p_flat, dtype=np.float64).reshape(n, n_z, n_k)
+    else:
+        interp_2d, _ = detection_probability._get_or_build_grid(h)
+        m_centers = np.asarray(interp_2d.grid[1], dtype=np.float64)  # M_z grid knots
+        n_k = m_centers.size
 
-    # p_det at every (host_i, z_j, M_center_k) -> (n, n_z, K), one interpolator call.
-    dl_zz = np.repeat(d_L, n_k)
-    mm = np.tile(m_centers, n * n_z)
-    phi = np.repeat(host_phiS, n_z * n_k)
-    theta = np.repeat(host_qS, n_z * n_k)
-    p = np.asarray(
-        detection_probability.detection_probability_with_bh_mass_interpolated(
-            dl_zz, mm, phi, theta, h=h
-        ),
-        dtype=np.float64,
-    ).reshape(n, n_z, n_k)
+        # p_det at every (host_i, z_j, M_center_k) -> (n, n_z, K), one interpolator call.
+        dl_zz = np.repeat(d_L, n_k)
+        mm = np.tile(m_centers, n * n_z)
+        phi = np.repeat(host_phiS, n_z * n_k)
+        theta = np.repeat(host_qS, n_z * n_k)
+        p = np.asarray(
+            detection_probability.detection_probability_with_bh_mass_interpolated(
+                dl_zz, mm, phi, theta, h=h
+            ),
+            dtype=np.float64,
+        ).reshape(n, n_z, n_k)
 
     mu = host_M_eff[:, None, None]
     sigma = host_M_error[:, None, None]

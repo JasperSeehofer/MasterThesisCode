@@ -42,6 +42,7 @@ References:
 
 import glob
 import logging
+import os
 import re
 import warnings
 from collections import OrderedDict
@@ -113,6 +114,36 @@ _ZRES_U_NODES: int = 121
 _ZRES_PILOT_BINS: int = 400
 _ZRES_PILOT_DENSITY_FLOOR: float = 1e-12
 
+# ── FIX-3 §7.1: joint z x M_z-resolved with-BH detection survival ──
+# docs/derivations/fix3_zmz_catalog_selection.md (RATIFIED 2026-07-27 rev. B).
+# Grid per [RATIFY-Z3]: probe-parity 61 u-nodes on [0, ln(1+1.5)] x 31 m-nodes
+# on the pool's [min, max] of log10 M_z; storage scheme (b) — exact
+# suffix-survival evaluated on a dense 3000-point d_L query grid
+# DLQ = linspace(1e-4, 1.02·max d_hor, 3000), LINEAR interpolation in d_L at
+# query time (§3.3-C convention 1).
+_WBH_ZRES_U_NODES: int = 61
+_WBH_ZRES_M_NODES: int = 31
+# u = ln(1+z) node span [0, ln(1+1.5)] — probe parity (z2.py build_surv_ulm).
+_WBH_ZRES_U_MAX: float = float(np.log(2.5))
+_WBH_ZRES_DLQ_POINTS: int = 3000
+_WBH_ZRES_DLQ_MIN: float = 1e-4
+_WBH_ZRES_DLQ_PAD: float = 1.02
+
+# [DIAGNOSTIC] MTC_WBH_GRID_ONLY=1 env override (fix3_zmz_catalog_selection.md
+# §3.5 grid-confound / §4 item 12): build the SAME joint (u, m) grid but with
+# the u-kernel factor forced to 1 — the "grid-only control cell" that isolates
+# the grid/interpolant change (31 uniform-log-M nodes + 3000-point d_L +
+# linear-in-d_L blend vs the production 40 geomspace-M_z x 60 linear-d_L grid)
+# from the z-conditioning change.  Diagnostic only; never set in production.
+_WBH_GRID_ONLY: bool = os.environ.get("MTC_WBH_GRID_ONLY", "") == "1"
+if _WBH_GRID_ONLY:
+    logging.getLogger(__name__).warning(
+        "[DIAGNOSTIC OVERRIDE ACTIVE] MTC_WBH_GRID_ONLY=1 — the joint with-BH "
+        "z x M_z survival grid is built with the u-kernel DISABLED (grid-only "
+        "control cell, fix3_zmz_catalog_selection.md §4 item 12). NOT a "
+        "production configuration."
+    )
+
 # Estimator selector retained for API compatibility.  The detection-horizon
 # survival function is exact in d_L, so this parameter no longer affects the
 # d_L treatment; it is accepted only so existing call sites and the NW
@@ -173,6 +204,15 @@ class SimulationDetectionProbability:
             suffix-survival in d_L per node) and the 3D accessors REQUIRE the
             ``z`` keyword.  The 2D (M_z-conditioned) grid keeps its current
             form.  DERIVATION_ZRESOLVED_SURVIVAL.md.
+        pdet_wbh_z_resolved: FIX-3 §7.1 (default False = pooled-in-z 2D grid,
+            byte-identical to pre-FIX-3 behaviour).  When True, the with-BH
+            (2D) survival query returns the joint conditional
+            ``S(d_L | z, M_z)`` (product Gaussian kernel in ``u = ln(1+z)``
+            and ``m = log10 M_z``, Scott d=2 bandwidths, Abramson-adaptive on
+            u only; exact suffix-survival in d_L; ESS-weighted (K5) shrinkage
+            toward ``S(d_L | M_z)``) and the 2D accessor REQUIRES the ``z``
+            keyword.  Requires ``pdet_z_resolved=True`` (RATIFY-Z7 guard).
+            docs/derivations/fix3_zmz_catalog_selection.md.
 
     References:
         Finn & Chernoff (1993), arXiv:gr-qc/9301003.
@@ -197,6 +237,7 @@ class SimulationDetectionProbability:
         expected_z_max: float | None = None,
         allow_shallow_pool: bool = False,
         pdet_z_resolved: bool = False,
+        pdet_wbh_z_resolved: bool = False,
     ) -> None:
         self._dl_bins = dl_bins
         self._mass_bins = mass_bins
@@ -223,6 +264,18 @@ class SimulationDetectionProbability:
             raise ValueError(msg)
         self._h_prior_min: float = float(h_prior_range[0])
         self._h_prior_max: float = float(h_prior_range[1])
+        # [RATIFY-Z7] guard (fix3_zmz_catalog_selection.md §4 item 2): a
+        # joint-conditioned 2D channel over pooled 3D legs mixes conventions
+        # inside D_gen — the Z5 atomic-switch rule at mode level, and the
+        # FIX-2 ship-together rule in code.
+        if pdet_wbh_z_resolved and not pdet_z_resolved:
+            msg = (
+                "pdet_wbh_z_resolved=True requires pdet_z_resolved=True: the "
+                "joint z x M_z with-BH survival must not ride over pooled 3D "
+                "selection legs (RATIFY-Z7, "
+                "docs/derivations/fix3_zmz_catalog_selection.md §4 item 2)."
+            )
+            raise ValueError(msg)
 
         if h_grid is not None:
             warnings.warn(
@@ -401,6 +454,30 @@ class SimulationDetectionProbability:
         self._zres_band_fallback: npt.NDArray[np.bool_] | None = None
         if self._z_resolved:
             self._build_zres_survival()
+
+        # ── FIX-3 §7.1 (opt-in, --pdet_wbh_z_resolved): joint z x M_z-resolved
+        # with-BH survival S(d_L | z, M_z) — product Gaussian kernel in
+        # (u = ln(1+z), m = log10 M_z), exact suffix-survival in d_L, (K5)
+        # ESS-shrinkage toward S(d_L | M_z).  Default OFF: the 2D grid above
+        # is byte-identical to pre-FIX-3 behaviour.
+        # docs/derivations/fix3_zmz_catalog_selection.md §3.2-§3.4;
+        # Finn & Chernoff (1993), arXiv:gr-qc/9301003; Mandel, Farr & Gair
+        # (2019), arXiv:1809.02063 (selection at hypothesis specifies (z, M_z)
+        # jointly for the catalogue channel).
+        self._wbh_z_resolved: bool = bool(pdet_wbh_z_resolved)
+        self._wbh_u_nodes: npt.NDArray[np.float64] | None = None
+        self._wbh_m_nodes: npt.NDArray[np.float64] | None = None
+        self._wbh_dlq: npt.NDArray[np.float64] | None = None
+        self._wbh_stilde: npt.NDArray[np.float64] | None = None
+        self._wbh_sm: npt.NDArray[np.float64] | None = None
+        self._wbh_ess: npt.NDArray[np.float64] | None = None
+        self._wbh_w: npt.NDArray[np.float64] | None = None
+        self._wbh_bias_m: npt.NDArray[np.float64] | None = None
+        self._wbh_bias_u: npt.NDArray[np.float64] | None = None
+        if self._wbh_z_resolved:
+            # Built in __init__: the raw injection arrays do not survive
+            # __getstate__; only the finished tables (~45 MB) ship to workers.
+            self._build_wbh_zres_survival()
 
         # Cache holder for the (single, h-invariant) survival interpolators.
         self._grid_cache: OrderedDict[
@@ -588,6 +665,43 @@ class SimulationDetectionProbability:
         """True iff the z-resolved (FIX-2) survival estimator is active."""
         return self._z_resolved
 
+    @property
+    def wbh_z_resolved(self) -> bool:
+        """True iff the joint z x M_z-resolved with-BH (FIX-3 §7.1) estimator is active."""
+        return self._wbh_z_resolved
+
+    def _abramson_lambda_u(
+        self,
+        u: npt.NDArray[np.float64],
+        sigma_u: float,
+    ) -> npt.NDArray[np.float64]:
+        """Abramson sqrt-law adaptive factors lambda_k on the u = ln(1+z) axis.
+
+        Pilot KDE: histogram density convolved with a Gaussian of width
+        ``sigma_u`` (packet zres_survival construction) — identical machinery
+        for the FIX-2 z-only kernel and the FIX-3 §7.1 joint kernel's u axis
+        ([RATIFY-Z2]: Abramson adaptivity on u ONLY, probe-parity settings).
+
+        References:
+            Abramson (1982), Ann. Statist. 10:1217 — square-root law
+            ``sigma_k = sigma_u * (g_hat / f_hat(u_k))^(1/2)``.
+        """
+        u_max = float(np.max(u))
+        edges = np.linspace(0.0, max(u_max, sigma_u), _ZRES_PILOT_BINS + 1)
+        centers = 0.5 * (edges[:-1] + edges[1:])
+        du = float(edges[1] - edges[0])
+        hist, _ = np.histogram(u, bins=edges, density=True)
+        # Cap the tap count (np.convolve 'same' needs len(taps) <= len(hist)):
+        # for very large bandwidths (sigma_u >> support) the pilot is ~flat
+        # and lambda -> 1 regardless.
+        kh = int(min(np.ceil(4.0 * sigma_u / du), (_ZRES_PILOT_BINS - 1) // 2))
+        taps = np.exp(-0.5 * (np.arange(-kh, kh + 1) * du / sigma_u) ** 2)
+        pilot = np.convolve(hist, taps / taps.sum(), mode="same")
+        pilot = np.clip(pilot, _ZRES_PILOT_DENSITY_FLOOR, None)
+        f_at = np.interp(u, centers, pilot)
+        g_mean = float(np.exp(np.mean(np.log(f_at))))
+        return np.asarray(np.sqrt(g_mean / f_at), dtype=np.float64)
+
     def _build_zres_survival(self) -> None:
         r"""Build the z-conditional survival tables ``S(d_L | z)`` (FIX-2).
 
@@ -654,24 +768,9 @@ class SimulationDetectionProbability:
         sigma_u = self._bandwidth_scale * float(n) ** _SCOTT_EXPONENT_1D * std_u
         u_max = float(np.max(u))
 
-        # Pilot KDE for the Abramson sqrt-law: histogram density convolved
-        # with a Gaussian of width sigma_u (packet zres_survival construction).
-        edges = np.linspace(0.0, max(u_max, sigma_u), _ZRES_PILOT_BINS + 1)
-        centers = 0.5 * (edges[:-1] + edges[1:])
-        du = float(edges[1] - edges[0])
-        hist, _ = np.histogram(u, bins=edges, density=True)
-        # Cap the tap count (np.convolve 'same' needs len(taps) <= len(hist)):
-        # for very large bandwidths (sigma_u >> support) the pilot is ~flat
-        # and lambda -> 1 regardless.
-        kh = int(min(np.ceil(4.0 * sigma_u / du), (_ZRES_PILOT_BINS - 1) // 2))
-        taps = np.exp(-0.5 * (np.arange(-kh, kh + 1) * du / sigma_u) ** 2)
-        pilot = np.convolve(hist, taps / taps.sum(), mode="same")
-        pilot = np.clip(pilot, _ZRES_PILOT_DENSITY_FLOOR, None)
-        f_at = np.interp(u, centers, pilot)
-        g_mean = float(np.exp(np.mean(np.log(f_at))))
         # Abramson (1982), Ann. Statist. 10:1217 — square-root law:
         # sigma_k = sigma_u * (g_hat / f_hat(u_k))^(1/2).
-        lam = np.sqrt(g_mean / f_at)
+        lam = self._abramson_lambda_u(u, sigma_u)
         sigma_i = sigma_u * lam  # per-injection adaptive bandwidth
 
         u_nodes = np.linspace(0.0, u_max, _ZRES_U_NODES)
@@ -863,6 +962,376 @@ class SimulationDetectionProbability:
             raise ValueError(msg)
         z_arr = np.atleast_1d(np.asarray(z, dtype=np.float64))
         return np.ascontiguousarray(np.broadcast_to(z_arr, shape), dtype=np.float64)
+
+    # ------------------------------------------------------------------
+    # FIX-3 §7.1: joint z x M_z-resolved with-BH survival S(d_L | z, M_z)
+    # ------------------------------------------------------------------
+
+    def _build_wbh_zres_survival(self) -> None:
+        r"""Build the joint conditional survival tables ``S(d_L | z, M_z)`` (FIX-3 §7.1).
+
+        Estimator (K3) of docs/derivations/fix3_zmz_catalog_selection.md §3.2
+        [RATIFY-Z2]:
+
+        .. math::
+
+            \hat S_\mathrm{joint}(d_L | u, m) = \frac{\sum_k
+                K((u_k - u)/\sigma_k^u)\, K((m_k - m)/\sigma_m)\,
+                \mathbb{1}[d_{hor,k} \ge d_L]}
+                {\sum_k K((u_k - u)/\sigma_k^u)\, K((m_k - m)/\sigma_m)},
+
+        with ``u = ln(1+z)``, ``m = log10 M_z``, Gaussian ``K``, Scott d=2
+        bandwidths ``sigma_j = bandwidth_scale · N^{-1/6} · std_j`` per axis
+        (Scott 1992 Ch. 6; the m bandwidth is EXACTLY the existing 2D kernel's
+        ``sigma_log_M`` from ``_compute_bandwidths``), Abramson (1982)
+        adaptivity on u ONLY (same pilot machinery as FIX-2), and exact
+        suffix-survival in d_L evaluated on the dense query grid
+        ``DLQ = linspace(1e-4, 1.02·max d_hor, 3000)`` ([RATIFY-Z3] storage
+        scheme (b)).
+
+        The SHIPPED table is the (K5)-shrunk blend of §3.4 [RATIFY-Z4]:
+
+        .. math::
+
+            \tilde S = w\,\hat S_\mathrm{joint} + (1 - w)\,\hat S_m,
+            \qquad w = \mathrm{ESS}/(\mathrm{ESS} + n_0),
+
+        with ``ESS = (Σw_k)²/Σw_k²`` per node (Kish 1965, (K4)),
+        ``n_0 = _MIN_BAND_INJECTIONS`` (the repo's n >= 10 reliability floor,
+        reused unchanged), and ``S_m = S(d_L | M_z)`` the m-only marginal built
+        with the SAME machinery (u-factor ≡ 1, same sigma_m, same DLQ).
+        MANDATORY empty/underflowed-node clause (§3.4): a node whose total
+        kernel weight is <= 0 or non-finite gets ``w = 0`` and
+        ``S̃ = S_m`` — NEVER the pooled-uniform fallback, never NaN.
+
+        Degenerate-pool collapse (§3.7 case 9), mirroring ``_zres_degenerate``:
+        ``n < 2`` or zero std on an axis collapses that axis to a SINGLE node
+        with unit kernel factor, so the joint reduces to the corresponding
+        marginal (m-only, u-only, or pooled) without crashing.
+        [Implementation detail left open by the doc; the single-node collapse
+        is the minimal option that keeps the query path uniform.]
+
+        A per-node bias diagnostic (kernel-weighted mean ``|m_k - m_b|`` and
+        ``|u_k - u_a|``) is stored alongside ESS (§3.4: Kish's ESS is
+        variance-only; the dominant starved-node error is bias — §4 item 3).
+
+        Everything stored here is h-invariant (built from ``d_hor_k, u_k,
+        m_k``); h enters only through the query ``d_L(z; h)`` (§3.3).
+
+        References:
+            Finn & Chernoff (1993), arXiv:gr-qc/9301003; Finn (1996),
+            arXiv:gr-qc/9601048 — horizon-survival framework.
+            Mandel, Farr & Gair (2019), arXiv:1809.02063 — selection at
+            hypothesis specifies (z, M_z) jointly for the catalogue channel.
+            Scott (1992), Multivariate Density Estimation, Ch. 6 (d=2 rule).
+            Abramson (1982), Ann. Statist. 10:1217.
+            Kish (1965), Survey Sampling — ESS = (Σw)²/Σw².
+            docs/derivations/fix3_zmz_catalog_selection.md §3.2-§3.4.
+        """
+        n = self._n_inj
+        u = np.log1p(self._z_arr)
+        m = self._log_M_z
+        std_u = float(np.std(u, ddof=0))
+        std_m = float(np.std(m, ddof=0))
+        # Degenerate-pool collapse (§3.7 case 9): a zero-variance axis is
+        # unidentifiable — collapse it to one node with unit kernel factor.
+        # np.ptp (max - min) is checked alongside std: for a CONSTANT column
+        # np.std returns a ~1e-17 accumulation residue rather than exactly 0,
+        # which would otherwise produce a machine-epsilon bandwidth instead of
+        # the collapse the packet specifies.
+        u_degen = n < 2 or std_u <= 0.0 or float(np.ptp(u)) <= 0.0
+        m_degen = n < 2 or std_m <= 0.0 or float(np.ptp(m)) <= 0.0
+        if u_degen:
+            u_nodes = np.array([float(u[0])], dtype=np.float64)
+            logger.info(
+                "wbh z-resolved survival: degenerate u axis (N=%d, std=%.3e) — "
+                "collapsing to the m-only marginal.",
+                n,
+                std_u,
+            )
+        else:
+            u_nodes = np.linspace(0.0, _WBH_ZRES_U_MAX, _WBH_ZRES_U_NODES)
+        if m_degen:
+            m_nodes = np.array([float(m[0])], dtype=np.float64)
+            logger.info(
+                "wbh z-resolved survival: degenerate m axis (N=%d, std=%.3e) — "
+                "collapsing to the u-only conditional.",
+                n,
+                std_m,
+            )
+        else:
+            m_nodes = np.linspace(float(np.min(m)), float(np.max(m)), _WBH_ZRES_M_NODES)
+
+        # Scott d=2 per-axis bandwidths [RATIFY-Z2]: sigma_u = N^(-1/6) std(u);
+        # sigma_m = the EXISTING 2D kernel's sigma_log_M (same
+        # _compute_bandwidths value — the sigma_m -> existing-kernel limit of
+        # §3.7 case 1 holds without bandwidth mismatch).
+        sigma_u = self._bandwidth_scale * float(n) ** _SCOTT_EXPONENT_2D * std_u
+        _, sigma_m = self._compute_bandwidths(self._dl_raw, self._log_M_z)
+
+        # d_hor-ascending order: a suffix-cumsum of kernel weights gives the
+        # exact weighted survival at any d_L (the _build_grid_2d /
+        # _build_zres_survival pattern).
+        order = np.argsort(self._d_hor, kind="mergesort")
+        d_hor_sorted = self._d_hor[order]
+        u_s = u[order]
+        m_s = m[order]
+
+        # Abramson adaptivity on u only (§3.2), same pilot as FIX-2.
+        if u_degen or _WBH_GRID_ONLY:
+            sig_u_s: npt.NDArray[np.float64] | None = None
+        else:
+            lam = self._abramson_lambda_u(u, sigma_u)
+            sig_u_s = (sigma_u * lam)[order]
+
+        # Dense d_L query grid ([RATIFY-Z3] scheme (b)).
+        dlq = np.linspace(
+            _WBH_ZRES_DLQ_MIN,
+            _WBH_ZRES_DLQ_PAD * float(np.max(self._d_hor)),
+            _WBH_ZRES_DLQ_POINTS,
+        )
+        idx = np.searchsorted(d_hor_sorted, dlq, side="left")
+        inside = idx < n
+        idx_c = np.minimum(idx, n - 1)
+
+        # m-kernel factor (fixed sigma_m, no adaptivity — [RATIFY-Z2]).
+        n_u, n_m, n_q = u_nodes.size, m_nodes.size, dlq.size
+        if m_degen:
+            km = np.ones((n, n_m), dtype=np.float64)
+        else:
+            diff_m = (m_s[:, None] - m_nodes[None, :]) / sigma_m
+            km = np.exp(-0.5 * diff_m * diff_m)  # (N, n_m)
+
+        # m-only marginal S_m(d_L | m_b): SAME machinery with u-factor ≡ 1
+        # (§3.4 — the current production 2D conditioning realized exactly in
+        # the joint build, so no second convention enters).
+        tot_m = km.sum(axis=0)
+        km_sm = km
+        bad_m = ~np.isfinite(tot_m) | (tot_m <= 0.0)
+        if np.any(bad_m):
+            # Unreachable for m-nodes inside the pool span (kernel distances
+            # << 38 sigma), but keep S_m defined: uniform weights at the
+            # affected m node (the production z-only guard's convention; the
+            # §3.4 never-pooled clause constrains the JOINT node fallback,
+            # whose target S_m this is).
+            km_sm = km.copy()
+            km_sm[:, bad_m] = 1.0
+            tot_m = km_sm.sum(axis=0)
+        suffix_m = np.cumsum(km_sm[::-1, :], axis=0)[::-1, :]  # (N, n_m)
+        sm = np.where(inside[:, None], suffix_m[idx_c, :], 0.0) / tot_m[None, :]
+        sm = np.clip(sm, 0.0, 1.0)  # (n_q, n_m)
+
+        abs_m = np.abs(m_s[:, None] - m_nodes[None, :])  # (N, n_m)
+
+        stilde = np.empty((n_q, n_u, n_m), dtype=np.float64)
+        ess = np.zeros((n_u, n_m), dtype=np.float64)
+        w_arr = np.zeros((n_u, n_m), dtype=np.float64)
+        bias_m = np.zeros((n_u, n_m), dtype=np.float64)
+        bias_u = np.zeros((n_u, n_m), dtype=np.float64)
+        n0 = float(_MIN_BAND_INJECTIONS)  # the repo's n >= 10 reliability floor
+        for a in range(n_u):
+            if u_degen or _WBH_GRID_ONLY:
+                # Grid-only control cell (§4 item 12) / degenerate u axis:
+                # u-factor ≡ 1 — the sigma_u -> inf construction.
+                w_joint = km
+                abs_u_a = np.abs(u_s - float(u_nodes[a]))
+            else:
+                assert sig_u_s is not None
+                t = (u_s - float(u_nodes[a])) / sig_u_s
+                ku = np.exp(-0.5 * t * t)
+                w_joint = ku[:, None] * km  # (N, n_m) product kernel (K3)
+                abs_u_a = np.abs(u_s - float(u_nodes[a]))
+            tot = w_joint.sum(axis=0)  # (n_m,)
+            sq = np.einsum("ij,ij->j", w_joint, w_joint)
+            valid = np.isfinite(tot) & (tot > 0.0) & np.isfinite(sq) & (sq > 0.0)
+            tot_safe = np.where(valid, tot, 1.0)
+            ess_a = np.where(valid, tot * tot / np.where(sq > 0.0, sq, 1.0), 0.0)
+            suffix = np.cumsum(w_joint[::-1, :], axis=0)[::-1, :]  # (N, n_m)
+            s_joint = np.where(inside[:, None], suffix[idx_c, :], 0.0) / tot_safe[None, :]
+            s_joint = np.clip(s_joint, 0.0, 1.0)
+            # (K5) shrinkage + MANDATORY empty/underflow clause (§3.4):
+            # invalid node => w = 0 => S̃ = S_m — never pooled, never NaN.
+            w_a = np.where(valid, ess_a / (ess_a + n0), 0.0)
+            stilde[:, a, :] = w_a[None, :] * s_joint + (1.0 - w_a[None, :]) * sm
+            ess[a, :] = ess_a
+            w_arr[a, :] = w_a
+            # Bias diagnostic (§3.4 / §4 item 3): kernel-weighted mean
+            # |m_k - m_b| and |u_k - u_a| per node (0 at empty nodes).
+            bias_m[a, :] = np.where(valid, (w_joint * abs_m).sum(axis=0) / tot_safe, 0.0)
+            bias_u[a, :] = np.where(valid, (abs_u_a @ w_joint) / tot_safe, 0.0)
+
+        self._wbh_u_nodes = u_nodes
+        self._wbh_m_nodes = m_nodes
+        self._wbh_dlq = dlq
+        self._wbh_stilde = np.ascontiguousarray(np.clip(stilde, 0.0, 1.0))
+        self._wbh_sm = np.ascontiguousarray(sm)
+        self._wbh_ess = ess
+        self._wbh_w = w_arr
+        self._wbh_bias_m = bias_m
+        self._wbh_bias_u = bias_u
+
+        logger.info(
+            "wbh joint z x M_z survival built: %d u-nodes on [0, %.4f] x %d "
+            "m-nodes on [%.3f, %.3f], sigma_u=%.5f sigma_m=%.5f (Scott d=2, "
+            "scale %.3g), DLQ %d points to %.4f Gpc, node ESS min/median = "
+            "%.2f/%.1f, shrunk fraction (w < 0.5) = %.3f%s.",
+            n_u,
+            float(u_nodes[-1]),
+            n_m,
+            float(m_nodes[0]),
+            float(m_nodes[-1]),
+            sigma_u,
+            sigma_m,
+            self._bandwidth_scale,
+            n_q,
+            float(dlq[-1]),
+            float(np.min(ess)),
+            float(np.median(ess)),
+            float(np.mean(w_arr < 0.5)),
+            " [GRID-ONLY CONTROL: u-kernel disabled]" if _WBH_GRID_ONLY else "",
+        )
+
+    @staticmethod
+    def _wbh_axis_pos(
+        nodes: npt.NDArray[np.float64],
+        x: npt.NDArray[np.float64],
+    ) -> tuple[npt.NDArray[np.int_], npt.NDArray[np.float64]]:
+        """Node bracket (k0, frac) on one grid axis, clamped to the node span.
+
+        Same clamp semantics as ``_zres_node_pos`` (u) / the true-nearest edge
+        clamp of the 2D wrapper (m) — §3.3-C: no new boundary machinery.  A
+        degenerate single-node axis returns (0, 0).
+        """
+        if nodes.size < 2:
+            zeros_i = np.zeros(x.shape, dtype=np.int_)
+            return zeros_i, np.zeros(x.shape, dtype=np.float64)
+        pos = np.interp(x, nodes, np.arange(nodes.size, dtype=np.float64))
+        k0 = np.clip(np.floor(pos).astype(np.int_), 0, nodes.size - 2)
+        frac = np.clip(pos - k0, 0.0, 1.0)
+        return k0, frac
+
+    def _require_wbh_z(
+        self,
+        z: float | npt.NDArray[np.float64] | None,
+        shape: tuple[int, ...],
+    ) -> npt.NDArray[np.float64]:
+        """Validate + broadcast the conditioning redshift for a flag-on 2D query."""
+        if z is None:
+            msg = (
+                "pdet_wbh_z_resolved is active: every with-BH (2D) p_det query "
+                "must pass the conditioning redshift z (atomic-switch rule, "
+                "fix3_zmz_catalog_selection.md §3.5 [RATIFY-Z5])."
+            )
+            raise ValueError(msg)
+        z_arr = np.atleast_1d(np.asarray(z, dtype=np.float64))
+        return np.ascontiguousarray(np.broadcast_to(z_arr, shape), dtype=np.float64)
+
+    def _wbh_survival_at(
+        self,
+        query: npt.NDArray[np.float64],
+        z: npt.NDArray[np.float64],
+        log_m: npt.NDArray[np.float64],
+    ) -> npt.NDArray[np.float64]:
+        r"""Shrunk joint survival ``S̃(d_L | z, M_z)`` at point queries (FIX-3 §7.1).
+
+        Query conventions (§3.3-C, [RATIFY-Z3]): LINEAR interpolation along the
+        stored DLQ axis (d_L below the first DLQ point clamps to the S≈1-side
+        value; above the last point the survival is exactly 0 — A2-EXTRAP
+        parity); bilinear across the four bracketing (u, m) nodes (q_ulm
+        parity in m for point queries); u and m clamped to the node span
+        (``_zres_node_pos`` / true-nearest conventions).
+
+        Args:
+            query: d_L query points [Gpc], 1-D.
+            z: conditioning redshifts, same shape.
+            log_m: log10 of the observer-frame mass M_z, same shape.
+
+        Returns:
+            Survival values in [0, 1], same shape as ``query``.
+        """
+        assert (
+            self._wbh_stilde is not None
+            and self._wbh_dlq is not None
+            and self._wbh_u_nodes is not None
+            and self._wbh_m_nodes is not None
+        )
+        dlq = self._wbh_dlq
+        s = self._wbh_stilde  # (n_q, n_u, n_m)
+        u = np.log1p(np.maximum(np.asarray(z, dtype=np.float64), 0.0))
+        a0, fu = self._wbh_axis_pos(self._wbh_u_nodes, u)
+        b0, fm = self._wbh_axis_pos(self._wbh_m_nodes, np.asarray(log_m, dtype=np.float64))
+        a1 = np.minimum(a0 + 1, self._wbh_u_nodes.size - 1)
+        b1 = np.minimum(b0 + 1, self._wbh_m_nodes.size - 1)
+        q = np.clip(np.asarray(query, dtype=np.float64), dlq[0], dlq[-1])
+        pos = np.interp(q, dlq, np.arange(dlq.size, dtype=np.float64))
+        i0 = np.clip(np.floor(pos).astype(np.int_), 0, dlq.size - 2)
+        fd = np.clip(pos - i0, 0.0, 1.0)
+        out = np.zeros(q.shape, dtype=np.float64)
+        for ia, wu in ((a0, 1.0 - fu), (a1, fu)):
+            for ib, wm in ((b0, 1.0 - fm), (b1, fm)):
+                s_lo = s[i0, ia, ib]
+                s_hi = s[i0 + 1, ia, ib]
+                out = out + wu * wm * ((1.0 - fd) * s_lo + fd * s_hi)
+        # d_L above the last DLQ point -> exactly 0 (A2-EXTRAP rule).
+        out = np.where(np.asarray(query, dtype=np.float64) > dlq[-1], 0.0, out)
+        return np.asarray(np.clip(out, 0.0, 1.0), dtype=np.float64)
+
+    def wbh_joint_knot_values(
+        self,
+        d_L: npt.NDArray[np.float64],
+        z: npt.NDArray[np.float64],
+    ) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
+        r"""M_z knots and shrunk-survival values for the erf-sum path (§3.3-C).
+
+        Returns the m-node knots lifted to observer-frame mass
+        ``M_z,j = 10^{m_j}`` together with ``S̃`` evaluated at
+        ``(d_L_i, u(z_i), m_j)`` for every knot j — two-u-node linear blend
+        plus linear interpolation along DLQ, NO m-interpolation (the values
+        ARE the knots).  The erf-sum consumer treats the interpolant as
+        PIECEWISE-LINEAR IN M_z between these lifted knots ([RATIFY-Z3]
+        §3.3-C convention 2 choice (a)), keeping its closed form exact
+        (fix3_zmz_catalog_selection.md §3.5 erf-sum correction).
+
+        Args:
+            d_L: query luminosity distances [Gpc], shape (n,).
+            z: conditioning redshifts, shape (n,) (broadcastable to d_L).
+
+        Returns:
+            ``(M_z_knots, S_values)`` with shapes (n_m,) and (n, n_m).
+
+        Raises:
+            ValueError: if the joint estimator is not active.
+        """
+        if not self._wbh_z_resolved:
+            msg = "wbh_joint_knot_values requires pdet_wbh_z_resolved=True."
+            raise ValueError(msg)
+        assert (
+            self._wbh_stilde is not None
+            and self._wbh_dlq is not None
+            and self._wbh_u_nodes is not None
+            and self._wbh_m_nodes is not None
+        )
+        dl_arr = np.atleast_1d(np.asarray(d_L, dtype=np.float64))
+        z_arr = self._require_wbh_z(z, dl_arr.shape)
+        dlq = self._wbh_dlq
+        s = self._wbh_stilde  # (n_q, n_u, n_m)
+        u = np.log1p(np.maximum(z_arr, 0.0))
+        a0, fu = self._wbh_axis_pos(self._wbh_u_nodes, u)
+        a1 = np.minimum(a0 + 1, self._wbh_u_nodes.size - 1)
+        q = np.clip(dl_arr, dlq[0], dlq[-1])
+        pos = np.interp(q, dlq, np.arange(dlq.size, dtype=np.float64))
+        i0 = np.clip(np.floor(pos).astype(np.int_), 0, dlq.size - 2)
+        fd = np.clip(pos - i0, 0.0, 1.0)
+        # (n, n_m): linear in d_L, linear blend across the two u nodes.
+        vals = (1.0 - fu)[:, None] * (
+            (1.0 - fd)[:, None] * s[i0, a0, :] + fd[:, None] * s[i0 + 1, a0, :]
+        ) + fu[:, None] * ((1.0 - fd)[:, None] * s[i0, a1, :] + fd[:, None] * s[i0 + 1, a1, :])
+        vals = np.where(dl_arr[:, None] > dlq[-1], 0.0, vals)
+        m_z_knots = np.power(10.0, self._wbh_m_nodes)
+        return (
+            np.asarray(m_z_knots, dtype=np.float64),
+            np.asarray(np.clip(vals, 0.0, 1.0), dtype=np.float64),
+        )
 
     # ------------------------------------------------------------------
     # Sky-band survival (Change 1: ecliptic-latitude response anisotropy)
@@ -1354,6 +1823,24 @@ class SimulationDetectionProbability:
         ):
             self._quality_flags[h]["zres_u_nodes"] = self._zres_u_nodes.copy()
             self._quality_flags[h]["zres_ess"] = self._zres_ess.copy()
+        # FIX-3 §7.1 diagnostics (§4 item 3): per-(u, m)-node ESS, (K5)
+        # shrinkage weight, and the bias diagnostic (kernel-weighted mean
+        # |m_k - m_b| / |u_k - u_a| — ESS is variance-only, §3.4).
+        if (
+            self._wbh_z_resolved
+            and self._wbh_u_nodes is not None
+            and self._wbh_m_nodes is not None
+            and self._wbh_ess is not None
+            and self._wbh_w is not None
+            and self._wbh_bias_m is not None
+            and self._wbh_bias_u is not None
+        ):
+            self._quality_flags[h]["wbh_zres_u_nodes"] = self._wbh_u_nodes.copy()
+            self._quality_flags[h]["wbh_zres_m_nodes"] = self._wbh_m_nodes.copy()
+            self._quality_flags[h]["wbh_zres_ess"] = self._wbh_ess.copy()
+            self._quality_flags[h]["wbh_zres_w"] = self._wbh_w.copy()
+            self._quality_flags[h]["wbh_zres_bias_m"] = self._wbh_bias_m.copy()
+            self._quality_flags[h]["wbh_zres_bias_u"] = self._wbh_bias_u.copy()
 
     def quality_flags(self, h: float) -> dict[str, npt.NDArray[np.float64] | npt.NDArray[np.bool_]]:
         """Return per-bin quality metadata for the given h value.
@@ -1398,6 +1885,7 @@ class SimulationDetectionProbability:
         theta: float | npt.NDArray[np.float64],
         *,
         h: float,
+        z: float | npt.NDArray[np.float64] | None = None,
     ) -> float | npt.NDArray[np.float64]:
         """Detection probability including BH mass dependence (survival form).
 
@@ -1427,6 +1915,10 @@ class SimulationDetectionProbability:
             theta: Sky angle theta (unused, marginalized over).
             h: Dimensionless Hubble parameter (accepted; horizon is
                 h-invariant).
+            z: Conditioning redshift per query point.  REQUIRED when the
+                FIX-3 §7.1 joint estimator is active (``wbh_z_resolved``,
+                atomic-switch rule); IGNORED otherwise (flag-off behaviour is
+                byte-identical with or without ``z``).
 
         Returns:
             Detection probability in [0, 1].
@@ -1436,7 +1928,27 @@ class SimulationDetectionProbability:
             arXiv:gr-qc/9601048.
             Gray et al. (2020), arXiv:1908.06050, Eq. (8).
             Mandel, Farr & Gair (2019), arXiv:1809.02063.
+            docs/derivations/fix3_zmz_catalog_selection.md (flag-on path).
         """
+        if self._wbh_z_resolved:
+            # FIX-3 §7.1: joint conditional S(d_L | z, M_z), (K1)/(K3)+(K5) in
+            # fix3_zmz_catalog_selection.md.  Finn & Chernoff (1993),
+            # arXiv:gr-qc/9301003; Mandel, Farr & Gair (2019),
+            # arXiv:1809.02063 (selection at hypothesis specifies (z, M_z)).
+            self._get_or_build_grid(h)  # parity: register the (h-invariant) flags
+            dl_arr = np.atleast_1d(np.asarray(d_L, dtype=np.float64))
+            M_arr = np.atleast_1d(np.asarray(M_z, dtype=np.float64))  # noqa: N806
+            dl_b, M_b = np.broadcast_arrays(dl_arr, M_arr)  # noqa: N806
+            z_b = self._require_wbh_z(z, dl_b.shape)
+            res = self._wbh_survival_at(
+                np.ascontiguousarray(dl_b, dtype=np.float64).ravel(),
+                z_b.ravel(),
+                np.log10(np.ascontiguousarray(M_b, dtype=np.float64)).ravel(),
+            ).reshape(dl_b.shape)
+            if np.ndim(d_L) == 0 and np.ndim(M_z) == 0:
+                return float(res.reshape(-1)[0])
+            return np.asarray(res, dtype=np.float64)
+
         interp_2d, _ = self._get_or_build_grid(h)
         dl_centers = np.asarray(interp_2d.grid[0])
         M_centers = np.asarray(interp_2d.grid[1])  # noqa: N806

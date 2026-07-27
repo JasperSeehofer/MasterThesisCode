@@ -7,6 +7,28 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Research (FIX-3 §7.1 — joint z×M_z-resolved with-BH selection survival)
+- **`--pdet_wbh_z_resolved` joint conditional S(d_L | z, M_z) [PHYSICS]**
+  (derivation `docs/derivations/fix3_zmz_catalog_selection.md`, RATIFIED rev. B
+  2026-07-27, gates Z1–Z7 + two author amendments). Replaces the pooled-in-z 2D
+  survival in the with-BH selection legs (Σ_glob_wbh + per-host 2D denominator
+  inner-M integrals — the atomic Z5 switch) with the product-kernel joint
+  conditional: Gaussian kernels in (u = ln(1+z), log₁₀M_z), Scott d=2
+  bandwidths (m-bandwidth ≡ the existing 2D kernel's), Abramson on u, exact
+  suffix-survival on a 3000-point d_L grid (61×31 nodes, ~45 MB), shipped with
+  the (K5) ESS shrinkage toward S(d_L | M_z) (w = ESS/(ESS+10), empty-node
+  clause → S_m never pooled) + per-node bias diagnostics. Erf-sum path stays
+  exact via lifted 10^m knots with linear-in-M_z segments (§3.3-C). Default OFF
+  = byte-identical (kernel-parity goldens untouched; 1080 fast tests green);
+  Z7 guard rejects composition with `--no-pdet_z_resolved`. Diagnostic
+  `MTC_WBH_GRID_ONLY=1` builds the grid-only control cell (§4 item 12).
+  Pre-registered A/B gate (z3 tabulation, `zres_survival/z3_results.json`):
+  production-axis increment −6.5 ± 4 ln for the shipped object. Amendments:
+  Z4 shrinkage = interim + safety net (designed fix = ESS-floor-sized
+  re-injection campaign, issue #51); mass bounds → scientifically correct
+  limit in the campaign redesign (#51). Tests: `test_wbh_zres_grid.py` (31,
+  §3.7 limiting cases incl. independent node re-derivation to 1e-9).
+
 ### Research (2D mass-marginal kernel — issue #40 remainder)
 - **Truncated lognormal × R_eff host-mass kernel RATIFIED + decomposition flag
   `--host_mass_kernel` [PHYSICS]** (derivation: `docs/derivations/mass_marginal_2d_kernel.md`,

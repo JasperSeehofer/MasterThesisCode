@@ -142,6 +142,13 @@ fi
 if [[ "${PDET_Z_RESOLVED:-}" == "yes" ]]; then
     EXTRA_ARGS+=(--pdet_z_resolved)
 fi
+# Optional --pdet_wbh_z_resolved (flag; set PDET_WBH_Z_RESOLVED=yes):
+# FIX-3 §7.1 joint z x M_z with-BH survival A/B cell; requires
+# PDET_Z_RESOLVED=yes (or the CLI default) — the constructor guard raises
+# otherwise. docs/derivations/fix3_zmz_catalog_selection.md.
+if [[ "${PDET_WBH_Z_RESOLVED:-}" == "yes" ]]; then
+    EXTRA_ARGS+=(--pdet_wbh_z_resolved)
+fi
 # Optional --host_z_kernel pass-through (issue #40a decomposition flag):
 # unset/empty keeps the CLI default ("auto" bundling) — byte-identical.
 if [[ -n "${HOST_Z_KERNEL:-}" ]]; then

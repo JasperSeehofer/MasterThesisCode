@@ -159,6 +159,11 @@ class Arguments:
         return bool(self._parsed_arguments.pdet_z_resolved)
 
     @property
+    def pdet_wbh_z_resolved(self) -> bool:
+        """FIX-3 §7.1: joint z x M_z-resolved with-BH survival (default off)."""
+        return bool(self._parsed_arguments.pdet_wbh_z_resolved)
+
+    @property
     def fisher_cond_threshold(self) -> float:
         """Condition number threshold for flagging near-singular covariance matrices."""
         return float(self._parsed_arguments.fisher_cond_threshold)
@@ -419,6 +424,22 @@ def _parse_arguments(arguments: list[str]) -> argparse.Namespace:
             "jointly with the generator_marginal normalization (stacked "
             "prediction, packet §6). "
             "results/lcat_h_dependence_20260725/DERIVATION_ZRESOLVED_SURVIVAL.md."
+        ),
+    )
+    parser.add_argument(
+        "--pdet_wbh_z_resolved",
+        action=argparse.BooleanOptionalAction,
+        default=False,
+        help=(
+            "[PHYSICS] FIX-3 SS7.1 (default OFF = byte-identical to the current "
+            "stack): joint z x M_z-resolved with-BH detection survival. Every "
+            "with-BH (2D) selection query uses the joint conditional "
+            "S(d_L | z, M_z) (product Gaussian kernel in u = ln(1+z) and "
+            "log10 M_z, Scott d=2 bandwidths, Abramson-adaptive on u; exact "
+            "suffix-survival in d_L; ESS-weighted shrinkage toward "
+            "S(d_L | M_z)) instead of the pooled-in-z S(d_L | M_z). Requires "
+            "--pdet_z_resolved (RATIFY-Z7 guard). "
+            "docs/derivations/fix3_zmz_catalog_selection.md."
         ),
     )
     parser.add_argument(

@@ -143,6 +143,7 @@ def main() -> None:
             h_values=_h_values,
             smear_global_selection=arguments.smear_global_selection,
             pdet_z_resolved=arguments.pdet_z_resolved,
+            pdet_wbh_z_resolved=arguments.pdet_wbh_z_resolved,
             host_z_kernel=arguments.host_z_kernel,
             host_mass_kernel=arguments.host_mass_kernel,
         )
@@ -1030,6 +1031,9 @@ def evaluate(
     h_values: list[float] | None = None,
     smear_global_selection: bool = False,
     pdet_z_resolved: bool = True,
+    # FIX-3 §7.1 (default OFF, byte-identical):
+    # docs/derivations/fix3_zmz_catalog_selection.md.
+    pdet_wbh_z_resolved: bool = False,
     host_z_kernel: str = "auto",
     host_mass_kernel: str = "auto",
 ) -> None:
@@ -1052,6 +1056,7 @@ def evaluate(
         h_values=h_values,
         smear_global_selection=smear_global_selection,
         pdet_z_resolved=pdet_z_resolved,
+        pdet_wbh_z_resolved=pdet_wbh_z_resolved,
         host_z_kernel=host_z_kernel,
         host_mass_kernel=host_mass_kernel,
     )
