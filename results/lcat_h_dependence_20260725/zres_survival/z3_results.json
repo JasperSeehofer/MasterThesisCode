@@ -1,0 +1,117 @@
+{
+ "h_grid": [
+  0.6,
+  0.61,
+  0.62,
+  0.63,
+  0.64,
+  0.65,
+  0.655,
+  0.66,
+  0.665,
+  0.67,
+  0.675,
+  0.68,
+  0.685,
+  0.69,
+  0.695,
+  0.7,
+  0.705,
+  0.71,
+  0.715,
+  0.72,
+  0.725,
+  0.73,
+  0.735,
+  0.74,
+  0.745,
+  0.75,
+  0.755,
+  0.76,
+  0.765,
+  0.77,
+  0.775,
+  0.78,
+  0.785,
+  0.79,
+  0.8,
+  0.81,
+  0.82,
+  0.83,
+  0.84,
+  0.85,
+  0.86
+ ],
+ "i73": 21,
+ "i86": 40,
+ "n0_shrink": 10.0,
+ "bandwidths": {
+  "sigma_u_probe_scott1d": 0.01923857150843722,
+  "sigma_u_z2_repo": 0.02759339610968692,
+  "sigma_lm": 0.051744972549166525
+ },
+ "Sigma_glob": {
+  "Mz_only_production": {
+   "v073": 301822037.6077009,
+   "slope": 0.3642569588882907,
+   "dln_073_086": 0.04239529814511173
+  },
+  "joint_probe_bw": {
+   "v073": 279774187.1475272,
+   "slope": 0.10630944692206867,
+   "dln_073_086": 0.060374073164350554
+  },
+  "joint_z2_bw": {
+   "v073": 292412320.7287439,
+   "slope": 0.14765401691511215,
+   "dln_073_086": 0.0544922783868181
+  },
+  "shrunk_joint_z2_bw_K5": {
+   "v073": 294226309.29368776,
+   "slope": 0.18783246890257033,
+   "dln_073_086": 0.05139896162278102
+  }
+ },
+ "ratios_at_073": {
+  "joint_probe_over_pooled": 0.5461923960074798,
+  "joint_probe_over_zonly": 0.6418389568734713,
+  "joint_probe_over_Mzonly": 0.9269508262719014,
+  "Mzonly_over_pooled": 0.5892355673323127,
+  "joint_z2bw_over_pooled": 0.5708653386122506,
+  "joint_z2bw_over_zonly": 0.6708325054109507,
+  "joint_z2bw_over_Mzonly": 0.9688236254928891,
+  "shrunk_over_Mzonly": 0.9748337517889074,
+  "shrunk_over_joint_z2bw": 1.0062035298663992
+ },
+ "production_axis_gaps": {
+  "Mz_only_baseline": -63.31198708129125,
+  "joint_probe_bw": -78.89598940792416,
+  "joint_z2_bw": -71.65646380055588,
+  "shrunk_joint_z2_bw": -69.78149311813277,
+  "increment_Mzonly_to_joint_probe_bw": -15.584002326632913,
+  "increment_Mzonly_to_joint_z2_bw": -8.344476719264634,
+  "increment_Mzonly_to_shrunk_joint": -6.469506036841523
+ },
+ "symmetric_beta_Gbar_control": {
+  "production_axis": {
+   "gap_Mzonly_baseline": -63.31198708129125,
+   "gap_joint_composition_matched": -125.41067599774209,
+   "increment": -62.09868891645084
+  },
+  "tabulated_axis": {
+   "gap_zonly_baseline": -21.38154178125319,
+   "gap_joint_composition_matched": -10.634636468497689,
+   "increment": 10.746905312755501
+  }
+ },
+ "ess_summary_z2_bandwidth": {
+  "n_nodes": 1891,
+  "min": 1.04245359406881,
+  "frac_below_10": 0.03172924378635643,
+  "frac_below_100": 0.1935483870967742,
+  "frac_below_500": 0.5092543627710207,
+  "catalogue_weighted_wbar_n0_10": 0.8340728475979369,
+  "catalogue_Wfrac_on_ESS_below_100": 0.9830061687821505,
+  "catalogue_weighted_median_ESS": 52.389448938566936
+ }
+}

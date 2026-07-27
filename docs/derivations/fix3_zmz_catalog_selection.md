@@ -1080,9 +1080,22 @@ the object that ships.
     is claimed for the 2D channel** pending the 0.589-vs-0.556 item.
 - **P2 (generator-stack gap — INCREMENT form; the absolute gap is
   direction-only).** The gate quantity is the **production-axis
-  increment**, which is baseline-independent:
-  Δgap(M_z-only → joint) = **−15.6 ln unshrunk**, **≈ −13 ln shrunk**,
-  tolerance ±5 ln (table noise + shrinkage estimate).
+  increment**, which is baseline-independent.
+  **[z3 REFINEMENT, 2026-07-27 — the mandatory §4 item-1 tabulation, run
+  BEFORE any A/B (artifacts `zres_survival/z3_production_axis.py` /
+  `z3_results.json`; all twelve reviewer verification targets reproduced
+  exactly).] The rev.-B "≈ −13 ln shrunk" sanity figure was
+  apples-to-oranges: it applied the Z2-bandwidth attenuation (w̄ = 0.834)
+  to the PROBE-bandwidth unshrunk increment (−15.6). The bandwidth switch
+  is itself value-side load-bearing: at the ratified Z2 bandwidth the
+  unshrunk increment is −8.34 ln, and the SHIPPED object (Z2 bandwidth +
+  (K5) shrinkage, per-cell w) gives**
+  Δgap(M_z-only → shipped) = **−6.47 ln** (decomposition: −15.58 probe-bw
+  unshrunk → −8.34 Z2-bw unshrunk → −6.47 shipped; per-cell-w blend vs
+  the uniform-w̄ estimate −6.96, 7 % apart). **The P2 gate value is
+  −6.5 ± 4 ln** (table noise + linearization; the rev.-B −15.6/−13
+  figures are retained above as the unshrunk/mislabeled history, not the
+  gate).
   For orientation only, not as a gate: the absolute assembled gaps are
   −63.3 (production baseline) → −78.9 (joint) on the +92-ln FIX-3
   baseline; recalibrated on B″'s **measured** −86.1 the same increment
@@ -1094,12 +1107,13 @@ the object that ships.
   - **A-cell (`absolute_marginal`) — the 2D-specific arm.** Σ_glob_wbh
     divides the 2D channel only; the 1D channel divides by
     `global_denom_no_bh` and is bit-identical. Direction: 2D profile moves
-    **DOWN (toward truth) at every h > 0.73**. Central expectation:
-    Δ(2D ln @0.80) ∈ **[−20, −7]** (the −15.6 increment attenuated by
-    shrinkage and re-expressed at 0.80 rather than as a 0.73→0.86 gap);
-    post-fix 2D residual @0.80 ∈ [+5, +18], i.e. **branch (d1) is not
-    expected to close the channel on its own** — branch (d2) is still
-    open.
+    **DOWN (toward truth) at every h > 0.73**. Central expectation
+    **[z3-refined]**: Δ(2D ln @0.80) ∈ **[−9, −3]** (the shipped −6.5
+    increment re-expressed at 0.80 rather than as a 0.73→0.86 gap;
+    rev.-B's [−20, −7] band was built on the mislabeled −13); post-fix
+    2D residual @0.80 ∈ [+15, +21], i.e. **branch (d1) closes only a
+    quarter-to-third of the A″ residual** — branch (d2)/(g1) carry the
+    majority expectation.
   - **B-cell (`generator_marginal`) — a shared-normalization CONTROL, not
     a discriminator.** D_gen divides both channels, so the flag moves 1D
     and 2D by *identical* per-event amounts and the **2D-minus-1D residual
@@ -1136,12 +1150,16 @@ the object that ships.
     reading dies. Consistency check against P1: if P1's table movement was
     large and the A/B is null, probe/production parity is broken — an
     implementation bug, not physics.
-  - **−7 < Δ ≤ −3 — MATERIAL BUT SMALL:** (d1) real, sub-dominant;
-    proceed to (d2) and (g1) as the primary owners; 2D stays OPEN.
-  - **−20 < Δ ≤ −7 — CENTRAL / AS-PREDICTED:** (d1) confirmed at the
-    predicted scale, covering ≈ 30–70 % of the +23.8 A″ residual. 2D
-    stays OPEN pending (d2); the FIX-2/FIX-3 joint ship gate may proceed
-    for the (d1) arm only. This is the **expected** outcome.
+  - **−9 < Δ ≤ −3 — CENTRAL / AS-PREDICTED [z3-refined]:** (d1)
+    confirmed at the shipped-object scale (−6.5 ± 4), covering roughly a
+    quarter-to-third of the +23.8 A″ residual. 2D stays OPEN pending
+    (d2)/(g1); the FIX-2/FIX-3 joint ship gate may proceed for the (d1)
+    arm only. This is the **expected** outcome. (Rev.-B's band labels
+    "MATERIAL BUT SMALL"/"CENTRAL" at [−7,−3]/[−20,−7] are superseded by
+    this z3-refined split; the region algebra below is unchanged.)
+  - **−20 < Δ ≤ −9 — ABOVE-PREDICTED:** larger than the shipped-object
+    arithmetic; check the P1 table parity and the per-cell shrinkage
+    weights before interpreting as (d1)+part-of-(d2).
   - **−30 < Δ ≤ −20 — OVER-PREDICTED CLOSURE:** larger than the
     increment arithmetic supports; if the post-fix residual lands within
     ±5 of 0 and 2D MAP = 0.73, record full closure but flag the
