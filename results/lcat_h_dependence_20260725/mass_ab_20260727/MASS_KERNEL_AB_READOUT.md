@@ -96,16 +96,47 @@ Magnitude: ~2–3 ln of the ~25–29 ln excess; 2D MAP unmoved at 0.80.
 
 - RATIFY-M6 position unchanged and now evidence-backed: the (M1) kernel is
   in production-quality shape (adopted, cheap, correct limits) but the 2D
-  channel REMAINS OPEN. Next discriminators, in priority order:
-  (b) proj-ablation diagnostic run (zero the d_L–M_z cross-covariance in
-  the 2D numerator on one cell), (d) FIX-3 z×M_z-resolved Σ_glob_wbh
-  (owned by the FIX-2/FIX-3 joint gate), (e) n=50 vs 200 z-quadrature on
-  the 2D numerator for a stratified event sample.
+  channel REMAINS OPEN. (Round-2 update below: branches (b)/(e) measured
+  NULL the same day; the residual attributes to branch (d) by
+  elimination.)
 - The §3.5 mechanism (mz(z) as a second z-likelihood) predicts the
-  kernel-shape term specifically; its measured share (~2–3 ln of ~26) now
-  BOUNDS the shape sub-effect. The remaining tilt must enter through the
-  μ_cond(z) sweep (branch b) or the selection/quadrature legs — exactly
-  the surviving branches.
+  kernel-shape term specifically; its measured share (~2–3 ln of ~26)
+  BOUNDS the shape sub-effect. Round 2 then killed the μ_cond(z)-sweep
+  and quadrature explanations — the remaining tilt enters through the
+  selection legs (branch d).
+
+## Round 2 (same day): branch (b) and (e) discriminators — BOTH NULL
+
+Diagnostic env overrides (`fe0ca3e`, default-off, byte-identical goldens):
+`MTC_ABLATE_MZ_PROJ=1` (2D conditioning → the consistent independent-M_z
+marginal pair: proj = 0 AND σ²_cond = Σ₄₄) and `MTC_HOST_QUAD_N=200`
+(stack-wide z-quadrature order). Cluster jobs 6061850/6061851/6061852
+(ablated A′, ablated A″, n=200 A′; all COMPLETED, override warnings
+verified in the .err logs, git_commit fe0ca3e in run_metadata).
+
+| Diagnostic | vs baseline | max per-event \|Δln L\| (2D) | total Δln @0.80 |
+|---|---|---|---|
+| A′ proj-ablated | A′ | 4.4×10⁻⁷ | +0.000 |
+| A″ proj-ablated | A″ | 3.2×10⁻⁶ | +0.000 |
+| A′ n=200 | A′ | 2.9×10⁻¹⁰ | +0.000 |
+
+- **Branch (b) — CRB proj/cross-covariance channel: NULL.** Dropping the
+  d_L–M_z cross-covariance is numerically a no-op at the 10⁻⁶-ln-per-event
+  level: on this venue the CRB conditional is already ≈ the marginal
+  (negligible d_L–M_z correlation in the Fisher matrices). The §3.5
+  "μ_cond(z) sweep" mechanism cannot carry the residual.
+- **Branch (e) — 2D numerator quadrature: NULL.** n = 50 → 200 is
+  converged to 10⁻¹⁰ ln; no aliasing through the mz(z) modulation.
+
+**Attribution by elimination.** With (a) measured at ~2–3 ln, (b)/(e) null,
+(c) cleared by the A-cell reproduction, and (f) bounded at +0.004–0.006
+per-event-sum scale by the P–P harness, the ~+25 ln 2D HIGH residual falls
+to **branch (d): the selection-side M-composition** — Σ_glob_wbh /
+2D-selection legs (point-evaluated in M, pooled survival) — i.e. the FIX-3
+§7.1 thread (`DERIVATION_ZRESOLVED_SURVIVAL.md`), whose z×M_z-resolved
+Σ_glob variant already has a measured −58-ln-scale predicted effect — the
+right order of magnitude for the first time. The FIX-2/FIX-3 ship-together
+gate is now the critical path for closing the 2D channel.
 
 ## Provenance
 
