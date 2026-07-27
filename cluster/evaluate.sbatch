@@ -142,15 +142,27 @@ fi
 if [[ "${PDET_Z_RESOLVED:-}" == "yes" ]]; then
     EXTRA_ARGS+=(--pdet_z_resolved)
 fi
+# Optional --host_z_kernel pass-through (issue #40a decomposition flag):
+# unset/empty keeps the CLI default ("auto" bundling) — byte-identical.
+if [[ -n "${HOST_Z_KERNEL:-}" ]]; then
+    EXTRA_ARGS+=(--host_z_kernel "$HOST_Z_KERNEL")
+fi
+# Optional --host_mass_kernel pass-through (#40 remainder, ratified 2D mass
+# kernel): unset/empty keeps the CLI default ("auto" bundling).
+if [[ -n "${HOST_MASS_KERNEL:-}" ]]; then
+    EXTRA_ARGS+=(--host_mass_kernel "$HOST_MASS_KERNEL")
+fi
 
 # P_det grid resolution: explicit flags for reproducibility (Phase 33).
 # Seeding (TC-05): per-task seed = EVAL_SEED + task id (EVAL_SEED exported by
 # submit_pipeline.sh from the campaign seed; standalone fallback 777000).
+# FORCE_SEED overrides with ONE fixed seed for every task — for A/B cells that
+# must be seed-identical to a fused local probe run (e.g. --seed 1000).
 # --simulation_index gives each task its own run_metadata_<task>.json.
 python -m master_thesis_code "$RUN_DIR" \
     --evaluate \
     --h_value "$H_VALUE" \
-    --seed "$((${EVAL_SEED:-777000} + SLURM_ARRAY_TASK_ID))" \
+    --seed "${FORCE_SEED:-$((${EVAL_SEED:-777000} + SLURM_ARRAY_TASK_ID))}" \
     --simulation_index "$SLURM_ARRAY_TASK_ID" \
     --pdet_dl_bins 60 \
     --pdet_mass_bins 40 \
