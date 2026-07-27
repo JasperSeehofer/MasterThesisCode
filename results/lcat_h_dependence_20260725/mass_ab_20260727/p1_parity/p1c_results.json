@@ -1,0 +1,64 @@
+{
+ "per_h": {
+  "0.6": {
+   "dln_sigma_flag": 0.02445807532207598,
+   "dln_dgen_measured_B": 0.004772060361784341,
+   "dln_dgen_table_assembly": 0.004767901000966861,
+   "P_cat_measured_B": 0.19511185156409488,
+   "P_cat_table_off": 0.1930273599333588,
+   "P_cat_table_on": 0.1968657677459568
+  },
+  "0.65": {
+   "dln_sigma_flag": 0.02381622912628682,
+   "dln_dgen_measured_B": 0.004043671568678965,
+   "dln_dgen_table_assembly": 0.0040421942617807,
+   "P_cat_measured_B": 0.16978639008035998,
+   "P_cat_table_off": 0.1680507039140921,
+   "P_cat_table_on": 0.17140681698460541
+  },
+  "0.7": {
+   "dln_sigma_flag": 0.02443635613122165,
+   "dln_dgen_measured_B": 0.003645514040686787,
+   "dln_dgen_table_assembly": 0.003646876455561433,
+   "P_cat_measured_B": 0.14918402813867226,
+   "P_cat_table_off": 0.1476929150212008,
+   "P_cat_table_on": 0.15079551282823514
+  },
+  "0.73": {
+   "dln_sigma_flag": 0.025269728639102252,
+   "dln_dgen_measured_B": 0.0035062570429012347,
+   "dln_dgen_table_assembly": 0.0035086396426244303,
+   "P_cat_measured_B": 0.13875325267544306,
+   "P_cat_table_off": 0.1373414078807476,
+   "P_cat_table_on": 0.14036286231805228
+  },
+  "0.76": {
+   "dln_sigma_flag": 0.026449273324335647,
+   "dln_dgen_measured_B": 0.0034242250658505034,
+   "dln_dgen_table_assembly": 0.0034262655125481445,
+   "P_cat_measured_B": 0.12946386178027494,
+   "P_cat_table_off": 0.12805467583777508,
+   "P_cat_table_on": 0.13103707985914878
+  },
+  "0.8": {
+   "dln_sigma_flag": 0.02851106306293144,
+   "dln_dgen_measured_B": 0.0033748378041518743,
+   "dln_dgen_table_assembly": 0.0033783754014211575,
+   "P_cat_measured_B": 0.1183694131889336,
+   "P_cat_table_off": 0.1170098705352568,
+   "P_cat_table_on": 0.1199879093693006
+  },
+  "0.86": {
+   "dln_sigma_flag": 0.032438142296649895,
+   "dln_dgen_measured_B": 0.003375185730646446,
+   "dln_dgen_table_assembly": 0.0033799373463623376,
+   "P_cat_measured_B": 0.1040499082771156,
+   "P_cat_table_off": 0.10268900181660784,
+   "P_cat_table_on": 0.1057167371104746
+  }
+ },
+ "Bcell_increment_073_086_measured": 0.4527203125280406,
+ "Bcell_increment_073_086_table_assembly_with_production_sigmas": 0.4445377312892679,
+ "z3_gate_increment_probe_sigmas": -6.469506036841523,
+ "note": "inc_measured is the actual B-cell 1D flag increment (readout +0.45 = -N*(dln_dgen_meas(0.86)-dln_dgen_meas(0.73)) with signs as stored); inc_table uses the SAME production Sigma tables but the z2/z3 n_hat_w + beta_Gbar(zres) assembly \u2014 the difference is pure assembly miscalibration of the D_gen axis, independent of any probe-vs-production Sigma parity question."
+}
