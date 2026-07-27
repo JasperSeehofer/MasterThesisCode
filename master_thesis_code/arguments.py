@@ -77,6 +77,11 @@ class Arguments:
         return bool(self._parsed_arguments.injection_campaign)
 
     @property
+    def injection_mixture(self) -> bool:
+        """Stratified 3-component injection sampling measure (issue #51, default off)."""
+        return bool(self._parsed_arguments.injection_mixture)
+
+    @property
     def generate_figures(self) -> str | None:
         """Output directory for figure generation. None means do not generate figures."""
         val: str | None = self._parsed_arguments.generate_figures
@@ -291,6 +296,22 @@ def _parse_arguments(arguments: list[str]) -> argparse.Namespace:
         action="store_true",
         default=False,
         help="Run SNR-only injection campaign for detection probability estimation.",
+    )
+    parser.add_argument(
+        "--injection_mixture",
+        action="store_true",
+        default=False,
+        help=(
+            "Stratified 3-component injection sampling measure for the campaign "
+            "redesign (issue #51; ratified sizing recommendation in results/"
+            "lcat_h_dependence_20260725/campaign_sizing_20260728/SIZING_ANALYSIS.md "
+            "§6): 0.50 stratum 'a' (status-quo Babak M1 emcee draw), 0.25 stratum "
+            "'b' (catalogue-coverage, (z, M) ~ R_eff/(1+z)-weighted catalogue "
+            "rows), 0.25 stratum 'c' (flat in (u = ln(1+z), m = log10 M_z) on the "
+            "reachable region). Every injection CSV row records its 'stratum'. "
+            "Default OFF: pure stratum-a draw, byte-identical to the pre-#51 "
+            "campaign. Only meaningful together with --injection_campaign."
+        ),
     )
     parser.add_argument(
         "--seed",

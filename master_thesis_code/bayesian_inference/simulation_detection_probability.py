@@ -346,16 +346,81 @@ class SimulationDetectionProbability:
             msg = f"Injection CSV missing required columns: {missing}"
             raise ValueError(msg)
 
-        # Pre-extract arrays for efficient rescaling / horizon construction
-        self._z_arr: npt.NDArray[np.float64] = self._pooled_df["z"].values.astype(np.float64)
-        self._M_arr: npt.NDArray[np.float64] = self._pooled_df["M"].values.astype(np.float64)
-        self._snr_raw: npt.NDArray[np.float64] = self._pooled_df["SNR"].values.astype(np.float64)
-        self._h_inj_arr: npt.NDArray[np.float64] = self._pooled_df["h_inj"].values.astype(
+        # ── Issue #51: stratified-campaign measure bookkeeping ──
+        # SIZING_ANALYSIS.md §4 (stratified 3-component mixture, option 1) +
+        # the FIX-3 measure-match rule [RATIFY-Z1]
+        # (docs/derivations/fix3_zmz_catalog_selection.md): POOL-MARGINAL
+        # objects — anything whose value depends on the pool's (z, M_z)
+        # marginal distribution (pooled/1D survival, 2D S(d_L | M_z) grid,
+        # sky bands, FIX-2 S(d_L | z), the (K5) m-marginal shrinkage target,
+        # quality flags, SNR rescaling, d_L grid support) — must be built
+        # from the population-measure stratum 'a' ONLY to stay unbiased
+        # under the Babak M1 measure.  The joint conditional S(d_L | u, m)
+        # (FIX-3 §7.1) is measure-free given (u, m) — d_hor depends only on
+        # identically-randomized extrinsics — and uses ALL rows
+        # (SIZING_ANALYSIS.md §4, tower-identity argument).
+        # ``stratum`` is an OPTIONAL column: a pool without it (every
+        # pre-#51 pool) is a single-measure Babak M1 campaign, i.e. all-'a'
+        # by construction, so the mask is all-True and every downstream
+        # array is value-identical to the unmasked build (bit-identical
+        # estimator behaviour — hard backward-compatibility requirement).
+        if "stratum" in self._pooled_df.columns:
+            # NaN rows come from legacy stratum-less CSVs concatenated with
+            # stratified ones; legacy writers ARE the status-quo measure -> 'a'.
+            strata_arr = self._pooled_df["stratum"].fillna("a").astype(str).to_numpy()
+            unknown_strata = set(np.unique(strata_arr)) - {"a", "b", "c"}
+            if unknown_strata:
+                msg = (
+                    f"Injection pool has unknown stratum labels {sorted(unknown_strata)}; "
+                    "expected 'a'/'b'/'c' (SIZING_ANALYSIS.md §4)."
+                )
+                raise ValueError(msg)
+            self._a_mask: npt.NDArray[np.bool_] = np.asarray(strata_arr == "a", dtype=np.bool_)
+        else:
+            self._a_mask = np.ones(len(self._pooled_df), dtype=np.bool_)
+        n_a_rows = int(np.count_nonzero(self._a_mask))
+        n_all_rows = int(len(self._pooled_df))
+        if n_a_rows == 0:
+            msg = (
+                "Injection pool contains no stratum-'a' (population-measure) rows: "
+                "every pool-marginal estimator leg would be built under the wrong "
+                "sampling measure (SIZING_ANALYSIS.md §4)."
+            )
+            raise ValueError(msg)
+        logger.info(
+            "Injection pool strata: %d rows total (a=%d, b=%d, c=%d). Leg masks — "
+            "pool-marginal legs (pooled/1D survival, 2D S(d_L|M_z) grid, sky bands, "
+            "FIX-2 S(d_L|z), wbh (K5) m-marginal shrinkage target, quality flags, "
+            "SNR rescaling, d_L grid support): stratum 'a' only; measure-free legs "
+            "(FIX-3 joint S(d_L|u,m) kernel/ESS/DLQ): all rows. "
+            "(SIZING_ANALYSIS.md §4; measure-match rule [RATIFY-Z1].)",
+            n_all_rows,
+            n_a_rows,
+            int(np.count_nonzero(self._pooled_df.get("stratum", pd.Series(dtype=str)) == "b")),
+            int(np.count_nonzero(self._pooled_df.get("stratum", pd.Series(dtype=str)) == "c")),
+        )
+
+        # Pre-extract FULL-pool arrays (all strata). These serve ONLY the
+        # measure-free joint conditional S(d_L | u, m) (FIX-3 §7.1) and the
+        # full-pool provenance/depth gates below.
+        z_full: npt.NDArray[np.float64] = self._pooled_df["z"].values.astype(np.float64)
+        M_full: npt.NDArray[np.float64] = self._pooled_df["M"].values.astype(np.float64)  # noqa: N806
+        snr_full: npt.NDArray[np.float64] = self._pooled_df["SNR"].values.astype(np.float64)
+        h_inj_full: npt.NDArray[np.float64] = self._pooled_df["h_inj"].values.astype(np.float64)
+        dl_full: npt.NDArray[np.float64] = self._pooled_df["luminosity_distance"].values.astype(
             np.float64
         )
-        self._dl_raw: npt.NDArray[np.float64] = self._pooled_df[
-            "luminosity_distance"
-        ].values.astype(np.float64)
+        qS_full: npt.NDArray[np.float64] = self._pooled_df["qS"].values.astype(np.float64)  # noqa: N806
+
+        # a-stratum (population-measure) arrays under the PRE-EXISTING attribute
+        # names: every pool-marginal leg reads these unchanged, so the
+        # measure-match rule is applied in ONE place. For an all-'a' pool the
+        # boolean mask is a value-identical copy (bit-identical downstream).
+        self._z_arr: npt.NDArray[np.float64] = z_full[self._a_mask]
+        self._M_arr: npt.NDArray[np.float64] = M_full[self._a_mask]
+        self._snr_raw: npt.NDArray[np.float64] = snr_full[self._a_mask]
+        self._h_inj_arr: npt.NDArray[np.float64] = h_inj_full[self._a_mask]
+        self._dl_raw: npt.NDArray[np.float64] = dl_full[self._a_mask]
 
         # ── Depth / provenance gates (issue #20 stale-pool hazard, 2026-07-03) ──
         # Deepening the host draw (HOST_DRAW_Z_MAX -> 1.5) outdates every
@@ -393,7 +458,10 @@ class SimulationDetectionProbability:
                 ", ".join(str(c)[:8] for c in self._pooled_df["code_rev"].unique()),
             )
         if expected_z_max is not None:
-            pool_z_max = float(np.max(self._z_arr)) if len(self._z_arr) else 0.0
+            # Depth gate on the FULL pool (all strata): it gates the delivered
+            # pool's coverage of the host-draw volume, a support property, not
+            # a measure-weighted estimand.
+            pool_z_max = float(np.max(z_full)) if len(z_full) else 0.0
             if pool_z_max < 0.9 * float(expected_z_max) and not allow_shallow_pool:
                 msg = (
                     f"Injection pool is SHALLOW: max injected z = {pool_z_max:.3f} "
@@ -410,6 +478,8 @@ class SimulationDetectionProbability:
         # with d_hor = SNR·d_L/threshold.
         # Finn & Chernoff (1993), arXiv:gr-qc/9301003; Finn (1996),
         # arXiv:gr-qc/9601048 (p_det = P(Theta > Theta_thr)).
+        # (a-stratum rows only — the pooled survival is a pool-marginal object;
+        # see the measure-match block above.)
         self._d_hor: npt.NDArray[np.float64] = self._snr_raw * self._dl_raw / self._snr_threshold
         # Observer-frame log10 mass (M_z) for the 2D survival kernel axis.  The
         # injection CSV "M" column already stores the DETECTOR-FRAME mass
@@ -418,6 +488,15 @@ class SimulationDetectionProbability:
         # inference's det.M = M_z convention, so NO (1+z) re-lift is applied here.
         # Maggiore (2008) GW Vol. 1 §4.1.4.
         self._log_M_z: npt.NDArray[np.float64] = np.log10(self._M_arr)
+
+        # ALL-row (all-strata) companions for the measure-free joint
+        # conditional S(d_L | u, m) build ONLY (issue #51; SIZING_ANALYSIS.md
+        # §4: the joint grid "uses all rows" — no reweighting needed given
+        # (u, m), same tower-identity logic as fix3 §3.1).
+        self._z_arr_all: npt.NDArray[np.float64] = z_full
+        self._dl_raw_all: npt.NDArray[np.float64] = dl_full
+        self._log_M_z_all: npt.NDArray[np.float64] = np.log10(M_full)
+        self._d_hor_all: npt.NDArray[np.float64] = snr_full * dl_full / self._snr_threshold
 
         # Sort the horizon set ONCE for exact searchsorted-based survival.
         sort_idx = np.argsort(self._d_hor, kind="mergesort")
@@ -430,7 +509,8 @@ class SimulationDetectionProbability:
         # Ecliptic colatitude qS = theta; latitude beta = pi/2 - qS, so the
         # equal-solid-angle variable is |sin beta| = |cos qS| (Cutler 1998,
         # arXiv:gr-qc/9703068 -- azimuthally symmetric orbit-averaged response).
-        self._qS_arr: npt.NDArray[np.float64] = self._pooled_df["qS"].values.astype(np.float64)
+        # (a-stratum rows only — sky bands are pool-marginal in (z, M_z).)
+        self._qS_arr: npt.NDArray[np.float64] = qS_full[self._a_mask]
         self._build_sky_bands()
 
         # ── FIX-2 (opt-in, --pdet_z_resolved): z-resolved detection survival ──
@@ -515,6 +595,13 @@ class SimulationDetectionProbability:
         state["_dl_raw"] = None
         state["_d_hor"] = None
         state["_log_M_z"] = None
+        # All-strata companions of the joint (u, m) build (issue #51): heavy,
+        # not needed post-build (the finished wbh tables ship instead).
+        state["_z_arr_all"] = None
+        state["_dl_raw_all"] = None
+        state["_log_M_z_all"] = None
+        state["_d_hor_all"] = None
+        state["_a_mask"] = None
         # Raw per-injection latitude not needed post-build; the per-band SORTED
         # horizons (``_d_hor_sorted_by_band``) ARE retained -- the sky accessor
         # and ``survival_per_band`` use them directly in workers.
@@ -590,6 +677,13 @@ class SimulationDetectionProbability:
         (≈0.86 Gpc on the canonical injections), NOT the old
         ``dist(z, h_min)`` (~13 Gpc).  This support is h-INVARIANT because the
         horizon ``d_hor = SNR·d_L/threshold`` is h-invariant.
+
+        Stratified pools (issue #51): this support serves the POOL-MARGINAL
+        grids (1D/2D survival) and the full-volume-denominator z_max(h), all
+        of which are a-stratum objects, so it is computed from the a-stratum
+        horizons — the marginal legs then behave EXACTLY as if only the
+        population-measure pool existed (SIZING_ANALYSIS.md §4).  The joint
+        (u, m) grid carries its own all-row DLQ support.
 
         Returns:
             float: ``max_k d_hor_k * _DL_PADDING_FACTOR`` in Gpc.
@@ -1028,9 +1122,16 @@ class SimulationDetectionProbability:
             Kish (1965), Survey Sampling — ESS = (Σw)²/Σw².
             docs/derivations/fix3_zmz_catalog_selection.md §3.2-§3.4.
         """
-        n = self._n_inj
-        u = np.log1p(self._z_arr)
-        m = self._log_M_z
+        # ALL rows (all strata): the joint conditional S(d_L | u, m) is
+        # measure-free given (u, m) — d_hor depends only on the identically
+        # randomized extrinsics — so every injection contributes regardless of
+        # its sampling stratum (issue #51; SIZING_ANALYSIS.md §4 "the joint
+        # grid uses all rows"; same tower-identity logic as fix3 §3.1 /
+        # measure-match rule [RATIFY-Z1]). For an all-'a' pool these arrays
+        # are value-identical to the a-stratum ones (bit-identical build).
+        n = int(self._d_hor_all.size)
+        u = np.log1p(self._z_arr_all)
+        m = self._log_M_z_all
         std_u = float(np.std(u, ddof=0))
         std_m = float(np.std(m, ddof=0))
         # Degenerate-pool collapse (§3.7 case 9): a zero-variance axis is
@@ -1067,13 +1168,17 @@ class SimulationDetectionProbability:
         # _compute_bandwidths value — the sigma_m -> existing-kernel limit of
         # §3.7 case 1 holds without bandwidth mismatch).
         sigma_u = self._bandwidth_scale * float(n) ** _SCOTT_EXPONENT_2D * std_u
-        _, sigma_m = self._compute_bandwidths(self._dl_raw, self._log_M_z)
+        # Joint-kernel sigma_m from the JOINT sample (all rows), Scott d=2
+        # [RATIFY-Z2] — the bandwidth belongs to the sample the kernel smooths.
+        # For an all-'a' pool this is exactly the marginal 2D kernel's
+        # sigma_log_M (the §3.7 case-1 limit holds without mismatch).
+        _, sigma_m = self._compute_bandwidths(self._dl_raw_all, self._log_M_z_all)
 
         # d_hor-ascending order: a suffix-cumsum of kernel weights gives the
         # exact weighted survival at any d_L (the _build_grid_2d /
         # _build_zres_survival pattern).
-        order = np.argsort(self._d_hor, kind="mergesort")
-        d_hor_sorted = self._d_hor[order]
+        order = np.argsort(self._d_hor_all, kind="mergesort")
+        d_hor_sorted = self._d_hor_all[order]
         u_s = u[order]
         m_s = m[order]
 
@@ -1084,10 +1189,11 @@ class SimulationDetectionProbability:
             lam = self._abramson_lambda_u(u, sigma_u)
             sig_u_s = (sigma_u * lam)[order]
 
-        # Dense d_L query grid ([RATIFY-Z3] scheme (b)).
+        # Dense d_L query grid ([RATIFY-Z3] scheme (b)); support = the ALL-row
+        # horizon max (the joint grid must cover every stratum's horizons).
         dlq = np.linspace(
             _WBH_ZRES_DLQ_MIN,
-            _WBH_ZRES_DLQ_PAD * float(np.max(self._d_hor)),
+            _WBH_ZRES_DLQ_PAD * float(np.max(self._d_hor_all)),
             _WBH_ZRES_DLQ_POINTS,
         )
         idx = np.searchsorted(d_hor_sorted, dlq, side="left")
@@ -1105,8 +1211,29 @@ class SimulationDetectionProbability:
         # m-only marginal S_m(d_L | m_b): SAME machinery with u-factor ≡ 1
         # (§3.4 — the current production 2D conditioning realized exactly in
         # the joint build, so no second convention enters).
-        tot_m = km.sum(axis=0)
-        km_sm = km
+        # POOL-MARGINAL leg (issue #51): S(d_L | m) averages z | m over the
+        # pool, so it is built from the population-measure stratum-'a' rows
+        # ONLY (SIZING_ANALYSIS.md §4 lists "the m-marginal (K5) shrinkage
+        # target" among the pool-marginal objects; measure-match rule
+        # [RATIFY-Z1]), while keeping the joint's sigma_m / m_nodes / DLQ
+        # conventions ("same machinery", §3.4). For an all-'a' pool the
+        # arrays, sort order (stable mergesort) and operations below are
+        # identical to the previous all-row build — bit-identical S_m.
+        m_a = self._log_M_z  # a-stratum rows
+        d_hor_a = self._d_hor  # a-stratum rows
+        n_a = int(d_hor_a.size)
+        order_a = np.argsort(d_hor_a, kind="mergesort")
+        d_hor_a_sorted = d_hor_a[order_a]
+        m_a_s = m_a[order_a]
+        idx_a = np.searchsorted(d_hor_a_sorted, dlq, side="left")
+        inside_a = idx_a < n_a
+        idx_a_c = np.minimum(idx_a, n_a - 1)
+        if m_degen:
+            km_sm = np.ones((n_a, n_m), dtype=np.float64)
+        else:
+            diff_m_a = (m_a_s[:, None] - m_nodes[None, :]) / sigma_m
+            km_sm = np.exp(-0.5 * diff_m_a * diff_m_a)  # (n_a, n_m)
+        tot_m = km_sm.sum(axis=0)
         bad_m = ~np.isfinite(tot_m) | (tot_m <= 0.0)
         if np.any(bad_m):
             # Unreachable for m-nodes inside the pool span (kernel distances
@@ -1114,11 +1241,11 @@ class SimulationDetectionProbability:
             # affected m node (the production z-only guard's convention; the
             # §3.4 never-pooled clause constrains the JOINT node fallback,
             # whose target S_m this is).
-            km_sm = km.copy()
+            km_sm = km_sm.copy()
             km_sm[:, bad_m] = 1.0
             tot_m = km_sm.sum(axis=0)
-        suffix_m = np.cumsum(km_sm[::-1, :], axis=0)[::-1, :]  # (N, n_m)
-        sm = np.where(inside[:, None], suffix_m[idx_c, :], 0.0) / tot_m[None, :]
+        suffix_m = np.cumsum(km_sm[::-1, :], axis=0)[::-1, :]  # (n_a, n_m)
+        sm = np.where(inside_a[:, None], suffix_m[idx_a_c, :], 0.0) / tot_m[None, :]
         sm = np.clip(sm, 0.0, 1.0)  # (n_q, n_m)
 
         abs_m = np.abs(m_s[:, None] - m_nodes[None, :])  # (N, n_m)
@@ -1171,10 +1298,14 @@ class SimulationDetectionProbability:
         self._wbh_bias_u = bias_u
 
         logger.info(
-            "wbh joint z x M_z survival built: %d u-nodes on [0, %.4f] x %d "
+            "wbh joint z x M_z survival built from ALL %d rows (S_m shrinkage "
+            "target from %d stratum-'a' rows, measure-match rule): %d u-nodes "
+            "on [0, %.4f] x %d "
             "m-nodes on [%.3f, %.3f], sigma_u=%.5f sigma_m=%.5f (Scott d=2, "
             "scale %.3g), DLQ %d points to %.4f Gpc, node ESS min/median = "
             "%.2f/%.1f, shrunk fraction (w < 0.5) = %.3f%s.",
+            n,
+            n_a,
             n_u,
             float(u_nodes[-1]),
             n_m,

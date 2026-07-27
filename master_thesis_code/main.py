@@ -11,6 +11,7 @@ from time import time
 from typing import TYPE_CHECKING
 
 import numpy as np
+import numpy.typing as npt
 
 from master_thesis_code.arguments import Arguments
 from master_thesis_code.constants import M_SOURCE_FRAME_MAX, M_SOURCE_FRAME_MIN
@@ -164,6 +165,16 @@ def main() -> None:
             simulation_index=arguments.simulation_index,
             rng=rng,
             use_gpu=arguments.use_gpu,
+            # Issue #51 stratified 3-component sampling measure (SIZING_ANALYSIS.md
+            # §6): opt-in via --injection_mixture; stratum 'b' draws from the
+            # pruned catalogue, so the handler is threaded through.
+            galaxy_catalog=galaxy_catalog,
+            injection_mixture=arguments.injection_mixture,
+            # Realized stratum counts are appended to the run metadata written
+            # above (provenance: flag itself is already in cli_args).
+            run_metadata_path=os.path.join(
+                arguments.working_directory, _run_metadata_filename(arguments)
+            ),
         )
 
     end_time = time()
@@ -272,6 +283,14 @@ def _get_git_commit() -> str:
         return "unknown"
 
 
+def _run_metadata_filename(arguments: Arguments) -> str:
+    """Default run-metadata filename (single source shared with _write_run_metadata)."""
+    index = arguments.simulation_index
+    if index > 0 or "SLURM_ARRAY_TASK_ID" in os.environ:
+        return f"run_metadata_{index}.json"
+    return "run_metadata.json"
+
+
 def _write_run_metadata(
     working_directory: str, seed: int, arguments: Arguments, filename: str | None = None
 ) -> None:
@@ -297,11 +316,7 @@ def _write_run_metadata(
         metadata["slurm"] = slurm_info
 
     if filename is None:
-        index = arguments.simulation_index
-        if index > 0 or "SLURM_ARRAY_TASK_ID" in os.environ:
-            filename = f"run_metadata_{index}.json"
-        else:
-            filename = "run_metadata.json"
+        filename = _run_metadata_filename(arguments)
     metadata_path = os.path.join(working_directory, filename)
     with open(metadata_path, "w") as f:
         json.dump(metadata, f, indent=2)
@@ -756,7 +771,19 @@ _INJECTION_COLUMNS = [
     "luminosity_distance",
     "z_cut",
     "code_rev",
+    # Issue #51 stratified sampling measure (SIZING_ANALYSIS.md §4 option 1):
+    # 'a' = Babak M1 emcee population draw, 'b' = catalogue-coverage draw,
+    # 'c' = flat-(u, m) draw. Pure-a campaigns write 'a' for every row; the
+    # estimator treats an absent column as all-'a' (legacy pools).
+    "stratum",
 ]
+
+# Ratified stratified-mixture proportions (alpha_a, alpha_b, alpha_c) —
+# mix3_50_25_25, SIZING_ANALYSIS.md §6 recommendation block. Module constant so
+# tests can exercise degenerate mixtures (e.g. (1, 0, 0)) via the
+# ``stratum_probs`` parameter without touching the production default.
+_STRATUM_PROBS: tuple[float, float, float] = (0.50, 0.25, 0.25)
+_STRATA: tuple[str, str, str] = ("a", "b", "c")
 
 
 def _flush_injection_results(results: list[dict[str, float | str]], csv_path: str) -> None:
@@ -774,11 +801,34 @@ def injection_campaign(
     rng: np.random.Generator | None = None,
     *,
     use_gpu: bool = False,
+    galaxy_catalog: GalaxyCatalogueHandler | None = None,
+    injection_mixture: bool = False,
+    stratum_probs: tuple[float, float, float] = _STRATUM_PROBS,
+    run_metadata_path: str | None = None,
 ) -> None:
     """Run SNR-only injection campaign for detection probability estimation.
 
     Draws EMRI events from the population model, computes SNR (no Fisher matrix),
     and stores ALL events (detected and undetected) to a per-task CSV file.
+
+    With ``injection_mixture=True`` (issue #51, SIZING_ANALYSIS.md §6) the (z, M)
+    draw is the stratified 3-component mixture mix3_50_25_25:
+
+    * stratum 'a' (0.50): the status-quo Babak M1 emcee population draw —
+      the ONLY stratum valid for pool-marginal estimator legs;
+    * stratum 'b' (0.25): catalogue-coverage draw — a pruned-catalogue row with
+      probability ∝ R_eff(M_g)/(1+z_g) (the Σ_glob_wbh rate weighting);
+    * stratum 'c' (0.25): flat in (u = ln(1+z), m = log10 M_z) on the reachable
+      region (M_source ∈ [M_SOURCE_FRAME_MIN, M_SOURCE_FRAME_MAX] enforced by
+      rejection; the unreachable wedge m > 7 + log10(1+z) yields no rows).
+
+    All strata share the identical downstream path (extrinsic randomization,
+    d_L = dist(z, h), SNR, CSV row); the per-row ``stratum`` column lets the
+    estimator apply the measure-match rule (marginal legs ← 'a' only, joint
+    (u, m)-conditional grid ← all rows).  Stratum labels and the 'b'/'c'
+    coordinate draws come from generators SPAWNED off ``rng`` so the parent
+    stream — and therefore the stratum-'a' path — is bit-identical to a
+    non-mixture run for the degenerate proportions (1, 0, 0).
 
     Args:
         simulation_steps: Number of successful SNR computations to accumulate.
@@ -787,6 +837,15 @@ def injection_campaign(
         simulation_index: Task index for unique CSV file naming (SLURM array compatibility).
         rng: Random number generator for reproducibility.
         use_gpu: Whether to use GPU acceleration.
+        galaxy_catalog: Pruned GLADE+ handler; REQUIRED for the stratum-'b' draw
+            when ``injection_mixture`` is on, unused otherwise.
+        injection_mixture: Opt-in stratified 3-component sampling measure
+            (default False = pure stratum-a, exactly the pre-#51 behaviour).
+        stratum_probs: Mixture proportions (alpha_a, alpha_b, alpha_c); the
+            production value is the ratified ``_STRATUM_PROBS`` — override is a
+            test hook only.
+        run_metadata_path: Existing run_metadata JSON to augment with the
+            realized per-stratum counts at campaign completion (None = skip).
     """
     from master_thesis_code.constants import HOST_DRAW_Z_MAX, INJECTION_CSV_PATH
     from master_thesis_code.galaxy_catalogue.handler import ParameterSample
@@ -835,6 +894,73 @@ def injection_campaign(
     z_cut = HOST_DRAW_Z_MAX
     skipped_high_z = 0
     timeout_count = 0
+    stratum_counts: dict[str, int] = {"a": 0, "b": 0, "c": 0}
+
+    # ── Issue #51 stratified 3-component mixture setup (opt-in) ──
+    # SIZING_ANALYSIS.md §6: alpha = (0.50 a, 0.25 cat, 0.25 flat_um).
+    # Stratum labels and the 'b'/'c' coordinate draws consume SPAWNED child
+    # generators, never the parent ``rng``: SeedSequence spawning does not
+    # advance the parent bit stream, so the stratum-'a' path (emcee batches +
+    # extrinsic randomization on ``rng``) stays bit-identical to a
+    # non-mixture run under degenerate proportions (1, 0, 0).
+    strat_rng: np.random.Generator | None = None
+    cat_rng: np.random.Generator | None = None
+    flat_rng: np.random.Generator | None = None
+    cat_z_arr: npt.NDArray[np.float64] | None = None
+    cat_M_arr: npt.NDArray[np.float64] | None = None
+    cat_cdf: npt.NDArray[np.float64] | None = None
+    probs_arr: npt.NDArray[np.float64] | None = None
+    if injection_mixture:
+        if rng is None:
+            msg = "injection_mixture=True requires an explicit rng (reproducibility)."
+            raise ValueError(msg)
+        probs_arr = np.asarray(stratum_probs, dtype=np.float64)
+        if probs_arr.shape != (3,) or np.any(probs_arr < 0.0) or probs_arr.sum() <= 0.0:
+            msg = f"stratum_probs must be 3 non-negative weights, got {stratum_probs}"
+            raise ValueError(msg)
+        probs_arr = probs_arr / probs_arr.sum()
+        strat_rng, cat_rng, flat_rng = rng.spawn(3)
+        if probs_arr[1] > 0.0:
+            if galaxy_catalog is None:
+                msg = "injection_mixture=True requires galaxy_catalog for the stratum-'b' draw."
+                raise ValueError(msg)
+            from master_thesis_code.emri_rate import R_eff_per_mbh
+            from master_thesis_code.galaxy_catalogue.handler import InternalCatalogColumns
+
+            cat_df = galaxy_catalog.reduced_galaxy_catalog
+            cat_M_all = cat_df[InternalCatalogColumns.BH_MASS].to_numpy(dtype=np.float64)
+            cat_z_all = cat_df[InternalCatalogColumns.REDSHIFT].to_numpy(dtype=np.float64)
+            # Strict in-band membership: the handler's pruning keeps rows whose
+            # ERROR BARS overlap the band; the injection draw needs the central
+            # values inside the SOURCE-frame band and z in (0, z_cut].
+            in_band = (
+                (cat_M_all >= M_SOURCE_FRAME_MIN)
+                & (cat_M_all <= M_SOURCE_FRAME_MAX)
+                & (cat_z_all > 0.0)
+                & (cat_z_all <= z_cut)
+            )
+            cat_M_arr = cat_M_all[in_band]
+            cat_z_arr = cat_z_all[in_band]
+            if cat_M_arr.size == 0:
+                msg = "stratum-'b' draw: no catalogue rows inside the source band."
+                raise ValueError(msg)
+            # Row weight ∝ R_eff_per_mbh(M_g)/(1+z_g): the catalogue's
+            # rate-weighted (z, M) profile — exactly the Σ_glob_wbh weighting
+            # the acceptance criterion scores (SIZING_ANALYSIS.md §2 item 1,
+            # 'cat' measure of §3). Precomputed ONCE; draws are O(log n)
+            # inverse-CDF lookups.
+            w_cat = np.asarray(R_eff_per_mbh(cat_M_arr), dtype=np.float64) / (1.0 + cat_z_arr)
+            if not np.all(np.isfinite(w_cat)) or w_cat.sum() <= 0.0:
+                msg = "stratum-'b' draw: non-finite or zero catalogue rate weights."
+                raise ValueError(msg)
+            cat_cdf = np.cumsum(w_cat)
+            cat_cdf /= cat_cdf[-1]
+    # Stratum-'c' box: u ~ U[0, ln(1+z_cut)], m ~ U[log10 M_min,
+    # log10(M_max·(1+z_cut))] with SOURCE-band rejection (flat on the
+    # reachable region; SIZING_ANALYSIS.md §3 'flat_um').
+    _u_max_c = float(np.log1p(z_cut))
+    _m_lo_c = float(np.log10(M_SOURCE_FRAME_MIN))
+    _m_hi_c = float(np.log10(M_SOURCE_FRAME_MAX * (1.0 + z_cut)))
     # Provenance stamped into every injection row (stale-pool gate,
     # readiness sweep A2, 2026-07-03): h_inj alone cannot discriminate
     # pre-/post-dt² or shallow/deep pools (0.73 in every era).
@@ -868,21 +994,68 @@ def injection_campaign(
     signal.signal(signal.SIGTERM, _sigterm_handler)
 
     while counter < simulation_steps:
-        # Sample events from population model
-        try:
-            sample = next(parameter_samples_iter)
-        except StopIteration:
-            samples_list = cosmological_model.sample_emri_events(_EMCEE_BATCH)
-            parameter_samples_iter = iter(samples_list)
-            sample = next(parameter_samples_iter)
+        # Stratum assignment (issue #51): fixed proportions from the ratified
+        # mixture; drawn from the SPAWNED strat_rng so the parent stream (and
+        # hence the stratum-'a' path) is untouched. Non-mixture runs make NO
+        # extra rng calls — the default path is byte-identical to pre-#51.
+        if injection_mixture:
+            assert strat_rng is not None and probs_arr is not None
+            stratum = _STRATA[int(strat_rng.choice(3, p=probs_arr))]
+        else:
+            stratum = "a"
 
-        # Population-depth consistency cut: z_cut = HOST_DRAW_Z_MAX so the
-        # P_det grid spans exactly the host-draw volume. NOT a p_det = 0
-        # claim — post-dt² the horizon reaches z ~ 1.5+ (issue #20 retired
-        # the pre-dt² "24/69500 detections at z < 0.18" justification).
-        if sample.redshift > z_cut:
-            skipped_high_z += 1
-            continue
+        if stratum == "a":
+            # Sample events from population model (status-quo Babak M1 emcee
+            # draw on the widened box — SIZING_ANALYSIS.md §3 measure 'a').
+            try:
+                sample = next(parameter_samples_iter)
+            except StopIteration:
+                samples_list = cosmological_model.sample_emri_events(_EMCEE_BATCH)
+                parameter_samples_iter = iter(samples_list)
+                sample = next(parameter_samples_iter)
+
+            # Population-depth consistency cut: z_cut = HOST_DRAW_Z_MAX so the
+            # P_det grid spans exactly the host-draw volume. NOT a p_det = 0
+            # claim — post-dt² the horizon reaches z ~ 1.5+ (issue #20 retired
+            # the pre-dt² "24/69500 detections at z < 0.18" justification).
+            if sample.redshift > z_cut:
+                skipped_high_z += 1
+                continue
+
+            event_z = sample.redshift
+            # sample.M is SOURCE-frame; lifted below.
+            # Eq. (4.7) in Maggiore (2008) GW Vol. 1 §4.1.4: M_z = M_source·(1+z)
+            redshifted_M = redshifted_mass(sample.M, event_z)  # M_z = M·(1+z)
+        elif stratum == "b":
+            # Catalogue-coverage draw ('cat' measure): a pruned-catalogue row
+            # with probability ∝ R_eff(M_g)/(1+z_g), inverse-CDF lookup.
+            # Catalogue masses/redshifts are SOURCE-frame rest quantities.
+            assert cat_rng is not None and cat_cdf is not None
+            assert cat_z_arr is not None and cat_M_arr is not None
+            g_idx = int(np.searchsorted(cat_cdf, cat_rng.random(), side="right"))
+            g_idx = min(g_idx, cat_cdf.size - 1)
+            event_z = float(cat_z_arr[g_idx])
+            # Same source→detector lift as stratum 'a' (Maggiore 2008 §4.1.4).
+            redshifted_M = redshifted_mass(float(cat_M_arr[g_idx]), event_z)
+        else:
+            # Flat-(u, m) draw ('flat_um' measure): u = ln(1+z), m = log10 M_z
+            # uniform on the box, SOURCE-band rejection keeps the density flat
+            # on the reachable region — the unreachable wedge
+            # m > log10(M_SOURCE_FRAME_MAX) + log10(1+z) yields no rows by
+            # construction (rejection), SIZING_ANALYSIS.md §2 item 2.
+            # NB: this stratum draws DIRECTLY in detector-frame m = log10 M_z;
+            # M_z is used as-is (NO second (1+z) lift).
+            assert flat_rng is not None
+            while True:
+                u_draw = float(flat_rng.uniform(0.0, _u_max_c))
+                m_draw = float(flat_rng.uniform(_m_lo_c, _m_hi_c))
+                z_candidate = float(np.expm1(u_draw))
+                M_z_candidate = float(10.0**m_draw)
+                M_source_candidate = M_z_candidate / (1.0 + z_candidate)
+                if M_SOURCE_FRAME_MIN <= M_source_candidate <= M_SOURCE_FRAME_MAX:
+                    break
+            event_z = z_candidate
+            redshifted_M = M_z_candidate  # already detector-frame
 
         if iteration % _GPU_FREE_INTERVAL == 0:
             memory_management.gpu_usage_stamp()
@@ -895,30 +1068,29 @@ def injection_campaign(
                 f"({skipped_high_z} high-z skipped)."
             )
 
-        # Randomize extrinsic parameters (sky angles, orbital phases, etc.)
+        # Randomize extrinsic parameters (sky angles, orbital phases, etc.) —
+        # identical full extrinsic randomization in EVERY stratum
+        # (SIZING_ANALYSIS.md §5 caveat (ii)).
         parameter_estimation.parameter_space.randomize_parameters(rng=rng)
 
-        # Set M from population model sample. FEW expects the DETECTOR-FRAME
-        # (redshifted) mass M_z = M_source·(1+z); sample.M is source-frame, so lift
-        # it by (1+z) so the injection CSV "M" column holds M_z consistently with
-        # the event CRBs (parameter_space.set_host_galaxy_parameters) and the p_det
-        # grid axis (simulation_detection_probability.py:265, which no longer
-        # re-lifts). Maggiore (2008) GW Vol. 1 §4.1.4; Babak et al. (2017) arXiv:1703.09722.
-        # Eq. (4.7) in Maggiore (2008) GW Vol. 1 §4.1.4: M_z = M_source·(1+z)
-        redshifted_M = redshifted_mass(sample.M, sample.redshift)  # M_z = M·(1+z)
-
+        # Set the DETECTOR-FRAME (redshifted) mass M_z: FEW expects M_z, and the
+        # injection CSV "M" column holds M_z consistently with the event CRBs
+        # (parameter_space.set_host_galaxy_parameters) and the p_det grid axis
+        # (simulation_detection_probability.py, which does not re-lift).
+        # Maggiore (2008) GW Vol. 1 §4.1.4; Babak et al. (2017) arXiv:1703.09722.
+        #
         # No detector-frame truncation (issue #51, supersedes readiness sweep
         # A3): parameter_space.M.upper_limit is now the (1+z_max)-lifted image
         # of the source-frame draw band (Model1CrossCheck), so
         # M_z = M_source*(1+z) <= M_SOURCE_FRAME_MAX*(1+max_redshift) holds by
-        # construction — pool and CRB event set share the full support with no
-        # extra clamp (the old A3 pool/event consistency argument is preserved
-        # structurally instead of by a cut).
+        # construction in every stratum — pool and CRB event set share the full
+        # support with no extra clamp (the old A3 pool/event consistency
+        # argument is preserved structurally instead of by a cut).
         parameter_estimation.parameter_space.M.value = redshifted_M
 
         # Set luminosity distance with candidate h value (injection pipeline does not use
         # set_host_galaxy_parameters — it sets d_L directly since no host galaxy is needed).
-        luminosity_distance = dist(sample.redshift, h=h_value)
+        luminosity_distance = dist(event_z, h=h_value)
         parameter_estimation.parameter_space.luminosity_distance.value = luminosity_distance
 
         # Compute SNR only (no Fisher matrix, no CRB)
@@ -982,8 +1154,8 @@ def injection_campaign(
         # Store ALL events regardless of SNR (per D-03: do NOT threshold)
         results.append(
             {
-                "z": sample.redshift,
-                # Store the DETECTOR-FRAME mass M_z (not source-frame sample.M) so the
+                "z": event_z,
+                # Store the DETECTOR-FRAME mass M_z (not the source-frame mass) so the
                 # injection CSV "M" column matches the value FEW saw and the p_det grid
                 # axis expects (simulation_detection_probability.py no longer re-lifts).
                 "M": redshifted_M,
@@ -996,9 +1168,13 @@ def injection_campaign(
                 # eras, code_rev ties rows to the generating commit.
                 "z_cut": z_cut,
                 "code_rev": code_rev,
+                # Issue #51: sampling-measure stratum of this row (estimator
+                # measure-match rule, SIZING_ANALYSIS.md §4).
+                "stratum": stratum,
             }
         )
         counter += 1
+        stratum_counts[stratum] += 1
 
         # Flush to disk periodically so SLURM timeouts don't lose all work
         if counter % _FLUSH_INTERVAL == 0:
@@ -1010,8 +1186,25 @@ def injection_campaign(
     _ROOT_LOGGER.info(
         f"Injection campaign complete: {len(results)} events stored to {csv_path} "
         f"(skipped: {skipped_high_z} high-z, "
-        f"{timeout_count} timeouts @ {_TIMEOUT_S}s)"
+        f"{timeout_count} timeouts @ {_TIMEOUT_S}s); "
+        f"realized stratum counts: a={stratum_counts['a']}, "
+        f"b={stratum_counts['b']}, c={stratum_counts['c']} "
+        f"(mixture={'on' if injection_mixture else 'off'})"
     )
+
+    # Record the realized stratum counts in the run metadata (the
+    # --injection_mixture flag itself is already captured via cli_args).
+    if run_metadata_path is not None and os.path.isfile(run_metadata_path):
+        try:
+            with open(run_metadata_path) as f:
+                metadata = json.load(f)
+            metadata["injection_mixture"] = injection_mixture
+            metadata["injection_stratum_counts"] = dict(stratum_counts)
+            with open(run_metadata_path, "w") as f:
+                json.dump(metadata, f, indent=2)
+            _ROOT_LOGGER.info(f"Stratum counts recorded in {run_metadata_path}")
+        except (OSError, json.JSONDecodeError) as e:
+            _ROOT_LOGGER.warning(f"Could not update run metadata with stratum counts: {e}")
 
 
 def evaluate(
