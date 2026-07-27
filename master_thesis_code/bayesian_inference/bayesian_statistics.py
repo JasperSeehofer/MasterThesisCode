@@ -229,9 +229,32 @@ _BH_DENOM_QUAD_ORDER: int = 64
 # what scipy.integrate.fixed_quad uses internally (its _cached_roots_legendre is
 # a cache around scipy.special.roots_legendre), so the batched quadrature
 # reproduces fixed_quad bit-for-bit per host row.
-_HOST_QUAD_N: int = 50
+#
+# [DIAGNOSTIC] MTC_HOST_QUAD_N env override (mass_marginal_2d_kernel.md §3.8
+# branch (e) discriminator): raises the numerator/host z-quadrature order
+# stack-wide (numerator, Z_g norm, B_num completion — every FIXED_QUAD_N
+# consumer) for the n=50-vs-200 aliasing check. Unset -> 50, byte-identical
+# (kernel-parity goldens). Scalar and batch kernels share this constant, so
+# bit-parity between them is preserved under the override.
+_HOST_QUAD_N: int = int(os.environ.get("MTC_HOST_QUAD_N", "50"))
 _GL_NODES_50, _GL_WEIGHTS_50 = roots_legendre(_HOST_QUAD_N)
 _GL_NODES_64, _GL_WEIGHTS_64 = roots_legendre(_BH_DENOM_QUAD_ORDER)
+
+# [DIAGNOSTIC] MTC_ABLATE_MZ_PROJ=1 env override (mass_marginal_2d_kernel.md
+# §3.8 branch (b) discriminator): drops the d_L-M_z CRB cross-covariance in
+# the 2D numerator's Gaussian conditioning — the conditional
+# N(a; mu_cond(z), sigma2_cond) becomes the MARGINAL N(a; mu_4, Sigma_44)
+# (consistent pair: zero proj AND marginal variance, not just a zeroed proj).
+# Applied at the single precompute site, so scalar/batch consume identically.
+# Unset -> production conditioning, byte-identical.
+_ABLATE_MZ_PROJ: bool = os.environ.get("MTC_ABLATE_MZ_PROJ", "") == "1"
+if _ABLATE_MZ_PROJ or _HOST_QUAD_N != 50:
+    _LOGGER.warning(
+        "[DIAGNOSTIC OVERRIDES ACTIVE] MTC_ABLATE_MZ_PROJ=%s MTC_HOST_QUAD_N=%d — "
+        "NOT a production configuration (mass_marginal_2d_kernel.md §3.8 b/e discriminators)",
+        _ABLATE_MZ_PROJ,
+        _HOST_QUAD_N,
+    )
 
 # --- mass_trunc host-mass kernel (EXP-45, 2026-07-13) --------------------------
 # The 2D (with-BH-mass) channel's `mass_trunc` mode replaces the linear-Gaussian
@@ -2265,8 +2288,16 @@ class BayesianStatistics:
             cov_cross = cov_4d[3, :3]
             cov_mz = cov_4d[3, 3]
             cov_obs_inv = _cov_inv_3d[slot]  # reuse already-computed inverse
-            _sigma2_cond_arr[slot] = max(float(cov_mz - cov_cross @ cov_obs_inv @ cov_cross), 1e-30)
-            _proj_arr[slot] = cov_cross @ cov_obs_inv
+            if _ABLATE_MZ_PROJ:
+                # [DIAGNOSTIC] branch (b): independent-M_z Gaussian — marginal
+                # variance, zero projection (see _ABLATE_MZ_PROJ constant).
+                _sigma2_cond_arr[slot] = max(float(cov_mz), 1e-30)
+                _proj_arr[slot] = 0.0
+            else:
+                _sigma2_cond_arr[slot] = max(
+                    float(cov_mz - cov_cross @ cov_obs_inv @ cov_cross), 1e-30
+                )
+                _proj_arr[slot] = cov_cross @ cov_obs_inv
 
         # Log Fisher quality summary (D-11)
         n_flagged = int(_excluded_mask.sum())
@@ -2916,7 +2947,7 @@ class BayesianStatistics:
             # D(h) did not -- mismatched domains in the same ratio p_i = B_num/D(h).
             z_upper = min(z_upper, redshift_upper_limit)
 
-            FIXED_QUAD_N = 50
+            FIXED_QUAD_N = _HOST_QUAD_N
             _comp_slot = self._det_index_to_slot[detection_index]
             _comp_mean_3d = self._means_3d[_comp_slot]
             _comp_cov_inv_3d = self._cov_inv_3d[_comp_slot]
@@ -3285,7 +3316,7 @@ def single_host_likelihood(
     global sigma2_cond_arr, proj_arr
     global det_d_L_arr, det_d_L_unc_arr, det_M_arr, det_phi_arr, det_theta_arr
 
-    FIXED_QUAD_N = 50
+    FIXED_QUAD_N = _HOST_QUAD_N
 
     slot = det_index_to_slot[detection_index]
     _det_d_L = float(det_d_L_arr[slot])
