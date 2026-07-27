@@ -137,6 +137,79 @@ def resolve_host_z_kernel(host_z_kernel: str, normalization_mode: str) -> str:
     return host_z_kernel
 
 
+# [PHYSICS] Issue #40 remainder (2D mass-marginal, RATIFIED 2026-07-27,
+# docs/derivations/mass_marginal_2d_kernel.md §4 item 1): the 2D host-MASS
+# kernel, historically bundled into normalization_mode ("mass_trunc" mode).
+# "auto" preserves that bundling exactly (trunc_lognormal iff mass_trunc);
+# "gaussian" / "trunc_lognormal" force the mass kernel independently, so the
+# ratified real-data combination (absolute_marginal normalization x
+# volume_deconv host-z kernel x trunc_lognormal mass kernel) is expressible.
+HOST_MASS_KERNEL_CHOICES = ("auto", "gaussian", "trunc_lognormal")
+
+
+def resolve_host_mass_kernel(
+    host_mass_kernel: str, normalization_mode: str, host_z_kernel: str
+) -> str:
+    """Resolve the 2D host-mass kernel selection to 'gaussian' or 'trunc_lognormal'.
+
+    Decomposition flag for the #40 remainder (RATIFY-M3/M4,
+    docs/derivations/mass_marginal_2d_kernel.md): makes the truncated
+    lognormal x R_eff mass kernel separately selectable from the
+    normalization leg. ``"auto"`` reproduces the historical bundling — the
+    truncated kernel if and only if ``normalization_mode == "mass_trunc"`` —
+    so the production default path is unchanged.
+
+    Guard (derivation §3.3): the delta-kernel (point) host-z numerator path
+    always evaluates the analytic Gaussian mass product at the catalogue
+    ``host_M`` (issue #24 point-M treatment), while the trunc_lognormal
+    denominator carries the LN x R_eff prior — N_g and D_g would silently use
+    DIFFERENT mass priors, violating the counted-once-in-M invariant. That
+    combination raises instead of running silently.
+
+    Args:
+        host_mass_kernel: One of ``HOST_MASS_KERNEL_CHOICES``.
+        normalization_mode: The in-catalogue normalization mode (see ``p_Di``).
+        host_z_kernel: The (unresolved) numerator host-z kernel selection;
+            resolved internally via :func:`resolve_host_z_kernel` for the
+            prior-consistency guard.
+
+    Returns:
+        ``"gaussian"`` (analytic Gaussian mass product + G2d moment-matched
+        shift in the calibrated kernels) or ``"trunc_lognormal"`` (the
+        ratified truncated lognormal x R_eff kernel, GH numerator with
+        small-sigma crossover + GL-in-lnM denominator).
+
+    Raises:
+        ValueError: Unknown choice, or the prior-inconsistent combination of
+            a point host-z numerator with the trunc_lognormal mass kernel.
+    """
+    if host_mass_kernel not in HOST_MASS_KERNEL_CHOICES:
+        raise ValueError(
+            f"unknown host_mass_kernel: {host_mass_kernel!r} "
+            f"(expected one of {HOST_MASS_KERNEL_CHOICES})"
+        )
+    resolved = (
+        ("trunc_lognormal" if normalization_mode == "mass_trunc" else "gaussian")
+        if host_mass_kernel == "auto"
+        else host_mass_kernel
+    )
+    if (
+        resolved == "trunc_lognormal"
+        and resolve_host_z_kernel(host_z_kernel, normalization_mode) == "point"
+    ):
+        raise ValueError(
+            "host_mass_kernel='trunc_lognormal' is prior-inconsistent with a "
+            "point (delta-kernel) host-z numerator: the point path evaluates "
+            "the analytic Gaussian mass product while the denominator carries "
+            "the truncated lognormal x R_eff prior — N_g and D_g would use "
+            "different mass priors (counted-once-in-M violation, "
+            "docs/derivations/mass_marginal_2d_kernel.md §3.3). Use "
+            "host_z_kernel='volume_deconv' (or a non-point-resolving mode) "
+            "with the truncated mass kernel."
+        )
+    return resolved
+
+
 GALAXY_LIKELIHOODS = "galaxy_likelihoods"
 ADDITIONAL_GALAXIES_WITHOUT_BH_MASS = "additional_galaxies_without_bh_mass"
 
@@ -177,6 +250,28 @@ _MASS_TRUNC_M_MAX: float = 1.0e7
 _MASS_TRUNC_SIGMA_LNM_FLOOR: float = 1.0e-6
 _MASS_TRUNC_GH_ORDER: int = 24
 _MASS_TRUNC_GL_ORDER: int = 64
+# [PHYSICS] RATIFY-M3 small-sigma crossover (mass_marginal_2d_kernel.md §3.3):
+# the GW-peak-centred Gauss-Hermite quadrature is exact only while the mass
+# prior is at least as wide as the GH node coverage (sigma_gal >= K*sigma_cond
+# in the fraction coordinate, sigma_gal = sigma_lnM * M_g(1+z)/M_det). Below
+# that the PRIOR is the spike and falls between the GW-centred nodes (GH-24
+# aliases it; returns exactly 0 at the sigma_lnM floor). The kernel therefore
+# falls back to the analytic Gaussian product there — where the lognormal/
+# Gaussian family difference is O(sigma_lnM) and truncation is negligible for
+# interior hosts — restoring the sigma_lnM -> 0 spec-mass limit (C0-continuity
+# bar; pinned by test_mass_trunc_kernel crossover tests).
+# IMPLEMENTATION CORRECTION (found by the kernel-parity goldens, recorded in
+# the derivation §3.3): the width condition ALONE misfires for mass-mismatched
+# hosts (a_gal << 1 makes the LINEARIZED width sigma_gal tiny even when the
+# prior is broad, sigma_lnM ~ 0.7, and its fat lognormal tail at the GW peak
+# is exactly what GH integrates correctly — the Gaussian fallback would
+# replace that tail with exp(-thousands), e.g. golden near_lowmass_bound_mt_4d
+# 0.061 -> 7e-15). Genuine aliasing requires a Gaussian-like spike, i.e.
+# sigma_lnM itself small: an in-span spike with moderate sigma_lnM is
+# impossible (a_gal ~ mu_cond forces sigma_gal ~ sigma_lnM > K*sigma_cond).
+# The crossover therefore ALSO requires sigma_lnM <= the family-validity cap.
+_MASS_TRUNC_GH_CROSSOVER_K: float = 5.0
+_MASS_TRUNC_GH_CROSSOVER_SIGMA_LNM_MAX: float = 0.1
 _MT_GH_NODES, _MT_GH_WEIGHTS = roots_hermite(_MASS_TRUNC_GH_ORDER)  # int e^{-t^2} g(t) dt
 _MT_GL_NODES, _MT_GL_WEIGHTS = roots_legendre(_MASS_TRUNC_GL_ORDER)  # [-1, 1]
 
@@ -427,6 +522,14 @@ def _mass_trunc_mz_integral(
     ``mu_cond`` / ``one_plus_z`` are the per-z-node arrays ``(..., K)``; ``host_M`` /
     ``sigma_lnM`` / ``Z_M`` are scalar (scalar path) or ``(n,)`` (batch, leading
     axis = ``mu_cond.shape[:-1]``). Returns ``(..., K)``.
+
+    Small-sigma crossover (RATIFY-M3, mass_marginal_2d_kernel.md §3.3):
+    elementwise, where ``sigma_gal = sigma_lnM * host_M (1+z) / det_M <=
+    _MASS_TRUNC_GH_CROSSOVER_K * sigma_cond`` the GW-centred GH nodes cannot
+    resolve the (now-narrow) prior, and the analytic Gaussian product
+    ``N(mu_cond; mu_gal, sigma_cond^2 + sigma_gal^2)`` is used instead —
+    recovering the spec-mass limit continuously (the family difference is
+    O(sigma_lnM) there; truncation negligible for interior hosts).
     """
     a = mu_cond[..., None] + np.sqrt(2.0) * sigma_cond * _MT_GH_NODES  # (..., K, G)
     opz = one_plus_z[..., None]  # (..., K, 1)
@@ -440,7 +543,30 @@ def _mass_trunc_mz_integral(
     # p_M(M) as a density in M: LN*R_eff/Z_M = (lnM-weight)/(M Z_M); 0 outside window.
     p_M = np.where(inside, _mass_trunc_lnM_weight(M_safe, hM, sg) / (M_safe * ZM), 0.0)
     p_a = p_M * det_M / opz  # push forward to the a coordinate (|dM/da|)
-    mz: npt.NDArray[np.float64] = (p_a @ _MT_GH_WEIGHTS) / np.sqrt(np.pi)  # (..., K)
+    mz_gh: npt.NDArray[np.float64] = (p_a @ _MT_GH_WEIGHTS) / np.sqrt(np.pi)  # (..., K)
+    # [PHYSICS] RATIFY-M3 crossover: analytic Gaussian product where the prior
+    # is narrower than the GH node coverage (sigma_gal <= K * sigma_cond).
+    # Eq. (14.31) in derivations/dark_siren_likelihood.md (Gaussian product);
+    # docs/derivations/mass_marginal_2d_kernel.md §3.3 / §3.7 cases 1 & 8.
+    mu_gal = (
+        np.asarray(host_M, dtype=np.float64).reshape(np.shape(host_M) + (1,)) * one_plus_z / det_M
+    )  # (..., K) = a_gal, the prior centre in the fraction coordinate
+    sigma_gal = (
+        np.asarray(sigma_lnM, dtype=np.float64).reshape(np.shape(sigma_lnM) + (1,)) * mu_gal
+    )  # (..., K) linearized prior width in the fraction coordinate
+    # Both conditions required: unresolvable by the GW-centred nodes AND
+    # Gaussian-like (family cap) — see the IMPLEMENTATION CORRECTION note at
+    # the constants. Broad mass-mismatched hosts (small a_gal, large
+    # sigma_lnM) stay on GH, preserving the fat-tail-at-the-GW-peak physics.
+    narrow = (sigma_gal <= _MASS_TRUNC_GH_CROSSOVER_K * sigma_cond) & (
+        np.asarray(sigma_lnM, dtype=np.float64).reshape(np.shape(sigma_lnM) + (1,))
+        <= _MASS_TRUNC_GH_CROSSOVER_SIGMA_LNM_MAX
+    )  # (..., K)
+    sigma2_sum = sigma_cond**2 + sigma_gal**2
+    mz_gauss = np.exp(-0.5 * (mu_cond - mu_gal) ** 2 / sigma2_sum) / np.sqrt(
+        2.0 * np.pi * sigma2_sum
+    )
+    mz: npt.NDArray[np.float64] = np.where(narrow, mz_gauss, mz_gh)
     return mz
 
 
@@ -1593,6 +1719,9 @@ class BayesianStatistics:
     # Issue #40(a): numerator host-z kernel decomposition flag (set by
     # evaluate()); "auto" reproduces the historical mode bundling exactly.
     _host_z_kernel: str = "auto"
+    # #40 remainder (RATIFIED 2026-07-27): 2D host-mass kernel decomposition
+    # flag (set by evaluate()); "auto" reproduces the mass_trunc bundling.
+    _host_mass_kernel: str = "auto"
     # G4: base seed for the deterministic with-BH-mass MC denominator streams.
     _base_seed: int = 0
     # generator_marginal precomputes (set by evaluate() when the mode is active):
@@ -1650,6 +1779,11 @@ class BayesianStatistics:
         # preserves the historical bundling (delta kernel iff
         # generator_marginal) — production default path unchanged.
         host_z_kernel: str = "auto",
+        # #40 remainder (RATIFIED 2026-07-27, mass_marginal_2d_kernel.md §4):
+        # 2D host-mass kernel decomposition flag; "auto" preserves the
+        # historical bundling (trunc_lognormal iff mass_trunc) — production
+        # default path unchanged.
+        host_mass_kernel: str = "auto",
     ) -> None:
         # h-grid fusion (opt-in): when h_values is given it supersedes h_value
         # and ALL h-invariant setup — catalogue/BallTree (passed in), injection
@@ -1768,6 +1902,21 @@ class BayesianStatistics:
                 _resolved_kernel,
                 normalization_mode,
             )
+        # #40 remainder: validate the mass-kernel choice up front (raises on
+        # unknown AND on the prior-inconsistent point-z x trunc-mass
+        # combination); recomputed identically inside the worker kernels.
+        _resolved_mass_kernel = resolve_host_mass_kernel(
+            host_mass_kernel, normalization_mode, host_z_kernel
+        )
+        if host_mass_kernel != "auto":
+            _LOGGER.info(
+                "host_mass_kernel=%r overrides the mode-bundled 2D mass kernel "
+                "(resolved: %s mass marginal with %s normalization) — "
+                "docs/derivations/mass_marginal_2d_kernel.md",
+                host_mass_kernel,
+                _resolved_mass_kernel,
+                normalization_mode,
+            )
         if normalization_mode == "generator_marginal" and smear_global_selection:
             # The mode is DEFINED with the point/point sigma_z pairing (generator-
             # exact, derivation §4.3): a smeared Sigma_glob would silently break
@@ -1789,6 +1938,7 @@ class BayesianStatistics:
             )
         self._normalization_mode = normalization_mode
         self._host_z_kernel = host_z_kernel
+        self._host_mass_kernel = host_mass_kernel
         self._dgen_catalog_selection = dgen_catalog_selection
         self._diagnostic_rows = []
         if catalog_only:
@@ -2540,6 +2690,7 @@ class BayesianStatistics:
             True,
             self._normalization_mode,
             self._host_z_kernel,
+            self._host_mass_kernel,
         )
 
         results_without_blackhole_mass = _starmap_host_batches(
@@ -2550,6 +2701,7 @@ class BayesianStatistics:
             False,
             self._normalization_mode,
             self._host_z_kernel,
+            self._host_mass_kernel,
         )
         end = time.time()
         _LOGGER.info(f"parallel computing took: {end - start}s")
@@ -3117,6 +3269,10 @@ def single_host_likelihood(
     # historical bundling (delta kernel iff generator_marginal). No value
     # change on the default path.
     host_z_kernel: str = "auto",
+    # #40 remainder (RATIFIED 2026-07-27): 2D host-mass kernel decomposition
+    # flag; "auto" == the historical bundling (trunc_lognormal iff
+    # mass_trunc). No value change on the default path.
+    host_mass_kernel: str = "auto",
 ) -> list[float]:
     global redshift_upper_integration_limit
     global redshift_lower_integration_limit
@@ -3155,11 +3311,20 @@ def single_host_likelihood(
     # numerator also tilts high). Not for production. results/volume_trunc_ab_20260712/.
     _use_volume_trunc = normalization_mode == "volume_trunc"
 
-    # [PHYSICS] mass_trunc (EXP-45, 2026-07-13): truncated lognormal x R_eff host-mass
-    # prior in the 2D channel (see module-level _MASS_TRUNC_* + _mass_trunc_* helpers).
-    # Shares the volume_deconv host-z kernel; differs ONLY in the with-BH-mass
-    # mass-marginal (numerator + selection denominator). No effect without BH mass.
-    _use_mass_trunc = normalization_mode == "mass_trunc"
+    # [PHYSICS] truncated lognormal x R_eff host-mass prior in the 2D channel
+    # (EXP-45; RATIFIED 2026-07-27, docs/derivations/mass_marginal_2d_kernel.md
+    # gates M1-M5: lognormal family from the Reines & Volonteri log-space fit,
+    # truncated + renormalized on ParameterSpace.M, GH numerator with the
+    # small-sigma crossover, GL-in-lnM denominator, counted-once-in-M). See
+    # module-level _MASS_TRUNC_* + _mass_trunc_* helpers. Differs ONLY in the
+    # with-BH-mass mass-marginal (numerator + selection denominator); no
+    # effect without BH mass. Selectable independently of the normalization
+    # leg via host_mass_kernel ("auto" == the historical mass_trunc bundling);
+    # the point-z x trunc-mass combination raises (prior-consistency guard).
+    _use_mass_trunc = (
+        resolve_host_mass_kernel(host_mass_kernel, normalization_mode, host_z_kernel)
+        == "trunc_lognormal"
+    )
 
     # [PHYSICS] generator_marginal (E1 FIX-3, approved 2026-07-26): point/point
     # sigma_z pairing. The generator draws hosts at their catalogue z verbatim and
@@ -3584,6 +3749,9 @@ def single_host_likelihood_batch(
     # Issue #40(a): numerator host-z kernel decomposition flag ("auto" == the
     # historical bundling; see the scalar kernel and resolve_host_z_kernel).
     host_z_kernel: str = "auto",
+    # #40 remainder: 2D host-mass kernel decomposition flag ("auto" == the
+    # historical mass_trunc bundling; see resolve_host_mass_kernel).
+    host_mass_kernel: str = "auto",
 ) -> npt.NDArray[np.float64]:
     """Host-batched twin of :func:`single_host_likelihood`.
 
@@ -3616,6 +3784,8 @@ def single_host_likelihood_batch(
         normalization_mode: In-catalogue normalization mode (see ``p_Di``).
         host_z_kernel: Numerator host-z kernel selection (issue #40a);
             ``"auto"`` reproduces the historical mode bundling.
+        host_mass_kernel: 2D host-mass kernel selection (#40 remainder);
+            ``"auto"`` reproduces the historical mass_trunc bundling.
 
     Returns:
         Array of shape ``(n, 6)`` when ``evaluate_with_bh_mass`` else
@@ -3658,9 +3828,13 @@ def single_host_likelihood_batch(
     # z >= 0 clamp: same G2b rationale as the scalar kernel. volume_trunc floors at
     # exactly 0 (w_pop ∝ z² → 0 there) instead of 1e-6.
     _use_volume_trunc = normalization_mode == "volume_trunc"
-    # mass_trunc (EXP-45): truncated lognormal x R_eff host-mass prior in the 2D
-    # channel; shares the volume_deconv host-z kernel (see scalar path).
-    _use_mass_trunc = normalization_mode == "mass_trunc"
+    # Truncated lognormal x R_eff host-mass prior in the 2D channel (EXP-45;
+    # RATIFIED 2026-07-27, docs/derivations/mass_marginal_2d_kernel.md).
+    # Selectable independently via host_mass_kernel (see scalar path).
+    _use_mass_trunc = (
+        resolve_host_mass_kernel(host_mass_kernel, normalization_mode, host_z_kernel)
+        == "trunc_lognormal"
+    )
     # generator_marginal (E1 FIX-3): point/point sigma_z pairing — the numerator
     # is the GW likelihood POINT-evaluated at the catalogue z_g (delta kernel);
     # see the scalar kernel for the physics comment and references. Issue
@@ -3997,6 +4171,7 @@ def _starmap_host_batches(
     evaluate_with_bh_mass: bool,
     normalization_mode: str,
     host_z_kernel: str = "auto",
+    host_mass_kernel: str = "auto",
 ) -> list[list[float]]:
     """Dispatch the batched host kernel over worker processes.
 
@@ -4014,6 +4189,7 @@ def _starmap_host_batches(
         evaluate_with_bh_mass: Include the with-BH-mass channel.
         normalization_mode: In-catalogue normalization mode.
         host_z_kernel: Numerator host-z kernel selection (issue #40a).
+        host_mass_kernel: 2D host-mass kernel selection (#40 remainder).
 
     Returns:
         Per-host result rows in input order.
@@ -4032,7 +4208,14 @@ def _starmap_host_batches(
     chunk_indices = np.array_split(np.arange(n), n_chunks)
     jobs = [
         tuple(a[idx] for a in arrays)
-        + (detection_index, h, evaluate_with_bh_mass, normalization_mode, host_z_kernel)
+        + (
+            detection_index,
+            h,
+            evaluate_with_bh_mass,
+            normalization_mode,
+            host_z_kernel,
+            host_mass_kernel,
+        )
         for idx in chunk_indices
     ]
     chunk_results = pool.starmap(single_host_likelihood_batch, jobs)

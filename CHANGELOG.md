@@ -7,6 +7,34 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Research (2D mass-marginal kernel — issue #40 remainder)
+- **Truncated lognormal × R_eff host-mass kernel RATIFIED + decomposition flag
+  `--host_mass_kernel` [PHYSICS]** (derivation: `docs/derivations/mass_marginal_2d_kernel.md`,
+  all seven RATIFY-M gates approved 2026-07-27). The EXP-45 `mass_trunc` kernel is
+  promoted from an underived experimental mode to the ratified real-data 2D mass
+  kernel (RV15 log-space error model → lognormal, median M_g; truncated + renormalized
+  on `ParameterSpace.M` = [1e4, 1e7]; R_eff shape-only, counted-once-in-M). Changes:
+  (i) RATIFY-M3 small-σ crossover in `_mass_trunc_mz_integral` — the GW-centred GH-24
+  quadrature provably aliases a narrow prior (returned exactly 0 at the σ_lnM floor);
+  it now falls back to the analytic Gaussian product where `σ_gal ≤ 5σ_cond` AND
+  `σ_lnM ≤ 0.1` (the family-validity cap is an implementation correction found by the
+  kernel-parity goldens: width-only misfired on broad mass-mismatched hosts, destroying
+  the fat-tail-at-GW-peak physics, golden `near_lowmass_bound_mt_4d` 0.061 → 7e-15 —
+  documented in the derivation §3.3); restores the σ_lnM→0 spec-mass limit.
+  (ii) `--host_mass_kernel {auto,gaussian,trunc_lognormal}` mirrors `--host_z_kernel`,
+  making the ratified real-data 2D combination (`absolute_marginal` × volume_deconv-z ×
+  trunc_lognormal-M) expressible; `auto` preserves the historical `mass_trunc` bundling
+  (production default path byte-identical, parity goldens). (iii) Prior-consistency
+  guard: a point-resolving host-z numerator with the trunc mass kernel raises
+  (N_g/D_g would carry different mass priors — counted-once-in-M violation).
+  Reviewed golden update: `near_specz_match_mt_4d`/`near_photoz_match_mt_4d` 2D
+  numerators shift −0.07%/−0.17% (σ_lnM = 0.1 boundary cases where the crossover
+  correctly replaces partial GH aliasing). Per RATIFY-M6 the kernel is NECESSARY but
+  not established SUFFICIENT: the 2D channel stays OPEN pending the §3.8 branch
+  discriminators (cell-A′/A″ A/B, proj ablation, quadrature stratification).
+  Tests: `test_mass_trunc_kernel.py` (+9: crossover limits/continuity/fat-tail guard,
+  resolver bundling/guard).
+
 ### Research (estimator redesign — issue #30 / E1 FIX-2)
 - **Z-resolved detection survival `S(d_L|z)` [PHYSICS]** (commit `a608c4f`; approved packet:
   `results/lcat_h_dependence_20260725/DERIVATION_ZRESOLVED_SURVIVAL.md`). Replaces the

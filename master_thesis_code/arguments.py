@@ -179,6 +179,11 @@ class Arguments:
         return str(self._parsed_arguments.host_z_kernel)
 
     @property
+    def host_mass_kernel(self) -> str:
+        """2D host-mass kernel decomposition flag (#40 remainder): 'auto'/'gaussian'/'trunc_lognormal'."""
+        return str(self._parsed_arguments.host_mass_kernel)
+
+    @property
     def catalog_only(self) -> bool:
         """Skip completion integral: set f_i=1, L_comp=0 (catalog-only diagnostic)."""
         return bool(self._parsed_arguments.catalog_only)
@@ -438,6 +443,25 @@ def _parse_arguments(arguments: list[str]) -> argparse.Namespace:
             "machinery stays governed by --normalization_mode. The real-data "
             "PV/photo-z kernel is a pending derivation "
             "(docs/derivations/hostz_pv_photoz_kernel.md, issue #40b)."
+        ),
+    )
+    parser.add_argument(
+        "--host_mass_kernel",
+        type=str,
+        choices=["auto", "gaussian", "trunc_lognormal"],
+        default="auto",
+        help=(
+            "#40-remainder decomposition flag (RATIFIED 2026-07-27): selects "
+            "the 2D (with-BH-mass) host-mass kernel independently of the "
+            "normalization leg. 'auto' (default) preserves the historical "
+            "bundling — the truncated lognormal x R_eff kernel iff "
+            "--normalization_mode=mass_trunc, else the analytic Gaussian "
+            "product (+ G2d shift in the calibrated kernels). "
+            "'gaussian'/'trunc_lognormal' force the mass kernel for the "
+            "kernel A/Bs; the normalization machinery stays governed by "
+            "--normalization_mode. Combining 'trunc_lognormal' with a "
+            "point-resolving host-z numerator raises (prior-consistency "
+            "guard). docs/derivations/mass_marginal_2d_kernel.md."
         ),
     )
     parser.add_argument(

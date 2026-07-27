@@ -101,10 +101,27 @@ def test_mz_integral_sharp_gw_limit() -> None:
     np.testing.assert_allclose(mz, ref, rtol=1e-4, atol=1e-8 * ref.max())
 
 
-def test_mz_integral_spec_mass_robustness() -> None:
-    """sigma_lnM -> 0 (delta prior) is OUTSIDE the GH design regime, but must stay
-    finite and non-negative -- no NaN from the peak-aware Z_M (the guard against the
-    volume_trunc-style aliasing blow-up)."""
+def _gaussian_product_mz(
+    mu_cond: np.ndarray,
+    sigma_cond: float,
+    opz: np.ndarray,
+    det_M: float,
+    host_M: float,
+    sigma_lnM: float,
+) -> np.ndarray:
+    """Analytic Gaussian-product mass marginal (Eq. 14.31), independent reference."""
+    mu_gal = host_M * opz / det_M
+    sigma_gal = sigma_lnM * mu_gal
+    s2 = sigma_cond**2 + sigma_gal**2
+    return np.exp(-0.5 * (mu_cond - mu_gal) ** 2 / s2) / np.sqrt(2.0 * np.pi * s2)
+
+
+def test_mz_integral_spec_mass_limit_recovers_gaussian_product() -> None:
+    """RATIFY-M3 crossover, sigma_lnM -> 0 (spec-mass limit, derivation §3.7 case 1):
+    the bare GW-centred GH quadrature aliases the now-narrow prior (it returned
+    exactly 0 at the floor pre-crossover); with the crossover the kernel falls back
+    to the analytic Gaussian product, recovering the current default path's
+    sigma_gal -> 0 limit N(mu_cond; mu_gal, sigma_cond) exactly."""
     K = 40
     mu_cond = np.linspace(0.85, 1.15, K)
     opz = 1.0 + np.linspace(0.30, 0.50, K)
@@ -112,8 +129,135 @@ def test_mz_integral_spec_mass_robustness() -> None:
     Z0 = bs._mass_trunc_log_normalisation(4.0e6, sig0).item()
     assert np.isfinite(Z0) and Z0 > 0.0
     mz = bs._mass_trunc_mz_integral(mu_cond, 0.05, opz, 5.0e6, 4.0e6, sig0, Z0)
+    ref = _gaussian_product_mz(mu_cond, 0.05, opz, 5.0e6, 4.0e6, sig0)
     assert np.all(np.isfinite(mz))
-    assert np.all(mz >= 0.0)
+    np.testing.assert_allclose(mz, ref, rtol=1e-12)
+    # and the limit itself: sigma_gal ~ 1e-6 -> N(mu_cond; mu_gal, sigma_cond)
+    mu_gal = 4.0e6 * opz / 5.0e6
+    lim = np.exp(-0.5 * (mu_cond - mu_gal) ** 2 / 0.05**2) / np.sqrt(2.0 * np.pi * 0.05**2)
+    np.testing.assert_allclose(mz, lim, rtol=1e-6)
+
+
+def test_mz_integral_crossover_continuity_at_threshold() -> None:
+    """RATIFY-M3: mz is continuous (to the O(sigma_lnM) family difference) across
+    the crossover threshold sigma_gal = K * sigma_cond — the C0-continuity minimum
+    bar. Interior host, so truncation is negligible on both sides."""
+    K = 30
+    mu_cond = np.linspace(0.95, 1.05, K)
+    opz = np.full(K, 1.4)
+    det_M, host_M, sigma_cond = 7.0e5, 5.0e5, 0.01
+    a_gal = host_M * 1.4 / det_M  # = 1.0
+    sig_thr = bs._MASS_TRUNC_GH_CROSSOVER_K * sigma_cond / a_gal
+    for eps in (0.999, 1.001):
+        sig = sig_thr * eps
+        Z = bs._mass_trunc_log_normalisation(host_M, sig).item()
+        mz = bs._mass_trunc_mz_integral(mu_cond, sigma_cond, opz, det_M, host_M, sig, Z)
+        ref = _gaussian_product_mz(mu_cond, sigma_cond, opz, det_M, host_M, sig)
+        # both sides agree with the Gaussian product to the family difference
+        np.testing.assert_allclose(mz, ref, rtol=0.15)
+    below = bs._mass_trunc_mz_integral(
+        mu_cond,
+        sigma_cond,
+        opz,
+        det_M,
+        host_M,
+        sig_thr * 0.999,
+        bs._mass_trunc_log_normalisation(host_M, sig_thr * 0.999).item(),
+    )
+    above = bs._mass_trunc_mz_integral(
+        mu_cond,
+        sigma_cond,
+        opz,
+        det_M,
+        host_M,
+        sig_thr * 1.001,
+        bs._mass_trunc_log_normalisation(host_M, sig_thr * 1.001).item(),
+    )
+    np.testing.assert_allclose(below, above, rtol=0.15)
+
+
+def test_mz_integral_operative_regime_untouched_by_crossover() -> None:
+    """Catalogue regime (sigma_lnM ~ 0.6 >> K*sigma_cond/a_gal): the crossover must
+    NOT fire — mz equals the brute-force quadrature of the truncated LN x R_eff
+    prior against the GW Gaussian (implementation-independent reference)."""
+    K = 8
+    mu_cond = np.linspace(0.9, 1.1, K)
+    sigma_cond = 0.01
+    det_M, host_M, sigma_lnM = 5.0e6, 4.0e6, 0.6
+    opz = 1.0 + np.linspace(0.30, 0.50, K)
+    Z_M = bs._mass_trunc_log_normalisation(host_M, sigma_lnM).item()
+    mz = bs._mass_trunc_mz_integral(mu_cond, sigma_cond, opz, det_M, host_M, sigma_lnM, Z_M)
+    # brute force: int N(a; mu_cond, sigma_cond) p_M(a det_M/(1+z)) det_M/(1+z) da
+    for j in range(K):
+        a = np.linspace(mu_cond[j] - 8 * sigma_cond, mu_cond[j] + 8 * sigma_cond, 20001)
+        M = a * det_M / opz[j]
+        gw = np.exp(-0.5 * ((a - mu_cond[j]) / sigma_cond) ** 2) / (
+            np.sqrt(2.0 * np.pi) * sigma_cond
+        )
+        ref_j = np.trapezoid(gw * _pm_density(M, host_M, sigma_lnM, Z_M) * det_M / opz[j], a)
+        assert mz[j] == pytest.approx(ref_j, rel=1e-6)
+
+
+def test_mz_integral_broad_mismatched_host_keeps_fat_tail() -> None:
+    """IMPLEMENTATION CORRECTION guard (derivation §3.3): a BROAD prior
+    (sigma_lnM ~ 0.7) on a mass-mismatched host (a_gal << 1) must stay on the GH
+    path — its fat lognormal tail at the GW peak is the correct physics; the
+    Gaussian fallback would return exp(-thousands). The linearized width alone
+    (sigma_gal = 0.0037 < K*sigma_cond) would misfire here."""
+    K = 10
+    mu_cond = np.linspace(0.95, 1.05, K)
+    sigma_cond = 0.01
+    det_M, host_M, sigma_lnM = 3.0e6, 1.5e4, 0.667  # a_gal ~ 0.0055
+    opz = np.full(K, 1.10)
+    Z_M = bs._mass_trunc_log_normalisation(host_M, sigma_lnM).item()
+    mz = bs._mass_trunc_mz_integral(mu_cond, sigma_cond, opz, det_M, host_M, sigma_lnM, Z_M)
+    # reference: sharp-GW limit — the prior tail density at the GW-peak mass
+    m_star = mu_cond * det_M / opz
+    ref = _pm_density(m_star, host_M, sigma_lnM, Z_M) * det_M / opz
+    assert np.all(ref > 0.0)  # the fat tail is nonzero at these ~8 sigma_lnM
+    # rtol: GH integrates the tail over the finite sigma_cond window; the
+    # reference is the sigma_cond -> 0 pointwise limit (~1% apart here). The
+    # Gaussian fallback would be ~40 orders of magnitude low, not ~1%.
+    np.testing.assert_allclose(mz, ref, rtol=2e-2)
+
+
+def test_resolve_host_mass_kernel_auto_preserves_bundling() -> None:
+    """'auto' == the historical bundling: trunc_lognormal iff mass_trunc mode."""
+    assert bs.resolve_host_mass_kernel("auto", "mass_trunc", "auto") == "trunc_lognormal"
+    for mode in ("volume_deconv", "absolute_marginal", "generator_marginal", "global"):
+        assert bs.resolve_host_mass_kernel("auto", mode, "auto") == "gaussian"
+
+
+def test_resolve_host_mass_kernel_explicit_override() -> None:
+    """The ratified real-data combination is expressible: absolute_marginal
+    normalization x volume_deconv z-kernel x trunc_lognormal mass kernel."""
+    assert (
+        bs.resolve_host_mass_kernel("trunc_lognormal", "absolute_marginal", "auto")
+        == "trunc_lognormal"
+    )
+    assert bs.resolve_host_mass_kernel("gaussian", "mass_trunc", "auto") == "gaussian"
+
+
+def test_resolve_host_mass_kernel_unknown_raises() -> None:
+    with pytest.raises(ValueError, match="unknown host_mass_kernel"):
+        bs.resolve_host_mass_kernel("lognormal", "mass_trunc", "auto")
+
+
+def test_resolve_host_mass_kernel_point_z_guard() -> None:
+    """Prior-consistency guard (derivation §3.3): a point-resolving host-z numerator
+    with the trunc_lognormal mass kernel would give N_g and D_g DIFFERENT mass
+    priors (counted-once-in-M violation) — must raise, in every route to it."""
+    # explicit point z with the bundled mass_trunc kernel
+    with pytest.raises(ValueError, match="prior-inconsistent"):
+        bs.resolve_host_mass_kernel("auto", "mass_trunc", "point")
+    # generator_marginal auto-resolves z to point
+    with pytest.raises(ValueError, match="prior-inconsistent"):
+        bs.resolve_host_mass_kernel("trunc_lognormal", "generator_marginal", "auto")
+    # explicit point z with an explicit trunc mass kernel
+    with pytest.raises(ValueError, match="prior-inconsistent"):
+        bs.resolve_host_mass_kernel("trunc_lognormal", "absolute_marginal", "point")
+    # the gaussian mass kernel composes freely with point (production default)
+    assert bs.resolve_host_mass_kernel("auto", "generator_marginal", "auto") == "gaussian"
 
 
 def test_mz_integral_zero_when_gw_mass_outside_window() -> None:
