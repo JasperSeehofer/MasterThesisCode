@@ -3,9 +3,6 @@ from collections.abc import Iterable
 from dataclasses import dataclass, field
 from enum import Enum
 
-# import normal distribution
-from statistics import NormalDist
-
 import astropy.units as u
 import numpy as np
 import numpy.typing as npt
@@ -24,8 +21,11 @@ from master_thesis_code.physical_relations import dist
 
 _LOGGER = logging.getLogger()
 REDUCED_CATALOGUE_FILE_PATH = "./master_thesis_code/galaxy_catalogue/reduced_galaxy_catalogue.csv"
-M_min = 10**4
-M_max = 10**6
+# NB: the mass band used for catalogue pruning is passed into
+# GalaxyCatalogueHandler by the caller (main.py) from
+# constants.M_SOURCE_FRAME_MIN/MAX — the single mass boundary (issue #51).
+# The former module-level M_min/M_max = [1e4, 1e6] uncoordinated constants
+# were deleted together with the dead draw_z_and_mass_from_gaussian.
 Z_draw = 1.5
 
 
@@ -133,17 +133,6 @@ class HostGalaxy:
         # set the name to thread the requested index (e.g. -1 for a dark host).
         parameters.name = catalog_index
         return HostGalaxy(parameters)
-
-    def draw_z_and_mass_from_gaussian(self) -> None:
-        while True:
-            self.z = NormalDist(mu=self.z, sigma=self.z_error).samples(1)[0]
-            if (self.z >= 0) and (self.z <= Z_draw):
-                break
-        while True:
-            self.M = NormalDist(mu=self.M, sigma=self.M_error).samples(1)[0]
-            if (self.M >= M_min) and (self.M <= M_max):
-                break
-
 
 class CatalogueColumns(Enum):
     # NB: entries MUST stay in ascending column-value order (pandas read_csv applies

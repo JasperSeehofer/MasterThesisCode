@@ -19,7 +19,13 @@ import numpy as np
 import numpy.typing as npt
 from scipy.stats import truncnorm
 
-from master_thesis_code.constants import H_MIN, HOST_DRAW_Z_MAX, SNR_THRESHOLD
+from master_thesis_code.constants import (
+    H_MIN,
+    HOST_DRAW_Z_MAX,
+    M_SOURCE_FRAME_MAX,
+    M_SOURCE_FRAME_MIN,
+    SNR_THRESHOLD,
+)
 from master_thesis_code.datamodels.detection import (
     Detection as Detection,
 )
@@ -176,9 +182,6 @@ class Model1CrossCheck:
         self.setup_emri_events_sampler()
 
     def _apply_model_assumptions(self) -> None:
-        self.parameter_space.M.lower_limit = 10 ** (4.5)
-        self.parameter_space.M.upper_limit = 10 ** (6.0)
-
         self.parameter_space.a.value = 0.98
         self.parameter_space.a.is_fixed = True
 
@@ -230,6 +233,18 @@ class Model1CrossCheck:
         self.parameter_space.luminosity_distance.upper_limit = dist(
             redshift=self.max_redshift, h=H_MIN / 100.0
         )
+        # [PHYSICS] Detector-frame waveform/Fisher domain for parameter_space.M,
+        # which holds M_z = M_source*(1+z) at simulation/injection time (det.M
+        # convention; Maggiore 2008 GW Vol. 1 Eq. 4.7). The domain is the
+        # (1+z)-lifted image of the source-frame Babak et al. (2017)
+        # arXiv:1703.09722 valid band (constants.M_SOURCE_FRAME_MIN/MAX) over
+        # the population depth, so every drawn event fits by construction and
+        # the limits never act as an extra clamp. Population-draw rejection
+        # uses the SOURCE-frame constants directly in _log_probability.
+        # Supersedes the unjustified cbe1a6f3 override M in [10^4.5, 1e6]
+        # (issue #51, FIX-3 Amendment 2). Must be set AFTER max_redshift above.
+        self.parameter_space.M.lower_limit = M_SOURCE_FRAME_MIN
+        self.parameter_space.M.upper_limit = M_SOURCE_FRAME_MAX * (1.0 + self.max_redshift)
 
     def emri_distribution(self, M: float, redshift: float) -> float:
         return self.dN_dz_of_mass(M, redshift) * self.R_emri(M)
@@ -275,11 +290,20 @@ class Model1CrossCheck:
             return float(10 ** ((-0.2475) * np.log10(M / 2.9e7) + np.log10(14.4)))
 
     def _log_probability(self, M: float, redshift: float) -> float:
-        if not self.parameter_space.M.lower_limit < M < self.parameter_space.M.upper_limit:
+        # [PHYSICS] Source-frame draw rejection on the Babak et al. (2017)
+        # arXiv:1703.09722 valid band (constants.M_SOURCE_FRAME_MIN/MAX) — NOT
+        # on parameter_space.M.limits, which are the detector-frame domain
+        # (see _apply_model_assumptions). Issue #51 / FIX-3 Amendment 2.
+        if not M_SOURCE_FRAME_MIN < M < M_SOURCE_FRAME_MAX:
             return -np.inf
         if not 0 < redshift < self.max_redshift:
             return -np.inf
-        return float(np.log(self.emri_distribution(M, redshift)))
+        density = self.emri_distribution(M, redshift)
+        # Robustness guard for the widened band: a non-positive polynomial
+        # extrapolation must reject (-inf), not propagate NaN into emcee.
+        if not np.isfinite(density) or density <= 0.0:
+            return -np.inf
+        return float(np.log(density))
 
     def setup_emri_events_sampler(self) -> None:
         # use emcee to sample the distribution
@@ -303,10 +327,12 @@ class Model1CrossCheck:
         # vs 0.91 (pre-fix, single-batch reproduction); cross-task std halved.
         nwalkers = 50
         burn_in_steps = 10000
+        # Walkers initialise across the SOURCE-frame Babak band — the same
+        # support _log_probability accepts (detector-frame parameter_space.M
+        # limits would seed walkers in a rejected region above M_SOURCE_FRAME_MAX).
         p0_mass = self._rng.random((nwalkers, 1)) * (
-            np.log10(self.parameter_space.M.upper_limit)
-            - np.log10(self.parameter_space.M.lower_limit)
-        ) + np.log10(self.parameter_space.M.lower_limit)
+            np.log10(M_SOURCE_FRAME_MAX) - np.log10(M_SOURCE_FRAME_MIN)
+        ) + np.log10(M_SOURCE_FRAME_MIN)
         p0_redshift = self._rng.random((nwalkers, 1)) * self.max_redshift
         p0 = np.column_stack((p0_mass, p0_redshift))
         _LOGGER.info(

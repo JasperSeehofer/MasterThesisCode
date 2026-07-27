@@ -3,6 +3,7 @@ from dataclasses import dataclass, field
 
 import numpy as np
 
+from master_thesis_code.constants import M_SOURCE_FRAME_MAX, M_SOURCE_FRAME_MIN
 from master_thesis_code.exceptions import ParameterOutOfBoundsError
 from master_thesis_code.galaxy_catalogue.handler import HostGalaxy
 from master_thesis_code.physical_relations import dist, redshifted_mass
@@ -54,8 +55,12 @@ class ParameterSpace:
         default_factory=lambda: Parameter(
             symbol="M",
             unit="solar masses",
-            lower_limit=1e4,
-            upper_limit=1e7,
+            # Babak et al. (2017) arXiv:1703.09722 valid band — single source of
+            # truth in constants.py (issue #51). Model1CrossCheck lifts the upper
+            # limit to the detector-frame image M_SOURCE_FRAME_MAX*(1+max_redshift)
+            # at construction (parameter_space.M holds M_z in production).
+            lower_limit=M_SOURCE_FRAME_MIN,
+            upper_limit=M_SOURCE_FRAME_MAX,
             randomize_by_distribution=log_uniform,
             # A tiny ABSOLUTE step (1 M_sun) on a ~1e5-1e6 M_sun mass: the EMRI phase is
             # extremely M-sensitive, so the finite-difference step must keep ∂Φ/∂M·(2ε)

@@ -13,6 +13,7 @@ from typing import TYPE_CHECKING
 import numpy as np
 
 from master_thesis_code.arguments import Arguments
+from master_thesis_code.constants import M_SOURCE_FRAME_MAX, M_SOURCE_FRAME_MIN
 from master_thesis_code.cosmological_model import Model1CrossCheck
 from master_thesis_code.exceptions import ParameterEstimationError, ParameterOutOfBoundsError
 
@@ -103,9 +104,13 @@ def main() -> None:
     _write_run_metadata(arguments.working_directory, seed, arguments)
 
     cosmological_model = Model1CrossCheck(rng=rng, max_redshift_override=arguments.max_redshift)
+    # Catalogue pruning on the SOURCE-frame population band (host BH masses are
+    # rest-frame): constants.M_SOURCE_FRAME_*, the single mass boundary (issue
+    # #51). parameter_space.M.limits are the detector-frame M_z domain and must
+    # NOT be used here.
     galaxy_catalog = GalaxyCatalogueHandler(
-        M_min=cosmological_model.parameter_space.M.lower_limit,
-        M_max=cosmological_model.parameter_space.M.upper_limit,
+        M_min=M_SOURCE_FRAME_MIN,
+        M_max=M_SOURCE_FRAME_MAX,
         z_max=cosmological_model.max_redshift,
     )
 
@@ -829,7 +834,6 @@ def injection_campaign(
     # pre-#20 hardcoded 0.5 capped the grid while hosts now reach z = 1.5).
     z_cut = HOST_DRAW_Z_MAX
     skipped_high_z = 0
-    skipped_high_mz = 0
     timeout_count = 0
     # Provenance stamped into every injection row (stale-pool gate,
     # readiness sweep A2, 2026-07-03): h_inj alone cannot discriminate
@@ -903,16 +907,13 @@ def injection_campaign(
         # Eq. (4.7) in Maggiore (2008) GW Vol. 1 §4.1.4: M_z = M_source·(1+z)
         redshifted_M = redshifted_mass(sample.M, sample.redshift)  # M_z = M·(1+z)
 
-        # Symmetric M_z truncation (readiness sweep A3, 2026-07-03): the CRB
-        # path structurally excludes M_z > M.upper_limit (Fisher stencil raises
-        # ParameterOutOfBoundsError at value + 2ε), so the p_det pool must
-        # exclude the same corner or the selection function includes a
-        # population the event set cannot contain. Rate-suppressed (mass
-        # function dies above ~4e6 M_sun source-frame), expected count ~0 —
-        # the counter makes that measurable.
-        if redshifted_M > parameter_estimation.parameter_space.M.upper_limit:
-            skipped_high_mz += 1
-            continue
+        # No detector-frame truncation (issue #51, supersedes readiness sweep
+        # A3): parameter_space.M.upper_limit is now the (1+z_max)-lifted image
+        # of the source-frame draw band (Model1CrossCheck), so
+        # M_z = M_source*(1+z) <= M_SOURCE_FRAME_MAX*(1+max_redshift) holds by
+        # construction — pool and CRB event set share the full support with no
+        # extra clamp (the old A3 pool/event consistency argument is preserved
+        # structurally instead of by a cut).
         parameter_estimation.parameter_space.M.value = redshifted_M
 
         # Set luminosity distance with candidate h value (injection pipeline does not use
@@ -1008,7 +1009,7 @@ def injection_campaign(
     _flush_injection_results(results, csv_path)
     _ROOT_LOGGER.info(
         f"Injection campaign complete: {len(results)} events stored to {csv_path} "
-        f"(skipped: {skipped_high_z} high-z, {skipped_high_mz} M_z > bound, "
+        f"(skipped: {skipped_high_z} high-z, "
         f"{timeout_count} timeouts @ {_TIMEOUT_S}s)"
     )
 

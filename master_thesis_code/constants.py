@@ -109,6 +109,21 @@ GALAXY_CATALOG_REDSHIFT_UPPER_LIMIT: float = 1.55  # maximum redshift for galaxy
 # that p_det = 0 beyond. The injection-campaign z_cut derives from this
 # constant (main.py) so the P_det grid always spans the host-draw volume.
 HOST_DRAW_Z_MAX: float = 1.5
+# [PHYSICS] THE single source of truth for the EMRI population mass boundary
+# (issue #51, FIX-3 §7.1 ratification Amendment 2, 2026-07-27): the MBH mass
+# band on which the Barausse/Babak M1 EMRI rate model is specified —
+# Babak et al. (2017) arXiv:1703.09722 §2/Fig. 1 (mass function valid band),
+# source frame, solar masses. Consumed by (i) the population draw rejection
+# (cosmological_model._log_probability), (ii) catalogue pruning (main.py ->
+# GalaxyCatalogueHandler), (iii) inference host-mass integration limits
+# (bayesian_statistics). The DETECTOR-FRAME waveform/Fisher domain is the
+# derived image [M_SOURCE_FRAME_MIN, M_SOURCE_FRAME_MAX * (1 + max_redshift)]
+# set in Model1CrossCheck._apply_model_assumptions — a derived quantity, not
+# an independent bound. No other mass clamp is permitted in the pipeline
+# (supersedes the unjustified cbe1a6f3 [10^4.5, 1e6] override; narrowing only
+# if VERIFIED by the detectability pilot, docs/campaign_redesign_51_design.md).
+M_SOURCE_FRAME_MIN: float = 1e4
+M_SOURCE_FRAME_MAX: float = 1e7
 # Multiplicative safety margin on the population-derived d_L pre-screen bound
 # (physical_relations.luminosity_distance_prescreen_gpc). Placeholder pending
 # re-measurement on post-dt^2 injection data — issue #19. Replaces the retired

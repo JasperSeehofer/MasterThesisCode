@@ -34,6 +34,8 @@ from master_thesis_code.constants import (
     CRAMER_RAO_BOUNDS_OUTPUT_PATH,
     HOST_DRAW_Z_MAX,
     INJECTION_DATA_DIR,
+    M_SOURCE_FRAME_MAX,
+    M_SOURCE_FRAME_MIN,
     PREPARED_CRAMER_RAO_BOUNDS_PATH,
     SIGMA_V_PEC_KM_S,
     SNR_THRESHOLD,
@@ -2057,8 +2059,12 @@ class BayesianStatistics:
         # parameter limitations
         REDSHIFT_LOWER_LIMIT = 0.0
         REDSHIFT_UPPER_LIMIT = cosmological_model.max_redshift
-        BH_MASS_LOWER_LIMIT = cosmological_model.parameter_space.M.lower_limit
-        BH_MASS_UPPER_LIMIT = cosmological_model.parameter_space.M.upper_limit
+        # Host BH masses are SOURCE-frame: integrate over the Babak et al.
+        # (2017) arXiv:1703.09722 band from constants (the single mass
+        # boundary, issue #51). parameter_space.M.limits are now the
+        # detector-frame M_z domain and must not be used here.
+        BH_MASS_LOWER_LIMIT = M_SOURCE_FRAME_MIN
+        BH_MASS_UPPER_LIMIT = M_SOURCE_FRAME_MAX
 
         _LOGGER.debug("Creating detection probability functions...")
         detection_probability = SimulationDetectionProbability(
