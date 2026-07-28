@@ -668,6 +668,20 @@ def data_simulation(
                     "Caught brent root solver error because it did not converge. Continue with new parameters..."
                 )
                 continue
+            elif "must have different signs" in str(e):
+                # few's separatrix kernel brentq at EVOLVED (a, e(t), x(t))
+                # inside get_p_at_t/trajectory integration — a rare numerical
+                # corner of the draw (measured ~0.5-1% of events, campaign #51
+                # pilot #2 job 6073027); skippable like the Brent branch above.
+                skip_counts["snr:ValueError:SeparatrixSigns"] = (
+                    skip_counts.get("snr:ValueError:SeparatrixSigns", 0) + 1
+                )
+                _ROOT_LOGGER.warning(
+                    "Caught separatrix-kernel sign error during trajectory root-find. "
+                    "Continue with new parameters... params=%s",
+                    parameter_estimation.parameter_space._parameters_to_dict(),
+                )
+                continue
             else:
                 # SIM-07: re-raise the original (bare raise preserves type + traceback).
                 raise
@@ -922,6 +936,7 @@ def injection_campaign(
     # pre-#20 hardcoded 0.5 capped the grid while hosts now reach z = 1.5).
     z_cut = HOST_DRAW_Z_MAX
     skipped_high_z = 0
+    separatrix_sign_skips = 0
     timeout_count = 0
     stratum_counts: dict[str, int] = {"a": 0, "b": 0, "c": 0}
 
@@ -1180,6 +1195,18 @@ def injection_campaign(
                     "Caught Brent root solver error. Continue with new parameters..."
                 )
                 continue
+            elif "must have different signs" in str(e):
+                # few's separatrix kernel brentq at EVOLVED (a, e(t), x(t))
+                # inside get_p_at_t/trajectory integration (campaign #51
+                # pilot #2, job 6073027: killed 22/60 tasks before this
+                # branch existed) — skippable numerical corner of the draw.
+                separatrix_sign_skips += 1
+                _ROOT_LOGGER.warning(
+                    "Caught separatrix-kernel sign error during trajectory root-find "
+                    "(%d total). Continue with new parameters...",
+                    separatrix_sign_skips,
+                )
+                continue
             else:
                 raise
         except ZeroDivisionError:
@@ -1244,6 +1271,7 @@ def injection_campaign(
     _ROOT_LOGGER.info(
         f"Injection campaign complete: {len(results)} events stored to {csv_path} "
         f"(skipped: {skipped_high_z} high-z, "
+        f"{separatrix_sign_skips} separatrix-sign, "
         f"{timeout_count} timeouts @ {_TIMEOUT_S}s); "
         f"realized stratum counts: a={stratum_counts['a']}, "
         f"b={stratum_counts['b']}, c={stratum_counts['c']} "
