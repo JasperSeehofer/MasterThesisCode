@@ -125,6 +125,7 @@ def main() -> None:
             rng=rng,
             use_gpu=arguments.use_gpu,
             prescreen_audit=arguments.prescreen_audit,
+            snapshot_ics=arguments.snapshot_ics,
         )
 
     if arguments.evaluate:
@@ -175,6 +176,7 @@ def main() -> None:
             run_metadata_path=os.path.join(
                 arguments.working_directory, _run_metadata_filename(arguments)
             ),
+            snapshot_ics=arguments.snapshot_ics,
         )
 
     end_time = time()
@@ -380,6 +382,7 @@ def data_simulation(
     *,
     use_gpu: bool = False,
     prescreen_audit: bool = False,
+    snapshot_ics: bool = False,
 ) -> None:
     # conditional imports because they require GPU
     from master_thesis_code.memory_management import MemoryManagement
@@ -545,6 +548,27 @@ def data_simulation(
 
         try:
             signal.alarm(90)
+            # [PHYSICS] Plunge-window initial conditions (author-ratified
+            # 2026-07-28, docs/derivations/plunge_window_initial_conditions.md):
+            # t_plunge ~ U[0, T_mission] and p0 = root of t_insp(p0) = t_plunge,
+            # AFTER M_z/d_L are set (the map depends on the detector-frame
+            # mass). Replaces the snapshot p0 ~ U[10, 16] draw (HIGHM_AUDIT.md
+            # item 1: a few-input-domain artifact that contradicted the Babak
+            # 2017 plunge-rate semantics). --snapshot_ics restores the old draw
+            # (archaeology only). Inside the try: the trajectory root-find
+            # raises the same exception classes (ValueError "Brent...",
+            # ZeroDivisionError) as waveform generation, covered by the same
+            # per-event skip handlers and the 90 s alarm.
+            if not snapshot_ics:
+                from master_thesis_code.plunge_window import (  # noqa: PLC0415
+                    draw_plunge_window_initial_conditions,
+                )
+
+                draw_plunge_window_initial_conditions(
+                    parameter_estimation.parameter_space,
+                    rng,
+                    parameter_estimation.T,
+                )
             # warnings-as-errors is scoped to the waveform/SNR computation via
             # catch_warnings() so it is restored on EVERY exit path (success,
             # exception, or the quick-gate continue) and cannot leak into the
@@ -575,7 +599,11 @@ def data_simulation(
                         f"Quick SNR threshold check failed: {np.round(quick_snr, 3)} < {cosmological_model.snr_threshold * PRE_SCREEN_SNR_FACTOR}."
                     )
                     for cb in _callbacks:
-                        cb.on_snr_computed(counter, quick_snr * np.sqrt(5), False)
+                        # sqrt(T) extrapolation of the 1-yr quick SNR to the
+                        # full observation span (callback bookkeeping only).
+                        cb.on_snr_computed(
+                            counter, quick_snr * np.sqrt(parameter_estimation.T), False
+                        )
                     continue
                 snr = parameter_estimation.compute_signal_to_noise_ratio()
             if prescreen_audit:
@@ -805,6 +833,7 @@ def injection_campaign(
     injection_mixture: bool = False,
     stratum_probs: tuple[float, float, float] = _STRATUM_PROBS,
     run_metadata_path: str | None = None,
+    snapshot_ics: bool = False,
 ) -> None:
     """Run SNR-only injection campaign for detection probability estimation.
 
@@ -972,11 +1001,18 @@ def injection_campaign(
     _GPU_FREE_INTERVAL = 50  # free GPU memory every N waveform computations
     _FLUSH_INTERVAL = 2000  # flush to disk every N events
     # Aligned with the main simulation loop's 90 s alarm (readiness sweep A1,
-    # 2026-07-03): the injection SNR uses the FULL 5-yr generator and depth 1.5
+    # 2026-07-03): the injection SNR uses the FULL T-yr generator and depth 1.5
     # lifts M_z into corners never timing-profiled at the old 30 s budget;
     # timed-out events are DROPPED from the pool, so a timeout-rate correlation
     # with (d_L, M_z) would bias the p_det grid. Smoke test bins the counter.
     _TIMEOUT_S = 90
+
+    # Normalize the rng for the per-event plunge-window t_plunge draw. Seeded
+    # runs always pass an explicit rng (main() does); the fallback only affects
+    # unseeded ad-hoc runs, where randomize_parameters previously created a
+    # fresh default_rng per event anyway (non-reproducible either way).
+    if rng is None:
+        rng = np.random.default_rng()
 
     def _sigterm_handler(signum: int, frame: object) -> None:
         # SLURM sends SIGTERM at the wall-time cap. Flush the events accumulated
@@ -1096,6 +1132,21 @@ def injection_campaign(
         # Compute SNR only (no Fisher matrix, no CRB)
         try:
             signal.alarm(_TIMEOUT_S)
+            # [PHYSICS] Plunge-window initial conditions — identical convention
+            # and call as the CRB loop (data_simulation): t_plunge ~ U[0, T],
+            # p0 from the PN5 time-to-plunge root-find, AFTER M_z is set.
+            # docs/derivations/plunge_window_initial_conditions.md;
+            # --snapshot_ics restores the retired p0 ~ U[10, 16] draw.
+            if not snapshot_ics:
+                from master_thesis_code.plunge_window import (  # noqa: PLC0415
+                    draw_plunge_window_initial_conditions,
+                )
+
+                draw_plunge_window_initial_conditions(
+                    parameter_estimation.parameter_space,
+                    rng,
+                    parameter_estimation.T,
+                )
             # warnings-as-errors scoped so it is restored on every exit path and
             # cannot leak into the next iteration's population sampling (review SIM-02).
             with warnings.catch_warnings():
@@ -1171,6 +1222,13 @@ def injection_campaign(
                 # Issue #51: sampling-measure stratum of this row (estimator
                 # measure-match rule, SIZING_ANALYSIS.md §4).
                 "stratum": stratum,
+                # Plunge-window provenance (2026-07-28 convention change): the
+                # drawn plunge time (yr; NaN under --snapshot_ics) and the
+                # derived p0, so pool rows are auditable against the
+                # t_insp(p0) = t_plunge convention and pool eras are
+                # discriminable. docs/derivations/plunge_window_initial_conditions.md.
+                "t_plunge_yr": parameter_estimation.parameter_space.t_plunge_yr,
+                "p0": parameter_estimation.parameter_space.p0.value,
             }
         )
         counter += 1

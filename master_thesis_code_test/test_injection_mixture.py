@@ -36,6 +36,11 @@ from master_thesis_code.main import injection_campaign
 class _StubParameterEstimation:
     """Drop-in for ParameterEstimation: real ParameterSpace, constant SNR."""
 
+    # Mirrors ParameterEstimation.T (the plunge-window draw reads it when
+    # snapshot_ics is False; these tests run snapshot_ics=True — see
+    # _run_campaign — but the attribute keeps the stub a faithful drop-in).
+    T: float = 4.5
+
     def __init__(
         self, waveform_generation_type: object, parameter_space: ParameterSpace, use_gpu: bool
     ) -> None:
@@ -112,6 +117,11 @@ def _run_campaign(
         use_gpu=False,
         galaxy_catalog=catalog,
         injection_mixture=injection_mixture,
+        # These tests validate the (z, M) sampling-measure machinery with a
+        # stub ParameterEstimation; snapshot ICs keep the rng stream identical
+        # to the pre-plunge-window pins (bit-identity tests). The plunge-window
+        # draw itself is covered by test_plunge_window.py.
+        snapshot_ics=True,
         stratum_probs=stratum_probs,
     )
     return pd.read_csv(csv_template.format(h_label="0p73", index=0))
@@ -307,6 +317,7 @@ class TestRunMetadataStratumCounts:
             use_gpu=False,
             galaxy_catalog=cast(GalaxyCatalogueHandler, _StubGalaxyCatalog()),
             injection_mixture=True,
+            snapshot_ics=True,
             run_metadata_path=str(meta_path),
         )
         metadata = json.loads(meta_path.read_text())

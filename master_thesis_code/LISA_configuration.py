@@ -25,6 +25,7 @@ from master_thesis_code.constants import (
     LISA_ARM_LENGTH as L,
 )
 from master_thesis_code.constants import (
+    LISA_MISSION_DURATION_YEARS,
     LISA_PSD_A,
     LISA_PSD_A1,
     LISA_PSD_AK,
@@ -64,7 +65,12 @@ class LisaTdiConfiguration:
         Robson, Cornish & Liu (2019), arXiv:1803.01944
     """
 
-    t_obs_years: float = 4.0
+    # [PHYSICS] Foreground-subtraction observation time = the official LISA
+    # nominal science-operations span, 4.5 yr — Colpi et al. (2024),
+    # arXiv:2402.07571. Aligned with ParameterEstimation.T (the old 4.0 default
+    # was inconsistent with the then-T = 5 yr SNR integration). Enters only the
+    # confusion-noise knee frequencies f1(T_obs), fk(T_obs).
+    t_obs_years: float = LISA_MISSION_DURATION_YEARS
     include_confusion_noise: bool = True
 
     def power_spectral_density(
@@ -148,9 +154,7 @@ class LisaTdiConfiguration:
             # results/campaign51_20260728/highm_audit/HIGHM_AUDIT.md item 4.
             x = 2 * xp.pi * frequencies * L / C
             stochastic_transfer = 1.5 * (2 * x * xp.sin(x)) ** 2
-            instrumental = instrumental + stochastic_transfer * self._confusion_noise(
-                frequencies
-            )
+            instrumental = instrumental + stochastic_transfer * self._confusion_noise(frequencies)
         return instrumental  # type: ignore[no-any-return]
 
     def power_spectral_density_t_channel(

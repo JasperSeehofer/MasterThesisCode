@@ -153,6 +153,18 @@ INJECTION_DATA_DIR: str = "simulations/injections"
 INJECTION_CSV_PATH: str = "simulations/injections/injection_h_{h_label}_task_{index}.csv"
 
 # ── LISA hardware constants ──────────────────────────────────────────────────
+# [PHYSICS] LISA mission observation span — THE single source of truth for the
+# observation time T and the plunge window (docs/derivations/
+# plunge_window_initial_conditions.md). Official figure: Colpi et al. (2024),
+# LISA Definition Study Report, arXiv:2402.07571 — "a nominal mission duration
+# of 4.5 yr of science operations". The quoted duty cycle (>82%) is NOT
+# modeled (no gap modeling); it is a tracked systematic in
+# .planning/gate/G7_systematics_budget.md. Supersedes the unofficial T = 5 yr
+# hardcoded in ParameterEstimation since 2023 and the t_obs_years = 4.0
+# confusion-noise default. Consumers: ParameterEstimation.T,
+# LisaTdiConfiguration.t_obs_years, the plunge-window draw (plunge_window.py),
+# and the quick-SNR sqrt(T) extrapolation in main.py.
+LISA_MISSION_DURATION_YEARS: float = 4.5
 LISA_ARM_LENGTH: float = 2.5e9  # m, interferometer arm length
 YEAR_IN_SEC: int = int(365.5 * 24 * 60 * 60)  # s, seconds per year
 LISA_STEPS: int = 10_000  # number of time steps per observation year

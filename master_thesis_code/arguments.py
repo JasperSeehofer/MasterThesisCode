@@ -209,6 +209,11 @@ class Arguments:
         return bool(self._parsed_arguments.prescreen_audit)
 
     @property
+    def snapshot_ics(self) -> bool:
+        """Restore the retired snapshot p0 ~ U[10, 16] draw (archaeology only)."""
+        return bool(self._parsed_arguments.snapshot_ics)
+
+    @property
     def combine(self) -> bool:
         """Indicates whether to combine per-event posteriors into joint H0 posterior."""
         return bool(self._parsed_arguments.combine)
@@ -402,6 +407,18 @@ def _parse_arguments(arguments: list[str]) -> argparse.Namespace:
             "when the quick gate would skip, and log PRESCREEN_AUDIT lines with "
             "(quick_snr, full_snr, params). Smoke-test use only (issue #19 / "
             "PRE_SCREEN_SNR_FACTOR re-validation)."
+        ),
+    )
+    parser.add_argument(
+        "--snapshot_ics",
+        action="store_true",
+        default=False,
+        help=(
+            "Archaeology only: restore the retired snapshot initial-condition "
+            "draw p0 ~ U[10, 16] (the pre-2026-07-28 convention) instead of the "
+            "plunge-window draw t_plunge ~ U[0, T] with p0 from the PN5 "
+            "time-to-plunge root-find. See "
+            "docs/derivations/plunge_window_initial_conditions.md."
         ),
     )
     parser.add_argument(

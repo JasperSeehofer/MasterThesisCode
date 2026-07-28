@@ -7,6 +7,32 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Research (plunge-window initial conditions + official mission duration) [PHYSICS]
+- **Plunge-window initial-condition convention** (author-ratified 2026-07-28;
+  derivation `docs/derivations/plunge_window_initial_conditions.md`; audit
+  `results/campaign51_20260728/highm_audit/HIGHM_AUDIT.md` item 1). Replaces
+  the 2023 snapshot draw p0 ~ U[10, 16] (few's Pn5AAK input domain adopted as
+  a prior) with the Babak et al. (2017) arXiv:1703.09722 §III C/D convention:
+  t_plunge ~ U[0, T], p0 = root of t_insp(p0) = t_plunge on the PN5 trajectory
+  (`plunge_window.py`, `few.utils.utility.get_p_at_t`; measured realized
+  accuracy ≤ 2.8e-4 in t, ~0.33 s/draw). Domain rule: p0 ≥ p_sep(a, e0, x0) +
+  0.05 (few's separatrix buffer), no upper clamp; wired into BOTH population
+  paths (data_simulation + injection_campaign). `--snapshot_ics` restores the
+  old draw (archaeology; byte-identical rng stream). t_plunge_yr recorded in
+  injection CSVs (plus p0) and CRB rows. e0 remains drawn at t = 0 (Babak's
+  band is AT plunge): bounded transplant, measured |Δe| ≤ 0.19 (doc §4).
+- **T = 4.5 yr (official)**: new `LISA_MISSION_DURATION_YEARS = 4.5`
+  (Colpi et al. 2024 arXiv:2402.07571; duty cycle >82% = tracked systematic)
+  supersedes the unofficial `ParameterEstimation.T = 5` and aligns
+  `LisaTdiConfiguration.t_obs_years` (was 4.0) — confusion knees shift ~3%
+  (1 mHz ratio pin 4.399 → 4.301, `test_confusion_noise_transfer.py`).
+- Regression pins: OLD pins in
+  `results/campaign51_20260728/plunge_window/old_pins_test_version.py`
+  (commit first), NEW pins in `master_thesis_code_test/test_plunge_window.py`.
+- First corrected-physics high-M look (fixed PSD + plunge-window, S_eff
+  estimator): d_hor ≈ 2.3–2.5 Gpc at M_z = 3e6, ≈ 0.35–0.48 Gpc at 1e7
+  (vs snapshot-corrected 0.1–0.25 / 0.014 Gpc) — doc §11.
+
 ### Research (FIX-3 §7.1 — joint z×M_z-resolved with-BH selection survival)
 - **`--pdet_wbh_z_resolved` joint conditional S(d_L | z, M_z) [PHYSICS]**
   (derivation `docs/derivations/fix3_zmz_catalog_selection.md`, RATIFIED rev. B

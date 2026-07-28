@@ -134,6 +134,7 @@ class HostGalaxy:
         parameters.name = catalog_index
         return HostGalaxy(parameters)
 
+
 class CatalogueColumns(Enum):
     # NB: entries MUST stay in ascending column-value order (pandas read_csv applies
     # `names` to the `usecols` columns in ascending file order in parse_to_reduced_catalog).

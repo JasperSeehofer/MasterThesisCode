@@ -40,9 +40,12 @@ def test_confusion_ratio_at_0p2mhz_corrected() -> None:
 
 
 def test_confusion_ratio_at_1mhz_corrected() -> None:
-    """NEW pin: ~4.40 at 1 mHz — confusion peaks at a few x instrumental in the
-    0.8-2.5 mHz band (OLD buggy value: 7.523679e4)."""
-    assert _confusion_to_instrumental_ratio(1e-3) == pytest.approx(4.399186, rel=1e-3)
+    """NEW pin: ~4.30 at 1 mHz — confusion peaks at a few x instrumental in the
+    0.8-2.5 mHz band (OLD buggy value: 7.523679e4; 4.399186 at the retired
+    t_obs_years = 4.0 — the [PHYSICS] mission-duration alignment to 4.5 yr,
+    Colpi et al. 2024 arXiv:2402.07571, moves the subtraction knees ~3%;
+    docs/derivations/plunge_window_initial_conditions.md SS7)."""
+    assert _confusion_to_instrumental_ratio(1e-3) == pytest.approx(4.300683, rel=1e-3)
 
 
 def test_confusion_negligible_at_5mhz() -> None:

@@ -33,6 +33,7 @@ from master_thesis_code.constants import (
     ECLIPTIC_FRAME_TAG,
     ESA_TDI_CHANNELS,
     FISHER_CONDITION_NUMBER_MAX,
+    LISA_MISSION_DURATION_YEARS,
     MAXIMAL_FREQUENCY,
     MINIMAL_FREQUENCY,
     SNR_ANALYSIS_PATH,
@@ -76,7 +77,7 @@ class ParameterEstimation:
 
     Attributes:
         parameter_space: 14-parameter EMRI configuration space.
-        lisa_response_generator: LISA TDI response generator for the full 5-year observation.
+        lisa_response_generator: LISA TDI response generator for the full T-year observation.
         snr_check_generator: LISA TDI response generator for the 1-year SNR pre-check.
         dt: Time sampling interval in seconds.
         T: Observation time in years.
@@ -86,7 +87,13 @@ class ParameterEstimation:
     lisa_response_generator: Any  # ResponseWrapper at runtime; lazy-imported to avoid SIGILL on CPU
     snr_check_generator: Any  # ResponseWrapper at runtime; lazy-imported to avoid SIGILL on CPU
     dt: int = 10  # time sampling in sec
-    T: float = 5  # observation time in years
+    # [PHYSICS] Observation time = official LISA nominal science-operations
+    # span, 4.5 yr — Colpi et al. (2024), LISA Definition Study Report,
+    # arXiv:2402.07571 (duty cycle >82% NOT modeled; tracked systematic).
+    # Supersedes the unofficial T = 5 hardcoded since 2023. Also the plunge
+    # window of the initial-condition draw (plunge_window.py), so every drawn
+    # event plunges within the observed span by construction.
+    T: float = LISA_MISSION_DURATION_YEARS  # observation time in years
 
     def __init__(
         self,
@@ -498,6 +505,10 @@ class ParameterEstimation:
             | {
                 "T": self.T,
                 "dt": self.dt,
+                # Plunge-window provenance: drawn plunge time in observer years
+                # (NaN in --snapshot_ics mode). docs/derivations/
+                # plunge_window_initial_conditions.md.
+                "t_plunge_yr": self.parameter_space.t_plunge_yr,
                 "SNR": snr,
                 "generation_time": self.waveform_generation_time,
                 "host_galaxy_index": host_galaxy_index,

@@ -95,12 +95,22 @@ class ParameterSpace:
     p0: Parameter = field(
         default_factory=lambda: Parameter(
             symbol="p0",
-            unit="meters",
+            unit="dimensionless",
+            # [PHYSICS] SNAPSHOT-mode bounds only (--snapshot_ics archaeology
+            # path): [10, 16] is few's documented Pn5AAK input domain, adopted
+            # as a prior in 2023 and RETIRED as the production convention on
+            # 2026-07-28 (HIGHM_AUDIT.md item 1). Production draws p0 via the
+            # plunge-window convention (plunge_window.py: t_plunge ~ U[0, T],
+            # p0 = root of t_insp(p0) = t_plunge), which OVERWRITES this value
+            # after the detector-frame mass is set; the plunge-window domain is
+            # p0 >= p_sep(a, e0, x0) + 0.05 with no upper clamp
+            # (docs/derivations/plunge_window_initial_conditions.md).
+            # Babak et al. (2017), arXiv:1703.09722, SS III C/D.
             lower_limit=10.0,
             upper_limit=16.0,
             derivative_epsilon=1e-3,  # ~3e-4 × 13 (midpoint; dimensionless semi-latus rectum)
         )
-    )  # Kepler-orbit parameter: separation
+    )  # Kepler-orbit parameter: separation (semi-latus rectum, units of G M / c^2)
     e0: Parameter = field(
         default_factory=lambda: Parameter(
             symbol="e0",
@@ -199,6 +209,13 @@ class ParameterSpace:
         )
     )  # initial radial phase
 
+    # Plunge-window bookkeeping (NOT one of the 14 waveform parameters): the
+    # drawn plunge time in observer years, set by
+    # plunge_window.draw_plunge_window_initial_conditions and recorded in the
+    # injection/CRB CSVs for provenance. NaN in snapshot mode (--snapshot_ics)
+    # and before any plunge-window draw.
+    t_plunge_yr: float = float("nan")
+
     def randomize_parameter(self, parameter: Parameter, rng: np.random.Generator) -> None:
         parameter.value = parameter.randomize_by_distribution(
             parameter.lower_limit, parameter.upper_limit, rng
@@ -211,6 +228,9 @@ class ParameterSpace:
         for parameter in vars(self).values():
             if isinstance(parameter, Parameter) and not parameter.is_fixed:
                 self.randomize_parameter(parameter=parameter, rng=rng)
+        # Reset plunge-window provenance: stale t_plunge from a previous event
+        # must not survive into a snapshot-mode row or a failed re-draw.
+        self.t_plunge_yr = float("nan")
         self._check_separatrix_guard()
 
     def _check_separatrix_guard(self) -> None:
@@ -222,6 +242,13 @@ class ParameterSpace:
         margin >= 2.6, so this never fires today -- it protects against future
         bound changes silently entering the plunge regime.
         Stein & Warburton (2020), arXiv:1912.07609 (separatrix).
+
+        NOTE (plunge-window convention, 2026-07-28): this guard checks the
+        SNAPSHOT draw only (it runs inside randomize_parameters, before the
+        plunge-window overwrite). A plunge-window p0 legitimately lies below
+        6 + 2 e0 + 0.5 for prograde Kerr orbits; its validity is enforced by
+        construction instead (brentq bracket [p_sep_Kerr + 0.05, p_up] in
+        plunge_window.draw_plunge_window_initial_conditions).
         """
         p_sep = 6.0 + 2.0 * self.e0.value
         if self.p0.value < p_sep + 0.5:
