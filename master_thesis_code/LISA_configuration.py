@@ -137,7 +137,20 @@ class LisaTdiConfiguration:
             )
         )
         if self.include_confusion_noise:
-            instrumental = instrumental + self._confusion_noise(frequencies)
+            # [PHYSICS] Stochastic (sky-averaged strain) -> TDI-1 A-channel
+            # transfer: S_c^A = 1.5 * (2x sin x)^2 * S_c, x = 2*pi*f*L/c.
+            # The Cornish & Robson (2017) arXiv:1703.09858 confusion fit is a
+            # strain-referred sensitivity PSD; adding it raw to the
+            # relative-frequency TDI-A instrumental PSD (the pre-fix state,
+            # commit 3bed9fc) overweights confusion by ~1/(6x^2 sin^2 x)
+            # (~1e6 at 0.2 mHz). Convention/cross-check: lisatools
+            # A1TDISens.stochastic_transform (LDC); audit:
+            # results/campaign51_20260728/highm_audit/HIGHM_AUDIT.md item 4.
+            x = 2 * xp.pi * frequencies * L / C
+            stochastic_transfer = 1.5 * (2 * x * xp.sin(x)) ** 2
+            instrumental = instrumental + stochastic_transfer * self._confusion_noise(
+                frequencies
+            )
         return instrumental  # type: ignore[no-any-return]
 
     def power_spectral_density_t_channel(
