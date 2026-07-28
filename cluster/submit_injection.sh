@@ -50,6 +50,8 @@ EOF
 TASKS_PER_H=""
 STEPS=""
 SEED=""
+# Issue #51: stratified mix3_50_25_25 sampling measure (--injection_mixture).
+MIXTURE=0
 # Single h by default: the detection-horizon survival p_det is h-invariant
 # (see header). Multi-h only accumulates more pooled samples, not per-h grids.
 H_VALUES="0.73"
@@ -60,6 +62,7 @@ while [[ $# -gt 0 ]]; do
         --steps)        STEPS="$2";        shift 2 ;;
         --seed)         SEED="$2";         shift 2 ;;
         --h_values)     H_VALUES="$2";     shift 2 ;;
+        --mixture)      MIXTURE=1;         shift 1 ;;
         -h|--help)      usage ;;
         *) echo "ERROR: Unknown argument: $1" >&2; usage ;;
     esac
@@ -140,7 +143,7 @@ for h_index in "${!H_ARRAY[@]}"; do
         --array="0-$((TASKS_PER_H - 1))" \
         --output="$RUN_DIR/logs/inject_h_${h_label}_%A_%a.out" \
         --error="$RUN_DIR/logs/inject_h_${h_label}_%A_%a.err" \
-        --export=ALL,RUN_DIR="$RUN_DIR",BASE_SEED="$H_BASE_SEED",INJ_STEPS="$STEPS",H_VALUE="$h" \
+        --export=ALL,RUN_DIR="$RUN_DIR",BASE_SEED="$H_BASE_SEED",INJ_STEPS="$STEPS",H_VALUE="$h",INJ_MIXTURE="$MIXTURE" \
         "$CLUSTER_DIR/inject.sbatch")
 
     JOB_IDS+=("$JOB_ID")

@@ -88,6 +88,13 @@ ln -sfn "$RUN_DIR/simulations" "$JOB_CWD/simulations"
 ln -sfn "$PROJECT_ROOT/master_thesis_code" "$JOB_CWD/master_thesis_code"
 cd "$JOB_CWD"
 
+# Issue #51: INJ_MIXTURE=1 enables the stratified mix3_50_25_25 measure
+# (--injection_mixture; default OFF preserves the pure population draw).
+MIXTURE_FLAG=()
+if [[ "${INJ_MIXTURE:-0}" == "1" ]]; then
+    MIXTURE_FLAG=(--injection_mixture)
+fi
+
 python -m master_thesis_code "$RUN_DIR" \
     --injection_campaign \
     --h_value "$H_VALUE" \
@@ -95,6 +102,7 @@ python -m master_thesis_code "$RUN_DIR" \
     --simulation_index "$SLURM_ARRAY_TASK_ID" \
     --seed "$TASK_SEED" \
     --use_gpu \
+    ${MIXTURE_FLAG[@]+"${MIXTURE_FLAG[@]}"} \
     --log_level INFO
 
 echo ""
