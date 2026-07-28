@@ -121,6 +121,14 @@ From `SIZING_ANALYSIS.md` (measured measure × N frontier, seed 20260728):
 - **ESS floor = 1000** per catalogue-support node (⇒ per-node K5 weight
   ≥ 0.99; SE(Ŝ) ≤ 1.6 %).
 
+> **[SCORED 2026-07-28 — ALL PASS]** Delivered pool (200,100 rows, stack
+> `a9f29e8`/`f644905`, `results/campaign51_20260728/acceptance/`):
+> catalogue-weighted median ESS **9088** (≥1000 ✓), W-frac ESS<500
+> **0.077 %** (≤1 % ✓), reachable w̄ **0.99841** (≥0.99 ✓; predicted
+> 0.9985). Unreachable-ridge weight 5.041 % reported separately (exempt).
+> Grid-noding deviation found and fixed: `_WBH_ZRES_M_NODES` 31→69
+> (`6eb86ad`) per §3; criteria PASS on both nodings.
+
 Pre-registered acceptance criteria (Amendment 1, fixed here):
 1. Catalogue-weighted median ESS ≥ 1000; catalogue weight-fraction on
    ESS < 500 nodes ≤ 1 %; reachable-weight w̄ ≥ 0.99 (shrinkage measured

@@ -1,0 +1,185 @@
+{
+ "meta": {
+  "pool": "/home/jasper/Repositories/MasterThesisCode/results/campaign51_20260728/pool_mix200k",
+  "date": "2026-07-28",
+  "estimator": "SimulationDetectionProbability(pdet_z_resolved=True, pdet_wbh_z_resolved=True, expected_z_max=1.5, snr_threshold=20.0)",
+  "n_rows_joint_leg_all_strata": 200100,
+  "n_rows_marginal_leg_a_stratum": 99014,
+  "sigma_u": 0.03873098727168561,
+  "sigma_m": 0.09592350407103467,
+  "n0": 10.0,
+  "ess_replica_max_rel_dev_vs_estimator": 1.8200026341142425e-13,
+  "catalogue_profile": "/home/jasper/Repositories/MasterThesisCode/results/lcat_h_dependence_20260725/zres_survival/catalog_zw_profile.json",
+  "catalogue_W_total": 634766393.9394231,
+  "unreachable_ridge_wfrac": 0.0504111428413638,
+  "sizing_predictions_N200k_mix3": {
+   "wbar_reachable": 0.9985,
+   "median_ESS": 8160.0,
+   "wfrac_ESS_lt_500": 0.0001,
+   "grid_min_ESS_reachable": 172.0
+  }
+ },
+ "pool_delivery_facts": {
+  "n_rows": 200100,
+  "n_files": 707,
+  "per_stratum_rows": {
+   "a": 99014,
+   "b": 50947,
+   "c": 50139
+  },
+  "snr_detected_frac_overall": 0.23225887056471764,
+  "snr_detected_frac_per_stratum": {
+   "a": 0.07623164400993798,
+   "b": 0.4715488645062516,
+   "c": 0.29723369034085245
+  },
+  "m_range_detector_frame_log10": [
+   4.001703119684002,
+   7.394566970165068
+  ],
+  "z_range": [
+   6.488617913685212e-05,
+   1.4999829114340408
+  ],
+  "h_inj_unique": [
+   0.73
+  ],
+  "z_cut_unique": [
+   1.5
+  ],
+  "code_rev_unique": [
+   "a9f29e82dee4d52668297459a11a2de85a1fbd22",
+   "f6449051e21333ae2a4e4ea634d397df119c7899"
+  ],
+  "n_rows_with_t_plunge_yr": 194100,
+  "snr_threshold_used": 20.0
+ },
+ "results": {
+  "as_built": {
+   "grid": {
+    "n_u_nodes": 61,
+    "n_m_nodes": 31,
+    "u_range": [
+     0.0,
+     0.9162907318741551
+    ],
+    "m_range": [
+     4.001703119684002,
+     7.394566970165068
+    ],
+    "m_spacing_dex": 0.11309546168270224
+   },
+   "criteria": {
+    "c1_median_ESS_ge_1000": {
+     "measured_reachable": 9087.913496484303,
+     "measured_all_clamped": 8837.790512502308,
+     "pass": true
+    },
+    "c2_wfrac_ESS_lt_500_le_1pct": {
+     "measured_reachable": 0.0007749176793156341,
+     "measured_all_clamped": 0.001015287637565063,
+     "pass": true
+    },
+    "c3_wbar_reachable_ge_0p99": {
+     "measured_reachable": 0.9984055460866844,
+     "measured_all_clamped": 0.9983805486240047,
+     "pass": true
+    }
+   },
+   "catalogue_metrics": {
+    "all_clamped": {
+     "wbar": 0.9983805486240047,
+     "median_ESS": 8837.790512502308,
+     "min_ESS_at_queries": 106.30987674744041,
+     "wfrac_ESS_lt_10": 0.0,
+     "wfrac_ESS_lt_100": 0.0,
+     "wfrac_ESS_lt_500": 0.001015287637565063,
+     "wfrac_ESS_lt_1000": 0.014017867127319783
+    },
+    "reachable": {
+     "wbar": 0.9984055460866844,
+     "median_ESS": 9087.913496484303,
+     "min_ESS_at_queries": 371.4009099719525,
+     "wfrac_ESS_lt_10": 0.0,
+     "wfrac_ESS_lt_100": 0.0,
+     "wfrac_ESS_lt_500": 0.0007749176793156341,
+     "wfrac_ESS_lt_1000": 0.014275154520972787
+    }
+   },
+   "grid_node_metrics": {
+    "n_nodes": 1891,
+    "n_nodes_reachable": 1753,
+    "min_ESS_all_nodes": 90.60810786960012,
+    "min_ESS_reachable": 151.27393541740813,
+    "median_ESS_reachable": 2082.4810527463487,
+    "frac_reachable_ESS_lt_10": 0.0,
+    "frac_reachable_ESS_lt_100": 0.0,
+    "frac_reachable_ESS_lt_500": 0.05704506560182544
+   },
+   "shipped_K5_wbar_reachable": 0.9983764468582581,
+   "shipped_K5_wbar_all_clamped": 0.9983445269225045
+  },
+  "design_projected": {
+   "grid": {
+    "n_u_nodes": 61,
+    "n_m_nodes": 69,
+    "u_range": [
+     0.0,
+     0.9162907318741551
+    ],
+    "m_range": [
+     4.0,
+     7.3979400086720375
+    ],
+    "m_spacing_dex": 0.049969706009882486
+   },
+   "criteria": {
+    "c1_median_ESS_ge_1000": {
+     "measured_reachable": 8831.475378665667,
+     "measured_all_clamped": 8683.001021830676,
+     "pass": true
+    },
+    "c2_wfrac_ESS_lt_500_le_1pct": {
+     "measured_reachable": 0.0007749176793156341,
+     "measured_all_clamped": 0.0010476339425185349,
+     "pass": true
+    },
+    "c3_wbar_reachable_ge_0p99": {
+     "measured_reachable": 0.998364013429462,
+     "measured_all_clamped": 0.9983408096895967,
+     "pass": true
+    }
+   },
+   "catalogue_metrics": {
+    "all_clamped": {
+     "wbar": 0.9983408096895967,
+     "median_ESS": 8683.001021830676,
+     "min_ESS_at_queries": 105.07606307590082,
+     "wfrac_ESS_lt_10": 0.0,
+     "wfrac_ESS_lt_100": 0.0,
+     "wfrac_ESS_lt_500": 0.0010476339425185349,
+     "wfrac_ESS_lt_1000": 0.015190719934077331
+    },
+    "reachable": {
+     "wbar": 0.998364013429462,
+     "median_ESS": 8831.475378665667,
+     "min_ESS_at_queries": 393.7927513285798,
+     "wfrac_ESS_lt_10": 0.0,
+     "wfrac_ESS_lt_100": 0.0,
+     "wfrac_ESS_lt_500": 0.0007749176793156341,
+     "wfrac_ESS_lt_1000": 0.015503698740958341
+    }
+   },
+   "grid_node_metrics": {
+    "n_nodes": 4209,
+    "n_nodes_reachable": 3937,
+    "min_ESS_all_nodes": 89.69728871798378,
+    "min_ESS_reachable": 150.72238118730098,
+    "median_ESS_reachable": 2094.0268429777375,
+    "frac_reachable_ESS_lt_10": 0.0,
+    "frac_reachable_ESS_lt_100": 0.0,
+    "frac_reachable_ESS_lt_500": 0.05410210820421641
+   }
+  }
+ }
+}
