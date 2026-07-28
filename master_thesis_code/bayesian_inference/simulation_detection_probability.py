@@ -116,13 +116,20 @@ _ZRES_PILOT_DENSITY_FLOOR: float = 1e-12
 
 # ── FIX-3 §7.1: joint z x M_z-resolved with-BH detection survival ──
 # docs/derivations/fix3_zmz_catalog_selection.md (RATIFIED 2026-07-27 rev. B).
-# Grid per [RATIFY-Z3]: probe-parity 61 u-nodes on [0, ln(1+1.5)] x 31 m-nodes
-# on the pool's [min, max] of log10 M_z; storage scheme (b) — exact
-# suffix-survival evaluated on a dense 3000-point d_L query grid
+# Grid per [RATIFY-Z3] + campaign #51 design §3: 61 u-nodes on [0, ln(1+1.5)]
+# x 69 m-nodes on the pool's [min, max] of log10 M_z; storage scheme (b) —
+# exact suffix-survival evaluated on a dense 3000-point d_L query grid
 # DLQ = linspace(1e-4, 1.02·max d_hor, 3000), LINEAR interpolation in d_L at
 # query time (§3.3-C convention 1).
+# [PHYSICS] 31 -> 69 m-nodes (2026-07-28, docs/campaign_redesign_51_design.md
+# §3 ratified noding): the widened band [4.0, 7.4] at 31 nodes gives 0.113 dex
+# spacing > sigma_m ≈ 0.096 at N=200k — interpolation-fidelity intent
+# (spacing ≲ sigma_m, i.e. 0.05 dex on the new support) requires 69. ESS/w-bar
+# measured noding-insensitive (ACCEPTANCE_REPORT.md: all criteria PASS on both
+# nodings; 31-node vs 69-node w-bar 0.99841 vs 0.99836). Opt-in
+# --pdet_wbh_z_resolved path only; default paths unaffected.
 _WBH_ZRES_U_NODES: int = 61
-_WBH_ZRES_M_NODES: int = 31
+_WBH_ZRES_M_NODES: int = 69
 # u = ln(1+z) node span [0, ln(1+1.5)] — probe parity (z2.py build_surv_ulm).
 _WBH_ZRES_U_MAX: float = float(np.log(2.5))
 _WBH_ZRES_DLQ_POINTS: int = 3000

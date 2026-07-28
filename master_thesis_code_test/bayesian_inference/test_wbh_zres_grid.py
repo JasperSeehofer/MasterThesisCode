@@ -659,7 +659,12 @@ class TestQualityFlags:
             assert key in flags, key
         ess = np.asarray(flags["wbh_zres_ess"])
         w = np.asarray(flags["wbh_zres_w"])
-        assert ess.shape == w.shape == (61, 31)
+        from master_thesis_code.bayesian_inference.simulation_detection_probability import (
+            _WBH_ZRES_M_NODES,
+            _WBH_ZRES_U_NODES,
+        )
+
+        assert ess.shape == w.shape == (_WBH_ZRES_U_NODES, _WBH_ZRES_M_NODES)
         assert np.all(np.asarray(flags["wbh_zres_bias_m"], dtype=np.float64) >= 0.0)
         assert np.all(np.asarray(flags["wbh_zres_bias_u"], dtype=np.float64) >= 0.0)
 
