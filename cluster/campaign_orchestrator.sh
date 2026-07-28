@@ -29,13 +29,19 @@ cd "$PROJECT_ROOT"
 
 WS="${WORKSPACE:-$(ws_find emri 2>/dev/null)}"
 WS="${WS:-/pfs/work9/workspace/scratch/st_ac147838-emri}"
-POOL="$WS/injection_pool_depth15_50k"
+# Pool + pipeline list are env-overridable (campaign #51, 2026-07-28) so new
+# campaigns don't require editing this script:
+#   POOL_OVERRIDE=$WS/injection_pool_mix200k_20260728 \
+#   PIPELINES_SPEC="61000:0.73 62000:0.73 63000:0.73 64000:0.67 65000:0.77" \
+#       bash cluster/campaign_orchestrator.sh
+POOL="${POOL_OVERRIDE:-$WS/injection_pool_depth15_50k}"
 MAIN_LOG="$WS/campaign_orchestrator.log"
 SUB_LOG="$WS/campaign_orchestrator_submissions.log"
 
-# Remaining campaign pipelines, submitted in order: "BASE_SEED:h_true"
-# (seed1000 @ 0.73 was submitted manually 2026-07-03, jobs 5743694-97).
-PIPELINES=("2000:0.73" "3000:0.73" "4000:0.73" "5000:0.67" "6000:0.77")
+# Campaign pipelines, submitted in order: "BASE_SEED:h_true".
+# Default = the phase-2 list (seed1000 @ 0.73 was submitted manually
+# 2026-07-03, jobs 5743694-97); override via PIPELINES_SPEC.
+read -ra PIPELINES <<< "${PIPELINES_SPEC:-2000:0.73 3000:0.73 4000:0.73 5000:0.67 6000:0.77}"
 
 # Submit the next 143-job pipeline only below this expanded-array queue depth.
 # Conservative: the per-user cap sits somewhere in (294, 544]; 150 + 143 stays
