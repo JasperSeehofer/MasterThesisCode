@@ -143,6 +143,12 @@ d_hor max 6.2 Gpc ≫ the 1.82 Gpc catalogue depth). **Detections continue
 above 10⁶ with near-certainty — narrowing is NOT verified and is not
 assumed.**
 
+> **[SUPERSEDED same day]** The pilot block below is QUARANTINED: its SNRs
+> carried the confusion-noise TDI-transfer bug (fixed `49251f3`,
+> `HIGHM_AUDIT.md` item 4) and the snapshot-p0 convention gap (item 1).
+> Narrowing verdict VOID. Pilot re-runs after the convention decision;
+> bulk array 6070769 cancelled, its 228 task CSVs quarantined.
+
 > **[EXECUTED 2026-07-28 — see `results/campaign51_20260728/PILOT_READOUT.md`]**
 > Pilot ran as the first 6k campaign tranche (job 6070423). The sizing
 > expectation is OVERTURNED: the horizon collapses above the old cap (last

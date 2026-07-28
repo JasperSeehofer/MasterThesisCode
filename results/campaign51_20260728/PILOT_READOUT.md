@@ -1,5 +1,15 @@
 # Campaign #51 pilot readout — detectability-verified-narrowing (2026-07-28)
 
+> **[QUARANTINED same day — HIGHM_AUDIT.md]** The pilot's SNRs carry the
+> confusion-noise TDI-transfer artifact (fixed in `49251f3`: suppression up
+> to ~1100× above m ≈ 6.2) and the snapshot-p0 convention issue (audit item
+> 1). The horizon table below is NOT the physical horizon; the narrowing-rule
+> scoring is VOID (it would not reproduce on corrected data). What stands:
+> the mixture-sampling mechanics (strata realized on target, zero
+> tracebacks), the throughput measurement, the timeout profile, and the
+> no-FEW-failure-wall finding to M_z = 10^7.37. The pilot re-runs after the
+> initial-condition convention decision.
+
 **Setup.** First campaign tranche = pilot: job 6070423, 60 A100 tasks × 100
 events = 6,000 injections under the stratified mixture (`--injection_mixture`,
 stack `8535ab2`), seeds 51000–51059, run

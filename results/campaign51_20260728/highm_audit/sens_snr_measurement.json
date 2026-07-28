@@ -1,0 +1,42 @@
+{
+  "m5.5_p10": {
+    "snr_sens_1gpc": 51.86289396763694,
+    "snr_sens_noconf_1gpc": 51.8629231887657,
+    "dhor_corrected_gpc": 2.593144698381847
+  },
+  "m6.0_p10": {
+    "snr_sens_1gpc": 99.84628889424799,
+    "snr_sens_noconf_1gpc": 104.64186750581092,
+    "dhor_corrected_gpc": 4.9923144447124
+  },
+  "m6.2_p10": {
+    "snr_sens_1gpc": 16.16877134347538,
+    "snr_sens_noconf_1gpc": 34.34709234485647,
+    "dhor_corrected_gpc": 0.808438567173769
+  },
+  "m6.4_p10": {
+    "snr_sens_1gpc": 5.0934864569331335,
+    "snr_sens_noconf_1gpc": 10.017149803578434,
+    "dhor_corrected_gpc": 0.2546743228466567
+  },
+  "m6.6_p10": {
+    "snr_sens_1gpc": 2.1690104257355056,
+    "snr_sens_noconf_1gpc": 3.2997061120525473,
+    "dhor_corrected_gpc": 0.10845052128677528
+  },
+  "m7.0_p10": {
+    "snr_sens_1gpc": 0.28531628167485124,
+    "snr_sens_noconf_1gpc": 0.30404089411184865,
+    "dhor_corrected_gpc": 0.014265814083742561
+  },
+  "m6.6_p13": {
+    "snr_sens_1gpc": 0.7819877090224345,
+    "snr_sens_noconf_1gpc": 0.9795370551580689,
+    "dhor_corrected_gpc": 0.039099385451121724
+  },
+  "m7.4_p16": {
+    "snr_sens_1gpc": 0.08115896738472593,
+    "snr_sens_noconf_1gpc": 0.08417552746704854,
+    "dhor_corrected_gpc": 0.0040579483692362965
+  }
+}
