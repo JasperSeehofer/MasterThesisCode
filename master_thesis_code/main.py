@@ -818,6 +818,13 @@ _INJECTION_COLUMNS = [
     # 'c' = flat-(u, m) draw. Pure-a campaigns write 'a' for every row; the
     # estimator treats an absent column as all-'a' (legacy pools).
     "stratum",
+    # Plunge-window provenance (2026-07-28): drawn plunge time (yr; NaN under
+    # --snapshot_ics) and derived p0. NB _flush_injection_results writes with
+    # an explicit columns= list, so a key missing HERE is silently dropped —
+    # pilot #3 (job 6073215, 6k rows) shipped without these two columns for
+    # exactly that reason; optional for the estimator, so those rows stay valid.
+    "t_plunge_yr",
+    "p0",
 ]
 
 # Ratified stratified-mixture proportions (alpha_a, alpha_b, alpha_c) —
