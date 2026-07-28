@@ -143,6 +143,15 @@ d_hor max 6.2 Gpc ≫ the 1.82 Gpc catalogue depth). **Detections continue
 above 10⁶ with near-certainty — narrowing is NOT verified and is not
 assumed.**
 
+> **[EXECUTED 2026-07-28 — see `results/campaign51_20260728/PILOT_READOUT.md`]**
+> Pilot ran as the first 6k campaign tranche (job 6070423). The sizing
+> expectation is OVERTURNED: the horizon collapses above the old cap (last
+> detection at detector m = 6.143; five-decade d_hor fall by m = 6.8). The
+> rule FIRES at source lg\* = 6.5 — narrowing verified available — but is
+> **DECLINED [AUTHOR-REVIEW]** (would reintroduce a second draw constant;
+> saving ~5 GPU-h; full-band coverage makes p_det ≈ 0 a measured statement).
+> No FEW-validity wall observed up to M_z = 10^7.37. Bulk released.
+
 Pilot (runs FIRST): **N = 2,000** SNR-only injections, log-uniform source
 M ∈ [10^5.8, 10⁷] (half-bin overlap with the existing pool for
 cross-validation), z from the measure-a z-marginal, detector-frame
