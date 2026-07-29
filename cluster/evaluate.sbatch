@@ -49,6 +49,19 @@ set -euo pipefail
 
 H_VALUES=(0.600 0.610 0.620 0.630 0.640 0.650 0.655 0.660 0.665 0.670 0.675 0.680 0.685 0.690 0.695 0.700 0.705 0.710 0.715 0.720 0.725 0.730 0.735 0.740 0.745 0.750 0.755 0.760 0.765 0.770 0.775 0.780 0.785 0.790 0.800 0.810 0.820 0.830 0.840 0.850 0.860)
 
+# Optional ZOOM grid (campaign #51, 2026-07-29): H_VALUES_OVERRIDE replaces the
+# canonical grid with a space-separated list, e.g.
+#   --export=ALL,...,H_VALUES_OVERRIDE="0.7280 0.7281 ..."
+# Needed because the corrected-physics posterior is ~15x narrower than the
+# canonical 0.005 peak step (seed 61000: sigma_h ~ 3.2e-4), so sigma and any
+# bias are unresolvable on the canonical grid. Unset/empty => byte-identical to
+# the canonical grid (TC-14 single-source rule still holds for production runs;
+# a zoom run must record its grid in the run's readout).
+if [[ -n "${H_VALUES_OVERRIDE:-}" ]]; then
+    read -ra H_VALUES <<< "$H_VALUES_OVERRIDE"
+    echo "  H grid: ZOOM override with ${#H_VALUES[@]} values (${H_VALUES[0]} .. ${H_VALUES[-1]})"
+fi
+
 H_VALUE="${H_VALUES[$SLURM_ARRAY_TASK_ID]}"
 
 # ---------------------------------------------------------------------------
