@@ -38,7 +38,7 @@ from master_thesis_code.constants import (
     MINIMAL_FREQUENCY,
     SNR_ANALYSIS_PATH,
 )
-from master_thesis_code.datamodels.parameter_space import ParameterSpace
+from master_thesis_code.datamodels.parameter_space import Parameter, ParameterSpace
 from master_thesis_code.decorators import timer_decorator
 from master_thesis_code.exceptions import (
     ParameterEstimationError,
@@ -200,6 +200,10 @@ class ParameterEstimation:
         base_waveform = self.generate_lisa_response()
 
         for parameter in vars(self.parameter_space).values():
+            # Skip non-Parameter provenance attributes (t_plunge_yr) — see the
+            # matching guard in five_point_stencil_derivative.
+            if not isinstance(parameter, Parameter):
+                continue
             _LOGGER.info(
                 f"Start computing partial derivative of the waveform w.r.t. {parameter.symbol}."
             )
@@ -253,6 +257,12 @@ class ParameterEstimation:
             _LOGGER.info(f"GPU memory before derivatives: {pool.total_bytes() / 1e9:.2f} GB")
 
         for parameter in vars(self.parameter_space).values():
+            # ParameterSpace also carries non-Parameter provenance attributes
+            # (t_plunge_yr, a float) — the derivative loop iterates ONLY the
+            # Parameter objects (same guard as randomize_parameters; campaign
+            # #51 field regression, cluster job 6076055).
+            if not isinstance(parameter, Parameter):
+                continue
             _LOGGER.info(f"Computing 5-point stencil derivative w.r.t. {parameter.symbol}.")
 
             derivative_epsilon = parameter.derivative_epsilon
