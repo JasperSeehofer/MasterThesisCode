@@ -162,6 +162,15 @@ fi
 if [[ "${PDET_WBH_Z_RESOLVED:-}" == "yes" ]]; then
     EXTRA_ARGS+=(--pdet_wbh_z_resolved)
 fi
+# Optional --observed_catalogue pass-through (campaign #53 realistic host
+# observations, docs/derivations/realistic_host_observation_model.md): path to
+# an observed_catalogue_seed{S}.csv realization; its .meta.json sidecar is read
+# and hash-verified, and the scatter guards then REFUSE the point z-kernel and
+# generator_marginal. Unset/empty => the baseline (unscattered) catalogue,
+# byte-identical to pre-#53 behaviour.
+if [[ -n "${OBSERVED_CATALOGUE:-}" ]]; then
+    EXTRA_ARGS+=(--observed_catalogue "$OBSERVED_CATALOGUE")
+fi
 # Optional --host_z_kernel pass-through (issue #40a decomposition flag):
 # unset/empty keeps the CLI default ("auto" bundling) — byte-identical.
 if [[ -n "${HOST_Z_KERNEL:-}" ]]; then
