@@ -1,0 +1,43 @@
+{
+  "n_rows": 22634764,
+  "F1_floor_violations_150kms": 0,
+  "F1_pass": true,
+  "F2_n_provably_corrected_class": 93673,
+  "F2_frac_provably_corrected": 0.004138457109603617,
+  "F2_n_spec_rows": 261218,
+  "F2_n_spec_provably_corrected": 87734,
+  "F2_note": "rows with z_error >= (1+z)*500km/s/c are ambiguous between {uncorrected} and {corrected with large measurement error}; the PV class split is irrecoverable from the reduced CSV",
+  "F3_mc_rows": [
+    {
+      "row": "spec_min_sigma",
+      "z": 0.0017937518863204,
+      "flag": 3,
+      "sigma_kernel(z_error)": 0.0005282073550389,
+      "mc_std_single_total": 0.0005280906313302067,
+      "mc_std_componentwise": 0.0005287961236233141,
+      "rel_err_single": 0.0002209808469719743,
+      "rel_err_componentwise": 0.0011146542712769936
+    },
+    {
+      "row": "spec_median_sigma",
+      "z": 0.062634,
+      "flag": 3,
+      "sigma_kernel(z_error)": 0.0025376806017424,
+      "mc_std_single_total": 0.002539289991686459,
+      "mc_std_componentwise": 0.002534791161588249,
+      "rel_err_single": 0.0006341972047050337,
+      "rel_err_componentwise": 0.0011386145885210475
+    },
+    {
+      "row": "photo_median_sigma",
+      "z": 0.199081,
+      "flag": 1,
+      "sigma_kernel(z_error)": 0.0396423757235692,
+      "mc_std_single_total": 0.03963439297306882,
+      "mc_std_componentwise": 0.039630162783344455,
+      "rel_err_single": 0.00020136912469737034,
+      "rel_err_componentwise": 0.0003080779091017005
+    }
+  ],
+  "F3_pass": true
+}
