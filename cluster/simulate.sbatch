@@ -33,7 +33,7 @@
 # constantly and are never blocked behind multi-day jobs, so they start far sooner
 # than the contended gpu_h100 partition. Same H100 hardware -> identical per-event
 # CRBs; only the per-task event count changes.
-#SBATCH --partition=gpu_h100_short,gpu_h100_il
+#SBATCH --partition=gpu_h100_short,gpu_h100_il,gpu_a100_short,gpu_a100_il
 #SBATCH --gres=gpu:1
 #SBATCH --time=00:30:00
 #SBATCH --ntasks=1
