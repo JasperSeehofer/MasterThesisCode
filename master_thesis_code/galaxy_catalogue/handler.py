@@ -1,4 +1,5 @@
 import logging
+import os
 from collections.abc import Iterable
 from dataclasses import dataclass, field
 from enum import Enum
@@ -220,29 +221,79 @@ class GalaxyCatalogueHandler:
     M_max: float
     z_max: float
 
-    def __init__(self, M_min: float, M_max: float, z_max: float) -> None:
+    def __init__(
+        self,
+        M_min: float,
+        M_max: float,
+        z_max: float,
+        observed_catalogue_path: str | None = None,
+    ) -> None:
         self.M_min = M_min
         self.M_max = M_max
         self.z_max = z_max
         self._angles_mapped_to_ecliptic: bool = False
-        try:
-            self.reduced_galaxy_catalog = self.read_reduced_galaxy_catalog()
-            _LOGGER.info("Successfully loaded reduced galaxy catalog.")
-        except FileNotFoundError:
-            _LOGGER.info(
-                "Reduced galaxy catalog not found. Looking for GLADE+.txt in ./galaxy_catalogue directory."
+        # [PHYSICS] Realistic host-observation model (campaign #53, RATIFIED
+        # 2026-07-29, docs/derivations/realistic_host_observation_model.md §6):
+        # when an OBSERVED-catalogue realization is provided, load it instead
+        # of the baseline reduced catalogue and read its hashed sidecar. The
+        # sidecar's sigma_scale drives the one-directional prior-consistency
+        # guards (§3.4/§9): sigma_scale > 0 => `scattered` is True and the
+        # point host-z kernel / generator_marginal mode are refused downstream.
+        # Default (observed_catalogue_path=None) is byte-identical to the
+        # pre-#53 load path.
+        self._scattered: bool = False
+        self.realization_metadata: dict[str, object] | None = None
+        if observed_catalogue_path is not None:
+            from master_thesis_code.galaxy_catalogue.observed_realization import (
+                load_realization_sidecar,
             )
+
+            if not os.path.isfile(observed_catalogue_path):
+                raise FileNotFoundError(f"observed catalogue not found: {observed_catalogue_path}")
+            sidecar = load_realization_sidecar(observed_catalogue_path)
+            if sidecar is None:
+                # Guard §9 item 4: missing sidecar => legacy/unscattered
+                # baseline catalogue; log PROMINENTLY.
+                _LOGGER.warning(
+                    "Observed catalogue %s has NO realization sidecar — treating it "
+                    "as a LEGACY UNSCATTERED baseline catalogue (guard 4, "
+                    "docs/derivations/realistic_host_observation_model.md §9). "
+                    "Baseline modes stay permitted.",
+                    observed_catalogue_path,
+                )
+            else:
+                self.realization_metadata = sidecar
+                self._scattered = float(sidecar["sigma_scale"]) > 0.0  # type: ignore[arg-type]
+                _LOGGER.info(
+                    "Loaded observed-catalogue realization %s (realization_seed=%s, "
+                    "sigma_scale=%s, sidecar sha256 of CSV verified).",
+                    observed_catalogue_path,
+                    sidecar.get("realization_seed"),
+                    sidecar.get("sigma_scale"),
+                )
+            self.reduced_galaxy_catalog = self.read_reduced_galaxy_catalog(
+                path=observed_catalogue_path
+            )
+            _LOGGER.info("Successfully loaded observed galaxy catalogue.")
+        else:
             try:
-                self.parse_to_reduced_catalog(
-                    galaxy_catalogue_file_path="./master_thesis_code/galaxy_catalogue/GLADE+.txt"
-                )
                 self.reduced_galaxy_catalog = self.read_reduced_galaxy_catalog()
-                _LOGGER.info("Successfully reduced and loaded galaxy catalog.")
+                _LOGGER.info("Successfully loaded reduced galaxy catalog.")
             except FileNotFoundError:
-                _LOGGER.error(
-                    "No reduced galaxy catalog or GLADE+.txt export was found. Please provide galaxy catalog and restart."
+                _LOGGER.info(
+                    "Reduced galaxy catalog not found. Looking for GLADE+.txt in ./galaxy_catalogue directory."
                 )
-                raise FileNotFoundError
+                try:
+                    self.parse_to_reduced_catalog(
+                        galaxy_catalogue_file_path="./master_thesis_code/galaxy_catalogue/GLADE+.txt"
+                    )
+                    self.reduced_galaxy_catalog = self.read_reduced_galaxy_catalog()
+                    _LOGGER.info("Successfully reduced and loaded galaxy catalog.")
+                except FileNotFoundError:
+                    _LOGGER.error(
+                        "No reduced galaxy catalog or GLADE+.txt export was found. Please provide galaxy catalog and restart."
+                    )
+                    raise FileNotFoundError
 
         _LOGGER.info(
             "Mapping catalog to spherical coordinates and using empirical relation to estimate BH mass."
@@ -408,7 +459,22 @@ class GalaxyCatalogueHandler:
 
             chunk.to_csv(REDUCED_CATALOGUE_FILE_PATH, header=False, mode="a", index=False)
 
-    def read_reduced_galaxy_catalog(self) -> pd.DataFrame:
+    @property
+    def scattered(self) -> bool:
+        """True iff the loaded catalogue is a scattered observed realization.
+
+        Read from the realization sidecar (``sigma_scale > 0``). Drives the
+        one-directional prior-consistency guards of the realistic
+        host-observation model (docs/derivations/
+        realistic_host_observation_model.md §3.4/§9): a scattered catalogue
+        refuses the point host-z kernel and the ``generator_marginal``
+        normalization; an unscattered catalogue permits every baseline mode.
+        """
+        # getattr fallback: some tests construct the handler via
+        # object.__new__ (repo idiom) and never run __init__.
+        return bool(getattr(self, "_scattered", False))
+
+    def read_reduced_galaxy_catalog(self, path: str | None = None) -> pd.DataFrame:
         """Load the reduced catalog (RAW equatorial ICRS degrees, pre-rotation).
 
         The on-disk sky columns are GLADE equatorial RA/Dec (deg). They are renamed
@@ -417,9 +483,16 @@ class GalaxyCatalogueHandler:
         does not leave a column literally named "RIGHT_ASCENSION" holding an ecliptic
         longitude. After that rotation these columns hold ecliptic φ (rad) and polar
         angle θ ∈ [0, π] (rad). See .planning/FRAME-AUDIT.md.
+
+        Args:
+            path: Optional catalogue CSV override (same 8-column headerless
+                schema) — used for OBSERVED-catalogue realizations (campaign
+                #53, docs/derivations/realistic_host_observation_model.md §6).
+                Default None reads the baseline reduced catalogue,
+                byte-identical to the historical behaviour.
         """
         catalog = pd.read_csv(
-            REDUCED_CATALOGUE_FILE_PATH,
+            REDUCED_CATALOGUE_FILE_PATH if path is None else path,
             names=_reduced_catalog_column_names(),
         )
         return catalog.rename(

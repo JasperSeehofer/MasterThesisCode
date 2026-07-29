@@ -214,6 +214,34 @@ class Arguments:
         return bool(self._parsed_arguments.snapshot_ics)
 
     @property
+    def realize_observed_catalogue(self) -> bool:
+        """Generate a seeded observed-catalogue realization (campaign #53, §6.1)."""
+        return bool(self._parsed_arguments.realize_observed_catalogue)
+
+    @property
+    def realization_seed(self) -> int | None:
+        """Seed of the observed-catalogue realization (required with --realize_observed_catalogue)."""
+        val: int | None = self._parsed_arguments.realization_seed
+        return val
+
+    @property
+    def realization_sigma_scale(self) -> float:
+        """Global width multiplier of the realization; 0 = byte-identical copy (R6 gate)."""
+        return float(self._parsed_arguments.realization_sigma_scale)
+
+    @property
+    def realization_parent(self) -> str | None:
+        """Parent (TRUE) catalogue CSV for the realization; None = the reduced catalogue."""
+        val: str | None = self._parsed_arguments.realization_parent
+        return val
+
+    @property
+    def observed_catalogue(self) -> str | None:
+        """Observed-catalogue CSV (+ sidecar) to evaluate against; None = baseline catalogue."""
+        val: str | None = self._parsed_arguments.observed_catalogue
+        return val
+
+    @property
     def combine(self) -> bool:
         """Indicates whether to combine per-event posteriors into joint H0 posterior."""
         return bool(self._parsed_arguments.combine)
@@ -261,6 +289,35 @@ class Arguments:
                 f"{self._parsed_arguments.simulation_steps} could not be converted to integer."
                 "Please provide an integer value as follows '--simulation_steps <int>'."
             ) from original_error
+
+        # Observed-catalogue realization stage (campaign #53, docs/derivations/
+        # realistic_host_observation_model.md §6.1): the realization is a pure
+        # function of (parent CSV, seed, sigma_scale) — an explicit seed is
+        # therefore mandatory (no silent random realization seeds).
+        if self.realize_observed_catalogue and self.realization_seed is None:
+            raise ArgumentsError(
+                "--realize_observed_catalogue requires an explicit "
+                "--realization_seed <int> (the realization must be a pure, "
+                "reproducible function of parent + seed + sigma_scale)."
+            )
+        if self.realization_sigma_scale < 0:
+            raise ArgumentsError(
+                f"--realization_sigma_scale must be >= 0, got {self.realization_sigma_scale}."
+            )
+        # Convention (A) [RATIFY-R1]: the observed catalogue is visible to the
+        # INFERENCE only. The injection/simulation side always runs on the TRUE
+        # (baseline) catalogue — refuse any pairing that would leak the
+        # realization into the generative path.
+        if self.observed_catalogue is not None and (
+            self.simulation_steps > 0 or self.injection_campaign or self.snr_analysis
+        ):
+            raise ArgumentsError(
+                "--observed_catalogue is an evaluation-side override only "
+                "(convention (A): the injection/simulation side uses the TRUE "
+                "catalogue; docs/derivations/realistic_host_observation_model.md "
+                "§1.2/§5). Drop --simulation_steps/--injection_campaign/"
+                "--snr_analysis or drop --observed_catalogue."
+            )
 
 
 def _parse_arguments(arguments: list[str]) -> argparse.Namespace:
@@ -574,6 +631,68 @@ def _parse_arguments(arguments: list[str]) -> argparse.Namespace:
             "consume Sigma_glob ('global', 'absolute_marginal'). Incompatible with "
             "'generator_marginal' (that mode is defined with the point/point "
             "sigma_z pairing and rejects this flag)."
+        ),
+    )
+    parser.add_argument(
+        "--realize_observed_catalogue",
+        action="store_true",
+        default=False,
+        help=(
+            "[PHYSICS] Campaign #53 (RATIFIED 2026-07-29, docs/derivations/"
+            "realistic_host_observation_model.md §6.1): write a seeded "
+            "OBSERVED-catalogue realization of the reduced catalogue into the "
+            "working directory (observed_catalogue_seed{S}.csv + hashed "
+            ".meta.json sidecar). One total Gaussian per row from the stored "
+            "width columns ([RATIFY-R2] counted-once): z_obs = z + N(0, "
+            "z_error), clipped at 1e-5; ln M_obs = ln M + N(0, M_error/M). "
+            "Requires --realization_seed. The parent catalogue, every CRB and "
+            "the injection pool are untouched (convention (A))."
+        ),
+    )
+    parser.add_argument(
+        "--realization_seed",
+        type=int,
+        default=None,
+        help=(
+            "Seed for the observed-catalogue realization (required with "
+            "--realize_observed_catalogue). The realization is a pure function "
+            "of (parent CSV, seed, sigma_scale) — bit-reproducible."
+        ),
+    )
+    parser.add_argument(
+        "--realization_sigma_scale",
+        type=float,
+        default=1.0,
+        help=(
+            "Global width multiplier for the realization (default 1.0). "
+            "0 writes a BYTE-IDENTICAL copy of the parent catalogue — the "
+            "mandatory sigma->0 regression gate ([RATIFY-R6] / P5)."
+        ),
+    )
+    parser.add_argument(
+        "--realization_parent",
+        type=str,
+        default=None,
+        help=(
+            "Parent (TRUE) catalogue CSV for --realize_observed_catalogue. "
+            "Default: the production reduced catalogue "
+            "(master_thesis_code/galaxy_catalogue/reduced_galaxy_catalogue.csv)."
+        ),
+    )
+    parser.add_argument(
+        "--observed_catalogue",
+        type=str,
+        default=None,
+        help=(
+            "[PHYSICS] Evaluate against an OBSERVED-catalogue realization: path "
+            "to observed_catalogue_seed{S}.csv (the .meta.json sidecar is read "
+            "from the same location and its hash verified). Scattered sidecar "
+            "(sigma_scale > 0) activates the one-directional prior-consistency "
+            "guards: --host_z_kernel point and --normalization_mode "
+            "generator_marginal are refused (use absolute_marginal + "
+            "volume_deconv, [RATIFY-R3]). Evaluation-side only; the simulation/"
+            "injection stages always use the TRUE catalogue (convention (A)). "
+            "Default: the baseline reduced catalogue, byte-identical behaviour."
         ),
     )
     parser.add_argument(

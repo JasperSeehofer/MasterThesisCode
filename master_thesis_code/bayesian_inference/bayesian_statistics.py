@@ -109,7 +109,9 @@ DEFAULT_GALAXY_Z_ERROR = 0.0015
 HOST_Z_KERNEL_CHOICES = ("auto", "point", "volume_deconv")
 
 
-def resolve_host_z_kernel(host_z_kernel: str, normalization_mode: str) -> str:
+def resolve_host_z_kernel(
+    host_z_kernel: str, normalization_mode: str, *, catalogue_scattered: bool = False
+) -> str:
     """Resolve the numerator host-z kernel selection to 'point' or 'volume_deconv'.
 
     Decomposition flag for issue #40(a): makes the delta-kernel (point/point)
@@ -121,22 +123,54 @@ def resolve_host_z_kernel(host_z_kernel: str, normalization_mode: str) -> str:
     (``n_hat_w``/``D_gen`` vs ``n_bar_w``/``D``) remains governed by
     ``normalization_mode``.
 
+    [PHYSICS] Scatter guard (realistic host-observation model, RATIFIED
+    2026-07-29, docs/derivations/realistic_host_observation_model.md §3.1/§9
+    guard 1): on a SCATTERED observed-catalogue realization
+    (``catalogue_scattered=True``, i.e. sidecar sigma_scale > 0) the point
+    (delta) kernel loses its licence — the realized data-generating process is
+    exactly the width-sigma marginal, so point evaluation is a model error of
+    order sigma_z * dln d_L/dz relative to sigma_dL/d_L. The guard is
+    ONE-DIRECTIONAL: unscattered catalogues (default False) keep every
+    baseline mode.
+
     Args:
         host_z_kernel: One of ``HOST_Z_KERNEL_CHOICES``.
         normalization_mode: The in-catalogue normalization mode (see ``p_Di``).
+        catalogue_scattered: True iff the loaded catalogue is a scattered
+            observed realization (``GalaxyCatalogueHandler.scattered``).
 
     Returns:
         ``"point"`` (delta kernel at the catalogue z_g) or ``"volume_deconv"``
         (the mode's own quadrature kernel — volume-deconvolved in the
         ``*_marginal`` modes, bare Gaussian in "global"/"local_ratio").
+
+    Raises:
+        ValueError: Unknown choice, or a point-resolving kernel on a
+            scattered catalogue.
     """
     if host_z_kernel not in HOST_Z_KERNEL_CHOICES:
         raise ValueError(
             f"unknown host_z_kernel: {host_z_kernel!r} (expected one of {HOST_Z_KERNEL_CHOICES})"
         )
-    if host_z_kernel == "auto":
-        return "point" if normalization_mode == "generator_marginal" else "volume_deconv"
-    return host_z_kernel
+    resolved = (
+        ("point" if normalization_mode == "generator_marginal" else "volume_deconv")
+        if host_z_kernel == "auto"
+        else host_z_kernel
+    )
+    if catalogue_scattered and resolved == "point":
+        raise ValueError(
+            "host-z kernel resolves to 'point' but the loaded catalogue is a "
+            "SCATTERED observed realization (sidecar sigma_scale > 0): the "
+            "delta kernel's licence is the unscattered-generator premise, which "
+            "is false by construction under the realized noise — the truth is "
+            "distributed with width sigma_z around each observed row, exactly "
+            "the marginal the width kernel computes "
+            "(docs/derivations/realistic_host_observation_model.md §3.1, guard "
+            "§9.1). Use --host_z_kernel volume_deconv with "
+            "--normalization_mode absolute_marginal (the ratified real-data "
+            "pairing, [RATIFY-R3])."
+        )
+    return resolved
 
 
 # [PHYSICS] Issue #40 remainder (2D mass-marginal, RATIFIED 2026-07-27,
@@ -150,7 +184,11 @@ HOST_MASS_KERNEL_CHOICES = ("auto", "gaussian", "trunc_lognormal")
 
 
 def resolve_host_mass_kernel(
-    host_mass_kernel: str, normalization_mode: str, host_z_kernel: str
+    host_mass_kernel: str,
+    normalization_mode: str,
+    host_z_kernel: str,
+    *,
+    catalogue_scattered: bool = False,
 ) -> str:
     """Resolve the 2D host-mass kernel selection to 'gaussian' or 'trunc_lognormal'.
 
@@ -168,12 +206,25 @@ def resolve_host_mass_kernel(
     DIFFERENT mass priors, violating the counted-once-in-M invariant. That
     combination raises instead of running silently.
 
+    [PHYSICS] Scatter guard (realistic host-observation model, RATIFIED
+    2026-07-29, docs/derivations/realistic_host_observation_model.md §9,
+    with-BH channel): on a SCATTERED observed-catalogue realization the
+    point-M treatment — the analytic mass product point-anchored by the
+    delta host-z numerator (issue #24 pairing) — loses its licence exactly
+    like the z delta kernel: the realized catalogue mass carries the
+    ~0.24 dex forward scatter of §1.3, so BOTH resolved mass kernels are
+    only licensed together with a width host-z numerator. The guard is
+    enforced by resolving the host-z kernel under ``catalogue_scattered``
+    (one-directional; unscattered catalogues keep every baseline pairing).
+
     Args:
         host_mass_kernel: One of ``HOST_MASS_KERNEL_CHOICES``.
         normalization_mode: The in-catalogue normalization mode (see ``p_Di``).
         host_z_kernel: The (unresolved) numerator host-z kernel selection;
             resolved internally via :func:`resolve_host_z_kernel` for the
             prior-consistency guard.
+        catalogue_scattered: True iff the loaded catalogue is a scattered
+            observed realization (``GalaxyCatalogueHandler.scattered``).
 
     Returns:
         ``"gaussian"`` (analytic Gaussian mass product + G2d moment-matched
@@ -195,6 +246,13 @@ def resolve_host_mass_kernel(
         if host_mass_kernel == "auto"
         else host_mass_kernel
     )
+    if catalogue_scattered:
+        # Scatter guard (§9, with-BH channel): a point-resolving host-z
+        # numerator would point-anchor the mass product on a catalogue whose
+        # masses now carry the realized ~0.24 dex scatter — refuse regardless
+        # of which width mass kernel is selected. Raises inside
+        # resolve_host_z_kernel with the derivation-cited message.
+        resolve_host_z_kernel(host_z_kernel, normalization_mode, catalogue_scattered=True)
     if (
         resolved == "trunc_lognormal"
         and resolve_host_z_kernel(host_z_kernel, normalization_mode) == "point"
@@ -210,6 +268,62 @@ def resolve_host_mass_kernel(
             "with the truncated mass kernel."
         )
     return resolved
+
+
+def validate_scatter_guards(
+    normalization_mode: str,
+    host_z_kernel: str,
+    host_mass_kernel: str,
+    catalogue_scattered: bool,
+) -> None:
+    """Enforce the scattered-catalogue prior-consistency guard set.
+
+    [PHYSICS] Realistic host-observation model (RATIFIED 2026-07-29,
+    docs/derivations/realistic_host_observation_model.md §3.4 / §9): when the
+    loaded catalogue is a SCATTERED observed realization (sidecar
+    sigma_scale > 0), refuse
+
+    1. any point-resolving host-z kernel (§9 guard 1, via
+       :func:`resolve_host_z_kernel`),
+    2. ``normalization_mode == 'generator_marginal'`` altogether (§9 guard 2:
+       its selection leg is derived FOR the point/point unscattered-generator
+       premise, DERIVATION_GENERATOR_CONSISTENT_NORM.md §4.3), and
+    3. the point-anchored with-BH mass pairing (§9, via
+       :func:`resolve_host_mass_kernel`).
+
+    The guard is ONE-DIRECTIONAL (§9 guard 3): on an unscattered catalogue
+    (``catalogue_scattered=False``, including sigma_scale = 0 realizations
+    and legacy no-sidecar catalogues) this is a no-op and every baseline
+    mode stays permitted.
+
+    Args:
+        normalization_mode: The in-catalogue normalization mode.
+        host_z_kernel: The (unresolved) numerator host-z kernel selection.
+        host_mass_kernel: The (unresolved) 2D host-mass kernel selection.
+        catalogue_scattered: ``GalaxyCatalogueHandler.scattered`` of the
+            loaded catalogue.
+
+    Raises:
+        ValueError: Any refused combination under scatter.
+    """
+    if not catalogue_scattered:
+        return
+    if normalization_mode == "generator_marginal":
+        raise ValueError(
+            "normalization_mode='generator_marginal' is refused on a SCATTERED "
+            "observed-catalogue realization (sidecar sigma_scale > 0): the "
+            "mode's selection leg is derived FOR the point/point unscattered-"
+            "generator premise (DERIVATION_GENERATOR_CONSISTENT_NORM.md §4.3), "
+            "which the realized noise falsifies by construction "
+            "(docs/derivations/realistic_host_observation_model.md §3.3/§3.4, "
+            "guard §9.2). Use --normalization_mode absolute_marginal "
+            "--host_z_kernel volume_deconv (the ratified real-data pairing, "
+            "[RATIFY-R3])."
+        )
+    resolve_host_z_kernel(host_z_kernel, normalization_mode, catalogue_scattered=True)
+    resolve_host_mass_kernel(
+        host_mass_kernel, normalization_mode, host_z_kernel, catalogue_scattered=True
+    )
 
 
 GALAXY_LIKELIHOODS = "galaxy_likelihoods"
@@ -2014,6 +2128,25 @@ class BayesianStatistics:
                 "incompatible with it. Drop the flag (or use 'absolute_marginal' "
                 "for the kernel/smeared pairing)."
             )
+        # [PHYSICS] Realistic host-observation model (campaign #53, RATIFIED
+        # 2026-07-29): one-directional scattered-catalogue guard set (§3.4/§9).
+        # getattr fallback: tests construct lightweight stand-in catalogues
+        # without the sidecar plumbing — those are unscattered by definition.
+        self._catalogue_scattered = bool(getattr(galaxy_catalog, "scattered", False))
+        validate_scatter_guards(
+            normalization_mode=normalization_mode,
+            host_z_kernel=host_z_kernel,
+            host_mass_kernel=host_mass_kernel,
+            catalogue_scattered=self._catalogue_scattered,
+        )
+        if self._catalogue_scattered:
+            _LOGGER.info(
+                "Scattered observed-catalogue realization loaded (sidecar: %s) — "
+                "point host-z kernel and generator_marginal refused; width "
+                "kernels are load-bearing "
+                "(docs/derivations/realistic_host_observation_model.md).",
+                getattr(galaxy_catalog, "realization_metadata", None),
+            )
         if normalization_mode == "global":
             warnings.warn(
                 "normalization_mode='global' is mis-calibrated for photometric-redshift "
@@ -2513,6 +2646,23 @@ class BayesianStatistics:
                     os.makedirs("simulations/posteriors")
                 if not os.path.isdir("simulations/posteriors_with_bh_mass"):
                     os.makedirs("simulations/posteriors_with_bh_mass")
+
+                # Observed-catalogue provenance (§6.1 item 3): record the
+                # realization sidecar next to the posteriors so every leg of a
+                # run is verifiably tied to ONE realization. Written as a
+                # SEPARATE file (not inside the per-event h_*.json) so the
+                # per-event posterior schema — and the sigma_scale = 0
+                # bit-identity gate [RATIFY-R6] on those files — is untouched.
+                _realization_metadata = getattr(galaxy_catalog, "realization_metadata", None)
+                if _realization_metadata is not None:
+                    for _prov_dir in (
+                        "simulations/posteriors",
+                        "simulations/posteriors_with_bh_mass",
+                    ):
+                        with open(
+                            os.path.join(_prov_dir, "realization_provenance.json"), "w"
+                        ) as _prov_file:
+                            json.dump(_realization_metadata, _prov_file, indent=2)
 
                 # 4-decimal precision required to distinguish Phase-50 superdense
                 # midpoints (Δh=0.0005, e.g. 0.7205 / 0.7215) from the dense Δh=0.001

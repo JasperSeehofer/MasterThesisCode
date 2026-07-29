@@ -94,6 +94,48 @@ def main() -> None:
             label="catalog_only" if arguments.catalog_only else "current",
         )
 
+    if arguments.realize_observed_catalogue:
+        # [PHYSICS] Campaign #53 observed-catalogue realization stage
+        # (docs/derivations/realistic_host_observation_model.md §6.1). Pure
+        # CPU, no model needed; provenance goes to a dedicated metadata file
+        # (the sidecar itself carries the full realization record).
+        from master_thesis_code.galaxy_catalogue.handler import REDUCED_CATALOGUE_FILE_PATH
+        from master_thesis_code.galaxy_catalogue.observed_realization import (
+            observed_catalogue_filename,
+            realize_observed_catalogue,
+        )
+
+        _write_run_metadata(
+            arguments.working_directory,
+            arguments.seed,
+            arguments,
+            filename="run_metadata_realization.json",
+        )
+        _realization_seed = arguments.realization_seed
+        assert _realization_seed is not None  # enforced by Arguments.validate()
+        _observed_path = os.path.join(
+            arguments.working_directory, observed_catalogue_filename(_realization_seed)
+        )
+        _parent_path = (
+            arguments.realization_parent
+            if arguments.realization_parent is not None
+            else REDUCED_CATALOGUE_FILE_PATH
+        )
+        _sidecar = realize_observed_catalogue(
+            parent_csv_path=_parent_path,
+            output_csv_path=_observed_path,
+            realization_seed=_realization_seed,
+            sigma_scale=arguments.realization_sigma_scale,
+        )
+        _ROOT_LOGGER.info(
+            "Observed catalogue written to %s (sha256 %s); evaluate with "
+            "--observed_catalogue %s --normalization_mode absolute_marginal "
+            "--host_z_kernel volume_deconv",
+            _observed_path,
+            _sidecar["observed_csv_sha256"],
+            _observed_path,
+        )
+
     if not _needs_model:
         end_time = time()
         _ROOT_LOGGER.debug(f"Finished in {end_time - start_time}s.")
@@ -113,6 +155,11 @@ def main() -> None:
         M_min=M_SOURCE_FRAME_MIN,
         M_max=M_SOURCE_FRAME_MAX,
         z_max=cosmological_model.max_redshift,
+        # [PHYSICS] Campaign #53: evaluation-side OBSERVED-catalogue override
+        # (None = baseline reduced catalogue, byte-identical behaviour).
+        # Arguments.validate() refuses pairing this with any generative stage
+        # (convention (A); realistic_host_observation_model.md §1.2/§5).
+        observed_catalogue_path=arguments.observed_catalogue,
     )
 
     if arguments.simulation_steps > 0 and not arguments.injection_campaign:
