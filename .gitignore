@@ -62,3 +62,10 @@ cluster/vpn.sh
 .cartographer-notes.md
 docs/coauthor_meeting_*.md
 docs/reviews/
+
+# Campaign #51/#53 bulk data mirrors (regenerable; canonical copies live on the
+# bwUniCluster workspace — see results/campaign51_20260728/RUNBOOK_NEXT_SESSION_5.md)
+results/campaign51_20260728/pool_mix200k/
+results/campaign51_20260728/pilot/injections/
+results/campaign51_20260728/pilot3/injections/
+results/campaign51_20260728/run_seed*/prepared_*.csv
