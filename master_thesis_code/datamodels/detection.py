@@ -7,10 +7,29 @@ import numpy as np
 import pandas as pd
 from scipy.stats import truncnorm
 
-from master_thesis_code.constants import ECLIPTIC_FRAME_TAG
+from master_thesis_code.constants import (
+    ECLIPTIC_FRAME_TAG,
+    HOST_DRAW_Z_MAX,
+    M_SOURCE_FRAME_MAX,
+    M_SOURCE_FRAME_MIN,
+)
 from master_thesis_code.physical_relations import dist
 
 _LOGGER = logging.getLogger(__name__)
+
+# [PHYSICS] Physical support of the MEASURED detector-frame mass M_z used by the
+# measurement-scatter draw below. DERIVED from the single mass boundary
+# (constants.M_SOURCE_FRAME_MIN/MAX, the Babak et al. (2017) arXiv:1703.09722
+# source-frame valid band) lifted to the detector frame over the population
+# depth: M_z = M_source*(1+z) <= M_SOURCE_FRAME_MAX*(1+HOST_DRAW_Z_MAX)
+# (Maggiore 2008 GW Vol. 1 Eq. 4.7) — the SAME derived domain
+# Model1CrossCheck._apply_model_assumptions puts on parameter_space.M, so the
+# scatter draw can never clip a physically drawn event.
+# Supersedes the hardcoded [1e4, 1e6] literals (issue #51): on campaign #51
+# seed 61000 those pinned 127/1590 measured masses (8.0 %) at exactly 1e6 while
+# the true CRB masses reached 1.63e6 with no pile-up.
+_M_Z_DOMAIN_MIN: float = M_SOURCE_FRAME_MIN
+_M_Z_DOMAIN_MAX: float = M_SOURCE_FRAME_MAX * (1.0 + HOST_DRAW_Z_MAX)
 
 
 def _sky_localization_uncertainty(
@@ -218,7 +237,7 @@ class Detection:
         self.phi = float(np.clip(sample[0], 0.0, 2.0 * np.pi))
         self.theta = float(np.clip(sample[1], 0.0, np.pi))
         self.d_L = float(np.clip(sample[2], 0.0, dist(1.5)))
-        self.M = float(np.clip(sample[3], 1e4, 1e6))
+        self.M = float(np.clip(sample[3], _M_Z_DOMAIN_MIN, _M_Z_DOMAIN_MAX))
 
     # -- legacy independent truncated-normal draws --------------------------
 
@@ -245,8 +264,8 @@ class Detection:
         ).rvs(1)[0]
 
         self.M = truncnorm(
-            (1e4 - self.M) / self.M_uncertainty,
-            (1e6 - self.M) / self.M_uncertainty,
+            (_M_Z_DOMAIN_MIN - self.M) / self.M_uncertainty,
+            (_M_Z_DOMAIN_MAX - self.M) / self.M_uncertainty,
             loc=self.M,
             scale=self.M_uncertainty,
         ).rvs(1)[0]
