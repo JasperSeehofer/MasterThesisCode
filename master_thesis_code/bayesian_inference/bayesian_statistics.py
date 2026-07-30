@@ -2786,6 +2786,10 @@ class BayesianStatistics:
         # the per-event diagnostics CSV afterwards.
         _n_in_cat_class = 0
         _n_dark_class = 0
+        # P6 host-recovery counters (INSTR-3): of the in-catalogue events, how many
+        # had their TRUE host actually returned by the candidate search, per channel.
+        _n_recovered_no_bh = 0
+        _n_recovered_with_bh = 0
         _sum_ln_p_in_cat_no_bh = 0.0
         _sum_ln_p_in_cat_with_bh = 0.0
         _sum_ln_p_dark_no_bh = 0.0
@@ -2906,6 +2910,20 @@ class BayesianStatistics:
                 _n_in_cat_class += 1
                 _sum_ln_p_in_cat_no_bh += _ln_p_no_bh
                 _sum_ln_p_in_cat_with_bh += _ln_p_with_bh
+                # P6: was the TRUE host among the candidates the production search
+                # actually returned? Checked against those exact lists (never a
+                # second, parallel search), so the counter can only ever agree
+                # with what the estimator consumed. The translation handles the
+                # observed-catalogue case where injection-time and evaluation
+                # frames have pruned different rows.
+                _translated = galaxy_catalog.resolve_host_recovery_position(
+                    self.detection.host_galaxy_index
+                )
+                if _translated is not None:
+                    if _translated in {host.catalog_index for host in candidate_hosts}:
+                        _n_recovered_no_bh += 1
+                    if _translated in {host.catalog_index for host in candidate_hosts_with_bh_mass}:
+                        _n_recovered_with_bh += 1
             else:
                 _n_dark_class += 1
                 _sum_ln_p_dark_no_bh += _ln_p_no_bh
@@ -2954,6 +2972,21 @@ class BayesianStatistics:
             _n_dark_class,
             _sum_ln_p_dark_no_bh,
             _sum_ln_p_dark_with_bh,
+        )
+
+        # P6 host-recovery (INSTR-3): numerator and denominator stated explicitly so
+        # the rate can never be misread. _n_in_cat_class IS the denominator -- there
+        # is no second, separately-maintained "in-cat events seen" count.
+        _LOGGER.info(
+            "P6 host-recovery (h=%.4f): 1D %d/%d hosts recovered/in-cat events seen "
+            "(%.7g%%), 2D %d/%d hosts recovered/in-cat events seen (%.7g%%)",
+            self.h,
+            _n_recovered_no_bh,
+            _n_in_cat_class,
+            (100.0 * _n_recovered_no_bh / _n_in_cat_class if _n_in_cat_class else float("nan")),
+            _n_recovered_with_bh,
+            _n_in_cat_class,
+            (100.0 * _n_recovered_with_bh / _n_in_cat_class if _n_in_cat_class else float("nan")),
         )
 
     def p_Di(

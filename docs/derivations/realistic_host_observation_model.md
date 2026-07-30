@@ -642,7 +642,9 @@ in h; σ_H0 = 100·I_tot^{-1/2} km/s/Mpc ✓. Kernel densities unchanged from G2
 | `master_thesis_code/galaxy_catalogue/handler.py:344-389` | parse-time counted-once σ_z fold | UNCHANGED (source of the totals the realization draws from) |
 | `handler.py:411-460` (`read_reduced_galaxy_catalog`) | catalogue load | loads the OBSERVED catalogue file when provided; reads sidecar |
 | `handler.py:260-278` (`_get_pruned_galaxy_catalog`) | mass/z pruning | operates on observed values → §5.3 edge-crossing logging |
-| `handler.py:508-541`, `:800-870` (ball-trees, `get_possible_hosts`) | candidate search windows | operate on observed rows; host-miss rate logged (P6) |
+| `handler.py:544-556` (`setup_galaxy_catalog_balltree`), `:558-658` (`get_possible_hosts_from_ball_tree`) | candidate search windows | operate on observed rows; the search itself is UNCHANGED |
+| `handler.py:660-707` (`resolve_host_recovery_position`), `:709-766` (helpers) | — (new) | translates `Detection.host_galaxy_index` from the INJECTION run's pruned+`reset_index` frame into this handler's own frame, via the shared pre-prune parent row-identity space (a positional comparison is wrong once the observed prune drops different rows) |
+| `bayesian_statistics.py:2977-2990` (P6 log line in `p_D`) | — (new) | logs the P6 host-recovery counter once per h-iteration: hosts recovered / in-catalogue events seen, separately for the 1D and 2D channels, counted against the candidate lists the production search actually returned |
 | `handler.py:692-800` (`draw_rate_weighted_hosts`) | injection-side truth draw | UNCHANGED (truth = parent catalogue; existing seeds valid) |
 | `handler.py:885-891`, `:1117-1131` (mass relation) | catalogue mass + M_error | UNCHANGED (σ_lnM source column) |
 | `master_thesis_code/datamodels/parameter_space.py:260-273` | injection d_L, M_z from truth | UNCHANGED (the §7 CPU-only verdict rests here) |
