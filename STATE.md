@@ -43,6 +43,16 @@ machines. Detailed, ephemeral working notes are kept out of the repository by de
   test, non-blocking robustness check).
 - **P–P impostor-capable harness extension** in progress on branch `feat/pp-impostor-harness`
   (verification hardening, non-blocking).
+- **2026-07-31 (quick task 260731-14d, on `physics/kernel-soft-membership`): evaluate-path
+  instrumentation landed** (`9522467`/`b287670`/`234890f`): per-class per-h Σ ln p_i logging both
+  channels, w_G at 7 s.f., P6 host-recovery counter with pruned-frame index translation +
+  regression test, derivation-doc P6 claim corrected. Output-invariant (verified); 1170 tests
+  green. Ordered by the Gate B/C adjudication (`results/campaign51_20260728/realistic_20260729/
+  gate_b_20260730/ADJUDICATION_20260730.md` §5.2) after the 2026-07-30 gates executed on the #53
+  2D-bias claim set (C3/C5/C7/C8 → FINDING; new C9 w_G ×2.5 mis-calibration z=−11.86; cell B 2×2
+  jobs 6101146/6101147 pending). Caveat (executor-flagged): the P6 counter's scattered path
+  assumes injection and evaluation share M_min/M_max/z_max — true for the standard main.py
+  workflow, documented inline.
 
 ### Resolved (2026-07-25 investigation, superseded by the 2026-07-26 milestone below)
 
