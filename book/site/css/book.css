@@ -1,0 +1,562 @@
+/* book.css — shared style for the EMRI Dark Siren discovery book.
+ *
+ * Palette mirrors master_thesis_code/plotting/_colors.py (Okabe-Ito +
+ * "Observatory + Atlas" tokens) so book figures and prose read as one
+ * system with the thesis's own static/interactive plots.
+ *   METHOD.dark      #0072B2  -- primary accent (dark/galaxy-catalog siren)
+ *   METHOD.combined  #1a1a1a  -- headline text / truth lines
+ *   PLANCK_BAND      #CC79A7
+ *   SHOES_BAND       #56B4E9
+ *   PRIOR            #9e9e9e
+ */
+
+:root {
+  --accent: #0072B2;
+  --accent-soft: #56B4E9;
+  --ink: #1a1a1a;
+  --paper: #ffffff;
+  --paper-raised: #f6f7f9;
+  --border: #d8dce1;
+  --muted: #5b6270;
+  --planck: #CC79A7;
+  --shoes: #56B4E9;
+  --prior: #9e9e9e;
+  --code-bg: #f0f1f4;
+  --measure: 72ch;
+  --radius: 10px;
+  --focus-ring: 0 0 0 3px rgba(0, 114, 178, 0.35);
+}
+
+:root[data-theme="dark"] {
+  --accent: #6fb8e8;
+  --accent-soft: #56B4E9;
+  --ink: #eef1f5;
+  --paper: #14161a;
+  --paper-raised: #1c1f25;
+  --border: #33373f;
+  --muted: #9aa2b1;
+  --code-bg: #1c1f25;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --accent: #6fb8e8;
+    --accent-soft: #56B4E9;
+    --ink: #eef1f5;
+    --paper: #14161a;
+    --paper-raised: #1c1f25;
+    --border: #33373f;
+    --muted: #9aa2b1;
+    --code-bg: #1c1f25;
+  }
+}
+
+* { box-sizing: border-box; }
+
+html { color-scheme: light dark; }
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font: 16px/1.65 -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+  text-rendering: optimizeLegibility;
+}
+
+.book-shell {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  min-height: 100vh;
+}
+
+/* --- top bar ------------------------------------------------------- */
+
+.book-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.6rem 1.25rem;
+  background: color-mix(in srgb, var(--paper) 88%, transparent);
+  backdrop-filter: saturate(140%) blur(6px);
+  border-bottom: 1px solid var(--border);
+}
+
+.book-topbar .brand {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--ink);
+  text-decoration: none;
+  letter-spacing: 0.01em;
+}
+.book-topbar .brand small {
+  display: block;
+  font-weight: 400;
+  color: var(--muted);
+  font-size: 0.72rem;
+}
+
+.book-nav {
+  display: flex;
+  gap: 0.9rem;
+  flex-wrap: wrap;
+  font-size: 0.88rem;
+}
+.book-nav a {
+  color: var(--muted);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+}
+.book-nav a:hover,
+.book-nav a[aria-current="page"] {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+.theme-toggle {
+  border: 1px solid var(--border);
+  background: var(--paper-raised);
+  color: var(--ink);
+  border-radius: 999px;
+  padding: 0.35rem 0.7rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+  line-height: 1;
+}
+.theme-toggle:hover { border-color: var(--accent); }
+
+/* --- content column -------------------------------------------------- */
+
+main.book-content {
+  width: min(var(--measure), 100% - 2.5rem);
+  margin: 0 auto;
+  padding: 2.25rem 0 5rem;
+}
+
+main.book-content h1 {
+  font-size: 2rem;
+  line-height: 1.2;
+  margin-bottom: 0.25rem;
+}
+main.book-content h2 {
+  font-size: 1.4rem;
+  margin-top: 2.6rem;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 0.35rem;
+}
+main.book-content h3 { font-size: 1.12rem; margin-top: 1.8rem; }
+
+.subtitle { color: var(--muted); margin-top: 0; }
+
+p, li { max-width: var(--measure); }
+
+a { color: var(--accent); }
+
+code, pre {
+  font-family: "SFMono-Regular", Consolas, Menlo, monospace;
+  background: var(--code-bg);
+  border-radius: 6px;
+}
+code { padding: 0.1em 0.35em; font-size: 0.9em; }
+pre { padding: 0.9rem 1rem; overflow-x: auto; }
+pre code { background: none; padding: 0; }
+
+hr {
+  border: none;
+  border-top: 1px dashed var(--border);
+  margin: 2.5rem 0;
+}
+
+blockquote {
+  margin: 1.2rem 0;
+  padding: 0.2rem 1rem;
+  border-left: 3px solid var(--accent);
+  color: var(--muted);
+  background: var(--paper-raised);
+  border-radius: 0 6px 6px 0;
+}
+
+/* --- callout / motivation boxes -------------------------------------- */
+
+.callout {
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--accent);
+  background: var(--paper-raised);
+  border-radius: var(--radius);
+  padding: 1rem 1.15rem;
+  margin: 1.4rem 0;
+}
+.callout .callout-label {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 0.35rem;
+}
+.callout.without {
+  border-left-color: #D55E00;
+}
+.callout.without .callout-label { color: #D55E00; }
+.callout.defect {
+  border-left-color: var(--planck);
+  background: color-mix(in srgb, var(--planck) 8%, var(--paper-raised));
+}
+.callout.defect .callout-label { color: var(--planck); }
+
+/* --- self-check / hidden-answer blocks -------------------------------- */
+
+.selfcheck {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.9rem 1.15rem;
+  margin: 1rem 0;
+  background: var(--paper-raised);
+}
+.selfcheck > p:first-child { font-weight: 600; margin-top: 0; }
+
+details.answer {
+  margin-top: 0.6rem;
+}
+details.answer > summary {
+  cursor: pointer;
+  color: var(--accent);
+  font-size: 0.92rem;
+  user-select: none;
+}
+details.answer > summary:focus-visible { outline: none; box-shadow: var(--focus-ring); border-radius: 4px; }
+details.answer[open] > summary { margin-bottom: 0.5rem; }
+details.answer .answer-body { color: var(--ink); }
+
+/* --- interactive widget shell ----------------------------------------- */
+
+.widget {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--paper-raised);
+  padding: 1.1rem 1.2rem 1.3rem;
+  margin: 1.4rem 0;
+}
+.widget h4 {
+  margin: 0 0 0.6rem;
+  font-size: 0.95rem;
+}
+.widget .widget-plot {
+  width: 100%;
+  min-height: 320px;
+}
+.widget .widget-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.6rem;
+  flex-wrap: wrap;
+}
+.widget .widget-controls label {
+  font-size: 0.85rem;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.widget input[type="range"] {
+  flex: 1 1 auto;
+  min-width: 160px;
+  accent-color: var(--accent);
+}
+.widget .readout {
+  font-variant-numeric: tabular-nums;
+  font-size: 0.88rem;
+  min-width: 8ch;
+}
+.widget .readout strong { color: var(--accent); }
+
+.widget .predict-row {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.7rem;
+  flex-wrap: wrap;
+}
+.widget .predict-row button {
+  border: 1px solid var(--border);
+  background: var(--paper);
+  color: var(--ink);
+  border-radius: 6px;
+  padding: 0.4rem 0.75rem;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+.widget .predict-row button:hover { border-color: var(--accent); }
+.widget .predict-row button[aria-pressed="true"] {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, var(--paper));
+}
+.widget .reveal {
+  margin-top: 0.6rem;
+  font-size: 0.9rem;
+  padding: 0.6rem 0.8rem;
+  border-radius: 6px;
+  background: var(--code-bg);
+  display: none;
+}
+.widget .reveal.shown { display: block; }
+
+/* --- provenance chips & status badges (writing rule 1 & 2) ------------- */
+
+/* Every widget carries one: <span class="prov-chip real">real: seed61000/real_r1</span>
+   or <span class="prov-chip toy">toy: analytic</span>. Every measured number can carry
+   an inline <span class="prov-chip">G2b:229-237</span>. */
+.prov-chip {
+  display: inline-block;
+  font-family: "SFMono-Regular", Consolas, Menlo, monospace;
+  font-size: 0.68rem;
+  line-height: 1.5;
+  padding: 0.05em 0.5em;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--code-bg);
+  color: var(--muted);
+  vertical-align: middle;
+  white-space: nowrap;
+}
+.prov-chip.real { border-color: var(--accent); color: var(--accent); }
+.prov-chip.toy  { border-color: #E69F00; color: #b07500; }
+:root[data-theme="dark"] .prov-chip.toy { color: #E69F00; }
+
+/* Status badges — the project's trust tiers, used verbatim.
+   <span class="badge ratified">RATIFIED</span> etc. */
+.badge {
+  display: inline-block;
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 0.1em 0.5em;
+  border-radius: 4px;
+  vertical-align: middle;
+  border: 1px solid transparent;
+}
+.badge.ratified   { background: rgba(0, 158, 115, 0.15); color: #007a5c; border-color: #009E73; }
+.badge.candidate  { background: rgba(230, 159, 0, 0.15); color: #9c6d00; border-color: #E69F00; }
+.badge.finding    { background: rgba(0, 114, 178, 0.13); color: var(--accent); border-color: var(--accent); }
+.badge.open       { background: rgba(158, 158, 158, 0.15); color: var(--muted); border-color: var(--prior); }
+.badge.refuted    { background: rgba(213, 94, 0, 0.14); color: #a44900; border-color: #D55E00; }
+.badge.exonerated { background: rgba(213, 94, 0, 0.14); color: #a44900; border-color: #D55E00; }
+.badge.confounded { background: rgba(204, 121, 167, 0.16); color: #a24e7f; border-color: var(--planck); }
+:root[data-theme="dark"] .badge.ratified  { color: #35d0a5; }
+:root[data-theme="dark"] .badge.candidate { color: #E69F00; }
+:root[data-theme="dark"] .badge.refuted,
+:root[data-theme="dark"] .badge.exonerated { color: #ff8b47; }
+:root[data-theme="dark"] .badge.confounded { color: #e096bf; }
+
+/* --- the three voices (writing rule 7) --------------------------------- */
+/* narrator = default prose; derivation = .voice-derivation; adjudicator = .voice-adjudicator */
+.voice-derivation {
+  border-left: 3px solid #009E73;
+  background: var(--paper-raised);
+  padding: 0.6rem 1rem;
+  margin: 1.1rem 0;
+  border-radius: 0 6px 6px 0;
+  font-size: 0.95rem;
+}
+.voice-adjudicator {
+  border-left: 3px solid var(--planck);
+  background: var(--paper-raised);
+  padding: 0.6rem 1rem;
+  margin: 1.1rem 0;
+  border-radius: 0 6px 6px 0;
+  font-size: 0.95rem;
+  font-style: italic;
+}
+.voice-derivation .voice-label,
+.voice-adjudicator .voice-label {
+  display: block;
+  font-style: normal;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 0.2rem;
+}
+
+/* --- "For the GW reader" collapsible stratum (persona P2) --------------- */
+details.gw-reader {
+  border: 1px dashed var(--border);
+  border-radius: var(--radius);
+  padding: 0.5rem 0.9rem;
+  margin: 1.1rem 0;
+  background: color-mix(in srgb, var(--accent) 4%, var(--paper));
+}
+details.gw-reader > summary {
+  cursor: pointer;
+  color: var(--accent);
+  font-size: 0.88rem;
+  font-weight: 600;
+  user-select: none;
+}
+details.gw-reader[open] > summary { margin-bottom: 0.5rem; }
+
+/* --- the Event Dossier (running example chrome) ------------------------- */
+.dossier {
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  padding: 0.9rem 1.1rem;
+  margin: 1.4rem 0;
+  background: color-mix(in srgb, var(--accent) 6%, var(--paper));
+}
+.dossier .dossier-title {
+  font-weight: 700;
+  font-size: 0.85rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 0.4rem;
+}
+.dossier table { border-collapse: collapse; font-size: 0.88rem; width: 100%; }
+.dossier td { padding: 0.15rem 0.6rem 0.15rem 0; vertical-align: top; }
+.dossier td:first-child { color: var(--muted); white-space: nowrap; }
+.dossier .dossier-new td { font-weight: 600; }
+
+/* --- "show me the numbers" table view (accessibility rule 7) ------------ */
+.num-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin: 0.8rem 0; }
+.num-table th, .num-table td {
+  border: 1px solid var(--border);
+  padding: 0.3rem 0.55rem;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.num-table th { background: var(--paper-raised); text-align: center; }
+.num-table td:first-child, .num-table th:first-child { text-align: left; }
+details.num-view > summary { cursor: pointer; color: var(--muted); font-size: 0.85rem; }
+.table-scroll { overflow-x: auto; }
+
+/* --- Bias Ledger Rail (BW1) --------------------------------------------- */
+#bias-rail {
+  position: fixed;
+  right: 0.8rem;
+  top: 5rem;
+  width: 205px;
+  z-index: 15;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--paper) 92%, transparent);
+  backdrop-filter: blur(4px);
+  padding: 0.6rem 0.7rem;
+  font-size: 0.72rem;
+}
+#bias-rail .bias-rail-title {
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  font-size: 0.62rem;
+  color: var(--muted);
+  margin-bottom: 0.45rem;
+}
+#bias-rail .bias-rail-row {
+  display: grid;
+  grid-template-columns: 1fr 60px 44px;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.14rem 0;
+  color: var(--muted);
+}
+#bias-rail .bias-rail-row.active { color: var(--ink); font-weight: 600; }
+#bias-rail .bias-rail-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#bias-rail .bias-rail-track {
+  position: relative;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--code-bg);
+}
+#bias-rail .bias-rail-zero {
+  position: absolute;
+  left: 69.2%; /* h-bias 0 on the fixed [-0.18, +0.08] scale */
+  top: -2px;
+  width: 1px;
+  height: 10px;
+  background: var(--muted);
+}
+#bias-rail .bias-rail-marker {
+  position: absolute;
+  top: -1px;
+  width: 8px;
+  height: 8px;
+  margin-left: -4px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+#bias-rail .bias-rail-row.active .bias-rail-marker { background: #D55E00; }
+#bias-rail .bias-rail-value, #bias-rail .bias-rail-na {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+@media (max-width: 1180px) {
+  #bias-rail { position: static; width: auto; margin: 1rem auto; max-width: var(--measure); }
+}
+@media print { #bias-rail { display: none !important; } }
+
+/* --- nav: planned (not yet live) chapters ------------------------------- */
+.book-nav .nav-planned {
+  color: var(--border);
+  cursor: default;
+  user-select: none;
+}
+
+/* --- widget toggle rows (segmented controls) ---------------------------- */
+.widget .toggle-row { display: flex; gap: 0; margin: 0.5rem 0; flex-wrap: wrap; }
+.widget .toggle-row button {
+  border: 1px solid var(--border);
+  background: var(--paper);
+  color: var(--ink);
+  padding: 0.35rem 0.8rem;
+  cursor: pointer;
+  font-size: 0.85rem;
+  margin-right: -1px;
+}
+.widget .toggle-row button:first-child { border-radius: 6px 0 0 6px; }
+.widget .toggle-row button:last-child { border-radius: 0 6px 6px 0; margin-right: 0; }
+.widget .toggle-row button[aria-pressed="true"] {
+  background: color-mix(in srgb, var(--accent) 14%, var(--paper));
+  border-color: var(--accent);
+  color: var(--accent);
+  font-weight: 600;
+}
+.widget .toggle-row button:focus-visible { outline: none; box-shadow: var(--focus-ring); z-index: 1; }
+
+/* --- provenance panel (chapter foot, persona P3) ------------------------ */
+.provenance-panel {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.9rem 1.1rem;
+  margin-top: 2.5rem;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+.provenance-panel h4 { margin: 0 0 0.5rem; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+.provenance-panel ul { margin: 0; padding-left: 1.1rem; }
+
+/* --- KaTeX display blocks --------------------------------------------- */
+
+.katex-display { overflow-x: auto; overflow-y: hidden; padding: 0.2rem 0; }
+
+/* --- footer / print ---------------------------------------------------- */
+
+.book-footer {
+  color: var(--muted);
+  font-size: 0.82rem;
+  border-top: 1px solid var(--border);
+  padding-top: 1rem;
+  margin-top: 3rem;
+}
+
+@media print {
+  .book-topbar, .theme-toggle, .widget .widget-controls, .predict-row { display: none !important; }
+  body { color: #000; background: #fff; }
+}
+
+@media (max-width: 640px) {
+  main.book-content { padding-top: 1.4rem; }
+  .book-topbar { padding: 0.5rem 0.9rem; }
+}

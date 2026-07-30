@@ -1,0 +1,175 @@
+<!--
+  _template.html — FROZEN reference template for every chapter page.
+
+  Chapter agents: COPY this file to your chNN-<slug>.html and fill the
+  marked slots. Do NOT edit this template, book.css, book.js, manifest.js,
+  index.html, or any other chapter's files. New shared-widget needs go to
+  book/design/WIDGET_REQUESTS.md.
+
+  The nav is built automatically from js/manifest.js — never hardcode
+  chapter links. Theme, math rendering, and nav highlighting are wired by
+  book.js on DOMContentLoaded.
+
+  This page is deployed as-is (no build step). It is wrapped by nothing:
+  the first element is <title> by convention of the existing pages.
+-->
+<title>Ch. NN — CHAPTER TITLE | EMRI Dark Siren Book</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="description" content="ONE-SENTENCE CHAPTER DESCRIPTION." />
+<link rel="stylesheet" href="vendor/katex/katex.min.css" />
+<link rel="stylesheet" href="css/book.css" />
+
+<div class="book-shell">
+  <header class="book-topbar">
+    <a class="brand" href="index.html">From Bayes&rsquo; Rule to H&#8320;
+      <small>an interactive discovery book</small>
+    </a>
+    <nav class="book-nav" data-nav aria-label="Chapters"><!-- built from js/manifest.js --></nav>
+    <button class="theme-toggle" data-theme-toggle type="button">☽ Dark</button>
+  </header>
+
+  <main class="book-content">
+    <h1>Chapter NN — CHAPTER TITLE</h1>
+    <p class="subtitle">DISCOVERY STATEMENT (the reader's own realization, one sentence).</p>
+
+    <!-- ===== B1: Cold Open — the live, broken/motivating figure BEFORE any math ===== -->
+    <div class="callout without">
+      <span class="callout-label">The failure this chapter answers</span>
+      OPENING HOOK: state the failure the previous chapter cannot answer. Show it,
+      don't assert it — the first widget goes right here if possible.
+    </div>
+
+    <!-- ===== Sections: introduce each tool WITH its motivation ===== -->
+    <h2>1. SECTION TITLE</h2>
+    <p>Prose for Mara (persona P1). Every new symbol: units + physical picture
+       before it appears in an equation. Inline math with $...$, display with $$...$$.</p>
+
+    <!-- The project's ratified derivation speaks in its own voice: -->
+    <div class="voice-derivation">
+      <span class="voice-label">From the ratified derivation
+        <span class="badge ratified">RATIFIED</span>
+        <span class="prov-chip">G2b &sect;2.1&ndash;2.3</span></span>
+      Quoted/faithfully-stated result. Never re-derive loosely.
+    </div>
+
+    <!-- The adjudicator's voice (findings, amendments): -->
+    <div class="voice-adjudicator">
+      <span class="voice-label">Adjudicated finding
+        <span class="badge finding">FINDING</span>
+        <span class="prov-chip">CLAIM_2D_BIAS_20260730.md C7</span></span>
+      Both halves of any amended claim, in the same block.
+    </div>
+
+    <!-- Collapsible stratum for persona P2 (open-by-default handled later by integrator): -->
+    <details class="gw-reader">
+      <summary>&#9656; For the GW reader</summary>
+      <p>Exact code site (<code>bayesian_statistics.py:NNNN</code>), the mapping onto
+         Gray et al. 2020 (arXiv:1908.06050), measured numbers with evidence tags.</p>
+    </details>
+
+    <!-- ===== A widget (one experiment, one aha) ===== -->
+    <div class="widget">
+      <h4>INTERACTIVE TITLE
+        <span class="prov-chip real">real: seed61000/real_r1</span>
+        <!-- or: <span class="prov-chip toy">toy: analytic</span> -->
+      </h4>
+      <p style="margin-top:0; color:var(--muted); font-size:0.88rem;">
+        What the reader manipulates and what they should watch.
+      </p>
+      <div id="chNN-plot-1" class="widget-plot"></div>
+      <div class="widget-controls">
+        <label for="chNN-slider-1">CONTROL LABEL:</label>
+        <input id="chNN-slider-1" type="range" />
+        <span class="readout">x = <strong id="chNN-readout-1">&mdash;</strong></span>
+      </div>
+      <!-- Accessibility rule: every widget also offers the numbers -->
+      <details class="num-view">
+        <summary>Show me the numbers</summary>
+        <div class="table-scroll"><table class="num-table" id="chNN-table-1"></table></div>
+      </details>
+      <!-- Static fallback for print / no-JS: -->
+      <noscript><p>STATIC FALLBACK DESCRIPTION of what the interactive shows.</p></noscript>
+    </div>
+
+    <!-- ===== Predict-then-reveal (reveal locked until a prediction is pressed) ===== -->
+    <div class="widget">
+      <h4>Predict, then reveal</h4>
+      <p style="margin-top:0;">THE COMMITMENT QUESTION.</p>
+      <div class="predict-row" id="chNN-predict-1" data-predict-id="chNN-q1">
+        <button type="button" data-predict="a">Choice A</button>
+        <button type="button" data-predict="b">Choice B</button>
+      </div>
+      <div class="reveal">THE MEASURED ANSWER, with provenance chip.</div>
+    </div>
+
+    <!-- ===== B4: the running-example beat (EMRI-889 / dark 606) ===== -->
+    <div class="dossier">
+      <div class="dossier-title">Event dossier — EMRI-889 after this chapter</div>
+      <table>
+        <tr><td>d_L</td><td>88.9 Mpc (&sigma;_dL/dL = 8.0&times;10&#8315;&#8309;)</td></tr>
+        <tr class="dossier-new"><td>NEW ROW</td><td>what this chapter added</td></tr>
+      </table>
+    </div>
+
+    <!-- ===== B7: self-check block (3–6 questions, hidden answers, last = transfer) ===== -->
+    <h2>Self-check</h2>
+    <div class="selfcheck">
+      <p>QN.1 QUESTION TEXT (no recall questions — "what happens if", estimates, transfer).</p>
+      <details class="answer">
+        <summary>Show answer</summary>
+        <div class="answer-body">ONE PARAGRAPH, naming the mechanism, with provenance
+          for every number.</div>
+      </details>
+    </div>
+
+    <!-- ===== Misconception trap(s), in the reader's voice ===== -->
+    <div class="callout defect">
+      <span class="callout-label">Trap &mdash; &ldquo;PLAUSIBLE WRONG SENTENCE&rdquo;</span>
+      Dismantled with a measurement, not an argument.
+    </div>
+
+    <!-- ===== Provenance panel (persona P3 audits the chapter in one screen) ===== -->
+    <div class="provenance-panel">
+      <h4>Provenance panel — every stamp used in this chapter</h4>
+      <ul>
+        <li><span class="badge ratified">RATIFIED</span> G2b &sect;2.1&ndash;2.3 — the &sigma;_z&sup2; law</li>
+        <li><span class="badge finding">FINDING</span> CLAIM_2D_BIAS C7 — measured, adjudicated 2026-07-30</li>
+      </ul>
+    </div>
+
+    <p class="book-footer">
+      Data generated by <code>book/generators/gen_chNN.py</code> (read-only against the
+      main package and <code>results/</code>). This page renders fully offline — Plotly
+      and KaTeX are vendored under <code>vendor/</code>.
+    </p>
+  </main>
+</div>
+
+<script src="js/manifest.js"></script>
+<script src="vendor/plotly/plotly.min.js"></script>
+<script src="vendor/katex/katex.min.js"></script>
+<script src="vendor/katex/auto-render.min.js"></script>
+<script src="js/book.js"></script>
+<script>
+  (function () {
+    // The chapter's Bias Ledger Rail (BW1). Entries accumulate chapter by
+    // chapter; mark this chapter's estimator `active: true`. Use bias: null
+    // for "not defined yet". Update from sandbox toggles where specified.
+    Book.biasRail({
+      entries: [
+        { label: "cat-only, no D(h)", bias: -0.178, note: "Phase 32 / ledger #9" },
+        { label: "full-volume D(h)", bias: 0.0, note: "Phase 32", active: true },
+      ],
+    });
+
+    Book.loadJSON("data/chNN_widget1.json").then((d) => {
+      // Use Book.themedPlot for every Plotly figure (theme re-layout is automatic):
+      // const plot = Book.themedPlot("chNN-plot-1", tracesFor(x0), layoutFn);
+      // Book.gridSlider({ sliderEl, readoutEl, steps, onStep: (v) => plot.update(tracesFor(v)) });
+      // Combined posteriors: Book.combineLogRows + Book.normalizePosterior (log-space native).
+      // NEVER numerically differentiate across the h-grid seams (0.65, 0.80).
+    });
+
+    Book.predictReveal(document.getElementById("chNN-predict-1").closest(".widget"));
+  })();
+</script>

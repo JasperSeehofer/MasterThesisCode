@@ -1,0 +1,62 @@
+<title>From Bayes&rsquo; Rule to H&#8320; | EMRI Dark Siren Discovery Book</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="description" content="An interactive, step-by-step journey from Bayes' rule to the full EMRI dark-siren H0 inference pipeline." />
+<link rel="stylesheet" href="css/book.css" />
+
+<div class="book-shell">
+  <header class="book-topbar">
+    <a class="brand" href="index.html">From Bayes&rsquo; Rule to H&#8320;
+      <small>an interactive discovery book</small>
+    </a>
+    <nav class="book-nav" data-nav aria-label="Chapters"><!-- built from js/manifest.js --></nav>
+    <button class="theme-toggle" data-theme-toggle type="button">☽ Dark</button>
+  </header>
+
+  <main class="book-content">
+    <h1>From Bayes&rsquo; rule to the EMRI dark-siren H&#8320; pipeline</h1>
+    <p class="subtitle">
+      A step-by-step, interactive companion to the thesis. Every representation is introduced
+      with its motivation — either &ldquo;without this, the posterior is defective&rdquo;
+      (shown, not asserted) or &ldquo;this addition measurably helps, here is how much.&rdquo;
+      The book ends where the research currently ends: with the estimator's live, honestly
+      inconsistent state.
+    </p>
+
+    <div class="callout">
+      <span class="callout-label">Status</span>
+      This book is under active construction against the build spec in
+      <code>book/design/BOOK_DESIGN.md</code>. The
+      <a href="ch00-demo.html">chapter-0 pipeline demo</a> is a fully working, fully
+      offline proof of the publishing chain (real data in, an interactive figure out); it
+      will be retired once the real chapters below land.
+    </div>
+
+    <h2>Contents</h2>
+    <ol start="0">
+      <li>Prologue — Two Numbers That Should Be One <span style="color:var(--muted);">(planned)</span></li>
+      <li>A Ruler That Needs No Ladder <span style="color:var(--muted);">(planned)</span></li>
+      <li>Bayes, Once and For All <span style="color:var(--muted);">(planned)</span></li>
+      <li>Which Galaxy? <span style="color:var(--muted);">(planned)</span></li>
+      <li>The Universe Only Shows You Its Loud Half <span style="color:var(--muted);">(planned; carries Museum interlude: the p_det anchor)</span></li>
+      <li>The Galaxy You Cannot See <span style="color:var(--muted);">(planned; interlude: information starvation, overturned)</span></li>
+      <li>Opening the Black Box <span style="color:var(--muted);">(planned)</span></li>
+      <li>A Redshift Is Not a Number <span style="color:var(--muted);">(planned; interlude: volume_trunc)</span></li>
+      <li>A Second Handle: the Mass Channel <span style="color:var(--muted);">(planned; interlude: mass_trunc)</span></li>
+      <li>Building a Universe to Break Your Estimator <span style="color:var(--muted);">(planned)</span></li>
+      <li>Is It Calibrated? <span style="color:var(--muted);">(planned; interlude: the H&#8320;-independent estimator)</span></li>
+      <li>The State of the Art, Honestly <span style="color:var(--muted);">(planned)</span></li>
+      <li>The Defect Museum — annex <span style="color:var(--muted);">(planned)</span></li>
+    </ol>
+
+    <h2>How this book is built</h2>
+    <p>
+      No build framework — plain HTML/CSS/JS, vendored Plotly and KaTeX, works over a
+      trivial local server and on GitHub Pages alike. See
+      <code>book/design/BOOK_TECH_DESIGN.md</code> for the architecture and
+      <code>book/design/BOOK_DESIGN.md</code> for the authoritative chapter build spec.
+    </p>
+  </main>
+</div>
+
+<script src="js/manifest.js"></script>
+<script src="js/book.js"></script>

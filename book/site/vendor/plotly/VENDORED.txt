@@ -1,0 +1,1 @@
+Plotly.js (bundled with the plotly Python package, version pinned in ../../../pyproject.toml) — MIT License. Copied from .venv/lib/python3.13/site-packages/plotly/package_data/plotly.min.js so the vendored JS build matches the repo's pinned Python plotly version exactly.

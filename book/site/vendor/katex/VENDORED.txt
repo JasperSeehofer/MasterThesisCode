@@ -1,0 +1,1 @@
+KaTeX 0.16.11 — MIT License. Vendored from npm registry (https://www.npmjs.com/package/katex) for offline rendering. See https://github.com/KaTeX/KaTeX/blob/main/LICENSE
