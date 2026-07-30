@@ -1,0 +1,36 @@
+{
+  "realization_seed": 900002,
+  "sigma_scale": 1.0,
+  "parent_csv": "/pfs/data6/home/st/st_us-403333/st_ac147838/MasterThesisCode/master_thesis_code/galaxy_catalogue/reduced_galaxy_catalogue.csv",
+  "parent_csv_sha256": "7af3f4f4a2d51de8fbeb6583e9fa8d825f66ca95817e23d728a969277e4bd7d9",
+  "observed_csv_sha256": "29d9a9bf655ac5793c78c1071d3340898e0cc2af7bf7b9334dbea2dc571c461e",
+  "git_commit": "7b30d1ff17c543d3464f533121f7b3e108347bb9",
+  "timestamp": "2026-07-29T18:41:04.553338",
+  "n_rows": 22641048,
+  "n_z_floor_clipped": 108790,
+  "n_mass_window_crossings": 1454433,
+  "z_floor": 1e-05,
+  "width_check": {
+    "z_per_flag": {
+      "1": {
+        "n": 22373546,
+        "n_z_floor_clipped": 108774,
+        "normalized_residual_std": 1.0000026035019547,
+        "expected_std": 1.0
+      },
+      "3": {
+        "n": 261218,
+        "n_z_floor_clipped": 16,
+        "normalized_residual_std": 0.9966653542808488,
+        "expected_std": 1.0
+      }
+    },
+    "mass": {
+      "n": 21753847,
+      "normalized_residual_std": 0.9996201121205882,
+      "expected_std": 1.0
+    },
+    "n_mass_width_floor": 24335
+  },
+  "derivation": "docs/derivations/realistic_host_observation_model.md"
+}

@@ -69,3 +69,8 @@ results/campaign51_20260728/pool_mix200k/
 results/campaign51_20260728/pilot/injections/
 results/campaign51_20260728/pilot3/injections/
 results/campaign51_20260728/run_seed*/prepared_*.csv
+
+# Campaign #53 realistic-run mirrors: the prepared CRB table is IDENTICAL across a
+# seed's 5 realizations (only the observed catalogue varies), so only the
+# seed-level copy is tracked. score_realistic.py falls back to it.
+results/campaign51_20260728/realistic_20260729/seed*/real_r*/prepared_cramer_rao_bounds.csv
