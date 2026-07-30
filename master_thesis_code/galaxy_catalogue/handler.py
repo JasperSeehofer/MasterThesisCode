@@ -212,6 +212,45 @@ def _reduced_catalog_column_names() -> list[str]:
     return names
 
 
+def _mass_redshift_prune_mask(
+    bh_mass: pd.Series,
+    bh_mass_error: pd.Series,
+    redshift: pd.Series,
+    redshift_error: pd.Series,
+    M_min: float,
+    M_max: float,
+    z_max: float,
+) -> pd.Series:
+    """Boolean keep-mask of the catalogue mass/redshift prune.
+
+    Extracted VERBATIM from :meth:`GalaxyCatalogueHandler._get_pruned_galaxy_catalog`
+    (behaviour-preserving; the inclusive ``>=``/``<=`` boundaries are unchanged) so
+    that the production prune and the P6 host-recovery counter's baseline-frame
+    reconstruction (:meth:`GalaxyCatalogueHandler._compute_baseline_prune_positions`)
+    call the SAME predicate and can never silently diverge.
+
+    A row is kept when its 1-sigma mass interval overlaps ``[M_min, M_max]`` and its
+    1-sigma-low redshift is at or below ``z_max``.
+
+    Args:
+        bh_mass: Source-frame BH masses (solar masses).
+        bh_mass_error: 1-sigma BH-mass uncertainties (solar masses).
+        redshift: Catalogue redshifts.
+        redshift_error: 1-sigma redshift uncertainties.
+        M_min: Lower BH-mass bound (solar masses).
+        M_max: Upper BH-mass bound (solar masses).
+        z_max: Upper redshift bound.
+
+    Returns:
+        Boolean Series aligned to the inputs; True = keep.
+    """
+    return (
+        (bh_mass + bh_mass_error >= M_min)
+        & (bh_mass - bh_mass_error <= M_max)
+        & (redshift - redshift_error <= z_max)
+    )
+
+
 @dataclass
 class GalaxyCatalogueHandler:
     reduced_galaxy_catalog: pd.DataFrame
@@ -220,6 +259,10 @@ class GalaxyCatalogueHandler:
     M_min: float
     M_max: float
     z_max: float
+    # Lazily-populated P6 host-recovery translation caches (see
+    # resolve_host_recovery_position); None until the first scattered lookup.
+    _baseline_prune_positions: npt.NDArray[np.int64] | None
+    _parent_row_position_map: dict[int, int] | None
 
     def __init__(
         self,
@@ -243,6 +286,10 @@ class GalaxyCatalogueHandler:
         # pre-#53 load path.
         self._scattered: bool = False
         self.realization_metadata: dict[str, object] | None = None
+        # P6 host-recovery translation caches (INSTR-3): populated on the first
+        # scattered lookup, never in the unscattered (identity) path.
+        self._baseline_prune_positions = None
+        self._parent_row_position_map = None
         if observed_catalogue_path is not None:
             from master_thesis_code.galaxy_catalogue.observed_realization import (
                 load_realization_sidecar,
@@ -309,22 +356,14 @@ class GalaxyCatalogueHandler:
         self.setup_4d_galaxy_catalog_balltree()
 
     def _get_pruned_galaxy_catalog(self, M_min: float, M_max: float, z_max: float) -> pd.DataFrame:
-        mask = (
-            (
-                self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS]
-                + self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS_ERROR]
-                >= M_min
-            )
-            & (
-                self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS]
-                - self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS_ERROR]
-                <= M_max
-            )
-            & (
-                self.reduced_galaxy_catalog[InternalCatalogColumns.REDSHIFT]
-                - self.reduced_galaxy_catalog[InternalCatalogColumns.REDSHIFT_ERROR]
-                <= z_max
-            )
+        mask = _mass_redshift_prune_mask(
+            self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS],
+            self.reduced_galaxy_catalog[InternalCatalogColumns.BH_MASS_ERROR],
+            self.reduced_galaxy_catalog[InternalCatalogColumns.REDSHIFT],
+            self.reduced_galaxy_catalog[InternalCatalogColumns.REDSHIFT_ERROR],
+            M_min,
+            M_max,
+            z_max,
         )
         return self.reduced_galaxy_catalog[mask]
 
@@ -617,6 +656,114 @@ class GalaxyCatalogueHandler:
             f"Found {len(possible_hosts_without_bh_mass)} possible hosts without BH mass and {len(possible_hosts_with_bh_mass)} possible hosts with BH mass."
         )
         return (possible_hosts_without_bh_mass, possible_hosts_with_bh_mass)
+
+    def resolve_host_recovery_position(self, host_galaxy_index: int) -> int | None:
+        """Translate an injection-time host position into THIS handler's frame.
+
+        ``Detection.host_galaxy_index`` is a position in the pruned +
+        ``reset_index`` frame the INJECTION run's handler built (``-1`` flags a
+        dark host drawn from the missing-galaxy population). The P6
+        host-recovery counter must compare that host against the candidate lists
+        this EVALUATION handler returned, and the two frames are NOT positionally
+        interchangeable once an observed-catalogue realization is in play: the
+        mass/redshift prune runs on scattered values, so rows the baseline frame
+        kept can drop out here (~958k rows on the campaign #53 realization,
+        ``HANDOFF_20260730.md`` §5) and every later position shifts down.
+
+        The translation therefore goes through the PRE-prune parent row-identity
+        space, which is shared by construction: an observed realization is
+        written row-for-row from its parent CSV (``observed_realization.
+        _realize_and_write`` never drops or reorders rows, and only overwrites
+        already-valid mass cells), so only the prune OUTCOME can differ.
+
+        Args:
+            host_galaxy_index: ``Detection.host_galaxy_index`` -- a position in
+                the injection-time pruned frame, or ``-1`` for a dark host.
+
+        Returns:
+            The corresponding row position in ``self.reduced_galaxy_catalog``
+            (directly comparable with ``HostGalaxy.catalog_index``), or ``None``
+            when the host is dark, out of frame, or genuinely did not survive
+            this handler's own prune (a real miss, not a translation failure).
+        """
+        if host_galaxy_index < 0:
+            return None
+
+        if not self.scattered:
+            # Unscattered (or sigma_scale = 0, byte-identical) catalogue: this
+            # handler's pruned frame IS the frame the injection run used.
+            if 0 <= host_galaxy_index < len(self.reduced_galaxy_catalog):
+                return host_galaxy_index
+            return None
+
+        if self._baseline_prune_positions is None:
+            self._baseline_prune_positions = self._compute_baseline_prune_positions()
+        if host_galaxy_index >= len(self._baseline_prune_positions):
+            return None
+        parent_row_id = int(self._baseline_prune_positions[host_galaxy_index])
+
+        if self._parent_row_position_map is None:
+            self._parent_row_position_map = self._parent_row_to_eval_position()
+        return self._parent_row_position_map.get(parent_row_id)
+
+    def _compute_baseline_prune_positions(self) -> npt.NDArray[np.int64]:
+        """Parent row ids surviving the BASELINE (parent-catalogue) prune, in order.
+
+        Element ``k`` is the parent CSV row id that injection-time position ``k``
+        refers to. Reconstructed from the realization sidecar's ``parent_csv``
+        by replaying the same two row-dropping steps ``__init__`` applies --
+        ``_remove_galaxies_without_mass_information`` and the mass/redshift prune
+        -- the latter through the shared :func:`_mass_redshift_prune_mask`, so
+        the counter and the production prune cannot diverge.
+
+        Assumes the injection run and this evaluation handler share ``M_min`` /
+        ``M_max`` / ``z_max``: true for the standard workflow, where
+        ``main.py`` constructs exactly one handler shape per process and only
+        ``observed_catalogue_path`` varies between an unscattered and an
+        observed-catalogue run.
+
+        Only reached when :attr:`scattered` is True, and memoized by
+        :meth:`resolve_host_recovery_position`, so the extra parent-catalogue
+        read is paid at most once per process and never in the default workflow.
+        """
+        if self.realization_metadata is None:
+            raise ValueError(
+                "resolve_host_recovery_position: a scattered catalogue must carry "
+                "realization metadata with a parent_csv path."
+            )
+        parent_csv_path = str(self.realization_metadata["parent_csv"])
+        parent = self.read_reduced_galaxy_catalog(path=parent_csv_path)
+        # Vectorized elementwise over the pandas columns (mirrors
+        # _map_stellar_masses_to_BH_masses); applied inline since only the mask
+        # is needed here, not a mutated catalogue.
+        bh_mass, bh_mass_error = _empiric_stellar_mass_to_BH_mass_relation(
+            parent[InternalCatalogColumns.BH_MASS],
+            parent[InternalCatalogColumns.BH_MASS_ERROR],
+        )
+        mass_valid = ~pd.Series(bh_mass).isna()
+        prune = _mass_redshift_prune_mask(
+            pd.Series(bh_mass),
+            pd.Series(bh_mass_error),
+            parent[InternalCatalogColumns.REDSHIFT],
+            parent[InternalCatalogColumns.REDSHIFT_ERROR],
+            self.M_min,
+            self.M_max,
+            self.z_max,
+        )
+        positions: npt.NDArray[np.int64] = np.flatnonzero((mass_valid & prune).to_numpy())
+        return positions
+
+    def _parent_row_to_eval_position(self) -> dict[int, int]:
+        """Map parent row id -> row position in this handler's own pruned frame.
+
+        Built from the ``"index"`` column that ``setup_galaxy_catalog_balltree``'s
+        ``reset_index()`` writes (per POST-prune position, the PRE-prune row
+        label). O(N) over an already-loaded frame; no new I/O.
+        """
+        return {
+            int(parent_row): position
+            for position, parent_row in enumerate(self.reduced_galaxy_catalog["index"])
+        }
 
     def setup_4d_galaxy_catalog_balltree(self) -> None:
         """Build the 5-D host-assignment BallTree (sky chord + z + log M).
