@@ -35,6 +35,9 @@ this protocol — only changes that alter a computed numerical value.
 
 ### STOP and wait for explicit user approval before implementing.
 
+Once the user answers, append a ledger row (see below) — `APPROVED` or `REJECTED`. A `REJECTED`
+verdict ends the protocol here; the row is still written.
+
 ### After implementation, verify and report:
 - [ ] Sign convention consistency with rest of codebase
 - [ ] Dimensional consistency (no mixed units)
@@ -44,6 +47,22 @@ this protocol — only changes that alter a computed numerical value.
   ```
 - [ ] Regression test added BEFORE the change (asserting old value) so the diff is visible
 - [ ] Git commit uses `[PHYSICS]` prefix
+- [ ] Ledger rows appended to `docs/gates/PHYSICS-GATE-LEDGER.md`
+
+### Ledger — the gate must leave evidence
+
+A `[PHYSICS]` commit with no ledger row is indistinguishable from a skipped gate. Append to
+`docs/gates/PHYSICS-GATE-LEDGER.md` (read its header for the column contract) at each step
+completion — never rewrite existing rows, never back-fill older commits:
+
+| when | row |
+|---|---|
+| user answers the 5-item gate | `\| YYYY-MM-DD \| pre-commit \| presented \| APPROVED\|REJECTED \| file.py:line \| what changed \|` |
+| code written after approval | `\| YYYY-MM-DD \| pre-commit \| implemented \| PASS \| file.py:line \| ref comment + regression test \|` |
+| post-implementation checks reported | `\| YYYY-MM-DD \| <short-sha> \| verified \| PASS\|FAIL \| file.py:line \| sign + units + limit checked \|` |
+
+Use `pre-commit` in the commit column until the commit exists, then update those rows to the
+short SHA when it lands. Rows go at the bottom of the `## Ledger` table (newest last).
 
 ### Known physics bugs for reference:
 !`grep -A2 "CRITICAL\|HIGH\|MEDIUM\|LOW" /home/jasper/Repositories/MasterThesisCode/CLAUDE.md | head -30`

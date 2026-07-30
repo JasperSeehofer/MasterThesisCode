@@ -161,7 +161,7 @@ The codebase has two distinct pipelines:
 ~~5. **`LISA_configuration.py` galactic confusion noise absent from PSD** [MEDIUM]~~ [FIXED Phase 9]: `_confusion_noise()` added to `LisaTdiConfiguration`. Ref: Babak et al. (2023) arXiv:2303.15929 Eq. (17).
 6. **`physical_relations.py` wCDM params w0, wa silently ignored** [MEDIUM] — GitHub #4: `dist()` accepts them but passes to a hardcoded-ΛCDM hypergeometric function. The review PR (2026-07-04) adds a `NotImplementedError` guard so non-default `w_0`/`w_a` raise instead of silently returning ΛCDM.
 ~~7. **`bayesian_inference/bayesian_inference.py` hardcoded 10% distance error**~~ [MOOT — Pipeline A removed in `c1571a2`]. Production Pipeline B uses per-source Cramér-Rao bounds from the CSV. GitHub #5 closed.
-~~8. **`constants.py` WMAP-era cosmology**~~ [RESOLVED as design choice — G11]: fiducial `OMEGA_M=0.2726`, H0=70.4 km/s/Mpc deliberately match the Barausse (2012) M1 EMRI-population cosmology (arXiv:1201.5888) for a self-consistent mock universe; the Planck-2018 mismatch is a tracked systematic in `.planning/gate/G7_systematics_budget.md`, not a bug. GitHub #6 closed.
+~~8. **`constants.py` WMAP-era cosmology**~~ [RESOLVED as design choice — G11]: fiducial `OMEGA_M=0.2726`, H0=70.4 km/s/Mpc deliberately match the Barausse (2012) M1 EMRI-population cosmology (arXiv:1201.5888) for a self-consistent mock universe; the Planck-2018 mismatch is a tracked systematic in `docs/gates/G7_systematics_budget.md` (row 6), not a bug. GitHub #6 closed.
 9. **`datamodels/galaxy.py:66` galaxy redshift uncertainty non-standard scaling** [LOW] — GitHub #7: `0.013 * (1+z)^3` has no reference; **this file is dead** (imported only by `test_benchmarks.py`; production uses `galaxy_catalogue/handler.py`). Slated for deletion in the review PR.
 
 ---
@@ -256,6 +256,8 @@ pytest -m "not gpu and not slow"   # fast subset only
 ## Math/Physics Validation Workflow
 
 The physics-change protocol — what counts as a physics change, the before-writing presentation gate (old formula, new formula, reference, dimensional analysis, limiting case), the post-implementation checks, and the `[PHYSICS]` commit convention — lives in **`.claude/rules/physics-validation.md`**, auto-loaded when editing physics-trigger files. It is the detail behind the `/physics-change` hard gate (see the Skill-Driven Workflows table above). See [[scientific-computing-validation]] for the promoted cross-project form.
+
+Every gate run appends a row to **`docs/gates/PHYSICS-GATE-LEDGER.md`** (date · commit ref · step · verdict · target), so compliance is evidence rather than inference: a `[PHYSICS]` commit with no ledger row is a gate that cannot be shown to have run. The ledger starts 2026-07-30 and is never back-filled; `/check` reads it as a pre-commit evidence check.
 
 <!-- GSD:project-start source:PROJECT.md -->
 ## Project
