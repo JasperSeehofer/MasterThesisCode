@@ -1,0 +1,207 @@
+{
+  "claim": "C9 discount (ii) follow-up -- dark-draw (beta_Gbar) self-consistency",
+  "h_true": 0.73,
+  "seeds": [
+    61000,
+    62000
+  ],
+  "n_dark_pooled": 2971,
+  "n_dark_in_local_horizon": 2971,
+  "z_dark_range": [
+    0.05381373252555398,
+    1.1096786496255893
+  ],
+  "z_min_model": 1e-06,
+  "z_max_model_local": 1.1607336084344981,
+  "dl_max_local_pool_Gpc": 7.760263047504339,
+  "dl_max_production_log_Gpc": 9.165,
+  "injection_pool_dir_used": "results/lcat_h_dependence_20260725/data/injections",
+  "sky_aware_branch_used": true,
+  "n_sky_bands": 6,
+  "npix": 12288,
+  "ks_vs_beta_Gbar_integrand": {
+    "statistic": 0.1579408754716986,
+    "pvalue": 3.348172121558924e-65
+  },
+  "ks_vs_draw_density_only": {
+    "statistic": 0.5027060990005431,
+    "pvalue": 0.0
+  },
+  "quantile_table": [
+    {
+      "q_pct": 10,
+      "observed_z": 0.2821007074983358,
+      "beta_Gbar_integrand_z": 0.24113666811442006,
+      "diff_vs_beta_Gbar": 0.04096403938391577,
+      "draw_density_only_z": 0.4342357795973105,
+      "diff_vs_draw_only": -0.1521350720989747
+    },
+    {
+      "q_pct": 25,
+      "observed_z": 0.3795830240835904,
+      "beta_Gbar_integrand_z": 0.3291461637662295,
+      "diff_vs_beta_Gbar": 0.05043686031736089,
+      "draw_density_only_z": 0.606672771426502,
+      "diff_vs_draw_only": -0.2270897473429116
+    },
+    {
+      "q_pct": 50,
+      "observed_z": 0.5063019071672112,
+      "beta_Gbar_integrand_z": 0.43845919173355546,
+      "diff_vs_beta_Gbar": 0.06784271543365578,
+      "draw_density_only_z": 0.8174910478155897,
+      "diff_vs_draw_only": -0.31118914064837844
+    },
+    {
+      "q_pct": 75,
+      "observed_z": 0.6396576598031951,
+      "beta_Gbar_integrand_z": 0.5550795982935519,
+      "diff_vs_beta_Gbar": 0.0845780615096432,
+      "draw_density_only_z": 0.9958143031048197,
+      "diff_vs_draw_only": -0.35615664330162455
+    },
+    {
+      "q_pct": 90,
+      "observed_z": 0.7370804928120244,
+      "beta_Gbar_integrand_z": 0.6529288528647466,
+      "diff_vs_beta_Gbar": 0.08415163994727781,
+      "draw_density_only_z": 1.0957735214583098,
+      "diff_vs_draw_only": -0.3586930286462854
+    }
+  ],
+  "pool_depth_diagnostic": {
+    "safe_pdet_threshold": 0.05,
+    "z_safe": 0.7217100564195164,
+    "frac_dark_beyond_z_safe": 0.12117132278694043,
+    "shallow_pool_dir": "simulations/injections",
+    "shallow_pool_dl_max_Gpc": 0.8578675948410486,
+    "shallow_pool_model_median_z": 0.07066655241393904,
+    "deep_pool_model_median_z": 0.43845919173355546
+  },
+  "safe_range_comparison": {
+    "z_safe": 0.7217100564195164,
+    "n_dark_in_safe_range": 2611,
+    "n_dark_total_in_horizon": 2971,
+    "ks_statistic": 0.11970480491993518,
+    "ks_pvalue": 4.652061538460301e-33,
+    "quantile_table": [
+      {
+        "q_pct": 10,
+        "observed_z": 0.2707747849866832,
+        "beta_Gbar_integrand_z": 0.2381624567216184,
+        "diff": 0.03261232826506483
+      },
+      {
+        "q_pct": 25,
+        "observed_z": 0.3615300772100484,
+        "beta_Gbar_integrand_z": 0.32445958122264407,
+        "diff": 0.037070495987404306
+      },
+      {
+        "q_pct": 50,
+        "observed_z": 0.4775061509873829,
+        "beta_Gbar_integrand_z": 0.4303502087989109,
+        "diff": 0.04715594218847202
+      },
+      {
+        "q_pct": 75,
+        "observed_z": 0.5851079535538828,
+        "beta_Gbar_integrand_z": 0.5398993606555581,
+        "diff": 0.045208592898324684
+      },
+      {
+        "q_pct": 90,
+        "observed_z": 0.6605065940267156,
+        "beta_Gbar_integrand_z": 0.6261594484611731,
+        "diff": 0.034347145565542525
+      }
+    ]
+  },
+  "verdict": "UNDETERMINED, confounded by local p_det pool depth for the full range; CREDIBLE sub-test (z<=0.722, 2611/2971 of the dark sample, where the local pool's p_det is still >=5%) shows a RESIDUAL offset even in the credible region (KS D=0.1197, p=4.65e-33, median offset +0.0472 in z): this part of the signal is NOT explained by pool depth and is evidence the dark/completion side carries its own selection mismatch, analogous to (and independent of) C9's catalogue-side finding. Full-range statistics (KS D=0.1579, p=3.35e-65, median offset +0.0678) are reported for completeness but the pool-depth sensitivity check above (shallow-pool median 0.0707 -> deep-pool median 0.4385, same sign as the residual gap) shows a deeper (production-grade) pool would very plausibly narrow it further, so the full-range gap alone cannot be attributed to a dark-side defect. Net: C9's discount (ii) is PARTIALLY closed -- the check is now measured, not assumed, but the measurement is only conclusive on 88% of the sample; settling the tail needs the production injection pool (cluster-only, per project provenance notes).",
+  "verdict_label": "LOCAL-POOL-APPROXIMATION (superseded by production_pool.final_verdict below; kept for the record)",
+  "production_pool": {
+    "note": "Coordinator-staged, fingerprint-verified copy of the ACTUAL production injection pool (originally $WS/run_20260729_seed61000/simulations/injections -> injection_pool_mix200k_20260728) that generated seed61000/seed62000's own p_det. This block SUPERSEDES the local-pool-approximation results above as the definitive answer to C9 discount (ii).",
+    "pool_dir": "results/campaign51_20260728/realistic_20260729/gate_b_20260730/injection_pool_mix200k_20260728",
+    "n_files": 707,
+    "n_rows_approx": 200807,
+    "z_cut": 1.5,
+    "fingerprint": {
+      "dl_max_computed_Gpc": 9.164987215485882,
+      "dl_max_production_log_Gpc": 9.165,
+      "dl_max_rel_err": 1.394927890624087e-06,
+      "z_max_computed": 1.3261748578964083,
+      "z_max_production_log": 1.3262,
+      "z_max_abs_err": 2.5142103591724307e-05,
+      "confirmed": true
+    },
+    "z_min_model": 1e-06,
+    "z_max_model": 1.3261748578964083,
+    "n_dark_in_horizon": 2971,
+    "n_dark_total": 2971,
+    "truncation_needed": false,
+    "ks_statistic": 0.08628213978403482,
+    "ks_pvalue": 1.0817697193100272e-19,
+    "quantile_table": [
+      {
+        "q_pct": 10,
+        "observed_z": 0.2821007074983358,
+        "beta_Gbar_integrand_z": 0.2657563331750474,
+        "diff": 0.016344374323288446
+      },
+      {
+        "q_pct": 25,
+        "observed_z": 0.3795830240835904,
+        "beta_Gbar_integrand_z": 0.35667220855637893,
+        "diff": 0.02291081552721147
+      },
+      {
+        "q_pct": 50,
+        "observed_z": 0.5063019071672112,
+        "beta_Gbar_integrand_z": 0.4694070003939794,
+        "diff": 0.03689490677323182
+      },
+      {
+        "q_pct": 75,
+        "observed_z": 0.6396576598031951,
+        "beta_Gbar_integrand_z": 0.593493972040318,
+        "diff": 0.04616368776287716
+      },
+      {
+        "q_pct": 90,
+        "observed_z": 0.7370804928120244,
+        "beta_Gbar_integrand_z": 0.7084336626548319,
+        "diff": 0.028646830157192493
+      }
+    ],
+    "comparison_to_local_pool_safe_range": {
+      "median_diff_local_safe": 0.04715594218847202,
+      "median_diff_production_full": 0.03689490677323182,
+      "ratio": 0.7824020698339759,
+      "ks_local_safe": 0.11970480491993518,
+      "ks_production_full": 0.08628213978403482
+    },
+    "final_verdict": "DEFINITIVE (production pool, fingerprint-verified to <2e-5 in z_max, all 2971/2971 dark events, NO truncation needed since z_max_prod=1.326 > max observed z=1.110): KS D=0.0863, p=1.08e-19. Observed z is systematically HIGHER than beta_Gbar's own integrand at every quantile (all 5/5 quantiles positive), from +0.0163 (q10) to +0.0369 (median) to +0.0286 (q90); the offset is NOT monotone in z -- it grows from q10 to q75 then falls back at q90, the same hump shape as the local-pool safe-range table, not a runaway tail. Compared to the local-pool-approximation safe-range read (median +0.0472, KS D=0.1197), the production-pool full-range measurement is SMALLER but the same sign and still highly significant (median ratio 0.78x, KS D 0.0863 vs 0.1197) -- so the earlier local approximation mildly OVERSTATED the offset (as expected, since it still had a residual, smaller pool-depth bias of its own) but did not invent it: removing the pool-depth confound entirely NARROWS, does not eliminate or reverse, the effect. VERDICT: C9 discount (ii) is CLOSED. eps_dark = eps_hat_dark does NOT hold exactly: the realized dark/completion-side redshift distribution is measurably skewed to higher z than beta_Gbar's own integrand predicts (median +0.037 in z, a few percent of the horizon, peaking around the middle quantiles and easing at the tail -- not a catastrophic mismatch, but a real, definitively-measured one, not merely 'argued from construction'). This is a distortion of the same character as (and smaller magnitude than) C9's catalogue-side mass-blind-w_G finding, and EXTENDS C9's scope to the dark/completion side; it should be folded into the same joint mass-consistent-mixture fix track (ADJUDICATION sec.5 item 6) rather than treated as an independent defect."
+  },
+  "code_citations": {
+    "realized_z_conversion": "physical_relations.py:447-490 dist_to_redshift",
+    "beta_Gbar_definition": "bayesian_statistics.py:1170-1304 precompute_missing_completion_denominator",
+    "beta_Gbar_log_line": "bayesian_statistics.py:1297-1302",
+    "sky_aware_gate": "bayesian_statistics.py:905-924 _sky_aware_selection_available",
+    "sky_band_pixel_map": "bayesian_statistics.py:927-950 _sky_band_pixel_map",
+    "sky_aware_integrand": "bayesian_statistics.py:1246-1277 (z_max/z_min setup 1237-1244; einsum reduction 1276-1277)",
+    "p_pop_weight": "dark_siren_injection.py:177-194 _redshift_population_weight (dVc/(1+z))",
+    "comoving_volume_element": "physical_relations.py:571-596",
+    "generator_draw_density": "dark_siren_injection.py:309-329 _draw_dark_redshifts (pre-detection, NO p_det)",
+    "f_pixels": "pixel_completeness.py:336-364",
+    "f_bar": "pixel_completeness.py:270-290",
+    "m_th_cache": "pixel_completeness.py:514-536 from_cache_or_build (frozen git-tracked cache)",
+    "p_det_marginal": "simulation_detection_probability.py:2198-2228 detection_probability_without_bh_mass_interpolated_zero_fill (cited for the 'population-mass-marginal' framing; NOT called directly -- the sky-aware branch uses survival_per_band instead, simulation_detection_probability.py:1560-1600)",
+    "production_pool_fingerprint": "bayesian_statistics.py:1145 (D(h) log line) and :1297 (beta_Gbar(h) log line), cross-checked against seed61000/mixture_leg_log_extract.txt's h=0.7300 entries"
+  },
+  "caveats": [
+    "f(z) is staleness-free (frozen git-tracked m_th_map_nside32.npy); the local reduced_galaxy_catalogue.csv z_error staleness noted elsewhere in this directory is IRRELEVANT to this check (no catalogue rows or z_error used).",
+    "p_det is built from the best locally-available self-consistent deep injection pool (results/lcat_h_dependence_20260725/data/injections, 50000 rows, z_cut=1.5) whose local dl_max(0.73)=7.760 Gpc is ~15% short of the production run's own pool (dl_max=9.1650 Gpc, from the run's own logs). All realized dark events lie inside the local model's z_max=1.161, but the local pool's RESOLUTION (marginal p_det > 5%) runs out much earlier, at z_safe=0.722 -- 12% of realized dark events sit beyond it, so the FULL-range quantile/KS numbers (q75-q100 especially) are confounded by local pool depth, not just the extreme tail. The restricted z<=z_safe comparison is the credible sub-test. Pool-merging was attempted and rejected by the code's own provenance guard (mixed z_cut-tagged vs untagged injection files) -- deepening the local pool further is not available without the cluster.",
+    "Sky-aware branch reproduced (n_sky_bands=6), not the isotropic sky-marginalised fallback -- this IS the branch that would execute for these production-shaped objects.",
+    "SUPERSEDED 2026-07-30 (same day, later): the production injection pool was staged locally and fingerprint-verified (see production_pool block) -- the pool-depth confound described above no longer applies to the production_pool.final_verdict; it is retained here only as the historical record of the local approximation and its diagnosed limitation."
+  ]
+}

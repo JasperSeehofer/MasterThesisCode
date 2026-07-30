@@ -161,9 +161,19 @@ realization-independent shift. This is plausibly the same defect as the open
 ≈ +23 ln 2D residual) — now showing up at +4σ instead of as a log-likelihood
 residual.
 
-**Recommendation: do not quote a 2D headline from this run.** The 1D channel is
-the defensible one. Diagnosing the mass-kernel/scatter pairing should precede
+~~**Recommendation: do not quote a 2D headline from this run.** The 1D channel is
+the defensible one.~~ Diagnosing the mass-kernel/scatter pairing should precede
 any use of the with-BH-mass posteriors.
+
+**[AMENDED 2026-07-30, Gate B/C adjudication]** Do not quote a headline from
+**EITHER** channel of this run. The 2D channel is biased **+4σ** (see the CLAIM
+file's C3 / C4-amended); the 1D channel's apparent unbiasedness is a **crossing
+of two opposing displaced class profiles** (in-cat argmax **0.86**, dark **0.64**
+in 10/10 runs), with per-event in-catalogue information destroyed (C5, FINDING),
+and the crossing point is contingent on the **mis-calibrated mixture weight**
+(C9: w_G model **0.1215** vs realized **0.0523**, binomial **z = −11.86**).
+Diagnosis and the jointly-derived mixture fix precede any headline.
+`gate_b_20260730/ADJUDICATION_20260730.md` is the record.
 
 ## 7. Status and what is not in here
 
