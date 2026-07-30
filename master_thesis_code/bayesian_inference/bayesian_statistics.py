@@ -2333,7 +2333,10 @@ class BayesianStatistics:
                 else float("nan")
             )
             _LOGGER.info(
-                "Partition-norm: w_G=beta_G/D(h)=%.4f, sum_w_Dg(no_bh)=%.4e, sum_w_Dg(with_bh)=%.4e",
+                # w_G at 7 significant figures (INSTR-2): the h-dependence of the
+                # catalogue partition weight is a ~1e-5 effect at the noise floor of
+                # the 2D-bias investigation -- %.4f rounded it away.
+                "Partition-norm: w_G=beta_G/D(h)=%.7g, sum_w_Dg(no_bh)=%.4e, sum_w_Dg(with_bh)=%.4e",
                 _w_G_preview,
                 _global_cat_denom_no_bh.get(_h_prev, float("nan")),
                 _global_cat_denom_with_bh.get(_h_prev, float("nan")),
@@ -2776,6 +2779,17 @@ class BayesianStatistics:
     ) -> None:
         count = 0
         _n_zero_host = 0
+        # Per-class Sigma ln p_i accumulators (INSTR-1): split the per-h posterior
+        # contribution by host provenance (host_galaxy_index >= 0 = in-catalogue,
+        # -1 = dark). Both channels are tracked so a per-class 1D-vs-2D divergence
+        # is visible directly in the log instead of having to be reconstructed from
+        # the per-event diagnostics CSV afterwards.
+        _n_in_cat_class = 0
+        _n_dark_class = 0
+        _sum_ln_p_in_cat_no_bh = 0.0
+        _sum_ln_p_in_cat_with_bh = 0.0
+        _sum_ln_p_dark_no_bh = 0.0
+        _sum_ln_p_dark_with_bh = 0.0
         _det_times: list[float] = []
         self.posterior_data_with_bh_mass[GALAXY_LIKELIHOODS] = {}
         self.posterior_data_with_bh_mass[ADDITIONAL_GALAXIES_WITHOUT_BH_MASS] = {}
@@ -2879,6 +2893,24 @@ class BayesianStatistics:
             self.posterior_data[index].append(event_likelihood)
             self.posterior_data_with_bh_mass[index].append(event_likelihood_with_bh_mass)
 
+            # Per-class Sigma ln p_i bookkeeping (INSTR-1): read-only accumulation of
+            # values already computed above. A zero-valued p_i contributes -inf, which
+            # IS the true class sum -- do not clip or filter it.
+            _ln_p_no_bh = math.log(event_likelihood) if event_likelihood > 0.0 else float("-inf")
+            _ln_p_with_bh = (
+                math.log(event_likelihood_with_bh_mass)
+                if event_likelihood_with_bh_mass > 0.0
+                else float("-inf")
+            )
+            if self.detection.host_galaxy_index >= 0:
+                _n_in_cat_class += 1
+                _sum_ln_p_in_cat_no_bh += _ln_p_no_bh
+                _sum_ln_p_in_cat_with_bh += _ln_p_with_bh
+            else:
+                _n_dark_class += 1
+                _sum_ln_p_dark_no_bh += _ln_p_no_bh
+                _sum_ln_p_dark_with_bh += _ln_p_with_bh
+
             _det_time = time.perf_counter() - _t_det
             _det_times.append(_det_time)
             if count % 100 == 0 or count == len(self.cramer_rao_bounds):
@@ -2904,6 +2936,24 @@ class BayesianStatistics:
             count - _n_zero_host,
             count,
             _n_zero_host,
+        )
+
+        # Per-class Sigma ln p_i (INSTR-1): the two lines the 2026-07 2D-bias
+        # investigation had to reconstruct by hand from ad-hoc scripts. Both
+        # channels on one line per class, 7 significant figures.
+        _LOGGER.info(
+            "Per-class Sigma ln p_i (h=%.4f): IN-CAT (N=%d) 1D=%.7g 2D=%.7g",
+            self.h,
+            _n_in_cat_class,
+            _sum_ln_p_in_cat_no_bh,
+            _sum_ln_p_in_cat_with_bh,
+        )
+        _LOGGER.info(
+            "Per-class Sigma ln p_i (h=%.4f): DARK (N=%d) 1D=%.7g 2D=%.7g",
+            self.h,
+            _n_dark_class,
+            _sum_ln_p_dark_no_bh,
+            _sum_ln_p_dark_with_bh,
         )
 
     def p_Di(
