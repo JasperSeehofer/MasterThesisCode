@@ -26,7 +26,20 @@ mix3_50_25_25) — all pre-registered acceptance criteria PASS
 |---|---|---|---|---|---|---|---|
 | 61000 | 0.73 | 1588 | 0.72990 | 0.72993 | 0.00030 | [0.72962, 0.73023] | −0.24σ |
 | 62000 | 0.73 | 1542 | 0.72990 | 0.72986 | 0.00039 | [0.72946, 0.73026] | −0.36σ |
-| 64000 | 0.67 | — | — | — | — | — | PENDING (closure test) |
+| 64000 | 0.67 | 1343 | 0.66990 | 0.66989 | 0.00045 | [0.66945, 0.67033] | −0.24σ |
+
+**0.67 closure row filled 2026-07-31** from the dedicated zoom (evaluate 6102316,
+combine 6102317; 31-pt grid [0.666, 0.674], 1e-4 core; artifacts pulled to
+`realistic_20260729/closure_seed64000_h0p67/zoom/`). The closure **PASSES**: pull
+−0.24σ, interior peak (edge/peak 1.7e-18), matching the two 0.73 baselines'
+family (−0.24σ/−0.36σ) — the estimator's h-truth independence holds at the
+resolved-σ level. The earlier coarse-grid parabola estimate (+0.12σ, flagged
+indicative — fitted bins sat 11.3σ out) is superseded by this direct measurement.
+Caveat carried from the run: the GPU simulate array TIMEOUT'd at the 30-min
+partition cap, yielding 1343 events vs the baselines' ~1590; the deficit cannot
+be split between wall-clock truncation and genuine h=0.67 detection loss
+post-merge, so σ_h (0.00045) is honestly wider and N-comparisons across the
+three rows are not exact.
 
 Both fiducial seeds recover truth inside the 68 % interval with symmetric,
 Gaussian peaks (ln L falls to −123/−115 at ±0.005, i.e. ±15σ, matching the
