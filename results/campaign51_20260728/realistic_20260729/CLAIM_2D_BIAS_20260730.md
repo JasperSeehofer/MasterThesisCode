@@ -300,7 +300,21 @@ r1-only, and the near-flat combined profile is precisely why **any** single
 counterfactual MAP displacement — including the ones quoted here and in C9 —
 must not be read alone as ownership.
 
-## C6 — Attribution is confounded; the decisive control was never run [DOC + INFER]
+## C6 — ~~Attribution is confounded; the decisive control was never run~~ **RESOLVED 2026-07-31: cell B ran — THE ESTIMATOR OWNS IT** [DOC + INFER → LOCAL, MEASURED]
+
+**[RESOLUTION 2026-07-31 — `CELLB_READOUT_20260731.md` is the record.]** The 2×2
+cell B (unscattered #51 catalogue + CRB through the #53 estimator, jobs
+6103219/6103220, code `7fd60bb`) delivered the pre-registered outcome 1:
+**B 1D = 0.7450, 2D = 0.7900** ⇒ estimator effect (B−A) = **+0.015 (1D) /
++0.060 (2D)**; scatter effect (C−B) = −0.005 / +0.023. 72% of the 2D
+displacement is the estimator configuration alone, with exact host redshifts.
+The in-cat catalogue-leg rail is 90.7% in B vs 89.2% in C (statistically
+identical — C7 confirmed against the true parent `z_error` widths, the
+staleness-free check); the dark channel difference is +18.0 nats **unscattered**
+(estimator-borne, not scatter-borne); w_G(h) is bit-identical to the #53 curve
+(C9 transfers verbatim). The realistic host-observation model is largely
+exonerated for the headline biases. The original confound statement below is
+retained as the historical record.
 
 | | catalogue | host-z kernel | normalization |
 |---|---|---|---|
