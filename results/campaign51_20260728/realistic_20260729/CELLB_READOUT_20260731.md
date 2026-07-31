@@ -29,9 +29,18 @@ pool. Readout by `cellb_readout.py` (this directory); artifacts pulled to
 
 ## Verdict: pre-registered outcome 1 — **THE ESTIMATOR OWNS IT**
 
+**[Erratum 2026-07-31, same day — flagged by the independent book-review audit:]**
+the original text below said "confirmed on every pre-registered read". Scored
+strictly, it is **2 of 3 exact + 1 marginal**: the 2D window (0.78–0.82 ∋
+0.7900 ✓) and the in-cat class argmax (0.86 ✓) hit exactly; the registered 1D
+read ("≈ 0.70–0.74 as a crossing") is missed by one grid step on the MAP
+(0.7450) while the mean (0.7320) sits inside. The 1D miss does not touch the
+outcome-1 adjudication (which keys on the 2D/argmax reads), but the scoring
+below is corrected to say so honestly.
+
 The joint prediction registered in `ADJUDICATION_20260730.md` §3 (B ≈ C: 2D in
 0.78–0.82, in-cat class argmax 0.86, 1D an interior crossing) is **confirmed on
-every pre-registered read**:
+the decisive reads (2/3 exact, 1D marginal — see erratum above)**:
 
 1. **2D**: B = 0.7900 with exact host redshifts — 72% of the total r1 2D
    displacement (+0.060 of +0.083) is the estimator configuration alone. The
