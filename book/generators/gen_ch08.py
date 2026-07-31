@@ -26,6 +26,12 @@ Outputs
     w_cat = w_G L_cat / (w_G L_cat + (1-w_G) L_comp) in both channels, the
     suppression histogram L_cat_2D / L_cat_1D over surviving dark events, and
     the C4-amended budget partition (zeroed / both-dead / survivors).
+    Since the 2026-07-31 revision it also carries ``cell_b`` — the same
+    accounting redone on the 2x2's cell B (the unscattered parent catalogue
+    through the same estimator), which shows the dark channel difference is
+    estimator-borne and that the 98.5%/1.5% split is configuration-scoped —
+    and, under ``recorded``, the sigma_Mz/M_z both-values pair (claim file
+    1e-4 vs measured median 8.8e-8, ch06_FLAGS.md F-ch06-5).
 
 ``book/site/data/ch08_reparam.json``      (I8.2 "The Reparametrization Walk")
     A faithful re-run of ``gate_b_20260730/c8_reparam.py``'s constant-C sweep
@@ -94,6 +100,13 @@ def _require(rel: Path) -> Path:
 # --- repo-relative artifact paths (spec §4.2 rule 7; never absolute) --------
 CAMPAIGN_REL = Path("results/campaign51_20260728/realistic_20260729")
 GATE_B_REL = CAMPAIGN_REL / "gate_b_20260730"
+# The 2x2's cell B (REVISION 2026-07-31, expB MJ-4): the same #53 estimator
+# configuration run against the UNSCATTERED parent catalogue.  Landed after the
+# chapter was drafted; readout CELLB_READOUT_20260731.md, evaluate 6103219 /
+# combine 6103220 (resubmission of 6101146/6101147 after a plumbing symlink
+# failure), code 7fd60bb — the same commit as cells A and C.
+CELLB_REL = CAMPAIGN_REL / "seed61000" / "estimatorB_2x2"
+CELLB_READOUT_REL = CAMPAIGN_REL / "CELLB_READOUT_20260731.md"
 SCORES_REL = CAMPAIGN_REL / "realistic_scores.csv"
 C8_RESULTS_REL = GATE_B_REL / "c8_reparam_results.json"
 C3C4_RESULTS_REL = GATE_B_REL / "c3c4_allruns_results.json"
@@ -142,6 +155,38 @@ SPEC = {
     "c10_dark_positive_frac": 0.391,  # C10
     "dmap_dlnc": 0.031,  # C8
     "e889_swing": (1.98, -2.04, -3.30),  # C3 off-r1 replication note
+    # --- the 2x2's cell B (CELLB_READOUT_20260731.md) --------------------
+    # Cited by the readout itself:
+    "cellb_map1d": 0.7450,
+    "cellb_map2d": 0.7900,
+    "cellb_channel_diff_dark": 18.00,
+    "cellb_channel_diff_incat": -1.80,
+    "cellb_channel_diff_total": 16.20,
+    "cellb_wG_060": 0.1625175,
+    "cellb_wG_073": 0.1215039,
+    "cellb_wG_081": 0.1038732,
+    # Recomputed by expert review B, NOT present in any adjudicated artifact.
+    # Reproduced here from cell B's own diagnostics CSV so the book prints
+    # measured numbers, not transcribed ones (ch08_FLAGS.md F-ch08-9).
+    "cellb_n_surv": 219,
+    # 80.7 is the review's own figure; recomputed here it is 80.763, which the
+    # chapter prints as 80.8% (the pair then sums to 100.0).  Gated at the one
+    # decimal the review quoted — see ch08_FLAGS.md F-ch08-9.
+    "cellb_pct_surv": 80.7,
+    "cellb_n_zeroed": 688,
+    "cellb_pct_zeroed": 19.2,
+    "cellb_wcat_dark_1d": 0.0361,
+    "cellb_wcat_dark_2d": 0.0043,
+    "cellb_deweight": 8.39,
+    "cellb_dark_zero2d_frac": 0.855,
+    "cellb_n_1d_nonzero": 982,
+    # --- sigma_Mz/M_z: the both-values pair (tomas B3 / F-ch06-5) ---------
+    # The claim file says ~1e-4; Chapter 6 recomputed the same stored
+    # quantity, sqrt(Sigma_MM)/M from prepared_cramer_rao_bounds.csv, and
+    # measured these.  Neither is corrected here — the chapter prints both.
+    "sigma_mz_claim": 1e-4,
+    "sigma_mz_measured_median": 8.8e-8,
+    "sigma_mz_measured_889": 1.36e-9,
 }
 
 # Tolerances.  These are deliberately tight: the point of the gates is to catch
@@ -229,6 +274,49 @@ def load_run(seed: int, run: int) -> dict[str, Any]:
         "events": evs,
         "incat": incat,
         "M_z_det": m_z_det,
+        "identity_relerr": {"1D": r1, "2D": r2},
+        **piv,
+    }
+
+
+def load_cellb() -> dict[str, Any] | None:
+    """Pivot the 2x2 cell-B run's diagnostics CSV, or ``None`` if absent.
+
+    Cell B is the same estimator configuration as campaign #53 run against the
+    *unscattered* parent catalogue (``observed_catalogue: null``), on the same
+    CRB table and injection pool and at the same commit.  It is the control
+    that separates the estimator's contribution from the realism layer's, and
+    for this chapter it is the first *second* diagnostics CSV the C4 partition
+    has ever had.
+
+    Returns ``None`` rather than raising when the artifact is not in either
+    checkout: the cell-B block is an addition to an already-gated chapter, and
+    a machine without the run must still be able to rebuild the other data.
+    """
+    csv = _resolve(CELLB_REL / "diagnostics" / "event_likelihoods.csv")
+    if csv is None:
+        return None
+    df = pd.read_csv(csv)
+    hs = np.sort(df["h"].unique())
+    evs = np.sort(df["event_idx"].unique())
+    piv = {
+        c: df.pivot(index="event_idx", columns="h", values=c).loc[evs, hs].to_numpy() for c in COLS
+    }
+    crb = pd.read_csv(_require(CAMPAIGN_REL / "seed61000" / "prepared_cramer_rao_bounds.csv"))
+    incat = crb["host_galaxy_index"].to_numpy()[evs] >= 0
+
+    rec2 = piv["w_G"] * piv["L_cat_with_bh"] + (1.0 - piv["w_G"]) * piv["L_comp"]
+    rec1 = piv["w_G"] * piv["L_cat_no_bh"] + (1.0 - piv["w_G"]) * piv["L_comp"]
+    r2 = float(np.abs(rec2 / piv["combined_with_bh"] - 1.0).max())
+    r1 = float(np.abs(rec1 / piv["combined_no_bh"] - 1.0).max())
+    if max(r1, r2) > TOL_IDENTITY:
+        msg = f"mixture identity broken for cell B: 1D {r1:.3e} 2D {r2:.3e}"
+        raise FidelityError(msg)
+
+    return {
+        "h": hs,
+        "events": evs,
+        "incat": incat,
         "identity_relerr": {"1D": r1, "2D": r2},
         **piv,
     }
@@ -451,7 +539,34 @@ def build_channel(r1: dict[str, Any]) -> dict[str, Any]:
 # ---------------------------------------------------------------------------
 # Step 2 — ch08_sieve.json  (I8.1)
 # ---------------------------------------------------------------------------
+def sigma_mz_measured() -> dict[str, float]:
+    """Chapter 6's recomputation of sigma_Mz/M_z, redone here (tomas B3).
+
+    The claim file states ~1e-4; the same stored quantity — the CRB table's
+    own sqrt(Sigma_MM)/M — measures ~1e-7.  ch06_FLAGS.md F-ch06-5 raised the
+    conflict *for this chapter*, so the chapter recomputes it rather than
+    transcribing either side, and prints both (worklist D5).
+    """
+    crb = pd.read_csv(_require(CAMPAIGN_REL / "seed61000" / "prepared_cramer_rao_bounds.csv"))
+    rel = np.sqrt(crb["delta_M_delta_M"].to_numpy()) / crb["M"].to_numpy()
+    out = {
+        "median": float(np.median(rel)),
+        "p5": float(np.quantile(rel, 0.05)),
+        "p95": float(np.quantile(rel, 0.95)),
+        "e889": float(rel[EVENT_INCAT]),
+    }
+    _check(
+        "sigma_Mz/M_z median vs F-ch06-5", out["median"], SPEC["sigma_mz_measured_median"], 5e-10
+    )
+    _check("sigma_Mz/M_z for 889 vs ch06 §4.1", out["e889"], SPEC["sigma_mz_measured_889"], 5e-12)
+    if not (out["median"] < 1e-6 < SPEC["sigma_mz_claim"]):
+        msg = "the sigma_Mz both-values pair no longer straddles 1e-6 — re-read F-ch06-5"
+        raise FidelityError(msg)
+    return out
+
+
 def build_sieve(r1: dict[str, Any]) -> dict[str, Any]:
+    sig_mz = sigma_mz_measured()
     hs = r1["h"]
     incat = r1["incat"]
     dark = ~incat
@@ -677,8 +792,170 @@ def build_sieve(r1: dict[str, Any]) -> dict[str, Any]:
             "one_sidedness_src": "CLAIM_2D_BIAS_20260730.md C4 (P6 measurement)",
             "sigma_lnM_catalogue": 1.28,
             "sigma_lnM_kernel_floor": 0.58,
+            # BOTH-VALUES item (worklist D5; tomas B3; ch06_FLAGS.md F-ch06-5).
+            # The claim file states 1e-4 at CLAIM_2D_BIAS_20260730.md:172; the
+            # same stored quantity recomputed from the CRB table is ~1e-7.
+            # The chapter prints both and prefers neither; amending the claim
+            # file is the author's call, not the book's.
             "sigma_Mz_over_Mz": 1e-4,
+            "sigma_Mz_over_Mz_claim_src": "CLAIM_2D_BIAS_20260730.md:172 (C4)",
+            "sigma_Mz_over_Mz_measured_median": _r(sig_mz["median"], 4),
+            "sigma_Mz_over_Mz_measured_p5": _r(sig_mz["p5"], 4),
+            "sigma_Mz_over_Mz_measured_p95": _r(sig_mz["p95"], 4),
+            "sigma_Mz_over_Mz_measured_889": _r(sig_mz["e889"], 4),
+            "sigma_Mz_over_Mz_measured_src": (
+                "sqrt(delta_M_delta_M)/M of prepared_cramer_rao_bounds.csv; ch06_FLAGS.md F-ch06-5"
+            ),
+            "sigma_Mz_over_Mz_status": (
+                "BOTH VALUES LIVE — three orders of magnitude apart, flagged, neither "
+                "corrected in the book. Every argument in the chapter needs only that the "
+                "GW side is negligible against the catalogue's sigma_lnM ~ 1.28, which "
+                "both satisfy."
+            ),
         },
+    }
+
+
+# ---------------------------------------------------------------------------
+# Step 2b — the 2x2's cell B  (expB MJ-4; folded into ch08_sieve.json)
+# ---------------------------------------------------------------------------
+def build_cellb(cb: dict[str, Any]) -> dict[str, Any]:
+    """The C4 accounting redone on the unscattered configuration.
+
+    Two things this delivers to §4/§5, neither of which the chapter could say
+    when it was drafted:
+
+    1.  the dark channel difference is +18.00 nats with **zero realized
+        scatter**, so the mass channel's de-weighting is estimator-borne and
+        not an artifact of the realism layer;
+    2.  the 98.5% / 1.5% survivors-vs-deleted split is *configuration-scoped* —
+        it reads 80.7% / 19.2% here.  Deletion is the minority carrier in both,
+        which is the finding; the percentage is not.
+
+    The partition numbers are gated against expert review B's independent
+    recomputation, and flagged in ``ch08_FLAGS.md`` (F-ch08-9) as recomputed
+    for the book: they are in no adjudicated artifact.
+    """
+    hs = cb["h"]
+    incat = cb["incat"]
+    dark = ~incat
+    i73 = int(np.argmin(np.abs(hs - 0.73)))
+    i81 = int(np.argmin(np.abs(hs - 0.81)))
+    w, lc1, lc2, lcomp = cb["w_G"], cb["L_cat_no_bh"], cb["L_cat_with_bh"], cb["L_comp"]
+    ln1 = np.log(cb["combined_no_bh"])
+    ln2 = np.log(cb["combined_with_bh"])
+
+    # --- the delivered MAPs (the readout's headline) -------------------------
+    map1_grid, _ = map_of(ln1.sum(axis=0), hs)
+    map2_grid, _ = map_of(ln2.sum(axis=0), hs)
+    _check("cell B 1D MAP", map1_grid, SPEC["cellb_map1d"], 1e-9)
+    _check("cell B 2D MAP", map2_grid, SPEC["cellb_map2d"], 1e-9)
+
+    # --- the class budget, 0.73 -> 0.81 --------------------------------------
+    def diff(mask: np.ndarray) -> float:
+        return float(
+            (ln2[mask, i81] - ln2[mask, i73]).sum() - (ln1[mask, i81] - ln1[mask, i73]).sum()
+        )
+
+    d_dark, d_incat = diff(dark), diff(incat)
+    _check("cell B dark channel diff", d_dark, SPEC["cellb_channel_diff_dark"], 5e-3)
+    _check("cell B in-cat channel diff", d_incat, SPEC["cellb_channel_diff_incat"], 5e-3)
+    _check("cell B total channel diff", d_dark + d_incat, SPEC["cellb_channel_diff_total"], 5e-3)
+    if d_dark <= 0:
+        msg = "cell B's dark channel difference is not positive — the whole §5 claim inverts"
+        raise FidelityError(msg)
+
+    # --- the C4 partition, same masks as attack_c4_decomposition.py ----------
+    any1d = np.any(lc1 > 0, axis=1)
+    any2d = np.any(lc2 > 0, axis=1)
+
+    def part(mask: np.ndarray) -> dict[str, Any]:
+        d1 = float((ln1[mask, i81] - ln1[mask, i73]).sum())
+        d2 = float((ln2[mask, i81] - ln2[mask, i73]).sum())
+        return {"n": int(mask.sum()), "diff": _r(d2 - d1, 6)}
+
+    p_zeroed = part(dark & any1d & ~any2d)
+    p_bothdead = part(dark & ~any1d)
+    p_surv = part(dark & any2d)
+    _check("cell B survivors n", p_surv["n"], SPEC["cellb_n_surv"], 0.5)
+    _check("cell B zeroed n", p_zeroed["n"], SPEC["cellb_n_zeroed"], 0.5)
+    _check("cell B both-dead contribution", p_bothdead["diff"], 0.0, 1e-9)
+    _check("cell B partition closes", p_zeroed["diff"] + p_surv["diff"], d_dark, 5e-3)
+    pct_surv = 100 * p_surv["diff"] / d_dark
+    pct_zeroed = 100 * p_zeroed["diff"] / d_dark
+    # the reviewer quoted the two shares to one decimal; gate at that precision
+    _check("cell B survivors share %", pct_surv, SPEC["cellb_pct_surv"], 0.1)
+    _check("cell B zeroed share %", pct_zeroed, SPEC["cellb_pct_zeroed"], 0.1)
+    # The structural claim the chapter actually makes — deletion is the
+    # minority carrier — must hold, or the sentence is wrong on this venue.
+    if pct_zeroed >= pct_surv:
+        msg = "cell B: deletion is no longer the minority carrier; §5's sentence is false"
+        raise FidelityError(msg)
+
+    # --- the de-weighting, same estimator as F-ch08-7 -------------------------
+    def wcat(lc: np.ndarray) -> np.ndarray:
+        num = w * lc
+        return num / (num + (1.0 - w) * lcomp)
+
+    wc1 = float(wcat(lc1)[dark].mean(axis=0)[i73])
+    wc2 = float(wcat(lc2)[dark].mean(axis=0)[i73])
+    _check("cell B dark w_cat 1D", wc1, SPEC["cellb_wcat_dark_1d"], 5e-5)
+    _check("cell B dark w_cat 2D", wc2, SPEC["cellb_wcat_dark_2d"], 5e-5)
+    _check("cell B de-weighting factor", wc1 / wc2, SPEC["cellb_deweight"], 5e-3)
+
+    zero2d = float((lc2[dark, i73] <= 0).mean())
+    _check("cell B dark 2D zero fraction", zero2d, SPEC["cellb_dark_zero2d_frac"], 5e-4)
+    _check("cell B events with a live 1D leg", int(any1d.sum()), SPEC["cellb_n_1d_nonzero"], 0.5)
+
+    # --- w_G(h): the pre-registered bit-identity read (ch09's payoff) ---------
+    i60 = int(np.argmin(np.abs(hs - 0.60)))
+    _check("cell B w_G(0.60)", float(w[0, i60]), SPEC["cellb_wG_060"], 5e-8)
+    _check("cell B w_G(0.73)", float(w[0, i73]), SPEC["cellb_wG_073"], 5e-8)
+    _check("cell B w_G(0.81)", float(w[0, i81]), SPEC["cellb_wG_081"], 5e-8)
+
+    return {
+        "venue": "seed61000/estimatorB_2x2 — the 2x2 cell B (unscattered parent catalogue)",
+        "readout": "CELLB_READOUT_20260731.md",
+        "jobs_result": "evaluate 6103219 / combine 6103220",
+        "jobs_prereg": "6101146 / 6101147",
+        "resubmission_note": (
+            "6103219/6103220 are the resubmission of 6101146/6101147 after a pure-plumbing "
+            "symlink failure in the run-dir setup; the test design and the pre-registration "
+            "are unchanged, and the code is the same commit (7fd60bb) as cells A and C."
+        ),
+        "code": "7fd60bb",
+        "map_1d": _r(map1_grid, 6),
+        "map_2d": _r(map2_grid, 6),
+        "channel_diff": {
+            "dark": _r(d_dark, 6),
+            "incat": _r(d_incat, 6),
+            "total": _r(d_dark + d_incat, 6),
+            "comparison_scattered_r1": {"dark": 15.83, "incat": 2.97, "total": 18.80},
+        },
+        "partition": {
+            "survivors": p_surv,
+            "zeroed_2d_alive_1d": p_zeroed,
+            "both_dead": p_bothdead,
+            "pct_survivors": _r(pct_surv, 4),
+            "pct_zeroed": _r(pct_zeroed, 4),
+            "comparison_scattered_r1": {"pct_survivors": 98.5, "pct_zeroed": 1.5},
+        },
+        "w_cat_dark_073": {"1D": _r(wc1, 5), "2D": _r(wc2, 5), "factor": _r(wc1 / wc2, 4)},
+        "dark_zero_fraction_2d_073": _r(zero2d, 5),
+        "n_1d_nonzero": int(any1d.sum()),
+        "w_G": {
+            "0.60": _r(float(w[0, i60]), 8),
+            "0.73": _r(float(w[0, i73]), 8),
+            "0.81": _r(float(w[0, i81]), 8),
+        },
+        "identity_relerr": {k: _r(v, 4) for k, v in cb["identity_relerr"].items()},
+        "provenance": (
+            "RECOMPUTED FOR THE BOOK from cell B's own diagnostics CSV. The MAPs, the "
+            "channel differences and w_G(h) are in CELLB_READOUT_20260731.md; the C4 "
+            "partition and the de-weighting factor are NOT in any adjudicated artifact — "
+            "they were first computed by the book's expert review and are reproduced here. "
+            "See book/design/flags/ch08_FLAGS.md F-ch08-9."
+        ),
     }
 
 
@@ -965,9 +1242,30 @@ def main() -> None:
         f"2D {r1['identity_relerr']['2D']:.2e}"
     )
 
+    sieve = build_sieve(r1)
+    cb = load_cellb()
+    if cb is None:
+        _FLAGS.append(
+            "F2  the 2x2 cell-B run is not in either checkout "
+            f"({CELLB_REL}); §5's cell-B block is on the page but its numbers "
+            "could not be re-derived on this machine."
+        )
+        print("WARNING: cell-B diagnostics not found — cell-B block not regenerated")
+    else:
+        cell_b = build_cellb(cb)
+        sieve["cell_b"] = cell_b
+        surv = cell_b["partition"]["survivors"]
+        zeroed = cell_b["partition"]["zeroed_2d_alive_1d"]
+        print(
+            f"cell B: 1D MAP {cell_b['map_1d']:.4f} / 2D MAP {cell_b['map_2d']:.4f}; "
+            f"dark channel diff {cell_b['channel_diff']['dark']:+.2f} nats; "
+            f"survivors {surv['n']} ({cell_b['partition']['pct_survivors']:.1f}%) "
+            f"vs zeroed {zeroed['n']} ({cell_b['partition']['pct_zeroed']:.1f}%)"
+        )
+
     payloads = [
         (OUT_CHANNEL, build_channel(r1)),
-        (OUT_SIEVE, build_sieve(r1)),
+        (OUT_SIEVE, sieve),
         (OUT_REPARAM, build_reparam(r1)),
         (OUT_TWOFACES, build_twofaces(r1)),
     ]

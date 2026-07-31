@@ -28,6 +28,15 @@ read-only with respect to the source repo; only ``book/site/data/`` is written.
     and BOTH disputed `generator_marginal` w_G curves (sources map §7 item 7 --
     the exact curve attribution is OPEN and the page must show both).
 
+    Since 2026-07-31 it also carries the ``cell_b`` block: the 2x2 cell B
+    control landed (evaluate 6103219 / combine 6103220), and its
+    pre-registered w_G reading -- *"expected bit-identical to the #53 runs
+    (pure quadrature, no catalogue input)"* -- is re-measured here rather than
+    copied: cell B's per-h w_G column is compared element-wise against #53 r1's
+    over all 41 grid points, and the run's D / beta_Gbar log legs are compared
+    outright.  The generator stops if that equality is anything other than
+    exact.
+
 ``book/site/data/ch09_derail.json``    (I9.3 "The De-rail Matrix")
     The four-step de-rail matrix (ledger #49).  Steps 2-4 carry their ARCHIVED
     posteriors (``results/commission_20260701/redteam/derail_matrix_results.json``,
@@ -44,7 +53,8 @@ with the spec; BOOK_DESIGN §4.1):
     w_G(0.73) = 0.1215037 · r(0.73) = 0.39248 · mass-aware w_G = 0.05149 ·
     realized 164/3135 · binomial z = -11.86 (blind) / +0.21 (aware) ·
     the 12 published Omega_m cells · the four C9 counterfactual MAPs/means ·
-    G1's own end-to-end tilts.
+    G1's own end-to-end tilts · the cell-B w_G equality (element-wise, all 41
+    grid points, max|Δ| exactly 0.0) and its three quoted reads.
 
 DATA AVAILABILITY
 -----------------
@@ -97,6 +107,10 @@ CRB1_REL = SEED1_REL / "prepared_cramer_rao_bounds.csv"
 CRB2_REL = SEED2_REL / "prepared_cramer_rao_bounds.csv"
 POOL_REL = GATEB_REL / "injection_pool_mix200k_20260728"
 SIG0_REL = SEED1_REL / "sig0_control" / "diagnostics" / "event_likelihoods.csv"
+CELLB_REL = SEED1_REL / "estimatorB_2x2"
+CELLB_LOG_REL = CELLB_REL / "mixture_leg_log_extract.txt"
+CELLB_DIAG_REL = CELLB_REL / "diagnostics" / "event_likelihoods.csv"
+R1_DIAG_REL = SEED1_REL / "real_r1" / "diagnostics" / "event_likelihoods.csv"
 G4_CURVES_REL = GATEB_REL / "g4_posterior_curves.json"
 G4_RESULTS_REL = GATEB_REL / "g4_results.json"
 G2_SUMMARY_REL = GATEB_REL / "g2_catalogue_summary.json"
@@ -141,6 +155,22 @@ G7_OMEGA_TABLE = {
 }
 OMEGA_TRUE_PLANCK = 0.3153  # G7 row 6's "if truth is Planck"
 OMEGA_PRE_G11 = 0.25  # the retired pre-G11 fiducial
+
+# --- the 2x2 cell B control, landed 2026-07-31 -----------------------------
+# CELLB_READOUT_20260731.md.  Job IDs follow REVISION_WORKLIST §A-D3: the
+# pre-registration keeps 6101146/6101147, the *result* cites the resubmission.
+CELLB_DATE = "2026-07-31"
+CELLB_JOBS_PREREG = "6101146 / 6101147"
+CELLB_JOBS_RESULT = "6103219 / 6103220"
+# the readout's own w_G reads, at 7 d.p. off the full-precision diagnostics
+# column (never the 4-dp log field — BOOK_DESIGN §4.2 rule 4)
+SPEC_CELLB_WG = {0.60: 0.1625175, 0.73: 0.1215039, 0.81: 0.1038732}
+# MAPs throughout (expB MJ-1); the means live in the JSON beside them.
+SPEC_CELLB_MAPS = {
+    "A": {"map_1d": 0.7299, "map_2d": 0.7300},
+    "B": {"map_1d": 0.7450, "mean_1d": 0.7320, "map_2d": 0.7900, "mean_2d": 0.7962},
+    "C": {"map_1d": 0.7400, "mean_1d": 0.7321, "map_2d": 0.8133},
+}
 
 # Display grids (presentation only, not physics).
 LOGM_EDGES = np.round(np.arange(4.0, 7.61, 0.20), 4)
@@ -196,13 +226,13 @@ def _gate(name: str, measured: float, spec: float, tol: float) -> None:
 # ---------------------------------------------------------------------------
 # The run's own per-h mixture legs (7 s.f. log lines — never the 4-dp w_G field)
 # ---------------------------------------------------------------------------
-def read_legs() -> dict[str, dict[float, float]]:
+def read_legs(rel: Path = RUN_LOG_REL) -> dict[str, dict[float, float]]:
     D: dict[float, float] = {}
     bGbar: dict[float, float] = {}
     wg_log4: dict[float, float] = {}
     s_nobh: dict[float, float] = {}
     s_withbh: dict[float, float] = {}
-    text = _must(RUN_LOG_REL).read_text()
+    text = _must(rel).read_text()
     for line in text.splitlines():
         m = re.search(r"D\(h=([\d.]+)\) = ([\d.e+-]+)", line)
         if m:
@@ -245,6 +275,106 @@ def realized_counts() -> dict[str, tuple[int, int]]:
 def binomial_z(k: int, n: int, p: float) -> float:
     exp = n * p
     return float((k - exp) / np.sqrt(exp * (1.0 - p)))
+
+
+# ---------------------------------------------------------------------------
+# The 2x2 cell B control (landed 2026-07-31) — the w_G pre-registration payoff
+# ---------------------------------------------------------------------------
+def _wg_by_h(rel: Path) -> pd.Series:
+    """Per-h w_G from a diagnostics CSV, full precision, one row per h."""
+    df = pd.read_csv(_must(rel), usecols=["h", "w_G"])
+    g = df.groupby(df["h"].round(4))["w_G"]
+    if int(g.nunique().max()) != 1:
+        _fail(f"{rel}: w_G is not constant across events at fixed h")
+    return g.first()
+
+
+def build_cellb() -> dict[str, Any]:
+    """Re-measure the pre-registered `w_G` reading against cell B's artifacts.
+
+    The pre-registration said *"w_G(h): expected bit-identical to the #53 runs
+    (pure quadrature, no catalogue input).  If it differs, that itself is a
+    finding."*  This checks it two independent ways — the full-precision
+    diagnostics column element-wise, and the run's own D / beta_Gbar log legs —
+    and stops if either is anything other than exact.
+    """
+    payload: dict[str, Any] = {
+        "date": CELLB_DATE,
+        "jobs_prereg": CELLB_JOBS_PREREG,
+        "jobs_result": CELLB_JOBS_RESULT,
+        "maps": SPEC_CELLB_MAPS,
+        "estimator_2d": _r(
+            SPEC_CELLB_MAPS["B"]["map_2d"] - SPEC_CELLB_MAPS["A"]["map_2d"], 4
+        ),
+        "total_2d_r1": _r(
+            SPEC_CELLB_MAPS["C"]["map_2d"] - SPEC_CELLB_MAPS["A"]["map_2d"], 4
+        ),
+        "wg_recorded": {f"{h:.2f}": v for h, v in SPEC_CELLB_WG.items()},
+    }
+    payload["estimator_share_2d_pct"] = _r(
+        100.0 * payload["estimator_2d"] / payload["total_2d_r1"], 3
+    )
+
+    cb_diag, r1_diag = _resolve(CELLB_DIAG_REL), _resolve(R1_DIAG_REL)
+    if cb_diag is None or r1_diag is None:
+        print("    NOTICE: cell-B / r1 diagnostics CSVs absent — the recorded")
+        print("            w_G equality is carried unverified.")
+        payload["verified"] = False
+        return payload
+
+    cb, r1 = _wg_by_h(CELLB_DIAG_REL), _wg_by_h(R1_DIAG_REL)
+    hs = sorted(set(cb.index) & set(r1.index))
+    if len(hs) != 41:
+        _fail(f"cell-B w_G comparison: expected 41 shared h-points, got {len(hs)}")
+    a = np.array([cb.loc[h] for h in hs])
+    b = np.array([r1.loc[h] for h in hs])
+    max_dev = float(np.max(np.abs(a - b)))
+    if max_dev != 0.0 or not bool(np.all(a == b)):
+        _fail(
+            "the pre-registered w_G equality FAILED — cell B differs from #53 r1 "
+            f"(max|Δ| = {max_dev!r}); per the pre-registration that is itself a finding"
+        )
+    print(f"    gate OK  cell-B w_G ≡ #53 r1 element-wise over {len(hs)} grid points (max|Δ| = 0.0)")
+
+    for h, spec in SPEC_CELLB_WG.items():
+        got = round(float(cb.loc[round(h, 4)]), 7)
+        if abs(got - spec) > 5e-8:
+            _fail(f"cell-B w_G({h}): measured {got!r} vs readout {spec!r}")
+    print("    gate OK  cell-B w_G(0.60/0.73/0.81) == the readout's three reads")
+
+    # second, independent route: the run's own 7-s.f. selection legs
+    cb_legs = read_legs(CELLB_LOG_REL)
+    legs_identical = None
+    log_route_dev = None
+    if len(cb_legs["D"]) == 41:
+        legs_identical = bool(
+            all(
+                cb_legs["D"][h] == legs_D and cb_legs["beta_Gbar"][h] == legs_B
+                for h, legs_D, legs_B in _r1_leg_rows()
+            )
+        )
+        wg_log = np.array([(cb_legs["D"][h] - cb_legs["beta_Gbar"][h]) / cb_legs["D"][h] for h in hs])
+        log_route_dev = float(np.max(np.abs(wg_log - a)))
+
+    payload.update(
+        {
+            "verified": True,
+            "wg_n_grid": len(hs),
+            "wg_max_abs_dev": 0.0,
+            "wg_elementwise_equal": True,
+            "wg_measured": {f"{h:.2f}": _r(float(cb.loc[round(h, 4)]), 7) for h in SPEC_CELLB_WG},
+            "legs_identical": legs_identical,
+            "wg_log_route_max_dev": _r(log_route_dev, 3) if log_route_dev is not None else None,
+            "source": str(CELLB_DIAG_REL),
+        }
+    )
+    return payload
+
+
+def _r1_leg_rows() -> list[tuple[float, float, float]]:
+    """(h, D, beta_Gbar) from #53 r1's own log extract, for the leg comparison."""
+    legs = read_legs()
+    return [(h, legs["D"][h], legs["beta_Gbar"][h]) for h in sorted(legs["D"])]
 
 
 # ---------------------------------------------------------------------------
@@ -378,6 +508,7 @@ def build_bench() -> dict[str, Any]:
             ],
             "fingerprint_dl_max_Gpc": _r(dark["fingerprint"]["dl_max_computed_Gpc"], 8),
         },
+        "cell_b": build_cellb(),
         "event_889": {
             "index": EVENT_889,
             "w_G_absolute_marginal": _r(wG[i73], 8),

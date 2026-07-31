@@ -284,6 +284,19 @@ def build_mixture() -> dict[str, Any]:
     w_by_kappa: list[list[float]] = []
     n_zero_by_kappa: list[int] = []
     summary_by_kappa: list[dict[str, float]] = []
+    # Per-kappa narration support (REVISION_WORKLIST.md section C-ch05,
+    # mara MAJOR-7): the dial is NON-MONOTONIC in the middle, so each reachable
+    # regime needs its own measured verdict rather than a generic "watch it
+    # move".  Emitted per kappa:
+    #   * prefactor_tilt_by_kappa -- N * dln(1 - w_kappa) across the whole
+    #     grid, i.e. C10's lever re-measured at the counterfactual weight;
+    #   * map_by_kappa_with_leg / _no_leg -- the MAP of the two sub-populations
+    #     separately (the 1095 events with a catalogue leg at every h, and the
+    #     493 that never have one).  Which of the two wins is what actually
+    #     decides where the total peaks in the 0.86 plateau.
+    prefactor_tilt_by_kappa: list[float | None] = []
+    map_by_kappa_with_leg: list[float | None] = []
+    map_by_kappa_no_leg: list[float | None] = []
     for kappa in KAPPA_GRID:
         if kappa is None:
             w_k = np.ones(n_h)
@@ -304,6 +317,18 @@ def build_mixture() -> dict[str, Any]:
         w_by_kappa.append(_round(w_k, 10))
         summary_by_kappa.append(_posterior_summary(log_sum, h_grid))
 
+        prefactor_tilt_by_kappa.append(
+            None if kappa is None else float(n_events * (np.log1p(-w_k[-1]) - np.log1p(-w_k[0])))
+        )
+        grp_with = mixed[has_cat_leg & alive]
+        grp_no = mixed[(~has_cat_leg) & alive]
+        map_by_kappa_with_leg.append(
+            float(h_grid[int(np.argmax(np.log(grp_with).sum(axis=0)))]) if grp_with.shape[0] else None
+        )
+        map_by_kappa_no_leg.append(
+            float(h_grid[int(np.argmax(np.log(grp_no).sum(axis=0)))]) if grp_no.shape[0] else None
+        )
+
     # "flatten the slope": w_G held at its h = 0.73 value.
     i73 = int(np.where(np.isclose(h_grid, 0.73))[0][0])
     w_flat = np.full(n_h, w_g[i73])
@@ -315,6 +340,30 @@ def build_mixture() -> dict[str, Any]:
     nats_prefactor = float(
         n_events * (np.log(1.0 - w_g[i81]) - np.log(1.0 - w_g[i73]))
     )
+
+    # --- C10's OTHER half: what L_comp itself does over the same window ---
+    # REVISION_WORKLIST.md section C-ch05 [expA-M1].  The page previously
+    # attached the ALL-EVENT sum (-3.11) to a sentence about DARK events and
+    # attributed to L_comp alone a positive-tilt fraction that C10 computes
+    # WITH the (1 - w_G) prefactor folded in.  Both halves are measured here so
+    # the block that enforces C10's phrasing rule obeys it.  Scoping matches
+    # ch08_FLAGS.md F-ch08-6.  (1 - w_G) is event-independent, so folding the
+    # prefactor in shifts every event's tilt by the SAME constant.
+    dln_comp = np.log(l_comp[:, i81]) - np.log(l_comp[:, i73])
+    dln_prefactor = float(np.log1p(-w_g[i81]) - np.log1p(-w_g[i73]))
+    dln_prefcomp = dln_comp + dln_prefactor
+    c10_lcomp = {
+        "window": [float(h_grid[i73]), float(h_grid[i81])],
+        "sum_dln_Lcomp_all": float(dln_comp.sum()),
+        "sum_dln_Lcomp_dark": float(dln_comp[~in_catalog].sum()),
+        "sum_dln_Lcomp_incat": float(dln_comp[in_catalog].sum()),
+        "sum_dln_prefactor_Lcomp_dark": float(dln_prefcomp[~in_catalog].sum()),
+        "frac_dark_positive_Lcomp": float((dln_comp[~in_catalog] > 0.0).mean()),
+        "frac_dark_positive_prefactor_Lcomp": float(
+            (dln_prefcomp[~in_catalog] > 0.0).mean()
+        ),
+        "dln_prefactor_per_event": dln_prefactor,
+    }
 
     # --- the two protagonists --------------------------------------------
     pos = {int(e): k for k, e in enumerate(event_idx)}
@@ -387,10 +436,14 @@ def build_mixture() -> dict[str, Any]:
         "w_by_kappa": w_by_kappa,
         "n_zero_by_kappa": n_zero_by_kappa,
         "summary_by_kappa": summary_by_kappa,
+        "prefactor_tilt_by_kappa": prefactor_tilt_by_kappa,
+        "map_by_kappa_with_leg": map_by_kappa_with_leg,
+        "map_by_kappa_no_leg": map_by_kappa_no_leg,
         "log_post_flat_w": _round(log_flat, 6),
         "w_flat": float(w_g[i73]),
         "summary_flat_w": _posterior_summary(log_flat, h_grid),
         "nats_prefactor_073_to_081": nats_prefactor,
+        "c10_Lcomp_scoping": c10_lcomp,
         "events": {"e889": event_block(EVENT_889), "e606": event_block(EVENT_606)},
     }
 
@@ -517,6 +570,25 @@ def main() -> None:
           f"{m['w_G'][m['h_grid'].index(0.73)]:.7f} / {m['w_G'][-1]:.7f}")
     print(f"  |w_G(csv) - w_G(logs)|max  : {m['w_G_log_max_abs_diff']:.3e}")
     print(f"  N dln(1-w_G), 0.73->0.81   : {m['nats_prefactor_073_to_081']:+.5f} nats")
+    q = m["c10_Lcomp_scoping"]
+    print(f"  C10 scoping, window {q['window'][0]}->{q['window'][1]}:")
+    print(f"    sum dln L_comp  all/dark/in-cat : {q['sum_dln_Lcomp_all']:+.2f} / "
+          f"{q['sum_dln_Lcomp_dark']:+.2f} / {q['sum_dln_Lcomp_incat']:+.2f} nats")
+    print(f"    dark positive on L_comp alone   : "
+          f"{100 * q['frac_dark_positive_Lcomp']:.2f}%")
+    print(f"    dark positive with (1-w_G)      : "
+          f"{100 * q['frac_dark_positive_prefactor_Lcomp']:.2f}%")
+    print(f"    sum dln[(1-w_G) L_comp], dark   : "
+          f"{q['sum_dln_prefactor_Lcomp_dark']:+.2f} nats")
+    print("  I5.1 dial regimes (kappa: MAP total | 1095 with leg | 493 without "
+          "| N dln(1-w) over the grid):")
+    for kk, ss, mw, mn, pt in zip(
+        m["kappa_grid"], m["summary_by_kappa"], m["map_by_kappa_with_leg"],
+        m["map_by_kappa_no_leg"], m["prefactor_tilt_by_kappa"],
+    ):
+        print(f"    {'inf' if kk is None else kk:>7} : {ss['map']:<6} | "
+              f"{'--' if mw is None else mw:<6} | {'--' if mn is None else mn:<6} | "
+              f"{'--' if pt is None else f'{pt:+.1f}'}")
     print(f"  MAP all / in-cat / dark    : {m['summary_all']['map']} / "
           f"{m['summary_incat']['map']} / {m['summary_dark']['map']}")
     print(f"  mean all / in-cat / dark   : {m['summary_all']['mean']:.4f} / "

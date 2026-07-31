@@ -362,3 +362,303 @@ dial — every dead end must volunteer its verdict and its ledger row.
 ---
 
 *Integrator, 2026-07-31. No git operations were performed; the orchestrator commits.*
+
+---
+
+# Revision pass 2026-07-31 (post-review; spec = `book/design/REVISION_WORKLIST.md`)
+
+Executed in three waves per the worklist's §E fan-out: wave 0 (ch03 census regeneration +
+integrator pass 1: §D items 1–3, 6, 7, 12), wave 1 (thirteen chapter/museum agents), wave 2
+(this pass: index.html, §D items 4, 5, 8–11, close-out). Every flag file gained a dated,
+append-only REVISION section; nothing above those lines was edited. The four §D-12 content
+gates now run inside `make_all.py` and are **all green** (0 violations).
+
+## 9.1 What changed per unit
+
+**Book-wide decisions applied (worklist §A):**
+- **D1 (σ_dL units slip, author mandate):** spec value is now σ_dL/d_L = **8.98×10⁻⁴**
+  (absolute 7.98×10⁻⁵ Gpc). One canonical dossier row + erratum line, defined once in
+  `js/manifest.js` `BOOK_CANON.sigmaDL`, applied on every dossier card ch01–ch11 + museum.
+  The old value survives only inside erratum notes (D1 gate PASS site-wide). Downstream
+  casualties fixed: Q1.2 rewritten as the erratum lesson, Q6.5's "6000×" → measured **≈550×**,
+  `ch04_denominator.json` key renamed `sigma_dL_Gpc` + corrected `sigma_dL_over_dL = 8.98e-4`.
+- **D2 (ball-search multiplier):** ch03 regenerated at the production **n_σ = 1.5**
+  (`bayesian_statistics.py:2838`; `gen_ch03.py` `SIGMA_MULTIPLIER = 1.5` with the
+  signature-default-trap warning on the page). Regenerated census: EMRI-889's ball = **2**
+  galaxies at radius **0.757′**; zero-candidate count **607/1590** (was 552 at 2σ) — consumed
+  by ch02 (BLOCKER-1 rewrite), ch04 §5, ch05 §4; ch03/ch06 print identical 889 ball facts.
+- **D3 (cell B landed):** the pre-registration → control → scored-readout arc is on
+  ch07/ch08/ch09/ch10/ch11/museum/index. Pre-registration blocks kept verbatim (registered
+  jobs 6101146/6101147); results cite the resubmission 6103219/6103220 with the one-sentence
+  plumbing note. **Honest scoring everywhere: 2 of 3 exact + 1D MAP 0.7450 one grid step
+  above the registered 0.70–0.74 band (mean 0.7320 inside; band written in MAPs)** — matches
+  the readout's own same-day ERRATUM; the readout's original "confirmed on every
+  pre-registered read" sentence is explicitly not copied (ch11 says why). 2×2 printed in MAPs
+  throughout, means in a footnote, "72% is 2D-only" warning attached. The four canonical
+  cell-B rail pips (ch07/ch09/ch10/ch11) are byte-identical, defined once in
+  `BOOK_CANON.cellB`.
+- **D4 (spoiler discipline):** forward references name phenomenon + chapter only; ch08/ch10
+  decks de-spoiled (+0.077 appears only at/after its reveal); traps relocated to where the
+  misconception forms; index journey de-spoiled (below).
+- **D5 (both-values policy):** every page quoting one half of a still-open pair now carries
+  the other + flag pointer (ch05 Q5.4 leverage, ch08's five σ_Mz sites, ch11's opening 2D
+  pull row +2.47…+4.74 with the F-ch08-1 footnote).
+
+**Per unit (headline items; full detail in each flag file's REVISION section):**
+- **ch00** — budget trim 2.33×→1.70× (σ_tot algebra into a num-view); GWTC-3 dark-siren row
+  (68⁺⁸₋₆, arXiv:2111.03604) added to the third-methods figure with provenance chip;
+  Trap 0.A de-spoiled; "most generous case" names its branch; Q0.3 re-aimed (decision logged).
+- **ch01** — F1 → resolved-erratum block (the 1/ρ check is now the proof); Q1.2 = the erratum
+  lesson; σ_Mz both-values note (10⁻⁴ claim / 8.8×10⁻⁸ measured, F-ch06-5); dossier mass row
+  relabelled M_z; Q1.3 folded into §2; standard-siren scope sentence; Q1.4 chain via Ch 2.
+- **ch02** — "tens of thousands" ×3 → the measured distribution (median ball 1,616 was the 2σ
+  figure; regenerated numbers consumed, Q2.5 graded "the answer is a distribution");
+  central predict graded ((d) — a handful; wrong options each answered); "62%" → **52%** for
+  r1's pair with the ensemble figure labelled; β(h)^N box moved out of the main column
+  (rung repair, received by ch04); Trap 2.A/2.B de-spoiled; percentages name denominators;
+  Q2.3 re-aimed; 7 Plotly instances lazy-initialized.
+- **ch03** — D2 regeneration (above) + corrections appended to F-ch03-2/-10/-12; RATIFIED box
+  states n_σ = 1.5 + the signature-default trap; σ_z-derived numbers carry the §7.19(d)
+  parent-staleness caveat (new F-ch03-13); Q3.4 internally consistent; new F-ch03-14
+  (search-disc vs localization ellipse).
+- **ch04** — D1 dossier + JSON key rename; p_det marginality stated in §2 ("marginal" /
+  intrinsics, ⏭ Ch 9); Q4.3/Q4.4 answers derivable from ch00–ch04 only; guess-marker
+  desync fixed (slider locks); §5 zero-candidate figure = 607 (regenerated).
+- **ch05** — w_G's *type* (one number per h; selection- and volume-weighted line-of-sight
+  average) now in the narrator flow before "First: 12%", with per-sample labels
+  (76/1588 = 4.8% one seed vs 164/3135 two seeds); C10 attribution corrected (dark
+  ΣΔln L_comp = −22.72; 27.7% L_comp-alone vs 39.1% with prefactor); Q5.4 carries both
+  leverage halves; I5.1 gains the narrated κ midrange (V51 third state, 0.86 plateau
+  explained — new measurement F-ch05-8); §3 de-spoiled ("factor of 5000" out of the heading).
+- **ch06** — D1 (§4 erratum form; Q6.5 ≈550× with the units-lesson dagger); §3 gains the
+  measured 14×14 condition-number distribution (median 2.6×10⁹ / p95 1.4×10¹⁰ / max
+  3.9×10¹², recomputed by gen_ch06, with the float64 price tag) + Babak-2017 plausibility
+  clause on §4.1's σ_Mz ("not tested here"); §4.1/§5 bookkeeping folded (budget 2.37×→
+  reduced; residual over-budget logged as F-ch06-10); traps relocated; ball cross-ref to
+  ch03's census closes the loop.
+- **ch07** — §6's "It has not landed." → the dated landed-block (90.7% vs 89.2% vs 5.3%;
+  argmax 0.860 as registered; combined rail 69.7%→57.9%) + the G2b scope constraint;
+  provenance OPEN→dated FINDING; Trap 7.B "…and did, 2026-07-31"; the honest staleness
+  nuance (98.7% ≠ 90.7%, different statistics, "resolves confirming, somewhat weaker");
+  `ch07_c7.json` gained `hosts.resolved_by_cellB` + landed decider; noscript updated;
+  φ_cat defined at first use; Q7.1 → transfer form; traps relocated; σ_Mz both values.
+- **ch08** — the five lone σ_Mz ≈ 10⁻⁴ sites → both-values treatment (RATIFIED display
+  equation now prints claim | measured, "Two values, both printed, neither preferred", new
+  F-ch08-10); deck de-spoiled ("Watch what it does instead"; +0.077 only inside the reveal);
+  cell-B §4/§5 block (+18.00 nats unscattered = estimator-borne; C4 partition
+  configuration-scoped with the reviewer-computed marker, raised as F-ch08-9 ⚑ for the
+  author); Q8.1 rewritten on §2's correct mechanism as transfer; spectral-siren
+  disambiguation sidebar; 8 Plotly instances lazy-initialized; rail 2D row arms at the
+  cold-open reveal (D4).
+- **ch09** — re-litigation guard + verdict: C9 **live, cell-B gate released 2026-07-31**,
+  fix = joint C9+C8 mass-consistent mixture; the bit-identical w_G payoff stated as the
+  book's cleanest pre-registration hit (max|Δ| = 0.0 across 41 grid points; 0.1625175 /
+  0.1215039 / 0.1038732 — now a hard generator gate, F-ch09-8); §4 symbols picture-first +
+  passport-tagged (nw/Sglob/Wcat/Vf/Fincat); the two "residuals" renamed (shape −17.2% vs
+  1D bias +1.667%, F-ch09-10); `global`-mode deprecation venue-scoped with gwcosmo named
+  (F-ch09-11); Q9.1 hardened; dossier beat leads with 889's own w_G.
+- **ch10** — §5's forward promise → landed ("submitted, and landed 2026-07-31…"); Q10.5
+  original answer intact above its dated postscript (0.7300→0.7900, 72%; "before the
+  control: still nothing"); deck de-spoiled; Laghi et al. 2021 (~1%) anchors the §3
+  scenario table; I10.2 num-view added; job IDs split per D3.
+- **ch11** — §5 retitled "The confound, and the control that resolved it": pre-registration
+  verbatim + dated readout block, 2×2 in MAPs, B−A/C−B/C−A rows, the 1D-share>100% note,
+  explicit scoring (2✓, 1D ✗ by one grid step), badge RESOLVED 2026-07-31; closing block:
+  item 1 leaves the no-answer list via a dated resolution card, renumbered to four;
+  `ch11_board.json` regenerated (C6 amended heading verbatim, C9 gate-released, C7
+  adjudication appended, n_live = 4 on all three surfaces); opening-table 2D pull row both
+  halves; §4's C7 block = the two-priors framing (φ_cat), adjudicating nothing; recall beat
+  maps slugs to human labels, verdict lands after; "3130" → 3135; §4 scoreboard collapsed
+  to one-line statuses + folds; Q11.6 kept + dated postscript; meta/subtitle "…the control
+  that landed the night the book was built".
+- **museum** — parser fixes: separator class `[,/·;]` recovers #41/#43/#44/#52 →
+  **do-not-re-try union = 30** (counts updated in census caption, noscript, M.4's answer;
+  new DNR gate); row #68 7-cell round-trip restored (`[AMBIG] see #69` back; ROW hard gate);
+  the two cell-B statements date-scoped (gate released, C9 live, w_G off the exonerated
+  list); ledger #88 gains the book-added "Cell B ≠ the 2×2 cell B" annotation (`book_note`,
+  rendered in the museum browser and now also in the shared search results); §7's BW3 claim
+  → the delivered instrument (updated again this pass after the inline chips shipped);
+  "twenty-one were fixed" → the ledger's own "insufficient alone" qualifier; M1 flag box
+  0.2–2.3%; static fallback 10⁻⁷⁹–10⁻⁸⁶; per-exhibit backlinks ("referenced by Ch N §… ·
+  ← back") on every chapter-referenced exhibit; exhibit browsing gets a path via mus-folds.
+
+**index.html (this pass):**
+- **[P0] expB MJ-7:** the honest-state callout now reads "three live, measured
+  inconsistencies … **plus a fourth (C5) …, and an attribution (C6) that was confounded
+  until the control was run on 2026-07-31**" — consistent with ch11's board count of four
+  (C5, C7, C8, C9); the contract callout says "the four live inconsistencies".
+- **[P1] ped B1/m7, tomas M10:** "The journey" now maps by *question* (failure-framed, no
+  reveal numbers un-collapsed); the discovery statements moved into a
+  `<details>` ("Spoiler: what each chapter discovers"); Ch 4's and Ch 8's blurbs rewritten
+  as failures ("Watch what it does instead" / "…and the answer moves the wrong way"); the
+  ch11 blurb's "control still running" → "the control that landed the night the book was
+  built"; the dossier teaser no longer leaks ch05's 76-events reveal.
+- **[P1] ped B4 step 1:** the BW3 promise now describes the shipped instrument (search box +
+  seeded dead hypotheses + the new inline verdict chips).
+
+**Shared files (this pass — §D items 4, 5, 8–11; WIDGET_REQUESTS R-INT-10…14):**
+- **§D-4 cumulative bias rail:** `window.BOOK_BIAS_ROWS` (manifest.js, five rows with
+  `from_chapter` + `match`) merged by `Book.biasRail`; the rail never loses rows moving
+  forward; ch11 and the museum now show the full five-row history; page-declared rows win
+  (ch08's reveal-armed 2D row preserved; `from_chapter` doubles as the D4 spoiler boundary).
+  New shared `Book.chapter()`. Verified per-page by node smoke test (ch02/04/07/08/11/museum
+  orderings all correct).
+- **§D-5 BW3 inline chips:** `Book.ledger` renders `⚖ #N — verdict` (+ do-not-re-try badge)
+  inside a widget when a `data-hypothesis`-tagged control becomes active;
+  `data-hypothesis-verdict="inline"` opts out (ch09 I9.2 uses it); any other value is the
+  chip's verbatim verdict text (ch07's two widgets). Non-control tags inside widgets (ch05's
+  own verdict box) seed the panel only — no double report. Tag inventory now: ch03 #26
+  (dynamic), ch04 #9 (the denominator switch — the worklist's named AC), ch06 #51,
+  ch07 #42/#70, ch08 #71/#72/#89, ch09 #61 (opt-out), ch10 **#49a (added this pass on
+  I10.1)**, ch11 #61/#64.
+- **§D-8 predict grading:** `data-predict-correct` support in `predictReveal`
+  (`.predict-correct` ✓ ring / `.predict-missed` strike); ch02's already-authored attribute
+  is now live.
+- **§D-9:** `Book.lazyPlot` shipped (ch03 recipe centralized; ch02/ch08/ch09 keep their
+  identical page-local copies per the zero-coupling precedent); `themedPlot`'s per-plot
+  MutationObservers consolidated to one; the two `@media print` blocks merged; persona
+  switch now only ever opens strata (never force-closes); `_template.html` placeholder-JSON
+  guard comment (the one granted template exception); the three persona nudges placed
+  (ch06 Fisher, ch08 mass measure, ch11 adjudication).
+- **§D-10 anchor-drift tooltips:** 16 `title="current lines/tree …"` tooltips added
+  (ch02 ×4, ch04, ch05, ch07, ch08 ×7, ch10, museum ×2), positions verified against the
+  tree this pass (`handler.py :519→558 / :592→623 / :605→632-634`;
+  `bayesian_statistics.py :3309-3311→3388-3392 / :3362→3445 / :4014→4097 /
+  :4363-4370→4442-4459`; `IDEALIZED_BASELINE_READOUT.md :36-39→50-52 / :42-47→54-60 /
+  :47-48→59-60 / :50-52→64-66`; `CLAIM_2D_BIAS_20260730.md :587-588→602`). ch01/ch03/ch06
+  had already re-grepped theirs in wave 1.
+- **§D-11 README:** rewritten — retired `ch00-demo` references dropped, current layout,
+  qa_gates documented, vendor-scoped external-ref grep policy for future CI recorded.
+- Pass-1 leftovers closed: ch06's and ch10's page-local rail-pip appends converted to
+  `Book.biasRail({pips})` and their page-local pip CSS removed (§D-6 / tomas-m2; ch05, ch07,
+  ch09, ch11, ch08 were already converted).
+
+## 9.2 QA results (close-out)
+
+| check | result |
+|---|---|
+| `make_all.py` end-to-end (subprocess mode) | **PASS — 13/13 green, exit 0, ~103 s** (gen_ch00 0.01 · ch01 0.37 · ch02 0.32 · ch03 12.2 · ch04 1.63 · ch05 1.32 · ch06 7.29 · ch07 0.75 · ch08 1.31 · ch09 0.86 · ch10 60.8 · ch11 0.39 · museum 15.7) |
+| §D-12 content gates (D1 / ROW / DNR / TNS) | **PASS, 0 violations.** One NOTE: `_template.html:112` still carries the retired dossier row — frozen-list; author call (see 9.4). |
+| Canonical-string advisory (cell-B pip wording) | **PASS** — all four pips byte-identical to `BOOK_CANON.cellB.pipLabel` |
+| `node --check` book.js / manifest.js | PASS |
+| Node smoke: `_mergeBiasRows` per-page orderings | PASS (6 venues incl. ch11 five-row history, ch08 arming preserved) |
+| Doctype + charset, all 14 pages | PASS |
+| Relative refs only (first-party files; vendor-scoped per README policy) | PASS |
+| Internal links + index links all 14 pages | PASS |
+| Museum anchors both ways (`ex-*`) | PASS |
+| Notation vs Symbol Passport (`data-term` keys) | PASS — 0 unknown keys |
+| Self-checks: answers hidden, no pre-shown reveals | PASS |
+| KaTeX delimiter convention (`$…$` only) | PASS |
+| Script order per template | PASS |
+| Data budget | PASS — 1.32 MiB total, max `ch03_skyball.json` 281 KB < 500 KB |
+| Cross-chapter predictions read⊆written | PASS |
+| noscript ≥3 per chapter page | PASS |
+| Retired-string sweep ("not landed"/"in flight"/"still running", "tens of thousands" as assertion, "6000×", lone "1500–2400×", "0.008%", old σ_dL outside errata) | PASS — survivors are quotation-in-flag/erratum/predict-option contexts only |
+| Light/dark on new chrome (chips, grading, nudges) | token-based + explicit dark overrides; grep-level PASS, **not browser-verified** (gap #1) |
+
+**Wave-1 acceptance cross-check (2 criteria per unit, spot-verified in the shipped files):**
+ch00 (GWTC-3 row + chip ✓ · Trap 0.A clean of #49a ✓) · ch01 (Q1.2 erratum-lesson, no live
+0.008% ✓ · σ_Mz both values + F-ch06-5 ✓) · ch02 (no census contradiction, distribution
+answer ✓ · 52%-with-ensemble-figure ✓) · ch03 (0.757′/2-galaxy ball identical on ch03+ch06 ✓
+· `:2838` pin + 1.5σ in gen_ch03 ✓) · ch04 (JSON key rename ✓ · marginal/intrinsic + locked
+slider ✓) · ch05 (w_G type-before-value ahead of "First: 12%" with sample labels ✓ ·
+−22.72/27.7%/39.1% ✓) · ch06 (≈550× with retired-6000× note ✓ · 14×14 κ distribution ✓) ·
+ch07 (zero stale-tense, 90.7/89.2/5.3 + G2b constraint ✓ · `resolved_by_cellB` in JSON +
+noscript ✓) · ch08 (no lone 10⁻⁴, RATIFIED box carries both + flag ✓ · deck de-spoiled,
++0.077 only inside the reveal ✓) · ch09 (no live "gated on cell B" ✓ · bit-identical w_G
+payoff numbers ✓) · ch10 (Q10.5 answer + dated postscript ✓ · Laghi anchor ✓) · ch11 (MAPs
+table + "✗ — by one grid step" ✓ · n_live = 4 on JSON/widget/noscript ✓) · museum (DNR = 30
+everywhere ✓ · #88 book-note disambiguation ✓). **No material failures.** Trivial misses
+fixed by this pass: ch06/ch10 pip conversion, ch10's missing #49a tag, `book_note` invisible
+to the shared search (now rendered).
+
+## 9.3 Flag addendum (new/changed flags this round — full text in `design/flags/*.md`)
+
+Resolved by mandate (D1): ch01 F1 · ch02 F-ch02-1 · ch03 F-ch03-1 · ch04 F-ch04-6 · ch05
+F-ch05-6 · ch06 F-ch06-1/-2 · ch07 FLAG-1 · ch09 F-ch09-12 · ch10 R-ch10-5 · museum D1
+entry. Corrections recorded: ch03 F-ch03-2/-10/-12 (census re-measured at 1.5σ; 607/1590);
+ch05 F-ch05-7 (C10 scoping). New flags: ch02 F-ch02-4 (quoted-census process note) · ch03
+F-ch03-13 (z_error parent staleness), F-ch03-14 (disc vs ellipse) · ch05 F-ch05-8 (κ-dial
+non-monotonicity, measured) · ch06 F-ch06-9 (14×14 conditioning + Babak check), F-ch06-10
+(budget not reachable by relocation alone) · ch07 "C7 decider landed" entry · ch08
+**F-ch08-9 ⚑ (reviewer-computed cell-B C4 partition — for the author)**, F-ch08-10 (σ_Mz
+both-values pair) · ch09 F-ch09-8 (w_G equality = hard gate), F-ch09-9 (gate released),
+F-ch09-10 (two "residuals" renamed), F-ch09-11 (global-mode venue scoping) · ch11 F-ch11-4
+(readout self-scoring vs 2-of-3), F-ch11-5 (2D pull range both halves) · museum F-museum-5
+(parser defects — fixed + gated), F-museum-6 (BW3 claim — corrected, then upgraded when the
+chips shipped).
+
+## 9.4 Remaining known gaps (ranked)
+
+1. **No in-browser visual check — still #1** (inherited from the build's gap #1, now larger):
+   everything this pass added (cumulative rail merge, inline chips, predict grading, persona
+   open-only behavior, single theme observer, the rewritten index) is verified by static
+   analysis, node syntax checks, and DOM-stub smoke tests only. A full serve + click-through
+   (`cd book/site && python3 -m http.server 8000`) is the next reviewer's first job —
+   priority pages: ch02 (graded reveal), ch04 (#9 chip on the denominator switch), ch10
+   (#49a chip on I10.1), ch11 (five-row rail + chips on the λ dial), index (details spoiler).
+2. `_template.html:112` still carries the retired σ_dL dossier row (frozen list; gate NOTE).
+   It is the file agents copy dossier markup from — granting the frozen-list exception and
+   replacing it with `BOOK_CANON.sigmaDL.dossierRowHTML` is a one-line author call.
+3. Inline chips are best-effort for dynamically-tagged controls (ch03's #26 — tag set inside
+   a data-load promise; the search panel still finds it).
+4. The `qa-allow` escape hatch is used sparingly but is only as honest as its comments —
+   periodic audit recommended.
+5. Museum per-exhibit backlinks cover the chapter-referenced exhibits (9); exhibits nothing
+   links to have none (defensible; noted).
+6. `__pycache__` build churn under `book/generators/` (harmless, untracked).
+
+## 9.5 Still-open disputes (nothing below was resolved by this pass)
+
+**Both-values items (worklist D5 — any page quoting one half must carry the other + flag):**
+1. C7 rail threshold **0.256 vs 0.2644** (§5.1-2; ch07 FLAG-2, ch10 R-ch10-7).
+2. C5 leverage **"1500–2400×" vs recomputed 141.8–2457.8× (median 197×)**; also the
+   "0.12–0.51 σ_h" gloss vs measured 0.085–1.124 (§5.1-3; ch11 F-ch11-1/-2, ch05 Q5.4).
+3. C11 band upper endpoints **+0.0097/+0.0181 vs recomputed +0.0078/+0.0157** (§5.1-4;
+   ch10 F-ch10-1).
+4. The 4π **"5000×"** vs the ratified analytic factor (§5.1-5; ch05 F-ch05-1).
+5. C9's **×2.19 vs ×2.446** (§5.1-6; ch09 F-ch09-1/-2, sources-map §7.7).
+6. σ_Mz/M_z **≈10⁻⁴ (claim file) vs 8.8×10⁻⁸ (measured)** (tomas B3 / §B-8; ch06 F-ch06-5,
+   ch08 F-ch08-10 — carried at every site, no book-side correction).
+7. ch08's 2D pull **range** +3.4…+4.5 vs recomputed +2.474…+4.735 (mean +4.04 and 10/10
+   reproduce; F-ch08-1 — carried with the footnote in ch11's opening table).
+
+**Back to the AUTHOR (worklist §F, carried verbatim):**
+
+1. **F-museum-1's production code comments** — `bayesian_statistics.py:384` and
+   `:3670` carry the falsified scalar-collapse mechanism attribution. Main-repo
+   change, `/physics-change` protocol. Also: whether F-museum-1 and F-museum-2 become
+   BIAS_HISTORY_LEDGER rows (BUILD_REPORT §5.2 already asks).
+2. **`CLAIM_2D_BIAS_20260730.md:172`'s σ_Mz ≈ 1e-4** — measured 8.8×10⁻⁸ (F-ch06-5;
+   plausibly a test-tolerance transcription). The book carries both values (D5);
+   amending the claim file is the author's.
+3. **`CELLB_READOUT_20260731.md`'s "confirmed on every pre-registered read"** — the 1D
+   MAP (0.7450) missed the registered 0.70–0.74 band by one grid step (band written in
+   MAPs; the mean is inside). The book scores it honestly (D3); annotating the project
+   artifact is the author's. (expB BL-4.) *[Update, same day: the readout now carries an
+   ERRATUM scoring itself "2 of 3 exact, 1D marginal" — the book and the readout agree;
+   the original sentence stands in the artifact's history above its erratum.]*
+4. **Expert B's reviewer-computed unscattered C4 partition** (219 survivors / 80.7%,
+   688 zeroed / 19.2%; dark zero-leg fraction 0.855; ×8.39 de-weighting) — used in
+   ch08 with a "recomputed for the book" marker; whether it is promoted into an
+   adjudicated artifact / claim-file amendment is the author's.
+5. **`BIAS_HISTORY_LEDGER.md:88`'s unescaped pipes** (row #68) — one-character
+   upstream fix; the book's parser now tolerates it either way. Also the §3
+   "Cell B"/A′ naming collision with the 2×2 — a one-line upstream annotation would
+   help future readers (the book disambiguates on its side regardless).
+6. **C7 rail threshold 0.256 vs 0.2644** — origin still unreconstructed
+   (BUILD_REPORT §5.1-2); no book action beyond the existing flags; project-side
+   archaeology is the author's if wanted.
+7. **σ_dL upstream** — D1 corrects the book; the spec cards/design docs and any
+   project artifact carrying 8.0×10⁻⁵ as a fraction remain uncorrected historical
+   record unless the author amends them.
+8. **The two `/physics-change` gates cell B unblocked** (joint C9+C8 mass-consistent
+   mixture; C7 kernel fix superseding G2b, not the exonerated p_det-in-numerator
+   form) — the book now states these as the fix surface; running them is the thesis
+   work, not the book's.
+
+*(Plus, from this pass: the `_template.html` dossier-row frozen-list exception, 9.4 item 2.)*
+
+---
+
+*Integrator pass 2, 2026-07-31. No git operations were performed; the orchestrator commits.*

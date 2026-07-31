@@ -278,6 +278,18 @@
       identical arrays. The production run&rsquo;s own log prints the same
       <code>dl_max = 9.1650 Gpc</code> on all 41 grid points.
     </p>
+    <p>
+      Note also what this $p_{\rm det}$ is a function of: <strong>distance, and nothing
+      else</strong>. If you come from LVK analyses you are used to a selection function
+      $p_{\rm det}(\theta)$ — masses, spins, inclination, sky position — evaluated per event.
+      The object above is a <strong>marginal</strong>: the intrinsic-parameter dependence has
+      been integrated out over the population the injections were drawn from. That is what
+      makes it cheap, and it is exact <em>only if</em> the events you apply it to are drawn
+      from that same population. It is a modelling assumption, not a definition — and
+      Chapter 9 measures a case where it does not hold, because the galaxies a catalogue
+      contains are not a fair draw from the population the injections sampled
+      <span class="ch04-fwd">⏭ Ch 9</span>.
+    </p>
 
     <div class="callout defect">
       <span class="callout-label">Trap &mdash; &ldquo;$p_{\rm det}$ is a detail of the simulation, not of the physics.&rdquo;</span>
@@ -355,7 +367,7 @@
       </p>
       <p>
         The claim file quotes this pool as &ldquo;<strong>200,807</strong> rows&rdquo;
-        (<span class="prov-chip">CLAIM_2D_BIAS_20260730.md:587-588</span>). Counting the 707 CSV
+        (<span class="prov-chip" title="current line :602">CLAIM_2D_BIAS_20260730.md:587-588</span>). Counting the 707 CSV
         header lines gives exactly 200,100 + 707 = 200,807, so the two numbers are the same pool
         counted two ways. This chapter quotes the data-row count and says which is which rather
         than picking one; the discrepancy is logged in
@@ -565,9 +577,9 @@
       #51/#53, realization r1: MAP <strong>0.740</strong>, posterior mean <strong>0.7321</strong>
       — one realization of one seed, reproducing this run&rsquo;s published row exactly. That is
       <em>not</em> a bias measurement: bias is a property of an estimator over realizations
-      (Chapter 2), the ten realistic runs range 0.700–0.740, and the 1D channel&rsquo;s apparent
-      unbiasedness is later shown to be a near-cancellation of opposing terms rather than a
-      clean result <span class="ch04-fwd">⏭ Ch 11</span>. What this chapter establishes is
+      (Chapter 2), the ten realistic runs range 0.700–0.740, and whether the 1D channel&rsquo;s
+      apparent unbiasedness is as clean as it looks is a question the last chapter has to
+      settle <span class="ch04-fwd">⏭ Ch 11</span>. What this chapter establishes is
       narrower and more solid: <strong>without a full-volume selection denominator the
       estimator does not have a bias, it has a wall.</strong>
     </div>
@@ -598,6 +610,28 @@
     </div>
 
     <p>
+      Zero times and once you have now seen. Before twice, one loose end from Chapter 2 comes
+      due. That chapter combined the per-event likelihoods into a joint posterior as a
+      <em>plain product</em> — no population-level factor multiplied on top — and promised the
+      justification here, because the justification is about $D(h)$ and Chapter 2 did not have
+      $D(h)$ yet.
+    </p>
+
+    <div class="voice-derivation">
+      <span class="voice-label">Why the product is plain — no extra $\beta(h)^N$
+        <span class="prov-chip">posterior_combination.py:284-330</span>
+        <span class="prov-chip">Loredo 2004</span>
+        <span class="prov-chip">Mandel, Farr &amp; Gair 2019, arXiv:1809.02063 §3</span>
+      </span>
+      Each $\mathcal{L}_i$ is <em>already</em> conditional on detection — that is what §1
+      installed — so it already carries one factor of $1/D(h)$. Conditioning on the observed
+      <em>number</em> of detections makes the $\beta(h)^N$ factor of the unconditional (Poisson)
+      likelihood cancel against the rate prior, so the joint posterior is the plain product
+      $\prod_i \mathcal{L}_i$ and nothing further is owed. Applying $-N\log D(h)$ again on top
+      is not conservatism; it is the same weight counted twice.
+    </div>
+
+    <p>
       Twice is a real failure mode, and it has a receipt. In May the selection denominator was
       being applied <em>both</em> inside the per-event likelihood <em>and</em> again as an outer
       $-N\log D$ term. Removing the duplicate (<code>6754ddb</code>) eliminated a
@@ -624,7 +658,7 @@
     <div class="dossier">
       <div class="dossier-title">Event dossier — EMRI-889 after this chapter</div>
       <table>
-        <tr><td>d_L</td><td>88.9 Mpc (&sigma;_dL/dL = 8.0&times;10&#8315;&#8309;)</td></tr>
+        <tr><td>d_L</td><td>88.9 Mpc &nbsp;&middot;&nbsp; &sigma;_dL/d_L = 8.98&times;10&#8315;&#8308;</td></tr>
         <tr><td>SNR</td><td>1425 — the loudest of the 1590 rows in this run&rsquo;s table</td></tr>
         <tr><td>host</td><td>catalogue index 859360 — one of only 76 events with a catalogued host</td></tr>
         <tr><td>z</td><td><em>still unknown</em></td></tr>
@@ -633,6 +667,17 @@
         <tr class="dossier-new"><td>what this chapter added</td><td>the events we <em>never saw</em>. 889 sails over the threshold; the estimator is only honest because it also accounts for the 92% of the population that did not.</td></tr>
       </table>
     </div>
+
+    <p class="ch04-note">
+      <strong>Erratum:</strong> the spec card carried
+      $\sigma_{d_L}/d_L = 8.0\times10^{-5}$ — that is the absolute $\sigma_{d_L}$ in Gpc under a
+      fractional label ($\sigma_{d_L} = 7.98\times10^{-5}$ Gpc $=$ 0.0798 Mpc on
+      $\hat d_L = 88.879$ Mpc, i.e. $8.98\times10^{-4}$ fractional). Corrected book-wide
+      2026-07-31; record: ch01 flag F1 / BUILD_REPORT &sect;5.1 item 1. This chapter&rsquo;s
+      generator now emits the two quantities under two keys
+      (<code>event889.sigma_dL_Gpc</code>, <code>event889.sigma_dL_over_dL</code>) so the slip
+      cannot recur silently.
+    </p>
 
     <p>
       That last row is the chapter in one line. Every number in the dossier is about a detection.
@@ -656,8 +701,14 @@
     </p>
     <p>
       Chapter 3&rsquo;s likelihood is a sum over candidate hosts. For 95% of these events that sum
-      is over the wrong galaxies, or over nothing at all. What does your repaired estimator say
-      about them?
+      is over the wrong galaxies, or over nothing at all. &ldquo;Nothing at all&rdquo; is not a
+      figure of speech: rebuilding the candidate search at the production radius, <strong>607 of
+      the 1590 rows</strong> have no catalogue galaxy in the ball to sum over
+      <span class="prov-chip">ch03 census, production 1.5σ ball</span>. Read that number the way
+      Chapter 3 asks you to — it is a <em>reconstruction</em> count on the truth catalogue,
+      <strong>never a drop count</strong>: this run reports no event with a zero likelihood, so
+      whatever it is doing with an empty ball, it is not discarding it. What, then, does your
+      repaired estimator say about them?
     </p>
 
     <div class="callout without">
@@ -713,13 +764,19 @@
       <details class="answer">
         <summary>Show answer</summary>
         <div class="answer-body">
-          (i) Extrapolation policy: filling $p_{\rm det}$ with 0 outside the grid silently deletes
-          real support, which the project had to fix explicitly
-          (<span class="prov-chip">ledger #8</span>, −9.2% → −6.9%); (ii) support mismatch — if the
-          pool is thin where the catalogue&rsquo;s candidates actually live, the estimator&rsquo;s
-          effective sample size collapses in exactly the cells that matter, which is why the
-          project&rsquo;s ratified campaign design imposes a <strong>minimum ESS per node</strong>
-          rather than trusting a large total pool. Both are systematic, not stochastic.
+          (i) <strong>Extrapolation policy.</strong> Filling $p_{\rm det}$ with 0 outside the
+          grid silently deletes real support — the survival estimator then claims that sources
+          in that band are undetectable rather than admitting it has no injections there. The
+          project shipped exactly that and had to fix it explicitly
+          (<span class="prov-chip">ledger #8</span>, bias −9.2% → −6.9%). (ii) <strong>Support
+          mismatch.</strong> If the pool is thin in the distance band where this run&rsquo;s
+          candidates actually live, $p_{\rm det}$ there is reconstructed from a handful of
+          horizons, and a systematically low (or high) estimate in one band is not noise that
+          averages away: it is a fixed tilt applied to every event that overlaps that band, and
+          — because $D(h)$ is one number shared by all $N$ events — it enters the stack $N$
+          times, exactly like §3&rsquo;s 639 nats. Ledger #8 is the extreme form of the same
+          failure. Both mechanisms are systematic, not stochastic: more events do not cure
+          either one.
         </div>
       </details>
     </div>
@@ -735,11 +792,8 @@
           denominator carries the population rate times detectability over the whole volume. Their
           $h$-dependences are genuinely different functions, and the ratio&rsquo;s $h$-dependence
           <em>is</em> the selection correction. When a piece of it <em>does</em> cancel, that is a
-          theorem worth proving, not an assumption — the project&rsquo;s G1 gate checked one such
-          cancellation ($\Sigma_{\rm glob} \equiv \bar n\,\beta_G$) and found a
-          <strong>−17.2% end-to-end residual</strong>, which is now part of claim C9
-          <span class="prov-chip">G1_beta_g_check.md:14-29</span>
-          <span class="ch04-fwd">⏭ Ch 9</span>.
+          theorem worth proving, not an assumption — and the project has a gate that puts one
+          such claimed cancellation to the test <span class="ch04-fwd">⏭ Ch 9</span>.
         </div>
       </details>
     </div>
@@ -812,6 +866,7 @@
       <ul>
         <li><span class="badge ratified">RATIFIED</span> <code>G2c §2 row D(h)</code>, <code>§3</code>, <code>D3</code>, <code>D4</code> — the selection integral, the horizon-survival $p_{\rm det}$, the single-ratio assembly</li>
         <li><span class="badge ratified">RATIFIED</span> <code>G2b §3.2</code> + <code>G6_starvation_postmortem.md:24-33</code> — the &ldquo;counted exactly once&rdquo; rule</li>
+        <li><em>Convention (code + literature)</em> <code>posterior_combination.py:284-330 combine_log_space()</code>; Loredo 2004; Mandel, Farr &amp; Gair 2019, arXiv:1809.02063 §3 — the plain product, and why there is no extra $\beta(h)^N$ (the argument Chapter 2 forward-references to §4 here, because it needs $D(h)$)</li>
         <li><span class="badge ratified">RATIFIED</span> <code>simulation_detection_probability.py</code> module docstring — $d_{\rm hor} = \rho\,d_L/\rho_{\rm thr}$, $h$-invariance, survival estimator</li>
         <li><span class="badge finding">FINDING</span> <code>G2c §6 C2</code> — the $D(h)$ docstring&rsquo;s Gray citation is stale; the object is the denominator of (A14)</li>
         <li><span class="badge finding">FINDING</span> <code>ledger #9</code> / <code>H0R:1980</code> (Phase 32) — local-window → full-volume $D(h)$: MAP 0.60 → 0.73, bias −17.8% → 0.0%</li>
@@ -824,7 +879,7 @@
         <li><span class="badge open">OPEN</span> <code>ledger #82</code> — pooled vs $z$-resolved survival $S(d_L\mid z)$; this chapter uses the pooled estimator, Chapter 9 opens the other</li>
         <li>Data: <code>results/campaign51_20260728/realistic_20260729/seed61000/real_r1/posteriors/</code>, <code>.../seed61000/mixture_leg_log_extract.txt</code>, <code>.../seed61000/prepared_cramer_rao_bounds.csv</code>, <code>.../gate_b_20260730/injection_pool_mix200k_20260728/</code></li>
         <li>Cross-check: the &ldquo;full-volume&rdquo; curve reproduces <code>REALISTIC_READOUT.md §1</code> row <em>61000 / r1</em> — MAP 0.740, mean 0.7321 — as a hard gate in the generator</li>
-        <li>Open flag: <code>book/design/flags/ch04_FLAGS.md</code> (pool row count 200,807 vs 200,100; $D(h)$ pooled-vs-sky-aware level)</li>
+        <li>Flags: <code>book/design/flags/ch04_FLAGS.md</code> — F-ch04-1 (pool row count 200,807 vs 200,100), F-ch04-3 ($D(h)$ pooled-vs-sky-aware level), F-ch04-6 (the &sigma;_dL/d_L label — <em>resolved 2026-07-31, see the erratum under the dossier</em>)</li>
       </ul>
     </div>
 
@@ -1092,36 +1147,46 @@
         })
       );
 
-      // ---- predict-then-reveal (numeric marker; see WIDGET_REQUESTS R-ch04-1)
+      // ---- predict-then-reveal (numeric marker; WIDGET_REQUESTS R-ch04-1).
+      // Converged onto Book.predictValue, the helper the integrator built for
+      // exactly this request, and the slider is disabled on lock (ch00's
+      // setLocked pattern). One code path now owns the stored value, the
+      // readout and the drawn marker, so they cannot drift apart if the reader
+      // keeps dragging after locking (mara MINOR-3).
       var guessSlider = document.getElementById("ch04-guess");
       var guessVal = document.getElementById("ch04-guess-val");
-      var predictBox = document.getElementById("ch04-predict-1");
-      var lockBtn = predictBox.querySelector("[data-predict]");
+      var restoreBtn = document.getElementById("ch04-restore");
+      var lockBtn = document.querySelector("#ch04-predict-1 [data-predict]");
 
       function applyGuess(v) {
         state.guess = Number(v);
         guessVal.textContent = fmt(state.guess, 3);
+        guessSlider.disabled = true;
+        guessSlider.setAttribute("aria-disabled", "true");
+        guessSlider.title = "Prediction locked — your guess stays on the plot.";
+        if (lockBtn) lockBtn.setAttribute("data-predict", String(state.guess));
         modeRow.classList.remove("ch04-locked");
         modeBtns.forEach(function (b) { b.removeAttribute("disabled"); });
-        document.getElementById("ch04-restore").removeAttribute("disabled");
+        restoreBtn.removeAttribute("disabled");
         denomPlot.update(tracesFor());
       }
       modeBtns.forEach(function (b) { b.setAttribute("disabled", "disabled"); });
-      var restoreBtn = document.getElementById("ch04-restore");
       restoreBtn.setAttribute("disabled", "disabled");
 
-      var saved = Book.getPrediction("ch04-map-guess");
-      if (saved !== null && isFinite(Number(saved))) {
-        guessSlider.value = saved;
-        guessVal.textContent = fmt(Number(saved), 3);
-        lockBtn.setAttribute("data-predict", saved);
-      }
+      // Before the lock the readout tracks the slider; after it, the slider is
+      // inert and this listener can no longer fire.
       guessSlider.addEventListener("input", function () {
         guessVal.textContent = fmt(Number(guessSlider.value), 3);
-        lockBtn.setAttribute("data-predict", guessSlider.value);
+        if (lockBtn) lockBtn.setAttribute("data-predict", guessSlider.value);
       });
-      Book.predictReveal(predictBox.closest(".widget"), function (choice) { applyGuess(choice); });
-      if (saved !== null && isFinite(Number(saved))) applyGuess(saved);
+
+      Book.predictValue({
+        slider: guessSlider,
+        button: lockBtn,
+        id: "ch04-map-guess",
+        format: function (v) { return fmt(v, 3); },
+        onLock: function (value) { applyGuess(value); },
+      });
 
       setMode("off");
     });

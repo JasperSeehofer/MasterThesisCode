@@ -9,7 +9,7 @@
 -->
 <title>Ch. 7 — A Redshift Is Not a Number | EMRI Dark Siren Book</title>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="description" content="Catalogue redshifts are photometric at sigma_z/z about 49 percent, and plugging in the central value moves the answer — the Eddington shift, the volume_deconv repair, and the C7 over-correction that shares the same knob." />
+<meta name="description" content="Catalogue redshifts are photometric at sigma_z/z about 49 percent, and the central value is not the safe choice — the Eddington shift, the volume_deconv repair, and the C7 over-correction that shares the same knob." />
 <link rel="stylesheet" href="vendor/katex/katex.min.css" />
 <link rel="stylesheet" href="css/book.css" />
 
@@ -86,8 +86,8 @@
     <h1>Chapter 7 — A Redshift Is Not a Number</h1>
     <p class="subtitle">
       Catalogue redshifts are photometric at
-      <span class="term" data-term="eps">$\sigma_z/z \approx 49\%$</span>, and plugging in
-      the central value does not blur the answer — it <em>moves</em> it.
+      <span class="term" data-term="eps">$\sigma_z/z \approx 49\%$</span>, and the central
+      value is not the safe choice.
     </p>
 
     <!-- ================= COLD OPEN ================= -->
@@ -102,7 +102,7 @@
       redshifts are <strong>0.56%</strong> of GLADE+
       <span class="prov-chip">ledger #42</span>; the campaign&rsquo;s information-carrying
       hosts have median <span class="term" data-term="eps">$\sigma_z/z \approx 49\%$</span>
-      <span class="prov-chip">IDEALIZED_BASELINE_READOUT.md:50-52</span>.
+      <span class="prov-chip" title="current lines :64-66">IDEALIZED_BASELINE_READOUT.md:50-52</span>.
       Below, drag the width up. Watch what the peak does.
     </div>
 
@@ -370,6 +370,19 @@
       width, with intervals that stop containing anything.
     </p>
 
+    <!-- Trap 7.A — relocated here from the end of the page (REVISION_WORKLIST
+         §C-ch07, ped-M3): the misconception forms in the cold open and is
+         dismantled by the paragraph directly above, so the trap must fire here,
+         not forty minutes later. -->
+    <div class="callout defect">
+      <span class="callout-label">Trap 7.A — &ldquo;Bigger &sigma;_z just means a wider posterior.&rdquo;</span>
+      It means a <em>shifted</em> posterior, quadratically in $\sigma_z$, and the shift
+      is ~17–20× $\sigma_z^2$ in $h$ <span class="prov-chip">G2b:229-237</span>. The
+      diagnostic that separates the two is coverage, not width: a merely-wider posterior
+      keeps its coverage, and this one takes it to ≈0%
+      <span class="prov-chip">ledger #47</span>.
+    </div>
+
     <button type="button" class="ch07-unlock" data-unlock="2">
       Unlock stage 2 — put the prior back and watch the bias go
     </button>
@@ -600,6 +613,17 @@
         threshold; the other 75 are above it, with quartiles 0.379 / 0.519 / 0.644. Cutting
         to spectroscopic hosts (0.56% of GLADE+, ≤8.7% of the rate-weighted in-catalogue
         likelihood) still railed the posterior at $h = 0.870$ — ledger #42, REFUTED.</p>
+        <p>Those widths are <em>indicative</em>: the local catalogue copy is not the
+        realization parent, differing in exactly the <code>z_error</code> column. The
+        staleness-free check — the 2×2 cell B — ran on 2026-07-31 against the true cluster
+        parent and, with exact host redshifts, put the catalogue leg&rsquo;s per-event
+        argmax at the top of the prior for <strong>68 of 75</strong> in-catalogue events
+        (<strong>90.7%</strong>), against 66 of 74 (89.2%) scattered and 5.3% under the
+        idealised estimator; the in-catalogue class argmax is 0.860, as registered
+        (CELLB_READOUT_20260731.md, evaluate 6103219 / combine 6103220). The stale column
+        had implied 75/76 = 98.7% on a <em>different</em> statistic, so the caveat resolves
+        in the confirming direction with the delivered rail somewhat weaker than the column
+        implied — not &ldquo;98.7% confirmed&rdquo;.</p>
       </noscript>
     </div>
 
@@ -643,6 +667,20 @@
     </p>
 
     <p class="ch07-note">
+      Read that 86.7% next to <strong>the 2×2 cell B</strong>&rsquo;s 72% (§6) with the
+      scoping in hand, because they are not the same decomposition and they do not
+      disagree. Ledger #88 isolates <em>one leg</em> — the host-z kernel alone — on the
+      <em>seed1000 deep venue</em>. The 2×2 cell B swaps the <em>whole estimator configuration</em>
+      (kernel <em>and</em> normalisation together) on <em>this campaign&rsquo;s venue</em>,
+      and finds it owns +0.060 of the +0.083 total 2D displacement. One number says how much
+      of a per-leg A/B rides on the kernel; the other says how much of the campaign&rsquo;s
+      2D displacement rides on the estimator. Note also that ledger #88 calls its own leg
+      &ldquo;Cell B&rdquo; — a different object on a different venue, which
+      <code>BIAS_HISTORY_LEDGER.md</code> §3 relabels A′
+      <span class="prov-chip">museum ledger #88</span>.
+    </p>
+
+    <p class="ch07-note">
       Which is also why the campaign that this book&rsquo;s numbers come from runs
       <code>volume_deconv</code>, and why the code will now <em>refuse</em> a point-resolving
       host-z kernel whenever the loaded catalogue is a scattered realisation — the guard is
@@ -655,6 +693,21 @@
     </button>
 
     <!-- ================= 6. THE TWIST ================= -->
+    <!-- Trap 7.B — relocated from the end of the page (REVISION_WORKLIST
+         §C-ch07, ped-M3): "immediately before §6's twist", because this is the
+         sentence the reader thinks *entering* §6. -->
+    <div class="callout defect">
+      <span class="callout-label">Trap 7.B — &ldquo;Deconvolution is the safe, principled choice, so more of it is better.&rdquo;</span>
+      The same operation that removes a &minus;0.023 bias at $\sigma_z = 0.035$ creates a
+      +16–49% inflation at $\sigma_z/z \approx 0.25$&ndash;$0.49$
+      <span class="prov-chip">G2b:229-237</span><span class="prov-chip">CLAIM C7</span>.
+      Principled operations have domains of validity. The domain here is set by whether the
+      weight you deconvolve against is the <em>population</em> prior (which G2b establishes
+      it is) or the <em>selected</em> population prior (which C7 measures it is not) — and
+      which of those the numerator should carry is precisely what the 2×2 cell B was
+      pre-registered to decide, and did, on 2026-07-31.
+    </div>
+
     <h2>6. The twist: the fix and its failure mode are the same knob</h2>
 
     <p>
@@ -685,6 +738,30 @@
       </p>
       $$\frac{h_{\rm eff}}{h_{\rm true}} \;=\; \frac{1 + \sqrt{1 + 12\,(\sigma_z/z)^2}}{2}
         \;\longrightarrow\; 1 + 3\,(\sigma_z/z)^2 .$$
+      <p>
+        Here <span class="term" data-term="phcat">$\varphi_{\rm cat}$</span> is the
+        <em>catalogue&rsquo;s own selected number density</em> — the prior over
+        &ldquo;a row in a flux-limited catalogue lies at redshift $z$&rdquo;, as against
+        $w_{\rm pop}$&rsquo;s prior over &ldquo;an EMRI host lies at redshift $z$&rdquo;.
+        With a selection function $f(z,\Omega)$ (the fraction of galaxies at $(z,\Omega)$
+        the survey actually lists) it is
+        $\varphi_{\rm cat}(z) \propto f(z,\Omega)\,(dV_c/dz)/(1+z)$, and for the numerator
+        of a <em>detected</em> event it should carry $p_{\rm det}$ on top. The bare
+        $w_{\rm pop}$ rises without limit; $\varphi_{\rm cat}$ turns over, because surveys
+        run out of galaxies before the universe runs out of volume.
+      </p>
+      <p>
+        Worth knowing where this sits relative to everyone else: the standard-practice
+        dark-siren kernels do not deconvolve host redshifts against a cosmic volume prior
+        <em>at all</em> — they take the catalogue&rsquo;s redshift and its error at face
+        value <span class="prov-chip">Laghi et al. 2021, arXiv:2102.01708</span><span class="prov-chip">Turski et al. 2023, arXiv:2302.12037</span><span class="prov-chip">gwcosmo, the reference implementation of Gray Eq. (A10)</span>.
+        Deconvolving is this project&rsquo;s own deviation — <strong>D8</strong>, &ldquo;no
+        Gray equation prescribes this&rdquo;
+        <span class="prov-chip">BOOK_SOURCES_MAP §K3 / G2c §4.3</span> — which is precisely
+        why it is the thing under test rather than a settled background assumption. Naming
+        the two priors names the axis a resolution will lie on; it does not resolve C7, and
+        this chapter does not.
+      </p>
       <p>
         The extra 3 (rather than 2) comes from the numerator window&rsquo;s width being
         <em>proportional to</em> $z$ — the GW kernel has a fixed <em>fractional</em> distance
@@ -817,9 +894,9 @@
     </p>
 
     <p>
-      The decider is a pre-registered run: <strong>cell B</strong>
-      <span class="badge open">OPEN</span>, registered 2026-07-30 <em>before</em> submission,
-      which pushes the <em>unscattered</em> #51 catalogue through the <em>#53</em> estimator
+      The decider is a pre-registered run: <strong>the 2×2 cell B</strong>, registered
+      2026-07-30 <em>before</em> submission (as jobs 6101146/6101147), which pushes the
+      <em>unscattered</em> #51 catalogue through the <em>#53</em> estimator
       — the one combination that separates &ldquo;the estimator owns it&rdquo; from
       &ldquo;the scatter owns it&rdquo;, and which uses the true cluster parent
       <code>z_error</code>, so it is the staleness-free magnitude check
@@ -827,7 +904,53 @@
       down in advance: if B&rsquo;s in-catalogue class argmax reaches ≈0.86
       <em>even with exact host redshifts</em>, the host-observation model is largely
       exonerated and the target is the kernel&rsquo;s population weight. If B ≈ A, the
-      estimator switch is inert. <strong>It has not landed.</strong>
+      estimator switch is inert.
+    </p>
+
+    <div class="voice-adjudicator">
+      <span class="voice-label">It landed, 2026-07-31
+        <span class="badge finding">FINDING</span>
+        <span class="prov-chip">CELLB_READOUT_20260731.md</span>
+        <span class="prov-chip">CLAIM C6 (resolved 2026-07-31)</span></span>
+      <p style="margin-top:0.4rem">
+        With <strong>exact host redshifts</strong> and the true cluster parent&rsquo;s
+        <code>z_error</code> column — the staleness-free check this section was waiting
+        for — the catalogue leg&rsquo;s per-event argmax sits at the top of the prior for
+        <strong>68 of 75</strong> in-catalogue events (<strong>90.7%</strong>), against
+        <strong>66 of 74 (89.2%)</strong> in the scattered run and <strong>5.3%</strong>
+        under the idealised estimator. The in-catalogue <em>class</em> argmax is
+        <strong>0.860</strong>, exactly as registered. The realised scatter is not what
+        rails the catalogue leg; if anything it <em>damps</em> the <em>combined</em> rail
+        (69.7% in B against 57.9% in C).
+      </p>
+      <p>
+        Reported from evaluate <strong>6103219</strong> / combine <strong>6103220</strong>
+        — the resubmission of the pre-registered 6101146/6101147 after a pure-plumbing
+        symlink failure in the run-dir setup, fixed without touching the test design.
+      </p>
+    </div>
+
+    <p>
+      What cell B settles is the <strong>magnitude and the attribution</strong> of
+      C7&rsquo;s effect — not the collision. A derivation-level conflict is not something a
+      posterior can settle, and G2b&rsquo;s CONFIRMED verdict is untouched by this run. The
+      fix is still author-gated, must <strong>explicitly supersede G2b</strong>, and — a
+      constraint <em>added</em> by the cell-B readout — <strong>must not be the
+      historically-exonerated &ldquo;$p_{\rm det}$ inside the numerator alone&rdquo;
+      form</strong> <span class="prov-chip">CELLB_READOUT_20260731.md §Next steps 1b</span>.
+      Chapter 7 still may not say &ldquo;the kernel is wrong, settled&rdquo;.
+    </p>
+
+    <p class="ch07-note">
+      One honest nuance, because this chapter owes itself the same flag culture it applies
+      to the project. The <em>indicative</em> local <code>z_error</code> column predicted
+      <strong>75/76 = 98.7%</strong> of hosts peaking above 0.86; the staleness-free
+      measurement gives <strong>90.7%</strong>. Those are not the same statistic — a
+      reconstructed unclipped single-host peak against a delivered clipped
+      $\mathcal L^{\rm cat}$ argmax — so this is not a contradiction. But the honest
+      sentence is <em>&ldquo;the staleness caveat resolves in the confirming direction,
+      with the delivered rail somewhat weaker than the stale column implied&rdquo;</em>,
+      never &ldquo;98.7% confirmed&rdquo;.
     </p>
 
     <div class="ch07-flag">
@@ -874,9 +997,12 @@
       <div class="dossier-title">Event dossier — EMRI-889 after Chapter 7</div>
       <table>
         <tr><td>M / &mu;</td><td>7.25&times;10<sup>5</sup> M<sub>&#9737;</sub> / 10 M<sub>&#9737;</sub></td></tr>
-        <tr><td>d_L</td><td>88.9 Mpc &middot; SNR 1425 &middot; in-catalogue (host index 859360)</td></tr>
-        <tr><td>&sigma;_dL/dL</td><td><strong id="ch07-doss-reldl">&mdash;</strong>
-          <span class="prov-chip">seed61000 CRB row 889</span> — see the flag note below</td></tr>
+        <!-- D1 canonical dossier row (BOOK_CANON.sigmaDL.dossierRow). The
+             fractional value is filled live from the CRB by the script below;
+             it is pre-rendered here so the static reader sees it too. -->
+        <tr><td>d_L</td><td>88.9 Mpc &middot; &sigma;_dL/d_L = <strong id="ch07-doss-reldl">8.98&times;10<sup>&minus;4</sup></strong>
+          <span class="prov-chip">seed61000 CRB row 889</span></td></tr>
+        <tr><td>SNR / host</td><td>1425 &middot; in-catalogue (host index 859360)</td></tr>
         <tr class="dossier-new"><td><strong>z</strong></td>
           <td><strong id="ch07-doss-z">&mdash;</strong> — the empty slot from Chapter 1 is
             filled, by a catalogue row rather than by a measurement of this source</td></tr>
@@ -891,42 +1017,56 @@
       </table>
     </div>
 
-    <div class="ch07-flag">
-      <span class="ch07-flag-label">Provenance note — the dossier&rsquo;s distance precision</span>
-      The build spec&rsquo;s chapter cards quote $\sigma_{d_L}/d_L = 8.0\times10^{-5}$ for
-      this event. Recomputing it from the delivered covariance —
-      $\sqrt{\Sigma_{d_Ld_L}}/d_L$ on CRB row 889, identical in all six seed61000 copies,
-      and equal to the <code>rel_dL</code> the project&rsquo;s own C7 driver stores for the
-      same host — gives $8.98\times10^{-4}$. The event identification is not in doubt (mass,
-      distance, SNR and host index all match). The chapter prints the recomputed value and
-      records the disagreement in <code>book/design/flags/ch07_FLAGS.md</code> (FLAG-1)
-      rather than choosing silently. Note the consequence: the &ldquo;≈6000× larger&rdquo;
-      comparison built on $8\times10^{-5}$ becomes ≈550× — which changes nothing about the
+    <p class="ch07-note">
+      <strong>Erratum:</strong> the spec card carried &sigma;_dL/dL = 8.0&times;10<sup>&minus;5</sup>
+      — that is the absolute $\sigma_{d_L}$ in Gpc under a fractional label. Corrected
+      book-wide 2026-07-31; record: ch01 flag F1 / BUILD_REPORT §5.1 item 1. On CRB row 889
+      the delivered covariance gives $\sigma_{d_L} = 7.98\times10^{-5}$ Gpc against
+      $d_L = 0.0889$ Gpc, i.e. $\sigma_{d_L}/d_L = 8.98\times10^{-4}$ — identical in all six
+      seed61000 copies, and equal to the <code>rel_dL</code> the project&rsquo;s own C7
+      driver stores for this host. The event identification was never in doubt (mass,
+      distance, SNR and host index all match), which is why the order-of-magnitude check
+      could isolate the label rather than the row. Chapter 7 raised this as FLAG-1 and it is
+      now <strong>resolved</strong>; the flag file keeps the history
+      <span class="prov-chip">book/design/flags/ch07_FLAGS.md FLAG-1</span>. The one
+      downstream casualty: the &ldquo;≈6000× larger&rdquo; comparison built on the
+      mislabelled figure becomes <strong>≈550×</strong> — which changes nothing about the
       conclusion, and is exactly why the conclusion should never have been carried by that
       number. Chapter 7 quotes the ratified population figures instead
       (median $\sigma_{d_L}/d_L = 0.53\%$ against $\sigma_z/z$ quartiles 0.379/0.519/0.644).
-    </div>
+    </p>
 
     <!-- ================= SELF-CHECK ================= -->
     <h2>Self-check</h2>
 
     <div class="selfcheck">
-      <p>Q7.1 &nbsp; Predict, before the reveal: you replace each catalogue redshift by a
-      Gaussian of width $\sigma_z$ centred on the catalogue value, and integrate. Does the
-      $H_0$ posterior (a) widen symmetrically, (b) shift low, (c) shift high?</p>
+      <p>Q7.1 (transfer) &nbsp; You measured $\Delta h = -C\sigma_z^2$ with
+      $C_{\rm meas} \approx 17$–$20$. Without re-reading §2: what feature of the volume
+      prior sets the <strong>sign</strong>, and what would have to be true of the prior for
+      a <em>symmetric widening</em> to have been the right answer?</p>
       <details class="answer">
         <summary>Show answer</summary>
         <div class="answer-body">
-          It <strong>shifts low</strong>, and quadratically: the project measured
-          $\Delta h = -C\sigma_z^2$ with $C \approx 17$–$20$, giving
-          &minus;0.0016 / &minus;0.0064 / &minus;0.023 / &minus;0.046 at
-          $\sigma_z$ = 0.005 / 0.015 / 0.035 / 0.050
-          <span class="prov-chip">G2b:229-237</span>. The mechanism is Eddington&rsquo;s:
-          more volume lies at higher $z$ than lower $z$, so a symmetric error in
-          <em>observed</em> $z$ corresponds to an asymmetric posterior in <em>true</em> $z$,
-          and using the bare Gaussian mis-states which side the galaxy is really on.
-          Symmetric widening is what almost every reader predicts, and it is the trap this
-          chapter is built around.
+          The sign is set by the <strong>slope</strong> of the prior across the width of the
+          likelihood — nothing else. $s(z) = d\ln w_{\rm pop}/dz$ is positive (at low $z$,
+          $s \approx 2/z$), so more of the probability that scattered <em>into</em> $z_g$
+          came from above than from below; the posterior mean sits at
+          $z_g + \sigma_z^2 s$, the bare Gaussian omits that term, and under-estimating $z$
+          at a fixed measured $d_L$ under-estimates $h$. Two consequences you can state
+          without the chapter: the effect is second order in $\sigma_z$ (the first-order
+          terms cancel by symmetry of the likelihood), and it does not depend on the
+          likelihood being Gaussian — only on the prior having a non-zero log-slope across
+          the smear.
+          <br /><br />
+          A symmetric widening would be right if — and essentially only if — the prior were
+          <strong>flat</strong> over the width of the kernel: $s = 0$ makes the shift
+          vanish identically and leaves nothing but variance. That is the tacit assumption
+          every &ldquo;plug in $z_g$, inflate the error bar&rdquo; estimator makes. It is
+          false here by orders of magnitude, and the diagnostic that tells you so is
+          coverage, not width <span class="prov-chip">ledger #47</span>. A flat prior would
+          also make the sign <em>ambiguous</em> rather than low — which is the sharper way to
+          say it: this is not a fact about redshift errors, it is a fact about where the
+          galaxies were.
         </div>
       </details>
     </div>
@@ -998,59 +1138,68 @@
     </div>
 
     <div class="selfcheck">
-      <p>Q7.5 &nbsp; Order of magnitude: spectroscopic redshifts are 0.56% of GLADE+. If you
-      kept only spec-z hosts, would the photo-z problem go away?</p>
+      <p>Q7.5 (transfer) &nbsp; The spec-z cut was tried and refuted (I7.2). Write down the
+      <strong>two</strong> conditions any &ldquo;keep only the clean data&rdquo; rescue must
+      satisfy to work, and say which of them this one fails — then name a change to the
+      <em>world</em> (not to the estimator) that would repair the one it fails, and say
+      whether that would be enough.</p>
       <details class="answer">
         <summary>Show answer</summary>
         <div class="answer-body">
-          No, and the project tested it. Spec-z hosts carry at most 8.7% (median ~0%) of the
-          rate-weighted in-catalogue likelihood, and an inference-side spec-z-only cut
-          <strong>still railed at 0.870</strong> <span class="prov-chip">ledger #42</span>.
-          The problem is not that some redshifts are bad; it is that the estimator&rsquo;s
-          treatment of <em>width</em> is wrong, and removing the wide ones removes almost all
-          the data without removing the defect.
+          <strong>(i) The survivors must still carry the constraint</strong>, and
+          <strong>(ii) the discarded rows must be where the defect lives.</strong> The cut
+          fails <em>both</em>, which is why it is a good exhibit. On (i) the retained hosts
+          hold at most 8.7% — median ≈ 0% — of the rate-weighted in-catalogue likelihood, so
+          the cut throws away roughly the whole measurement to keep half a percent of the
+          catalogue. On (ii) the defect is not resident in the wide rows at all: it is in the
+          estimator&rsquo;s <em>treatment</em> of width, so deleting wide rows deletes data,
+          not the bug — measured, the cut still railed at 0.870
+          <span class="prov-chip">ledger #42</span>.
+          <br /><br />
+          A change to the world — a targeted spectroscopic follow-up of the localisation
+          volumes, moving the spec-z share from 0.56% toward unity — would repair (i), and
+          only (i). It buys you a catalogue whose widths are small enough that the kernel
+          question stops mattering <em>in practice</em>; it does not make a wrong
+          width-treatment right, and at the widths GLADE+ actually has it is a promise about
+          a future survey rather than a fix to this analysis. That asymmetry is the general
+          lesson: data cuts can satisfy (i) or fail it, but only an estimator change can
+          satisfy (ii).
         </div>
       </details>
     </div>
 
     <div class="selfcheck">
       <p>Q7.6 (transfer) &nbsp; The redshift is wide and its treatment is delicate. The GW
-      measures the <em>redshifted</em> mass $M_z = M(1+z)$ to about $10^{-4}$. Propose how
-      that could be used, and guess whether it will help.</p>
+      measures the <em>redshifted</em> mass $M_z = M(1+z)$ far more precisely than anything
+      else on this card — the claim file quotes $\sigma_{M_z}/M_z \approx 10^{-4}$
+      <span class="prov-chip">CLAIM C4</span>, while the delivered covariance measures a
+      median $8.8\times10^{-8}$ across this venue&rsquo;s events (EMRI-889:
+      $1.36\times10^{-9}$) <span class="prov-chip">ch06 flag F-ch06-5</span>. Both values
+      are carried here because the project has not reconciled them; the argument below needs
+      only that the number is very small. Propose how that could be used, and guess whether
+      it will help.</p>
       <details class="answer">
         <summary>Show answer</summary>
         <div class="answer-body">
           If a catalogue galaxy reports a black-hole mass $M_g$, then $M_z/M_g - 1$ estimates
           $z$ independently of the distance — a second handle, and an extremely sharp one on
           the GW side. It should sharpen host identification enormously, and mechanically it
-          does: 97–99% of impostors are rejected. Whether the <em>posterior</em> improves is
-          Chapter 8 <span class="ch07-fwd">⏭ Ch 8</span>, and the answer is the most
-          instructive &ldquo;no&rdquo; in the book.
+          does: 97–99% of impostors are rejected. Note that the sharpness on the GW side is
+          not the binding quantity, which is why the $10^{-4}$-vs-$8.8\times10^{-8}$
+          disagreement does not change the answer: at either value the GW mass is orders of
+          magnitude sharper than the <em>catalogue&rsquo;s</em> mass, and it is the
+          catalogue&rsquo;s width that decides what the comparison can do. Whether the
+          <em>posterior</em> improves is Chapter 8 <span class="ch07-fwd">⏭ Ch 8</span>, and
+          the answer is the most instructive &ldquo;no&rdquo; in the book.
         </div>
       </details>
     </div>
 
-    <!-- ================= TRAPS ================= -->
-    <div class="callout defect">
-      <span class="callout-label">Trap 7.A — &ldquo;Bigger &sigma;_z just means a wider posterior.&rdquo;</span>
-      Q7.1. It means a <em>shifted</em> posterior, quadratically in $\sigma_z$, and the shift
-      is ~17–20× $\sigma_z^2$ in $h$ <span class="prov-chip">G2b:229-237</span>. The
-      diagnostic that separates the two is coverage, not width: a merely-wider posterior
-      keeps its coverage, and this one takes it to ≈0%
-      <span class="prov-chip">ledger #47</span>.
-    </div>
-
-    <div class="callout defect">
-      <span class="callout-label">Trap 7.B — &ldquo;Deconvolution is the safe, principled choice, so more of it is better.&rdquo;</span>
-      The same operation that removes a &minus;0.023 bias at $\sigma_z = 0.035$ creates a
-      +16–49% inflation at $\sigma_z/z \approx 0.25$&ndash;$0.49$
-      <span class="prov-chip">G2b:229-237</span><span class="prov-chip">CLAIM C7</span>.
-      Principled operations have domains of validity. The domain here is set by whether the
-      weight you deconvolve against is the <em>population</em> prior (which G2b establishes
-      it is) or the <em>selected</em> population prior (which C7 measures it is not) — and
-      which of those the numerator should carry is precisely what cell B was pre-registered
-      to decide.
-    </div>
+    <!-- Traps 7.A and 7.B are no longer parked here: both were relocated to the
+         sections that create the misconception (REVISION_WORKLIST §C-ch07,
+         ped-M3). 7.A now sits in §2 after the coverage-collapse paragraph;
+         7.B sits at the head of §6, which is the sentence the reader thinks
+         entering the twist. -->
 
     <!-- ================= MUSEUM INTERLUDE ================= -->
     <h2>Interlude — <code>volume_trunc</code>, or: your quadrature can delete the signal you are integrating</h2>
@@ -1155,16 +1304,23 @@
     <p>
       You now hold a redshift kernel that is derived, ratified, measured to repair a
       quadratic bias and restore coverage — and separately measured to inflate the answer at
-      the widths its own hosts actually have, with the deciding experiment pre-registered and
-      not yet run. That is an uncomfortable place to leave a chapter, and it is the honest
-      one.
+      the widths its own hosts actually have. The deciding experiment was pre-registered and
+      <strong>landed on 2026-07-31</strong>: it sized the effect and told you who owns it
+      (the estimator, not the realism layer), and it left the derivation-level collision
+      exactly where it was, because that is not a thing a posterior can decide. So the
+      chapter closes one question and hands you a sharper version of the other. That is an
+      uncomfortable place to leave a chapter, and it is the honest one.
     </p>
 
     <p>
       It also sets up the obvious escape. The redshift is the wide, badly-known quantity; the
-      gravitational wave measures the <em>redshifted</em> mass $M_z = M(1+z)$ to about
-      $10^{-4}$. If a catalogue galaxy reports a black-hole mass, that is a second, very
-      sharp handle on $z$ that never touches the distance at all. It should help enormously.
+      gravitational wave measures the <em>redshifted</em> mass $M_z = M(1+z)$ with a
+      fractional precision the claim file puts at $\approx 10^{-4}$
+      <span class="prov-chip">CLAIM C4</span> and the delivered covariance measures at a
+      median $8.8\times10^{-8}$ <span class="prov-chip">ch06 flag F-ch06-5</span> — both
+      carried, both far sharper than any redshift here. If a catalogue galaxy reports a
+      black-hole mass, that is a second, very sharp handle on $z$ that never touches the
+      distance at all. It should help enormously.
       <span class="ch07-fwd">⏭ Ch 8</span> — and the reader was promised an improvement.
     </p>
 
@@ -1191,8 +1347,15 @@
         <li><span class="badge finding">FINDING</span> <code>CLAIM_2D_BIAS_20260730.md</code>
           <strong>C5</strong> fair-framing amendment (binding) — quoted in both halves
           wherever the 57.9% / &ldquo;58%&rdquo; rail fraction appears.</li>
-        <li><span class="badge open">OPEN</span> <code>PREREGISTRATION_2x2_cellB.md</code>
-          — registered 2026-07-30 before submission; the G2b↔C7 decider; not yet landed.</li>
+        <li><span class="badge finding">FINDING</span> <code>PREREGISTRATION_2x2_cellB.md</code>
+          + <code>CELLB_READOUT_20260731.md</code> — the 2×2 cell B, registered 2026-07-30
+          before submission (jobs 6101146/6101147) and <strong>landed 2026-07-31</strong>
+          (evaluate 6103219 / combine 6103220, the resubmission after a plumbing-only
+          symlink failure). Catalogue-leg rail 90.7% (68/75) with exact host redshifts vs
+          89.2% scattered; in-cat class argmax 0.860 as registered. It settles C7&rsquo;s
+          magnitude and attribution; the G2b↔C7 collision is untouched, and the fix must
+          supersede G2b without being the exonerated &ldquo;p_det in the numerator
+          alone&rdquo; form.</li>
         <li><span class="badge open">OPEN</span> the foreground-impostor thread (C7 scope
           narrowing ii) — a hypothesis from censored data, explicitly not a measurement.</li>
         <li><span class="badge refuted">REFUTED</span> <code>volume_trunc</code> —
@@ -1211,10 +1374,12 @@
           2019, arXiv:1809.02063; Gray et al. 2020, arXiv:1908.06050; Davis et al. 2011,
           arXiv:1012.2912; Carrick et al. 2015; Laghi et al. 2021, arXiv:2102.01708;
           Turski et al. 2023, arXiv:2302.12037; Dálya et al. 2022, arXiv:2110.06184.</li>
-        <li><strong>Open flags raised by this chapter:</strong>
-          <code>book/design/flags/ch07_FLAGS.md</code> — FLAG-1 (σ_dL/dL of EMRI-889:
-          spec 8.0×10⁻⁵ vs CRB 8.98×10⁻⁴), FLAG-2 (rail threshold: artifacts 0.256 vs the
-          quoted law&rsquo;s own 0.2644). Neither reconciled.</li>
+        <li><strong>Flags raised by this chapter:</strong>
+          <code>book/design/flags/ch07_FLAGS.md</code> — <strong>FLAG-1</strong> (σ_dL of
+          EMRI-889) is <strong>RESOLVED</strong> by the author&rsquo;s book-wide correction
+          of 2026-07-31; see the erratum note under the dossier above. <strong>FLAG-2</strong>
+          (rail threshold: artifacts 0.256 vs the quoted law&rsquo;s own 0.2644) remains
+          <span class="badge open">OPEN</span> and unreconciled.</li>
       </ul>
     </div>
 
@@ -1275,9 +1440,23 @@
   // ------------------------------------------------------- bias ledger rail
   // R-ch07-1 IMPLEMENTED by the integrator: Book.biasRail takes `pips`
   // directly; the page-local append workaround is retired (2026-07-31).
+  // The CANONICAL cell-B pip — worded identically on ch07/ch09/ch10/ch11
+  // (REVISION_WORKLIST §D-6, expB MN-5). The literals below are kept greppable
+  // for book/generators/qa_gates.py; the one definition is BOOK_CANON.cellB in
+  // js/manifest.js and wins at runtime.
+  const CELLB_PIP = {
+    tone: "amber",
+    label: "cell B (2026-07-31): estimator owns +0.060 of the 2D +0.083",
+    note: "CELLB_READOUT_20260731.md — evaluate 6103219 / combine 6103220; the 2D-only share is 72%",
+  };
+  if (Book.canon && Book.canon.cellB) {
+    CELLB_PIP.tone = Book.canon.cellB.pipTone || CELLB_PIP.tone;
+    CELLB_PIP.label = Book.canon.cellB.pipLabel || CELLB_PIP.label;
+    CELLB_PIP.note = Book.canon.cellB.pipNote || CELLB_PIP.note;
+  }
   const PIPS = [
     { tone: "amber", label: "C7: kernel inflates at σ_z/z > 0.256", note: "CLAIM C7 — MEASURED, live" },
-    { tone: "grey", label: "cell B (the G2b↔C7 decider) not landed", note: "PREREGISTRATION_2x2_cellB.md" },
+    CELLB_PIP,
   ];
   function renderRail(activeRow) {
     const entries = [
@@ -1677,8 +1856,9 @@
           ? ' <br><br><strong>Rollover ON.</strong> This multiplies the numerator weight by ' +
             'an illustrative selection turnover at z = 2·z_g. <em>No such term is ' +
             'implemented anywhere in the pipeline, and no fix has been ratified</em> — a C7 ' +
-            'fix must explicitly supersede G2b (conflict register §7 item 1), and cell B is ' +
-            'the pre-registered decider. The h-panel therefore reports no value.'
+            'fix must explicitly supersede G2b (conflict register §7 item 1) and, per the ' +
+            'cell-B readout of 2026-07-31, must not be the exonerated "p_det in the ' +
+            'numerator alone" form. The h-panel therefore reports no value.'
           : "");
       pZ.update(zspaceTraces());
       pH.update(hstripTraces());

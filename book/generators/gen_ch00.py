@@ -5,10 +5,12 @@ Produces one small data file:
 ``book/site/data/ch00_tension.json``
     1. **The anchors** (``measurements``) — the published H0 determinations the
        prologue plots *before any equation*: the CMB+LCDM value, the Cepheid
-       distance-ladder value, and three "third methods" that illustrate why a
-       new number does not automatically arbitrate.  These are **recorded
-       literature values**, carried verbatim with their arXiv identifiers; the
-       page chips them ``rec``/``real`` and never blends them with the toy.
+       distance-ladder value, and the "third methods" that illustrate why a
+       new number does not automatically arbitrate — including the current
+       state of the art in this book's own genre, the GWTC-3 dark-siren
+       result.  These are **recorded literature values**, carried verbatim with
+       their arXiv identifiers; the page chips them ``rec``/``real`` and never
+       blends them with the toy.
 
     2. **The tension arithmetic** (``tension``) — gap, fractional gap and the
        two-number Gaussian significance, computed here so that every number in
@@ -174,7 +176,36 @@ MEASUREMENTS: list[dict[str, Any]] = [
         "anchor": False,
         "asym": {"hi": 12.0, "lo": 8.0},
     },
+    {
+        "key": "gwtc3",
+        "label": "GWTC-3 dark sirens",
+        "method": "galaxy-catalogue redshifts, with the GW170817 counterpart",
+        "family": "siren",
+        # `sigma` is the symmetric average of the published asymmetric interval;
+        # `asym` carries the published values and is what the page plots.
+        "H0": 68.0,
+        "sigma": 7.0,
+        "sigma_stat": None,
+        "sigma_sys": None,
+        "note": (
+            "The state of the art in this book's own genre: no counterpart, "
+            "the redshift information taken from a galaxy catalogue. This is "
+            "the published dark-siren analysis combined with GW170817's "
+            "counterpart; the catalogue events on their own constrain far "
+            "more weakly. Not a like-for-like 'before/after' against the 2017 "
+            "counterpart-only row above -- that is a different analysis of "
+            "different data."
+        ),
+        "cite": "Abbott et al. (2023), arXiv:2111.03604",
+        "anchor": False,
+        "asym": {"hi": 8.0, "lo": 6.0},
+    },
 ]
+
+# The row the prologue's own argument is aimed at: the published dark-siren
+# determination, measured against the precision ceiling computed below.  Which
+# row this is is named here rather than typed into the page.
+GENRE_KEY = "gwtc3"
 
 # The single-event scale used by the toy: rounded from GW170817's published
 # +12.0/-8.0 to a symmetric 10 km/s/Mpc.  Stated on the page as a round number,
@@ -231,9 +262,18 @@ def main() -> None:
     # thing standing between it and a verdict is its distance to the OTHER one.
     # Requiring a 3-sigma exclusion of the far anchor caps the method's TOTAL
     # 1-sigma at:  sqrt((gap/3)^2 - sigma_far^2).
-    sigma_far = shoes["sigma"]  # far anchor when parked on Planck (the tighter case)
-    ceiling = math.sqrt((gap / T_EXCLUDE) ** 2 - sigma_far**2)
+    #
+    # There are TWO such placements and they are not equally kind.  Parked on
+    # the early-universe anchor the far anchor is the LATE one (sigma = 1.04)
+    # and the cap is tighter; parked on the late-universe anchor the far anchor
+    # is the tighter early one (sigma = 0.5) and the cap relaxes.  The page
+    # quotes the demanding branch and names which one it is, so that the prose
+    # and the arithmetic describe the same placement.
+    ceiling_rhs = gap / T_EXCLUDE
+    sigma_far = shoes["sigma"]  # far anchor when parked on Planck (the demanding case)
+    ceiling = math.sqrt(ceiling_rhs**2 - sigma_far**2)
     ceiling_frac = ceiling / planck["H0"]
+    ceiling_parked_late = math.sqrt(ceiling_rhs**2 - planck["sigma"] ** 2)
     n_needed_zero_sys = (SIGMA_PER_EVENT / ceiling) ** 2
 
     # -- three worked example points (the widget's static fallback) -----------
@@ -291,6 +331,23 @@ def main() -> None:
             }
         )
 
+    # -- the genre's own state of the art, against the ceiling ----------------
+    # The published dark-siren number is the one row on the figure that measures
+    # the same thing this book measures, so the prologue says out loud how far it
+    # is from the arbitration ceiling.  Both numbers in that sentence are emitted
+    # here rather than typed into the page.
+    genre = _anchor(GENRE_KEY)
+    genre_sigma = (genre["asym"]["hi"] + genre["asym"]["lo"]) / 2 if "asym" in genre else genre["sigma"]
+    genre_anchor = {
+        "key": GENRE_KEY,
+        "label": genre["label"],
+        "cite": genre["cite"],
+        "H0": genre["H0"],
+        "sigma_symmetric": genre_sigma,
+        "frac_of_own_H0": genre_sigma / genre["H0"],
+        "ratio_to_ceiling": genre_sigma / ceiling,
+    }
+
     # -- the h convention, read out of the pipeline's own constants -----------
     h_convention = _read_h_convention()
 
@@ -318,8 +375,18 @@ def main() -> None:
             "sigma_per_event_basis": "GW170817, arXiv:1710.05835 (70.0 +12.0 -8.0), rounded",
             "t_exclude": T_EXCLUDE,
             "t_consistent": T_CONSISTENT,
+            "ceiling_rhs": ceiling_rhs,
             "ceiling_sigma_total": ceiling,
             "ceiling_frac_of_H0": ceiling_frac,
+            "ceiling_parked_on": planck["key"],
+            "ceiling_far_anchor": shoes["key"],
+            "ceiling_sigma_total_parked_on_late": ceiling_parked_late,
+            "ceiling_branch_note": (
+                "parked on the early-universe anchor the far anchor is the late "
+                "one (the wider sigma), which is the more DEMANDING of the two "
+                "placements; parked on the late-universe anchor the far anchor is "
+                "the tighter early one and the cap relaxes"
+            ),
             "n_events_needed_zero_sys": n_needed_zero_sys,
             "n_events_needed_zero_sys_int": math.ceil(n_needed_zero_sys),
             "examples": examples,
@@ -331,6 +398,7 @@ def main() -> None:
             },
             "check_points": check_points,
         },
+        "genre_anchor": genre_anchor,
         "h_convention": h_convention,
     }
 
@@ -340,7 +408,12 @@ def main() -> None:
     print(f"wrote {OUT_FILE.relative_to(REPO_ROOT)}  ({OUT_FILE.stat().st_size:,} bytes)")
     print(f"  gap                {gap:.2f} km/s/Mpc = {gap / planck['H0'] * 100:.2f}% of the early value")
     print(f"  two-number sigma   {n_sigma:.2f} (paper quotes {payload['tension']['published_n_sigma']:.1f})")
-    print(f"  precision ceiling  {ceiling:.4f} km/s/Mpc = {ceiling_frac * 100:.2f}% of H0")
+    print(f"  precision ceiling  {ceiling:.4f} km/s/Mpc = {ceiling_frac * 100:.2f}% of H0"
+          f"  (parked on {planck['key']}; parked on {shoes['key']}: {ceiling_parked_late:.4f})")
+    print(f"  genre anchor       {genre_anchor['label']}: {genre['H0']:.1f} "
+          f"+{genre['asym']['hi']:.1f}/-{genre['asym']['lo']:.1f} = "
+          f"{genre_anchor['frac_of_own_H0'] * 100:.1f}% of its own H0, "
+          f"{genre_anchor['ratio_to_ceiling']:.1f}x the ceiling  [{genre_anchor['cite']}]")
     print(f"  N needed (sys=0)   {n_needed_zero_sys:.2f} -> {math.ceil(n_needed_zero_sys)} events")
     for ex in examples:
         print(

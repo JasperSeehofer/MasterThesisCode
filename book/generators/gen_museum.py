@@ -194,6 +194,41 @@ _VENUE_TOKENS = [
 ]
 
 
+# ---- row shape (expA-M4) --------------------------------------------
+# BIAS_HISTORY_LEDGER.md's table is exactly seven columns wide:
+#   # | Era | Hypothesis | Decisive test | Verdict | Documented | Residual
+LEDGER_CELLS = ("id", "era", "hypothesis", "test", "verdict", "documented", "residual")
+LEDGER_CELL_COUNT = 7
+VERDICT_IDX = 4
+# `documented` is a citation column: a path, an anchor, a section or a row ref.
+# If it ever holds bare prose, the row's cells are shifted.
+_CITATION = re.compile(r"(:\d|\.md|\.py|\.json|§|#\d)")
+
+# ---- the DO-NOT-RE-TRY back-reference grammar (expA-M3) --------------
+# §2 writes its ledger back-references as parenthesised groups: "(#25, #30, #10)",
+# "(#41/#52)", "(#43/#44)".  ONLY groups that consist entirely of such refs are
+# read — "(#30 option b)" is a GitHub issue number, not a ledger row, and stays
+# rejected.  The separator class was comma-only before 2026-07-31, which silently
+# dropped items 13 and 15 (rows #41/#52 information starvation, #43/#44
+# heliocentric/PV frame) and left the union 4 rows short.
+_DNR_REF_GROUP = re.compile(r"#\d+[a-z]?(\s*[,/·;]\s*#\d+[a-z]?)*")
+EXPECTED_DNR_ROWS = 30
+
+# ---- book-added annotations (never presented as ledger text) ---------
+# expB MJ-3: ledger #88's verdict says "Cell B", meaning the three-way A/B's
+# leg B on the seed1000 deep venue.  The 2026-07-31 2x2's cell B is a different
+# object on a different venue with a nearly identical 2D number, so a reader who
+# searches "cell B" after Ch 11 §5 lands here first.  The clause below is the
+# BOOK's annotation, carried in its own field so nothing overwrites the ledger.
+BOOK_NOTES: dict[str, str] = {
+    "88": (
+        "Book note (not ledger text): this “Cell B” is the three-way A/B's leg B "
+        "on the seed1000 deep venue — not the 2026-07-31 2×2 cell B "
+        "(1D 0.7450 / 2D 0.7900, campaign venue); see Ch 11 §5."
+    ),
+}
+
+
 def _strip_md(cell: str) -> str:
     out = cell.strip()
     for pat, repl in _MD_STRIP:
@@ -202,10 +237,28 @@ def _strip_md(cell: str) -> str:
 
 
 def _split_row(line: str) -> list[str]:
-    """Split a markdown table row on unescaped pipes."""
+    r"""Split a markdown table row into the ledger's seven source cells.
+
+    Escaped pipes (``\|``, used by rows #49d and #82) are honoured.  Row #68
+    (``BIAS_HISTORY_LEDGER.md:88``) carries **unescaped** pipes inside its
+    VERDICT cell — ``(trimming top-|tilt| GROWS it)`` — which a naive split
+    shifts one column to the left: the verdict is truncated, ``documented``
+    becomes the word "tilt", and the ``[AMBIG] see #69`` residual is lost
+    entirely (REVISION_WORKLIST §C-museum, expA-M4).
+
+    Any surplus cells are therefore folded back into the VERDICT column — the
+    only free-text column in the table — and ``build_ledger`` then gates every
+    row on the recovered shape.  The upstream one-character fix is the
+    author's (§F-5); the parser tolerates the source either way.
+    """
     tmp = line.strip().strip("|")
     tmp = tmp.replace(r"\|", "\x00")
-    return [c.replace("\x00", "|") for c in tmp.split("|")]
+    cells = [c.replace("\x00", "|") for c in tmp.split("|")]
+    surplus = len(cells) - LEDGER_CELL_COUNT
+    if surplus > 0:
+        merged = "|".join(cells[VERDICT_IDX: VERDICT_IDX + surplus + 1])
+        cells = cells[:VERDICT_IDX] + [merged] + cells[VERDICT_IDX + surplus + 1:]
+    return cells
 
 
 def _classify(verdict_raw: str) -> tuple[str, str]:
@@ -248,11 +301,17 @@ def build_ledger() -> dict[str, Any]:
             if set(line.replace("|", "").strip()) <= set("-: "):
                 continue
             cells = _split_row(line)
-            if len(cells) < 7:
-                continue
-            rid = _strip_md(cells[0])
+            rid = _strip_md(cells[0]) if cells else ""
             if not re.fullmatch(r"\d+[a-z]?", rid):
                 continue
+            # Hard row-shape gate (expA-M4): a data row that does not recover
+            # to seven cells fails the build rather than shipping shifted cells.
+            if len(cells) != LEDGER_CELL_COUNT:
+                raise AssertionError(
+                    f"gen_museum: ledger row #{rid} parsed to {len(cells)} cells, "
+                    f"expected {LEDGER_CELL_COUNT} — the source row's pipe escaping "
+                    f"changed; see museum_FLAGS.md F-museum-5"
+                )
             era = _strip_md(cells[1])
             verdict_raw = cells[4]
             cls, label = _classify(verdict_raw)
@@ -271,7 +330,21 @@ def build_ledger() -> dict[str, Any]:
                     "documented": _strip_md(cells[5]),
                     "residual": _strip_md(cells[6]),
                     "venues": _venues(row_text),
+                    "book_note": BOOK_NOTES.get(rid, ""),
                 }
+            )
+
+    # ---- row-shape gate, part 2: every cell present, citation real --
+    for row in rows:
+        empty = [c for c in LEDGER_CELLS if not str(row[c]).strip()]
+        if empty:
+            raise AssertionError(
+                f"gen_museum: ledger row #{row['id']} has empty source cell(s) {empty}"
+            )
+        if not _CITATION.search(row["documented"]):
+            raise AssertionError(
+                f"gen_museum: ledger row #{row['id']} documented="
+                f"{row['documented']!r} is not a citation — the row's cells are shifted"
             )
 
     # ---- DO-NOT-RE-TRY: section 2's own back-references -------------
@@ -284,11 +357,23 @@ def build_ledger() -> dict[str, Any]:
         # (that one is a GitHub issue number, not a ledger row).
         refs: set[str] = set()
         for grp in re.findall(r"\(([^()]*)\)", m.group(2)):
-            if re.fullmatch(r"#\d+[a-z]?(\s*,\s*#\d+[a-z]?)*", grp.strip()):
+            if _DNR_REF_GROUP.fullmatch(grp.strip()):
                 refs.update(re.findall(r"#(\d+[a-z]?)", grp))
         ref_list = sorted(refs)
         dnr_items.append({"item": int(m.group(1)), "text": body, "ledger_rows": ref_list})
     dnr_rows = sorted({rid for it in dnr_items for rid in it["ledger_rows"]})
+    if len(dnr_rows) != EXPECTED_DNR_ROWS:
+        raise AssertionError(
+            f"gen_museum: §2's back-references resolve to {len(dnr_rows)} ledger rows, "
+            f"expected {EXPECTED_DNR_ROWS} ({sorted(dnr_rows)}) — the museum's binding "
+            f"union, the census caption and M.4's answer all print this number"
+        )
+    known = {row["id"] for row in rows}
+    orphan = [rid for rid in dnr_rows if rid not in known]
+    if orphan:
+        raise AssertionError(
+            f"gen_museum: §2 back-references rows absent from the table: {orphan}"
+        )
     for row in rows:
         row["do_not_retry"] = row["id"] in dnr_rows
 
@@ -305,10 +390,14 @@ def build_ledger() -> dict[str, Any]:
     for row in rows:
         census[row["verdict_class"]] = census.get(row["verdict_class"], 0) + 1
 
-    print(f"  ledger: {len(rows)} rows, census {census}")
+    print(
+        f"  ledger: {len(rows)} rows, census {census}; "
+        f"do-not-re-try union {len(dnr_rows)} rows from {len(dnr_items)} §2 items"
+    )
     return {
         "source": LEDGER_REL,
         "compiled": "2026-07-30",
+        "book_revision": "2026-07-31",
         "n_rows": len(rows),
         "census": census,
         "class_labels": {cls: label for cls, label, _ in _VERDICT_RULES}

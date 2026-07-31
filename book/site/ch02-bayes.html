@@ -48,6 +48,10 @@
     margin-bottom: 0.25rem;
   }
   .ch02-note { font-size: 0.82rem; color: var(--muted); margin: 0.6rem 0 0; }
+  /* D1 erratum footnote (BOOK_CANON.sigmaDL.erratumHTML is quoted verbatim and
+     carries class="note"; no shared rule defines it yet — page-local until the
+     integrator's pass 2 promotes it into css/book.css). */
+  .dossier .note { font-size: 0.76rem; color: var(--muted); margin: 0.5rem 0 0; line-height: 1.45; }
   .ch02-locked { opacity: 0.45; pointer-events: none; }
   @media print { .ch02-locked { opacity: 1; } }
   .ch02-fwd {
@@ -184,25 +188,14 @@
       smallest non-zero value rather than annihilating the whole product.
     </p>
     <p>
-      <strong>Why there is no extra $\beta(h)^N$.</strong> Each $\mathcal{L}_i$ is
-      <em>already</em> conditional on detection, so the joint posterior is a plain product,
-      with no further population-level selection factor multiplied on top. That is a
-      statement with a citation, not a convenience.
+      <strong>Why the product is plain.</strong> Each $\mathcal{L}_i$ is <em>already</em>
+      conditional on detection, so the joint posterior is a plain product with no extra
+      population-level factor multiplied on top. Why that is a theorem and not a
+      convenience — and what it costs to apply the correction twice — needs the selection
+      machinery this book has not built yet, so it is Chapter 4&rsquo;s
+      <span class="ch02-fwd">⏭ Ch 4</span>. (The argument and its citations are in the
+      GW-reader fold at the end of this section, for readers who already have that rung.)
     </p>
-
-    <div class="voice-derivation">
-      <span class="voice-label">Why the product is plain — the production combiner&rsquo;s own argument
-        <span class="prov-chip">posterior_combination.py:284-330</span>
-        <span class="prov-chip">Loredo 2004</span>
-        <span class="prov-chip">Mandel, Farr &amp; Gair 2019, arXiv:1809.02063 §3</span>
-      </span>
-      Conditioning on the observed number of detections makes the $\beta(h)^N$ factor of the
-      unconditional (Poisson) likelihood cancel against the rate prior. Applying
-      $-N\log D(h)$ <em>again</em> on top of per-event likelihoods that already carry it is a
-      double count — and the project shipped exactly that for a while, then measured what
-      removing it was worth: it eliminated a $+0.020\ldots+0.025$ shift in $h$
-      <span class="prov-chip">ledger #20</span> <span class="prov-chip">6754ddb</span>.
-    </div>
 
     <p>
       One more thing the grid has to do, and it is easy to get wrong: it has to be able to
@@ -252,7 +245,7 @@
         symmetric Gaussian peak with MAP 0.72990 and $\sigma_h = 3.00\times10^{-4}$ — about
         <strong>15&times; narrower than the production grid&rsquo;s 0.005 step</strong>, which
         is why the un-zoomed posterior looked like a delta spike and why the project needed a
-        zoom-grid hook (<code>IDEALIZED_BASELINE_READOUT.md:36-39</code>).</p>
+        zoom-grid hook (<code title="current lines :50-52">IDEALIZED_BASELINE_READOUT.md:36-39</code>).</p>
       </noscript>
     </div>
 
@@ -262,7 +255,7 @@
       $3\times10^{-4}$ or $3\times10^{-9}$, the production grid renders both as the same
       picture. Resolution is a property of your instrument, not of your result — and the
       idealized run&rsquo;s $\sigma_h$ is only knowable because someone re-ran it on a grid
-      15&times; finer. <span class="prov-chip">IDEALIZED_BASELINE_READOUT.md:36-39</span>
+      15&times; finer. <span class="prov-chip" title="current lines :50-52">IDEALIZED_BASELINE_READOUT.md:36-39</span>
     </div>
 
     <details class="gw-reader">
@@ -285,6 +278,21 @@
         purpose: the entire point of the arc is that the reader first learns what a
         <em>defective</em> $\mathcal{L}_i$ looks like from the outside, and only then opens it.
         Chapters 3&ndash;9 are that opening, one factor at a time.
+      </p>
+      <p>
+        <strong>Why the product is plain, in full.</strong> Conditioning on the observed
+        number of detections makes the $\beta(h)^N$ factor of the unconditional (Poisson)
+        likelihood cancel against the rate prior
+        <span class="prov-chip">Loredo 2004</span>
+        <span class="prov-chip">Mandel, Farr &amp; Gair 2019, arXiv:1809.02063 §3</span>
+        <span class="prov-chip">posterior_combination.py:284-330</span>. Applying
+        $-N\log D(h)$ <em>again</em> on top of per-event likelihoods that already carry it is
+        a double count — and the project shipped exactly that for a while, then measured what
+        removing it was worth: it eliminated a $+0.020\ldots+0.025$ shift in $h$
+        <span class="prov-chip">ledger #20</span> <span class="prov-chip">6754ddb</span>.
+        This paragraph is deliberately below the fold: $D(h)$, $\beta$ and &ldquo;conditional
+        on detection&rdquo; are Chapter 4&rsquo;s objects, and the main column of this chapter
+        does not use tools it has not built <span class="ch02-fwd">⏭ Ch 4</span>.
       </p>
       <p>
         Two data-hygiene rules were binding on this chapter&rsquo;s generator and are worth
@@ -370,9 +378,11 @@
       $\mathcal{L}_i(h) = p(x_i \mid h)$ requires connecting a measured $d_L$ to an $h$, and
       the only bridge is $d_L(z; h, \Omega_m)$ — which needs $z$. The host&rsquo;s redshift is
       not measured, not guessed, and not marginalizable with a shrug: it is a
-      <strong>discrete latent variable</strong> with tens of thousands of candidate values per
-      event, one per catalogued galaxy in the localization volume. Summing over it is
-      Chapter 3. Discovering that the true host is usually not among them is Chapter 5.
+      <strong>discrete latent variable</strong> with anywhere from zero to hundreds of
+      thousands of candidate values per event — one per catalogued galaxy in the localization
+      volume, and the count is a distribution, not a typical number. Summing over it is
+      Chapter 3, which measures that distribution <span class="ch02-fwd">⏭ Ch 3</span>.
+      Discovering that the true host is usually not among them is Chapter 5.
     </div>
 
     <!-- ================= §3 ================= -->
@@ -452,17 +462,17 @@
         <button type="button" data-preset="honest">honest</button>
         <button type="button" data-preset="overconfident">unbiased, over-confident</button>
         <button type="button" data-preset="biased-calibrated">biased, honest &sigma;</button>
-        <button type="button" data-preset="twod">set b to the recorded 2D offset</button>
+        <button type="button" data-preset="twod">badly biased, honest &sigma;</button>
       </div>
       <p class="ch02-note">
-        The last preset dials the toy&rsquo;s <em>true bias</em> to <strong>+0.077</strong> in
-        $h$ — the recorded mean offset of campaign #53&rsquo;s two-dimensional channel
-        <span class="prov-chip">REALISTIC_READOUT.md §6</span>
-        <span class="badge candidate">CANDIDATE</span> ([RATIFY-M6] designates that 2D pairing
-        &ldquo;necessary, not established sufficient&rdquo;). Only the <em>number</em> is real;
-        the 200 estimates scattered around it remain Gaussian toys, which is why this widget
-        stays chipped <code>toy</code>. What it is for: watching coverage go to zero while the
-        stated &sigma; is perfectly honest.
+        The last preset dials the toy&rsquo;s <em>true bias</em> to a round
+        <strong>+0.080</strong> in $h$ — four times the scatter, and chosen for exactly that
+        reason. Every number in this widget is invented, including that one: the 200 estimates
+        are Gaussian draws from a fixed seed, which is why it stays chipped <code>toy</code>
+        and why no figure in it should ever be quoted as a result. What it is for: watching
+        coverage go to zero while the stated &sigma; is perfectly honest. A displacement of
+        this order is not hypothetical — this book measures one, later, in a channel you have
+        not met <span class="ch02-fwd">⏭ Ch 8</span>.
       </p>
       <div class="ch02-panels">
         <div id="ch02-t-plot" class="widget-plot" style="min-height:250px"></div>
@@ -488,8 +498,8 @@
         $\sigma_{\rm stated} = 0.005$): bias and scatter unchanged, but coverage collapses to
         <strong>17.5%</strong> and the pull s.d. is <strong>4.37</strong> — an estimator that
         is right on average and lies about how sure it is. <em>Biased with an honest $\sigma$</em>
-        ($b = +0.077$, $\sigma_{\rm true} = \sigma_{\rm stated} = 0.020$): coverage
-        <strong>0.5%</strong>, pull s.d. still 1.09, mean pull +3.8 — every interval misses,
+        ($b = +0.080$, $\sigma_{\rm true} = \sigma_{\rm stated} = 0.020$): coverage
+        <strong>0.5%</strong>, pull s.d. still 1.09, mean pull +3.95 — every interval misses,
         and the width is not the reason. (The finite-sample offsets — 64.5% rather than 68%,
         0.0218 rather than 0.020 — are what 200 draws actually give; they are not rounded to
         the textbook values.)</p>
@@ -566,14 +576,11 @@
 
     <div class="callout defect">
       <span class="callout-label">Trap 2.A &mdash; &ldquo;MAP = truth means the estimator is right.&rdquo;</span>
-      Chapter 10&rsquo;s exhibit #49a: a production estimator returned MAP = <strong>0.86 for
-      <em>every</em> injected truth from 0.63 to 0.77</strong>, while a
-      <code>catalog_only</code> control tracked truth exactly. It was stable, reproducible,
-      and carried literally zero information about $H_0$. Hitting truth once is one bit of
-      evidence. <span class="prov-chip">ledger #49a</span>
-      <span class="prov-chip">DRAFT_REPORT.md:24-27</span>
-      <span class="badge refuted">REFUTED</span> as an estimator —
-      <a href="museum.html#ex-h0-independent">the full exhibit is in the Defect Museum</a>.
+      An estimator can be stable, reproducible, and carry literally <em>zero</em> information
+      about the parameter it reports — and still land on truth in the one run you looked at.
+      Hitting truth once is one bit of evidence, and this book has a measured instance of an
+      estimator that hit it for the wrong reason. Chapter 10 shows you that one
+      <span class="ch02-fwd">⏭ Ch 10</span>; the number and the verdict are its to deliver.
     </div>
 
     <!-- ================= §4 ================= -->
@@ -586,8 +593,12 @@
       buying about as much as the first hundred. Commit to that intuition before you break it.
     </p>
 
-    <!-- ============ predict, then reveal ============ -->
-    <div class="widget" data-predict-id="ch02-concentration">
+    <!-- ============ predict, then reveal ============
+         data-predict-correct marks the graded option (worklist §D item 8;
+         ch02 is that item's customer). The reveal below already opens with
+         the graded verdict in prose, so the attribute is inert until the
+         integrator ships the shared grading mechanism. -->
+    <div class="widget" data-predict-id="ch02-concentration" data-predict-correct="few">
       <h4>Predict, then reveal — how many events carry the answer?</h4>
       <p style="margin-top:0;">
         In the idealized campaign-#51 baseline there are 1588 detected events. Rank them by how
@@ -595,16 +606,21 @@
         many events does it take to reach 90% of the total constraint?</strong> Commit, then
         the Event Stacker below unlocks.
       </p>
-      <div class="predict-row" id="ch02-predict-1" data-predict-id="ch02-concentration">
+      <div class="predict-row" id="ch02-predict-1" data-predict-id="ch02-concentration"
+           data-predict-correct="few">
         <button type="button" data-predict="most">most of them — ~1400</button>
         <button type="button" data-predict="half">about half — ~800</button>
         <button type="button" data-predict="hundred">a minority — ~100</button>
         <button type="button" data-predict="few">a handful — ~10</button>
       </div>
       <div class="reveal">
-        <strong>Measured: 24 events.</strong> The top 3 alone carry <strong>46%</strong> of the
-        in-catalogue budget (47% of the signed total — the two denominators differ by 1.3%,
-        see below), the top 10 carry 71%, the top 20 carry 87%, and 24 of 1588 reach 91%. The
+        <strong>(d) — a handful. Measured: 24 of 1588.</strong> Ranked by the curvature
+        statistic defined just below, and quoting every cumulative figure against the
+        <em>signed total</em>: the top 3 carry <strong>47%</strong> of it, the top 10
+        <strong>71%</strong>, the top 20 <strong>87%</strong>, and 24 events reach
+        <strong>91%</strong>. (Against the <em>in-catalogue</em> budget — the readout&rsquo;s
+        own denominator — the same four figures are <strong>46%</strong>, 70%, 86% and 90%;
+        the two denominators differ by 1.3% because the dark class contributes −1.3%.) The
         cumulative share then <em>overshoots</em> 100% around the 40th event and comes back
         down, because <strong>466 of the 1588 events have negative curvature</strong> — locally
         they push the other way. The project&rsquo;s own
@@ -612,20 +628,33 @@
         in-catalogue events (4.8 %); the 3 loudest (SNR 995&ndash;1425, z ≈ 0.016&ndash;0.021)
         carry 46 % alone. The other ~1510 detections are dark hosts contributing ~1 % of the
         curvature.&rdquo;</em>
-        <span class="prov-chip">IDEALIZED_BASELINE_READOUT.md:42-47</span>
+        <span class="prov-chip" title="current lines :54-60">IDEALIZED_BASELINE_READOUT.md:42-47</span>
         <span class="prov-chip real">real: #51 posteriors_fixed</span>
-        If you chose &ldquo;~1400&rdquo; you were applying $\sqrt{N}$ reasoning to a sample
-        that does not have $N$ independent things in it. The number that matters is not how
-        many events you have; it is how much information they carry, and that quantity is not
+        <br />
+        <strong>The other three options, and what each of them is thinking.</strong>
+        <em>&ldquo;~1400 — most of them&rdquo;</em> is $\sqrt{N}$ reasoning applied to a sample
+        that does not contain $N$ independent things; it is the answer this chapter exists to
+        break. <em>&ldquo;~800 — about half&rdquo;</em> is the same instinct with a hedge: it
+        still assumes the information is spread roughly evenly, and evenness is exactly what
+        fails. <em>&ldquo;~100 — a minority&rdquo;</em> is the closest miss and the most
+        interesting one: it expects a healthy informative <em>sub-population</em> — a few
+        percent of 1588, which is the right order for the 76 events whose host is actually
+        catalogued. But a sub-population is still not a <em>flat</em> sub-population: the
+        participation ratio computed two paragraphs below — over all 1122 events that pull
+        the right way — is <strong>12.1</strong>, so the effective count is twelve, not a
+        hundred. The number that matters is not how many
+        events you have; it is how much information they carry, and that quantity is not
         spread evenly over anything.
       </div>
       <noscript>
-        <p><strong>Static fallback.</strong> The answer is <strong>24 of 1588</strong>. Ranked
-        by the project&rsquo;s own per-event curvature statistic on the idealized campaign-#51
-        baseline, the top 3 events carry 46% of the in-catalogue budget, the top 10 carry 71%,
-        the top 20 carry 87%, and 24 events reach 91%. The cumulative share then overshoots
-        100% and comes back, because 466 of the 1588 events have negative curvature.
-        (<code>IDEALIZED_BASELINE_READOUT.md:42-47</code>.)</p>
+        <p><strong>Static fallback.</strong> The answer is <strong>(d), a handful — 24 of
+        1588</strong>. Ranked by the project&rsquo;s own per-event curvature statistic on the
+        idealized campaign-#51 baseline and quoted against the <em>signed total</em>, the top
+        3 events carry 47%, the top 10 carry 71%, the top 20 carry 87%, and 24 events reach
+        91%; against the <em>in-catalogue</em> budget the same four are 46%, 70%, 86% and 90%.
+        The cumulative share then overshoots 100% and comes back, because 466 of the 1588
+        events have negative curvature.
+        (<code title="current lines :54-60">IDEALIZED_BASELINE_READOUT.md:42-47</code>.)</p>
       </noscript>
     </div>
 
@@ -650,7 +679,8 @@
     <p>
       With that statistic the concentration is not an impression, it is a count. Of the 1588
       events, the 76 whose true host galaxy is actually in the catalogue carry
-      <strong>101.3%</strong> of the total; the remaining 1512 carry <strong>−1.3%</strong>.
+      <strong>101.3%</strong> of the signed total; the remaining 1512 carry
+      <strong>−1.3%</strong> of it.
       (Why only 76 of 1588 is Chapter 5&rsquo;s subject <span class="ch02-fwd">⏭ Ch 5</span>;
       here it is simply a label on a subset.) A useful descriptive summary of how uneven the
       rest is: the participation ratio $\bigl(\sum_k c_k\bigr)^2 / \sum_k c_k^2$ over the 1122
@@ -733,10 +763,14 @@
         <span class="badge finding">FINDING</span>
         <span class="prov-chip">REALISTIC_READOUT.md §4</span>
       </span>
-      The concentration percentages above — 46%, 101.3%, −1.3% — are <strong>idealized-venue
-      measurements</strong> and are quoted only there. In the realistic run the same statistic
-      is cancellation-dominated: the signed total (0.0851 for r1) is only about 62% of the
-      absolute curvature mass (0.1650), so ratios blow up — the readout records a &ldquo;dark
+      The concentration percentages above — 47%, 101.3%, −1.3% of the signed total, 46% of
+      the in-catalogue budget — are <strong>idealized-venue measurements</strong> and are
+      quoted only there. In the realistic run the same statistic
+      is cancellation-dominated: the signed total (0.0851 for r1) is only
+      <strong>52%</strong> of that run&rsquo;s absolute curvature mass (0.1650) — do the
+      division yourself; <strong>62%</strong> is the readout&rsquo;s <em>ensemble</em> figure
+      (mean 0.076 / mean 0.123 over the ten runs), and this page is quoting r1. Either way
+      ratios blow up — the readout records a &ldquo;dark
       share&rdquo; reaching 140% and one run&rsquo;s golden share going to <strong>−159%</strong>,
       and instructs: <em>&ldquo;Quote the signed sums, never the ratios.&rdquo;</em> So this
       page quotes the signed sums for r1 and nothing else: total <strong>+0.0851</strong>,
@@ -774,41 +808,35 @@
       Only if they are unbiased. A coherent, same-signed tilt shared across many events
       accumulates linearly in log-space while the statistical width shrinks as $1/\sqrt{N}$,
       so the <em>pull</em> grows as $\sqrt{N}$: more data makes the wrongness more
-      <em>significant</em>, not less. The measured instance closes this book — campaign
-      #53&rsquo;s two-dimensional channel puts <strong>10 of 10 runs</strong> above $+2\sigma$,
-      at a mean pull of <strong>+4.04</strong>
-      <span class="prov-chip">REALISTIC_READOUT.md §6</span>
-      <span class="prov-chip">ledger #94</span>. That number sits on
-      <span class="badge candidate">CANDIDATE</span> ground — [RATIFY-M6] designates the 2D
-      pairing &ldquo;necessary, not established sufficient&rdquo; — and it is Chapter 8&rsquo;s
-      cold open <span class="ch02-fwd">⏭ Ch 8</span>.
+      <em>significant</em>, not less. That is a mechanism, and you can drive it yourself with
+      I2.2&rsquo;s dials. This book also has a measured instance of it, in a channel this
+      chapter has not met yet <span class="ch02-fwd">⏭ Ch 8</span>.
     </div>
 
     <!-- ================= dossier ================= -->
     <div class="dossier">
       <div class="dossier-title">Event dossier — EMRI-889 after this chapter</div>
       <table>
-        <tr><td>d_L</td><td>88.9 Mpc (0.0888792 Gpc)</td></tr>
+        <tr><td>d_L</td><td>88.9 Mpc &nbsp;&middot;&nbsp; &sigma;_dL/d_L = 8.98&times;10&#8315;&#8308;</td></tr>
         <tr><td>SNR</td><td>1424.7 — the loudest of the 1590 rows in this run&rsquo;s table</td></tr>
         <tr><td>z</td><td><em>still unknown</em></td></tr>
         <tr class="dossier-new"><td>distance precision</td>
             <td>&sigma;_dL = 7.98&times;10<sup>&minus;5</sup> <strong>Gpc</strong> = 0.0798 Mpc
-                &rArr; &sigma;_dL/d_L = <strong>9.0&times;10<sup>&minus;4</sup></strong> (0.090%).
-                The design documents quote &ldquo;&sigma;_dL/dL = 8.0&times;10<sup>&minus;5</sup>&rdquo;;
-                that is the same measurement read as the <em>absolute</em> &sigma; in Gpc.
-                Both readings are carried, neither is dropped —
-                flag <strong>F-ch02-1</strong>.</td></tr>
+                on d_L = 0.0888792 Gpc &rArr; the fraction above, 0.090% — this event is the
+                book&rsquo;s ruler <span class="prov-chip">ch02_FLAGS.md F-ch02-1, resolved 2026-07-31</span></td></tr>
         <tr class="dossier-new"><td>its own likelihood</td>
             <td>plotted at last: a sharp peak at h = 0.7295 in the idealized baseline,
                 a broad hump peaking at h = 0.745 in the realistic run</td></tr>
         <tr class="dossier-new"><td>rank in the information budget</td>
             <td><strong>#2 of 1588</strong> by curvature — one of the three golden events that
-                carry <strong>46%</strong> of the idealized constraint between them, and the
+                carry <strong>46%</strong> of the idealized <em>in-catalogue</em> budget
+                between them (47% of the signed total), and the
                 single event that halves the posterior width when it enters the stack</td></tr>
         <tr class="dossier-new"><td>what this chapter added</td>
             <td>889 is not one of 1588. It is one of <em>three</em>. Whatever is wrong with how
                 this pipeline treats one galaxy&rsquo;s redshift is wrong with the answer.</td></tr>
       </table>
+      <p class="note">Erratum: the spec card carried &sigma;_dL/dL = 8.0&times;10&#8315;&#8309; &mdash; that is the absolute &sigma;_dL in Gpc under a fractional label. Corrected book-wide 2026-07-31; record: ch01 flag F1 / BUILD_REPORT &sect;5.1 item 1.</p>
     </div>
 
     <p>
@@ -825,10 +853,12 @@
       $\mathcal L_i(h)$ — the one object this chapter never computed. To compute it you must
       turn a measured distance into a statement about $h$, and that needs a redshift the
       waveform does not carry. The cheapest source is the galaxy catalogue: look up which
-      galaxies lie inside the localization volume and use theirs. For a typical event that
-      volume contains <strong>tens of thousands</strong> of them, and not knowing which is
-      the host is not an error bar — it is a sum, and the weights in that sum are astrophysics
-      somebody has to commit to.
+      galaxies lie inside the localization volume and use theirs. For some events that volume
+      contains <strong>tens of thousands</strong> of them; for others — including EMRI-889 —
+      a handful; for a large fraction of this run, <strong>none at all</strong>. Either way,
+      not knowing which is the host is not an error bar — it is a sum, and the weights in that
+      sum are astrophysics somebody has to commit to. How many terms that sum has is itself a
+      distribution, and Chapter 3 measures it <span class="ch02-fwd">⏭ Ch 3</span>.
     </div>
 
     <!-- ================= self-check ================= -->
@@ -845,18 +875,18 @@
           products of likelihoods are unforgiving: a coherent, same-signed tilt shared across
           many events accumulates linearly in log-space while the statistical width shrinks as
           $1/\sqrt N$, so the <em>pull</em> grows as $\sqrt N$. This is precisely the failure
-          mode the book ends with: campaign #53&rsquo;s 2D channel produces 10 runs all pulling
-          in the same direction at $+4.04\sigma$
-          <span class="prov-chip">REALISTIC_READOUT.md §6</span>. More data made the wrongness
+          mode the book ends with: one of campaign #53&rsquo;s two channels puts every one of
+          its ten runs on the same side of truth, and the chapter that measures it is
+          Chapter 8 <span class="ch02-fwd">⏭ Ch 8</span>. More data made the wrongness
           more significant, not less.
         </div>
       </details>
     </div>
 
     <div class="selfcheck">
-      <p>Q2.2 &nbsp; In the idealized baseline, 76 of 1588 events carry 100% of the constraint
-      and 3 carry 46%. What does that do to your intuition about the estimator&rsquo;s
-      robustness?</p>
+      <p>Q2.2 &nbsp; In the idealized baseline, 76 of 1588 events carry 100% of the signed
+      total curvature and 3 carry 46% of the in-catalogue budget. What does that do to your
+      intuition about the estimator&rsquo;s robustness?</p>
       <details class="answer">
         <summary>Show answer</summary>
         <div class="answer-body">
@@ -874,17 +904,33 @@
     </div>
 
     <div class="selfcheck">
-      <p>Q2.3 &nbsp; Distinguish, with a one-line operational test each: a <em>biased</em>
-      estimator, a <em>noisy</em> estimator, and a <em>mis-calibrated</em> estimator.</p>
+      <p>Q2.3 &nbsp; Using I2.2&rsquo;s three dials, construct an estimator that fails
+      <em>exactly one</em> of biased / noisy / mis-calibrated and passes the other two. Give
+      the dial settings and the readout that convicts it. Then say which of the three failures
+      a single run&rsquo;s <code>combined_posterior.json</code> could diagnose on its own.</p>
       <details class="answer">
         <summary>Show answer</summary>
         <div class="answer-body">
-          Biased: repeat the experiment many times with the same truth and the mean of the
-          estimates misses truth. Noisy: the estimates scatter widely but their mean is right.
-          Mis-calibrated: the estimates may even be unbiased, but the <em>stated</em>
-          uncertainty is wrong, so the 68% intervals do not contain truth 68% of the time. The
-          three are independent, and Chapter 10 exists because a project can be congratulating
-          itself on the first while failing the third.
+          <strong>Mis-calibrated only</strong> is the easiest to build and the most instructive:
+          $b = 0$, $\sigma_{\rm true} = 0.020$, $\sigma_{\rm stated} = 0.005$. The measured bias
+          stays at −0.0009 and the measured scatter at 0.0218 — both healthy — while coverage
+          collapses to <strong>17.5%</strong> and the pull s.d. goes to <strong>4.37</strong>.
+          The convicting readout is coverage; nothing about the centre or the spread of the
+          estimates changed. <strong>Biased only</strong> ($b = +0.080$,
+          $\sigma_{\rm true} = \sigma_{\rm stated} = 0.020$) is the mirror image: pull s.d.
+          still 1.09 — the width is honest — but the mean pull is +3.95 and coverage is 0.5%.
+          <strong>Noisy only</strong> is the one you cannot build with these dials without
+          cheating: raising $\sigma_{\rm true}$ alone makes the stated $\sigma$ wrong too, so
+          you must move $\sigma_{\rm stated}$ with it — which is the lesson, since &ldquo;noisy
+          but honest&rdquo; is a statement about <em>two</em> numbers agreeing.
+          <br />
+          On the second half: a single run diagnoses <em>none</em> of the three. Bias and
+          scatter are properties of an estimator over realizations, and calibration is a
+          statement about a frequency over realizations; one <code>combined_posterior.json</code>
+          gives you one point estimate and one stated $\sigma$, and no way to compare either
+          against anything. That is why the ten-run table above exists, why it is still only
+          two effective degrees of freedom, and why Chapter 10 has to build a synthetic
+          universe to get coverage at all.
         </div>
       </details>
     </div>
@@ -902,7 +948,7 @@
           resolve the peak: the idealized posterior&rsquo;s $\sigma_h = 0.00030$ is ~15&times;
           narrower than the production grid&rsquo;s 0.005 step, which is why the un-zoomed
           posterior looked like a delta spike and why the project needed a zoom-grid hook
-          <span class="prov-chip">IDEALIZED_BASELINE_READOUT.md:36-39</span> — you can see both
+          <span class="prov-chip" title="current lines :50-52">IDEALIZED_BASELINE_READOUT.md:36-39</span> — you can see both
           renderings of the identical posterior in this chapter&rsquo;s first widget.
         </div>
       </details>
@@ -915,11 +961,23 @@
       <details class="answer">
         <summary>Show answer</summary>
         <div class="answer-body">
-          The host redshift; and typically <em>tens of thousands</em> of candidates, because the
-          localization volume of even a well-localized EMRI contains that many catalogued
-          galaxies. The likelihood must therefore marginalize over &ldquo;which galaxy&rdquo;,
-          which is Chapter 3 — and the fact that the answer is usually &ldquo;none of
-          them&rdquo; is Chapter 5.
+          The host redshift. On the count: <strong>the honest answer is that there is no
+          typical event — the answer is a distribution, and Chapter 3 measures it.</strong>
+          If you predicted a single number you were asked a slightly unfair question on
+          purpose; what matters is whether you predicted the right <em>order</em> for the
+          right reason (angular localization dominates the volume, and the catalogue is dense
+          at low $z$). Measured over this run&rsquo;s 1590 detections at the production search
+          radius: the median event has <strong>888</strong> galaxies in its sky ball and
+          <strong>6</strong> left after the candidate redshift window; the 95th percentile has
+          <strong>2725</strong>; the worst has <strong>245,334</strong>; and
+          <strong>607 of 1590</strong> events have <em>no</em> catalogue candidate at all.
+          EMRI-889 — this book&rsquo;s running example, and its loudest event — has
+          <strong>two</strong>. So the likelihood must marginalize over &ldquo;which
+          galaxy&rdquo; over a candidate set whose size spans five orders of magnitude, which
+          is Chapter 3 <span class="ch02-fwd">⏭ Ch 3</span> — and the fact that the answer is
+          usually &ldquo;none of them&rdquo; is Chapter 5.
+          <span class="prov-chip real">real: ch03 census, 1590 events, n_&sigma; = 1.5</span>
+          <span class="prov-chip">bayesian_statistics.py:2838</span>
         </div>
       </details>
     </div>
@@ -931,17 +989,17 @@
         <li><em>Derivation</em> <code>derivations/dark_siren_likelihood.md §1.1</code> (Phase 14, first-principles; no <code>[RATIFY-*]</code> gates — badged accordingly) · <code>bayesian_statistics.py:1954 evaluate()</code> — the posterior over $h$ on a grid; Schutz 1986, Nature 323, 310</li>
         <li><em>Convention (code + literature)</em> <code>posterior_combination.py:284-330 combine_log_space()</code>; Loredo 2004; Mandel, Farr &amp; Gair 2019, arXiv:1809.02063 §3 — the plain product, and why no $\beta(h)^N$</li>
         <li><em>Convention (scoring script)</em> <code>score_realistic.py:14-21</code> / <code>idealization_audit/audit_information_decomposition.py</code> — the 3-point curvature information statistic, reused verbatim by this chapter&rsquo;s generator rather than re-invented; every published information number in the project was measured under it</li>
-        <li><span class="badge finding">FINDING</span> <code>IDEALIZED_BASELINE_READOUT.md:42-47</code> — 76 of 1588 carry 100%; the 3 loudest carry 46%; dark hosts ~1%. Reproduced by <code>gen_ch02.py</code> as a hard gate (0.4641 of the in-catalogue budget, 0.4700 of the signed total)</li>
+        <li><span class="badge finding">FINDING</span> <code title="current lines :54-60">IDEALIZED_BASELINE_READOUT.md:42-47</code> — 76 of 1588 carry 100%; the 3 loudest carry 46%; dark hosts ~1%. Reproduced by <code>gen_ch02.py</code> as a hard gate (0.4641 of the in-catalogue budget, 0.4700 of the signed total)</li>
         <li><span class="badge finding">FINDING</span> <code>IDEALIZED_BASELINE_READOUT.md:22-39</code> — MAP 0.72990, $\sigma_h = 0.00030$ on the zoom grid, ~15&times; narrower than the production step</li>
         <li><span class="badge finding">FINDING</span> <code>REALISTIC_READOUT.md §1, §3</code> — the ten realistic runs, their pulls, and the &ldquo;two effective degrees of freedom&rdquo; caveat; recomputed and gated per run by <code>gen_ch02.py</code></li>
         <li><span class="badge finding">FINDING</span> <code>REALISTIC_READOUT.md §4</code> — realistic-venue information <em>shares</em> are cancellation-dominated and must not be quoted; signed sums only</li>
-        <li><span class="badge finding">FINDING</span> <code>REALISTIC_READOUT.md §6</code> (amended 2026-07-30) · <code>ledger #94</code> — 2D channel 10/10 runs, mean pull +4.04, on <span class="badge candidate">CANDIDATE</span> ground ([RATIFY-M6]); and the standing instruction not to quote a headline from either channel of this run</li>
+        <li><span class="badge finding">FINDING</span> <code>REALISTIC_READOUT.md §6</code> (amended 2026-07-30) · <code>ledger #94</code> — the 2D channel's 10-of-10 same-sign pull, on <span class="badge candidate">CANDIDATE</span> ground ([RATIFY-M6]); its magnitude is Chapter 8's reveal and is not printed here <span class="ch02-fwd">⏭ Ch 8</span>. Also the standing instruction not to quote a headline from either channel of this run</li>
         <li><span class="badge finding">FINDING</span> <code>CLAIM_2D_BIAS_20260730.md:155</code> · <code>c3c4_allruns_summary.md:123</code> — event 889&rsquo;s channel swing $+1.98 \to -2.04 \to -3.30$ across r1/r2/r3</li>
-        <li><span class="badge refuted">REFUTED</span> <code>ledger #49a</code> · <code>DRAFT_REPORT.md:24-27</code> — the H₀-independent estimator: MAP 0.86 for every injected truth 0.63&ndash;0.77</li>
+        <li><code>ledger #49a</code> · <code>DRAFT_REPORT.md:24-27</code> — the H₀-independent estimator behind Trap 2.A. Its verdict, its numbers and its exhibit belong to Chapter 10 <span class="ch02-fwd">⏭ Ch 10</span>; this chapter cites the phenomenon only</li>
         <li><span class="badge finding">FINDING</span> <code>ledger #7</code> (<code>H0R:1978</code>) — posterior underflow: log-space + 4 strategies, &ldquo;fixed, not the cause&rdquo;; <code>ledger #20</code> (<code>6754ddb</code>) — $D(h)$ double-counted, removal worth $+0.020\ldots+0.025$</li>
         <li>Data: <code>results/campaign51_20260728/run_seed61000/posteriors_fixed/</code> (canonical idealized dir — <em>not</em> <code>posteriors/</code>), <code>.../run_seed61000/zoom/posteriors/</code>, <code>.../realistic_20260729/seed{61000,62000}/real_r{1..5}/posteriors/</code>, <code>.../realistic_20260729/seed61000/prepared_cramer_rao_bounds.csv</code></li>
-        <li>Generator gates: golden share vs the readout&rsquo;s 46%; in-catalogue share vs 100%; implied $\sigma_h \in [2.9,3.4]\times10^{-4}$; r1 MAP 0.740 / mean 0.7321; all ten runs&rsquo; MAPs vs the published column; identical 1588-event index set across all three venues; endpoint independence of stacking order</li>
-        <li>Open flags: <code>book/design/flags/ch02_FLAGS.md</code> — F-ch02-1 (889&rsquo;s &ldquo;8.0&times;10⁻⁵&rdquo; is the absolute $\sigma_{d_L}$ in Gpc, <strong>affects Ch 1, Ch 4, Ch 6 and pedagogy Q1.2</strong>), F-ch02-2 (the 46% is metric-dependent; the metric is now pinned), F-ch02-3 (realistic shares not quotable)</li>
+        <li>Generator gates: golden share vs the readout&rsquo;s 46%; the printed r1 signed/absolute ratio (52%) vs the recomputed one; in-catalogue share vs 100%; implied $\sigma_h \in [2.9,3.4]\times10^{-4}$; r1 MAP 0.740 / mean 0.7321; all ten runs&rsquo; MAPs vs the published column; identical 1588-event index set across all three venues; endpoint independence of stacking order</li>
+        <li>Flags: <code>book/design/flags/ch02_FLAGS.md</code> — F-ch02-1 <strong>RESOLVED 2026-07-31</strong> (the spec card's fractional label carried the absolute $\sigma_{d_L}$ in Gpc; the measured fraction 8.98&times;10⁻⁴ is now the book-wide spec value — see the erratum under the dossier), F-ch02-2 (the 46% is metric-dependent; the metric is now pinned), F-ch02-3 (realistic shares not quotable, and the r1 signed/absolute ratio is 52% where the readout's ensemble figure is 62%)</li>
       </ul>
     </div>
 
@@ -1017,6 +1075,51 @@
         b.setAttribute("aria-pressed", String(b.getAttribute(attr) === value));
       });
     }
+
+    // ---------------------------------------------------------------
+    // lazyPlot — deferred Plotly construction (ux review MAJOR; worklist
+    // §C-ch02 [P2]). This page carries SEVEN Plotly instances and six of
+    // them are below the fold; building them all on load is a visible
+    // stall for charts nobody is looking at yet. Same signature and same
+    // { update(traces) } return shape as Book.themedPlot, so every call
+    // site is unchanged: the plot is constructed the first time its
+    // widget comes within ~300px of the viewport, and until then
+    // update() only records the traces to draw at construction. Without
+    // IntersectionObserver (or without a container) it degrades to the
+    // eager path. Follows ch03's IntersectionObserver precedent; swap
+    // for Book.lazyPlot if the integrator promotes this into book.js.
+    // ---------------------------------------------------------------
+    function lazyPlot(divId, traces, layoutFn, config) {
+      var el = document.getElementById(divId);
+      var target = (el && el.closest && el.closest(".widget")) || el;
+      var real = null;
+      var pending = traces || [];
+
+      function build() {
+        if (!real) real = Book.themedPlot(divId, pending, layoutFn, config);
+        return real;
+      }
+
+      if (!target || !("IntersectionObserver" in window)) {
+        build();
+      } else {
+        var io = new IntersectionObserver(function (entries) {
+          entries.forEach(function (e) {
+            if (!e.isIntersecting) return;
+            io.disconnect();
+            build();
+          });
+        }, { rootMargin: "300px 0px 300px 0px" });
+        io.observe(target);
+      }
+
+      return {
+        update: function (newTraces) {
+          pending = newTraces;
+          if (real) real.update(newTraces);
+        },
+      };
+    }
     // Un-normalized density from a max-subtracted log array, then trapezoid-
     // normalized on the (non-uniform) grid — Book.trapz handles the seams.
     function densityFromLog(logArr, H) {
@@ -1086,7 +1189,7 @@
       };
 
       var gridState = "prod";
-      var gridPlot = Book.themedPlot("ch02-grid-plot", [], function () {
+      var gridPlot = lazyPlot("ch02-grid-plot", [], function () {
         var s = GRID_STATE[gridState];
         var L = baseLayout(s.xlab, "posterior density");
         L.xaxis.range = s.range;
@@ -1165,7 +1268,7 @@
         },
       };
       var v889 = "ideal";
-      var plot889 = Book.themedPlot("ch02-889-plot", [], function () {
+      var plot889 = lazyPlot("ch02-889-plot", [], function () {
         var s = V889[v889];
         var L = baseLayout(s.xlab, "L₈₈₉(h)   (per-event likelihood)");
         L.xaxis.range = v889 === "ideal" ? [HZ[0], HZ[HZ.length - 1]] : [0.595, 0.865];
@@ -1219,7 +1322,7 @@
           ? [HZ[0], HZ[HZ.length - 1]] : [0.595, 0.865];
       }
 
-      var stackPlot = Book.themedPlot("ch02-stack-plot", [], function () {
+      var stackPlot = lazyPlot("ch02-stack-plot", [], function () {
         var L = baseLayout(
           "h = H₀ / 100" + (d.venues[stackState.venue].grid === "zoom" ? "   (zoom grid)" : "   (production grid)"),
           "posterior density"
@@ -1233,7 +1336,7 @@
         return L;
       });
 
-      var widthPlot = Book.themedPlot("ch02-width-plot", [], function () {
+      var widthPlot = lazyPlot("ch02-width-plot", [], function () {
         var L = baseLayout("events in the stack, N", "posterior width σ_h");
         L.xaxis.type = "log";
         L.yaxis.type = "log";
@@ -1387,7 +1490,7 @@
       var labels = runs.map(function (r) { return r.seed + " r" + r.realization; });
       var idx = runs.map(function (_, i) { return i; });
 
-      Book.themedPlot("ch02-runs-plot", [
+      lazyPlot("ch02-runs-plot", [
         {
           x: runs.map(function (r) { return r.map; }),
           y: idx,
@@ -1477,7 +1580,7 @@
       var stEl = document.getElementById("ch02-t-stated");
       var presets = document.getElementById("ch02-t-presets");
 
-      var estPlot = Book.themedPlot("ch02-t-plot", [], function () {
+      var estPlot = lazyPlot("ch02-t-plot", [], function () {
         var L = baseLayout("estimate ĥ (200 repeats)", "repeat #");
         L.xaxis.range = [0.56, 0.94];
         L.hovermode = "closest";
@@ -1489,7 +1592,7 @@
         return L;
       });
       var pullRange = 6;
-      var pullPlot = Book.themedPlot("ch02-t-pull", [], function () {
+      var pullPlot = lazyPlot("ch02-t-pull", [], function () {
         var L = baseLayout("pull = (ĥ − h_true) / σ_stated", "count");
         L.xaxis.range = [-pullRange, pullRange];
         L.bargap = 0.05;
@@ -1613,7 +1716,9 @@
           if (p === "honest") { bEl.value = "0"; sEl.value = "0.02"; stEl.value = "0.02"; }
           if (p === "overconfident") { bEl.value = "0"; sEl.value = "0.02"; stEl.value = "0.005"; }
           if (p === "biased-calibrated") { bEl.value = "0.02"; sEl.value = "0.02"; stEl.value = "0.02"; }
-          if (p === "twod") { bEl.value = "0.077"; sEl.value = "0.02"; stEl.value = "0.02"; }
+          // A round toy value, deliberately NOT the recorded 2D offset: that
+          // number is Ch 8's reveal (REVISION_WORKLIST §D4 spoiler discipline).
+          if (p === "twod") { bEl.value = "0.08"; sEl.value = "0.02"; stEl.value = "0.02"; }
           press(presets, "data-preset", p);
           draw();
         });

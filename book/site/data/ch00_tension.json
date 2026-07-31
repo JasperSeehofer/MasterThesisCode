@@ -91,6 +91,23 @@
     "hi": 12.0,
     "lo": 8.0
    }
+  },
+  {
+   "key": "gwtc3",
+   "label": "GWTC-3 dark sirens",
+   "method": "galaxy-catalogue redshifts, with the GW170817 counterpart",
+   "family": "siren",
+   "H0": 68.0,
+   "sigma": 7.0,
+   "sigma_stat": null,
+   "sigma_sys": null,
+   "note": "The state of the art in this book's own genre: no counterpart, the redshift information taken from a galaxy catalogue. This is the published dark-siren analysis combined with GW170817's counterpart; the catalogue events on their own constrain far more weakly. Not a like-for-like 'before/after' against the 2017 counterpart-only row above -- that is a different analysis of different data.",
+   "cite": "Abbott et al. (2023), arXiv:2111.03604",
+   "anchor": false,
+   "asym": {
+    "hi": 8.0,
+    "lo": 6.0
+   }
   }
  ],
  "tension": {
@@ -109,8 +126,13 @@
   "sigma_per_event_basis": "GW170817, arXiv:1710.05835 (70.0 +12.0 -8.0), rounded",
   "t_exclude": 3.0,
   "t_consistent": 2.0,
+  "ceiling_rhs": 1.8800000000000001,
   "ceiling_sigma_total": 1.5661417560361517,
   "ceiling_frac_of_H0": 0.023236524570269312,
+  "ceiling_parked_on": "planck",
+  "ceiling_far_anchor": "shoes",
+  "ceiling_sigma_total_parked_on_late": 1.8122913673027305,
+  "ceiling_branch_note": "parked on the early-universe anchor the far anchor is the late one (the wider sigma), which is the more DEMANDING of the two placements; parked on the late-universe anchor the far anchor is the tighter early one and the cap relaxes",
   "n_events_needed_zero_sys": 40.76973255055446,
   "n_events_needed_zero_sys_int": 41,
   "examples": [
@@ -261,6 +283,15 @@
     "verdict": "arbitrates nothing"
    }
   ]
+ },
+ "genre_anchor": {
+  "key": "gwtc3",
+  "label": "GWTC-3 dark sirens",
+  "cite": "Abbott et al. (2023), arXiv:2111.03604",
+  "H0": 68.0,
+  "sigma_symmetric": 7.0,
+  "frac_of_own_H0": 0.10294117647058823,
+  "ratio_to_ceiling": 4.469582637089473
  },
  "h_convention": {
   "symbol": "h",

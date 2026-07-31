@@ -195,6 +195,16 @@
     </div>
 
     <p>
+      One caveat, in the open rather than in a fold: that is the <strong>circular-binary
+      quadrupole</strong> form, printed because it shows where $d_L$ enters and nothing else.
+      A real EMRI is eccentric, inclined, and deep in the strong field of a spinning black
+      hole — the running example below has $e_0 = 0.167$ — and its waveform is generated
+      numerically by <code>few</code> + <code>fastlisaresponse</code>, not from the closed
+      form above. Nothing in this chapter depends on the closed form; it is a picture of the
+      $1/d_L$, not the pipeline&rsquo;s waveform.
+    </p>
+
+    <p>
       Read that formula the way an experimentalist would and the trouble is immediate. You do
       not measure $h_+$ and $h_\times$ separately. You measure one number per detector channel
       — a projection $F_+h_+ + F_\times h_\times$ through the instrument&rsquo;s antenna
@@ -287,12 +297,25 @@
       <span class="callout-label">Trap &mdash; &ldquo;An EMRI is just a long binary.&rdquo;</span>
       The length <em>is</em> the physics. About $10^5$ observable cycles deep in the strong
       field is why the redshifted mass
-      <span class="term" data-term="Mz">$M_z$</span> is measured to $\sim10^{-4}$, and why the
-      geometry has time to rotate through a full year of antenna pattern while the source is
-      still inspiralling. A short binary — a few hundred cycles, a few seconds of visible
-      geometry — has neither, and its distance is correspondingly poor. That same $10^{-4}$
-      mass precision becomes, in Chapter 8, simultaneously the best idea and the worst problem
-      in this book. <span class="ch01-fwd">⏭ Ch 8</span>
+      <span class="term" data-term="Mz">$M_z$</span> is measured extraordinarily well, and why
+      the geometry has time to rotate through a full year of antenna pattern while the source
+      is still inspiralling. A short binary — a few hundred cycles, a few seconds of visible
+      geometry — has neither, and its distance is correspondingly poor. That mass precision
+      becomes, in Chapter 8, simultaneously the best idea and the worst problem in this book.
+      <span class="ch01-fwd">⏭ Ch 8</span>
+      <br /><br />
+      <strong>How well, exactly — two numbers, and the book prints both.</strong> The project&rsquo;s
+      claim file and this book&rsquo;s own spec card say $\sigma_{M_z}/M_z \approx 10^{-4}$
+      (<span class="prov-chip">CLAIM_2D_BIAS_20260730.md:172</span>
+      <span class="badge candidate">CLAIM C4</span>). The stored Cramér&ndash;Rao table this
+      chapter reads gives a median of $8.8\times10^{-8}$ across the 1590 events, and
+      $1.36\times10^{-9}$ for EMRI-889 itself — three to five orders of magnitude smaller
+      (<span class="prov-chip">book/design/flags/ch06_FLAGS.md#F-ch06-5</span>, recomputed
+      here by <code>gen_ch01.py</code>). Chapter 6 measures the covariance those two
+      measured numbers come from; Chapter 8 is where the precision gets used. Neither value is substituted for the
+      other anywhere in this book, and no argument in it turns on which one is right: the
+      mass channel is astonishingly sharp on either reading, and that is the whole trouble.
+      <span class="ch01-fwd">⏭ Ch 6</span> <span class="ch01-fwd">⏭ Ch 8</span>
     </div>
 
     <details class="gw-reader">
@@ -345,6 +368,18 @@
       luminosity distance, four angles fixing the sky position and the spin orientation, and
       three initial orbital phases. Twelve of them are nuisance; one of them is $d_L$; none
       of them is a redshift.
+    </p>
+    <p>
+      One definitional choice belongs in the open, because it will matter twice later. An
+      <em>event</em>, in this pipeline, is not &ldquo;an EMRI that is loud at some
+      moment&rdquo;: it is one that <strong>plunges inside the mission span</strong>. Two
+      reasons, and they are the same reason twice. An EMRI&rsquo;s signal-to-noise accumulates
+      overwhelmingly in its last, strongest-field cycles, so the detectable population
+      essentially <em>is</em> the plunging population; and the rate model these events are
+      drawn from is itself a <em>plunge</em> rate. Define an event any other way and the
+      generator and the population model stop counting the same thing
+      <span class="ch01-fwd">⏭ Ch 9</span>. The sidebar has the history — including the
+      earlier convention that quietly froze a whole mass range outside its detectable phase.
     </p>
 
     <details class="ch01-sidebar" open>
@@ -399,32 +434,54 @@
       </details>
       <noscript>
         <p><strong>Static fallback.</strong> EMRI-889 (seed 61000, realization r1, row 889 of
-        the stored Cramér–Rao table): $M = 7.246\times10^5\,M_\odot$, $\mu = 10\,M_\odot$,
-        spin $a = 0.98$, $d_L = 88.879$ Mpc, SNR = 1424.7 — the loudest of 1590 stored
+        the stored Cramér–Rao table): $M_z = 7.246\times10^5\,M_\odot$ (the stored mass column
+        is the <em>detector-frame</em> mass), $\mu = 10\,M_\odot$,
+        spin $a = 0.98$, SNR = 1424.7 — the loudest of 1590 stored
         events — plunging 2.87 yr into a 4.5 yr mission, host galaxy index 859360, in the
-        catalogue. Distance error bar: $\sigma_{d_L} = 7.98\times10^{-5}$ Gpc = 0.0798 Mpc,
-        i.e. $8.98\times10^{-4}$ of $d_L$. Redshift: <strong>unknown</strong>.</p>
+        catalogue. Distance:
+        <strong>d_L &nbsp;88.9 Mpc &nbsp;&middot;&nbsp; &sigma;_dL/d_L = 8.98&times;10&#8315;&#8308;</strong>
+        ($\sigma_{d_L} = 7.98\times10^{-5}$ Gpc = 0.0798 Mpc on $\hat d_L = 88.879$ Mpc,
+        $= 1.28/\rho$). Redshift: <strong>unknown</strong>.</p>
       </noscript>
     </div>
 
     <div class="voice-adjudicator">
-      <span class="voice-label">A number this book will not quietly fix
-        <span class="badge open">OPEN</span>
+      <span class="voice-label">A number this book did not quietly fix
+        <span class="badge finding">RESOLVED 2026-07-31</span>
         <span class="prov-chip">book/design/flags/ch01_FLAGS.md#F1</span>
       </span>
-      The build spec for this book, and the pedagogy card behind it, both quote EMRI-889&rsquo;s
-      distance precision as <strong>$\sigma_{d_L}/d_L = 8.0\times10^{-5}$</strong>. Reading the
-      row the spec names gives $\sigma_{d_L} = 7.984\times10^{-5}$ <em>Gpc</em>, and
-      $d_L = 0.0888792$ Gpc, so the <em>fraction</em> is
-      <strong>$8.983\times10^{-4}$</strong> — the same stored quantity, a factor 11.25 apart,
-      depending on whether the division was done. This page prints both and picks neither.
-      One discriminating check is available and is stated here because it is instructive rather
-      than because it settles anything: a matched-filter amplitude measurement cannot do better
-      than the $1/\rho$ scale, and $8.983\times10^{-4} = 1.28/\rho$ at $\rho = 1424.7$, whereas
-      the fractional reading of $8.0\times10^{-5}$ would be $0.11/\rho$. The discrepancy is
-      logged, unreconciled, in the chapter&rsquo;s flag file, because
-      <span class="prov-chip">BOOK_DESIGN.md &sect;4.1</span> says a generator that disagrees
-      with the spec stops and flags rather than choosing.
+      <strong>Erratum.</strong> The spec card carried
+      $\sigma_{d_L}/d_L = 8.0\times10^{-5}$ — that is the absolute $\sigma_{d_L}$ in Gpc
+      under a fractional label. Corrected book-wide 2026-07-31; record: ch01 flag F1 /
+      BUILD_REPORT &sect;5.1 item 1. The dossier above therefore reads
+      <strong>$8.98\times10^{-4}$</strong>, and so does every other dossier card in this book.
+      <br /><br />
+      That is the correction. <em>How it was caught</em> is the part worth keeping. The build
+      spec, and the pedagogy card behind it, quoted the erratum&rsquo;s retired figure as a
+      fraction; reading the row the spec names gives $\sigma_{d_L} = 7.984\times10^{-5}$
+      <em>Gpc</em> against $d_L = 0.0888792$ Gpc, so the <em>fraction</em> is
+      $8.983\times10^{-4}$ — the same stored quantity, a factor $1/0.0888792 = 11.25$ apart,
+      depending on whether the division was done. Two numbers that agree to two digits and
+      differ by an order of magnitude are exactly what a missing division looks like, and
+      nothing on the page could tell them apart. For most of this book&rsquo;s construction
+      the generator printed both and refused to choose, because
+      <span class="prov-chip">BOOK_DESIGN.md &sect;4.1</span> tells it to stop and flag rather
+      than reconcile — which is why the correction is an erratum with a record and not a
+      silent edit.
+      <br /><br />
+      <strong>The check that settled it.</strong> A matched-filter amplitude measurement
+      cannot do better than the $1/\rho$ scale. Measured, $8.983\times10^{-4} = 1.28/\rho$ at
+      $\rho = 1424.7$: an ordinary, degeneracy-inflated distance error. The retired reading
+      would have been $0.11/\rho$ — nine times <em>better</em> than the $1/\rho$ scale the
+      measurement is bounded by, which is not a precision but an impossibility. A second,
+      independent check
+      agrees: the idealized campaign&rsquo;s per-event budget is
+      $\sigma_{H_0}/H_0 \approx 0.38\%$
+      (<span class="prov-chip">IDEALIZED_BASELINE_READOUT.md:54-60</span>), within a factor
+      $\approx 4$ of the corrected fraction and a factor $\approx 47$ from the retired one.
+      Neither check is a calculation anyone had to be clever to do. That is the point: an
+      order-of-magnitude check on a number you were handed is the cheapest instrument in this
+      book, and it is the one that found the defect. Q1.2 makes you run it yourself.
     </div>
 
     <!-- ================= §3 ================= -->
@@ -705,35 +762,49 @@
     </div>
 
     <div class="selfcheck">
-      <p>Q1.2 &nbsp; EMRI-889 has SNR 1425 and a fractional distance precision of
-      $8.0\times10^{-5}$. Estimate what fractional $H_0$ precision that <em>single</em> event
-      would give if its host redshift were known exactly, and say why the book will
-      nevertheless not get anywhere near that.</p>
+      <p>Q1.2 &dagger; &nbsp; EMRI-889 has SNR 1425, a measured luminosity distance
+      $\hat d_L = 88.879$ Mpc, and a stored distance error bar of
+      $\sigma_{d_L} = 7.98\times10^{-5}$ Gpc. Estimate what fractional $H_0$ precision that
+      <em>single</em> event would give if its host redshift were known exactly; check the
+      answer against the $1/\rho$ scale before you believe it; and say why the book will
+      nevertheless not get anywhere near it.
+      <br /><span style="color:var(--muted);font-size:0.9em;">&dagger; the units in this
+      question are the point — see the answer.</span></p>
       <details class="answer">
         <summary>Show answer</summary>
         <div class="answer-body">
-          With $z$ exact, $\sigma_{H_0}/H_0 \approx \sigma_{d_L}/d_L \approx 0.008\%$ — an
-          absurdly good single-event measurement, and indeed the idealized campaign&rsquo;s
-          total $\sigma_{H_0}/H_0 \approx 0.044\%$ is roughly $0.38\%/\sqrt{76}$, of the same
-          character (<span class="prov-chip">IDEALIZED_BASELINE_READOUT.md:42-47</span>). The
-          book will not get near it because (i) the host redshift is <em>not</em> known exactly
-          — it is a photometric redshift with median $\sigma_z/z \approx 49\%$, which dominates
-          everything <span class="ch01-fwd">⏭ Ch 7</span>, and (ii) for 95% of events there is
-          no identified host at all <span class="ch01-fwd">⏭ Ch 5</span>. The GW measurement is
-          not the bottleneck; the galaxy catalogue is.
+          The error bar is in <em>Gpc</em>, the same units as $d_L$, so the fraction is
+          $7.98\times10^{-5}\,/\,0.0888792 = 8.98\times10^{-4}$. With $z$ exact,
+          $\sigma_{H_0}/H_0 \approx \sigma_{d_L}/d_L \approx 0.09\%$ from this one event.
           <br /><br />
-          <strong>Editor&rsquo;s note, and a live disagreement.</strong> The question&rsquo;s
-          $8.0\times10^{-5}$ is the number this book&rsquo;s build spec carries; the stored row
-          gives $\sigma_{d_L} = 7.984\times10^{-5}$ <em>Gpc</em> against
-          $d_L = 0.0888792$ Gpc, i.e. a fraction of $8.983\times10^{-4}$ — see §2 and
-          <span class="prov-chip">book/design/flags/ch01_FLAGS.md#F1</span>. Redo the estimate
-          with the recomputed fraction and you get $\sigma_{H_0}/H_0 \approx 0.09\%$ per golden
-          event, which is the more interesting answer anyway: it is within a factor $\approx4$
-          of the $0.38\%$ per-event budget the idealized readout actually measured, whereas
-          $0.008\%$ is a factor $\approx47$ away from it. <em>The order-of-magnitude check
-          you were asked to do is what catches the units slip</em> — which is the real lesson,
-          and a preview of Chapter 8, where an entire published MAP turns out to move when
-          someone changes the units of a mass.
+          <em>Now the check.</em> $8.98\times10^{-4} = 1.28/\rho$ at $\rho = 1424.7$: just
+          worse than the signal-to-noise scale, which is where an amplitude measurement has
+          to sit — degeneracies can only inflate it. And $0.09\%$ is within a factor
+          $\approx4$ of the $0.38\%$ per-event budget the idealized campaign actually measured
+          (<span class="prov-chip">IDEALIZED_BASELINE_READOUT.md:54-60</span>), whose total
+          $\sigma_{H_0}/H_0 \approx 0.044\%$ is roughly $0.38\%/\sqrt{76}$. Two independent
+          scales, same order of magnitude, answer believed.
+          <br /><br />
+          The book will not get near it because (i) the host redshift is <em>not</em> known
+          exactly — it is a photometric redshift with median $\sigma_z/z \approx 49\%$, which
+          dominates everything <span class="ch01-fwd">⏭ Ch 7</span>, and (ii) for 95% of
+          events there is no identified host at all <span class="ch01-fwd">⏭ Ch 5</span>. The
+          GW measurement is not the bottleneck; the galaxy catalogue is.
+          <br /><br />
+          <strong>Erratum — and why this question hands you Gpc.</strong> Until 2026-07-31
+          this question handed you a <em>fraction</em> instead: the spec card carried
+          $\sigma_{d_L}/d_L = 8.0\times10^{-5}$ — that is the absolute $\sigma_{d_L}$ in Gpc
+          under a fractional label. Corrected book-wide 2026-07-31; record: ch01 flag F1 /
+          BUILD_REPORT &sect;5.1 item 1
+          (<span class="prov-chip">book/design/flags/ch01_FLAGS.md#F1</span>). The model
+          answer that went with it read $\sigma_{H_0}/H_0 \approx 0.008\%$ and stopped there —
+          a factor $\approx47$ from the measured per-event budget, and $0.11/\rho$, nine times
+          better than a matched filter can be. Nobody had to be clever to catch that:
+          <em>the order-of-magnitude check you were just asked to do is what catches the units
+          slip</em>, which is the real lesson of this question and the reason it now hands you
+          an error bar in Gpc and makes you divide. It is also a preview of Chapter 8, where
+          what a mass number <em>means</em> — which frame, which units — turns out to move an
+          entire published result.
         </div>
       </details>
     </div>
@@ -770,7 +841,9 @@
           Look up which galaxies lie inside the GW localization volume and use their redshifts
           — which smuggles in the assumptions that the host is (a) <em>in</em> the catalogue,
           (b) identifiable among the candidates, and (c) at its catalogued redshift. Chapters
-          3, 5 and 7 are the successive discoveries that all three are false. Note that even
+          3, 5 and 7 are the successive discoveries that all three are false — and before any
+          of that you need a machine that turns 1,588 distances into a statement about $h$,
+          which is Chapter 2 <span class="ch01-fwd">⏭ Ch 2</span>. Note that even
           the word &ldquo;volume&rdquo; hides the circularity you met in I1.3: the shell you
           look inside is a shell in <em>redshift</em>, and mapping your measured distance into
           a redshift shell requires a value of $h$ — so the candidate set itself moves as $h$
@@ -792,10 +865,11 @@
         <li><span class="badge exonerated">EXONERATED</span> <code>ledger #53</code> ("WMAP-era $\Omega_m$ is a bug" → design choice, GitHub #6 closed) and <code>ledger #59</code> ($\Omega_m$-era mismatch measured at $-0.00059$, wrong-signed, on the seed600 shallow venue) — on the do-not-re-try list</li>
         <li><span class="badge open">OPEN</span> <code>G7 row 14</code> / GitHub #4 — <code>dist()</code>'s wCDM scope limit; no effect at $w_0=-1$, $w_a=0$</li>
         <li><code>docs/gates/G7_systematics_budget.md</code> row 6 + "Numbers behind row #6" — the $\Omega_m$ mis-specification table, <strong>recomputed and reproduced exactly</strong> by <code>gen_ch01.py</code> at all six redshifts (hard gate, tolerance 0.01 pp)</li>
-        <li><span class="badge finding">FINDING</span> <code>IDEALIZED_BASELINE_READOUT.md:42-47</code> — 76 of 1588 events carry 100% of the constraint; the 3 loudest (SNR 995–1425, $z\approx0.016$–0.021) carry 46%; per-event budget $\sigma_{H_0}/H_0 \approx 0.38\%$</li>
+        <li><span class="badge finding">FINDING</span> <code>IDEALIZED_BASELINE_READOUT.md:54-60</code> (&sect; &ldquo;Where the information comes from (MEASURED)&rdquo;; re-grepped 2026-07-31 — the file gained a closure row on build day and this anchor was cited as <code>:42-47</code>) — 76 of 1588 events carry 100% of the constraint; the 3 loudest (SNR 995–1425, $z\approx0.016$–0.021) carry 46%; per-event budget $\sigma_{H_0}/H_0 \approx 0.38\%$</li>
         <li>Data: <code>results/campaign51_20260728/realistic_20260729/seed61000/prepared_cramer_rao_bounds.csv</code> (row 889; verified byte-identical to the spec-named <code>real_r1/</code> copy on every column read) and <code>.../real_r1/posteriors/combined_posterior.json</code> (1588 events used, 0 excluded)</li>
         <li>External: Schutz (1986), Nature 323, 310; Hogg (1999), arXiv:astro-ph/9905116; Gray et al. (2020), arXiv:1908.06050; Barausse et al. (2012), arXiv:1201.5888; Babak et al. (2023), arXiv:2303.15929</li>
-        <li>Open flags: <code>book/design/flags/ch01_FLAGS.md</code> — F1 ($\sigma_{d_L}$ fractional-vs-absolute, <strong>unresolved</strong>), F2 (1588 vs 1590), F3 (plunge sidebar placement), F4 (G7 row 6 reproduces — a passing check, logged)</li>
+        <li><span class="badge candidate">CLAIM C4</span> <code>CLAIM_2D_BIAS_20260730.md:172</code> ($\sigma_{M_z}/M_z \approx 10^{-4}$) beside <code>book/design/flags/ch06_FLAGS.md#F-ch06-5</code> (measured median $8.8\times10^{-8}$, EMRI-889 $1.36\times10^{-9}$, recomputed by <code>gen_ch01.py</code> from the same CRB table) — a <strong>both-values</strong> item; neither is substituted for the other <span class="prov-chip">REVISION_WORKLIST &sect;D5</span></li>
+        <li>Flags: <code>book/design/flags/ch01_FLAGS.md</code> — F1 ($\sigma_{d_L}$ fractional-vs-absolute, <strong>RESOLVED 2026-07-31</strong> — see the erratum in &sect;2; the spec figure was the absolute Gpc value under a fractional label), F2 (1588 vs 1590), F3 (plunge sidebar placement), F4 (G7 row 6 reproduces — a passing check, logged); and <code>ch08_FLAGS.md#F-ch08-8</code> — this chapter&rsquo;s dossier now names the stored mass column $M_z$ (detector frame)</li>
       </ul>
     </div>
 
@@ -1058,13 +1132,27 @@
     Book.loadJSON("data/ch01_event889.json").then(function (d) {
       var e = d.event, p = d.distance_precision, c = d.context;
 
+      // D1 (REVISION_WORKLIST §A): the distance row is the book's canonical
+      // dossier string, read from its ONE definition in js/manifest.js
+      // (BOOK_CANON.sigmaDL) so it cannot drift from ch02-ch11 + the museum.
+      var canonDL = (Book.canon.sigmaDL && Book.canon.sigmaDL.dossierRow) ||
+        "d_L  88.9 Mpc  ·  σ_dL/d_L = 8.98×10⁻⁴";
       var rows = [
         ["event", "<strong>EMRI-889</strong> — seed 61000, realization r1, row 889"],
-        ["central mass $M$", e.M_msun.toExponential(4).replace("e+5", "&times;10<sup>5</sup>") + " $M_\\odot$"],
+        // tomas-m4 / ch08_FLAGS.md#F-ch08-8: the stored `M` column is the
+        // DETECTOR-frame mass. Ch 8 establishes M_z = M(1+z) is the measured
+        // quantity, so the running example is labelled correctly from Ch 1.
+        ["central mass $M_z$", e.M_msun.toExponential(4).replace("e+5", "&times;10<sup>5</sup>") + " $M_\\odot$" +
+          "<br><span style='color:var(--muted);font-weight:400'>the stored mass column is the " +
+          "<em>detector-frame</em> mass $M_z = M(1+z)$; for a source this nearby the " +
+          "source-frame value differs by a couple of percent, below the precision " +
+          "shown</span> &nbsp;" +
+          "<span class='ch01-fwd'>⏭ Ch 8</span>"],
         ["inspiralling mass $\\mu$", e.mu_msun + " $M_\\odot$"],
         ["spin $a$", e.a],
-        ["luminosity distance $d_L$", "<strong>" + fmt(e.dL_Mpc, 3) + " Mpc</strong> (" + e.dL_Gpc + " Gpc)"],
-        ["distance error bar",
+        ["luminosity distance $d_L$", "<strong>" + canonDL.replace(/^d_L\s*/, "") + "</strong>"],
+        ["&hellip; in full, as stored",
+          "$\\hat d_L$ = " + fmt(e.dL_Mpc, 3) + " Mpc (" + e.dL_Gpc + " Gpc); " +
           "$\\sigma_{d_L}$ = " + p.sigma_dL_Gpc.toExponential(3) + " Gpc = " + fmt(p.sigma_dL_Mpc, 4) +
           " Mpc<br>= <strong>" + p.sigma_dL_over_dL.toExponential(3) + "</strong> of $d_L$ &nbsp;" +
           "(= " + fmt(p.frac_in_units_of_one_over_snr, 2) + "/SNR) &nbsp;" +
@@ -1088,7 +1176,7 @@
       table(document.getElementById("ch01-params-table"),
         ["parameter", "stored value", "what it is"],
         [
-          ["M", e.M_msun, "central black-hole mass [M☉], source frame"],
+          ["M", e.M_msun, "central black-hole mass [M☉] — the stored column is the DETECTOR-frame mass M_z = M(1+z) (ch08_FLAGS.md#F-ch08-8)"],
           ["mu", e.mu_msun, "inspiralling compact object [M☉]"],
           ["a", e.a, "dimensionless spin of the central BH"],
           ["p0", e.p0, "initial semi-latus rectum — set by the plunge window"],

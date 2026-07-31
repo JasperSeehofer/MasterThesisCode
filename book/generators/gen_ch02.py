@@ -55,13 +55,22 @@ GATES (the generator stops rather than shipping a silently-different number)
  G4  realistic r1 combined MAP == 0.740, mean == 0.7321   (REALISTIC_READOUT sec. 1)
  G5  all ten runs' recomputed MAP == the published MAP column
  G6  the three venues carry the identical 1588-event index set
+ G7  r1's signed/absolute curvature ratio == the 52 % printed in sec. 4
+     (the readout's 62 % is the ENSEMBLE figure, mean 0.076 / mean 0.123 --
+     expert-A review M5; the page now prints both, each with its scope)
+ G8  the Ch 3 census figures quoted in Q2.5 still match the census Ch 3
+     ships (``ch03_candidates.json``).  Advisory when that file is absent
+     (cold clone); a hard failure when it is present and has drifted --
+     this gate exists because ch02 asserted "tens of thousands" for three
+     screens against a measured median of six (mara BLOCKER-1).
 
 FLAGS
 -----
-``book/design/flags/ch02_FLAGS.md`` — F-ch02-1 (EMRI-889's "sigma_dL/dL =
-8.0e-5" is the absolute sigma_dL in Gpc; the fraction is 9.0e-4), F-ch02-2 (the
-"46 %" is metric-dependent and the metric is now pinned), F-ch02-3 (realistic
-shares are not quotable).  Nothing is reconciled silently; both readings ship.
+``book/design/flags/ch02_FLAGS.md`` — F-ch02-1 (RESOLVED 2026-07-31 by author
+mandate: sigma_dL/d_L = 8.98e-4 is the spec value book-wide; the retired 8.0e-5
+was the absolute sigma_dL in Gpc under a fractional label, and ships only inside
+this file's erratum block), F-ch02-2 (the "46 %" is metric-dependent and the
+metric is now pinned), F-ch02-3 (realistic shares are not quotable).
 
 Run as::
 
@@ -126,9 +135,31 @@ READOUT_MAPS = {  # REALISTIC_READOUT.md sec. 1, the "MAP h" column
     (62000, 1): 0.715, (62000, 2): 0.700, (62000, 3): 0.710,
     (62000, 4): 0.710, (62000, 5): 0.710,
 }
+# The r1 signed/absolute curvature ratio as PRINTED on the page (sec. 4).
+# Expert-A M5: the page used to print the readout's ensemble 62 % beside r1's
+# own pair, which does not divide.  Both now ship, each scoped.
+PAGE_R1_SIGNED_FRACTION = 0.52  # r1: 0.0851 / 0.1650
+READOUT_ENSEMBLE_SIGNED_FRACTION = 0.62  # REALISTIC_READOUT sec. 4: 0.076 / 0.123
+
+# The Ch 3 census figures this chapter quotes in Q2.5 (worklist §C-ch02 P0,
+# consumed from ch03's REGENERATED census at the production radius n_sigma =
+# 1.5).  Gate G8 re-reads ch03_candidates.json and refuses to ship if any of
+# them has drifted.
+CH03_CENSUS_QUOTED = {
+    "median_in_ball": 888,
+    "median_after_window": 6,
+    "p95_after_window": 2725,
+    "max_after_window": 245334,
+    "n_zero_candidate": 607,
+    "n_events": 1590,
+    "event889_n_cand": 2,
+}
+
 # REALISTIC_READOUT.md sec. 6 — the 2D channel row, carried verbatim as a
 # recorded measurement (this chapter never recomputes a 2D number; RATIFY-M6
 # designates the 2D pairing a CANDIDATE, see BOOK_SOURCES_MAP sec. 7 item 18).
+# DISPLAY SCOPE: Ch 8 and later.  Ch 2 prints the phenomenon only -- the
+# magnitude is Ch 8's reveal (REVISION_WORKLIST §D4; pedagogy B1 / M9).
 TWOD_RECORDED = {
     "map_range": [0.780, 0.820],
     "pull_range": [3.4, 4.5],
@@ -138,6 +169,11 @@ TWOD_RECORDED = {
     "source": "REALISTIC_READOUT.md §6",
     "badge": "CANDIDATE",
     "badge_note": "RATIFY-M6 designates the 2D pairing necessary, not established sufficient",
+    "display_scope": (
+        "Ch 8 and later. Chapter 2 names the phenomenon (a coherent tilt makes the pull "
+        "grow as sqrt(N)) and prints none of these values: they are Ch 8's reveal "
+        "(REVISION_WORKLIST.md §D4)."
+    ),
 }
 
 
@@ -389,8 +425,17 @@ def build_stacker() -> dict[str, Any]:
             "sigma_dL_Mpc": _r(sigma_dl_gpc * 1000.0, 6),
             "sigma_dL_over_dL": _r(sigma_dl_gpc / dl_gpc, 6),
             "sigma_dL_over_dL_times_snr": _r(sigma_dl_gpc / dl_gpc * float(row889["SNR"]), 6),
-            "spec_quoted_fraction": 8.0e-5,
-            "flag": "book/design/flags/ch02_FLAGS.md F-ch02-1",
+            "erratum": {
+                "status": "RESOLVED 2026-07-31 — sigma_dL/d_L = 8.98e-4 is the spec value",
+                "note": (
+                    "Erratum: the spec card carried sigma_dL/dL = 8.0e-5 — that is the "
+                    "absolute sigma_dL in Gpc under a fractional label. Corrected "
+                    "book-wide 2026-07-31; record: ch01 flag F1 / BUILD_REPORT §5.1 "
+                    "item 1. The retired figure is kept here only as history."
+                ),
+                "retired_spec_fraction": 8.0e-5,
+            },
+            "flag": "book/design/flags/ch02_FLAGS.md F-ch02-1 (resolved)",
             "host_galaxy_index": int(row889["host_galaxy_index"]),
             "L_zoom": _rl(np.exp(log_zoom[e889]), 6),
             "L_prod_realistic": _rl(np.exp(log_real[e889]), 6),
@@ -408,6 +453,52 @@ def build_stacker() -> dict[str, Any]:
             ),
             6,
         ),
+    }
+
+
+# ---------------------------------------------------------------------------
+# G8 — the Ch 3 census figures this chapter quotes
+# ---------------------------------------------------------------------------
+def check_ch03_census() -> dict[str, Any]:
+    """Re-read Ch 3's shipped census and gate the figures Q2.5 prints.
+
+    Chapter 2 asserted "tens of thousands of candidates" three times, and
+    graded a self-check answer on it, against a Ch 3 census that measures a
+    median of six (mara BLOCKER-1; the search radius itself was wrong, see
+    worklist §A-D2).  Ch 2 now quotes Ch 3's numbers, so it must break when
+    they move.  ``ch03_candidates.json`` is Ch 3's own output; if it is not
+    built yet (cold clone, gen_ch02 runs before gen_ch03) the check is an
+    advisory rather than a failure.
+    """
+    path = OUT_DIR / "ch03_candidates.json"
+    quoted = dict(CH03_CENSUS_QUOTED)
+    if not path.exists():
+        print(f"  G8 SKIPPED: {path.name} not built yet — Q2.5's census figures unverified")
+        return {"gated": False, "quoted": quoted, "why": "ch03_candidates.json absent"}
+
+    with open(path) as fh:
+        c = json.load(fh)
+    measured = {
+        "median_in_ball": int(c["n_ball"]["percentiles"]["50"]),
+        "median_after_window": int(c["n_cand"]["percentiles"]["50"]),
+        "p95_after_window": int(round(c["n_cand"]["percentiles"]["95"])),
+        "max_after_window": int(c["n_cand"]["max"]),
+        "n_zero_candidate": int(c["n_cand"]["n_zero"]),
+        "n_events": int(c["n_events"]),
+        "event889_n_cand": int(c["featured"]["889"]["n_cand"]),
+    }
+    drift = {k: (quoted[k], measured[k]) for k in quoted if quoted[k] != measured[k]}
+    if drift:
+        msg = (
+            "G8 FAILED: ch02 quotes Ch 3 census figures that Ch 3 no longer measures "
+            f"(quoted, measured): {drift}. Update Q2.5 and CH03_CENSUS_QUOTED together."
+        )
+        raise ValueError(msg)
+    return {
+        "gated": True,
+        "source": "book/site/data/ch03_candidates.json (Ch 3's own census)",
+        "ball_rule": c["meta"]["ball_rule"],
+        "quoted": quoted,
     }
 
 
@@ -463,6 +554,19 @@ def build_information() -> dict[str, Any]:
     v_r1 = np.array([curv_r1[k] for k in sorted(curv_r1)])
     incat_signed = float(sum(v for k, v in curv_r1.items() if k in in_cat))
     total_r1 = float(v_r1.sum())
+    abs_mass_r1 = float(np.abs(v_r1).sum())
+    signed_fraction_r1 = total_r1 / abs_mass_r1
+
+    # G7 — the page prints "the signed total is only 52% of the absolute
+    # curvature mass" beside r1's own two numbers.  A reader who does the
+    # division must land on the printed figure (expert-A M5: it used to print
+    # the readout's ENSEMBLE 62% beside r1's pair).
+    if abs(signed_fraction_r1 - PAGE_R1_SIGNED_FRACTION) > 0.005:
+        msg = (
+            f"G7 FAILED: r1 signed/absolute curvature ratio {signed_fraction_r1:.4f} "
+            f"!= the {PAGE_R1_SIGNED_FRACTION:.2f} printed in ch02 §4"
+        )
+        raise ValueError(msg)
 
     return {
         "meta": {
@@ -477,6 +581,7 @@ def build_information() -> dict[str, Any]:
             ),
             "flag": "book/design/flags/ch02_FLAGS.md F-ch02-2",
         },
+        "ch03_census_quoted": check_ch03_census(),
         "idealized": {
             "run": "campaign51 run_seed61000/posteriors_fixed (canonical; NOT posteriors/)",
             "n_events": len(vals),
@@ -507,7 +612,15 @@ def build_information() -> dict[str, Any]:
                 "sums, never the ratios."
             ),
             "signed_total": _r(total_r1, 5),
-            "absolute_mass": _r(float(np.abs(v_r1).sum()), 5),
+            "absolute_mass": _r(abs_mass_r1, 5),
+            "signed_over_absolute": _r(signed_fraction_r1, 4),
+            "signed_over_absolute_printed": PAGE_R1_SIGNED_FRACTION,
+            "signed_over_absolute_readout_ensemble": READOUT_ENSEMBLE_SIGNED_FRACTION,
+            "signed_over_absolute_scope": (
+                "0.52 is r1's own ratio (0.0851/0.1650); 0.62 is REALISTIC_READOUT §4's "
+                "ENSEMBLE figure (mean 0.076 / mean 0.123 over the ten runs). The page "
+                "prints both, each labelled with its scope (expert-A review M5)."
+            ),
             "in_catalogue_signed": _r(incat_signed, 5),
             "dark_signed": _r(total_r1 - incat_signed, 5),
             "sigma_h_implied": _r(DH_CURV / np.sqrt(total_r1), 5) if total_r1 > 0 else None,

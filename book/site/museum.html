@@ -50,6 +50,45 @@
     color: var(--muted);
     display: block;
   }
+  /* Folded exhibits (ped-M5): the five an interlude sends you to ship
+     expanded; the other nine collapse to hypothesis + verdict badge, so the
+     room stays complete but the visit gets a path. Deep links and printing
+     both force them open (script at the foot of the page). */
+  .mus-fold > summary {
+    cursor: pointer;
+    list-style: none;
+    position: relative;
+    padding-right: 4.2rem;
+  }
+  .mus-fold > summary::-webkit-details-marker { display: none; }
+  .mus-fold > summary::after {
+    content: "▸ open";
+    position: absolute;
+    right: 0;
+    top: 0;
+    font-size: 0.68rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .mus-fold[open] > summary::after { content: "▾ close"; }
+  .mus-fold > summary:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
+    border-radius: 4px;
+  }
+  .mus-fold[open] > summary {
+    padding-bottom: 0.45rem;
+    margin-bottom: 0.2rem;
+    border-bottom: 1px dotted var(--border);
+  }
+  .mus-exhibit .mus-backlink {
+    font-size: 0.76rem;
+    color: var(--muted);
+    margin: 0.9rem 0 0;
+    padding-top: 0.45rem;
+    border-top: 1px dotted var(--border);
+  }
   .mus-exhibit dl { margin: 0.7rem 0 0; }
   .mus-exhibit dt {
     font-size: 0.71rem;
@@ -132,6 +171,16 @@
   }
   :root[data-theme="dark"] .mus-dnr { color: #ff8b47; }
   .mus-ledger-table td { vertical-align: top; font-size: 0.82rem; }
+  /* Book-added annotation on a ledger row (expB MJ-3). Visually distinct from
+     the verbatim verdict it sits under, and labelled in its own text. */
+  .mus-booknote {
+    display: block;
+    margin-top: 0.35rem;
+    padding-left: 0.5rem;
+    border-left: 2px solid var(--prior);
+    color: var(--muted);
+    font-style: italic;
+  }
   .mus-ledger-table td.mus-cell-h { text-align: left; min-width: 13rem; }
   .mus-ledger-table td.mus-cell-v { text-align: left; }
   .mus-timeline-card {
@@ -173,7 +222,8 @@
       Between March and July 2026 this project tested <strong>98</strong> distinct hypotheses
       about why its H&#8320; estimator was wrong. Twenty-one were refuted, eight were exonerated,
       four were overturned <em>after</em> being formally concluded, and twenty-one were real
-      defects that were fixed and did not fix the symptom. The chapters of this book show you
+      defects that were fixed and landed &mdash; most of them, in the ledger&rsquo;s own words,
+      <em>insufficient alone</em>. The chapters of this book show you
       the pieces that survived. This room shows you the ones that did not — because a
       pipeline is not the list of its correct decisions, it is the residue of its wrong ones.
     </div>
@@ -185,8 +235,9 @@
       <p style="margin-top:0; color:var(--muted); font-size:0.88rem;">
         Every row of <code>gate_b_20260730/BIAS_HISTORY_LEDGER.md</code>, classified by what
         its VERDICT cell actually says. <strong>Hover</strong> a bar for the class definition;
-        the exact strings are in the numbers view. Twenty-six of the 98 rows are additionally
-        flagged <span class="mus-dnr">DO NOT RE-TRY</span> by the ledger&rsquo;s own &sect;2.
+        the exact strings are in the numbers view. <strong>Thirty</strong> of the 98 rows are
+        additionally flagged <span class="mus-dnr">DO NOT RE-TRY</span> by the ledger&rsquo;s
+        own &sect;2.
       </p>
       <div id="mus-census-plot" class="widget-plot" style="min-height:300px"></div>
       <div class="mus-readouts" id="mus-census-readouts">
@@ -204,7 +255,7 @@
         falsified · 21 fixed and landed · 19 measured (a number, not a verdict) · 8 exonerated ·
         8 confirmed · 8 qualified or ambiguous · 7 real-but-not-the-cause · 4 overturned or
         re-attributed · 2 open. The ledger&rsquo;s &sect;2 &ldquo;DO NOT RE-TRY&rdquo; list has 17
-        items back-referencing 26 distinct rows; the claim file&rsquo;s own Exonerated list has
+        items back-referencing 30 distinct rows; the claim file&rsquo;s own Exonerated list has
         15 entries, and the binding union is both together.</p>
       </noscript>
     </div>
@@ -329,6 +380,7 @@
         the same subsample as <a href="#ex-mass-trunc">Exhibit 5</a>. Not cross-venue
         confirmed <span class="prov-chip">ledger &sect;2, standing scoping rule</span>.
       </p>
+      <p class="mus-backlink">referenced by <a href="ch07-redshift.html">Ch 7 &mdash; the <code>volume_trunc</code> interlude</a> &middot; <a href="ch07-redshift.html">&larr; back</a></p>
     </div>
 
     <!-- ============ M1 ============ -->
@@ -435,8 +487,9 @@
         integral at $h = 0.73$ reads 1.504 ($n=10$), 0.147 (15), 0.068 (20), 0.458 (25),
         0.604 (30), 0.382 (40), 0.441 (50), 0.4314 (75, converged) against an exact 0.4314.
         With the GW leg evaluated as the 2026-07-12 diagnostic script wrote it, every order from
-        $n=10$ to $n=600$ returns $\approx 10^{-86}$ — printed as 0.0000 — and the value does
-        not respond to the dial at all.</p>
+        $n=10$ to $n=600$ returns $10^{-79}$–$10^{-86}$ ($6.53\times10^{-79}$ at $n=10$,
+        $1.11\times10^{-86}$ at $n=600$) — 0.0000 at every printed precision, and essentially
+        flat in $n$: the value does not respond to the dial at all.</p>
       </noscript>
     </div>
 
@@ -450,7 +503,7 @@
         <em>same integrand</em> with the GW leg written the way production writes it —
         <code>dist_vectorized</code>, <code>bayesian_statistics.py:3806</code> — gives
         <strong>0.2376 / 0.4412 / 0.6524</strong> at $h = 0.60/0.73/0.86$: $n = 50$ is accurate
-        to 1.7–2.3%, not to 100%.
+        to <strong>0.2–2.3%</strong> (1.70% / 2.26% / 0.21% at those three $h$), not to 100%.
       </p>
       <p>
         The reason is measurable and it reproduces the diagnostic&rsquo;s <em>entire</em> table:
@@ -544,10 +597,13 @@
 
     <!-- ---------- #ex-absolute-marginal ---------- -->
     <div class="mus-exhibit is-refuted" id="ex-absolute-marginal">
-      <span class="mus-num">Exhibit 2 · ledger #77 · 2026-07-25</span>
-      <h3><code>absolute_marginal</code> (V1) — cure the deep rail
-        <span class="badge refuted">REFUTED as a cure</span>
-      </h3>
+      <details class="mus-fold">
+        <summary>
+        <span class="mus-num">Exhibit 2 · ledger #77 · 2026-07-25</span>
+        <h3><code>absolute_marginal</code> (V1) — cure the deep rail
+          <span class="badge refuted">REFUTED as a cure</span>
+        </h3>
+        </summary>
       <dl>
         <dt>The hypothesis</dt>
         <dd>
@@ -586,18 +642,26 @@
       <p class="mus-note">
         <strong>Still live downstream.</strong> The failure of that calibration identity is
         <em>not</em> retired: it is the measured half of claim <strong>C9</strong>, which the
-        adjudication leaves open pending the cell-B control
-        <span class="mus-fwd">⏭ Ch 9, Ch 11</span>.
+        <strong>2026-07-30</strong> adjudication left open pending the cell-B control. That
+        control landed <strong>2026-07-31</strong> and released the gate &mdash; C9 remains
+        live and unfixed, and $w_G$ stays off the exonerated list
+        <span class="prov-chip">CELLB_READOUT_20260731.md</span>
+        <span class="mus-fwd">⏭ Ch 9, Ch 11 §5</span>.
       </p>
+      <p class="mus-backlink">referenced by <a href="ch09-universe-factory.html">Ch 9 &sect;4, &ldquo;Two estimands&rdquo;</a> &middot; <a href="ch09-universe-factory.html">&larr; back</a></p>
+      </details>
     </div>
 
     <!-- ---------- #ex-numerator-only ---------- -->
     <div class="mus-exhibit is-refuted" id="ex-numerator-only">
-      <span class="mus-num">Exhibit 3 · ledger #37 / #38 / #39 · 2026-06-30</span>
-      <h3>Numerator-only normalization cleans
-        <span class="badge refuted">REFUTED</span>
-        <span class="badge confounded">CONTESTED PROVENANCE</span>
-      </h3>
+      <details class="mus-fold">
+        <summary>
+        <span class="mus-num">Exhibit 3 · ledger #37 / #38 / #39 · 2026-06-30</span>
+        <h3>Numerator-only normalization cleans
+          <span class="badge refuted">REFUTED</span>
+          <span class="badge confounded">CONTESTED PROVENANCE</span>
+        </h3>
+        </summary>
       <dl>
         <dt>The hypothesis</dt>
         <dd>
@@ -638,14 +702,19 @@
         <span class="prov-chip">WF3a_DIGEST.md:3-20</span>
         <span class="prov-chip">sources map &sect;7.9</span>.
       </p>
+      <p class="mus-backlink">Not cited from a chapter &mdash; museum-only. <a href="index.html">&larr; the front door</a></p>
+      </details>
     </div>
 
     <!-- ---------- #ex-gray-mixture ---------- -->
     <div class="mus-exhibit is-refuted" id="ex-gray-mixture">
-      <span class="mus-num">Exhibit 4 · ledger #60 · 2026-07-11</span>
-      <h3>The full Gray mixture as the cure
-        <span class="badge refuted">REFUTED</span>
-      </h3>
+      <details class="mus-fold">
+        <summary>
+        <span class="mus-num">Exhibit 4 · ledger #60 · 2026-07-11</span>
+        <h3>The full Gray mixture as the cure
+          <span class="badge refuted">REFUTED</span>
+        </h3>
+        </summary>
       <dl>
         <dt>The hypothesis</dt>
         <dd>
@@ -674,6 +743,8 @@
       </dl>
       <p class="mus-note"><strong>Venue scope.</strong> Synthetic coverage harness, deep cells.
         <span class="mus-dnr">DO NOT RE-TRY</span> — ledger &sect;2 item 2.</p>
+      <p class="mus-backlink">Not cited from a chapter &mdash; museum-only. <a href="index.html">&larr; the front door</a></p>
+      </details>
     </div>
 
     <!-- ==========================================================
@@ -745,15 +816,19 @@
         <a href="#ex-volume-trunc">Exhibit 1</a>. <span class="mus-dnr">DO NOT RE-TRY</span> —
         ledger &sect;2 item 1, which explicitly says: do not re-derive this a third time.
       </p>
+      <p class="mus-backlink">referenced by <a href="ch08-mass-channel.html">Ch 8 &mdash; the museum interlude</a> &middot; <a href="ch08-mass-channel.html">&larr; back</a></p>
     </div>
 
     <!-- ---------- #ex-ha-measure ---------- -->
     <div class="mus-exhibit is-exonerated" id="ex-ha-measure">
-      <span class="mus-num">Exhibit 6 · claim file HA / C8 · 2026-07-30</span>
-      <h3>HA — &ldquo;$D(h)$ is not mass-marginalised&rdquo;
-        <span class="badge exonerated">EXONERATED as the owner</span>
-        <span class="badge finding">the defect it found is LIVE</span>
-      </h3>
+      <details class="mus-fold">
+        <summary>
+        <span class="mus-num">Exhibit 6 · claim file HA / C8 · 2026-07-30</span>
+        <h3>HA — &ldquo;$D(h)$ is not mass-marginalised&rdquo;
+          <span class="badge exonerated">EXONERATED as the owner</span>
+          <span class="badge finding">the defect it found is LIVE</span>
+        </h3>
+        </summary>
       <dl>
         <dt>The hypothesis</dt>
         <dd>
@@ -791,15 +866,20 @@
         attributed to the numerator legs&rsquo; measure mismatch — not to $D(h)$
         <span class="mus-fwd">⏭ Ch 8 &sect;6, Ch 11</span>.
       </p>
+      <p class="mus-backlink">Not cited from a chapter &mdash; museum-only. <a href="index.html">&larr; the front door</a></p>
+      </details>
     </div>
 
     <!-- ---------- #ex-zerohost-fallback ---------- -->
     <div class="mus-exhibit is-exonerated" id="ex-zerohost-fallback">
-      <span class="mus-num">Exhibit 7 · ledger #54 &rarr; #55 · 2026-07-10 &rarr; 2026-07-25</span>
-      <h3>The zero-host fallback (issue #29)
-        <span class="badge finding">REAL BUG, FIXED</span>
-        <span class="badge refuted">NOT THE SYMPTOM</span>
-      </h3>
+      <details class="mus-fold">
+        <summary>
+        <span class="mus-num">Exhibit 7 · ledger #54 &rarr; #55 · 2026-07-10 &rarr; 2026-07-25</span>
+        <h3>The zero-host fallback (issue #29)
+          <span class="badge finding">REAL BUG, FIXED</span>
+          <span class="badge refuted">NOT THE SYMPTOM</span>
+        </h3>
+        </summary>
       <dl>
         <dt>The hypothesis</dt>
         <dd>
@@ -839,15 +919,20 @@
         which must always be quoted with its fair-framing amendment (per-event cosmetic
         <em>and</em> class-summed +3.4–6.1σ) <span class="mus-fwd">⏭ Ch 11 &sect;2</span>.
       </p>
+      <p class="mus-backlink">referenced by <a href="ch05-unseen-galaxy.html">Ch 5 &mdash; the museum interlude</a> &middot; <a href="ch05-unseen-galaxy.html">&larr; back</a></p>
+      </details>
     </div>
 
     <!-- ---------- #ex-wg-bookkeeping ---------- -->
     <div class="mus-exhibit is-exonerated" id="ex-wg-bookkeeping">
-      <span class="mus-num">Exhibit 8 · ledger #61 · 2026-07-11</span>
-      <h3>The $w_G = \beta_G/D$ bookkeeping fix
-        <span class="badge refuted">REFUTED as the fix</span>
-        <span class="badge finding">C9 is LIVE</span>
-      </h3>
+      <details class="mus-fold">
+        <summary>
+        <span class="mus-num">Exhibit 8 · ledger #61 · 2026-07-11</span>
+        <h3>The $w_G = \beta_G/D$ bookkeeping fix
+          <span class="badge refuted">REFUTED as the fix</span>
+          <span class="badge finding">C9 is LIVE</span>
+        </h3>
+        </summary>
       <dl>
         <dt>The hypothesis</dt>
         <dd>
@@ -877,10 +962,14 @@
       <p class="mus-note">
         <strong>This exonerates the fix, not the defect.</strong> Claim <strong>C9</strong> —
         that $w_G$ is mis-calibrated by 2.3–2.5&times; against the realized catalogued-host rate,
-        at $z = -11.86$ — is <em>live</em> and gated on the cell-B control. The re-litigation
+        at $z = -11.86$ — is <em>live</em>. It was gated on the cell-B control until that
+        control landed <strong>2026-07-31</strong>; the gate is released and the claim is not
+        <span class="prov-chip">CELLB_READOUT_20260731.md</span>. The re-litigation
         guard is narrow and specific: do not re-try the membership-conditioned inverse
         <span class="prov-chip">ledger &sect;2 item 3</span> <span class="mus-fwd">⏭ Ch 9 &sect;6</span>.
       </p>
+      <p class="mus-backlink">referenced by <a href="ch09-universe-factory.html">Ch 9 &sect;6</a> &middot; <a href="ch09-universe-factory.html">&larr; back</a></p>
+      </details>
     </div>
 
     <!-- ==========================================================
@@ -929,14 +1018,18 @@
           layer that matters.</strong> Before spending a cycle on something because it is
           visibly defective, ask what the answer is actually a <em>function</em> of.</dd>
       </dl>
+      <p class="mus-backlink">referenced by <a href="ch04-loud-half.html">Ch 4 &mdash; the museum interlude</a> &middot; <a href="ch04-loud-half.html">&larr; back</a></p>
     </div>
 
     <!-- ---------- #ex-hb-window ---------- -->
     <div class="mus-exhibit is-refuted" id="ex-hb-window">
-      <span class="mus-num">Exhibit 10 · claim file HB · 2026-07-30</span>
-      <h3>HB — the hard mass window as support truncation
-        <span class="badge refuted">REFUTED — by its own investigator</span>
-      </h3>
+      <details class="mus-fold">
+        <summary>
+        <span class="mus-num">Exhibit 10 · claim file HB · 2026-07-30</span>
+        <h3>HB — the hard mass window as support truncation
+          <span class="badge refuted">REFUTED — by its own investigator</span>
+        </h3>
+        </summary>
       <dl>
         <dt>The hypothesis</dt>
         <dd>
@@ -966,7 +1059,7 @@
           Two of the framing assumptions used to <em>motivate</em> it were also false: the
           &ldquo;why is 1D spared?&rdquo; screen has no discriminating power for mass hypotheses
           (the 1D channel never sees the mass window at all —
-          <code>handler.py:592</code> vs <code>:605</code>), and campaign #51 is a
+          <code title="current tree :623">handler.py:592</code> vs <code title="current tree :632-634">:605</code>), and campaign #51 is a
           <em>stronger</em> exposure, not a non-control (153,473 impostors pass the window in the
           unscattered case).
         </dd>
@@ -980,14 +1073,19 @@
         block, and this book never cites it as current
         <span class="prov-chip">sources map &sect;7.2</span>.
       </p>
+      <p class="mus-backlink">Not cited from a chapter &mdash; museum-only. <a href="index.html">&larr; the front door</a></p>
+      </details>
     </div>
 
     <!-- ---------- #ex-index-bug ---------- -->
     <div class="mus-exhibit" id="ex-index-bug">
-      <span class="mus-num">Exhibit 11 · ledger #4 · 2026-03-31</span>
-      <h3>The Gaussian 3D/4D index bug
-        <span class="badge exonerated">NOT A FACTOR</span>
-      </h3>
+      <details class="mus-fold">
+        <summary>
+        <span class="mus-num">Exhibit 11 · ledger #4 · 2026-03-31</span>
+        <h3>The Gaussian 3D/4D index bug
+          <span class="badge exonerated">NOT A FACTOR</span>
+        </h3>
+        </summary>
       <dl>
         <dt>The hypothesis</dt>
         <dd>
@@ -1011,6 +1109,8 @@
           every suspicion is nearly right. Most are not, and the cheap check that says so is a
           good check.</dd>
       </dl>
+      <p class="mus-backlink">referenced by <a href="ch06-black-box.html">Ch 6 &mdash; the provenance panel</a> &middot; <a href="ch06-black-box.html">&larr; back</a></p>
+      </details>
     </div>
 
     <!-- ==========================================================
@@ -1079,6 +1179,7 @@
         <span class="mus-dnr">DO NOT RE-TRY</span> — ledger &sect;2 item 13: do not resurrect
         starvation as an explanation.
       </p>
+      <p class="mus-backlink">referenced by <a href="ch04-loud-half.html">Ch 4 &sect;4</a> and <a href="ch05-unseen-galaxy.html">Ch 5 &mdash; the museum interlude</a> &middot; <a href="ch04-loud-half.html">&larr; back</a></p>
     </div>
 
     <!-- ---------- #ex-h0-independent ---------- -->
@@ -1128,6 +1229,7 @@
           debugging a value, check that the value is a function of what you think it is a
           function of.</dd>
       </dl>
+      <p class="mus-backlink">referenced by <a href="ch02-bayes.html">Ch 2 &sect;3</a>, <a href="ch09-universe-factory.html">Ch 9 &sect;3</a> and <a href="ch10-calibration.html">Ch 10 &mdash; the museum interlude</a> &middot; <a href="ch10-calibration.html">&larr; back</a></p>
     </div>
 
     <div class="widget">
@@ -1174,10 +1276,13 @@
 
     <!-- ---------- #ex-archaeology ---------- -->
     <div class="mus-exhibit is-method" id="ex-archaeology">
-      <span class="mus-num">Exhibit 14 · ledger #49b · 2026-07-01</span>
-      <h3>Archaeology — bisecting the stored posteriors
-        <span class="badge finding">MEASURED</span>
-      </h3>
+      <details class="mus-fold">
+        <summary>
+        <span class="mus-num">Exhibit 14 · ledger #49b · 2026-07-01</span>
+        <h3>Archaeology — bisecting the stored posteriors
+          <span class="badge finding">MEASURED</span>
+        </h3>
+        </summary>
       <dl>
         <dt>The hypothesis</dt>
         <dd>
@@ -1211,6 +1316,8 @@
           is a question with a method.</strong> Keep your outputs, date them, and make the
           archive bisectable — a stored posterior is a measurement of the code that wrote it.</dd>
       </dl>
+      <p class="mus-backlink">Not cited from a chapter &mdash; museum-only. <a href="index.html">&larr; the front door</a></p>
+      </details>
     </div>
 
     <div class="widget">
@@ -1257,9 +1364,18 @@
 
     <p>
       Fourteen exhibits is a curation. The ledger is the collection. Below is all 98 rows,
-      searchable — the same data that will back the book-wide <em>Has this been tried?</em>
-      instrument, which volunteers a verdict whenever a sandbox anywhere in this book is dragged
-      into a configuration the project has already killed.
+      searchable. The same digest backs the <em>Has this been tried?</em> box carried at the
+      foot of every chapter page — which searches these rows, and seeds itself with the dead
+      hypotheses that page&rsquo;s own sandboxes can reach — and it is the source the sandboxes
+      themselves quote when they hard-code a dead-end verdict beside a control. Since the
+      2026-07-31 revision pass it also powers the inline chips: a dial or button tagged with a
+      dead hypothesis volunteers its verdict (&#9878;&nbsp;#N) inside its own widget the moment
+      it becomes active, and widgets that already hard-code the verdict opt out, so nothing
+      double-reports and no predict-lock is pre-empted. This paragraph previously promised
+      something stronger than the build then delivered — an instrument that interrupts you
+      anywhere in the book — and was first corrected on 2026-07-31 after a review found the
+      promise ahead of the build; the scoped inline mechanism shipped later the same day
+      <span class="prov-chip">museum_FLAGS.md F-museum-6</span>.
     </p>
     <p>
       Two things to try. Search <code>photo-z</code>, or <code>mass</code>, or
@@ -1288,7 +1404,7 @@
         <code>results/campaign51_20260728/realistic_20260729/gate_b_20260730/BIAS_HISTORY_LEDGER.md</code>;
         the machine-readable digest this widget reads is
         <code>book/site/data/museum_ledger.json</code>. Its &sect;2 lists 17 do-not-re-try items
-        covering 26 rows; the claim file adds 15 more entries by name.</p>
+        covering 30 rows; the claim file adds 15 more entries by name.</p>
       </noscript>
     </div>
 
@@ -1306,20 +1422,32 @@
       The binding union is that list <strong>plus</strong> the ledger&rsquo;s &sect;2 items 1–17,
       which are historical exonerations absent from it and are therefore the live re-litigation
       risk. And one deliberate omission is load-bearing: <strong>$w_G$ is <em>not</em> on the
-      list</strong> — C9 is live, gated on cell B.
+      list</strong> — as of the <strong>2026-07-30</strong> adjudication C9 was live and gated on
+      the cell-B control. That control landed <strong>2026-07-31</strong> and released the gate:
+      C9 remains <strong>live and unfixed</strong>, and $w_G$ stays off the exonerated list
+      <span class="prov-chip">CELLB_READOUT_20260731.md</span>.
     </div>
 
     <!-- ================= DOSSIER ================= -->
     <div class="dossier">
       <div class="dossier-title">Event dossier — EMRI-889 in the museum</div>
       <table>
-        <tr><td>d_L</td><td>88.9 Mpc (&sigma;_dL/dL = 8.0&times;10&#8315;&#8309;), SNR 1425, host galaxy index 859360, in catalogue</td></tr>
+        <tr><td>d_L</td><td>88.9 Mpc &middot; &sigma;_dL/d_L = 8.98&times;10&#8315;&#8308;</td></tr>
+        <tr><td>the rest of the card</td><td>SNR 1425, host galaxy index 859360, in catalogue</td></tr>
         <tr><td>Exhibit 7</td><td>structurally, the zero-host fallback can never fire for 889: the fallback is the branch for events whose candidate list is <em>empty</em>, and 889 has a catalogued host — which is exactly why it is one of the 76</td></tr>
         <tr><td>Exhibit 11</td><td>the 3D/4D index question was about the very Gaussian that turns 889&rsquo;s Fisher ellipse into a likelihood. There was no bug in it.</td></tr>
         <tr><td>Exhibits 9, 12, 13</td><td>say nothing about <em>this event</em>: they were measured in May and June 2026, on venues and code eras that predate campaign #51/#53 entirely. A venue is not a detail.</td></tr>
         <tr class="dossier-new"><td>after this annex</td><td>none of these 98 hypotheses changed a single measured number about EMRI-889. Every one of them changed the estimator wrapped around it — which is the only reason its numbers mean anything.</td></tr>
       </table>
     </div>
+
+    <p class="mus-note">
+      Erratum: the spec card carried &sigma;_dL/dL = 8.0&times;10&#8315;&#8309; &mdash; that is
+      the absolute &sigma;_dL in Gpc under a fractional label. Corrected book-wide 2026-07-31;
+      record: ch01 flag F1 / BUILD_REPORT &sect;5.1 item 1. The museum keeps it visible for the
+      reason the rest of this room exists: a units slip that survives six chapters is a defect
+      with a date, and it belongs in the collection, not in a silent overwrite.
+    </p>
 
     <!-- ================= SELF-CHECK ================= -->
     <h2>Self-check</h2>
@@ -1380,9 +1508,18 @@
           re-parametrization is not the cure; it is not evidence that $w_G$ agrees with the
           realized catalogued-host rate — which is separately measured to be off by 2.3–2.5&times;
           at $z = -11.86$, and which the 2026-07-30 adjudication deliberately kept <em>off</em>
-          the exoneration list. Moving C9 requires the pre-registered cell-B control, which
-          separates the estimator from the catalogue realization; until it lands, the honest
-          state is &ldquo;measured, unexplained, gated&rdquo;.
+          the exoneration list. Moving C9 required the pre-registered cell-B control, which
+          separates the estimator from the catalogue realization.
+          <strong>That control landed 2026-07-31</strong>: with a completely unscattered parent
+          catalogue $w_G(h)$ came back <em>bit-identical</em> to the realistic run at all 41 grid
+          points, so the mis-calibration is estimator-borne and the catalogue realization is not
+          the explanation
+          <span class="prov-chip">CELLB_READOUT_20260731.md</span>. That released the gate; it
+          did not close the claim. C9 is still <strong>live and unfixed</strong> — the honest
+          state moved from &ldquo;measured, unexplained, gated&rdquo; to &ldquo;measured,
+          attributed, and waiting on a derivation&rdquo; (the joint C9+C8 mass-consistent
+          mixture, author-gated under <code>/physics-change</code>)
+          <span class="mus-fwd">⏭ Ch 9, Ch 11 §5</span>.
         </div>
       </details>
     </div>
@@ -1394,7 +1531,7 @@
       <details class="answer">
         <summary>Show answer</summary>
         <div class="answer-body">
-          (i) <strong>Search the ledger.</strong> 26 of its 98 rows are flagged do-not-re-try and
+          (i) <strong>Search the ledger.</strong> 30 of its 98 rows are flagged do-not-re-try and
           they are the plausible ideas, not the silly ones; if your candidate is already row #61
           or #72, you are done in thirty seconds. (ii) <strong>Size it before you believe it.</strong>
           HB was real, $h$-dependent, and 0.063% of its target
@@ -1435,7 +1572,7 @@
     <div class="provenance-panel">
       <h4>Provenance panel — every stamp used in this annex</h4>
       <ul>
-        <li><span class="badge finding">FINDING</span> <code>gate_b_20260730/BIAS_HISTORY_LEDGER.md</code> — the 98-row chronological table, its &sect;2 DO-NOT-RE-TRY list (17 items, 26 rows) and its standing venue-scoping rule. Parsed, not transcribed, into <code>data/museum_ledger.json</code></li>
+        <li><span class="badge finding">FINDING</span> <code>gate_b_20260730/BIAS_HISTORY_LEDGER.md</code> — the 98-row chronological table, its &sect;2 DO-NOT-RE-TRY list (17 items, 30 rows) and its standing venue-scoping rule. Parsed, not transcribed, into <code>data/museum_ledger.json</code>. Corrected 2026-07-31: the parser read &sect;2&rsquo;s back-references as comma-separated only, so items 13 and 15 &mdash; written <code>(#41/#52)</code> and <code>(#43/#44)</code> &mdash; silently lost four rows (<code>museum_FLAGS.md</code> F-museum-5)</li>
         <li><span class="badge finding">FINDING</span> <code>CLAIM_2D_BIAS_20260730.md &sect;Exonerated</code> (as amended 2026-07-30) — the 15-entry exoneration list; HA, HB, HC; the deliberate omission of $w_G$</li>
         <li><span class="badge refuted">REFUTED</span> <code>results/volume_trunc_ab_20260712/FINDING.md:1-58</code> + <code>gate_result.json</code> + <code>quadrature_diagnostic.py</code> — ledger #70; the A/B posteriors plotted here are that JSON, unmodified</li>
         <li><span class="badge exonerated">EXONERATED</span> <code>results/mass_trunc_ab_20260713/FINDING.md:3-12, 54-78</code> — ledger #71 &rarr; #72; and <code>mass_ab_20260727/MASS_KERNEL_AB_READOUT.md:23-80</code> — ledger #89</li>
@@ -1450,7 +1587,7 @@
         <li><span class="badge finding">FINDING</span> <code>ledger #49b</code> / <code>WF1_DIGEST.md:9-15</code> — the archaeology; plus ledger #49, #93, #94 for the later markers</li>
         <li><span class="badge candidate">CANDIDATE</span> <code>[RATIFY-M6]</code>, <code>mass_marginal_2d_kernel.md:1-17, 690-706</code> — every 2D number in this annex sits on designated-candidate ground</li>
         <li><span class="badge open">OPEN</span> C7 · C8 · C9 remain live and are <em>explained, not retired</em>, here: Exhibit 6 retires HA-as-owner but not C8; Exhibit 8 retires a $w_G$ fix form but not C9</li>
-        <li>Code sites: <code>physical_relations.py:132 dist</code> (scalar-only), <code>bayesian_statistics.py:3806, :3826</code> (<code>dist_vectorized</code>), <code>:3867</code> (<code>fixed_quad</code>, n = 50), <code>:450-500</code> (the hand-rolled bit-identical node map), <code>handler.py:592</code> vs <code>:605</code> (1D never sees the mass window)</li>
+        <li>Code sites: <code>physical_relations.py:132 dist</code> (scalar-only), <code>bayesian_statistics.py:3806, :3826</code> (<code>dist_vectorized</code>), <code>:3867</code> (<code>fixed_quad</code>, n = 50), <code>:450-500</code> (the hand-rolled bit-identical node map), <code title="current tree :623">handler.py:592</code> vs <code title="current tree :632-634">:605</code> (1D never sees the mass window)</li>
         <li>Open flags: <code>book/design/flags/museum_FLAGS.md</code> — <strong>F-museum-1</strong> (the flagship&rsquo;s aliasing attribution does not reproduce; both forms shown), <strong>F-museum-2</strong> (&ldquo;tracks truth exactly&rdquo; vs a re-run one grid step low in 2 of 5 cells), F-museum-3 (untracked sources), F-museum-4 (checked without discrepancy)</li>
       </ul>
     </div>
@@ -1471,6 +1608,48 @@
 <script>
   (function () {
     "use strict";
+
+    // ---------------------------------------------------------------
+    // Folded exhibits: never hide content from someone who asked for it
+    // ---------------------------------------------------------------
+    // Nine of the fourteen exhibits ship collapsed (REVISION_WORKLIST
+    // §C-museum, ped-M5). Two ways in must still work: a deep link from a
+    // chapter (or from the ledger browser), and print. Both force the fold
+    // open — the room stays complete, only the visit is shortened.
+    function openFoldsIn(el) {
+      if (!el) return;
+      var node = el;
+      while (node && node !== document.body) {
+        if (node.tagName === "DETAILS") node.open = true;
+        node = node.parentNode;
+      }
+      Array.prototype.forEach.call(el.querySelectorAll("details.mus-fold"), function (d) {
+        d.open = true;
+      });
+    }
+    function openHashTarget() {
+      if (!location.hash || location.hash.length < 2) return;
+      var target = null;
+      try { target = document.getElementById(decodeURIComponent(location.hash.slice(1))); }
+      catch (e) { target = null; }
+      if (!target) return;
+      openFoldsIn(target);
+      // re-run the jump: the anchor resolved before the fold expanded
+      target.scrollIntoView();
+    }
+    window.addEventListener("hashchange", openHashTarget);
+    openHashTarget();
+    function openAllFolds() {
+      Array.prototype.forEach.call(document.querySelectorAll("details.mus-fold"), function (d) {
+        d.open = true;
+      });
+    }
+    if (window.matchMedia) {
+      var mq = window.matchMedia("print");
+      if (mq.addEventListener) mq.addEventListener("change", function (e) { if (e.matches) openAllFolds(); });
+      else if (mq.addListener) mq.addListener(function (e) { if (e.matches) openAllFolds(); });
+    }
+    window.addEventListener("beforeprint", openAllFolds);
 
     // ---------------------------------------------------------------
     // Palette (mirrors css/book.css tokens; Plotly needs literals)
@@ -1614,8 +1793,9 @@
           if (cls && r.verdict_class !== cls) return false;
           if (dnrOnly && !r.do_not_retry) return false;
           if (!q) return true;
-          return (r.hypothesis + " " + r.test + " " + r.verdict + " " + r.documented + " " +
-                  r.era + " " + r.venues.join(" ")).toLowerCase().indexOf(q) >= 0;
+          return ("#" + r.id + " " + r.hypothesis + " " + r.test + " " + r.verdict + " " +
+                  r.documented + " " + r.era + " " + (r.book_note || "") + " " +
+                  r.venues.join(" ")).toLowerCase().indexOf(q) >= 0;
         });
         countEl.textContent = rows.length + " / " + d.n_rows;
         table(
@@ -1626,7 +1806,12 @@
               "#" + r.id + (r.do_not_retry ? '<br><span class="mus-dnr">DO NOT RE-TRY</span>' : ""),
               esc(r.date || r.era),
               esc(r.hypothesis),
-              esc(r.verdict),
+              // The verdict is the ledger's own string, verbatim. Where the book
+              // has to disambiguate it (expB MJ-3: row #88's "Cell B" is not the
+              // 2026-07-31 2x2's cell B), the annotation is rendered BELOW it and
+              // labelled as the book's, never merged into the quoted text.
+              esc(r.verdict) + (r.book_note
+                ? '<span class="mus-booknote">' + esc(r.book_note) + "</span>" : ""),
               r.venues.length ? esc(r.venues.join("; ")) : '<span style="color:var(--muted)">not stated in the row</span>',
               "<code>" + esc(r.documented) + "</code>",
             ];

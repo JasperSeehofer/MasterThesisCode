@@ -238,6 +238,12 @@ def build_denominator_payload() -> dict[str, Any]:
     row = crb.iloc[EVENT_889]
     dl889 = float(row["luminosity_distance"])
     snr889 = float(row["SNR"])
+    # The CRB column is a variance in Gpc^2, so its square root is the ABSOLUTE
+    # sigma_dL in Gpc — it is not a fraction.  Shipping it under the key
+    # ``sigma_dL_over_dL`` was the book-wide units slip corrected on 2026-07-31
+    # (REVISION_WORKLIST.md §A-D1): the key now names what it holds, and the
+    # fractional precision is emitted separately.
+    sigma_dl_gpc = float(np.sqrt(float(row["delta_luminosity_distance_delta_luminosity_distance"])))
     ev889 = {
         "index": EVENT_889,
         "SNR": _r(snr889, 6),
@@ -247,9 +253,8 @@ def build_denominator_payload() -> dict[str, Any]:
         "mu_Msun": _r(float(row["mu"]), 4),
         "host_galaxy_index": int(row["host_galaxy_index"]),
         "in_catalog": bool(row["in_catalog"]),
-        "sigma_dL_over_dL": _r(
-            float(np.sqrt(float(row["delta_luminosity_distance_delta_luminosity_distance"]))), 3
-        ),
+        "sigma_dL_Gpc": _r(sigma_dl_gpc, 3),
+        "sigma_dL_over_dL": _r(sigma_dl_gpc / dl889, 3),
         "d_horizon_Gpc": _r(snr889 * dl889 / SNR_THRESHOLD, 6),
         "horizon_over_distance": _r(snr889 / SNR_THRESHOLD, 6),
         "is_loudest_of": int(len(crb)),

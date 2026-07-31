@@ -56,3 +56,119 @@ window.BOOK_PREDICT_IDS = {
   ch11Leverage:    "ch11-leverage-guess",
   musQuadrature:   "mus-quadrature-guess",
 };
+
+/*
+ * ===================================================================
+ * BOOK_CANON — the book's canonical shared strings (ONE definition)
+ * ===================================================================
+ * REVISION_WORKLIST.md §D item 6, integrator pass 1, 2026-07-31.
+ *
+ * These strings are quoted VERBATIM by every page that carries them.
+ * Chapter agents must copy from here (or read `Book.canon` at runtime);
+ * they must not re-word them locally. `book/generators/qa_gates.py`
+ * greps the built pages against this object, so a local re-wording is a
+ * build failure, not a style difference.
+ *
+ * Why here and not in book.js: these are DATA (spec-fixed text), and
+ * manifest.js is the file both the site and the QA gate parse. The gate
+ * extracts the values by key with a regex — keep every value on ONE
+ * line, in double quotes.
+ */
+window.BOOK_CANON = {
+  /* --- D1: the sigma_dL units slip, resolved book-wide 2026-07-31 -----
+   * Spec value is now the six-chapter MEASURED value. The old spec figure
+   * 8.0e-5 was the ABSOLUTE sigma_dL in Gpc carried under a fractional
+   * label (a x11.25 slip). Pages print the corrected value once, plus the
+   * one-line erratum note; the flag files remain the historical record.
+   */
+  sigmaDL: {
+    fractional: "8.98×10⁻⁴",
+    absolute: "7.98×10⁻⁵ Gpc",
+    // the dossier row, identical on every dossier card ch01-ch11 + museum
+    dossierRow: "d_L  88.9 Mpc  ·  σ_dL/d_L = 8.98×10⁻⁴",
+    // the same row as the book's dossier-table markup (entity-escaped)
+    dossierRowHTML: "<tr><td>d_L</td><td>88.9 Mpc &middot; &sigma;_dL/d_L = 8.98&times;10&#8315;&#8308;</td></tr>",
+    // the erratum line — a footnote or small .note, NOT a boxed OPEN dispute
+    erratum: "Erratum: the spec card carried σ_dL/dL = 8.0×10⁻⁵ — that is the absolute σ_dL in Gpc under a fractional label. Corrected book-wide 2026-07-31; record: ch01 flag F1 / BUILD_REPORT §5.1 item 1.",
+    erratumHTML: "<p class=\"note\">Erratum: the spec card carried &sigma;_dL/dL = 8.0&times;10&#8315;&#8309; &mdash; that is the absolute &sigma;_dL in Gpc under a fractional label. Corrected book-wide 2026-07-31; record: ch01 flag F1 / BUILD_REPORT &sect;5.1 item 1.</p>",
+  },
+
+  /* --- D3: the 2x2 cell B landed 2026-07-31 --------------------------- */
+  cellB: {
+    // the canonical rail pip — identical wording on ch07 / ch09 / ch10 / ch11
+    pipLabel: "cell B (2026-07-31): estimator owns +0.060 of the 2D +0.083",
+    pipNote: "CELLB_READOUT_20260731.md — evaluate 6103219 / combine 6103220; the 2D-only share is 72%",
+    pipTone: "amber",
+    // the job-ID split rule (D3): pre-registration keeps the registered IDs,
+    // results cite the resubmission, with the one-sentence note.
+    jobsPrereg: "6101146 / 6101147",
+    jobsResult: "6103219 / 6103220",
+    jobIdRule: "Where the pre-registration is quoted, the job IDs stay 6101146/6101147; where the result is reported, cite 6103219/6103220 and carry the resubmission note once.",
+    resubmissionNote: "Jobs 6103219/6103220 are the resubmission of 6101146/6101147 after a pure-plumbing symlink failure in the run-dir setup; the test design and the pre-registration are unchanged, and the code is the same commit (7fd60bb) as cells A and C.",
+    // the naming rule (MJ-3): the 2026-07-31 2x2 object is always "the 2x2 cell B"
+    naming: "the 2×2 cell B",
+  },
+};
+
+/*
+ * ===================================================================
+ * BOOK_BIAS_ROWS — the cumulative bias-rail history (§D item 4, ped M7)
+ * ===================================================================
+ * Integrator pass 2, 2026-07-31.  The bias rail is the book's continuity
+ * spine, but each chapter used to declare only its own rows, so the rail
+ * FORGOT rows moving forward (ch05 showed two, ch11 showed two again).
+ * These are the book-wide rows; Book.biasRail merges them into every
+ * page's own spec:
+ *
+ *   - a row renders on every page whose chapter number n satisfies
+ *     from_chapter <= n (index/museum render all of them);
+ *   - if the page already declares an equivalent row (any `match`
+ *     substring found in the page row's label, case-insensitive), the
+ *     page's row wins — its wording, note, `active` state and arming
+ *     pattern (ch08 arms its 2D row only at the cold-open reveal) are
+ *     the chapter agent's;
+ *   - rows a page does not declare are rendered from here, inactive.
+ *
+ * `from_chapter` is a D4 (spoiler-discipline) boundary: it is the first
+ * chapter where the row's value is no longer that chapter's own reveal
+ * (the 2D +0.077 row is ch08's reveal, so it becomes unconditional only
+ * from ch09; ch08 itself arms it page-locally at the reveal moment).
+ * Values are venue-scoped exactly as the chapters state them.
+ */
+window.BOOK_BIAS_ROWS = [
+  {
+    from_chapter: 4,
+    label: "cat-only, no D(h)",
+    bias: -0.178,
+    note: "Phase 32 / ledger #9 — MAP 0.60, the bottom of the prior",
+    match: ["cat-only", "no d(h)", "no selection"],
+  },
+  {
+    from_chapter: 4,
+    label: "full-volume D(h)",
+    bias: 0.0,
+    note: "Phase 32 / ledger #9 — MAP 0.73. Venue-scoped: campaign #51/#53 r1 reads MAP 0.740.",
+    match: ["full-volume"],
+  },
+  {
+    from_chapter: 8,
+    label: "1D, realistic host-z (volume_deconv)",
+    bias: -0.002,
+    note: "G2b §2.3 — the σ_z-independent residual floor the volume estimator retains (−0.0014…−0.0030 across the archive-gated control cells)",
+    match: ["volume_deconv", "realistic host-z"],
+  },
+  {
+    from_chapter: 9,
+    label: "2D, mass channel",
+    bias: 0.077,
+    note: "campaign #53, 10 runs: mean pull +4.04, 10/10 beyond 2σ — RATIFY-M6 CANDIDATE ground",
+    match: ["2d"],
+  },
+  {
+    from_chapter: 11,
+    label: "1D (contingent)",
+    bias: 0.0,
+    note: "Not a clean zero: the 1D headline is the crossing of two railed opposing runaways (in-cat 0.86 / dark 0.64). C5, FINDING.",
+    match: ["contingent"],
+  },
+];

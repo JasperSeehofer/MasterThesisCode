@@ -36,13 +36,13 @@
     display: block; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.06em;
     text-transform: uppercase; color: var(--planck); margin-bottom: 0.25rem;
   }
-  .ch06-flag {
-    border: 1px dashed var(--planck); border-radius: var(--radius);
-    padding: 0.6rem 0.85rem; margin: 1rem 0; font-size: 0.87rem;
-  }
-  .ch06-flag .ch06-flag-label {
-    display: block; text-transform: uppercase; letter-spacing: 0.05em;
-    font-size: 0.71rem; color: var(--planck); font-weight: 700; margin-bottom: 0.25rem;
+  /* .ch06-flag / .ch06-flag-label removed 2026-07-31: the sigma_dL dispute
+     this page boxed is resolved (REVISION_WORKLIST §A-D1), and D1 requires the
+     erratum to read as a footnote, not as a boxed OPEN dispute. */
+  /* The provenance panel is a reference list, not a read: fifteen stamps
+     collapse behind one summary (REVISION_WORKLIST §C-ch06 [ped-M5]). */
+  .provenance-panel > details > summary {
+    cursor: pointer; color: var(--muted); font-size: 0.8rem; margin-bottom: 0.4rem;
   }
   .ch06-fwd {
     display: inline-block; font-size: 0.72rem; border: 1px dashed var(--border);
@@ -73,15 +73,8 @@
   .ch06-eventpick button[aria-pressed="true"] {
     border-color: var(--accent); color: var(--accent); font-weight: 600;
   }
-  #bias-rail .ch06-pip {
-    display: flex; gap: 0.4rem; align-items: baseline; font-size: 0.72rem;
-    margin-top: 0.35rem; padding-top: 0.3rem; border-top: 1px dotted var(--border);
-  }
-  #bias-rail .ch06-pip .ch06-pip-dot {
-    width: 0.55rem; height: 0.55rem; border-radius: 50%; flex: 0 0 auto;
-    background: var(--planck);
-  }
-  #bias-rail .ch06-pip.grey .ch06-pip-dot { background: var(--prior); }
+  /* (page-local rail-pip CSS retired: pips go through Book.biasRail's own
+     `pips` channel — integrator pass 2, REVISION_WORKLIST §D-6 / tomas-m2) */
 </style>
 
 <div class="book-shell">
@@ -132,15 +125,30 @@
       </table>
     </div>
     <p class="ch06-note">
-      Counts measured by this chapter&rsquo;s generator over the real GLADE+ catalogue,
-      using the production search radius
-      $1.5\sqrt{\lambda_{\max}(J\Sigma_{\rm sky}J^{\mathsf T})}$ and the production redshift
-      window. Sky areas from the run&rsquo;s own Cram&eacute;r&ndash;Rao rows. Each event is
-      evaluated at the nearest point of the widget&rsquo;s 40-point SNR grid to its measured
-      SNR (for 361 that is $\rho = 171$ against a measured 167.9; for 606, 41.5 against 43.1;
-      for 555, 27.0 against 28.3).
+      Real counts, over the real GLADE+ catalogue, at the production search radius.
+      <strong>Chapter 3 measures the same rule</strong> over all 1590 events at the same
+      production multiplier $n_\sigma = 1.5$: 889&rsquo;s ball is the same two galaxies at the
+      same 0.757&prime; radius on both pages. Its two <em>areas</em> differ on purpose — Ch 3
+      quotes the search disc $\pi r^2 = 5.00\times10^{-4}$ deg&sup2;, this chapter the
+      localization ellipse $\Delta\Omega = 3.29\times10^{-4}$ deg&sup2;; same ball, two
+      different questions <span class="prov-chip">ch03_FLAGS.md F-ch03-14</span>.
       <span class="prov-chip real">real: seed61000 CRB + GLADE+ patch</span>
     </p>
+    <details class="num-view">
+      <summary>How these four rows were computed</summary>
+      <p>
+        Counts measured by this chapter&rsquo;s generator over the real GLADE+ reduced
+        catalogue, using the production search radius
+        $1.5\sqrt{\lambda_{\max}(J\Sigma_{\rm sky}J^{\mathsf T})}$
+        (<span class="prov-chip" title="current lines :610-617">handler.py:575-578</span>) and the production redshift
+        window. Sky areas are $\Delta\Omega = 2\pi|\sin\theta|\sqrt{\det\Sigma_{\rm sky}}$
+        from the run&rsquo;s own Cram&eacute;r&ndash;Rao rows. Each event is evaluated at the
+        nearest point of I6.1&rsquo;s 40-point SNR grid to its measured SNR — for 361 that is
+        $\rho = 171$ against a measured 167.9; for 606, 41.5 against 43.1; for 555, 27.0
+        against 28.3 — so the numbers here and the widget&rsquo;s opening state are the same
+        numbers.
+      </p>
+    </details>
 
     <p>
       Two events a factor 33 apart in loudness, and the candidate list differs by a
@@ -206,13 +214,10 @@
     </p>
     <p>
       <strong>The PSD is a physics input, not a convenience.</strong> The galactic confusion
-      foreground was missing from $S_n$ until Phase 9; adding it was a landed fix, and the
-      ledger records the honest verdict — <em>fixed-and-landed, insufficient alone</em>
-      <span class="prov-chip">ledger #1</span>. The analytic form now used is Babak et al.
-      (2023), arXiv:2303.15929, Eq. (17), evaluated in
-      <code>LISA_configuration._confusion_noise</code>. A separate defect in the same area,
-      repaired alongside the subject of §2, had made the pre-fix TDI transfer roughly
-      $10^3\times$ deaf below about 1 mHz <span class="prov-chip">commit 49251f3</span>.
+      foreground was missing from $S_n$ until Phase 9 — a landed fix, recorded with the
+      honest verdict <em>fixed-and-landed, insufficient alone</em>
+      <span class="prov-chip">ledger #1</span>, and it was not the only thing wrong in that
+      part of the code <span class="ch06-fwd">provenance panel</span>.
     </p>
     <p>
       <strong>It is dimensionless, and that is checkable.</strong>
@@ -406,20 +411,29 @@
       </noscript>
     </div>
 
-    <div class="ch06-verdict">
-      <span class="ch06-verdict-label">What this widget is, precisely</span>
-      The pre-fix bar is a <strong>counterfactual on the post-fix pool</strong>, not a
-      re-simulation. It is exact rather than approximate, and for a specific reason: G8
-      proves the old code returned <em>exactly</em>
-      $\langle h_1\mid h_2\rangle/\Delta t^{2}$, so at $\Delta t = 10\ \mathrm{s}$ the pre-fix
-      detection criterion on these same injections is exactly $\rho/10 \ge 20$. No waveform
-      is regenerated and nothing is fitted. Beside it sits the project&rsquo;s
-      <em>recorded</em> pre-fix measurement from a different venue and code era (seed600,
-      500 events: median $z = 0.046$, $z_{90} = 0.074$, max $z = 0.109$,
-      <span class="prov-chip">G8 §2 L5</span>). The two are never blended — but they land on
-      top of each other, which is the strongest thing that could have happened to a
-      counterfactual.
+    <div class="callout defect">
+      <span class="callout-label">Trap 6.B &mdash; &ldquo;Numerical factors are bookkeeping.&rdquo;</span>
+      $dt^2$. Ten times the SNR. A hundred and sixty-eight times fewer events.
+      <span class="prov-chip">ledger #51</span>
+      <span class="prov-chip real">injection_pool_mix200k_20260728</span>
     </div>
+
+    <details class="num-view">
+      <summary>What this widget is, precisely — the counterfactual&rsquo;s scope</summary>
+      <p>
+        The pre-fix bar is a <strong>counterfactual on the post-fix pool</strong>, not a
+        re-simulation. It is exact rather than approximate, and for a specific reason: G8
+        proves the old code returned <em>exactly</em>
+        $\langle h_1\mid h_2\rangle/\Delta t^{2}$, so at $\Delta t = 10\ \mathrm{s}$ the
+        pre-fix detection criterion on these same injections is exactly $\rho/10 \ge 20$. No
+        waveform is regenerated and nothing is fitted. Beside it sits the project&rsquo;s
+        <em>recorded</em> pre-fix measurement from a different venue and code era (seed600,
+        500 events: median $z = 0.046$, $z_{90} = 0.074$, max $z = 0.109$,
+        <span class="prov-chip">G8 §2 L5</span>). The two are never blended — but they land
+        on top of each other, which is the strongest thing that could have happened to a
+        counterfactual.
+      </p>
+    </details>
 
     <!-- ===================== §3 ===================== -->
     <h2>3. Fisher and Cram&eacute;r&ndash;Rao: where the ellipsoid comes from</h2>
@@ -462,21 +476,23 @@
       numerically — and the accuracy of that numerical step is a physics decision, not an
       implementation detail.
     </p>
+    <p class="ch06-note">
+      If you have met Fisher matrices before, this is the section where the GW stratum earns
+      its keep: the folds from here on carry the 14-parameter version, the stencil, and the
+      conditioning. Switch persona at the top of the page, or just open them.
+    </p>
 
     <div class="voice-adjudicator">
       <span class="voice-label">Three landed repairs to the same object
         <span class="badge finding">FINDING</span>
       </span>
+      Two were about the derivative — an $O(\varepsilon)$ forward difference replaced by
+      Vallisneri&rsquo;s five-point stencil <span class="prov-chip">ledger #2</span>, and a
+      single $\varepsilon$ shared across 14 parameters replaced by a per-parameter one
+      <span class="prov-chip">ledger #13</span>; both recorded as
+      <em>fixed-and-landed, insufficient alone</em>, both detailed in the fold below. The
+      third is about the <em>inverse</em>, and it is the one this section measures:
       <ul style="margin:0.3rem 0 0;">
-        <li><strong>Stencil order.</strong> The derivatives were originally
-          $O(\varepsilon)$ forward differences. They are now the $O(\varepsilon^4)$
-          five-point stencil Vallisneri (2008) recommends precisely because Fisher matrices
-          are sensitive to derivative error <span class="prov-chip">ledger #2</span>
-          (Phase 10). Verdict as recorded: <em>fixed-and-landed, insufficient alone</em>.</li>
-        <li><strong>Per-parameter step size.</strong> A single $\varepsilon$ across 14
-          parameters spanning $10^5\,M_\odot$ and radians is not a step size, it is a
-          coincidence. Per-parameter $\varepsilon$ landed in Phase 37
-          <span class="prov-chip">ledger #13</span>.</li>
         <li><strong>The singular-Fisher gate.</strong> Inversion used to run with
           <code>allow_singular=True</code>, which quietly accepted Fisher matrices with
           condition number $\kappa &gt; 10^{14}$ — in float64 that leaves fewer than two
@@ -488,21 +504,77 @@
       </ul>
     </div>
 
+    <p class="persona-nudge" style="font-size:0.85rem; color:var(--muted);">
+      If you have met Fisher matrices before, the GW stratum below is where the
+      14-parameter version lives &mdash; or flip the topbar to
+      <em>Reading as: Tomas</em> and every such fold opens for the rest of the book.
+    </p>
+    <details class="gw-reader">
+      <summary>&#9656; For the GW reader — the two derivative repairs, in detail</summary>
+      <p>
+        <strong>Stencil order.</strong> The derivatives were originally $O(\varepsilon)$
+        forward differences. They are now the $O(\varepsilon^4)$ five-point stencil
+        Vallisneri (2008) recommends precisely because Fisher matrices are sensitive to
+        derivative error <span class="prov-chip">ledger #2</span> (Phase 10). Verdict as
+        recorded: <em>fixed-and-landed, insufficient alone</em>.
+      </p>
+      <p>
+        <strong>Per-parameter step size.</strong> A single $\varepsilon$ across 14 parameters
+        spanning $10^5\,M_\odot$ and radians is not a step size, it is a coincidence.
+        Per-parameter $\varepsilon$ landed in Phase 37
+        <span class="prov-chip">ledger #13</span>.
+      </p>
+    </details>
+
     <p>
-      That last one is worth a measurement rather than a reassurance. Across all
-      <strong>1590</strong> rows of this run&rsquo;s table, the assembled 3&times;3
-      covariance has condition number median <strong>53.2</strong> and maximum
-      <strong>2813</strong> — comfortable. The 4&times;4 covariance that adds the redshifted
-      mass has median <strong>2.3&times;10<sup>11</sup></strong> and maximum
-      <strong>8.0&times;10<sup>12</sup></strong>, and <strong>zero</strong> rows exceed the
-      inference-side threshold of $10^{16}$
-      (<span class="prov-chip">bayesian_statistics.py:1964, :2443-2444</span>).
+      The gate is worth a measurement rather than a reassurance — and worth measuring on the
+      matrix it actually acts on. The threshold is applied to the <strong>14&times;14</strong>
+      Fisher at simulation time, not to any of the small blocks the inference later derives
+      from it. Since $\Sigma = \Gamma^{-1}$ and both are symmetric positive definite, the two
+      have the <em>same</em> condition number in exact arithmetic, so the stored covariance
+      answers the question directly. Across all <strong>1590</strong> rows of this run&rsquo;s
+      table the 14&times;14 has $\kappa$ median <strong>2.6&times;10<sup>9</sup></strong>,
+      p95 <strong>1.4&times;10<sup>10</sup></strong>, maximum
+      <strong>3.9&times;10<sup>12</sup></strong> — <strong>zero</strong> rows anywhere near
+      the $10^{14}$ gate, and every one of the 1590 matrices positive definite. The
+      reassurance is real. It also has a price tag: float64 carries about sixteen significant
+      digits, and a condition number costs roughly $\log_{10}\kappa$ of them, so the
+      worst-conditioned event in this run has about <strong>3.4</strong> trustworthy digits
+      left in its inverse. Remember that number when §4.1 reports a mass precision to three.
+      <span class="prov-chip real">seed61000 CRB, 1590 rows</span>
+      <span class="prov-chip">parameter_estimation.py:447</span>
     </p>
     <p>
-      The eleven-order-of-magnitude gap between those two condition numbers is not a defect —
-      it is the mass coordinate announcing itself. §4 says why, and Chapter 8 is where it
-      matters <span class="ch06-fwd">⏭ Ch 8</span>.
+      The blocks the inference derives from it are milder, and the gap <em>between</em> them
+      is the interesting part: the 3&times;3 covariance is conditioned at median 53, the
+      4&times;4 that adds the redshifted mass at median $2.3\times10^{11}$ — eleven orders of
+      magnitude apart, with zero rows anywhere near the inference-side threshold either. That
+      gap is not a defect; it is the mass coordinate announcing itself. §4 says why, and
+      Chapter 8 is where it matters <span class="ch06-fwd">⏭ Ch 8</span>.
     </p>
+
+    <details class="num-view">
+      <summary>Show me the conditioning numbers</summary>
+      <p>
+        All 1590 rows of <code>seed61000/prepared_cramer_rao_bounds.csv</code>, recomputed by
+        <code>gen_ch06.py</code>:
+      </p>
+      <div class="table-scroll">
+        <table class="num-table">
+          <tr><th>matrix</th><th>p5</th><th>median</th><th>p95</th><th>max</th><th>gate</th><th>over gate</th></tr>
+          <tr><td>14&times;14 (the stored covariance = the gated Fisher)</td><td>9.5&times;10<sup>8</sup></td><td><strong>2.6&times;10<sup>9</sup></strong></td><td>1.4&times;10<sup>10</sup></td><td>3.9&times;10<sup>12</sup></td><td>10<sup>14</sup> (simulation)</td><td><strong>0</strong></td></tr>
+          <tr><td>3&times;3 fraction block $(\phi,\theta,u)$</td><td>12.0</td><td><strong>53.2</strong></td><td>188</td><td>2813</td><td>10<sup>16</sup> (inference)</td><td><strong>0</strong></td></tr>
+          <tr><td>4&times;4, adding $M_{z,\rm frac}$</td><td>4.0&times;10<sup>10</sup></td><td><strong>2.3&times;10<sup>11</sup></strong></td><td>9.6&times;10<sup>11</sup></td><td>8.0&times;10<sup>12</sup></td><td>10<sup>16</sup> (inference)</td><td><strong>0</strong></td></tr>
+        </table>
+      </div>
+      <p>
+        Every one of the 1590 stored 14&times;14 matrices is positive definite. The
+        simulation-side gate is <code>parameter_estimation.py:447</code>; the inference-side
+        one is <code>bayesian_statistics.py:1964, :2443-2444</code>. The four events I6.1
+        offers sit at $\kappa_{14}$ = 2.8&times;10<sup>9</sup> (889), 1.5&times;10<sup>10</sup>
+        (361), 7.5&times;10<sup>9</sup> (606), 2.6&times;10<sup>9</sup> (555).
+      </p>
+    </details>
 
     <div class="callout defect">
       <span class="callout-label">Trap &mdash; &ldquo;The Cram&eacute;r&ndash;Rao bound is the posterior.&rdquo;</span>
@@ -547,7 +619,7 @@
          \end{pmatrix} . $$
       The mean&rsquo;s third component is <strong>1 by construction</strong>: at the
       maximum-likelihood point the fractional distance <em>is</em> one.
-      <span class="ch06-fwd">code, current tree: <code>bayesian_statistics.py:2389-2409</code> (assembly), <code>:2459</code> (mean)</span>
+      <span class="ch06-fwd" title="current lines :2392-2410 (assembly), :2462 (mean)">code, current tree: <code>bayesian_statistics.py:2389-2409</code> (assembly), <code>:2459</code> (mean)</span>
     </div>
 
     <p>
@@ -639,77 +711,123 @@
     <p>
       <strong>Second: no Jacobian.</strong> The integration variable is <span class="term" data-term="z">$z$</span> (dimensionless),
       the Gaussian is parameterized in $u$ (dimensionless), and the change of variables from
-      $d_L$ to $u$ is already absorbed into $\Sigma$ — which is why no $dd_L/dz$ appears in
-      the numerator. A spurious factor of this kind was found and removed in Phase 15
-      <span class="prov-chip">ledger #5</span>; a <em>different</em> proposed Jacobian, the
-      &ldquo;missing $dd_L/dz$&rdquo; in the catalogue term, was
-      <span class="badge refuted">REFUTED</span> on sign grounds
-      <span class="prov-chip">H0R:1010</span>. Both belong to the same lesson: in these
-      coordinates the GW factor is a <em>likelihood evaluated at</em> $d_L(z;h)$, not a
-      density in $z$, so it carries no measure of its own.
+      $d_L$ to $u$ is already absorbed into $\Sigma$ — so no $dd_L/dz$ appears in the
+      numerator. In these coordinates the GW factor is a <em>likelihood evaluated at</em>
+      $d_L(z;h)$, not a density in $z$: it carries no measure of its own. Two entries in the
+      project&rsquo;s ledger are that one sentence, learned the hard way; they are in the fold
+      below <span class="ch06-fwd">ledger #5 · H0R:1010</span>.
     </p>
 
     <h3>4.1 The fourth coordinate, and why it is nearly degenerate</h3>
 
     <p>
-      The mass channel adds a fourth: <span class="term" data-term="Mz">$M_{z,\rm frac} = M_z/\hat M_z$</span>, the fractional
-      redshifted mass, with mean 1 for the same reason. The 4&times;4 Gaussian then splits
-      exactly, by the standard multivariate-normal conditioning identity:
+      The mass channel adds a fourth coordinate: <span class="term" data-term="Mz">$M_{z,\rm frac} = M_z/\hat M_z$</span>, the
+      fractional redshifted mass, with mean 1 for the same reason. What matters here is that
+      the 4&times;4 Gaussian then splits <em>exactly</em>, by the standard multivariate-normal
+      conditioning identity: the 3D marginal of the 4D Gaussian <strong>is</strong> the 3D
+      likelihood, and everything the mass adds is one conditional Gaussian sitting beside it.
+      The two channels share a numerator factor exactly, not approximately — the algebra is
+      in the fold below.
     </p>
-
-    <div class="voice-derivation">
-      <span class="voice-label">Conditional decomposition
-        <span class="badge ratified">RATIFIED</span>
-        <span class="prov-chip">dark_siren_likelihood.md §9.1</span>
-        <span class="prov-chip">Bishop 2006, PRML Eqs. 2.81–2.82</span>
-        <span class="prov-chip">bayesian_statistics.py:2492-2510</span>
-      </span>
-      Partition $\Sigma_{4\times4}$ into the observed block
-      $\Sigma_{\rm obs} = \Sigma[0{:}3,0{:}3]$, the cross vector
-      $c = \Sigma[0{:}3,3]$ and $\sigma_{M_z}^2 = \Sigma[3,3]$. Then
-      $$ p^{(4D)}(x_{\rm obs}, M_{z,\rm frac})
-         = \underbrace{\mathcal N(x_{\rm obs};\mu_{\rm obs},\Sigma_{\rm obs})}_{\text{= exactly the 3D likelihood}}
-         \cdot\ \mathcal N\bigl(M_{z,\rm frac};\ \mu_{\rm cond},\ \sigma^2_{\rm cond}\bigr), $$
-      $$ \mu_{\rm cond} = 1 + c^{\mathsf T}\Sigma_{\rm obs}^{-1}(x_{\rm obs}-\mu_{\rm obs}),
-         \qquad
-         \sigma^2_{\rm cond} = \sigma_{M_z}^2 - c^{\mathsf T}\Sigma_{\rm obs}^{-1} c . $$
-      The 3D marginal of the 4D Gaussian <em>is</em> the 3D likelihood — the marginal
-      covariance of a multivariate normal is just the submatrix — so the two channels share
-      a numerator factor exactly, not approximately.
-    </div>
 
     <p>
       For event 889 the numbers are:
       $\sigma_{M_z}/M_z = 1.36\times10^{-9}$ before conditioning and
       $\sigma_{\rm cond} = 1.19\times10^{-9}$ after — knowing the sky position and distance
-      buys 13% on the mass. And there is the source of that $10^{11}$ condition number: the
-      4&times;4 covariance mixes a coordinate of width $\sim10^{-3}$ with one of width
+      buys 13% on the mass. And there is the source of that $10^{11}$ condition number in the
+      4&times;4: it mixes a coordinate of width $\sim10^{-3}$ with one of width
       $\sim10^{-9}$, and the condition number of a matrix is roughly the square of that
-      dynamic range. The redshifted mass is measured <em>absurdly</em> well; whether that
-      helps is Chapter 8&rsquo;s subject, and its answer is not the obvious one
-      <span class="ch06-fwd">⏭ Ch 8</span>.
+      dynamic range.
     </p>
 
-    <div class="ch06-flag">
-      <span class="ch06-flag-label">Flag raised by this chapter — a unit, not a value</span>
-      The build spec carries EMRI-889&rsquo;s distance precision as
-      &ldquo;$\sigma_{d_L}/d_L = 8.0\times10^{-5}$&rdquo;. The Cram&eacute;r&ndash;Rao row
-      gives $\sigma_{d_L} = 7.984\times10^{-5}$ <strong>Gpc</strong> at
-      $d_L = 0.0888792$ Gpc, so as a <em>fraction</em> it is
-      $\boldsymbol{8.98\times10^{-4}}$. The two are the same measurement in different units;
-      $8.0\times10^{-5}$ is the absolute error in Gpc wearing a fractional label. This page
-      prints both and reconciles neither on the spec&rsquo;s behalf. Two independent checks
-      agree on which one is the fraction. F6.1 above: $\sigma_u\rho \approx 1.04$ predicts
-      $7.3\times10^{-4}$ at 889&rsquo;s $\rho = 1424.7$ — consistent with
-      $8.98\times10^{-4}$, and inconsistent with $8.0\times10^{-5}$, which would need
-      $\rho \approx 13{,}000$. And the project&rsquo;s own idealized readout builds its error
-      budget from &ldquo;$\sigma_{H_0}/H_0 \approx$ <strong>0.38%</strong> $/\sqrt{76}$&rdquo;,
-      so it too treats the per-event GW distance precision of the information-carrying hosts
-      as of order $10^{-3}$; measured here, those 76 rows have median
-      $\sigma_{d_L}/d_L = 5.3\times10^{-3}$.
-      <span class="prov-chip">IDEALIZED_BASELINE_READOUT.md:47-48</span>
-      <span class="prov-chip">book/design/flags/ch06_FLAGS.md F-ch06-1</span>
-    </div>
+    <p>
+      The redshifted mass is measured <em>absurdly</em> well — and &ldquo;absurdly&rdquo; is a
+      word this chapter should price rather than admire. The population median
+      $(\sigma_{M_z}/M_z)\,\rho = 2.57\times10^{-6}$ implies
+      $1.3\times10^{-7}$ at the detection threshold $\rho = 20$. Published EMRI Fisher
+      forecasts — Babak et al. (2017), the same paper this book takes its population model
+      and its SNR-20 horizon from — quote fractional redshifted-mass precisions of order
+      $10^{-5}$&ndash;$10^{-6}$ at comparable SNR. This run is therefore
+      <strong>roughly 8 to 80 times better than the published range</strong>. That is a gap
+      worth naming out loud: it could be the AK-vs-numerical-derivative difference, the
+      mission baseline, or the familiar optimism of a high-SNR Fisher approximation. It is
+      <strong>not tested here</strong>, and nothing in this book leans on it — Chapter
+      8&rsquo;s result turns on what the mass channel <em>does to the sum</em>, not on how
+      narrow it is, and its answer is not the obvious one
+      <span class="ch06-fwd">⏭ Ch 8</span>.
+      <span class="prov-chip real">seed61000 CRB, 1590 rows</span>
+      <span class="prov-chip">Babak et al. 2017, arXiv:1703.09722</span>
+    </p>
+
+    <details class="gw-reader">
+      <summary>&#9656; For the GW reader — the conditional decomposition, written out</summary>
+      <div class="voice-derivation">
+        <span class="voice-label">Conditional decomposition
+          <span class="badge ratified">RATIFIED</span>
+          <span class="prov-chip">dark_siren_likelihood.md §9.1</span>
+          <span class="prov-chip">Bishop 2006, PRML Eqs. 2.81–2.82</span>
+          <span class="prov-chip" title="current lines :2494-2510">bayesian_statistics.py:2492-2510</span>
+        </span>
+        Partition $\Sigma_{4\times4}$ into the observed block
+        $\Sigma_{\rm obs} = \Sigma[0{:}3,0{:}3]$, the cross vector
+        $c = \Sigma[0{:}3,3]$ and $\sigma_{M_z}^2 = \Sigma[3,3]$. Then
+        $$ p^{(4D)}(x_{\rm obs}, M_{z,\rm frac})
+           = \underbrace{\mathcal N(x_{\rm obs};\mu_{\rm obs},\Sigma_{\rm obs})}_{\text{= exactly the 3D likelihood}}
+           \cdot\ \mathcal N\bigl(M_{z,\rm frac};\ \mu_{\rm cond},\ \sigma^2_{\rm cond}\bigr), $$
+        $$ \mu_{\rm cond} = 1 + c^{\mathsf T}\Sigma_{\rm obs}^{-1}(x_{\rm obs}-\mu_{\rm obs}),
+           \qquad
+           \sigma^2_{\rm cond} = \sigma_{M_z}^2 - c^{\mathsf T}\Sigma_{\rm obs}^{-1} c . $$
+        The marginal covariance of a multivariate normal is just the submatrix, which is why
+        the 3D marginal is the 3D likelihood on the nose. 889&rsquo;s projection vector is
+        $c^{\mathsf T}\Sigma_{\rm obs}^{-1} = (-5.48\times10^{-6},\ 7.62\times10^{-7},\
+        -3.02\times10^{-9})$: the mass coordinate barely listens to the other three, which is
+        the same near-degeneracy the condition number reports.
+      </div>
+    </details>
+
+    <p class="ch06-note">
+      <strong>Erratum:</strong> the spec card carried
+      $\sigma_{d_L}/d_L = 8.0\times10^{-5}$ — that is the absolute $\sigma_{d_L}$ in Gpc under
+      a fractional label. Corrected book-wide 2026-07-31; record: ch01 flag F1 /
+      BUILD_REPORT &sect;5.1 item 1. This chapter is where it was caught, and the catch is
+      worth more than the correction, because nobody proofread the label. <strong>Two
+      independent order-of-magnitude checks</strong> did the work: F6.1&rsquo;s
+      $\sigma_u\rho \approx 1.04$ predicts $7.3\times10^{-4}$ for 889 — the discarded reading
+      would have needed $\rho \approx 13{,}000$ against a measured $\rho = 1424.7$ — and the
+      project&rsquo;s own idealized readout independently prices the same 76 hosts at
+      $\sigma_{H_0}/H_0 \approx 0.38\%/\sqrt{76}$, i.e. a per-event fractional distance error
+      of order $10^{-3}$. Both land two orders of magnitude away from the discarded reading.
+      A <em>discriminating</em> check is one whose two answers differ by more than the thing
+      you are unsure about; these differed by eleven
+      <span class="prov-chip">ch06_FLAGS.md F-ch06-1</span>.
+    </p>
+
+    <details class="num-view">
+      <summary>How the slip was caught — the two checks, and why either one was enough</summary>
+      <p>
+        The Cram&eacute;r&ndash;Rao row gives $\sigma_{d_L} = 7.984\times10^{-5}$
+        <strong>Gpc</strong> at $d_L = 0.0888792$ Gpc, so as a <em>fraction</em> it is
+        $\boldsymbol{8.98\times10^{-4}}$: the same measurement, 11.25 times apart because one
+        of the two readings is carrying a hidden Gpc. Neither check below needed that
+        division — each independently said which reading was the fraction.
+      </p>
+      <p>
+        <strong>Check 1 — F6.1, on this page.</strong> $\sigma_u\rho$ has median 1.040 across
+        all 1590 events, so the fractional distance error is $\approx 1/\rho$. At 889&rsquo;s
+        $\rho = 1424.7$ that predicts $7.3\times10^{-4}$. The discarded reading would have
+        required $\rho \approx 13{,}000$ — and $\rho = 1424.7$ <em>is</em> the loudest event
+        in the run.
+      </p>
+      <p>
+        <strong>Check 2 — the project&rsquo;s own idealized readout.</strong> It builds its
+        error budget from &ldquo;$\sigma_{H_0}/H_0 \approx$ 0.38% $/\sqrt{76}$&rdquo;, i.e. it
+        treats the per-event GW distance precision of the 76 information-carrying hosts as of
+        order $10^{-3}$; measured here, those 76 rows have median
+        $\sigma_{d_L}/d_L = 5.3\times10^{-3}$. All three figures are of order $10^{-3}$. None
+        is of order $10^{-5}$.
+        <span class="prov-chip" title="current lines :59-60">IDEALIZED_BASELINE_READOUT.md:47-48</span>
+      </p>
+    </details>
 
     <!-- ============ I6.1 ============ -->
     <div class="widget" id="ch06-i61">
@@ -759,32 +877,40 @@
       </div>
 
       <p class="ch06-note">
-        <strong>What is real and what is rescaled.</strong> The covariance, the sky position,
-        the search radius, the redshift window and every galaxy plotted are measured — the
-        first four from the run&rsquo;s own Cram&eacute;r&ndash;Rao row, the last from the
-        GLADE+ reduced catalogue, put through the production pipeline (stellar&rarr;BH mass
-        relation, equatorial&rarr;ecliptic rotation, mass/redshift prune). Moving the
-        $\rho$ slider away from an event&rsquo;s <em>own</em> measured SNR is a
-        <strong>counterfactual</strong>: it rescales the whole covariance by
-        $(\rho_{\rm ref}/\rho)^2$, which is exact for an amplitude-only change (moving the
-        same source nearer or further scales every waveform derivative by the same factor, so
-        $\Gamma \propto \rho^2$) and is the same licence the $p_{\rm det}$ horizon estimator
-        uses <span class="ch06-fwd">⏭ Ch 4</span>. F6.1 bounds it: exact to ~30% for
-        $\sigma_u$, only indicative for the sky widths. Each event opens at its own measured
-        SNR, marked on the slider.
+        <strong>Every event opens at its own measured SNR</strong>, marked on the slider.
+        Moving the $\rho$ slider away from it is a <strong>counterfactual</strong>, not a
+        second measurement — and F6.1 above is what bounds it: the rescaling is
+        <strong>exact to ~30% for $\sigma_u$, only indicative for the sky widths</strong>.
+        That is the whole reason F6.1 comes first.
       </p>
-      <p class="ch06-note">
-        <strong>Which catalogue.</strong> The committed baseline
-        <code>reduced_galaxy_catalogue.csv</code>, which differs from the campaign-#53
-        realization parent in exactly one column, <code>z_error</code>, so it is licensed for
-        positions and redshifts but is <em>not</em> the production candidate list
-        <span class="prov-chip">BOOK_DESIGN §4.2 rule 5</span>. The host galaxy is not marked:
-        <code>host_galaxy_index</code> is a positional label in the <em>pruned observed</em>
-        frame, and the prune runs on scattered columns, so the index spaces differ and a
-        naively drawn marker would point at the wrong galaxy
-        <span class="prov-chip">sources map §7.12</span>. Counts are exact over a 4.5&deg;
-        cone; the plotted scatter is the nearest 2000 galaxies.
-      </p>
+
+      <details class="num-view">
+        <summary>Provenance — what is real, what is rescaled, and which catalogue</summary>
+        <p>
+          <strong>What is real and what is rescaled.</strong> The covariance, the sky position,
+          the search radius, the redshift window and every galaxy plotted are measured — the
+          first four from the run&rsquo;s own Cram&eacute;r&ndash;Rao row, the last from the
+          GLADE+ reduced catalogue, put through the production pipeline (stellar&rarr;BH mass
+          relation, equatorial&rarr;ecliptic rotation, mass/redshift prune). The slider
+          rescales the whole covariance by $(\rho_{\rm ref}/\rho)^2$, which is exact for an
+          amplitude-only change (moving the same source nearer or further scales every
+          waveform derivative by the same factor, so $\Gamma \propto \rho^2$) and is the same
+          licence the $p_{\rm det}$ horizon estimator uses
+          <span class="ch06-fwd">⏭ Ch 4</span>.
+        </p>
+        <p>
+          <strong>Which catalogue.</strong> The committed baseline
+          <code>reduced_galaxy_catalogue.csv</code>, which differs from the campaign-#53
+          realization parent in exactly one column, <code>z_error</code>, so it is licensed
+          for positions and redshifts but is <em>not</em> the production candidate list
+          <span class="prov-chip">BOOK_DESIGN §4.2 rule 5</span>. The host galaxy is not
+          marked: <code>host_galaxy_index</code> is a positional label in the <em>pruned
+          observed</em> frame, and the prune runs on scattered columns, so the index spaces
+          differ and a naively drawn marker would point at the wrong galaxy
+          <span class="prov-chip">sources map §7.12</span>. Counts are exact over a
+          4.5&deg; cone; the plotted scatter is the nearest 2000 galaxies.
+        </p>
+      </details>
 
       <details class="num-view">
         <summary>Show me the numbers</summary>
@@ -833,6 +959,32 @@
       $|r_{\theta\phi}| &gt; 0.3$, with a maximum of 0.982.
     </div>
 
+    <div class="callout defect">
+      <span class="callout-label">Trap 6.A &mdash; &ldquo;Sky localization and distance are separate measurements.&rdquo;</span>
+      <p style="margin:0.3rem 0 0;">
+        They are correlated through the antenna pattern, and the correlation sits in the
+        off-diagonals of the stored 3&times;3 covariance. Factorizing them mis-weights the
+        candidate galaxies — measured just above on event 361: 35% of the candidate weight
+        moves, and the top-weighted candidate changes.
+      </p>
+      <p style="margin:0.5rem 0 0;">
+        <strong>But measure before you generalize, including here.</strong> Across all 1590
+        events the sky&harr;sky correlation is the large one — median $|r_{\theta\phi}| =
+        0.260$, 43.0% of events above 0.3, maximum 0.982 — while the sky&harr;distance
+        correlation is real but modest: median 0.041, p95 0.207, maximum 0.703. And the
+        tempting extra clause, <em>&ldquo;worst for the loud events&rdquo;</em>, is
+        <strong>not what this run says</strong>: the Spearman rank correlation of
+        sky&harr;distance correlation against SNR is <strong>&minus;0.019</strong>, the
+        SNR-quartile medians are flat (0.045 / 0.039 / 0.040 / 0.041), and event 889, the
+        loudest in the run, sits <em>below</em> the population median. What the run does
+        support is the other half: the in-catalogue events carry a higher sky&harr;distance
+        correlation than the dark ones (median 0.058 vs 0.041), so the correlation is worst
+        exactly where the catalogue term has something to say.
+        <span class="prov-chip real">seed61000 CRB, 1590 rows</span>
+        <span class="prov-chip">ch06_FLAGS.md F-ch06-3</span>
+      </p>
+    </div>
+
     <details class="gw-reader">
       <summary>&#9656; For the GW reader — search radius, redshift window, and the measure question</summary>
       <p>
@@ -841,10 +993,18 @@
         $n_\sigma\sqrt{\lambda_{\max}(J\Sigma_{\rm sky}J^{\mathsf T})}$ with
         $J = \mathrm{diag}(|\sin\theta|, 1)$ rescaling the azimuthal standard deviation to a
         great-circle length ($ds^2 = d\theta^2 + \sin^2\theta\,d\phi^2$). Production passes
-        $n_\sigma = 1.5$ <span class="prov-chip">handler.py:575-578</span>
-        <span class="prov-chip">bayesian_statistics.py:2820</span>. This chapter reproduces
-        that exactly. The 1D channel then applies the redshift window only; the 2D channel
-        adds a mass window on top <span class="prov-chip">handler.py:584-592 vs :594-603</span>
+        $n_\sigma = 1.5$, explicitly, at the one and only ball-search call site
+        <span class="prov-chip" title="current lines :610-617">handler.py:575-578</span>
+        <span class="prov-chip">bayesian_statistics.py:2838</span>. This chapter reproduces
+        that exactly. Note the trap, because it caught this book once: the
+        <em>signature default</em> of <code>get_possible_hosts_from_ball_tree</code> is
+        $n_\sigma = 2$ (<span class="prov-chip">handler.py:568</span>) and production never
+        uses it, while a <em>different</em> multiplier of 2.0 sits fifteen lines above at
+        <code>:2823</code> — parameterizing the redshift window, not the ball. Chapter 3&rsquo;s
+        census was measured at the signature default until 2026-07-31 and has been
+        regenerated <span class="prov-chip">ch03_FLAGS.md F-ch03-2</span>.
+        The 1D channel then applies the redshift window only; the 2D channel
+        adds a mass window on top <span class="prov-chip" title="current lines :623-632 (z window) vs :634-644 (mass window)">handler.py:584-592 vs :594-603</span>
         — a structural asymmetry that is load-bearing later
         <span class="ch06-fwd">⏭ Ch 8</span>.
       </p>
@@ -855,7 +1015,7 @@
         <code>sigma_multiplier</code> argument that its body never uses — both bounds
         hardcode $3\sigma$ <span class="prov-chip">physical_relations.py:546-567</span> —
         so production&rsquo;s <code>sigma_multiplier=2.0</code>
-        (<span class="prov-chip">bayesian_statistics.py:2805</span>) has no effect and the
+        (<span class="prov-chip">bayesian_statistics.py:2823</span>) has no effect and the
         window is always $\pm3\sigma_{d_L}$. This is conservative, not wrong: the window
         bounds <em>which galaxies enter the sum</em>, and the weighting inside it is done by
         the Gaussian, not by the window. This chapter calls the production function and
@@ -875,6 +1035,16 @@
         was a real, landed fix worth a median $1.15\times$ per-event over-weighting
         <span class="prov-chip">ledger #46</span> <span class="prov-chip">commit 4a259b7</span>
         <span class="ch06-fwd">⏭ Ch 5</span>.
+      </p>
+      <p>
+        <strong>The two Jacobian entries §4 defers here.</strong> A spurious $/(1+z)$ factor
+        in the with-BH-mass numerator was found and removed in Phase 15
+        <span class="prov-chip">ledger #5</span>. Separately, a <em>proposed</em> Jacobian —
+        the &ldquo;missing $dd_L/dz$&rdquo; in the catalogue term — was
+        <span class="badge refuted">REFUTED</span> on sign grounds
+        <span class="prov-chip">H0R:1010</span>. One was a real factor that should not have
+        been there; the other was an imagined factor that should not have been added. Both
+        are the same lesson about what the GW factor is a density in.
       </p>
       <p>
         <strong>The candidate weights shown.</strong> The GW factor alone,
@@ -912,15 +1082,10 @@
       Catalogue ingestion stored equatorial coordinates while the EMRI sky angles were
       ecliptic. A 23.4&deg; systematic offset against a 1.76&deg; ball does not add noise; it
       puts the ball somewhere else. About 15 of 60 events landed on spurious near-host
-      matches and most of the rest found no possible hosts at all. The repair had two
-      surfaces — rotating the catalogue at ingestion (Phase 36, <code>b460297</code>, with a
-      polar-correct BallTree embedding and an eigenvalue search radius) and separately
-      rotating the <em>cached</em> 14&times;14 covariances that had been computed before it
-      (Phase 43-H2, <code>ab4bc80</code>). Measured: host recovery
-      <strong>31 &rarr; 38 of 60</strong>, &ldquo;no possible hosts&rdquo;
+      matches and most of the rest found no possible hosts at all. Measured after the repair:
+      host recovery <strong>31 &rarr; 38 of 60</strong>, &ldquo;no possible hosts&rdquo;
       <strong>10 &rarr; 1</strong>, a 5.4&sigma; sky anisotropy in the Q3 quartile
-      &rarr; 0&sigma;, and the second surface alone moved the MAP
-      <strong>0.860 &rarr; 0.730</strong>.
+      &rarr; 0&sigma;, and the MAP <strong>0.860 &rarr; 0.730</strong>.
     </div>
 
     <p>
@@ -950,16 +1115,36 @@
       <strong>non-cause</strong>. That covariance was already natively ecliptic, the
       migration script had deliberately not been run on it, and <strong>rotating it would
       have double-rotated</strong> — introducing the very defect the fix was meant to remove.
-      <br /><br />
-      Venue scope, stated as the project states it: #12 is a defect of the pre-Phase-36
-      cached CRBs; #27 is an exoneration of the <code>seed400</code>-era ones. Neither
-      transfers. The tables this book uses carry an explicit frame stamp in two columns,
-      <code>_coord_frame</code> and <code>_cov_frame</code>, and
-      <code>Detection.__init__</code> <strong>refuses to load a row without them</strong>;
-      both read <code>ecliptic_BarycentricTrue_J2000</code> for every one of the 1590 rows
-      here. The lesson the project drew is written into the guard&rsquo;s own error message:
-      stamp, do not rotate.
+      Neither verdict transfers to the other&rsquo;s venue, and the project&rsquo;s response
+      was not a better rotation but a <em>stamp</em>: the lesson is written into a guard&rsquo;s
+      error message as <strong>stamp, do not rotate</strong>.
     </div>
+
+    <details class="gw-reader">
+      <summary>&#9656; For the GW reader — the two repair surfaces, and the frame stamp</summary>
+      <p>
+        <strong>Two surfaces, not one.</strong> The #12 repair had to happen twice: once at
+        catalogue ingestion, rotating GLADE+ into the ecliptic (Phase 36,
+        <code>b460297</code>, together with a polar-correct BallTree embedding and an
+        eigenvalue search radius), and again on the <em>cached</em> 14&times;14 covariances
+        that had already been computed in the wrong frame (Phase 43-H2,
+        <code>ab4bc80</code>). The MAP movement quoted above,
+        <strong>0.860 &rarr; 0.730</strong>, is the second surface <em>alone</em>
+        <span class="prov-chip">H0R §3.2</span>.
+      </p>
+      <p>
+        <strong>Venue scope, stated as the project states it.</strong> Ledger #12 is a defect
+        of the pre-Phase-36 cached CRBs; ledger #27 is an exoneration of the
+        <code>seed400</code>-era ones. Neither transfers.
+      </p>
+      <p>
+        <strong>The stamp.</strong> The tables this book uses carry an explicit frame stamp in
+        two columns, <code>_coord_frame</code> and <code>_cov_frame</code>, and
+        <code>Detection.__init__</code> <strong>refuses to load a row without them</strong>;
+        both read <code>ecliptic_BarycentricTrue_J2000</code> for every one of the 1590 rows
+        here.
+      </p>
+    </details>
 
     <p>
       Two stories, then, in one chapter, about the same object. A constant that multiplied
@@ -972,13 +1157,13 @@
     <div class="dossier">
       <div class="dossier-title">Event dossier — EMRI-889 after this chapter</div>
       <table>
-        <tr><td>d_L</td><td>88.879 Mpc</td></tr>
+        <tr><td>d_L</td><td>88.9 Mpc &middot; &sigma;_dL/d_L = 8.98&times;10&#8315;&#8308;</td></tr>
         <tr><td>SNR</td><td>1424.7 — the loudest of the 1590 rows in this run&rsquo;s table</td></tr>
         <tr><td>host</td><td>catalogue index 859360 — one of only 76 events with a catalogued host</td></tr>
         <tr><td>z</td><td><em>still unknown</em></td></tr>
         <tr><td>detection horizon</td><td>6.33 Gpc</td></tr>
-        <tr class="dossier-new"><td>distance precision</td><td>&sigma;_dL = 8.0&times;10<sup>&minus;5</sup> <strong>Gpc</strong> = 0.0798 Mpc &nbsp;&rarr;&nbsp; as a fraction, &sigma;_dL/d_L = <strong>9.0&times;10<sup>&minus;4</sup></strong> (see the flag in §4)</td></tr>
-        <tr class="dossier-new"><td>sky ellipse</td><td>&Delta;&Omega; = 1.00&times;10<sup>&minus;7</sup> sr = 3.29&times;10<sup>&minus;4</sup> deg² = <strong>1.19 arcmin²</strong></td></tr>
+        <tr class="dossier-new"><td>distance precision</td><td>&sigma;_dL = 7.98&times;10<sup>&minus;5</sup> Gpc = 0.0798 Mpc, i.e. a fraction of <strong>8.98&times;10<sup>&minus;4</sup></strong> — nine parts in ten thousand (erratum in §4)</td></tr>
+        <tr class="dossier-new"><td>sky ellipse</td><td>&Delta;&Omega; = 1.00&times;10<sup>&minus;7</sup> sr = 3.29&times;10<sup>&minus;4</sup> deg² = <strong>1.19 arcmin²</strong> (the localization <em>ellipse</em>; Ch 3&rsquo;s 5.00&times;10<sup>&minus;4</sup> deg² is the search <em>disc</em>)</td></tr>
         <tr class="dossier-new"><td>correlations</td><td>r(&theta;,&phi;) = +0.212 · r(&phi;,u) = &minus;0.015 · r(&theta;,u) = &minus;0.031 — sky&ndash;sky matters here, sky&ndash;distance barely</td></tr>
         <tr class="dossier-new"><td>redshifted mass</td><td>&sigma;_Mz/M_z = 1.36&times;10<sup>&minus;9</sup>; conditioning on (&phi;, &theta;, u) buys 13% &rarr; 1.19&times;10<sup>&minus;9</sup></td></tr>
         <tr class="dossier-new"><td>its candidate ball</td><td><strong>2 galaxies</strong>, both inside z &isin; [0.0175, 0.0251]; effective number of candidates 1.0</td></tr>
@@ -992,7 +1177,8 @@
     <p>
       Take stock. EMRI-889&rsquo;s distance is known to nine parts in ten thousand. Its sky
       position is pinned to about a square arcminute. Its detector-frame mass is known to
-      nine significant figures. Two galaxies are inside its ball. By any standard of
+      nine significant figures — a claim &sect;4.1 prices against the published forecasts
+      and does not entirely believe. Two galaxies are inside its ball. By any standard of
       gravitational-wave astronomy this is an extraordinarily well-measured event, and the
       instrument that measured it is now fully specified: an inner product, a Fisher matrix,
       an inverse, three fraction coordinates, and a frame stamp.
@@ -1001,7 +1187,7 @@
       Now put a number next to it. The catalogue redshift of a host galaxy — the other half
       of every term in the sum — is known, for the events that carry this run&rsquo;s
       information, to a median fractional precision of about
-      <strong>49%</strong> <span class="prov-chip">IDEALIZED_BASELINE_READOUT.md:50-52</span>.
+      <strong>49%</strong> <span class="prov-chip" title="current lines :64-66">IDEALIZED_BASELINE_READOUT.md:50-52</span>.
     </p>
 
     <div class="callout without">
@@ -1057,7 +1243,7 @@
           stored CRB reusable and the Gaussian approximation better behaved. It also means
           the mean of the fractional coordinate is exactly 1 by construction, which is why
           the code&rsquo;s mean vector is $(\hat\phi,\hat\theta,1)$
-          <span class="prov-chip">bayesian_statistics.py:2459</span>. Note the honest
+          <span class="prov-chip" title="current line :2462">bayesian_statistics.py:2459</span>. Note the honest
           limit: the <em>sky</em> widths do not collapse this way (spread 5.4 and 9.2), so
           &ldquo;fraction coordinates make everything SNR-set&rdquo; would be the wrong
           generalization.
@@ -1117,41 +1303,49 @@
 
     <div class="selfcheck">
       <p>Q6.5 <em>(transfer)</em> &nbsp; You now have a well-characterized ellipsoid. For
-      EMRI-889 the distance shell is thin to 8&times;10<sup>&minus;5</sup>. Yet the book is
-      about to claim the redshift is the dominant error. Estimate the redshift precision
-      implied by a catalogue photo-z at $\sigma_z/z \approx 49\%$ and compare.</p>
+      EMRI-889 the distance shell is thin to 8&times;10<sup>&minus;5</sup>.<sup>&dagger;</sup>
+      Yet the book is about to claim the redshift is the dominant error. Estimate the redshift
+      precision implied by a catalogue photo-z at $\sigma_z/z \approx 49\%$ and compare.</p>
+      <p style="font-size:0.82rem; color:var(--muted); margin:-0.4rem 0 0.6rem;">
+        &dagger; the units in this question are the point — see the answer.
+      </p>
       <details class="answer">
         <summary>Show answer</summary>
         <div class="answer-body">
           <p>
-            First, fix the units in the question — this is the flag §4 raises, and working
-            through it <em>is</em> the answer. &ldquo;8&times;10<sup>&minus;5</sup>&rdquo; is
-            889&rsquo;s $\sigma_{d_L}$ in <strong>Gpc</strong> (7.984&times;10<sup>&minus;5</sup>
-            Gpc = 0.0798 Mpc). Divided by its $d_L = 0.0888792$ Gpc, the
+            First, fix the units in the question — that is what the dagger is for, and
+            working through it <em>is</em> the answer. The
+            &ldquo;8&times;10<sup>&minus;5</sup>&rdquo; in the stem is 889&rsquo;s
+            $\sigma_{d_L}$ in <strong>Gpc</strong> (7.984&times;10<sup>&minus;5</sup>
+            Gpc = 0.0798 Mpc), not a fraction. Divided by its $d_L = 0.0888792$ Gpc, the
             <em>fractional</em> distance error is
             $\sigma_{d_L}/d_L = \boldsymbol{8.98\times10^{-4}}$, i.e. 0.0898%
-            <span class="prov-chip real">seed61000 CRB row 889</span>.
+            <span class="prov-chip real">seed61000 CRB row 889</span>. That is the erratum
+            §4 records: the book&rsquo;s own spec card had carried the Gpc figure under a
+            fractional label, and the chapter caught it with an order-of-magnitude check,
+            not with a proofread.
           </p>
           <p>
             Now the comparison. At low redshift $H_0 \simeq cz/d_L$, so the fractional error
             in $H_0$ inherited from each side is just that side&rsquo;s fractional error:
             <strong>0.0898% from the distance, 49% from the redshift</strong>. The ratio is
-            <strong>&asymp;550&times;</strong>. (With the mislabelled
-            8&times;10<sup>&minus;5</sup> read as a fraction you get &asymp;6000&times;;
-            both figures deliver the same verdict, and neither is close.) The
-            gravitational-wave measurement is, for these events, effectively exact and the
-            catalogue is effectively unmeasured. Everything from here on is about handling a
-            wide, badly-known redshift correctly — and Chapter 7 shows that the <em>naive</em>
+            <strong>&asymp;550&times;</strong>. (The &ldquo;&asymp;6000&times;&rdquo; retired by the
+            erratum above is exactly what you get by reading that
+            Gpc figure as a fraction — an eleven-fold slip that does not change the verdict,
+            which is the only reason it survived as long as it did.) The gravitational-wave
+            measurement is, for these events, effectively exact and the catalogue is
+            effectively unmeasured. Everything from here on is about handling a wide,
+            badly-known redshift correctly — and Chapter 7 shows that the <em>naive</em>
             handling does not merely widen the answer, it moves it.
             <span class="prov-chip">ch06_FLAGS.md F-ch06-1, F-ch06-2</span>
-            <span class="prov-chip">IDEALIZED_BASELINE_READOUT.md:50-52</span>
+            <span class="prov-chip" title="current lines :64-66">IDEALIZED_BASELINE_READOUT.md:50-52</span>
           </p>
           <p>
-            One more reason to trust the corrected arithmetic rather than the label: the
+            One more reason to trust the arithmetic rather than the label: the
             project's own idealized readout, computing the same budget for the 76
             information-carrying hosts, writes it as
             &ldquo;$\sigma_{H_0}/H_0 \approx 0.38\%\,/\sqrt{76} = 0.044\%$&rdquo;
-            <span class="prov-chip">IDEALIZED_BASELINE_READOUT.md:47-48</span>. That
+            <span class="prov-chip" title="current lines :59-60">IDEALIZED_BASELINE_READOUT.md:47-48</span>. That
             0.38% is a per-event <em>fractional distance</em> error of order
             $10^{-3}$, arrived at independently — and the 76 rows measure a median of
             $5.3\times10^{-3}$.
@@ -1160,47 +1354,19 @@
       </details>
     </div>
 
-    <!-- ===================== TRAPS ===================== -->
-    <div class="callout defect">
-      <span class="callout-label">Trap 6.A &mdash; &ldquo;Sky localization and distance are separate measurements.&rdquo;</span>
-      <p style="margin:0.3rem 0 0;">
-        They are correlated through the antenna pattern, and the correlation sits in the
-        off-diagonals of the stored 3&times;3 covariance. Factorizing them mis-weights the
-        candidate galaxies — measured above on event 361: 35% of the candidate weight moves,
-        and the top-weighted candidate changes.
-      </p>
-      <p style="margin:0.5rem 0 0;">
-        <strong>But measure before you generalize, including here.</strong> Across all 1590
-        events the sky&harr;sky correlation is the large one — median $|r_{\theta\phi}| =
-        0.260$, 43.0% of events above 0.3, maximum 0.982 — while the sky&harr;distance
-        correlation is real but modest: median 0.041, p95 0.207, maximum 0.703. And the
-        tempting extra clause, <em>&ldquo;worst for the loud events&rdquo;</em>, is
-        <strong>not what this run says</strong>: the Spearman rank correlation of
-        sky&harr;distance correlation against SNR is <strong>&minus;0.019</strong>, the
-        SNR-quartile medians are flat (0.045 / 0.039 / 0.040 / 0.041), and event 889, the
-        loudest in the run, sits <em>below</em> the population median. What the run does
-        support is the other half: the in-catalogue events carry a higher sky&harr;distance
-        correlation than the dark ones (median 0.058 vs 0.041), so the correlation is worst
-        exactly where the catalogue term has something to say.
-        <span class="prov-chip real">seed61000 CRB, 1590 rows</span>
-        <span class="prov-chip">ch06_FLAGS.md F-ch06-3</span>
-      </p>
-    </div>
-
-    <div class="callout defect">
-      <span class="callout-label">Trap 6.B &mdash; &ldquo;Numerical factors are bookkeeping.&rdquo;</span>
-      $dt^2$. Ten times the SNR. A hundred and sixty-eight times fewer events.
-      <span class="prov-chip">ledger #51</span>
-      <span class="prov-chip real">injection_pool_mix200k_20260728</span>
-    </div>
+    <!-- Traps 6.A and 6.B are no longer parked here: both now fire in-line, in
+         the section that creates the misconception (6.A in §4 after I6.1's
+         measurement, 6.B in §2 after I6.2). REVISION_WORKLIST §C-ch06 [ped-M3]. -->
 
     <!-- ===================== PROVENANCE ===================== -->
     <div class="provenance-panel">
       <h4>Provenance panel — every stamp used in this chapter</h4>
+      <details>
+      <summary>Show all fifteen stamps, with their artifacts, commits and line anchors</summary>
       <ul>
         <li><span class="badge ratified">RATIFIED</span> <code>G8_dt2_inner_product_derivation.md</code> §1–§3 — the inner product, the DFT↔CFT correspondence, evidence lines L1–L5, the three objections; Finn (1992) PRD 46 5236 Eq. 2.3, Cutler &amp; Flanagan (1994) arXiv:gr-qc/9402014 Eq. 2.4</li>
         <li><span class="badge ratified">RATIFIED</span> <code>parameter_estimation.py:335</code> (inner product), <code>:396</code> (the $dt^2$ prefactor), <code>:399</code> ($\Gamma_{ab}$), <code>:430</code> ($\Sigma = \Gamma^{-1}$), <code>:447</code> (the $\kappa &gt; 10^{14}$ gate), <code>:488</code> (SNR); Vallisneri (2008) arXiv:gr-qc/0703086 for the five-point stencil</li>
-        <li><span class="badge ratified">RATIFIED</span> <code>dark_siren_likelihood.md</code> §2.1 (fraction coordinates), §2.4 (where $h$ enters; no $dd_L/dz$), §7.3 (the 4D coordinate), §9.1 (Bishop 2006 PRML Eqs. 2.81–2.82); code <code>bayesian_statistics.py:1856</code>, <code>:2389-2409</code>, <code>:2459</code>, <code>:2492-2510</code>, <code>:3532</code>, <code>:4014</code></li>
+        <li><span class="badge ratified">RATIFIED</span> <code>dark_siren_likelihood.md</code> §2.1 (fraction coordinates), §2.4 (where $h$ enters; no $dd_L/dz$), §7.3 (the 4D coordinate), §9.1 (Bishop 2006 PRML Eqs. 2.81–2.82); code <code>bayesian_statistics.py:1856</code>, <code title="current :2392-2410">:2389-2409</code>, <code title="current :2462">:2459</code>, <code title="current :2494-2510">:2492-2510</code>, <code>:3532</code>, <code>:4014</code></li>
         <li><span class="badge ratified">RATIFIED</span> <code>G2a_completion_sky_marginal_4pi.md</code> §1 — $\Sigma$ as assembled from the CRB, and the Lebesgue-vs-solid-angle measure statement</li>
         <li><span class="badge ratified">RATIFIED</span> <code>LISA_configuration._confusion_noise</code> — Babak et al. (2023) arXiv:2303.15929 Eq. (17)</li>
         <li><span class="badge finding">FINDING</span> <code>ledger #51</code> / <code>G7 row 1</code> / <code>fcc49c4</code> — missing $dt^2$: SNR ×1/10, CRB σ ×10, population depth $z \le 0.11$ instead of $\lesssim 1.5$; en route, <code>49251f3</code> (pre-fix confusion-noise TDI transfer ~10³× deaf below ~1 mHz)</li>
@@ -1212,8 +1378,10 @@
         <li><span class="badge refuted">REFUTED</span> <code>H0R:1010</code> — the catalogue term's "missing $dd_L/dz$ Jacobian": wrong sign; the GW factor is a likelihood at $d_L(z,h)$, so it carries no measure</li>
         <li><span class="badge finding">FINDING</span> <code>ledger #5</code> (Phase 15) — a spurious $/(1+z)$ Jacobian in the with-BH numerator, removed</li>
         <li>Data: <code>results/campaign51_20260728/realistic_20260729/seed61000/prepared_cramer_rao_bounds.csv</code> (1590 rows, 76 in-catalogue, frame-stamped <code>ecliptic_BarycentricTrue_J2000</code>); <code>.../gate_b_20260730/injection_pool_mix200k_20260728/</code> (707 files, 200,100 data rows; stratum a = 99,014 carries the population measure); <code>master_thesis_code/galaxy_catalogue/reduced_galaxy_catalogue.csv</code> (22,641,048 rows; baseline, see §4.2 rule 5)</li>
-        <li>Open flags: <code>book/design/flags/ch06_FLAGS.md</code> — F-ch06-1 (σ_dL unit label, <strong>cross-chapter</strong>), F-ch06-2 (Q6.5's 6000× vs the measured 550×), F-ch06-3 (Trap 6.A's SNR clause not supported), F-ch06-4 (dead <code>sigma_multiplier</code>), F-ch06-5 (Ch 8's $M_z$ precision), F-ch06-6 (two stale line anchors), F-ch06-7 (pool row count, reconfirmed), F-ch06-8 (I6.3 lives in Ch 5)</li>
+        <li><span class="badge ratified">RATIFIED</span> Babak et al. (2017) arXiv:1703.09722 — the EMRI population model behind the injection pool, the SNR-20 horizon used as G8's evidence line L5, and (in §4.1) the published mass-precision forecast this run is priced against</li>
+        <li>Open flags: <code>book/design/flags/ch06_FLAGS.md</code> — F-ch06-1 (σ_dL unit label — <em>resolved 2026-07-31, see the erratum in §4</em>), F-ch06-2 (Q6.5's retired 6000× → the measured 550×; <em>resolved with it</em>), F-ch06-3 (Trap 6.A's SNR clause not supported), F-ch06-4 (dead <code>sigma_multiplier</code>), F-ch06-5 (Ch 8's $M_z$ precision — both values carried, see Ch 8), F-ch06-6 (two stale line anchors), F-ch06-7 (pool row count, reconfirmed), F-ch06-8 (I6.3 lives in Ch 5), F-ch06-9 (the 14×14 conditioning and the Babak plausibility check), F-ch06-10 (this chapter's main-column budget)</li>
       </ul>
+      </details>
     </div>
 
     <p class="book-footer">
@@ -1296,7 +1464,8 @@
     // Bias rail (BW1). Chapter 6 refines the INSTRUMENT, not the
     // estimator: the rail is unchanged from Chapter 5, and the page
     // says so rather than inventing a movement.
-    // Pips are a page-local workaround for WIDGET_REQUESTS R-ch07-1.
+    // R-ch07-1 IMPLEMENTED by the integrator: Book.biasRail takes `pips`
+    // directly; the page-local append workaround is retired (pass 2).
     // ---------------------------------------------------------------
     var PIPS = [
       { tone: "amber", label: "two branches disagree (0.86 / 0.64) — unresolved",
@@ -1304,23 +1473,13 @@
       { tone: "grey", label: "Ch 6 moves nothing: the instrument, not the estimator",
         note: "This chapter characterises the covariance; no estimator term changes." },
     ];
-    (function renderRail() {
-      Book.biasRail({
-        entries: [
-          { label: "cat-only, no D(h)", bias: -0.178, note: "Phase 32 / ledger #9" },
-          { label: "full-volume D(h)", bias: 0.0, note: "Phase 32 / ledger #9", active: true },
-        ],
-      });
-      var host = document.getElementById("bias-rail");
-      if (!host) return;
-      PIPS.forEach(function (p) {
-        var d = document.createElement("div");
-        d.className = "ch06-pip" + (p.tone === "grey" ? " grey" : "");
-        d.title = p.note;
-        d.innerHTML = '<span class="ch06-pip-dot"></span><span>' + p.label + "</span>";
-        host.appendChild(d);
-      });
-    })();
+    Book.biasRail({
+      entries: [
+        { label: "cat-only, no D(h)", bias: -0.178, note: "Phase 32 / ledger #9" },
+        { label: "full-volume D(h)", bias: 0.0, note: "Phase 32 / ledger #9", active: true },
+      ],
+      pips: PIPS,
+    });
 
     // ===============================================================
     // I6.2 — the dt^2 switch

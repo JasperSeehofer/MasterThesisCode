@@ -17,6 +17,12 @@ or, once this repo has its own synced `.venv`:
 Generators are plain modules with a ``main() -> None`` entry point that
 write their own file(s) under ``book/site/data/`` -- read-only with respect
 to the main package and ``results/`` (only ``book/`` is written).
+
+After every generator has run, the content gates in ``qa_gates.py``
+(REVISION_WORKLIST.md §D item 12) are executed against the built site and
+data. They fail the build loudly: a gate hit means a page still asserts
+something the project has since measured otherwise. Run them on their own
+with ``python book/generators/qa_gates.py``.
 """
 
 from __future__ import annotations
@@ -25,6 +31,8 @@ import subprocess
 import sys
 import time
 from pathlib import Path
+
+import qa_gates
 
 GENERATORS_DIR = Path(__file__).resolve().parent
 
@@ -63,8 +71,14 @@ def main() -> None:
             print(f"!!! {name} FAILED with exit code {result.returncode}")
         dt = time.monotonic() - t0
         print(f"--- {name} done in {dt:.2f}s ---\n", flush=True)
+
+    # Content gates run even when a generator failed: their report is the
+    # most useful thing on the screen when the build is red.
+    violations = qa_gates.run()
+
     if failures:
         print(f"FAILED generators: {', '.join(failures)}")
+    if failures or violations:
         raise SystemExit(1)
 
 

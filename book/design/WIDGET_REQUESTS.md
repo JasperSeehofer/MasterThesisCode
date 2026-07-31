@@ -226,3 +226,213 @@ Do NOT block your chapter on a request. Do NOT edit shared files "just this once
   `@media (max-width: 720px)` block `.prov-chip { white-space: normal }` +
   `code, .provenance-panel li { overflow-wrap: anywhere }`.
 - Status: IMPLEMENTED (integrator, 2026-07-31) — `.katex-display { overflow-x: auto }` was already in book.css; the `@media (max-width: 720px)` rules (`.prov-chip { white-space: normal }`, `code, .provenance-panel li { overflow-wrap: anywhere }`) added. ch06's page-local copy is now redundant but harmless and was left in place.
+
+---
+
+# REVISION PASS — integrator pass 1 (wave 0), 2026-07-31
+
+Scope: `REVISION_WORKLIST.md` §D items **1, 2, 3, 6, 7, 12** (the shared-file
+work every other agent depends on). Items 4, 5, 8–11 and `index.html` are
+integrator **pass 2**'s and were deliberately not touched here.
+
+### R-INT-4: Symbol Passport chapter gating (§D-1) — mara MAJOR-2, ped M4, mara MINOR-7
+- Need: shared chrome was defeating the rung-guard that binds every chapter
+  agent. Hovering `w_G` in Ch 5 handed the reader `β_G/D`,
+  "ESTIMAND-DEPENDENT" and "C9 is a live FINDING" — Ch 9's reveal, four
+  chapters early. Same for `σ_z/z` (0.256 on Ch 7's deck, which §6 exists to
+  arrive at), `C` (the C8 walk) and `Σ` (Γ⁻¹ before Ch 6 defines Γ).
+- Status: IMPLEMENTED (integrator pass 1, 2026-07-31) — `Book.SYMBOLS` entries
+  may carry `firstChapter: <n>` + `gloss: "<rung-safe one-liner>"`. Before that
+  chapter `Book.passport._view()` renders the gloss instead of `meaning`,
+  suppresses `note` entirely, strips a trailing claim pointer from `src`
+  (`…py:3309-3311; C9` → `…py:3309-3311`) and adds a "full card from Ch N on"
+  footer. Symbol, units and code site stay unconditional (ped M4's rule). The
+  same gating runs in the pinned-glossary panel, so a symbol pinned in Ch 9
+  cannot re-spoil Ch 9 when the reader pages back. Chapter index comes from the
+  page filename (`ch07-…` → 7), overridable with `<body data-chapter="N">`;
+  `index.html` and `museum.html` are ungated (99) — the annex may say
+  everything.
+- Gated entries: `wG` (9), `eps` (**8**, not 7 — both `data-term="eps"` tags
+  sit in Ch 7's deck and §1 while §6 is the arrival, so gating at 7 would be a
+  no-op), `Cscale` (8), `Sig` (6). `firstChapter` without a `gloss` is ignored
+  by design (it would render an empty card).
+
+### R-INT-5: fetch-failure surface (§D-2) — ux MAJOR-1
+- Need: `Book.loadJSON` rejects on network failure and non-2xx, and 12 of 13
+  chapter pages had no `.catch()` at all. Under `file://` (the single most
+  natural thing to do with a downloaded book) the reader got 30+ fixed-height
+  blank boxes and an unhandled promise rejection.
+- Status: IMPLEMENTED (integrator pass 1, 2026-07-31) — and implemented so it
+  needs **no chapter-page edit**, because those files are the chapter agents'.
+  `Book.loadJSON` now catches, calls `Book.dataFailure(url, err)` and re-throws
+  a `bookHandled`-marked error (a window `unhandledrejection` listener
+  `preventDefault()`s those, so the console shows one clear warning instead of
+  N traces). `Book.dataFailure` schedules a debounced, re-armable sweep
+  (`Book.degradeWidgets()`, idempotent, plus one final sweep after `load`):
+  every `.widget` whose JS-filled containers are *all* still empty gets its own
+  `<noscript>` copy promoted into the page (with scripting on, a `<noscript>`'s
+  content is raw text, so `innerHTML = noscript.textContent` renders exactly the
+  fallback the chapter already wrote); the empty plot boxes are collapsed by
+  `.widget.is-data-failed` CSS. A second pass covers the three JS-filled tables
+  that live in the prose with no `.widget` and no `<noscript>` of their own
+  (`ch01-omtable`, `ch10-kernel-table`, `ch10-nscale-table`).
+  New going-forward API: `Book.widget(target, url, render)`.
+- Verified in headless Chromium over `file://`, all 14 pages: fallbacks
+  rendered on every page that loads data, **zero** silent blank boxes; served
+  over `http://` the behaviour is unchanged (0 fallbacks, plots and tables
+  render as before).
+
+### R-INT-6: dark-mode badge/chip contrast fallback (§D-3) — ux MAJOR-2
+- Need: `Book.theme.init()` only sets `data-theme` when localStorage already
+  holds a preference, so a first-time visitor in OS dark mode got the dark base
+  tokens (media query) with the light-tuned badge accents (attribute-gated) —
+  measured 3.05–3.97:1, below WCAG AA, on exactly the RATIFIED / CANDIDATE /
+  REFUTED / EXONERATED / CONFOUNDED vocabulary that tells the reader how much to
+  trust a claim.
+- Status: IMPLEMENTED (integrator pass 1, 2026-07-31) — `css/book.css` gains a
+  `@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {…} }`
+  block mirroring every `:root[data-theme="dark"]` accent override (`.badge.*`,
+  `.prov-chip.toy`, `.passport-pop .passport-note`, `.ledger-dnr`). Same
+  specificity as the attribute rules and identical values, so the two paths can
+  never disagree; an explicit `light` choice still wins.
+- Verified in headless Chromium with `prefers-color-scheme: dark` emulated and
+  no `data-theme` attribute: ratified 9.24, candidate 8.04, refuted/exonerated
+  7.79, confounded 8.01, finding 8.36, open 7.05 — all ≥ 4.5:1.
+
+### R-INT-7: canonical shared strings (§D-6)
+- Need: the D1 dossier row + erratum line and the D3 cell-B rail pip are quoted
+  on a dozen pages; one definition, or they drift.
+- Status: IMPLEMENTED (integrator pass 1, 2026-07-31) — `window.BOOK_CANON` in
+  `js/manifest.js` (also exposed as `Book.canon`), one string per line so the QA
+  gate can extract it by key:
+  - `BOOK_CANON.sigmaDL.dossierRow` = `d_L  88.9 Mpc  ·  σ_dL/d_L = 8.98×10⁻⁴`
+    (+ `dossierRowHTML` in the book's `<tr><td>…` dossier markup)
+  - `BOOK_CANON.sigmaDL.erratum` (+ `erratumHTML`) = the worklist's canonical
+    erratum line, verbatim
+  - `BOOK_CANON.cellB.pipLabel` =
+    `cell B (2026-07-31): estimator owns +0.060 of the 2D +0.083`
+    (+ `pipNote`, `pipTone: "amber"`)
+  - `BOOK_CANON.cellB.jobIdRule` / `jobsPrereg` / `jobsResult` /
+    `resubmissionNote` / `naming` — D3's job-ID split and the "the 2×2 cell B"
+    naming rule
+  `qa_gates.py` reports (advisory) any rail-pip label naming cell B that is not
+  the canonical string.
+- **Deferred to integrator pass 2, deliberately:** converting ch06's and ch08's
+  page-local rail pips to `Book.biasRail`'s `spec.pips` (tomas-m2). The support
+  already exists in `book.js`; the change itself is in
+  `ch06-black-box.html:76-84, :1318` and `ch08-mass-channel.html:88-98, :1355`,
+  which are chapter-agent files being edited concurrently in wave 1. Pass 2 runs
+  when those files are quiescent — same for placing the four canonical cell-B
+  pips.
+
+### R-INT-8: SYMBOLS additions (§D-7) — tomas M5
+- Need: Ch 9 §4 introduced `n_w`, `Σ_glob`, `W_cat`, `V_f`, `F` inside two
+  display equations with **no** passport entry, and `Σ_glob` leaks into Ch 7 §6
+  and Ch 11's C8 dimension count; Ch 7 §6 needs `φ_cat`.
+- Status: IMPLEMENTED (integrator pass 1, 2026-07-31) — `nw`, `Sglob`, `Wcat`,
+  `Vf`, `Fincat`, `phcat` added. Units are the derivation's own, not inferred:
+  `DERIVATION_GENERATOR_CONSISTENT_NORM.md` §4's units table gives
+  `n̂_w = W_cat/V_f` in `yr⁻¹ sr Mpc⁻³`, `W_cat` and `Σ_glob` in `yr⁻¹`,
+  `V_f` in `Mpc³ sr⁻¹`, `F` dimensionless (0.0175370, exactly h-independent).
+  None of the six is chapter-gated: they carry no later chapter's verdict.
+  Chapter agents now tag the terms (ch07 §6, ch09 §4, ch11 C8).
+
+### R-INT-9: build gates (§D-12)
+- Status: IMPLEMENTED (integrator pass 1, 2026-07-31) —
+  `book/generators/qa_gates.py`, run by `make_all.py` after every generator and
+  standalone via `python book/generators/qa_gates.py`. Four hard gates:
+  **D1** the retired σ_dL value (all six encodings the book uses: KaTeX
+  `8.0\times10^{-5}`, `&times;10<sup>&minus;5</sup>`, `⁻⁵`,
+  `&#8315;&#8309;`, `×10⁻⁵`, `8.0e-5`) may appear only with an *erratum* in
+  scope — the exponent is pinned to −5 so ch06's legitimate `8.0×10¹²`
+  condition number does not trip it; **ROW** every museum-ledger row keeps its
+  seven source cells and `documented` really holds a citation (this is what
+  catches row #68's shifted cells); **DNR** the do-not-re-try union is 30 rows
+  in the JSON and no page still prints 26 beside the phrase; **TNS** no page
+  says "not landed" / "in flight" / "still running" within 500 characters of a
+  cell-B reference.
+  Escape hatch for genuinely historical strings (e.g. a pre-registration block
+  quoted verbatim under D3): put `qa-allow: sigma-dl` | `ledger-row` |
+  `dnr-count` | `cellb-tense` in a comment **on the same line**. Use it as a
+  claim that the string is history, not state.
+- Baseline at the end of wave 0: **42 violations**, which is the wave-1 work
+  list (19 D1 sites, 1 ledger row, 6 do-not-re-try counts, 16 cell-B tense
+  strings). The gates are supposed to be red until the chapter agents land;
+  `make_all.py` prints the full report and exits 1.
+- **For the author / integrator pass 2:** `_template.html:112` still carries the
+  retired dossier row (`&sigma;_dL/dL = 8.0&times;10⁻⁵`). It is on the
+  worklist's frozen list, so pass 1 left it alone and the gate reports it as a
+  NOTE rather than a failure — but it is the file chapter agents copy dossier
+  markup *from*, so leaving it uncorrected guarantees the slip recurs. It needs
+  the same explicit frozen-list exception the worklist granted `book/README.md`
+  (§D-11). One line: replace it with `BOOK_CANON.sigmaDL.dossierRowHTML`.
+
+### R-INT-10: cumulative bias rail (`BOOK_BIAS_ROWS`, §D-4, ped M7)
+- Status: IMPLEMENTED (integrator pass 2, 2026-07-31) — `window.BOOK_BIAS_ROWS`
+  in `js/manifest.js` (five book-wide rows, each with `from_chapter`, `label`,
+  `bias`, `note`, and a `match` substring list); `Book.biasRail` merges them
+  into every page's own spec. A row renders on every page with
+  `from_chapter <= Book.chapter()`; a page row whose label matches a book
+  row's `match` list REPLACES it (the chapter's wording, `active` state and
+  arming pattern win — ch08 still arms its own 2D row only at the cold-open
+  reveal); unmatched page rows (live sandbox rows) are appended after the
+  history. `from_chapter` is a D4 spoiler boundary: the 2D +0.077 row is
+  unconditional only from ch09; the volume_deconv row from ch08; ch11 now
+  shows the full five-row history under its pips; index/museum render all
+  rows. `Book.chapter()` (shared with the passport's gating) is new API.
+
+### R-INT-11: BW3 scoped inline verdict chips (§D-5, ped B4 steps 2–3 / §B-4)
+- Status: IMPLEMENTED (integrator pass 2, 2026-07-31) — when a
+  `data-hypothesis`-tagged CONTROL (button/input/select) becomes active, the
+  containing widget gains one chip per tagged row: `⚖ #N — <verdict>` (+
+  do-not-re-try badge), rendered from `data/museum_ledger.json`. Opt-outs:
+  `data-hypothesis-verdict="inline"` on the control or widget = "this widget
+  already hard-codes its verdict, no second report" (ch09 I9.2 uses it); any
+  other non-empty `data-hypothesis-verdict` value is used as the chip's
+  verdict text verbatim (ch07's two widgets supply page-scoped wording this
+  way). Tags on non-control elements inside a widget (ch05's own hidden
+  verdict box) only seed the search panel — never chip — so no page-local
+  reveal is doubled. Widget-level tags chip on first interaction with any
+  control inside (ch08 I8.2's #89; ch10 I10.1's #49a, tag added this pass).
+  Known limit: tags set dynamically after init (ch03's #26) surface in the
+  search panel but may miss the chip (BUILD_REPORT gap #3, best-effort).
+
+### R-INT-12: uniform predict grading (`data-predict-correct`, §D-8, mara MAJOR-3)
+- Status: IMPLEMENTED (integrator pass 2, 2026-07-31) — optional
+  `data-predict-correct="<choice>"` on the predict container (or any
+  descendant, same resolution rule as `data-predict-id`). On reveal the
+  correct button gains `.predict-correct` (✓ ring) and a wrong CHOSEN button
+  `.predict-missed` (struck). The reveal's prose still owns the verdict
+  wording. ch02 (`ch02-concentration`) is the first customer — its markup
+  already carried the attribute, inert until this pass.
+
+### R-INT-13: `Book.lazyPlot` + observer/print consolidation + persona open-only (§D-9)
+- Status: IMPLEMENTED (integrator pass 2, 2026-07-31) —
+  (a) `Book.lazyPlot(target, build)`: the ch03 IntersectionObserver recipe
+  centralized (±300px rootMargin, eager fallback). ch02/ch08/ch09 keep their
+  identical page-local copies (zero-coupling precedent, as with interp1);
+  new chapters should call the shared one.
+  (b) `Book.themedPlot`'s per-plot `MutationObserver`s consolidated into ONE
+  shared observer over `data-theme`; dead plot registrations dropped.
+  (c) the two `@media print` blocks in book.css merged into one.
+  (d) `Book.persona.apply` only ever OPENS strata — switching back to Mara no
+  longer force-closes folds the reader opened ("never hides content" now also
+  covers reader-revealed content).
+  (e) `_template.html` placeholder-JSON guard comment added (the worklist's
+  one granted template exception).
+
+### R-INT-14: anchor-drift tooltip policy (§D-10, mara MINOR-8 / expA m1)
+- Status: APPLIED (integrator pass 2, 2026-07-31) — every chip in
+  BUILD_REPORT §5.5 item 23's drift table + expA-m1's IDEALIZED/CLAIM table
+  now carries a `title="current lines/tree :NN"` tooltip beside the spec
+  anchor (16 added this pass across ch02/ch04/ch05/ch07/ch08/ch10/museum;
+  ch01/ch03/ch06 had already been re-grepped by their wave-1 agents).
+  Current positions verified against the tree by this pass:
+  `handler.py :519→:558, :592→:623, :605→:632-634`;
+  `bayesian_statistics.py :3309-3311→:3388-3392, :3362→:3445, :4014→:4097,
+  :4363-4370→:4442-4459`; `IDEALIZED_BASELINE_READOUT.md :36-39→:50-52,
+  :42-47→:54-60, :47-48→:59-60, :50-52→:64-66`;
+  `CLAIM_2D_BIAS_20260730.md :587-588→:602`. Policy going forward: spec
+  anchors stay as printed (they are the citation of record); tooltips carry
+  the current position; generators may re-grep instead where they already
+  parse the artifact.

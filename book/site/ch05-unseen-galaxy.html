@@ -376,11 +376,38 @@
       deserve to be uncomfortable.
     </p>
     <p>
-      First: <strong>12%</strong>. Not 5%, which is the fraction of events whose host really is
-      catalogued in this run (76/1588 = 4.8%). Those are different quantities and the gap between
-      them is a live, adjudicated problem — Chapter 9 measures it and Chapter 11 puts it on the
-      board <span class="ch05-fwd">⏭ Ch 9</span>.
+      Before either of them, be clear about <em>what kind of object</em> those three numbers are,
+      because the type decides what the numbers are allowed to mean. Read the sentence above
+      carefully: $w_G$ is not a per-event flag and not a per-event count. It is
+      <strong>one number per $h$</strong> — a <em>selection- and volume-weighted average</em> of the
+      completeness $f$ along the whole line of sight, not $f$ at any one redshift and not a tally of
+      this run&rsquo;s events. So there is no arithmetic reason it must equal the fraction of events
+      that happened to have a catalogued host. Whether it nevertheless <em>should</em> is a live
+      claim, and it is not this chapter&rsquo;s to settle
+      <span class="ch05-fwd">⏭ Ch 9</span>.
     </p>
+    <p>
+      First: <strong>12%</strong>. Not 5%, which is the fraction of events whose host really is
+      catalogued <em>in this run</em> — <strong>76/1588 = 4.8%</strong> on seed 61000&rsquo;s single
+      realization. (The campaign figure the project&rsquo;s own claim file quotes for the same
+      quantity is <strong>164/3135 = 5.2%</strong>, two seeds pooled; same quantity, larger sample,
+      and the book keeps the two labelled because they are not interchangeable.) Those are different
+      quantities from $w_G$, and the gap between them is a live, adjudicated problem — Chapter 9
+      measures it and Chapter 11 puts it on the board <span class="ch05-fwd">⏭ Ch 9</span>.
+    </p>
+
+    <div class="callout defect">
+      <span class="callout-label">Trap &mdash; &ldquo;w_G is roughly the catalogue&rsquo;s completeness fraction.&rdquo;</span>
+      It is a <em>detection-weighted, rate-weighted, $h$-dependent</em> posterior probability, and
+      the paragraph you just read is why. Two measurements kill the identification. Locally: at
+      EMRI-889&rsquo;s redshift the sky-averaged completeness is <strong>0.920</strong>, while the
+      weight its likelihood is actually multiplied by is <strong>0.1215</strong> — a factor 7.6, in
+      the direction that matters. Globally: $w_G = 0.1215$ against a realized in-catalogue rate of
+      <strong>76/1588 = 4.8%</strong> in this run. Whether that gap is a defect, and how large it is
+      once it is measured properly, is claim C9 — Chapter 9&rsquo;s subject, not a number to carry
+      away from here <span class="ch05-fwd">⏭ Ch 9</span>. Treating $w_G$ as
+      &ldquo;completeness&rdquo; is exactly the confusion that hid C9 for months.
+    </div>
     <p>
       Second: it has a <em>slope</em>. And the slope has nothing to do with the completeness curve
       you just plotted, which does not depend on $h$ at all. It comes from the only place it can:
@@ -410,6 +437,19 @@
         own delivered numbers and are never touched</strong> — the only thing this control changes
         is the scalar weight. <strong>Then</strong> press <em>flatten the slope</em>: same average
         weight, slope removed, both branches still untouched.
+      </p>
+      <p style="margin-top:0; color:var(--muted); font-size:0.88rem;">
+        The dial is <strong>not monotonic</strong>, and that is the interesting part. Turned down it
+        does not glide to the empty-catalogue answer — the catalogue branch is so much larger than
+        the completion branch for events like EMRI-889 that a sub-percent weight still carries its
+        rail, so the MAP sits near 0.60 all the way down and only jumps to 0.755 at exactly
+        $\kappa = 0$. Turned up past $\kappa \approx 3$ the answer <em>plateaus at 0.86</em>, the top
+        of the grid, for two decades of the dial: not because the in-catalogue class wins, but
+        because raising $\kappa$ steepens the $(1-w_G)$ prefactor until its up-tilt swamps both
+        branches — measured separately, the 1095 events with a catalogue leg and the 493 without
+        <em>both</em> peak there. Past $\kappa \approx 200$ the catalogue branch&rsquo;s own rail
+        wins the 1095 back and the answer falls to the other wall. Every state has its own verdict
+        below; none of them is a measurement.
       </p>
       <div class="widget-controls">
         <label for="ch05-kappa">Counterfactual catalogue depth $\kappa$:</label>
@@ -459,6 +499,11 @@
       <details class="num-view">
         <summary>Show me the numbers</summary>
         <div class="table-scroll"><table class="num-table" id="ch05-i51-table"></table></div>
+        <p style="margin:0.8rem 0 0.3rem; font-size:0.85rem; color:var(--muted);">
+          And the dial itself, regime by regime — the last two columns are the two
+          sub-populations summed separately, which is what decides where the total goes:
+        </p>
+        <div class="table-scroll"><table class="num-table" id="ch05-i51-kappa-table"></table></div>
       </details>
       <noscript>
         <p><strong>Static fallback.</strong> Three curves. The shipped mixture ($\kappa=1$) peaks
@@ -468,6 +513,14 @@
         monotonically 0.1625 → 0.1215 → 0.0947 across $h$ = 0.60 → 0.73 → 0.86. Holding $w_G$
         <em>flat</em> at its $h=0.73$ value, changing nothing else, moves the combined MAP from
         0.740 to <strong>0.630</strong> — the slope alone is worth 0.11 in $h$.</p>
+        <p>The dial itself is non-monotonic: MAP <strong>0.755</strong> at $\kappa = 0$,
+        <strong>0.61</strong> at $\kappa = 0.05$, <strong>0.740</strong> at the shipped
+        $\kappa = 1$, then a plateau at <strong>0.86</strong> for $3 \le \kappa \le 120$, then back
+        to <strong>0.600</strong> from $\kappa \ge 500$. The plateau is the $(1-w_G)$ prefactor's
+        up-tilt across the grid growing from +124 nats at $\kappa = 1$ to +927 at $\kappa = 120$
+        and swamping both branch shapes — over that stretch the 1095 events with a catalogue leg
+        and the 493 without one <em>both</em> peak at 0.86. No event is silenced at any finite
+        $\kappa$; the 493 fall out only at $\kappa = \infty$.</p>
       </noscript>
     </div>
 
@@ -484,24 +537,33 @@
       diagnostics as <strong>+31.554</strong> — larger than any other single term in that budget.
       The binding phrasing rule that comes with it: the up-pull is carried by the
       <strong>$(1-w_G)$ prefactor</strong>. The completion likelihood
-      $\mathcal L^{\rm comp}$ itself pulls <em>down</em> for dark events (only 39.1% of them have a
-      positive completion tilt; $\Sigma\Delta\ln\mathcal L^{\rm comp} = -3.11$ over the same
-      window). A sentence that attributes the up-pull to $\mathcal L^{\rm comp}$ is not a
-      simplification, it is the claim the project retired.
+      $\mathcal L^{\rm comp}$ itself pulls <em>down</em> for dark events —
+      $\Sigma\Delta\ln\mathcal L^{\rm comp} = \mathbf{-22.72}$ nats over the dark class alone
+      (the <em>all-event</em> total is $-3.11$, because the 76 in-catalogue events contribute
+      $+19.61$ the other way; the two are different numbers and this block used to print the
+      second under the first&rsquo;s sentence). And only <strong>27.7%</strong> of dark events have
+      a positive tilt on $\mathcal L^{\rm comp}$ <em>by itself</em> — <strong>39.1%</strong> once
+      the $(1-w_G)$ prefactor is folded in, which is the form C10 quotes
+      <span class="prov-chip">ch08_FLAGS.md F-ch08-6</span>. Fold that prefactor in and the dark
+      class&rsquo;s sum changes sign, $-22.72 \to \mathbf{+7.33}$ nats. That sign change
+      <em>is</em> the claim: a sentence that attributes the up-pull to $\mathcal L^{\rm comp}$ is
+      not a simplification, it is the claim the project retired — and quoting either percentage
+      without saying which object it counts is how the retired sentence keeps coming back.
     </div>
 
     <details class="gw-reader">
       <summary>&#9656; For the GW reader — what $w_G$ is made of</summary>
       <p>
         $w_G = \beta_G/D$, with $\beta_G = D - \beta_{\bar G}$
-        (<code>bayesian_statistics.py:3309-3311</code>; G2c §2 rows <code>beta_G</code>,
+        (<code title="current tree :3388-3392">bayesian_statistics.py:3309-3311</code>; G2c §2 rows <code>beta_G</code>,
         <code>beta_Gbar</code>, <code>w_G</code>), where
         <span class="term" data-term="Dh">$D(h)$</span>$ = \int \langle$<span class="term" data-term="pdet">$p_{\rm det}$</span>$\rangle_\Omega\,(dV_c/dz\,d\Omega)\,dz/(1+z)$ is Chapter
         4&rsquo;s full-volume selection integral and
         $\beta_{\bar G}(h) = \int \langle (1-f_k(z))\,p_{\rm det}\rangle_\Omega\,(dV_c/dz\,d\Omega)\,dz/(1+z)$
         is its dark-side restriction — Gray (A18) with the hard magnitude threshold replaced by the
-        smooth $(1-f)$. So $w_G$ is a <em>selection- and volume-weighted</em> average of $f$ along
-        the whole line of sight, not $f$ at any one redshift. What that normalizes <em>to</em>, and
+        smooth $(1-f)$. That ratio of integrals is <em>why</em> the narrator above could call $w_G$ a
+        selection- and volume-weighted line-of-sight average: the weighting is $p_{\rm det}$ times
+        comoving volume, and $f$ enters only inside it. What that normalizes <em>to</em>, and
         why the choice is not unique, is Chapter 9 <span class="ch05-fwd">⏭ Ch 9</span>.
       </p>
       <p>
@@ -522,7 +584,7 @@
     </details>
 
     <!-- ================= §3 ================= -->
-    <h2>3. The completion branch, and a factor of 5000 hiding in a sky integral</h2>
+    <h2>3. The completion branch, and the step where you must integrate rather than evaluate</h2>
 
     <p>
       Write down the dark branch. The source is somewhere in a shell of luminosity distance <span class="term" data-term="dL">$d_L$</span> that the
@@ -530,8 +592,8 @@
       entry for it. So: integrate over redshift <span class="term" data-term="z">$z$</span>, weight each shell by how much of the galaxy
       population the catalogue is <em>missing</em> there, $1-f(z,\Omega)$, times how much comoving
       volume that shell contains per unit redshift, times the gravitational wave&rsquo;s own
-      probability density for the source sitting at that distance. And — the step that costs a
-      factor of several thousand if you get it wrong — average over direction against the only
+      probability density for the source sitting at that distance. And — the step that costs orders
+      of magnitude if you get it wrong — average over direction against the only
       honest prior for a source you cannot localize to a galaxy: an isotropic one, $1/4\pi$ per
       steradian.
     </p>
@@ -560,6 +622,21 @@
       Chapter 6 <span class="ch05-fwd">⏭ Ch 6</span>.
       Then $\mathcal L^{\rm comp}_i = $<span class="term" data-term="Bnum">$B^{\rm num}_i$</span>$/$<span class="term" data-term="betaGbar">$\beta_{\bar G}$</span> — the branch, normalized by the
       dark side of the selection integral, exactly as the catalogue branch is normalized by its own.
+    </div>
+
+    <div class="callout defect">
+      <span class="callout-label">Trap &mdash; &ldquo;The completion term is a fudge factor for incompleteness.&rdquo;</span>
+      You have just watched it be built, so notice what it is not. It is a full likelihood branch
+      derived from the same population model and the same selection
+      function as the catalogue branch — Gray et al. (2020) Eqs. (A17)/(A18)/(A19), implemented as
+      $B^{\rm num}/\beta_{\bar G}$ — and it is the side of the estimator that the 2D channel&rsquo;s
+      difference lives on. The replicated finding is qualitative and blunt: the <em>dark class
+      dominates that difference, and always with the same sign</em>; the r1 partition puts its share
+      at 84.2%, and off-r1 replication spans 84.2%–112.5%, mean 91.6%, so the share is a
+      run-specific number and the dominance is the result
+      <span class="prov-chip">CLAIM_2D_BIAS_20260730.md C3</span>. Calling the branch a fudge is
+      how you avoid noticing that its prefactor is the largest tilt in the inference
+      <span class="prov-chip">C10</span>. <span class="ch05-fwd">⏭ Ch 8</span>
     </div>
 
     <p>
@@ -741,6 +818,16 @@
         candidate search still came back with nothing usable.
       </p>
       <p>
+        The nearest thing to a true empty-ball count is Chapter 3&rsquo;s, and it is a different
+        object measured a different way: reconstructing the production search
+        ($n_\sigma = 1.5$, <code>bayesian_statistics.py:2838</code>) against the <em>truth</em>
+        catalogue, <strong>607 of 1590</strong> events have no catalogue candidate at all, and
+        <strong>983</strong> have at least one <span class="prov-chip">Ch 3 census</span>. That is a
+        <em>reconstruction</em> count on a different catalogue and a different event list — never a
+        drop count, and never this run&rsquo;s 493. Nothing in this run is dropped: the completion
+        branch carries every event, which is the whole point of the section you are reading.
+      </p>
+      <p>
         Note also that <code>in_catalog</code> (76 events) is the <em>generator&rsquo;s</em> truth
         flag from <code>prepared_cramer_rao_bounds.csv</code> — whether the injected host was drawn
         from the catalogue — and is a different question from whether the estimator found a
@@ -860,7 +947,7 @@
       <div class="dossier-title">Event dossier — after this chapter</div>
       <table>
         <tr><td colspan="2"><strong>EMRI-889</strong> — the loud one</td></tr>
-        <tr><td>d_L</td><td>88.9 Mpc (&sigma;_dL/dL = 8.0&times;10&#8315;&#8309;)</td></tr>
+        <tr><td>d_L</td><td>88.9 Mpc &nbsp;&middot;&nbsp; &sigma;_dL/d_L = 8.98&times;10&#8315;&#8308;</td></tr>
         <tr><td>SNR</td><td>1425 — the loudest of the run</td></tr>
         <tr><td>host</td><td>catalogue index 859360</td></tr>
         <tr><td>z</td><td><em>still unknown</em> — but at h = 0.73 its distance puts it near z ≈ 0.021</td></tr>
@@ -876,6 +963,12 @@
         <tr class="dossier-new"><td>sky completeness at its z</td><td>0.321 — two thirds of its neighbourhood was never catalogued</td></tr>
       </table>
     </div>
+
+    <p class="ch05-note">
+      <strong>Erratum:</strong> the spec card carried $\sigma_{d_L}/d_L = 8.0\times10^{-5}$ — that
+      is the absolute $\sigma_{d_L}$ in Gpc under a fractional label. Corrected book-wide
+      2026-07-31; record: ch01 flag F1 / BUILD_REPORT &sect;5.1 item 1.
+    </p>
 
     <p>
       Those two rows are the chapter. For 889 the completion branch is numerically irrelevant and
@@ -929,45 +1022,62 @@
     </div>
 
     <div class="selfcheck">
-      <p>Q5.3 &nbsp; Sanity limits. What must the master equation reduce to as (a) the catalogue
-      becomes complete, (b) the catalogue becomes empty?</p>
+      <p>Q5.3 <em>(transfer)</em> &nbsp; Both sanity limits are reachable on I5.1&rsquo;s dial, and
+      one of them is <strong>discontinuous</strong>: the MAP reads <strong>0.755</strong> at exactly
+      $\kappa = 0$ but <strong>0.61</strong> at $\kappa = 0.05$, a weight of well under one percent.
+      Which limit is the discontinuous one, and what property of <em>this run&rsquo;s two branches</em>
+      — a property you can read off the event dossier — makes a vanishing weight fail to vanish?</p>
       <details class="answer">
         <summary>Show answer</summary>
         <div class="answer-body">
-          (a) $w_G \to 1$, the completion branch switches off, and
-          $p_i \to \mathcal L^{\rm cat}$ — the Chapter 4 estimator. (b) $w_G \to 0$ and
-          $p_i \to \mathcal L^{\rm comp}$ — a pure population-model inference with no catalogue
-          information, which should be <em>wide but centred</em>. Checking that second limit is not
-          academic: the project&rsquo;s harness measured the pure-completion estimator to be
-          <strong>biased HIGH by +0.7…+5.4% in $h$</strong> at deep incompleteness with 68% coverage
-          collapsing <span class="prov-chip">ledger #57</span>. A limit that is supposed to be
-          trivially safe was not. And you can take both limits yourself in I5.1: the $\kappa \to 0$
-          end reads MAP 0.755, the $\kappa \to \infty$ end rails at 0.600 while silencing 493 events
-          — because limit (a) applied to a catalogue that is <em>not</em> complete is precisely the
-          bug of §4.
+          The <strong>empty-catalogue</strong> limit, $\kappa \to 0$. The reason is that the two
+          branches are not the same size. The dossier gives it for EMRI-889: its catalogue leg is
+          $\approx 5\times10^{7}$ times its completion leg at $h = 0.73$. A mixture
+          $w\mathcal L^{\rm cat} + (1-w)\mathcal L^{\rm comp}$ is still
+          <em>catalogue-dominated</em> for any $w \gg 10^{-8}$, so shrinking the weight to 0.7%
+          does not fade the catalogue branch out — it leaves it in charge, complete with its rail
+          at 0.600. Only at exactly $w = 0$ does the term disappear, and the answer jumps to 0.755.
+          The complete-catalogue limit has no such jump; it approaches
+          $p_i \to \mathcal L^{\rm cat}$ smoothly — and applied to a catalogue that is <em>not</em>
+          complete it rails at 0.600 while silencing 493 events, which is exactly the bug of §4.
+          Two lessons: a limit is not a small perturbation, and &ldquo;the empty-catalogue
+          estimator&rdquo; is a genuinely different machine, one the project&rsquo;s harness measured
+          as <strong>biased HIGH by +0.7…+5.4% in $h$</strong> at deep incompleteness with 68%
+          coverage collapsing <span class="prov-chip">ledger #57</span>.
         </div>
       </details>
     </div>
 
     <div class="selfcheck">
-      <p>Q5.4 &nbsp; Split the events into in-catalogue (76) and dark (1512), and each
-      class&rsquo;s summed log-posterior peaks in a different place — <strong>0.86</strong> and
-      <strong>0.64</strong>, with the combined answer between them at 0.740. Give two mutually
-      exclusive readings of that, and say what would distinguish them.</p>
+      <p>Q5.4 <em>(transfer)</em> &nbsp; §5 gives you two incompatible readings of the crossing —
+      A, two honest classes combining legitimately; B, two opposing errors balancing. Do not restate
+      them: <strong>design the measurement that tells them apart.</strong> Say what you would
+      perturb, what you must hold fixed while you perturb it, and what size of response would
+      falsify A. Then check your design against what the project actually ran.</p>
       <details class="answer">
         <summary>Show answer</summary>
         <div class="answer-body">
-          Reading A: both branches are fine and the classes genuinely carry different statistical
-          power, so their crossing is a legitimate combination. Reading B: at least one branch is
-          tilted, and the crossing is a coincidence of two opposing errors — in which case the
-          &ldquo;measurement&rdquo; is not centred on truth, it is balanced there. The
-          distinguishing test is <strong>leverage</strong>: if reading A holds, small perturbations
-          to the class composition should barely move the answer; if B holds, they should move it a
-          lot. The project ran exactly this and found a $\pm1/\sqrt N$ Poisson reweight moves the MAP
-          by up to <strong>0.025</strong> in the realistic venue versus <strong>0.0000</strong>
-          idealized, with $dh^\ast/d\varepsilon$ leverage <strong>1500–2400&times;</strong> — strong
-          evidence for reading B. That is claim C5, and Chapter 11 is where it lands
-          <span class="prov-chip">CLAIM_2D_BIAS_20260730.md C5</span>
+          <strong>Perturb</strong> the class composition — the relative number of in-catalogue and
+          dark events entering the sum — and nothing else. <strong>Hold fixed</strong> every
+          per-event likelihood, both branch normalizations, the $h$-grid and $w_G(h)$; if you let
+          the estimator re-fit anything you have changed two things at once and the response is
+          uninterpretable. <strong>The falsifying scale</strong> is set by what the composition is
+          already uncertain by: a sample of $N$ events knows its own class split only to
+          $\pm1/\sqrt N$, so a perturbation of that size is one the data cannot tell you did not
+          happen. Under A the MAP should move by <em>less</em> than the posterior&rsquo;s own width;
+          if it moves by an appreciable fraction of the answer, A is dead.
+          <br><br>
+          That is exactly the test the project ran, and the result is claim <strong>C5</strong>: a
+          $\pm1/\sqrt N$ Poisson reweight moves the MAP by up to <strong>0.025</strong> in $h$ in
+          the realistic venue against <strong>0.0000</strong> idealized — a response bigger than
+          the distance between the answer and the truth, from a perturbation the data cannot
+          exclude. That figure reproduces here to $10^{-6}$. The <em>ratio</em> form of the same
+          statistic is disputed and the book carries both halves: the adjudicated
+          $dh^\ast/d\varepsilon$ leverage is <strong>1500–2400&times;</strong>, while recomputing it
+          from the adjudicator&rsquo;s own output gives <strong>142–2458&times;, median 197&times;</strong>
+          <span class="prov-chip">ch11_FLAGS.md F-ch11-1</span>. Nothing in the argument depends on
+          which is right — either way the response is enormous, and reading B survives. Chapter 11
+          is where C5 lands <span class="prov-chip">CLAIM_2D_BIAS_20260730.md C5</span>
           <span class="ch05-fwd">⏭ Ch 11</span>.
         </div>
       </details>
@@ -993,33 +1103,14 @@
       </details>
     </div>
 
-    <!-- ================= traps ================= -->
-    <div class="callout defect">
-      <span class="callout-label">Trap &mdash; &ldquo;The completion term is a fudge factor for incompleteness.&rdquo;</span>
-      It is a full likelihood branch derived from the same population model and the same selection
-      function as the catalogue branch — Gray et al. (2020) Eqs. (A17)/(A18)/(A19), implemented as
-      $B^{\rm num}/\beta_{\bar G}$ — and it is the side of the estimator that the 2D channel&rsquo;s
-      difference lives on. The replicated finding is qualitative and blunt: the <em>dark class
-      dominates that difference, and always with the same sign</em>; the r1 partition puts its share
-      at 84.2%, and off-r1 replication spans 84.2%–112.5%, mean 91.6%, so the share is a
-      run-specific number and the dominance is the result
-      <span class="prov-chip">CLAIM_2D_BIAS_20260730.md C3</span>. Calling the branch a fudge is
-      how you avoid noticing that its prefactor is the largest tilt in the inference
-      <span class="prov-chip">C10</span>. <span class="ch05-fwd">⏭ Ch 8</span>
-    </div>
+    <!-- (Traps 5.A and 5.B both moved in-line — 5.A to section 3 where
+         L^comp is introduced, 5.B to section 2 after the "12%. Not 5%"
+         paragraph — REVISION_WORKLIST.md section C-ch05 [ped-M3].) -->
 
-    <div class="callout defect">
-      <span class="callout-label">Trap &mdash; &ldquo;w_G is roughly the catalogue&rsquo;s completeness fraction.&rdquo;</span>
-      It is a <em>detection-weighted, rate-weighted, $h$-dependent</em> posterior probability. Two
-      measurements kill the identification. Locally: at EMRI-889&rsquo;s redshift the sky-averaged
-      completeness is <strong>0.920</strong>, while the weight its likelihood is actually multiplied
-      by is <strong>0.1215</strong> — a factor 7.6, in the direction that matters. Globally: the
-      project measured $w_G$ at <strong>2.3–2.5&times; the realized in-catalogue rate</strong>
-      (0.1215 vs 164/3135 = 0.0523, binomial $z = -11.86$)
-      <span class="prov-chip">CLAIM_2D_BIAS_20260730.md C9</span>. Treating it as
-      &ldquo;completeness&rdquo; is exactly the confusion that hid claim C9 for months
-      <span class="ch05-fwd">⏭ Ch 9</span>.
-    </div>
+    <!-- (Trap 5.B moved to section 2, immediately after the "12%. Not 5%"
+         paragraph that creates the misconception — REVISION_WORKLIST.md
+         section C-ch05 [ped-M3]; its C9 measurement numbers stripped per
+         [ped-M9]/D4.) -->
 
     <!-- ================= MUSEUM INTERLUDE ================= -->
     <div class="ch05-interlude">
@@ -1105,16 +1196,17 @@
         <li><span class="badge finding">FINDING</span> <code>ledger #54</code> (<code>8db6c6e</code>) / <code>H0R:1368-1420</code> — zero-host events silently dropped, 58% of a deep venue; pure-completion fallback installed</li>
         <li><span class="badge refuted">REFUTED</span> <code>ledger #55</code> — the #29 fix as the rail&rsquo;s cause: rail persists at 0.6000, fallback events $h$-inert (−59 nats)</li>
         <li><span class="badge finding">FINDING</span> <code>ledger #57</code> — the pure-completion fallback estimator is biased HIGH, +0.7…+5.4% in $h$, cov68 ≤ 0.27 at comp_frac 0.22–0.85</li>
-        <li><span class="badge finding">FINDING</span> <code>CLAIM_2D_BIAS_20260730.md C10</code> — the up-pull is carried by the $(1-w_G)$ prefactor (+31.55 nats over 0.73→0.81), not by $\mathcal L^{\rm comp}$ (−3.11 nats; 39.1% positive)</li>
+        <li><span class="badge finding">FINDING</span> <code>CLAIM_2D_BIAS_20260730.md C10</code> — the up-pull is carried by the $(1-w_G)$ prefactor (+31.55 nats over 0.73→0.81), not by $\mathcal L^{\rm comp}$, which over the same window sums to <strong>−22.72</strong> nats <em>over the dark class</em> (−3.11 all-event; +19.61 in-catalogue) with <strong>27.7%</strong> of dark events positive on $\mathcal L^{\rm comp}$ alone and <strong>39.1%</strong> with the $(1-w_G)$ prefactor folded in — the form C10 quotes <span class="prov-chip">ch08_FLAGS.md F-ch08-6</span></li>
         <li><span class="badge finding">FINDING</span> <code>CLAIM_2D_BIAS_20260730.md C3</code> — dark class dominates the 2D channel difference, always positive; share 84.2% on r1, 84.2–112.5% (mean 91.6%) off-r1 — the dominance replicates, the number does not</li>
         <li><span class="badge finding">FINDING</span> <code>CLAIM_2D_BIAS_20260730.md C5</code> — the two-class crossing has leverage: ±1/√N reweight moves the MAP up to 0.025 realistic vs 0.0000 idealized; <em>live, unresolved</em></li>
-        <li><span class="badge finding">FINDING</span> <code>CLAIM_2D_BIAS_20260730.md C9</code> — $w_G$ measured at 2.3–2.5× the realized in-catalogue rate (0.1215 vs 0.0523, binomial $z=-11.86$); <em>live</em></li>
+        <li><span class="badge finding">FINDING</span> <code>CLAIM_2D_BIAS_20260730.md C9</code> — $w_G$ sits well above the realized in-catalogue rate (0.1215 vs this run&rsquo;s 76/1588 = 0.048); <em>live</em>. The size of the gap and its significance are Chapter 9&rsquo;s measurement and are not quoted here <span class="ch05-fwd">⏭ Ch 9</span></li>
         <li><span class="badge refuted">REFUTED</span> <code>ledger #41 → #52</code> / <code>G6_starvation_postmortem.md:24-33</code> — information starvation, overturned; on the do-not-retry list (<code>ledger §2 item 13</code>)</li>
         <li><span class="badge refuted">REFUTED</span> <code>ledger #61</code> (w_G bookkeeping as the fix — tilt relocates), <code>ledger #64</code> (tuning w_pop, ≤ +0.0004) — volunteered inside I5.1&rsquo;s sandbox; do not re-try</li>
         <li><span class="badge candidate">CANDIDATE</span> <code>G7 row 15</code> — GLADE completeness at $z\gtrsim0.3$ is forecast-defining after the sensitivity fix, not a defect</li>
         <li>Data: <code>results/campaign51_20260728/realistic_20260729/seed61000/real_r1/diagnostics/event_likelihoods.csv</code> (1588 events × 41 h), <code>.../real_r1/prepared_cramer_rao_bounds.csv</code>, <code>.../seed61000/mixture_leg_log_extract.txt</code>, <code>master_thesis_code/galaxy_catalogue/m_th_map_nside32.npy</code></li>
-        <li>Cross-checks run by the generator: mixture identity (max rel. err. 3.9×10⁻¹³ on 65,108 cells); $w_G$ from the CSV vs $1-\beta_{\bar G}/D$ from the run log (max |Δ| 5.5×10⁻⁷); $\bar f(z)$ $h$-invariance (max |Δ| 1.8×10⁻¹⁵); $N\Delta\ln(1-w_G)$ = +31.554 vs C10&rsquo;s +31.55</li>
-        <li>Open flag: <code>book/design/flags/ch05_FLAGS.md</code> (the ~5000× vs the analytic $2/(\sigma_\phi\sigma_\theta)$ at $\sigma_{\rm sky}=2^\circ$; &ldquo;493 zero-catalogue-leg events&rdquo; vs a zero-host count)</li>
+        <li>Cross-checks run by the generator: mixture identity (max rel. err. 3.9×10⁻¹³ on 65,108 cells); $w_G$ from the CSV vs $1-\beta_{\bar G}/D$ from the run log (max |Δ| 5.5×10⁻⁷); $\bar f(z)$ $h$-invariance (max |Δ| 1.8×10⁻¹⁵); $N\Delta\ln(1-w_G)$ = +31.554 vs C10&rsquo;s +31.55; C10&rsquo;s other half re-measured over the same window — dark $\Sigma\Delta\ln\mathcal L^{\rm comp}$ = −22.717 (all-event −3.109, in-catalogue +19.609), dark positive fraction 27.71% on $\mathcal L^{\rm comp}$ alone and 39.09% with the $(1-w_G)$ prefactor</li>
+        <li>Consumed from Chapter 3&rsquo;s regenerated census ($n_\sigma = 1.5$, the production ball rule): 607 of 1590 events with no catalogue candidate, 983 with at least one — a truth-catalogue reconstruction count, not a drop count</li>
+        <li>Open flag: <code>book/design/flags/ch05_FLAGS.md</code> (the ~5000× vs the analytic $2/(\sigma_\phi\sigma_\theta)$ at $\sigma_{\rm sky}=2^\circ$; &ldquo;493 zero-catalogue-leg events&rdquo; vs a zero-host count; and the 2026-07-31 revision section)</li>
       </ul>
     </div>
 
@@ -1463,9 +1555,74 @@
           "<span class='ch05-verdict-label'>Counterfactual — real branches, invented weight</span>" +
           "Both branch likelihoods are the run's own; only the scalar weight has moved. Watch how far " +
           "the MAP travels for a weight change you would struggle to justify — that sensitivity is " +
-          "the point of the widget, and it is why claim C9 (w_G measured at 2.3–2.5× the realized " +
-          "in-catalogue rate) is a live problem rather than bookkeeping.",
+          "the point of the widget, and it is why claim C9, the gap between w_G and the realized " +
+          "in-catalogue rate, is a live problem rather than bookkeeping. ⏭ Ch 9",
       };
+
+      // The three MIDRANGE regimes. Non-monotonic, so each gets its own
+      // MEASURED verdict rather than a generic "watch it move"
+      // (REVISION_WORKLIST.md §C-ch05 [mara-MAJOR-7]). Numbers are read live
+      // from the generator's per-kappa decomposition: the C10 prefactor tilt
+      // across the whole grid, and the MAP of the 1095 events that have a
+      // catalogue leg versus the 493 that never do.
+      function fmtMap(v) { return v === null ? "—" : fmt(v, 3); }
+      function regimeNumbers() {
+        var i = state.k;
+        return {
+          tilt: d.prefactor_tilt_by_kappa[i],
+          mapWith: d.map_by_kappa_with_leg[i],
+          mapNo: d.map_by_kappa_no_leg[i],
+          zero: d.n_zero_by_kappa[i],
+        };
+      }
+      function V51below() {
+        var n = regimeNumbers();
+        var w73 = d.w_by_kappa[state.k][H.indexOf(0.73)];
+        return "<span class='ch05-verdict-label'>Counterfactual — turning the catalogue down, " +
+          "and the dial's discontinuity</span>" +
+          "Here w_G(0.73) = <strong>" + fmt(w73, 4) + "</strong> — a weight of " +
+          fmt(100 * w73, 2) + "% — and the answer is already at or near the lower wall. Turning " +
+          "the catalogue down does <em>not</em> fade the catalogue branch out gracefully: for an " +
+          "event like EMRI-889 the catalogue leg is some 5×10⁷ times the completion leg at " +
+          "h = 0.73, so any weight above about 10⁻⁸ leaves the catalogue branch in charge, rail " +
+          "and all. Measured separately here, the 1095 events with a catalogue leg peak at " +
+          "<strong>" + fmtMap(n.mapWith) + "</strong> and the 493 without one at <strong>" +
+          fmtMap(n.mapNo) + "</strong>. Only at exactly κ = 0 does the term vanish and the MAP " +
+          "jump to 0.755. That jump is a fact about this run's two legs, not about the widget — " +
+          "and it is Q5.3.";
+      }
+      function V51plateau() {
+        var n = regimeNumbers();
+        return "<span class='ch05-verdict-label'>Counterfactual — turning the catalogue up: the " +
+          "weight's own slope takes over</span>" +
+          "Raising κ does not merely re-balance the two branches: it <em>steepens</em> the " +
+          "(1 − w_G) prefactor, which C10 already names as the largest single tilt in this " +
+          "inference. Across the whole grid that prefactor's up-tilt is worth <strong>" +
+          (n.tilt === null ? "—" : (n.tilt >= 0 ? "+" : "") + fmt(n.tilt, 0)) +
+          " nats</strong> here, against +124 at the shipped κ = 1 — and it is what produces the " +
+          "long <strong>0.86 plateau</strong> that occupies most of this half of the dial. " +
+          "Measured separately at this κ, the 1095 events with a catalogue leg peak at <strong>" +
+          fmtMap(n.mapWith) + "</strong> and the 493 without one at <strong>" + fmtMap(n.mapNo) +
+          "</strong>; from κ ≈ 3 to κ ≈ 60 both sit at the top of the grid together, and beyond " +
+          "that the catalogue branch starts pulling its own events back down while the " +
+          "prefactor-only events keep the total up. So the plateau is not the in-catalogue class " +
+          "winning an argument — it is an invented weight slope out-shouting the data. Push " +
+          "further and the catalogue branch's rail wins outright. No events are silenced anywhere " +
+          "on the finite dial (" + n.zero + " here).";
+      }
+      function V51wall() {
+        var n = regimeNumbers();
+        return "<span class='ch05-verdict-label'>Counterfactual — the far wall</span>" +
+          "The prefactor's up-tilt has saturated (<strong>" +
+          (n.tilt === null ? "—" : (n.tilt >= 0 ? "+" : "") + fmt(n.tilt, 0)) +
+          " nats</strong> across the grid) while w_G → 1 keeps handing the 1095 events with a " +
+          "catalogue leg over to L_cat, whose own preference is the rail: they now peak at " +
+          "<strong>" + fmtMap(n.mapWith) + "</strong>. The 493 events with no catalogue leg still " +
+          "read <strong>" + fmtMap(n.mapNo) + "</strong> on the prefactor alone, and lose. Still " +
+          "<strong>" + n.zero + "</strong> events silenced — the 493 only fall out of the product " +
+          "at κ = ∞ exactly, which is the next stop. Neither wall is a measurement. The round " +
+          "trip is the point.";
+      }
 
       function classify() {
         if (state.flat) return "flat";
@@ -1473,7 +1630,19 @@
         if (k === null) return "complete";
         if (k === 0) return "empty";
         if (k === 1) return "shipped";
-        return "other";
+        // Every reachable regime is narrated; the boundaries are the measured
+        // ones (the total's MAP plateaus at 0.86 for 3 ≲ κ ≲ 120 and has
+        // fallen to the lower wall by κ = 250).
+        if (k < 1) return "below";
+        if (k <= 200) return "plateau";
+        return "wall";
+      }
+
+      function verdictHTML(cls) {
+        if (cls === "below") return V51below();
+        if (cls === "plateau") return V51plateau();
+        if (cls === "wall") return V51wall();
+        return V51[cls] || V51.other;
       }
 
       function draw51() {
@@ -1491,7 +1660,7 @@
         document.getElementById("ch05-mix-silenced").textContent =
           state.flat ? "0" : String(d.n_zero_by_kappa[state.k]);
         var cls = classify();
-        verdict51.innerHTML = V51[cls];
+        verdict51.innerHTML = verdictHTML(cls);
         Book.renderMath(verdict51);
         triedBox.hidden = (cls === "shipped");
       }
@@ -1543,6 +1712,24 @@
                       postByKappa[iShipped][i].toExponential(3),
                       postLegCat[i].toExponential(3),
                       postLegComp[i].toExponential(3)];
+            }));
+
+      // The dial, regime by regime (mara MAJOR-7): the 0.86 plateau is only
+      // interpretable next to the prefactor tilt and the two sub-population
+      // MAPs, so print all three.
+      table(document.getElementById("ch05-i51-kappa-table"),
+            ["κ", "MAP", "mean", "w_G(0.73)", "N Δln(1−w) over the grid [nats]",
+             "MAP — 1095 with a catalogue leg", "MAP — 493 without", "silenced"],
+            d.kappa_grid.map(function (k, i) {
+              var s = d.summary_by_kappa[i];
+              var t = d.prefactor_tilt_by_kappa[i];
+              return [k === null ? "∞" : String(k),
+                      fmt(s.map, 3), fmt(s.mean, 4),
+                      k === null ? "1" : fmt(d.w_by_kappa[i][H.indexOf(0.73)], 4),
+                      t === null ? "—" : (t >= 0 ? "+" : "") + fmt(t, 1),
+                      fmt(d.map_by_kappa_with_leg[i], 3),
+                      fmt(d.map_by_kappa_no_leg[i], 3),
+                      String(d.n_zero_by_kappa[i])];
             }));
       draw51();
 

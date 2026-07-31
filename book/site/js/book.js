@@ -7,7 +7,13 @@
  * Provides:
  *   Book.theme              — light/dark toggle, respects prefers-color-scheme
  *   Book.renderMath(root)   — KaTeX auto-render over a subtree (or document)
- *   Book.loadJSON(url)      — fetch + cache a data/*.json file
+ *   Book.loadJSON(url)      — fetch + cache a data/*.json file; on failure
+ *                             surfaces the page's own <noscript> fallbacks
+ *                             instead of leaving blank boxes (§D-2)
+ *   Book.widget(t,url,fn)   — explicit load-then-render wrapper (same fallback)
+ *   Book.canon              — the canonical shared strings from manifest.js
+ *                             (D1 dossier row + erratum, D3 cell-B pip and
+ *                             job-ID split rule) — one definition, §D-6
  *   Book.gridSlider(opts)   — a slider bound to a precomputed data grid
  *   Book.predictReveal(el)  — "predict, then reveal" row (localStorage-persisted)
  *   Book.buildNav()         — top nav from window.BOOK_CHAPTERS (js/manifest.js)
@@ -26,10 +32,18 @@
  *   Book.predictValue(opts) — numeric predict-then-reveal marker (R-ch04-1)
  *   Book.predictReveal(el, cb, {gates}) — cross-widget reveal locks (R-ch05-1)
  *   Book.passport           — the Symbol Passport (BW2): hover/tap any
- *                             `.term[data-term]`, pin to a personal glossary
+ *                             `.term[data-term]`, pin to a personal glossary;
+ *                             chapter-gated (SYMBOLS.firstChapter + .gloss)
+ *                             so shared chrome cannot break the rung-guard
  *   Book.ledger             — "Has this been tried?" (BW3): per-page search over
  *                             data/museum_ledger.json + verdict hints for
- *                             sandbox states tagged data-hypothesis="<row#>"
+ *                             sandbox states tagged data-hypothesis="<row#>";
+ *                             tagged CONTROLS volunteer "⚖ #N — verdict" chips
+ *                             in-widget on first use (§D-5; opt-out
+ *                             data-hypothesis-verdict="inline")
+ *   Book.lazyPlot(el, fn)   — build a widget when it nears the viewport
+ *                             (ch03's IntersectionObserver recipe, §D-9)
+ *   Book.chapter()          — current chapter number (99 = ungated pages)
  *   Book.persona            — global "Reading as: Mara / Tomas / Examiner"
  *                             switch (pre-expands strata; never hides content)
  *
@@ -117,17 +131,186 @@
   };
 
   // ------------------------------------------------------------------
+  // Canonical shared strings (js/manifest.js -> window.BOOK_CANON)
+  // ------------------------------------------------------------------
+  /* REVISION_WORKLIST §D-6: the D1 dossier row + erratum line, the D3
+   * cell-B rail pip and job-ID split rule have exactly ONE definition,
+   * in js/manifest.js. Read them here rather than re-typing them. */
+  Book.canon = global.BOOK_CANON || {};
+
+  // ------------------------------------------------------------------
   // Tiny JSON cache (data/*.json is small — whole-file fetch is fine)
   // ------------------------------------------------------------------
   const _jsonCache = new Map();
   Book.loadJSON = function (url) {
     if (_jsonCache.has(url)) return _jsonCache.get(url);
-    const p = fetch(url).then((r) => {
-      if (!r.ok) throw new Error(`book.js: failed to load ${url} (${r.status})`);
-      return r.json();
-    });
+    const p = fetch(url)
+      .then((r) => {
+        if (!r.ok) throw new Error(`book.js: failed to load ${url} (${r.status})`);
+        return r.json();
+      })
+      .catch((err) => {
+        // UX MAJOR-1 (REVISION_WORKLIST §D-2): a failed fetch must never
+        // leave a silent blank box. Surface the page's own static
+        // fallbacks, then re-throw so no widget renders bogus data.
+        Book.dataFailure(url, err);
+        const e = err instanceof Error ? err : new Error(String(err));
+        e.bookHandled = true;
+        throw e;
+      });
     _jsonCache.set(url, p);
     return p;
+  };
+
+  // ------------------------------------------------------------------
+  // Data-failure surface (UX MAJOR-1 / REVISION_WORKLIST §D item 2)
+  // ------------------------------------------------------------------
+  /* Every chapter page loads its widgets with
+   *   Book.loadJSON("data/chNN_x.json").then(render)
+   * and (as shipped) no .catch(). Under `file://` in Chromium, a stale
+   * deploy, or any 404, the reader used to get a fixed-height empty box
+   * next to prose that assumes a chart is there — no error, no pointer,
+   * nothing. Since the failure handler cannot live in 13 chapter files
+   * (they are the chapter agents'), it lives here and works WITHOUT any
+   * page edit: the first failure schedules one sweep that finds every
+   * still-empty widget target and replaces it with that widget's own
+   * <noscript> copy — which every chapter already wrote, and which is
+   * exactly the right text.
+   *
+   * Newly written widgets should prefer the explicit wrapper
+   * Book.widget(target, url, render) below; the sweep is the safety net
+   * for everything already shipped. */
+
+  /* Selectors for "a container a widget fills in with JS". `.readout`
+   * spans are deliberately NOT here: they ship with static label text
+   * ("$d_L$ = — Mpc"), so they are never "empty" and would veto the
+   * emptiness test below. */
+  const _FILL_TARGETS = ".widget-plot, .num-table, .table-scroll, [data-fill]";
+  let _sweepTimer = null;
+  let _finalSweepArmed = false;
+  const _failedURLs = new Set();
+
+  function _isEmptyTarget(el) {
+    // rendered content = a Plotly graph, an inline figure, or table rows
+    if (el.querySelector(".plotly, svg, canvas, tr, img")) return false;
+    return el.textContent.replace(/[\s—–-]/g, "") === "";
+  }
+
+  /** Replace every still-empty widget container with the page's own
+   *  <noscript> fallback (or a one-line pointer if it has none). */
+  Book.degradeWidgets = function () {
+    const urls = Array.from(_failedURLs).join(", ");
+    const inserted = [];
+    let touched = 0;
+    document.querySelectorAll(".widget").forEach((w) => {
+      if (w.classList.contains("is-data-failed")) return;
+      const targets = Array.from(w.querySelectorAll(_FILL_TARGETS));
+      if (!targets.length) return;
+      // Only degrade a widget whose targets are ALL still empty — a widget
+      // whose own data loaded fine must never be annotated.
+      if (!targets.every(_isEmptyTarget)) return;
+      w.classList.add("is-data-failed");
+      const box = document.createElement("div");
+      box.className = "data-fallback";
+      box.setAttribute("role", "status");
+      const ns = w.querySelector("noscript");
+      // With scripting enabled a <noscript>'s content is parsed as raw
+      // text, so .textContent is its markup — re-render it here.
+      const fallback = ns ? ns.textContent : "";
+      box.innerHTML =
+        `<p class="data-fallback-head">Interactive data failed to load` +
+        (urls ? ` (<code>${urls}</code>)` : "") +
+        `. The static version of this figure follows.</p>` +
+        (fallback ||
+          `<p>Open this book over <code>http://</code> (e.g. ` +
+          `<code>python3 -m http.server</code> in <code>book/site/</code>) — ` +
+          `browsers block <code>fetch()</code> on <code>file://</code>. ` +
+          `The surrounding text carries every number this widget shows.</p>`);
+      const anchor = w.querySelector(".widget-controls") || targets[0];
+      anchor.parentNode.insertBefore(box, anchor);
+      inserted.push(box);
+      touched += 1;
+    });
+
+    // Second pass: JS-filled tables that live in the prose with no .widget
+    // wrapper and no <noscript> of their own (ch01's Omega_m table, ch10's
+    // kernel and N-scaling tables). They would otherwise be the one blank
+    // gap left on the page.
+    document.querySelectorAll(_FILL_TARGETS).forEach((el) => {
+      if (el.closest(".widget") || el.closest(".data-fallback")) return;
+      if (el.dataset && el.dataset.bookFallback) return;
+      if (!_isEmptyTarget(el)) return;
+      const host = el.closest(".table-scroll") || el;
+      if (host.previousElementSibling &&
+          host.previousElementSibling.classList.contains("data-fallback")) return;
+      const box = document.createElement("div");
+      box.className = "data-fallback";
+      box.setAttribute("role", "status");
+      box.innerHTML =
+        `<p class="data-fallback-head">A table belongs here, and its data ` +
+        (urls ? `(<code>${urls}</code>) ` : "") +
+        `failed to load. Open the book over <code>http://</code> — browsers ` +
+        `block <code>fetch()</code> on <code>file://</code>. The paragraphs ` +
+        `around this gap state the numbers it would show.</p>`;
+      host.parentNode.insertBefore(box, host);
+      if (el.dataset) el.dataset.bookFallback = "1";
+      inserted.push(box);
+      touched += 1;
+    });
+
+    // Render math only inside what was just inserted (the promoted <noscript>
+    // copy is full of $...$); never re-walk the whole, already-rendered page.
+    inserted.forEach((b) => Book.renderMath(b));
+    return touched;
+  };
+
+  Book.dataFailure = function (url, err) {
+    if (!_failedURLs.has(url)) {
+      _failedURLs.add(url);
+      console.warn(`book.js: ${url} could not be loaded — falling back to the ` +
+        `page's static copy for every widget that needed it.`, err);
+    }
+    // Debounced, and re-armable: a fetch that fails late (a slow 404) must
+    // still degrade its widget. degradeWidgets() is idempotent.
+    const schedule = () => {
+      if (_sweepTimer) clearTimeout(_sweepTimer);
+      _sweepTimer = setTimeout(() => { _sweepTimer = null; Book.degradeWidgets(); }, 300);
+    };
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", schedule, { once: true });
+    } else {
+      schedule();
+    }
+    // ...plus one final sweep after everything else on the page has had its
+    // turn, so a widget whose render raced the first sweep is still caught.
+    if (!_finalSweepArmed) {
+      _finalSweepArmed = true;
+      const fin = () => setTimeout(() => Book.degradeWidgets(), 1200);
+      if (document.readyState === "complete") fin();
+      else global.addEventListener("load", fin, { once: true });
+    }
+  };
+
+  /* One clear warning instead of N unhandled-rejection traces: the
+   * failure has already been surfaced on the page by the time this fires. */
+  global.addEventListener("unhandledrejection", (ev) => {
+    if (ev.reason && ev.reason.bookHandled) ev.preventDefault();
+  });
+
+  /**
+   * Explicit data-widget wrapper (the going-forward API):
+   *   Book.widget("#ch07-plot", "data/ch07_c7.json", (d, el) => {...})
+   * Renders on success; on failure the shared fallback above takes over.
+   * Returns the promise so callers can chain.
+   */
+  Book.widget = function (target, url, render) {
+    const el = typeof target === "string"
+      ? (document.querySelector(target) || document.getElementById(target))
+      : target;
+    return Book.loadJSON(url).then((d) => {
+      if (el) render(d, el);
+      return d;
+    }).catch(() => { /* surfaced by Book.dataFailure */ });
   };
 
   // ------------------------------------------------------------------
@@ -234,6 +417,16 @@
       : container.querySelector("[data-predict-id]");
     const pid = idHost ? idHost.getAttribute("data-predict-id") : null;
     const storageKey = pid ? "book-predict:" + pid : null;
+    // Uniform grading (REVISION_WORKLIST §D item 8, mara MAJOR-3): an
+    // optional data-predict-correct="<choice>" on the container (or any
+    // descendant, matching the id-resolution rule) names the graded
+    // option. On reveal the correct button is marked .predict-correct
+    // and a wrong chosen button .predict-missed — the reveal's prose
+    // still owns the verdict wording (ch02 is the first customer).
+    const gradeHost = container.hasAttribute("data-predict-correct")
+      ? container
+      : container.querySelector("[data-predict-correct]");
+    const correct = gradeHost ? gradeHost.getAttribute("data-predict-correct") : null;
     const gates = ((opts && opts.gates) || [])
       .map((g) => (typeof g === "string" ? document.querySelector(g) : g))
       .filter(Boolean);
@@ -246,6 +439,13 @@
       buttons.forEach((b) => b.setAttribute("aria-pressed", "false"));
       btn.setAttribute("aria-pressed", "true");
       if (reveal) reveal.classList.add("shown");
+      if (correct) {
+        buttons.forEach((b) => {
+          const isCorrect = b.getAttribute("data-predict") === correct;
+          b.classList.toggle("predict-correct", isCorrect);
+          b.classList.toggle("predict-missed", b === btn && !isCorrect);
+        });
+      }
       setGates(false);
       if (storageKey) {
         try {
@@ -402,21 +602,76 @@
    *   config   - optional Plotly config (default: no modebar, responsive)
    * Returns { update(traces) } which re-renders traces with a fresh layout.
    */
-  Book.themedPlot = function (divId, traces, layoutFn, config) {
-    const cfg = config || { displayModeBar: false, responsive: true };
-    Plotly.newPlot(divId, traces, layoutFn(), cfg);
-    const observer = new MutationObserver(() => {
-      Plotly.relayout(divId, layoutFn());
+  /* ONE theme observer for every themed plot (REVISION_WORKLIST §D item 9,
+   * ux MINOR): the per-plot MutationObservers are consolidated — pages with
+   * 8 Plotly instances used to run 8 observers watching the same
+   * attribute flip. Registrations survive re-renders (update() re-reads
+   * layoutFn); a plot whose container has left the DOM is dropped. */
+  const _themedPlots = [];
+  let _themeObserver = null;
+
+  function _ensureThemeObserver() {
+    if (_themeObserver) return;
+    _themeObserver = new MutationObserver(() => {
+      for (let i = _themedPlots.length - 1; i >= 0; i--) {
+        const p = _themedPlots[i];
+        if (!document.getElementById(p.divId)) {
+          _themedPlots.splice(i, 1);
+          continue;
+        }
+        try {
+          Plotly.relayout(p.divId, p.layoutFn());
+        } catch (e) {
+          console.warn(`book.js: theme relayout failed for #${p.divId}`, e);
+        }
+      }
     });
-    observer.observe(document.documentElement, {
+    _themeObserver.observe(document.documentElement, {
       attributes: true,
       attributeFilter: ["data-theme"],
     });
+  }
+
+  Book.themedPlot = function (divId, traces, layoutFn, config) {
+    const cfg = config || { displayModeBar: false, responsive: true };
+    Plotly.newPlot(divId, traces, layoutFn(), cfg);
+    _ensureThemeObserver();
+    _themedPlots.push({ divId: divId, layoutFn: layoutFn });
     return {
       update(newTraces) {
         Plotly.react(divId, newTraces, layoutFn(), cfg);
       },
     };
+  };
+
+  // ------------------------------------------------------------------
+  // Lazy widget construction (REVISION_WORKLIST §D item 9, ux MAJOR-3)
+  // ------------------------------------------------------------------
+  /**
+   * Book.lazyPlot(target, build) — run `build()` once, when `target`
+   * (element or selector) approaches the viewport (±300px), instead of at
+   * page load. This is the ch03 IntersectionObserver recipe, centralized;
+   * without IntersectionObserver (or with a missing target) it degrades
+   * to the eager path. ch02/ch08/ch09 currently ship the identical
+   * page-local copy (zero-coupling rule, same precedent as interp1);
+   * new chapters should call this instead.
+   */
+  Book.lazyPlot = function (target, build) {
+    const el = typeof target === "string"
+      ? (document.querySelector(target) || document.getElementById(target))
+      : target;
+    if (!el || !("IntersectionObserver" in global)) {
+      build();
+      return;
+    }
+    const io = new IntersectionObserver((entries, obs) => {
+      entries.forEach((e) => {
+        if (!e.isIntersecting) return;
+        obs.disconnect();
+        build();
+      });
+    }, { rootMargin: "300px 0px 300px 0px" });
+    io.observe(el);
   };
 
   // ------------------------------------------------------------------
@@ -468,6 +723,24 @@
   }
 
   // ------------------------------------------------------------------
+  // Current chapter number (shared: passport gating + cumulative rail)
+  // ------------------------------------------------------------------
+  /** Which chapter is the reader on? ch07-redshift.html -> 7. Pages with
+   *  no chapter number (index, museum, template) return 99, i.e. no
+   *  gating — the museum is the annex that may say everything. A page
+   *  can override with <body data-chapter="7"> if it is ever renamed. */
+  Book.chapter = function () {
+    const attr = document.body && document.body.getAttribute("data-chapter");
+    if (attr !== null && attr !== undefined && attr !== "") {
+      const n = parseInt(attr, 10);
+      if (isFinite(n)) return n;
+    }
+    const file = (global.location.pathname.split("/").pop() || "");
+    const m = /^ch(\d+)/.exec(file);
+    return m ? parseInt(m[1], 10) : 99;
+  };
+
+  // ------------------------------------------------------------------
   // Bias Ledger Rail (BW1, minimal implementation)
   // ------------------------------------------------------------------
   /**
@@ -488,7 +761,43 @@
    * is the point" channel: amber = measured-but-unresolved defect, grey =
    * confounded / in-flight. Call again (e.g. from a sandbox toggle) to
    * update — the rail re-renders in place.
+   *
+   * CUMULATIVE HISTORY (REVISION_WORKLIST §D item 4, ped M7): the page's
+   * entries are merged with window.BOOK_BIAS_ROWS (js/manifest.js) so the
+   * rail never loses rows moving forward. Book rows with
+   * from_chapter <= Book.chapter() render even when the page did not
+   * declare them; a page row whose label matches a book row's `match`
+   * list REPLACES that book row (the chapter's own wording, note and
+   * arming pattern win). Page rows with no book counterpart (e.g. a
+   * chapter's live sandbox row) are appended after the history.
    */
+  function _mergeBiasRows(pageEntries) {
+    const n = Book.chapter();
+    const rows = (global.BOOK_BIAS_ROWS || []).filter(
+      (r) => typeof r.from_chapter === "number" && r.from_chapter <= n
+    );
+    if (!rows.length) return pageEntries;
+    const consumed = new Set();
+    const merged = [];
+    for (const r of rows) {
+      let hit = -1;
+      for (let i = 0; i < pageEntries.length; i++) {
+        if (consumed.has(i)) continue;
+        const label = String(pageEntries[i].label || "").toLowerCase();
+        if ((r.match || []).some((m) => label.indexOf(m) >= 0)) { hit = i; break; }
+      }
+      if (hit >= 0) {
+        consumed.add(hit);
+        merged.push(pageEntries[hit]);
+      } else {
+        merged.push({ label: r.label, bias: r.bias, note: r.note });
+      }
+    }
+    pageEntries.forEach((e, i) => { if (!consumed.has(i)) merged.push(e); });
+    return merged;
+  }
+  Book._mergeBiasRows = _mergeBiasRows; // exposed for testing
+
   Book.biasRail = function (spec) {
     let host = document.getElementById("bias-rail");
     if (!host) {
@@ -500,7 +809,7 @@
     const MIN = -0.18, MAX = 0.08;
     const pct = (b) => Math.max(0, Math.min(100, ((b - MIN) / (MAX - MIN)) * 100));
     let html = `<div class="bias-rail-title">${spec.title || "Bias ledger (in h, truth = 0)"}</div>`;
-    for (const e of spec.entries) {
+    for (const e of _mergeBiasRows(spec.entries || [])) {
       const activeCls = e.active ? " active" : "";
       if (e.bias === null || e.bias === undefined) {
         html += `<div class="bias-rail-row${activeCls}"><span class="bias-rail-label">${e.label}</span><span class="bias-rail-na">not defined yet</span></div>`;
@@ -530,7 +839,29 @@
   /* The binding notation table of BOOK_DESIGN.md §3.1, transcribed verbatim
    * (meaning / units / defining source). Chapters mark occurrences with
    * <span class="term" data-term="KEY">…</span>; the passport attaches a
-   * hover/tap card and a pin-to-glossary control to every one. */
+   * hover/tap card and a pin-to-glossary control to every one.
+   *
+   * CHAPTER GATING (REVISION_WORKLIST §D item 1; mara MAJOR-2 / ped M4).
+   * Shared chrome must not defeat the rung-guard that binds every chapter
+   * agent: hovering w_G in Ch 5 used to hand the reader "β_G/D —
+   * ESTIMAND-DEPENDENT" and "C9 is a live FINDING", i.e. Ch 9's reveal,
+   * four chapters early. An entry may therefore carry:
+   *
+   *   firstChapter: <n>   the first chapter from which the FULL card is
+   *                       safe — i.e. one past any chapter whose own
+   *                       reveal the card would pre-empt. (eps is 8, not
+   *                       7: both `data-term="eps"` tags sit in Ch 7's
+   *                       deck and §1, while §6 is where the chapter
+   *                       *arrives* at 0.256 — gating at 7 would be a
+   *                       no-op and ped M4's complaint would stand.)
+   *   gloss:  "<rung-safe one-liner>"   shown INSTEAD of `meaning` before
+   *                                      that chapter (and `note` is
+   *                                      suppressed entirely)
+   *
+   * Both are required together — gating without a gloss would show an
+   * empty card, so `firstChapter` alone is ignored. Symbol, units and the
+   * defining code site stay unconditional: that is the passport's actual
+   * job for Mara and Tomas, and none of it spoils anything. */
   Book.SYMBOLS = {
     h:      { sym: "$h$", meaning: "H₀ / 100 km s⁻¹ Mpc⁻¹; mock truth h_true = 0.73", units: "—", src: "constants.py H" },
     H0:     { sym: "$H_0$", meaning: "Hubble constant", units: "km s⁻¹ Mpc⁻¹", src: "constants.py" },
@@ -538,7 +869,8 @@
     z:      { sym: "$z$", meaning: "true redshift", units: "—", src: "dark_siren_likelihood.md §2.4" },
     zg:     { sym: "$z_g$", meaning: "catalogue (observed) redshift of galaxy g", units: "—", src: "handler.py; K1" },
     sigz:   { sym: "$\\sigma_z$", meaning: "host-z kernel width (total: measurement ⊕ peculiar velocity)", units: "—", src: "hostz_pv_photoz_kernel.md" },
-    eps:    { sym: "$\\sigma_z/z$", meaning: "fractional z width — the C7 variable; rail threshold quoted at 0.256", units: "—", src: "C7_README", note: "C7 is a live FINDING — see Ch 7 §6 / Ch 11" },
+    eps:    { sym: "$\\sigma_z/z$", meaning: "fractional z width — the C7 variable; rail threshold quoted at 0.256", units: "—", src: "C7_README", note: "C7 is a live FINDING — see Ch 7 §6 / Ch 11",
+              firstChapter: 8, gloss: "how wide the host-redshift smear is compared with the redshift itself — the fractional width of the kernel" },
     Om:     { sym: "$\\Omega_m$", meaning: "matter density; fiducial 0.2726 (Barausse M1, a design choice)", units: "—", src: "constants.py; G11" },
     Ez:     { sym: "$E(z)$", meaning: "√(Ω_m(1+z)³ + Ω_Λ)", units: "—", src: "dark_siren_likelihood.md §2.4" },
     dVc:    { sym: "$dV_c/dz$", meaning: "comoving volume element per unit z (per sr where noted)", units: "Mpc³", src: "physical_relations.py:571" },
@@ -551,7 +883,8 @@
     slnM:   { sym: "$\\sigma_{\\ln M}$", meaning: "mass-proxy scatter (≈0.58 kernel-side / ≈1.28 catalogue-side — state which)", units: "—", src: "mass_marginal_2d_kernel.md; RV15" },
     snr:    { sym: "SNR / $\\rho$", meaning: "matched-filter signal-to-noise; threshold 20", units: "—", src: "parameter_estimation.py:488; constants.py" },
     Gam:    { sym: "$\\Gamma_{ab}$", meaning: "Fisher matrix ⟨∂_a h | ∂_b h⟩", units: "mixed", src: "parameter_estimation.py:399" },
-    Sig:    { sym: "$\\Sigma$", meaning: "Cramér–Rao covariance Γ⁻¹", units: "mixed", src: "parameter_estimation.py:430" },
+    Sig:    { sym: "$\\Sigma$", meaning: "Cramér–Rao covariance Γ⁻¹", units: "mixed", src: "parameter_estimation.py:430",
+              firstChapter: 6, gloss: "the measurement's covariance: how big the error ellipsoid is and which way it tilts" },
     u:      { sym: "$u$", meaning: "fractional distance d_L/d̂_L (mean 1)", units: "—", src: "E4; bayesian_statistics.py:1856" },
     phth:   { sym: "$\\phi, \\theta$", meaning: "sky coordinates (frame-stamped)", units: "rad", src: "LISA_configuration.py" },
     wg:     { sym: "$w_g$", meaning: "rate weight R_eff(M_g)/(1+z_g)", units: "yr⁻¹-ish (relative)", src: "bayesian_statistics.py:879; G2c D1" },
@@ -564,12 +897,28 @@
     betaG:  { sym: "$\\beta_G$", meaning: "catalogued-side selection integral", units: "Mpc³ sr⁻¹", src: "G2c; bayesian_statistics.py (β_G = D − β_Ḡ)" },
     betaGbar: { sym: "$\\beta_{\\bar G}$", meaning: "dark-side selection integral", units: "Mpc³ sr⁻¹", src: "bayesian_statistics.py:1170" },
     Dh:     { sym: "$D(h)$", meaning: "full-volume selection normalization β_G + β_Ḡ", units: "Mpc³ sr⁻¹", src: "bayesian_statistics.py:1013; G2c §6 C2 (cite “denominator of (A14)”)" },
-    wG:     { sym: "$w_G$", meaning: "mixture weight β_G/D — ESTIMAND-DEPENDENT; always name the mode", units: "—", src: "bayesian_statistics.py:3309-3311; C9", note: "C9 is a live FINDING — see Ch 9 §6 / Ch 11" },
+    wG:     { sym: "$w_G$", meaning: "mixture weight β_G/D — ESTIMAND-DEPENDENT; always name the mode", units: "—", src: "bayesian_statistics.py:3309-3311; C9", note: "C9 is a live FINDING — see Ch 9 §6 / Ch 11",
+              firstChapter: 9, gloss: "mixture weight — the probability the host is catalogued; how it is computed, and what it is normalized to, is Ch 9" },
     pdet:   { sym: "$p_{\\rm det}$", meaning: "detection probability (horizon-survival estimator)", units: "—", src: "simulation_detection_probability.py" },
     fz:     { sym: "$f(z,\\Omega)$", meaning: "catalogue completeness fraction", units: "—", src: "G2c D2; pixel_completeness.py" },
     pi:     { sym: "$p_i(h)$", meaning: "per-event likelihood (the master equation)", units: "—", src: "bayesian_statistics.py:3006-3009, 1042-1048" },
-    Cscale: { sym: "$C$", meaning: "the arbitrary mass-coordinate rescale of the C8 walk", units: "—", src: "README_C8.md", note: "C8 is a live FINDING — see Ch 8 §6 / Ch 11" },
+    Cscale: { sym: "$C$", meaning: "the arbitrary mass-coordinate rescale of the C8 walk", units: "—", src: "README_C8.md", note: "C8 is a live FINDING — see Ch 8 §6 / Ch 11",
+              firstChapter: 8, gloss: "a free rescaling of the mass coordinate — a change of units the answer should not notice" },
     sigh:   { sym: "$\\sigma_h$", meaning: "posterior width in h", units: "—", src: "readouts" },
+
+    /* --- the two-estimands normalization block (REVISION_WORKLIST §D-7,
+     * tomas M5): Ch 9 §4 introduced these inside two display equations
+     * with no passport entry at all; Σ_glob also leaks into Ch 7 §6 and
+     * Ch 11's C8 dimension count. Units are the derivation's own
+     * (DERIVATION_GENERATOR_CONSISTENT_NORM.md §4 units table), not
+     * inferred here. None of these is gated: they carry no later
+     * chapter's verdict. */
+    nw:     { sym: "$n_w$", meaning: "rate-weight density that converts the discrete catalogue sum Σ w_g N_g into the same measure as the model integrals — mode-dependent: n̄_w = Σ_glob/β_G (absolute_marginal) vs n̂_w = W_cat/V_f (generator_marginal)", units: "yr⁻¹ sr Mpc⁻³", src: "DERIVATION_GENERATOR_CONSISTENT_NORM.md §2.3 (4); bayesian_statistics.py" },
+    Sglob:  { sym: "$\\Sigma_{\\rm glob}$", meaning: "catalogue-channel detection expectation Σ_{g: z_g<z_max} w_g P_det(d_L(z_g;h)) — the normalization packet's spelling of G2c's Σ_global", units: "yr⁻¹", src: "bayesian_statistics.py:998-1195 precompute_global_catalog_selection; DERIVATION_GENERATOR_CONSISTENT_NORM.md §2.1" },
+    Wcat:   { sym: "$W_{\\rm cat}$", meaning: "total draw-eligible rate weight of the pruned catalogue, Σ_{g: z_g<1.5} w_g — an h-independent scalar (the generator's own draw normalizer)", units: "yr⁻¹", src: "DERIVATION_GENERATOR_CONSISTENT_NORM.md §2.2; :243" },
+    Vf:     { sym: "$V_f(h)$", meaning: "completeness-weighted population volume ∫₀^{1.5} f̄(z,h)(dV_c/dz)/(1+z) dz; exactly ∝ h⁻³, V_f(0.73) = 2.3237×10⁸", units: "Mpc³ sr⁻¹", src: "DERIVATION_GENERATOR_CONSISTENT_NORM.md §2.2, §3.2" },
+    Fincat: { sym: "$F$", meaning: "pre-detection in-catalogue fraction V_f/V_tot — the generator's Bernoulli channel split, derived not posited; 0.0175370 and exactly h-independent", units: "—", src: "DERIVATION_GENERATOR_CONSISTENT_NORM.md §2.1 (2), §3.2; ledger #81" },
+    phcat:  { sym: "$\\phi_{\\rm cat}$", meaning: "selected number density — what a flux-limited catalogue row is drawn from: f(z,Ω)·(dV_c/dz)/(1+z). Distinct from the prior over where an EMRI host is (that is w_pop)", units: "Mpc³ sr⁻¹ per unit z", src: "G2c D2 (f) × G2b §1 (w_pop); Ch 7 §6 / Ch 11 §4" },
   };
 
   Book.passport = {
@@ -587,17 +936,46 @@
       } catch (e) { /* ignore */ }
     },
 
-    _card(key) {
+    /** The reader's chapter number — delegates to the shared Book.chapter()
+     *  (one definition; the cumulative bias rail uses the same one). */
+    _chapter() {
+      return Book.chapter();
+    },
+
+    /** The card's visible fields for the current page (chapter-gated). */
+    _view(key) {
       const s = Book.SYMBOLS[key];
       if (!s) return null;
+      const gated = !!(s.gloss && typeof s.firstChapter === "number" &&
+        Book.passport._chapter() < s.firstChapter);
+      return {
+        sym: s.sym,
+        meaning: gated ? s.gloss : s.meaning,
+        units: s.units,
+        // the code site stays (it is the passport's job for Tomas), but a
+        // trailing claim reference — "…py:3309-3311; C9" — is a verdict
+        // pointer, not a source, and is dropped with the rest of the card.
+        src: gated ? s.src.replace(/[;,]\s*C\d+\b/g, "").trim() : s.src,
+        note: gated ? "" : (s.note || ""),
+        gatedFrom: gated ? s.firstChapter : null,
+      };
+    },
+
+    _card(key) {
+      const v = Book.passport._view(key);
+      if (!v) return null;
       const pinned = Book.passport._pinned().indexOf(key) >= 0;
-      const note = s.note ? `<div class="passport-note">${s.note}</div>` : "";
+      const note = v.note ? `<div class="passport-note">${v.note}</div>` : "";
+      // D4 spoiler discipline: name the chapter, never its number or verdict.
+      const later = v.gatedFrom !== null
+        ? `<div class="passport-later">full card from Ch ${v.gatedFrom} on</div>`
+        : "";
       return (
-        `<div class="passport-sym">${s.sym}</div>` +
-        `<div class="passport-meaning">${s.meaning}</div>` +
-        `<div class="passport-row"><span>units</span> ${s.units}</div>` +
-        `<div class="passport-row"><span>defined by</span> <code>${s.src}</code></div>` +
-        note +
+        `<div class="passport-sym">${v.sym}</div>` +
+        `<div class="passport-meaning">${v.meaning}</div>` +
+        `<div class="passport-row"><span>units</span> ${v.units}</div>` +
+        `<div class="passport-row"><span>defined by</span> <code>${v.src}</code></div>` +
+        note + later +
         `<button type="button" class="passport-pin" data-key="${key}" aria-pressed="${pinned}">` +
         (pinned ? "★ pinned — unpin" : "☆ pin to my glossary") + `</button>`
       );
@@ -657,10 +1035,12 @@
       } else {
         let html = `<div class="passport-glossary-title">My glossary</div>`;
         for (const k of list) {
-          const s = Book.SYMBOLS[k];
-          if (!s) continue;
-          html += `<div class="passport-glossary-item"><strong>${s.sym}</strong> ` +
-            `${s.meaning} <em>[${s.units}]</em> <code>${s.src}</code></div>`;
+          // same chapter gating as the hover card — a symbol pinned in Ch 9
+          // must not re-spoil Ch 9 when the reader pages back to Ch 5.
+          const v = Book.passport._view(k);
+          if (!v) continue;
+          html += `<div class="passport-glossary-item"><strong>${v.sym}</strong> ` +
+            `${v.meaning} <em>[${v.units}]</em> <code>${v.src}</code></div>`;
         }
         panel.innerHTML = html;
       }
@@ -746,11 +1126,16 @@
 
     _fmtRow(r) {
       const dnr = r.do_not_retry ? ` <span class="ledger-dnr">do-not-re-try</span>` : "";
+      // book_note: a book-added disambiguation (NOT ledger text) — e.g. row
+      // #88's "Cell B" naming collision with the 2×2 cell B (worklist MJ-3).
+      // Rendering it here keeps a chapter-page search from misleading.
+      const note = r.book_note
+        ? ` <span class="ledger-date">${r.book_note}</span>` : "";
       return (
         `<div class="ledger-result"><strong>#${r.id}</strong> ` +
         `<span class="ledger-date">${r.date || r.era || ""}</span> — ` +
         `${r.hypothesis} → <em>${r.verdict}</em>${dnr} ` +
-        `<span class="prov-chip">${r.documented || ""}</span></div>`
+        `<span class="prov-chip">${r.documented || ""}</span>${note}</div>`
       );
     },
 
@@ -761,6 +1146,108 @@
         const hay = `#${r.id} ${r.id} ${r.hypothesis} ${r.test} ${r.verdict} ${r.documented} ${r.date}`.toLowerCase();
         return terms.every((t) => hay.indexOf(t) >= 0);
       }).slice(0, 12);
+    },
+
+    /* ---- scoped inline verdict chips (REVISION_WORKLIST §D item 5,
+     * ped B4 steps 2–3 as adjudicated in §B-4) ----------------------
+     * When a data-hypothesis-tagged CONTROL becomes active (a tagged
+     * button is clicked / a tagged input is moved), the widget gains a
+     * one-line chip per tagged row: ⚖ #N — <verdict>. Opt-outs:
+     *   - data-hypothesis-verdict="inline" on the control or the widget
+     *     ("this widget already hard-codes its verdict — no second
+     *     report", the integrator's original double-report concern);
+     *   - any other non-empty data-hypothesis-verdict value is used as
+     *     the chip's verdict text verbatim (ch07 supplies page-scoped
+     *     wording this way).
+     * Tags on non-control elements INSIDE a widget (e.g. ch05's own
+     * hidden verdict box) only seed the panel — they never chip, so a
+     * page-local reveal is never doubled. Tags on the .widget element
+     * itself chip on the first interaction with any control inside it.
+     * Known limit (BUILD_REPORT gap #3): controls tagged dynamically
+     * after init (ch03's #26) are armed on a best-effort re-scan when
+     * the chip container is first needed — a tag set after the reader's
+     * first interaction may only surface in the search panel. */
+    _chipContainer(widget) {
+      let box = widget.querySelector(".ledger-inline-chips");
+      if (!box) {
+        box = document.createElement("div");
+        box.className = "ledger-inline-chips";
+        box.setAttribute("role", "status");
+        box.setAttribute("aria-live", "polite");
+        const controls = widget.querySelector(".widget-controls");
+        if (controls && controls.parentNode) {
+          controls.parentNode.insertBefore(box, controls.nextSibling);
+        } else {
+          widget.appendChild(box);
+        }
+      }
+      return box;
+    },
+
+    _inlineReveal(widget, ids, overrideText) {
+      const box = Book.ledger._chipContainer(widget);
+      const todo = ids.filter(
+        (id) => !box.querySelector(`[data-ledger-chip="${id}"]`)
+      );
+      if (!todo.length) return;
+      Book.ledger.load().then((rows) => {
+        const byId = {};
+        rows.forEach((r) => { byId[String(r.id)] = r; });
+        todo.forEach((id, i) => {
+          if (box.querySelector(`[data-ledger-chip="${id}"]`)) return;
+          const r = byId[String(id)];
+          if (!r) return;
+          const chip = document.createElement("div");
+          chip.className = "ledger-inline-chip";
+          chip.setAttribute("data-ledger-chip", id);
+          const head = document.createElement("strong");
+          head.textContent = `⚖ #${r.id}`;
+          chip.appendChild(head);
+          chip.appendChild(document.createTextNode(" — "));
+          const verdict = document.createElement("span");
+          verdict.textContent = (i === 0 && overrideText) ? overrideText : r.verdict;
+          chip.appendChild(verdict);
+          if (r.do_not_retry) {
+            const dnr = document.createElement("span");
+            dnr.className = "ledger-dnr";
+            dnr.textContent = "do-not-re-try";
+            chip.appendChild(document.createTextNode(" "));
+            chip.appendChild(dnr);
+          }
+          chip.title = `${r.hypothesis} (${r.documented || "ledger"})`;
+          box.appendChild(chip);
+        });
+      }).catch(() => { /* ledger data unavailable — search panel says so */ });
+    },
+
+    _armInlineChips() {
+      document.querySelectorAll("[data-hypothesis]").forEach((el) => {
+        const ids = [];
+        for (const attr of ["data-hypothesis", "data-hypothesis-2"]) {
+          const v = el.getAttribute(attr);
+          if (v && v !== "none" && ids.indexOf(v) < 0) ids.push(v);
+        }
+        if (!ids.length) return;
+        const own = el.getAttribute("data-hypothesis-verdict");
+        if (own === "inline") return; // hard-coded verdict: no second report
+        const widget = el.closest(".widget");
+        if (!widget) return;
+        if (widget !== el &&
+            widget.getAttribute("data-hypothesis-verdict") === "inline") return;
+        const override = own && own !== "inline" ? own : null;
+        const fire = () => Book.ledger._inlineReveal(widget, ids, override);
+        const isControl = /^(BUTTON|INPUT|SELECT)$/.test(el.tagName);
+        if (isControl) {
+          el.addEventListener(el.tagName === "BUTTON" ? "click" : "input", fire);
+        } else if (widget === el) {
+          // widget-level tag: first interaction with any control inside
+          widget.querySelectorAll("button, input, select").forEach((c) => {
+            c.addEventListener(c.tagName === "BUTTON" ? "click" : "input", fire);
+          });
+        }
+        // non-control, non-widget tags (page-local verdict boxes) only
+        // seed the search panel — deliberately no chip.
+      });
     },
 
     init() {
@@ -801,11 +1288,15 @@
           : (input.value.trim() ? `<p class="ledger-ask-hint">No ledger row matches.</p>` : "");
       });
 
-      // 2. seed the panel with the hypotheses this page's sandboxes can
-      // reach (their data-hypothesis="<row#>" tags). The IN-WIDGET verdict
-      // reveals themselves stay page-local by design: the museum meta-rule
-      // required every chapter to hard-code its own reveal, so injecting a
-      // second one here would double-reveal (and pre-empt predict-locks).
+      // 2. arm the scoped inline verdict chips (§D item 5): a tagged
+      // control volunteers "⚖ #N — verdict" inside its own widget the
+      // moment it becomes active. Widgets that hard-code their verdict
+      // opt out with data-hypothesis-verdict="inline", so nothing
+      // double-reports and no predict-lock is pre-empted.
+      Book.ledger._armInlineChips();
+
+      // 3. seed the panel with the hypotheses this page's sandboxes can
+      // reach (their data-hypothesis="<row#>" tags).
       const tagIds = [];
       document.querySelectorAll("[data-hypothesis]").forEach((el) => {
         for (const attr of ["data-hypothesis", "data-hypothesis-2"]) {
@@ -861,13 +1352,13 @@
       document.body.classList.add("persona-" + mode);
       const gw = document.querySelectorAll("details.gw-reader");
       const num = document.querySelectorAll("details.num-view");
-      if (mode === "mara") {
-        gw.forEach((d) => { d.open = false; });
-        num.forEach((d) => { d.open = false; });
-      } else if (mode === "tomas") {
+      // The switch only ever OPENS strata, never force-closes them
+      // (REVISION_WORKLIST §D item 9 / ped m3): switching back to Mara
+      // leaves whatever the reader opened alone — "it never hides
+      // content" now also holds for content the reader revealed.
+      if (mode === "tomas") {
         gw.forEach((d) => { d.open = true; });
-        num.forEach((d) => { d.open = false; });
-      } else {
+      } else if (mode === "examiner") {
         gw.forEach((d) => { d.open = true; });
         num.forEach((d) => { d.open = true; });
       }

@@ -10,14 +10,15 @@ nothing is modelled, fitted or invented.
     ``seed61000`` Cramer-Rao table against the reduced GLADE+ catalogue,
     using the production ball radius
     ``r = sigma_multiplier * sqrt(lambda_max(J Sigma J^T))``
-    (``galaxy_catalogue/handler.py:519``, ``:584-592``) and the production
-    candidate redshift window ``get_redshift_outer_bounds``
+    (``galaxy_catalogue/handler.py:558``, ``:617``) with the PRODUCTION
+    ``sigma_multiplier = 1.5`` (``bayesian_statistics.py:2838``) and the
+    production candidate redshift window ``get_redshift_outer_bounds``
     (``physical_relations.py:546``).
 
 ``book/site/data/ch03_skyball.json``      (I3.1 "Sky-Ball Explorer")
     Two real events -- EMRI-889 (the book's running example: the loudest
-    event of the run, a ball 0.0168 deg across holding *three* galaxies) and
-    event 1121 (SNR 35, a ball 4.96 deg across holding 57,535) -- with their
+    event of the run, a ball 0.0126 deg across holding *two* galaxies) and
+    event 1121 (SNR 35, a wide ball holding tens of thousands) -- with their
     real candidate galaxies, real rate weights ``w_g = R_eff(M_g)/(1+z_g)``
     (``bayesian_statistics.py:879``), the event's real 3-D Fisher Gaussian,
     and the exact per-h aggregate of the **point-kernel** numerator
@@ -149,15 +150,25 @@ OUT_RATIO = OUT_DIR / "ch03_ratio.json"
 EVENT_GOLDEN = 889
 EVENT_CROWDED = 1121
 # Third event, ratio-block only: the candidate set with the largest measured
-# spread in the per-galaxy selection factor D_g anywhere in this run
-# (p_det 0.246 -> 0.824 at h = 0.60 across its 18,839 candidates).  Ratio of
+# spread in the per-galaxy selection factor D_g anywhere in this run.  Ratio of
 # sums and mean of ratios can only differ where D_g differs, so this is the
 # event on which the algebra is worth looking at.  Selected by measurement
-# (max_g p_det - min_g p_det over all events with >= 50 candidates), not taste.
+# (max_g p_det - min_g p_det over all events with >= D_SPREAD_MIN_CAND
+# candidates, at h = 0.60), not taste — and RE-VERIFIED at the production
+# radius by `d_spread_scan` below, which raises if the pick is not the argmax.
 EVENT_DSPREAD = 676
+D_SPREAD_MIN_CAND = 50
 
 # Production ball / window conventions, quoted from the code sites.
-SIGMA_MULTIPLIER = 2  # handler.get_possible_hosts_from_ball_tree default
+#
+# REVISION 2026-07-31 (worklist D2): was `2`, the *signature default* of
+# `handler.get_possible_hosts_from_ball_tree` (handler.py:568) — which production
+# never uses.  The only production ball-search call site is
+# `bayesian_statistics.py:2838` → `sigma_multiplier=1.5`.  The `2.0` in the call
+# immediately above (`:2823`) is an argument to `get_redshift_outer_bounds`: a
+# different multiplier for a different cut (the candidate z-window), which is why
+# the two got crossed.  Do NOT read the handler signature default as production.
+SIGMA_MULTIPLIER = 1.5  # bayesian_statistics.py:2838 (production call site)
 H_PRIOR_MIN, H_PRIOR_MAX = 0.6, 0.86  # physical_relations.get_redshift_outer_bounds
 NUMERATOR_SIGMA_MULTIPLIER = 4.0  # single_host_likelihood integration window
 
@@ -393,7 +404,9 @@ def build_census(
             "(baseline reduced GLADE+, production prune)",
             "crb": "results/.../realistic_20260729/seed61000/prepared_cramer_rao_bounds.csv",
             "n_catalogue_rows_pruned": int(len(cat["z"])),
-            "ball_rule": "handler.py:519 r = 2*sqrt(lambda_max(J Sigma J^T)), chord on unit sphere",
+            "ball_rule": "handler.py:617 r = 1.5*sqrt(lambda_max(J Sigma J^T)), chord on unit "
+            "sphere; n_sigma = 1.5 from the production call site "
+            "bayesian_statistics.py:2838 (the handler signature default 2 is NOT production)",
             "z_window_rule": "physical_relations.py:546 get_redshift_outer_bounds, h in [0.60, 0.86]",
             "venue_note": "baseline (truth) catalogue; the run's evaluation used an "
             "observed-catalogue realization not present in this checkout",
@@ -834,6 +847,43 @@ def build_ratio_block(
     }
 
 
+def d_spread_scan(
+    cat: dict[str, np.ndarray],
+    cand_lists: list[np.ndarray],
+    dp: Any,
+    h: float = 0.60,
+) -> list[tuple[int, float, float, float, int]]:
+    """Rank every event by the spread of its per-galaxy selection factor D_g.
+
+    Ratio-of-sums and mean-of-ratios are algebraically identical when the D_g
+    are equal, so the event worth looking at is the one whose candidates differ
+    most in detectability.  This makes the page's "selected by measurement"
+    claim checkable *at the production radius* rather than inherited from an
+    earlier, wider ball.  Returns (event, max-min, min, max, n_cand) sorted by
+    spread, descending.
+    """
+    out: list[tuple[int, float, float, float, int]] = []
+    for i, cand_idx in enumerate(cand_lists):
+        if cand_idx.size < D_SPREAD_MIN_CAND:
+            continue
+        coord = SkyCoord(
+            ra=cat["ra"][cand_idx] * u.deg, dec=cat["dec"][cand_idx] * u.deg, frame="icrs"
+        ).transform_to(BarycentricTrueEcliptic(equinox="J2000"))
+        phi_g = np.radians(coord.lon.to(u.deg).value % 360.0)
+        theta_g = -(np.radians(coord.lat.to(u.deg).value) - np.pi / 2.0)
+        d_l = dist_vectorized(cat["z"][cand_idx], h=h)
+        d_g = np.asarray(
+            dp.detection_probability_without_bh_mass_interpolated_zero_fill(
+                d_l, phi_g, theta_g, h=h
+            ),
+            dtype=np.float64,
+        )
+        lo, hi = float(d_g.min()), float(d_g.max())
+        out.append((i, hi - lo, lo, hi, int(cand_idx.size)))
+    out.sort(key=lambda t: (-t[1], t[0]))
+    return out
+
+
 def global_catalogue_denominator(h_grid: np.ndarray) -> np.ndarray:
     """Sigma_global(h) = sum over the WHOLE catalogue of w_g p_det(d_L(z_g,h)).
 
@@ -1104,6 +1154,37 @@ def main() -> None:
             injection_data_dir=str(pool), snr_threshold=SNR_THRESHOLD
         )
         print(f"  p_det built in {time.monotonic() - t0:.1f}s", flush=True)
+
+        # Re-verify the featured D_g-spread event AT THE PRODUCTION RADIUS.
+        t0 = time.monotonic()
+        rank = d_spread_scan(cat, cand_lists, dp)
+        top = rank[:5]
+        print(
+            f"  D_g-spread ranking (h=0.60, >={D_SPREAD_MIN_CAND} candidates): "
+            + " | ".join(
+                f"{ev}: {lo:.3f}->{hi:.3f} (n={n})" for ev, _, lo, hi, n in top
+            )
+            + f"  ({time.monotonic() - t0:.1f}s)",
+            flush=True,
+        )
+        if top and top[0][0] != EVENT_DSPREAD:
+            raise RuntimeError(
+                f"EVENT_DSPREAD = {EVENT_DSPREAD} is no longer the measured argmax of the "
+                f"D_g spread (now event {top[0][0]}, spread {top[0][1]:.4f} vs "
+                f"{next((t[1] for t in rank if t[0] == EVENT_DSPREAD), float('nan')):.4f}). "
+                "Update EVENT_DSPREAD and every number the page quotes for it, or drop the "
+                "'selected by measurement' claim — do not ship the stale pick."
+            )
+        ratio["meta"]["d_spread_selection"] = {
+            "criterion": "max_g p_det - min_g p_det at h = 0.60 over events with "
+            f">= {D_SPREAD_MIN_CAND} candidates, at the production ball radius",
+            "n_events_scanned": len(rank),
+            "top5": [
+                {"event": ev, "spread": _r(sp, 4), "p_det_min": _r(lo, 4),
+                 "p_det_max": _r(hi, 4), "n_cand": n}
+                for ev, sp, lo, hi, n in top
+            ],
+        }
         for idx_event in (EVENT_GOLDEN, EVENT_CROWDED, EVENT_DSPREAD):
             ratio["events"][str(idx_event)] = build_ratio_block(
                 cat, crb, idx_event, cand_lists[idx_event], h_grid, dp

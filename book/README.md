@@ -11,16 +11,22 @@ write-up (rationale, trade-offs, CI diff). This file is the short "how do I run 
 ```
 book/
   README.md                 <- you are here
+  BUILD_REPORT.md            <- integration + QA report (incl. the revision pass)
   design/
     BOOK_TECH_DESIGN.md      <- architecture decision record
+    BOOK_DESIGN.md           <- authoritative build spec (chapters, ownership contract)
+    REVISION_WORKLIST.md     <- the post-review revision spec
+    flags/                   <- per-chapter flag files (append-only historical record)
   generators/                <- Python data generators (read the main package + results/, read-only)
-    make_all.py               <- driver: runs every generator in order
-    gen_ch00_demo.py           <- ch00 demo: real posteriors -> data/ch00_demo.json
+    make_all.py               <- driver: auto-discovers and runs every gen_ch*.py / gen_museum*.py
+    qa_gates.py               <- content build gates (run by make_all.py; runnable standalone)
+    gen_ch00.py … gen_ch11.py, gen_museum.py
   site/                      <- the deployable artifact (this is what ships to GH Pages)
     index.html
-    ch00-demo.html
+    ch00-two-numbers.html … ch11-honest-state.html, museum.html
+    _template.html             <- reference-only chapter skeleton (not linked, not shipped as a page)
     css/book.css
-    js/book.js
+    js/book.js, js/manifest.js
     data/*.json                <- generator output, committed (reproducible, but also just data)
     vendor/plotly/plotly.min.js <- copied from the repo's pinned plotly wheel (see VENDORED.txt)
     vendor/katex/               <- KaTeX 0.16.11 + fonts + auto-render (see VENDORED.txt)
@@ -36,7 +42,9 @@ uv run python book/generators/make_all.py
 ```
 
 Generators are deterministic (fixed seeds) and read-only against `master_thesis_code/` and
-`results/` — never edit the package from here.
+`results/` — never edit the package from here. `make_all.py` runs each generator in its own
+subprocess and then executes the `qa_gates.py` content gates against the built site; a gate
+hit fails the build loudly.
 
 ## Viewing locally
 
@@ -49,7 +57,8 @@ python3 -m http.server 8000
 A plain double-click (`file://.../index.html`) works for static prose/math, but the
 data-driven widgets use `fetch()` to load `data/*.json`, which Chromium-family browsers
 block under `file://` (CORS). Use the local server above, or Firefox, for full-fidelity
-local testing. GitHub Pages serves over HTTPS, so production is unaffected.
+local testing — under `file://` the widgets degrade to their static `<noscript>` copies
+rather than failing silently. GitHub Pages serves over HTTPS, so production is unaffected.
 
 ## Adding a new chapter (build-phase rules)
 
@@ -64,6 +73,16 @@ interactives, sources, and the file-ownership contract all live there. Mechanics
    `js/manifest.js`) and fill the slots. The nav is built from `js/manifest.js`
    automatically — do not hardcode chapter links anywhere.
 3. **Frozen files** (integrator-only): `css/book.css`, `js/book.js`, `js/manifest.js`,
-   `_template.html`, `index.html`, `generators/make_all.py`, `vendor/`,
-   `.github/workflows/ci.yml`. Missing shared capability? Append to
+   `_template.html`, `index.html`, `generators/make_all.py`, `generators/qa_gates.py`,
+   `vendor/`, `.github/workflows/ci.yml`. Missing shared capability? Append to
    `design/WIDGET_REQUESTS.md` and use a page-local inline workaround in your own file.
+
+## CI note — external-reference audits must scope out `vendor/`
+
+The "relative refs only / zero external URLs" audit applies to first-party files
+(`site/*.html`, `site/css/`, `site/js/book.js`, `site/js/manifest.js`, `site/data/`).
+The vendored `plotly.min.js` bundles dead default URLs for its geo/mapbox subsystem
+(openstreetmap, mapbox, cartocdn, cdn.plot.ly); no shipped trace type ever reaches them
+(verified — no `scattermapbox`/`scattergeo`/`choropleth` anywhere in the book). A future
+automated CSP/external-ref check must therefore grep first-party files only, or it will
+false-positive on `vendor/` forever. (ux review, 2026-07-31; REVISION_WORKLIST §D-11.)

@@ -630,9 +630,19 @@ def build_closure_payload() -> dict[str, Any]:
     pos = {k: i for i, k in enumerate(idx)}
     curv3 = float(sum(curv[pos[k]] for k in golden3))
 
+    # The CRB's sqrt(Sigma_dLdL) is the ABSOLUTE sigma_dL, in the same units as
+    # the luminosity_distance column (Gpc) -- NOT a fraction.  Carrying it under
+    # a fractional key is exactly the book-wide units slip resolved by
+    # REVISION_WORKLIST.md §A-D1 (spec value: sigma_dL/d_L = 8.98e-4 for 889,
+    # absolute sigma_dL = 7.98e-5 Gpc).  Both are emitted, each under its own
+    # name, so no consumer can pick up the absolute value as a fraction.
     top_meta = []
     for rank, j in enumerate(top):
         k = idx[j]
+        sigma_dl_gpc = float(
+            np.sqrt(float(crb["delta_luminosity_distance_delta_luminosity_distance"].iloc[k]))
+        )
+        d_l_gpc = float(crb["luminosity_distance"].iloc[k])
         top_meta.append(
             {
                 "rank": rank,
@@ -640,20 +650,15 @@ def build_closure_payload() -> dict[str, Any]:
                 "curvature": _r(float(curv[j]), 6),
                 "SNR": _r(float(snr[j]), 5),
                 "in_catalog": bool(in_cat[j]),
-                "sigma_dL_over_dL": _r(
-                    float(
-                        np.sqrt(
-                            float(
-                                crb["delta_luminosity_distance_delta_luminosity_distance"].iloc[k]
-                            )
-                        )
-                    ),
-                    3,
-                ),
+                "sigma_dL_Gpc": _r(sigma_dl_gpc, 3),
+                "sigma_dL_over_dL": _r(sigma_dl_gpc / d_l_gpc, 3),
             }
         )
 
     row889 = crb.iloc[EVENT_889]
+    sigma_dl_gpc_889 = float(
+        np.sqrt(float(row889["delta_luminosity_distance_delta_luminosity_distance"]))
+    )
     ev889 = {
         "index": EVENT_889,
         "rank_by_curvature": int(np.where(np.array([idx[j] for j in order]) == EVENT_889)[0][0]),
@@ -662,9 +667,8 @@ def build_closure_payload() -> dict[str, Any]:
         "d_L_Gpc": _r(float(row889["luminosity_distance"]), 6),
         "in_catalog": bool(row889["host_galaxy_index"] >= 0),
         "host_galaxy_index": int(row889["host_galaxy_index"]),
-        "sigma_dL_over_dL": _r(
-            float(np.sqrt(float(row889["delta_luminosity_distance_delta_luminosity_distance"]))), 3
-        ),
+        "sigma_dL_Gpc": _r(sigma_dl_gpc_889, 3),
+        "sigma_dL_over_dL": _r(sigma_dl_gpc_889 / float(row889["luminosity_distance"]), 3),
         "share_of_total_curvature": _r(float(curv[pos[EVENT_889]] / curv_total), 4),
     }
 

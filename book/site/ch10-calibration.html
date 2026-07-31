@@ -12,17 +12,9 @@
 
 <style>
   /* Page-local only (css/book.css is frozen). Nothing here restyles a shared
-     class; these are new elements this chapter introduces, plus the rail-pip
-     workaround for WIDGET_REQUESTS R-ch07-1. */
-  #bias-rail .ch10-pip {
-    display: flex; gap: 0.4rem; align-items: baseline; font-size: 0.72rem;
-    margin-top: 0.35rem; padding-top: 0.3rem; border-top: 1px dotted var(--border);
-  }
-  #bias-rail .ch10-pip .ch10-pip-dot {
-    width: 0.55rem; height: 0.55rem; border-radius: 50%; flex: 0 0 auto;
-    background: var(--planck);
-  }
-  #bias-rail .ch10-pip.grey .ch10-pip-dot { background: var(--prior); }
+     class; these are new elements this chapter introduces. (The rail-pip
+     workaround for R-ch07-1 is retired: pips go through Book.biasRail's own
+     `pips` channel — integrator pass 2, REVISION_WORKLIST §D-6.) */
   .ch10-verdict {
     border: 1px solid var(--border);
     border-left: 4px solid var(--planck);
@@ -51,6 +43,10 @@
   }
   .ch10-readouts strong { color: var(--accent); font-variant-numeric: tabular-nums; }
   .ch10-note { font-size: 0.82rem; color: var(--muted); margin: 0.6rem 0 0; }
+  /* D1 erratum footnote (BOOK_CANON.sigmaDL.erratumHTML is quoted verbatim and
+     carries class="note"; no shared rule defines it yet — page-local until the
+     integrator's pass 2 promotes it into css/book.css). */
+  .dossier .note { font-size: 0.76rem; color: var(--muted); margin: 0.5rem 0 0; line-height: 1.45; }
   .ch10-locked { opacity: 0.45; pointer-events: none; }
   @media print { .ch10-locked { opacity: 1; } }
   .ch10-interlude {
@@ -104,7 +100,7 @@
   <main class="book-content">
     <h1>Chapter 10 — Is It Calibrated?</h1>
     <p class="subtitle">
-      It recovers truth at &minus;0.24&sigma;. That is not the same as being right.
+      It recovers truth at &minus;0.24&sigma;, twice. What does that establish?
     </p>
 
     <!-- ================= COLD OPEN (B1) ================= -->
@@ -161,6 +157,7 @@
     </div>
 
     <p>
+      <strong>It recovers truth. That is not the same as being right.</strong>
       This chapter is about instruments. Not about the estimator — the estimator is now
       built, and Chapters 3 through 9 each installed one piece of it. This chapter asks the
       question a referee asks: <em>how do you know?</em> Four answers exist in this project,
@@ -239,7 +236,11 @@
     </p>
 
     <!-- ============ I10.1 ============ -->
-    <div class="widget" id="ch10-i101">
+    <!-- BW3 (REVISION_WORKLIST §D-5): varying the injected truth is the exact
+         gesture of ledger #49a's decisive test (an estimator that does not move
+         is not measuring the parameter). The widget does not hard-code #49a's
+         verdict, so the inline chip volunteers it on first interaction. -->
+    <div class="widget" id="ch10-i101" data-hypothesis="49a">
       <h4>I10.1 — The P&ndash;P Slot Machine
         <span class="prov-chip real">real: pp_coverage_deepvenue_20260710 / _20260730</span>
         <span class="prov-chip">archive-gated re-run</span>
@@ -340,7 +341,12 @@
       this kernel is calibrated in this harness at these widths — which is exactly the shape of
       the live collision between G2b&rsquo;s ratified confirmation and claim C7&rsquo;s measured
       inflation above $\sigma_z/z = 0.256$ <span class="ch10-fwd">⏮ Ch 7</span>
-      <span class="ch10-fwd">⏭ Ch 11</span>. What this table settles is narrower and solid: the
+      <span class="ch10-fwd">⏭ Ch 11</span>. (That threshold is itself a both-values item: three
+      artifacts state <strong>0.256</strong>, while solving those same documents&rsquo; corrected
+      law for the 0.86 edge gives <strong>0.2644</strong> — which is also where the delivered
+      per-host measurement puts the crossing. The book prints both; the project has not
+      reconciled them <span class="prov-chip">book/design/flags/ch07_FLAGS.md FLAG-2</span>)
+      What this table settles is narrower and solid: the
       estimator, not the data, produced the rail — the point Chapter 4&rsquo;s starvation
       interlude made <span class="ch10-fwd">⏮ Ch 4</span>.
     </p>
@@ -555,6 +561,11 @@
       <details class="num-view">
         <summary>Show me the numbers</summary>
         <div class="table-scroll"><table class="num-table" id="ch10-closure-table"></table></div>
+        <p class="ch10-note" style="margin-top:0.6rem;">
+          And the decomposition the widget&rsquo;s argument rests on — who supplies the
+          curvature, and how concentrated it is:
+        </p>
+        <div class="table-scroll"><table class="num-table" id="ch10-closure-decomp"></table></div>
       </details>
       <noscript>
         <p><strong>Static fallback.</strong> Constraint width against events removed, from the
@@ -703,11 +714,23 @@
         <tr><td>D — the catalogue as it actually is</td><td>each host&rsquo;s own $\sigma_z$ (all 76 photometric)</td><td><strong>3.6</strong></td><td><strong>~110&times; worse</strong></td></tr>
       </table>
     </div>
+    <p class="ch10-note">
+      <strong>An external scale for the table.</strong> The published LISA EMRI dark-siren
+      forecast — Laghi et al. 2021 <span class="prov-chip">arXiv:2102.01708</span>, the same
+      paper this book cites for the comparable host-$z$ kernel <span class="ch10-fwd">⏮ Ch 7</span> —
+      is <strong>percent-level</strong> on $H_0$. Row D&rsquo;s 3.6 km s⁻¹ Mpc⁻¹ is
+      <strong>&asymp;5%</strong> of $H_0$: the same order as the literature forecast, and a
+      little worse than it. Row A&rsquo;s 0.032 is <strong>0.04%</strong> — two orders below
+      anything the literature claims, which is by itself a reason to read it as a consistency
+      baseline rather than a forecast. The comparison is an order-of-magnitude anchor only:
+      the forecasts differ in event count, mission duration, population model and catalogue
+      assumptions, and this row is 76 hosts from one seed.
+    </p>
     <p>
       All 76 information-carrying hosts are GLADE+ <strong>photometric</strong>-redshift galaxies,
       median $z$ = 0.071, median
       <span class="term" data-term="eps">$\sigma_z/z$ = <strong>49%</strong></span>
-      <span class="prov-chip">IDEALIZED_BASELINE_READOUT.md:50-52</span>. The estimator was handed
+      <span class="prov-chip" title="current lines :64-66">IDEALIZED_BASELINE_READOUT.md:50-52</span>. The estimator was handed
       a redshift with a fifty-percent error bar and told it was exact. Everything downstream of
       that — the 0.032, the &minus;0.24&sigma;, the two-seed agreement — is a statement about
       internal consistency and about nothing else. And the audit is careful that even row D is
@@ -732,13 +755,14 @@
     <div class="dossier">
       <div class="dossier-title">Event dossier — EMRI-889 after this chapter</div>
       <table>
-        <tr><td>d_L</td><td>88.9 Mpc (&sigma;_dL/dL = 8.0&times;10&#8315;&#8309;)</td></tr>
+        <tr><td>d_L</td><td>88.9 Mpc &middot; &sigma;_dL/d_L = 8.98&times;10&#8315;&#8308;</td></tr>
         <tr><td>SNR</td><td>1425 — the loudest event in this seed</td></tr>
         <tr><td>host</td><td>catalogue index 859360 — photometric, &sigma;_z/z &asymp; 49%</td></tr>
         <tr><td>2D channel</td><td>destroyed this event&rsquo;s information and pushed it high</td></tr>
         <tr class="dossier-new"><td>role in the closure</td><td><strong>rank 2 of 1588</strong> by curvature; alone it carries <strong>15.9%</strong> of the idealized constraint, and it is one of the three events carrying ~46%</td></tr>
         <tr class="dossier-new"><td>what this chapter added</td><td>the 0.032 km/s/Mpc that 889 helps produce is a <em>consistency baseline</em>. Give 889&rsquo;s host the redshift error its catalogue row actually records and the same event set delivers ~3.6 — <strong>110&times;</strong> wider.</td></tr>
       </table>
+      <p class="note">Erratum: the spec card carried &sigma;_dL/dL = 8.0&times;10&#8315;&#8309; &mdash; that is the absolute &sigma;_dL in Gpc under a fractional label. Corrected book-wide 2026-07-31; record: ch01 flag F1 / BUILD_REPORT &sect;5.1 item 1.</p>
     </div>
 
     <!-- ================= §4 ================= -->
@@ -876,8 +900,10 @@
       together with the two readings it would license, <em>before</em> submitting it
       <span class="prov-chip">PREREGISTRATION_2x2_cellB.md</span>. It also registered a dated
       prediction: the five Gate-B reports jointly predict &ldquo;estimator owns it&rdquo;, cell B
-      &asymp; cell C in both channels. It is in flight. Chapter 11 shows you that prediction from
-      the inside, unresolved, because the project has not resolved it either.
+      &asymp; cell C in both channels. It was submitted, and it landed on <strong>2026-07-31</strong>
+      — after the pre-registration, and after this chapter&rsquo;s prediction was written down.
+      Chapter 11 shows you the prediction from the inside first, and then what it got right and
+      what it missed.
     </p>
 
     <div class="callout without">
@@ -885,7 +911,7 @@
       Every instrument in this chapter has now been used, and the honest scoreboard reads: a
       calibrated 1D estimator whose unbiasedness is a cancellation, a 2D channel biased +0.077 on
       candidate ground, three measured internal inconsistencies all on the same side of the
-      mixture, and one confounded attribution whose decisive control has not landed. That is not a
+      mixture, and one attribution that was confounded until the control was run. That is not a
       verdict. Chapter 11 is about how to write that down without either overclaiming or
       pretending it is worse than it is.
     </div>
@@ -978,6 +1004,17 @@
           catalogue. That is claim C6, confirmed by a one-file check, and it is the honest opening of
           Chapter 11. <span class="prov-chip">CLAIM_2D_BIAS C6</span>
         </div>
+        <div class="answer-body" style="border-top:1px dashed var(--border); margin-top:0.7rem; padding-top:0.6rem;">
+          <strong><em>Postscript, 2026-07-31.</em></strong> The missing cell was run. With the
+          catalogue held unscattered and only the estimator switched — the 2&times;2&rsquo;s
+          cell B — the 2D MAP moves 0.7300 &rarr; <strong>0.7900</strong>, which is
+          <strong>72%</strong> of the full displacement in that channel. The answer to
+          &ldquo;which one&rdquo; is now <em>the estimator configuration</em>. The answer to
+          &ldquo;what could you conclude <em>before</em> the control&rdquo; is still
+          <strong>nothing</strong> — and that is the transferable half.
+          <span class="prov-chip">CELLB_READOUT_20260731.md</span>
+          <span class="ch10-fwd">⏭ Ch 11 §5</span>
+        </div>
       </details>
     </div>
 
@@ -1066,8 +1103,8 @@
         <li><span class="badge open">OPEN</span> redteam <strong>T-1</strong> — the blind sealed-truth mock, the decisive anti-tuning test: <em>ordered, never run</em></li>
         <li><span class="badge finding">FINDING</span> <code>idealization_audit/IDEALIZATION_LEDGER.md</code> I1&ndash;I4 + <code>IDEALIZED_BASELINE_READOUT.md:25-30, :42-52</code> — &sigma;_H0 = 0.032 is a consistency baseline; counterfactuals 8&times;&ndash;110&times;; all 76 hosts photometric, median &sigma;_z/z = 49%</li>
         <li><span class="badge finding">FINDING</span> <code>CLAIM_2D_BIAS_20260730.md C11</code> + <code>ADJUDICATION_20260730.md §1</code> — the completion leg is 6&ndash;16&times; too small to own +0.077; harness 1D-only by construction</li>
-        <li><span class="badge confounded">CONFOUNDED</span> <code>CLAIM_2D_BIAS_20260730.md C6</code>, confirmed by Gate A1 — three variables moved at once; no estimator control exists</li>
-        <li><span class="badge open">OPEN</span> <code>PREREGISTRATION_2x2_cellB.md</code> — the pre-registered missing control, with its dated pre-readout prediction, in flight</li>
+        <li><span class="badge confounded">CONFOUNDED</span> <code>CLAIM_2D_BIAS_20260730.md C6</code>, confirmed by Gate A1 — three variables moved at once; no estimator control existed <em>as adjudicated 2026-07-30</em>. C6 was resolved on 2026-07-31 by the 2&times;2&rsquo;s cell B; the badge here is the state this chapter&rsquo;s §5 argument reasons from <span class="ch10-fwd">⏭ Ch 11 §5</span></li>
+        <li><span class="badge finding">FINDING</span> <code>PREREGISTRATION_2x2_cellB.md</code> + <code>CELLB_READOUT_20260731.md</code> — the pre-registered missing control, with its dated pre-readout prediction; <strong>landed 2026-07-31</strong> (evaluate 6103219 / combine 6103220, the resubmission of the registered 6101146 / 6101147 after a pure-plumbing symlink failure; same commit <code>7fd60bb</code> as cells A and C)</li>
         <li><span class="badge candidate">CANDIDATE</span> <code>mass_marginal_2d_kernel.md:1-17, 690-706</code> (RATIFY-M6) — the #53 2D pairing is designated candidate ground; the +0.077 sits on it</li>
         <li><span class="badge finding">FINDING</span> <code>G3_ablation_cube.json</code> + <code>G6_starvation_postmortem.md:12-16</code> — the ablation lattice 0.60 &rarr; 0.76 &rarr; 0.73</li>
         <li><span class="badge finding">FINDING</span> <code>threeway_ab/THREEWAY_AB_READOUT.md:19-56</code>, <code>mass_ab_20260727/MASS_KERNEL_AB_READOUT.md:23-80</code> — per-leg A/B: &delta;-kernel share 85.3% / 86.7%; the mass kernel is necessary, not sufficient</li>
@@ -1137,17 +1174,22 @@
     }
 
     // ------------------------------------------------- bias ledger rail
-    // Page-local workaround for WIDGET_REQUESTS R-ch07-1 (rail pips):
-    // Book.biasRail replaces innerHTML, so pips are appended after each call.
+    // R-ch07-1 IMPLEMENTED by the integrator: Book.biasRail takes `pips`
+    // directly; the page-local append workaround is retired (pass 2).
     var PIPS = [
       { tone: "amber", label: "two branches disagree (0.86 / 0.64) — unresolved",
         note: "CLAIM C5 — measured, live" },
       { tone: "amber", label: "C7: kernel inflates at σ_z/z > 0.256",
-        note: "CLAIM C7 — measured, live; collides with G2b's ratified confirmation" },
+        note: "CLAIM C7 — measured, live; collides with G2b's ratified confirmation. " +
+              "Threshold is a both-values item: artifacts 0.256, the same documents' " +
+              "corrected law at the 0.86 edge 0.2644 (ch07_FLAGS FLAG-2)." },
       { tone: "amber", label: "w_G ≠ realized rate (z = −11.86) — C9",
         note: "CLAIM C9 — measured, live" },
-      { tone: "grey", label: "cell B (the decider) not landed",
-        note: "PREREGISTRATION_2x2_cellB.md — jobs 6101146 / 6101147, in flight" },
+      // canonical cell-B pip — BOOK_CANON.cellB.pipLabel / .pipNote (manifest.js);
+      // identical wording on ch07 / ch09 / ch10 / ch11. Do not re-word locally.
+      { tone: "amber",
+        label: "cell B (2026-07-31): estimator owns +0.060 of the 2D +0.083",
+        note: "CELLB_READOUT_20260731.md — evaluate 6103219 / combine 6103220; the 2D-only share is 72%" },
     ];
     function renderRail() {
       Book.biasRail({
@@ -1166,15 +1208,7 @@
                   "C11 measures the completion leg at 6–16× too small to own it.",
             active: true },
         ],
-      });
-      var host = document.getElementById("bias-rail");
-      if (!host) return;
-      PIPS.forEach(function (p) {
-        var d = document.createElement("div");
-        d.className = "ch10-pip" + (p.tone === "grey" ? " grey" : "");
-        d.title = p.note;
-        d.innerHTML = '<span class="ch10-pip-dot"></span><span>' + p.label + "</span>";
-        host.appendChild(d);
+        pips: PIPS,
       });
     }
     renderRail();
@@ -1602,6 +1636,34 @@
                   st.sigmaH0 === null ? "<em>no peak</em>" : fmt(st.sigmaH0, 4),
                   fmt(st.map, 3) + (st.railed ? " (railed)" : "")];
         })
+      );
+
+      // Class decomposition — the numbers §3 and the fold argue FROM
+      // (ped-m5: every widget's argument must be tabulated, not only asserted).
+      var CV = d.curvature, G3 = d.golden3;
+      var nTopIncat = d.top_meta.filter(function (m) { return m.in_catalog; }).length;
+      table(
+        document.getElementById("ch10-closure-decomp"),
+        ["class / subset", "events", "curvature at truth", "share of the signed total"],
+        [
+          ["in-catalogue", String(d.n_in_catalog) + " of " + String(NEV),
+           signed(CV.in_catalog, 3), fmt(100 * CV.in_catalog_share, 1) + "%"],
+          ["dark (no catalogued host)", String(d.n_dark) + " of " + String(NEV),
+           signed(CV.dark, 3), fmt(100 * CV.dark_share, 1) + "%"],
+          ["<strong>signed total</strong>", "<strong>" + String(NEV) + "</strong>",
+           "<strong>" + signed(CV.total, 3) + "</strong>", "<strong>100%</strong>"],
+          ["the 3 loudest in-catalogue (" + G3.events.join(", ") + ")", "3",
+           signed(G3.curvature_sum, 3),
+           "<strong>" + fmt(100 * G3.share_of_total, 2) + "%</strong> of the signed total &middot; "
+             + fmt(100 * G3.share_of_in_catalog, 2) + "% of the in-catalogue curvature"],
+          ["top-60 by curvature (the slider's range)", String(NTOP),
+           signed(d.top_meta.reduce(function (a, m) { return a + m.curvature; }, 0), 3),
+           fmt(100 * d.top_meta.reduce(function (a, m) { return a + m.curvature; }, 0) / CV.total, 1)
+             + "% &middot; " + String(nTopIncat) + " of them in-catalogue"],
+          ["σ_H₀ at K = 0", String(NEV), "&mdash;",
+           fmt(CV.sigma_H0_km_s_Mpc, 4) + " km s⁻¹ Mpc⁻¹ (σ_h = "
+             + CV.sigma_h.toExponential(3) + ")"],
+        ]
       );
     });
   })();

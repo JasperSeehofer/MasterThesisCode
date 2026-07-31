@@ -85,17 +85,9 @@
     margin-top: 0.7rem;
   }
   .ch08-interlude dd { margin: 0.1rem 0 0; }
-  /* Bias-rail pips — page-local workaround, same shape as ch07's
-     (WIDGET_REQUESTS R-ch07-1: rail pips are not yet in the frozen book.js). */
-  #bias-rail .ch08-pip {
-    display: flex; gap: 0.4rem; align-items: baseline; font-size: 0.72rem;
-    margin-top: 0.35rem; padding-top: 0.3rem; border-top: 1px dotted var(--border);
-  }
-  #bias-rail .ch08-pip .ch08-pip-dot {
-    width: 0.55rem; height: 0.55rem; border-radius: 50%; flex: 0 0 auto;
-    background: var(--planck);
-  }
-  #bias-rail .ch08-pip.grey .ch08-pip-dot { background: var(--prior); }
+  /* The page-local bias-rail pip CSS that used to live here is GONE
+     (revision 2026-07-31, worklist §C-ch08 / tomas-m2): rail pips are now a
+     first-class Book.biasRail capability styled by css/book.css. */
   @media print { .ch08-locked { opacity: 1; } }
 </style>
 
@@ -111,7 +103,10 @@
   <main class="book-content">
     <h1>Chapter 8 — A Second Handle: the Mass Channel</h1>
     <p class="subtitle">
-      The mass channel should sharpen everything — and the bias goes to <strong>+0.077</strong>.
+      <!-- REVISION 2026-07-31 (ped B1 / tomas M10, worklist §C-ch08 P0): the deck used to
+           print "+0.077", i.e. the answer to #ch08-predict-1 one screen above the lock.
+           Ch 4's inversion pattern is the template: name the promise, not the outcome. -->
+      The mass channel should sharpen everything. Watch what it does instead.
     </p>
 
     <!-- ================= COLD OPEN (B1) ================= -->
@@ -121,7 +116,11 @@
       branch, a redshift that was not a number. This one starts from an <strong>abundance</strong>.
       The gravitational wave measures the binary&rsquo;s <em>redshifted</em> mass
       <span class="term" data-term="Mz">$M_z = M(1+z)$</span> to a fractional precision of
-      about $10^{-4}$. Every catalogue galaxy carries an estimate of its own black-hole
+      about $10^{-4}$ — the claim file&rsquo;s figure; recomputed from this campaign&rsquo;s own
+      Cramér&ndash;Rao table the median is $8.8\times10^{-8}$. Both values are live and §1 carries
+      both <span class="prov-chip">ch06_FLAGS.md F-ch06-5</span>; nothing below depends on which
+      is right.
+      Every catalogue galaxy carries an estimate of its own black-hole
       mass <span class="term" data-term="Mg">$M_g$</span>. Then
       $M_z/M_g - 1$ is a <em>second, independent estimate of the redshift of that host</em> —
       a second handle on the same event, free, already in the data.
@@ -214,6 +213,17 @@
       same time, which nobody designed and which is bigger.
     </p>
 
+    <!-- REVISION 2026-07-31 (ped M3, worklist §C-ch08 P2): trap relocated here from the
+         bottom of the page — this is where the misconception is live. -->
+    <div class="callout defect">
+      <span class="callout-label">Trap &mdash; &ldquo;More information cannot hurt.&rdquo;</span>
+      More information <em>in a correctly specified model</em> cannot hurt. In a model with a
+      measure mismatch (C8, §6) and a mis-calibrated mixture weight (C9, Chapter 9), a sharper
+      likelihood makes the mis-specification <em>more decisive</em>. Measured: the 2D channel is
+      10/10 runs at a mean pull of +4.04; the 1D channel is 0/10 exceeding 2σ.
+      <span class="prov-chip">REALISTIC_READOUT.md §6</span>
+    </div>
+
     <!-- ================= §1 ================= -->
     <h2>1. The second handle</h2>
 
@@ -232,12 +242,28 @@
       <span class="voice-label">The redshifted mass, and why it is a redshift measurement
         <span class="badge ratified">RATIFIED</span>
         <span class="prov-chip">dark_siren_likelihood.md §7&ndash;§11</span>
-        <span class="prov-chip">bayesian_statistics.py:4014</span>
+        <span class="prov-chip" title="current tree :4097">bayesian_statistics.py:4014</span>
       </span>
       The GW datum is the detector-frame mass
-      $$ M_z \;=\; M\,(1+z), \qquad \frac{\sigma_{M_z}}{M_z} \;\approx\; 10^{-4} $$
+      $$ M_z \;=\; M\,(1+z), \qquad \frac{\sigma_{M_z}}{M_z} \;\approx\; 10^{-4}
+         \quad\text{(claim file)} \quad\big|\quad 8.8\times10^{-8} \;\text{(measured median)} $$
       for the events in this campaign
-      <span class="prov-chip">CLAIM_2D_BIAS_20260730.md C4</span>. It carries no cosmology: it is a measured number,
+      <span class="prov-chip">CLAIM_2D_BIAS_20260730.md C4</span>
+      <span class="prov-chip">ch06_FLAGS.md F-ch06-5</span>.
+      <br />
+      <strong>Two values, both printed, neither preferred.</strong>
+      <code>CLAIM_2D_BIAS_20260730.md:172</code> states $\sigma_{M_z}/M_z \approx 10^{-4}$;
+      Chapter 6 recomputed the same stored quantity —
+      $\sqrt{\Sigma_{MM}}/M$ from <code>prepared_cramer_rao_bounds.csv</code> — and measured a
+      <strong>median $8.8\times10^{-8}$</strong> (p5&ndash;p95 $2.5\times10^{-8}$&ndash;$3.0\times10^{-7}$;
+      EMRI-889 itself <strong>$1.36\times10^{-9}$</strong>, which is the number Chapter 6 §4.1
+      prints). Three orders of magnitude apart, and this book does not silently pick one: the
+      dispute is open in <code>ch06_FLAGS.md</code> F-ch06-5, and amending the claim file is the
+      author&rsquo;s call. Nothing below depends on which is right — every argument in this
+      chapter uses only that the GW side is <em>negligible</em> against the catalogue side&rsquo;s
+      $\sigma_{\ln M} \approx 1.28$, and $10^{-7}$ is negligible for the same reason $10^{-4}$ is.
+      <br /><br />
+      It carries no cosmology: it is a measured number,
       like $\hat d_L$. Now suppose a candidate host galaxy $g$ supplies an estimate
       $M_g$ of its central black hole&rsquo;s <em>source-frame</em> mass. Under the
       hypothesis that $g$ is the host, at the hypothesised redshift $z$,
@@ -247,13 +273,46 @@
       likelihood implements it as a marginal over the host&rsquo;s true mass, in the
       dimensionless <span class="term" data-term="u">fraction coordinate</span>
       $x = M_z/M_{z,\det,i}$ that Chapter 6 introduced for distance — the analytic Gaussian
-      product <code>mz_integral</code> <span class="prov-chip">bayesian_statistics.py:4363-4370</span>,
+      product <code>mz_integral</code> <span class="prov-chip" title="current tree :4442-4459">bayesian_statistics.py:4363-4370</span>,
       with the matching mass marginalization inside the per-galaxy selection integral
       <span class="term" data-term="Dg">$D_g$</span>
-      <span class="prov-chip">bayesian_statistics.py:3362</span> — counted once on each
+      <span class="prov-chip" title="current tree :3445">bayesian_statistics.py:3362</span> — counted once on each
       side, exactly as Chapter 4&rsquo;s rule demands. There is no analogue of this term in
       Gray et al. (2020), arXiv:1908.06050: the mass axis is this project&rsquo;s own
       extension <span class="prov-chip">G2c D6</span>.
+    </div>
+
+    <!-- REVISION 2026-07-31 (tomas M3.5, worklist §C-ch08 P1): block the predictable
+         misreading at the point it forms — a GW reader meets "M_z is a redshift handle"
+         and thinks "spectral sirens". It is a different method with different failure modes. -->
+    <div class="callout">
+      <span class="callout-label">This is <em>not</em> the spectral-siren method — and the
+        failure modes are different</span>
+      A GW reader arriving at &ldquo;the redshifted mass is a redshift handle&rdquo; will
+      reasonably think of <strong>spectral sirens</strong> (Farr et al. 2019, arXiv:1908.09084;
+      Ezquiaga &amp; Holz 2022, arXiv:2202.08240; Mastrogiovanni et al. 2021,
+      arXiv:2103.14663), which is the method LVK actually uses when no catalogue is available.
+      They are not the same thing.
+      <br /><br />
+      <strong>Spectral sirens</strong> read $z$ off a <em>feature of the population&rsquo;s
+      source-frame mass function</em> — the pair-instability gap, a break, a peak. The
+      detector-frame spectrum is the source-frame one stretched by $(1+z)$, so the location of a
+      known feature in $M_z$ dates the population statistically. No host, no catalogue: the
+      redshift information is <em>population-level</em>, one number for many events, and the
+      dominant systematic is that the assumed mass function may itself evolve with redshift
+      (a feature that moves fakes an $H_0$).
+      <br /><br />
+      <strong>What this chapter does</strong> is a per-host <em>association</em>: for each
+      individual candidate galaxy $g$, compare the measured $M_z$ against <em>that
+      galaxy&rsquo;s own</em> catalogue BH-mass proxy $M_g$ and ask whether the pair is
+      consistent at the hypothesised redshift. The redshift information is per-event and
+      per-candidate; there is no population feature anywhere in it. Its failure modes are
+      therefore an entirely different list: the proxy&rsquo;s scatter (§2), the reference measure
+      the proxy&rsquo;s distribution is written in (§2), the fact that the proxy is derived at a
+      fixed fiducial cosmology (§4&rsquo;s [RATIFY-M7]) — <em>none</em> of which a spectral-siren
+      analysis has, and none of which is fixed by anything the spectral-siren literature does.
+      The one thing the two share is that both are sensitive to a mass distribution being wrong;
+      the distributions in question are different objects.
     </div>
 
     <p>
@@ -270,11 +329,16 @@
       time campaign #53 ran, the obvious bugs had been found.
     </p>
 
+    <p class="persona-nudge" style="font-size:0.85rem; color:var(--muted);">
+      If measures and Jacobians are old friends, the GW stratum below is where the mass
+      measure actually enters the code &mdash; or flip the topbar to
+      <em>Reading as: Tomas</em> to keep these folds open.
+    </p>
     <details class="gw-reader">
       <summary>&#9656; For the GW reader — where the mass axis lives, and where it does not</summary>
       <p>
         The 2D path is <code>single_host_likelihood_batch</code>
-        (<code>bayesian_statistics.py:4014</code>); the mass factor is a conditional Gaussian
+        (<code title="current tree :4097">bayesian_statistics.py:4014</code>); the mass factor is a conditional Gaussian
         marginalization in the Bishop (2.81&ndash;2.82) sense, taken against the same 4&times;4
         Cramér&ndash;Rao block Chapter 6 built, with <code>means_4d = [φ, θ, 1, 1]</code> —
         both the distance and the mass enter as fractions with mean 1.
@@ -283,8 +347,8 @@
         The <em>candidate search</em> is where the two channels first diverge, and it is
         load-bearing for everything below. The BallTree query returns a sky-and-redshift
         ball; a redshift filter alone produces the 1D candidate list
-        (<code>handler.py:592</code>), and a <em>second</em>, mass filter is applied on top
-        of it to produce the 2D list (<code>handler.py:605</code>). So the 2D candidate set
+        (<code title="current tree :623">handler.py:592</code>), and a <em>second</em>, mass filter is applied on top
+        of it to produce the 2D list (<code title="current tree :632-634">handler.py:605</code>). So the 2D candidate set
         is a strict subset of the 1D one, and the 1D channel never sees the mass window at
         all. That asymmetry is why every mass-side defect in this chapter is
         <strong>2D-only</strong> — and it is also why &ldquo;why is 1D spared?&rdquo; turns
@@ -312,12 +376,16 @@
     </p>
     <p>
       So the catalogue&rsquo;s mass is uncertain by a factor of a few. The GW&rsquo;s mass is
-      uncertain by one part in ten thousand. Hold those two numbers next to each other,
-      because their <em>ratio</em> is the mechanism of this entire chapter:
-      $\sigma_{M_z}/M_z \approx 10^{-4}$ against a catalogue
+      uncertain by one part in ten thousand — or one part in ten <em>million</em>, depending on
+      which of the two live values you take. Hold those numbers next to each other, because
+      their <em>ratio</em> is the mechanism of this entire chapter:
+      $\sigma_{M_z}/M_z \approx 10^{-4}$ (claim file) or $8.8\times10^{-8}$ (measured median)
+      against a catalogue
       <span class="term" data-term="slnM">$\sigma_{\ln M} \approx 1.28$</span>, a factor
-      $\approx 3.6$ <span class="prov-chip">CLAIM_2D_BIAS_20260730.md C4</span>. The
-      comparison of a needle with a barn door.
+      $\approx 3.6$ <span class="prov-chip">CLAIM_2D_BIAS_20260730.md C4</span>
+      <span class="prov-chip">ch06_FLAGS.md F-ch06-5</span>. Either way, the comparison of a
+      needle with a barn door — and every step below needs only that, which is exactly why the
+      chapter can carry both values honestly instead of choosing.
     </p>
 
     <div class="callout defect">
@@ -366,14 +434,16 @@
       Now the sieve. The 2D candidate search keeps a galaxy only if its mass interval
       $[M_g - \sigma_M,\ M_g + \sigma_M]$ overlaps the interval the GW allows,
       $[(M_z - 2\sigma_{M_z})/(1+z_{\max}),\ (M_z + 2\sigma_{M_z})/(1+z_{\min})]$
-      <span class="prov-chip">handler.py:605</span>. Predict the shape of what that throws
+      <span class="prov-chip" title="current tree :632-634">handler.py:605</span>. Predict the shape of what that throws
       away before you look.
     </p>
 
     <div class="widget" data-predict-id="ch08-sieve-shape">
       <h4>Predict, then reveal — the shape of the rejection</h4>
       <p style="margin-top:0;">
-        The GW side of the comparison is exact to $10^{-4}$; the catalogue side is uncertain
+        The GW side of the comparison is exact to $10^{-4}$ (claim file) or $8.8\times10^{-8}$
+        (measured median — both are live, see §1 and
+        <span class="prov-chip">ch06_FLAGS.md F-ch06-5</span>); the catalogue side is uncertain
         by a factor $\approx 3.6$. Is the resulting rejection symmetric about the allowed
         mass, one-sided against galaxies that are <em>too light</em>, or one-sided against
         galaxies that are <em>too heavy</em>?
@@ -605,8 +675,10 @@
       test of the mass kernel; it was a test <em>of a different estimator</em>, one in which
       the kernel&rsquo;s shape is unreachable. Chapter 7&rsquo;s realistic redshift kernel is
       what switched the mass kernel on. Two changes were made at once, and one of them turned
-      the other into an observable — which is also, precisely, why the attribution is
-      confounded <span class="ch08-fwd">⏭ Ch 11</span>.
+      the other into an observable — which is also, precisely, why the attribution
+      <em>was</em> confounded, until the 2&times;2 cell B separated them on 2026-07-31
+      <span class="ch08-fwd">⏭ Ch 11 §5</span>. §5 below reports what that control did to this
+      chapter&rsquo;s own accounting.
     </p>
 
     <div class="voice-adjudicator">
@@ -658,6 +730,39 @@
       always positive&rdquo;</strong> — not the number 84%, which is r1-specific.
     </div>
 
+    <!-- REVISION 2026-07-31 (expB MJ-4, worklist §C-ch08 P1): cell B landed after this
+         chapter was drafted and it answers the question this section had to defer —
+         is the dark de-weighting scatter-induced? It is not. -->
+    <div class="voice-adjudicator">
+      <span class="voice-label">Cell B, 2026-07-31 — the same accounting with the scatter removed
+        <span class="badge finding">FINDING</span>
+        <span class="prov-chip real">real: CELLB_READOUT_20260731.md</span>
+        <span class="prov-chip">jobs 6103219 / 6103220</span>
+      </span>
+      Every number above is measured on a run whose catalogue carries <em>realized</em>
+      observational scatter. That leaves one question open, and it is the obvious one: is any of
+      this an artifact of the noise? The 2&times;2&rsquo;s <strong>cell B</strong> — the same
+      estimator configuration run against the <em>unscattered parent catalogue</em> — answers it.
+      Recomputed here from cell B&rsquo;s own diagnostics CSV, the class-summed channel
+      difference over $h = 0.73 \to 0.81$ is
+      <br /><br />
+      dark <strong>+18.00</strong> nats · in-catalogue <strong>&minus;1.80</strong> ·
+      total <strong>+16.20</strong>,
+      <br /><br />
+      against $+15.83 / +2.97 / +18.80$ scattered. <strong>The mass channel does not need
+      realized noise to do this.</strong> The dark de-weighting is <em>estimator-borne</em>: it
+      is a property of what the likelihood computes, not of what the observation happened to
+      scatter. (The in-catalogue leg flips sign, which is exactly the realization noise the box
+      above describes — 76 events is a small class.)
+      <br /><br />
+      Two bookkeeping notes. Jobs <strong>6103219/6103220</strong> are the resubmission of
+      6101146/6101147 after a pure-plumbing symlink failure in the run-dir setup; the test
+      design and the pre-registration are unchanged, and the code is the same commit
+      (<code>7fd60bb</code>) as cells A and C. And cell B is the first <em>second</em>
+      diagnostics CSV this accounting has ever had — the independent configuration the
+      adjudication asked for, which is what makes the next paragraph possible.
+    </div>
+
     <p>
       So the dark events own it. The obvious next sentence — the one the project itself
       wrote first — is that the mass window <em>deletes</em> their catalogue leg. And the
@@ -687,11 +792,26 @@
       channels. &ldquo;Falls back on the completion term&rdquo; cannot appear in the +15.83
       as an accounting statement at all.
       <br /><br />
-      <strong>(2) The 487 deleted events carry 1.5% of it.</strong> +0.24 nats of +15.83.
-      The 491 events dead in <em>both</em> channels carry exactly 0.00. The remaining
-      <strong>98.5% (+15.60) is carried by the 534 survivors</strong> — the events the sieve
-      <em>kept</em>. The zeroed events&rsquo; 1D legs were already negligible, so deleting
-      them cost almost nothing.
+      <strong>(2) Deletion is a minority carrier; the survivors carry the rest.</strong>
+      On <code>seed61000/real_r1</code>: the 487 deleted events carry <strong>+0.24 nats =
+      1.5%</strong> of the +15.83, the 491 events dead in <em>both</em> channels carry exactly
+      0.00, and the remaining <strong>98.5% (+15.60) is carried by the 534 survivors</strong> —
+      the events the sieve <em>kept</em>. The zeroed events&rsquo; 1D legs were already
+      negligible, so deleting them cost almost nothing.
+      <br /><br />
+      <strong>That split is configuration-scoped, and this book will not print it as the
+      mechanism&rsquo;s signature.</strong> Run the same partition on the 2&times;2&rsquo;s
+      cell B — same estimator, unscattered parent catalogue — and it reads
+      <strong>219 survivors carrying 80.8% (+14.53)</strong> against <strong>688 always-zeroed
+      events carrying 19.2% (+3.46)</strong>, with 605 both-dead at exactly 0.00. The sieve
+      deletes <em>more</em> and de-weights <em>harder</em> without any realized scatter (dark
+      mean catalogue mixture weight 0.0361 → 0.0043, a factor <strong>8.39</strong>, against
+      0.0354 → 0.0061 and 5.79 on r1). <strong>Deletion is a minority carrier in both
+      configurations — that is the finding; 98.5% is not a constant of the mechanism.</strong>
+      <span class="prov-chip toy">recomputed for this book — not in any adjudicated
+        artifact</span>
+      <span class="prov-chip real">real: cell B diagnostics, CELLB_READOUT_20260731.md</span>
+      <span class="prov-chip">ch08_FLAGS.md F-ch08-9</span>
       <br /><br />
       <strong>Amended mechanism.</strong> The mass kernel <strong>de-weights</strong> the
       surviving dark catalogue legs: mean catalogue mixture weight
@@ -709,9 +829,28 @@
       This is the book&rsquo;s cleanest example of a striking statistic being the wrong
       statistic. &ldquo;487 events zeroed at every $h$&rdquo; is arresting, true, and
       causally almost irrelevant; &ldquo;534 events down-weighted by a factor 5.8&rdquo; is
-      dull, true, and carries 98.5% of the effect. The refutation was exact algebra, it took
-      one afternoon, and it killed the investigating agent&rsquo;s own mechanism.
+      dull, true, and carries most of the effect on that run. The refutation was exact algebra,
+      it took one afternoon, and it killed the investigating agent&rsquo;s own mechanism. Note
+      what generalizes and what does not: the <em>ordering</em> — de-weighting ≫ deletion —
+      survives onto an independently configured run; the percentages move (98.5 / 1.5 on r1,
+      80.7 / 19.2 on cell B) and are quoted with their configuration every time they appear.
     </p>
+
+    <!-- REVISION 2026-07-31 (ped M3, worklist §C-ch08 P2): trap relocated here from the
+         bottom of the page — this is the paragraph that creates the misconception. -->
+    <div class="callout defect">
+      <span class="callout-label">Trap &mdash; &ldquo;Impostor deletion is the mechanism.&rdquo;</span>
+      Deletion is the minority carrier and de-weighting is the majority one, in every
+      configuration measured: on <code>seed61000/real_r1</code> the 487 events with an
+      identically-zero 2D catalogue leg contribute +0.24 nats (<strong>1.5%</strong>) of the
+      +15.83 while the 534 survivors contribute +15.60 (<strong>98.5%</strong>); on the
+      2&times;2&rsquo;s cell B the same partition reads 688 zeroed at +3.46
+      (<strong>19.2%</strong>) against 219 survivors at +14.53 (<strong>80.8%</strong>). The
+      project&rsquo;s adjudication retired the deletion mechanism explicitly, and this book does
+      not resurrect it — nor does it promote either percentage into a constant.
+      <span class="prov-chip">CLAIM_2D_BIAS_20260730.md C4 (amended)</span>
+      <span class="prov-chip toy">cell-B figures recomputed for this book</span>
+    </div>
     <p>
       With the dark catalogue leg de-weighted, look at what the dark class as a whole now
       prefers. Its summed 1D profile peaks at <strong>$h = 0.640$</strong> and opposes the
@@ -798,16 +937,26 @@
     <div class="dossier">
       <div class="dossier-title">Event dossier — EMRI-889 after this chapter</div>
       <table>
-        <tr><td>d_L</td><td>88.9 Mpc (&sigma;_dL/dL = 8.0&times;10&#8315;&#8309;)</td></tr>
+        <tr><td>d_L</td><td>88.9 Mpc &nbsp;&middot;&nbsp; &sigma;_dL/d_L = 8.98&times;10&#8315;&#8308;</td></tr>
         <tr><td>SNR</td><td>1425 — the loudest event in this run</td></tr>
         <tr><td>host</td><td>catalogue index 859360 — one of only 76 with a catalogued host</td></tr>
         <tr><td>z</td><td>photometric, with an error bar wider than anything else on this card</td></tr>
-        <tr class="dossier-new"><td>M_z</td><td>7.25&times;10&#8309; M&#9737;, measured to ~10&#8315;&#8308; — the second handle. (The CRB table&rsquo;s mass column is the <em>detector-frame</em> mass: that is how the project&rsquo;s own C8 attacker reads it, and its min/max reproduce the quoted $M_{z,\det}$ span.)</td></tr>
+        <tr class="dossier-new"><td>M_z</td><td>7.25&times;10&#8309; M&#9737;, measured to ~10&#8315;&#8308; (claim file) / 1.36&times;10&#8315;&#8313; (this event&rsquo;s own CRB row, F-ch06-5) — the second handle. (The CRB table&rsquo;s mass column is the <em>detector-frame</em> mass: that is how the project&rsquo;s own C8 attacker reads it, and its min/max reproduce the quoted $M_{z,\det}$ span.)</td></tr>
         <tr class="dossier-new"><td>1D posterior</td><td>peaks at h = 0.745; its catalogue leg falls 5.9&times; from 0.73 to 0.86 — this event knows something</td></tr>
         <tr class="dossier-new"><td>2D posterior</td><td>peaks at h = 0.790, nearly flat; the same leg now <em>rises</em> 1.28&times;</td></tr>
         <tr class="dossier-new"><td>what this chapter added</td><td>a warning label. The mass channel destroyed this event&rsquo;s information and pushed it high — and across five noise realizations of the <em>same</em> class its channel difference swings +1.98 → −2.04 → −3.30.</td></tr>
       </table>
     </div>
+
+    <p class="ch08-note">
+      <strong>Erratum:</strong> the spec card carried
+      $\sigma_{d_L}/d_L = 8.0\times10^{-5}$ — that is the absolute $\sigma_{d_L}$ in Gpc under a
+      fractional label ($\sigma_{d_L} = 7.98\times10^{-5}$ Gpc on $\hat d_L = 88.879$ Mpc, i.e.
+      $8.98\times10^{-4}$ fractional). Corrected book-wide 2026-07-31; record: ch01 flag F1 /
+      BUILD_REPORT &sect;5.1 item 1. The $M_z$ row&rsquo;s two precisions are a different case
+      and are <em>not</em> an erratum: both values are live and flagged
+      (<code>ch06_FLAGS.md</code> F-ch06-5), and this chapter carries both.
+    </p>
 
     <!-- ================= §6 ================= -->
     <h2>6. The well-posedness bomb</h2>
@@ -873,7 +1022,11 @@
     </p>
 
     <!-- ============ I8.2 ============ -->
-    <div class="widget" id="ch08-i82">
+    <!-- REVISION 2026-07-31 (worklist §D-5 / ped B4 step 3): the sandbox declares the
+         ledger rows it can reach, so "Has this been tried?" can answer for it.
+         #89 — the ratified (M1) mass-kernel A/B: necessary, not sufficient (the standing
+         verdict on the very 2D pairing this dial drives). -->
+    <div class="widget" id="ch08-i82" data-hypothesis="89">
       <h4>I8.2 — The Reparametrization Walk
         <span class="prov-chip real">real: seed61000/real_r1</span>
         <span class="prov-chip">gate_b_20260730/c8_reparam.py</span>
@@ -911,7 +1064,10 @@
       <div class="ch08-verdict" id="ch08-reparam-verdict"></div>
       <div class="widget-controls">
         <button type="button" id="ch08-restore" class="theme-toggle">↺ Back to the shipped measure (dM_z / M_z,det,i)</button>
-        <button type="button" id="ch08-canon" class="theme-toggle">Has anyone tried to fix this?</button>
+        <!-- #71 → #72: mass_trunc, confirmed in isolation and exonerated in the pipeline —
+             the two rows a reader reaching for "just fix the kernel" needs. -->
+        <button type="button" id="ch08-canon" class="theme-toggle"
+                data-hypothesis="71" data-hypothesis-2="72">Has anyone tried to fix this?</button>
       </div>
       <div class="ch08-verdict" id="ch08-canon-box" style="display:none"></div>
       <details class="num-view">
@@ -1025,8 +1181,9 @@
       weight. And a simulator can make a <em>correct</em> estimator look biased, whenever the
       simulator and the estimator disagree about the same universe. That is not hypothetical:
       the generator draws hosts <strong>mass-aware</strong> while the estimator computes its
-      mixture weight $w_G$ <strong>mass-blind</strong>, and the two disagree by a factor
-      2.3–2.5 at a binomial $z = -11.86$ <span class="prov-chip">CLAIM_2D_BIAS_20260730.md C9</span>
+      mixture weight $w_G$ <strong>mass-blind</strong>, and they do not agree. How badly, and
+      what it does to the answer, is Chapter 9&rsquo;s measurement — note it and move on
+      <span class="prov-chip">CLAIM_2D_BIAS_20260730.md C9</span>
       <span class="ch08-fwd">⏭ Ch 9</span>.
     </div>
 
@@ -1034,21 +1191,49 @@
     <h2>Self-check</h2>
 
     <div class="selfcheck">
-      <p>Q8.1 &nbsp; The GW measures $M_z$ to ~10⁻⁴; the catalogue&rsquo;s black-hole mass
-      proxy has $\sigma_{\ln M} \approx 1.28$ (a factor ≈3.6). Predict the <em>shape</em> of
-      the resulting mass window&rsquo;s rejection: symmetric, one-sided low, or one-sided
-      high?</p>
+      <!-- REVISION 2026-07-31 (tomas M7 + ped M2, worklist §C-ch08 P1): the old Q8.1 was a
+           verbatim re-ask of #ch08-predict-2 AND gave a different, wrong mechanism (M_z ≥ M
+           vacuity) from the one §2 measures. One rewrite fixes both: §2's mechanism, in
+           transfer form. -->
+      <p>Q8.1 <em>(transfer)</em> &nbsp; §2&rsquo;s mass window rejects one-sided low because
+      once $\sigma_M \gtrsim M_g$ the window&rsquo;s lower edge $M_g - \sigma_M$ goes negative
+      and the <em>upper</em> leg of the overlap test can no longer fail. Name a source
+      population for which the upper leg would <strong>not</strong> be vacuous, and say whether
+      the chapter&rsquo;s tilt survives there.</p>
       <details class="answer">
         <summary>Show answer</summary>
         <div class="answer-body">
-          Strongly <strong>one-sided low</strong>. Because $\sigma_{M_z}/M_z \approx 10^{-4}$
-          is negligible against the catalogue&rsquo;s factor-3.6 scatter, the window&rsquo;s
-          width is set almost entirely by the catalogue side, and the physically-allowed
-          condition $M_z = M(1+z) \ge M$ makes the upper leg vacuous — a galaxy can always be
-          &ldquo;too light for its redshift&rdquo; but never meaningfully too heavy. The
-          project measured <strong>193 low-side rejections against 1 high-side</strong>
-          <span class="prov-chip">CLAIM_2D_BIAS_20260730.md C4</span>. Asymmetric rejection
-          means asymmetric surviving support, which means a tilt.
+          <strong>The mechanism first, because it is easy to get wrong.</strong> The test is an
+          interval overlap: $[M_g - \sigma_M,\ M_g + \sigma_M]$ against
+          $[(M_z - 2\sigma_{M_z})/(1+z_{\max}),\ (M_z + 2\sigma_{M_z})/(1+z_{\min})]$. It fails
+          <em>high</em> only if $M_g - \sigma_M$ exceeds the GW-allowed upper bound — and with
+          a catalogue proxy whose $\sigma_M$ is of order $M_g$ itself, $M_g - \sigma_M \le 0$,
+          so that condition is unreachable no matter how heavy the galaxy is. (It is
+          <em>not</em> the kinematic inequality $M_z = M(1+z) \ge M$: that bounds the
+          GW-allowed source-frame mass from above, and says nothing about a catalogue
+          galaxy&rsquo;s own upper test. Measured: <strong>193 low-side rejections against 1
+          high-side</strong> <span class="prov-chip">CLAIM_2D_BIAS_20260730.md C4</span>.)
+          <br /><br />
+          <strong>A population that restores the upper leg</strong> is any one whose BH masses
+          are measured rather than proxied — hosts with resolved dynamical $M_{\rm BH}$
+          (the $M$&ndash;$\sigma$ calibrators), or reverberation-mapped AGN — where
+          $\sigma_M/M_g$ drops from $\approx 1$ to a few tenths. Then $M_g - \sigma_M > 0$, the
+          test can fail on both sides, and the rejection becomes two-sided. (The mirror-image
+          answer also scores: keep the catalogue and instead degrade the <em>GW</em> side to
+          $\sigma_{M_z}/M_z \sim 1$; the window is then GW-set and again symmetric — for a
+          different reason, and with the sieve doing nothing useful.)
+          <br /><br />
+          <strong>Does the tilt survive?</strong> Mostly not — but not because the window
+          became symmetric. §7 measures the hard window&rsquo;s own $h$-tilt at
+          <strong>&minus;0.317 nats</strong>, 0.063% of the target and sign-inverted: fixing
+          only the window would move nothing. What carries the effect is the <em>smooth
+          kernel&rsquo;s de-weighting</em> of the survivors, and that is driven by the same
+          $\sigma_M \gtrsim M_g$ fact. A population with a sharp mass proxy kills both at once —
+          two-sided rejection <em>and</em> survivors that keep their weight. Which is the real
+          lesson: the one-sidedness and the de-weighting are not two problems, they are one
+          number ($\sigma_M/M_g$) seen twice. What would <em>not</em> be fixed is §6&rsquo;s
+          well-posedness defect: the measure mismatch between the two numerator legs is
+          independent of how good the proxy is.
         </div>
       </details>
     </div>
@@ -1080,9 +1265,12 @@
         <summary>Show answer</summary>
         <div class="answer-body">
           Because their 1D legs were already negligible, so deleting them costs almost
-          nothing: those 487 events carry <strong>+0.24 nats = 1.5%</strong> of the +15.83,
-          and the 491 both-dead events carry exactly 0.00. <strong>98.5% is carried by the
-          534 survivors</strong>, which were <em>de-weighted</em>, not deleted. This is the
+          nothing: on <code>seed61000/real_r1</code> those 487 events carry
+          <strong>+0.24 nats = 1.5%</strong> of the +15.83, the 491 both-dead events carry
+          exactly 0.00, and <strong>98.5% is carried by the 534 survivors</strong>, which were
+          <em>de-weighted</em>, not deleted. Quote the split with its configuration: on the
+          2&times;2&rsquo;s cell B the same partition is 80.8% (219 survivors) against 19.2%
+          (688 zeroed). What replicates is the <em>ordering</em>, not the percentage. This is the
           book&rsquo;s best example of a striking statistic being the wrong statistic — and
           it was the author-agent&rsquo;s own mechanism, refuted by exact algebra verified to
           $6.2\times10^{-13}$ on all 65,108 cells
@@ -1147,31 +1335,17 @@
           detection applied, hosts drawn with a rate weight. The simulator can make a correct
           estimator look biased whenever the two disagree about the population — for instance
           if the simulator draws hosts <em>mass-aware</em> while the estimator&rsquo;s mixture
-          weight is computed <em>mass-blind</em>. That is not hypothetical: it is claim C9,
-          measured at a factor 2.3 with binomial $z = -11.86$
-          <span class="prov-chip">CLAIM_2D_BIAS_20260730.md C9</span>, and it is Chapter 9.
+          weight is computed <em>mass-blind</em>. That is not hypothetical: it is claim C9
+          <span class="prov-chip">CLAIM_2D_BIAS_20260730.md C9</span>, and measuring the size of
+          the disagreement is Chapter 9&rsquo;s job, not this one&rsquo;s.
         </div>
       </details>
     </div>
 
-    <!-- ================= traps ================= -->
-    <div class="callout defect">
-      <span class="callout-label">Trap &mdash; &ldquo;More information cannot hurt.&rdquo;</span>
-      More information <em>in a correctly specified model</em> cannot hurt. In a model with a
-      measure mismatch (C8) and a mis-calibrated mixture weight (C9), a sharper likelihood
-      makes the mis-specification <em>more decisive</em>. Measured: the 2D channel is 10/10
-      runs at a mean pull of +4.04; the 1D channel is 0/10 exceeding 2σ.
-      <span class="prov-chip">REALISTIC_READOUT.md §6</span>
-    </div>
-
-    <div class="callout defect">
-      <span class="callout-label">Trap &mdash; &ldquo;Impostor deletion is the mechanism.&rdquo;</span>
-      Deletion carries <strong>1.5%</strong>. De-weighting carries <strong>98.5%</strong>.
-      The 487 events with an identically-zero 2D catalogue leg contribute +0.24 nats of the
-      +15.83; the 534 survivors contribute +15.60. The project&rsquo;s adjudication retired
-      the deletion mechanism explicitly, and this book does not resurrect it.
-      <span class="prov-chip">CLAIM_2D_BIAS_20260730.md C4 (amended)</span>
-    </div>
+    <!-- REVISION 2026-07-31 (ped M3): both of this chapter's traps were here, after the
+         self-check. 8.A now sits at the end of the cold open (where "more information
+         cannot hurt" is what the reader is thinking) and 8.B in §5 (where the 487-zeroed
+         statistic creates the misconception). Nothing was deleted; both moved. -->
 
     <!-- ================= MUSEUM INTERLUDE ================= -->
     <div class="ch08-interlude">
@@ -1251,6 +1425,9 @@
         <li><span class="badge finding">FINDING</span> <code>CLAIM_2D_BIAS_20260730.md</code> C1–C3 + <code>c3c4_allruns_summary.md</code> — the class budget (+2.97 / +15.83 of +18.80 on r1); dark +15.83…+17.14 positive in 10/10; the 84% is r1-specific</li>
         <li><span class="badge finding">FINDING</span> C4-obs — 64.7% dark 2D zeros vs 32.5% 1D; 488 zeroed at every h (487 dark); median suppression 7.78e−3; dark tilt −504.8 nats</li>
         <li><span class="badge refuted">REFUTED</span> C4-mechanism as stated (&ldquo;deletion → completion fallback&rdquo;) — <span class="badge finding">FINDING</span> replaced by de-weighting: 0.0354 → 0.0061, +15.83 = 0 + 19.10 − 3.27 <code>ADJUDICATION_20260730.md §6.3</code></li>
+        <li><span class="badge finding">FINDING</span> <code>CELLB_READOUT_20260731.md</code> (evaluate 6103219 / combine 6103220, code <code>7fd60bb</code>) — the 2×2's cell B: unscattered parent through the #53 estimator. Dark channel difference <strong>+18.00</strong> nats (in-cat −1.80, total +16.20) with zero realized scatter ⇒ the dark de-weighting is <em>estimator-borne</em>. Its C4 partition (219 survivors / 80.8%, 688 zeroed / 19.2%, 605 both-dead / 0.00; w̄_cat 0.0361 → 0.0043, ×8.39) is <strong>recomputed for this book</strong> from cell B's own diagnostics CSV and is <em>not</em> in any adjudicated artifact — see <code>ch08_FLAGS.md</code> F-ch08-9</li>
+        <li><span class="badge open">OPEN</span> σ_Mz/M_z — <strong>both values carried</strong>: <code>CLAIM_2D_BIAS_20260730.md:172</code> says ≈10⁻⁴; the same stored quantity recomputed from <code>prepared_cramer_rao_bounds.csv</code> has median <strong>8.8×10⁻⁸</strong> (889: 1.36×10⁻⁹) <code>ch06_FLAGS.md F-ch06-5</code>. No book-side correction: amending the claim file is the author's</li>
+        <li>Literature contrast (Ch 8 §1 sidebar): the mass channel here is a per-host BH-mass <em>association</em>, not the population-mass-function <strong>spectral-siren</strong> method — Farr et al. 2019 (arXiv:1908.09084), Ezquiaga &amp; Holz 2022 (arXiv:2202.08240), Mastrogiovanni et al. 2021 (arXiv:2103.14663); different failure modes</li>
         <li><span class="badge finding">FINDING</span> <code>CLAIM_2D_BIAS_20260730.md</code> C10 — the up-pull is the $(1-w_G)$ prefactor (+31.55), not $\mathcal L^{\rm comp}$ (−3.11; dark −22.72, 39.1% positive)</li>
         <li><span class="badge finding">FINDING</span> <code>CLAIM_2D_BIAS_20260730.md</code> C8 + <code>gate_b_20260730/README_C8.md</code> — reparametrization dependence; cause relocated to the two numerator legs; $d\mathrm{MAP}/d\ln C = +0.031$; 1D bitwise invariant</li>
         <li><span class="badge refuted">REFUTED</span> <code>HANDOFF_20260730.md §4</code> (historical record only) — HB, the hard mass window: −0.317 nats = 0.063% of target, sign-inverted; and its two framing errors</li>
@@ -1259,7 +1436,7 @@
         <li><span class="badge finding">FINDING</span> <code>ledger #5</code> (spurious $1/(1+z)$), <code>#22</code> (<code>f01595c</code>: observation vs hypothesis, 2D +0.0141 → +0.0007) — the mass channel's fixed defects</li>
         <li>Data: <code>results/campaign51_20260728/realistic_20260729/seed{61000,62000}/real_r{1..5}/diagnostics/event_likelihoods.csv</code>, <code>.../seed61000/real_r1/combined_posterior_2d.json</code>, <code>.../prepared_cramer_rao_bounds.csv</code>, <code>.../realistic_scores.csv</code>, <code>.../gate_b_20260730/c8_reparam_results.json</code></li>
         <li>Gates: mixture identity 3.9e−13 (1D) / 9.2e−13 (2D); delivered 2D posterior reconstructed to 3.6e−12 nats; every C-sweep and named-measure MAP matched to <code>c8_reparam.py</code> at 1e−9; 43 numeric fidelity gates + 8 structural guards in <code>gen_ch08.py</code></li>
-        <li>Open flags: <code>book/design/flags/ch08_FLAGS.md</code> (2D pull-range mismatch with <code>REALISTIC_READOUT.md §6</code>; the spec's I8.2 unit labels vs the constant-C sweep; code line drift; 606's 80× vs 74×; σ_lnM provenance; C10's 39.1% definition)</li>
+        <li>Open flags: <code>book/design/flags/ch08_FLAGS.md</code> (2D pull-range mismatch with <code>REALISTIC_READOUT.md §6</code>; the spec's I8.2 unit labels vs the constant-C sweep; code line drift; 606's 80× vs 74×; σ_lnM provenance; C10's 39.1% definition; <strong>F-ch08-9</strong>, the reviewer-computed cell-B C4 partition, raised for the author; <strong>F-ch08-10</strong>, σ_Mz/M_z 10⁻⁴ vs 8.8×10⁻⁸ carried as a both-values pair)</li>
       </ul>
     </div>
 
@@ -1328,37 +1505,66 @@
     }
 
     // -----------------------------------------------------------------
-    // Bias Ledger Rail (BW1) + page-local pips (workaround for the
-    // capability requested as R-ch07-1; book.js is frozen).
+    // Lazy widget init (ux MAJOR-3 / worklist §C-ch08 P2).
+    // This page builds 8 Plotly instances; ch03's IntersectionObserver
+    // pattern is the in-tree precedent, so each widget's data fetch and
+    // plot construction now waits until its container approaches the
+    // viewport. No-IO browsers and print get everything immediately.
+    // -----------------------------------------------------------------
+    function whenVisible(id, fn) {
+      var el = document.getElementById(id);
+      if (!el || !("IntersectionObserver" in window)) { fn(); return; }
+      var io = new IntersectionObserver(function (entries, obs) {
+        entries.forEach(function (e) {
+          if (e.isIntersecting) { obs.disconnect(); fn(); }
+        });
+      }, { rootMargin: "300px 0px 300px 0px" });
+      io.observe(el);
+    }
+
+    // -----------------------------------------------------------------
+    // Bias Ledger Rail (BW1). The pips now go through Book.biasRail's own
+    // `pips` channel (integrator pass 1, worklist §D-6) — the page-local
+    // pip markup and CSS that stood in for it are gone.
+    //
+    // D4 (spoiler discipline): this chapter's own row IS the reveal of
+    // #ch08-predict-1, so the rail ships with the through-Ch-7 history and
+    // gains the 2D row only once the reader reaches the cold-open figure —
+    // the same arming pattern ch03 uses for its §5 row.
     // -----------------------------------------------------------------
     var PIPS = [
       { tone: "amber", label: "C7: kernel inflates at σ_z/z > 0.256", note: "CLAIM C7 — MEASURED, live" },
       { tone: "amber", label: "C8: 2D MAP walks with an arbitrary mass measure", note: "CLAIM C8 — FINDING, well-posedness, live" },
       { tone: "grey", label: "2D pairing is RATIFY-M6 CANDIDATE, not ratified", note: "mass_marginal_2d_kernel.md:1-17, 690-706" },
     ];
-    function renderRail(extra) {
+    function renderRail(armed) {
       var entries = [
         { label: "cat-only, no D(h)", bias: -0.178, note: "Phase 32 / ledger #9" },
         { label: "full-volume D(h)", bias: 0.0, note: "Phase 32 / ledger #9" },
         { label: "1D, realistic host-z", bias: -0.002, note: "volume_deconv repair; Ch 7" },
       ];
-      entries.push(extra || {
-        label: "2D (mass channel)", bias: 0.077,
-        note: "campaign #53, 10 runs: mean MAP 0.807, mean pull +4.04, 10/10 beyond 2σ — on RATIFY-M6 CANDIDATE ground",
-        active: true,
-      });
-      Book.biasRail({ entries: entries });
-      var host = document.getElementById("bias-rail");
-      if (!host) return;
-      PIPS.forEach(function (p) {
-        var d = document.createElement("div");
-        d.className = "ch08-pip" + (p.tone === "grey" ? " grey" : "");
-        d.title = p.note;
-        d.innerHTML = '<span class="ch08-pip-dot"></span><span>' + p.label + "</span>";
-        host.appendChild(d);
-      });
+      if (armed) {
+        entries.push({
+          label: "2D (mass channel)", bias: 0.077,
+          note: "campaign #53, 10 runs: mean MAP 0.807, mean pull +4.04, 10/10 beyond 2σ — on RATIFY-M6 CANDIDATE ground",
+          active: true,
+        });
+      }
+      Book.biasRail({ entries: entries, pips: PIPS });
     }
-    renderRail();
+    renderRail(false);
+    if ("IntersectionObserver" in window) {
+      var railTarget = document.getElementById("ch08-cold-plot");
+      if (railTarget) {
+        new IntersectionObserver(function (es) {
+          es.forEach(function (e) { if (e.isIntersecting) renderRail(true); });
+        }, { rootMargin: "0px 0px -30% 0px" }).observe(railTarget);
+      } else {
+        renderRail(true);
+      }
+    } else {
+      renderRail(true);
+    }
 
     Book.predictReveal(document.getElementById("ch08-predict-1").closest(".widget"));
     Book.predictReveal(document.getElementById("ch08-predict-2").closest(".widget"));
@@ -1366,6 +1572,7 @@
     // =================================================================
     // COLD OPEN — data/ch08_channel.json
     // =================================================================
+    whenVisible("ch08-cold-plot", function () {
     Book.loadJSON("data/ch08_channel.json").then(function (d) {
       var H = d.h_grid;
       function post(logArr) {
@@ -1443,10 +1650,12 @@
           "<strong>" + sgn(d.scorecard_summary.pull_2d_mean, 3) + "</strong>", "—", "—",
         ]]));
     });
+    });
 
     // =================================================================
     // I8.1 — the sieve (toy panel + real panel)
     // =================================================================
+    whenVisible("ch08-toy-plot", function () {
     Book.loadJSON("data/ch08_sieve.json").then(function (S) {
       var H = S.h_grid, i73 = S.i_073;
 
@@ -1572,9 +1781,11 @@
           S.w_cat_dark["1D"][i73].toPrecision(4) + "</strong> in 1D to <strong>" +
           S.w_cat_dark["2D"][i73].toPrecision(4) + "</strong> in 2D — a factor <strong>" +
           fmt(S.deweighting_factor_073, 2) + "</strong>. That collapse, not the deletion, " +
-          "is what carries <strong>98.5%</strong> of the +15.83-nat channel difference " +
-          "(survivors +15.60 nats over 534 events; the 487 zeroed events carry +0.24, and " +
-          "the 491 dead in both channels carry exactly 0.00).",
+          "is the majority carrier of the +15.83-nat channel difference: on this run " +
+          "<strong>98.5%</strong> (survivors +15.60 nats over 534 events; the 487 zeroed " +
+          "events carry +0.24, and the 491 dead in both channels carry exactly 0.00), and " +
+          "<strong>80.8%</strong> on the 2×2's unscattered cell B (219 survivors) — the " +
+          "ordering replicates, the percentage does not.",
         zero:
           "<span class='ch08-verdict-label'>Measured, seed61000/real_r1</span>" +
           "At h = 0.73, <strong>" + fmt(100 * S.zero_fraction.dark_2D[i73], 1) +
@@ -1582,7 +1793,8 @@
           fmt(100 * S.zero_fraction.dark_1D[i73], 1) + "%</strong> in 1D. Of the " +
           S.counts.n_1d_nonzero + " events with a live 1D catalogue leg anywhere on the grid, " +
           S.counts.n_zero2d_of_nonzero1d + " are identically zero in 2D at <em>every</em> h — " +
-          S.counts.n_zero2d_dark + " of them dark. Striking, and worth <strong>1.5%</strong>: " +
+          S.counts.n_zero2d_dark + " of them dark. Striking, and worth <strong>1.5%</strong> " +
+          "of the channel difference on this run (19.2% on the unscattered cell B): " +
           "these events' 1D legs were already negligible.",
         class:
           "<span class='ch08-verdict-label'>Measured, seed61000/real_r1</span>" +
@@ -1692,10 +1904,12 @@
                   fmt(100 * S.zero_fraction.dark_1D[i], 1), fmt(100 * S.zero_fraction.dark_2D[i], 1)];
         }));
     });
+    });
 
     // =================================================================
     // I8.2 — the reparametrization walk
     // =================================================================
+    whenVisible("ch08-reparam-plot", function () {
     Book.loadJSON("data/ch08_reparam.json").then(function (R) {
       var H = R.h_grid;
       var state = { mode: "C", ci: 4, named: 0 };
@@ -1904,10 +2118,12 @@
           fmt(R.named_measures[0].map_parab, 5) + " (exactly invariant)", fmt(R.one_d.map_parab, 5),
         ]]));
     });
+    });
 
     // =================================================================
     // I8.3 — EMRI-889's two faces
     // =================================================================
+    whenVisible("ch08-ev-post", function () {
     Book.loadJSON("data/ch08_twofaces.json").then(function (T) {
       var H = T.h_grid;
       var st = { ev: "889", chan: "both" };
@@ -2032,6 +2248,7 @@
         });
       });
       draw();
+    });
     });
   })();
 </script>

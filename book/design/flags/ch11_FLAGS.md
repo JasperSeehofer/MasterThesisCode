@@ -125,3 +125,110 @@ themselves.
 The chapter states this on the page rather than choosing silently: the live λ readout uses
 the 5-point convention (λ is the control being dragged), the quoted ±1/√N figure is labelled
 as the published 3-point measurement, and the numbers view tabulates both per run.
+
+---
+---
+
+# REVISION — 2026-07-31 (post-review pass, `REVISION_WORKLIST.md` §C-ch11)
+
+Appended, not rewritten: everything above is the record as it stood when the chapter was
+first built. This section records what the revision pass changed, and the two new flags it
+raised.
+
+## F-ch11-4 — the cell-B readout's self-scoring: "confirmed on every pre-registered read" vs 2 of 3
+
+- **Document value.** `CELLB_READOUT_20260731.md` §Verdict, as first written:
+  the pre-registered joint prediction is *"confirmed on every pre-registered read"*.
+- **Scored strictly** (expB BL-4, and re-verified here against the delivered posteriors):
+  the registered prediction had **three** numeric reads.
+
+  | registered read | delivered | score |
+  |---|---|---|
+  | 2D MAP ∈ [0.78, 0.82] | 0.7900 | ✓ |
+  | in-catalogue class argmax ≈ 0.86 | 0.860 | ✓ |
+  | 1D MAP ∈ [0.70, 0.74] | **0.7450** | ✗ — one grid step above (spacing 0.005) |
+
+  The 1D **mean** (0.7320) is inside the band, but the band was written in **MAPs** (it came
+  from the ten delivered runs' 1D MAPs, 0.700–0.740), so on its own convention the miss is real.
+- **Disposition — the book scores it, the artifact is the author's.** The chapter prints
+  **2 of 3 exact, 1D marginal**, states that the readout's "confirmed on every read" is the one
+  sentence it does not copy, and says why the miss makes the pre-registration stronger.
+  It does **not** downgrade the adjudication's outcome-1 verdict, which keys on the 2D and
+  argmax reads (both exact).
+- **Now also the main repo's own record.** `CELLB_READOUT_20260731.md` carries a same-day
+  **ERRATUM** with exactly this scoring ("2 of 3 exact, 1D marginal"). Book and artifact agree;
+  this flag is retained as the trace of how the correction was found (an independent review pass
+  scoring a self-report against what it registered), not as an open disagreement.
+- **Author item** (worklist §F-3): whether any *other* project artifact repeats the softened
+  sentence is the author's to check.
+
+## F-ch11-5 — §1's 2D pull range: both halves, per D5 (carried from ch08)
+
+`+3.4 … +4.5` (`REALISTIC_READOUT.md` §6) vs `+2.474 … +4.735` recomputed from
+`realistic_scores.csv` (`pull_2d`, n = 10). The **mean** (+4.0388) and the 10/10 count
+reproduce exactly; the **range** does not. This is `ch08_FLAGS.md` **F-ch08-1**, not a new
+disagreement — the flag entry exists because ch11's opening table was quoting the readout half
+alone (expB MJ-6, tomas M1), in the chapter whose thesis is that no page may do that. Both
+halves now print, with the F-ch08-1 pointer.
+
+## What the revision changed (item by item)
+
+- **§5 rebuilt as one arc** (expB BL-2 / BL-4 / MJ-1): title → "The confound, and the control
+  that resolved it"; the pre-registration block kept **verbatim** (its table cell now carries
+  the registered document's own words, `B = this run`, in place of the book's build-time status
+  gloss — strictly more verbatim); the predict box untouched and still answerable; then a
+  visually distinct **dated readout block** with the filled 2×2 **in MAPs throughout**
+  (A 0.7299/0.7300 · B 0.7450/0.7900 · C r1 0.7400/0.8133), the means as a footnote, the three
+  difference rows, the explicit **2D-only** warning on the 72% share (the 1D estimator effect
+  exceeds the 1D total, because the scatter pushes the other way), and the three-line scoring
+  table.
+- **No-answer block** (BL-1): item 1 left the list via a dated resolution card that keeps the
+  original question visible (struck); the list is four items; the closing line is now "Four of
+  the five … The fifth was answered by running the control."
+- **Board regenerated** (BL-6 / MJ-7): C6 `status` is the claim file's **current** amended
+  heading verbatim (`RESOLVED 2026-07-31: cell B ran — THE ESTIMATOR OWNS IT`), `live: false`,
+  tag `[DOC + INFER → LOCAL, MEASURED]`; C9 carries the released cell-B gate + the joint-C9+C8
+  constraint; C7 carries the staleness-free magnitude check and the "must not be the exonerated
+  p_det-in-the-numerator-alone form" constraint. Live count **5 → 4** (C5, C7, C8, C9) in the
+  JSON, the widget's count line (computed) and the noscript. The board's contract sentence is
+  now date-scoped, and cell-B gate releases are marked as dated annotations rather than being
+  written into a file's own words.
+- **New generator gates** (191 → **210** checks): every cell-B number in §5 is **re-measured
+  from the delivered posteriors** (`seed61000/estimatorB_2x2/…`) rather than transcribed —
+  MAPs to 1e-9, means and σ_h to 5e-4, the B−A / C−B / C−A rows to 5e-5, the 72% share to
+  5e-3 — plus `3135` detections and a hard gate that the live set is exactly C5/C7/C8/C9.
+- **Two priors, named** (tomas M4): §4's C7 collision now says *which* two priors collide —
+  `w_pop`, the prior over where an EMRI host is, vs `φ_cat ∝ f·(dV_c/dz)/(1+z)` (× `p_det`),
+  the prior over a row in a flux-limited catalogue. It names the axis and adjudicates nothing;
+  `φ_cat` is tagged to the passport key `phcat`.
+- **§4 de-recited** (ped M1/M5): C7/C8/C9 each keep a one-line status + the chapter's own
+  argument in the main column; the per-claim adjudicator recitations (which duplicated §1's
+  board) moved into `details.gw-reader` folds. Nothing was deleted.
+- **Recall beat fixed** (ped B3, mara MINOR-1/2): the ch03 slug is mapped to the button label
+  the reader actually clicked (`impostor → "A — the spectroscopic one"`, etc.), the sentence
+  describes the delivered three-button interaction rather than the spec's marker, the verdict
+  is no longer stated by the slug, and the stale R-ch11-2 comment is replaced (the id is fixed
+  book-wide; the probe is kept only for pre-fix localStorage).
+- **D1 applied**: the closing dossier prints the canonical row
+  `d_L 88.9 Mpc · σ_dL/d_L = 8.98×10⁻⁴` + the one-line erratum note.
+- Also: MN-3 (`<meta description>` + subtitle), MN-4 (§7's ending), MJ-2 (job-ID split —
+  6101146/6101147 where the *pre-registration* is quoted, 6103219/6103220 where the *result* is
+  reported, with the resubmission note once), MJ-3 ("the 2×2 cell B" naming + the ledger-#88 /
+  A′ disambiguation clause), tomas m1 (3130 → **3135**), ped m8 (the twice-stated completion
+  trap is deliberate, and now says so), ped m5 (I11.1's numbers view tabulates the whole
+  published λ-scan, not just its ends), MN-5 (the canonical cell-B rail pip, read from
+  `BOOK_CANON.cellB`, not re-typed), and the §D-5 BW3 tags (`data-hypothesis="61"`,
+  `data-hypothesis-2="64"` on I11.1's λ control — the gesture two dead hypotheses already made).
+
+## Deliberately NOT done
+
+- **Q11.2 was not re-aimed** (ped M1's "construct a statistic under which the rail would look
+  like noise"). The worklist item is conditional ("if time allows"); the frozen list is not.
+  Expert B's PRAISE **PR-4** names Q11.2 specifically — *"Q11.2 makes the reason both are true
+  into the lesson"* — and praised elements are frozen. The C5 fair-framing beat is left exactly
+  as shipped.
+- **The pre-registration block was not edited into hindsight** (D3), including its mixed
+  mean/MAP C row. The convention slip is disclosed in the readout block below it instead, where
+  it functions as a lesson rather than as a silent correction.
+- **`_template.html`'s retired dossier row** is a frozen-file item; the QA gate reports it as a
+  NOTE. Not this agent's to change.

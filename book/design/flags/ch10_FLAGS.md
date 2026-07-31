@@ -120,3 +120,138 @@ and both forms are emitted into the chapter's data files so a reviewer can check
 - `REALISTIC_READOUT.md` §6's struck-out sentence "the 1D channel is the defensible one"
   is **not** used (sources map §7.3). §5 of the chapter follows C5 and the readout's own
   2026-07-30 amendment.
+
+---
+
+# REVISION pass — 2026-07-31 (ch10 agent, per `design/REVISION_WORKLIST.md` §C-ch10)
+
+Append-only. Nothing above this line was rewritten; the pre-revision record stands.
+Every item below names its worklist entry and what changed on the page.
+
+## R-ch10-1 — [P0] expB BL-7: §5's forward promise now points at a landed control
+
+`CELLB_READOUT_20260731.md` (jobs **6103219 / 6103220**, the resubmission of the
+registered 6101146 / 6101147 after a pure-plumbing symlink failure; code `7fd60bb`)
+landed the 2×2's cell B on 2026-07-31. §5 promised Chapter 11 an *unresolved*
+prediction. Applied, exactly per BL-7's scope (the design lesson and the "design the
+missing control yourself" beat are untouched, and the landing sentence still sits
+**after** that exercise so the reader designs blind):
+
+- `§5` closing paragraph: *"It is in flight. Chapter 11 shows you that prediction from
+  the inside, unresolved, because the project has not resolved it either."* →
+  *"It was submitted, and it landed on **2026-07-31** — after the pre-registration, and
+  after this chapter's prediction was written down. Chapter 11 shows you the prediction
+  from the inside first, and then what it got right and what it missed."*
+  The registered prediction ("estimator owns it", cell B ≈ cell C in both channels) is
+  quoted **verbatim above it**, unedited (D3's verbatim rule).
+- Closing callout: *"one confounded attribution whose decisive control has not landed"*
+  → *"one attribution that was confounded until the control was run."*
+- Provenance panel: the `PREREGISTRATION_2x2_cellB.md` item **OPEN → FINDING**, dated,
+  and now cites `CELLB_READOUT_20260731.md` + the result job IDs + the one-sentence
+  resubmission note (D3's job-ID split; expB MJ-2's `:1150` site is the rail pip, below).
+- Rail pip: the grey *"cell B (the decider) not landed"* pip → the **canonical** amber
+  cell-B pip, copied verbatim from `BOOK_CANON.cellB.pipLabel` / `.pipNote`
+  (`js/manifest.js`, §D item 6). Verified byte-identical to the canonical strings;
+  `qa_gates.py`'s pip advisory no longer lists ch10.
+- **Q10.5 is kept as history, not overwritten.** The original answer ("you can conclude
+  **nothing** about which one") was correct at the state the question describes and is
+  intact; a visually separated **dated postscript** was appended: 2D MAP 0.7300 → 0.7900
+  = 72% of that channel's displacement, "which one" is now the estimator configuration,
+  and "what could you conclude *before* the control" is still **nothing** — the
+  transferable half.
+
+**Judgement recorded (not a deviation, but worth stating):** the §5 heading *"The control
+that was never run"* and the C6 `CONFOUNDED` adjudicator box are **kept**. BL-7 scopes the
+edit to the last two sentences and forbids spoiling the design beat; the box is the state
+the section's argument reasons *from*, it is chipped to the dated
+`CLAIM_2D_BIAS_20260730.md`, and the resolution is stated two paragraphs later. The only
+addition is a dated scope clause on the provenance panel's C6 entry, so nothing static at
+the bottom of the page lets a resolved claim look open (museum MJ-8's mirror rule). C6's
+badge flip to RESOLVED is ch11's item (BL-6), not ch10's.
+
+## R-ch10-2 — [P1] tomas M10: the deck no longer answers the cold-open predict
+
+Subtitle *"It recovers truth at −0.24σ. **That is not the same as being right.**"* → *"It
+recovers truth at −0.24σ, twice. **What does that establish?**"* The discovery statement
+moved **below** the predict widget, opening the "this chapter is about instruments"
+paragraph. An honest wrong answer at `#ch10-predict-1` (Yes / No / can't tell) is now
+possible: the deck poses the question the box asks instead of answering it (D4).
+
+## R-ch10-3 — [P1] tomas M3.4: the §3 scenario table has an external scale
+
+Caption added under the A–D table, citing the book's already-used LISA EMRI dark-siren
+forecast — **Laghi et al. 2021, arXiv:2102.01708** (the same paper ch07 cites for the
+comparable host-z kernel) — as **percent-level on H₀**. Row D's 3.6 km s⁻¹ Mpc⁻¹ is
+**≈5%** of H₀ (3.6/73 = 4.9%): same order as the forecast, a little worse. Row A's 0.032
+is **0.04%**, two orders below anything the literature claims — which is itself an
+argument for reading it as a consistency baseline. The caption states the comparison is an
+order-of-magnitude anchor only (different event counts, mission duration, population model
+and catalogue assumptions; this row is 76 hosts from one seed). No repo number changed;
+the anchor is external and carries an arXiv chip, matching ch00's convention for
+literature values.
+
+## R-ch10-4 — [P2] ped m5: I10.2's num-view
+
+**Finding first: the AC was already met.** `details.num-view` → `#ch10-closure-table` has
+been on I10.2 since the build (page `:555`, filled by the widget's own `table()` call with
+the K-ladder: K, events used, % removed, curvature at truth, σ_H0, MAP). ped-m5's "the
+real gaps are ch10's I10.2" does not hold against the shipped page; recorded here rather
+than silently "fixed".
+
+The *substance* of the review's complaint does hold — the widget argues from a class
+decomposition (76 in-catalogue events carrying 101% of the curvature, dark −1%, the three
+loudest ~46%, 54 of the top 60 in-catalogue) that appeared only in prose and in the
+`<noscript>` fallback. A **second table** was added inside the same num-view
+(`#ch10-closure-decomp`), computed live from `ch10_closure.json`: in-catalogue / dark /
+signed total with shares, the three loudest with **both** denominators (47.00% of the
+signed total, 46.41% of the in-catalogue curvature — F-ch10-2's ambiguity carried, not
+resolved), the top-60 subset with its in-catalogue count, and σ_H0 at K = 0. Every number
+is read from the gated data file; none is typed into the page.
+
+## R-ch10-5 — [P2] mandate D1: the dossier row, and a generator key carrying the same slip
+
+- Dossier `:735` → the canonical row, verbatim from `BOOK_CANON.sigmaDL.dossierRowHTML`:
+  `d_L | 88.9 Mpc · σ_dL/d_L = 8.98×10⁻⁴`, followed by the canonical erratum note
+  (`.erratumHTML`, verbatim). A page-local `.dossier .note` rule styles it as a footnote
+  (`css/book.css` is frozen; promote in integrator pass 2 if wanted).
+- **`gen_ch10.py` carried the same units slip and is fixed.** `sqrt(Σ_dLdL)` from the CRB
+  is the **absolute** σ_dL in Gpc (same units as the `luminosity_distance` column), and it
+  was emitted under the key `sigma_dL_over_dL` in `ch10_closure.json` —
+  `event889.sigma_dL_over_dL = 7.98e-05` and 60 `top_meta` rows. Renamed to
+  **`sigma_dL_Gpc`**, with a genuine **`sigma_dL_over_dL = σ_dL / d_L`** added beside it
+  (same treatment the worklist mandates for `ch04_denominator.json`). Regenerated:
+  event 889 now reads `sigma_dL_Gpc 7.98e-05` / `sigma_dL_over_dL 0.000898` — i.e. the
+  generator independently reproduces D1's adopted spec value **8.98×10⁻⁴** from the CRB
+  row. No page reads these keys (verified by grep), so nothing on the page moved.
+- `qa_gates.py` D1 gate: **0 ch10 violations**; the retired string appears on the page
+  only inside the erratum note.
+
+## R-ch10-6 — [P2] expB MJ-2: job IDs
+
+The only ch10 site that named job IDs is the rail pip (`:1150`), which reports a
+*result* → `6103219 / 6103220` via the canonical pip note. The provenance entry carries
+the full split (registered 6101146/6101147 → resubmitted 6103219/6103220) with the
+one-sentence plumbing-failure note. §5 quotes the pre-registration but names no IDs, so
+nothing there needed changing.
+
+## R-ch10-7 — [D5, book-wide policy] the C7 threshold is a both-values item
+
+Not in ch10's item list, applied because D5 is book-wide and ch10 quoted one half twice.
+§1's G2b↔C7 collision sentence and the C7 rail-pip tooltip printed **0.256** alone; both
+now carry **0.2644** (solving the same artifacts' corrected law for the 0.86 edge, which
+is also where the delivered per-host measurement puts the crossing) with a pointer to
+`ch07_FLAGS.md` FLAG-2. Nothing is adjudicated: ch10 states that the project has not
+reconciled them.
+
+## Verification (this pass)
+
+- `gen_ch10.py` re-ran clean end to end: **61.5 s**, 16 archive cells × 3 truths all
+  bit-gated PASS, the K = 0 MAP gate and the audit-script decomposition gate both pass,
+  and the two pre-existing C11 band disagreements (F-ch10-1) still print as FLAGGED —
+  unchanged, as they should be.
+- `qa_gates.py`: ch10 clean on **D1** (retired σ_dL only inside the erratum), on **TNS**
+  (no "not landed" / "in flight" / "still running" anywhere on the page) and on the
+  canonical-pip advisory. Remaining gate failures are other chapters' pages.
+- Page structure re-checked after editing: HTML tag balance clean, the single inline
+  `<script>` passes `node --check`, and the four canonical BOOK_CANON strings
+  (`dossierRowHTML`, `erratumHTML`, `pipLabel`, `pipNote`) are present **verbatim**.

@@ -116,17 +116,21 @@
       </div>
       <div class="reveal">
         All four answers are right, for different events — and that is the finding. Measured
-        over all 1590 rows with the production ball rule and the production candidate
-        redshift window: the <strong>median</strong> event has <strong>1616</strong> galaxies
-        inside its sky ball and <strong>12</strong> left after the redshift window; the 95th
-        percentile has <strong>4891</strong>; the worst has <strong>431,670</strong>; and
-        <strong>552 of 1590</strong> events have <em>no</em> catalogue candidate at all.
-        The chapter&rsquo;s running example, EMRI-889, has <strong>three</strong> galaxies in
-        its ball and <strong>two</strong> after the window. There is no &ldquo;typical&rdquo;
+        over all 1590 rows with the production ball rule ($n_\sigma = 1.5$) and the production
+        candidate redshift window: the <strong>median</strong> event has <strong>888</strong>
+        galaxies inside its sky ball and <strong>6</strong> left after the redshift window;
+        the 95th percentile has <strong>2725</strong>; the worst has <strong>245,334</strong>;
+        and <strong>607 of 1590</strong> events have <em>no</em> catalogue candidate at all.
+        So the median event answers <strong>(a)</strong>, the 90th percentile answers
+        <strong>(c)</strong> with 954, and the 99th answers <strong>(d)</strong> with 11,323 —
+        while 38% of the run has no candidate to count at all.
+        The chapter&rsquo;s running example, EMRI-889, has <strong>two</strong> galaxies in
+        its ball, and both survive the window. There is no &ldquo;typical&rdquo;
         localization ball — there is a distribution spanning five orders of magnitude, and
         both of its ends will teach you something.
         <span class="prov-chip real">real: 1590 events, measured</span>
-        <span class="prov-chip">handler.py:519, :584-592</span>
+        <span class="prov-chip" title="current tree: handler.py:558 (function), :617 (radius), :623-632 (z-window)">handler.py:519, :584-592</span>
+        <span class="prov-chip">bayesian_statistics.py:2838 &mdash; n_&sigma; = 1.5</span>
       </div>
       <div id="ch03-census-plot" class="widget-plot ch03-locked"></div>
       <div class="ch03-readouts ch03-locked" id="ch03-census-readouts">
@@ -146,7 +150,7 @@
       <p class="ch03-note ch03-locked">
         The two histograms are the <em>same</em> 1590 events counted before and after one
         cut. The redshift window — not the sky — is what makes host identification
-        thinkable at all: it removes a factor of a few hundred from the median ball. It is
+        thinkable at all: it takes the median ball from 888 galaxies to 6, a factor of ~150. It is
         also the cut that will turn out to be built on the shakiest number in the catalogue
         <span class="ch03-fwd">⏭ Ch 7</span>.
       </p>
@@ -156,12 +160,13 @@
       </details>
       <noscript>
         <p><strong>Static fallback.</strong> Candidate galaxies per detected event, measured
-        on 1590 seed-61000 events against the 20,834,171-row pruned GLADE+ catalogue.
-        <em>Inside the sky ball:</em> 5th percentile 1, median 1616, 95th 35,466, max
-        546,158, mean 7330; 79 events have an empty ball. <em>After the candidate redshift
-        window:</em> 5th percentile 0, median 12, 95th 4891, max 431,670, mean 1330; 552
-        events have no candidate. EMRI-889: 3 in the ball, 2 candidates. Event 1121: 57,535
-        in the ball, 26,652 candidates.</p>
+        on 1590 seed-61000 events against the 20,834,171-row pruned GLADE+ catalogue, at the
+        production search radius n_&sigma; = 1.5.
+        <em>Inside the sky ball:</em> 5th percentile 0, median 888, 95th 19,851, max
+        311,430, mean 4116; 95 events have an empty ball. <em>After the candidate redshift
+        window:</em> 5th percentile 0, median 6, 95th 2725, max 245,334, mean 751; 607
+        events have no candidate. EMRI-889: 2 in the ball, 2 candidates. Event 1121: 32,825
+        in the ball, 15,242 candidates.</p>
       </noscript>
     </div>
 
@@ -169,7 +174,7 @@
       So the honest statement of the problem is not &ldquo;the host is uncertain&rdquo;. It is:
       <em>the host is one of $N$ specific objects, each of which has its own redshift, its own
       sky position, and its own astrophysical claim to being the kind of galaxy that hosts an
-      EMRI — and $N$ ranges from 0 to 431,670.</em> A parameter you do not know but which
+      EMRI — and $N$ ranges from 0 to 245,334.</em> A parameter you do not know but which
       takes discrete values has exactly one correct treatment in Bayesian inference: you
       marginalize it.
     </p>
@@ -186,18 +191,32 @@
     <div class="voice-derivation">
       <span class="voice-label">The ball search
         <span class="badge ratified">RATIFIED</span>
-        <span class="prov-chip">galaxy_catalogue/handler.py:519</span>
+        <span class="prov-chip" title="current tree: handler.py:558 (function), :617 (radius)">galaxy_catalogue/handler.py:519</span>
+        <span class="prov-chip">bayesian_statistics.py:2838</span>
         <span class="prov-chip">COORD-04</span>
       </span>
       Catalogue galaxies are embedded as unit vectors on the sphere and indexed by a BallTree
-      (<code>handler.py:505</code>), so the search metric is <em>chord length</em>. The 2&times;2
-      Fisher sky block <span class="term" data-term="Sig">$\Sigma$</span> is measured in
+      (<code title="current tree: handler.py:554">handler.py:505</code>), so the search metric
+      is <em>chord length</em>. The 2&times;2
+      Fisher sky block <span class="term" data-term="Sig">$\Sigma$</span> — the
+      measurement&rsquo;s covariance: how big the error ellipsoid is and which way it tilts — is
+      measured in
       $(\phi,\theta)$ coordinates, in which a step in $\phi$ is a great-circle step of
       $\sin\theta\,d\phi$ — so it is first rescaled,
       $$\Sigma' = J\,\Sigma\,J^{\mathsf T},\qquad J = \operatorname{diag}(|\sin\theta|,\,1),$$
       and the search radius is
-      $$ r \;=\; n_\sigma\,\sqrt{\lambda_{\max}(\Sigma')},\qquad n_\sigma = 2 , $$
-      the semi-major axis of the 2&#8209;$\sigma$ error ellipse, as a chord on the unit sphere.
+      $$ r \;=\; n_\sigma\,\sqrt{\lambda_{\max}(\Sigma')},\qquad n_\sigma = 1.5 , $$
+      one and a half times the semi-major axis of the $1\sigma$ error ellipse, as a chord on
+      the unit sphere.
+      <strong>Where that 1.5 comes from, and the trap it sits in:</strong> the function&rsquo;s
+      own signature default is <code>sigma_multiplier = 2</code>
+      (<code>handler.py:568</code>), and production <em>never</em> uses it — the single
+      production ball-search call site passes <code>1.5</code> explicitly
+      (<code>bayesian_statistics.py:2838</code>). The call immediately above it passes
+      <code>2.0</code>, but to <code>get_redshift_outer_bounds</code>: a different multiplier
+      for a different cut. Reading the signature default as &ldquo;the production rule&rdquo; is
+      exactly how the first edition of this chapter came to publish a census at the wrong
+      radius <span class="prov-chip">ch03_FLAGS.md F-ch03-2 (2026-07-31 correction)</span>.
       Both the covariance and the catalogue are in the barycentric ecliptic frame
       (<code>_coord_frame = ecliptic_BarycentricTrue_J2000</code>); getting that wrong once
       cost this project a factor it could see — the equatorial/ecliptic migration moved the
@@ -212,7 +231,8 @@
     <p>
       The <strong>redshift window</strong> keeps a galaxy if its own $1\sigma$ redshift
       interval overlaps the redshift range the measured distance could correspond to
-      (<code>handler.py:584-592</code>). Note <em>which</em> range: not the range for the
+      (<code title="current tree: handler.py:623-632">handler.py:584-592</code>). Note
+      <em>which</em> range: not the range for the
       current trial $h$, but the range spanned by the <em>whole prior</em> on $h$ —
       $z_{\min} = z(d_L - 3\sigma_{d_L};\,h = 0.60)$ to
       $z_{\max} = z(d_L + 3\sigma_{d_L};\,h = 0.86)$
@@ -223,11 +243,13 @@
     </p>
     <p>
       The <strong>mass window</strong> keeps a galaxy if its black-hole mass interval is
-      compatible with the event&rsquo;s measured redshifted mass (<code>handler.py:594-603</code>).
+      compatible with the event&rsquo;s measured redshifted mass
+      (<code title="current tree: handler.py:634-644">handler.py:594-603</code>).
       And here is the fact: the pipeline returns <em>two</em> candidate lists, one with the mass
       window applied and one without, and the channel this chapter is building — the
       distance-and-sky channel — <strong>uses the list without it</strong>
-      (<code>handler.py:592</code> vs <code>:605</code>). The mass window exists only in the
+      (<code title="current tree: handler.py:632">handler.py:592</code> vs
+      <code title="current tree: handler.py:644">:605</code>). The mass window exists only in the
       second channel <span class="ch03-fwd">⏭ Ch 8</span>. When Chapter 8 asks
       &ldquo;why was the 1D channel spared?&rdquo;, this line is the answer, and the claim file
       records that forgetting it was an error of its own investigation.
@@ -236,12 +258,26 @@
     <h3>EMRI-889&rsquo;s ball</h3>
     <p>
       Our running example is the loudest event of the run, and its localization is
-      correspondingly absurd: a sky ball of radius <strong>1.009 arcmin</strong>
-      (0.01682&deg;, a solid angle of 8.885&times;10<sup>&minus;4</sup> deg&sup2;) and a
+      correspondingly absurd: a sky ball of radius <strong>0.757 arcmin</strong>
+      (0.01261&deg;, a disc of area 5.00&times;10<sup>&minus;4</sup> deg&sup2;) and a
       fractional distance precision of <strong>8.98&times;10<sup>&minus;4</sup></strong>
       ($\sigma_{d_L} = 7.98\times10^{-5}$ Gpc $=$ 0.0798 Mpc on
-      $\hat d_L = 88.879$ Mpc). Inside that ball sit <strong>three</strong> catalogue
-      galaxies. Two survive the redshift window. Here they are.
+      $\hat d_L = 88.879$ Mpc). Inside that ball sit <strong>two</strong> catalogue
+      galaxies, and both survive the redshift window. Here they are.
+    </p>
+    <p class="ch03-note">
+      Two bookkeeping notes, so nothing on this page can be read against another chapter and
+      come out wrong. <strong>(1)</strong> The area quoted here is the <em>search disc</em>,
+      $\pi r^2$ with $r = 1.5\sqrt{\lambda_{\max}}$ — what the ball search actually sweeps.
+      Chapter 6 quotes $\Delta\Omega = 3.29\times10^{-4}$ deg&sup2; for the same event: that is
+      the event&rsquo;s <em>localization ellipse</em>, $2\pi\sqrt{\det\Sigma'}$, a different
+      object that does not depend on the search multiplier at all. Same radius, same two
+      galaxies, two different areas because they are two different questions
+      <span class="prov-chip">ch03_FLAGS.md F-ch03-14</span>.
+      <strong>(2) Erratum:</strong> the spec card carried
+      $\sigma_{d_L}/d_L = 8.0\times10^{-5}$ — that is the absolute $\sigma_{d_L}$ in Gpc under a
+      fractional label. Corrected book-wide 2026-07-31; record: ch01 flag F1 /
+      BUILD_REPORT &sect;5.1 item 1.
     </p>
 
     <div class="ch03-cards">
@@ -317,10 +353,10 @@
         coin flip on the book&rsquo;s <em>best-localized event of 1590</em>. And the trap is
         subtler than &ldquo;it is usually wrong&rdquo;, because a measurement says something
         genuinely surprising. Evaluate the weighted numerator at the injected $h = 0.73$ on
-        every event that has any candidate at all (1038 of 1590): <strong>52.6%</strong> of them
-        <em>do</em> have a single galaxy carrying more than half the sum, 35.3% have one
+        every event that has any candidate at all (983 of 1590): <strong>52.0%</strong> of them
+        <em>do</em> have a single galaxy carrying more than half the sum, 35.1% have one
         carrying more than 90%, and the median effective number of contributing galaxies is
-        <strong>2.34</strong>. One galaxy often <em>does</em> dominate.
+        <strong>2.29</strong>. One galaxy often <em>does</em> dominate.
       </p>
       <p style="margin:0;">
         It is just not the nearest one. The galaxy that dominates is the one whose
@@ -346,7 +382,27 @@
         <code>_mass_redshift_prune_mask</code> (<code>handler.py:215</code>) at
         $M \in [10^4, 10^7]\,M_\odot$, $z \le 1.5$ — leaving <strong>20,834,171</strong> rows in
         the production row order. The ball radius, the redshift window and the mass window are
-        the production functions, not re-implementations of them in spirit.
+        the production functions, not re-implementations of them in spirit, and the radius uses
+        the multiplier the <em>production call site</em> passes ($n_\sigma = 1.5$,
+        <code>bayesian_statistics.py:2838</code>) rather than the handler&rsquo;s signature
+        default.
+      </p>
+      <p>
+        <strong>One column of that file is stale, and it is the column half this page depends
+        on.</strong> The local <code>reduced_galaxy_catalogue.csv</code> is <em>not</em> the
+        parent the campaign&rsquo;s observed realizations were drawn from — local sha256
+        <code>623527929d…</code> against the realization sidecar&rsquo;s
+        <code>parent_csv_sha256 7af3f4f4a2…</code> — and they differ in <em>exactly one</em>
+        column, <code>z_error</code>, where the cluster parent carries the counted-once
+        peculiar-velocity width
+        <span class="prov-chip">BOOK_SOURCES_MAP.md &sect;7.19(d)</span>. So: everything computed
+        from <em>positions</em> is parent-independent (the ball counts, the separations, the
+        radius, $h^\star$). Everything computed from a redshift <em>width</em> is
+        <strong>indicative</strong> — the after-window counts (the window is a
+        $z \pm \sigma_z$ overlap test), the zero-candidate count, and the $\sigma_h$ figures in
+        &sect;4. The campaign itself was evaluated against the true parent, so no qualitative
+        claim on this page rides on the stale column; only these digits do
+        <span class="prov-chip">ch03_FLAGS.md F-ch03-13</span>.
       </p>
       <p>
         <strong>Venue, stated once and honoured everywhere on this page.</strong> The seed-61000
@@ -513,13 +569,18 @@
         <strong>Watch</strong> the two forms: at spread&nbsp;0 they lie on top of each other to
         machine precision, because that is a theorem; at spread&nbsp;1, the measured data, they
         separate by a measurable amount; beyond that they diverge.
+        Event 676 is here by measurement, not by taste: at the production ball radius it has
+        the largest $\max_g D_g - \min_g D_g$ of the 568 events with at least 50 candidates
+        ($p_{\rm det}$ 0.246&nbsp;→&nbsp;0.824 at $h = 0.60$; the runner-up, event 392, is close
+        at 0.196&nbsp;→&nbsp;0.762), and the generator refuses to write its files if that ever
+        stops being true.
       </p>
       <div class="widget-controls">
         <span class="readout">candidate set:</span>
         <div class="toggle-row" id="ch03-ratio-event" role="group" aria-label="Candidate set">
           <button type="button" data-ev="889" aria-pressed="true">889 &middot; 2 galaxies</button>
-          <button type="button" data-ev="1121">1121 &middot; 26,652</button>
-          <button type="button" data-ev="676">676 &middot; 18,839</button>
+          <button type="button" data-ev="1121">1121 &middot; 15,242</button>
+          <button type="button" data-ev="676">676 &middot; 10,829</button>
         </div>
       </div>
       <div class="widget-controls">
@@ -558,9 +619,13 @@
         D_g equal) the two forms agree to 3.6&times;10<sup>&minus;12</sup> or better — they
         are the same function. At &lambda; = 1 (the measured D_g) the logarithm of their
         ratio varies across the grid by 8.05&times;10<sup>&minus;4</sup> nats for event 889
-        (whose D_g span a factor 1.001), 3.44&times;10<sup>&minus;2</sup> for event 1121
-        (factor 1.145), and 7.84&times;10<sup>&minus;2</sup> for event 676 (factor 3.353). No
-        single event&rsquo;s argmax moves; the recorded stack-level effect is ledger #26 below.</p>
+        (whose D_g span a factor 1.001), 3.42&times;10<sup>&minus;2</sup> for event 1121
+        (factor 1.145), and 7.78&times;10<sup>&minus;2</sup> for event 676 (factor 3.353).
+        Events 889 and 676 have the same argmax under both forms (0.73 and 0.60); event
+        1121&rsquo;s leg is flat to 0.30 nats across the whole grid, so its argmax is
+        degenerate and the two forms land on different, essentially tied points (0.67 vs 0.86,
+        separated by 3&times;10<sup>&minus;4</sup> nats). The recorded stack-level effect is
+        ledger #26 below.</p>
       </noscript>
     </div>
 
@@ -670,7 +735,7 @@
         <span class="readout">event:</span>
         <div class="toggle-row" id="ch03-sky-event" role="group" aria-label="Event">
           <button type="button" data-ev="889" aria-pressed="true">EMRI-889 &middot; SNR 1425 &middot; 2 candidates</button>
-          <button type="button" data-ev="1121">event 1121 &middot; SNR 35 &middot; 26,652 candidates</button>
+          <button type="button" data-ev="1121">event 1121 &middot; SNR 35 &middot; 15,242 candidates</button>
         </div>
       </div>
       <div class="widget-controls">
@@ -694,15 +759,15 @@
       <noscript>
         <p><strong>Static fallback.</strong> Left: the candidate galaxies of an event, plotted
         as sky offsets from its maximum-likelihood position, inside the production ball
-        (EMRI-889: 2 galaxies, radius 1.009&prime;; event 1121: 26,652 galaxies, radius
-        4.963&deg;). Right: each galaxy&rsquo;s point-kernel numerator against h. For
+        (EMRI-889: 2 galaxies, radius 0.757&prime;; event 1121: 15,242 galaxies, radius
+        3.722&deg;). Right: each galaxy&rsquo;s point-kernel numerator against h. For
         EMRI-889 the two candidates produce two razor-thin, almost equally tall spikes — the
         true host at h* = 0.7294 and the impostor at h* = 0.7675 — so the weighted sum is
         essentially zero at h = 0.65 (both galaxies sit ~9000 nats below their own peaks), is
         carried entirely by the host at h = 0.7294, and entirely by the impostor at
         h = 0.7675. For event 1121 the weighted sum is a broad, almost
         featureless curve rising towards the top of the grid, with an effective number of
-        contributing galaxies between 436 and 635 and no galaxy carrying more than 0.74%.</p>
+        contributing galaxies between 369 and 544 and no galaxy carrying more than 0.81%.</p>
       </noscript>
     </div>
 
@@ -757,6 +822,19 @@
       uncertainty is a photometric redshift in a galaxy catalogue. Hold that thought
       <span class="ch03-fwd">⏭ Ch 7</span>.
     </p>
+    <p class="ch03-note">
+      <strong>Read those three widths as indicative, not as digits to quote.</strong>
+      &plusmn;0.155, &plusmn;0.0089 and the 236&times; ratio are computed from the local
+      catalogue&rsquo;s <code>z_error</code> column, and that column is the one place this
+      checkout differs from the parent the campaign actually ran against — the cluster copy
+      carries the counted-once peculiar-velocity width
+      <span class="prov-chip">BOOK_SOURCES_MAP.md &sect;7.19(d)</span>
+      <span class="prov-chip">ch03_FLAGS.md F-ch03-13</span>. What survives any plausible
+      change to that column is the <em>ordering</em>, which is the point being made here: a
+      photometric redshift is worse than this event&rsquo;s distance measurement by more than
+      two orders of magnitude, and a spectroscopic one by more than one. The exact factor is
+      not load-bearing; the gap is.
+    </p>
 
     <div class="callout defect">
       <span class="callout-label">Trap &mdash; &ldquo;If we can&rsquo;t identify the host, the event is useless.&rdquo;</span>
@@ -774,9 +852,9 @@
     <div class="dossier">
       <div class="dossier-title">Event dossier — EMRI-889 after this chapter</div>
       <table>
-        <tr><td>d_L</td><td>88.879 Mpc (&sigma;_dL = 7.98&times;10&#8315;&#8309; Gpc = 0.0798 Mpc, i.e. &sigma;_dL/d_L = 8.98&times;10&#8315;&#8308;)</td></tr>
+        <tr><td>d_L</td><td>88.9 Mpc &nbsp;&middot;&nbsp; &sigma;_dL/d_L = 8.98&times;10&#8315;&#8308;</td></tr>
         <tr><td>SNR</td><td>1425 — the loudest of the 1590 rows in this run&rsquo;s table</td></tr>
-        <tr class="dossier-new"><td>localization</td><td>ball radius 1.009&prime; (8.885&times;10&#8315;&#8308; deg&sup2;) &mdash; <strong>3 galaxies</strong> inside it, 2 after the redshift window</td></tr>
+        <tr class="dossier-new"><td>localization</td><td>ball radius 0.757&prime; (a search disc of 5.00&times;10&#8315;&#8308; deg&sup2;; Ch 6&rsquo;s &Delta;&Omega; = 3.29&times;10&#8315;&#8308; deg&sup2; is the localization <em>ellipse</em>) &mdash; <strong>2 galaxies</strong> inside it, both surviving the redshift window</td></tr>
         <tr class="dossier-new"><td>host</td><td>catalogue row <strong>859360</strong>, z = 0.021268 &plusmn; 0.004443, <em>photometric</em>, M = 7.095&times;10&#8309; M<sub>&#9737;</sub></td></tr>
         <tr class="dossier-new"><td>the impostor</td><td>catalogue row 760983, z = 0.022359 &plusmn; 0.000256, <em>spectroscopic</em>, 0.00001&prime; further away</td></tr>
         <tr class="dossier-new"><td>rate weights</td><td>w = 92.14 (host) vs 88.50 (impostor) — the astrophysical prior decides nothing here</td></tr>
@@ -808,8 +886,9 @@
 
     <p>
       There is a hint already on this page, if you look at the single-event legs in I3.2 with
-      the selection question in mind: event 676&rsquo;s catalogue leg rails to the
-      <em>bottom</em> of the grid and event 1121&rsquo;s rails to the <em>top</em>. A quantity
+      the selection question in mind: event 676&rsquo;s catalogue leg falls by 4.0 nats from
+      the bottom of the grid to the top — it rails to the <em>bottom</em> — while event
+      1121&rsquo;s climbs to the <em>top</em> edge. A quantity
       that is systematically largest wherever sources are easiest to detect is not a
       likelihood — it is a likelihood divided by the wrong thing. Chapter 4 names it.
     </p>
@@ -886,23 +965,28 @@
       <details class="answer">
         <summary>Show answer</summary>
         <div class="answer-body">
-          Thousands to tens of thousands. Even with a razor-thin distance shell the
-          <em>angular</em> uncertainty dominates the volume, and the catalogue&rsquo;s density at
-          low $z$ is high. Measured on this run: the median event holds <strong>1616</strong>
-          galaxies in its sky ball and <strong>12</strong> after the redshift window; the 90th
-          percentile holds 20,322 and 1708; event 1121 — 4.96&deg; across — holds
-          <strong>57,535</strong> and <strong>26,652</strong>. A single event therefore rarely
-          identifies a host; it supplies a weak preference over a large candidate set, and the
-          constraint comes from stacking. Two caveats the measurement adds to that story. First,
+          <strong>The honest answer is that there is no single number — the answer is a
+          distribution, and it spans five orders of magnitude.</strong> For the <em>kind</em> of event
+          the question describes, thousands is the right order: the <em>angular</em> uncertainty
+          dominates the volume even with a razor-thin distance shell, and the catalogue&rsquo;s
+          density at low $z$ is high. But that is a statement about one slice of the run.
+          Measured over all 1590 detections at the production search radius: the median event
+          holds <strong>888</strong> galaxies in its sky ball and <strong>6</strong> after the
+          redshift window; the 90th percentile holds 11,272 and 954; event 1121 — 3.72&deg;
+          across — holds <strong>32,825</strong> and <strong>15,242</strong>; and
+          <strong>607 of 1590</strong> events have no catalogue candidate at all. So a single
+          event rarely identifies a host: it supplies a weak preference over a candidate set
+          whose size you cannot guess from the event&rsquo;s SNR alone, and the constraint comes
+          from stacking. Two caveats the measurement adds to that story. First,
           &ldquo;large candidate set&rdquo; does not imply &ldquo;diffuse sum&rdquo;: with point
           redshifts, one galaxy carries more than half the weighted numerator for
-          <strong>52.6%</strong> of the 1038 events that have any candidate, and the median
-          effective number of contributors is <strong>2.34</strong> — concentration is the rule,
+          <strong>52.0%</strong> of the 983 events that have any candidate, and the median
+          effective number of contributors is <strong>2.29</strong> — concentration is the rule,
           and it is broken by the <em>redshift kernel</em>, not by the candidate count
           <span class="ch03-fwd">⏭ Ch 7</span>. Second, the exception at the other end: for
-          EMRI-889 the ball holds <em>three</em> galaxies, which is exactly the regime in which
+          EMRI-889 the ball holds just <em>two</em> galaxies, which is exactly the regime in which
           3 events carry 46% of the idealized constraint
-          (<span class="prov-chip">IDEALIZED_BASELINE_READOUT.md:42-47</span>).
+          (<span class="prov-chip" title="current lines :54-60">IDEALIZED_BASELINE_READOUT.md:42-47</span>).
         </div>
       </details>
     </div>
@@ -953,9 +1037,10 @@
     <div class="provenance-panel">
       <h4>Provenance panel — every stamp used in this chapter</h4>
       <ul>
-        <li><span class="badge ratified">RATIFIED</span> <code>galaxy_catalogue/handler.py:505, :519, :584-592, :594-603</code> — BallTree, the $J\Sigma J^{\mathsf T}$ search radius, the redshift window, the mass window (and <code>:592</code> vs <code>:605</code>: the 1D channel never sees the mass window)</li>
+        <li><span class="badge ratified">RATIFIED</span> <code title="current tree: :554, :558/:617, :623-632, :634-644">galaxy_catalogue/handler.py:505, :519, :584-592, :594-603</code> — BallTree, the $J\Sigma J^{\mathsf T}$ search radius, the redshift window, the mass window (and <code title="current tree: :632 vs :644">:592</code> vs <code>:605</code>: the 1D channel never sees the mass window)</li>
+        <li><span class="badge ratified">RATIFIED</span> <code>bayesian_statistics.py:2838</code> — the <em>only</em> production ball-search call site, <code>sigma_multiplier = 1.5</code>; the handler&rsquo;s signature default (<code>2</code>, <code>handler.py:568</code>) is not production, and the <code>2.0</code> at <code>:2823</code> is an argument to <code>get_redshift_outer_bounds</code>, a different cut. The first edition of this chapter published its census at the signature default; corrected 2026-07-31 <span class="prov-chip">ch03_FLAGS.md F-ch03-2</span></li>
         <li><span class="badge ratified">RATIFIED</span> <code>G2c §2 row w_g</code> + <code>bayesian_statistics.py:879</code> + Babak et al. 2017, arXiv:1703.09722 — the rate weight <span class="term" data-term="wg">$w_g = R_{\rm eff}(M_g)/(1+z_g)$</span></li>
-        <li><span class="badge ratified">RATIFIED</span> <code>handler.py:765 draw_rate_weighted_hosts</code> — the same weight on the generator side; the loop is closed by construction</li>
+        <li><span class="badge ratified">RATIFIED</span> <code title="current tree: handler.py:912">handler.py:765 draw_rate_weighted_hosts</code> — the same weight on the generator side; the loop is closed by construction</li>
         <li><span class="badge ratified">RATIFIED</span> <code>G2c §2 rows N_g, D_g, weighted_ratio_of_sums</code> + <code>bayesian_statistics.py:804, :3615, :3722, :3742</code> + Gray et al. 2020, arXiv:1908.06050 Eqs. (A.9)/(A.10)</li>
         <li><span class="badge ratified">RATIFIED</span> <code>physical_relations.py:132</code> (Hogg 1999, arXiv:astro-ph/9905116 Eq. 16), <code>:546 get_redshift_outer_bounds</code> — $d_L(z;h) = d_L(z;1)/h$ and the candidate window over the whole $h$ prior</li>
         <li><span class="badge open">OPEN</span> <code>G2c §5 D1 sub-deviation</code> — $w_g$ evaluated at $z_g$ and pulled outside $\int dz$; unmeasured for GLADE+ photo-$z$ widths</li>
@@ -966,7 +1051,7 @@
         <li><span class="badge finding">FINDING</span> <code>G2c §4.1 vs §4.2</code> / <code>bayesian_statistics.py:3190</code> — the campaign runs <code>absolute_marginal</code>, whose $\mathcal L^{\rm cat}$ denominator is the <em>global</em> catalogue sum, not the local ratio of sums this chapter teaches</li>
         <li>Data: <code>master_thesis_code/galaxy_catalogue/reduced_galaxy_catalogue.csv</code> (20,834,171 rows after the production prune); <code>results/campaign51_20260728/realistic_20260729/seed61000/prepared_cramer_rao_bounds.csv</code>, <code>.../real_r1/diagnostics/event_likelihoods.csv</code>, <code>.../seed61000/mixture_leg_log_extract.txt</code>, <code>.../gate_b_20260730/injection_pool_mix200k_20260728/</code></li>
         <li>Hard gate in the generator: baseline pruned row 859360 lifts to $M_g(1+z_g) = M_z$ to a relative 2.96&times;10<sup>&minus;10</sup> — the host index really is an injection-frame position</li>
-        <li>Open flags: <code>book/design/flags/ch03_FLAGS.md</code> — F-ch03-1 (σ_dL/dL label), F-ch03-2 (&ldquo;tens of thousands&rdquo; is the tail), F-ch03-3 (truth vs observed catalogue), F-ch03-4 (ledger #26 bundles two changes), F-ch03-5 (which denominator the run used), F-ch03-8 (the h-grid undersamples 889), F-ch03-9 (per-event size of the rearrangement)</li>
+        <li>Open flags: <code>book/design/flags/ch03_FLAGS.md</code> — F-ch03-1 (σ_dL/dL label — <em>resolved 2026-07-31, see the erratum in &sect;1</em>), F-ch03-2 (&ldquo;tens of thousands&rdquo; is the tail; <em>and the 2026-07-31 search-radius correction</em>), F-ch03-3 (truth vs observed catalogue), F-ch03-4 (ledger #26 bundles two changes), F-ch03-5 (which denominator the run used), F-ch03-8 (the h-grid undersamples 889), F-ch03-9 (per-event size of the rearrangement), F-ch03-13 (the local <code>z_error</code> column is not the campaign parent&rsquo;s), F-ch03-14 (this chapter&rsquo;s search-disc area vs Ch 6&rsquo;s localization ellipse)</li>
       </ul>
     </div>
 
@@ -1108,7 +1193,7 @@
         ];
         L.annotations = [
           { x: Math.log10(d.featured["889"].n_cand), y: 0.95, yref: "paper", text: "EMRI-889: 2", showarrow: false, xanchor: "left", font: { size: 11, color: C.ok } },
-          { x: Math.log10(d.featured["1121"].n_cand), y: 0.85, yref: "paper", text: "event 1121: 26,652", showarrow: false, xanchor: "right", font: { size: 11, color: C.warn } },
+          { x: Math.log10(d.featured["1121"].n_cand), y: 0.85, yref: "paper", text: "event 1121: " + d.featured["1121"].n_cand.toLocaleString("en-US"), showarrow: false, xanchor: "right", font: { size: 11, color: C.warn } },
         ];
         return L;
       }
@@ -1317,9 +1402,9 @@
           "this event's distance shell by 7.6 σ_dL — which is why this panel draws its own " +
           "0.0005 grid and says so. Production never evaluates a point kernel on that grid; it " +
           "integrates a redshift kernel that smears each spike across ~0.15 in h (⏭ Ch 7).",
-        "1121": "Event 1121 is what a normal event looks like: 26,652 candidates spread over a " +
-          "5° ball, between 436 and 635 of them contributing effectively at any h, and no single " +
-          "galaxy ever carrying more than 0.74%. The weighted sum has no sharp feature at all — " +
+        "1121": "Event 1121 is what a normal event looks like: 15,242 candidates spread over a " +
+          "3.7° ball, between 369 and 544 of them contributing effectively at any h, and no single " +
+          "galaxy ever carrying more than 0.81%. The weighted sum has no sharp feature at all — " +
           "one such event says almost nothing about h, and the constraint has to come from " +
           "stacking 1588 of them.",
       };
@@ -1477,8 +1562,24 @@
         var diff = c.diff;
         document.getElementById("ch03-r-spread").textContent = Number(c.spread).toExponential(3);
         var pr = norm(c.ros), pm = norm(c.mor);
-        document.getElementById("ch03-r-map1").textContent = fmt(H[Book.argmaxIdx(pr)], 3);
-        document.getElementById("ch03-r-map2").textContent = fmt(H[Book.argmaxIdx(pm)], 3);
+        var iR = Book.argmaxIdx(pr), iM = Book.argmaxIdx(pm);
+        document.getElementById("ch03-r-map1").textContent = fmt(H[iR], 3);
+        document.getElementById("ch03-r-map2").textContent = fmt(H[iM], 3);
+        // Whether the argmax "moves" is measured, not asserted — and a leg that is
+        // flat across the whole grid has a degenerate argmax, which is not the same
+        // thing as the two forms disagreeing. Say which case this is.
+        var legMin = Math.min.apply(null, c.ros), legMax = Math.max.apply(null, c.ros);
+        var argmaxSentence;
+        if (iR === iM) {
+          argmaxSentence = "This single event's argmax does not move: both forms peak at h = " +
+            fmt(H[iR], 3) + ". ";
+        } else {
+          argmaxSentence = "The two forms peak at h = " + fmt(H[iR], 3) + " and h = " +
+            fmt(H[iM], 3) + " — but this event's leg spans only <strong>" +
+            (legMax - legMin).toFixed(2) + " nats</strong> across the entire grid, and the two " +
+            "peaks are separated by " + Math.abs(c.ros[iR] - c.ros[iM]).toExponential(1) +
+            " nats, so the argmax is degenerate rather than genuinely displaced. ";
+        }
 
         var v = document.getElementById("ch03-ratio-verdict");
         var body;
@@ -1494,7 +1595,7 @@
             "The real $D_g$ of event " + state.ev + " span a factor <strong>" +
             fmt(e.D_g_max[0] / e.D_g_min[0], 3) + "</strong>, and the two forms' log-ratio varies " +
             "across the grid by <strong>" + Number(e.summary.ln_form_ratio_spread).toExponential(3) +
-            " nats</strong>. This single event's argmax does not move. " +
+            " nats</strong>. " + argmaxSentence +
             "<strong>Has this been tried?</strong> Yes — the pipeline shipped the mean-of-ratios " +
             "form. Ledger&nbsp;#26 (<code>816f904</code>): repairing it <em>together with</em> " +
             "removing a spurious $p_{\\rm det}$ from the numerator moved the stacked 1D MAP " +

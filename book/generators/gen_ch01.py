@@ -14,11 +14,24 @@ Produces the two data files behind the chapter's beats.
     The one *derived* quantity is the distance error bar,
     ``sigma_dL = sqrt(delta_luminosity_distance_delta_luminosity_distance)``,
     which is the square root of a stored diagonal element and is emitted BOTH
-    absolutely (Gpc, Mpc) and as a fraction of d_L, because those two readings
-    differ by a factor 11.1 and the build spec quotes the absolute one with a
-    fractional label.  See ``book/design/flags/ch01_FLAGS.md`` (F1) — the
-    generator refuses to pick one and prints both plus the 1/SNR scale that
-    discriminates them.
+    absolutely (Gpc, Mpc) and as a fraction of d_L.
+
+    **D1, 2026-07-31 — the units slip is RESOLVED.**  The two readings differ
+    by a factor 11.25, and the old spec figure ``8.0e-5`` was the *absolute*
+    sigma_dL in Gpc carried under a *fractional* label.  Per
+    ``book/design/REVISION_WORKLIST.md`` §A-D1 the measured fractional value
+    ``sigma_dL/d_L = 8.98e-4`` is now the book's spec value; this generator
+    gates against it and emits the retired figure only as dated history
+    (``retired_spec_value_*``) beside the canonical erratum line.  The 1/SNR
+    scale is still emitted — it is no longer an open arbitration but the
+    *proof*: 8.98e-4 = 1.28/rho is ordinary, 8.0e-5 would be 0.11/rho, nine
+    times better than the bound a matched-filter amplitude measurement obeys.
+    Record: ``book/design/flags/ch01_FLAGS.md`` (F1).
+
+    Also emitted (D5, both-values): ``mass_precision`` — the stored
+    ``sqrt(delta_M_delta_M)/M`` distribution, which the book carries beside
+    the claim file's ``sigma_Mz/M_z ~ 1e-4``.  Gated against
+    ``book/design/flags/ch06_FLAGS.md#F-ch06-5``.
 
 ``book/site/data/ch01_dlz.json``        (I1.3 "d_L(z; h, Omega_m) explorer")
     The chapter's explorer computes ``d_L(z; h, Omega_m)`` closed-form in the
@@ -97,9 +110,33 @@ SPEC_DOSSIER = {
     "mu_msun": 10.0,
     "dL_Mpc": 88.9,
     "snr": 1425.0,
-    "sigma_dL_over_dL_quoted": 8.0e-5,  # <- the disputed one (flag F1)
+    # D1 (REVISION_WORKLIST §A): the book's spec value for this row is now the
+    # measured fraction.  The figure below it is the retired one, kept only so
+    # the erratum can name what was corrected.
+    "sigma_dL_over_dL": 8.98e-4,
+    "sigma_dL_over_dL_retired": 8.0e-5,  # absolute Gpc under a fractional label
     "host_galaxy_index": 859360,
 }
+
+# --- D1 canonical strings (js/manifest.js -> BOOK_CANON.sigmaDL) -----------
+# Copied VERBATIM from the integrator's one definition; the book's QA gate
+# (book/generators/qa_gates.py) greps the built pages against that object, so
+# these must not be re-worded here.
+D1_DOSSIER_ROW = "d_L  88.9 Mpc  ·  σ_dL/d_L = 8.98×10⁻⁴"
+D1_ERRATUM = (
+    "Erratum: the spec card carried σ_dL/dL = 8.0×10⁻⁵ — that is the absolute "
+    "σ_dL in Gpc under a fractional label. Corrected book-wide 2026-07-31; "
+    "record: ch01 flag F1 / BUILD_REPORT §5.1 item 1."
+)
+
+# --- D5 both-values: the mass-precision pair (ch06_FLAGS.md#F-ch06-5) ------
+# The claim file (CLAIM_2D_BIAS_20260730.md:172) and BOOK_DESIGN's Ch 8 card
+# say sigma_Mz/M_z ~ 1e-4; the stored CRB table says ~1e-7.  Unlike sigma_dL
+# there is no author mandate, so the book prints BOTH (worklist §B-8) — and
+# this generator gates its own recomputation against Ch 6's measurement.
+CLAIM_SIGMA_MZ_OVER_MZ = 1.0e-4
+F_CH06_5_MEDIAN = 8.8e-8  # median sqrt(delta_M_delta_M)/M over the 1590 rows
+F_CH06_5_EVENT889 = 1.36e-9
 
 # docs/gates/G7_systematics_budget.md, "Numbers behind row #6": h' solving
 # d_L(z; h', 0.2726) = d_L(z; 0.73, 0.3153), quoted as a percentage on H0.
@@ -194,16 +231,47 @@ def build_event() -> dict[str, Any]:
 
     frac = sigma_dl / d_l
 
-    # --- FLAG F1 -----------------------------------------------------------
-    # The spec quotes sigma_dL/dL = 8.0e-5.  The stored row gives
-    # sigma_dL = 7.98e-5 *Gpc*; dividing by d_L = 0.0888792 Gpc gives 8.98e-4.
-    # Do not reconcile: emit both, plus 1/SNR, which is the scale a
-    # matched-filter amplitude measurement is bounded by.
-    disagrees = abs(frac - SPEC_DOSSIER["sigma_dL_over_dL_quoted"]) > 0.1 * frac
+    # --- F1, RESOLVED 2026-07-31 (D1) --------------------------------------
+    # The stored row gives sigma_dL = 7.98e-5 *Gpc*; dividing by
+    # d_L = 0.0888792 Gpc gives 8.98e-4, which is now the book's spec value.
+    # HARD GATE against it, and record the retired figure + the ratio that
+    # explains it (a missing division by d_L, x11.25).
+    if abs(frac / SPEC_DOSSIER["sigma_dL_over_dL"] - 1.0) > 0.01:
+        _fail(
+            f"sigma_dL/d_L {frac:.6e} != D1 spec value "
+            f"{SPEC_DOSSIER['sigma_dL_over_dL']:.3e} (worklist §A-D1)"
+        )
+    retired = float(SPEC_DOSSIER["sigma_dL_over_dL_retired"])
+    # The slip IS the missing division by d_L in Gpc: 1/0.0888792 = 11.25.
+    slip_factor = 1.0 / d_l
+    # The retired figure is the ABSOLUTE sigma_dL in Gpc: check that reading
+    # too, so the erratum's diagnosis is verified and not asserted.
+    if abs(sigma_dl / retired - 1.0) > 0.01:
+        _fail(
+            f"retired spec figure {retired:.1e} does not match the absolute "
+            f"sigma_dL {sigma_dl:.6e} Gpc either — the erratum's diagnosis fails"
+        )
     print(
-        f"  [F1] sigma_dL = {sigma_dl:.6e} Gpc; sigma_dL/d_L = {frac:.6e}; "
-        f"spec quotes {SPEC_DOSSIER['sigma_dL_over_dL_quoted']:.1e} as a FRACTION "
-        f"({'DISAGREES' if disagrees else 'agrees'}); 1/SNR = {1.0 / snr:.6e}"
+        f"  [F1 RESOLVED] sigma_dL = {sigma_dl:.6e} Gpc; sigma_dL/d_L = {frac:.6e} "
+        f"(spec value, D1); retired figure {retired:.1e} = the absolute Gpc value, "
+        f"i.e. a missing division by d_L (x{slip_factor:.2f}); 1/SNR = {1.0 / snr:.6e} "
+        f"=> {frac * snr:.3f}/rho (the proof: the retired reading would be "
+        f"{retired * snr:.2f}/rho)"
+    )
+
+    # --- D5 both-values: the mass channel's precision -----------------------
+    sigma_mz_over_mz = np.sqrt(crb["delta_M_delta_M"].to_numpy()) / crb["M"].to_numpy()
+    mz_median = float(np.median(sigma_mz_over_mz))
+    mz_889 = float(sigma_mz_over_mz[EVENT_889])
+    if abs(mz_median / F_CH06_5_MEDIAN - 1.0) > 0.02:
+        _fail(f"sigma_Mz/M_z median {mz_median:.3e} != F-ch06-5's {F_CH06_5_MEDIAN:.1e}")
+    if abs(mz_889 / F_CH06_5_EVENT889 - 1.0) > 0.02:
+        _fail(f"sigma_Mz/M_z(889) {mz_889:.3e} != F-ch06-5's {F_CH06_5_EVENT889:.2e}")
+    print(
+        f"  [F-ch06-5] sigma_Mz/M_z: median {mz_median:.3e}, event 889 {mz_889:.3e} "
+        f"(p5 {np.percentile(sigma_mz_over_mz, 5):.2e}, "
+        f"p95 {np.percentile(sigma_mz_over_mz, 95):.2e}); the claim file says "
+        f"{CLAIM_SIGMA_MZ_OVER_MZ:.0e} — both printed, neither substituted"
     )
 
     n_rows = int(len(crb))
@@ -264,9 +332,27 @@ def build_event() -> dict[str, Any]:
             "sigma_dL_over_dL": _r(frac),
             "one_over_snr": _r(1.0 / snr),
             "frac_in_units_of_one_over_snr": _r(frac * snr),
-            "spec_quoted_as_fraction": SPEC_DOSSIER["sigma_dL_over_dL_quoted"],
-            "spec_disagrees_with_recomputation": bool(disagrees),
+            "dossier_row": D1_DOSSIER_ROW,
+            "erratum": D1_ERRATUM,
+            "retired_spec_value_as_fraction": retired,
+            "retired_spec_value_is_the_absolute_Gpc": True,
+            "retired_spec_value_missing_division_by_dL_Gpc": _r(slip_factor, 4),
+            "retired_reading_in_units_of_one_over_snr": _r(retired * snr, 3),
+            "resolved": "2026-07-31 (REVISION_WORKLIST §A-D1)",
             "flag": "book/design/flags/ch01_FLAGS.md#F1",
+        },
+        "mass_precision": {
+            "sigma_Mz_over_Mz_median": _r(mz_median),
+            "sigma_Mz_over_Mz_event889": _r(mz_889),
+            "sigma_Mz_over_Mz_p5": _r(float(np.percentile(sigma_mz_over_mz, 5))),
+            "sigma_Mz_over_Mz_p95": _r(float(np.percentile(sigma_mz_over_mz, 95))),
+            "claim_file_value": CLAIM_SIGMA_MZ_OVER_MZ,
+            "claim_file_source": "CLAIM_2D_BIAS_20260730.md:172 (also BOOK_DESIGN.md §1 Ch 8 card)",
+            "both_values": True,
+            "flag": "book/design/flags/ch06_FLAGS.md#F-ch06-5",
+            "note": "stored column is sqrt(delta_M_delta_M)/M — the detector-frame "
+            "mass M_z (ch08_FLAGS.md#F-ch08-8); the book prints both readings and "
+            "substitutes neither (REVISION_WORKLIST §D5 / §B-8)",
         },
         "context": {
             "n_crb_rows": n_rows,
@@ -380,8 +466,10 @@ def main() -> None:
     print(f"  wrote {OUT_DLZ.relative_to(REPO_ROOT)} ({OUT_DLZ.stat().st_size:,} bytes)")
 
     print(
-        "  gates: dossier vs spec card OK; G7 row-6 recomputation matches the "
-        "published table at all 6 redshifts; Hubble-law limit OK"
+        "  gates: dossier vs spec card OK; D1 sigma_dL/d_L == 8.98e-4 (and the "
+        "retired 8.0e-5 verified to be the absolute Gpc value); sigma_Mz/M_z "
+        "reproduces F-ch06-5; G7 row-6 recomputation matches the published "
+        "table at all 6 redshifts; Hubble-law limit OK"
     )
 
 

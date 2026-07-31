@@ -106,3 +106,133 @@ is visible to the reader.
   zero-host fallback comment at ~`:2843-2866`, and the `w_G = beta_G / D_h` assignment at
   `:3392`. **Not a conflict**: every cited block was located and read, and every semantic
   claim matches. Recorded so a reviewer re-grepping does not read the offset as an error.
+
+---
+
+# REVISION 2026-07-31 — post-review pass (`REVISION_WORKLIST.md` §C-ch05)
+
+Appended, not rewritten: everything above is the record as it stood at build time. This
+section records what the revision pass changed, and opens one new measurement flag.
+
+## F-ch05-6 — RESOLVED by author mandate: σ_dL/d_L = 8.98×10⁻⁴ is now the spec value
+
+`REVISION_WORKLIST.md` §A-D1 adopts the six-chapter measured value book-wide. Ch 5's only
+site was the closing dossier row, which now carries the canonical string
+`d_L  88.9 Mpc  ·  σ_dL/d_L = 8.98×10⁻⁴`, followed by the canonical one-line erratum note.
+Ch 5 never carried the dispute in prose, so nothing else on the page changed. The retired
+`8.0×10⁻⁵` appears on this page in exactly one place — inside that erratum note — and the
+build's D1 grep gate passes on ch05.
+
+## F-ch05-7 — CORRECTION: C10's attribution was mis-scoped in the block whose job is to enforce it
+
+- **What was wrong.** §2's `.voice-adjudicator` ("What the flatten-the-slope number is, and
+  is not") read *"only 39.1% of them have a positive completion tilt; ΣΔln L^comp = −3.11
+  over the same window"* in a sentence about **dark** events. Both halves were mis-scoped:
+  −3.11 is the **all-event** total, and 39.1% is the fraction positive on
+  **(1−w_G)·L^comp**, not on `L^comp` alone. The same two numbers appeared in the
+  provenance panel. `ch08_FLAGS.md` F-ch08-6 already establishes the second scoping, so
+  Ch 5 was inconsistent with Ch 8 as well as with C10 itself.
+- **Caught by:** expert A M1 (independent recomputation from the r1 diagnostics CSV).
+- **Re-measured by `gen_ch05.py`** over C10's own window h = 0.73 → 0.81, emitted as
+  `ch05_mixture.json.c10_Lcomp_scoping` and printed in the generator's console gates:
+
+  | quantity | value |
+  |---|---|
+  | ΣΔ ln L^comp, **dark (1512)** | **−22.717** |
+  | ΣΔ ln L^comp, all 1588 | −3.109 |
+  | ΣΔ ln L^comp, in-catalogue (76) | +19.609 |
+  | dark fraction positive, **L^comp alone** | **27.71%** |
+  | dark fraction positive, **(1−w_G)·L^comp** | **39.09%** |
+  | ΣΔ ln[(1−w_G)·L^comp], dark | **+7.327** |
+  | Δ ln(1−w_G) per event | +0.0198705 |
+
+  Every figure reproduces expert A's recomputation to the digit, and `N·Δln(1−w_G)` is
+  unchanged at +31.554 against C10's +31.55.
+- **Fixed:** the adjudicator block and the provenance panel now print the dark sum −22.72
+  with the all-event −3.11 named as such, both percentages with the object each counts, the
+  F-ch08-6 pointer, and the sign flip −22.72 → +7.33 that *is* C10's claim. Nothing was
+  reconciled away; the numbers were re-scoped, not changed.
+
+## F-ch05-8 — NEW measurement: I5.1's κ dial is non-monotonic, and the 0.86 plateau has a measured mechanism
+
+- **Raised by:** Mara MAJOR-7 (she read the shipped JSON and found the midrange unnarrated;
+  the page's generic `other` verdict said only "watch how far the MAP travels").
+- **Measured by `gen_ch05.py`**, emitted as `prefactor_tilt_by_kappa`,
+  `map_by_kappa_with_leg` and `map_by_kappa_no_leg`. The dial's regimes:
+
+  | κ | MAP (total) | MAP, 1095 with a catalogue leg | MAP, 493 without | N·Δln(1−w_κ) over the grid |
+  |---|---|---|---|---|
+  | 0 | 0.755 | 0.86 | 0.60 | +0.0 |
+  | 0.05 → 0.7 | 0.61 → 0.71 | 0.82 → 0.76 | 0.60 | +7.1 → +90.1 |
+  | 1 (shipped) | 0.740 | 0.76 | 0.60 | +123.7 |
+  | 3 → 60 | 0.85 → **0.86** | 0.85 → 0.86 | 0.85 → 0.86 | +295 → +878 |
+  | 120 | 0.86 | 0.61 | 0.86 | +926.5 |
+  | 250 → 3000 | 0.63 → 0.600 | 0.60 | 0.86 | +954 → +979 |
+  | ∞ | 0.600 | 0.60 | — (493 silenced) | — |
+
+- **The two mechanisms, as measured — not as guessed.** (a) *Below κ = 1 the dial is
+  effectively discontinuous at the origin*: for an event like EMRI-889 the catalogue leg is
+  ≈5×10⁷ times the completion leg at h = 0.73 (both numbers are already on the page's
+  dossier), so any weight above ~10⁻⁸ leaves the catalogue branch — and its rail at 0.600 —
+  in charge. Only at exactly κ = 0 does the term vanish and the MAP jump to 0.755.
+  (b) *The 0.86 plateau is the (1−w_G) prefactor, not the in-catalogue class.* Mara's
+  proposed narration ("you are watching the 76 in-catalogue events' own preference
+  dominate") is **not** what the data says and was not adopted: over κ = 3…60 the 1095
+  events **with** a catalogue leg and the 493 **without** one peak at 0.86 *together*, and
+  by κ = 120 the with-leg group has already fallen back to 0.61 while the total is still
+  0.86. What rises monotonically across the whole stretch is C10's prefactor tilt, from
+  +124 nats at the shipped κ = 1 to +979 at κ = 3000. The plateau is an invented weight
+  slope out-shouting both branches — which is the same lever the chapter's own
+  flatten-the-slope beat is about, seen from the other side.
+- **Disposition:** three new `V51` verdict states (`below`, `plateau`, `wall`) render the
+  live per-κ numbers, so every reachable dial position has a measured verdict; a prose
+  paragraph before the widget and an extended `<noscript>` fallback give static readers the
+  same content; the `Show me the numbers` fold gains the per-κ table above. `n_zero_by_kappa`
+  is 0 at every finite κ and this is now stated on the page — the 493 fall out only at
+  κ = ∞ exactly.
+
+## Other items from the worklist, dispositioned
+
+- **[mara MAJOR-1] w_G's type before its value.** The line-of-sight-average sentence was
+  **moved** (not copied) out of the `▸ For the GW reader` fold into the narrator flow
+  immediately before "First: 12%"; the fold now points back at it and keeps only the
+  β_G/D mechanics. The 12%-vs-5% paragraph additionally labels **both** realized-rate
+  figures with their samples — 76/1588 = 4.8% (seed 61000, one realization) and
+  164/3135 = 5.2% (two seeds pooled, the claim file's figure) — which was the page's
+  internal denominator contradiction.
+- **[expA M2 / mara MAJOR-6 — D5]** Q5.4's answer no longer carries "1500–2400×" alone: it
+  now carries the adjudicated 1500–2400× **and** the recomputed 142–2458×, median 197×,
+  with the `ch11_FLAGS.md` F-ch11-1 pointer, plus the sentence that the argument does not
+  depend on which is right. The 0.025 Poisson headline (which reproduces to 1e-6) leads.
+- **[mara MAJOR-4 — D4]** §3 de-spoiled: the heading is now "The completion branch, and the
+  step where you must integrate rather than evaluate" and the opening paragraph says "costs
+  orders of magnitude" instead of "a factor of several thousand". The ~5000× now first
+  appears in the reveal, so the predict is answerable wrongly. No data changed.
+- **[ped M3]** Trap 5.B moved to §2, immediately after the "12%. Not 5%" paragraph that
+  creates the misconception; Trap 5.A moved to §3, immediately after `L^comp` is defined.
+  Neither trap remains below the self-check.
+- **[ped M9 / D4]** Trap 5.B's C9 measurement numbers stripped: the binomial z = −11.86 and
+  the "2.3–2.5× the realized in-catalogue rate" framing are Ch 9's, and D4 names z = −11.86
+  explicitly. The trap keeps what Ch 5 owns — 0.920 vs 0.1215 locally, 0.1215 vs 4.8%
+  globally — and names C9 as the phenomenon without its verdict. The provenance panel's C9
+  entry was softened the same way. **Consequence for D5:** with the ratio gone, no half of
+  a flagged pair is left alone on the page.
+- **[ped M1] Q5.3 / Q5.4 overlap, re-aimed per option (b)**, not kept. Q5.3 now asks *which*
+  sanity limit is discontinuous on the dial and what property of this run's branches makes a
+  vanishing weight fail to vanish (answerable from the dossier; it consumes F-ch05-8's
+  measurement). Q5.4 now asks the reader to **design** the leverage test — what to perturb,
+  what to hold fixed, what response falsifies reading A — before comparing with C5.
+  Re-measured 5-gram overlap against the chapter body, same method as the pedagogy review:
+  **Q5.3 25% → 7.9%, Q5.4 27% → 0.4%** (Q5.1 6.8%, Q5.2 15.2%, Q5.5 0.0%). All five now
+  sit under the 22% bar.
+- **[synth / D2]** §4's GW-reader fold now consumes Ch 3's **regenerated** census
+  (n_σ = 1.5, `bayesian_statistics.py:2838`): **607 of 1590** events with no catalogue
+  candidate, **983** with at least one — replacing nothing on this page (Ch 5 never quoted
+  the retired 552) but closing the gap a reader would otherwise have to guess across. The
+  expA-P7 discipline is stated explicitly: it is a *reconstruction* count on the truth
+  catalogue and a different event list, never a drop count, and never this run's 493.
+- **Not changed, deliberately:** F-ch05-1's two numbers for the 4π defect stay carried and
+  unreconciled (that is a §D-5 both-values item and the adjudicator block already obeyed
+  it); F-ch05-2's "493 is a zero-catalogue-leg count" discipline stands; F-ch05-3 and
+  F-ch05-4 are untouched; the I5.1 sandbox's `Has this been tried?` box (ledger #61/#64)
+  and the museum interlude are PRAISE-protected and were not edited.

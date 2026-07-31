@@ -8,7 +8,7 @@
 -->
 <title>Ch. 11 — The State of the Art, Honestly | EMRI Dark Siren Book</title>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="description" content="The closing chapter: the C1-C11 adjudication board, the two runaways unlocked with the reader's own hands, three measured inconsistencies on one side of the estimator, a confounded attribution, and the pre-registered control still in flight." />
+<meta name="description" content="The closing chapter: the C1-C11 adjudication board, the two runaways unlocked with the reader's own hands, three measured inconsistencies on one side of the estimator, and the pre-registered control that landed the night the book was built." />
 <link rel="stylesheet" href="vendor/katex/katex.min.css" />
 <link rel="stylesheet" href="css/book.css" />
 
@@ -131,18 +131,20 @@
   <main class="book-content">
     <h1>Chapter 11 — The State of the Art, Honestly</h1>
     <p class="subtitle">
-      Three measured inconsistencies, a confounded attribution, and the control still running.
+      Three measured inconsistencies, and the control that landed the night the book was built.
     </p>
 
     <!-- ================= COLD OPEN (B1) ================= -->
     <div class="callout without">
       <span class="callout-label">The failure this chapter answers</span>
-      <strong>Failure: everything. Resolution: none yet — and that is the chapter.</strong>
+      <strong>Failure: everything. Resolution: one of five — and it arrived while this
+      chapter was being written.</strong>
       Ten chapters built an estimator and spent most of their length trying to break it.
       This one is the scoreboard, written in the project&rsquo;s own adjudicated language,
-      on the day the adjudication was signed. It resolves nothing, because the project has
-      resolved nothing, and a book that tidied this up would be lying about what research
-      looks like from the inside.
+      on the day the adjudication was signed — and then amended the next night, when the one
+      experiment the whole scoreboard was waiting on landed. It resolves one question of
+      five, because the project has resolved one of five, and a book that tidied the other
+      four up would be lying about what research looks like from the inside.
     </div>
 
     <p>
@@ -158,12 +160,19 @@
         </tr>
         <tr><td>1D (<code>posteriors</code>)</td><td>0.700–0.740</td><td>−1.15 … +0.51</td><td>0/10</td></tr>
         <tr><td>2D (<code>posteriors_with_bh_mass</code>)</td><td><strong>0.780–0.820</strong></td>
-          <td><strong>+3.4 … +4.5 (mean +4.04)</strong></td><td><strong>10/10</strong></td></tr>
+          <td><strong>+2.47 … +4.74 (mean +4.04)</strong><sup>†</sup></td><td><strong>10/10</strong></td></tr>
       </table>
     </div>
     <p class="ch11-note">
       <span class="prov-chip">REALISTIC_READOUT.md §6</span>
       <span class="prov-chip real">real: seed{61000,62000}/real_r{1..5}</span>
+      <sup>†</sup> <strong>Both halves of a flagged pair.</strong> The readout prints the range as
+      <strong>+3.4 … +4.5</strong>; recomputed from <code>realistic_scores.csv</code> (column
+      <code>pull_2d</code>, n = 10) it is <strong>+2.474 … +4.735</strong>. The mean
+      (<strong>+4.0388</strong>) and the 10/10 count reproduce exactly; the <em>range</em> does not.
+      Chapter 8 raised this as <span class="prov-chip">F-ch08-1</span> and prints the recomputed
+      pair; so does this table, because the opening table of the closing chapter is exactly where a
+      reader would otherwise learn that the book quietly prefers one half.
       &sigma;<sub>H₀</sub> in the 2D channel (1.4–2.5) is comparable to the 1D channel, so
       the offset is a genuine <strong>+0.07…+0.09 shift in $h$</strong>, not a width
       artifact; the maximum edge/peak ratio is 0.17, so the 2D posteriors are not railing
@@ -223,9 +232,12 @@
       </span>
       Every <em>status</em> string in the board below is transcribed <strong>verbatim</strong>
       from the claim file&rsquo;s section heading or the adjudication&rsquo;s per-claim
-      verdict. Where a claim was amended, the amendment is carried in the same block as the
-      claim — never separately, because half of an amended claim is a misrepresentation.
-      Nothing in this book upgrades a CANDIDATE to a RATIFIED, or a FINDING to a fact.
+      verdict, <strong>as those files stand on 2026-07-31</strong>. Where a claim was amended,
+      the amendment is carried in the same block as the claim — never separately, because half
+      of an amended claim is a misrepresentation. Where the <em>2×2 cell B</em> (§5) released a
+      gate after a status string was written, the release is carried as a dated, explicitly
+      marked annotation inside the same block — never as a silent rewrite of the file&rsquo;s
+      own words. Nothing in this book upgrades a CANDIDATE to a RATIFIED, or a FINDING to a fact.
     </div>
 
     <!-- ============ I11.2 ============ -->
@@ -283,27 +295,38 @@
         mechanism AS STATED REFUTED, replaced by an AMENDED mechanism [LOCAL, VERIFIED, r1];
         <strong>C5</strong> 58% of in-catalogue hosts rail at the prior edge — FINDING,
         interpretation AMENDED [LOCAL, VERIFIED, replicated];
-        <strong>C6</strong> attribution confounded, decisive control never run — FINDING
-        (confirmed by Gate A1), resolution in flight [DOC + INFER];
+        <strong>C6</strong> attribution confounded, decisive control never run — struck
+        2026-07-31: <em>RESOLVED 2026-07-31: cell B ran — THE ESTIMATOR OWNS IT</em>
+        [DOC + INFER → LOCAL, MEASURED];
         <strong>C7</strong> host-z kernel omits selection — promoted to FINDING (measured),
         with corrected law, scope narrowed [LOCAL, VERIFIED — MEASURED];
         <strong>C8</strong> 2D posterior reparametrization-dependent — promoted to FINDING
         (well-posedness defect), cause RELOCATED [LOCAL, VERIFIED];
         <strong>C9</strong> $w_G$ mis-calibrated against the code&rsquo;s own generator —
-        FINDING, live, gated on cell B [LOCAL, VERIFIED];
+        FINDING, live; the cell-B gate is released (2026-07-31), the fix is author-gated
+        [LOCAL, VERIFIED];
         <strong>C10</strong> the up-pull is prefactor-carried — FINDING [LOCAL, VERIFIED];
         <strong>C11</strong> completion-leg calibration too small to own the 2D bias —
         REFUTED as the 2D owner, live as a modest 1D contributor [LOCAL, harness].
-        Four are live: C5, C6, C7, C8, C9. Three of the live inconsistencies (C7, C8, C9)
-        sit on the completion / prefactor / kernel side; none convicts the catalogue leg.</p>
+        <strong>Four are live: C5, C7, C8, C9</strong> — C6 left the list on 2026-07-31, when
+        the control it was waiting on landed (§5). Three of the four (C7, C8, C9) sit on the
+        completion / prefactor / kernel side; none convicts the catalogue leg.</p>
       </noscript>
     </div>
 
+    <p class="persona-nudge" style="font-size:0.85rem; color:var(--muted);">
+      If you read adjudication files for a living, the GW stratum below defines this
+      chapter&rsquo;s status vocabulary precisely &mdash; or flip the topbar to
+      <em>Reading as: Tomas</em> (or <em>Examiner</em>) and every fold on this page opens.
+    </p>
     <details class="gw-reader">
       <summary>&#9656; For the GW reader — what &ldquo;live&rdquo; means here</summary>
       <p>
         A claim is <em>live</em> in this book when the project has neither retired it nor
-        shipped a fix: C5, C6, C7, C8 and C9. C1/C2/C3/C10 are closed findings — measured,
+        shipped a fix: <strong>C5, C7, C8 and C9</strong>. C6 was live until 2026-07-31 and is
+        not any more — not because anyone fixed anything, but because the experiment that
+        separated its two candidate explanations was run (§5); that is the only way an item
+        leaves this list without a fix. C1/C2/C3/C10 are closed findings — measured,
         replicated, no longer in dispute, and not defects in themselves. C4&rsquo;s
         observations are a closed finding while its <em>mechanism as originally stated</em>
         is refuted and replaced. C11 is refuted <em>as the owner of the 2D bias</em> and
@@ -535,7 +558,13 @@
       </div>
       <div class="widget-controls">
         <label for="ch11-lambda">Class weight $\lambda$ on the in-catalogue class:</label>
-        <input id="ch11-lambda" type="range" aria-describedby="ch11-lev-readouts" />
+        <!-- BW3 (REVISION_WORKLIST §D-5): re-weighting the mixture by hand is the
+             gesture two dead hypotheses already made — #61 (w_G = β_G/D bookkeeping,
+             REFUTED: the tilt relocated) and #64 (w_pop misspecification, NEGLIGIBLE).
+             The verdicts are not hard-coded in this widget, so the inline chip is
+             wanted here rather than opted out of. -->
+        <input id="ch11-lambda" type="range" aria-describedby="ch11-lev-readouts"
+               data-hypothesis="61" data-hypothesis-2="64" />
         <span class="readout">$\lambda$ = <strong id="ch11-lambda-readout">1.000</strong></span>
         <button type="button" id="ch11-poisson-minus" class="theme-toggle">Poisson −1σ</button>
         <button type="button" id="ch11-poisson-plus" class="theme-toggle">Poisson +1σ</button>
@@ -637,14 +666,21 @@
     </p>
 
     <h3>C7 — the host-redshift kernel integrates against the wrong prior</h3>
+    <p class="ch11-note">
+      <strong>Status</strong> <span class="badge finding">FINDING</span>
+      <em>promoted to FINDING (measured), with corrected law; scope narrowed</em> — live.
+      Chapter 7 argued it in full <span class="ch11-fwd">⏮ Ch 7</span>; the board above carries
+      the verbatim status. What this section adds is the part neither of them can settle.
+    </p>
     <p>
       The numerator&rsquo;s host-redshift kernel weights candidate redshifts by the
       <em>cosmic</em> volume prior <span class="term" data-term="wpop">$w_{\rm pop} = (dV_c/dz)/(1+z)$</span>
       with no <span class="term" data-term="pdet">$p_{\rm det}$</span> and no catalogue
       selection — i.e. it deconvolves a wide photometric redshift against a monotonically
-      rising prior that never turns over. Chapter 7 showed you the shift this produces and
-      the measured law <span class="ch11-fwd">⏮ Ch 7</span>:
+      rising prior that never turns over.
     </p>
+    <details class="gw-reader">
+      <summary>&#9656; The corrected law, and how it was measured on the code&rsquo;s own numerator</summary>
     <div class="voice-adjudicator">
       <span class="voice-label">C7 — the corrected law, measured on the code&rsquo;s own numerator
         <span class="badge finding">FINDING</span>
@@ -665,6 +701,7 @@
       The claim file&rsquo;s original $2(\sigma_z/z)^2$ form understates by 1.35–1.5× and
       is superseded; this book uses only the corrected law.
     </div>
+    </details>
 
     <p>
       And here is where an honest book has to stop and show you a collision instead of a
@@ -704,33 +741,64 @@
     </div>
 
     <p>
-      They are answers to different questions. G2b establishes which weight is
-      <em>uniquely consistent</em> with the rate model and the selection integrals, and
-      proves the limiting behaviour. C7 measures what that weight <em>does</em> at finite
-      width when the numerator&rsquo;s integration window is proportional to $z$. Both are
-      correct about what they measured; the premise of one and the finite-$\sigma_z$
-      behaviour of the other are in tension. The project&rsquo;s binding rule is therefore
+      They are answers to different questions — and it is worth being exact about
+      <em>which</em>, because the difference is not a scale artefact of $\sigma_z$. They are
+      <strong>priors over two different random variables</strong>
+      <span class="ch11-fwd">⏮ Ch 7 Trap 7.B</span>:
+    </p>
+    <ul>
+      <li><strong>G2b&rsquo;s $w_{\rm pop} = (dV_c/dz)/(1+z)$ is the prior over <em>where an
+        EMRI host is</em></strong>, given that an EMRI happened. On that question G2b&rsquo;s
+        proof is fine: unique, consistent with the rate model, exactly $h$-independent.</li>
+      <li><strong>The object the numerator actually deconvolves is <em>a row in a flux-limited
+        catalogue</em></strong>. Its prior is the catalogue&rsquo;s own selected number
+        density, <span class="term" data-term="phcat">$\phi_{\rm cat}(z) \propto f(z,\Omega)\,(dV_c/dz)/(1+z)$</span>, and for the numerator of a
+        <em>detected</em> event it should further carry
+        <span class="term" data-term="pdet">$p_{\rm det}$</span>. That prior turns over.
+        The bare one does not — and the difference between a prior that turns over and one
+        that does not is the whole of C7&rsquo;s $+3(\sigma_z/z)^2$.</li>
+    </ul>
+    <p>
+      Naming the axis is not adjudicating on it, and this book does not adjudicate: whether the
+      numerator&rsquo;s prior <em>should</em> be $\phi_{\rm cat}\,p_{\rm det}$ rather than
+      $w_{\rm pop}$ is a derivation nobody has written, and writing it is the fix that must
+      supersede G2b. G2b establishes which weight is <em>uniquely consistent</em> with the rate
+      model and the selection integrals, and proves the limiting behaviour. C7 measures what
+      that weight <em>does</em> at finite width when the numerator&rsquo;s integration window is
+      proportional to $z$. Both are correct about what they measured; the premise of one and the
+      finite-$\sigma_z$ behaviour of the other are in tension. The project&rsquo;s binding rule is therefore
       not &ldquo;the kernel is wrong&rdquo; but: <strong>any C7 fix must explicitly supersede
       G2b, and must not silently contradict it</strong>. This book does not pick a side, and
       it may not say &ldquo;the volume kernel is calibrated, full stop&rdquo; nor &ldquo;the
       kernel is wrong, settled&rdquo;.
     </p>
     <p>
-      Two further constraints on anyone reaching for the obvious fix. First, the
+      Three further constraints on anyone reaching for the obvious fix. First, the
       <em>measured historical failure mode</em> of this deconvolution at large $\sigma_z/z$
       was <strong>over</strong>-correction — the opposite sign to where a C7 fix pushes
       <span class="prov-chip">ledger #62 / #68</span>. Second, C7 is
       <strong>channel-common</strong>: <code>prior_num</code> multiplies both numerators
       identically, so C7 is <em>not</em> a candidate for the 2D-versus-1D difference at all;
       and it acts <em>against</em> the dark class&rsquo;s rail, because dark events sit at
-      $\sigma_z/z \approx 0.10$ where $K = 1.03$. The decider is the pre-registered cell B,
-      which uses the true cluster parent catalogue and is therefore the staleness-free
-      magnitude check (§5).
+      $\sigma_z/z \approx 0.10$ where $K = 1.03$. Third — and this one is new, from
+      <strong>the 2×2 cell B</strong>, which ran on 2026-07-31 against the true cluster parent
+      catalogue and is therefore the staleness-free magnitude check (§5): the rail is
+      <strong>90.7%</strong> of the catalogue leg with <em>exact</em> host redshifts, so the
+      magnitude and the attribution are settled — and the fix <strong>must not</strong> take
+      the historically exonerated &ldquo;$p_{\rm det}$ inside the numerator alone&rdquo; form.
+      What cell B does <em>not</em> settle is the collision above: a posterior cannot decide a
+      derivation.
+      <span class="prov-chip">CELLB_READOUT_20260731.md §Consequences / Next steps 1b</span>
     </p>
 
     <h3>C8 — a number that moves when you change the units</h3>
+    <p class="ch11-note">
+      <strong>Status</strong> <span class="badge finding">FINDING</span>
+      <em>promoted to FINDING (well-posedness defect); cause RELOCATED</em> — live.
+      Chapter 8 argued it in full <span class="ch11-fwd">⏮ Ch 8</span>.
+    </p>
     <p>
-      Chapter 8 walked the mass coordinate <span class="ch11-fwd">⏮ Ch 8</span>. Rescale it
+      Chapter 8 walked the mass coordinate. Rescale it
       by an arbitrary constant <span class="term" data-term="Cscale">$C$</span> — a pure
       bookkeeping choice, no physics — and the 2D MAP walks across the grid:
     </p>
@@ -749,6 +817,8 @@
       claim to $\le 10^{-3}$ (the residual is the MAP-refinement convention).
     </p>
 
+    <details class="gw-reader">
+      <summary>&#9656; Why the stated cause was REFUTED, and where the mismatch actually lives</summary>
     <div class="voice-adjudicator">
       <span class="voice-label">C8 — well-posedness defect; the stated cause was REFUTED and relocated
         <span class="badge finding">FINDING</span>
@@ -768,6 +838,7 @@
       unit change $M \to kM$ of all inputs is exactly invariant — so the walk is arbitrary,
       not a physical scale.
     </div>
+    </details>
 
     <p>
       This is the claim that does not need the truth. A published 2D number that moves with
@@ -784,6 +855,11 @@
     </p>
 
     <h3>C9 — the model&rsquo;s mixture weight disagrees with the code&rsquo;s own generator</h3>
+    <p class="ch11-note">
+      <strong>Status</strong> <span class="badge finding">FINDING</span>
+      <em>[LOCAL, VERIFIED] — live; the cell-B gate is released (2026-07-31), the fix is
+      author-gated</em>. Chapter 9 argued it in full <span class="ch11-fwd">⏮ Ch 9</span>.
+    </p>
     <p>
       <span class="term" data-term="wG">$w_G$</span> is the probability that a detected
       event&rsquo;s host is in the catalogue. The estimator models it as
@@ -792,6 +868,8 @@
       both truth seeds — <strong>0.05231</strong>. Binomial <strong>$z = -11.86$</strong>.
     </p>
 
+    <details class="gw-reader">
+      <summary>&#9656; Where the discrepancy localizes, and the two independent corroborations</summary>
     <div class="voice-adjudicator">
       <span class="voice-label">C9 — localized, corroborated two ways, and live
         <span class="badge finding">FINDING</span>
@@ -810,7 +888,18 @@
       <strong>KS $D = 0.0863$, $p = 1.08\times10^{-19}$</strong> on 2971 events, measured
       against the production injection pool with a verified fingerprint. Same character,
       smaller magnitude, same fix track.
+      <div class="ch11-note" style="margin-top:0.5rem">
+        <strong>Cell B, 2026-07-31 — the gate, released.</strong> $w_G(h)$ came back
+        <em>bit-identical</em> to the #53 curve across all 41 grid points, so C9&rsquo;s transfer
+        arithmetic applies to cell B verbatim, and the control that was C9&rsquo;s last external
+        gate is done. C9 is still live, still unfixed: what remains is the author&rsquo;s
+        leg-adjudication and a <code>/physics-change</code> derivation — and the fix must be the
+        <strong>joint C9+C8</strong> mass-consistent mixture, because the two counterfactuals act
+        on different terms of the same mixture and are not additive.
+        <span class="prov-chip">CELLB_READOUT_20260731.md §Consequences</span>
+      </div>
     </div>
+    </details>
 
     <div class="callout defect">
       <span class="callout-label">Do not re-try &mdash; the exonerated fix <em>form</em>, not the defect</span>
@@ -848,6 +937,11 @@
       different parts of the estimator, respond to different fixes, and the sentence
       &ldquo;the completion term pulls up&rdquo; is what made the original C4 mechanism read
       plausible for a month before it was refuted <span class="prov-chip">C10</span>.
+      <div class="ch11-note" style="margin-top:0.5rem">
+        This is the one trap the book states twice — Chapter 8 sets it, and this chapter sets it
+        again — because C10 exists for exactly one purpose: to retire that sentence. Repeating a
+        retirement is cheaper than letting the sentence come back.
+      </div>
     </div>
 
     <div class="ch11-verdict">
@@ -863,10 +957,19 @@
       to convict on principle. The leg adjudication is now
       <strong>an evidence-weighted question, not an open coin</strong>: a direction, not a
       verdict. <span class="prov-chip">CLAIM_2D_BIAS_20260730.md §&ldquo;What is explicitly NOT claimed&rdquo; item 1, as appended 2026-07-30</span>
+      <div class="ch11-note" style="margin-top:0.5rem">
+        <strong>What the 2×2 cell B added to this on 2026-07-31 (§5):</strong> it did not convict
+        a leg. It removed the <em>excuse</em> — the attribution is no longer confounded, so the
+        three convictions above are known to act on the delivered posterior rather than on a
+        realism layer that might have been carrying them. What the author now weighs is: three
+        measured inconsistencies on the completion / prefactor / kernel side, none on the
+        catalogue side, and a realism layer largely exonerated. That is a heavier direction. It is
+        still not a verdict.
+      </div>
     </div>
 
     <!-- ================= §5 ================= -->
-    <h2>5. The confound, and the control that is still running</h2>
+    <h2>5. The confound, and the control that resolved it</h2>
 
     <p>
       Everything above compares campaign #53 to campaign #51. So it is worth asking the
@@ -884,10 +987,11 @@
     </div>
 
     <p>
-      Three variables moved at once. And no run anywhere in the project varies the
-      <em>estimator</em> at fixed catalogue. That means the sentence everyone wanted to
-      write — &ldquo;the bias switches on when you make the catalogue realistic&rdquo; — is
-      <strong>not established</strong>, no matter how natural it sounds.
+      Three variables moved at once. And — as of the day the adjudication was signed — no run
+      anywhere in the project varied the <em>estimator</em> at fixed catalogue. That meant the
+      sentence everyone wanted to write — &ldquo;the bias switches on when you make the
+      catalogue realistic&rdquo; — was <strong>not established</strong>, no matter how natural
+      it sounded. What follows is how that was fixed: not by arguing, by running one experiment.
     </p>
     <p>
       There was one candidate control: the $\sigma \to 0$ gate, which runs the pipeline with
@@ -899,7 +1003,7 @@
 
     <div class="voice-adjudicator">
       <span class="voice-label">C6 — confirmed by Gate A1; the one-file check was executed
-        <span class="badge confounded">CONFOUNDED</span>
+        <span class="badge confounded">CONFOUNDED, as of 2026-07-30</span>
         <span class="prov-chip">CLAIM_2D_BIAS_20260730.md C6</span>
         <span class="prov-chip">ADJUDICATION §1 C6</span>
       </span>
@@ -930,8 +1034,15 @@
         <table class="ch11-2x2">
           <tr><th></th><th>point / <code>generator_marginal</code></th>
             <th><code>volume_deconv</code> / <code>absolute_marginal</code></th></tr>
+          <!-- This block is the pre-registration, reproduced as registered on 2026-07-30
+               (worklist D3's verbatim rule): it is history, not state. The cell below now
+               carries the registered document's OWN words ("B = this run",
+               PREREGISTRATION_2x2_cellB.md §The 2x2) instead of the book's build-time status
+               gloss — strictly more verbatim, and it stops a frozen block asserting a tense
+               that is no longer true. The filled 2x2 is the dated readout block after the
+               predict box. -->
           <tr><th>unscattered</th><td>A = #51: 1D 0.7299, 2D 0.7300</td>
-            <td class="ch11-cellB">B = <em>this run — in flight</em></td></tr>
+            <td class="ch11-cellB">B = <em>this run</em></td></tr>
           <tr><th>scattered</th><td class="ch11-forbidden">forbidden by guard</td>
             <td>C = #53 r1–r5: 1D 0.732, 2D 0.813</td></tr>
         </table>
@@ -953,17 +1064,27 @@
       <p style="margin-bottom:0">
         <span class="prov-chip">PREREGISTRATION_2x2_cellB.md</span>
         <span class="prov-chip">gate_b_20260730/ADJUDICATION_20260730.md §3</span>
-        <span class="badge open">OPEN</span> — at the time of writing this chapter, cell B
-        had not landed. The book does not report a result it does not have.
+        <span class="badge open">OPEN 2026-07-30</span>
+        <span class="badge finding">RESOLVED 2026-07-31</span> — everything above this line is
+        the registered document, reproduced as written on 2026-07-30, when the book had no
+        result to report. It was still true for one more day.
       </p>
     </div>
+
+    <p class="ch11-note">
+      <strong>Commit before you scroll.</strong> The result is directly below the prediction box
+      — which is the wrong order for a reader who wants to be right and the right order for a
+      reader who wants to find out what they actually believed.
+    </p>
 
     <div class="widget" data-predict-id="ch11-cellb-guess">
       <h4>Predict, then reveal — what would each outcome mean?</h4>
       <p style="margin-top:0;">
-        You now know as much as the project did when it submitted the job. Commit to an
-        outcome. There is no answer key for the <em>result</em> — there is one for what each
-        result would license you to say, which is the part pre-registration actually buys.
+        You now know as much as the project did when it submitted the job — no more. Commit to
+        an outcome. What the reveal gives you is not the result (that is the block below, dated
+        and separate): it is <em>what each outcome would have licensed you to say</em>,
+        registered in advance. That is the part pre-registration actually buys, and it is worth
+        reading before you know which branch you are in.
       </p>
       <div class="predict-row" id="ch11-predict-2" data-predict-id="ch11-cellb-guess">
         <button type="button" data-predict="est">B ≈ C — the estimator owns it</button>
@@ -989,17 +1110,121 @@
         </ul>
         <p style="margin-bottom:0">
           There is also an off-venue analogue, and it is carried with its scope attached:
-          <code>mass_ab_20260727</code>&rsquo;s cell A′ ran exactly the #53 pairing on an
+          <code>mass_ab_20260727</code>&rsquo;s <strong>cell A′</strong> — the run the defect
+          ledger&rsquo;s row #88 confusingly also calls &ldquo;Cell B&rdquo;, and which
+          <code>BIAS_HISTORY_LEDGER.md</code> §3 relabels A′ — ran exactly the #53 pairing on an
           <em>unscattered</em> mock and measured <strong>1D 0.73 / 2D 0.80</strong>, with a
           three-way per-leg A/B attributing 86.7% of the 2D movement to the
           $\delta \to$ <code>volume_deconv</code> kernel switch. That is independent
           historical support for &ldquo;estimator owns it&rdquo; — but it is a
           <strong>different venue</strong> (a deep seed1000 mock, not this campaign&rsquo;s),
-          so <strong>cell B remains the on-venue decider</strong>.
+          so <strong>the 2×2 cell B remains the on-venue decider</strong>. Two different objects,
+          two different venues, nearly the same 2D number: when you search the ledger for
+          &ldquo;cell B&rdquo;, row #88 is <em>not</em> this section&rsquo;s run.
           <span class="prov-chip">MASS_KERNEL_AB_READOUT.md:23-30</span>
           <span class="prov-chip">THREEWAY_AB_READOUT.md:41-56</span>
+          <span class="prov-chip">BIAS_HISTORY_LEDGER.md §3</span>
         </p>
       </div>
+    </div>
+
+    <!-- ====== the landed readout — distinct from, and below, the pre-registration ====== -->
+    <div class="ch11-prereg" id="ch11-cellb-readout" style="border-top-color:#D55E00">
+      <span class="ch11-stamp" style="color:#D55E00">Readout &middot; landed 2026-07-31, the night
+        after this chapter was drafted &middot; not part of the registered document above</span>
+      <p style="margin-top:0.2rem">
+        Cell B ran. Jobs <strong>6103219</strong> (evaluate) / <strong>6103220</strong> (combine)
+        — the resubmission of the registered 6101146 / 6101147, which failed on a missing raw-CRB
+        symlink in the run-dir setup: a pure plumbing error, fixed without touching the test
+        design, on the same commit (<code>7fd60bb</code>) as cells A and C. Recording that is
+        cheaper than being asked about it later.
+      </p>
+
+      <div class="table-scroll">
+        <table class="ch11-2x2">
+          <tr><th></th><th>point / <code>generator_marginal</code></th>
+            <th><code>volume_deconv</code> / <code>absolute_marginal</code></th></tr>
+          <tr><th>unscattered</th><td>A = #51: 1D <strong>0.7299</strong>, 2D <strong>0.7300</strong></td>
+            <td class="ch11-cellB">B = <strong>1D 0.7450</strong>, <strong>2D 0.7900</strong>
+              &nbsp;← landed 2026-07-31</td></tr>
+          <tr><th>scattered</th><td class="ch11-forbidden">forbidden by guard</td>
+            <td>C = #53 r1: 1D <strong>0.7400</strong>, 2D <strong>0.8133</strong></td></tr>
+        </table>
+      </div>
+      <p class="ch11-note" style="margin-top:0.2rem">
+        <strong>One convention, stated: every cell is a MAP.</strong> The pre-registration&rsquo;s
+        C row printed the 1D <em>mean</em> (0.732) beside the 2D <em>MAP</em> (0.813); fill B in
+        next to that and you would compute a scatter effect of −0.013 instead of −0.005. The means,
+        for the record: B <strong>0.7320 / 0.7962</strong>, C(r1) <strong>0.7321 / 0.8123</strong>.
+        B&rsquo;s 2D posterior is interior (edge/peak 1.2×10⁻²), σ<sub>h</sub> 0.019; its 1D
+        σ<sub>h</sub> is 0.026.
+      </p>
+
+      <div class="table-scroll">
+        <table class="num-table">
+          <tr><th>effect</th><th>1D</th><th>2D</th></tr>
+          <tr><td><strong>B − A</strong> — the estimator</td><td><strong>+0.0151</strong></td>
+            <td><strong>+0.0600</strong></td></tr>
+          <tr><td><strong>C − B</strong> — the scatter</td><td>−0.0050</td><td>+0.0233</td></tr>
+          <tr><td>C − A — the total (r1)</td><td>+0.0101</td><td>+0.0833</td></tr>
+        </table>
+      </div>
+      <p class="ch11-note" style="margin-top:0.2rem">
+        <strong>The estimator configuration owns +0.060 of the 2D +0.083 — 72%.</strong> That
+        number is <strong>2D-only</strong>, and it must never be quoted as a both-channel summary:
+        on the 1D channel the estimator effect (+0.0151) <em>exceeds the total</em> (+0.0101),
+        because the realized scatter pushes the other way (−0.0050). On the mean convention the
+        1D scatter effect is ≈ 0.000 and the estimator owns essentially all of it. A share above
+        100% is not an error — it is what happens when two effects have opposite signs, and it is
+        the reason the split is printed as two signed differences rather than as one percentage.
+        <br />
+        It is also <em>not</em> ledger #88&rsquo;s <strong>86.7%</strong>: that is a per-leg
+        decomposition (the kernel switch alone) on a deep off-venue mock, while this is the whole
+        estimator configuration on this campaign&rsquo;s venue. Two questions, two answers, no
+        disagreement.
+      </p>
+
+      <p style="margin-bottom:0.2rem"><strong>And now the part that is worth more than the
+        result: scoring the prediction against what was actually registered.</strong></p>
+      <div class="table-scroll">
+        <table class="num-table">
+          <tr><th>registered read</th><th>delivered</th><th>score</th></tr>
+          <tr><td>2D ∈ [0.78, 0.82]</td><td>0.7900</td><td><strong>✓</strong></td></tr>
+          <tr><td>in-catalogue class argmax ≈ 0.86</td><td>0.860</td><td><strong>✓</strong></td></tr>
+          <tr><td>1D ∈ [0.70, 0.74]</td><td>0.7450</td>
+            <td><strong>✗ — by one grid step</strong></td></tr>
+        </table>
+      </div>
+      <p class="ch11-note" style="margin-top:0.2rem">
+        The 1D <em>mean</em>, 0.7320, is inside the band. But the band was written in <em>MAPs</em>
+        — it came from the ten delivered runs&rsquo; 1D MAPs, 0.700–0.740 — so on the convention
+        it was registered in, the miss is real, and it is the smallest miss the 41-point grid can
+        resolve.
+      </p>
+      <p>
+        <strong>Two hits and a one-grid-step miss.</strong> That is a stronger result than three
+        hits would have been, because it is the only version of this paragraph that could not have
+        been written by moving the goalposts. The project&rsquo;s own readout first said the
+        prediction was &ldquo;confirmed on every pre-registered read&rdquo; and corrected itself
+        the same day, once the 1D band was scored on the convention it was written in; that
+        original sentence is the one sentence in the readout this book does not copy. The
+        adjudication&rsquo;s <em>outcome-1</em> verdict is untouched — it keys on the 2D and
+        argmax reads, both exact — and the honest score is <strong>2 of 3 exact, 1D marginal</strong>.
+      </p>
+      <p style="margin-bottom:0">
+        <strong>What it resolves:</strong> C6. The attribution is no longer confounded — the
+        estimator configuration owns the 2D displacement, the realism layer of campaign #53 is
+        largely exonerated for the headline biases (its measured share is +0.023 in 2D, −0.005 in
+        1D), the catalogue-leg rail is <strong>90.7%</strong> in B against 89.2% in C with
+        <em>exact</em> host redshifts, the dark channel difference is <strong>+18.00 nats</strong>
+        with zero realized scatter, and $w_G(h)$ came back bit-identical to the #53 curve on all
+        41 grid points. <strong>What it does not resolve:</strong> anything else. Nothing is
+        fixed; C5, C7, C8 and C9 are exactly as live as they were the day before.
+        <span class="prov-chip real">real: CELLB_READOUT_20260731.md</span>
+        <span class="prov-chip">CLAIM_2D_BIAS_20260730.md C6 (as amended 2026-07-31)</span>
+        <span class="prov-chip">gate_b_20260730/ADJUDICATION_20260730.md §3</span>
+        <span class="badge finding">RESOLVED 2026-07-31</span>
+      </p>
     </div>
 
     <div class="callout defect">
@@ -1015,7 +1240,9 @@
     <div class="dossier">
       <div class="dossier-title">Event dossier — EMRI-889, closed</div>
       <table>
-        <tr><td>d_L</td><td>88.9 Mpc (&sigma;_dL/dL = 8.0&times;10&#8315;&#8309;)</td></tr>
+        <!-- canonical D1 dossier row — the single definition is
+             js/manifest.js BOOK_CANON.sigmaDL.dossierRowHTML -->
+        <tr><td>d_L</td><td>88.9 Mpc &middot; &sigma;_dL/d_L = 8.98&times;10&#8315;&#8308;</td></tr>
         <tr><td>SNR</td><td>1425 — the loudest event in this run</td></tr>
         <tr><td>host</td><td>catalogue index 859360 — one of only 76 with a catalogued host</td></tr>
         <tr><td>z</td><td>photometric, &sigma;_z/z wider than every other quantity on this card</td></tr>
@@ -1029,6 +1256,11 @@
             which is why the &ldquo;84.2%&rdquo; dark share is <em>r1-specific</em> and the
             replicated finding is the ordering, not the number.</td></tr>
       </table>
+      <p class="ch11-note">
+        Erratum: the spec card carried &sigma;_dL/dL = 8.0&times;10&#8315;&#8309; — that is the
+        absolute &sigma;_dL in Gpc under a fractional label. Corrected book-wide 2026-07-31;
+        record: ch01 flag F1 / BUILD_REPORT §5.1 item 1.
+      </p>
     </div>
 
     <div class="widget">
@@ -1119,8 +1351,9 @@
     <h2>7. What would you do first?</h2>
 
     <p>
-      You now know this estimator&rsquo;s three live inconsistencies, its confounded
-      attribution, and — behind all of it — a ledger of <strong>98 hypotheses</strong> about
+      You now know this estimator&rsquo;s three live inconsistencies, its attribution —
+      confounded until the night of 2026-07-31, when the control finally ran — and, behind all
+      of it, a ledger of <strong>98 hypotheses</strong> about
       this bias, each with what it cost. The temptation at this point is overwhelming and it
       is wrong: <em>propose a fix</em>.
     </p>
@@ -1141,7 +1374,9 @@
     <p>
       The discipline this book has been teaching is the answer, and it is unglamorous:
       <strong>run the control; isolate one variable; check whether it has been tried
-      before.</strong> The last of those is not rhetorical — the project maintains a binding
+      before.</strong> Section 5 is what the first two look like when they work — one job, one
+      variable, a prediction written down first, and an attribution that had resisted a month of
+      argument settled in a night. The third is not rhetorical — the project maintains a binding
       <em>do-not-re-try</em> union (the claim file&rsquo;s Exonerated list <strong>plus</strong>
       the ledger&rsquo;s §2 items 1–17), and the entries absent from the first list are
       precisely the live re-litigation risk.
@@ -1151,13 +1386,14 @@
       <span class="ch11-verdict-label">The state of the art, in one paragraph</span>
       A dark-siren $H_0$ estimator built from a ratified selection integral, a ratified
       two-branch mixture, a ratified volume kernel and a <span class="badge candidate">CANDIDATE</span>
-      2D mass pairing, run on 3130 detections from two mock universes, delivers a 1D channel
+      2D mass pairing, run on 3135 detections from two mock universes, delivers a 1D channel
       whose centredness is a contingent crossing and a 2D channel biased +4σ in 10/10 runs.
       Three internal inconsistencies are measured, all on the completion / prefactor / kernel
-      side; none convicts the catalogue leg; the attribution between estimator and catalogue
-      is confounded by three simultaneous changes; and the one experiment that separates them
-      was pre-registered, submitted, and had not landed when this was written. That is not a
-      result. It is a position, and it is an honest one.
+      side; none convicts the catalogue leg; the attribution between estimator and catalogue was
+      confounded by three simultaneous changes — and the one experiment that separates them was
+      pre-registered, submitted, and <strong>landed</strong>: the estimator configuration owns
+      72% of the 2D displacement, and the realism layer is largely exonerated. <em>That</em> is a
+      result. What to do about it is still a position, and it is an honest one.
     </div>
 
     <!-- ================= self-check ================= -->
@@ -1299,6 +1535,18 @@
           <span class="prov-chip">BIAS_HISTORY_LEDGER.md §2</span>
           <span class="prov-chip">ADJUDICATION §5</span>
           <div class="ch11-note" style="margin-top:0.5rem">
+            <strong>Postscript, 2026-07-31 — the control was run.</strong> This answer was written
+            when it had not been, and it is kept as written, because the reasoning is the point
+            and the reasoning did not change. What the result adds: cell B delivered the
+            <em>predicted</em> outcome, and a confirmed prediction is the <em>weakest</em> kind of
+            confirmation — the reading was registered in advance precisely so that this sentence
+            would be available. That is why running the control unblocked the fix program without
+            settling it: the two <code>/physics-change</code> derivations (the joint C9+C8
+            mass-consistent mixture; the C7 kernel fix that must supersede G2b) are now author-gated
+            rather than evidence-gated, which is a different thing from being right.
+            <span class="prov-chip">CELLB_READOUT_20260731.md §Next steps</span>
+          </div>
+          <div class="ch11-note" style="margin-top:0.5rem">
             On the &ldquo;1500–2400×&rdquo; in that answer: it is the adjudicated figure and
             is quoted as written. Recomputing it from the adjudicator&rsquo;s own leverage
             output gives 142×–2458×, median 197× — see §3 and
@@ -1315,14 +1563,36 @@
     <p>
       Every self-check in this book so far has had a hidden answer, because the project had
       one. These do not, and the absence is the point: this is the live edge of the work on
-      the day the book was written.
+      the day the book was written. One of them stopped being open while the chapter was being
+      written, and the honest thing to do with it is not to quietly delete it — it is to show
+      the question, the prediction, and then the answer.
     </p>
+
+    <div class="ch11-verdict" style="border-left-color:#D55E00">
+      <span class="ch11-verdict-label" style="color:#D55E00">Resolved after this chapter was
+        drafted — 2026-07-31</span>
+      <p style="margin-top:0">
+        <strong>What this chapter asked, when it was written:</strong>
+        <s>Did cell B land at B ≈ C or B ≈ A? Which of C7, C9 transferred to the delivered
+        posterior?</s>
+      </p>
+      <p style="margin-bottom:0">
+        <strong>Answered by running it.</strong> Cell B landed (jobs 6103219 / 6103220, code
+        <code>7fd60bb</code>, the unscattered parent catalogue through the #53 estimator):
+        <strong>1D MAP 0.7450, 2D MAP 0.7900</strong>. B − A = <strong>+0.0151 / +0.0600</strong>;
+        C − B = <strong>−0.0050 / +0.0233</strong>. That is <strong>B ≈ C</strong> — the
+        pre-registered &ldquo;estimator owns it&rdquo; outcome, scored 2 of 3 exact with the 1D
+        band missed by one grid step (§5). Both C7 and C9 transfer: the catalogue-leg rail is
+        90.7% with exact host redshifts, and $w_G(h)$ is bit-identical. The other four questions
+        below still have no answer.
+        <span class="prov-chip real">real: CELLB_READOUT_20260731.md</span>
+        <span class="ch11-fwd">⏮ §5</span>
+      </p>
+    </div>
 
     <div class="selfcheck ch11-noanswer">
       <p>Open — the project has no answer for these</p>
       <ol style="margin:0.4rem 0 0 0; padding-left:1.15rem;">
-        <li>Did cell B land at B ≈ C or B ≈ A? Which of C7, C9 transferred to the delivered
-          posterior?</li>
         <li><strong>Which leg is wrong.</strong> The catalogue leg rails at 0.64 for dark
           events, the completion leg pushes past 0.86, truth is 0.73. The evidence points at
           the completion/prefactor/kernel side — but rejecting impostors is what the 2D
@@ -1336,8 +1606,11 @@
           mock-internal.</li>
       </ol>
       <p class="ch11-note" style="margin-top:0.6rem;">
-        There is no <em>Show answer</em> control on this block, and adding one would be the
-        single most dishonest thing this book could do.
+        <strong>Four of the five questions this chapter opened still have no answer.</strong> The
+        fifth was answered by running the control — which is the only reason it is no longer on
+        this list, and the only kind of reason that would be allowed to take one off. There is no
+        <em>Show answer</em> control on this block, and adding one would be the single most
+        dishonest thing this book could do.
       </p>
     </div>
 
@@ -1354,8 +1627,9 @@
       <h4>Provenance panel — every stamp used in this chapter</h4>
       <ul>
         <li><span class="badge finding">FINDING</span> <code>CLAIM_2D_BIAS_20260730.md</code>
-          (as amended 2026-07-30) — claims C1–C11, the Exonerated list, the
-          &ldquo;NOT claimed&rdquo; list; the source of every status string on the board</li>
+          (as amended 2026-07-30, and again 2026-07-31 when C6 was struck and resolved) —
+          claims C1–C11, the Exonerated list, the &ldquo;NOT claimed&rdquo; list; the source of
+          every status string on the board</li>
         <li><span class="badge finding">FINDING</span>
           <code>gate_b_20260730/ADJUDICATION_20260730.md</code> §1, §3, §5 — the adjudication
           of record for 2026-07-30; the cell-B mechanical readout; the cost-ordered next steps</li>
@@ -1370,12 +1644,22 @@
           <code>absolute_marginal</code> + <code>volume_deconv</code> 2D pairing is
           &ldquo;necessary, not established sufficient&rdquo;; every 2D number here sits on
           candidate ground</li>
-        <li><span class="badge open">OPEN</span> <code>PREREGISTRATION_2x2_cellB.md</code> —
-          cell B, jobs 6101146/6101147, with the dated pre-readout prediction; not landed at
-          the time of writing</li>
-        <li><span class="badge confounded">CONFOUNDED</span> C6 — three variables moved
-          between #51 and #53; <code>sig0_control</code> ran #51&rsquo;s estimator
-          (Gate A1, one-file check)</li>
+        <li><span class="badge finding">FINDING 2026-07-31</span>
+          <code>CELLB_READOUT_20260731.md</code> — the 2×2 cell B, delivered by jobs
+          6103219/6103220 (the resubmission of the registered 6101146/6101147 after a plumbing
+          failure), code <code>7fd60bb</code>: 1D MAP 0.7450 / 2D MAP 0.7900, estimator
+          +0.0151/+0.0600, scatter −0.0050/+0.0233, catalogue-leg rail 90.7%, $w_G$ bit-identical.
+          The registered prediction scored 2 of 3 exact, 1D marginal — the readout&rsquo;s own
+          &ldquo;confirmed on every read&rdquo; was corrected the same day and is not copied here</li>
+        <li><span class="badge open">OPEN 2026-07-30</span>
+          <code>PREREGISTRATION_2x2_cellB.md</code> — cell B as registered, jobs 6101146/6101147,
+          with the dated pre-readout prediction; reproduced verbatim in §5 as the document it was
+          on the day it was written</li>
+        <li><span class="badge confounded">CONFOUNDED → RESOLVED 2026-07-31</span> C6 — three
+          variables moved between #51 and #53 and <code>sig0_control</code> ran #51&rsquo;s
+          estimator (Gate A1, one-file check); the 2×2 cell B separated them, and the claim
+          file&rsquo;s C6 heading now reads <em>RESOLVED 2026-07-31: cell B ran — THE ESTIMATOR
+          OWNS IT</em></li>
         <li><span class="badge refuted">REFUTED</span> C4-mechanism as stated (deletion is not
           the mechanism; 98.5% carried by survivors) · C11 as the 2D owner (6–16× too small) ·
           the <code>w_G = β_G/D</code> bookkeeping <em>fix form</em> (ledger #61: relocates,
@@ -1389,13 +1673,19 @@
           <code>c3c4_allruns_summary.md</code>;
           <code>seed61000/real_r{1..5}/diagnostics/event_likelihoods.csv</code>;
           <code>seed{61000,62000}/prepared_cramer_rao_bounds.csv</code></li>
-        <li>Gates: <code>gen_ch11.py</code> runs <strong>191 checks</strong> — the full
+        <li>Gates: <code>gen_ch11.py</code> runs <strong>210 checks</strong> — the full
           λ-scan and Poisson reweight reproduced from the shipped arrays at &lt;10⁻⁶, the C1/C2/C3
-          class budgets to ≤0.02 nats, C9&rsquo;s realized 164/3135 to 10⁻⁹, and 889&rsquo;s
-          swing to 0.011 nats</li>
+          class budgets to ≤0.02 nats, C9&rsquo;s realized 164/3135 to 10⁻⁹, 889&rsquo;s
+          swing to 0.011 nats, and (new, 2026-07-31) every cell-B number in §5 re-measured from
+          the delivered posteriors rather than transcribed — MAPs to 10⁻⁹, means and σ_h to
+          5×10⁻⁴, the three difference rows to 5×10⁻⁵, the 72% share to 5×10⁻³, plus a hard gate
+          that the board&rsquo;s live set is exactly C5/C7/C8/C9</li>
         <li>Open flags: <code>book/design/flags/ch11_FLAGS.md</code> — F-ch11-1 (leverage
           ratio 1500–2400× vs recomputed 142–2458×), F-ch11-2 (the σ_h gloss on the Poisson
-          shift), F-ch11-3 (889&rsquo;s r2 rounding)</li>
+          shift), F-ch11-3 (889&rsquo;s r2 rounding), F-ch11-4 (the cell-B readout&rsquo;s
+          &ldquo;confirmed on every pre-registered read&rdquo;, corrected the same day — the
+          book scores 2 of 3 exact, 1D marginal). Carried from another chapter:
+          <code>ch08_FLAGS.md</code> F-ch08-1, the 2D pull range in §1&rsquo;s opening table</li>
         <li>Capability requests: <code>book/design/WIDGET_REQUESTS.md</code> R-ch11-1 (bias-rail
           pips without a bias number), R-ch11-2 (a registry of canonical predict-ids)</li>
       </ul>
@@ -1541,15 +1831,24 @@
     // R-ch11-1 IMPLEMENTED by the integrator: Book.biasRail takes `pips`
     // directly; the page-local append workaround is retired.
     // ===============================================================
+    /* The fourth pip is the canonical cell-B pip (REVISION_WORKLIST §D-6 / D3):
+       identical wording on ch07 / ch09 / ch10 / ch11, defined once in
+       js/manifest.js as BOOK_CANON.cellB. Read, never re-typed. */
+    var CANON_CELLB = (Book.canon && Book.canon.cellB) || {};
     var PIPS = [
       { tone: "amber", label: "C7 — host-z kernel omits selection",
-        note: "FINDING (measured); collides with RATIFIED G2b; cell B decides" },
+        note: "FINDING (measured); collides with RATIFIED G2b; magnitude settled by cell B, "
+            + "the collision is not" },
       { tone: "amber", label: "C8 — 2D MAP walks with the mass unit",
         note: "FINDING (well-posedness); 0.813 → 0.600 across an arbitrary rescale" },
       { tone: "amber", label: "C9 — w_G ≠ realized rate (z = −11.86)",
-        note: "FINDING; model 0.1215 vs realized 164/3135 = 0.0523" },
-      { tone: "grey", label: "C6 — attribution confounded",
-        note: "three variables moved at once; cell B in flight (6101146/6101147)" },
+        note: "FINDING; model 0.1215 vs realized 164/3135 = 0.0523; cell-B gate released, "
+            + "fix author-gated and joint with C8" },
+      { tone: CANON_CELLB.pipTone || "amber",
+        label: CANON_CELLB.pipLabel
+          || "cell B (2026-07-31): estimator owns +0.060 of the 2D +0.083",
+        note: CANON_CELLB.pipNote
+          || "CELLB_READOUT_20260731.md — evaluate 6103219 / combine 6103220; the 2D-only share is 72%" },
     ];
     function renderRail() {
       Book.biasRail({
@@ -1704,7 +2003,9 @@
           var dLo = submap5(H, mix(r.S_in, r.S_dk, lamLo(r))) - live1;
           return [
             esc(r.label),
-            fmt(r.lambda_scan["0.0"], 4), fmt(r.lambda_scan["1.0"], 4), fmt(r.lambda_scan["2.0"], 4),
+            fmt(r.lambda_scan["0.0"], 4), fmt(r.lambda_scan["0.5"], 4),
+            fmt(r.lambda_scan["1.0"], 4), fmt(r.lambda_scan["1.5"], 4),
+            fmt(r.lambda_scan["2.0"], 4),
             fmt(live1, 4),
             fmt(r.incat_only_argmax, 3), fmt(r.dark_only_argmax, 3),
             r.poisson_max_shift.toExponential(2),
@@ -1713,8 +2014,10 @@
             fmt(r.leverage.ratio_to_ideal, 1) + "×",
           ];
         });
+        // ped m5: every number the widget argues FROM is tabulated here — the
+        // whole published lambda-scan (0, 0.5, 1, 1.5, 2), not just its ends.
         table(document.getElementById("ch11-lev-table"),
-          ["venue / run", "MAP λ=0", "MAP λ=1 (published)", "MAP λ=2",
+          ["venue / run", "MAP λ=0", "MAP λ=0.5", "MAP λ=1 (published)", "MAP λ=1.5", "MAP λ=2",
            "MAP λ=1 (recomputed here)", "in-cat only", "dark only",
            "max ±1/√N shift (published, 3-pt)", "max ±1/√N shift (live, 5-pt)",
            "dh*/dε", "vs idealized"],
@@ -1794,7 +2097,11 @@
 
       // Status options are the verbatim strings, deduplicated by keyword so the
       // filter stays usable without paraphrasing any of them.
-      var KEYWORDS = ["FINDING", "REFUTED", "AMENDED", "CONFOUNDED", "RELOCATED", "in flight"];
+      // These must be substrings that actually occur in a verbatim status
+      // string. "CONFOUNDED" and the old unresolved-tense option were both
+      // retired on 2026-07-31, when C6's heading was struck and replaced by
+      // "RESOLVED …".
+      var KEYWORDS = ["FINDING", "REFUTED", "AMENDED", "RESOLVED", "RELOCATED", "closed"];
       KEYWORDS.forEach(function (k) {
         var o = document.createElement("option");
         o.value = k; o.textContent = "contains “" + k + "”";
@@ -1925,12 +2232,24 @@
 
     // ===============================================================
     // Recall: re-surface the reader's earlier predictions.
-    // The Chapter 3 host-guess id is not yet fixed book-wide
-    // (WIDGET_REQUESTS R-ch11-2), so probe the candidates and degrade
-    // honestly rather than fabricate a remembered guess.
+    // ch03 writes `ch03-host-guess` (the integrator fixed the id book-wide;
+    // WIDGET_REQUESTS R-ch11-2 is CLOSED). The defensive probe is kept for
+    // readers whose localStorage predates that fix — it costs three lookups
+    // and it is the difference between a degraded beat and a broken one.
+    //
+    // The stored VALUES are internal slugs (impostor / host / cannot-tell),
+    // and two of the three state the verdict. Rendering them raw graded the
+    // reader at the exact moment the beat exists to make them own the choice
+    // (ped B3, mara MINOR-1). They are mapped back to the button labels the
+    // reader actually clicked, and the verdict lands after, in prose.
     // ===============================================================
     (function () {
       var el = document.getElementById("ch11-recall");
+      var CH3_LABEL = {
+        "impostor": "A — the spectroscopic one",
+        "host": "B — the photometric one",
+        "cannot-tell": "Neither — you could not tell from this",
+      };
       var ch3 = null, ids = ["ch03-host-guess", "ch03-host", "ch03-marker", "ch03-guess"], i;
       for (i = 0; i < ids.length; i++) {
         var v = Book.getPrediction(ids[i]);
@@ -1941,13 +2260,15 @@
       var parts = [];
       parts.push("<strong>Your own predictions, re-surfaced.</strong>");
       if (ch3) {
-        parts.push(" In Chapter 3 you put a marker on the galaxy you thought hosted this event ("
-          + esc(ch3.value) + "). Chapter 3 told you the marker is usually wrong. What this "
+        var lbl = CH3_LABEL[ch3.value];
+        parts.push(" In Chapter 3 you were shown two galaxies in one sky ball and asked which "
+          + "one hosted this event; you chose <strong>"
+          + esc(lbl || ch3.value) + "</strong>. What this "
           + "chapter adds is that the estimator does not need you to be right — it needs the "
           + "<em>weights</em> in the sum over candidates to be right, and C7, C8 and C9 are three "
           + "measured statements that they are not.");
       } else {
-        parts.push(" Chapter 3's host-guess marker is not recorded in this browser yet — it is "
+        parts.push(" Chapter 3's host choice is not recorded in this browser yet — it is "
           + "stored when you take that chapter's guess, and it will appear here afterwards. "
           + "(Nothing is fabricated in its place.)");
       }

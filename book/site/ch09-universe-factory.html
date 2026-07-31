@@ -494,6 +494,18 @@
       count of galaxies commensurable with a volume.
     </p>
 
+    <p>
+      The picture first, before any symbol. <strong>A catalogue is a list</strong>: so many rows,
+      each carrying a rate weight. <strong>The selection integrals are volumes</strong>: cubic
+      megaparsecs of universe, weighted by how likely a source inside them is to be detected. To
+      multiply a list by a volume you need an <em>exchange rate</em> — how many catalogue rows
+      there are per unit volume — and Option A is the claim that you never have to know it,
+      because it cancels. One more name in words before it appears as a symbol:
+      <span class="term" data-term="Sglob">$\Sigma_{\rm global}$</span> is
+      <strong>what the catalogue channel expects to detect</strong> — the catalogue summed row by
+      row, each row weighted by its own chance of being seen.
+    </p>
+
     <div class="voice-derivation">
       <span class="voice-label">The Option-A bridge
         <span class="badge ratified">RATIFIED</span>
@@ -505,7 +517,8 @@
       $$ \sum_{g \in {\rm cat}} w_g\, Q(z_g,\Omega_g) \;\approx\;
          \bar n_{\rm gal} \int\! dz\, d\Omega\; f(z,\Omega)\, \bar w(z)\, Q\,
          \frac{dV_c}{dz\,d\Omega}, $$
-      and applying it to Gray&rsquo;s (A10) denominator gives
+      and applying it to Gray&rsquo;s (A10) denominator gives, for
+      <span class="term" data-term="Sglob">$\Sigma_{\rm global}$</span>,
       $$ \Sigma_{\rm global}(h) \;\approx\; C\,\beta_G(h), \qquad
          C = \bar n_{\rm gal}\langle R_{\rm eff}\rangle \ \text{independent of } h $$
       <em>up to second order</em>. Everything unknowable — $\bar n_{\rm gal}$, the rate
@@ -518,16 +531,70 @@
       <span class="prov-chip">G2c §4.1&ndash;4.3</span>:
     </p>
     <ul>
-      <li><code>global</code> — $L^{\rm cat} = \sum_{\rm ball} w_g N_g / \Sigma_{\rm global}(h)$.
-        The faithful discrete transcription of Gray&rsquo;s (A10). Deprecated and warned: on
-        photometric catalogues it is empirically mis-calibrated, ~0% coverage, railing to the grid
-        edge.</li>
-      <li><code>local_ratio</code> — $L^{\rm cat} = \sum_{\rm ball} w_g N_g / \sum_{\rm ball} w_g D_g$,
+      <li><code>global</code> — <span class="term" data-term="Lcat">$L^{\rm cat}$</span>
+        $= \sum_{\rm ball} w_g$ <span class="term" data-term="Ng">$N_g$</span>
+        $/\,\Sigma_{\rm global}(h)$.
+        The faithful discrete transcription of Gray&rsquo;s (A10) — the equation the LVK&rsquo;s own
+        dark-siren code, <code>gwcosmo</code>, implements (Gray et al. 2020, arXiv:1908.06050
+        App. A; Gray et al. 2023, arXiv:2308.02281)
+        <span class="prov-chip">G5a §1</span>. <strong>Deprecated and warned</strong> in this
+        pipeline — with a scope worth stating carefully, below.</li>
+      <li><code>local_ratio</code> — $L^{\rm cat} = \sum_{\rm ball} w_g N_g / \sum_{\rm ball} w_g$
+        <span class="term" data-term="Dg">$D_g$</span>,
         self-normalized over the same galaxy set, so <em>all</em> per-galaxy constants cancel
         row-by-row and no density calibration is needed at all.</li>
       <li><code>volume_deconv</code> — the same local ratio with Chapter 7&rsquo;s volume-deconvolved
         host-redshift kernel inside both $N_g$ and $D_g$. The library default.</li>
     </ul>
+
+    <p>
+      <strong>Whose failure is the deprecation?</strong> That warning is a claim about a
+      <em>published</em> method, so it has to carry its venue. The &ldquo;~0% coverage, rails to
+      the grid edge&rdquo; reading comes from the 2026-07-01 commission&rsquo;s independent
+      calibration test, and that test ran on a <em>from-scratch synthetic</em> universe — the real
+      GLADE catalogue was never loaded — where the literal-global-denominator estimator returned
+      0/0/0 coverage at the 50/68/90% levels and railed in every realization. The same note says,
+      in its own words, that this needs the synthetic&rsquo;s discrete catalogue density to
+      reproduce $\beta_G$ exactly and is therefore &ldquo;a limitation of the synthetic, NOT
+      evidence about the real code&rdquo;
+      <span class="prov-chip">commission d2/NOTE_calibration_findings.md</span>. On real data
+      <code>global</code> has <strong>never been run in a configuration matching the published
+      machinery</strong>: its two archived runs are steps 1&ndash;2 of the de-rail matrix below,
+      and both carry co-varying deviations of this pipeline&rsquo;s own. What <em>is</em> measured
+      on the real catalogue is §5 — the Option-A constant $C$ is not constant — which indicts the
+      bridge between <em>this</em> pipeline&rsquo;s discrete $\Sigma_{\rm global}$ and its
+      continuous $\beta_G$, not the algebra of (A10). And it must not be confused with Chapter
+      10&rsquo;s ~0% coverage, which is a different variable — the <em>bare host-$z$ kernel</em>
+      at large $\sigma_z$ <span class="ch09-fwd">⏭ Ch 10</span>.
+    </p>
+
+    <details class="gw-reader">
+      <summary>&#9656; For the GW reader — what co-varies with <code>global</code> here, and what gwcosmo does instead</summary>
+      <p>
+        The deviations present in both archived <code>global</code>-denominator runs: this
+        pipeline&rsquo;s ±3σ candidate ball, its smooth per-pixel completeness in place of
+        Gray&rsquo;s hard magnitude threshold (deviation D2), its host-$z$ kernel — the bare
+        Gaussian in both runs, since the volume-deconvolved kernel only arrives at step 4 of the
+        same matrix — and G2c&rsquo;s C6 asymmetry — <code>precompute_global_catalog_selection</code> delta-approximates
+        the photo-$z$ ($D_g \approx p_{\rm det}(z_g)$) while the numerator integrates over the full
+        photo-$z$ PDF, so the smearing is treated asymmetrically across the ratio
+        <span class="prov-chip">G2c §4.1, §6 C6</span>. Step 1 additionally carried the pre-4π
+        completion numerator. Any one of these could produce a rail on its own; none of them is in
+        Gray (A10).
+      </p>
+      <p>
+        <code>gwcosmo</code> was inspected line-by-line for this project (v1.0.0 and current
+        <code>master</code>) and differs in the way that matters here: it reuses <em>literally the
+        same</em> line-of-sight redshift prior in the numerator and in the selection denominator,
+        and it declares the catalogue&rsquo;s $z$-pdfs to be posteriors rather than likelihoods
+        <span class="prov-chip">G5a §2.1&ndash;2.2</span>. That inspection is not a numerical
+        cross-check: the commission&rsquo;s external-code comparison item (D7) is still recorded
+        NOT-ATTEMPTED <span class="prov-chip">sources map §7 item 15</span>. So the honest verdict
+        is scoped twice over — on this venue, in this configuration, the mode is mis-calibrated and
+        rails; whether Gray&rsquo;s (A10) fails on a photometric catalogue is not something this
+        pipeline has tested.
+      </p>
+    </details>
 
     <div class="voice-adjudicator">
       <span class="voice-label">A citation to not propagate
@@ -612,29 +679,53 @@
         <span class="badge ratified">RATIFIED</span>
         <span class="prov-chip">DERIVATION_GENERATOR_CONSISTENT_NORM.md §2.3, §3.1</span>
       </span>
-      Both assemble the same per-event likelihood shape,
+      Both assemble the same per-event likelihood shape. §3&rsquo;s exchange rate appears in it
+      explicitly, as <span class="term" data-term="nw">$n_w$</span> — the rate-weight density that
+      converts the discrete catalogue sum into the measure the model integrals are written in
+      (rate weight per steradian per cubic megaparsec, $\mathrm{yr^{-1}\,sr\,Mpc^{-3}}$):
       $$ p_i(h) \;=\; \frac{\displaystyle\sum_{g\in B_i} w_g N_g(h) \big/ n_w(h)
                             \;+\; B^{\rm num}_i(h)}{D_\bullet(h)} , $$
-      and differ in what $n_w$ and $D_\bullet$ are:
+      and the two modes differ in exactly two places: where they get that exchange rate, and what
+      they divide by.
       <br />
-      <strong><code>absolute_marginal</code></strong> (campaign #53, the realistic runs):
-      $\bar n_w = \Sigma_{\rm glob}/\beta_G$ and $D = \beta_G + \beta_{\bar G}$ — i.e. it
-      <em>uses</em> the Option-A identity. ($\Sigma_{\rm glob}$ is the normalization packet’s
-      spelling of G2c’s $\Sigma_{\rm global}$; same object, the catalogue-channel detection
-      expectation.)
+      <strong><code>absolute_marginal</code></strong> (campaign #53, the realistic runs) reads the
+      exchange rate off the Option-A identity itself — it <em>uses</em> the bridge, so if the
+      bridge tilts, so does the answer.
       <br />
-      <strong><code>generator_marginal</code></strong> (campaign #51, the idealized baseline):
-      $\hat n_w = W_{\rm cat}/V_f(h)$ and $D_{\rm gen} = \Sigma_{\rm glob}/\hat n_w + \beta_{\bar G}$,
-      with $W_{\rm cat} = \sum_{z_g \lt 1.5} w_g$ an $h$-independent scalar and
-      $V_f(h) = \int_0^{1.5} \bar f(z,h)\,(dV_c/dz)/(1+z)\,dz$. Here $\bar n_w$
-      <strong>does not survive</strong>: no model integral is ever compared against a discrete
-      catalogue sum anywhere in the estimator. The Option-A identity is not approximately
-      enforced — it is never invoked.
+      <strong><code>generator_marginal</code></strong> (campaign #51, the idealized baseline)
+      builds it from the generator&rsquo;s own draw normalizer instead, and never invokes the
+      identity at all: no model integral is ever compared against a discrete catalogue sum
+      anywhere in that estimator.
     </div>
+
+    <details class="gw-reader">
+      <summary>&#9656; For the GW reader — the two modes, term by term</summary>
+      <p>
+        <strong><code>absolute_marginal</code></strong>:
+        $\bar n_w = \Sigma_{\rm glob}/\beta_G$ and $D = \beta_G + \beta_{\bar G}$.
+        (<span class="term" data-term="Sglob">$\Sigma_{\rm glob}$</span> is the normalization
+        packet&rsquo;s spelling of G2c&rsquo;s $\Sigma_{\rm global}$; same object, the
+        catalogue-channel detection expectation.)
+      </p>
+      <p>
+        <strong><code>generator_marginal</code></strong>:
+        $\hat n_w = W_{\rm cat}/V_f(h)$ and
+        $D_{\rm gen} = \Sigma_{\rm glob}/\hat n_w + \beta_{\bar G}$, with
+        <span class="term" data-term="Wcat">$W_{\rm cat} = \sum_{z_g \lt 1.5} w_g$</span> an
+        $h$-independent scalar — the pruned catalogue&rsquo;s total draw-eligible rate weight, the
+        generator&rsquo;s own draw normalizer — and
+        <span class="term" data-term="Vf">$V_f(h) = \int_0^{1.5} \bar f(z,h)\,(dV_c/dz)/(1+z)\,dz$</span>
+        the completeness-weighted population volume (exactly $\propto h^{-3}$). Here $\bar n_w$
+        <strong>does not survive</strong>. The Option-A identity is not approximately enforced —
+        it is never invoked.
+      </p>
+    </details>
 
     <p>
       The second mode&rsquo;s mixing fraction is <em>derived, not posited</em>: the injection is a
-      per-event $\mathrm{Bernoulli}(F)$ channel split, so $F(h) = V_f(h)/V_{\rm tot}(h)$, measured
+      per-event $\mathrm{Bernoulli}(F)$ channel split — before any detection, a source either sits
+      inside the completeness-weighted catalogue volume or it does not — so
+      <span class="term" data-term="Fincat">$F(h) = V_f(h)/V_{\rm tot}(h)$</span>, measured
       at $F = 0.0175370\ldots$ and exactly $h$-independent, reproducing the generator&rsquo;s own
       <code>F_incat_population</code> to machine precision. It was pre-registered to
       <em>not</em> de-rail the deep venue; the prediction was falsified, favorably — 1D and 2D MAP
@@ -670,7 +761,8 @@
       downstream ratios: the #51 → #53 switch multiplied the delivered mixture weight by
       <strong>&times;2.19</strong> using C9&rsquo;s value and <strong>&times;2.45</strong> using the
       measured one. The realistic-venue $w_G(0.73) = 0.1215039$ — all ten realistic diagnostics files
-      carry one bit-identical curve, matching the adjudicated 0.1215037 to floating rounding —
+      carry one bit-identical curve, matching the adjudicated 0.1215037 to floating rounding, and
+      the 2&times;2 cell B made it eleven <span class="ch09-fwd">⏭ §6</span> —
       is independently confirmed and is <em>not</em> in question.
     </div>
 
@@ -714,10 +806,11 @@
           <strong>Most of it, and the leftover is the finding.</strong> $(0.86/0.60)^3 = 2.94$
           against a measured 2.48: the $h^3$ density scaling is the dominant piece, it is common
           to the discrete numerator and denominator of $L^{\rm cat}$, and it cancels in the
-          likelihood ratio. Divide it out and a smooth monotone residual survives:
-          <strong>&minus;17.2% end-to-end</strong>, $+8.7\%$ at $h = 0.60$ falling to $-8.7\%$ at
-          $h = 0.86$. In <code>global</code> mode that residual multiplies the in-catalogue channel
-          once per event — a coherent tilt of that size over hundreds of events is enormous.
+          likelihood ratio. Divide it out and a smooth monotone <strong>shape residual</strong>
+          survives: <strong>&minus;17.2% end-to-end</strong>, $+8.7\%$ at $h = 0.60$ falling to
+          $-8.7\%$ at $h = 0.86$. In <code>global</code> mode that shape residual multiplies the
+          in-catalogue channel once per event — a coherent tilt of that size over hundreds of
+          events is enormous.
         </p>
         <div class="toggle-row" id="ch09-identity-row">
           <button type="button" data-idmode="raw">raw ratio Σ_glob / β_G</button>
@@ -727,15 +820,21 @@
         <div class="ch09-readouts">
           <span>growth across the grid <strong id="ch09-id-growth">&mdash;</strong></span>
           <span>pure-$h^3$ expectation <strong id="ch09-id-h3">&mdash;</strong></span>
-          <span>residual after removal <strong id="ch09-id-resid">&mdash;</strong></span>
+          <span>shape residual after removal <strong id="ch09-id-resid">&mdash;</strong></span>
         </div>
         <div class="ch09-verdict">
           <span class="ch09-verdict-label">Has this been tried? — yes, and part of it is closed</span>
-          The raw <strong>&times;2.48 drift is EXONERATED</strong>: it is exactly the $h^{-3}$
-          volume Jacobian, $(0.73/0.81)^3 - 1 = -26.80\%$, and it must not be re-opened. What
-          remains after removing it is a <strong>1D-only residual of $+1.667\%$, i.e. $+0.017$ in
-          $h$</strong> <span class="prov-chip">ledger, Option-A residual</span>. The defect is the
-          residual, not the Jacobian.
+          The raw drift of $\Sigma_{\rm glob}$ against $\beta_G$ is <strong>EXONERATED</strong>: it
+          is the mandatory $h^{-3}$ volume Jacobian — $\beta_G$ carries the comoving volume element,
+          a sum over a fixed catalogue does not — and it must not be re-opened. What survives that
+          removal is the <strong>1D bias residual</strong>: $+1.667\%$, i.e. $+0.017$ in $h$, and
+          1D only (the 2D leg passes at $|\delta| \lt 0.4\%$)
+          <span class="prov-chip">ledger, Option-A bias residual</span>. Two different objects share the
+          word: the <em>shape</em> residual above is a tilt in $\Sigma_{\rm glob}/\beta_G$ across
+          the $h$ grid, measured on G1&rsquo;s 14 h-values; the <em>bias</em> residual here is a
+          displacement in $h$ itself, measured on campaign #53&rsquo;s own legs over
+          $h = 0.73 \to 0.81$ — where the exact Jacobian, $(0.73/0.81)^3 - 1 = -26.80\%$, matched
+          the measured $-26.84\%$ on the with-BH leg. The defect is the bias residual, not the Jacobian.
         </div>
         <details class="num-view">
           <summary>Show me the numbers</summary>
@@ -746,15 +845,15 @@
         <p><strong>Static fallback.</strong> $\Sigma_{\rm global}/\beta_G$ rises monotonically from
         8.96 at $h = 0.60$ to 22.20 at $h = 0.86$ — a factor 2.478 against the pure-$h^3$
         expectation of 2.944. After dividing by $h^3$ and normalizing at $h_{\rm ref} = 0.72$, the
-        shape runs 1.0854 → 0.9135: a monotone <strong>&minus;17.19%</strong> end-to-end residual,
+        shape runs 1.0854 → 0.9135: a monotone <strong>&minus;17.19%</strong> end-to-end shape residual,
         maximum deviation 8.65%.</p>
       </noscript>
     </div>
 
     <p>
       Independently, the identity in its raw form —
-      $\bar n_w = \Sigma_{\rm glob}/\beta_G$ — is violated by <strong>33% in value and 0.39 per
-      $h$ in log-slope</strong> <span class="prov-chip">H0R:1548-1552</span>. G1&rsquo;s own
+      <span class="term" data-term="nw">$\bar n_w = \Sigma_{\rm glob}/\beta_G$</span> — is violated
+      by <strong>33% in value and 0.39 per $h$ in log-slope</strong> <span class="prov-chip">H0R:1548-1552</span>. G1&rsquo;s own
       conclusion was that &ldquo;local modes are structurally immune&rdquo;, and that is correct:
       they never build $\Sigma_{\rm glob}$. But <code>absolute_marginal</code> does
       <span class="prov-chip">G1_beta_g_check.md:14-29</span>. This class of inconsistency is why
@@ -774,7 +873,11 @@
     </p>
 
     <!-- ============ I9.2 ============ -->
-    <div class="widget">
+    <!-- BW3 (REVISION_WORKLIST §D item 5): this sandbox's mass-aware dial is
+         ledger #61's fix form. The verdict is hard-coded on the page (the
+         re-litigation guard below §6), so the widget opts out of the shared
+         inline chip rather than double-reporting it. -->
+    <div class="widget" data-hypothesis="61" data-hypothesis-verdict="inline">
       <h4>I9.2 — The Consistency Bench
         <span class="prov-chip real">real: seed61000 log legs + both seeds&rsquo; CRB tables</span>
         <span class="prov-chip">CLAIM_2D_BIAS_20260730.md C9</span>
@@ -901,8 +1004,14 @@
       of a <strong>FIX FORM, not of the defect</strong>. Re-deriving $w_G$ as a
       membership-conditioned inverse merely <em>relocated</em> the tilt to the host branch
       ($+94$&hellip;$+455$ nats, 12/12 fail) and <strong>must not be re-tried</strong>
-      <span class="prov-chip">ledger #61</span>. C9 is live; the fix is gated on the 2&times;2
-      cell-B control, which had not landed when this chapter was written. Exhibit:
+      <span class="prov-chip">ledger #61</span>. <strong>C9 is live.</strong> The gate on the
+      2&times;2 cell B was <strong>released on 2026-07-31</strong>, when that control landed; what
+      remains is the author&rsquo;s leg-adjudication and a <code>/physics-change</code> derivation
+      — and the adjudication is binding that C9 and C8 must be fixed <strong>jointly</strong>, as
+      one mass-consistent mixture, because their counterfactuals act on different terms of the same
+      mixture and are not additive
+      <span class="prov-chip">CELLB_READOUT_20260731.md, Consequences</span>
+      <span class="prov-chip">ADJUDICATION_20260730.md §5 item 6</span>. Exhibit:
       <a href="museum.html#ex-wg-bookkeeping">the Defect Museum → the w_G bookkeeping fix</a>.
     </div>
 
@@ -910,23 +1019,47 @@
       One pre-registered line from that control belongs here, because it is about this
       chapter&rsquo;s quantity: <em>&ldquo;$w_G(h)$: expected bit-identical to the #53 runs (pure
       quadrature, no catalogue input). If it differs, that itself is a finding.&rdquo;</em>
-      <span class="prov-chip">PREREGISTRATION_2x2_cellB.md</span>. It has already been checked off
-      r1: all ten realistic diagnostics files carry <em>one</em> bit-identical $w_G(h)$ curve. The
-      mixture weight does not depend on the realized event catalogue at all — which is exactly why
-      comparing it against a realized count is a fair test.
+      <span class="prov-chip">PREREGISTRATION_2x2_cellB.md</span>. The mixture weight does not
+      depend on the realized event catalogue at all — which is exactly why comparing it against a
+      realized count is a fair test — so the prediction was registered at seven significant
+      figures, with a stated consequence if it failed.
     </p>
+
+    <div class="ch09-verdict">
+      <span class="ch09-verdict-label">Readout — the 2&times;2 cell B, 2026-07-31</span>
+      <p style="margin:0 0 0.5rem">
+        It holds <strong>bit-for-bit</strong>. The 2&times;2 cell B&rsquo;s $w_G(h)$ is equal to campaign
+        #53&nbsp;r1&rsquo;s element-wise across <strong>all 41 grid points</strong> —
+        <strong>max$|\Delta| = 0.0$</strong>, not &ldquo;agrees to&rdquo; anything —
+        at <strong>0.1625175 / 0.1215039 / 0.1038732</strong> for $h = 0.60/0.73/0.81$, and the
+        two runs&rsquo; $D(h)$ and $\beta_{\bar G}(h)$ selection legs are identical numbers in the
+        logs as well <span class="prov-chip real">re-measured by <code>gen_ch09.py</code>; the
+        generator stops if it is anything other than exact</span>. A prediction registered at
+        seven significant figures and met exactly is the cleanest kind of confirmation this book
+        has to offer — and the weakest kind of evidence, which is the honest way to say it: the
+        quantity was <em>expected</em> not to move, and it did not.
+      </p>
+      <p style="margin:0">
+        That is one of the control&rsquo;s pre-registered readings. Chapter 11 scores all of them,
+        including the one that missed <span class="ch09-fwd">⏭ Ch 11 §5</span>. Result jobs
+        6103219 / 6103220 — the resubmission of the registered 6101146 / 6101147 after a
+        pure-plumbing symlink failure in the run-dir setup; the test design and the
+        pre-registration are unchanged, and the code is the same commit (<code>7fd60bb</code>) as
+        cells A and C.
+      </p>
+    </div>
 
     <!-- ================= dossier ================= -->
     <div class="dossier">
       <div class="dossier-title">Event dossier — EMRI-889 after this chapter</div>
       <table>
-        <tr><td>d_L</td><td>88.9 Mpc</td></tr>
+        <tr><td>d_L</td><td>88.9 Mpc &middot; &sigma;_dL/d_L = 8.98&times;10&#8315;&#8308;</td></tr>
         <tr><td>SNR</td><td>1425 — the loudest row in this run&rsquo;s table</td></tr>
         <tr><td>host</td><td>catalogue index 859360 — one of only 76 with a catalogued host</td></tr>
         <tr><td>z</td><td>photometric, and wider than anything else on this card</td></tr>
         <tr class="dossier-new"><td>how it was born</td><td>M_z = 7.246×10⁵ M☉, t_plunge = 2.87 yr of the 4.5-yr window, p0 = 11.34 — a plunge-window draw, not a p₀ ∈ [10,16] snapshot (its p₀ lands inside the retired band by coincidence; 68% of the population&rsquo;s does not)</td></tr>
         <tr class="dossier-new"><td>P(host catalogued)</td><td><strong>estimand-dependent</strong>: 0.1215 under <code>absolute_marginal</code> (#53), 0.0497 under <code>generator_marginal</code> (#51, measured) or 0.0555 (as quoted in C9 — disputed). The realized rate over 3135 events was 0.0523.</td></tr>
-        <tr class="dossier-new"><td>what this chapter added</td><td>889 is not special here. The chapter&rsquo;s measurement is about the <em>2971 detected events across both seeds that had no catalogued host</em> — while the estimator expected 381 of the 3135 to have one.</td></tr>
+        <tr class="dossier-new"><td>what this chapter added</td><td>the one number above that is 889&rsquo;s own — <strong>P(host catalogued)</strong> — turns out to have <em>two</em> values on the same run, 0.1215 and 0.0497, depending on which estimand you ask for. That is this chapter&rsquo;s finding, in one cell of one card. Beyond it 889 is not special here: the measurement lives in the <em>2971 detected events across both seeds that had no catalogued host</em>, while the estimator expected 381 of the 3135 to have one.</td></tr>
       </table>
     </div>
 
@@ -957,19 +1090,28 @@
     <h2>Self-check</h2>
 
     <div class="selfcheck">
-      <p>Q9.1 &nbsp; The pipeline uses $\Omega_m = 0.2726$, not the Planck value. Bug or design
-      choice, and how would you tell?</p>
+      <p>Q9.1 &nbsp; $\Omega_m = 0.2726$ is licensed by an argument: it is the cosmology the
+      <em>population</em> was drawn from, so the mock stays self-consistent. Name a quantity in
+      this pipeline for which the <strong>same argument would not</strong> license a non-standard
+      value, and say why.</p>
       <details class="answer">
         <summary>Show answer</summary>
         <div class="answer-body">
-          Design choice, and you tell by asking what the number is <em>for</em>: it matches the
-          Barausse (2012) M1 cosmology that the EMRI population itself is drawn from, so the mock
-          universe is self-consistent. Using Planck&rsquo;s $\Omega_m$ with an M1 population would
-          put the generator and its own rate model in disagreement — a worse error than a known
-          offset. The Planck mismatch is tracked as a <em>quoted systematic</em>
-          ($+1.5$&ndash;$3\%$; $+0.16\%$ at $z = 0.05$ rising to $+3.31\%$ at $z = 1.5$
-          <span class="prov-chip">G7 row 6</span>), not silently absorbed. The general rule this
-          chapter teaches: a constant is a bug only relative to a stated purpose.
+          The licence is narrow: it covers a <em>generator-side convention that the estimator
+          shares</em>, where being self-consistent is the whole job and the offset from the real
+          universe can be quoted as a systematic ($+1.5$&ndash;$3\%$ here; $+0.16\%$ at $z = 0.05$
+          rising to $+3.31\%$ at $z = 1.5$ <span class="prov-chip">G7 row 6</span>). Three kinds of
+          quantity fall outside it. <strong>(i) Anything whose job is to imitate the real
+          instrument or the real catalogue</strong> — the LISA noise curve, GLADE+&rsquo;s
+          <code>z_error</code> column, the completeness map: there is no second copy of it in the
+          estimator to be consistent <em>with</em>, so a wrong value is simply wrong.
+          <strong>(ii) Anything that differs between the generator and the estimator</strong> —
+          that is not a shared convention, it is the C9 defect of this chapter: two pieces of the
+          same code describing different universes. <strong>(iii) The same $\Omega_m$, the moment
+          the pipeline is pointed at real events</strong> — then the mismatch stops being a known
+          offset between two stated cosmologies and becomes an unknown error, because the real
+          universe does not come with a fiducial. So: a constant is a bug only relative to a stated
+          purpose — and &ldquo;self-consistency&rdquo; is a purpose only a mock can have.
         </div>
       </details>
     </div>
@@ -1057,7 +1199,7 @@
         <li><span class="badge ratified">RATIFIED</span> <code>G2c §3, §4.1–4.3</code> — the Option-A bridge and the three normalization modes; Gray et al. 2020, arXiv:1908.06050 Eqs. (A9)/(A10)/(A14)/(A20)</li>
         <li><span class="badge ratified">RATIFIED</span> <code>DERIVATION_GENERATOR_CONSISTENT_NORM.md §2.2, §2.3, §3.1</code> — $\hat n_w = W_{\rm cat}/V_f$, $D_{\rm gen}$, the derived $F = 0.0175370$</li>
         <li><span class="badge finding">FINDING</span> <code>G2c §6 C1</code> — the &ldquo;Gray A.9/A.10 literal&rdquo; code comment overstates <code>local_ratio</code>; nearest analogue is (A20)</li>
-        <li><span class="badge finding">FINDING</span> <code>G1_beta_g_check.md:14-29</code> / <code>H0R:1548-1552</code> — Option-A residual &minus;17.2% end-to-end; identity violated 33% in value, 0.39/h in log-slope</li>
+        <li><span class="badge finding">FINDING</span> <code>G1_beta_g_check.md:14-29</code> / <code>H0R:1548-1552</code> — Option-A <em>shape</em> residual &minus;17.2% end-to-end; identity violated 33% in value, 0.39/h in log-slope</li>
         <li><span class="badge finding">FINDING</span> <code>CLAIM_2D_BIAS_20260730.md C9</code> + <code>ADJUDICATION_20260730.md §1</code> — $w_G$ mis-calibrated 2.3–2.5&times;, binomial z = &minus;11.86, with the leverage discount carried</li>
         <li><span class="badge finding">FINDING</span> <code>ledger #49</code> — the four-step de-rail matrix (seed600, 494 events); <code>ledger #49a</code> — the H₀-independent estimator; <code>#49b</code> — the rail dated to ~2026-04-24</li>
         <li><span class="badge finding">FINDING</span> <code>ledger #74</code> / <code>#77</code> — host misassociation confirmed; <code>absolute_marginal</code> relocated the rail LOW→HIGH</li>
@@ -1065,10 +1207,10 @@
         <li><span class="badge candidate">CANDIDATE</span> <code>RATIFY-M6</code> — the #53 2D pairing (<code>absolute_marginal</code> + <code>volume_deconv</code>) is designated candidate; every 2D number on this page sits on that ground</li>
         <li><span class="badge exonerated">EXONERATED</span> <code>ledger #61</code> — the $w_G = \beta_G/D$ membership-conditioned-inverse <em>fix form</em> (12/12 fail; do not re-try); the raw &times;2.48 Option-A drift as the $h^{-3}$ Jacobian (do not re-open)</li>
         <li><span class="badge open">OPEN</span> <code>sources map §7 item 7</code> — the <code>generator_marginal</code> $w_G$ curve attribution; both sets plotted</li>
-        <li><span class="badge open">OPEN</span> <code>PREREGISTRATION_2x2_cellB.md</code> — the estimator control; in flight at the time of writing</li>
+        <li><span class="badge finding">FINDING</span> <code>PREREGISTRATION_2x2_cellB.md</code> (registered jobs 6101146/6101147) → <code>CELLB_READOUT_20260731.md</code> (result: evaluate 6103219 / combine 6103220, the resubmission) — the 2&times;2 cell B <strong>landed 2026-07-31</strong>: the estimator configuration owns +0.060 of the r1 2D displacement of +0.083 (72%, a 2D-only figure), the realism layer is largely exonerated, and this chapter&rsquo;s pre-registered $w_G(h)$ reading held bit-identically across all 41 grid points. C9&rsquo;s cell-B gate is released; C9 itself stays live and unfixed</li>
         <li><span class="badge ratified">RATIFIED</span> <code>ledger #53</code> / <code>GATE_SIGNOFF.md G11</code> / <code>G7 row 6</code> — $\Omega_m = 0.2726$ as a population-matched design choice with a quoted systematic</li>
         <li>Data: <code>results/campaign51_20260728/realistic_20260729/seed{61000,62000}/</code> (log legs, CRB tables), <code>.../gate_b_20260730/{g4_posterior_curves,g4_results,g2_catalogue_summary,g6_results,c9_darkdraw_results}.json</code>, <code>.../injection_pool_mix200k_20260728/</code>, <code>results/commission_20260701/redteam/derail_matrix_results.json</code>, <code>docs/gates/{G1_beta_g_check,G3_ablation_cube}.json</code></li>
-        <li>Hard gates in <code>gen_ch09.py</code>: $w_G(0.73)$, $r(0.73)$, mass-aware $w_G$, 164/3135, both binomial z, the four counterfactual MAP/mean pairs, all twelve published $\Omega_m$ cells, G1&rsquo;s own end-to-end tilts, and the de-rail matrix ≡ ablation-cube identity</li>
+        <li>Hard gates in <code>gen_ch09.py</code>: $w_G(0.73)$, $r(0.73)$, mass-aware $w_G$, 164/3135, both binomial z, the four counterfactual MAP/mean pairs, all twelve published $\Omega_m$ cells, G1&rsquo;s own end-to-end tilts, the de-rail matrix ≡ ablation-cube identity, and the cell-B $w_G$ equality (element-wise over all 41 grid points, max$|\Delta|$ exactly 0.0, plus its three quoted reads)</li>
         <li>Open flags: <code>book/design/flags/ch09_FLAGS.md</code></li>
       </ul>
     </div>
@@ -1128,15 +1270,61 @@
     function fmt(v, n) {
       return (v === null || v === undefined || !isFinite(v)) ? "\u2014" : Number(v).toFixed(n);
     }
+    /* ---------------------------------------------------------------
+       Lazy plot construction (ux review MAJOR-3: this page used to build
+       all eight Plotly instances on load, unlike ch03 which already gates
+       its expensive widget behind an IntersectionObserver).
+
+       The observer watches the enclosing `.widget`, not the plot div:
+       three of these plots live inside a hidden `.reveal`, which has
+       `display:none` and therefore never intersects anything. Handles
+       have Book.themedPlot's `{ update }` shape plus `ensure()`, and
+       `update()` before construction is a no-op — the constructor calls
+       `tracesFn()` itself, so it always builds from current state.
+       --------------------------------------------------------------- */
+    var LAZY = {};
+    function lazyPlot(divId, tracesFn, layoutFn) {
+      var handle = {
+        _p: null,
+        ensure: function () {
+          if (!handle._p && document.getElementById(divId)) {
+            handle._p = Book.themedPlot(divId, tracesFn(), layoutFn);
+          }
+          return handle._p;
+        },
+        update: function (traces) {
+          if (handle._p) handle._p.update(traces || tracesFn());
+        },
+      };
+      LAZY[divId] = handle;
+      var el = document.getElementById(divId);
+      if (!el || !("IntersectionObserver" in window)) {
+        handle.ensure();
+        return handle;
+      }
+      var io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (e) {
+          if (!e.isIntersecting) return;
+          io.disconnect();
+          handle.ensure();
+        });
+      }, { rootMargin: "300px 0px 300px 0px" });
+      io.observe(el.closest(".widget") || el);
+      return handle;
+    }
+
     /* Plots created inside a hidden .reveal render at zero width; resize them
-       when the block becomes visible (and on restore from localStorage). */
+       when the block becomes visible (and on restore from localStorage).
+       Plots not yet constructed need nothing: they are built at their real
+       width when the observer fires. */
     function revealResize(widgetId, plotIds) {
       var w = document.getElementById(widgetId);
       if (!w) return;
       var rev = w.closest(".widget").querySelector(".reveal");
       var go = function () {
         plotIds.forEach(function (id) {
-          if (document.getElementById(id)) Plotly.Plots.resize(id);
+          var h = LAZY[id];
+          if (h && h._p && document.getElementById(id)) Plotly.Plots.resize(id);
         });
       };
       if (rev && rev.classList.contains("shown")) setTimeout(go, 0);
@@ -1160,11 +1348,19 @@
     // R-ch07-1/R-ch11-1 IMPLEMENTED by the integrator: Book.biasRail takes
     // `pips` directly; the page-local append workaround is retired.
     // ---------------------------------------------------------------
+    /* The cell-B pip is the book's canonical one (REVISION_WORKLIST §D item 6:
+       one definition, in manifest.js BOOK_CANON; identical on ch07/09/10/11).
+       The literals are the same strings, kept as a fallback only. */
+    var CB = (Book.canon && Book.canon.cellB) || {};
     var PIPS = [
       { tone: "amber", label: "C7: kernel inflates at σ_z/z > 0.256", note: "CLAIM C7 — MEASURED, live" },
       { tone: "amber", label: "C8: 2D MAP walks with the mass unit", note: "CLAIM C8 — well-posedness, live" },
-      { tone: "amber", label: "C9: w_G ≠ realized rate (z = −11.86)", note: "CLAIM C9 — measured this chapter; leverage discount applies" },
-      { tone: "grey", label: "cell B (the estimator control) not landed", note: "PREREGISTRATION_2x2_cellB.md" },
+      { tone: "amber", label: "C9: w_G ≠ realized rate (z = −11.86)", note: "CLAIM C9 — measured this chapter; live, cell-B gate released 2026-07-31" },
+      {
+        tone: CB.pipTone || "amber",
+        label: CB.pipLabel || "cell B (2026-07-31): estimator owns +0.060 of the 2D +0.083",
+        note: CB.pipNote || "CELLB_READOUT_20260731.md — evaluate 6103219 / combine 6103220; the 2D-only share is 72%",
+      },
     ];
     function renderRail() {
       Book.biasRail({
@@ -1207,15 +1403,17 @@
       }
 
       // ---- cold open -------------------------------------------------
-      Book.themedPlot(
+      lazyPlot(
         "ch09-cold-plot",
-        [
-          {
-            x: H, y: B.w_G_blind, mode: "lines", line: { color: live(), width: 2.6 },
-            name: "model w_G(h) = β_G/D  (absolute_marginal, #53)",
-            hovertemplate: "h = %{x:.3f}<br>w_G = %{y:.6f}<extra></extra>",
-          },
-        ].concat(bandTraces("realized ± 1 binomial s.e.")),
+        function () {
+          return [
+            {
+              x: H, y: B.w_G_blind, mode: "lines", line: { color: live(), width: 2.6 },
+              name: "model w_G(h) = β_G/D  (absolute_marginal, #53)",
+              hovertemplate: "h = %{x:.3f}<br>w_G = %{y:.6f}<extra></extra>",
+            },
+          ].concat(bandTraces("realized ± 1 binomial s.e."));
+        },
         function () {
           var L = baseLayout("h = H₀ / 100", "P(host in catalogue | detected)");
           L.shapes = [truthShape(B.h_true)];
@@ -1297,8 +1495,10 @@
           "realized: <strong>z = +0.21</strong>. And r(0.73) = 0.39248 from the run's logs agrees " +
           "with the realized suppression 0.3991 ± 0.0312 to <strong>0.21σ</strong> — two " +
           "independent routes to the same number. This is a <em>diagnostic counterfactual, not a " +
-          "ratified fix</em>: it is gated on cell B, and the adjudicator's leverage discount " +
-          "applies to every MAP it moves.",
+          "ratified fix</em>: the 2×2 cell B released its gate on 2026-07-31, and what remains is " +
+          "the author's joint C9+C8 leg-adjudication under <code>/physics-change</code> — the two " +
+          "counterfactuals act on different terms of the same mixture and are not additive. The " +
+          "adjudicator's leverage discount still applies to every MAP this dial moves.",
         "blind|blind":
           "<span class='ch09-verdict-label'>No such run exists</span>" +
           "A mass-blind host draw would make the estimator's β_G right by construction — and no " +
@@ -1334,16 +1534,16 @@
         cfWrap.className = (st.gen === "aware" && st.est === "aware") ? "" : "ch09-locked";
       }
 
-      benchPlot = Book.themedPlot("ch09-bench-plot", benchTraces(), function () {
+      benchPlot = lazyPlot("ch09-bench-plot", benchTraces, function () {
         var L = baseLayout("h = H₀ / 100", "P(host in catalogue | detected)");
         L.shapes = [truthShape(B.h_true)];
         L.yaxis.range = [0, 0.18];
         return L;
       });
 
-      cfPlot = Book.themedPlot(
+      cfPlot = lazyPlot(
         "ch09-cf-plot",
-        (function () {
+        function () {
           var cf = B.counterfactual;
           function norm(logArr) {
             var m = -Infinity, i;
@@ -1361,7 +1561,7 @@
             { x: cf.h, y: norm(cf.with_bh_corr), mode: "lines", line: { color: C.warn, width: 2, dash: "dot" },
               name: "2D with mass-aware β_G (mean 0.7433)" },
           ];
-        })(),
+        },
         function () {
           var L = baseLayout("h = H₀ / 100", "posterior density");
           L.shapes = [truthShape(B.h_true)];
@@ -1395,6 +1595,15 @@
           ["dark-side KS vs β_Ḡ's own integrand", "D = " + B.dark_side.ks.toFixed(4) + ", p = " + B.dark_side.p.toExponential(2) + " (n = " + B.dark_side.n_dark + ")", "production pool, fingerprint " + B.dark_side.fingerprint_dl_max_Gpc.toFixed(6) + " Gpc"],
           ["#51 → #53 mixture-weight ratio", "×" + B.event_889.ratio_53_over_51_claimed.toFixed(2) + " (C9's value) / ×" + B.event_889.ratio_53_over_51_measured.toFixed(2) + " (measured)", "OPEN — sources map §7 item 7"],
           ["4-dp w_G log field, max relative deviation", B.w_G_log_4dp_max_rel_dev.toExponential(2), "why residual work must use D − β_Ḡ"],
+          [
+            "w_G(h): the 2×2 cell B vs #53 r1, element-wise",
+            B.cell_b.verified
+              ? "max|Δ| = " + B.cell_b.wg_max_abs_dev.toFixed(1) + " over " + B.cell_b.wg_n_grid +
+                " grid points (D and β_Ḡ legs identical too)"
+              : "recorded bit-identical; artifacts not resolvable in this checkout",
+            "the pre-registered reading, re-measured — cell B landed " + B.cell_b.date +
+              " (jobs " + B.cell_b.jobs_result + ")",
+          ],
         ]
       );
 
@@ -1465,7 +1674,7 @@
         if (plot) plot.update(traces(i));
       }
 
-      plot = Book.themedPlot("ch09-derail-plot", traces(0), function () {
+      plot = lazyPlot("ch09-derail-plot", function () { return traces(idx); }, function () {
         var L = baseLayout("h = H₀ / 100", "posterior mass (7-point grid)");
         L.shapes = [truthShape(D.h_true)];
         L.yaxis.type = "log";
@@ -1544,7 +1753,7 @@
         if (plot) plot.update(traces());
       }
 
-      plot = Book.themedPlot("ch09-identity-plot", traces(), function () {
+      plot = lazyPlot("ch09-identity-plot", traces, function () {
         var L = baseLayout("h = H₀ / 100", mode === "raw" ? "Σ_global / β_G" : "shape after ÷ h³");
         L.shapes = [truthShape(0.73)];
         return L;
@@ -1733,7 +1942,7 @@
         warn();
       }
 
-      zPlot = Book.themedPlot("ch09-factory-plot", zTraces(), function () {
+      zPlot = lazyPlot("ch09-factory-plot", zTraces, function () {
         var L = baseLayout("redshift z", "injections per bin");
         L.barmode = "overlay";
         L.yaxis.type = "log";
@@ -1741,7 +1950,7 @@
         return L;
       });
 
-      p0Plot = Book.themedPlot("ch09-p0-plot", p0Traces(), function () {
+      p0Plot = lazyPlot("ch09-p0-plot", p0Traces, function () {
         var L = baseLayout("log₁₀ M_z  (detector-frame mass, M☉)", "initial semi-latus rectum p₀");
         L.yaxis.type = "log";
         L.yaxis.range = [Math.log10(2), Math.log10(120)];
@@ -1763,7 +1972,7 @@
       });
       void p0Plot;
 
-      omPlot = Book.themedPlot("ch09-omega-plot", omTraces(), function () {
+      omPlot = lazyPlot("ch09-omega-plot", omTraces, function () {
         var L = baseLayout("redshift z", "bias in h if the fiducial Ω_m is wrong (%)");
         L.xaxis.type = "log";
         return L;

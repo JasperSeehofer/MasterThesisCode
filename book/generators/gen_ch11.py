@@ -32,9 +32,14 @@ Outputs
     Claims C1-C11 with their **verbatim** adjudicated status strings, the
     provenance tag the claim file assigns, which side of the estimator each
     sits on, the refutation route, and the artifact chips.  Hand-authored from
-    ``CLAIM_2D_BIAS_20260730.md`` (as amended 2026-07-30) +
+    ``CLAIM_2D_BIAS_20260730.md`` (as amended **2026-07-31**) +
     ``gate_b_20260730/ADJUDICATION_20260730.md``; the generator re-checks the
     numeric fields it can (C1, C2, C3, C9's realized rate) against the data.
+
+    Also carries ``cell_b`` — the 2x2's landed control (2026-07-31), measured
+    here from the delivered posteriors rather than transcribed, and gated
+    against ``CELLB_READOUT_20260731.md``.  C6 is RESOLVED by it; four claims
+    stay live (C5, C7, C8, C9).
 
 ``book/site/data/ch11_dossier.json``    (the running example's payoff)
     EMRI-889's per-realization 2D-minus-1D channel swing, re-measured from
@@ -553,22 +558,37 @@ BOARD: list[dict[str, Any]] = [
     },
     {
         "id": "C6",
-        "title": "Attribution is confounded; the decisive control was never run",
-        "status": "FINDING (confirmed by Gate A1); resolution in flight",
-        "badge": "confounded",
-        "tag": "[DOC + INFER]",
+        "title": "Attribution is confounded; the decisive control was never run — struck 2026-07-31",
+        # verbatim from the claim file's amended C6 section heading (line 303)
+        "status": "RESOLVED 2026-07-31: cell B ran — THE ESTIMATOR OWNS IT",
+        "badge": "finding",
+        "tag": "[DOC + INFER → LOCAL, MEASURED]",
         "side": "meta",
         "side_label": "experimental design",
-        "live": True,
+        "live": False,
         "one_line": "Campaign #51 → #53 changed catalogue scatter, host-z kernel and normalization "
-        "mode simultaneously, and no run anywhere varies the estimator at fixed catalogue.",
-        "adjudication": "The one-file check was executed: sig0_control ran generator_marginal + the "
-        "point kernel, so it is not the missing control. “The bias switches on with the realized "
-        "scatter” is NOT established. Resolution in flight: the pre-registered 2×2 cell B "
-        "(unscattered catalogue × the #53 estimator), jobs 6101146 / 6101147, with a dated "
-        "pre-readout prediction registered 2026-07-30 BEFORE the run landed.",
-        "refute_by": "read sig0_control/run_metadata_0.json — DONE; the claim did not collapse",
-        "chips": ["CLAIM_2D_BIAS_20260730.md C6", "PREREGISTRATION_2x2_cellB.md", "ADJUDICATION §3"],
+        "mode simultaneously, and no run anywhere varied the estimator at fixed catalogue — until "
+        "the 2×2 cell B did, on 2026-07-31.",
+        "adjudication": "The one-file check was executed first: sig0_control ran generator_marginal + "
+        "the point kernel, so it was not the missing control, and “the bias switches on with the "
+        "realized scatter” was NOT established. RESOLUTION 2026-07-31 (jobs 6103219 / 6103220, "
+        "resubmission of the registered 6101146 / 6101147 after a pure-plumbing symlink failure; "
+        "code 7fd60bb, the same commit as cells A and C): B = 1D MAP 0.7450 / 2D MAP 0.7900. "
+        "B − A (estimator) = +0.0151 / +0.0600; C − B (scatter) = −0.0050 / +0.0233 — the estimator "
+        "configuration owns 72% of the 2D displacement (a 2D-only share: on 1D the estimator effect "
+        "exceeds the total, because the realized scatter pushes the other way). Catalogue-leg rail "
+        "90.7% (B) vs 89.2% (C); dark channel difference +18.00 nats with zero realized scatter; "
+        "w_G(h) bit-identical to the #53 curve across all 41 grid points. The realistic "
+        "host-observation model is largely exonerated for the headline biases.",
+        "refute_by": "run the unscattered catalogue through the #53 estimator — DONE; the "
+        "pre-registered prediction held on two of its three numeric reads (the 1D MAP band missed "
+        "by one grid step)",
+        "chips": [
+            "CLAIM_2D_BIAS_20260730.md C6 (resolved 2026-07-31)",
+            "CELLB_READOUT_20260731.md",
+            "PREREGISTRATION_2x2_cellB.md",
+            "ADJUDICATION §3",
+        ],
     },
     {
         "id": "C7",
@@ -588,8 +608,12 @@ BOARD: list[dict[str, Any]] = [
         "confirmed exactly that weight, without p_det, as uniquely consistent and exactly "
         "h-independent, protected by a binding regression gate. Any fix must EXPLICITLY SUPERSEDE "
         "G2b. The measured historical failure mode of the deconvolution at large σ_z/z was "
-        "OVER-correction — the opposite sign to where a C7 fix pushes. Cell B is the staleness-free "
-        "magnitude check.",
+        "OVER-correction — the opposite sign to where a C7 fix pushes. "
+        "[Cell B, 2026-07-31] The staleness-free magnitude check landed: 90.7% catalogue-leg rail "
+        "at the true parent widths, with exact host redshifts. It settles C7’s magnitude and "
+        "attribution, NOT the collision — the G2b confirmation is untouched, the fix must "
+        "explicitly supersede G2b, and it must not take the historically exonerated “p_det inside "
+        "the numerator alone” form.",
         "refute_by": "compute the induced host-z shift numerically for the 76 hosts at their real "
         "σ_z — DONE, it confirmed; the collision with G2b is unresolved",
         "chips": ["CLAIM_2D_BIAS_20260730.md C7", "gate_b_20260730/C7_README.md", "G2b:413-436"],
@@ -619,7 +643,12 @@ BOARD: list[dict[str, Any]] = [
     {
         "id": "C9",
         "title": "w_G is mis-calibrated against the code’s own generator",
-        "status": "FINDING [LOCAL, VERIFIED] — live, gated on cell B",
+        # the claim file's own wording is "[LOCAL, VERIFIED] … C9 is live, gated on
+        # cell B" (CLAIM_2D_BIAS:531, :698). Cell B landed 2026-07-31 and released
+        # that gate; the release is carried as a DATED book annotation, marked as
+        # such, never as a silent rewrite of the file's string.
+        "status": "FINDING [LOCAL, VERIFIED] — live; the cell-B gate is released (2026-07-31), "
+        "the fix is author-gated",
         "badge": "finding",
         "tag": "[LOCAL, VERIFIED]",
         "side": "prefactor",
@@ -636,7 +665,12 @@ BOARD: list[dict[str, Any]] = [
         "dark side: the realized detected dark-host z-distribution is skewed high against "
         "β_Ḡ’s own coded integrand, KS D = 0.0863, p = 1.08×10⁻¹⁹. "
         "RE-LITIGATION GUARD: the exonerated w_G = β_G/D bookkeeping FIX FORM merely relocated the "
-        "tilt (+94…+455 nats, 12/12 fail, ledger #61) and must not be re-tried — the DEFECT is live.",
+        "tilt (+94…+455 nats, 12/12 fail, ledger #61) and must not be re-tried — the DEFECT is live. "
+        "[Cell B, 2026-07-31] w_G(h) is bit-identical in cell B, so C9’s transfer arithmetic applies "
+        "verbatim, and cell B removed C9’s last external gate. What remains is the author’s "
+        "leg-adjudication plus a /physics-change derivation — and the fix must be the JOINT C9+C8 "
+        "mass-consistent mixture, because the two counterfactuals act on different terms of the same "
+        "mixture and are not additive.",
         "refute_by": "show the two estimands are in fact compatible — i.e. that the realized 164/3135 "
         "is not the quantity w_G models",
         "chips": ["CLAIM_2D_BIAS_20260730.md C9", "c9_darkdraw_check.py", "G1_beta_g_check.md:14-29"],
@@ -681,6 +715,129 @@ BOARD: list[dict[str, Any]] = [
 ]
 
 
+# ==========================================================================
+# 2b. The 2x2 cell B — measured here, gated against CELLB_READOUT_20260731.md
+# ==========================================================================
+# Cell B = the unscattered #51 parent catalogue put through the #53 estimator
+# (`absolute_marginal` + `volume_deconv`), same CRB table, same injection pool,
+# same commit (7fd60bb) as cells A and C.  Jobs 6103219 (evaluate) / 6103220
+# (combine) — the resubmission of the REGISTERED 6101146 / 6101147 after a
+# pure-plumbing symlink failure in the run-dir setup.
+#
+# The book prints the 2x2 in MAPs throughout (expB MJ-1: the readout's C row
+# mixed a 1D mean with a 2D MAP).  Means are carried separately, for the
+# footnote, so nobody re-derives the scatter effect on a mixed convention.
+CELLB_REL = f"{REAL_REL}/seed61000/estimatorB_2x2"
+
+
+def _posterior_stats(rel: str) -> dict[str, float]:
+    """MAP (as published), posterior mean, sigma_h and the edge/peak ratio."""
+    d = json.loads(need(rel).read_text())
+    h = np.asarray(d["h_values"], dtype=float)
+    y = np.asarray(d["posterior"], dtype=float)
+    y = y / np.trapezoid(y, h)
+    mean = float(np.trapezoid(y * h, h))
+    var = float(np.trapezoid(y * (h - mean) ** 2, h))
+    return {
+        "map": float(d["map_h"]),
+        "mean": mean,
+        "sigma_h": float(np.sqrt(var)),
+        "edge_peak": float(max(y[0], y[-1]) / y.max()),
+        "n_events": int(d["n_events_used"]),
+    }
+
+
+def build_cellb() -> dict[str, Any]:
+    b1 = _posterior_stats(f"{CELLB_REL}/posteriors/combined_posterior.json")
+    b2 = _posterior_stats(f"{CELLB_REL}/posteriors_with_bh_mass/combined_posterior.json")
+    c1 = _posterior_stats(f"{REAL_REL}/seed61000/real_r1/posteriors/combined_posterior.json")
+    c2 = _posterior_stats(f"{REAL_REL}/seed61000/real_r1/combined_posterior_2d.json")
+
+    cite = "CELLB_READOUT_20260731.md"
+    GATES.check("cell B 1D MAP", b1["map"], 0.7450, 1e-9, cite)
+    GATES.check("cell B 2D MAP", b2["map"], 0.7900, 1e-9, cite)
+    GATES.check("cell B 1D mean", b1["mean"], 0.7320, 5e-4, cite)
+    GATES.check("cell B 2D mean", b2["mean"], 0.7962, 5e-4, cite)
+    GATES.check("cell B 1D sigma_h", b1["sigma_h"], 0.026, 1e-3, cite)
+    GATES.check("cell B 2D sigma_h", b2["sigma_h"], 0.019, 1e-3, cite)
+    GATES.check("cell B 2D edge/peak (interior)", b2["edge_peak"], 1.2e-2, 1e-3, cite)
+    GATES.check("cell B event count", float(b1["n_events"]), 1588.0, 0.0, cite)
+    GATES.check("cell C (r1) 1D MAP", c1["map"], 0.7400, 1e-9, cite)
+    GATES.check("cell C (r1) 1D mean", c1["mean"], 0.7321, 5e-4, cite)
+    GATES.check("cell C (r1) 2D mean", c2["mean"], 0.8123, 5e-4, cite)
+
+    # A = #51 idealized: 1D 0.7299 / 2D 0.7300, IDEALIZED_BASELINE_READOUT.md.
+    # The 2x2's published MAPs are the sub-grid-refined ones (the r1 2D grid
+    # argmax is 0.81; the refined MAP the claim file and the readout print is
+    # 0.8133) — the book uses the published values, and gates the two it can
+    # read straight off the delivered files (B, above) plus every mean.
+    a_1d, a_2d = 0.7299, 0.7300
+    b_1d, b_2d = b1["map"], b2["map"]
+    c_1d, c_2d = 0.7400, 0.8133
+    est = (b_1d - a_1d, b_2d - a_2d)
+    sca = (c_1d - b_1d, c_2d - b_2d)
+    tot = (c_1d - a_1d, c_2d - a_2d)
+    GATES.check("cell B − A (estimator, 1D)", est[0], 0.0151, 5e-5, cite)
+    GATES.check("cell B − A (estimator, 2D)", est[1], 0.0600, 5e-5, cite)
+    GATES.check("cell C − B (scatter, 1D)", sca[0], -0.0050, 5e-5, cite)
+    GATES.check("cell C − B (scatter, 2D)", sca[1], 0.0233, 5e-5, cite)
+    GATES.check("cell C − A (total, 2D)", tot[1], 0.0833, 5e-5, cite)
+    GATES.check("estimator share of the 2D displacement", est[1] / tot[1], 0.72, 5e-3, cite)
+
+    return {
+        "landed": "2026-07-31",
+        "jobs_registered": "6101146 / 6101147",
+        "jobs_delivered": "6103219 / 6103220",
+        "resubmission_note": (
+            "6101146/6101147 failed on a missing raw-CRB symlink in the run-dir setup and were "
+            "resubmitted as 6103219/6103220 without touching the test design; the pre-registration "
+            "is unchanged and the code is the same commit (7fd60bb) as cells A and C."
+        ),
+        "convention": "MAPs throughout; means are carried separately (expB MJ-1)",
+        "maps": {
+            "A_unscattered_point": {"1D": a_1d, "2D": a_2d},
+            "B_unscattered_voldeconv": {"1D": rnd(b_1d, 4), "2D": rnd(b_2d, 4)},
+            "C_scattered_voldeconv_r1": {"1D": c_1d, "2D": c_2d},
+        },
+        "means": {
+            "B": {"1D": rnd(b1["mean"], 4), "2D": rnd(b2["mean"], 4)},
+            "C_r1": {"1D": rnd(c1["mean"], 4), "2D": rnd(c2["mean"], 4)},
+        },
+        "sigma_h": {"B": {"1D": rnd(b1["sigma_h"], 4), "2D": rnd(b2["sigma_h"], 4)}},
+        "edge_peak": {"B_2D": rnd(b2["edge_peak"], 6)},
+        "effects_on_maps": {
+            "estimator_B_minus_A": {"1D": rnd(est[0], 4), "2D": rnd(est[1], 4)},
+            "scatter_C_minus_B": {"1D": rnd(sca[0], 4), "2D": rnd(sca[1], 4)},
+            "total_C_minus_A": {"1D": rnd(tot[0], 4), "2D": rnd(tot[1], 4)},
+            "estimator_share_2D": rnd(est[1] / tot[1], 3),
+            "share_warning": (
+                "The 72% share is 2D-ONLY. On 1D the estimator effect (+0.0151) exceeds the total "
+                "(+0.0101) because the realized scatter pushes the other way (−0.0050); on the mean "
+                "convention the 1D scatter effect is ≈0.000."
+            ),
+        },
+        "prereg_scoring": [
+            {"read": "2D MAP ∈ [0.78, 0.82]", "delivered": rnd(b_2d, 4), "verdict": "hit"},
+            {"read": "in-catalogue class argmax ≈ 0.86", "delivered": 0.860, "verdict": "hit"},
+            {
+                "read": "1D MAP ∈ [0.70, 0.74]",
+                "delivered": rnd(b_1d, 4),
+                "verdict": "miss by one grid step",
+                "note": "the 1D MEAN (0.7320) is inside the band, but the band was written in "
+                "MAPs (the ten delivered runs' 1D MAPs, 0.700–0.740), so the miss is real on the "
+                "convention the band was registered in.",
+            },
+        ],
+        "scoring_summary": "2 of 3 exact, 1D marginal (MAP one grid step above the registered band)",
+        "book_note": (
+            "The readout's own “confirmed on every pre-registered read” was corrected the same day "
+            "(erratum in CELLB_READOUT_20260731.md, raised by this book's review pass); the book "
+            "scores 2 hits and one one-grid-step miss."
+        ),
+        "chips": [cite, "CLAIM_2D_BIAS_20260730.md C6 (resolved 2026-07-31)"],
+    }
+
+
 def build_board() -> dict[str, Any]:
     # Cross-check the two board rows whose numbers this generator can re-measure
     # cheaply and independently (the rest are gated in build_dossier()).
@@ -694,6 +851,15 @@ def build_board() -> dict[str, Any]:
     n_rows_62 = int(len(pd.read_csv(need(f"{REAL_REL}/seed62000/prepared_cramer_rao_bounds.csv"))))
     realized = (n_incat_61 + n_incat_62) / (n_rows_61 + n_rows_62)
     GATES.check("C9 realized in-cat rate 164/3135", realized, 164 / 3135, 1e-9, "CLAIM_2D_BIAS C9")
+    GATES.check("C9 realized detections 3135", float(n_rows_61 + n_rows_62), 3135.0, 0.0, "CLAIM_2D_BIAS C9")
+
+    # expB MJ-7: the board said "four are live" and listed five. After cell B
+    # resolved C6 the count really is four — gated so the three count surfaces
+    # (JSON, widget line, noscript) cannot drift apart again.
+    live_ids = [c["id"] for c in BOARD if c["live"]]
+    GATES.check("board live count = 4 (C5, C7, C8, C9)", float(len(live_ids)), 4.0, 0.0, "expB MJ-7 / BL-6")
+    if live_ids != ["C5", "C7", "C8", "C9"]:
+        raise SystemExit(f"gen_ch11 GATE FAILED: live claims are {live_ids}, expected C5/C7/C8/C9")
 
     sides = {
         "measurement": "bookkeeping (both channels)",
@@ -708,13 +874,18 @@ def build_board() -> dict[str, Any]:
         "_meta": {
             "chapter": 11,
             "widget": "I11.2 The Adjudication Board",
-            "source": "CLAIM_2D_BIAS_20260730.md (as amended 2026-07-30) + "
-            "gate_b_20260730/ADJUDICATION_20260730.md §1 — status strings verbatim",
+            "source": "CLAIM_2D_BIAS_20260730.md (as amended 2026-07-31) + "
+            "gate_b_20260730/ADJUDICATION_20260730.md §1 — status strings verbatim; "
+            "cell-B releases carried as dated, marked annotations",
             "adjudicated": "2026-07-30",
+            "amended": "2026-07-31 (C6 RESOLVED by the 2×2 cell B; C7/C9 gate notes appended)",
         },
         "sides": sides,
         "one_side_ids": ["C7", "C8", "C9"],
+        "live_ids": [c["id"] for c in BOARD if c["live"]],
+        "n_live": sum(1 for c in BOARD if c["live"]),
         "claims": BOARD,
+        "cell_b": build_cellb(),
         "realized_incat_rate": {
             "n_incat": n_incat_61 + n_incat_62,
             "n_rows": n_rows_61 + n_rows_62,
@@ -750,6 +921,21 @@ def main() -> None:
     write_json("ch11_board.json", board)
 
     print(f"  gates: {gates['n']} checks, all_pass={gates['all_pass']}")
+    cb = board["cell_b"]
+    print(
+        "  cell B (landed {landed}, jobs {j}): 1D MAP {b1} / 2D MAP {b2}; "
+        "estimator {e1:+} / {e2:+}, scatter {s1:+} / {s2:+}; scored {sc}".format(
+            landed=cb["landed"],
+            j=cb["jobs_delivered"],
+            b1=cb["maps"]["B_unscattered_voldeconv"]["1D"],
+            b2=cb["maps"]["B_unscattered_voldeconv"]["2D"],
+            e1=cb["effects_on_maps"]["estimator_B_minus_A"]["1D"],
+            e2=cb["effects_on_maps"]["estimator_B_minus_A"]["2D"],
+            s1=cb["effects_on_maps"]["scatter_C_minus_B"]["1D"],
+            s2=cb["effects_on_maps"]["scatter_C_minus_B"]["2D"],
+            sc=cb["scoring_summary"],
+        )
+    )
     pub = runaways["published"]
     print(
         "  FLAG F-ch11-1: adjudicated dh*/deps leverage ratio "

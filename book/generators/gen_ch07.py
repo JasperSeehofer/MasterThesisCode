@@ -45,9 +45,19 @@ PROVENANCE / FIDELITY RULES OBSERVED HERE
   (it is not tracked in every worktree); its verdict is printed, never written,
   so the JSON stays byte-deterministic across checkouts.
 
-One DISAGREEMENT with the build spec was found and is NOT reconciled here — see
-``book/design/flags/ch07_FLAGS.md`` (FLAG-1: σ_dL/dL of EMRI-889; FLAG-2: the
-0.256 rail threshold).  Both values are carried side by side into the JSON.
+Two DISAGREEMENTS with the build spec were found — see
+``book/design/flags/ch07_FLAGS.md``.  **FLAG-1** (σ_dL/dL of EMRI-889) was
+RESOLVED book-wide on 2026-07-31 by the author's D1 mandate: the spec figure
+``8.0e-5`` was the *absolute* σ_dL in Gpc under a *fractional* label, so the
+JSON now carries the measured pair (``sigma_dL_Gpc`` + ``rel_dL_recomputed``)
+plus a single ``rel_dL_erratum`` string, and no live bare spec value.
+**FLAG-2** (the 0.256 rail threshold) stays open, with both values side by side.
+
+The C7 decider — **the 2×2 cell B** — LANDED 2026-07-31 (evaluate 6103219 /
+combine 6103220, the resubmission of the pre-registered 6101146/6101147 after a
+pure-plumbing symlink failure).  ``ch07_c7.json`` carries the landed values in
+``conflict.decider`` and ``hosts.resolved_by_cellB``; cell B settles C7's
+magnitude and attribution, **not** the G2b↔C7 collision.
 
 Run (read-only against ``master_thesis_code/``, ``docs/`` and ``results/``):
 
@@ -386,6 +396,24 @@ def build_eddington() -> dict[str, Any]:
     }
 
 
+def _d_l_889_gpc() -> float:
+    """d_L of CRB row 889 (Gpc), read from the tracked seed61000 CRB.
+
+    Used only by D1's erratum arithmetic: the retired spec figure
+    ``8.0e-5`` was the ABSOLUTE ``sigma_dL`` in Gpc under a fractional
+    label, and ``sigma_dL = rel_dL * d_L`` has to be shown, not asserted.
+    Pure stdlib csv — no pandas at module import time.
+    """
+    import csv
+
+    path = SEED / "prepared_cramer_rao_bounds.csv"
+    with path.open(newline="", encoding="utf-8") as fh:
+        for i, row in enumerate(csv.DictReader(fh)):
+            if i == 889:
+                return float(row["luminosity_distance"])
+    raise RuntimeError(f"row 889 not present in {path}")
+
+
 def build_c7() -> dict[str, Any]:
     km = json.loads((GATE_B / "c7_kernel_measure_results.json").read_text())
     vp = json.loads((GATE_B / "c7_vs_production_results.json").read_text())
@@ -414,6 +442,11 @@ def build_c7() -> dict[str, Any]:
     # list is fixed by the driver's `crb[host_galaxy_index >= 0]` ordering.
     idx_889 = 41
     assert abs(float(rel_dl[idx_889]) - 8.983284023774961e-04) < 1e-12, "889 row moved"
+
+    # D1: the ABSOLUTE sigma_dL, in Gpc — the quantity the retired spec figure
+    # actually was.  Read from the tracked CRB so the erratum's own arithmetic
+    # is a measurement, not a transcription.
+    d_l_889 = _d_l_889_gpc()
 
     observed = np.asarray(vp["observed_incat_dln"], float)
 
@@ -481,19 +514,53 @@ def build_c7() -> dict[str, Any]:
             "staleness_caveat": (
                 "INDICATIVE ONLY: the local reduced_galaxy_catalogue.csv is not the #53 "
                 "realization parent — it differs in exactly the z_error column (#40b PV "
-                "width). Cell B is the staleness-free magnitude check."
+                "width). The 2×2 cell B is the staleness-free magnitude check — and it "
+                "ran; see resolved_by_cellB below."
             ),
+            # MN-2 (expert B): the caveat used to end on the question.  It now
+            # carries the answer, because the noscript reader gets this file's
+            # numbers and nothing else.
+            "resolved_by_cellB": {
+                "date": "2026-07-31",
+                "lcat_rail_frac": 0.907,
+                "n": "68/75",
+                "comparison_scattered": 0.892,
+                "comparison_idealised_estimator": 0.053,
+                "combined_rail_B": 0.697,
+                "combined_rail_C": 0.579,
+                "incat_class_argmax": 0.860,
+                "jobs": "evaluate 6103219 / combine 6103220",
+                "chip": "CELLB_READOUT_20260731.md",
+                "honest_nuance": (
+                    "The indicative (stale) z_error column predicted 75/76 = 98.7% of "
+                    "hosts peaking above 0.86; the staleness-free measurement gives "
+                    "90.7%. These are NOT the same statistic (reconstructed unclipped "
+                    "single-host peak vs delivered clipped L_cat argmax), so it is not "
+                    "a contradiction — the honest reading is that the staleness caveat "
+                    "resolves in the confirming direction with the delivered rail "
+                    "somewhat weaker than the stale column implied, never '98.7% "
+                    "confirmed'."
+                ),
+            },
         },
         "event_889": {
             "crb_row": 889,
             "incat_index": idx_889,
             "z_true": round(float(z_true[idx_889]), 6),
             "rel_dL_recomputed": float(f"{rel_dl[idx_889]:.5g}"),
-            "rel_dL_build_spec_value": 8.0e-5,
-            "rel_dL_flag": (
-                "FLAG-1: the build spec's chapter cards quote sigma_dL/dL = 8.0e-5 for this "
-                "row; the CRB covariance gives 8.98e-4 in every seed61000 copy. Recorded, "
-                "not reconciled — see book/design/flags/ch07_FLAGS.md."
+            # D1 (author mandate, 2026-07-31): the spec figure was the ABSOLUTE
+            # sigma_dL in Gpc carried under a fractional label.  The book now
+            # prints one corrected value; the retired figure survives only
+            # inside the erratum string below (and in the flag file).
+            "sigma_dL_Gpc": float(f"{rel_dl[idx_889] * d_l_889:.5g}"),
+            "d_L_Gpc": float(f"{d_l_889:.6g}"),
+            "rel_dL_erratum": (
+                "Erratum: the spec card carried σ_dL/dL = 8.0×10⁻⁵ — that is the absolute "
+                "σ_dL in Gpc under a fractional label. Corrected book-wide 2026-07-31; "
+                "record: ch01 flag F1 / BUILD_REPORT §5.1 item 1. Measured on CRB row 889 "
+                "of seed61000 (identical in all six copies, and equal to the rel_dL the "
+                "project's own C7 driver stores for this host): σ_dL = 7.98e-05 Gpc, "
+                "σ_dL/d_L = 8.98e-04. ch07 FLAG-1 is thereby RESOLVED."
             ),
             "eps_indicative": round(float(eps_ind[idx_889]), 4),
             "eps_rank_desc": int((eps_ind > eps_ind[idx_889]).sum()) + 1,
@@ -543,7 +610,30 @@ def build_c7() -> dict[str, Any]:
         "conflict": {
             "name": "G2b ↔ C7",
             "register_item": "BOOK_SOURCES_MAP.md §7 item 1",
-            "decider": "cell B (PREREGISTRATION_2x2_cellB.md, registered 2026-07-30, pending)",
+            # MN-1 (expert B): this string is read by a future grepper, so it
+            # carries the landed values, not the pre-registration's tense.
+            # Job-ID split rule (worklist D3): the pre-registration keeps
+            # 6101146/6101147; the RESULT cites the resubmission 6103219/6103220.
+            "decider": (
+                "the 2×2 cell B (PREREGISTRATION_2x2_cellB.md, registered 2026-07-30 "
+                "as jobs 6101146/6101147) — LANDED 2026-07-31, reported from evaluate "
+                "6103219 / combine 6103220: catalogue-leg per-event argmax at the top "
+                "of the prior for 68/75 in-catalogue events (90.7%) with EXACT host "
+                "redshifts, against 66/74 (89.2%) scattered and 5.3% under the "
+                "idealised estimator; in-catalogue class argmax 0.860 as registered; "
+                "combined-leg rail 69.7% (B) vs 57.9% (C). CELLB_READOUT_20260731.md."
+            ),
+            "decider_scope": (
+                "Cell B settles C7's MAGNITUDE and ATTRIBUTION, not the G2b↔C7 "
+                "collision: that is a derivation-level conflict no posterior can "
+                "settle. G2b's CONFIRMED verdict is untouched."
+            ),
+            "post_cellB_constraint": (
+                "New constraint delivered by the readout (CELLB_READOUT_20260731.md "
+                "§Next steps 1b): the C7 kernel fix must explicitly supersede G2b AND "
+                "must not be the historically-exonerated 'p_det inside the numerator "
+                "alone' form. The fix stays author-gated under /physics-change."
+            ),
             "binding_rule": (
                 "A C7 fix must explicitly supersede G2b and must not silently contradict "
                 "it. Neither side may be presented as settled without the other."
@@ -758,11 +848,19 @@ def main() -> None:
           f"{'PASS' if g3_ok else 'FAIL'}")
     print("    " + _gate_g4())
 
-    print("\n  flags carried (NOT reconciled — book/design/flags/ch07_FLAGS.md):")
-    print(f"    FLAG-1 sigma_dL/dL(EMRI-889): spec 8.0e-5 vs CRB "
-          f"{c7['event_889']['rel_dL_recomputed']:.3g}")
+    print("\n  flags — book/design/flags/ch07_FLAGS.md:")
+    ev = c7["event_889"]
+    print(f"    FLAG-1 sigma_dL(EMRI-889): RESOLVED by the D1 mandate 2026-07-31 — "
+          f"absolute {ev['sigma_dL_Gpc']:.3g} Gpc / d_L {ev['d_L_Gpc']:.4g} Gpc "
+          f"=> fractional {ev['rel_dL_recomputed']:.3g} (the retired spec figure was "
+          f"the absolute value under a fractional label)")
     print(f"    FLAG-2 rail threshold: artifact 0.256 vs law-solved "
-          f"{c7['rail_threshold']['recomputed_from_quoted_law']}")
+          f"{c7['rail_threshold']['recomputed_from_quoted_law']} — still OPEN, "
+          f"not reconciled")
+    print(f"    cell B (2×2) LANDED 2026-07-31: catalogue-leg rail "
+          f"{c7['hosts']['resolved_by_cellB']['lcat_rail_frac']:.3f} "
+          f"({c7['hosts']['resolved_by_cellB']['n']}) vs "
+          f"{c7['hosts']['resolved_by_cellB']['comparison_scattered']:.3f} scattered")
 
     print("\n  outputs:")
     _write("ch07_eddington.json", edd)

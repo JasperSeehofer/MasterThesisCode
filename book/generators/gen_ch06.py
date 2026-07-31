@@ -14,6 +14,13 @@ running-example dossier numbers.
       1.29); the sky widths do NOT (p95/p5 = 5.4 and 9.2).  That contrast is
       the chapter's argument for fraction coordinates, measured rather than
       asserted, AND the honest bound on the widget's own SNR rescaling.
+    * the conditioning of the **14x14** covariance -- the gate's actual
+      operand.  ``FISHER_CONDITION_NUMBER_MAX = 1e14`` is applied to the
+      14x14 *Fisher* at simulation time, and for a symmetric positive
+      definite matrix ``cond_2(Gamma^-1) = cond_2(Gamma)`` exactly, so the
+      stored covariance's condition number IS the gated quantity (up to the
+      inversion's own error).  Measured, not copied: the reviewer's expected
+      values were median 2.6e9 / p95 1.4e10 / max 3.9e12 (tomas M8).
     * the measured correlation structure of the stored 3x3 covariance
       (r_theta_phi, r_phi_u, r_theta_u), including the Spearman rank
       correlation of |r| against SNR.
@@ -47,13 +54,17 @@ running-example dossier numbers.
 
 PROVENANCE / SCOPE NOTES
 ------------------------
-1. ``sigma_dL/dL`` for event 889.  ``BOOK_DESIGN.md`` section 1 (Ch 1, Ch 4,
-   Ch 6 cards) and ``BOOK_PEDAGOGY.md`` Q6.5 carry "sigma_dL/dL = 8.0e-5".
-   The CRB row gives ``sigma_dL = 7.984e-5 **Gpc**`` at ``d_L = 0.0888792
-   Gpc``, i.e. a *fraction* of ``8.983e-4``.  8.0e-5 is the absolute Gpc
-   value wearing a fractional label.  NOT reconciled here: both are emitted
-   (``sigma_dL_Gpc`` and ``sigma_u``), the page prints both, and the
-   disagreement is filed in ``book/design/flags/ch06_FLAGS.md``.
+1. ``sigma_dL/dL`` for event 889.  **RESOLVED 2026-07-31** by author mandate
+   (``REVISION_WORKLIST.md`` section A-D1): the measured fraction
+   ``8.98e-4`` is now the book-wide spec value.  The CRB row gives
+   ``sigma_dL = 7.984e-5 **Gpc**`` at ``d_L = 0.0888792 Gpc``, i.e. a
+   *fraction* of ``8.983e-4``; the old spec figure ``8.0e-5`` was that
+   absolute Gpc value wearing a fractional label.  This generator is
+   unchanged: it always emitted the two as separate, correctly-named keys
+   (``sigma_dL_Gpc`` in Gpc and ``sigma_u`` dimensionless), which are two
+   quantities in two units, not two candidate values for one quantity.  The
+   page now prints the corrected fraction plus a one-line erratum; the
+   history stays in ``book/design/flags/ch06_FLAGS.md`` (F-ch06-1, F-ch06-2).
 2. The galaxy patch is cut from the committed baseline
    ``reduced_galaxy_catalogue.csv``.  Per ``BOOK_DESIGN.md`` section 4.2 rule
    5 that file differs from the campaign-#53 realization parent in exactly
@@ -162,7 +173,13 @@ OUT_DT2 = OUT_DIR / "ch06_dt2.json"
 # population-median SNR event.
 EVENT_IDS = [889, 361, 606, 555]
 
-# Production BallTree call (bayesian_statistics.py:2837): sigma_multiplier=1.5.
+# Production BallTree call: bayesian_statistics.py:2838 passes
+# sigma_multiplier=1.5 explicitly, and it is the ONLY production ball-search
+# call site.  Do NOT use handler.get_possible_hosts_from_ball_tree's signature
+# default of 2 (handler.py:568) -- production never uses it, and the 2.0 at
+# :2823 is a different multiplier for a different cut (the redshift window,
+# get_redshift_outer_bounds).  gen_ch03 was measured at the signature default
+# until 2026-07-31; see ch03_FLAGS.md F-ch03-2 and REVISION_WORKLIST.md §A-D2.
 SIGMA_MULTIPLIER = 1.5
 # Production redshift cap: REDSHIFT_UPPER_LIMIT = cosmological_model.max_redshift
 # (bayesian_statistics.py:2194, :2826) = HOST_DRAW_Z_MAX.
@@ -183,6 +200,34 @@ SNR_GRID = [
     239.0, 267.0, 299.0, 334.0, 373.0, 417.0, 466.0, 521.0, 582.0, 651.0,
     728.0, 813.0, 909.0, 1016.0, 1136.0, 1270.0, 1424.7236072062765,
 ]
+
+# The 14 waveform parameters, in the CRB table's own column order.  The
+# stored lower triangle is named ``delta_<later>_delta_<earlier>``, so this
+# order is what reassembles the full 14x14 covariance.
+CRB_PARAMS_14 = [
+    "M", "mu", "a", "p0", "e0", "x0", "luminosity_distance",
+    "qS", "phiS", "qK", "phiK", "Phi_phi0", "Phi_theta0", "Phi_r0",
+]
+
+# Babak et al. (2017), arXiv:1703.09722 -- this project's own EMRI population
+# reference (it is already cited by G8 evidence line L5 for the SNR-20
+# horizon).  Its Fisher forecasts quote fractional redshifted-mass precisions
+# of order 1e-5 to 1e-6 at comparable SNR.  This is a LITERATURE FIGURE, not a
+# recomputation: it is carried as a citation so the page can price its own
+# most extreme number against a published one, and the verdict the page draws
+# is explicitly "not tested here".
+BABAK_2017_MASS_PRECISION = {
+    "reference": "Babak et al. (2017), arXiv:1703.09722",
+    "quantity": "fractional redshifted-mass precision Delta(ln M_z) from EMRI Fisher forecasts",
+    "range_low": 1e-6,
+    "range_high": 1e-5,
+    "kind": "literature citation, not recomputed here",
+    "verdict": (
+        "This run is 10-100x better than the published forecasts at comparable SNR. "
+        "Whether that is the AK-vs-numerical-derivative difference, the mission "
+        "duration, or optimism of the high-SNR Fisher approximation is NOT TESTED HERE."
+    ),
+}
 
 # G8 evidence line L5: the measured PRE-fix detected population (seed600,
 # 500 events, nominal SNR >= 20). Carried as a RECORDED measurement to sit
@@ -278,13 +323,40 @@ def _cov4_fraction(row: pd.Series) -> np.ndarray:
     return cov
 
 
+def _cov14(crb: pd.DataFrame) -> np.ndarray:
+    """The full 14x14 covariances, stacked, exactly as the CRB table stores
+    them: the lower triangle lives in ``delta_<i>_delta_<j>`` columns over
+    ``CRB_PARAMS_14``, in the table's own parameter order and units (masses in
+    solar masses, distance in Gpc, angles in radians).  No rescaling: the
+    condition number of the *stored* matrix is what the pipeline's gate sees.
+
+    Returns an ``(n, 14, 14)`` array; raises if a column is missing, so a
+    schema change fails the build instead of silently degrading the number.
+    """
+    n = len(crb)
+    out = np.zeros((n, 14, 14))
+    for i, a in enumerate(CRB_PARAMS_14):
+        for j, b in enumerate(CRB_PARAMS_14[: i + 1]):
+            col = f"delta_{a}_delta_{b}"
+            if col not in crb.columns:
+                raise SystemExit(f"gen_ch06: CRB table is missing column {col!r}")
+            v = crb[col].to_numpy(dtype=float)
+            out[:, i, j] = v
+            out[:, j, i] = v
+    return out
+
+
 def _conditioning_stats(crb: pd.DataFrame) -> dict[str, Any]:
-    """Condition numbers of the assembled 3D and 4D covariances for every row,
-    against the two gates the pipeline actually applies:
+    """Condition numbers of the stored 14x14 covariance and of the assembled
+    3D and 4D blocks derived from it, against the two gates the pipeline
+    actually applies:
 
     * ``FISHER_CONDITION_NUMBER_MAX = 1e14`` on the 14x14 **Fisher**, at
       simulation time (``parameter_estimation.py:441-452``; ledger #11,
-      ``d17230d``) — an event failing it never reaches this table at all;
+      ``d17230d``) — an event failing it never reaches this table at all.
+      Sigma = Gamma^-1 and both are symmetric positive definite, so in exact
+      arithmetic ``cond_2(Sigma_14) == cond_2(Gamma_14)``: the 14x14 number
+      below IS the gated quantity, which is why it is the one worth showing;
     * ``fisher_cond_threshold = 1e16`` on the assembled 3D/4D **covariance**,
       at inference time (``bayesian_statistics.py:1964, :2443-2444``).
     """
@@ -294,7 +366,25 @@ def _conditioning_stats(crb: pd.DataFrame) -> dict[str, Any]:
         c4.append(float(np.linalg.cond(_cov4_fraction(row))))
     a3 = np.array(c3)
     a4 = np.array(c4)
+
+    cov14 = _cov14(crb)
+    a14 = np.linalg.cond(cov14)
+    eig14 = np.linalg.eigvalsh(cov14)
+    # float64 carries ~16 significant digits; a condition number kappa costs
+    # roughly log10(kappa) of them in the inverse.
+    digits_worst = 16.0 - math.log10(float(a14.max()))
+
     return {
+        "cond14": _quantiles(a14),
+        "cond14_max": _r(float(a14.max()), 5),
+        "cond14_min": _r(float(a14.min()), 5),
+        "cond14_n_above_1e14": int((a14 > 1e14).sum()),
+        "cond14_equals_fisher_cond": (
+            "Sigma = Gamma^-1, both symmetric positive definite, so "
+            "cond_2(Sigma_14) = cond_2(Gamma_14) in exact arithmetic"
+        ),
+        "cond14_all_positive_definite": bool((eig14.min(axis=1) > 0).all()),
+        "cond14_float64_digits_left_worst_case": _r(digits_worst, 3),
         "cond3": _quantiles(a3),
         "cond4": _quantiles(a4),
         "cond3_max": _r(float(a3.max()), 5),
@@ -467,6 +557,30 @@ def build_fisher(crb: pd.DataFrame, catalogue: Path | None) -> dict[str, Any]:
             },
             "d_omega_deg2": _quantiles(d_omega * (180.0 / math.pi) ** 2),
             "sigma_u": _quantiles(s_u),
+            # The chapter's most extreme number, priced against the published
+            # literature -- the chapter's own "measure before you generalize"
+            # discipline applied to itself (tomas M8).
+            "mass_precision_plausibility": {
+                "measured_sigma_Mz_frac_median": _r(float(np.median(s_mz)), 4),
+                "measured_sigma_Mz_frac_x_snr_median": _r(float(np.median(s_mz * snr)), 4),
+                "implied_at_snr_20": _r(float(np.median(s_mz * snr)) / 20.0, 4),
+                "event_889": _r(
+                    math.sqrt(float(crb.loc[889, "delta_M_delta_M"]))
+                    / float(crb.loc[889, "M"]),
+                    4,
+                ),
+                "literature": BABAK_2017_MASS_PRECISION,
+                "ratio_vs_literature_low": _r(
+                    BABAK_2017_MASS_PRECISION["range_low"]  # type: ignore[operator]
+                    / (float(np.median(s_mz * snr)) / 20.0),
+                    3,
+                ),
+                "ratio_vs_literature_high": _r(
+                    BABAK_2017_MASS_PRECISION["range_high"]  # type: ignore[operator]
+                    / (float(np.median(s_mz * snr)) / 20.0),
+                    3,
+                ),
+            },
             "conditioning": _conditioning_stats(crb),
             "scatter": scatter,
         },
@@ -506,6 +620,10 @@ def build_fisher(crb: pd.DataFrame, catalogue: Path | None) -> dict[str, Any]:
         patches = [_prepare_patch(p) for p in patches]
     else:
         patches = [None] * len(EVENT_IDS)  # type: ignore[list-item]
+
+    cond14_by_event = {
+        eid: float(np.linalg.cond(_cov14(crb.loc[[eid]])[0])) for eid in EVENT_IDS
+    }
 
     for k, eid in enumerate(EVENT_IDS):
         row = crb.loc[eid]
@@ -547,6 +665,7 @@ def build_fisher(crb: pd.DataFrame, catalogue: Path | None) -> dict[str, Any]:
             "corr3": [[_r(v, 5) for v in r_] for r_ in corr3],
             "cond3": _r(float(np.linalg.cond(cov3)), 5),
             "cond4": _r(float(np.linalg.cond(cov4)), 5),
+            "cond14": _r(cond14_by_event[eid], 5),
             "sigma_cond": _r(math.sqrt(max(sigma2_cond, 0.0)), 6),
             "proj": [_r(v, 6) for v in proj],
             "d_omega_sr": _r(

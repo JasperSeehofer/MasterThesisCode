@@ -495,7 +495,8 @@ details.num-view > summary { cursor: pointer; color: var(--muted); font-size: 0.
 @media (max-width: 1180px) {
   #bias-rail { position: static; width: auto; margin: 1rem auto; max-width: var(--measure); }
 }
-@media print { #bias-rail { display: none !important; } }
+/* (#bias-rail's print rule lives in the single consolidated @media print
+   block further down — REVISION_WORKLIST §D item 9, ux MINOR) */
 
 /* --- bias-rail pips (R-ch07-1 / R-ch11-1): live, unquantified entries ---- */
 #bias-rail .bias-rail-pipsep {
@@ -773,13 +774,122 @@ body.persona-examiner .provenance-panel { border-color: var(--accent); }
   margin-top: 3rem;
 }
 
+/* the ONE print block (merged from the former two — §D item 9, ux MINOR) */
 @media print {
   .book-topbar, .theme-toggle, .widget .widget-controls, .predict-row,
-  .persona-switch, .passport-pop, #passport-glossary, .ledger-ask { display: none !important; }
+  .persona-switch, .passport-pop, #passport-glossary, .ledger-ask,
+  #bias-rail { display: none !important; }
   body { color: #000; background: #fff; }
 }
 
 @media (max-width: 640px) {
   main.book-content { padding-top: 1.4rem; }
   .book-topbar { padding: 0.5rem 0.9rem; }
+}
+
+/* ======================================================================
+   Data-failure fallback (UX MAJOR-1 / REVISION_WORKLIST §D item 2)
+   ======================================================================
+   Rendered by Book.degradeWidgets() when a data/*.json fetch fails: the
+   widget's own <noscript> copy is promoted into the page, and the empty
+   fixed-height plot boxes it would have filled are collapsed so the
+   reader never sees a silent blank frame. */
+
+.data-fallback {
+  border-left: 3px solid var(--prior);
+  background: var(--paper-raised);
+  padding: 0.6rem 0.9rem;
+  margin: 0.8rem 0;
+  border-radius: 0 6px 6px 0;
+  font-size: 0.9rem;
+}
+.data-fallback .data-fallback-head {
+  margin: 0 0 0.5rem;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+.data-fallback p:last-child { margin-bottom: 0; }
+.widget.is-data-failed .widget-plot,
+.widget.is-data-failed .table-scroll { display: none; }
+.widget.is-data-failed .widget-controls { opacity: 0.45; }
+
+/* Symbol Passport: the chapter-gating footer line (§D item 1) */
+.passport-later {
+  margin-top: 0.35rem;
+  font-size: 0.7rem;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* ======================================================================
+   Dark-mode accent fallback (UX MAJOR-2 / REVISION_WORKLIST §D item 3)
+   ======================================================================
+   Book.theme.init() only sets data-theme when localStorage already holds
+   a preference, so a first-time visitor whose OS is dark got the dark
+   base tokens (from the media query at the top of this file) with the
+   LIGHT-tuned badge/chip accents — measured 3.05–3.97:1 against the dark
+   paper, i.e. below WCAG AA, on exactly the RATIFIED / CANDIDATE /
+   REFUTED / EXONERATED / CONFOUNDED vocabulary the reader is supposed to
+   read carefully. This block mirrors every :root[data-theme="dark"]
+   accent override so the media-query path and the explicit toggle
+   produce identical output; an explicit `light` choice still wins.
+   Measured after the fix: 9.24 / 8.04 / 7.79 / 8.01 : 1. */
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .prov-chip.toy { color: #E69F00; }
+  :root:not([data-theme="light"]) .badge.ratified  { color: #35d0a5; }
+  :root:not([data-theme="light"]) .badge.candidate { color: #E69F00; }
+  :root:not([data-theme="light"]) .badge.refuted,
+  :root:not([data-theme="light"]) .badge.exonerated { color: #ff8b47; }
+  :root:not([data-theme="light"]) .badge.confounded { color: #e096bf; }
+  :root:not([data-theme="light"]) .passport-pop .passport-note { color: #E69F00; }
+  :root:not([data-theme="light"]) .ledger-dnr { color: #ff8b47; }
+}
+
+/* ======================================================================
+   BW3 inline verdict chips (REVISION_WORKLIST §D item 5, ped B4 / §B-4)
+   ======================================================================
+   Rendered by Book.ledger._inlineReveal() inside a widget when one of its
+   data-hypothesis-tagged controls becomes active: "⚖ #N — verdict". */
+
+.ledger-inline-chips { margin: 0.35rem 0 0.2rem; }
+.ledger-inline-chip {
+  font-size: 0.78rem;
+  line-height: 1.45;
+  color: var(--muted);
+  border-left: 3px solid var(--prior);
+  background: var(--paper-raised);
+  border-radius: 0 6px 6px 0;
+  padding: 0.3rem 0.6rem;
+  margin-top: 0.3rem;
+}
+.ledger-inline-chip strong { color: var(--ink); font-variant-numeric: tabular-nums; }
+
+/* ======================================================================
+   Predict grading (REVISION_WORKLIST §D item 8, mara MAJOR-3)
+   ======================================================================
+   Book.predictReveal marks the graded option (data-predict-correct) once
+   the reveal is open: the correct button gains a ✓ ring, a wrong CHOSEN
+   button is struck. Colors are the book's Okabe-Ito accents, tuned per
+   theme in the dark blocks below. */
+
+.predict-row button.predict-correct {
+  border-color: #009E73;
+  box-shadow: inset 0 0 0 1px #009E73;
+}
+.predict-row button.predict-correct::after { content: " ✓"; color: #009E73; }
+.predict-row button.predict-missed { text-decoration: line-through; opacity: 0.75; }
+
+:root[data-theme="dark"] .predict-row button.predict-correct {
+  border-color: #35d0a5;
+  box-shadow: inset 0 0 0 1px #35d0a5;
+}
+:root[data-theme="dark"] .predict-row button.predict-correct::after { color: #35d0a5; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .predict-row button.predict-correct {
+    border-color: #35d0a5;
+    box-shadow: inset 0 0 0 1px #35d0a5;
+  }
+  :root:not([data-theme="light"]) .predict-row button.predict-correct::after { color: #35d0a5; }
 }

@@ -165,6 +165,11 @@
       ],
     });
 
+    // NB: "data/chNN_widget1.json" is a PLACEHOLDER path (this template is
+    // reference-only and unlinked). If you open the template directly, the
+    // resulting fetch 404 in the console is expected, not a bug — replace the
+    // path with your chapter's real generator output. (§D-9 guard comment,
+    // the worklist's one granted _template.html exception.)
     Book.loadJSON("data/chNN_widget1.json").then((d) => {
       // Use Book.themedPlot for every Plotly figure (theme re-layout is automatic):
       // const plot = Book.themedPlot("chNN-plot-1", tracesFor(x0), layoutFn);
