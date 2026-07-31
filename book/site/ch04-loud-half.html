@@ -1,0 +1,1255 @@
+<!DOCTYPE html>
+<!-- Doctype + charset added by the integrator (WIDGET_REQUESTS R-ch07-3):
+     without the doctype the page renders in quirks mode and KaTeX refuses to run. -->
+<meta charset="utf-8" />
+<title>Ch. 4 — The Universe Only Shows You Its Loud Half | EMRI Dark Siren Book</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="description" content="Conditioning on detection: p_det as a measured horizon, the full-volume selection integral D(h), and what happens to a real H0 posterior when you delete it." />
+<link rel="stylesheet" href="vendor/katex/katex.min.css" />
+<link rel="stylesheet" href="css/book.css" />
+
+<style>
+  /* Page-local only (css/book.css is frozen). Nothing here restyles a shared
+     class; these are new elements this chapter introduces. */
+  .ch04-verdict {
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--planck);
+    background: var(--paper-raised);
+    border-radius: 8px;
+    padding: 0.7rem 0.9rem;
+    margin: 0.7rem 0 0;
+    font-size: 0.9rem;
+  }
+  .ch04-verdict .ch04-verdict-label {
+    display: block;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--planck);
+    margin-bottom: 0.25rem;
+  }
+  .ch04-readouts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem 1.2rem;
+    margin: 0.5rem 0 0;
+    font-size: 0.86rem;
+    color: var(--muted);
+  }
+  .ch04-readouts strong { color: var(--accent); font-variant-numeric: tabular-nums; }
+  .ch04-locked { opacity: 0.45; pointer-events: none; }
+  .ch04-note {
+    font-size: 0.82rem;
+    color: var(--muted);
+    margin: 0.6rem 0 0;
+  }
+  .ch04-interlude {
+    border: 1px solid var(--border);
+    border-top: 3px solid var(--prior);
+    background: var(--paper-raised);
+    border-radius: var(--radius);
+    padding: 1.1rem 1.25rem;
+    margin: 2.4rem 0 1.4rem;
+  }
+  .ch04-interlude .ch04-interlude-kicker {
+    display: block;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 0.2rem;
+  }
+  .ch04-interlude h3 { margin-top: 0.1rem; }
+  .ch04-interlude dl { margin: 0.8rem 0 0; }
+  .ch04-interlude dt {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--muted);
+    margin-top: 0.7rem;
+  }
+  .ch04-interlude dd { margin: 0.1rem 0 0; }
+  .ch04-fwd {
+    display: inline-block;
+    font-size: 0.72rem;
+    border: 1px dashed var(--border);
+    border-radius: 999px;
+    padding: 0 0.45em;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  @media print { .ch04-locked { opacity: 1; } }
+</style>
+
+<div class="book-shell">
+  <header class="book-topbar">
+    <a class="brand" href="index.html">From Bayes&rsquo; Rule to H&#8320;
+      <small>an interactive discovery book</small>
+    </a>
+    <nav class="book-nav" data-nav aria-label="Chapters"><!-- built from js/manifest.js --></nav>
+    <button class="theme-toggle" data-theme-toggle type="button">☽ Dark</button>
+  </header>
+
+  <main class="book-content">
+    <h1>Chapter 4 — The Universe Only Shows You Its Loud Half</h1>
+    <p class="subtitle">
+      If I don&rsquo;t divide by what I <em>could</em> have seen, my posterior doesn&rsquo;t get
+      noisy — it runs to the edge of the prior and stops caring what the truth is.
+    </p>
+
+    <!-- ================= COLD OPEN (B1) ================= -->
+    <div class="callout without">
+      <span class="callout-label">The failure this chapter answers</span>
+      Chapter 3 built a likelihood: sum over every catalogue galaxy in the localization
+      ball, weight each by how likely it is to host an EMRI, take the ratio of sums. It is
+      a defensible object. Run it on 1588 real detections — and it peaks at
+      <strong>h&nbsp;=&nbsp;0.600</strong>, the bottom of the prior grid. Not near the truth.
+      Not <em>inside</em> the plausible range. Below it, hard against the wall.
+    </div>
+
+    <div class="widget">
+      <h4>The cold open — what &ldquo;wrong&rdquo; looks like here
+        <span class="prov-chip real">real: seed61000/real_r1</span>
+      </h4>
+      <p style="margin-top:0; color:var(--muted); font-size:0.88rem;">
+        1588 detected events, combined in log space. The blue curve is the estimator with
+        its selection denominator deleted. The dashed line is the mock universe&rsquo;s
+        injected truth, <span class="term" data-term="h">$h_{\rm true} = 0.73$</span>.
+        Nothing about this is a wide error bar.
+      </p>
+      <div id="ch04-cold-plot" class="widget-plot"></div>
+      <div class="ch04-readouts">
+        <span>MAP <strong id="ch04-cold-map">&mdash;</strong></span>
+        <span>posterior mean <strong id="ch04-cold-mean">&mdash;</strong></span>
+        <span>density at $h=0.86$, relative to the peak: <strong id="ch04-cold-edge">&mdash;</strong></span>
+      </div>
+      <details class="num-view">
+        <summary>Show me the numbers</summary>
+        <div class="table-scroll"><table class="num-table" id="ch04-cold-table"></table></div>
+      </details>
+      <noscript>
+        <p><strong>Static fallback.</strong> With the selection denominator deleted, the
+        combined posterior over 1588 real events is a spike against the lower grid edge:
+        MAP = 0.600, posterior mean = 0.600, and the density at the opposite edge
+        ($h = 0.86$) is 3.8&times;10<sup>&minus;279</sup> of the peak. The truth is 0.73.</p>
+      </noscript>
+    </div>
+
+    <p>
+      A wrong answer that is <em>noisy</em> is a statistics problem. A wrong answer that is
+      <em>railed</em> — pinned to the boundary of the prior, with the posterior mean equal to
+      the lower edge to six significant figures — is a <strong>physics</strong> problem. The
+      likelihood is not merely uncertain about $h$; it is monotonically confident in a
+      direction, and it would happily go further if the grid let it.
+    </p>
+    <p>
+      Something in that likelihood is not a likelihood. This chapter finds it, names it, and
+      hands you the switch.
+    </p>
+
+    <!-- ================= §1 ================= -->
+    <h2>1. What did we condition on?</h2>
+
+    <p>
+      Write down, in words, what Chapter 3&rsquo;s likelihood actually says. For event $i$ it
+      says: <em>given a Hubble parameter $h$, how probable is this measured distance and sky
+      position, if the source sat in one of these candidate galaxies?</em> It is the
+      probability of the data given that <strong>an EMRI happened</strong>.
+    </p>
+    <p>
+      But that is not the experiment. You did not observe &ldquo;an EMRI happened&rdquo;. You
+      observed &ldquo;an EMRI happened <strong>and LISA&rsquo;s pipeline recovered it above
+      threshold</strong>&rdquo;. Those are different events, and the second one is not a
+      neutral filter on the first: detection prefers loud sources, loud means nearby, and
+      &ldquo;nearby&rdquo; is exactly the thing $h$ is supposed to be inferred from. The
+      selection is <em>correlated with the parameter</em>. That is the whole problem.
+    </p>
+
+    <div class="voice-derivation">
+      <span class="voice-label">The conditioning rule
+        <span class="badge ratified">RATIFIED</span>
+        <span class="prov-chip">G2c D3</span>
+        <span class="prov-chip">Mandel, Farr &amp; Gair 2019, arXiv:1809.02063</span>
+      </span>
+      When events enter the analysis only if they pass a detection criterion, the correct
+      per-event likelihood is the <em>detected-data</em> likelihood: the unconditioned
+      likelihood divided by the probability that a source drawn from the population would
+      have been detected at all,
+      $$ p(x_i \mid h,\ \text{detected}) \;=\; \frac{p(x_i \mid h)}{p(\mathcal{D} \mid h)} ,
+         \qquad p(\mathcal{D}\mid h) \;=\; \int p_{\rm det}\,(\text{population}) . $$
+      The denominator is called the <strong>selection integral</strong>. It depends on $h$,
+      it is the same for every event, and it does not cancel.
+    </div>
+
+    <p>
+      Two features of that denominator decide everything that follows. First, it is an
+      <em>integral over the whole population</em>, not over this event&rsquo;s neighbourhood:
+      the question it answers is &ldquo;of all the sources this universe could have produced,
+      what fraction would I have seen?&rdquo; Second, it is raised to the power of the number
+      of events — each event divides by it once, so $N$ events divide by it $N$ times. With
+      $N$ in the thousands, a denominator that is even mildly sloped in $h$ becomes an
+      enormous monotone pull. Delete it, and you have not removed a small correction; you
+      have removed the only thing standing between your posterior and the wall.
+    </p>
+
+    <div class="callout defect">
+      <span class="callout-label">Trap &mdash; &ldquo;Selection effects are a small correction.&rdquo;</span>
+      They were worth <strong>17.8% in h</strong> — larger than the entire Hubble tension the
+      book opened with. <span class="prov-chip">ledger&nbsp;#9</span>
+    </div>
+
+    <details class="gw-reader">
+      <summary>&#9656; For the GW reader</summary>
+      <p>
+        In this pipeline the conditioning is implemented as a <em>single ratio</em> per event,
+        <code>p_i = (beta_G * L_cat + B_num) / D(h)</code>
+        (<code>bayesian_statistics.py:3006-3009</code>, <code>:1042-1048</code>), mapping onto
+        Gray et al. (2020), arXiv:1908.06050, Eq. (9) with the two-term convex form
+        rearranged into one quotient (deviation <span class="prov-chip">G2c D4</span>; the
+        rearrangement avoids a division by $\beta_{\bar G}\to 0$ and is algebraically
+        identical). The numerator&rsquo;s second term is the branch for events whose host is
+        <em>not</em> in the catalogue — Chapter 5&rsquo;s subject
+        <span class="ch04-fwd">⏭ Ch 5</span>. Everything this chapter toggles is the
+        <em>denominator</em> $D(h)$; the numerator is held fixed throughout, so the two live
+        states differ by exactly one factor.
+      </p>
+      <p>
+        The mixture identity behind that rearrangement was verified to 2.8&times;10<sup>&minus;16</sup>
+        on 65,108 diagnostic rows, and re-verified at 3.9&times;10<sup>&minus;13</sup> /
+        9.2&times;10<sup>&minus;13</sup> in Gate&nbsp;B
+        (<span class="prov-chip">HANDOFF_20260730.md §2</span>). The chapter therefore treats
+        &ldquo;multiply $D(h)$ back in&rdquo; as an exact operation on the delivered
+        likelihoods, not an approximation.
+      </p>
+    </details>
+
+    <!-- ================= §2 ================= -->
+    <h2>2. $p_{\rm det}$: a horizon you can measure</h2>
+
+    <p>
+      To divide by the probability of detection you must first <em>have</em> a probability of
+      detection. Call it
+      <span class="term" data-term="pdet">$p_{\rm det}$</span>: given a source at luminosity
+      distance <span class="term" data-term="dL">$d_L$</span>, what fraction of the sources
+      the population model produces at that distance would clear the detection threshold?
+      In this pipeline the threshold is a matched-filter
+      <span class="term" data-term="snr">signal-to-noise ratio</span> of
+      $\rho_{\rm thr} = 20$, applied to a deterministic optimal SNR
+      (<span class="prov-chip">constants.py SNR_THRESHOLD</span>).
+    </p>
+    <p>
+      You could try to model that. The project measures it instead, from an
+      <strong>injection campaign</strong>: hundreds of thousands of simulated EMRIs, drawn
+      from the population model, each pushed through the same waveform and response code the
+      real analysis uses, each with its own SNR. And then one observation makes the whole
+      thing cheap.
+    </p>
+
+    <div class="voice-derivation">
+      <span class="voice-label">The detection-horizon survival estimator
+        <span class="badge ratified">RATIFIED</span>
+        <span class="prov-chip">simulation_detection_probability.py</span>
+        <span class="prov-chip">Finn &amp; Chernoff 1993, arXiv:gr-qc/9301003</span>
+        <span class="prov-chip">Finn 1996, arXiv:gr-qc/9601048</span>
+      </span>
+      Gravitational-wave strain amplitude falls as $1/d_L$, so injection $k$ — recorded with
+      SNR $\rho_k$ at distance $d_{L,k}$ — would sit exactly at threshold if it were moved to
+      its <strong>detection horizon</strong>
+      $$ d_{{\rm hor},k} \;=\; \frac{\rho_k\, d_{L,k}}{\rho_{\rm thr}} . $$
+      Detection is then simply &ldquo;is the source closer than its own horizon?&rdquo;, and
+      the detection probability is <em>exactly</em> the survival function of the horizon
+      distribution:
+      $$ p_{\rm det}(d_L) \;=\; \Pr\bigl(d_{\rm hor} \ge d_L\bigr)
+         \;=\; \text{fraction of injections still detectable at } d_L . $$
+      No kernel, no fit, no smoothing parameter — a sorted array and a suffix count.
+    </div>
+
+    <p>
+      The elegance is in what is <em>missing</em> from that formula: $h$. The horizon set
+      $\{d_{{\rm hor},k}\}$ is a property of the injections&rsquo; amplitudes, and when you
+      re-map redshifts to distances with a different Hubble parameter, the $1/d_L$ amplitude
+      scaling and the $d_L$ rescaling cancel. The survival grid is built <strong>once</strong>
+      and reused for every trial $h$. This is not an argument in a docstring; it is checkable,
+      and the chapter&rsquo;s generator checks it: the estimator&rsquo;s distance ceiling reads
+      <strong>9.164987 Gpc</strong> at $h = 0.60$, at $h = 0.73$ and at $h = 0.86$, and the
+      survival curves at those $h$ differ by a maximum of <strong>0.0</strong> — bitwise
+      identical arrays. The production run&rsquo;s own log prints the same
+      <code>dl_max = 9.1650 Gpc</code> on all 41 grid points.
+    </p>
+
+    <div class="callout defect">
+      <span class="callout-label">Trap &mdash; &ldquo;$p_{\rm det}$ is a detail of the simulation, not of the physics.&rdquo;</span>
+      $p_{\rm det}$ appears in the denominator of <em>every</em> event&rsquo;s likelihood and its
+      $h$-dependence is a direct multiplicative tilt on the posterior. Ledger&nbsp;#33: fixing
+      a tail overshoot in the $p_{\rm det}$ estimator moved the MAP
+      <strong>0.760 → 0.750</strong>. <span class="prov-chip">ledger #33</span>
+    </div>
+
+    <!-- ============ I4.2 ============ -->
+    <div class="widget">
+      <h4>I4.2 — The Horizon Breather
+        <span class="prov-chip real">real: injection_pool_mix200k_20260728</span>
+        <span class="prov-chip real">real: seed61000/real_r1 run log</span>
+      </h4>
+      <p style="margin-top:0; color:var(--muted); font-size:0.88rem;">
+        <strong>Manipulate</strong> the trial Hubble parameter $h$. <strong>Watch</strong> the
+        left panel: the survival curve never moves, but the redshift shells slide along it,
+        because $h$ is what turns a redshift into a distance. <strong>Then watch</strong> the
+        right panel: the shaded area <em>is</em> $D(h)$ — the visible volume of the universe
+        under that hypothesis, breathing in and out.
+      </p>
+      <div class="widget-controls">
+        <label for="ch04-h-slider">Trial Hubble parameter $h$:</label>
+        <input id="ch04-h-slider" type="range" aria-describedby="ch04-horizon-readouts" />
+        <span class="readout">h = <strong id="ch04-h-readout">&mdash;</strong></span>
+      </div>
+      <div id="ch04-survival-plot" class="widget-plot" style="min-height:280px"></div>
+      <div id="ch04-volume-plot" class="widget-plot" style="min-height:280px"></div>
+      <div class="ch04-readouts" id="ch04-horizon-readouts">
+        <span>$D(h)$ <strong id="ch04-D-readout">&mdash;</strong> Mpc³ sr⁻¹</span>
+        <span>relative to $D(0.73)$: <strong id="ch04-Drel-readout">&mdash;</strong></span>
+        <span>selection domain $z \le$ <strong id="ch04-zmax-readout">&mdash;</strong></span>
+      </div>
+      <p class="ch04-note">
+        <strong>Provenance, precisely.</strong> The survival curve and the plotted integrand are
+        recomputed here from the production injection pool with the project&rsquo;s own
+        estimator object; the $D(h)$ <em>number</em> in the readout is the production run&rsquo;s
+        own logged value. The two differ in level by a factor 1.0444–1.0627, because production
+        evaluates $p_{\rm det}$ per ecliptic-latitude band and averages over equal-area sky
+        pixels (<code>bayesian_statistics.py:1074-1088</code>) while this recomputation uses the
+        pooled isotropic survival. Across the whole $h$-grid that factor itself varies by only
+        <strong>1.75%</strong> — so the shape you are dragging is the same object, at a slightly
+        different level. The page says so rather than quietly rescaling one to the other.
+      </p>
+      <details class="num-view">
+        <summary>Show me the numbers</summary>
+        <div class="table-scroll"><table class="num-table" id="ch04-horizon-table"></table></div>
+      </details>
+      <noscript>
+        <p><strong>Static fallback.</strong> Left panel: $p_{\rm det}(d_L)$ falls monotonically
+        from ≈0.99 at 20 Mpc to 0 at the pool&rsquo;s ceiling of 9.165 Gpc; the curve is
+        identical for every trial $h$. Right panel: the visible-volume integrand
+        $p_{\rm det}(d_L(z,h))\,(dV_c/dz\,d\Omega)/(1+z)$ rises from zero, peaks at
+        $z \approx 0.38$ (at $h = 0.60$) to $0.48$ (at $h = 0.86$), and is cut off at the
+        selection-domain edge $z_{\max}(h)$. Its area is
+        $D(h)$, which falls monotonically from 1.881×10⁹ Mpc³ sr⁻¹ at $h = 0.60$ to
+        1.258×10⁹ at $h = 0.86$ — a factor 1.4955 across the grid.</p>
+      </noscript>
+    </div>
+
+    <details class="gw-reader">
+      <summary>&#9656; For the GW reader — the pool, and the $p_{\rm det}$ defect shelf</summary>
+      <p>
+        The staged production pool is <code>gate_b_20260730/injection_pool_mix200k_20260728/</code>:
+        707 task CSVs, <strong>200,100 data rows</strong>, <code>z_cut = 1.5</code>, spanning two
+        code revisions (a straggler-resubmit split, flagged by the loader itself). It is
+        <em>stratified</em> — a = 99,014, b = 50,947, c = 50,139 — and only stratum <code>a</code>
+        carries the population measure, so the pooled 1D survival is built from those 99,014 rows
+        and the b/c strata serve other legs (<code>simulation_detection_probability.py:370-400</code>).
+        Of the stratum-a injections, <strong>7.62%</strong> clear $\rho \ge 20$: that is the
+        chapter title, measured, in this venue (population model, $z \le 1.5$, $h_{\rm inj}=0.73$).
+        The grid ceiling is 10% headroom above the largest horizon in the stratum
+        (8.3318 → 9.1650 Gpc).
+      </p>
+      <p>
+        The claim file quotes this pool as &ldquo;<strong>200,807</strong> rows&rdquo;
+        (<span class="prov-chip">CLAIM_2D_BIAS_20260730.md:587-588</span>). Counting the 707 CSV
+        header lines gives exactly 200,100 + 707 = 200,807, so the two numbers are the same pool
+        counted two ways. This chapter quotes the data-row count and says which is which rather
+        than picking one; the discrepancy is logged in
+        <code>book/design/flags/ch04_FLAGS.md</code>.
+      </p>
+      <p>The estimator&rsquo;s own history is one of the project&rsquo;s richest defect shelves:</p>
+      <div class="table-scroll">
+        <table class="num-table">
+          <tr><th>Change</th><th>What moved</th><th>Ledger</th></tr>
+          <tr><td>KDE $p_{\rm det}$ → simulation-based importance sampling</td><td>fixed; insufficient alone</td><td>#3 (Phase 11.1)</td></tr>
+          <tr><td><code>fill_value=0.0</code> → <code>None</code> (extrapolation deleted real support)</td><td>bias −9.2% → −6.9%</td><td>#8 (<code>44d5358</code>)</td></tr>
+          <tr><td>$h$-dependent zero-fill cutoff $c_0 \propto 1/h$</td><td>cluster MAP 0.860 → 0.7650</td><td>#16 (Phase 44)</td></tr>
+          <tr><td>principled monotonic bridge below $d_{L,\min}$</td><td>1D closure 0.7309 (+0.19σ)</td><td>#21 (<code>2b33cad</code>)</td></tr>
+          <tr><td>kernel tail overshoot → the survival estimator above</td><td>$D(h)$ decline −3.9% → −0.87%; 1D 0.760 → 0.750</td><td>#33 (<code>5e94139</code>)</td></tr>
+        </table>
+      </div>
+      <p>
+        And three <span class="badge exonerated">EXONERATED</span> hypotheses that must not be
+        re-tried: $p_{\rm det}$ grid resolution 30 vs 60 bins — not a bias source
+        (<span class="prov-chip">ledger #10</span>); Nadaraya–Watson vs local-linear estimator —
+        bias-neutral, identical MAPs (<span class="prov-chip">ledger #34</span>); and adding
+        $p_{\rm det}$ <em>inside the numerator alone</em> — refuted, and it breaks calibrated
+        controls (<span class="prov-chip">ledger #66</span>: &ldquo;do not cargo-cult it&rdquo;).
+        The pool used here is <em>not</em> the $z$-resolved variant (FIX-2,
+        <span class="prov-chip">ledger #82</span>); that is Chapter 9&rsquo;s subject
+        <span class="ch04-fwd">⏭ Ch 9</span>.
+      </p>
+    </details>
+
+    <!-- ================= §3 ================= -->
+    <h2>3. $D(h)$, and why the <em>whole</em> volume</h2>
+
+    <p>
+      Now assemble the denominator — call it <span class="term" data-term="Dh">$D(h)$</span>.
+      Take the population&rsquo;s expected distribution of sources in redshift <span class="term" data-term="z">$z$</span> — the comoving volume element
+      <span class="term" data-term="dVc">$dV_c/dz\,d\Omega$</span>, divided by $(1+z)$ for the
+      source-to-detector time dilation — weight each shell by the fraction of sources there
+      that would be detected, and integrate over everything:
+    </p>
+
+    <div class="voice-derivation">
+      <span class="voice-label">The full-volume selection normalization
+        <span class="badge ratified">RATIFIED</span>
+        <span class="prov-chip">G2c §2 row D(h)</span>
+        <span class="prov-chip">bayesian_statistics.py:1013</span>
+      </span>
+      $$ \underbrace{D(h)}_{\text{Mpc}^3\,\text{sr}^{-1}}
+         \;=\; \int_{z_{\min}}^{z_{\max}(h)}
+         \bigl\langle p_{\rm det}\bigl(d_L(z,h),\Omega\bigr)\bigr\rangle_{\Omega}\;
+         \frac{dV_c}{dz\,d\Omega}\;\frac{dz}{1+z} $$
+      with the sky average taken over equal-area HEALPix pixels. The population&rsquo;s overall
+      rate normalization and its mass integral are $z$-independent under this
+      campaign&rsquo;s surrogate and cancel between numerator and denominator, so only the
+      volume and the time dilation survive here (Option A;
+      <span class="prov-chip">G2c §3</span>). Babak et al. (2017), arXiv:1703.09722 for the
+      rate; Mandel, Farr &amp; Gair (2019), arXiv:1809.02063 for the detector-frame rate density.
+    </div>
+
+    <div class="voice-adjudicator">
+      <span class="voice-label">Citation correction — carried, not propagated
+        <span class="badge finding">FINDING</span>
+        <span class="prov-chip">G2c §6 C2</span>
+      </span>
+      The <code>precompute_completion_denominator</code> docstring cites &ldquo;Gray Eqs. 33 /
+      A.19&rdquo; for $D(h)$. That attribution is wrong: $D(h)$ carries no incompleteness
+      weight, so it is the <strong>denominator of (A14)</strong> — the full-volume GW selection
+      normalization $p(D_{\rm GW}\mid s, H_0)$ expanded — not the $\bar G$-restricted (A18)/(A19)
+      object. The mathematics implemented is as documented; only the citation is stale, from an
+      era when $D(h)$ normalized a different term. This book cites (A14) and says why.
+    </div>
+
+    <p>
+      Why the <em>whole</em> volume, though? The local version looks more consistent: the
+      numerator sums over candidate galaxies inside one localization ball, so surely the
+      denominator should sum over the same ball. It is a genuinely tempting mistake, and the
+      project shipped it first.
+    </p>
+    <p>
+      The answer is that numerator and denominator are answering different questions. The
+      numerator asks &ldquo;given $h$, how well does <em>this</em> data match a source at
+      <em>these</em> candidate hosts?&rdquo; The denominator asks &ldquo;given $h$, what
+      fraction of <em>all</em> sources this universe could have produced would have been
+      detected at all?&rdquo; — a statement about the population, not about this event&rsquo;s
+      neighbourhood. Restrict it to the window and the normalization becomes event-dependent
+      in a way that does not cancel across the stack, and every event contributes its own
+      residual tilt.
+    </p>
+    <p>
+      Here is what <span class="term" data-term="Dh">$D(h)$</span> actually does across the grid, from the production run&rsquo;s own
+      log: it falls from $1.881\times10^{9}$ Mpc³ sr⁻¹ at $h = 0.60$ to
+      $1.521\times10^{9}$ at $h = 0.73$ to $1.258\times10^{9}$ at $h = 0.86$ — a factor
+      <strong>1.4955</strong> over the grid. Two effects fight, and the loser is worth knowing.
+      Raising $h$ maps a given redshift to a <em>smaller</em> distance, so more of the
+      population clears threshold there (at $z = 0.5$, $p_{\rm det}$ runs 0.285 at $h = 0.60$ to
+      0.553 at $h = 0.86$), and the fixed distance ceiling reaches to <em>higher</em> redshift
+      ($z_{\max}$: 1.1334 at $h = 0.60$, and at the top grid point it would run past the
+      analysis&rsquo;s own redshift cap, so it is held at 1.5 — the same domain the candidate
+      window uses, so that a truncation moves numerator and denominator together). Both push
+      $D$ up. They lose anyway, because the comoving volume
+      element itself carries $(c/H_0)^3 \propto h^{-3}$ — a factor 2.95 across this grid. Net:
+      the visible universe shrinks by a third as you turn $h$ from 0.60 to 0.86,
+      monotonically.
+      Per event that is $\ln D(0.60) - \ln D(0.86) = 0.4025$. Multiply by 1588 events and the
+      denominator is worth <strong>639 nats</strong> of monotone pull across the grid.
+    </p>
+    <p>
+      For comparison: with $D(h)$ in place, the entire data-driven preference — the depth of
+      $\sum_i \ln p_i(h)$ at its peak relative to the grid edges — is <strong>18.8 nats</strong>
+      (low edge) and <strong>20.8 nats</strong> (high edge). The denominator you are about to
+      delete is worth roughly <strong>thirty times the whole signal</strong>. That is why the
+      failure mode is a rail and not a nudge: you are not perturbing the evidence, you are
+      burying it.
+    </p>
+
+    <!-- ============ predict, then reveal + I4.1 ============ -->
+    <div class="widget" data-predict-id="ch04-map-guess">
+      <h4>Predict, then reveal — where does the repaired estimator land?</h4>
+      <p style="margin-top:0;">
+        You have already seen where this estimator goes with no denominator at all: the wall at
+        0.600. Now commit to the other end. Divide by the full-volume $D(h)$ — the same 1588
+        events, the same numerator, one extra factor — and drag the marker to where you think the
+        combined MAP will land. Then lock it in. Your guess stays on the plot, and in the margin
+        of the rest of the book.
+      </p>
+      <div class="widget-controls">
+        <label for="ch04-guess">My prediction for the MAP:</label>
+        <input id="ch04-guess" type="range" min="0.60" max="0.86" step="0.005" value="0.70"
+               aria-describedby="ch04-guess-readout" />
+        <span class="readout" id="ch04-guess-readout">h = <strong id="ch04-guess-val">0.700</strong></span>
+      </div>
+      <div class="predict-row" id="ch04-predict-1" data-predict-id="ch04-map-guess">
+        <button type="button" data-predict="0.700">Lock my prediction</button>
+      </div>
+      <div class="reveal">
+        The measured answer on this run is <strong>h = 0.740</strong>, posterior mean
+        <strong>0.7321</strong> — interior, and 0.010 above the injected truth. If you put the
+        marker exactly on 0.730 you made the assumption this book is built to attack: that a
+        repaired estimator lands <em>on</em> the truth. It lands somewhere; whether that somewhere
+        is unbiased is a statement about many realizations, not this one. What the repair
+        genuinely buys is the difference between a peak and a wall.
+        <span class="prov-chip real">real: seed61000/real_r1</span>
+        <span class="prov-chip">REALISTIC_READOUT.md §1</span>
+      </div>
+    </div>
+
+    <div class="widget" id="ch04-i41">
+      <h4>I4.1 — Delete the Denominator
+        <span class="prov-chip real">real: seed61000/real_r1</span>
+        <span class="prov-chip">1588 events · 41-point h grid</span>
+      </h4>
+      <p style="margin-top:0; color:var(--muted); font-size:0.88rem;">
+        Three states of the same 1588 real likelihoods. Two of them are computed live in your
+        browser from the run&rsquo;s own per-event curves; the third is a <em>recorded
+        measurement</em> from an earlier code era and is labelled as such — it is not
+        recomputed, and it is not blended with the live ones.
+      </p>
+      <div class="toggle-row ch04-locked" id="ch04-mode-row" role="group" aria-label="Selection denominator">
+        <button type="button" data-mode="off" data-hypothesis="none">$D(h)$ deleted</button>
+        <button type="button" data-mode="local" data-hypothesis="9">local window (recorded)</button>
+        <button type="button" data-mode="on" data-hypothesis="9">full-volume $D(h)$</button>
+      </div>
+      <div id="ch04-denom-plot" class="widget-plot"></div>
+      <div class="widget-controls">
+        <span class="readout">MAP <strong id="ch04-denom-map">&mdash;</strong></span>
+        <span class="readout">mean <strong id="ch04-denom-mean">&mdash;</strong></span>
+        <span class="readout">y axis:</span>
+        <div class="toggle-row" id="ch04-scale-row" role="group" aria-label="Vertical scale">
+          <button type="button" data-scale="linear" aria-pressed="true">density</button>
+          <button type="button" data-scale="log">log density</button>
+        </div>
+        <button type="button" id="ch04-restore" class="theme-toggle">↺ Restore the full-volume $D(h)$</button>
+      </div>
+      <div class="ch04-verdict" id="ch04-verdict"></div>
+      <p class="ch04-note">
+        The combination is a sum of log-likelihoods — $\sum_i \ln p_i(h)$, the production rule
+        in <code>combine_log_space()</code> — and deleting the denominator is implemented here as
+        adding $N\ln D(h)$ back on, which is exact because $D(h)$ is one number per grid point,
+        shared by every event. The linear-density view is a display option only. Note also that
+        the $h$-grid is <em>not</em> uniform (0.01-spaced on [0.60, 0.65] and [0.80, 0.86],
+        0.005-spaced between): every normalization here uses a non-uniform trapezoid, and
+        nothing on this page takes a numerical derivative across those seams.
+      </p>
+      <details class="num-view">
+        <summary>Show me the numbers</summary>
+        <div class="table-scroll"><table class="num-table" id="ch04-denom-table"></table></div>
+      </details>
+      <noscript>
+        <p><strong>Static fallback.</strong> Three posteriors over the same 1588 events.
+        <em>$D(h)$ deleted</em>: MAP 0.600, mean 0.600 — a rail against the lower grid edge.
+        <em>Local-window denominator</em> (recorded, Phase 32, a different venue and code era):
+        MAP 0.60, bias −17.8%. <em>Full-volume $D(h)$</em>: MAP 0.740, mean 0.7321, an interior
+        peak whose density at both grid edges is below 10⁻⁸ of the peak. The Phase-32
+        replacement of the local-window denominator by the full-volume integral moved that
+        era&rsquo;s MAP 0.60 → 0.73 and its bias −17.8% → 0.0% (ledger #9).</p>
+      </noscript>
+    </div>
+
+    <div class="voice-adjudicator">
+      <span class="voice-label">What the live numbers are, and are not
+        <span class="badge finding">FINDING</span>
+        <span class="prov-chip">REALISTIC_READOUT.md §1</span>
+        <span class="prov-chip">ledger #9</span>
+      </span>
+      The <strong>0.60 → 0.73</strong> movement and the <strong>−17.8% → 0.0%</strong> bias in
+      the bias rail are the <em>Phase 32</em> measurement, on that era&rsquo;s venue
+      (<span class="prov-chip">H0R:1980</span>). The live curves you just toggled are campaign
+      #51/#53, realization r1: MAP <strong>0.740</strong>, posterior mean <strong>0.7321</strong>
+      — one realization of one seed, reproducing this run&rsquo;s published row exactly. That is
+      <em>not</em> a bias measurement: bias is a property of an estimator over realizations
+      (Chapter 2), the ten realistic runs range 0.700–0.740, and the 1D channel&rsquo;s apparent
+      unbiasedness is later shown to be a near-cancellation of opposing terms rather than a
+      clean result <span class="ch04-fwd">⏭ Ch 11</span>. What this chapter establishes is
+      narrower and more solid: <strong>without a full-volume selection denominator the
+      estimator does not have a bias, it has a wall.</strong>
+    </div>
+
+    <!-- ================= §4 ================= -->
+    <h2>4. Counted exactly once</h2>
+
+    <p>
+      There is a principle hiding in what you just did, and it governs the rest of this book.
+      Every physical weight in the estimator — the volume prior, the rate weight, the detection
+      probability, and later the redshift and mass kernels — must appear in the numerator and in
+      the denominator <strong>exactly once</strong>. Not zero times, which is what deleting
+      <span class="term" data-term="Dh">$D(h)$</span> does. And not twice.
+    </p>
+
+    <div class="voice-derivation">
+      <span class="voice-label">The counted-once rule
+        <span class="badge ratified">RATIFIED</span>
+        <span class="prov-chip">G2b §3.2</span>
+        <span class="prov-chip">G6_starvation_postmortem.md:24-33</span>
+      </span>
+      An estimator is <em>prior-consistent</em> when the same population prior multiplies the
+      same measurement likelihood on both sides of the ratio. Every configuration in this
+      project&rsquo;s history that railed or &ldquo;starved&rdquo; violated that rule in one
+      direction or the other: bare numerator with a bare global denominator, a $4\pi$-fixed
+      numerator with a mismatched denominator, a numerator-only volume tilt, a smeared
+      denominator with an unsmeared numerator. Consistency — not any single factor — is the cure.
+    </div>
+
+    <p>
+      Twice is a real failure mode, and it has a receipt. In May the selection denominator was
+      being applied <em>both</em> inside the per-event likelihood <em>and</em> again as an outer
+      $-N\log D$ term. Removing the duplicate (<code>6754ddb</code>) eliminated a
+      <strong>+0.020…+0.025</strong> shift in $h$ and moved a closure test at a deliberately
+      wrong truth from 0.6708 to 0.6555 — a pull of $+5.62\sigma$ down to $+1.67\sigma$
+      <span class="prov-chip">ledger #20</span>. What makes this exhibit worth keeping is that
+      the duplicate had been added <em>on purpose</em>, in an earlier phase, as a fix for a
+      monotone $h$-pull (Phase 43-H1, <span class="prov-chip">ledger #15</span>) — and was later found to be
+      actively harmful. A correction that points the right way can still be a second copy of
+      something you already had.
+    </p>
+    <p>
+      The same rule retired the most seductive negative result in the project&rsquo;s history.
+      In June the conclusion was formally recorded that in-catalogue photometric dark sirens are
+      <strong>information-starved</strong> — that no normalization could recover a peaked $H_0$
+      from this data, because the information was not there. It was overturned two days later
+      <span class="prov-chip">ledger #41 → #52</span>: starvation was &ldquo;a property of
+      prior-<em>inconsistent</em> estimators, not of the data&rdquo;. A negative result about
+      your estimator is not a negative result about nature. The full exhibit is in
+      <a href="museum.html#ex-starvation">the Defect Museum</a>.
+    </p>
+
+    <!-- ================= dossier ================= -->
+    <div class="dossier">
+      <div class="dossier-title">Event dossier — EMRI-889 after this chapter</div>
+      <table>
+        <tr><td>d_L</td><td>88.9 Mpc (&sigma;_dL/dL = 8.0&times;10&#8315;&#8309;)</td></tr>
+        <tr><td>SNR</td><td>1425 — the loudest of the 1590 rows in this run&rsquo;s table</td></tr>
+        <tr><td>host</td><td>catalogue index 859360 — one of only 76 events with a catalogued host</td></tr>
+        <tr><td>z</td><td><em>still unknown</em></td></tr>
+        <tr class="dossier-new"><td>detection horizon</td><td>6.33 Gpc — it could have been seen <strong>71&times;</strong> further away than it is</td></tr>
+        <tr class="dossier-new"><td>p_det at its own distance</td><td>0.983 — 889 is not the point</td></tr>
+        <tr class="dossier-new"><td>what this chapter added</td><td>the events we <em>never saw</em>. 889 sails over the threshold; the estimator is only honest because it also accounts for the 92% of the population that did not.</td></tr>
+      </table>
+    </div>
+
+    <p>
+      That last row is the chapter in one line. Every number in the dossier is about a detection.
+      $D(h)$ is the only place in the whole estimator where the <em>non-detections</em> speak —
+      and they outnumber 889 twelve to one in this pool.
+    </p>
+
+    <!-- ================= §5 ================= -->
+    <h2>5. What the fixed estimator still cannot answer</h2>
+
+    <p>
+      So: conditioning repaired, denominator installed, posterior interior. In a mock universe
+      where every host galaxy is in the catalogue, this estimator recovers the truth. Now look at
+      what it is being asked to do here.
+    </p>
+    <p>
+      Of the 1588 detected events in this run, <strong>76</strong> have a host galaxy in the
+      catalogue. The other <strong>1512</strong> do not — the source sits somewhere the catalogue
+      has no entry at all. (The run&rsquo;s parameter table lists 1590 rows, 76 of them
+      in-catalogue; two rows carry no delivered posterior.)
+    </p>
+    <p>
+      Chapter 3&rsquo;s likelihood is a sum over candidate hosts. For 95% of these events that sum
+      is over the wrong galaxies, or over nothing at all. What does your repaired estimator say
+      about them?
+    </p>
+
+    <div class="callout without">
+      <span class="callout-label">The failure the next chapter answers</span>
+      Nothing coherent. As written it either returns zero — and the project really did ship the
+      version that silently dropped such events, discarding <strong>58% of the event set</strong>
+      on a deep venue before it was found <span class="prov-chip">ledger #54</span> — or it
+      returns the likelihood of galaxies that are not the host. A second branch is needed, for
+      the host you cannot see.
+    </div>
+
+    <!-- ================= self-check ================= -->
+    <h2>Self-check</h2>
+
+    <div class="selfcheck">
+      <p>Q4.1 &nbsp; You delete the selection denominator entirely. Predict the direction of the
+      bias in $h$ <em>before</em> reasoning about the formula, then check yourself.</p>
+      <details class="answer">
+        <summary>Show answer</summary>
+        <div class="answer-body">
+          The undenominated likelihood over-rewards configurations where detection is easy —
+          nearby sources — so it prefers $h$ values that make the observed distances correspond
+          to <em>low</em> redshift, i.e. it rails <strong>low</strong>. The project measured
+          exactly this: before the full-volume denominator, the MAP sat at 0.60, the bottom of
+          the prior, with a bias of −17.8%; installing the correct $D(h)$ moved it to 0.73 and
+          the bias to 0.0% <span class="prov-chip">ledger #9</span>.
+        </div>
+      </details>
+    </div>
+
+    <div class="selfcheck">
+      <p>Q4.2 &nbsp; Why must the denominator be integrated over the <strong>full volume</strong>
+      rather than over the same local candidate window as the numerator? The local version looks
+      more &ldquo;consistent&rdquo;.</p>
+      <details class="answer">
+        <summary>Show answer</summary>
+        <div class="answer-body">
+          Because the denominator answers a different question. The numerator asks &ldquo;given
+          this $h$, how well does this data match a source at these candidate hosts?&rdquo;; the
+          denominator asks &ldquo;given this $h$, what fraction of <em>all</em> sources that could
+          have occurred would have been detected at all?&rdquo; — a question about the whole
+          universe the population model describes, not about this event&rsquo;s neighbourhood.
+          Restricting it to the window makes the normalization event-dependent in a way that does
+          not cancel, and the project measured that this single mis-scoping was the dominant bias
+          of its era <span class="prov-chip">ledger #9</span>.
+        </div>
+      </details>
+    </div>
+
+    <div class="selfcheck">
+      <p>Q4.3 &nbsp; $p_{\rm det}$ is estimated from a finite pool of injections. Name two
+      distinct ways a finite pool can bias the <em>inference</em> rather than merely add noise.</p>
+      <details class="answer">
+        <summary>Show answer</summary>
+        <div class="answer-body">
+          (i) Extrapolation policy: filling $p_{\rm det}$ with 0 outside the grid silently deletes
+          real support, which the project had to fix explicitly
+          (<span class="prov-chip">ledger #8</span>, −9.2% → −6.9%); (ii) support mismatch — if the
+          pool is thin where the catalogue&rsquo;s candidates actually live, the estimator&rsquo;s
+          effective sample size collapses in exactly the cells that matter, which is why the
+          project&rsquo;s ratified campaign design imposes a <strong>minimum ESS per node</strong>
+          rather than trusting a large total pool. Both are systematic, not stochastic.
+        </div>
+      </details>
+    </div>
+
+    <div class="selfcheck">
+      <p>Q4.4 &nbsp; The selection integral depends on $h$. Why does that dependence <em>not</em>
+      simply cancel between numerator and denominator?</p>
+      <details class="answer">
+        <summary>Show answer</summary>
+        <div class="answer-body">
+          Because they are integrals of different things over different supports: the numerator
+          carries the GW measurement&rsquo;s own likelihood evaluated at the candidate hosts, the
+          denominator carries the population rate times detectability over the whole volume. Their
+          $h$-dependences are genuinely different functions, and the ratio&rsquo;s $h$-dependence
+          <em>is</em> the selection correction. When a piece of it <em>does</em> cancel, that is a
+          theorem worth proving, not an assumption — the project&rsquo;s G1 gate checked one such
+          cancellation ($\Sigma_{\rm glob} \equiv \bar n\,\beta_G$) and found a
+          <strong>−17.2% end-to-end residual</strong>, which is now part of claim C9
+          <span class="prov-chip">G1_beta_g_check.md:14-29</span>
+          <span class="ch04-fwd">⏭ Ch 9</span>.
+        </div>
+      </details>
+    </div>
+
+    <div class="selfcheck">
+      <p>Q4.5 <em>(transfer)</em> &nbsp; Your fixed estimator now recovers truth in a mock where
+      every host is in the catalogue. In the real venue, only 76 of 1588 events have a catalogued
+      host. What does your likelihood currently say about the other 1512?</p>
+      <details class="answer">
+        <summary>Show answer</summary>
+        <div class="answer-body">
+          Nothing coherent — as written it either returns zero (if the candidate list is empty) or
+          the likelihood of the wrong galaxies. The project actually shipped the &ldquo;returns
+          zero and the event is silently dropped&rdquo; version, which discarded <strong>58% of
+          events</strong> on a deep venue before it was found and fixed
+          <span class="prov-chip">ledger #54</span>. The correct answer requires a second branch
+          for uncatalogued hosts: Chapter 5.
+        </div>
+      </details>
+    </div>
+
+    <!-- ================= MUSEUM INTERLUDE ================= -->
+    <div class="ch04-interlude">
+      <span class="ch04-interlude-kicker">Defect Museum · interlude</span>
+      <h3>The $p_{\rm det}$ anchor <span class="badge refuted">REFUTED</span></h3>
+      <dl>
+        <dt>The hypothesis</dt>
+        <dd>
+          By May, with the denominator in place, a stubborn residual remained. $p_{\rm det}$ is
+          built on a finite grid in $d_L$, and its very first bin — the $d_L \to 0$ asymptote,
+          where detection should be certain — was measurably too low. That underestimate sits in
+          the denominator of every event. It looked like an obvious suspect, and it was a
+          <em>real</em> defect, not an imagined one.
+        </dd>
+        <dt>The pre-registered prediction</dt>
+        <dd>
+          Raise the anchor and the MAP moves toward truth. Plan 45-06 raised it from
+          <strong>0.7931 to 0.8873</strong> — a <strong>+12%</strong> lift on the first bin of
+          the selection function, applied to every event at once.
+        </dd>
+        <dt>The measured outcome</dt>
+        <dd>
+          The MAP did not move. Not &ldquo;moved a little&rdquo;: <strong>1D 0.7550 and 2D 0.7450,
+          unchanged, zero grid steps</strong>
+          <span class="prov-chip">ledger #17</span>
+          <span class="prov-chip">H0R:184-208, :1989-1990</span>.
+        </dd>
+        <dt>What it cost</dt>
+        <dd>Three plan cycles — 45-02/03, 45-04/05 and 45-06. The two shipped anchor fixes
+          moved the production MAP by at most a single grid step; the decisive +12% escalation
+          moved it by none.</dd>
+        <dt>The transferable lesson</dt>
+        <dd>
+          <strong>The layer you can see is not the layer that matters.</strong> A quantity can be
+          genuinely wrong, genuinely important-looking, and sit on top of a mechanism that
+          integrates it away. Before you spend a cycle fixing something because it is visibly
+          defective, ask what the answer is actually a function of — and prefer the test that can
+          <em>refute</em> your suspect over the one that can only confirm it.
+        </dd>
+      </dl>
+      <p style="margin-bottom:0;">
+        Full exhibit, alongside the rest of the collection:
+        <a href="museum.html#ex-pdet-anchor">the Defect Museum &rarr; the p_det anchor</a>.
+      </p>
+    </div>
+
+    <!-- ================= provenance ================= -->
+    <div class="provenance-panel">
+      <h4>Provenance panel — every stamp used in this chapter</h4>
+      <ul>
+        <li><span class="badge ratified">RATIFIED</span> <code>G2c §2 row D(h)</code>, <code>§3</code>, <code>D3</code>, <code>D4</code> — the selection integral, the horizon-survival $p_{\rm det}$, the single-ratio assembly</li>
+        <li><span class="badge ratified">RATIFIED</span> <code>G2b §3.2</code> + <code>G6_starvation_postmortem.md:24-33</code> — the &ldquo;counted exactly once&rdquo; rule</li>
+        <li><span class="badge ratified">RATIFIED</span> <code>simulation_detection_probability.py</code> module docstring — $d_{\rm hor} = \rho\,d_L/\rho_{\rm thr}$, $h$-invariance, survival estimator</li>
+        <li><span class="badge finding">FINDING</span> <code>G2c §6 C2</code> — the $D(h)$ docstring&rsquo;s Gray citation is stale; the object is the denominator of (A14)</li>
+        <li><span class="badge finding">FINDING</span> <code>ledger #9</code> / <code>H0R:1980</code> (Phase 32) — local-window → full-volume $D(h)$: MAP 0.60 → 0.73, bias −17.8% → 0.0%</li>
+        <li><span class="badge finding">FINDING</span> <code>ledger #20</code> (<code>6754ddb</code>) — $D(h)$ double-counted; removal eliminated +0.020…+0.025, closure pull +5.62σ → +1.67σ</li>
+        <li><span class="badge finding">FINDING</span> <code>ledger #3, #8, #16, #21, #33</code> — the $p_{\rm det}$ estimator&rsquo;s defect shelf</li>
+        <li><span class="badge finding">FINDING</span> <code>ledger #54</code> (<code>8db6c6e</code>) — zero-host events silently dropped, 58% of a deep venue</li>
+        <li><span class="badge refuted">REFUTED</span> <code>ledger #17</code> — the $p_{\rm det}$ $d_L\to0$ anchor: +12% lift, zero grid steps</li>
+        <li><span class="badge exonerated">EXONERATED</span> <code>ledger #10</code> (grid resolution), <code>#34</code> (NW vs LL), <code>#66</code> ($p_{\rm det}$ inside the numerator alone) — do not re-try</li>
+        <li><span class="badge finding">FINDING</span> <code>ledger #41 → #52</code> — &ldquo;information starvation&rdquo; overturned</li>
+        <li><span class="badge open">OPEN</span> <code>ledger #82</code> — pooled vs $z$-resolved survival $S(d_L\mid z)$; this chapter uses the pooled estimator, Chapter 9 opens the other</li>
+        <li>Data: <code>results/campaign51_20260728/realistic_20260729/seed61000/real_r1/posteriors/</code>, <code>.../seed61000/mixture_leg_log_extract.txt</code>, <code>.../seed61000/prepared_cramer_rao_bounds.csv</code>, <code>.../gate_b_20260730/injection_pool_mix200k_20260728/</code></li>
+        <li>Cross-check: the &ldquo;full-volume&rdquo; curve reproduces <code>REALISTIC_READOUT.md §1</code> row <em>61000 / r1</em> — MAP 0.740, mean 0.7321 — as a hard gate in the generator</li>
+        <li>Open flag: <code>book/design/flags/ch04_FLAGS.md</code> (pool row count 200,807 vs 200,100; $D(h)$ pooled-vs-sky-aware level)</li>
+      </ul>
+    </div>
+
+    <p class="book-footer">
+      Data generated by <code>book/generators/gen_ch04.py</code> (read-only against the main
+      package and <code>results/</code>). This page renders fully offline — Plotly and KaTeX are
+      vendored under <code>vendor/</code>.
+    </p>
+  </main>
+</div>
+
+<script src="js/manifest.js"></script>
+<script src="vendor/plotly/plotly.min.js"></script>
+<script src="vendor/katex/katex.min.js"></script>
+<script src="vendor/katex/auto-render.min.js"></script>
+<script src="js/book.js"></script>
+<script>
+  (function () {
+    "use strict";
+
+    // ---------------------------------------------------------------
+    // Palette (mirrors css/book.css tokens; Plotly needs literals)
+    // ---------------------------------------------------------------
+    var C = {
+      accent: "#0072B2",
+      accentDark: "#6fb8e8",
+      warn: "#D55E00",
+      rec: "#CC79A7",
+      ok: "#009E73",
+      guess: "#E69F00",
+      prior: "#9e9e9e",
+    };
+    function ink() { return Book.isDark() ? "#eef1f5" : "#1a1a1a"; }
+    function grid() { return Book.isDark() ? "#33373f" : "#d8dce1"; }
+    function live() { return Book.isDark() ? C.accentDark : C.accent; }
+
+    function baseLayout(xTitle, yTitle) {
+      return {
+        margin: { l: 62, r: 18, t: 26, b: 46 },
+        xaxis: { title: xTitle, gridcolor: grid(), zeroline: false },
+        yaxis: { title: yTitle, gridcolor: grid(), zeroline: false },
+        paper_bgcolor: "rgba(0,0,0,0)",
+        plot_bgcolor: "rgba(0,0,0,0)",
+        font: { color: ink(), size: 12 },
+        showlegend: false,
+        hovermode: "x unified",
+      };
+    }
+
+    function truthShape(h) {
+      return {
+        type: "line", x0: h, x1: h, y0: 0, y1: 1, yref: "paper",
+        line: { color: Book.isDark() ? "#eef1f5" : "#1a1a1a", dash: "dot", width: 1.6 },
+      };
+    }
+
+    function fmt(v, n) { return (v === null || v === undefined || !isFinite(v)) ? "—" : Number(v).toFixed(n); }
+    function sci(v) {
+      if (!isFinite(v) || v === 0) return String(v);
+      var e = Math.floor(Math.log10(Math.abs(v)));
+      return (v / Math.pow(10, e)).toFixed(3) + "e" + e;
+    }
+    function table(el, headers, rows) {
+      var html = "<tr>" + headers.map(function (h) { return "<th>" + h + "</th>"; }).join("") + "</tr>";
+      rows.forEach(function (r) {
+        html += "<tr>" + r.map(function (c) { return "<td>" + c + "</td>"; }).join("") + "</tr>";
+      });
+      el.innerHTML = html;
+    }
+
+    // ---------------------------------------------------------------
+    // The bias rail (BW1). Entries are the PHASE-32 measurement
+    // (ledger #9) — the rail is the project's history, not this run's
+    // single realization. `active` follows I4.1's toggle.
+    // ---------------------------------------------------------------
+    function renderRail(mode) {
+      Book.biasRail({
+        entries: [
+          {
+            label: "cat-only, no D(h)",
+            bias: -0.178,
+            note: "Phase 32 / ledger #9 — MAP 0.60, the bottom of the prior",
+            active: mode !== "on",
+          },
+          {
+            label: "full-volume D(h)",
+            bias: 0.0,
+            note: "Phase 32 / ledger #9 — MAP 0.73. Venue-scoped: campaign #51/#53 r1 reads MAP 0.740.",
+            active: mode === "on",
+          },
+        ],
+      });
+    }
+    renderRail("off");
+
+    // ===============================================================
+    // I4.1 + cold open — data/ch04_denominator.json
+    // ===============================================================
+    Book.loadJSON("data/ch04_denominator.json").then(function (d) {
+      var H = d.h_grid, N = d.n_events, hTrue = d.h_true;
+
+      function normalize(logArr) {
+        var m = -Infinity, i;
+        for (i = 0; i < logArr.length; i++) if (logArr[i] > m) m = logArr[i];
+        var y = logArr.map(function (v) { return Math.exp(v - m); });
+        return Book.normalizePosterior(y, H);
+      }
+      // Live, in-browser, log-space: the two states differ by N ln D(h).
+      var postOn = normalize(d.log_like_sum.slice());
+      var postOff = normalize(d.log_like_sum.map(function (v, i) { return v + N * d.log_D[i]; }));
+
+      // ---- cold open -------------------------------------------------
+      var coldPlot = Book.themedPlot(
+        "ch04-cold-plot",
+        [{
+          x: H, y: postOff, mode: "lines", fill: "tozeroy",
+          line: { color: C.warn, width: 2.5 }, fillcolor: "rgba(213,94,0,0.16)",
+          name: "D(h) deleted",
+          hovertemplate: "h = %{x:.3f}<br>density = %{y:.4g}<extra></extra>",
+        }],
+        function () {
+          var L = baseLayout("h = H₀ / 100", "posterior density");
+          L.xaxis.range = [0.595, 0.865];
+          L.shapes = [truthShape(hTrue)];
+          L.annotations = [
+            { x: hTrue, y: 1, yref: "paper", text: "truth 0.73", showarrow: false, yanchor: "bottom", font: { size: 11 } },
+            { x: 0.60, y: postOff[0], text: "MAP 0.600", showarrow: true, arrowhead: 0, ax: 46, ay: -26, font: { size: 11, color: C.warn } },
+          ];
+          return L;
+        }
+      );
+      void coldPlot;
+      document.getElementById("ch04-cold-map").textContent = fmt(d.summary.off.map, 3);
+      document.getElementById("ch04-cold-mean").textContent = fmt(d.summary.off.mean, 6);
+      document.getElementById("ch04-cold-edge").textContent = d.summary.off.edge_high_over_peak.toExponential(1);
+      table(
+        document.getElementById("ch04-cold-table"),
+        ["h", "posterior density (D(h) deleted)", "relative to peak"],
+        H.map(function (h, i) {
+          return [fmt(h, 3), postOff[i].toExponential(3), (postOff[i] / Math.max.apply(null, postOff)).toExponential(2)];
+        })
+      );
+
+      // ---- I4.1 ------------------------------------------------------
+      var modeRow = document.getElementById("ch04-mode-row");
+      var modeBtns = modeRow.querySelectorAll("[data-mode]");
+      var verdictEl = document.getElementById("ch04-verdict");
+      var mapEl = document.getElementById("ch04-denom-map");
+      var meanEl = document.getElementById("ch04-denom-mean");
+      var scaleRow = document.getElementById("ch04-scale-row");
+      var state = { mode: "off", scale: "linear", guess: null };
+
+      var VERDICTS = {
+        off: "<span class='ch04-verdict-label'>Measured, this run</span>" +
+          "There is no peak to report. The posterior is a rail against the lower grid edge: " +
+          "MAP <strong>0.600</strong>, posterior mean <strong>0.600000</strong>, and the density at " +
+          "h = 0.86 is 3.8&times;10<sup>&minus;279</sup> of the value at 0.60. Deleting D(h) injects " +
+          "<strong>639 nats</strong> of monotone pull across the grid, against a data signal of 18.8 nats.",
+        local: "<span class='ch04-verdict-label'>Recorded measurement — not recomputed</span>" +
+          "The local-window denominator was the shipped estimator before Phase 32. On that era's venue it " +
+          "gave MAP <strong>0.60</strong>, bias <strong>&minus;17.8%</strong>; replacing it with the " +
+          "full-volume D(h) moved the MAP to <strong>0.73</strong> and the bias to <strong>0.0%</strong> " +
+          "(ledger&nbsp;#9, H0R:1980). That estimator does not exist in campaign #51/#53, so this state " +
+          "shows the recorded numbers and the run's full-volume curve for scale — it is deliberately " +
+          "<em>not</em> a live recomputation, and the two must not be read as one measurement. " +
+          "<strong>Has this been tried?</strong> Yes — it is ledger row #9, and the verdict is above.",
+        on: "<span class='ch04-verdict-label'>Measured, this run</span>" +
+          "An interior peak: MAP <strong>0.740</strong>, posterior mean <strong>0.7321</strong>, with the " +
+          "density at both grid edges below 10<sup>&minus;8</sup> of the peak. This reproduces " +
+          "REALISTIC_READOUT.md §1's published row for seed 61000 / r1 exactly. It is one realization — " +
+          "the ten realistic runs span 0.700–0.740 — so read it as <em>not railed</em>, not as <em>unbiased</em>.",
+      };
+
+      function tracesFor() {
+        var t = [];
+        if (state.mode === "local") {
+          t.push({
+            x: H, y: postOn, mode: "lines",
+            line: { color: C.prior, width: 1.8, dash: "dot" },
+            name: "campaign #51/#53, full-volume D(h) — for scale",
+            hovertemplate: "h = %{x:.3f}<br>density = %{y:.4g}<extra></extra>",
+          });
+        } else {
+          var y = state.mode === "on" ? postOn : postOff;
+          t.push({
+            x: H, y: y, mode: "lines", fill: "tozeroy",
+            line: { color: state.mode === "on" ? live() : C.warn, width: 2.6 },
+            fillcolor: state.mode === "on" ? "rgba(0,114,178,0.15)" : "rgba(213,94,0,0.16)",
+            name: state.mode === "on" ? "full-volume D(h)" : "D(h) deleted",
+            hovertemplate: "h = %{x:.3f}<br>density = %{y:.4g}<extra></extra>",
+          });
+        }
+        return t;
+      }
+
+      function layoutFor() {
+        var L = baseLayout("h = H₀ / 100", state.scale === "log" ? "posterior density (log)" : "posterior density");
+        L.xaxis.range = [0.595, 0.865];
+        if (state.scale === "log") L.yaxis.type = "log";
+        L.shapes = [truthShape(hTrue)];
+        L.annotations = [{ x: hTrue, y: 1, yref: "paper", text: "truth 0.73", showarrow: false, yanchor: "bottom", font: { size: 11 } }];
+        if (state.guess !== null) {
+          L.shapes.push({
+            type: "line", x0: state.guess, x1: state.guess, y0: 0, y1: 1, yref: "paper",
+            line: { color: C.guess, dash: "dash", width: 2 },
+          });
+          L.annotations.push({
+            x: state.guess, y: 0.92, yref: "paper", text: "your guess", showarrow: false,
+            font: { size: 11, color: C.guess }, yanchor: "top",
+          });
+        }
+        if (state.mode === "local") {
+          L.shapes.push({
+            type: "line", x0: 0.60, x1: 0.60, y0: 0, y1: 1, yref: "paper",
+            line: { color: C.rec, dash: "dashdot", width: 2.6 },
+          });
+          L.annotations.push({
+            x: 0.60, y: 0.55, yref: "paper", text: "Phase 32, recorded:<br>MAP 0.60 (bias −17.8%)",
+            showarrow: false, xanchor: "left", font: { size: 11, color: C.rec },
+          });
+        }
+        return L;
+      }
+
+      var denomPlot = Book.themedPlot("ch04-denom-plot", tracesFor(), layoutFor);
+
+      function setMode(mode) {
+        state.mode = mode;
+        modeBtns.forEach(function (b) {
+          b.setAttribute("aria-pressed", String(b.getAttribute("data-mode") === mode));
+        });
+        denomPlot.update(tracesFor());
+        verdictEl.innerHTML = VERDICTS[mode];
+        if (mode === "local") {
+          mapEl.textContent = "0.60 (recorded)";
+          meanEl.textContent = "—";
+        } else {
+          var s = mode === "on" ? d.summary.on : d.summary.off;
+          mapEl.textContent = fmt(s.map, 3);
+          meanEl.textContent = fmt(s.mean, 6);
+        }
+        renderRail(mode);
+        Book.renderMath(verdictEl);
+      }
+
+      modeBtns.forEach(function (b) {
+        b.addEventListener("click", function () { setMode(b.getAttribute("data-mode")); });
+      });
+      scaleRow.querySelectorAll("[data-scale]").forEach(function (b) {
+        b.addEventListener("click", function () {
+          state.scale = b.getAttribute("data-scale");
+          scaleRow.querySelectorAll("[data-scale]").forEach(function (o) {
+            o.setAttribute("aria-pressed", String(o === b));
+          });
+          denomPlot.update(tracesFor());
+        });
+      });
+      document.getElementById("ch04-restore").addEventListener("click", function () { setMode("on"); });
+
+      table(
+        document.getElementById("ch04-denom-table"),
+        ["h", "D(h) [Mpc³ sr⁻¹]", "density — D(h) deleted", "density — full-volume D(h)"],
+        H.map(function (h, i) {
+          return [fmt(h, 3), sci(d.D_h[i]), postOff[i].toExponential(3), postOn[i].toExponential(3)];
+        })
+      );
+
+      // ---- predict-then-reveal (numeric marker; see WIDGET_REQUESTS R-ch04-1)
+      var guessSlider = document.getElementById("ch04-guess");
+      var guessVal = document.getElementById("ch04-guess-val");
+      var predictBox = document.getElementById("ch04-predict-1");
+      var lockBtn = predictBox.querySelector("[data-predict]");
+
+      function applyGuess(v) {
+        state.guess = Number(v);
+        guessVal.textContent = fmt(state.guess, 3);
+        modeRow.classList.remove("ch04-locked");
+        modeBtns.forEach(function (b) { b.removeAttribute("disabled"); });
+        document.getElementById("ch04-restore").removeAttribute("disabled");
+        denomPlot.update(tracesFor());
+      }
+      modeBtns.forEach(function (b) { b.setAttribute("disabled", "disabled"); });
+      var restoreBtn = document.getElementById("ch04-restore");
+      restoreBtn.setAttribute("disabled", "disabled");
+
+      var saved = Book.getPrediction("ch04-map-guess");
+      if (saved !== null && isFinite(Number(saved))) {
+        guessSlider.value = saved;
+        guessVal.textContent = fmt(Number(saved), 3);
+        lockBtn.setAttribute("data-predict", saved);
+      }
+      guessSlider.addEventListener("input", function () {
+        guessVal.textContent = fmt(Number(guessSlider.value), 3);
+        lockBtn.setAttribute("data-predict", guessSlider.value);
+      });
+      Book.predictReveal(predictBox.closest(".widget"), function (choice) { applyGuess(choice); });
+      if (saved !== null && isFinite(Number(saved))) applyGuess(saved);
+
+      setMode("off");
+    });
+
+    // ===============================================================
+    // I4.2 — data/ch04_horizon.json
+    // ===============================================================
+    Book.loadJSON("data/ch04_horizon.json").then(function (d) {
+      var H = d.h_grid, Z = d.z_grid, DL = d.dl_grid_Gpc;
+      var iRef = H.indexOf(0.73) >= 0 ? H.indexOf(0.73) : Math.floor(H.length / 2);
+      var idx = iRef;
+
+      // Shell markers: (d_L(z,h), p_det) straight from the generator — both
+      // columns are evaluated at the same z-nodes by the same call, so the
+      // markers sit exactly on the survival curve with no browser-side
+      // re-derivation and no interpolation.
+      var SHELLS = [0.25, 0.5, 0.75, 1.0];
+      var shellIdx = SHELLS.map(function (zs) {
+        var k = 0, best = Infinity;
+        for (var i = 0; i < Z.length; i++) {
+          var dz = Math.abs(Z[i] - zs);
+          if (dz < best) { best = dz; k = i; }
+        }
+        return k;
+      });
+      function shellMarkers(j) {
+        var xs = [], ys = [], txt = [];
+        shellIdx.forEach(function (k) {
+          if (d.p_det_of_z[j][k] <= 0) return;
+          xs.push(d.dl_of_z_Gpc[j][k]);
+          ys.push(d.p_det_of_z[j][k]);
+          txt.push("z = " + Z[k].toFixed(2));
+        });
+        return { x: xs, y: ys, text: txt };
+      }
+
+      function survivalTraces(j) {
+        var mk = shellMarkers(j);
+        return [
+          {
+            x: DL, y: d.p_det_of_dl, mode: "lines",
+            line: { color: live(), width: 2.6 },
+            name: "p_det(d_L)",
+            hovertemplate: "d_L = %{x:.2f} Gpc<br>p_det = %{y:.3f}<extra></extra>",
+          },
+          {
+            x: mk.x, y: mk.y, text: mk.text, mode: "markers+text",
+            textposition: "top right",
+            marker: { color: C.guess, size: 9, symbol: "circle" },
+            textfont: { size: 10, color: C.guess },
+            name: "redshift shells",
+            hovertemplate: "%{text}<br>d_L = %{x:.2f} Gpc<br>p_det = %{y:.3f}<extra></extra>",
+          },
+        ];
+      }
+
+      function volumeTraces(j) {
+        return [{
+          x: Z, y: d.visible_volume_integrand[j], mode: "lines", fill: "tozeroy",
+          line: { color: C.ok, width: 2.4 }, fillcolor: "rgba(0,158,115,0.18)",
+          name: "visible volume per unit z",
+          hovertemplate: "z = %{x:.3f}<br>integrand = %{y:.4g}<extra></extra>",
+        }];
+      }
+
+      var maxInteg = 0;
+      d.visible_volume_integrand.forEach(function (row) {
+        row.forEach(function (v) { if (v > maxInteg) maxInteg = v; });
+      });
+
+      var survPlot = Book.themedPlot("ch04-survival-plot", survivalTraces(idx), function () {
+        var L = baseLayout("d_L  [Gpc]", "p_det — fraction still detectable");
+        L.yaxis.range = [0, 1.04];
+        L.annotations = [{
+          x: 0.02, y: 1.0, xref: "paper", yref: "paper", xanchor: "left", yanchor: "top",
+          text: "the curve never moves — only the shells slide", showarrow: false,
+          font: { size: 11, color: Book.isDark() ? "#9aa2b1" : "#5b6270" },
+        }];
+        return L;
+      });
+
+      var volPlot = Book.themedPlot("ch04-volume-plot", volumeTraces(idx), function () {
+        var L = baseLayout("z", "p_det · (dV_c/dz dΩ) / (1+z)   [Mpc³ sr⁻¹]");
+        L.yaxis.range = [0, maxInteg * 1.08];
+        L.xaxis.range = [0, Math.max.apply(null, Z)];
+        L.annotations = [{
+          x: 0.98, y: 1.0, xref: "paper", yref: "paper", xanchor: "right", yanchor: "top",
+          text: "shaded area = D(h)", showarrow: false,
+          font: { size: 11, color: Book.isDark() ? "#9aa2b1" : "#5b6270" },
+        }];
+        return L;
+      });
+
+      var hOut = document.getElementById("ch04-h-readout");
+      var dOut = document.getElementById("ch04-D-readout");
+      var dRelOut = document.getElementById("ch04-Drel-readout");
+      var zOut = document.getElementById("ch04-zmax-readout");
+
+      function draw(j) {
+        idx = j;
+        survPlot.update(survivalTraces(j));
+        volPlot.update(volumeTraces(j));
+        hOut.textContent = fmt(H[j], 3);
+        dOut.textContent = sci(d.D_h_production[j]);
+        dRelOut.textContent = fmt(d.D_h_production[j] / d.D_h_production[iRef], 4) + "×";
+        zOut.textContent = fmt(d.z_max_by_h[j], 4);
+      }
+
+      var slider = document.getElementById("ch04-h-slider");
+      Book.gridSlider({
+        sliderEl: slider,
+        readoutEl: null,
+        steps: H,
+        onStep: function (v, i) { draw(i); },
+      });
+      slider.value = String(iRef);
+      draw(iRef);
+
+      table(
+        document.getElementById("ch04-horizon-table"),
+        ["h", "D(h) production [Mpc³ sr⁻¹]", "D(h) pooled recompute", "ratio", "z_max(h)"],
+        H.map(function (h, i) {
+          return [
+            fmt(h, 3), sci(d.D_h_production[i]), sci(d.D_h_pooled_recompute[i]),
+            fmt(d.D_h_pooled_recompute[i] / d.D_h_production[i], 4), fmt(d.z_max_by_h[i], 4),
+          ];
+        })
+      );
+    });
+  })();
+</script>

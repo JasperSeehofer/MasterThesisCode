@@ -1,0 +1,1798 @@
+<!DOCTYPE html>
+<!-- Doctype + charset added by the integrator (WIDGET_REQUESTS R-ch07-3):
+     without the doctype the page renders in quirks mode and KaTeX refuses to run. -->
+<meta charset="utf-8" />
+<title>Ch. 9 — Building a Universe to Break Your Estimator | EMRI Dark Siren Book</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="description" content="The forward model: the population, the plunge window, the injection pool, the realistic host-observation model — and the two normalization estimands whose disagreement about one run is the live claim C9." />
+<link rel="stylesheet" href="vendor/katex/katex.min.css" />
+<link rel="stylesheet" href="css/book.css" />
+
+<style>
+  /* Page-local only (css/book.css is frozen). Nothing here restyles a shared
+     class; these are new elements this chapter introduces. */
+  .ch09-verdict {
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--planck);
+    background: var(--paper-raised);
+    border-radius: 8px;
+    padding: 0.7rem 0.9rem;
+    margin: 0.7rem 0 0;
+    font-size: 0.9rem;
+  }
+  .ch09-verdict .ch09-verdict-label {
+    display: block;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--planck);
+    margin-bottom: 0.25rem;
+  }
+  .ch09-warn {
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--warn, #D55E00);
+    background: var(--paper-raised);
+    border-radius: 8px;
+    padding: 0.6rem 0.85rem;
+    margin: 0.7rem 0 0;
+    font-size: 0.86rem;
+  }
+  .ch09-warn .ch09-warn-label {
+    display: block;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #D55E00;
+    margin-bottom: 0.2rem;
+  }
+  .ch09-warn.quiet { opacity: 0.55; border-left-color: var(--border); }
+  .ch09-warn.quiet .ch09-warn-label { color: var(--muted); }
+  .ch09-readouts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem 1.2rem;
+    margin: 0.5rem 0 0;
+    font-size: 0.86rem;
+    color: var(--muted);
+  }
+  .ch09-readouts strong { color: var(--accent); font-variant-numeric: tabular-nums; }
+  .ch09-note { font-size: 0.82rem; color: var(--muted); margin: 0.6rem 0 0; }
+  .ch09-fwd {
+    display: inline-block;
+    font-size: 0.72rem;
+    border: 1px dashed var(--border);
+    border-radius: 999px;
+    padding: 0 0.45em;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  .ch09-dials { display: flex; flex-wrap: wrap; gap: 1.2rem; margin: 0.6rem 0 0; }
+  .ch09-dial { min-width: 15rem; }
+  .ch09-dial > span {
+    display: block; font-size: 0.72rem; text-transform: uppercase;
+    letter-spacing: 0.05em; color: var(--muted); margin-bottom: 0.25rem;
+  }
+  .ch09-locked { opacity: 0.42; pointer-events: none; }
+  .ch09-two-arrows {
+    display: grid; grid-template-columns: 1fr; gap: 0.7rem; margin: 0.9rem 0;
+  }
+  @media (min-width: 46rem) { .ch09-two-arrows { grid-template-columns: 1fr 1fr; } }
+  .ch09-arrow {
+    border: 1px solid var(--border); border-radius: var(--radius);
+    background: var(--paper-raised); padding: 0.75rem 0.9rem; font-size: 0.88rem;
+  }
+  .ch09-arrow h5 { margin: 0 0 0.35rem; font-size: 0.92rem; }
+  .ch09-arrow code { font-size: 0.82rem; }
+  .ch09-arrow.bad { border-left: 4px solid #D55E00; }
+  .ch09-arrow.good { border-left: 4px solid #009E73; }
+  /* (the former #bias-rail .ch09-pip rules moved into book.css as the shared
+     .bias-rail-pip capability — WIDGET_REQUESTS R-ch07-1/R-ch11-1, IMPLEMENTED) */
+  @media print { .ch09-locked { opacity: 1; } }
+</style>
+
+<div class="book-shell">
+  <header class="book-topbar">
+    <a class="brand" href="index.html">From Bayes&rsquo; Rule to H&#8320;
+      <small>an interactive discovery book</small>
+    </a>
+    <nav class="book-nav" data-nav aria-label="Chapters"><!-- built from js/manifest.js --></nav>
+    <button class="theme-toggle" data-theme-toggle type="button">☽ Dark</button>
+  </header>
+
+  <main class="book-content">
+    <h1>Chapter 9 — Building a Universe to Break Your Estimator</h1>
+    <p class="subtitle">
+      Every claim so far was measured against &ldquo;truth&rdquo;. Where did truth come from —
+      and would I notice if my simulator and my estimator disagreed about the same universe?
+    </p>
+
+    <!-- ================= COLD OPEN (B1) ================= -->
+    <div class="callout without">
+      <span class="callout-label">The failure this chapter answers</span>
+      Eight chapters of measured biases, every one of them a distance from a number called
+      <em>truth</em>. That number came from a simulator: a population model, a detection cut, a
+      host draw. So &ldquo;biased&rdquo; is not a property of the estimator — it is a
+      <em>relation</em> between two pieces of code. And the two pieces of code in this pipeline,
+      running on the same universe, disagree about how often the host galaxy is in the catalogue
+      by a factor of <strong>2.3</strong>.
+    </div>
+
+    <div class="widget">
+      <h4>The cold open — one quantity, two answers
+        <span class="prov-chip real">real: seed61000 + seed62000 / real_r1&ndash;r5</span>
+      </h4>
+      <p style="margin-top:0; color:var(--muted); font-size:0.88rem;">
+        The blue curve is what the <em>estimator</em> believes: <span class="term"
+        data-term="wG">$w_G(h) = \beta_G/D$</span>, the probability that a detected event&rsquo;s
+        host sits in the catalogue, rebuilt at full precision from the run&rsquo;s own per-$h$
+        selection legs. The orange band is what the <em>generator</em> did: 164 of 3135 detected
+        events actually had a catalogued host, with its binomial uncertainty. Nothing here is a
+        model comparison — it is one run, checked against itself.
+      </p>
+      <div id="ch09-cold-plot" class="widget-plot" style="min-height:300px"></div>
+      <div class="ch09-readouts">
+        <span>model $w_G(0.73)$ <strong id="ch09-cold-model">&mdash;</strong></span>
+        <span>realized <strong id="ch09-cold-real">&mdash;</strong></span>
+        <span>binomial <strong id="ch09-cold-z">&mdash;</strong></span>
+      </div>
+      <details class="num-view">
+        <summary>Show me the numbers</summary>
+        <div class="table-scroll"><table class="num-table" id="ch09-cold-table"></table></div>
+      </details>
+      <noscript>
+        <p><strong>Static fallback.</strong> The modelled mixture weight falls smoothly from
+        $w_G(0.60) = 0.1625$ to $w_G(0.86) = 0.0947$, passing through
+        <strong>0.1215037</strong> at the injected truth $h = 0.73$. The realized detected
+        in-catalogue rate over both seeds is <strong>164/3135 = 0.05231</strong>. The model
+        expects 380.9 such events; 164 occurred. Binomial <strong>z = &minus;11.86</strong>.</p>
+      </noscript>
+    </div>
+
+    <p>
+      Hold that number for a moment, because the same campaign also produced this: on the
+      <em>idealized</em> mock — same code, same estimator, hosts at their exact redshifts — the
+      combined posterior peaked at $h = 0.72990$ with $\sigma_h = 0.00030$, which is
+      <strong>&minus;0.24&sigma;</strong> from the injected 0.73; the second seed gave 0.72990 at
+      <strong>&minus;0.36&sigma;</strong>
+      <span class="prov-chip">IDEALIZED_BASELINE_READOUT.md:27-28</span>. By the only test most
+      papers report, this pipeline works.
+    </p>
+    <p>
+      Both statements are true of the same software. That is the subject of this chapter: what a
+      forward model actually is, what it silently assumes, and how a generator and an estimator
+      can be individually reasonable and jointly incoherent.
+    </p>
+
+    <!-- ================= §1 ================= -->
+    <h2>1. The universe factory</h2>
+
+    <p>
+      Everything the book has measured runs on a mock universe built in four moves.
+    </p>
+    <ol>
+      <li><strong>A population.</strong> Massive black holes and their EMRI rates come from the
+        Barausse (2012) <em>M1</em> model (arXiv:1201.5888) — the same rate model that supplies
+        the per-galaxy rate weight <span class="term" data-term="wg">$w_g = R_{\rm eff}(M_g)/(1+z_g)$</span> from Chapter 3.</li>
+      <li><strong>A cosmology.</strong> <span class="term" data-term="Om">$\Omega_m = 0.2726$</span>, <span class="term" data-term="h">$h_{\rm true} = 0.73$</span>
+        (<code>constants.py</code>). Not the Planck value, and not by accident — §1.2.</li>
+      <li><strong>A definition of &ldquo;event&rdquo;.</strong> An EMRI counts if it
+        <em>plunges inside the mission span</em>. This is a convention, and it is load-bearing.</li>
+      <li><strong>An injection campaign.</strong> 200,100 simulated EMRIs pushed through the same
+        waveform and response code as the analysis, which is where
+        <span class="term" data-term="pdet">$p_{\rm det}$</span> came from in Chapter 4
+        <span class="ch09-fwd">↩ Ch 4</span>.</li>
+    </ol>
+
+    <h3>1.1 An event is a plunge inside the window</h3>
+
+    <div class="voice-derivation">
+      <span class="voice-label">The plunge-window convention
+        <span class="badge ratified">RATIFIED</span>
+        <span class="prov-chip">plunge_window_initial_conditions.md §1</span>
+        <span class="prov-chip">Babak et al. 2017, arXiv:1703.09722 §III C/D</span>
+        <span class="prov-chip">Colpi et al. 2024, arXiv:2402.07571</span>
+      </span>
+      The source is observed from $t = 0$ for the full mission span
+      $T = 4.5\ \mathrm{yr}$; its plunge time is drawn
+      $$ t_{\rm plunge} \sim U[0,\,T], $$
+      and the initial semi-latus rectum $p_0$ is fixed by the time-to-separatrix condition on the
+      <em>same</em> PN5 trajectory that generates the waveform,
+      $$ t_{\rm insp}\bigl(p_0;\ M_z,\mu,a,e_0,x_0\bigr) \;=\; t_{\rm plunge}, $$
+      solved by Brent root-finding. Events that would plunge after $T$ are excluded from the
+      population — exactly Babak&rsquo;s construction. The window is defined in the
+      <strong>detector frame</strong>; no extra $(1+z)$ enters the draw.
+    </div>
+
+    <p>
+      The retired convention drew $p_0 \sim U[10,16]$ independently of everything else — a range
+      lifted from a waveform-package docstring. The difference is not cosmetic. A rate model that
+      counts <em>plunges</em> was being fed initial conditions that, above
+      <span class="term" data-term="Mz">$M_z \approx 10^{6.2}\,M_\odot$</span>, essentially forbid a plunge inside the window: the packet
+      names this &ldquo;audit item 1&rdquo;, an <em>input-validity domain used as an
+      astrophysical prior</em>. Repairing it recovered one to one-and-a-half decades of horizon at
+      the top of the mass band — $d_{\rm hor}$ at $M_z = 10^7\,M_\odot$ went from
+      <strong>0.014 Gpc</strong> under the snapshot draw to <strong>0.35&ndash;0.48 Gpc</strong>
+      <span class="prov-chip">plunge_window_initial_conditions.md §11</span>.
+    </p>
+
+    <div class="callout defect">
+      <span class="callout-label">Trap &mdash; &ldquo;The simulator is the easy part.&rdquo;</span>
+      The simulator contains the population model, the plunge-window convention, the injection
+      sampling measure and the host-draw weight — four places where it can disagree with the
+      estimator. <strong>Three of this book&rsquo;s live claims are exactly such
+      disagreements</strong> (C6, C9, and the C8 measure mismatch). The simulator is not the part
+      you check last.
+    </div>
+
+    <h3>1.2 Whose $\Omega_m$?</h3>
+
+    <p>
+      $\Omega_m = 0.2726$ is a WMAP-era number, and every reader&rsquo;s first instinct is that it
+      is a bug. It was filed as one, investigated, and closed as a design choice: it is the
+      cosmology the <em>population</em> is drawn from, so using Planck&rsquo;s $\Omega_m$ with an
+      M1 population would put the generator in disagreement with its own rate model
+      <span class="prov-chip">ledger #53</span> <span class="prov-chip">GATE_SIGNOFF.md G11</span>.
+      The mismatch is not absorbed; it is a <em>quoted</em> systematic of
+      $+1.5$&ndash;$3\%$ in $H_0$ <span class="prov-chip">G7 row 6</span>. The generator below
+      recomputes that table from scratch with the repo&rsquo;s own <code>dist()</code>, and the
+      page refuses to build if any of the twelve published cells moves.
+    </p>
+
+    <!-- ============ I9.1 ============ -->
+    <div class="widget">
+      <h4>I9.1 — The Universe Factory
+        <span class="prov-chip real">real: injection_pool_mix200k_20260728</span>
+        <span class="prov-chip real">real: recomputed with <code>physical_relations.dist</code></span>
+      </h4>
+      <p style="margin-top:0; color:var(--muted); font-size:0.88rem;">
+        <strong>Manipulate</strong> the population&rsquo;s mass band, the initial-conditions
+        convention, and the fiducial $\Omega_m$. <strong>Watch</strong> which events survive
+        detection, where the retired $p_0$ draw actually lives, and how far a &ldquo;fiducial
+        choice&rdquo; moves the answer. <strong>The point:</strong> every one of these dials is a
+        generator setting that the estimator silently assumes.
+      </p>
+
+      <div class="widget-controls">
+        <label for="ch09-mlo">Population mass band, $\log_{10} M_z$:</label>
+        <input id="ch09-mlo" type="range" aria-label="mass band lower edge" />
+        <input id="ch09-mhi" type="range" aria-label="mass band upper edge" />
+        <span class="readout"><strong id="ch09-mband">&mdash;</strong></span>
+      </div>
+      <div class="ch09-dials">
+        <div class="ch09-dial">
+          <span>Initial conditions</span>
+          <div class="toggle-row" id="ch09-ic-row">
+            <button type="button" data-ic="plunge">plunge window (ratified)</button>
+            <button type="button" data-ic="snapshot">snapshot $p_0 \sim U[10,16]$ (retired)</button>
+          </div>
+        </div>
+        <div class="ch09-dial">
+          <span>Fiducial $\Omega_m$ used by the estimator</span>
+          <div class="toggle-row" id="ch09-om-row">
+            <button type="button" data-om="m1">0.2726 (Barausse M1)</button>
+            <button type="button" data-om="planck">0.3153 (Planck)</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="ch09-factory-plot" class="widget-plot" style="min-height:300px"></div>
+      <div id="ch09-p0-plot" class="widget-plot" style="min-height:290px"></div>
+      <div id="ch09-omega-plot" class="widget-plot" style="min-height:270px"></div>
+
+      <div class="ch09-readouts" id="ch09-factory-readouts">
+        <span>drawn in band <strong id="ch09-n-drawn">&mdash;</strong></span>
+        <span>detected (SNR ≥ 20) <strong id="ch09-n-det">&mdash;</strong></span>
+        <span>detected fraction <strong id="ch09-detfrac">&mdash;</strong></span>
+        <span>median $z$ (bin-resolved): drawn <strong id="ch09-zmed-drawn">&mdash;</strong> → detected
+          <strong id="ch09-zmed-det">&mdash;</strong></span>
+      </div>
+      <div class="ch09-warn quiet" id="ch09-factory-warn">
+        <span class="ch09-warn-label">Generator / estimator consistency</span>
+        <span id="ch09-factory-warn-text">Both dials are in their shipped positions: the pool you
+        are looking at was generated under exactly these conventions.</span>
+      </div>
+      <p class="ch09-note">
+        <strong>Provenance, precisely.</strong> The population panel uses <em>stratum &lsquo;a&rsquo;
+        only</em> — 99,014 of the pool&rsquo;s 200,100 rows. Strata &lsquo;b&rsquo; and
+        &lsquo;c&rsquo; are catalogue-coverage and flat-in-$(\ln(1{+}z),\log M_z)$ importance
+        draws; only &lsquo;a&rsquo; carries the population measure, which is why the estimator
+        itself restricts its pool-marginal legs to it
+        (<code>simulation_detection_probability.py:356-407</code>). The $p_0$ panel uses the
+        96,105 stratum-&lsquo;a&rsquo; rows written by the era that recorded initial conditions;
+        6,000 rows of the pool predate those columns and are excluded rather than imputed. The
+        $\Omega_m$ panel is <em>recomputed here</em> and gated cell-by-cell against
+        <code>G7_systematics_budget.md</code>. The redshift marginals are binned at
+        $\Delta z = 0.05$, so the medians in the readout are bin-resolved: the exact values over
+        the full band are 1.0944 (drawn) and 0.4677 (detected).
+      </p>
+      <details class="num-view">
+        <summary>Show me the numbers</summary>
+        <div class="table-scroll"><table class="num-table" id="ch09-factory-table"></table></div>
+      </details>
+      <noscript>
+        <p><strong>Static fallback.</strong> Of 99,014 population-measure injections, 7,548
+        (7.62%) clear SNR = 20. Selection moves the median redshift from
+        <strong>1.094 to 0.468</strong> and the median $\log_{10}M_z$ from 5.563 to 5.661. The
+        realized plunge-window $p_0$ runs from 2.27 to 92.7 and depends strongly on mass: median
+        $p_0$ is 62 at $\log_{10}M_z = 4.3$ and 8.3 at 6.3. The retired snapshot band $[10,16]$
+        contains 32.2% of plunge-consistent events overall, but 70% at
+        $\log_{10}M_z \approx 5.7$, 5.8% above $\log_{10}M_z = 6.2$ and 0.6% above 6.4. Assuming
+        $\Omega_m = 0.2726$ when the truth is Planck&rsquo;s 0.3153 biases $h$ by +0.16% at
+        $z = 0.05$, +0.94% at $z = 0.3$ and +3.31% at $z = 1.5$.</p>
+      </noscript>
+    </div>
+
+    <details class="gw-reader">
+      <summary>&#9656; For the GW reader</summary>
+      <p>
+        The pool is 707 CSV files, 200,100 data rows (200,807 lines including headers), all at
+        $h_{\rm inj} = 0.73$ with $z_{\rm cut} = 1.5$; its $p_{\rm det}$ fingerprint is
+        $d_{L,\max}(0.73) = 9.164987$ Gpc against the production log&rsquo;s 9.1650
+        <span class="prov-chip">c9_darkdraw_results.json production_pool</span>. Strata are
+        realized at $(a,b,c) = (99014,\,50947,\,50139)$ against nominal proportions
+        $(0.50,\,0.25,\,0.25)$ <span class="prov-chip">main.py:902-945</span>. The injection
+        CSV&rsquo;s <code>M</code> column is the <em>detector-frame</em> $M_z = M(1+z)$ — the value
+        FEW saw — so every mass axis on this page is $M_z$
+        (<code>main.py:1291-1293</code>).
+      </p>
+      <p>
+        On the $\Omega_m$ recomputation: both cosmologies must be passed as
+        <em>flat</em> pairs, <code>dist(z, h, Omega_m, 1 - Omega_m)</code>. The module default
+        keeps $\Omega_{\rm de} = 0.7274$, so passing only <code>Omega_m=0.3153</code> silently
+        builds a non-flat model and shifts even the $z \to 0$ limit by ~2%. The generator does the
+        flat thing and then gates on the published table; that gate is the reason you can trust
+        the panel.
+      </p>
+    </details>
+
+    <!-- ================= §2 ================= -->
+    <h2>2. Making the mock honest</h2>
+
+    <p>
+      Until campaign #51 the mock had a comfortable habit: it handed the inference each host&rsquo;s
+      redshift and black-hole mass <em>exactly</em>. Chapter 7 showed what a real catalogue
+      redshift is — photometric, $\sigma_z/z \approx 49\%$ — so a mock that injects catalogue
+      redshifts as truth <em>and</em> point-evaluates them is not testing the redshift kernel at
+      all. Campaign #53 realizes the noise. Doing that correctly takes four decisions, and the
+      first one is the one everybody gets wrong.
+    </p>
+
+    <div class="ch09-two-arrows">
+      <div class="ch09-arrow good">
+        <h5>(A) Catalogue is TRUTH — scatter forward <span class="badge ratified">RATIFIED</span>
+          <span class="prov-chip">realistic_host_observation_model.md §1.2 (RATIFY-R1)</span>
+          <span class="prov-chip">Davis et al. 2011, arXiv:1012.2912 Eqs. (1)/(A1)</span></h5>
+        <p style="margin:0">
+          The stored $z_g$ <em>is</em> the host&rsquo;s cosmological redshift. The event is
+          generated at $d_L(z_g, h_{\rm inj})$ exactly as before; the inference is handed a
+          realized observed catalogue,
+          $z_{{\rm obs},g} = z_g + (1+z_g)v_{\rm pec}/c + \mathcal N(0,\sigma_{\rm meas})
+          \equiv z_g + \mathcal N(0, \sigma_{z,g}^{\rm tot})$.
+          A <em>forward</em> model: no inverse problem, no prior ambiguity.
+        </p>
+      </div>
+      <div class="ch09-arrow bad">
+        <h5>(B) Catalogue is the OBSERVATION — scatter truth <span class="badge refuted">REJECTED</span>
+          <span class="prov-chip">ibid., the analysis that rejects it</span></h5>
+        <p style="margin:0">
+          Keep $z_g$ as what the inference reads and draw a latent truth. This matches the
+          real-data reading — and it requires the <em>posterior</em> draw
+          $p(z_{\rm true}\mid z_{\rm obs}) \propto \mathcal N \cdot p_{\rm pop}$. Sampling the
+          tempting $z_{\rm true} \sim \mathcal N(z_g,\sigma)$ omits the population prior and
+          <strong>commits the exact Eddington error the volume deconvolution was built to
+          remove</strong>. Doing (B) properly is ill-posed at $\sigma_z/z \approx 0.5$.
+        </p>
+      </div>
+    </div>
+
+    <div class="voice-derivation">
+      <span class="voice-label">Realized noise ≡ kernel width, exactly
+        <span class="badge ratified">RATIFIED</span>
+        <span class="prov-chip">realistic_host_observation_model.md §2 (RATIFY-R2)</span>
+      </span>
+      The realization must draw <strong>one total Gaussian from the same stored column the
+      inference kernel reads</strong>:
+      $$ \delta z_g \sim \mathcal N\bigl(0,\ \texttt{z\_error}_g\bigr), \qquad
+         z_{{\rm obs},g} = z_g + \delta z_g, $$
+      not a re-derived component-wise sum of peculiar-velocity and measurement terms. Then
+      $\sigma_{\rm realized} \equiv \sigma_{\rm kernel}$ holds per row <em>by construction</em>,
+      and cannot be broken by a constants drift or a catalogue regeneration. This is Chapter
+      7&rsquo;s counted-once rule, now on the generative side.
+      Verified on the production catalogue (22,634,764 valid rows): the #40b fold is present in
+      every row (0 violations); only 0.41% of rows are provably in a known PV class, which is
+      <em>why</em> the total is realized rather than its components; and a $10^6$-draw Monte Carlo
+      matches <code>z_error</code> to better than 0.12%.
+    </div>
+
+    <p>
+      Two consequences make the rest of the pipeline cheap and honest. Because (A) leaves every
+      <em>injected</em> coordinate untouched, the event&rsquo;s $d_L$, waveform, SNR and
+      Cram&eacute;r&ndash;Rao covariance are unchanged — the GPU products and the entire injection
+      pool stay valid, and only the catalogue file handed to the evaluation changes
+      <span class="prov-chip">realistic_host_observation_model.md §5 (RATIFY-R5)</span>. And the
+      selection legs split cleanly along Mandel, Farr &amp; Gair&rsquo;s rule: $p_{\rm det}$ legs
+      integrate over <em>true</em> quantities, catalogue-composition legs describe what the
+      analyst&rsquo;s catalogue <em>contains</em> and therefore use <em>observed</em> rows.
+    </p>
+
+    <p>
+      The fourth decision is the guard. A ratified derivation can be enforced, and this one is:
+      the evaluation <strong>refuses to run</strong> a point-resolving host-redshift kernel — and
+      refuses <code>generator_marginal</code> altogether — whenever the loaded catalogue is a
+      scattered realization, because that mode&rsquo;s selection leg was derived <em>for</em> the
+      unscattered generator. The guard is one-directional: running the unscattered baseline with
+      the width kernel is merely conservative, and stays legal
+      <span class="prov-chip">§3.4, §9 (RATIFY-R3/R9)</span>
+      <span class="prov-chip">bayesian_statistics.py:112, :186, :273</span>. That is what it looks
+      like when a derivation is executable rather than decorative.
+    </p>
+
+    <div class="voice-adjudicator">
+      <span class="voice-label">The honest price, stated by the packet itself
+        <span class="badge ratified">RATIFIED</span>
+        <span class="prov-chip">realistic_host_observation_model.md §1.2</span>
+      </span>
+      Under (A) the declared truth redshift distribution <em>equals GLADE+&rsquo;s observed one</em>
+      — photo-$z$-smeared and Malmquist-shaped — rather than the deconvolved sky. That is a
+      second-order, population-level statement; it does not touch per-event consistency; it is
+      standard in dark-siren mock studies that draw hosts from a real catalogue (Gray et al. 2020,
+      arXiv:1908.06050 §IV). It is marked <strong>ASSUMED, to be stated in the paper</strong>.
+      Remember this sentence when §6 asks why the catalogue&rsquo;s hosts are systematically
+      heavier than the population&rsquo;s.
+    </div>
+
+    <p>
+      Two measured facts about the realized venue close this section. First, the hosts are
+      photometric — <em>all</em> of them: at $z \lt 0.15$ the pruned catalogue is 97.4% photometric
+      by rate weight, and the campaign realized <strong>164 in-catalogue hosts, zero
+      spectroscopic</strong>, which falsifies the derivation&rsquo;s own expectation of about 3.4
+      spectroscopic hosts per seed <span class="prov-chip">§4 (RATIFY-R4), P6</span>. A ratified
+      packet made a quantitative prediction about its own venue and the venue said no; the packet
+      is not thereby wrong, but the deferral that rested on that prediction is.
+    </p>
+    <p>
+      Second, a documented approximation: realized redshifts are clipped at
+      $z_{\rm floor} = 10^{-5}$ rather than redrawn, because redrawing would break
+      $\sigma_{\rm realized} = \sigma_{\rm kernel}$. The clip fires
+      <strong>108,395 times out of 22,641,048 rows</strong> in r1 — 0.5%, all of them photometric
+      rows at $z \lesssim 2\sigma$ that carry essentially no information precisely because their
+      kernel is that wide <span class="prov-chip">sources map §7 item 8</span>. It is small. It is
+      also a <em>generative</em> clamp, and the project&rsquo;s own history contains a $+0.030$
+      harness bias that was re-attributed to exactly such a clamp
+      <span class="prov-chip">ledger #69</span> — which is why every citation of that exoneration
+      has to carry this caveat rather than inherit it.
+    </p>
+
+    <details class="gw-reader">
+      <summary>&#9656; For the GW reader — a false line inside a ratified packet</summary>
+      <p>
+        <code>realistic_host_observation_model.md:645</code> states that the host-miss rate is
+        &ldquo;logged (P6)&rdquo;. <strong>It is not</strong>: nothing in
+        <code>bayesian_inference/</code> ever reads <code>host_galaxy_index</code>
+        <span class="prov-chip">sources map §7 item 12</span>. Worse, the counter as described
+        could not work: <code>host_galaxy_index</code> is a positional label into the
+        <em>pruned</em> frame, and the prune runs on <em>observed</em> columns — 20,834,171 parent
+        rows against 19,874,547 realized, so about 958,000 galaxies (&minus;4.6%) vanish under
+        scatter and the two index spaces do not correspond. The book flags this rather than
+        repeating it. RATIFIED is a status for a derivation, not an immunity for every sentence
+        in the file that carries it.
+      </p>
+    </details>
+
+    <!-- ================= §3 ================= -->
+    <h2>3. What am I normalizing to?</h2>
+
+    <p>
+      Now the deep problem of this chapter. Chapter 3&rsquo;s catalogue likelihood is a
+      <strong>discrete sum over catalogue rows</strong>. Chapters 4 and 5&rsquo;s selection
+      integrals — <span class="term" data-term="Dh">$D(h)$</span>,
+      <span class="term" data-term="betaG">$\beta_G$</span>,
+      <span class="term" data-term="betaGbar">$\beta_{\bar G}$</span> — are <strong>continuous population
+      integrals</strong>. The master equation multiplies them together. Something has to make a
+      count of galaxies commensurable with a volume.
+    </p>
+
+    <div class="voice-derivation">
+      <span class="voice-label">The Option-A bridge
+        <span class="badge ratified">RATIFIED</span>
+        <span class="prov-chip">G2c §3</span>
+      </span>
+      Treat the catalogue as a Monte-Carlo realization of an in-catalogue number density
+      $n_G(z,\Omega) = \bar n_{\rm gal} f(z,\Omega)$ with $\bar n_{\rm gal}$ constant in comoving
+      coordinates. Then for any smooth per-galaxy statistic $Q$,
+      $$ \sum_{g \in {\rm cat}} w_g\, Q(z_g,\Omega_g) \;\approx\;
+         \bar n_{\rm gal} \int\! dz\, d\Omega\; f(z,\Omega)\, \bar w(z)\, Q\,
+         \frac{dV_c}{dz\,d\Omega}, $$
+      and applying it to Gray&rsquo;s (A10) denominator gives
+      $$ \Sigma_{\rm global}(h) \;\approx\; C\,\beta_G(h), \qquad
+         C = \bar n_{\rm gal}\langle R_{\rm eff}\rangle \ \text{independent of } h $$
+      <em>up to second order</em>. Everything unknowable — $\bar n_{\rm gal}$, the rate
+      normalization — then cancels.
+    </div>
+
+    <p>
+      That approximate identity is the hinge of the whole normalization story, and the pipeline
+      offers three ways to lean on it
+      <span class="prov-chip">G2c §4.1&ndash;4.3</span>:
+    </p>
+    <ul>
+      <li><code>global</code> — $L^{\rm cat} = \sum_{\rm ball} w_g N_g / \Sigma_{\rm global}(h)$.
+        The faithful discrete transcription of Gray&rsquo;s (A10). Deprecated and warned: on
+        photometric catalogues it is empirically mis-calibrated, ~0% coverage, railing to the grid
+        edge.</li>
+      <li><code>local_ratio</code> — $L^{\rm cat} = \sum_{\rm ball} w_g N_g / \sum_{\rm ball} w_g D_g$,
+        self-normalized over the same galaxy set, so <em>all</em> per-galaxy constants cancel
+        row-by-row and no density calibration is needed at all.</li>
+      <li><code>volume_deconv</code> — the same local ratio with Chapter 7&rsquo;s volume-deconvolved
+        host-redshift kernel inside both $N_g$ and $D_g$. The library default.</li>
+    </ul>
+
+    <div class="voice-adjudicator">
+      <span class="voice-label">A citation to not propagate
+        <span class="badge finding">FINDING</span>
+        <span class="prov-chip">G2c §6 C1</span>
+      </span>
+      The code comment at <code>bayesian_statistics.py:1578-1582</code> calls
+      <code>local_ratio</code> &ldquo;the Gray A.9/A.10 <em>literal</em> local self-normalized
+      ratio-of-sums&rdquo;. It is not literal: (A10)&rsquo;s selection sum runs over the whole
+      catalogue, not over the event&rsquo;s candidate ball. The nearest published analogue is the
+      catalogue-<em>patch</em> case, Gray Eq. (A20), with the patch identified event-by-event with
+      a three-dimensional localization ball and without (A20)&rsquo;s explicit $\Omega_{\rm rest}$
+      term. The mathematics implemented is as documented; only the attribution is wrong. The book
+      says &ldquo;deliberate deviation, empirically justified by P&ndash;P calibration&rdquo;,
+      which is what it is.
+    </div>
+
+    <!-- ============ I9.3 ============ -->
+    <div class="widget">
+      <h4>I9.3 — The De-rail Matrix
+        <span class="prov-chip real">real: commission_20260701/redteam · seed600, 494 events</span>
+        <span class="prov-chip">ledger #49</span>
+      </h4>
+      <p style="margin-top:0; color:var(--muted); font-size:0.88rem;">
+        <strong>Walk</strong> the four states the project actually shipped, in order.
+        <strong>Watch</strong> the posterior on a 7-point grid over the same 494 real events.
+        <strong>The point:</strong> each fix earns its place — and two of them are
+        <em>necessary but not sufficient</em>, which is a category most bug reports do not have.
+      </p>
+      <div class="toggle-row" id="ch09-derail-row">
+        <button type="button" data-step="0">1 · pre-4π</button>
+        <button type="button" data-step="1">2 · 4π only</button>
+        <button type="button" data-step="2">3 · local_ratio</button>
+        <button type="button" data-step="3">4 · volume_deconv</button>
+      </div>
+      <div id="ch09-derail-plot" class="widget-plot" style="min-height:300px"></div>
+      <div class="ch09-readouts">
+        <span>MAP <strong id="ch09-derail-map">&mdash;</strong></span>
+        <span>posterior mean <strong id="ch09-derail-mean">&mdash;</strong></span>
+        <span>mass at the grid edges <strong id="ch09-derail-edge">&mdash;</strong></span>
+      </div>
+      <div class="ch09-verdict" id="ch09-derail-verdict"></div>
+      <details class="num-view">
+        <summary>Show me the numbers</summary>
+        <div class="table-scroll"><table class="num-table" id="ch09-derail-table"></table></div>
+      </details>
+      <noscript>
+        <p><strong>Static fallback.</strong> Four states on the same 494-event venue at injected
+        $h = 0.73$: pre-4π MAP <strong>0.86</strong> (rails high; recorded value only, no stored
+        posterior); the 1/(4π) completion fix alone → MAP <strong>0.60</strong> (rails low —
+        the fix <em>flips</em> the rail); + <code>local_ratio</code> → MAP <strong>0.73</strong>
+        with 98% of the mass on the truth point; + <code>volume_deconv</code> → MAP
+        <strong>0.73</strong>, mean +0.010 higher. The <code>catalog_only</code> baseline sat at
+        0.73 throughout.</p>
+      </noscript>
+    </div>
+
+    <p>
+      Step 2 is the one worth sitting with. The 1/(4&pi;) sky-marginalization fix from Chapter 5
+      is unambiguously correct, and applying it <em>alone</em> moved the answer from one wall of
+      the prior to the other. A correct fix that leaves you railed is not a failed fix; it is a
+      fix whose companion is missing. And the state <em>before</em> all of this had a property
+      worse than being wrong: the production MAP read <strong>0.86 for every injected truth from
+      0.63 to 0.77</strong>, while the <code>catalog_only</code> baseline tracked truth exactly.
+      A precise, stable, reproducible estimator carrying zero information about the parameter it
+      reports <span class="prov-chip">ledger #49a</span>
+      <span class="prov-chip">DRAFT_REPORT.md:24-27</span>. The full exhibit is in
+      <a href="museum.html#ex-h0-independent">the Defect Museum</a>.
+    </p>
+
+    <!-- ================= §4 ================= -->
+    <h2>4. Two estimands</h2>
+
+    <p>
+      So: <code>local_ratio</code> and <code>volume_deconv</code> never invoke the Option-A
+      identity, because they never build $\Sigma_{\rm global}$. The two <em>absolute</em> modes
+      do — and they do it differently.
+    </p>
+
+    <div class="voice-derivation">
+      <span class="voice-label">The two absolute normalizations
+        <span class="badge ratified">RATIFIED</span>
+        <span class="prov-chip">DERIVATION_GENERATOR_CONSISTENT_NORM.md §2.3, §3.1</span>
+      </span>
+      Both assemble the same per-event likelihood shape,
+      $$ p_i(h) \;=\; \frac{\displaystyle\sum_{g\in B_i} w_g N_g(h) \big/ n_w(h)
+                            \;+\; B^{\rm num}_i(h)}{D_\bullet(h)} , $$
+      and differ in what $n_w$ and $D_\bullet$ are:
+      <br />
+      <strong><code>absolute_marginal</code></strong> (campaign #53, the realistic runs):
+      $\bar n_w = \Sigma_{\rm glob}/\beta_G$ and $D = \beta_G + \beta_{\bar G}$ — i.e. it
+      <em>uses</em> the Option-A identity. ($\Sigma_{\rm glob}$ is the normalization packet’s
+      spelling of G2c’s $\Sigma_{\rm global}$; same object, the catalogue-channel detection
+      expectation.)
+      <br />
+      <strong><code>generator_marginal</code></strong> (campaign #51, the idealized baseline):
+      $\hat n_w = W_{\rm cat}/V_f(h)$ and $D_{\rm gen} = \Sigma_{\rm glob}/\hat n_w + \beta_{\bar G}$,
+      with $W_{\rm cat} = \sum_{z_g \lt 1.5} w_g$ an $h$-independent scalar and
+      $V_f(h) = \int_0^{1.5} \bar f(z,h)\,(dV_c/dz)/(1+z)\,dz$. Here $\bar n_w$
+      <strong>does not survive</strong>: no model integral is ever compared against a discrete
+      catalogue sum anywhere in the estimator. The Option-A identity is not approximately
+      enforced — it is never invoked.
+    </div>
+
+    <p>
+      The second mode&rsquo;s mixing fraction is <em>derived, not posited</em>: the injection is a
+      per-event $\mathrm{Bernoulli}(F)$ channel split, so $F(h) = V_f(h)/V_{\rm tot}(h)$, measured
+      at $F = 0.0175370\ldots$ and exactly $h$-independent, reproducing the generator&rsquo;s own
+      <code>F_incat_population</code> to machine precision. It was pre-registered to
+      <em>not</em> de-rail the deep venue; the prediction was falsified, favorably — 1D and 2D MAP
+      both landed at 0.73 <span class="prov-chip">ledger #81</span>.
+    </p>
+
+    <p>
+      Here is the trap. Both modes report a field called <code>w_G</code>, &ldquo;the probability
+      the host is catalogued&rdquo;. On the <em>same run</em> they report
+      <strong>0.1215</strong> and <strong>0.0497</strong>. Neither is corrupt. They are
+      <strong>different estimands</strong> — different conditionals — each internally consistent
+      inside its own mode. The project spent real effort chasing a phantom
+      &ldquo;45% discrepancy&rdquo; between two numbers that were never the same quantity, and
+      declared a diagnostics column corrupt when it was simply the other mode&rsquo;s value
+      <span class="prov-chip">CLAIM_2D_BIAS_20260730.md, &ldquo;Loose thread&rdquo; → C9</span>.
+    </p>
+
+    <div class="voice-adjudicator">
+      <span class="voice-label">What is settled and what is open here
+        <span class="badge open">OPEN</span>
+        <span class="prov-chip">sources map §7 item 7</span>
+      </span>
+      The qualitative resolution is settled: the &ldquo;ghost&rdquo; values around 0.069 lie on the
+      <code>generator_marginal</code> curve, far from <code>absolute_marginal</code>&rsquo;s
+      0.1215. The <em>exact curve</em> is not. C9 quotes
+      $0.0774 / 0.0692 / 0.0555 / 0.0427$ at $h = 0.60/0.64/0.73/0.86$; the diagnostics CSVs
+      measure $0.0686001 / 0.0614573 / 0.0496786 / 0.0385580$ — uniformly 10&ndash;12% lower, which
+      is not a rounding difference. (The measured set is read from the &sigma;&nbsp;&rarr;&nbsp;0
+      control run’s diagnostics, which carries the <code>generator_marginal</code> estimand —
+      exactly why it is the right file for <em>this</em> comparison and the wrong file for any
+      #51&nbsp;&harr;&nbsp;#53 comparison <span class="prov-chip">sources map §7 item 6</span>.)
+      This page plots <strong>both</strong>. It also reports both
+      downstream ratios: the #51 → #53 switch multiplied the delivered mixture weight by
+      <strong>&times;2.19</strong> using C9&rsquo;s value and <strong>&times;2.45</strong> using the
+      measured one. The realistic-venue $w_G(0.73) = 0.1215039$ — all ten realistic diagnostics files
+      carry one bit-identical curve, matching the adjudicated 0.1215037 to floating rounding —
+      is independently confirmed and is <em>not</em> in question.
+    </div>
+
+    <p>
+      A relocation, not a removal, is worth naming while we are here. <code>absolute_marginal</code>
+      was adopted to cure host misassociation on the deep venue — a mechanism that was
+      <strong>confirmed</strong>, with 91&ndash;100% of the tilt living in the numerator overlap
+      <span class="prov-chip">ledger #74</span>. What it did was move the rail from the bottom of
+      the prior to the top: 0.86 in both channels, seed600 1D 0.775
+      <span class="prov-chip">ledger #77</span>. Exhibit:
+      <a href="museum.html#ex-absolute-marginal">the Defect Museum → absolute_marginal</a>.
+    </p>
+
+    <!-- ================= §5 ================= -->
+    <h2>5. The identity that fails</h2>
+
+    <p>
+      <code>absolute_marginal</code> is the mode campaign #53 ran, so the Option-A identity is not
+      an academic point for this book — it is load-bearing for every realistic number in it. The
+      commission asked for it to be checked by summing the real GLADE catalogue directly. It was.
+    </p>
+
+    <!-- ============ I9.4 ============ -->
+    <div class="widget">
+      <h4>I9.4 — The h³ that cancels, and the 17% that doesn&rsquo;t
+        <span class="prov-chip real">real: G1_beta_g_check.json · seed600 pool, 14 h-values</span>
+      </h4>
+      <p style="margin-top:0;">
+        <strong>Predict first.</strong> The measured ratio $\Sigma_{\rm global}(h)/\beta_G(h)$
+        grows by a factor <strong>2.48</strong> from $h = 0.60$ to $h = 0.86$, where the Option-A
+        bridge says it should be constant. How much of that growth is the trivial one — the
+        catalogue is a fixed set of galaxies, so its implied comoving density scales as $h^3$?
+      </p>
+      <div class="predict-row" id="ch09-identity-predict" data-predict-id="ch09-q-identity">
+        <button type="button" data-predict="none">Essentially none of it</button>
+        <button type="button" data-predict="most">Most of it, but not all</button>
+        <button type="button" data-predict="all">All of it — the identity holds</button>
+      </div>
+      <div class="reveal">
+        <p style="margin:0 0 0.6rem">
+          <strong>Most of it, and the leftover is the finding.</strong> $(0.86/0.60)^3 = 2.94$
+          against a measured 2.48: the $h^3$ density scaling is the dominant piece, it is common
+          to the discrete numerator and denominator of $L^{\rm cat}$, and it cancels in the
+          likelihood ratio. Divide it out and a smooth monotone residual survives:
+          <strong>&minus;17.2% end-to-end</strong>, $+8.7\%$ at $h = 0.60$ falling to $-8.7\%$ at
+          $h = 0.86$. In <code>global</code> mode that residual multiplies the in-catalogue channel
+          once per event — a coherent tilt of that size over hundreds of events is enormous.
+        </p>
+        <div class="toggle-row" id="ch09-identity-row">
+          <button type="button" data-idmode="raw">raw ratio Σ_glob / β_G</button>
+          <button type="button" data-idmode="corr">÷ h³ (the part that cancels)</button>
+        </div>
+        <div id="ch09-identity-plot" class="widget-plot" style="min-height:290px"></div>
+        <div class="ch09-readouts">
+          <span>growth across the grid <strong id="ch09-id-growth">&mdash;</strong></span>
+          <span>pure-$h^3$ expectation <strong id="ch09-id-h3">&mdash;</strong></span>
+          <span>residual after removal <strong id="ch09-id-resid">&mdash;</strong></span>
+        </div>
+        <div class="ch09-verdict">
+          <span class="ch09-verdict-label">Has this been tried? — yes, and part of it is closed</span>
+          The raw <strong>&times;2.48 drift is EXONERATED</strong>: it is exactly the $h^{-3}$
+          volume Jacobian, $(0.73/0.81)^3 - 1 = -26.80\%$, and it must not be re-opened. What
+          remains after removing it is a <strong>1D-only residual of $+1.667\%$, i.e. $+0.017$ in
+          $h$</strong> <span class="prov-chip">ledger, Option-A residual</span>. The defect is the
+          residual, not the Jacobian.
+        </div>
+        <details class="num-view">
+          <summary>Show me the numbers</summary>
+          <div class="table-scroll"><table class="num-table" id="ch09-identity-table"></table></div>
+        </details>
+      </div>
+      <noscript>
+        <p><strong>Static fallback.</strong> $\Sigma_{\rm global}/\beta_G$ rises monotonically from
+        8.96 at $h = 0.60$ to 22.20 at $h = 0.86$ — a factor 2.478 against the pure-$h^3$
+        expectation of 2.944. After dividing by $h^3$ and normalizing at $h_{\rm ref} = 0.72$, the
+        shape runs 1.0854 → 0.9135: a monotone <strong>&minus;17.19%</strong> end-to-end residual,
+        maximum deviation 8.65%.</p>
+      </noscript>
+    </div>
+
+    <p>
+      Independently, the identity in its raw form —
+      $\bar n_w = \Sigma_{\rm glob}/\beta_G$ — is violated by <strong>33% in value and 0.39 per
+      $h$ in log-slope</strong> <span class="prov-chip">H0R:1548-1552</span>. G1&rsquo;s own
+      conclusion was that &ldquo;local modes are structurally immune&rdquo;, and that is correct:
+      they never build $\Sigma_{\rm glob}$. But <code>absolute_marginal</code> does
+      <span class="prov-chip">G1_beta_g_check.md:14-29</span>. This class of inconsistency is why
+      <code>generator_marginal</code> replaced <code>absolute_marginal</code> historically — and
+      campaign #53 ran <code>absolute_marginal</code>.
+    </p>
+
+    <!-- ================= §6 ================= -->
+    <h2>6. C9 — the generator and the estimator describe different universes</h2>
+
+    <p>
+      Which brings the chapter back to its cold open, now with the machinery to read it. The
+      estimator&rsquo;s mixture weight $w_G = \beta_G/D$ is a statement about the
+      <em>generator</em>: of the events this universe produces and this detector sees, this
+      fraction should have a catalogued host. It is checkable by counting, and the count is
+      164 of 3135.
+    </p>
+
+    <!-- ============ I9.2 ============ -->
+    <div class="widget">
+      <h4>I9.2 — The Consistency Bench
+        <span class="prov-chip real">real: seed61000 log legs + both seeds&rsquo; CRB tables</span>
+        <span class="prov-chip">CLAIM_2D_BIAS_20260730.md C9</span>
+      </h4>
+      <p style="margin-top:0;">
+        <strong>Predict first.</strong> The estimator models $w_G(0.73) = 0.1215$; the generator
+        realized $164/3135 = 0.0523$. One dial reconciles them. Which?
+      </p>
+      <div class="predict-row" id="ch09-bench-predict" data-predict-id="ch09-q-bench">
+        <button type="button" data-predict="gen">The generator: it should draw hosts mass-blind</button>
+        <button type="button" data-predict="est">The estimator: $\beta_G$ should be mass-aware</button>
+        <button type="button" data-predict="neither">Neither — they measure different things</button>
+        <button type="button" data-predict="stats">Nothing: 164 vs 381 is a fluctuation</button>
+      </div>
+      <div class="reveal">
+        <p style="margin:0 0 0.6rem">
+          It is the <strong>estimator</strong> dial — and it is the one nobody turned. Try both
+          below; the bench refuses to invent a measurement that does not exist.
+        </p>
+        <div class="ch09-dials">
+          <div class="ch09-dial">
+            <span>What the <em>generator</em> believes about host masses</span>
+            <div class="toggle-row" id="ch09-gen-row">
+              <button type="button" data-gen="aware">mass-aware draw (shipped)</button>
+              <button type="button" data-gen="blind">mass-blind draw (never run)</button>
+            </div>
+          </div>
+          <div class="ch09-dial">
+            <span>What the <em>estimator</em> assumes when it computes $w_G$</span>
+            <div class="toggle-row" id="ch09-est-row">
+              <button type="button" data-est="blind">mass-blind $\beta_G$ (shipped)</button>
+              <button type="button" data-est="aware">mass-aware $r(h)\,\beta_G$ (diagnostic)</button>
+            </div>
+          </div>
+        </div>
+        <div id="ch09-bench-plot" class="widget-plot" style="min-height:310px"></div>
+        <div class="ch09-readouts">
+          <span>model $w_G(0.73)$ <strong id="ch09-bench-model">&mdash;</strong></span>
+          <span>expected in-catalogue events <strong id="ch09-bench-exp">&mdash;</strong></span>
+          <span>realized <strong id="ch09-bench-obs">&mdash;</strong></span>
+          <span>binomial <strong id="ch09-bench-z">&mdash;</strong></span>
+        </div>
+        <div class="ch09-verdict" id="ch09-bench-verdict"></div>
+        <div id="ch09-cf-wrap" class="ch09-locked">
+          <p class="ch09-note" style="margin-bottom:0.3rem">
+            The same substitution, propagated to the combined posterior — a
+            <strong>diagnostic counterfactual, not a ratified fix</strong>, computed on
+            <em>seed61000 / real_r1</em>&rsquo;s per-event diagnostics and scoped to that venue
+            <span class="prov-chip">g4_wg_tension.py (d)</span>. Every 2D number below sits on
+            <span class="badge candidate">CANDIDATE</span> ground
+            <span class="prov-chip">RATIFY-M6</span>:
+          </p>
+          <div id="ch09-cf-plot" class="widget-plot" style="min-height:280px"></div>
+        </div>
+        <details class="num-view">
+          <summary>Show me the numbers</summary>
+          <div class="table-scroll"><table class="num-table" id="ch09-bench-table"></table></div>
+        </details>
+      </div>
+      <noscript>
+        <p><strong>Static fallback.</strong> Shipped configuration: model $w_G(0.73) = 0.1215037$,
+        expected 380.9 in-catalogue events out of 3135, realized 164, binomial
+        <strong>z = &minus;11.86</strong> (per seed: &minus;9.00 and &minus;7.77). Making
+        $\beta_G$ mass-aware, $\beta_G \to r(h)\beta_G$ with $r(0.73) = 0.39248$, gives
+        $w_G(0.73) = 0.05149$, expected 161.4, realized 164, <strong>z = +0.21</strong>. There is
+        no mass-blind-generator realization anywhere in the project, so that cell has no realized
+        rate and no z-score.</p>
+      </noscript>
+    </div>
+
+    <div class="voice-adjudicator">
+      <span class="voice-label">C9, as adjudicated
+        <span class="badge finding">FINDING</span>
+        <span class="prov-chip">CLAIM_2D_BIAS_20260730.md C9</span>
+        <span class="prov-chip">ADJUDICATION_20260730.md §1</span>
+      </span>
+      <p style="margin:0 0 0.5rem">
+        <strong>Localized.</strong> The whole discrepancy is the catalogue&rsquo;s <em>relative
+        detection efficiency</em>. <span class="term" data-term="betaG">$\beta_G$</span> weights the completeness $f(z)$ by the
+        <em>pool-marginal</em>, population-mass $p_{\rm det}$ — but the catalogue&rsquo;s hosts are
+        Malmquist-selected and carry heavier M&ndash;&sigma; black holes (rate-weighted median
+        $\log_{10}M = 6.9$; at least 88% of the rate weight sits above the $10^7 M_\odot$
+        population cap by $z \approx 0.3$). Two <em>independent</em> suppression measures agree to
+        0.2&sigma;: the run&rsquo;s own logs give
+        $r(0.73) = \Sigma w D_g(\text{with bh})/\Sigma w D_g(\text{no bh}) = 0.39248$, and the
+        realized odds ratio gives $0.3991 \pm 0.0312$. A $p_{\rm det}$-free pointwise check agrees:
+        $P(\text{in-cat} \mid \text{det}, z)$ tracks $\bar f(z)$ below $z = 0.15$ and then
+        collapses — <strong>1/62</strong> in $[0.15,0.20]$ and <strong>0/2882</strong> above 0.20,
+        where $\bar f$ is still 0.11&ndash;0.29.
+      </p>
+      <p style="margin:0 0 0.5rem">
+        <strong>The adjudicator&rsquo;s discount, which must travel with the claim.</strong> The
+        counterfactual moves the MAP a lot — but in a near-flat profile many $\pm 10$-nat
+        interventions move the MAP a lot. What is solid <em>independent of leverage</em> is the
+        $z = -11.86$ generator-vs-inference inconsistency and the two-way $0.392/0.399$ agreement.
+        The bias question and the consistency question are separable, and only the second one is
+        settled here.
+      </p>
+      <p style="margin:0">
+        <strong>Extends to the dark side.</strong> Measured against the production pool
+        (fingerprint $d_{L,\max} = 9.164987$ Gpc), the realized dark-host redshift distribution is
+        skewed <em>high</em> relative to $\beta_{\bar G}$&rsquo;s own coded integrand:
+        KS $D = 0.0863$, $p = 1.08\times10^{-19}$ over 2971 events, quantile offsets
+        $+0.0163/+0.0229/+0.0369/+0.0462/+0.0286$. So $\varepsilon_{\rm dark} =
+        \hat\varepsilon_{\rm dark}$ does not hold exactly either. The effect is real but modest —
+        smaller than the catalogue-side finding, of the same character, and belonging to the same
+        fix track rather than to a new claim.
+      </p>
+    </div>
+
+    <div class="callout defect">
+      <span class="callout-label">Trap &mdash; &ldquo;If the generator and the estimator disagree, the estimator is wrong.&rdquo;</span>
+      Sometimes the generator is. Under convention (A) the mock&rsquo;s galaxy field <em>is</em>
+      GLADE+&rsquo;s Malmquist-shaped observed catalogue (§2) — that is a declared modelling
+      choice, not an error, and it is half of why the catalogue&rsquo;s hosts are mass-atypical.
+      &ldquo;Bias&rdquo; is a relation between two models, and naming which one you are holding
+      fixed is part of the claim. What C9 establishes is that <em>somebody</em> is wrong, at
+      11.9&sigma;, inside one run.
+    </div>
+
+    <div class="ch09-warn">
+      <span class="ch09-warn-label">Re-litigation guard — do not re-try the exonerated fix shape</span>
+      The historical exoneration of &ldquo;$w_G = \beta_G/D$ bookkeeping&rdquo; was an exoneration
+      of a <strong>FIX FORM, not of the defect</strong>. Re-deriving $w_G$ as a
+      membership-conditioned inverse merely <em>relocated</em> the tilt to the host branch
+      ($+94$&hellip;$+455$ nats, 12/12 fail) and <strong>must not be re-tried</strong>
+      <span class="prov-chip">ledger #61</span>. C9 is live; the fix is gated on the 2&times;2
+      cell-B control, which had not landed when this chapter was written. Exhibit:
+      <a href="museum.html#ex-wg-bookkeeping">the Defect Museum → the w_G bookkeeping fix</a>.
+    </div>
+
+    <p>
+      One pre-registered line from that control belongs here, because it is about this
+      chapter&rsquo;s quantity: <em>&ldquo;$w_G(h)$: expected bit-identical to the #53 runs (pure
+      quadrature, no catalogue input). If it differs, that itself is a finding.&rdquo;</em>
+      <span class="prov-chip">PREREGISTRATION_2x2_cellB.md</span>. It has already been checked off
+      r1: all ten realistic diagnostics files carry <em>one</em> bit-identical $w_G(h)$ curve. The
+      mixture weight does not depend on the realized event catalogue at all — which is exactly why
+      comparing it against a realized count is a fair test.
+    </p>
+
+    <!-- ================= dossier ================= -->
+    <div class="dossier">
+      <div class="dossier-title">Event dossier — EMRI-889 after this chapter</div>
+      <table>
+        <tr><td>d_L</td><td>88.9 Mpc</td></tr>
+        <tr><td>SNR</td><td>1425 — the loudest row in this run&rsquo;s table</td></tr>
+        <tr><td>host</td><td>catalogue index 859360 — one of only 76 with a catalogued host</td></tr>
+        <tr><td>z</td><td>photometric, and wider than anything else on this card</td></tr>
+        <tr class="dossier-new"><td>how it was born</td><td>M_z = 7.246×10⁵ M☉, t_plunge = 2.87 yr of the 4.5-yr window, p0 = 11.34 — a plunge-window draw, not a p₀ ∈ [10,16] snapshot (its p₀ lands inside the retired band by coincidence; 68% of the population&rsquo;s does not)</td></tr>
+        <tr class="dossier-new"><td>P(host catalogued)</td><td><strong>estimand-dependent</strong>: 0.1215 under <code>absolute_marginal</code> (#53), 0.0497 under <code>generator_marginal</code> (#51, measured) or 0.0555 (as quoted in C9 — disputed). The realized rate over 3135 events was 0.0523.</td></tr>
+        <tr class="dossier-new"><td>what this chapter added</td><td>889 is not special here. The chapter&rsquo;s measurement is about the <em>2971 detected events across both seeds that had no catalogued host</em> — while the estimator expected 381 of the 3135 to have one.</td></tr>
+      </table>
+    </div>
+
+    <!-- ================= §7 ================= -->
+    <h2>7. What this chapter cannot tell you</h2>
+
+    <p>
+      The idealized campaign recovers truth at $-0.24\sigma$ and $-0.36\sigma$ on two independent
+      seeds. It is worth being exact about what that buys. Those runs use each host&rsquo;s
+      <em>true</em> redshift and mass, point-to-point: recovery is guaranteed by construction, and
+      the measured $\sigma_h = 0.00030$ matches &ldquo;$z$ exact, GW distance error only&rdquo; to
+      about 5%. It is a <strong>consistency test of the generator&ndash;estimator pair</strong> —
+      the readout says so in its own caveat section — and it therefore cannot test redshift
+      kernels, catalogue scatter, mass proxies, or the completion branch&rsquo;s calibration.
+    </p>
+
+    <div class="callout without">
+      <span class="callout-label">The failure the next chapter answers</span>
+      Two seeds, both landing on truth, both slightly <em>negative</em>. Is the estimator
+      calibrated? A MAP at the right place is not an answer to that question — and the project
+      measured something worse about this particular closure: <strong>133 golden events carry
+      ~100% of the curvature</strong>, so the test that passed was validating <em>host
+      association</em>, not the selection machinery it was assumed to validate. Coverage,
+      P&ndash;P plots, and what a passing test actually tested: Chapter 10.
+    </div>
+
+    <!-- ================= self-check ================= -->
+    <h2>Self-check</h2>
+
+    <div class="selfcheck">
+      <p>Q9.1 &nbsp; The pipeline uses $\Omega_m = 0.2726$, not the Planck value. Bug or design
+      choice, and how would you tell?</p>
+      <details class="answer">
+        <summary>Show answer</summary>
+        <div class="answer-body">
+          Design choice, and you tell by asking what the number is <em>for</em>: it matches the
+          Barausse (2012) M1 cosmology that the EMRI population itself is drawn from, so the mock
+          universe is self-consistent. Using Planck&rsquo;s $\Omega_m$ with an M1 population would
+          put the generator and its own rate model in disagreement — a worse error than a known
+          offset. The Planck mismatch is tracked as a <em>quoted systematic</em>
+          ($+1.5$&ndash;$3\%$; $+0.16\%$ at $z = 0.05$ rising to $+3.31\%$ at $z = 1.5$
+          <span class="prov-chip">G7 row 6</span>), not silently absorbed. The general rule this
+          chapter teaches: a constant is a bug only relative to a stated purpose.
+        </div>
+      </details>
+    </div>
+
+    <div class="selfcheck">
+      <p>Q9.2 &nbsp; Two normalization modes give $w_G(0.73) = 0.1215$ and $0.0497$ for the
+      <em>same run</em>. Is one of them wrong?</p>
+      <details class="answer">
+        <summary>Show answer</summary>
+        <div class="answer-body">
+          No — they are <strong>different estimands</strong>, and both are internally consistent
+          within their own mode. <code>absolute_marginal</code> and <code>generator_marginal</code>
+          normalize the catalogue likelihood differently, so &ldquo;the probability the host is
+          catalogued&rdquo; means a different conditional in each. The danger is not the ambiguity
+          but the <em>comparison across modes</em>: the project spent real effort chasing a phantom
+          &ldquo;45% discrepancy&rdquo; that turned out to be two incompatible estimands placed
+          side by side, and one diagnostics column was declared corrupt when it was merely the
+          other mode&rsquo;s value <span class="prov-chip">C9 / loose thread</span>.
+        </div>
+      </details>
+    </div>
+
+    <div class="selfcheck">
+      <p>Q9.3 &nbsp; The estimator&rsquo;s $w_G(0.73) = 0.1215$; the realized detected
+      in-catalogue rate is $164/3135 = 0.0523$. Why is this a defect <em>independent</em> of
+      whether it causes the bias?</p>
+      <details class="answer">
+        <summary>Show answer</summary>
+        <div class="answer-body">
+          Because it is an internal inconsistency: the same code, in the same run, models a
+          quantity at 2.3&ndash;2.5&times; what the same code&rsquo;s own generator realizes, at
+          binomial $z = -11.86$. Whatever it does to the MAP, the estimator&rsquo;s mixture weight
+          is not the quantity the simulation produced, and no downstream number can be defended
+          while that holds. The project localizes the whole gap to the catalogue&rsquo;s
+          <em>relative</em> detection efficiency — $\beta_G$ weights by a pool-marginal,
+          population-mass $p_{\rm det}$, while Malmquist-selected catalogue hosts carry heavier
+          black holes — with two independent suppression measures agreeing to 0.2&sigma;
+          (0.39248 vs $0.3991 \pm 0.0312$) <span class="prov-chip">CLAIM C9</span>.
+        </div>
+      </details>
+    </div>
+
+    <div class="selfcheck">
+      <p>Q9.4 &nbsp; The idealized campaign uses each host&rsquo;s <em>true</em> $z$ and $M$
+      point-to-point. Name what that guarantees and what it therefore cannot test.</p>
+      <details class="answer">
+        <summary>Show answer</summary>
+        <div class="answer-body">
+          It guarantees recovery-on-truth by construction — with the redshift exactly right, each
+          golden event pins $h$ at its GW distance precision, which is why the measured
+          $\sigma_h = 0.00030$ matches &ldquo;$z$ exact + GW $d_L$ error only&rdquo; to ~5%. It
+          therefore cannot test anything about redshift kernels, catalogue scatter, mass proxies,
+          or the completion branch&rsquo;s calibration. It is a <em>consistency test of the
+          generator&ndash;estimator pair</em>, and the readout says so in its own caveat section.
+          The book quotes that caveat rather than celebrating the number
+          <span class="prov-chip">IDEALIZATION_LEDGER.md I1&ndash;I4</span>.
+        </div>
+      </details>
+    </div>
+
+    <div class="selfcheck">
+      <p>Q9.5 <em>(transfer)</em> &nbsp; Your estimator recovers truth at $-0.24\sigma$ on two
+      independent seeds. State the strongest claim you are entitled to make, and the claim you are
+      not.</p>
+      <details class="answer">
+        <summary>Show answer</summary>
+        <div class="answer-body">
+          Entitled: &ldquo;on this venue, with these idealizations, the generator and the estimator
+          agree, and no gross error is present in the path that connects them.&rdquo; Not entitled:
+          &ldquo;the estimator is unbiased&rdquo; or &ldquo;the estimator is calibrated&rdquo; — the
+          first needs many realizations, the second needs coverage. And there is a sharper trap:
+          the project measured that <strong>133 golden events carry ~100% of the
+          curvature</strong>, so the closure test validated <em>host association</em>, not the
+          selection machinery it was assumed to validate. Chapter 10.
+        </div>
+      </details>
+    </div>
+
+    <!-- ================= provenance ================= -->
+    <div class="provenance-panel">
+      <h4>Provenance panel — every stamp used in this chapter</h4>
+      <ul>
+        <li><span class="badge ratified">RATIFIED</span> <code>plunge_window_initial_conditions.md §1, §5, §11</code> — $t_{\rm plunge} \sim U[0,T]$, $T = 4.5$ yr, the $p_0$ domain rule, the high-mass horizon table</li>
+        <li><span class="badge ratified">RATIFIED</span> <code>realistic_host_observation_model.md §1.2 (R1), §2 (R2), §3.4/§9 (R3/R9), §4 (R4 option c), §5 (R5)</code> — the forward convention, counted-once realization, the guards, the selection split</li>
+        <li><span class="badge ratified">RATIFIED</span> <code>G2c §3, §4.1–4.3</code> — the Option-A bridge and the three normalization modes; Gray et al. 2020, arXiv:1908.06050 Eqs. (A9)/(A10)/(A14)/(A20)</li>
+        <li><span class="badge ratified">RATIFIED</span> <code>DERIVATION_GENERATOR_CONSISTENT_NORM.md §2.2, §2.3, §3.1</code> — $\hat n_w = W_{\rm cat}/V_f$, $D_{\rm gen}$, the derived $F = 0.0175370$</li>
+        <li><span class="badge finding">FINDING</span> <code>G2c §6 C1</code> — the &ldquo;Gray A.9/A.10 literal&rdquo; code comment overstates <code>local_ratio</code>; nearest analogue is (A20)</li>
+        <li><span class="badge finding">FINDING</span> <code>G1_beta_g_check.md:14-29</code> / <code>H0R:1548-1552</code> — Option-A residual &minus;17.2% end-to-end; identity violated 33% in value, 0.39/h in log-slope</li>
+        <li><span class="badge finding">FINDING</span> <code>CLAIM_2D_BIAS_20260730.md C9</code> + <code>ADJUDICATION_20260730.md §1</code> — $w_G$ mis-calibrated 2.3–2.5&times;, binomial z = &minus;11.86, with the leverage discount carried</li>
+        <li><span class="badge finding">FINDING</span> <code>ledger #49</code> — the four-step de-rail matrix (seed600, 494 events); <code>ledger #49a</code> — the H₀-independent estimator; <code>#49b</code> — the rail dated to ~2026-04-24</li>
+        <li><span class="badge finding">FINDING</span> <code>ledger #74</code> / <code>#77</code> — host misassociation confirmed; <code>absolute_marginal</code> relocated the rail LOW→HIGH</li>
+        <li><span class="badge finding">FINDING</span> <code>ledger #81</code> — <code>generator_marginal</code> pre-registered NOT to de-rail; prediction falsified, favorably (1D and 2D MAP = 0.73)</li>
+        <li><span class="badge candidate">CANDIDATE</span> <code>RATIFY-M6</code> — the #53 2D pairing (<code>absolute_marginal</code> + <code>volume_deconv</code>) is designated candidate; every 2D number on this page sits on that ground</li>
+        <li><span class="badge exonerated">EXONERATED</span> <code>ledger #61</code> — the $w_G = \beta_G/D$ membership-conditioned-inverse <em>fix form</em> (12/12 fail; do not re-try); the raw &times;2.48 Option-A drift as the $h^{-3}$ Jacobian (do not re-open)</li>
+        <li><span class="badge open">OPEN</span> <code>sources map §7 item 7</code> — the <code>generator_marginal</code> $w_G$ curve attribution; both sets plotted</li>
+        <li><span class="badge open">OPEN</span> <code>PREREGISTRATION_2x2_cellB.md</code> — the estimator control; in flight at the time of writing</li>
+        <li><span class="badge ratified">RATIFIED</span> <code>ledger #53</code> / <code>GATE_SIGNOFF.md G11</code> / <code>G7 row 6</code> — $\Omega_m = 0.2726$ as a population-matched design choice with a quoted systematic</li>
+        <li>Data: <code>results/campaign51_20260728/realistic_20260729/seed{61000,62000}/</code> (log legs, CRB tables), <code>.../gate_b_20260730/{g4_posterior_curves,g4_results,g2_catalogue_summary,g6_results,c9_darkdraw_results}.json</code>, <code>.../injection_pool_mix200k_20260728/</code>, <code>results/commission_20260701/redteam/derail_matrix_results.json</code>, <code>docs/gates/{G1_beta_g_check,G3_ablation_cube}.json</code></li>
+        <li>Hard gates in <code>gen_ch09.py</code>: $w_G(0.73)$, $r(0.73)$, mass-aware $w_G$, 164/3135, both binomial z, the four counterfactual MAP/mean pairs, all twelve published $\Omega_m$ cells, G1&rsquo;s own end-to-end tilts, and the de-rail matrix ≡ ablation-cube identity</li>
+        <li>Open flags: <code>book/design/flags/ch09_FLAGS.md</code></li>
+      </ul>
+    </div>
+
+    <p class="book-footer">
+      Data generated by <code>book/generators/gen_ch09.py</code> (read-only against the main
+      package and <code>results/</code>). This page renders fully offline — Plotly and KaTeX are
+      vendored under <code>vendor/</code>.
+    </p>
+  </main>
+</div>
+
+<script src="js/manifest.js"></script>
+<script src="vendor/plotly/plotly.min.js"></script>
+<script src="vendor/katex/katex.min.js"></script>
+<script src="vendor/katex/auto-render.min.js"></script>
+<script src="js/book.js"></script>
+<script>
+  (function () {
+    "use strict";
+
+    // ---------------------------------------------------------------
+    // Palette (mirrors css/book.css tokens; Plotly needs literals)
+    // ---------------------------------------------------------------
+    var C = {
+      accent: "#0072B2",
+      accentDark: "#6fb8e8",
+      warn: "#D55E00",
+      rec: "#CC79A7",
+      ok: "#009E73",
+      guess: "#E69F00",
+      prior: "#9e9e9e",
+    };
+    function ink() { return Book.isDark() ? "#eef1f5" : "#1a1a1a"; }
+    function grid() { return Book.isDark() ? "#33373f" : "#d8dce1"; }
+    function live() { return Book.isDark() ? C.accentDark : C.accent; }
+
+    function baseLayout(xTitle, yTitle) {
+      return {
+        margin: { l: 64, r: 18, t: 26, b: 46 },
+        xaxis: { title: xTitle, gridcolor: grid(), zeroline: false },
+        yaxis: { title: yTitle, gridcolor: grid(), zeroline: false },
+        paper_bgcolor: "rgba(0,0,0,0)",
+        plot_bgcolor: "rgba(0,0,0,0)",
+        font: { color: ink(), size: 12 },
+        showlegend: true,
+        legend: { orientation: "h", y: 1.14, x: 0, font: { size: 11 } },
+        hovermode: "closest",
+      };
+    }
+    function truthShape(h) {
+      return {
+        type: "line", x0: h, x1: h, y0: 0, y1: 1, yref: "paper",
+        line: { color: Book.isDark() ? "#eef1f5" : "#1a1a1a", dash: "dot", width: 1.6 },
+      };
+    }
+    function fmt(v, n) {
+      return (v === null || v === undefined || !isFinite(v)) ? "\u2014" : Number(v).toFixed(n);
+    }
+    /* Plots created inside a hidden .reveal render at zero width; resize them
+       when the block becomes visible (and on restore from localStorage). */
+    function revealResize(widgetId, plotIds) {
+      var w = document.getElementById(widgetId);
+      if (!w) return;
+      var rev = w.closest(".widget").querySelector(".reveal");
+      var go = function () {
+        plotIds.forEach(function (id) {
+          if (document.getElementById(id)) Plotly.Plots.resize(id);
+        });
+      };
+      if (rev && rev.classList.contains("shown")) setTimeout(go, 0);
+      return go;
+    }
+    function table(el, headers, rows) {
+      var html = "<tr>" + headers.map(function (h) { return "<th>" + h + "</th>"; }).join("") + "</tr>";
+      rows.forEach(function (r) {
+        html += "<tr>" + r.map(function (c) { return "<td>" + c + "</td>"; }).join("") + "</tr>";
+      });
+      el.innerHTML = html;
+    }
+    function setActive(row, attr, value) {
+      row.querySelectorAll("[" + attr + "]").forEach(function (b) {
+        b.setAttribute("aria-pressed", b.getAttribute(attr) === value ? "true" : "false");
+      });
+    }
+
+    // ---------------------------------------------------------------
+    // Bias rail (BW1) — this chapter changes no estimator row; it adds a pip.
+    // R-ch07-1/R-ch11-1 IMPLEMENTED by the integrator: Book.biasRail takes
+    // `pips` directly; the page-local append workaround is retired.
+    // ---------------------------------------------------------------
+    var PIPS = [
+      { tone: "amber", label: "C7: kernel inflates at σ_z/z > 0.256", note: "CLAIM C7 — MEASURED, live" },
+      { tone: "amber", label: "C8: 2D MAP walks with the mass unit", note: "CLAIM C8 — well-posedness, live" },
+      { tone: "amber", label: "C9: w_G ≠ realized rate (z = −11.86)", note: "CLAIM C9 — measured this chapter; leverage discount applies" },
+      { tone: "grey", label: "cell B (the estimator control) not landed", note: "PREREGISTRATION_2x2_cellB.md" },
+    ];
+    function renderRail() {
+      Book.biasRail({
+        entries: [
+          { label: "cat-only, no D(h)", bias: -0.178, note: "Phase 32 / ledger #9" },
+          { label: "full-volume D(h)", bias: 0.0, note: "Phase 32 / ledger #9" },
+          { label: "volume_deconv (residual floor)", bias: -0.002, note: "ledger #47 — coverage ≈0% → nominal" },
+          { label: "2D, mass channel", bias: 0.077, note: "10/10 runs > +2σ — RATIFY-M6 CANDIDATE ground", active: true },
+        ],
+        pips: PIPS,
+      });
+    }
+    renderRail();
+
+    // ===============================================================
+    // Cold open + I9.2 — data/ch09_bench.json
+    // ===============================================================
+    Book.loadJSON("data/ch09_bench.json").then(function (B) {
+      var H = B.h_grid;
+      var realRate = B.realized.pooled.rate;
+      var se = Math.sqrt(realRate * (1 - realRate) / B.realized.pooled.n);
+
+      function bandTraces(name) {
+        var hi = H.map(function () { return realRate + se; });
+        var lo = H.map(function () { return realRate - se; });
+        return [
+          { x: H, y: hi, mode: "lines", line: { width: 0 }, hoverinfo: "skip", showlegend: false },
+          {
+            x: H, y: lo, mode: "lines", line: { width: 0 }, fill: "tonexty",
+            fillcolor: "rgba(213,94,0,0.20)", name: name,
+            hovertemplate: "realized 164/3135 = %{y:.5f}<extra></extra>",
+          },
+          {
+            x: H, y: H.map(function () { return realRate; }), mode: "lines",
+            line: { color: C.warn, width: 2, dash: "dash" },
+            name: "realized rate (164/3135)",
+            hovertemplate: "realized = %{y:.5f}<extra></extra>",
+          },
+        ];
+      }
+
+      // ---- cold open -------------------------------------------------
+      Book.themedPlot(
+        "ch09-cold-plot",
+        [
+          {
+            x: H, y: B.w_G_blind, mode: "lines", line: { color: live(), width: 2.6 },
+            name: "model w_G(h) = β_G/D  (absolute_marginal, #53)",
+            hovertemplate: "h = %{x:.3f}<br>w_G = %{y:.6f}<extra></extra>",
+          },
+        ].concat(bandTraces("realized ± 1 binomial s.e.")),
+        function () {
+          var L = baseLayout("h = H₀ / 100", "P(host in catalogue | detected)");
+          L.shapes = [truthShape(B.h_true)];
+          L.yaxis.range = [0, 0.18];
+          L.annotations = [
+            {
+              x: 0.73, y: B.w_G_blind[H.indexOf(0.73)], text: "0.1215037",
+              showarrow: true, arrowhead: 0, ax: 40, ay: -26, font: { size: 11, color: live() },
+            },
+            {
+              x: 0.79, y: realRate, text: "0.05231 — binomial z = −11.86",
+              showarrow: true, arrowhead: 0, ax: 0, ay: 30, font: { size: 11, color: C.warn },
+            },
+          ];
+          return L;
+        }
+      );
+      document.getElementById("ch09-cold-model").textContent = B.w_G_blind[H.indexOf(0.73)].toFixed(7);
+      document.getElementById("ch09-cold-real").textContent =
+        B.realized.pooled.k + "/" + B.realized.pooled.n + " = " + realRate.toFixed(5);
+      document.getElementById("ch09-cold-z").textContent = "z = " + B.realized.z_blind.toFixed(2);
+      table(
+        document.getElementById("ch09-cold-table"),
+        ["h", "w_G (mass-blind, shipped)", "w_G (mass-aware, diagnostic)", "r(h)", "the 4-dp log field"],
+        H.map(function (h, i) {
+          return [h.toFixed(3), B.w_G_blind[i].toFixed(7), B.w_G_aware[i].toFixed(7),
+                  B.r[i].toFixed(5), B.w_G_log_4dp[i].toFixed(4)];
+        })
+      );
+
+      // ---- I9.2 ------------------------------------------------------
+      var st = { gen: "aware", est: "blind" };
+      var genRow = document.getElementById("ch09-gen-row");
+      var estRow = document.getElementById("ch09-est-row");
+      var cfWrap = document.getElementById("ch09-cf-wrap");
+      var i73 = H.indexOf(0.73);
+
+      var benchPlot = null, cfPlot = null;
+
+      function modelCurve() { return st.est === "aware" ? B.w_G_aware : B.w_G_blind; }
+
+      function benchTraces() {
+        var y = modelCurve();
+        var t = [
+          {
+            x: H, y: y, mode: "lines",
+            line: { color: st.est === "aware" ? C.ok : live(), width: 2.8 },
+            name: st.est === "aware" ? "model w_G with mass-aware β_G" : "model w_G (shipped, mass-blind β_G)",
+            hovertemplate: "h = %{x:.3f}<br>w_G = %{y:.6f}<extra></extra>",
+          },
+          {
+            x: B.genmarg.h, y: B.genmarg.measured, mode: "markers",
+            marker: { color: C.rec, size: 8, symbol: "circle" },
+            name: "generator_marginal w_G — measured in the CSVs (a different estimand)",
+            hovertemplate: "h = %{x:.2f}<br>w_G = %{y:.6f}<extra></extra>",
+          },
+          {
+            x: B.genmarg.h, y: B.genmarg.claimed, mode: "markers",
+            marker: { color: C.rec, size: 9, symbol: "circle-open", line: { width: 2 } },
+            name: "generator_marginal w_G — as quoted in C9 (OPEN dispute)",
+            hovertemplate: "h = %{x:.2f}<br>w_G = %{y:.6f}<extra></extra>",
+          },
+        ];
+        if (st.gen === "aware") t = t.concat(bandTraces("realized ± 1 s.e."));
+        return t;
+      }
+
+      var VERDICT = {
+        "aware|blind":
+          "<span class='ch09-verdict-label'>The shipped configuration — measured</span>" +
+          "The estimator expects <strong>380.9</strong> of 3135 detected events to have a " +
+          "catalogued host. <strong>164</strong> did. Binomial <strong>z = −11.86</strong> pooled " +
+          "(−9.00 and −7.77 per seed). This is not a fit quality; it is the same code disagreeing " +
+          "with itself about a countable thing.",
+        "aware|aware":
+          "<span class='ch09-verdict-label'>The dial that reconciles them — measured</span>" +
+          "Weighting β_G by the catalogue's own mass-aware selection ratio r(h) gives " +
+          "<strong>w_G(0.73) = 0.05149</strong>, expected <strong>161.4</strong> against 164 " +
+          "realized: <strong>z = +0.21</strong>. And r(0.73) = 0.39248 from the run's logs agrees " +
+          "with the realized suppression 0.3991 ± 0.0312 to <strong>0.21σ</strong> — two " +
+          "independent routes to the same number. This is a <em>diagnostic counterfactual, not a " +
+          "ratified fix</em>: it is gated on cell B, and the adjudicator's leverage discount " +
+          "applies to every MAP it moves.",
+        "blind|blind":
+          "<span class='ch09-verdict-label'>No such run exists</span>" +
+          "A mass-blind host draw would make the estimator's β_G right by construction — and no " +
+          "realization of it exists anywhere in the project, so there is no realized rate to " +
+          "compare against and the binomial z is <strong>undefined</strong>. The bench will not " +
+          "invent one. Note also that the catalogue's mass selection is not a switch: it is a " +
+          "property of GLADE+, inherited by the mock under the ratified forward convention (A).",
+        "blind|aware":
+          "<span class='ch09-verdict-label'>No such run exists</span>" +
+          "Same as the cell to the left: with a mass-blind generator there is nothing measured to " +
+          "compare against. The mass-aware β_G curve is drawn for reference only. The honest " +
+          "reading of this quadrant is that <em>the generator dial was never turned, and could " +
+          "not be turned without rebuilding the catalogue the mock is made of</em>.",
+      };
+
+      function renderBench() {
+        setActive(genRow, "data-gen", st.gen);
+        setActive(estRow, "data-est", st.est);
+        var key = st.gen + "|" + st.est;
+        document.getElementById("ch09-bench-verdict").innerHTML = VERDICT[key];
+
+        var wm = modelCurve()[i73];
+        document.getElementById("ch09-bench-model").textContent = wm.toFixed(7);
+        document.getElementById("ch09-bench-exp").textContent =
+          (B.realized.pooled.n * wm).toFixed(1);
+        document.getElementById("ch09-bench-obs").textContent =
+          st.gen === "aware" ? String(B.realized.pooled.k) : "no realization";
+        var z = st.est === "aware" ? B.realized.z_aware : B.realized.z_blind;
+        document.getElementById("ch09-bench-z").innerHTML =
+          st.gen === "aware" ? "z = " + (z >= 0 ? "+" : "") + z.toFixed(2) : "undefined";
+
+        if (benchPlot) benchPlot.update(benchTraces());
+        cfWrap.className = (st.gen === "aware" && st.est === "aware") ? "" : "ch09-locked";
+      }
+
+      benchPlot = Book.themedPlot("ch09-bench-plot", benchTraces(), function () {
+        var L = baseLayout("h = H₀ / 100", "P(host in catalogue | detected)");
+        L.shapes = [truthShape(B.h_true)];
+        L.yaxis.range = [0, 0.18];
+        return L;
+      });
+
+      cfPlot = Book.themedPlot(
+        "ch09-cf-plot",
+        (function () {
+          var cf = B.counterfactual;
+          function norm(logArr) {
+            var m = -Infinity, i;
+            for (i = 0; i < logArr.length; i++) if (logArr[i] > m) m = logArr[i];
+            var y = logArr.map(function (v) { return Math.exp(v - m); });
+            return Book.normalizePosterior(y, cf.h);
+          }
+          return [
+            { x: cf.h, y: norm(cf.no_bh_base), mode: "lines", line: { color: live(), width: 2 },
+              name: "1D as delivered (mean 0.7321)" },
+            { x: cf.h, y: norm(cf.no_bh_corr), mode: "lines", line: { color: live(), width: 2, dash: "dot" },
+              name: "1D with mass-aware β_G (mean 0.6430)" },
+            { x: cf.h, y: norm(cf.with_bh_base), mode: "lines", line: { color: C.warn, width: 2 },
+              name: "2D as delivered (mean 0.8123)" },
+            { x: cf.h, y: norm(cf.with_bh_corr), mode: "lines", line: { color: C.warn, width: 2, dash: "dot" },
+              name: "2D with mass-aware β_G (mean 0.7433)" },
+          ];
+        })(),
+        function () {
+          var L = baseLayout("h = H₀ / 100", "posterior density");
+          L.shapes = [truthShape(B.h_true)];
+          return L;
+        }
+      );
+      void cfPlot;
+
+      genRow.querySelectorAll("[data-gen]").forEach(function (b) {
+        b.addEventListener("click", function () { st.gen = b.getAttribute("data-gen"); renderBench(); });
+      });
+      estRow.querySelectorAll("[data-est]").forEach(function (b) {
+        b.addEventListener("click", function () { st.est = b.getAttribute("data-est"); renderBench(); });
+      });
+      renderBench();
+
+      table(
+        document.getElementById("ch09-bench-table"),
+        ["quantity", "value", "provenance"],
+        [
+          ["model w_G(0.73), mass-blind β_G (shipped)", B.w_G_blind[i73].toFixed(7), "D − β_Ḡ from the run's per-h logs, 7 s.f."],
+          ["model w_G(0.73), mass-aware β_G (diagnostic)", B.w_G_aware[i73].toFixed(7), "r(h)·β_G / (r(h)·β_G + β_Ḡ)"],
+          ["r(0.73) = Σw·D_g(with bh) / Σw·D_g(no bh)", B.suppression.r_073_from_logs.toFixed(5), "the run's own logs"],
+          ["realized suppression (odds ratio)", B.suppression.realized.toFixed(4) + " ± " + B.suppression.realized_err.toFixed(4), "164/3135 vs model odds"],
+          ["gap between the two suppression measures", B.suppression.sigma_gap.toFixed(2) + "σ", "independent routes"],
+          ["realized in-catalogue, seed 61000", B.realized.seed61000.k + "/" + B.realized.seed61000.n + "  (z = " + B.realized.z_blind_seed61000.toFixed(2) + ")", "prepared_cramer_rao_bounds.csv"],
+          ["realized in-catalogue, seed 62000", B.realized.seed62000.k + "/" + B.realized.seed62000.n + "  (z = " + B.realized.z_blind_seed62000.toFixed(2) + ")", "prepared_cramer_rao_bounds.csv"],
+          ["expected (mass-blind) / (mass-aware)", B.realized.expected_blind.toFixed(1) + " / " + B.realized.expected_aware.toFixed(1), "n · w_G(0.73)"],
+          ["pre-detection in-catalogue fraction F", B.population_fraction.F.toFixed(7), "V_f/V_tot, exactly h-independent"],
+          ["mean f̄(z) over detected events", B.population_fraction.mean_fbar_over_detected.toFixed(4), "g6_results.json"],
+          ["dark-side KS vs β_Ḡ's own integrand", "D = " + B.dark_side.ks.toFixed(4) + ", p = " + B.dark_side.p.toExponential(2) + " (n = " + B.dark_side.n_dark + ")", "production pool, fingerprint " + B.dark_side.fingerprint_dl_max_Gpc.toFixed(6) + " Gpc"],
+          ["#51 → #53 mixture-weight ratio", "×" + B.event_889.ratio_53_over_51_claimed.toFixed(2) + " (C9's value) / ×" + B.event_889.ratio_53_over_51_measured.toFixed(2) + " (measured)", "OPEN — sources map §7 item 7"],
+          ["4-dp w_G log field, max relative deviation", B.w_G_log_4dp_max_rel_dev.toExponential(2), "why residual work must use D − β_Ḡ"],
+        ]
+      );
+
+      var benchResize = revealResize("ch09-bench-predict", ["ch09-bench-plot", "ch09-cf-plot"]);
+      Book.predictReveal(
+        document.getElementById("ch09-bench-predict").closest(".widget"),
+        function () { setTimeout(benchResize, 0); }
+      );
+      setTimeout(benchResize, 0);
+    });
+
+    // ===============================================================
+    // I9.3 — data/ch09_derail.json
+    // ===============================================================
+    Book.loadJSON("data/ch09_derail.json").then(function (D) {
+      var row = document.getElementById("ch09-derail-row");
+      var plot = null;
+      var idx = 0;
+
+      function traces(i) {
+        var s = D.steps[i];
+        var t = [];
+        if (s.curve) {
+          t.push({
+            x: s.curve.h, y: s.curve.posterior, mode: "lines+markers",
+            line: { color: s.curve.railed ? C.warn : live(), width: 2.6 },
+            marker: { size: 7 },
+            name: s.label,
+            hovertemplate: "h = %{x:.2f}<br>mass = %{y:.4g}<extra></extra>",
+          });
+        } else {
+          t.push({
+            x: [s.map], y: [1], mode: "markers",
+            marker: { color: C.rec, size: 15, symbol: "diamond" },
+            name: "recorded MAP only — no stored posterior",
+            hovertemplate: "recorded MAP = %{x:.2f}<extra></extra>",
+          });
+        }
+        t.push({
+          x: D.catonly.h, y: D.catonly.posterior, mode: "lines",
+          line: { color: C.prior, width: 1.6, dash: "dot" },
+          name: "catalog_only baseline (MAP 0.73 throughout)",
+          hovertemplate: "h = %{x:.2f}<br>mass = %{y:.4g}<extra></extra>",
+        });
+        return t;
+      }
+
+      function render(i) {
+        idx = i;
+        setActive(row, "data-step", String(i));
+        var s = D.steps[i];
+        document.getElementById("ch09-derail-map").textContent = s.map.toFixed(2);
+        document.getElementById("ch09-derail-mean").innerHTML =
+          s.curve ? s.curve.mean.toFixed(6) : "&mdash; (not stored)";
+        document.getElementById("ch09-derail-edge").innerHTML =
+          s.curve ? s.curve.edge_mass.toExponential(2) : "&mdash;";
+        void 0;
+        document.getElementById("ch09-derail-verdict").innerHTML =
+          "<span class='ch09-verdict-label'>" +
+          (s.recorded_only ? "Recorded measurement — not recomputed" : "Measured, archived posterior") +
+          "</span><strong>" + s.label + "</strong> → MAP <strong>" + s.map.toFixed(2) +
+          "</strong>. " + s.verdict +
+          (s.recorded_only
+            ? " This state predates every stored posterior in the tree, so the strip shows its"
+              + " recorded MAP and nothing else — it is deliberately <em>not</em> a live curve,"
+              + " and the two must not be read as one measurement."
+            : "");
+        if (plot) plot.update(traces(i));
+      }
+
+      plot = Book.themedPlot("ch09-derail-plot", traces(0), function () {
+        var L = baseLayout("h = H₀ / 100", "posterior mass (7-point grid)");
+        L.shapes = [truthShape(D.h_true)];
+        L.yaxis.type = "log";
+        L.yaxis.range = [-22, 0.2];
+        L.yaxis.title = "posterior mass (log scale)";
+        return L;
+      });
+
+      row.querySelectorAll("[data-step]").forEach(function (b) {
+        b.addEventListener("click", function () { render(Number(b.getAttribute("data-step"))); });
+      });
+      render(0);
+
+      var rows = D.steps.map(function (s) {
+        return [s.label, s.map.toFixed(2),
+                s.curve ? s.curve.mean.toFixed(6) : "not stored",
+                s.curve ? s.curve.edge_mass.toExponential(2) : "—",
+                s.recorded_only ? "recorded MAP (ledger #49)" : "archived posterior"];
+      });
+      rows.push(["catalog_only baseline", D.catonly.map.toFixed(2), D.catonly.mean.toFixed(6),
+                 D.catonly.edge_mass.toExponential(2), "archived posterior"]);
+      if (D.cube_extra.volume_global) {
+        rows.push(["volume kernel, denominator still global (a different ablation axis)",
+                   D.cube_extra.volume_global.map.toFixed(2),
+                   D.cube_extra.volume_global.mean.toFixed(6),
+                   D.cube_extra.volume_global.edge_mass.toExponential(2),
+                   "G3_ablation_cube.json only"]);
+      }
+      table(document.getElementById("ch09-derail-table"),
+            ["state", "MAP", "posterior mean", "mass at grid edges", "provenance"], rows);
+    });
+
+    // ===============================================================
+    // I9.4 — data/ch09_identity.json
+    // ===============================================================
+    Book.loadJSON("data/ch09_identity.json").then(function (G) {
+      var row = document.getElementById("ch09-identity-row");
+      var mode = "raw";
+      var plot = null;
+
+      function traces() {
+        if (mode === "raw") {
+          return [
+            {
+              x: G.h, y: G.ratio, mode: "lines+markers", line: { color: C.warn, width: 2.6 },
+              name: "Σ_global(h) / β_G(h) — should be constant",
+              hovertemplate: "h = %{x:.2f}<br>ratio = %{y:.3f}<extra></extra>",
+            },
+            {
+              x: G.h,
+              y: G.h.map(function (h) { return G.ratio[0] * Math.pow(h / G.h[0], 3); }),
+              mode: "lines", line: { color: C.prior, width: 1.8, dash: "dash" },
+              name: "pure h³ (the piece that cancels)",
+              hovertemplate: "h = %{x:.2f}<br>h³ model = %{y:.3f}<extra></extra>",
+            },
+          ];
+        }
+        return [
+          {
+            x: G.h, y: G.shape_h3_corrected, mode: "lines+markers",
+            line: { color: live(), width: 2.6 },
+            name: "after ÷ h³, normalized at h = 0.72",
+            hovertemplate: "h = %{x:.2f}<br>shape = %{y:.4f}<extra></extra>",
+          },
+          {
+            x: G.h, y: G.h.map(function () { return 1; }), mode: "lines",
+            line: { color: C.prior, width: 1.6, dash: "dash" },
+            name: "what the Option-A identity predicts",
+            hoverinfo: "skip",
+          },
+        ];
+      }
+
+      function render() {
+        setActive(row, "data-idmode", mode);
+        if (plot) plot.update(traces());
+      }
+
+      plot = Book.themedPlot("ch09-identity-plot", traces(), function () {
+        var L = baseLayout("h = H₀ / 100", mode === "raw" ? "Σ_global / β_G" : "shape after ÷ h³");
+        L.shapes = [truthShape(0.73)];
+        return L;
+      });
+
+      row.querySelectorAll("[data-idmode]").forEach(function (b) {
+        b.addEventListener("click", function () { mode = b.getAttribute("data-idmode"); render(); });
+      });
+      render();
+
+      document.getElementById("ch09-id-growth").textContent = "×" + G.raw_ratio_growth.toFixed(3);
+      document.getElementById("ch09-id-h3").textContent = "×" + G.h3_expected.toFixed(3);
+      document.getElementById("ch09-id-resid").textContent =
+        (G.end_to_end_tilt_h3_corrected * 100).toFixed(2) + "% end-to-end (max ±" +
+        (G.max_shape_deviation_h3_corrected * 100).toFixed(2) + "%)";
+
+      table(
+        document.getElementById("ch09-identity-table"),
+        ["h", "Σ_global(h)", "β_G(h)", "ratio", "shape after ÷ h³ (norm. at 0.72)"],
+        G.h.map(function (h, i) {
+          return [h.toFixed(2), G.Sigma_global[i].toExponential(4), G.beta_G[i].toExponential(4),
+                  G.ratio[i].toFixed(4), G.shape_h3_corrected[i].toFixed(5)];
+        })
+      );
+
+      var idResize = revealResize("ch09-identity-predict", ["ch09-identity-plot"]);
+      Book.predictReveal(
+        document.getElementById("ch09-identity-predict").closest(".widget"),
+        function () { setTimeout(idResize, 0); }
+      );
+      setTimeout(idResize, 0);
+    });
+
+    // ===============================================================
+    // I9.1 — data/ch09_factory.json
+    // ===============================================================
+    Book.loadJSON("data/ch09_factory.json").then(function (F) {
+      var P = F.pool;
+      var mlo = document.getElementById("ch09-mlo");
+      var mhi = document.getElementById("ch09-mhi");
+      var icRow = document.getElementById("ch09-ic-row");
+      var omRow = document.getElementById("ch09-om-row");
+      var nb = F.logm_edges.length - 1;
+      var st = { lo: 0, hi: nb - 1, ic: "plunge", om: "m1" };
+      var zPlot = null, p0Plot = null, omPlot = null;
+
+      mlo.min = "0"; mlo.max = String(nb - 1); mlo.step = "1"; mlo.value = "0";
+      mhi.min = "0"; mhi.max = String(nb - 1); mhi.step = "1"; mhi.value = String(nb - 1);
+
+      function zCentres() {
+        var c = [];
+        for (var j = 0; j < F.z_edges.length - 1; j++) c.push(0.5 * (F.z_edges[j] + F.z_edges[j + 1]));
+        return c;
+      }
+      function mCentres() {
+        var c = [];
+        for (var j = 0; j < nb; j++) c.push(0.5 * (F.logm_edges[j] + F.logm_edges[j + 1]));
+        return c;
+      }
+      function marginal(hist) {
+        var out = new Array(F.z_edges.length - 1).fill(0);
+        for (var b = st.lo; b <= st.hi; b++) {
+          for (var j = 0; j < out.length; j++) out[j] += hist[b][j];
+        }
+        return out;
+      }
+      function medianOf(counts) {
+        var tot = counts.reduce(function (a, b) { return a + b; }, 0);
+        if (!tot) return NaN;
+        var acc = 0, zc = zCentres();
+        for (var j = 0; j < counts.length; j++) {
+          acc += counts[j];
+          if (acc >= tot / 2) return zc[j];
+        }
+        return zc[zc.length - 1];
+      }
+
+      function zTraces() {
+        var d = marginal(P.hist_drawn), e = marginal(P.hist_detected);
+        var zc = zCentres();
+        return [
+          { x: zc, y: d, type: "bar", marker: { color: C.prior, opacity: 0.55 },
+            name: "drawn (population measure)",
+            hovertemplate: "z ≈ %{x:.2f}<br>%{y} injections<extra></extra>" },
+          { x: zc, y: e, type: "bar", marker: { color: live() },
+            name: "detected (SNR ≥ 20)",
+            hovertemplate: "z ≈ %{x:.2f}<br>%{y} detections<extra></extra>" },
+        ];
+      }
+
+      function p0Traces() {
+        var mc = mCentres();
+        var q10 = [], q50 = [], q90 = [], band = [];
+        for (var b = 0; b < nb; b++) {
+          var p = P.p0_profile[b];
+          q10.push(p && p.p0_q10 !== undefined ? p.p0_q10 : null);
+          q50.push(p && p.p0_q50 !== undefined ? p.p0_q50 : null);
+          q90.push(p && p.p0_q90 !== undefined ? p.p0_q90 : null);
+          band.push(p && p.frac_in_snapshot_band !== undefined ? p.frac_in_snapshot_band : null);
+        }
+        var t = [
+          { x: mc, y: q90, mode: "lines", line: { width: 0 }, hoverinfo: "skip", showlegend: false },
+          { x: mc, y: q10, mode: "lines", line: { width: 0 }, fill: "tonexty",
+            fillcolor: "rgba(0,114,178,0.18)", name: "plunge-consistent p₀, 10th–90th percentile" },
+          { x: mc, y: q50, mode: "lines+markers", line: { color: live(), width: 2.4 },
+            name: "median p₀ from the plunge-window root-find",
+            hovertemplate: "log₁₀M_z = %{x:.1f}<br>median p₀ = %{y:.1f}<extra></extra>" },
+          { x: mc, y: band.map(function (v) { return v === null ? null : v * 100; }),
+            mode: "lines", yaxis: "y2", line: { color: C.rec, width: 2, dash: "dot" },
+            name: "% of events whose p₀ lands in the retired [10,16] band",
+            hovertemplate: "log₁₀M_z = %{x:.1f}<br>%{y:.1f}% in band<extra></extra>" },
+        ];
+        return t;
+      }
+
+      function omTraces() {
+        var zs = F.omega.rows.map(function (r) { return r.z; });
+        var t = [
+          { x: zs, y: F.omega.rows.map(function (r) { return r.pct_m1; }), mode: "lines+markers",
+            line: { color: st.om === "planck" ? C.warn : live(), width: 2.6 },
+            name: "assume Ω_m = 0.2726, truth = Planck 0.3153",
+            hovertemplate: "z = %{x}<br>bias in h = +%{y:.2f}%<extra></extra>" },
+          { x: zs, y: F.omega.rows.map(function (r) { return r.pct_preG11; }), mode: "lines+markers",
+            line: { color: C.prior, width: 1.8, dash: "dash" },
+            name: "the retired pre-G11 fiducial 0.25, for scale",
+            hovertemplate: "z = %{x}<br>bias in h = +%{y:.2f}%<extra></extra>" },
+        ];
+        return t;
+      }
+
+      function warn() {
+        var box = document.getElementById("ch09-factory-warn");
+        var txt = document.getElementById("ch09-factory-warn-text");
+        var msgs = [];
+        if (st.ic === "snapshot") {
+          msgs.push(
+            "<strong>Initial conditions ≠ rate model.</strong> The rate weight w_g = R_eff(M_g)/(1+z_g) " +
+            "counts <em>plunges</em>. Under the retired snapshot draw only " +
+            (P.frac_p0_in_snapshot_band * 100).toFixed(1) + "% of plunge-consistent events have a p₀ " +
+            "inside [10,16] at all, and above log₁₀M_z = 6.2 the overlap is 5.8%, above 6.4 it is 0.6% — the draw " +
+            "silently forbids in-window plunges exactly where the rate model says they happen. " +
+            "That is an input-validity domain being used as an astrophysical prior (audit item 1). " +
+            "No injection pool exists for this convention, and that is the point: turning this dial " +
+            "changes which events exist, so every downstream product — SNRs, CRBs, p_det — must be regenerated."
+          );
+        }
+        if (st.om === "planck") {
+          msgs.push(
+            "<strong>Cosmology ≠ population.</strong> The EMRI population was drawn from the Barausse M1 " +
+            "model at Ω_m = 0.2726. Switching only the <em>estimator's</em> Ω_m to Planck's 0.3153 puts " +
+            "the generator in disagreement with its own rate model — which is precisely the error the " +
+            "G11 design decision avoids. The curve below is the size of the mis-specification if the " +
+            "real universe is Planck's: +0.16% in h at z = 0.05, +3.31% at z = 1.5."
+          );
+        }
+        if (msgs.length) {
+          box.className = "ch09-warn";
+          txt.innerHTML = msgs.join("<br /><br />");
+        } else {
+          box.className = "ch09-warn quiet";
+          txt.innerHTML = "Both dials are in their shipped positions: the pool you are looking at was " +
+            "generated under exactly these conventions.";
+        }
+      }
+
+      function render() {
+        st.lo = Math.min(Number(mlo.value), Number(mhi.value));
+        st.hi = Math.max(Number(mlo.value), Number(mhi.value));
+        setActive(icRow, "data-ic", st.ic);
+        setActive(omRow, "data-om", st.om);
+        document.getElementById("ch09-mband").textContent =
+          F.logm_edges[st.lo].toFixed(1) + " – " + F.logm_edges[st.hi + 1].toFixed(1);
+
+        var d = marginal(P.hist_drawn), e = marginal(P.hist_detected);
+        var nd = d.reduce(function (a, b) { return a + b; }, 0);
+        var ne = e.reduce(function (a, b) { return a + b; }, 0);
+        document.getElementById("ch09-n-drawn").textContent = nd.toLocaleString("en");
+        document.getElementById("ch09-n-det").textContent = ne.toLocaleString("en");
+        document.getElementById("ch09-detfrac").textContent =
+          nd ? (100 * ne / nd).toFixed(2) + "%" : "—";
+        document.getElementById("ch09-zmed-drawn").textContent = fmt(medianOf(d), 3);
+        document.getElementById("ch09-zmed-det").textContent = fmt(medianOf(e), 3);
+
+        if (zPlot) zPlot.update(zTraces());
+        if (omPlot) omPlot.update(omTraces());
+        warn();
+      }
+
+      zPlot = Book.themedPlot("ch09-factory-plot", zTraces(), function () {
+        var L = baseLayout("redshift z", "injections per bin");
+        L.barmode = "overlay";
+        L.yaxis.type = "log";
+        L.yaxis.title = "injections per bin (log)";
+        return L;
+      });
+
+      p0Plot = Book.themedPlot("ch09-p0-plot", p0Traces(), function () {
+        var L = baseLayout("log₁₀ M_z  (detector-frame mass, M☉)", "initial semi-latus rectum p₀");
+        L.yaxis.type = "log";
+        L.yaxis.range = [Math.log10(2), Math.log10(120)];
+        L.yaxis2 = {
+          overlaying: "y", side: "right", title: "% inside [10,16]",
+          range: [0, 100], gridcolor: "rgba(0,0,0,0)", zeroline: false,
+          titlefont: { color: C.rec }, tickfont: { color: C.rec },
+        };
+        L.shapes = [{
+          type: "rect", xref: "paper", x0: 0, x1: 1, y0: 10, y1: 16,
+          fillcolor: "rgba(204,121,167,0.16)", line: { width: 0 }, layer: "below",
+        }];
+        L.annotations = [{
+          xref: "paper", x: 0.02, y: Math.log10(16), text: "retired snapshot draw p₀ ~ U[10,16]",
+          showarrow: false, yanchor: "bottom", font: { size: 11, color: C.rec },
+        }];
+        L.margin.r = 58;
+        return L;
+      });
+      void p0Plot;
+
+      omPlot = Book.themedPlot("ch09-omega-plot", omTraces(), function () {
+        var L = baseLayout("redshift z", "bias in h if the fiducial Ω_m is wrong (%)");
+        L.xaxis.type = "log";
+        return L;
+      });
+
+      mlo.addEventListener("input", render);
+      mhi.addEventListener("input", render);
+      icRow.querySelectorAll("[data-ic]").forEach(function (b) {
+        b.addEventListener("click", function () { st.ic = b.getAttribute("data-ic"); render(); });
+      });
+      omRow.querySelectorAll("[data-om]").forEach(function (b) {
+        b.addEventListener("click", function () { st.om = b.getAttribute("data-om"); render(); });
+      });
+      render();
+
+      var rows = [];
+      for (var b = 0; b < nb; b++) {
+        var p = P.p0_profile[b];
+        rows.push([
+          F.logm_edges[b].toFixed(1) + "–" + F.logm_edges[b + 1].toFixed(1),
+          (p.n || 0).toLocaleString("en"),
+          p.p0_q50 !== undefined ? p.p0_q50.toFixed(2) : "—",
+          p.frac_in_snapshot_band !== undefined ? (100 * p.frac_in_snapshot_band).toFixed(1) + "%" : "—",
+          p.det_frac !== undefined ? (100 * p.det_frac).toFixed(2) + "%" : "—",
+        ]);
+      }
+      table(document.getElementById("ch09-factory-table"),
+            ["log₁₀ M_z band", "injections (stratum a)", "median p₀", "p₀ inside [10,16]", "detected"],
+            rows);
+    });
+  })();
+</script>

@@ -1,0 +1,1772 @@
+<!DOCTYPE html>
+<meta charset="utf-8" />
+<!--
+  The two lines above are a page-local workaround for R-ch07-3 in
+  book/design/WIDGET_REQUESTS.md: the frozen _template.html ships no doctype
+  and no charset, so pages render in quirks mode and KaTeX refuses to run.
+  Remove them once the integrator fixes the template.
+-->
+<title>Ch. 5 — The Galaxy You Cannot See | EMRI Dark Siren Book</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="description" content="Catalogue incompleteness as a second likelihood branch: the G/Gbar mixture, the master equation, the completion numerator's 4-pi sky marginal, the zero-host fallback, and two classes that disagree about H0." />
+<link rel="stylesheet" href="vendor/katex/katex.min.css" />
+<link rel="stylesheet" href="css/book.css" />
+
+<style>
+  /* Page-local only (css/book.css is frozen). Nothing here restyles a shared
+     class; these are new elements this chapter introduces. */
+  .ch05-verdict {
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--planck);
+    background: var(--paper-raised);
+    border-radius: 8px;
+    padding: 0.7rem 0.9rem;
+    margin: 0.7rem 0 0;
+    font-size: 0.9rem;
+  }
+  .ch05-verdict .ch05-verdict-label {
+    display: block;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--planck);
+    margin-bottom: 0.25rem;
+  }
+  .ch05-tried {
+    border: 1px dashed var(--planck);
+    border-radius: 8px;
+    padding: 0.55rem 0.8rem;
+    margin: 0.6rem 0 0;
+    font-size: 0.85rem;
+    background: transparent;
+  }
+  .ch05-tried[hidden] { display: none; }
+  .ch05-tried .ch05-tried-label {
+    display: block;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--planck);
+    margin-bottom: 0.2rem;
+  }
+  .ch05-readouts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem 1.2rem;
+    margin: 0.5rem 0 0;
+    font-size: 0.86rem;
+    color: var(--muted);
+  }
+  .ch05-readouts strong { color: var(--accent); font-variant-numeric: tabular-nums; }
+  .ch05-note { font-size: 0.82rem; color: var(--muted); margin: 0.6rem 0 0; }
+  .ch05-locked { opacity: 0.45; pointer-events: none; }
+  @media print { .ch05-locked { opacity: 1; } }
+  .ch05-fwd {
+    display: inline-block;
+    font-size: 0.72rem;
+    border: 1px dashed var(--border);
+    border-radius: 999px;
+    padding: 0 0.45em;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  .ch05-interlude {
+    border: 1px solid var(--border);
+    border-top: 3px solid var(--prior);
+    background: var(--paper-raised);
+    border-radius: var(--radius);
+    padding: 1.1rem 1.25rem;
+    margin: 2.4rem 0 1.4rem;
+  }
+  .ch05-interlude .ch05-interlude-kicker {
+    display: block;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 0.2rem;
+  }
+  .ch05-interlude h3 { margin-top: 0.1rem; }
+  .ch05-interlude dl { margin: 0.8rem 0 0; }
+  .ch05-interlude dt {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--muted);
+    margin-top: 0.7rem;
+  }
+  .ch05-interlude dd { margin: 0.1rem 0 0; }
+  /* The hero graphic: the master equation with per-chapter unlock state. */
+  .ch05-hero {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--paper-raised);
+    padding: 1rem 1.1rem 0.8rem;
+    margin: 1.2rem 0;
+    text-align: center;
+  }
+  .ch05-hero .ch05-hero-eq { overflow-x: auto; padding: 0.2rem 0; }
+  .ch05-hero .ch05-hero-legend {
+    display: flex; flex-wrap: wrap; gap: 0.3rem 1rem;
+    justify-content: center; font-size: 0.76rem; color: var(--muted);
+    margin-top: 0.5rem;
+  }
+  .ch05-locked-factor { opacity: 0.38; }
+  /* (the former #bias-rail .ch05-pip rules moved into book.css as the shared
+     .bias-rail-pip capability — WIDGET_REQUESTS R-ch07-1, IMPLEMENTED) */
+  /* This chapter carries a few long display equations (the completion
+     numerator, the Schechter completeness ratio). Let each one scroll inside
+     its own box so the page body never scrolls horizontally on a narrow
+     viewport. Scoped to this page via .ch05-page. */
+  .ch05-page .katex-display {
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 0.15rem 0 0.35rem;
+  }
+  /* Long artifact paths in the provenance panel are single unbreakable
+     tokens; let them wrap instead of widening the page. */
+  .ch05-page .provenance-panel code,
+  .ch05-page .book-footer code { overflow-wrap: anywhere; word-break: break-word; }
+</style>
+<noscript>
+  <style>
+    /* Without JS the predict-locks can never be released, so unlock the
+       widgets and show every reveal block: the static reader still gets the
+       measured answer, just not the commitment step. */
+    .ch05-locked { opacity: 1 !important; pointer-events: auto !important; }
+    .widget .reveal { display: block !important; }
+    .widget .predict-row { display: none !important; }
+    .ch05-tried[hidden] { display: block !important; }
+  </style>
+</noscript>
+
+<div class="book-shell">
+  <header class="book-topbar">
+    <a class="brand" href="index.html">From Bayes&rsquo; Rule to H&#8320;
+      <small>an interactive discovery book</small>
+    </a>
+    <nav class="book-nav" data-nav aria-label="Chapters"><!-- built from js/manifest.js --></nav>
+    <button class="theme-toggle" data-theme-toggle type="button">☽ Dark</button>
+  </header>
+
+  <main class="book-content ch05-page">
+    <h1>Chapter 5 — The Galaxy You Cannot See</h1>
+    <p class="subtitle">
+      For <strong>1512 of 1588</strong> events the host is not in the catalogue at all — so the
+      sum I spent two chapters building is, most of the time, a sum over the wrong galaxies.
+    </p>
+
+    <!-- ================= COLD OPEN (B1) ================= -->
+    <div class="callout without">
+      <span class="callout-label">The failure this chapter answers</span>
+      Chapter 4 handed you a repaired estimator: sum over the catalogue galaxies in the
+      localization ball, divide by the full-volume selection integral, and the posterior stops
+      railing. Every line of that construction assumed one thing without saying so — that the
+      host <em>is one of the galaxies in the sum</em>. In this run,
+      <strong>76 of 1588</strong> detections have a catalogued host. The other
+      <strong>1512</strong> do not.
+    </div>
+
+    <div class="widget">
+      <h4>The cold open — insist the host is always catalogued
+        <span class="prov-chip real">real: seed61000/real_r1</span>
+        <span class="prov-chip">1588 events &middot; 41-point h grid</span>
+      </h4>
+      <p style="margin-top:0; color:var(--muted); font-size:0.88rem;">
+        This is not a strawman: it is the <em>complete-catalogue limit</em> of the equation this
+        chapter is about to build, applied to the run&rsquo;s own delivered per-event likelihoods.
+        Assert that every host is in the catalogue and the catalogue branch is the whole story.
+        The blue curve is what comes out. The dashed line is the mock universe&rsquo;s injected
+        truth, <span class="term" data-term="h">$h_{\rm true} = 0.73$</span>.
+      </p>
+      <div id="ch05-cold-plot" class="widget-plot"></div>
+      <div class="ch05-readouts">
+        <span>MAP <strong id="ch05-cold-map">&mdash;</strong></span>
+        <span>posterior mean <strong id="ch05-cold-mean">&mdash;</strong></span>
+        <span>events that fall silent <strong id="ch05-cold-silenced">&mdash;</strong></span>
+      </div>
+      <details class="num-view">
+        <summary>Show me the numbers</summary>
+        <div class="table-scroll"><table class="num-table" id="ch05-cold-table"></table></div>
+      </details>
+      <noscript>
+        <p><strong>Static fallback.</strong> Forcing the catalogue branch to carry the whole
+        likelihood puts the combined posterior back against the lower grid edge: MAP
+        <strong>0.600</strong>, posterior mean <strong>0.600</strong>, with the density at
+        $h = 0.86$ numerically zero relative to the peak. On top of that, <strong>493</strong> of
+        the 1588 events return exactly zero and drop out of the product entirely. The truth is
+        0.73.</p>
+      </noscript>
+    </div>
+
+    <p>
+      You have seen this shape before. In Chapter 4 the rail meant a missing denominator; the
+      denominator is still here, untouched. What is broken now is the <em>numerator&rsquo;s
+      premise</em>. And there is a second symptom the rail hides: 493 events return a likelihood
+      of exactly zero — not &ldquo;small&rdquo;, not &ldquo;uninformative&rdquo;, but zero — and a
+      zero factor in a product does not vote. It deletes the product. The estimator has silently
+      stopped being an estimator for nearly a third of the data.
+    </p>
+    <p>
+      Two things have to happen in this chapter. The likelihood needs a branch for a host it
+      cannot point at, and that branch has to be <em>weighted</em> — because &ldquo;is the host in
+      the catalogue?&rdquo; is not a fact you observe, it is a quantity you must put a probability
+      on.
+    </p>
+
+    <!-- ================= §1 ================= -->
+    <h2>1. How incomplete, exactly?</h2>
+
+    <p>
+      &ldquo;The catalogue is incomplete&rdquo; is not yet a number. Make it one. For a patch of sky
+      $\Omega$ and a redshift $z$, define the
+      <span class="term" data-term="fz">completeness</span>
+      $f(z,\Omega)$: the fraction of the galaxies actually out there at that redshift, in that
+      direction, that made it into the catalogue. It runs from 1 (you have them all) to 0 (you have
+      none), it is <em>not</em> a single number for a survey, and it is the only honest way to
+      describe a flux-limited catalogue: nearby galaxies are bright enough to be listed, distant
+      ones of the same intrinsic luminosity are not.
+    </p>
+
+    <div class="voice-derivation">
+      <span class="voice-label">Completeness as implemented
+        <span class="badge ratified">RATIFIED</span>
+        <span class="prov-chip">G2c D2</span>
+        <span class="prov-chip">pixel_completeness.py</span>
+        <span class="prov-chip">Gray, Messenger &amp; Veitch 2022, arXiv:2111.04629, Eqs. (2)(3)(5)</span>
+      </span>
+      The sky is tiled into <strong>12,288</strong> equal-area pixels. Each pixel $k$ carries one
+      data-estimated number — the median apparent $B$ magnitude of its catalogued galaxies,
+      $m_{{\rm th},k}$ — and the completeness is the closed-form Schechter luminosity ratio above
+      that flux threshold,
+      $$ f_k(z,h) \;=\; \frac{\Gamma\bigl(\alpha+2,\;x_{{\rm th},k}(z,h)\bigr)}
+                              {\Gamma\bigl(\alpha+2,\;x_{\rm dim}\bigr)},
+         \qquad x_{{\rm th},k} = 10^{\,0.4\,(M_\ast - M_{{\rm th},k}(z,h))} , $$
+      with $M_{{\rm th},k}(z,h) = m_{{\rm th},k} - 25 - 5\log_{10}\bigl(d_L(z,h)/\mathrm{Mpc}\bigr)$.
+      This replaces Gray et al.&rsquo;s hard magnitude cut $\Theta[m_{\rm th}-m]$ plus Schechter
+      integral with a single smooth pre-integrated fraction (deviation <strong>D2</strong>); the
+      per-pixel resolution follows Gray, Messenger &amp; Veitch (2022), arXiv:2111.04629, Eq. (5)
+      and Gray et al. (2023), arXiv:2308.02281, Eq. (2.3). The sky average
+      $\bar f(z) = N_{\rm pix}^{-1}\sum_k f_k(z)$ is exact because the pixels are equal-area.
+      Empty and zone-of-avoidance pixels self-set $m_{{\rm th},k}\to-\infty$, so $f_k \equiv 0$
+      there — pure darkness, with no separate mask.
+    </div>
+
+    <p>
+      Smoothness is not cosmetic here. It is what makes the missing-galaxy branch
+      <em>differentiable in $h$</em>, which is the only reason the whole construction below can be
+      swept across a grid at all.
+    </p>
+
+    <div class="widget">
+      <h4>What the catalogue actually knows, as a function of depth
+        <span class="prov-chip real">real: frozen m_th map, nside 32</span>
+        <span class="prov-chip">pixel_completeness.py</span>
+      </h4>
+      <p style="margin-top:0; color:var(--muted); font-size:0.88rem;">
+        The sky-averaged completeness $\bar f(z)$ of the catalogue this campaign actually used,
+        computed with the pipeline&rsquo;s own estimator on its own frozen threshold map, plus three
+        individual pixels at the 10th, 50th and 90th percentile of depth. <strong>Watch</strong> how
+        fast it falls, and where the two protagonists of this book sit on it.
+      </p>
+      <div id="ch05-fz-plot" class="widget-plot"></div>
+      <div class="ch05-readouts">
+        <span>$\bar f = 0.5$ at $z =$ <strong id="ch05-fz-half">&mdash;</strong></span>
+        <span>$\bar f = 0.1$ at $z =$ <strong id="ch05-fz-tenth">&mdash;</strong></span>
+        <span>empty / zone-of-avoidance pixels <strong id="ch05-fz-empty">&mdash;</strong></span>
+      </div>
+      <p class="ch05-note">
+        $\bar f$ is <em>exactly</em> independent of $h$ — measured max deviation across this
+        chapter&rsquo;s whole $h$-grid: <strong id="ch05-fz-hinv">&mdash;</strong>. The $5\log_{10}h$
+        inside $M_\ast$ cancels the $h$ in the distance modulus. Remember that: whatever makes the
+        mixture weight below depend on $h$, it is <em>not</em> the completeness curve.
+      </p>
+      <details class="num-view">
+        <summary>Show me the numbers</summary>
+        <div class="table-scroll"><table class="num-table" id="ch05-fz-table"></table></div>
+      </details>
+      <noscript>
+        <p><strong>Static fallback.</strong> $\bar f(z)$ falls from 0.94 at $z=0.005$ through
+        0.92 at $z=0.021$ (EMRI-889&rsquo;s redshift), 0.71 at $z=0.1$, 0.43 at $z=0.2$, 0.32 at
+        $z=0.243$ (dark event 606&rsquo;s redshift), 0.19 at $z=0.3$ and 0.0096 at $z=0.5$, reaching
+        zero before $z=1$. It crosses 0.5 at $z=0.176$ and 0.1 at $z=0.357$. 751 of the 12,288
+        pixels are empty (completeness identically zero).</p>
+      </noscript>
+    </div>
+
+    <p>
+      Now put the detected population next to that curve. Chapter 4&rsquo;s detection horizon
+      reaches to $z \approx 1.3$; the completeness is already below 1% by $z = 0.5$. The catalogue
+      and the detector are not looking at the same universe. That is not a bug in either of them —
+      it is the regime this experiment lives in, and the project&rsquo;s own systematics inventory
+      records it as <em>forecast-defining rather than defective</em>: after the sensitivity fix that
+      deepened the population <span class="ch05-fwd">⏭ Ch 6</span>, GLADE completeness beyond
+      $z \gtrsim 0.3$ is the thing that decides what this measurement can be
+      <span class="prov-chip">G7 row 15</span>.
+    </p>
+
+    <!-- ================= §2 ================= -->
+    <h2>2. A second branch: the host you cannot point at</h2>
+
+    <p>
+      Chapter 3 marginalized over a discrete unknown — <em>which</em> of these galaxies was it. The
+      repair here is the same move one level up, over a <em>binary</em> unknown: was the host in the
+      catalogue at all? Call that event $G$, and its complement $\bar G$. The law of total
+      probability does the rest:
+      $$ p(x_i \mid h) \;=\; p(x_i \mid G, h)\,\Pr(G\mid h) \;+\; p(x_i \mid \bar G, h)\,\Pr(\bar G \mid h) . $$
+      Two branches, two weights that sum to one. Nothing clever has happened yet — but notice what
+      the second branch has to be. It cannot be &ldquo;the catalogue sum with the missing galaxies
+      filled in&rdquo;, because you do not know where the missing galaxies are. That is what
+      <em>missing</em> means. It has to be a smooth integral over where the population model says
+      the uncatalogued galaxies <em>would</em> be, weighted at every redshift by the fraction the
+      catalogue is missing, $1 - f(z,\Omega)$.
+    </p>
+
+    <div class="ch05-hero">
+      <div class="ch05-hero-eq">
+        $$ p_i(h) \;=\; \underbrace{w_G(h)}_{\textbf{Ch 5}}\;
+                        \underbrace{\mathcal L^{\rm cat}_i(h)}_{\text{Ch 3, 4}}
+           \;+\; \underbrace{\bigl(1-w_G(h)\bigr)}_{\textbf{Ch 5}}\;
+                 \underbrace{\mathcal L^{\rm comp}_i(h)}_{\textbf{Ch 5}} $$
+      </div>
+      <div class="ch05-hero-legend">
+        <span><strong><span class="term" data-term="wG">$w_G$</span></strong> — the probability this detection&rsquo;s host is catalogued</span>
+        <span><strong><span class="term" data-term="Lcat">$\mathcal L^{\rm cat}$</span></strong> — the catalogue branch (Ch 3, 4)</span>
+        <span><strong><span class="term" data-term="Lcomp">$\mathcal L^{\rm comp}$</span></strong> — the completion branch</span>
+        <span class="ch05-locked-factor">the host-redshift kernel inside $\mathcal L^{\rm cat}$ — Ch 7</span>
+        <span class="ch05-locked-factor">the second observable — Ch 8</span>
+      </div>
+    </div>
+
+    <p>
+      That is the <strong>master equation</strong> of this book, and from here to the last chapter
+      nothing is added to it — only sharpened, attacked, and in three places found wanting. Read it
+      once more in words: <em>every</em> event contributes through <em>both</em> branches, always.
+      There is no per-event decision about which case applies, because you never learn which case
+      applies. The weight <span class="term" data-term="wG">$w_G$</span> is the probability that
+      <em>this</em> detection&rsquo;s host is in the catalogue, and it is a probability, not a flag.
+    </p>
+
+    <div class="voice-derivation">
+      <span class="voice-label">The mixture, and what it maps onto
+        <span class="badge ratified">RATIFIED</span>
+        <span class="prov-chip">G2c §1</span>
+        <span class="prov-chip">bayesian_statistics.py:3006-3009, :1042-1048</span>
+        <span class="prov-chip">Gray et al. 2020, arXiv:1908.06050, Eqs. (9), (A14), (A15), (A19)</span>
+      </span>
+      The implemented per-event likelihood is exactly the structure of Gray et al.&rsquo;s main-text
+      Eq. (9), with $\mathcal L^{\rm cat} \leftrightarrow p(x_{\rm GW}\mid G, D_{\rm GW}, H_0)$,
+      $w_G \leftrightarrow p(G\mid D_{\rm GW},H_0)$ [Eq. (A14)],
+      $1-w_G \leftrightarrow p(\bar G \mid D_{\rm GW},H_0)$ [Eq. (A15)] and
+      $\mathcal L^{\rm comp} \leftrightarrow p(x_{\rm GW}\mid \bar G, D_{\rm GW},H_0)$ [Eq. (A19)].
+      The code assembles it as a <em>single ratio</em> rather than the two-term convex sum
+      (deviation <strong>D4</strong>): algebraically identical, and numerically safer in the limit
+      where the catalogue becomes complete and the dark branch&rsquo;s normalization goes to zero.
+      This chapter therefore treats the two forms as one object.
+    </div>
+
+    <p>
+      Everything about $w_G$ that matters at this rung is measurable, and it is measured. On this
+      run it falls, monotonically, from <strong>0.1625</strong> at $h = 0.60$ through
+      <strong>0.1215</strong> at $h = 0.73$ to <strong>0.0947</strong> at $h = 0.86$
+      <span class="prov-chip real">real: seed61000/real_r1</span>. Two facts about that sentence
+      deserve to be uncomfortable.
+    </p>
+    <p>
+      First: <strong>12%</strong>. Not 5%, which is the fraction of events whose host really is
+      catalogued in this run (76/1588 = 4.8%). Those are different quantities and the gap between
+      them is a live, adjudicated problem — Chapter 9 measures it and Chapter 11 puts it on the
+      board <span class="ch05-fwd">⏭ Ch 9</span>.
+    </p>
+    <p>
+      Second: it has a <em>slope</em>. And the slope has nothing to do with the completeness curve
+      you just plotted, which does not depend on $h$ at all. It comes from the only place it can:
+      $h$ is what converts a redshift into a distance, so raising $h$ moves the detectable
+      population out to higher redshift — the run&rsquo;s own selection domain runs
+      $z \le 1.133$ at $h=0.60$ and $z \le 1.500$ at $h = 0.86$ — and at higher redshift the
+      catalogue holds a smaller share of the galaxies. A larger $h$ means a darker universe, in the
+      literal sense of &ldquo;fewer of the possible hosts are ones I have a name for&rdquo;.
+    </p>
+    <p>
+      A slope in a weight is a <em>tilt</em> on the posterior, and it is present whether or not
+      either branch prefers any particular $h$. That claim is easy to make and easy to check, so
+      check it.
+    </p>
+
+    <!-- ============ I5.1 ============ -->
+    <div class="widget" id="ch05-i51">
+      <h4>I5.1 — The Two Branches
+        <span class="prov-chip real">real: seed61000/real_r1 legs</span>
+        <span class="prov-chip toy">counterfactual: mixture weight only</span>
+      </h4>
+      <p style="margin-top:0; color:var(--muted); font-size:0.88rem;">
+        <strong>Manipulate</strong> the catalogue&rsquo;s depth: the dial multiplies the
+        catalogued-to-dark <em>odds</em> $w_G/(1-w_G)$ by $\kappa$, so $\kappa = 1$ is the
+        catalogue this campaign actually had, $\kappa \to 0$ is an empty catalogue and
+        $\kappa \to \infty$ a complete one. <strong>Both branch likelihoods are the run&rsquo;s
+        own delivered numbers and are never touched</strong> — the only thing this control changes
+        is the scalar weight. <strong>Then</strong> press <em>flatten the slope</em>: same average
+        weight, slope removed, both branches still untouched.
+      </p>
+      <div class="widget-controls">
+        <label for="ch05-kappa">Counterfactual catalogue depth $\kappa$:</label>
+        <input id="ch05-kappa" type="range" aria-describedby="ch05-i51-readouts" />
+        <span class="readout">$\kappa$ = <strong id="ch05-kappa-readout">&mdash;</strong></span>
+      </div>
+      <div class="widget-controls">
+        <span class="readout">show:</span>
+        <div class="toggle-row" id="ch05-branch-row" role="group" aria-label="Branch display">
+          <button type="button" data-branch="mix" aria-pressed="true">the mixture</button>
+          <button type="button" data-branch="legs">each branch alone</button>
+          <button type="button" data-branch="both">both</button>
+        </div>
+        <button type="button" id="ch05-flat" class="theme-toggle">flatten the slope</button>
+        <button type="button" id="ch05-restore" class="theme-toggle">↺ Restore the shipped mixture</button>
+      </div>
+      <div id="ch05-mix-plot" class="widget-plot"></div>
+      <div id="ch05-wg-plot" class="widget-plot" style="min-height:230px"></div>
+      <div class="ch05-readouts" id="ch05-i51-readouts">
+        <span>$w_G$ at $h=0.73$ <strong id="ch05-w73">&mdash;</strong></span>
+        <span>MAP <strong id="ch05-mix-map">&mdash;</strong></span>
+        <span>posterior mean <strong id="ch05-mix-mean">&mdash;</strong></span>
+        <span>events silenced <strong id="ch05-mix-silenced">&mdash;</strong></span>
+      </div>
+      <div class="ch05-verdict" id="ch05-i51-verdict"></div>
+      <div class="ch05-tried" id="ch05-i51-tried" hidden
+           data-hypothesis="61" data-hypothesis-2="64">
+        <span class="ch05-tried-label">Has this been tried?</span>
+        Yes. &ldquo;The defect is the $w_G = \beta_G/D$ bookkeeping&rdquo; was tested on
+        2026-07-11 by re-deriving the weight as a membership-conditioned inverse:
+        <strong>REFUTED</strong> — the tilt <em>relocates</em> to the host branch (+94…+455 nats),
+        12/12 calibration cells still fail <span class="prov-chip">ledger #61</span>. Tuning the
+        population weight instead is worth $\le +0.0004$ in $h$ at a 10% misspecification
+        <span class="prov-chip">ledger #64</span>. You can move this answer with this dial; that is
+        not the same as being allowed to.
+      </div>
+      <p class="ch05-note">
+        The combination is a sum of log-likelihoods, $\sum_i \ln p_i(h)$, and the re-mix is exact:
+        the diagnostics ship $w_G$, $\mathcal L^{\rm cat}_i$ and $\mathcal L^{\rm comp}_i$
+        separately for all 65,108 event&times;$h$ cells, and the identity
+        $p_i = w_G\mathcal L^{\rm cat}_i + (1-w_G)\mathcal L^{\rm comp}_i$ was re-verified here
+        to a maximum relative error of <strong id="ch05-identity">&mdash;</strong>. The $h$-grid is
+        non-uniform (0.01 on [0.60, 0.65] and [0.80, 0.86], 0.005 between); every normalization on
+        this page uses a non-uniform trapezoid and nothing takes a numerical derivative across the
+        seams.
+      </p>
+      <details class="num-view">
+        <summary>Show me the numbers</summary>
+        <div class="table-scroll"><table class="num-table" id="ch05-i51-table"></table></div>
+      </details>
+      <noscript>
+        <p><strong>Static fallback.</strong> Three curves. The shipped mixture ($\kappa=1$) peaks
+        at MAP <strong>0.740</strong>, mean 0.7321. The catalogue branch alone (the 1095 events
+        that have one) rails at <strong>0.600</strong>. The completion branch alone, over all 1588
+        events, peaks at <strong>0.755</strong>, mean 0.7461. Below them, $w_G(h)$ falls
+        monotonically 0.1625 → 0.1215 → 0.0947 across $h$ = 0.60 → 0.73 → 0.86. Holding $w_G$
+        <em>flat</em> at its $h=0.73$ value, changing nothing else, moves the combined MAP from
+        0.740 to <strong>0.630</strong> — the slope alone is worth 0.11 in $h$.</p>
+      </noscript>
+    </div>
+
+    <div class="voice-adjudicator">
+      <span class="voice-label">What the flatten-the-slope number is, and is not
+        <span class="badge finding">FINDING</span>
+        <span class="prov-chip">CLAIM_2D_BIAS_20260730.md C10</span>
+      </span>
+      Removing the slope from $w_G$ and touching nothing else moves this run&rsquo;s MAP
+      <strong>0.740 → 0.630</strong>. That is a measurement on one realization of one seed, not a
+      bias; what it establishes is the <em>size of the lever</em>. The project measured the same
+      lever in its own units: over the window $h = 0.73 \to 0.81$, the prefactor term
+      $N\,\Delta\ln(1-w_G)$ is worth <strong>+31.55 nats</strong> — recomputed here from the same
+      diagnostics as <strong>+31.554</strong> — larger than any other single term in that budget.
+      The binding phrasing rule that comes with it: the up-pull is carried by the
+      <strong>$(1-w_G)$ prefactor</strong>. The completion likelihood
+      $\mathcal L^{\rm comp}$ itself pulls <em>down</em> for dark events (only 39.1% of them have a
+      positive completion tilt; $\Sigma\Delta\ln\mathcal L^{\rm comp} = -3.11$ over the same
+      window). A sentence that attributes the up-pull to $\mathcal L^{\rm comp}$ is not a
+      simplification, it is the claim the project retired.
+    </div>
+
+    <details class="gw-reader">
+      <summary>&#9656; For the GW reader — what $w_G$ is made of</summary>
+      <p>
+        $w_G = \beta_G/D$, with $\beta_G = D - \beta_{\bar G}$
+        (<code>bayesian_statistics.py:3309-3311</code>; G2c §2 rows <code>beta_G</code>,
+        <code>beta_Gbar</code>, <code>w_G</code>), where
+        <span class="term" data-term="Dh">$D(h)$</span>$ = \int \langle$<span class="term" data-term="pdet">$p_{\rm det}$</span>$\rangle_\Omega\,(dV_c/dz\,d\Omega)\,dz/(1+z)$ is Chapter
+        4&rsquo;s full-volume selection integral and
+        $\beta_{\bar G}(h) = \int \langle (1-f_k(z))\,p_{\rm det}\rangle_\Omega\,(dV_c/dz\,d\Omega)\,dz/(1+z)$
+        is its dark-side restriction — Gray (A18) with the hard magnitude threshold replaced by the
+        smooth $(1-f)$. So $w_G$ is a <em>selection- and volume-weighted</em> average of $f$ along
+        the whole line of sight, not $f$ at any one redshift. What that normalizes <em>to</em>, and
+        why the choice is not unique, is Chapter 9 <span class="ch05-fwd">⏭ Ch 9</span>.
+      </p>
+      <p>
+        Precision note, because it bites: the run logs $w_G$ at 4 decimal places
+        (<code>bayesian_statistics.py:2335</code>), whose $4.8\times10^{-4}$ noise floor is
+        comparable to the entire residual structure people argue about. Everything on this page uses
+        the full-double column in <code>diagnostics/event_likelihoods.csv</code>, cross-checked
+        against $1 - \beta_{\bar G}/D$ rebuilt from the run&rsquo;s 7-significant-figure log lines
+        (<code>:1145</code>, <code>:1297</code>): the two agree to
+        <strong id="ch05-wglog">&mdash;</strong>, i.e. to the log&rsquo;s own rounding.
+      </p>
+      <p>
+        The mixture identity was verified to $2.8\times10^{-16}$ on 65,108 rows when the claim file
+        was assembled <span class="prov-chip">HANDOFF_20260730.md §2</span>, and re-verified at
+        $3.9\times10^{-13}$ / $9.2\times10^{-13}$ in Gate B. This page&rsquo;s own re-verification,
+        from the re-staged CSV, reads <strong id="ch05-identity2">&mdash;</strong>.
+      </p>
+    </details>
+
+    <!-- ================= §3 ================= -->
+    <h2>3. The completion branch, and a factor of 5000 hiding in a sky integral</h2>
+
+    <p>
+      Write down the dark branch. The source is somewhere in a shell of luminosity distance <span class="term" data-term="dL">$d_L$</span> that the
+      gravitational wave has measured; it is in <em>some</em> direction, and the catalogue has no
+      entry for it. So: integrate over redshift <span class="term" data-term="z">$z$</span>, weight each shell by how much of the galaxy
+      population the catalogue is <em>missing</em> there, $1-f(z,\Omega)$, times how much comoving
+      volume that shell contains per unit redshift, times the gravitational wave&rsquo;s own
+      probability density for the source sitting at that distance. And — the step that costs a
+      factor of several thousand if you get it wrong — average over direction against the only
+      honest prior for a source you cannot localize to a galaxy: an isotropic one, $1/4\pi$ per
+      steradian.
+    </p>
+
+    <div class="voice-derivation">
+      <span class="voice-label">The completion numerator
+        <span class="badge ratified">RATIFIED</span>
+        <span class="prov-chip">G2a §3, §5, §7</span>
+        <span class="prov-chip">bayesian_statistics.py:3210-3238</span>
+        <span class="prov-chip">Gray et al. 2020, arXiv:1908.06050, Eq. (A17)</span>
+      </span>
+      $$ B^{\rm num}_i(h) \;=\; \int_{z_-}^{z_+}
+         \bigl(1 - f_{k(\Omega_i)}(z)\bigr)\;
+         \frac{\sin\hat\theta_i}{4\pi}\;
+         \mathcal N\!\left(\frac{d_L(z,h)}{\hat d_{L,i}};\,1,\,\sigma_{{\rm marg},i}\right)\;
+         \frac{dV_c}{dz\,d\Omega}\;\frac{dz}{1+z} $$
+      The sky average is not approximated: the gravitational wave&rsquo;s three-dimensional
+      measurement density factorizes <em>exactly</em> into a marginal in the distance direction
+      times a conditional on the sky [Bishop 2006, PRML Eqs. (2.81)–(2.82)], and the sky factor
+      integrates to one — leaving $1/4\pi$ times a one-dimensional Gaussian in the distance
+      fraction $d_L(z,h)/\hat d_L$ with the <em>marginal</em> width the detector achieved
+      (G2a Eq. 10; the pull-out is good to a relative error $\lesssim 10^{-5}$ at the median EMRI
+      sky error). The $\sin\hat\theta$ is the solid-angle Jacobian: the measurement density lives in
+      the bare sky coordinates, so an integral against $d\Omega = \sin\theta\,d\theta\,d\phi$ picks
+      it up. What that width is, and why sky and distance are correlated in the first place, is
+      Chapter 6 <span class="ch05-fwd">⏭ Ch 6</span>.
+      Then $\mathcal L^{\rm comp}_i = $<span class="term" data-term="Bnum">$B^{\rm num}_i$</span>$/$<span class="term" data-term="betaGbar">$\beta_{\bar G}$</span> — the branch, normalized by the
+      dark side of the selection integral, exactly as the catalogue branch is normalized by its own.
+    </div>
+
+    <p>
+      Now the part worth stopping for. Before commit <code>cb16142</code> that sky step was not an
+      integral. It <em>evaluated</em> the measurement density at its own peak — at the best-fit sky
+      position — and used that number as though it were the sky average. That is the difference
+      between asking &ldquo;how well does a source at exactly this spot fit?&rdquo; and &ldquo;how
+      likely is it that the dark host is anywhere in the beam?&rdquo;, and for a well-localized
+      event those two questions differ by the ratio of a peak height to a flat prior.
+    </p>
+
+    <!-- ============ predict, then reveal + I5.3 ============ -->
+    <div class="widget" id="ch05-i53" data-predict-id="ch05-sky-guess">
+      <h4>Predict, then reveal — how big is &ldquo;evaluate&rdquo; versus &ldquo;integrate&rdquo;?</h4>
+      <p style="margin-top:0;">
+        An EMRI is localized on the sky to a fraction of a degree. Swapping an isotropic sky average
+        for an evaluation at the peak inflates the completion branch by a factor of —
+      </p>
+      <div class="predict-row" id="ch05-predict-1" data-predict-id="ch05-sky-guess">
+        <button type="button" data-predict="a">about 1.5&times;</button>
+        <button type="button" data-predict="b">about 20&times;</button>
+        <button type="button" data-predict="c">thousands</button>
+      </div>
+      <div class="reveal">
+        Thousands. The project measured a <strong>~5000&times;</strong> inflation of $B^{\rm num}$,
+        which pinned the posterior against the grid edge until it was found and fixed
+        <span class="prov-chip">ledger #46</span> <span class="prov-chip">G7 rows 3–4</span>. The
+        widget below lets you see where a number that size comes from — and why the honest range is
+        wider than any single figure.
+      </div>
+      <noscript>
+        <p><strong>Static fallback.</strong> The prediction step needs JavaScript; the measured
+        answer is the paragraph above — a ~5000&times; inflation of $B^{\rm num}$, which railed the
+        posterior at the grid edge until <code>cb16142</code> replaced the peak evaluation with the
+        isotropic marginal (ledger #46, G7 rows 3–4).</p>
+      </noscript>
+    </div>
+
+    <div class="widget ch05-locked" id="ch05-i53-widget">
+      <h4>I5.3 — The 4π Marginal
+        <span class="prov-chip toy">toy: analytic sky integrand</span>
+        <span class="prov-chip real">recorded: ledger #46 · G2a §7 case 5</span>
+      </h4>
+      <p style="margin-top:0; color:var(--muted); font-size:0.88rem;">
+        <strong>Manipulate</strong> the sky localization width. <strong>Watch</strong> the two
+        numbers the completion branch could use for &ldquo;the sky part&rdquo;: the height of the
+        measurement bump at its peak, and its isotropic average $1/4\pi$. The curve is an analytic
+        toy — a circular Gaussian beam on a sphere, with the exact ratio
+        $4\pi \big/ (2\pi\sigma_\phi\sigma_\theta) = 2/(\sigma_\phi\sigma_\theta)$ from the ratified
+        derivation. The two labelled anchors and the recorded pipeline number are real.
+      </p>
+      <div class="widget-controls">
+        <label for="ch05-sky">Sky localization $\sigma_{\rm sky}$:</label>
+        <input id="ch05-sky" type="range" aria-describedby="ch05-i53-readouts" />
+        <span class="readout"><strong id="ch05-sky-readout">&mdash;</strong></span>
+        <div class="toggle-row" id="ch05-sky-mode" role="group" aria-label="Sky treatment">
+          <button type="button" data-sky="marg" aria-pressed="true">marginalize over $1/4\pi$</button>
+          <button type="button" data-sky="peak">evaluate at the peak</button>
+        </div>
+      </div>
+      <div id="ch05-sky-plot" class="widget-plot"></div>
+      <div class="ch05-readouts" id="ch05-i53-readouts">
+        <span>solid angle <strong id="ch05-sky-omega">&mdash;</strong> deg²</span>
+        <span>peak / isotropic <strong id="ch05-sky-ratio">&mdash;</strong></span>
+      </div>
+      <div class="ch05-verdict" id="ch05-i53-verdict"></div>
+      <details class="num-view">
+        <summary>Show me the numbers</summary>
+        <div class="table-scroll"><table class="num-table" id="ch05-sky-table"></table></div>
+      </details>
+      <noscript>
+        <p><strong>Static fallback.</strong> On a log axis, two horizontal quantities: the
+        isotropic sky prior $1/4\pi = 0.0796\ \mathrm{sr^{-1}}$, flat, and the peak density of the
+        measurement bump, $1/(2\pi\sigma_\phi\sigma_\theta)$, which climbs without bound as the
+        localization sharpens. Their ratio is $2/(\sigma_\phi\sigma_\theta)$: about
+        $1.6\times10^{3}$ at $\sigma_{\rm sky} = 2^\circ$ and about $1.8\times10^{5}$ at the median
+        EMRI localization of $0.2\ \mathrm{deg^2}$ (G2a §7 case 5). The measured inflation of
+        $B^{\rm num}$ in the pipeline was ~5000&times; (ledger #46).</p>
+      </noscript>
+    </div>
+
+    <div class="voice-adjudicator">
+      <span class="voice-label">Two numbers for one defect — carried, not reconciled
+        <span class="badge finding">FINDING</span>
+        <span class="prov-chip">ledger #46</span>
+        <span class="prov-chip">G2a §7 case 5</span>
+        <span class="prov-chip">book/design/flags/ch05_FLAGS.md</span>
+      </span>
+      The systematics inventory and the history ledger both record the peak-evaluation defect as a
+      <strong>~5000&times; $B^{\rm num}$ inflation</strong> with no localization attached
+      <span class="prov-chip">G7 row 3</span>. The ratified derivation gives the analytic
+      old/new ratio $2/(\sigma_\phi\sigma_\theta)$ and quotes it as
+      $\approx 1.6\times10^{3}$ at $\sigma_{\rm sky} = 2^\circ$ and $\approx 1.8\times10^{5}$ at the
+      median $0.2\ \mathrm{deg^2}$ localization, concluding that a mechanism claim of
+      $10^3$–$10^5$ is &ldquo;arithmetically consistent&rdquo;. The code comment at the fix site
+      pins the two together at a single point — &ldquo;~5000&times; at $\sigma_{\rm sky}\approx
+      2^\circ$&rdquo; — where the sky factor alone gives $1.6\times10^{3}$. The book shows both and
+      does not pick: the measured pipeline-level inflation and the analytic sky factor are different
+      quantities (the old evaluation also used a narrower distance width than the marginal one,
+      G2a §3), and no artifact in the repo states their decomposition.
+    </div>
+
+    <p>
+      One more thing about that sky integral is <em>still</em> open, and the derivation says so in
+      its own verdict. The gravitational-wave part is marginalized against $1/4\pi$; the
+      incompleteness part is not — $f$ is collapsed onto the single pixel containing the detection.
+      Strictly, Gray&rsquo;s Eq. (A17) wants one sky integral weighting <em>both</em> factors
+      together, and the implemented product is exact only when $f$ is constant across the beam. It
+      is internally consistent to first order and it maps onto no single published equation
+      <span class="badge open">OPEN</span> <span class="prov-chip">G2c D5</span>. It is a small
+      approximation. So was the last one.
+    </p>
+
+    <!-- ================= §4 ================= -->
+    <h2>4. The event with no candidates at all</h2>
+
+    <p>
+      Return to the 493 events that went silent in the cold open. In the mixture they are not a
+      special case: if the localization volume contains no catalogue galaxy, the catalogue branch is
+      an empty sum, $\mathcal L^{\rm cat}_i = 0$, and the master equation degrades — smoothly,
+      correctly — to $p_i = (1-w_G)\,\mathcal L^{\rm comp}_i$. The event still speaks. It just says
+      only what the population model lets it say.
+    </p>
+    <p>
+      That is not what the code did. For six years — the line dates to 2024 — an event whose
+      catalogue lookup came back empty hit a <code>continue</code> and contributed
+      <strong>no factor at all</strong> to the joint likelihood, logged at debug level.
+    </p>
+
+    <div class="voice-adjudicator">
+      <span class="voice-label">A real bug, fixed — and the symptom did not move
+        <span class="badge finding">FINDING</span>
+        <span class="prov-chip">ledger #54</span>
+        <span class="prov-chip">ledger #55</span>
+        <span class="prov-chip">H0R:1368-1420</span>
+        <span class="prov-chip">bayesian_statistics.py:2832-2844</span>
+      </span>
+      <strong>Part one.</strong> Dropping zero-host events conditions the event sample on catalogue
+      support, which is exactly the thing selection corrections exist to prevent. On the deep
+      campaign venue it discarded <strong>58% of the events</strong>, leaving a shallow,
+      high-latitude subsample whose likelihoods tilt low, and the combined posterior railed at
+      $h = 0.6000$ in both channels. Real bug, correctly diagnosed, fixed under the physics-change
+      protocol (<code>8db6c6e</code>): a zero-host event now contributes the pure-completion
+      likelihood $p_i = B^{\rm num}/D$ — the exact $\mathcal L^{\rm cat}\to 0$ limit of the mixture
+      — and the skip was promoted to a warning with a per-$h$ lookup-yield metric.
+      <strong>Part two.</strong> The re-evaluation with the fix in place
+      <strong>still railed at 0.6000</strong>, in both channels. The restored events turned out to
+      be <em>$h$-inert</em>: −59 nats across the whole grid, against −4265 nats from the events that
+      had hosts all along. Fixing a real bug is not the same as explaining the symptom.
+    </div>
+
+    <p>
+      And the estimator the fix installs is itself under suspicion. Read the empty-catalogue limit of
+      the master equation as a sanity check — $w_G \to 0$, $p_i \to \mathcal L^{\rm comp}$, a pure
+      population-model inference with no catalogue information, which ought to be <em>wide but
+      centred</em>. The project measured it against known truth with its calibration harness and
+      found it <strong>biased high by +0.7…+5.4% in $h$</strong> at deep incompleteness, with 68%
+      coverage collapsing to $\le 0.27$ over completeness fractions 0.22–0.85, while the control
+      configurations stayed calibrated <span class="prov-chip">ledger #57</span>. A limit that is
+      supposed to be trivially safe was not.
+    </p>
+    <p>
+      In this run that limit is the $\kappa = 0$ end of I5.1&rsquo;s dial: MAP <strong>0.755</strong>,
+      posterior mean 0.7461 — high, by 0.025 in $h$, on one realization. Consistent in sign and
+      order with the harness result; not a substitute for it.
+    </p>
+
+    <details class="gw-reader">
+      <summary>&#9656; For the GW reader — what &ldquo;493&rdquo; is, precisely</summary>
+      <p>
+        The measurable statement is: <strong>493 of the 1588 events have
+        $\mathcal L^{\rm cat}_i = 0$ at every one of the 41 grid points</strong>, so the completion
+        branch is their entire likelihood; the remaining 1095 have a non-zero catalogue leg at every
+        grid point, and no event is zero at only some $h$ (0 of 1588). The delivered diagnostics do
+        <em>not</em> separate &ldquo;the ball-tree returned no candidate at all&rdquo; from
+        &ldquo;candidates were returned but none contributed&rdquo;, so 493 is the number this
+        chapter quotes rather than a zero-host count. Two of the 493 carry
+        <code>in_catalog = True</code> — the generator did put their host in the catalogue, and the
+        candidate search still came back with nothing usable.
+      </p>
+      <p>
+        Note also that <code>in_catalog</code> (76 events) is the <em>generator&rsquo;s</em> truth
+        flag from <code>prepared_cramer_rao_bounds.csv</code> — whether the injected host was drawn
+        from the catalogue — and is a different question from whether the estimator found a
+        candidate (1095 events). The chapter uses the first for the class split of I5.2 and the
+        second for the branch-alone curves of I5.1, and never mixes them.
+      </p>
+      <p>
+        The 58% figure is the <em>deep</em> Phase-2 venue (depth-1.5 pool, seed 1000), not this
+        campaign; it is quoted as the historical measurement it is
+        <span class="prov-chip">ledger #54</span>. Its companion mechanism — the mass-pruned host
+        catalogue being 99.98% below $z = 0.3$ — belongs to Chapter 8
+        <span class="ch05-fwd">⏭ Ch 8</span>.
+      </p>
+    </details>
+
+    <!-- ================= §5 ================= -->
+    <h2>5. The splinter</h2>
+
+    <p>
+      The mixture is built. It has a catalogue branch, a completion branch, a weight with a
+      measured slope, and a graceful limit for events with nothing to point at. Applied to this
+      run it gives a peaked, interior posterior — MAP 0.740, mean 0.7321 — and if the book stopped
+      here you would have a working dark-siren estimator and a good story.
+    </p>
+    <p>
+      So do one more thing before moving on. You know, from the simulation, which events had a
+      catalogued host and which did not. Split the 1588 into those two classes, combine each class
+      on its own, and look at where each one peaks.
+    </p>
+
+    <div class="widget" data-predict-id="ch05-class-guess">
+      <h4>Predict, then reveal — do the two classes agree?</h4>
+      <p style="margin-top:0;">
+        76 events whose host is in the catalogue; 1512 whose host is not. Same estimator, same
+        grid, same truth. Where do the two class-summed posteriors peak?
+      </p>
+      <div class="predict-row" id="ch05-predict-2" data-predict-id="ch05-class-guess">
+        <button type="button" data-predict="a">both near 0.73 — the dark class just wider</button>
+        <button type="button" data-predict="b">in-catalogue near truth, dark biased</button>
+        <button type="button" data-predict="c">neither near truth; they straddle it</button>
+      </div>
+      <div class="reveal">
+        <strong>(c).</strong> The in-catalogue class peaks at <strong>0.86</strong> — the top of the
+        grid. The dark class peaks at <strong>0.64</strong>. Neither is at 0.73. The combined answer
+        is not a consensus; it is a <em>crossing</em>.
+        <span class="prov-chip real">real: seed61000/real_r1</span>
+      </div>
+      <noscript>
+        <p><strong>Static fallback.</strong> The prediction step needs JavaScript. The measured
+        answer: the in-catalogue class peaks at $h = 0.86$, the dark class at $h = 0.64$, the
+        combined posterior at 0.740, and the injected truth is 0.73
+        (seed61000/real_r1).</p>
+      </noscript>
+    </div>
+
+    <div class="widget ch05-locked" id="ch05-i52">
+      <h4>I5.2 — The Two Runaways
+        <span class="prov-chip real">real: seed61000/real_r1</span>
+        <span class="prov-chip">class flag: prepared_cramer_rao_bounds.csv in_catalog</span>
+      </h4>
+      <p style="margin-top:0; color:var(--muted); font-size:0.88rem;">
+        <strong>Manipulate</strong> the class filter. <strong>Watch</strong> the peaks — and watch
+        that the combined curve is not between them in any comfortable sense: it is where two
+        opposing pulls happen to balance. <strong>Remember this figure.</strong> It comes back in
+        Chapter 11 with the leverage control unlocked, and what it does there is the reason this
+        book has a last chapter.
+      </p>
+      <div class="toggle-row" id="ch05-class-row" role="group" aria-label="Event class">
+        <button type="button" data-class="all" aria-pressed="true">all 1588</button>
+        <button type="button" data-class="incat">in-catalogue (76)</button>
+        <button type="button" data-class="dark">dark (1512)</button>
+        <button type="button" data-class="split">show all three</button>
+      </div>
+      <div id="ch05-class-plot" class="widget-plot"></div>
+      <div class="ch05-readouts">
+        <span>MAP <strong id="ch05-class-map">&mdash;</strong></span>
+        <span>posterior mean <strong id="ch05-class-mean">&mdash;</strong></span>
+        <span>peak depth vs the far edge <strong id="ch05-class-depth">&mdash;</strong> nats</span>
+      </div>
+      <div class="ch05-verdict" id="ch05-class-verdict"></div>
+      <details class="num-view">
+        <summary>Show me the numbers</summary>
+        <div class="table-scroll"><table class="num-table" id="ch05-class-table"></table></div>
+      </details>
+      <noscript>
+        <p><strong>Static fallback.</strong> Three normalized posteriors on the same axes. The 76
+        in-catalogue events peak at $h = 0.86$ (mean 0.822) — the curve climbs 22.1 nats from the
+        bottom of the grid and its highest point is the last grid point, so the peak is wherever the
+        grid stops. The 1512 dark events peak at $h = 0.64$ (mean 0.657). All 1588 together peak at
+        $h = 0.740$ (mean 0.7321), between them. The injected truth is 0.73.</p>
+      </noscript>
+    </div>
+
+    <p>
+      There are exactly two readings of that picture, and they are not compatible.
+      <strong>Reading A:</strong> both branches are sound, the two classes genuinely carry different
+      statistical power, and their crossing is a legitimate combination that happens to land near
+      truth. <strong>Reading B:</strong> at least one branch is tilted, and the crossing is a
+      coincidence of two opposing errors — in which case the measurement is not <em>centred</em> on
+      truth, it is <em>balanced</em> there, and it will move as soon as anything disturbs the
+      balance.
+    </p>
+    <p>
+      Distinguishing them needs a test, not an opinion, and the test is leverage: under Reading A a
+      small perturbation of the class composition should barely move the answer. The project ran it.
+      What it found is the subject of Chapter 11, and this chapter&rsquo;s job is to make sure you
+      arrive there having <em>seen</em> the crossing rather than been told about it.
+    </p>
+    <p>
+      Hold that thought for six chapters. In the meantime the bias ledger in the margin gains
+      something it has not had before: an entry with no number — two branches that disagree, and no
+      verdict on which one is wrong.
+    </p>
+
+    <!-- ================= dossier ================= -->
+    <div class="dossier">
+      <div class="dossier-title">Event dossier — after this chapter</div>
+      <table>
+        <tr><td colspan="2"><strong>EMRI-889</strong> — the loud one</td></tr>
+        <tr><td>d_L</td><td>88.9 Mpc (&sigma;_dL/dL = 8.0&times;10&#8315;&#8309;)</td></tr>
+        <tr><td>SNR</td><td>1425 — the loudest of the run</td></tr>
+        <tr><td>host</td><td>catalogue index 859360</td></tr>
+        <tr><td>z</td><td><em>still unknown</em> — but at h = 0.73 its distance puts it near z ≈ 0.021</td></tr>
+        <tr class="dossier-new"><td>class</td><td><strong>one of only 76</strong> events whose host is in the catalogue — 4.8% of the run</td></tr>
+        <tr class="dossier-new"><td>catalogue branch</td><td>a clean peak: L_cat runs 0.39 → 8.79 → <strong>12.49</strong> (max at h = 0.75) → 1.48</td></tr>
+        <tr class="dossier-new"><td>completion branch</td><td>1.8&times;10&#8315;&#8311; at h = 0.73 — <strong>50 million times smaller</strong>. For 889 the mixture is the catalogue branch.</td></tr>
+        <tr class="dossier-new"><td>sky completeness at its z</td><td>0.920 — and yet w_G, the weight its likelihood is actually multiplied by, is 0.1215</td></tr>
+        <tr><td colspan="2" style="padding-top:0.6rem;"><strong>Dark 606</strong> — the counterpart, new this chapter</td></tr>
+        <tr class="dossier-new"><td>d_L / SNR</td><td>1.17 Gpc / 43 — thirteen times further, thirty-three times quieter</td></tr>
+        <tr class="dossier-new"><td>class</td><td>dark: no catalogued host. One of 1512.</td></tr>
+        <tr class="dossier-new"><td>catalogue branch</td><td>nearly flat at ≈0.088 — candidates exist, none of them is the host, and the sum knows nothing</td></tr>
+        <tr class="dossier-new"><td>completion branch</td><td>rises monotonically 0.0149 → 0.0195 → 0.0238 across the grid</td></tr>
+        <tr class="dossier-new"><td>sky completeness at its z</td><td>0.321 — two thirds of its neighbourhood was never catalogued</td></tr>
+      </table>
+    </div>
+
+    <p>
+      Those two rows are the chapter. For 889 the completion branch is numerically irrelevant and
+      the catalogue sum is a real measurement. For 606 the catalogue sum is noise and the completion
+      branch is all there is. The estimator has to be right about <em>both</em>, with one equation,
+      and the weight that decides how much each one counts is the same scalar for every event.
+    </p>
+
+    <!-- ================= self-check ================= -->
+    <h2>Self-check</h2>
+
+    <div class="selfcheck">
+      <p>Q5.1 &nbsp; $w_G$ is &ldquo;the probability that this detection&rsquo;s host is in the
+      catalogue&rdquo;. Why is it a function of <strong>h</strong>, and which way does it go as
+      $h$ increases?</p>
+      <details class="answer">
+        <summary>Show answer</summary>
+        <div class="answer-body">
+          Because $h$ sets the distance–redshift mapping, and therefore how far out in redshift a
+          source at a given measured $d_L$ must be. Larger $h$ pushes sources to higher $z$, where
+          the catalogue is more incomplete, so $w_G$ <strong>falls</strong> with $h$. Note what does
+          <em>not</em> cause it: the completeness curve $\bar f(z)$ is exactly $h$-independent
+          (measured deviation $\sim 10^{-15}$ across this grid). This is measured directly in the
+          campaign diagnostics: $w_G$ runs 0.1625 → 0.0947 across $h = 0.60 \to 0.86$,
+          monotonically <span class="prov-chip real">real: seed61000/real_r1</span>. That slope is
+          not a detail — Chapter 8 shows the $(1-w_G)$ prefactor&rsquo;s tilt is worth
+          <strong>+31.55 nats</strong> across a 0.08-wide $h$ window, larger than any other single
+          term <span class="prov-chip">CLAIM_2D_BIAS_20260730.md C10</span>
+          <span class="ch05-fwd">⏭ Ch 8</span>.
+        </div>
+      </details>
+    </div>
+
+    <div class="selfcheck">
+      <p>Q5.2 &nbsp; The completion term is built from the population model in the region where the
+      catalogue is blind. Why can it not simply be &ldquo;the catalogue term with the missing
+      galaxies filled in&rdquo;?</p>
+      <details class="answer">
+        <summary>Show answer</summary>
+        <div class="answer-body">
+          Because you do not know where the missing galaxies are — that is what &ldquo;missing&rdquo;
+          means. The completion branch replaces the <em>discrete sum over known positions</em> with a
+          <em>smooth integral over the population&rsquo;s expected distribution</em>, marginalized
+          over the sky against an isotropic prior. It is a genuinely different mathematical object,
+          and the switch from discrete to smooth is where a factor of 5000 hid: evaluating the sky
+          marginal at the peak of the density instead of integrating $1/4\pi$ inflated
+          $B^{\rm num}$ ~5000&times; and railed the posterior at the grid edge
+          <span class="prov-chip">G2a</span> <span class="prov-chip">ledger #46</span>.
+        </div>
+      </details>
+    </div>
+
+    <div class="selfcheck">
+      <p>Q5.3 &nbsp; Sanity limits. What must the master equation reduce to as (a) the catalogue
+      becomes complete, (b) the catalogue becomes empty?</p>
+      <details class="answer">
+        <summary>Show answer</summary>
+        <div class="answer-body">
+          (a) $w_G \to 1$, the completion branch switches off, and
+          $p_i \to \mathcal L^{\rm cat}$ — the Chapter 4 estimator. (b) $w_G \to 0$ and
+          $p_i \to \mathcal L^{\rm comp}$ — a pure population-model inference with no catalogue
+          information, which should be <em>wide but centred</em>. Checking that second limit is not
+          academic: the project&rsquo;s harness measured the pure-completion estimator to be
+          <strong>biased HIGH by +0.7…+5.4% in $h$</strong> at deep incompleteness with 68% coverage
+          collapsing <span class="prov-chip">ledger #57</span>. A limit that is supposed to be
+          trivially safe was not. And you can take both limits yourself in I5.1: the $\kappa \to 0$
+          end reads MAP 0.755, the $\kappa \to \infty$ end rails at 0.600 while silencing 493 events
+          — because limit (a) applied to a catalogue that is <em>not</em> complete is precisely the
+          bug of §4.
+        </div>
+      </details>
+    </div>
+
+    <div class="selfcheck">
+      <p>Q5.4 &nbsp; Split the events into in-catalogue (76) and dark (1512), and each
+      class&rsquo;s summed log-posterior peaks in a different place — <strong>0.86</strong> and
+      <strong>0.64</strong>, with the combined answer between them at 0.740. Give two mutually
+      exclusive readings of that, and say what would distinguish them.</p>
+      <details class="answer">
+        <summary>Show answer</summary>
+        <div class="answer-body">
+          Reading A: both branches are fine and the classes genuinely carry different statistical
+          power, so their crossing is a legitimate combination. Reading B: at least one branch is
+          tilted, and the crossing is a coincidence of two opposing errors — in which case the
+          &ldquo;measurement&rdquo; is not centred on truth, it is balanced there. The
+          distinguishing test is <strong>leverage</strong>: if reading A holds, small perturbations
+          to the class composition should barely move the answer; if B holds, they should move it a
+          lot. The project ran exactly this and found a $\pm1/\sqrt N$ Poisson reweight moves the MAP
+          by up to <strong>0.025</strong> in the realistic venue versus <strong>0.0000</strong>
+          idealized, with $dh^\ast/d\varepsilon$ leverage <strong>1500–2400&times;</strong> — strong
+          evidence for reading B. That is claim C5, and Chapter 11 is where it lands
+          <span class="prov-chip">CLAIM_2D_BIAS_20260730.md C5</span>
+          <span class="ch05-fwd">⏭ Ch 11</span>.
+        </div>
+      </details>
+    </div>
+
+    <div class="selfcheck">
+      <p>Q5.5 <em>(transfer)</em> &nbsp; Both branches depend on how precisely the gravitational
+      wave pins the source. Up to now the localization has been &ldquo;an ellipsoid, somehow&rdquo;.
+      Name two properties of that ellipsoid you would need to know before you could trust either
+      branch.</p>
+      <details class="answer">
+        <summary>Show answer</summary>
+        <div class="answer-body">
+          Its <em>size</em> (how many galaxies are in it, hence whether the catalogue sum is
+          dominated by one host or ten thousand impostors) and its
+          <em>orientation/correlation</em> (whether the sky and distance errors are independent —
+          they are not, because the LISA antenna pattern couples them, and treating them as
+          independent mis-weights every candidate). You have already met the size question twice in
+          this chapter without being able to answer it: it sets the width of the distance Gaussian
+          inside $B^{\rm num}$, and it is the $\sigma_\phi\sigma_\theta$ in the factor of 5000.
+          Chapter 6 opens the box.
+        </div>
+      </details>
+    </div>
+
+    <!-- ================= traps ================= -->
+    <div class="callout defect">
+      <span class="callout-label">Trap &mdash; &ldquo;The completion term is a fudge factor for incompleteness.&rdquo;</span>
+      It is a full likelihood branch derived from the same population model and the same selection
+      function as the catalogue branch — Gray et al. (2020) Eqs. (A17)/(A18)/(A19), implemented as
+      $B^{\rm num}/\beta_{\bar G}$ — and it is the side of the estimator that the 2D channel&rsquo;s
+      difference lives on. The replicated finding is qualitative and blunt: the <em>dark class
+      dominates that difference, and always with the same sign</em>; the r1 partition puts its share
+      at 84.2%, and off-r1 replication spans 84.2%–112.5%, mean 91.6%, so the share is a
+      run-specific number and the dominance is the result
+      <span class="prov-chip">CLAIM_2D_BIAS_20260730.md C3</span>. Calling the branch a fudge is
+      how you avoid noticing that its prefactor is the largest tilt in the inference
+      <span class="prov-chip">C10</span>. <span class="ch05-fwd">⏭ Ch 8</span>
+    </div>
+
+    <div class="callout defect">
+      <span class="callout-label">Trap &mdash; &ldquo;w_G is roughly the catalogue&rsquo;s completeness fraction.&rdquo;</span>
+      It is a <em>detection-weighted, rate-weighted, $h$-dependent</em> posterior probability. Two
+      measurements kill the identification. Locally: at EMRI-889&rsquo;s redshift the sky-averaged
+      completeness is <strong>0.920</strong>, while the weight its likelihood is actually multiplied
+      by is <strong>0.1215</strong> — a factor 7.6, in the direction that matters. Globally: the
+      project measured $w_G$ at <strong>2.3–2.5&times; the realized in-catalogue rate</strong>
+      (0.1215 vs 164/3135 = 0.0523, binomial $z = -11.86$)
+      <span class="prov-chip">CLAIM_2D_BIAS_20260730.md C9</span>. Treating it as
+      &ldquo;completeness&rdquo; is exactly the confusion that hid claim C9 for months
+      <span class="ch05-fwd">⏭ Ch 9</span>.
+    </div>
+
+    <!-- ================= MUSEUM INTERLUDE ================= -->
+    <div class="ch05-interlude">
+      <span class="ch05-interlude-kicker">Defect Museum · interlude</span>
+      <h3>Information starvation <span class="badge refuted">REFUTED</span></h3>
+      <dl>
+        <dt>The hypothesis</dt>
+        <dd>
+          By the end of June the evidence looked conclusive. Every attempt to get a peaked $H_0$ out
+          of in-catalogue photometric hosts had failed. A five-paper, five-dimension reverse
+          engineering of the literature found <em>no</em> published method validated in this
+          regime <span class="prov-chip">ledger #40</span>. So the verdict was written down
+          formally: <strong>in-catalogue photo-z dark sirens are information-starved</strong> — the
+          information is not in the data, and no normalization can conjure it
+          <span class="prov-chip">ledger #41</span>. Notice how comfortable that conclusion is. It
+          is not a mistake anyone made; it is a limit of nature.
+        </dd>
+        <dt>The decisive test</dt>
+        <dd>
+          Two days later, an unrelated line of work produced a peaked, calibrated posterior at 0.73
+          from <em>the same real data</em>. The reconciliation gate (G6) then assembled every
+          configuration that had ever &ldquo;starved&rdquo; or railed and asked what they had in
+          common: bare numerator with a bare global denominator; a $4\pi$-fixed numerator with a
+          mismatched denominator; a numerator-only volume tilt; a smeared denominator against an
+          unsmeared numerator. Every single one puts the population prior into the numerator and the
+          selection denominator <em>differently</em>.
+        </dd>
+        <dt>The measured outcome</dt>
+        <dd>
+          <strong>Overturned.</strong> &ldquo;Information starvation&rdquo; was
+          <em>&ldquo;a property of prior-INCONSISTENT estimators, not of the data&rdquo;</em>
+          <span class="prov-chip">ledger #41 → #52</span>
+          <span class="prov-chip">G6_starvation_postmortem.md:24-33</span>. The one configuration
+          family that recovers and calibrates is the one where the same population prior multiplies
+          the same measurement likelihood on both sides — Chapter 4&rsquo;s <em>counted exactly
+          once</em>. The failed partial fix was retained deliberately, as the negative control that
+          shows a numerator-only repair does not cure the rail.
+        </dd>
+        <dt>What it cost</dt>
+        <dd>
+          A formally recorded verdict that had to be superseded in place, and a supersession note
+          now carried at the top of the report that stated it. It also very nearly cost the project
+          the whole approach: a conclusion of &ldquo;the data cannot do this&rdquo; is a stopping
+          condition.
+        </dd>
+        <dt>The transferable lesson</dt>
+        <dd>
+          <strong>A negative result about your estimator is not a negative result about nature.</strong>
+          The most seductive failure is the one that flatters you by being fundamental — it ends the
+          investigation, it is not anyone&rsquo;s fault, and it sounds like physics. Before accepting
+          one, enumerate the estimators you actually tested and ask what they share. And note that
+          this exhibit is now itself on the do-not-retry list: starvation may not be resurrected as
+          an explanation <span class="prov-chip">ledger §2 item 13</span>.
+        </dd>
+      </dl>
+      <p style="margin-bottom:0;">
+        Full exhibit, alongside the rest of the collection:
+        <a href="museum.html#ex-starvation">the Defect Museum &rarr; information starvation</a>.
+        The zero-host fallback of §4 has its own room:
+        <a href="museum.html#ex-zerohost-fallback">a real bug whose repair changed nothing</a>.
+      </p>
+    </div>
+
+    <!-- ================= what next ================= -->
+    <div class="callout without">
+      <span class="callout-label">The failure the next chapter answers</span>
+      Every quantity in this chapter leaned on the same unexamined object: the gravitational
+      wave&rsquo;s own measurement, treated as &ldquo;an ellipsoid, somehow&rdquo;. Its width sets
+      the completion branch&rsquo;s distance Gaussian; its sky area is the $\sigma_\phi\sigma_\theta$
+      inside the factor of 5000; its size decides whether the catalogue sum is one host or ten
+      thousand impostors. Neither branch can be trusted until that box is open.
+    </div>
+
+    <!-- ================= provenance ================= -->
+    <div class="provenance-panel">
+      <h4>Provenance panel — every stamp used in this chapter</h4>
+      <ul>
+        <li><span class="badge ratified">RATIFIED</span> <code>G2c §1</code> + <code>§2</code> rows <code>beta_G</code>/<code>beta_Gbar</code>/<code>w_G</code> + <code>D4</code> — the mixture, its mapping onto Gray et al. (2020) Eqs. (9)/(A14)/(A15)/(A19), and the single-ratio assembly</li>
+        <li><span class="badge ratified">RATIFIED</span> <code>G2c D2</code> — smooth per-pixel completeness $f_k$ in place of Gray&rsquo;s hard magnitude threshold (Gray, Messenger &amp; Veitch 2022, arXiv:2111.04629 Eq. 5; Gray et al. 2023, arXiv:2308.02281 Eq. 2.3)</li>
+        <li><span class="badge ratified">RATIFIED</span> <code>G2a §3, §5, §7</code> — the exact isotropic sky marginal, the $\sin\hat\theta$ Jacobian, and the four limiting cases (including $f\to1$ and $f\to0$)</li>
+        <li><span class="badge open">OPEN</span> <code>G2c D5</code> — mixed sky treatment inside $B^{\rm num}$: GW marginalized against $1/4\pi$, incompleteness delta-collapsed to the event pixel; maps to no single published equation</li>
+        <li><span class="badge finding">FINDING</span> <code>ledger #46</code> / <code>G7 rows 3–4</code> — peak-density sky evaluation: ~5000&times; $B^{\rm num}$ inflation, rail at the grid edge; $\sin\theta_{\rm det}$ median 1.15&times; over-weight, both fixed (<code>cb16142</code>, <code>4a259b7</code>)</li>
+        <li><span class="badge finding">FINDING</span> <code>ledger #54</code> (<code>8db6c6e</code>) / <code>H0R:1368-1420</code> — zero-host events silently dropped, 58% of a deep venue; pure-completion fallback installed</li>
+        <li><span class="badge refuted">REFUTED</span> <code>ledger #55</code> — the #29 fix as the rail&rsquo;s cause: rail persists at 0.6000, fallback events $h$-inert (−59 nats)</li>
+        <li><span class="badge finding">FINDING</span> <code>ledger #57</code> — the pure-completion fallback estimator is biased HIGH, +0.7…+5.4% in $h$, cov68 ≤ 0.27 at comp_frac 0.22–0.85</li>
+        <li><span class="badge finding">FINDING</span> <code>CLAIM_2D_BIAS_20260730.md C10</code> — the up-pull is carried by the $(1-w_G)$ prefactor (+31.55 nats over 0.73→0.81), not by $\mathcal L^{\rm comp}$ (−3.11 nats; 39.1% positive)</li>
+        <li><span class="badge finding">FINDING</span> <code>CLAIM_2D_BIAS_20260730.md C3</code> — dark class dominates the 2D channel difference, always positive; share 84.2% on r1, 84.2–112.5% (mean 91.6%) off-r1 — the dominance replicates, the number does not</li>
+        <li><span class="badge finding">FINDING</span> <code>CLAIM_2D_BIAS_20260730.md C5</code> — the two-class crossing has leverage: ±1/√N reweight moves the MAP up to 0.025 realistic vs 0.0000 idealized; <em>live, unresolved</em></li>
+        <li><span class="badge finding">FINDING</span> <code>CLAIM_2D_BIAS_20260730.md C9</code> — $w_G$ measured at 2.3–2.5× the realized in-catalogue rate (0.1215 vs 0.0523, binomial $z=-11.86$); <em>live</em></li>
+        <li><span class="badge refuted">REFUTED</span> <code>ledger #41 → #52</code> / <code>G6_starvation_postmortem.md:24-33</code> — information starvation, overturned; on the do-not-retry list (<code>ledger §2 item 13</code>)</li>
+        <li><span class="badge refuted">REFUTED</span> <code>ledger #61</code> (w_G bookkeeping as the fix — tilt relocates), <code>ledger #64</code> (tuning w_pop, ≤ +0.0004) — volunteered inside I5.1&rsquo;s sandbox; do not re-try</li>
+        <li><span class="badge candidate">CANDIDATE</span> <code>G7 row 15</code> — GLADE completeness at $z\gtrsim0.3$ is forecast-defining after the sensitivity fix, not a defect</li>
+        <li>Data: <code>results/campaign51_20260728/realistic_20260729/seed61000/real_r1/diagnostics/event_likelihoods.csv</code> (1588 events × 41 h), <code>.../real_r1/prepared_cramer_rao_bounds.csv</code>, <code>.../seed61000/mixture_leg_log_extract.txt</code>, <code>master_thesis_code/galaxy_catalogue/m_th_map_nside32.npy</code></li>
+        <li>Cross-checks run by the generator: mixture identity (max rel. err. 3.9×10⁻¹³ on 65,108 cells); $w_G$ from the CSV vs $1-\beta_{\bar G}/D$ from the run log (max |Δ| 5.5×10⁻⁷); $\bar f(z)$ $h$-invariance (max |Δ| 1.8×10⁻¹⁵); $N\Delta\ln(1-w_G)$ = +31.554 vs C10&rsquo;s +31.55</li>
+        <li>Open flag: <code>book/design/flags/ch05_FLAGS.md</code> (the ~5000× vs the analytic $2/(\sigma_\phi\sigma_\theta)$ at $\sigma_{\rm sky}=2^\circ$; &ldquo;493 zero-catalogue-leg events&rdquo; vs a zero-host count)</li>
+      </ul>
+    </div>
+
+    <p class="book-footer">
+      Data generated by <code>book/generators/gen_ch05.py</code> (read-only against the main
+      package and <code>results/</code>). This page renders fully offline — Plotly and KaTeX are
+      vendored under <code>vendor/</code>.
+    </p>
+  </main>
+</div>
+
+<script src="js/manifest.js"></script>
+<script src="vendor/plotly/plotly.min.js"></script>
+<script src="vendor/katex/katex.min.js"></script>
+<script src="vendor/katex/auto-render.min.js"></script>
+<script src="js/book.js"></script>
+<script>
+  (function () {
+    "use strict";
+
+    // ---------------------------------------------------------------
+    // Palette (mirrors css/book.css tokens; Plotly needs literals)
+    // ---------------------------------------------------------------
+    var C = {
+      accent: "#0072B2",
+      accentDark: "#6fb8e8",
+      warn: "#D55E00",
+      rec: "#CC79A7",
+      ok: "#009E73",
+      guess: "#E69F00",
+      prior: "#9e9e9e",
+      violet: "#8f6fd0",
+    };
+    function ink() { return Book.isDark() ? "#eef1f5" : "#1a1a1a"; }
+    function grid() { return Book.isDark() ? "#33373f" : "#d8dce1"; }
+    function live() { return Book.isDark() ? C.accentDark : C.accent; }
+    function faint() { return Book.isDark() ? "#9aa2b1" : "#5b6270"; }
+
+    function baseLayout(xTitle, yTitle) {
+      return {
+        margin: { l: 62, r: 18, t: 26, b: 46 },
+        xaxis: { title: xTitle, gridcolor: grid(), zeroline: false },
+        yaxis: { title: yTitle, gridcolor: grid(), zeroline: false },
+        paper_bgcolor: "rgba(0,0,0,0)",
+        plot_bgcolor: "rgba(0,0,0,0)",
+        font: { color: ink(), size: 12 },
+        showlegend: false,
+        hovermode: "x unified",
+      };
+    }
+    function truthShape(h) {
+      return {
+        type: "line", x0: h, x1: h, y0: 0, y1: 1, yref: "paper",
+        line: { color: Book.isDark() ? "#eef1f5" : "#1a1a1a", dash: "dot", width: 1.6 },
+      };
+    }
+    function fmt(v, n) {
+      return (v === null || v === undefined || !isFinite(v)) ? "—" : Number(v).toFixed(n);
+    }
+    function sci(v, n) {
+      if (!isFinite(v) || v === 0) return String(v);
+      var e = Math.floor(Math.log10(Math.abs(v)));
+      return (v / Math.pow(10, e)).toFixed(n === undefined ? 3 : n) + "e" + e;
+    }
+    function table(el, headers, rows) {
+      var html = "<tr>" + headers.map(function (h) { return "<th>" + h + "</th>"; }).join("") + "</tr>";
+      rows.forEach(function (r) {
+        html += "<tr>" + r.map(function (c) { return "<td>" + c + "</td>"; }).join("") + "</tr>";
+      });
+      el.innerHTML = html;
+    }
+    // Log-sum -> normalized density on the (non-uniform) h grid.
+    function densify(logArr, H) {
+      var m = -Infinity, i;
+      for (i = 0; i < logArr.length; i++) if (logArr[i] > m) m = logArr[i];
+      var y = logArr.map(function (v) { return Math.exp(v - m); });
+      return Book.normalizePosterior(y, H);
+    }
+
+    // ---------------------------------------------------------------
+    // Bias rail (BW1). The chapter inherits Ch 4's live entry at 0.0 and
+    // adds an amber PIP with no number: the two branches disagree.
+    // R-ch07-1 IMPLEMENTED by the integrator: Book.biasRail takes `pips`
+    // directly; the page-local append workaround is retired.
+    // ---------------------------------------------------------------
+    function renderRail() {
+      Book.biasRail({
+        entries: [
+          {
+            label: "cat-only, no D(h)",
+            bias: -0.178,
+            note: "Phase 32 / ledger #9 — MAP 0.60, the bottom of the prior",
+          },
+          {
+            label: "full-volume D(h) + mixture",
+            bias: 0.0,
+            note: "Phase 32 / ledger #9. Venue-scoped: campaign #51/#53 r1 reads MAP 0.740.",
+            active: true,
+          },
+        ],
+        pips: [
+          {
+            tone: "amber",
+            label: "two branches disagree (0.86 / 0.64) — unresolved",
+            note: "in-catalogue class peaks 0.86, dark class 0.64 (seed61000/real_r1). " +
+              "No bias number: the project has not resolved which leg is wrong (C5, live).",
+          },
+        ],
+      });
+    }
+    renderRail();
+
+    // ===============================================================
+    // §1 — completeness  (data/ch05_completeness.json)
+    // ===============================================================
+    Book.loadJSON("data/ch05_completeness.json").then(function (F) {
+      var Z = F.z_grid;
+      var marks = [
+        { z: 0.02128, label: "EMRI-889", color: C.accent },
+        { z: 0.24279, label: "dark 606", color: C.warn },
+      ];
+
+      function interpF(z) {
+        for (var i = 1; i < Z.length; i++) {
+          if (Z[i] >= z) {
+            var t = (z - Z[i - 1]) / (Z[i] - Z[i - 1]);
+            return F.f_bar[i - 1] + t * (F.f_bar[i] - F.f_bar[i - 1]);
+          }
+        }
+        return F.f_bar[F.f_bar.length - 1];
+      }
+
+      var traces = [
+        {
+          x: Z, y: F.f_bar, mode: "lines", fill: "tozeroy",
+          line: { color: live(), width: 2.8 }, fillcolor: "rgba(0,114,178,0.13)",
+          name: "sky-averaged f̄(z)",
+          hovertemplate: "z = %{x:.3f}<br>f̄ = %{y:.4f}<extra></extra>",
+        },
+      ];
+      [["p90", "deepest decile of pixels", "dash"],
+       ["p50", "median pixel", "dot"],
+       ["p10", "shallowest decile", "dashdot"]].forEach(function (spec) {
+        var pc = F.pixel_curves[spec[0]];
+        traces.push({
+          x: Z, y: pc.f, mode: "lines",
+          line: { color: C.prior, width: 1.4, dash: spec[2] },
+          name: spec[1] + " (m_th = " + pc.m_th.toFixed(2) + ")",
+          hovertemplate: spec[1] + "<br>z = %{x:.3f}<br>f = %{y:.4f}<extra></extra>",
+        });
+      });
+      traces.push({
+        x: marks.map(function (m) { return m.z; }),
+        y: marks.map(function (m) { return interpF(m.z); }),
+        text: marks.map(function (m) { return m.label; }),
+        mode: "markers+text", textposition: "top right",
+        marker: { color: C.guess, size: 10 },
+        textfont: { size: 11, color: C.guess },
+        name: "the two protagonists",
+        hovertemplate: "%{text}<br>z = %{x:.4f}<br>f̄ = %{y:.4f}<extra></extra>",
+      });
+
+      Book.themedPlot("ch05-fz-plot", traces, function () {
+        var L = baseLayout("z", "catalogue completeness f");
+        L.xaxis.range = [0, 0.62];
+        L.yaxis.range = [0, 1.02];
+        L.annotations = [{
+          x: 0.98, y: 1.0, xref: "paper", yref: "paper", xanchor: "right", yanchor: "top",
+          text: "solid: sky average · grey: individual pixels",
+          showarrow: false, font: { size: 11, color: faint() },
+        }];
+        return L;
+      });
+
+      document.getElementById("ch05-fz-half").textContent = fmt(F.z_at_f_half, 3);
+      document.getElementById("ch05-fz-tenth").textContent = fmt(F.z_at_f_tenth, 3);
+      document.getElementById("ch05-fz-empty").textContent =
+        F.n_empty_pixels + " of " + F.npix;
+      document.getElementById("ch05-fz-hinv").textContent =
+        F.f_bar_h_max_abs_dev.toExponential(1);
+
+      var rows = [];
+      [0.005, 0.01, 0.02128, 0.05, 0.1, 0.15, 0.2, 0.24279, 0.3, 0.4, 0.5, 0.6, 0.8].forEach(function (z) {
+        rows.push([fmt(z, 5), fmt(interpF(z), 5)]);
+      });
+      table(document.getElementById("ch05-fz-table"),
+            ["z", "sky-averaged completeness f̄(z)"], rows);
+    });
+
+    // ===============================================================
+    // Cold open + I5.1 + I5.2  (data/ch05_mixture.json)
+    // ===============================================================
+    Book.loadJSON("data/ch05_mixture.json").then(function (d) {
+      var H = d.h_grid, hTrue = d.h_true;
+      var iComplete = d.kappa_grid.length - 1;   // kappa -> infinity
+      var iShipped = d.kappa_shipped_index;
+
+      var postByKappa = d.log_post_by_kappa.map(function (L) { return densify(L, H); });
+      var postFlat = densify(d.log_post_flat_w, H);
+      var postLegCat = densify(d.log_leg_cat_only, H);
+      var postLegComp = densify(d.log_leg_comp_only, H);
+      var postAll = densify(d.log_post_all, H);
+      var postIncat = densify(d.log_post_incat, H);
+      var postDark = densify(d.log_post_dark, H);
+
+      // ---------------- cold open --------------------------------
+      Book.themedPlot("ch05-cold-plot", [{
+        x: H, y: postByKappa[iComplete], mode: "lines", fill: "tozeroy",
+        line: { color: C.warn, width: 2.6 }, fillcolor: "rgba(213,94,0,0.16)",
+        name: "the host is always catalogued",
+        hovertemplate: "h = %{x:.3f}<br>density = %{y:.4g}<extra></extra>",
+      }], function () {
+        var L = baseLayout("h = H₀ / 100", "posterior density");
+        L.xaxis.range = [0.595, 0.865];
+        L.shapes = [truthShape(hTrue)];
+        L.annotations = [
+          { x: hTrue, y: 1, yref: "paper", text: "truth 0.73", showarrow: false, yanchor: "bottom", font: { size: 11 } },
+          { x: 0.60, y: postByKappa[iComplete][0], text: "MAP 0.600", showarrow: true,
+            arrowhead: 0, ax: 52, ay: -26, font: { size: 11, color: C.warn } },
+        ];
+        return L;
+      });
+      var sComplete = d.summary_by_kappa[iComplete];
+      document.getElementById("ch05-cold-map").textContent = fmt(sComplete.map, 3);
+      document.getElementById("ch05-cold-mean").textContent = fmt(sComplete.mean, 4);
+      document.getElementById("ch05-cold-silenced").textContent =
+        d.n_zero_by_kappa[iComplete] + " of " + d.n_events;
+      table(document.getElementById("ch05-cold-table"),
+            ["h", "density (host always catalogued)", "relative to peak"],
+            H.map(function (h, i) {
+              var y = postByKappa[iComplete];
+              var mx = Math.max.apply(null, y);
+              return [fmt(h, 3), y[i].toExponential(3), (y[i] / mx).toExponential(2)];
+            }));
+
+      // ---------------- I5.1 --------------------------------------
+      var state = { k: iShipped, flat: false, branch: "mix" };
+      var kSlider = document.getElementById("ch05-kappa");
+      var kRead = document.getElementById("ch05-kappa-readout");
+      var branchRow = document.getElementById("ch05-branch-row");
+      var triedBox = document.getElementById("ch05-i51-tried");
+      var verdict51 = document.getElementById("ch05-i51-verdict");
+
+      function kappaLabel(k) {
+        if (k === null) return "∞ (complete catalogue)";
+        if (k === 0) return "0 (empty catalogue)";
+        if (k === 1) return "1 — the shipped catalogue";
+        return String(k);
+      }
+
+      function mixTraces() {
+        var t = [];
+        if (state.branch === "legs" || state.branch === "both") {
+          t.push({
+            x: H, y: postLegCat, mode: "lines",
+            line: { color: C.rec, width: 2, dash: "dash" },
+            name: "catalogue branch alone (1095 events with one)",
+            hovertemplate: "catalogue branch<br>h = %{x:.3f}<br>%{y:.4g}<extra></extra>",
+          });
+          t.push({
+            x: H, y: postLegComp, mode: "lines",
+            line: { color: C.ok, width: 2, dash: "dot" },
+            name: "completion branch alone (all 1588)",
+            hovertemplate: "completion branch<br>h = %{x:.3f}<br>%{y:.4g}<extra></extra>",
+          });
+        }
+        if (state.branch === "mix" || state.branch === "both") {
+          var y = state.flat ? postFlat : postByKappa[state.k];
+          t.push({
+            x: H, y: y, mode: "lines", fill: "tozeroy",
+            line: { color: state.flat ? C.violet : live(), width: 2.8 },
+            fillcolor: state.flat ? "rgba(143,111,208,0.16)" : "rgba(0,114,178,0.15)",
+            name: state.flat ? "mixture, slope removed" : "the mixture",
+            hovertemplate: "h = %{x:.3f}<br>density = %{y:.4g}<extra></extra>",
+          });
+        }
+        return t;
+      }
+      function mixLayout() {
+        var L = baseLayout("h = H₀ / 100", "posterior density (each curve normalized)");
+        L.xaxis.range = [0.595, 0.865];
+        L.shapes = [truthShape(hTrue)];
+        L.annotations = [{ x: hTrue, y: 1, yref: "paper", text: "truth 0.73",
+                           showarrow: false, yanchor: "bottom", font: { size: 11 } }];
+        return L;
+      }
+      var mixPlot = Book.themedPlot("ch05-mix-plot", mixTraces(), mixLayout);
+
+      function wgTraces() {
+        var t = [{
+          x: H, y: d.w_G, mode: "lines",
+          line: { color: C.prior, width: 1.6, dash: "dot" },
+          name: "shipped w_G(h)",
+          hovertemplate: "shipped w_G<br>h = %{x:.3f}<br>%{y:.4f}<extra></extra>",
+        }];
+        var w = state.flat ? H.map(function () { return d.w_flat; }) : d.w_by_kappa[state.k];
+        t.push({
+          x: H, y: w, mode: "lines",
+          line: { color: state.flat ? C.violet : live(), width: 2.8 },
+          name: state.flat ? "flat w_G" : "w_G in play",
+          hovertemplate: "w_G in play<br>h = %{x:.3f}<br>%{y:.4f}<extra></extra>",
+        });
+        return t;
+      }
+      var wgPlot = Book.themedPlot("ch05-wg-plot", wgTraces(), function () {
+        var L = baseLayout("h = H₀ / 100", "w_G — P(host is catalogued)");
+        L.xaxis.range = [0.595, 0.865];
+        L.yaxis.range = [0, 1.02];
+        L.annotations = [{
+          x: 0.02, y: 1.0, xref: "paper", yref: "paper", xanchor: "left", yanchor: "top",
+          text: "dotted: the catalogue this campaign actually had",
+          showarrow: false, font: { size: 11, color: faint() },
+        }];
+        return L;
+      });
+
+      var V51 = {
+        shipped:
+          "<span class='ch05-verdict-label'>Measured, this run</span>" +
+          "The shipped mixture: MAP <strong>0.740</strong>, posterior mean <strong>0.7321</strong>, " +
+          "reproducing this run's published row. One realization — read it as <em>not railed</em>, " +
+          "not as <em>unbiased</em>.",
+        flat:
+          "<span class='ch05-verdict-label'>Measured, this run — the slope alone</span>" +
+          "Both branch likelihoods are byte-for-byte what the run delivered. The only change is that " +
+          "w_G is held at its h = 0.73 value, 0.1215, instead of falling across the grid. The MAP " +
+          "moves <strong>0.740 → 0.630</strong>. That is the tilt: a weight with a slope moves the " +
+          "answer by 0.11 in h without either branch preferring anything different. In the " +
+          "project's own units the same lever reads <strong>+31.55 nats</strong> over h = 0.73 → 0.81 " +
+          "(C10) — carried by the <strong>(1 − w_G) prefactor</strong>.",
+        empty:
+          "<span class='ch05-verdict-label'>Sanity limit (b): the empty catalogue</span>" +
+          "w_G → 0, so p_i → L_comp for every event: a pure population-model inference. MAP " +
+          "<strong>0.755</strong>, mean 0.7461 — high. The project's calibration harness measured " +
+          "this estimator <strong>biased HIGH by +0.7…+5.4% in h</strong> at deep incompleteness, " +
+          "with 68% coverage collapsing to ≤ 0.27 (ledger #57). A limit that ought to be trivially " +
+          "safe is not.",
+        complete:
+          "<span class='ch05-verdict-label'>Sanity limit (a): the complete catalogue</span>" +
+          "w_G → 1, so p_i → L_cat — Chapter 4's estimator. Applied to a catalogue that is <em>not</em> " +
+          "complete it rails at <strong>0.600</strong> and <strong>silences 493 events</strong> whose " +
+          "catalogue branch is identically zero. That is not a thought experiment: shipping exactly " +
+          "this behaviour discarded 58% of a deep venue's events before it was found " +
+          "(ledger #54, fixed in 8db6c6e).",
+        other:
+          "<span class='ch05-verdict-label'>Counterfactual — real branches, invented weight</span>" +
+          "Both branch likelihoods are the run's own; only the scalar weight has moved. Watch how far " +
+          "the MAP travels for a weight change you would struggle to justify — that sensitivity is " +
+          "the point of the widget, and it is why claim C9 (w_G measured at 2.3–2.5× the realized " +
+          "in-catalogue rate) is a live problem rather than bookkeeping.",
+      };
+
+      function classify() {
+        if (state.flat) return "flat";
+        var k = d.kappa_grid[state.k];
+        if (k === null) return "complete";
+        if (k === 0) return "empty";
+        if (k === 1) return "shipped";
+        return "other";
+      }
+
+      function draw51() {
+        mixPlot.update(mixTraces());
+        wgPlot.update(wgTraces());
+        var k = d.kappa_grid[state.k];
+        kRead.textContent = state.flat ? "1 (slope removed)" : kappaLabel(k);
+        var s = state.flat ? d.summary_flat_w : d.summary_by_kappa[state.k];
+        var wArr = state.flat ? null : d.w_by_kappa[state.k];
+        var i73 = H.indexOf(0.73);
+        document.getElementById("ch05-w73").textContent =
+          state.flat ? fmt(d.w_flat, 4) + " (held)" : fmt(wArr[i73], 4);
+        document.getElementById("ch05-mix-map").textContent = fmt(s.map, 3);
+        document.getElementById("ch05-mix-mean").textContent = fmt(s.mean, 4);
+        document.getElementById("ch05-mix-silenced").textContent =
+          state.flat ? "0" : String(d.n_zero_by_kappa[state.k]);
+        var cls = classify();
+        verdict51.innerHTML = V51[cls];
+        Book.renderMath(verdict51);
+        triedBox.hidden = (cls === "shipped");
+      }
+
+      Book.gridSlider({
+        sliderEl: kSlider,
+        readoutEl: null,
+        steps: d.kappa_grid.map(function (_, i) { return i; }),
+        onStep: function (_v, i) { state.k = i; state.flat = false; draw51(); },
+      });
+      kSlider.value = String(iShipped);
+
+      branchRow.querySelectorAll("[data-branch]").forEach(function (b) {
+        b.addEventListener("click", function () {
+          state.branch = b.getAttribute("data-branch");
+          branchRow.querySelectorAll("[data-branch]").forEach(function (o) {
+            o.setAttribute("aria-pressed", String(o === b));
+          });
+          draw51();
+        });
+      });
+      document.getElementById("ch05-flat").addEventListener("click", function () {
+        state.flat = !state.flat;
+        if (state.flat) state.k = iShipped;
+        kSlider.value = String(iShipped);
+        draw51();
+      });
+      document.getElementById("ch05-restore").addEventListener("click", function () {
+        state.flat = false; state.k = iShipped; kSlider.value = String(iShipped);
+        state.branch = "mix";
+        branchRow.querySelectorAll("[data-branch]").forEach(function (o) {
+          o.setAttribute("aria-pressed", String(o.getAttribute("data-branch") === "mix"));
+        });
+        draw51();
+      });
+
+      document.getElementById("ch05-identity").textContent =
+        d.identity_max_rel_err.toExponential(1);
+      var id2 = document.getElementById("ch05-identity2");
+      if (id2) id2.textContent = d.identity_max_rel_err.toExponential(1);
+      var wglog = document.getElementById("ch05-wglog");
+      if (wglog) wglog.textContent = d.w_G_log_max_abs_diff.toExponential(1);
+
+      table(document.getElementById("ch05-i51-table"),
+            ["h", "w_G (shipped)", "D(h) [Mpc³ sr⁻¹]", "β_Ḡ(h)",
+             "mixture density", "catalogue branch", "completion branch"],
+            H.map(function (h, i) {
+              return [fmt(h, 3), fmt(d.w_G[i], 6), sci(d.D_h[i]), sci(d.beta_Gbar[i]),
+                      postByKappa[iShipped][i].toExponential(3),
+                      postLegCat[i].toExponential(3),
+                      postLegComp[i].toExponential(3)];
+            }));
+      draw51();
+
+      // ---------------- I5.2 --------------------------------------
+      var classRow = document.getElementById("ch05-class-row");
+      var classVerdict = document.getElementById("ch05-class-verdict");
+      var CLASSES = {
+        all: { y: postAll, s: d.summary_all, c: live(), n: 1588, label: "all 1588" },
+        incat: { y: postIncat, s: d.summary_incat, c: C.rec, n: 76, label: "in-catalogue (76)" },
+        dark: { y: postDark, s: d.summary_dark, c: C.ok, n: 1512, label: "dark (1512)" },
+      };
+      var classState = "all";
+      var VCLASS = {
+        all: "<span class='ch05-verdict-label'>Measured, this run</span>" +
+          "MAP <strong>0.740</strong>, mean 0.7321. Interior, close to truth, and — as the other two " +
+          "states show — not for the reason it looks like.",
+        incat: "<span class='ch05-verdict-label'>Measured, this run</span>" +
+          "The 76 events whose host really is catalogued peak at <strong>0.86</strong>: the top of the " +
+          "grid — the curve climbs 22.1 nats from h = 0.60 and its highest point is the last grid " +
+          "point, so the peak is wherever the grid stops. Mean 0.822. These are the events with the <em>most</em> " +
+          "information, and they are the ones pointing furthest from truth.",
+        dark: "<span class='ch05-verdict-label'>Measured, this run</span>" +
+          "The 1512 dark events peak at <strong>0.64</strong>, mean 0.657 — below truth by roughly as " +
+          "much as the in-catalogue class is above it.",
+        split: "<span class='ch05-verdict-label'>Measured, this run — the splinter</span>" +
+          "0.86 and 0.64, and 0.740 in between. The headline number is a <strong>crossing</strong>, " +
+          "not a consensus. Two readings survive this figure and only a leverage test separates them " +
+          "(Q5.4); the project ran that test and Chapter 11 is where its answer lands. The bias " +
+          "ledger records this as an <em>unresolved</em> entry with no number, which is the honest " +
+          "state and not an oversight.",
+      };
+
+      function classTraces() {
+        if (classState === "split") {
+          return ["incat", "dark", "all"].map(function (k) {
+            var c = CLASSES[k];
+            return {
+              x: H, y: c.y, mode: "lines",
+              line: { color: c.c, width: k === "all" ? 2.8 : 2, dash: k === "all" ? "solid" : "dash" },
+              name: c.label,
+              hovertemplate: c.label + "<br>h = %{x:.3f}<br>%{y:.4g}<extra></extra>",
+            };
+          });
+        }
+        var c = CLASSES[classState];
+        return [{
+          x: H, y: c.y, mode: "lines", fill: "tozeroy",
+          line: { color: c.c, width: 2.8 },
+          fillcolor: classState === "incat" ? "rgba(204,121,167,0.16)"
+            : classState === "dark" ? "rgba(0,158,115,0.16)" : "rgba(0,114,178,0.15)",
+          name: c.label,
+          hovertemplate: c.label + "<br>h = %{x:.3f}<br>%{y:.4g}<extra></extra>",
+        }];
+      }
+      function classLayout() {
+        var L = baseLayout("h = H₀ / 100", "class posterior density (each normalized)");
+        L.xaxis.range = [0.595, 0.865];
+        L.shapes = [truthShape(hTrue)];
+        L.annotations = [{ x: hTrue, y: 1, yref: "paper", text: "truth 0.73",
+                           showarrow: false, yanchor: "bottom", font: { size: 11 } }];
+        if (classState === "split") {
+          L.showlegend = true;
+          L.legend = { orientation: "h", y: 1.12, x: 0, font: { size: 11 } };
+          L.margin.t = 44;
+          L.annotations.push(
+            { x: 0.86, y: 0.72, yref: "paper", text: "in-catalogue → 0.86", showarrow: false,
+              xanchor: "right", font: { size: 11, color: C.rec } },
+            { x: 0.64, y: 0.86, yref: "paper", text: "dark → 0.64", showarrow: false,
+              xanchor: "left", font: { size: 11, color: C.ok } });
+        }
+        return L;
+      }
+      var classPlot = Book.themedPlot("ch05-class-plot", classTraces(), classLayout);
+
+      function drawClass() {
+        classPlot.update(classTraces());
+        classRow.querySelectorAll("[data-class]").forEach(function (o) {
+          o.setAttribute("aria-pressed", String(o.getAttribute("data-class") === classState));
+        });
+        var s = classState === "split" ? d.summary_all : CLASSES[classState].s;
+        document.getElementById("ch05-class-map").textContent =
+          classState === "split" ? "0.86 / 0.64 / 0.740" : fmt(s.map, 3);
+        document.getElementById("ch05-class-mean").textContent =
+          classState === "split" ? "0.822 / 0.657 / 0.7321" : fmt(s.mean, 4);
+        document.getElementById("ch05-class-depth").textContent =
+          classState === "split" ? "22.1 / 27.6 / 20.8"
+            : fmt(Math.max(s.depth_low_nats, s.depth_high_nats), 1);
+        classVerdict.innerHTML = VCLASS[classState];
+        Book.renderMath(classVerdict);
+      }
+      classRow.querySelectorAll("[data-class]").forEach(function (b) {
+        b.addEventListener("click", function () {
+          classState = b.getAttribute("data-class");
+          drawClass();
+        });
+      });
+      table(document.getElementById("ch05-class-table"),
+            ["h", "all 1588", "in-catalogue (76)", "dark (1512)"],
+            H.map(function (h, i) {
+              return [fmt(h, 3), postAll[i].toExponential(3),
+                      postIncat[i].toExponential(3), postDark[i].toExponential(3)];
+            }));
+      drawClass();
+
+      // I5.2 is locked until the class prediction is recorded.
+      var i52 = document.getElementById("ch05-i52");
+      Book.predictReveal(document.getElementById("ch05-predict-2").closest(".widget"),
+        function () { i52.classList.remove("ch05-locked"); });
+      if (Book.getPrediction("ch05-class-guess") !== null) i52.classList.remove("ch05-locked");
+    });
+
+    // ===============================================================
+    // I5.3 — the 4π marginal (closed form, in-browser; TOY curve,
+    // recorded anchors).  G2a §7 case 5: old/new = 2/(σ_φ σ_θ).
+    // ===============================================================
+    (function () {
+      var SIG_DEG = [0.05, 0.08, 0.12, 0.19, 0.3, 0.5, 0.8, 1.2, 2.0, 3.0, 5.0, 8.0];
+      var slider = document.getElementById("ch05-sky");
+      var readout = document.getElementById("ch05-sky-readout");
+      var modeRow = document.getElementById("ch05-sky-mode");
+      var verdict = document.getElementById("ch05-i53-verdict");
+      var st = { i: SIG_DEG.indexOf(2.0), mode: "marg" };
+
+      var ISO = 1 / (4 * Math.PI);                    // sr^-1
+      function rad(deg) { return deg * Math.PI / 180; }
+      function peakDensity(sigDeg) { return 1 / (2 * Math.PI * rad(sigDeg) * rad(sigDeg)); }
+      function ratio(sigDeg) { return 2 / (rad(sigDeg) * rad(sigDeg)); }
+      // The project's own area convention, detection.py:25, at sinθ ≈ 0.87.
+      function omegaDeg2(sigDeg) {
+        return 2 * Math.PI * 0.87 * rad(sigDeg) * rad(sigDeg) * Math.pow(180 / Math.PI, 2);
+      }
+
+      var curveX = [], curvePeak = [], curveIso = [];
+      for (var s = 0.03; s <= 10.0001; s *= 1.06) {
+        curveX.push(s); curvePeak.push(peakDensity(s)); curveIso.push(ISO);
+      }
+
+      function traces() {
+        var sg = SIG_DEG[st.i];
+        var t = [
+          { x: curveX, y: curveIso, mode: "lines",
+            line: { color: C.ok, width: 2.6 },
+            name: "isotropic average 1/4π",
+            hovertemplate: "isotropic 1/4π = %{y:.4g} sr⁻¹<extra></extra>" },
+          { x: curveX, y: curvePeak, mode: "lines",
+            line: { color: C.warn, width: 2.6, dash: "dash" },
+            name: "peak density 1/(2πσ_φσ_θ)",
+            hovertemplate: "σ_sky = %{x:.3g}°<br>peak = %{y:.4g} sr⁻¹<extra></extra>" },
+          { x: [sg, sg], y: [ISO, peakDensity(sg)], mode: "lines+markers",
+            line: { color: st.mode === "peak" ? C.warn : C.ok, width: 2 },
+            marker: { size: 9, color: [C.ok, C.warn] },
+            name: "the gap you are choosing between",
+            hovertemplate: "σ_sky = %{x:.3g}°<extra></extra>" },
+        ];
+        return t;
+      }
+      function layout() {
+        var sg = SIG_DEG[st.i];
+        var L = baseLayout("sky localization σ_sky  [degrees]",
+                           "sky factor used by the completion branch  [sr⁻¹]");
+        L.xaxis.type = "log"; L.yaxis.type = "log";
+        L.annotations = [
+          { x: Math.log10(2.0), y: Math.log10(peakDensity(2.0)),
+            text: "σ = 2°: ratio 1.6×10³", showarrow: true, arrowhead: 0, ax: -70, ay: -18,
+            font: { size: 11, color: faint() } },
+          { x: Math.log10(0.19), y: Math.log10(peakDensity(0.19)),
+            text: "median EMRI, 0.2 deg²: 1.8×10⁵", showarrow: true, arrowhead: 0, ax: 96, ay: -12,
+            font: { size: 11, color: faint() } },
+          { x: Math.log10(sg), y: Math.log10(ISO), text: "1/4π", showarrow: false,
+            yanchor: "top", font: { size: 11, color: C.ok } },
+        ];
+        return L;
+      }
+      var plot = Book.themedPlot("ch05-sky-plot", traces(), layout);
+
+      function draw() {
+        var sg = SIG_DEG[st.i];
+        plot.update(traces());
+        readout.textContent = sg.toFixed(2) + "°";
+        document.getElementById("ch05-sky-omega").textContent = omegaDeg2(sg).toPrecision(3);
+        document.getElementById("ch05-sky-ratio").textContent = sci(ratio(sg), 2);
+        var r = ratio(sg);
+        verdict.innerHTML = st.mode === "marg"
+          ? "<span class='ch05-verdict-label'>What the code does now</span>" +
+            "The sky factor is <strong>1/4π = 0.0796 sr⁻¹</strong>, flat, independent of how well " +
+            "the event is localized — because a dark host is not more likely to be in the beam just " +
+            "because the beam is narrow. This is the ratified reading of Gray et al. (2020) " +
+            "Eq. (A17) (G2a Eq. 10), and it is exact: the measurement density factorizes, and the " +
+            "sky factor integrates to one."
+          : "<span class='ch05-verdict-label'>What the code did before <code>cb16142</code></span>" +
+            "The sky factor is the <strong>peak density, " + sci(peakDensity(sg), 2) +
+            " sr⁻¹</strong> — larger by <strong>" + sci(r, 2) + "×</strong> at this localization. " +
+            "The narrower the event is localized, the larger the completion branch becomes, which " +
+            "is exactly backwards. In the pipeline this inflated B_num by ~5000× and pinned the " +
+            "posterior to the grid edge (ledger #46). <strong>Has this been tried?</strong> It was " +
+            "the shipped behaviour; the verdict is above, and the fix is the state you are toggling " +
+            "away from.";
+        Book.renderMath(verdict);
+        modeRow.querySelectorAll("[data-sky]").forEach(function (o) {
+          o.setAttribute("aria-pressed", String(o.getAttribute("data-sky") === st.mode));
+        });
+      }
+      Book.gridSlider({
+        sliderEl: slider, readoutEl: null,
+        steps: SIG_DEG.map(function (_, i) { return i; }),
+        onStep: function (_v, i) { st.i = i; draw(); },
+      });
+      slider.value = String(st.i);
+      modeRow.querySelectorAll("[data-sky]").forEach(function (b) {
+        b.addEventListener("click", function () { st.mode = b.getAttribute("data-sky"); draw(); });
+      });
+      table(document.getElementById("ch05-sky-table"),
+            ["σ_sky [deg]", "solid angle [deg²]", "1/4π [sr⁻¹]", "peak density [sr⁻¹]", "peak / isotropic"],
+            SIG_DEG.map(function (sg) {
+              return [sg.toFixed(2), omegaDeg2(sg).toPrecision(3), ISO.toFixed(5),
+                      sci(peakDensity(sg), 3), sci(ratio(sg), 3)];
+            }));
+      draw();
+
+      // I5.3 is locked until the prediction is recorded.
+      var w53 = document.getElementById("ch05-i53-widget");
+      Book.predictReveal(document.getElementById("ch05-predict-1").closest(".widget"),
+        function () { w53.classList.remove("ch05-locked"); });
+      if (Book.getPrediction("ch05-sky-guess") !== null) w53.classList.remove("ch05-locked");
+    })();
+  })();
+</script>

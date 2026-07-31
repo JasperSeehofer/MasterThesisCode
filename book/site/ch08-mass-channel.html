@@ -1,0 +1,2037 @@
+<!DOCTYPE html>
+<!-- Doctype + charset added by the integrator (WIDGET_REQUESTS R-ch07-3):
+     without the doctype the page renders in quirks mode and KaTeX refuses to run. -->
+<meta charset="utf-8" />
+<title>Ch. 8 — A Second Handle: the Mass Channel | EMRI Dark Siren Book</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="description" content="The redshifted mass as a second handle on z: the impostor sieve that works while the mixture weight collapses, the reparametrization walk, and why only the 2D channel breaks." />
+<link rel="stylesheet" href="vendor/katex/katex.min.css" />
+<link rel="stylesheet" href="css/book.css" />
+
+<style>
+  /* Page-local only (css/book.css is frozen). Nothing here restyles a shared
+     class; these are new elements this chapter introduces. */
+  .ch08-verdict {
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--planck);
+    background: var(--paper-raised);
+    border-radius: 8px;
+    padding: 0.7rem 0.9rem;
+    margin: 0.7rem 0 0;
+    font-size: 0.9rem;
+  }
+  .ch08-verdict .ch08-verdict-label {
+    display: block;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--planck);
+    margin-bottom: 0.25rem;
+  }
+  .ch08-readouts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem 1.2rem;
+    margin: 0.5rem 0 0;
+    font-size: 0.86rem;
+    color: var(--muted);
+  }
+  .ch08-readouts strong { color: var(--accent); font-variant-numeric: tabular-nums; }
+  .ch08-note { font-size: 0.82rem; color: var(--muted); margin: 0.6rem 0 0; }
+  .ch08-panel-label {
+    display: block;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin: 1rem 0 0.1rem;
+  }
+  .ch08-locked { opacity: 0.45; pointer-events: none; }
+  .ch08-fwd {
+    display: inline-block;
+    font-size: 0.72rem;
+    border: 1px dashed var(--border);
+    border-radius: 999px;
+    padding: 0 0.45em;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  .ch08-interlude {
+    border: 1px solid var(--border);
+    border-top: 3px solid var(--prior);
+    background: var(--paper-raised);
+    border-radius: var(--radius);
+    padding: 1.1rem 1.25rem;
+    margin: 2.4rem 0 1.4rem;
+  }
+  .ch08-interlude .ch08-interlude-kicker {
+    display: block;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 0.2rem;
+  }
+  .ch08-interlude h3 { margin-top: 0.1rem; }
+  .ch08-interlude dl { margin: 0.8rem 0 0; }
+  .ch08-interlude dt {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--muted);
+    margin-top: 0.7rem;
+  }
+  .ch08-interlude dd { margin: 0.1rem 0 0; }
+  /* Bias-rail pips — page-local workaround, same shape as ch07's
+     (WIDGET_REQUESTS R-ch07-1: rail pips are not yet in the frozen book.js). */
+  #bias-rail .ch08-pip {
+    display: flex; gap: 0.4rem; align-items: baseline; font-size: 0.72rem;
+    margin-top: 0.35rem; padding-top: 0.3rem; border-top: 1px dotted var(--border);
+  }
+  #bias-rail .ch08-pip .ch08-pip-dot {
+    width: 0.55rem; height: 0.55rem; border-radius: 50%; flex: 0 0 auto;
+    background: var(--planck);
+  }
+  #bias-rail .ch08-pip.grey .ch08-pip-dot { background: var(--prior); }
+  @media print { .ch08-locked { opacity: 1; } }
+</style>
+
+<div class="book-shell">
+  <header class="book-topbar">
+    <a class="brand" href="index.html">From Bayes&rsquo; Rule to H&#8320;
+      <small>an interactive discovery book</small>
+    </a>
+    <nav class="book-nav" data-nav aria-label="Chapters"><!-- built from js/manifest.js --></nav>
+    <button class="theme-toggle" data-theme-toggle type="button">☽ Dark</button>
+  </header>
+
+  <main class="book-content">
+    <h1>Chapter 8 — A Second Handle: the Mass Channel</h1>
+    <p class="subtitle">
+      The mass channel should sharpen everything — and the bias goes to <strong>+0.077</strong>.
+    </p>
+
+    <!-- ================= COLD OPEN (B1) ================= -->
+    <div class="callout without">
+      <span class="callout-label">The promise this chapter starts from</span>
+      Every chapter so far fought a <em>deficiency</em>: a missing denominator, a missing
+      branch, a redshift that was not a number. This one starts from an <strong>abundance</strong>.
+      The gravitational wave measures the binary&rsquo;s <em>redshifted</em> mass
+      <span class="term" data-term="Mz">$M_z = M(1+z)$</span> to a fractional precision of
+      about $10^{-4}$. Every catalogue galaxy carries an estimate of its own black-hole
+      mass <span class="term" data-term="Mg">$M_g$</span>. Then
+      $M_z/M_g - 1$ is a <em>second, independent estimate of the redshift of that host</em> —
+      a second handle on the same event, free, already in the data.
+      It should sharpen everything.
+    </div>
+
+    <div class="widget" data-predict-id="ch08-second-handle">
+      <h4>Predict, then reveal — what does a second observable do to the answer?</h4>
+      <p style="margin-top:0;">
+        Same 1588 detections, same selection machinery, same host-redshift kernel. The only
+        change is that the likelihood now also asks each candidate galaxy whether its
+        black-hole mass is consistent with the measured $M_z$ at the hypothesised redshift.
+        Commit before you scroll.
+      </p>
+      <div class="predict-row" id="ch08-predict-1" data-predict-id="ch08-second-handle">
+        <button type="button" data-predict="sharper">Sharper, same centre</button>
+        <button type="button" data-predict="same">Barely moves — the catalogue masses are too noisy to matter</button>
+        <button type="button" data-predict="worse">Moves the centre</button>
+      </div>
+      <div class="reveal">
+        It moves the centre, and it does not move it a little. Across the ten realistic
+        runs the 1D MAP averages <strong>0.7205</strong> and no run exceeds $2\sigma$;
+        the 2D MAP averages <strong>0.807</strong> — a bias of <strong>+0.077</strong> in
+        $h$, with a mean pull of <strong>+4.04</strong> and
+        <strong>10 runs out of 10</strong> beyond $2\sigma$. The widths are comparable —
+        $\sigma_{H_0} = 1.41$–2.46 km s⁻¹ Mpc⁻¹ in the 2D channel against 1.54–2.64 in the
+        1D — and the maximum edge-to-peak posterior ratio is 0.17, so this is not a rail and
+        not a width artifact. The peak is interior and simply in the wrong place.
+        <span class="prov-chip real">real: campaign #51/#53, 10 runs</span>
+        <span class="prov-chip">REALISTIC_READOUT.md §6</span>
+      </div>
+      <noscript>
+        <p><strong>Static answer</strong> (the reveal above is normally locked until you
+        commit). It moves the centre. Over the ten realistic runs the 1D MAP averages 0.7205
+        with 0/10 runs beyond 2σ; the 2D MAP averages 0.807 — a bias of +0.077 in h, mean
+        pull +4.04, 10/10 runs beyond 2σ. The widths are comparable and both peaks are
+        interior, so this is neither a rail nor a width artifact.</p>
+      </noscript>
+    </div>
+
+    <div class="widget">
+      <h4>The cold open — the same events, one extra observable
+        <span class="prov-chip real">real: seed61000/real_r1</span>
+        <span class="badge candidate">CANDIDATE</span>
+      </h4>
+      <p style="margin-top:0; color:var(--muted); font-size:0.88rem;">
+        The two delivered posteriors of one run, combined in log space over the same 1588
+        events. Blue is the 1D channel (redshift only), pink is the 2D channel (redshift
+        <em>and</em> mass). The dashed line is the mock universe&rsquo;s injected truth
+        <span class="term" data-term="h">$h_{\rm true} = 0.73$</span>. Below, every run&rsquo;s
+        2D pull.
+      </p>
+      <div id="ch08-cold-plot" class="widget-plot"></div>
+      <div id="ch08-pull-plot" class="widget-plot" style="min-height:190px"></div>
+      <div class="ch08-readouts">
+        <span>1D MAP <strong id="ch08-cold-map1">&mdash;</strong></span>
+        <span>2D MAP <strong id="ch08-cold-map2">&mdash;</strong></span>
+        <span>2D mean bias over 10 runs <strong id="ch08-cold-bias">&mdash;</strong></span>
+        <span>mean 2D pull <strong id="ch08-cold-pull">&mdash;</strong></span>
+      </div>
+      <p class="ch08-note">
+        <strong>Standing on candidate ground.</strong> The 2D pairing this run used —
+        <code>absolute_marginal</code> normalization × <code>volume_deconv</code> host-z
+        kernel × the (M1) mass kernel — is a
+        <span class="badge candidate">CANDIDATE</span>, not a ratified estimator:
+        <code>[RATIFY-M6]</code> designates it &ldquo;necessary, not established
+        sufficient&rdquo; <span class="prov-chip">mass_marginal_2d_kernel.md:1-17, 690-706</span>.
+        Every 2D number on this page sits on that ground, and the page says so at each one.
+      </p>
+      <details class="num-view">
+        <summary>Show me the numbers</summary>
+        <div class="table-scroll"><table class="num-table" id="ch08-cold-table"></table></div>
+      </details>
+      <noscript>
+        <p><strong>Static fallback.</strong> Two combined posteriors over the same 1588
+        events of <code>seed61000/real_r1</code>. 1D: MAP 0.740 (parabola-refined 0.7405),
+        interior, close to the truth 0.73. 2D: MAP 0.810 (parabola-refined 0.8133), also
+        interior, 0.08 above the truth. Over all ten realistic runs the 2D MAPs are
+        0.78–0.82 (mean 0.807, bias +0.077) with pulls +2.47…+4.74 (mean +4.04), 10/10
+        beyond 2σ; the 1D MAPs are 0.70–0.74 (mean 0.7205) with |pull| ≤ 1.15,
+        0/10 beyond 2σ.</p>
+      </noscript>
+    </div>
+
+    <p>
+      That is the whole chapter in one figure, and the rest of it is the answer to a single
+      question: <em>how does adding correct information make an estimator worse?</em>
+      The answer is not that the mass channel fails to do its job. It does its job. What
+      the chapter has to show you is the <strong>second thing</strong> that happens at the
+      same time, which nobody designed and which is bigger.
+    </p>
+
+    <!-- ================= §1 ================= -->
+    <h2>1. The second handle</h2>
+
+    <p>
+      Chapter 6 established what the waveform actually measures. Among the fourteen
+      parameters, the two masses are measured through the <em>phasing</em>: an EMRI spends
+      of order $10^5$ cycles in band, and the accumulated phase is exquisitely sensitive to
+      the mass that sets the orbital frequency. But the detector never sees the source-frame
+      mass. Cosmological expansion stretches every timescale by $(1+z)$, so a binary of
+      source-frame mass <span class="term" data-term="M">$M$</span> at redshift
+      <span class="term" data-term="z">$z$</span> produces exactly the waveform of a binary
+      of mass $M(1+z)$ at rest. The detector measures the product, and only the product.
+    </p>
+
+    <div class="voice-derivation">
+      <span class="voice-label">The redshifted mass, and why it is a redshift measurement
+        <span class="badge ratified">RATIFIED</span>
+        <span class="prov-chip">dark_siren_likelihood.md §7&ndash;§11</span>
+        <span class="prov-chip">bayesian_statistics.py:4014</span>
+      </span>
+      The GW datum is the detector-frame mass
+      $$ M_z \;=\; M\,(1+z), \qquad \frac{\sigma_{M_z}}{M_z} \;\approx\; 10^{-4} $$
+      for the events in this campaign
+      <span class="prov-chip">CLAIM_2D_BIAS_20260730.md C4</span>. It carries no cosmology: it is a measured number,
+      like $\hat d_L$. Now suppose a candidate host galaxy $g$ supplies an estimate
+      $M_g$ of its central black hole&rsquo;s <em>source-frame</em> mass. Under the
+      hypothesis that $g$ is the host, at the hypothesised redshift $z$,
+      $$ M_z \;\overset{!}{=}\; M_g\,(1+z) \quad\Longrightarrow\quad 1+z \;=\; M_z/M_g . $$
+      This is a redshift estimate built from masses alone — it never touches $d_L$, and so
+      it is <em>statistically independent</em> of the distance channel given the host. The
+      likelihood implements it as a marginal over the host&rsquo;s true mass, in the
+      dimensionless <span class="term" data-term="u">fraction coordinate</span>
+      $x = M_z/M_{z,\det,i}$ that Chapter 6 introduced for distance — the analytic Gaussian
+      product <code>mz_integral</code> <span class="prov-chip">bayesian_statistics.py:4363-4370</span>,
+      with the matching mass marginalization inside the per-galaxy selection integral
+      <span class="term" data-term="Dg">$D_g$</span>
+      <span class="prov-chip">bayesian_statistics.py:3362</span> — counted once on each
+      side, exactly as Chapter 4&rsquo;s rule demands. There is no analogue of this term in
+      Gray et al. (2020), arXiv:1908.06050: the mass axis is this project&rsquo;s own
+      extension <span class="prov-chip">G2c D6</span>.
+    </div>
+
+    <p>
+      Two of this term&rsquo;s previous incarnations were wrong in ways worth a sentence
+      each, because both are the kind of error a careful person makes. A spurious
+      $1/(1+z)$ Jacobian sat in the with-mass numerator until Phase 15
+      <span class="prov-chip">ledger #5</span> — a double-counted time dilation. And until
+      commit <code>f01595c</code> the numerator queried the <em>observation</em>
+      $M_{z,\det}$ where it should have queried the <em>hypothesis</em> $M_g(1+z)$, while
+      the grid&rsquo;s mass axis mixed source and observer frames; the observer-frame fix
+      moved the 2D bias from +0.0141 to +0.0007, a factor 20
+      <span class="prov-chip">ledger #22</span>. Neither is the subject of this chapter.
+      Both are the reason the subject of this chapter is not &ldquo;a bug&rdquo;: by the
+      time campaign #53 ran, the obvious bugs had been found.
+    </p>
+
+    <details class="gw-reader">
+      <summary>&#9656; For the GW reader — where the mass axis lives, and where it does not</summary>
+      <p>
+        The 2D path is <code>single_host_likelihood_batch</code>
+        (<code>bayesian_statistics.py:4014</code>); the mass factor is a conditional Gaussian
+        marginalization in the Bishop (2.81&ndash;2.82) sense, taken against the same 4&times;4
+        Cramér&ndash;Rao block Chapter 6 built, with <code>means_4d = [φ, θ, 1, 1]</code> —
+        both the distance and the mass enter as fractions with mean 1.
+      </p>
+      <p>
+        The <em>candidate search</em> is where the two channels first diverge, and it is
+        load-bearing for everything below. The BallTree query returns a sky-and-redshift
+        ball; a redshift filter alone produces the 1D candidate list
+        (<code>handler.py:592</code>), and a <em>second</em>, mass filter is applied on top
+        of it to produce the 2D list (<code>handler.py:605</code>). So the 2D candidate set
+        is a strict subset of the 1D one, and the 1D channel never sees the mass window at
+        all. That asymmetry is why every mass-side defect in this chapter is
+        <strong>2D-only</strong> — and it is also why &ldquo;why is 1D spared?&rdquo; turns
+        out to be a screen with no discriminating power for mass hypotheses (§7).
+      </p>
+      <p>
+        One nuance, because &ldquo;the 1D channel is mass-blind&rdquo; is too strong: the
+        rate weight <span class="term" data-term="wg">$w_g = R_{\rm eff}(M_g)/(1+z_g)$</span>
+        of Chapter 3 uses the host mass in <em>both</em> channels. It is a rate, not a
+        density in the mass coordinate, which is exactly why the invariance argument of §6
+        still goes through untouched <span class="prov-chip">README_C8.md, correction 3</span>.
+      </p>
+    </details>
+
+    <!-- ================= §2 ================= -->
+    <h2>2. The kernel, and the measure it is written in</h2>
+
+    <p>
+      A galaxy does not hand you $M_g$. It hands you a stellar mass, and the black-hole mass
+      is inferred from it through an empirical scaling relation. The pipeline uses
+      Reines &amp; Volonteri (2015), arXiv:1508.06274:
+      $\log_{10}(M_{\rm BH}/M_\odot) = 7.45 + 1.05\,\log_{10}(M_*/10^{11}M_\odot)$, whose
+      <em>intrinsic</em> scatter is 0.24 dex — and which is fit in log space, on a sample of
+      local broad-line AGN, and then applied to the mostly inactive galaxies of GLADE+.
+    </p>
+    <p>
+      So the catalogue&rsquo;s mass is uncertain by a factor of a few. The GW&rsquo;s mass is
+      uncertain by one part in ten thousand. Hold those two numbers next to each other,
+      because their <em>ratio</em> is the mechanism of this entire chapter:
+      $\sigma_{M_z}/M_z \approx 10^{-4}$ against a catalogue
+      <span class="term" data-term="slnM">$\sigma_{\ln M} \approx 1.28$</span>, a factor
+      $\approx 3.6$ <span class="prov-chip">CLAIM_2D_BIAS_20260730.md C4</span>. The
+      comparison of a needle with a barn door.
+    </p>
+
+    <div class="callout defect">
+      <span class="callout-label">Two numbers both called &ldquo;$\sigma_{\ln M}$&rdquo; — say which</span>
+      The ratified kernel derivation quotes a <strong>floor</strong> of
+      $\sigma_{\ln M} \ge \sqrt{0.553^2 + 0.184^2} \approx 0.58$ — the irreducible part
+      (intrinsic scatter plus the relation&rsquo;s $\alpha$-uncertainty)
+      <span class="prov-chip">mass_marginal_2d_kernel.md §1</span>. The measured
+      <em>median</em> over the catalogue&rsquo;s actual host population is
+      $\approx 1.28$, because it also carries the propagated stellar-mass error and the
+      $\beta$-slope term <span class="prov-chip">CLAIM_2D_BIAS_20260730.md C4</span>. These
+      are different objects and this book names which one it means every time.
+    </div>
+
+    <div class="voice-derivation">
+      <span class="voice-label">The ratified mass kernel — and the family the pipeline actually shipped
+        <span class="badge ratified">RATIFIED</span>
+        <span class="badge candidate">CANDIDATE (RATIFY-M6)</span>
+        <span class="prov-chip">mass_marginal_2d_kernel.md, gates M1&ndash;M7</span>
+      </span>
+      The derived per-galaxy mass kernel is a <strong>truncated lognormal times the EMRI
+      rate</strong>, on a flat-in-$\ln M$ reference measure,
+      $$ p_g(M) \;\propto\; \mathrm{LN}\bigl(M;\,M_g,\ \sigma_{\ln M}\bigr)\;R_{\rm eff}(M),
+         \qquad M \in [10^4,\,10^7]\,M_\odot, $$
+      renormalized on that interval (gates M1&ndash;M2). Because the relation is fit in
+      $\log M$, $M_g$ is a <em>median</em>, not a mean; the reference measure is not a
+      technicality (flat-in-$M$ instead would shift the median up by
+      $e^{\sigma_{\ln M}^2} \approx 1.40$ at $\sigma_{\ln M} = 0.58$).
+      <br /><br />
+      <strong>The production pipeline does not use this.</strong> It marginalizes with an
+      <em>untruncated linear</em> Gaussian $N(M; M_g,\,M_g\sigma_{\ln M})$. At
+      $\sigma_M/M = 0.6$ that distribution puts <strong>4.8% of every host&rsquo;s kernel
+      mass at $M &lt; 0$</strong>, 29% below $M_{\min}$ for low-mass hosts and 24% above
+      $M_{\max}$ for high-mass ones — and <strong>65% of $R_{\rm eff}$-weighted EMRI hosts
+      sit in the $M_{\max}$ boundary zone</strong>. It is the wrong distribution
+      <em>family</em>, not a mis-set width
+      <span class="prov-chip">mass_marginal_2d_kernel.md §1&ndash;§2</span>.
+      <br /><br />
+      Gate <strong>[RATIFY-M6]</strong> is the one that matters for how you read this
+      chapter: the real-data 2D mode is designated <strong>CANDIDATE / OPEN</strong> —
+      &ldquo;necessary, not established sufficient&rdquo; — pending discriminators that have
+      not run.
+    </div>
+
+    <p>
+      Now the sieve. The 2D candidate search keeps a galaxy only if its mass interval
+      $[M_g - \sigma_M,\ M_g + \sigma_M]$ overlaps the interval the GW allows,
+      $[(M_z - 2\sigma_{M_z})/(1+z_{\max}),\ (M_z + 2\sigma_{M_z})/(1+z_{\min})]$
+      <span class="prov-chip">handler.py:605</span>. Predict the shape of what that throws
+      away before you look.
+    </p>
+
+    <div class="widget" data-predict-id="ch08-sieve-shape">
+      <h4>Predict, then reveal — the shape of the rejection</h4>
+      <p style="margin-top:0;">
+        The GW side of the comparison is exact to $10^{-4}$; the catalogue side is uncertain
+        by a factor $\approx 3.6$. Is the resulting rejection symmetric about the allowed
+        mass, one-sided against galaxies that are <em>too light</em>, or one-sided against
+        galaxies that are <em>too heavy</em>?
+      </p>
+      <div class="predict-row" id="ch08-predict-2" data-predict-id="ch08-sieve-shape">
+        <button type="button" data-predict="sym">Symmetric</button>
+        <button type="button" data-predict="low">One-sided low</button>
+        <button type="button" data-predict="high">One-sided high</button>
+      </div>
+      <div class="reveal">
+        <strong>Strongly one-sided low</strong>, and the reason is not statistical but
+        structural. The window&rsquo;s width is set almost entirely by the catalogue side,
+        and once $\sigma_M \gtrsim M_g$ the lower edge $M_g - \sigma_M$ goes negative: the
+        upper leg of the test becomes <em>vacuous</em>. A galaxy can always be &ldquo;too
+        light for this redshift&rdquo;; it can essentially never be meaningfully too heavy.
+        Measured on the production venue: <strong>193 low-side rejections against 1
+        high-side</strong> <span class="prov-chip">CLAIM_2D_BIAS_20260730.md C4</span>.
+        Asymmetric rejection means asymmetric surviving support — which means a
+        <em>tilt</em>, and a tilt in $h$ is a bias.
+      </div>
+      <noscript>
+        <p><strong>Static answer.</strong> Strongly one-sided low: once σ_M ≳ M_g the
+        window's lower edge M_g − σ_M goes negative and the upper leg of the test becomes
+        vacuous. Measured: 193 low-side rejections against 1 high-side
+        (CLAIM_2D_BIAS_20260730.md C4).</p>
+      </noscript>
+    </div>
+
+    <!-- ============ I8.1 ============ -->
+    <div class="widget" id="ch08-i81">
+      <h4>I8.1 — The Impostor Sieve</h4>
+      <p style="margin-top:0; color:var(--muted); font-size:0.88rem;">
+        Two panels, two provenances, deliberately not blended. The upper one is an
+        <em>analytic toy</em> you can drive with the catalogue&rsquo;s mass scatter; the
+        lower one is the production run. <strong>Watch both at once</strong> — that
+        simultaneity is the mechanism.
+      </p>
+
+      <span class="ch08-panel-label">Panel A — the sieve, driven
+        <span class="prov-chip toy">toy: analytic</span>
+      </span>
+      <p style="margin:0.2rem 0 0; color:var(--muted); font-size:0.85rem;">
+        400 synthetic candidate galaxies in one localization ball, with true masses spread
+        log-uniformly over the catalogue&rsquo;s range $[10^4, 10^7]\,M_\odot$ and catalogue
+        estimates scattered by $\sigma_{\ln M}$. Horizontal axis: how far each
+        candidate&rsquo;s implied mass sits from the mass the GW allows. Points below the axis
+        are rejected by the hard window, points above survive it.
+        <strong>The absolute rates here are the toy&rsquo;s, not the pipeline&rsquo;s</strong> —
+        what transfers is the <em>shape</em> of the two effects and how they move together.
+      </p>
+      <div class="widget-controls">
+        <label for="ch08-slnm">Catalogue mass scatter $\sigma_{\ln M}$:</label>
+        <input id="ch08-slnm" type="range" aria-describedby="ch08-toy-readouts" />
+        <span class="readout">$\sigma_{\ln M}$ = <strong id="ch08-slnm-out">&mdash;</strong></span>
+      </div>
+      <div id="ch08-toy-plot" class="widget-plot" style="min-height:250px"></div>
+      <div class="ch08-readouts" id="ch08-toy-readouts">
+        <span>rejected by the window <strong id="ch08-toy-rej">&mdash;</strong></span>
+        <span>rejections low : high <strong id="ch08-toy-side">&mdash;</strong></span>
+        <span>median kernel weight of a survivor <strong id="ch08-toy-w">&mdash;</strong></span>
+      </div>
+      <p class="ch08-note">
+        The kernel weight is quoted relative to a reference mass kernel of fixed 10% width, so
+        it is a pure &ldquo;how much does a surviving candidate still contribute&rdquo; number.
+        The production measurement of the one-sidedness — the thing the toy&rsquo;s low : high
+        counter is a picture of — is <strong>193 : 1</strong>
+        <span class="prov-chip real">real: CLAIM_2D_BIAS_20260730.md C4</span>.
+      </p>
+
+      <span class="ch08-panel-label">Panel B — the production run
+        <span class="prov-chip real">real: seed61000/real_r1</span>
+      </span>
+      <div class="toggle-row" id="ch08-real-row" role="group" aria-label="Production view">
+        <button type="button" data-view="weight" aria-pressed="true">the mixture weight</button>
+        <button type="button" data-view="zero">what got zeroed</button>
+        <button type="button" data-view="class">the dark class&rsquo;s own profile</button>
+      </div>
+      <div id="ch08-real-plot" class="widget-plot" style="min-height:280px"></div>
+      <div class="ch08-verdict" id="ch08-real-verdict"></div>
+      <p class="ch08-note">
+        The mixture weight plotted here is the per-event catalogue share
+        $\bar w_{\rm cat} = \langle w_G \mathcal L^{\rm cat} /
+        (w_G \mathcal L^{\rm cat} + (1-w_G)\mathcal L^{\rm comp})\rangle$, averaged over the
+        1512 dark events. It is what &ldquo;the catalogue leg&rsquo;s influence&rdquo; means
+        numerically. The $h$-grid is <em>not</em> uniform (0.01-spaced on [0.60, 0.65] and
+        [0.80, 0.86], 0.005-spaced between), and nothing on this page differentiates across
+        those seams.
+      </p>
+      <details class="num-view">
+        <summary>Show me the numbers</summary>
+        <div class="table-scroll"><table class="num-table" id="ch08-sieve-table"></table></div>
+      </details>
+      <noscript>
+        <p><strong>Static fallback.</strong> Panel A (toy): as the catalogue mass scatter
+        grows past $\sigma_{\ln M}\approx 1$, the hard mass window&rsquo;s upper leg goes
+        vacuous and every rejection lands on the low side, while the surviving candidates&rsquo;
+        kernel weights collapse toward zero — two effects at once. Panel B (real,
+        seed61000/real_r1, h = 0.73): 64.7% of the 1512 dark events have an exactly-zero 2D
+        catalogue leg against 32.5% in 1D; the dark class&rsquo;s mean catalogue mixture
+        weight falls from 0.0354 (1D) to 0.0061 (2D), a factor 5.79; and the dark class&rsquo;s
+        own summed profile moves its argmax from h = 0.640 (1D) to h = 0.785 (2D), landing
+        beside the dark completion leg&rsquo;s own preference of h = 0.810.</p>
+      </noscript>
+    </div>
+
+    <p>
+      Panel A is a toy and proves nothing about the pipeline; what it does is make two
+      simultaneous effects visible as one gesture. Drag $\sigma_{\ln M}$ up from 0.1 and watch
+      both counters at once. The rejection stops being two-sided — at
+      $\sigma_{\ln M} \approx 0.9$ the high-side leg starts to vanish, and by the
+      catalogue&rsquo;s own 1.28 every single rejection is on the low side, because
+      $M_g - \sigma_M$ has gone negative and the upper test can no longer fail. And the
+      survivors the sieve <em>keeps</em> get quieter by an order of magnitude on the way. A
+      tight sieve keeps few candidates and each of them means something; a loose one keeps
+      many and each of them means almost nothing. There is no setting at which you get both.
+      <br /><br />
+      On the real run the pipeline&rsquo;s own numbers say the same thing twice over. The
+      sieve works: the mass window and kernel reject roughly <strong>97–99% of impostor
+      hosts</strong> <span class="prov-chip">CLAIM_2D_BIAS_20260730.md</span>. And the
+      surviving dark catalogue legs are suppressed by a median factor
+      <strong>$7.78\times10^{-3}$</strong>, dragging the dark class&rsquo;s mean catalogue
+      mixture weight from <strong>0.0354 to 0.0061</strong>. Only the first of those was
+      designed.
+    </p>
+
+    <!-- ================= §3 ================= -->
+    <h2>3. Eddington, in mass this time</h2>
+
+    <p>
+      Chapter 7 met the Eddington bias in redshift: a wide measurement error against a rising
+      population prior does not blur the answer, it moves it. The mass axis has exactly the
+      same disease, for exactly the same reason, and the project fixed it the same way.
+    </p>
+    <p>
+      The catalogue&rsquo;s mass likelihood $N(M; M_g, \sigma_M)$ says how compatible each
+      true mass is with the <em>measurement</em>. It does not say how likely each true mass
+      is to <em>host an EMRI</em> — and that is not flat. The per-MBH EMRI rate
+      <span class="term" data-term="Reff">$R_{\rm eff}(M)$</span> falls with mass, about
+      $-0.43$ per dex across the catalogue&rsquo;s range. Omitting it treats every mass
+      within the scatter as an equally likely host, which they are not.
+    </p>
+
+    <div class="voice-derivation">
+      <span class="voice-label">G2d — the host-mass rate prior
+        <span class="badge ratified">RATIFIED</span>
+        <span class="prov-chip">G2d_host_mass_rate_prior.md</span>
+        <span class="prov-chip">bayesian_statistics.py:500</span>
+      </span>
+      The correct per-galaxy mass prior carries the rate:
+      $$ p_g(M) \;=\; \frac{N(M;\,M_g,\sigma_M^2)\;R_{\rm eff}(M)}{Z_M},
+         \qquad Z_M = \int N\,R_{\rm eff}\,dM . $$
+      Expanding $\ln R_{\rm eff}$ to first order makes this an exactly shifted Gaussian,
+      $M_g^{\rm eff} = M_g\,(1 + \alpha_g\,\sigma_{\rm rel}^2)$ with
+      $\alpha_g = d\ln R_{\rm eff}/d\ln M$ and $\sigma_{\rm rel} = \sigma_M/M_g$ — the same
+      $\sigma^2$ law as the redshift channel, symmetric to <code>volume_deconv</code>.
+    </div>
+
+    <div class="voice-adjudicator">
+      <span class="voice-label">…and the linearization lies at this width
+        <span class="badge finding">FINDING</span>
+        <span class="prov-chip">G2d_host_mass_rate_prior.md §3</span>
+      </span>
+      That tidy closed form <strong>fails</strong> at GLADE&rsquo;s
+      $\sigma_{\rm rel} \approx 1$, near the rate model&rsquo;s <code>kappa_cap</code>
+      roll-off where $R_{\rm eff}$ stops falling and <em>rises</em> with $M$. There the local
+      slope gets the shift&rsquo;s <strong>sign wrong</strong>: at $M_g = 10^5\,M_\odot$,
+      $\sigma_{\rm rel} = 0.55$, the tangent says the effective mass moves down while the
+      exact posterior mean moves <strong>up by ~3.7%</strong>. The shipped implementation is
+      therefore the <em>exact moment-matched posterior mean</em> by 401-point quadrature,
+      pinned against an independent 20001-point quadrature to better than 0.5% of $M_g$
+      across both slope-sign regimes and the $\sigma\to0$ limit.
+      <br /><br />
+      A first-order expansion is not a small error when the function you expanded turns
+      around inside your error bar. This is the chapter&rsquo;s quietest lesson and its most
+      portable one.
+    </div>
+
+    <div class="voice-adjudicator">
+      <span class="voice-label">Stale code comment — carried, not propagated
+        <span class="badge finding">FINDING</span>
+        <span class="prov-chip">ledger #50</span>
+        <span class="prov-chip">bayesian_statistics.py:2400-2401</span>
+      </span>
+      The code records this fix&rsquo;s 2D effect as <strong>&minus;0.020</strong> in $h$.
+      That number is from before commit <code>713fbd1</code>; re-measured afterwards, the
+      effect is <strong>&minus;0.0022</strong> — an order of magnitude smaller. The
+      mathematics is as documented; the comment is a fossil. This book quotes the
+      re-measurement, and notes that a stale magnitude in a comment is exactly how a
+      fix&rsquo;s importance gets mis-remembered.
+    </div>
+
+    <!-- ================= §4 ================= -->
+    <h2>4. Why only the 2D channel breaks</h2>
+
+    <p>
+      Here is the fact that has to be explained before anything else makes sense. Campaign
+      #51 — the idealized run, where the host redshift is <em>pinned</em> at the
+      catalogue value — recovered truth in <em>both</em> channels. The mass kernel was just
+      as wrong there as it is here. Why did it not bite?
+    </p>
+
+    <div class="voice-derivation">
+      <span class="voice-label">Eq. (M9) — the mass factor is a second redshift likelihood
+        <span class="badge ratified">RATIFIED</span>
+        <span class="prov-chip">mass_marginal_2d_kernel.md §3.5</span>
+      </span>
+      Under the point (δ) host-redshift kernel, $z$ is pinned at $z_g$. The mass factor
+      $mz(z_g;h)$ then varies with $h$ only through the narrow Cramér&ndash;Rao
+      cross-correlation $\mu_{\rm cond}(d_L(z_g;h))$, against a <em>fixed</em>
+      $\mu_{\rm gal}(z_g)$ which equals truth by construction. <strong>The kernel&rsquo;s
+      shape is never swept.</strong> Family, tilt and truncation enter as a nearly
+      $h$-inert per-host weight — the defect is invisible.
+      <br /><br />
+      Under a <em>broadened</em> $p_g(z)$ the numerator convolves along the trajectory
+      $M^*(z) = \mu_{\rm cond}(z)\,M_{\det}/(1+z)$: as $z$ sweeps the window, $M^*$ sweeps
+      <em>through the kernel&rsquo;s shape</em>. In the narrow-GW limit,
+      $$ \ln mz(z) = \ln p_g\bigl(M^*(z)\bigr) - \ln(1+z) + \text{const}, $$
+      $$ \frac{d\ln mz}{dz} = \Bigl[\tfrac{d\ln p_g}{d\ln M}\Bigr]_{M^*}
+         \Bigl(\tfrac{d\ln\mu_{\rm cond}}{dz} - \tfrac{1}{1+z}\Bigr) - \tfrac{1}{1+z}. $$
+      $mz(z)$ has become a <strong>second likelihood in $z$</strong>. A wrong kernel shape is
+      then a multiplicative tilt $\Delta(z)$, which displaces the numerator&rsquo;s effective
+      redshift by $\delta z \approx \sigma_w^2\,\Delta'(z_g)$ — hence $d_L$, hence $h$. And
+      because mass enters only the 2D channel, the resulting defect is
+      <strong>2D-only</strong>.
+    </div>
+
+    <p>
+      Read that backwards and it is a design lesson. The idealized campaign was not a weaker
+      test of the mass kernel; it was a test <em>of a different estimator</em>, one in which
+      the kernel&rsquo;s shape is unreachable. Chapter 7&rsquo;s realistic redshift kernel is
+      what switched the mass kernel on. Two changes were made at once, and one of them turned
+      the other into an observable — which is also, precisely, why the attribution is
+      confounded <span class="ch08-fwd">⏭ Ch 11</span>.
+    </p>
+
+    <div class="voice-adjudicator">
+      <span class="voice-label">Two open first-order caveats on the datum itself
+        <span class="badge open">OPEN</span>
+        <span class="prov-chip">[RATIFY-M7]</span>
+        <span class="prov-chip">mass_marginal_2d_kernel.md §3.5</span>
+      </span>
+      GLADE+ stellar masses are luminosity-derived at a fixed fiducial cosmology, so
+      $M_* \propto d_L^2$ and $\delta \ln M_{\rm BH} \approx 2.1\,\delta\ln d_L$. Two
+      consequences the clean statement above misses:
+      <br />(a) for photometric hosts the catalogue-$z$ error enters $\ln M_g$ at
+      <em>first order</em>, fully correlated with the redshift kernel — so the
+      $p_g(z)\,p_g(M)$ factorization fails at first order for exactly the host class whose
+      $z$-broadening gives the 2D channel its leverage;
+      <br />(b) the <em>datum</em> $M_g$ carries a hidden $h$-dependence: across the
+      0.60–0.86 grid, $\delta \ln M_g$ reaches $\approx 0.4$ — comparable to
+      $\sigma_{\ln M} = 0.58$ itself. The kernel contains no $h$; the number it is centred on
+      does. Both are filed as gates on any real-data 2D promotion, and neither has been
+      closed.
+    </div>
+
+    <!-- ================= §5 ================= -->
+    <h2>5. What actually moved</h2>
+
+    <p>
+      Now the accounting. The channel difference is measured in the log-likelihood ratio
+      between two grid points that straddle the effect,
+      $\Delta_i = \ln p_i(0.81) - \ln p_i(0.73)$, summed over a class. On
+      <code>seed61000/real_r1</code>: the 1D channel prefers 0.73 over 0.81 by
+      <strong>−9.30 nats</strong>; the 2D channel prefers 0.81 by <strong>+9.51</strong>.
+      The channel difference is <strong>+18.80 nats</strong>, and splitting it by class gives
+      <strong>+2.97</strong> from the 76 in-catalogue events and <strong>+15.83</strong> from
+      the 1512 dark ones <span class="prov-chip">CLAIM_2D_BIAS_20260730.md C1&ndash;C3</span>.
+    </p>
+
+    <div class="voice-adjudicator">
+      <span class="voice-label">What replicates, and what does not
+        <span class="badge finding">FINDING</span>
+        <span class="prov-chip">c3c4_allruns_summary.md</span>
+        <span class="prov-chip">BOOK_SOURCES_MAP.md §7.5</span>
+      </span>
+      Recomputed on all ten realistic runs from their own diagnostics: the dark component is
+      <strong>+15.83 … +17.14 nats, positive in 10/10 runs, both seeds</strong>. The
+      in-catalogue component is small and realization-noisy (<strong>−1.83 … +2.97</strong>)
+      and <em>changes sign</em> in <code>seed61000/real_r3</code>. Consequently the dark
+      <em>share</em> ranges 84.2%–112.5% (shares above 100% are exactly the runs where the
+      in-catalogue leg goes negative). <strong>The finding is &ldquo;dark ≫ in-cat, and dark
+      always positive&rdquo;</strong> — not the number 84%, which is r1-specific.
+    </div>
+
+    <p>
+      So the dark events own it. The obvious next sentence — the one the project itself
+      wrote first — is that the mass window <em>deletes</em> their catalogue leg. And the
+      evidence for it is spectacular: at $h = 0.73$, <strong>64.7%</strong> of dark events
+      have $\mathcal L^{\rm cat}_{\rm 2D}$ exactly zero, against 32.5% in 1D; of the 1095
+      events with a live 1D catalogue leg anywhere on the grid, <strong>488</strong> have an
+      identically-zero 2D leg at every single $h$, 487 of them dark.
+    </p>
+    <p>
+      That sentence is wrong, and the way it was refuted is the best thing in this chapter.
+    </p>
+
+    <div class="voice-adjudicator">
+      <span class="voice-label">C4-mechanism: refuted as stated, and replaced
+        <span class="badge refuted">REFUTED</span>
+        <span class="badge finding">FINDING (amended mechanism)</span>
+        <span class="prov-chip">ADJUDICATION_20260730.md §6.3</span>
+        <span class="prov-chip">CLAIM_2D_BIAS_20260730.md C4</span>
+      </span>
+      Two exact grounds, verified to $6.2\times10^{-13}$ on all 65,108 diagnostic cells.
+      <br /><br />
+      <strong>(1) The completion term contributes exactly zero to the channel
+      difference.</strong> Write each event&rsquo;s likelihood as $p = C\,(1+R)$ with
+      $C = (1-w_G)\mathcal L^{\rm comp}$ and
+      $R = w_G\mathcal L^{\rm cat}/C$. $C$ is <em>channel-common</em> — the completion leg
+      knows nothing about mass — so $\ln C$ <strong>cancels identically</strong> between the
+      channels. &ldquo;Falls back on the completion term&rdquo; cannot appear in the +15.83
+      as an accounting statement at all.
+      <br /><br />
+      <strong>(2) The 487 deleted events carry 1.5% of it.</strong> +0.24 nats of +15.83.
+      The 491 events dead in <em>both</em> channels carry exactly 0.00. The remaining
+      <strong>98.5% (+15.60) is carried by the 534 survivors</strong> — the events the sieve
+      <em>kept</em>. The zeroed events&rsquo; 1D legs were already negligible, so deleting
+      them cost almost nothing.
+      <br /><br />
+      <strong>Amended mechanism.</strong> The mass kernel <strong>de-weights</strong> the
+      surviving dark catalogue legs: mean catalogue mixture weight
+      <strong>0.0354 → 0.0061</strong>, a factor 5.79. The exact budget is
+      <br />
+      $$ \underbrace{+15.83}_{\text{dark channel difference}}
+         \;=\; \underbrace{0}_{\text{completion, cancels}}
+         \;+\; \underbrace{19.10}_{\text{loss of the 1D catalogue down-tilt}}
+         \;-\; \underbrace{3.27}_{\text{residual 2D tilt}} $$
+      The 2D channel did not add a wrong term. It <em>removed a right one&rsquo;s
+      influence</em>.
+    </div>
+
+    <p>
+      This is the book&rsquo;s cleanest example of a striking statistic being the wrong
+      statistic. &ldquo;487 events zeroed at every $h$&rdquo; is arresting, true, and
+      causally almost irrelevant; &ldquo;534 events down-weighted by a factor 5.8&rdquo; is
+      dull, true, and carries 98.5% of the effect. The refutation was exact algebra, it took
+      one afternoon, and it killed the investigating agent&rsquo;s own mechanism.
+    </p>
+    <p>
+      With the dark catalogue leg de-weighted, look at what the dark class as a whole now
+      prefers. Its summed 1D profile peaks at <strong>$h = 0.640$</strong> and opposes the
+      move to 0.86 by <strong>−24.46 nats</strong>. Its 2D profile peaks at
+      <strong>$h = 0.785$</strong> and opposes it by <strong>−0.63</strong> — the opposition
+      has essentially evaporated, and the class has drifted to sit beside its own completion
+      leg, whose argmax is <strong>0.810</strong>, which is where the 2D posterior lands.
+      Turn on Panel B&rsquo;s third view in I8.1 above and watch that happen.
+    </p>
+
+    <div class="callout defect">
+      <span class="callout-label">Trap &mdash; &ldquo;The completion term pulls the answer up.&rdquo;</span>
+      It does not, and the project created a claim specifically to retire this sentence.
+      Over $h = 0.73 \to 0.81$ the <strong>$(1-w_G)$ prefactor</strong> contributes
+      $N\,\Delta\ln(1-w_G) = \mathbf{+31.55}$ nats, while
+      $\sum_i \Delta\ln\mathcal L^{\rm comp} = \mathbf{-3.11}$ — of which the dark class
+      contributes <strong>−22.72</strong>. Only <strong>39.1%</strong> of dark events have a
+      positive tilt in the whole channel-common factor $(1-w_G)\mathcal L^{\rm comp}$, and
+      only 27.7% in $\mathcal L^{\rm comp}$ alone.
+      <strong>$\mathcal L^{\rm comp}$ pulls <em>down</em> for dark events.</strong> Any
+      sentence about a completion up-pull must name the prefactor.
+      <span class="prov-chip">CLAIM_2D_BIAS_20260730.md C10</span>
+    </div>
+
+    <p>
+      The prefactor is worth a sentence of its own, because it explains why the mixture is so
+      fragile. <span class="term" data-term="wG">$w_G$</span> — the probability that this
+      event&rsquo;s host is in the catalogue — is not a constant: it falls from 0.1625 at
+      $h = 0.60$ to 0.1215 at 0.73 to 0.0947 at 0.86
+      <span class="prov-chip real">real: seed61000/real_r1 diagnostics</span>. So $(1-w_G)$ <em>rises</em> with $h$,
+      for every event, identically. With 1588 events that monotone tilt is worth tens of
+      nats. Ordinarily it is balanced by the catalogue leg pulling the other way. De-weight
+      the catalogue leg and nothing balances it.
+    </p>
+
+    <!-- ============ I8.3 ============ -->
+    <div class="widget" id="ch08-i83">
+      <h4>I8.3 — EMRI-889&rsquo;s Two Faces
+        <span class="prov-chip real">real: seed61000/real_r1</span>
+        <span class="badge candidate">CANDIDATE (2D)</span>
+      </h4>
+      <p style="margin-top:0; color:var(--muted); font-size:0.88rem;">
+        The whole class-level story is legible in two events — one of which you have been
+        following since Chapter 1. <strong>Switch the event</strong> and
+        <strong>switch the channel</strong>. Upper panel: that event&rsquo;s own normalized
+        posterior. Lower panel: the three terms the mixture is built from, on a log axis, so
+        you can see which one is doing the work.
+      </p>
+      <div class="widget-controls">
+        <span class="readout">event:</span>
+        <div class="toggle-row" id="ch08-ev-row" role="group" aria-label="Event">
+          <button type="button" data-ev="889" aria-pressed="true">EMRI-889 (in-catalogue)</button>
+          <button type="button" data-ev="606">event 606 (dark)</button>
+        </div>
+        <span class="readout">channel:</span>
+        <div class="toggle-row" id="ch08-chan-row" role="group" aria-label="Channel">
+          <button type="button" data-chan="both" aria-pressed="true">both</button>
+          <button type="button" data-chan="1D">1D only</button>
+          <button type="button" data-chan="2D">2D only</button>
+        </div>
+      </div>
+      <div id="ch08-ev-post" class="widget-plot" style="min-height:250px"></div>
+      <div id="ch08-ev-terms" class="widget-plot" style="min-height:250px"></div>
+      <div class="ch08-verdict" id="ch08-ev-verdict"></div>
+      <details class="num-view">
+        <summary>Show me the numbers</summary>
+        <div class="table-scroll"><table class="num-table" id="ch08-ev-table"></table></div>
+      </details>
+      <noscript>
+        <p><strong>Static fallback.</strong> <em>EMRI-889</em> (in-catalogue, SNR 1425,
+        d_L 88.9 Mpc): a clean 1D posterior peaking at h = 0.745, whose catalogue leg falls
+        by a factor 5.9 from h = 0.73 to h = 0.86 — real information. In 2D that same leg
+        <em>rises</em> by 1.28 over the same span and the posterior flattens out with its
+        peak at h = 0.790. <em>Event 606</em> (dark, SNR 43, d_L 1.17 Gpc): a nearly flat 1D
+        catalogue leg carrying a mixture weight of 0.385, a 2D catalogue leg suppressed
+        74× at h = 0.73 and <em>falling</em> across the grid (argmax 0.600) with its mixture
+        weight collapsed to 0.0084 — a factor 46 — against a completion leg that rises
+        monotonically to h = 0.860. Both events' 2D posteriors end up following the
+        completion term.</p>
+      </noscript>
+    </div>
+
+    <!-- ================= dossier ================= -->
+    <div class="dossier">
+      <div class="dossier-title">Event dossier — EMRI-889 after this chapter</div>
+      <table>
+        <tr><td>d_L</td><td>88.9 Mpc (&sigma;_dL/dL = 8.0&times;10&#8315;&#8309;)</td></tr>
+        <tr><td>SNR</td><td>1425 — the loudest event in this run</td></tr>
+        <tr><td>host</td><td>catalogue index 859360 — one of only 76 with a catalogued host</td></tr>
+        <tr><td>z</td><td>photometric, with an error bar wider than anything else on this card</td></tr>
+        <tr class="dossier-new"><td>M_z</td><td>7.25&times;10&#8309; M&#9737;, measured to ~10&#8315;&#8308; — the second handle. (The CRB table&rsquo;s mass column is the <em>detector-frame</em> mass: that is how the project&rsquo;s own C8 attacker reads it, and its min/max reproduce the quoted $M_{z,\det}$ span.)</td></tr>
+        <tr class="dossier-new"><td>1D posterior</td><td>peaks at h = 0.745; its catalogue leg falls 5.9&times; from 0.73 to 0.86 — this event knows something</td></tr>
+        <tr class="dossier-new"><td>2D posterior</td><td>peaks at h = 0.790, nearly flat; the same leg now <em>rises</em> 1.28&times;</td></tr>
+        <tr class="dossier-new"><td>what this chapter added</td><td>a warning label. The mass channel destroyed this event&rsquo;s information and pushed it high — and across five noise realizations of the <em>same</em> class its channel difference swings +1.98 → −2.04 → −3.30.</td></tr>
+      </table>
+    </div>
+
+    <!-- ================= §6 ================= -->
+    <h2>6. The well-posedness bomb</h2>
+
+    <p>
+      Everything so far has been an argument about <em>bias</em> — about a number being in
+      the wrong place. This section is about something worse and simpler, and it is
+      independent of any bias question: for a stretch, the 2D number is not a measurement of
+      anything at all.
+    </p>
+    <p>
+      Recall the master equation. Each event&rsquo;s likelihood is a two-term mixture, and
+      the two terms are added:
+      $$ p_i(h) \;=\; \underbrace{w_G\,\mathcal L^{\rm cat}_i(h)}_{\text{host in the catalogue}}
+         \;+\; \underbrace{(1-w_G)\,\mathcal L^{\rm comp}_i(h)}_{\text{host not in the catalogue}} . $$
+      For that addition to mean anything, the two terms must be densities in the
+      <em>same</em> variables. In the 1D channel they are. In the 2D channel they are not:
+      the catalogue leg carries the analytic mass factor <code>mz_integral</code> — a density
+      in the mass coordinate, exactly one factor of it — and the completion leg
+      $B^{\rm num}$ carries none at all. Its integrand is
+      $(1-f)\,N(d_{L,\rm frac})\,\sin\theta/4\pi\;dV_c/(1+z)$: sky, distance, volume. No
+      mass.
+    </p>
+
+    <div class="voice-adjudicator">
+      <span class="voice-label">C8 — the 2D posterior is reparametrization-dependent
+        <span class="badge finding">FINDING</span>
+        <span class="prov-chip">CLAIM_2D_BIAS_20260730.md C8</span>
+        <span class="prov-chip">gate_b_20260730/README_C8.md</span>
+      </span>
+      Because exactly one of the two summed terms carries a mass density, rescaling the mass
+      coordinate by a constant $C$ maps
+      $\mathcal L^{\rm cat}_{\rm 2D} \to \mathcal L^{\rm cat}_{\rm 2D}/C$ while leaving
+      $B^{\rm num}$, $\mathcal L^{\rm comp}$, $w_G$, $\beta_G$, $\beta_{\bar G}$ and $D(h)$
+      untouched — and $C$ <strong>does not cancel</strong>. Measured on
+      <code>seed61000/real_r1</code>, the 2D MAP walks
+      <strong>0.81329 → 0.78107 → 0.74440 → rails at 0.600</strong> for
+      $C = 1 / 0.3 / 0.1 / \le 0.01$, at a rate
+      $d(\mathrm{MAP})/d\ln C = \mathbf{+0.031}$ per e-fold — 3.1 km s⁻¹ Mpc⁻¹ per e-fold of
+      an arbitrary constant. The <strong>1D channel is bitwise invariant</strong> across the
+      whole sweep.
+      <br /><br />
+      <strong>The cause is not what the claim originally said.</strong> It is <em>not</em>
+      &ldquo;a 4D numerator against a 3D selection denominator&rdquo;: $D(h)$, $\beta_G$,
+      $\beta_{\bar G}$ and $\Sigma_{\rm glob}$ are all mass-<em>dimensionless</em>, and
+      correctly so — a Mandel–Farr–Gair selection probability should be. The mismatch is
+      <strong>between the two numerator legs</strong>. Mass-marginalizing $D(h)$ could not
+      restore invariance; it has no mass dimension to begin with.
+    </div>
+
+    <p>
+      And there is a subtlety that makes this sharper rather than softer. A
+      <em>consistent</em> physical change of unit — rescale $M_g$, $\sigma_{M,g}$,
+      $M_z$, $\sigma_{M_z}$, the $p_{\rm det}$ mass grid and the mass argument of the rate
+      model, all together — is <strong>exactly invariant</strong>, because mass enters the 2D
+      numerator only through the ratios $M_g(1+z)/M_{z,\det}$ and
+      $\sigma_{M,g}(1+z)/M_{z,\det}$. So &ldquo;units matter&rdquo; is the wrong diagnosis.
+      What is broken is the <em>measure the mixture is taken in</em> — and the code has
+      already silently chosen one: $dM_z / M_{z,\det,i}$, <strong>the event&rsquo;s own
+      measured detector-frame mass</strong>, which spans $1.33\times10^5$ to
+      $1.63\times10^6\,M_\odot$ across this catalogue, a factor <strong>12</strong>. Every
+      event is measured in its own private unit.
+    </p>
+
+    <!-- ============ I8.2 ============ -->
+    <div class="widget" id="ch08-i82">
+      <h4>I8.2 — The Reparametrization Walk
+        <span class="prov-chip real">real: seed61000/real_r1</span>
+        <span class="prov-chip">gate_b_20260730/c8_reparam.py</span>
+      </h4>
+      <p style="margin-top:0; color:var(--muted); font-size:0.88rem;">
+        Three controls, three different questions. <strong>Turn the dial</strong> and watch a
+        published number move; the 1D MAP is displayed beside it and does not move at all.
+        Everything here is a live recomputation from the run&rsquo;s own per-event
+        likelihoods — the reconstruction of the delivered 2D posterior agrees to
+        <strong>3.6×10⁻¹² nats</strong>.
+      </p>
+      <div class="toggle-row" id="ch08-mode-row" role="group" aria-label="Reparametrization mode">
+        <button type="button" data-mode="C" aria-pressed="true">an arbitrary constant $C$</button>
+        <button type="button" data-mode="named">name the mass coordinate</button>
+        <button type="button" data-mode="consistent">change the units <em>consistently everywhere</em></button>
+      </div>
+      <div class="widget-controls" id="ch08-c-controls">
+        <label for="ch08-c-slider">Rescale the mass measure by $C$:</label>
+        <input id="ch08-c-slider" type="range" aria-describedby="ch08-reparam-readouts" />
+        <span class="readout">C = <strong id="ch08-c-out">&mdash;</strong></span>
+      </div>
+      <div class="toggle-row ch08-locked" id="ch08-named-row" role="group" aria-label="Named mass measure">
+        <button type="button" data-named="0">fraction (as shipped)</button>
+        <button type="button" data-named="1">$M_z$ in 10⁶ M☉</button>
+        <button type="button" data-named="2">$M_z$ in 10⁵ M☉</button>
+        <button type="button" data-named="3">$M_z$ in M☉</button>
+      </div>
+      <div id="ch08-reparam-plot" class="widget-plot"></div>
+      <div id="ch08-walk-plot" class="widget-plot" style="min-height:210px"></div>
+      <div class="ch08-readouts" id="ch08-reparam-readouts">
+        <span>2D MAP <strong id="ch08-map2-out">&mdash;</strong></span>
+        <span>1D MAP <strong id="ch08-map1-out">&mdash;</strong></span>
+        <span>$d\,\mathrm{MAP}/d\ln C$ <strong id="ch08-slope-out">&mdash;</strong></span>
+      </div>
+      <div class="ch08-verdict" id="ch08-reparam-verdict"></div>
+      <div class="widget-controls">
+        <button type="button" id="ch08-restore" class="theme-toggle">↺ Back to the shipped measure (dM_z / M_z,det,i)</button>
+        <button type="button" id="ch08-canon" class="theme-toggle">Has anyone tried to fix this?</button>
+      </div>
+      <div class="ch08-verdict" id="ch08-canon-box" style="display:none"></div>
+      <details class="num-view">
+        <summary>Show me the numbers</summary>
+        <div class="table-scroll"><table class="num-table" id="ch08-reparam-table"></table></div>
+      </details>
+      <noscript>
+        <p><strong>Static fallback.</strong> Rescaling the 2D catalogue leg&rsquo;s mass
+        measure by a constant C walks the 2D MAP: C = 100/10 → 0.860 (rail, the pure-completion
+        limit); C = 3 → 0.841; C = 1 → 0.813; C = 0.3 → 0.781; C = 0.1 → 0.744; C = 0.03 →
+        0.620; C ≤ 0.01 → 0.600 (rail). Slope +0.0309 in h per e-fold over C ∈ [0.05, 3]. The
+        four <em>named</em> mass coordinates — the shipped per-event fraction, and M_z
+        expressed in 10⁶, 10⁵ and 1 M☉ — give 0.8133, 0.8063, 0.8540 and 0.8600. The 1D MAP
+        is 0.7405 in every one of these, bitwise identical. A consistent change of physical
+        unit applied to every input at once is exactly invariant.</p>
+      </noscript>
+    </div>
+
+    <details class="gw-reader">
+      <summary>&#9656; For the GW reader — the dimension count, leg by leg</summary>
+      <p>
+        Writing $\mathcal L^{\rm cat}_{\rm 2D} \to C^{s}\,\mathcal L^{\rm cat}_{\rm 2D}$ under
+        $M \to CM$, the exponent is $s = -1$ in <em>every</em> normalization mode and both
+        mass-kernel families. The 2D catalogue numerator carries <code>mz_integral</code>, a
+        Gaussian density in the mass-fraction coordinate (the <code>mass_trunc</code> family
+        carries the same object through an explicit push-forward
+        $p_a = p_M\,\det_M/(1+z)$). Its normalizing partners are all mass-dimensionless:
+        $\Sigma_{\rm glob}(\text{with\_bh}) = \sum_g w_g\,p_{\rm det}$; the local $D_g$ has
+        $\int p_{\rm det}\,N(M)\,dM$ as a <em>normalized</em> probability average;
+        $\hat n_w = W_{\rm cat}/V_f$. The completion numerator $B^{\rm num}$ has $s = 0$; the
+        1D path has no mass object anywhere. So a 4D density is being added to a 3D one
+        <span class="prov-chip">README_C8.md, structural result</span>.
+      </p>
+      <p>
+        The measure question has an answer, and it is not &ldquo;pick a convention&rdquo;. The
+        invariance-restoring object is the completion leg&rsquo;s <em>missing</em> mass-data
+        likelihood for a dark host at redshift $z$,
+        $g_i(z) = \int \phi(M)\,N\bigl(M_{z,{\rm obs},i};\,M(1+z),\sigma_{M_z,i}\bigr)\,dM
+        \approx \phi\bigl(M_{z,{\rm obs},i}/(1+z)\bigr)/(1+z)$, with $\phi$ the
+        population&rsquo;s own source-frame mass prior. With both legs carrying the same mass
+        density, any measure change multiplies $p_i$ by the same event-wise, $h$-independent
+        constant and the MAP is <em>exactly</em> invariant. The pricing of that fix is in the
+        widget&rsquo;s &ldquo;has anyone tried to fix this?&rdquo; box, and it is
+        <strong>indicative, not ratified</strong>.
+      </p>
+    </details>
+
+    <!-- ================= §7 ================= -->
+    <h2>7. HB, killed by its own author</h2>
+
+    <p>
+      One more hypothesis belongs here, because of how it ended. Given everything above, the
+      obvious suspect for the dark class&rsquo;s $-504.8$-nat tilt is the <em>hard mass
+      window</em> itself — not the smooth kernel but the binary cut in the candidate search.
+      Its bounds depend on $z_{\min}$ and $z_{\max}$, which depend on $h$, so the truncation
+      is $h$-dependent by construction. That is a real mechanism, correctly identified, and
+      it was written up as the one unrefuted candidate.
+    </p>
+
+    <div class="voice-adjudicator">
+      <span class="voice-label">HB — refuted by the investigator who proposed it
+        <span class="badge refuted">REFUTED</span>
+        <span class="prov-chip">HANDOFF_20260730.md §4 (historical record only)</span>
+        <span class="prov-chip">CLAIM_2D_BIAS_20260730.md, Exonerated</span>
+      </span>
+      Measured, the window&rsquo;s $h$-tilt is <strong>−0.317 nats</strong> over
+      $0.73 \to 0.81$ — <strong>0.063%</strong> of the 504.8-nat target, and ~50× too
+      small even at its ceiling — and it is <strong>sign-inverted</strong>: removing the window
+      moves the MAP <em>up</em> by about +0.0015.
+      <br /><br />
+      Two framing assumptions that had been used to <em>motivate</em> it died with it, and
+      both are more instructive than the hypothesis. (a) &ldquo;Why is the 1D channel
+      spared?&rdquo; has <em>no discriminating power</em> for any mass hypothesis — the 1D
+      candidate list never sees the mass window, so every mass mechanism passes that screen
+      for free. (b) &ldquo;Campaign #51 is a non-control, because at zero scatter no impostor
+      passes the window&rdquo; is simply false: <strong>153,473 impostors pass</strong> in the
+      unscattered case, which makes #51 a <em>stronger</em> exposure, not a weaker one.
+      <br /><br />
+      The section of the handoff that argued for HB is retained as historical record and is
+      cited here as such. It must never be quoted as the current state.
+    </div>
+
+    <p>
+      A hypothesis is not refuted by being implausible. HB was plausible, it was mechanistic,
+      it named a real $h$-dependence in real code — and it was 40× too small and pointed the
+      wrong way. The only thing that settled it was a measurement of the size and sign of
+      the thing it claimed.
+    </p>
+
+    <!-- ================= §8 ================= -->
+    <h2>8. What this chapter cannot tell you</h2>
+
+    <p>
+      Assemble the state. The mass channel adds real information, and its sieve works as
+      designed. The kernel it uses is the wrong distribution family, which is
+      <span class="badge candidate">CANDIDATE</span> ground by the project&rsquo;s own
+      designation. The de-weighting mechanism is measured and its budget closes exactly. The
+      2D posterior is reparametrization-dependent, which is a well-posedness defect
+      independent of any bias question. And the bias is +0.077 with 10/10 runs beyond
+      $2\sigma$.
+    </p>
+    <p>
+      Every one of those statements is a comparison against &ldquo;truth&rdquo; = 0.73. So
+      here is the question this chapter cannot answer.
+    </p>
+
+    <div class="callout without">
+      <span class="callout-label">The failure the next chapter answers</span>
+      Where did 0.73 come from? It came from a <em>simulator</em>: a population drawn from a
+      rate model, waveforms generated, a detection threshold applied, hosts drawn with a rate
+      weight. And a simulator can make a <em>correct</em> estimator look biased, whenever the
+      simulator and the estimator disagree about the same universe. That is not hypothetical:
+      the generator draws hosts <strong>mass-aware</strong> while the estimator computes its
+      mixture weight $w_G$ <strong>mass-blind</strong>, and the two disagree by a factor
+      2.3–2.5 at a binomial $z = -11.86$ <span class="prov-chip">CLAIM_2D_BIAS_20260730.md C9</span>
+      <span class="ch08-fwd">⏭ Ch 9</span>.
+    </div>
+
+    <!-- ================= self-check ================= -->
+    <h2>Self-check</h2>
+
+    <div class="selfcheck">
+      <p>Q8.1 &nbsp; The GW measures $M_z$ to ~10⁻⁴; the catalogue&rsquo;s black-hole mass
+      proxy has $\sigma_{\ln M} \approx 1.28$ (a factor ≈3.6). Predict the <em>shape</em> of
+      the resulting mass window&rsquo;s rejection: symmetric, one-sided low, or one-sided
+      high?</p>
+      <details class="answer">
+        <summary>Show answer</summary>
+        <div class="answer-body">
+          Strongly <strong>one-sided low</strong>. Because $\sigma_{M_z}/M_z \approx 10^{-4}$
+          is negligible against the catalogue&rsquo;s factor-3.6 scatter, the window&rsquo;s
+          width is set almost entirely by the catalogue side, and the physically-allowed
+          condition $M_z = M(1+z) \ge M$ makes the upper leg vacuous — a galaxy can always be
+          &ldquo;too light for its redshift&rdquo; but never meaningfully too heavy. The
+          project measured <strong>193 low-side rejections against 1 high-side</strong>
+          <span class="prov-chip">CLAIM_2D_BIAS_20260730.md C4</span>. Asymmetric rejection
+          means asymmetric surviving support, which means a tilt.
+        </div>
+      </details>
+    </div>
+
+    <div class="selfcheck">
+      <p>Q8.2 &nbsp; Rejecting impostors is what the 2D channel is <em>for</em>, and the 2D
+      bias is +0.077. Reconcile those two statements.</p>
+      <details class="answer">
+        <summary>Show answer</summary>
+        <div class="answer-body">
+          The rejection is doing its job; the problem is what happens to the mixture
+          afterwards. Removing a <em>down-pulling</em> catalogue leg without touching the
+          up-tilting prefactor shifts the mixture&rsquo;s balance. The exact accounting for
+          the dark class is
+          <strong>+15.83 = 0 (completion, cancels identically) + 19.10 (loss of the 1D
+          catalogue down-tilt) − 3.27 (residual 2D tilt)</strong>, and the dark class&rsquo;s
+          mean catalogue mixture weight falls <strong>0.0354 → 0.0061</strong>, a factor 5.79
+          <span class="prov-chip">CLAIM_2D_BIAS_20260730.md C4 (amended)</span>. The 2D
+          channel did not add a wrong term; it <em>removed a right one&rsquo;s influence</em>.
+        </div>
+      </details>
+    </div>
+
+    <div class="selfcheck">
+      <p>Q8.3 &nbsp; Why is &ldquo;the 487 events whose 2D catalogue likelihood is exactly
+      zero&rdquo; <strong>not</strong> the mechanism, despite being the most striking number
+      in the dataset?</p>
+      <details class="answer">
+        <summary>Show answer</summary>
+        <div class="answer-body">
+          Because their 1D legs were already negligible, so deleting them costs almost
+          nothing: those 487 events carry <strong>+0.24 nats = 1.5%</strong> of the +15.83,
+          and the 491 both-dead events carry exactly 0.00. <strong>98.5% is carried by the
+          534 survivors</strong>, which were <em>de-weighted</em>, not deleted. This is the
+          book&rsquo;s best example of a striking statistic being the wrong statistic — and
+          it was the author-agent&rsquo;s own mechanism, refuted by exact algebra verified to
+          $6.2\times10^{-13}$ on all 65,108 cells
+          <span class="prov-chip">ADJUDICATION_20260730.md §6.3</span>.
+        </div>
+      </details>
+    </div>
+
+    <div class="selfcheck">
+      <p>Q8.4 &nbsp; You rescale your masses from solar masses to $10^5\,M_\odot$. Which of
+      the 1D and 2D MAPs moves, and why is the answer a crisis rather than a curiosity?</p>
+      <details class="answer">
+        <summary>Show answer</summary>
+        <div class="answer-body">
+          The 1D MAP is <strong>bitwise invariant</strong>; the 2D MAP walks —
+          <strong>0.81329 → 0.78107 → 0.74440 → rails at 0.600</strong> for a mass-coordinate
+          rescale of $C = 1 / 0.3 / 0.1 / \le 0.01$, at +0.031 per e-fold. It is a crisis
+          because a published number that moves with an arbitrary choice is not a measurement
+          of anything. The cause, located by adjudication, is a <strong>measure mismatch
+          between the two numerator legs</strong>: the 2D catalogue leg carries exactly one
+          mass density while the completion leg carries none, so the arbitrary constant fails
+          to cancel. Note the subtlety — a <em>consistent</em> physical unit change of all
+          inputs <strong>is</strong> exactly invariant; what is broken is that the code
+          silently hard-wires the measure to each event&rsquo;s own measured mass
+          $M_{z,\det,i}$, which spans a factor 12 across the population
+          <span class="prov-chip">CLAIM_2D_BIAS_20260730.md C8</span>
+          <span class="prov-chip">README_C8.md</span>. (When you name the four unit choices
+          literally — per-event $C_i = M_{z,\det,i}/U$ — the measured MAPs are 0.8133,
+          0.8063, 0.8540 and 0.8600: a different walk, the same crisis.)
+        </div>
+      </details>
+    </div>
+
+    <div class="selfcheck">
+      <p>Q8.5 &nbsp; A mass-kernel improvement was confirmed in isolation (+0.016…+0.02,
+      correct sign) and then exonerated in the full pipeline (Δ2D = +0.0029, wrong sign;
+      Δ1D = 0.0000 <em>exactly</em>). What single structural fact explains both results?</p>
+      <details class="answer">
+        <summary>Show answer</summary>
+        <div class="answer-body">
+          The same prior enters the per-galaxy selection denominator $D_g$ as the numerator,
+          so $N_g/D_g$ cancels the shift — <strong>&ldquo;the selection denominator is not a
+          spectator&rdquo;</strong> <span class="prov-chip">ledger #71 → #72</span>. The
+          exactly-zero 1D change is the tell: a change that touches only the mass channel
+          <em>cannot</em> move 1D, so a nonzero 1D shift would have indicated a plumbing error
+          rather than physics. The transferable lesson is that a toy which isolates the
+          numerator is testing a different estimator from the one you ship. (Venue: the
+          seed600 494-event shallow subsample — the same subsample as
+          <code>volume_trunc</code>&rsquo;s A/B, which is itself worth remembering.)
+        </div>
+      </details>
+    </div>
+
+    <div class="selfcheck">
+      <p>Q8.6 <em>(transfer)</em> &nbsp; Every claim so far compares the estimator to
+      &ldquo;truth&rdquo;. Where did truth come from, and name one way the <em>simulator</em>
+      could make an estimator look biased when it is not.</p>
+      <details class="answer">
+        <summary>Show answer</summary>
+        <div class="answer-body">
+          From a forward model: a population drawn from a rate model, waveforms generated,
+          detection applied, hosts drawn with a rate weight. The simulator can make a correct
+          estimator look biased whenever the two disagree about the population — for instance
+          if the simulator draws hosts <em>mass-aware</em> while the estimator&rsquo;s mixture
+          weight is computed <em>mass-blind</em>. That is not hypothetical: it is claim C9,
+          measured at a factor 2.3 with binomial $z = -11.86$
+          <span class="prov-chip">CLAIM_2D_BIAS_20260730.md C9</span>, and it is Chapter 9.
+        </div>
+      </details>
+    </div>
+
+    <!-- ================= traps ================= -->
+    <div class="callout defect">
+      <span class="callout-label">Trap &mdash; &ldquo;More information cannot hurt.&rdquo;</span>
+      More information <em>in a correctly specified model</em> cannot hurt. In a model with a
+      measure mismatch (C8) and a mis-calibrated mixture weight (C9), a sharper likelihood
+      makes the mis-specification <em>more decisive</em>. Measured: the 2D channel is 10/10
+      runs at a mean pull of +4.04; the 1D channel is 0/10 exceeding 2σ.
+      <span class="prov-chip">REALISTIC_READOUT.md §6</span>
+    </div>
+
+    <div class="callout defect">
+      <span class="callout-label">Trap &mdash; &ldquo;Impostor deletion is the mechanism.&rdquo;</span>
+      Deletion carries <strong>1.5%</strong>. De-weighting carries <strong>98.5%</strong>.
+      The 487 events with an identically-zero 2D catalogue leg contribute +0.24 nats of the
+      +15.83; the 534 survivors contribute +15.60. The project&rsquo;s adjudication retired
+      the deletion mechanism explicitly, and this book does not resurrect it.
+      <span class="prov-chip">CLAIM_2D_BIAS_20260730.md C4 (amended)</span>
+    </div>
+
+    <!-- ================= MUSEUM INTERLUDE ================= -->
+    <div class="ch08-interlude">
+      <span class="ch08-interlude-kicker">Defect Museum · interlude</span>
+      <h3><code>mass_trunc</code> — right in isolation, irrelevant in the pipeline
+        <span class="badge exonerated">EXONERATED</span></h3>
+      <dl>
+        <dt>The hypothesis</dt>
+        <dd>
+          §2&rsquo;s defect is real: the production mass kernel is an untruncated linear
+          Gaussian where the derivation says truncated lognormal × $R_{\rm eff}$. Replace it,
+          and the 2D residual should close. This was not a guess — it was the ratified
+          kernel, implemented properly, with Gauss–Hermite on the narrow GW mass peak in the
+          numerator and Gauss–Legendre-in-$\ln M$ over a peak-aware window in the selection
+          integral.
+        </dd>
+        <dt>The pre-registered prediction, and the isolation test</dt>
+        <dd>
+          A single-host toy — numerator only, no selection term — <strong>confirmed</strong>
+          it: production minus correct came out at <strong>+0.016…+0.02</strong> at
+          $\sigma_z/z = 0.5$–0.65, sign HIGH, ~3σ, growing monotonically with photo-z leverage
+          across all five tested leverages <span class="prov-chip">ledger #71</span>. By any
+          normal standard that is a confirmed driver.
+        </dd>
+        <dt>The measured outcome, in the full pipeline</dt>
+        <dd>
+          A pre-registered A/B on the seed600 494-event shallow venue:
+          <strong>Δ2D = +0.0029 — the <em>wrong sign</em></strong>, an order of magnitude
+          smaller than the toy, and <strong>Δ1D = 0.0000 exactly</strong>
+          <span class="prov-chip">ledger #72</span>
+          <span class="prov-chip">mass_trunc_ab_20260713/FINDING.md</span>. The kernel change
+          was numerically clean — deterministic, no rail, MAP unmoved at 0.76 — and simply
+          did not do what the toy said it would.
+        </dd>
+        <dt>Why</dt>
+        <dd>
+          The in-catalogue likelihood is a <em>ratio</em>,
+          $\mathcal L^{\rm cat} = \sum_g w_g N_g / \sum_g w_g D_g$, and the very same mass
+          prior enters $D_g$ that enters $N_g$. A shape change moves numerator and
+          denominator in the same direction, so most of it cancels. What survives is only the
+          part reweighted differently by $p_{\rm det}$ inside $D_g$ — and that residue points
+          the other way. The toy had no denominator, so it measured a different estimator.
+        </dd>
+        <dt>What it cost, and what it did not buy</dt>
+        <dd>
+          One implementation cycle plus a cluster A/B. It did not buy an explanation of the 2D
+          residual. It <em>did</em> buy the exactly-zero 1D delta, which is a plumbing gate
+          worth keeping: a mass-only change that moved 1D would have been a bug report.
+          Note the venue scope — this A/B and <code>volume_trunc</code>&rsquo;s share the
+          <em>same</em> 494-event subsample, so &ldquo;exonerated&rdquo; here means
+          &ldquo;exonerated on that venue&rdquo;.
+        </dd>
+        <dt>The transferable lesson</dt>
+        <dd>
+          <strong>The selection denominator is not a spectator.</strong> An isolated toy can
+          be right about the physics and irrelevant to the number you care about, because the
+          estimator you ship is a ratio and the ratio is what cancels. Before believing a
+          numerator-only experiment, ask what the denominator does with the same change.
+        </dd>
+      </dl>
+      <p style="margin-bottom:0;">
+        Full exhibit, alongside the rest of the collection:
+        <a href="museum.html#ex-mass-trunc">the Defect Museum &rarr; mass_trunc</a>.
+      </p>
+    </div>
+
+    <!-- ================= provenance ================= -->
+    <div class="provenance-panel">
+      <h4>Provenance panel — every stamp used in this chapter</h4>
+      <ul>
+        <li><span class="badge ratified">RATIFIED</span> <code>dark_siren_likelihood.md §7–§11</code> — $M_z = M(1+z)$ as a second redshift observable; the fraction-coordinate marginal</li>
+        <li><span class="badge ratified">RATIFIED</span> <span class="badge candidate">CANDIDATE</span> <code>mass_marginal_2d_kernel.md</code> gates M1–M7 — the truncated-lognormal × $R_{\rm eff}$ kernel; <code>[RATIFY-M6]</code> keeps the real-data 2D mode CANDIDATE/OPEN (<code>:1-17, 690-706</code>)</li>
+        <li><span class="badge ratified">RATIFIED</span> <code>mass_marginal_2d_kernel.md §3.5</code> Eq. (M9) — why z-broadening makes $mz(z)$ a second z-likelihood, and why the defect is 2D-only</li>
+        <li><span class="badge open">OPEN</span> <code>[RATIFY-M7]</code> — catalogue masses are $d_L$-derived: first-order $(z,M)$ covariance for photo-z hosts, and $\delta\ln M_g \lesssim 0.4$ across the h-grid</li>
+        <li><span class="badge ratified">RATIFIED</span> <code>G2d_host_mass_rate_prior.md</code> — Eddington-in-M; the exact moment-matched posterior mean (401-point quadrature, pinned to &lt;0.5% against 20001 points) after the log-linear form got the sign wrong at $\sigma_{\rm rel}\approx1$</li>
+        <li><span class="badge finding">FINDING</span> <code>ledger #50</code> — the G2d 2D effect re-measured post-<code>713fbd1</code> at −0.0022; <code>bayesian_statistics.py:2400-2401</code>'s −0.020 is stale</li>
+        <li><span class="badge finding">FINDING</span> <code>CLAIM_2D_BIAS_20260730.md</code> C1–C3 + <code>c3c4_allruns_summary.md</code> — the class budget (+2.97 / +15.83 of +18.80 on r1); dark +15.83…+17.14 positive in 10/10; the 84% is r1-specific</li>
+        <li><span class="badge finding">FINDING</span> C4-obs — 64.7% dark 2D zeros vs 32.5% 1D; 488 zeroed at every h (487 dark); median suppression 7.78e−3; dark tilt −504.8 nats</li>
+        <li><span class="badge refuted">REFUTED</span> C4-mechanism as stated (&ldquo;deletion → completion fallback&rdquo;) — <span class="badge finding">FINDING</span> replaced by de-weighting: 0.0354 → 0.0061, +15.83 = 0 + 19.10 − 3.27 <code>ADJUDICATION_20260730.md §6.3</code></li>
+        <li><span class="badge finding">FINDING</span> <code>CLAIM_2D_BIAS_20260730.md</code> C10 — the up-pull is the $(1-w_G)$ prefactor (+31.55), not $\mathcal L^{\rm comp}$ (−3.11; dark −22.72, 39.1% positive)</li>
+        <li><span class="badge finding">FINDING</span> <code>CLAIM_2D_BIAS_20260730.md</code> C8 + <code>gate_b_20260730/README_C8.md</code> — reparametrization dependence; cause relocated to the two numerator legs; $d\mathrm{MAP}/d\ln C = +0.031$; 1D bitwise invariant</li>
+        <li><span class="badge refuted">REFUTED</span> <code>HANDOFF_20260730.md §4</code> (historical record only) — HB, the hard mass window: −0.317 nats = 0.063% of target, sign-inverted; and its two framing errors</li>
+        <li><span class="badge exonerated">EXONERATED</span> <code>ledger #71 → #72</code> — <code>mass_trunc</code>: confirmed in isolation, Δ2D +0.0029 wrong sign in the pipeline, Δ1D 0.0000 exact (venue: seed600 494-event subsample)</li>
+        <li><span class="badge exonerated">EXONERATED</span> <code>ledger #89</code> — the ratified (M1) kernel A/B moves the 2D by −1.8…−2.3 ln of a +25.6…+29.1 excess, MAP unmoved at 0.80: <strong>necessary, not sufficient</strong></li>
+        <li><span class="badge finding">FINDING</span> <code>ledger #5</code> (spurious $1/(1+z)$), <code>#22</code> (<code>f01595c</code>: observation vs hypothesis, 2D +0.0141 → +0.0007) — the mass channel's fixed defects</li>
+        <li>Data: <code>results/campaign51_20260728/realistic_20260729/seed{61000,62000}/real_r{1..5}/diagnostics/event_likelihoods.csv</code>, <code>.../seed61000/real_r1/combined_posterior_2d.json</code>, <code>.../prepared_cramer_rao_bounds.csv</code>, <code>.../realistic_scores.csv</code>, <code>.../gate_b_20260730/c8_reparam_results.json</code></li>
+        <li>Gates: mixture identity 3.9e−13 (1D) / 9.2e−13 (2D); delivered 2D posterior reconstructed to 3.6e−12 nats; every C-sweep and named-measure MAP matched to <code>c8_reparam.py</code> at 1e−9; 43 numeric fidelity gates + 8 structural guards in <code>gen_ch08.py</code></li>
+        <li>Open flags: <code>book/design/flags/ch08_FLAGS.md</code> (2D pull-range mismatch with <code>REALISTIC_READOUT.md §6</code>; the spec's I8.2 unit labels vs the constant-C sweep; code line drift; 606's 80× vs 74×; σ_lnM provenance; C10's 39.1% definition)</li>
+      </ul>
+    </div>
+
+    <p class="book-footer">
+      Data generated by <code>book/generators/gen_ch08.py</code> (read-only against the main
+      package and <code>results/</code>). This page renders fully offline — Plotly and KaTeX
+      are vendored under <code>vendor/</code>.
+    </p>
+  </main>
+</div>
+
+<script src="js/manifest.js"></script>
+<script src="vendor/plotly/plotly.min.js"></script>
+<script src="vendor/katex/katex.min.js"></script>
+<script src="vendor/katex/auto-render.min.js"></script>
+<script src="js/book.js"></script>
+<script>
+  (function () {
+    "use strict";
+
+    // -----------------------------------------------------------------
+    // Palette (mirrors css/book.css tokens; Plotly needs literals)
+    // -----------------------------------------------------------------
+    var C = {
+      one: "#0072B2", oneDark: "#6fb8e8",
+      two: "#CC79A7",
+      warn: "#D55E00",
+      ok: "#009E73",
+      toy: "#E69F00",
+      prior: "#9e9e9e",
+    };
+    function ink() { return Book.isDark() ? "#eef1f5" : "#1a1a1a"; }
+    function grid() { return Book.isDark() ? "#33373f" : "#d8dce1"; }
+    function c1() { return Book.isDark() ? C.oneDark : C.one; }
+
+    function baseLayout(xTitle, yTitle, over) {
+      var L = {
+        margin: { l: 64, r: 18, t: 26, b: 46 },
+        xaxis: { title: xTitle, gridcolor: grid(), zeroline: false },
+        yaxis: { title: yTitle, gridcolor: grid(), zeroline: false },
+        paper_bgcolor: "rgba(0,0,0,0)",
+        plot_bgcolor: "rgba(0,0,0,0)",
+        font: { color: ink(), size: 12 },
+        showlegend: true,
+        legend: { orientation: "h", y: -0.2, yanchor: "top", x: 0, font: { size: 10 } },
+        hovermode: "closest",
+      };
+      return Object.assign(L, over || {});
+    }
+    function truthShape(h) {
+      return {
+        type: "line", x0: h, x1: h, y0: 0, y1: 1, yref: "paper",
+        line: { color: Book.isDark() ? "#eef1f5" : "#1a1a1a", dash: "dot", width: 1.6 },
+      };
+    }
+    function fmt(v, n) {
+      return (v === null || v === undefined || !isFinite(v)) ? "—" : Number(v).toFixed(n);
+    }
+    function sgn(v, n) { return (v >= 0 ? "+" : "") + fmt(v, n); }
+    function table(el, headers, rowsArr) {
+      var html = "<tr>" + headers.map(function (h) { return "<th>" + h + "</th>"; }).join("") + "</tr>";
+      rowsArr.forEach(function (r) {
+        html += "<tr>" + r.map(function (c) { return "<td>" + c + "</td>"; }).join("") + "</tr>";
+      });
+      el.innerHTML = html;
+    }
+
+    // -----------------------------------------------------------------
+    // Bias Ledger Rail (BW1) + page-local pips (workaround for the
+    // capability requested as R-ch07-1; book.js is frozen).
+    // -----------------------------------------------------------------
+    var PIPS = [
+      { tone: "amber", label: "C7: kernel inflates at σ_z/z > 0.256", note: "CLAIM C7 — MEASURED, live" },
+      { tone: "amber", label: "C8: 2D MAP walks with an arbitrary mass measure", note: "CLAIM C8 — FINDING, well-posedness, live" },
+      { tone: "grey", label: "2D pairing is RATIFY-M6 CANDIDATE, not ratified", note: "mass_marginal_2d_kernel.md:1-17, 690-706" },
+    ];
+    function renderRail(extra) {
+      var entries = [
+        { label: "cat-only, no D(h)", bias: -0.178, note: "Phase 32 / ledger #9" },
+        { label: "full-volume D(h)", bias: 0.0, note: "Phase 32 / ledger #9" },
+        { label: "1D, realistic host-z", bias: -0.002, note: "volume_deconv repair; Ch 7" },
+      ];
+      entries.push(extra || {
+        label: "2D (mass channel)", bias: 0.077,
+        note: "campaign #53, 10 runs: mean MAP 0.807, mean pull +4.04, 10/10 beyond 2σ — on RATIFY-M6 CANDIDATE ground",
+        active: true,
+      });
+      Book.biasRail({ entries: entries });
+      var host = document.getElementById("bias-rail");
+      if (!host) return;
+      PIPS.forEach(function (p) {
+        var d = document.createElement("div");
+        d.className = "ch08-pip" + (p.tone === "grey" ? " grey" : "");
+        d.title = p.note;
+        d.innerHTML = '<span class="ch08-pip-dot"></span><span>' + p.label + "</span>";
+        host.appendChild(d);
+      });
+    }
+    renderRail();
+
+    Book.predictReveal(document.getElementById("ch08-predict-1").closest(".widget"));
+    Book.predictReveal(document.getElementById("ch08-predict-2").closest(".widget"));
+
+    // =================================================================
+    // COLD OPEN — data/ch08_channel.json
+    // =================================================================
+    Book.loadJSON("data/ch08_channel.json").then(function (d) {
+      var H = d.h_grid;
+      function post(logArr) {
+        var m = -Infinity, i;
+        for (i = 0; i < logArr.length; i++) if (logArr[i] > m) m = logArr[i];
+        return Book.normalizePosterior(logArr.map(function (v) { return Math.exp(v - m); }), H);
+      }
+      var p1 = post(d.log_sum["1D"]), p2 = post(d.log_sum["2D"]);
+
+      Book.themedPlot("ch08-cold-plot", [
+        {
+          x: H, y: p1, mode: "lines", fill: "tozeroy", name: "1D — redshift only",
+          line: { color: c1(), width: 2.6 }, fillcolor: "rgba(0,114,178,0.14)",
+          hovertemplate: "h = %{x:.3f}<br>density = %{y:.4g}<extra>1D</extra>",
+        },
+        {
+          x: H, y: p2, mode: "lines", fill: "tozeroy", name: "2D — redshift and mass",
+          line: { color: C.two, width: 2.6 }, fillcolor: "rgba(204,121,167,0.16)",
+          hovertemplate: "h = %{x:.3f}<br>density = %{y:.4g}<extra>2D</extra>",
+        },
+      ], function () {
+        var L = baseLayout("h = H₀ / 100", "posterior density");
+        L.xaxis.range = [0.595, 0.865];
+        L.shapes = [truthShape(d.h_true)];
+        L.annotations = [{
+          x: d.h_true, y: 1, yref: "paper", text: "truth 0.73", showarrow: false,
+          yanchor: "bottom", font: { size: 11 },
+        }];
+        return L;
+      });
+
+      var sc = d.scorecard;
+      Book.themedPlot("ch08-pull-plot", [
+        {
+          x: sc.map(function (r) { return r.run; }), y: sc.map(function (r) { return r.pull_1d; }),
+          type: "bar", name: "1D pull", marker: { color: c1() },
+          hovertemplate: "%{x}<br>pull = %{y:.2f}<extra>1D</extra>",
+        },
+        {
+          x: sc.map(function (r) { return r.run; }), y: sc.map(function (r) { return r.pull_2d; }),
+          type: "bar", name: "2D pull", marker: { color: C.two },
+          hovertemplate: "%{x}<br>pull = %{y:.2f}<extra>2D</extra>",
+        },
+      ], function () {
+        var L = baseLayout("", "pull  (MAP − 0.73) / σ_h");
+        L.margin.b = 70;
+        L.shapes = [
+          { type: "line", x0: -0.5, x1: 9.5, y0: 2, y1: 2, line: { color: C.warn, dash: "dash", width: 1.4 } },
+          { type: "line", x0: -0.5, x1: 9.5, y0: -2, y1: -2, line: { color: C.warn, dash: "dash", width: 1.4 } },
+        ];
+        L.annotations = [{
+          x: 9.4, y: 2.15, text: "±2σ", showarrow: false, xanchor: "right",
+          font: { size: 10, color: C.warn },
+        }];
+        L.xaxis.tickangle = -35;
+        return L;
+      });
+
+      document.getElementById("ch08-cold-map1").textContent =
+        fmt(d.map["1D_grid"], 3) + " (refined " + fmt(d.map["1D_parab"], 4) + ")";
+      document.getElementById("ch08-cold-map2").textContent =
+        fmt(d.map["2D_grid"], 3) + " (refined " + fmt(d.map["2D_parab"], 4) + ")";
+      document.getElementById("ch08-cold-bias").textContent = sgn(d.scorecard_summary.bias_2d_mean, 3);
+      document.getElementById("ch08-cold-pull").textContent =
+        sgn(d.scorecard_summary.pull_2d_mean, 2) + " (" + d.scorecard_summary.n_pull_gt_2 + "/10 beyond 2σ)";
+
+      table(document.getElementById("ch08-cold-table"),
+        ["run", "1D MAP", "2D MAP", "1D pull", "2D pull", "σ_H0 (2D)", "edge/peak (2D)"],
+        sc.map(function (r) {
+          return [r.run, fmt(r.map_1d, 3), fmt(r.map_2d, 3), sgn(r.pull_1d, 2),
+                  sgn(r.pull_2d, 2), fmt(r.sigma_H0_2d, 2), r.edge_2d.toExponential(2)];
+        }).concat([[
+          "<strong>mean</strong>", "<strong>" + fmt(d.scorecard_summary.map_1d_mean, 4) + "</strong>",
+          "<strong>" + fmt(d.scorecard_summary.map_2d_mean, 4) + "</strong>", "—",
+          "<strong>" + sgn(d.scorecard_summary.pull_2d_mean, 3) + "</strong>", "—", "—",
+        ]]));
+    });
+
+    // =================================================================
+    // I8.1 — the sieve (toy panel + real panel)
+    // =================================================================
+    Book.loadJSON("data/ch08_sieve.json").then(function (S) {
+      var H = S.h_grid, i73 = S.i_073;
+
+      // ---------- Panel A: the analytic toy --------------------------
+      // Deterministic LCG so the toy is identical on every reload and in
+      // every browser (pedagogy: never animate what the reader did not cause).
+      function lcg(seed) {
+        var s = seed >>> 0;
+        return function () { s = (1664525 * s + 1013904223) >>> 0; return s / 4294967296; };
+      }
+      function gauss(rnd) {
+        var u = Math.max(rnd(), 1e-12), v = rnd();
+        return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+      }
+      var N_TOY = 400;
+      var toyBase = (function () {
+        var rnd = lcg(20260731), out = [];
+        for (var i = 0; i < N_TOY; i++) {
+          // true source-frame masses log-uniform over the catalogue range,
+          // candidate redshifts spread across a localization window
+          out.push({
+            lnMtrue: Math.log(1e4) + rnd() * (Math.log(1e7) - Math.log(1e4)),
+            z: 0.05 + 0.45 * rnd(),
+            g: gauss(rnd),
+          });
+        }
+        return out;
+      })();
+      // The event: M_z measured to 1e-4, host at z = 0.25 with M = 6e5.
+      var MZ = 6e5 * 1.25, SIG_MZ = 1e-4 * MZ, ZMIN = 0.05, ZMAX = 0.50, KSIG = 2;
+
+      var SLNM_STEPS = [0.1, 0.2, 0.3, 0.4, 0.58, 0.7, 0.9, 1.1, 1.28, 1.5, 1.8, 2.2];
+
+      function toyState(slnM) {
+        var lo = (MZ - KSIG * SIG_MZ) / (1 + ZMAX);
+        var hi = (MZ + KSIG * SIG_MZ) / (1 + ZMIN);
+        var kept = [], rejLow = 0, rejHigh = 0, weights = [], x = [], y = [], col = [];
+        toyBase.forEach(function (t) {
+          var Mg = Math.exp(t.lnMtrue + slnM * t.g);   // catalogue estimate
+          var sM = Mg * slnM;                          // stored LINEAR 1σ
+          var passLow = (Mg + sM) >= lo;
+          var passHigh = (Mg - sM) <= hi;
+          var pass = passLow && passHigh;
+          // where the candidate sits relative to the mass the GW allows,
+          // at that candidate's own redshift
+          var implied = Math.log10(Mg * (1 + t.z) / MZ);
+          x.push(implied);
+          y.push(pass ? 1 : -1);
+          col.push(pass ? C.ok : C.warn);
+          if (!pass) { if (!passLow) rejLow++; else rejHigh++; } else {
+            // the 2D kernel weight this survivor then receives
+            var mu = MZ / (1 + t.z);
+            weights.push(Math.exp(-0.5 * Math.pow((mu - Mg) / sM, 2)) / (sM * Math.sqrt(2 * Math.PI)));
+            kept.push(t);
+          }
+        });
+        var wsorted = weights.slice().sort(function (a, b) { return a - b; });
+        var wmed = wsorted.length ? wsorted[Math.floor(wsorted.length / 2)] : 0;
+        var wref = 1 / (MZ * 0.1 * Math.sqrt(2 * Math.PI)); // a 10%-wide reference kernel
+        return {
+          x: x, y: y, col: col, nKept: kept.length,
+          rejPct: 100 * (N_TOY - kept.length) / N_TOY,
+          rejLow: rejLow, rejHigh: rejHigh,
+          wRel: wmed / wref,
+        };
+      }
+
+      var toyPlot = Book.themedPlot("ch08-toy-plot", [], function () {
+        var L = baseLayout("log₁₀[ M_g(1+z) / M_z ]  — how far the candidate is from the mass the GW allows",
+                           "rejected  ←   → kept");
+        L.showlegend = false;
+        L.yaxis.range = [-2.2, 2.2];
+        L.yaxis.tickvals = [-1, 1];
+        L.yaxis.ticktext = ["rejected", "kept"];
+        L.xaxis.range = [-3.2, 3.2];
+        L.shapes = [{ type: "line", x0: 0, x1: 0, y0: -2.2, y1: 2.2, line: { color: grid(), width: 1.4, dash: "dot" } }];
+        L.annotations = [{
+          x: 0, y: 2.1, text: "the mass the GW allows", showarrow: false,
+          font: { size: 10, color: Book.isDark() ? "#9aa2b1" : "#5b6270" },
+        }];
+        return L;
+      });
+
+      function drawToy(slnM) {
+        var t = toyState(slnM);
+        toyPlot.update([{
+          x: t.x, y: t.y, mode: "markers", type: "scatter",
+          marker: { color: t.col, size: 6, opacity: 0.75, symbol: "circle" },
+          hovertemplate: "log₁₀ offset = %{x:.2f}<extra></extra>",
+        }]);
+        document.getElementById("ch08-toy-rej").textContent = fmt(t.rejPct, 1) + "%  (" + (N_TOY - t.nKept) + " of " + N_TOY + ")";
+        document.getElementById("ch08-toy-side").textContent = t.rejLow + " : " + t.rejHigh;
+        document.getElementById("ch08-toy-w").textContent =
+          t.wRel > 0 ? t.wRel.toExponential(2) + " × the reference" : "0";
+      }
+
+      var slider = document.getElementById("ch08-slnm");
+      Book.gridSlider({
+        sliderEl: slider,
+        readoutEl: document.getElementById("ch08-slnm-out"),
+        steps: SLNM_STEPS,
+        formatReadout: function (v) {
+          if (v === 0.58) return "0.58 <em>(the derivation&rsquo;s floor)</em>";
+          if (v === 1.28) return "1.28 <em>(the catalogue median)</em>";
+          return v.toFixed(2);
+        },
+        onStep: function (v) { drawToy(v); },
+      });
+      slider.value = String(SLNM_STEPS.indexOf(1.28));
+      document.getElementById("ch08-slnm-out").innerHTML = "1.28 <em>(the catalogue median)</em>";
+      drawToy(1.28);
+
+      // ---------- Panel B: the production run ------------------------
+      // The three views need different axes, and Book.themedPlot re-applies the
+      // layout function it was constructed with on every update and on every theme
+      // flip — so the function reads a mutable holder rather than a fixed object.
+      var realLayout = function () { return baseLayout("h = H₀ / 100", ""); };
+      var realPlot = Book.themedPlot("ch08-real-plot", [], function () { return realLayout(); });
+      var VERDICT = {
+        weight:
+          "<span class='ch08-verdict-label'>Measured, seed61000/real_r1</span>" +
+          "The dark class's mean catalogue mixture weight at h = 0.73 falls from <strong>" +
+          S.w_cat_dark["1D"][i73].toPrecision(4) + "</strong> in 1D to <strong>" +
+          S.w_cat_dark["2D"][i73].toPrecision(4) + "</strong> in 2D — a factor <strong>" +
+          fmt(S.deweighting_factor_073, 2) + "</strong>. That collapse, not the deletion, " +
+          "is what carries <strong>98.5%</strong> of the +15.83-nat channel difference " +
+          "(survivors +15.60 nats over 534 events; the 487 zeroed events carry +0.24, and " +
+          "the 491 dead in both channels carry exactly 0.00).",
+        zero:
+          "<span class='ch08-verdict-label'>Measured, seed61000/real_r1</span>" +
+          "At h = 0.73, <strong>" + fmt(100 * S.zero_fraction.dark_2D[i73], 1) +
+          "%</strong> of the 1512 dark events have an exactly-zero 2D catalogue leg, against <strong>" +
+          fmt(100 * S.zero_fraction.dark_1D[i73], 1) + "%</strong> in 1D. Of the " +
+          S.counts.n_1d_nonzero + " events with a live 1D catalogue leg anywhere on the grid, " +
+          S.counts.n_zero2d_of_nonzero1d + " are identically zero in 2D at <em>every</em> h — " +
+          S.counts.n_zero2d_dark + " of them dark. Striking, and worth <strong>1.5%</strong>: " +
+          "these events' 1D legs were already negligible.",
+        class:
+          "<span class='ch08-verdict-label'>Measured, seed61000/real_r1</span>" +
+          "The dark class's own summed profile moves its argmax from <strong>h = " +
+          fmt(S.dark_class_profile.argmax_1D, 3) + "</strong> (1D) to <strong>h = " +
+          fmt(S.dark_class_profile.argmax_2D, 3) + "</strong> (2D), and its opposition to the " +
+          "move from 0.73 to 0.86 collapses from <strong>" +
+          fmt(S.dark_class_profile.opposition_1D_073_086, 2) + "</strong> to <strong>" +
+          fmt(S.dark_class_profile.opposition_2D_073_086, 2) + "</strong> nats. The dashed grey " +
+          "curve is the same class's channel-common completion factor (1−w_G)·L_comp alone, whose " +
+          "argmax is <strong>h = " + fmt(S.dark_class_profile.dark_completion_argmax, 3) +
+          "</strong> — which is where the delivered 2D posterior lands. Note what this does " +
+          "<em>not</em> say: L_comp itself pulls DOWN for dark events (−22.72 nats); the up-tilt " +
+          "in that grey curve is the (1−w_G) prefactor (+30.04 nats for this class).",
+      };
+
+      function drawReal(view) {
+        var traces, layoutFn;
+        if (view === "weight") {
+          traces = [
+            { x: H, y: S.w_cat_dark["1D"], mode: "lines", name: "1D — catalogue share of the mixture",
+              line: { color: c1(), width: 2.6 },
+              hovertemplate: "h = %{x:.3f}<br>w̄_cat = %{y:.4f}<extra>1D</extra>" },
+            { x: H, y: S.w_cat_dark["2D"], mode: "lines", name: "2D — same events, mass added",
+              line: { color: C.two, width: 2.6 },
+              hovertemplate: "h = %{x:.3f}<br>w̄_cat = %{y:.4f}<extra>2D</extra>" },
+          ];
+          layoutFn = function () {
+            var L = baseLayout("h = H₀ / 100", "mean catalogue mixture weight, dark class");
+            L.shapes = [truthShape(0.73)];
+            L.annotations = [{
+              x: 0.73, y: S.w_cat_dark["1D"][i73], ax: 60, ay: -30,
+              text: S.w_cat_dark["1D"][i73].toPrecision(3) + " → " + S.w_cat_dark["2D"][i73].toPrecision(3),
+              showarrow: true, arrowhead: 0, font: { size: 11, color: C.warn },
+            }];
+            return L;
+          };
+        } else if (view === "zero") {
+          traces = [
+            { x: H, y: S.zero_fraction.dark_1D.map(function (v) { return 100 * v; }), mode: "lines",
+              name: "dark, 1D", line: { color: c1(), width: 2.6 },
+              hovertemplate: "h = %{x:.3f}<br>%{y:.1f}% zero<extra>dark 1D</extra>" },
+            { x: H, y: S.zero_fraction.dark_2D.map(function (v) { return 100 * v; }), mode: "lines",
+              name: "dark, 2D", line: { color: C.two, width: 2.6 },
+              hovertemplate: "h = %{x:.3f}<br>%{y:.1f}% zero<extra>dark 2D</extra>" },
+            { x: H, y: S.zero_fraction.incat_1D.map(function (v) { return 100 * v; }), mode: "lines",
+              name: "in-catalogue, 1D", line: { color: c1(), width: 1.4, dash: "dot" },
+              hovertemplate: "h = %{x:.3f}<br>%{y:.1f}% zero<extra>in-cat 1D</extra>" },
+            { x: H, y: S.zero_fraction.incat_2D.map(function (v) { return 100 * v; }), mode: "lines",
+              name: "in-catalogue, 2D", line: { color: C.two, width: 1.4, dash: "dot" },
+              hovertemplate: "h = %{x:.3f}<br>%{y:.1f}% zero<extra>in-cat 2D</extra>" },
+          ];
+          layoutFn = function () {
+            var L = baseLayout("h = H₀ / 100", "% of the class with an exactly-zero catalogue leg");
+            L.shapes = [truthShape(0.73)];
+            return L;
+          };
+        } else {
+          traces = [
+            { x: H, y: S.dark_class_profile["1D"], mode: "lines", name: "dark class, 1D",
+              line: { color: c1(), width: 2.6 },
+              hovertemplate: "h = %{x:.3f}<br>Δ ln L = %{y:.2f}<extra>1D</extra>" },
+            { x: H, y: S.dark_class_profile["2D"], mode: "lines", name: "dark class, 2D",
+              line: { color: C.two, width: 2.6 },
+              hovertemplate: "h = %{x:.3f}<br>Δ ln L = %{y:.2f}<extra>2D</extra>" },
+            { x: H, y: S.dark_class_profile.completion_only, mode: "lines",
+              name: "(1−w_G)·L_comp alone", line: { color: C.prior, width: 2, dash: "dash" },
+              hovertemplate: "h = %{x:.3f}<br>Δ ln = %{y:.2f}<extra>completion factor</extra>" },
+          ];
+          layoutFn = function () {
+            var L = baseLayout("h = H₀ / 100", "class-summed ln L, relative to its own maximum");
+            L.yaxis.range = [-60, 4];
+            L.shapes = [truthShape(0.73)];
+            L.annotations = [
+              { x: S.dark_class_profile.argmax_1D, y: 1.5, text: "0.640", showarrow: false,
+                font: { size: 11, color: c1() } },
+              { x: S.dark_class_profile.argmax_2D, y: 1.5, text: "0.785", showarrow: false,
+                font: { size: 11, color: C.two } },
+              { x: S.dark_class_profile.dark_completion_argmax, y: -6, text: "0.810",
+                showarrow: false, font: { size: 11, color: C.prior } },
+            ];
+            return L;
+          };
+        }
+        realLayout = layoutFn;
+        realPlot.update(traces);
+        var vEl = document.getElementById("ch08-real-verdict");
+        vEl.innerHTML = VERDICT[view];
+        Book.renderMath(vEl);
+      }
+
+      var realRow = document.getElementById("ch08-real-row");
+      realRow.querySelectorAll("[data-view]").forEach(function (b) {
+        b.addEventListener("click", function () {
+          realRow.querySelectorAll("[data-view]").forEach(function (o) {
+            o.setAttribute("aria-pressed", String(o === b));
+          });
+          drawReal(b.getAttribute("data-view"));
+        });
+      });
+      drawReal("weight");
+
+      table(document.getElementById("ch08-sieve-table"),
+        ["h", "dark w̄_cat (1D)", "dark w̄_cat (2D)", "dark zero % (1D)", "dark zero % (2D)"],
+        H.map(function (h, i) {
+          return [fmt(h, 3), S.w_cat_dark["1D"][i].toPrecision(4), S.w_cat_dark["2D"][i].toPrecision(4),
+                  fmt(100 * S.zero_fraction.dark_1D[i], 1), fmt(100 * S.zero_fraction.dark_2D[i], 1)];
+        }));
+    });
+
+    // =================================================================
+    // I8.2 — the reparametrization walk
+    // =================================================================
+    Book.loadJSON("data/ch08_reparam.json").then(function (R) {
+      var H = R.h_grid;
+      var state = { mode: "C", ci: 4, named: 0 };
+      var shippedIdx = 4; // C = 1 in R.sweep
+      for (var k = 0; k < R.sweep.length; k++) if (R.sweep[k].C === 1) shippedIdx = k;
+
+      var plot = Book.themedPlot("ch08-reparam-plot", [], function () {
+        var L = baseLayout("h = H₀ / 100", "2D posterior density");
+        L.xaxis.range = [0.595, 0.865];
+        L.shapes = [truthShape(R.h_true)];
+        return L;
+      });
+
+      var walk = Book.themedPlot("ch08-walk-plot", [], function () {
+        var L = baseLayout("ln C — the logarithm of an arbitrary constant", "2D MAP in h");
+        L.shapes = [{
+          type: "line", x0: -3.1, x1: 1.15, y0: R.h_true, y1: R.h_true,
+          line: { color: ink(), dash: "dot", width: 1.4 },
+        }];
+        L.annotations = [{
+          x: 1.1, y: R.h_true, text: "truth", showarrow: false, xanchor: "right",
+          yanchor: "bottom", font: { size: 10 },
+        }];
+        return L;
+      });
+
+      function currentEntry() {
+        if (state.mode === "named") return R.named_measures[state.named];
+        if (state.mode === "consistent") return R.named_measures[0];
+        return R.sweep[state.ci];
+      }
+
+      var VERDICTS = {
+        C: function (e) {
+          return "<span class='ch08-verdict-label'>Live recomputation — seed61000/real_r1</span>" +
+            "At C = <strong>" + e.C + "</strong> the 2D MAP is <strong>" + fmt(e.map_parab, 5) +
+            "</strong>; the 1D MAP is <strong>" + fmt(R.one_d.map_parab, 5) +
+            "</strong>, unchanged — bitwise, at every C on this dial. C is a pure convention: " +
+            "it multiplies the mass measure the 2D catalogue leg's density is expressed in, and " +
+            "nothing else in the pipeline. It should cancel. It does not, because the completion " +
+            "leg it is added to carries no mass density at all.";
+        },
+        named: function (e) {
+          return "<span class='ch08-verdict-label'>Live recomputation — seed61000/real_r1</span>" +
+            "Measure: <strong>" + e.label + "</strong> — " + e.note + ". 2D MAP <strong>" +
+            fmt(e.map_parab, 5) + "</strong>, 1D MAP <strong>" + fmt(R.one_d.map_parab, 5) +
+            "</strong>. These four are not the constant-C dial: each is a genuine, nameable " +
+            "coordinate, and the rescaling is <em>per event</em> (C_i = M_z,det,i / unit), which " +
+            "is why the walk is not monotone in the unit. The shipped code sits on the first one " +
+            "— it measures every event in that event's own private mass unit, and those span a " +
+            "factor " + fmt(R.M_z_det.span_factor, 1) + " across this catalogue (" +
+            R.M_z_det.min.toExponential(2) + " to " + R.M_z_det.max.toExponential(2) + " M☉).";
+        },
+        consistent: function () {
+          return "<span class='ch08-verdict-label'>Structural result — not a measurement to run</span>" +
+            "Nothing moves, <strong>exactly</strong>. Rescale M → kM in <em>every</em> input at " +
+            "once — catalogue M_g and σ_M,g, the detection M_z and σ_Mz, the p_det mass grid, the " +
+            "mass argument of the rate model and the truncation bounds — and the code is exactly " +
+            "invariant, because mass enters the 2D numerator only through the ratios " +
+            "M_g(1+z)/M_z,det and σ_M,g(1+z)/M_z,det, and the 4D covariance row is σ_M²/M². " +
+            "An input-rescaling A/B would report zero movement. <strong>So the naive reading of " +
+            "the C8 test is false, and the real dependence is on the <em>measure</em> the mixture " +
+            "is taken in</strong> — which the code has already hard-wired to dM_z / M_z,det,i. " +
+            "<span class='prov-chip'>README_C8.md, correction 1</span>";
+        },
+      };
+
+      function draw() {
+        var e = currentEntry();
+        var shipped = R.sweep[shippedIdx];
+        var traces = [{
+          x: H, y: shipped.posterior, mode: "lines", name: "as shipped (C = 1)",
+          line: { color: C.prior, width: 1.6, dash: "dot" },
+          hovertemplate: "h = %{x:.3f}<extra>as shipped</extra>",
+        }];
+        {
+          traces.push({
+            x: H, y: e.posterior, mode: "lines", fill: "tozeroy",
+            name: state.mode === "named" ? e.label : ("C = " + e.C),
+            line: { color: C.two, width: 2.6 }, fillcolor: "rgba(204,121,167,0.16)",
+            hovertemplate: "h = %{x:.3f}<br>density = %{y:.4g}<extra>2D</extra>",
+          });
+        }
+        traces.push({
+          x: H, y: R.one_d.posterior, mode: "lines", name: "1D — never moves",
+          line: { color: c1(), width: 1.8 },
+          hovertemplate: "h = %{x:.3f}<extra>1D</extra>",
+        });
+        plot.update(traces);
+
+        var mapNow = e.map_parab;
+        walk.update([
+          {
+            x: R.sensitivity.ln_C, y: R.sensitivity.map_parab, mode: "lines",
+            name: "MAP(ln C), 25 points over C ∈ [0.05, 3]",
+            line: { color: C.two, width: 2.4 },
+            hovertemplate: "ln C = %{x:.2f}<br>MAP = %{y:.4f}<extra></extra>",
+          },
+          {
+            x: state.mode === "C" ? [Math.log(e.C)] : [],
+            y: state.mode === "C" ? [mapNow] : [],
+            mode: "markers", name: "you are here",
+            marker: { color: C.toy, size: 12, symbol: "circle" },
+            hovertemplate: "ln C = %{x:.2f}<br>MAP = %{y:.4f}<extra></extra>",
+          },
+          {
+            x: [-3.1, 1.15], y: [R.one_d.map_parab, R.one_d.map_parab], mode: "lines",
+            name: "1D MAP — bitwise invariant", line: { color: c1(), width: 2, dash: "dash" },
+            hovertemplate: "1D MAP = %{y:.4f}<extra></extra>",
+          },
+        ]);
+
+        document.getElementById("ch08-map2-out").textContent =
+          state.mode === "consistent" ? fmt(R.named_measures[0].map_parab, 5) + " (unchanged)" : fmt(mapNow, 5);
+        document.getElementById("ch08-map1-out").textContent = fmt(R.one_d.map_parab, 5) + " (bitwise unchanged)";
+        document.getElementById("ch08-slope-out").textContent =
+          sgn(R.sensitivity.dMAP_dlnC, 4) + " per e-fold  (" +
+          sgn(R.sensitivity.per_efold_H0_km_s_Mpc, 2) + " km s⁻¹ Mpc⁻¹)";
+
+        var v = document.getElementById("ch08-reparam-verdict");
+        v.innerHTML = VERDICTS[state.mode](e);
+        Book.renderMath(v);
+      }
+
+      var cSlider = document.getElementById("ch08-c-slider");
+      Book.gridSlider({
+        sliderEl: cSlider,
+        readoutEl: document.getElementById("ch08-c-out"),
+        steps: R.sweep.map(function (s) { return s.C; }),
+        formatReadout: function (v) { return String(v); },
+        onStep: function (v, i) { state.ci = i; state.mode = "C"; setMode("C", true); },
+      });
+      cSlider.value = String(shippedIdx);
+      document.getElementById("ch08-c-out").textContent = "1";
+
+      var modeRow = document.getElementById("ch08-mode-row");
+      var namedRow = document.getElementById("ch08-named-row");
+      var cControls = document.getElementById("ch08-c-controls");
+
+      function setMode(mode, keepIndex) {
+        state.mode = mode;
+        modeRow.querySelectorAll("[data-mode]").forEach(function (o) {
+          o.setAttribute("aria-pressed", String(o.getAttribute("data-mode") === mode));
+        });
+        cControls.classList.toggle("ch08-locked", mode !== "C");
+        namedRow.classList.toggle("ch08-locked", mode !== "named");
+        if (!keepIndex && mode === "C") { state.ci = shippedIdx; cSlider.value = String(shippedIdx); }
+        draw();
+      }
+      modeRow.querySelectorAll("[data-mode]").forEach(function (b) {
+        b.addEventListener("click", function () { setMode(b.getAttribute("data-mode")); });
+      });
+      namedRow.querySelectorAll("[data-named]").forEach(function (b) {
+        b.addEventListener("click", function () {
+          state.named = Number(b.getAttribute("data-named"));
+          namedRow.querySelectorAll("[data-named]").forEach(function (o) {
+            o.setAttribute("aria-pressed", String(o === b));
+          });
+          setMode("named", true);
+        });
+      });
+      document.getElementById("ch08-restore").addEventListener("click", function () {
+        state.named = 0;
+        namedRow.querySelectorAll("[data-named]").forEach(function (o, i) {
+          o.setAttribute("aria-pressed", String(i === 0));
+        });
+        setMode("C");
+      });
+
+      var canonBox = document.getElementById("ch08-canon-box");
+      document.getElementById("ch08-canon").addEventListener("click", function () {
+        var K = R.canonical_fix_indicative;
+        canonBox.style.display = "block";
+        canonBox.innerHTML =
+          "<span class='ch08-verdict-label'>Yes — priced, and it is " + K.status + "</span>" +
+          "Give the completion leg the mass-data likelihood it is missing, g_i(z), from the " +
+          "population's own source-frame mass prior. Then both legs carry the same mass density " +
+          "and any measure change multiplies p_i by one event-wise, h-independent constant — the " +
+          "MAP becomes exactly invariant. Measured, indicatively: the code implicitly uses g = 1 " +
+          "where the median is <strong>" + K.g_frac_median + "</strong>, so the completion leg is " +
+          "currently over-weighted about <strong>" + K.over_weight_factor + "×</strong>. The pure " +
+          "measure correction (g frozen at h = 0.73) moves the 2D MAP 0.8133 → <strong>" +
+          K.map_h_frozen + "</strong>, i.e. −0.058, toward truth. But the full g(h) also injects a " +
+          "+19.0-nat population tilt and lands at <strong>" + K.map_full_g_of_h + "</strong> — " +
+          "which independently reproduces the already-<em>exonerated</em> HA correction (" +
+          K.ha_endpoint_reproduced + ") to " + K.ha_agreement + ", from a completely different " +
+          "starting point. <strong>HA's exoneration stands</strong>: this fix, taken whole, moves " +
+          "the MAP the wrong way. What is new is the decomposition — a −0.058 well-posedness term " +
+          "plus a larger +0.093 model-dependent mass-function term, and it is the second one that " +
+          "needs scrutiny before anyone writes a physics change. " +
+          "<span class='prov-chip'>README_C8.md part (3)</span> " +
+          "<span class='prov-chip'>CLAIM_2D_BIAS_20260730.md C8</span>";
+        Book.renderMath(canonBox);
+      });
+
+      setMode("C");
+
+      table(document.getElementById("ch08-reparam-table"),
+        ["mass measure", "2D MAP (grid)", "2D MAP (refined)", "1D MAP"],
+        R.sweep.map(function (s) {
+          return ["constant C = " + s.C, fmt(s.map_grid, 3), fmt(s.map_parab, 5), fmt(R.one_d.map_parab, 5)];
+        }).concat(R.named_measures.map(function (m) {
+          return [m.label, fmt(m.map_grid, 3), fmt(m.map_parab, 5), fmt(R.one_d.map_parab, 5)];
+        })).concat([[
+          "consistent unit change (all inputs)", fmt(R.named_measures[0].map_grid, 3),
+          fmt(R.named_measures[0].map_parab, 5) + " (exactly invariant)", fmt(R.one_d.map_parab, 5),
+        ]]));
+    });
+
+    // =================================================================
+    // I8.3 — EMRI-889's two faces
+    // =================================================================
+    Book.loadJSON("data/ch08_twofaces.json").then(function (T) {
+      var H = T.h_grid;
+      var st = { ev: "889", chan: "both" };
+
+      var postPlot = Book.themedPlot("ch08-ev-post", [], function () {
+        var L = baseLayout("h = H₀ / 100", "single-event posterior density");
+        L.xaxis.range = [0.595, 0.865];
+        L.shapes = [truthShape(T.h_true)];
+        return L;
+      });
+      var termPlot = Book.themedPlot("ch08-ev-terms", [], function () {
+        var L = baseLayout("h = H₀ / 100", "mixture term (log scale)");
+        L.xaxis.range = [0.595, 0.865];
+        L.yaxis.type = "log";
+        L.shapes = [truthShape(T.h_true)];
+        return L;
+      });
+
+      function draw() {
+        var e = T.events[st.ev];
+        var pt = [];
+        if (st.chan !== "2D") {
+          pt.push({ x: H, y: e.post_1D, mode: "lines", name: "1D", line: { color: c1(), width: 2.6 },
+                    hovertemplate: "h = %{x:.3f}<extra>1D</extra>" });
+        }
+        if (st.chan !== "1D") {
+          pt.push({ x: H, y: e.post_2D, mode: "lines", name: "2D", line: { color: C.two, width: 2.6 },
+                    hovertemplate: "h = %{x:.3f}<extra>2D</extra>" });
+        }
+        postPlot.update(pt);
+
+        var tt = [];
+        if (st.chan !== "2D") {
+          tt.push({
+            x: H, y: e.w_G.map(function (w, i) { return w * e.L_cat_1D[i]; }),
+            mode: "lines", name: "w_G · L_cat (1D)", line: { color: c1(), width: 2.4 },
+            hovertemplate: "h = %{x:.3f}<br>%{y:.3e}<extra>catalogue leg, 1D</extra>",
+          });
+        }
+        if (st.chan !== "1D") {
+          tt.push({
+            x: H, y: e.w_G.map(function (w, i) { return w * e.L_cat_2D[i]; }),
+            mode: "lines", name: "w_G · L_cat (2D)", line: { color: C.two, width: 2.4 },
+            hovertemplate: "h = %{x:.3f}<br>%{y:.3e}<extra>catalogue leg, 2D</extra>",
+          });
+        }
+        tt.push({
+          x: H, y: e.w_G.map(function (w, i) { return (1 - w) * e.L_comp[i]; }),
+          mode: "lines", name: "(1 − w_G) · L_comp — channel-common",
+          line: { color: C.prior, width: 2, dash: "dash" },
+          hovertemplate: "h = %{x:.3f}<br>%{y:.3e}<extra>completion leg</extra>",
+        });
+        termPlot.update(tt);
+
+        var v = document.getElementById("ch08-ev-verdict");
+        if (st.ev === "889") {
+          v.innerHTML =
+            "<span class='ch08-verdict-label'>EMRI-889 — in-catalogue, SNR " + fmt(e.SNR, 0) +
+            ", d_L " + fmt(e.d_L_Gpc * 1000, 1) + " Mpc</span>" +
+            "The completion leg is invisible on this plot for a reason: 889's host <em>is</em> in " +
+            "the catalogue, and its catalogue leg outweighs the completion term by seven orders of " +
+            "magnitude (the completion share of the mixture is " +
+            e.one_minus_w_cat_073_1D.toExponential(2) + " in 1D). So this event is a pure " +
+            "catalogue-leg measurement — and look what the mass channel does to it. In 1D that leg " +
+            "<strong>falls by a factor " + fmt(1 / e.L_cat_1D_ratio_086_over_073, 1) +
+            "</strong> from h = 0.73 to 0.86: real information, and the posterior peaks at <strong>" +
+            fmt(e.argmax_1D, 3) + "</strong>. In 2D the same leg <strong>rises by " +
+            fmt(e.L_cat_2D_ratio_086_over_073, 2) + "×</strong>, the posterior flattens, and its " +
+            "peak moves to <strong>" + fmt(e.argmax_2D, 3) + "</strong>. The information did not " +
+            "get sharper; it changed sign. And it is not stable: across five noise realizations of " +
+            "the same 76-event class this event's channel difference reads " +
+            T.e889_swing.map(function (s) { return sgn(s.diff, 2); }).join(" / ") +
+            " — which is why its class's contribution flips sign between runs.";
+        } else {
+          v.innerHTML =
+            "<span class='ch08-verdict-label'>Event 606 — dark, SNR " + fmt(e.SNR, 0) +
+            ", d_L " + fmt(e.d_L_Gpc, 2) + " Gpc</span>" +
+            "A typical member of the 1512. Its host is <em>not</em> in the catalogue, so the " +
+            "candidate galaxies in its ball are all impostors — and the mixture is a genuine " +
+            "competition: the catalogue leg carries <strong>" + fmt(e.w_cat_073_1D, 3) +
+            "</strong> of the mixture in 1D. Add the mass channel and that share collapses to " +
+            "<strong>" + e.w_cat_073_2D.toPrecision(3) + "</strong> — a factor <strong>" +
+            fmt(e.w_cat_collapse_factor_073, 0) + "</strong> — because the leg itself is suppressed " +
+            "<strong>" + fmt(1 / e.suppression_073, 0) + "×</strong> at h = 0.73. Now watch the " +
+            "<em>shapes</em>: the 1D catalogue leg is nearly flat, the 2D one <em>falls</em> across " +
+            "the grid (its argmax is at the bottom, h = " + fmt(e.argmax_Lcat_2D, 3) + "), and the " +
+            "completion leg rises monotonically to h = " + fmt(e.argmax_Lcomp, 3) + ". With the " +
+            "catalogue leg de-weighted 46-fold, the only thing left with a slope is the " +
+            "channel-common factor. Multiply that across 1512 events and you have the +15.83.";
+        }
+        Book.renderMath(v);
+
+        table(document.getElementById("ch08-ev-table"),
+          ["h", "w_G · L_cat (1D)", "w_G · L_cat (2D)", "(1−w_G) · L_comp", "posterior 1D", "posterior 2D"],
+          H.map(function (h, i) {
+            return [fmt(h, 3),
+                    (e.w_G[i] * e.L_cat_1D[i]).toExponential(3),
+                    (e.w_G[i] * e.L_cat_2D[i]).toExponential(3),
+                    ((1 - e.w_G[i]) * e.L_comp[i]).toExponential(3),
+                    e.post_1D[i].toExponential(3), e.post_2D[i].toExponential(3)];
+          }));
+      }
+
+      var evRow = document.getElementById("ch08-ev-row");
+      evRow.querySelectorAll("[data-ev]").forEach(function (b) {
+        b.addEventListener("click", function () {
+          st.ev = b.getAttribute("data-ev");
+          evRow.querySelectorAll("[data-ev]").forEach(function (o) {
+            o.setAttribute("aria-pressed", String(o === b));
+          });
+          draw();
+        });
+      });
+      var chanRow = document.getElementById("ch08-chan-row");
+      chanRow.querySelectorAll("[data-chan]").forEach(function (b) {
+        b.addEventListener("click", function () {
+          st.chan = b.getAttribute("data-chan");
+          chanRow.querySelectorAll("[data-chan]").forEach(function (o) {
+            o.setAttribute("aria-pressed", String(o === b));
+          });
+          draw();
+        });
+      });
+      draw();
+    });
+  })();
+</script>

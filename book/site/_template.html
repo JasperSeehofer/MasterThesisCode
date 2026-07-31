@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <!--
   _template.html — FROZEN reference template for every chapter page.
 
@@ -10,9 +11,11 @@
   chapter links. Theme, math rendering, and nav highlighting are wired by
   book.js on DOMContentLoaded.
 
-  This page is deployed as-is (no build step). It is wrapped by nothing:
-  the first element is <title> by convention of the existing pages.
+  This page is deployed as-is (no build step). The <!DOCTYPE html> above
+  MUST stay the first line: without it browsers render in quirks mode and
+  KaTeX refuses to run (WIDGET_REQUESTS R-ch07-3, fixed by the integrator).
 -->
+<meta charset="utf-8" />
 <title>Ch. NN — CHAPTER TITLE | EMRI Dark Siren Book</title>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <meta name="description" content="ONE-SENTENCE CHAPTER DESCRIPTION." />

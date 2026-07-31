@@ -1,0 +1,273 @@
+{
+ "_generated_by": "book/generators/gen_ch00.py",
+ "_provenance": "measurements: published literature values, carried verbatim with their arXiv identifiers. arbitration: closed-form toy defined in this file. h_convention: parsed from the pipeline's constants.py.",
+ "measurements": [
+  {
+   "key": "planck",
+   "label": "Planck 2018",
+   "method": "CMB anisotropies, flat \u039bCDM",
+   "family": "early",
+   "H0": 67.4,
+   "sigma": 0.5,
+   "sigma_stat": 0.5,
+   "sigma_sys": null,
+   "note": "Not a distance measurement at all: an inference of H0 from the acoustic scale of the last-scattering surface, under an assumed cosmological model.",
+   "cite": "Planck Collaboration VI (2020), arXiv:1807.06209",
+   "anchor": true
+  },
+  {
+   "key": "shoes",
+   "label": "SH0ES 2022",
+   "method": "Cepheid-calibrated Type Ia supernova distance ladder",
+   "family": "late",
+   "H0": 73.04,
+   "sigma": 1.04,
+   "sigma_stat": null,
+   "sigma_sys": null,
+   "note": "A ladder: geometric parallaxes calibrate Cepheids, Cepheids calibrate supernovae, supernovae reach the Hubble flow. Every rung is calibrated on the rung below it.",
+   "cite": "Riess et al. (2022), arXiv:2112.04510",
+   "anchor": true
+  },
+  {
+   "key": "cchp",
+   "label": "CCHP 2019 (TRGB)",
+   "method": "tip-of-the-red-giant-branch calibrated supernova ladder",
+   "family": "late",
+   "H0": 69.8,
+   "sigma": 1.8788294228055935,
+   "sigma_stat": 0.8,
+   "sigma_sys": 1.7,
+   "note": "A third method that swapped one rung of the ladder and landed between the two anchors, with a systematic term twice its statistical one. It did not arbitrate.",
+   "cite": "Freedman et al. (2019), arXiv:1907.05922",
+   "anchor": false
+  },
+  {
+   "key": "h0licow",
+   "label": "H0LiCOW 2020",
+   "method": "time-delay cosmography, 6 lensed quasars",
+   "family": "late",
+   "H0": 73.3,
+   "sigma": 1.75,
+   "sigma_stat": null,
+   "sigma_sys": null,
+   "note": "Quoted at 2.4% \u2014 under an assumed family of lens mass profiles.",
+   "cite": "Wong et al. (2020), arXiv:1907.04869",
+   "anchor": false,
+   "asym": {
+    "hi": 1.7,
+    "lo": 1.8
+   }
+  },
+  {
+   "key": "tdcosmo",
+   "label": "TDCOSMO IV 2020",
+   "method": "the same technique with the lens mass profile left free",
+   "family": "late",
+   "H0": 74.5,
+   "sigma": 5.85,
+   "sigma_stat": null,
+   "sigma_sys": null,
+   "note": "Same systems, one modelling assumption relaxed: the uncertainty went from ~2% to ~8%. The extra 6% was always there; it was in the assumption, not in the data.",
+   "cite": "Birrer et al. (2020), arXiv:2007.02941",
+   "anchor": false,
+   "asym": {
+    "hi": 5.6,
+    "lo": 6.1
+   }
+  },
+  {
+   "key": "gw170817",
+   "label": "GW170817",
+   "method": "one bright standard siren (GW + electromagnetic counterpart)",
+   "family": "siren",
+   "H0": 70.0,
+   "sigma": 10.0,
+   "sigma_stat": null,
+   "sigma_sys": null,
+   "note": "The first siren H0: distance from general relativity, redshift from the host galaxy's spectrum. Published as 70.0 +12.0 \u22128.0 \u2014 the scale of a single-event measurement.",
+   "cite": "Abbott et al. (2017), arXiv:1710.05835",
+   "anchor": false,
+   "asym": {
+    "hi": 12.0,
+    "lo": 8.0
+   }
+  }
+ ],
+ "tension": {
+  "early": "planck",
+  "late": "shoes",
+  "gap": 5.640000000000001,
+  "gap_frac_of_early": 0.08367952522255193,
+  "gap_frac_of_late": 0.07721796276013143,
+  "sigma_combined": 1.1539497389401325,
+  "n_sigma": 4.887561225309663,
+  "published_n_sigma": 5.0,
+  "published_n_sigma_cite": "Riess et al. (2022), arXiv:2112.04510"
+ },
+ "arbitration": {
+  "sigma_per_event": 10.0,
+  "sigma_per_event_basis": "GW170817, arXiv:1710.05835 (70.0 +12.0 -8.0), rounded",
+  "t_exclude": 3.0,
+  "t_consistent": 2.0,
+  "ceiling_sigma_total": 1.5661417560361517,
+  "ceiling_frac_of_H0": 0.023236524570269312,
+  "n_events_needed_zero_sys": 40.76973255055446,
+  "n_events_needed_zero_sys_int": 41,
+  "examples": [
+   {
+    "n_events": 41,
+    "sigma_sys": 0.0,
+    "sigma_stat": 1.5617376188860608,
+    "sigma_total": 1.5617376188860606,
+    "sigma_total_frac": 0.02317118128911069,
+    "t_far_best_case": 3.0058635170015924,
+    "verdict": "arbitrates",
+    "tag": "just enough events, and an honest zero systematic"
+   },
+   {
+    "n_events": 10000,
+    "sigma_sys": 2.0,
+    "sigma_stat": 0.1,
+    "sigma_total": 2.0024984394500787,
+    "sigma_total_frac": 0.029710659339021936,
+    "t_far_best_case": 2.499493231691619,
+    "verdict": "arbitrates nothing",
+    "tag": "two hundred times more events, with a 3% unknown systematic"
+   },
+   {
+    "n_events": 400,
+    "sigma_sys": 0.5,
+    "sigma_stat": 0.5,
+    "sigma_total": 0.7071067811865476,
+    "sigma_total_frac": 0.010491198533925038,
+    "t_far_best_case": 4.484672936851818,
+    "verdict": "arbitrates",
+    "tag": "a realistic middle: many events and a controlled systematic"
+   }
+  ],
+  "verdict_map": {
+   "n_grid": [
+    1,
+    10,
+    100,
+    1000,
+    10000
+   ],
+   "sys_grid": [
+    0.0,
+    0.5,
+    1.0,
+    1.5,
+    2.0,
+    3.0
+   ],
+   "t_far": [
+    [
+     0.5609744095863135,
+     1.694251461906098,
+     3.909133159660065,
+     5.1885243929041795,
+     5.398179734736139
+    ],
+    [
+     0.5602819789443516,
+     1.6754577708570384,
+     3.6936188732534854,
+     4.713768600327667,
+     4.869311735755293
+    ],
+    [
+     0.5582199708902318,
+     1.622620197435355,
+     3.2128538570159173,
+     3.8184889794012213,
+     3.8997771241316057
+    ],
+    [
+     0.5548333105334078,
+     1.5446780194991805,
+     2.709910398670859,
+     3.0446037250966063,
+     3.085331781985816
+    ],
+    [
+     0.550193893036103,
+     1.4522968485192582,
+     2.2870211339053594,
+     2.47769110647048,
+     2.499493231691619
+    ],
+    [
+     0.537553553797428,
+     1.2585774548211488,
+     1.694251461906098,
+     1.767547478999143,
+     1.7754117505923144
+    ]
+   ],
+   "t_far_asymptote": [
+    5.423076923076923,
+    4.887561225309663,
+    3.909133159660065,
+    3.0899587180636017,
+    2.501951379481558,
+    1.7762920531774167
+   ]
+  },
+  "check_points": [
+   {
+    "n_events": 1,
+    "sigma_sys": 0.0,
+    "mu": 70.0,
+    "sigma_total": 10.0,
+    "t_planck": 0.25967560810823903,
+    "t_shoes": 0.30236918530893553,
+    "verdict": "arbitrates nothing"
+   },
+   {
+    "n_events": 41,
+    "sigma_sys": 0.0,
+    "mu": 67.4,
+    "sigma_total": 1.5617376188860606,
+    "t_planck": 0.0,
+    "t_shoes": 3.0058635170015924,
+    "verdict": "arbitrates for the early-universe value"
+   },
+   {
+    "n_events": 10000,
+    "sigma_sys": 2.0,
+    "mu": 67.4,
+    "sigma_total": 2.0024984394500787,
+    "t_planck": 0.0,
+    "t_shoes": 2.499493231691619,
+    "verdict": "arbitrates nothing"
+   },
+   {
+    "n_events": 400,
+    "sigma_sys": 0.5,
+    "mu": 73.04,
+    "sigma_total": 0.7071067811865476,
+    "t_planck": 6.512511036458979,
+    "t_shoes": 0.0,
+    "verdict": "arbitrates for the late-universe value"
+   },
+   {
+    "n_events": 100,
+    "sigma_sys": 1.0,
+    "mu": 70.2,
+    "sigma_total": 1.4142135623730951,
+    "t_planck": 1.8666666666666645,
+    "t_shoes": 1.617820027291705,
+    "verdict": "arbitrates nothing"
+   }
+  ]
+ },
+ "h_convention": {
+  "symbol": "h",
+  "definition": "H0 / (100 km s^-1 Mpc^-1)",
+  "H": 0.73,
+  "role": "the mock universe's injected truth",
+  "source": "master_thesis_code/constants.py:25",
+  "source_line": "H: float = 0.73  # dimensionless h = H\u2080 / (100 km/s/Mpc), fiducial simulation value"
+ }
+}

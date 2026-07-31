@@ -21,7 +21,7 @@ to the main package and ``results/`` (only ``book/`` is written).
 
 from __future__ import annotations
 
-import importlib
+import subprocess
 import sys
 import time
 from pathlib import Path
@@ -39,19 +39,30 @@ def discover() -> list[str]:
 
 
 def main() -> None:
-    sys.path.insert(0, str(GENERATORS_DIR))
+    """Run every generator in its own subprocess.
+
+    Isolation is deliberate (integrator fix, 2026-07-31): generators resolve
+    their own source checkout (this worktree vs a sibling ``MasterThesisCode``)
+    and import ``master_thesis_code`` from it.  In a single shared process the
+    first import wins for every later generator via ``sys.modules``, which
+    broke ``gen_ch03`` (it needs the sibling checkout's newer package).  A
+    subprocess per generator restores the documented contract that each one is
+    independently re-runnable.
+    """
     failures: list[str] = []
     for name in discover():
-        print(f"--- running {name} ---")
+        print(f"--- running {name} ---", flush=True)
         t0 = time.monotonic()
-        try:
-            module = importlib.import_module(name)
-            module.main()
-        except Exception as exc:  # noqa: BLE001 -- one broken generator must not block the rest
+        result = subprocess.run(
+            [sys.executable, str(GENERATORS_DIR / f"{name}.py")],
+            cwd=GENERATORS_DIR.parent.parent,  # repo root, matching the documented invocation
+            check=False,
+        )
+        if result.returncode != 0:
             failures.append(name)
-            print(f"!!! {name} FAILED: {exc!r}")
+            print(f"!!! {name} FAILED with exit code {result.returncode}")
         dt = time.monotonic() - t0
-        print(f"--- {name} done in {dt:.2f}s ---\n")
+        print(f"--- {name} done in {dt:.2f}s ---\n", flush=True)
     if failures:
         print(f"FAILED generators: {', '.join(failures)}")
         raise SystemExit(1)

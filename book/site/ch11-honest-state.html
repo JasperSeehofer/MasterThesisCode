@@ -1,0 +1,1967 @@
+<!DOCTYPE html>
+<meta charset="utf-8" />
+<!--
+  Doctype + charset are deliberate: without the doctype browsers enter quirks
+  mode and KaTeX refuses to render, so every equation degrades to raw $...$
+  source. _template.html omits both — filed as R-ch07-3 in
+  book/design/WIDGET_REQUESTS.md for the integrator (those files are frozen).
+-->
+<title>Ch. 11 — The State of the Art, Honestly | EMRI Dark Siren Book</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="description" content="The closing chapter: the C1-C11 adjudication board, the two runaways unlocked with the reader's own hands, three measured inconsistencies on one side of the estimator, a confounded attribution, and the pre-registered control still in flight." />
+<link rel="stylesheet" href="vendor/katex/katex.min.css" />
+<link rel="stylesheet" href="css/book.css" />
+
+<style>
+  /* Page-local only. css/book.css is FROZEN; nothing here restyles a shared
+     class — these are elements this chapter introduces. */
+  .ch11-fwd {
+    display: inline-block; font-size: 0.72rem; border: 1px dashed var(--border);
+    border-radius: 999px; padding: 0 0.45em; color: var(--muted); white-space: nowrap;
+  }
+  .ch11-note { font-size: 0.83rem; color: var(--muted); margin: 0.6rem 0 0; }
+  /* mirrors the frozen `.widget .widget-controls label` rule for a non-label
+     caption on the venue button group (a <label for=…> would dangle) */
+  .widget .widget-controls .ch11-ctl-label {
+    font-size: 0.85rem; color: var(--muted); white-space: nowrap;
+  }
+  .ch11-readouts {
+    display: flex; flex-wrap: wrap; gap: 0.4rem 1.2rem; margin: 0.5rem 0 0;
+    font-size: 0.86rem; color: var(--muted);
+  }
+  .ch11-readouts strong { color: var(--accent); font-variant-numeric: tabular-nums; }
+  .ch11-filters { display: flex; flex-wrap: wrap; gap: 0.5rem 1rem; align-items: center; margin: 0.6rem 0; }
+  .ch11-filters label { font-size: 0.8rem; color: var(--muted); }
+  .ch11-filters select, .ch11-controls select {
+    font: inherit; font-size: 0.82rem; padding: 0.2rem 0.35rem;
+    border: 1px solid var(--border); border-radius: 6px;
+    background: var(--paper); color: var(--ink);
+  }
+  .ch11-claim {
+    border: 1px solid var(--border); border-left: 4px solid var(--prior);
+    border-radius: 8px; background: var(--paper-raised);
+    padding: 0.7rem 0.9rem; margin: 0.55rem 0; font-size: 0.9rem;
+  }
+  .ch11-claim.side-completion, .ch11-claim.side-prefactor, .ch11-claim.side-kernel {
+    border-left-color: #D55E00;
+  }
+  .ch11-claim.side-catalogue { border-left-color: #009E73; }
+  .ch11-claim.side-meta { border-left-color: var(--planck); }
+  .ch11-claim.side-both, .ch11-claim.side-measurement { border-left-color: var(--accent); }
+  .ch11-claim h5 { margin: 0 0 0.25rem; font-size: 0.95rem; }
+  .ch11-claim .ch11-claim-id {
+    font-variant-numeric: tabular-nums; font-weight: 700; color: var(--accent);
+    margin-right: 0.4rem;
+  }
+  .ch11-claim .ch11-status {
+    display: block; font-size: 0.78rem; color: var(--muted); margin: 0.15rem 0 0.4rem;
+  }
+  .ch11-claim .ch11-verbatim { font-style: italic; }
+  .ch11-claim .ch11-adj { margin: 0.4rem 0 0; font-size: 0.86rem; }
+  .ch11-claim .ch11-adj-label,
+  .ch11-claim .ch11-route-label {
+    display: block; font-size: 0.66rem; font-weight: 700; letter-spacing: 0.06em;
+    text-transform: uppercase; color: var(--muted); margin-top: 0.45rem;
+  }
+  .ch11-claim .ch11-route { font-size: 0.83rem; color: var(--muted); margin: 0.1rem 0 0; }
+  .ch11-live-dot {
+    display: inline-block; width: 0.5em; height: 0.5em; border-radius: 50%;
+    background: #D55E00; margin-right: 0.3em; vertical-align: 0.05em;
+  }
+  .ch11-verdict {
+    border: 1px solid var(--border); border-left: 4px solid var(--planck);
+    background: var(--paper-raised); border-radius: 8px;
+    padding: 0.7rem 0.9rem; margin: 0.7rem 0 0; font-size: 0.9rem;
+  }
+  .ch11-verdict .ch11-verdict-label {
+    display: block; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.06em;
+    text-transform: uppercase; color: var(--planck); margin-bottom: 0.25rem;
+  }
+  .ch11-collision {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem; margin: 1rem 0;
+  }
+  @media (max-width: 720px) { .ch11-collision { grid-template-columns: 1fr; } }
+  .ch11-collision > div {
+    border: 1px solid var(--border); border-radius: var(--radius);
+    background: var(--paper-raised); padding: 0.8rem 0.9rem; font-size: 0.9rem;
+  }
+  .ch11-collision > div h5 { margin: 0 0 0.4rem; font-size: 0.9rem; }
+  .ch11-collision .ch11-side-a { border-top: 3px solid #009E73; }
+  .ch11-collision .ch11-side-b { border-top: 3px solid #D55E00; }
+  .ch11-prereg {
+    border: 1px solid var(--border); border-top: 3px solid var(--accent);
+    border-radius: var(--radius); background: var(--paper-raised);
+    padding: 1rem 1.1rem; margin: 1.2rem 0;
+  }
+  .ch11-prereg .ch11-stamp {
+    display: block; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.07em;
+    text-transform: uppercase; color: var(--accent); margin-bottom: 0.3rem;
+  }
+  .ch11-2x2 { border-collapse: collapse; font-size: 0.86rem; margin: 0.7rem 0; width: 100%; }
+  .ch11-2x2 th, .ch11-2x2 td {
+    border: 1px solid var(--border); padding: 0.35rem 0.5rem; text-align: center;
+  }
+  .ch11-2x2 th { background: var(--paper-raised); }
+  .ch11-2x2 td.ch11-cellB { background: rgba(0, 114, 178, 0.12); font-weight: 600; }
+  .ch11-2x2 td.ch11-forbidden { color: var(--muted); font-style: italic; }
+  .ch11-threads { margin: 0.8rem 0 0; padding-left: 1.15rem; }
+  .ch11-threads li { margin-bottom: 0.5rem; }
+  .ch11-noanswer {
+    border-left-color: var(--planck) !important;
+  }
+  .ch11-recall {
+    border: 1px dashed var(--border); border-radius: 8px;
+    padding: 0.6rem 0.8rem; margin: 0.8rem 0; font-size: 0.88rem;
+    background: var(--paper-raised);
+  }
+  /* (the former #bias-rail .ch11-pip rules moved into book.css as the shared
+     .bias-rail-pip capability — WIDGET_REQUESTS R-ch11-1, IMPLEMENTED) */
+  @media print { .ch11-claim { break-inside: avoid; } }
+</style>
+
+<div class="book-shell">
+  <header class="book-topbar">
+    <a class="brand" href="index.html">From Bayes&rsquo; Rule to H&#8320;
+      <small>an interactive discovery book</small>
+    </a>
+    <nav class="book-nav" data-nav aria-label="Chapters"><!-- built from js/manifest.js --></nav>
+    <button class="theme-toggle" data-theme-toggle type="button">☽ Dark</button>
+  </header>
+
+  <main class="book-content">
+    <h1>Chapter 11 — The State of the Art, Honestly</h1>
+    <p class="subtitle">
+      Three measured inconsistencies, a confounded attribution, and the control still running.
+    </p>
+
+    <!-- ================= COLD OPEN (B1) ================= -->
+    <div class="callout without">
+      <span class="callout-label">The failure this chapter answers</span>
+      <strong>Failure: everything. Resolution: none yet — and that is the chapter.</strong>
+      Ten chapters built an estimator and spent most of their length trying to break it.
+      This one is the scoreboard, written in the project&rsquo;s own adjudicated language,
+      on the day the adjudication was signed. It resolves nothing, because the project has
+      resolved nothing, and a book that tidied this up would be lying about what research
+      looks like from the inside.
+    </div>
+
+    <p>
+      Here is the delivered state of campaign #53, ten runs, two truth universes, one
+      injected truth <span class="term" data-term="h">$h_{\rm true} = 0.73$</span>:
+    </p>
+
+    <div class="table-scroll">
+      <table class="num-table">
+        <tr>
+          <th>channel</th><th>MAP range, 10 runs</th><th>pull vs truth</th>
+          <th>runs with |pull| &gt; 2</th>
+        </tr>
+        <tr><td>1D (<code>posteriors</code>)</td><td>0.700–0.740</td><td>−1.15 … +0.51</td><td>0/10</td></tr>
+        <tr><td>2D (<code>posteriors_with_bh_mass</code>)</td><td><strong>0.780–0.820</strong></td>
+          <td><strong>+3.4 … +4.5 (mean +4.04)</strong></td><td><strong>10/10</strong></td></tr>
+      </table>
+    </div>
+    <p class="ch11-note">
+      <span class="prov-chip">REALISTIC_READOUT.md §6</span>
+      <span class="prov-chip real">real: seed{61000,62000}/real_r{1..5}</span>
+      &sigma;<sub>H₀</sub> in the 2D channel (1.4–2.5) is comparable to the 1D channel, so
+      the offset is a genuine <strong>+0.07…+0.09 shift in $h$</strong>, not a width
+      artifact; the maximum edge/peak ratio is 0.17, so the 2D posteriors are not railing
+      against the grid — the peak is interior and simply in the wrong place.
+    </p>
+
+    <div class="voice-adjudicator">
+      <span class="voice-label">The readout&rsquo;s own amendment, the day after it was written
+        <span class="badge finding">FINDING</span>
+        <span class="prov-chip">REALISTIC_READOUT.md §6 (amended 2026-07-30)</span>
+      </span>
+      &ldquo;Do not quote a headline from <strong>EITHER</strong> channel of this run. The
+      2D channel is biased <strong>+4σ</strong>; the 1D channel&rsquo;s apparent
+      unbiasedness is a <strong>crossing of two opposing displaced class profiles</strong>
+      (in-cat argmax <strong>0.86</strong>, dark <strong>0.64</strong> in 10/10 runs), with
+      per-event in-catalogue information destroyed (C5, FINDING), and the crossing point is
+      contingent on the <strong>mis-calibrated mixture weight</strong> (C9:
+      <span class="term" data-term="wG">$w_G$</span> model <strong>0.1215</strong> vs
+      realized <strong>0.0523</strong>, binomial <strong>z = −11.86</strong>).&rdquo;
+      <div class="ch11-note" style="margin-top:0.5rem">
+        The struck sentence in that same section — &ldquo;the 1D channel is the defensible
+        one&rdquo; — was retracted by its own author. This book follows the amendment, not
+        the original <span class="prov-chip">BOOK_SOURCES_MAP.md §7.3</span>.
+      </div>
+    </div>
+
+    <p>
+      Everything below is a claim with a status, a provenance tag, an artifact, and — this
+      is the part worth learning — a <em>refutation route</em> that was written down before
+      anyone knew whether it would fire.
+    </p>
+
+    <!-- ================= §1 ================= -->
+    <h2>1. The scoreboard: what an adjudication looks like</h2>
+
+    <p>
+      On 2026-07-30 the project did something a paper never shows you. It wrote eleven
+      numbered claims about its own estimator, tagged each with how it was known, attached
+      to each a specific experiment that would kill it, and then ran the experiments —
+      including on the claims it wanted to keep. Six candidate mechanisms died that day,
+      two of them the claim-author&rsquo;s own.
+    </p>
+    <p>
+      The provenance tags are the load-bearing part. <strong>[LOCAL]</strong> means
+      re-measured from artifacts in the repository, reproducible offline, now.
+      <strong>[DOC]</strong> means read from a committed artifact — a readout, a runbook, a
+      derivation, a code comment. <strong>[INFER]</strong> means a logical step from
+      [LOCAL]/[DOC] facts with <em>no new measurement</em>. A claim that is [INFER] all the
+      way down is not worthless; it is worth exactly the strength of its weakest premise,
+      and saying so on the label is what stops it from being quoted later as a measurement.
+    </p>
+
+    <div class="voice-derivation">
+      <span class="voice-label">How to read the board
+        <span class="prov-chip">CLAIM_2D_BIAS_20260730.md &sect;Provenance legend</span>
+        <span class="prov-chip">gate_b_20260730/ADJUDICATION_20260730.md &sect;1</span>
+      </span>
+      Every <em>status</em> string in the board below is transcribed <strong>verbatim</strong>
+      from the claim file&rsquo;s section heading or the adjudication&rsquo;s per-claim
+      verdict. Where a claim was amended, the amendment is carried in the same block as the
+      claim — never separately, because half of an amended claim is a misrepresentation.
+      Nothing in this book upgrades a CANDIDATE to a RATIFIED, or a FINDING to a fact.
+    </div>
+
+    <!-- ============ I11.2 ============ -->
+    <div class="widget" id="ch11-board-widget">
+      <h4>I11.2 — The Adjudication Board
+        <span class="prov-chip real">real: CLAIM_2D_BIAS_20260730.md (as amended)</span>
+        <span class="prov-chip">gate_b_20260730/ADJUDICATION_20260730.md</span>
+      </h4>
+      <p style="margin-top:0; color:var(--muted); font-size:0.88rem;">
+        <strong>Manipulate</strong> the three filters. <strong>Watch</strong> the count line
+        under them. The board is not a table of contents: it is an argument, and the filter
+        is how you interrogate it. Set <em>side of the estimator</em> to
+        &ldquo;completion / prefactor / kernel&rdquo; and then to &ldquo;catalogue
+        leg&rdquo;, with <em>live only</em> on, and read what comes back.
+      </p>
+      <div class="ch11-filters" id="ch11-board-filters">
+        <label>status
+          <select id="ch11-f-status">
+            <option value="">all</option>
+          </select>
+        </label>
+        <label>provenance tag
+          <select id="ch11-f-tag">
+            <option value="">all</option>
+            <option value="LOCAL">[LOCAL]</option>
+            <option value="DOC">[DOC]</option>
+            <option value="INFER">[INFER]</option>
+            <option value="harness">[LOCAL, harness]</option>
+          </select>
+        </label>
+        <label>side of the estimator
+          <select id="ch11-f-side">
+            <option value="">all</option>
+          </select>
+        </label>
+        <label style="display:flex; gap:0.3rem; align-items:center;">
+          <input type="checkbox" id="ch11-f-live" /> live only
+        </label>
+        <button type="button" class="theme-toggle" id="ch11-f-reset">↺ Reset the board</button>
+      </div>
+      <div class="ch11-readouts" id="ch11-board-count"></div>
+      <div id="ch11-board-list"></div>
+      <div class="ch11-verdict" id="ch11-board-verdict"></div>
+      <details class="num-view">
+        <summary>Show me the numbers</summary>
+        <div class="table-scroll"><table class="num-table" id="ch11-board-table"></table></div>
+      </details>
+      <noscript>
+        <p><strong>Static fallback.</strong> Eleven claims, with their verbatim adjudicated
+        status: <strong>C1</strong> 1D class budget — FINDING, closed [LOCAL, VERIFIED];
+        <strong>C2</strong> channel totals — FINDING, closed [LOCAL, VERIFIED];
+        <strong>C3</strong> dark class owns the channel difference — promoted to FINDING
+        [LOCAL, VERIFIED];
+        <strong>C4</strong> impostor rejection → completion fallback — observations FINDING,
+        mechanism AS STATED REFUTED, replaced by an AMENDED mechanism [LOCAL, VERIFIED, r1];
+        <strong>C5</strong> 58% of in-catalogue hosts rail at the prior edge — FINDING,
+        interpretation AMENDED [LOCAL, VERIFIED, replicated];
+        <strong>C6</strong> attribution confounded, decisive control never run — FINDING
+        (confirmed by Gate A1), resolution in flight [DOC + INFER];
+        <strong>C7</strong> host-z kernel omits selection — promoted to FINDING (measured),
+        with corrected law, scope narrowed [LOCAL, VERIFIED — MEASURED];
+        <strong>C8</strong> 2D posterior reparametrization-dependent — promoted to FINDING
+        (well-posedness defect), cause RELOCATED [LOCAL, VERIFIED];
+        <strong>C9</strong> $w_G$ mis-calibrated against the code&rsquo;s own generator —
+        FINDING, live, gated on cell B [LOCAL, VERIFIED];
+        <strong>C10</strong> the up-pull is prefactor-carried — FINDING [LOCAL, VERIFIED];
+        <strong>C11</strong> completion-leg calibration too small to own the 2D bias —
+        REFUTED as the 2D owner, live as a modest 1D contributor [LOCAL, harness].
+        Four are live: C5, C6, C7, C8, C9. Three of the live inconsistencies (C7, C8, C9)
+        sit on the completion / prefactor / kernel side; none convicts the catalogue leg.</p>
+      </noscript>
+    </div>
+
+    <details class="gw-reader">
+      <summary>&#9656; For the GW reader — what &ldquo;live&rdquo; means here</summary>
+      <p>
+        A claim is <em>live</em> in this book when the project has neither retired it nor
+        shipped a fix: C5, C6, C7, C8 and C9. C1/C2/C3/C10 are closed findings — measured,
+        replicated, no longer in dispute, and not defects in themselves. C4&rsquo;s
+        observations are a closed finding while its <em>mechanism as originally stated</em>
+        is refuted and replaced. C11 is refuted <em>as the owner of the 2D bias</em> and
+        alive as a small contributor to the 1D <strong>+0.017</strong> Option-A residual —
+        a distinction the board keeps because &ldquo;refuted&rdquo; without a scope is how
+        an exoneration becomes a myth.
+      </p>
+      <p>
+        Two standing rules travel with every negative result on this board.
+        <strong>Venue scope:</strong> the <code>volume_trunc</code> and
+        <code>mass_trunc</code> exonerations were both measured on the same 494-event
+        shallow subsample and are explicitly <em>not</em> cross-venue confirmed
+        <span class="prov-chip">BIAS_HISTORY_LEDGER.md §2</span>.
+        <strong>Candidate ground:</strong> <code>[RATIFY-M6]</code> already designates the
+        <code>absolute_marginal</code> + <code>volume_deconv</code> 2D pairing a
+        <span class="badge candidate">CANDIDATE</span> — &ldquo;necessary, not established
+        sufficient&rdquo; — so every 2D number on this page, including the +0.077, sits on
+        designated-candidate ground rather than ratified ground
+        <span class="prov-chip">mass_marginal_2d_kernel.md:1-17, 690-706</span>.
+      </p>
+    </details>
+
+    <!-- ================= §2 ================= -->
+    <h2>2. C5, fairly: a rail that is real, and smaller than it sounds</h2>
+
+    <p>
+      Start with the claim that most invites over-reading. Of the 76 events whose host
+      galaxy <em>is</em> in the catalogue — the ones that are supposed to carry the
+      measurement — <strong>44, or 57.9%</strong>, have their per-event 1D posterior peaking
+      at $h = 0.86$, the top of the prior grid. Median per-event argmax: <strong>0.860</strong>.
+      In the idealized baseline the same 76 events give median <strong>0.730</strong> and
+      4/76 = 5.3% at the edge.
+    </p>
+    <p>
+      The obvious objection is the right one to make first, and the project made it against
+      itself: <em>any</em> bounded grid piles probability at its edge, so a concentration at
+      0.86 could just be a broad, uninformative profile getting clipped. That is a
+      refutation route, and it was executed.
+    </p>
+
+    <div class="voice-adjudicator">
+      <span class="voice-label">C5 — the designated refutation attempt FAILED
+        <span class="badge finding">FINDING</span>
+        <span class="prov-chip">CLAIM_2D_BIAS_20260730.md C5</span>
+        <span class="prov-chip">attack_c5_rail.py</span>
+        <span class="prov-chip">attack_c5_extrap_validation.py</span>
+      </span>
+      Three independent ways, all negative for the artifact hypothesis.
+      <strong>(i)</strong> The railed profiles are genuinely <em>concave</em> at the top:
+      86–96% of railed events have all five second differences negative on the
+      <em>uniformly spaced</em> 0.80–0.86 stretch, with $|d^2|$ about $10^{11}\times$
+      roundoff. <strong>(ii)</strong> Top-$K$ parabola vertices give <em>finite</em> implied
+      peaks at $h_{\rm eff} = 0.93$–$1.05$ (median), stable over $K = 3\ldots9$ in all ten
+      runs, with the extrapolator validated in-band (median error &lt; 0.007 at the relevant
+      standoffs). <strong>(iii)</strong> An independent reconstruction of the single-host
+      kernel on a grid extended to $h = 2.4$ finds <em>interior</em> peaks, median
+      $\approx 1.12$. The 0.86 concentration is a <strong>clipped real runaway</strong>, and
+      it replicates 10/10 runs at 54–67% against a 2.4% flat-surface expectation.
+    </div>
+
+    <p>
+      And now the amendment that must never be separated from it.
+    </p>
+
+    <div class="voice-adjudicator">
+      <span class="voice-label">C5 — fair-framing amendment, BINDING for any write-up
+        <span class="badge finding">FINDING</span>
+        <span class="prov-chip">CLAIM_2D_BIAS_20260730.md C5</span>
+        <span class="prov-chip">ADJUDICATION §1 C5</span>
+      </span>
+      <strong>Per event the rail is cosmetic.</strong> The median peak-to-truth
+      $\Delta \ln p$ is <strong>0.072–0.134 nats = 0.30–0.47 $\sigma_{\rm event}$</strong>
+      (implied per-event $\sigma_h$ 0.235–0.311, versus 0.043–0.053 idealized); only
+      <strong>0–1.3%</strong> of events exceed $1\sigma$. No single in-catalogue event is
+      anomalous. <strong>But it is not noise.</strong> The displacements are coherently
+      same-signed, so they add linearly in the class sum while the class uncertainty grows
+      only as $\sqrt{N}$: the <strong>class-summed</strong> displacement is
+      <strong>+3.4 to +6.1 $\sigma_{\rm class}$</strong> above truth in 8/10 runs, with two
+      independent $\sigma$ routes agreeing and leave-one-out never moving the argmax.
+      A correct estimator under large $\sigma_z$ is <em>wide but centred</em>; a
+      $\ge 3.4\sigma$ coherent class displacement is not that.
+      <strong>&ldquo;Not a centred measurement&rdquo; stands.</strong>
+    </div>
+
+    <p>
+      Both halves are true because they are different summary statistics of the same data.
+      Quote only the per-event number — &ldquo;it&rsquo;s within half a sigma&rdquo; — and
+      you have hidden a &gt;3σ systematic. Quote only &ldquo;58% of hosts rail&rdquo; and
+      you invite the reader to picture 58% of events being individually broken, which they
+      are not. The project made carrying both mandatory. So does this book.
+    </p>
+
+    <details class="gw-reader">
+      <summary>&#9656; For the GW reader — C5 has <em>two</em> contributors, not one</summary>
+      <p>
+        The per-event argmax rail and the class-summed rise are different objects and live
+        in different places.
+      </p>
+      <ul>
+        <li>The <strong>per-event argmax rail lives in the catalogue leg</strong>:
+          <span class="term" data-term="Lcat">$\mathcal L^{\rm cat}$</span> argmax sits at
+          0.86 for <strong>66/74 = 89.2%</strong> of in-catalogue events, and
+          $\mathcal L^{\rm cat}$ carries a median <strong>96.3%</strong> of the in-cat
+          mixture at $h = 0.73$. <strong>C7 is its confirmed mechanism</strong> (§4).</li>
+        <li>The <strong>class-summed mixture rise</strong> (+3.92 nats over 0.73 → 0.86 in
+          1D) is <strong>~82%</strong> carried by the ~9%-weight <em>completion admixture</em>
+          — the catalogue leg&rsquo;s own class sum peaks at <strong>0.760</strong> with a
+          rise of only <strong>+0.80</strong>, because a few golden events&rsquo; large
+          negative tilts nearly cancel many small positive ones (per-event median
+          <strong>+0.308</strong>, <strong>93.2%</strong> positive).</li>
+      </ul>
+      <p>
+        Both push up; they are not in conflict; the leg split is r1-only and labelled as
+        such <span class="prov-chip">ADJUDICATION §1 C5</span>. One warning the adjudicator
+        attached and this book repeats: <strong>do not read the run-to-run MAP scatter
+        (sd 0.006–0.008) as robustness against class composition.</strong> The Cramér–Rao
+        file is byte-identical across realizations of a seed, so class membership never
+        varied between those runs. The next section varies it on purpose.
+      </p>
+    </details>
+
+    <div class="callout defect">
+      <span class="callout-label">Trap &mdash; &ldquo;The 1D channel is fine; only 2D is broken.&rdquo;</span>
+      C5 says the opposite. The 1D headline is the <em>crossing point</em> of two railed,
+      opposing runaways, and its centredness is contingent on the same mis-calibration:
+      remove C9&rsquo;s defect in the diagnostic counterfactual and the 1D mean goes to
+      <strong>0.643</strong> <span class="prov-chip">CLAIM_2D_BIAS_20260730.md C9</span>.
+      The project explicitly does <strong>not</strong> claim the 1D channel is trustworthy
+      <span class="prov-chip">CLAIM_2D_BIAS_20260730.md &sect;&ldquo;What is explicitly NOT claimed&rdquo; item 3</span>.
+    </div>
+
+    <!-- ================= §3 ================= -->
+    <h2>3. The two runaways, unlocked</h2>
+
+    <p>
+      In Chapter 5 you split the event set in two and found the two halves disagreeing:
+      the 76 in-catalogue events peaking at <strong>0.86</strong>, the 1512 dark events at
+      <strong>0.64</strong>, and the combined answer sitting between them at
+      <strong>0.700–0.742</strong>. You were asked to hold that thought for six chapters
+      <span class="ch11-fwd">⏮ Ch 5</span>. Here is what it was for.
+    </p>
+    <p>
+      Two readings were on the table. <strong>Reading A:</strong> both branches are fine,
+      the classes genuinely carry different statistical power, and their crossing is a
+      legitimate combination — that is what combining evidence <em>is</em>.
+      <strong>Reading B:</strong> at least one branch is tilted, and the crossing is a
+      coincidence of two opposing errors, in which case the &ldquo;measurement&rdquo; is not
+      centred on truth, it is <em>balanced</em> there.
+    </p>
+    <p>
+      Those two readings make different predictions about something you can measure:
+      <strong>leverage</strong>. Under reading A, small perturbations to the class
+      composition should barely move the answer, because each class is separately informative
+      about $h$ and they agree. Under reading B, the answer sits where two steep opposing
+      slopes happen to cross, so a small change in the relative weight of the two classes
+      slides the crossing point a long way.
+    </p>
+
+    <div class="voice-derivation">
+      <span class="voice-label">The leverage of a crossing
+        <span class="prov-chip">attack_c5_leverage.py:160-200</span>
+        <span class="prov-chip">attack_c5_class_weight.py</span>
+      </span>
+      Write the combined log-posterior as the sum of two class profiles,
+      $S(h) = S_{\rm in}(h) + S_{\rm dk}(h)$, and reweight the in-catalogue class by
+      $\lambda = 1+\varepsilon$:
+      $$ S_\lambda(h) \;=\; \lambda\,S_{\rm in}(h) \;+\; S_{\rm dk}(h), \qquad
+         h^*(\lambda) \;=\; \arg\max_h S_\lambda(h). $$
+      Differentiating the stationarity condition $S'_\lambda(h^*) = 0$ gives the leverage
+      $$ \frac{dh^*}{d\varepsilon} \;=\; -\,\frac{S'_{\rm in}(h^*)}{S''_{\rm tot}(h^*)} . $$
+      A well-conditioned combination has a small class slope over a large total curvature.
+      A crossing has the opposite: <em>each</em> class is steeply sloped at $h^*$ (they must
+      be, to cross) while their sum is nearly flat there. The natural size of
+      $\varepsilon$ is the Poisson fluctuation of the class count,
+      $\pm 1/\sqrt{N_{\rm class}}$ — a statistical nothing, not a modelling choice.
+    </div>
+
+    <!-- ============ predict, then reveal ============ -->
+    <div class="widget" data-predict-id="ch11-leverage-guess">
+      <h4>Predict, then reveal — how much can a class-count fluctuation be worth?</h4>
+      <p style="margin-top:0;">
+        You are about to reweight the in-catalogue class by $\pm 1/\sqrt{76} = \pm 11.5\%$ —
+        the size of a Poisson fluctuation in how many of the 1588 events happened to have a
+        catalogued host. Nothing about the physics changes; nothing about the data changes.
+        How far does the combined MAP move in the realistic venue? Commit before you drag
+        anything.
+      </p>
+      <div class="predict-row" id="ch11-predict-1" data-predict-id="ch11-leverage-guess">
+        <button type="button" data-predict="a">&lt; 0.001 in $h$</button>
+        <button type="button" data-predict="b">~0.005</button>
+        <button type="button" data-predict="c">up to ~0.025</button>
+        <button type="button" data-predict="d">it rails to an edge</button>
+      </div>
+      <div class="reveal">
+        <strong>(c).</strong> Across the ten realistic runs the largest
+        $\pm 1/\sqrt{N}$ shift is <strong>0.024904</strong> in $h$ (seed61000 / r5) — about
+        2.5 km s⁻¹ Mpc⁻¹, comparable to the entire Hubble tension this book opened with.
+        The <em>same gesture</em> on the two idealized baselines moves the MAP by
+        <strong>0.000006</strong> and <strong>0.000015</strong>: zero to four decimal places.
+        That contrast is the measurement. It is strong evidence for reading B.
+        <span class="prov-chip real">real: c5_rail_results.json</span>
+        <span class="prov-chip">CLAIM_2D_BIAS_20260730.md C5</span>
+      </div>
+    </div>
+
+    <!-- ============ I11.1 ============ -->
+    <div class="widget" id="ch11-i111">
+      <h4>I11.1 — The Two Runaways, Unlocked
+        <span class="prov-chip real">real: c5_rail_results.json (_S_in / _S_dk), 12 venues</span>
+        <span class="prov-chip">41-point h grid, 1588 / 1542 events</span>
+      </h4>
+      <p style="margin-top:0; color:var(--muted); font-size:0.88rem;">
+        <strong>Manipulate</strong> $\lambda$, the weight on the in-catalogue class&rsquo;s
+        summed log-likelihood ($\lambda = 1$ is the delivered result; $\lambda = 0$ deletes
+        the class; the shaded band is $1 \pm 1/\sqrt{N_{\rm in}}$).
+        <strong>Watch</strong> the top panel: the two class curves never move — only their
+        <em>relative height</em> does — and the combined peak slides between them.
+        <strong>Then switch venue</strong> to idealized and do it again. The same gesture,
+        on the same code, on a mock with exact host redshifts, does nothing.
+      </p>
+      <div class="widget-controls ch11-controls">
+        <span class="ch11-ctl-label" id="ch11-venue-label">Venue:</span>
+        <div class="toggle-row" id="ch11-venue-row" role="group" aria-labelledby="ch11-venue-label">
+          <button type="button" data-venue="realistic" aria-pressed="true">realistic (#53)</button>
+          <button type="button" data-venue="idealized">idealized (#51)</button>
+        </div>
+        <label for="ch11-run">Run:</label>
+        <select id="ch11-run"></select>
+      </div>
+      <div class="widget-controls">
+        <label for="ch11-lambda">Class weight $\lambda$ on the in-catalogue class:</label>
+        <input id="ch11-lambda" type="range" aria-describedby="ch11-lev-readouts" />
+        <span class="readout">$\lambda$ = <strong id="ch11-lambda-readout">1.000</strong></span>
+        <button type="button" id="ch11-poisson-minus" class="theme-toggle">Poisson −1σ</button>
+        <button type="button" id="ch11-poisson-plus" class="theme-toggle">Poisson +1σ</button>
+        <button type="button" id="ch11-restore" class="theme-toggle">↺ Restore the delivered weighting (λ = 1)</button>
+      </div>
+      <div id="ch11-class-plot" class="widget-plot" style="min-height:300px"></div>
+      <div id="ch11-map-plot" class="widget-plot" style="min-height:300px"></div>
+      <div class="ch11-readouts" id="ch11-lev-readouts">
+        <span>combined MAP <strong id="ch11-map-readout">&mdash;</strong></span>
+        <span>shift from $\lambda = 1$: <strong id="ch11-shift-readout">&mdash;</strong></span>
+        <span>in-cat only <strong id="ch11-incat-readout">&mdash;</strong></span>
+        <span>dark only <strong id="ch11-dark-readout">&mdash;</strong></span>
+        <span>published max $\pm1/\sqrt{N}$ shift <strong id="ch11-poisson-readout">&mdash;</strong></span>
+      </div>
+      <p class="ch11-note">
+        <strong>Why one slider covers a two-class reweight.</strong> Scaling <em>both</em>
+        class profiles by a common factor adds a constant to $S$ and cannot move an argmax,
+        so the whole two-parameter Poisson family
+        $\bigl(f_{\rm in} S_{\rm in} + f_{\rm dk} S_{\rm dk}\bigr)$ collapses onto the single
+        effective weight $\lambda = f_{\rm in}/f_{\rm dk}$. The two buttons therefore land on
+        the extreme combinations, $\lambda = (1+1/\sqrt{N_{\rm in}})/(1-1/\sqrt{N_{\rm dk}})$
+        and its inverse-signed partner — the same six configurations the attack script scanned.
+        <strong>One honesty note.</strong> The published $\pm1/\sqrt{N}$ figure in the readout
+        above uses the attack script&rsquo;s <em>three</em>-point MAP refinement; this
+        page&rsquo;s live $\lambda$ readout uses the $\lambda$-scan&rsquo;s <em>five</em>-point
+        one, because $\lambda$ is what you are dragging. On a surface this flat the two
+        refinements disagree in the third to fourth decimal — which is itself the
+        chapter&rsquo;s point, not a bug in either. Both are tabulated below.
+      </p>
+      <div class="ch11-verdict" id="ch11-lev-verdict"></div>
+      <p class="ch11-note">
+        <strong>Provenance, precisely.</strong> The two class profiles are the
+        adjudicator&rsquo;s own <code>_S_in</code> / <code>_S_dk</code> arrays from
+        <code>c5_rail_results.json</code>, max-subtracted per class (an additive constant in
+        $h$, so no argmax changes). The MAP refinement is the attack scripts&rsquo; own —
+        a five-point parabola vertex for the $\lambda$-scan
+        (<code>attack_c5_class_weight.py:55-63</code>) and a three-point vertex for the
+        Poisson reweight (<code>attack_c5_rail.py:185-193</code>) — transcribed so this
+        page reproduces their published numbers rather than approximating them. The
+        generator gates all 60 $\lambda$-scan values and all 72 Poisson MAPs against those
+        two JSONs at $&lt;10^{-6}$. The $h$ grid is non-uniform (0.01 on [0.60, 0.65] and
+        [0.80, 0.86], 0.005 between); nothing here differentiates across a seam.
+      </p>
+      <details class="num-view">
+        <summary>Show me the numbers</summary>
+        <div class="table-scroll"><table class="num-table" id="ch11-lev-table"></table></div>
+        <p class="ch11-note" id="ch11-lev-flag"></p>
+      </details>
+      <noscript>
+        <p><strong>Static fallback.</strong> Top panel: two class-summed posteriors over the
+        same 41-point $h$ grid. In the realistic venue the in-catalogue class (76 events)
+        peaks at the grid edge <strong>0.860</strong> and the dark class (1512 events) peaks
+        at <strong>0.640</strong>, in 10/10 runs; the combined posterior peaks between them
+        at 0.700–0.742. In the idealized venue the same two classes peak at
+        <strong>0.730</strong> (in-cat, = truth) and <strong>0.600</strong> (dark), combining
+        to 0.730. Bottom panel: combined MAP as a function of the in-catalogue class weight
+        $\lambda$. Realistic: $\lambda = 0 \to 0.635$–0.644, $\lambda = 2 \to +0.011$…+0.049
+        above the delivered MAP, and a $\pm 1/\sqrt{N}$ Poisson reweight moves it by up to
+        <strong>0.024904</strong>. Idealized: the same curve is flat to four decimals —
+        $\pm 1/\sqrt{N}$ moves the MAP by <strong>0.000006</strong> (seed61000) and
+        <strong>0.000015</strong> (seed62000), and dropping the entire in-catalogue class
+        ($\lambda = 0$) is the only thing that moves it, to the grid edge 0.600.</p>
+      </noscript>
+    </div>
+
+    <div class="voice-adjudicator">
+      <span class="voice-label">What this measures, and the discount that travels with it
+        <span class="badge finding">FINDING</span>
+        <span class="prov-chip">CLAIM_2D_BIAS_20260730.md C5</span>
+        <span class="prov-chip">book/design/flags/ch11_FLAGS.md F-ch11-1</span>
+      </span>
+      The $\lambda$-scan and the $\pm 1/\sqrt{N}$ shift reproduce the adjudicated numbers
+      exactly. The <em>leverage ratio</em> $dh^*/d\varepsilon$ relative to the idealized
+      baseline is quoted in the claim file and the adjudication as
+      <strong>1500–2400×</strong>; recomputing it from the adjudicator&rsquo;s own
+      <code>c5_leverage_results.json</code> gives <strong>142×–2458×</strong> across the ten
+      runs, median <strong>197×</strong>. This book does not reconcile the two: both are
+      printed, both are chipped, and the disagreement is logged. What is <em>not</em> in
+      question is the direction and the order of the effect, and the fact that the same
+      gesture is worth <strong>0.0000</strong> idealized.
+      <div class="ch11-note" style="margin-top:0.5rem">
+        The adjudicator attached a discount to the whole family of numbers in this section,
+        and it applies to C9&rsquo;s counterfactual too: <em>in a near-flat likelihood
+        surface, many ±10-nat interventions move the MAP a lot, so &ldquo;my change moved
+        the answer toward truth&rdquo; is nearly no evidence at all.</em> Leverage cuts
+        both ways — it is why the crossing is fragile <em>and</em> why a fix that improves
+        the number proves little.
+      </div>
+    </div>
+
+    <!-- ================= §4 ================= -->
+    <h2>4. Three measured inconsistencies, all on one side</h2>
+
+    <p>
+      Three things about this estimator are now measured to be internally inconsistent —
+      not &ldquo;biased&rdquo;, which requires knowing the truth, but <em>inconsistent with
+      the project&rsquo;s own model, code or generator</em>. That is a stronger and cheaper
+      kind of finding: you can establish it without ever asking whether $h = 0.73$.
+    </p>
+
+    <h3>C7 — the host-redshift kernel integrates against the wrong prior</h3>
+    <p>
+      The numerator&rsquo;s host-redshift kernel weights candidate redshifts by the
+      <em>cosmic</em> volume prior <span class="term" data-term="wpop">$w_{\rm pop} = (dV_c/dz)/(1+z)$</span>
+      with no <span class="term" data-term="pdet">$p_{\rm det}$</span> and no catalogue
+      selection — i.e. it deconvolves a wide photometric redshift against a monotonically
+      rising prior that never turns over. Chapter 7 showed you the shift this produces and
+      the measured law <span class="ch11-fwd">⏮ Ch 7</span>:
+    </p>
+    <div class="voice-adjudicator">
+      <span class="voice-label">C7 — the corrected law, measured on the code&rsquo;s own numerator
+        <span class="badge finding">FINDING</span>
+        <span class="prov-chip">CLAIM_2D_BIAS_20260730.md C7</span>
+        <span class="prov-chip">gate_b_20260730/C7_README.md</span>
+      </span>
+      $$ \frac{h_{\rm eff}}{h_{\rm true}} \;=\;
+         \frac{1+\sqrt{1+12\,(\sigma_z/z)^2}}{2} \;\longrightarrow\; 1 + 3\,(\sigma_z/z)^2 ,
+         \qquad \text{rail threshold } \sigma_z/z > 0.256 . $$
+      Measured, not predicted: the driver validated against <code>fixed_quad</code> at
+      $0.0$, kernel $h$-invariance $9.1\times10^{-16}$, no quadrature aliasing; the
+      $\sigma_z \to 0$ gate passes with log-log slope 1.99 and coefficient $\to 3$.
+      Confronted with production rather than merely predicted: the observed in-catalogue
+      ball-numerator tilt is median <strong>+0.308 nats, 93.2% positive</strong>, against a
+      prediction of +0.33…+0.39 at $\sigma_z/z$ 0.35–0.65 — and against
+      <strong>−408 nats, 0% positive</strong> for the point kernel. <em>This is the
+      confirmed mechanism of C5&rsquo;s per-event catalogue-leg rail.</em>
+      The claim file&rsquo;s original $2(\sigma_z/z)^2$ form understates by 1.35–1.5× and
+      is superseded; this book uses only the corrected law.
+    </div>
+
+    <p>
+      And here is where an honest book has to stop and show you a collision instead of a
+      conclusion.
+    </p>
+
+    <div class="ch11-collision">
+      <div class="ch11-side-a">
+        <h5><span class="badge ratified">RATIFIED</span> G2b says the weight is right</h5>
+        <p style="margin-top:0.3rem">
+          The ratified derivation <strong>confirmed</strong> $w_{\rm pop} = (dV_c/dz)/(1+z)$,
+          <strong>without</strong> $p_{\rm det}$, as &ldquo;the unique weight consistent with
+          the project&rsquo;s own rate model and with every selection integral&rdquo; —
+          exactly $h$-independent, reducing correctly to the point kernel as
+          $\sigma_z \to 0$. That $h$-independence is protected by a <strong>binding
+          regression gate</strong>.
+        </p>
+        <p style="margin-bottom:0">
+          <span class="prov-chip">G2b_host_z_volume_prior.md:413-436</span>
+          <span class="prov-chip">PRODUCTION-KERNEL-FIX-SCOPING:170-180 gate 6</span>
+        </p>
+      </div>
+      <div class="ch11-side-b">
+        <h5><span class="badge finding">FINDING</span> C7 says the same weight inflates</h5>
+        <p style="margin-top:0.3rem">
+          The <em>same</em> weight, measured at finite $\sigma_z/z$ against a
+          $z$-proportional numerator window, inflates the recovered $h$ by
+          $1+3(\sigma_z/z)^2$ and rails above $\sigma_z/z = 0.256$. At the measured host
+          widths $\sigma_z/z = 0.25$–0.49 that is <strong>+16% to +49%</strong>,
+          $h_{\rm eff} = 0.85$–1.11.
+        </p>
+        <p style="margin-bottom:0">
+          <span class="prov-chip">CLAIM_2D_BIAS_20260730.md C7</span>
+          <span class="prov-chip">c7_kernel_measure_results.json</span>
+        </p>
+      </div>
+    </div>
+
+    <p>
+      They are answers to different questions. G2b establishes which weight is
+      <em>uniquely consistent</em> with the rate model and the selection integrals, and
+      proves the limiting behaviour. C7 measures what that weight <em>does</em> at finite
+      width when the numerator&rsquo;s integration window is proportional to $z$. Both are
+      correct about what they measured; the premise of one and the finite-$\sigma_z$
+      behaviour of the other are in tension. The project&rsquo;s binding rule is therefore
+      not &ldquo;the kernel is wrong&rdquo; but: <strong>any C7 fix must explicitly supersede
+      G2b, and must not silently contradict it</strong>. This book does not pick a side, and
+      it may not say &ldquo;the volume kernel is calibrated, full stop&rdquo; nor &ldquo;the
+      kernel is wrong, settled&rdquo;.
+    </p>
+    <p>
+      Two further constraints on anyone reaching for the obvious fix. First, the
+      <em>measured historical failure mode</em> of this deconvolution at large $\sigma_z/z$
+      was <strong>over</strong>-correction — the opposite sign to where a C7 fix pushes
+      <span class="prov-chip">ledger #62 / #68</span>. Second, C7 is
+      <strong>channel-common</strong>: <code>prior_num</code> multiplies both numerators
+      identically, so C7 is <em>not</em> a candidate for the 2D-versus-1D difference at all;
+      and it acts <em>against</em> the dark class&rsquo;s rail, because dark events sit at
+      $\sigma_z/z \approx 0.10$ where $K = 1.03$. The decider is the pre-registered cell B,
+      which uses the true cluster parent catalogue and is therefore the staleness-free
+      magnitude check (§5).
+    </p>
+
+    <h3>C8 — a number that moves when you change the units</h3>
+    <p>
+      Chapter 8 walked the mass coordinate <span class="ch11-fwd">⏮ Ch 8</span>. Rescale it
+      by an arbitrary constant <span class="term" data-term="Cscale">$C$</span> — a pure
+      bookkeeping choice, no physics — and the 2D MAP walks across the grid:
+    </p>
+    <div class="table-scroll">
+      <table class="num-table">
+        <tr><th>mass-coordinate rescale $C$</th><th>1</th><th>0.3</th><th>0.1</th><th>&le; 0.01</th></tr>
+        <tr><td>2D MAP</td><td><strong>0.81329</strong></td><td>0.78107</td><td>0.74440</td>
+          <td><em>rails at 0.600</em></td></tr>
+        <tr><td>1D MAP</td><td colspan="4"><strong>bitwise invariant across the whole sweep</strong></td></tr>
+      </table>
+    </div>
+    <p class="ch11-note">
+      <span class="prov-chip">CLAIM_2D_BIAS_20260730.md C8</span>
+      <span class="prov-chip">gate_b_20260730/c8_reparam.py</span>
+      Sensitivity $d(\mathrm{MAP}_{\rm 2D})/d\ln C = +0.031$ per e-fold; reproduced from the
+      claim to $\le 10^{-3}$ (the residual is the MAP-refinement convention).
+    </p>
+
+    <div class="voice-adjudicator">
+      <span class="voice-label">C8 — well-posedness defect; the stated cause was REFUTED and relocated
+        <span class="badge finding">FINDING</span>
+        <span class="prov-chip">CLAIM_2D_BIAS_20260730.md C8</span>
+        <span class="prov-chip">gate_b_20260730/README_C8.md</span>
+      </span>
+      It is <strong>not</strong> &ldquo;a 4D numerator against a 3D
+      <span class="term" data-term="Dh">$D(h)$</span>&rdquo;: $D$, $\beta_G$,
+      $\beta_{\bar G}$ and $\Sigma_{\rm glob}$ are <em>all</em> mass-dimensionless, so
+      mass-marginalising $D$ could not restore invariance. The mismatch is
+      <strong>between the two numerator legs</strong> — the 2D catalogue leg carries exactly
+      one mass density (<code>mz_integral</code>), the completion leg carries none — and the
+      code silently hard-wires the measure to $dM_z / M_{z,{\rm det},i}$, <em>the
+      event&rsquo;s own measured detector-frame mass</em> (span
+      $1.33\times10^5$–$1.63\times10^6\,M_\odot$, a factor 12; swapping in a constant of the
+      same geometric mean already moves the MAP by 0.0056). A <em>consistent</em> physical
+      unit change $M \to kM$ of all inputs is exactly invariant — so the walk is arbitrary,
+      not a physical scale.
+    </div>
+
+    <p>
+      This is the claim that does not need the truth. A published 2D number that moves with
+      a unit convention is not a measurement with a systematic; it is not yet a number.
+      The fix is identified and <em>priced</em>, which is why it has not shipped: give the
+      completion leg its missing dark-host mass likelihood, and the pure measure part moves
+      2D <strong>0.8133 → 0.7558</strong> (−0.058, agreeing with the constant-$C$ sweep at
+      $C \approx 0.135$) — but the <em>full</em> fix adds a <strong>+19.0-nat</strong>
+      population tilt and lands at <strong>0.84917</strong>, the wrong direction, and
+      independently reproduces the previously exonerated HA endpoint 0.8492 to
+      $3\times10^{-5}$. The measure part is robust; the population part is
+      Babak-M1-model-dependent. Shipping them together would import a population-model term
+      into a well-posedness repair.
+    </p>
+
+    <h3>C9 — the model&rsquo;s mixture weight disagrees with the code&rsquo;s own generator</h3>
+    <p>
+      <span class="term" data-term="wG">$w_G$</span> is the probability that a detected
+      event&rsquo;s host is in the catalogue. The estimator models it as
+      $\beta_G/D$ and evaluates <strong>0.1215037</strong> at $h = 0.73$. The same code&rsquo;s
+      simulation realized <strong>164 catalogued hosts out of 3135 detections</strong> across
+      both truth seeds — <strong>0.05231</strong>. Binomial <strong>$z = -11.86$</strong>.
+    </p>
+
+    <div class="voice-adjudicator">
+      <span class="voice-label">C9 — localized, corroborated two ways, and live
+        <span class="badge finding">FINDING</span>
+        <span class="prov-chip">CLAIM_2D_BIAS_20260730.md C9</span>
+        <span class="prov-chip">c9_darkdraw_check.py</span>
+      </span>
+      The discrepancy localizes to the catalogue&rsquo;s <em>relative detection
+      efficiency</em>: $\beta_G$ weights the completeness $f(z)$ by the
+      <strong>pool-marginal (population-mass)</strong> $p_{\rm det}$, while
+      Malmquist-selected catalogue hosts carry heavier $M$–$\sigma$ black holes. Two
+      independent suppression measures agree to <strong>0.2σ</strong>
+      ($r(0.73) = 0.39248$ from the run&rsquo;s own logs vs realized $0.3991 \pm 0.0312$),
+      and a mass-aware $w_G = 0.05149$ gives $z = +0.21$. The defect
+      <strong>extends to the dark side</strong>: the realized detected dark-host redshift
+      distribution is skewed high against $\beta_{\bar G}$&rsquo;s own coded integrand,
+      <strong>KS $D = 0.0863$, $p = 1.08\times10^{-19}$</strong> on 2971 events, measured
+      against the production injection pool with a verified fingerprint. Same character,
+      smaller magnitude, same fix track.
+    </div>
+
+    <div class="callout defect">
+      <span class="callout-label">Do not re-try &mdash; the exonerated fix <em>form</em>, not the defect</span>
+      Re-deriving $w_G$ as a membership-conditioned inverse — the obvious repair — was
+      tried. It did not remove the tilt; it <strong>relocated</strong> it to the host branch
+      (+94…+455 nats, 12/12 configurations fail) <span class="prov-chip">ledger #61</span>.
+      That exonerated the <em>fix form</em>. <strong>C9 the defect is live.</strong>
+      Relocating is not removing, and the ledger keeps the difference so nobody spends the
+      cycle twice.
+    </div>
+
+    <h3>C10 — and the sentence this book is forbidden to write</h3>
+    <p>
+      One more measurement belongs here, because it governs how the previous three may be
+      described. Over $h: 0.73 \to 0.81$, the budget splits like this:
+    </p>
+    <div class="table-scroll">
+      <table class="num-table">
+        <tr><th>term</th><th>total</th><th>dark</th><th>in-cat</th></tr>
+        <tr><td>$N\,\Delta\ln(1-w_G)$ &mdash; the <strong>prefactor</strong></td>
+          <td><strong>+31.55</strong></td><td>+30.04</td><td>+1.51</td></tr>
+        <tr><td>$\Sigma\,\Delta\ln \mathcal L^{\rm comp}$ &mdash; the completion likelihood</td>
+          <td><strong>−3.11</strong></td><td><strong>−22.72</strong></td><td>+19.61</td></tr>
+      </table>
+    </div>
+    <p class="ch11-note">
+      <span class="prov-chip">CLAIM_2D_BIAS_20260730.md C10</span> Only <strong>39.1%</strong>
+      of dark events have a positive completion tilt.
+    </p>
+    <div class="callout defect">
+      <span class="callout-label">Trap &mdash; &ldquo;The completion term pulls the answer up.&rdquo;</span>
+      It does not. <span class="term" data-term="Lcomp">$\mathcal L^{\rm comp}$</span> pulls
+      <strong>down</strong> for dark events, by −22.72 nats. The up-pull is carried by the
+      <strong>$(1-w_G)$ prefactor</strong>, +31.55. This is not pedantry: the two live in
+      different parts of the estimator, respond to different fixes, and the sentence
+      &ldquo;the completion term pulls up&rdquo; is what made the original C4 mechanism read
+      plausible for a month before it was refuted <span class="prov-chip">C10</span>.
+    </div>
+
+    <div class="ch11-verdict">
+      <span class="ch11-verdict-label">The direction &mdash; and why it is not a verdict</span>
+      All three measured internal inconsistencies — <strong>C7</strong> (kernel selection
+      omission), <strong>C8</strong> (missing mass measure), <strong>C9</strong>
+      ($w_G$ calibration) — sit on the <strong>completion / prefactor / kernel</strong> side.
+      <strong>None convicts the catalogue leg.</strong> That is a real asymmetry and it
+      should update you. But &ldquo;we found problems on side A and none on side B&rdquo; is
+      evidence about <em>where we looked</em> as much as about where the problems are — and
+      the catalogue leg&rsquo;s mass de-weighting, the mechanism that carries the 2D channel
+      difference, is the 2D channel&rsquo;s <em>intended function</em>, which makes it hard
+      to convict on principle. The leg adjudication is now
+      <strong>an evidence-weighted question, not an open coin</strong>: a direction, not a
+      verdict. <span class="prov-chip">CLAIM_2D_BIAS_20260730.md §&ldquo;What is explicitly NOT claimed&rdquo; item 1, as appended 2026-07-30</span>
+    </div>
+
+    <!-- ================= §5 ================= -->
+    <h2>5. The confound, and the control that is still running</h2>
+
+    <p>
+      Everything above compares campaign #53 to campaign #51. So it is worth asking the
+      question an experimentalist asks first: <em>what exactly changed between them?</em>
+    </p>
+
+    <div class="table-scroll">
+      <table class="ch11-2x2">
+        <tr><th></th><th>catalogue</th><th>host-z kernel</th><th>normalization</th></tr>
+        <tr><th>#51 idealized</th><td>unscattered</td><td><strong>point ($\delta$)</strong></td>
+          <td><strong><code>generator_marginal</code></strong></td></tr>
+        <tr><th>#53 realistic</th><td>scattered</td><td><strong><code>volume_deconv</code></strong></td>
+          <td><strong><code>absolute_marginal</code></strong></td></tr>
+      </table>
+    </div>
+
+    <p>
+      Three variables moved at once. And no run anywhere in the project varies the
+      <em>estimator</em> at fixed catalogue. That means the sentence everyone wanted to
+      write — &ldquo;the bias switches on when you make the catalogue realistic&rdquo; — is
+      <strong>not established</strong>, no matter how natural it sounds.
+    </p>
+    <p>
+      There was one candidate control: the $\sigma \to 0$ gate, which runs the pipeline with
+      the scatter turned off and checks byte-identity against the idealized baseline. If
+      that control had run #53&rsquo;s estimator, it would have isolated the catalogue
+      variable and the confound would dissolve. The refutation route was one file:
+      <em>read <code>sig0_control/run_metadata_0.json</code></em>.
+    </p>
+
+    <div class="voice-adjudicator">
+      <span class="voice-label">C6 — confirmed by Gate A1; the one-file check was executed
+        <span class="badge confounded">CONFOUNDED</span>
+        <span class="prov-chip">CLAIM_2D_BIAS_20260730.md C6</span>
+        <span class="prov-chip">ADJUDICATION §1 C6</span>
+      </span>
+      <code>sig0_control</code> ran <strong><code>generator_marginal</code> + the point
+      kernel</strong> — that is, #51&rsquo;s estimator. The inference was correct and the
+      claim did not collapse: <strong>no estimator control exists anywhere.</strong>
+      Its diagnostics carry the <code>generator_marginal</code> estimand
+      ($w_G(0.73) = 0.0496786$ against the realistic runs&rsquo; $0.1215039$), so it is not a
+      $\sigma\to0$ limit of the same estimator and any #51↔#53 comparison routed through it
+      is estimand-confounded <span class="prov-chip">BOOK_SOURCES_MAP.md §7.6</span>.
+    </div>
+
+    <p>
+      So the project designed the missing control, and — this is the part worth stealing —
+      <strong>wrote down what it expected before the answer existed.</strong>
+    </p>
+
+    <div class="ch11-prereg">
+      <span class="ch11-stamp">Pre-registered 2026-07-30, before submission &middot; reproduced verbatim</span>
+      <p style="margin-top:0.2rem">
+        <strong>Cell B</strong> = the unscattered #51 catalogue put through the #53
+        estimator (<code>absolute_marginal</code> + <code>volume_deconv</code>), on the same
+        Cramér–Rao table and the same injection pool as cells A and C, at the same commit.
+        No code change; the scatter guards simply no-op because no observed catalogue is
+        exported. Jobs <strong>6101146 / 6101147</strong>.
+      </p>
+      <div class="table-scroll">
+        <table class="ch11-2x2">
+          <tr><th></th><th>point / <code>generator_marginal</code></th>
+            <th><code>volume_deconv</code> / <code>absolute_marginal</code></th></tr>
+          <tr><th>unscattered</th><td>A = #51: 1D 0.7299, 2D 0.7300</td>
+            <td class="ch11-cellB">B = <em>this run — in flight</em></td></tr>
+          <tr><th>scattered</th><td class="ch11-forbidden">forbidden by guard</td>
+            <td>C = #53 r1–r5: 1D 0.732, 2D 0.813</td></tr>
+        </table>
+      </div>
+      <p>
+        <strong>B − A = the estimator effect. C − B = the scatter effect.</strong>
+      </p>
+      <p>
+        <strong>Dated pre-readout statement, registered before cell B landed:</strong>
+        everything relevant in B is scatter-independent or scatter-inert by prior
+        measurement, so the five Gate-B reports <em>jointly predict the &ldquo;estimator
+        owns it&rdquo; outcome</em>: <strong>B ≈ C in both channels</strong> — 2D ≈ 0.78–0.82,
+        in-catalogue class argmax ≈ 0.86, 1D ≈ 0.70–0.74 as a crossing. A contrary result is
+        therefore unmistakably a <strong>surprise</strong>, and per the adjudication&rsquo;s
+        Outcome 2 would falsify the transfer of C7 and C9 to the delivered posterior,
+        mandating re-examination of the ln-$M$-draw and candidate-window-membership
+        exonerations for a support-structure loophole <em>before anything else</em>.
+      </p>
+      <p style="margin-bottom:0">
+        <span class="prov-chip">PREREGISTRATION_2x2_cellB.md</span>
+        <span class="prov-chip">gate_b_20260730/ADJUDICATION_20260730.md §3</span>
+        <span class="badge open">OPEN</span> — at the time of writing this chapter, cell B
+        had not landed. The book does not report a result it does not have.
+      </p>
+    </div>
+
+    <div class="widget" data-predict-id="ch11-cellb-guess">
+      <h4>Predict, then reveal — what would each outcome mean?</h4>
+      <p style="margin-top:0;">
+        You now know as much as the project did when it submitted the job. Commit to an
+        outcome. There is no answer key for the <em>result</em> — there is one for what each
+        result would license you to say, which is the part pre-registration actually buys.
+      </p>
+      <div class="predict-row" id="ch11-predict-2" data-predict-id="ch11-cellb-guess">
+        <button type="button" data-predict="est">B ≈ C — the estimator owns it</button>
+        <button type="button" data-predict="scat">B ≈ A — the scatter owns it</button>
+        <button type="button" data-predict="mix">mixed</button>
+      </div>
+      <div class="reveal">
+        <p style="margin-top:0"><strong>The reading, registered in advance for all three:</strong></p>
+        <ul style="margin:0.3rem 0 0.5rem 0">
+          <li><strong>B ≈ C (estimator owns it)</strong> — the realistic host-observation
+            model is largely exonerated for the headline numbers; the fix surface becomes
+            C7&rsquo;s kernel plus the joint C9+C8 mixture repair, and #53&rsquo;s realism
+            layer needs no revisiting for the bias. This is the <em>predicted</em> outcome,
+            so it would be the weakest kind of confirmation.</li>
+          <li><strong>B ≈ A (scatter owns it)</strong> — a deep surprise that falsifies the
+            transfer of two <em>confirmed</em> mechanisms to the delivered posterior, and
+            triggers a mandatory re-examination of two existing exonerations before any new
+            work. Note this is the outcome that would teach the most.</li>
+          <li><strong>Mixed</strong> — read B&rsquo;s per-class summed profiles in nats:
+            B−A is the estimator share, C−B the scatter share. And if B&rsquo;s $w_G$ is not
+            bit-identical to 0.1215039, <em>that is its own finding</em> and voids the C9
+            transfer arithmetic for B.</li>
+        </ul>
+        <p style="margin-bottom:0">
+          There is also an off-venue analogue, and it is carried with its scope attached:
+          <code>mass_ab_20260727</code>&rsquo;s cell A′ ran exactly the #53 pairing on an
+          <em>unscattered</em> mock and measured <strong>1D 0.73 / 2D 0.80</strong>, with a
+          three-way per-leg A/B attributing 86.7% of the 2D movement to the
+          $\delta \to$ <code>volume_deconv</code> kernel switch. That is independent
+          historical support for &ldquo;estimator owns it&rdquo; — but it is a
+          <strong>different venue</strong> (a deep seed1000 mock, not this campaign&rsquo;s),
+          so <strong>cell B remains the on-venue decider</strong>.
+          <span class="prov-chip">MASS_KERNEL_AB_READOUT.md:23-30</span>
+          <span class="prov-chip">THREEWAY_AB_READOUT.md:41-56</span>
+        </p>
+      </div>
+    </div>
+
+    <div class="callout defect">
+      <span class="callout-label">Trap &mdash; &ldquo;Now that we know the defects, the number just needs correcting.&rdquo;</span>
+      There is no scalar correction. C9&rsquo;s diagnostic counterfactual moves the 2D mean
+      <strong>0.8123 → 0.7433</strong> — and the 1D mean <strong>0.7321 → 0.6430</strong>.
+      The intervention that repairs one channel breaks the other, because the two channels
+      share the prefactor and differ only by the mass dimension. A defect list is not a
+      correction table. <span class="prov-chip">CLAIM_2D_BIAS_20260730.md C9</span>
+    </div>
+
+    <!-- ================= dossier ================= -->
+    <div class="dossier">
+      <div class="dossier-title">Event dossier — EMRI-889, closed</div>
+      <table>
+        <tr><td>d_L</td><td>88.9 Mpc (&sigma;_dL/dL = 8.0&times;10&#8315;&#8309;)</td></tr>
+        <tr><td>SNR</td><td>1425 — the loudest event in this run</td></tr>
+        <tr><td>host</td><td>catalogue index 859360 — one of only 76 with a catalogued host</td></tr>
+        <tr><td>z</td><td>photometric, &sigma;_z/z wider than every other quantity on this card</td></tr>
+        <tr><td>role</td><td>one of the 3 golden events carrying 46% of the idealized constraint</td></tr>
+        <tr class="dossier-new"><td>channel swing</td>
+          <td><strong>+1.9832 → −2.0347 → −3.3004 nats</strong> across realizations r1 → r2 → r3
+            of the <em>same</em> universe — the same event, the same host, the same waveform</td></tr>
+        <tr class="dossier-new"><td>what this chapter added</td>
+          <td><strong>a warning label.</strong> 889 alone flips the sign of its entire
+            class&rsquo;s channel budget between noise realizations (in-cat +2.97 → −1.83),
+            which is why the &ldquo;84.2%&rdquo; dark share is <em>r1-specific</em> and the
+            replicated finding is the ordering, not the number.</td></tr>
+      </table>
+    </div>
+
+    <div class="widget">
+      <h4>EMRI-889&rsquo;s two faces, three times
+        <span class="prov-chip real">real: seed61000/real_r{1,2,3}/diagnostics/event_likelihoods.csv</span>
+      </h4>
+      <p style="margin-top:0; color:var(--muted); font-size:0.88rem;">
+        The channel difference $\Delta(h) = \ln p^{\rm 2D}_{889}(h) - \ln p^{\rm 1D}_{889}(h)$,
+        anchored at $h = 0.73$, for three noise realizations of the same truth universe. This
+        is not an interactive: there is nothing to manipulate, and the figure is the argument.
+      </p>
+      <div id="ch11-889-plot" class="widget-plot" style="min-height:280px"></div>
+      <div class="ch11-readouts" id="ch11-889-readouts"></div>
+      <details class="num-view">
+        <summary>Show me the numbers</summary>
+        <div class="table-scroll"><table class="num-table" id="ch11-889-table"></table></div>
+        <p class="ch11-note">
+          The tracing summary prints the swing as <strong>+1.98 / −2.04 / −3.30</strong>;
+          re-measuring from the CSVs gives <strong>+1.9832 / −2.0347 / −3.3004</strong>. The
+          r2 figure was rounded away from 2 d.p. in the summary. Both are shown; logged as
+          F-ch11-3 in <code>book/design/flags/ch11_FLAGS.md</code>.
+          <span class="prov-chip">c3c4_allruns_summary.md:123</span>
+        </p>
+      </details>
+      <noscript>
+        <p><strong>Static fallback.</strong> Three curves of $\Delta(h)$ against $h$, all
+        passing through zero at $h = 0.73$ by construction. At $h = 0.81$ they read
+        <strong>+1.9832</strong> (r1), <strong>−2.0347</strong> (r2) and
+        <strong>−3.3004</strong> (r3): the same event contributes a positive channel
+        difference in one noise realization and a negative one, 1.7× larger, in another.</p>
+      </noscript>
+    </div>
+
+    <div class="ch11-recall" id="ch11-recall">
+      <em>Loading your earlier predictions…</em>
+    </div>
+
+    <!-- ================= §6 ================= -->
+    <h2>6. Open threads</h2>
+
+    <p>
+      A closing chapter that listed only what is known would be a different genre. These are
+      the threads the project has left open, in its own words, with their status labels
+      intact. Two of them are <em>hypotheses</em> and are labelled as such — that distinction
+      is the whole point of the exercise.
+    </p>
+
+    <ol class="ch11-threads">
+      <li><strong>The ≈ +23 ln / MAP-0.80 2D HIGH residual</strong> under a broadened host-z
+        kernel, with named owners <strong>(d2)</strong> selection-side $M$ scatter/truncation
+        and <strong>(g1)</strong> mass-support clamp. <em>Almost certainly the same object as
+        #53&rsquo;s +0.077.</em> <span class="prov-chip">ledger #92, thread 1</span></li>
+      <li><strong><span class="term" data-term="Bnum">$B^{\rm num}$</span>&rsquo;s own bias
+        model</strong> — the sole carrier of the harness residual at full power; remains
+        open. <span class="prov-chip">ledger #87, thread 2</span></li>
+      <li><strong>The real-data host-z kernel.</strong> The point/point pairing is
+        generator-exact <em>only for the mock</em>; redteam R3 makes every precision claim in
+        this book mock-internal until the photo-z kernel is re-derived for real data.
+        <span class="prov-chip">thread 3</span></li>
+      <li><strong>The shallow-venue +0.0132 / +0.0138 residual</strong> — attribution
+        REOPENED since 2026-07-13, unowned. <span class="prov-chip">thread 4</span></li>
+      <li><strong>The 1D residual after the Option-A Jacobian, +0.017, 1D-only.</strong>
+        C11 is a modest contributor to it; the rest is unassigned.
+        <span class="prov-chip">thread 5</span></li>
+      <li><strong>The foreground-impostor thread</strong> <span class="badge open">HYPOTHESIS</span>
+        — the dark catalogue leg&rsquo;s preference for 0.60–0.64 requires bare impostor
+        $z_g/\hat z \le 0.83$. The inversion is <em>censored data</em>, so this is
+        <strong>a hypothesis, not a measurement</strong>, and the book will not present it as
+        one. Candidate ingredient: the $z_{\rm floor} = 10^{-5}$ clip, which fired
+        <strong>108,395</strong> times out of 22,641,048 rows in r1 — and history&rsquo;s
+        z-clamp exoneration was granted on the premise that production&rsquo;s catalogue was
+        <em>unclamped</em>, which #53 changes.
+        <span class="prov-chip">C7, new open thread</span>
+        <span class="prov-chip">BOOK_SOURCES_MAP.md §7.8</span></li>
+      <li><strong>Redteam T-1: the blind, sealed-truth mock</strong> — described by the
+        project as &ldquo;the decisive anti-tuning test&rdquo;, <strong>ordered, never
+        run</strong>. Nothing in this book has been checked against an $h_{\rm inj}$ the
+        analyst did not know. <span class="prov-chip">thread 7</span></li>
+    </ol>
+
+    <p>
+      There are eleven more in the ledger, including two ambiguity flags where two of the
+      project&rsquo;s own documents disagree about whether a gate passed. They are listed
+      rather than resolved, which is the correct state for a thing nobody has measured.
+    </p>
+
+    <!-- ================= §7 ================= -->
+    <h2>7. What would you do first?</h2>
+
+    <p>
+      You now know this estimator&rsquo;s three live inconsistencies, its confounded
+      attribution, and — behind all of it — a ledger of <strong>98 hypotheses</strong> about
+      this bias, each with what it cost. The temptation at this point is overwhelming and it
+      is wrong: <em>propose a fix</em>.
+    </p>
+    <p>
+      Here is why it is wrong, in this specific inference. The combined likelihood surface is
+      near-flat at its peak, and you measured its leverage with your own hands in §3. In the
+      corrected units the project itself had to fix, one nat of window-integrated
+      log-likelihood over a 0.08-wide window is worth
+      $\Delta h = \Delta\text{nats}\cdot\sigma_h^2/\Delta h_{\rm window} \approx 4.9\times10^{-3}$
+      <span class="prov-chip">BOOK_SOURCES_MAP.md §7.20</span>. So a ±10-nat intervention —
+      and almost any plausible change to a kernel, a prior or a normalization is worth ±10
+      nats — moves the MAP by ~0.05. <strong>A fix that moves the answer toward truth is
+      therefore almost no evidence that the fix is right.</strong> The ledger is 98 rows of
+      what that produces: fixes right in isolation and wrong in the pipeline, right in sign
+      and 4× wrong in magnitude, and one that merely relocated the tilt to a different branch
+      (+94…+455 nats, 12/12 fail).
+    </p>
+    <p>
+      The discipline this book has been teaching is the answer, and it is unglamorous:
+      <strong>run the control; isolate one variable; check whether it has been tried
+      before.</strong> The last of those is not rhetorical — the project maintains a binding
+      <em>do-not-re-try</em> union (the claim file&rsquo;s Exonerated list <strong>plus</strong>
+      the ledger&rsquo;s §2 items 1–17), and the entries absent from the first list are
+      precisely the live re-litigation risk.
+    </p>
+
+    <div class="ch11-verdict">
+      <span class="ch11-verdict-label">The state of the art, in one paragraph</span>
+      A dark-siren $H_0$ estimator built from a ratified selection integral, a ratified
+      two-branch mixture, a ratified volume kernel and a <span class="badge candidate">CANDIDATE</span>
+      2D mass pairing, run on 3130 detections from two mock universes, delivers a 1D channel
+      whose centredness is a contingent crossing and a 2D channel biased +4σ in 10/10 runs.
+      Three internal inconsistencies are measured, all on the completion / prefactor / kernel
+      side; none convicts the catalogue leg; the attribution between estimator and catalogue
+      is confounded by three simultaneous changes; and the one experiment that separates them
+      was pre-registered, submitted, and had not landed when this was written. That is not a
+      result. It is a position, and it is an honest one.
+    </div>
+
+    <!-- ================= self-check ================= -->
+    <h2>Self-check</h2>
+
+    <div class="selfcheck">
+      <p>Q11.1 &nbsp; 58% of in-catalogue hosts peak at the top of the prior. Give the
+      strongest argument that this is an artifact of the prior&rsquo;s upper bound, then say
+      how the project killed it.</p>
+      <details class="answer">
+        <summary>Show answer</summary>
+        <div class="answer-body">
+          The argument: any bounded grid piles up probability at its edge, so a concentration
+          at 0.86 could simply be truncation of a broad, uninformative profile. It was killed
+          three ways: the railed profiles are genuinely <strong>concave</strong> on the
+          uniform stretch (86–96% all-negative second differences, $|d^2|$ ~$10^{11}\times$
+          roundoff); top-K parabola vertices give finite implied peaks at
+          $h_{\rm eff} = 0.93$–$1.05$, stable over K = 3–9 in all 10 runs with the
+          extrapolator validated in-band; and an independent reconstruction on a grid
+          extended to $h = 2.4$ found <strong>interior</strong> peaks at median ≈1.12. It is
+          a clipped real runaway.
+          <span class="prov-chip">CLAIM_2D_BIAS_20260730.md C5</span>
+          <span class="prov-chip">attack_c5_rail.py</span>
+        </div>
+      </details>
+    </div>
+
+    <div class="selfcheck">
+      <p>Q11.2 &nbsp; The same claim carries a binding fair-framing amendment: per event the
+      rail is &ldquo;cosmetic&rdquo; (0.30–0.47 σ_event) but the class-summed displacement is
+      +3.4 to +6.1 σ_class. Explain how both can be true, and why quoting either alone is a
+      misrepresentation.</p>
+      <details class="answer">
+        <summary>Show answer</summary>
+        <div class="answer-body">
+          Both are true because they are different summary statistics of the same data:
+          individually each event&rsquo;s peak sits well inside its own (very wide)
+          uncertainty, so no single event is anomalous; but the displacements are
+          <strong>coherently same-signed</strong>, so they add linearly in the class sum
+          while the class uncertainty grows only as $\sqrt N$. Quoting only the per-event
+          number (&ldquo;it&rsquo;s within 0.5σ&rdquo;) hides a &gt;3σ systematic; quoting
+          only &ldquo;58% rail&rdquo; invites the reader to picture 58% of events being
+          individually broken, which they are not. The project made carrying both mandatory
+          for any write-up, and the book obeys.
+          <span class="prov-chip">CLAIM_2D_BIAS_20260730.md C5 fair-framing amendment</span>
+        </div>
+      </details>
+    </div>
+
+    <div class="selfcheck">
+      <p>Q11.3 &nbsp; C7 says the host-z kernel omits selection. The ratified derivation G2b
+      <em>confirmed</em> that exact weight, without $p_{\rm det}$, as uniquely consistent —
+      and protects it with a regression gate. How can both be right?</p>
+      <details class="answer">
+        <summary>Show answer</summary>
+        <div class="answer-body">
+          They are answers to different questions. G2b establishes that
+          $(dV_c/dz)/(1+z)$ is the unique weight consistent with this project&rsquo;s rate
+          model and its selection integrals, and that it is exactly $h$-independent and
+          reduces correctly as $\sigma_z \to 0$. C7 measures what that same weight
+          <em>does</em> at finite $\sigma_z/z \gtrsim 0.256$ when the numerator&rsquo;s window
+          is $z$-proportional: it inflates. The honest statement is that G2b&rsquo;s premise
+          and the finite-$\sigma_z$ numerator kernel are in tension, so <strong>any C7 fix
+          must explicitly supersede G2b</strong> rather than quietly contradict it — and must
+          reckon with the fact that the measured historical failure mode of deconvolution at
+          large $\sigma_z/z$ was <strong>over</strong>-correction, the opposite sign to where
+          the proposed fix pushes.
+          <span class="prov-chip">G2b:413-436</span>
+          <span class="prov-chip">CLAIM_2D_BIAS_20260730.md C7</span>
+          <span class="prov-chip">ledger #62 / #68</span>
+        </div>
+      </details>
+    </div>
+
+    <div class="selfcheck">
+      <p>Q11.4 &nbsp; Of C7, C8 and C9, which would you fix first if you could fix exactly
+      one, and what is the argument <em>against</em> your own choice?</p>
+      <details class="answer">
+        <summary>Show answer</summary>
+        <div class="answer-body">
+          A defensible first choice is <strong>C8</strong>, because it is a well-posedness
+          failure rather than a bias claim — a number that moves with a unit choice cannot be
+          published at all, and the fix is identified and priced (give the completion leg its
+          missing dark-host mass likelihood; the pure measure part moves 2D by
+          <strong>−0.058</strong>, agreeing with the constant-$C$ sweep at $C \approx 0.135$).
+          The argument against: the <em>full</em> fix also carries a <strong>+19.0-nat</strong>
+          population tilt that lands at <strong>0.84917</strong> — the wrong direction — and
+          independently reproduces a previously exonerated endpoint to $3\times10^{-5}$. So
+          the measure part is robust and the population part is model-dependent, and shipping
+          them together would import a Babak-M1-dependent term into a well-posedness repair.
+          That decomposition is exactly why the project has not shipped it.
+          <span class="prov-chip">CLAIM_2D_BIAS_20260730.md C8</span>
+          <span class="prov-chip">README_C8.md</span>
+        </div>
+      </details>
+    </div>
+
+    <div class="selfcheck">
+      <p>Q11.5 &nbsp; Three measured inconsistencies (C7, C8, C9) all sit on the
+      completion/prefactor/kernel side, and none convicts the catalogue leg. Why is that a
+      <em>direction</em> and not a verdict?</p>
+      <details class="answer">
+        <summary>Show answer</summary>
+        <div class="answer-body">
+          Because &ldquo;we found problems on side A and none on side B&rdquo; is evidence
+          about where we looked, not only about where the problems are — and the catalogue
+          leg&rsquo;s mass de-weighting, the mechanism that carries the 2D difference, is the
+          2D channel&rsquo;s <em>intended function</em>, which makes it hard to convict on
+          principle. The decisive instrument is the pre-registered 2×2 cell B (unscattered
+          catalogue × the #53 estimator), the only configuration that varies the estimator at
+          fixed catalogue. The project wrote down its prediction <strong>before</strong> the
+          result existed (&ldquo;B ≈ C in both channels&rdquo;) precisely so that a contrary
+          outcome would be unmistakably a surprise rather than something to rationalize.
+          <span class="prov-chip">CLAIM_2D_BIAS_20260730.md §NOT claimed item 1</span>
+          <span class="prov-chip">PREREGISTRATION_2x2_cellB.md</span>
+        </div>
+      </details>
+    </div>
+
+    <div class="selfcheck">
+      <p>Q11.6 <em>(transfer — the book&rsquo;s last question)</em> &nbsp; You now know this
+      estimator&rsquo;s three live defects, its confounded attribution, and its 98-item
+      history of falsified fixes. What is the <em>first</em> thing you would do, and why is
+      &ldquo;propose a fix&rdquo; the wrong answer?</p>
+      <details class="answer">
+        <summary>Show answer</summary>
+        <div class="answer-body">
+          <strong>Run the control.</strong> Attribution is confounded because three variables
+          moved together, so any fix proposed now would be aimed at an unidentified target,
+          and the ledger is 98 rows of what that produces — including fixes that were right
+          in isolation and wrong in the pipeline, right in sign and 4× wrong in magnitude,
+          and one that merely relocated the tilt to a different branch (+94…+455 nats, 12/12
+          fail). &ldquo;Propose a fix&rdquo; is wrong because in a near-flat likelihood
+          surface with 1500–2400× leverage, <em>many</em> ±10-nat interventions move the MAP
+          a lot, so a fix that moves the answer toward truth is almost no evidence at all.
+          The discipline the book has been teaching — pre-register, isolate one variable,
+          check whether it has been tried — is the answer.
+          <span class="prov-chip">CLAIM_2D_BIAS_20260730.md C6</span>
+          <span class="prov-chip">BIAS_HISTORY_LEDGER.md §2</span>
+          <span class="prov-chip">ADJUDICATION §5</span>
+          <div class="ch11-note" style="margin-top:0.5rem">
+            On the &ldquo;1500–2400×&rdquo; in that answer: it is the adjudicated figure and
+            is quoted as written. Recomputing it from the adjudicator&rsquo;s own leverage
+            output gives 142×–2458×, median 197× — see §3 and
+            <code>book/design/flags/ch11_FLAGS.md</code> F-ch11-1. The argument does not
+            depend on which is right; both are enormous compared to the idealized baseline.
+          </div>
+        </div>
+      </details>
+    </div>
+
+    <!-- ================= the questions with no answer key ================= -->
+    <h2>The questions with no answer key</h2>
+
+    <p>
+      Every self-check in this book so far has had a hidden answer, because the project had
+      one. These do not, and the absence is the point: this is the live edge of the work on
+      the day the book was written.
+    </p>
+
+    <div class="selfcheck ch11-noanswer">
+      <p>Open — the project has no answer for these</p>
+      <ol style="margin:0.4rem 0 0 0; padding-left:1.15rem;">
+        <li>Did cell B land at B ≈ C or B ≈ A? Which of C7, C9 transferred to the delivered
+          posterior?</li>
+        <li><strong>Which leg is wrong.</strong> The catalogue leg rails at 0.64 for dark
+          events, the completion leg pushes past 0.86, truth is 0.73. The evidence points at
+          the completion/prefactor/kernel side — but rejecting impostors is what the 2D
+          channel is <em>for</em>.</li>
+        <li>Is the foreground-impostor mechanism real, or is the $z_{\rm floor}$ clip
+          producing it? The inversion is censored data; nobody has measured it.</li>
+        <li>What does this estimator do on a mock whose injected $h$ the analyst has never
+          seen? Redteam T-1 was ordered and never run.</li>
+        <li>What are these numbers on <em>real</em> data? The point/point kernel pairing is
+          generator-exact only for the mock, which makes every precision claim in this book
+          mock-internal.</li>
+      </ol>
+      <p class="ch11-note" style="margin-top:0.6rem;">
+        There is no <em>Show answer</em> control on this block, and adding one would be the
+        single most dishonest thing this book could do.
+      </p>
+    </div>
+
+    <p>
+      The 98 hypotheses this chapter is standing on — each with what was believed, what was
+      measured, what it cost, and the lesson that survived — are laid out in
+      <a href="museum.html">the Defect Museum</a>. Several of them were better arguments than
+      some of the claims on this page. That is not a reason to trust the page less; it is the
+      reason to read the museum.
+    </p>
+
+    <!-- ================= provenance ================= -->
+    <div class="provenance-panel">
+      <h4>Provenance panel — every stamp used in this chapter</h4>
+      <ul>
+        <li><span class="badge finding">FINDING</span> <code>CLAIM_2D_BIAS_20260730.md</code>
+          (as amended 2026-07-30) — claims C1–C11, the Exonerated list, the
+          &ldquo;NOT claimed&rdquo; list; the source of every status string on the board</li>
+        <li><span class="badge finding">FINDING</span>
+          <code>gate_b_20260730/ADJUDICATION_20260730.md</code> §1, §3, §5 — the adjudication
+          of record for 2026-07-30; the cell-B mechanical readout; the cost-ordered next steps</li>
+        <li><span class="badge finding">FINDING</span>
+          <code>gate_b_20260730/BIAS_HISTORY_LEDGER.md</code> §2, §3, §4 — the binding
+          do-not-re-try union, the per-claim history collisions, the 12 inherited open threads</li>
+        <li><span class="badge ratified">RATIFIED</span>
+          <code>G2b_host_z_volume_prior.md:413-436</code> + <code>PRODUCTION-KERNEL-FIX-SCOPING:170-180</code>
+          gate 6 — the host-z volume weight and the binding h-independence gate that C7 collides with</li>
+        <li><span class="badge candidate">CANDIDATE</span>
+          <code>mass_marginal_2d_kernel.md:1-17, 690-706</code> [RATIFY-M6] — the
+          <code>absolute_marginal</code> + <code>volume_deconv</code> 2D pairing is
+          &ldquo;necessary, not established sufficient&rdquo;; every 2D number here sits on
+          candidate ground</li>
+        <li><span class="badge open">OPEN</span> <code>PREREGISTRATION_2x2_cellB.md</code> —
+          cell B, jobs 6101146/6101147, with the dated pre-readout prediction; not landed at
+          the time of writing</li>
+        <li><span class="badge confounded">CONFOUNDED</span> C6 — three variables moved
+          between #51 and #53; <code>sig0_control</code> ran #51&rsquo;s estimator
+          (Gate A1, one-file check)</li>
+        <li><span class="badge refuted">REFUTED</span> C4-mechanism as stated (deletion is not
+          the mechanism; 98.5% carried by survivors) · C11 as the 2D owner (6–16× too small) ·
+          the <code>w_G = β_G/D</code> bookkeeping <em>fix form</em> (ledger #61: relocates,
+          +94…+455 nats, 12/12 fail — the defect C9 stays live)</li>
+        <li><span class="badge finding">FINDING</span> <code>REALISTIC_READOUT.md</code> §1, §6
+          (amended 2026-07-30) — the per-run table and the &ldquo;do not quote a headline from
+          EITHER channel&rdquo; amendment; the struck &ldquo;1D is the defensible one&rdquo;
+          sentence is <em>not</em> followed <span class="prov-chip">BOOK_SOURCES_MAP.md §7.3</span></li>
+        <li>Data: <code>gate_b_20260730/c5_rail_results.json</code>,
+          <code>c5_class_weight_results.json</code>, <code>c5_leverage_results.json</code>,
+          <code>c3c4_allruns_summary.md</code>;
+          <code>seed61000/real_r{1..5}/diagnostics/event_likelihoods.csv</code>;
+          <code>seed{61000,62000}/prepared_cramer_rao_bounds.csv</code></li>
+        <li>Gates: <code>gen_ch11.py</code> runs <strong>191 checks</strong> — the full
+          λ-scan and Poisson reweight reproduced from the shipped arrays at &lt;10⁻⁶, the C1/C2/C3
+          class budgets to ≤0.02 nats, C9&rsquo;s realized 164/3135 to 10⁻⁹, and 889&rsquo;s
+          swing to 0.011 nats</li>
+        <li>Open flags: <code>book/design/flags/ch11_FLAGS.md</code> — F-ch11-1 (leverage
+          ratio 1500–2400× vs recomputed 142–2458×), F-ch11-2 (the σ_h gloss on the Poisson
+          shift), F-ch11-3 (889&rsquo;s r2 rounding)</li>
+        <li>Capability requests: <code>book/design/WIDGET_REQUESTS.md</code> R-ch11-1 (bias-rail
+          pips without a bias number), R-ch11-2 (a registry of canonical predict-ids)</li>
+      </ul>
+    </div>
+
+    <p class="book-footer">
+      Data generated by <code>book/generators/gen_ch11.py</code> (read-only against the main
+      package and <code>results/</code>). This page renders fully offline — Plotly and KaTeX
+      are vendored under <code>vendor/</code>.
+    </p>
+  </main>
+</div>
+
+<script src="js/manifest.js"></script>
+<script src="vendor/plotly/plotly.min.js"></script>
+<script src="vendor/katex/katex.min.js"></script>
+<script src="vendor/katex/auto-render.min.js"></script>
+<script src="js/book.js"></script>
+<script>
+  (function () {
+    "use strict";
+
+    // ---------------------------------------------------------------
+    // Palette (mirrors css/book.css tokens; Plotly needs literals)
+    // ---------------------------------------------------------------
+    var C = {
+      accent: "#0072B2", accentDark: "#6fb8e8", warn: "#D55E00",
+      rec: "#CC79A7", ok: "#009E73", guess: "#E69F00", prior: "#9e9e9e",
+    };
+    function ink() { return Book.isDark() ? "#eef1f5" : "#1a1a1a"; }
+    function grid() { return Book.isDark() ? "#33373f" : "#d8dce1"; }
+    function live() { return Book.isDark() ? C.accentDark : C.accent; }
+
+    function baseLayout(xTitle, yTitle) {
+      // Plotly 3.x removed the string form of `axis.title` (the vendored build
+      // is 3.4.0): a bare string renders NO axis title at all. Filed as
+      // R-ch11-3 in book/design/WIDGET_REQUESTS.md — other chapters currently
+      // use the string form and are silently losing their axis labels.
+      return {
+        margin: { l: 68, r: 18, t: 26, b: 52 },
+        xaxis: { title: { text: xTitle }, gridcolor: grid(), zeroline: false },
+        yaxis: { title: { text: yTitle }, gridcolor: grid(), zeroline: false },
+        paper_bgcolor: "rgba(0,0,0,0)", plot_bgcolor: "rgba(0,0,0,0)",
+        font: { color: ink(), size: 12 },
+        showlegend: true,
+        legend: { orientation: "h", y: 1.16, x: 0, font: { size: 11 } },
+        hovermode: "x unified",
+      };
+    }
+    function vline(x, color, dash) {
+      return {
+        type: "line", x0: x, x1: x, y0: 0, y1: 1, yref: "paper",
+        line: { color: color, dash: dash || "dot", width: 1.6 },
+      };
+    }
+    function fmt(v, n) {
+      return (v === null || v === undefined || !isFinite(v)) ? "—" : Number(v).toFixed(n);
+    }
+    function table(el, headers, rows) {
+      var html = "<tr>" + headers.map(function (h) { return "<th>" + h + "</th>"; }).join("") + "</tr>";
+      rows.forEach(function (r) {
+        html += "<tr>" + r.map(function (c) { return "<td>" + c + "</td>"; }).join("") + "</tr>";
+      });
+      el.innerHTML = html;
+    }
+    function esc(s) {
+      return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    }
+
+    // ---------------------------------------------------------------
+    // The sub-grid MAP refinements, transcribed from the attack scripts
+    // so this page reproduces their published numbers exactly.
+    //   submap5  <- attack_c5_class_weight.py:55-63  (5-point polyfit)
+    //   submap3  <- attack_c5_rail.py:185-193        (3-point parabola)
+    // ---------------------------------------------------------------
+    function argmax(a) { var b = 0, i; for (i = 1; i < a.length; i++) if (a[i] > a[b]) b = i; return b; }
+
+    /** Least-squares quadratic fit y = c0 x^2 + c1 x + c2 over the given points. */
+    function polyfit2(xs, ys) {
+      var n = xs.length, s0 = n, s1 = 0, s2 = 0, s3 = 0, s4 = 0, t0 = 0, t1 = 0, t2 = 0, i, x, y;
+      for (i = 0; i < n; i++) {
+        x = xs[i]; y = ys[i];
+        s1 += x; s2 += x * x; s3 += x * x * x; s4 += x * x * x * x;
+        t0 += y; t1 += x * y; t2 += x * x * y;
+      }
+      // Solve the 3x3 normal equations [[s4,s3,s2],[s3,s2,s1],[s2,s1,s0]] c = [t2,t1,t0]
+      var A = [[s4, s3, s2, t2], [s3, s2, s1, t1], [s2, s1, s0, t0]], j, k, p, f;
+      for (i = 0; i < 3; i++) {
+        p = i;
+        for (j = i + 1; j < 3; j++) if (Math.abs(A[j][i]) > Math.abs(A[p][i])) p = j;
+        var tmp = A[i]; A[i] = A[p]; A[p] = tmp;
+        if (A[i][i] === 0) return null;
+        for (j = i + 1; j < 3; j++) {
+          f = A[j][i] / A[i][i];
+          for (k = i; k < 4; k++) A[j][k] -= f * A[i][k];
+        }
+      }
+      var c = [0, 0, 0];
+      for (i = 2; i >= 0; i--) {
+        var s = A[i][3];
+        for (k = i + 1; k < 3; k++) s -= A[i][k] * c[k];
+        c[i] = s / A[i][i];
+      }
+      return c; // [quadratic, linear, constant]
+    }
+
+    function submap5(h, S) {
+      var j = argmax(S);
+      if (j === 0 || j === S.length - 1) return h[j];
+      var lo = Math.max(0, j - 2), hi = Math.min(h.length, j + 3);
+      var xs = h.slice(lo, hi), ys = S.slice(lo, hi);
+      // Centre the abscissae before fitting: algebraically identical, but it
+      // keeps the 3x3 normal matrix well conditioned (x ~ 0.8, x^4 ~ 0.4).
+      var x0 = xs.reduce(function (a, b) { return a + b; }, 0) / xs.length;
+      var c = polyfit2(xs.map(function (x) { return x - x0; }), ys);
+      if (!c || c[0] === 0) return h[j];
+      var hv = -c[1] / (2 * c[0]) + x0;
+      return (h[lo] <= hv && hv <= h[hi - 1]) ? hv : h[j];
+    }
+
+    function submap3(h, p) {
+      var j = argmax(p);
+      if (j === 0 || j === p.length - 1) return h[j];
+      var y0 = p[j - 1], y1 = p[j], y2 = p[j + 1], den = y0 - 2 * y1 + y2;
+      if (den === 0) return h[j];
+      return h[j] - 0.5 * (h[j + 1] - h[j]) * (y2 - y0) / den;
+    }
+
+    function mix(Sin, Sdk, lam) {
+      var out = new Array(Sin.length), i;
+      for (i = 0; i < Sin.length; i++) out[i] = lam * Sin[i] + Sdk[i];
+      return out;
+    }
+    function toDensity(S, h) {
+      var m = -Infinity, i;
+      for (i = 0; i < S.length; i++) if (S[i] > m) m = S[i];
+      var y = S.map(function (v) { return Math.exp(v - m); });
+      return Book.normalizePosterior(y, h);
+    }
+
+    // ===============================================================
+    // Bias rail (BW1) — the full honest amber state.
+    // R-ch11-1 IMPLEMENTED by the integrator: Book.biasRail takes `pips`
+    // directly; the page-local append workaround is retired.
+    // ===============================================================
+    var PIPS = [
+      { tone: "amber", label: "C7 — host-z kernel omits selection",
+        note: "FINDING (measured); collides with RATIFIED G2b; cell B decides" },
+      { tone: "amber", label: "C8 — 2D MAP walks with the mass unit",
+        note: "FINDING (well-posedness); 0.813 → 0.600 across an arbitrary rescale" },
+      { tone: "amber", label: "C9 — w_G ≠ realized rate (z = −11.86)",
+        note: "FINDING; model 0.1215 vs realized 164/3135 = 0.0523" },
+      { tone: "grey", label: "C6 — attribution confounded",
+        note: "three variables moved at once; cell B in flight (6101146/6101147)" },
+    ];
+    function renderRail() {
+      Book.biasRail({
+        title: "Bias ledger — the honest state",
+        entries: [
+          { label: "1D (contingent)", bias: 0.0, active: true,
+            note: "Not a clean zero: the 1D headline is the crossing of two railed opposing "
+                + "runaways (in-cat 0.86 / dark 0.64), and C9's counterfactual moves it to 0.643. "
+                + "C5, FINDING." },
+          { label: "2D (+0.077)", bias: 0.077, active: true,
+            note: "+4.04σ mean pull, 10/10 runs > +2σ. Sits on RATIFY-M6 CANDIDATE ground "
+                + "(absolute_marginal + volume_deconv: 'necessary, not established sufficient')." },
+        ],
+        pips: PIPS,
+      });
+    }
+    renderRail();
+
+    // ===============================================================
+    // I11.1 — The Two Runaways, Unlocked
+    // ===============================================================
+    Book.loadJSON("data/ch11_runaways.json").then(function (d) {
+      var H = d.h_grid, hTrue = d.h_true;
+      var byKey = {};
+      d.runs.forEach(function (r) { byKey[r.key] = r; });
+      var venue = "realistic";
+      var current = d.runs.filter(function (r) { return r.venue === "realistic"; })[0];
+      var lambda = 1.0;
+
+      var LAM_MIN = 0, LAM_MAX = 2, LAM_STEP = 0.005;
+      var LAM_STEPS = (function () {
+        var s = [], l;
+        for (l = LAM_MIN; l <= LAM_MAX + 1e-9; l += LAM_STEP) s.push(Number(l.toFixed(3)));
+        return s;
+      })();
+      var slider = document.getElementById("ch11-lambda");
+      var runSel = document.getElementById("ch11-run");
+      var curveCache = {};
+
+      function fillRuns() {
+        runSel.innerHTML = "";
+        d.runs.filter(function (r) { return r.venue === venue; }).forEach(function (r) {
+          var o = document.createElement("option");
+          o.value = r.key; o.textContent = r.label;
+          runSel.appendChild(o);
+        });
+        current = byKey[runSel.value];
+      }
+      fillRuns();
+
+      // --- MAP-vs-lambda curve (computed once per run, then cached) --
+      function mapCurve(run) {
+        if (curveCache[run.key]) return curveCache[run.key];
+        var xs = [], ys = [], l;
+        for (l = LAM_MIN; l <= LAM_MAX + 1e-9; l += 0.02) {
+          xs.push(Number(l.toFixed(3)));
+          ys.push(submap5(H, mix(run.S_in, run.S_dk, l)));
+        }
+        curveCache[run.key] = { x: xs, y: ys };
+        return curveCache[run.key];
+      }
+
+      var classPlot = Book.themedPlot("ch11-class-plot", [], function () {
+        var L = baseLayout("h = H₀ / 100", "class posterior (normalised)");
+        L.xaxis.range = [0.595, 0.865];
+        L.shapes = [vline(hTrue, ink())];
+        L.annotations = [{
+          x: hTrue, y: 0.99, yref: "paper", text: "truth 0.73", showarrow: false,
+          yanchor: "top", xanchor: "left", xshift: 4, font: { size: 11 },
+        }];
+        return L;
+      });
+
+      var mapPlot = Book.themedPlot("ch11-map-plot", [], function () {
+        var L = baseLayout("in-catalogue class weight λ", "combined MAP in h");
+        L.showlegend = false;
+        L.shapes = [{
+          type: "line", x0: LAM_MIN, x1: LAM_MAX, y0: hTrue, y1: hTrue,
+          line: { color: ink(), dash: "dot", width: 1.4 },
+        }];
+        return L;
+      });
+
+      function render() {
+        var run = current;
+        var Sc = mix(run.S_in, run.S_dk, lambda);
+        var mapNow = submap5(H, Sc);
+        var mapBase = submap5(H, mix(run.S_in, run.S_dk, 1));
+
+        classPlot.update([
+          { x: H, y: toDensity(run.S_in, H), mode: "lines", name: "in-catalogue class (" + run.n_incat + ")",
+            line: { color: C.warn, width: 2.4 },
+            hovertemplate: "h = %{x:.3f}<br>%{y:.4g}<extra>in-cat</extra>" },
+          { x: H, y: toDensity(run.S_dk, H), mode: "lines", name: "dark class (" + run.n_dark + ")",
+            line: { color: C.ok, width: 2.4, dash: "dash" },
+            hovertemplate: "h = %{x:.3f}<br>%{y:.4g}<extra>dark</extra>" },
+          { x: H, y: toDensity(Sc, H), mode: "lines", name: "combined at λ = " + lambda.toFixed(3),
+            line: { color: live(), width: 3 }, fill: "tozeroy",
+            fillcolor: Book.isDark() ? "rgba(111,184,232,0.12)" : "rgba(0,114,178,0.10)",
+            hovertemplate: "h = %{x:.3f}<br>%{y:.4g}<extra>combined</extra>" },
+        ]);
+
+        var mc = mapCurve(run);
+        var lo = lamLo(run), hi = lamHi(run);
+        mapPlot.update([
+          { x: [lo, lo, hi, hi], y: [Math.min.apply(null, mc.y), Math.max.apply(null, mc.y),
+                                     Math.max.apply(null, mc.y), Math.min.apply(null, mc.y)],
+            fill: "toself", mode: "none", fillcolor: "rgba(230,159,0,0.18)", hoverinfo: "skip" },
+          { x: mc.x, y: mc.y, mode: "lines", line: { color: live(), width: 2.4 },
+            hovertemplate: "λ = %{x:.2f}<br>MAP = %{y:.4f}<extra></extra>" },
+          { x: [lambda], y: [mapNow], mode: "markers",
+            marker: { size: 11, color: C.warn, symbol: "circle" }, hoverinfo: "skip" },
+        ]);
+
+        document.getElementById("ch11-lambda-readout").textContent = lambda.toFixed(3);
+        document.getElementById("ch11-map-readout").textContent = fmt(mapNow, 4);
+        var dv = mapNow - mapBase;
+        document.getElementById("ch11-shift-readout").textContent =
+          (dv >= 0 ? "+" : "") + fmt(dv, 4);
+        document.getElementById("ch11-incat-readout").textContent = fmt(run.incat_only_argmax, 3);
+        document.getElementById("ch11-dark-readout").textContent = fmt(run.dark_only_argmax, 3);
+        document.getElementById("ch11-poisson-readout").textContent = fmt(run.poisson_max_shift, 6);
+
+        var lev = run.leverage;
+        var isIdeal = run.venue === "idealized";
+        document.getElementById("ch11-lev-verdict").innerHTML =
+          '<span class="ch11-verdict-label">' + esc(run.label) + "</span>"
+          + (isIdeal
+            ? "Both classes agree: the in-catalogue class peaks at <strong>"
+              + fmt(run.incat_only_argmax, 3) + "</strong> — the injected truth — and the "
+              + "combined answer does not care what you do to λ. A ±1/√N Poisson "
+              + "reweight moves the MAP by <strong>" + run.poisson_max_shift.toExponential(1)
+              + "</strong> in h. This is what a combination that is not a crossing looks like."
+            : "The two classes disagree by <strong>"
+              + fmt(Math.abs(run.incat_only_argmax - run.dark_only_argmax), 2)
+              + "</strong> in h, and the delivered answer sits between them. A ±1/√N "
+              + "Poisson reweight — a statistical nothing — moves the MAP by up to "
+              + "<strong>" + fmt(run.poisson_max_shift, 6) + "</strong>; dropping the "
+              + "in-catalogue class entirely (λ = 0) sends it to <strong>"
+              + fmt(run.lambda_scan["0.0"], 4) + "</strong>. Leverage dh*/dε = <strong>"
+              + fmt(lev.dh_deps_incat, 4) + "</strong>, i.e. <strong>" + fmt(lev.ratio_to_ideal, 1)
+              + "×</strong> this seed's idealized baseline (adjudicated range 1500–2400× "
+              + "— see the flag note in the numbers view). Across all ten realistic runs the "
+              + "largest ±1/√N shift is <strong>" + d.published.poisson_max_shift_realistic
+              + "</strong>, in <strong>seed61000 r5</strong> — switch runs and watch the "
+              + "bottom panel steepen.");
+
+        // numbers view — the published vs live comparison, per run
+        var rows = d.runs.map(function (r) {
+          var live1 = submap5(H, mix(r.S_in, r.S_dk, 1));
+          var dHi = submap5(H, mix(r.S_in, r.S_dk, lamHi(r))) - live1;
+          var dLo = submap5(H, mix(r.S_in, r.S_dk, lamLo(r))) - live1;
+          return [
+            esc(r.label),
+            fmt(r.lambda_scan["0.0"], 4), fmt(r.lambda_scan["1.0"], 4), fmt(r.lambda_scan["2.0"], 4),
+            fmt(live1, 4),
+            fmt(r.incat_only_argmax, 3), fmt(r.dark_only_argmax, 3),
+            r.poisson_max_shift.toExponential(2),
+            (Math.max(Math.abs(dHi), Math.abs(dLo))).toExponential(2),
+            fmt(r.leverage.dh_deps_incat, 5),
+            fmt(r.leverage.ratio_to_ideal, 1) + "×",
+          ];
+        });
+        table(document.getElementById("ch11-lev-table"),
+          ["venue / run", "MAP λ=0", "MAP λ=1 (published)", "MAP λ=2",
+           "MAP λ=1 (recomputed here)", "in-cat only", "dark only",
+           "max ±1/√N shift (published, 3-pt)", "max ±1/√N shift (live, 5-pt)",
+           "dh*/dε", "vs idealized"],
+          rows);
+
+        var p = d.published;
+        document.getElementById("ch11-lev-flag").innerHTML =
+          "<strong>Flag F-ch11-1 — not reconciled.</strong> The claim file and the "
+          + "adjudication quote the leverage ratio as <strong>"
+          + p.claim_leverage_ratio_range[0] + "–" + p.claim_leverage_ratio_range[1]
+          + "×</strong> idealized. Recomputing it from the adjudicator's own "
+          + "<code>c5_leverage_results.json</code> (the &quot;vs idealized&quot; column above) gives "
+          + "<strong>" + p.measured_leverage_ratio_range[0] + "–"
+          + p.measured_leverage_ratio_range[1] + "×</strong>, median <strong>"
+          + p.measured_leverage_ratio_median + "×</strong>. Both are printed; neither is "
+          + "adjusted toward the other; the disagreement is logged in "
+          + "<code>book/design/flags/ch11_FLAGS.md</code>. The ±1/√N shift itself "
+          + "reproduces exactly: measured max <strong>" + p.poisson_max_shift_realistic
+          + "</strong> realistic vs <strong>" + p.poisson_max_shift_idealized
+          + "</strong> idealized, against the claim's &quot;up to " + p.claim_poisson_up_to
+          + "&quot;.";
+      }
+
+      // Book.gridSlider re-indexes the slider onto `steps` (0..n-1) and calls
+      // onStep with the step VALUE; setLambda() below drives it programmatically.
+      var gs = Book.gridSlider({
+        sliderEl: slider,
+        readoutEl: null,
+        steps: LAM_STEPS,
+        onStep: function (v) { lambda = v; render(); },
+      });
+
+      runSel.addEventListener("change", function () { current = byKey[runSel.value]; render(); });
+
+      document.querySelectorAll("#ch11-venue-row button").forEach(function (b) {
+        b.addEventListener("click", function () {
+          document.querySelectorAll("#ch11-venue-row button").forEach(function (x) {
+            x.setAttribute("aria-pressed", "false");
+          });
+          b.setAttribute("aria-pressed", "true");
+          venue = b.getAttribute("data-venue");
+          fillRuns();
+          render();
+        });
+      });
+
+      function setLambda(v) {
+        var best = 0, bd = Infinity;
+        LAM_STEPS.forEach(function (s, i) {
+          var dd = Math.abs(s - v);
+          if (dd < bd) { bd = dd; best = i; }
+        });
+        slider.value = String(best);
+        gs.render(best);
+      }
+      function lamHi(r) { return (1 + r.sigma_incat_frac) / (1 - r.sigma_dark_frac); }
+      function lamLo(r) { return (1 - r.sigma_incat_frac) / (1 + r.sigma_dark_frac); }
+      document.getElementById("ch11-poisson-plus").addEventListener("click", function () {
+        setLambda(lamHi(current));
+      });
+      document.getElementById("ch11-poisson-minus").addEventListener("click", function () {
+        setLambda(lamLo(current));
+      });
+      document.getElementById("ch11-restore").addEventListener("click", function () { setLambda(1); });
+
+      setLambda(1);
+    });
+
+    // ===============================================================
+    // I11.2 — The Adjudication Board
+    // ===============================================================
+    Book.loadJSON("data/ch11_board.json").then(function (d) {
+      var fStatus = document.getElementById("ch11-f-status");
+      var fSide = document.getElementById("ch11-f-side");
+      var fTag = document.getElementById("ch11-f-tag");
+      var fLive = document.getElementById("ch11-f-live");
+
+      // Status options are the verbatim strings, deduplicated by keyword so the
+      // filter stays usable without paraphrasing any of them.
+      var KEYWORDS = ["FINDING", "REFUTED", "AMENDED", "CONFOUNDED", "RELOCATED", "in flight"];
+      KEYWORDS.forEach(function (k) {
+        var o = document.createElement("option");
+        o.value = k; o.textContent = "contains “" + k + "”";
+        fStatus.appendChild(o);
+      });
+      Object.keys(d.sides).forEach(function (k) {
+        var o = document.createElement("option");
+        o.value = k; o.textContent = d.sides[k];
+        fSide.appendChild(o);
+      });
+
+      function matches(c) {
+        if (fStatus.value && c.status.indexOf(fStatus.value) < 0) return false;
+        if (fSide.value && c.side !== fSide.value) return false;
+        if (fTag.value && c.tag.indexOf(fTag.value) < 0) return false;
+        if (fLive.checked && !c.live) return false;
+        return true;
+      }
+
+      function render() {
+        var shown = d.claims.filter(matches);
+        var listEl = document.getElementById("ch11-board-list");
+        listEl.innerHTML = shown.map(function (c) {
+          return '<div class="ch11-claim side-' + c.side + '">'
+            + "<h5>" + (c.live ? '<span class="ch11-live-dot" title="live"></span>' : "")
+            + '<span class="ch11-claim-id">' + c.id + "</span>" + esc(c.title) + "</h5>"
+            + '<span class="ch11-status"><span class="badge ' + c.badge + '">'
+            + esc(c.status) + "</span> " + esc(c.tag) + " · " + esc(c.side_label) + "</span>"
+            + "<div>" + esc(c.one_line) + "</div>"
+            + '<span class="ch11-adj-label">adjudication, 2026-07-30</span>'
+            + '<div class="ch11-adj">' + esc(c.adjudication) + "</div>"
+            + '<span class="ch11-route-label">refutation route</span>'
+            + '<p class="ch11-route">' + esc(c.refute_by) + "</p>"
+            + "<div>" + c.chips.map(function (ch) {
+                return '<span class="prov-chip">' + esc(ch) + "</span>";
+              }).join(" ") + "</div>"
+            + "</div>";
+        }).join("");
+        if (!shown.length) {
+          listEl.innerHTML = '<div class="ch11-claim"><em>No claim on this board matches '
+            + "that combination. That is itself information: check which side you asked for."
+            + "</em></div>";
+        }
+
+        var nOneSide = shown.filter(function (c) { return d.one_side_ids.indexOf(c.id) >= 0; }).length;
+        var nCat = shown.filter(function (c) { return c.side === "catalogue" && c.live; }).length;
+        document.getElementById("ch11-board-count").innerHTML =
+          "<span>showing <strong>" + shown.length + "</strong> of " + d.claims.length + " claims</span>"
+          + "<span>live: <strong>" + shown.filter(function (c) { return c.live; }).length + "</strong></span>"
+          + "<span>of the three live inconsistencies (C7, C8, C9): <strong>" + nOneSide + "</strong></span>"
+          + "<span>live claims convicting the catalogue leg: <strong>" + nCat + "</strong></span>";
+
+        table(document.getElementById("ch11-board-table"),
+          ["claim", "verbatim status", "tag", "side", "live"],
+          d.claims.map(function (c) {
+            return [c.id + " — " + esc(c.title), esc(c.status), esc(c.tag),
+                    esc(c.side_label), c.live ? "live" : "closed"];
+          }));
+
+        Book.renderMath(listEl);
+      }
+
+      [fStatus, fSide, fTag].forEach(function (el) { el.addEventListener("change", render); });
+      fLive.addEventListener("change", render);
+      document.getElementById("ch11-f-reset").addEventListener("click", function () {
+        fStatus.value = ""; fSide.value = ""; fTag.value = ""; fLive.checked = false; render();
+      });
+
+      document.getElementById("ch11-board-verdict").innerHTML =
+        '<span class="ch11-verdict-label">Read this off the board yourself</span>'
+        + "Set <em>side of the estimator</em> to <strong>completion leg</strong>, then "
+        + "<strong>mixture weight / prefactor</strong>, then <strong>host-z kernel</strong>, with "
+        + "<em>live only</em> ticked — C8, C9 and C7. Now set it to "
+        + "<strong>catalogue leg</strong> with <em>live only</em> ticked: the board comes back "
+        + "empty. Three measured inconsistencies on one side, none on the other. That is the "
+        + "asymmetry §4 is about — and §4 also says why it is a direction rather "
+        + "than a verdict.";
+
+      render();
+    });
+
+    // ===============================================================
+    // EMRI-889's channel swing (figure, not an interactive)
+    // ===============================================================
+    Book.loadJSON("data/ch11_dossier.json").then(function (d) {
+      var H = d.h_grid;
+      var cols = { real_r1: C.accent, real_r2: C.warn, real_r3: C.rec };
+      var traces = Object.keys(d.profiles).map(function (k) {
+        return {
+          x: H, y: d.profiles[k].delta, mode: "lines", name: k.replace("real_", "realization "),
+          line: { color: cols[k], width: 2.4 },
+          hovertemplate: "h = %{x:.3f}<br>Δ = %{y:.3f} nats<extra>" + k + "</extra>",
+        };
+      });
+      Book.themedPlot("ch11-889-plot", traces, function () {
+        var L = baseLayout("h = H₀ / 100", "Δ(h)  [nats]");
+        L.xaxis.range = [0.595, 0.865];
+        L.shapes = [vline(0.73, ink()), vline(0.81, C.prior, "dash"),
+          { type: "line", x0: 0.595, x1: 0.865, y0: 0, y1: 0,
+            line: { color: grid(), width: 1 } }];
+        L.annotations = [
+          { x: 0.81, y: 0.99, yref: "paper", text: "h = 0.81", showarrow: false,
+            yanchor: "top", xanchor: "left", xshift: 4, font: { size: 11 } },
+        ];
+        return L;
+      });
+
+      document.getElementById("ch11-889-readouts").innerHTML = d.runs.slice(0, 3).map(function (r) {
+        return "<span>" + r.run + " channel diff <strong>"
+          + (r.channel_diff >= 0 ? "+" : "") + fmt(r.channel_diff, 4) + "</strong></span>";
+      }).join("");
+
+      table(document.getElementById("ch11-889-table"),
+        ["realization", "Δln p 1D (0.73→0.81)", "Δln p 2D (0.73→0.81)",
+         "channel difference", "1D argmax", "2D argmax"],
+        d.runs.map(function (r) {
+          return [r.run, fmt(r.d_ln_1D_073_081, 4), fmt(r.d_ln_2D_073_081, 4),
+                  (r.channel_diff >= 0 ? "+" : "") + fmt(r.channel_diff, 4),
+                  fmt(r.argmax_1D, 3), fmt(r.argmax_2D, 3)];
+        }));
+    });
+
+    // ===============================================================
+    // Predict-then-reveal blocks
+    // ===============================================================
+    Book.predictReveal(document.getElementById("ch11-predict-1").closest(".widget"));
+    Book.predictReveal(document.getElementById("ch11-predict-2").closest(".widget"));
+
+    // ===============================================================
+    // Recall: re-surface the reader's earlier predictions.
+    // The Chapter 3 host-guess id is not yet fixed book-wide
+    // (WIDGET_REQUESTS R-ch11-2), so probe the candidates and degrade
+    // honestly rather than fabricate a remembered guess.
+    // ===============================================================
+    (function () {
+      var el = document.getElementById("ch11-recall");
+      var ch3 = null, ids = ["ch03-host-guess", "ch03-host", "ch03-marker", "ch03-guess"], i;
+      for (i = 0; i < ids.length; i++) {
+        var v = Book.getPrediction(ids[i]);
+        if (v !== null) { ch3 = { id: ids[i], value: v }; break; }
+      }
+      var ch4 = Book.getPrediction("ch04-map-guess");
+      var ch11a = Book.getPrediction("ch11-leverage-guess");
+      var parts = [];
+      parts.push("<strong>Your own predictions, re-surfaced.</strong>");
+      if (ch3) {
+        parts.push(" In Chapter 3 you put a marker on the galaxy you thought hosted this event ("
+          + esc(ch3.value) + "). Chapter 3 told you the marker is usually wrong. What this "
+          + "chapter adds is that the estimator does not need you to be right — it needs the "
+          + "<em>weights</em> in the sum over candidates to be right, and C7, C8 and C9 are three "
+          + "measured statements that they are not.");
+      } else {
+        parts.push(" Chapter 3's host-guess marker is not recorded in this browser yet — it is "
+          + "stored when you take that chapter's guess, and it will appear here afterwards. "
+          + "(Nothing is fabricated in its place.)");
+      }
+      if (ch4) {
+        parts.push(" In Chapter 4 you predicted the repaired estimator's MAP at <strong>"
+          + esc(ch4) + "</strong>; the run delivered 0.740. If you guessed near 0.73 you made the "
+          + "assumption this chapter finally cashes out: that an estimator which lands near truth "
+          + "is centred on it.");
+      }
+      if (ch11a) {
+        parts.push(" And a few screens ago you predicted the leverage. The measured answer is "
+          + "0.024904 realistic against 0.000006 idealized.");
+      }
+      el.innerHTML = parts.join("");
+    })();
+  })();
+</script>

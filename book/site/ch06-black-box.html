@@ -1,0 +1,1740 @@
+<!DOCTYPE html>
+<meta charset="utf-8" />
+<!--
+  The doctype and charset are deliberate and load-bearing: without a doctype
+  browsers enter quirks mode and KaTeX refuses to render, so every equation
+  degrades to raw $...$ source. _template.html omits both — filed by the ch07
+  agent as R-ch07-3 in book/design/WIDGET_REQUESTS.md; those files are frozen,
+  so this page carries its own two lines, as ch07 does.
+-->
+<title>Ch. 6 — Opening the Black Box | EMRI Dark Siren Book</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="description" content="What the waveform actually measures: the noise-weighted inner product, the Fisher matrix and the Cramer-Rao bound, fraction coordinates — and the two constant factors, dt squared and the sky frame, that each rewrote the answer." />
+<link rel="stylesheet" href="vendor/katex/katex.min.css" />
+<link rel="stylesheet" href="css/book.css" />
+
+<style>
+  /* Page-local only (css/book.css is FROZEN). Nothing here restyles a shared
+     class; these are elements this chapter introduces. No new palette — the
+     book's CSS custom properties are reused throughout. */
+  .ch06-readouts {
+    display: flex; flex-wrap: wrap; gap: 0.35rem 1.15rem;
+    margin: 0.55rem 0 0; font-size: 0.85rem; color: var(--muted);
+  }
+  .ch06-readouts strong { color: var(--accent); font-variant-numeric: tabular-nums; }
+  .ch06-readouts .warn strong { color: var(--planck); }
+  .ch06-note {
+    font-size: 0.83rem; color: var(--muted);
+    border-left: 2px solid var(--border); padding-left: 0.7rem; margin: 0.7rem 0 0;
+  }
+  .ch06-verdict {
+    border: 1px solid var(--border); border-left: 4px solid var(--planck);
+    background: var(--paper-raised); border-radius: 8px;
+    padding: 0.7rem 0.9rem; margin: 0.7rem 0 0; font-size: 0.9rem;
+  }
+  .ch06-verdict .ch06-verdict-label {
+    display: block; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.06em;
+    text-transform: uppercase; color: var(--planck); margin-bottom: 0.25rem;
+  }
+  .ch06-flag {
+    border: 1px dashed var(--planck); border-radius: var(--radius);
+    padding: 0.6rem 0.85rem; margin: 1rem 0; font-size: 0.87rem;
+  }
+  .ch06-flag .ch06-flag-label {
+    display: block; text-transform: uppercase; letter-spacing: 0.05em;
+    font-size: 0.71rem; color: var(--planck); font-weight: 700; margin-bottom: 0.25rem;
+  }
+  .ch06-fwd {
+    display: inline-block; font-size: 0.72rem; border: 1px dashed var(--border);
+    border-radius: 999px; padding: 0 0.45em; color: var(--muted); white-space: nowrap;
+  }
+  /* Wide display equations (the 3x3 Sigma, the Bishop block) must scroll
+     inside their own box, never the page body. KaTeX emits .katex-display;
+     this rule is scoped to this page's main column only. */
+  .book-content .katex-display { overflow-x: auto; overflow-y: hidden; padding: 0.2rem 0; }
+  .book-content .katex-display > .katex { white-space: nowrap; }
+  /* Narrow viewports only: long citation chips and artifact paths are the last
+     things pushing the page body wider than the screen. Scoped to this page and
+     to <=720px, so nothing changes on the desktop layout or on other chapters.
+     Filed for a shared fix as R-ch06-1 in book/design/WIDGET_REQUESTS.md. */
+  @media (max-width: 720px) {
+    .book-content .prov-chip { white-space: normal; }
+    .book-content code,
+    .book-content .provenance-panel li { overflow-wrap: anywhere; }
+    .book-content .ch06-fwd { white-space: normal; }
+  }
+  .ch06-grid2 { display: grid; gap: 0.9rem; grid-template-columns: 1fr; margin: 0.6rem 0 0; }
+  @media (min-width: 780px) { .ch06-grid2 { grid-template-columns: 1fr 1fr; } }
+  .ch06-eventpick { display: flex; flex-wrap: wrap; gap: 0.3rem; margin: 0.2rem 0 0.6rem; }
+  .ch06-eventpick button {
+    font-size: 0.8rem; padding: 0.25rem 0.6rem; border: 1px solid var(--border);
+    background: var(--paper-raised); color: inherit; border-radius: 999px; cursor: pointer;
+  }
+  .ch06-eventpick button[aria-pressed="true"] {
+    border-color: var(--accent); color: var(--accent); font-weight: 600;
+  }
+  #bias-rail .ch06-pip {
+    display: flex; gap: 0.4rem; align-items: baseline; font-size: 0.72rem;
+    margin-top: 0.35rem; padding-top: 0.3rem; border-top: 1px dotted var(--border);
+  }
+  #bias-rail .ch06-pip .ch06-pip-dot {
+    width: 0.55rem; height: 0.55rem; border-radius: 50%; flex: 0 0 auto;
+    background: var(--planck);
+  }
+  #bias-rail .ch06-pip.grey .ch06-pip-dot { background: var(--prior); }
+</style>
+
+<div class="book-shell">
+  <header class="book-topbar">
+    <a class="brand" href="index.html">From Bayes&rsquo; Rule to H&#8320;
+      <small>an interactive discovery book</small>
+    </a>
+    <nav class="book-nav" data-nav aria-label="Chapters"><!-- built from js/manifest.js --></nav>
+    <button class="theme-toggle" data-theme-toggle type="button">☽ Dark</button>
+  </header>
+
+  <main class="book-content">
+    <h1>Chapter 6 — Opening the Black Box: What the Waveform Actually Measures</h1>
+    <p class="subtitle">
+      &ldquo;An ellipsoid, somehow&rdquo; is no longer good enough — how big, and
+      correlated with what?
+    </p>
+
+    <!-- ===================== COLD OPEN (B1) ===================== -->
+    <div class="callout without">
+      <span class="callout-label">The failure this chapter answers</span>
+      Three chapters have now been built on a phrase. Chapter 3 summed over
+      &ldquo;the galaxies in the localization ball&rdquo;. Chapter 4 divided by
+      &ldquo;the probability of detecting a source like this one&rdquo;. Chapter 5 split the
+      answer into two branches according to whether &ldquo;the host is inside the
+      ball&rdquo;. Every one of those sentences is a statement about a
+      <em>measurement uncertainty</em> that has never been written down. How big is the
+      ball? What shape? Tilted which way? The whole inference is a weighted sum, and
+      nobody has yet said what the weights are.
+    </div>
+
+    <p>
+      It is not an academic gap. Here are four real events from this run&rsquo;s
+      Cram&eacute;r&ndash;Rao table, and the number of catalogue galaxies each one&rsquo;s
+      search ball actually contains:
+    </p>
+
+    <div class="table-scroll">
+      <table class="num-table">
+        <tr>
+          <th>event</th><th>SNR</th><th>$d_L$</th><th>sky area $\Delta\Omega$</th>
+          <th>galaxies in the ball</th><th>&hellip; after the redshift window</th>
+        </tr>
+        <tr><td>889 (in-cat)</td><td>1424.7</td><td>88.88 Mpc</td><td>3.29&times;10<sup>&minus;4</sup> deg²</td><td><strong>2</strong></td><td><strong>2</strong></td></tr>
+        <tr><td>361 (in-cat)</td><td>167.9</td><td>293.2 Mpc</td><td>0.0374 deg²</td><td>240</td><td>52</td></tr>
+        <tr><td>606 (dark)</td><td>43.1</td><td>1174.6 Mpc</td><td>0.819 deg²</td><td><strong>7109</strong></td><td><strong>4758</strong></td></tr>
+        <tr><td>555 (dark)</td><td>28.3</td><td>2847.5 Mpc</td><td>2.090 deg²</td><td>12&thinsp;056</td><td>145</td></tr>
+      </table>
+    </div>
+    <p class="ch06-note">
+      Counts measured by this chapter&rsquo;s generator over the real GLADE+ catalogue,
+      using the production search radius
+      $1.5\sqrt{\lambda_{\max}(J\Sigma_{\rm sky}J^{\mathsf T})}$ and the production redshift
+      window. Sky areas from the run&rsquo;s own Cram&eacute;r&ndash;Rao rows. Each event is
+      evaluated at the nearest point of the widget&rsquo;s 40-point SNR grid to its measured
+      SNR (for 361 that is $\rho = 171$ against a measured 167.9; for 606, 41.5 against 43.1;
+      for 555, 27.0 against 28.3).
+      <span class="prov-chip real">real: seed61000 CRB + GLADE+ patch</span>
+    </p>
+
+    <p>
+      Two events a factor 33 apart in loudness, and the candidate list differs by a
+      factor of <strong>3555</strong>. For 889 the &ldquo;sum over candidate hosts&rdquo;
+      is a sum over two galaxies; for 606 it is a sum over seven thousand. Chapter
+      5&rsquo;s question — <em>can I trust either branch?</em> — cannot even be asked until
+      you know which regime an event is in. And that is set entirely by an object we have
+      been carrying around unopened: the <span class="term" data-term="Sig"><strong>covariance matrix</strong></span> the
+      gravitational-wave measurement hands over.
+    </p>
+    <p>
+      This chapter opens it. Where the numbers in it come from, what they mean, what
+      coordinates they live in, and — the part that makes it a chapter of <em>this</em>
+      book rather than a textbook appendix — two occasions on which a single constant
+      factor inside that object silently rewrote the answer.
+    </p>
+
+    <!-- ===================== §1 ===================== -->
+    <h2>1. The inner product, and the noise that defines it</h2>
+
+    <p>
+      Start with the only question a detector can answer: <em>how much of this waveform is
+      there, given how noisy I am at each frequency?</em> LISA is not equally deaf
+      everywhere. It has a sweet spot around a few millihertz, laser shot noise rising at
+      high frequency, acceleration noise rising at low frequency, and — because tens of
+      millions of galactic white-dwarf binaries chirp in the same band — an irreducible
+      <strong>confusion foreground</strong> that is itself a source of noise. All of that is
+      packed into one function of frequency, the one-sided power spectral density $S_n(f)$, with units of strain² per hertz.
+    </p>
+    <p>
+      Given $S_n$, there is exactly one natural way to compare two waveforms: weight each
+      frequency by how well you hear it.
+    </p>
+
+    <div class="voice-derivation">
+      <span class="voice-label">The noise-weighted inner product
+        <span class="badge ratified">RATIFIED</span>
+        <span class="prov-chip">G8 §1.1</span>
+        <span class="prov-chip">parameter_estimation.py:335</span>
+        <span class="prov-chip">Finn 1992, PRD 46 5236 Eq. 2.3</span>
+        <span class="prov-chip">Cutler &amp; Flanagan 1994, arXiv:gr-qc/9402014 Eq. 2.4</span>
+      </span>
+      For two time-domain signals with continuous Fourier transforms $\tilde h_1,\tilde h_2$,
+      summed over the TDI channels $\alpha \in \{A,E\}$,
+      $$ \langle h_1 \mid h_2\rangle \;=\; 4\,\mathrm{Re} \sum_{\alpha}
+         \int_{f_{\min}}^{f_{\max}}
+         \frac{\tilde h_1^{\alpha}(f)\,\tilde h_2^{\alpha *}(f)}{S_n^{\alpha}(f)}\, df ,
+         \qquad
+         \tilde h(f) = \int dt\; h(t)\, e^{-2\pi i f t}. $$
+      Everything in this chapter is built from that one bracket. The
+      <span class="term" data-term="snr">signal-to-noise ratio</span> is
+      $\rho = \sqrt{\langle h\mid h\rangle}$
+      (<span class="prov-chip">parameter_estimation.py:488</span>), the detection
+      threshold is $\rho \ge 20$
+      (<span class="prov-chip">constants.py SNR_THRESHOLD</span>), and the
+      <span class="term" data-term="Gam">Fisher matrix</span> of §3 is the same bracket
+      taken between derivatives.
+    </div>
+
+    <p>
+      Two things about that bracket deserve a sentence each, because both of them have
+      cost this project real numbers.
+    </p>
+    <p>
+      <strong>The PSD is a physics input, not a convenience.</strong> The galactic confusion
+      foreground was missing from $S_n$ until Phase 9; adding it was a landed fix, and the
+      ledger records the honest verdict — <em>fixed-and-landed, insufficient alone</em>
+      <span class="prov-chip">ledger #1</span>. The analytic form now used is Babak et al.
+      (2023), arXiv:2303.15929, Eq. (17), evaluated in
+      <code>LISA_configuration._confusion_noise</code>. A separate defect in the same area,
+      repaired alongside the subject of §2, had made the pre-fix TDI transfer roughly
+      $10^3\times$ deaf below about 1 mHz <span class="prov-chip">commit 49251f3</span>.
+    </p>
+    <p>
+      <strong>It is dimensionless, and that is checkable.</strong>
+      $[\tilde h^2/S_n]\cdot[df] = (\text{strain}^2\,\mathrm{s}^2)\,/\,(\text{strain}^2/\mathrm{Hz})\cdot\mathrm{Hz}
+      = 1$. An SNR is a pure number. Hold on to that, because §2 is the story of what
+      happened when the implemented expression was <em>not</em> dimensionless and nobody
+      noticed for four months.
+    </p>
+
+    <!-- ===================== §2 ===================== -->
+    <h2>2. $dt^2$: a Riemann sum, and a different universe</h2>
+
+    <p>
+      Equation (1) is an integral over a continuous Fourier transform. A computer has
+      samples. The bridge between them is one line of undergraduate numerical analysis:
+      <code>numpy.fft.rfft</code> returns the <em>un-normalized</em> discrete transform
+      $X_k = \sum_m h(t_m) e^{-2\pi i k m/n}$, and approximating
+      $\tilde h(f_k) = \int h(t)e^{-2\pi i f_k t}dt$ by its Riemann sum on the sampling grid
+      $t_m = m\,\Delta t$ gives
+    </p>
+
+    <div class="voice-derivation">
+      <span class="voice-label">The DFT ↔ continuous-FT correspondence
+        <span class="badge ratified">RATIFIED</span>
+        <span class="prov-chip">G8 §1.2</span>
+        <span class="prov-chip">parameter_estimation.py:396</span>
+      </span>
+      $$ \tilde h(f_k) \;\simeq\; \Delta t \cdot X_k
+         \qquad\Longrightarrow\qquad
+         |\tilde h|^2 = \Delta t^2\,|X|^2 . $$
+      The implemented inner product used $X_k$ where the formula wants
+      $\Delta t\,X_k$, in both slots. It therefore returned exactly
+      $\langle h_1\mid h_2\rangle/\Delta t^{2}$ — and at this pipeline&rsquo;s
+      $\Delta t = 10\ \mathrm{s}$ that is a factor $10^{-2}$, every time.
+      <br /><br />
+      <strong>Dimensional check (the tell).</strong> Without $\Delta t^2$ the expression
+      carries units of $\mathrm{Hz}^2$, i.e. $1/\mathrm{s}^2$ — it is not a squared
+      signal-to-noise ratio at all. Only the $\Delta t^2$-corrected form is dimensionless.
+    </div>
+
+    <p>
+      One line, one factor, no physics. Now follow it through. The bracket is quadratic in
+      the signal, so:
+    </p>
+    <ul>
+      <li>every <strong>SNR</strong> came out $\sqrt{10^{-2}} = 1/10$ of its physical value;</li>
+      <li>every <strong>Fisher matrix</strong>, being a bracket of derivatives, came out
+        $100\times$ too small;</li>
+      <li>every <strong>Cram&eacute;r&ndash;Rao</strong> $\sigma$, going as the inverse square
+        root of the Fisher, came out $10\times$ too <em>large</em>.</li>
+    </ul>
+
+    <p>
+      And here is why that is not a rescaling. The pipeline is internally self-consistent —
+      threshold, <span class="term" data-term="pdet">$p_{\rm det}$</span>, and the stored covariances all shared the same mis-scaled
+      bracket, so nothing downstream <em>broke</em>. But the threshold is a
+      <strong>cut on an absolute number</strong>. &ldquo;$\rho \ge 20$&rdquo; applied to a
+      quantity that is ten times too small selects physically $\rho \ge 200$ sources: the
+      near ones. The mock universe the analysis could see collapsed to the neighbourhood.
+    </p>
+
+    <div class="voice-adjudicator">
+      <span class="voice-label">The principle this chapter takes from it
+        <span class="badge finding">FINDING</span>
+        <span class="prov-chip">ledger #51</span>
+        <span class="prov-chip">G7 row 1</span>
+        <span class="prov-chip">commit fcc49c4</span>
+      </span>
+      <strong>A normalization that multiplies a threshold changes which data exists.</strong>
+      Constants that only rescale an answer are bookkeeping. Constants that sit next to an
+      inequality are physics, because they decide the sample. This one was found by the G8
+      soundness gate on 2026-07-02 and fixed before the Phase-2 campaign; the CRB tables
+      this whole book uses are post-fix.
+    </div>
+
+    <details class="gw-reader">
+      <summary>&#9656; For the GW reader — the five evidence lines, and the three objections</summary>
+      <p>
+        G8 did not argue the convention; it measured it, five independent ways
+        (<span class="prov-chip">G8 §2</span>), each committed as a reproducer:
+      </p>
+      <div class="table-scroll">
+        <table class="num-table">
+          <tr><th></th><th>test</th><th>code / reference</th></tr>
+          <tr><td>L1</td><td>exact-bin monochromatic vs the analytic $A^2T/S_n(f_0)$, two frequencies</td><td>0.01000000 = $1/\Delta t^2$</td></tr>
+          <tr><td>L2</td><td><strong>FFT-free</strong> Parseval reference, $S_n$ patched constant: $\langle h\mid h\rangle=(2/S_0)\sum h^2\,\Delta t$ — no frequency axis anywhere on the reference side</td><td>0.010000</td></tr>
+          <tr><td>L3</td><td>broadband, coloured LISA PSD, reference FFT normalized independently</td><td>0.010000</td></tr>
+          <tr><td>L4</td><td>the dependency stack&rsquo;s own convention: <code>lisatools</code> applies <code>rfft(...) * dt</code> at the transform</td><td>differs by exactly the missing $\Delta t$</td></tr>
+          <tr><td>L5</td><td>astrophysical: the detected population sat at $z \le 0.11$ under a model whose SNR-20 horizon is $z \approx 1.5$–3.8 (Babak et al. 2017, arXiv:1703.09722)</td><td>the signature of $\rho$ ten times too small</td></tr>
+        </table>
+      </div>
+      <p>
+        L2 is the decisive one: it removes the PSD and the Fourier convention from the
+        argument entirely. The three anticipated objections — &ldquo;the PSD convention
+        absorbs it&rdquo;, &ldquo;the waveform units compensate&rdquo;, &ldquo;trapezoid vs
+        sum, one-sidedness, DC handling&rdquo; — are each dispatched in
+        <span class="prov-chip">G8 §3</span>; all three are $\Delta t$-independent, and the
+        measured ratio is exactly $1/\Delta t^2$, not 2 or 4 or $\tfrac12$.
+        The fix is the single prefactor at <code>parameter_estimation.py:396</code>, with the
+        regression anchor in <code>test_inner_product_magnitude.py</code> flipping from
+        <code>physical/dt²</code> to <code>physical</code>.
+      </p>
+      <p>
+        Note what &ldquo;nothing broke&rdquo; means here, because it is the honest reason a
+        four-month-old factor-100 error is not embarrassing: an internally consistent
+        pipeline has no way to notice a global rescaling. The <em>only</em> external anchor
+        was the detection horizon, and it is the anchor that failed loudly. Build one.
+      </p>
+    </details>
+
+    <!-- ============ predict, then reveal + I6.2 ============ -->
+    <div class="widget" id="ch06-predict-widget" data-predict-id="ch06-dt2-guess">
+      <h4>Predict, then reveal — how much of the universe does a factor 10 cost?</h4>
+      <p style="margin-top:0;">
+        You know the mechanism now: SNR ten times too small, threshold unchanged at 20.
+        Before you touch the switch, commit. Out of a fixed pool of simulated EMRIs drawn
+        from the population model, how many <em>fewer</em> detections does the pre-fix
+        convention give?
+      </p>
+      <div class="predict-row" id="ch06-predict-row" data-predict-id="ch06-dt2-guess">
+        <button type="button" data-predict="10">about 10&times; fewer</button>
+        <button type="button" data-predict="30">about 30&times; fewer</button>
+        <button type="button" data-predict="100">about 100&times; fewer</button>
+        <button type="button" data-predict="1000">about 1000&times; fewer</button>
+      </div>
+      <div class="reveal">
+        <strong>168&times;.</strong> On the production injection pool&rsquo;s
+        population-measure stratum — 99&thinsp;014 EMRIs drawn from the Barausse M1 model out
+        to $z = 1.5$ — the physical convention detects <strong>7548</strong> and the pre-fix
+        convention detects <strong>45</strong>. If you reasoned &ldquo;horizon $\propto \rho$,
+        volume $\propto d^3$, so $10^3$&rdquo; you had the right instinct and the wrong
+        geometry: the population is not uniform in a Euclidean volume, it is cut off at
+        $z = 1.5$ and thinned by $(1+z)$ time dilation and by the comoving volume element,
+        so the loss lands between $10^2$ and $10^3$.
+        <span class="prov-chip real">real: injection_pool_mix200k_20260728</span>
+      </div>
+      <noscript>
+        <p><strong>Static fallback.</strong> The commitment question: with SNR ten times too
+        small and the threshold unchanged at $\rho \ge 20$, how many fewer detections does
+        the pre-fix convention give? <strong>The measured answer is 168&times;</strong> — on
+        the production injection pool&rsquo;s population-measure stratum (99,014 EMRIs drawn
+        from the Barausse M1 model out to $z = 1.5$), the physical convention detects 7548
+        and the pre-fix convention detects 45. The naive &ldquo;horizon $\propto \rho$,
+        volume $\propto d^3$, so $10^3$&rdquo; estimate has the right instinct and the wrong
+        geometry: the population is cut off at $z = 1.5$ and thinned by $(1+z)$ time dilation
+        and by the comoving volume element, so the loss lands between $10^2$ and $10^3$.</p>
+      </noscript>
+    </div>
+
+    <div class="widget" id="ch06-i62">
+      <h4>I6.2 — The $dt^2$ Switch
+        <span class="prov-chip real">real: injection_pool_mix200k_20260728 (stratum a, 99,014 rows)</span>
+      </h4>
+      <p style="margin-top:0; color:var(--muted); font-size:0.88rem;">
+        <strong>Manipulate</strong> one binary switch — the $\Delta t^2$ in the inner
+        product. <strong>Watch</strong> the detected population. Not its width: its
+        <em>existence</em>. Both bars are the same 99,014 injections, at the same threshold
+        $\rho \ge 20$; the only thing that changes is a Riemann-sum factor.
+      </p>
+      <div class="toggle-row" id="ch06-dt2-row" role="group" aria-label="Inner-product convention">
+        <button type="button" data-state="with_dt2" aria-pressed="true">$\Delta t^2$ present (physical)</button>
+        <button type="button" data-state="without_dt2" data-hypothesis="51">$\Delta t^2$ absent (pre-fix)</button>
+      </div>
+      <div id="ch06-dt2-plot" class="widget-plot" style="min-height:320px"></div>
+      <div class="ch06-readouts" id="ch06-dt2-readouts">
+        <span>detected <strong id="ch06-dt2-n">&mdash;</strong> of 99,014</span>
+        <span>detected fraction <strong id="ch06-dt2-frac">&mdash;</strong></span>
+        <span>median $z$ <strong id="ch06-dt2-zmed">&mdash;</strong></span>
+        <span>$z_{90}$ <strong id="ch06-dt2-z90">&mdash;</strong></span>
+        <span>deepest detection <strong id="ch06-dt2-zmax">&mdash;</strong></span>
+        <span>furthest horizon <strong id="ch06-dt2-hor">&mdash;</strong></span>
+      </div>
+      <div class="ch06-verdict" id="ch06-dt2-verdict"></div>
+      <div class="widget-controls">
+        <button type="button" id="ch06-dt2-restore" class="theme-toggle">↺ Restore the $\Delta t^2$ normalization</button>
+      </div>
+      <details class="num-view">
+        <summary>Show me the numbers</summary>
+        <div class="table-scroll"><table class="num-table" id="ch06-dt2-table"></table></div>
+      </details>
+      <noscript>
+        <p><strong>Static fallback.</strong> Redshift histogram of the detected population
+        from 99,014 population-measure injections at threshold $\rho \ge 20$.
+        <em>With $\Delta t^2$ (physical):</em> 7548 detections (7.623%), median $z = 0.468$,
+        $z_{90} = 0.725$, deepest $z = 1.108$, furthest horizon 8.332 Gpc. <em>Without
+        $\Delta t^2$ (the pre-fix code):</em> 45 detections (0.045%), median $z = 0.048$,
+        $z_{90} = 0.096$, deepest $z = 0.124$, furthest horizon 0.833 Gpc. A factor 168 in
+        the number of events, and the deepest detectable redshift falls by a factor 9.
+        For comparison the project&rsquo;s own recorded pre-fix population (seed600, 500
+        events) had median $z = 0.046$, $z_{90} = 0.074$, maximum $z = 0.109$.</p>
+      </noscript>
+    </div>
+
+    <div class="ch06-verdict">
+      <span class="ch06-verdict-label">What this widget is, precisely</span>
+      The pre-fix bar is a <strong>counterfactual on the post-fix pool</strong>, not a
+      re-simulation. It is exact rather than approximate, and for a specific reason: G8
+      proves the old code returned <em>exactly</em>
+      $\langle h_1\mid h_2\rangle/\Delta t^{2}$, so at $\Delta t = 10\ \mathrm{s}$ the pre-fix
+      detection criterion on these same injections is exactly $\rho/10 \ge 20$. No waveform
+      is regenerated and nothing is fitted. Beside it sits the project&rsquo;s
+      <em>recorded</em> pre-fix measurement from a different venue and code era (seed600,
+      500 events: median $z = 0.046$, $z_{90} = 0.074$, max $z = 0.109$,
+      <span class="prov-chip">G8 §2 L5</span>). The two are never blended — but they land on
+      top of each other, which is the strongest thing that could have happened to a
+      counterfactual.
+    </div>
+
+    <!-- ===================== §3 ===================== -->
+    <h2>3. Fisher and Cram&eacute;r&ndash;Rao: where the ellipsoid comes from</h2>
+
+    <p>
+      An EMRI waveform is described by 14 parameters — two masses, the spin, the orbital
+      elements $(p_0, e_0, x_0)$, the distance, four angles for sky position and spin
+      orientation, and three initial phases. The question is: <em>having observed one, how
+      well is each of those pinned down, and by how much do the answers trade off against
+      each other?</em>
+    </p>
+    <p>
+      Near a high signal-to-noise maximum the log-likelihood is locally quadratic, and a
+      quadratic log-likelihood is a Gaussian. The curvature of that quadratic — the matrix
+      of second derivatives — is the <span class="term" data-term="Gam">Fisher information
+      matrix</span>, and because the noise is Gaussian it can be written entirely with the
+      bracket of §1:
+    </p>
+
+    <div class="voice-derivation">
+      <span class="voice-label">Fisher matrix and the Cram&eacute;r&ndash;Rao bound
+        <span class="badge ratified">RATIFIED</span>
+        <span class="prov-chip">parameter_estimation.py:399</span>
+        <span class="prov-chip">parameter_estimation.py:430</span>
+        <span class="prov-chip">Vallisneri 2008, arXiv:gr-qc/0703086</span>
+      </span>
+      $$ \Gamma_{ab} \;=\; \bigl\langle \partial_a h \,\big|\, \partial_b h \bigr\rangle ,
+         \qquad
+         \Sigma \;=\; \Gamma^{-1} , $$
+      with $\Sigma$ the covariance of the best achievable unbiased estimator — the
+      <span class="term" data-term="Sig">Cram&eacute;r&ndash;Rao bound</span>. For 14
+      parameters the symmetric upper triangle is 105 bracket evaluations per event, each one
+      an FFT and a PSD-weighted integral; this is the computational hot path of the whole
+      simulation pipeline.
+    </div>
+
+    <p>
+      Note what $\Gamma$ is made of: <em>derivatives of the waveform</em>. There is no
+      analytic form for an EMRI waveform&rsquo;s parameter derivatives, so they are taken
+      numerically — and the accuracy of that numerical step is a physics decision, not an
+      implementation detail.
+    </p>
+
+    <div class="voice-adjudicator">
+      <span class="voice-label">Three landed repairs to the same object
+        <span class="badge finding">FINDING</span>
+      </span>
+      <ul style="margin:0.3rem 0 0;">
+        <li><strong>Stencil order.</strong> The derivatives were originally
+          $O(\varepsilon)$ forward differences. They are now the $O(\varepsilon^4)$
+          five-point stencil Vallisneri (2008) recommends precisely because Fisher matrices
+          are sensitive to derivative error <span class="prov-chip">ledger #2</span>
+          (Phase 10). Verdict as recorded: <em>fixed-and-landed, insufficient alone</em>.</li>
+        <li><strong>Per-parameter step size.</strong> A single $\varepsilon$ across 14
+          parameters spanning $10^5\,M_\odot$ and radians is not a step size, it is a
+          coincidence. Per-parameter $\varepsilon$ landed in Phase 37
+          <span class="prov-chip">ledger #13</span>.</li>
+        <li><strong>The singular-Fisher gate.</strong> Inversion used to run with
+          <code>allow_singular=True</code>, which quietly accepted Fisher matrices with
+          condition number $\kappa &gt; 10^{14}$ — in float64 that leaves fewer than two
+          significant digits in the inverse, so the stored &ldquo;bounds&rdquo; were
+          numerical noise wearing error bars. A hard gate now raises and the event is
+          skipped <span class="prov-chip">ledger #11</span>
+          <span class="prov-chip">commit d17230d</span>
+          <span class="prov-chip">G7 row 11</span>.</li>
+      </ul>
+    </div>
+
+    <p>
+      That last one is worth a measurement rather than a reassurance. Across all
+      <strong>1590</strong> rows of this run&rsquo;s table, the assembled 3&times;3
+      covariance has condition number median <strong>53.2</strong> and maximum
+      <strong>2813</strong> — comfortable. The 4&times;4 covariance that adds the redshifted
+      mass has median <strong>2.3&times;10<sup>11</sup></strong> and maximum
+      <strong>8.0&times;10<sup>12</sup></strong>, and <strong>zero</strong> rows exceed the
+      inference-side threshold of $10^{16}$
+      (<span class="prov-chip">bayesian_statistics.py:1964, :2443-2444</span>).
+    </p>
+    <p>
+      The eleven-order-of-magnitude gap between those two condition numbers is not a defect —
+      it is the mass coordinate announcing itself. §4 says why, and Chapter 8 is where it
+      matters <span class="ch06-fwd">⏭ Ch 8</span>.
+    </p>
+
+    <div class="callout defect">
+      <span class="callout-label">Trap &mdash; &ldquo;The Cram&eacute;r&ndash;Rao bound is the posterior.&rdquo;</span>
+      It is the leading-order Gaussian approximation to the likelihood <em>around its
+      peak</em>, and this pipeline&rsquo;s $\rho \ge 20$ threshold exists partly to keep that
+      approximation honest. What degrades first as $\rho$ falls is not the <em>width</em> but
+      the <em>shape</em>: non-Gaussian tails and secondary sky modes. That matters more here
+      than in most applications, because — as the cold open showed — the candidate-host sum
+      is an integral over exactly those tails. A 5% error in $\sigma$ is harmless. A missing
+      secondary sky mode is not.
+    </div>
+
+    <!-- ===================== §4 ===================== -->
+    <h2>4. Fraction coordinates: the three numbers the likelihood actually sees</h2>
+
+    <p>
+      The inference does not use all fourteen parameters. It needs the sky position, because
+      that is what selects candidate galaxies, and the <span class="term" data-term="dL">distance</span>,
+      because that is what carries <span class="term" data-term="h">$h$</span>. So the 14&times;14 covariance is projected onto three coordinates — and the choice
+      of <em>which</em> three is where the pipeline&rsquo;s design shows.
+    </p>
+
+    <div class="voice-derivation">
+      <span class="voice-label">The GW likelihood in fraction coordinates
+        <span class="badge ratified">RATIFIED</span>
+        <span class="prov-chip">dark_siren_likelihood.md §2.1</span>
+        <span class="prov-chip">G2a §1</span>
+        <span class="prov-chip">bayesian_statistics.py:1856 _mvn_pdf</span>
+      </span>
+      With <span class="term" data-term="phth">$\phi = \phi_S$</span> (ecliptic azimuth),
+      $\theta = q_S$ (ecliptic polar angle) and the
+      <span class="term" data-term="u">fractional distance</span>
+      $u = d_L/\hat d_L$, the per-event GW likelihood is
+      $$ p(x_{\rm GW}\mid \phi,\theta,d_L) \;\simeq\;
+         \mathcal N_3\bigl((\phi,\theta,u);\ \mu,\ \Sigma\bigr),
+         \qquad \mu = (\hat\phi,\ \hat\theta,\ 1), $$
+      $$ \Sigma \;=\;
+         \begin{pmatrix}
+           \sigma_\phi^2 & C_{\theta\phi} & C_{d_L\phi}/\hat d_L \\
+           C_{\theta\phi} & \sigma_\theta^2 & C_{d_L\theta}/\hat d_L \\
+           C_{d_L\phi}/\hat d_L & C_{d_L\theta}/\hat d_L & \sigma_{d_L}^2/\hat d_L^{\,2}
+         \end{pmatrix} . $$
+      The mean&rsquo;s third component is <strong>1 by construction</strong>: at the
+      maximum-likelihood point the fractional distance <em>is</em> one.
+      <span class="ch06-fwd">code, current tree: <code>bayesian_statistics.py:2389-2409</code> (assembly), <code>:2459</code> (mean)</span>
+    </div>
+
+    <p>
+      Why fractional? Because the gravitational-wave amplitude determines $d_L$
+      <em>multiplicatively</em> — the strain goes as $1/d_L$, so what the detector constrains
+      is a ratio, not a length. The claim is that this makes $\sigma_u$ approximately
+      SNR-set and approximately distance-independent, which would make the stored covariance
+      reusable and the Gaussian approximation better behaved.
+    </p>
+    <p>
+      That is a claim about 1590 events, so measure it. If the fractional distance error is
+      set by the signal-to-noise ratio alone, then $\sigma_u \times \rho$ should be the
+      <em>same number</em> for every event in the run, whatever its masses, distance,
+      inclination or sky position:
+    </p>
+
+    <div class="widget" id="ch06-f61">
+      <h4>F6.1 — What is set by $\rho$, and what is not
+        <span class="prov-chip real">real: seed61000 CRB, all 1590 rows</span>
+      </h4>
+      <p style="margin-top:0; color:var(--muted); font-size:0.88rem;">
+        <strong>Switch</strong> the quantity. <strong>Watch</strong> whether the cloud
+        collapses onto a horizontal line. A flat cloud means &ldquo;this uncertainty is
+        $\rho$ and nothing else&rdquo;; a fanned cloud means geometry is doing the work.
+      </p>
+      <div class="toggle-row" id="ch06-f61-row" role="group" aria-label="Quantity">
+        <button type="button" data-q="sigma_u_x_snr" aria-pressed="true">$\sigma_u \times \rho$</button>
+        <button type="button" data-q="sigma_phi_x_snr">$\sigma_\phi \times \rho$</button>
+        <button type="button" data-q="sigma_theta_x_snr">$\sigma_\theta \times \rho$</button>
+        <button type="button" data-q="sqrt_dOmega_x_snr">$\sqrt{\Delta\Omega} \times \rho$</button>
+        <button type="button" data-q="sigma_Mz_frac_x_snr">$(\sigma_{M_z}/M_z) \times \rho$</button>
+      </div>
+      <div id="ch06-f61-plot" class="widget-plot" style="min-height:300px"></div>
+      <div class="ch06-readouts" id="ch06-f61-readouts">
+        <span>median <strong id="ch06-f61-med">&mdash;</strong></span>
+        <span>p5&ndash;p95 <strong id="ch06-f61-rng">&mdash;</strong></span>
+        <span>spread p95/p5 <strong id="ch06-f61-spread">&mdash;</strong></span>
+      </div>
+      <div class="ch06-verdict" id="ch06-f61-verdict"></div>
+      <details class="num-view">
+        <summary>Show me the numbers</summary>
+        <div class="table-scroll"><table class="num-table" id="ch06-f61-table"></table></div>
+      </details>
+      <noscript>
+        <p><strong>Static fallback.</strong> Over all 1590 events, the product of each
+        1-&sigma; width with the event&rsquo;s own SNR has p5 / median / p95:
+        $\sigma_u\rho$ = 0.970 / <strong>1.040</strong> / 1.250 (spread p95/p5 =
+        <strong>1.29</strong>); $\sigma_\phi\rho$ = 0.0995 / 0.189 / 0.542 (spread 5.44);
+        $\sigma_\theta\rho$ = 0.112 / 0.313 / 1.032 (spread 9.24);
+        $\sqrt{\Delta\Omega}\,\rho$ = 0.258 / 0.533 / 1.221 (spread 4.73);
+        $(\sigma_{M_z}/M_z)\rho$ = 1.41&times;10<sup>&minus;6</sup> /
+        2.57&times;10<sup>&minus;6</sup> / 7.93&times;10<sup>&minus;6</sup> (spread 5.61).
+        Only the fractional distance error collapses onto $1/\rho$.</p>
+      </noscript>
+    </div>
+
+    <div class="voice-adjudicator">
+      <span class="voice-label">The measured answer, both halves
+        <span class="badge finding">FINDING</span>
+        <span class="prov-chip real">seed61000 CRB, 1590 rows</span>
+      </span>
+      <strong>$\sigma_u\,\rho$ has median 1.040 and a p95/p5 spread of 1.29.</strong> Across
+      three decades of SNR, four decades of distance and the whole mass range, the fractional
+      distance uncertainty is $\approx 1/\rho$ to within about 30%. The fraction coordinate
+      is not a convention; it is the coordinate in which this measurement is almost
+      one-dimensional.
+      <br /><br />
+      <strong>And the sky is not.</strong> The same product for $\sigma_\phi$ and
+      $\sigma_\theta$ spreads by factors of 5.4 and 9.2. Sky localization depends on how the
+      LISA antenna pattern sweeps past that particular source over the mission — geometry
+      that $\rho$ knows nothing about. Both halves matter: the first licenses the
+      distance-fraction coordinate; the second is the honest bound on the SNR rescaling the
+      next widget uses.
+    </div>
+
+    <p>
+      Two consequences follow immediately, and they are the reason this section exists.
+    </p>
+    <p>
+      <strong>First: the GW leg is $h$-independent.</strong> $\Sigma$ and $\mu$ are properties
+      of the detector and the source. Nothing in them knows about $h$. All of the
+      cosmology enters through one place — the argument at which the Gaussian is
+      <em>evaluated</em>, $u = d_L(z;h)/\hat d_L$. Turning $h$ up shrinks $d_L(z;h)$ for every
+      candidate galaxy at once, sliding the whole candidate set along the $u$ axis. That is
+      the entire mechanism by which a galaxy catalogue measures the Hubble constant, and it
+      is why a per-event $\ln p_i(h)$ curve is interpretable at all
+      <span class="prov-chip">dark_siren_likelihood.md §2.4</span>.
+    </p>
+    <p>
+      <strong>Second: no Jacobian.</strong> The integration variable is <span class="term" data-term="z">$z$</span> (dimensionless),
+      the Gaussian is parameterized in $u$ (dimensionless), and the change of variables from
+      $d_L$ to $u$ is already absorbed into $\Sigma$ — which is why no $dd_L/dz$ appears in
+      the numerator. A spurious factor of this kind was found and removed in Phase 15
+      <span class="prov-chip">ledger #5</span>; a <em>different</em> proposed Jacobian, the
+      &ldquo;missing $dd_L/dz$&rdquo; in the catalogue term, was
+      <span class="badge refuted">REFUTED</span> on sign grounds
+      <span class="prov-chip">H0R:1010</span>. Both belong to the same lesson: in these
+      coordinates the GW factor is a <em>likelihood evaluated at</em> $d_L(z;h)$, not a
+      density in $z$, so it carries no measure of its own.
+    </p>
+
+    <h3>4.1 The fourth coordinate, and why it is nearly degenerate</h3>
+
+    <p>
+      The mass channel adds a fourth: <span class="term" data-term="Mz">$M_{z,\rm frac} = M_z/\hat M_z$</span>, the fractional
+      redshifted mass, with mean 1 for the same reason. The 4&times;4 Gaussian then splits
+      exactly, by the standard multivariate-normal conditioning identity:
+    </p>
+
+    <div class="voice-derivation">
+      <span class="voice-label">Conditional decomposition
+        <span class="badge ratified">RATIFIED</span>
+        <span class="prov-chip">dark_siren_likelihood.md §9.1</span>
+        <span class="prov-chip">Bishop 2006, PRML Eqs. 2.81–2.82</span>
+        <span class="prov-chip">bayesian_statistics.py:2492-2510</span>
+      </span>
+      Partition $\Sigma_{4\times4}$ into the observed block
+      $\Sigma_{\rm obs} = \Sigma[0{:}3,0{:}3]$, the cross vector
+      $c = \Sigma[0{:}3,3]$ and $\sigma_{M_z}^2 = \Sigma[3,3]$. Then
+      $$ p^{(4D)}(x_{\rm obs}, M_{z,\rm frac})
+         = \underbrace{\mathcal N(x_{\rm obs};\mu_{\rm obs},\Sigma_{\rm obs})}_{\text{= exactly the 3D likelihood}}
+         \cdot\ \mathcal N\bigl(M_{z,\rm frac};\ \mu_{\rm cond},\ \sigma^2_{\rm cond}\bigr), $$
+      $$ \mu_{\rm cond} = 1 + c^{\mathsf T}\Sigma_{\rm obs}^{-1}(x_{\rm obs}-\mu_{\rm obs}),
+         \qquad
+         \sigma^2_{\rm cond} = \sigma_{M_z}^2 - c^{\mathsf T}\Sigma_{\rm obs}^{-1} c . $$
+      The 3D marginal of the 4D Gaussian <em>is</em> the 3D likelihood — the marginal
+      covariance of a multivariate normal is just the submatrix — so the two channels share
+      a numerator factor exactly, not approximately.
+    </div>
+
+    <p>
+      For event 889 the numbers are:
+      $\sigma_{M_z}/M_z = 1.36\times10^{-9}$ before conditioning and
+      $\sigma_{\rm cond} = 1.19\times10^{-9}$ after — knowing the sky position and distance
+      buys 13% on the mass. And there is the source of that $10^{11}$ condition number: the
+      4&times;4 covariance mixes a coordinate of width $\sim10^{-3}$ with one of width
+      $\sim10^{-9}$, and the condition number of a matrix is roughly the square of that
+      dynamic range. The redshifted mass is measured <em>absurdly</em> well; whether that
+      helps is Chapter 8&rsquo;s subject, and its answer is not the obvious one
+      <span class="ch06-fwd">⏭ Ch 8</span>.
+    </p>
+
+    <div class="ch06-flag">
+      <span class="ch06-flag-label">Flag raised by this chapter — a unit, not a value</span>
+      The build spec carries EMRI-889&rsquo;s distance precision as
+      &ldquo;$\sigma_{d_L}/d_L = 8.0\times10^{-5}$&rdquo;. The Cram&eacute;r&ndash;Rao row
+      gives $\sigma_{d_L} = 7.984\times10^{-5}$ <strong>Gpc</strong> at
+      $d_L = 0.0888792$ Gpc, so as a <em>fraction</em> it is
+      $\boldsymbol{8.98\times10^{-4}}$. The two are the same measurement in different units;
+      $8.0\times10^{-5}$ is the absolute error in Gpc wearing a fractional label. This page
+      prints both and reconciles neither on the spec&rsquo;s behalf. Two independent checks
+      agree on which one is the fraction. F6.1 above: $\sigma_u\rho \approx 1.04$ predicts
+      $7.3\times10^{-4}$ at 889&rsquo;s $\rho = 1424.7$ — consistent with
+      $8.98\times10^{-4}$, and inconsistent with $8.0\times10^{-5}$, which would need
+      $\rho \approx 13{,}000$. And the project&rsquo;s own idealized readout builds its error
+      budget from &ldquo;$\sigma_{H_0}/H_0 \approx$ <strong>0.38%</strong> $/\sqrt{76}$&rdquo;,
+      so it too treats the per-event GW distance precision of the information-carrying hosts
+      as of order $10^{-3}$; measured here, those 76 rows have median
+      $\sigma_{d_L}/d_L = 5.3\times10^{-3}$.
+      <span class="prov-chip">IDEALIZED_BASELINE_READOUT.md:47-48</span>
+      <span class="prov-chip">book/design/flags/ch06_FLAGS.md F-ch06-1</span>
+    </div>
+
+    <!-- ============ I6.1 ============ -->
+    <div class="widget" id="ch06-i61">
+      <h4>I6.1 — The Fisher Ellipse Forge
+        <span class="prov-chip real">real: seed61000 CRB rows</span>
+        <span class="prov-chip real">real: GLADE+ reduced catalogue patch</span>
+        <span class="prov-chip toy">analytic: the SNR rescaling</span>
+      </h4>
+      <p style="margin-top:0; color:var(--muted); font-size:0.88rem;">
+        <strong>Pick</strong> a real event. <strong>Drag</strong> its signal-to-noise ratio.
+        <strong>Then factorize</strong> the covariance — throw away the off-diagonals, the
+        thing everyone&rsquo;s intuition says is a detail. <strong>Watch the candidate
+        count.</strong> The covariance is not a summary statistic attached to an answer; it
+        is a <em>selection rule</em> that decides which galaxies are in the sum at all.
+      </p>
+
+      <div class="ch06-eventpick" id="ch06-eventpick" role="group" aria-label="Event"></div>
+
+      <div class="widget-controls">
+        <label for="ch06-snr">Signal-to-noise ratio $\rho$:</label>
+        <input id="ch06-snr" type="range" aria-describedby="ch06-i61-readouts" />
+        <span class="readout">$\rho$ = <strong id="ch06-snr-readout">&mdash;</strong></span>
+      </div>
+      <div class="toggle-row" id="ch06-factorize-row" role="group" aria-label="Covariance form">
+        <button type="button" data-fac="0" aria-pressed="true">full $\Sigma$ (as measured)</button>
+        <button type="button" data-fac="1">factorized: $\Sigma \to \mathrm{diag}\,\Sigma$</button>
+      </div>
+
+      <div class="ch06-grid2">
+        <div id="ch06-sky-plot" class="widget-plot" style="min-height:330px"></div>
+        <div id="ch06-dist-plot" class="widget-plot" style="min-height:330px"></div>
+      </div>
+
+      <div class="ch06-readouts" id="ch06-i61-readouts">
+        <span>search radius <strong id="ch06-r-readout">&mdash;</strong></span>
+        <span>galaxies in the ball <strong id="ch06-n-readout">&mdash;</strong></span>
+        <span>&hellip; inside the $z$ window <strong id="ch06-nz-readout">&mdash;</strong></span>
+        <span>$\sigma_u$ <strong id="ch06-su-readout">&mdash;</strong></span>
+        <span>$\Delta\Omega$ <strong id="ch06-dO-readout">&mdash;</strong></span>
+        <span class="warn">effective candidates $1/\sum p_g^2$ <strong id="ch06-ess-readout">&mdash;</strong></span>
+      </div>
+
+      <div class="ch06-verdict" id="ch06-i61-verdict"></div>
+
+      <div class="widget-controls">
+        <button type="button" id="ch06-i61-restore" class="theme-toggle">↺ Restore the measured covariance</button>
+      </div>
+
+      <p class="ch06-note">
+        <strong>What is real and what is rescaled.</strong> The covariance, the sky position,
+        the search radius, the redshift window and every galaxy plotted are measured — the
+        first four from the run&rsquo;s own Cram&eacute;r&ndash;Rao row, the last from the
+        GLADE+ reduced catalogue, put through the production pipeline (stellar&rarr;BH mass
+        relation, equatorial&rarr;ecliptic rotation, mass/redshift prune). Moving the
+        $\rho$ slider away from an event&rsquo;s <em>own</em> measured SNR is a
+        <strong>counterfactual</strong>: it rescales the whole covariance by
+        $(\rho_{\rm ref}/\rho)^2$, which is exact for an amplitude-only change (moving the
+        same source nearer or further scales every waveform derivative by the same factor, so
+        $\Gamma \propto \rho^2$) and is the same licence the $p_{\rm det}$ horizon estimator
+        uses <span class="ch06-fwd">⏭ Ch 4</span>. F6.1 bounds it: exact to ~30% for
+        $\sigma_u$, only indicative for the sky widths. Each event opens at its own measured
+        SNR, marked on the slider.
+      </p>
+      <p class="ch06-note">
+        <strong>Which catalogue.</strong> The committed baseline
+        <code>reduced_galaxy_catalogue.csv</code>, which differs from the campaign-#53
+        realization parent in exactly one column, <code>z_error</code>, so it is licensed for
+        positions and redshifts but is <em>not</em> the production candidate list
+        <span class="prov-chip">BOOK_DESIGN §4.2 rule 5</span>. The host galaxy is not marked:
+        <code>host_galaxy_index</code> is a positional label in the <em>pruned observed</em>
+        frame, and the prune runs on scattered columns, so the index spaces differ and a
+        naively drawn marker would point at the wrong galaxy
+        <span class="prov-chip">sources map §7.12</span>. Counts are exact over a 4.5&deg;
+        cone; the plotted scatter is the nearest 2000 galaxies.
+      </p>
+
+      <details class="num-view">
+        <summary>Show me the numbers</summary>
+        <div class="table-scroll"><table class="num-table" id="ch06-i61-table"></table></div>
+      </details>
+      <noscript>
+        <p><strong>Static fallback.</strong> Two ellipses, with candidate counts.
+        <em>Event 889</em> at its measured $\rho = 1424.7$: search radius 0.757 arcmin,
+        $\Delta\Omega = 3.29\times10^{-4}$ deg², <strong>2</strong> catalogue galaxies in the
+        ball, both inside the redshift window $z \in [0.0175, 0.0251]$. The same event
+        rescaled to $\rho = 20$: radius 53.9 arcmin, <strong>1980</strong> galaxies in the
+        ball, 88 after the redshift window.
+        <em>Event 361</em> ($\rho = 167.9$, the most sky-correlated event in the run,
+        $r_{\theta\phi} = +0.975$) at $\rho = 171$: with the measured covariance,
+        <strong>240</strong> galaxies in the ball and 52 after the redshift window; with the
+        covariance factorized, <strong>135</strong> and 25 — a 44% smaller candidate list
+        from deleting one off-diagonal number. Over the surviving candidates, factorizing
+        also redistributes <strong>35%</strong> of the GW weight, changes which galaxy is
+        the top-weighted candidate, and moves the effective number of candidates from 2.57
+        to 2.00.</p>
+      </noscript>
+    </div>
+
+    <div class="voice-adjudicator">
+      <span class="voice-label">What the widget measured, stated once
+        <span class="badge finding">FINDING</span>
+        <span class="prov-chip real">seed61000 CRB + GLADE+ patch</span>
+      </span>
+      Deleting the off-diagonals of a covariance does two <em>different</em> things, and both
+      are measurable on event 361 at its own SNR:
+      <ul style="margin:0.4rem 0 0;">
+        <li><strong>It changes who is a candidate.</strong> The BallTree search radius is
+          $1.5\sqrt{\lambda_{\max}(J\Sigma_{\rm sky}J^{\mathsf T})}$, and
+          $\lambda_{\max}$ depends on $C_{\theta\phi}$. Dropping that one number shrinks the
+          radius by 23% and the candidate list from <strong>240 to 135</strong> (52 to 25
+          after the redshift window) — a 44% cut, from an off-diagonal.</li>
+        <li><strong>It changes what each survivor is worth.</strong> Over the <em>same</em>
+          candidate set, factorizing moves <strong>35%</strong> of the total GW weight from
+          one galaxy to another (total-variation distance between the normalized weight
+          vectors), changes which galaxy is top-weighted, and inflates the effective number
+          of candidates $1/\sum_g p_g^2$ from 2.57 to 2.00.</li>
+      </ul>
+      Neither effect is universal: on event 555, whose $r_{\theta\phi} = -0.032$, the same
+      operation changes the candidate count by <strong>one galaxy out of 12,056</strong>.
+      The correlation is real where it is large, and 43.0% of the run&rsquo;s events carry
+      $|r_{\theta\phi}| &gt; 0.3$, with a maximum of 0.982.
+    </div>
+
+    <details class="gw-reader">
+      <summary>&#9656; For the GW reader — search radius, redshift window, and the measure question</summary>
+      <p>
+        <strong>The ball.</strong> Candidates come from a BallTree over unit vectors, so the
+        query metric is the Euclidean <em>chord</em>, and the radius is
+        $n_\sigma\sqrt{\lambda_{\max}(J\Sigma_{\rm sky}J^{\mathsf T})}$ with
+        $J = \mathrm{diag}(|\sin\theta|, 1)$ rescaling the azimuthal standard deviation to a
+        great-circle length ($ds^2 = d\theta^2 + \sin^2\theta\,d\phi^2$). Production passes
+        $n_\sigma = 1.5$ <span class="prov-chip">handler.py:575-578</span>
+        <span class="prov-chip">bayesian_statistics.py:2820</span>. This chapter reproduces
+        that exactly. The 1D channel then applies the redshift window only; the 2D channel
+        adds a mass window on top <span class="prov-chip">handler.py:584-592 vs :594-603</span>
+        — a structural asymmetry that is load-bearing later
+        <span class="ch06-fwd">⏭ Ch 8</span>.
+      </p>
+      <p>
+        <strong>The redshift window.</strong> Bounds come from
+        <code>get_redshift_outer_bounds</code>, capped at the analysis redshift limit. Note a
+        small piece of dead code found while reproducing it: the function takes a
+        <code>sigma_multiplier</code> argument that its body never uses — both bounds
+        hardcode $3\sigma$ <span class="prov-chip">physical_relations.py:546-567</span> —
+        so production&rsquo;s <code>sigma_multiplier=2.0</code>
+        (<span class="prov-chip">bayesian_statistics.py:2805</span>) has no effect and the
+        window is always $\pm3\sigma_{d_L}$. This is conservative, not wrong: the window
+        bounds <em>which galaxies enter the sum</em>, and the weighting inside it is done by
+        the Gaussian, not by the window. This chapter calls the production function and
+        therefore inherits the real behaviour
+        <span class="prov-chip">ch06_FLAGS.md F-ch06-4</span>.
+      </p>
+      <p>
+        <strong>The measure.</strong> The Fisher matrix is computed with respect to the bare
+        coordinates $(\phi_S, q_S)$, so $\mathcal N_3$ is a density with respect to
+        $d\phi\,d\theta\,du$ — <em>not</em> with respect to the solid angle
+        $d\Omega = \sin\theta\,d\theta\,d\phi$
+        <span class="prov-chip">G2a §1</span>. The sky panel above is drawn in the
+        great-circle tangent plane (the $J$-scaled coordinates, which is what the ball
+        search uses), so the plotted ellipse and the plotted circle are geometrically
+        honest; the <em>weights</em> come from the bare-coordinate Gaussian. That distinction
+        is not pedantry — the missing $\sin\theta_{\rm det}$ Jacobian in the completion term
+        was a real, landed fix worth a median $1.15\times$ per-event over-weighting
+        <span class="prov-chip">ledger #46</span> <span class="prov-chip">commit 4a259b7</span>
+        <span class="ch06-fwd">⏭ Ch 5</span>.
+      </p>
+      <p>
+        <strong>The candidate weights shown.</strong> The GW factor alone,
+        $\mathcal N_3((\phi_g,\theta_g,u_g);\mu,\Sigma)$ with
+        $u_g = d_L(z_g;h{=}0.73)/\hat d_L$ — evaluated at each candidate&rsquo;s catalogue
+        redshift, i.e. in the $\sigma_z \to 0$ point limit. The rate weight $w_g$, the
+        detection probability, and the host-redshift kernel that replaces the point
+        evaluation are Chapters 3, 4 and 7 respectively
+        <span class="ch06-fwd">⏭ Ch 7</span>.
+      </p>
+    </details>
+
+    <!-- ===================== §5 ===================== -->
+    <h2>5. The frame story: the same matrix, in the wrong sky</h2>
+
+    <p>
+      One number in $\Sigma$ has not been discussed: none of them, individually. The
+      question of §5 is about all of them at once — <em>in what coordinate system are they
+      written?</em>
+    </p>
+    <p>
+      LISA waveform conventions are barycentric <strong>ecliptic</strong>. GLADE+ stores
+      positions in <strong>equatorial</strong> ICRS J2000. The two frames differ by the
+      obliquity of the ecliptic, 23.4&deg;. And the median BallTree search radius in that era
+      was <strong>1.76&deg;</strong>.
+    </p>
+
+    <div class="voice-adjudicator">
+      <span class="voice-label">The primary mover of its era
+        <span class="badge finding">FINDING</span>
+        <span class="prov-chip">ledger #12</span>
+        <span class="prov-chip">H0R §3.2</span>
+        <span class="prov-chip">H0R:134 (Audit A5)</span>
+      </span>
+      Catalogue ingestion stored equatorial coordinates while the EMRI sky angles were
+      ecliptic. A 23.4&deg; systematic offset against a 1.76&deg; ball does not add noise; it
+      puts the ball somewhere else. About 15 of 60 events landed on spurious near-host
+      matches and most of the rest found no possible hosts at all. The repair had two
+      surfaces — rotating the catalogue at ingestion (Phase 36, <code>b460297</code>, with a
+      polar-correct BallTree embedding and an eigenvalue search radius) and separately
+      rotating the <em>cached</em> 14&times;14 covariances that had been computed before it
+      (Phase 43-H2, <code>ab4bc80</code>). Measured: host recovery
+      <strong>31 &rarr; 38 of 60</strong>, &ldquo;no possible hosts&rdquo;
+      <strong>10 &rarr; 1</strong>, a 5.4&sigma; sky anisotropy in the Q3 quartile
+      &rarr; 0&sigma;, and the second surface alone moved the MAP
+      <strong>0.860 &rarr; 0.730</strong>.
+    </div>
+
+    <p>
+      That is the single largest movement any covariance-side repair has produced in this
+      project&rsquo;s history, and it came from a rotation, not from a formula. It is also
+      the reason Chapter 5&rsquo;s question — <em>can I trust either branch?</em> — is a
+      question about the covariance and not only about the mixture: a mis-framed $\Sigma$
+      systematically picks up the wrong galaxies, and since galaxies at different sky
+      positions sit at different redshifts, the wrong galaxies prefer a wrong $h$
+      <strong>coherently across events</strong>. Coherent error is bias. Incoherent error is
+      noise. A frame is coherent.
+    </p>
+
+    <p>
+      And then the part that makes this a two-sided story.
+    </p>
+
+    <div class="voice-adjudicator">
+      <span class="voice-label">The same hypothesis, later, on a different venue
+        <span class="badge exonerated">EXONERATED</span>
+        <span class="prov-chip">ledger #27</span>
+        <span class="prov-chip">H0R:1010</span>
+      </span>
+      In June a residual bias on the <code>seed400</code> venue prompted the obvious
+      suspicion: <em>frame mismatch again</em>. It was checked by tracing the full
+      construction chain and survived two adversarial refutation attempts. Verdict:
+      <strong>non-cause</strong>. That covariance was already natively ecliptic, the
+      migration script had deliberately not been run on it, and <strong>rotating it would
+      have double-rotated</strong> — introducing the very defect the fix was meant to remove.
+      <br /><br />
+      Venue scope, stated as the project states it: #12 is a defect of the pre-Phase-36
+      cached CRBs; #27 is an exoneration of the <code>seed400</code>-era ones. Neither
+      transfers. The tables this book uses carry an explicit frame stamp in two columns,
+      <code>_coord_frame</code> and <code>_cov_frame</code>, and
+      <code>Detection.__init__</code> <strong>refuses to load a row without them</strong>;
+      both read <code>ecliptic_BarycentricTrue_J2000</code> for every one of the 1590 rows
+      here. The lesson the project drew is written into the guard&rsquo;s own error message:
+      stamp, do not rotate.
+    </div>
+
+    <p>
+      Two stories, then, in one chapter, about the same object. A constant that multiplied
+      the inner product, and a rotation that did not change any individual number in the
+      covariance at all. Neither was a formula error. Both were worth more than most formula
+      errors.
+    </p>
+
+    <!-- ===================== dossier ===================== -->
+    <div class="dossier">
+      <div class="dossier-title">Event dossier — EMRI-889 after this chapter</div>
+      <table>
+        <tr><td>d_L</td><td>88.879 Mpc</td></tr>
+        <tr><td>SNR</td><td>1424.7 — the loudest of the 1590 rows in this run&rsquo;s table</td></tr>
+        <tr><td>host</td><td>catalogue index 859360 — one of only 76 events with a catalogued host</td></tr>
+        <tr><td>z</td><td><em>still unknown</em></td></tr>
+        <tr><td>detection horizon</td><td>6.33 Gpc</td></tr>
+        <tr class="dossier-new"><td>distance precision</td><td>&sigma;_dL = 8.0&times;10<sup>&minus;5</sup> <strong>Gpc</strong> = 0.0798 Mpc &nbsp;&rarr;&nbsp; as a fraction, &sigma;_dL/d_L = <strong>9.0&times;10<sup>&minus;4</sup></strong> (see the flag in §4)</td></tr>
+        <tr class="dossier-new"><td>sky ellipse</td><td>&Delta;&Omega; = 1.00&times;10<sup>&minus;7</sup> sr = 3.29&times;10<sup>&minus;4</sup> deg² = <strong>1.19 arcmin²</strong></td></tr>
+        <tr class="dossier-new"><td>correlations</td><td>r(&theta;,&phi;) = +0.212 · r(&phi;,u) = &minus;0.015 · r(&theta;,u) = &minus;0.031 — sky&ndash;sky matters here, sky&ndash;distance barely</td></tr>
+        <tr class="dossier-new"><td>redshifted mass</td><td>&sigma;_Mz/M_z = 1.36&times;10<sup>&minus;9</sup>; conditioning on (&phi;, &theta;, u) buys 13% &rarr; 1.19&times;10<sup>&minus;9</sup></td></tr>
+        <tr class="dossier-new"><td>its candidate ball</td><td><strong>2 galaxies</strong>, both inside z &isin; [0.0175, 0.0251]; effective number of candidates 1.0</td></tr>
+        <tr class="dossier-new"><td>what this chapter added</td><td>the ellipsoid, opened. 889&rsquo;s GW measurement has essentially <em>resolved</em> its host — and the answer still contains no redshift.</td></tr>
+      </table>
+    </div>
+
+    <!-- ===================== §6 ===================== -->
+    <h2>6. What the open box cannot fix</h2>
+
+    <p>
+      Take stock. EMRI-889&rsquo;s distance is known to nine parts in ten thousand. Its sky
+      position is pinned to about a square arcminute. Its detector-frame mass is known to
+      nine significant figures. Two galaxies are inside its ball. By any standard of
+      gravitational-wave astronomy this is an extraordinarily well-measured event, and the
+      instrument that measured it is now fully specified: an inner product, a Fisher matrix,
+      an inverse, three fraction coordinates, and a frame stamp.
+    </p>
+    <p>
+      Now put a number next to it. The catalogue redshift of a host galaxy — the other half
+      of every term in the sum — is known, for the events that carry this run&rsquo;s
+      information, to a median fractional precision of about
+      <strong>49%</strong> <span class="prov-chip">IDEALIZED_BASELINE_READOUT.md:50-52</span>.
+    </p>
+
+    <div class="callout without">
+      <span class="callout-label">The failure the next chapter answers</span>
+      The gravitational-wave side of this measurement is, for these events, effectively
+      exact — the redshift side is effectively unmeasured, by roughly <strong>three orders of
+      magnitude</strong>. Every remaining question about this pipeline is therefore a
+      question about handling a wide, badly-known redshift correctly. And the naive handling
+      — put the catalogue&rsquo;s central value in, widen the error bar a bit — does not
+      merely widen the answer. <strong>It moves it.</strong>
+    </div>
+
+    <!-- ===================== SELF-CHECK ===================== -->
+    <h2>Self-check</h2>
+
+    <div class="selfcheck">
+      <p>Q6.1 &nbsp; The Cram&eacute;r&ndash;Rao bound is a <em>bound</em>. Under what
+      conditions is using it <em>as</em> the posterior width defensible, and what would you
+      expect to break first as those conditions fail?</p>
+      <details class="answer">
+        <summary>Show answer</summary>
+        <div class="answer-body">
+          It is the leading-order Gaussian approximation to the likelihood around its peak,
+          valid at high SNR where the log-likelihood is locally quadratic. This
+          pipeline&rsquo;s $\rho \ge 20$ threshold is chosen with that in mind
+          <span class="prov-chip">constants.py SNR_THRESHOLD</span>, and the loudest events
+          — up to $\rho = 1424.7$ in this run — are extremely safe. What breaks first as SNR
+          falls is not the width but the <em>shape</em>: non-Gaussian tails and
+          multimodality in sky position. That matters enormously here because the
+          candidate-host sum is an integral over exactly those tails — at $\rho = 28$, event
+          555&rsquo;s ball holds 12,056 galaxies, so the sum is dominated by the far wings
+          of the Gaussian, not by its core. A 5% error in $\sigma$ is harmless; a missing
+          secondary sky mode is not.
+        </div>
+      </details>
+    </div>
+
+    <div class="selfcheck">
+      <p>Q6.2 &nbsp; The distance is parameterized fractionally, $u = d_L/\hat d_L$. Why is
+      that the natural coordinate, and what would go wrong with absolute $d_L$?</p>
+      <details class="answer">
+        <summary>Show answer</summary>
+        <div class="answer-body">
+          Because the GW amplitude determines $d_L$ <em>multiplicatively</em> — the strain
+          goes as $1/d_L$ — so the fractional error is roughly SNR-set and roughly
+          $d_L$-independent, whereas $\sigma$ in absolute distance scales with distance
+          itself. This run measures the claim directly: $\sigma_u \times \rho$ has median
+          <strong>1.040</strong> with a p95/p5 spread of only <strong>1.29</strong> across
+          1590 events spanning $\rho = 20$–1425 and $d_L = 0.068$–7.3 Gpc, while the
+          absolute $\sigma_{d_L}$ over the same events runs from 0.08 Mpc to hundreds of Mpc
+          <span class="prov-chip real">seed61000 CRB</span>. In fractional coordinates the
+          covariance is approximately stationary across the population, which makes the
+          stored CRB reusable and the Gaussian approximation better behaved. It also means
+          the mean of the fractional coordinate is exactly 1 by construction, which is why
+          the code&rsquo;s mean vector is $(\hat\phi,\hat\theta,1)$
+          <span class="prov-chip">bayesian_statistics.py:2459</span>. Note the honest
+          limit: the <em>sky</em> widths do not collapse this way (spread 5.4 and 9.2), so
+          &ldquo;fraction coordinates make everything SNR-set&rdquo; would be the wrong
+          generalization.
+        </div>
+      </details>
+    </div>
+
+    <div class="selfcheck">
+      <p>Q6.3 &nbsp; A missing $dt^2$ made every SNR 10&times; too small. Without looking it
+      up: what does a factor 10 in SNR do to (a) the Fisher matrix, (b) the CRB $\sigma$,
+      (c) the detectable population depth?</p>
+      <details class="answer">
+        <summary>Show answer</summary>
+        <div class="answer-body">
+          (a) The Fisher is quadratic in the signal, so <strong>100&times; too small</strong>;
+          (b) the CRB $\sigma$ goes as the inverse square root of the Fisher, so
+          <strong>10&times; too large</strong>; (c) since $\rho \propto 1/d_L$ at fixed
+          source, a 10&times; SNR deficit shrinks the horizon about 10&times; — and because
+          the number of detections goes roughly as the enclosed volume, the population is
+          not rescaled, it is <em>deleted</em>. The project measured its mock population
+          capped at $z \le 0.11$ instead of $\lesssim 1.5$
+          <span class="prov-chip">G8 §2 L5</span>; this chapter&rsquo;s counterfactual on
+          the production injection pool gives deepest $z$ = 0.124 instead of 1.108 and
+          <strong>45 detections instead of 7548</strong>. The lesson the book draws: a
+          constant factor in an inner product is never &ldquo;just a
+          normalization&rdquo;, because normalizations that multiply a
+          <em>threshold</em> change which data exists.
+        </div>
+      </details>
+    </div>
+
+    <div class="selfcheck">
+      <p>Q6.4 &nbsp; Why does a covariance stamped in the wrong sky frame bias H₀ rather than
+      merely add noise?</p>
+      <details class="answer">
+        <summary>Show answer</summary>
+        <div class="answer-body">
+          Because the candidate-host sum weights each galaxy by the Gaussian evaluated at
+          <em>that galaxy&rsquo;s</em> coordinates, so a frame error systematically mis-places
+          the ellipsoid relative to the real large-scale structure and the sum picks up the
+          wrong galaxies. Since galaxies at different sky positions sit at different
+          redshifts, the wrong galaxies prefer a wrong $h$ — and they do so
+          <em>coherently across every event</em>, because a frame offset is the same rotation
+          for all of them. Coherent error is bias; incoherent error is noise. The project
+          measured host recovery 31 &rarr; 38 of 60 and the MAP moving
+          <strong>0.860 &rarr; 0.730</strong> from this alone
+          <span class="prov-chip">ledger #12</span>. The scale is what makes it decisive: a
+          23.4&deg; obliquity against a 1.76&deg; median search radius is not a perturbation
+          of the ball, it is a different ball. The matching negative result is worth as much:
+          when the same hypothesis was raised again on a later venue it was
+          <span class="badge exonerated">EXONERATED</span> — that covariance was already
+          ecliptic, and &ldquo;fixing&rdquo; it would have double-rotated
+          <span class="prov-chip">ledger #27</span>.
+        </div>
+      </details>
+    </div>
+
+    <div class="selfcheck">
+      <p>Q6.5 <em>(transfer)</em> &nbsp; You now have a well-characterized ellipsoid. For
+      EMRI-889 the distance shell is thin to 8&times;10<sup>&minus;5</sup>. Yet the book is
+      about to claim the redshift is the dominant error. Estimate the redshift precision
+      implied by a catalogue photo-z at $\sigma_z/z \approx 49\%$ and compare.</p>
+      <details class="answer">
+        <summary>Show answer</summary>
+        <div class="answer-body">
+          <p>
+            First, fix the units in the question — this is the flag §4 raises, and working
+            through it <em>is</em> the answer. &ldquo;8&times;10<sup>&minus;5</sup>&rdquo; is
+            889&rsquo;s $\sigma_{d_L}$ in <strong>Gpc</strong> (7.984&times;10<sup>&minus;5</sup>
+            Gpc = 0.0798 Mpc). Divided by its $d_L = 0.0888792$ Gpc, the
+            <em>fractional</em> distance error is
+            $\sigma_{d_L}/d_L = \boldsymbol{8.98\times10^{-4}}$, i.e. 0.0898%
+            <span class="prov-chip real">seed61000 CRB row 889</span>.
+          </p>
+          <p>
+            Now the comparison. At low redshift $H_0 \simeq cz/d_L$, so the fractional error
+            in $H_0$ inherited from each side is just that side&rsquo;s fractional error:
+            <strong>0.0898% from the distance, 49% from the redshift</strong>. The ratio is
+            <strong>&asymp;550&times;</strong>. (With the mislabelled
+            8&times;10<sup>&minus;5</sup> read as a fraction you get &asymp;6000&times;;
+            both figures deliver the same verdict, and neither is close.) The
+            gravitational-wave measurement is, for these events, effectively exact and the
+            catalogue is effectively unmeasured. Everything from here on is about handling a
+            wide, badly-known redshift correctly — and Chapter 7 shows that the <em>naive</em>
+            handling does not merely widen the answer, it moves it.
+            <span class="prov-chip">ch06_FLAGS.md F-ch06-1, F-ch06-2</span>
+            <span class="prov-chip">IDEALIZED_BASELINE_READOUT.md:50-52</span>
+          </p>
+          <p>
+            One more reason to trust the corrected arithmetic rather than the label: the
+            project's own idealized readout, computing the same budget for the 76
+            information-carrying hosts, writes it as
+            &ldquo;$\sigma_{H_0}/H_0 \approx 0.38\%\,/\sqrt{76} = 0.044\%$&rdquo;
+            <span class="prov-chip">IDEALIZED_BASELINE_READOUT.md:47-48</span>. That
+            0.38% is a per-event <em>fractional distance</em> error of order
+            $10^{-3}$, arrived at independently — and the 76 rows measure a median of
+            $5.3\times10^{-3}$.
+          </p>
+        </div>
+      </details>
+    </div>
+
+    <!-- ===================== TRAPS ===================== -->
+    <div class="callout defect">
+      <span class="callout-label">Trap 6.A &mdash; &ldquo;Sky localization and distance are separate measurements.&rdquo;</span>
+      <p style="margin:0.3rem 0 0;">
+        They are correlated through the antenna pattern, and the correlation sits in the
+        off-diagonals of the stored 3&times;3 covariance. Factorizing them mis-weights the
+        candidate galaxies — measured above on event 361: 35% of the candidate weight moves,
+        and the top-weighted candidate changes.
+      </p>
+      <p style="margin:0.5rem 0 0;">
+        <strong>But measure before you generalize, including here.</strong> Across all 1590
+        events the sky&harr;sky correlation is the large one — median $|r_{\theta\phi}| =
+        0.260$, 43.0% of events above 0.3, maximum 0.982 — while the sky&harr;distance
+        correlation is real but modest: median 0.041, p95 0.207, maximum 0.703. And the
+        tempting extra clause, <em>&ldquo;worst for the loud events&rdquo;</em>, is
+        <strong>not what this run says</strong>: the Spearman rank correlation of
+        sky&harr;distance correlation against SNR is <strong>&minus;0.019</strong>, the
+        SNR-quartile medians are flat (0.045 / 0.039 / 0.040 / 0.041), and event 889, the
+        loudest in the run, sits <em>below</em> the population median. What the run does
+        support is the other half: the in-catalogue events carry a higher sky&harr;distance
+        correlation than the dark ones (median 0.058 vs 0.041), so the correlation is worst
+        exactly where the catalogue term has something to say.
+        <span class="prov-chip real">seed61000 CRB, 1590 rows</span>
+        <span class="prov-chip">ch06_FLAGS.md F-ch06-3</span>
+      </p>
+    </div>
+
+    <div class="callout defect">
+      <span class="callout-label">Trap 6.B &mdash; &ldquo;Numerical factors are bookkeeping.&rdquo;</span>
+      $dt^2$. Ten times the SNR. A hundred and sixty-eight times fewer events.
+      <span class="prov-chip">ledger #51</span>
+      <span class="prov-chip real">injection_pool_mix200k_20260728</span>
+    </div>
+
+    <!-- ===================== PROVENANCE ===================== -->
+    <div class="provenance-panel">
+      <h4>Provenance panel — every stamp used in this chapter</h4>
+      <ul>
+        <li><span class="badge ratified">RATIFIED</span> <code>G8_dt2_inner_product_derivation.md</code> §1–§3 — the inner product, the DFT↔CFT correspondence, evidence lines L1–L5, the three objections; Finn (1992) PRD 46 5236 Eq. 2.3, Cutler &amp; Flanagan (1994) arXiv:gr-qc/9402014 Eq. 2.4</li>
+        <li><span class="badge ratified">RATIFIED</span> <code>parameter_estimation.py:335</code> (inner product), <code>:396</code> (the $dt^2$ prefactor), <code>:399</code> ($\Gamma_{ab}$), <code>:430</code> ($\Sigma = \Gamma^{-1}$), <code>:447</code> (the $\kappa &gt; 10^{14}$ gate), <code>:488</code> (SNR); Vallisneri (2008) arXiv:gr-qc/0703086 for the five-point stencil</li>
+        <li><span class="badge ratified">RATIFIED</span> <code>dark_siren_likelihood.md</code> §2.1 (fraction coordinates), §2.4 (where $h$ enters; no $dd_L/dz$), §7.3 (the 4D coordinate), §9.1 (Bishop 2006 PRML Eqs. 2.81–2.82); code <code>bayesian_statistics.py:1856</code>, <code>:2389-2409</code>, <code>:2459</code>, <code>:2492-2510</code>, <code>:3532</code>, <code>:4014</code></li>
+        <li><span class="badge ratified">RATIFIED</span> <code>G2a_completion_sky_marginal_4pi.md</code> §1 — $\Sigma$ as assembled from the CRB, and the Lebesgue-vs-solid-angle measure statement</li>
+        <li><span class="badge ratified">RATIFIED</span> <code>LISA_configuration._confusion_noise</code> — Babak et al. (2023) arXiv:2303.15929 Eq. (17)</li>
+        <li><span class="badge finding">FINDING</span> <code>ledger #51</code> / <code>G7 row 1</code> / <code>fcc49c4</code> — missing $dt^2$: SNR ×1/10, CRB σ ×10, population depth $z \le 0.11$ instead of $\lesssim 1.5$; en route, <code>49251f3</code> (pre-fix confusion-noise TDI transfer ~10³× deaf below ~1 mHz)</li>
+        <li><span class="badge finding">FINDING</span> <code>ledger #1</code> (Phase 9, galactic confusion foreground), <code>#2</code> (Phase 10, five-point stencil), <code>#13</code> (Phase 37 PE-02, per-parameter ε) — each recorded as <em>fixed-and-landed, insufficient alone</em></li>
+        <li><span class="badge finding">FINDING</span> <code>ledger #11</code> / <code>d17230d</code> / <code>G7 row 11</code> — <code>allow_singular=True</code> masked κ &gt; 10¹⁴ Fishers whose CRBs were numerical noise; hard gate now skips the event</li>
+        <li><span class="badge finding">FINDING</span> <code>ledger #12</code> / <code>H0R §3.2</code> / <code>H0R:134</code> — equatorial CRB vs ecliptic catalogue: host recovery 31→38/60, "no possible hosts" 10→1, Q3 anisotropy 5.4σ→0σ, MAP 0.860→0.730 from Phase 43-H2 alone</li>
+        <li><span class="badge exonerated">EXONERATED</span> <code>ledger #27</code> / <code>H0R:1010</code> — the seed400-era frame-mismatch hypothesis: non-cause; <strong>rotating would double-rotate</strong>. Venue-scoped; do not re-try</li>
+        <li><span class="badge exonerated">EXONERATED</span> <code>ledger #4</code> — the "Gaussian evaluation index bug (3D vs 4D)": investigated, <strong>NOT A FACTOR</strong>. Full exhibit in <a href="museum.html#ex-index-bug">the Defect Museum</a></li>
+        <li><span class="badge refuted">REFUTED</span> <code>H0R:1010</code> — the catalogue term's "missing $dd_L/dz$ Jacobian": wrong sign; the GW factor is a likelihood at $d_L(z,h)$, so it carries no measure</li>
+        <li><span class="badge finding">FINDING</span> <code>ledger #5</code> (Phase 15) — a spurious $/(1+z)$ Jacobian in the with-BH numerator, removed</li>
+        <li>Data: <code>results/campaign51_20260728/realistic_20260729/seed61000/prepared_cramer_rao_bounds.csv</code> (1590 rows, 76 in-catalogue, frame-stamped <code>ecliptic_BarycentricTrue_J2000</code>); <code>.../gate_b_20260730/injection_pool_mix200k_20260728/</code> (707 files, 200,100 data rows; stratum a = 99,014 carries the population measure); <code>master_thesis_code/galaxy_catalogue/reduced_galaxy_catalogue.csv</code> (22,641,048 rows; baseline, see §4.2 rule 5)</li>
+        <li>Open flags: <code>book/design/flags/ch06_FLAGS.md</code> — F-ch06-1 (σ_dL unit label, <strong>cross-chapter</strong>), F-ch06-2 (Q6.5's 6000× vs the measured 550×), F-ch06-3 (Trap 6.A's SNR clause not supported), F-ch06-4 (dead <code>sigma_multiplier</code>), F-ch06-5 (Ch 8's $M_z$ precision), F-ch06-6 (two stale line anchors), F-ch06-7 (pool row count, reconfirmed), F-ch06-8 (I6.3 lives in Ch 5)</li>
+      </ul>
+    </div>
+
+    <p class="book-footer">
+      Data generated by <code>book/generators/gen_ch06.py</code> (read-only against the main
+      package and <code>results/</code>). This page renders fully offline — Plotly and KaTeX
+      are vendored under <code>vendor/</code>. Nothing on this page differentiates anything
+      across the $h$-grid; this chapter does not touch the $h$ grid at all.
+    </p>
+  </main>
+</div>
+
+<script src="js/manifest.js"></script>
+<script src="vendor/plotly/plotly.min.js"></script>
+<script src="vendor/katex/katex.min.js"></script>
+<script src="vendor/katex/auto-render.min.js"></script>
+<script src="js/book.js"></script>
+<script>
+  (function () {
+    "use strict";
+
+    // ---------------------------------------------------------------
+    // Palette (mirrors css/book.css tokens; Plotly needs literals)
+    // ---------------------------------------------------------------
+    var C = {
+      accent: "#0072B2", accentDark: "#6fb8e8", warn: "#D55E00",
+      rec: "#CC79A7", ok: "#009E73", amber: "#E69F00", grey: "#9e9e9e",
+    };
+    function ink() { return Book.isDark() ? "#eef1f5" : "#1a1a1a"; }
+    function grid() { return Book.isDark() ? "#33373f" : "#d8dce1"; }
+    function live() { return Book.isDark() ? C.accentDark : C.accent; }
+
+    function baseLayout(xTitle, yTitle, over) {
+      return Object.assign({
+        margin: { l: 62, r: 16, t: 28, b: 46 },
+        xaxis: { title: xTitle, gridcolor: grid(), zeroline: false },
+        yaxis: { title: yTitle, gridcolor: grid(), zeroline: false },
+        paper_bgcolor: "rgba(0,0,0,0)",
+        plot_bgcolor: "rgba(0,0,0,0)",
+        font: { color: ink(), size: 12 },
+        showlegend: false,
+        hovermode: "closest",
+      }, over || {});
+    }
+    function fmt(v, n) {
+      return (v === null || v === undefined || !isFinite(v)) ? "—" : Number(v).toFixed(n);
+    }
+    function sci(v, d) {
+      if (v === null || v === undefined || !isFinite(v)) return "—";
+      if (v === 0) return "0";
+      var e = Math.floor(Math.log10(Math.abs(v)));
+      if (e >= -2 && e <= 4) return Number(v).toPrecision(d === undefined ? 3 : d);
+      return (v / Math.pow(10, e)).toFixed(2) + "e" + e;
+    }
+    function thou(n) { return Number(n).toLocaleString("en-US"); }
+    function table(el, headers, rows) {
+      var html = "<tr>" + headers.map(function (h) { return "<th>" + h + "</th>"; }).join("") + "</tr>";
+      rows.forEach(function (r) {
+        html += "<tr>" + r.map(function (c) { return "<td>" + c + "</td>"; }).join("") + "</tr>";
+      });
+      el.innerHTML = html;
+    }
+    function pressOnly(container, attr, value) {
+      container.querySelectorAll("button").forEach(function (b) {
+        b.setAttribute("aria-pressed", String(b.getAttribute(attr) === String(value)));
+      });
+    }
+    // Linear interpolation onto a monotone tabulated grid (page-local
+    // workaround; requested as R-ch07-2 in WIDGET_REQUESTS.md).
+    function interp1(xs, ys, x) {
+      var n = xs.length;
+      if (x <= xs[0]) return ys[0];
+      if (x >= xs[n - 1]) return ys[n - 1];
+      var lo = 0, hi = n - 1;
+      while (hi - lo > 1) { var m = (lo + hi) >> 1; if (xs[m] <= x) lo = m; else hi = m; }
+      var t = (x - xs[lo]) / (xs[hi] - xs[lo]);
+      return ys[lo] + t * (ys[hi] - ys[lo]);
+    }
+
+    // ---------------------------------------------------------------
+    // Bias rail (BW1). Chapter 6 refines the INSTRUMENT, not the
+    // estimator: the rail is unchanged from Chapter 5, and the page
+    // says so rather than inventing a movement.
+    // Pips are a page-local workaround for WIDGET_REQUESTS R-ch07-1.
+    // ---------------------------------------------------------------
+    var PIPS = [
+      { tone: "amber", label: "two branches disagree (0.86 / 0.64) — unresolved",
+        note: "Ch 5 splinter: in-catalogue vs dark class argmaxes, real_r1 diagnostics" },
+      { tone: "grey", label: "Ch 6 moves nothing: the instrument, not the estimator",
+        note: "This chapter characterises the covariance; no estimator term changes." },
+    ];
+    (function renderRail() {
+      Book.biasRail({
+        entries: [
+          { label: "cat-only, no D(h)", bias: -0.178, note: "Phase 32 / ledger #9" },
+          { label: "full-volume D(h)", bias: 0.0, note: "Phase 32 / ledger #9", active: true },
+        ],
+      });
+      var host = document.getElementById("bias-rail");
+      if (!host) return;
+      PIPS.forEach(function (p) {
+        var d = document.createElement("div");
+        d.className = "ch06-pip" + (p.tone === "grey" ? " grey" : "");
+        d.title = p.note;
+        d.innerHTML = '<span class="ch06-pip-dot"></span><span>' + p.label + "</span>";
+        host.appendChild(d);
+      });
+    })();
+
+    // ===============================================================
+    // I6.2 — the dt^2 switch
+    // ===============================================================
+    Book.loadJSON("data/ch06_dt2.json").then(function (D) {
+      var edges = D.z_edges;
+      var centres = [];
+      for (var i = 1; i < edges.length; i++) centres.push(0.5 * (edges[i] + edges[i - 1]));
+      var state = "with_dt2";
+
+      function traces(which) {
+        var s = D.states[which];
+        var other = D.states[which === "with_dt2" ? "without_dt2" : "with_dt2"];
+        return [
+          { x: centres, y: other.z_hist, type: "bar", name: "the other convention",
+            marker: { color: C.grey, opacity: 0.28 }, hoverinfo: "skip" },
+          { x: centres, y: s.z_hist, type: "bar", name: s.label,
+            marker: { color: which === "with_dt2" ? live() : C.warn } },
+        ];
+      }
+      function layout() {
+        return baseLayout("redshift z of the detected source",
+          "detected injections per bin (Δz = 0.025)",
+          { barmode: "overlay",
+            shapes: [{ type: "line", x0: 0.11, x1: 0.11, y0: 0, y1: 1, yref: "paper",
+              line: { color: C.rec, dash: "dot", width: 1.6 } }],
+            annotations: [{ x: 0.11, y: 1, yref: "paper", yanchor: "bottom",
+              text: "recorded pre-fix max, z = 0.109 (seed600)",
+              showarrow: false, font: { size: 10, color: C.rec }, xanchor: "left" }] });
+      }
+      var plot = Book.themedPlot("ch06-dt2-plot", traces(state), layout);
+
+      function render() {
+        var s = D.states[state];
+        plot.update(traces(state));
+        document.getElementById("ch06-dt2-n").textContent = thou(s.n_detected);
+        document.getElementById("ch06-dt2-frac").textContent = (100 * s.detected_fraction).toFixed(3) + "%";
+        document.getElementById("ch06-dt2-zmed").textContent = fmt(s.z_median, 3);
+        document.getElementById("ch06-dt2-z90").textContent = fmt(s.z_p90, 3);
+        document.getElementById("ch06-dt2-zmax").textContent = fmt(s.z_max, 3);
+        document.getElementById("ch06-dt2-hor").textContent = fmt(s.horizon_max_Gpc, 3) + " Gpc";
+        pressOnly(document.getElementById("ch06-dt2-row"), "data-state", state);
+        var v = document.getElementById("ch06-dt2-verdict");
+        if (state === "with_dt2") {
+          v.innerHTML = '<span class="ch06-verdict-label">The physical convention</span>' +
+            "7548 of 99,014 injections clear ρ ≥ 20 — <strong>7.62%</strong> — and the " +
+            "detected population reaches z = 1.108, filling the model's own z ≤ 1.5 " +
+            "sampling range. This is the universe the campaign in this book analysed.";
+        } else {
+          v.innerHTML = '<span class="ch06-verdict-label">Historical hypothesis ' +
+            '&mdash; ledger&nbsp;#51, FIXED (commit fcc49c4)</span>' +
+            "You are looking at a real code era, not a thought experiment. 45 detections " +
+            "instead of 7548 (<strong>168× fewer</strong>), deepest z = 0.124 instead of " +
+            "1.108, horizon 0.833 Gpc instead of 8.332. The project's own recorded pre-fix " +
+            "population — a different venue, seed600, 500 events — had median z = 0.046, " +
+            "z₉₀ = 0.074, max z = 0.109: the dotted line on the plot. The counterfactual and " +
+            "the record agree, and the fix landed on 2026-07-02, before the campaign.";
+        }
+      }
+      document.getElementById("ch06-dt2-row").addEventListener("click", function (e) {
+        var b = e.target.closest("button[data-state]");
+        if (!b) return;
+        state = b.getAttribute("data-state");
+        render();
+      });
+      document.getElementById("ch06-dt2-restore").addEventListener("click", function () {
+        state = "with_dt2"; render();
+      });
+
+      table(document.getElementById("ch06-dt2-table"),
+        ["quantity", "Δt² present (physical)", "Δt² absent (pre-fix)", "recorded pre-fix (seed600)"],
+        [
+          ["detections (of 99,014)", thou(D.states.with_dt2.n_detected), thou(D.states.without_dt2.n_detected), "500 events (whole run)"],
+          ["detected fraction", (100 * D.states.with_dt2.detected_fraction).toFixed(3) + "%", (100 * D.states.without_dt2.detected_fraction).toFixed(3) + "%", "—"],
+          ["median z", fmt(D.states.with_dt2.z_median, 4), fmt(D.states.without_dt2.z_median, 4), fmt(D.recorded_prefix_population.z_median, 3)],
+          ["z₉₀", fmt(D.states.with_dt2.z_p90, 4), fmt(D.states.without_dt2.z_p90, 4), fmt(D.recorded_prefix_population.z_p90, 3)],
+          ["max z", fmt(D.states.with_dt2.z_max, 4), fmt(D.states.without_dt2.z_max, 4), fmt(D.recorded_prefix_population.z_max, 3)],
+          ["max d_L (Gpc)", fmt(D.states.with_dt2.d_L_max_Gpc, 3), fmt(D.states.without_dt2.d_L_max_Gpc, 3), fmt(D.recorded_prefix_population.d_L_max_Gpc, 3)],
+          ["furthest horizon (Gpc)", fmt(D.states.with_dt2.horizon_max_Gpc, 4), fmt(D.states.without_dt2.horizon_max_Gpc, 4), "—"],
+        ]);
+      render();
+    });
+
+    Book.predictReveal(document.getElementById("ch06-predict-widget"));
+
+    // ===============================================================
+    // F6.1 + I6.1 — the Fisher blocks
+    // ===============================================================
+    Book.loadJSON("data/ch06_fisher.json").then(function (F) {
+      // ------------------------------------------------- F6.1
+      var Q = {
+        sigma_u_x_snr: { label: "σ_u × ρ  (fractional distance)", log: false },
+        sigma_phi_x_snr: { label: "σ_φ × ρ  (ecliptic azimuth)", log: true },
+        sigma_theta_x_snr: { label: "σ_θ × ρ  (ecliptic polar angle)", log: true },
+        sqrt_dOmega_x_snr: { label: "√ΔΩ × ρ  (sky area)", log: true },
+        sigma_Mz_frac_x_snr: { label: "(σ_Mz/M_z) × ρ  (redshifted mass)", log: true },
+      };
+      var qkey = "sigma_u_x_snr";
+      var SC = F.population.scatter;
+
+      // The scatter panel plots sigma_u * SNR directly (the only quantity for
+      // which per-event values ship); for the others the panel shows the
+      // measured quantile band, which is what the comparison is about.
+      function f61Traces(k) {
+        var s = F.population.scaling[k];
+        if (k === "sigma_u_x_snr") {
+          var y = SC.sigma_u.map(function (v, i) { return v * SC.snr[i]; });
+          return [{
+            x: SC.snr, y: y, mode: "markers", type: "scatter",
+            marker: {
+              size: 4, opacity: 0.5,
+              color: SC.in_catalog.map(function (b) { return b ? C.amber : live(); }),
+            },
+            text: SC.in_catalog.map(function (b) { return b ? "in-catalogue" : "dark"; }),
+            hovertemplate: "ρ = %{x:.1f}<br>σ_u·ρ = %{y:.3f}<br>%{text}<extra></extra>",
+          }];
+        }
+        return [{
+          x: [20, 1425], y: [s.median, s.median], mode: "lines",
+          line: { color: live(), width: 2 },
+          hovertemplate: "median " + s.median.toPrecision(3) + "<extra></extra>",
+        }, {
+          x: [20, 1425, 1425, 20], y: [s.p5, s.p5, s.p95, s.p95],
+          fill: "toself", mode: "lines", line: { width: 0 },
+          fillcolor: Book.isDark() ? "rgba(111,184,232,0.16)" : "rgba(0,114,178,0.12)",
+          hoverinfo: "skip",
+        }];
+      }
+      function f61Layout() {
+        var s = F.population.scaling[qkey];
+        var lo = s.p5, hi = s.p95, pad = (hi - lo) * 0.6;
+        return baseLayout("event SNR ρ (log scale)", Q[qkey].label, {
+          xaxis: { title: "event SNR ρ (log scale)", type: "log", gridcolor: grid(), zeroline: false },
+          yaxis: {
+            title: Q[qkey].label, gridcolor: grid(), zeroline: false,
+            type: Q[qkey].log ? "log" : "linear",
+            range: Q[qkey].log ? undefined : [Math.max(0, lo - pad), hi + pad],
+          },
+          shapes: [{ type: "line", x0: 20, x1: 1425, y0: s.median, y1: s.median,
+            line: { color: C.warn, dash: "dot", width: 1.4 } }],
+        });
+      }
+      var f61 = Book.themedPlot("ch06-f61-plot", f61Traces(qkey), f61Layout);
+
+      function f61Render() {
+        var s = F.population.scaling[qkey];
+        f61.update(f61Traces(qkey));
+        Plotly.relayout("ch06-f61-plot", f61Layout());
+        document.getElementById("ch06-f61-med").textContent = sci(s.median, 3);
+        document.getElementById("ch06-f61-rng").textContent = sci(s.p5, 3) + " – " + sci(s.p95, 3);
+        document.getElementById("ch06-f61-spread").textContent = fmt(s.spread_p95_over_p5, 2) + "×";
+        pressOnly(document.getElementById("ch06-f61-row"), "data-q", qkey);
+        var v = document.getElementById("ch06-f61-verdict");
+        if (qkey === "sigma_u_x_snr") {
+          v.innerHTML = '<span class="ch06-verdict-label">Flat</span>' +
+            "Every one of the 1590 events lands on the same horizontal band: the fractional " +
+            "distance error is 1/ρ to within a factor 1.29 from p5 to p95, across three " +
+            "decades of SNR and four of distance. Orange = the 76 in-catalogue events; they " +
+            "sit on the same line. <strong>This is what licenses the fraction coordinate.</strong>";
+        } else {
+          v.innerHTML = '<span class="ch06-verdict-label">Not flat</span>' +
+            "Spread p95/p5 = <strong>" + fmt(s.spread_p95_over_p5, 2) + "×</strong>, against " +
+            "1.29× for σ_u. This width is not set by loudness — it is set by where the source " +
+            "sits and how the antenna pattern sweeps past it over the mission. The band shows " +
+            "the measured p5–p95 range; per-event points are shipped only for σ_u.";
+        }
+      }
+      document.getElementById("ch06-f61-row").addEventListener("click", function (e) {
+        var b = e.target.closest("button[data-q]");
+        if (!b) return;
+        qkey = b.getAttribute("data-q");
+        f61Render();
+      });
+      table(document.getElementById("ch06-f61-table"),
+        ["quantity × ρ", "p5", "p25", "median", "p75", "p95", "spread p95/p5"],
+        Object.keys(Q).map(function (k) {
+          var s = F.population.scaling[k];
+          return [Q[k].label, sci(s.p5, 3), sci(s.p25, 3), sci(s.median, 3),
+                  sci(s.p75, 3), sci(s.p95, 3), fmt(s.spread_p95_over_p5, 2) + "×"];
+        }));
+      f61Render();
+
+      // ------------------------------------------------- I6.1
+      var EV_LABEL = {
+        "889": "889 · ρ 1425 · in-catalogue",
+        "361": "361 · ρ 168 · most sky-correlated",
+        "606": "606 · ρ 43 · dark",
+        "555": "555 · ρ 28 · population median",
+      };
+      var ids = Object.keys(F.events);
+      var pick = document.getElementById("ch06-eventpick");
+      ids.forEach(function (id) {
+        var b = document.createElement("button");
+        b.type = "button";
+        b.setAttribute("data-ev", id);
+        b.textContent = EV_LABEL[id] || ("event " + id);
+        pick.appendChild(b);
+      });
+
+      var evId = "889", facOn = false, si = F.events["889"].own_snr_index;
+      var slider = document.getElementById("ch06-snr");
+      slider.min = "0"; slider.max = String(F.snr_grid.length - 1); slider.step = "1";
+      slider.value = String(si);
+
+      function ev() { return F.events[evId]; }
+      function scale() { return ev().snr / F.snr_grid[si]; }
+
+      function ellipsePts(cov, k) {
+        // 2x2 sky block in the great-circle tangent plane: x = δφ·sinθ, y = δθ.
+        var st = Math.sin(ev().theta);
+        var a = cov[0][0] * st * st, b = cov[0][1] * st, c = cov[1][1];
+        var out = { x: [], y: [] };
+        var tr = a + c, det = a * c - b * b;
+        var l1 = 0.5 * tr + Math.sqrt(Math.max(0.25 * tr * tr - det, 0));
+        var l2 = 0.5 * tr - Math.sqrt(Math.max(0.25 * tr * tr - det, 0));
+        var ang = 0.5 * Math.atan2(2 * b, a - c);
+        var arcmin = 180 * 60 / Math.PI;
+        for (var t = 0; t <= 64; t++) {
+          var p = (t / 64) * 2 * Math.PI;
+          var u = k * Math.sqrt(Math.max(l1, 0)) * Math.cos(p);
+          var v = k * Math.sqrt(Math.max(l2, 0)) * Math.sin(p);
+          out.x.push((u * Math.cos(ang) - v * Math.sin(ang)) * arcmin);
+          out.y.push((u * Math.sin(ang) + v * Math.cos(ang)) * arcmin);
+        }
+        return out;
+      }
+      function circlePts(rArcmin) {
+        var o = { x: [], y: [] };
+        for (var t = 0; t <= 96; t++) {
+          var p = (t / 96) * 2 * Math.PI;
+          o.x.push(rArcmin * Math.cos(p));
+          o.y.push(rArcmin * Math.sin(p));
+        }
+        return o;
+      }
+
+      function skyTraces() {
+        var e = ev(), p = e.patch, s = scale();
+        var rFull = p.radius_arcmin[si];
+        var rShown = facOn ? rFull * (e.radius_nocorr_rad / e.radius_full_rad) : rFull;
+        var cov = e.cov3.map(function (row) { return row.map(function (v) { return v * s * s; }); });
+        if (facOn) { cov = [[cov[0][0], 0, 0], [0, cov[1][1], 0], [0, 0, cov[2][2]]]; }
+        var ell = ellipsePts(cov, 1.0);
+        var cir = circlePts(rShown);
+        var lim = rFull * 1.9;
+        var xs = [], ys = [], zs = [];
+        for (var i = 0; i < p.scatter_x_arcmin.length; i++) {
+          if (Math.abs(p.scatter_x_arcmin[i]) < lim && Math.abs(p.scatter_y_arcmin[i]) < lim) {
+            xs.push(p.scatter_x_arcmin[i]); ys.push(p.scatter_y_arcmin[i]); zs.push(p.scatter_z[i]);
+          }
+        }
+        return [
+          { x: xs, y: ys, mode: "markers", type: "scatter", name: "GLADE+ galaxies",
+            marker: { size: 4, opacity: 0.55, color: C.grey },
+            text: zs.map(function (z) { return "z = " + z.toFixed(4); }),
+            hovertemplate: "Δ = (%{x:.2f}, %{y:.2f}) arcmin<br>%{text}<extra></extra>" },
+          { x: cir.x, y: cir.y, mode: "lines", name: "1.5σ search ball",
+            line: { color: facOn ? C.warn : live(), width: 2 }, hoverinfo: "skip" },
+          { x: ell.x, y: ell.y, mode: "lines", name: "1σ ellipse",
+            line: { color: facOn ? C.warn : live(), width: 1.4, dash: "dash" }, hoverinfo: "skip" },
+          { x: [0], y: [0], mode: "markers", marker: { size: 9, symbol: "x", color: ink() },
+            hovertemplate: "maximum-likelihood sky position<extra></extra>" },
+        ];
+      }
+      function skyLayout() {
+        var lim = ev().patch.radius_arcmin[si] * 1.9;
+        return baseLayout("Δ(φ·sin θ) [arcmin]", "Δθ [arcmin]", {
+          xaxis: { title: "Δ(φ·sin θ) [arcmin]", range: [-lim, lim], gridcolor: grid(), zeroline: false },
+          yaxis: { title: "Δθ [arcmin]", range: [-lim, lim], gridcolor: grid(),
+                   zeroline: false, scaleanchor: "x", scaleratio: 1 },
+          title: { text: "the sky ellipsoid, and who is inside it", font: { size: 12 } },
+        });
+      }
+
+      function distTraces() {
+        var e = ev(), p = e.patch, s = scale();
+        var su = e.sigma_u * s;
+        var lo = 1 - 4.2 * su, hi = 1 + 4.2 * su;
+        var xs = [], ys = [];
+        for (var i = 0; i <= 220; i++) {
+          var u = lo + (hi - lo) * i / 220;
+          xs.push(u);
+          ys.push(Math.exp(-0.5 * Math.pow((u - 1) / su, 2)) / (su * Math.sqrt(2 * Math.PI)));
+        }
+        // candidate galaxies (display sample) mapped onto u via d_L(z; h=0.73)
+        var T = F.dl_table, rug = [];
+        var rShown = p.radius_arcmin[si] *
+          (facOn ? (e.radius_nocorr_rad / e.radius_full_rad) : 1);
+        for (var j = 0; j < p.scatter_z.length; j++) {
+          var rr = Math.hypot(p.scatter_x_arcmin[j], p.scatter_y_arcmin[j]);
+          if (rr > rShown) continue;
+          var u2 = interp1(T.z, T.d_L_Gpc, p.scatter_z[j]) / e.d_L_Gpc;
+          if (u2 >= lo && u2 <= hi) rug.push(u2);
+        }
+        var uLo = interp1(T.z, T.d_L_Gpc, p.zwin_lo[si]) / e.d_L_Gpc;
+        var uHi = interp1(T.z, T.d_L_Gpc, p.zwin_hi[si]) / e.d_L_Gpc;
+        var ymax = Math.max.apply(null, ys);
+        return [
+          { x: [uLo, uHi, uHi, uLo], y: [0, 0, ymax * 1.08, ymax * 1.08], fill: "toself",
+            mode: "lines", line: { width: 0 },
+            fillcolor: Book.isDark() ? "rgba(230,159,0,0.14)" : "rgba(230,159,0,0.18)",
+            hoverinfo: "skip", name: "redshift window" },
+          { x: xs, y: ys, mode: "lines", line: { color: facOn ? C.warn : live(), width: 2 },
+            hovertemplate: "u = %{x:.4f}<extra></extra>", name: "N(u; 1, σ_u)" },
+          { x: rug, y: rug.map(function () { return ymax * 0.035; }), mode: "markers",
+            marker: { symbol: "line-ns-open", size: 11, color: C.grey,
+                      line: { width: 1.2, color: C.grey } },
+            hovertemplate: "candidate at u = %{x:.4f}<extra></extra>", name: "candidates" },
+        ];
+      }
+      function distLayout() {
+        return baseLayout("fractional distance u = d_L / d̂_L", "density", {
+          title: { text: "the distance dimension of the same ellipsoid", font: { size: 12 } },
+        });
+      }
+
+      var skyPlot = Book.themedPlot("ch06-sky-plot", skyTraces(), skyLayout);
+      var distPlot = Book.themedPlot("ch06-dist-plot", distTraces(), distLayout);
+
+      function render() {
+        var e = ev(), p = e.patch;
+        skyPlot.update(skyTraces());
+        Plotly.relayout("ch06-sky-plot", skyLayout());
+        distPlot.update(distTraces());
+        Plotly.relayout("ch06-dist-plot", distLayout());
+
+        var nBall = facOn ? p.counts.nocorr[si] : p.counts.full[si];
+        var nZ = facOn ? p.counts.nocorr_zwin[si] : p.counts.full_zwin[si];
+        var rr = p.radius_arcmin[si] * (facOn ? (e.radius_nocorr_rad / e.radius_full_rad) : 1);
+        var s = scale();
+        var ess = facOn ? p.ess_diagonal[si] : p.ess_full[si];
+
+        document.getElementById("ch06-snr-readout").innerHTML =
+          fmt(F.snr_grid[si], 1) + (si === e.own_snr_index ? " &nbsp;<em>(measured)</em>" : " &nbsp;<em>(counterfactual)</em>");
+        document.getElementById("ch06-r-readout").textContent = fmt(rr, 3) + " arcmin";
+        document.getElementById("ch06-n-readout").textContent = thou(nBall);
+        document.getElementById("ch06-nz-readout").textContent = thou(nZ);
+        document.getElementById("ch06-su-readout").textContent = sci(e.sigma_u * s, 3);
+        document.getElementById("ch06-dO-readout").textContent = sci(e.d_omega_deg2 * s * s, 3) + " deg²";
+        document.getElementById("ch06-ess-readout").textContent = ess === null ? "—" : fmt(ess, 2);
+
+        pressOnly(pick, "data-ev", evId);
+        pressOnly(document.getElementById("ch06-factorize-row"), "data-fac", facOn ? "1" : "0");
+
+        var v = document.getElementById("ch06-i61-verdict");
+        var nF = p.counts.full[si], nN = p.counts.nocorr[si];
+        var tv = p.weight_moved_by_factorizing[si];
+        if (!facOn) {
+          v.innerHTML = '<span class="ch06-verdict-label">Measured covariance</span>' +
+            "Event " + evId + " at ρ = " + fmt(F.snr_grid[si], 1) +
+            ": r(θ,φ) = <strong>" + fmt(e.corr3[0][1], 3) + "</strong>, " +
+            "r(φ,u) = " + fmt(e.corr3[0][2], 3) + ", r(θ,u) = " + fmt(e.corr3[1][2], 3) +
+            ". The search ball holds <strong>" + thou(nF) + "</strong> catalogue galaxies, " +
+            thou(p.counts.full_zwin[si]) + " of which survive the redshift window " +
+            "z ∈ [" + fmt(p.zwin_lo[si], 4) + ", " + fmt(p.zwin_hi[si], 4) + "]." +
+            (si === e.own_snr_index ? "" :
+              " This is a counterfactual SNR; the event's measured value is ρ = " + fmt(e.snr, 1) + ".");
+        } else {
+          var pct = nF > 0 ? (100 * (nN - nF) / nF) : 0;
+          v.innerHTML = '<span class="ch06-verdict-label">Factorized — Σ → diag Σ</span>' +
+            "<strong>Who is a candidate:</strong> " + thou(nF) + " → <strong>" + thou(nN) +
+            "</strong> galaxies (" + (pct >= 0 ? "+" : "") + fmt(pct, 1) + "%), because the " +
+            "search radius depends on λ_max of the sky block and therefore on C(θ,φ). " +
+            "<br /><strong>What each survivor is worth:</strong> " +
+            (tv === null || tv === undefined
+              ? "not defined here — fewer than two candidates survive the redshift window."
+              : "<strong>" + fmt(100 * tv, 1) + "%</strong> of the total GW weight moves from one " +
+                "galaxy to another, and the effective number of candidates goes " +
+                fmt(p.ess_full[si], 2) + " → " + fmt(p.ess_diagonal[si], 2) +
+                (p.top_candidate_changed[si] ? "; the top-weighted candidate <strong>changes</strong>." : "; the top-weighted candidate is unchanged.")) +
+            "<br /><em>This is not a dead hypothesis from the ledger — nobody shipped a " +
+            "factorized covariance. It is the intuition Trap 6.A names, priced.</em>";
+        }
+
+        var rows = [];
+        for (var k = 0; k < F.snr_grid.length; k += 4) {
+          rows.push([
+            fmt(F.snr_grid[k], 1) + (k === e.own_snr_index ? " (measured)" : ""),
+            fmt(p.radius_arcmin[k], 3),
+            thou(p.counts.full[k]), thou(p.counts.nocorr[k]),
+            thou(p.counts.full_zwin[k]), thou(p.counts.nocorr_zwin[k]),
+            p.weight_moved_by_factorizing[k] === null ? "—" : fmt(p.weight_moved_by_factorizing[k], 4),
+            p.ess_full[k] === null ? "—" : fmt(p.ess_full[k], 2),
+          ]);
+        }
+        table(document.getElementById("ch06-i61-table"),
+          ["ρ", "radius [arcmin]", "in ball (full Σ)", "in ball (no C_θφ)",
+           "+ z window (full)", "+ z window (no C_θφ)", "weight moved", "effective candidates"],
+          rows);
+      }
+
+      slider.addEventListener("input", function () { si = Number(slider.value); render(); });
+      pick.addEventListener("click", function (e2) {
+        var b = e2.target.closest("button[data-ev]");
+        if (!b) return;
+        evId = b.getAttribute("data-ev");
+        si = ev().own_snr_index;
+        slider.value = String(si);
+        render();
+      });
+      document.getElementById("ch06-factorize-row").addEventListener("click", function (e2) {
+        var b = e2.target.closest("button[data-fac]");
+        if (!b) return;
+        facOn = b.getAttribute("data-fac") === "1";
+        render();
+      });
+      document.getElementById("ch06-i61-restore").addEventListener("click", function () {
+        facOn = false; si = ev().own_snr_index; slider.value = String(si); render();
+      });
+      render();
+    });
+
+    // Re-render KaTeX inside the button labels / dynamic verdicts once the
+    // data-driven text is in place.
+    setTimeout(function () { Book.renderMath(document.querySelector("main")); }, 350);
+  })();
+</script>

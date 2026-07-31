@@ -497,6 +497,228 @@ details.num-view > summary { cursor: pointer; color: var(--muted); font-size: 0.
 }
 @media print { #bias-rail { display: none !important; } }
 
+/* --- bias-rail pips (R-ch07-1 / R-ch11-1): live, unquantified entries ---- */
+#bias-rail .bias-rail-pipsep {
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-top: 0.45rem;
+  padding-top: 0.35rem;
+  border-top: 1px dotted var(--border);
+}
+#bias-rail .bias-rail-pip {
+  display: flex;
+  gap: 0.4rem;
+  align-items: baseline;
+  font-size: 0.72rem;
+  color: var(--muted);
+  margin-top: 0.25rem;
+}
+#bias-rail .bias-rail-pip .bias-rail-pip-dot {
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 50%;
+  flex: 0 0 auto;
+  align-self: center;
+}
+#bias-rail .bias-rail-pip.amber .bias-rail-pip-dot { background: #D55E00; }
+#bias-rail .bias-rail-pip.grey .bias-rail-pip-dot { background: var(--prior); }
+
+/* --- Symbol Passport (BW2) ---------------------------------------------- */
+.term[data-term] { /* inert until book.js upgrades it to .term-live */ }
+.term-live {
+  border-bottom: 1px dotted var(--accent);
+  cursor: help;
+  border-radius: 2px;
+}
+.term-live:hover,
+.term-live:focus-visible {
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  outline: none;
+}
+.passport-pop {
+  position: absolute;
+  z-index: 40;
+  display: none;
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  background: var(--paper);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.18);
+  padding: 0.7rem 0.85rem;
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+.passport-pop .passport-sym { font-size: 1rem; margin-bottom: 0.25rem; }
+.passport-pop .passport-meaning { margin-bottom: 0.35rem; }
+.passport-pop .passport-row { color: var(--muted); font-size: 0.76rem; }
+.passport-pop .passport-row span {
+  display: inline-block;
+  min-width: 5.5em;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  font-size: 0.62rem;
+}
+.passport-pop .passport-note {
+  margin-top: 0.35rem;
+  font-size: 0.74rem;
+  color: #b07500;
+}
+:root[data-theme="dark"] .passport-pop .passport-note { color: #E69F00; }
+.passport-pop .passport-pin {
+  margin-top: 0.5rem;
+  border: 1px solid var(--border);
+  background: var(--paper-raised);
+  color: var(--ink);
+  border-radius: 6px;
+  padding: 0.25rem 0.6rem;
+  font-size: 0.76rem;
+  cursor: pointer;
+}
+.passport-pop .passport-pin:hover { border-color: var(--accent); }
+#passport-glossary {
+  position: fixed;
+  right: 0.8rem;
+  bottom: 0.8rem;
+  width: 300px;
+  max-height: 50vh;
+  overflow-y: auto;
+  z-index: 30;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--paper);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.18);
+  padding: 0.7rem 0.85rem;
+  font-size: 0.8rem;
+}
+#passport-glossary .passport-glossary-title {
+  font-weight: 700;
+  font-size: 0.68rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 0.4rem;
+}
+#passport-glossary .passport-glossary-item { margin-bottom: 0.45rem; }
+#passport-glossary .passport-glossary-empty { color: var(--muted); margin: 0; }
+#passport-glossary .term-example { border-bottom: 1px dotted var(--accent); }
+
+/* --- persona switch (R-INT-3) ------------------------------------------- */
+.persona-switch {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  font-size: 0.78rem;
+}
+.persona-switch .persona-label {
+  color: var(--muted);
+  margin-right: 0.45rem;
+  white-space: nowrap;
+}
+.persona-switch button {
+  border: 1px solid var(--border);
+  background: var(--paper-raised);
+  color: var(--muted);
+  padding: 0.3rem 0.6rem;
+  cursor: pointer;
+  font-size: 0.78rem;
+  line-height: 1;
+  margin-right: -1px;
+}
+.persona-switch button:first-of-type { border-radius: 999px 0 0 999px; }
+.persona-switch button:last-of-type { border-radius: 0 999px 999px 0; margin-right: 0; }
+.persona-switch button[aria-pressed="true"] {
+  background: color-mix(in srgb, var(--accent) 14%, var(--paper));
+  border-color: var(--accent);
+  color: var(--accent);
+  font-weight: 600;
+}
+.persona-switch button:focus-visible { outline: none; box-shadow: var(--focus-ring); z-index: 1; }
+@media (max-width: 900px) {
+  .persona-switch .persona-label { display: none; }
+}
+/* Examiner: emphasize the provenance layer (never hides anything). */
+body.persona-examiner .prov-chip { border-color: var(--accent); }
+body.persona-examiner .provenance-panel { border-color: var(--accent); }
+
+/* --- "Has this been tried?" ledger search (BW3) -------------------------- */
+.ledger-ask {
+  border: 1px dashed var(--border);
+  border-radius: var(--radius);
+  padding: 0.6rem 0.9rem;
+  margin: 1.6rem 0 0;
+  background: var(--paper-raised);
+}
+.ledger-ask > summary {
+  cursor: pointer;
+  color: var(--accent);
+  font-size: 0.88rem;
+  font-weight: 600;
+  user-select: none;
+}
+.ledger-ask .ledger-ask-hint { color: var(--muted); font-size: 0.82rem; }
+.ledger-ask .ledger-ask-input {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--paper);
+  color: var(--ink);
+  padding: 0.4rem 0.6rem;
+  font-size: 0.85rem;
+  margin: 0.3rem 0 0.5rem;
+}
+.ledger-ask .ledger-ask-input:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+.ledger-ask .ledger-tag {
+  border: 1px solid var(--border);
+  background: var(--paper);
+  color: var(--accent);
+  border-radius: 999px;
+  padding: 0.05rem 0.5rem;
+  font-size: 0.76rem;
+  cursor: pointer;
+}
+.ledger-ask .ledger-tag:hover { border-color: var(--accent); }
+.ledger-result {
+  font-size: 0.8rem;
+  padding: 0.3rem 0;
+  border-top: 1px dotted var(--border);
+}
+.ledger-result .ledger-date { color: var(--muted); }
+.ledger-dnr {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #a44900;
+  border: 1px solid #D55E00;
+  border-radius: 4px;
+  padding: 0 0.3em;
+}
+:root[data-theme="dark"] .ledger-dnr { color: #ff8b47; }
+.ledger-hint {
+  margin-top: 0.6rem;
+  font-size: 0.8rem;
+  padding: 0.45rem 0.7rem;
+  border-left: 3px solid #D55E00;
+  background: color-mix(in srgb, #D55E00 7%, var(--paper-raised));
+  border-radius: 0 6px 6px 0;
+}
+
+/* --- cross-widget predict lock (R-ch05-1) -------------------------------- */
+/* Added only ever by JS, so no-JS readers are never locked out. */
+.is-predict-locked {
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+/* --- narrow-viewport overflow (R-ch06-1) --------------------------------- */
+@media (max-width: 720px) {
+  .prov-chip { white-space: normal; }
+  code, .provenance-panel li { overflow-wrap: anywhere; }
+}
+
 /* --- nav: planned (not yet live) chapters ------------------------------- */
 .book-nav .nav-planned {
   color: var(--border);
@@ -552,7 +774,8 @@ details.num-view > summary { cursor: pointer; color: var(--muted); font-size: 0.
 }
 
 @media print {
-  .book-topbar, .theme-toggle, .widget .widget-controls, .predict-row { display: none !important; }
+  .book-topbar, .theme-toggle, .widget .widget-controls, .predict-row,
+  .persona-switch, .passport-pop, #passport-glossary, .ledger-ask { display: none !important; }
   body { color: #000; background: #fff; }
 }
 

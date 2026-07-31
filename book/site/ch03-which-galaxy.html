@@ -1,0 +1,1545 @@
+<!DOCTYPE html>
+<meta charset="utf-8" />
+<!--
+  The doctype is load-bearing: without it browsers enter quirks mode and KaTeX
+  refuses to render. _template.html omits it — filed as R-ch07-3 in
+  book/design/WIDGET_REQUESTS.md for the integrator (frozen file).
+-->
+<title>Ch. 3 — Which Galaxy? | EMRI Dark Siren Book</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="description" content="Marginalizing the discrete host: the candidate ball, the EMRI rate weight, the catalogue likelihood as a ratio of sums, and the h-sweep that is the entire mechanism by which a galaxy catalogue constrains H0." />
+<link rel="stylesheet" href="vendor/katex/katex.min.css" />
+<link rel="stylesheet" href="css/book.css" />
+
+<style>
+  /* Page-local only (css/book.css is FROZEN). Nothing here restyles a shared
+     class; these are elements this chapter introduces. */
+  .ch03-verdict {
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--planck);
+    background: var(--paper-raised);
+    border-radius: 8px;
+    padding: 0.7rem 0.9rem;
+    margin: 0.7rem 0 0;
+    font-size: 0.9rem;
+  }
+  .ch03-verdict .ch03-verdict-label {
+    display: block;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--planck);
+    margin-bottom: 0.25rem;
+  }
+  .ch03-readouts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem 1.2rem;
+    margin: 0.5rem 0 0;
+    font-size: 0.86rem;
+    color: var(--muted);
+  }
+  .ch03-readouts strong { color: var(--accent); font-variant-numeric: tabular-nums; }
+  .ch03-locked { opacity: 0.35; pointer-events: none; filter: blur(2.5px); }
+  .ch03-note { font-size: 0.82rem; color: var(--muted); margin: 0.6rem 0 0; }
+  .ch03-fwd {
+    display: inline-block;
+    font-size: 0.72rem;
+    border: 1px dashed var(--border);
+    border-radius: 999px;
+    padding: 0 0.45em;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  .ch03-cards { display: flex; flex-wrap: wrap; gap: 0.8rem; margin: 1rem 0; }
+  .ch03-card {
+    flex: 1 1 15rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--paper-raised);
+    padding: 0.7rem 0.9rem;
+    font-size: 0.86rem;
+  }
+  .ch03-card h5 { margin: 0 0 0.35rem; font-size: 0.92rem; }
+  .ch03-card dl { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 0.1rem 0.6rem; }
+  .ch03-card dt { color: var(--muted); white-space: nowrap; }
+  .ch03-card dd { margin: 0; font-variant-numeric: tabular-nums; }
+  .ch03-card.ch03-card-host { border-left: 3px solid #009E73; }
+  .ch03-card.ch03-card-impostor { border-left: 3px solid #D55E00; }
+  @media print { .ch03-locked { opacity: 1; filter: none; } }
+</style>
+
+<div class="book-shell">
+  <header class="book-topbar">
+    <a class="brand" href="index.html">From Bayes&rsquo; Rule to H&#8320;
+      <small>an interactive discovery book</small>
+    </a>
+    <nav class="book-nav" data-nav aria-label="Chapters"><!-- built from js/manifest.js --></nav>
+    <button class="theme-toggle" data-theme-toggle type="button">☽ Dark</button>
+  </header>
+
+  <main class="book-content">
+    <h1>Chapter 3 — Which Galaxy?</h1>
+    <p class="subtitle">
+      Not knowing the host is not an error bar — it is a <em>sum</em>, and the weights in
+      that sum are astrophysics I have to commit to.
+    </p>
+
+    <!-- ================= COLD OPEN (B1) ================= -->
+    <div class="callout without">
+      <span class="callout-label">The failure this chapter answers</span>
+      Chapter 2 left you needing a per-event likelihood $\mathcal L_i(h)$. To build one you
+      need a redshift, and the gravitational wave does not carry one — it carries a distance
+      and a patch of sky. So you look the patch up in a galaxy catalogue. And then you have a
+      new problem, which is not &ldquo;my redshift is uncertain&rdquo;. It is
+      <strong>&ldquo;I do not know which galaxy&rdquo;</strong>, and that is a different kind
+      of ignorance: discrete, not Gaussian.
+    </div>
+
+    <!-- ============ W1: the census (predict-then-reveal) ============ -->
+    <div class="widget" id="ch03-census-widget" data-predict-id="ch03-ball-size">
+      <h4>How crowded is a localization ball, really?
+        <span class="prov-chip real">real: seed61000 CRB &times; reduced GLADE+</span>
+      </h4>
+      <p style="margin-top:0;">
+        LISA localizes an EMRI to a sky ellipse and a distance shell. The pipeline turns that
+        into a candidate list with a ball search over 20,834,171 catalogue galaxies. Before
+        you look: for a <em>typical</em> one of this run&rsquo;s 1590 detections, how many
+        catalogue galaxies survive as candidate hosts?
+      </p>
+      <div class="predict-row" id="ch03-predict-census" data-predict-id="ch03-ball-size">
+        <button type="button" data-predict="a">a few (&lt; 10)</button>
+        <button type="button" data-predict="b">dozens</button>
+        <button type="button" data-predict="c">thousands</button>
+        <button type="button" data-predict="d">tens of thousands</button>
+      </div>
+      <div class="reveal">
+        All four answers are right, for different events — and that is the finding. Measured
+        over all 1590 rows with the production ball rule and the production candidate
+        redshift window: the <strong>median</strong> event has <strong>1616</strong> galaxies
+        inside its sky ball and <strong>12</strong> left after the redshift window; the 95th
+        percentile has <strong>4891</strong>; the worst has <strong>431,670</strong>; and
+        <strong>552 of 1590</strong> events have <em>no</em> catalogue candidate at all.
+        The chapter&rsquo;s running example, EMRI-889, has <strong>three</strong> galaxies in
+        its ball and <strong>two</strong> after the window. There is no &ldquo;typical&rdquo;
+        localization ball — there is a distribution spanning five orders of magnitude, and
+        both of its ends will teach you something.
+        <span class="prov-chip real">real: 1590 events, measured</span>
+        <span class="prov-chip">handler.py:519, :584-592</span>
+      </div>
+      <div id="ch03-census-plot" class="widget-plot ch03-locked"></div>
+      <div class="ch03-readouts ch03-locked" id="ch03-census-readouts">
+        <span>median in ball <strong id="ch03-c-med-ball">&mdash;</strong></span>
+        <span>median after the z-window <strong id="ch03-c-med-cand">&mdash;</strong></span>
+        <span>events with zero candidates <strong id="ch03-c-zero">&mdash;</strong></span>
+        <span>events where one galaxy carries &gt;50% of the sum <strong id="ch03-c-conc">&mdash;</strong></span>
+      </div>
+      <div class="widget-controls ch03-locked" id="ch03-census-controls">
+        <span class="readout">show:</span>
+        <div class="toggle-row" id="ch03-census-toggle" role="group" aria-label="Which count">
+          <button type="button" data-which="both" aria-pressed="true">both</button>
+          <button type="button" data-which="ball">inside the sky ball</button>
+          <button type="button" data-which="cand">after the redshift window</button>
+        </div>
+      </div>
+      <p class="ch03-note ch03-locked">
+        The two histograms are the <em>same</em> 1590 events counted before and after one
+        cut. The redshift window — not the sky — is what makes host identification
+        thinkable at all: it removes a factor of a few hundred from the median ball. It is
+        also the cut that will turn out to be built on the shakiest number in the catalogue
+        <span class="ch03-fwd">⏭ Ch 7</span>.
+      </p>
+      <details class="num-view">
+        <summary>Show me the numbers</summary>
+        <div class="table-scroll"><table class="num-table" id="ch03-census-table"></table></div>
+      </details>
+      <noscript>
+        <p><strong>Static fallback.</strong> Candidate galaxies per detected event, measured
+        on 1590 seed-61000 events against the 20,834,171-row pruned GLADE+ catalogue.
+        <em>Inside the sky ball:</em> 5th percentile 1, median 1616, 95th 35,466, max
+        546,158, mean 7330; 79 events have an empty ball. <em>After the candidate redshift
+        window:</em> 5th percentile 0, median 12, 95th 4891, max 431,670, mean 1330; 552
+        events have no candidate. EMRI-889: 3 in the ball, 2 candidates. Event 1121: 57,535
+        in the ball, 26,652 candidates.</p>
+      </noscript>
+    </div>
+
+    <p>
+      So the honest statement of the problem is not &ldquo;the host is uncertain&rdquo;. It is:
+      <em>the host is one of $N$ specific objects, each of which has its own redshift, its own
+      sky position, and its own astrophysical claim to being the kind of galaxy that hosts an
+      EMRI — and $N$ ranges from 0 to 431,670.</em> A parameter you do not know but which
+      takes discrete values has exactly one correct treatment in Bayesian inference: you
+      marginalize it.
+    </p>
+
+    <!-- ================= §1 ================= -->
+    <h2>1. The candidate ball</h2>
+
+    <p>
+      Marginalizing needs a list to sum over, and the list has to come from somewhere. The
+      pipeline builds it geometrically: take the event&rsquo;s Fisher sky uncertainty, turn it
+      into a radius, and ask a spatial index for every catalogue galaxy inside.
+    </p>
+
+    <div class="voice-derivation">
+      <span class="voice-label">The ball search
+        <span class="badge ratified">RATIFIED</span>
+        <span class="prov-chip">galaxy_catalogue/handler.py:519</span>
+        <span class="prov-chip">COORD-04</span>
+      </span>
+      Catalogue galaxies are embedded as unit vectors on the sphere and indexed by a BallTree
+      (<code>handler.py:505</code>), so the search metric is <em>chord length</em>. The 2&times;2
+      Fisher sky block <span class="term" data-term="Sig">$\Sigma$</span> is measured in
+      $(\phi,\theta)$ coordinates, in which a step in $\phi$ is a great-circle step of
+      $\sin\theta\,d\phi$ — so it is first rescaled,
+      $$\Sigma' = J\,\Sigma\,J^{\mathsf T},\qquad J = \operatorname{diag}(|\sin\theta|,\,1),$$
+      and the search radius is
+      $$ r \;=\; n_\sigma\,\sqrt{\lambda_{\max}(\Sigma')},\qquad n_\sigma = 2 , $$
+      the semi-major axis of the 2&#8209;$\sigma$ error ellipse, as a chord on the unit sphere.
+      Both the covariance and the catalogue are in the barycentric ecliptic frame
+      (<code>_coord_frame = ecliptic_BarycentricTrue_J2000</code>); getting that wrong once
+      cost this project a factor it could see — the equatorial/ecliptic migration moved the
+      MAP <strong>0.860 &rarr; 0.730</strong> on its own
+      <span class="prov-chip">ledger #12</span> <span class="ch03-fwd">⏭ Ch 6</span>.
+    </div>
+
+    <p>
+      That is the sky cut. Two more cuts follow, and the difference between them is one of the
+      most load-bearing structural facts in this whole book.
+    </p>
+    <p>
+      The <strong>redshift window</strong> keeps a galaxy if its own $1\sigma$ redshift
+      interval overlaps the redshift range the measured distance could correspond to
+      (<code>handler.py:584-592</code>). Note <em>which</em> range: not the range for the
+      current trial $h$, but the range spanned by the <em>whole prior</em> on $h$ —
+      $z_{\min} = z(d_L - 3\sigma_{d_L};\,h = 0.60)$ to
+      $z_{\max} = z(d_L + 3\sigma_{d_L};\,h = 0.86)$
+      (<code>physical_relations.py:546</code>, capped at the analysis&rsquo; redshift limit at
+      <code>bayesian_statistics.py:2826</code>). The candidate list is therefore built
+      <strong>once per event</strong> and is the same for every $h$. Remember that: when we
+      sweep $h$ in a moment, the members of the sum will not change — only their weights.
+    </p>
+    <p>
+      The <strong>mass window</strong> keeps a galaxy if its black-hole mass interval is
+      compatible with the event&rsquo;s measured redshifted mass (<code>handler.py:594-603</code>).
+      And here is the fact: the pipeline returns <em>two</em> candidate lists, one with the mass
+      window applied and one without, and the channel this chapter is building — the
+      distance-and-sky channel — <strong>uses the list without it</strong>
+      (<code>handler.py:592</code> vs <code>:605</code>). The mass window exists only in the
+      second channel <span class="ch03-fwd">⏭ Ch 8</span>. When Chapter 8 asks
+      &ldquo;why was the 1D channel spared?&rdquo;, this line is the answer, and the claim file
+      records that forgetting it was an error of its own investigation.
+    </p>
+
+    <h3>EMRI-889&rsquo;s ball</h3>
+    <p>
+      Our running example is the loudest event of the run, and its localization is
+      correspondingly absurd: a sky ball of radius <strong>1.009 arcmin</strong>
+      (0.01682&deg;, a solid angle of 8.885&times;10<sup>&minus;4</sup> deg&sup2;) and a
+      fractional distance precision of <strong>8.98&times;10<sup>&minus;4</sup></strong>
+      ($\sigma_{d_L} = 7.98\times10^{-5}$ Gpc $=$ 0.0798 Mpc on
+      $\hat d_L = 88.879$ Mpc). Inside that ball sit <strong>three</strong> catalogue
+      galaxies. Two survive the redshift window. Here they are.
+    </p>
+
+    <div class="ch03-cards">
+      <div class="ch03-card">
+        <h5>Candidate A <span style="font-weight:400;color:var(--muted)">— catalogue row 760983</span></h5>
+        <dl>
+          <dt>separation</dt><dd>0.22841&prime;</dd>
+          <dt>redshift</dt><dd>0.0223591 &plusmn; 0.0002558</dd>
+          <dt>redshift type</dt><dd>spectroscopic</dd>
+          <dt>BH mass</dt><dd>9.598&times;10<sup>5</sup> M<sub>&#9737;</sub></dd>
+          <dt>rate weight</dt><dd>88.50</dd>
+        </dl>
+      </div>
+      <div class="ch03-card">
+        <h5>Candidate B <span style="font-weight:400;color:var(--muted)">— catalogue row 859360</span></h5>
+        <dl>
+          <dt>separation</dt><dd>0.22842&prime;</dd>
+          <dt>redshift</dt><dd>0.0212685 &plusmn; 0.0044429</dd>
+          <dt>redshift type</dt><dd>photometric</dd>
+          <dt>BH mass</dt><dd>7.095&times;10<sup>5</sup> M<sub>&#9737;</sub></dd>
+          <dt>rate weight</dt><dd>92.14</dd>
+        </dl>
+      </div>
+    </div>
+
+    <p>
+      Read the first row of each card again. The two galaxies sit <strong>0.22841</strong> and
+      <strong>0.22842</strong> arcminutes from the maximum-likelihood sky position. That is not
+      a near-tie engineered for the book; it is what the measurement returns, and it is not
+      really a coincidence — a sky ellipse this small mostly contains close pairs or nothing.
+    </p>
+
+    <!-- ============ predict: which one? ============ -->
+    <div class="widget" id="ch03-host-widget" data-predict-id="ch03-host-guess">
+      <h4>Predict, then reveal — which one is the host?</h4>
+      <p style="margin-top:0;">
+        One of these two galaxies really did host EMRI-889; the mock universe knows which.
+        Commit before reading on. Your answer is stored and the last chapter of this book will
+        hand it back to you.
+      </p>
+      <div class="predict-row" id="ch03-predict-host" data-predict-id="ch03-host-guess">
+        <button type="button" data-predict="impostor">A — the spectroscopic one</button>
+        <button type="button" data-predict="host">B — the photometric one</button>
+        <button type="button" data-predict="cannot-tell">Neither — you cannot tell from this</button>
+      </div>
+      <div class="reveal">
+        <strong>&ldquo;Neither&rdquo; is the scientifically correct answer to the question as
+        posed</strong>, and it is worth seeing exactly why every discriminator you have so far
+        fails. <em>Sky position:</em> 0.22841&prime; vs 0.22842&prime; — a difference of
+        6&times;10<sup>&minus;6</sup> arcmin, hundreds of times below the localization width.
+        <em>Rate weight:</em> 88.50 vs 92.14 — the astrophysical prior prefers B by 4%, which
+        is noise on a two-element sum. <em>Redshift:</em> 0.02236 vs 0.02127 — a 5% difference,
+        and this is the one the data can actually see, because 5% in $z$ is 5% in $h$. The
+        answer is decided by the distance shell, which is &sect;4 — and the identity is
+        revealed there, on the plot.
+        <span class="prov-chip real">real: reduced GLADE+ rows 760983, 859360</span>
+      </div>
+      <noscript>
+        <p><strong>Static fallback.</strong> The commitment cannot be recorded without
+        JavaScript, so here is the resolution: neither candidate is distinguishable by sky
+        position (0.22841&prime; vs 0.22842&prime;) or by rate weight (88.50 vs 92.14). Only
+        their redshifts differ meaningfully — 0.022359 vs 0.021268 — and it is the distance
+        shell of &sect;4 that decides between them. The true host is catalogue row
+        <strong>859360</strong>, the <em>photometric</em> one.</p>
+      </noscript>
+    </div>
+
+    <div class="callout defect">
+      <span class="callout-label">Trap &mdash; &ldquo;The right host is the closest galaxy to the best-fit sky position.&rdquo;</span>
+      <p style="margin:0 0 0.6rem;">
+        Here the two leading candidates differ in separation by
+        <strong>1&times;10<sup>&minus;5</sup> arcmin</strong>: the nearest-neighbour rule is a
+        coin flip on the book&rsquo;s <em>best-localized event of 1590</em>. And the trap is
+        subtler than &ldquo;it is usually wrong&rdquo;, because a measurement says something
+        genuinely surprising. Evaluate the weighted numerator at the injected $h = 0.73$ on
+        every event that has any candidate at all (1038 of 1590): <strong>52.6%</strong> of them
+        <em>do</em> have a single galaxy carrying more than half the sum, 35.3% have one
+        carrying more than 90%, and the median effective number of contributing galaxies is
+        <strong>2.34</strong>. One galaxy often <em>does</em> dominate.
+      </p>
+      <p style="margin:0;">
+        It is just not the nearest one. The galaxy that dominates is the one whose
+        <em>redshift</em> puts it on the distance shell — sky proximity barely enters, because
+        inside a ball defined by the sky uncertainty every member is, by construction, sky-compatible.
+        And that dominance is an artefact of pretending each catalogue redshift is a number:
+        the numbers above use the point-kernel limit, and EMRI-889&rsquo;s real host is
+        <em>photometric</em> <span class="ch03-fwd">⏭ Ch 7</span>. Structurally, too, the
+        lookup is the wrong shape of answer: the likelihood is a weighted sum, and collapsing
+        it discards the sky–distance correlation the Fisher matrix supplies
+        <span class="ch03-fwd">⏭ Ch 6</span>.
+      </p>
+    </div>
+
+    <details class="gw-reader">
+      <summary>&#9656; For the GW reader — what exactly was measured, and against which catalogue</summary>
+      <p>
+        The census and every candidate set on this page are recomputed by
+        <code>book/generators/gen_ch03.py</code> from
+        <code>master_thesis_code/galaxy_catalogue/reduced_galaxy_catalogue.csv</code>, put
+        through the production pipeline's own steps — the empirical stellar&#8209;to&#8209;BH mass
+        relation, the drop of massless rows, and the shared prune predicate
+        <code>_mass_redshift_prune_mask</code> (<code>handler.py:215</code>) at
+        $M \in [10^4, 10^7]\,M_\odot$, $z \le 1.5$ — leaving <strong>20,834,171</strong> rows in
+        the production row order. The ball radius, the redshift window and the mass window are
+        the production functions, not re-implementations of them in spirit.
+      </p>
+      <p>
+        <strong>Venue, stated once and honoured everywhere on this page.</strong> The seed-61000
+        <em>evaluation</em> ran against an observed-catalogue <em>realization</em>
+        (campaign&nbsp;#53: the catalogue is truth, the estimator sees a noisy copy of it —
+        <span class="prov-chip">REALISTIC_READOUT.md:1-11</span>), and those realization CSVs are
+        not in this checkout. The <em>injection</em> side used the baseline catalogue, so
+        <code>host_galaxy_index</code> indexes the baseline pruned frame — which this page
+        verifies rather than assumes: baseline pruned row <strong>859360</strong> carries
+        $M_g = 709{,}540.71\,M_\odot$ at $z_g = 0.021268457$, and the detector-frame lift
+        $M_g(1+z_g)$ reproduces the CRB row&rsquo;s $M_z = 724{,}631.54\,M_\odot$ to a relative
+        <strong>2.96&times;10<sup>&minus;10</sup></strong>. The generator refuses to write its
+        files if that ever exceeds 10<sup>&minus;5</sup>.
+      </p>
+      <p>
+        So: every reconstruction here lives on the <strong>truth</strong> catalogue — the right
+        venue for &ldquo;which galaxy could this have been&rdquo;, and <em>not</em> the catalogue
+        the run&rsquo;s own $\mathcal L^{\rm cat}$ was computed against. Where both appear
+        (&sect;3), they are drawn separately and are not reconciled;
+        <code>book/design/flags/ch03_FLAGS.md</code> F&#8209;ch03&#8209;3 records the measured
+        difference.
+      </p>
+    </details>
+
+    <!-- ================= §2 ================= -->
+    <h2>2. Who hosts an EMRI?</h2>
+
+    <p>
+      Marginalizing a discrete latent means summing over its values weighted by their prior
+      probability. So: what is the prior probability that galaxy $g$, rather than its
+      neighbour, produced the extreme-mass-ratio inspiral you just detected?
+    </p>
+    <p>
+      The lazy answer is &ldquo;all equal&rdquo;. That answer is a physical claim, and it is
+      false. An EMRI needs a massive black hole; the rate at which a given black hole captures
+      a stellar-mass companion depends on its mass; and a fixed source-frame rate is diluted in
+      the detector frame by time dilation. Both effects are standard and both are in the
+      pipeline.
+    </p>
+
+    <div class="voice-derivation">
+      <span class="voice-label">The rate weight
+        <span class="badge ratified">RATIFIED</span>
+        <span class="prov-chip">G2c &sect;2 row w_g</span>
+        <span class="prov-chip">bayesian_statistics.py:879</span>
+        <span class="prov-chip">Babak et al. 2017, arXiv:1703.09722</span>
+      </span>
+      $$ \underbrace{w_g}_{\text{relative, yr}^{-1}} \;=\;
+         \frac{R_{\rm eff}(M_g)}{1 + z_g} $$
+      with <span class="term" data-term="Reff">$R_{\rm eff}(M)$</span> the effective per-MBH
+      EMRI rate of the Barausse M1 population model (Babak et al. 2017, Eqs. 31 &times; 34,
+      implemented in <code>emri_rate.R_eff_per_mbh</code>) evaluated at the catalogue&rsquo;s
+      <em>source-frame</em> black-hole mass <span class="term" data-term="Mg">$M_g$</span>, and
+      $1/(1+z_g)$ the source&#8209;to&#8209;detector rate dilation (Mandel, Farr &amp; Gair 2019,
+      arXiv:1809.02063). In Gray et al. (2020), arXiv:1908.06050 this slot holds a
+      <em>placeholder</em> — luminosity weighting (A3) and a rate-evolution factor (A4); here it
+      is filled with astrophysics. Any overall rescaling of $w$ cancels, because the weight
+      enters numerator and denominator identically
+      (<code>bayesian_statistics.py:804</code>).
+    </div>
+
+    <p>
+      The reason to care about this weight is not that it is large. Measured on EMRI-889&rsquo;s
+      two candidates, $R_{\rm eff}$ differs by 4% and the weights come out
+      <strong>88.50</strong> and <strong>92.14</strong>. That 4% <em>does</em> decide something
+      — measured below, the host&rsquo;s peak weighted numerator beats the impostor&rsquo;s by
+      0.035 nats, and it does so <em>entirely</em> because of the rate weight: the host&rsquo;s
+      bare $N_g$ peak is actually 0.005 nats <em>lower</em>. It decides which of the two peaks
+      is taller, and it comes nowhere near deciding which galaxy is the host, because the two
+      peaks are at different values of $h$ in the first place.
+    </p>
+    <p>
+      The reason to care, then, is not the size of the weight. It is that this is the
+      <em>same weight the simulator used to draw the host in the first place</em>
+      (<code>handler.py:765 draw_rate_weighted_hosts</code>).
+      Generator and estimator are holding the identical astrophysical opinion, by construction.
+      That closes the loop — and it also means the loop <em>can</em> be opened, which is the
+      subject of a later chapter and one of this project&rsquo;s live inconsistencies
+      <span class="ch03-fwd">⏭ Ch 9</span>.
+    </p>
+
+    <div class="voice-adjudicator">
+      <span class="voice-label">A documented approximation, still open
+        <span class="badge open">OPEN</span>
+        <span class="prov-chip">G2c &sect;5 D1 sub-deviation</span>
+      </span>
+      In Gray&rsquo;s (A10) the host-prior factors $p(s\mid z_i)$ sit <em>inside</em> the
+      integral over the galaxy&rsquo;s redshift. In the implementation $w_g$ is evaluated once,
+      at the catalogue redshift $z_g$, and pulled <em>outside</em> that integral. The mapping
+      document records this verbatim as &ldquo;second-order for narrow $\sigma_z$ but
+      <strong>not</strong> for GLADE+ photo&#8209;$z$ widths — undocumented approximation&rdquo;.
+      It has not been measured. It is written down here because a book about a pipeline should
+      say which of its steps are theorems and which are choices someone is still living with.
+    </div>
+
+    <!-- ================= §3 ================= -->
+    <h2>3. The ratio of sums</h2>
+
+    <p>
+      Now assemble the marginal. For each candidate galaxy $g$ you need two numbers, and it is
+      worth being very clear about what each one answers.
+    </p>
+
+    <div class="voice-derivation">
+      <span class="voice-label">Per-galaxy numerator and denominator
+        <span class="badge ratified">RATIFIED</span>
+        <span class="prov-chip">G2c &sect;2 rows N_g, D_g</span>
+        <span class="prov-chip">bayesian_statistics.py:3615</span>
+        <span class="prov-chip">Gray et al. 2020, arXiv:1908.06050 (A.9)/(A.10)</span>
+      </span>
+      <p style="margin-top:0.4rem">
+        <strong>&ldquo;How well does the data fit a source sitting at $g$?&rdquo;</strong> &mdash; <span class="term" data-term="Ng">$N_g$</span>
+      </p>
+      $$ \underbrace{N_g}_{\text{sr}^{-1}} \;=\;
+         \int \mathcal N_3\!\Bigl(\bigl(\phi_g,\ \theta_g,\ \tfrac{d_L(z,h)}{\hat d_L}\bigr);\,
+         \bigl(\hat\phi,\hat\theta,1\bigr),\ \Sigma_3\Bigr)\; p_g(z)\, dz $$
+      — the event&rsquo;s three-dimensional Fisher Gaussian in
+      <span class="term" data-term="phth">$(\phi,\theta)$</span> and the <em>fractional</em>
+      distance <span class="term" data-term="u">$u = d_L/\hat d_L$</span>, evaluated at the
+      galaxy&rsquo;s position, integrated against that galaxy&rsquo;s redshift kernel
+      $p_g(z)$. <strong>No $p_{\rm det}$ appears here</strong> (comment at
+      <code>bayesian_statistics.py:3722</code>) — putting it in the numerator is a
+      double-count, and this pipeline once did exactly that.
+      <p>
+        <strong>&ldquo;How likely were you to have detected an EMRI at $g$ at all?&rdquo;</strong> &mdash; <span class="term" data-term="Dg">$D_g$</span>
+      </p>
+      $$ \underbrace{D_g}_{\text{dimensionless}} \;=\;
+         \int p_{\rm det}\bigl(d_L(z,h),\,\Omega_g\bigr)\, p_g(z)\, dz $$
+      with <span class="term" data-term="pdet">$p_{\rm det}$</span> a measured detection
+      probability. This chapter takes $p_{\rm det}$ as a given black box; building it, and
+      discovering what happens when its population-level counterpart is missing, is the next
+      chapter <span class="ch03-fwd">⏭ Ch 4</span>. The kernel $p_g(z)$ — the thing that turns
+      &ldquo;the catalogue says $z_g$&rdquo; into a distribution — is Chapter 7
+      <span class="ch03-fwd">⏭ Ch 7</span>.
+      <p>
+        The in-catalogue likelihood <span class="term" data-term="Lcat">$\mathcal L^{\rm cat}$</span> is then the <strong>ratio of the weighted sums</strong>:
+      </p>
+      $$ \boxed{\ \mathcal L^{\rm cat}(h) \;=\;
+         \frac{\sum_g w_g\, N_g(h)}{\sum_g w_g\, D_g(h)}\ } $$
+      <code>weighted_ratio_of_sums</code> at <code>bayesian_statistics.py:804</code>; Gray
+      et al. (2020) Eqs. (A.9)/(A.10) with the placeholder host weights replaced by $w_g$.
+    </div>
+
+    <p>
+      Everything about that expression is unremarkable except one thing, and the one thing is
+      the parenthesis. It is a ratio <em>of sums</em>, not a sum of ratios:
+      $$ \frac{\sum_g w_g N_g}{\sum_g w_g D_g}
+         \qquad\text{versus}\qquad
+         \frac{\sum_g w_g\,(N_g/D_g)}{\sum_g w_g} . $$
+      Both are averages of &ldquo;fit divided by detectability&rdquo; over the candidate set.
+      Both reduce to the same thing when the $D_g$ are all equal. Neither is obviously wrong.
+      They are not the same function, and the difference is not academic.
+    </p>
+
+    <!-- ============ I3.2 ============ -->
+    <div class="widget" id="ch03-ratio-widget">
+      <h4>I3.2 — Ratio of Sums vs Sum of Ratios
+        <span class="prov-chip real">real: candidate sets of events 889 / 1121 / 676</span>
+        <span class="prov-chip">Gray A.9 point-kernel limit &middot; production p_det</span>
+      </h4>
+      <p style="margin-top:0; color:var(--muted); font-size:0.88rem;">
+        <strong>Manipulate</strong> the candidate set, the algebraic form, and — this is the
+        experiment — the <em>spread</em> of the per-galaxy detectability $D_g$.
+        <strong>Watch</strong> the two forms: at spread&nbsp;0 they lie on top of each other to
+        machine precision, because that is a theorem; at spread&nbsp;1, the measured data, they
+        separate by a measurable amount; beyond that they diverge.
+      </p>
+      <div class="widget-controls">
+        <span class="readout">candidate set:</span>
+        <div class="toggle-row" id="ch03-ratio-event" role="group" aria-label="Candidate set">
+          <button type="button" data-ev="889" aria-pressed="true">889 &middot; 2 galaxies</button>
+          <button type="button" data-ev="1121">1121 &middot; 26,652</button>
+          <button type="button" data-ev="676">676 &middot; 18,839</button>
+        </div>
+      </div>
+      <div class="widget-controls">
+        <label for="ch03-lambda">$D_g$ spread &nbsp;$\lambda$:</label>
+        <input id="ch03-lambda" type="range" aria-describedby="ch03-ratio-readouts" />
+        <span class="readout">&lambda; = <strong id="ch03-lambda-readout">1</strong></span>
+        <button type="button" id="ch03-lambda-reset" class="theme-toggle">↺ back to the measured set (&lambda; = 1)</button>
+      </div>
+      <div id="ch03-ratio-plot" class="widget-plot"></div>
+      <div class="ch03-readouts" id="ch03-ratio-readouts">
+        <span>$D_g$ range across the set <strong id="ch03-r-drange">&mdash;</strong></span>
+        <span>separation of the two forms <strong id="ch03-r-spread">&mdash;</strong> nats across the grid</span>
+        <span>argmax — ratio of sums <strong id="ch03-r-map1">&mdash;</strong>, mean of ratios <strong id="ch03-r-map2">&mdash;</strong></span>
+      </div>
+      <div class="ch03-verdict" id="ch03-ratio-verdict"></div>
+      <p class="ch03-note">
+        <strong>What is real and what is not.</strong> $N_g$, $D_g$ and $w_g$ are measured: the
+        real candidate galaxies of the named event, the event&rsquo;s real Fisher Gaussian, and
+        the production $p_{\rm det}$ built from the 200k-injection pool. The numerator uses the
+        <em>point</em> (delta) limit of the host-redshift kernel, which is Gray&rsquo;s (A.9)
+        and the production <code>generator_marginal</code> numerator; the production default
+        integrates a kernel instead <span class="ch03-fwd">⏭ Ch 7</span>. Only $\lambda$ is
+        artificial: it rescales the measured log-$D_g$ about their weighted mean,
+        $\ln D_g(\lambda) = \langle \ln D\rangle + \lambda\,(\ln D_g - \langle\ln D\rangle)$.
+        <strong>$\lambda = 1$ is the data.</strong> Every other $\lambda$ is drawn dashed and is
+        a deliberate distortion of it, shown because the identity at $\lambda = 0$ is the whole
+        point and cannot be observed any other way.
+      </p>
+      <details class="num-view">
+        <summary>Show me the numbers</summary>
+        <div class="table-scroll"><table class="num-table" id="ch03-ratio-table"></table></div>
+      </details>
+      <noscript>
+        <p><strong>Static fallback.</strong> Ratio of sums and mean of ratios, evaluated on
+        three real candidate sets over the 41-point production h grid. At &lambda; = 0 (all
+        D_g equal) the two forms agree to 3.6&times;10<sup>&minus;12</sup> or better — they
+        are the same function. At &lambda; = 1 (the measured D_g) the logarithm of their
+        ratio varies across the grid by 8.05&times;10<sup>&minus;4</sup> nats for event 889
+        (whose D_g span a factor 1.001), 3.44&times;10<sup>&minus;2</sup> for event 1121
+        (factor 1.145), and 7.84&times;10<sup>&minus;2</sup> for event 676 (factor 3.353). No
+        single event&rsquo;s argmax moves; the recorded stack-level effect is ledger #26 below.</p>
+      </noscript>
+    </div>
+
+    <div class="voice-adjudicator">
+      <span class="voice-label">What the project measured — both halves
+        <span class="badge finding">FINDING</span>
+        <span class="prov-chip">ledger #26</span>
+        <span class="prov-chip">816f904</span>
+        <span class="prov-chip">H0R:1119-1139</span>
+      </span>
+      The shipped $\mathcal L^{\rm cat}$ departed from Gray (A.9)/(A.10) in <strong>two</strong>
+      ways at once: it carried a <strong>spurious $p_{\rm det}$ in the numerator</strong>, and it
+      used the <strong>mean of ratios</strong> instead of the ratio of sums. Repairing both, on
+      2026-06-19/20, moved the 1D MAP <strong>0.750 &rarr; 0.740</strong> — the bias
+      <strong>halved</strong> — and the 2D MAP 0.7375 &rarr; 0.7350. That measured
+      <strong>0.010 in $h$</strong> is the <em>joint</em> effect of the two corrections; no
+      artifact in this project splits them, and this book will not split them for it. What the
+      widget above measures is the second correction&rsquo;s own size, per event, on real
+      candidate sets — which is small, and which is exactly why it survived so long.
+    </div>
+
+    <p>
+      The mechanism is worth stating in words, because it is the reason the ratio-of-sums form
+      is the right one and not merely the published one. The mean-of-ratios form divides
+      <em>each galaxy&rsquo;s</em> fit by <em>its own</em> detectability before averaging, so a
+      candidate that is individually hard to detect has its contribution <em>inflated</em> — and
+      as $D_g \to 0$ its term diverges. The ratio-of-sums form divides the total fit by the
+      total detectability, so a galaxy you were unlikely to see contributes little to both
+      sums and cannot dominate either. One of these is a well-posed average and the other needs
+      an arbitrary floor to be finite at all. The full exhibit lives in
+      <a href="museum.html">the Defect Museum</a>.
+    </p>
+
+    <details class="gw-reader">
+      <summary>&#9656; For the GW reader — which denominator the campaign actually ran</summary>
+      <p>
+        The equation this chapter teaches — the <em>local</em> self-normalized ratio of sums,
+        numerator and denominator over the same candidate ball — is what the
+        <code>local_ratio</code> and <code>volume_deconv</code> modes implement
+        (<span class="prov-chip">G2c &sect;4.2, &sect;4.3</span>). The campaign the rest of this
+        book reads (seed 61000, realization r1) ran <code>absolute_marginal</code>, which takes
+        the other branch at <code>bayesian_statistics.py:3190</code>:
+        $$ \mathcal L^{\rm cat} = \frac{\sum_{g\in\text{ball}} w_g N_g}{\Sigma_{\rm global}(h)},
+           \qquad \Sigma_{\rm global}(h) = \sum_{g\,\in\,\text{catalogue}} w_g\,
+           p_{\rm det}\bigl(d_L(z_g,h),\Omega_g\bigr) , $$
+        the <em>full-catalogue</em> selection sum — which is, strictly, the literal (A10)
+        denominator (<span class="prov-chip">G2c &sect;4.1</span>), while the local ratio is
+        closest to Gray&rsquo;s catalogue-patch case (A20). Which of these an estimator
+        <em>should</em> use is not a detail; it is a question about what you are normalizing to,
+        and it has its own chapter <span class="ch03-fwd">⏭ Ch 9</span>.
+      </p>
+      <p>
+        Rebuilding EMRI-889&rsquo;s catalogue leg here — the project&rsquo;s own
+        <code>single_host_likelihood</code>, in the run&rsquo;s own mode, on the two real
+        candidates, divided by the run&rsquo;s own logged $\Sigma_{\rm global}(h)$ — reproduces
+        the run&rsquo;s delivered <code>L_cat_no_bh</code> to a factor
+        <strong>0.815–1.319 in the grid wings</strong>, and puts the peak at $h = 0.77$ where
+        the run&rsquo;s own leg peaks at $h = 0.75$. The two are <em>not</em> the same
+        measurement and are not reconciled here: this reconstruction is on the truth catalogue,
+        the run is on a scattered observed realization that is not in this checkout. The
+        obvious candidate explanation is that scatter, and it is a candidate, not a result
+        <span class="ch03-fwd">⏭ Ch 9</span>
+        <span class="prov-chip">ch03_FLAGS.md F-ch03-3</span>.
+      </p>
+    </details>
+
+    <!-- ================= §4 ================= -->
+    <h2>4. The mechanism: $h$ sweeps the shell</h2>
+
+    <p>
+      Here is the question this whole construction exists to answer, and if you take one thing
+      from this book it should be this one. <strong>How does a galaxy catalogue know anything
+      at all about $h$?</strong>
+    </p>
+    <p>
+      The gravitational wave never sees a <span class="term" data-term="z">redshift</span>. It measures $\hat d_L$. A candidate galaxy
+      never sees a distance; the catalogue gives <span class="term" data-term="zg">$z_g$</span>. The only thing that connects them is
+      the cosmology, and in a flat &Lambda;CDM with fixed $\Omega_m$ the connection is exactly
+      inverse-linear in $h$:
+      $$ d_L(z;h) \;=\; \frac{d_L(z;h=1)}{h} $$
+      because the whole $(1+z)\!\int\! dz'/E(z')$ integral is multiplied by $c/H_0 \propto 1/h$
+      (<code>physical_relations.py:132</code>; Hogg 1999, arXiv:astro-ph/9905116 Eq. 16). So each
+      candidate galaxy makes exactly one statement about the Hubble parameter:
+      $$ h^\star(g) \;=\; \frac{d_L(z_g;\,h=1)}{\hat d_L} $$
+      — <em>&ldquo;if I am the host, then $h$ is this.&rdquo;</em> Turning the $h$ dial does not
+      change which galaxies are in the list. It changes which of them the measured distance
+      shell is <strong>currently standing on</strong>. That sweep is the entire mechanism. If
+      the catalogue were structureless — uniform galaxies at uniform redshifts — the sweep would
+      find the same thing everywhere and carry no information at all.
+    </p>
+
+    <!-- ============ I3.1 ============ -->
+    <div class="widget" id="ch03-skyball-widget">
+      <h4>I3.1 — The Sky-Ball Explorer
+        <span class="prov-chip real">real: reduced GLADE+ &times; seed61000 CRB</span>
+        <span class="prov-chip">Gray A.9 point-kernel numerator</span>
+      </h4>
+      <p style="margin-top:0; color:var(--muted); font-size:0.88rem;">
+        <strong>Manipulate</strong> the trial Hubble parameter <span class="term" data-term="h">$h$</span>, and switch between the
+        book&rsquo;s golden event and a normal one. <strong>Watch</strong> the left panel: the
+        galaxies do not move and the ball does not move — what moves is <em>which of them the
+        distance shell is on</em>, shown as colour. <strong>Then watch</strong> the right panel:
+        each galaxy&rsquo;s vote, and their weighted sum. <strong>The AHA:</strong> the same
+        catalogue, the same event, and two different $h$ pick out two different populations.
+      </p>
+      <div class="widget-controls">
+        <span class="readout">event:</span>
+        <div class="toggle-row" id="ch03-sky-event" role="group" aria-label="Event">
+          <button type="button" data-ev="889" aria-pressed="true">EMRI-889 &middot; SNR 1425 &middot; 2 candidates</button>
+          <button type="button" data-ev="1121">event 1121 &middot; SNR 35 &middot; 26,652 candidates</button>
+        </div>
+      </div>
+      <div class="widget-controls">
+        <label for="ch03-h-slider">Trial Hubble parameter $h$:</label>
+        <input id="ch03-h-slider" type="range" aria-describedby="ch03-sky-readouts" />
+        <span class="readout">h = <strong id="ch03-h-readout">&mdash;</strong></span>
+      </div>
+      <div id="ch03-sky-plot" class="widget-plot" style="min-height:330px"></div>
+      <div id="ch03-vote-plot" class="widget-plot" style="min-height:280px"></div>
+      <div class="ch03-readouts" id="ch03-sky-readouts">
+        <span>the shell sits at $z = $ <strong id="ch03-zshell">&mdash;</strong></span>
+        <span>galaxies inside the $\pm4\sigma_{d_L}$ window <strong id="ch03-nwin">&mdash;</strong></span>
+        <span>effective number contributing <strong id="ch03-neff">&mdash;</strong></span>
+        <span>largest single share <strong id="ch03-topshare">&mdash;</strong></span>
+      </div>
+      <p class="ch03-note" id="ch03-sky-note"></p>
+      <details class="num-view">
+        <summary>Show me the numbers</summary>
+        <div class="table-scroll"><table class="num-table" id="ch03-sky-table"></table></div>
+      </details>
+      <noscript>
+        <p><strong>Static fallback.</strong> Left: the candidate galaxies of an event, plotted
+        as sky offsets from its maximum-likelihood position, inside the production ball
+        (EMRI-889: 2 galaxies, radius 1.009&prime;; event 1121: 26,652 galaxies, radius
+        4.963&deg;). Right: each galaxy&rsquo;s point-kernel numerator against h. For
+        EMRI-889 the two candidates produce two razor-thin, almost equally tall spikes — the
+        true host at h* = 0.7294 and the impostor at h* = 0.7675 — so the weighted sum is
+        essentially zero at h = 0.65 (both galaxies sit ~9000 nats below their own peaks), is
+        carried entirely by the host at h = 0.7294, and entirely by the impostor at
+        h = 0.7675. For event 1121 the weighted sum is a broad, almost
+        featureless curve rising towards the top of the grid, with an effective number of
+        contributing galaxies between 436 and 635 and no galaxy carrying more than 0.74%.</p>
+      </noscript>
+    </div>
+
+    <div class="ch03-cards" id="ch03-vote-cards"></div>
+
+    <p>
+      Two things in that widget are worth saying out loud. The first is the shape of
+      EMRI-889&rsquo;s answer: <strong>two spikes, at $h^\star = 0.7294$ and
+      $h^\star = 0.7675$, of almost exactly the same height</strong> (the peak log-numerators
+      differ by 0.005). The truth is 0.73: the host&rsquo;s vote misses it by
+      <strong>0.0006</strong> and the impostor&rsquo;s by <strong>0.0375</strong>. The data
+      cannot separate the two by sky position, cannot separate them by rate weight, and
+      separates them by redshift only to the extent that it trusts the redshifts.
+    </p>
+    <p>
+      Which brings us to the second thing, and it is a number you should not forget. How
+      precisely does each of these galaxies pin $h$? Propagate the GW&rsquo;s own distance
+      error and you get $\pm 6.6\times10^{-4}$ — this one event, through this one galaxy,
+      would measure the Hubble constant to <em>0.09%</em>. Now propagate the
+      <em>galaxy&rsquo;s</em> redshift error instead:
+    </p>
+
+    <div class="ch03-cards">
+      <div class="ch03-card">
+        <h5>What the wave knows</h5>
+        <dl>
+          <dt>$\sigma_h$ from $\sigma_{d_L}$</dt><dd>&plusmn;0.00066</dd>
+        </dl>
+      </div>
+      <div class="ch03-card ch03-card-impostor">
+        <h5>Candidate A (spec-$z$)</h5>
+        <dl>
+          <dt>$h^\star$</dt><dd>0.7675</dd>
+          <dt>$\sigma_h$ from $\sigma_{z_g}$</dt><dd>&plusmn;0.0089</dd>
+        </dl>
+      </div>
+      <div class="ch03-card ch03-card-host">
+        <h5>Candidate B (photo-$z$, the host)</h5>
+        <dl>
+          <dt>$h^\star$</dt><dd>0.7294</dd>
+          <dt>$\sigma_h$ from $\sigma_{z_g}$</dt><dd>&plusmn;0.155</dd>
+        </dl>
+      </div>
+    </div>
+
+    <p>
+      The true host&rsquo;s own catalogue redshift error, on its own, smears its vote over
+      <strong>&plusmn;0.155 in $h$</strong> — <strong>236 times</strong> the width the
+      gravitational wave contributes, and a $1\sigma$ interval wider than the entire
+      $[0.60,\,0.86]$ prior grid. The
+      loudest EMRI in 1590 detections, localized to a square arcminute, and the limiting
+      uncertainty is a photometric redshift in a galaxy catalogue. Hold that thought
+      <span class="ch03-fwd">⏭ Ch 7</span>.
+    </p>
+
+    <div class="callout defect">
+      <span class="callout-label">Trap &mdash; &ldquo;If we can&rsquo;t identify the host, the event is useless.&rdquo;</span>
+      This project formally concluded exactly that — in June it was recorded as a finding that
+      in-catalogue photometric dark sirens are <strong>information-starved</strong>, a limit of
+      the data rather than of the method — and then <strong>overturned it two days later</strong>:
+      starvation was &ldquo;a property of prior-<em>inconsistent</em> estimators, not of the
+      data&rdquo; <span class="prov-chip">ledger #41 → #52</span>. Events with no identified
+      host are not discarded; they are handled by a second branch, which is the next chapter but
+      one <span class="ch03-fwd">⏭ Ch 5</span>. A negative result about your estimator is not a
+      negative result about nature.
+    </div>
+
+    <!-- ================= dossier ================= -->
+    <div class="dossier">
+      <div class="dossier-title">Event dossier — EMRI-889 after this chapter</div>
+      <table>
+        <tr><td>d_L</td><td>88.879 Mpc (&sigma;_dL = 7.98&times;10&#8315;&#8309; Gpc = 0.0798 Mpc, i.e. &sigma;_dL/d_L = 8.98&times;10&#8315;&#8308;)</td></tr>
+        <tr><td>SNR</td><td>1425 — the loudest of the 1590 rows in this run&rsquo;s table</td></tr>
+        <tr class="dossier-new"><td>localization</td><td>ball radius 1.009&prime; (8.885&times;10&#8315;&#8308; deg&sup2;) &mdash; <strong>3 galaxies</strong> inside it, 2 after the redshift window</td></tr>
+        <tr class="dossier-new"><td>host</td><td>catalogue row <strong>859360</strong>, z = 0.021268 &plusmn; 0.004443, <em>photometric</em>, M = 7.095&times;10&#8309; M<sub>&#9737;</sub></td></tr>
+        <tr class="dossier-new"><td>the impostor</td><td>catalogue row 760983, z = 0.022359 &plusmn; 0.000256, <em>spectroscopic</em>, 0.00001&prime; further away</td></tr>
+        <tr class="dossier-new"><td>rate weights</td><td>w = 92.14 (host) vs 88.50 (impostor) — the astrophysical prior decides nothing here</td></tr>
+        <tr class="dossier-new"><td>z</td><td><em>still unknown</em> — but now it is a <strong>two-term sum</strong> voting for h = 0.7294 and h = 0.7675</td></tr>
+        <tr class="dossier-new"><td>what this chapter added</td><td>the host is marginalized, not identified. The reader&rsquo;s own guess is stored; Chapter 11 will ask for it back.</td></tr>
+      </table>
+    </div>
+
+    <!-- ================= §5 ================= -->
+    <h2>5. Now run it</h2>
+
+    <p>
+      You have a complete per-event likelihood. It marginalizes the discrete host over a real
+      candidate list, with an astrophysical prior on which galaxies host EMRIs, in the
+      algebraic form the literature prescribes. Combine them in log space, exactly as Chapter 2
+      did — 1588 of the run&rsquo;s 1590 Cramér–Rao rows carry a delivered posterior — and read
+      off the maximum.
+    </p>
+
+    <div class="callout without">
+      <span class="callout-label">The failure the next chapter answers</span>
+      The posterior peaks at <strong>h = 0.60</strong>. That is the bottom edge of the prior
+      grid: not near the truth, not inside the plausible range, hard against the wall — and it
+      would go further if the grid let it. The measured bias of that estimator is
+      <strong>&minus;17.8%</strong> <span class="prov-chip">ledger #9</span>
+      <span class="prov-chip">H0R:1980</span>. Nothing in the derivation above is algebraically
+      wrong. Something in it is <em>conditioned</em> wrong.
+    </div>
+
+    <p>
+      There is a hint already on this page, if you look at the single-event legs in I3.2 with
+      the selection question in mind: event 676&rsquo;s catalogue leg rails to the
+      <em>bottom</em> of the grid and event 1121&rsquo;s rails to the <em>top</em>. A quantity
+      that is systematically largest wherever sources are easiest to detect is not a
+      likelihood — it is a likelihood divided by the wrong thing. Chapter 4 names it.
+    </p>
+
+    <!-- ================= self-check ================= -->
+    <h2>Self-check</h2>
+
+    <div class="selfcheck">
+      <p>Q3.1 &nbsp; The likelihood sums over candidate hosts weighted by $w_g$. What happens to
+      the inference if you set all $w_g$ equal?</p>
+      <details class="answer">
+        <summary>Show answer</summary>
+        <div class="answer-body">
+          You assert that every galaxy in the ball is equally likely to host an EMRI, which is
+          false: the EMRI rate per massive black hole depends on the black-hole mass, and the
+          number of <em>hosts</em> per unit volume is not the number of <em>events</em> per unit
+          volume. Equal weights therefore mis-state which redshifts the event could have come
+          from — and, more subtly, they put the estimator into disagreement with the simulator,
+          which drew the host <em>using</em> the rate weight
+          (<span class="prov-chip">handler.py:765</span>). That is the Chapter 9 failure mode in
+          miniature. On EMRI-889 specifically the weights are 92.14 and 88.50, so the flat-prior
+          error would be invisible; that is a property of this event, not of the choice.
+        </div>
+      </details>
+    </div>
+
+    <div class="selfcheck">
+      <p>Q3.2 &nbsp; As you increase $h$, the same measured $d_L$ maps to a larger $z$, so the
+      candidate shell sweeps outward. Why is that sweep the <em>entire</em> mechanism by which a
+      catalogue constrains H&#8320;?</p>
+      <details class="answer">
+        <summary>Show answer</summary>
+        <div class="answer-body">
+          Because the GW data never sees a redshift; it sees a distance. The only way $h$ can be
+          preferred or disfavoured is if some values of $h$ place the shell on top of real
+          galaxies and others place it in empty space. The likelihood is literally a measure of
+          &ldquo;how much galaxy is where this $h$ says the source must be&rdquo;. If the
+          catalogue were uniform and structureless — or if the shell were much wider than the
+          structure — the sweep would carry no information, which is the quantitative content of
+          Chapter 7&rsquo;s photo-$z$ problem. Note also what the sweep does <em>not</em> do: it
+          does not change the candidate list, which is built once over the whole $h$ prior
+          (<span class="prov-chip">physical_relations.py:546</span>). Only the weights move.
+        </div>
+      </details>
+    </div>
+
+    <div class="selfcheck">
+      <p>Q3.3 &nbsp; The in-catalogue likelihood is a <strong>ratio of sums</strong>,
+      $\sum_g w_g N_g / \sum_g w_g D_g$, not a sum of ratios $\sum_g w_g (N_g/D_g)$. Why can
+      that distinction not be waved away?</p>
+      <details class="answer">
+        <summary>Show answer</summary>
+        <div class="answer-body">
+          Because the two differ whenever the per-galaxy denominators $D_g$ vary across the
+          candidate set — which they do, since $D_g$ depends on each galaxy&rsquo;s own redshift
+          and detectability. The mean-of-ratios form over-weights galaxies that are individually
+          hard to detect, and diverges as $D_g \to 0$, so it is not even finite without an
+          arbitrary floor. The project shipped the wrong form; restoring Gray&rsquo;s A.9/A.10
+          ratio of sums <em>together with</em> removing a spurious $p_{\rm det}$ from the
+          numerator <strong>halved</strong> the 1D bias, 0.750 &rarr; 0.740
+          (<span class="prov-chip">ledger #26</span>) — 0.010 in $h$ from two &ldquo;obviously
+          harmless&rdquo; rearrangements, which no artifact in this project separates. Measured
+          per event, the rearrangement alone moves the log-likelihood shape by
+          8&times;10<sup>&minus;4</sup> nats on EMRI-889 and 7.8&times;10<sup>&minus;2</sup> on
+          event 676 (I3.2) — small per event, which is exactly why it survived review.
+        </div>
+      </details>
+    </div>
+
+    <div class="selfcheck">
+      <p>Q3.4 &nbsp; Order of magnitude: a well-localized EMRI at $z \approx 0.1$ with a
+      ~10 deg&sup2; sky area and sub-percent distance precision. Roughly how many catalogued
+      galaxies are in the ball, and what does that imply about the strength of a single event?</p>
+      <details class="answer">
+        <summary>Show answer</summary>
+        <div class="answer-body">
+          Thousands to tens of thousands. Even with a razor-thin distance shell the
+          <em>angular</em> uncertainty dominates the volume, and the catalogue&rsquo;s density at
+          low $z$ is high. Measured on this run: the median event holds <strong>1616</strong>
+          galaxies in its sky ball and <strong>12</strong> after the redshift window; the 90th
+          percentile holds 20,322 and 1708; event 1121 — 4.96&deg; across — holds
+          <strong>57,535</strong> and <strong>26,652</strong>. A single event therefore rarely
+          identifies a host; it supplies a weak preference over a large candidate set, and the
+          constraint comes from stacking. Two caveats the measurement adds to that story. First,
+          &ldquo;large candidate set&rdquo; does not imply &ldquo;diffuse sum&rdquo;: with point
+          redshifts, one galaxy carries more than half the weighted numerator for
+          <strong>52.6%</strong> of the 1038 events that have any candidate, and the median
+          effective number of contributors is <strong>2.34</strong> — concentration is the rule,
+          and it is broken by the <em>redshift kernel</em>, not by the candidate count
+          <span class="ch03-fwd">⏭ Ch 7</span>. Second, the exception at the other end: for
+          EMRI-889 the ball holds <em>three</em> galaxies, which is exactly the regime in which
+          3 events carry 46% of the idealized constraint
+          (<span class="prov-chip">IDEALIZED_BASELINE_READOUT.md:42-47</span>).
+        </div>
+      </details>
+    </div>
+
+    <div class="selfcheck">
+      <p>Q3.5 &nbsp; Two galaxies sit in EMRI-889&rsquo;s ball at the same sky separation to five
+      significant figures, with rate weights within 4% of each other. One has a spectroscopic
+      redshift with $\sigma_z = 2.6\times10^{-4}$; the other, the true host, has a photometric
+      redshift with $\sigma_z = 4.4\times10^{-3}$. Which one contributes more to
+      $\sum_g w_g N_g$ near the truth $h = 0.73$, and why is the answer uncomfortable?</p>
+      <details class="answer">
+        <summary>Show answer</summary>
+        <div class="answer-body">
+          Near $h = 0.73$ the host dominates, because the shell is standing on <em>it</em>
+          ($h^\star = 0.7294$) and nowhere near the impostor ($h^\star = 0.7675$). But that is a
+          statement about a <em>point</em> redshift. The impostor&rsquo;s spectroscopic
+          $\sigma_z$ pins its vote to &plusmn;0.0089 in $h$, while the host&rsquo;s photometric
+          $\sigma_z$ smears its vote over &plusmn;0.155 — 236&times; the width the wave itself
+          contributes. So the sharp, confident, wrong galaxy and the broad, vague, right galaxy
+          are being added together, and which one wins depends entirely on how the pipeline turns
+          &ldquo;the catalogue says $z_g$&rdquo; into a distribution. That choice has not been
+          made yet in this chapter, and when it is made it will move the answer
+          <span class="ch03-fwd">⏭ Ch 7</span>.
+        </div>
+      </details>
+    </div>
+
+    <div class="selfcheck">
+      <p>Q3.6 <em>(transfer)</em> &nbsp; Run this estimator on the real event set and the
+      posterior peaks at $h = 0.60$, the bottom of the prior. Before reading on: name one thing
+      this likelihood conditions on incorrectly.</p>
+      <details class="answer">
+        <summary>Show answer</summary>
+        <div class="answer-body">
+          It conditions on &ldquo;an EMRI occurred at this galaxy&rdquo;, when the data is
+          &ldquo;an EMRI occurred at this galaxy <strong>and we detected it</strong>&rdquo;.
+          Detection preferentially selects loud, nearby sources, so the likelihood as written
+          rewards $h$ values that put sources where detection is easy. Correcting it requires
+          dividing by the probability of detection integrated over everything the source could
+          have been — Chapter 4. Note that $D_g$ is <em>not</em> that correction: it is a
+          per-galaxy selection factor inside the ball, and the object that is missing is a
+          population-level one.
+        </div>
+      </details>
+    </div>
+
+    <!-- ================= provenance ================= -->
+    <div class="provenance-panel">
+      <h4>Provenance panel — every stamp used in this chapter</h4>
+      <ul>
+        <li><span class="badge ratified">RATIFIED</span> <code>galaxy_catalogue/handler.py:505, :519, :584-592, :594-603</code> — BallTree, the $J\Sigma J^{\mathsf T}$ search radius, the redshift window, the mass window (and <code>:592</code> vs <code>:605</code>: the 1D channel never sees the mass window)</li>
+        <li><span class="badge ratified">RATIFIED</span> <code>G2c §2 row w_g</code> + <code>bayesian_statistics.py:879</code> + Babak et al. 2017, arXiv:1703.09722 — the rate weight <span class="term" data-term="wg">$w_g = R_{\rm eff}(M_g)/(1+z_g)$</span></li>
+        <li><span class="badge ratified">RATIFIED</span> <code>handler.py:765 draw_rate_weighted_hosts</code> — the same weight on the generator side; the loop is closed by construction</li>
+        <li><span class="badge ratified">RATIFIED</span> <code>G2c §2 rows N_g, D_g, weighted_ratio_of_sums</code> + <code>bayesian_statistics.py:804, :3615, :3722, :3742</code> + Gray et al. 2020, arXiv:1908.06050 Eqs. (A.9)/(A.10)</li>
+        <li><span class="badge ratified">RATIFIED</span> <code>physical_relations.py:132</code> (Hogg 1999, arXiv:astro-ph/9905116 Eq. 16), <code>:546 get_redshift_outer_bounds</code> — $d_L(z;h) = d_L(z;1)/h$ and the candidate window over the whole $h$ prior</li>
+        <li><span class="badge open">OPEN</span> <code>G2c §5 D1 sub-deviation</code> — $w_g$ evaluated at $z_g$ and pulled outside $\int dz$; unmeasured for GLADE+ photo-$z$ widths</li>
+        <li><span class="badge finding">FINDING</span> <code>ledger #26</code> (<code>816f904</code>, <code>H0R:1119-1139</code>) — spurious numerator $p_{\rm det}$ <em>and</em> mean-of-ratios; joint fix 1D 0.750 → 0.740, 2D 0.7375 → 0.7350</li>
+        <li><span class="badge finding">FINDING</span> <code>ledger #9</code> / <code>H0R:1980</code> — the catalogue-only estimator rails at MAP 0.60, bias &minus;17.8% (Chapter 4)</li>
+        <li><span class="badge finding">FINDING</span> <code>ledger #12</code> — the equatorial→ecliptic frame migration: MAP 0.860 → 0.730 on its own</li>
+        <li><span class="badge finding">FINDING</span> <code>ledger #41 → #52</code> — &ldquo;information starvation&rdquo; concluded, then overturned</li>
+        <li><span class="badge finding">FINDING</span> <code>G2c §4.1 vs §4.2</code> / <code>bayesian_statistics.py:3190</code> — the campaign runs <code>absolute_marginal</code>, whose $\mathcal L^{\rm cat}$ denominator is the <em>global</em> catalogue sum, not the local ratio of sums this chapter teaches</li>
+        <li>Data: <code>master_thesis_code/galaxy_catalogue/reduced_galaxy_catalogue.csv</code> (20,834,171 rows after the production prune); <code>results/campaign51_20260728/realistic_20260729/seed61000/prepared_cramer_rao_bounds.csv</code>, <code>.../real_r1/diagnostics/event_likelihoods.csv</code>, <code>.../seed61000/mixture_leg_log_extract.txt</code>, <code>.../gate_b_20260730/injection_pool_mix200k_20260728/</code></li>
+        <li>Hard gate in the generator: baseline pruned row 859360 lifts to $M_g(1+z_g) = M_z$ to a relative 2.96&times;10<sup>&minus;10</sup> — the host index really is an injection-frame position</li>
+        <li>Open flags: <code>book/design/flags/ch03_FLAGS.md</code> — F-ch03-1 (σ_dL/dL label), F-ch03-2 (&ldquo;tens of thousands&rdquo; is the tail), F-ch03-3 (truth vs observed catalogue), F-ch03-4 (ledger #26 bundles two changes), F-ch03-5 (which denominator the run used), F-ch03-8 (the h-grid undersamples 889), F-ch03-9 (per-event size of the rearrangement)</li>
+      </ul>
+    </div>
+
+    <p class="book-footer">
+      Data generated by <code>book/generators/gen_ch03.py</code> (read-only against the main
+      package and <code>results/</code>). This page renders fully offline — Plotly and KaTeX are
+      vendored under <code>vendor/</code>.
+    </p>
+  </main>
+</div>
+
+<script src="js/manifest.js"></script>
+<script src="vendor/plotly/plotly.min.js"></script>
+<script src="vendor/katex/katex.min.js"></script>
+<script src="vendor/katex/auto-render.min.js"></script>
+<script src="js/book.js"></script>
+<script>
+  (function () {
+    "use strict";
+
+    // ---------------------------------------------------------------
+    // Palette (mirrors css/book.css tokens; Plotly needs literals)
+    // ---------------------------------------------------------------
+    var C = {
+      accent: "#0072B2",
+      accentDark: "#6fb8e8",
+      warn: "#D55E00",
+      rec: "#CC79A7",
+      ok: "#009E73",
+      guess: "#E69F00",
+      prior: "#9e9e9e",
+    };
+    function ink() { return Book.isDark() ? "#eef1f5" : "#1a1a1a"; }
+    function grid() { return Book.isDark() ? "#33373f" : "#d8dce1"; }
+    function live() { return Book.isDark() ? C.accentDark : C.accent; }
+    function faint() { return Book.isDark() ? "#9aa2b1" : "#5b6270"; }
+
+    function baseLayout(xTitle, yTitle) {
+      return {
+        margin: { l: 66, r: 18, t: 26, b: 46 },
+        xaxis: { title: xTitle, gridcolor: grid(), zeroline: false },
+        yaxis: { title: yTitle, gridcolor: grid(), zeroline: false },
+        paper_bgcolor: "rgba(0,0,0,0)",
+        plot_bgcolor: "rgba(0,0,0,0)",
+        font: { color: ink(), size: 12 },
+        showlegend: false,
+        hovermode: "closest",
+      };
+    }
+    function vline(x, color, dash, width) {
+      return {
+        type: "line", x0: x, x1: x, y0: 0, y1: 1, yref: "paper",
+        line: { color: color, dash: dash || "dot", width: width || 1.6 },
+      };
+    }
+    function fmt(v, n) {
+      return (v === null || v === undefined || !isFinite(v)) ? "—" : Number(v).toFixed(n);
+    }
+    function table(el, headers, rows) {
+      var html = "<tr>" + headers.map(function (h) { return "<th>" + h + "</th>"; }).join("") + "</tr>";
+      rows.forEach(function (r) {
+        html += "<tr>" + r.map(function (c) { return "<td>" + c + "</td>"; }).join("") + "</tr>";
+      });
+      el.innerHTML = html;
+    }
+    function setPressed(row, attr, value) {
+      row.querySelectorAll("[" + attr + "]").forEach(function (b) {
+        b.setAttribute("aria-pressed", String(b.getAttribute(attr) === value));
+      });
+    }
+
+    // ---------------------------------------------------------------
+    // Bias rail (BW1). Chapter 3 begins with no estimator on the board;
+    // §5 puts the first live entry on it — the RECORDED Phase-32-era
+    // measurement of the catalogue-only estimator (ledger #9).
+    // ---------------------------------------------------------------
+    function renderRail(armed) {
+      var entries = [{ label: "estimator", bias: null, note: "not defined yet", active: !armed }];
+      if (armed) {
+        entries = [{
+          label: "cat-only, no selection",
+          bias: -0.178,
+          note: "ledger #9 / H0R:1980 — MAP 0.60, the bottom of the prior grid",
+          active: true,
+        }];
+      }
+      Book.biasRail({ entries: entries });
+    }
+    renderRail(false);
+    // Arm the rail when the reader reaches §5 (the failure this chapter plants).
+    if ("IntersectionObserver" in window) {
+      var target = document.querySelectorAll(".callout.without")[1];
+      if (target) {
+        new IntersectionObserver(function (entries) {
+          entries.forEach(function (e) { if (e.isIntersecting) renderRail(true); });
+        }, { rootMargin: "0px 0px -40% 0px" }).observe(target);
+      }
+    } else {
+      renderRail(true);
+    }
+
+    // ===============================================================
+    // W1 — the census: data/ch03_candidates.json
+    // ===============================================================
+    Book.loadJSON("data/ch03_candidates.json").then(function (d) {
+      var plotEl = document.getElementById("ch03-census-plot");
+      var state = { which: "both" };
+
+      function barsFor(hist, name, color) {
+        var e = hist.edges, x = [], y = [], w = [];
+        for (var i = 0; i < hist.counts.length; i++) {
+          // geometric bin centre on the log axis
+          x.push(Math.sqrt(Math.max(e[i], 0.5) * e[i + 1]));
+          y.push(hist.counts[i]);
+          w.push(e[i + 1] - e[i]);
+        }
+        return {
+          x: x, y: y, type: "bar", name: name, width: w,
+          marker: { color: color, opacity: 0.55, line: { width: 0 } },
+          hovertemplate: name + "<br>%{y} events<extra></extra>",
+        };
+      }
+
+      function traces() {
+        var t = [];
+        if (state.which !== "cand") t.push(barsFor(d.n_ball.hist, "inside the sky ball", C.prior));
+        if (state.which !== "ball") t.push(barsFor(d.n_cand.hist, "after the redshift window", C.accent));
+        return t;
+      }
+      function layout() {
+        var L = baseLayout("catalogue galaxies per event", "number of events");
+        L.xaxis.type = "log";
+        L.barmode = "overlay";
+        L.showlegend = true;
+        L.legend = { orientation: "h", y: 1.12, x: 0 };
+        L.shapes = [
+          vline(d.featured["889"].n_cand, C.ok, "dash", 2),
+          vline(d.featured["1121"].n_cand, C.warn, "dash", 2),
+        ];
+        L.annotations = [
+          { x: Math.log10(d.featured["889"].n_cand), y: 0.95, yref: "paper", text: "EMRI-889: 2", showarrow: false, xanchor: "left", font: { size: 11, color: C.ok } },
+          { x: Math.log10(d.featured["1121"].n_cand), y: 0.85, yref: "paper", text: "event 1121: 26,652", showarrow: false, xanchor: "right", font: { size: 11, color: C.warn } },
+        ];
+        return L;
+      }
+      var plot = Book.themedPlot("ch03-census-plot", traces(), layout);
+
+      document.getElementById("ch03-c-med-ball").textContent = d.n_ball.percentiles["50"];
+      document.getElementById("ch03-c-med-cand").textContent = d.n_cand.percentiles["50"];
+      document.getElementById("ch03-c-zero").textContent =
+        d.n_cand.n_zero + " of " + d.n_events;
+      document.getElementById("ch03-c-conc").textContent =
+        (100 * d.concentration.frac_top_share_above_half).toFixed(1) + "% of " +
+        d.concentration.n_events_with_candidates;
+
+      var toggle = document.getElementById("ch03-census-toggle");
+      toggle.querySelectorAll("[data-which]").forEach(function (b) {
+        b.addEventListener("click", function () {
+          state.which = b.getAttribute("data-which");
+          setPressed(toggle, "data-which", state.which);
+          plot.update(traces());
+        });
+      });
+
+      var pct = ["5", "25", "50", "75", "90", "95", "99"];
+      table(
+        document.getElementById("ch03-census-table"),
+        ["percentile"].concat(pct.map(function (p) { return p + "%"; })).concat(["mean", "max", "zero"]),
+        [
+          ["inside the sky ball"].concat(pct.map(function (p) { return d.n_ball.percentiles[p]; }))
+            .concat([d.n_ball.mean, d.n_ball.max, d.n_ball.n_zero]),
+          ["after the z-window"].concat(pct.map(function (p) { return d.n_cand.percentiles[p]; }))
+            .concat([d.n_cand.mean, d.n_cand.max, d.n_cand.n_zero]),
+        ]
+      );
+      document.getElementById("ch03-census-table").insertAdjacentHTML(
+        "beforeend",
+        '<tr><td colspan="11">Concentration at the injected h = 0.73, over the ' +
+        d.concentration.n_events_with_candidates + " events with any candidate " +
+        "(Gray A.9 point-kernel numerator): largest single galaxy's share — median " +
+        d.concentration.top_share_percentiles["50"] + ", 25% " +
+        d.concentration.top_share_percentiles["25"] + ", 75% " +
+        d.concentration.top_share_percentiles["75"] + "; effective number of contributing " +
+        "galaxies — median " + d.concentration.n_eff_median + ", 75th percentile " +
+        d.concentration.n_eff_percentiles["75"] + ", 95th " +
+        d.concentration.n_eff_percentiles["95"] + ".</td></tr>"
+      );
+
+      // Predict-lock: the histogram stays blurred until the reader commits.
+      var w = document.getElementById("ch03-census-widget");
+      Book.predictReveal(w, function () {
+        w.querySelectorAll(".ch03-locked").forEach(function (el) { el.classList.remove("ch03-locked"); });
+        Plotly.Plots.resize(plotEl);
+      });
+      if (Book.getPrediction("ch03-ball-size")) {
+        w.querySelectorAll(".ch03-locked").forEach(function (el) { el.classList.remove("ch03-locked"); });
+      }
+    });
+
+    // The host guess: no plot to unlock, but Ch 11 reads this key back.
+    Book.predictReveal(document.getElementById("ch03-host-widget"));
+
+    // ===============================================================
+    // I3.1 — the Sky-Ball Explorer: data/ch03_skyball.json
+    // ===============================================================
+    Book.loadJSON("data/ch03_skyball.json").then(function (d) {
+      var H = d.h_grid;
+      var state = { ev: "889", idx: 0 };
+      var iTruth = 0, best = Infinity;
+      H.forEach(function (h, i) { var dd = Math.abs(h - d.meta.h_true); if (dd < best) { best = dd; iTruth = i; } });
+      state.idx = iTruth;
+
+      // Per-galaxy log-numerator, computed live from the event's real 3-D
+      // Fisher Gaussian and the exact d_L(z;h) = d_L(z;1)/h scaling.
+      function interp1(xs, ys, x) {
+        if (x <= xs[0]) return ys[0];
+        if (x >= xs[xs.length - 1]) return ys[ys.length - 1];
+        var lo = 0, hi = xs.length - 1;
+        while (hi - lo > 1) { var mid = (lo + hi) >> 1; if (xs[mid] <= x) lo = mid; else hi = mid; }
+        var t = (x - xs[lo]) / (xs[hi] - xs[lo]);
+        return ys[lo] + t * (ys[hi] - ys[lo]);
+      }
+      function logNumerators(e, h) {
+        var g = e.display, n = g.z.length, out = new Array(n);
+        var Ci = e.cov_inv_3d, ln = e.log_norm_3d;
+        for (var k = 0; k < n; k++) {
+          var dphi = g.phi[k] - e.phi;
+          dphi = ((dphi + Math.PI) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI) - Math.PI;
+          var dth = g.theta[k] - e.theta;
+          var u = interp1(d.dl_table.z, d.dl_table.dl_h1_Gpc, g.z[k]) / h / e.d_L_Gpc - 1.0;
+          var v = [dphi, dth, u];
+          var q = 0;
+          for (var a = 0; a < 3; a++) for (var b = 0; b < 3; b++) q += v[a] * Ci[a][b] * v[b];
+          out[k] = ln - 0.5 * q;
+        }
+        return out;
+      }
+
+      function skyTraces() {
+        var e = d.events[state.ev], g = e.display;
+        var h = H[state.idx];
+        var lw = logNumerators(e, h).map(function (v, k) { return v + Math.log(g.w[k]); });
+        var m = -Infinity;
+        lw.forEach(function (v) { if (v > m) m = v; });
+        var shade = lw.map(function (v) { return Math.max(-8, (v - m) / Math.LN10); });
+        var deg = e.radius_arcmin > 60;
+        var s = deg ? 1 / 60 : 1;
+        var wmax = Math.max.apply(null, g.w);
+        var revealed = !!Book.getPrediction("ch03-host-guess");
+        var traces = [{
+          x: g.d_phi_arcmin.map(function (v) { return v * s; }),
+          y: g.d_theta_arcmin.map(function (v) { return v * s; }),
+          mode: "markers", type: "scatter",
+          marker: {
+            color: shade, colorscale: "Viridis", cmin: -8, cmax: 0,
+            size: g.w.map(function (v) { return 5 + 7 * (v / wmax); }),
+            line: { width: 0 },
+            colorbar: { title: { text: "log₁₀ share", side: "right" }, thickness: 10, len: 0.8 },
+          },
+          text: g.z.map(function (z, k) {
+            return "z = " + z.toFixed(5) + (g.spec_z[k] ? " (spec-z)" : " (photo-z)") +
+              "<br>h* = " + g.h_star[k].toFixed(4) + "<br>w = " + g.w[k].toFixed(2);
+          }),
+          hovertemplate: "%{text}<extra></extra>",
+        }];
+        if (revealed) {
+          var hx = [], hy = [];
+          g.is_host.forEach(function (v, k) {
+            if (v) { hx.push(g.d_phi_arcmin[k] * s); hy.push(g.d_theta_arcmin[k] * s); }
+          });
+          if (hx.length) {
+            traces.push({
+              x: hx, y: hy, mode: "markers", type: "scatter",
+              marker: { symbol: "star-open", size: 22, color: C.ok, line: { width: 2 } },
+              hovertemplate: "the true host<extra></extra>",
+            });
+          }
+        }
+        return traces;
+      }
+      function skyLayout() {
+        var e = d.events[state.ev];
+        var deg = e.radius_arcmin > 60;
+        var R = deg ? e.radius_deg : e.radius_arcmin;
+        var unit = deg ? "deg" : "arcmin";
+        var L = baseLayout("Δφ·sin θ  [" + unit + "]", "Δθ  [" + unit + "]");
+        L.xaxis.range = [-1.1 * R, 1.1 * R];
+        L.yaxis.range = [-1.1 * R, 1.1 * R];
+        L.yaxis.scaleanchor = "x";
+        L.shapes = [{
+          type: "circle", xref: "x", yref: "y",
+          x0: -R, x1: R, y0: -R, y1: R,
+          line: { color: faint(), width: 1.4, dash: "dot" },
+        }];
+        L.annotations = [{
+          x: 0.02, y: 1.0, xref: "paper", yref: "paper", xanchor: "left", yanchor: "top",
+          text: "the ball never moves — only the colour does",
+          showarrow: false, font: { size: 11, color: faint() },
+        }];
+        return L;
+      }
+
+      function voteTraces() {
+        var e = d.events[state.ev];
+        var agg = e.agg.log_sum_wN;
+        var m = Math.max.apply(null, agg);
+        var t = [{
+          x: H, y: agg.map(function (v) { return Math.exp(v - m); }),
+          mode: "lines", line: { color: live(), width: 2.6 },
+          name: "Σ w N (all candidates)",
+          hovertemplate: "h = %{x:.4f}<br>relative Σ w N = %{y:.3e}<extra></extra>",
+        }];
+        if (e.per_galaxy_log_N) {
+          var colors = [C.warn, C.ok, C.rec, C.guess, C.prior];
+          e.per_galaxy_log_N.forEach(function (row, k) {
+            t.push({
+              x: H, y: row.map(function (v) { return Math.exp(v + Math.log(e.display.w[k]) - m); }),
+              mode: "lines", line: { color: colors[k % colors.length], width: 1.8, dash: "dash" },
+              name: "candidate " + String.fromCharCode(65 + k),
+              hovertemplate: "candidate " + String.fromCharCode(65 + k) +
+                "<br>h = %{x:.4f}<br>relative w·N = %{y:.3e}<extra></extra>",
+            });
+          });
+        }
+        return t;
+      }
+      function voteLayout() {
+        var L = baseLayout("h = H₀ / 100", "weighted numerator, relative to its peak");
+        L.yaxis.type = "log";
+        L.yaxis.range = [-9, 0.4];
+        L.xaxis.range = [0.595, 0.865];
+        L.showlegend = true;
+        L.legend = { orientation: "h", y: 1.14, x: 0 };
+        L.shapes = [vline(d.meta.h_true, ink(), "dot", 1.6), vline(H[state.idx], C.guess, "solid", 2)];
+        L.annotations = [
+          { x: d.meta.h_true, y: 1, yref: "paper", text: "truth 0.73", showarrow: false, yanchor: "bottom", font: { size: 11 } },
+        ];
+        return L;
+      }
+
+      var skyPlot = Book.themedPlot("ch03-sky-plot", skyTraces(), skyLayout);
+      var votePlot = Book.themedPlot("ch03-vote-plot", voteTraces(), voteLayout);
+
+      var NOTES = {
+        "889": "EMRI-889's two candidates produce two razor-thin spikes of almost the same " +
+          "height, at h* = 0.7294 (the host) and h* = 0.7675 (the impostor). They are so thin " +
+          "that the production 41-point h grid steps straight over them — one 0.005 step slides " +
+          "this event's distance shell by 7.6 σ_dL — which is why this panel draws its own " +
+          "0.0005 grid and says so. Production never evaluates a point kernel on that grid; it " +
+          "integrates a redshift kernel that smears each spike across ~0.15 in h (⏭ Ch 7).",
+        "1121": "Event 1121 is what a normal event looks like: 26,652 candidates spread over a " +
+          "5° ball, between 436 and 635 of them contributing effectively at any h, and no single " +
+          "galaxy ever carrying more than 0.74%. The weighted sum has no sharp feature at all — " +
+          "one such event says almost nothing about h, and the constraint has to come from " +
+          "stacking 1588 of them.",
+      };
+
+      function cards() {
+        var e = d.events[state.ev];
+        var host = document.getElementById("ch03-vote-cards");
+        if (!e.per_galaxy_log_N) { host.innerHTML = ""; return; }
+        var g = e.display, html = "";
+        for (var k = 0; k < g.z.length; k++) {
+          var pk = Math.max.apply(null, e.per_galaxy_log_N[k]);
+          html += '<div class="ch03-card ' + (g.is_host[k] ? "ch03-card-host" : "ch03-card-impostor") + '">' +
+            "<h5>Candidate " + String.fromCharCode(65 + k) + (g.is_host[k] ? " — the host" : "") + "</h5><dl>" +
+            "<dt>votes for h</dt><dd>" + g.h_star[k].toFixed(4) + "</dd>" +
+            "<dt>peak ln N</dt><dd>" + pk.toFixed(4) + "</dd>" +
+            "<dt>peak ln (w·N)</dt><dd>" + (pk + Math.log(g.w[k])).toFixed(4) + "</dd>" +
+            "<dt>±, from its own z error</dt><dd>" + g.h_star_sigma_from_z[k].toFixed(4) + "</dd>" +
+            "<dt>±, from the GW distance</dt><dd>" + g.h_star_sigma_from_GW[k].toFixed(5) + "</dd>" +
+            "<dt>rate weight</dt><dd>" + g.w[k].toFixed(2) + "</dd>" +
+            "</dl></div>";
+        }
+        host.innerHTML = html;
+      }
+
+      function draw() {
+        var e = d.events[state.ev];
+        skyPlot.update(skyTraces());
+        votePlot.update(voteTraces());
+        document.getElementById("ch03-h-readout").textContent = fmt(H[state.idx], 4);
+        document.getElementById("ch03-zshell").textContent = fmt(e.agg.z_shell[state.idx], 5);
+        document.getElementById("ch03-nwin").textContent =
+          e.agg.n_in_window[state.idx] + " of " + e.n_cand;
+        document.getElementById("ch03-neff").textContent = fmt(e.agg.n_eff[state.idx], 1);
+        document.getElementById("ch03-topshare").textContent =
+          (100 * e.agg.top_share[state.idx]).toFixed(2) + "%";
+        var note = document.getElementById("ch03-sky-note");
+        note.innerHTML = NOTES[state.ev] +
+          (e.display.seeded_subsample
+            ? " The sky panel draws a seeded random " + e.display.n_shown + " of the " +
+              e.n_cand + " candidates; every readout and the curve on the right are computed " +
+              "over all of them."
+            : "");
+      }
+
+      var slider = document.getElementById("ch03-h-slider");
+      Book.gridSlider({
+        sliderEl: slider, readoutEl: null, steps: H,
+        onStep: function (v, i) { state.idx = i; draw(); },
+      });
+      slider.value = String(iTruth);
+
+      var evRow = document.getElementById("ch03-sky-event");
+      evRow.querySelectorAll("[data-ev]").forEach(function (b) {
+        b.addEventListener("click", function () {
+          state.ev = b.getAttribute("data-ev");
+          setPressed(evRow, "data-ev", state.ev);
+          Plotly.relayout("ch03-sky-plot", skyLayout());
+          Plotly.relayout("ch03-vote-plot", voteLayout());
+          cards();
+          draw();
+          fillTable();
+        });
+      });
+
+      function fillTable() {
+        var e = d.events[state.ev];
+        var g = e.display;
+        var rows = [];
+        var n = Math.min(g.z.length, 40);
+        for (var k = 0; k < n; k++) {
+          rows.push([
+            String.fromCharCode(65 + k) + (g.is_host[k] ? " (host)" : ""),
+            fmt(g.sep_arcmin[k], 5), fmt(g.z[k], 6), fmt(g.z_err[k], 6),
+            g.spec_z[k] ? "spec" : "photo",
+            Number(g.M[k]).toExponential(3), fmt(g.w[k], 2),
+            fmt(g.h_star[k], 4), fmt(g.h_star_sigma_from_z[k], 4),
+          ]);
+        }
+        var el = document.getElementById("ch03-sky-table");
+        table(el, ["candidate", "sep [′]", "z", "σ_z", "z type", "M [M☉]", "w", "h*", "σ(h*) from z"], rows);
+        if (g.z.length > n) {
+          el.insertAdjacentHTML("beforeend",
+            '<tr><td colspan="9">… ' + (e.n_cand - n) + " further candidates not listed; " +
+            "aggregates in the readouts are computed over all " + e.n_cand + ".</td></tr>");
+        }
+      }
+
+      cards();
+      fillTable();
+      draw();
+    });
+
+    // ===============================================================
+    // I3.2 — ratio of sums vs mean of ratios: data/ch03_ratio.json
+    // ===============================================================
+    Book.loadJSON("data/ch03_ratio.json").then(function (d) {
+      var H = d.h_grid;
+      var LAMS = ["0", "0.5", "1", "2", "3"];
+      var state = { ev: "889", li: 2 };
+
+      function norm(logArr) {
+        var m = -Infinity;
+        logArr.forEach(function (v) { if (v > m) m = v; });
+        var y = logArr.map(function (v) { return Math.exp(v - m); });
+        return Book.normalizePosterior(y, H);
+      }
+      function curves() {
+        var e = d.events[state.ev], lam = LAMS[state.li];
+        // NB: the difference comes from the generator, not from subtracting the
+        // two stored log arrays — those run to -2.9e4 in the wings of a sharp
+        // event, where 8-significant-figure storage cannot resolve an O(1e-3) gap.
+        return {
+          ros: e.lambda_ratio_of_sums[lam],
+          mor: e.lambda_mean_of_ratios[lam],
+          diff: e.log_form_difference[lam],
+          spread: e.summary.ln_form_ratio_spread_by_lambda[lam],
+          e: e, lam: lam,
+        };
+      }
+      function traces() {
+        var c = curves();
+        var real = c.lam === "1";
+        return [
+          {
+            x: H, y: norm(c.ros), mode: "lines",
+            line: { color: live(), width: 2.8, dash: real ? "solid" : "dash" },
+            name: "ratio of sums", hovertemplate: "ratio of sums<br>h = %{x:.3f}<br>%{y:.4g}<extra></extra>",
+          },
+          {
+            x: H, y: norm(c.mor), mode: "lines",
+            line: { color: C.warn, width: 2.2, dash: real ? "dot" : "dashdot" },
+            name: "mean of ratios", hovertemplate: "mean of ratios<br>h = %{x:.3f}<br>%{y:.4g}<extra></extra>",
+          },
+        ];
+      }
+      function layout() {
+        var L = baseLayout("h = H₀ / 100", "single-event catalogue leg (normalized)");
+        L.xaxis.range = [0.595, 0.865];
+        L.showlegend = true;
+        L.legend = { orientation: "h", y: 1.14, x: 0 };
+        L.shapes = [vline(0.73, ink(), "dot", 1.6)];
+        L.annotations = [{ x: 0.73, y: 1, yref: "paper", text: "truth 0.73", showarrow: false, yanchor: "bottom", font: { size: 11 } }];
+        return L;
+      }
+      var plot = Book.themedPlot("ch03-ratio-plot", traces(), layout);
+
+      function update() {
+        var c = curves(), e = c.e, lam = c.lam;
+        plot.update(traces());
+        document.getElementById("ch03-lambda-readout").textContent = lam;
+        var i0 = 0;
+        document.getElementById("ch03-r-drange").textContent =
+          fmt(e.D_g_min[i0], 3) + " … " + fmt(e.D_g_max[i0], 3) +
+          " (×" + fmt(e.D_g_max[i0] / e.D_g_min[i0], 3) + ")";
+        var diff = c.diff;
+        document.getElementById("ch03-r-spread").textContent = Number(c.spread).toExponential(3);
+        var pr = norm(c.ros), pm = norm(c.mor);
+        document.getElementById("ch03-r-map1").textContent = fmt(H[Book.argmaxIdx(pr)], 3);
+        document.getElementById("ch03-r-map2").textContent = fmt(H[Book.argmaxIdx(pm)], 3);
+
+        var v = document.getElementById("ch03-ratio-verdict");
+        var body;
+        if (lam === "0") {
+          body = "<span class='ch03-verdict-label'>The identity, checked</span>" +
+            "With every $D_g$ set equal, the two forms agree to <strong>" +
+            e.lambda_identity_residual.toExponential(1) + "</strong> in the log across the whole grid. " +
+            "That is not a fit or an approximation — it is the algebra: with a common $D$, " +
+            "$\\sum w N / \\sum w D = \\sum w (N/D)/\\sum w$ exactly. Everything the choice of form " +
+            "can ever be worth is the spread of $D_g$.";
+        } else if (lam === "1") {
+          body = "<span class='ch03-verdict-label'>Measured, this candidate set</span>" +
+            "The real $D_g$ of event " + state.ev + " span a factor <strong>" +
+            fmt(e.D_g_max[0] / e.D_g_min[0], 3) + "</strong>, and the two forms' log-ratio varies " +
+            "across the grid by <strong>" + Number(e.summary.ln_form_ratio_spread).toExponential(3) +
+            " nats</strong>. This single event's argmax does not move. " +
+            "<strong>Has this been tried?</strong> Yes — the pipeline shipped the mean-of-ratios " +
+            "form. Ledger&nbsp;#26 (<code>816f904</code>): repairing it <em>together with</em> " +
+            "removing a spurious $p_{\\rm det}$ from the numerator moved the stacked 1D MAP " +
+            "<strong>0.750 → 0.740</strong> and the 2D MAP 0.7375 → 0.7350. The verdict is " +
+            "recorded; the split between the two halves is not.";
+        } else {
+          body = "<span class='ch03-verdict-label'>Deliberate distortion — not data</span>" +
+            "λ = " + lam + " rescales the measured $\\ln D_g$ about their weighted mean by a factor " +
+            lam + ". Both curves are drawn dashed to say so. The forms separate monotonically with " +
+            "the spread, which is the whole content of the distinction: they are the same function " +
+            "when $D_g$ is constant and different functions when it is not.";
+        }
+        v.innerHTML = body;
+        Book.renderMath(v);
+
+        var rows = [];
+        for (var i = 0; i < H.length; i += 2) {
+          rows.push([fmt(H[i], 3), c.ros[i].toFixed(4), c.mor[i].toFixed(4), diff[i].toExponential(3),
+            fmt(e.D_g_min[i], 4), fmt(e.D_g_max[i], 4)]);
+        }
+        table(document.getElementById("ch03-ratio-table"),
+          ["h", "ln ratio-of-sums", "ln mean-of-ratios", "difference", "min D_g", "max D_g"], rows);
+      }
+
+      var lamSlider = document.getElementById("ch03-lambda");
+      Book.gridSlider({
+        sliderEl: lamSlider, readoutEl: null, steps: LAMS,
+        onStep: function (v, i) { state.li = i; update(); },
+      });
+      lamSlider.value = "2";
+      document.getElementById("ch03-lambda-reset").addEventListener("click", function () {
+        state.li = 2; lamSlider.value = "2"; update();
+      });
+
+      var evRow = document.getElementById("ch03-ratio-event");
+      evRow.querySelectorAll("[data-ev]").forEach(function (b) {
+        b.setAttribute("data-hypothesis", "26");
+        b.addEventListener("click", function () {
+          state.ev = b.getAttribute("data-ev");
+          setPressed(evRow, "data-ev", state.ev);
+          update();
+        });
+      });
+
+      update();
+    });
+  })();
+</script>

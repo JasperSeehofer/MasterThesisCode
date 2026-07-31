@@ -1,0 +1,1624 @@
+<!DOCTYPE html>
+<meta charset="utf-8" />
+<!--
+  The doctype and charset are deliberate and load-bearing. Without a doctype the
+  browser enters quirks mode and KaTeX hard-refuses to run ("KaTeX doesn't work in
+  quirks mode"), leaving every equation as raw $...$ source — verified headless on
+  this very page (0 .katex nodes before, 300+ after). Without the charset the
+  em-dashes and Greek in this file are mojibake when served without a
+  Content-Type charset. _template.html, index.html and ch00-demo.html omit both;
+  that is filed for the integrator as R-ch07-3 in book/design/WIDGET_REQUESTS.md
+  (those files are frozen), and this page carries the same page-local workaround
+  that ch07-redshift.html uses.
+-->
+<title>Ch. 2 — Bayes, Once and For All | EMRI Dark Siren Book</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="description" content="A posterior over one number: the h-grid, log-additivity, and a working vocabulary for wrong — bias, scatter, coverage, pull. Then the lurch: 1588 real events whose constraint is carried by three." />
+<link rel="stylesheet" href="vendor/katex/katex.min.css" />
+<link rel="stylesheet" href="css/book.css" />
+
+<style>
+  /* Page-local only (css/book.css is frozen). Nothing here restyles a shared
+     class; these are new elements this chapter introduces. */
+  .ch02-readouts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem 1.2rem;
+    margin: 0.55rem 0 0;
+    font-size: 0.86rem;
+    color: var(--muted);
+  }
+  .ch02-readouts strong { color: var(--accent); font-variant-numeric: tabular-nums; }
+  .ch02-verdict {
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--planck);
+    background: var(--paper-raised);
+    border-radius: 8px;
+    padding: 0.7rem 0.9rem;
+    margin: 0.7rem 0 0;
+    font-size: 0.9rem;
+  }
+  .ch02-verdict .ch02-verdict-label {
+    display: block;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--planck);
+    margin-bottom: 0.25rem;
+  }
+  .ch02-note { font-size: 0.82rem; color: var(--muted); margin: 0.6rem 0 0; }
+  .ch02-locked { opacity: 0.45; pointer-events: none; }
+  @media print { .ch02-locked { opacity: 1; } }
+  .ch02-fwd {
+    display: inline-block;
+    font-size: 0.72rem;
+    border: 1px dashed var(--border);
+    border-radius: 999px;
+    padding: 0 0.45em;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  .ch02-defbox {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--paper-raised);
+    padding: 0.9rem 1.1rem;
+    margin: 1.1rem 0;
+  }
+  .ch02-defbox dt {
+    font-weight: 700;
+    margin-top: 0.65rem;
+    color: var(--accent);
+  }
+  .ch02-defbox dt:first-of-type { margin-top: 0; }
+  .ch02-defbox dd { margin: 0.15rem 0 0; }
+  .ch02-defbox .ch02-test {
+    display: block;
+    font-size: 0.83rem;
+    color: var(--muted);
+    margin-top: 0.15rem;
+  }
+  .ch02-panels { display: grid; gap: 0.4rem; grid-template-columns: 1fr; }
+  @media (min-width: 780px) { .ch02-panels { grid-template-columns: 1fr 1fr; } }
+  /* Narrow screens only: long provenance chips and file paths are the only
+     things on this page wide enough to force the document to scroll sideways.
+     Scoped to this file and to <=640px; no shared stylesheet is touched and no
+     other page is affected. */
+  @media (max-width: 640px) {
+    .book-content .prov-chip { white-space: normal; overflow-wrap: anywhere; }
+    .book-content code { overflow-wrap: anywhere; }
+    .dossier td:first-child { white-space: normal; }
+  }
+</style>
+
+<div class="book-shell">
+  <header class="book-topbar">
+    <a class="brand" href="index.html">From Bayes&rsquo; Rule to H&#8320;
+      <small>an interactive discovery book</small>
+    </a>
+    <nav class="book-nav" data-nav aria-label="Chapters"><!-- built from js/manifest.js --></nav>
+    <button class="theme-toggle" data-theme-toggle type="button">☽ Dark</button>
+  </header>
+
+  <main class="book-content">
+    <h1>Chapter 2 — Bayes, Once and For All</h1>
+    <p class="subtitle">
+      One distance and no redshift is not yet an inference — and $N$ events do not sharpen
+      like $\sqrt{N}$.
+    </p>
+
+    <!-- ================= COLD OPEN (B1) ================= -->
+    <div class="callout without">
+      <span class="callout-label">The failure this chapter answers</span>
+      Chapter 1 ended holding a number and a gap: EMRI-889&rsquo;s luminosity distance
+      <span class="term" data-term="dL">$d_L$</span> = 88.9 Mpc, measured to a fraction of a percent by general relativity, and a slot marked
+      <strong><span class="term" data-term="z">$z$</span>: unknown</strong>. That is not yet an inference. It is not even a
+      <em>statement</em> about <span class="term" data-term="h">$h$</span>. A distance is a
+      measurement; a measurement becomes an inference only when you can say, for every
+      candidate value of the thing you want, <em>how probable this data would have been</em>.
+      This chapter builds that machine — and then discovers that feeding it 1588 real events
+      does not do what you expect.
+    </div>
+
+    <!-- ================= §1 ================= -->
+    <h2>1. A posterior over one number</h2>
+
+    <p>
+      Everything in this book is an inference about a single scalar. Write
+      <span class="term" data-term="h">$h$</span> = <span class="term" data-term="H0">$H_0$</span>$\,/\,(100\ \mathrm{km\,s^{-1}\,Mpc^{-1}})$
+      — dimensionless, and in the mock universe this book runs on it has a true value,
+      $h_{\rm true} = 0.73$ <span class="prov-chip">constants.py H</span>. One number.
+      Not a spectrum, not a field, not a 14-parameter waveform: one number, with a truth we
+      are allowed to check against, which is the only reason any of the following chapters
+      can be judged at all.
+    </p>
+    <p>
+      Bayes&rsquo; rule for that one number, given a set of detections $\{x_i\}$, is the
+      thing every reader already knows:
+    </p>
+
+    <div class="voice-derivation">
+      <span class="voice-label">The posterior over $h$ — the project&rsquo;s own derivation
+        <span class="prov-chip">derivations/dark_siren_likelihood.md §1.1</span>
+        <span class="prov-chip">bayesian_statistics.py:1954 evaluate()</span>
+        <span class="prov-chip">Schutz 1986, Nature 323, 310</span>
+      </span>
+      $$ p\bigl(h \mid \{x_i\}\bigr) \;\propto\; p(h)\;\prod_{i=1}^{N} p\bigl(x_i \mid h,\ \mathcal{D}\bigr) $$
+      with $p(h)$ flat on the analysis grid and $\mathcal{D}$ the statement that the event was
+      <em>detected</em> — the conditioning that Chapter 4 is about
+      <span class="ch02-fwd">⏭ Ch 4</span>. The pipeline evaluates this on a fixed grid of
+      $h$ values and works throughout in
+      $$ S_N(h) \;=\; \sum_{i=1}^{N} \ln \mathcal{L}_i(h), \qquad \underbrace{\mathcal{L}_i(h)}_{\text{one event, one number per grid point}} \equiv p(x_i \mid h, \mathcal{D}), $$
+      because a product of 1588 numbers, each of which can be $10^{-7}$, is not a number a
+      computer has. Nothing else in the estimator is additive; this is.
+    </div>
+
+    <p>
+      Three design decisions are hiding in that box, and each of them earned its place
+      against a specific failure.
+    </p>
+    <p>
+      <strong>Why a grid and not a sampler.</strong> $h$ enters the likelihood only through
+      the distance&ndash;redshift map $d_L(z; h, \Omega_m)$, so every event&rsquo;s expensive
+      part — an integral over candidate host galaxies, which is Chapter 3&rsquo;s subject
+      <span class="ch02-fwd">⏭ Ch 3</span> — can be evaluated once per grid point and cached.
+      A Metropolis sampler would buy nothing: there is no high-dimensional space to explore,
+      and it would pay the same integral per proposal. The production grid has 41 points
+      spanning $[0.60,\,0.86]$, and it is deliberately <em>non-uniform</em>: 0.01-spaced on
+      $[0.60, 0.65]$ and $[0.80, 0.86]$, 0.005-spaced in between. Every integral on this page
+      is a trapezoid over the actual node spacing, and nothing on this page takes a numerical
+      derivative across the seams at 0.65 and 0.80.
+    </p>
+    <p>
+      <strong>Why log-space.</strong> Because the naive product underflows. This is not a
+      hypothetical: the project spent Phases 21&ndash;23 on it, moved to log-space with four
+      different zero-handling strategies, and recorded the verdict as
+      <em>&ldquo;fixed, <strong>not</strong> the cause&rdquo;</em>
+      <span class="prov-chip">ledger #7</span> <span class="prov-chip">H0R:1978</span> — the
+      bias it was hoped to explain was still there afterwards. Keep that shape in mind; it
+      recurs. The production combiner is
+      <code>combine_log_space()</code> in <code>posterior_combination.py:284-330</code>, and
+      its default zero-handling strategy is <code>physics-floor</code>: an event whose
+      likelihood is exactly zero at some grid points gets those points replaced by its own
+      smallest non-zero value rather than annihilating the whole product.
+    </p>
+    <p>
+      <strong>Why there is no extra $\beta(h)^N$.</strong> Each $\mathcal{L}_i$ is
+      <em>already</em> conditional on detection, so the joint posterior is a plain product,
+      with no further population-level selection factor multiplied on top. That is a
+      statement with a citation, not a convenience.
+    </p>
+
+    <div class="voice-derivation">
+      <span class="voice-label">Why the product is plain — the production combiner&rsquo;s own argument
+        <span class="prov-chip">posterior_combination.py:284-330</span>
+        <span class="prov-chip">Loredo 2004</span>
+        <span class="prov-chip">Mandel, Farr &amp; Gair 2019, arXiv:1809.02063 §3</span>
+      </span>
+      Conditioning on the observed number of detections makes the $\beta(h)^N$ factor of the
+      unconditional (Poisson) likelihood cancel against the rate prior. Applying
+      $-N\log D(h)$ <em>again</em> on top of per-event likelihoods that already carry it is a
+      double count — and the project shipped exactly that for a while, then measured what
+      removing it was worth: it eliminated a $+0.020\ldots+0.025$ shift in $h$
+      <span class="prov-chip">ledger #20</span> <span class="prov-chip">6754ddb</span>.
+    </div>
+
+    <p>
+      One more thing the grid has to do, and it is easy to get wrong: it has to be able to
+      <em>hold</em> the answer.
+    </p>
+
+    <!-- ============ grid-resolution widget ============ -->
+    <div class="widget" id="ch02-grid-widget">
+      <h4>The grid has to be able to hold the answer
+        <span class="prov-chip real">real: #51 run_seed61000</span>
+        <span class="prov-chip">posteriors_fixed · zoom</span>
+      </h4>
+      <p style="margin-top:0; color:var(--muted); font-size:0.88rem;">
+        The same 1588 events, the same combination rule, two grids. <strong>Switch</strong>
+        between the production grid and the $10^{-4}$ zoom grid and watch what the answer
+        looks like on each. Nothing about the physics changes between the two panels — only
+        where the machine was asked to evaluate.
+      </p>
+      <div class="toggle-row" id="ch02-grid-row" role="group" aria-label="h grid">
+        <button type="button" data-grid="prod" aria-pressed="true">production grid (0.005 step)</button>
+        <button type="button" data-grid="zoom">zoom grid (10⁻⁴ step)</button>
+      </div>
+      <div id="ch02-grid-plot" class="widget-plot"></div>
+      <div class="ch02-readouts" id="ch02-grid-readouts">
+        <span>MAP <strong id="ch02-grid-map">&mdash;</strong></span>
+        <span><span class="term" data-term="sigh">$\sigma_h$</span> <strong id="ch02-grid-sigma">&mdash;</strong></span>
+        <span>density at the grid edge, relative to peak: <strong id="ch02-grid-edge">&mdash;</strong></span>
+      </div>
+      <div class="ch02-verdict" id="ch02-grid-verdict"></div>
+      <p class="ch02-note">
+        The plotted curves are max-subtracted log arrays clipped 60 below their own peak
+        ($e^{-60} = 8.8\times10^{-27}$), because a browser cannot render $10^{-139}$ and a
+        table of it teaches nothing. The <em>readouts</em> — MAP, $\sigma_h$ and the
+        edge-to-peak ratio — are computed by the generator before that clip, at full
+        precision, so the number 1.9&times;10<sup>&minus;139</sup> is real and the plotted
+        floor is a display artefact. Both are labelled as such.
+      </p>
+      <details class="num-view">
+        <summary>Show me the numbers</summary>
+        <div class="table-scroll"><table class="num-table" id="ch02-grid-table"></table></div>
+      </details>
+      <noscript>
+        <p><strong>Static fallback.</strong> On the production grid the idealized campaign-#51
+        posterior over 1588 events is a <em>single-node spike</em>: all of its mass sits on
+        $h = 0.730$ and the density at the grid edges is $1.9\times10^{-139}$ of the peak. On
+        the $10^{-4}$ zoom grid over $[0.728, 0.732]$ the same posterior resolves into a
+        symmetric Gaussian peak with MAP 0.72990 and $\sigma_h = 3.00\times10^{-4}$ — about
+        <strong>15&times; narrower than the production grid&rsquo;s 0.005 step</strong>, which
+        is why the un-zoomed posterior looked like a delta spike and why the project needed a
+        zoom-grid hook (<code>IDEALIZED_BASELINE_READOUT.md:36-39</code>).</p>
+      </noscript>
+    </div>
+
+    <div class="callout defect">
+      <span class="callout-label">Trap &mdash; &ldquo;A spike on the grid means an exquisitely precise measurement.&rdquo;</span>
+      A spike on the grid means the grid cannot see the width. Whether that width is
+      $3\times10^{-4}$ or $3\times10^{-9}$, the production grid renders both as the same
+      picture. Resolution is a property of your instrument, not of your result — and the
+      idealized run&rsquo;s $\sigma_h$ is only knowable because someone re-ran it on a grid
+      15&times; finer. <span class="prov-chip">IDEALIZED_BASELINE_READOUT.md:36-39</span>
+    </div>
+
+    <details class="gw-reader">
+      <summary>&#9656; For the GW reader — what one $\mathcal{L}_i(h)$ actually is here</summary>
+      <p>
+        Per-event likelihoods are delivered as one JSON per grid point
+        (<code>posteriors/h_0_*.json</code>, key = detection index, value = $\mathcal{L}_i$ at
+        that $h$), assembled by <code>load_posterior_jsons</code> /
+        <code>build_likelihood_array</code>
+        (<code>posterior_combination.py:42-140</code>) into an
+        $N \times n_h$ array. This chapter&rsquo;s generator reads exactly that array and does
+        nothing else to it: every curve on this page is $\sum_i \ln \mathcal{L}_i(h)$ over a
+        subset, max-subtracted and trapezoid-normalised.
+      </p>
+      <p>
+        The object $\mathcal{L}_i$ is the single-ratio form
+        $p_i = \bigl(\beta_G \mathcal{L}^{\rm cat}_i + B^{\rm num}_i\bigr)/D(h)$
+        (<code>bayesian_statistics.py:3006-3009</code>, <code>:1042-1048</code>), mapping onto
+        Gray et al. (2020), arXiv:1908.06050 Eq. (9). Chapter 2 uses it as a black box on
+        purpose: the entire point of the arc is that the reader first learns what a
+        <em>defective</em> $\mathcal{L}_i$ looks like from the outside, and only then opens it.
+        Chapters 3&ndash;9 are that opening, one factor at a time.
+      </p>
+      <p>
+        Two data-hygiene rules were binding on this chapter&rsquo;s generator and are worth
+        knowing if you reproduce it. (i) seed 61000&rsquo;s canonical <em>idealized</em>
+        posterior directory is <code>run_seed61000/posteriors_fixed</code> — the plain
+        <code>posteriors/</code> beside it is a stale pre-<code>ec09ed0</code> backup, and
+        reading &ldquo;posteriors/&rdquo; uniformly across runs mixes code eras. (ii) The root
+        diagnostics CSVs of that run contain two concatenated <code>evaluate</code> sweeps
+        (2.00&times; row counts) and must not be computed on without era disambiguation. This
+        page uses neither: it reads the per-h posterior JSONs directly.
+      </p>
+    </details>
+
+    <!-- ================= §2 ================= -->
+    <h2>2. Stacking events — and what $\mathcal{L}_i(h)$ costs</h2>
+
+    <p>
+      Log-additivity has a consequence worth stating before any data arrives: the combined
+      answer <em>cannot</em> depend on the order in which you add events. Addition commutes.
+      Stack the loudest first, stack them alphabetically, stack them in the order they were
+      detected — $S_N(h)$ at $N = 1588$ is the same function every time, to the last bit.
+      This chapter&rsquo;s generator asserts that rather than asserting it in prose: if the
+      two stacking orders below disagreed at the endpoint by more than $10^{-12}$, the
+      generator would refuse to write its data file.
+    </p>
+    <p>
+      And yet every <em>partial</em> answer depends on the order completely. That gap — a
+      fixed destination reached by wildly different paths — is where this chapter&rsquo;s
+      discovery lives. Hold it.
+    </p>
+    <p>
+      First, though: what is one $\mathcal{L}_i(h)$? Here is EMRI-889&rsquo;s, plotted for the
+      first time in this book.
+    </p>
+
+    <!-- ============ 889's own likelihood ============ -->
+    <div class="widget" id="ch02-889-widget">
+      <h4>EMRI-889&rsquo;s own likelihood, $\mathcal{L}_{889}(h)$
+        <span class="prov-chip real">real: #51 idealized</span>
+        <span class="prov-chip real">real: #53 real_r1</span>
+      </h4>
+      <p style="margin-top:0; color:var(--muted); font-size:0.88rem;">
+        <strong>Switch</strong> between the two universes this book keeps side by side: the
+        idealized campaign-#51 baseline, where the host redshift is used exactly as
+        catalogued, and the realistic campaign-#53 run, where the catalogue&rsquo;s own
+        measurement noise has been realized. Same event, same detector, same 41 grid points.
+      </p>
+      <div class="toggle-row" id="ch02-889-row" role="group" aria-label="Venue for event 889">
+        <button type="button" data-venue="ideal" aria-pressed="true">idealized #51 (zoom grid)</button>
+        <button type="button" data-venue="real">realistic #53, r1 (production grid)</button>
+      </div>
+      <div id="ch02-889-plot" class="widget-plot"></div>
+      <div class="ch02-readouts" id="ch02-889-readouts">
+        <span>peak at <strong id="ch02-889-map">&mdash;</strong></span>
+        <span>peak/floor ratio across the plotted grid: <strong id="ch02-889-dyn">&mdash;</strong></span>
+      </div>
+      <div class="ch02-verdict" id="ch02-889-verdict"></div>
+      <details class="num-view">
+        <summary>Show me the numbers</summary>
+        <div class="table-scroll"><table class="num-table" id="ch02-889-table"></table></div>
+      </details>
+      <noscript>
+        <p><strong>Static fallback.</strong> In the idealized baseline, $\mathcal{L}_{889}$ on
+        the zoom grid is a sharp peak at $h = 0.7295$ rising to 43.1 from a floor of 0.024
+        across a window only 0.004 wide in $h$. In the realistic run, on the production grid,
+        the same event&rsquo;s likelihood is a broad, smooth hump peaking at
+        $h = 0.745$, rising from 0.063 at $h = 0.60$ to 1.467 and falling back to 0.140 at
+        $h = 0.86$ — a factor ~23 of dynamic range spread over a window 65&times; wider.
+        One event, one detector, and two entirely different amounts of information, because
+        of what was assumed about its host galaxy&rsquo;s redshift.</p>
+      </noscript>
+    </div>
+
+    <p>
+      That curve is the whole product this book is building, for one event. And it is
+      expensive in a way that has nothing to do with computers: to know how probable
+      889&rsquo;s measured distance is under a given $h$, you need to know what redshift to
+      compare it against. GR gave you $d_L$. It gave you nothing at all about $z$.
+    </p>
+
+    <div class="callout without">
+      <span class="callout-label">The missing ingredient</span>
+      $\mathcal{L}_i(h) = p(x_i \mid h)$ requires connecting a measured $d_L$ to an $h$, and
+      the only bridge is $d_L(z; h, \Omega_m)$ — which needs $z$. The host&rsquo;s redshift is
+      not measured, not guessed, and not marginalizable with a shrug: it is a
+      <strong>discrete latent variable</strong> with tens of thousands of candidate values per
+      event, one per catalogued galaxy in the localization volume. Summing over it is
+      Chapter 3. Discovering that the true host is usually not among them is Chapter 5.
+    </div>
+
+    <!-- ================= §3 ================= -->
+    <h2>3. A vocabulary for &ldquo;wrong&rdquo;</h2>
+
+    <p>
+      Before running anything on 1588 events, the book needs words. &ldquo;The answer is
+      wrong&rdquo; is three different diseases with three different cures, and the rest of
+      this book is unreadable without separating them. Each has a one-line
+      <em>operational</em> test — something you could actually run.
+    </p>
+
+    <div class="ch02-defbox">
+      <dl>
+        <dt>Biased</dt>
+        <dd>Repeat the experiment many times with the <em>same</em> truth; the mean of the
+          estimates misses truth.
+          <span class="ch02-test">Test: $\langle \hat h \rangle - h_{\rm true} \neq 0$ over
+            realizations. Bias is a property of an <strong>estimator over realizations</strong>,
+            never of one run.</span></dd>
+        <dt>Noisy (scattered)</dt>
+        <dd>The estimates spread widely, but their mean is right.
+          <span class="ch02-test">Test: the standard deviation of $\hat h$ over realizations is
+            large while the mean is on truth. Curable with more data; bias is not.</span></dd>
+        <dt>Mis-calibrated</dt>
+        <dd>The estimates may even be unbiased, but the <em>stated</em> uncertainty is wrong,
+          so the quoted 68% intervals do not contain truth 68% of the time.
+          <span class="ch02-test">Test: <strong>coverage</strong> — the fraction of
+            realizations whose stated interval contains truth. This is the one a project can
+            fail while congratulating itself on the other two.</span></dd>
+        <dt>Pull</dt>
+        <dd>The single number that fuses the three:
+          $\text{pull} = (\hat h - h_{\rm true}) / \sigma_{\hat h}$, using the estimator&rsquo;s
+          <em>own stated</em> $\sigma$.
+          <span class="ch02-test">In this project, $\hat h$ is the MAP and $\sigma_{\hat h}$ the
+            posterior standard deviation
+            (<code>score_realistic.py:152</code>). A well-behaved estimator gives pulls that
+            look like draws from $\mathcal{N}(0,1)$.</span></dd>
+      </dl>
+    </div>
+
+    <p>
+      They are independent. You can build an estimator that fails any one while passing the
+      other two, and the fastest way to believe that is to build one.
+    </p>
+
+    <!-- ============ I2.2 ============ -->
+    <div class="widget" id="ch02-trainer">
+      <h4>I2.2 — Bias / Scatter / Coverage Trainer
+        <span class="prov-chip toy">toy: analytic, 200 seeded repeats</span>
+      </h4>
+      <p style="margin-top:0; color:var(--muted); font-size:0.88rem;">
+        <strong>Manipulate</strong> three dials of a <em>hypothetical</em> estimator: its true
+        bias, its true scatter, and the $\sigma$ it <em>states</em> about itself.
+        <strong>Watch</strong> 200 simulated repeats of the same experiment, their mean, their
+        spread, and the realized coverage of the stated 68% interval. This widget contains
+        <strong>no project data</strong>: the estimates are Gaussian draws from a fixed seed,
+        so the same dial settings always give the same picture. The real ten-run anchor is
+        directly below it.
+      </p>
+      <div class="widget-controls">
+        <label for="ch02-t-bias">true bias (in $h$):</label>
+        <input id="ch02-t-bias" type="range" min="-0.05" max="0.09" step="0.001" value="0" />
+        <span class="readout">b = <strong id="ch02-t-bias-out">+0.000</strong></span>
+      </div>
+      <div class="widget-controls">
+        <label for="ch02-t-sigma">true scatter $\sigma_{\rm true}$:</label>
+        <input id="ch02-t-sigma" type="range" min="0.002" max="0.04" step="0.001" value="0.02" />
+        <span class="readout">&sigma;<sub>true</sub> = <strong id="ch02-t-sigma-out">0.020</strong></span>
+      </div>
+      <div class="widget-controls">
+        <label for="ch02-t-stated">stated $\sigma$ (what the estimator claims):</label>
+        <input id="ch02-t-stated" type="range" min="0.002" max="0.04" step="0.001" value="0.02" />
+        <span class="readout">&sigma;<sub>stated</sub> = <strong id="ch02-t-stated-out">0.020</strong></span>
+      </div>
+      <div class="toggle-row" id="ch02-t-presets" role="group" aria-label="Presets">
+        <button type="button" data-preset="honest">honest</button>
+        <button type="button" data-preset="overconfident">unbiased, over-confident</button>
+        <button type="button" data-preset="biased-calibrated">biased, honest &sigma;</button>
+        <button type="button" data-preset="twod">set b to the recorded 2D offset</button>
+      </div>
+      <p class="ch02-note">
+        The last preset dials the toy&rsquo;s <em>true bias</em> to <strong>+0.077</strong> in
+        $h$ — the recorded mean offset of campaign #53&rsquo;s two-dimensional channel
+        <span class="prov-chip">REALISTIC_READOUT.md §6</span>
+        <span class="badge candidate">CANDIDATE</span> ([RATIFY-M6] designates that 2D pairing
+        &ldquo;necessary, not established sufficient&rdquo;). Only the <em>number</em> is real;
+        the 200 estimates scattered around it remain Gaussian toys, which is why this widget
+        stays chipped <code>toy</code>. What it is for: watching coverage go to zero while the
+        stated &sigma; is perfectly honest.
+      </p>
+      <div class="ch02-panels">
+        <div id="ch02-t-plot" class="widget-plot" style="min-height:250px"></div>
+        <div id="ch02-t-pull" class="widget-plot" style="min-height:250px"></div>
+      </div>
+      <div class="ch02-readouts" id="ch02-t-readouts">
+        <span>measured bias <strong id="ch02-t-mb">&mdash;</strong></span>
+        <span>measured scatter <strong id="ch02-t-ms">&mdash;</strong></span>
+        <span>coverage of the stated 68% interval <strong id="ch02-t-cov">&mdash;</strong></span>
+        <span>pull s.d. <strong id="ch02-t-ps">&mdash;</strong></span>
+      </div>
+      <div class="ch02-verdict" id="ch02-t-verdict"></div>
+      <details class="num-view">
+        <summary>Show me the numbers</summary>
+        <div class="table-scroll"><table class="num-table" id="ch02-t-table"></table></div>
+      </details>
+      <noscript>
+        <p><strong>Static fallback.</strong> Three settings, the same 200 fixed standard-normal
+        draws each, truth $h = 0.73$. <em>Honest</em> ($b=0$,
+        $\sigma_{\rm true} = \sigma_{\rm stated} = 0.020$): measured bias −0.0009, measured
+        scatter 0.0218, coverage <strong>64.5%</strong>, pull s.d. 1.09.
+        <em>Unbiased but over-confident</em> ($b=0$, $\sigma_{\rm true} = 0.020$,
+        $\sigma_{\rm stated} = 0.005$): bias and scatter unchanged, but coverage collapses to
+        <strong>17.5%</strong> and the pull s.d. is <strong>4.37</strong> — an estimator that
+        is right on average and lies about how sure it is. <em>Biased with an honest $\sigma$</em>
+        ($b = +0.077$, $\sigma_{\rm true} = \sigma_{\rm stated} = 0.020$): coverage
+        <strong>0.5%</strong>, pull s.d. still 1.09, mean pull +3.8 — every interval misses,
+        and the width is not the reason. (The finite-sample offsets — 64.5% rather than 68%,
+        0.0218 rather than 0.020 — are what 200 draws actually give; they are not rounded to
+        the textbook values.)</p>
+      </noscript>
+    </div>
+
+    <p>
+      Now the same three questions, asked of something real. Campaign #53 ran the production
+      estimator over <strong>two truth universes &times; five observation realizations</strong>
+      — ten runs of the identical pipeline, differing only in which random universe was
+      generated and which measurement noise was drawn.
+    </p>
+
+    <div class="widget" id="ch02-runs-widget">
+      <h4>Ten realizations of one estimator
+        <span class="prov-chip real">real: #53 seed61000+62000, r1&ndash;r5</span>
+        <span class="prov-chip">REALISTIC_READOUT.md §1</span>
+      </h4>
+      <p style="margin-top:0; color:var(--muted); font-size:0.88rem;">
+        Each row is one complete run: its MAP, its stated 68% interval, and its pull. Recomputed
+        from each run&rsquo;s own <code>combined_posterior.json</code> and gated against the
+        published table — the generator stops if any recomputed MAP disagrees.
+      </p>
+      <div id="ch02-runs-plot" class="widget-plot" style="min-height:300px"></div>
+      <div class="ch02-readouts" id="ch02-runs-readouts">
+        <span>MAP range <strong id="ch02-runs-range">&mdash;</strong></span>
+        <span>pull mean <strong id="ch02-runs-pmean">&mdash;</strong></span>
+        <span>pull s.d. <strong id="ch02-runs-psd">&mdash;</strong></span>
+        <span>runs with $|$pull$| &gt; 2$: <strong id="ch02-runs-n2">&mdash;</strong></span>
+      </div>
+      <details class="num-view">
+        <summary>Show me the numbers</summary>
+        <div class="table-scroll"><table class="num-table" id="ch02-runs-table"></table></div>
+      </details>
+      <noscript>
+        <p><strong>Static fallback.</strong> Ten runs, truth $h = 0.73$. Seed 61000:
+        MAPs 0.740, 0.725, 0.730, 0.725, 0.740 (pulls +0.51, −0.28, 0.00, −0.33, +0.45).
+        Seed 62000: MAPs 0.715, 0.700, 0.710, 0.710, 0.710 (pulls −0.67, −1.15, −0.83, −0.97,
+        −0.76). Pull mean −0.40, s.d. 0.58, maximum $|$pull$|$ = 1.15, and 0 of 10 exceed 2 —
+        the pre-registered P2 criterion (<code>REALISTIC_READOUT.md §2</code>) is
+        <strong>PASS</strong>. Nine of the ten 68% intervals contain the truth.</p>
+      </noscript>
+    </div>
+
+    <div class="voice-adjudicator">
+      <span class="voice-label">What those ten numbers are, and what they are not
+        <span class="badge finding">FINDING</span>
+        <span class="prov-chip">REALISTIC_READOUT.md §3</span>
+        <span class="prov-chip">REALISTIC_READOUT.md §6, as amended 2026-07-30</span>
+      </span>
+      <p style="margin-top:0">
+        Two warnings travel with that table, and both come from the artifact itself.
+      </p>
+      <p>
+        <strong>The ten runs are not ten degrees of freedom.</strong> They share
+        <em>two</em> truth universes, so the pulls are strongly correlated within a seed:
+        &ldquo;two effective degrees of freedom, not ten&rdquo;. A pull s.d. of 0.58 must
+        therefore <em>not</em> be read as an over-conservative $\sigma$; ten correlated draws
+        cannot estimate a pull dispersion at all. The measured decomposition is that the
+        observation realization contributes sd 0.0055&ndash;0.0076 in $h$ within a seed, while
+        the difference between the two truth universes is −0.023 — the realization scatter is
+        the <em>small</em> component.
+      </p>
+      <p>
+        <strong>And no headline may be quoted from this run.</strong> The readout&rsquo;s own
+        amendment, dated 2026-07-30: <em>&ldquo;Do not quote a headline from
+        <strong>EITHER</strong> channel of this run.&rdquo;</em> The reasons need Chapters 5,
+        8 and 11 <span class="ch02-fwd">⏭ Ch 11</span>. What this chapter takes from the table
+        is narrower and safe: a working demonstration that <em>bias, scatter and coverage are
+        three separate measurements</em>, and that only the second and third of them can be
+        read off a single run at all.
+      </p>
+    </div>
+
+    <div class="callout defect">
+      <span class="callout-label">Trap 2.A &mdash; &ldquo;MAP = truth means the estimator is right.&rdquo;</span>
+      Chapter 10&rsquo;s exhibit #49a: a production estimator returned MAP = <strong>0.86 for
+      <em>every</em> injected truth from 0.63 to 0.77</strong>, while a
+      <code>catalog_only</code> control tracked truth exactly. It was stable, reproducible,
+      and carried literally zero information about $H_0$. Hitting truth once is one bit of
+      evidence. <span class="prov-chip">ledger #49a</span>
+      <span class="prov-chip">DRAFT_REPORT.md:24-27</span>
+      <span class="badge refuted">REFUTED</span> as an estimator —
+      <a href="museum.html#ex-h0-independent">the full exhibit is in the Defect Museum</a>.
+    </div>
+
+    <!-- ================= §4 ================= -->
+    <h2>4. The lurch</h2>
+
+    <p>
+      Now stack real events. The intuition every reader brings — mine included, before doing
+      this — is that a posterior over 1588 events sharpens like $1/\sqrt{N}$: each event a
+      small, roughly equal contribution, the curve narrowing smoothly, the last hundred events
+      buying about as much as the first hundred. Commit to that intuition before you break it.
+    </p>
+
+    <!-- ============ predict, then reveal ============ -->
+    <div class="widget" data-predict-id="ch02-concentration">
+      <h4>Predict, then reveal — how many events carry the answer?</h4>
+      <p style="margin-top:0;">
+        In the idealized campaign-#51 baseline there are 1588 detected events. Rank them by how
+        much each one narrows the combined posterior, and add them up from the top. <strong>How
+        many events does it take to reach 90% of the total constraint?</strong> Commit, then
+        the Event Stacker below unlocks.
+      </p>
+      <div class="predict-row" id="ch02-predict-1" data-predict-id="ch02-concentration">
+        <button type="button" data-predict="most">most of them — ~1400</button>
+        <button type="button" data-predict="half">about half — ~800</button>
+        <button type="button" data-predict="hundred">a minority — ~100</button>
+        <button type="button" data-predict="few">a handful — ~10</button>
+      </div>
+      <div class="reveal">
+        <strong>Measured: 24 events.</strong> The top 3 alone carry <strong>46%</strong> of the
+        in-catalogue budget (47% of the signed total — the two denominators differ by 1.3%,
+        see below), the top 10 carry 71%, the top 20 carry 87%, and 24 of 1588 reach 91%. The
+        cumulative share then <em>overshoots</em> 100% around the 40th event and comes back
+        down, because <strong>466 of the 1588 events have negative curvature</strong> — locally
+        they push the other way. The project&rsquo;s own
+        readout states it as: <em>&ldquo;100 % of the constraint is carried by the 76
+        in-catalogue events (4.8 %); the 3 loudest (SNR 995&ndash;1425, z ≈ 0.016&ndash;0.021)
+        carry 46 % alone. The other ~1510 detections are dark hosts contributing ~1 % of the
+        curvature.&rdquo;</em>
+        <span class="prov-chip">IDEALIZED_BASELINE_READOUT.md:42-47</span>
+        <span class="prov-chip real">real: #51 posteriors_fixed</span>
+        If you chose &ldquo;~1400&rdquo; you were applying $\sqrt{N}$ reasoning to a sample
+        that does not have $N$ independent things in it. The number that matters is not how
+        many events you have; it is how much information they carry, and that quantity is not
+        spread evenly over anything.
+      </div>
+      <noscript>
+        <p><strong>Static fallback.</strong> The answer is <strong>24 of 1588</strong>. Ranked
+        by the project&rsquo;s own per-event curvature statistic on the idealized campaign-#51
+        baseline, the top 3 events carry 46% of the in-catalogue budget, the top 10 carry 71%,
+        the top 20 carry 87%, and 24 events reach 91%. The cumulative share then overshoots
+        100% and comes back, because 466 of the 1588 events have negative curvature.
+        (<code>IDEALIZED_BASELINE_READOUT.md:42-47</code>.)</p>
+      </noscript>
+    </div>
+
+    <div class="voice-derivation">
+      <span class="voice-label">The information statistic used on this page — the project&rsquo;s own, reused verbatim
+        <span class="prov-chip">score_realistic.py:14-21</span>
+        <span class="prov-chip">idealization_audit/audit_information_decomposition.py</span>
+      </span>
+      &ldquo;How much does event $k$ narrow the posterior&rdquo; is made precise by the
+      project&rsquo;s own three-point log-likelihood curvature about truth,
+      $$ c_k \;=\; \ln\frac{\mathcal L_k(0.730)}{\mathcal L_k(0.725)} \;+\; \ln\frac{\mathcal L_k(0.730)}{\mathcal L_k(0.735)},
+         \qquad \sigma_h \;=\; \frac{\Delta h}{\sqrt{\sum_k c_k}},\quad \Delta h = 0.005 . $$
+      It is a discrete second difference of $\ln\mathcal L$ taken <em>inside</em> the
+      0.005-spaced region of the grid, never across a seam. This book does not define an
+      information measure of its own; it reuses this one, because it is the statistic under
+      which every published information number in the project was measured. Measured here:
+      total curvature <strong>238.33</strong>, implied
+      $\sigma_h = 3.24\times10^{-4}$ — against the zoom-grid posterior&rsquo;s
+      $3.00\times10^{-4}$, agreeing to 8%.
+    </div>
+
+    <p>
+      With that statistic the concentration is not an impression, it is a count. Of the 1588
+      events, the 76 whose true host galaxy is actually in the catalogue carry
+      <strong>101.3%</strong> of the total; the remaining 1512 carry <strong>−1.3%</strong>.
+      (Why only 76 of 1588 is Chapter 5&rsquo;s subject <span class="ch02-fwd">⏭ Ch 5</span>;
+      here it is simply a label on a subset.) A useful descriptive summary of how uneven the
+      rest is: the participation ratio $\bigl(\sum_k c_k\bigr)^2 / \sum_k c_k^2$ over the 1122
+      events with positive curvature is <strong>12.1</strong>. Eleven hundred events that pull
+      the right way, and the effective count is twelve.
+    </p>
+
+    <!-- ============ I2.1 ============ -->
+    <div class="widget" id="ch02-stacker">
+      <h4>I2.1 — The Event Stacker
+        <span class="prov-chip real">real: #51 idealized</span>
+        <span class="prov-chip real">real: #53 seed61000/real_r1</span>
+        <span class="prov-chip">1588 events · combined in log space</span>
+      </h4>
+      <p style="margin-top:0; color:var(--muted); font-size:0.88rem;">
+        <strong>Manipulate</strong> $N$ — how many of the 1588 events are in the stack — and
+        the <strong>order</strong> in which they enter (matched-filter
+        <span class="term" data-term="snr">SNR</span>, or a fixed shuffle). <strong>Watch</strong> the combined
+        posterior, and especially the width readout. Two venues are available: the idealized
+        campaign-#51 baseline (drawn on its zoom grid, the only grid on which its answer is
+        resolved) and the realistic campaign-#53 run r1 (production grid). The endpoint at
+        $N = 1588$ is identical for both orders, by construction. The <em>path</em> is not.
+      </p>
+      <div class="toggle-row ch02-locked" id="ch02-venue-row" role="group" aria-label="Venue">
+        <button type="button" data-venue="idealized" aria-pressed="true">idealized #51 (zoom grid)</button>
+        <button type="button" data-venue="realistic">realistic #53 · r1 (production grid)</button>
+      </div>
+      <div class="toggle-row ch02-locked" id="ch02-order-row" role="group" aria-label="Stacking order">
+        <button type="button" data-order="random" aria-pressed="true">random order (fixed seed)</button>
+        <button type="button" data-order="snr">loudest first (by SNR)</button>
+      </div>
+      <div class="widget-controls ch02-locked" id="ch02-n-controls">
+        <label for="ch02-n-slider">events in the stack, $N$:</label>
+        <input id="ch02-n-slider" type="range" aria-describedby="ch02-stack-readouts" />
+        <span class="readout">N = <strong id="ch02-n-readout">&mdash;</strong></span>
+        <button type="button" id="ch02-stack-full" class="theme-toggle">↺ stack all 1588</button>
+      </div>
+      <div id="ch02-stack-plot" class="widget-plot" style="min-height:300px"></div>
+      <div id="ch02-width-plot" class="widget-plot" style="min-height:250px"></div>
+      <div class="ch02-readouts" id="ch02-stack-readouts">
+        <span>MAP <strong id="ch02-stack-map">&mdash;</strong></span>
+        <span>posterior width $\sigma_h$ <strong id="ch02-stack-sigma">&mdash;</strong></span>
+        <span>width relative to the full stack: <strong id="ch02-stack-rel">&mdash;</strong></span>
+      </div>
+      <div class="ch02-verdict" id="ch02-stack-verdict"></div>
+      <p class="ch02-note">
+        The combination is $\sum_i \ln \mathcal L_i(h)$ — the production rule in
+        <code>combine_log_space()</code> — evaluated by the generator at 72 values of $N$ per
+        order per venue and shipped as max-subtracted log arrays clipped 60 below their own
+        peak (below that the density is under $10^{-26}$ and no plot or table can show it).
+        Every MAP, mean and width in the readouts was computed <em>before</em> the clip, at full
+        precision, with a trapezoid over the non-uniform node spacing. The
+        &ldquo;random&rdquo; order is one fixed permutation
+        (<code>numpy.random.default_rng(20260731)</code>), so it is the same for you as for
+        everyone else — this is a demonstration, not a lottery.
+      </p>
+      <details class="num-view">
+        <summary>Show me the numbers</summary>
+        <div class="table-scroll"><table class="num-table" id="ch02-stack-table"></table></div>
+      </details>
+      <noscript>
+        <p><strong>Static fallback.</strong> <em>Idealized #51, random order:</em> the posterior
+        width sits flat at $\sigma_h = 1.16\times10^{-3}$ for the first ~15 events and is still
+        $1.01\times10^{-3}$ after 222 of them; the <strong>223rd</strong> event is EMRI-889, and
+        the width halves in one step to $5.85\times10^{-4}$. Two more steps like it follow, at
+        $N = 897$ (event 1536) and $N = 1320$ (event 118); the final width over all 1588 events
+        is $3.00\times10^{-4}$. <em>Idealized #51, loudest first:</em> one event gives
+        $6.29\times10^{-4}$, three give $4.15\times10^{-4}$, one hundred give
+        $3.007\times10^{-4}$ — and the remaining 1488 events improve that by 0.2%.
+        <em>Realistic #53 r1, random order:</em> the same 223rd event still halves the width,
+        $5.4\times10^{-2} \to 2.9\times10^{-2}$, and the full stack lands at MAP 0.740,
+        $\sigma_h = 0.0198$. <em>Realistic #53 r1, loudest first:</em> the running MAP climbs to
+        the top of the grid — 0.86 from $N = 35$ to $N \approx 1050$ — before walking back
+        down to the same 0.740 at $N = 1588$.</p>
+      </noscript>
+    </div>
+
+    <div class="voice-adjudicator">
+      <span class="voice-label">Why this page shows no percentages in the realistic venue
+        <span class="badge finding">FINDING</span>
+        <span class="prov-chip">REALISTIC_READOUT.md §4</span>
+      </span>
+      The concentration percentages above — 46%, 101.3%, −1.3% — are <strong>idealized-venue
+      measurements</strong> and are quoted only there. In the realistic run the same statistic
+      is cancellation-dominated: the signed total (0.0851 for r1) is only about 62% of the
+      absolute curvature mass (0.1650), so ratios blow up — the readout records a &ldquo;dark
+      share&rdquo; reaching 140% and one run&rsquo;s golden share going to <strong>−159%</strong>,
+      and instructs: <em>&ldquo;Quote the signed sums, never the ratios.&rdquo;</em> So this
+      page quotes the signed sums for r1 and nothing else: total <strong>+0.0851</strong>,
+      in-catalogue <strong>+0.0357</strong>, dark <strong>+0.0494</strong>, implied
+      $\sigma_h = 0.0171$ against the posterior&rsquo;s own 0.0198. The three golden events
+      retained <strong>0.045%</strong> of their idealized curvature — the pre-registered P4
+      criterion, passed by three orders of magnitude in the direction nobody wanted.
+    </div>
+
+    <p>
+      Two things in that widget deserve to be said out loud.
+    </p>
+    <p>
+      <strong>The lurch is real and it is one event.</strong> In random order, 222 events have
+      accumulated and the width has moved 13%. The 223rd is EMRI-889, and the width halves in
+      one step, from one galaxy, arriving at no distinguished place in the queue. A posterior
+      plotted only at $N = 1588$ shows you a clean peak and hides the
+      fact that it is three galaxies. That is the entire argument for making this figure
+      interactive: the final answer is not where the information is.
+    </p>
+    <p>
+      <strong>The path is not the destination.</strong> Switch the realistic venue to
+      &ldquo;loudest first&rdquo; and the running MAP reaches 0.86 — the top of the grid — at
+      the 35th event, sits there for the next thousand, and then walks back down to 0.740,
+      which is exactly where the random order lands. Nothing is wrong with the arithmetic; addition still
+      commutes. What the excursion says is that the loud events and the quiet ones are pulling
+      in different directions, and the answer is where they cross. That is a real, measured
+      feature of this run, it has a name, and it is the subject of Chapter 5
+      <span class="ch02-fwd">⏭ Ch 5</span>. Note it and move on — you are not equipped to
+      interpret it yet, and being handed the interpretation now would cost you the discovery.
+    </p>
+
+    <div class="callout defect">
+      <span class="callout-label">Trap 2.B &mdash; &ldquo;More events always help.&rdquo;</span>
+      Only if they are unbiased. A coherent, same-signed tilt shared across many events
+      accumulates linearly in log-space while the statistical width shrinks as $1/\sqrt{N}$,
+      so the <em>pull</em> grows as $\sqrt{N}$: more data makes the wrongness more
+      <em>significant</em>, not less. The measured instance closes this book — campaign
+      #53&rsquo;s two-dimensional channel puts <strong>10 of 10 runs</strong> above $+2\sigma$,
+      at a mean pull of <strong>+4.04</strong>
+      <span class="prov-chip">REALISTIC_READOUT.md §6</span>
+      <span class="prov-chip">ledger #94</span>. That number sits on
+      <span class="badge candidate">CANDIDATE</span> ground — [RATIFY-M6] designates the 2D
+      pairing &ldquo;necessary, not established sufficient&rdquo; — and it is Chapter 8&rsquo;s
+      cold open <span class="ch02-fwd">⏭ Ch 8</span>.
+    </div>
+
+    <!-- ================= dossier ================= -->
+    <div class="dossier">
+      <div class="dossier-title">Event dossier — EMRI-889 after this chapter</div>
+      <table>
+        <tr><td>d_L</td><td>88.9 Mpc (0.0888792 Gpc)</td></tr>
+        <tr><td>SNR</td><td>1424.7 — the loudest of the 1590 rows in this run&rsquo;s table</td></tr>
+        <tr><td>z</td><td><em>still unknown</em></td></tr>
+        <tr class="dossier-new"><td>distance precision</td>
+            <td>&sigma;_dL = 7.98&times;10<sup>&minus;5</sup> <strong>Gpc</strong> = 0.0798 Mpc
+                &rArr; &sigma;_dL/d_L = <strong>9.0&times;10<sup>&minus;4</sup></strong> (0.090%).
+                The design documents quote &ldquo;&sigma;_dL/dL = 8.0&times;10<sup>&minus;5</sup>&rdquo;;
+                that is the same measurement read as the <em>absolute</em> &sigma; in Gpc.
+                Both readings are carried, neither is dropped —
+                flag <strong>F-ch02-1</strong>.</td></tr>
+        <tr class="dossier-new"><td>its own likelihood</td>
+            <td>plotted at last: a sharp peak at h = 0.7295 in the idealized baseline,
+                a broad hump peaking at h = 0.745 in the realistic run</td></tr>
+        <tr class="dossier-new"><td>rank in the information budget</td>
+            <td><strong>#2 of 1588</strong> by curvature — one of the three golden events that
+                carry <strong>46%</strong> of the idealized constraint between them, and the
+                single event that halves the posterior width when it enters the stack</td></tr>
+        <tr class="dossier-new"><td>what this chapter added</td>
+            <td>889 is not one of 1588. It is one of <em>three</em>. Whatever is wrong with how
+                this pipeline treats one galaxy&rsquo;s redshift is wrong with the answer.</td></tr>
+      </table>
+    </div>
+
+    <p>
+      That last row is the chapter&rsquo;s payload, and it changes what &ldquo;robust&rdquo;
+      can possibly mean. With an effective sample of order ten, the posterior inherits the
+      idiosyncrasies of a handful of individual galaxies: their redshift errors, their
+      catalogue masses, their sky positions. There is no averaging left to save you.
+    </p>
+
+    <!-- ================= failure planted ================= -->
+    <div class="callout without">
+      <span class="callout-label">The failure the next chapter answers</span>
+      Every curve on this page was drawn from <em>delivered</em> per-event likelihoods
+      $\mathcal L_i(h)$ — the one object this chapter never computed. To compute it you must
+      turn a measured distance into a statement about $h$, and that needs a redshift the
+      waveform does not carry. The cheapest source is the galaxy catalogue: look up which
+      galaxies lie inside the localization volume and use theirs. For a typical event that
+      volume contains <strong>tens of thousands</strong> of them, and not knowing which is
+      the host is not an error bar — it is a sum, and the weights in that sum are astrophysics
+      somebody has to commit to.
+    </div>
+
+    <!-- ================= self-check ================= -->
+    <h2>Self-check</h2>
+
+    <div class="selfcheck">
+      <p>Q2.1 &nbsp; You add a second event. The combined posterior is the product of the two
+      likelihoods. Under what circumstance does a second event make the posterior
+      <em>worse</em> rather than merely wider?</p>
+      <details class="answer">
+        <summary>Show answer</summary>
+        <div class="answer-body">
+          When the second event&rsquo;s likelihood is biased in a way the first is not, because
+          products of likelihoods are unforgiving: a coherent, same-signed tilt shared across
+          many events accumulates linearly in log-space while the statistical width shrinks as
+          $1/\sqrt N$, so the <em>pull</em> grows as $\sqrt N$. This is precisely the failure
+          mode the book ends with: campaign #53&rsquo;s 2D channel produces 10 runs all pulling
+          in the same direction at $+4.04\sigma$
+          <span class="prov-chip">REALISTIC_READOUT.md §6</span>. More data made the wrongness
+          more significant, not less.
+        </div>
+      </details>
+    </div>
+
+    <div class="selfcheck">
+      <p>Q2.2 &nbsp; In the idealized baseline, 76 of 1588 events carry 100% of the constraint
+      and 3 carry 46%. What does that do to your intuition about the estimator&rsquo;s
+      robustness?</p>
+      <details class="answer">
+        <summary>Show answer</summary>
+        <div class="answer-body">
+          It destroys the comfort of large $N$. With effectively ~3&ndash;76 informative events,
+          the posterior inherits the idiosyncrasies of a handful of galaxies: their redshift
+          errors, their catalogue masses, their sky positions. A single event&rsquo;s
+          misbehaviour can then move the answer, which is exactly what the project measured for
+          event 889 — its channel contribution swings $+1.98 \to -2.04 \to -3.30$ across three
+          noise realizations of the <em>same</em> event list, flipping the sign of its whole
+          class&rsquo;s contribution in one of them
+          <span class="prov-chip">CLAIM_2D_BIAS_20260730.md:155</span>
+          <span class="prov-chip">c3c4_allruns_summary.md:123</span>.
+        </div>
+      </details>
+    </div>
+
+    <div class="selfcheck">
+      <p>Q2.3 &nbsp; Distinguish, with a one-line operational test each: a <em>biased</em>
+      estimator, a <em>noisy</em> estimator, and a <em>mis-calibrated</em> estimator.</p>
+      <details class="answer">
+        <summary>Show answer</summary>
+        <div class="answer-body">
+          Biased: repeat the experiment many times with the same truth and the mean of the
+          estimates misses truth. Noisy: the estimates scatter widely but their mean is right.
+          Mis-calibrated: the estimates may even be unbiased, but the <em>stated</em>
+          uncertainty is wrong, so the 68% intervals do not contain truth 68% of the time. The
+          three are independent, and Chapter 10 exists because a project can be congratulating
+          itself on the first while failing the third.
+        </div>
+      </details>
+    </div>
+
+    <div class="selfcheck">
+      <p>Q2.4 &nbsp; Why does this pipeline evaluate the posterior on an h-<strong>grid</strong>
+      rather than sampling it?</p>
+      <details class="answer">
+        <summary>Show answer</summary>
+        <div class="answer-body">
+          Because every event&rsquo;s likelihood requires an expensive integral over candidate
+          hosts, and $h$ enters only through the $d_L \leftrightarrow z$ mapping, so the same
+          host set can be re-evaluated at a fixed list of $h$ values and cached — $h$ is one
+          scalar, not a high-dimensional space needing MCMC. The cost is that the grid must
+          resolve the peak: the idealized posterior&rsquo;s $\sigma_h = 0.00030$ is ~15&times;
+          narrower than the production grid&rsquo;s 0.005 step, which is why the un-zoomed
+          posterior looked like a delta spike and why the project needed a zoom-grid hook
+          <span class="prov-chip">IDEALIZED_BASELINE_READOUT.md:36-39</span> — you can see both
+          renderings of the identical posterior in this chapter&rsquo;s first widget.
+        </div>
+      </details>
+    </div>
+
+    <div class="selfcheck">
+      <p>Q2.5 <em>(transfer)</em> &nbsp; You have a posterior machine and a distance. To get a
+      likelihood $p(d_i \mid h)$ you must connect $d_L$ to $h$. Write down the missing
+      ingredient and predict how many candidate values of it a typical event will offer.</p>
+      <details class="answer">
+        <summary>Show answer</summary>
+        <div class="answer-body">
+          The host redshift; and typically <em>tens of thousands</em> of candidates, because the
+          localization volume of even a well-localized EMRI contains that many catalogued
+          galaxies. The likelihood must therefore marginalize over &ldquo;which galaxy&rdquo;,
+          which is Chapter 3 — and the fact that the answer is usually &ldquo;none of
+          them&rdquo; is Chapter 5.
+        </div>
+      </details>
+    </div>
+
+    <!-- ================= provenance ================= -->
+    <div class="provenance-panel">
+      <h4>Provenance panel — every stamp used in this chapter</h4>
+      <ul>
+        <li><em>Derivation</em> <code>derivations/dark_siren_likelihood.md §1.1</code> (Phase 14, first-principles; no <code>[RATIFY-*]</code> gates — badged accordingly) · <code>bayesian_statistics.py:1954 evaluate()</code> — the posterior over $h$ on a grid; Schutz 1986, Nature 323, 310</li>
+        <li><em>Convention (code + literature)</em> <code>posterior_combination.py:284-330 combine_log_space()</code>; Loredo 2004; Mandel, Farr &amp; Gair 2019, arXiv:1809.02063 §3 — the plain product, and why no $\beta(h)^N$</li>
+        <li><em>Convention (scoring script)</em> <code>score_realistic.py:14-21</code> / <code>idealization_audit/audit_information_decomposition.py</code> — the 3-point curvature information statistic, reused verbatim by this chapter&rsquo;s generator rather than re-invented; every published information number in the project was measured under it</li>
+        <li><span class="badge finding">FINDING</span> <code>IDEALIZED_BASELINE_READOUT.md:42-47</code> — 76 of 1588 carry 100%; the 3 loudest carry 46%; dark hosts ~1%. Reproduced by <code>gen_ch02.py</code> as a hard gate (0.4641 of the in-catalogue budget, 0.4700 of the signed total)</li>
+        <li><span class="badge finding">FINDING</span> <code>IDEALIZED_BASELINE_READOUT.md:22-39</code> — MAP 0.72990, $\sigma_h = 0.00030$ on the zoom grid, ~15&times; narrower than the production step</li>
+        <li><span class="badge finding">FINDING</span> <code>REALISTIC_READOUT.md §1, §3</code> — the ten realistic runs, their pulls, and the &ldquo;two effective degrees of freedom&rdquo; caveat; recomputed and gated per run by <code>gen_ch02.py</code></li>
+        <li><span class="badge finding">FINDING</span> <code>REALISTIC_READOUT.md §4</code> — realistic-venue information <em>shares</em> are cancellation-dominated and must not be quoted; signed sums only</li>
+        <li><span class="badge finding">FINDING</span> <code>REALISTIC_READOUT.md §6</code> (amended 2026-07-30) · <code>ledger #94</code> — 2D channel 10/10 runs, mean pull +4.04, on <span class="badge candidate">CANDIDATE</span> ground ([RATIFY-M6]); and the standing instruction not to quote a headline from either channel of this run</li>
+        <li><span class="badge finding">FINDING</span> <code>CLAIM_2D_BIAS_20260730.md:155</code> · <code>c3c4_allruns_summary.md:123</code> — event 889&rsquo;s channel swing $+1.98 \to -2.04 \to -3.30$ across r1/r2/r3</li>
+        <li><span class="badge refuted">REFUTED</span> <code>ledger #49a</code> · <code>DRAFT_REPORT.md:24-27</code> — the H₀-independent estimator: MAP 0.86 for every injected truth 0.63&ndash;0.77</li>
+        <li><span class="badge finding">FINDING</span> <code>ledger #7</code> (<code>H0R:1978</code>) — posterior underflow: log-space + 4 strategies, &ldquo;fixed, not the cause&rdquo;; <code>ledger #20</code> (<code>6754ddb</code>) — $D(h)$ double-counted, removal worth $+0.020\ldots+0.025$</li>
+        <li>Data: <code>results/campaign51_20260728/run_seed61000/posteriors_fixed/</code> (canonical idealized dir — <em>not</em> <code>posteriors/</code>), <code>.../run_seed61000/zoom/posteriors/</code>, <code>.../realistic_20260729/seed{61000,62000}/real_r{1..5}/posteriors/</code>, <code>.../realistic_20260729/seed61000/prepared_cramer_rao_bounds.csv</code></li>
+        <li>Generator gates: golden share vs the readout&rsquo;s 46%; in-catalogue share vs 100%; implied $\sigma_h \in [2.9,3.4]\times10^{-4}$; r1 MAP 0.740 / mean 0.7321; all ten runs&rsquo; MAPs vs the published column; identical 1588-event index set across all three venues; endpoint independence of stacking order</li>
+        <li>Open flags: <code>book/design/flags/ch02_FLAGS.md</code> — F-ch02-1 (889&rsquo;s &ldquo;8.0&times;10⁻⁵&rdquo; is the absolute $\sigma_{d_L}$ in Gpc, <strong>affects Ch 1, Ch 4, Ch 6 and pedagogy Q1.2</strong>), F-ch02-2 (the 46% is metric-dependent; the metric is now pinned), F-ch02-3 (realistic shares not quotable)</li>
+      </ul>
+    </div>
+
+    <p class="book-footer">
+      Data generated by <code>book/generators/gen_ch02.py</code> (read-only against the main
+      package and <code>results/</code>). This page renders fully offline — Plotly and KaTeX are
+      vendored under <code>vendor/</code>.
+    </p>
+  </main>
+</div>
+
+<script src="js/manifest.js"></script>
+<script src="vendor/plotly/plotly.min.js"></script>
+<script src="vendor/katex/katex.min.js"></script>
+<script src="vendor/katex/auto-render.min.js"></script>
+<script src="js/book.js"></script>
+<script>
+  (function () {
+    "use strict";
+
+    // ---------------------------------------------------------------
+    // Palette (mirrors css/book.css tokens; Plotly needs literals)
+    // ---------------------------------------------------------------
+    var C = {
+      accent: "#0072B2",
+      accentDark: "#6fb8e8",
+      warn: "#D55E00",
+      rec: "#CC79A7",
+      ok: "#009E73",
+      guess: "#E69F00",
+      prior: "#9e9e9e",
+    };
+    function ink() { return Book.isDark() ? "#eef1f5" : "#1a1a1a"; }
+    function grid() { return Book.isDark() ? "#33373f" : "#d8dce1"; }
+    function live() { return Book.isDark() ? C.accentDark : C.accent; }
+    function faint() { return Book.isDark() ? "#9aa2b1" : "#5b6270"; }
+
+    function baseLayout(xTitle, yTitle) {
+      return {
+        margin: { l: 62, r: 18, t: 26, b: 46 },
+        xaxis: { title: xTitle, gridcolor: grid(), zeroline: false },
+        yaxis: { title: yTitle, gridcolor: grid(), zeroline: false },
+        paper_bgcolor: "rgba(0,0,0,0)",
+        plot_bgcolor: "rgba(0,0,0,0)",
+        font: { color: ink(), size: 12 },
+        showlegend: false,
+        hovermode: "x unified",
+      };
+    }
+    function truthShape(h) {
+      return {
+        type: "line", x0: h, x1: h, y0: 0, y1: 1, yref: "paper",
+        line: { color: ink(), dash: "dot", width: 1.6 },
+      };
+    }
+    function fmt(v, n) {
+      return (v === null || v === undefined || !isFinite(v)) ? "—" : Number(v).toFixed(n);
+    }
+    function sci(v, n) {
+      if (!isFinite(v)) return "—";
+      if (v === 0) return "0";
+      return Number(v).toExponential(n === undefined ? 3 : n);
+    }
+    function table(el, headers, rows) {
+      var html = "<tr>" + headers.map(function (h) { return "<th>" + h + "</th>"; }).join("") + "</tr>";
+      rows.forEach(function (r) {
+        html += "<tr>" + r.map(function (c) { return "<td>" + c + "</td>"; }).join("") + "</tr>";
+      });
+      el.innerHTML = html;
+    }
+    function press(row, attr, value) {
+      row.querySelectorAll("[" + attr + "]").forEach(function (b) {
+        b.setAttribute("aria-pressed", String(b.getAttribute(attr) === value));
+      });
+    }
+    // Un-normalized density from a max-subtracted log array, then trapezoid-
+    // normalized on the (non-uniform) grid — Book.trapz handles the seams.
+    function densityFromLog(logArr, H) {
+      return Book.normalizePosterior(logArr.map(function (v) { return Math.exp(v); }), H);
+    }
+
+    // ---------------------------------------------------------------
+    // BW1 — the bias rail. Ch 2 has no estimator yet: the rail is
+    // rendered deliberately empty, so its first live entry in Ch 4
+    // lands as an event rather than as a new piece of furniture.
+    // ---------------------------------------------------------------
+    Book.biasRail({
+      title: "Bias ledger (in h, truth = 0)",
+      entries: [
+        { label: "Ch 2 — estimator not defined yet", bias: null, active: true },
+        { label: "first live entry: Ch 4, D(h) on/off", bias: null },
+      ],
+    });
+
+    // ===============================================================
+    // §1 grid widget · §2 event-889 widget · §4 stacker
+    //     — all from data/ch02_stacker.json
+    // ===============================================================
+    Book.loadJSON("data/ch02_stacker.json").then(function (d) {
+      var HZ = d.grids.zoom, HP = d.grids.prod, hTrue = d.h_true;
+
+      // ---------- §1: the grid-resolution widget ---------------------
+      var gridRow = document.getElementById("ch02-grid-row");
+      var idealZoomFull = d.venues.idealized.orders.random;
+      var lastIdx = d.n_steps.length - 1;
+
+      var GRID_STATE = {
+        prod: {
+          H: HP,
+          y: densityFromLog(d.idealized_production_grid.log, HP),
+          map: d.idealized_production_grid.map,
+          sigma: d.idealized_production_grid.sigma,
+          edge: d.idealized_production_grid.edge_over_peak,
+          range: [0.595, 0.865],
+          xlab: "h = H₀ / 100   (production grid, 41 points)",
+          verdict:
+            "<span class='ch02-verdict-label'>Measured — campaign #51, 1588 events</span>" +
+            "Every visible unit of posterior mass sits on the single node h = 0.730. The width " +
+            "readout says 5.3&times;10<sup>&minus;28</sup>, which is not a measurement of anything: " +
+            "it is what a trapezoid rule returns when a distribution occupies one node. The " +
+            "density at the grid edges is 1.9&times;10<sup>&minus;139</sup> of the peak. You cannot " +
+            "tell from this picture whether the answer is good to 3&times;10<sup>&minus;4</sup> or to " +
+            "3&times;10<sup>&minus;9</sup>.",
+        },
+        zoom: {
+          H: HZ,
+          y: densityFromLog(idealZoomFull.log[lastIdx], HZ),
+          map: idealZoomFull.map[lastIdx],
+          sigma: idealZoomFull.sigma[lastIdx],
+          edge: idealZoomFull.edge_over_peak[lastIdx],
+          range: [HZ[0], HZ[HZ.length - 1]],
+          xlab: "h = H₀ / 100   (zoom grid, 10⁻⁴ step)",
+          verdict:
+            "<span class='ch02-verdict-label'>Measured — the identical events, re-evaluated</span>" +
+            "A symmetric, resolved peak: MAP <strong>0.72990</strong>, " +
+            "&sigma;<sub>h</sub> = <strong>3.00&times;10<sup>&minus;4</sup></strong>. That is " +
+            "~15&times; narrower than the production grid's 0.005 step — which is exactly why " +
+            "the previous panel looked like a delta function, and why the project built an " +
+            "<code>H_VALUES_OVERRIDE</code> zoom hook. Read this as a statement about generator&harr;" +
+            "evaluation consistency, never as a LISA H₀ forecast: the readout's own instruction.",
+        },
+      };
+
+      var gridState = "prod";
+      var gridPlot = Book.themedPlot("ch02-grid-plot", [], function () {
+        var s = GRID_STATE[gridState];
+        var L = baseLayout(s.xlab, "posterior density");
+        L.xaxis.range = s.range;
+        if (gridState === "prod") {
+          L.shapes = [truthShape(hTrue)];
+          L.annotations = [{
+            x: 0.73, y: 0.96, yref: "paper", text: "all of it, on one node",
+            showarrow: false, xanchor: "left", font: { size: 11, color: C.warn },
+          }];
+        } else {
+          L.shapes = [];
+          L.annotations = [{
+            x: 0.02, y: 1.0, xref: "paper", yref: "paper", xanchor: "left", yanchor: "top",
+            text: "same 1588 events — the peak was always this shape",
+            showarrow: false, font: { size: 11, color: faint() },
+          }];
+        }
+        return L;
+      });
+
+      function drawGrid() {
+        var s = GRID_STATE[gridState];
+        gridPlot.update([{
+          x: s.H, y: s.y, mode: "lines", fill: "tozeroy",
+          line: { color: live(), width: 2.4 }, fillcolor: "rgba(0,114,178,0.15)",
+          hovertemplate: "h = %{x:.5f}<br>density = %{y:.4g}<extra></extra>",
+        }]);
+        document.getElementById("ch02-grid-map").textContent = fmt(s.map, 5);
+        document.getElementById("ch02-grid-sigma").textContent = sci(s.sigma, 2);
+        document.getElementById("ch02-grid-edge").textContent = sci(s.edge, 1);
+        var v = document.getElementById("ch02-grid-verdict");
+        v.innerHTML = s.verdict;
+        Book.renderMath(v);
+        var mx = Math.max.apply(null, s.y);
+        table(
+          document.getElementById("ch02-grid-table"),
+          ["h", "posterior density (display floor e⁻⁶⁰)", "relative to peak (floored)"],
+          s.H.map(function (h, i) {
+            return [fmt(h, 5), sci(s.y[i], 3), sci(s.y[i] / mx, 2)];
+          })
+        );
+      }
+      gridRow.querySelectorAll("[data-grid]").forEach(function (b) {
+        b.addEventListener("click", function () {
+          gridState = b.getAttribute("data-grid");
+          press(gridRow, "data-grid", gridState);
+          drawGrid();
+        });
+      });
+      drawGrid();
+
+      // ---------- §2: EMRI-889's own likelihood ---------------------
+      var e = d.event889;
+      var row889 = document.getElementById("ch02-889-row");
+      var V889 = {
+        ideal: {
+          H: HZ, y: e.L_zoom, map: e.map_zoom, color: C.ok,
+          xlab: "h = H₀ / 100   (zoom grid)",
+          verdict:
+            "<span class='ch02-verdict-label'>Idealized #51 — the host redshift used as truth</span>" +
+            "A near-delta peak 0.004 wide in h. This is what one loud EMRI is worth when its " +
+            "host's catalogued redshift is taken to be exactly right — and the campaign's own " +
+            "readout is emphatic that this is a <em>consistency test, not a forecast</em>: the " +
+            "76 information-carrying hosts are photometric-redshift galaxies with median " +
+            "&sigma;_z/z = 49%, injected as truth and point-evaluated.",
+        },
+        real: {
+          H: HP, y: e.L_prod_realistic, map: e.map_prod_realistic, color: live(),
+          xlab: "h = H₀ / 100   (production grid)",
+          verdict:
+            "<span class='ch02-verdict-label'>Realistic #53 r1 — the catalogue's noise realized</span>" +
+            "The same event, on a grid 65&times; wider, and now a broad hump peaking at " +
+            "h = 0.745. The peak-to-floor ratio has fallen from ~1800 to ~23. Nothing about the " +
+            "detector changed between the two panels; what changed is what was assumed about " +
+            "one galaxy's redshift. Chapter 7 is that assumption.",
+        },
+      };
+      var v889 = "ideal";
+      var plot889 = Book.themedPlot("ch02-889-plot", [], function () {
+        var s = V889[v889];
+        var L = baseLayout(s.xlab, "L₈₈₉(h)   (per-event likelihood)");
+        L.xaxis.range = v889 === "ideal" ? [HZ[0], HZ[HZ.length - 1]] : [0.595, 0.865];
+        L.shapes = [truthShape(hTrue)];
+        L.annotations = [{
+          x: hTrue, y: 1, yref: "paper", text: "truth 0.73", showarrow: false,
+          yanchor: "bottom", font: { size: 11 },
+        }];
+        return L;
+      });
+      function draw889() {
+        var s = V889[v889];
+        plot889.update([{
+          x: s.H, y: s.y, mode: "lines+markers",
+          line: { color: s.color, width: 2.4 }, marker: { size: 4, color: s.color },
+          hovertemplate: "h = %{x:.5f}<br>L = %{y:.4g}<extra></extra>",
+        }]);
+        var mx = Math.max.apply(null, s.y), mn = Math.min.apply(null, s.y);
+        document.getElementById("ch02-889-map").textContent = "h = " + fmt(s.map, 4);
+        document.getElementById("ch02-889-dyn").textContent = fmt(mx / mn, 1) + "×";
+        var vEl = document.getElementById("ch02-889-verdict");
+        vEl.innerHTML = s.verdict;
+        Book.renderMath(vEl);
+        table(
+          document.getElementById("ch02-889-table"),
+          ["h", "L₈₈₉(h)"],
+          s.H.map(function (h, i) { return [fmt(h, 5), sci(s.y[i], 4)]; })
+        );
+      }
+      row889.querySelectorAll("[data-venue]").forEach(function (b) {
+        b.addEventListener("click", function () {
+          v889 = b.getAttribute("data-venue");
+          press(row889, "data-venue", v889);
+          draw889();
+        });
+      });
+      draw889();
+
+      // ---------- §4: I2.1 the Event Stacker -------------------------
+      var NS = d.n_steps;
+      var stackState = { venue: "idealized", order: "random", n: NS.length - 1 };
+      var venueRow = document.getElementById("ch02-venue-row");
+      var orderRow = document.getElementById("ch02-order-row");
+      var nControls = document.getElementById("ch02-n-controls");
+      var slider = document.getElementById("ch02-n-slider");
+
+      function cur() { return d.venues[stackState.venue].orders[stackState.order]; }
+      function curH() { return d.venues[stackState.venue].grid === "zoom" ? HZ : HP; }
+      function curRange() {
+        return d.venues[stackState.venue].grid === "zoom"
+          ? [HZ[0], HZ[HZ.length - 1]] : [0.595, 0.865];
+      }
+
+      var stackPlot = Book.themedPlot("ch02-stack-plot", [], function () {
+        var L = baseLayout(
+          "h = H₀ / 100" + (d.venues[stackState.venue].grid === "zoom" ? "   (zoom grid)" : "   (production grid)"),
+          "posterior density"
+        );
+        L.xaxis.range = curRange();
+        L.shapes = [truthShape(hTrue)];
+        L.annotations = [{
+          x: hTrue, y: 1, yref: "paper", text: "truth 0.73", showarrow: false,
+          yanchor: "bottom", font: { size: 11 },
+        }];
+        return L;
+      });
+
+      var widthPlot = Book.themedPlot("ch02-width-plot", [], function () {
+        var L = baseLayout("events in the stack, N", "posterior width σ_h");
+        L.xaxis.type = "log";
+        L.yaxis.type = "log";
+        L.hovermode = "closest";
+        L.annotations = [{
+          x: 0.02, y: 1.0, xref: "paper", yref: "paper", xanchor: "left", yanchor: "top",
+          text: "vertical marks: a golden event enters the stack",
+          showarrow: false, font: { size: 11, color: faint() },
+        }];
+        L.shapes = goldenRanks().map(function (r) {
+          return {
+            type: "line", x0: r, x1: r, y0: 0, y1: 1, yref: "paper",
+            line: { color: C.ok, dash: "dot", width: 1.6 },
+          };
+        });
+        return L;
+      });
+
+      function goldenRanks() {
+        return stackState.order === "random" ? d.golden.rank_random : d.golden.rank_snr;
+      }
+
+      function drawStack() {
+        var s = cur(), H = curH(), i = stackState.n;
+        var y = densityFromLog(s.log[i], H);
+        stackPlot.update([{
+          x: H, y: y, mode: "lines", fill: "tozeroy",
+          line: { color: live(), width: 2.4 }, fillcolor: "rgba(0,114,178,0.15)",
+          hovertemplate: "h = %{x:.5f}<br>density = %{y:.4g}<extra></extra>",
+        }]);
+
+        var ranks = goldenRanks();
+        var traces = [{
+          x: NS, y: s.sigma, mode: "lines+markers",
+          line: { color: C.warn, width: 2.2, shape: "hv" },
+          marker: { size: 4, color: C.warn },
+          hovertemplate: "N = %{x}<br>σ_h = %{y:.4g}<extra></extra>",
+        }, {
+          x: [NS[i]], y: [s.sigma[i]], mode: "markers",
+          marker: { size: 12, color: C.guess, symbol: "circle-open", line: { width: 2.5 } },
+          hovertemplate: "you are here: N = %{x}<extra></extra>",
+        }];
+        widthPlot.update(traces);
+
+        document.getElementById("ch02-n-readout").textContent = String(NS[i]);
+        document.getElementById("ch02-stack-map").textContent = fmt(s.map[i], 4);
+        document.getElementById("ch02-stack-sigma").textContent = sci(s.sigma[i], 3);
+        document.getElementById("ch02-stack-rel").textContent =
+          fmt(s.sigma[i] / s.sigma[s.sigma.length - 1], 2) + "×";
+
+        // verdict
+        var vEl = document.getElementById("ch02-stack-verdict");
+        var html = "";
+        var N = NS[i];
+        var justAfter = ranks.filter(function (r) { return N >= r && N <= r + 2; });
+        if (stackState.venue === "idealized") {
+          html += "<span class='ch02-verdict-label'>Idealized #51 · " +
+            (stackState.order === "random" ? "random order" : "loudest first") + "</span>";
+          if (stackState.order === "random") {
+            var pairs = d.golden.indices.map(function (g, k) { return [d.golden.rank_random[k], g]; })
+              .sort(function (a, b) { return a[0] - b[0]; });
+            html += "Golden events enter at N = " +
+              pairs.map(function (p) { return p[0] + " (event " + p[1] + ")"; }).join(", ") +
+              ". Between them the curve barely moves: " +
+              "the width is 1.16&times;10<sup>&minus;3</sup> after the first event and still " +
+              "1.01&times;10<sup>&minus;3</sup> after 222 of them.";
+          } else {
+            html += "Ranked by SNR the three golden events are ranks 1, 2 and 3. One event buys " +
+              "&sigma;<sub>h</sub> = 6.29&times;10<sup>&minus;4</sup>; three buy 4.15&times;10<sup>&minus;4</sup>; " +
+              "one hundred buy 3.007&times;10<sup>&minus;4</sup>. The remaining 1488 events are worth 0.2%.";
+          }
+          if (justAfter.length) {
+            html += " <strong>You just added a golden event — that step is the lurch.</strong>";
+          }
+        } else {
+          html += "<span class='ch02-verdict-label'>Realistic #53 r1 · " +
+            (stackState.order === "random" ? "random order" : "loudest first") + "</span>";
+          if (stackState.order === "random") {
+            html += "The same 223rd event still halves the width (5.4&times;10<sup>&minus;2</sup> " +
+              "&rarr; 2.9&times;10<sup>&minus;2</sup>), but the endpoint is 65&times; wider than " +
+              "the idealized one: MAP 0.740, &sigma;<sub>h</sub> = 0.0198. Information shares are " +
+              "<em>not quotable</em> in this venue — REALISTIC_READOUT.md §4.";
+          } else {
+            html += "The running MAP climbs to the top of the grid and stays there for a thousand " +
+              "events before walking back to 0.740. Addition still commutes — the endpoint is " +
+              "identical to the random order, bit for bit. The excursion is real, it is measured, " +
+              "and it is Chapter 5's subject; this chapter does not interpret it.";
+          }
+        }
+        vEl.innerHTML = html;
+        Book.renderMath(vEl);
+      }
+
+      Book.gridSlider({
+        sliderEl: slider,
+        readoutEl: null,
+        steps: NS,
+        onStep: function (v, i) { stackState.n = i; drawStack(); },
+      });
+      venueRow.querySelectorAll("[data-venue]").forEach(function (b) {
+        b.addEventListener("click", function () {
+          stackState.venue = b.getAttribute("data-venue");
+          press(venueRow, "data-venue", stackState.venue);
+          drawStack();
+        });
+      });
+      orderRow.querySelectorAll("[data-order]").forEach(function (b) {
+        b.addEventListener("click", function () {
+          stackState.order = b.getAttribute("data-order");
+          press(orderRow, "data-order", stackState.order);
+          drawStack();
+        });
+      });
+      document.getElementById("ch02-stack-full").addEventListener("click", function () {
+        stackState.n = NS.length - 1;
+        slider.value = String(NS.length - 1);
+        drawStack();
+      });
+
+      // numbers view: width vs N for all four (venue × order) combinations
+      table(
+        document.getElementById("ch02-stack-table"),
+        ["N", "σ_h idealized/random", "MAP", "σ_h idealized/SNR", "σ_h realistic/random", "MAP", "σ_h realistic/SNR"],
+        NS.map(function (n, i) {
+          var a = d.venues.idealized.orders, b = d.venues.realistic.orders;
+          return [
+            String(n), sci(a.random.sigma[i], 3), fmt(a.random.map[i], 4), sci(a.snr.sigma[i], 3),
+            sci(b.random.sigma[i], 3), fmt(b.random.map[i], 4), sci(b.snr.sigma[i], 3),
+          ];
+        })
+      );
+
+      // predict-then-reveal gate (pedagogy: "locked, not suggested")
+      var locks = [venueRow, orderRow, nControls];
+      function unlock() {
+        locks.forEach(function (el) { el.classList.remove("ch02-locked"); });
+      }
+      var predictBox = document.getElementById("ch02-predict-1");
+      Book.predictReveal(predictBox.closest(".widget"), function () { unlock(); });
+      if (Book.getPrediction("ch02-concentration") !== null) unlock();
+
+      slider.value = String(NS.length - 1);
+      drawStack();
+    });
+
+    // ===============================================================
+    // §3 — the ten realistic runs (data/ch02_runs.json)
+    // ===============================================================
+    Book.loadJSON("data/ch02_runs.json").then(function (d) {
+      var runs = d.runs, hTrue = d.h_true, s = d.summary_1d;
+      var labels = runs.map(function (r) { return r.seed + " r" + r.realization; });
+      var idx = runs.map(function (_, i) { return i; });
+
+      Book.themedPlot("ch02-runs-plot", [
+        {
+          x: runs.map(function (r) { return r.map; }),
+          y: idx,
+          error_x: {
+            type: "data",
+            symmetric: false,
+            array: runs.map(function (r) { return r.q84 - r.map; }),
+            arrayminus: runs.map(function (r) { return r.map - r.q16; }),
+            color: Book.isDark() ? "#6fb8e8" : "#0072B2",
+            thickness: 1.6, width: 5,
+          },
+          mode: "markers",
+          marker: {
+            size: 10,
+            color: runs.map(function (r) { return r.seed === 61000 ? C.accent : C.rec; }),
+            symbol: runs.map(function (r) { return r.seed === 61000 ? "circle" : "diamond"; }),
+          },
+          text: runs.map(function (r) { return "pull " + (r.pull >= 0 ? "+" : "") + r.pull.toFixed(2); }),
+          hovertemplate: "%{text}<br>MAP = %{x:.3f}<extra></extra>",
+        },
+      ], function () {
+        var L = baseLayout("MAP h, with the run's own stated 68% interval", "");
+        L.yaxis.tickmode = "array";
+        L.yaxis.tickvals = idx;
+        L.yaxis.ticktext = labels;
+        L.yaxis.autorange = "reversed";
+        L.xaxis.range = [0.66, 0.79];
+        L.margin.l = 92;
+        L.hovermode = "closest";
+        L.shapes = [truthShape(hTrue)];
+        L.annotations = [{
+          x: hTrue, y: 1, yref: "paper", text: "truth 0.73", showarrow: false,
+          yanchor: "bottom", font: { size: 11 },
+        }];
+        return L;
+      });
+
+      document.getElementById("ch02-runs-range").textContent =
+        fmt(s.map_min, 3) + " – " + fmt(s.map_max, 3);
+      document.getElementById("ch02-runs-pmean").textContent =
+        (s.pull_mean >= 0 ? "+" : "") + fmt(s.pull_mean, 2);
+      document.getElementById("ch02-runs-psd").textContent = fmt(s.pull_sd, 2);
+      document.getElementById("ch02-runs-n2").textContent =
+        s.n_pull_gt_2 + " of " + s.n_runs;
+
+      table(
+        document.getElementById("ch02-runs-table"),
+        ["truth seed", "realization", "MAP h", "mean h", "σ_h", "σ_H0 [km/s/Mpc]", "pull", "68% interval", "contains truth?"],
+        runs.map(function (r) {
+          return [
+            String(r.seed), "r" + r.realization, fmt(r.map, 3), fmt(r.mean, 4),
+            fmt(r.sigma_h, 4), fmt(r.sigma_H0, 2),
+            (r.pull >= 0 ? "+" : "") + fmt(r.pull, 2),
+            "[" + fmt(r.q16, 3) + ", " + fmt(r.q84, 3) + "]",
+            (r.q16 <= hTrue && hTrue <= r.q84) ? "yes" : "no",
+          ];
+        })
+      );
+    });
+
+    // ===============================================================
+    // I2.2 — Bias / Scatter / Coverage Trainer  (TOY, no project data)
+    // ===============================================================
+    (function () {
+      var H_TRUE = 0.73, NREP = 200;
+
+      // Deterministic PRNG (mulberry32) + Box–Muller: the SAME 200 standard
+      // normal draws are reused for every dial setting, so moving a slider
+      // shows the effect of the dial and nothing else.
+      function mulberry32(a) {
+        return function () {
+          a |= 0; a = (a + 0x6D2B79F5) | 0;
+          var t = Math.imul(a ^ (a >>> 15), 1 | a);
+          t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+          return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+        };
+      }
+      var rnd = mulberry32(20260731);
+      var Z = [];
+      for (var k = 0; k < NREP; k++) {
+        var u1 = Math.max(rnd(), 1e-12), u2 = rnd();
+        Z.push(Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2));
+      }
+
+      var bEl = document.getElementById("ch02-t-bias");
+      var sEl = document.getElementById("ch02-t-sigma");
+      var stEl = document.getElementById("ch02-t-stated");
+      var presets = document.getElementById("ch02-t-presets");
+
+      var estPlot = Book.themedPlot("ch02-t-plot", [], function () {
+        var L = baseLayout("estimate ĥ (200 repeats)", "repeat #");
+        L.xaxis.range = [0.56, 0.94];
+        L.hovermode = "closest";
+        L.shapes = [truthShape(H_TRUE)];
+        L.annotations = [{
+          x: H_TRUE, y: 1, yref: "paper", text: "truth 0.73", showarrow: false,
+          yanchor: "bottom", font: { size: 11 },
+        }];
+        return L;
+      });
+      var pullRange = 6;
+      var pullPlot = Book.themedPlot("ch02-t-pull", [], function () {
+        var L = baseLayout("pull = (ĥ − h_true) / σ_stated", "count");
+        L.xaxis.range = [-pullRange, pullRange];
+        L.bargap = 0.05;
+        L.hovermode = "closest";
+        L.shapes = [
+          { type: "line", x0: -1, x1: -1, y0: 0, y1: 1, yref: "paper", line: { color: C.ok, dash: "dot", width: 1.4 } },
+          { type: "line", x0: 1, x1: 1, y0: 0, y1: 1, yref: "paper", line: { color: C.ok, dash: "dot", width: 1.4 } },
+        ];
+        L.annotations = [{
+          x: 0.98, y: 1.0, xref: "paper", yref: "paper", xanchor: "right", yanchor: "top",
+          text: "dotted: ±1, where 68% of pulls belong", showarrow: false,
+          font: { size: 11, color: faint() },
+        }];
+        return L;
+      });
+
+      function draw() {
+        var b = Number(bEl.value), st = Number(sEl.value), ss = Number(stEl.value);
+        document.getElementById("ch02-t-bias-out").textContent = (b >= 0 ? "+" : "") + b.toFixed(3);
+        document.getElementById("ch02-t-sigma-out").textContent = st.toFixed(3);
+        document.getElementById("ch02-t-stated-out").textContent = ss.toFixed(3);
+
+        var est = Z.map(function (z) { return H_TRUE + b + st * z; });
+        var mean = est.reduce(function (a, c) { return a + c; }, 0) / NREP;
+        var sd = Math.sqrt(est.reduce(function (a, c) { return a + (c - mean) * (c - mean); }, 0) / (NREP - 1));
+        var cov = est.filter(function (h) { return Math.abs(h - H_TRUE) <= ss; }).length / NREP;
+        var pulls = est.map(function (h) { return (h - H_TRUE) / ss; });
+        var pmean = pulls.reduce(function (a, c) { return a + c; }, 0) / NREP;
+        var psd = Math.sqrt(pulls.reduce(function (a, c) { return a + (c - pmean) * (c - pmean); }, 0) / (NREP - 1));
+
+        estPlot.update([{
+          x: est, y: est.map(function (_, i) { return i; }), mode: "markers",
+          marker: {
+            size: 5,
+            color: est.map(function (h) { return Math.abs(h - H_TRUE) <= ss ? C.ok : C.warn; }),
+            symbol: est.map(function (h) { return Math.abs(h - H_TRUE) <= ss ? "circle" : "x"; }),
+          },
+          hovertemplate: "ĥ = %{x:.4f}<extra></extra>",
+        }, {
+          x: [mean, mean], y: [0, NREP], mode: "lines",
+          line: { color: C.guess, width: 2.4, dash: "dash" },
+          hovertemplate: "mean of the 200 estimates = %{x:.4f}<extra></extra>",
+        }]);
+
+        var maxAbs = pulls.reduce(function (a, p) { return Math.max(a, Math.abs(p)); }, 0);
+        pullRange = Math.min(40, Math.max(4, Math.ceil(maxAbs * 1.15)));
+        var bw = (2 * pullRange) / 32;
+        var bins = [], counts = [];
+        for (var t = -pullRange; t < pullRange - 1e-9; t += bw) {
+          var lo = t, hi = t + bw;
+          bins.push(lo + bw / 2);
+          counts.push(pulls.filter(function (p) { return p >= lo && p < hi; }).length);
+        }
+        pullPlot.update([{
+          x: bins, y: counts, type: "bar",
+          marker: { color: live() },
+          hovertemplate: "pull ≈ %{x:.2f}<br>count %{y}<extra></extra>",
+        }]);
+
+        document.getElementById("ch02-t-mb").textContent =
+          ((mean - H_TRUE) >= 0 ? "+" : "") + (mean - H_TRUE).toFixed(4);
+        document.getElementById("ch02-t-ms").textContent = sd.toFixed(4);
+        document.getElementById("ch02-t-cov").textContent = (100 * cov).toFixed(1) + "%";
+        document.getElementById("ch02-t-ps").textContent = psd.toFixed(2);
+
+        var verdict;
+        var unbiased = Math.abs(mean - H_TRUE) < 3.0 * st / Math.sqrt(NREP);
+        if (unbiased && cov > 0.6 && cov < 0.76) {
+          verdict = "<span class='ch02-verdict-label'>All three pass</span>" +
+            "Unbiased, honestly scattered, and the stated interval covers truth about 68% of the " +
+            "time. This is the only configuration in which a single run's error bar means what it says.";
+        } else if (unbiased && cov <= 0.6) {
+          verdict = "<span class='ch02-verdict-label'>Unbiased — and badly mis-calibrated</span>" +
+            "The mean of 200 repeats is on truth and the scatter is whatever it is, yet only " +
+            (100 * cov).toFixed(0) + "% of the stated 68% intervals contain the truth, and the pull " +
+            "spread is " + psd.toFixed(1) + " instead of 1. <strong>Zero bias bought you nothing.</strong> " +
+            "This is the failure Chapter 10 is built to detect, and it is invisible in any single run.";
+        } else if (!unbiased && cov > 0.6 && cov < 0.76) {
+          verdict = "<span class='ch02-verdict-label'>Well calibrated about the wrong number</span>" +
+            "Coverage is nominal because the stated &sigma; matches the true scatter — but the " +
+            "estimates are systematically displaced. More data will shrink the interval around the " +
+            "wrong value and the coverage will then collapse: this configuration only looks healthy " +
+            "because 200 repeats of a wide estimator still straddle truth.";
+        } else if (!unbiased) {
+          verdict = "<span class='ch02-verdict-label'>Biased, and the intervals know it</span>" +
+            "Measured bias " + ((mean - H_TRUE) >= 0 ? "+" : "") + (mean - H_TRUE).toFixed(3) +
+            " with coverage " + (100 * cov).toFixed(0) + "% and mean pull " +
+            (pmean >= 0 ? "+" : "") + pmean.toFixed(2) + ". Note that the pull <em>spread</em> can " +
+            "still be exactly 1 while every single interval misses — spread and centre are " +
+            "independent diagnostics.";
+        } else {
+          verdict = "<span class='ch02-verdict-label'>Over-covering</span>" +
+            "More than 76% of intervals contain truth: the stated &sigma; is larger than the real " +
+            "scatter. Not a lie, but not a measurement either — an interval that always contains " +
+            "truth excludes nothing.";
+        }
+        var vEl = document.getElementById("ch02-t-verdict");
+        vEl.innerHTML = verdict;
+        Book.renderMath(vEl);
+
+        table(
+          document.getElementById("ch02-t-table"),
+          ["quantity", "value", "what it tests"],
+          [
+            ["true bias b (dialled in)", (b >= 0 ? "+" : "") + b.toFixed(3), "—"],
+            ["σ_true (dialled in)", st.toFixed(3), "—"],
+            ["σ_stated (dialled in)", ss.toFixed(3), "—"],
+            ["measured bias, 200 repeats", ((mean - H_TRUE) >= 0 ? "+" : "") + (mean - H_TRUE).toFixed(4), "biased?"],
+            ["measured scatter", sd.toFixed(4), "noisy?"],
+            ["coverage of the stated 68% interval", (100 * cov).toFixed(1) + "%", "mis-calibrated?"],
+            ["mean pull", (pmean >= 0 ? "+" : "") + pmean.toFixed(2), "biased?"],
+            ["pull s.d.", psd.toFixed(2), "mis-calibrated?"],
+          ]
+        );
+      }
+
+      [bEl, sEl, stEl].forEach(function (el) { el.addEventListener("input", draw); });
+      presets.querySelectorAll("[data-preset]").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          var p = btn.getAttribute("data-preset");
+          if (p === "honest") { bEl.value = "0"; sEl.value = "0.02"; stEl.value = "0.02"; }
+          if (p === "overconfident") { bEl.value = "0"; sEl.value = "0.02"; stEl.value = "0.005"; }
+          if (p === "biased-calibrated") { bEl.value = "0.02"; sEl.value = "0.02"; stEl.value = "0.02"; }
+          if (p === "twod") { bEl.value = "0.077"; sEl.value = "0.02"; stEl.value = "0.02"; }
+          press(presets, "data-preset", p);
+          draw();
+        });
+      });
+      draw();
+    })();
+  })();
+</script>
