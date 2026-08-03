@@ -27,9 +27,7 @@ from master_thesis_code.datamodels.parameter_space import ParameterSpace
 @pytest.fixture()
 def model(monkeypatch: pytest.MonkeyPatch) -> Model1CrossCheck:
     """Model1CrossCheck without the expensive emcee burn-in (sampler unused here)."""
-    monkeypatch.setattr(
-        Model1CrossCheck, "setup_emri_events_sampler", lambda self: None
-    )
+    monkeypatch.setattr(Model1CrossCheck, "setup_emri_events_sampler", lambda self: None)
     return Model1CrossCheck(rng=np.random.default_rng(0))
 
 
@@ -63,15 +61,9 @@ def test_detector_frame_domain_tracks_max_redshift_override(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """A shallower --max_redshift override shrinks the lifted image consistently."""
-    monkeypatch.setattr(
-        Model1CrossCheck, "setup_emri_events_sampler", lambda self: None
-    )
-    shallow = Model1CrossCheck(
-        rng=np.random.default_rng(0), max_redshift_override=0.5
-    )
-    assert shallow.parameter_space.M.upper_limit == pytest.approx(
-        M_SOURCE_FRAME_MAX * 1.5
-    )
+    monkeypatch.setattr(Model1CrossCheck, "setup_emri_events_sampler", lambda self: None)
+    shallow = Model1CrossCheck(rng=np.random.default_rng(0), max_redshift_override=0.5)
+    assert shallow.parameter_space.M.upper_limit == pytest.approx(M_SOURCE_FRAME_MAX * 1.5)
 
 
 def test_population_draw_accepts_full_babak_band(model: Model1CrossCheck) -> None:

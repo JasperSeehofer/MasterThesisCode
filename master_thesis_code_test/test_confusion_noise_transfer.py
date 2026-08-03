@@ -65,9 +65,9 @@ def test_transfer_matches_lisatools_convention() -> None:
     # the audit record — HIGHM_AUDIT.md item 4 verified the factor against the
     # in-venv lisatools A1TDISens.stochastic_transform source.)
     f = np.logspace(np.log10(2e-4), np.log10(3e-3), 100)
-    added = with_c.power_spectral_density_a_channel(
+    added = with_c.power_spectral_density_a_channel(f) - without_c.power_spectral_density_a_channel(
         f
-    ) - without_c.power_spectral_density_a_channel(f)
+    )
     x = 2 * np.pi * f * L / C
     expected = 1.5 * (2 * x * np.sin(x)) ** 2 * with_c._confusion_noise(f)
     np.testing.assert_allclose(added, expected, rtol=1e-9)
