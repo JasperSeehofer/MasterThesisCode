@@ -136,12 +136,12 @@ jobs:
           fi
         continue-on-error: true
 
-      - name: Build discovery book
+      - name: Publish discovery book
+        # book/site is committed pre-built and QA'd; the generators need ~60 MB of
+        # untracked run artifacts that never exist in CI, so do NOT regenerate here.
         run: |
-          uv run python book/generators/make_all.py
           mkdir -p _site/book
           cp -r book/site/. _site/book/
-        continue-on-error: true
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v5
