@@ -1,0 +1,2131 @@
+<!DOCTYPE html>
+<meta charset="utf-8" />
+<!--
+  The doctype is deliberate and load-bearing: without it browsers enter quirks
+  mode and KaTeX refuses to render ("KaTeX doesn't work in quirks mode"), so
+  every equation on the page degrades to raw $...$ source. _template.html,
+  index.html and ch00-demo.html currently omit it — filed as R-ch07-3 in
+  book/design/WIDGET_REQUESTS.md for the integrator, since those files are frozen.
+-->
+<title>Ch. 7 — A Redshift Is Not a Number | EMRI Dark Siren Book</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="description" content="Catalogue redshifts are photometric at sigma_z/z about 49 percent, and the central value is not the safe choice — the Eddington shift, the volume_deconv repair, and the C7 over-correction that shares the same knob." />
+<link rel="stylesheet" href="vendor/katex/katex.min.css" />
+<link rel="stylesheet" href="css/book.css" />
+
+<style>
+  /* Page-local styles only (css/book.css is FROZEN). Everything here is scoped
+     to Chapter 7 markup and adds no new palette — it reuses the book's CSS
+     custom properties. */
+  .ch07-eq-hero {
+    background: var(--paper-raised); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 0.9rem 1rem; margin: 1.2rem 0;
+  }
+  .ch07-eq-hero .ch07-eq-caption { font-size: 0.8rem; color: var(--muted); margin-top: 0.4rem; }
+  .ch07-dim { opacity: 0.38; }
+  .ch07-lit { font-weight: 600; }
+  .ch07-open { outline: 2px dashed var(--accent); outline-offset: 3px; border-radius: 4px; padding: 0 2px; }
+  .ch07-note {
+    font-size: 0.84rem; color: var(--muted); border-left: 2px solid var(--border);
+    padding-left: 0.7rem; margin: 0.7rem 0;
+  }
+  .ch07-flag {
+    border: 1px dashed var(--planck); border-radius: var(--radius);
+    padding: 0.6rem 0.8rem; margin: 0.9rem 0; font-size: 0.86rem;
+  }
+  .ch07-flag .ch07-flag-label {
+    display: block; text-transform: uppercase; letter-spacing: 0.05em;
+    font-size: 0.72rem; color: var(--planck); font-weight: 700; margin-bottom: 0.25rem;
+  }
+  .ch07-sides { display: grid; gap: 0.9rem; grid-template-columns: 1fr; margin: 1rem 0; }
+  @media (min-width: 860px) { .ch07-sides { grid-template-columns: 1fr 1fr; } }
+  .ch07-controls-grid { display: flex; flex-wrap: wrap; gap: 0.8rem 1.4rem; align-items: center; }
+  .ch07-controls-grid label { font-size: 0.86rem; color: var(--muted); }
+  .ch07-controls-grid select {
+    font: inherit; font-size: 0.86rem; padding: 0.2rem 0.35rem;
+    background: var(--paper); color: var(--ink);
+    border: 1px solid var(--border); border-radius: 6px;
+  }
+  /* book.css sets .widget-plot { min-height: 320px }; short panels opt out. */
+  .widget .widget-plot.ch07-plot-fit { min-height: 0; }
+  .widget .toggle-row button[disabled] { opacity: 0.42; cursor: not-allowed; }
+  .ch07-unlock {
+    font: inherit; font-size: 0.86rem; cursor: pointer;
+    background: var(--paper); color: var(--accent);
+    border: 1px solid var(--accent); border-radius: 6px; padding: 0.35rem 0.7rem;
+    margin: 0.6rem 0;
+  }
+  .ch07-unlock:disabled { opacity: 0.5; cursor: default; }
+  .ch07-restore {
+    font: inherit; font-size: 0.82rem; cursor: pointer;
+    background: var(--paper); color: var(--ink);
+    border: 1px solid var(--border); border-radius: 6px; padding: 0.3rem 0.6rem;
+  }
+  .ch07-stagenote {
+    font-size: 0.86rem; border: 1px solid var(--border); border-radius: var(--radius);
+    background: var(--paper-raised); padding: 0.6rem 0.8rem; margin: 0.7rem 0;
+  }
+  .ch07-fwd {
+    display: inline-block; font-size: 0.72rem; border: 1px solid var(--border);
+    border-radius: 999px; padding: 0 0.45rem; color: var(--muted); white-space: nowrap;
+  }
+  /* (the former #bias-rail .ch07-pip rules moved into book.css as the shared
+     .bias-rail-pip capability — WIDGET_REQUESTS R-ch07-1, IMPLEMENTED) */
+</style>
+
+<div class="book-shell">
+  <header class="book-topbar">
+    <a class="brand" href="index.html">From Bayes&rsquo; Rule to H&#8320;
+      <small>an interactive discovery book</small>
+    </a>
+    <nav class="book-nav" data-nav aria-label="Chapters"><!-- built from js/manifest.js --></nav>
+    <button class="theme-toggle" data-theme-toggle type="button">☽ Dark</button>
+  </header>
+
+  <main class="book-content">
+    <h1>Chapter 7 — A Redshift Is Not a Number</h1>
+    <p class="subtitle">
+      Catalogue redshifts are photometric at
+      <span class="term" data-term="eps">$\sigma_z/z \approx 49\%$</span>, and the central
+      value is not the safe choice.
+    </p>
+
+    <!-- ================= COLD OPEN ================= -->
+    <div class="callout without">
+      <span class="callout-label">The failure this chapter answers</span>
+      Chapter 6 handed you a well-characterised ellipsoid: for
+      <strong>EMRI-889</strong> the distance shell is thin to
+      <span class="term" data-term="dL">$\sigma_{d_L}/d_L$</span> = <strong>9.0&times;10<sup>&minus;4</sup></strong>
+      <span class="prov-chip">seed61000 CRB row 889</span>.
+      Every estimator you have built so far then takes each candidate galaxy&rsquo;s catalogue
+      redshift and <em>plugs it in as a number</em>. It is not a number. Spectroscopic
+      redshifts are <strong>0.56%</strong> of GLADE+
+      <span class="prov-chip">ledger #42</span>; the campaign&rsquo;s information-carrying
+      hosts have median <span class="term" data-term="eps">$\sigma_z/z \approx 49\%$</span>
+      <span class="prov-chip" title="current lines :64-66">IDEALIZED_BASELINE_READOUT.md:50-52</span>.
+      Below, drag the width up. Watch what the peak does.
+    </div>
+
+    <!-- ================= I7.1 THE EDDINGTON MACHINE ================= -->
+    <div class="widget" id="i71">
+      <h4>I7.1 — The Eddington Machine
+        <span class="prov-chip toy">toy: single host, analytic kernels</span>
+        <span class="prov-chip real">real: G2b measured points &middot; Gate-B C7 measurement</span>
+      </h4>
+      <p style="margin-top:0; color:var(--muted); font-size:0.88rem;">
+        <strong>Manipulate:</strong> the host-redshift width, the kernel, and (stage&nbsp;3) an
+        illustrative selection rollover. <strong>Observe:</strong> the photo-z likelihood, the
+        volume prior, their product and its mode (top); where this host&rsquo;s catalogue-leg
+        peak lands in <span class="term" data-term="h">$h$</span> (middle); and the measured
+        bias law (bottom). <strong>The cosmology tables are the project&rsquo;s own</strong>
+        (<code>physical_relations.py</code>), tabulated by <code>gen_ch07.py</code>; the
+        <em>single synthetic host</em> and the stage-3 rollover are toys and are chipped as
+        such. Stages&nbsp;2 and 3 unlock from the text below, once you have earned them.
+      </p>
+
+      <!-- Predict-lock: Q7.1, the chapter's central commitment -->
+      <div class="predict-row" id="ch07-predict-1" data-predict-id="ch07-q1">
+        <button type="button" data-predict="widen">(a) It widens symmetrically</button>
+        <button type="button" data-predict="low">(b) It shifts low</button>
+        <button type="button" data-predict="high">(c) It shifts high</button>
+      </div>
+      <div class="reveal" id="ch07-reveal-1">
+        <strong>It shifts <em>low</em>, and quadratically.</strong> The project measured
+        $\Delta h = -C\sigma_z^2$ with $C_{\rm meas}\approx 17$&ndash;$20$, giving
+        &minus;0.0016 / &minus;0.0064 / &minus;0.023 / &minus;0.046 at
+        $\sigma_z$ = 0.005 / 0.015 / 0.035 / 0.050
+        <span class="prov-chip">G2b:229-237</span>. Symmetric widening is what almost every
+        reader predicts — and it is the trap this chapter is built around. The machine is
+        now live.
+      </div>
+
+      <div class="toggle-row" role="group" aria-label="Stage">
+        <button type="button" data-stage="1" aria-pressed="true">1 &middot; bare Gaussian</button>
+        <button type="button" data-stage="2" aria-pressed="false" disabled>2 &middot; volume_deconv</button>
+        <button type="button" data-stage="3" aria-pressed="false" disabled>3 &middot; the same knob, pushed</button>
+      </div>
+
+      <div class="ch07-stagenote" id="ch07-stage-note">
+        <strong>Stage 1 — the bare Gaussian.</strong> The kernel is
+        $\mathcal N(z; z_g, \sigma_z)$ and nothing else. Venue: the commission synthetic
+        in which the four points below were measured
+        (<span class="term" data-term="Om">$\Omega_m = 0.3$</span>,
+        $h_{\rm true} = 0.72$) <span class="prov-chip">G2b §2.3</span>.
+      </div>
+
+      <div id="ch07-i71-zspace" class="widget-plot ch07-plot-fit" style="height:360px"></div>
+      <div id="ch07-i71-hstrip" class="widget-plot ch07-plot-fit" style="height:210px"></div>
+      <div id="ch07-i71-board" class="widget-plot ch07-plot-fit" style="height:390px"></div>
+
+      <div class="widget-controls ch07-controls-grid">
+        <span>
+          <label for="ch07-i71-host">Host:</label>
+          <select id="ch07-i71-host"></select>
+        </span>
+        <span>
+          <label for="ch07-i71-width" id="ch07-i71-width-label">Catalogue width &sigma;_z:</label>
+          <input id="ch07-i71-width" type="range" />
+          <span class="readout"><strong id="ch07-i71-width-readout">&mdash;</strong></span>
+        </span>
+        <span>
+          <label><input type="checkbox" id="ch07-i71-turnover" /> illustrative selection rollover</label>
+        </span>
+        <span class="readout">peak <span class="term" data-term="h">h</span> = <strong id="ch07-i71-peak">&mdash;</strong></span>
+        <span class="readout">&Delta;h = <strong id="ch07-i71-dh">&mdash;</strong></span>
+        <button type="button" class="ch07-restore" id="ch07-i71-restore">
+          Restore: <code>volume_deconv</code> (G2b, RATIFIED)
+        </button>
+      </div>
+
+      <details class="num-view">
+        <summary>Show me the numbers</summary>
+        <div class="table-scroll"><table class="num-table" id="ch07-i71-table"></table></div>
+        <p class="ch07-note">
+          No quantity in this widget is a finite difference across the production
+          <span class="term" data-term="h">$h$</span>-grid, whose spacing changes at
+          $h = 0.65$ and $h = 0.80$; the one difference that <em>is</em> taken from
+          delivered data (the observed tilt in §6) is a single interval
+          $0.73 \to 0.86$, not a derivative <span class="prov-chip">BOOK_DESIGN §4.2.3</span>.
+        </p>
+      </details>
+
+      <noscript>
+        <p><strong>Static fallback.</strong> Three panels. <em>Top:</em> at
+        $z_g = 0.25$, $\sigma_z = 0.035$, the photo-z likelihood is symmetric about
+        $z_g$ but the volume prior $w_{\rm pop} \propto (dV_c/dz)/(1+z)$ rises steeply,
+        so their product peaks <em>above</em> $z_g$ — the posterior mean sits at
+        $z_g + 0.0245$. <em>Middle:</em> a bare-Gaussian estimator that assumes
+        $\hat z = z_g$ therefore lands at $h = 0.706$ instead of 0.72.
+        <em>Bottom:</em> the project measured exactly this,
+        $\Delta h = -0.0016 / -0.0064 / -0.023 / -0.046$ at
+        $\sigma_z = 0.005 / 0.015 / 0.035 / 0.050$ (G2b:229-237); the
+        <code>volume_deconv</code> kernel removes it, leaving a $\sigma_z$-independent
+        floor of $-0.002$ (ledger #47); and pushed to $\sigma_z/z > 0.256$ the same
+        kernel over-corrects, inflating $h$ by $[1+\sqrt{1+12(\sigma_z/z)^2}]/2$
+        (claim C7).</p>
+      </noscript>
+    </div>
+
+    <!-- ================= 1. WHAT A CATALOGUE REDSHIFT IS ================= -->
+    <h2>1. What a catalogue redshift actually is</h2>
+
+    <p>
+      A galaxy catalogue does not store redshifts. It stores <em>measurements</em> of
+      redshifts, and it stores them in two very different qualities. A
+      <strong>spectroscopic</strong> redshift comes from identified emission or absorption
+      lines and is precise to a few parts in ten thousand. A <strong>photometric</strong>
+      redshift is a regression: broadband fluxes in a handful of filters, fitted against
+      galaxy templates, producing an estimate whose fractional error is measured in tens of
+      percent. GLADE+ <span class="prov-chip">Dálya et al. 2022, arXiv:2110.06184</span> is
+      overwhelmingly the second kind: spectroscopic hosts are
+      <strong>0.56%</strong> of the catalogue
+      <span class="prov-chip">ledger #42</span><span class="prov-chip">F4_SPECZ_DECOMPOSITION.md:8-15</span>.
+    </p>
+
+    <p>
+      So for galaxy $g$ the catalogue hands you a pair: a central value
+      <span class="term" data-term="zg">$z_g$</span> and a width
+      <span class="term" data-term="sigz">$\sigma_z$</span>. The object those two numbers
+      define is
+    </p>
+
+    <p>$$ p(z_g \mid z) \;=\; \mathcal N\!\left(z_g;\, z,\, \sigma_z\right), $$</p>
+
+    <p>
+      read: <em>&ldquo;if the true redshift were $z$, this is how probable the catalogue&rsquo;s
+      reported value $z_g$ would have been.&rdquo;</em> That is a <strong>likelihood</strong>. It
+      is a statement about the measurement, given the truth. What every candidate-host sum in
+      Chapter 3 needs is the other direction — <em>given the reported value, where is the
+      galaxy really?</em> — and those are not the same object.
+    </p>
+
+    <div class="callout defect">
+      <span class="callout-label">Why the mistake is so easy to make</span>
+      Because a Gaussian is symmetric in $(z_g - z)$, the expression above, read as a
+      function of $z$ at fixed $z_g$, is <em>numerically</em>
+      $\mathcal N(z; z_g, \sigma_z)$ — the same curve. Nothing in the arithmetic warns you.
+      That is exactly what <code>scipy.stats.norm(loc=host_z, scale=host_z_error).pdf(z)</code>
+      evaluates in the code, and it is correct as a likelihood and wrong as a weight
+      <span class="prov-chip">G2b §1.1</span>.
+    </div>
+
+    <details class="gw-reader">
+      <summary>&#9656; For the GW reader</summary>
+      <p>
+        The width the code actually uses is not the raw catalogue column. It is
+        $\sigma_{\rm eff}^2 = \sigma_{z,\rm meas}^2 + \sigma_{z,\rm pv}^2$ with the
+        peculiar-velocity term applied <em>exactly once</em>, at parse time, and resolved by
+        the GLADE+ PV-correction flag — 150 km/s residual for BORG-corrected hosts, 500 km/s
+        for uncorrected ones <span class="badge ratified">RATIFIED</span>
+        <span class="prov-chip">hostz_pv_photoz_kernel.md §3.1 (RATIFY-1/RATIFY-2, 2026-07-26)</span>.
+        The $(1+z)$ in $\sigma_{z,\rm pv} = (1+z)\sigma_v/c$ is
+        <span class="prov-chip">Davis et al. 2011, arXiv:1012.2912</span>. The runtime
+        <code>SIGMA_V_PEC_KM_S</code> quadrature was <em>removed</em> when this landed,
+        precisely so the term has a single application site. §4 below has the measured
+        consequence.
+      </p>
+    </details>
+
+    <!-- ================= 2. THE EDDINGTON SHIFT ================= -->
+    <h2>2. The Eddington shift, and why it is a shift</h2>
+
+    <p>
+      To turn the likelihood into a weight you need a prior: <em>where were the hosts, before
+      anybody measured this one?</em> EMRI hosts are not spread uniformly in $z$. They are
+      drawn from an astrophysical event <em>rate</em>, and the number of events per unit
+      detector time per unit true redshift is
+    </p>
+
+    <div class="voice-derivation">
+      <span class="voice-label">From the ratified derivation
+        <span class="badge ratified">RATIFIED</span>
+        <span class="prov-chip">G2b §1.1, Eqs. (1.1)–(1.3)</span></span>
+      $$\frac{dN}{dt_{\rm det}\,dz} = \mathcal R(z)\,\frac{dV_c}{dz}\,\frac{1}{1+z}
+        \qquad\Longrightarrow\qquad
+        \underbrace{w_{\rm pop}(z)}_{\text{the population weight}} \;=\; \frac{1}{1+z}\frac{dV_c}{dz}.$$
+      Two factors, two physical facts. <span class="term" data-term="dVc">$dV_c/dz$</span> is
+      comoving volume per unit redshift, in Mpc³ sr⁻¹
+      <span class="prov-chip">Hogg 1999, arXiv:astro-ph/9905116, Eq. (28)</span>: there is
+      simply more universe at larger $z$. The $1/(1+z)$ is cosmological time dilation — a
+      clock at redshift $z$ ticks $(1+z)$ times slower as seen by the detector, so a
+      source-frame rate is suppressed by exactly one such factor when counted in detector
+      time <span class="prov-chip">Babak et al. 2017, arXiv:1703.09722, Sec. III.4</span>.
+      Under the module&rsquo;s $p_0 = 1$ surrogate the intrinsic rate is $z$-independent, so
+      after marginalising mass this <em>is</em> the $z$-shape of the population prior
+      <span class="prov-chip">emri_rate.py:296-331</span>.
+    </div>
+
+    <p>
+      Now the consequence. $w_{\rm pop}$ rises steeply with $z$ — at low redshift roughly as
+      $z^2$. A galaxy <em>observed</em> at $z_g$ is therefore more probably a higher-$z$
+      galaxy scattered down than a lower-$z$ galaxy scattered up, simply because there were
+      more of the former to begin with. This is Eddington&rsquo;s 1913 argument, transcribed
+      from stellar magnitudes to redshift. Expanding $\ln w_{\rm pop}$ about $z_g$ and
+      completing the square:
+    </p>
+
+    <div class="voice-derivation">
+      <span class="voice-label">From the ratified derivation
+        <span class="badge ratified">RATIFIED</span>
+        <span class="prov-chip">G2b §2.1, Eqs. (2.1)–(2.2)</span></span>
+      $$\langle z\rangle = z_g + \sigma_z^2\,s(z_g) + \mathcal O(\sigma_z^4),
+        \qquad s(z) \equiv \frac{d\ln w_{\rm pop}}{dz}
+        = \frac{2}{I(z)E(z)} - \frac{E'(z)}{E(z)} - \frac{1}{1+z},$$
+      with $I(z) = \int_0^z dz'/E(z')$ and
+      <span class="term" data-term="Ez">$E(z) = \sqrt{\Omega_m(1+z)^3+\Omega_\Lambda}$</span>.
+      At low $z$, $I \approx z$ and $s \approx 2/z$ — <strong>the shift is largest exactly
+      where the GLADE-like hosts sit.</strong> The bare Gaussian omits the
+      $+\sigma_z^2 s$ term, so it systematically <em>under</em>-estimates every host&rsquo;s
+      redshift.
+    </div>
+
+    <p>
+      Under-estimating $z$ at a <em>fixed measured distance</em> under-estimates $h$. The
+      mapping is exact and worth carrying, because the whole rest of the chapter uses it:
+      write $d_L(z;h) = f(z)/h$ with $f(z) = (1+z)I(z)\,c/100$ independent of $h$. An
+      estimator that matches the same measured $d_L$ with an assumed host redshift $\hat z$
+      when the truth is $z_t$ lands at
+    </p>
+
+    <p>$$ \frac{h_{\rm eff}}{h_{\rm true}} \;=\; \frac{f(\hat z)}{f(z_t)}
+      \qquad\Longrightarrow\qquad
+      \Delta h \;\simeq\; -\,h_{\rm true}\left.\frac{d\ln f}{dz}\right|_{\bar z}\sigma_z^2\,s(\bar z)
+      \;\equiv\; -\,C(\bar z)\,\sigma_z^2 . $$</p>
+
+    <p class="ch07-note">
+      The exact ratio form is stated at
+      <span class="prov-chip">C7_README §5</span>; the linearised $-C\sigma_z^2$ form at
+      <span class="prov-chip">G2b §2.2, Eq. (2.3)</span>, with
+      $d\ln f/dz = 1/(1+z) + 1/(IE)$. The widget evaluates the exact form and plots the
+      linearised one beside it, because at real GLADE redshifts they visibly part company —
+      see the last row of the table below.
+    </p>
+
+    <h3>The measurement</h3>
+
+    <p>
+      The commission ran a clean single-host coverage test at four widths. This is the
+      cleanest quantitative law in the project:
+    </p>
+
+    <div class="table-scroll">
+      <table class="num-table">
+        <tr><th>$\sigma_z$</th><th>measured $\Delta h$</th><th>floor-subtracted</th><th>implied $C_{\rm meas}$</th></tr>
+        <tr><td>0.005</td><td>&minus;0.0016</td><td>+0.0004</td><td><em>floor-dominated</em></td></tr>
+        <tr><td>0.015</td><td>&minus;0.0064</td><td>&minus;0.0044</td><td>19.6</td></tr>
+        <tr><td>0.035</td><td>&minus;0.023</td><td>&minus;0.021</td><td>17.1</td></tr>
+        <tr><td>0.050</td><td>&minus;0.046</td><td>&minus;0.044</td><td>17.6</td></tr>
+      </table>
+    </div>
+
+    <p>
+      The floor-subtracted biases scale as $1 : 4.8 : 10.0$ against
+      $\sigma_z^2 = 1 : 5.44 : 11.1$ — <strong>the $\sigma_z^2$ law holds to ~10%</strong>,
+      and $C_{\rm meas}$ is constant to ±8% across a factor 11 in $\sigma_z^2$
+      <span class="prov-chip">G2b:229-237</span>. And coverage — the fraction of repeated
+      universes in which the stated interval actually contains the truth
+      <span class="ch07-fwd">⏭ Ch 10</span> — <strong>collapses to ≈0%</strong> under the
+      bare kernel <span class="prov-chip">ledger #47</span>. That combination is the
+      signature you should learn to smell: a bias that grows as the <em>square</em> of a
+      width, with intervals that stop containing anything.
+    </p>
+
+    <!-- Trap 7.A — relocated here from the end of the page (REVISION_WORKLIST
+         §C-ch07, ped-M3): the misconception forms in the cold open and is
+         dismantled by the paragraph directly above, so the trap must fire here,
+         not forty minutes later. -->
+    <div class="callout defect">
+      <span class="callout-label">Trap 7.A — &ldquo;Bigger &sigma;_z just means a wider posterior.&rdquo;</span>
+      It means a <em>shifted</em> posterior, quadratically in $\sigma_z$, and the shift
+      is ~17–20× $\sigma_z^2$ in $h$ <span class="prov-chip">G2b:229-237</span>. The
+      diagnostic that separates the two is coverage, not width: a merely-wider posterior
+      keeps its coverage, and this one takes it to ≈0%
+      <span class="prov-chip">ledger #47</span>.
+    </div>
+
+    <button type="button" class="ch07-unlock" data-unlock="2">
+      Unlock stage 2 — put the prior back and watch the bias go
+    </button>
+
+    <!-- ================= 3. THE VOLUME KERNEL ================= -->
+    <h2>3. The volume kernel: <code>volume_deconv</code></h2>
+
+    <p>
+      The repair is the thing you already know how to write down. Bayes, applied to the pair
+      the catalogue gave you:
+    </p>
+
+    <div class="voice-derivation">
+      <span class="voice-label">From the ratified derivation
+        <span class="badge ratified">RATIFIED</span>
+        <span class="prov-chip">G2b §1.2, Eq. (1.4)</span>
+        <span class="prov-chip">bayesian_statistics.py:3712 galaxy_redshift_prior_pdf</span></span>
+      $$p_g(z) \;=\; \frac{\mathcal N(z_g;\,z,\,\sigma_z)\;w_{\rm pop}(z)}{Z_g},
+        \qquad
+        Z_g = \int dz'\;\mathcal N(z_g;\,z',\,\sigma_z)\;w_{\rm pop}(z').$$
+      <span class="term" data-term="Zg">$Z_g$</span> is the per-galaxy normalisation, in
+      Mpc³ sr⁻¹, computed by 50-point Gauss–Legendre quadrature over
+      $[z_g - 4\sigma_z,\,z_g + 4\sigma_z]$ — the <em>same</em> interval, and therefore the
+      same nodes, that the per-galaxy selection integral
+      <span class="term" data-term="Dg">$D_g$</span> uses
+      <span class="prov-chip">G2b §3.1</span>. $[\mathcal N] = z^{-1}$ and
+      $[w_{\rm pop}] = \mathrm{Mpc^3\,sr^{-1}}$, so $p_g$ has units $z^{-1}$ and unit
+      integral: a proper probability density in $z$.
+    </div>
+
+    <p>
+      This is the mode the pipeline calls <code>volume_deconv</code>, and it is what the
+      chapter&rsquo;s stage-2 button switched on. Two of its properties are load-bearing and
+      neither is obvious.
+    </p>
+
+    <p>
+      <strong>(i) It is exactly $h$-independent.</strong> Writing
+      $dV_c/dz = (c/100h)^3 I^2(z)/E(z)$ gives $w_{\rm pop}(z;h) = h^{-3}g(z)$, and the
+      $h^{-3}$ cancels identically between the numerator of $p_g$ and $Z_g$. Passing the
+      trial $h$ into the volume element is therefore harmless — the kernel injects
+      <em>no</em> spurious $h$-dependence into
+      <span class="term" data-term="Lcat">$\mathcal L^{\rm cat}$</span>; only the
+      <em>shape</em> of $w_{\rm pop}$ acts. Measured:
+      <span class="term" data-term="Zg">$Z_g \propto h^{-3}$</span> to $10^{-15}$
+      <span class="badge exonerated">EXONERATED</span>
+      <span class="prov-chip">ledger #75</span>, re-measured at $9.1\times10^{-16}$ in
+      Gate B <span class="prov-chip">C7_README §Correctness checks 2</span>.
+    </p>
+
+    <p>
+      <strong>(ii) It reduces to the point kernel as $\sigma_z\to0$.</strong>
+      $\mathcal N \to \delta(z-z_g)$, so $Z_g \to w_{\rm pop}(z_g)$ and
+      $p_g(z) \to \delta(z-z_g)$: the prior becomes irrelevant exactly where the likelihood
+      has no width. A prior can only matter where the measurement does not
+      <span class="prov-chip">G2b §1.2, limiting case</span>.
+    </p>
+
+    <h3>&ldquo;$dV_c$ counted once&rdquo;</h3>
+
+    <p>
+      Question 7.3 below asks why the same prior must appear in the per-galaxy
+      <em>denominator</em>, not only the numerator. The answer is a rule the project names
+      and then enforces term-by-term. Collect every $z$-integral in the per-event likelihood:
+    </p>
+
+    <div class="table-scroll">
+      <table class="num-table">
+        <tr><th>term</th><th>integrand</th><th>measure factor</th><th>site</th></tr>
+        <tr><td>$N_g$ (numerator)</td><td>$p_{\rm GW}\cdot\mathcal N\,w_{\rm pop}/Z_g$</td><td>$w_{\rm pop}$ <strong>once</strong></td><td><code>:1896-1901</code></td></tr>
+        <tr><td>$D_g$ (per-galaxy selection)</td><td>$p_{\rm det}\cdot\mathcal N\,w_{\rm pop}/Z_g$</td><td>$w_{\rm pop}$ <strong>once</strong></td><td><code>:1903-1914</code></td></tr>
+        <tr><td>$B^{\rm num}$</td><td>$(1-f)\,p_{\rm GW}\cdot dV_c/dz/(1+z)$</td><td>$w_{\rm pop}$ <strong>once</strong></td><td><code>:1698</code></td></tr>
+        <tr><td>$D(h)$</td><td>$\overline{p_{\rm det}}\cdot dV_c/dz/(1+z)$</td><td>$w_{\rm pop}$ <strong>once</strong></td><td><code>:336</code></td></tr>
+        <tr><td>$\beta_{\bar G}$</td><td>$(1-f)\,\overline{p_{\rm det}}\cdot dV_c/dz/(1+z)$</td><td>$w_{\rm pop}$ <strong>once</strong></td><td><code>:479</code></td></tr>
+      </table>
+    </div>
+
+    <p class="ch07-note">
+      Line numbers as recorded in <span class="prov-chip">G2b §3.2</span> — re-grep anchors,
+      not immutable. Never zero times (the pre-fix bare-Gaussian numerator) and never twice
+      (nothing multiplies $p_g$ by $w_{\rm pop}$ again). Numerator and denominator call the
+      <em>same function object</em>, so measure symmetry inside the ratio $N_g/D_g$ is exact
+      by construction.
+    </p>
+
+    <p>
+      And the repair is measured, not asserted: <code>volume_deconv</code> takes the bias
+      from <strong>&minus;0.024 to &minus;0.002</strong> and coverage from
+      <strong>≈0% to nominal</strong> <span class="prov-chip">ledger #47</span>
+      <span class="prov-chip">G2b:413-436</span>. The residual &minus;0.002 is
+      $\sigma_z$-independent — it is a floor, not a slope, which is why subtracting it
+      isolates the prior-omission term so cleanly in the table above.
+    </p>
+
+    <div class="ch07-eq-hero">
+      <p style="margin:0">
+        $$p_i(h)\;=\;\underbrace{w_G(h)}_{\text{Ch }5}\;
+        \underbrace{\mathcal L^{\rm cat}_i(h)}_{\text{Ch }3,4,\;\textbf{7}}\;+\;
+        \underbrace{\bigl(1-w_G(h)\bigr)}_{\text{Ch }5}\;
+        \underbrace{\mathcal L^{\rm comp}_i(h)}_{\text{Ch }5}$$
+      </p>
+      <p class="ch07-eq-caption">
+        The master equation, with the factor this chapter opens marked. Chapter 7 does not
+        add a factor — it goes <em>inside</em>
+        <span class="term" data-term="Lcat">$\mathcal L^{\rm cat} = \sum_g w_g N_g / \sum_g w_g D_g$</span>
+        and fixes what $N_g$ and $D_g$ integrate against.
+        <span class="ch07-fwd">⏭ Ch 8</span> adds a second observable to the same $N_g$;
+        <span class="ch07-fwd">⏭ Ch 9</span> asks what the whole ratio is normalised to.
+      </p>
+    </div>
+
+    <details class="gw-reader">
+      <summary>&#9656; For the GW reader</summary>
+      <p>
+        Kernel at <code>bayesian_statistics.py:3712 galaxy_redshift_prior_pdf</code>; batched
+        at <code>:4202 _z_prior_pdf_at</code>, with the $w_{\rm pop}$ construction at
+        <code>:4190-4199</code>. Mapping onto the literature: no Gray et al. (2020) equation
+        prescribes this — it is a documented <em>deviation</em>
+        <span class="prov-chip">G2c §4.3, deviation D8</span>. The comparable literature
+        kernels are Gaussian in $z$ (Laghi et al. 2021, arXiv:2102.01708, fixed
+        $\sigma_z = 0.0015 \Leftrightarrow$ 500 km/s rms PV) and Gaussian-or-Lorentzian
+        (Turski et al. 2023, arXiv:2302.12037); all verified sources agree the kernel is
+        <em>not</em> $h$-dependent, belongs in the per-galaxy numerator sum, and leaves the
+        selection integral carrying the smooth $dV_c/dz$ prior
+        <span class="prov-chip">hostz_pv_photoz_kernel.md §2</span>. G2b&rsquo;s own flagged
+        asymmetries (unclamped $z<0$ window in $Z_g/D_g$; the prior evaluated slightly
+        outside its normalisation window in $N_g$; the mass channel left symmetrically
+        undeconvolved) are at <span class="prov-chip">G2b §3.3</span> — the third of those
+        becomes Chapter 8&rsquo;s problem <span class="ch07-fwd">⏭ Ch 8</span>.
+      </p>
+    </details>
+
+    <!-- ================= 4. REAL WIDTHS ================= -->
+    <h2>4. How wide is wide? Real widths, and which error actually dominates</h2>
+
+    <p>
+      Everything above is parameterised by $\sigma_z$, so the size of the problem is an
+      empirical question about the catalogue. There are two contributions and the project
+      measured both against the error it had been keeping.
+    </p>
+
+    <div class="voice-derivation">
+      <span class="voice-label">From the ratified derivation
+        <span class="badge ratified">RATIFIED</span>
+        <span class="prov-chip">hostz_pv_photoz_kernel.md §0, §3.1 (RATIFIED 2026-07-26)</span></span>
+      $$\sigma_{z,\rm tot}^2 \;=\; \sigma_{z,\rm meas}^2 \;+\; \Bigl(\frac{(1+z)\,\sigma_v}{c}\Bigr)^{2}$$
+      Against the <em>retained</em> GW distance error
+      $\sigma_{d_L}/d_L = 0.54\%$: peculiar velocity at 200 km/s is
+      <strong>1.25% median — 2.3× larger</strong>; the GLADE+ parse-time redshift floor of
+      0.0015 is <strong>2.67% median — 4.9× larger</strong>. Restoring them degrades the
+      golden-set combined width by <strong>×3.3</strong> (PV alone) to <strong>×6.8</strong>
+      (PV + floor). Ratified widths: $\sigma_v = 150$ km/s residual for BORG-corrected hosts
+      (Carrick et al. 2015), $\sigma_v = 500$ km/s for uncorrected hosts (Laghi et al. 2021),
+      applied once, at parse time.
+    </div>
+
+    <p>
+      Read that table again, because it is the sentence of the chapter that a reader is most
+      likely to skip: <strong>the terms that had been neglected were larger than the term
+      that had been carefully retained.</strong> The detector is not the bottleneck. In this
+      venue, the median GW distance precision over the 76 information-carrying hosts is
+      <strong>0.53%</strong> <span class="prov-chip">recomputed from c7_kernel_measure_results.json</span>
+      — consistent with the 0.54% figure above — while the same hosts&rsquo; indicative
+      $\sigma_z/z$ has quartiles <strong>0.379 / 0.519 / 0.644</strong>
+      <span class="prov-chip">C7_README §3</span>. Two orders of magnitude separate them.
+    </p>
+
+    <div class="callout defect">
+      <span class="callout-label">A cautionary aside — where a width can come from</span>
+      A secondary review of this pipeline attributed the photo-z model
+      $\sigma_z = 0.013(1+z)^3$ to Gray et al. It does not appear in Gray et al. It exactly
+      matches <em>this repository&rsquo;s own uncited dead code</em>
+      <span class="prov-chip">datamodels/galaxy.py:66</span><span class="prov-chip">GitHub #7</span>,
+      and the attribution was <span class="badge refuted">REJECTED</span>
+      <span class="prov-chip">hostz_pv_photoz_kernel.md §2, anti-anchor</span>. A number
+      acquires a citation by being repeated next to one. Check the primary source, or the
+      laundering is yours.
+    </div>
+
+    <p class="ch07-note">
+      One data-hygiene warning that this chapter obeys throughout: the
+      <code>reduced_galaxy_catalogue.csv</code> available locally is <em>not</em> the parent
+      of the campaign&rsquo;s realised catalogue. The two files differ in exactly one column —
+      <code>z_error</code>, which on the cluster copy carries the counted-once PV width. Every
+      $\sigma_z/z$ derived from the local column is therefore labelled
+      <strong>indicative</strong>, here and in the artifacts
+      <span class="prov-chip">BOOK_SOURCES_MAP §7.19d</span><span class="prov-chip">C7_README §Caveats</span>.
+    </p>
+
+    <!-- ================= I7.2 SPEC-Z RESCUE ================= -->
+    <div class="widget" id="i72" data-hypothesis="42"
+         data-hypothesis-verdict="REFUTED — spec-z = 0.56% of GLADE+, ≤8.7% (median ~0%) of the rate-weighted in-catalogue likelihood; an inference-side spec-z-only cut still rails at 0.870 (ledger #42).">
+      <h4>I7.2 — The spec-z rescue attempt
+        <span class="prov-chip real">real: ledger #42 &middot; seed61000 in-cat hosts</span>
+      </h4>
+      <p style="margin-top:0; color:var(--muted); font-size:0.88rem;">
+        <strong>Manipulate:</strong> one obvious idea — throw the wide redshifts away.
+        <strong>Observe:</strong> what is left, and what the posterior does. This is a
+        recorded historical experiment; the reveal is the measured verdict, not an opinion.
+      </p>
+      <div class="predict-row" id="ch07-predict-2" data-predict-id="ch07-q2">
+        <button type="button" data-predict="fixes">It fixes it — spec-z is clean data</button>
+        <button type="button" data-predict="noisier">It survives but gets much noisier</button>
+        <button type="button" data-predict="rails">It still fails</button>
+      </div>
+      <div class="reveal">
+        <p>
+          <strong>It still fails.</strong> Spectroscopic hosts are <strong>0.56%</strong> of
+          GLADE+ and carry at most <strong>8.7%</strong> (median ≈ 0%) of the rate-weighted
+          in-catalogue likelihood; an inference-side spec-z-only cut
+          <strong>still railed at 0.870</strong>
+          <span class="badge refuted">REFUTED</span>
+          <span class="prov-chip">ledger #42</span><span class="prov-chip">H0R:1268</span>.
+          The defect is not that some redshifts are bad. It is that the estimator&rsquo;s
+          treatment of <em>width</em> is wrong — and removing the wide ones removes almost
+          all of the data without removing the defect.
+        </p>
+        <div id="ch07-i72-plot" class="widget-plot ch07-plot-fit" style="height:300px"></div>
+        <p class="ch07-note" id="ch07-i72-caption">&mdash;</p>
+      </div>
+      <details class="num-view">
+        <summary>Show me the numbers</summary>
+        <div class="table-scroll"><table class="num-table" id="ch07-i72-table"></table></div>
+      </details>
+      <noscript>
+        <p><strong>Static fallback.</strong> Of the 76 in-catalogue hosts that carry the
+        constraint, only 1 has an indicative $\sigma_z/z$ at or below the 0.256 rail
+        threshold; the other 75 are above it, with quartiles 0.379 / 0.519 / 0.644. Cutting
+        to spectroscopic hosts (0.56% of GLADE+, ≤8.7% of the rate-weighted in-catalogue
+        likelihood) still railed the posterior at $h = 0.870$ — ledger #42, REFUTED.</p>
+        <p>Those widths are <em>indicative</em>: the local catalogue copy is not the
+        realization parent, differing in exactly the <code>z_error</code> column. The
+        staleness-free check — the 2×2 cell B — ran on 2026-07-31 against the true cluster
+        parent and, with exact host redshifts, put the catalogue leg&rsquo;s per-event
+        argmax at the top of the prior for <strong>68 of 75</strong> in-catalogue events
+        (<strong>90.7%</strong>), against 66 of 74 (89.2%) scattered and 5.3% under the
+        idealised estimator; the in-catalogue class argmax is 0.860, as registered
+        (CELLB_READOUT_20260731.md, evaluate 6103219 / combine 6103220). The stale column
+        had implied 75/76 = 98.7% on a <em>different</em> statistic, so the caveat resolves
+        in the confirming direction with the delivered rail somewhat weaker than the column
+        implied — not &ldquo;98.7% confirmed&rdquo;.</p>
+      </noscript>
+    </div>
+
+    <!-- ================= 5. THE LICENCE OF THE POINT KERNEL ================= -->
+    <h2>5. The point kernel and its licence</h2>
+
+    <p>
+      There is a third kernel in the code, and for one specific purpose it is not an
+      approximation at all — it is exact. The <strong>point</strong> (δ) kernel simply
+      evaluates the numerator at the catalogue redshift:
+      $N_g = \lim_{\sigma\to0} N_g(\sigma)$. If the simulator draws each host
+      <em>at its catalogue redshift verbatim</em>, then the catalogue value <em>is</em> the
+      truth, the width is zero by construction, and the δ-kernel is the generator-exact
+      answer. That was the arrangement of this project&rsquo;s idealised baseline.
+    </p>
+
+    <div class="voice-derivation">
+      <span class="voice-label">From the ratified derivation
+        <span class="badge ratified">RATIFIED</span>
+        <span class="prov-chip">realistic_host_observation_model.md §3.1 (RATIFY-R3)</span></span>
+      Under a scattered catalogue that premise is false <em>by design</em>: given the
+      observed row $(z_{{\rm obs},g}, \sigma_g)$, the truth is distributed as
+      $p(z_{\rm true}\mid z_{{\rm obs},g}) \propto \mathcal N(z_{{\rm obs},g}; z_{\rm true},\sigma_g)\,p_{\rm pop}(z_{\rm true})$
+      — a width-$\sigma_g$ object. Point-evaluating at $z_{{\rm obs},g}$ is a model error of
+      order $\sigma_g\,d\ln d_L/dz$ relative to the GW width — for the golden events a factor
+      <strong>25–110</strong> — and, worse, it is <em>inconsistent</em>: the realised data
+      generating process is exactly the marginal the width kernel computes.
+      <strong>&ldquo;The δ-kernel is not &lsquo;optimistic&rsquo; under scatter, it is
+      wrong.&rdquo;</strong>
+    </div>
+
+    <p>
+      This is the single most transferable epistemic point in the book, so it is worth saying
+      slowly. The δ-kernel is <em>correct for the mock</em> and <em>wrong for real data</em>,
+      and the thing that decides which is not a property of the kernel — it is a property of
+      how the universe you are testing against was built. A kernel does not have a validity;
+      a kernel-plus-generator pair does. And the leverage is enormous: in the three-way
+      per-leg A/B the δ-kernel carries <strong>85.3% (1D) / 86.7% (2D)</strong> of the total
+      ln movement <span class="prov-chip">ledger #88</span><span class="prov-chip">THREEWAY_AB_READOUT.md:19-56</span>.
+      Nearly the whole answer sits on this one choice.
+    </p>
+
+    <p class="ch07-note">
+      Read that 86.7% next to <strong>the 2×2 cell B</strong>&rsquo;s 72% (§6) with the
+      scoping in hand, because they are not the same decomposition and they do not
+      disagree. Ledger #88 isolates <em>one leg</em> — the host-z kernel alone — on the
+      <em>seed1000 deep venue</em>. The 2×2 cell B swaps the <em>whole estimator configuration</em>
+      (kernel <em>and</em> normalisation together) on <em>this campaign&rsquo;s venue</em>,
+      and finds it owns +0.060 of the +0.083 total 2D displacement. One number says how much
+      of a per-leg A/B rides on the kernel; the other says how much of the campaign&rsquo;s
+      2D displacement rides on the estimator. Note also that ledger #88 calls its own leg
+      &ldquo;Cell B&rdquo; — a different object on a different venue, which
+      <code>BIAS_HISTORY_LEDGER.md</code> §3 relabels A′
+      <span class="prov-chip">museum ledger #88</span>.
+    </p>
+
+    <p class="ch07-note">
+      Which is also why the campaign that this book&rsquo;s numbers come from runs
+      <code>volume_deconv</code>, and why the code will now <em>refuse</em> a point-resolving
+      host-z kernel whenever the loaded catalogue is a scattered realisation — the guard is
+      one-directional, since running the unscattered baseline with the width kernel is merely
+      conservative <span class="prov-chip">realistic_host_observation_model.md §3.4</span>.
+    </p>
+
+    <button type="button" class="ch07-unlock" data-unlock="3">
+      Unlock stage 3 — push the fix past the widths its hosts actually have
+    </button>
+
+    <!-- ================= 6. THE TWIST ================= -->
+    <!-- Trap 7.B — relocated from the end of the page (REVISION_WORKLIST
+         §C-ch07, ped-M3): "immediately before §6's twist", because this is the
+         sentence the reader thinks *entering* §6. -->
+    <div class="callout defect">
+      <span class="callout-label">Trap 7.B — &ldquo;Deconvolution is the safe, principled choice, so more of it is better.&rdquo;</span>
+      The same operation that removes a &minus;0.023 bias at $\sigma_z = 0.035$ creates a
+      +16–49% inflation at $\sigma_z/z \approx 0.25$&ndash;$0.49$
+      <span class="prov-chip">G2b:229-237</span><span class="prov-chip">CLAIM C7</span>.
+      Principled operations have domains of validity. The domain here is set by whether the
+      weight you deconvolve against is the <em>population</em> prior (which G2b establishes
+      it is) or the <em>selected</em> population prior (which C7 measures it is not) — and
+      which of those the numerator should carry is precisely what the 2×2 cell B was
+      pre-registered to decide, and did, on 2026-07-31.
+    </div>
+
+    <h2>6. The twist: the fix and its failure mode are the same knob</h2>
+
+    <p>
+      Stage 3 asks a question the reader of Q7.4 has already been set up for. You have a
+      deconvolution that removes an over-correction low. Push it: what happens when you
+      deconvolve a <em>very</em> wide photo-z against a <strong>monotonically rising</strong>
+      volume prior with <strong>no selection turnover at all</strong>?
+    </p>
+
+    <p>
+      Nothing penalises pushing the host to higher $z$. Nothing has to. The prior rises
+      without limit over the integration window, the likelihood is wide enough to reach the
+      rising part, and the deconvolved estimate inflates. The project measured this on its
+      own numerator, host by host.
+    </p>
+
+    <div class="voice-adjudicator">
+      <span class="voice-label">Adjudicated finding
+        <span class="badge finding">FINDING</span>
+        <span class="prov-chip">CLAIM_2D_BIAS_20260730.md C7 (MEASURED, adjudicated 2026-07-30)</span>
+        <span class="prov-chip">C7_README.md §1</span></span>
+      <p style="margin-top:0.4rem">
+        <code>bayesian_statistics.py:4201-4207</code> weights the host-z <em>numerator</em>
+        kernel by $w_{\rm pop} = (dV_c/dz)/(1+z)$ — the <em>cosmic</em> prior — with
+        <strong>no $p_{\rm det}$ and no catalogue selection $\varphi_{\rm cat}$</strong>. The
+        induced inflation, measured by rebuilding the code&rsquo;s own numerator for the 76
+        in-catalogue hosts, obeys
+      </p>
+      $$\frac{h_{\rm eff}}{h_{\rm true}} \;=\; \frac{1 + \sqrt{1 + 12\,(\sigma_z/z)^2}}{2}
+        \;\longrightarrow\; 1 + 3\,(\sigma_z/z)^2 .$$
+      <p>
+        Here <span class="term" data-term="phcat">$\varphi_{\rm cat}$</span> is the
+        <em>catalogue&rsquo;s own selected number density</em> — the prior over
+        &ldquo;a row in a flux-limited catalogue lies at redshift $z$&rdquo;, as against
+        $w_{\rm pop}$&rsquo;s prior over &ldquo;an EMRI host lies at redshift $z$&rdquo;.
+        With a selection function $f(z,\Omega)$ (the fraction of galaxies at $(z,\Omega)$
+        the survey actually lists) it is
+        $\varphi_{\rm cat}(z) \propto f(z,\Omega)\,(dV_c/dz)/(1+z)$, and for the numerator
+        of a <em>detected</em> event it should carry $p_{\rm det}$ on top. The bare
+        $w_{\rm pop}$ rises without limit; $\varphi_{\rm cat}$ turns over, because surveys
+        run out of galaxies before the universe runs out of volume.
+      </p>
+      <p>
+        Worth knowing where this sits relative to everyone else: the standard-practice
+        dark-siren kernels do not deconvolve host redshifts against a cosmic volume prior
+        <em>at all</em> — they take the catalogue&rsquo;s redshift and its error at face
+        value <span class="prov-chip">Laghi et al. 2021, arXiv:2102.01708</span><span class="prov-chip">Turski et al. 2023, arXiv:2302.12037</span><span class="prov-chip">gwcosmo, the reference implementation of Gray Eq. (A10)</span>.
+        Deconvolving is this project&rsquo;s own deviation — <strong>D8</strong>, &ldquo;no
+        Gray equation prescribes this&rdquo;
+        <span class="prov-chip">BOOK_SOURCES_MAP §K3 / G2c §4.3</span> — which is precisely
+        why it is the thing under test rather than a settled background assumption. Naming
+        the two priors names the axis a resolution will lie on; it does not resolve C7, and
+        this chapter does not.
+      </p>
+      <p>
+        The extra 3 (rather than 2) comes from the numerator window&rsquo;s width being
+        <em>proportional to</em> $z$ — the GW kernel has a fixed <em>fractional</em> distance
+        width, so $d\ln N_g/dz$ picks up $+1/z$ from the window on top of $+2/z$ from the
+        volume weight. The point kernel has no window and therefore no $+1/z$
+        <span class="prov-chip">C7_README §1</span>. The claim&rsquo;s own earlier
+        $[1+\sqrt{1+8\varepsilon^2}]/2$ form <strong>understates by 1.35–1.5×</strong> and is
+        superseded. At $\sigma_z/z = 0.25$&ndash;$0.49$ the inflation is
+        <strong>+16% to +49%</strong>, $h_{\rm eff} = 0.85$&ndash;$1.11$.
+        <strong>Rail threshold: $\sigma_z/z > 0.256$.</strong>
+      </p>
+    </div>
+
+    <p>
+      Three things make this a <em>measurement</em> rather than a prediction that happens to
+      match, and each is worth knowing how to demand:
+    </p>
+
+    <ul>
+      <li>
+        <strong>The driver is the code.</strong> The numerator was rebuilt exactly as
+        <code>bayesian_statistics.py:4099-4245</code> computes it, validated against
+        <code>scipy.integrate.fixed_quad</code> on the same integrand at relative difference
+        <strong>0.0e0</strong>, with kernel $h$-invariance $9.1\times10^{-16}$ and
+        $n=50$ vs $n=400$ agreement below $5\times10^{-12}$ — <strong>no quadrature
+        aliasing</strong>, unlike the exhibit at the end of this chapter
+        <span class="prov-chip">C7_README §Correctness checks</span>.
+      </li>
+      <li>
+        <strong>The $\sigma_z\to0$ gate passes.</strong> The shift vanishes as
+        $(\sigma_z/z)^2$: log–log slope <strong>1.99</strong> over the last decade, with the
+        coefficient converging to <strong>3</strong>. Whatever a fix does, it cannot disturb
+        the idealised baseline <span class="prov-chip">C7_README §2</span>.
+      </li>
+      <li>
+        <strong>It was confronted with the delivered data.</strong> The observed
+        in-catalogue ball-numerator tilt over $0.73\to0.86$ is a median
+        <strong>+0.308 nats, 93.2% positive</strong> (IQR [+0.208, +0.413]) against a
+        predicted +0.33…+0.39 at $\sigma_z/z = 0.35$&ndash;$0.65$ — and against
+        <strong>&minus;408 nats, 0% positive</strong> for the point kernel. The production
+        data therefore <em>independently</em> implies $\sigma_z/z \approx 0.35$&ndash;$0.6$
+        for these hosts, so the verdict does not rest on the stale local column
+        <span class="prov-chip">C7_README §3</span>.
+      </li>
+    </ul>
+
+    <p class="ch07-note">
+      That last number was re-derived from scratch for this chapter: taking
+      $\ln \mathcal L^{\rm cat}_i$ at $h = 0.86$ and $h = 0.73$ straight out of
+      <code>real_r1/diagnostics/event_likelihoods.csv</code> and adding
+      $\Delta\ln\Sigma_{\rm glob} = +0.027597$ reproduces the stored per-event tilts to
+      $7.2\times10^{-16}$ (gate G4 in <code>gen_ch07.py</code>).
+      <span class="term" data-term="Lcat">$\Sigma_{\rm glob}$</span> is an event-independent
+      normalisation identical for both kernels, which is why it cancels out of the kernel
+      comparison; where it comes from is Chapter 9 <span class="ch07-fwd">⏭ Ch 9</span>.
+    </p>
+
+    <h3>The rail, framed fairly</h3>
+
+    <p>
+      At the campaign&rsquo;s in-catalogue widths the catalogue leg&rsquo;s per-event argmax
+      sits at the top of the prior for <strong>66 of 74</strong> events (89.2%), and the
+      catalogue leg carries a median <strong>96.3%</strong> of the in-catalogue mixture at
+      $h = 0.73$ <span class="prov-chip">C7_README §0</span>. The combined per-event
+      in-catalogue argmax is at 0.86 for <strong>57.9%</strong> of events. That number is
+      easy to over-read, so the adjudication attaches a binding amendment to it, and this
+      book quotes both halves together, always:
+    </p>
+
+    <div class="voice-adjudicator">
+      <span class="voice-label">Adjudicated finding — fair-framing amendment, binding
+        <span class="badge finding">FINDING</span>
+        <span class="prov-chip">CLAIM_2D_BIAS_20260730.md C5 (as amended 2026-07-30)</span>
+        <span class="ch07-fwd">⏭ Ch 11</span></span>
+      <strong>Per event the rail is cosmetic</strong> — median peak-to-truth
+      $\Delta\ln p$ of 0.072–0.134 nats = 0.30–0.47 $\sigma_{\rm event}$, and only
+      <strong>0–1.3%</strong> of events exceed $1\sigma$. <strong>But it is not
+      noise</strong>: the tilt is coherently same-signed and the <em>class-summed</em>
+      displacement is <strong>+3.4 to +6.1 $\sigma_{\rm class}$</strong> above truth in 8 of
+      10 runs, with two independent $\sigma$ routes agreeing. A correct estimator under large
+      $\sigma_z$ is wide but centred; a ≥3.4σ coherent class displacement is not that.
+      Separately: the railed profiles are genuinely concave and single-host peaks
+      reconstructed on a grid extended to $h = 2.4$ are <em>interior</em> (median ≈ 1.12), so
+      the concentration at 0.86 is a <strong>clipped real runaway, not an edge
+      artifact</strong>.
+    </div>
+
+    <h3>Both sides, and who decides</h3>
+
+    <p>
+      Here the chapter must do something a textbook would not. The kernel that C7 measures
+      as inflating $h$ is the same kernel that a ratified derivation
+      <strong>confirms</strong> — and neither result has been withdrawn.
+    </p>
+
+    <div class="ch07-sides">
+      <div class="voice-derivation">
+        <span class="voice-label">The ratified side
+          <span class="badge ratified">RATIFIED</span>
+          <span class="prov-chip">G2b:413-436</span></span>
+        <strong>CONFIRMED.</strong> $w_{\rm pop} = (dV_c/dz)/(1+z)$, <em>without</em>
+        $p_{\rm det}$, is &ldquo;the unique weight consistent with the project&rsquo;s own rate
+        model and with every selection integral in the pipeline&rdquo;; the
+        &ldquo;$dV_c$ counted once&rdquo; rule holds term-by-term; the prior is proper,
+        exactly $h$-independent, dimensionally a density in $z$, and reduces to the bare
+        kernel as $\sigma_z\to0$. That $h$-independence is protected by a <strong>binding
+        regression gate</strong>.
+      </div>
+      <div class="voice-adjudicator">
+        <span class="voice-label">The adjudicated side
+          <span class="badge finding">FINDING</span>
+          <span class="prov-chip">CLAIM C7 / C7_README</span></span>
+        <strong>MEASURED.</strong> The <em>same</em> kernel, driven at these hosts&rsquo;
+        widths on the code&rsquo;s own numerator, inflates the recovered $h$ by
+        $1 + 3(\sigma_z/z)^2$ and rails above $\sigma_z/z = 0.256$. And the historical
+        record cuts the other way again: the measured failure mode of this deconvolution at
+        large $\sigma_z/z$ was <strong>OVER-correction</strong>
+        <span class="prov-chip">ledger #62/#68</span> — the <em>opposite</em> sign to the
+        direction a C7 fix would push.
+      </div>
+    </div>
+
+    <p>
+      <strong>The book therefore does not resolve this, because the project has not.</strong>
+      The binding rule from the conflict register is that a C7 fix
+      <em>must explicitly supersede G2b and must not silently contradict it</em>
+      <span class="prov-chip">BOOK_SOURCES_MAP §7 item 1</span>. Chapter 7 may not say
+      &ldquo;the volume kernel is calibrated, full stop&rdquo;; Chapter 11 may not say
+      &ldquo;the kernel is wrong, settled&rdquo;.
+    </p>
+
+    <p>
+      The decider is a pre-registered run: <strong>the 2×2 cell B</strong>, registered
+      2026-07-30 <em>before</em> submission (as jobs 6101146/6101147), which pushes the
+      <em>unscattered</em> #51 catalogue through the <em>#53</em> estimator
+      — the one combination that separates &ldquo;the estimator owns it&rdquo; from
+      &ldquo;the scatter owns it&rdquo;, and which uses the true cluster parent
+      <code>z_error</code>, so it is the staleness-free magnitude check
+      <span class="prov-chip">PREREGISTRATION_2x2_cellB.md</span>. Its readings were written
+      down in advance: if B&rsquo;s in-catalogue class argmax reaches ≈0.86
+      <em>even with exact host redshifts</em>, the host-observation model is largely
+      exonerated and the target is the kernel&rsquo;s population weight. If B ≈ A, the
+      estimator switch is inert.
+    </p>
+
+    <div class="voice-adjudicator">
+      <span class="voice-label">It landed, 2026-07-31
+        <span class="badge finding">FINDING</span>
+        <span class="prov-chip">CELLB_READOUT_20260731.md</span>
+        <span class="prov-chip">CLAIM C6 (resolved 2026-07-31)</span></span>
+      <p style="margin-top:0.4rem">
+        With <strong>exact host redshifts</strong> and the true cluster parent&rsquo;s
+        <code>z_error</code> column — the staleness-free check this section was waiting
+        for — the catalogue leg&rsquo;s per-event argmax sits at the top of the prior for
+        <strong>68 of 75</strong> in-catalogue events (<strong>90.7%</strong>), against
+        <strong>66 of 74 (89.2%)</strong> in the scattered run and <strong>5.3%</strong>
+        under the idealised estimator. The in-catalogue <em>class</em> argmax is
+        <strong>0.860</strong>, exactly as registered. The realised scatter is not what
+        rails the catalogue leg; if anything it <em>damps</em> the <em>combined</em> rail
+        (69.7% in B against 57.9% in C).
+      </p>
+      <p>
+        Reported from evaluate <strong>6103219</strong> / combine <strong>6103220</strong>
+        — the resubmission of the pre-registered 6101146/6101147 after a pure-plumbing
+        symlink failure in the run-dir setup, fixed without touching the test design.
+      </p>
+    </div>
+
+    <p>
+      What cell B settles is the <strong>magnitude and the attribution</strong> of
+      C7&rsquo;s effect — not the collision. A derivation-level conflict is not something a
+      posterior can settle, and G2b&rsquo;s CONFIRMED verdict is untouched by this run. The
+      fix is still author-gated, must <strong>explicitly supersede G2b</strong>, and — a
+      constraint <em>added</em> by the cell-B readout — <strong>must not be the
+      historically-exonerated &ldquo;$p_{\rm det}$ inside the numerator alone&rdquo;
+      form</strong> <span class="prov-chip">CELLB_READOUT_20260731.md §Next steps 1b</span>.
+      Chapter 7 still may not say &ldquo;the kernel is wrong, settled&rdquo;.
+    </p>
+
+    <p class="ch07-note">
+      One honest nuance, because this chapter owes itself the same flag culture it applies
+      to the project. The <em>indicative</em> local <code>z_error</code> column predicted
+      <strong>75/76 = 98.7%</strong> of hosts peaking above 0.86; the staleness-free
+      measurement gives <strong>90.7%</strong>. Those are not the same statistic — a
+      reconstructed unclipped single-host peak against a delivered clipped
+      $\mathcal L^{\rm cat}$ argmax — so this is not a contradiction. But the honest
+      sentence is <em>&ldquo;the staleness caveat resolves in the confirming direction,
+      with the delivered rail somewhat weaker than the stale column implied&rdquo;</em>,
+      never &ldquo;98.7% confirmed&rdquo;.
+    </p>
+
+    <div class="ch07-flag">
+      <span class="ch07-flag-label">Provenance note — one number this chapter would not tidy</span>
+      The rail threshold is stated as $\sigma_z/z > 0.256$ in three artifacts
+      (<span class="prov-chip">C7_README §1</span><span class="prov-chip">CLAIM C7</span><span class="prov-chip">ADJUDICATION:148</span>).
+      Solving those same artifacts&rsquo; corrected law
+      $[1+\sqrt{1+12\varepsilon^2}]/2$ for $h_{\rm eff} = 0.86$ at $h_{\rm true} = 0.73$
+      gives <strong>0.2644</strong>, and interpolating the delivered per-host median peaks
+      (0.8476 at ε = 0.25, 0.9390 at ε = 0.35) gives the same ≈0.264. The widget therefore
+      shows the published 0.256 marker <em>and</em> the crossing where the published law puts
+      it, about 3% apart. Neither has been adopted over the other; the discrepancy is
+      recorded in <code>book/design/flags/ch07_FLAGS.md</code> (FLAG-2). A book about
+      estimator honesty does not get to round its own numbers into agreement.
+    </div>
+
+    <h3>What C7 is <em>not</em></h3>
+
+    <p>
+      Scope, narrowed twice by the adjudication, and over-claiming it would be the easiest
+      mistake in the chapter:
+    </p>
+    <ol>
+      <li>
+        <strong>It is channel-common.</strong> The numerator prior multiplies both the
+        with-mass and without-mass numerators identically, so C7 is <em>not</em> a candidate
+        for any difference between the two channels <span class="ch07-fwd">⏭ Ch 8</span>
+        <span class="prov-chip">CLAIM C7 (i)</span>.
+      </li>
+      <li>
+        <strong>It acts <em>against</em> the dark-class rail.</strong> The factor
+        $K = h_{\rm eff}/h_{\rm true}$ is always $> 1$, and dark events sit at
+        $\sigma_z/z \approx 0.10$ where $K = 1.03$. The dark catalogue leg&rsquo;s preference
+        for 0.60–0.64 would require bare impostor hosts at $z_g/\hat z \le 0.83$ — i.e.
+        foreground contamination. That is a <strong>new open thread</strong>
+        <span class="badge open">OPEN</span>, and because the inversion is censored data it
+        is a <em>hypothesis, not a measurement</em>
+        <span class="prov-chip">CLAIM C7 (ii)</span>.
+      </li>
+    </ol>
+
+    <!-- ================= DOSSIER ================= -->
+    <div class="dossier">
+      <div class="dossier-title">Event dossier — EMRI-889 after Chapter 7</div>
+      <table>
+        <tr><td>M / &mu;</td><td>7.25&times;10<sup>5</sup> M<sub>&#9737;</sub> / 10 M<sub>&#9737;</sub></td></tr>
+        <!-- D1 canonical dossier row (BOOK_CANON.sigmaDL.dossierRow). The
+             fractional value is filled live from the CRB by the script below;
+             it is pre-rendered here so the static reader sees it too. -->
+        <tr><td>d_L</td><td>88.9 Mpc &middot; &sigma;_dL/d_L = <strong id="ch07-doss-reldl">8.98&times;10<sup>&minus;4</sup></strong>
+          <span class="prov-chip">seed61000 CRB row 889</span></td></tr>
+        <tr><td>SNR / host</td><td>1425 &middot; in-catalogue (host index 859360)</td></tr>
+        <tr class="dossier-new"><td><strong>z</strong></td>
+          <td><strong id="ch07-doss-z">&mdash;</strong> — the empty slot from Chapter 1 is
+            filled, by a catalogue row rather than by a measurement of this source</td></tr>
+        <tr class="dossier-new"><td><strong>&sigma;_z/z</strong></td>
+          <td><strong id="ch07-doss-eps">&mdash;</strong> (indicative; 2nd widest of the 76
+            in-catalogue hosts) — <em>wider than every other entry on this card by three
+            orders of magnitude</em></td></tr>
+        <tr class="dossier-new"><td><strong>kernel peak</strong></td>
+          <td>point kernel: <strong id="ch07-doss-pt">&mdash;</strong> (exact by construction) &middot;
+            <code>volume_deconv</code> at its indicative width:
+            <strong id="ch07-doss-pk">&mdash;</strong>, off any grid this book draws</td></tr>
+      </table>
+    </div>
+
+    <p class="ch07-note">
+      <strong>Erratum:</strong> the spec card carried &sigma;_dL/dL = 8.0&times;10<sup>&minus;5</sup>
+      — that is the absolute $\sigma_{d_L}$ in Gpc under a fractional label. Corrected
+      book-wide 2026-07-31; record: ch01 flag F1 / BUILD_REPORT §5.1 item 1. On CRB row 889
+      the delivered covariance gives $\sigma_{d_L} = 7.98\times10^{-5}$ Gpc against
+      $d_L = 0.0889$ Gpc, i.e. $\sigma_{d_L}/d_L = 8.98\times10^{-4}$ — identical in all six
+      seed61000 copies, and equal to the <code>rel_dL</code> the project&rsquo;s own C7
+      driver stores for this host. The event identification was never in doubt (mass,
+      distance, SNR and host index all match), which is why the order-of-magnitude check
+      could isolate the label rather than the row. Chapter 7 raised this as FLAG-1 and it is
+      now <strong>resolved</strong>; the flag file keeps the history
+      <span class="prov-chip">book/design/flags/ch07_FLAGS.md FLAG-1</span>. The one
+      downstream casualty: the &ldquo;≈6000× larger&rdquo; comparison built on the
+      mislabelled figure becomes <strong>≈550×</strong> — which changes nothing about the
+      conclusion, and is exactly why the conclusion should never have been carried by that
+      number. Chapter 7 quotes the ratified population figures instead
+      (median $\sigma_{d_L}/d_L = 0.53\%$ against $\sigma_z/z$ quartiles 0.379/0.519/0.644).
+    </p>
+
+    <!-- ================= SELF-CHECK ================= -->
+    <h2>Self-check</h2>
+
+    <div class="selfcheck">
+      <p>Q7.1 (transfer) &nbsp; You measured $\Delta h = -C\sigma_z^2$ with
+      $C_{\rm meas} \approx 17$–$20$. Without re-reading §2: what feature of the volume
+      prior sets the <strong>sign</strong>, and what would have to be true of the prior for
+      a <em>symmetric widening</em> to have been the right answer?</p>
+      <details class="answer">
+        <summary>Show answer</summary>
+        <div class="answer-body">
+          The sign is set by the <strong>slope</strong> of the prior across the width of the
+          likelihood — nothing else. $s(z) = d\ln w_{\rm pop}/dz$ is positive (at low $z$,
+          $s \approx 2/z$), so more of the probability that scattered <em>into</em> $z_g$
+          came from above than from below; the posterior mean sits at
+          $z_g + \sigma_z^2 s$, the bare Gaussian omits that term, and under-estimating $z$
+          at a fixed measured $d_L$ under-estimates $h$. Two consequences you can state
+          without the chapter: the effect is second order in $\sigma_z$ (the first-order
+          terms cancel by symmetry of the likelihood), and it does not depend on the
+          likelihood being Gaussian — only on the prior having a non-zero log-slope across
+          the smear.
+          <br /><br />
+          A symmetric widening would be right if — and essentially only if — the prior were
+          <strong>flat</strong> over the width of the kernel: $s = 0$ makes the shift
+          vanish identically and leaves nothing but variance. That is the tacit assumption
+          every &ldquo;plug in $z_g$, inflate the error bar&rdquo; estimator makes. It is
+          false here by orders of magnitude, and the diagnostic that tells you so is
+          coverage, not width <span class="prov-chip">ledger #47</span>. A flat prior would
+          also make the sign <em>ambiguous</em> rather than low — which is the sharper way to
+          say it: this is not a fact about redshift errors, it is a fact about where the
+          galaxies were.
+        </div>
+      </details>
+    </div>
+
+    <div class="selfcheck">
+      <p>Q7.2 &nbsp; Why is $p(z_g\mid z)$ &ldquo;not a posterior&rdquo;, and what exactly
+      does the volume prior supply?</p>
+      <details class="answer">
+        <summary>Show answer</summary>
+        <div class="answer-body">
+          $p(z_g\mid z)$ is a <em>likelihood</em> — a statement about the measurement given
+          the truth. Read as a function of $z$ at fixed $z_g$ it is numerically a Gaussian in
+          $z$, and that numerical coincidence is what makes the mistake so easy. To weight
+          candidate redshifts you need
+          $p(z \mid z_g) \propto p(z_g\mid z)\,p(z)$, and the prior $p(z)$ is the
+          <em>rate</em> of EMRIs per unit true redshift,
+          $\propto (dV_c/dz)/(1+z)$: comoving volume per unit redshift, with a time-dilation
+          factor converting source-frame rate to detector frame. That is the
+          <code>volume_deconv</code> kernel, and G2b proves it is the unique weight
+          consistent with this project&rsquo;s own rate model
+          <span class="prov-chip">G2b §1.1–1.2</span>.
+        </div>
+      </details>
+    </div>
+
+    <div class="selfcheck">
+      <p>Q7.3 &nbsp; Why must the same volume prior appear in the per-galaxy
+      <strong>denominator</strong> as well as the numerator, and what is the name of the
+      invariant that enforces it?</p>
+      <details class="answer">
+        <summary>Show answer</summary>
+        <div class="answer-body">
+          Because the numerator and denominator are integrals over the same true-$z$ variable
+          with the same measure; if the prior appeared in only one, the ratio would carry a
+          spurious $dV_c$ and become $h$-dependent for a purely bookkeeping reason. G2b calls
+          this <strong>&ldquo;$dV_c$ counted once&rdquo;</strong> and verifies it explicitly,
+          including the exact $h$-invariance of the per-galaxy normalisation
+          $Z_g \propto h^{-3}$ to 1e&minus;15. The project protects it with a binding
+          regression gate — which is why any future fix to this kernel must
+          <em>explicitly supersede</em> G2b rather than quietly contradict it
+          <span class="prov-chip">G2b §3.2, §3.1</span><span class="prov-chip">ledger #75</span>.
+        </div>
+      </details>
+    </div>
+
+    <div class="selfcheck">
+      <p>Q7.4 &nbsp; The deconvolution fixes an over-correction low. Now push it: what
+      happens if you deconvolve a <em>very</em> wide photo-z against a monotonically rising
+      volume prior with <strong>no</strong> selection turnover?</p>
+      <details class="answer">
+        <summary>Show answer</summary>
+        <div class="answer-body">
+          You over-correct the other way. With no $p_{\rm det}$ and no catalogue selection in
+          the weight, nothing penalises pushing the host to higher $z$, so the deconvolved
+          estimate inflates. The measured law on this code is
+          $h_{\rm eff}/h_{\rm true} = \frac12[1+\sqrt{1+12(\sigma_z/z)^2}] \to 3(\sigma_z/z)^2$,
+          with a rail threshold at <strong>$\sigma_z/z > 0.256$</strong>; the campaign&rsquo;s
+          in-catalogue hosts sit at 0.25–0.49, predicting +16% to +49% inflation — and 58% of
+          them do in fact rail at the top of the prior. <em>Read that last number with its
+          binding amendment</em>: per event the rail is cosmetic (median 0.072–0.134 nats =
+          0.30–0.47 $\sigma_{\rm event}$; only 0–1.3% of events exceed 1σ), but the
+          class-summed displacement is +3.4 to +6.1 $\sigma_{\rm class}$ above truth in 8/10
+          runs, so &ldquo;not a centred measurement&rdquo; stands. This is claim
+          <strong>C7</strong>, adjudicated as a MEASURED finding on the code&rsquo;s own
+          numerator, and it is the book&rsquo;s cleanest example of a fix and its failure mode
+          being the same object <span class="prov-chip">CLAIM C7 + C5 amendment</span>.
+        </div>
+      </details>
+    </div>
+
+    <div class="selfcheck">
+      <p>Q7.5 (transfer) &nbsp; The spec-z cut was tried and refuted (I7.2). Write down the
+      <strong>two</strong> conditions any &ldquo;keep only the clean data&rdquo; rescue must
+      satisfy to work, and say which of them this one fails — then name a change to the
+      <em>world</em> (not to the estimator) that would repair the one it fails, and say
+      whether that would be enough.</p>
+      <details class="answer">
+        <summary>Show answer</summary>
+        <div class="answer-body">
+          <strong>(i) The survivors must still carry the constraint</strong>, and
+          <strong>(ii) the discarded rows must be where the defect lives.</strong> The cut
+          fails <em>both</em>, which is why it is a good exhibit. On (i) the retained hosts
+          hold at most 8.7% — median ≈ 0% — of the rate-weighted in-catalogue likelihood, so
+          the cut throws away roughly the whole measurement to keep half a percent of the
+          catalogue. On (ii) the defect is not resident in the wide rows at all: it is in the
+          estimator&rsquo;s <em>treatment</em> of width, so deleting wide rows deletes data,
+          not the bug — measured, the cut still railed at 0.870
+          <span class="prov-chip">ledger #42</span>.
+          <br /><br />
+          A change to the world — a targeted spectroscopic follow-up of the localisation
+          volumes, moving the spec-z share from 0.56% toward unity — would repair (i), and
+          only (i). It buys you a catalogue whose widths are small enough that the kernel
+          question stops mattering <em>in practice</em>; it does not make a wrong
+          width-treatment right, and at the widths GLADE+ actually has it is a promise about
+          a future survey rather than a fix to this analysis. That asymmetry is the general
+          lesson: data cuts can satisfy (i) or fail it, but only an estimator change can
+          satisfy (ii).
+        </div>
+      </details>
+    </div>
+
+    <div class="selfcheck">
+      <p>Q7.6 (transfer) &nbsp; The redshift is wide and its treatment is delicate. The GW
+      measures the <em>redshifted</em> mass $M_z = M(1+z)$ far more precisely than anything
+      else on this card — the claim file quotes $\sigma_{M_z}/M_z \approx 10^{-4}$
+      <span class="prov-chip">CLAIM C4</span>, while the delivered covariance measures a
+      median $8.8\times10^{-8}$ across this venue&rsquo;s events (EMRI-889:
+      $1.36\times10^{-9}$) <span class="prov-chip">ch06 flag F-ch06-5</span>. Both values
+      are carried here because the project has not reconciled them; the argument below needs
+      only that the number is very small. Propose how that could be used, and guess whether
+      it will help.</p>
+      <details class="answer">
+        <summary>Show answer</summary>
+        <div class="answer-body">
+          If a catalogue galaxy reports a black-hole mass $M_g$, then $M_z/M_g - 1$ estimates
+          $z$ independently of the distance — a second handle, and an extremely sharp one on
+          the GW side. It should sharpen host identification enormously, and mechanically it
+          does: 97–99% of impostors are rejected. Note that the sharpness on the GW side is
+          not the binding quantity, which is why the $10^{-4}$-vs-$8.8\times10^{-8}$
+          disagreement does not change the answer: at either value the GW mass is orders of
+          magnitude sharper than the <em>catalogue&rsquo;s</em> mass, and it is the
+          catalogue&rsquo;s width that decides what the comparison can do. Whether the
+          <em>posterior</em> improves is Chapter 8 <span class="ch07-fwd">⏭ Ch 8</span>, and
+          the answer is the most instructive &ldquo;no&rdquo; in the book.
+        </div>
+      </details>
+    </div>
+
+    <!-- Traps 7.A and 7.B are no longer parked here: both were relocated to the
+         sections that create the misconception (REVISION_WORKLIST §C-ch07,
+         ped-M3). 7.A now sits in §2 after the coverage-collapse paragraph;
+         7.B sits at the head of §6, which is the sentence the reader thinks
+         entering the twist. -->
+
+    <!-- ================= MUSEUM INTERLUDE ================= -->
+    <h2>Interlude — <code>volume_trunc</code>, or: your quadrature can delete the signal you are integrating</h2>
+
+    <p>
+      A pre-registered fix, sitting exactly where a reader of this chapter would put one.
+      The idea: unify the numerator&rsquo;s integration support with the host window — integrate
+      $N_g$ over $[z_g-4\sigma_z,\, z_g+4\sigma_z]$, the same interval that $Z_g$ and $D_g$
+      already share, instead of over the event-level GW window. Symmetric, tidy, and
+      motivated by the very &ldquo;counted once&rdquo; instinct §3 taught you. It was
+      implemented behind an isolated mode, tested against a decisive 494-event A/B, and
+      <span class="badge refuted">REFUTED</span>.
+    </p>
+
+    <div class="voice-adjudicator">
+      <span class="voice-label">The measured outcome
+        <span class="badge refuted">REFUTED</span>
+        <span class="prov-chip">volume_trunc_ab_20260712/FINDING.md:1-58</span>
+        <span class="prov-chip">ledger #70</span></span>
+      1D mean $0.745 \to \mathbf{0.800}$, 2D mean $0.768 \to \mathbf{0.800}$: away from truth,
+      by roughly <strong>4×</strong> the +0.013 residual it was built to remove. And it failed
+      for <strong>two independent reasons at once</strong>. (1) The shared
+      <code>fixed_quad(n=50)</code> — correct over the <em>narrow, peak-centred</em> GW window
+      — is numerically invalid over the <em>wide</em> host window: the sparse Gauss–Legendre
+      nodes straddle the narrow GW peak and miss it, returning <strong>0.0000</strong> where
+      the exact integral is <strong>0.24–0.65</strong>. Which nodes catch a peak depends on
+      the host <em>and on $h$</em>, so the per-host numerators are erratic and $h$-dependent.
+      (2) Even the <em>exact</em> host-window numerator increases monotonically in $h$
+      (0.24 → 0.65 over $h = 0.60 \to 0.86$), so the unified-support idea itself tilts high
+      in this regime. Venue: the seed600 shallow venue, 494-event subsample.
+    </div>
+
+    <div class="widget" id="vt" data-hypothesis="70"
+         data-hypothesis-verdict="FALSIFIED — volume_trunc moved the 1D mean 0.745 → 0.800 and the 2D mean 0.768 → 0.800, ~4× the residual it targeted, for two independent reasons (ledger #70).">
+      <h4>Interlude widget — watch a Gauss–Legendre rule delete a peak
+        <span class="prov-chip toy">toy: Gaussian peak in a wide window</span>
+        <span class="prov-chip real">real: the production <code>_GL_NODES_50</code></span>
+      </h4>
+      <p style="margin-top:0; color:var(--muted); font-size:0.88rem;">
+        <strong>Manipulate:</strong> the quadrature order, and where the peak sits inside the
+        window. <strong>Observe:</strong> the nodes, and what the rule reports. The window
+        $[0,\,0.182]$ is the host window of FINDING.md&rsquo;s representative shallow host
+        ($z_g = 0.05$, $\sigma_z = 0.033$); the peak is a toy stand-in for the narrow GW
+        likelihood. The $n = 50$ nodes and weights are literally the ones the pipeline uses.
+        <strong>The flagship version of this exhibit, with the pipeline&rsquo;s own numbers,
+        lives in the</strong> <a href="museum.html#ex-volume-trunc">Defect Museum</a>.
+      </p>
+      <div id="ch07-vt-plot" class="widget-plot ch07-plot-fit" style="height:340px"></div>
+      <div class="widget-controls ch07-controls-grid">
+        <span>
+          <label for="ch07-vt-n">Gauss–Legendre order n:</label>
+          <input id="ch07-vt-n" type="range" />
+          <span class="readout">n = <strong id="ch07-vt-n-readout">50</strong></span>
+        </span>
+        <span>
+          <label for="ch07-vt-zc">Peak position z*:</label>
+          <input id="ch07-vt-zc" type="range" />
+          <span class="readout">z* = <strong id="ch07-vt-zc-readout">&mdash;</strong></span>
+        </span>
+        <span class="readout">quadrature / exact = <strong id="ch07-vt-ratio">&mdash;</strong></span>
+      </div>
+      <details class="num-view">
+        <summary>Show me the numbers</summary>
+        <div class="table-scroll"><table class="num-table" id="ch07-vt-table"></table></div>
+      </details>
+      <noscript>
+        <p><strong>Static fallback.</strong> A Gaussian peak of width 4×10<sup>&minus;4</sup>
+        placed inside the window [0, 0.182], integrated by Gauss–Legendre. At $n = 50$ the
+        rule returns anywhere between 0.0000 and 4.6× the exact value depending only on where
+        the peak sits relative to the nodes; convergence to within 0.1% requires $n \ge 400$.
+        The pipeline&rsquo;s recorded case: numerator 0.0000 at $n = 50$ over the host window
+        against exact values 0.2417 / 0.4314 / 0.6537 at $h = 0.60 / 0.73 / 0.86$
+        (FINDING.md).</p>
+      </noscript>
+    </div>
+
+    <p>
+      <strong>The transferable lesson is not &ldquo;use more nodes&rdquo;.</strong> It is that
+      quadrature is physics: an integration rule encodes an assumption about the shape of the
+      integrand, and when a change of variables, a widened window, or a new kernel breaks that
+      assumption, the rule fails <em>silently</em> and in a way that is correlated with the
+      parameter you are inferring. The fix was rejected as designed, and the follow-up
+      requirement written down: any wide-window numerator integral must be
+      peak-aware or adaptive before its physics can even be evaluated
+      <span class="prov-chip">FINDING.md §Conclusion</span>. <code>volume_trunc</code> is
+      retained as an experimental, FALSIFIED mode so the result stays reproducible; it is not
+      wired into the CLI, and it must not be revived
+      <span class="prov-chip">realistic_host_observation_model.md §3.2</span>.
+    </p>
+
+    <p class="ch07-note">
+      Contrast, deliberately: the C7 measurement in §6 was run through exactly this check and
+      passed it — <code>fixed_quad</code> parity at relative difference 0.0e0 and
+      $n = 50$ vs $n = 400$ agreement below $5\times10^{-12}$
+      <span class="prov-chip">C7_README §Correctness checks 1, 3</span>. That is why one of
+      these two results is a finding and the other is an exhibit.
+    </p>
+
+    <!-- ================= WHAT'S NEXT ================= -->
+    <h2>What this leaves on the table</h2>
+
+    <p>
+      You now hold a redshift kernel that is derived, ratified, measured to repair a
+      quadratic bias and restore coverage — and separately measured to inflate the answer at
+      the widths its own hosts actually have. The deciding experiment was pre-registered and
+      <strong>landed on 2026-07-31</strong>: it sized the effect and told you who owns it
+      (the estimator, not the realism layer), and it left the derivation-level collision
+      exactly where it was, because that is not a thing a posterior can decide. So the
+      chapter closes one question and hands you a sharper version of the other. That is an
+      uncomfortable place to leave a chapter, and it is the honest one.
+    </p>
+
+    <p>
+      It also sets up the obvious escape. The redshift is the wide, badly-known quantity; the
+      gravitational wave measures the <em>redshifted</em> mass $M_z = M(1+z)$ with a
+      fractional precision the claim file puts at $\approx 10^{-4}$
+      <span class="prov-chip">CLAIM C4</span> and the delivered covariance measures at a
+      median $8.8\times10^{-8}$ <span class="prov-chip">ch06 flag F-ch06-5</span> — both
+      carried, both far sharper than any redshift here. If a catalogue galaxy reports a
+      black-hole mass, that is a second, very sharp handle on $z$ that never touches the
+      distance at all. It should help enormously.
+      <span class="ch07-fwd">⏭ Ch 8</span> — and the reader was promised an improvement.
+    </p>
+
+    <!-- ================= PROVENANCE PANEL ================= -->
+    <div class="provenance-panel">
+      <h4>Provenance panel — every stamp used in this chapter</h4>
+      <ul>
+        <li><span class="badge ratified">RATIFIED</span> <code>G2b_host_z_volume_prior.md</code>
+          §1.1–1.2 (the kernel), §2.1–2.3 (the σ_z² law and its measured points, lines 229-237),
+          §3.1–3.2 (Z_g propriety, &ldquo;dV_c counted once&rdquo;), §4 VERDICT lines 413-436 —
+          <em>CONFIRMED</em>, h-independence protected by a binding regression gate.</li>
+        <li><span class="badge ratified">RATIFIED</span> <code>hostz_pv_photoz_kernel.md</code>
+          §0 (the measured dominance: PV 2.3×, z-floor 4.9× the retained GW term), §2
+          (literature anchors + the rejected anti-anchor), §3.1 RATIFY-1/RATIFY-2
+          (σ_v = 150 / 500 km/s), ratified 2026-07-26.</li>
+        <li><span class="badge ratified">RATIFIED</span> <code>realistic_host_observation_model.md</code>
+          §3.1–3.2 RATIFY-R3 — the point kernel loses its licence under scatter;
+          <code>volume_deconv</code> is the generator-consistent kernel <em>of the scattered
+          generator</em>; §3.4 the one-directional guard.</li>
+        <li><span class="badge finding">FINDING</span> <code>CLAIM_2D_BIAS_20260730.md</code>
+          <strong>C7</strong> (MEASURED, adjudicated 2026-07-30) + <code>gate_b_20260730/C7_README.md</code>
+          — the corrected law [1+√(1+12ε²)]/2, the 0.256 rail threshold, the production
+          confrontation, and both scope narrowings.</li>
+        <li><span class="badge finding">FINDING</span> <code>CLAIM_2D_BIAS_20260730.md</code>
+          <strong>C5</strong> fair-framing amendment (binding) — quoted in both halves
+          wherever the 57.9% / &ldquo;58%&rdquo; rail fraction appears.</li>
+        <li><span class="badge finding">FINDING</span> <code>PREREGISTRATION_2x2_cellB.md</code>
+          + <code>CELLB_READOUT_20260731.md</code> — the 2×2 cell B, registered 2026-07-30
+          before submission (jobs 6101146/6101147) and <strong>landed 2026-07-31</strong>
+          (evaluate 6103219 / combine 6103220, the resubmission after a plumbing-only
+          symlink failure). Catalogue-leg rail 90.7% (68/75) with exact host redshifts vs
+          89.2% scattered; in-cat class argmax 0.860 as registered. It settles C7&rsquo;s
+          magnitude and attribution; the G2b↔C7 collision is untouched, and the fix must
+          supersede G2b without being the exonerated &ldquo;p_det in the numerator
+          alone&rdquo; form.</li>
+        <li><span class="badge open">OPEN</span> the foreground-impostor thread (C7 scope
+          narrowing ii) — a hypothesis from censored data, explicitly not a measurement.</li>
+        <li><span class="badge refuted">REFUTED</span> <code>volume_trunc</code> —
+          <code>results/volume_trunc_ab_20260712/FINDING.md:1-58</code>, ledger #70.</li>
+        <li><span class="badge refuted">REFUTED</span> ledger #42 — the spec-z rescue;
+          and the <code>0.013(1+z)³</code> citation-laundering anti-anchor
+          (<code>datamodels/galaxy.py:66</code>, GitHub #7).</li>
+        <li><span class="badge exonerated">EXONERATED</span> ledger #75 — the
+          <code>volume_deconv</code> kernel does not carry h-dependence (Z_g ∝ h⁻³ to 1e-15);
+          re-measured 9.1e-16 in Gate B.</li>
+        <li><span class="badge finding">FINDING</span> ledger #47 (bias −0.024 → −0.002,
+          coverage ≈0% → nominal), #88 (δ-kernel carries 85.3% / 86.7% of the ln movement),
+          #62/#68 (the historical OVER-correction, opposite in sign to a C7 fix).</li>
+        <li><strong>External:</strong> Eddington (1913); Hogg 1999, arXiv:astro-ph/9905116
+          Eq. (28); Babak et al. 2017, arXiv:1703.09722 Sec. III.4; Mandel, Farr &amp; Gair
+          2019, arXiv:1809.02063; Gray et al. 2020, arXiv:1908.06050; Davis et al. 2011,
+          arXiv:1012.2912; Carrick et al. 2015; Laghi et al. 2021, arXiv:2102.01708;
+          Turski et al. 2023, arXiv:2302.12037; Dálya et al. 2022, arXiv:2110.06184.</li>
+        <li><strong>Flags raised by this chapter:</strong>
+          <code>book/design/flags/ch07_FLAGS.md</code> — <strong>FLAG-1</strong> (σ_dL of
+          EMRI-889) is <strong>RESOLVED</strong> by the author&rsquo;s book-wide correction
+          of 2026-07-31; see the erratum note under the dossier above. <strong>FLAG-2</strong>
+          (rail threshold: artifacts 0.256 vs the quoted law&rsquo;s own 0.2644) remains
+          <span class="badge open">OPEN</span> and unreconciled.</li>
+      </ul>
+    </div>
+
+    <p class="book-footer">
+      Data generated by <code>book/generators/gen_ch07.py</code> (read-only against the main
+      package, <code>docs/</code> and <code>results/</code>), which re-measures four published
+      tables as reproduction gates before writing anything: G2b&rsquo;s exact posterior-mean
+      shift table (0.1–0.4%), G2b&rsquo;s amplitude table $C(\bar z)$ (&lt;1%), the corrected
+      C7 law against the delivered per-host peaks (worst |Δ| = 0.0032), and the observed
+      in-catalogue tilt recomputed from the diagnostics CSV (7.2×10⁻¹⁶). This page renders
+      fully offline — Plotly and KaTeX are vendored under <code>vendor/</code>.
+    </p>
+  </main>
+</div>
+
+<script src="js/manifest.js"></script>
+<script src="vendor/plotly/plotly.min.js"></script>
+<script src="vendor/katex/katex.min.js"></script>
+<script src="vendor/katex/auto-render.min.js"></script>
+<script src="js/book.js"></script>
+<script>
+(function () {
+  "use strict";
+
+  // ---------------------------------------------------------------- helpers
+  // Page-local workaround for WIDGET_REQUESTS R-ch07-2 (Book.interp1).
+  function interp1(xs, ys, x) {
+    const n = xs.length;
+    if (x <= xs[0]) return ys[0];
+    if (x >= xs[n - 1]) return ys[n - 1];
+    let lo = 0, hi = n - 1;
+    while (hi - lo > 1) {
+      const mid = (lo + hi) >> 1;
+      if (xs[mid] <= x) lo = mid; else hi = mid;
+    }
+    const t = (x - xs[lo]) / (xs[hi] - xs[lo]);
+    return ys[lo] + t * (ys[hi] - ys[lo]);
+  }
+  const COL = {
+    like: "#0072B2", prior: "#009E73", prod: "#CC79A7",
+    truth: "#D55E00", edge: "#9e9e9e", node: "#E69F00",
+  };
+  const ink = () => (Book.isDark() ? "#eef1f5" : "#1a1a1a");
+  const baseLayout = (over) => Object.assign({
+    margin: { l: 58, r: 18, t: 30, b: 92 },
+    paper_bgcolor: "rgba(0,0,0,0)",
+    plot_bgcolor: "rgba(0,0,0,0)",
+    font: { color: ink(), size: 12 },
+    showlegend: true,
+    legend: { orientation: "h", y: -0.22, yanchor: "top", x: 0, font: { size: 10 } },
+    hovermode: "closest",
+  }, over || {});
+  const fmt = (v, d) => (v >= 0 ? "+" : "") + v.toFixed(d === undefined ? 4 : d);
+  const rows = (head, body) =>
+    "<tr>" + head.map((h) => "<th>" + h + "</th>").join("") + "</tr>" +
+    body.map((r) => "<tr>" + r.map((c) => "<td>" + c + "</td>").join("") + "</tr>").join("");
+
+  // ------------------------------------------------------- bias ledger rail
+  // R-ch07-1 IMPLEMENTED by the integrator: Book.biasRail takes `pips`
+  // directly; the page-local append workaround is retired (2026-07-31).
+  // The CANONICAL cell-B pip — worded identically on ch07/ch09/ch10/ch11
+  // (REVISION_WORKLIST §D-6, expB MN-5). The literals below are kept greppable
+  // for book/generators/qa_gates.py; the one definition is BOOK_CANON.cellB in
+  // js/manifest.js and wins at runtime.
+  const CELLB_PIP = {
+    tone: "amber",
+    label: "cell B (2026-07-31): estimator owns +0.060 of the 2D +0.083",
+    note: "CELLB_READOUT_20260731.md — evaluate 6103219 / combine 6103220; the 2D-only share is 72%",
+  };
+  if (Book.canon && Book.canon.cellB) {
+    CELLB_PIP.tone = Book.canon.cellB.pipTone || CELLB_PIP.tone;
+    CELLB_PIP.label = Book.canon.cellB.pipLabel || CELLB_PIP.label;
+    CELLB_PIP.note = Book.canon.cellB.pipNote || CELLB_PIP.note;
+  }
+  const PIPS = [
+    { tone: "amber", label: "C7: kernel inflates at σ_z/z > 0.256", note: "CLAIM C7 — MEASURED, live" },
+    CELLB_PIP,
+  ];
+  function renderRail(activeRow) {
+    const entries = [
+      { label: "cat-only, no D(h)", bias: -0.178, note: "Phase 32 / ledger #9" },
+      { label: "full-volume D(h)", bias: 0.0, note: "Phase 32 / ledger #9" },
+    ];
+    if (activeRow) entries.push(activeRow);
+    Book.biasRail({ entries: entries, pips: PIPS });
+  }
+  renderRail({ label: "host-z kernel: pending", bias: null, note: "set by I7.1" });
+
+  // =====================================================================
+  // I7.1 — The Eddington Machine
+  // =====================================================================
+  Promise.all([
+    Book.loadJSON("data/ch07_eddington.json"),
+    Book.loadJSON("data/ch07_c7.json"),
+    Book.loadJSON("data/ch07_speczrescue.json"),
+  ]).then(function (payload) {
+    const E = payload[0], C = payload[1], S = payload[2];
+
+    // --- state ---------------------------------------------------------
+    const SIGMA_STEPS = [0.001, 0.002, 0.003, 0.005, 0.008, 0.010, 0.015, 0.020,
+                         0.025, 0.030, 0.035, 0.040, 0.045, 0.050, 0.055, 0.060];
+    const EPS_STEPS = [0.02, 0.05, 0.10, 0.15, 0.20, 0.25, 0.256, 0.30, 0.35,
+                       0.42, 0.49, 0.60, 0.80];
+    const PROD_HOSTS = [
+      { z_g: C.hosts.z_true[C.event_889.incat_index], label: "EMRI-889 (z = " +
+        C.event_889.z_true.toFixed(4) + ") — 2nd widest of the 76" },
+      { z_g: 0.0706, label: "median in-catalogue host (z = 0.0706)" },
+    ];
+
+    let stage = 1;
+    let unlocked = { 1: true, 2: false, 3: false };
+    let widthIdx = SIGMA_STEPS.indexOf(0.035);
+    let hostIdx = 4;              // z_g = 0.25 by default (stages 1-2)
+    let prodHostIdx = 1;
+    let turnover = false;
+
+    const venueOf = () => (stage === 3 ? "production" : "g2b");
+    const tablesOf = () => E.venues[venueOf()].tables;
+    const hTrueOf = () => E.venues[venueOf()].h_true;
+    const zgOf = () => (stage === 3 ? PROD_HOSTS[prodHostIdx].z_g : E.host_presets[hostIdx].z_g);
+    const widthOf = () =>
+      stage === 3 ? EPS_STEPS[widthIdx] * zgOf() : SIGMA_STEPS[widthIdx];
+    const epsOf = () => widthOf() / zgOf();
+
+    // --- the physics the browser is allowed to do ----------------------
+    // p_g(z) proportional to N(z; z_g, sigma_z) * w_pop(z) [* illustrative rollover]
+    //   — G2b Eq. (1.4). Nothing here is re-derived; w_pop and f(z) are tabulated
+    //   from physical_relations by gen_ch07.py.
+    function rolloverAt(z, zg) {
+      const zr = 2.0 * zg;
+      return 1.0 / (1.0 + Math.pow(z / zr, 4));
+    }
+    function kernelGrid(zg, sigma, useTurnover) {
+      const T = tablesOf();
+      const lo = Math.max(zg - 6 * sigma, 1e-6), hi = zg + 6 * sigma;
+      const n = 601, z = new Array(n), like = new Array(n),
+            prior = new Array(n), prod = new Array(n);
+      for (let i = 0; i < n; i++) {
+        const zi = lo + ((hi - lo) * i) / (n - 1);
+        z[i] = zi;
+        like[i] = Math.exp(-0.5 * Math.pow((zi - zg) / sigma, 2));
+        let w = interp1(T.z, T.w_pop_shape, zi);
+        if (useTurnover) w *= rolloverAt(zi, zg);
+        prior[i] = w;
+        prod[i] = like[i] * w;
+      }
+      const num = Book.trapz(z.map((zi, i) => zi * prod[i]), z);
+      const den = Book.trapz(prod, z);
+      const mean = den > 0 ? num / den : zg;
+      return { z, like, prior, prod, mean, deltaZ: mean - zg };
+    }
+    function fOf(z) { const T = tablesOf(); return interp1(T.z, T.f_gpc, z); }
+    // C7_README §5: h_eff/h_true = f(z_hat)/f(z_true), exact for a d_L-anchored event.
+    function deltaHBare(zg, deltaZ) {
+      return hTrueOf() * (fOf(zg) / fOf(zg + deltaZ) - 1.0);
+    }
+    function c7Law(eps) { return 0.5 * (1 + Math.sqrt(1 + 12 * eps * eps)); }
+    function c7LawSuperseded(eps) { return 0.5 * (1 + Math.sqrt(1 + 8 * eps * eps)); }
+
+    // --- current readouts ----------------------------------------------
+    function currentState() {
+      const zg = zgOf(), sigma = widthOf();
+      const k = kernelGrid(zg, sigma, turnover && stage === 3);
+      const out = { zg: zg, sigma: sigma, eps: epsOf(), grid: k, hTrue: hTrueOf() };
+      if (stage === 1) {
+        out.deltaH = deltaHBare(zg, k.deltaZ);
+        out.peak = out.hTrue + out.deltaH;
+        out.peakKind = "computed";
+      } else if (stage === 2) {
+        out.deltaH = E.measured.volume_floor;      // recorded residual floor
+        out.peak = out.hTrue + out.deltaH;
+        out.peakKind = "recorded-floor";
+      } else {
+        if (turnover) {
+          out.deltaH = null;                       // no measured value exists
+          out.peak = null;
+          out.peakKind = "unmeasured";
+        } else {
+          out.peak = C.h_true * c7Law(out.eps);
+          out.deltaH = out.peak - C.h_true;
+          out.peakKind = "measured-law";
+        }
+      }
+      return out;
+    }
+
+    // --- panel A: z-space ----------------------------------------------
+    const zspaceLayout = () => {
+      const st = currentState();
+      const shapes = [
+        { type: "line", x0: st.zg, x1: st.zg, y0: 0, y1: 1, yref: "paper",
+          line: { color: COL.edge, dash: "dot", width: 1.5 } },
+      ];
+      if (isFinite(st.grid.mean)) {
+        shapes.push({ type: "line", x0: st.grid.mean, x1: st.grid.mean, y0: 0, y1: 1,
+          yref: "paper", line: { color: COL.prod, dash: "dash", width: 2 } });
+      }
+      return baseLayout({
+        title: { text: "the kernel, in z", font: { size: 12 }, x: 0 },
+        xaxis: { title: "true redshift z", zeroline: false },
+        yaxis: { title: "density (peak-scaled)", rangemode: "tozero" },
+        shapes: shapes,
+        annotations: [
+          { x: st.zg, y: 1.02, yref: "paper", text: "z_g", showarrow: false, font: { size: 10 } },
+          { x: st.grid.mean, y: 1.09, yref: "paper", text: "⟨z⟩ = z_g " +
+              (st.grid.deltaZ >= 0 ? "+ " : "− ") + Math.abs(st.grid.deltaZ).toFixed(4),
+            showarrow: false, xanchor: "left", font: { size: 10, color: COL.prod } },
+        ],
+        height: 360,
+      });
+    };
+    function zspaceTraces() {
+      const st = currentState(), g = st.grid;
+      const mx = (a) => { let m = 0; for (const v of a) if (v > m) m = v; return m || 1; };
+      const sc = (a) => { const m = mx(a); return a.map((v) => v / m); };
+      const t = [
+        { x: g.z, y: sc(g.like), mode: "lines", name: "photo-z likelihood N(z; z_g, σ_z)",
+          line: { color: COL.like, width: 2 } },
+        { x: g.z, y: sc(g.prior), mode: "lines",
+          name: (turnover && stage === 3 ? "w_pop × illustrative rollover" : "volume prior w_pop = (dV_c/dz)/(1+z)"),
+          line: { color: COL.prior, width: 2, dash: "dot" } },
+      ];
+      // The product is drawn in EVERY stage on purpose: in stage 1 it is not what
+      // the estimator uses — it is what the estimator is ignoring.
+      t.push({ x: g.z, y: sc(g.prod), mode: "lines",
+        name: stage === 1
+          ? "their product — where the galaxy really is (the bare kernel ignores this)"
+          : "their product = p_g(z), the kernel volume_deconv uses",
+        fill: "tozeroy", fillcolor: "rgba(204,121,167,0.16)",
+        line: { color: COL.prod, width: 2.5, dash: stage === 1 ? "dash" : "solid" } });
+      return t;
+    }
+
+    // --- panel B: the h strip ------------------------------------------
+    const hstripLayout = () => {
+      const st = currentState();
+      const xr = stage === 3 ? [0.55, 1.55] : [0.60, 0.90];
+      const shapes = [
+        { type: "line", x0: st.hTrue, x1: st.hTrue, y0: 0, y1: 1, yref: "paper",
+          line: { color: COL.truth, dash: "dot", width: 2 } },
+        { type: "line", x0: 0.60, x1: 0.60, y0: 0, y1: 1, yref: "paper",
+          line: { color: COL.edge, width: 1 } },
+        { type: "line", x0: 0.86, x1: 0.86, y0: 0, y1: 1, yref: "paper",
+          line: { color: COL.edge, width: 1 } },
+      ];
+      return baseLayout({
+        title: { text: "where this host's catalogue-leg peak lands, in h", font: { size: 12 }, x: 0 },
+        xaxis: { title: "h", range: xr, zeroline: false },
+        yaxis: { visible: false, range: [-1, 1.6] },
+        shapes: shapes,
+        annotations: [
+          { x: st.hTrue, y: 1.0, yref: "paper", text: "truth " + st.hTrue.toFixed(2),
+            showarrow: false, font: { size: 10, color: COL.truth }, yanchor: "bottom" },
+          { x: 0.86, y: 1.0, yref: "paper", text: "prior edge", showarrow: false,
+            font: { size: 10, color: COL.edge }, yanchor: "bottom", xanchor: "left" },
+        ],
+        height: 210, showlegend: true,
+        margin: { l: 58, r: 18, t: 44, b: 74 },
+      });
+    };
+    function hstripTraces() {
+      const st = currentState();
+      const t = [];
+      if (st.peak !== null) {
+        t.push({ x: [st.peak], y: [0], mode: "markers+text", name: "this host's peak",
+          text: [st.peak.toFixed(4)], textposition: "top center",
+          marker: { size: 16, color: COL.prod, symbol: "diamond",
+                    line: { color: ink(), width: 1 } } });
+      } else {
+        t.push({ x: [st.hTrue], y: [0], mode: "text", name: "no measured value",
+          text: ["no measured value exists for this configuration"],
+          textposition: "top center", textfont: { size: 11, color: COL.edge } });
+      }
+      if (stage === 3) {
+        t.push({ x: C.hosts.peak_indicative, y: C.hosts.peak_indicative.map(() => -0.55),
+          mode: "markers", name: "the 76 in-cat hosts (indicative widths)",
+          marker: { size: 6, color: COL.like, opacity: 0.55, symbol: "line-ns-open" } });
+      }
+      return t;
+    }
+
+    // --- panel C: the board --------------------------------------------
+    const boardLayout = () => {
+      if (stage < 3) {
+        return baseLayout({
+          title: { text: "the measured bias law: Δh against σ_z", font: { size: 12 }, x: 0 },
+          xaxis: { title: "catalogue width σ_z" },
+          yaxis: { title: "Δh (truth at 0)" },
+          height: 390, margin: { l: 58, r: 18, t: 30, b: 126 },
+        });
+      }
+      return baseLayout({
+        title: { text: "the measured inflation law: h_eff/h_true against σ_z/z", font: { size: 12 }, x: 0 },
+        xaxis: { title: "σ_z / z", range: [0, 0.9] },
+        yaxis: { title: "h_eff / h_true", range: [0.95, 2.3] },
+        shapes: [
+          { type: "line", x0: C.rail_threshold.artifact_value, x1: C.rail_threshold.artifact_value,
+            y0: 0, y1: 1, yref: "paper", line: { color: COL.truth, width: 2, dash: "dash" } },
+          { type: "line", x0: C.rail_threshold.recomputed_from_quoted_law,
+            x1: C.rail_threshold.recomputed_from_quoted_law, y0: 0, y1: 1, yref: "paper",
+            line: { color: COL.truth, width: 1, dash: "dot" } },
+          { type: "line", x0: 0, x1: 1, xref: "paper", y0: 0.86 / C.h_true, y1: 0.86 / C.h_true,
+            line: { color: COL.edge, width: 1 } },
+        ],
+        annotations: [
+          { x: C.rail_threshold.artifact_value, y: 1.0, yref: "paper",
+            text: "0.256 (published)", showarrow: false, yanchor: "bottom",
+            font: { size: 10, color: COL.truth } },
+          { x: 0.02, y: 0.86 / C.h_true, text: "h = 0.86 prior edge", showarrow: false,
+            yanchor: "bottom", xanchor: "left", font: { size: 10, color: COL.edge } },
+          { x: 0.9, y: 0.98, xref: "paper", yref: "paper", xanchor: "right",
+            text: "axes clipped — the widest hosts run off the top right",
+            showarrow: false, font: { size: 9, color: COL.edge } },
+        ],
+        height: 390, margin: { l: 58, r: 18, t: 30, b: 126 },
+      });
+    };
+    function boardTraces() {
+      const st = currentState();
+      if (stage < 3) {
+        const sig = [];
+        for (let i = 0; i <= 30; i++) sig.push(0.0005 + (0.062 - 0.0005) * (i / 30));
+        const live = sig.map((s) => deltaHBare(st.zg, kernelGrid(st.zg, s, false).deltaZ));
+        const lawLo = sig.map((s) => -E.measured.C_range[0] * s * s);
+        const lawHi = sig.map((s) => -E.measured.C_range[1] * s * s);
+        const t = [
+          { x: sig, y: lawHi, mode: "lines", name: "−Cσ_z², C = 17–20 (measured)",
+            line: { color: COL.edge, width: 0 }, showlegend: false, hoverinfo: "skip" },
+          { x: sig, y: lawLo, mode: "lines", name: "−Cσ_z², C = 17–20 (measured)",
+            fill: "tonexty", fillcolor: "rgba(158,158,158,0.22)",
+            line: { color: COL.edge, width: 0 } },
+          { x: sig, y: live, mode: "lines",
+            name: "exact ⟨z⟩ shift at this host (G2b Eq. 1.4, evaluated)",
+            line: { color: COL.prod, width: 2.5 } },
+          { x: E.measured.sigma_z, y: E.measured.delta_h, mode: "markers",
+            name: "measured Δh (G2b:229-237)",
+            marker: { size: 11, color: COL.like, symbol: "circle" } },
+          { x: E.measured.sigma_z, y: E.measured.floor_subtracted, mode: "markers",
+            name: "measured, floor-subtracted",
+            marker: { size: 11, color: COL.like, symbol: "circle-open", line: { width: 2 } } },
+          { x: [0.0005, 0.062], y: [E.measured.volume_floor, E.measured.volume_floor],
+            mode: "lines", name: "volume_deconv residual floor −0.002 (ledger #47)",
+            line: { color: COL.prior, width: 2, dash: "dash" } },
+          { x: [st.sigma], y: [stage === 1 ? st.deltaH : E.measured.volume_floor],
+            mode: "markers", name: "you are here",
+            marker: { size: 15, color: COL.truth, symbol: "x" } },
+        ];
+        return t;
+      }
+      const eps = [];
+      for (let i = 0; i <= 60; i++) eps.push(0.005 + (0.85 - 0.005) * (i / 60));
+      const measEps = C.leg_a.map((r) => r.eps);
+      const t = [
+        { x: eps, y: eps.map(c7Law), mode: "lines",
+          name: "corrected law [1+√(1+12ε²)]/2",
+          line: { color: COL.prod, width: 2.5 } },
+        { x: eps, y: eps.map(c7LawSuperseded), mode: "lines",
+          name: "the claim's superseded 8ε² form (understates 1.35–1.5×)",
+          line: { color: COL.edge, width: 1.5, dash: "dot" } },
+        { x: measEps, y: C.leg_a.map((r) => r.measured_peak_h / C.h_true), mode: "markers",
+          name: "measured median peak, 76 hosts (Leg A)",
+          marker: { size: 11, color: COL.like } },
+        { x: C.hosts.eps_indicative, y: C.hosts.peak_indicative.map((p) => p / C.h_true),
+          mode: "markers", name: "the 76 hosts at indicative widths",
+          marker: { size: 6, color: COL.prior, opacity: 0.55 } },
+      ];
+      if (!turnover) {
+        t.push({ x: [st.eps], y: [c7Law(st.eps)], mode: "markers", name: "you are here",
+          marker: { size: 15, color: COL.truth, symbol: "x" } });
+      }
+      return t;
+    }
+
+    // --- plots ---------------------------------------------------------
+    const pZ = Book.themedPlot("ch07-i71-zspace", zspaceTraces(), zspaceLayout);
+    const pH = Book.themedPlot("ch07-i71-hstrip", hstripTraces(), hstripLayout);
+    const pB = Book.themedPlot("ch07-i71-board", boardTraces(), boardLayout);
+
+    // --- controls ------------------------------------------------------
+    const elHost = document.getElementById("ch07-i71-host");
+    const elWidth = document.getElementById("ch07-i71-width");
+    const elWidthLabel = document.getElementById("ch07-i71-width-label");
+    const elWidthOut = document.getElementById("ch07-i71-width-readout");
+    const elTurn = document.getElementById("ch07-i71-turnover");
+    const elPeak = document.getElementById("ch07-i71-peak");
+    const elDh = document.getElementById("ch07-i71-dh");
+    const elNote = document.getElementById("ch07-stage-note");
+    const elTable = document.getElementById("ch07-i71-table");
+
+    const STAGE_NOTES = {
+      1: '<strong>Stage 1 — the bare Gaussian.</strong> The kernel is 𝒩(z; z_g, σ_z) and ' +
+         'nothing else. Venue: the commission synthetic in which the four points below were ' +
+         'measured (Ω_m = 0.3, h_true = 0.72) <span class="prov-chip">G2b §2.3</span>. ' +
+         'Move the width and the host: the peak <em>slides</em>, and at z̄ ≈ 0.25 the ' +
+         'computed curve lands on the floor-subtracted measured points — which is exactly ' +
+         'the effective host redshift G2b infers from C_meas ≈ 17–20.',
+      2: '<strong>Stage 2 — <code>volume_deconv</code>.</strong> The population weight is ' +
+         'now inside the kernel, so the shift the bare version missed is carried, not ' +
+         'omitted. The product curve is p_g(z) of G2b Eq. (1.4). <strong>Watch the h ' +
+         'panel stop moving</strong>: drag the width or change the host and the peak ' +
+         'stays put. That standstill <em>is</em> the repair — what was a σ_z-dependent ' +
+         'slope becomes the measured σ_z-<em>independent</em> residual floor of −0.002, ' +
+         'with coverage back to nominal <span class="prov-chip">ledger #47</span>. ' +
+         'Same venue. (The −0.002 is a recorded number, not a computed one — the widget ' +
+         'will not invent a bias the project did not measure.)',
+      3: '<strong>Stage 3 — the same knob, pushed.</strong> Venue switches to <em>this ' +
+         'pipeline</em> (Ω_m = 0.2726, h_true = 0.73) and the slider switches from absolute ' +
+         'σ_z to <em>fractional</em> σ_z/z, because that is how each result was measured — ' +
+         'and that difference is not cosmetic: one law is −Cσ_z², the other is +3(σ_z/z)². ' +
+         'The board is now the delivered C7 measurement on the code’s own numerator ' +
+         '<span class="prov-chip">C7_README §1</span>.',
+    };
+
+    function rebuildHostOptions() {
+      elHost.innerHTML = "";
+      const list = stage === 3 ? PROD_HOSTS : E.host_presets;
+      const cur = stage === 3 ? prodHostIdx : hostIdx;
+      list.forEach((hst, i) => {
+        const o = document.createElement("option");
+        o.value = String(i);
+        o.textContent = hst.label;
+        if (i === cur) o.selected = true;
+        elHost.appendChild(o);
+      });
+    }
+    function rebuildWidthSlider() {
+      const steps = stage === 3 ? EPS_STEPS : SIGMA_STEPS;
+      const target = stage === 3 ? 0.35 : 0.035;
+      widthIdx = steps.indexOf(target);
+      if (widthIdx < 0) widthIdx = Math.floor(steps.length / 2);
+      elWidth.min = "0";
+      elWidth.max = String(steps.length - 1);
+      elWidth.step = "1";
+      elWidth.value = String(widthIdx);
+      elWidthLabel.textContent =
+        stage === 3 ? "Fractional width σ_z/z:" : "Catalogue width σ_z:";
+    }
+
+    function railRow(st) {
+      if (stage === 1) {
+        const measIdx = E.measured.sigma_z.indexOf(st.sigma);
+        if (measIdx >= 0) {
+          return { label: "bare kernel, σ_z = " + st.sigma.toFixed(3),
+                   bias: E.measured.delta_h[measIdx],
+                   note: "MEASURED — G2b:229-237", active: true };
+        }
+        return { label: "≈ bare kernel, σ_z = " + st.sigma.toFixed(3),
+                 bias: st.deltaH,
+                 note: "reproduced from G2b Eq. (1.4), not a measured point", active: true };
+      }
+      if (stage === 2) {
+        return { label: "volume_deconv (residual floor)", bias: E.measured.volume_floor,
+                 note: "MEASURED — ledger #47: −0.024 → −0.002, coverage ≈0% → nominal",
+                 active: true };
+      }
+      if (turnover) {
+        return { label: "illustrative rollover — unmeasured", bias: null,
+                 note: "no such term is implemented anywhere", active: true };
+      }
+      return { label: "volume_deconv at σ_z/z = " + st.eps.toFixed(3),
+               bias: st.peak - C.h_true,
+               note: "C7 measured law [1+√(1+12ε²)]/2 — CLAIM C7", active: true };
+    }
+
+    function refresh() {
+      const st = currentState();
+      elWidthOut.textContent = stage === 3
+        ? "σ_z/z = " + st.eps.toFixed(3) + "  (σ_z = " + st.sigma.toFixed(4) + ")"
+        : "σ_z = " + st.sigma.toFixed(3) + "  (σ_z/z = " + st.eps.toFixed(3) + ")";
+      elPeak.textContent = st.peak === null ? "—" : st.peak.toFixed(4);
+      elDh.textContent = st.deltaH === null ? "not measured" : fmt(st.deltaH);
+      elNote.innerHTML = STAGE_NOTES[stage] +
+        (stage === 3 && turnover
+          ? ' <br><br><strong>Rollover ON.</strong> This multiplies the numerator weight by ' +
+            'an illustrative selection turnover at z = 2·z_g. <em>No such term is ' +
+            'implemented anywhere in the pipeline, and no fix has been ratified</em> — a C7 ' +
+            'fix must explicitly supersede G2b (conflict register §7 item 1) and, per the ' +
+            'cell-B readout of 2026-07-31, must not be the exonerated "p_det in the ' +
+            'numerator alone" form. The h-panel therefore reports no value.'
+          : "");
+      pZ.update(zspaceTraces());
+      pH.update(hstripTraces());
+      pB.update(boardTraces());
+      renderRail(railRow(st));
+
+      // numbers view
+      if (stage < 3) {
+        const body = E.gate_g1_exact_shift_table.map((r) => [
+          r.sigma_z.toFixed(3),
+          fmt(r.quoted_exact, 5), fmt(r.measured_exact, 5),
+          fmt(r.quoted_leading, 5), fmt(r.measured_leading, 5),
+        ]);
+        elTable.innerHTML = rows(
+          ["σ_z", "G2b exact δz (quoted)", "re-measured", "leading order σ_z²s (quoted)", "re-measured"],
+          body) +
+          '<tr><td colspan="5" style="text-align:left">Reproduction gate G1, at z_g = 0.05 ' +
+          '(G2b:288-293). The exact shift saturates far below the quadratic law at real ' +
+          'GLADE redshifts — which is why the code deconvolves exactly instead of applying ' +
+          'a leading-order correction. Current setting: z_g = ' + st.zg.toFixed(3) +
+          ', σ_z = ' + st.sigma.toFixed(4) + ', ⟨z⟩ − z_g = ' + fmt(st.grid.deltaZ, 5) +
+          ', Δh = ' + (st.deltaH === null ? "—" : fmt(st.deltaH)) + '.</td></tr>';
+      } else {
+        const body = C.leg_a.map((r) => [
+          r.eps.toFixed(2), r.measured_peak_h.toFixed(4), fmt(r.measured_frac_shift),
+          fmt(r.law_frac_shift), fmt(r.superseded_8eps2_form),
+          (100 * r.frac_peak_above_086).toFixed(1) + "%",
+        ]);
+        elTable.innerHTML = rows(
+          ["σ_z/z", "measured median peak h", "measured frac shift",
+           "corrected law (12)", "superseded form (8)", "hosts above 0.86"], body) +
+          '<tr><td colspan="6" style="text-align:left">Leg A of the Gate-B C7 measurement ' +
+          '(z_obs = z_true, 76 in-catalogue hosts). The point kernel peaks at exactly ' +
+          '0.730000 for all 76. Rail threshold as published: 0.256; solving the corrected ' +
+          'law for the 0.86 edge gives ' +
+          C.rail_threshold.recomputed_from_quoted_law.toFixed(4) +
+          ' — see the provenance note in §6 (FLAG-2).</td></tr>';
+      }
+    }
+
+    function setStage(s) {
+      if (!unlocked[s]) return;
+      stage = s;
+      document.querySelectorAll('#i71 .toggle-row [data-stage]').forEach((b) => {
+        b.setAttribute("aria-pressed", String(Number(b.dataset.stage) === s));
+      });
+      if (s !== 3) turnover = false;
+      elTurn.checked = turnover;
+      elTurn.disabled = s !== 3;
+      rebuildHostOptions();
+      rebuildWidthSlider();
+      refresh();
+    }
+
+    document.querySelectorAll('#i71 .toggle-row [data-stage]').forEach((b) => {
+      b.addEventListener("click", () => setStage(Number(b.dataset.stage)));
+    });
+    document.querySelectorAll("[data-unlock]").forEach((b) => {
+      b.addEventListener("click", () => {
+        const s = Number(b.dataset.unlock);
+        unlocked[s] = true;
+        const btn = document.querySelector('#i71 .toggle-row [data-stage="' + s + '"]');
+        if (btn) btn.disabled = false;
+        b.disabled = true;
+        b.textContent = "Stage " + s + " unlocked — the machine is above ↑";
+        setStage(s);
+        document.getElementById("i71").scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    });
+    elHost.addEventListener("change", () => {
+      if (stage === 3) prodHostIdx = Number(elHost.value); else hostIdx = Number(elHost.value);
+      refresh();
+    });
+    elWidth.addEventListener("input", () => { widthIdx = Number(elWidth.value); refresh(); });
+    elTurn.addEventListener("change", () => { turnover = elTurn.checked; refresh(); });
+    document.getElementById("ch07-i71-restore").addEventListener("click", () => {
+      turnover = false;
+      elTurn.checked = false;
+      if (unlocked[2]) setStage(2); else refresh();
+    });
+
+    Book.predictReveal(document.getElementById("ch07-predict-1").closest(".widget"));
+
+    rebuildHostOptions();
+    rebuildWidthSlider();
+    elTurn.disabled = true;
+    refresh();
+
+    // =====================================================================
+    // Dossier — EMRI-889
+    // =====================================================================
+    const ev = C.event_889;
+    document.getElementById("ch07-doss-reldl").textContent =
+      ev.rel_dL_recomputed.toExponential(2).replace("e-4", "×10⁻⁴");
+    document.getElementById("ch07-doss-z").textContent = ev.z_true.toFixed(4);
+    document.getElementById("ch07-doss-eps").textContent =
+      ev.eps_indicative.toFixed(2) + " (σ_z/z)";
+    document.getElementById("ch07-doss-pt").textContent = ev.point_peak.toFixed(4);
+    document.getElementById("ch07-doss-pk").textContent =
+      "h ≈ " + ev.peak_indicative.toFixed(2);
+
+    // =====================================================================
+    // I7.2 — the spec-z rescue attempt
+    // =====================================================================
+    const epsHist = S.eps_indicative.slice().sort((a, b) => a - b);
+    // The plot lives inside a `.reveal`, which is display:none until a prediction
+    // is recorded — Plotly must not lay it out at zero size, so build it lazily.
+    let i72Plot = null;
+    function ensureI72Plot() {
+      if (i72Plot) { Plotly.Plots.resize("ch07-i72-plot"); return; }
+      i72Plot = makeI72Plot();
+    }
+    function makeI72Plot() { return Book.themedPlot("ch07-i72-plot", [
+      { x: epsHist, type: "histogram", name: "the 76 in-catalogue hosts",
+        marker: { color: COL.like, opacity: 0.75 },
+        xbins: { start: 0, end: 2.4, size: 0.1 } },
+    ], () => baseLayout({
+      title: { text: "indicative σ_z/z of the 76 hosts that carry the constraint",
+               font: { size: 12 }, x: 0 },
+      xaxis: { title: "σ_z / z (indicative — stale z_error column)" },
+      yaxis: { title: "hosts" },
+      shapes: [{ type: "line", x0: 0.256, x1: 0.256, y0: 0, y1: 1, yref: "paper",
+                 line: { color: COL.truth, width: 2, dash: "dash" } }],
+      annotations: [{ x: 0.256, y: 1.0, yref: "paper", text: "C7 rail threshold 0.256",
+                      showarrow: false, yanchor: "bottom", xanchor: "left",
+                      font: { size: 10, color: COL.truth } }],
+      height: 300, showlegend: false, margin: { l: 58, r: 18, t: 34, b: 60 },
+    })); }
+    document.getElementById("ch07-i72-caption").innerHTML =
+      "Of the " + S.n_hosts + " in-catalogue hosts that carry ~100% of the constraint, <strong>" +
+      S.n_hosts_below_threshold + "</strong> sits at or below the 0.256 rail threshold. " +
+      "A spec-z cut does not select the narrow tail of this distribution — it deletes almost " +
+      "the whole histogram. Indicative widths only (stale <code>z_error</code> column, §7.19d).";
+    document.getElementById("ch07-i72-table").innerHTML = rows(
+      ["quantity", "value", "provenance"],
+      [
+        ["spec-z share of GLADE+", (100 * S.ledger_42.specz_fraction_of_glade).toFixed(2) + "%", "ledger #42"],
+        ["spec-z share of rate-weighted in-cat likelihood",
+         "≤ " + (100 * S.ledger_42.specz_share_of_rateweighted_incat_likelihood_max).toFixed(1) +
+         "% (median ≈ 0%)", "ledger #42"],
+        ["inference-side spec-z-only cut", "still rails at h = " +
+         S.ledger_42.inference_side_cut_result_map.toFixed(3), "ledger #42 / H0R:1268"],
+        ["median σ_z/z of the golden hosts", (100 * S.venue_median_eps_readout).toFixed(0) + "%",
+         S.venue_median_eps_readout_chip],
+        ["median σ_z/z (binned-relation estimate)", S.venue_median_eps_c7.toFixed(3),
+         S.venue_median_eps_c7_chip],
+        ["retained GW distance error", (100 * S.widths.retained_gw_sigma_dl_over_dl).toFixed(2) + "%",
+         "hostz_pv_photoz_kernel.md §0"],
+        ["neglected PV term", (100 * S.widths.pv_median).toFixed(2) + "% (" +
+         S.widths.pv_vs_gw_ratio + "× larger)", "hostz_pv_photoz_kernel.md §0"],
+        ["neglected z-floor term", (100 * S.widths.zfloor_median).toFixed(2) + "% (" +
+         S.widths.zfloor_vs_gw_ratio + "× larger)", "hostz_pv_photoz_kernel.md §0"],
+        ["δ-kernel share of total ln movement",
+         (100 * S.point_kernel_licence.leverage_1d).toFixed(1) + "% (1D) / " +
+         (100 * S.point_kernel_licence.leverage_2d).toFixed(1) + "% (2D)",
+         S.point_kernel_licence.leverage_chip],
+      ]);
+    const w72 = document.getElementById("ch07-predict-2").closest(".widget");
+    Book.predictReveal(w72, ensureI72Plot);
+    // predictReveal restores a persisted choice WITHOUT firing the callback, so
+    // catch the already-revealed case too.
+    if (w72.querySelector(".reveal.shown")) ensureI72Plot();
+  });
+
+  // =====================================================================
+  // Museum interlude — the quadrature dial
+  // =====================================================================
+  Book.loadJSON("data/ch07_volumetrunc.json").then(function (V) {
+    const A = V.window[0], B = V.window[1], SIG = V.peak_sigma;
+    let nIdx = V.node_counts.indexOf(50);
+    let zc = 0.043;
+
+    // integrand: a narrow Gaussian peak on a smoothly rising weight.
+    const g = (z) => Math.exp(-0.5 * Math.pow((z - zc) / SIG, 2)) * (1 + 4 * z);
+    function exactIntegral() {
+      const n = 100001, h = (B - A) / (n - 1);
+      let s = 0;
+      for (let i = 0; i < n; i++) {
+        const w = i === 0 || i === n - 1 ? 0.5 : 1;
+        s += w * g(A + h * i);
+      }
+      return s * h;
+    }
+    function glIntegral(n) {
+      const x = V.nodes[String(n)], w = V.weights[String(n)];
+      let s = 0;
+      for (let i = 0; i < x.length; i++) s += w[i] * g(0.5 * (B - A) * x[i] + 0.5 * (A + B));
+      return 0.5 * (B - A) * s;
+    }
+
+    const elN = document.getElementById("ch07-vt-n");
+    const elNOut = document.getElementById("ch07-vt-n-readout");
+    const elZc = document.getElementById("ch07-vt-zc");
+    const elZcOut = document.getElementById("ch07-vt-zc-readout");
+    const elRatio = document.getElementById("ch07-vt-ratio");
+    const elTab = document.getElementById("ch07-vt-table");
+
+    const layout = () => baseLayout({
+      title: { text: "a narrow peak, a wide window, and where the nodes fall",
+               font: { size: 12 }, x: 0 },
+      xaxis: { title: "z (host window [0, 0.182])", range: [A, B] },
+      yaxis: { title: "integrand (peak-scaled)", rangemode: "tozero" },
+      height: 340,
+    });
+    function traces() {
+      const n = V.node_counts[nIdx];
+      const xs = [], ys = [];
+      for (let i = 0; i <= 1400; i++) {
+        const z = A + ((B - A) * i) / 1400;
+        xs.push(z); ys.push(g(z) / (1 + 4 * zc));
+      }
+      const t = [
+        { x: xs, y: ys, mode: "lines", name: "the integrand (a GW peak in z)",
+          line: { color: COL.like, width: 2 } },
+      ];
+      if (n <= 200) {
+        const nodesZ = V.nodes[String(n)].map((u) => 0.5 * (B - A) * u + 0.5 * (A + B));
+        t.push({ x: nodesZ, y: nodesZ.map(() => 0), mode: "markers",
+          name: "Gauss–Legendre nodes (n = " + n + ")",
+          marker: { size: 7, color: COL.node, symbol: "line-ns-open",
+                    line: { width: 2, color: COL.node } } });
+      }
+      return t;
+    }
+    const plot = Book.themedPlot("ch07-vt-plot", traces(), layout);
+
+    function refreshVT() {
+      const n = V.node_counts[nIdx];
+      const ex = exactIntegral();
+      const q = glIntegral(n);
+      const ratio = ex > 0 ? q / ex : 0;
+      elNOut.textContent = String(n);
+      elZcOut.textContent = zc.toFixed(4);
+      elRatio.textContent = ratio.toFixed(4) +
+        (ratio < 0.01 ? "  ← the rule reports nothing" :
+         ratio > 1.5 ? "  ← the rule invents signal" : "");
+      plot.update(traces());
+      const body = V.node_counts.map((m) => {
+        const r = glIntegral(m) / ex;
+        return [String(m), r.toFixed(4), m === n ? "◀ selected" : ""];
+      });
+      elTab.innerHTML = rows(["Gauss–Legendre order n", "quadrature / exact", ""], body) +
+        '<tr><td colspan="3" style="text-align:left">Toy integrand: a Gaussian of width ' +
+        SIG + ' at z* = ' + zc.toFixed(4) + ' on a rising weight, over the host window [' +
+        A + ', ' + B + ']. n = 50 uses the pipeline’s own <code>_GL_NODES_50</code>. ' +
+        'The recorded pipeline case (FINDING.md §Mechanism): host-window numerator ' +
+        '<strong>0.0000</strong> at n = 50 against exact ' +
+        V.recorded.finding_table.map((r) => r.host_window_exact.toFixed(4)).join(" / ") +
+        ' at h = ' + V.recorded.finding_table.map((r) => r.h.toFixed(2)).join(" / ") +
+        '; the A/B outcome was 1D ' + V.recorded.ab_result["1d_deconv_mean"].toFixed(3) +
+        ' → <strong>' + V.recorded.ab_result["1d_trunc_mean"].toFixed(3) + '</strong>, ' +
+        V.recorded.ab_result.wrong_way_factor + '× the residual it targeted.</td></tr>';
+    }
+
+    elN.min = "0"; elN.max = String(V.node_counts.length - 1); elN.step = "1";
+    elN.value = String(nIdx);
+    elN.addEventListener("input", () => { nIdx = Number(elN.value); refreshVT(); });
+
+    const ZC_LO = V.peak_centre_range[0], ZC_HI = V.peak_centre_range[1], ZC_N = 120;
+    elZc.min = "0"; elZc.max = String(ZC_N); elZc.step = "1";
+    elZc.value = String(Math.round(((zc - ZC_LO) / (ZC_HI - ZC_LO)) * ZC_N));
+    elZc.addEventListener("input", () => {
+      zc = ZC_LO + ((ZC_HI - ZC_LO) * Number(elZc.value)) / ZC_N;
+      refreshVT();
+    });
+
+    refreshVT();
+  });
+})();
+</script>

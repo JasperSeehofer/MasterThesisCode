@@ -1,0 +1,1166 @@
+<!DOCTYPE html>
+<meta charset="utf-8" />
+<!--
+  The doctype and charset are deliberate and load-bearing: without a doctype
+  browsers enter quirks mode and KaTeX refuses to render ("KaTeX doesn't work
+  in quirks mode"), so every equation degrades to raw $...$ source. The frozen
+  _template.html / index.html omit both — already filed as R-ch07-3 in
+  book/design/WIDGET_REQUESTS.md; this page carries the same page-local
+  workaround rather than duplicating the request.
+-->
+<title>Ch. 0 — Two Numbers That Should Be One | EMRI Dark Siren Book</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="description" content="The H0 tension as two precise incompatible measurements, an arbitration budget you can drive yourself, and the contract of this book: build an estimator, then spend ten chapters trying to break it." />
+<link rel="stylesheet" href="vendor/katex/katex.min.css" />
+<link rel="stylesheet" href="css/book.css" />
+
+<style>
+  /* Page-local only (css/book.css is FROZEN). Nothing here restyles a shared
+     class; these are elements this prologue introduces. */
+  .ch00-readouts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem 1.4rem;
+    margin: 0.6rem 0 0;
+    font-size: 0.86rem;
+    color: var(--muted);
+  }
+  .ch00-readouts strong { color: var(--accent); font-variant-numeric: tabular-nums; }
+  .ch00-verdict {
+    margin: 0.7rem 0 0;
+    padding: 0.55rem 0.8rem;
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--prior);
+    border-radius: 8px;
+    background: var(--paper);
+    font-size: 0.92rem;
+  }
+  .ch00-verdict.good { border-left-color: #009E73; }
+  .ch00-verdict.bad  { border-left-color: #D55E00; }
+  .ch00-verdict .ch00-verdict-head {
+    display: block;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 0.2rem;
+  }
+  .ch00-note { font-size: 0.82rem; color: var(--muted); margin: 0.6rem 0 0; }
+  .ch00-fwd {
+    display: inline-block;
+    font-size: 0.72rem;
+    border: 1px dashed var(--border);
+    border-radius: 999px;
+    padding: 0 0.45em;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  .ch00-legend { margin: 0.6rem 0 0; padding-left: 1.1rem; font-size: 0.9rem; }
+  .ch00-legend li { margin: 0.3rem 0; }
+  .ch00-reset {
+    border: 1px solid var(--border);
+    background: var(--paper);
+    color: var(--ink);
+    border-radius: 6px;
+    padding: 0.3rem 0.7rem;
+    cursor: pointer;
+    font-size: 0.82rem;
+  }
+  .ch00-reset:hover { border-color: var(--accent); }
+  /* predict-then-reveal is LOCKED, not suggested: the instrument stays inert
+     until the reader has committed to a prediction. */
+  .ch00-locked { opacity: 0.4; }
+  .ch00-lockhint { font-size: 0.82rem; color: var(--warn, #D55E00); margin: 0.5rem 0 0; }
+  @media print { .ch00-locked { opacity: 1; } .ch00-lockhint { display: none; } }
+  /* the ladder schematic — a drawing, not data */
+  .ch00-ladder { width: 100%; height: auto; display: block; margin: 0.4rem 0 0; }
+  .ch00-ladder .box { fill: var(--paper-raised); stroke: var(--border); stroke-width: 1; }
+  .ch00-ladder .box-gr { fill: color-mix(in srgb, var(--accent) 10%, var(--paper)); stroke: var(--accent); }
+  .ch00-ladder .lbl { fill: var(--ink); font-size: 12px; font-family: inherit; }
+  .ch00-ladder .sub { fill: var(--muted); font-size: 10.5px; font-family: inherit; }
+  .ch00-ladder .arr { stroke: var(--muted); stroke-width: 1.4; fill: none; }
+  .ch00-ladder .arr-miss { stroke: #D55E00; stroke-width: 1.6; stroke-dasharray: 5 4; fill: none; }
+  .ch00-ladder .miss { fill: #D55E00; font-size: 11px; font-weight: 600; font-family: inherit; }
+  .ch00-figcap { font-size: 0.82rem; color: var(--muted); margin: 0.5rem 0 0; }
+</style>
+
+<div class="book-shell">
+  <header class="book-topbar">
+    <a class="brand" href="index.html">From Bayes&rsquo; Rule to H&#8320;
+      <small>an interactive discovery book</small>
+    </a>
+    <nav class="book-nav" data-nav aria-label="Chapters"><!-- built from js/manifest.js --></nav>
+    <button class="theme-toggle" data-theme-toggle type="button">☽ Dark</button>
+  </header>
+
+  <main class="book-content">
+    <h1>Chapter 0 — Two Numbers That Should Be One</h1>
+    <p class="subtitle">
+      Every rung of the local distance ladder is calibrated against another rung. There is
+      no independent ruler.
+    </p>
+
+    <!-- ================= COLD OPEN (B1) — before a single equation ============ -->
+    <div class="callout without">
+      <span class="callout-label">Where this book starts</span>
+      Two groups measured the expansion rate of the same universe. Both worked for years, both
+      quoted an uncertainty under 2%, both are careful. Their answers do not overlap — and no
+      amount of staring at the two error bars decides which to believe.
+    </div>
+
+    <div class="widget">
+      <h4>The two numbers, drawn to scale
+        <span class="prov-chip real">rec: Planck Collaboration VI (2020), arXiv:1807.06209</span>
+        <span class="prov-chip real">rec: Riess et al. (2022), arXiv:2112.04510</span>
+      </h4>
+      <p style="margin-top:0; color:var(--muted); font-size:0.88rem;">
+        Shaded blocks are the published &plusmn;1&sigma; intervals. Nothing subtle here: the gap
+        is wider than either interval.
+      </p>
+      <div id="ch00-cold-plot" class="widget-plot" style="min-height:230px"></div>
+      <!-- The values below are gen_ch00.py's; the script overwrites each one with
+           the number it reads from data/ch00_tension.json, so the page degrades to
+           the same figures with scripting off. -->
+      <div class="ch00-readouts">
+        <span>gap <strong id="ch00-gap">5.64</strong> km s⁻¹ Mpc⁻¹</span>
+        <span><strong id="ch00-gapfrac">8.4%</strong> of the lower value</span>
+        <span>two-number significance <strong id="ch00-nsigma">4.89σ (the paper quotes 5.0σ)</strong></span>
+      </div>
+      <details class="num-view">
+        <summary>Show me the numbers</summary>
+        <div class="table-scroll"><table class="num-table" id="ch00-cold-table"></table></div>
+      </details>
+      <noscript>
+        <p><strong>Static fallback.</strong> Planck 2018 (CMB, flat &Lambda;CDM):
+        67.4 &plusmn; 0.5 km s⁻¹ Mpc⁻¹. SH0ES 2022 (Cepheid + SN Ia ladder): 73.04 &plusmn; 1.04.
+        [66.9, 67.9] and [72.00, 74.08] do not touch: gap 5.64, 8.4% of the lower value,
+        4.89&sigma; on the quoted uncertainties alone (arXiv:2112.04510 quotes 5.0&sigma;).</p>
+      </noscript>
+    </div>
+
+    <p>
+      That is the Hubble tension, and this book will not resolve it. It is about what resolving
+      it would <em>take</em> — about the work hiding inside the phrase &ldquo;a third,
+      independent measurement&rdquo;.
+    </p>
+
+    <!-- ================= §1 ================= -->
+    <h2>1. Two numbers, and what each of them actually is</h2>
+
+    <p>
+      They are not two attempts at the same measurement. They are two <em>different</em>
+      measurements that ought to agree.
+    </p>
+    <p>
+      The lower one is not a distance measurement at all. It is an inference: the angular scale
+      of the sound horizon frozen into the microwave background, propagated to today through a
+      cosmological model. Change that model — extra relativistic species, early dark energy —
+      and the number moves. It measures <span class="term" data-term="H0">$H_0$</span>,
+      today&rsquo;s expansion rate in km s⁻¹ Mpc⁻¹, <em>conditional on</em> $\Lambda$CDM.
+      <span class="prov-chip">arXiv:1807.06209</span>
+    </p>
+    <p>
+      The upper one is a ladder. Parallaxes fix the distances to nearby Cepheids; Cepheids fix
+      the luminosity of Type Ia supernovae; supernovae reach the smooth Hubble flow, where
+      redshift means expansion, not local motion. Each rung is absolute only because the one
+      below it was. <span class="prov-chip">arXiv:2112.04510</span>
+    </p>
+
+    <figure style="margin:1.2rem 0;">
+      <svg class="ch00-ladder" viewBox="0 0 560 214" role="img"
+           aria-label="Schematic. Top row: parallax calibrates Cepheids, Cepheids calibrate Type Ia supernovae, supernovae reach the Hubble flow and give H0 — each rung absolute only because of the one before. Bottom row: a gravitational wave gives the distance directly, no rung, but the arrow on to H0 is dashed: no redshift, the dark siren gap.">
+        <text class="sub" x="0" y="10">THE LADDER — every rung absolute only because the one before it was</text>
+        <g>
+          <rect class="box" x="0.5" y="20" width="122" height="42" rx="6"></rect>
+          <text class="lbl" x="10" y="39">parallax</text>
+          <text class="sub" x="10" y="54">Gaia, Milky Way</text>
+
+          <rect class="box" x="146.5" y="20" width="122" height="42" rx="6"></rect>
+          <text class="lbl" x="156" y="39">Cepheids</text>
+          <text class="sub" x="156" y="54">period–luminosity</text>
+
+          <rect class="box" x="292.5" y="20" width="122" height="42" rx="6"></rect>
+          <text class="lbl" x="302" y="39">Type Ia SNe</text>
+          <text class="sub" x="302" y="54">standardizable</text>
+
+          <rect class="box" x="437.5" y="20" width="122" height="42" rx="6"></rect>
+          <text class="lbl" x="447" y="39">Hubble flow → H₀</text>
+          <text class="sub" x="447" y="54">redshift = expansion</text>
+
+          <path class="arr" d="M124 41 H143" marker-end="url(#ch00-ah)"></path>
+          <path class="arr" d="M270 41 H289" marker-end="url(#ch00-ah)"></path>
+          <path class="arr" d="M416 41 H435" marker-end="url(#ch00-ah)"></path>
+          <text class="sub" x="0" y="78">each → reads &ldquo;calibrates&rdquo;: take the left-hand box away and nothing to its right has a scale.</text>
+        </g>
+        <g>
+          <text class="sub" x="0" y="112">THE SIREN — one arrow, no rungs, and one thing missing</text>
+          <rect class="box-gr" x="0.5" y="122" width="170" height="42" rx="6"></rect>
+          <text class="lbl" x="10" y="141">waveform amplitude</text>
+          <text class="sub" x="10" y="156">general relativity, absolute</text>
+
+          <rect class="box-gr" x="192.5" y="122" width="110" height="42" rx="6"></rect>
+          <text class="lbl" x="202" y="141">distance d_L</text>
+          <text class="sub" x="202" y="156">no calibration rung</text>
+
+          <rect class="box" x="437.5" y="122" width="122" height="42" rx="6"></rect>
+          <text class="lbl" x="447" y="141">H₀</text>
+          <text class="sub" x="447" y="156">needs d_L and z</text>
+
+          <path class="arr" d="M172 143 H190" marker-end="url(#ch00-ah)"></path>
+          <path class="arr-miss" d="M304 143 H433" marker-end="url(#ch00-ahm)"></path>
+          <text class="miss" x="310" y="135">? no redshift</text>
+          <text class="miss" x="310" y="159">the dark siren gap</text>
+          <text class="sub" x="0" y="186">Chapter 1 opens on exactly this arrow.</text>
+        </g>
+        <defs>
+          <marker id="ch00-ah" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto">
+            <path d="M0,0 L7,3.5 L0,7 z" fill="var(--muted)"></path>
+          </marker>
+          <marker id="ch00-ahm" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto">
+            <path d="M0,0 L7,3.5 L0,7 z" fill="#D55E00"></path>
+          </marker>
+        </defs>
+      </svg>
+      <figcaption class="ch00-figcap">
+        Schematic — a drawing of the argument, not a plot of data.
+      </figcaption>
+    </figure>
+
+    <p>
+      This is why &ldquo;which one is wrong?&rdquo; is the wrong question. If the ladder is
+      wrong it is wrong in a rung — a metallicity dependence, a zero point — and a better ladder
+      will not tell you. If it is right, the early-universe number is wrong because the model
+      connecting then to now is incomplete: a discovery, not an error bar. Either way, what
+      settles it is a measurement that <strong>fails differently</strong>.
+    </p>
+
+    <div class="widget">
+      <h4>Third methods have been tried
+        <span class="prov-chip real">rec: six published determinations, cited per row</span>
+      </h4>
+      <p style="margin-top:0; color:var(--muted); font-size:0.88rem;">
+        Shaded blocks: the two anchors. Everything else was supposed to break the deadlock —
+        the bottom row is this book&rsquo;s genre. Watch the error bars, not the dots.
+      </p>
+      <div id="ch00-cast-plot" class="widget-plot" style="min-height:330px"></div>
+      <details class="num-view">
+        <summary>Show me the numbers</summary>
+        <div class="table-scroll"><table class="num-table" id="ch00-cast-table"></table></div>
+      </details>
+      <noscript>
+        <p><strong>Static fallback.</strong> Against the anchors (67.4 &plusmn; 0.5;
+        73.04 &plusmn; 1.04): TRGB ladder 69.8 &plusmn; 0.8 (stat) &plusmn; 1.7 (sys),
+        arXiv:1907.05922; time delays 73.3 (+1.7/&minus;1.8) under an assumed lens mass-profile
+        family, arXiv:1907.04869, and 74.5 (+5.6/−6.1) with it relaxed, arXiv:2007.02941; one
+        bright siren 70.0 (+12.0/−8.0), arXiv:1710.05835; dark sirens — catalogue redshifts, no
+        counterpart — 68.0 (+8.0/−6.0), arXiv:2111.03604. None excludes either anchor.</p>
+      </noscript>
+    </div>
+
+    <p>
+      The bottom row is this book&rsquo;s own genre: gravitational-wave distances, no
+      counterpart, redshift information from a galaxy catalogue. It stands at
+      <strong id="ch00-genre-frac">10%</strong> of its own central value —
+      <strong id="ch00-genre-ratio">4.5&times;</strong> the precision ceiling &sect;2 derives
+      below <span class="prov-chip">arXiv:2111.03604</span>. That is the state of the art; the
+      rest of this book is what stands between it and a verdict.
+    </p>
+
+    <p>
+      Read the two time-delay rows together, because they are the same technique applied to
+      the same class of systems. The published uncertainty went from about 2% to about 8%
+      when one modelling assumption — the shape of the lens galaxy&rsquo;s mass profile — was
+      allowed to float.
+      <span class="prov-chip">arXiv:1907.04869</span>
+      <span class="prov-chip">arXiv:2007.02941</span>
+      The extra 6% was there the whole time. It was not in the data; it was in the
+      assumption, and it only became visible when somebody varied it.
+    </p>
+    <p>
+      That is the distinction this prologue exists to install. A <strong>number</strong> is a
+      central value and an error bar. A <strong>measurement</strong> is a number <em>plus a
+      stated list of the ways it could be wrong</em>, each one someone has tried to vary. The
+      rest of this book is what the second kind costs.
+    </p>
+
+    <!-- ================= §2 ================= -->
+    <h2>2. What would actually arbitrate</h2>
+
+    <p>
+      Suppose you are designing that third method. The instinct is &ldquo;better than the 8%
+      gap&rdquo;, and it is wrong twice over. A total 1&sigma; has two parts: a
+      <strong>statistical</strong> one, which shrinks as you collect events, and a
+      <strong>systematic</strong> one, which does not. Park the method <em>exactly</em> on the
+      early-universe anchor, demand a 3&sigma; exclusion of the late-universe one, and the
+      <em>total</em> is capped at <strong id="ch00-ceiling-inline">1.57</strong> km s⁻¹ Mpc⁻¹,
+      <strong id="ch00-ceilingfrac-inline">2.3%</strong> of $H_0$ — the more demanding placement;
+      parked on the late-universe anchor the cap relaxes to
+      <strong id="ch00-ceiling-other-inline">1.81</strong>.
+      <span class="prov-chip toy">gen_ch00.py — closed form</span>
+    </p>
+
+    <details class="num-view">
+      <summary>Show me the algebra — the arbitration budget, written out</summary>
+      <div class="callout">
+        <span class="callout-label">The book&rsquo;s working definition of &ldquo;arbitrate&rdquo;
+          <span class="prov-chip toy">toy: analytic</span></span>
+        <p style="margin-top:0.3rem;">
+          With $N$ events, each contributing an independent measurement of scale $\sigma_1$,
+          $$\sigma_{\rm tot}^2 \;=\; \underbrace{\frac{\sigma_1^2}{N}}_{\text{statistical}}
+            \;+\; \underbrace{\sigma_{\rm sys}^2}_{\text{does not shrink}},$$
+          and the significance with which the method separates itself from an anchor $A$
+          (published value $\mu_A$, uncertainty $\sigma_A$) is
+          $$ T_A \;=\; \frac{|\mu-\mu_A|}{\sqrt{\sigma_{\rm tot}^2+\sigma_A^2}} . $$
+          The method <em>arbitrates</em> if it excludes one anchor at $T \ge 3$ while remaining
+          consistent with the other at $T \le 2$. These are the book&rsquo;s thresholds, chosen
+          for this argument — not a project result, not a community standard.
+        </p>
+      </div>
+      <p style="font-size:0.9rem;">
+        The ceiling, in three steps. Parked exactly on one anchor, $|\mu-\mu_A|$ is the whole
+        gap, so a 3&sigma; exclusion of the far anchor demands
+        $\sqrt{\sigma_{\rm tot}^2+\sigma_A^2} \le 5.64/3 =
+        \mathord{}$<strong id="ch00-rhs">1.88</strong>; subtract the far anchor&rsquo;s own
+        $\sigma_A$ in quadrature; what is left is the cap on $\sigma_{\rm tot}$. Which anchor
+        you park on therefore matters, and the two branches are not equally kind — parked on
+        the early-universe value the far $\sigma_A$ is <strong id="ch00-far-demanding">1.04</strong>
+        and the cap is <strong id="ch00-ceiling-fold">1.57</strong>; parked on the late-universe
+        value it is <strong id="ch00-far-relaxed">0.50</strong> and the cap is
+        <strong id="ch00-ceiling-other-fold">1.81</strong>. The page quotes the demanding branch
+        throughout, and I0.1 below recomputes every one of these numbers in your browser and
+        cross-checks itself against the generator.
+        <span class="prov-chip toy">gen_ch00.py — closed form</span>
+      </p>
+    </details>
+
+    <p>
+      So the honest answer to &ldquo;how precise must it be&rdquo; is <em>1–2%</em>, not
+      &ldquo;better than 8%&rdquo;: a method whose own 1&sigma; is 8% holds both anchors inside
+      its interval and arbitrates nothing. And notice <em>where</em> the ceiling sits — on the
+      <strong>total</strong>. The statistical part you buy with events; the systematic part you
+      cannot buy at any price, and if it alone exceeds the ceiling the method is dead before the
+      first event.
+    </p>
+
+    <!-- ============ I0.1 ============ -->
+    <div class="widget" id="ch00-i01" data-predict-id="ch00-q-sys">
+      <h4>I0.1 — The Arbitration Budget
+        <span class="prov-chip toy">toy: analytic — a hypothetical third method</span>
+        <span class="prov-chip real">rec: the anchors are published values</span>
+      </h4>
+      <p style="margin-top:0; color:var(--muted); font-size:0.88rem;">
+        <strong>Manipulate</strong> events collected, the <em>unknown systematic</em>, and where
+        the answer lands. <strong>Watch</strong> the verdict — then the lower panel: the best
+        exclusion that systematic could <em>ever</em> reach.
+      </p>
+
+      <p style="margin-bottom:0.2rem;"><strong>Predict first.</strong> You carry an unknown
+        systematic of 2 km s⁻¹ Mpc⁻¹ — about 3% of $H_0$. How many events before your method
+        can exclude the far anchor at 3&sigma;?</p>
+      <div class="predict-row" data-predict-id="ch00-q-sys">
+        <button type="button" data-predict="a">~40</button>
+        <button type="button" data-predict="b">~400</button>
+        <button type="button" data-predict="c">~40,000</button>
+        <button type="button" data-predict="d">no number of events works</button>
+      </div>
+      <div class="reveal">
+        <strong>(d).</strong> With $\sigma_{\rm sys} = 2$ the exclusion saturates at
+        <strong id="ch00-asym-readout">2.50</strong>&sigma; as $N\to\infty$ — it never reaches
+        3. Ten thousand events buy a statistical error of 0.10 km s⁻¹ Mpc⁻¹ and a verdict of
+        <em>arbitrates nothing</em>: 99.9% of the budget is the term you did not measure. The
+        ceiling for a 3&sigma; exclusion is <strong id="ch00-ceiling-readout">1.57</strong>;
+        above it, no $N$ helps.
+        <span class="prov-chip toy">gen_ch00.py — closed form</span>
+      </div>
+
+      <p class="ch00-lockhint" id="ch00-lockhint">
+        Locked until you commit to one of the four answers.
+      </p>
+      <!-- With scripting off there is nothing to unlock and nothing to draw, so the
+           dimming and the hint would be noise; the static fallback carries the result. -->
+      <noscript><style>.ch00-locked { opacity: 1; } .ch00-lockhint { display: none; }</style></noscript>
+
+      <div id="ch00-lab" class="ch00-locked">
+      <div class="widget-controls">
+        <label for="ch00-n">events $N$:</label>
+        <input id="ch00-n" type="range" aria-describedby="ch00-budget-readouts" />
+        <span class="readout">N = <strong id="ch00-n-readout">&mdash;</strong></span>
+      </div>
+      <div class="widget-controls">
+        <label for="ch00-sys">unknown systematic &sigma;<sub>sys</sub>:</label>
+        <input id="ch00-sys" type="range" aria-describedby="ch00-budget-readouts" />
+        <span class="readout"><strong id="ch00-sys-readout">&mdash;</strong> km s⁻¹ Mpc⁻¹</span>
+      </div>
+      <div class="widget-controls">
+        <label for="ch00-mu">where it lands &mu;:</label>
+        <input id="ch00-mu" type="range" aria-describedby="ch00-budget-readouts" />
+        <span class="readout"><strong id="ch00-mu-readout">&mdash;</strong> km s⁻¹ Mpc⁻¹</span>
+        <button class="ch00-reset" id="ch00-reset" type="button">reset the budget</button>
+      </div>
+
+      <div id="ch00-budget-plot" class="widget-plot" style="min-height:210px"></div>
+      <div id="ch00-saturation-plot" class="widget-plot" style="min-height:280px"></div>
+
+      <div class="ch00-readouts" id="ch00-budget-readouts">
+        <span>&sigma;<sub>stat</sub> <strong id="ch00-sigstat">&mdash;</strong></span>
+        <span>&sigma;<sub>tot</sub> <strong id="ch00-sigtot">&mdash;</strong> (<strong id="ch00-sigtotpct">&mdash;</strong> of H₀)</span>
+        <span>vs the early value <strong id="ch00-tp">&mdash;</strong>&sigma;</span>
+        <span>vs the late value <strong id="ch00-ts">&mdash;</strong>&sigma;</span>
+      </div>
+      <div class="ch00-verdict" id="ch00-verdict">
+        <span class="ch00-verdict-head">Verdict</span>
+        <span id="ch00-verdict-text">&mdash;</span>
+      </div>
+      </div><!-- /#ch00-lab -->
+      <details class="num-view">
+        <summary>Show me the numbers</summary>
+        <p class="ch00-note" style="margin-top:0.5rem;">
+          The per-event scale is fixed at $\sigma_1 = 10$ km s⁻¹ Mpc⁻¹ — a round number chosen
+          because the first bright standard siren delivered 70.0 (+12.0/−8.0) from a single
+          event <span class="prov-chip">arXiv:1710.05835</span>. It is a <em>scale</em>, not a
+          forecast, and the widget is a toy: the only real quantities in it are the two
+          published anchors it is judged against.
+        </p>
+        <p style="font-size:0.85rem; color:var(--muted); margin:0.5rem 0 0;">
+          Best-case exclusion of the far anchor (your method parked exactly on the near one),
+          in &sigma;. Rows: the unknown systematic. Columns: the number of events. The last
+          column is the $N\to\infty$ limit — the row&rsquo;s ceiling.
+        </p>
+        <div class="table-scroll"><table class="num-table" id="ch00-map-table"></table></div>
+        <p class="ch00-note" id="ch00-crosscheck">&mdash;</p>
+      </details>
+      <noscript>
+        <p><strong>Static fallback — three points on the budget</strong>
+        (events, &sigma;<sub>sys</sub> &rarr; &sigma;<sub>tot</sub>, best exclusion):
+        41, 0 &rarr; 1.56, 3.01&sigma; — arbitrates, barely.
+        10,000, 2.0 &rarr; 2.00 (0.10 statistical), 2.50&sigma; — nothing, here or at any larger
+        N: 2.50&sigma; is the row&rsquo;s ceiling.
+        400, 0.5 &rarr; 0.71, 4.49&sigma; — decisive. First against second is the lesson: 240×
+        the events loses to a systematic 25 times smaller than the gap.</p>
+      </noscript>
+    </div>
+
+    <p>
+      Two hundred and forty times more events, and the second configuration still loses. That is
+      not a quirk of these numbers; it is what the quadrature sum does. Once
+      $\sigma_{\rm sys}$ dominates, $N$ has left the argument and every further event measures
+      your systematic rather than $H_0$.
+    </p>
+
+    <h3>Why the systematics must be <em>uncorrelated</em>, not merely small</h3>
+    <p>
+      The second requirement is the one people skip: a discrepancy between two methods carries
+      information only if their errors are independent. Build a third method on the
+      ladder&rsquo;s Cepheid zero point and agreement is circular — the same calibration measured
+      twice — while disagreement is uninterpretable, the new physics being either in the universe
+      or in the shared rung.
+    </p>
+    <p>
+      That is what makes gravitational-wave sirens structurally interesting, and the claim is
+      worth stating exactly: the siren&rsquo;s distance comes from the waveform amplitude and
+      general relativity, sharing no rung with parallaxes, Cepheids or supernovae. That does not
+      make it error-free. It makes its errors <em>different</em> errors — and there are a lot of
+      them.
+    </p>
+
+    <details class="gw-reader">
+      <summary>&#9656; For the GW reader</summary>
+      <p>
+        The toy above deliberately collapses the siren $H_0$ likelihood to a Gaussian of
+        scale $\sigma_1/\sqrt N$, which is the standard forecast scaling for standard sirens
+        (Schutz 1986, <em>Nature</em> 323, 310; and the $1/\sqrt{N}$ posture of every siren
+        forecast since). The real object is not Gaussian and does not stack that way: in this
+        pipeline&rsquo;s own idealized baseline, <strong>76 of 1588</strong> detected events
+        carry essentially all of the constraint and three of them carry 46% of it
+        <span class="prov-chip" title="current lines: :54-60">IDEALIZED_BASELINE_READOUT.md:42-47</span>
+        <span class="ch00-fwd">⏭ Ch 2</span>. So &ldquo;$N$ events&rdquo; is already the wrong
+        currency, and the widget&rsquo;s $\sqrt N$ is the <em>optimistic</em> half of the
+        story.
+      </p>
+      <p>
+        For a bright siren the redshift arrives with the counterpart. An EMRI has no
+        counterpart, so the redshift has to be inferred from a galaxy catalogue — which is
+        where this book&rsquo;s entire systematic budget lives: catalogue completeness
+        <span class="ch00-fwd">⏭ Ch 5</span>, photometric redshift widths
+        <span class="ch00-fwd">⏭ Ch 7</span>, and the selection function of the detector
+        itself <span class="ch00-fwd">⏭ Ch 4</span>. Those are the $\sigma_{\rm sys}$ of the
+        method, and the honest position of this book is that they are not yet all measured.
+      </p>
+    </details>
+
+    <!-- ================= §3 ================= -->
+    <h2>3. The contract of this book</h2>
+
+    <p>
+      From here on the expansion rate is written in the dimensionless form the pipeline uses,
+      <span class="term" data-term="h">$h = H_0 / (100\ \mathrm{km\,s^{-1}\,Mpc^{-1}})$</span>:
+      the anchors sit at $h \approx 0.674$ and $h \approx 0.730$, and every posterior here is
+      over that one scalar.
+    </p>
+    <p>
+      And every one of them is computed on a <em>simulated</em> universe whose answer is known in
+      advance: <strong id="ch00-htrue">h = 0.73</strong>, the value the mock population was
+      generated with
+      <span class="prov-chip" id="ch00-htrue-chip">master_thesis_code/constants.py:25</span>.
+      That is the most important design decision here. On real data you can only compare your
+      answer to somebody else&rsquo;s; against a known truth <em>bias is measurable</em> and an
+      estimator can be caught being wrong, not merely different.
+    </p>
+
+    <div class="callout">
+      <span class="callout-label">The contract</span>
+      We are going to build a dark-siren estimator for $h$, one term per chapter, each term
+      existing because the previous version visibly failed. Then we are going to spend most of
+      the book attacking the finished object: deleting its terms, pushing its kernels past their
+      validity, changing the units its masses are measured in, and running it over universes we
+      built to be hostile. The chapters are named after the failures, not the formulas.
+    </div>
+
+    <p>
+      To make that felt rather than claimed, the book carries a permanent <strong>bias ledger
+      rail</strong> — the strip beside this text (below it on a narrow screen) — showing the
+      estimator&rsquo;s <em>measured</em> bias in $h$, truth at zero. Right now it reads what it
+      should: there is no estimator yet. That lasts until Chapter 3 builds one, whose first
+      entry will be a failure.
+    </p>
+    <p>
+      One more promise. In the next chapter a single detected event opens a dossier that follows
+      you to the last page, acquiring a host galaxy, a redshift, an error bar and, eventually, a
+      warning label. By Chapter 11 it will be visibly capable of moving the headline number on
+      its own: the whole book in one object, starting with an empty slot where its redshift
+      should be.
+    </p>
+
+    <p>
+      Three conventions carry the book: every figure declares whether it is project data or
+      teaching construction; the badges (<span class="badge ratified">RATIFIED</span> through
+      <span class="badge open">OPEN</span>) are the project&rsquo;s own, verbatim;
+      <span class="ch00-fwd">⏭ Ch 6</span> marks a tool not in use yet.
+    </p>
+    <details class="num-view">
+      <summary>How to read the pages that follow — stamps, badges and voices</summary>
+    <ul class="ch00-legend">
+      <li><span class="prov-chip real">real: seed61000/real_r1</span> and
+        <span class="prov-chip toy">toy: analytic</span> — every figure says whether you are
+        looking at project data or at a teaching construction. There is no third category.</li>
+      <li><span class="badge ratified">RATIFIED</span>
+        <span class="badge candidate">CANDIDATE</span>
+        <span class="badge finding">FINDING</span>
+        <span class="badge refuted">REFUTED</span>
+        <span class="badge exonerated">EXONERATED</span>
+        <span class="badge open">OPEN</span>
+        <span class="badge confounded">CONFOUNDED</span> — the project&rsquo;s own trust
+        tiers, used verbatim. <span class="badge ratified">RATIFIED</span> and
+        <span class="badge candidate">CANDIDATE</span> are not the same word, and the book
+        never quietly upgrades one to the other.</li>
+      <li>Bordered green blocks are the project&rsquo;s ratified derivations speaking in their
+        own voice; pink italic blocks are the adjudicator&rsquo;s. Plain prose is the
+        narrator&rsquo;s, and the narrator does not get to make findings.</li>
+      <li><span class="ch00-fwd">⏭ Ch 6</span> marks a tool the argument is deliberately
+        <em>not</em> using yet.</li>
+      <li>Where the project&rsquo;s position is unresolved, the book leaves it unresolved.
+        Four of the estimator&rsquo;s measured inconsistencies are live as this is written,
+        and Chapter 11 ends without a verdict — on purpose.</li>
+    </ul>
+    </details>
+
+    <!-- ================= Trap 0.A =================
+         De-spoiled 2026-07-31 per REVISION_WORKLIST §C-ch00 [ped-M9] and D4:
+         a forward reference names the phenomenon and the chapter, never the
+         number or the verdict. The three failures keep their ledger chips —
+         the reader can look them up — but their values now land in the
+         chapters that own them. -->
+    <div class="callout defect">
+      <span class="callout-label">Trap &mdash; &ldquo;Sirens are better because they&rsquo;re direct.&rdquo;</span>
+      Directness buys freedom from <em>calibration</em> systematics, not from systematics. This
+      book will show a &ldquo;direct&rdquo; estimator walk off the bottom of its prior
+      <span class="prov-chip">ledger #9</span> <span class="ch00-fwd">⏭ Ch 4</span>, report the
+      same answer whatever universe it is given <span class="prov-chip">ledger #49a</span>
+      <span class="ch00-fwd">⏭ Ch 10</span>, and move when its variable is redefined
+      <span class="prov-chip">README_C8.md</span> <span class="ch00-fwd">⏭ Ch 8</span>. None is
+      a calibration problem.
+    </div>
+
+    <!-- ================= transfer / next failure ================= -->
+    <div class="callout without">
+      <span class="callout-label">The failure the next chapter opens with</span>
+      A gravitational wave gives you a distance without a ladder — general relativity fixes
+      the amplitude scale absolutely. It gives you nothing whatsoever about redshift. And
+      $H_0$ needs both.
+    </div>
+
+    <!-- ================= self-check (B7) ================= -->
+    <h2>Self-check</h2>
+
+    <div class="selfcheck">
+      <p>Q0.1 &nbsp; The two $H_0$ values differ by about 8%. If one new method is to
+      <em>arbitrate</em>, what fractional precision does it need — and why is &ldquo;better than
+      8%&rdquo; the wrong answer?</p>
+      <details class="answer">
+        <summary>Show answer</summary>
+        <div class="answer-body">
+          It needs to be several times better than the gap — of order 1–2% — because
+          arbitration requires distinguishing two hypotheses that are 8% apart <em>with
+          confidence</em>, and a method whose own 1&sigma; is 8% would place both values
+          inside its own interval. The arithmetic in §2 puts the ceiling at 1.57 km s⁻¹ Mpc⁻¹
+          on the <em>total</em> uncertainty, 2.3% of $H_0$
+          <span class="prov-chip toy">gen_ch00.py — closed form</span>. The deeper point is
+          that precision is necessary but not sufficient: a 1% method with a 3% unknown
+          systematic arbitrates nothing. This is why the rest of the book spends far more
+          effort on <em>bias</em> than on &sigma;.
+        </div>
+      </details>
+    </div>
+
+    <div class="selfcheck">
+      <p>Q0.2 &nbsp; Why does it matter that the new method&rsquo;s systematics be
+      <em>uncorrelated</em> with the ladder&rsquo;s, rather than merely small?</p>
+      <details class="answer">
+        <summary>Show answer</summary>
+        <div class="answer-body">
+          Because a discrepancy between two methods is only informative if their errors are
+          independent. If a dark-siren $H_0$ inherited the same Cepheid or SN calibration as
+          the ladder, agreement would be circular and disagreement uninterpretable. GW sirens
+          are attractive precisely because the distance comes from the waveform amplitude and
+          general relativity, sharing no calibration rung with the EM ladder — the systematics
+          we spend this book on (catalogue completeness, photo-z, selection) are
+          <em>different</em> systematics, which is the whole point.
+        </div>
+      </details>
+    </div>
+
+    <div class="selfcheck">
+      <p>Q0.3 <em>(transfer)</em> &nbsp; $H_0 \approx cz/d_L$ needs a redshift, and the waveform
+      gives only $d_L$; with no light it must be <em>inferred</em>. In &sect;2&rsquo;s budget,
+      which side does that land on — and can more events buy you out?</p>
+      <details class="answer">
+        <summary>Show answer</summary>
+        <div class="answer-body">
+          Both sides, but the dangerous half is $\sigma_{\rm sys}$. Each event&rsquo;s own
+          redshift guess is noisy, and that part does average down. What does not is the
+          machinery the guess is made <em>with</em> — the catalogue, its coverage, the model of
+          how it was assembled — because every event in the campaign is inferred through the
+          same machinery, so its error is common to all of them and survives the average. By
+          &sect;2 a systematic above the ceiling is fatal at any $N$: collecting more events
+          then measures the catalogue rather than $H_0$. That is why the chapters that follow
+          are named after failure modes rather than after sample sizes, and it is the reason a
+          method with no counterpart is a harder object than a method with one.
+        </div>
+      </details>
+    </div>
+
+    <!-- ================= provenance ================= -->
+    <div class="provenance-panel">
+      <h4>Provenance panel — every stamp used in this chapter</h4>
+      <p style="margin:0; font-size:0.88rem;">
+        Seven recorded literature values, one code site, four forward references, and one toy.
+        Nothing on this page is a pipeline result.
+      </p>
+      <!-- The panel's roster is folded (ped-M5 relocation, 2026-07-31): it is a
+           reference list, not narration, and the prologue's only job is to reach
+           Chapter 1. Nothing is removed and the panel keeps its heading and lede. -->
+      <details class="num-view">
+        <summary>The roster, item by item</summary>
+      <ul>
+        <li>Recorded — <code>Planck Collaboration VI (2020), arXiv:1807.06209</code>: $67.4 \pm 0.5$ km s⁻¹ Mpc⁻¹ (CMB + flat &Lambda;CDM)</li>
+        <li>Recorded — <code>Riess et al. (2022), arXiv:2112.04510</code>: $73.04 \pm 1.04$; the 5.0&sigma; tension figure is theirs</li>
+        <li>Recorded — <code>Freedman et al. (2019), arXiv:1907.05922</code>: $69.8 \pm 0.8\,({\rm stat}) \pm 1.7\,({\rm sys})$ (TRGB ladder)</li>
+        <li>Recorded — <code>Wong et al. (2020), arXiv:1907.04869</code>: $73.3^{+1.7}_{-1.8}$ (time delays, assumed mass-profile family)</li>
+        <li>Recorded — <code>Birrer et al. (2020), arXiv:2007.02941</code>: $74.5^{+5.6}_{-6.1}$ (same technique, that assumption relaxed)</li>
+        <li>Recorded — <code>Abbott et al. (2017), arXiv:1710.05835</code>: $70.0^{+12.0}_{-8.0}$ (one bright standard siren)</li>
+        <li>Recorded — <code>Abbott et al. (2023), arXiv:2111.03604</code>: $68.0^{+8.0}_{-6.0}$ (GWTC-3 galaxy-catalogue dark sirens with the GW170817 counterpart) — this book&rsquo;s genre; its ratio to the ceiling is computed by the generator, not typed</li>
+        <li>Code site — <code>master_thesis_code/constants.py:25</code> (<code>H: float = 0.73</code>): the $h = H_0/100$ convention and the mock universe&rsquo;s injected truth, read live by the generator</li>
+        <li>Forward references — phenomena only, numbers left to the chapters that measure them (D4): <code>ledger #9</code> (an estimator walking off the bottom of its prior <span class="ch00-fwd">⏭ Ch 4</span>), <code>ledger #49a</code> (an estimator carrying no information about the parameter it reports <span class="ch00-fwd">⏭ Ch 10</span>), <code>README_C8.md</code> (the reparametrization walk <span class="ch00-fwd">⏭ Ch 8</span>), <code title="current lines: :54-60">IDEALIZED_BASELINE_READOUT.md:42-47</code> (76 of 1588 events <span class="ch00-fwd">⏭ Ch 2</span>)</li>
+        <li><span class="prov-chip toy">toy: analytic</span> Everything in I0.1 except the two anchors — quadrature budget, $T_A$, the per-event scale $\sigma_1 = 10$, the 3&sigma;/2&sigma; thresholds, both branches of the ceiling. Defined in <code>book/generators/gen_ch00.py</code>, recomputed in-browser, cross-checked against the generator on five points at load (numbers view).</li>
+        <li>No pipeline result is claimed here; the bias rail is deliberately empty. Chapter notes and presentation decisions: <code>book/design/flags/ch00_FLAGS.md</code></li>
+      </ul>
+      </details>
+    </div>
+
+    <p class="book-footer">
+      Data generated by <code>book/generators/gen_ch00.py</code> (read-only against the main
+      package and <code>results/</code>). This page renders fully offline — Plotly and KaTeX
+      are vendored under <code>vendor/</code>.
+    </p>
+  </main>
+</div>
+
+<script src="js/manifest.js"></script>
+<script src="vendor/plotly/plotly.min.js"></script>
+<script src="vendor/katex/katex.min.js"></script>
+<script src="vendor/katex/auto-render.min.js"></script>
+<script src="js/book.js"></script>
+<script>
+  (function () {
+    "use strict";
+
+    // ---------------------------------------------------------------
+    // Palette (mirrors css/book.css tokens; Plotly needs literals)
+    // ---------------------------------------------------------------
+    var C = {
+      planck: "#CC79A7",
+      shoes: "#56B4E9",
+      accent: "#0072B2",
+      accentDark: "#6fb8e8",
+      warn: "#D55E00",
+      ok: "#009E73",
+      toy: "#E69F00",
+      prior: "#9e9e9e",
+    };
+    function ink() { return Book.isDark() ? "#eef1f5" : "#1a1a1a"; }
+    function grid() { return Book.isDark() ? "#33373f" : "#d8dce1"; }
+    function live() { return Book.isDark() ? C.accentDark : C.accent; }
+
+    function baseLayout(xTitle, yTitle) {
+      return {
+        margin: { l: 130, r: 20, t: 18, b: 46 },
+        xaxis: { title: xTitle, gridcolor: grid(), zeroline: false },
+        yaxis: { title: yTitle, gridcolor: grid(), zeroline: false },
+        paper_bgcolor: "rgba(0,0,0,0)",
+        plot_bgcolor: "rgba(0,0,0,0)",
+        font: { color: ink(), size: 12 },
+        showlegend: false,
+      };
+    }
+    function fmt(v, n) {
+      return (v === null || v === undefined || !isFinite(v)) ? "—" : Number(v).toFixed(n);
+    }
+    function table(el, headers, rows) {
+      var html = "<tr>" + headers.map(function (h) { return "<th>" + h + "</th>"; }).join("") + "</tr>";
+      rows.forEach(function (r) {
+        html += "<tr>" + r.map(function (c) { return "<td>" + c + "</td>"; }).join("") + "</tr>";
+      });
+      el.innerHTML = html;
+    }
+
+    // ---------------------------------------------------------------
+    // BW1 — the bias rail, introduced EMPTY. There is no estimator in
+    // this chapter, so there is no bias to report, and the rail says so
+    // rather than showing a zero (which would be a claim).
+    // ---------------------------------------------------------------
+    Book.biasRail({
+      entries: [
+        {
+          label: "estimator",
+          bias: null,
+          note: "Chapter 0 builds nothing yet. The first live entry arrives in Chapter 3.",
+        },
+      ],
+    });
+
+    Book.loadJSON("data/ch00_tension.json").then(function (D) {
+      var M = {};
+      D.measurements.forEach(function (m) { M[m.key] = m; });
+      var planck = M.planck, shoes = M.shoes, T = D.tension, A = D.arbitration;
+
+      // -------------------------------------------------------------
+      // Shared: the two anchor bands, drawn as full-height shapes.
+      // -------------------------------------------------------------
+      function anchorBands() {
+        return [
+          {
+            type: "rect", xref: "x", yref: "paper",
+            x0: planck.H0 - planck.sigma, x1: planck.H0 + planck.sigma, y0: 0, y1: 1,
+            fillcolor: "rgba(204,121,167,0.20)", line: { width: 0 }, layer: "below",
+          },
+          {
+            type: "rect", xref: "x", yref: "paper",
+            x0: shoes.H0 - shoes.sigma, x1: shoes.H0 + shoes.sigma, y0: 0, y1: 1,
+            fillcolor: "rgba(86,180,233,0.22)", line: { width: 0 }, layer: "below",
+          },
+          {
+            type: "line", xref: "x", yref: "paper",
+            x0: planck.H0, x1: planck.H0, y0: 0, y1: 1,
+            line: { color: C.planck, width: 1.6 },
+          },
+          {
+            type: "line", xref: "x", yref: "paper",
+            x0: shoes.H0, x1: shoes.H0, y0: 0, y1: 1,
+            line: { color: C.shoes, width: 1.6 },
+          },
+        ];
+      }
+
+      // =============================================================
+      // COLD OPEN — the two numbers, drawn to scale
+      // =============================================================
+      var coldRows = [shoes, planck];
+      Book.themedPlot(
+        "ch00-cold-plot",
+        [{
+          type: "scatter", mode: "markers",
+          x: coldRows.map(function (m) { return m.H0; }),
+          y: coldRows.map(function (m) { return m.label + " · " + m.method.split(",")[0]; }),
+          error_x: {
+            type: "data",
+            array: coldRows.map(function (m) { return m.sigma; }),
+            color: ink(), thickness: 2.5, width: 8,
+          },
+          marker: { size: 11, color: [C.shoes, C.planck] },
+          hovertemplate: "%{y}<br>H₀ = %{x:.2f} km s⁻¹ Mpc⁻¹<extra></extra>",
+        }],
+        function () {
+          var L = baseLayout("H₀  [km s⁻¹ Mpc⁻¹]", "");
+          L.xaxis.range = [64.5, 76.5];
+          L.yaxis.automargin = true;
+          L.shapes = anchorBands();
+          L.annotations = [{
+            x: (planck.H0 + shoes.H0) / 2, y: 0.5, xref: "x", yref: "paper",
+            ax: 0, ay: -34, showarrow: false,
+            text: T.gap.toFixed(2) + " km s⁻¹ Mpc⁻¹  ·  " +
+                  (T.gap_frac_of_early * 100).toFixed(1) + "%  ·  " +
+                  T.n_sigma.toFixed(2) + "σ",
+            font: { color: ink(), size: 12 },
+            bgcolor: Book.isDark() ? "rgba(20,22,26,0.75)" : "rgba(255,255,255,0.75)",
+          }, {
+            x: (planck.H0 + shoes.H0) / 2, y: 0.12, xref: "x", yref: "paper",
+            showarrow: false, text: "no overlap",
+            font: { color: C.warn, size: 11 },
+          }];
+          return L;
+        }
+      );
+
+      document.getElementById("ch00-gap").textContent = fmt(T.gap, 2);
+      document.getElementById("ch00-gapfrac").textContent =
+        (T.gap_frac_of_early * 100).toFixed(1) + "%";
+      document.getElementById("ch00-nsigma").textContent =
+        T.n_sigma.toFixed(2) + "σ  (the paper quotes " + T.published_n_sigma.toFixed(1) + "σ)";
+
+      table(
+        document.getElementById("ch00-cold-table"),
+        ["measurement", "H₀", "±1σ", "what it is", "source"],
+        D.measurements.filter(function (m) { return m.anchor; }).map(function (m) {
+          return [m.label, m.H0.toFixed(2), m.sigma.toFixed(2), m.method, m.cite];
+        }).concat([[
+          "difference", T.gap.toFixed(2), T.sigma_combined.toFixed(3),
+          "quadrature of the two quoted σ", T.n_sigma.toFixed(2) + "σ (gen_ch00.py)",
+        ]])
+      );
+
+      // =============================================================
+      // THE CAST — third methods that were supposed to arbitrate
+      // =============================================================
+      var cast = D.measurements.slice().reverse();  // GW170817 at the bottom
+      var castColor = { early: C.planck, late: C.shoes, siren: C.ok };
+      Book.themedPlot(
+        "ch00-cast-plot",
+        [{
+          type: "scatter", mode: "markers",
+          x: cast.map(function (m) { return m.H0; }),
+          y: cast.map(function (m) { return m.label; }),
+          error_x: {
+            type: "data",
+            array: cast.map(function (m) { return m.asym ? m.asym.hi : m.sigma; }),
+            arrayminus: cast.map(function (m) { return m.asym ? m.asym.lo : m.sigma; }),
+            color: ink(), thickness: 2.2, width: 7,
+          },
+          marker: {
+            size: 10,
+            color: cast.map(function (m) { return castColor[m.family] || C.prior; }),
+            symbol: cast.map(function (m) { return m.anchor ? "circle" : "diamond"; }),
+          },
+          text: cast.map(function (m) { return m.method; }),
+          hovertemplate: "%{y}<br>H₀ = %{x:.2f}<br>%{text}<extra></extra>",
+        }],
+        function () {
+          var L = baseLayout("H₀  [km s⁻¹ Mpc⁻¹]", "");
+          L.xaxis.range = [58, 88];
+          L.yaxis.automargin = true;
+          L.shapes = anchorBands();
+          return L;
+        }
+      );
+
+      table(
+        document.getElementById("ch00-cast-table"),
+        ["determination", "H₀", "uncertainty", "method", "source"],
+        D.measurements.map(function (m) {
+          var unc = m.asym
+            ? "+" + m.asym.hi.toFixed(1) + " / −" + m.asym.lo.toFixed(1)
+            : (m.sigma_sys !== null && m.sigma_sys !== undefined
+                ? "±" + m.sigma_stat.toFixed(1) + " (stat) ±" + m.sigma_sys.toFixed(1) + " (sys)"
+                : "±" + m.sigma.toFixed(2));
+          return [m.label, m.H0.toFixed(2), unc, m.method, m.cite];
+        })
+      );
+
+      // =============================================================
+      // I0.1 — THE ARBITRATION BUDGET (toy; anchors real)
+      // =============================================================
+      var SIG1 = A.sigma_per_event;
+      var GAP = T.gap;
+
+      function sigmaTotal(n, sys) { return Math.sqrt(SIG1 * SIG1 / n + sys * sys); }
+      function tension(mu, sig, anchor) {
+        return Math.abs(mu - anchor.H0) / Math.sqrt(sig * sig + anchor.sigma * anchor.sigma);
+      }
+      function verdictOf(tp, ts) {
+        if (tp >= A.t_exclude && ts >= A.t_exclude)
+          return "excludes both anchors — a third answer, not an arbitration";
+        if (ts >= A.t_exclude && tp <= A.t_consistent)
+          return "arbitrates for the early-universe value";
+        if (tp >= A.t_exclude && ts <= A.t_consistent)
+          return "arbitrates for the late-universe value";
+        if (tp >= A.t_exclude || ts >= A.t_exclude)
+          return "excludes one anchor but does not sit comfortably on the other — not an arbitration";
+        return "arbitrates nothing";
+      }
+      function isArbitration(v) { return v.indexOf("arbitrates for") === 0; }
+      // best case: parked on the near anchor, excluding the far one
+      function bestExclusion(sig) {
+        return GAP / Math.sqrt(sig * sig + shoes.sigma * shoes.sigma);
+      }
+
+      // ---- cross-check the in-browser closed form against the generator
+      var maxDiff = 0;
+      A.check_points.forEach(function (p) {
+        var s = sigmaTotal(p.n_events, p.sigma_sys);
+        maxDiff = Math.max(
+          maxDiff,
+          Math.abs(s - p.sigma_total),
+          Math.abs(tension(p.mu, s, planck) - p.t_planck),
+          Math.abs(tension(p.mu, s, shoes) - p.t_shoes)
+        );
+      });
+      document.getElementById("ch00-crosscheck").textContent =
+        "Cross-check: the closed form evaluated in your browser reproduces the generator's " +
+        A.check_points.length + " check points to a maximum absolute difference of " +
+        maxDiff.toExponential(1) + ".";
+
+      document.getElementById("ch00-ceiling-inline").textContent = fmt(A.ceiling_sigma_total, 2);
+      document.getElementById("ch00-ceilingfrac-inline").textContent =
+        (A.ceiling_frac_of_H0 * 100).toFixed(1) + "%";
+      document.getElementById("ch00-ceiling-readout").textContent = fmt(A.ceiling_sigma_total, 2);
+      // the two placements, named: the page quotes the demanding branch and the fold
+      // shows both, so prose and arithmetic cannot drift apart (expA-m6).
+      document.getElementById("ch00-ceiling-other-inline").textContent =
+        fmt(A.ceiling_sigma_total_parked_on_late, 2);
+      document.getElementById("ch00-ceiling-fold").textContent = fmt(A.ceiling_sigma_total, 2);
+      document.getElementById("ch00-ceiling-other-fold").textContent =
+        fmt(A.ceiling_sigma_total_parked_on_late, 2);
+      document.getElementById("ch00-rhs").textContent = fmt(A.ceiling_rhs, 2);
+      document.getElementById("ch00-far-demanding").textContent =
+        fmt(M[A.ceiling_far_anchor].sigma, 2);
+      document.getElementById("ch00-far-relaxed").textContent =
+        fmt(M[A.ceiling_parked_on].sigma, 2);
+
+      // the genre's own state of the art, measured against that ceiling
+      var G = D.genre_anchor;
+      document.getElementById("ch00-genre-frac").textContent =
+        (G.frac_of_own_H0 * 100).toFixed(0) + "%";
+      document.getElementById("ch00-genre-ratio").textContent =
+        G.ratio_to_ceiling.toFixed(1) + "×";
+      var iSys2 = A.verdict_map.sys_grid.indexOf(2.0);
+      document.getElementById("ch00-asym-readout").textContent =
+        fmt(A.verdict_map.t_far_asymptote[iSys2], 2);
+
+      // ---- control grids
+      var N_STEPS = [1, 2, 3, 5, 8, 12, 20, 30, 41, 60, 100, 150, 250, 400, 650,
+                     1000, 1600, 2500, 4000, 6300, 10000];
+      var SYS_STEPS = [0, 0.1, 0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 2.0, 2.5, 3.0, 4.0];
+      var MU_STEPS = [];
+      for (var mv = 64; mv <= 78.0001; mv += 0.2) MU_STEPS.push(Math.round(mv * 10) / 10);
+
+      var DEFAULT = { n: 8, sys: 8, mu: MU_STEPS.indexOf(70.0) };  // N=41, sys=2.0, mu=70.0
+      var state = { n: N_STEPS[DEFAULT.n], sys: SYS_STEPS[DEFAULT.sys], mu: MU_STEPS[DEFAULT.mu] };
+
+      // ---- panel A: your method against the anchors
+      function budgetTraces() {
+        var sig = sigmaTotal(state.n, state.sys);
+        return [{
+          type: "scatter", mode: "markers",
+          x: [shoes.H0, planck.H0, state.mu],
+          y: ["late-universe anchor", "early-universe anchor", "your method (toy)"],
+          error_x: {
+            type: "data", array: [shoes.sigma, planck.sigma, sig],
+            color: ink(), thickness: 2.4, width: 8,
+          },
+          marker: { size: 11, color: [C.shoes, C.planck, C.toy],
+                    symbol: ["circle", "circle", "diamond"] },
+          hovertemplate: "%{y}<br>H₀ = %{x:.2f}<extra></extra>",
+        }];
+      }
+      var budgetPlot = Book.themedPlot("ch00-budget-plot", budgetTraces(), function () {
+        var L = baseLayout("H₀  [km s⁻¹ Mpc⁻¹]", "");
+        L.xaxis.range = [58, 88];
+        L.yaxis.automargin = true;
+        L.shapes = anchorBands();
+        return L;
+      });
+
+      // ---- panel B: the saturation family
+      var NCURVE = [];
+      for (var e = 0; e <= 4.0001; e += 0.05) NCURVE.push(Math.pow(10, e));
+      function saturationTraces() {
+        var traces = [];
+        SYS_STEPS.forEach(function (s) {
+          var isLive = Math.abs(s - state.sys) < 1e-9;
+          traces.push({
+            type: "scatter", mode: "lines",
+            x: NCURVE,
+            y: NCURVE.map(function (n) { return bestExclusion(sigmaTotal(n, s)); }),
+            line: { color: isLive ? live() : C.prior, width: isLive ? 3 : 1,
+                    dash: isLive ? "solid" : "dot" },
+            opacity: isLive ? 1 : 0.55,
+            name: "σ_sys = " + s,
+            hovertemplate: "N = %{x:.0f}<br>best exclusion = %{y:.2f}σ<br>σ_sys = " +
+                           s + "<extra></extra>",
+          });
+        });
+        traces.push({
+          type: "scatter", mode: "markers",
+          x: [state.n], y: [bestExclusion(sigmaTotal(state.n, state.sys))],
+          marker: { size: 12, color: C.toy, symbol: "diamond",
+                    line: { color: ink(), width: 1 } },
+          hovertemplate: "your budget: N = %{x:.0f}, %{y:.2f}σ<extra></extra>",
+        });
+        return traces;
+      }
+      var satPlot = Book.themedPlot("ch00-saturation-plot", saturationTraces(), function () {
+        var L = baseLayout("number of events N  (log scale)", "best possible exclusion  [σ]");
+        L.margin.l = 62;
+        L.xaxis.type = "log";
+        L.xaxis.range = [0, 4];
+        L.yaxis.range = [0, 6];
+        L.shapes = [{
+          type: "line", xref: "paper", yref: "y", x0: 0, x1: 1,
+          y0: A.t_exclude, y1: A.t_exclude,
+          line: { color: C.warn, width: 1.6, dash: "dash" },
+        }];
+        L.annotations = [{
+          xref: "paper", x: 0.02, y: A.t_exclude, yref: "y",
+          text: "3σ — the verdict threshold", showarrow: false,
+          yanchor: "bottom", xanchor: "left",
+          font: { color: C.warn, size: 11 },
+        }, {
+          xref: "paper", x: 0.98, y: 5.6, yref: "y", xanchor: "right",
+          text: "each curve flattens at a ceiling set by σ_sys alone",
+          showarrow: false, font: { color: ink(), size: 11 },
+        }];
+        return L;
+      });
+
+      // ---- readouts + verdict
+      var elVerdict = document.getElementById("ch00-verdict");
+      var elVerdictText = document.getElementById("ch00-verdict-text");
+      function update() {
+        var sigStat = SIG1 / Math.sqrt(state.n);
+        var sig = sigmaTotal(state.n, state.sys);
+        var tp = tension(state.mu, sig, planck);
+        var ts = tension(state.mu, sig, shoes);
+        var v = verdictOf(tp, ts);
+        var best = bestExclusion(sig);
+
+        document.getElementById("ch00-sigstat").textContent = fmt(sigStat, 2);
+        document.getElementById("ch00-sigtot").textContent = fmt(sig, 2);
+        document.getElementById("ch00-sigtotpct").textContent =
+          (sig / planck.H0 * 100).toFixed(1) + "%";
+        document.getElementById("ch00-tp").textContent = fmt(tp, 2);
+        document.getElementById("ch00-ts").textContent = fmt(ts, 2);
+
+        var tail;
+        if (isArbitration(v)) {
+          tail = ". Parked exactly on an anchor, this budget reaches " + fmt(best, 2) + "σ.";
+        } else if (best < A.t_exclude) {
+          // Is this a shortage of events, or a wall? sigma_tot -> sigma_sys as N -> inf.
+          var bestInf = bestExclusion(state.sys);
+          tail = ". Even parked exactly on an anchor this budget reaches only " +
+            fmt(best, 2) + "σ against a threshold of " + A.t_exclude +
+            (bestInf < A.t_exclude
+              ? " — and its ceiling as N → ∞ is " + fmt(bestInf, 2) +
+                "σ, so no number of events rescues it."
+              : " — but that is a shortage of events, not a wall: the ceiling for this " +
+                "systematic is " + fmt(bestInf, 2) + "σ.");
+        } else {
+          tail = ". The budget itself is good enough (" + fmt(best, 2) +
+            "σ if it were parked exactly on an anchor); it is where the answer landed " +
+            "that prevents a verdict.";
+        }
+        elVerdictText.textContent = v + tail;
+        elVerdict.className = "ch00-verdict " + (isArbitration(v) ? "good" : "bad");
+
+        budgetPlot.update(budgetTraces());
+        satPlot.update(saturationTraces());
+      }
+
+      var sliderN = Book.gridSlider({
+        sliderEl: document.getElementById("ch00-n"),
+        readoutEl: document.getElementById("ch00-n-readout"),
+        steps: N_STEPS,
+        formatReadout: function (v) { return v.toLocaleString("en-US"); },
+        onStep: function (v) { state.n = v; update(); },
+      });
+      var sliderSys = Book.gridSlider({
+        sliderEl: document.getElementById("ch00-sys"),
+        readoutEl: document.getElementById("ch00-sys-readout"),
+        steps: SYS_STEPS,
+        formatReadout: function (v) { return v.toFixed(2); },
+        onStep: function (v) { state.sys = v; update(); },
+      });
+      var sliderMu = Book.gridSlider({
+        sliderEl: document.getElementById("ch00-mu"),
+        readoutEl: document.getElementById("ch00-mu-readout"),
+        steps: MU_STEPS,
+        formatReadout: function (v) { return v.toFixed(1); },
+        onStep: function (v) { state.mu = v; update(); },
+      });
+
+      function setAll(idxN, idxSys, idxMu) {
+        document.getElementById("ch00-n").value = String(idxN);
+        document.getElementById("ch00-sys").value = String(idxSys);
+        document.getElementById("ch00-mu").value = String(idxMu);
+        state.n = N_STEPS[idxN];
+        state.sys = SYS_STEPS[idxSys];
+        state.mu = MU_STEPS[idxMu];
+        document.getElementById("ch00-n-readout").textContent = state.n.toLocaleString("en-US");
+        document.getElementById("ch00-sys-readout").textContent = state.sys.toFixed(2);
+        document.getElementById("ch00-mu-readout").textContent = state.mu.toFixed(1);
+        update();
+      }
+      setAll(DEFAULT.n, DEFAULT.sys, DEFAULT.mu);
+
+      document.getElementById("ch00-reset").addEventListener("click", function () {
+        setAll(DEFAULT.n, DEFAULT.sys, DEFAULT.mu);
+      });
+
+      // ---- predict-then-reveal, LOCKED: the sliders and the plots stay inert
+      // (and the range inputs stay out of the tab order) until the reader has
+      // committed to one of the four answers. Restored predictions unlock too,
+      // because Book.predictReveal replays a stored choice without firing the
+      // callback.
+      var lab = document.getElementById("ch00-lab");
+      var labInputs = lab.querySelectorAll("input, button");
+      function setLocked(locked) {
+        lab.classList.toggle("ch00-locked", locked);
+        labInputs.forEach(function (el) { el.disabled = locked; });
+        document.getElementById("ch00-lockhint").style.display = locked ? "" : "none";
+      }
+      setLocked(true);
+      Book.predictReveal(document.getElementById("ch00-i01"), function () { setLocked(false); });
+      if (Book.getPrediction("ch00-q-sys")) setLocked(false);
+
+      // ---- numbers view: the verdict map, with the N -> infinity column
+      var vm = A.verdict_map;
+      table(
+        document.getElementById("ch00-map-table"),
+        ["σ_sys \\ N"].concat(vm.n_grid.map(function (n) { return n.toLocaleString("en-US"); }))
+                     .concat(["N → ∞"]),
+        vm.sys_grid.map(function (s, i) {
+          return [s.toFixed(2)]
+            .concat(vm.t_far[i].map(function (t) { return t.toFixed(2) + "σ"; }))
+            .concat([vm.t_far_asymptote[i].toFixed(2) + "σ"]);
+        })
+      );
+
+      // ---- §3: the h convention, read out of the pipeline's constants
+      var hc = D.h_convention;
+      document.getElementById("ch00-htrue").textContent = "h = " + hc.H;
+      document.getElementById("ch00-htrue-chip").textContent = hc.source;
+      document.getElementById("ch00-htrue-chip").title = hc.source_line;
+    }).catch(function (err) {
+      console.error("ch00: data load failed", err);
+    });
+  })();
+</script>

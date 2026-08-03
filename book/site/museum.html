@@ -1,0 +1,2255 @@
+<!DOCTYPE html>
+<meta charset="utf-8" />
+<!--
+  The two lines above are a page-local workaround for WIDGET_REQUESTS R-ch07-3:
+  the frozen _template.html carries no doctype and no charset, which puts every
+  page in quirks mode (where KaTeX hard-refuses to render). Remove them once the
+  integrator lands the fix in the shared template.
+-->
+<title>The Defect Museum | EMRI Dark Siren Book</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="description" content="98 hypotheses about an H0 bias, and what each one cost: fourteen exhibits from the project's own falsification ledger, a live quadrature dial, and the archaeology of when it broke." />
+<link rel="stylesheet" href="vendor/katex/katex.min.css" />
+<link rel="stylesheet" href="css/book.css" />
+
+<style>
+  /* Page-local only (css/book.css is frozen). Nothing here restyles a shared
+     class; these are new elements this annex introduces. */
+  .mus-room {
+    margin: 2.6rem 0 0.6rem;
+    padding-top: 1rem;
+    border-top: 2px solid var(--border);
+  }
+  .mus-room h2 { margin-top: 0.3rem; }
+  .mus-room .mus-room-kicker {
+    display: block;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .mus-exhibit {
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--prior);
+    background: var(--paper-raised);
+    border-radius: var(--radius);
+    padding: 1rem 1.2rem 1.1rem;
+    margin: 1.3rem 0;
+    scroll-margin-top: 5rem;
+  }
+  .mus-exhibit.is-refuted { border-left-color: #D55E00; }
+  .mus-exhibit.is-exonerated { border-left-color: #E69F00; }
+  .mus-exhibit.is-overturned { border-left-color: var(--planck); }
+  .mus-exhibit.is-method { border-left-color: #009E73; }
+  .mus-exhibit h3 { margin: 0 0 0.15rem; font-size: 1.12rem; }
+  .mus-exhibit .mus-num {
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    display: block;
+  }
+  /* Folded exhibits (ped-M5): the five an interlude sends you to ship
+     expanded; the other nine collapse to hypothesis + verdict badge, so the
+     room stays complete but the visit gets a path. Deep links and printing
+     both force them open (script at the foot of the page). */
+  .mus-fold > summary {
+    cursor: pointer;
+    list-style: none;
+    position: relative;
+    padding-right: 4.2rem;
+  }
+  .mus-fold > summary::-webkit-details-marker { display: none; }
+  .mus-fold > summary::after {
+    content: "▸ open";
+    position: absolute;
+    right: 0;
+    top: 0;
+    font-size: 0.68rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .mus-fold[open] > summary::after { content: "▾ close"; }
+  .mus-fold > summary:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
+    border-radius: 4px;
+  }
+  .mus-fold[open] > summary {
+    padding-bottom: 0.45rem;
+    margin-bottom: 0.2rem;
+    border-bottom: 1px dotted var(--border);
+  }
+  .mus-exhibit .mus-backlink {
+    font-size: 0.76rem;
+    color: var(--muted);
+    margin: 0.9rem 0 0;
+    padding-top: 0.45rem;
+    border-top: 1px dotted var(--border);
+  }
+  .mus-exhibit dl { margin: 0.7rem 0 0; }
+  .mus-exhibit dt {
+    font-size: 0.71rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+    margin-top: 0.75rem;
+  }
+  .mus-exhibit dd { margin: 0.12rem 0 0; }
+  .mus-exhibit dd.mus-lesson { font-weight: 600; }
+  .mus-chipline { margin: 0.35rem 0 0; line-height: 1.9; }
+  .mus-flag {
+    border: 1px dashed #D55E00;
+    border-radius: 8px;
+    background: rgba(213, 94, 0, 0.06);
+    padding: 0.8rem 1rem;
+    margin: 1rem 0;
+    font-size: 0.92rem;
+  }
+  .mus-flag .mus-flag-label {
+    display: block;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: #a44900;
+    margin-bottom: 0.3rem;
+  }
+  :root[data-theme="dark"] .mus-flag .mus-flag-label { color: #ff8b47; }
+  .mus-readouts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem 1.2rem;
+    margin: 0.55rem 0 0;
+    font-size: 0.86rem;
+    color: var(--muted);
+  }
+  .mus-readouts strong { color: var(--accent); font-variant-numeric: tabular-nums; }
+  .mus-readouts .bad { color: #D55E00; }
+  .mus-readouts .good { color: #009E73; }
+  .mus-note { font-size: 0.82rem; color: var(--muted); margin: 0.6rem 0 0; }
+  .mus-fwd {
+    display: inline-block;
+    font-size: 0.72rem;
+    border: 1px dashed var(--border);
+    border-radius: 999px;
+    padding: 0 0.45em;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  .mus-ledger-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 0.8rem;
+    align-items: center;
+    margin: 0.6rem 0;
+  }
+  .mus-ledger-controls input[type="search"],
+  .mus-ledger-controls select {
+    font: inherit;
+    font-size: 0.9rem;
+    padding: 0.3rem 0.5rem;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--paper);
+    color: var(--ink);
+  }
+  .mus-ledger-controls input[type="search"] { min-width: 16rem; flex: 1 1 16rem; }
+  .mus-ledger-controls label { font-size: 0.85rem; color: var(--muted); }
+  .mus-dnr {
+    display: inline-block;
+    font-size: 0.66rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    border: 1px solid #D55E00;
+    color: #a44900;
+    border-radius: 4px;
+    padding: 0 0.35em;
+    white-space: nowrap;
+  }
+  :root[data-theme="dark"] .mus-dnr { color: #ff8b47; }
+  .mus-ledger-table td { vertical-align: top; font-size: 0.82rem; }
+  /* Book-added annotation on a ledger row (expB MJ-3). Visually distinct from
+     the verbatim verdict it sits under, and labelled in its own text. */
+  .mus-booknote {
+    display: block;
+    margin-top: 0.35rem;
+    padding-left: 0.5rem;
+    border-left: 2px solid var(--prior);
+    color: var(--muted);
+    font-style: italic;
+  }
+  .mus-ledger-table td.mus-cell-h { text-align: left; min-width: 13rem; }
+  .mus-ledger-table td.mus-cell-v { text-align: left; }
+  .mus-timeline-card {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--paper);
+    padding: 0.7rem 0.9rem;
+    margin-top: 0.6rem;
+    font-size: 0.9rem;
+  }
+  .mus-timeline-card .mus-tc-date {
+    font-size: 0.72rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .mus-locked { opacity: 0.45; pointer-events: none; }
+  @media print { .mus-locked { opacity: 1; } }
+</style>
+
+<div class="book-shell">
+  <header class="book-topbar">
+    <a class="brand" href="index.html">From Bayes&rsquo; Rule to H&#8320;
+      <small>an interactive discovery book</small>
+    </a>
+    <nav class="book-nav" data-nav aria-label="Chapters"><!-- built from js/manifest.js --></nav>
+    <button class="theme-toggle" data-theme-toggle type="button">☽ Dark</button>
+  </header>
+
+  <main class="book-content">
+    <h1>The Defect Museum</h1>
+    <p class="subtitle">
+      98 hypotheses, and what each one cost.
+    </p>
+
+    <!-- ================= COLD OPEN ================= -->
+    <div class="callout without">
+      <span class="callout-label">What this annex is</span>
+      Between March and July 2026 this project tested <strong>98</strong> distinct hypotheses
+      about why its H&#8320; estimator was wrong. Twenty-one were refuted, eight were exonerated,
+      four were overturned <em>after</em> being formally concluded, and twenty-one were real
+      defects that were fixed and landed &mdash; most of them, in the ledger&rsquo;s own words,
+      <em>insufficient alone</em>. The chapters of this book show you
+      the pieces that survived. This room shows you the ones that did not — because a
+      pipeline is not the list of its correct decisions, it is the residue of its wrong ones.
+    </div>
+
+    <div class="widget">
+      <h4>The ledger, by verdict
+        <span class="prov-chip real">real: BIAS_HISTORY_LEDGER.md</span>
+      </h4>
+      <p style="margin-top:0; color:var(--muted); font-size:0.88rem;">
+        Every row of <code>gate_b_20260730/BIAS_HISTORY_LEDGER.md</code>, classified by what
+        its VERDICT cell actually says. <strong>Hover</strong> a bar for the class definition;
+        the exact strings are in the numbers view. <strong>Thirty</strong> of the 98 rows are
+        additionally flagged <span class="mus-dnr">DO NOT RE-TRY</span> by the ledger&rsquo;s
+        own &sect;2.
+      </p>
+      <div id="mus-census-plot" class="widget-plot" style="min-height:300px"></div>
+      <div class="mus-readouts" id="mus-census-readouts">
+        <span>rows <strong id="mus-census-n">&mdash;</strong></span>
+        <span>flagged do-not-re-try <strong id="mus-census-dnr">&mdash;</strong></span>
+        <span>ledger &sect;2 items <strong id="mus-census-items">&mdash;</strong></span>
+        <span>claim-file exoneration entries <strong id="mus-census-claim">&mdash;</strong></span>
+      </div>
+      <details class="num-view">
+        <summary>Show me the numbers</summary>
+        <div class="table-scroll"><table class="num-table" id="mus-census-table"></table></div>
+      </details>
+      <noscript>
+        <p><strong>Static fallback.</strong> The 98 ledger rows split as: 21 refuted or
+        falsified · 21 fixed and landed · 19 measured (a number, not a verdict) · 8 exonerated ·
+        8 confirmed · 8 qualified or ambiguous · 7 real-but-not-the-cause · 4 overturned or
+        re-attributed · 2 open. The ledger&rsquo;s &sect;2 &ldquo;DO NOT RE-TRY&rdquo; list has 17
+        items back-referencing 30 distinct rows; the claim file&rsquo;s own Exonerated list has
+        15 entries, and the binding union is both together.</p>
+      </noscript>
+    </div>
+
+    <h2>1. How to read an exhibit</h2>
+
+    <p>
+      A defect museum is only useful if it is not a morality play. Each exhibit below carries
+      the same six fields, in the same order, because those six are what turn an anecdote
+      into a transferable lesson:
+    </p>
+    <ol>
+      <li><strong>The hypothesis</strong> — stated as it was believed at the time, in its
+        strongest form. If it sounds stupid, the exhibit is written badly.</li>
+      <li><strong>The pre-registered prediction</strong> — what the investigator said would
+        happen <em>before</em> the measurement. Several exhibits exist only because this field
+        was filled in first.</li>
+      <li><strong>The decisive test</strong> — the measurement that could have gone either
+        way, and its venue.</li>
+      <li><strong>The measured outcome</strong> — the number, with its artifact.</li>
+      <li><strong>What it cost</strong> — cycles, sessions, or a shipped default.</li>
+      <li><strong>The transferable lesson</strong> — the thing you would tell someone starting
+        the same investigation tomorrow.</li>
+    </ol>
+
+    <div class="voice-derivation">
+      <span class="voice-label">The standing scoping rule
+        <span class="badge ratified">RATIFIED</span>
+        <span class="prov-chip">BIAS_HISTORY_LEDGER.md &sect;2</span>
+      </span>
+      <em>Negative</em> conclusions are <strong>venue-scoped</strong>. &ldquo;X was ruled
+      out&rdquo; is always &ldquo;X was ruled out <em>on venue V</em>&rdquo;. Two of this
+      museum&rsquo;s exhibits — <code>volume_trunc</code> and <code>mass_trunc</code> — were both
+      falsified on the <strong>same</strong> seed600 494-event shallow subsample, so a shared
+      venue idiosyncrasy would have fooled both. Every exhibit here names its venue, and none
+      of them claims to be universal.
+    </div>
+
+    <div class="callout defect">
+      <span class="callout-label">The museum meta-rule &mdash; binding on the rest of the book</span>
+      The ledger&rsquo;s &sect;2 &ldquo;DO NOT RE-TRY&rdquo; list <strong>plus</strong> the claim
+      file&rsquo;s Exonerated list form a binding union. Any interactive anywhere in this book
+      that lets you <em>try</em> one of those configurations must <strong>volunteer the measured
+      verdict</strong> — never leave a dead hypothesis open as if it were a live option. That is
+      what the ledger browser at the bottom of this page is for
+      <span class="prov-chip">CLAIM_2D_BIAS_20260730.md &sect;Exonerated</span>
+      <span class="prov-chip">ledger &sect;2 items 1&ndash;17</span>.
+    </div>
+
+    <!-- ==========================================================
+         ROOM 1 — the flagship
+         ========================================================== -->
+    <div class="mus-room">
+      <span class="mus-room-kicker">Room 1 · the flagship</span>
+      <h2>2. Fixes that made it worse</h2>
+      <p>
+        The four exhibits in this room were all <em>corrections</em>: each one moved the code
+        closer to something the investigator could defend on paper, and each one moved the
+        answer further from the truth. They are first because they are the least intuitive
+        failure mode in the whole collection.
+      </p>
+    </div>
+
+    <!-- ---------- #ex-volume-trunc ---------- -->
+    <div class="mus-exhibit is-refuted" id="ex-volume-trunc">
+      <span class="mus-num">Exhibit 1 · ledger #70 · 2026-07-12</span>
+      <h3><code>volume_trunc</code> — unify the numerator window
+        <span class="badge refuted">REFUTED</span>
+      </h3>
+      <dl>
+        <dt>The hypothesis</dt>
+        <dd>
+          In the in-catalogue leg, the numerator $N_g$ and the per-galaxy selection integral
+          $D_g$ were integrated over <em>different</em> supports: $N_g$ over the narrow
+          event-level GW window, $D_g$ (and the kernel normalization
+          <span class="term" data-term="Zg">$Z_g$</span>) over the wide per-host galaxy window
+          $[z_g - 4\sigma_z,\ z_g + 4\sigma_z]$. The book&rsquo;s own &ldquo;counted exactly
+          once&rdquo; principle says a prior should enter both sides the same way
+          <span class="mus-fwd">⏭ Ch 4 &sect;4</span>. Unify the supports and the shallow-venue
+          $+0.013$ residual should go away.
+        </dd>
+        <dt>The pre-registered prediction</dt>
+        <dd>
+          Registered in <code>PRODUCTION-KERNEL-FIX-SCOPING &sect;7b</code> before the run:
+          the bias moves <strong>toward</strong> truth. The A/B gate, the venue and the
+          7-point grid were all fixed in advance.
+        </dd>
+        <dt>The decisive test</dt>
+        <dd>
+          seed600, 494-event shallow subsample, <code>volume_trunc</code> vs the production
+          <code>volume_deconv</code>, identical inputs, same 7-point $h$-grid. The baseline arm
+          was required to reproduce the established reference (1D mean 0.745, 2D 0.768) —
+          it did, to the digit, so the divergence is the kernel and not the driver.
+        </dd>
+        <dt>The measured outcome</dt>
+        <dd>
+          1D mean <strong>0.7450 &rarr; 0.8000</strong>; 2D mean <strong>0.7681 &rarr;
+          0.8000</strong>. Wrong direction, and about <strong>4&times;</strong> the residual it
+          was built to remove. Both channels collapse onto a single grid point: 99.9% of the 1D
+          posterior mass sits at $h = 0.80$.
+          <div class="mus-chipline">
+            <span class="prov-chip real">results/volume_trunc_ab_20260712/gate_result.json</span>
+            <span class="prov-chip">FINDING.md:1-58</span>
+            <span class="prov-chip">ledger #70</span>
+          </div>
+        </dd>
+        <dt>What it cost</dt>
+        <dd>
+          One implemented normalization mode (retained behind a flag, marked FALSIFIED, never
+          wired into the CLI), one pre-registered campaign gate, and the working hypothesis
+          that the shallow residual had a numerator-window cure. It did not: the ledger&rsquo;s
+          §2 carries <code>volume_trunc</code> as do-not-re-try, and the open attribution of
+          that +0.013 has been unowned since 2026-07-13
+          <span class="prov-chip">ledger #69</span>.
+        </dd>
+        <dd class="mus-lesson">The transferable lesson: <strong>quadrature is physics.</strong>
+          An integral you cannot resolve is not a weaker version of the integral you meant —
+          it is a different number, and it will happily be a confident one.</dd>
+      </dl>
+      <p class="mus-note">
+        <strong>Venue scope.</strong> Falsified on the seed600 494-event shallow subsample —
+        the same subsample as <a href="#ex-mass-trunc">Exhibit 5</a>. Not cross-venue
+        confirmed <span class="prov-chip">ledger &sect;2, standing scoping rule</span>.
+      </p>
+      <p class="mus-backlink">referenced by <a href="ch07-redshift.html">Ch 7 &mdash; the <code>volume_trunc</code> interlude</a> &middot; <a href="ch07-redshift.html">&larr; back</a></p>
+    </div>
+
+    <!-- ============ M1 ============ -->
+    <h3>M1 — the Falsified Fix Gallery: a quadrature dial</h3>
+
+    <p>
+      The FINDING names <strong>two</strong> compounding causes. The second is easy to state and
+      is reproduced below without controversy: even evaluated <em>exactly</em>, the host-window
+      numerator rises monotonically with $h$ — 0.2417 at $h = 0.60$, 0.4314 at 0.73, 0.6537 at
+      0.86 — so unifying the support rewards a higher Hubble constant in this regime, all by
+      itself. The first cause is about the <em>machinery</em>, and it is the one worth putting a
+      dial on.
+    </p>
+    <p>
+      The object being integrated is the in-catalogue numerator for one representative shallow
+      photometric host — $z_g = 0.05$, $\sigma_z = 0.033$, so
+      <span class="term" data-term="eps">$\sigma_z/z = 0.66$</span>:
+      $$ N_g(h) \;=\; \int_{z_{\rm lo}}^{z_{\rm hi}}
+         \underbrace{p\!\left(x_{\rm GW} \,\middle|\, d_L(z;h)\right)}_{\text{width } \approx 0.0025 \text{ in } z}
+         \; \underbrace{\frac{\mathcal N(z; z_g,\sigma_z)\, w_{\rm pop}(z,h)}{Z_g(h)}}_{\text{width } \approx 0.033}
+         \; dz ,$$
+      with $w_{\rm pop} = (dV_c/dz)/(1+z)$
+      <span class="prov-chip">G2b &sect;1</span>. Over the <em>host</em> window the integration
+      range is $[0,\ 0.182]$ — about <strong>73 times</strong> the width of the GW peak inside
+      it. Production evaluates this with <code>scipy.integrate.fixed_quad</code> at a
+      <strong>fixed</strong> Gauss–Legendre order $n = 50$
+      <span class="prov-chip">bayesian_statistics.py:3867</span>. Fifty nodes. Across a window
+      that holds one needle.
+    </p>
+
+    <div class="widget" id="mus-predict-widget" data-predict-id="mus-quadrature-guess">
+      <h4>Predict, then turn the dial</h4>
+      <p style="margin-top:0;">
+        You are integrating a needle in a haystack with 50 quadrature nodes. Now turn the node
+        count <em>down</em> to 10. What happens to the value of the integral?
+      </p>
+      <div class="predict-row" id="mus-predict-1" data-predict-id="mus-quadrature-guess">
+        <button type="button" data-predict="low">It gets smaller — coarser nodes miss the peak</button>
+        <button type="button" data-predict="same">It barely changes — the peak is tiny either way</button>
+        <button type="button" data-predict="erratic">It goes wherever the nodes happen to land</button>
+      </div>
+      <div class="reveal">
+        At $h = 0.73$ the exact value is <strong>0.4314</strong>. The measured ladder reads
+        <strong>1.504</strong> at $n = 10$ (3.5&times; <em>high</em>), <strong>0.068</strong> at
+        $n = 20$ (6.3&times; <em>low</em>), <strong>0.604</strong> at $n = 30$, and does not settle
+        until $n \approx 75$. It is not biased low and it is not stable: it is
+        <strong>erratic in both directions</strong>, and which direction depends on $h$ — which
+        is precisely how a quadrature artifact turns into an $h$-dependent tilt in a posterior.
+        <span class="prov-chip real">recomputed: gen_museum.py</span>
+      </div>
+    </div>
+
+    <div class="widget">
+      <h4>M1 — The quadrature dial
+        <span class="prov-chip real">real: recomputed with master_thesis_code.physical_relations</span>
+        <span class="prov-chip">rec: FINDING.md table, 2026-07-12</span>
+      </h4>
+      <p style="margin-top:0; color:var(--muted); font-size:0.88rem;">
+        <strong>Manipulate</strong> the Gauss–Legendre order $n$, the trial $h$, and — this is the
+        part that matters — <em>how the GW leg is evaluated</em>.
+        <strong>Watch</strong> the top panel: the integrand (blue) against the actual node
+        positions (ticks). <strong>Then watch</strong> the bottom panel: the integral as a
+        function of $n$, against the exact value.
+      </p>
+      <div class="widget-controls">
+        <label for="mus-n-slider">Gauss&ndash;Legendre order $n$:</label>
+        <input id="mus-n-slider" type="range" aria-describedby="mus-quad-readouts" />
+        <span class="readout">n = <strong id="mus-n-readout">&mdash;</strong></span>
+      </div>
+      <div class="widget-controls">
+        <label>Trial $h$:</label>
+        <div class="toggle-row" id="mus-h-row">
+          <button type="button" data-h="0.60">0.60</button>
+          <button type="button" data-h="0.70">0.70</button>
+          <button type="button" data-h="0.73">0.73</button>
+          <button type="button" data-h="0.80">0.80</button>
+          <button type="button" data-h="0.86">0.86</button>
+        </div>
+      </div>
+      <div class="widget-controls">
+        <label>GW leg evaluated with:</label>
+        <div class="toggle-row" id="mus-mode-row">
+          <button type="button" data-mode="vectorized"><code>dist_vectorized()</code> — production</button>
+          <button type="button" data-mode="scalar"><code>dist()</code> — the 2026-07-12 diagnostic</button>
+        </div>
+      </div>
+      <div id="mus-integrand-plot" class="widget-plot" style="min-height:280px"></div>
+      <div id="mus-ladder-plot" class="widget-plot" style="min-height:280px"></div>
+      <div class="mus-readouts" id="mus-quad-readouts">
+        <span>$N_g$ at this $n$: <strong id="mus-quad-val">&mdash;</strong></span>
+        <span>exact: <strong id="mus-quad-exact">&mdash;</strong></span>
+        <span>relative error: <strong id="mus-quad-err">&mdash;</strong></span>
+        <span>mean node spacing &divide; GW peak $\sigma_z$: <strong id="mus-quad-ratio">&mdash;</strong></span>
+      </div>
+      <div id="mus-quad-verdict" class="mus-note"></div>
+      <details class="num-view">
+        <summary>Show me the numbers</summary>
+        <div class="table-scroll"><table class="num-table" id="mus-quad-table"></table></div>
+      </details>
+      <noscript>
+        <p><strong>Static fallback.</strong> Integrand: a Gaussian-in-$d_L$ GW peak of width
+        &asymp;0.0025 in $z$, sitting inside a host window $[0,\,0.182]$ — 73 peak-widths wide.
+        With the GW leg evaluated as production evaluates it, the fixed-order Gauss–Legendre
+        integral at $h = 0.73$ reads 1.504 ($n=10$), 0.147 (15), 0.068 (20), 0.458 (25),
+        0.604 (30), 0.382 (40), 0.441 (50), 0.4314 (75, converged) against an exact 0.4314.
+        With the GW leg evaluated as the 2026-07-12 diagnostic script wrote it, every order from
+        $n=10$ to $n=600$ returns $10^{-79}$–$10^{-86}$ ($6.53\times10^{-79}$ at $n=10$,
+        $1.11\times10^{-86}$ at $n=600$) — 0.0000 at every printed precision, and essentially
+        flat in $n$: the value does not respond to the dial at all.</p>
+      </noscript>
+    </div>
+
+    <div class="mus-flag">
+      <span class="mus-flag-label">Flag raised by this page&rsquo;s generator — not adjudicated by the project</span>
+      <p style="margin-top:0;">
+        The FINDING&rsquo;s first mechanism is stated as <em>&ldquo;quadrature aliasing
+        (dominant)&rdquo;</em>, and its evidence is a column of <strong>0.0000</strong> at
+        $n = 50$ against an exact 0.24–0.65. This page reproduces that diagnostic script
+        unchanged and gets its published table <strong>exactly</strong>. But re-computing the
+        <em>same integrand</em> with the GW leg written the way production writes it —
+        <code>dist_vectorized</code>, <code>bayesian_statistics.py:3806</code> — gives
+        <strong>0.2376 / 0.4412 / 0.6524</strong> at $h = 0.60/0.73/0.86$: $n = 50$ is accurate
+        to <strong>0.2–2.3%</strong> (1.70% / 2.26% / 0.21% at those three $h$), not to 100%.
+      </p>
+      <p>
+        The reason is measurable and it reproduces the diagnostic&rsquo;s <em>entire</em> table:
+        <code>physical_relations.py:132 dist()</code> is scalar-only, and given an array it
+        returns the value at that array&rsquo;s <em>first</em> element. <code>fixed_quad</code>
+        passes all nodes in one call, so inside that script the GW factor is a
+        <strong>constant</strong> — which is why the scalar mode of the dial above is
+        <em>flat in $n$</em>. Set the host window&rsquo;s lower limit $z = 0$ and that constant
+        is $e^{-200}$; set the GW window&rsquo;s lower limit and it is $e^{-8}$, predicting
+        0.000265 / 0.000468 / 0.000701 — the published GW-window column
+        <strong>0.0003 / 0.0005 / 0.0007</strong>, digit for digit.
+      </p>
+      <p style="margin-bottom:0;">
+        <strong>What this does and does not touch.</strong> It does <em>not</em> touch the
+        verdict: <code>volume_trunc</code> is falsified on a production-code A/B gate, and the
+        second mechanism (the exact numerator tilts high, 0.2417 &rarr; 0.6537) is reproduced
+        here and is on its own sufficient. It does <em>not</em> touch production, which uses the
+        vectorized call. It touches the <em>attribution</em> of mechanism (1) and the
+        &ldquo;two independent causes&rdquo; framing. Aliasing is still real and still visible —
+        at $n \le 30$, where the dial swings by factors of 3.5&times; and 6.3&times;. The book
+        records this and does not resolve it:
+        <code>book/design/flags/museum_FLAGS.md</code> F-museum-1.
+      </p>
+    </div>
+
+    <div class="widget">
+      <h4>What the falsification actually measured
+        <span class="prov-chip real">real: results/volume_trunc_ab_20260712/gate_result.json</span>
+      </h4>
+      <p style="margin-top:0; color:var(--muted); font-size:0.88rem;">
+        The gate that killed <code>volume_trunc</code> ran production code on real data. Toggle
+        the channel; the dashed line is the injected truth. Note what &ldquo;worse&rdquo; looks
+        like here: not a wider posterior, a <em>narrower</em> one in the wrong place.
+      </p>
+      <div class="widget-controls">
+        <label>Channel:</label>
+        <div class="toggle-row" id="mus-ab-row">
+          <button type="button" data-ch="1d">1D (no mass channel)</button>
+          <button type="button" data-ch="2d">2D (with BH mass)</button>
+        </div>
+      </div>
+      <div id="mus-ab-plot" class="widget-plot" style="min-height:280px"></div>
+      <div class="mus-readouts" id="mus-ab-readouts">
+        <span><code>volume_deconv</code> mean <strong id="mus-ab-base">&mdash;</strong></span>
+        <span><code>volume_trunc</code> mean <strong id="mus-ab-trunc">&mdash;</strong></span>
+        <span>&Delta; <strong id="mus-ab-delta">&mdash;</strong></span>
+      </div>
+      <p class="mus-note">
+        The 2D row sits on <strong>designated-candidate</strong> ground for real-data work
+        <span class="badge candidate">CANDIDATE</span> — <code>[RATIFY-M6]</code> calls the
+        <code>absolute_marginal</code> + <code>volume_deconv</code> pairing &ldquo;necessary,
+        not established sufficient&rdquo;
+        <span class="prov-chip">mass_marginal_2d_kernel.md:1-17, 690-706</span>. Read every 2D
+        number in this museum with that badge attached.
+      </p>
+      <details class="num-view">
+        <summary>Show me the numbers</summary>
+        <div class="table-scroll"><table class="num-table" id="mus-ab-table"></table></div>
+      </details>
+      <noscript>
+        <p><strong>Static fallback.</strong> 7-point $h$-grid, seed600 494 events.
+        1D: <code>volume_deconv</code> MAP 0.73, mean 0.7450 &rarr; <code>volume_trunc</code>
+        MAP 0.80, mean 0.8000 (0.999 of the mass at 0.80).
+        2D: 0.76 / 0.7681 &rarr; 0.80 / 0.8000 (0.9998 at 0.80).
+        &Delta;mean = +0.0549 (1D), +0.0319 (2D).</p>
+      </noscript>
+    </div>
+
+    <details class="gw-reader">
+      <summary>&#9656; For the GW reader</summary>
+      <p>
+        <code>fixed_quad(f, a, b, n)</code> is Gauss–Legendre on the affine map of $[-1,1]$ to
+        $[a,b]$: it is exact for polynomials of degree $\le 2n-1$ and says nothing at all about
+        functions with structure below the node spacing. For $n = 50$ on $[0, 0.182]$ the mean
+        node spacing is $3.6\times10^{-3}$ (Legendre nodes cluster at the endpoints, so the
+        interior spacing is larger still) against a GW peak whose $\sigma$ in $z$ is
+        $\approx 2.5\times10^{-3}$ — the <em>marginal</em> regime, which is exactly why the
+        answer comes out accurate-ish and not reliable-ish.
+      </p>
+      <p>
+        Production hard-codes <code>FIXED_QUAD_N = 50</code> and later re-implements the same
+        node map by hand for a batched per-row reduction that is required to be bit-identical to
+        <code>fixed_quad</code> (<code>bayesian_statistics.py:450-500</code>). That is the right
+        engineering call — but it also means the quadrature order is a <em>physics</em>
+        parameter of this pipeline that no gate currently sweeps. The narrow event-level GW
+        window, which is what production actually integrates over in every shipped mode, is
+        peak-centred and about $8\sigma$ wide, so $n = 50$ is comfortable there; the exposure is
+        specific to wide-window variants like <code>volume_trunc</code>.
+      </p>
+    </details>
+
+    <!-- ---------- #ex-absolute-marginal ---------- -->
+    <div class="mus-exhibit is-refuted" id="ex-absolute-marginal">
+      <details class="mus-fold">
+        <summary>
+        <span class="mus-num">Exhibit 2 · ledger #77 · 2026-07-25</span>
+        <h3><code>absolute_marginal</code> (V1) — cure the deep rail
+          <span class="badge refuted">REFUTED as a cure</span>
+        </h3>
+        </summary>
+      <dl>
+        <dt>The hypothesis</dt>
+        <dd>
+          On the deep venue the posterior railed <em>low</em>, at $h = 0.60$. The diagnosis was
+          that the mixture&rsquo;s catalogue leg was normalized against a quantity that does not
+          describe the absolute number of hosts, so V1 replaced it with an
+          absolute-mass host marginal, calibrated through
+          $\bar n_w = \Sigma_{\rm glob}/\beta_G$.
+        </dd>
+        <dt>The pre-registered prediction</dt>
+        <dd>The deep rail clears; the MAP moves into the interior.</dd>
+        <dt>The decisive test</dt>
+        <dd>seed1000 probe plus the seed600 gate, commit <code>49b9ade</code>.</dd>
+        <dt>The measured outcome</dt>
+        <dd>
+          The rail <strong>relocated</strong>: LOW &rarr; HIGH, <strong>0.86 in both
+          channels</strong>; seed600 1D <strong>0.775 (+0.030)</strong> and 2D railed at 0.86.
+          And the identity it rests on was then measured on the real catalogue and found
+          <strong>violated by 33% in value and 0.39/h in log-slope</strong>
+          <span class="prov-chip">ledger #77, #78</span>
+          <span class="prov-chip">H0R:1475-1482, :1548-1552</span>.
+        </dd>
+        <dt>What it cost</dt>
+        <dd>
+          It became the shipped normalization of campaign <strong>#53</strong> anyway — the
+          realistic campaign this whole book&rsquo;s final chapters read — and the successor
+          <code>generator_marginal</code> exists specifically because
+          $\bar n_w = \Sigma_{\rm glob}/\beta_G$ had to be replaced by $W_{\rm cat}/V_f$
+          <span class="prov-chip">ledger &sect;3 Gate C item 1</span>
+          <span class="prov-chip">ledger #81</span>.
+        </dd>
+        <dd class="mus-lesson">The transferable lesson: <strong>a fix can be correct in
+          mechanism and still be a different bug.</strong> &ldquo;It no longer rails low&rdquo;
+          is not the same sentence as &ldquo;it is calibrated&rdquo;.</dd>
+      </dl>
+      <p class="mus-note">
+        <strong>Still live downstream.</strong> The failure of that calibration identity is
+        <em>not</em> retired: it is the measured half of claim <strong>C9</strong>, which the
+        <strong>2026-07-30</strong> adjudication left open pending the cell-B control. That
+        control landed <strong>2026-07-31</strong> and released the gate &mdash; C9 remains
+        live and unfixed, and $w_G$ stays off the exonerated list
+        <span class="prov-chip">CELLB_READOUT_20260731.md</span>
+        <span class="mus-fwd">⏭ Ch 9, Ch 11 §5</span>.
+      </p>
+      <p class="mus-backlink">referenced by <a href="ch09-universe-factory.html">Ch 9 &sect;4, &ldquo;Two estimands&rdquo;</a> &middot; <a href="ch09-universe-factory.html">&larr; back</a></p>
+      </details>
+    </div>
+
+    <!-- ---------- #ex-numerator-only ---------- -->
+    <div class="mus-exhibit is-refuted" id="ex-numerator-only">
+      <details class="mus-fold">
+        <summary>
+        <span class="mus-num">Exhibit 3 · ledger #37 / #38 / #39 · 2026-06-30</span>
+        <h3>Numerator-only normalization cleans
+          <span class="badge refuted">REFUTED</span>
+          <span class="badge confounded">CONTESTED PROVENANCE</span>
+        </h3>
+        </summary>
+      <dl>
+        <dt>The hypothesis</dt>
+        <dd>
+          Three sibling proposals, all of the same shape: clean up the way the host-redshift
+          kernel is normalized <em>in the numerator</em> (Angles A/B/C), or build a locally
+          consistent same-kernel denominator, or smear the global selection integral with the
+          photometric width ($D_{\rm sm}$). Any of them should de-rail the estimator.
+        </dd>
+        <dt>The pre-registered prediction</dt>
+        <dd>De-rail to an interior peak at truth, with the $\sigma_z \to 0$ gate passing.</dd>
+        <dt>The decisive test</dt>
+        <dd>The <code>rung_I</code> harness, a $\sigma_z \to 0$ gate, and a multi-seed
+          $n_{\rm gal}$-convergence run.</dd>
+        <dt>The measured outcome</dt>
+        <dd>
+          Angles A/C and B rail <strong>UP to 0.870</strong> at $\sigma_z = 0.035$; the local
+          same-kernel denominator <strong>fails the $\sigma_z \to 0$ gate</strong> (0.870 at
+          <em>both</em> widths); $D_{\rm sm}$ <strong>de-biases without producing a peak</strong>
+          — the width does not shrink with $N$ (std 0.11 &rarr; 0.097 at 2000 events) and the
+          peaks land at 0.64 / 0.64 / 0.69 / 0.87, never 0.73
+          <span class="prov-chip">BRA:76-82, :81, :309-322</span>.
+        </dd>
+        <dt>What it cost</dt>
+        <dd>An era of the investigation, and — read forward — the &ldquo;information
+          starvation&rdquo; verdict of <a href="#ex-starvation">Exhibit 10</a>, which was
+          assembled largely out of these three failures.</dd>
+        <dd class="mus-lesson">The transferable lesson: <strong>symmetry between numerator and
+          denominator is not optional.</strong> Changing a prior on one side of a ratio is not a
+          refinement; it is a different estimator.</dd>
+      </dl>
+      <p class="mus-note">
+        <strong>Read this exhibit with its own asterisk.</strong> The commission&rsquo;s
+        evidence-locker audit graded <strong>0 of 5</strong> of the project&rsquo;s railing
+        harnesses faithful and classified <code>rung_I</code> — the source of these three rows —
+        as an <em>artifact with sign flips</em>: in the auditor&rsquo;s hands STANDARD &rarr; 0.60
+        and CONSISTENT_DENOM &rarr; 0.87, i.e. the labels inverted relative to production. Treat
+        the rail <em>directions</em> of rows #37–#39 as contested, not settled
+        <span class="prov-chip">WF3a_DIGEST.md:3-20</span>
+        <span class="prov-chip">sources map &sect;7.9</span>.
+      </p>
+      <p class="mus-backlink">Not cited from a chapter &mdash; museum-only. <a href="index.html">&larr; the front door</a></p>
+      </details>
+    </div>
+
+    <!-- ---------- #ex-gray-mixture ---------- -->
+    <div class="mus-exhibit is-refuted" id="ex-gray-mixture">
+      <details class="mus-fold">
+        <summary>
+        <span class="mus-num">Exhibit 4 · ledger #60 · 2026-07-11</span>
+        <h3>The full Gray mixture as the cure
+          <span class="badge refuted">REFUTED</span>
+        </h3>
+        </summary>
+      <dl>
+        <dt>The hypothesis</dt>
+        <dd>
+          The pipeline&rsquo;s deep-venue coverage failure comes from running a simplified
+          two-branch mixture instead of the published form. Replace it with the full
+          $(\beta_G \mathcal L^{\rm cat} + B^{\rm num})/D$ mixture — literally Gray et al. (2020),
+          arXiv:1908.06050 — and calibration should be restored.
+        </dd>
+        <dt>The pre-registered prediction</dt>
+        <dd>Bias shrinks toward the two-branch estimator&rsquo;s +0.032 or below.</dd>
+        <dt>The decisive test</dt>
+        <dd>The EXP-41 coverage harness, 12 deep cells with known truth.</dd>
+        <dt>The measured outcome</dt>
+        <dd>
+          It <strong>amplifies</strong>: worst-cell bias <strong>+0.123</strong> against the
+          two-branch +0.032, <strong>12/12 cells fail</strong>, and the host branch flips from
+          <em>counterweight</em> (−26…−182 nats) to <em>co-tilt</em> (+47…+166)
+          <span class="prov-chip">pp_coverage_graymix_20260711/SUMMARY.md:12-42</span>.
+        </dd>
+        <dt>What it cost</dt>
+        <dd>A cycle, and the last comfortable belief available to a pipeline that had been
+          drifting from its own reference paper.</dd>
+        <dd class="mus-lesson">The transferable lesson: <strong>being closer to the published
+          equation is not automatically better in a modified pipeline.</strong> Equations are
+          not modular; the published mixture assumes the rest of the published machinery.</dd>
+      </dl>
+      <p class="mus-note"><strong>Venue scope.</strong> Synthetic coverage harness, deep cells.
+        <span class="mus-dnr">DO NOT RE-TRY</span> — ledger &sect;2 item 2.</p>
+      <p class="mus-backlink">Not cited from a chapter &mdash; museum-only. <a href="index.html">&larr; the front door</a></p>
+      </details>
+    </div>
+
+    <!-- ==========================================================
+         ROOM 2
+         ========================================================== -->
+    <div class="mus-room">
+      <span class="mus-room-kicker">Room 2</span>
+      <h2>3. Right about the physics, wrong about the number</h2>
+      <p>
+        Every exhibit in this room identified something genuinely defective. Every one of them
+        fixed it. None of them moved the number they were built to move. This is the most
+        expensive category in the collection, because there is no moment at which the
+        investigator is <em>wrong</em> — only a moment at which they are irrelevant.
+      </p>
+    </div>
+
+    <!-- ---------- #ex-mass-trunc ---------- -->
+    <div class="mus-exhibit is-exonerated" id="ex-mass-trunc">
+      <span class="mus-num">Exhibit 5 · ledger #71 &rarr; #72 · 2026-07-13</span>
+      <h3><code>mass_trunc</code> — the truncated-lognormal mass kernel as the 2D driver
+        <span class="badge exonerated">EXONERATED</span>
+      </h3>
+      <dl>
+        <dt>The hypothesis</dt>
+        <dd>
+          The 2D channel&rsquo;s residual is owned by the host-mass prior. Production used an
+          untruncated linear Gaussian in $M$ — which assigns real probability to negative masses
+          — where the physically correct object is a lognormal, truncated and renormalized on
+          $[10^4, 10^7]\,M_\odot$ and multiplied by the EMRI rate $R_{\rm eff}(M)$
+          <span class="prov-chip">Reines &amp; Volonteri 2015, arXiv:1508.06274</span>.
+        </dd>
+        <dt>The pre-registered prediction</dt>
+        <dd>
+          Uniquely in this museum, the prediction came with a <em>measured</em> effect size
+          first: an isolated single-host toy gave <strong>+0.016…+0.02</strong> in $h$, with the
+          right sign, at $\sigma_z/z \approx 0.5$–0.65. <strong>Confirmed in isolation</strong>
+          <span class="prov-chip">ledger #71</span>.
+        </dd>
+        <dt>The decisive test</dt>
+        <dd>The same kernel, in the full pipeline: seed600 494-event A/B, commit
+          <code>70bee1f</code>.</dd>
+        <dt>The measured outcome</dt>
+        <dd>
+          &Delta;2D mean <strong>+0.0029 — the wrong sign</strong>. &Delta;1D
+          <strong>0.0000, exact</strong>. Re-measured later against the ratified kernel in a
+          4-cell A/B: it moves the 2D leg down by only <strong>−1.8 / −2.3 nats</strong> of a
+          +25.6 / +29.1 excess, and the 2D MAP <strong>does not move</strong> from 0.80
+          <span class="prov-chip">ledger #72, #89</span>.
+        </dd>
+        <dt>Why the toy was wrong</dt>
+        <dd>
+          The toy isolated the <em>numerator</em>. The pipeline applies the same prior to the
+          per-galaxy selection integral, and the likelihood is the ratio
+          $\mathcal L^{\rm cat} = \sum_g w_g N_g / \sum_g w_g D_g$. A prior-shape change moves
+          $N_g$ and $D_g$ in the <em>same</em> direction, so most of it cancels; what survives is
+          the small piece where $p_{\rm det}$ weights the denominator differently from the way
+          the GW likelihood weights the numerator.
+        </dd>
+        <dt>What it cost</dt>
+        <dd>Two measurement cycles and, more expensively, a plausible story about the 2D
+          residual that had to be dismantled twice — once as <code>mass_trunc</code>, once as
+          &ldquo;mass-kernel family&rdquo; on the claim file&rsquo;s own list.</dd>
+        <dd class="mus-lesson">The transferable lesson:
+          <strong>the selection denominator is not a spectator.</strong> An isolated toy can be
+          right about the physics and irrelevant to the answer.</dd>
+      </dl>
+      <p class="mus-note">
+        <strong>Venue scope.</strong> Same seed600 494-event shallow subsample as
+        <a href="#ex-volume-trunc">Exhibit 1</a>. <span class="mus-dnr">DO NOT RE-TRY</span> —
+        ledger &sect;2 item 1, which explicitly says: do not re-derive this a third time.
+      </p>
+      <p class="mus-backlink">referenced by <a href="ch08-mass-channel.html">Ch 8 &mdash; the museum interlude</a> &middot; <a href="ch08-mass-channel.html">&larr; back</a></p>
+    </div>
+
+    <!-- ---------- #ex-ha-measure ---------- -->
+    <div class="mus-exhibit is-exonerated" id="ex-ha-measure">
+      <details class="mus-fold">
+        <summary>
+        <span class="mus-num">Exhibit 6 · claim file HA / C8 · 2026-07-30</span>
+        <h3>HA — &ldquo;$D(h)$ is not mass-marginalised&rdquo;
+          <span class="badge exonerated">EXONERATED as the owner</span>
+          <span class="badge finding">the defect it found is LIVE</span>
+        </h3>
+        </summary>
+      <dl>
+        <dt>The hypothesis</dt>
+        <dd>
+          The 2D likelihood adds a term carrying a mass density to a term carrying none, so the
+          mixture is dimensionally inconsistent — and the culprit is the selection normalization
+          $D(h)$, which is not marginalised over mass.
+        </dd>
+        <dt>The pre-registered prediction</dt>
+        <dd>Correcting the mismatch moves the 2D MAP down, toward truth.</dd>
+        <dt>The decisive test</dt>
+        <dd>Apply the correction to the delivered realistic runs and read the MAP.</dd>
+        <dt>The measured outcome</dt>
+        <dd>
+          It moves r1 from <strong>0.8133 to 0.8492</strong> and r2 from 0.7820 to 0.8527 —
+          a real effect, and <strong>the wrong sign</strong>. And the attribution is wrong too:
+          a code trace shows $D$, $\beta_G$ and $\beta_{\bar G}$ are <em>correctly</em>
+          mass-dimensionless (they are Mandel–Farr–Gair selection probabilities). The mismatch is
+          <strong>numerator-internal</strong> — a 4D catalogue leg added to a 3D completion leg
+          <span class="prov-chip">README_C8.md</span>
+          <span class="prov-chip">CLAIM_2D_BIAS_20260730.md &sect;Exonerated</span>.
+        </dd>
+        <dt>What it cost</dt>
+        <dd>Nothing wasted — this is the exhibit that <em>paid</em>. HA-as-owner is dead, but
+          the dimensional analysis that killed it is what produced <strong>C8</strong>: the 2D
+          MAP walks with an arbitrary choice of mass unit (0.81329 / 0.78107 / 0.74440, then a
+          rail at 0.600) while the 1D channel is bitwise invariant.</dd>
+        <dd class="mus-lesson">The transferable lesson: <strong>a confirmed dimensional
+          mismatch can still be the wrong explanation of the number you care about.</strong>
+          Separate &ldquo;is this defective?&rdquo; from &ldquo;does this own the residual?&rdquo;
+          — they need different tests.</dd>
+      </dl>
+      <p class="mus-note">
+        <strong>C8 is live.</strong> This museum retires HA-as-owner, not the well-posedness
+        problem it found. The claim file&rsquo;s adjudication keeps C8 open, with its cause
+        attributed to the numerator legs&rsquo; measure mismatch — not to $D(h)$
+        <span class="mus-fwd">⏭ Ch 8 &sect;6, Ch 11</span>.
+      </p>
+      <p class="mus-backlink">Not cited from a chapter &mdash; museum-only. <a href="index.html">&larr; the front door</a></p>
+      </details>
+    </div>
+
+    <!-- ---------- #ex-zerohost-fallback ---------- -->
+    <div class="mus-exhibit is-exonerated" id="ex-zerohost-fallback">
+      <details class="mus-fold">
+        <summary>
+        <span class="mus-num">Exhibit 7 · ledger #54 &rarr; #55 · 2026-07-10 &rarr; 2026-07-25</span>
+        <h3>The zero-host fallback (issue #29)
+          <span class="badge finding">REAL BUG, FIXED</span>
+          <span class="badge refuted">NOT THE SYMPTOM</span>
+        </h3>
+        </summary>
+      <dl>
+        <dt>The hypothesis</dt>
+        <dd>
+          Events whose candidate ball contained no catalogued galaxy at all were being
+          <em>silently dropped</em> from the combination — not down-weighted, not flagged,
+          dropped. On the deep venue that was <strong>58% of the events</strong>. Restore them
+          via the pure-completion branch and the deep rail at $h = 0.600$ should clear.
+        </dd>
+        <dt>The pre-registered prediction</dt>
+        <dd>The rail clears once the discarded 58% are back in the likelihood.</dd>
+        <dt>The decisive test</dt>
+        <dd>EXP-40: a full re-evaluation with the code fix as the only variable.</dd>
+        <dt>The measured outcome</dt>
+        <dd>
+          The bug was real and was fixed (<code>8db6c6e</code>). <strong>The rail persisted at
+          0.6000 in both channels.</strong> The split explains why: the host-bearing events
+          carry −4265 nats across the grid, and the restored fallback events are
+          <strong>$h$-inert</strong> — a total of −59 nats
+          <span class="prov-chip">ledger #54, #55</span>
+          <span class="prov-chip">H0R:1368-1420</span>.
+        </dd>
+        <dt>What it cost</dt>
+        <dd>
+          A campaign hold, and a follow-up measurement that made things worse before better: the
+          restored pure-completion estimator is itself <strong>biased high</strong> by +0.7…+5.4%
+          in $h$, with 68% coverage collapsing to ≤0.27 at completeness fractions 0.22–0.85
+          <span class="prov-chip">ledger #57</span>.
+        </dd>
+        <dd class="mus-lesson">The transferable lesson: <strong>fixing a real bug is not the
+          same as explaining the symptom.</strong> The size of a bug is not evidence about its
+          effect; only a measurement is.</dd>
+      </dl>
+      <p class="mus-note">
+        <strong>Do not confuse two 58%s.</strong> The number above is the <em>drop rate</em> of
+        ledger #54 on a deep venue. It is a different quantity, in a different venue, from
+        claim <strong>C5</strong>&rsquo;s statistic about in-catalogue events in campaign #53 —
+        which must always be quoted with its fair-framing amendment (per-event cosmetic
+        <em>and</em> class-summed +3.4–6.1σ) <span class="mus-fwd">⏭ Ch 11 &sect;2</span>.
+      </p>
+      <p class="mus-backlink">referenced by <a href="ch05-unseen-galaxy.html">Ch 5 &mdash; the museum interlude</a> &middot; <a href="ch05-unseen-galaxy.html">&larr; back</a></p>
+      </details>
+    </div>
+
+    <!-- ---------- #ex-wg-bookkeeping ---------- -->
+    <div class="mus-exhibit is-exonerated" id="ex-wg-bookkeeping">
+      <details class="mus-fold">
+        <summary>
+        <span class="mus-num">Exhibit 8 · ledger #61 · 2026-07-11</span>
+        <h3>The $w_G = \beta_G/D$ bookkeeping fix
+          <span class="badge refuted">REFUTED as the fix</span>
+          <span class="badge finding">C9 is LIVE</span>
+        </h3>
+        </summary>
+      <dl>
+        <dt>The hypothesis</dt>
+        <dd>
+          The mixture weight <span class="term" data-term="wG">$w_G$</span> — the probability that
+          this event&rsquo;s host is in the catalogue — is computed as $\beta_G/D$, and that is
+          the wrong bookkeeping. Re-derive it as a membership-conditioned inverse and the deep
+          tilt should go.
+        </dd>
+        <dt>The pre-registered prediction</dt>
+        <dd>Bias shrinks; the failing coverage cells recover.</dd>
+        <dt>The decisive test</dt>
+        <dd>N-2b on the coverage harness, 12 deep cells.</dd>
+        <dt>The measured outcome</dt>
+        <dd>
+          Bias <strong>+0.005…+0.044</strong>, <strong>12/12 fail</strong> — and the diagnosis of
+          <em>why</em> is the lesson: the tilt did not shrink, it
+          <strong>relocated to the host branch</strong> (+94…+455 nats)
+          <span class="prov-chip">pp_coverage_graymix_20260711/SUMMARY.md:64-75</span>.
+        </dd>
+        <dt>What it cost</dt>
+        <dd>A cycle — and it bought a permanent guard: the ledger now records that this
+          particular <em>fix form</em> is dead, so nobody spends the cycle again.</dd>
+        <dd class="mus-lesson">The transferable lesson: <strong>relocating is not
+          removing.</strong> If your correction moves a discrepancy from one leg to another,
+          your model of the discrepancy is wrong, not your arithmetic.</dd>
+      </dl>
+      <p class="mus-note">
+        <strong>This exonerates the fix, not the defect.</strong> Claim <strong>C9</strong> —
+        that $w_G$ is mis-calibrated by 2.3–2.5&times; against the realized catalogued-host rate,
+        at $z = -11.86$ — is <em>live</em>. It was gated on the cell-B control until that
+        control landed <strong>2026-07-31</strong>; the gate is released and the claim is not
+        <span class="prov-chip">CELLB_READOUT_20260731.md</span>. The re-litigation
+        guard is narrow and specific: do not re-try the membership-conditioned inverse
+        <span class="prov-chip">ledger &sect;2 item 3</span> <span class="mus-fwd">⏭ Ch 9 &sect;6</span>.
+      </p>
+      <p class="mus-backlink">referenced by <a href="ch09-universe-factory.html">Ch 9 &sect;6</a> &middot; <a href="ch09-universe-factory.html">&larr; back</a></p>
+      </details>
+    </div>
+
+    <!-- ==========================================================
+         ROOM 3
+         ========================================================== -->
+    <div class="mus-room">
+      <span class="mus-room-kicker">Room 3</span>
+      <h2>4. The wrong layer — and one that simply wasn&rsquo;t there</h2>
+      <p>
+        A museum of only near-misses would be a morality play. This room has two hypotheses
+        that were investigated at the wrong altitude, and one that was a perfectly reasonable
+        suspicion about a bug that did not exist.
+      </p>
+    </div>
+
+    <!-- ---------- #ex-pdet-anchor ---------- -->
+    <div class="mus-exhibit is-refuted" id="ex-pdet-anchor">
+      <span class="mus-num">Exhibit 9 · ledger #17 · 2026-05-02/03</span>
+      <h3>The $p_{\rm det}$ anchor escalation
+        <span class="badge refuted">REFUTED</span>
+      </h3>
+      <dl>
+        <dt>The hypothesis</dt>
+        <dd>
+          The detection probability is built on a finite grid in $d_L$, and its very first bin —
+          the $d_L \to 0$ asymptote, where detection should be certain — read
+          <strong>0.7931</strong>. That underestimate sits in the denominator of every
+          event&rsquo;s likelihood. A real defect, and an obvious suspect.
+        </dd>
+        <dt>The pre-registered prediction</dt>
+        <dd>Raise the anchor, and the MAP moves toward truth. Plan 45-06 raised it to
+          <strong>0.8873</strong> — a <strong>+12%</strong> lift applied to every event at once.</dd>
+        <dt>The decisive test</dt>
+        <dd>Production re-evaluation, anchor as the only variable.</dd>
+        <dt>The measured outcome</dt>
+        <dd>
+          <strong>1D 0.7550, 2D 0.7450 — unchanged. Zero grid steps.</strong>
+          <span class="prov-chip">ledger #17</span>
+          <span class="prov-chip">H0R:184-208, :1989-1990</span>
+        </dd>
+        <dt>What it cost</dt>
+        <dd>Three plan cycles (45-02/03, 45-04/05, 45-06). The two shipped anchor fixes moved
+          the production MAP by at most one grid step; the decisive +12% escalation moved it by
+          none.</dd>
+        <dd class="mus-lesson">The transferable lesson: <strong>the layer you can see is not the
+          layer that matters.</strong> Before spending a cycle on something because it is
+          visibly defective, ask what the answer is actually a <em>function</em> of.</dd>
+      </dl>
+      <p class="mus-backlink">referenced by <a href="ch04-loud-half.html">Ch 4 &mdash; the museum interlude</a> &middot; <a href="ch04-loud-half.html">&larr; back</a></p>
+    </div>
+
+    <!-- ---------- #ex-hb-window ---------- -->
+    <div class="mus-exhibit is-refuted" id="ex-hb-window">
+      <details class="mus-fold">
+        <summary>
+        <span class="mus-num">Exhibit 10 · claim file HB · 2026-07-30</span>
+        <h3>HB — the hard mass window as support truncation
+          <span class="badge refuted">REFUTED — by its own investigator</span>
+        </h3>
+        </summary>
+      <dl>
+        <dt>The hypothesis</dt>
+        <dd>
+          The 2D candidate search applies a <em>hard</em> mass cut where the mass information
+          should enter as a soft kernel weight. Because the window&rsquo;s bounds depend on
+          $z_{\min}$/$z_{\max}$, which depend on $h$, the truncation is $h$-dependent
+          <em>by construction</em> — a natural candidate for the −504.8-nat dark-class tilt. The
+          catalogue mass error is huge ($\sigma_{\ln M} \approx 1.28$) against a near-exact GW
+          mass, so only the lower edge bites: 193 low-side rejections against 1 high-side.
+        </dd>
+        <dt>The pre-registered prediction</dt>
+        <dd>The window&rsquo;s $h$-tilt accounts for a substantial share of the dark tilt.</dd>
+        <dt>The decisive test</dt>
+        <dd>Measure the truncation&rsquo;s own $h$-tilt over 0.73 &rarr; 0.81 and compare it to
+          the target.</dd>
+        <dt>The measured outcome</dt>
+        <dd>
+          <strong>−0.317 nats = 0.063% of the 504.8-nat target</strong>, roughly 50&times; too
+          small at its ceiling, and <strong>sign-inverted</strong> — removing the window moves the
+          MAP <em>up</em> by ~+0.0015. The investigator killed their own candidate
+          <span class="prov-chip">HANDOFF_20260730.md &sect;4 (historical record only)</span>
+          <span class="prov-chip">CLAIM_2D_BIAS_20260730.md &sect;Exonerated</span>.
+        </dd>
+        <dt>What it cost</dt>
+        <dd>
+          The session that ended with HB written up as &ldquo;the one unrefuted candidate&rdquo;.
+          Two of the framing assumptions used to <em>motivate</em> it were also false: the
+          &ldquo;why is 1D spared?&rdquo; screen has no discriminating power for mass hypotheses
+          (the 1D channel never sees the mass window at all —
+          <code title="current tree :623">handler.py:592</code> vs <code title="current tree :632-634">:605</code>), and campaign #51 is a
+          <em>stronger</em> exposure, not a non-control (153,473 impostors pass the window in the
+          unscattered case).
+        </dd>
+        <dd class="mus-lesson">The transferable lesson: <strong>size your candidate before you
+          believe it.</strong> A mechanism that is real, $h$-dependent, and 1000&times; too small
+          is not a partial explanation — it is a different subject.</dd>
+      </dl>
+      <p class="mus-note">
+        <strong>Citation hygiene.</strong> <code>HANDOFF_20260730.md</code> &sect;4 still reads
+        as though HB were live; it is retained only as historical record behind a superseding
+        block, and this book never cites it as current
+        <span class="prov-chip">sources map &sect;7.2</span>.
+      </p>
+      <p class="mus-backlink">Not cited from a chapter &mdash; museum-only. <a href="index.html">&larr; the front door</a></p>
+      </details>
+    </div>
+
+    <!-- ---------- #ex-index-bug ---------- -->
+    <div class="mus-exhibit" id="ex-index-bug">
+      <details class="mus-fold">
+        <summary>
+        <span class="mus-num">Exhibit 11 · ledger #4 · 2026-03-31</span>
+        <h3>The Gaussian 3D/4D index bug
+          <span class="badge exonerated">NOT A FACTOR</span>
+        </h3>
+        </summary>
+      <dl>
+        <dt>The hypothesis</dt>
+        <dd>
+          The likelihood evaluates a multivariate Gaussian in either three coordinates
+          $(\phi,\theta,u)$ or four (adding $M_z$). Two code paths, two index conventions, one
+          plausible off-by-one. Early in the investigation, with a large unexplained bias on the
+          table, this is exactly the sort of thing that is usually the answer.
+        </dd>
+        <dt>The pre-registered prediction</dt>
+        <dd>If the indexing is wrong, the $\delta$-approximation analysis will show a
+          measurable shift.</dd>
+        <dt>The decisive test</dt>
+        <dd>A $\delta$-approximation analysis of the evaluation path.</dd>
+        <dt>The measured outcome</dt>
+        <dd><strong>NOT A FACTOR</strong> <span class="prov-chip">H0R:1975</span>. There was no
+          bug. The indices were right.</dd>
+        <dt>What it cost</dt>
+        <dd>Very little — which is the point of including it.</dd>
+        <dd class="mus-lesson">The transferable lesson: <strong>sometimes the plausible bug
+          simply is not there.</strong> A museum that only exhibits near-misses teaches you that
+          every suspicion is nearly right. Most are not, and the cheap check that says so is a
+          good check.</dd>
+      </dl>
+      <p class="mus-backlink">referenced by <a href="ch06-black-box.html">Ch 6 &mdash; the provenance panel</a> &middot; <a href="ch06-black-box.html">&larr; back</a></p>
+      </details>
+    </div>
+
+    <!-- ==========================================================
+         ROOM 4
+         ========================================================== -->
+    <div class="mus-room">
+      <span class="mus-room-kicker">Room 4</span>
+      <h2>5. Failures about your estimator, mistaken for facts about nature</h2>
+      <p>
+        The two exhibits in this room are the most dangerous in the collection, because both of
+        them are <em>flattering</em>. One concluded that the data were fundamentally
+        uninformative. The other produced a beautifully stable, precise, reproducible number
+        that contained no information about $H_0$ whatsoever.
+      </p>
+    </div>
+
+    <!-- ---------- #ex-starvation ---------- -->
+    <div class="mus-exhibit is-overturned" id="ex-starvation">
+      <span class="mus-num">Exhibit 12 · ledger #41 &rarr; #52 · 2026-06-30 &rarr; 2026-07-02</span>
+      <h3>Information starvation
+        <span class="badge refuted">OVERTURNED</span>
+      </h3>
+      <dl>
+        <dt>The hypothesis</dt>
+        <dd>
+          Formally concluded, in writing, as a <em>verdict</em>: in-catalogue photometric dark
+          sirens at $\sigma_z/z \approx 0.7$ are <strong>information-starved</strong>. Not a bug
+          — a limit of the data. It was supported by a five-paper, five-dimension literature
+          reverse-engineering that found no published method validated in this regime
+          <span class="prov-chip">ledger #40</span>, and by three independent failed cures
+          (<a href="#ex-numerator-only">Exhibit 3</a>).
+        </dd>
+        <dt>The pre-registered prediction</dt>
+        <dd>
+          The negative control: a numerator-only volume tilt (rung G2) should <em>also</em> rail,
+          because if starvation is a property of the data, no estimator can escape it.
+        </dd>
+        <dt>The decisive test</dt>
+        <dd>Run the negative control and the production ablation cube side by side, and see
+          whether <em>any</em> configuration recovers.</dd>
+        <dt>The measured outcome</dt>
+        <dd>
+          One family does recover — the one where the same population prior multiplies the same
+          measurement likelihood on <em>both</em> sides of the ratio. The ablation cube reads
+          bare+global 0.60 &rarr; volume kernel in $N_g$ <em>and</em> $D_g$ 0.76 &rarr; with the
+          local denominator <strong>0.73</strong>, and a synthetic coverage run of the consistent
+          estimator is calibrated at bias −0.002. Verdict, in the postmortem&rsquo;s own words:
+          starvation was <strong>&ldquo;a property of prior-INCONSISTENT estimators, not of the
+          data&rdquo;</strong>
+          <span class="prov-chip">G6_starvation_postmortem.md:24-33</span>
+          <span class="prov-chip">ledger #48, #52</span>.
+        </dd>
+        <dt>What it cost</dt>
+        <dd>
+          A month of work aimed at the wrong target, a literature review commissioned to
+          confirm a conclusion, and a written verdict that had to be publicly superseded. The
+          &ldquo;counted exactly once&rdquo; rule that runs through this whole book is the
+          artifact that survived it.
+        </dd>
+        <dd class="mus-lesson">The transferable lesson: <strong>the most seductive failure is the
+          one that flatters you by being fundamental.</strong> &ldquo;My estimator cannot do
+          this&rdquo; and &ldquo;this cannot be done&rdquo; are separated by exactly one negative
+          control, and it is always worth running.</dd>
+      </dl>
+      <p class="mus-note">
+        <span class="mus-dnr">DO NOT RE-TRY</span> — ledger &sect;2 item 13: do not resurrect
+        starvation as an explanation.
+      </p>
+      <p class="mus-backlink">referenced by <a href="ch04-loud-half.html">Ch 4 &sect;4</a> and <a href="ch05-unseen-galaxy.html">Ch 5 &mdash; the museum interlude</a> &middot; <a href="ch04-loud-half.html">&larr; back</a></p>
+    </div>
+
+    <!-- ---------- #ex-h0-independent ---------- -->
+    <div class="mus-exhibit is-overturned" id="ex-h0-independent">
+      <span class="mus-num">Exhibit 13 · ledger #49a · 2026-07-01</span>
+      <h3>The $H_0$-independent estimator
+        <span class="badge finding">MEASURED</span>
+      </h3>
+      <dl>
+        <dt>The hypothesis</dt>
+        <dd>
+          Not a fix — a <em>test of the instrument</em>, and the sharpest question in this
+          museum. The production estimator was railing at $h = 0.86$. Before asking why, an
+          independent commission asked something more basic: <strong>is this estimator even
+          responsive to the truth?</strong> Vary the injected $H_0$ and see whether the answer
+          follows.
+        </dd>
+        <dt>The pre-registered prediction</dt>
+        <dd>
+          Stated in the script&rsquo;s own docstring, before the run: <em>&ldquo;If
+          <code>catalog_only</code> tracks the injection but production rails to the SAME edge
+          regardless, the rail is a normalization artifact, not a data constraint.&rdquo;</em>
+        </dd>
+        <dt>The decisive test</dt>
+        <dd>
+          An injection scan over five injected truths on one fixed synthetic catalogue, reading
+          two estimators side by side.
+        </dd>
+        <dt>The measured outcome</dt>
+        <dd>
+          The production MAP reads <strong>0.86 at every injected truth from 0.63 to 0.77</strong>
+          while the locally-normalized control follows the truth. An estimator whose mode does
+          not move with the parameter is not measuring the parameter
+          <span class="prov-chip">ledger #49a</span>
+          <span class="prov-chip">DRAFT_REPORT.md:24-27</span>.
+        </dd>
+        <dt>What it cost</dt>
+        <dd>
+          Almost nothing — the script is a couple of hundred lines of numpy over a synthetic
+          catalogue, and this page&rsquo;s generator re-runs the whole scan in about
+          <strong>16 seconds</strong>. That is the exhibit: the cheapest test in the ledger was
+          also the one that reframed the investigation, from &ldquo;why is the number
+          high?&rdquo; to &ldquo;is this a number?&rdquo;
+        </dd>
+        <dd class="mus-lesson">The transferable lesson: <strong>an estimator can be precise,
+          stable, reproducible and carry zero information about the parameter.</strong> Before
+          debugging a value, check that the value is a function of what you think it is a
+          function of.</dd>
+      </dl>
+      <p class="mus-backlink">referenced by <a href="ch02-bayes.html">Ch 2 &sect;3</a>, <a href="ch09-universe-factory.html">Ch 9 &sect;3</a> and <a href="ch10-calibration.html">Ch 10 &mdash; the museum interlude</a> &middot; <a href="ch10-calibration.html">&larr; back</a></p>
+    </div>
+
+    <div class="widget">
+      <h4>Is it a function of the truth?
+        <span class="prov-chip real">real: re-run of results/commission_20260701/injection_scan.py</span>
+      </h4>
+      <p style="margin-top:0; color:var(--muted); font-size:0.88rem;">
+        The dashed diagonal is what a responsive estimator looks like: MAP = injected truth.
+        This is a re-run of the commission&rsquo;s own script with its own seeds, not a
+        transcription of its output.
+      </p>
+      <div id="mus-h0i-plot" class="widget-plot" style="min-height:300px"></div>
+      <div class="mus-readouts">
+        <span>production MAP range <strong id="mus-h0i-prod">&mdash;</strong></span>
+        <span>control MAP range <strong id="mus-h0i-ctrl">&mdash;</strong></span>
+      </div>
+      <p class="mus-note" id="mus-h0i-note"></p>
+      <details class="num-view">
+        <summary>Show me the numbers</summary>
+        <div class="table-scroll"><table class="num-table" id="mus-h0i-table"></table></div>
+      </details>
+      <noscript>
+        <p><strong>Static fallback.</strong> Injected truth 0.63 / 0.67 / 0.70 / 0.73 / 0.77 &rarr;
+        production MAP 0.86 / 0.86 / 0.86 / 0.86 / 0.86; <code>catalog_only</code> control MAP
+        0.630 / 0.660 / 0.690 / 0.730 / 0.770. Venue: the commission&rsquo;s synthetic harness
+        (20,000-galaxy catalogue, moderate completeness), <strong>not</strong> the production
+        catalogue.</p>
+      </noscript>
+    </div>
+
+    <!-- ==========================================================
+         ROOM 5 — method
+         ========================================================== -->
+    <div class="mus-room">
+      <span class="mus-room-kicker">Room 5 · method</span>
+      <h2>6. When did it break?</h2>
+      <p>
+        Every exhibit so far answers &ldquo;is this hypothesis true?&rdquo;. This last one
+        answers a question that comes earlier and is almost never asked: <em>when did the
+        estimator stop working?</em> It has a method, and the method is a bisect — not over
+        commits, but over the posteriors those commits left lying on disk.
+      </p>
+    </div>
+
+    <!-- ---------- #ex-archaeology ---------- -->
+    <div class="mus-exhibit is-method" id="ex-archaeology">
+      <details class="mus-fold">
+        <summary>
+        <span class="mus-num">Exhibit 14 · ledger #49b · 2026-07-01</span>
+        <h3>Archaeology — bisecting the stored posteriors
+          <span class="badge finding">MEASURED</span>
+        </h3>
+        </summary>
+      <dl>
+        <dt>The hypothesis</dt>
+        <dd>
+          Three independent auditors were asked the same question — <em>why were past results
+          sensible, and what changed?</em> — and disagreed. The git-diff angle only looked back
+          to 27 April and concluded &ldquo;born railing, then fixed&rdquo;. The run-artifact
+          angle looked at what was actually written to disk.
+        </dd>
+        <dt>The decisive test</dt>
+        <dd>
+          Not a code review: a <strong>bisect over stored posteriors by date</strong>. Every run
+          in the archive leaves a posterior; sort them by commit date and read the MAP.
+        </dd>
+        <dt>The measured outcome</dt>
+        <dd>
+          A <strong>2026-04-09</strong> baseline over 417 events peaks at
+          <strong>map_h = 0.735</strong>, interior, recovering the injected 0.73, with edge mass
+          $\sim 10^{-36}$ — and that posterior had <em>no selection machinery at all</em>. The
+          rail to 0.86 first appears on <strong>~2026-04-24</strong>, when the Gray
+          selection/completeness machinery was switched on
+          <span class="prov-chip">WF1_DIGEST.md:9-15</span>
+          <span class="prov-chip">ledger #49b</span>.
+        </dd>
+        <dt>What it cost</dt>
+        <dd>
+          It <em>saved</em>: it is what reframed the rail as introduced-by-machinery rather than
+          intrinsic-to-photometric-data, and it is a large part of why
+          <a href="#ex-starvation">Exhibit 12</a> was overturned.
+        </dd>
+        <dd class="mus-lesson">The transferable lesson: <strong>&ldquo;when did it break?&rdquo;
+          is a question with a method.</strong> Keep your outputs, date them, and make the
+          archive bisectable — a stored posterior is a measurement of the code that wrote it.</dd>
+      </dl>
+      <p class="mus-backlink">Not cited from a chapter &mdash; museum-only. <a href="index.html">&larr; the front door</a></p>
+      </details>
+    </div>
+
+    <div class="widget">
+      <h4>M2 — Archaeology: scrub the timeline
+        <span class="prov-chip">rec: WF1_DIGEST.md:9-15 · ledger #49, #49b, #93, #94</span>
+      </h4>
+      <p style="margin-top:0; color:var(--muted); font-size:0.88rem;">
+        <strong>Manipulate</strong> the date. <strong>Watch</strong> the MAP leave the interior on
+        2026-04-24 and take three months to come back — and read <em>what changed</em> at each
+        step, which is the part a plot cannot tell you.
+      </p>
+      <div class="widget-controls">
+        <label for="mus-time-slider">Era:</label>
+        <input id="mus-time-slider" type="range" aria-describedby="mus-time-card" />
+        <span class="readout"><strong id="mus-time-readout">&mdash;</strong></span>
+      </div>
+      <div id="mus-time-plot" class="widget-plot" style="min-height:300px"></div>
+      <div class="mus-timeline-card" id="mus-time-card"></div>
+      <p class="mus-note">
+        <strong>These are not one time series.</strong> The event set, the code and the estimator
+        all change between markers — 417 events in April, 494 in the de-rail matrix, 1588 in
+        campaign #51/#53. Each marker carries its own venue in the card below it. The strip is a
+        <em>bisect</em>, not a measurement of drift.
+      </p>
+      <details class="num-view">
+        <summary>Show me the numbers</summary>
+        <div class="table-scroll"><table class="num-table" id="mus-time-table"></table></div>
+      </details>
+      <noscript>
+        <p><strong>Static fallback.</strong> 2026-04-09: MAP 0.735, interior, no selection
+        machinery (n=417). 2026-04-24: selection ON &rarr; rails to 0.86. 2026-04-29: zero-fill
+        p_det fixed &rarr; interior, +4.8% high. May–June: interior, +1.5–4% high, grid narrowed
+        to [0.70, 0.80]. 2026-06-26: restructure to the single Gray ratio. 2026-06-28: seed600 at
+        HEAD rails to 0.86 again. 2026-07-01/02 de-rail matrix: 0.86 &rarr; 0.60 &rarr; 0.73
+        &rarr; 0.73. 2026-07-29: campaign #51 idealized 1D 0.7299; campaign #53 realistic 1D
+        pooled 0.7205, 2D 0.78–0.82.</p>
+      </noscript>
+    </div>
+
+    <!-- ==========================================================
+         THE LEDGER BROWSER
+         ========================================================== -->
+    <h2>7. &ldquo;Has this been tried?&rdquo;</h2>
+
+    <p>
+      Fourteen exhibits is a curation. The ledger is the collection. Below is all 98 rows,
+      searchable. The same digest backs the <em>Has this been tried?</em> box carried at the
+      foot of every chapter page — which searches these rows, and seeds itself with the dead
+      hypotheses that page&rsquo;s own sandboxes can reach — and it is the source the sandboxes
+      themselves quote when they hard-code a dead-end verdict beside a control. Since the
+      2026-07-31 revision pass it also powers the inline chips: a dial or button tagged with a
+      dead hypothesis volunteers its verdict (&#9878;&nbsp;#N) inside its own widget the moment
+      it becomes active, and widgets that already hard-code the verdict opt out, so nothing
+      double-reports and no predict-lock is pre-empted. This paragraph previously promised
+      something stronger than the build then delivered — an instrument that interrupts you
+      anywhere in the book — and was first corrected on 2026-07-31 after a review found the
+      promise ahead of the build; the scoped inline mechanism shipped later the same day
+      <span class="prov-chip">museum_FLAGS.md F-museum-6</span>.
+    </p>
+    <p>
+      Two things to try. Search <code>photo-z</code>, or <code>mass</code>, or
+      <code>denominator</code>, and read how many times the same suspicion came back wearing a
+      different name. Then filter to <strong>do not re-try</strong> and notice that the list is
+      not a list of stupid ideas — it is a list of the <em>most plausible</em> ideas, which is
+      exactly why they needed killing in writing.
+    </p>
+
+    <div class="widget">
+      <h4>The ledger, all 98 rows
+        <span class="prov-chip real">real: BIAS_HISTORY_LEDGER.md, parsed</span>
+      </h4>
+      <div class="mus-ledger-controls">
+        <input type="search" id="mus-search" placeholder="Search hypothesis, test, verdict, artifact…" aria-label="Search the ledger" />
+        <label for="mus-filter-class">Verdict:</label>
+        <select id="mus-filter-class"><option value="">all</option></select>
+        <label><input type="checkbox" id="mus-filter-dnr" /> do-not-re-try only</label>
+        <span class="readout"><strong id="mus-ledger-count">&mdash;</strong> rows</span>
+      </div>
+      <div class="table-scroll">
+        <table class="num-table mus-ledger-table" id="mus-ledger-table"></table>
+      </div>
+      <noscript>
+        <p><strong>Static fallback.</strong> The full 98-row ledger is
+        <code>results/campaign51_20260728/realistic_20260729/gate_b_20260730/BIAS_HISTORY_LEDGER.md</code>;
+        the machine-readable digest this widget reads is
+        <code>book/site/data/museum_ledger.json</code>. Its &sect;2 lists 17 do-not-re-try items
+        covering 30 rows; the claim file adds 15 more entries by name.</p>
+      </noscript>
+    </div>
+
+    <div class="voice-adjudicator">
+      <span class="voice-label">The binding union
+        <span class="badge finding">ADJUDICATED 2026-07-30</span>
+        <span class="prov-chip">CLAIM_2D_BIAS_20260730.md</span>
+        <span class="prov-chip">BIAS_HISTORY_LEDGER.md &sect;2</span>
+      </span>
+      The claim file&rsquo;s Exonerated list — catalogue Jacobian · Fisher frame ·
+      $p_{\rm det}$ estimator choice · $p_{\rm det}$ inside/outside · $h$-prior sensitivity ·
+      <code>volume_trunc</code> · the $z$ leg · the $\ln M$ draw · realization plumbing ·
+      candidate-window membership · mass-kernel family · Option-A $\beta_G/\Sigma_{\rm glob}$
+      drift · HA as the bias owner · HC zero-handling · HB — is <strong>not the whole set</strong>.
+      The binding union is that list <strong>plus</strong> the ledger&rsquo;s &sect;2 items 1–17,
+      which are historical exonerations absent from it and are therefore the live re-litigation
+      risk. And one deliberate omission is load-bearing: <strong>$w_G$ is <em>not</em> on the
+      list</strong> — as of the <strong>2026-07-30</strong> adjudication C9 was live and gated on
+      the cell-B control. That control landed <strong>2026-07-31</strong> and released the gate:
+      C9 remains <strong>live and unfixed</strong>, and $w_G$ stays off the exonerated list
+      <span class="prov-chip">CELLB_READOUT_20260731.md</span>.
+    </div>
+
+    <!-- ================= DOSSIER ================= -->
+    <div class="dossier">
+      <div class="dossier-title">Event dossier — EMRI-889 in the museum</div>
+      <table>
+        <tr><td>d_L</td><td>88.9 Mpc &middot; &sigma;_dL/d_L = 8.98&times;10&#8315;&#8308;</td></tr>
+        <tr><td>the rest of the card</td><td>SNR 1425, host galaxy index 859360, in catalogue</td></tr>
+        <tr><td>Exhibit 7</td><td>structurally, the zero-host fallback can never fire for 889: the fallback is the branch for events whose candidate list is <em>empty</em>, and 889 has a catalogued host — which is exactly why it is one of the 76</td></tr>
+        <tr><td>Exhibit 11</td><td>the 3D/4D index question was about the very Gaussian that turns 889&rsquo;s Fisher ellipse into a likelihood. There was no bug in it.</td></tr>
+        <tr><td>Exhibits 9, 12, 13</td><td>say nothing about <em>this event</em>: they were measured in May and June 2026, on venues and code eras that predate campaign #51/#53 entirely. A venue is not a detail.</td></tr>
+        <tr class="dossier-new"><td>after this annex</td><td>none of these 98 hypotheses changed a single measured number about EMRI-889. Every one of them changed the estimator wrapped around it — which is the only reason its numbers mean anything.</td></tr>
+      </table>
+    </div>
+
+    <p class="mus-note">
+      Erratum: the spec card carried &sigma;_dL/dL = 8.0&times;10&#8315;&#8309; &mdash; that is
+      the absolute &sigma;_dL in Gpc under a fractional label. Corrected book-wide 2026-07-31;
+      record: ch01 flag F1 / BUILD_REPORT &sect;5.1 item 1. The museum keeps it visible for the
+      reason the rest of this room exists: a units slip that survives six chapters is a defect
+      with a date, and it belongs in the collection, not in a silent overwrite.
+    </p>
+
+    <!-- ================= SELF-CHECK ================= -->
+    <h2>Self-check</h2>
+
+    <div class="selfcheck">
+      <p>M.1 &nbsp; <code>mass_trunc</code> was <em>confirmed</em> in an isolated single-host toy
+      (+0.016…+0.02, right sign) and <em>exonerated</em> in the full pipeline (&Delta;2D +0.0029,
+      wrong sign). Both measurements are correct. What is the toy missing, and what is the
+      general rule?</p>
+      <details class="answer">
+        <summary>Show answer</summary>
+        <div class="answer-body">
+          The toy computes only the numerator $N_g$. The pipeline computes the ratio
+          $\sum_g w_g N_g / \sum_g w_g D_g$, and the <em>same</em> host-mass prior enters
+          $D_g$ — so a change in prior shape moves numerator and denominator in the same
+          direction and mostly cancels. What survives is only the part where $p_{\rm det}$
+          weights the denominator differently from the way the GW likelihood weights the
+          numerator, and that residue happened to have the opposite sign
+          <span class="prov-chip">ledger #72</span>. The general rule is the one the finding
+          itself names: <strong>the selection denominator is not a spectator</strong>. Any toy
+          that omits the selection integral can predict the sign of a numerator effect and
+          nothing about the H₀ shift.
+        </div>
+      </details>
+    </div>
+
+    <div class="selfcheck">
+      <p>M.2 &nbsp; The <code>volume_trunc</code> gate found <strong>two</strong> reasons the fix
+      failed. Suppose you could only have measured one of them. Which one would still have been
+      decisive for the campaign, and why does that matter for how you write up a falsification?</p>
+      <details class="answer">
+        <summary>Show answer</summary>
+        <div class="answer-body">
+          The second — that even the <em>exact</em> host-window numerator rises monotonically with
+          $h$ (0.2417 &rarr; 0.4314 &rarr; 0.6537, reproduced on this page). That is a statement
+          about the <em>estimator</em> and it transfers to any implementation; the first is a
+          statement about a particular quadrature call and would be repaired by a better
+          integrator. The write-up lesson is sharper than that, though: the evidence offered for
+          the first cause turns out to be a scalar-array collapse in the diagnostic script
+          (<code>museum_FLAGS.md</code> F-museum-1) — so the falsification survives entirely on
+          the cause that was <em>estimator-level</em>. When you report two causes, say which one
+          the verdict rests on, because one of them may not survive re-measurement.
+        </div>
+      </details>
+    </div>
+
+    <div class="selfcheck">
+      <p>M.3 &nbsp; The $w_G$ bookkeeping fix (Exhibit 8) is on the do-not-re-try list, yet claim
+      C9 — which is <em>about</em> $w_G$ being mis-calibrated — is live. Explain how both can be
+      true at once, and what would have to be shown to move C9.</p>
+      <details class="answer">
+        <summary>Show answer</summary>
+        <div class="answer-body">
+          What was refuted is a <strong>fix form</strong>, not a defect: re-deriving $w_G$ as a
+          membership-conditioned inverse did not remove the tilt, it <em>relocated</em> it to the
+          host branch (+94…+455 nats, 12/12 cells still failing)
+          <span class="prov-chip">ledger #61</span>. That is evidence that a particular
+          re-parametrization is not the cure; it is not evidence that $w_G$ agrees with the
+          realized catalogued-host rate — which is separately measured to be off by 2.3–2.5&times;
+          at $z = -11.86$, and which the 2026-07-30 adjudication deliberately kept <em>off</em>
+          the exoneration list. Moving C9 required the pre-registered cell-B control, which
+          separates the estimator from the catalogue realization.
+          <strong>That control landed 2026-07-31</strong>: with a completely unscattered parent
+          catalogue $w_G(h)$ came back <em>bit-identical</em> to the realistic run at all 41 grid
+          points, so the mis-calibration is estimator-borne and the catalogue realization is not
+          the explanation
+          <span class="prov-chip">CELLB_READOUT_20260731.md</span>. That released the gate; it
+          did not close the claim. C9 is still <strong>live and unfixed</strong> — the honest
+          state moved from &ldquo;measured, unexplained, gated&rdquo; to &ldquo;measured,
+          attributed, and waiting on a derivation&rdquo; (the joint C9+C8 mass-consistent
+          mixture, author-gated under <code>/physics-change</code>)
+          <span class="mus-fwd">⏭ Ch 9, Ch 11 §5</span>.
+        </div>
+      </details>
+    </div>
+
+    <div class="selfcheck">
+      <p>M.4 <em>(transfer)</em> &nbsp; You have a new candidate mechanism for the remaining 2D
+      residual. Before writing a line of code, what are the three cheapest things this museum
+      says you should do — in order?</p>
+      <details class="answer">
+        <summary>Show answer</summary>
+        <div class="answer-body">
+          (i) <strong>Search the ledger.</strong> 30 of its 98 rows are flagged do-not-re-try and
+          they are the plausible ideas, not the silly ones; if your candidate is already row #61
+          or #72, you are done in thirty seconds. (ii) <strong>Size it before you believe it.</strong>
+          HB was real, $h$-dependent, and 0.063% of its target
+          <span class="prov-chip">claim file &sect;Exonerated</span> — an order-of-magnitude
+          estimate would have retired it before the session started. (iii) <strong>Ask whether
+          your test can refute or only confirm</strong>, and whether it includes the selection
+          denominator: the $p_{\rm det}$ anchor (+12%, zero grid steps) and <code>mass_trunc</code>
+          (right in isolation, wrong in the pipeline) both failed at exactly that step. Then write
+          the prediction down, with the venue, <em>before</em> you run it — every exhibit in this
+          museum that taught something had that field filled in first.
+        </div>
+      </details>
+    </div>
+
+    <div class="callout defect">
+      <span class="callout-label">Trap &mdash; &ldquo;These were all just bugs. The physics was never in question.&rdquo;</span>
+      Count them. Twenty-one ledger rows are <em>fixed and landed</em> — real defects, correctly
+      identified, correctly repaired — and the ledger&rsquo;s own residual column shows the
+      symptom surviving most of them. Meanwhile the single largest documented movement in the
+      whole history, MAP 0.60 &rarr; 0.73, came from changing the <em>domain of an integral</em>
+      (local window &rarr; full volume, ledger #9), and the second largest, 0.86 &rarr; 0.60, from
+      marginalizing a sky Gaussian instead of evaluating it at its peak (ledger #46). Those are
+      not typos. They are modelling choices that look like implementation details right up until
+      you measure them.
+    </div>
+
+    <div class="callout defect">
+      <span class="callout-label">Trap &mdash; &ldquo;Fine &mdash; but a museum of dead ideas can&rsquo;t tell me what&rsquo;s true.&rdquo;</span>
+      It tells you something stronger than a list of live claims: it tells you the
+      <em>shape</em> of this estimator&rsquo;s failures. Four of the five most expensive exhibits
+      here (Exhibits 1, 3, 4, 12) failed in the same way — a prior entered one side of a ratio
+      and not the other — and the rule that survived them all, <em>counted exactly once</em>, is
+      now the first thing to check on any new candidate. A falsification ledger is not the
+      absence of knowledge; it is the compressed form of it.
+    </div>
+
+    <!-- ================= PROVENANCE ================= -->
+    <div class="provenance-panel">
+      <h4>Provenance panel — every stamp used in this annex</h4>
+      <ul>
+        <li><span class="badge finding">FINDING</span> <code>gate_b_20260730/BIAS_HISTORY_LEDGER.md</code> — the 98-row chronological table, its &sect;2 DO-NOT-RE-TRY list (17 items, 30 rows) and its standing venue-scoping rule. Parsed, not transcribed, into <code>data/museum_ledger.json</code>. Corrected 2026-07-31: the parser read &sect;2&rsquo;s back-references as comma-separated only, so items 13 and 15 &mdash; written <code>(#41/#52)</code> and <code>(#43/#44)</code> &mdash; silently lost four rows (<code>museum_FLAGS.md</code> F-museum-5)</li>
+        <li><span class="badge finding">FINDING</span> <code>CLAIM_2D_BIAS_20260730.md &sect;Exonerated</code> (as amended 2026-07-30) — the 15-entry exoneration list; HA, HB, HC; the deliberate omission of $w_G$</li>
+        <li><span class="badge refuted">REFUTED</span> <code>results/volume_trunc_ab_20260712/FINDING.md:1-58</code> + <code>gate_result.json</code> + <code>quadrature_diagnostic.py</code> — ledger #70; the A/B posteriors plotted here are that JSON, unmodified</li>
+        <li><span class="badge exonerated">EXONERATED</span> <code>results/mass_trunc_ab_20260713/FINDING.md:3-12, 54-78</code> — ledger #71 &rarr; #72; and <code>mass_ab_20260727/MASS_KERNEL_AB_READOUT.md:23-80</code> — ledger #89</li>
+        <li><span class="badge refuted">REFUTED</span> <code>ledger #17</code> / <code>H0R:184-208, :1989-1990</code> — the $p_{\rm det}$ anchor, +12%, zero grid steps</li>
+        <li><span class="badge refuted">REFUTED</span> <code>ledger #54 &rarr; #55</code> / <code>H0R:1368-1420</code> / <code>8db6c6e</code> — the zero-host fallback: real bug, fixed, rail persists; fallback events $h$-inert (−59 nats)</li>
+        <li><span class="badge refuted">REFUTED</span> <code>pp_coverage_graymix_20260711/SUMMARY.md:12-42, :64-75</code> — ledger #60 (full Gray mixture amplifies) and #61 ($w_G$ bookkeeping relocates)</li>
+        <li><span class="badge refuted">REFUTED</span> <code>ledger #77, #78</code> / <code>H0R:1475-1482, :1548-1552</code> — <code>absolute_marginal</code> relocates the rail LOW&rarr;HIGH; its calibration identity violated 33% / 0.39 per h</li>
+        <li><span class="badge refuted">REFUTED</span> <code>BRA:76-82, :81, :309-322</code> — ledger #37/#38/#39, with the contested-provenance caveat <code>WF3a_DIGEST.md:3-20</code> (sources map &sect;7.9)</li>
+        <li><span class="badge refuted">REFUTED</span> <code>G6_starvation_postmortem.md:24-33</code> + <code>ledger #41 &rarr; #52, #48</code> — information starvation, overturned</li>
+        <li><span class="badge exonerated">EXONERATED</span> <code>H0R:1975</code> — ledger #4, the 3D/4D index bug: NOT A FACTOR</li>
+        <li><span class="badge finding">FINDING</span> <code>ledger #49a</code> / <code>DRAFT_REPORT.md:24-27</code> / <code>WF2_DIGEST.md:26-30</code> — the $H_0$-independent estimator (cited by the draft&rsquo;s real name, sources map &sect;7.10)</li>
+        <li><span class="badge finding">FINDING</span> <code>ledger #49b</code> / <code>WF1_DIGEST.md:9-15</code> — the archaeology; plus ledger #49, #93, #94 for the later markers</li>
+        <li><span class="badge candidate">CANDIDATE</span> <code>[RATIFY-M6]</code>, <code>mass_marginal_2d_kernel.md:1-17, 690-706</code> — every 2D number in this annex sits on designated-candidate ground</li>
+        <li><span class="badge open">OPEN</span> C7 · C8 · C9 remain live and are <em>explained, not retired</em>, here: Exhibit 6 retires HA-as-owner but not C8; Exhibit 8 retires a $w_G$ fix form but not C9</li>
+        <li>Code sites: <code>physical_relations.py:132 dist</code> (scalar-only), <code>bayesian_statistics.py:3806, :3826</code> (<code>dist_vectorized</code>), <code>:3867</code> (<code>fixed_quad</code>, n = 50), <code>:450-500</code> (the hand-rolled bit-identical node map), <code title="current tree :623">handler.py:592</code> vs <code title="current tree :632-634">:605</code> (1D never sees the mass window)</li>
+        <li>Open flags: <code>book/design/flags/museum_FLAGS.md</code> — <strong>F-museum-1</strong> (the flagship&rsquo;s aliasing attribution does not reproduce; both forms shown), <strong>F-museum-2</strong> (&ldquo;tracks truth exactly&rdquo; vs a re-run one grid step low in 2 of 5 cells), F-museum-3 (untracked sources), F-museum-4 (checked without discrepancy)</li>
+      </ul>
+    </div>
+
+    <p class="book-footer">
+      Data generated by <code>book/generators/gen_museum.py</code> (read-only against the main
+      package and <code>results/</code>). This page renders fully offline — Plotly and KaTeX are
+      vendored under <code>vendor/</code>.
+    </p>
+  </main>
+</div>
+
+<script src="js/manifest.js"></script>
+<script src="vendor/plotly/plotly.min.js"></script>
+<script src="vendor/katex/katex.min.js"></script>
+<script src="vendor/katex/auto-render.min.js"></script>
+<script src="js/book.js"></script>
+<script>
+  (function () {
+    "use strict";
+
+    // ---------------------------------------------------------------
+    // Folded exhibits: never hide content from someone who asked for it
+    // ---------------------------------------------------------------
+    // Nine of the fourteen exhibits ship collapsed (REVISION_WORKLIST
+    // §C-museum, ped-M5). Two ways in must still work: a deep link from a
+    // chapter (or from the ledger browser), and print. Both force the fold
+    // open — the room stays complete, only the visit is shortened.
+    function openFoldsIn(el) {
+      if (!el) return;
+      var node = el;
+      while (node && node !== document.body) {
+        if (node.tagName === "DETAILS") node.open = true;
+        node = node.parentNode;
+      }
+      Array.prototype.forEach.call(el.querySelectorAll("details.mus-fold"), function (d) {
+        d.open = true;
+      });
+    }
+    function openHashTarget() {
+      if (!location.hash || location.hash.length < 2) return;
+      var target = null;
+      try { target = document.getElementById(decodeURIComponent(location.hash.slice(1))); }
+      catch (e) { target = null; }
+      if (!target) return;
+      openFoldsIn(target);
+      // re-run the jump: the anchor resolved before the fold expanded
+      target.scrollIntoView();
+    }
+    window.addEventListener("hashchange", openHashTarget);
+    openHashTarget();
+    function openAllFolds() {
+      Array.prototype.forEach.call(document.querySelectorAll("details.mus-fold"), function (d) {
+        d.open = true;
+      });
+    }
+    if (window.matchMedia) {
+      var mq = window.matchMedia("print");
+      if (mq.addEventListener) mq.addEventListener("change", function (e) { if (e.matches) openAllFolds(); });
+      else if (mq.addListener) mq.addListener(function (e) { if (e.matches) openAllFolds(); });
+    }
+    window.addEventListener("beforeprint", openAllFolds);
+
+    // ---------------------------------------------------------------
+    // Palette (mirrors css/book.css tokens; Plotly needs literals)
+    // ---------------------------------------------------------------
+    var C = {
+      accent: "#0072B2",
+      accentDark: "#6fb8e8",
+      warn: "#D55E00",
+      rec: "#CC79A7",
+      ok: "#009E73",
+      guess: "#E69F00",
+      prior: "#9e9e9e",
+    };
+    function ink() { return Book.isDark() ? "#eef1f5" : "#1a1a1a"; }
+    function grid() { return Book.isDark() ? "#33373f" : "#d8dce1"; }
+    function live() { return Book.isDark() ? C.accentDark : C.accent; }
+    function muted() { return Book.isDark() ? "#9aa2b1" : "#5b6270"; }
+
+    function baseLayout(xTitle, yTitle) {
+      return {
+        margin: { l: 66, r: 18, t: 26, b: 46 },
+        xaxis: { title: xTitle, gridcolor: grid(), zeroline: false },
+        yaxis: { title: yTitle, gridcolor: grid(), zeroline: false },
+        paper_bgcolor: "rgba(0,0,0,0)",
+        plot_bgcolor: "rgba(0,0,0,0)",
+        font: { color: ink(), size: 12 },
+        showlegend: false,
+        hovermode: "closest",
+      };
+    }
+    function truthShape(h) {
+      return {
+        type: "line", x0: h, x1: h, y0: 0, y1: 1, yref: "paper",
+        line: { color: Book.isDark() ? "#eef1f5" : "#1a1a1a", dash: "dot", width: 1.6 },
+      };
+    }
+    function fmt(v, n) {
+      return (v === null || v === undefined || !isFinite(v)) ? "—" : Number(v).toFixed(n);
+    }
+    function esc(s) {
+      return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    }
+    function table(el, headers, rows, classes) {
+      var html = "<tr>" + headers.map(function (h) { return "<th>" + h + "</th>"; }).join("") + "</tr>";
+      rows.forEach(function (r) {
+        html += "<tr>" + r.map(function (c, i) {
+          var cls = classes && classes[i] ? ' class="' + classes[i] + '"' : "";
+          return "<td" + cls + ">" + c + "</td>";
+        }).join("") + "</tr>";
+      });
+      el.innerHTML = html;
+    }
+
+    // ---------------------------------------------------------------
+    // Bias rail (BW1). The museum is an annex: it adds no estimator, so
+    // nothing is `active`. Values are the project's own measurements,
+    // each with its venue in the tooltip.
+    // ---------------------------------------------------------------
+    Book.biasRail({
+      entries: [
+        { label: "cat-only, no D(h)", bias: -0.178, note: "Phase 32 / ledger #9 — MAP 0.60, that era's venue" },
+        { label: "full-volume D(h)", bias: 0.0, note: "Phase 32 / ledger #9 — MAP 0.73, that era's venue" },
+        { label: "2D pairing (#53)", bias: 0.077, note: "ledger #94 — mean over 10 realistic runs; RATIFY-M6 CANDIDATE ground" },
+      ],
+    });
+    (function railNote() {
+      var host = document.getElementById("bias-rail");
+      if (!host) return;
+      var p = document.createElement("div");
+      p.style.cssText = "font-size:0.68rem;line-height:1.35;color:var(--muted);margin-top:0.5rem;border-top:1px solid var(--border);padding-top:0.4rem;";
+      p.textContent = "Annex — no estimator on this page. The rail shows the book's state; the museum explains how it got there.";
+      host.appendChild(p);
+    })();
+
+    // ===============================================================
+    // The ledger: census widget + browser
+    // ===============================================================
+    Book.loadJSON("data/museum_ledger.json").then(function (d) {
+      var order = ["refuted", "fixed", "measured", "exonerated", "confirmed", "qualified",
+                   "non_cause", "overturned", "open"];
+      var classes = order.filter(function (k) { return d.census[k]; });
+      var counts = classes.map(function (k) { return d.census[k]; });
+      var labels = classes.map(function (k) { return d.class_labels[k] || k; });
+      var colors = classes.map(function (k) {
+        if (k === "refuted" || k === "overturned") return C.warn;
+        if (k === "exonerated" || k === "non_cause") return C.guess;
+        if (k === "fixed" || k === "confirmed") return C.ok;
+        if (k === "open") return C.prior;
+        return live();
+      });
+
+      Book.themedPlot("mus-census-plot", [{
+        type: "bar", orientation: "h",
+        x: counts.slice().reverse(), y: labels.slice().reverse(),
+        marker: { color: colors.slice().reverse() },
+        text: counts.slice().reverse().map(String),
+        textposition: "outside",
+        hovertemplate: "%{y}<br>%{x} of " + d.n_rows + " rows<extra></extra>",
+      }], function () {
+        var L = baseLayout("ledger rows", "");
+        L.margin.l = 200;
+        L.xaxis.range = [0, Math.max.apply(null, counts) * 1.25];
+        L.yaxis.automargin = true;
+        return L;
+      });
+
+      document.getElementById("mus-census-n").textContent = d.n_rows;
+      document.getElementById("mus-census-dnr").textContent = d.do_not_retry_rows.length;
+      document.getElementById("mus-census-items").textContent = d.do_not_retry_items.length;
+      document.getElementById("mus-census-claim").textContent = d.claim_file_exonerated.length;
+
+      table(
+        document.getElementById("mus-census-table"),
+        ["verdict class", "rows", "example row", "verdict text as written"],
+        classes.map(function (k) {
+          var ex = d.rows.filter(function (r) { return r.verdict_class === k; })[0];
+          return [d.class_labels[k] || k, String(d.census[k]), "#" + ex.id, esc(ex.verdict)];
+        })
+      );
+
+      // ---- browser -------------------------------------------------
+      var sel = document.getElementById("mus-filter-class");
+      classes.forEach(function (k) {
+        var o = document.createElement("option");
+        o.value = k; o.textContent = (d.class_labels[k] || k) + " (" + d.census[k] + ")";
+        sel.appendChild(o);
+      });
+      var search = document.getElementById("mus-search");
+      var dnrBox = document.getElementById("mus-filter-dnr");
+      var countEl = document.getElementById("mus-ledger-count");
+      var tableEl = document.getElementById("mus-ledger-table");
+
+      // Museum meta-rule: a row that is on the DO-NOT-RE-TRY union always
+      // renders its verdict; the browser never shows a dead hypothesis
+      // without the measured outcome next to it.
+      function render() {
+        var q = search.value.trim().toLowerCase();
+        var cls = sel.value;
+        var dnrOnly = dnrBox.checked;
+        var rows = d.rows.filter(function (r) {
+          if (cls && r.verdict_class !== cls) return false;
+          if (dnrOnly && !r.do_not_retry) return false;
+          if (!q) return true;
+          return ("#" + r.id + " " + r.hypothesis + " " + r.test + " " + r.verdict + " " +
+                  r.documented + " " + r.era + " " + (r.book_note || "") + " " +
+                  r.venues.join(" ")).toLowerCase().indexOf(q) >= 0;
+        });
+        countEl.textContent = rows.length + " / " + d.n_rows;
+        table(
+          tableEl,
+          ["#", "date", "hypothesis", "verdict (as written)", "venue", "artifact"],
+          rows.map(function (r) {
+            return [
+              "#" + r.id + (r.do_not_retry ? '<br><span class="mus-dnr">DO NOT RE-TRY</span>' : ""),
+              esc(r.date || r.era),
+              esc(r.hypothesis),
+              // The verdict is the ledger's own string, verbatim. Where the book
+              // has to disambiguate it (expB MJ-3: row #88's "Cell B" is not the
+              // 2026-07-31 2x2's cell B), the annotation is rendered BELOW it and
+              // labelled as the book's, never merged into the quoted text.
+              esc(r.verdict) + (r.book_note
+                ? '<span class="mus-booknote">' + esc(r.book_note) + "</span>" : ""),
+              r.venues.length ? esc(r.venues.join("; ")) : '<span style="color:var(--muted)">not stated in the row</span>',
+              "<code>" + esc(r.documented) + "</code>",
+            ];
+          }),
+          [null, null, "mus-cell-h", "mus-cell-v", "mus-cell-v", "mus-cell-v"]
+        );
+      }
+      search.addEventListener("input", render);
+      sel.addEventListener("change", render);
+      dnrBox.addEventListener("change", render);
+      render();
+    });
+
+    // ===============================================================
+    // M1 — the quadrature dial
+    // ===============================================================
+    Book.loadJSON("data/museum_quadrature.json").then(function (d) {
+      var state = { n: 50, h: "0.73", mode: "vectorized" };
+      var lo = d.host.host_window[0], hi = d.host.host_window[1];
+      // sigma of the GW peak expressed in z at this host: sigma_dL/dL * z_g
+      var peakWidth = d.host.sigma_dl_frac * d.host.z_g;
+
+      function hIndex() { return d.h_values.indexOf(Number(state.h)); }
+      function ladder() {
+        return state.mode === "vectorized"
+          ? d.fixed_quad_vectorized[state.h]
+          : d.fixed_quad_scalar_dist[state.h];
+      }
+      function valueAt(n) { return ladder()[d.n_ladder.indexOf(n)]; }
+
+      // ---- top panel: integrand + the actual GL nodes ---------------
+      function integrandTraces() {
+        var g = d.integrand[state.h];
+        var t = [{
+          x: g.z, y: g.y, mode: "lines", fill: "tozeroy",
+          line: { color: live(), width: 2.2 }, fillcolor: "rgba(0,114,178,0.14)",
+          name: "integrand",
+          hovertemplate: "z = %{x:.4f}<br>integrand = %{y:.4g}<extra></extra>",
+        }];
+        var nodes = d.nodes[String(state.n)];
+        var ymax = Math.max.apply(null, g.y);
+        if (nodes) {
+          t.push({
+            x: nodes, y: nodes.map(function () { return -0.045 * ymax; }),
+            mode: "markers", marker: { symbol: "line-ns-open", size: 11, color: C.warn, line: { width: 1.4 } },
+            name: "quadrature nodes",
+            hovertemplate: "node at z = %{x:.4f}<extra></extra>",
+          });
+        }
+        if (state.mode === "scalar") {
+          t.push({
+            x: [lo], y: [ymax * 0.5], mode: "markers+text",
+            marker: { color: C.rec, size: 12, symbol: "x" },
+            text: ["the only z this mode ever evaluates"], textposition: "middle right",
+            textfont: { size: 11, color: C.rec },
+            hovertemplate: "scalar dist() collapses the node array to z = %{x:.4f}<extra></extra>",
+          });
+        }
+        return t;
+      }
+      var integrandPlot = Book.themedPlot("mus-integrand-plot", integrandTraces(), function () {
+        var L = baseLayout("host redshift z", "numerator integrand");
+        L.xaxis.range = [lo - 0.004, hi + 0.004];
+        L.annotations = [{
+          x: 0.98, y: 1.0, xref: "paper", yref: "paper", xanchor: "right", yanchor: "top",
+          text: "host window [0, 0.182] · GW peak width ≈ 0.0025",
+          showarrow: false, font: { size: 11, color: muted() },
+        }];
+        return L;
+      });
+
+      // ---- bottom panel: the ladder ---------------------------------
+      function ladderTraces() {
+        var y = ladder().map(function (v) { return Math.max(v, 1e-90); });
+        var ex = d.exact[hIndex()];
+        var t = [
+          {
+            x: d.n_ladder, y: y, mode: "lines+markers",
+            line: { color: state.mode === "vectorized" ? live() : C.warn, width: 2.2 },
+            marker: { size: 7 },
+            name: "fixed_quad(n)",
+            hovertemplate: "n = %{x}<br>integral = %{y:.4g}<extra></extra>",
+          },
+          {
+            x: d.n_ladder, y: d.n_ladder.map(function () { return ex; }),
+            mode: "lines", line: { color: C.ok, width: 1.8, dash: "dash" },
+            name: "exact",
+            hovertemplate: "exact = %{y:.4f}<extra></extra>",
+          },
+          {
+            x: [state.n], y: [Math.max(valueAt(state.n), 1e-90)],
+            mode: "markers", marker: { color: C.guess, size: 14, symbol: "circle-open", line: { width: 3 } },
+            hovertemplate: "you are here: n = %{x}<extra></extra>",
+          },
+        ];
+        // the recorded FINDING.md point, where it exists (h in 0.60/0.70/0.73/0.80/0.86)
+        var ri = d.recorded_finding.h.indexOf(Number(state.h));
+        if (ri >= 0 && state.mode === "scalar") {
+          t.push({
+            x: [50], y: [Math.max(d.recorded_finding.host_window_n50[ri], 1e-90)],
+            mode: "markers+text", marker: { color: C.rec, size: 11, symbol: "square" },
+            text: ["recorded 2026-07-12: 0.0000"], textposition: "top center",
+            textfont: { size: 10, color: C.rec },
+            hovertemplate: "FINDING.md host-window n=50: 0.0000<extra></extra>",
+          });
+        }
+        if (ri >= 0 && state.mode === "vectorized") {
+          t.push({
+            x: [50], y: [d.fixed_quad_vectorized[state.h][d.n_ladder.indexOf(50)]],
+            mode: "markers+text", marker: { color: C.rec, size: 11, symbol: "square-open", line: { width: 2 } },
+            text: ["n = 50, production form"], textposition: "top center",
+            textfont: { size: 10, color: C.rec },
+            hovertemplate: "%{y:.4f}<extra></extra>",
+          });
+        }
+        return t;
+      }
+      var ladderPlot = Book.themedPlot("mus-ladder-plot", ladderTraces(), function () {
+        var L = baseLayout("Gauss–Legendre order n", "value of the numerator integral");
+        L.xaxis.type = "log";
+        if (state.mode === "scalar") {
+          L.yaxis.type = "log";
+          L.yaxis.title = "value (log scale — note the 86 decades)";
+          L.yaxis.range = [-90, 1];
+        }
+        return L;
+      });
+
+      var valEl = document.getElementById("mus-quad-val");
+      var exEl = document.getElementById("mus-quad-exact");
+      var errEl = document.getElementById("mus-quad-err");
+      var ratioEl = document.getElementById("mus-quad-ratio");
+      var verdictEl = document.getElementById("mus-quad-verdict");
+
+      function draw() {
+        document.getElementById("mus-n-readout").textContent = String(state.n);
+        integrandPlot.update(integrandTraces());
+        ladderPlot.update(ladderTraces());
+        var v = valueAt(state.n), ex = d.exact[hIndex()];
+        valEl.textContent = (Math.abs(v) < 1e-4 && v !== 0) ? v.toExponential(2) : fmt(v, 4);
+        exEl.textContent = fmt(ex, 4);
+        var rel = (v - ex) / ex;
+        errEl.innerHTML = '<span class="' + (Math.abs(rel) < 0.05 ? "good" : "bad") + '">' +
+          (rel > 0 ? "+" : "") + (rel * 100).toFixed(1) + "%</span>";
+        ratioEl.textContent = (((hi - lo) / state.n) / peakWidth).toFixed(2) + "×";
+
+        if (state.mode === "scalar") {
+          verdictEl.innerHTML =
+            "<strong>Look at the ladder: it is flat in $n$.</strong> Every order from 10 to 600 " +
+            "returns ~10<sup>−86</sup>. A quadrature dial that changes nothing is not telling you " +
+            "about quadrature — here it is telling you that <code>dist()</code> collapsed the node " +
+            "array to its first element, so the GW factor is a constant evaluated at z = 0. This " +
+            "mode reproduces the recorded FINDING.md table exactly, and it is <em>not</em> what " +
+            "production computes. See the flag above.";
+        } else if (state.n <= 30) {
+          verdictEl.innerHTML =
+            "<strong>This is aliasing.</strong> With " + state.n + " nodes across a window 73 peak-widths " +
+            "wide, whether the integral is 3× too big or 6× too small depends on where the nodes " +
+            "happen to fall relative to the peak — and the peak moves with $h$. That is how a " +
+            "quadrature setting becomes an $h$-dependent tilt in a posterior.";
+        } else if (state.n < 75) {
+          verdictEl.innerHTML =
+            "<strong>The marginal regime.</strong> Accurate to a few percent and not reliable: the " +
+            "error still changes sign with $h$. Production's default is $n$ = 50 — comfortable on " +
+            "the narrow event-level GW window it actually integrates, exposed on a wide one.";
+        } else {
+          verdictEl.innerHTML =
+            "<strong>Converged.</strong> And the physics that killed <code>volume_trunc</code> is " +
+            "now legible without any quadrature excuse: switch $h$ across 0.60 → 0.86 and the exact " +
+            "value climbs 0.2417 → 0.6537. Unifying the numerator support rewards a higher $h$, in " +
+            "this regime, by construction.";
+        }
+        Book.renderMath(verdictEl);
+      }
+
+      var slider = document.getElementById("mus-n-slider");
+      Book.gridSlider({
+        sliderEl: slider,
+        readoutEl: null, // set inside draw() so the initial state is populated too
+        steps: d.n_ladder,
+        onStep: function (v) { state.n = v; draw(); },
+      });
+      slider.value = String(d.n_ladder.indexOf(50));
+
+      function wireToggle(rowId, attr, key, after) {
+        var row = document.getElementById(rowId);
+        var btns = row.querySelectorAll("[" + attr + "]");
+        btns.forEach(function (b) {
+          b.addEventListener("click", function () {
+            state[key] = b.getAttribute(attr);
+            btns.forEach(function (o) { o.setAttribute("aria-pressed", String(o === b)); });
+            if (after) after();
+            draw();
+          });
+        });
+        return btns;
+      }
+      var hBtns = wireToggle("mus-h-row", "data-h", "h");
+      var modeBtns = wireToggle("mus-mode-row", "data-mode", "mode");
+      hBtns.forEach(function (b) { b.setAttribute("aria-pressed", String(b.getAttribute("data-h") === "0.73")); });
+      modeBtns.forEach(function (b) { b.setAttribute("aria-pressed", String(b.getAttribute("data-mode") === "vectorized")); });
+
+      table(
+        document.getElementById("mus-quad-table"),
+        ["n", "h = 0.60 (vec)", "h = 0.73 (vec)", "h = 0.86 (vec)", "h = 0.73 (scalar dist)"],
+        d.n_ladder.map(function (n, i) {
+          return [
+            String(n),
+            fmt(d.fixed_quad_vectorized["0.60"][i], 4),
+            fmt(d.fixed_quad_vectorized["0.73"][i], 4),
+            fmt(d.fixed_quad_vectorized["0.86"][i], 4),
+            d.fixed_quad_scalar_dist["0.73"][i].toExponential(2),
+          ];
+        }).concat([[
+          "<strong>exact</strong>",
+          "<strong>" + fmt(d.exact[0], 4) + "</strong>",
+          "<strong>" + fmt(d.exact[2], 4) + "</strong>",
+          "<strong>" + fmt(d.exact[4], 4) + "</strong>",
+          "<strong>—</strong>",
+        ], [
+          "recorded, FINDING.md",
+          "0.0000", "0.0000", "0.0000", "0.0000",
+        ]])
+      );
+
+      draw();
+      // NOTE (WIDGET_REQUESTS R-ch04-1): predictReveal reads data-predict-id off
+      // the container it is GIVEN and looks for `.reveal` inside it, so the id is
+      // carried on the .widget as well as on the .predict-row and the .widget is
+      // what we pass.
+      Book.predictReveal(document.getElementById("mus-predict-widget"));
+
+      // ---- the A/B posteriors ---------------------------------------
+      var ab = d.ab, abState = "1d";
+      function abTraces() {
+        var H = ab.volume_deconv[abState].h_values;
+        return [
+          {
+            x: H, y: ab.volume_deconv[abState].posterior, mode: "lines+markers",
+            line: { color: live(), width: 2.4 }, marker: { size: 7 },
+            name: "volume_deconv",
+            hovertemplate: "h = %{x}<br>volume_deconv: %{y:.4f}<extra></extra>",
+          },
+          {
+            x: H, y: ab.volume_trunc[abState].posterior, mode: "lines+markers",
+            line: { color: C.warn, width: 2.4, dash: "dot" }, marker: { size: 7, symbol: "square" },
+            name: "volume_trunc",
+            hovertemplate: "h = %{x}<br>volume_trunc: %{y:.4f}<extra></extra>",
+          },
+        ];
+      }
+      var abPlot = Book.themedPlot("mus-ab-plot", abTraces(), function () {
+        var L = baseLayout("h = H₀ / 100", "posterior mass at grid point");
+        L.shapes = [truthShape(0.73)];
+        L.annotations = [
+          { x: 0.73, y: 1, yref: "paper", text: "truth 0.73", showarrow: false, yanchor: "bottom", font: { size: 11 } },
+          { x: 0.80, y: ab.volume_trunc[abState].posterior[5], text: "volume_trunc collapses here",
+            showarrow: true, arrowhead: 0, ax: -70, ay: -22, font: { size: 11, color: C.warn } },
+        ];
+        return L;
+      });
+      function abDraw() {
+        abPlot.update(abTraces());
+        document.getElementById("mus-ab-base").textContent = fmt(ab.volume_deconv[abState].mean, 4);
+        document.getElementById("mus-ab-trunc").textContent = fmt(ab.volume_trunc[abState].mean, 4);
+        var dm = ab.volume_trunc[abState].mean - ab.volume_deconv[abState].mean;
+        document.getElementById("mus-ab-delta").innerHTML =
+          '<span class="bad">+' + dm.toFixed(4) + " — away from truth</span>";
+        table(
+          document.getElementById("mus-ab-table"),
+          ["h", "volume_deconv", "volume_trunc"],
+          ab.volume_deconv[abState].h_values.map(function (h, i) {
+            return [fmt(h, 2),
+                    ab.volume_deconv[abState].posterior[i].toExponential(3),
+                    ab.volume_trunc[abState].posterior[i].toExponential(3)];
+          }).concat([["<strong>MAP / mean</strong>",
+                      "<strong>" + ab.volume_deconv[abState].MAP + " / " + fmt(ab.volume_deconv[abState].mean, 4) + "</strong>",
+                      "<strong>" + ab.volume_trunc[abState].MAP + " / " + fmt(ab.volume_trunc[abState].mean, 4) + "</strong>"]])
+        );
+      }
+      var abBtns = document.getElementById("mus-ab-row").querySelectorAll("[data-ch]");
+      abBtns.forEach(function (b) {
+        b.setAttribute("aria-pressed", String(b.getAttribute("data-ch") === "1d"));
+        b.addEventListener("click", function () {
+          abState = b.getAttribute("data-ch");
+          abBtns.forEach(function (o) { o.setAttribute("aria-pressed", String(o === b)); });
+          abDraw();
+        });
+      });
+      abDraw();
+    });
+
+    // ===============================================================
+    // M2 — the archaeology scrubber
+    // ===============================================================
+    Book.loadJSON("data/museum_archaeology.json").then(function (d) {
+      var E = d.entries;
+      var idx = 0;
+      var xs = E.map(function (_e, i) { return i; });
+
+      function traces(sel) {
+        var known = [], knownX = [], unknownX = [], unknownY = [];
+        E.forEach(function (e, i) {
+          if (e.map_h === null || e.map_h === undefined) { unknownX.push(i); unknownY.push(d.truth_h); }
+          else { known.push(e.map_h); knownX.push(i); }
+        });
+        return [
+          {
+            x: knownX, y: known, mode: "lines+markers",
+            line: { color: C.prior, width: 1.2, dash: "dot" },
+            marker: {
+              size: knownX.map(function (i) { return i === sel ? 15 : 9; }),
+              color: knownX.map(function (i) {
+                return E[i].state === "railed" ? C.warn : (E[i].state === "current" ? C.guess : C.ok);
+              }),
+              line: { width: knownX.map(function (i) { return i === sel ? 3 : 0; }), color: live() },
+            },
+            text: knownX.map(function (i) { return E[i].date + " — " + E[i].label; }),
+            hovertemplate: "%{text}<br>MAP = %{y}<extra></extra>",
+            name: "recorded MAP",
+          },
+          {
+            x: unknownX, y: unknownY, mode: "markers",
+            marker: { size: 10, color: C.prior, symbol: "diamond-open", line: { width: 2 } },
+            text: unknownX.map(function (i) { return E[i].date + " — " + E[i].label + " (no MAP recorded)"; }),
+            hovertemplate: "%{text}<extra></extra>",
+            name: "no MAP recorded",
+          },
+        ];
+      }
+      var plot = Book.themedPlot("mus-time-plot", traces(0), function () {
+        var L = baseLayout("", "MAP in h  (markers with no recorded MAP are drawn on the truth line)");
+        L.xaxis.tickmode = "array";
+        L.xaxis.tickvals = xs;
+        L.xaxis.ticktext = E.map(function (e) { return e.date; });
+        L.xaxis.tickangle = -40;
+        L.xaxis.tickfont = { size: 10 };
+        L.yaxis.range = [0.58, 0.90];
+        L.shapes = [{
+          type: "line", x0: -0.5, x1: E.length - 0.5, y0: d.truth_h, y1: d.truth_h,
+          line: { color: Book.isDark() ? "#eef1f5" : "#1a1a1a", dash: "dot", width: 1.5 },
+        }];
+        L.annotations = [{
+          x: 0.02, y: 1.0, xref: "paper", yref: "paper", xanchor: "left", yanchor: "top",
+          text: "separate measurements, separate venues — a bisect, not a drift curve",
+          showarrow: false, font: { size: 11, color: muted() },
+        }];
+        L.margin.b = 96;
+        return L;
+      });
+
+      var card = document.getElementById("mus-time-card");
+      function draw(i) {
+        idx = i;
+        plot.update(traces(i));
+        var e = E[i];
+        var mapTxt = e.map_label
+          ? "MAP: <strong>" + esc(e.map_label) + "</strong>"
+          : ((e.map_h === null || e.map_h === undefined)
+              ? esc(e.map_note)
+              : "MAP = <strong>" + e.map_h + "</strong>");
+        card.innerHTML =
+          '<span class="mus-tc-date">' + esc(e.date) + (e.commit ? " · " + esc(e.commit) : "") + "</span>" +
+          "<strong>" + esc(e.label) + "</strong><br>" + mapTxt +
+          '<div style="margin-top:0.4rem">' + esc(e.what) + "</div>" +
+          '<div style="margin-top:0.4rem;font-size:0.82rem;color:var(--muted)">venue: ' + esc(e.venue) +
+          ' &nbsp;·&nbsp; <span class="prov-chip">' + esc(e.artifact) + "</span></div>";
+        document.getElementById("mus-time-readout").textContent = e.date;
+      }
+      var slider = document.getElementById("mus-time-slider");
+      Book.gridSlider({
+        sliderEl: slider, readoutEl: null, steps: xs,
+        onStep: function (_v, i) { draw(i); },
+      });
+      slider.value = "0";
+      draw(0);
+
+      table(
+        document.getElementById("mus-time-table"),
+        ["date", "era", "MAP in h", "venue", "artifact"],
+        E.map(function (e) {
+          return [esc(e.date), esc(e.label),
+                  esc(e.map_label || (e.map_h === null || e.map_h === undefined ? e.map_note : String(e.map_h))),
+                  esc(e.venue), "<code>" + esc(e.artifact) + "</code>"];
+        })
+      );
+    });
+
+    // ===============================================================
+    // #49a — the H0-independent estimator
+    // ===============================================================
+    Book.loadJSON("data/museum_h0_independent.json").then(function (d) {
+      var T = d.injected_truth;
+      Book.themedPlot("mus-h0i-plot", [
+        {
+          x: [0.60, 0.80], y: [0.60, 0.80], mode: "lines",
+          line: { color: C.prior, width: 1.5, dash: "dash" },
+          hovertemplate: "a responsive estimator lies here<extra></extra>",
+        },
+        {
+          x: T, y: d.map_catalog_only, mode: "lines+markers",
+          line: { color: C.ok, width: 2.2 }, marker: { size: 10 },
+          name: "catalog_only (control)",
+          hovertemplate: "injected %{x}<br>control MAP %{y}<extra></extra>",
+        },
+        {
+          x: T, y: d.map_production, mode: "lines+markers",
+          line: { color: C.warn, width: 2.6 }, marker: { size: 11, symbol: "square" },
+          name: "production (railed era)",
+          hovertemplate: "injected %{x}<br>production MAP %{y}<extra></extra>",
+        },
+      ], function () {
+        var L = baseLayout("injected truth h", "recovered MAP h");
+        L.xaxis.range = [0.60, 0.80];
+        L.yaxis.range = [0.60, 0.90];
+        L.annotations = [
+          { x: 0.70, y: 0.865, text: "production: flat at 0.86", showarrow: false,
+            font: { size: 12, color: C.warn }, yanchor: "bottom" },
+          { x: 0.755, y: 0.745, text: "control follows the truth", showarrow: false,
+            font: { size: 12, color: C.ok }, xanchor: "left" },
+        ];
+        return L;
+      });
+      document.getElementById("mus-h0i-prod").textContent =
+        Math.min.apply(null, d.map_production).toFixed(3) + " – " + Math.max.apply(null, d.map_production).toFixed(3);
+      document.getElementById("mus-h0i-ctrl").textContent =
+        Math.min.apply(null, d.map_catalog_only).toFixed(3) + " – " + Math.max.apply(null, d.map_catalog_only).toFixed(3);
+      document.getElementById("mus-h0i-note").innerHTML =
+        "<strong>Venue:</strong> " + esc(d.venue) + ". <strong>Recorded wording vs this re-run:</strong> " +
+        esc(d.note);
+      table(
+        document.getElementById("mus-h0i-table"),
+        ["injected truth", "catalog_only MAP (control)", "production MAP", "control − truth"],
+        T.map(function (t, i) {
+          return [fmt(t, 2), fmt(d.map_catalog_only[i], 3), fmt(d.map_production[i], 3),
+                  (d.map_catalog_only[i] - t >= 0 ? "+" : "") + (d.map_catalog_only[i] - t).toFixed(3)];
+        })
+      );
+    });
+  })();
+</script>

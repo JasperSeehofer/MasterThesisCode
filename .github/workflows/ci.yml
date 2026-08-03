@@ -136,6 +136,13 @@ jobs:
           fi
         continue-on-error: true
 
+      - name: Build discovery book
+        run: |
+          uv run python book/generators/make_all.py
+          mkdir -p _site/book
+          cp -r book/site/. _site/book/
+        continue-on-error: true
+
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v5
         with:

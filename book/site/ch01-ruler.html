@@ -1,0 +1,1434 @@
+<!DOCTYPE html>
+<!-- Doctype + charset added by the integrator (WIDGET_REQUESTS R-ch07-3):
+     without the doctype the page renders in quirks mode and KaTeX refuses to run. -->
+<meta charset="utf-8" />
+<title>Ch. 1 — A Ruler That Needs No Ladder | EMRI Dark Siren Book</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="description" content="General relativity gives an EMRI's luminosity distance absolutely, with no calibration ladder — and says nothing at all about its redshift. The dark-siren gap, stated." />
+<link rel="stylesheet" href="vendor/katex/katex.min.css" />
+<link rel="stylesheet" href="css/book.css" />
+
+<style>
+  /* Page-local only (css/book.css is frozen). Nothing here restyles a shared
+     class; these are new elements this chapter introduces. */
+  .ch01-readouts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem 1.2rem;
+    margin: 0.5rem 0 0;
+    font-size: 0.86rem;
+    color: var(--muted);
+  }
+  .ch01-readouts strong { color: var(--accent); font-variant-numeric: tabular-nums; }
+  .ch01-verdict {
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--accent);
+    background: var(--paper-raised);
+    border-radius: 8px;
+    padding: 0.7rem 0.9rem;
+    margin: 0.7rem 0 0;
+    font-size: 0.9rem;
+  }
+  .ch01-verdict .ch01-verdict-label {
+    display: block;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 0.25rem;
+  }
+  .ch01-note { font-size: 0.82rem; color: var(--muted); margin: 0.6rem 0 0; }
+  .ch01-fwd {
+    display: inline-block;
+    font-size: 0.72rem;
+    border: 1px dashed var(--border);
+    border-radius: 999px;
+    padding: 0 0.45em;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  .ch01-unknown {
+    color: #D55E00;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+  }
+  .ch01-slot {
+    border: 1px dashed #D55E00;
+    border-radius: 6px;
+    padding: 0.05rem 0.5rem;
+    display: inline-block;
+  }
+  .ch01-ladder {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.9rem;
+    margin: 1rem 0 0;
+  }
+  .ch01-ladder > div {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.7rem 0.85rem;
+    background: var(--paper-raised);
+    font-size: 0.88rem;
+  }
+  .ch01-ladder h5 {
+    margin: 0 0 0.35rem;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+  }
+  .ch01-ladder ol, .ch01-ladder ul { margin: 0; padding-left: 1.1rem; }
+  .ch01-ladder li { margin: 0.1rem 0; }
+  @media (max-width: 640px) { .ch01-ladder { grid-template-columns: 1fr; } }
+  details.ch01-sidebar {
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--prior);
+    border-radius: 8px;
+    padding: 0.6rem 0.9rem;
+    margin: 1.2rem 0;
+    background: var(--paper-raised);
+    font-size: 0.9rem;
+  }
+  details.ch01-sidebar > summary {
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+  details.ch01-sidebar[open] > summary { margin-bottom: 0.5rem; }
+</style>
+
+<div class="book-shell">
+  <header class="book-topbar">
+    <a class="brand" href="index.html">From Bayes&rsquo; Rule to H&#8320;
+      <small>an interactive discovery book</small>
+    </a>
+    <nav class="book-nav" data-nav aria-label="Chapters"><!-- built from js/manifest.js --></nav>
+    <button class="theme-toggle" data-theme-toggle type="button">☽ Dark</button>
+  </header>
+
+  <main class="book-content">
+    <h1>Chapter 1 — A Ruler That Needs No Ladder</h1>
+    <p class="subtitle">
+      General relativity gives <span class="term" data-term="dL">$d_L$</span> absolutely —
+      and says nothing at all about <span class="term" data-term="z">$z$</span>.
+    </p>
+
+    <!-- ================= COLD OPEN (B1) ================= -->
+    <div class="callout without">
+      <span class="callout-label">The failure this chapter answers</span>
+      Every rung of the distance ladder is calibrated against the rung below it. Parallax
+      calibrates Cepheids; Cepheids calibrate supernovae; supernovae reach into the Hubble
+      flow. Nothing in that chain measures a distance <em>from first principles</em> — each
+      step inherits every zero-point error beneath it, and the disagreement Chapter 0 opened
+      with is, in the end, an argument about zero points.
+      <br /><br />
+      A gravitational wave does not work that way. The amplitude of the strain that reaches
+      the detector is fixed by general relativity, in terms of quantities the same waveform
+      measures, with <strong>no free normalization</strong>. Point a detector at a binary and
+      you get a distance in megaparsecs, calibrated by nothing.
+    </div>
+
+    <div class="ch01-ladder">
+      <div>
+        <h5>The ladder</h5>
+        <ol>
+          <li>parallax &rarr; nearby stars</li>
+          <li>&darr; calibrates Cepheids</li>
+          <li>&darr; calibrates SNe Ia</li>
+          <li>&darr; reaches the Hubble flow</li>
+        </ol>
+        <p style="margin:0.5rem 0 0; color:var(--muted);">
+          Four rungs, four zero points, one accumulated systematic.
+        </p>
+      </div>
+      <div>
+        <h5>The siren</h5>
+        <ul>
+          <li>strain amplitude $\propto 1/d_L$</li>
+          <li>constant of proportionality: <em>GR</em></li>
+          <li>&nbsp;</li>
+          <li>&nbsp;</li>
+        </ul>
+        <p style="margin:0.5rem 0 0; color:var(--muted);">
+          One step. No zero point to inherit.
+        </p>
+      </div>
+    </div>
+
+    <p>
+      That is the promise, and it is real. This chapter spends its first half making it
+      precise, and its second half showing you the hole in it — a hole big enough that the
+      remaining ten chapters are all about climbing out.
+    </p>
+
+    <!-- ================= §1 ================= -->
+    <h2>1. The waveform as a ruler</h2>
+
+    <p>
+      A compact binary radiates gravitational waves. Far from the source, the strain a
+      detector sees is a product of three things: an <strong>amplitude</strong> set by the
+      masses and the distance, a set of <strong>geometric factors</strong> from the
+      orientation of the orbit and the position of the source on the sky, and a
+      <strong>phase</strong> that winds forward as the orbit shrinks:
+    </p>
+
+    <div class="voice-derivation">
+      <span class="voice-label">The standard-siren relation
+        <span class="prov-chip">Schutz (1986), Nature 323, 310</span>
+        <span class="prov-chip">derivations/dark_siren_likelihood.md &sect;2.4</span>
+        <span class="prov-chip">Gray et al. 2020, arXiv:1908.06050</span>
+      </span>
+      $$
+        h_+(t) \;=\; \frac{\mathcal{A}(t)}{d_L}\,\frac{1+\cos^2\iota}{2}\,\cos\Phi(t),
+        \qquad
+        h_\times(t) \;=\; \frac{\mathcal{A}(t)}{d_L}\,\cos\iota\;\sin\Phi(t) ,
+      $$
+      with $\mathcal{A}$ fixed by the masses and the orbital frequency, $\iota$ the
+      inclination of the orbital plane to the line of sight, and $\Phi$ the accumulated
+      orbital phase. The luminosity distance
+      <span class="term" data-term="dL">$d_L$</span> enters as an overall
+      $1/d_L$ — <em>and there is no calibration constant anywhere in the expression.</em>
+      This is the entire content of the phrase &ldquo;standard siren&rdquo;.
+    </div>
+
+    <p>
+      One caveat, in the open rather than in a fold: that is the <strong>circular-binary
+      quadrupole</strong> form, printed because it shows where $d_L$ enters and nothing else.
+      A real EMRI is eccentric, inclined, and deep in the strong field of a spinning black
+      hole — the running example below has $e_0 = 0.167$ — and its waveform is generated
+      numerically by <code>few</code> + <code>fastlisaresponse</code>, not from the closed
+      form above. Nothing in this chapter depends on the closed form; it is a picture of the
+      $1/d_L$, not the pipeline&rsquo;s waveform.
+    </p>
+
+    <p>
+      Read that formula the way an experimentalist would and the trouble is immediate. You do
+      not measure $h_+$ and $h_\times$ separately. You measure one number per detector channel
+      — a projection $F_+h_+ + F_\times h_\times$ through the instrument&rsquo;s antenna
+      pattern — and its size depends on $d_L$, on $\cos\iota$, and on where the source sits on
+      the sky, <em>all multiplied together</em>. A quiet source could be far away, or nearby
+      and viewed edge-on. Amplitude alone cannot tell you which.
+    </p>
+    <p>
+      What breaks the tie is <strong>everything that is not amplitude</strong>. The phase
+      $\Phi(t)$ is a function of the masses only; it does not care about distance or
+      orientation at all, so it pins the masses independently. And because the detector moves
+      — LISA cartwheels around the Sun once a year — the geometric factors $F_+$ and
+      $F_\times$ are not constants but slow functions of time, and they mix the two
+      polarizations in a ratio that changes as the mission proceeds. A pair
+      $(d_L,\iota)$ that reproduces the observed amplitude <em>today</em> will generally
+      not reproduce it six months from now.
+    </p>
+    <p>
+      So the distance is not read off; it is <em>fitted</em>, jointly with the masses and the
+      geometry, out of a signal that is long enough for the geometry to rotate underneath it.
+      Play with that below.
+    </p>
+
+    <!-- ============ I1.1 ============ -->
+    <div class="widget">
+      <h4>I1.1 — Amplitude, Phase, Distance
+        <span class="prov-chip toy">toy: analytic strain, single rotating channel</span>
+      </h4>
+      <p style="margin-top:0; color:var(--muted); font-size:0.88rem;">
+        <strong>Manipulate</strong> the distance, the inclination and the sky position of a
+        synthetic source. <strong>Watch</strong> the top panel: try to make your strain
+        (blue) match the recorded one (grey ghost) — then press
+        <em>&ldquo;find the degenerate twin&rdquo;</em>, which solves for the distance that
+        matches the recorded amplitude <em>exactly</em> at your chosen inclination.
+        <strong>Then watch</strong> the bottom panel, which is the same two signals over the
+        whole 4.5-year mission.
+      </p>
+      <div id="ch01-strain-plot" class="widget-plot" style="min-height:240px"></div>
+      <div id="ch01-envelope-plot" class="widget-plot" style="min-height:220px"></div>
+      <div class="widget-controls">
+        <label for="ch01-dl">distance $d_L$ [Mpc]:</label>
+        <input id="ch01-dl" type="range" min="20" max="400" step="0.01" value="200" />
+        <span class="readout">$d_L$ = <strong id="ch01-dl-out">&mdash;</strong> Mpc</span>
+      </div>
+      <div class="widget-controls">
+        <label for="ch01-cosi">inclination $\cos\iota$:</label>
+        <input id="ch01-cosi" type="range" min="-1" max="1" step="0.01" value="0" />
+        <span class="readout">$\cos\iota$ = <strong id="ch01-cosi-out">&mdash;</strong></span>
+      </div>
+      <div class="widget-controls">
+        <label for="ch01-theta">sky colatitude $\theta$ [rad]:</label>
+        <input id="ch01-theta" type="range" min="0.05" max="3.09" step="0.01" value="1.99" />
+        <span class="readout">$\theta$ = <strong id="ch01-theta-out">&mdash;</strong></span>
+      </div>
+      <div class="toggle-row">
+        <button id="ch01-twin" type="button">find the degenerate twin</button>
+        <button id="ch01-reset" type="button">reset to the recorded source</button>
+      </div>
+      <div class="ch01-readouts">
+        <span>amplitude match at $t=0$: <strong id="ch01-match0">&mdash;</strong></span>
+        <span>worst mismatch over 4.5 yr: <strong id="ch01-matchT">&mdash;</strong></span>
+      </div>
+      <div class="ch01-verdict" id="ch01-strain-verdict"></div>
+      <details class="num-view">
+        <summary>Show me the numbers</summary>
+        <div class="table-scroll"><table class="num-table" id="ch01-strain-table"></table></div>
+      </details>
+      <p class="ch01-note">
+        <strong>This one is a toy and says so.</strong> The strain is the analytic
+        quadrupole form above with a slowly chirping phase, projected through a single
+        L-shaped channel whose antenna pattern rotates once per year — a stand-in for
+        LISA&rsquo;s two independent TDI channels and its real orbital motion. No pipeline
+        number is computed here. The <em>recorded</em> source&rsquo;s parameters are the
+        real ones (EMRI-889&rsquo;s $d_L$ and the angle between its stored spin axis and
+        line of sight), so the dial has a real place to sit, but the curves are analytic.
+      </p>
+      <noscript>
+        <p><strong>Static fallback.</strong> Two strain time series drawn on the same axes.
+        They are indistinguishable over a two-hour segment — identical amplitude, identical
+        phase — yet one has $d_L = 88.88$ Mpc with $\cos\iota = -0.796$ and the other
+        $d_L = 56.57$ Mpc with $\cos\iota = -0.30$: a source seen closer to edge-on, moved
+        nearer, arranged to arrive with exactly the same amplitude. Over the full 4.5-year
+        mission the antenna pattern rotates, the mix of the two polarizations changes, and the
+        two envelopes separate by up to <strong>39.9%</strong>. Distance is recovered from the
+        joint fit, not from the amplitude.</p>
+      </noscript>
+    </div>
+
+    <div class="callout defect">
+      <span class="callout-label">Trap &mdash; &ldquo;An EMRI is just a long binary.&rdquo;</span>
+      The length <em>is</em> the physics. About $10^5$ observable cycles deep in the strong
+      field is why the redshifted mass
+      <span class="term" data-term="Mz">$M_z$</span> is measured extraordinarily well, and why
+      the geometry has time to rotate through a full year of antenna pattern while the source
+      is still inspiralling. A short binary — a few hundred cycles, a few seconds of visible
+      geometry — has neither, and its distance is correspondingly poor. That mass precision
+      becomes, in Chapter 8, simultaneously the best idea and the worst problem in this book.
+      <span class="ch01-fwd">⏭ Ch 8</span>
+      <br /><br />
+      <strong>How well, exactly — two numbers, and the book prints both.</strong> The project&rsquo;s
+      claim file and this book&rsquo;s own spec card say $\sigma_{M_z}/M_z \approx 10^{-4}$
+      (<span class="prov-chip">CLAIM_2D_BIAS_20260730.md:172</span>
+      <span class="badge candidate">CLAIM C4</span>). The stored Cramér&ndash;Rao table this
+      chapter reads gives a median of $8.8\times10^{-8}$ across the 1590 events, and
+      $1.36\times10^{-9}$ for EMRI-889 itself — three to five orders of magnitude smaller
+      (<span class="prov-chip">book/design/flags/ch06_FLAGS.md#F-ch06-5</span>, recomputed
+      here by <code>gen_ch01.py</code>). Chapter 6 measures the covariance those two
+      measured numbers come from; Chapter 8 is where the precision gets used. Neither value is substituted for the
+      other anywhere in this book, and no argument in it turns on which one is right: the
+      mass channel is astonishingly sharp on either reading, and that is the whole trouble.
+      <span class="ch01-fwd">⏭ Ch 6</span> <span class="ch01-fwd">⏭ Ch 8</span>
+    </div>
+
+    <details class="gw-reader">
+      <summary>&#9656; For the GW reader — where the amplitude actually gets weighed</summary>
+      <p>
+        The pipeline never manipulates $h(t)$ in the form printed above. It generates the
+        response with <code>few</code> + <code>fastlisaresponse</code> and weighs everything in
+        the noise-weighted inner product
+        $$ \langle a \mid b\rangle \;=\; 4\,\mathrm{Re} \sum_{\alpha\in\{A,E\}}
+           \int_{f_{\min}}^{f_{\max}} \frac{\tilde a_\alpha(f)\,\tilde b^{*}_\alpha(f)}{S_n(f)}\,df ,
+           \qquad \rho \;=\; \sqrt{\langle h\mid h\rangle} , $$
+        implemented in <code>parameter_estimation.py:335</code>
+        (<code>scalar_product_of_functions</code>) and <code>:488</code>
+        (<code>compute_signal_to_noise_ratio</code>), over the TDI A and E channels. The
+        detection threshold is $\rho_{\rm thr} = 20$
+        (<span class="prov-chip">constants.py SNR_THRESHOLD</span>).
+      </p>
+      <p>
+        Because $h \propto 1/d_L$ and the inner product is quadratic,
+        $\rho \propto 1/d_L$ exactly — a fact Chapter 4 turns into a detection horizon and
+        Chapter 6 turns into a covariance <span class="ch01-fwd">⏭ Ch 4</span>
+        <span class="ch01-fwd">⏭ Ch 6</span>. Two properties of $S_n(f)$ that this chapter
+        does not need but that the reader should know exist: the galactic confusion
+        foreground is in the PSD (Babak et al. 2023, arXiv:2303.15929 Eq. 17), and the
+        discrete-to-continuous Fourier normalization of that integral once dropped a factor
+        $dt^2$ — which multiplied every SNR by $1/10$ and shrank the detectable universe from
+        $z \lesssim 1.5$ to $z \le 0.11$
+        (<span class="prov-chip">G8_dt2_inner_product_derivation.md</span>,
+        <span class="prov-chip">G7 row 1</span>, <span class="prov-chip">ledger #51</span>).
+        Chapter 6 tells that story properly. <span class="ch01-fwd">⏭ Ch 6</span>
+      </p>
+    </details>
+
+    <!-- ================= §2 ================= -->
+    <h2>2. Meet the EMRI</h2>
+
+    <p>
+      The source this book is built on is an <strong>extreme mass-ratio inspiral</strong>: a
+      stellar-mass compact object, <span class="term" data-term="mu">$\mu \sim 10\,M_\odot$</span>,
+      spiralling into a massive black hole,
+      <span class="term" data-term="M">$M \sim 10^5$–$10^7\,M_\odot$</span>, at the centre of a
+      galaxy. The mass ratio $\mu/M \sim 10^{-5}$ is what makes it extreme, and what makes it
+      useful: the small body is a test particle, it radiates weakly, and it therefore takes
+      years to fall in, executing of order $10^5$ orbits in LISA&rsquo;s band before it
+      plunges. Each of those orbits is a measurement.
+    </p>
+    <p>
+      An EMRI in this pipeline is described by fourteen numbers — two masses, the black
+      hole&rsquo;s spin, three numbers fixing the orbit at the start of observation, the
+      luminosity distance, four angles fixing the sky position and the spin orientation, and
+      three initial orbital phases. Twelve of them are nuisance; one of them is $d_L$; none
+      of them is a redshift.
+    </p>
+    <p>
+      One definitional choice belongs in the open, because it will matter twice later. An
+      <em>event</em>, in this pipeline, is not &ldquo;an EMRI that is loud at some
+      moment&rdquo;: it is one that <strong>plunges inside the mission span</strong>. Two
+      reasons, and they are the same reason twice. An EMRI&rsquo;s signal-to-noise accumulates
+      overwhelmingly in its last, strongest-field cycles, so the detectable population
+      essentially <em>is</em> the plunging population; and the rate model these events are
+      drawn from is itself a <em>plunge</em> rate. Define an event any other way and the
+      generator and the population model stop counting the same thing
+      <span class="ch01-fwd">⏭ Ch 9</span>. The sidebar has the history — including the
+      earlier convention that quietly froze a whole mass range outside its detectable phase.
+    </p>
+
+    <details class="ch01-sidebar" open>
+      <summary>Sidebar — what counts as an &ldquo;event&rdquo;
+        <span class="badge ratified">RATIFIED</span>
+        <span class="prov-chip">plunge_window_initial_conditions.md</span>
+      </summary>
+      <p style="margin-top:0.4rem;">
+        A subtlety that will matter twice later. An <em>event</em>, in this pipeline, is not
+        &ldquo;an EMRI that is loud at some moment&rdquo;. It is
+        <strong>an EMRI that plunges during the observed mission span</strong>: the plunge
+        time is drawn $t_{\rm plunge} \sim U[0, T]$ with $T = 4.5$ yr of science operations
+        (Colpi et al. 2024, arXiv:2402.07571), and the orbit&rsquo;s starting radius is then
+        <em>solved</em> so that the inspiral takes exactly that long.
+      </p>
+      <p>
+        Two reasons, and they are the same reason twice. First, an EMRI&rsquo;s
+        signal-to-noise accumulates overwhelmingly in the last, strongest-field cycles, so
+        the detectable population <em>is</em> essentially the plunging population. Second,
+        the rate model these events are drawn from — Babak et al. (2017), arXiv:1703.09722,
+        model M1 — is itself a <em>plunge</em> rate. Defining an event any other way makes
+        the generator and the population model disagree about what they are counting, which
+        is the first appearance in this book of a theme that eventually gets a chapter of its
+        own. <span class="ch01-fwd">⏭ Ch 9</span>
+      </p>
+      <p style="margin-bottom:0.2rem;">
+        The convention replaced an earlier draw, $p_0 \sim U[10,16]$, which was a
+        waveform-code validity domain being used as an astrophysical prior — and which froze
+        every high-mass event outside its detectable phase. Ratified 2026-07-28 under the
+        project&rsquo;s physics-change protocol.
+      </p>
+    </details>
+
+    <!-- ============ I1.2 ============ -->
+    <div class="widget">
+      <h4>I1.2 — Meet EMRI-889
+        <span class="prov-chip real">real: seed61000 / real_r1, row 889</span>
+      </h4>
+      <p style="margin-top:0; color:var(--muted); font-size:0.88rem;">
+        One event will follow you through every chapter of this book. Here it is on the day
+        it was detected. <strong>There is nothing to manipulate</strong> — this card is
+        deliberately static, and the interaction is that it <em>grows</em>: every chapter
+        adds a row, and by Chapter 11 the last row it gains is a warning label.
+      </p>
+      <div class="dossier" id="ch01-dossier">
+        <div class="dossier-title">Event dossier — EMRI-889, after Chapter 1</div>
+        <table id="ch01-dossier-table"></table>
+      </div>
+      <details class="num-view">
+        <summary>Show me the numbers — all fourteen parameters, as stored</summary>
+        <div class="table-scroll"><table class="num-table" id="ch01-params-table"></table></div>
+      </details>
+      <noscript>
+        <p><strong>Static fallback.</strong> EMRI-889 (seed 61000, realization r1, row 889 of
+        the stored Cramér–Rao table): $M_z = 7.246\times10^5\,M_\odot$ (the stored mass column
+        is the <em>detector-frame</em> mass), $\mu = 10\,M_\odot$,
+        spin $a = 0.98$, SNR = 1424.7 — the loudest of 1590 stored
+        events — plunging 2.87 yr into a 4.5 yr mission, host galaxy index 859360, in the
+        catalogue. Distance:
+        <strong>d_L &nbsp;88.9 Mpc &nbsp;&middot;&nbsp; &sigma;_dL/d_L = 8.98&times;10&#8315;&#8308;</strong>
+        ($\sigma_{d_L} = 7.98\times10^{-5}$ Gpc = 0.0798 Mpc on $\hat d_L = 88.879$ Mpc,
+        $= 1.28/\rho$). Redshift: <strong>unknown</strong>.</p>
+      </noscript>
+    </div>
+
+    <div class="voice-adjudicator">
+      <span class="voice-label">A number this book did not quietly fix
+        <span class="badge finding">RESOLVED 2026-07-31</span>
+        <span class="prov-chip">book/design/flags/ch01_FLAGS.md#F1</span>
+      </span>
+      <strong>Erratum.</strong> The spec card carried
+      $\sigma_{d_L}/d_L = 8.0\times10^{-5}$ — that is the absolute $\sigma_{d_L}$ in Gpc
+      under a fractional label. Corrected book-wide 2026-07-31; record: ch01 flag F1 /
+      BUILD_REPORT &sect;5.1 item 1. The dossier above therefore reads
+      <strong>$8.98\times10^{-4}$</strong>, and so does every other dossier card in this book.
+      <br /><br />
+      That is the correction. <em>How it was caught</em> is the part worth keeping. The build
+      spec, and the pedagogy card behind it, quoted the erratum&rsquo;s retired figure as a
+      fraction; reading the row the spec names gives $\sigma_{d_L} = 7.984\times10^{-5}$
+      <em>Gpc</em> against $d_L = 0.0888792$ Gpc, so the <em>fraction</em> is
+      $8.983\times10^{-4}$ — the same stored quantity, a factor $1/0.0888792 = 11.25$ apart,
+      depending on whether the division was done. Two numbers that agree to two digits and
+      differ by an order of magnitude are exactly what a missing division looks like, and
+      nothing on the page could tell them apart. For most of this book&rsquo;s construction
+      the generator printed both and refused to choose, because
+      <span class="prov-chip">BOOK_DESIGN.md &sect;4.1</span> tells it to stop and flag rather
+      than reconcile — which is why the correction is an erratum with a record and not a
+      silent edit.
+      <br /><br />
+      <strong>The check that settled it.</strong> A matched-filter amplitude measurement
+      cannot do better than the $1/\rho$ scale. Measured, $8.983\times10^{-4} = 1.28/\rho$ at
+      $\rho = 1424.7$: an ordinary, degeneracy-inflated distance error. The retired reading
+      would have been $0.11/\rho$ — nine times <em>better</em> than the $1/\rho$ scale the
+      measurement is bounded by, which is not a precision but an impossibility. A second,
+      independent check
+      agrees: the idealized campaign&rsquo;s per-event budget is
+      $\sigma_{H_0}/H_0 \approx 0.38\%$
+      (<span class="prov-chip">IDEALIZED_BASELINE_READOUT.md:54-60</span>), within a factor
+      $\approx 4$ of the corrected fraction and a factor $\approx 47$ from the retired one.
+      Neither check is a calculation anyone had to be clever to do. That is the point: an
+      order-of-magnitude check on a number you were handed is the cheapest instrument in this
+      book, and it is the one that found the defect. Q1.2 makes you run it yourself.
+    </div>
+
+    <!-- ================= §3 ================= -->
+    <h2>3. The missing scale</h2>
+
+    <p>
+      You now have a distance in megaparsecs, obtained without a ladder. Turn it into a Hubble
+      constant. At small redshift the recession velocity of a source is $cz$ and Hubble&rsquo;s
+      law says $v = H_0 d$, so
+    </p>
+    $$ H_0 \;\approx\; \frac{c\,z}{d_L} \qquad (z \ll 1). $$
+    <p>
+      One measured quantity on the right, one <em>unmeasured</em> one. The waveform delivered
+      $d_L$ and, in delivering it, said nothing whatsoever about $z$ — a gravitational wave is
+      not redshifted in a way you can detect from a single signal, because the redshift is
+      perfectly degenerate with the masses: a heavier binary nearby and a lighter binary far
+      away emit identical waveforms. What LISA measures is the
+      <em>redshifted</em> mass <span class="term" data-term="Mz">$M_z = M(1+z)$</span>, and
+      without independent knowledge of $M$ you cannot separate the two.
+      <span class="ch01-fwd">⏭ Ch 8</span>
+    </p>
+    <p>
+      Away from $z \ll 1$ the relation is not a division but an integral, and it acquires a
+      second parameter:
+    </p>
+
+    <div class="voice-derivation">
+      <span class="voice-label">The distance&ndash;redshift relation, flat &Lambda;CDM
+        <span class="prov-chip">derivations/dark_siren_likelihood.md &sect;2.4 Eq. (14.7)</span>
+        <span class="prov-chip">physical_relations.py:132 dist</span>
+        <span class="prov-chip">Hogg (1999), arXiv:astro-ph/9905116 Eq. (16)</span>
+      </span>
+      $$
+        d_L(z;\,h,\Omega_m) \;=\; (1+z)\,\frac{c}{100\,h}
+          \int_0^{z} \frac{dz'}{E(z')},
+        \qquad
+        E(z) \;=\; \sqrt{\Omega_m (1+z)^3 + \Omega_\Lambda},
+      $$
+      with $\Omega_\Lambda = 1-\Omega_m$ (flat),
+      <span class="term" data-term="h">$h = H_0/100\ \mathrm{km\,s^{-1}\,Mpc^{-1}}$</span>,
+      and $c$ in km s$^{-1}$ so that $d_L$ comes out in Mpc. The pipeline evaluates the
+      integral in closed form via a hypergeometric identity rather than by quadrature;
+      the two agree to machine precision.
+    </div>
+
+    <p>
+      Look at where the two parameters sit. <strong>$h$ is a pure prefactor</strong>: it
+      multiplies the whole curve by $1/h$ and changes no shape. $\Omega_m$ lives
+      <em>inside</em> the integral: it bends the curve, and it can only bend it where there is
+      enough path length to bend. That single structural difference is the reason the next
+      widget looks the way it does — and the reason a nearby event like EMRI-889 is a clean
+      probe of $h$ and a useless probe of $\Omega_m$.
+    </p>
+
+    <!-- ============ I1.3 ============ -->
+    <div class="widget">
+      <h4>I1.3 — The $d_L(z;\,h,\Omega_m)$ explorer
+        <span class="prov-chip toy">toy: in-browser quadrature of $1/E(z)$</span>
+        <span class="prov-chip real">real: validated against <code>physical_relations.dist()</code></span>
+      </h4>
+      <p style="margin-top:0; color:var(--muted); font-size:0.88rem;">
+        <strong>Manipulate</strong> $h$ and $\Omega_m$. <strong>Watch</strong> two things:
+        the curve against the fiducial grey one, and the orange marker — the redshift that
+        <em>this</em> cosmology would assign to EMRI-889&rsquo;s measured distance. The
+        second panel is the same curve zoomed to where EMRI-889 actually lives.
+      </p>
+      <div class="widget-controls">
+        <label for="ch01-h">$h = H_0/100$:</label>
+        <input id="ch01-h" type="range" min="0.55" max="0.90" step="0.0005" value="0.73" />
+        <span class="readout">$h$ = <strong id="ch01-h-out">&mdash;</strong></span>
+      </div>
+      <div class="widget-controls">
+        <label for="ch01-om">$\Omega_m$:</label>
+        <input id="ch01-om" type="range" min="0.15" max="0.45" step="0.0001" value="0.2726" />
+        <span class="readout">$\Omega_m$ = <strong id="ch01-om-out">&mdash;</strong></span>
+      </div>
+      <div class="toggle-row" id="ch01-preset-row">
+        <button type="button" data-preset="fid">this mock (h 0.73, &Omega;<sub>m</sub> 0.2726)</button>
+        <button type="button" data-preset="planck">Planck-like (h 0.674, &Omega;<sub>m</sub> 0.3153)</button>
+        <button type="button" data-preset="shoes">SH0ES-like (h 0.730, &Omega;<sub>m</sub> 0.3153)</button>
+      </div>
+      <div id="ch01-dlz-plot" class="widget-plot" style="min-height:300px"></div>
+      <div id="ch01-dlz-zoom" class="widget-plot" style="min-height:230px"></div>
+      <div class="ch01-readouts">
+        <span>redshift assigned to EMRI-889: <strong id="ch01-impz">&mdash;</strong></span>
+        <span>$d_L$ at $z=1.5$, relative to fiducial: <strong id="ch01-rel15">&mdash;</strong></span>
+        <span>$d_L$ at $z=0.021$, relative to fiducial: <strong id="ch01-rel002">&mdash;</strong></span>
+        <span>browser vs <code>dist()</code>, worst of 1134 lattice points:
+          <strong id="ch01-valid">&mdash;</strong></span>
+      </div>
+      <div class="ch01-verdict" id="ch01-dlz-verdict"></div>
+      <details class="num-view">
+        <summary>Show me the numbers — the redshift EMRI-889 is assigned, per $h$</summary>
+        <div class="table-scroll"><table class="num-table" id="ch01-dlz-table"></table></div>
+      </details>
+      <noscript>
+        <p><strong>Static fallback.</strong> Three $d_L(z)$ curves at $h = 0.60$, $0.73$ and
+        $0.86$, fiducial $\Omega_m = 0.2726$. They are the same curve scaled by $1/h$: at
+        every redshift, $d_L(z;0.86)/d_L(z;0.60) = 0.6977$ exactly — a 30.2% spread,
+        independent of $z$. Changing $\Omega_m$ from 0.15 to 0.45 instead changes $d_L$ by
+        only $-0.45\%$ at $z = 0.02$, but by $-21.0\%$ at $z = 1.5$: $h$ rescales, $\Omega_m$
+        bends. EMRI-889's measured $d_L = 88.879$ Mpc is assigned $z = 0.01754$ if
+        $h = 0.60$, $z = 0.02128$ if $h = 0.73$, and $z = 0.02500$ if $h = 0.86$
+        (<code>physical_relations.dist_to_redshift</code>).</p>
+      </noscript>
+    </div>
+
+    <p>
+      Notice what just happened in that last readout, because it is the pivot of the whole
+      book. To convert EMRI-889&rsquo;s distance into a redshift you had to
+      <em>choose $h$</em> — the very number you were trying to measure. The ruler has no
+      scale. Running it backwards is not a measurement; it is a restatement of your
+      assumption.
+    </p>
+    <p>
+      Which means the redshift has to come from somewhere else entirely. And that is a
+      different kind of problem, with a different kind of error bar.
+    </p>
+
+    <!-- ================= §4 ================= -->
+    <h2>4. Whose universe? The fiducial choice</h2>
+
+    <p>
+      There is a second thing you had to choose in that widget, and it is easier to miss.
+      $\Omega_m$ was set to <strong>0.2726</strong>. That is not Planck&rsquo;s value
+      (0.3153); it is not a typo; and it is not a leftover. It is a deliberate choice, and
+      the reasoning is worth a paragraph because it is the first example in this book of the
+      difference between a bug and a decision.
+    </p>
+
+    <div class="voice-derivation">
+      <span class="voice-label">Why 0.2726
+        <span class="prov-chip">constants.py OMEGA_M</span>
+        <span class="prov-chip">GATE_SIGNOFF.md:26 (G11)</span>
+        <span class="prov-chip">ledger #53</span>
+        <span class="prov-chip">Barausse et al. (2012), arXiv:1201.5888</span>
+      </span>
+      The EMRI population these events are drawn from is the Barausse M1 model, whose black-hole
+      mass function and event rates were computed in a specific cosmology. Adopting
+      <em>that</em> cosmology as the mock universe&rsquo;s truth makes the mock internally
+      consistent: the same $\Omega_m$ generates the population, converts its redshifts to
+      distances, and defines the volume the estimator normalizes over. Adopting Planck&rsquo;s
+      instead would put the population model and the distance model in disagreement — a real
+      inconsistency, traded for a cosmetic one.
+    </div>
+
+    <p>
+      The honest cost of that choice is not zero, and the project quotes it rather than
+      absorbing it. If the true universe were Planck&rsquo;s and you analysed it assuming
+      0.2726, you would recover the wrong $H_0$ — by an amount that grows with redshift,
+      exactly as §3 predicted, because $\Omega_m$ is a shape parameter with no leverage
+      nearby:
+    </p>
+
+    <div class="table-scroll">
+      <table class="num-table" id="ch01-omtable"></table>
+    </div>
+    <p class="ch01-note">
+      <span class="prov-chip">docs/gates/G7_systematics_budget.md row 6</span>
+      Recomputed from scratch by this chapter&rsquo;s generator — $h'$ solving
+      $d_L(z; h', 0.2726) = d_L(z; 0.73, 0.3153)$ by root-find on the repo&rsquo;s own
+      <code>dist()</code> — and it reproduces the published gate table at all six redshifts.
+      The generator treats that as a hard gate and refuses to write a file if it ever drifts.
+      Weighted over the detected population rather than read off at a single redshift, G7
+      row 6 quotes the same systematic as <strong>&approx;+1.5&ndash;2.5%</strong>, with
+      &Omega;<sub>m</sub> marginalization listed as future work.
+    </p>
+
+    <p>
+      Two things to take from the table. The first is scale: at the redshifts where this
+      book&rsquo;s information actually lives — EMRI-889 sits near $z \approx 0.02$ — the
+      $\Omega_m$ systematic is well under a tenth of a percent, while the disagreement
+      Chapter 0 opened with is about 8%. The second is the habit: the number is
+      <em>stated</em>, in a budget, with the redshift dependence spelled out, rather than
+      being described as &ldquo;negligible&rdquo; and forgotten.
+    </p>
+
+    <div class="voice-adjudicator">
+      <span class="voice-label">Already tried, already dead
+        <span class="badge exonerated">EXONERATED</span>
+        <span class="prov-chip">ledger #53</span>
+        <span class="prov-chip">ledger #59</span>
+      </span>
+      &ldquo;The fiducial $\Omega_m$ is a WMAP-era leftover and that is where the bias comes
+      from&rdquo; is a hypothesis the project raised against itself, twice, and killed twice.
+      As a design question it closed as a design choice (row #53, GitHub issue closed on those
+      grounds). As a quantitative question it was measured directly — the exact per-event
+      $\Delta h$ from an $\Omega_m$-era mismatch on the seed600 venue came out
+      <strong>$-0.00059$, i.e. $-0.08\%$, and with the <em>wrong sign</em></strong> to explain
+      the residual it was proposed for; correcting for it made the unexplained residual
+      <em>larger</em> (+0.0132 → +0.0138). Venue-scoped, as all negative results in this book
+      are: that measurement was made on the shallow seed600 subsample, whose median redshift
+      is 0.046. It is on the project&rsquo;s do-not-re-try list.
+    </div>
+
+    <details class="gw-reader">
+      <summary>&#9656; For the GW reader — the scope limit inside <code>dist()</code></summary>
+      <p>
+        <code>physical_relations.dist()</code> accepts $w_0$ and $w_a$ in its signature but
+        implements $\Lambda$CDM only (the comoving integral is evaluated with a
+        <code>hyp2f1</code> identity that assumes $w = -1$). Until the 2026-07-04 review it
+        accepted non-default values and silently returned the $\Lambda$CDM answer; it now
+        raises through <code>_reject_unsupported_wcdm</code>
+        (<code>physical_relations.py:36</code>). Status: <span class="badge open">OPEN</span>
+        as a scope limit (GitHub #4), <span class="prov-chip">G7 row 14</span> — zero effect
+        on this book, whose entire content is $w_0 = -1$, $w_a = 0$, and a loud failure rather
+        than a quiet wrong answer for anyone who extends it.
+      </p>
+      <p>
+        Note also that <code>dist()</code> returns <strong>Gpc</strong> while the catalogue
+        and most of the prose work in Mpc, and that the stored Cramér–Rao columns inherit the
+        Gpc convention. That is the unit slip flagged in §2 above, and it is the reason the
+        flag exists rather than a correction.
+      </p>
+    </details>
+
+    <!-- ================= §5 ================= -->
+    <h2>5. The gap, stated</h2>
+
+    <p>
+      Assemble what this chapter has and has not delivered. It has delivered a luminosity
+      distance to a source 88.9 Mpc away, measured to a fraction of a percent, by an argument
+      that begins with the Einstein field equations and ends at the detector with no
+      calibration constant in between. That is a genuinely remarkable thing to be handed.
+    </p>
+    <p>
+      It has not delivered a redshift, and it cannot. A binary with an electromagnetic
+      counterpart — a kilonova, an afterglow, anything that shines — hands you the host galaxy
+      and its spectrum, and a spectrum is a redshift. That is a <strong>bright siren</strong>,
+      and it is why GW170817 produced an $H_0$ measurement within a year of detection.
+    </p>
+
+    <div class="callout without">
+      <span class="callout-label">The gap</span>
+      An EMRI has <strong>no electromagnetic counterpart</strong>. The mass falling in is a
+      single compact object; nothing disrupts, nothing radiates, and the event is invisible to
+      every telescope ever built. A gravitational-wave source with a distance and no
+      counterpart is a <strong>dark siren</strong>
+      (<span class="prov-chip">Gray et al. 2020, arXiv:1908.06050</span>). The redshift must
+      be inferred, and this book is the cost of that inference.
+    </div>
+
+    <p>
+      There is one obvious way to proceed, and it is the right one. You know where the source
+      is on the sky, to within some patch; you know how far away it is, to within some shell.
+      Look up which catalogued galaxies lie inside that volume, and use their redshifts. It is
+      cheap, the catalogues exist, and it is exactly what the rest of this book does.
+    </p>
+    <p>
+      It also smuggles in three assumptions, and the next several chapters are the successive
+      discoveries that all three are false: that the host <em>is</em> in the catalogue
+      <span class="ch01-fwd">⏭ Ch 5</span>; that it is identifiable among the candidates
+      <span class="ch01-fwd">⏭ Ch 3</span>; and that it is <em>at</em> its catalogued redshift
+      <span class="ch01-fwd">⏭ Ch 7</span>. Chapter 2 first has to say what &ldquo;infer&rdquo;
+      even means when you have one distance, no redshift, and 1587 more events waiting.
+    </p>
+
+    <!-- ================= SELF-CHECK (B7) ================= -->
+    <h2>Self-check</h2>
+
+    <div class="selfcheck">
+      <p>Q1.1 &nbsp; The waveform amplitude scales as $1/d_L$. Why does that not immediately
+      mean the distance is measured as well as the amplitude?</p>
+      <details class="answer">
+        <summary>Show answer</summary>
+        <div class="answer-body">
+          Because the observed amplitude is a product of distance, source masses, and the
+          geometric factors of inclination and sky position folded through the detector&rsquo;s
+          antenna pattern. Amplitude alone is degenerate; the distance is recovered only
+          because the <em>phasing</em> independently fixes the masses and the modulation of the
+          signal across the mission fixes the geometry. That is why an EMRI&rsquo;s $\sim10^5$
+          cycles are so valuable — they break the degeneracies that make a short binary&rsquo;s
+          distance poor. You built exactly this degeneracy in I1.1: the &ldquo;degenerate
+          twin&rdquo; matches the recorded amplitude to machine precision at $t = 0$ and
+          separates by tens of percent once the antenna pattern has rotated.
+        </div>
+      </details>
+    </div>
+
+    <div class="selfcheck">
+      <p>Q1.2 &dagger; &nbsp; EMRI-889 has SNR 1425, a measured luminosity distance
+      $\hat d_L = 88.879$ Mpc, and a stored distance error bar of
+      $\sigma_{d_L} = 7.98\times10^{-5}$ Gpc. Estimate what fractional $H_0$ precision that
+      <em>single</em> event would give if its host redshift were known exactly; check the
+      answer against the $1/\rho$ scale before you believe it; and say why the book will
+      nevertheless not get anywhere near it.
+      <br /><span style="color:var(--muted);font-size:0.9em;">&dagger; the units in this
+      question are the point — see the answer.</span></p>
+      <details class="answer">
+        <summary>Show answer</summary>
+        <div class="answer-body">
+          The error bar is in <em>Gpc</em>, the same units as $d_L$, so the fraction is
+          $7.98\times10^{-5}\,/\,0.0888792 = 8.98\times10^{-4}$. With $z$ exact,
+          $\sigma_{H_0}/H_0 \approx \sigma_{d_L}/d_L \approx 0.09\%$ from this one event.
+          <br /><br />
+          <em>Now the check.</em> $8.98\times10^{-4} = 1.28/\rho$ at $\rho = 1424.7$: just
+          worse than the signal-to-noise scale, which is where an amplitude measurement has
+          to sit — degeneracies can only inflate it. And $0.09\%$ is within a factor
+          $\approx4$ of the $0.38\%$ per-event budget the idealized campaign actually measured
+          (<span class="prov-chip">IDEALIZED_BASELINE_READOUT.md:54-60</span>), whose total
+          $\sigma_{H_0}/H_0 \approx 0.044\%$ is roughly $0.38\%/\sqrt{76}$. Two independent
+          scales, same order of magnitude, answer believed.
+          <br /><br />
+          The book will not get near it because (i) the host redshift is <em>not</em> known
+          exactly — it is a photometric redshift with median $\sigma_z/z \approx 49\%$, which
+          dominates everything <span class="ch01-fwd">⏭ Ch 7</span>, and (ii) for 95% of
+          events there is no identified host at all <span class="ch01-fwd">⏭ Ch 5</span>. The
+          GW measurement is not the bottleneck; the galaxy catalogue is.
+          <br /><br />
+          <strong>Erratum — and why this question hands you Gpc.</strong> Until 2026-07-31
+          this question handed you a <em>fraction</em> instead: the spec card carried
+          $\sigma_{d_L}/d_L = 8.0\times10^{-5}$ — that is the absolute $\sigma_{d_L}$ in Gpc
+          under a fractional label. Corrected book-wide 2026-07-31; record: ch01 flag F1 /
+          BUILD_REPORT &sect;5.1 item 1
+          (<span class="prov-chip">book/design/flags/ch01_FLAGS.md#F1</span>). The model
+          answer that went with it read $\sigma_{H_0}/H_0 \approx 0.008\%$ and stopped there —
+          a factor $\approx47$ from the measured per-event budget, and $0.11/\rho$, nine times
+          better than a matched filter can be. Nobody had to be clever to catch that:
+          <em>the order-of-magnitude check you were just asked to do is what catches the units
+          slip</em>, which is the real lesson of this question and the reason it now hands you
+          an error bar in Gpc and makes you divide. It is also a preview of Chapter 8, where
+          what a mass number <em>means</em> — which frame, which units — turns out to move an
+          entire published result.
+        </div>
+      </details>
+    </div>
+
+    <div class="selfcheck">
+      <p>Q1.3 &nbsp; Why is &ldquo;an event&rdquo; defined in this pipeline as an EMRI that
+      <strong>plunges inside the mission span</strong>, rather than one that is simply loud
+      enough at some moment?</p>
+      <details class="answer">
+        <summary>Show answer</summary>
+        <div class="answer-body">
+          Because the SNR of an EMRI accumulates overwhelmingly in the final,
+          strongest-field cycles near plunge, so the detectable population is essentially the
+          plunging population; and because the rate model the events are drawn from (Babak et
+          al. 2017, arXiv:1703.09722, M1) is itself a <em>plunge</em> rate. Defining events any
+          other way would put the generator and the population model in disagreement — the
+          first instance of a theme that becomes Chapter 9. The concrete failure that forced
+          the convention: the previous initial-condition draw
+          ($p_0 \sim U[10,16]$, a waveform-code validity domain used as an astrophysical
+          prior) froze every $M_z \gtrsim 10^{6.2}$ event outside its detectable plunge phase
+          (<span class="prov-chip">plunge_window_initial_conditions.md</span>, RATIFIED
+          2026-07-28).
+        </div>
+      </details>
+    </div>
+
+    <div class="selfcheck">
+      <p>Q1.4 <em>(transfer)</em> &nbsp; You have $d_L$ to a fraction of a percent and no
+      redshift. Sketch, in one sentence, the cheapest possible way to get a redshift, and name
+      the assumption it smuggles in.</p>
+      <details class="answer">
+        <summary>Show answer</summary>
+        <div class="answer-body">
+          Look up which galaxies lie inside the GW localization volume and use their redshifts
+          — which smuggles in the assumptions that the host is (a) <em>in</em> the catalogue,
+          (b) identifiable among the candidates, and (c) at its catalogued redshift. Chapters
+          3, 5 and 7 are the successive discoveries that all three are false — and before any
+          of that you need a machine that turns 1,588 distances into a statement about $h$,
+          which is Chapter 2 <span class="ch01-fwd">⏭ Ch 2</span>. Note that even
+          the word &ldquo;volume&rdquo; hides the circularity you met in I1.3: the shell you
+          look inside is a shell in <em>redshift</em>, and mapping your measured distance into
+          a redshift shell requires a value of $h$ — so the candidate set itself moves as $h$
+          moves. That is not a nuisance; in Chapter 3 it turns out to be the entire mechanism
+          by which a galaxy catalogue constrains $H_0$ at all.
+        </div>
+      </details>
+    </div>
+
+    <!-- ================= PROVENANCE ================= -->
+    <div class="provenance-panel">
+      <h4>Provenance panel — every stamp used in this chapter</h4>
+      <ul>
+        <li><span class="badge ratified">RATIFIED</span> <code>docs/derivations/plunge_window_initial_conditions.md</code> (2026-07-28) — the event convention: $t_{\rm plunge}\sim U[0,T]$, $T = 4.5$ yr; Babak et al. 2017 (arXiv:1703.09722) M1 plunge rate; Colpi et al. 2024 (arXiv:2402.07571) mission span</li>
+        <li><code>derivations/dark_siren_likelihood.md</code> §2.4 Eq. (14.7) — the distance–redshift relation and the mechanism by which $h$ enters the likelihood (no ratification tag on this packet; cited as the project's own derivation, not asserted as ratified)</li>
+        <li><code>physical_relations.py:132 dist</code>, <code>:447 dist_to_redshift</code>, <code>:36 _reject_unsupported_wcdm</code> — every $d_L$ and $z$ number on this page, and the wCDM guard</li>
+        <li><code>parameter_estimation.py:335</code> (<code>scalar_product_of_functions</code>), <code>:488</code> (<code>compute_signal_to_noise_ratio</code>), <code>constants.py SNR_THRESHOLD = 20</code> — the inner product and the SNR EMRI-889's 1424.7 is measured in</li>
+        <li><code>constants.py</code> <code>OMEGA_M = 0.2726</code>, <code>H = 0.73</code>, <code>LISA_MISSION_DURATION_YEARS = 4.5</code> — the mock universe's truth</li>
+        <li><span class="badge exonerated">EXONERATED</span> <code>ledger #53</code> ("WMAP-era $\Omega_m$ is a bug" → design choice, GitHub #6 closed) and <code>ledger #59</code> ($\Omega_m$-era mismatch measured at $-0.00059$, wrong-signed, on the seed600 shallow venue) — on the do-not-re-try list</li>
+        <li><span class="badge open">OPEN</span> <code>G7 row 14</code> / GitHub #4 — <code>dist()</code>'s wCDM scope limit; no effect at $w_0=-1$, $w_a=0$</li>
+        <li><code>docs/gates/G7_systematics_budget.md</code> row 6 + "Numbers behind row #6" — the $\Omega_m$ mis-specification table, <strong>recomputed and reproduced exactly</strong> by <code>gen_ch01.py</code> at all six redshifts (hard gate, tolerance 0.01 pp)</li>
+        <li><span class="badge finding">FINDING</span> <code>IDEALIZED_BASELINE_READOUT.md:54-60</code> (&sect; &ldquo;Where the information comes from (MEASURED)&rdquo;; re-grepped 2026-07-31 — the file gained a closure row on build day and this anchor was cited as <code>:42-47</code>) — 76 of 1588 events carry 100% of the constraint; the 3 loudest (SNR 995–1425, $z\approx0.016$–0.021) carry 46%; per-event budget $\sigma_{H_0}/H_0 \approx 0.38\%$</li>
+        <li>Data: <code>results/campaign51_20260728/realistic_20260729/seed61000/prepared_cramer_rao_bounds.csv</code> (row 889; verified byte-identical to the spec-named <code>real_r1/</code> copy on every column read) and <code>.../real_r1/posteriors/combined_posterior.json</code> (1588 events used, 0 excluded)</li>
+        <li>External: Schutz (1986), Nature 323, 310; Hogg (1999), arXiv:astro-ph/9905116; Gray et al. (2020), arXiv:1908.06050; Barausse et al. (2012), arXiv:1201.5888; Babak et al. (2023), arXiv:2303.15929</li>
+        <li><span class="badge candidate">CLAIM C4</span> <code>CLAIM_2D_BIAS_20260730.md:172</code> ($\sigma_{M_z}/M_z \approx 10^{-4}$) beside <code>book/design/flags/ch06_FLAGS.md#F-ch06-5</code> (measured median $8.8\times10^{-8}$, EMRI-889 $1.36\times10^{-9}$, recomputed by <code>gen_ch01.py</code> from the same CRB table) — a <strong>both-values</strong> item; neither is substituted for the other <span class="prov-chip">REVISION_WORKLIST &sect;D5</span></li>
+        <li>Flags: <code>book/design/flags/ch01_FLAGS.md</code> — F1 ($\sigma_{d_L}$ fractional-vs-absolute, <strong>RESOLVED 2026-07-31</strong> — see the erratum in &sect;2; the spec figure was the absolute Gpc value under a fractional label), F2 (1588 vs 1590), F3 (plunge sidebar placement), F4 (G7 row 6 reproduces — a passing check, logged); and <code>ch08_FLAGS.md#F-ch08-8</code> — this chapter&rsquo;s dossier now names the stored mass column $M_z$ (detector frame)</li>
+      </ul>
+    </div>
+
+    <p class="book-footer">
+      Data generated by <code>book/generators/gen_ch01.py</code> (read-only against the main
+      package and <code>results/</code>). This page renders fully offline — Plotly and KaTeX
+      are vendored under <code>vendor/</code>.
+    </p>
+  </main>
+</div>
+
+<script src="js/manifest.js"></script>
+<script src="vendor/plotly/plotly.min.js"></script>
+<script src="vendor/katex/katex.min.js"></script>
+<script src="vendor/katex/auto-render.min.js"></script>
+<script src="js/book.js"></script>
+<script>
+  (function () {
+    "use strict";
+
+    // ---------------------------------------------------------------
+    // Palette (mirrors css/book.css tokens; Plotly needs literals)
+    // ---------------------------------------------------------------
+    var C = {
+      accent: "#0072B2",
+      accentDark: "#6fb8e8",
+      warn: "#D55E00",
+      rec: "#CC79A7",
+      ok: "#009E73",
+      guess: "#E69F00",
+      prior: "#9e9e9e",
+    };
+    function ink() { return Book.isDark() ? "#eef1f5" : "#1a1a1a"; }
+    function grid() { return Book.isDark() ? "#33373f" : "#d8dce1"; }
+    function live() { return Book.isDark() ? C.accentDark : C.accent; }
+    function ghost() { return Book.isDark() ? "#6b7280" : "#a9b0ba"; }
+
+    function baseLayout(xTitle, yTitle) {
+      return {
+        margin: { l: 66, r: 18, t: 26, b: 46 },
+        xaxis: { title: xTitle, gridcolor: grid(), zeroline: false },
+        yaxis: { title: yTitle, gridcolor: grid(), zeroline: false },
+        paper_bgcolor: "rgba(0,0,0,0)",
+        plot_bgcolor: "rgba(0,0,0,0)",
+        font: { color: ink(), size: 12 },
+        showlegend: false,
+        hovermode: "x unified",
+      };
+    }
+
+    function fmt(v, n) {
+      return (v === null || v === undefined || !isFinite(v)) ? "—" : Number(v).toFixed(n);
+    }
+    function table(el, headers, rows) {
+      var html = "<tr>" + headers.map(function (h) { return "<th>" + h + "</th>"; }).join("") + "</tr>";
+      rows.forEach(function (r) {
+        html += "<tr>" + r.map(function (c) { return "<td>" + c + "</td>"; }).join("") + "</tr>";
+      });
+      el.innerHTML = html;
+    }
+
+    // ---------------------------------------------------------------
+    // BW1 — the Bias Ledger Rail. Chapter 1 has no estimator yet; the
+    // rail is rendered empty on purpose (BOOK_DESIGN.md §1 Ch 1).
+    // ---------------------------------------------------------------
+    Book.biasRail({
+      title: "Bias ledger (in h, truth = 0)",
+      entries: [
+        { label: "estimator: not defined yet", bias: null, active: true },
+      ],
+    });
+
+    // ===============================================================
+    // I1.1 — Amplitude, Phase, Distance  (TOY: analytic, no pipeline data)
+    // ===============================================================
+    // Toy model, stated on the page:
+    //   h+ = (A/dL) (1+c^2)/2 cos(Phi),  hx = (A/dL) c sin(Phi)
+    //   F+ = 0.5 (1+cos^2 th) cos 2ph(t),  Fx = cos th sin 2ph(t)
+    //   ph(t) = ph0 + 2 pi t / 1yr           (the channel rotates annually)
+    // The observable envelope is
+    //   E(dL,c,th,t) = (A/dL) sqrt( F+^2 ((1+c^2)/2)^2 + Fx^2 c^2 ).
+    // Everything below is closed form; there is no RNG and no fitted value.
+    var TOY = { A: 1.0, phi0: 1.3039462, Tyr: 4.5 };
+    // The "recorded" source uses EMRI-889's real dL and the angle between its
+    // stored spin axis and line of sight (data/ch01_event889.json); the curves
+    // are still analytic.
+    var REC = { dL: 88.879221, cosi: -0.79576695, theta: 1.9871644 };
+
+    function ampShape(c, th, t) {
+      var ph = TOY.phi0 + 2 * Math.PI * t;             // t in years
+      var Fp = 0.5 * (1 + Math.cos(th) * Math.cos(th)) * Math.cos(2 * ph);
+      var Fx = Math.cos(th) * Math.sin(2 * ph);
+      var ap = Fp * (1 + c * c) / 2;
+      var ax = Fx * c;
+      return Math.sqrt(ap * ap + ax * ax);
+    }
+    function envelope(dL, c, th, t) { return TOY.A * ampShape(c, th, t) / dL; }
+
+    // Strain over a short segment: the phase is a slow chirp, identical for
+    // both traces (the masses are not what is being confused here).
+    function phaseOf(tHours) {
+      var f0 = 3.0, drift = 0.55;                       // cycles per hour (toy)
+      return 2 * Math.PI * (f0 * tHours + 0.5 * drift * tHours * tHours);
+    }
+    function strainSeries(dL, c, th, tGridHours) {
+      var ph = TOY.phi0;                                 // t = 0 -> no rotation yet
+      var Fp = 0.5 * (1 + Math.cos(th) * Math.cos(th)) * Math.cos(2 * ph);
+      var Fx = Math.cos(th) * Math.sin(2 * ph);
+      return tGridHours.map(function (t) {
+        var P = phaseOf(t);
+        return (TOY.A / dL) * (Fp * (1 + c * c) / 2 * Math.cos(P) + Fx * c * Math.sin(P));
+      });
+    }
+
+    var tHours = [];
+    for (var i = 0; i <= 600; i++) tHours.push(i * (2.0 / 600));   // 0..2 h
+    var tYears = [];
+    for (var j = 0; j <= 360; j++) tYears.push(j * (TOY.Tyr / 360));
+
+    // Initial state mirrors the HTML slider values exactly.
+    var state11 = { dL: 200, cosi: 0.0, theta: 1.99 };
+
+    var recStrain = strainSeries(REC.dL, REC.cosi, REC.theta, tHours);
+    var recEnv = tYears.map(function (t) { return envelope(REC.dL, REC.cosi, REC.theta, t); });
+
+    function strainTraces() {
+      return [
+        {
+          x: tHours, y: recStrain, mode: "lines", name: "recorded",
+          line: { color: ghost(), width: 3 },
+          hovertemplate: "t = %{x:.3f} h<br>recorded h = %{y:.4g}<extra></extra>",
+        },
+        {
+          x: tHours, y: strainSeries(state11.dL, state11.cosi, state11.theta, tHours),
+          mode: "lines", name: "yours", line: { color: live(), width: 1.8 },
+          hovertemplate: "t = %{x:.3f} h<br>your h = %{y:.4g}<extra></extra>",
+        },
+      ];
+    }
+    function envTraces() {
+      return [
+        {
+          x: tYears, y: recEnv, mode: "lines", name: "recorded",
+          line: { color: ghost(), width: 3 },
+          hovertemplate: "t = %{x:.2f} yr<br>recorded amplitude = %{y:.4g}<extra></extra>",
+        },
+        {
+          x: tYears,
+          y: tYears.map(function (t) { return envelope(state11.dL, state11.cosi, state11.theta, t); }),
+          mode: "lines", name: "yours", line: { color: live(), width: 2.2 },
+          hovertemplate: "t = %{x:.2f} yr<br>your amplitude = %{y:.4g}<extra></extra>",
+        },
+      ];
+    }
+
+    var strainPlot = Book.themedPlot("ch01-strain-plot", strainTraces(), function () {
+      var L = baseLayout("time [hours, near the start of observation]", "strain h(t)  [arb.]");
+      L.annotations = [{
+        x: 0.02, y: 1.0, xref: "paper", yref: "paper", xanchor: "left", yanchor: "top",
+        text: "grey = the recorded source · blue = yours", showarrow: false,
+        font: { size: 11, color: Book.isDark() ? "#9aa2b1" : "#5b6270" },
+      }];
+      return L;
+    });
+    var envPlot = Book.themedPlot("ch01-envelope-plot", envTraces(), function () {
+      var L = baseLayout("time [years of the 4.5 yr mission]", "amplitude envelope  [arb.]");
+      L.annotations = [{
+        x: 0.02, y: 1.0, xref: "paper", yref: "paper", xanchor: "left", yanchor: "top",
+        text: "the antenna pattern rotates — this is what breaks the tie", showarrow: false,
+        font: { size: 11, color: Book.isDark() ? "#9aa2b1" : "#5b6270" },
+      }];
+      return L;
+    });
+
+    var dlEl = document.getElementById("ch01-dl");
+    var cosiEl = document.getElementById("ch01-cosi");
+    var thEl = document.getElementById("ch01-theta");
+    var verdict11 = document.getElementById("ch01-strain-verdict");
+
+    function redraw11() {
+      strainPlot.update(strainTraces());
+      envPlot.update(envTraces());
+      document.getElementById("ch01-dl-out").textContent = fmt(state11.dL, 1);
+      document.getElementById("ch01-cosi-out").textContent = fmt(state11.cosi, 2);
+      document.getElementById("ch01-theta-out").textContent = fmt(state11.theta, 2);
+
+      var e0y = envelope(state11.dL, state11.cosi, state11.theta, 0);
+      var r0y = envelope(REC.dL, REC.cosi, REC.theta, 0);
+      var m0 = e0y / r0y;
+      var worst = 0;
+      for (var k = 0; k < tYears.length; k++) {
+        var a = envelope(state11.dL, state11.cosi, state11.theta, tYears[k]);
+        var b = recEnv[k];
+        if (b > 1e-12) worst = Math.max(worst, Math.abs(a / b - 1));
+      }
+      document.getElementById("ch01-match0").textContent = (100 * m0).toFixed(2) + "% of recorded";
+      document.getElementById("ch01-matchT").textContent = (100 * worst).toFixed(1) + "%";
+
+      var near0 = Math.abs(m0 - 1) < 1e-6;
+      if (near0 && worst > 0.01) {
+        verdict11.innerHTML =
+          "<span class='ch01-verdict-label'>The degeneracy, and its limit</span>" +
+          "Your source now reproduces the recorded amplitude <strong>exactly</strong> at " +
+          "t = 0 — a different distance and a different inclination, arranged to arrive with " +
+          "the same strength. The top panel cannot tell them apart. The bottom panel can: as " +
+          "the antenna pattern rotates it re-weights the two polarizations, which the two " +
+          "sources carry in <em>different</em> proportions, and the envelopes separate by up " +
+          "to <strong>" + (100 * worst).toFixed(1) + "%</strong>. That separation is the " +
+          "information the distance is actually fitted from.";
+      } else if (near0) {
+        verdict11.innerHTML =
+          "<span class='ch01-verdict-label'>Matched everywhere</span>" +
+          "You have found the recorded source itself (or its mirror in $\\cos\\iota$, which " +
+          "is genuinely indistinguishable in this toy). Move the inclination and press " +
+          "&ldquo;find the degenerate twin&rdquo; to build a source that matches now and " +
+          "fails later.";
+      } else {
+        verdict11.innerHTML =
+          "<span class='ch01-verdict-label'>Try to match it</span>" +
+          "You are at <strong>" + (100 * m0).toFixed(1) + "%</strong> of the recorded " +
+          "amplitude. There is no unique way to fix that: every inclination has a distance " +
+          "that works. Pick an inclination, then press <em>find the degenerate twin</em>.";
+      }
+      Book.renderMath(verdict11);
+
+      var rows = [0, 0.5, 1.0, 1.5, 2.25, 3.0, 3.75, 4.5].map(function (t) {
+        var a = envelope(state11.dL, state11.cosi, state11.theta, t);
+        var b = envelope(REC.dL, REC.cosi, REC.theta, t);
+        return [fmt(t, 2), a.toExponential(4), b.toExponential(4), (100 * (a / b - 1)).toFixed(2) + "%"];
+      });
+      table(document.getElementById("ch01-strain-table"),
+        ["t [yr]", "your amplitude", "recorded amplitude", "difference"], rows);
+    }
+
+    dlEl.addEventListener("input", function () { state11.dL = Number(dlEl.value); redraw11(); });
+    cosiEl.addEventListener("input", function () { state11.cosi = Number(cosiEl.value); redraw11(); });
+    thEl.addEventListener("input", function () { state11.theta = Number(thEl.value); redraw11(); });
+
+    document.getElementById("ch01-twin").addEventListener("click", function () {
+      // Solve E(dL', c, th, 0) = E(dL_rec, c_rec, th_rec, 0) for dL'.
+      var shapeMine = ampShape(state11.cosi, state11.theta, 0);
+      var shapeRec = ampShape(REC.cosi, REC.theta, 0);
+      var target = REC.dL * shapeMine / shapeRec;
+      state11.dL = Math.min(400, Math.max(20, target));
+      dlEl.value = String(state11.dL);
+      redraw11();
+    });
+    document.getElementById("ch01-reset").addEventListener("click", function () {
+      state11 = { dL: REC.dL, cosi: REC.cosi, theta: REC.theta };
+      dlEl.value = String(REC.dL);
+      cosiEl.value = String(REC.cosi);
+      thEl.value = String(REC.theta);
+      redraw11();
+    });
+    redraw11();
+
+    // ===============================================================
+    // I1.2 — the dossier (data/ch01_event889.json)
+    // ===============================================================
+    Book.loadJSON("data/ch01_event889.json").then(function (d) {
+      var e = d.event, p = d.distance_precision, c = d.context;
+
+      // D1 (REVISION_WORKLIST §A): the distance row is the book's canonical
+      // dossier string, read from its ONE definition in js/manifest.js
+      // (BOOK_CANON.sigmaDL) so it cannot drift from ch02-ch11 + the museum.
+      var canonDL = (Book.canon.sigmaDL && Book.canon.sigmaDL.dossierRow) ||
+        "d_L  88.9 Mpc  ·  σ_dL/d_L = 8.98×10⁻⁴";
+      var rows = [
+        ["event", "<strong>EMRI-889</strong> — seed 61000, realization r1, row 889"],
+        // tomas-m4 / ch08_FLAGS.md#F-ch08-8: the stored `M` column is the
+        // DETECTOR-frame mass. Ch 8 establishes M_z = M(1+z) is the measured
+        // quantity, so the running example is labelled correctly from Ch 1.
+        ["central mass $M_z$", e.M_msun.toExponential(4).replace("e+5", "&times;10<sup>5</sup>") + " $M_\\odot$" +
+          "<br><span style='color:var(--muted);font-weight:400'>the stored mass column is the " +
+          "<em>detector-frame</em> mass $M_z = M(1+z)$; for a source this nearby the " +
+          "source-frame value differs by a couple of percent, below the precision " +
+          "shown</span> &nbsp;" +
+          "<span class='ch01-fwd'>⏭ Ch 8</span>"],
+        ["inspiralling mass $\\mu$", e.mu_msun + " $M_\\odot$"],
+        ["spin $a$", e.a],
+        ["luminosity distance $d_L$", "<strong>" + canonDL.replace(/^d_L\s*/, "") + "</strong>"],
+        ["&hellip; in full, as stored",
+          "$\\hat d_L$ = " + fmt(e.dL_Mpc, 3) + " Mpc (" + e.dL_Gpc + " Gpc); " +
+          "$\\sigma_{d_L}$ = " + p.sigma_dL_Gpc.toExponential(3) + " Gpc = " + fmt(p.sigma_dL_Mpc, 4) +
+          " Mpc<br>= <strong>" + p.sigma_dL_over_dL.toExponential(3) + "</strong> of $d_L$ &nbsp;" +
+          "(= " + fmt(p.frac_in_units_of_one_over_snr, 2) + "/SNR) &nbsp;" +
+          "<span class='ch01-fwd'>⏭ Ch 6</span>"],
+        ["SNR", "<strong>" + fmt(e.snr, 1) + "</strong> — the loudest of " + c.n_crb_rows +
+          " stored events (threshold " + c.snr_threshold + ")"],
+        ["mission span / plunge", e.T_yr + " yr; plunges at " + fmt(e.t_plunge_yr, 3) + " yr"],
+        ["sky position (ecliptic)", "$\\theta$ = " + fmt(e.qS, 4) + ", $\\phi$ = " + fmt(e.phiS, 4) + " rad"],
+        ["host galaxy", "index " + e.host_galaxy_index + " — in the catalogue (one of only " +
+          c.n_in_catalog + " of " + c.n_events_used + ")"],
+        ["frame stamp", "<code>" + e.coord_frame + "</code>"],
+      ];
+      var html = "";
+      rows.forEach(function (r) { html += "<tr><td>" + r[0] + "</td><td>" + r[1] + "</td></tr>"; });
+      html += "<tr class='dossier-new'><td>redshift $z$</td><td>" +
+        "<span class='ch01-slot ch01-unknown'>unknown</span> &nbsp;" +
+        "<span style='color:var(--muted);font-weight:400'>— and this empty slot is the rest of the book</span>" +
+        "</td></tr>";
+      document.getElementById("ch01-dossier-table").innerHTML = html;
+
+      table(document.getElementById("ch01-params-table"),
+        ["parameter", "stored value", "what it is"],
+        [
+          ["M", e.M_msun, "central black-hole mass [M☉] — the stored column is the DETECTOR-frame mass M_z = M(1+z) (ch08_FLAGS.md#F-ch08-8)"],
+          ["mu", e.mu_msun, "inspiralling compact object [M☉]"],
+          ["a", e.a, "dimensionless spin of the central BH"],
+          ["p0", e.p0, "initial semi-latus rectum — set by the plunge window"],
+          ["e0", e.e0, "initial eccentricity"],
+          ["x0", e.x0, "cosine of the orbital inclination to the spin axis"],
+          ["luminosity_distance", e.dL_Gpc, "d_L [Gpc] — the one cosmological observable"],
+          ["qS, phiS", e.qS + ", " + e.phiS, "sky position [rad], ecliptic"],
+          ["qK, phiK", e.qK + ", " + e.phiK, "spin-axis direction [rad], ecliptic"],
+          ["Phi_phi0, Phi_theta0, Phi_r0", e.Phi_phi0 + ", " + e.Phi_theta0 + ", " + e.Phi_r0, "initial orbital phases [rad]"],
+          ["T, dt", e.T_yr + " yr, " + e.dt_s + " s", "observation span and sampling cadence"],
+          ["t_plunge_yr", e.t_plunge_yr, "drawn plunge time inside the mission span"],
+          ["SNR", e.snr, "matched-filter signal-to-noise"],
+          ["host_galaxy_index", e.host_galaxy_index, "label of the injected host"],
+          ["in_catalog", String(e.in_catalog), "was the injected host drawn from the catalogue?"],
+          ["(derived) cos ι", e.cos_iota_from_stored_angles,
+            "angle between the stored spin axis and the line of sight — ι = " +
+            fmt(e.iota_deg_from_stored_angles, 1) + "°; a geometric definition, not a fitted parameter"],
+        ]);
+
+      Book.renderMath(document.getElementById("ch01-dossier"));
+    });
+
+    // ===============================================================
+    // I1.3 — d_L(z; h, Omega_m) explorer
+    //   The curve is computed HERE, closed form: cumulative trapezoid of
+    //   1/E(z) on a fine grid (dz = 2.5e-4 out to z = 2), then
+    //   d_L = (1+z) (c/100h) I(z).  The JSON supplies a lattice of repo
+    //   dist() values purely as an accuracy witness, plus dist_to_redshift
+    //   values for the "redshift assigned to EMRI-889" readout.
+    // ===============================================================
+    var ZMAX = 2.0, NZ = 8000, DZ = ZMAX / NZ;
+    function buildIntegral(om) {
+      var I = new Float64Array(NZ + 1);
+      var prev = 1.0 / Math.sqrt(om + (1 - om));   // 1/E(0) = 1
+      var acc = 0;
+      I[0] = 0;
+      for (var k = 1; k <= NZ; k++) {
+        var z = k * DZ;
+        var cur = 1.0 / Math.sqrt(om * Math.pow(1 + z, 3) + (1 - om));
+        acc += 0.5 * (cur + prev) * DZ;
+        prev = cur;
+        I[k] = acc;
+      }
+      return I;
+    }
+    function integralAt(I, z) {
+      if (z <= 0) return 0;
+      if (z >= ZMAX) return I[NZ];
+      var x = z / DZ, k = Math.floor(x), f = x - k;
+      return I[k] + f * (I[k + 1] - I[k]);
+    }
+
+    Book.loadJSON("data/ch01_dlz.json").then(function (d) {
+      var CKMS = d.fiducial.c_km_s;
+      var OM_FID = d.fiducial.omega_m, H_FID = d.fiducial.h_true;
+      var DL889 = d.event_dl.dL_Gpc;                       // Gpc
+
+      var cacheOm = null, cacheI = null;
+      function integ(om) {
+        if (om !== cacheOm) { cacheOm = om; cacheI = buildIntegral(om); }
+        return cacheI;
+      }
+      /** d_L in Gpc — the same formula as physical_relations.dist(). */
+      function dL(z, h, om) {
+        return (1 + z) * (CKMS / (100 * h)) * integralAt(integ(om), z) / 1000.0;
+      }
+      /** Invert d_L -> z by bisection on a monotone function. */
+      function zOf(dl, h, om) {
+        var lo = 0, hi = ZMAX;
+        if (dL(hi, h, om) < dl) return NaN;
+        for (var it = 0; it < 60; it++) {
+          var mid = 0.5 * (lo + hi);
+          if (dL(mid, h, om) < dl) lo = mid; else hi = mid;
+        }
+        return 0.5 * (lo + hi);
+      }
+
+      // --- accuracy witness against the repo's own dist() ------------
+      var V = d.validation, worst = 0, worstAt = null, nPts = 0;
+      for (var a = 0; a < V.h.length; a++) {
+        for (var b = 0; b < V.omega_m.length; b++) {
+          for (var c2 = 0; c2 < V.z.length; c2++) {
+            var mine = dL(V.z[c2], V.h[a], V.omega_m[b]);
+            var theirs = V.dL_Gpc[a][b][c2];
+            if (theirs > 0) {
+              var rel = Math.abs(mine / theirs - 1);
+              nPts++;
+              if (rel > worst) { worst = rel; worstAt = [V.h[a], V.omega_m[b], V.z[c2]]; }
+            }
+          }
+        }
+      }
+      document.getElementById("ch01-valid").textContent =
+        worst.toExponential(1) + " relative";
+      void nPts; void worstAt;
+
+      // --- curves ----------------------------------------------------
+      var zPlot = [];
+      for (var q = 0; q <= 300; q++) zPlot.push(q * (1.5 / 300));
+      var zZoom = [];
+      for (var q2 = 0; q2 <= 200; q2++) zZoom.push(q2 * (0.05 / 200));
+
+      var st = { h: H_FID, om: OM_FID };
+
+      function curve(zs, h, om) { return zs.map(function (z) { return dL(z, h, om) * 1000; }); }
+
+      var fidMain = curve(zPlot, H_FID, OM_FID);
+      var fidZoom = curve(zZoom, H_FID, OM_FID);
+
+      function mainTraces() {
+        return [
+          {
+            x: zPlot, y: fidMain, mode: "lines", name: "fiducial (0.73, 0.2726)",
+            line: { color: ghost(), width: 2, dash: "dot" },
+            hovertemplate: "z = %{x:.3f}<br>fiducial d_L = %{y:.1f} Mpc<extra></extra>",
+          },
+          {
+            x: zPlot, y: curve(zPlot, st.h, st.om), mode: "lines", name: "your cosmology",
+            line: { color: live(), width: 2.6 },
+            hovertemplate: "z = %{x:.3f}<br>d_L = %{y:.1f} Mpc<extra></extra>",
+          },
+        ];
+      }
+      function zoomTraces() {
+        var zi = zOf(DL889, st.h, st.om);
+        return [
+          {
+            x: zZoom, y: fidZoom, mode: "lines",
+            line: { color: ghost(), width: 2, dash: "dot" }, name: "fiducial",
+            hovertemplate: "z = %{x:.4f}<br>fiducial d_L = %{y:.2f} Mpc<extra></extra>",
+          },
+          {
+            x: zZoom, y: curve(zZoom, st.h, st.om), mode: "lines",
+            line: { color: live(), width: 2.6 }, name: "your cosmology",
+            hovertemplate: "z = %{x:.4f}<br>d_L = %{y:.2f} Mpc<extra></extra>",
+          },
+          {
+            x: [zi], y: [DL889 * 1000], mode: "markers+text",
+            text: ["EMRI-889 → z = " + (isFinite(zi) ? zi.toFixed(5) : "—")],
+            textposition: "top right",
+            marker: { color: C.guess, size: 11, symbol: "diamond" },
+            textfont: { size: 11, color: C.guess },
+            name: "EMRI-889",
+            hovertemplate: "assigned z = %{x:.5f}<br>measured d_L = %{y:.2f} Mpc<extra></extra>",
+          },
+        ];
+      }
+
+      var mainPlot = Book.themedPlot("ch01-dlz-plot", mainTraces(), function () {
+        var L = baseLayout("redshift z", "luminosity distance d_L  [Mpc]");
+        L.annotations = [{
+          x: 0.02, y: 1.0, xref: "paper", yref: "paper", xanchor: "left", yanchor: "top",
+          text: "h rescales the whole curve · Ω_m bends it", showarrow: false,
+          font: { size: 11, color: Book.isDark() ? "#9aa2b1" : "#5b6270" },
+        }];
+        return L;
+      });
+      var zoomPlot = Book.themedPlot("ch01-dlz-zoom", zoomTraces(), function () {
+        var L = baseLayout("redshift z  (zoom: where EMRI-889 lives)", "d_L  [Mpc]");
+        L.xaxis.range = [0, 0.05];
+        L.shapes = [{
+          type: "line", x0: 0, x1: 0.05, y0: DL889 * 1000, y1: DL889 * 1000,
+          line: { color: C.warn, dash: "dash", width: 1.6 },
+        }];
+        L.annotations = [{
+          x: 0.001, y: DL889 * 1000, xanchor: "left", yanchor: "bottom",
+          text: "measured d_L = 88.879 Mpc", showarrow: false,
+          font: { size: 11, color: C.warn },
+        }];
+        return L;
+      });
+
+      var hEl = document.getElementById("ch01-h");
+      var omEl = document.getElementById("ch01-om");
+      var verdict13 = document.getElementById("ch01-dlz-verdict");
+
+      function redraw13() {
+        mainPlot.update(mainTraces());
+        zoomPlot.update(zoomTraces());
+        document.getElementById("ch01-h-out").textContent = fmt(st.h, 3);
+        document.getElementById("ch01-om-out").textContent = fmt(st.om, 4);
+        var zi = zOf(DL889, st.h, st.om);
+        document.getElementById("ch01-impz").textContent = isFinite(zi) ? zi.toFixed(5) : "—";
+        document.getElementById("ch01-rel15").textContent =
+          fmt(dL(1.5, st.h, st.om) / dL(1.5, H_FID, OM_FID), 4) + "×";
+        document.getElementById("ch01-rel002").textContent =
+          fmt(dL(0.021284, st.h, st.om) / dL(0.021284, H_FID, OM_FID), 4) + "×";
+
+        // The two levers, separated: h at fixed Om, Om at fixed h.
+        var hOnly = dL(1.5, st.h, OM_FID) / dL(1.5, H_FID, OM_FID);
+        var omOnlyHigh = dL(1.5, H_FID, st.om) / dL(1.5, H_FID, OM_FID);
+        var omOnlyLow = dL(0.021284, H_FID, st.om) / dL(0.021284, H_FID, OM_FID);
+        verdict13.innerHTML =
+          "<span class='ch01-verdict-label'>What each dial did</span>" +
+          "Your $h$ alone rescales $d_L$ by <strong>" + fmt(hOnly, 4) + "&times;</strong> — " +
+          "and by exactly that same factor at <em>every</em> redshift, because $h$ is a pure " +
+          "prefactor. Your $\\Omega_m$ alone changes $d_L$ by <strong>" +
+          fmt(omOnlyHigh, 4) + "&times;</strong> at $z = 1.5$ but only <strong>" +
+          fmt(omOnlyLow, 4) + "&times;</strong> at $z = 0.021$, where EMRI-889 sits: a shape " +
+          "parameter needs path length to act. That is why a nearby loud event is a clean " +
+          "probe of $h$ and carries essentially no information about $\\Omega_m$ — and why " +
+          "the fiducial $\\Omega_m$ below is a stated systematic rather than a fitted number.";
+        Book.renderMath(verdict13);
+      }
+
+      hEl.addEventListener("input", function () { st.h = Number(hEl.value); redraw13(); });
+      omEl.addEventListener("input", function () { st.om = Number(omEl.value); redraw13(); });
+      document.getElementById("ch01-preset-row").querySelectorAll("[data-preset]").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          var p = btn.getAttribute("data-preset");
+          if (p === "fid") { st.h = H_FID; st.om = OM_FID; }
+          else if (p === "planck") { st.h = 0.674; st.om = 0.3153; }
+          else { st.h = 0.730; st.om = 0.3153; }
+          hEl.value = String(st.h);
+          omEl.value = String(st.om);
+          document.getElementById("ch01-preset-row")
+            .querySelectorAll("[data-preset]").forEach(function (o) {
+              o.setAttribute("aria-pressed", String(o === btn));
+            });
+          redraw13();
+        });
+      });
+      redraw13();
+
+      // Numbers view: the repo's own dist_to_redshift table vs the browser's
+      // bisection — every fifth h, so the table stays readable.
+      var rows13 = [];
+      for (var k2 = 0; k2 < d.event_dl.h.length; k2 += 5) {
+        var hk = d.event_dl.h[k2];
+        var repo = d.event_dl.implied_z[k2];
+        var mine2 = zOf(DL889, hk, OM_FID);
+        rows13.push([
+          fmt(hk, 3), repo.toFixed(6), mine2.toFixed(6),
+          Math.abs(mine2 / repo - 1).toExponential(1),
+        ]);
+      }
+      table(document.getElementById("ch01-dlz-table"),
+        ["h", "z from repo dist_to_redshift()", "z from this page", "relative difference"],
+        rows13);
+
+      // --- Omega_m mis-specification table (§4) ----------------------
+      var M = d.omega_m_mispec;
+      var rowsOm = M.z.map(function (z, i2) {
+        return [
+          fmt(z, 2), fmt(M.h_prime[i2], 6),
+          (M.pct_on_H0_recomputed[i2] >= 0 ? "+" : "") + fmt(M.pct_on_H0_recomputed[i2], 2) + "%",
+          (M.pct_on_H0_published_G7[i2] >= 0 ? "+" : "") + M.pct_on_H0_published_G7[i2].toFixed(2) + "%",
+        ];
+      });
+      table(document.getElementById("ch01-omtable"),
+        ["z", "recovered h′", "error on H₀ (recomputed)", "G7 row 6, as published"],
+        rowsOm);
+    });
+  })();
+</script>

@@ -1,0 +1,1670 @@
+<!DOCTYPE html>
+<meta charset="utf-8" />
+<!-- The doctype + charset above are a page-local workaround for
+     WIDGET_REQUESTS R-ch07-3 (the frozen _template.html ships neither, and
+     KaTeX refuses to render in quirks mode). Everything below follows the
+     template. -->
+<title>Ch. 10 — Is It Calibrated? | EMRI Dark Siren Book</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="description" content="Coverage, P-P plots and pulls over many synthetic universes; what the closure test actually tested; the idealization ledger; and C11, an exoneration done right." />
+<link rel="stylesheet" href="vendor/katex/katex.min.css" />
+<link rel="stylesheet" href="css/book.css" />
+
+<style>
+  /* Page-local only (css/book.css is frozen). Nothing here restyles a shared
+     class; these are new elements this chapter introduces. (The rail-pip
+     workaround for R-ch07-1 is retired: pips go through Book.biasRail's own
+     `pips` channel — integrator pass 2, REVISION_WORKLIST §D-6.) */
+  .ch10-verdict {
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--planck);
+    background: var(--paper-raised);
+    border-radius: 8px;
+    padding: 0.7rem 0.9rem;
+    margin: 0.7rem 0 0;
+    font-size: 0.9rem;
+  }
+  .ch10-verdict .ch10-verdict-label {
+    display: block;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--planck);
+    margin-bottom: 0.25rem;
+  }
+  .ch10-readouts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem 1.2rem;
+    margin: 0.5rem 0 0;
+    font-size: 0.86rem;
+    color: var(--muted);
+  }
+  .ch10-readouts strong { color: var(--accent); font-variant-numeric: tabular-nums; }
+  .ch10-note { font-size: 0.82rem; color: var(--muted); margin: 0.6rem 0 0; }
+  /* D1 erratum footnote (BOOK_CANON.sigmaDL.erratumHTML is quoted verbatim and
+     carries class="note"; no shared rule defines it yet — page-local until the
+     integrator's pass 2 promotes it into css/book.css). */
+  .dossier .note { font-size: 0.76rem; color: var(--muted); margin: 0.5rem 0 0; line-height: 1.45; }
+  .ch10-locked { opacity: 0.45; pointer-events: none; }
+  @media print { .ch10-locked { opacity: 1; } }
+  .ch10-interlude {
+    border: 1px solid var(--border);
+    border-top: 3px solid var(--prior);
+    background: var(--paper-raised);
+    border-radius: var(--radius);
+    padding: 1.1rem 1.25rem;
+    margin: 2.4rem 0 1.4rem;
+  }
+  .ch10-interlude .ch10-interlude-kicker {
+    display: block;
+    font-size: 0.7rem; font-weight: 700; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--muted); margin-bottom: 0.2rem;
+  }
+  .ch10-interlude h3 { margin-top: 0.1rem; }
+  .ch10-interlude dl { margin: 0.8rem 0 0; }
+  .ch10-interlude dt {
+    font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em;
+    color: var(--muted); margin-top: 0.7rem;
+  }
+  .ch10-interlude dd { margin: 0.1rem 0 0; }
+  .ch10-fwd {
+    display: inline-block; font-size: 0.72rem;
+    border: 1px dashed var(--border); border-radius: 999px;
+    padding: 0 0.45em; color: var(--muted); white-space: nowrap;
+  }
+  .ch10-flag {
+    border: 1px dashed var(--planck);
+    border-radius: 8px;
+    padding: 0.6rem 0.85rem;
+    margin: 0.9rem 0;
+    font-size: 0.85rem;
+    background: rgba(204, 121, 167, 0.07);
+  }
+  .ch10-flag .ch10-flag-label {
+    display: block; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.06em;
+    text-transform: uppercase; color: var(--planck); margin-bottom: 0.25rem;
+  }
+</style>
+
+<div class="book-shell">
+  <header class="book-topbar">
+    <a class="brand" href="index.html">From Bayes&rsquo; Rule to H&#8320;
+      <small>an interactive discovery book</small>
+    </a>
+    <nav class="book-nav" data-nav aria-label="Chapters"><!-- built from js/manifest.js --></nav>
+    <button class="theme-toggle" data-theme-toggle type="button">☽ Dark</button>
+  </header>
+
+  <main class="book-content">
+    <h1>Chapter 10 — Is It Calibrated?</h1>
+    <p class="subtitle">
+      It recovers truth at &minus;0.24&sigma;, twice. What does that establish?
+    </p>
+
+    <!-- ================= COLD OPEN (B1) ================= -->
+    <div class="callout without">
+      <span class="callout-label">The failure this chapter answers</span>
+      Chapter 9 built the universe the estimator is graded against, and then ran the
+      estimator on it. On the idealized campaign-#51 mock the combined posterior over
+      1588 events peaks at <strong>h = 0.72990</strong> with
+      <span class="term" data-term="sigh">$\sigma_h$</span> = 0.00030 — the injected truth
+      0.73 sits <strong>&minus;0.24&sigma;</strong> from the peak. A second, independent
+      seed lands at 0.72990 too, &minus;0.36&sigma;.
+      <span class="prov-chip">IDEALIZED_BASELINE_READOUT.md:25-30</span>
+      That is a recovery to four decimal places, twice.
+      <strong>So: is the estimator calibrated?</strong>
+    </div>
+
+    <div class="widget" id="ch10-coldopen" data-predict-id="ch10-calibrated">
+      <h4>Predict, then reveal — commit before you read on</h4>
+      <p style="margin-top:0;">
+        Two independent synthetic universes. Two MAPs on truth to four decimals. Two
+        sub-&sigma; pulls, both small. Answer in one click, then keep reading; the
+        chapter is an unpacking of your answer either way.
+      </p>
+      <div class="predict-row" id="ch10-predict-1" data-predict-id="ch10-calibrated">
+        <button type="button" data-predict="yes">Yes — it is calibrated</button>
+        <button type="button" data-predict="no">No — this does not show that</button>
+        <button type="button" data-predict="unsure">I cannot tell from this</button>
+      </div>
+      <div class="reveal">
+        <p style="margin-top:0;">
+          <strong>&ldquo;No&rdquo; and &ldquo;I cannot tell&rdquo; are the same answer, and
+          both are right.</strong> Nothing in those two numbers is a statement about
+          calibration. Calibration is a property of an estimator over <em>many</em>
+          universes: it says that when the estimator reports a 68% interval, truth is
+          inside it 68% of the time. A MAP is a single point from a single draw; two of
+          them cannot resolve a bias smaller than the scatter — and note that both pulls
+          are <em>negative</em>, which the readout itself flags as worth re-testing.
+        </p>
+        <p style="margin-bottom:0;">
+          Worse: those two numbers cannot even tell you <em>which parts of the estimator
+          were tested</em>. That turns out to be the more interesting failure, and it has
+          a measurement attached.
+          <span class="prov-chip">IDEALIZED_BASELINE_READOUT.md:31-36</span>
+        </p>
+      </div>
+      <noscript>
+        <p><strong>Static fallback (the reveal).</strong> &ldquo;No&rdquo; and &ldquo;I cannot
+        tell&rdquo; are the same answer, and both are right. Calibration is a property of an
+        estimator over many universes — that a 68% interval contains truth 68% of the time — and
+        two MAPs from two draws cannot establish it, cannot resolve a bias smaller than the
+        scatter (note both pulls are negative), and cannot say which parts of the estimator were
+        exercised at all.</p>
+      </noscript>
+    </div>
+
+    <p>
+      <strong>It recovers truth. That is not the same as being right.</strong>
+      This chapter is about instruments. Not about the estimator — the estimator is now
+      built, and Chapters 3 through 9 each installed one piece of it. This chapter asks the
+      question a referee asks: <em>how do you know?</em> Four answers exist in this project,
+      they are of genuinely different strengths, and one of them is the methodological jewel
+      of the whole repository.
+    </p>
+
+    <!-- ================= §1 ================= -->
+    <h2>1. Coverage is the currency</h2>
+
+    <p>
+      Chapter 2 gave you three independent ways for an estimator to be wrong: <strong>bias</strong>
+      (the answer sits off truth on average), <strong>scatter</strong> (the answers spread), and
+      <strong>coverage</strong> (the stated uncertainty is dishonest). Only the third is a
+      statement about the error bar, and only the third is what a reader of your paper is
+      implicitly trusting.
+    </p>
+    <p>
+      Coverage is a frequentist audit of a Bayesian object, and it is defined by a procedure,
+      not by a formula. Build many synthetic universes, each with a known injected
+      <span class="term" data-term="h">$h_{\rm true}$</span>. Run the estimator on each. For
+      each posterior, form the credible region of mass $q$ and ask whether truth is inside it.
+      If the estimator is honest, truth falls inside the $q$ region a fraction $q$ of the time
+      — <em>for every $q$ at once</em>. Plotting measured fraction against nominal $q$ gives a
+      <strong>P&ndash;P plot</strong>, and calibration is the diagonal.
+    </p>
+
+    <div class="voice-derivation">
+      <span class="voice-label">The instrument, and why it is trustworthy
+        <span class="prov-chip">validation/pp_coverage.py</span>
+        <span class="prov-chip">commission 2026-07-01, investigator d2</span>
+      </span>
+      <p style="margin-top:0;">
+        The harness builds a synthetic galaxy catalogue and EMRI detections in a flat
+        &Lambda;CDM universe, runs a from-scratch single-host dark-siren $H_0$ estimator with a
+        switchable host-redshift kernel, and measures P&ndash;P coverage at the 50 / 68 / 90%
+        highest-posterior-density levels together with MAP bias, across many realizations and
+        several injected truths.
+      </p>
+      <p style="margin-bottom:0;">
+        Its scientific value is in what it refuses to do. The module is pure
+        <code>numpy</code>/<code>scipy</code> and <strong>deliberately does not import the
+        production inference code</strong>: it re-derives the estimator from the written
+        formulas, <em>&ldquo;so a calibration failure here cannot be explained away as a shared
+        implementation bug.&rdquo;</em> It was written from scratch by the 2026-07-01
+        verification commission (investigator d2) — by someone whose job was to break the
+        pipeline, not to ship it.
+      </p>
+    </div>
+
+    <p>
+      For a formal HPD region there is a compact way to say the same thing. For one realization,
+      let $p(h)$ be the normalized posterior over <span class="term" data-term="h">$h$</span> and define
+    </p>
+    <div class="voice-derivation">
+      <span class="voice-label">The credible level at which truth enters
+        <span class="prov-chip">pp_coverage.py <code>_hpd_contains</code></span>
+      </span>
+      $$ L \;=\; \int_{\{h\,:\;p(h)\,\ge\,p(h_{\rm true})\}} p(h)\,dh , $$
+      the posterior mass sitting <em>above</em> the density at truth. The HPD region of mass $q$
+      is exactly $\{p \ge t_q\}$ with $\int_{p\ge t_q} p = q$, so
+      $$ h_{\rm true} \in \mathrm{HPD}_q \iff L \le q . $$
+      Coverage at level $q$ is therefore the empirical CDF of $L$ over realizations, and
+      <strong>the P&ndash;P curve <em>is</em> that CDF</strong>. A calibrated estimator produces
+      $L$ uniform on $[0,1]$.
+    </div>
+
+    <p>
+      The harness stores coverage at three levels; the widget below evaluates $L$ per
+      realization and draws the whole curve. Every cell it shows is re-run from that cell&rsquo;s
+      own archived configuration — same seed, same random stream — and the recomputation is
+      required to reproduce the archived coverage, bias, rail fraction and completion fraction
+      <strong>exactly</strong> before anything is written. All 16 cells &times; 3 truths pass.
+      That is a small point worth pausing on: the July archives still reproduce, bit for bit,
+      from today&rsquo;s code.
+    </p>
+
+    <!-- ============ I10.1 ============ -->
+    <!-- BW3 (REVISION_WORKLIST §D-5): varying the injected truth is the exact
+         gesture of ledger #49a's decisive test (an estimator that does not move
+         is not measuring the parameter). The widget does not hard-code #49a's
+         verdict, so the inline chip volunteers it on first interaction. -->
+    <div class="widget" id="ch10-i101" data-hypothesis="49a">
+      <h4>I10.1 — The P&ndash;P Slot Machine
+        <span class="prov-chip real">real: pp_coverage_deepvenue_20260710 / _20260730</span>
+        <span class="prov-chip">archive-gated re-run</span>
+      </h4>
+      <p style="margin-top:0; color:var(--muted); font-size:0.88rem;">
+        <strong>Manipulate</strong> how much of the event set is driven by the completion
+        branch (the completeness dial), the catalogue redshift width
+        <span class="term" data-term="sigz">$\sigma_z$</span>, and the injected truth.
+        <strong>Watch bias and coverage separately.</strong> They are different numbers and
+        they do not move together — that is the entire point of the instrument.
+      </p>
+      <div class="widget-controls">
+        <label for="ch10-cf-slider">Completion-driven fraction of events:</label>
+        <input id="ch10-cf-slider" type="range" aria-describedby="ch10-pp-readouts" />
+        <span class="readout">f<sub>comp</sub> = <strong id="ch10-cf-readout">&mdash;</strong></span>
+      </div>
+      <div class="widget-controls">
+        <span class="readout">catalogue z width:</span>
+        <div class="toggle-row" id="ch10-sz-row" role="group" aria-label="Catalogue redshift width">
+          <button type="button" data-sz="0.015">$\sigma_z = 0.015$</button>
+          <button type="button" data-sz="0.035" aria-pressed="true">$\sigma_z = 0.035$</button>
+        </div>
+        <span class="readout">injected truth:</span>
+        <div class="toggle-row" id="ch10-truth-row" role="group" aria-label="Injected truth">
+          <button type="button" data-truth="0.6200">0.62</button>
+          <button type="button" data-truth="0.7200" aria-pressed="true">0.72</button>
+          <button type="button" data-truth="0.8400">0.84</button>
+        </div>
+      </div>
+      <div id="ch10-pp-plot" class="widget-plot" style="min-height:300px"></div>
+      <div id="ch10-ladder-plot" class="widget-plot" style="min-height:260px"></div>
+      <div class="ch10-readouts" id="ch10-pp-readouts">
+        <span>68% coverage <strong id="ch10-cov68">&mdash;</strong> (nominal 0.68)</span>
+        <span>MAP bias in $h$ <strong id="ch10-bias">&mdash;</strong></span>
+        <span>MAP scatter <strong id="ch10-mapstd">&mdash;</strong></span>
+        <span>railed realizations <strong id="ch10-rail">&mdash;</strong></span>
+      </div>
+      <div class="ch10-verdict" id="ch10-pp-verdict"></div>
+      <p class="ch10-note">
+        Each ensemble is <strong>120 realizations</strong> of 250 events — the archives&rsquo; own
+        count, so the binomial standard error on a coverage number is about
+        <strong>&plusmn;0.043</strong> at the 68% level. Do not read a third digit. The
+        harness&rsquo;s $h$-grid here is uniform at 0.004, so the credible levels are computed on
+        a regular grid; the production grid&rsquo;s 0.65 / 0.80 spacing seams do not enter this
+        widget at all.
+      </p>
+      <details class="num-view">
+        <summary>Show me the numbers</summary>
+        <div class="table-scroll"><table class="num-table" id="ch10-pp-table"></table></div>
+      </details>
+      <noscript>
+        <p><strong>Static fallback.</strong> Three P&ndash;P curves. (i) <em>Control</em>, no
+        completion branch (completion fraction 0.000, $\sigma_z$ = 0.035, truth 0.72): the curve
+        tracks the diagonal, 68% coverage 0.675, MAP bias &minus;0.0018. (ii) <em>Campaign-like</em>
+        (completion fraction 0.082, same $\sigma_z$ and truth): the curve bows visibly below the
+        diagonal, 68% coverage 0.417, MAP bias +0.0078 — the bias has grown by 0.010 in $h$ while
+        coverage has lost a third of its mass. (iii) <em>Completion-dominated</em> (completion
+        fraction 0.787, truth 0.72): 68% coverage 0.050, MAP bias +0.0368. Bias and coverage
+        degrade together here but not proportionally, and in the deepest cells coverage collapses
+        long before the bias becomes large compared with the posterior width.</p>
+      </noscript>
+    </div>
+
+    <div class="callout defect">
+      <span class="callout-label">Trap &mdash; &ldquo;A small bias means a small problem.&rdquo;</span>
+      Set the widget to $\sigma_z = 0.035$, injected truth 0.62, and drag the completeness dial to
+      <code>z_support</code> = 0.3 — completion fraction 0.219. The MAP bias is
+      <strong>+0.015</strong> in $h$ — about 1.5 km/s/Mpc, arguably tolerable — while 68% coverage
+      reads <strong>0.083</strong>. An analysis quoting that estimator would be wrong about its own
+      error bar by a factor of eight. Bias and coverage are independent failure modes and the
+      second is the one your reader is trusting.
+    </div>
+
+    <p>
+      Two more readings of the same instrument are worth having in hand before we use it in
+      anger.
+    </p>
+
+    <p>
+      <strong>The defect it was built to expose.</strong> Chapter 7&rsquo;s Eddington shift
+      <span class="ch10-fwd">⏮ Ch 7</span> is what the commission found with this harness, and it
+      found it as a coverage collapse rather than as a bias. With the bare Gaussian host-$z$
+      kernel — no volume prior — coverage does not degrade gracefully; it goes to zero, and the
+      posterior rails.
+    </p>
+    <div class="table-scroll">
+      <table class="num-table" id="ch10-kernel-table"></table>
+    </div>
+    <p class="ch10-note">
+      Read straight from <span class="prov-chip">pp_coverage_sigmaz_scan_20260703</span>
+      (250 realizations per cell, injected truth 0.72). The <code>bare</code> rows are not
+      &ldquo;a bit over-confident&rdquo;: at $\sigma_z = 0.10$ the <em>90%</em> credible interval
+      contains truth in <strong>0 of 250</strong> universes, every realization rails against a
+      grid edge, and the MAP sits <strong>0.12 low</strong> in $h$ — the Eddington shift, at
+      full volume. The <code>volume</code> rows on the same data are calibrated at
+      $\sigma_z \le 0.15$ and then <em>stop being</em>: by $\sigma_z = 0.25$ the same kernel reads
+      68% coverage 0.444 and bias +0.040, now high. So the honest statement is a scoped one —
+      this kernel is calibrated in this harness at these widths — which is exactly the shape of
+      the live collision between G2b&rsquo;s ratified confirmation and claim C7&rsquo;s measured
+      inflation above $\sigma_z/z = 0.256$ <span class="ch10-fwd">⏮ Ch 7</span>
+      <span class="ch10-fwd">⏭ Ch 11</span>. (That threshold is itself a both-values item: three
+      artifacts state <strong>0.256</strong>, while solving those same documents&rsquo; corrected
+      law for the 0.86 edge gives <strong>0.2644</strong> — which is also where the delivered
+      per-host measurement puts the crossing. The book prints both; the project has not
+      reconciled them <span class="prov-chip">book/design/flags/ch07_FLAGS.md FLAG-2</span>)
+      What this table settles is narrower and solid: the
+      estimator, not the data, produced the rail — the point Chapter 4&rsquo;s starvation
+      interlude made <span class="ch10-fwd">⏮ Ch 4</span>.
+    </p>
+
+    <p>
+      <strong>The signature that separates a bias from noise.</strong> Suppose your coverage is
+      poor. Is that a real systematic offset, or is it finite-sample skew that will wash out with
+      more events? There is a clean discriminator: run the same estimator at increasing event
+      count. A finite-sample artifact shrinks like $1/\sqrt{N}$ and coverage returns to nominal.
+      A real asymptotic bias does the opposite — the offset stays put while the posterior narrows
+      around it, so coverage <em>degrades</em>.
+    </p>
+    <div class="table-scroll">
+      <table class="num-table" id="ch10-nscale-table"></table>
+    </div>
+    <p class="ch10-note">
+      Read from <span class="prov-chip">pp_coverage_noisemodel_20260711/SUMMARY.md:80-86</span>
+      and the archives behind it. At $h_{\rm true} = 0.72$ the const-$\sigma$ estimator&rsquo;s bias
+      is <strong>flat</strong> in $N$ (+0.0023 &rarr; +0.0024 &rarr; +0.0022) while 68% coverage
+      runs <strong>0.63 &rarr; 0.38 &rarr; 0.12</strong>. That is a real asymptotic model bias,
+      diagnosed without ever knowing its cause. (The cause, as it happens, was an inconsistent
+      noise model in the likelihood; correcting it takes the bias to $\le$ +0.0008 and restores
+      coverage at campaign scale, with a small residual that only surfaces at $N = 4000$.
+      <span class="prov-chip">ledger #67</span>)
+    </p>
+
+    <!-- ================= §2 ================= -->
+    <h2>2. The instruments, ranked by what they can refuse</h2>
+
+    <p>
+      Coverage is one instrument. This project has five more, and they are not
+      interchangeable. Ranked by how hard they are to argue with:
+    </p>
+
+    <h3 style="font-size:1.02rem; margin-bottom:0.3rem;">2a. The byte-identity gate</h3>
+
+    <div class="voice-derivation">
+      <span class="voice-label">The &sigma; &rarr; 0 regression gate
+        <span class="badge ratified">RATIFIED</span>
+        <span class="prov-chip">realistic_host_observation_model.md §6.2 (RATIFY-R6)</span>
+      </span>
+      Campaign #53 realizes observation noise on the galaxy catalogue by drawing from the error
+      law with a scale factor. At <code>sigma_scale = 0</code> the draw is $N(0,0) = 0$, so the
+      &ldquo;observed&rdquo; catalogue must be a <strong>byte copy</strong> of the parent — and
+      the full evaluation, run in the baseline mode, must then reproduce the campaign-#51
+      posteriors <strong>byte-identically</strong>. Not &ldquo;to within tolerance&rdquo;: same
+      bytes. It is a REQUIRED pre-production test, not an optional one.
+    </div>
+
+    <p>
+      It passed, in both channels: control md5 <code>1e81ba22</code> (1D) and
+      <code>733c8d32</code> (2D), identical to the seed-61000 idealized baselines
+      <span class="prov-chip">REALISTIC_READOUT.md §2 P5</span>
+      <span class="prov-chip">HANDOFF_20260730.md §1</span>. This is the strongest kind of
+      evidence in the project because there is nothing to interpret. Either the hashes match or
+      they do not, and no amount of narrative can soften a mismatch.
+    </p>
+
+    <div class="voice-adjudicator">
+      <span class="voice-label">And what it does not show
+        <span class="badge finding">FINDING</span>
+        <span class="prov-chip">CLAIM_2D_BIAS_20260730.md C6</span>
+        <span class="prov-chip">Gate A1</span>
+      </span>
+      The $\sigma \to 0$ control does <strong>not</strong> vary the estimator. It ran campaign
+      #51&rsquo;s pairing — <code>generator_marginal</code> with the point host-$z$ kernel —
+      which is exactly why a byte-identical result was even possible: a width-integrating
+      kernel could not reproduce a $\delta$-kernel posterior to the byte. The one-file check was
+      executed and confirmed it. So the gate proves the <em>realization plumbing</em> is inert at
+      zero noise, and proves nothing about the estimator switch.
+      <strong>It is not the control §5 will need.</strong>
+    </div>
+
+    <h3 style="font-size:1.02rem; margin-bottom:0.3rem;">2b. Closure at a different truth</h3>
+
+    <p>
+      A mock whose injected truth is 0.73 and an estimator that returns 0.73 is a suspicious
+      pairing: 0.73 is also the value baked into <code>constants.py</code>, so a tuned estimator
+      would pass. The counter-test is to inject a truth the estimator has never seen and demand
+      that it follow. This project ran two.
+    </p>
+    <ul>
+      <li>
+        <strong>h = 0.65</strong>, in the era of ledger #20. It <em>failed</em> usefully: the
+        closure came back at 0.6708, a <strong>+5.62&sigma;</strong> pull. The cause was the
+        selection denominator being applied twice — inside the per-event likelihood and again as
+        an outer $-N\log D$ term <span class="ch10-fwd">⏮ Ch 4</span>. Removing the duplicate
+        moved the closure to 0.6555, a pull of <strong>+1.67&sigma;</strong>, and eliminated a
+        +0.020&hellip;+0.025 shift in $h$ <span class="prov-chip">ledger #20</span>
+        <span class="prov-chip"><code>6754ddb</code></span>.
+      </li>
+      <li>
+        <strong>h = 0.67</strong>, on the current stack: MAP <strong>0.670</strong> on 1343
+        events, zero excluded; a parabola on the three central bins gives $\sigma_h$ = 4.42e&minus;4
+        and a peak at 0.670053, i.e. <strong>+0.12&sigma;</strong> from truth — against the two
+        baselines&rsquo; &minus;0.24&sigma; and &minus;0.36&sigma;
+        <span class="prov-chip">HANDOFF_20260730.md:15-23</span>.
+        The handoff carries its own caveats and so does this book: the fitted bins sit 11.3&sigma;
+        from the peak, so the $\sigma$ is indicative rather than a substitute for a zoom grid, and
+        the GPU array ended in a 100/100 wall-clock timeout, yielding 1345 detections against the
+        baselines&rsquo; 1590. The deficit cannot now be split between truncation and a genuine
+        detection loss at $h = 0.67$.
+      </li>
+    </ul>
+
+    <p>
+      A red team was then pointed at exactly this claim, and its findings are the most useful
+      thing in this section.
+    </p>
+
+    <div class="voice-adjudicator">
+      <span class="voice-label">Redteam, 2026-07-26 — three binding rescopes
+        <span class="badge finding">FINDING</span>
+        <span class="prov-chip">ledger #85</span>
+        <span class="prov-chip">redteam_20260726/CONSOLIDATED_VERDICT.md:13-40</span>
+      </span>
+      <p style="margin-top:0;">
+        <strong>No numerical anchor to 0.73 was found</strong> — the threshold mass, the
+        completeness map, the antenna factors and the detection horizon are all either
+        $h$-free or exactly $h$-scaled; <code>constants.H</code> enters the inference only in a
+        post-hoc diagnostic; and the commit chronology is clean, with no estimator constant
+        altered after a readout. Independently, the golden-event pulls are $N(0,1)$-consistent
+        (mean +0.06, sd 0.94, $n$ = 133). The estimator is not tuned.
+      </p>
+      <p style="margin-bottom:0;">
+        <strong>R2 — what the closure actually validates.</strong> 133 golden events (3.9% of the
+        sample, exact host IDs, $z \in [0.011, 0.166]$) carry <strong>~100% of the curvature</strong>.
+        The closure therefore validates <em>host association and generator consistency</em>, and
+        <strong>not the completeness / selection machinery</strong>, which is simply out-voted
+        (tilt ~1.45 per unit $h$ against the ~1.7 needed to move the MAP by 4e&minus;4).
+        <strong>R3 — all precision claims are mock-internal.</strong>
+      </p>
+    </div>
+
+    <p>
+      That is a passing test passing for a reason nobody intended, stated by the people who
+      wanted it to pass. The next widget lets you do the measurement yourself, on the seed-61000
+      idealized baseline, and the number it produces is even starker than 3.9%.
+    </p>
+
+    <div class="widget" id="ch10-predict2" data-predict-id="ch10-topk">
+      <h4>Predict, then reveal — how load-bearing is a &ldquo;golden&rdquo; event?</h4>
+      <p style="margin-top:0;">
+        The idealized baseline combines <strong>1588</strong> detected events and reports
+        $\sigma_{H_0}$ = 0.032 km/s/Mpc. Delete events one at a time, hardest-working first.
+        How many do you have to delete before the combined posterior has <em>no peak at all</em>
+        — before the curvature at truth goes negative and the estimator rails to the edge of the
+        prior?
+      </p>
+      <div class="predict-row" id="ch10-predict-2" data-predict-id="ch10-topk">
+        <button type="button" data-predict="800">~800 (half of them)</button>
+        <button type="button" data-predict="200">~200</button>
+        <button type="button" data-predict="40">~40</button>
+        <button type="button" data-predict="5">~5</button>
+      </div>
+      <div class="reveal">
+        <strong>40.</strong> Two and a half percent of the sample. At $K = 30$ the posterior is
+        still peaked at 0.730, five times wider; by $K = 40$ the second derivative of
+        $\sum_i \ln \mathcal{L}_i$ at truth has changed sign and the MAP falls to
+        <strong>0.600</strong>, the bottom of the grid. The other 1548 events do not hold it up.
+        <span class="prov-chip real">real: run_seed61000/posteriors_fixed</span>
+      </div>
+      <noscript>
+        <p><strong>Static fallback (the reveal).</strong> <strong>40</strong> — two and a half
+        percent of the sample. At K = 30 the posterior is still peaked at 0.730 and five times
+        wider; by K = 40 the second derivative of &Sigma; ln 𝓛 at truth has changed sign and the
+        MAP falls to 0.600, the bottom of the grid.</p>
+      </noscript>
+    </div>
+
+    <!-- ============ I10.2 ============ -->
+    <div class="widget" id="ch10-i102">
+      <h4>I10.2 — What Did the Closure Test Actually Test?
+        <span class="prov-chip real">real: campaign #51, seed 61000, <code>posteriors_fixed</code></span>
+        <span class="prov-chip">1588 events &middot; 41-point h grid</span>
+      </h4>
+      <p style="margin-top:0; color:var(--muted); font-size:0.88rem;">
+        <strong>Remove</strong> the top-$K$ events, ranked by how much curvature each contributes
+        to the combined log-likelihood at truth. <strong>Watch two things at once:</strong> the
+        posterior widening — and the MAP <em>not moving</em>, right up until there is nothing left
+        to hold it. Every curve is recombined live in your browser, in log space, from the run&rsquo;s
+        own per-event likelihoods.
+      </p>
+      <div class="toggle-row ch10-locked" id="ch10-k-lock" role="group" aria-label="Removal control">
+        <button type="button" id="ch10-k-hint" disabled>make a prediction above to unlock the slider</button>
+      </div>
+      <div class="widget-controls">
+        <label for="ch10-k-slider">Events removed (hardest-working first):</label>
+        <input id="ch10-k-slider" type="range" aria-describedby="ch10-closure-readouts" disabled />
+        <span class="readout">K = <strong id="ch10-k-readout">0</strong></span>
+        <button type="button" id="ch10-k-restore" class="theme-toggle" disabled>↺ Put all 1588 back</button>
+      </div>
+      <div id="ch10-closure-plot" class="widget-plot" style="min-height:300px"></div>
+      <div id="ch10-curv-plot" class="widget-plot" style="min-height:240px"></div>
+      <div class="ch10-readouts" id="ch10-closure-readouts">
+        <span>events used <strong id="ch10-nused">&mdash;</strong></span>
+        <span>MAP <strong id="ch10-map">&mdash;</strong></span>
+        <span>$\sigma_{H_0}$ <strong id="ch10-sigma">&mdash;</strong> km s⁻¹ Mpc⁻¹</span>
+        <span>curvature at truth <strong id="ch10-curv">&mdash;</strong></span>
+      </div>
+      <div class="ch10-verdict" id="ch10-closure-verdict"></div>
+      <p class="ch10-note">
+        The ranking statistic is the signed 3-point second difference of
+        $\sum_i \ln \mathcal{L}_i$ at $h \in \{0.725, 0.730, 0.735\}$ — three nodes inside the
+        0.005-uniform stretch of the production grid, so nothing here differentiates across the
+        0.65 or 0.80 spacing seams. It is the same statistic, on the same three nodes, as the
+        idealization audit&rsquo;s own script, and the generator reproduces that script&rsquo;s
+        published decomposition (in-catalogue <strong>+241.3</strong>, dark <strong>&minus;3.0</strong>,
+        $\sigma_{H_0}$ <strong>0.032</strong>) as a hard gate before writing any data.
+        <span class="prov-chip">idealization_audit/audit_information_decomposition.py</span>
+      </p>
+      <details class="num-view">
+        <summary>Show me the numbers</summary>
+        <div class="table-scroll"><table class="num-table" id="ch10-closure-table"></table></div>
+        <p class="ch10-note" style="margin-top:0.6rem;">
+          And the decomposition the widget&rsquo;s argument rests on — who supplies the
+          curvature, and how concentrated it is:
+        </p>
+        <div class="table-scroll"><table class="num-table" id="ch10-closure-decomp"></table></div>
+      </details>
+      <noscript>
+        <p><strong>Static fallback.</strong> Constraint width against events removed, from the
+        seed-61000 idealized baseline (1588 events, MAP 0.730): $K$ = 0 &rarr; $\sigma_{H_0}$ =
+        0.0324; $K$ = 1 &rarr; 0.0354; $K$ = 3 &rarr; 0.0445; $K$ = 10 &rarr; 0.0603; $K$ = 20
+        &rarr; 0.0894; $K$ = 30 &rarr; 0.1548; $K$ = 40 &rarr; <em>no peak</em> — the curvature at
+        truth has gone negative (&minus;1.4) and the posterior rails to the lower grid edge,
+        MAP 0.600. The MAP stays at 0.730 for every $K \le 30$: removing information widens the
+        posterior without moving it, until it removes the peak entirely. Of the 60 highest-ranked
+        events, 54 are in-catalogue; the 76 in-catalogue events carry +241.3 of the +238.3 total
+        curvature (101%) and the 1512 dark events carry &minus;3.0 (&minus;1%).</p>
+      </noscript>
+    </div>
+
+    <details class="gw-reader">
+      <summary>&#9656; For the GW reader — why the MAP does not move</summary>
+      <p>
+        The combination is $\sum_i \ln \mathcal{L}_i(h)$, so deleting event $i$ subtracts one
+        smooth curve from a sum of 1588. Near the peak each in-catalogue golden event contributes
+        an approximately quadratic $\ln \mathcal{L}_i$ centred close to truth — the idealization
+        audit shows the per-event curvature matches the analytic
+        $I_e = (h\,\sigma_{d_L}/d_L)^{-2}$ prediction for &ldquo;$z$ known exactly, GW distance
+        error only&rdquo; to within ~5%, event by event. Subtracting a centred quadratic removes
+        <em>precision</em> without moving the vertex. The vertex only moves once the surviving sum
+        is no longer concave, which is what happens between $K = 30$ and $K = 40$: the dark
+        class&rsquo;s small <em>negative</em> curvature (&minus;3.0 in total) stops being negligible
+        against what is left, the sum turns convex at truth, and the MAP is driven to whichever
+        edge the residual monotone tilt prefers.
+      </p>
+      <p>
+        Two scoping notes. First, the &ldquo;133 golden events&rdquo; of redteam R2 belong to the
+        closure venue, not to this one; here the equivalent statement is that 76 of 1588 events
+        (4.8%) carry 101% of the curvature and the 3 loudest carry roughly 46% of it by
+        themselves. Second, this is the <strong>1D</strong> channel
+        (<code>posteriors_fixed/</code>, the without-BH-mass variant), which is what the quoted
+        $\sigma_{H_0}$ = 0.032 refers to.
+      </p>
+    </details>
+
+    <h3 style="font-size:1.02rem; margin-bottom:0.3rem;">2c. Pre-registration</h3>
+
+    <p>
+      The third instrument is not a computation. Before campaign #53 was evaluated, six
+      predictions <strong>P1&ndash;P6</strong> were written down in a ratified derivation
+      packet, each with an explicit falsification clause, and the run was scored against them
+      afterwards <span class="prov-chip">REALISTIC_READOUT.md §2</span>. Its value is visible
+      precisely in the rows that did not go the author&rsquo;s way:
+    </p>
+    <div class="table-scroll">
+      <table class="num-table">
+        <tr><th>#</th><th>Registered prediction</th><th>Measured</th><th>Verdict</th></tr>
+        <tr><td>P1</td><td>$\sigma_{H_0}$ = 1.3&ndash;1.7; &lt; 0.3 falsifies</td><td>1.54&ndash;2.64</td><td>not falsified, <strong>expectation missed high</strong></td></tr>
+        <tr><td>P2</td><td>pulls $N(0,1)$-consistent</td><td>max |pull| 1.15; 0/10 exceed 2</td><td><strong>PASS</strong></td></tr>
+        <tr><td>P3</td><td>dark contribution in [&minus;5%, +5%]</td><td>dark = +35% to +140%</td><td><strong>PREDICTION MISSED</strong></td></tr>
+        <tr><td>P4</td><td>3 golden events each lose &ge; 95% of curvature</td><td>retained 0.045% / 0.0013%</td><td><strong>PASS</strong>, by ~3 orders</td></tr>
+        <tr><td>P5</td><td>&sigma;&rarr;0 bit-identity, hard pass/fail</td><td>md5 <code>1e81ba22</code> &equiv; baseline</td><td><strong>PASS</strong></td></tr>
+        <tr><td>P6</td><td>host-loss 10&ndash;30% photometric</td><td>no such counter is written</td><td><strong>NOT SCORABLE</strong></td></tr>
+      </table>
+    </div>
+    <p>
+      P3 is the row that matters. Under the idealized stack the dark events carried
+      &minus;1% of the curvature; in the realistic run they carry more than the in-catalogue
+      events do. That regime change was not predicted, was recorded as a miss rather than
+      reinterpreted into a pass, and it is the reason the realistic headline is substantially a
+      completion-term measurement. P6 is the second-most useful row: a prediction that could not
+      be scored at all, because the quantity it needed was never logged — recorded as a gap, not
+      quietly dropped.
+    </p>
+    <p>
+      This book&rsquo;s own predict-then-reveal boxes are the same instrument at reader scale.
+      That is not decoration: a prediction you did not write down is a prediction you will
+      remember having made correctly.
+    </p>
+
+    <h3 style="font-size:1.02rem; margin-bottom:0.3rem;">2d. Ablation, and per-leg A/B</h3>
+
+    <p>
+      The last two instruments you have already used, and both exist to break a composite change
+      into pieces you can attribute. The <strong>ablation cube</strong>
+      <span class="ch10-fwd">⏮ Ch 9</span> turns &ldquo;the fix works&rdquo; into a measured
+      lattice: bare numerator with a bare global denominator rails at 0.60; the volume kernel in
+      <em>both</em> $N_g$ and $D_g$ moves it to 0.76; adding the local denominator lands it at 0.73
+      <span class="prov-chip">G3_ablation_cube.json</span>
+      <span class="prov-chip">G6_starvation_postmortem.md:12-16</span>.
+      <strong>Per-leg A/B</strong> does the same for a two-part switch: campaign #53 changed the
+      normalization legs and the host-$z$ kernel together, and a three-cell A/B found the
+      $\delta$-kernel numerator carries <strong>85.3%</strong> (1D) and <strong>86.7%</strong> (2D)
+      of the log-likelihood movement while the normalization substitutions alone are what de-rail
+      the 1D channel <span class="prov-chip">threeway_ab/THREEWAY_AB_READOUT.md:19-56</span>;
+      a follow-up 2&times;2 put the mass kernel at 2&ndash;3 nats of the 2D channel&rsquo;s
+      25&ndash;29-nat excess <span class="prov-chip">mass_ab_20260727/MASS_KERNEL_AB_READOUT.md:23-80</span>
+      <span class="ch10-fwd">⏮ Ch 8</span>. Both instruments keep returning the same verdict
+      shape — <em>necessary, not sufficient</em> — which a single before/after comparison can
+      never produce.
+    </p>
+
+    <!-- ================= §3 ================= -->
+    <h2>3. What the mock cannot see</h2>
+
+    <p>
+      Return to the cold open. The idealized baseline quotes
+      <span class="term" data-term="sigh">$\sigma_{H_0}$</span> = <strong>0.032</strong> km s⁻¹ Mpc⁻¹. Put that beside the numbers Chapter 0
+      opened with: the two measurements whose disagreement started this book differ by about
+      5 km s⁻¹ Mpc⁻¹, and each carries an uncertainty near 1. A 0.032 would not arbitrate the
+      Hubble tension; it would end the subject.
+    </p>
+    <p>
+      It is also not a forecast, and the project says so in its own words rather than being
+      caught at it. When the author asked directly whether the setup was realistic, the answer
+      was an audit.
+    </p>
+
+    <div class="voice-adjudicator">
+      <span class="voice-label">The idealization ledger — the honest sentence, verbatim
+        <span class="badge finding">FINDING</span>
+        <span class="prov-chip">idealization_audit/IDEALIZATION_LEDGER.md</span>
+      </span>
+      <p style="margin-top:0;">
+        <em>&ldquo;Verdict up front: NO — this is not the full realistic setup.&rdquo;</em> The
+        catalogue&rsquo;s bad mass and redshift measurements are <em>stored</em> honestly, but on
+        the production path they are <strong>never realized as noise and (for redshift) not even
+        used as a width</strong>. <em>&ldquo;The quoted precision is the precision of a universe
+        in which every GLADE+ catalogue redshift is exact.&rdquo;</em>
+      </p>
+      <p style="margin-bottom:0;">
+        And the pair that produces it is internally consistent, which is the subtle part:
+        <strong>I1</strong> injects the catalogue redshift verbatim as the event&rsquo;s true
+        redshift, and <strong>I2</strong> has the inference point-evaluate its numerator at that
+        same redshift. Generator and estimator agree because they were handed the same number.
+        The audit&rsquo;s own framing: this is <em>&ldquo;a valid consistency baseline, not a
+        forecast&rdquo;</em> — quote it <em>&ldquo;only as generator&harr;evaluation consistency
+        at the 0.0003-in-$h$ level, never as a LISA $H_0$ forecast.&rdquo;</em>
+      </p>
+    </div>
+
+    <p>
+      The audit then prices the idealization on the <em>same</em> 76 events, which is what turns
+      a caveat into a measurement:
+    </p>
+    <div class="table-scroll">
+      <table class="num-table">
+        <tr><th>scenario</th><th>redshift-error model</th><th>$\sigma_{H_0}$ [km s⁻¹ Mpc⁻¹]</th><th>vs quoted</th></tr>
+        <tr><td>A — pipeline as run</td><td>$z$ exact ($\delta$ at the catalogue $z$)</td><td>0.027&ndash;0.032</td><td>1&times;</td></tr>
+        <tr><td>B — dream follow-up</td><td>spec-$z$ $\sigma_z = 0.0017$ + corrected 150 km/s PV</td><td>0.22</td><td>~8&times; worse</td></tr>
+        <tr><td>C — spec-$z$, uncorrected PV</td><td>spec-$z$ + 500 km/s PV</td><td>0.30</td><td>~10&times; worse</td></tr>
+        <tr><td>D — the catalogue as it actually is</td><td>each host&rsquo;s own $\sigma_z$ (all 76 photometric)</td><td><strong>3.6</strong></td><td><strong>~110&times; worse</strong></td></tr>
+      </table>
+    </div>
+    <p class="ch10-note">
+      <strong>An external scale for the table.</strong> The published LISA EMRI dark-siren
+      forecast — Laghi et al. 2021 <span class="prov-chip">arXiv:2102.01708</span>, the same
+      paper this book cites for the comparable host-$z$ kernel <span class="ch10-fwd">⏮ Ch 7</span> —
+      is <strong>percent-level</strong> on $H_0$. Row D&rsquo;s 3.6 km s⁻¹ Mpc⁻¹ is
+      <strong>&asymp;5%</strong> of $H_0$: the same order as the literature forecast, and a
+      little worse than it. Row A&rsquo;s 0.032 is <strong>0.04%</strong> — two orders below
+      anything the literature claims, which is by itself a reason to read it as a consistency
+      baseline rather than a forecast. The comparison is an order-of-magnitude anchor only:
+      the forecasts differ in event count, mission duration, population model and catalogue
+      assumptions, and this row is 76 hosts from one seed.
+    </p>
+    <p>
+      All 76 information-carrying hosts are GLADE+ <strong>photometric</strong>-redshift galaxies,
+      median $z$ = 0.071, median
+      <span class="term" data-term="eps">$\sigma_z/z$ = <strong>49%</strong></span>
+      <span class="prov-chip" title="current lines :64-66">IDEALIZED_BASELINE_READOUT.md:50-52</span>. The estimator was handed
+      a redshift with a fifty-percent error bar and told it was exact. Everything downstream of
+      that — the 0.032, the &minus;0.24&sigma;, the two-seed agreement — is a statement about
+      internal consistency and about nothing else. And the audit is careful that even row D is
+      optimistic: at $\sigma_z/z \approx 0.5$ the host <em>association</em> itself becomes
+      ambiguous, weak lensing is absent from the distance budget, and the event rate sits at the
+      optimistic end of the population models.
+    </p>
+
+    <div class="ch10-flag">
+      <span class="ch10-flag-label">Recomputed, and one number does not pin down</span>
+      The ledger writes that the three loudest events <em>&ldquo;carry <strong>46%</strong> of the
+      total information by themselves&rdquo;</em> without naming the denominator, and in the same
+      paragraph reports the in-catalogue share as &ldquo;101% of the total&rdquo;. This
+      chapter&rsquo;s generator reproduces the decomposition exactly (in-catalogue +241.335, dark
+      &minus;3.003, $\sigma_{H_0}$ 0.0324) and measures the golden three at
+      <strong>46.41%</strong> of the in-catalogue curvature and <strong>47.00%</strong> of the
+      signed total. Both are carried; neither is substituted for the ledger&rsquo;s figure.
+      Logged as <code>book/design/flags/ch10_FLAGS.md</code> F-ch10-2.
+    </div>
+
+    <!-- ================= dossier ================= -->
+    <div class="dossier">
+      <div class="dossier-title">Event dossier — EMRI-889 after this chapter</div>
+      <table>
+        <tr><td>d_L</td><td>88.9 Mpc &middot; &sigma;_dL/d_L = 8.98&times;10&#8315;&#8308;</td></tr>
+        <tr><td>SNR</td><td>1425 — the loudest event in this seed</td></tr>
+        <tr><td>host</td><td>catalogue index 859360 — photometric, &sigma;_z/z &asymp; 49%</td></tr>
+        <tr><td>2D channel</td><td>destroyed this event&rsquo;s information and pushed it high</td></tr>
+        <tr class="dossier-new"><td>role in the closure</td><td><strong>rank 2 of 1588</strong> by curvature; alone it carries <strong>15.9%</strong> of the idealized constraint, and it is one of the three events carrying ~46%</td></tr>
+        <tr class="dossier-new"><td>what this chapter added</td><td>the 0.032 km/s/Mpc that 889 helps produce is a <em>consistency baseline</em>. Give 889&rsquo;s host the redshift error its catalogue row actually records and the same event set delivers ~3.6 — <strong>110&times;</strong> wider.</td></tr>
+      </table>
+      <p class="note">Erratum: the spec card carried &sigma;_dL/dL = 8.0&times;10&#8315;&#8309; &mdash; that is the absolute &sigma;_dL in Gpc under a fractional label. Corrected book-wide 2026-07-31; record: ch01 flag F1 / BUILD_REPORT &sect;5.1 item 1.</p>
+    </div>
+
+    <!-- ================= §4 ================= -->
+    <h2>4. C11 — an exoneration done right</h2>
+
+    <p>
+      So far the harness has been used to find defects. Its most valuable use in this project was
+      the opposite: <strong>ruling a suspect out, quantitatively</strong>.
+    </p>
+    <p>
+      Chapter 8 left the 2D channel biased by <strong>+0.077</strong> in <span class="term" data-term="h">$h$</span>, on ground the
+      project itself designates a <span class="badge candidate">CANDIDATE</span> pairing
+      <span class="prov-chip">mass_marginal_2d_kernel.md:1-17, 690-706</span>. Chapter 5&rsquo;s
+      completion branch is an obvious suspect: it is the leg that handles the 95% of events with
+      no catalogued host, and <em>in the coverage harness</em> — where the completion branch is
+      the bare <span class="term" data-term="Bnum">$B^{\rm num}$</span>/<span class="term" data-term="Dh">$D$</span> limit and nothing else — ensembles dominated by that branch were
+      already measured to bias high, by +0.7% to +5.4% in $h$ at completion fractions 0.22&ndash;0.85
+      <span class="prov-chip">ledger #57</span>
+      <span class="prov-chip">pp_coverage_deepvenue_20260710/SUMMARY.md</span>. (That is a
+      statement about the harness&rsquo;s branch, not about the production mixture&rsquo;s budget,
+      where the up-pull is carried by the $(1-w_G)$ prefactor <span class="ch10-fwd">⏮ Ch 8</span>.)
+      Does the completion leg own the +0.077?
+    </p>
+    <p>
+      The wrong way to answer is to argue. The right way is to put the harness at the campaign&rsquo;s
+      <em>own</em> operating point — completion fraction around the delivered
+      <span class="term" data-term="wG">$w_G \approx 0.12$</span> — and measure how much bias the
+      completion leg can produce there. That is the ladder you dragged in I10.1, and its answer is
+      an order-of-magnitude elimination you can do in your head.
+    </p>
+
+    <div class="voice-adjudicator">
+      <span class="voice-label">C11, as adjudicated
+        <span class="badge finding">FINDING</span>
+        <span class="prov-chip">CLAIM_2D_BIAS_20260730.md C11</span>
+        <span class="prov-chip">ADJUDICATION_20260730.md §1</span>
+      </span>
+      <p style="margin-top:0;">
+        <code>pp_coverage</code> extended to completion fraction <strong>0.008&ndash;0.234</strong>,
+        landing #53&rsquo;s $w_G \approx 0.12$ venue: bias <strong>+0.0008&hellip;+0.0097</strong>
+        at completion fraction 0.06&ndash;0.09 and <strong>+0.0034&hellip;+0.0181</strong> at
+        0.13&ndash;0.24; <strong>monotone in completion fraction across the full 0.008&ndash;0.85
+        range, no sign flip, control-consistent at zero.</strong> That is <strong>6&ndash;16&times;
+        below +0.077</strong> &rArr; <strong>REFUTED as the 2D owner.</strong> Live as a modest
+        contributor to the 1D +0.017 Option-A residual (same order).
+      </p>
+      <p style="margin-bottom:0;">
+        <strong>Caveat, in the claim&rsquo;s own words:</strong> the harness is
+        <strong>1D-only / single-channel by construction</strong>, so <em>it has never covered the
+        2D residual.</em>
+      </p>
+    </div>
+
+    <p>
+      Read that caveat twice, because it is the most useful sentence in the block. The harness has
+      no host-mass dimension: it cannot form the 2D likelihood at all. So what has actually been
+      established is a bound on <em>the completion leg&rsquo;s 1D calibration</em> at the right
+      completeness, extrapolated to a channel the instrument cannot see. The elimination is sound
+      and the scope is narrow, and C11 says both. <strong>The most useful thing a harness can tell
+      you is often the scope of its own answer.</strong>
+    </p>
+
+    <div class="ch10-flag">
+      <span class="ch10-flag-label">Recomputed, and the upper endpoints do not reproduce</span>
+      <p style="margin-top:0;">
+        This chapter&rsquo;s generator re-ran the archived harness cells spanning exactly that
+        completion-fraction window and gated them to bit-equality with the archives. The window
+        endpoints reproduce (0.0085&ndash;0.2337 against &ldquo;0.008&ndash;0.234&rdquo;) and so do
+        both <em>lower</em> bias endpoints, exactly: <strong>+0.0008</strong> and
+        <strong>+0.0034</strong>. The <em>upper</em> endpoints come out smaller:
+        <strong>+0.0078</strong> (band 0.06&ndash;0.09, claim +0.0097) and <strong>+0.0157</strong>
+        (band 0.13&ndash;0.24, claim +0.0181). The archives&rsquo; own log files carry the
+        recomputed values.
+      </p>
+      <p style="margin-bottom:0;">
+        A +0.0096 at completion fraction 0.085 does exist — in
+        <code>pp_fullpower_20260727</code>, which is a <em>different</em> harness family
+        (the catalogue-mode impostor-ball universe), so C11&rsquo;s band may pool two families;
+        no archived cell anywhere reproduces +0.0181 inside 0.13&ndash;0.24.
+        <strong>This is recorded, not reconciled</strong>
+        (<code>book/design/flags/ch10_FLAGS.md</code> F-ch10-1). It does not move the verdict in
+        either direction: 0.0157 and 0.0181 are both far below +0.077, and the recomputed maximum
+        makes the exoneration stronger, not weaker.
+      </p>
+    </div>
+
+    <p>
+      What C11 <em>is</em>, as a piece of scientific work, is worth naming. It is a suspect with a
+      plausible mechanism, tested at the right operating point, on an instrument built by someone
+      else, with a monotone dependence measured across two decades of the controlling variable, a
+      control that reads zero, and a numerical margin — and then a stated limit on what the test
+      covered. Compare that with the museum downstairs, which is full of suspects eliminated by
+      assertion and later found to be innocent for reasons nobody had checked.
+    </p>
+
+    <!-- ================= §5 ================= -->
+    <h2>5. The control that was never run</h2>
+
+    <p>
+      One question is now unavoidable. The idealized campaign #51 recovers truth; the realistic
+      campaign #53 is biased +0.077 in the 2D channel and its 1D unbiasedness is a
+      cancellation <span class="ch10-fwd">⏭ Ch 11</span>. Something between #51 and #53 did that.
+      What?
+    </p>
+
+    <div class="voice-adjudicator">
+      <span class="voice-label">C6 — attribution is confounded
+        <span class="badge confounded">CONFOUNDED</span>
+        <span class="prov-chip">CLAIM_2D_BIAS_20260730.md C6</span>
+        <span class="prov-chip">confirmed by Gate A1</span>
+      </span>
+      <div class="table-scroll">
+        <table class="num-table">
+          <tr><th></th><th>catalogue</th><th>host-$z$ kernel</th><th>normalization</th></tr>
+          <tr><td>#51 idealized</td><td>unscattered</td><td><strong>point ($\delta$)</strong></td><td><strong><code>generator_marginal</code></strong></td></tr>
+          <tr><td>#53 realistic</td><td>scattered</td><td><strong><code>volume_deconv</code></strong></td><td><strong><code>absolute_marginal</code></strong></td></tr>
+        </table>
+      </div>
+      <strong>Three variables moved at once, and no run anywhere varies the estimator at fixed
+      catalogue.</strong> The $\sigma \to 0$ gate cannot be the missing control — §2a — and the
+      one-file check confirmed it ran #51&rsquo;s estimator. Therefore &ldquo;the bias switches on
+      with the realized scatter&rdquo; is <strong>not established</strong>.
+    </div>
+
+    <p>
+      This is a teaching moment about experimental design rather than a failure. Before reading on,
+      design the missing control yourself: you have two catalogues (unscattered, scattered) and two
+      estimators (#51&rsquo;s pairing, #53&rsquo;s pairing), one cell of that 2&times;2 is
+      forbidden by a guard <span class="ch10-fwd">⏮ Ch 9</span>, and two are already measured.
+      Which cell do you run, and what does each possible outcome buy you?
+    </p>
+    <p>
+      The project pre-registered exactly that cell — the unscattered parent catalogue through the
+      #53 estimator, no code change, the same CRB table and injection pool as the other cells —
+      together with the two readings it would license, <em>before</em> submitting it
+      <span class="prov-chip">PREREGISTRATION_2x2_cellB.md</span>. It also registered a dated
+      prediction: the five Gate-B reports jointly predict &ldquo;estimator owns it&rdquo;, cell B
+      &asymp; cell C in both channels. It was submitted, and it landed on <strong>2026-07-31</strong>
+      — after the pre-registration, and after this chapter&rsquo;s prediction was written down.
+      Chapter 11 shows you the prediction from the inside first, and then what it got right and
+      what it missed.
+    </p>
+
+    <div class="callout without">
+      <span class="callout-label">The failure the next chapter answers</span>
+      Every instrument in this chapter has now been used, and the honest scoreboard reads: a
+      calibrated 1D estimator whose unbiasedness is a cancellation, a 2D channel biased +0.077 on
+      candidate ground, three measured internal inconsistencies all on the same side of the
+      mixture, and one attribution that was confounded until the control was run. That is not a
+      verdict. Chapter 11 is about how to write that down without either overclaiming or
+      pretending it is worse than it is.
+    </div>
+
+    <!-- ================= self-check ================= -->
+    <h2>Self-check</h2>
+
+    <div class="selfcheck">
+      <p>Q10.1 &nbsp; An estimator returns MAP = truth on two independent seeds at &minus;0.24&sigma;
+      and &minus;0.36&sigma;. List everything that still does not follow.</p>
+      <details class="answer">
+        <summary>Show answer</summary>
+        <div class="answer-body">
+          It does not follow that the estimator is unbiased (two draws cannot resolve a bias smaller
+          than the scatter — and note both are <em>negative</em>, which the readout itself flags as
+          worth re-testing <span class="prov-chip">IDEALIZED_BASELINE_READOUT.md:31-36</span>); that
+          its stated uncertainty is correct (that is coverage, not location); that it will behave on
+          a different venue (every negative result in this project is venue-scoped by standing rule);
+          or that the parts you <em>think</em> were tested were tested — 133 golden events carrying
+          ~100% of the curvature means the selection machinery was along for the ride
+          <span class="prov-chip">ledger #85</span>.
+        </div>
+      </details>
+    </div>
+
+    <div class="selfcheck">
+      <p>Q10.2 &nbsp; What does a P&ndash;P plot show that a bias measurement does not, and construct
+      an estimator that is unbiased and badly mis-calibrated.</p>
+      <details class="answer">
+        <summary>Show answer</summary>
+        <div class="answer-body">
+          A P&ndash;P plot shows whether the <em>quantiles</em> of the posterior are honest: over many
+          synthetic universes, the fraction of times truth falls below the posterior&rsquo;s $q$-th
+          quantile should be $q$. An estimator that returns the correct mean but a $\sigma$ half the
+          true scatter is unbiased and catastrophically mis-calibrated — its 68% intervals contain
+          truth ~38% of the time. The project measured exactly this shape in the pure-completion
+          regime, with 68% coverage falling to 0.27, and in the noise-model study where coverage went
+          <strong>0.63 &rarr; 0.38 &rarr; 0.12</strong> as $N$ grew — the signature of a <em>real
+          asymptotic bias</em>, since a purely noisy estimator&rsquo;s coverage does not degrade with
+          $N$ <span class="prov-chip">pp_coverage_noisemodel_20260711/SUMMARY.md:80-86</span>.
+        </div>
+      </details>
+    </div>
+
+    <div class="selfcheck">
+      <p>Q10.3 &nbsp; The coverage harness measures the completion leg&rsquo;s deep-venue
+      mis-calibration at +0.0008&hellip;+0.0097 in $h$. The 2D bias is +0.077. What have you learned,
+      and what have you <em>not</em>?</p>
+      <details class="answer">
+        <summary>Show answer</summary>
+        <div class="answer-body">
+          Learned: the completion leg&rsquo;s calibration is <strong>6&ndash;16&times; too small to
+          own the 2D bias</strong> — a quantitative exoneration, monotone in completeness fraction
+          across the full 0.008&ndash;0.85 range with no sign flip and control-consistent at zero.
+          Not learned: anything about the 2D channel, because the harness is <strong>1D-only /
+          single-channel by construction</strong> and has never covered the 2D residual. The book
+          makes a point of this: the most useful thing a harness can tell you is often the
+          <em>scope</em> of its own answer. <span class="prov-chip">CLAIM_2D_BIAS C11</span>
+        </div>
+      </details>
+    </div>
+
+    <div class="selfcheck">
+      <p>Q10.4 &nbsp; Why is &ldquo;coverage measured on synthetic universes&rdquo; not circular,
+      given that the synthetic universes come from the same population model the estimator assumes?</p>
+      <details class="answer">
+        <summary>Show answer</summary>
+        <div class="answer-body">
+          It is not circular for the failure modes it can see — kernel mis-specification, selection
+          mis-scoping, quadrature, bookkeeping — because those break even when the population model is
+          shared. It <strong>is</strong> blind to a mis-specified population model, since both sides
+          would be wrong identically. That is why the project separately tests generator&ndash;estimator
+          agreement <span class="ch10-fwd">⏮ Ch 9</span> and why C9 could only be found by comparing
+          the model&rsquo;s $w_G$ to the <em>realized</em> rate rather than by any coverage test.
+        </div>
+      </details>
+    </div>
+
+    <div class="selfcheck">
+      <p>Q10.5 <em>(transfer)</em> &nbsp; Your estimator passes the idealized closure and its
+      completion leg is exonerated quantitatively. Name the three things campaign #51 &rarr; #53
+      changed simultaneously, and say what you can conclude about which one caused the +0.077.</p>
+      <details class="answer">
+        <summary>Show answer</summary>
+        <div class="answer-body">
+          Catalogue scatter (unscattered &rarr; realized), host-<span class="term" data-term="z">$z$</span> kernel (point $\delta$ &rarr;
+          <code>volume_deconv</code>) and normalization mode (<code>generator_marginal</code> &rarr;
+          <code>absolute_marginal</code>) — and you can conclude <strong>nothing</strong> about which
+          one, because three variables moved at once and no run anywhere varies the estimator at fixed
+          catalogue. That is claim C6, confirmed by a one-file check, and it is the honest opening of
+          Chapter 11. <span class="prov-chip">CLAIM_2D_BIAS C6</span>
+        </div>
+        <div class="answer-body" style="border-top:1px dashed var(--border); margin-top:0.7rem; padding-top:0.6rem;">
+          <strong><em>Postscript, 2026-07-31.</em></strong> The missing cell was run. With the
+          catalogue held unscattered and only the estimator switched — the 2&times;2&rsquo;s
+          cell B — the 2D MAP moves 0.7300 &rarr; <strong>0.7900</strong>, which is
+          <strong>72%</strong> of the full displacement in that channel. The answer to
+          &ldquo;which one&rdquo; is now <em>the estimator configuration</em>. The answer to
+          &ldquo;what could you conclude <em>before</em> the control&rdquo; is still
+          <strong>nothing</strong> — and that is the transferable half.
+          <span class="prov-chip">CELLB_READOUT_20260731.md</span>
+          <span class="ch10-fwd">⏭ Ch 11 §5</span>
+        </div>
+      </details>
+    </div>
+
+    <!-- ===== Misconception traps ===== -->
+    <div class="callout defect">
+      <span class="callout-label">Trap &mdash; &ldquo;It reproduces, so it&rsquo;s right.&rdquo;</span>
+      Reproducibility is a property of the code, not of the physics. Ledger #49a: an estimator
+      reproduced MAP = <strong>0.86</strong> perfectly across every injected truth from 0.63 to 0.77.
+      Full exhibit below. <span class="prov-chip">ledger #49a</span>
+    </div>
+
+    <div class="callout defect">
+      <span class="callout-label">Trap &mdash; &ldquo;A negative result is permanent.&rdquo;</span>
+      Standing scoping rule: negative conclusions are <strong>venue-scoped</strong>. Two of this
+      project&rsquo;s exonerations — <code>volume_trunc</code> and <code>mass_trunc</code>
+      <span class="ch10-fwd">⏮ Ch 7</span> <span class="ch10-fwd">⏮ Ch 8</span> — were measured on
+      the <em>same</em> 494-event shallow subsample and are explicitly <em>not</em> cross-venue
+      confirmed; a shared venue idiosyncrasy would have fooled both. Do not cite either as universal.
+      <span class="prov-chip">BIAS_HISTORY_LEDGER.md §2 standing scoping rule</span>
+    </div>
+
+    <!-- ================= MUSEUM INTERLUDE ================= -->
+    <div class="ch10-interlude">
+      <span class="ch10-interlude-kicker">Defect Museum · interlude</span>
+      <h3>The $H_0$-independent estimator <span class="badge refuted">REFUTED</span></h3>
+      <dl>
+        <dt>The hypothesis</dt>
+        <dd>
+          By July 2026 the production estimator railed at $h = 0.86$ on photometric-host data, and
+          the standing explanation was <em>information starvation</em>: photo-$z$ hosts are simply
+          too uninformative, the posterior is wide and prior-dominated, and the rail is where a weak
+          likelihood ends up. Plausible, and flattering — it makes the failure a property of nature.
+        </dd>
+        <dt>The decisive test</dt>
+        <dd>
+          The 2026-07-01 verification commission ran a tournament <strong>injection scan</strong>:
+          the same estimator, on synthetic data generated at ten different injected truths spanning
+          $H_0$ from 0.63 to 0.77. An estimator that is merely <em>imprecise</em> still moves with
+          the truth. An estimator that does not move is not measuring the parameter at all.
+        </dd>
+        <dt>The measured outcome</dt>
+        <dd>
+          The production MAP came back at <strong>0.86 for every single injected truth</strong>,
+          0.63 through 0.77 — while the local <code>catalog_only</code> normalization on the
+          <em>same</em> data tracked truth exactly, 0.63&rarr;0.63 &hellip; 0.77&rarr;0.77.
+          <span class="prov-chip">ledger #49a</span>
+          <span class="prov-chip">synthesis/DRAFT_REPORT.md:24-27</span>
+          <span class="prov-chip">synthesis/WF2_DIGEST.md:26-30</span>
+          The rail was not weak information. It was a mis-normalized selection term reporting where
+          it points, and it was <em>curable</em> — a correctly specified estimator recovers the
+          injected $H_0$ to 1&ndash;2% on the same $\sigma_z \approx 0.035$ data.
+        </dd>
+        <dt>What it cost, and what it bought</dt>
+        <dd>
+          It retired a formally recorded conclusion, and it rewrote the direction of the whole
+          investigation: from &ldquo;the data cannot support this&rdquo; to &ldquo;find the
+          inconsistency.&rdquo; The nuance was preserved rather than discarded — photometric
+          redshifts <em>do</em> genuinely degrade $H_0$ <strong>precision</strong>; wide is real.
+          But wide is not railed.
+        </dd>
+        <dt>The transferable lesson</dt>
+        <dd>
+          <strong>An estimator can be precise, stable, perfectly reproducible — and carry zero
+          information about the parameter.</strong> Every reproducibility check that estimator would
+          have passed, it did pass. The one test it could not survive was the one that varied the
+          thing it claimed to measure. If you have an inference and you have never injected a
+          different truth into it, you do not yet know whether it is an instrument or a constant.
+        </dd>
+      </dl>
+      <p style="margin-bottom:0;">
+        Full exhibit, alongside the rest of the collection:
+        <a href="museum.html#ex-h0-independent">the Defect Museum &rarr; the H₀-independent estimator</a>.
+      </p>
+    </div>
+
+    <!-- ================= provenance ================= -->
+    <div class="provenance-panel">
+      <h4>Provenance panel — every stamp used in this chapter</h4>
+      <ul>
+        <li><code>master_thesis_code/validation/pp_coverage.py</code> module docstring (code site, no ratification packet — cited, not asserted from) — the independent P&ndash;P/coverage harness, kernels, mixture modes, and the &ldquo;Scientific independence&rdquo; clause</li>
+        <li><span class="badge ratified">RATIFIED</span> <code>realistic_host_observation_model.md §6.2</code> (RATIFY-R6) — the &sigma;&rarr;0 byte-identity regression gate</li>
+        <li><span class="badge finding">FINDING</span> <code>REALISTIC_READOUT.md §2</code> — the P1&ndash;P6 pre-registered scorecard (P5 md5 <code>1e81ba22</code> / <code>733c8d32</code>; P3 MISSED; P6 NOT SCORABLE)</li>
+        <li><span class="badge finding">FINDING</span> <code>HANDOFF_20260730.md:15-23</code> — the h = 0.67 closure: MAP 0.670, 1343 events, &sigma;_h 4.42e&minus;4, +0.12&sigma;, with its timeout and 11.3&sigma;-bin caveats</li>
+        <li><span class="badge finding">FINDING</span> <code>ledger #20</code> (<code>6754ddb</code>) — the h = 0.65 closure: 0.6708 &rarr; 0.6555, pull +5.62&sigma; &rarr; +1.67&sigma;</li>
+        <li><span class="badge finding">FINDING</span> <code>ledger #85</code> / <code>redteam_20260726/CONSOLIDATED_VERDICT.md:13-40</code> — no numerical anchor; golden pulls +0.06 &plusmn; 0.94 (n = 133); <strong>R2</strong> 133 golden events carry ~100% of the curvature; <strong>R3</strong> precision is mock-internal</li>
+        <li><span class="badge open">OPEN</span> redteam <strong>T-1</strong> — the blind sealed-truth mock, the decisive anti-tuning test: <em>ordered, never run</em></li>
+        <li><span class="badge finding">FINDING</span> <code>idealization_audit/IDEALIZATION_LEDGER.md</code> I1&ndash;I4 + <code>IDEALIZED_BASELINE_READOUT.md:25-30, :42-52</code> — &sigma;_H0 = 0.032 is a consistency baseline; counterfactuals 8&times;&ndash;110&times;; all 76 hosts photometric, median &sigma;_z/z = 49%</li>
+        <li><span class="badge finding">FINDING</span> <code>CLAIM_2D_BIAS_20260730.md C11</code> + <code>ADJUDICATION_20260730.md §1</code> — the completion leg is 6&ndash;16&times; too small to own +0.077; harness 1D-only by construction</li>
+        <li><span class="badge confounded">CONFOUNDED</span> <code>CLAIM_2D_BIAS_20260730.md C6</code>, confirmed by Gate A1 — three variables moved at once; no estimator control existed <em>as adjudicated 2026-07-30</em>. C6 was resolved on 2026-07-31 by the 2&times;2&rsquo;s cell B; the badge here is the state this chapter&rsquo;s §5 argument reasons from <span class="ch10-fwd">⏭ Ch 11 §5</span></li>
+        <li><span class="badge finding">FINDING</span> <code>PREREGISTRATION_2x2_cellB.md</code> + <code>CELLB_READOUT_20260731.md</code> — the pre-registered missing control, with its dated pre-readout prediction; <strong>landed 2026-07-31</strong> (evaluate 6103219 / combine 6103220, the resubmission of the registered 6101146 / 6101147 after a pure-plumbing symlink failure; same commit <code>7fd60bb</code> as cells A and C)</li>
+        <li><span class="badge candidate">CANDIDATE</span> <code>mass_marginal_2d_kernel.md:1-17, 690-706</code> (RATIFY-M6) — the #53 2D pairing is designated candidate ground; the +0.077 sits on it</li>
+        <li><span class="badge finding">FINDING</span> <code>G3_ablation_cube.json</code> + <code>G6_starvation_postmortem.md:12-16</code> — the ablation lattice 0.60 &rarr; 0.76 &rarr; 0.73</li>
+        <li><span class="badge finding">FINDING</span> <code>threeway_ab/THREEWAY_AB_READOUT.md:19-56</code>, <code>mass_ab_20260727/MASS_KERNEL_AB_READOUT.md:23-80</code> — per-leg A/B: &delta;-kernel share 85.3% / 86.7%; the mass kernel is necessary, not sufficient</li>
+        <li><span class="badge refuted">REFUTED</span> <code>ledger #49a</code> / <code>synthesis/DRAFT_REPORT.md:24-27</code>, <code>WF2_DIGEST.md:26-30</code> — production MAP 0.86 for every injected truth 0.63&ndash;0.77 (the interlude)</li>
+        <li><span class="badge finding">FINDING</span> <code>ledger #67</code> / <code>pp_coverage_noisemodel_20260711/SUMMARY.md:80-86</code> — coverage 0.63 &rarr; 0.38 &rarr; 0.12 at flat bias: a real asymptotic bias</li>
+        <li><span class="badge exonerated">EXONERATED</span> <code>BIAS_HISTORY_LEDGER.md §2</code> standing scoping rule — <code>volume_trunc</code> and <code>mass_trunc</code> share one 494-event venue; not cross-venue confirmed</li>
+        <li>Data (re-run + gated): <code>results/pp_coverage_deepvenue_20260710/</code>, <code>results/pp_coverage_deepvenue_20260730/</code>; read-only: <code>results/pp_coverage_noisemodel_20260711/</code>, <code>results/pp_coverage_exactmode_20260711/</code>, <code>results/pp_coverage_sigmaz_scan_20260703/</code></li>
+        <li>Data (closure): <code>results/campaign51_20260728/run_seed61000/posteriors_fixed/</code> — the canonical seed-61000 directory; plain <code>posteriors/</code> is the stale pre-<code>ec09ed0</code> backup and is not read</li>
+        <li>Not used: <code>sig0_control/</code> (carries the <code>generator_marginal</code> estimand); <code>REALISTIC_READOUT.md §6</code>&rsquo;s struck-out &ldquo;the 1D channel is the defensible one&rdquo; (superseded by C5 and by the readout&rsquo;s own 2026-07-30 amendment)</li>
+        <li>Open flags: <code>book/design/flags/ch10_FLAGS.md</code> (F-ch10-1 C11 band upper endpoints; F-ch10-2 the &ldquo;46%&rdquo; denominator; F-ch10-3 the 120- vs 200-universe label)</li>
+      </ul>
+    </div>
+
+    <p class="book-footer">
+      Data generated by <code>book/generators/gen_ch10.py</code> (read-only against the main
+      package and <code>results/</code>). This page renders fully offline — Plotly and KaTeX are
+      vendored under <code>vendor/</code>.
+    </p>
+  </main>
+</div>
+
+<script src="js/manifest.js"></script>
+<script src="vendor/plotly/plotly.min.js"></script>
+<script src="vendor/katex/katex.min.js"></script>
+<script src="vendor/katex/auto-render.min.js"></script>
+<script src="js/book.js"></script>
+<script>
+  (function () {
+    "use strict";
+
+    // ---------------------------------------------------------------
+    // Palette (mirrors css/book.css tokens; Plotly needs literals)
+    // ---------------------------------------------------------------
+    var C = {
+      accent: "#0072B2", accentDark: "#6fb8e8", warn: "#D55E00",
+      rec: "#CC79A7", ok: "#009E73", guess: "#E69F00", prior: "#9e9e9e",
+    };
+    function ink() { return Book.isDark() ? "#eef1f5" : "#1a1a1a"; }
+    function grid() { return Book.isDark() ? "#33373f" : "#d8dce1"; }
+    function live() { return Book.isDark() ? C.accentDark : C.accent; }
+    function faint() { return Book.isDark() ? "#9aa2b1" : "#5b6270"; }
+
+    function baseLayout(xTitle, yTitle) {
+      return {
+        margin: { l: 62, r: 18, t: 26, b: 46 },
+        xaxis: { title: xTitle, gridcolor: grid(), zeroline: false },
+        yaxis: { title: yTitle, gridcolor: grid(), zeroline: false },
+        paper_bgcolor: "rgba(0,0,0,0)",
+        plot_bgcolor: "rgba(0,0,0,0)",
+        font: { color: ink(), size: 12 },
+        showlegend: false,
+        hovermode: "closest",
+      };
+    }
+    function fmt(v, n) {
+      return (v === null || v === undefined || !isFinite(v)) ? "—" : Number(v).toFixed(n);
+    }
+    function signed(v, n) {
+      return (v === null || !isFinite(v)) ? "—" : (v >= 0 ? "+" : "") + Number(v).toFixed(n);
+    }
+    function table(el, headers, rows) {
+      var html = "<tr>" + headers.map(function (h) { return "<th>" + h + "</th>"; }).join("") + "</tr>";
+      rows.forEach(function (r) {
+        html += "<tr>" + r.map(function (c) { return "<td>" + c + "</td>"; }).join("") + "</tr>";
+      });
+      el.innerHTML = html;
+    }
+
+    // ------------------------------------------------- bias ledger rail
+    // R-ch07-1 IMPLEMENTED by the integrator: Book.biasRail takes `pips`
+    // directly; the page-local append workaround is retired (pass 2).
+    var PIPS = [
+      { tone: "amber", label: "two branches disagree (0.86 / 0.64) — unresolved",
+        note: "CLAIM C5 — measured, live" },
+      { tone: "amber", label: "C7: kernel inflates at σ_z/z > 0.256",
+        note: "CLAIM C7 — measured, live; collides with G2b's ratified confirmation. " +
+              "Threshold is a both-values item: artifacts 0.256, the same documents' " +
+              "corrected law at the 0.86 edge 0.2644 (ch07_FLAGS FLAG-2)." },
+      { tone: "amber", label: "w_G ≠ realized rate (z = −11.86) — C9",
+        note: "CLAIM C9 — measured, live" },
+      // canonical cell-B pip — BOOK_CANON.cellB.pipLabel / .pipNote (manifest.js);
+      // identical wording on ch07 / ch09 / ch10 / ch11. Do not re-word locally.
+      { tone: "amber",
+        label: "cell B (2026-07-31): estimator owns +0.060 of the 2D +0.083",
+        note: "CELLB_READOUT_20260731.md — evaluate 6103219 / combine 6103220; the 2D-only share is 72%" },
+    ];
+    function renderRail() {
+      Book.biasRail({
+        entries: [
+          { label: "cat-only, no D(h)", bias: -0.178,
+            note: "Phase 32 / ledger #9 — MAP 0.60, the bottom of the prior" },
+          { label: "full-volume D(h) (1D)", bias: 0.0,
+            note: "Phase 32 / ledger #9. Coverage of this estimator family measured " +
+                  "separately: nominal at completion fraction ≈ 0, cov68 0.083 at 0.22 " +
+                  "(pp_coverage, σ_z = 0.035)." },
+          { label: "host-z kernel volume_deconv", bias: -0.002,
+            note: "G2b §2.3 — the σ_z-independent residual the volume estimator retains; " +
+                  "this chapter's archive-gated control cells read −0.0014…−0.0030." },
+          { label: "2D channel, #53 (CANDIDATE)", bias: 0.077,
+            note: "10/10 runs > +2σ, mean pull +4.04. RATIFY-M6 candidate ground. " +
+                  "C11 measures the completion leg at 6–16× too small to own it.",
+            active: true },
+        ],
+        pips: PIPS,
+      });
+    }
+    renderRail();
+
+    // Cold-open predict block (no side effects beyond the reveal).
+    Book.predictReveal(document.getElementById("ch10-coldopen"));
+
+    // ===============================================================
+    // I10.1 — data/ch10_pp.json
+    // ===============================================================
+    Book.loadJSON("data/ch10_pp.json").then(function (d) {
+      var LEV = d.pp_levels;
+
+      // Order the cells into a completion-fraction ladder, per sigma_z.
+      function cellsFor(sz) {
+        return d.cells.filter(function (c) { return Math.abs(c.sigma_z - sz) < 1e-12; });
+      }
+      // Ladder positions are keyed on z_support (a physical dial); the
+      // completion fraction it produces depends on the injected truth, which
+      // is exactly the point the readout makes.
+      var Z_ORDER = [1.0, 0.5, 0.43, 0.41, 0.39, 0.38, 0.3, 0.2];
+      // Start on the control cell: the reader should see a calibrated
+      // estimator before being invited to break one.
+      var state = { sz: 0.035, truth: "0.7200", zi: 0 };
+
+      function currentCell() {
+        var zs = Z_ORDER[state.zi];
+        var m = cellsFor(state.sz).filter(function (c) {
+          return Math.abs(c.z_support - zs) < 1e-12;
+        });
+        return m.length ? m[0] : null;
+      }
+      function currentTruth() {
+        var c = currentCell();
+        return c ? c.truths[state.truth] : null;
+      }
+
+      var ppPlot = Book.themedPlot("ch10-pp-plot", ppTraces(), function () {
+        var L = baseLayout("nominal credible level q", "fraction of universes containing truth");
+        L.xaxis.range = [0, 1]; L.yaxis.range = [0, 1];
+        L.showlegend = true;
+        L.legend = { orientation: "h", y: -0.2, yanchor: "top", x: 0, font: { size: 10 } };
+        L.margin.b = 74;
+        return L;
+      });
+
+      function ppTraces() {
+        var t = currentTruth();
+        var traces = [{
+          x: [0, 1], y: [0, 1], mode: "lines", name: "calibrated (diagonal)",
+          line: { color: C.prior, width: 1.6, dash: "dot" }, hoverinfo: "skip",
+        }];
+        if (!t) return traces;
+        traces.push({
+          x: LEV, y: t.pp_curve, mode: "lines", name: "measured P–P curve",
+          line: { color: live(), width: 2.8 },
+          hovertemplate: "nominal %{x:.3f}<br>measured %{y:.3f}<extra></extra>",
+        });
+        traces.push({
+          x: [0.5, 0.68, 0.9],
+          y: [t.coverage["50"], t.coverage["68"], t.coverage["90"]],
+          mode: "markers", name: "the archive's three levels",
+          marker: { color: C.guess, size: 9, symbol: "diamond" },
+          hovertemplate: "HPD %{x:.2f} → %{y:.3f}<extra></extra>",
+        });
+        return traces;
+      }
+
+      var ladderPlot = Book.themedPlot("ch10-ladder-plot", ladderTraces(), function () {
+        var L = baseLayout("completion-driven fraction of events", "MAP bias in h");
+        L.xaxis.range = [-0.02, 0.88];
+        L.shapes = [{
+          type: "line", x0: -0.02, x1: 0.88, y0: 0, y1: 0,
+          line: { color: faint(), width: 1, dash: "dot" },
+        }];
+        L.annotations = [{
+          x: 0.86, y: 0.077, xanchor: "right", yanchor: "bottom", showarrow: false,
+          text: "the 2D bias this is being compared with: +0.077", font: { size: 10, color: C.warn },
+        }];
+        L.yaxis.range = [-0.006, 0.085];
+        L.showlegend = true;
+        L.legend = { orientation: "h", y: -0.24, yanchor: "top", x: 0, font: { size: 10 } };
+        L.margin.b = 78;
+        return L;
+      });
+
+      function ladderTraces() {
+        var t = currentTruth();
+        function series(sz, color, dash) {
+          var pts = d.ladder.filter(function (r) { return Math.abs(r.sigma_z - sz) < 1e-12; });
+          return {
+            x: pts.map(function (r) { return r.completion_fraction; }),
+            y: pts.map(function (r) { return r.map_bias; }),
+            mode: "markers", name: "σ_z = " + sz,
+            marker: { color: color, size: 7, symbol: dash },
+            hovertemplate: "f_comp %{x:.3f}<br>bias %{y:+.4f}<extra></extra>",
+          };
+        }
+        var traces = [
+          series(0.015, C.ok, "circle"),
+          series(0.035, C.warn, "square"),
+          {
+            x: [-0.02, 0.88], y: [0.077, 0.077], mode: "lines", name: "+0.077 (the 2D bias)",
+            line: { color: C.warn, width: 1.4, dash: "dash" }, hoverinfo: "skip",
+          },
+        ];
+        if (t) {
+          traces.push({
+            x: [t.completion_fraction], y: [t.map_bias], mode: "markers",
+            name: "you are here",
+            marker: { color: live(), size: 15, symbol: "circle-open", line: { width: 3 } },
+            hoverinfo: "skip",
+          });
+        }
+        return traces;
+      }
+
+      var VERDICT_NOTE = {
+        control: "<span class='ch10-verdict-label'>Control cell — the machinery is off</span>" +
+          "No event is routed to the completion branch. This is the calibration baseline: coverage " +
+          "at nominal, MAP bias at the volume kernel's known σ_z-independent floor of about " +
+          "−0.002 (G2b §2.3). If this cell were mis-calibrated, nothing further would be readable.",
+        inert: "<span class='ch10-verdict-label'>Truncation present but inert</span>" +
+          "The catalogue-support edge exists, but almost no event falls beyond it, so the completion " +
+          "branch does essentially nothing — and the results are indistinguishable from the control. " +
+          "That is the machinery declining to add anything spurious, which is its own kind of evidence.",
+        c11: "<span class='ch10-verdict-label'>The C11 window — campaign #53's own operating point</span>" +
+          "These are the cells that land on the delivered run's w_G ≈ 0.12. This is where the " +
+          "completion leg's calibration is measured, and where §4's order-of-magnitude elimination " +
+          "is done. Watch the bias grow smoothly and stay an order of magnitude under +0.077.",
+        deep: "<span class='ch10-verdict-label'>Deep incompleteness — far past this campaign's venue</span>" +
+          "Most events are now completion-driven. Coverage has collapsed and the bias is large, but " +
+          "this is NOT #53's regime — the campaign sits near f_comp ≈ 0.12, an order of magnitude " +
+          "less completion-governed. Shown so the ladder's monotone trend is visible over two decades, " +
+          "not as a statement about the delivered run.",
+      };
+
+      var cfOut = document.getElementById("ch10-cf-readout");
+      var cov68Out = document.getElementById("ch10-cov68");
+      var biasOut = document.getElementById("ch10-bias");
+      var stdOut = document.getElementById("ch10-mapstd");
+      var railOut = document.getElementById("ch10-rail");
+      var verdictEl = document.getElementById("ch10-pp-verdict");
+
+      function redraw() {
+        var c = currentCell(), t = currentTruth();
+        ppPlot.update(ppTraces());
+        ladderPlot.update(ladderTraces());
+        if (!c || !t) return;
+        var se = Math.sqrt(0.68 * 0.32 / c.n_realizations);
+        cfOut.textContent = fmt(t.completion_fraction, 3) +
+          "  (z_support = " + c.z_support + ")";
+        cov68Out.textContent = fmt(t.coverage["68"], 3) + " ± " + fmt(se, 3);
+        biasOut.textContent = signed(t.map_bias, 4);
+        stdOut.textContent = fmt(t.map_std, 4);
+        railOut.textContent = fmt(100 * t.rail_fraction, 1) + "%";
+        verdictEl.innerHTML = VERDICT_NOTE[c.family] +
+          " <span class='prov-chip real'>" + c.n_realizations + " universes × " +
+          c.n_events + " events · " + c.archive.split("/").slice(-2).join("/") + "</span>";
+        Book.renderMath(verdictEl);
+      }
+
+      var cfSlider = document.getElementById("ch10-cf-slider");
+      Book.gridSlider({
+        sliderEl: cfSlider, readoutEl: null, steps: Z_ORDER,
+        onStep: function (v, i) { state.zi = i; redraw(); },
+      });
+      cfSlider.value = String(state.zi);
+
+      document.querySelectorAll("#ch10-sz-row [data-sz]").forEach(function (b) {
+        b.addEventListener("click", function () {
+          state.sz = Number(b.getAttribute("data-sz"));
+          document.querySelectorAll("#ch10-sz-row [data-sz]").forEach(function (o) {
+            o.setAttribute("aria-pressed", String(o === b));
+          });
+          redraw();
+        });
+      });
+      document.querySelectorAll("#ch10-truth-row [data-truth]").forEach(function (b) {
+        b.addEventListener("click", function () {
+          state.truth = b.getAttribute("data-truth");
+          document.querySelectorAll("#ch10-truth-row [data-truth]").forEach(function (o) {
+            o.setAttribute("aria-pressed", String(o === b));
+          });
+          redraw();
+        });
+      });
+      redraw();
+
+      // numbers view: the whole ladder
+      table(
+        document.getElementById("ch10-pp-table"),
+        ["f_comp", "σ_z", "h_true", "z_support", "MAP bias", "cov 68%"],
+        d.ladder.map(function (r) {
+          return [fmt(r.completion_fraction, 4), fmt(r.sigma_z, 3), fmt(r.h_true, 2),
+                  String(r.z_support), signed(r.map_bias, 4), fmt(r.coverage68, 3)];
+        })
+      );
+
+      // bare-vs-volume kernel table (§1)
+      var ks = d.kernel_scan.filter(function (r) { return Math.abs(r.h_true - 0.72) < 1e-9; });
+      table(
+        document.getElementById("ch10-kernel-table"),
+        ["host-z kernel", "σ_z", "cov 50%", "cov 68%", "cov 90%", "MAP bias", "railed"],
+        ks.map(function (r) {
+          return ["<code>" + r.kernel_label + "</code>", fmt(r.sigma_z_cell, 2),
+                  fmt(r.coverage["50"], 3), "<strong>" + fmt(r.coverage["68"], 3) + "</strong>",
+                  fmt(r.coverage["90"], 3), signed(r.map_bias, 4),
+                  fmt(100 * r.rail_fraction, 1) + "%"];
+        })
+      );
+
+      // n-scaling table (§1)
+      var order = [["const-sigma", 250], ["const-sigma", 1000], ["const-sigma", 4000],
+                   ["model-sigma+pdet", 1000], ["model-sigma+pdet", 4000]];
+      var ns = order.map(function (k) {
+        return d.n_scaling.filter(function (r) {
+          return r.variant === k[0] && r.n_events_cell === k[1] && Math.abs(r.h_true - 0.72) < 1e-9;
+        })[0];
+      }).filter(Boolean);
+      table(
+        document.getElementById("ch10-nscale-table"),
+        ["estimator", "events per universe", "MAP bias in h", "cov 68%"],
+        ns.map(function (r) {
+          return ["<code>" + r.variant + "</code>", String(r.n_events_cell),
+                  signed(r.map_bias, 4), "<strong>" + fmt(r.coverage["68"], 3) + "</strong>"];
+        })
+      );
+    });
+
+    // ===============================================================
+    // I10.2 — data/ch10_closure.json
+    // ===============================================================
+    Book.loadJSON("data/ch10_closure.json").then(function (d) {
+      var H = d.h_grid, ROWS = d.log_rows_top, ALL = d.log_sum_all;
+      var i0 = d.i_curv[0], i1 = d.i_curv[1], i2 = d.i_curv[2], STEP = d.curv_step;
+      var NTOP = d.n_top, NEV = d.n_events;
+
+      // Prefix sums so the slider is O(1) per step.
+      var PREFIX = [new Array(H.length).fill(0)];
+      for (var k = 0; k < NTOP; k++) {
+        var prev = PREFIX[k], next = new Array(H.length);
+        for (var j = 0; j < H.length; j++) next[j] = prev[j] + ROWS[k][j];
+        PREFIX.push(next);
+      }
+      function logSum(K) {
+        var p = PREFIX[K], out = new Array(H.length);
+        for (var j = 0; j < H.length; j++) out[j] = ALL[j] - p[j];
+        return out;
+      }
+      function stateFor(K) {
+        var s = logSum(K);
+        // Legal 3-point second difference: the three nodes sit inside the
+        // 0.005-uniform stretch of the grid (no seam crossing).
+        var curv = 2 * s[i1] - s[i0] - s[i2];
+        var m = -Infinity, j;
+        for (j = 0; j < s.length; j++) if (s[j] > m) m = s[j];
+        var y = s.map(function (v) { return Math.exp(v - m); });
+        y = Book.normalizePosterior(y, H);
+        var mi = Book.argmaxIdx(y);
+        return {
+          post: y, curv: curv, map: H[mi], railed: (mi === 0 || mi === H.length - 1),
+          sigmaH0: curv > 0 ? 100 * STEP / Math.sqrt(curv) : null,
+        };
+      }
+
+      var K = 0, unlocked = false;
+      var s0 = stateFor(0);
+      var refPost = s0.post.slice();
+
+      var closurePlot = Book.themedPlot("ch10-closure-plot", closureTraces(s0), function () {
+        var L = baseLayout("h = H₀ / 100", "posterior density (log)");
+        L.yaxis.type = "log";
+        L.xaxis.range = [0.595, 0.865];
+        L.shapes = [{
+          type: "line", x0: d.h_true, x1: d.h_true, y0: 0, y1: 1, yref: "paper",
+          line: { color: ink(), dash: "dot", width: 1.6 },
+        }];
+        L.annotations = [{
+          x: d.h_true, y: 1, yref: "paper", text: "truth 0.73", showarrow: false,
+          yanchor: "bottom", font: { size: 11 },
+        }];
+        L.showlegend = true;
+        L.legend = { orientation: "h", y: -0.2, yanchor: "top", x: 0, font: { size: 10 } };
+        L.margin.b = 74;
+        return L;
+      });
+
+      function closureTraces(st) {
+        return [
+          {
+            x: H, y: refPost, mode: "lines", name: "all 1588 events",
+            line: { color: C.prior, width: 1.6, dash: "dot" }, hoverinfo: "skip",
+          },
+          {
+            x: H, y: st.post, mode: "lines", name: "with the top-K removed",
+            line: { color: st.curv > 0 ? live() : C.warn, width: 2.8 },
+            hovertemplate: "h = %{x:.3f}<br>density = %{y:.4g}<extra></extra>",
+          },
+        ];
+      }
+
+      // Cumulative curvature share vs rank — the second half of the argument.
+      var cum = [], acc = 0;
+      for (var r = 0; r < NTOP; r++) {
+        acc += d.top_meta[r].curvature;
+        cum.push(acc / d.curvature.total);
+      }
+      var curvPlot = Book.themedPlot("ch10-curv-plot", curvTraces(0), function () {
+        var L = baseLayout("events removed, K (ranked by curvature)",
+                           "share of the total curvature removed");
+        L.xaxis.range = [0, NTOP];
+        L.yaxis.range = [0, 1.15];
+        L.shapes = [{
+          type: "line", x0: 0, x1: NTOP, y0: 1, y1: 1,
+          line: { color: faint(), width: 1, dash: "dot" },
+        }];
+        L.annotations = [{
+          x: NTOP, y: 1.0, xanchor: "right", yanchor: "bottom", showarrow: false,
+          text: "100% of the constraint", font: { size: 10, color: faint() },
+        }];
+        return L;
+      });
+      function curvTraces(kk) {
+        var t = [{
+          x: cum.map(function (_, i) { return i + 1; }), y: cum, mode: "lines",
+          line: { color: C.ok, width: 2.4 }, fill: "tozeroy", fillcolor: "rgba(0,158,115,0.15)",
+          name: "cumulative share removed",
+          hovertemplate: "K = %{x}<br>%{y:.1%} of the curvature gone<extra></extra>",
+        }];
+        if (kk > 0) {
+          t.push({
+            x: [kk], y: [cum[kk - 1]], mode: "markers",
+            marker: { color: live(), size: 13, symbol: "circle-open", line: { width: 3 } },
+            hoverinfo: "skip", name: "you are here",
+          });
+        }
+        return t;
+      }
+
+      var nUsed = document.getElementById("ch10-nused");
+      var mapOut = document.getElementById("ch10-map");
+      var sigOut = document.getElementById("ch10-sigma");
+      var curvOut = document.getElementById("ch10-curv");
+      var kOut = document.getElementById("ch10-k-readout");
+      var verdict = document.getElementById("ch10-closure-verdict");
+
+      function draw(kk) {
+        K = kk;
+        var st = stateFor(kk);
+        closurePlot.update(closureTraces(st));
+        curvPlot.update(curvTraces(kk));
+        kOut.textContent = String(kk);
+        nUsed.textContent = (NEV - kk) + " of " + NEV +
+          " (" + fmt(100 * kk / NEV, 2) + "% removed)";
+        mapOut.textContent = fmt(st.map, 3);
+        sigOut.textContent = st.sigmaH0 === null ? "no peak" : fmt(st.sigmaH0, 4);
+        curvOut.textContent = signed(st.curv, 2);
+        if (st.curv <= 0) {
+          verdict.innerHTML =
+            "<span class='ch10-verdict-label'>The constraint is gone</span>" +
+            "The second derivative of Σ ln 𝓛 at truth is <strong>" + signed(st.curv, 2) +
+            "</strong> — the combined log-likelihood is no longer concave there, so there is no " +
+            "peak to report. The MAP has fallen to <strong>" + fmt(st.map, 3) + "</strong>, an edge " +
+            "of the prior grid. You removed <strong>" + kk + "</strong> events out of " + NEV +
+            " (" + fmt(100 * kk / NEV, 2) + "%). The remaining " + (NEV - kk) +
+            " detections do not hold the answer up: the 1512 dark events carry −3.0 of curvature " +
+            "between them, which is slightly <em>anti</em>-informative.";
+        } else if (kk === 0) {
+          verdict.innerHTML =
+            "<span class='ch10-verdict-label'>The published baseline</span>" +
+            "MAP <strong>0.730</strong> on the production grid, σ_H₀ <strong>0.0324</strong> " +
+            "km s⁻¹ Mpc⁻¹ from the 3-point curvature — reproducing the idealization audit's " +
+            "published 0.032, and the readout's zoom-grid 0.72990 ± 0.00030 sits inside this " +
+            "grid's single central node. Now start deleting.";
+        } else {
+          var widen = st.sigmaH0 / (100 * STEP / Math.sqrt(d.curvature.total));
+          verdict.innerHTML =
+            "<span class='ch10-verdict-label'>Information removed; the answer has not moved</span>" +
+            "MAP still <strong>" + fmt(st.map, 3) + "</strong>. The posterior is <strong>" +
+            fmt(widen, 2) + "×</strong> wider than with all " + NEV + " events, from removing " +
+            "<strong>" + fmt(100 * cum[kk - 1], 1) + "%</strong> of the curvature by deleting " +
+            fmt(100 * kk / NEV, 2) + "% of the sample. A MAP that stays on truth while its " +
+            "own support is being dismantled is not evidence that the estimator is right.";
+        }
+        Book.renderMath(verdict);
+      }
+
+      var kSlider = document.getElementById("ch10-k-slider");
+      var steps = [];
+      for (var q = 0; q <= NTOP; q++) steps.push(q);
+      Book.gridSlider({
+        sliderEl: kSlider, readoutEl: null, steps: steps,
+        onStep: function (v) { draw(v); },
+      });
+      kSlider.value = "0";
+      document.getElementById("ch10-k-restore").addEventListener("click", function () {
+        kSlider.value = "0"; draw(0);
+      });
+
+      function unlock() {
+        if (unlocked) return;
+        unlocked = true;
+        kSlider.removeAttribute("disabled");
+        document.getElementById("ch10-k-restore").removeAttribute("disabled");
+        var lock = document.getElementById("ch10-k-lock");
+        lock.classList.remove("ch10-locked");
+        lock.innerHTML = "";
+      }
+      Book.predictReveal(document.getElementById("ch10-predict2"), unlock);
+      if (Book.getPrediction("ch10-topk") !== null) unlock();
+
+      draw(0);
+
+      // numbers view
+      var LADDER = [0, 1, 2, 3, 5, 10, 20, 30, 40, 50, 60];
+      table(
+        document.getElementById("ch10-closure-table"),
+        ["K removed", "events used", "% of sample removed", "curvature at truth",
+         "σ_H₀ [km s⁻¹ Mpc⁻¹]", "MAP"],
+        LADDER.map(function (kk) {
+          var st = stateFor(kk);
+          return [String(kk), String(NEV - kk), fmt(100 * kk / NEV, 2) + "%",
+                  signed(st.curv, 2),
+                  st.sigmaH0 === null ? "<em>no peak</em>" : fmt(st.sigmaH0, 4),
+                  fmt(st.map, 3) + (st.railed ? " (railed)" : "")];
+        })
+      );
+
+      // Class decomposition — the numbers §3 and the fold argue FROM
+      // (ped-m5: every widget's argument must be tabulated, not only asserted).
+      var CV = d.curvature, G3 = d.golden3;
+      var nTopIncat = d.top_meta.filter(function (m) { return m.in_catalog; }).length;
+      table(
+        document.getElementById("ch10-closure-decomp"),
+        ["class / subset", "events", "curvature at truth", "share of the signed total"],
+        [
+          ["in-catalogue", String(d.n_in_catalog) + " of " + String(NEV),
+           signed(CV.in_catalog, 3), fmt(100 * CV.in_catalog_share, 1) + "%"],
+          ["dark (no catalogued host)", String(d.n_dark) + " of " + String(NEV),
+           signed(CV.dark, 3), fmt(100 * CV.dark_share, 1) + "%"],
+          ["<strong>signed total</strong>", "<strong>" + String(NEV) + "</strong>",
+           "<strong>" + signed(CV.total, 3) + "</strong>", "<strong>100%</strong>"],
+          ["the 3 loudest in-catalogue (" + G3.events.join(", ") + ")", "3",
+           signed(G3.curvature_sum, 3),
+           "<strong>" + fmt(100 * G3.share_of_total, 2) + "%</strong> of the signed total &middot; "
+             + fmt(100 * G3.share_of_in_catalog, 2) + "% of the in-catalogue curvature"],
+          ["top-60 by curvature (the slider's range)", String(NTOP),
+           signed(d.top_meta.reduce(function (a, m) { return a + m.curvature; }, 0), 3),
+           fmt(100 * d.top_meta.reduce(function (a, m) { return a + m.curvature; }, 0) / CV.total, 1)
+             + "% &middot; " + String(nTopIncat) + " of them in-catalogue"],
+          ["σ_H₀ at K = 0", String(NEV), "&mdash;",
+           fmt(CV.sigma_H0_km_s_Mpc, 4) + " km s⁻¹ Mpc⁻¹ (σ_h = "
+             + CV.sigma_h.toExponential(3) + ")"],
+        ]
+      );
+    });
+  })();
+</script>

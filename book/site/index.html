@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<meta charset="utf-8" />
+<title>From Bayes&rsquo; Rule to H&#8320; | EMRI Dark Siren Discovery Book</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="description" content="An interactive, step-by-step journey from Bayes' rule to the full EMRI dark-siren H0 inference pipeline — built as a discovery arc: every tool arrives because the estimator just failed without it." />
+<link rel="stylesheet" href="vendor/katex/katex.min.css" />
+<link rel="stylesheet" href="css/book.css" />
+
+<div class="book-shell">
+  <header class="book-topbar">
+    <a class="brand" href="index.html">From Bayes&rsquo; Rule to H&#8320;
+      <small>an interactive discovery book</small>
+    </a>
+    <nav class="book-nav" data-nav aria-label="Chapters"><!-- built from js/manifest.js --></nav>
+    <button class="theme-toggle" data-theme-toggle type="button">☽ Dark</button>
+  </header>
+
+  <main class="book-content">
+    <h1>From Bayes&rsquo; rule to the EMRI dark-siren H&#8320; pipeline</h1>
+    <p class="subtitle">
+      A step-by-step, interactive companion to the thesis. Every representation is introduced
+      with its motivation &mdash; either &ldquo;without this, the posterior is defective&rdquo;
+      (shown, not asserted) or &ldquo;this addition measurably helps, here is how much.&rdquo;
+      The book ends where the research currently ends: with the estimator&rsquo;s live,
+      honestly inconsistent state.
+    </p>
+
+    <div class="callout">
+      <span class="callout-label">The contract of this book</span>
+      We will build an estimator for the Hubble constant out of gravitational-wave events that
+      carry no redshift &mdash; and then spend most of the book trying to break it. Every number
+      on every page carries a provenance chip to the project artifact that measured it; toys are
+      labelled toys; and the four live inconsistencies the project has <em>not</em> resolved are
+      presented unresolved. The last chapter does not end with an answer, because the project
+      has not ended with one.
+    </div>
+
+    <h2>The journey</h2>
+    <p>
+      Twelve chapters plus an annex, each opening on the failure the previous chapter could not
+      answer. The map below names each chapter&rsquo;s <em>question</em>; what each chapter
+      discovers is folded underneath, because four of the discoveries are cold-open reveals the
+      chapters ask you to predict first.
+    </p>
+    <ol start="0">
+      <li><a href="ch00-two-numbers.html">Two Numbers That Should Be One</a> <em>(prologue)</em>
+        &mdash; two precise measurements of the same constant disagree; what would a third
+        method have to be to matter?</li>
+      <li><a href="ch01-ruler.html">A Ruler That Needs No Ladder</a>
+        &mdash; general relativity hands you a distance with no calibration ladder; what it
+        refuses to hand you is the problem.
+        <span style="color:var(--muted);">The dossier opens: EMRI-889.</span></li>
+      <li><a href="ch02-bayes.html">Bayes, Once and For All</a>
+        &mdash; one distance and no redshift is not yet an inference. What does stacking many
+        events actually buy?</li>
+      <li><a href="ch03-which-galaxy.html">Which Galaxy?</a>
+        &mdash; the sky box is exquisite, and the host is still not determined.</li>
+      <li><a href="ch04-loud-half.html">The Universe Only Shows You Its Loud Half</a>
+        &mdash; you only ever fit the events you detected. What does leaving that fact out of
+        the likelihood do?
+        <span style="color:var(--muted);">Museum interlude: the p_det anchor.</span></li>
+      <li><a href="ch05-unseen-galaxy.html">The Galaxy You Cannot See</a>
+        &mdash; most hosts are not in the catalogue at all, and the estimator must answer
+        anyway.
+        <span style="color:var(--muted);">Interlude: information starvation, overturned.</span></li>
+      <li><a href="ch06-black-box.html">Opening the Black Box</a>
+        &mdash; &ldquo;an ellipsoid, somehow&rdquo; is no longer good enough: how big, and
+        correlated with what?</li>
+      <li><a href="ch07-redshift.html">A Redshift Is Not a Number</a>
+        &mdash; a catalogue redshift is a distribution, and this chapter measures what treating
+        it as a number does.
+        <span style="color:var(--muted);">Interlude: volume_trunc.</span></li>
+      <li><a href="ch08-mass-channel.html">A Second Handle: the Mass Channel</a>
+        &mdash; the mass channel should sharpen everything. Watch what it does instead.
+        <span style="color:var(--muted);">Interlude: mass_trunc.</span></li>
+      <li><a href="ch09-universe-factory.html">Building a Universe to Break Your Estimator</a>
+        &mdash; every claim so far compared to &ldquo;truth&rdquo;; where did truth come from,
+        and does it agree with the estimator?</li>
+      <li><a href="ch10-calibration.html">Is It Calibrated?</a>
+        &mdash; recovering the truth once is not the same as being right.
+        <span style="color:var(--muted);">Interlude: the H&#8320;-independent estimator.</span></li>
+      <li><a href="ch11-honest-state.html">The State of the Art, Honestly</a>
+        &mdash; the scoreboard, exactly as the project adjudicates it &mdash; and the control
+        that landed the night the book was built. <em>This chapter does not resolve.</em></li>
+      <li value="12"><a href="museum.html">The Defect Museum</a> <em>(annex)</em>
+        &mdash; 98 hypotheses, and what each one cost.</li>
+    </ol>
+
+    <details>
+      <summary style="cursor:pointer; color:var(--accent);">Spoiler: what each chapter
+        discovers (the four cold-open reveals included &mdash; open after your first
+        read-through)</summary>
+      <ol start="0" style="margin-top:0.8rem;">
+        <li>every rung of the local ladder is calibrated against another rung; there is no
+          independent ruler.</li>
+        <li>GR gives d<sub>L</sub> absolutely, and says nothing at all about z.</li>
+        <li>one distance and no redshift is not yet an inference; and N events do not sharpen
+          like &radic;N &mdash; a handful carry almost everything.</li>
+        <li>not knowing the host is not an error bar: it is a sum, and the weights in that sum
+          are astrophysics you have to commit to.</li>
+        <li>without dividing by what you could have seen, the posterior does not get noisy; it
+          runs to the edge of the prior and stops caring what the truth is &mdash; and the
+          repair has to be derived, not patched.</li>
+        <li>for 1512 of 1588 events the host is not in the catalogue at all.</li>
+        <li>the error ellipsoid is real, measured, and correlated in exactly the ways that
+          matter later.</li>
+        <li>catalogue redshifts are photometric at &sigma;<sub>z</sub>/z &asymp; 49%, and
+          plugging in the central value <em>moves</em> the answer.</li>
+        <li>the mass channel should sharpen everything &mdash; and the answer moves the wrong
+          way.</li>
+        <li>the mock universe is the estimator&rsquo;s harshest critic: the generator and the
+          inference disagree about a quantity both of them own.</li>
+        <li>it recovers truth at &minus;0.24&sigma;; that is not the same as being right.</li>
+        <li>three measured inconsistencies plus a fourth, and an attribution that stayed
+          confounded until the pre-registered control ran &mdash; 2026-07-31, two hits and a
+          one-grid-step miss.</li>
+        <li value="12">most of the 98 dead hypotheses were the <em>most plausible</em> ideas
+          &mdash; which is exactly why they needed killing in writing.</li>
+      </ol>
+    </details>
+
+    <h2>One event follows you the whole way</h2>
+    <div class="dossier">
+      <div class="dossier-title">Event dossier &mdash; EMRI-889 (opens in Ch.&nbsp;1)</div>
+      <table>
+        <tr><td>what it is</td><td>a 10&nbsp;M&#9737; compact object spiralling into a
+          7.25&times;10&#8309;&nbsp;M&#9737; black hole, seen by LISA at SNR 1425</td></tr>
+        <tr><td>d_L</td><td>88.9 Mpc &mdash; measured absolutely, from general relativity,
+          with no calibration ladder</td></tr>
+        <tr class="dossier-new"><td>z</td><td><strong>unknown.</strong> The empty slot is the
+          book: no light, no redshift, no H&#8320; &mdash; yet.</td></tr>
+      </table>
+    </div>
+    <p>
+      By Chapter&nbsp;5, 889&rsquo;s standing in the galaxy catalogue turns out to be far rarer
+      than you would guess, and a dark counterpart (event 606) joins the dossier. By
+      Chapter&nbsp;11 the dossier&rsquo;s final row is a warning label. The guess <em>you</em>
+      make about 889&rsquo;s host in Chapter&nbsp;3 is remembered and re-surfaced at the end.
+    </p>
+
+    <h2>How to read this book</h2>
+    <ul>
+      <li><strong>Reading as&hellip;</strong> &mdash; the topbar switch pre-expands strata for
+        three readers: <em>Mara</em> (physicist, new to GW inference &mdash; the default),
+        <em>Tomas</em> (GW reader: code sites and Gray et al. mappings open), and
+        <em>Examiner</em> (numbers views open, provenance emphasized). It never hides content
+        &mdash; it only pre-opens.</li>
+      <li><strong>The bias rail</strong> &mdash; the panel on the right of every chapter is the
+        estimator&rsquo;s live scorecard: its measured bias in h as it is built, repaired, and
+        broken again. Amber dots are measured-but-unresolved defects. The scorecard does not
+        monotonically improve; that is the point.</li>
+      <li><strong>Symbol passport</strong> &mdash; tap any dotted symbol for its definition,
+        units, defining code site, and status; pin it to your personal glossary
+        (&#9733; in the topbar).</li>
+      <li><strong>Provenance chips and badges</strong> &mdash; every measured number carries a
+        chip naming its artifact; every claim carries the project&rsquo;s own trust tier
+        (<span class="badge ratified">RATIFIED</span> <span class="badge candidate">CANDIDATE</span>
+        <span class="badge finding">FINDING</span> <span class="badge open">OPEN</span>
+        <span class="badge refuted">REFUTED</span>). Toys are chipped
+        <span class="prov-chip toy">toy: analytic</span>, real data
+        <span class="prov-chip real">real: seed61000/real_r1</span>.</li>
+      <li><strong>Predict, then reveal</strong> &mdash; the interactives ask you to commit to a
+        guess before showing the measurement. The reveal is locked, not suggested &mdash; the
+        same instrument the project itself uses (pre-registration), turned on the reader.</li>
+      <li><strong>&ldquo;Has this been tried?&rdquo;</strong> &mdash; every sandbox page carries
+        a search box over the project&rsquo;s 98-row defect ledger, seeded with the dead
+        hypotheses that page&rsquo;s own dials can reach; and a dial tagged with a dead
+        hypothesis volunteers its verdict (&#9878; #N) inside the widget the moment you turn
+        it. If your clever fix has a name, a date, and an obituary, the search box will find
+        it.</li>
+      <li><strong>Self-checks</strong> &mdash; every chapter ends with questions whose answers
+        stay hidden until you ask; the last one is always the transfer whose answer is the next
+        chapter&rsquo;s opening failure. Chapter&nbsp;11&rsquo;s last question has no answer
+        key, because the project has none.</li>
+    </ul>
+
+    <h2>The honest state, up front</h2>
+    <div class="callout defect">
+      <span class="callout-label">What this book does not resolve</span>
+      The pipeline&rsquo;s current adjudicated state (2026-07-30, as amended 2026-07-31)
+      carries <strong>three live, measured inconsistencies</strong> &mdash; C7 (the ratified
+      host-z kernel and a measured inflation law collide; the 2&times;2 cell&nbsp;B control
+      settled the magnitude and attribution on 2026-07-31, not the collision), C8 (the 2D
+      headline moves under an arbitrary mass-coordinate rescale), and C9 (the delivered
+      mixture weight disagrees with the generator&rsquo;s realized rate at
+      z&nbsp;=&nbsp;&minus;11.86) &mdash; <strong>plus a fourth</strong> (C5: the two
+      class-conditional posteriors rail at opposite edges, and the 1D headline is their
+      crossing), and an attribution (C6) <strong>that was confounded until the control was run
+      on 2026-07-31</strong> &mdash; the pre-registered 2&times;2 cell&nbsp;B landed the night
+      this book was built, and the estimator configuration owns the bulk of the 2D
+      displacement. Four questions stay live; none is resolved by narrative.
+      <a href="ch11-honest-state.html">Chapter&nbsp;11</a> is the scoreboard;
+      <a href="museum.html">the museum</a> is the graveyard it stands on.
+    </div>
+
+    <h2>How this book is built</h2>
+    <p>
+      No build framework &mdash; plain HTML/CSS/JS, vendored Plotly and KaTeX, works over a
+      trivial local server and on GitHub Pages alike. Every figure&rsquo;s data is produced by a
+      deterministic Python generator (<code>book/generators/</code>) reading the thesis
+      pipeline&rsquo;s own artifacts read-only; <code>make_all.py</code> rebuilds everything.
+      See <code>book/design/BOOK_TECH_DESIGN.md</code> for the architecture,
+      <code>book/design/BOOK_DESIGN.md</code> for the authoritative build spec, and
+      <code>book/BUILD_REPORT.md</code> for the integration QA report.
+    </p>
+  </main>
+</div>
+
+<script src="js/manifest.js"></script>
+<script src="vendor/katex/katex.min.js"></script>
+<script src="vendor/katex/auto-render.min.js"></script>
+<script src="js/book.js"></script>
