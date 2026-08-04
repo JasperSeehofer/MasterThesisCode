@@ -1,5 +1,41 @@
 # G2b — The volume-consistent host-redshift prior (`volume_deconv` kernel)
 
+> ## SUPERSEDED IN PART (2026-08-04)
+>
+> The **C7-core** `/physics-change` (ratified in
+> `.planning/derivation-2dbias-fix-20260803/GATE_PACKAGE_FINAL.md` §1, author-approved
+> 2026-08-04) amends this note as follows:
+>
+> * **The uniqueness sentence of §1.1 is withdrawn as stated.** `w_pop(z)` alone is *not*
+>   the population weight the in-catalogue host-z kernel must carry. The kernel's prior is
+>   the **catalogued-host intensity** `f_{k(g)}(z) · w_pop(z)`, with `f_k` the per-pixel
+>   catalogue completeness — the same callable `B_num` and `beta_Gbar` already use, now
+>   evaluated at the **host's** HEALPix pixel. Licence: the attacker's **theorem (T)**
+>   (the discrete catalogue sum reconstructs the population intensity,
+>   `E[Σ_g w_g ρ_g(z)] = λ(z)`, *iff* the prior inside `ρ_g` is the catalogued-host
+>   intensity) plus the **leg-partition argument** (post-fix the catalogue leg carries
+>   `f·w_pop` and the completion leg `(1−f)·w_pop`, so the two partition the z-density;
+>   pre-fix they were `w_pop` vs `(1−f)·w_pop`). Gray et al. (2020) Eq. (A.10) and
+>   Turski et al. (2023) Eq. (4) are cited **for structure only** (numerator and
+>   per-galaxy denominator share one kernel; `p_det` lives in the normalisation slot).
+> * **Eqs. (1.3) and (1.4) are amended to carry `f`** — see the two amendment boxes below.
+> * **Retained unchanged:** the exact `h`-independence derivation of §1.5 (`f_k` carries no
+>   `h` at all — the `+5 log10 h` in `M_*` cancels the `−5 log10 h` of the distance modulus,
+>   an exact `m_star` cancellation), the propriety/dimensional argument (`f` is
+>   dimensionless in `(0, 1]`, so `ρ_g` remains a unit-mass density in `z`), the
+>   `σ_z²` Eddington-bias derivation (its `3 (σ_z/z)²` coefficient is continuously
+>   **renormalised** to `(3 + γ_f)(σ_z/z)²` with `γ_f = dln f/dln z`, agreeing at `f ≡ 1`;
+>   it does not collapse), and the `dV_c`-counted-once measure symmetry.
+> * **Unchanged conclusions about what stays out of the kernel:** `p_det` still does **not**
+>   enter the numerator (the refuted `--pdet-in-numerator` form; Mandel, Farr & Gair (2019)
+>   arXiv:1809.02063 §5).
+> * G2b §3.3 item 1 is already cured in the batched path.
+>
+> Implementation: `[PHYSICS] C7-core` commit on `physics/c7-hostz-kernel-fk`
+> (`bayesian_statistics.py`, batched `single_host_likelihood_batch` + scalar
+> `single_host_likelihood`); tests in
+> `master_thesis_code_test/bayesian_inference/test_c7_hostz_kernel_fk.py`.
+
 **Scope.** This note derives the per-galaxy host-redshift posterior implemented as the
 `volume_deconv` kernel in `single_host_likelihood`
 (`master_thesis_code/bayesian_inference/bayesian_statistics.py:1844-1914`, introduced in
@@ -86,6 +122,26 @@ $\beta_{\bar G}$ (`:479`), and in the completion numerator $B_{\rm num}$ (`:1698
 So Eq. (1.3) is the unique population weight consistent with the rest of the pipeline
 and with the event generator.
 
+> **AMENDED 2026-08-04 (C7-core).** The sentence above is withdrawn as stated: Eq. (1.3) is
+> the unique weight for the **whole population**, but the in-catalogue kernel conditions on
+> the galaxy being **in the catalogue**, whose selection probability at $(z, \Omega)$ is the
+> completeness $f_{k}(z)$. The population weight the kernel must carry is therefore the
+> catalogued-host intensity
+>
+> $$
+> w^{\rm cat}_{\rm pop}(z;\, k(g)) \;\equiv\; f_{k(g)}(z)\; w_{\rm pop}(z)
+> \;=\; f_{k(g)}(z)\,\frac{1}{1+z}\,\frac{dV_c}{dz},
+> \tag{1.3'}
+> $$
+>
+> where $k(g)$ is the host's HEALPix pixel. This is what makes the two legs of the mixture
+> **partition** the $z$-density: catalogue $f\,w_{\rm pop}$, completion
+> $(1-f)\,w_{\rm pop}$. Because $f$ is dimensionless in $(0, 1]$, every dimensional
+> statement below is unchanged; because $f$ carries no $h$ (§1.5's mechanism, exactly),
+> the $h$-independence of the kernel is unchanged. `f` is counted **once**: it appears in
+> $\rho_g$ as a *shape* that $Z_g$ normalises away, so theorem (T)'s reconstruction
+> carries $f^{1}$.
+
 ### 1.2 The posterior
 
 By Bayes' theorem, the density of the *true* host redshift given the catalogue
@@ -101,6 +157,28 @@ Z_g \;=\; \int dz'\; \mathcal{N}(z_g;\, z',\, \sigma_z)\; w_{\rm pop}(z')\;
 }
 \tag{1.4}
 $$
+
+> **AMENDED 2026-08-04 (C7-core).** Eq. (1.4) carries the catalogued-host intensity
+> $w^{\rm cat}_{\rm pop}$ of Eq. (1.3') in **both** slots:
+>
+> $$
+> \boxed{\;
+> \rho_g(z) \;=\; \frac{\mathcal{N}(z;\, z_g,\, \sigma_{\rm eff})\;
+> w_{\rm pop}(z;h)\; f_{k(g)}(z)}{Z_g},
+> \qquad
+> Z_g \;=\; \int dz'\; \mathcal{N}(z';\, z_g,\, \sigma_{\rm eff})\;
+> w_{\rm pop}(z';h)\; f_{k(g)}(z')\;
+> }
+> \tag{1.4'}
+> $$
+>
+> $N_g$ and $D_g$ are unchanged *as expressions in* $\rho_g$; their numerical values move
+> because $\rho_g$ does. **ZoA branch:** if $f_{k(g)} \equiv 0$ across the whole
+> $\pm 4\sigma$ host window (an empty HEALPix pixel), the kernel falls back to Eq. (1.4)
+> and warns once — an elementwise clamp $\max(f, \varepsilon)$ is **forbidden**, it would
+> install a kink where $f$ crosses the floor partway across the window.
+> $\sigma_z \to 0$ is **exact** and $f$-independent: $f(z_g)$ cancels between numerator
+> and $Z_g$. $f \equiv 1$ is byte-identical to Eq. (1.4) (strict generalisation).
 
 with $w_{\rm pop}$ from Eq. (1.3). This is exactly what the code builds:
 the unnormalized integrand `_z_prior_unnorm`

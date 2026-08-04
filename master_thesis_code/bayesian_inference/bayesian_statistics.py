@@ -99,6 +99,38 @@ def _warn_quadrature_weight_outside_grid(
     )
 
 
+# Per-process dedup state for the C7 ZoA host-z-kernel fallback (see
+# _warn_zoa_hostz_kernel_fallback): hosts whose HEALPix pixel is empty carry
+# f_k == 0 at every redshift, so the catalogued-host intensity f*w_pop vanishes
+# on the whole window and the kernel falls back to the pre-C7 (f == 1) form.
+_zoa_hostz_kernel_fallback_warned: bool = False
+_zoa_hostz_kernel_fallback_hosts: int = 0
+
+
+def _warn_zoa_hostz_kernel_fallback(detection_index: int, n_hosts: int) -> None:
+    """Warn once per worker that the ZoA host-z-kernel fallback engaged.
+
+    ``n_hosts`` hosts of this event sit in a pixel whose completeness is
+    identically zero across their whole ``+/-4 sigma`` window. There the
+    catalogued-host intensity carries no information, so the kernel reverts to
+    the pre-C7 ``w_pop``-only form for those hosts (GATE_PACKAGE_FINAL.md
+    §1.1 B5: elementwise clamping is forbidden — it would install a kink where
+    ``f_k`` crosses a floor partway across the window).
+    """
+    global _zoa_hostz_kernel_fallback_warned, _zoa_hostz_kernel_fallback_hosts
+    _zoa_hostz_kernel_fallback_hosts += n_hosts
+    if _zoa_hostz_kernel_fallback_warned:
+        return
+    _zoa_hostz_kernel_fallback_warned = True
+    _LOGGER.warning(
+        "Event %d: %d host(s) have f_k == 0 across the whole host-z window "
+        "(empty/ZoA pixel) — host-z kernel falls back to the w_pop-only form "
+        "for those hosts (further occurrences in this worker are suppressed).",
+        detection_index,
+        n_hosts,
+    )
+
+
 DEFAULT_GALAXY_Z_ERROR = 0.0015
 
 # Issue #40(a) decomposition flag (redteam F2/F3): the in-catalogue NUMERATOR
@@ -495,6 +527,54 @@ def _batched_gl_reduce(
     """
     result: npt.NDArray[np.float64] = (b - a) / 2.0 * np.sum(weights * values, axis=-1)
     return result
+
+
+def _host_pixels(
+    completeness: CompletenessModel,
+    host_phiS: npt.NDArray[np.float64],
+    host_qS: npt.NDArray[np.float64],
+) -> npt.NDArray[np.int64]:
+    """HEALPix pixel index ``k(g)`` of every host, from its own sky position.
+
+    ``host_qS`` is the ecliptic *colatitude* — the same convention
+    :meth:`CompletenessModel.ang2pix` takes and the same one the completion
+    numerator uses for the event pixel.
+    """
+    return np.array(
+        [completeness.ang2pix(float(phi), float(theta)) for phi, theta in zip(host_phiS, host_qS)],
+        dtype=np.int64,
+    )
+
+
+def _completeness_at_host_nodes(
+    completeness: CompletenessModel,
+    z_nodes: npt.NDArray[np.float64],
+    host_pixels: npt.NDArray[np.int64],
+    h: float,
+) -> npt.NDArray[np.float64]:
+    """Per-host catalogue completeness ``f_{k(g)}(z)`` at ``(n, k)`` nodes.
+
+    Vectorised over the redshift nodes; the only Python-level loop is over the
+    *distinct* HEALPix pixels of the batch (``f_k`` is a per-pixel accessor),
+    never over hosts or nodes.
+
+    Args:
+        completeness: Per-pixel completeness model (``f_k`` accessor).
+        z_nodes: Redshift nodes, shape ``(n, k)``.
+        host_pixels: HEALPix pixel index per host, shape ``(n,)``.
+        h: Dimensionless Hubble parameter.
+
+    Returns:
+        ``f_{k(g)}(z)`` clipped to ``[0, 1]``, shape ``(n, k)``.
+    """
+    out = np.empty(z_nodes.shape, dtype=np.float64)
+    for pixel in np.unique(host_pixels):
+        rows = host_pixels == pixel
+        values = np.asarray(
+            completeness.f_k(z_nodes[rows].reshape(-1), int(pixel), h), dtype=np.float64
+        )
+        out[rows] = values.reshape(-1, z_nodes.shape[1])
+    return np.clip(out, 0.0, 1.0)
 
 
 def eddington_shifted_host_mass(host_M: float, host_M_error: float) -> float:
@@ -1828,6 +1908,13 @@ det_M_arr: npt.NDArray[np.float64] = np.empty(0)
 det_phi_arr: npt.NDArray[np.float64] = np.empty(0)
 det_theta_arr: npt.NDArray[np.float64] = np.empty(0)
 
+# Per-HEALPix-pixel catalogue completeness f_k, threaded into the worker
+# processes by child_process_init so the host-z kernel can evaluate f at the
+# HOST's pixel (C7-core, GATE_PACKAGE_FINAL.md §1.2). ``None`` reproduces the
+# pre-C7 kernel exactly (f == 1 everywhere): every unit test that installs the
+# worker globals by hand and does not set this stays byte-identical.
+completeness_model: CompletenessModel | None = None
+
 
 def _check_covariance_quality(
     cov: npt.NDArray[np.float64],
@@ -2610,6 +2697,7 @@ class BayesianStatistics:
                 _det_phi,
                 _det_theta,
                 _D_h_table,
+                completeness,
             ),
         ) as pool:
             _LOGGER.info(
@@ -3644,6 +3732,7 @@ def single_host_likelihood(
     global det_index_to_slot
     global sigma2_cond_arr, proj_arr
     global det_d_L_arr, det_d_L_unc_arr, det_M_arr, det_phi_arr, det_theta_arr
+    global completeness_model
 
     FIXED_QUAD_N = _HOST_QUAD_N
 
@@ -3773,11 +3862,49 @@ def single_host_likelihood(
         "absolute_marginal",
         "generator_marginal",
     )
+    # [PHYSICS] C7-core (scalar twin of the batched kernel): the in-catalogue
+    # host-z prior's population weight is the CATALOGUED-host intensity
+    # f_{k(g)}(z) * w_pop(z). f is evaluated at the HOST's HEALPix pixel with the
+    # SAME completeness callable B_num and beta_Gbar use, and enters the
+    # numerator AND Z_g (hence D_g), so rho_g stays a unit-mass density in z and
+    # p_det stays out of the numerator. ZoA: if f_k == 0 across the whole host
+    # window the kernel falls back to the pre-C7 w_pop-only form (no clamp).
+    # Theorem (T) + partition argument, GATE_PACKAGE_FINAL.md §1.2 (2026-08-04);
+    # structure: Gray et al. (2020) arXiv:1908.06050 Eq. (A.10); Turski et al.
+    # (2023) arXiv:2302.12037 Eq. (4)
+    _completeness = completeness_model
+    _host_pixel: int | None = None
+    if _use_volume_deconv and _completeness is not None:
+        _host_pixel = _completeness.ang2pix(host_phiS, host_qS)
+        _f_probe = _completeness_at_host_nodes(
+            _completeness,
+            _batched_gl_nodes(
+                np.array([denominator_integration_lower_redshift_limit]),
+                np.array([denominator_integration_upper_redshift_limit]),
+                _GL_NODES_50,
+            ),
+            np.array([_host_pixel], dtype=np.int64),
+            h,
+        )
+        if not bool(np.any(_f_probe > 0.0)):
+            _host_pixel = None
+            _warn_zoa_hostz_kernel_fallback(detection_index, 1)
+
+    def _w_pop_eff(z: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
+        """``w_pop(z) = dV_c/dz / (1 + z)``, times ``f_{k(g)}(z)`` (C7-core)."""
+        w_pop = np.asarray(comoving_volume_element(z, h=h), dtype=np.float64) / (1.0 + z)
+        if _host_pixel is not None and _completeness is not None:
+            f_k = np.clip(
+                np.asarray(_completeness.f_k(z, _host_pixel, h), dtype=np.float64), 0.0, 1.0
+            )
+            return w_pop * f_k
+        return w_pop
+
     _z_prior_norm = 1.0
     if _use_volume_deconv:
 
         def _z_prior_unnorm(z: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
-            w_pop = np.asarray(comoving_volume_element(z, h=h), dtype=np.float64) / (1.0 + z)
+            w_pop = _w_pop_eff(z)
             base = np.asarray(galaxy_redshift_normal_distribution.pdf(z), dtype=np.float64)
             return base * w_pop
 
@@ -3795,8 +3922,7 @@ def single_host_likelihood(
     def galaxy_redshift_prior_pdf(z: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
         base = np.asarray(galaxy_redshift_normal_distribution.pdf(z), dtype=np.float64)
         if _use_volume_deconv:
-            w_pop = np.asarray(comoving_volume_element(z, h=h), dtype=np.float64) / (1.0 + z)
-            return base * w_pop / _z_prior_norm
+            return base * _w_pop_eff(z) / _z_prior_norm
         return base
 
     # Sky localization weight (phi, theta) is inside the GW likelihood Gaussian.
@@ -4157,6 +4283,7 @@ def single_host_likelihood_batch(
     global det_index_to_slot
     global sigma2_cond_arr, proj_arr
     global det_d_L_arr, det_d_L_unc_arr, det_M_arr
+    global completeness_model
 
     n = int(host_z.size)
     if n == 0:
@@ -4221,6 +4348,29 @@ def single_host_likelihood_batch(
     y_den = _batched_gl_nodes(den_lo, den_hi, _GL_NODES_50)  # (n, 50)
     gauss_den = _gaussian_pdf(y_den, host_z[:, None], host_z_error_eff[:, None])
 
+    # [PHYSICS] C7-core: the in-catalogue host-z kernel's population prior is the
+    # CATALOGUED-host intensity f_{k(g)}(z) * w_pop(z), not w_pop(z) alone — the
+    # discrete catalogue sum then reconstructs the population intensity
+    # (E[sum_g w_g rho_g] = lambda) and the two legs of the mixture partition the
+    # z-density (catalogue f*w_pop, completion (1-f)*w_pop). f enters the
+    # numerator AND Z_g (and hence D_g), so rho_g stays a unit-mass density in z;
+    # p_det stays OUT of the numerator (normalisation slot only).
+    # Theorem (T) + partition argument, GATE_PACKAGE_FINAL.md §1.2 (2026-08-04);
+    # structure: Gray et al. (2020) arXiv:1908.06050 Eq. (A.10); Turski et al.
+    # (2023) arXiv:2302.12037 Eq. (4)
+    f_host_den: npt.NDArray[np.float64] | None = None
+    host_pixels: npt.NDArray[np.int64] | None = None
+    zoa_rows: npt.NDArray[np.bool_] | None = None
+    if _use_volume_deconv and completeness_model is not None:
+        host_pixels = _host_pixels(completeness_model, host_phiS, host_qS)
+        f_host_den = _completeness_at_host_nodes(completeness_model, y_den, host_pixels, h)
+        # ZoA branch (B5): per-pixel all-zero window -> pre-C7 kernel for those
+        # hosts. Never an elementwise clamp (that installs a kink mid-window).
+        zoa_rows = ~np.any(f_host_den > 0.0, axis=1)
+        if bool(np.any(zoa_rows)):
+            f_host_den[zoa_rows, :] = 1.0
+            _warn_zoa_hostz_kernel_fallback(detection_index, int(np.count_nonzero(zoa_rows)))
+
     z_prior_norm = np.ones(n, dtype=np.float64)
     w_pop_den: npt.NDArray[np.float64] | None = None
     if _use_volume_deconv:
@@ -4229,6 +4379,8 @@ def single_host_likelihood_batch(
             np.asarray(comoving_volume_element(y_den_flat, h=h), dtype=np.float64)
             / (1.0 + y_den_flat)
         ).reshape(n, _HOST_QUAD_N)
+        if f_host_den is not None:
+            w_pop_den = w_pop_den * f_host_den
         z_prior_norm = _batched_gl_reduce(den_lo, den_hi, _GL_WEIGHTS_50, gauss_den * w_pop_den)
         z_prior_norm = np.where(z_prior_norm <= 0.0, 1.0, z_prior_norm)
 
@@ -4274,13 +4426,29 @@ def single_host_likelihood_batch(
     w_pop_num: npt.NDArray[np.float64] | None = None
     if _use_volume_deconv and not _use_generator_point:
         if _use_volume_trunc:
-            # Numerator nodes == denominator nodes -> reuse the denominator w_pop.
+            # Numerator nodes == denominator nodes -> reuse the denominator w_pop
+            # (which already carries f_{k(g)} on those very nodes).
             w_pop_num = w_pop_den
         else:
             w_pop_num_1d = np.asarray(comoving_volume_element(y_num_1d, h=h), dtype=np.float64) / (
                 1.0 + y_num_1d
             )
             w_pop_num = np.broadcast_to(w_pop_num_1d[None, :], (n, _HOST_QUAD_N))  # (n, 50)
+            # [PHYSICS] C7-core: same f_{k(g)}(z) factor as Z_g, at the numerator
+            # nodes (the event-level window, shared across hosts of this batch).
+            # Theorem (T) + partition argument, GATE_PACKAGE_FINAL.md §1.2
+            # (2026-08-04); structure: Gray et al. (2020) arXiv:1908.06050
+            # Eq. (A.10); Turski et al. (2023) arXiv:2302.12037 Eq. (4)
+            if host_pixels is not None:
+                f_host_num = _completeness_at_host_nodes(
+                    completeness_model,  # type: ignore[arg-type]
+                    y_num_nodes,
+                    host_pixels,
+                    h,
+                )
+                if zoa_rows is not None:
+                    f_host_num[zoa_rows, :] = 1.0
+                w_pop_num = w_pop_num * f_host_num
 
     def _z_prior_pdf_at(
         z_nodes: npt.NDArray[np.float64], w_pop: npt.NDArray[np.float64] | None
@@ -4485,6 +4653,21 @@ def single_host_likelihood_batch(
             np.asarray(comoving_volume_element(y_bh_flat, h=h), dtype=np.float64)
             / (1.0 + y_bh_flat)
         ).reshape(n, _BH_DENOM_QUAD_ORDER)
+        # [PHYSICS] C7-core: D_g integrates the SAME rho_g as the numerator, so
+        # the 64-node with-BH-mass denominator carries f_{k(g)}(z) too.
+        # Theorem (T) + partition argument, GATE_PACKAGE_FINAL.md §1.2
+        # (2026-08-04); structure: Gray et al. (2020) arXiv:1908.06050
+        # Eq. (A.10); Turski et al. (2023) arXiv:2302.12037 Eq. (4)
+        if host_pixels is not None:
+            f_host_bh = _completeness_at_host_nodes(
+                completeness_model,  # type: ignore[arg-type]
+                y_bh,
+                host_pixels,
+                h,
+            )
+            if zoa_rows is not None:
+                f_host_bh[zoa_rows, :] = 1.0
+            w_pop_bh = w_pop_bh * f_host_bh
     prior_bh = _z_prior_pdf_at(y_bh, w_pop_bh)
     denominator_with_bh_mass = _batched_gl_reduce(
         den_lo, den_hi, _GL_WEIGHTS_64, inner_m * prior_bh
@@ -4911,6 +5094,7 @@ def child_process_init(
     current_det_phi_arr: npt.NDArray[np.float64],
     current_det_theta_arr: npt.NDArray[np.float64],
     current_D_h_table: dict[float, float] | None = None,
+    current_completeness: CompletenessModel | None = None,
 ) -> None:
     global redshift_upper_integration_limit
     global redshift_lower_integration_limit
@@ -4923,6 +5107,7 @@ def child_process_init(
     global sigma2_cond_arr, proj_arr
     global det_d_L_arr, det_d_L_unc_arr, det_M_arr, det_phi_arr, det_theta_arr
     global D_h_table
+    global completeness_model
 
     redshift_upper_integration_limit = redshift_upper_limit
     redshift_lower_integration_limit = redshift_lower_limit
@@ -4945,6 +5130,10 @@ def child_process_init(
     det_theta_arr = current_det_theta_arr
     if current_D_h_table is not None:
         D_h_table = current_D_h_table
+    # C7-core: the per-pixel completeness the host-z kernel evaluates at the
+    # HOST's pixel. Threaded here (not passed per task) so the batched and the
+    # scalar kernel read the SAME object in every worker.
+    completeness_model = current_completeness
 
 
 def _get_closest_possible_host(
