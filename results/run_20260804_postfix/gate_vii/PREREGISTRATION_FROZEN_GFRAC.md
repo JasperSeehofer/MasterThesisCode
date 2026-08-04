@@ -125,3 +125,36 @@ is 0.01, at 0.66 it is 0.005. The CONFIRM band below therefore admits
 
 Verdict to be appended below by the session that reads out the run — after this file
 is committed, no edits above this line.
+
+---
+
+## VERDICT — appended 2026-08-05 by the readout session
+
+**CONFIRM, both venues.** Jobs 6148505 (iiib) / 6148507 (joint_r1), 41/41 tasks
+COMPLETED each, zero tracebacks; `freeze_g_frac_ref_h: 0.73` verified in
+`run_metadata_*.json` of both runs; code `main@930a9484` + `c917ed87`
+(EXTRA_EVAL_ARGS passthrough).
+
+| read | pre-registered | measured | status |
+|---|---|---|---|
+| 2D MAP iiib | CONFIRM band [0.63, 0.665] | **0.660** | in band |
+| 2D MAP joint_r1 | CONFIRM band [0.63, 0.665] | **0.640** | in band |
+| live vs CSV proxy | — | 0 grid steps difference, both venues | exact |
+| secondary (i) 1D bit-identity | required | `combined_no_bh`, `L_cat_no_bh` max abs diff 0.0, 0/65108 cells differ, both venues | PASS |
+| secondary (ii) g_frac h-constancy | required | 0/1588 events violate; frozen values equal the unfrozen run's h=0.73 values to 0.0 | PASS |
+| secondary (selection objects) | required | `w_tilde_G`, `r_Malm`, `alpha_G_phi`, `D_tilde_phi` bit-identical, both venues | PASS |
+
+Context: Δln(argmax → h=0.80) = 12.1 (iiib) / 13.7 (joint) nats; full-grid frozen
+posterior mean 0.6731 ± 0.0348 (iiib) / 0.6588 ± 0.0308 (joint).
+
+**Meaning per the CONFIRM branch above:** g_frac(h) — the completion leg's
+population-mass-density factor — is the carrier of the residual 2D high-h
+displacement. No compensating renormalisation exists in the live estimator (live ==
+proxy exactly). The question is now a derivation question — is g(h)'s h-slope
+correct physics? — and routes through `/physics-change` per the scope guard.
+Converges with BIAS_HISTORY_LEDGER "residual is entirely B_num" (§1 row 87-referent)
+and possibly with D1 (same selection machinery feeds B_num_wbh).
+
+Evidence: `results/run_20260804_frozeng/readout.{py,json}`; diagnostics CSVs and
+per-h posteriors retrieved under `results/run_20260804_frozeng/` (large data
+uncommitted, regenerable from the cluster run dirs).
