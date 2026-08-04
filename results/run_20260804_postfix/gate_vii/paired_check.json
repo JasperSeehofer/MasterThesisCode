@@ -1,0 +1,17 @@
+{
+  "intersection_size": 218,
+  "n_events_with_delta_joint_near_zero": 0,
+  "n_events_in_ratio_statistics": 218,
+  "median_d_e": -0.59202312204126,
+  "mean_d_e": -0.5846393101417,
+  "std_d_e": 0.48372915153791424,
+  "median_r_e": 2.08250130966582,
+  "p16_r_e": 1.3136775468650699,
+  "p84_r_e": 3.2971508019982467,
+  "spearman_correlation": 0.5280658887140499,
+  "spearman_p_value": 4.7102738008008745e-17,
+  "fraction_r_e_within_0_05": 0.013761467889908258,
+  "fraction_r_e_within_0_20": 0.05963302752293578,
+  "aggregate_mean_delta_iiib": -1.1015968640325031,
+  "aggregate_mean_delta_joint": -0.5169575538908032
+}
