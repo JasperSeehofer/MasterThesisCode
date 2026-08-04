@@ -23,6 +23,12 @@
 #     truncation study), passed through as --max_redshift. Unset/empty means
 #     the pipeline's built-in default (1.5, a no-op for the current
 #     population) -- byte-identical to before this variable existed.
+#   EXTRA_EVAL_ARGS -- free-form extra CLI args appended verbatim to the
+#     python invocation (word-split, no shell quoting applied). Unset/empty
+#     is byte-identical to before this variable existed. For flags with
+#     dedicated env passthroughs above, prefer those; EXTRA_EVAL_ARGS is the
+#     escape hatch for one-off / instrumentation flags not yet promoted to a
+#     named variable (e.g. --freeze_g_frac_ref_h 0.73).
 #
 # Note: --output and --error are NOT set here; submit_pipeline.sh passes them
 # via command line so that shell variables are expanded correctly.
@@ -180,6 +186,13 @@ fi
 # kernel): unset/empty keeps the CLI default ("auto" bundling).
 if [[ -n "${HOST_MASS_KERNEL:-}" ]]; then
     EXTRA_ARGS+=(--host_mass_kernel "$HOST_MASS_KERNEL")
+fi
+# Optional EXTRA_EVAL_ARGS passthrough: free-form extra CLI args, word-split
+# and appended verbatim. Unset/empty => byte-identical to before this
+# variable existed.
+if [[ -n "${EXTRA_EVAL_ARGS:-}" ]]; then
+    read -ra _EXTRA_EVAL_ARGS_WORDS <<< "$EXTRA_EVAL_ARGS"
+    EXTRA_ARGS+=("${_EXTRA_EVAL_ARGS_WORDS[@]}")
 fi
 
 # P_det grid resolution: explicit flags for reproducibility (Phase 33).
