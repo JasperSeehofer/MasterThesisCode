@@ -279,6 +279,22 @@ class Arguments:
         val: float | None = self._parsed_arguments.freeze_g_frac_ref_h
         return val
 
+    @property
+    def selection_in_completion_numerator(self) -> str:
+        """N-2 selection-in-numerator counterfactual cell (INSTRUMENTATION).
+
+        ``"off"`` (default) is the production path and is BYTE-IDENTICAL to
+        pre-flag behaviour. ``"1d"`` multiplies the **1D** completion-leg
+        z-integrand by the phi-marginal survival ``S_bar_phi(z;h)`` — the same
+        table (and the same ``np.interp`` accessor) the ``D~^phi``
+        normalisation already uses — leaving the 2D channel, both catalogue
+        legs and the whole selection stack untouched. Diagnostic only
+        (N-2 counterfactual); NOT a physics change and never a production
+        posterior.
+        """
+        val: str = self._parsed_arguments.selection_in_completion_numerator
+        return val
+
     @staticmethod
     def create(sys_args: list[str] = sys.argv[1:]) -> "Arguments":
         parsed_arguments = _parse_arguments(sys_args)
@@ -741,6 +757,30 @@ def _parse_arguments(arguments: list[str]) -> argparse.Namespace:
             "and never a production posterior. See "
             "results/run_20260804_postfix/gate_vii/"
             "PREREGISTRATION_FROZEN_GFRAC.md."
+        ),
+    )
+    parser.add_argument(
+        "--selection_in_completion_numerator",
+        type=str,
+        choices=["off", "1d"],
+        default="off",
+        help=(
+            "INSTRUMENTATION (default 'off' = byte-identical production path): "
+            "the N-2 selection-in-numerator counterfactual. Under '1d' the 1D "
+            "completion-leg z-integrand is multiplied by the phi-marginal "
+            "survival S_bar_phi(z;h) INSIDE the quadrature, i.e. B_num = "
+            "INTEGRAL (1-f_k) p_gw dVc/(1+z) S_bar_phi(z;h) dz — the SAME "
+            "table and the SAME np.interp accessor the D~^phi normalisation "
+            "uses (precompute_phi_marginal_survival). The 2D (with-BH-mass) "
+            "leg, both catalogue legs, w~_G, r_Malm, beta^phi and D~^phi are "
+            "untouched; the D~^phi denominator deliberately stays the "
+            "PRODUCTION object so the run is a pure numerator contrast. The "
+            "'both' cell of the derivation draft is DELETED: measurement M2 "
+            "found the 2D arm inert at |Sum| <= 7.2 nats over the grid, 200x "
+            "under the 20 nats/h tolerance. Diagnostic counterfactual only -- "
+            "NOT a physics change and never a production posterior. Requires "
+            "--normalization_mode absolute_marginal. See "
+            "results/run_20260804_postfix/gate_vii/PREREGISTRATION_N2_SEL1D.md."
         ),
     )
     parsed_arguments: argparse.Namespace = parser.parse_args(arguments)

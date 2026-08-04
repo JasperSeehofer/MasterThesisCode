@@ -2625,6 +2625,9 @@ class BayesianStatistics:
         # INSTRUMENTATION (default OFF): reference h for the frozen-g_frac
         # counterfactual. None => the production path, byte-identical.
         self._freeze_g_frac_ref_h: float | None = None
+        # INSTRUMENTATION (default OFF): N-2 selection-in-numerator
+        # counterfactual cell. "off" => the production path, byte-identical.
+        self._selection_in_completion_numerator: str = "off"
 
     def evaluate(
         self,
@@ -2666,6 +2669,12 @@ class BayesianStatistics:
         # g_ref = B_num_wbh(h_ref)/B_num(h_ref) — see p_Di. Not a physics
         # change; the 1D channel and both catalogue legs are untouched.
         freeze_g_frac_ref_h: float | None = None,
+        # INSTRUMENTATION (default "off" = OFF, byte-identical): the N-2
+        # selection-in-numerator counterfactual. "1d" multiplies the 1D
+        # completion-leg z-integrand by S_bar_phi(z;h) inside the quadrature
+        # (the same table D~^phi uses); the 2D leg and the whole selection
+        # stack are untouched. Not a physics change.
+        selection_in_completion_numerator: str = "off",
     ) -> None:
         # h-grid fusion (opt-in): when h_values is given it supersedes h_value
         # and ALL h-invariant setup — catalogue/BallTree (passed in), injection
@@ -2691,6 +2700,28 @@ class BayesianStatistics:
                 "B_num_wbh(h). This run is a COUNTERFACTUAL, not a production "
                 "posterior.",
                 self._freeze_g_frac_ref_h,
+            )
+        _sel_cell = str(selection_in_completion_numerator)
+        if _sel_cell not in ("off", "1d"):
+            raise ValueError(
+                "selection_in_completion_numerator must be 'off' or '1d', "
+                f"got {selection_in_completion_numerator!r}"
+            )
+        self._selection_in_completion_numerator = _sel_cell
+        if _sel_cell != "off":
+            if normalization_mode != "absolute_marginal":
+                raise ValueError(
+                    "selection_in_completion_numerator='1d' requires "
+                    "normalization_mode='absolute_marginal' (the S_bar_phi table it "
+                    f"reuses is only built there); got {normalization_mode!r}"
+                )
+            _LOGGER.warning(
+                "INSTRUMENTATION ACTIVE: --selection_in_completion_numerator=%s — the "
+                "1D completion numerator carries S_bar_phi(z;h) inside the "
+                "z-quadrature. The 2D leg, both catalogue legs and the D~^phi "
+                "denominator are the production objects. This run is a "
+                "COUNTERFACTUAL, not a production posterior.",
+                _sel_cell,
             )
         # G4: deterministic seed for the with-BH-mass MC denominator (threaded to
         # single_host_likelihood workers; per-call streams derived per host).
@@ -3303,6 +3334,11 @@ class BayesianStatistics:
         self._beta_G_phi_table = _beta_G_phi_table
         self._beta_Gbar_phi_table = _beta_Gbar_phi_table
         self._global_cat_selection_phi = _global_cat_selection_phi
+        # The S_bar_phi(z;h) table itself (h -> (z_grid, S_bar_phi)). Read by
+        # the N-2 counterfactual in p_Di through the SAME np.interp accessor
+        # precompute_global_catalog_selection uses for Sigma^phi — one object,
+        # one interpolation, never a re-typed copy.
+        self._phi_survival_table = _phi_survival_table
         self._proj_d_L_to_M = _proj_d_L_to_M_arr
         self._sigma_cond_M = _sigma_cond_M_arr
         self._excluded_mask = _excluded_mask
@@ -4095,6 +4131,37 @@ class BayesianStatistics:
                 )
                 return (1.0 - f_z) * p_gw * dVc / (1.0 + z)
 
+            # INSTRUMENTATION ONLY (N-2 counterfactual, --selection_in_completion
+            # _numerator 1d; default "off" never constructs or calls this). The
+            # 1D channel discards M_z^obs, so under a latent-thresholded
+            # detection model the MFG numerator's P(det|theta) survives the
+            # z-quadrature as the phi-marginal survival S_bar_phi(z;h):
+            #     B_num^{1d} = INTEGRAL (1-f_k) p_gw dVc/(1+z) S_bar_phi(z;h) dz
+            # (derivation draft N2_SELECTION_NUMERATOR_DERIVATION_20260805 (T3')).
+            # S_bar_phi is READ, never rebuilt: the same table
+            # precompute_phi_marginal_survival produced for beta^phi/D~^phi, via
+            # the same np.interp accessor precompute_global_catalog_selection
+            # uses for Sigma^phi. Outside the table's [1e-6, z_max(h)] domain
+            # np.interp clamps to the endpoints, matching that accessor exactly.
+            _sel_1d = getattr(self, "_selection_in_completion_numerator", "off") == "1d"
+
+            def completion_numerator_integrand_sel_1d(
+                z: npt.NDArray[np.float64],
+                h_eval: float,
+            ) -> npt.NDArray[np.float64]:
+                base = completion_numerator_integrand(z, h_eval)
+                _table = getattr(self, "_phi_survival_table", {})
+                if h_eval not in _table:
+                    raise ValueError(
+                        "selection_in_completion_numerator='1d': no S_bar_phi table "
+                        f"entry for h={h_eval!r} (tabulated: {sorted(_table)!r})"
+                    )
+                _z_phi_grid, _s_phi_grid = _table[h_eval]
+                s_bar_phi: npt.NDArray[np.float64] = np.interp(
+                    np.asarray(z, dtype=np.float64), _z_phi_grid, _s_phi_grid
+                )
+                return base * s_bar_phi
+
             # [PHYSICS] (N8) the 2D completion leg's own numerator
             # (GATE_PACKAGE_FINAL.md §2.2, FIXB_PATHA_PACKAGE.md §3.2):
             #     B_num_wbh = INTEGRAL (1-f_k) p_gw dVc/(1+z) g_i(z;h) dz
@@ -4183,14 +4250,27 @@ class BayesianStatistics:
                     # inverted [z_lower, z_upper] interval (which would return a
                     # negative fixed_quad result, not 0).
                     return 0.0, 0.0
-                b_num = float(
-                    fixed_quad(
-                        lambda z: completion_numerator_integrand(z, h_eval),
-                        z_lower,
-                        z_upper,
-                        n=FIXED_QUAD_N,
-                    )[0]
-                )
+                if _sel_1d:
+                    # INSTRUMENTATION branch (N-2 '1d' cell). Never taken on the
+                    # default path — the `else` below is the verbatim production
+                    # expression, unreordered.
+                    b_num = float(
+                        fixed_quad(
+                            lambda z: completion_numerator_integrand_sel_1d(z, h_eval),
+                            z_lower,
+                            z_upper,
+                            n=FIXED_QUAD_N,
+                        )[0]
+                    )
+                else:
+                    b_num = float(
+                        fixed_quad(
+                            lambda z: completion_numerator_integrand(z, h_eval),
+                            z_lower,
+                            z_upper,
+                            n=FIXED_QUAD_N,
+                        )[0]
+                    )
                 b_num_wbh = (
                     float(
                         fixed_quad(

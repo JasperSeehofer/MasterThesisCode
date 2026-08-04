@@ -201,6 +201,7 @@ def main() -> None:
             host_z_kernel=arguments.host_z_kernel,
             host_mass_kernel=arguments.host_mass_kernel,
             freeze_g_frac_ref_h=arguments.freeze_g_frac_ref_h,
+            selection_in_completion_numerator=arguments.selection_in_completion_numerator,
         )
 
     if arguments.snr_analysis:
@@ -1373,6 +1374,9 @@ def evaluate(
     host_mass_kernel: str = "auto",
     # INSTRUMENTATION (default OFF, byte-identical): frozen-g_frac counterfactual.
     freeze_g_frac_ref_h: float | None = None,
+    # INSTRUMENTATION (default OFF, byte-identical): N-2 selection-in-numerator
+    # counterfactual ("off" | "1d").
+    selection_in_completion_numerator: str = "off",
 ) -> None:
     from master_thesis_code.bayesian_inference.bayesian_statistics import BayesianStatistics
 
@@ -1397,6 +1401,7 @@ def evaluate(
         host_z_kernel=host_z_kernel,
         host_mass_kernel=host_mass_kernel,
         freeze_g_frac_ref_h=freeze_g_frac_ref_h,
+        selection_in_completion_numerator=selection_in_completion_numerator,
     )
 
 
