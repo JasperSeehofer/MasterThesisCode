@@ -7,6 +7,22 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added (research-cycle standing workflow)
+- **`/research-cycle` skill** (`.claude/skills/research-cycle/SKILL.md`) +
+  companion `docs/RESEARCH_CYCLE.md` — the standing 7-stage research cycle
+  mandated by `results/campaign51_20260728/RUNBOOK_NEXT_SESSION_7.md` §2
+  (claim intake → information forecast → pre-registration → measure/refute →
+  calibration gate → decision → chronicle), wiring each stage to the existing
+  battle-tested assets (claim files + provenance tags, two-layer exoneration
+  check incl. `BIAS_HISTORY_LEDGER.md` §2, the pre-registration skeleton,
+  RUNBOOK-6 Gates A–C + model/effort policy, `pp_coverage.py` + (ii-d)
+  absolute-count audit + forecast-consistent width, the stage-5 decision
+  mapping, gate-ledger and runbook-lineage chronicle duties). Known gaps
+  marked TO-BUILD: no Fisher-forecast asset; `pp_coverage.py` lacks the
+  2-channel/BH-mass + realistic host-observation extension. D1 (p0-window
+  mass band-pass) is the designated first full cycle. New trigger row added
+  to CLAUDE.md's Skill-Driven Workflows table.
+
 ### Fix B path (A) — one detection model in the mixture [PHYSICS]
 - **`S̄_φ` replaces the fitted `S_3D` in every path-(A) selection slot**
   (author-approved 2026-08-04;

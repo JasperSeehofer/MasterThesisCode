@@ -183,6 +183,7 @@ workflow gates.
 | User asks "what should I work on?" or "what bugs remain?" | `/known-bugs` | Show current bug status with priorities. |
 | User wants to run the simulation or evaluation pipeline | `/run-pipeline` | Use instead of ad-hoc bash commands. |
 | About to submit, monitor, or retrieve **anything on bwUniCluster** | `/cluster` | **Consult first.** Run `ssh bwunicluster 'bash -s' < cluster/preflight.sh` and require `VERDICT: READY ✓` before submitting. |
+| User opens a new investigation, mechanism hunt, or claim assessment | `/research-cycle` | **Consult first.** Start at stage 0; do not reinvent a runbook. |
 
 ### Physics-change trigger files
 
