@@ -193,10 +193,11 @@ remove the need for a `/physics-change` gate at all — runs first.
 enumerate the diagnostics artifacts already on disk — `event_likelihoods.csv`,
 gate readouts, run bookkeeping — and exhaust what they can already decide. They
 are re-readable at zero marginal cost. Precedent: the gate-(vii) g_frac(h)
-finding — ~83% of the dark 2D-vs-1D up-tilt, and the whole 2D MAP displacement
-(0.78/0.80 → 0.700 under frozen-g) — came out of an existing
-`event_likelihoods.csv` at zero marginal compute, and was findable *before* the
-post-fix runs that were commissioned to look for it.
+finding — the whole 2D MAP displacement collapses under frozen-g (0.780/0.800 →
+0.66/0.64, per-event freeze, single-instrument adjudicated;
+`adjudicate_g_frac.py`) — came out of an existing `event_likelihoods.csv` at
+zero marginal compute, and was findable *before* the post-fix runs that were
+commissioned to look for it.
 
 **[A2] Paired per-event read alongside every class-summed comparison.** Whenever
 a Σ-over-events statistic is compared across venues, configurations, or eras, a
@@ -262,7 +263,7 @@ mechanism hunt beyond D1, and it is the explicit gatekeeper for "trusted run".
    coverage verdict does not count, unless all three hold:
    (i) **genuinely 2-channel**, with the completion-leg mass factor **g recomputed
    per h** — never frozen across the h grid, never elided;
-   (ii) **run at production N** — the mechanism is N-coherent at 0.019 nats/event
+   (ii) **run at production N** — the mechanism is N-coherent (per-event sub-threshold; event-summed ḡ(h) Δln ≈ 0.048 grid-wide)
    and is invisible at small N;
    (iii) **multi-candidate host balls** — a one-candidate-per-event harness
    structurally cannot exercise the mechanism (cf. `BIAS_HISTORY_LEDGER.md` §1
@@ -377,6 +378,7 @@ without a row is a change that cannot be shown to have been earned.
 | date | amendment | stage | what changed | why (one clause) | evidence |
 |---|---|---|---|---|---|
 | 2026-08-04 | A0 — establishment | all | Cycle established: 7 stages wired to existing assets; `/research-cycle` made the entry point for every investigation | author mandate to stop reinventing a runbook per investigation | `results/campaign51_20260728/RUNBOOK_NEXT_SESSION_7.md` §2; commit `f8a01b04` |
-| 2026-08-04 | A1 — free re-reads before compute | 3 | New hard rule: exhaust re-reads of on-disk diagnostics artifacts before requesting ANY new compute | the g_frac(h) finding (~83% of the dark 2D-vs-1D up-tilt; whole 2D MAP displacement 0.78/0.80 → 0.700 under frozen-g) came at zero marginal compute from an existing `event_likelihoods.csv`, and was findable before the post-fix runs | `results/run_20260804_postfix/gate_vii/gate_vii_readout.json`, `.../compute_gate_vii.py` |
+| 2026-08-04 | A1 — free re-reads before compute | 3 | New hard rule: exhaust re-reads of on-disk diagnostics artifacts before requesting ANY new compute | the g_frac(h) finding (2D MAP displacement collapses 0.780/0.800 → 0.66/0.64 under per-event frozen-g) came at zero marginal compute from an existing `event_likelihoods.csv`, and was findable before the post-fix runs | `results/run_20260804_postfix/gate_vii/gate_vii_readout.json`, `.../adjudicate_g_frac.py` |
 | 2026-08-04 | A2 — paired read with every class-summed comparison | 3 | New hard rule: any Σ-over-events statistic compared across venues/configs/eras requires a paired/stratified per-event read alongside the aggregate | gate (vii)'s aggregate tilts agreed across venues to 2.6% by pure coincidence — scatter diluting shared-event tilts ×0.469 vs 316 resurrected dead-2D-leg events tilting 3.01× steeper (81% of the headline) cancelled in the mean, and a D1-demotion conclusion built on the agreement had to be withdrawn | `results/run_20260804_postfix/gate_vii/paired_check.json`, `.../paired_check.py` |
-| 2026-08-04 | A3 — harness acceptance criteria | 4 | TO-BUILD `pp_coverage.py` extension now carries three acceptance criteria: 2-channel with g recomputed per h; production N; multi-candidate host balls | the residual 2D displacement is an event-independent per-h scalar (N-coherent, 0.019 nats/event) — exactly the class small-N, single-candidate SBC structurally cannot see | `results/run_20260804_postfix/gate_vii/gate_vii_readout.json`; `BIAS_HISTORY_LEDGER.md` §1 row 86 |
+| 2026-08-04 | A3 — harness acceptance criteria | 4 | TO-BUILD `pp_coverage.py` extension now carries three acceptance criteria: 2-channel with g recomputed per h; production N; multi-candidate host balls | the residual 2D displacement rides the completion-leg mass factor's h-slope (event-summed ḡ(h) Δln ≈ 0.048 grid-wide; per-event sub-threshold, ensemble-dominant) — exactly the N-coherent class small-N, single-candidate SBC structurally cannot see | `results/run_20260804_postfix/gate_vii/gate_vii_readout.json`; `BIAS_HISTORY_LEDGER.md` §1 row 86 |
+| 2026-08-04 | A4 — evidence correction on A1/A3 | 3, 4 | A1/A3 precedent numbers corrected after adjudication: g_frac is NOT a per-h near-scalar (1587 distinct per-event values at h=0.73, range 0.076–0.242); frozen-g 2D MAPs are 0.66/0.64 (not 0.700); event-summed ḡ(h) 0.1348→0.1413, bit-identical both venues | two subagents disagreed on the numbers; a deciding single-instrument run refuted the interpreter's near-scalar claim while STRENGTHENING the qualitative finding (larger collapse, overshoots below injected 0.73) | `results/run_20260804_postfix/gate_vii/adjudicate_g_frac.py`, `.../viz_data.json` |

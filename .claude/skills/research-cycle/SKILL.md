@@ -138,7 +138,7 @@ Author-gated. Present the verdict with its evidence and STOP.
   GLADE-like host model that stage 4 requires are **TO-BUILD**, and the build is
   not accepted unless it is [A3]: (i) genuinely 2-channel with the completion-leg
   mass factor **g recomputed per h**, never frozen or elided; (ii) run at
-  **production N** — the mechanism is N-coherent (0.019 nats/event) and invisible
+  **production N** — the mechanism is N-coherent (per-event sub-threshold, ~0.05 nats grid-wide in ḡ) and invisible
   at small N; (iii) **multi-candidate host balls** — a one-candidate-per-event
   harness structurally cannot exercise it (ledger row 86).
 - `/commission --research` is a **user-level** skill (`~/.claude/skills/commission/`),
