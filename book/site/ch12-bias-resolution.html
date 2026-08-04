@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<meta charset="utf-8" />
+<!--
+  Doctype + charset are deliberate: without the doctype browsers enter quirks
+  mode and KaTeX refuses to render. See ch11's identical note; _template.html
+  is frozen and omits both (filed R-ch07-3).
+
+  ch12 is NOT a discovery chapter in the ch00-ch11 arc. It is the book's
+  living bias-resolution record: hand-authored (no gen_ch12.py — the content
+  is a running narrative over results/ and docs/ markdown, not a data-driven
+  figure a generator would regenerate), updated in place as the investigation
+  moves. See "How this document evolves" below.
+-->
+<title>Ch. 12 — The Bias Resolution, a Live Thread | EMRI Dark Siren Book</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="description" content="The living record of the 2D-bias resolution thread: Fix A + Fix B landed, the residual survived post-fix, gate (vii) found a growing dark-leg tilt, and a pre-registered frozen-g evaluate confirmed the completion-leg mass factor as the carrier. The derivation question is open." />
+<link rel="stylesheet" href="vendor/katex/katex.min.css" />
+<link rel="stylesheet" href="css/book.css" />
+
+<style>
+  /* Page-local only. css/book.css is FROZEN; nothing here restyles a shared
+     class — these are elements this chapter introduces. */
+  .ch12-status {
+    display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.5rem 0.9rem;
+    margin: 0 0 0.3rem;
+  }
+  .ch12-status .badge { font-size: 0.72rem; }
+  .ch12-status .ch12-updated { font-size: 0.82rem; color: var(--muted); }
+  .ch12-timeline { list-style: none; margin: 0.6rem 0; padding: 0; }
+  .ch12-timeline li {
+    position: relative; padding: 0 0 0.85rem 1.3rem; border-left: 2px solid var(--border);
+    margin-left: 0.3rem; font-size: 0.92rem;
+  }
+  .ch12-timeline li:last-child { border-left-color: transparent; padding-bottom: 0; }
+  .ch12-timeline li::before {
+    content: ""; position: absolute; left: -0.4rem; top: 0.2rem; width: 0.7rem; height: 0.7rem;
+    border-radius: 50%; background: var(--paper); border: 2px solid var(--accent);
+  }
+  .ch12-timeline li.open::before { border-color: #D55E00; }
+  .ch12-timeline .ch12-tl-label { font-weight: 600; }
+  .ch12-timeline .ch12-tl-note { display: block; color: var(--muted); font-size: 0.84rem; margin-top: 0.1rem; }
+  .ch12-map-table { border-collapse: collapse; width: 100%; font-size: 0.88rem; margin: 0.6rem 0; }
+  .ch12-map-table th, .ch12-map-table td { border: 1px solid var(--border); padding: 0.3rem 0.55rem; text-align: right; }
+  .ch12-map-table th:first-child, .ch12-map-table td:first-child { text-align: left; }
+  .ch12-map-table thead th { background: var(--paper-raised); font-weight: 600; }
+  .ch12-map-table td.ch12-injected { color: var(--muted); }
+  .ch12-svg-wrap { margin: 0.7rem 0; }
+  .ch12-svg-wrap svg { max-width: 100%; height: auto; }
+  .ch12-svg-caption { font-size: 0.78rem; color: var(--muted); margin: 0.3rem 0 0; }
+  .ch12-counterfactual-note {
+    font-size: 0.82rem; color: var(--muted); border-left: 3px solid var(--prior);
+    padding: 0.15rem 0 0.15rem 0.6rem; margin: 0.4rem 0;
+  }
+</style>
+
+<div class="book-shell">
+  <header class="book-topbar">
+    <a class="brand" href="index.html">From Bayes&rsquo; Rule to H&#8320;
+      <small>an interactive discovery book</small>
+    </a>
+    <nav class="book-nav" data-nav aria-label="Chapters"><!-- built from js/manifest.js --></nav>
+    <button class="theme-toggle" data-theme-toggle type="button">☽ Dark</button>
+  </header>
+
+  <main class="book-content">
+    <h1>Chapter 12 &mdash; The Bias Resolution, a Live Thread</h1>
+    <p class="subtitle">This chapter does not end. It is the running record of the
+      investigation Chapter&nbsp;11 left open, updated in place as each research-cycle
+      stage lands &mdash; the honest state, kept honest past the night the book was built.</p>
+
+    <div class="ch12-status">
+      <span class="badge open">ACTIVE INVESTIGATION</span>
+      <span class="ch12-updated">Last updated 2026-08-05</span>
+    </div>
+    <div class="callout defect">
+      <span class="callout-label">Current state, one line</span>
+      The residual 2D displacement is carried by the completion-leg mass factor
+      g_frac(h) &mdash; confirmed by a pre-registered frozen-g evaluate; the derivation
+      question (correct physics vs defect) is open.
+    </div>
+
+    <!-- ===== Timeline ===== -->
+    <h2>1. The thread so far</h2>
+    <p>A compact timeline of the resolution thread. Every entry names its source; the
+       amber-ringed entries are open. Full detail is in the linked files &mdash; this
+       chapter summarizes, it does not replace them.</p>
+    <ol class="ch12-timeline">
+      <li><span class="ch12-tl-label">Campaign 51</span> &mdash; the realistic-venue
+        campaign that first surfaced the 2D bias.
+        <span class="ch12-tl-note">results/campaign51_20260728/</span></li>
+      <li><span class="ch12-tl-label">Cell&nbsp;B 2&times;2 (2026-07-31)</span> &mdash;
+        pre-registered control: the estimator configuration, not the collision C7
+        describes, owns +0.060 of the measured 2D +0.083 (72% of the 2D-only share).
+        <span class="ch12-tl-note">manifest.js BOOK_CANON.cellB; CELLB_READOUT_20260731.md</span></li>
+      <li><span class="ch12-tl-label">Fix&nbsp;A + Fix&nbsp;B path-A, landed
+        <code>main@658c428a</code></span> &mdash; Fix A: the C7-core host-z kernel
+        carries f_k&middot;w_pop. Fix B path-A: the S&#772;_&phi; mass-consistent
+        completion mixture. Both author-gated, both arithmetically verified correct.
+        <span class="ch12-tl-note">commits 0f923485 (Fix A), 658c428a (Fix B path-A);
+          GATE_PACKAGE_FINAL.md, FIXB_PATHA_PACKAGE.md</span></li>
+      <li><span class="ch12-tl-label">Post-fix evaluates (2026-08-04)</span> &mdash;
+        1D rails at 0.600 in both venues (the pre-registered ADVERSE branch &mdash;
+        1D's old ~0.74 centredness is now proven a contingent cancellation, not
+        physics); 2D lands 0.780 (idealized) / 0.800 (joint r1), against an injected
+        0.730. The residual +0.05&ndash;0.07 <strong>survives at the idealized
+        venue</strong> &mdash; exact host redshifts, no scatter &mdash; so it is owned
+        by something the two fixes did not touch.
+        <span class="ch12-tl-note">results/campaign51_20260728/RUNBOOK_NEXT_SESSION_7.md
+          &sect;0</span></li>
+      <li class="open"><span class="ch12-tl-label">Gate (vii) proper read</span>
+        &mdash; the post-fix dark catalogue-leg channel tilt
+        (&Sigma;<sub>dark</sub> &Delta;ln(L<sub>cat</sub><sup>2D</sup>/L<sub>cat</sub><sup>1D</sup>),
+        h=0.73&rarr;0.81, paired-survivor definition) grew to
+        <strong>&minus;604.8&nbsp;nats</strong> in the joint/observed venue (534 dark
+        survivors; idealized venue: &minus;241.7 nats, 219 survivors). Composition-dominated,
+        not a per-event tilt: the same paired-survivor check on the in-catalogue leg
+        moves by only +0.13 (joint) / &minus;3.8 (idealized) nats.
+        <span class="ch12-tl-note">results/run_20260804_postfix/gate_vii/gate_vii_readout.json,
+          paired_check.py</span></li>
+      <li class="open"><span class="ch12-tl-label">g_frac finding + adjudication</span>
+        &mdash; two agents disagreed on whether g_frac(h) is a near-scalar; the
+        adjudication script settled it: g_frac has 1587 distinct per-event values at
+        h=0.73 (not &le;6), and pinning each event's own h=0.73 value moves the 2D MAP
+        proxy 0.780&rarr;0.660 (idealized) / 0.800&rarr;0.640 (joint) &mdash; a larger
+        collapse than either agent first claimed, overshooting below the injected
+        0.730.
+        <span class="ch12-tl-note">results/run_20260804_postfix/gate_vii/adjudicate_g_frac.py
+          (docstring is the verdict of record)</span></li>
+      <li><span class="ch12-tl-label">Frozen-g evaluate &mdash; CONFIRM
+        (2026-08-05)</span> &mdash; the CSV proxy replayed <em>inside</em> the live
+        estimator (<code>--freeze_g_frac_ref_h 0.73</code>, code
+        <code>main@930a9484</code>+<code>c917ed87</code>). 2D MAP: <strong>0.660</strong>
+        (idealized) / <strong>0.640</strong> (joint) &mdash; both inside the
+        pre-registered CONFIRM band [0.63, 0.665]. Live == CSV proxy exactly: no
+        compensating renormalisation exists anywhere in the mixture. 1D bit-identical
+        to the unfrozen runs (0/65108 diagnostics cells differ, both venues).
+        <span class="ch12-tl-note">results/run_20260804_postfix/gate_vii/PREREGISTRATION_FROZEN_GFRAC.md
+          &mdash; verdict appended 2026-08-05</span></li>
+      <li class="open"><span class="ch12-tl-label">NOW OPEN &mdash; the g(h)
+        derivation question</span> &mdash; is the completion leg's mass-factor h-slope
+        correct physics, or is a normalisation missing from it? Routes through
+        <code>/physics-change</code> (derivation, dimensional analysis, limiting case,
+        literature reference, regression test, ledger row) &mdash; a measurement
+        answered <em>where</em>, not <em>whether</em> it is correct. D1 (the p0-window
+        mass band-pass) is queued as the first full run through the standing research
+        cycle, with the S_and re-weight instrument (s_G/s_D = 0.7305 &plusmn; 0.4%) as
+        the stage-3 measurement.
+        <span class="ch12-tl-note">docs/RESEARCH_CYCLE.md; RUNBOOK_NEXT_SESSION_7.md
+          &sect;1 item 2, &sect;2</span></li>
+    </ol>
+
+    <!-- ===== The frozen-g measurement in detail ===== -->
+    <h2>2. The frozen-g CONFIRM, in detail</h2>
+    <div class="voice-adjudicator">
+      <span class="voice-label">Adjudicated finding
+        <span class="badge finding">FINDING</span>
+        <span class="prov-chip">PREREGISTRATION_FROZEN_GFRAC.md, verdict 2026-08-05</span></span>
+      g_frac(h) &mdash; the completion leg's population-mass-density factor &mdash; is
+      the carrier of the residual 2D high-h displacement. Both pre-registered branches
+      (CONFIRM in [0.63, 0.665], both venues) were hit; the MIXED and REFUTE branches
+      were not.
+    </div>
+
+    <table class="ch12-map-table">
+      <thead>
+        <tr><th>venue</th><th>full (post-fix)</th><th>frozen-g (CONFIRM)</th><th>injected</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>2D idealized (iiib)</td><td>0.780</td><td>0.660</td><td class="ch12-injected">0.730</td></tr>
+        <tr><td>2D joint r1 (observed)</td><td>0.800</td><td>0.640</td><td class="ch12-injected">0.730</td></tr>
+        <tr><td>1D (both venues)</td><td>0.600 railed</td><td>0.600 (bit-identical)</td><td class="ch12-injected">0.730</td></tr>
+      </tbody>
+    </table>
+
+    <div class="ch12-svg-wrap">
+      <svg viewBox="0 0 400 210" role="img" aria-labelledby="ch12-svg-title ch12-svg-desc">
+        <title id="ch12-svg-title">2D MAP progression: full vs frozen-g vs injected</title>
+        <desc id="ch12-svg-desc">Bar chart. Idealized venue: full 0.780, frozen-g 0.660. Joint r1 venue: full 0.800, frozen-g 0.640. A dashed line marks the injected value 0.730 in both.</desc>
+        <!-- axis -->
+        <line x1="40" y1="180" x2="380" y2="180" stroke="var(--border)" stroke-width="1.5" />
+        <!-- gridlines + labels at h=0.60, 0.70, 0.80 -->
+        <line x1="40" y1="180" x2="380" y2="180" stroke="var(--border)" stroke-width="1" />
+        <line x1="40" y1="107.3" x2="380" y2="107.3" stroke="var(--border)" stroke-width="0.5" stroke-dasharray="2,3" />
+        <line x1="40" y1="34.5" x2="380" y2="34.5" stroke="var(--border)" stroke-width="0.5" stroke-dasharray="2,3" />
+        <text x="34" y="183" font-size="9" fill="var(--muted)" text-anchor="end">0.60</text>
+        <text x="34" y="110.3" font-size="9" fill="var(--muted)" text-anchor="end">0.70</text>
+        <text x="34" y="37.5" font-size="9" fill="var(--muted)" text-anchor="end">0.80</text>
+        <!-- injected reference line, h=0.73 -->
+        <line x1="40" y1="85.5" x2="380" y2="85.5" stroke="#D55E00" stroke-width="1.4" stroke-dasharray="5,4" />
+        <text x="384" y="88.5" font-size="9" fill="#D55E00">injected 0.730</text>
+        <!-- idealized group -->
+        <rect x="70" y="49.1" width="42" height="130.9" fill="var(--accent)" />
+        <text x="91" y="42" font-size="10" fill="var(--ink)" text-anchor="middle">0.780</text>
+        <rect x="122" y="136.4" width="42" height="43.6" fill="var(--accent)" opacity="0.45" />
+        <text x="143" y="129.4" font-size="10" fill="var(--ink)" text-anchor="middle">0.660</text>
+        <text x="117" y="198" font-size="10" fill="var(--muted)" text-anchor="middle">idealized</text>
+        <!-- joint r1 group -->
+        <rect x="230" y="34.5" width="42" height="145.5" fill="var(--planck)" />
+        <text x="251" y="27.5" font-size="10" fill="var(--ink)" text-anchor="middle">0.800</text>
+        <rect x="282" y="150.9" width="42" height="29.1" fill="var(--planck)" opacity="0.45" />
+        <text x="303" y="143.9" font-size="10" fill="var(--ink)" text-anchor="middle">0.640</text>
+        <text x="277" y="198" font-size="10" fill="var(--muted)" text-anchor="middle">joint r1</text>
+      </svg>
+      <p class="ch12-svg-caption">Solid bars: full post-fix 2D MAP. Faded bars: frozen-g
+        (CONFIRM) 2D MAP &mdash; a counterfactual diagnostic, not a result. Dashed line:
+        the injected value 0.730. Both frozen bars land inside the pre-registered
+        CONFIRM band [0.63, 0.665].</p>
+    </div>
+
+    <div class="ch12-counterfactual-note">
+      The frozen-g run is a counterfactual instrument, not a competing estimator
+      configuration: the estimator itself logs a WARNING when the flag is set, and
+      the pre-registration's scope guard states explicitly that neither run may be
+      quoted as a result. It answers the attribution question (<em>where</em> the
+      residual lives), not the physics question (<em>whether</em> g(h)'s h-slope is
+      correct). That is why it does not appear on this book's bias rail &mdash; the
+      rail tracks estimator configurations that were actually run for h, not
+      diagnostics.
+    </div>
+
+    <h2>3. Gate (vii): the dark-leg tilt is composition, not per-event</h2>
+    <p>Before the frozen-g run, gate (vii) asked a narrower question: does the
+      catalogue leg itself tilt between h=0.73 and h=0.81 in the post-fix runs? A
+      pairwise-survivor check (events with a defined catalogue likelihood at both
+      h-points, in both channels) found the dark-class tilt <strong>&minus;604.8
+      nats</strong> in the joint/observed venue (534 survivors) and <strong>&minus;241.7
+      nats</strong> in the idealized venue (219 survivors) &mdash; while the
+      in-catalogue leg barely moves (+0.13 / &minus;3.8 nats respectively, 73&ndash;75
+      survivors). The paired check confirmed this is <strong>composition-dominated</strong>:
+      the large numbers come from summing many dark events each shifting a little in
+      the same direction, not from a few outliers. This ruled out a narrow per-event
+      pathology as the driver and pointed at exactly the kind of systematic,
+      class-wide h-slope that g_frac(h) turned out to carry.</p>
+    <details class="gw-reader">
+      <summary>&#9656; For the GW reader</summary>
+      <p>Both runs consumed the same 41-h &times; 1588-event
+        <code>event_likelihoods.csv</code> diagnostics (7 s.f. path-A columns:
+        <code>w_G</code>, <code>w_tilde_G</code>, <code>alpha_G_phi</code>,
+        <code>r_Malm</code>, <code>D_tilde_phi</code>, <code>L_cat_no_bh</code>,
+        <code>L_cat_with_bh</code>, <code>B_num</code>, <code>B_num_wbh</code>,
+        <code>g_frac</code>, <code>L_comp</code>). "Survivor" = catalogue likelihood
+        strictly positive and finite at every one of the 41 grid points, in both
+        channels; a survivor set is computed independently per venue and per check
+        (fixed-all-41h vs pairwise-073-081-only definitions agree exactly in both
+        venues, which is itself a consistency check). Code sites:
+        <code>results/run_20260804_postfix/gate_vii/paired_check.py</code>,
+        <code>compute_gate_vii.py</code>.</p>
+    </details>
+
+    <h2>4. How this document evolves</h2>
+    <p>This chapter is the living bias-resolution record. It is not generated by
+      <code>book/generators/</code> &mdash; there is no <code>gen_ch12.py</code>, and
+      none is planned, because this page's content is a narrative synthesis of
+      dated markdown reports and pre-registration verdicts, not a reproducible
+      numeric figure a generator would rebuild from a CSV. Each future
+      research-cycle <strong>stage-6 chronicle</strong> (the "ledger rows, claim-file
+      writebacks, next runbook" stage of <code>docs/RESEARCH_CYCLE.md</code>)
+      appends to this chapter: a new timeline entry, an updated status line, and
+      &mdash; if the g(h) derivation question resolves &mdash; a verdict section
+      naming whether the h-slope was correct physics, a defect fixed via
+      <code>/physics-change</code>, or something in between. The "last updated"
+      date above and the status badge are the two things that must never go stale;
+      everything else may be added but the measured numbers already stated above must
+      not be silently revised without a superseding measurement cited in place.</p>
+
+    <div class="callout defect">
+      <span class="callout-label">Trap &mdash; &ldquo;g_frac is confirmed, so the 2D
+        bias is fixed&rdquo;</span>
+      No production formula has moved. The frozen-g run is a diagnostic that
+      identifies <em>where</em> the residual lives; it deliberately does not, and
+      cannot, decide whether g(h)'s h-slope is correct physics that a different
+      convention would reconcile, or a defect that needs a derivation fix. Reading
+      CONFIRM as closure would treat a counterfactual as a result &mdash; exactly what
+      the pre-registration's scope guard forbids.
+    </div>
+
+    <div class="provenance-panel">
+      <h4>Provenance panel &mdash; every source cited in this chapter</h4>
+      <ul>
+        <li><span class="badge open">OPEN</span>
+          <code>results/campaign51_20260728/RUNBOOK_NEXT_SESSION_7.md</code> &mdash;
+          post-fix state, suspect ranking, task queue, research-cycle mandate</li>
+        <li><span class="badge finding">FINDING</span>
+          <code>results/run_20260804_postfix/gate_vii/PREREGISTRATION_FROZEN_GFRAC.md</code>
+          &mdash; the frozen-g pre-registration and its 2026-08-05 CONFIRM verdict</li>
+        <li><span class="badge finding">FINDING</span>
+          <code>results/run_20260804_postfix/gate_vii/adjudicate_g_frac.py</code>
+          &mdash; the g_frac scalar-vs-distribution adjudication (docstring is the
+          verdict of record)</li>
+        <li><span class="badge finding">FINDING</span>
+          <code>results/run_20260804_postfix/gate_vii/gate_vii_readout.json</code>,
+          <code>paired_check.py</code> &mdash; the dark/in-cat catalogue-leg tilt
+          numbers</li>
+        <li><span class="badge open">OPEN</span>
+          <code>docs/RESEARCH_CYCLE.md</code> &mdash; the standing seven-stage
+          investigation procedure; D1 designated its first full run</li>
+        <li><span class="badge ratified">RATIFIED</span> commits
+          <code>0f923485</code> (Fix A), <code>658c428a</code> (Fix B path-A) &mdash;
+          landed, author-gated, arithmetically verified</li>
+      </ul>
+    </div>
+
+    <p class="book-footer">
+      Hand-authored, not generated: this chapter has no <code>gen_ch12.py</code> (see
+      &sect;4 above). Sourced from the dated reports and pre-registration files listed
+      in the provenance panel, all under <code>results/</code> and <code>docs/</code>,
+      read-only. This page renders fully offline &mdash; Plotly and KaTeX are vendored
+      under <code>vendor/</code> (unused on this page: the one figure here is a static
+      inline SVG, per the no-new-binary-assets rule for this chapter).
+    </p>
+  </main>
+</div>
+
+<script src="js/manifest.js"></script>
+<script src="vendor/plotly/plotly.min.js"></script>
+<script src="vendor/katex/katex.min.js"></script>
+<script src="vendor/katex/auto-render.min.js"></script>
+<script src="js/book.js"></script>
+<script>
+  (function () {
+    // Bias Ledger Rail: this chapter adds no new estimator-configuration row
+    // (the frozen-g run is a counterfactual, deliberately excluded — see the
+    // ch12-counterfactual-note above). Carries forward ch11's rows via
+    // manifest.js BOOK_BIAS_ROWS merge; declares no page-local rows of its own.
+    Book.biasRail({
+      entries: [],
+      pips: [
+        { label: "g_frac(h) mass-factor slope — CONFIRMED carrier, derivation open", tone: "amber",
+          note: "PREREGISTRATION_FROZEN_GFRAC.md verdict 2026-08-05" },
+      ],
+    });
+  })();
+</script>
