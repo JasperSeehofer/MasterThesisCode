@@ -8,7 +8,8 @@
  *
  * status: "live" (rendered as a link) | "planned" (rendered greyed, no link).
  * All 13 chapters + the museum annex went live 2026-07-31 (integrator pass);
- * the legacy ch00-demo page was retired in the same pass.
+ * the legacy ch00-demo page was retired in the same pass. Ch. 12 (the living
+ * bias-resolution record) added 2026-08-05, hand-authored, no generator.
  */
 window.BOOK_CHAPTERS = [
   { file: "index.html",              short: "Contents",   title: "Contents",                                    status: "live" },
@@ -24,6 +25,7 @@ window.BOOK_CHAPTERS = [
   { file: "ch09-universe-factory.html", short: "Ch. 9",   title: "Building a Universe to Break Your Estimator", status: "live" },
   { file: "ch10-calibration.html",   short: "Ch. 10",     title: "Is It Calibrated?",                           status: "live" },
   { file: "ch11-honest-state.html",  short: "Ch. 11",     title: "The State of the Art, Honestly",              status: "live" },
+  { file: "ch12-bias-resolution.html", short: "Ch. 12",   title: "The Bias Resolution, a Live Thread",          status: "live" },
   { file: "museum.html",             short: "Museum",     title: "The Defect Museum",                           status: "live" },
 ];
 
