@@ -1343,7 +1343,11 @@ def compute_catalog_draw_weight_total(
 
     References:
         - results/lcat_h_dependence_20260725/DERIVATION_GENERATOR_CONSISTENT_NORM.md
-          §2.3 Eq. (4) (spec; W_cat anchor: 6.3477e8 over 9,060,017 pruned rows).
+          §2.3 Eq. (4) (spec). W_cat anchor of record (pin R5,
+          FIXB_PATHA_PACKAGE.md §5, 2026-08-04): **W_cat = 1.2493e9 over
+          20,834,171 pruned rows** of the campaign-#51 reduced catalogue. The
+          earlier "6.3477e8 over 9,060,017 pruned rows" anchor belonged to the
+          pre-#51 catalogue snapshot and is superseded (package erratum).
         - master_thesis_code/galaxy_catalogue/handler.py, draw_rate_weighted_hosts
           (the generator draw this normalizer replicates).
         - Babak et al. (2017), arXiv:1703.09722 — per-MBH rate ``R_eff``.
