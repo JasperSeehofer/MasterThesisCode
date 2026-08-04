@@ -264,6 +264,21 @@ class Arguments:
         val: float | None = self._parsed_arguments.max_redshift
         return val
 
+    @property
+    def freeze_g_frac_ref_h(self) -> float | None:
+        """Reference h for the frozen-g_frac counterfactual (INSTRUMENTATION).
+
+        None (default) is the production path and is BYTE-IDENTICAL to
+        pre-flag behaviour. When set to ``h_ref``, each event's 2D completion
+        numerator becomes ``B_num(h) * g_ref`` with
+        ``g_ref = B_num_wbh(h_ref)/B_num(h_ref)`` — the h-slope of the
+        completion-leg mass factor is removed while every other h-dependence
+        still moves. Diagnostic only (gate (vii) follow-up); NOT a physics
+        change and never a production posterior.
+        """
+        val: float | None = self._parsed_arguments.freeze_g_frac_ref_h
+        return val
+
     @staticmethod
     def create(sys_args: list[str] = sys.argv[1:]) -> "Arguments":
         parsed_arguments = _parse_arguments(sys_args)
@@ -706,6 +721,26 @@ def _parse_arguments(arguments: list[str]) -> argparse.Namespace:
             "candidate-host window, D(h)/beta_Gbar(h)/Sigma_global(h), and the "
             "B_num completion numerator at min(z_max(h), max_redshift) (issue #30 "
             "depth-truncation study)."
+        ),
+    )
+    parser.add_argument(
+        "--freeze_g_frac_ref_h",
+        type=float,
+        default=None,
+        help=(
+            "INSTRUMENTATION (default None = OFF, byte-identical production "
+            "path): frozen-g_frac counterfactual for the gate (vii) follow-up. "
+            "When set to h_ref, every event's 2D (with-BH-mass) completion "
+            "numerator becomes B_num(h) * g_ref with g_ref = "
+            "B_num_wbh(h_ref)/B_num(h_ref) computed by the SAME quadrature at "
+            "the reference h. Removes the h-slope of the completion-leg mass "
+            "factor while the catalogue legs, w~_G, B_num itself and the whole "
+            "1D channel keep their h-dependence. The diagnostics CSV g_frac "
+            "column emits the value actually used (h-constant per event when "
+            "frozen). Diagnostic counterfactual only -- NOT a physics change "
+            "and never a production posterior. See "
+            "results/run_20260804_postfix/gate_vii/"
+            "PREREGISTRATION_FROZEN_GFRAC.md."
         ),
     )
     parsed_arguments: argparse.Namespace = parser.parse_args(arguments)

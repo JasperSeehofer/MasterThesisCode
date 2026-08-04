@@ -2622,6 +2622,9 @@ class BayesianStatistics:
         self.catalog_only: bool = False
         self._diagnostic_rows: list[dict[str, object]] = []
         self._V_f_table: dict[float, float] = {}
+        # INSTRUMENTATION (default OFF): reference h for the frozen-g_frac
+        # counterfactual. None => the production path, byte-identical.
+        self._freeze_g_frac_ref_h: float | None = None
 
     def evaluate(
         self,
@@ -2657,6 +2660,12 @@ class BayesianStatistics:
         # historical bundling (trunc_lognormal iff mass_trunc) — production
         # default path unchanged.
         host_mass_kernel: str = "auto",
+        # INSTRUMENTATION (default None = OFF, byte-identical): gate (vii)
+        # follow-up frozen-g_frac counterfactual. When set to h_ref, every
+        # event's 2D completion numerator becomes B_num(h) * g_ref with
+        # g_ref = B_num_wbh(h_ref)/B_num(h_ref) — see p_Di. Not a physics
+        # change; the 1D channel and both catalogue legs are untouched.
+        freeze_g_frac_ref_h: float | None = None,
     ) -> None:
         # h-grid fusion (opt-in): when h_values is given it supersedes h_value
         # and ALL h-invariant setup — catalogue/BallTree (passed in), injection
@@ -2672,6 +2681,17 @@ class BayesianStatistics:
         if not _h_list:
             raise ValueError("h_values must contain at least one value")
         self.catalog_only = catalog_only
+        self._freeze_g_frac_ref_h = (
+            float(freeze_g_frac_ref_h) if freeze_g_frac_ref_h is not None else None
+        )
+        if self._freeze_g_frac_ref_h is not None:
+            _LOGGER.warning(
+                "INSTRUMENTATION ACTIVE: --freeze_g_frac_ref_h=%.6g — the 2D "
+                "completion leg uses B_num(h)*g_frac(h_ref) instead of "
+                "B_num_wbh(h). This run is a COUNTERFACTUAL, not a production "
+                "posterior.",
+                self._freeze_g_frac_ref_h,
+            )
         # G4: deterministic seed for the with-BH-mass MC denominator (threaded to
         # single_host_likelihood workers; per-call streams derived per host).
         self._base_seed = int(base_seed) if base_seed is not None else 0
@@ -3881,6 +3901,7 @@ class BayesianStatistics:
             w_G = 1.0
             B_num = 0.0
             B_num_wbh = 0.0
+            g_frac_used = float("nan")
             L_comp = 0.0
             w_G_legacy = 1.0
             alpha_G_phi = float("nan")
@@ -4007,27 +4028,6 @@ class BayesianStatistics:
             # D(h) (Mandel-Farr-Gair 2019, arXiv:1809.02063). 1/(1+z) matches D(h),
             # beta_Gbar, and the event sampler (emri_rate.p_pop_unnormalized).
             integration_limit_sigma_multiplier = 4.0
-            z_upper = dist_to_redshift(
-                self.detection.d_L
-                + integration_limit_sigma_multiplier * self.detection.d_L_uncertainty,
-                h=self.h,
-            )
-            z_lower = dist_to_redshift(
-                self.detection.d_L
-                - integration_limit_sigma_multiplier * self.detection.d_L_uncertainty,
-                h=self.h,
-            )
-            z_lower = max(z_lower, 1e-6)  # avoid z=0 singularity in volume element
-            # Domain-matched to D(h): Eq. (32) in Gray et al. (2020), arXiv:1908.06050;
-            # analysis-depth cap per f29a5e7. B_num shares the SAME functional form as
-            # D(h)/beta_Gbar(h)/Sigma_global(h) (all `(1-f) p_det|p_GW dVc/(1+z)`), and
-            # all three are already capped at `min(z_max(h), max_redshift)`
-            # (z_max_cap, see precompute_completion_denominator and the
-            # candidate-host window cap in p_D). Without this cap, B_num integrated
-            # population density beyond the analysis depth while its own denominator
-            # D(h) did not -- mismatched domains in the same ratio p_i = B_num/D(h).
-            z_upper = min(z_upper, redshift_upper_limit)
-
             FIXED_QUAD_N = _HOST_QUAD_N
             _comp_slot = self._det_index_to_slot[detection_index]
             _comp_mean_3d = self._means_3d[_comp_slot]
@@ -4054,9 +4054,10 @@ class BayesianStatistics:
 
             def completion_numerator_integrand(
                 z: npt.NDArray[np.float64],
+                h_eval: float,
             ) -> npt.NDArray[np.float64]:
                 d_L: npt.NDArray[np.float64] = np.asarray(
-                    dist_vectorized(z, h=self.h), dtype=np.float64
+                    dist_vectorized(z, h=h_eval), dtype=np.float64
                 )  # Gpc
                 d_L_fraction = d_L / _comp_det_d_L  # dimensionless
                 # [PHYSICS] isotropic-sky-marginalised GW likelihood (see the precompute
@@ -4075,7 +4076,7 @@ class BayesianStatistics:
                     / (4.0 * np.pi)
                 )
                 dVc: npt.NDArray[np.float64] = np.atleast_1d(
-                    np.asarray(comoving_volume_element(z, h=self.h), dtype=np.float64)
+                    np.asarray(comoving_volume_element(z, h=h_eval), dtype=np.float64)
                 )
                 # Eq. (32) in Gray et al. (2020), arXiv:1908.06050, with the per-pixel
                 # incompleteness weight (1-f_{k(Omega_e)}(z)): GW likelihood × (1-f_k)
@@ -4086,7 +4087,7 @@ class BayesianStatistics:
                 # injected dark density at the event direction.
                 f_z: npt.NDArray[np.float64] = np.clip(
                     np.asarray(
-                        completeness.f_k(z, _event_pixel, self.h),
+                        completeness.f_k(z, _event_pixel, h_eval),
                         dtype=np.float64,
                     ),
                     0.0,
@@ -4116,10 +4117,11 @@ class BayesianStatistics:
 
             def completion_numerator_integrand_with_bh_mass(
                 z: npt.NDArray[np.float64],
+                h_eval: float,
             ) -> npt.NDArray[np.float64]:
-                base = completion_numerator_integrand(z)
+                base = completion_numerator_integrand(z, h_eval)
                 d_L_mass: npt.NDArray[np.float64] = np.asarray(
-                    dist_vectorized(z, h=self.h), dtype=np.float64
+                    dist_vectorized(z, h=h_eval), dtype=np.float64
                 )
                 # g_i is a density in x_M = M_z/M_z,det,i — the SAME measure as
                 # the 2D catalogue leg's mz_integral, so the two legs are
@@ -4144,30 +4146,94 @@ class BayesianStatistics:
                     )
                 return base * g_i
 
-            if z_lower >= z_upper:
-                # The event's entire 4-sigma window lies beyond the analysis depth
-                # (redshift_upper_limit): no population support survives the cap, so
-                # the completion numerator vanishes rather than integrating an
-                # inverted [z_lower, z_upper] interval (which would return a
-                # negative fixed_quad result, not 0).
-                B_num = 0.0
-                B_num_wbh = 0.0
-            else:
-                B_num = float(
-                    fixed_quad(completion_numerator_integrand, z_lower, z_upper, n=FIXED_QUAD_N)[0]
+            def _completion_numerators(h_eval: float) -> tuple[float, float]:
+                """Completion-leg numerators ``(B_num, B_num_wbh)`` at ``h_eval``.
+
+                Factored out of the inline body (2026-08-04) so the SAME
+                quadrature can be re-evaluated at a reference Hubble value for
+                the frozen-g_frac counterfactual (``--freeze_g_frac_ref_h``).
+                Called with ``self.h`` it reproduces the pre-factorisation
+                expressions verbatim — the default path is byte-identical.
+                """
+                z_upper = dist_to_redshift(
+                    self.detection.d_L
+                    + integration_limit_sigma_multiplier * self.detection.d_L_uncertainty,
+                    h=h_eval,
                 )
-                B_num_wbh = (
+                z_lower = dist_to_redshift(
+                    self.detection.d_L
+                    - integration_limit_sigma_multiplier * self.detection.d_L_uncertainty,
+                    h=h_eval,
+                )
+                z_lower = max(z_lower, 1e-6)  # avoid z=0 singularity in volume element
+                # Domain-matched to D(h): Eq. (32) in Gray et al. (2020), arXiv:1908.06050;
+                # analysis-depth cap per f29a5e7. B_num shares the SAME functional form as
+                # D(h)/beta_Gbar(h)/Sigma_global(h) (all `(1-f) p_det|p_GW dVc/(1+z)`), and
+                # all three are already capped at `min(z_max(h), max_redshift)`
+                # (z_max_cap, see precompute_completion_denominator and the
+                # candidate-host window cap in p_D). Without this cap, B_num integrated
+                # population density beyond the analysis depth while its own denominator
+                # D(h) did not -- mismatched domains in the same ratio p_i = B_num/D(h).
+                z_upper = min(z_upper, redshift_upper_limit)
+
+                if z_lower >= z_upper:
+                    # The event's entire 4-sigma window lies beyond the analysis depth
+                    # (redshift_upper_limit): no population support survives the cap, so
+                    # the completion numerator vanishes rather than integrating an
+                    # inverted [z_lower, z_upper] interval (which would return a
+                    # negative fixed_quad result, not 0).
+                    return 0.0, 0.0
+                b_num = float(
+                    fixed_quad(
+                        lambda z: completion_numerator_integrand(z, h_eval),
+                        z_lower,
+                        z_upper,
+                        n=FIXED_QUAD_N,
+                    )[0]
+                )
+                b_num_wbh = (
                     float(
                         fixed_quad(
-                            completion_numerator_integrand_with_bh_mass,
+                            lambda z: completion_numerator_integrand_with_bh_mass(z, h_eval),
                             z_lower,
                             z_upper,
                             n=FIXED_QUAD_N,
                         )[0]
                     )
                     if _use_g_inside
-                    else B_num
+                    else b_num
                 )
+                return b_num, b_num_wbh
+
+            B_num, B_num_wbh = _completion_numerators(self.h)
+            # g_frac = B_num_wbh/B_num is the completion leg's mass-consistency
+            # factor; unfrozen it carries its own h-dependence through the whole
+            # quadrature. The diagnostics column below records the value ACTUALLY
+            # used, so a frozen run is self-describing.
+            g_frac_used = (B_num_wbh / B_num) if B_num > 0.0 else float("nan")
+            # getattr: p_Di is exercised by tests that build the instance with
+            # ``object.__new__`` (no __init__), matching the surrounding style.
+            _freeze_ref_h: float | None = getattr(self, "_freeze_g_frac_ref_h", None)
+            if _freeze_ref_h is not None:
+                # INSTRUMENTATION ONLY (gate (vii) follow-up, default OFF — no
+                # computed value changes when the flag is None; nothing inside
+                # this branch runs on the production path). Pins each event's
+                # g_frac to its OWN value at the reference h, so the 2D
+                # completion leg becomes B_num(h) * g_ref(h_ref): the h-slope of
+                # the mass factor is removed while every other h-dependence
+                # (catalogue leg, w~_G, B_num itself, the 1D channel) still
+                # moves. Counterfactual diagnostic, not a physics change.
+                _b_ref, _b_wbh_ref = _completion_numerators(float(_freeze_ref_h))
+                if _b_ref > 0.0:
+                    g_frac_used = _b_wbh_ref / _b_ref
+                    B_num_wbh = B_num * g_frac_used
+                else:
+                    _LOGGER.warning(
+                        "Detection %s: frozen-g reference B_num(h_ref=%.6g) is zero — "
+                        "B_num_wbh left unfrozen for this event",
+                        detection_index,
+                        _freeze_ref_h,
+                    )
 
             # Grid coverage flag: warn if numerator 4-sigma window exceeds P_det grid
             d_L_upper = self.detection.d_L + 4.0 * self.detection.d_L_uncertainty
@@ -4312,7 +4378,7 @@ class BayesianStatistics:
                 "L_cat_with_bh": L_cat_with_bh_mass,
                 "B_num": B_num,
                 "B_num_wbh": B_num_wbh,
-                "g_frac": (B_num_wbh / B_num) if B_num > 0.0 else float("nan"),
+                "g_frac": g_frac_used,
                 "L_comp": L_comp,
                 "combined_no_bh": combined_without_bh_mass,
                 "combined_with_bh": combined_with_bh_mass,

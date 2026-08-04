@@ -200,6 +200,7 @@ def main() -> None:
             pdet_wbh_z_resolved=arguments.pdet_wbh_z_resolved,
             host_z_kernel=arguments.host_z_kernel,
             host_mass_kernel=arguments.host_mass_kernel,
+            freeze_g_frac_ref_h=arguments.freeze_g_frac_ref_h,
         )
 
     if arguments.snr_analysis:
@@ -1370,6 +1371,8 @@ def evaluate(
     pdet_wbh_z_resolved: bool = False,
     host_z_kernel: str = "auto",
     host_mass_kernel: str = "auto",
+    # INSTRUMENTATION (default OFF, byte-identical): frozen-g_frac counterfactual.
+    freeze_g_frac_ref_h: float | None = None,
 ) -> None:
     from master_thesis_code.bayesian_inference.bayesian_statistics import BayesianStatistics
 
@@ -1393,6 +1396,7 @@ def evaluate(
         pdet_wbh_z_resolved=pdet_wbh_z_resolved,
         host_z_kernel=host_z_kernel,
         host_mass_kernel=host_mass_kernel,
+        freeze_g_frac_ref_h=freeze_g_frac_ref_h,
     )
 
 
