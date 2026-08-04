@@ -7,6 +7,32 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added (bias-resolution instrumentation + calibration, 2026-08-04/05)
+- **`--freeze_g_frac_ref_h <float>`** (default off, byte-identical off-path; commit
+  `121f57d8`) — frozen-g counterfactual toggle for the gate (vii) follow-up; pins each
+  event's 2D completion-leg `g_frac` to its value at the reference h. Pre-registered
+  run CONFIRMED g_frac(h) as the residual 2D-displacement carrier
+  (`results/run_20260804_postfix/gate_vii/PREREGISTRATION_FROZEN_GFRAC.md`).
+- **`--selection_in_completion_numerator {off,1d}`** (default off, byte-identical
+  off-path; commit `07904540`) — N-2 counterfactual toggle: multiplies the 1D
+  completion-leg z-integrand by the existing path-A `S̄_φ(z;h)` table (the same object
+  `D̃^φ` uses); 2D channel structurally untouched. Pure numerator contrast; the
+  denominator question is author-gated.
+- **`cluster/evaluate.sbatch` `EXTRA_EVAL_ARGS` passthrough** (commit `c917ed87`) —
+  counterfactual flags reach the evaluate CLI without template edits.
+- **`master_thesis_code/validation/closed_loop_gfrac.py`** (+12 tests; commit
+  `77b524af`) — closed-loop two-channel calibration harness (G4b/§9): synthetic
+  universes drawn from the estimator's own φ (incl. the kappa_cap kink), w_pop, S_4D
+  and fractional cov_4d error model; g recomputed per h; production N; 200-seed
+  verdict MIXED (2D MAP mean +0.011, not-REFUTE — the production +0.05–0.07
+  displacement is NOT reproduced when the loop closes); 1D rails 200/200
+  (info-starved venue), removed 0/50 by the numerator-selection diagnostic.
+- Research-cycle artifacts: gate (vii) readout + paired venue check + g_frac
+  adjudication (`results/run_20260804_postfix/gate_vii/`), Gate-B refutation and
+  amended derivation package (`.planning/derivation-gfrac-20260805/`), claim-file
+  writebacks + `BIAS_HISTORY_LEDGER` rows 90–91, book ch12 living bias-resolution
+  chapter.
+
 ### Changed (book site — first reader-feedback batch, 2026-08-04)
 - **Persona switch renamed and made reversible** (`book/site/js/book.js`).
   The three modes are labelled by the depth they open — **Curious /
