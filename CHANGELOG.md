@@ -7,6 +7,56 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Fix B path (A) — one detection model in the mixture [PHYSICS]
+- **`S̄_φ` replaces the fitted `S_3D` in every path-(A) selection slot**
+  (author-approved 2026-08-04;
+  `.planning/derivation-2dbias-fix-20260803/FIXB_PATHA_PACKAGE.md` §3; in-repo
+  entry `docs/derivations/fixb_pathA_phi_marginal_selection.md`). The
+  `absolute_marginal` mixture mixed two detection models — the mass-blind
+  fitted `S_3D` in `D`/`β_Ḡ`/`β_G` against the mass-aware `S_4D` in `Σ⁴ᴰ` and
+  the 2D numerator — and the tower identity `S_3D = ∫φ S_4D dM` failed by
+  8.8–11.4 % (`r_φ(0.73) = 0.9119 ± 3e-7`), carrying 89–133 % of `r(h)`'s
+  h-slope. Now `S̄_φ(z;h) = ∫ φ(log₁₀M) S_4D(d_L(z;h), M(1+z)) dlog₁₀M` — one
+  contraction over the *production* pooled-2D with-BH object, with φ imported
+  from the generator (`dark_mass_log10_density_unnormalised`, never re-typed) —
+  supplies `β_G^φ`, `β_Ḡ^φ`, `Σᶲ` and `D^φ`; the mixture assembles from
+  `α_G^φ = β_G^φ·r_Malm`, `r_Malm = Σ⁴ᴰ/Σᶲ`, `D̃^φ = α_G^φ + β_Ḡ^φ` and
+  `w̃_G = α_G^φ/D̃^φ`. `r_φ ≡ 1` by construction; `r_Malm` is a pure Malmquist
+  ratio. Refs: MFG (2019) arXiv:1809.02063 Eqs. (5)–(7) A2; Turski et al.
+  (2023) arXiv:2302.12037 Eq. (8); Gray et al. (2020) arXiv:1908.06050
+  Eq. (A.19); Babak et al. (2017) arXiv:1703.09722 for φ.
+- **(N8) the 2D completion leg gains its own numerator** `B_num_wbh =
+  ∫(1−f_k) p_gw dVc/(1+z) · g_i(z;h) dz` with the population mass density
+  `g_i` **inside** the quadrature (`completion_mass_factor_g`; μ_cond/σ_cond
+  from the `(d_L_frac, M_z_frac)` 2×2 block of `cov_4d`). The 1D `B_num` stays
+  unmultiplied (gate (iv): `cov_obs = cov_4d[:3,:3]`). Catalogue masses are
+  evaluated at the **point** form (author decision D3; the smeared variant is
+  refuted — it double-counts the realization's noise).
+- **Scope guard:** the φ-convention tables are NEW and consumed by
+  `absolute_marginal` only — the legacy `D`/`β_Ḡ`/`β_G` tables and the
+  `generator_marginal` assembly are byte-identical (gate (iii-a), protecting
+  the issue-#51 idealized-1D pin `1e81ba22`).
+- **Pins:** operative weight `w_G = β_G/D = 0.1215039 → w̃_G = 0.070802`
+  (delivered convention, PRIMARY per decision D2; truth 0.061967 secondary with
+  a documented promotion path); `r_Malm(0.73) = 0.4415122`; anchors `β_G^φ =
+  1.533228e8`, `β_Ḡ^φ = 8.884038e8`, `D^φ = 1.041727e9` reproduced by the
+  shipped code to ≤ 4e-8. Retired: the mixed-catalogue `0.4304`/`0.069143`/
+  `z = −3.71`, the −80.30-nat 1D tilt, the void 2D `0.775 ± 0.010`
+  pre-registration. Regression pins committed *before* the change in
+  `test_fixb_pathA_regression_pins.py`; new gates in
+  `test_fixb_pathA_mixture.py`.
+- **Instrumentation:** diagnostics CSV emits `w_G_legacy` (renamed, not
+  overwritten), `w_tilde_G`, `alpha_G_phi`, `r_Malm`, `D_tilde_phi`,
+  `B_num_wbh`, `g_frac` at 7 s.f.; per-h `S_bar_phi`/`phi-convention legs`/
+  `path-A` log lines; T9 `Σ⁴ᴰ` mass-band shares; `g_i` support-exit warning.
+- **Gate (ii) is a MONITORED CONSISTENCY NUMBER, not evidence** (it ships on
+  correctness grounds). `rescore_class_share_joint_selection` scores it under
+  the joint selection `S_and` (ρ = s_G/s_Ḡ = 0.7305 ± 0.4 %, author decision
+  D1 remedy (ii) monitoring half): `0.0728 → 0.0542`, `z = −0.48`. Retiring the
+  stale `ParameterSpace.p0` bounds (remedy (i)) is deferred to next-campaign
+  prep — tracked in `TODO.md`, and the p0 window is now on the 2D-bias suspect
+  list. Fix A (the C7 host-z kernel) is a separate, independent commit.
+
 ### Research (plunge-window initial conditions + official mission duration) [PHYSICS]
 - **Plunge-window initial-condition convention** (author-ratified 2026-07-28;
   derivation `docs/derivations/plunge_window_initial_conditions.md`; audit

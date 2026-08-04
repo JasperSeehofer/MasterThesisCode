@@ -329,6 +329,42 @@ def _draw_dark_redshifts(
     return _inverse_cdf_sample(rng, z_grid, density, size)
 
 
+def dark_mass_log10_density_unnormalised(
+    mass_grid: npt.NDArray[np.float64],
+) -> npt.NDArray[np.float64]:
+    r"""The dark-host MBH mass density ``phi`` in ``log10 M``, unnormalised.
+
+    .. math::
+
+        \phi(\log_{10} M) \propto
+            \frac{\mathrm{d}n}{\mathrm{d}\log_{10}M}(M)\; R_\mathrm{eff}(M)
+
+    the per-dex MBH number density times the effective per-MBH EMRI rate. This
+    is the SINGLE definition of the dark-host mass measure in the codebase: it
+    is the density :func:`_draw_dark_masses` samples (so the injected dark
+    population is drawn from exactly this ``phi``) and the density the
+    inference contracts the with-BH survival against in the path-(A)
+    phi-marginal survival ``S_bar_phi`` and in the 2D completion mass factor
+    ``g_i`` (``bayesian_statistics``). It is deliberately NOT re-typed there —
+    FIXB_PATHA_PACKAGE.md §3.2 ("phi imported from
+    ``dark_siren_injection._draw_dark_masses``, never re-typed").
+
+    Args:
+        mass_grid: Source-frame MBH masses in solar masses.
+
+    Returns:
+        ``phi`` up to an overall constant, as a density in ``log10 M``
+        (per dex). Callers normalise on the band they use.
+
+    References:
+        Babak et al. (2017), arXiv:1703.09722, Eqs. (5), (23), (31)x(34) —
+            MBH mass function and per-MBH effective EMRI rate.
+    """
+    return np.asarray(mbh_mass_function(mass_grid), dtype=np.float64) * np.asarray(
+        R_eff_per_mbh(mass_grid), dtype=np.float64
+    )
+
+
 def _draw_dark_masses(
     rng: np.random.Generator,
     M_min: float,
@@ -345,13 +381,15 @@ def _draw_dark_masses(
     ``dn/dlog10 M``; this matches the per-MBH weight applied to catalog galaxies
     in :meth:`GalaxyCatalogueHandler.draw_rate_weighted_hosts`, making the dark
     and in-catalog mass marginals self-consistent.
+
+    The density itself lives in
+    :func:`dark_mass_log10_density_unnormalised` — the one definition of
+    ``phi`` shared with the inference side.
     """
     log_grid = np.linspace(np.log10(M_min), np.log10(M_max), n_grid, dtype=np.float64)
     mass_grid = 10.0**log_grid
     # Per-dex EMRI-rate weight (density in log10 M).
-    density = np.asarray(mbh_mass_function(mass_grid), dtype=np.float64) * np.asarray(
-        R_eff_per_mbh(mass_grid), dtype=np.float64
-    )
+    density = dark_mass_log10_density_unnormalised(mass_grid)
     log_samples = _inverse_cdf_sample(rng, log_grid, density, size)
     return np.asarray(10.0**log_samples, dtype=np.float64)
 

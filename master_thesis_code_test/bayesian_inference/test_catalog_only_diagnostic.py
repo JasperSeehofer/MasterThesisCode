@@ -192,13 +192,23 @@ class TestDiagnosticCsv:
             rows = list(reader)
 
         assert len(rows) == 2
+        # Schema after the path-(A) instrumentation (FIXB_PATHA_PACKAGE.md §5):
+        # the legacy w_G column is KEPT, w_G_legacy/w_tilde_G and the mixture
+        # ingredients are added. Missing keys in a row are written empty.
         assert set(rows[0].keys()) == {
             "event_idx",
             "h",
             "w_G",
+            "w_G_legacy",
+            "w_tilde_G",
+            "alpha_G_phi",
+            "r_Malm",
+            "D_tilde_phi",
             "L_cat_no_bh",
             "L_cat_with_bh",
             "B_num",
+            "B_num_wbh",
+            "g_frac",
             "L_comp",
             "combined_no_bh",
             "combined_with_bh",

@@ -10,6 +10,7 @@ Output is written to ``simulations/posteriors/`` as JSON.
 """
 
 import csv
+import functools
 import json
 import logging
 import math
@@ -43,6 +44,10 @@ from master_thesis_code.constants import (
     H,
 )
 from master_thesis_code.cosmological_model import LamCDMScenario, Model1CrossCheck
+from master_thesis_code.dark_siren_injection import (
+    _redshift_population_weight,
+    dark_mass_log10_density_unnormalised,
+)
 from master_thesis_code.datamodels.detection import (
     Detection,
     _sky_localization_uncertainty,
@@ -1423,7 +1428,11 @@ def compute_catalog_draw_weight_total(
 
     References:
         - results/lcat_h_dependence_20260725/DERIVATION_GENERATOR_CONSISTENT_NORM.md
-          §2.3 Eq. (4) (spec; W_cat anchor: 6.3477e8 over 9,060,017 pruned rows).
+          §2.3 Eq. (4) (spec). W_cat anchor of record (pin R5,
+          FIXB_PATHA_PACKAGE.md §5, 2026-08-04): **W_cat = 1.2493e9 over
+          20,834,171 pruned rows** of the campaign-#51 reduced catalogue. The
+          earlier "6.3477e8 over 9,060,017 pruned rows" anchor belonged to the
+          pre-#51 catalogue snapshot and is superseded (package erratum).
         - master_thesis_code/galaxy_catalogue/handler.py, draw_rate_weighted_hosts
           (the generator draw this normalizer replicates).
         - Babak et al. (2017), arXiv:1703.09722 — per-MBH rate ``R_eff``.
@@ -1656,6 +1665,485 @@ def _smeared_global_pdet_expectation(
     return out
 
 
+# ===========================================================================
+# Path (A): ONE detection model — the phi-marginal survival S_bar_phi
+# ===========================================================================
+# [PHYSICS] FIXB_PATHA_PACKAGE.md §3 (2026-08-04), joint C9+C8 mass-consistent
+# mixture. The shipped estimator carried the separately fitted mass-blind
+# survival S_3D in the completion/partition legs while the catalogue leg
+# carried the mass-aware S_4D at catalogue masses; nothing enforced the tower
+# identity S_3D = INTEGRAL phi S_4D dM and it failed by 8.8-11.4% (gate (ii-b)
+# r_phi(0.73) = 0.9119 +- 3e-7 on the production object), with 89-133% of the
+# h-slope of r(h) being that mismatch rather than Malmquist physics. Path (A)
+# replaces S_3D by the phi-marginal of the SAME S_4D in all three slots, so
+# the tower identity holds by construction (r_phi == 1) and the surviving
+# ratio r_Malm = Sigma^4D/Sigma^phi is a pure Malmquist ratio.
+#
+# References:
+#     Mandel, Farr & Gair (2019), arXiv:1809.02063, Eqs. (5)-(7) — selection
+#         alpha must use the SAME population and detection model as every
+#         numerator (assumption A2), applied to the hybrid population density
+#         of GATE_PACKAGE_FINAL.md Appendix A.
+#     Turski et al. (2023), arXiv:2302.12037, Eq. (8) — completion numerator
+#         and denominator carry the population mass density.
+#     Gray et al. (2020), arXiv:1908.06050, Eq. (A.19) — catalogue/completion
+#         partition structure.
+#     Babak et al. (2017), arXiv:1703.09722, Eqs. (5), (23), (31)x(34) — phi
+#         and R_eff.
+
+# Quadrature conventions of the measured anchors (FIXB_PATHA_PACKAGE.md §5;
+# instruments fixb_measurements/iid_pathA.py, fixb_x15_attribution/pathA_recomb.py):
+# 600 log10-M nodes on [1e4, 1e7] (the generator's own `_DEFAULT_M_GRID_POINTS`
+# convention) and 1500 z nodes on (1e-6, z_max(h)], trapezoid in both.
+_PHI_LOG10_M_GRID_POINTS = 600
+_S_PHI_Z_GRID_POINTS = 1500
+_S_PHI_Z_CHUNK = 250
+# Gauss-Hermite order of the g_i mass-kernel contraction (N8).
+_G_I_HERMITE_NODES = 64
+
+# [PHYSICS] D1 remedy (ii), monitoring half (author decision 2026-08-04):
+# the campaign-#51 detections were selected by SNR >= 20 AND p0 in
+# [10.002, 15.998] (the stale snapshot-era `ParameterSpace.p0` bound guard in
+# the 5-point-stencil derivative), a MASS band-pass that no inference selection
+# object models. Its class-conditional retention ratio under the joint
+# selection S_and = P(SNR >= 20 AND p0 in W | d_L, M_z) was measured on the
+# production pool at s_G/s_D = 0.7305 +- 0.4%
+# (fixb_x15_attribution/CAND_B_CRB_FILTER.md, `cand_b_joint_selection.py`).
+# Only this RATIO enters the class-share rescaling below, so the monitored
+# gate-(ii) consistency number can be scored under S_and without rebuilding
+# the selection objects (which would re-pin R10-R12; retiring the stale bounds
+# is deferred to the next campaign — see TODO.md).
+P0_WINDOW_CLASS_RETENTION_RATIO = 0.7305
+
+
+@functools.lru_cache(maxsize=4)
+def _phi_dark_mass_log10_grid(
+    n_grid: int = _PHI_LOG10_M_GRID_POINTS,
+) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64], npt.NDArray[np.float64], float]:
+    r"""The normalised dark-host mass density ``phi`` on its log10-M grid.
+
+    Returns ``(log10_M, M, phi, Z_phi)`` where ``phi`` is a normalised density
+    in ``log10 M`` on ``[M_SOURCE_FRAME_MIN, M_SOURCE_FRAME_MAX]``
+    (``INTEGRAL phi dlog10 M = 1`` by the same trapezoid rule the generator's
+    inverse-CDF sampler uses) and ``Z_phi`` is the normalisation that was
+    divided out. The unnormalised density comes from
+    :func:`~master_thesis_code.dark_siren_injection.dark_mass_log10_density_unnormalised`
+    — the density the injected dark hosts are drawn from (never re-typed here).
+
+    The arrays are returned read-only: they are cached module state.
+    """
+    log10_M = np.linspace(
+        math.log10(M_SOURCE_FRAME_MIN), math.log10(M_SOURCE_FRAME_MAX), n_grid, dtype=np.float64
+    )
+    M_grid = 10.0**log10_M
+    # Eqs. (5), (23), (31)x(34) in Babak et al. (2017), arXiv:1703.09722.
+    phi = dark_mass_log10_density_unnormalised(M_grid)
+    Z_phi = float(np.trapezoid(phi, log10_M))
+    if not (Z_phi > 0.0):
+        raise ValueError(f"dark-host mass density normalisation Z_phi = {Z_phi} is non-positive")
+    phi = phi / Z_phi
+    for arr in (log10_M, M_grid, phi):
+        arr.setflags(write=False)
+    return log10_M, M_grid, phi, Z_phi
+
+
+def dark_mass_density_per_mass(
+    M: npt.NDArray[np.float64],
+) -> npt.NDArray[np.float64]:
+    r"""``phi(M)``: the dark-host mass density per unit ``M`` (zero off-band).
+
+    .. math::
+
+        \phi(M) = \frac{1}{Z_\phi}\,
+            \frac{\mathrm{d}n/\mathrm{d}\log_{10}M \; R_\mathrm{eff}(M)}
+                 {M \ln 10},
+        \qquad \int_{10^4}^{10^7}\phi(M)\,\mathrm{d}M = 1 ,
+
+    the same ``phi`` as :func:`_phi_dark_mass_log10_grid` transformed from a
+    density in ``log10 M`` to a density in ``M`` (``dlog10 M = dM/(M ln 10)``),
+    with the IDENTICAL normalisation constant. Support is the Babak band; off
+    the band the density is exactly zero (a dark host outside the band does not
+    exist in the population, so ``g_i`` must not be extrapolated there).
+
+    Args:
+        M: Source-frame MBH masses in solar masses (any shape).
+
+    Returns:
+        ``phi(M)`` in ``M_sun^-1``, same shape as ``M``.
+    """
+    _, _, _, Z_phi = _phi_dark_mass_log10_grid()
+    M_arr = np.asarray(M, dtype=np.float64)
+    inside = (M_arr >= M_SOURCE_FRAME_MIN) & (M_arr <= M_SOURCE_FRAME_MAX)
+    safe = np.where(inside, M_arr, M_SOURCE_FRAME_MIN)
+    density = dark_mass_log10_density_unnormalised(safe) / (safe * math.log(10.0)) / Z_phi
+    return np.asarray(np.where(inside, density, 0.0), dtype=np.float64)
+
+
+def precompute_phi_marginal_survival(
+    h_values: list[float],
+    detection_probability_obj: SimulationDetectionProbability,
+    *,
+    z_max_cap: float | None = None,
+    n_z: int = _S_PHI_Z_GRID_POINTS,
+    n_log10_M: int = _PHI_LOG10_M_GRID_POINTS,
+) -> dict[float, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]]:
+    r"""Tabulate the phi-marginal survival ``S_bar_phi(z;h)`` (path A, slot 0).
+
+    [PHYSICS] FIXB_PATHA_PACKAGE.md §3.2 (2026-08-04):
+
+    .. math::
+
+        \bar S_\phi(z;h) \equiv \int \phi(\log_{10}M)\,
+            S_\mathrm{4D}\bigl(d_L(z;h),\, M(1+z)\bigr)\,\mathrm{d}\log_{10}M
+
+    ONE contraction over the **production** with-BH survival object — the
+    pooled-2D 40-bin ``S(d_L | M_z)`` grid (``pdet_wbh_z_resolved = False`` in
+    every run of record, cluster-verified 41/41), NOT the FIX-3 joint
+    ``z x M_z`` grid. It is the SAME object
+    :func:`precompute_global_catalog_selection` evaluates for ``Sigma^4D``, so
+    the tower identity ``S_bar_phi = INTEGRAL phi S_4D dM`` holds by
+    construction and ``r_phi == 1``. When the FIX-3 flag IS on, the
+    conditioning redshift rides along per query node via
+    :func:`_wbh_z_kwargs` (atomic-switch rule).
+
+    Sky: the with-BH object is isotropic by standing decision (the 4D
+    sky x M_z survival is statistics-starved; residual sky systematic bounded
+    at ``Sigma^3D(sky)/Sigma^3D(iso) = 1.000202``, gate (ii-e)), so
+    ``phi = theta = 0`` here exactly as in ``Sigma^4D``.
+
+    Args:
+        h_values: Hubble parameter values to tabulate.
+        detection_probability_obj: The detection-probability object whose
+            with-BH accessor defines ``S_4D``.
+        z_max_cap: Analysis-depth cap (issue #30), applied as in ``D(h)``.
+        n_z: Redshift nodes (trapezoid; anchor convention 1500).
+        n_log10_M: ``log10 M`` nodes (trapezoid; anchor convention 600).
+
+    Returns:
+        ``h -> (z_grid, S_bar_phi(z_grid))``; ``S_bar_phi`` is dimensionless
+        and in ``[0, 1]``.
+
+    References:
+        Mandel, Farr & Gair (2019), arXiv:1809.02063, Eqs. (5)-(7).
+        Babak et al. (2017), arXiv:1703.09722 — ``phi``.
+    """
+    log10_M, M_grid, phi, _ = _phi_dark_mass_log10_grid(n_log10_M)
+    table: dict[float, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]] = {}
+    for h in h_values:
+        dl_max = detection_probability_obj.get_dl_max(h)
+        z_max = dist_to_redshift(dl_max, h=h)
+        if z_max_cap is not None:
+            z_max = min(z_max, z_max_cap)
+        z_grid = np.linspace(1e-6, z_max, n_z, dtype=np.float64)
+        d_L_grid = np.asarray(dist_vectorized(z_grid, h=h), dtype=np.float64)  # Gpc
+        s_phi = np.empty(n_z, dtype=np.float64)
+        for start in range(0, n_z, _S_PHI_Z_CHUNK):
+            sl = slice(start, min(start + _S_PHI_Z_CHUNK, n_z))
+            z_chunk = z_grid[sl]
+            # (n_chunk, n_M) query block: the SAME (d_L, M_z) pair Sigma^4D uses,
+            # M_z = M (1 + z) with the one z per node (FIX-3 §7.1 one-z rule).
+            d_L_block = np.repeat(d_L_grid[sl][:, None], M_grid.size, axis=1)
+            M_z_block = M_grid[None, :] * (1.0 + z_chunk[:, None])
+            z_block = np.repeat(z_chunk[:, None], M_grid.size, axis=1)
+            zeros = np.zeros(d_L_block.size, dtype=np.float64)
+            s_4d = np.asarray(
+                detection_probability_obj.detection_probability_with_bh_mass_interpolated(
+                    d_L_block.ravel(),
+                    M_z_block.ravel(),
+                    zeros,
+                    zeros,
+                    h=h,
+                    **_wbh_z_kwargs(detection_probability_obj, z_block.ravel()),
+                ),
+                dtype=np.float64,
+            ).reshape(d_L_block.shape)
+            # S_bar_phi(z) = INTEGRAL phi(log10 M) S_4D dlog10 M (§3.2).
+            s_phi[sl] = np.trapezoid(s_4d * phi[None, :], log10_M, axis=1)
+        table[h] = (z_grid, s_phi)
+        _LOGGER.info(
+            "S_bar_phi(h=%.4f): z_max=%.4f, S_bar_phi(z_min)=%.7g, S_bar_phi(z_max)=%.7g, "
+            "max=%.7g [%d z x %d log10M nodes]",
+            h,
+            z_max,
+            float(s_phi[0]),
+            float(s_phi[-1]),
+            float(np.max(s_phi)),
+            n_z,
+            M_grid.size,
+        )
+    return table
+
+
+def precompute_phi_selection_integrals(
+    h_values: list[float],
+    phi_survival_table: dict[float, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]],
+    completeness: CompletenessModel,
+) -> tuple[dict[float, float], dict[float, float]]:
+    r"""The phi-convention partition legs ``beta_G^phi`` and ``beta_Gbar^phi``.
+
+    [PHYSICS] FIXB_PATHA_PACKAGE.md §3.2 (2026-08-04), slots 1 and 3:
+
+    .. math::
+
+        \beta_G^\phi(h)  &= \int \bar f(z;h)\,\bar S_\phi(z;h)\,p_\mathrm{pop}(z;h)\,\mathrm{d}z \\
+        \beta_{\bar G}^\phi(h) &= \int \bigl(1-\bar f(z;h)\bigr)\,\bar S_\phi(z;h)\,
+            p_\mathrm{pop}(z;h)\,\mathrm{d}z \\
+        D^\phi(h) &= \beta_G^\phi + \beta_{\bar G}^\phi
+
+    the exact analogues of the legacy ``beta_G``/``beta_Gbar``/``D`` with the
+    fitted mass-blind ``S_3D`` replaced by ``S_bar_phi``. ``p_pop`` is the
+    generator's own
+    :func:`~master_thesis_code.dark_siren_injection._redshift_population_weight`
+    (``dVc/dz/(1+z)``) and ``f_bar`` the same sky-marginalised completeness the
+    legacy ``beta_Gbar`` uses; the legs are ISOTROPIC because the with-BH
+    survival object they contract is (gate (ii-e) bounds the residual at
+    2e-4). These are NEW tables: the legacy ones stay untouched so the
+    ``generator_marginal`` assembly remains byte-identical (gate (iii-a)).
+
+    Args:
+        h_values: Hubble parameter values.
+        phi_survival_table: Output of :func:`precompute_phi_marginal_survival`.
+        completeness: Catalogue completeness ``f_bar(z, h)`` (Gray Eq. 9).
+
+    Returns:
+        ``(beta_G_phi_table, beta_Gbar_phi_table)``, both in the units of
+        ``p_pop dz`` — identical to the legacy ``D``/``beta_Gbar``.
+
+    References:
+        Gray et al. (2020), arXiv:1908.06050, Eqs. (29), (33), (A.19).
+        Mandel, Farr & Gair (2019), arXiv:1809.02063, Eqs. (5)-(7).
+    """
+    beta_G_phi: dict[float, float] = {}
+    beta_Gbar_phi: dict[float, float] = {}
+    for h in h_values:
+        z_grid, s_phi = phi_survival_table[h]
+        p_pop = np.asarray(_redshift_population_weight(z_grid, h), dtype=np.float64)
+        f_bar = np.clip(np.asarray(completeness.f_bar(z_grid, h), dtype=np.float64), 0.0, 1.0)
+        # Eq. (29) / Eq. (33) in Gray et al. (2020) with S_3D -> S_bar_phi.
+        beta_G_phi[h] = float(np.trapezoid(f_bar * s_phi * p_pop, z_grid))
+        beta_Gbar_phi[h] = float(np.trapezoid((1.0 - f_bar) * s_phi * p_pop, z_grid))
+        _LOGGER.info(
+            "phi-convention legs(h=%.4f): beta_G_phi=%.7g, beta_Gbar_phi=%.7g, D_phi=%.7g",
+            h,
+            beta_G_phi[h],
+            beta_Gbar_phi[h],
+            beta_G_phi[h] + beta_Gbar_phi[h],
+        )
+    return beta_G_phi, beta_Gbar_phi
+
+
+def completion_mass_factor_g(
+    z_nodes: npt.NDArray[np.float64],
+    d_L_fraction: npt.NDArray[np.float64],
+    det_M_z: float,
+    proj_d_L_to_M: float,
+    sigma_cond_M: float,
+    *,
+    n_hermite: int = _G_I_HERMITE_NODES,
+) -> npt.NDArray[np.float64]:
+    r"""The 2D completion leg's mass density ``g_i(z;h)`` at quadrature nodes.
+
+    [PHYSICS] (N8), GATE_PACKAGE_FINAL.md §2.2 / FIXB_PATHA_PACKAGE.md §3.2:
+
+    .. math::
+
+        g_i(z;h) = \int \mathrm{d}x_M\,
+            \mathcal{N}\bigl(x_M;\mu_\mathrm{cond}(z),\sigma_\mathrm{cond}\bigr)\,
+            \phi_x(x_M;z), \qquad
+        \phi_x(x_M;z) = \phi\Bigl(x_M \frac{M_{z,\mathrm{det},i}}{1+z}\Bigr)
+            \frac{M_{z,\mathrm{det},i}}{1+z}
+
+    with ``x_M = M_z/M_z,det,i`` the dimensionless mass coordinate the 2D
+    catalogue leg's ``mz_integral`` is a density in, ``mu_cond(z) = 1 +
+    proj (d_L_frac(z) - 1)`` and ``sigma_cond`` the Gaussian conditional of the
+    ``(d_L_frac, M_z_frac)`` 2x2 block of ``cov_4d`` (Bishop 2006 PRML Eqs.
+    2.81-2.82). ``g_i`` is a density in ``x_M`` — the SAME measure as
+    ``mz_integral`` — so the 2D catalogue and completion legs become addable
+    and the 2D measure invariance is preserved exactly (gate (i)).
+
+    The factor sits **inside** the completion quadrature (the ``z``-dependence
+    of ``mu_cond`` and of the ``1/(1+z)`` mass lift is not separable); the 1D
+    completion numerator stays unmultiplied — the 1D observable set is
+    ``cov_obs = cov_4d[:3, :3]``, its M-integral collapses, and inserting
+    ``g`` there would be an MFG double count (gate (iv)).
+
+    Args:
+        z_nodes: Quadrature redshift nodes, shape ``(k,)``.
+        d_L_fraction: ``d_L(z;h)/d_L,det,i`` at the same nodes, shape ``(k,)``.
+        det_M_z: The event's own measured detector-frame BH mass ``M_z,det,i``.
+        proj_d_L_to_M: ``cov_4d[3,2]/cov_4d[2,2]`` (the 2x2 block projection).
+        sigma_cond_M: ``sqrt(cov_4d[3,3] - cov_4d[3,2]^2/cov_4d[2,2])``.
+        n_hermite: Gauss-Hermite order (default 64, the measured convention).
+
+    Returns:
+        ``g_i`` at the nodes, shape ``(k,)``, in units of ``1/x_M``.
+
+    References:
+        Mandel, Farr & Gair (2019), arXiv:1809.02063, Eqs. (5)-(7).
+        Turski et al. (2023), arXiv:2302.12037, Eq. (8).
+        Gray et al. (2020), arXiv:1908.06050, Eq. (A.19).
+        Babak et al. (2017), arXiv:1703.09722 — ``phi``.
+    """
+    x_nodes, x_weights = roots_hermite(n_hermite)
+    # dM/dx_M at each z: the mass scale the dimensionless coordinate rides on.
+    scale = det_M_z / (1.0 + np.asarray(z_nodes, dtype=np.float64))  # (k,)
+    mu_cond = 1.0 + proj_d_L_to_M * (np.asarray(d_L_fraction, dtype=np.float64) - 1.0)  # (k,)
+    # Gauss-Hermite for E_{x~N(mu,sigma)}[phi_x]: nodes mu + sqrt(2) sigma t_j.
+    x_M = mu_cond[:, None] + math.sqrt(2.0) * sigma_cond_M * x_nodes[None, :]  # (k, n_h)
+    M_source = x_M * scale[:, None]
+    phi_x = dark_mass_density_per_mass(M_source) * scale[:, None]
+    return np.asarray((phi_x @ x_weights) / math.sqrt(math.pi), dtype=np.float64)
+
+
+def path_a_mixture_objects(
+    beta_G_phi: float,
+    beta_Gbar_phi: float,
+    sigma_phi: float,
+    sigma_4d: float,
+) -> dict[str, float]:
+    r"""Assemble the path-(A) mixture scalars from the four selection legs.
+
+    [PHYSICS] FIXB_PATHA_PACKAGE.md §3.2 (2026-08-04):
+
+    .. math::
+
+        \hat n_w^\phi &= \Sigma^\phi/\beta_G^\phi \\
+        r_\mathrm{Malm} &= \Sigma^\mathrm{4D}/\Sigma^\phi \\
+        \alpha_G^\phi &= \Sigma^\mathrm{4D}/\hat n_w^\phi
+            = \beta_G^\phi\, r_\mathrm{Malm} \\
+        \tilde D^\phi &= \alpha_G^\phi + \beta_{\bar G}^\phi , \qquad
+        \tilde w_G = \alpha_G^\phi/\tilde D^\phi
+
+    with ``D^phi = beta_G^phi + beta_Gbar^phi`` reported alongside (the 1D
+    channel's re-derived full-volume normalisation in the same convention).
+    ``n_hat_w^phi`` is mass-blind by construction, so ``alpha_G^phi`` is the
+    only place the Malmquist-selected catalogue masses enter — ``r_Malm`` is a
+    pure Malmquist ratio and ``r_phi == 1`` identically.
+
+    Args:
+        beta_G_phi: ``beta_G^phi(h)``.
+        beta_Gbar_phi: ``beta_Gbar^phi(h)``.
+        sigma_phi: ``Sigma^phi(h)`` (mass-blind catalogue sum).
+        sigma_4d: ``Sigma^4D(h)`` (mass-aware catalogue sum, same catalogue).
+
+    Returns:
+        ``{"n_hat_w_phi", "r_Malm", "alpha_G_phi", "D_phi", "D_tilde_phi",
+        "w_tilde_G"}``. Degenerate legs (non-positive) yield zeros/NaN rather
+        than raising, so a single bad ``h`` cannot abort a grid.
+
+    References:
+        Mandel, Farr & Gair (2019), arXiv:1809.02063, Eqs. (5)-(7);
+        GATE_PACKAGE_FINAL.md Appendix A (hybrid population density).
+    """
+    D_phi = beta_G_phi + beta_Gbar_phi
+    n_hat_w_phi = sigma_phi / beta_G_phi if beta_G_phi > 0.0 else 0.0
+    r_Malm = sigma_4d / sigma_phi if sigma_phi > 0.0 else 0.0
+    alpha_G_phi = sigma_4d / n_hat_w_phi if n_hat_w_phi > 0.0 else 0.0
+    D_tilde_phi = alpha_G_phi + beta_Gbar_phi
+    w_tilde_G = alpha_G_phi / D_tilde_phi if D_tilde_phi > 0.0 else float("nan")
+    return {
+        "n_hat_w_phi": float(n_hat_w_phi),
+        "r_Malm": float(r_Malm),
+        "alpha_G_phi": float(alpha_G_phi),
+        "D_phi": float(D_phi),
+        "D_tilde_phi": float(D_tilde_phi),
+        "w_tilde_G": float(w_tilde_G),
+    }
+
+
+def _log_path_a_selection_objects(
+    h: float,
+    *,
+    beta_G_phi: float,
+    beta_Gbar_phi: float,
+    sigma_phi: float,
+    sigma_4d: float,
+    w_G_legacy: float,
+) -> None:
+    """Log the path-(A) mixture scalars at 7 s.f. plus the monitored gate (ii).
+
+    The legacy ``w_G = beta_G/D`` is logged under the RENAMED key
+    ``w_G_legacy`` — it is no longer the operative mixture weight but it is not
+    overwritten either (FIXB_PATHA_PACKAGE.md §5 instrumentation).
+    """
+    obj = path_a_mixture_objects(beta_G_phi, beta_Gbar_phi, sigma_phi, sigma_4d)
+    _LOGGER.info(
+        "path-A(h=%.4f): w_tilde_G=%.7g, alpha_G_phi=%.7g, r_Malm=%.7g, "
+        "n_hat_w_phi=%.7g, D_phi=%.7g, D_tilde_phi=%.7g, Sigma_phi=%.7g, "
+        "Sigma_4D=%.7g | w_G_legacy=%.7g",
+        h,
+        obj["w_tilde_G"],
+        obj["alpha_G_phi"],
+        obj["r_Malm"],
+        obj["n_hat_w_phi"],
+        obj["D_phi"],
+        obj["D_tilde_phi"],
+        sigma_phi,
+        sigma_4d,
+        w_G_legacy,
+    )
+    # Monitored consistency number (NOT evidence): gate (ii) is demoted
+    # (FIXB_PATHA_PACKAGE.md §2). Scored BOTH raw (SNR-only selection objects,
+    # i.e. ignoring the p0 window the pipeline actually applied) and under the
+    # joint selection S_and, per author decision D1 remedy (ii).
+    _LOGGER.info(
+        "path-A(h=%.4f) monitored gate(ii): predicted in-cat share = %.7g "
+        "(SNR-only) -> %.7g (S_and, rho=%.4f). Monitored consistency number, "
+        "not evidence.",
+        h,
+        obj["w_tilde_G"],
+        rescore_class_share_joint_selection(obj["w_tilde_G"]),
+        P0_WINDOW_CLASS_RETENTION_RATIO,
+    )
+
+
+def rescore_class_share_joint_selection(
+    predicted_in_catalogue_share: float,
+    retention_ratio: float = P0_WINDOW_CLASS_RETENTION_RATIO,
+) -> float:
+    r"""Rescore a predicted in-catalogue share under the joint selection S_and.
+
+    [PHYSICS] D1 remedy (ii), monitoring half (FIXB_PATHA_PACKAGE.md §8, author
+    decision 2026-08-04). The pipeline's realized detections passed
+    ``SNR >= 20 AND p0 in [10.002, 15.998]``; the inference selection objects
+    model only the SNR leg. Because the p0 window is a MASS band-pass, it
+    retains the two classes unequally, and the class-share discriminator under
+    the joint selection depends only on the RATIO of the class retentions:
+
+    .. math::
+
+        \mathrm{share}_\mathrm{and} =
+            \frac{\mathrm{share}\,\rho}{\mathrm{share}\,\rho + (1-\mathrm{share})},
+        \qquad \rho \equiv s_G/s_{\bar G} = 0.7305 \pm 0.4\% .
+
+    Verified against the measurement of record: ``share = 0.07280503``
+    (generator-closure class share, SNR-only) rescores to ``0.054249`` versus
+    the measured ``0.0542477`` (``z = -0.48``).
+
+    This is a MONITORED CONSISTENCY NUMBER, not evidence: gate (ii) is demoted
+    (FIXB_PATHA_PACKAGE.md §2), and the number is conditional both on the
+    generator-closure convention and on modelling a filter whose existence is
+    the package's own defect finding.
+
+    Args:
+        predicted_in_catalogue_share: Predicted in-catalogue share under the
+            SNR-only selection.
+        retention_ratio: ``s_G/s_Gbar`` under the joint selection.
+
+    Returns:
+        The predicted share under ``S_and``.
+
+    References:
+        fixb_x15_attribution/CAND_B_CRB_FILTER.md (measurement, instrument
+            ``cand_b_joint_selection.py``); FIXB_PATHA_PACKAGE.md §2, §8 (D1).
+    """
+    share = float(predicted_in_catalogue_share)
+    if not (0.0 < share < 1.0):
+        return share
+    scaled = share * float(retention_ratio)
+    return scaled / (scaled + (1.0 - share))
+
+
 def precompute_global_catalog_selection(
     h_values: list[float],
     galaxy_catalog: GalaxyCatalogueHandler,
@@ -1664,6 +2152,8 @@ def precompute_global_catalog_selection(
     with_bh_mass: bool,
     z_max_cap: float | None = None,
     smear_sigma_z: bool = False,
+    phi_survival_table: dict[float, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]]
+    | None = None,
 ) -> dict[float, float]:
     r"""Precompute the GLOBAL in-catalogue selection denominator (Option A).
 
@@ -1702,6 +2192,24 @@ def precompute_global_catalog_selection(
             without-BH-mass channel); ``True`` uses the 4D
             (sky+distance+observer-frame mass ``M_z = M_g(1+z_g)``) ``P_det``,
             the global companion of the with-BH-mass catalogue sum.
+        phi_survival_table: [PHYSICS] path (A), FIXB_PATHA_PACKAGE.md §3.2
+            slot 2. When given (and only with ``with_bh_mass=False``,
+            ``smear_sigma_z=False``), ``P_det`` is replaced by the phi-marginal
+            survival ``S_bar_phi(z_g;h)`` of
+            :func:`precompute_phi_marginal_survival`, producing
+
+            .. math::
+
+                \Sigma^\phi(h) = \sum_g w_g\,\bar S_\phi(z_g;h) ,
+
+            the mass-BLIND companion of ``Sigma^4D`` on the SAME catalogue
+            rows, the SAME eligibility mask and the SAME weights ``w_g`` — so
+            ``r_Malm(h) = Sigma^4D/Sigma^phi`` is a pure Malmquist ratio and
+            ``n_hat_w^phi = Sigma^phi/beta_G^phi`` cannot inherit the Malmquist
+            bias. Sharing this function (rather than a parallel one) is what
+            guarantees the two sums are computed on the catalogue the run
+            actually loads — the convention rule of decision D2, whose
+            violation produced the retired mixed-catalogue ``r_Malm = 0.4304``.
 
     Returns:
         Dict mapping ``h -> sum_global w_g D_g(h)`` (dimensionless rate-weighted
@@ -1713,6 +2221,12 @@ def precompute_global_catalog_selection(
         Babak et al. (2017), arXiv:1703.09722 — per-MBH rate ``R_eff``
             (:func:`master_thesis_code.emri_rate.R_eff_per_mbh`).
     """
+    if phi_survival_table is not None and (with_bh_mass or smear_sigma_z):
+        raise ValueError(
+            "phi_survival_table is the mass-blind phi-marginal leg Sigma^phi: it "
+            "must be requested with with_bh_mass=False and smear_sigma_z=False "
+            "(FIXB_PATHA_PACKAGE.md §3.2 slot 2)."
+        )
     catalog = galaxy_catalog.reduced_galaxy_catalog
     z_all = np.asarray(
         catalog[InternalCatalogColumns.REDSHIFT].to_numpy(dtype=np.float64),
@@ -1744,8 +2258,12 @@ def precompute_global_catalog_selection(
     )
     # Sky-aware only for the 3D (without-BH-mass) channel; the 4D with-BH-mass
     # sky x M_z survival is statistics-starved, so it stays ISOTROPIC (below).
+    # The phi-marginal leg contracts the ISOTROPIC with-BH object, so it must not
+    # take the sky-aware 3D path (FIXB_PATHA_PACKAGE.md §3.2; gate (ii-e) bounds
+    # the residual sky systematic at Sigma^3D(sky)/Sigma^3D(iso) = 1.000202).
     _sky_aware = (
         (not with_bh_mass)
+        and phi_survival_table is None
         and _has_sky_cols
         and hasattr(detection_probability_obj, "detection_probability_without_bh_mass_sky")
     )
@@ -1783,7 +2301,17 @@ def precompute_global_catalog_selection(
         # in-catalogue likelihood use (Babak et al. 2017; Gray et al. 2020).
         w_g = np.asarray(R_eff_per_mbh(M_g), dtype=np.float64) / (1.0 + z_g)
         d_L_g = np.asarray(dist_vectorized(z_g, h=h), dtype=np.float64)  # Gpc
-        if smear_sigma_z:
+        if phi_survival_table is not None:
+            # [PHYSICS] path (A) slot 2 (FIXB_PATHA_PACKAGE.md §3.2):
+            # Sigma^phi(h) = sum_g w_g S_bar_phi(z_g;h). The survival is a
+            # smooth function of z alone once phi is contracted out, so it is
+            # read off the S_bar_phi table by linear interpolation at the
+            # galaxies' own redshifts (the table is built on 1500 nodes over
+            # the same [1e-6, z_max(h)] domain; interpolation error 8e-7 at the
+            # anchors). Mandel, Farr & Gair (2019), arXiv:1809.02063 Eq. (6).
+            _z_phi_grid, _s_phi_grid = phi_survival_table[h]
+            p_det = np.interp(z_g, _z_phi_grid, _s_phi_grid)
+        elif smear_sigma_z:
             # [PHYSICS] num/denom sigma_z symmetry (issue #30 redesign, risk R4):
             # E_{z~kernel_g}[P_det] over the numerator's volume-deconvolved host-z
             # kernel replaces the point evaluation P_det(d_L(z_g;h)). Opt-in via
@@ -1863,16 +2391,73 @@ def precompute_global_catalog_selection(
             )
         global_table[h] = float(np.sum(w_g * p_det))
         _LOGGER.info(
-            "Global catalog selection (with_bh=%s) sum_w_Dg(h=%.4f) = %.6e  "
+            "Global catalog selection (with_bh=%s%s) sum_w_Dg(h=%.4f) = %.6e  "
             "[%d eligible galaxies, z_max=%.4f]",
             with_bh_mass,
+            ", phi_marginal" if phi_survival_table is not None else "",
             h,
             global_table[h],
             z_g.size,
             z_max,
         )
+        if with_bh_mass and global_table[h] > 0.0:
+            _log_sigma_4d_mass_band_shares(w_g * p_det, M_g, z_g, detection_probability_obj, h)
 
     return global_table
+
+
+def _log_sigma_4d_mass_band_shares(
+    contributions: npt.NDArray[np.float64],
+    M_g: npt.NDArray[np.float64],
+    z_g: npt.NDArray[np.float64],
+    detection_probability_obj: SimulationDetectionProbability,
+    h: float,
+) -> None:
+    r"""T9 instrumentation: the mass-band decomposition of ``Sigma^4D(h)``.
+
+    Logs the share of ``Sigma^4D`` carried by catalogue rows in the Babak band
+    ``[1e4, 1e7]``, above it, below it, and by rows whose observer-frame mass
+    ``M_z = M_g(1+z_g)`` falls outside the with-BH grid's ``M_z`` centres (where
+    the accessor clamps to the nearest edge rather than extrapolating).
+
+    This is the standing refutation of F8 ("the clamp dominates ``Sigma^4D``"):
+    the measured shares of record at ``h = 0.73`` are
+    **98.980 % in-band / 0.999 % above / 0.020 % hard-clamped-high**
+    (FIXB_PATHA_PACKAGE.md §5 T9, gate (ii-c); instrument
+    ``fixb_measurements/iic_clamp_decomposition.py``). Diagnostic only — no
+    computed value depends on it.
+    """
+    if not hasattr(detection_probability_obj, "_grid_support"):
+        return
+    try:
+        _, _, _, M_centers = detection_probability_obj._grid_support()
+    except Exception:  # pragma: no cover - diagnostic must never break a run
+        _LOGGER.debug("T9 Sigma^4D band shares unavailable (no grid support).")
+        return
+    total = float(np.sum(contributions))
+    if not (total > 0.0):
+        return
+    M_z = M_g * (1.0 + z_g)
+    M_lo = float(np.asarray(M_centers, dtype=np.float64)[0])
+    M_hi = float(np.asarray(M_centers, dtype=np.float64)[-1])
+    masks = {
+        "in_band": (M_g >= M_SOURCE_FRAME_MIN) & (M_g <= M_SOURCE_FRAME_MAX),
+        "above_band": M_g > M_SOURCE_FRAME_MAX,
+        "below_band": M_g < M_SOURCE_FRAME_MIN,
+        "clamped_hi": M_z > M_hi,
+        "clamped_lo": M_z < M_lo,
+    }
+    shares = {k: 100.0 * float(np.sum(contributions[m])) / total for k, m in masks.items()}
+    _LOGGER.info(
+        "T9 Sigma^4D(h=%.4f) mass-band shares [%%]: in_band=%.4f above=%.4f below=%.4f "
+        "clamped_hi=%.4f clamped_lo=%.4f  (of record at 0.73: 98.980/0.999/~0/0.020)",
+        h,
+        shares["in_band"],
+        shares["above_band"],
+        shares["below_band"],
+        shares["clamped_hi"],
+        shares["clamped_lo"],
+    )
 
 
 # Module-level globals used by child_process_init for multiprocessing worker state
@@ -2382,6 +2967,53 @@ class BayesianStatistics:
             z_max_cap=REDSHIFT_UPPER_LIMIT,
             smear_sigma_z=smear_global_selection,
         )
+        # [PHYSICS] Path (A): ONE detection model (FIXB_PATHA_PACKAGE.md §3.2,
+        # 2026-08-04). Only the production mixture mode consumes the
+        # phi-convention tables; the legacy tables above stay untouched so the
+        # generator_marginal assembly is byte-identical (gate (iii-a)).
+        _phi_survival_table: dict[
+            float, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]
+        ] = {}
+        _beta_G_phi_table: dict[float, float] = {}
+        _beta_Gbar_phi_table: dict[float, float] = {}
+        _global_cat_selection_phi: dict[float, float] = {}
+        _use_phi_selection = normalization_mode == "absolute_marginal"
+        if _use_phi_selection:
+            _phi_survival_table = precompute_phi_marginal_survival(
+                h_values=_h_list,
+                detection_probability_obj=detection_probability,
+                z_max_cap=REDSHIFT_UPPER_LIMIT,
+            )
+            _beta_G_phi_table, _beta_Gbar_phi_table = precompute_phi_selection_integrals(
+                h_values=_h_list,
+                phi_survival_table=_phi_survival_table,
+                completeness=completeness,
+            )
+            # Sigma^phi on the SAME catalogue rows/weights/eligibility as
+            # Sigma^4D (decision D2's self-consistency rule).
+            _global_cat_selection_phi = precompute_global_catalog_selection(
+                h_values=_h_list,
+                galaxy_catalog=galaxy_catalog,
+                detection_probability_obj=detection_probability,
+                with_bh_mass=False,
+                z_max_cap=REDSHIFT_UPPER_LIMIT,
+                smear_sigma_z=False,
+                phi_survival_table=_phi_survival_table,
+            )
+            for _h_phi in _h_list:
+                _log_path_a_selection_objects(
+                    _h_phi,
+                    beta_G_phi=_beta_G_phi_table[_h_phi],
+                    beta_Gbar_phi=_beta_Gbar_phi_table[_h_phi],
+                    sigma_phi=_global_cat_selection_phi[_h_phi],
+                    sigma_4d=_global_cat_denom_with_bh[_h_phi],
+                    w_G_legacy=(
+                        _beta_G_table[_h_phi] / _D_h_table[_h_phi]
+                        if _D_h_table.get(_h_phi, 0.0) > 0.0
+                        else float("nan")
+                    ),
+                )
+
         # generator_marginal precomputes: the draw-side calibration pair
         # (W_cat, V_f(h)). Domain = min(draw depth, analysis cap) so an
         # issue-#30 depth truncation moves W_cat/V_f together with the
@@ -2449,6 +3081,13 @@ class BayesianStatistics:
         # Conditional distribution pre-computations for BH mass branch
         _sigma2_cond_arr = np.zeros(n_det)
         _proj_arr = np.zeros((n_det, 3))
+        # [PHYSICS] (N8) g_i's mass kernel: the (d_L_frac, M_z_frac) 2x2 block
+        # conditional of cov_4d (GATE_PACKAGE_FINAL.md §2.2 item 2). The 2D
+        # completion leg knows only d_L (p_gw has already collapsed the sky),
+        # so g_i conditions on d_L alone — NOT on the 3-observable
+        # (_proj_arr, _sigma2_cond_arr) pair the catalogue leg uses.
+        _proj_d_L_to_M_arr = np.zeros(n_det)
+        _sigma_cond_M_arr = np.zeros(n_det)
 
         # Fisher quality: condition numbers and exclusion mask
         _excluded_mask = np.zeros(n_det, dtype=bool)
@@ -2593,6 +3232,15 @@ class BayesianStatistics:
                     float(cov_mz - cov_cross @ cov_obs_inv @ cov_cross), 1e-30
                 )
                 _proj_arr[slot] = cov_cross @ cov_obs_inv
+            # (N8) d_L-only 2x2 block conditional for g_i: mu_cond(z) =
+            # 1 + proj (d_L_frac - 1), sigma_cond^2 = S_MM - S_dM^2/S_dd.
+            # Bishop (2006) PRML Eqs. 2.81-2.82 on the 2x2 block of cov_4d.
+            _s_dd = float(cov_4d[2, 2])
+            _s_dm = float(cov_4d[2, 3])
+            _proj_d_L_to_M_arr[slot] = _s_dm / _s_dd if _s_dd > 0.0 else 0.0
+            _sigma_cond_M_arr[slot] = math.sqrt(
+                max(float(cov_mz) - (_s_dm * _s_dm / _s_dd if _s_dd > 0.0 else 0.0), 1e-30)
+            )
 
         # Log Fisher quality summary (D-11)
         n_flagged = int(_excluded_mask.sum())
@@ -2629,6 +3277,14 @@ class BayesianStatistics:
         self._beta_G_table = _beta_G_table
         self._global_cat_denom_no_bh = _global_cat_denom_no_bh
         self._global_cat_denom_with_bh = _global_cat_denom_with_bh
+        # Path-(A) phi-convention tables (FIXB_PATHA_PACKAGE.md §3.2) and the
+        # (N8) g_i per-event mass-kernel scalars.
+        self._use_phi_selection = _use_phi_selection
+        self._beta_G_phi_table = _beta_G_phi_table
+        self._beta_Gbar_phi_table = _beta_Gbar_phi_table
+        self._global_cat_selection_phi = _global_cat_selection_phi
+        self._proj_d_L_to_M = _proj_d_L_to_M_arr
+        self._sigma_cond_M = _sigma_cond_M_arr
         self._excluded_mask = _excluded_mask
         self._cond_3d = _cond_3d
         self._cond_4d = _cond_4d
@@ -2838,22 +3494,43 @@ class BayesianStatistics:
             "event_idx",
             "h",
             "w_G",
+            # Path-(A) instrumentation (FIXB_PATHA_PACKAGE.md §5): the legacy
+            # beta_G/D weight is RENAMED to w_G_legacy (kept, not overwritten)
+            # and the operative w~_G plus its ingredients are emitted at 7 s.f.
+            "w_G_legacy",
+            "w_tilde_G",
+            "alpha_G_phi",
+            "r_Malm",
+            "D_tilde_phi",
             "L_cat_no_bh",
             "L_cat_with_bh",
             "B_num",
+            "B_num_wbh",
+            "g_frac",
             "L_comp",
             "combined_no_bh",
             "combined_with_bh",
         ]
+        # 7 significant figures on the path-(A) diagnostics.
+        _seven_sf = ("w_G_legacy", "w_tilde_G", "alpha_G_phi", "r_Malm", "D_tilde_phi", "g_frac")
 
         os.makedirs(os.path.dirname(csv_path), exist_ok=True)
         write_header = not os.path.isfile(csv_path)
+
+        rows_out: list[dict[str, Any]] = []
+        for row in self._diagnostic_rows:
+            out = {key: row.get(key, "") for key in fieldnames}
+            for key in _seven_sf:
+                value = out.get(key, "")
+                if isinstance(value, float):
+                    out[key] = f"{value:.7g}"
+            rows_out.append(out)
 
         with open(csv_path, "a", newline="") as f:
             writer = csv.DictWriter(f, fieldnames=fieldnames)
             if write_header:
                 writer.writeheader()
-            writer.writerows(self._diagnostic_rows)
+            writer.writerows(rows_out)
 
         _LOGGER.info("Wrote %d diagnostic rows to %s", len(self._diagnostic_rows), csv_path)
 
@@ -3203,7 +3880,12 @@ class BayesianStatistics:
             combined_with_bh_mass = float(L_cat_with_bh_mass)
             w_G = 1.0
             B_num = 0.0
+            B_num_wbh = 0.0
             L_comp = 0.0
+            w_G_legacy = 1.0
+            alpha_G_phi = float("nan")
+            r_Malm = float("nan")
+            D_tilde_phi = float("nan")
         else:
             D_h: float = self._D_h_table.get(self.h, 0.0)
             beta_G: float = self._beta_G_table.get(self.h, 0.0)
@@ -3212,6 +3894,12 @@ class BayesianStatistics:
             global_denom_with_bh: float = self._global_cat_denom_with_bh.get(self.h, 0.0)
             # generator_marginal draw-side calibration (0.0 outside that mode).
             n_hat_w: float = 0.0
+            # Path-(A) diagnostics (NaN outside the phi-convention branch); the
+            # legacy w_G = beta_G/D is RENAMED, never overwritten.
+            w_G_legacy = beta_G / D_h if D_h > 0.0 else float("nan")
+            alpha_G_phi = float("nan")
+            r_Malm = float("nan")
+            D_tilde_phi = float("nan")
 
             # In-catalogue term L_cat. Normalization modes:
             #   "global"/"volume_global"/"absolute_marginal":
@@ -3406,6 +4094,56 @@ class BayesianStatistics:
                 )
                 return (1.0 - f_z) * p_gw * dVc / (1.0 + z)
 
+            # [PHYSICS] (N8) the 2D completion leg's own numerator
+            # (GATE_PACKAGE_FINAL.md §2.2, FIXB_PATHA_PACKAGE.md §3.2):
+            #     B_num_wbh = INTEGRAL (1-f_k) p_gw dVc/(1+z) g_i(z;h) dz
+            # with g_i INSIDE the quadrature — mu_cond(z) and the (1+z) mass
+            # lift both depend on z, so the factor is not separable. The 1D
+            # B_num stays unmultiplied (gate (iv)).
+            _use_g_inside = bool(getattr(self, "_use_phi_selection", False))
+            _g_slot = self._det_index_to_slot[detection_index]
+            _g_proj = (
+                float(getattr(self, "_proj_d_L_to_M", np.zeros(1))[_g_slot])
+                if _use_g_inside
+                else 0.0
+            )
+            _g_sigma = (
+                float(getattr(self, "_sigma_cond_M", np.zeros(1))[_g_slot])
+                if _use_g_inside
+                else 0.0
+            )
+            _g_det_M_z = float(self.detection.M)
+
+            def completion_numerator_integrand_with_bh_mass(
+                z: npt.NDArray[np.float64],
+            ) -> npt.NDArray[np.float64]:
+                base = completion_numerator_integrand(z)
+                d_L_mass: npt.NDArray[np.float64] = np.asarray(
+                    dist_vectorized(z, h=self.h), dtype=np.float64
+                )
+                # g_i is a density in x_M = M_z/M_z,det,i — the SAME measure as
+                # the 2D catalogue leg's mz_integral, so the two legs are
+                # addable and the 2D MAP stays invariant under a rescaling of
+                # that measure (gate (i)).
+                g_i = completion_mass_factor_g(
+                    np.asarray(z, dtype=np.float64),
+                    d_L_mass / _comp_det_d_L,
+                    _g_det_M_z,
+                    _g_proj,
+                    _g_sigma,
+                )
+                _n_support_exit = int(np.count_nonzero((g_i <= 0.0) & (base > 0.0)))
+                if _n_support_exit:
+                    _LOGGER.warning(
+                        "Detection %d: g_i left the phi support (%d/%d quadrature "
+                        "nodes with zero mass density) — the completion leg's "
+                        "population mass prior has no weight there.",
+                        detection_index,
+                        _n_support_exit,
+                        g_i.size,
+                    )
+                return base * g_i
+
             if z_lower >= z_upper:
                 # The event's entire 4-sigma window lies beyond the analysis depth
                 # (redshift_upper_limit): no population support survives the cap, so
@@ -3413,9 +4151,22 @@ class BayesianStatistics:
                 # inverted [z_lower, z_upper] interval (which would return a
                 # negative fixed_quad result, not 0).
                 B_num = 0.0
+                B_num_wbh = 0.0
             else:
                 B_num = float(
                     fixed_quad(completion_numerator_integrand, z_lower, z_upper, n=FIXED_QUAD_N)[0]
+                )
+                B_num_wbh = (
+                    float(
+                        fixed_quad(
+                            completion_numerator_integrand_with_bh_mass,
+                            z_lower,
+                            z_upper,
+                            n=FIXED_QUAD_N,
+                        )[0]
+                    )
+                    if _use_g_inside
+                    else B_num
                 )
 
             # Grid coverage flag: warn if numerator 4-sigma window exceeds P_det grid
@@ -3476,6 +4227,52 @@ class BayesianStatistics:
                     w_G = 1.0
                     combined_without_bh_mass = float(L_cat_without_bh_mass)
                     combined_with_bh_mass = float(L_cat_with_bh_mass)
+            elif _use_g_inside and self.h in getattr(self, "_beta_G_phi_table", {}):
+                # [PHYSICS] Path (A): ONE detection model, mass-consistent
+                # mixture (FIXB_PATHA_PACKAGE.md §3.2, 2026-08-04):
+                #   1D: p_i = (beta_G^phi L_cat^1D + B_num^phi) / D~^phi
+                #   2D: p_i = (alpha_G^phi L_cat^2D + B_num^phi g_i) / D~^phi
+                # with B_num^phi = beta_Gbar^phi L_comp (the completion leg
+                # re-expressed in the phi convention: B_num carries the
+                # legacy beta_Gbar's normalisation, so it is transferred by
+                # the ratio beta_Gbar^phi/beta_Gbar) and alpha_G^phi =
+                # beta_G^phi r_Malm the mass-aware in-catalogue selection.
+                # The tower identity S_3D = INTEGRAL phi S_4D dM now holds by
+                # construction (r_phi == 1) and r_Malm is a pure Malmquist
+                # ratio. Mandel, Farr & Gair (2019), arXiv:1809.02063,
+                # Eqs. (5)-(7) (assumption A2, hybrid population density of
+                # GATE_PACKAGE_FINAL.md Appendix A); Turski et al. (2023),
+                # arXiv:2302.12037, Eq. (8); Gray et al. (2020),
+                # arXiv:1908.06050, Eq. (A.19).
+                beta_G_phi = self._beta_G_phi_table[self.h]
+                beta_Gbar_phi = self._beta_Gbar_phi_table[self.h]
+                sigma_phi = self._global_cat_selection_phi.get(self.h, 0.0)
+                path_a = path_a_mixture_objects(
+                    beta_G_phi, beta_Gbar_phi, sigma_phi, global_denom_with_bh
+                )
+                alpha_G_phi = path_a["alpha_G_phi"]
+                D_tilde_phi = path_a["D_tilde_phi"]
+                r_Malm = path_a["r_Malm"]
+                # L_comp = B_num/beta_Gbar is convention-free; the phi-convention
+                # completion numerator is beta_Gbar^phi L_comp.
+                B_scale = beta_Gbar_phi / beta_Gbar if beta_Gbar > 0.0 else 0.0
+                B_num_phi = B_num * B_scale
+                B_num_wbh_phi = B_num_wbh * B_scale
+                if D_tilde_phi > 0.0:
+                    w_G = path_a["w_tilde_G"]
+                    combined_without_bh_mass = float(
+                        (beta_G_phi * L_cat_without_bh_mass + B_num_phi) / D_tilde_phi
+                    )
+                    combined_with_bh_mass = float(
+                        (alpha_G_phi * L_cat_with_bh_mass + B_num_wbh_phi) / D_tilde_phi
+                    )
+                else:
+                    _LOGGER.warning(
+                        "Detection %s: D~^phi(h) is zero, using L_cat only", detection_index
+                    )
+                    w_G = 1.0
+                    combined_without_bh_mass = float(L_cat_without_bh_mass)
+                    combined_with_bh_mass = float(L_cat_with_bh_mass)
             elif D_h > 0:
                 w_G = beta_G / D_h
                 combined_without_bh_mass = float((beta_G * L_cat_without_bh_mass + B_num) / D_h)
@@ -3490,20 +4287,32 @@ class BayesianStatistics:
             L_comp = float(B_num / beta_Gbar) if beta_Gbar > 0 else 0.0
 
         _LOGGER.debug(
-            f"Detection {detection_index}: w_G={w_G:.4f}, "
+            f"Detection {detection_index}: w_G={w_G:.7g} (w_G_legacy={w_G_legacy:.7g}), "
             f"L_cat_no_bh={L_cat_without_bh_mass:.6e}, "
-            f"L_cat_with_bh={L_cat_with_bh_mass:.6e}, B_num={B_num:.6e}, L_comp={L_comp:.6e}"
+            f"L_cat_with_bh={L_cat_with_bh_mass:.6e}, B_num={B_num:.6e}, "
+            f"B_num_wbh={B_num_wbh:.6e}, L_comp={L_comp:.6e}"
         )
 
-        # Record diagnostic row for every event
+        # Record diagnostic row for every event. The path-(A) columns
+        # (w_tilde_G, alpha_G_phi, r_Malm, D_tilde_phi, B_num_wbh, g_frac) ship
+        # WITH the change and are written at 7 significant figures — the
+        # h-dependence of the partition weight is a ~1e-5 effect
+        # (FIXB_PATHA_PACKAGE.md §5 instrumentation).
         self._diagnostic_rows.append(
             {
                 "event_idx": detection_index,
                 "h": self.h,
                 "w_G": w_G,
+                "w_G_legacy": w_G_legacy,
+                "w_tilde_G": w_G if getattr(self, "_use_phi_selection", False) else float("nan"),
+                "alpha_G_phi": alpha_G_phi,
+                "r_Malm": r_Malm,
+                "D_tilde_phi": D_tilde_phi,
                 "L_cat_no_bh": L_cat_without_bh_mass,
                 "L_cat_with_bh": L_cat_with_bh_mass,
                 "B_num": B_num,
+                "B_num_wbh": B_num_wbh,
+                "g_frac": (B_num_wbh / B_num) if B_num > 0.0 else float("nan"),
                 "L_comp": L_comp,
                 "combined_no_bh": combined_without_bh_mass,
                 "combined_with_bh": combined_with_bh_mass,
