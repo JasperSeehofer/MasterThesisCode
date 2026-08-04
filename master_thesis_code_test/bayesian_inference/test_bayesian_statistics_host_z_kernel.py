@@ -312,14 +312,28 @@ def test_volume_trunc_prior_shape_h_independent() -> None:
 
 
 # ── Pinned values ─────────────────────────────────────────────────────────────
-# PRE-C7-FIX values (2026-08-04): the fixture now installs a non-trivial
-# per-pixel completeness (_StubCompleteness) into the worker globals, and these
-# pins record that the HEAD host-z kernel IGNORES it — the volume_deconv /
-# volume_trunc / clamp pins below are byte-identical with and without
-# bs.completeness_model. The C7-core fix (GATE_PACKAGE_FINAL.md §1.2) inserts
-# f_k(g)(z) into the kernel and MOVES exactly these pins (PIN_VD_*, PIN_VT_*,
-# PIN_CLAMP_*); PIN_LR_* must NOT move (local_ratio is not in the
-# _use_volume_deconv set).
+# Re-pinned in the [PHYSICS] C7-core commit (GATE_PACKAGE_FINAL.md §1.2/§1.5,
+# 2026-08-04): the host-z volume_deconv kernel now carries the catalogued-host
+# intensity f_{k(g)}(z) * w_pop(z) in both the numerator and Z_g / D_g. The
+# fixture installs a non-trivial per-pixel completeness (_StubCompleteness,
+# f = 1/(1 + (z/0.2)^2), gamma_f(0.1) = -0.4), so PIN_VD_*, PIN_VT_* and
+# PIN_CLAMP_* move; the pre-C7 values (asserted in the parent commit
+# "test: pin pre-C7-fix volume_deconv kernel values") were
+#   PIN_VD_NUM     1622.0066615458952  -> 1618.855141034943
+#   PIN_VD_DEN     0.9153058114327306  -> 0.9153135911632229
+#   PIN_VD_BH_NUM  4574.22742983034    -> 4565.355545079394
+#   PIN_VD_BH_DEN  0.9427033282673192  -> 0.9427085122404929
+#   PIN_CLAMP_DEN  0.9958992939449592  -> 0.9958996737905789
+#   PIN_VT_NUM     1621.8905890993271  -> 1618.7417804538027
+#   PIN_VT_DEN     0.9153058114327306  -> 0.9153135911632229
+#   PIN_VT_BH_NUM  4573.901034625918   -> 4565.036772477752
+#   PIN_VT_BH_DEN  0.9427033282673192  -> 0.9427085122404929
+# The numerators fall (gamma_f < 0 => the kernel's z-weight tilts DOWN) and the
+# denominators rise by ~1e-5 relative; PIN_CLAMP_W_DEN (a window-geometry
+# diagnostic, not a kernel value) is unchanged. PIN_LR_* must NOT move and does
+# not: verified bit-identical with and without bs.completeness_model (the
+# historical PIN_LR_NUM literal differs from the delivered value by 1 ulp, which
+# predates this change and is inside the rel=1e-9 pin tolerance).
 #
 # Re-pinned in the [PHYSICS] counted-once PV commit (issue #40b, RATIFIED
 # 2026-07-26; docs/derivations/hostz_pv_photoz_kernel.md): SIGMA_V_PEC_KM_S
@@ -331,13 +345,13 @@ def test_volume_trunc_prior_shape_h_independent() -> None:
 # this diff (physics-change protocol). [History: issue-#16 commit added the
 # runtime broadening; [PHYSICS] 2026-07-08 replaced the MC BH denominator by
 # the exact erf-sum — see test_bh_denominator_semianalytic.]
-PIN_VD_NUM = 1622.0066615458952
-PIN_VD_DEN = 0.9153058114327306
+PIN_VD_NUM = 1618.855141034943
+PIN_VD_DEN = 0.9153135911632229
 PIN_LR_NUM = 1607.5871613613651
 PIN_LR_DEN = 0.9152832361770838
-PIN_VD_BH_NUM = 4574.22742983034
-PIN_VD_BH_DEN = 0.9427033282673192
-PIN_CLAMP_DEN = 0.9958992939449592
+PIN_VD_BH_NUM = 4565.355545079394
+PIN_VD_BH_DEN = 0.9427085122404929
+PIN_CLAMP_DEN = 0.9958996737905789
 PIN_CLAMP_W_DEN = 0.24151081257029428
 
 # volume_trunc (Part 1, 2026-07-12): the in-catalogue numerator is integrated over
@@ -346,7 +360,7 @@ PIN_CLAMP_W_DEN = 0.24151081257029428
 # are unchanged (z_g - 4σ > 0, so no z-floor difference; D_g/Z_g byte-identical to
 # volume_deconv → PIN_VT_DEN == PIN_VD_DEN), and the numerator lands within ~7e-6 of
 # PIN_VD_NUM because the narrow host kernel is fully inside the GW window.
-PIN_VT_NUM = 1621.8905890993271
-PIN_VT_DEN = 0.9153058114327306
-PIN_VT_BH_NUM = 4573.901034625918
-PIN_VT_BH_DEN = 0.9427033282673192
+PIN_VT_NUM = 1618.7417804538027
+PIN_VT_DEN = 0.9153135911632229
+PIN_VT_BH_NUM = 4565.036772477752
+PIN_VT_BH_DEN = 0.9427085122404929
