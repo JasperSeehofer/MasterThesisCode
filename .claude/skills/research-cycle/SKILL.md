@@ -79,6 +79,15 @@ not skip forward, and say so explicitly when you deliberately re-enter earlier.
 8. **Physics routes to `/physics-change`.** Any formula/constant change in a
    trigger file is a hard gate: 5-item package → author approval → ledger rows.
    Tag fixes `instrumentation` (plain GSD) vs `formula` (`/physics-change`).
+9. **Exhaust the free re-reads before requesting compute.** [A1] Every
+   diagnostics artifact already on disk (`event_likelihoods.csv`, readouts,
+   run bookkeeping) is re-readable at zero marginal cost. Enumerate what the
+   existing artifacts can already decide, and read them, before asking for a run.
+10. **Never compare a class-summed statistic without a paired per-event read.**
+    [A2] Any Σ-over-events quantity compared across venues, configurations, or
+    eras requires a paired/stratified per-event read **alongside** the aggregate.
+    Opposing sub-population effects cancel in the mean and manufacture spurious
+    agreement. The paired read is free; the retraction is not.
 
 ### Model & effort policy (RUNBOOK-6 §2)
 
@@ -126,7 +135,12 @@ Author-gated. Present the verdict with its evidence and STOP.
   needs a Fisher leg.
 - `pp_coverage.py` is **single-channel and synthetic-catalogue**: no mass/BH-mass
   channel, no realistic host-observation model. The two-channel extension and the
-  GLADE-like host model that stage 4 requires are **TO-BUILD**.
+  GLADE-like host model that stage 4 requires are **TO-BUILD**, and the build is
+  not accepted unless it is [A3]: (i) genuinely 2-channel with the completion-leg
+  mass factor **g recomputed per h**, never frozen or elided; (ii) run at
+  **production N** — the mechanism is N-coherent (0.019 nats/event) and invisible
+  at small N; (iii) **multi-candidate host balls** — a one-candidate-per-event
+  harness structurally cannot exercise it (ledger row 86).
 - `/commission --research` is a **user-level** skill (`~/.claude/skills/commission/`),
   not committed with this repo, and RESEARCH mode needs a `.commission-research.yaml`
   config that this repo does not have. **TO-SCAFFOLD** before first use.
@@ -135,6 +149,12 @@ Author-gated. Present the verdict with its evidence and STOP.
 
 `/commission --research` is the standing, memory-bearing falsification pass over
 a thread's accumulated claims (delta → falsify → claim-history regression diff →
-typed feedback). It is stage 3's periodic counterpart to the in-session Gates
-A–C, and it should be run at go/kill/pivot points, i.e. alongside stage 5.
-Propose-only; it never lands fixes.
+typed feedback). Propose-only. It is stage 3's periodic counterpart to the
+in-session Gates A–C; run it at go/kill/pivot points, i.e. alongside stage 5.
+
+### Amendments
+
+The cycle is itself append-only-governed: every change to it adds a row to the
+**Amendment ledger** at the end of `docs/RESEARCH_CYCLE.md`. No silent edits.
+Rules tagged `[A1]`/`[A2]`/`[A3]` above are session-earned amendments — the
+ledger carries the evidence that earned them.

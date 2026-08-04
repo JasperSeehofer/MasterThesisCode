@@ -189,6 +189,27 @@ Strictly ordered. Do not skip forward.
 collapse the need for the expensive test — or decide a formula's shape and so
 remove the need for a `/physics-change` gate at all — runs first.
 
+**[A1] Free re-reads before compute.** Before requesting **any** new compute,
+enumerate the diagnostics artifacts already on disk — `event_likelihoods.csv`,
+gate readouts, run bookkeeping — and exhaust what they can already decide. They
+are re-readable at zero marginal cost. Precedent: the gate-(vii) g_frac(h)
+finding — ~83% of the dark 2D-vs-1D up-tilt, and the whole 2D MAP displacement
+(0.78/0.80 → 0.700 under frozen-g) — came out of an existing
+`event_likelihoods.csv` at zero marginal compute, and was findable *before* the
+post-fix runs that were commissioned to look for it.
+
+**[A2] Paired per-event read alongside every class-summed comparison.** Whenever
+a Σ-over-events statistic is compared across venues, configurations, or eras, a
+paired/stratified **per-event** read is MANDATORY alongside the aggregate — not
+optional, not deferred. Aggregates hide opposing sub-population effects that
+cancel in the mean and manufacture spurious agreement. Precedent: gate (vii)'s
+aggregate per-event tilts agreed across venues to 2.6% *by pure coincidence* —
+scatter diluting shared-event tilts (×0.469) against 316 resurrected
+dead-2D-leg events tilting 3.01× steeper and carrying 81% of the headline. A
+D1-demotion conclusion was built on that agreement and had to be withdrawn when
+the paired check — free, zero compute — refuted it.
+Evidence: `results/run_20260804_postfix/gate_vii/paired_check.json`.
+
 **Model & effort policy** (RUNBOOK-6 §2): haiku/low for mechanical extraction ·
 sonnet/medium for bounded code tracing and literature checks against a cited
 paper · opus/high for independent re-derivation and adversarial refutation ·
@@ -236,6 +257,18 @@ mechanism hunt beyond D1, and it is the explicit gatekeeper for "trusted run".
    **2-channel extension** and the **realistic host-observation model** (real
    n(z), genuine multi-galaxy impostor balls, mass observables, completeness-edge
    truncation) that this stage requires **do not exist yet**.
+
+   **[A3] Harness acceptance criteria** — the extension is not accepted, and its
+   coverage verdict does not count, unless all three hold:
+   (i) **genuinely 2-channel**, with the completion-leg mass factor **g recomputed
+   per h** — never frozen across the h grid, never elided;
+   (ii) **run at production N** — the mechanism is N-coherent at 0.019 nats/event
+   and is invisible at small N;
+   (iii) **multi-candidate host balls** — a one-candidate-per-event harness
+   structurally cannot exercise the mechanism (cf. `BIAS_HISTORY_LEDGER.md` §1
+   row 86).
+   Rationale: the residual 2D displacement is carried by an event-independent
+   per-h scalar — exactly the class small-N SBC cannot see.
 2. **Generator-closure absolute-count audit** — the (ii-d)-style check.
    Defined `.planning/derivation-2dbias-fix-20260803/GATE_PACKAGE_FINAL.md` §2.6;
    executed and closed in
@@ -331,3 +364,19 @@ applicable, the `presented` row in `docs/gates/PHYSICS-GATE-LEDGER.md`.
 
 **Exit artifact:** ledger rows + updated claim file + updated
 `BIAS_HISTORY_LEDGER.md` + the next runbook.
+
+---
+
+## Amendment ledger
+
+The cycle governs itself by its own discipline: **every future change to the
+Research Cycle — this file or `.claude/skills/research-cycle/SKILL.md` — adds a
+row here. Append-only, never back-filled, no silent edits.** An amendment
+without a row is a change that cannot be shown to have been earned.
+
+| date | amendment | stage | what changed | why (one clause) | evidence |
+|---|---|---|---|---|---|
+| 2026-08-04 | A0 — establishment | all | Cycle established: 7 stages wired to existing assets; `/research-cycle` made the entry point for every investigation | author mandate to stop reinventing a runbook per investigation | `results/campaign51_20260728/RUNBOOK_NEXT_SESSION_7.md` §2; commit `f8a01b04` |
+| 2026-08-04 | A1 — free re-reads before compute | 3 | New hard rule: exhaust re-reads of on-disk diagnostics artifacts before requesting ANY new compute | the g_frac(h) finding (~83% of the dark 2D-vs-1D up-tilt; whole 2D MAP displacement 0.78/0.80 → 0.700 under frozen-g) came at zero marginal compute from an existing `event_likelihoods.csv`, and was findable before the post-fix runs | `results/run_20260804_postfix/gate_vii/gate_vii_readout.json`, `.../compute_gate_vii.py` |
+| 2026-08-04 | A2 — paired read with every class-summed comparison | 3 | New hard rule: any Σ-over-events statistic compared across venues/configs/eras requires a paired/stratified per-event read alongside the aggregate | gate (vii)'s aggregate tilts agreed across venues to 2.6% by pure coincidence — scatter diluting shared-event tilts ×0.469 vs 316 resurrected dead-2D-leg events tilting 3.01× steeper (81% of the headline) cancelled in the mean, and a D1-demotion conclusion built on the agreement had to be withdrawn | `results/run_20260804_postfix/gate_vii/paired_check.json`, `.../paired_check.py` |
+| 2026-08-04 | A3 — harness acceptance criteria | 4 | TO-BUILD `pp_coverage.py` extension now carries three acceptance criteria: 2-channel with g recomputed per h; production N; multi-candidate host balls | the residual 2D displacement is an event-independent per-h scalar (N-coherent, 0.019 nats/event) — exactly the class small-N, single-candidate SBC structurally cannot see | `results/run_20260804_postfix/gate_vii/gate_vii_readout.json`; `BIAS_HISTORY_LEDGER.md` §1 row 86 |
