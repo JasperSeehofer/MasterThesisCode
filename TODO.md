@@ -1,5 +1,27 @@
 # TODO's
 
+## 🔆 Next-campaign prep (2026-08-04, from Fix B path (A) — author decision D1)
+
+- [ ] **D1 remedy (i) — retire the stale `ParameterSpace.p0` bounds** (`datamodels/parameter_space.py:96-113`).
+      The campaign-#51 detections were selected by **SNR ≥ 20 ∧ p0 ∈ [10.002, 15.998]**: the
+      5-point-stencil bound guard (`parameter_estimation.py:271-276`) silently rejected **69.3 % of
+      SNR-passing events, mass-dependently**, against snapshot-era bounds that the ratified
+      2026-07-28 plunge-window ICs (`plunge_window.py`, no upper clamp) already superseded. No
+      inference selection object (`D`, `β`, `Σ`, `p_det`) knows about that filter.
+      **Deferred deliberately** to next-campaign prep: it changes *simulation*, not inference, so it
+      is out of scope for the path-(A) `[PHYSICS]` commit (`docs/derivations/fixb_pathA_phi_marginal_selection.md` §7).
+      Widen/retire the bounds so the filter vanishes, then **re-simulate** — the existing 3135-event
+      catalogue stays band-passed and must NOT be re-scored against band-blind selection objects.
+      The monitoring half (remedy (ii)) already shipped: `rescore_class_share_joint_selection`
+      (ρ = s_G/s_Ḡ = 0.7305 ± 0.4 %) scores the monitored gate-(ii) number under `S_and`.
+- [ ] **2D-bias suspect list — add the p0 window.** A mass band-pass is, via `M_z = M(1+z)`, a
+      redshift-selection distortion at fixed source mass, so it is a live candidate for the residual
+      2D bias itself (in-catalogue class MAP still ≈ 0.834 after path (A) — path (A) does **not**
+      close the class tension). Rank it alongside the C7 host-z-kernel track.
+- [ ] **Promote the truth-convention pins (author decision D2)** — measure the truth-convention
+      `Σ⁴ᴰ(h)` at all 41 h on the D1-remedied rerun; until then its h-curve is a 3-anchor quadratic
+      model and the delivered-convention `r_Malm(0.73) = 0.4415122` / `w̃_G = 0.070802` stay PRIMARY.
+
 ## 🔆 Active / Next Session (2026-06-20)
 
 - [ ] **CLUSTER-VERIFY (P0, blocking L_cat merge)** — run the **multi-seed campaign** on bwUniCluster
