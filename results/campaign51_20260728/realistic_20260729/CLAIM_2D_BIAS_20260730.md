@@ -180,6 +180,30 @@ measurement listed above reproduces exactly: 64.7% of dark events with
 `L_cat_with_bh == 0`; 488/1095 2D-zero at every h, 487 of them dark; median
 suppression 7.78e-3; dark Σ ln(L_cat_2D/L_cat_1D) tilt −504.8.
 
+**[2026-08-04/05, LOCAL — gate (vii) proper read, post-fix]** C4-obs survives
+both fixes and strengthens. On `main@658c428a` the dark catalogue-leg tilt
+`Σ_dark Δln(L_cat^2D/L_cat^1D)` over 0.73→0.81 is **−604.77 nats over the
+bit-identical N=534 survivor set** (pre-fix −504.8), i.e. −1.1325 nats/event
+vs −0.9453 pre-fix (+19.8% on the class mean); the per-event distribution is
+heterogeneous (paired std 0.484 ≈ the mean) — a mean shift, not a uniform
+per-event shift. Survives the idealized venue: −241.71 over N=219. Monotone
+decreasing over all 41 h, argmax at the h=0.600 grid edge. In-cat analogue
+−3.778 (iiib, N=75) / +0.128 (joint, N=73), inside this file's in-cat
+realization-noise band. **The two venue aggregates (−1.104 vs −1.133/event)
+agree only by coincidence — do not read venue-invariance into them** (paired
+check `results/run_20260804_postfix/gate_vii/paired_check.json`): on the 218
+shared survivors the idealized tilt is ≈2.08× the joint tilt (median r_e
+2.083, 16/84th [1.314, 3.297]; 1.4% of events within 5%; Spearman ρ=0.528).
+The aggregate closes because scatter dilutes shared-event tilts (×0.469)
+while resurrecting 316 events whose 2D catalogue leg is zero at every h
+idealized and which tilt 3.01× steeper; those 316 carry 81% of the −604.8
+headline (robust shared stratum: −112.70, 19%). Genuinely deep on the mass
+band-pass tail, not numerics (min L_cat_with_bh 2.7e-25). ⇒ Quote this object
+only with its N, venue, and stratum. Provenance:
+`results/run_20260804_postfix/gate_vii/{compute_gate_vii.py, gate_vii_readout.json, paired_check.py, paired_check.json}`.
+Convention footnote: the emitted `L_cat_no_bh` carries path-A's implicit
+1/r_Malm(h) (`FIXB_PATHA_PACKAGE.md` L1′); bounded ≤1.3 nats.
+
 **[2026-07-30 adjudication, §6.3] C4-mechanism → REFUTED AS STATED.** ~~impostor
 rejection → completion fallback~~ fails on two exact grounds (attacker 1, algebra
 verified to 6.2e-13 on all 65,108 cells):
@@ -222,6 +246,25 @@ dark 2D-zeros **62.9–64.7%**; zero-at-every-h events **472–518** (dark subse
 **−475.88 to −552.43 nats**. The C4-obs FINDING is no longer
 r1-scoped. (The C4-amended *budget* decomposition above remains an r1 partition
 until it too is recomputed off-r1.)
+
+**[2026-08-04/05, LOCAL] Gate (vii) closes the A2 blind spot; the residual
+carrier is g_frac(h) — CONFIRMED by the pre-registered frozen-g evaluate.**
+`GATE_PACKAGE_FINAL.md:216`'s downgrade is discharged: the modified kernel
+moves the channel difference in A2's derived direction by ≈−100 nats (Fix B
+bounded ≤1.3 nats via h-flat r_Malm ⇒ the move is Fix A's; γ_f magnitude
+comparison UNDETERMINED, units ambiguous at :86). The catalogue leg is a
+**down**-pull attenuated by w̃_G; ablating both catalogue legs leaves 79–86%
+of the dark 2D-vs-1D up-tilt intact. The remainder rides
+`g_frac = B_num_wbh/B_num` (per-event, 1587 distinct values at h=0.73, range
+0.076–0.242 — NOT a scalar; adjudicated in `adjudicate_g_frac.py`), whose
+event-summed ḡ(h) rises 0.1348→0.1413 across the grid identically in both
+venues. **Pre-registered frozen-g live evaluate
+(PREREGISTRATION_FROZEN_GFRAC.md): CONFIRM — 2D MAP 0.780/0.800 → 0.660/0.640
+(band [0.63, 0.665]), live == CSV proxy to 0 grid steps, 1D + all selection
+objects bit-identical.** No compensating renormalisation exists. The question
+is now a derivation question (is g(h)'s h-slope correct physics?) routed via
+/physics-change; converges with the ledger's 'residual is entirely B_num'
+finding and possibly D1 (same selection machinery feeds B_num_wbh).
 
 ## C5 — 58% of in-catalogue hosts rail at the prior edge [LOCAL, VERIFIED] **→ FINDING (2026-07-30), interpretation AMENDED**
 
