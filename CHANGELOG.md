@@ -7,6 +7,38 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Changed (book site — first reader-feedback batch, 2026-08-04)
+- **Persona switch renamed and made reversible** (`book/site/js/book.js`).
+  The three modes are labelled by the depth they open — **Curious /
+  Methodology / All details** — instead of by persona name (`Mara / Tomas /
+  Examiner`); the internal keys and the `body.persona-*` CSS hooks are
+  unchanged, so stored preferences survive. `Book.persona.apply()` is now
+  symmetric: stepping *down* a level re-collapses the strata the switch
+  itself opened (tracked via `data-persona-opened`), while a fold the reader
+  opened by hand keeps its state — the §D item 9 / ped m3 rule ("never hides
+  the reader's own content") still holds, and self-check answers are still
+  never touched.
+- **Chapter picker + foot-of-page pager** replace the flat 14-link top nav.
+  `Book.buildNav()` renders a native `<select>` (current chapter
+  preselected, `planned` chapters disabled); the new `Book.buildPager()`
+  appends **← Previous | Contents | Next →** to every page, built from
+  `js/manifest.js` so no chapter hardcodes its neighbours. New
+  `Book.chrome()` groups nav + persona + glossary + theme into
+  `.book-controls` behind a ☰ button — assembled in JS so the 14 frozen
+  chapter files are untouched.
+- **Symbol-passport glossary**: pinned symbols can be removed *in the panel*
+  (per-row `✕` plus "clear all") instead of only from the term's hover card,
+  and the panel's open state persists across chapters
+  (`book-glossary-open`).
+- **Narrow-viewport pass** (`book/site/css/book.css`): topbar collapses
+  behind ☰ below 860px; below 640px the reading column, widget controls,
+  sliders and pager go single-column, and the glossary becomes a bottom
+  sheet. Structurally verified only — not yet checked on a physical device.
+- **Ch 0 self-check Q0.3 re-posed**: the question no longer points at
+  "§2's budget" but states the split it asks about (σ²_stat/N vs σ²_sys).
+- Verification: jsdom harness (33 behavioural checks) + a boot sweep over
+  all 14 shipped pages, clean; `book/generators/qa_gates.py` 0 violations.
+
 ### Added (research-cycle standing workflow)
 - **`/research-cycle` skill** (`.claude/skills/research-cycle/SKILL.md`) +
   companion `docs/RESEARCH_CYCLE.md` — the standing 7-stage research cycle

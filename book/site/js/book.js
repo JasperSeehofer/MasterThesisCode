@@ -16,7 +16,10 @@
  *                             job-ID split rule) — one definition, §D-6
  *   Book.gridSlider(opts)   — a slider bound to a precomputed data grid
  *   Book.predictReveal(el)  — "predict, then reveal" row (localStorage-persisted)
- *   Book.buildNav()         — top nav from window.BOOK_CHAPTERS (js/manifest.js)
+ *   Book.chrome()           — topbar controls group + ☰ mobile menu toggle
+ *   Book.buildNav()         — chapter PICKER from window.BOOK_CHAPTERS
+ *                             (js/manifest.js)
+ *   Book.buildPager()       — previous/next chapter buttons at the page foot
  *   Book.themedPlot(...)    — Plotly plot that re-layouts on theme change
  *   Book.isDark()           — current effective theme
  *   Book.logsumexp / combineLogRows / normalizePosterior / trapz / argmaxIdx
@@ -44,8 +47,10 @@
  *   Book.lazyPlot(el, fn)   — build a widget when it nears the viewport
  *                             (ch03's IntersectionObserver recipe, §D-9)
  *   Book.chapter()          — current chapter number (99 = ungated pages)
- *   Book.persona            — global "Reading as: Mara / Tomas / Examiner"
- *                             switch (pre-expands strata; never hides content)
+ *   Book.persona            — global "Reading as: Curious / Methodology /
+ *                             All details" switch (pre-expands strata; a step
+ *                             down re-collapses what IT opened, never what
+ *                             the reader opened)
  *
  * No build step: this file is loaded directly via <script src="js/book.js">
  * after js/manifest.js, vendor/plotly/plotly.min.js and vendor/katex/katex.min.js
@@ -923,6 +928,10 @@
 
   Book.passport = {
     GLOSSARY_KEY: "book-glossary",
+    /* Whether the glossary panel is open — persisted, so paging to the next
+     * chapter keeps the reader's pinned symbols on screen instead of making
+     * them re-open it every page (reader feedback 2026-08-04). */
+    GLOSSARY_OPEN_KEY: "book-glossary-open",
     _pop: null,
 
     _pinned() {
@@ -1023,6 +1032,14 @@
       if (Book.passport._pop) Book.passport._pop.style.display = "none";
     },
 
+    /** Unpin a symbol from anywhere (glossary row ✕, or the card's pin). */
+    unpin(key) {
+      Book.passport._setPinned(
+        Book.passport._pinned().filter((x) => x !== key)
+      );
+      Book.passport._renderGlossary();
+    },
+
     _renderGlossary() {
       const panel = document.getElementById("passport-glossary");
       if (!panel) return;
@@ -1033,14 +1050,22 @@
           `<p class="passport-glossary-empty">Nothing pinned yet — tap any ` +
           `<span class="term-example">dotted symbol</span> in the text and pin it.</p>`;
       } else {
-        let html = `<div class="passport-glossary-title">My glossary</div>`;
+        // Removal lives in the panel itself (reader feedback 2026-08-04): a
+        // reader who over-pinned had to hunt the original term in the prose
+        // to get the card back and unpin from there.
+        let html = `<div class="passport-glossary-title">My glossary` +
+          `<button type="button" class="passport-glossary-clear" ` +
+          `title="Unpin every symbol">clear all</button></div>`;
         for (const k of list) {
           // same chapter gating as the hover card — a symbol pinned in Ch 9
           // must not re-spoil Ch 9 when the reader pages back to Ch 5.
           const v = Book.passport._view(k);
           if (!v) continue;
-          html += `<div class="passport-glossary-item"><strong>${v.sym}</strong> ` +
-            `${v.meaning} <em>[${v.units}]</em> <code>${v.src}</code></div>`;
+          html += `<div class="passport-glossary-item">` +
+            `<button type="button" class="passport-unpin" data-unpin="${k}" ` +
+            `title="Remove from my glossary" aria-label="Remove ${k} from my glossary">&times;</button>` +
+            `<span class="passport-glossary-body"><strong>${v.sym}</strong> ` +
+            `${v.meaning} <em>[${v.units}]</em> <code>${v.src}</code></span></div>`;
         }
         panel.innerHTML = html;
       }
@@ -1095,14 +1120,45 @@
         panel.setAttribute("aria-label", "Pinned symbol glossary");
         panel.style.display = "none";
         document.body.appendChild(panel);
+
+        const setOpen = (open, persist) => {
+          panel.style.display = open ? "block" : "none";
+          btn.setAttribute("aria-expanded", String(open));
+          if (open) Book.passport._renderGlossary();
+          if (persist) {
+            try {
+              localStorage.setItem(Book.passport.GLOSSARY_OPEN_KEY, open ? "1" : "0");
+            } catch (e) { /* ignore */ }
+          }
+        };
         btn.addEventListener("click", () => {
-          const open = panel.style.display !== "none";
-          panel.style.display = open ? "none" : "block";
-          btn.setAttribute("aria-expanded", String(!open));
-          if (!open) Book.passport._renderGlossary();
+          setOpen(panel.style.display === "none", true);
         });
+
+        // Removal controls, delegated (the panel re-renders on every change).
+        panel.addEventListener("click", (ev) => {
+          const un = ev.target.closest("[data-unpin]");
+          if (un) {
+            Book.passport.unpin(un.getAttribute("data-unpin"));
+            return;
+          }
+          if (ev.target.closest(".passport-glossary-clear")) {
+            Book.passport._setPinned([]);
+            Book.passport._renderGlossary();
+          }
+        });
+
+        const controls = topbar.querySelector(".book-controls");
         const themeBtn = topbar.querySelector("[data-theme-toggle]");
-        topbar.insertBefore(btn, themeBtn);
+        if (controls) controls.insertBefore(btn, themeBtn || null);
+        else topbar.insertBefore(btn, themeBtn);
+
+        // Restore the panel's open state across chapters.
+        let wasOpen = false;
+        try {
+          wasOpen = localStorage.getItem(Book.passport.GLOSSARY_OPEN_KEY) === "1";
+        } catch (e) { /* ignore */ }
+        if (wasOpen) setOpen(true, false);
       }
     },
   };
@@ -1326,19 +1382,29 @@
   // ------------------------------------------------------------------
   // Persona switch (WIDGET_REQUESTS R-INT-3)
   // ------------------------------------------------------------------
-  /* "Reading as: Mara / Tomas / Examiner" — progressive disclosure by reader,
-   * per BOOK_PEDAGOGY.md §1.2. It only PRE-EXPANDS strata, never hides
-   * content, and never touches self-check answers (rubric D: answers stay
-   * hidden until asked). Persisted across pages. */
+  /* "Reading as: Curious / Methodology / All details" — progressive
+   * disclosure by depth, per BOOK_PEDAGOGY.md §1.2. The three modes are the
+   * book's three personas (internally still keyed mara / tomas / examiner,
+   * so stored preferences and the body.persona-* CSS hooks are unchanged);
+   * the visible labels name the DEPTH the reader wants rather than a person.
+   * It never touches self-check answers (rubric D: answers stay hidden until
+   * asked). Persisted across pages.
+   *
+   * Reversibility (reader feedback 2026-08-04): stepping DOWN a level now
+   * re-collapses the strata this switch opened — but only those. A fold the
+   * reader opened (or kept open) by hand is theirs: the toggle listener in
+   * init() clears our ownership flag, so "never hides the reader's own
+   * content" (§D item 9 / ped m3) still holds. */
   Book.persona = {
     STORAGE_KEY: "book-persona",
     MODES: ["mara", "tomas", "examiner"],
-    LABELS: { mara: "Mara", tomas: "Tomas", examiner: "Examiner" },
+    LABELS: { mara: "Curious", tomas: "Methodology", examiner: "All details" },
     TITLES: {
-      mara: "Curious physicist: nothing pre-expanded",
-      tomas: "GW reader: 'For the GW reader' strata open by default",
-      examiner: "Examiner: GW strata + numbers views open, provenance emphasized",
+      mara: "Curious — the main thread only; nothing pre-expanded",
+      tomas: "Methodology — the 'For the GW reader' strata (code sites, derivations) open by default",
+      examiner: "All details — methodology strata plus every numbers view, provenance emphasized",
     },
+    _applying: false,
 
     current() {
       try {
@@ -1347,21 +1413,39 @@
       } catch (e) { return "mara"; }
     },
 
+    /** The strata each mode pre-expands (in depth order). */
+    _managed() {
+      return {
+        gw: Array.from(document.querySelectorAll("details.gw-reader")),
+        num: Array.from(document.querySelectorAll("details.num-view")),
+      };
+    },
+
     apply(mode) {
       document.body.classList.remove("persona-mara", "persona-tomas", "persona-examiner");
       document.body.classList.add("persona-" + mode);
-      const gw = document.querySelectorAll("details.gw-reader");
-      const num = document.querySelectorAll("details.num-view");
-      // The switch only ever OPENS strata, never force-closes them
-      // (REVISION_WORKLIST §D item 9 / ped m3): switching back to Mara
-      // leaves whatever the reader opened alone — "it never hides
-      // content" now also holds for content the reader revealed.
-      if (mode === "tomas") {
-        gw.forEach((d) => { d.open = true; });
-      } else if (mode === "examiner") {
-        gw.forEach((d) => { d.open = true; });
-        num.forEach((d) => { d.open = true; });
-      }
+      const { gw, num } = Book.persona._managed();
+      const wanted = new Set();
+      if (mode === "tomas") gw.forEach((d) => wanted.add(d));
+      if (mode === "examiner") { gw.forEach((d) => wanted.add(d)); num.forEach((d) => wanted.add(d)); }
+
+      // Symmetric switching: open what this mode wants, and re-collapse what
+      // a PREVIOUS mode opened and this one does not — never a fold the
+      // reader opened by hand (init() clears personaOpened on user toggles).
+      Book.persona._applying = true;
+      gw.concat(num).forEach((d) => {
+        if (wanted.has(d)) {
+          if (!d.open) {
+            d.open = true;
+            d.dataset.personaOpened = "1";
+          }
+        } else if (d.dataset.personaOpened === "1") {
+          d.open = false;
+          delete d.dataset.personaOpened;
+        }
+      });
+      Book.persona._applying = false;
+
       document.querySelectorAll(".persona-switch button").forEach((b) => {
         b.setAttribute("aria-pressed", String(b.getAttribute("data-persona") === mode));
       });
@@ -1385,13 +1469,64 @@
           `${Book.persona.LABELS[m]}</button>`;
       }
       wrap.innerHTML = html;
+      // order in the group: chapter picker | persona | glossary | theme
+      const controls = topbar.querySelector(".book-controls");
       const themeBtn = topbar.querySelector("[data-theme-toggle]");
-      topbar.insertBefore(wrap, themeBtn);
+      (controls || topbar).insertBefore(wrap, themeBtn || null);
       wrap.querySelectorAll("button").forEach((b) => {
         b.addEventListener("click", () => Book.persona.set(b.getAttribute("data-persona")));
       });
+
+      // A fold the reader touches becomes the reader's: clear our ownership
+      // flag so a later mode change never closes it under them.
+      const { gw, num } = Book.persona._managed();
+      gw.concat(num).forEach((d) => {
+        d.addEventListener("toggle", () => {
+          if (!Book.persona._applying) delete d.dataset.personaOpened;
+        });
+      });
+
       Book.persona.apply(Book.persona.current());
     },
+  };
+
+  // ------------------------------------------------------------------
+  // Topbar chrome: controls row + mobile menu (reader feedback 2026-08-04)
+  // ------------------------------------------------------------------
+  /* The topbar used to be brand + 14 chapter links + N buttons on one flex
+   * row: on a phone that wrapped into a five-line wall before the chapter
+   * even started. Chrome is assembled HERE rather than in the 14 chapter
+   * files (which are frozen): the existing <nav class="book-nav"> and the
+   * theme button are moved into a .book-controls group, and a ☰ button —
+   * shown by CSS only on narrow viewports — collapses that group. Persona
+   * and glossary buttons insert themselves into the same group. */
+  Book.chrome = function () {
+    const topbar = document.querySelector(".book-topbar");
+    if (!topbar || topbar.querySelector(".book-controls")) return;
+
+    const controls = document.createElement("div");
+    controls.className = "book-controls";
+    controls.id = "book-controls";
+
+    const nav = topbar.querySelector(".book-nav");
+    const themeBtn = topbar.querySelector("[data-theme-toggle]");
+    if (nav) controls.appendChild(nav);
+    if (themeBtn) controls.appendChild(themeBtn);
+    topbar.appendChild(controls);
+
+    const menu = document.createElement("button");
+    menu.type = "button";
+    menu.className = "topbar-menu";
+    menu.setAttribute("data-topbar-menu", "");
+    menu.setAttribute("aria-expanded", "false");
+    menu.setAttribute("aria-controls", "book-controls");
+    menu.setAttribute("aria-label", "Menu");
+    menu.textContent = "☰";
+    menu.addEventListener("click", () => {
+      const open = controls.classList.toggle("is-open");
+      menu.setAttribute("aria-expanded", String(open));
+    });
+    topbar.insertBefore(menu, controls);
   };
 
   // ------------------------------------------------------------------
@@ -1399,29 +1534,95 @@
   // ------------------------------------------------------------------
   /**
    * If window.BOOK_CHAPTERS exists and the page carries
-   * <nav class="book-nav" data-nav></nav>, populate it: "live" chapters as
-   * links, "planned" ones greyed out. Pages with a hand-written nav (no
-   * data-nav attribute) are left untouched.
+   * <nav class="book-nav" data-nav></nav>, populate it with a chapter
+   * PICKER (a native <select>): the flat 14-link list was unreadable on a
+   * phone and hard to scan on a laptop, and it gave no sense of order.
+   * Sequential movement is the pager at the foot of the page
+   * (Book.buildPager). "planned" chapters render as disabled options.
+   * Pages with a hand-written nav (no data-nav attribute) are untouched.
    */
   Book.buildNav = function () {
     const nav = document.querySelector(".book-nav[data-nav]");
     if (!nav || !global.BOOK_CHAPTERS) return;
+    const here = Book.currentFile();
     nav.innerHTML = "";
+
+    const sel = document.createElement("select");
+    sel.className = "book-nav-select";
+    sel.setAttribute("aria-label", "Jump to a chapter");
     for (const ch of global.BOOK_CHAPTERS) {
-      if (ch.status === "live") {
-        const a = document.createElement("a");
-        a.href = ch.file;
-        a.textContent = ch.short;
-        a.title = ch.title;
-        nav.appendChild(a);
-      } else {
-        const s = document.createElement("span");
-        s.className = "nav-planned";
-        s.textContent = ch.short;
-        s.title = ch.title + " (planned)";
-        nav.appendChild(s);
-      }
+      const opt = document.createElement("option");
+      opt.value = ch.file;
+      opt.textContent = Book.chapterLabel(ch) +
+        (ch.status === "live" ? "" : "  (planned)");
+      if (ch.status !== "live") opt.disabled = true;
+      if (ch.file === here) opt.selected = true;
+      sel.appendChild(opt);
     }
+    if (!global.BOOK_CHAPTERS.some((c) => c.file === here)) {
+      const opt = document.createElement("option");
+      opt.value = "";
+      opt.textContent = "Jump to…";
+      opt.selected = true;
+      sel.insertBefore(opt, sel.firstChild);
+    }
+    sel.addEventListener("change", () => {
+      if (sel.value && sel.value !== here) global.location.href = sel.value;
+    });
+    nav.appendChild(sel);
+  };
+
+  /** The current page's file name ("" — a directory URL — means index). */
+  Book.currentFile = function () {
+    return global.location.pathname.split("/").pop() || "index.html";
+  };
+
+  /** "Ch. 7 — A Redshift Is Not a Number" (no duplication for Contents). */
+  Book.chapterLabel = function (ch) {
+    return ch.short === ch.title ? ch.title : ch.short + " — " + ch.title;
+  };
+
+  // ------------------------------------------------------------------
+  // Foot-of-page pager (reader feedback 2026-08-04)
+  // ------------------------------------------------------------------
+  /**
+   * Previous / next chapter buttons appended to main.book-content (before
+   * the .book-footer note if there is one). Order and titles come from
+   * window.BOOK_CHAPTERS, so a chapter never hardcodes its neighbours —
+   * same contract as the nav. Only "live" chapters take part.
+   */
+  Book.buildPager = function () {
+    const main = document.querySelector("main.book-content");
+    if (!main || !global.BOOK_CHAPTERS) return;
+    if (main.querySelector(".book-pager")) return;
+    const live = global.BOOK_CHAPTERS.filter((c) => c.status === "live");
+    const here = Book.currentFile();
+    const i = live.findIndex((c) => c.file === here);
+    if (i < 0) return; // not a book page (template, stray file) — no pager
+
+    const cell = (ch, dir) => {
+      if (!ch) return `<span class="book-pager-slot"></span>`;
+      const arrow = dir === "prev" ? "← Previous" : "Next →";
+      return `<a class="book-pager-slot book-pager-${dir}" href="${ch.file}" ` +
+        `rel="${dir}"><span class="book-pager-dir">${arrow}</span>` +
+        `<span class="book-pager-title">${Book.chapterLabel(ch)}</span></a>`;
+    };
+
+    const pager = document.createElement("nav");
+    pager.className = "book-pager";
+    pager.setAttribute("aria-label", "Chapter navigation");
+    pager.innerHTML =
+      cell(live[i - 1], "prev") +
+      (here === "index.html"
+        ? `<span class="book-pager-slot"></span>`
+        : `<a class="book-pager-slot book-pager-toc" href="index.html">` +
+          `<span class="book-pager-dir">Contents</span>` +
+          `<span class="book-pager-title">All chapters</span></a>`) +
+      cell(live[i + 1], "next");
+
+    const footer = main.querySelector(".book-footer");
+    if (footer) main.insertBefore(pager, footer);
+    else main.appendChild(pager);
   };
 
   // ------------------------------------------------------------------
@@ -1438,8 +1639,12 @@
 
   document.addEventListener("DOMContentLoaded", () => {
     Book.theme.init();
+    // chrome() first: persona + glossary insert themselves into the
+    // .book-controls group it creates.
+    try { Book.chrome(); } catch (e) { console.warn("book.js: chrome init failed", e); }
     Book.buildNav();
     Book.markCurrentNav();
+    try { Book.buildPager(); } catch (e) { console.warn("book.js: pager init failed", e); }
     Book.renderMath(document.body);
     // Phase-4 instruments — each guarded so a failure can never take down
     // theme/nav/math on a page.
