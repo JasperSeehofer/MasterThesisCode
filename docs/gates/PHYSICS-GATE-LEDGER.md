@@ -41,3 +41,6 @@ are not.
 | Date | Commit | Step | Verdict | Target | Note |
 |---|---|---|---|---|---|
 <!-- APPEND NEW ROWS BELOW THIS LINE — newest last -->
+| 2026-08-04 | pre-commit | presented | APPROVED | bayesian_statistics.py:4226-4293 | Fix A C7-core: host-z volume_deconv kernel gains f_k(z) selection weight (GATE_PACKAGE_FINAL.md §1.2); author approved with honest framing (rail persists, 1D moves down) |
+| 2026-08-04 | pre-commit | presented | APPROVED | bayesian_statistics.py:3296-3331 | Fix B C8 half: 2D completion leg mass density g_i (measure-invariance PROVEN); C9 half NOT presented — blocked on gates ii-b/ii-c, author asked for measurement rationale |
+| 2026-08-04 | pre-commit | presented | APPROVED | bayesian_statistics.py (selection stack + mixture) | Fix B path-A joint C9+C8 (FIXB_PATHA_PACKAGE.md §3): S̄_φ replaces fitted S_3D in all three slots, D^φ, g-inside, w̃_G=α_G^φ/D̃^φ. Author decisions: D1=both (S_and now, retire stale p0 bounds next campaign; p0-window onto 2D-bias suspect list), D2=delivered-convention pins primary with MANDATORY promotion to truth once truth Σ4D(h) measured at 41h, D3=point form. Gate (ii) demoted to monitored consistency number; ship-on-correctness |
