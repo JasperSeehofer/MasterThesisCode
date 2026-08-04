@@ -172,6 +172,10 @@ def _install_worker_globals() -> None:
     bs.sigma2_cond_arr = np.array(sigma2_cond)
     bs.proj_arr = np.array(proj)
     bs.detection_probability = _StubDetectionProbability()
+    # C7: no completeness in the worker globals => f == 1 => the pre-C7 host-z
+    # kernel. Set explicitly so a sibling test module that installs a
+    # completeness stub cannot leak into these goldens via the module global.
+    bs.completeness_model = None
 
 
 # ── Regime grid ─────────────────────────────────────────────────────────────

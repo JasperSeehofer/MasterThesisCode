@@ -1828,6 +1828,13 @@ det_M_arr: npt.NDArray[np.float64] = np.empty(0)
 det_phi_arr: npt.NDArray[np.float64] = np.empty(0)
 det_theta_arr: npt.NDArray[np.float64] = np.empty(0)
 
+# Per-HEALPix-pixel catalogue completeness f_k, threaded into the worker
+# processes by child_process_init so the host-z kernel can evaluate f at the
+# HOST's pixel (C7-core, GATE_PACKAGE_FINAL.md §1.2). ``None`` reproduces the
+# pre-C7 kernel exactly (f == 1 everywhere): every unit test that installs the
+# worker globals by hand and does not set this stays byte-identical.
+completeness_model: CompletenessModel | None = None
+
 
 def _check_covariance_quality(
     cov: npt.NDArray[np.float64],
