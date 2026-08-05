@@ -1,0 +1,588 @@
+{
+  "fingerprints": {
+    "A1_iiib": {
+      "n_rows": 65108,
+      "n_rows_expected_65108": true,
+      "n_events": 1588,
+      "n_h": 41,
+      "row_formula_ok": true,
+      "git_commit": "128f318a8b5f9f9c7889b69f7f3402bd5726d037",
+      "git_commit_matches_128f318a": true,
+      "cli_args": {
+        "working_directory": "/pfs/work9/workspace/scratch/st_ac147838-emri/run_20260805_d1_a1_iiib",
+        "simulation_steps": 0,
+        "simulation_index": 0,
+        "evaluate": true,
+        "h_value": 0.6,
+        "h_values": null,
+        "snr_analysis": false,
+        "injection_campaign": false,
+        "injection_mixture": false,
+        "seed": 777000,
+        "generate_figures": null,
+        "use_gpu": false,
+        "num_workers": null,
+        "log_level": "INFO",
+        "combine": false,
+        "strategy": "physics-floor",
+        "generate_interactive": null,
+        "save_baseline": false,
+        "compare_baseline": null,
+        "catalog_only": false,
+        "allow_low_pdet_coverage": false,
+        "prescreen_audit": false,
+        "snapshot_ics": false,
+        "pdet_dl_bins": 60,
+        "pdet_mass_bins": 40,
+        "pdet_estimator": "local_linear",
+        "pdet_z_resolved": true,
+        "pdet_wbh_z_resolved": false,
+        "fisher_cond_threshold": 1e+16,
+        "host_z_kernel": "volume_deconv",
+        "host_mass_kernel": "auto",
+        "normalization_mode": "absolute_marginal",
+        "smear_global_selection": false,
+        "realize_observed_catalogue": false,
+        "realization_seed": null,
+        "realization_sigma_scale": 1.0,
+        "realization_parent": null,
+        "observed_catalogue": null,
+        "max_redshift": null,
+        "freeze_g_frac_ref_h": null,
+        "selection_in_completion_numerator": "off"
+      }
+    },
+    "A1_joint_r1": {
+      "n_rows": 65108,
+      "n_rows_expected_65108": true,
+      "n_events": 1588,
+      "n_h": 41,
+      "row_formula_ok": true,
+      "git_commit": "128f318a8b5f9f9c7889b69f7f3402bd5726d037",
+      "git_commit_matches_128f318a": true,
+      "cli_args": {
+        "working_directory": "/pfs/work9/workspace/scratch/st_ac147838-emri/run_20260805_d1_a1_joint_r1",
+        "simulation_steps": 0,
+        "simulation_index": 0,
+        "evaluate": true,
+        "h_value": 0.6,
+        "h_values": null,
+        "snr_analysis": false,
+        "injection_campaign": false,
+        "injection_mixture": false,
+        "seed": 777000,
+        "generate_figures": null,
+        "use_gpu": false,
+        "num_workers": null,
+        "log_level": "INFO",
+        "combine": false,
+        "strategy": "physics-floor",
+        "generate_interactive": null,
+        "save_baseline": false,
+        "compare_baseline": null,
+        "catalog_only": false,
+        "allow_low_pdet_coverage": false,
+        "prescreen_audit": false,
+        "snapshot_ics": false,
+        "pdet_dl_bins": 60,
+        "pdet_mass_bins": 40,
+        "pdet_estimator": "local_linear",
+        "pdet_z_resolved": true,
+        "pdet_wbh_z_resolved": false,
+        "fisher_cond_threshold": 1e+16,
+        "host_z_kernel": "volume_deconv",
+        "host_mass_kernel": "auto",
+        "normalization_mode": "absolute_marginal",
+        "smear_global_selection": false,
+        "realize_observed_catalogue": false,
+        "realization_seed": null,
+        "realization_sigma_scale": 1.0,
+        "realization_parent": null,
+        "observed_catalogue": "/pfs/work9/workspace/scratch/st_ac147838-emri/realizations_20260729/observed_catalogue_seed900001.csv",
+        "max_redshift": null,
+        "freeze_g_frac_ref_h": null,
+        "selection_in_completion_numerator": "off"
+      }
+    },
+    "A2_iiib": {
+      "n_rows": 65108,
+      "n_rows_expected_65108": true,
+      "n_events": 1588,
+      "n_h": 41,
+      "row_formula_ok": true,
+      "git_commit": "128f318a8b5f9f9c7889b69f7f3402bd5726d037",
+      "git_commit_matches_128f318a": true,
+      "cli_args": {
+        "working_directory": "/pfs/work9/workspace/scratch/st_ac147838-emri/run_20260805_d1_a2_iiib",
+        "simulation_steps": 0,
+        "simulation_index": 0,
+        "evaluate": true,
+        "h_value": 0.6,
+        "h_values": null,
+        "snr_analysis": false,
+        "injection_campaign": false,
+        "injection_mixture": false,
+        "seed": 777000,
+        "generate_figures": null,
+        "use_gpu": false,
+        "num_workers": null,
+        "log_level": "INFO",
+        "combine": false,
+        "strategy": "physics-floor",
+        "generate_interactive": null,
+        "save_baseline": false,
+        "compare_baseline": null,
+        "catalog_only": false,
+        "allow_low_pdet_coverage": false,
+        "prescreen_audit": false,
+        "snapshot_ics": false,
+        "pdet_dl_bins": 60,
+        "pdet_mass_bins": 40,
+        "pdet_estimator": "local_linear",
+        "pdet_z_resolved": true,
+        "pdet_wbh_z_resolved": false,
+        "fisher_cond_threshold": 1e+16,
+        "host_z_kernel": "volume_deconv",
+        "host_mass_kernel": "auto",
+        "normalization_mode": "absolute_marginal",
+        "smear_global_selection": false,
+        "realize_observed_catalogue": false,
+        "realization_seed": null,
+        "realization_sigma_scale": 1.0,
+        "realization_parent": null,
+        "observed_catalogue": null,
+        "max_redshift": null,
+        "freeze_g_frac_ref_h": null,
+        "selection_in_completion_numerator": "off"
+      }
+    },
+    "A2_joint_r1": {
+      "n_rows": 65108,
+      "n_rows_expected_65108": true,
+      "n_events": 1588,
+      "n_h": 41,
+      "row_formula_ok": true,
+      "git_commit": "128f318a8b5f9f9c7889b69f7f3402bd5726d037",
+      "git_commit_matches_128f318a": true,
+      "cli_args": {
+        "working_directory": "/pfs/work9/workspace/scratch/st_ac147838-emri/run_20260805_d1_a2_joint_r1",
+        "simulation_steps": 0,
+        "simulation_index": 0,
+        "evaluate": true,
+        "h_value": 0.6,
+        "h_values": null,
+        "snr_analysis": false,
+        "injection_campaign": false,
+        "injection_mixture": false,
+        "seed": 777000,
+        "generate_figures": null,
+        "use_gpu": false,
+        "num_workers": null,
+        "log_level": "INFO",
+        "combine": false,
+        "strategy": "physics-floor",
+        "generate_interactive": null,
+        "save_baseline": false,
+        "compare_baseline": null,
+        "catalog_only": false,
+        "allow_low_pdet_coverage": false,
+        "prescreen_audit": false,
+        "snapshot_ics": false,
+        "pdet_dl_bins": 60,
+        "pdet_mass_bins": 40,
+        "pdet_estimator": "local_linear",
+        "pdet_z_resolved": true,
+        "pdet_wbh_z_resolved": false,
+        "fisher_cond_threshold": 1e+16,
+        "host_z_kernel": "volume_deconv",
+        "host_mass_kernel": "auto",
+        "normalization_mode": "absolute_marginal",
+        "smear_global_selection": false,
+        "realize_observed_catalogue": false,
+        "realization_seed": null,
+        "realization_sigma_scale": 1.0,
+        "realization_parent": null,
+        "observed_catalogue": "/pfs/work9/workspace/scratch/st_ac147838-emri/realizations_20260729/observed_catalogue_seed900001.csv",
+        "max_redshift": null,
+        "freeze_g_frac_ref_h": null,
+        "selection_in_completion_numerator": "off"
+      }
+    }
+  },
+  "flag_check": {
+    "A1_iiib": {
+      "production_flags_ok": true,
+      "mismatches": {},
+      "counterfactual_toggles_at_default": true,
+      "toggle_mismatches": {}
+    },
+    "A1_joint_r1": {
+      "production_flags_ok": true,
+      "mismatches": {},
+      "counterfactual_toggles_at_default": true,
+      "toggle_mismatches": {}
+    },
+    "A2_iiib": {
+      "production_flags_ok": true,
+      "mismatches": {},
+      "counterfactual_toggles_at_default": true,
+      "toggle_mismatches": {}
+    },
+    "A2_joint_r1": {
+      "production_flags_ok": true,
+      "mismatches": {},
+      "counterfactual_toggles_at_default": true,
+      "toggle_mismatches": {}
+    }
+  },
+  "commit_provenance_note": "Registered pin (table 'The run') = 9a715405. Actual run_metadata git_commit = 128f318a8b5f9f9c7889b69f7f3402bd5726d037. `git diff --stat 9a715405 128f318a -- master_thesis_code/` is EMPTY (verified) -- the only commit between the pin and 128f318a is 128f318a itself, which adds `d1_sand/make_sand_pools.py` (the registered 'instrumentation' script) and touches nothing on the /physics-change trigger list. Estimator code at 128f318a is byte-identical to the pinned 9a715405 production code. No discrepancy.",
+  "S1_self_certification": {
+    "iiib": {
+      "Sigma4D_A2_over_A1": 0.22864027196320774,
+      "Sigma4D_target": 0.2286246597604769,
+      "Sigma4D_rel_dev": 6.828748371757768e-05,
+      "Sigma4D_pass_1e-3": true,
+      "beta_Gbar_phi_A2_over_A1": 0.31297598808059934,
+      "beta_Gbar_phi_target": 0.3129747690740832,
+      "beta_Gbar_phi_rel_dev": 3.894903476481772e-06,
+      "beta_Gbar_phi_pass_1e-3": true
+    },
+    "joint_r1": {
+      "Sigma4D_A2_over_A1": 0.2572032853430452,
+      "Sigma4D_target": 0.2286246597604769,
+      "Sigma4D_rel_dev": 0.12500237556398883,
+      "Sigma4D_pass_1e-3": false,
+      "beta_Gbar_phi_A2_over_A1": 0.31297592896106674,
+      "beta_Gbar_phi_target": 0.3129747690740832,
+      "beta_Gbar_phi_rel_dev": 3.706007953760763e-06,
+      "beta_Gbar_phi_pass_1e-3": true
+    },
+    "both_pass": false
+  },
+  "stratum_membership": {
+    "dark_event_indices_n": 1514,
+    "iiib_dark_survivors_n": 219,
+    "joint_r1_dark_survivors_n": 534,
+    "shared_218_n": 218,
+    "shared_218_matches_registered_218": true,
+    "resurrected_316_n": 316,
+    "resurrected_316_matches_registered_316": true,
+    "A0_joint_r1_shared_218_reproduction": {
+      "sum": -112.69674674819511,
+      "mean": -0.5169575538908032,
+      "sum_matches_registered": "True",
+      "mean_matches_registered": "True"
+    },
+    "A0_joint_r1_resurrected_316_reproduction": {
+      "sum": -492.0762245626547,
+      "sum_matches_registered": "True"
+    }
+  },
+  "per_venue_distribution": {
+    "iiib": {
+      "n_events_requested": 1588,
+      "n_common_delta_events": 294,
+      "n_delta_undefined_A1": 1294,
+      "n_delta_undefined_A2": 1294,
+      "n_delta_undefined_note": "Delta_e requires L_cat_no_bh>0 AND L_cat_with_bh>0 at BOTH h=0.73,0.81; undefined counts explain why the paired distribution population is smaller than the full 1588 events, and tie directly to the N2 catalogue-leg bit-identity violation below (A2's numerator legs go to 0 for many rows).",
+      "n_common_t_events": 1588,
+      "rho_e": {
+        "n_guarded": 0,
+        "n_used": 294,
+        "median": 0.9784030789675509,
+        "p16": 0.6949197067327393,
+        "p84": 0.9858853664524589,
+        "spearman_delta_A1_A2": 1.0,
+        "spearman_p": 0.0,
+        "frac_within_0.05": 0.6564625850340136,
+        "frac_within_0.20": 0.7925170068027211
+      },
+      "tau_e": {
+        "n_guarded": 0,
+        "n_used": 1588,
+        "median": 0.8628821317325588,
+        "p16": 0.6009454983163345,
+        "p84": 1.2319178162551436,
+        "spearman_t_A1_A2": 0.9965974655703007,
+        "spearman_p": 0.0,
+        "frac_within_0.05": 0.05919395465994962,
+        "frac_within_0.20": 0.4811083123425693
+      },
+      "S4_ceiling_0.73_0.81": {
+        "ceiling_nats": 0.01066732831245143,
+        "n_events": 1588,
+        "frac_compliant": 0.9848866498740554,
+        "pass_ge_90pct": true,
+        "max_abs_violation": 0.044301444189447814,
+        "sum_abs_class_summed_move": 10.38889815981815,
+        "scale_sanity_ceiling_17nats": true
+      }
+    },
+    "joint_r1": {
+      "n_events_requested": 1588,
+      "n_common_delta_events": 607,
+      "n_delta_undefined_A1": 981,
+      "n_delta_undefined_A2": 981,
+      "n_delta_undefined_note": "Delta_e requires L_cat_no_bh>0 AND L_cat_with_bh>0 at BOTH h=0.73,0.81; undefined counts explain why the paired distribution population is smaller than the full 1588 events, and tie directly to the N2 catalogue-leg bit-identity violation below (A2's numerator legs go to 0 for many rows).",
+      "n_common_t_events": 1588,
+      "rho_e": {
+        "n_guarded": 0,
+        "n_used": 607,
+        "median": 0.9827787103487033,
+        "p16": 0.9338757398528176,
+        "p84": 0.9927124969104161,
+        "spearman_delta_A1_A2": 1.0,
+        "spearman_p": 0.0,
+        "frac_within_0.05": 0.7578253706754531,
+        "frac_within_0.20": 0.8813838550247117
+      },
+      "tau_e": {
+        "n_guarded": 0,
+        "n_used": 1588,
+        "median": 0.8384235960622122,
+        "p16": 0.5097222796655317,
+        "p84": 1.2650521918266364,
+        "spearman_t_A1_A2": 0.9943689302077038,
+        "spearman_p": 0.0,
+        "frac_within_0.05": 0.07052896725440806,
+        "frac_within_0.20": 0.3916876574307305
+      },
+      "S4_ceiling_0.73_0.81": {
+        "ceiling_nats": 0.01066732831245143,
+        "n_events": 1588,
+        "frac_compliant": 0.9748110831234257,
+        "pass_ge_90pct": true,
+        "max_abs_violation": 0.04083428984642179,
+        "sum_abs_class_summed_move": 11.586306247521136,
+        "scale_sanity_ceiling_17nats": true
+      }
+    }
+  },
+  "stratum_decomposition": {
+    "iiib": {
+      "shared_218": {
+        "n_events": 218,
+        "sum_A1": -240.2002493882112,
+        "sum_A2": -235.52037440810884,
+        "mean_A1": -1.1018360063679413,
+        "mean_A2": -1.0803686899454534,
+        "delta_sum_A2_minus_A1": 4.679874980102369,
+        "m_S_vs_registered_joint_A0_ref_112.697": 0.04152626508872422,
+        "sign_delta_sum": "opposite_to_A0(positive)",
+        "rho_e_median_on_shared218": 0.9826922647060831,
+        "rho_e_p16_on_shared218": 0.9584927158926265,
+        "rho_e_p84_on_shared218": 0.9862292819019628,
+        "rho_e_median_within_pm10pct_of_1": true,
+        "rho_e_median_within_0.9_1.1": true,
+        "note": "No registered A0 reference constant exists for iiib on this stratum; m_S here is computed against the JOINT_R1 A0 reference (112.697) per the registered single m_S formula, since the prereg gives only one denominator. iiib's own A0 baseline sum on shared-218 = -240.148116 is reported for context/flagging only.",
+        "iiib_own_A0_baseline_sum": -240.14811635908575
+      }
+    },
+    "joint_r1": {
+      "shared_218": {
+        "n_events": 218,
+        "sum_A1": -112.73246240950128,
+        "sum_A2": -109.09821194115871,
+        "mean_A1": -0.5171213871995471,
+        "mean_A2": -0.5004505134915537,
+        "delta_sum_A2_minus_A1": 3.6342504683425716,
+        "m_S_vs_registered_joint_A0_ref_112.697": 0.032248051281043535,
+        "sign_delta_sum": "opposite_to_A0(positive)",
+        "rho_e_median_on_shared218": 0.9638638918366016,
+        "rho_e_p16_on_shared218": 0.9346043859736717,
+        "rho_e_p84_on_shared218": 0.9819012224298218,
+        "rho_e_median_within_pm10pct_of_1": true,
+        "rho_e_median_within_0.9_1.1": true
+      },
+      "resurrected_316": {
+        "n_events": 316,
+        "sum_A1": -492.1279958882209,
+        "sum_A2": -486.8599997964973,
+        "mean_A1": -1.5573670755956357,
+        "mean_A2": -1.5406962018876496,
+        "delta_sum_A2_minus_A1": 5.267996091723603,
+        "m_R": 0.010705650524785403,
+        "sign_delta_sum": "opposite_to_A0(positive)"
+      }
+    }
+  },
+  "branch_scoring": {
+    "iiib": {
+      "m_S": 0.04152626508872422,
+      "m_R": null,
+      "note": "resurrected-316 is a joint_r1-only stratum by definition (joint_r1-only dark survivors); it structurally does not exist for iiib. Branches (a)/(b) both require m_R, so iiib alone cannot independently satisfy (a) or (b) under a literal reading -- iiib is reported as (c) MIXED/UNDETERMINED by construction unless the joint verdict is read as a single cross-venue call (see joint below).",
+      "verdict": "(c) MIXED/UNDETERMINED (m_R undefined for iiib)"
+    },
+    "joint_r1": {
+      "m_S": 0.032248051281043535,
+      "m_R": 0.010705650524785403,
+      "same_sign_strata": "True",
+      "rho_e_median_shared218": 0.9638638918366016,
+      "tail_acting_criteria_met": "False",
+      "core_reaching_criteria_met": "False",
+      "verdict": "(c) MIXED/UNDETERMINED"
+    },
+    "joint_verdict": "(c) MIXED/UNDETERMINED",
+    "joint_verdict_note": "Only joint_r1 carries both m_S and m_R (resurrected-316 does not exist as an iiib stratum). The joint verdict is read off joint_r1's mechanical branch call; iiib's m_S is reported as a cross-check, not as an independent branch input."
+  },
+  "nulls": {
+    "N1_horizon_invariance": {
+      "unique_dl_max_values_across_grid_and_pools": [
+        9.164987215
+      ],
+      "all_equal_target": true,
+      "pass": true,
+      "cross_check_evaluate_logs_h0.73_A1_iiib": "D(h=0.7300) ... dl_max=9.1650 Gpc (4 s.f., consistent)"
+    },
+    "N2_catalogue_leg_bit_identity": {
+      "iiib": {
+        "row_alignment_ok": true,
+        "n_cells": 65108,
+        "L_cat_no_bh_bit_identical": false,
+        "n_mismatch_no_bh": 40262,
+        "L_cat_with_bh_bit_identical": false,
+        "n_mismatch_with_bh": 12054,
+        "pass": false
+      },
+      "joint_r1": {
+        "row_alignment_ok": true,
+        "n_cells": 65108,
+        "L_cat_no_bh_bit_identical": false,
+        "n_mismatch_no_bh": 44895,
+        "L_cat_with_bh_bit_identical": false,
+        "n_mismatch_with_bh": 24887,
+        "pass": false
+      }
+    },
+    "N3_A1_vs_A0_near_null": {
+      "iiib": {
+        "n_h": 41,
+        "max_abs_dln_w_tilde_G": 0.001002809637157931,
+        "all_below_0.01": true,
+        "pass": true
+      },
+      "joint_r1": {
+        "n_h": 41,
+        "max_abs_dln_w_tilde_G": 0.0008293621522388328,
+        "all_below_0.01": true,
+        "pass": true
+      }
+    },
+    "N4_1D_channel_moves_nonnull_expected": {
+      "iiib": {
+        "combined_with_bh_bit_identical_A1_A2": false,
+        "D_tilde_phi_bit_identical_A1_A2": false,
+        "expected_NON_null_confirmed": true,
+        "pass": true
+      },
+      "joint_r1": {
+        "combined_with_bh_bit_identical_A1_A2": false,
+        "D_tilde_phi_bit_identical_A1_A2": false,
+        "expected_NON_null_confirmed": true,
+        "pass": true
+      }
+    }
+  },
+  "context_only": {
+    "iiib": {
+      "A0": {
+        "w_tilde_G_h0.73": 0.06196684,
+        "w_tilde_G_h0.60": 0.08320248,
+        "w_tilde_G_h0.86": 0.0490002
+      },
+      "A1": {
+        "w_tilde_G_h0.73": 0.06190526,
+        "w_tilde_G_h0.60": 0.08312144,
+        "w_tilde_G_h0.86": 0.04895578
+      },
+      "A2": {
+        "w_tilde_G_h0.73": 0.05101099,
+        "w_tilde_G_h0.60": 0.07108771,
+        "w_tilde_G_h0.86": 0.03896637
+      }
+    },
+    "joint_r1": {
+      "A0": {
+        "w_tilde_G_h0.73": 0.07080225,
+        "w_tilde_G_h0.60": 0.09568661,
+        "w_tilde_G_h0.86": 0.05560791
+      },
+      "A1": {
+        "w_tilde_G_h0.73": 0.07074465,
+        "w_tilde_G_h0.60": 0.09561881,
+        "w_tilde_G_h0.86": 0.05556191
+      },
+      "A2": {
+        "w_tilde_G_h0.73": 0.06542319,
+        "w_tilde_G_h0.60": 0.09091379,
+        "w_tilde_G_h0.86": 0.05000448
+      }
+    },
+    "note_2d_1d_MAP": "2D/1D MAP context numbers are NOT available: all four D1 arms were run with --combine=false (diagnostic-only, per the prereg's 'No production posterior' scope guard) -- no combined_2d.json/combined_1d.json exist for the D1 arms. Only the retrieved per-event/per-h event_likelihoods.csv are available, so the MAP context read is reported as N/A by design, not a gap in retrieval."
+  },
+  "S2_g_frac_slope": {
+    "per_arm_venue_slope_mean_g_frac_ln_ratio_h060_h086": {
+      "A1_iiib": 0.040284309008804246,
+      "A2_iiib": 0.040284309008804246,
+      "A1_joint_r1": 0.040284309008804246,
+      "A2_joint_r1": 0.040284309008804246
+    },
+    "A0_recomputed_slope_this_definition": {
+      "iiib": 0.040284309008804246,
+      "joint_r1": 0.040284309008804246
+    },
+    "A0_recomputed_slope_bit_identical_across_venues": true,
+    "prereg_quoted_A0_reference": 0.047586,
+    "AMBIGUITY_FLAG": "The prereg quotes A0 reference slope 0.047586 for 'Deltaln g-bar'. Recomputing the population MEAN g_frac ln-ratio over the full grid (h=0.60->0.86) from the retrieved A0 twins gives 0.040284309008804246 (bit-identical between venues, confirming the 'bit-identical across venues' half of the registered fact, but NOT matching 0.047586 under this aggregation choice). Median-based and sum-based alternatives were also tried (0.043408, identical-to-mean respectively) and do not match 0.047586 either. Flagged rather than guessed further; the %-change verdict below is computed self-consistently against MY OWN recomputed A0/A1 reference using the mean-ln-ratio definition, since the pass/fail condition is a RELATIVE (%) comparison, not an absolute-value match.",
+    "gfrac_bit_identity_per_event": {
+      "iiib": {
+        "bit_identical_per_event_A1_A2": true,
+        "n_mismatch": 0,
+        "max_abs_diff": 0.0
+      },
+      "joint_r1": {
+        "bit_identical_per_event_A1_A2": true,
+        "n_mismatch": 0,
+        "max_abs_diff": 0.0
+      }
+    },
+    "pct_change_A1_to_A2": {
+      "iiib": {
+        "A1_slope": 0.040284309008804246,
+        "A2_slope": 0.040284309008804246,
+        "pct_change": 0.0,
+        "unchanged_le_5pct": true
+      },
+      "joint_r1": {
+        "A1_slope": 0.040284309008804246,
+        "A2_slope": 0.040284309008804246,
+        "pct_change": 0.0,
+        "unchanged_le_5pct": true
+      }
+    },
+    "S2_verdict": "g_frac is BIT-IDENTICAL per event, per h, in BOTH venues, between A1 and A2 (max abs diff = 0.0, 0 mismatches out of 65108 cells each). This directly answers B3's registered check ('if g_frac is invariant under S_4D -> S_and,4D to <=1e-6 per event, the C7 convergence route is dead') at machine precision (0, not just <=1e-6). Consequently the h-slope is unchanged (0.0% change, well within the <=5%% band the prereg itself states as the refutation condition): 'D1 does not act through the completion leg's mass factor, and the C7 convergence is refuted regardless of the branch.' -- S2 registers this refutation as TRUE."
+  },
+  "S3_sign_expectation": {
+    "iiib": {
+      "n_events": 1588,
+      "frac_positive": 0.9659949622166247,
+      "frac_negative": 0.03400503778337532,
+      "frac_zero": 0.0,
+      "median_diff": 0.006400025976236456,
+      "mean_diff": 0.005457243963467912,
+      "one_signed_strict": false,
+      "predominant_sign": "positive"
+    },
+    "joint_r1": {
+      "n_events": 1588,
+      "frac_positive": 0.948992443324937,
+      "frac_negative": 0.05100755667506297,
+      "frac_zero": 0.0,
+      "median_diff": 0.007232240386369271,
+      "mean_diff": 0.005741531394921527,
+      "one_signed_strict": false,
+      "predominant_sign": "positive"
+    },
+    "S3_verdict": "t_e^A2 - t_e^A1 at the gate-vii (0.73,0.81) pair is predominantly ONE-SIGNED (positive) in both venues (~96.6% iiib / ~94.9% joint_r1 of events share the same sign), consistent with S3's first-order mixture-log-odds direction, but NOT strictly one-signed at the individual-event level: 3.4% (iiib) / 5.1% (joint_r1) of events flip sign. Per S3's own text ('A sign flip ... is a registered failure of S3 ... and must be reported, not smoothed'), these minority-sign events are a registered PARTIAL FAILURE of the strict one-signed prediction, reported as such."
+  }
+}
