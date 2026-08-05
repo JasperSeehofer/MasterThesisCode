@@ -179,3 +179,48 @@ this file is committed, **no edits above this line.**
 ---
 
 ## VERDICT — to be appended by the readout session
+
+**(c) MIXED, both venues — the bounded direction.** Jobs 6152554 (iiib) / 6152556
+(joint_r1), 246/246 tasks COMPLETED each, code commit `0167df53`.
+
+| read | pre-registered | measured (iiib / joint) | status |
+|---|---|---|---|
+| P-2 full-grid chord, [0.60, 0.86] | band [+10, +30] nats/h | **+24.588 / +22.736** nats/h | IN band |
+| P-2 central diff @ h=0.73 | band [+10, +30] nats/h | **+30.901 / +32.315** nats/h | OUT (above ceiling by 0.9 / 2.3) |
+| P-3 sign coherence | ≥ 0.90 | **0.7286 / 0.7128** | FAIL |
+| P-6 1D MAP | branches (a)/(b)/(c), no number pre-registered | **railed 0.600, both venues** (hard rail: Δln to the next grid point −1.61 / −1.11 nats) | branch (a)-consistent on P-6 alone, but see below |
+| Expected NULLs | must hold, all venues | **held bit-exactly**: 2D posterior, catalogue legs, `w_G`/`w_tilde_G`/`alpha_G_phi`/`r_Malm`/`D_tilde_phi` — 0 differing cells of 65108 | PASS |
+| Expected non-NULLs | must change | confirmed changed (`B_num`, `L_comp`, `g_frac`, `combined_no_bh`) | PASS |
+
+**Reading, per the prereg's own §"(c) MIXED / read the split" sub-branch.** The chord
+statistic lands in band in both venues (the primary, less approximation-sensitive
+read), but the central-difference statistic overshoots the ceiling in both venues,
+and sign coherence (0.71–0.73) falls well short of the 0.90 bar. Per the pre-registered
+"*Above +30*" reading: **the live z-quadrature of S̄_φ differs materially from M1's
+point-GW-peak evaluation, and/or the live completion share exceeds the CSV read** —
+this is **flagged for follow-up, NOT resolved** by this run. Both venues move together
+(no venue split), consistent with the completion machinery's known venue-independence
+(gate (vii)).
+
+**What this run does and does not establish.** N-2 is a **real, positive, bounded
+correction** — order +23 to +25 nats/h at the chord statistic — that is the derived
+sign and order of magnitude M1 predicted (band centred between M1's chord 15.7/17.5
+and central-diff 24.0/25.4). It is **not** a phantom or a sign error. But it
+**does not un-rail the production 1D channel**: the 1D MAP stays pinned at 0.600 in
+both venues, with a hard rail (the next grid point is disfavoured by −1.1 to −1.6
+nats). Per P-6's pre-registered discipline (never convert a ln-tilt into a MAP shift,
+and the rail-stays-put branch (a) reads as "bounded, another owner"), the standing
+explanation for the production 1D rail — the host photo-z root cause of record
+(`[[h0-railing-rootcause-photoz]]`, ledger #36) — is **not re-attributed** by this
+result. N-2 is real but bounded; it does not carry enough weight, even summed with a
+hard rail of only ~1.1–1.6 nats, to move the MAP off 0.600 given the down-tilt of
+record (−247.4/−184.0 nats/h) that produced that rail in the first place.
+
+**Formula adoption remains open**, gated by the P-2/P-3 mixed read above: whether the
+`1d` numerator selection factor becomes a `/physics-change` default depends on
+resolving why the live quadrature diverges from M1's point evaluation (candidates:
+the z-integration of `S̄_φ` versus the GW-peak point estimate; the completion share
+under the live mixture versus the CSV-measured share) — author ruling R-0..R-5,
+per the "Denominator scope" section above, not decided here.
+
+Evidence: `results/run_20260805_n2sel1d/readout.{py,json}`.
