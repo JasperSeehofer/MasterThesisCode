@@ -368,6 +368,99 @@ applicable, the `presented` row in `docs/gates/PHYSICS-GATE-LEDGER.md`.
 
 ---
 
+## Stage L — external consult (cross-cutting)
+
+**Not a numbered stage.** Stage L is invocable *from* stage 0 (intake) and *from*
+stage 5 (decision); the 0–6 pipeline is unchanged and is **not** renumbered.
+
+**Question:** Has the field already documented this failure mode — and if so, where
+exactly, with what validity conditions, and did we heed it?
+
+**Why it exists.** On 2026-08-05 the decisive external input for the Hitchhiker
+thread (arXiv:2212.08694 §2.3, the paragraph after Eq. 30 — the selection
+denominator's perfect-z condition) came from **author memory**, not from the cycle,
+and the paper was **already cited in this repo**: the adjacent passage sits quoted in
+`docs/BIAS_RESOLUTION_ATTEMPTS_REPORT.md:174-179`. *Already-cited ≠ already-heeded.*
+Stage L makes the consult a procedure instead of a recollection.
+
+### Entry triggers (all four are binding)
+
+| # | trigger | weight |
+|---|---|---|
+| L-a | **Every new mechanism thread's stage 0** | MANDATORY lightweight **R0 sweep** (see rings) — no full Stage L required, but the sweep is part of intake completeness |
+| L-b | **STUCK SIGNAL** — two consecutive `MIXED`/`UNDETERMINED` verdicts on the same thread | auto-triggers a **full** Stage L before the third measurement is designed |
+| L-c | **Before any `/physics-change` ADOPTION** | does the literature document *this fix's* failure modes? A fix with an undocumented-in-our-notes failure mode is not gate-ready |
+| L-d | **Each runbook lineage rollover** (`RUNBOOK_NEXT_SESSION_<N+1>`) | lightweight pass — refresh `docs/LITERATURE_WARNINGS.md` statuses against the session's verdicts |
+
+### Procedure
+
+**1. Symptom card.** State the problem *as observed signatures* — the numbers, the
+venues, what survived which controls — and then restate it **up an abstraction
+ladder**, each rung with its own search vocabulary:
+
+| rung | example (the 2026-08-05 case) |
+|---|---|
+| field-specific | "dark-siren H₀ rails high with photo-z hosts" |
+| method class | "selection effects in hierarchical Bayesian population inference" |
+| math class | "measure / normalization mismatch under data reduction; latent-variable marginalisation coupling" |
+| generic inference pathology | "per-item independence assumed where a shared latent breaks separability" |
+
+A card that only carries the field-specific rung will only find papers we already know.
+
+**2. Rings, searched in order. R0 first, always.**
+
+| ring | contents | the specific reading instruction |
+|---|---|---|
+| **R0** | papers **already cited in this repo** | re-read them **for warnings**: caveat/limitation sections, validity conditions attached to the equations we imported, "inconsistency" catalogues, footnotes. Not for the equations — we already took those |
+| **R1** | citation neighborhood of R0 | especially **forward** citations, filtered on *bias · inconsistent · caveat · erratum · corrigendum*; plus mock-data-challenge and code-comparison papers, which exist precisely to catalogue these failures |
+| **R2** | the field | the broader dark-siren / GW-cosmology literature on the method class |
+| **R3** | the math class | astrostatistics, selection-effect primers, simulation-based calibration (SBC) |
+| **R4** | code / numerics | implementations, issue trackers, release notes of the codes that solve our problem |
+
+**3. Independence.** The searcher receives the **symptom card only** — **never** the
+current suspect list, and never "we think it's X". This mirrors the commission's
+independence rule: a searcher told the suspect finds confirmation for the suspect.
+Timebox the search and say what the box was.
+
+**4. Intake.** Each candidate enters **stage 0** as a claim with provenance tag
+**`[LIT]`**, carrying the full citation *with section and equation numbers*. Then, in
+order:
+
+1. **Quote-verification before mapping — MANDATORY.** Pull the passage verbatim
+   before mapping it onto our pipeline. The 2026-08-05 lesson: without it, S1 and S2
+   were treated as two statements when they are two ends of *one*, and a genuinely
+   distinct third statement (P1) was missed entirely.
+2. The standard **two-layer exoneration check** (stage 0 procedure step 1).
+3. The **cheapest decisive measurement** (`Refute by:`), per stage-0 rule 4.
+
+**Exit artifacts**
+- Candidates **ranked by signature-match × cost-to-test**, filed as stage-0 claims and
+  feeding stage-2 pre-registrations; **or**
+- a documented **"the field has no answer"** — which is itself a reportable result, and
+  is stated as such rather than left as a silent absence; **and**
+- updated rows in **`docs/LITERATURE_WARNINGS.md`** (below).
+
+### The prevention half — assumption register
+
+Stage L is reactive; these two provisions make it preventive.
+
+**(i) The `/physics-change` gate package gains a SIXTH item.** In addition to the five
+(old formula with file:line · new formula · reference · dimensional analysis ·
+limiting case), a gate package must state **the source equations' stated validity
+conditions, each checked against our venue/regime.** Motivating case: Eq. 15's
+perfect-z condition was never registered when the per-event form was imported; M-1
+later showed it violated on *every* venue (ledger row 95). Approved 2026-08-05,
+**pending application** to `.claude/skills/physics-change/SKILL.md` — that edit belongs
+to a physics-change-owned commit and is tracked as a TODO in amendment row A5.
+
+**(ii) `docs/LITERATURE_WARNINGS.md`** — the register itself: the field's documented
+pitfalls mapped onto our status (`CHECKED` / `VIOLATED` / `UNDER MEASUREMENT` / `OPEN` /
+`N-A` / `UNCHECKED`), every row citing evidence or honestly saying `UNCHECKED`. Rows are
+written at Stage L intake (ring R0) and at gate item 6. Seeded 2026-08-05 with the
+arXiv:2212.08694 section.
+
+---
+
 ## Amendment ledger
 
 The cycle governs itself by its own discipline: **every future change to the
@@ -382,3 +475,4 @@ without a row is a change that cannot be shown to have been earned.
 | 2026-08-04 | A2 — paired read with every class-summed comparison | 3 | New hard rule: any Σ-over-events statistic compared across venues/configs/eras requires a paired/stratified per-event read alongside the aggregate | gate (vii)'s aggregate tilts agreed across venues to 2.6% by pure coincidence — scatter diluting shared-event tilts ×0.469 vs 316 resurrected dead-2D-leg events tilting 3.01× steeper (81% of the headline) cancelled in the mean, and a D1-demotion conclusion built on the agreement had to be withdrawn | `results/run_20260804_postfix/gate_vii/paired_check.json`, `.../paired_check.py` |
 | 2026-08-04 | A3 — harness acceptance criteria | 4 | TO-BUILD `pp_coverage.py` extension now carries three acceptance criteria: 2-channel with g recomputed per h; production N; multi-candidate host balls | the residual 2D displacement rides the completion-leg mass factor's h-slope (event-summed ḡ(h) Δln ≈ 0.048 grid-wide; per-event sub-threshold, ensemble-dominant) — exactly the N-coherent class small-N, single-candidate SBC structurally cannot see | `results/run_20260804_postfix/gate_vii/gate_vii_readout.json`; `BIAS_HISTORY_LEDGER.md` §1 row 86 |
 | 2026-08-04 | A4 — evidence correction on A1/A3 | 3, 4 | A1/A3 precedent numbers corrected after adjudication: g_frac is NOT a per-h near-scalar (1587 distinct per-event values at h=0.73, range 0.076–0.242); frozen-g 2D MAPs are 0.66/0.64 (not 0.700); event-summed ḡ(h) 0.1348→0.1413, bit-identical both venues | two subagents disagreed on the numbers; a deciding single-instrument run refuted the interpreter's near-scalar claim while STRENGTHENING the qualitative finding (larger collapse, overshoots below injected 0.73) | `results/run_20260804_postfix/gate_vii/adjudicate_g_frac.py`, `.../viz_data.json` |
+| 2026-08-05 | A5 — Stage L: external consult | 0, 5, cross-cutting + `/physics-change` gate | New cross-cutting **Stage L** (symptom card up an abstraction ladder → rings R0…R4, R0 = already-cited papers re-read for warnings → independence-preserving timeboxed search → `[LIT]`-tagged stage-0 intake with mandatory quote-verification-before-mapping), four entry triggers (mandatory R0 sweep at every stage 0; auto-trigger on two consecutive MIXED/UNDETERMINED; before any `/physics-change` adoption; lightweight at runbook rollover); `[LIT]` added to the tag vocabulary; the `/physics-change` gate package extended to a **6th item** (source equations' stated validity conditions, checked per venue) — approved, pending application; new register `docs/LITERATURE_WARNINGS.md`. Pipeline **not** renumbered. **TODO (physics-change-owned commit): add gate item 6 to `.claude/skills/physics-change/SKILL.md`.** | the decisive external input on the Hitchhiker thread sat in an **already-cited** paper (arXiv:2212.08694 §2.3, after Eq. 30) quoted in this repo for weeks and was surfaced by author memory, not by the cycle — already-cited ≠ already-heeded | `results/campaign51_20260728/realistic_20260729/CLAIM_HITCHHIKER_INDEPENDENCE_20260805.md.DRAFT`; `gate_b_20260730/BIAS_HISTORY_LEDGER.md` §1 row 95; `results/campaign51_20260728/RUNBOOK_NEXT_SESSION_8.md` §5; `docs/BIAS_RESOLUTION_ATTEMPTS_REPORT.md:174-179` |

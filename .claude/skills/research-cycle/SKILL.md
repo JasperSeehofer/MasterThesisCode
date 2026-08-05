@@ -44,6 +44,42 @@ for future campaigns only.
 `--stage N` enters mid-cycle; without it, start at 0. Stages are ordered — do
 not skip forward, and say so explicitly when you deliberately re-enter earlier.
 
+### Stage L — external consult (cross-cutting)
+
+Invocable from stage 0 and stage 5; the 0–6 pipeline is **not** renumbered.
+Full wiring: `docs/RESEARCH_CYCLE.md` § "Stage L"; register:
+`docs/LITERATURE_WARNINGS.md`.
+
+**Procedure.** (1) **Symptom card** — the problem as observed signatures (numbers,
+venues, what survived which controls), then restated up an abstraction ladder:
+field-specific → method class → math class → generic inference pathology, each rung
+with its own search vocabulary. (2) **Rings, in order, R0 first always** — R0 =
+papers **already cited in this repo**, re-read for warnings/caveats/validity
+conditions (*already-cited ≠ already-heeded*); R1 = citation neighborhood, esp.
+**forward** citations filtered on bias/inconsistent/caveat/erratum/corrigendum, plus
+mock-data-challenge and code-comparison papers; R2 = the field; R3 = the math class
+(astrostatistics, selection-effect primers, SBC); R4 = code/numerics. (3)
+**Independence** — the searcher gets the symptom card and **never** the current
+suspect list; timeboxed. (4) **Intake** — each candidate enters stage 0 as a `[LIT]`
+claim with section/eq numbers; **quote-verification before mapping is MANDATORY**;
+then the two-layer exoneration check; then the cheapest decisive measurement. Exit:
+candidates ranked by signature-match × cost-to-test → stage-2 preregs, **or** a
+documented "the field has no answer" (itself a reportable result), plus updated
+`docs/LITERATURE_WARNINGS.md` rows.
+
+**Triggers.** (a) MANDATORY lightweight R0 sweep at every new mechanism thread's
+stage 0; (b) **STUCK SIGNAL** — two consecutive MIXED/UNDETERMINED verdicts on one
+thread auto-triggers a full Stage L; (c) before any `/physics-change` **adoption**
+(does the literature document this fix's failure modes?); (d) lightweight pass at
+each runbook lineage rollover.
+
+**Assumption register.** The `/physics-change` gate package is now **6 items**: the
+five plus **the source equations' stated validity conditions, checked against our
+venue/regime** (approved 2026-08-05, pending application to
+`.claude/skills/physics-change/SKILL.md`). Registered rows live in
+`docs/LITERATURE_WARNINGS.md` with status CHECKED / VIOLATED / UNDER MEASUREMENT /
+OPEN / N-A / UNCHECKED — every row cites evidence or says UNCHECKED.
+
 ### Hard rules
 
 1. **Check both exoneration layers before opening any mechanism.** The local
@@ -56,8 +92,10 @@ not skip forward, and say so explicitly when you deliberately re-enter earlier.
 2. **Never build on an un-adjudicated `[AGENT]` claim.** Tag vocabulary:
    `[LOCAL]` re-measured here · `[AGENT]` measured by a subagent from a source
    not re-measured here; NOT independently reproduced · `[DOC]` read from a
-   committed artifact · `[INFER]` inference from `[LOCAL]`/`[DOC]`. Reproduce
-   before you use.
+   committed artifact · `[INFER]` inference from `[LOCAL]`/`[DOC]` ·
+   `[LIT]` quoted from external literature (Stage L), full citation with
+   section/eq numbers, quote-verified before it is mapped onto our pipeline.
+   Reproduce before you use.
 3. **Every claim carries a `Refute by:` clause** naming the cheapest decisive
    falsification test. A claim without one is not intake-complete.
 4. **Pre-register before running.** Numeric falsifiable bands, a first-class
