@@ -74,3 +74,11 @@ results/campaign51_20260728/run_seed*/prepared_*.csv
 # seed's 5 realizations (only the observed catalogue varies), so only the
 # seed-level copy is tracked. score_realistic.py falls back to it.
 results/campaign51_20260728/realistic_20260729/seed*/real_r*/prepared_cramer_rao_bounds.csv
+
+# D1 S_and re-weight: the staged injection pool of record and the two derived
+# pools built from it (74 MB of CSV, regenerable byte-for-byte from
+# d1_sand/make_sand_pools.py). The sha256 MANIFESTS are tracked instead — they
+# are the provenance record; the bulk rows are not.
+results/campaign51_20260728/realistic_20260729/gate_b_20260730/injection_pool_mix200k_20260728/
+results/campaign51_20260728/realistic_20260729/d1_sand/pool_p0kept/
+results/campaign51_20260728/realistic_20260729/d1_sand/pool_p0window/
