@@ -1,0 +1,473 @@
+# N-2 — the selection factor in the MFG hierarchical numerator, per channel
+
+**DRAFT · 2026-08-05 · research-cycle stage 1 + derivation.** No source file
+modified, no run launched, no commit. Author of record: Jasper Seehofer; this
+document derives and proposes, it decides nothing.
+
+**Companion claim file (stage 0, including the C0 exoneration check):**
+[`results/campaign51_20260728/realistic_20260729/CLAIM_N2_SELECTION_NUMERATOR_20260805.md.DRAFT`](../../results/campaign51_20260728/realistic_20260729/CLAIM_N2_SELECTION_NUMERATOR_20260805.md.DRAFT).
+Read C0 first — if the author rules the local list's bare `p_det inside/outside`
+entry a blanket prohibition, this document is void.
+
+**Code base:** `main` @ `87bc7771`. Line numbers are
+`master_thesis_code/bayesian_inference/bayesian_statistics.py` unless prefixed.
+
+---
+
+## VERDICT CANDIDATE
+
+> **DEFECT-WITH-FORMULA, one channel of two.**
+>
+> Under this project's detection model — deterministic in the *true* parameters
+> θ, not in the data (`simulation_detection_probability.py:175-179`) — the MFG
+> numerator carries `1[det(θ)]` inside the θ-integral. It leaves the integral
+> only for coordinates the analysis *retains*. Therefore:
+>
+> * **2D channel — correct as implemented, up to a measured residual.** The
+>   channel retains `(d_L^obs, M_z^obs)`, the two coordinates `S_4D` acts in.
+>   The formally required factor `S_4D(d_L(z;h), M(1+z))` inside `g_i`'s
+>   M-integral collapses, at `σ_cond ≈ 8.8e-8`, to `S_4D` evaluated at the
+>   **data** — an event-wise constant, h-independent, invisible to the posterior.
+>   The omission is a formal one with no numerical consequence. (Residual: the
+>   z-quadrature tails, where `d_L(z;h) ≠ d_L,det`. Bounded by measurement M2.)
+> * **1D channel — defect.** The channel discards `M_z^obs`, the coordinate whose
+>   `(1+z)` lift carries the factor's entire h-dependence. The correct numerator
+>   carries `S̄_φ(z;h)` inside the quadrature. Measured magnitude: **+207.0 nats
+>   per unit h** summed over 1590 events, 94.7% of events positive, essentially
+>   linear over the grid — against a 1D ln-posterior down-tilt of −247.4 (iiib) /
+>   −184.0 (joint_r1) nats/h over 0.60→0.73.
+>
+> **The selection factor does not cancel from `g_frac`** — the refuter's core
+> structural claim survives intact. It cancels neither in form (different
+> weightings: conditional-Gaussian vs φ) nor in effect (0 vs +207 nats/h).
+>
+> **This verdict is derivation-grade, not measurement-grade.** It must not be
+> implemented in production before the two-venue counterfactual of §6, because
+> the isolated form is exactly what ledger #66 measured as calibration-degrading
+> in a 1D harness and #67 measured as *necessary but insufficient without its
+> σ-model companion*. Claim-file caveat CC-1 binds.
+
+---
+
+## 1. The detection model, exactly
+
+`simulation_detection_probability.py:169-182` (verbatim in the claim file, C1):
+`d_hor_k = SNR_raw_k · d_L_k / snr_threshold`, with `SNR_raw` the **optimal
+(noiseless) SNR at the injection's true parameters**, and *"Detection is
+deterministic (SNR >= threshold ⇔ d_L <= d_hor)"*.
+
+Write θ = (z, Ω, M, ψ) with ψ the 11 remaining EMRI parameters (μ, a, p0, e0, x0,
+angles, phases). Then
+
+```
+P(det | θ) = 1[ d_L(z;h) ≤ d_hor(M, ψ, Ω) ]                                  (D1)
+```
+
+— an **indicator in θ**, with no dependence on the data d. This is the
+*latent-thresholded* class, not the data-thresholded class.
+
+The estimator never uses (D1) directly: it uses the injection-pool marginals
+
+```
+S_4D(d_L, M_z) = P_pool( d_hor ≥ d_L | M_z )      (the with-BH survival grid)
+S_3D(d_L)      = P_pool( d_hor ≥ d_L )            (the pooled survival)
+S̄_φ(z;h)      = ∫ φ(log₁₀M) S_4D( d_L(z;h), M(1+z) ) dlog₁₀M     (:1782-1830)
+```
+
+i.e. (D1) already marginalised over ψ (and Ω) against the pool's parameter
+distribution. **Honest gap:** the correctness of that marginal rests on the pool's
+ψ-distribution being the population's; unaudited here, see §5.
+
+---
+
+## 2. MFG with reduced data — the general result
+
+MFG 2019 (arXiv:1809.02063) Eqs. (5)–(7), for one detected event with data d:
+
+```
+p(d | det, h) = [ ∫dθ L(d|θ) P(det|θ) n(θ|h) ] / α(h),   α(h) = ∫dθ P(det|θ) n(θ|h)
+```
+
+`P(det|θ)` sits **inside** the numerator integral. The familiar "no p_det in the
+numerator" form is the special case where detection is a deterministic function
+of the *observed data*: then `P(det|θ) = ∫_{det} L(d'|θ) dd'` is replaced, for the
+event actually in hand, by `1[d ∈ det] = 1`, and the factor leaves.
+
+**Reduced data.** Let the analysis use `d_red = R(d)` and discard the complement.
+Marginalising the numerator over the discarded data coordinates does *not* remove
+`P(det|θ)` — it is a function of θ, not of d. It leaves the θ-integral only if
+θ is itself reduced to coordinates on which the retained data pin it. Concretely:
+
+```
+numerator(d_red; h) = ∫dθ L_red(d_red|θ) P(det|θ) n(θ|h)                     (M1)
+```
+
+**Statement of the asymmetry.** Suppose `P(det|θ)` depends on θ only through
+`(a(θ), b(θ))`, and the retained data pin `b` to within a width σ_b ≪ the scale on
+which `P(det|·)` varies in b, while `a` remains integrated over the population.
+Then
+
+```
+numerator ≈ [ ∫da ... P(det|a, b_obs) ... ]   with b_obs h-independent (it is data)
+```
+
+so the surviving factor's h-dependence is carried **only by the coordinates the
+data does not pin**. This is the whole content of N-2, and §3 instantiates it.
+
+---
+
+## 3. Instantiation, channel by channel
+
+Population (dark leg), `GATE_PACKAGE_FINAL.md` App. A:
+`n_Ḡ(z,Ω,M|h) = (1−f(z,Ω)) w_pop(z;h) φ(M)/4π`, `∫φ dM = 1`.
+
+### 3.1 The 2D channel — `d^{2D} = (Ω^obs, d_L^obs, M_z^obs)`
+
+By (M1), the MFG-correct completion numerator is
+
+```
+B^{2D}_corr = ∫dz (1−f_k) w_pop ∫dM φ(M) · N₂( (d_L^obs,M_z^obs); (d_L(z;h), M(1+z)) )
+                                        · S_4D( d_L(z;h), M(1+z) )              (T1′)
+```
+
+— i.e. `g_i → g_i^corr` with `S_4D` **inside** the Gauss–Hermite M-integral of
+`completion_mass_factor_g` (`:1935-1995`). It is *not* `S̄_φ`: `S̄_φ` weights
+`S_4D` by φ alone, (T1′) weights it by `φ × N_cond`.
+
+**Why it is nevertheless inert.** In the code's coordinates
+(`:1989-1993`) the integration variable is `x_M = M_z/M_z,det`, so the
+detector-frame mass entering `S_4D` is `M(1+z) = x_M · M_z,det` — **it does not
+depend on z at all**. The conditional is `x_M ~ N(μ_cond(z;h), σ_cond)` with
+`μ_cond = 1 + proj·(x_dL−1)` and `σ_cond ≈ 8.8e-8` (`FIXB_PATHA_PACKAGE.md` §3.5
+L5), five orders of magnitude below the `log₁₀M` grid spacing of the survival
+object. So
+
+```
+g_i^corr(z;h) ≃ g_i(z;h) · S_4D( d_L(z;h), μ_cond(z;h)·M_z,det )               (T1″)
+```
+
+and at the GW peak `z = z*(d_L,det;h)` we have `x_dL = 1`, `μ_cond = 1`, hence
+
+```
+S_4D( d_L,det , M_z,det )  —  both arguments are DATA  ⇒  ∂_h(·) = 0.
+```
+
+The factor is an event-wise constant and drops out of the H₀ posterior. Away from
+the peak it varies as `p_gw`'s width allows; that residual is measurement M2, and
+it is bounded above by the width of `S_4D` over `x_dL ∈ 1 ± few·σ_dLfrac`.
+
+**⇒ The 2D completion numerator is correct as implemented, up to M2.**
+
+### 3.2 The 1D channel — `d^{1D} = (Ω^obs, d_L^obs)`
+
+Marginalise (T1′) over the discarded `M_z^obs`. Using `∫dM_z^obs N₂ = N₁`:
+
+```
+B^{1D}_corr = ∫dz (1−f_k) w_pop N₁(d_L^obs; d_L(z;h)) ∫dM φ(M) S_4D(d_L(z;h), M(1+z))
+            = ∫dz (1−f_k) (dV_c/dz)/(1+z) · N₁(d_L^obs; d_L(z;h)) · S̄_φ(z;h)   (T3′)
+```
+
+exactly the object the estimator already tabulates at `:1782-1830`. The
+conditional Gaussian is gone — nothing pins the mass any more — and with it goes
+the cancellation of §3.1: the mass entering `S_4D` is now `M(1+z)`, **z-dependent
+and therefore h-dependent**.
+
+**Where the h-dependence lives.** At the GW peak `d_L(z*;h) = d_L,det` exactly, so
+the first slot of `S_4D` is h-frozen. The entire h-slope of `S̄_φ(z*(h);h)` is the
+`(1+z*)` **mass lift**: as h rises, a fixed observed `d_L` maps to larger z, the
+source-frame masses of the φ-integral lift to larger detector-frame `M_z`, and
+louder sources survive the horizon cut more often ⇒ `S̄_φ` rises.
+
+**This is the selection-side twin of `g`'s spectral-siren term.** `g` carries the
+mass–redshift term of the *population density*
+(`dln g/dln(1+z) = −s_dex = +0.43`, `GFRAC_DERIVATION_PACKAGE.md` §5a/§6.3); `S̄_φ`
+carries it in the *selection function* (measured exponent
+`dln S̄_φ/dln(1+z*) = +0.375`, §4). They enter the 1D and 2D legs asymmetrically
+and therefore do **not** cancel from `g_frac`.
+
+### 3.3 Why `g_frac` is affected
+
+```
+g_frac_corr = B^{2D}_corr / B^{1D}_corr  ≈  (const × B_num_wbh) / (B_num · ⟨S̄_φ⟩)
+```
+
+The 2D leg's factor is h-flat (§3.1); the 1D leg's is not (§3.2). Hence a factor
+`1/S̄_φ`-shaped h-dependence appears in `g_frac` that the current implementation
+does not have — the refuter's "it does NOT cancel from g_frac", confirmed.
+
+### 3.4 Why `α(h)` does not absorb it
+
+`GFRAC_DERIVATION_PACKAGE.md` §8 proposed that the population-level `β_Ḡ^φ(h)`
+inside `D̃^φ` absorbs the per-event `∂_h ln⟨S⟩_i`. It cannot, for a bookkeeping
+reason: `α(h)` is **one scalar per h**, common to all events and to all z; the
+factor in (T3′) is **per-event and inside the z-quadrature**. Under MFG both are
+present and neither substitutes for the other — the numerator's `P(det|θ)` and the
+denominator's `α(h) = ∫P(det|θ)n(θ|h)dθ` are different contractions of the same
+indicator. §8's own identity `E_det[∂_h ln g_frac] = ∂_h ln⟨S⟩_h` is precisely
+the missing numerator factor, viewed from the score side; §6.1's "1588 of 1588
+events with a strictly positive score" is its signature.
+
+---
+
+## 4. Magnitude and sign — measured (stage-1 forecast, [LOCAL])
+
+Probe `n2_sphi_tilt.py` → `n2_sphi_tilt_results.json` (this directory). Method:
+build `SimulationDetectionProbability` on the production mix200k pool, call
+`precompute_phi_marginal_survival` on the canonical 41-h grid [0.60, 0.86], and
+evaluate `ln S̄_φ` at `z*(d_L,det;h)` for all 1590 rows of
+`results/run_20260804_postfix/iiib/diagnostics/prepared_cramer_rao_bounds.csv`
+(point-GW / peak approximation).
+
+| quantity | value |
+|---|---|
+| `S̄_φ` at the peak, h=0.73 | median **0.266**; 5–95% [0.0305, 0.899]; min 1.9e-4; max 0.989 |
+| per-event `dln S̄_φ/dh` @0.73 | median **+0.1398**; 5–95% [−0.00080, +0.2105]; **94.7% > 0** |
+| **Σ over 1590 events** | **+207.00 nats/h** (grid chord +207.84 ⇒ linear to 0.4%) |
+| `dln(1+z*)/dh` median | +0.3735 |
+| effective exponent `dln S̄_φ/dln(1+z*)` | **+0.3748** |
+| median `z*` @0.73 | 0.490 |
+
+**Sign: positive** — the correction tilts the 1D likelihood *up* in h.
+
+**Scale reference** (same run of record, `combined_{1d,2d}.json`, read this
+session): 1D ln-posterior chord slope 0.60→0.73 = **−247.4** (iiib) / **−184.0**
+(joint_r1) nats/h, MAP 0.600 at the grid rail in both; 2D +267.9 / +251.9, MAP
+0.780 / 0.800. Adding +207 removes 84% of iiib's 1D down-tilt and flips
+joint_r1's sign (−184 → +24).
+
+**`S̄_φ` at the peak is median 0.266, not ≈1** — this is the decisive answer to
+subtlety (a) in the framing question. The deterministic indicator does **not**
+reduce to "≈1 for detected events" once the mass coordinate is marginalised:
+three quarters of the mass-marginal probability is cut away at the median event.
+
+**Discipline.** These are **ln-space tilts**, which add; they are **not** MAP
+displacements, which do not — the never-add-MAP-displacements rule
+(`GATE_PACKAGE_FINAL.md:609`, `DERIVATION_C7_HOSTZ_KERNEL.md:545-547`) is what
+refuted `GFRAC_DERIVATION_PACKAGE.md` §7 at
+[`GATEB_REFUTATION_REPORT.md`](GATEB_REFUTATION_REPORT.md) row 4. No MAP is
+predicted here.
+
+**Corollary, flagged not claimed.** With both channels corrected, `g_frac`'s
+h-slope goes `+243.5 → +243.5 − 207.0 ≈ +36 nats/h`: the object gate (vii)
+identified as carrying the *entire* residual 2D displacement largely annihilates
+against the selection term it was missing. If the toggle reproduces this, the
+"is 0.78 wrong?" question changes character.
+
+---
+
+## 5. Limiting cases
+
+| case | required behaviour | result |
+|---|---|---|
+| **S → 1 everywhere** (infinitely sensitive detector) | recover the current implementation exactly | `S̄_φ ≡ 1` ⇒ (T3′) → (T3); `S_4D ≡ 1` ⇒ `g_i^corr = g_i`. **PASS by construction** |
+| **σ_cond → 0** (mass perfectly informative) | 2D factor → `S_4D` at the data; h-independent | (T1″); the implemented value is `8.8e-8`, i.e. already this limit. **PASS** |
+| **σ_cond → ∞** (mass uninformative) | 2D channel must degenerate to the 1D channel | `N_cond → ` flat ⇒ `g_i^corr → ∫φ S_4D = S̄_φ` and (T1′) → (T3′). **PASS — and it exhibits the asymmetry as a continuous interpolation between the two limits** |
+| **full data retained** (all 14 params observed) | no correction at all | `P(det|θ)` → indicator at the data = 1 for every detected event. **PASS** — the correction is exactly the price of reduced data |
+| **data-thresholded detection** (SNR from the noisy data) | no correction in any channel | MFG standard form; C1 fails and the whole result is void. Consistent |
+| **φ flat in `log₁₀M`, `S_4D` mass-independent** | 1D correction h-independent | `S̄_φ` = `S_3D(d_L(z;h))`, h-frozen at the peak ⇒ tilt → 0. Consistent with §3.2's attribution of the whole slope to the mass lift |
+
+---
+
+## 6. If the author rules DEFECT: the proposed route (measurement first, gate second)
+
+**Order is binding** (research-cycle rule 6, measurement-before-gate; and claim
+caveat CC-1): the counterfactual runs **before** any `/physics-change` package is
+presented for approval, not after.
+
+### 6.1 Counterfactual toggle — instrumentation, default-off
+
+Modelled on `--freeze_g_frac_ref_h` (commits `930a9484`, `c917ed87`), which is the
+precedent for "add an instrument, change nothing by default, read the
+counterfactual".
+
+```
+--selection_in_completion_numerator {off,1d,both}     default: off
+```
+
+* `off` — **bit-identical to `main`**. Regression: byte-compare
+  `event_likelihoods.csv` against the run of record.
+* `1d` — multiply `completion_numerator_integrand` (`:4096`) by
+  `S̄_φ(z;h)` interpolated on the existing `precompute_phi_marginal_survival`
+  table (`:1782-1830` — **no new physics object is introduced**; the table is
+  already built every run for `β^φ`). The 2D companion at `:4147` multiplies by
+  the same `S̄_φ` **only** if the author also wants the naive symmetric variant;
+  the derived form for `both` is (T1′).
+* `both` — additionally carry `S_4D(d_L(z;h), x_M·M_z,det)` **inside** the
+  Gauss–Hermite loop of `completion_mass_factor_g` (`:1987-1995`), i.e. the
+  literal (T1′). Expected to be numerically ≈ `off` for the 2D channel; this cell
+  exists to *measure* that expectation (M2), not to assume it.
+
+Emitted diagnostics per event per h: `S_bar_phi_at_quadrature_peak`,
+`delta_ln_B_num`, `delta_ln_B_num_wbh`, `delta_ln_g_frac`. Tag: `instrumentation`
+(plain GSD), **not** `formula` — the default path is unchanged, so no
+`/physics-change` gate is required to *build* it. The gate is required only to
+change the default.
+
+### 6.2 The two-venue 41-h counterfactual
+
+Venues: `iiib` (idealized) and `joint_r1` (realistic) — the same pair gate (vii)
+and the frozen-g run used, so the comparison is against bit-identical survivor
+sets. Grid: canonical 41 points [0.60, 0.86]. Cells: `off` (control, must
+reproduce the run of record exactly), `1d`, `both`.
+
+### 6.3 Pre-registration skeleton (bands to be fixed BEFORE running; append-only)
+
+| read | prediction | band |
+|---|---|---|
+| **P-1** control fidelity | `off` reproduces `run_20260804_postfix` | bit-identical `event_likelihoods.csv`; **any** difference invalidates the run |
+| **P-2** 1D tilt magnitude | `Σ_i Δln p_i^{1D}` over 0.60→0.86 matches the §4 forecast | **+207 ± 40 nats/h** (the ±20% band covers the point-GW approximation and the completion-share hole, claim C6 hole (ii)) |
+| **P-3** 1D sign/coherence | fraction of events with positive `Δ`-slope | **≥ 0.90** (forecast 0.947) |
+| **P-4** 2D inertness | `Σ_i Δln p_i^{2D}` in cell `both` | **\|Σ\| ≤ 20 nats/h** ⇒ §3.1 CONFIRMED. `> 20` ⇒ the `σ_cond`/tail argument fails and the 2D verdict flips to defect |
+| **P-5** `g_frac` residual | `Σ Δln g_frac` | **−207 ± 40 nats/h**, i.e. residual slope `+36 ± 40` — a band that **includes zero**; a zero-consistent residual is a *first-class recorded outcome*, not a success criterion |
+| **P-6** 1D MAP | reported, **not** pre-banded | the never-add-MAP rule forbids predicting it from P-2; record it and stop |
+| **P-7** 2D MAP | reported | expected unmoved if P-4 holds |
+| **P-8 — Mixed branch (first-class)** | P-2 in band **and** P-4 out of band, or vice versa | report the split; do **not** force a branch. Route to M2 |
+| **P-9 — expected NULL** | the `--freeze_g_frac_ref_h` frozen-g objects and the 1D *selection* objects (`β^φ`, `D̃^φ`, `Σ⁴ᴰ`) | **unchanged**; a move means the toggle leaked into the normalisation and the run is void |
+| **P-10 — #66 pairing probe** | CC-1's open question | record whether the corrected 1D channel's coverage improves or degrades in the `pp_coverage` harness once that harness has a mass channel. **Explicitly deferred** — the harness gap is TO-BUILD (`research-cycle/SKILL.md:135-143`) |
+
+**Provenance gating** (what upstream gate made this test necessary): gate (vii)
+CONFIRM of `PREREGISTRATION_FROZEN_GFRAC.md` → `GFRAC_DERIVATION_PACKAGE.md`
+§9 R-C → Gate-B row N-2 re-scoping → this derivation.
+
+**Append-only discipline:** once the pre-registration is committed, no edits above
+the run line.
+
+### 6.4 Cheap measurements that could pre-empt the run (measurement-before-gate)
+
+* **M1 — 1D completion share.** Claim C6 hole (ii): the 1D mixture's
+  completion-vs-catalogue share per event is *not* measured (only the 2D's, 95%,
+  §6.6). It is a free read of `event_likelihoods.csv` + the `w_G`/`β^φ` columns
+  and it rescales P-2's band directly. **Run this first.**
+* **M2 — 2D inertness, offline.** Evaluate `S_4D(d_L(z;h), μ_cond·M_z,det)` on
+  the existing quadrature nodes for a sample of events across the 41-h grid and
+  measure its h-slope. If `|Σ| ≤ 20 nats/h` the `both` cell can be dropped from
+  the counterfactual and only the `1d` cell is needed. Cheap; no run.
+* **M3 — kink interaction.** `S̄_φ` is built from the *same* broken φ whose
+  `kappa_cap` kink at `M = 1e5` the Gate-B report found active
+  ([`GATEB_REFUTATION_REPORT.md`](GATEB_REFUTATION_REPORT.md) row 2). Re-run the
+  §4 probe with the kink-aware slope decomposition and check event 953. This is
+  also the object `GFRAC_DERIVATION_PACKAGE.md` §6.4's amendment says must be
+  re-examined *together with D1* — N-2's resolution is its stated precondition.
+
+### 6.5 Draft `/physics-change` 5-item package (for the default flip only, AFTER §6.2)
+
+1. **Old formula** — `bayesian_statistics.py:4096`
+   `return (1.0 - f_z) * p_gw * dVc / (1.0 + z)`; and `:4147`
+   `return base * g_i`. No selection factor in either.
+2. **New formula** — `:4096` → `… * S_bar_phi(z; h)` with `S_bar_phi` interpolated
+   from the existing `precompute_phi_marginal_survival` table (T3′). `:4147`
+   unchanged **if M2/P-4 confirm inertness**; otherwise `g_i → g_i^corr` with
+   `S_4D` inside the Gauss–Hermite loop at `:1987-1995` (T1′).
+3. **Reference** — Mandel, Farr & Gair (2019) arXiv:1809.02063 Eqs. (5)–(7)
+   (`P(det|θ)` inside the numerator's θ-integral for latent thresholding);
+   the code's own statement of latent thresholding at
+   `simulation_detection_probability.py:175-179`; the project's own prior
+   statement of the same principle at `pp_coverage.py:499-506` and
+   `results/pp_coverage_pdetnum_20260711/SUMMARY.md:19-22`. Gray et al. (2020)
+   arXiv:1908.06050 Eq. (32) for the completion numerator's structure. Note
+   explicitly: **no published dark-siren analysis carries a compact-object mass
+   observable in the catalogue/completion split** (the honest gap of
+   `FIXB_PATHA_PACKAGE.md` §3.3), so the 2D leg has no literature precedent and
+   rests on the derivation alone.
+4. **Dimensional analysis** — `S̄_φ` and `S_4D` are dimensionless probabilities in
+   [0,1] (`precompute_phi_marginal_survival` docstring, `:1826-1828`). `B_num`
+   keeps units `[x_dL]⁻¹ · V`; `B_num_wbh` keeps `[x_dL]⁻¹[x_M]⁻¹ · V`;
+   `g_frac` keeps `[x_M]⁻¹`. **No dimensional change** — the correction is a
+   dimensionless reweighting. The `GFRAC_DERIVATION_PACKAGE.md` §4 table is
+   unaffected row for row.
+5. **Limiting case** — §5 above; minimally the `S → 1` row (recovers `main`
+   exactly) and the `σ_cond → ∞` row (2D degenerates to 1D, exhibiting the
+   asymmetry as a continuous limit).
+
+**Regression pins to add** (alongside `GFRAC_DERIVATION_PACKAGE.md` P1–P5):
+* **P6** — `S → 1` stub: with the survival accessor monkeypatched to 1.0,
+  `B_num`, `B_num_wbh`, and `g_frac` must be bit-identical to the `off` path.
+* **P7** — `S̄_φ ∈ [0,1]` and monotone non-increasing in `d_L` at fixed `M_z`, on
+  the production table (a guard against interpolation overshoot at the pool edge;
+  the §4 probe already clips at 1e-300 and saw a min of 1.9e-4).
+* **P8** — the *selection* objects (`β_G^φ`, `β_Ḡ^φ`, `D̃^φ`, `Σ⁴ᴰ`) must be
+  unchanged by the toggle in every cell (P-9's programmatic form).
+
+---
+
+## 7. What the author must rule on
+
+* **R-0 (gating, must be answered first).** Does the bare `p_det inside/outside`
+  entry on `CLAIM_2D_BIAS_20260730.md:723` bind as a blanket prohibition, or does
+  the venue-scoping rule apply as claim-file C0 argues (exonerating #66's
+  *bias-mechanism* hypothesis in a mass-free 1D harness, not the MFG correctness
+  question in a two-channel mass-carrying estimator)? **If blanket: stop here.**
+* **R-1.** Accept or reject the verdict candidate: **2D correct (inert), 1D
+  defect**, with the correct 1D numerator (T3′).
+* **R-2.** Authorise the §6.1 default-off instrumentation and the §6.2 two-venue
+  41-h counterfactual, with §6.3's bands frozen before the run. Run M1 and M2
+  first (§6.4) — either can shrink the run.
+* **R-3.** Rule on scope: the correction is derived and proposed for the
+  **completion leg only**. The catalogue leg (claim C8) is the same argument and
+  collides with exoneration #26; it is *not* opened here and needs its own check.
+* **R-4.** Rule on the interaction with `GFRAC_DERIVATION_PACKAGE.md` R-A. If R-1
+  is accepted, R-A's *consequence clause* — "the residual 2D displacement is
+  re-attributed to the shared 1D-rail bias" — is not merely unestablished (Gate B
+  amendment 5) but **actively contested**: a +207 nats/h 1D-only correction of
+  the right sign is now on the table as a competing owner of that rail's tilt.
+  R-A's *derivation* of `g` (§3, §5, §6.3) is untouched.
+* **R-5.** Rule on whether §6.4 M3 (kink × `S̄_φ` × D1) is folded into this thread
+  or stays with the D1 suspect queue. `GFRAC_DERIVATION_PACKAGE.md` §6.4's
+  amendment makes N-2's resolution its stated precondition.
+
+---
+
+## 8. Honest gaps — do not read past these
+
+1. **The §4 magnitude is a point-GW forecast, not a delivered posterior.** It
+   ignores the z-width of the quadrature and applies the completion-leg
+   correction to all 1590 events (M1 is the fix).
+2. **The 1D completion-vs-catalogue mixture share is unmeasured** (only the 2D's).
+3. **`S_4D`'s marginal over the 11 discarded Fisher parameters is the injection
+   pool's, not provably the population's.** If the pool's ψ-distribution differs
+   from the analysed catalogue's, `S̄_φ` is the wrong marginal — a separate,
+   unaudited assumption that this derivation inherits rather than establishes.
+4. **The 2D "inert" conclusion rests on `σ_cond ≈ 8.8e-8`**, a pin from
+   `FIXB_PATHA_PACKAGE.md` §3.5 L5 that was **not re-measured here** — it is
+   `[DOC]`, and M2 is its re-measurement.
+5. **#67's pairing question is untested on this venue.** In the harness, the
+   selection-inside factor only calibrated when paired with the
+   σ(d_L^obs)-vs-σ(d_L^true) noise-model fix. Production's GW likelihood uses the
+   per-source Cramér–Rao `σ` at the *observed* `d_L` (`:4044-4046`,
+   `_comp_sigma_dLfrac` from the 3-D covariance) — structurally the same
+   approximation the harness had. **Whether production needs the same companion
+   fix is open and is the single most likely way this correction disappoints.**
+6. **No claim is made that this fixes the 1D rail.** The rail's root cause of
+   record is host photo-z (`[[h0-railing-rootcause-photoz]]`, ledger #36); two
+   mechanisms may share a sign.
+
+---
+
+## 9. References
+
+* Mandel, Farr & Gair (2019), arXiv:1809.02063, Eqs. (5)–(7) — hierarchical
+  selection; `P(det|θ)` inside the numerator's θ-integral.
+* Gray et al. (2020), arXiv:1908.06050, Eq. (32), A.9/A.10 — catalogue/completion
+  partition and the completion numerator.
+* Chen, Fishbach & Holz (2018), arXiv:1712.06531, Eq. (15) — the mixture form the
+  code cites at `:4256`.
+* Babak et al. (2017), arXiv:1703.09722 — φ and `R_eff` (`emri_rate.py:72-97`,
+  `:235-261`).
+* Farr, Fishbach, Ye & Holz (2019), arXiv:1908.09084; Ezquiaga & Holz (2022),
+  arXiv:2202.08240 — the mass-scale/spectral-siren mechanism, of which §3.2
+  identifies `S̄_φ`'s h-slope as the *selection-side* image.
+* In-repo: `GFRAC_DERIVATION_PACKAGE.md` (§5c, §8, §9 R-C — where N-2 was
+  raised); `GATEB_REFUTATION_REPORT.md` row N-2 (where it was re-scoped);
+  `FIXB_PATHA_PACKAGE.md` §3.2/§3.5; `results/pp_coverage_pdetnum_20260711/SUMMARY.md`
+  (the exonerated form); `docs/derivations/fixb_pathA_phi_marginal_selection.md`.
+
+## 10. Provenance
+
+`S̄_φ` table and all §4 numbers computed this session by
+`.planning/derivation-gfrac-20260805/n2_sphi_tilt.py` (→ `n2_sphi_tilt_results.json`)
+from the mix200k injection pool
+(`results/campaign51_20260728/realistic_20260729/gate_b_20260730/injection_pool_mix200k_20260728/`)
+and `results/run_20260804_postfix/iiib/diagnostics/prepared_cramer_rao_bounds.csv`
+(1590 rows). Posterior chord slopes and curvatures read from
+`results/run_20260804_postfix/{iiib,joint_r1}/combined_{1d,2d}.json`. No source
+file was modified; no run was launched; no commit was made.

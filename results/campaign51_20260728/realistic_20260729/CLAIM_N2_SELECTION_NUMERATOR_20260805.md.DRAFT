@@ -1,0 +1,373 @@
+# CLAIM N-2 — does the MFG hierarchical numerator carry a selection factor, and in which channel?
+
+**Status:** DRAFT (research-cycle stage 0 + stage 1). No source edited, no run
+launched, no commit. Author of record: Jasper Seehofer — this file claims and
+proposes, it decides nothing.
+
+**Question of record** (inherited from
+[`.planning/derivation-gfrac-20260805/GATEB_REFUTATION_REPORT.md`](../../../.planning/derivation-gfrac-20260805/GATEB_REFUTATION_REPORT.md)
+row N-2, which re-scoped
+[`GFRAC_DERIVATION_PACKAGE.md`](../../../.planning/derivation-gfrac-20260805/GFRAC_DERIVATION_PACKAGE.md)
+§9 R-C): under the code's θ-deterministic detection model
+(`simulation_detection_probability.py:175-179`), what selection factor does the
+correct MFG hierarchical numerator carry in **each** channel — and is the current
+implementation (which carries **none** in either completion numerator; selection
+enters only via the `D̃^φ` normalisation) MFG-correct or defective?
+
+**Derivation companion:**
+[`.planning/derivation-gfrac-20260805/N2_SELECTION_NUMERATOR_DERIVATION_20260805.md.DRAFT`](../../../.planning/derivation-gfrac-20260805/N2_SELECTION_NUMERATOR_DERIVATION_20260805.md.DRAFT).
+
+---
+
+## C0 — EXONERATION CHECK (hard rule 1). Verdict: **DISTINGUISHABLE, not isomorphic** — with a binding carry-over caveat. [DOC + LOCAL]
+
+Both exoneration layers were read before any mechanism was opened: the local list
+in `CLAIM_2D_BIAS_20260730.md:721-756` and §2 of
+`gate_b_20260730/BIAS_HISTORY_LEDGER.md`. Three entries touch this object.
+
+### The three candidate collisions, quoted verbatim
+
+**(a) `CLAIM_2D_BIAS_20260730.md:723` — the local list:**
+
+> catalogue Jacobian · Fisher frame · **p_det estimator choice · p_det
+> inside/outside** · h-prior sensitivity · `volume_trunc` · the z leg
+> (channel-common) · …
+
+**(b) `BIAS_HISTORY_LEDGER.md:137` (§2 item 6, ⚠ = absent from the claim file,
+"live re-litigation risk"):**
+
+> 6. ⚠ **Adding `p_det` inside the numerator alone** — refuted and it *breaks*
+>    calibrated controls (#66). Only the joint model-σ + p_det-inside pair
+>    works (#67).
+
+and ledger row #66 (`BIAS_HISTORY_LEDGER.md:86`):
+
+> | 66 | 07-11 27m | The floor is the p_det-inside-numerator factor | flag A/B |
+> **REFUTED** — deep cells unchanged (Δ≤+0.0006) and it *flips* the calibrated
+> controls −0.003 → +0.003…+0.006. **"Do not cargo-cult it."** |
+
+**(c) `BIAS_HISTORY_LEDGER.md:42` (row #26) — the catalogue-leg precedent:**
+
+> | 26 | 06-19/20 `816f904` | `L_cat` departs from Gray A.9/A.10: **spurious
+> p_det in numerator** + mean-of-ratios | equation-level read of 1908.06050
+> pp.16-21 + seed400 A/B | **fixed, sign-test PASSED**: 1D 0.750→0.740
+> (**halved**), 2D 0.7375→0.7350 |
+
+### What the exonerated form actually was (source-verified, not paraphrased)
+
+`master_thesis_code/validation/pp_coverage.py:494-511` defines the flag that #66
+tested:
+
+> `pdet_in_numerator`: Latent-detection exact-inverse probe (quick task
+> 260711-27m, floor mechanism). The harness generative model decides detection
+> on the TRUE z (`_sample_detected_redshifts` draws z from `w_pop * p_det`
+> BEFORE the `dL_obs`/`z_gal` noise draws), so detection is independent of the
+> data given z and **the exact conditional keeps `p_det(A(z)/h)` INSIDE the
+> numerator integrals** … The Mandel, Farr & Gair (2019, arXiv:1809.02063)
+> no-p_det-inside form applies when detection is a deterministic function of the
+> OBSERVED data; **for latent-thresholded detection the factor stays inside.**
+
+Implementation, `pp_coverage.py:659-661`:
+
+```python
+if pdet_in_numerator:
+    # Latent-detection exact inverse: detection is decided on the true z,
+    # so p_det(A(z)/h) stays inside the numerator (260711-27m probe).
+    pGW_b = pGW_b * detection_probability(dLg_b, d50, w_pdet)  # (nz, nh)
+```
+
+i.e. a **`d_L`-only** factor `p_det(d_L(z;h))`, applied to **both** branch
+numerators, in a harness whose own carried caveats
+(`results/pp_coverage_pdetnum_20260711/SUMMARY.md:97-99`) are:
+
+> 1. **1D-channel only; single effective host per event;** hard truncation (vs
+>    production's soft M_BH-prune) — as in the three predecessor SUMMARYs.
+
+### The precise distinction (four axes; the first is decisive)
+
+1. **The exoneration is of a bias-mechanism hypothesis, not of a
+   correctness claim — and the exonerating document itself concedes the
+   correctness point.** `SUMMARY.md:10` states the refuted hypothesis:
+   *"the persistent floor is NOT the latent-detection p_det-inside-numerator
+   factor"*. `SUMMARY.md:19-22` then says, of the same object:
+
+   > the p_det-inside form — **although it is the formally exact conditional for
+   > this latent-thresholded generative model** — measures WORSE than the
+   > Mandel–Farr–Gair no-p_det-inside form on the calibrated controls.
+
+   and `SUMMARY.md:59-61` ("Formal-vs-effective inverse") reconciles that as a
+   *cancellation against a second, separate O(σ_f²) approximation* — the
+   σ(dL_obs)-vs-σ(dL_true) noise model — which #67 then confirmed
+   (`BIAS_HISTORY_LEDGER.md:87`: "both together remove ~85–90% … **Neither half
+   alone works**"). So the exonerated proposition is *"inserting p_det alone
+   fixes/does-not-fix the deep-venue floor"*. N-2 asks *"what does MFG require
+   under this project's detection model"* — a question #66 answered in N-2's
+   favour in passing and did not adjudicate.
+
+2. **Venue.** #66's venue is the `pp_coverage` synthetic harness — **1D-only,
+   single effective host, hard truncation, no mass observable and no mass
+   coordinate at all**. N-2's venue is the production two-channel estimator on a
+   realized GLADE-like catalogue, where the selection function is 4-D in
+   `(d_L, M_z)` and the discarded coordinate is a *mass*. The standing scoping
+   rule (`BIAS_HISTORY_LEDGER.md:150-152`) binds **both ways**: *"negative
+   conclusions are venue-scoped"* — #66's negative result does not transfer to
+   production unexamined, and equally N-2 may not be quoted as universal from
+   production alone.
+
+3. **Object.** #66's factor is `p_det(d_L(z;h))` — a function of a coordinate
+   the 1D data **retains**. N-2's 1D factor is `S̄_φ(z;h) = ∫φ(log₁₀M)
+   S_4D(d_L(z;h), M(1+z)) dlog₁₀M` — the **φ-marginal over the discarded
+   coordinate**. Its entire h-dependence comes from the `(1+z)` mass lift, an
+   object with no counterpart in a mass-free harness (C6 below measures it:
+   +207 nats/h, of which the `d_L` slot contributes nothing at the GW peak).
+
+4. **Channel.** The 2D half of N-2 — `S_4D` **inside `g_i`'s M-integral** — has
+   never been tested by anything. `.claude/skills/research-cycle/SKILL.md:135-143`
+   records `pp_coverage.py` as *"single-channel and synthetic-catalogue: no
+   mass/BH-mass channel"*, TO-BUILD. No exoneration covers it.
+
+### Binding carry-over caveats (do not lose these)
+
+- **CC-1.** In the *1D channel of a 1D harness*, "insert the selection factor in
+  the numerator" is the move #66 measured as **calibration-degrading in
+  isolation** and #67 measured as **necessary but insufficient in pair**. Any
+  N-2 fix is therefore *measurement-gated, never derivation-adopted*: it must be
+  run as a counterfactual toggle at two venues before any production change, and
+  the pre-registration must carry #67's pairing question as a first-class branch.
+  "Do not cargo-cult it" (`BIAS_HISTORY_LEDGER.md:86`) stands.
+- **CC-2.** The **catalogue-leg** analogue of N-2 collides head-on with #26,
+  where a p_det *was removed* from the `L_cat` numerator against Gray A.9/A.10
+  and the removal halved the 1D bias. This claim file therefore scopes N-2 to
+  the **completion leg only** and books the catalogue leg as a linked, explicitly
+  *unopened* question (C8). Opening it requires new evidence against #26 and its
+  own exoneration check.
+- **CC-3.** `p_det inside/outside` is on the *local* claim-file list (a) with no
+  scoping text at all. Under the venue-scoping rule the honest reading is that it
+  records #66/#67; if the author reads it as a blanket standing prohibition,
+  **C0 fails and the whole thread stops here.** This is the author's call, and it
+  is R-0 below.
+
+**Refute by:** produce a document in which the p_det/selection-inside-numerator
+exoneration is stated (i) for a channel that retains a mass observable, or
+(ii) as a *correctness* verdict on the MFG numerator rather than as a *bias-carrier*
+verdict, or (iii) with the discarded-coordinate marginal `S̄_φ` (not `p_det(d_L)`)
+as the tested object. Any one of the three collapses C0 to "isomorphic" and this
+thread stops.
+
+---
+
+## C1 — The production detection model is θ-deterministic (latent-thresholded), not data-thresholded. [LOCAL, verified in source]
+
+`simulation_detection_probability.py:169-182`:
+
+> For a source with measured optimal SNR_raw at luminosity distance `d_L_k`, the
+> **detection horizon** is the distance at which it would sit exactly at
+> threshold: `d_hor_k = SNR_raw_k * d_L_k / snr_threshold` [Gpc].
+> **Detection is deterministic (SNR >= threshold ⇔ d_L <= d_hor)**, so the
+> detection probability is the survival function of the horizon distribution:
+> `p_det(d_L) = P(d_hor >= d_L)`. The horizon set is independent of h …
+
+`SNR_raw` is the **optimal (noiseless) SNR at the injection's true parameters**;
+the cut is therefore a deterministic function of θ, not of the noisy data d.
+Independently corroborated by `pp_coverage_pdetnum_20260711/SUMMARY.md:90-91`:
+*"production also thresholds SNR on the noiseless injected waveform
+(latent-thresholded class)"*.
+
+**Consequence (MFG 2019 Eqs. 5–7):** for latent thresholding the indicator
+`1[det(θ)]` sits **inside** the numerator's θ-integral and only leaves it if every
+coordinate it depends on is retained as data. The MFG "no p_det in the numerator"
+form is the *data-thresholded* special case.
+
+**Refute by:** show that `SNR_raw` in the injection CSVs is a noise-realised
+(matched-filter) SNR rather than the optimal SNR of the injected waveform, or that
+the analysed CRB catalogue was thresholded on a noisy statistic. Either makes
+detection data-deterministic and C1 fails, taking C3–C6 with it.
+
+---
+
+## C2 — Neither completion numerator carries any selection factor today. [LOCAL, verified in source]
+
+1D: `completion_numerator_integrand`, `bayesian_statistics.py:4055-4096`, returns
+`(1.0 - f_z) * p_gw * dVc / (1.0 + z)` — GW likelihood × incompleteness ×
+volume, no `p_det`, no `S`.
+2D: `completion_numerator_integrand_with_bh_mass`, `:4118-4147`, returns
+`base * g_i` with `g_i` (`:1935-1995`) a pure φ-weighted Gaussian expectation —
+again no `S`. Selection enters only through the shared normalisation
+`D̃^φ = α_G^φ + β_Ḡ^φ` (`:1998-2069`, `:4324-4334`), built on
+`S̄_φ` (`precompute_phi_marginal_survival`, `:1782-1830`).
+
+**Refute by:** find a selection factor already folded into `p_gw`, `f_k`, or the
+per-event `B_scale` in a way that reproduces `S̄_φ(z;h)`'s h-shape. (`B_scale =
+β_Ḡ^φ/β_Ḡ` is a candidate-looking object but is *common* to both legs and
+z-independent — `GFRAC_DERIVATION_PACKAGE.md` §3.4.)
+
+---
+
+## C3 — The correct 1D completion numerator carries `S̄_φ(z;h)` inside the z-quadrature. [INFER from C1+C2, derived]
+
+```
+B^{1D}_corr(d_L^obs; h) = ∫dz (1−f_k) (dV_c/dz)/(1+z) · N₁(d_L^obs; d_L(z;h)) · S̄_φ(z;h)
+```
+
+Derivation: `N2_SELECTION_NUMERATOR_DERIVATION_20260805.md.DRAFT` §2–§3. This is
+the refuter's structure and `GFRAC_DERIVATION_PACKAGE.md` §9 R-C's formula,
+now derived rather than raised.
+
+**Refute by:** the S→1 limiting case is trivially satisfied; the real falsifier is
+a demonstration that the M-marginalisation of `1[det]` is already carried
+somewhere in the 1D numerator chain (C2's refutation), or that MFG's α at
+population level legitimately absorbs the *per-event* `⟨S⟩_i` heterogeneity —
+the question `GFRAC_DERIVATION_PACKAGE.md` §8 called "the honest boundary of what
+a derivation can settle". §3.4 of the derivation draft argues it cannot: α is a
+single scalar per h, the numerator factor is per-event and per-z.
+
+---
+
+## C4 — The correct 2D completion numerator carries `S_4D(d_L(z;h), M(1+z))` **inside `g_i`'s M-integral** — and it is NOT `S̄_φ`. [INFER, derived]
+
+```
+g_i^corr(z;h) = ∫dM φ(M) · S_4D(d_L(z;h), M(1+z)) · N(x_M(M,z); μ_cond, σ_cond)
+```
+
+vs the 1D leg's `∫dM φ(M) S_4D(·)` with **no** conditional Gaussian. The two
+weightings differ ⇒ **the selection factor does not cancel from
+`g_frac = B_num_wbh/B_num`.** This is the load-bearing structural point of the
+refuter's N-2 and it survives.
+
+**Refute by:** show `σ_cond` is large enough that `N(x_M;μ_cond,σ_cond)` ≈ φ's own
+width, in which case the two weightings coincide and the factor does cancel.
+(Measured against: `σ_cond ≈ 8.8e-8`, `FIXB_PATHA_PACKAGE.md` §3.5 L5 — five
+orders below φ's support width, so the opposite.)
+
+---
+
+## C5 — The two-channel asymmetry: the 2D correction is ≈ h-independent, the 1D correction is not. [INFER + LOCAL]
+
+Because `σ_cond → 0`, `g_i^corr ≈ g_i · S_4D(d_L(z;h), μ_cond·M_z,det)` — the
+**detector-frame** mass entering `S_4D` is pinned by the *data*
+(`M_z = x_M·M_z,det`, `:1993`), not by `(1+z)`. At the GW peak
+`z = z*(d_L,det;h)` both `S_4D` arguments are data ⇒ the 2D correction is an
+event-wise constant, invisible to the H₀ posterior. The 1D correction's whole
+h-dependence is the `(1+z*)` mass lift inside `S̄_φ` — the very information the
+discarded coordinate carried.
+
+⇒ **Answer to the question of record: a defect, in the 1D channel; formally
+required but numerically inert in the 2D channel.**
+
+**Refute by:** measure `S_4D(d_L,det, μ_cond·M_z,det)` across the 41-h grid per
+event and show a non-trivial h-slope (it should be ≤ the quadrature-tail
+residual). Cheap; not yet run — see the derivation draft's deciding-measurement
+list, item M2.
+
+---
+
+## C6 — Magnitude: the 1D correction is **+207.0 nats per unit h**, 94.7% of events positive, and it opposes the 1D rail almost exactly. [LOCAL — measured this session]
+
+Probe: `.planning/derivation-gfrac-20260805/n2_sphi_tilt.py` →
+`n2_sphi_tilt_results.json`. Built the production `S̄_φ(z;h)` table
+(`precompute_phi_marginal_survival`, mix200k pool, 41-h grid) and evaluated
+`ln S̄_φ` at the GW-peak redshift `z*(d_L,det;h)` for all 1590 CRB events
+(point-GW approximation; completion-leg-dominated events).
+
+| quantity | value |
+|---|---|
+| `S̄_φ` at the GW peak, h=0.73 | median **0.266**, 5–95% [0.031, 0.899], min 1.9e-4 |
+| per-event `dln S̄_φ/dh` @0.73 | median **+0.1398**, 5–95% [−0.0008, +0.2105], **94.7% positive** |
+| **Σ over 1590 events** | **+207.0 nats/h** (chord over the full grid +207.8 ⇒ essentially linear) |
+| effective exponent `dln S̄_φ/dln(1+z*)` | **+0.375** (cf. `g`'s `−s_dex = +0.43`) |
+| median `z*` @0.73 | 0.490 |
+
+Comparison objects, from the same run of record
+(`results/run_20260804_postfix/{iiib,joint_r1}/combined_{1d,2d}.json`, read this
+session):
+
+| venue · channel | MAP | ln-posterior chord slope 0.60→0.73 |
+|---|---|---|
+| iiib 1D | 0.600 (rail) | **−247.4 nats/h** |
+| joint_r1 1D | 0.600 (rail) | **−184.0 nats/h** |
+| iiib 2D | 0.780 | +267.9 |
+| joint_r1 2D | 0.800 | +251.9 |
+
+⇒ adding +207 nats/h to the 1D channel removes **84%** of the iiib 1D down-tilt
+and **over-corrects** joint_r1's (−184 → +24, sign flip off the rail). The 2D
+channel is predicted to move by ≈0.
+
+**This is a log-slope comparison, not a MAP decomposition.** The standing
+never-add-MAP-displacements rule (`GATE_PACKAGE_FINAL.md:609`;
+`DERIVATION_C7_HOSTZ_KERNEL.md:545-547`; enforced when it refuted
+`GFRAC_DERIVATION_PACKAGE.md` §7 at
+[`GATEB_REFUTATION_REPORT.md`](../../../.planning/derivation-gfrac-20260805/GATEB_REFUTATION_REPORT.md)
+row 4) applies: tilts add in ln-space, MAPs do not.
+
+**Carried holes (do not over-quote C6):**
+(i) the point-GW approximation ignores the quadrature's z-width — it is a
+first-order read, not a delivered posterior;
+(ii) it applies the completion-leg correction to *all* 1590 events, i.e. it
+assumes completion dominance (measured only for the 2D channel: 95%,
+`GFRAC_DERIVATION_PACKAGE.md` §6.6 — **the 1D mixture share was not measured**);
+(iii) the catalogue leg's own correction (C8) is omitted entirely.
+
+**Refute by:** the counterfactual toggle (derivation draft §6) — a default-off
+`--selection_in_completion_numerator` instrumentation run at both venues on the
+41-h grid. `Σ Δln(1D)` must reproduce +207 ± tail correction, and the 2D channel
+must be bit-identical up to the `σ_cond` residual. Both are pre-registered there.
+
+---
+
+## C7 — N-2 resolves, rather than survives, `GFRAC_DERIVATION_PACKAGE.md` §8's "honest boundary". [INFER]
+
+§8 asked whether the population-level `β_Ḡ^φ(h)` "correctly absorbs the per-event
+`∂_h ln⟨S⟩_i`". Under C1+C3 the answer is **no, and it is not supposed to**: `α`
+is one scalar per h in the *denominator*; the per-event `⟨S⟩_i(h)` belongs in each
+*numerator*. §8's `E_det[∂_h ln g_frac] = ∂_h ln⟨S⟩_h` identity is exactly C6's
++207 object, and it explains §6.1's *"all 1588 events positive"* score anomaly
+without appeal to a population-scale cancellation.
+
+**Corollary (numerically striking, flagged for the author, NOT claimed as a
+result):** with both corrections applied, `g_frac`'s h-slope becomes
+`+243.5 − 207.0 ≈ +36 nats/h` — the channel difference that gate (vii) attributed
+**entirely** to `g` largely annihilates against the selection term it was missing.
+Both numbers are ln-space tilts and may be differenced; the MAP consequence may
+**not** be inferred from them.
+
+**Refute by:** the same counterfactual toggle; if `Σ Δln g_frac` under the toggle
+is not ≈ −207 the corollary is dead.
+
+---
+
+## C8 — LINKED BUT NOT OPENED: the catalogue-leg 1D numerator. [DOC — flagged, not claimed]
+
+The reduced-data argument applies verbatim to the 1D **catalogue** numerator
+(`weighted_sum` of the per-galaxy `N_g`, `:3976-4007`): it too discards
+`M_z^obs`, so it too should carry a host-mass-marginal survival. **This claim
+file does not open that question** — it collides with exoneration #26
+(`816f904`), where a p_det was *removed* from `L_cat`'s numerator against Gray
+A.9/A.10 and the removal **halved** the 1D bias. Opening it needs its own
+exoneration check and new evidence against #26.
+
+**Refute by:** n/a (nothing is claimed). Recorded so a future reader does not
+mistake the completion-leg scoping for a statement that the catalogue leg is fine.
+
+---
+
+## Not claimed
+
+1. **Not claimed: that adopting C3 fixes the 1D rail.** C6's arithmetic is
+   suggestive and the direction is favourable; the rail's root cause of record is
+   host photo-z (`[[h0-railing-rootcause-photoz]]`, ledger #36). Two mechanisms
+   can share a sign.
+2. **Not claimed: any MAP number.** No MAP is derived, decomposed, or predicted.
+3. **Not claimed: that the catalogue leg is correct** (C8).
+4. **Not claimed: that #66/#67's pairing question is settled.** CC-1 stands: the
+   σ(d_L) noise-model half may be a required companion in production too, and
+   that has never been measured on this venue.
+5. **Not claimed: that the injection pool's marginal over the 11 discarded Fisher
+   parameters is the population marginal.** `S_4D` inherits whatever the pool's
+   parameter distribution is. That is a separate, unaudited assumption
+   (derivation draft §5, honest gaps).
+
+## Exonerated — do NOT re-open without new evidence
+
+Inherit the binding union: `CLAIM_2D_BIAS_20260730.md:721-756` **plus**
+`gate_b_20260730/BIAS_HISTORY_LEDGER.md` §2. Nothing is added to it by this file;
+C0's distinction is a *scoping* argument, not a removal.
