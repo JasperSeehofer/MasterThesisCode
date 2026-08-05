@@ -335,3 +335,45 @@ band and a ≈17-nat class-summed sanity ceiling. Derived mechanically from
 
 Verdict to be appended below by the session that reads out the run — after this
 file is committed, no edits above this line.
+
+---
+
+## VERDICT — appended 2026-08-05, readout session
+
+**(c) MIXED / UNDETERMINED — bounded null, with one falsified prereg assumption
+(N2) recorded as a discovered fact.**
+
+- **Branch scoring**: `m_S = 0.0322`, `m_R = 0.0107` (joint_r1; both < 0.10 ⇒ the
+  **(c) bounded-null** clause fires; the branch (a)/(b) thresholds of 0.25 are
+  missed by ~8–20×). Shared-218 paired `ρ_e` median **0.983** (iiib) / **0.964**
+  (joint) — within ±10% of 1. `ΔΣ(A2−A1)`: shared-218 +4.68/+3.63 nats;
+  resurrected-316 +5.27 nats (joint).
+- **S2 decisive**: `g_frac` is **bit-identical A1-vs-A2** per event, per h, in
+  both venues (0/65108 mismatches) ⇒ the D1→`g_frac` convergence route (C7) is
+  **DEAD at machine precision**.
+- **S-bands**: S1 self-certification `Σ⁴ᴰ` **PASS iiib** (relative deviation
+  6.8e-5) / **FAIL joint_r1** (12.5%) — `Σ⁴ᴰ` folds the catalogue-side `f_k`,
+  which is legitimately venue-dependent; flagged, not adjudicated. S1
+  `β_Ḡ^φ` **PASS both venues** (≤4e-6). S3 sign expectation: one-signed
+  96.6% (iiib) / 94.9% (joint). S4 mixture-log-odds ceiling: **PASS**
+  98.5% (iiib) / 97.5% (joint) of events within the 0.0107-nat band.
+- **N2 run-voiding null FAILED, root cause traced**: `L_cat_no_bh`/`L_cat_with_bh`
+  differ A1-vs-A2 in 62–69% (iiib) / 18–38% (joint) of cells — because under
+  `volume_deconv`/`absolute_marginal` the catalogue-leg host-z prior carries the
+  completeness callable `f_k`, and `f_k` is **built from the injection pool**
+  (the very object D1 substitutes). The prereg's assumption "`L_cat` carries no
+  selection function" is **falsified** by the current estimator config. Per the
+  prereg's own STOP semantics, the N2-dependent reads are void as registered;
+  the stratum read above is reported on the valid (shrunk) `Δ_e` populations
+  (294/1588 iiib, 607/1588 joint) and is **CONDITIONAL on that caveat**. The
+  `f_k`-is-pool-fed fact is promoted to the next session's intake queue.
+- **N1 PASS** (horizon `9.164987215485882` exact, 41/41 h, both pools).
+  **N3 PASS** (`|Δln w̃_G| ≤ 0.001`). **N4 PASS** (expected non-nulls moved).
+- **Context (not scored)**: `w̃_G(0.73)` A0→A1→A2 = 0.06197→0.06191→0.05101
+  (iiib) / 0.07080→0.07074→0.06542 (joint). No MAPs by design (no combine).
+- **Ambiguities recorded**: S2's registered A0 reference slope `0.047586` did
+  not reproduce under mean/median/sum aggregations (closest 0.040284,
+  bit-identical across venues); `m_S` was applied using the joint-only
+  registered denominator.
+- Jobs 6152697–6152704, 492/492 COMPLETED, code `128f318a`. Evidence:
+  `results/run_20260805_d1/readout.{py,json}`.
