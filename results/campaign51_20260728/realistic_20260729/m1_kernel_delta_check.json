@@ -1,0 +1,52 @@
+{
+  "spec": "M-1, CLAIM_HITCHHIKER_INDEPENDENCE_20260805.md.DRAFT sec 6",
+  "code_path_evidence": {
+    "resolve_host_z_kernel": "master_thesis_code/bayesian_inference/bayesian_statistics.py:149-210. With host_z_kernel='volume_deconv' (explicit, not 'auto'), the function returns 'volume_deconv' unconditionally at line 195 (`resolved = host_z_kernel` branch of the ternary at :192-196) regardless of normalization_mode or catalogue_scattered -- 'point' (the delta kernel) is never selected.",
+    "iiib_cli_args": "results/run_20260804_frozeng/iiib/run_metadata_0.json and results/run_20260805_d1/a1_iiib/run_metadata_0.json (same-day iiib arms; run_20260804_postfix/iiib itself has no run_metadata_0.json staged locally) both record host_z_kernel='volume_deconv', normalization_mode='absolute_marginal', observed_catalogue=null, realize_observed_catalogue=false -- i.e. the parent (unscattered) catalogue loaded directly, kernel explicitly volume_deconv.",
+    "sigma_source": "bayesian_statistics.py:4662-4794 (single-host path) and :5182-5304 (vectorized path): host_z_error is read per-galaxy from the loaded catalogue (galaxy_catalogue/handler.py InternalCatalogColumns.REDSHIFT_ERROR = on-disk column REDSHIFT_MEASUREMENT_ERROR, handler.py:78/163/182), then combined in quadrature with a peculiar-velocity floor: sigma_z_pv = (1+z_g) * SIGMA_V_PEC_KM_S / c (bayesian_statistics.py:4765-4766, 5259-5260); host_z_error_eff = sqrt(z_error**2 + sigma_z_pv**2). SIGMA_V_PEC_KM_S = 0.0 (constants.py:95, an inference-time residual knob, default off) so this particular floor is inert at iiib; the effective width is therefore just the catalogue's own REDSHIFT_MEASUREMENT_ERROR.",
+    "catalogue_parse_time_floor": "The catalogue-level floor is baked in earlier, at parse time, NOT at inference time: galaxy_catalogue/handler.py:434-479 (parse_to_reduced_catalog) folds a peculiar-velocity term into REDSHIFT_MEASUREMENT_ERROR in quadrature for EVERY row -- sqrt(raw_z_error**2 + sigma_pv_catalogue**2 + sigma_z_pv_class**2), where sigma_z_pv_class = (1+z) * SIGMA_V_PV_UNCORRECTED_KM_S / c for PV-uncorrected rows (SIGMA_V_PV_UNCORRECTED_KM_S = 500.0 km/s, constants.py) or the smaller SIGMA_V_PV_RESIDUAL_CORRECTED_KM_S for BORG-corrected rows. This applies identically to the parent (unscattered) and any observed-realization catalogue, since both derive from the same parse. The parent catalogue's z_error column is therefore NOT zero by construction -- the PV floor alone gives (1+z)*500/c ~ 0.00167 at z~0."
+  },
+  "parent_catalogue_path": "/home/jasper/Repositories/MasterThesisCode/results/campaign51_20260728/realistic_20260729/realizations_staged/cluster_parent_reduced_galaxy_catalogue.csv",
+  "observed_catalogue_path": "/home/jasper/Repositories/MasterThesisCode/results/campaign51_20260728/realistic_20260729/realizations_staged/observed_catalogue_seed900001.csv",
+  "parent_stats": {
+    "n_rows": 22641048,
+    "n_nan_z_error": 6284,
+    "frac_nan_z_error": 0.0002775489897817451,
+    "n_finite": 22634764,
+    "z_error_min": 0.0005244904928578,
+    "z_error_median": 0.03959198424570605,
+    "z_error_max": 0.265125751116521,
+    "z_error_mean": 0.040140144665788,
+    "frac_exactly_zero": 0.0,
+    "frac_below_1e-4": 0.0,
+    "sigma_over_1plusz_median": 0.03303813426597286,
+    "sigma_over_1plusz_min": 0.0005244263052005067,
+    "sigma_over_1plusz_max": 0.03467921353316526
+  },
+  "observed_stats": {
+    "n_rows": 22641048,
+    "n_nan_z_error": 6284,
+    "frac_nan_z_error": 0.0002775489897817451,
+    "n_finite": 22634764,
+    "z_error_min": 0.0005244904928578,
+    "z_error_median": 0.03959198424570605,
+    "z_error_max": 0.265125751116521,
+    "z_error_mean": 0.040140144665788,
+    "frac_exactly_zero": 0.0,
+    "frac_below_1e-4": 0.0,
+    "sigma_over_1plusz_median": 0.03297587225205699,
+    "sigma_over_1plusz_min": 0.0005244852480053199,
+    "sigma_over_1plusz_max": 0.04000198352404645
+  },
+  "comparison": {
+    "parent_sigma_over_1plusz_median": 0.03303813426597286,
+    "glade_photoz_scale_joint_venue": 0.035,
+    "ratio_parent_to_glade_photoz": 0.9439466933135101,
+    "paper_sec3_3_demo_deltaz_over_z_low": 0.003,
+    "paper_sec3_3_demo_deltaz_over_z_high": 0.03,
+    "ratio_parent_to_paper_demo_low": 11.012711421990952,
+    "ratio_parent_to_paper_demo_high": 1.1012711421990953
+  },
+  "verdict": "KERNEL-FINITE",
+  "verdict_rationale": "iiib's run_metadata pins host_z_kernel='volume_deconv' explicitly (never resolves to 'point'/delta), and the parent catalogue's REDSHIFT_MEASUREMENT_ERROR column is nonzero for essentially all rows (a parse-time peculiar-velocity floor is folded in regardless of catalogue realization) -- both the KERNEL CHOICE and the per-galaxy WIDTH INPUT are non-delta at iiib."
+}

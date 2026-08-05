@@ -1,0 +1,712 @@
+# CLAIM — Hitchhiker per-event independence / large-N_gal validity (intake, stage 0)
+
+**Status:** DRAFT — research-cycle stage 0 (claim intake + literature verification).
+No commits, no runs. Author-gated.
+**Date:** 2026-08-05
+**Cycle:** `/research-cycle` stage 0 → (if promoted) stage 1/2.
+**Origin:** author's recollection of "The Hitchhiker's Guide to Dark Siren Cosmology",
+flagged by the author themselves as a possible conflation of two statements.
+
+## Provenance legend
+
+| tag | meaning |
+|---|---|
+| **[LOCAL]** | re-measured this session from artifacts in this repo; reproducible now, offline |
+| **[AGENT]** | measured by a subagent, not independently reproduced here — **none used in this file** |
+| **[DOC]** | read from a committed artifact (readout, runbook, derivation, prereg, code comment) |
+| **[LIT]** | quoted verbatim from the fetched paper text (ar5iv full text of arXiv:2212.08694), with section/equation numbers |
+| **[INFER]** | logical inference from [LOCAL]/[DOC]/[LIT] facts; no new measurement |
+
+---
+
+## 0. Paper identification — CONFIRMED
+
+**[LIT]** arXiv:**2212.08694** — *"The Hitchhiker's guide to the galaxy catalog approach
+for gravitational wave cosmology"*, Gair, Ghosh, Gray, Holz, Mastrogiovanni, Mukherjee,
+Palmese, Tamanini, Baker, Beirnaert, Bilicki, Chen, Dálya, Ezquiaga, Farr, Fishbach,
+Garcia-Bellido, T. Ghosh, Huang, Karathanasis, Leyde, Magaña Hernandez, Noller, Pierra,
+Raffai, Romano, Seglar-Arroyo, Steer, Turski, Vaccaro, Vallejo-Peña (AJ 2023).
+
+The author's guess was correct. Full text obtained from `ar5iv.labs.arxiv.org/html/2212.08694`;
+all quotes below are verbatim from that rendering (section/equation numbers as printed there).
+
+**Prior use in this repo:** this paper is *already cited* in
+`docs/BIAS_RESOLUTION_ATTEMPTS_REPORT.md:175-179` and at `:234` and `:266`. That citation
+already states the substance of S1. See §4 (prior art) — this is NOT a first encounter.
+
+---
+
+## 1. Step 1 — the three statements the paper actually makes
+
+The paper contains **three distinct statements**, not two. The author's S1 and S2 map onto
+two of them (and those two are two halves of *one* statement). The third — the one the
+author did **not** recall — is the one that maps most dangerously onto our pipeline.
+
+### P1 — the SELECTION DENOMINATOR breaks separability (single-event statement)
+
+**[LIT] §2.3, paragraph following Eq. (30):**
+
+> "However, this is a function of the true values of the galaxy redshifts. This dependence
+> of the denominator of the GW likelihood on {z_g} **breaks the separability of the integrals
+> that we exploited above, unless the true redshifts of the galaxies are perfectly known.**
+> In this case, it can be seen that the full hierarchical likelihood reduces to Eq. 15. In
+> practice, however, we will not know the true redshifts of the galaxies. The detection
+> probability is effectively an average of the galaxy redshift distribution over the whole
+> volume within which GW sources can be observed. **If that volume is sufficiently large**,
+> as is the case for current GW detectors, then the average galaxy redshift will be
+> approximately uniform in comoving volume, and so the dependence of the detection probability
+> on the actual galaxy redshifts will be relatively weak and so this term can be factored out,
+> reducing the result to the simpler expression used in this paper."
+
+Note what this is and is not:
+- It is a **single-event** statement. It needs no second event and no shared host.
+- The escape clause is a **large-VOLUME / uniform-in-comoving-volume** argument about the
+  *detection* volume, not a large-count argument about the candidate list.
+- Its precondition for exactness is **perfect galaxy redshifts**.
+
+**[LIT] §2.3, Eq. (30)** (the object in question):
+> `p_det(H_0, {z_g}) = (1/N_gal) Σ_{j=1}^{N_gal} ∫_{-∞}^{d_L^thr} L_GW(x | d_L(z_g^j, H_0)) dx
+>  = (1/N_gal) Σ_{j=1}^{N_gal} p_det^GW(d_L(z_g^j, H_0))`
+
+### P2 — the MULTI-EVENT cross-terms (= the author's S1)
+
+**[LIT] §2.3, next paragraph (immediately after P1), leading to Eq. (31):**
+
+> "**The second correction arises when considering multiple GW observations. The likelihood
+> is the product of likelihoods for each GW observation, but each one of those likelihoods
+> includes the sum over galaxies. This will introduce cross terms which are not simply the
+> product of the individually-marginalized likelihoods, but marginals of the product of the
+> likelihoods over the true redshift of the galaxies.** These terms represent corrections for
+> the case when multiple GW events are observed from the same galaxy. In practice, **these
+> corrections are small, as there are typically 1/N_gal times fewer of them than the dominant
+> independent-host terms. These terms will only become important once a significant number of
+> sources in the catalogue share a host.** With typical merger rates of a few tens per Gpc^3
+> per year and approximately one galaxy per cubic megaparsec, the typical spacing of mergers
+> in any given galaxy is millions of years, so we will essentially never be in a regime where
+> these corrections matter.[fn 4] **Once again, we emphasise that these terms only arise when
+> the galaxy redshift measurements are imperfect. When galaxy redshifts are known perfectly,
+> Eq. 15 is still exact when analysing many GW sources.**"
+
+(Footnote 4 is the Adams joke: "Space is big. Really big…")
+
+**[LIT] §2.3, Eq. (31)** — the exact, non-factorizing form:
+> `p(H_0 | {x}) ∝ p(H_0) ∫ d{z_g} [ Π_{j=1}^{N_obs} L_GW(x_j | {z_g}, H_0) / p_det(H_0, {z_g}) ]
+>  × [ Π_{k=1}^{N_gal} L_red(ẑ_g^k | z_g^k) ] p_bg({z_g})`
+> with `L_GW(x_j | {z_g}, H_0) = (1/N_gal) Σ_{i=1}^{N_gal} L_GW(x_j | d_L(z_g^i, H_0))`.
+
+**[LIT] §2.3, closing:**
+> "This expression involves multiplication of a sum over galaxies for each GW event, followed
+> by an integration over all the unknown true galaxy redshifts. This is extremely
+> computationally expensive, which is why it is better to use the standard approximate
+> expression, especially since the latter is expected to be accurate in any application to
+> real data."
+
+### P3 — the large-N_gal validity condition and its empirical demonstration (= the author's S2)
+
+**[LIT] §3.3 "The one galaxy limit", opening sentence:**
+
+> "As described in Section 2.3, **the standard analysis makes some approximations that are
+> only valid in the limit that the gravitational wave detection volume contains a sufficiently
+> large number of galaxies.** To illustrate this, we consider here an extreme and unrealistic
+> example in which the galaxy catalogue contains only one galaxy, the redshift of which is
+> known imperfectly from electromagnetic observations."
+
+**[LIT] §3.3, the measured bias:**
+> "In Figure 8 we show example posteriors for catalogues generated with H_0 = 70 km s^-1 Mpc^-1,
+> assuming the uncertainty in the EM redshift measurement is δz/z = 3% or 0.3%. **We see that
+> with a 3% error, the posterior is shifted significantly to the right and shows a large bias.**
+> For the smaller redshift uncertainty the posterior appears to be unbiased, but in fact a
+> small bias is still present on average. This is revealed by constructing a PP-plot over 100
+> random realisations of the Universe. The PP-plot is shown in Figure 9 and **there is a clear
+> and significant departure from the diagonal, even when δz/z = 0.3%.**"
+
+**[LIT] §3.3, the attribution — this is the load-bearing sentence:**
+> "**These biases arise from the fact that in the standard analysis the approximation has been
+> used that the true redshift of the galaxy can be marginalised out of the likelihood separately
+> for each GW event.** To carry out a consistent analysis we must use the full likelihood given
+> in Eq. (31). In the case that there is only one galaxy, with unknown true redshift z and
+> observed redshift ẑ, this simplifies to [Eq. **(33)**]:
+> `p(H_0|{x}) ∝ p(H_0) ∫ dz [ Π_{j=1}^{N_obs} L_GW(x_j|d_L(z,H_0)) / p_det(H_0,z) ] × [L_red(ẑ|z)] p(z)`"
+
+**[LIT] §3.3, the fix and the perfect-z limit:**
+> "We see that the full likelihood broadens the posterior, making it consistent with the true
+> value even in the case of large redshift uncertainties, and it generates a pp-plot that is
+> perfectly consistent with the expected diagonal line. The figures also show results computed
+> in the perfect-redshift measurement limit, δz/z = 0%. **In this limit the full and approximate
+> likelihoods are exactly equivalent and so we recover unbiased results using either likelihood.**"
+
+**[LIT] §3.3, the practical warning:**
+> "**Using galaxy catalogues that are too sparse can lead to biases** because of the inconsistency
+> in the standard analysis that becomes apparent in this limit. However, these are not indicative
+> of a fundamental problem in the analysis, and can be avoided by using the full likelihood of
+> Eq. (31)."
+
+**[LIT] §3.2 (the operating rule the paper adopts for its own runs):**
+> "In the limit that we have N_GW ≥ N_gal, **the simplified framework cannot be used**[fn 6] …
+> otherwise, there could be a bias (see Sec. 3.3) for more details."
+> (fn 6: "This an extremely unrealistic limit where we assume that multiple GW sources are hosted
+> in the same galaxy.")
+
+**[LIT] §4.2 "Inconsistency 5, simulating dark siren events along the same line of sight"** —
+the *opposite-sign* companion, and the only place the paper gives a **low-H_0** direction for
+this mechanism:
+> "The statistical method used in TH21 is for the high-galaxy density regime, but this is
+> inconsistent with the generation of data from D_11 and D_21, where it is possible for multiple
+> GW events to be drawn from the same low-redshift host galaxy. … However, in our own analyses,
+> this produced a noticeable bias less frequently than the other potential sources of bias we
+> explored. Moreover, **we find that a low-H_0 bias will arise if there are low-redshift
+> overdensities along the line of sight and the full likelihood analysis is not used.** When
+> simulating multiple events along the same line of sight, if there is an overdensity of
+> galaxies in that direction, the H_0 posterior is expected to display a peak at an H_0 lower
+> than the input value, that corresponds to the redshift of the overdensity … Especially when
+> using the light cones with fewer galaxies, there are very few galaxies at the redshift of
+> interest z ≲ 0.3, so we are sensitive to the small number statistics of a peak in the redshift
+> distribution … **the presence of the same galaxies across multiple GW events needs to be taken
+> into account with the full likelihood analysis so as not to incur in a bias.**"
+
+### Statements that DO **NOT** exist in the paper (checked, negative results)
+
+**[LIT]** Searched the full text for each; report explicitly as absent:
+
+- **No** statement about correlations induced by **shared population hyperparameters** across
+  events. (The paper's hyperparameter is H_0 alone; rate evolution is deliberately switched off
+  — §2.1: "we will neglect the rate term in Eq. 5 in order to align more closely with the
+  approach taken in TH21".)
+- **No** statement about **catalogue-realization** correlations (a shared *noise* realization of
+  the catalogue inducing correlated per-event likelihoods). The paper's only shared-catalogue
+  correlation is the shared **latent true redshifts** {z_g} — a marginalization coupling, not a
+  realization coupling.
+- **No** statement about correlations from a **shared selection/injection-pool estimate**.
+  (P1 is the nearest thing, and it concerns the *exact* p_det's dependence on the latent {z_g},
+  not on a Monte-Carlo estimate of it.)
+- The paper's **"double counting"** (§4.2 Inconsistency 1) is **NOT** about double-counting hosts
+  across events. **[LIT] §4.2:** "since the sample of MICEcat galaxies is already distributed as
+  Eq. 13, this procedure effectively introduces a 'double counting' problem. In other words, if
+  the distribution of galaxies follows a z^2 profile, the distribution of GW events will follow a
+  z^4 profile. … **this type of mismatch usually results in a bias towards lower values of H_0.**"
+  That is a generator/estimator prior mismatch — a different animal, and one this project already
+  quotes (`docs/BIAS_RESOLUTION_ATTEMPTS_REPORT.md:266`).
+- No adjacent-canon check was needed: both S1 and S2 are present in this paper. (Gray et al. 2020
+  arXiv:1908.06050 / Mandel, Farr & Gair 2019 arXiv:1809.02063 were **not** re-read this session;
+  any claim about them here would be untagged and is therefore not made. See Refute-by on **H-6**.)
+
+---
+
+## 2. S1 vs S2 — the disentanglement
+
+**Verdict: the author is not conflating two unrelated things — S1 and S2 are the two ends of ONE
+statement. But the author's recollection is missing a genuinely distinct THIRD statement (P1),
+and that omission is the interesting part.**
+
+| author's recollection | paper statement | status |
+|---|---|---|
+| **S1** "the per-detection-independent integral is an approximation; the full form does not factorize and carries correlations between detections" | **P2** (§2.3 after Eq. 30, Eq. 31) | **CORRECT, verbatim.** |
+| **S2** "some approximation only holds when the number of possible hosts is LARGE" | **P3** (§3.3 opening; §3.2 fn 6; §4.2 Inconsistency 5) | **CORRECT, verbatim.** |
+| (not recalled) | **P1** (§2.3 after Eq. 30) — the *selection denominator* breaks separability unless galaxy z is perfect; rescued by a **large-detection-volume** argument | **DISTINCT third statement.** |
+
+**S1 and S2 are the same object.** P3's "sufficiently large number of galaxies" is precisely the
+condition under which P2's `1/N_gal` suppression of the cross-terms holds. §3.3 says so in one
+sentence — the one-galaxy bias "arise[s] from the fact that … the true redshift of the galaxy can
+be marginalised out of the likelihood **separately for each GW event**". So: *the factorization
+approximation (S1) is the approximation whose validity requires large N_gal (S2).* They are not
+two independent claims to be checked separately.
+
+**Three consequences that matter for us, all read directly off the quotes:**
+
+1. **The mechanism requires imperfect galaxy redshifts. Full stop.** [LIT] §2.3: "these terms
+   only arise when the galaxy redshift measurements are imperfect. When galaxy redshifts are
+   known perfectly, Eq. 15 is still exact when analysing many GW sources." [LIT] §3.3: at
+   δz/z = 0% "the full and approximate likelihoods are exactly equivalent".
+2. **The mechanism requires the SAME galaxies to be summed over by MORE THAN ONE event.** "These
+   terms will only become important once a significant number of sources in the catalogue share a
+   host"; "the presence of the same galaxies across multiple GW events". A single event with few
+   candidates is **not** in the failure regime — the §3.3 demonstration puts **200 GW events on
+   one galaxy**. Few-hosts-per-event, with no sharing, does not trigger P2/P3.
+3. **The sign is regime-dependent, and the paper gives both.** §3.3 (one shared galaxy,
+   δz/z = 3%): **HIGH** ("shifted significantly to the right"). §4.2 Inconsistency 5 (shared line
+   of sight with a low-z overdensity): **LOW**. Anyone claiming a sign for our pipeline must name
+   which regime they are in.
+
+**P1 is the statement with no shared-host precondition.** It says the *selection denominator*,
+which genuinely depends on the latent galaxy field, is factored out of the {z_g} integral on a
+large-volume/uniform-comoving-volume argument. That is a modelling assumption our pipeline makes
+everywhere and has never audited against this quote.
+
+---
+
+## 3. Step 2 — mapping onto our pipeline
+
+### 3.1 Where we assume the per-event-independent form
+
+**C-1 [LOCAL] — our joint posterior is exactly the factorized form.**
+`master_thesis_code/bayesian_inference/posterior_combination.py:324`:
+```python
+joint_log = np.sum(log_likes, axis=0)
+```
+over an `(n_events, n_h_values)` array — i.e. `ln p(h|{x}) = Σ_i ln L_i(h) + const`, the paper's
+Eq. (3)/(15) product, **not** Eq. (31). There is no {z_g} marginalization outside the per-event
+loop anywhere in the codebase.
+*Refute by:* grep the `--combine` path for any cross-event coupling term; if `np.sum(log_likes,
+axis=0)` at `:324` is the only combination and no caller passes event-coupled likelihoods, C-1 stands.
+(Note the same function's docstring at `:300-315` records that a `−N·log D(h)` term was removed
+in the Tier-3 audit — the only historical cross-event object, and it was a selection correction,
+not a P2 cross-term.)
+
+**C-2 [LOCAL] — the per-event likelihood is a two-leg mixture; only one leg is galaxy-summed.**
+`bayesian_statistics.py:3813` (`p_Di`) builds
+`L_i = w_G · L_cat,i + (1 − w_G) · L_comp,i`, where `L_cat,i` sums `single_host_likelihood`
+(`:4658`) over **that event's own candidate ball** returned by
+`get_possible_hosts_from_ball_tree` (`:3649`; radius definition
+`galaxy_catalogue/handler.py:558-618`, `2σ√λ_max(JΣJᵀ)`), and `L_comp,i` is a smooth
+completeness-corrected integral carrying **no discrete galaxies at all**.
+⇒ **P2/P3 can only enter through `L_cat`.** [INFER]
+*Refute by:* show `L_comp` depends on any individual catalogue galaxy's observed redshift
+(it depends on `f_k` — see C-7 — which is the one live doubt).
+
+**C-3 [LOCAL] — the completion leg carries ~93% of the mixture weight, and the 2D catalogue leg
+is identically zero for most events.** Measured from
+`results/run_20260804_postfix/joint_r1/diagnostics/event_likelihoods.csv`, 1588 events at the
+mid-grid h:
+- `w_G` median = mean = **0.0708** ⇒ completion share **0.9292**
+- `L_cat_with_bh == 0` for **61.8%** of events; `L_cat_no_bh == 0` for **31.0%**
+(This reproduces the gate-(vii)/N-1 figures at the joint venue; the 81.5% figure is the idealized
+venue.)
+*Refute by:* recompute the same two columns at any other h on the grid; the numbers are h-stable
+by construction of `w_G`.
+
+**C-4 [LOCAL] — shared candidate galaxies between events are RARE but NOT zero.**
+Computed from `results/run_20260804_postfix/joint_r1/diagnostics/prepared_cramer_rao_bounds.csv`
+(1590 events) using the production ball radius formula (`handler.py:613-617`):
+- ball radius (chord): median **1.22°**, p90 **3.65°**, max **15.98°**
+- **event pairs with overlapping sky balls: 1620 of 1 263 255 (0.128%)**; **981/1590 events (61.7%)**
+  have ≥1 sky-overlapping partner (median degree 1, p90 6, max 40)
+- adding a 2σ `d_L`-window overlap requirement: **279 pairs (0.022%)**, touching **385 events (24.2%)**
+This is an **upper bound** on P2-relevant sharing: it ignores the mass cut and the z-window, both of
+which only shrink it.
+*Refute by:* re-run with actual `catalog_index` sets per event (requires a diagnostics emit that does
+not currently exist) — the exact overlap count is ≤ 279 pairs.
+
+**C-5 [DOC/LOCAL] — the 1D low rail is present at the EXACT-z venue.**
+`results/run_20260804_postfix/gate_vii/PREREGISTRATION_FROZEN_GFRAC.md:43` defines
+"iiib = idealized (parent/exact-z); joint_r1 = realization r1 (delivered/observed)" **[DOC]**.
+Reading the combined posteriors **[LOCAL]**: `iiib/combined_1d.json` → `map_h = 0.6`
+(`map_posterior` 0.6653); `joint_r1/combined_1d.json` → `map_h = 0.6` (0.4708). Both rail at the
+grid edge 0.600.
+*Refute by:* show that the iiib venue's *estimator kernel* is not δ-like — i.e. that `L_red` is not
+effectively a delta even though the catalogue is the exact-z parent. **This is the one open hole in
+C-5 and it is cheap to close** (see §6, M-1).
+
+**C-6 [LOCAL] — every selection object is precomputed ONCE and shared by all events.**
+`bayesian_statistics.py:2982-3078` inside `evaluate()`: `precompute_completion_denominator` (2982),
+`precompute_missing_completion_denominator` (2998), `precompute_global_catalog_selection`
+(3005/3013/3045), `precompute_phi_marginal_survival` (3033), `precompute_phi_selection_integrals`
+(3038), `compute_catalog_draw_weight_total` (3075), `precompute_completeness_population_volume`
+(3078). All are consumed per-event via module globals; `completion_mass_factor_g` (`:4197`) reads
+them. ⇒ our `D(h)`, `β_Ḡ`, `S̄_φ`, `Σ^4D`, `V_f` are treated as **exactly known functions of h**,
+built from the injection pool — precisely the object P1 says is "a function of the true values of
+the galaxy redshifts" and may only be factored out under a large-volume argument. [INFER]
+*Refute by:* show any of these tables is re-derived per event conditional on that event's candidate
+redshifts (it is not — they are module globals set before the event loop).
+
+**C-7 [DOC] — `f_k` is pool-fed into the CATALOGUE leg.** RUNBOOK-8 §0 "Discovered facts" and
+BIAS_HISTORY_LEDGER §4 item 15 (row #94): "under `volume_deconv`/`absolute_marginal` the
+catalogue-leg host-z prior carries the completeness callable `f_k` built from the injection pool …
+62–69% of `L_cat_no_bh` cells move under a pool substitution." ⇒ the one place in our code where a
+**globally-estimated selection object enters a LOCAL, small-N_gal sum** — the exact intersection of
+P1's escape clause (which needs a *large* volume) with a *ball-sized* volume. [INFER]
+*Refute by:* the D1 A1/A2 arms already measured the *magnitude* of a pool substitution on `L_cat`;
+re-read `results/run_20260805_d1/readout.json` for the h-slope (not just the level) of that movement.
+
+### 3.2 Which of the paper's validity conditions we satisfy / violate
+
+| paper condition | our 1D channel | our 2D (with-BH-mass) channel |
+|---|---|---|
+| **perfect galaxy redshifts** (P2/P3 exactness) | **VIOLATED at joint_r1** (GLADE photo-z, σ_z ≈ 0.035 ⇒ δz/z ≈ 7–35% over z ∈ [0.1, 0.5], vs the paper's 3% "large bias" case) — **SATISFIED at iiib** (exact-z parent) | same |
+| **same galaxy summed by ≥2 events** (P2/P3 necessity) | **~SATISFIED for ≤24.2% of events / ≤0.022% of pairs** (C-4) | **WEAKER** — mass conditioning zeroes `L_cat` outright for 61.8% of events (C-3), so those events contribute no galaxy sum to share |
+| **large N_gal in the sum** (P3) | ball-sized, not measured per-event here | **strongly reduced** — the mass factor concentrates weight and, for 61.8% of events, empties the ball |
+| **large detection volume ⇒ p_det ≈ uniform-comoving** (P1 escape clause) | **SATISFIED by construction in `L_comp`** (uniform-in-comoving completion density) | same for `L_comp`; **QUESTIONABLE in `L_cat` via `f_k`** (C-7) |
+| **mixture weight on the galaxy-summed leg** | 7.1% (C-3) | 7.1%, and zero for 61.8% of events |
+
+**The author's S2 concern, stated precisely and then answered:** the 2D channel's mass conditioning
+*does* shrink the effective host count, and dramatically — 61.8% of events have an identically-zero
+2D catalogue leg. **But the paper's failure mode is not "few hosts"; it is "few hosts, shared across
+events, with imperfect redshifts."** Shrinking a *per-event* candidate ball toward one galaxy, when
+that galaxy is summed by exactly one event, keeps the paper's Eq. (31) factorization **exact** — the
+one-galaxy integral separates trivially. The §3.3 bias appears only because 200 events share it.
+Mass conditioning therefore pushes us *away* from, not toward, the P2 regime: it reduces the number
+of event pairs that can share a candidate. [INFER]
+
+### 3.3 Could the neglected correlations produce the observed signatures?
+
+**H-1 (1D low rail at 0.600, both venues) — REFUTED on the paper's own stated condition.**
+Mechanism argument: P2/P3 corrections are *identically absent* when galaxy redshifts are perfect
+([LIT] §2.3 "When galaxy redshifts are known perfectly, Eq. 15 is still exact when analysing many GW
+sources"; §3.3 "In this limit the full and approximate likelihoods are exactly equivalent"). The
+iiib venue is the exact-z parent catalogue **[DOC]** and it rails at 0.600 **[LOCAL, C-5]**. A
+mechanism that vanishes at exact z cannot own a rail that persists at exact z.
+Secondary, independent: even where it does not vanish, the effect is bounded by
+(mixture weight 0.071) × (fraction of events with a shared candidate ≤ 0.242) × (1/N_shared),
+i.e. sub-percent on the per-event log-likelihood — orders of magnitude short of a hard rail that
+survives −1.1…−1.6 nats to the next grid point (ledger #93). [INFER]
+*Refute by:* **M-1** below — demonstrate the iiib estimator's host-z kernel is not δ-like. If iiib's
+kernel carries a finite σ_z, H-1's refutation collapses and this becomes a live candidate.
+
+**H-2 (+0.05–0.07 2D displacement) — DISTINGUISHABLE / does not fit.**
+Sign: the only 2D-relevant P2 regime the paper measures (§3.3, shared galaxy, imperfect z) biases
+**HIGH**, which is the right direction. But the carrier is already identified: the frozen-g
+counterfactual **CONFIRMED** that `g_frac(h)` carries the *whole* residual 2D displacement
+(0.780/0.800 → 0.660/0.640; ledger #91) **[DOC]**, and `g_frac` is a **completion-leg** mass factor
+(`bayesian_statistics.py:4197`), living in the 93%-weight leg that contains no galaxy sum (C-2).
+P2 cannot act there. For P2 to own the 2D displacement it would have to act through the 7%-weight
+catalogue leg that is *identically zero for 61.8% of events*. [INFER]
+*Refute by:* stratify the 2D displacement by C-4's overlap classes — if the +0.05–0.07 is carried
+disproportionately by the 385 events with a `d_L`-compatible sky-overlapping partner, H-2 revives.
+This is a free CSV read (see §6, M-2).
+
+**H-3 (P1 / the shared precomputed selection objects) — UNDETERMINED, and the live one.**
+P1 is the statement with no shared-host precondition, and C-6 shows we factor out exactly the class
+of object it warns about. The paper's escape clause is a **large-volume** argument. Our `L_comp` leg
+satisfies it by construction (uniform-in-comoving completion density). Our `L_cat` leg, via the
+pool-fed `f_k` (C-7), applies a globally-averaged completeness inside a *ball-sized* volume, where
+the escape clause's premise ("the average galaxy redshift will be approximately uniform in comoving
+volume") is exactly what a candidate ball is not. **Sign: undetermined** — P1 is a statement about
+separability breaking, not about a direction; the paper never measures its residual.
+*Refute by:* show `f_k`'s entry into `L_cat` is h-flat (then it cannot tilt the posterior at all),
+or show its h-slope is bounded well below the observed displacement. The D1 arms already moved the
+pool; the missing read is the **h-slope**, not the level (see §6, M-3).
+
+**H-4 (Inconsistency-5 low-H_0 overdensity mechanism) — DISTINGUISHABLE, wrong geometry.**
+[LIT] §4.2's low-H_0 bias needs *multiple events along one narrow line of sight* through a low-z
+overdensity — the paper explicitly advises "against using a small area light cone simulation".
+Our events are full-sky with median NN separation 2.44° and median ball radius 1.22° (C-4); we are
+structurally the *opposite* of a light-cone simulation. The 279 `d_L`-compatible overlapping pairs
+are the only candidates, and they are 0.022% of pairs. [INFER]
+*Refute by:* M-2's stratification (same read as H-2) — if the 385 touched events pull the 1D
+posterior low relative to the 1205 untouched ones, H-4 revives.
+
+**H-5 (catalogue-realization / shared-estimator correlations) — OUT OF SCOPE OF THIS PAPER.**
+The paper's only cross-event coupling is via **shared latent true redshifts** {z_g}. Correlations
+induced by a shared *injection-pool estimate* of the selection functions (C-6) are structurally
+similar but are **not** the Gair correlation, and the paper says nothing about them (§1, negative
+results). Do not cite Gair et al. 2023 as authority for or against them.
+*Refute by:* n/a — this is a scoping statement about the literature, falsified only by locating such
+a statement in the paper (searched; absent).
+
+**H-6 (adjacent canon might state it differently) — UNVERIFIED.**
+Gray et al. 2020 (1908.06050) appendices, Mandel/Farr/Gair 2019 (1809.02063), and the gwcosmo
+methods papers were **not** re-read this session. No claim is made about them.
+*Refute by:* read them. Low priority — S1 and S2 are both fully present in 2212.08694.
+
+---
+
+## 4. Step 3 — prior-art check (both exoneration layers + history)
+
+**Layer 1 — `CLAIM_2D_BIAS_20260730.md:721-740` "Exonerated — do NOT re-open":**
+catalogue Jacobian · Fisher frame · p_det estimator choice · p_det inside/outside · h-prior
+sensitivity · `volume_trunc` · the z leg · the ln-M draw · realization plumbing ·
+**candidate-window membership** · mass-kernel family · Option-A β_G/Σ_glob drift · HA as owner ·
+HC zero-handling · HB.
+→ **No entry is isomorphic to per-event independence or cross-event correlation.**
+"Candidate-window **membership**" is the nearest neighbour and is **distinguishable**: it asks
+*which galaxies enter one event's ball* (a within-event question, measured by exact removal, MAP
+0.81→0.82, wrong sign). P2 asks *whether two events' balls may be marginalized separately* — a
+between-event question that membership tests cannot exercise.
+
+**Layer 2 — `gate_b_20260730/BIAS_HISTORY_LEDGER.md` §2 (17 ⚠ items) and §1 (rows 1–94):**
+grepped for `independen|correlat|double.count|factoriz|effective N|N_eff|few host|multi-candidate|
+candidate.window|large N|hitchhiker|gair`. Hits: row 20 (`D(h)` double-counted — a *selection*
+double-count, not host double-count), row 49a (estimator "H₀-independent" — different sense of the
+word), row 86, §2 item 13 (**"Information starvation — OVERTURNED (#41/#52). Do not resurrect it as
+an explanation."**). **No isomorph.**
+- §2 item 13 is a **near-miss worth naming**: "information starvation" is exonerated as an
+  *explanation of the rail*. H-1/H-2 above are **not** that claim — they are about a specific
+  missing correction term, not about information content — but any promotion of this thread must
+  say so explicitly or it will be read as resurrecting #13.
+
+**§4 open threads:** items 13 (g_frac h-slope), 14 (1D rail owner at large), 15 (f_k pool-fed into
+`L_cat`). **Item 15 is the thread this intake lands on** (H-3), and it is *unowned and heads the
+next session's intake queue* per RUNBOOK-8 §1 item 5.
+
+**Harness gap — adjacent, and it is the reason this was never testable:**
+- Ledger **row 86**: "the harness has one candidate/event so it **cannot exercise** V1's mechanism"
+  (`pp_coverage_absolute_20260726/SUMMARY.md:104-107`).
+- Research-cycle **[A3](iii)**: "**multi-candidate host balls** — a one-candidate-per-event harness
+  structurally cannot exercise it (ledger row 86)"; and the SKILL's Known-gaps section:
+  "`pp_coverage.py` is single-channel and synthetic-catalogue".
+⇒ Our only calibration instrument is **one candidate per event and one event per catalogue draw** —
+which is, exactly and by construction, the regime in which P2's cross-terms are identically zero.
+**The harness could never have detected this class.** That is a real, previously unnamed gap, and it
+is the honest reason this question is not already in the ledger.
+
+**Literature prior art — the important one:** `docs/BIAS_RESOLUTION_ATTEMPTS_REPORT.md:175-179`
+**[DOC]** already records:
+> "**Hitchhiker / Gair et al. 2023** (2212.08694): the per-event same-kernel form is explicitly an
+> **approximation** (its Eq. 3); the exact object is the hierarchical Eq. 31/33 with a *shared
+> latent* host redshift marginalised once across all events. The per-event form biases H0 **HIGH**
+> for imperfect redshifts — the same direction as our cleaned-numerator 0.87 rail. Photo-z tested
+> only to σ_z/z = 3% (we are ~0.7)."
+⇒ **S1 was already read correctly and written down in this repo.** It was cited as *context for a
+sign argument*, never opened as a mechanism, never measured, and never entered the ledger. It also
+predates the current 0.600 (low) rail — the "0.87 rail" it refers to is the era-3 upper rail.
+
+### Prior-art verdict
+
+| aspect | verdict |
+|---|---|
+| S1 as a *literature fact* | **ALREADY KNOWN** — recorded verbatim at `BIAS_RESOLUTION_ATTEMPTS_REPORT.md:175-179`; not new. |
+| S2 / the large-N_gal validity condition | **NEW to this repo's written record** — no artifact states it. |
+| S1/S2 as a *measured mechanism* on our pipeline | **GENUINELY NEW** — no ledger row, no exoneration, no test; and **structurally untestable by our current harness** (row 86 / [A3](iii)). |
+| the specific H-1/H-2 hypotheses | **DISTINGUISHABLE** from "information starvation" (§2 item 13) and from "candidate-window membership" (layer 1). Say so explicitly if promoting. |
+| H-3 (P1 / pool-fed `f_k` in `L_cat`) | **NEW, and it merges with open thread §4 item 15** — do not open it as a separate thread. |
+
+**No exoneration is being re-litigated.** Hard rule 1 satisfied.
+
+---
+
+## 5. Final assessment — the author's three-way question
+
+> *candidate for the remaining bias / already tried / unrelated?*
+
+**Split answer. The three hypotheses do not share a verdict, and forcing one would be dishonest.**
+
+**(a) As the owner of the 1D low rail (0.600, both venues): ~~UNRELATED — refuted, pending one check.~~**
+
+> **[LOCAL, RESCINDED 2026-08-05 — M-1 verdict KERNEL-FINITE.]** The "single thing that would
+> overturn this is M-1" fired. M-1 ran (`m1_kernel_delta_check.py` /
+> `m1_kernel_delta_check.json`, this directory): `resolve_host_z_kernel`
+> (`bayesian_statistics.py:149-210`) has `volume_deconv` pinned explicitly in iiib's own
+> `run_metadata_0.json` (`host_z_kernel: "volume_deconv"`, `observed_catalogue: null`) —
+> the point/δ branch at `:192-196` is unreachable from that config. The per-galaxy width
+> input is likewise non-δ: the parent (22.6M-row) catalogue's `REDSHIFT_MEASUREMENT_ERROR`
+> column has minimum 5.24e-4, median 0.0396, **0.0% exactly zero** — a parse-time
+> peculiar-velocity floor (`galaxy_catalogue/handler.py:434-479`) is folded into every row
+> regardless of realization. Median σ_z/(1+z) = **0.0330**, i.e. **0.94×** the GLADE
+> photo-z scale (0.035) used at the joint venue, and **1.1–11×** the paper's §3.3
+> demonstrated-bias range (δz/z = 0.3–3%). **Both the kernel choice and its width input
+> are non-δ at iiib.** The premise of (a) — "a term that is exactly zero in a venue cannot
+> own a rail in that venue" — does not hold: the term is not zero at iiib. **H-1 (the 1D
+> rail via P2/P3 cross-terms) is therefore LIVE, not refuted, and is promoted to
+> §6-cross-term-instrument status below.** This does not by itself say H-1 *is* the rail's
+> owner — that requires the measurement in the new §"cross-term instrument" — only that the
+> refutation-by-perfect-z argument is unavailable as an idealized-venue statement was
+> conflated with an idealized-*kernel* statement. See the new "Author mandate" section: this
+> rescission exists because the mandate forbids treating an escape clause as closed without
+> checking it.
+
+*(Original text, superseded by the above, retained for audit trail:)* ~~The paper states
+twice, unambiguously, that the correction vanishes identically at perfect galaxy redshifts.
+Our exact-z idealized venue rails at 0.600 just as hard as the observed venue **[LOCAL,
+C-5]**. A term that is exactly zero in a venue cannot own a rail in that venue. The magnitude
+argument agrees independently (7.1% mixture weight × ≤24.2% of events × 1/N_shared). *The
+single thing that would overturn this is M-1.*~~
+
+**(b) As the owner of the +0.05–0.07 2D displacement: UNRELATED — wrong leg.**
+The carrier is already CONFIRMED to be `g_frac(h)` in the completion leg (ledger #91), which
+contains no galaxy sum; the catalogue leg that P2 lives in carries 7.1% weight and is identically
+zero for 61.8% of 2D events **[LOCAL, C-3]**. The author's S2 intuition — that mass conditioning
+shrinks the host count into the paper's danger zone — is **directionally reversed**: it shrinks the
+number of *shared* candidates, which is the quantity the paper's correction actually scales with.
+Sign would have been right (HIGH); geometry and weight are wrong.
+
+**(c) As a live candidate via P1 — the statement the author did NOT recall: UNDETERMINED.**
+This is the finding of this intake. P1 needs **no shared host and no second event**; it says a
+selection denominator that depends on the latent galaxy field may only be factored out under a
+**large-volume** argument. We factor out seven such objects, once, before the event loop **[LOCAL,
+C-6]** — and one of them (`f_k`) is applied inside a *ball-sized* volume where the escape clause's
+premise fails **[DOC, C-7]**. This is not a new thread: **it is open thread §4 item 15**, and this
+intake supplies it with a literature warrant it did not have. Sign and size: **not determined by
+anything read or measured here** — P1 is a separability statement, and the paper never quantifies
+its residual. UNDETERMINED is the correct answer, not a hedge.
+
+**Meta-finding (recommend recording regardless of the above):** our calibration harness is
+one-candidate-per-event and therefore **structurally blind to this entire class**, exactly as
+[A3](iii) and ledger row 86 already warn. Whatever the verdict on (a)–(c), the harness gap is real
+and the paper is the clean external citation for *why* it matters. This strengthens the existing
+RUNBOOK-8 §1 item 7 build request rather than adding a new one.
+
+---
+
+## 6. If promoted: the cheapest decisive measurements (stage-1 sketch — NOT run)
+
+Ordered by cost. **M-1 is a precondition for trusting §5(a) and should run first**
+(research-cycle rule 6, measurement-before-gate; rule 9, free re-reads first).
+
+**M-1 — Is the iiib venue's host-z KERNEL δ-like, or only its catalogue?** *(free, ~10 min, code read)*
+`PREREGISTRATION_FROZEN_GFRAC.md:43` calls iiib "parent/exact-z", but that describes the *catalogue*.
+Read `resolve_host_z_kernel` (`bayesian_statistics.py:149`) and the iiib run's
+`run_metadata_0.json` for the `host_z_kernel` / `normalization_mode` actually used, and confirm the
+per-host `z_error` column in iiib's `prepared_cramer_rao_bounds.csv` is identically 0.
+**Decides:** whether §5(a)'s refutation stands. If iiib carries a finite σ_z, H-1 becomes live and
+the whole assessment reopens. *Expected: δ-like ⇒ refutation stands.* **State the expected null.**
+
+> **[LOCAL] RUN, 2026-08-05 — COMPLETE. Verdict: KERNEL-FINITE (the "not-null" branch fired).**
+> `m1_kernel_delta_check.py` (this directory) + `m1_kernel_delta_check.json`. Both the kernel
+> resolution (`volume_deconv` pinned, `point` unreachable from iiib's config) and the width input
+> (parent catalogue `REDSHIFT_MEASUREMENT_ERROR`, min 5.24e-4, median 0.0396, 0.0% exactly zero,
+> median σ_z/(1+z) = 0.0330 ≈ 0.94× the GLADE photo-z scale) are non-δ. **The expected null
+> (δ-like ⇒ refutation stands) did NOT hold.** §5(a) is rescinded (see the strikethrough + dated
+> note there). H-1 is promoted to a measurement mandate — see "The cross-term instrument" below.
+
+**M-2 — Overlap-stratified per-event read.** *(free, ~30 min, existing CSVs only)*
+Partition the 1590 events into the 385 with a `d_L`-compatible sky-overlapping partner (C-4) and the
+1205 without. From `event_likelihoods.csv`, compare the two strata's per-event
+`ln L(h=0.60) − ln L(h_truth)` chords, in **1D and 2D separately**, with the paired/stratified read
+mandated by [A2] alongside any aggregate.
+**Decides:** H-2 and H-4 jointly. **Pre-registered expectation: NULL** — the two strata should be
+statistically indistinguishable. A ≥2σ separation with the overlapping stratum pulling low would
+revive H-4; pulling high would revive H-2.
+*Caveat to pre-register:* sky-overlap correlates with sky-localisation area, which correlates with
+SNR and `w_G`. The stratification must be **matched on `w_G` and ball radius**, or it will manufacture
+a difference that is pure selection. This is the trap [A2] exists to catch.
+
+**M-3 — h-slope of `f_k`'s contribution to `L_cat`.** *(free, existing D1 artifacts)*
+Re-read `results/run_20260805_d1/readout.json` and the A1/A2 `event_likelihoods.csv` for the
+**h-slope** (not the level) of the `L_cat_no_bh` movement under the pool substitution. The 62–69%
+cell-movement figure is a *level* statement; only an h-slope can tilt a posterior.
+**Decides:** whether H-3 / thread §4 item 15 can carry any displacement at all. **Expected: bounded**
+— if the chord over the h-grid is ≲1 nat/event, H-3 is bounded-null without any new run.
+
+**M-4 — (only if M-2 is non-null) exact shared-galaxy census.** *(cheap run)*
+Emit per-event `catalog_index` sets from the ball-tree search and compute the true pairwise
+intersection, replacing C-4's ≤279-pair upper bound with the exact count and the shared galaxies'
+`w_pop` weight share.
+**Decides:** the actual `1/N_gal`-suppression factor, turning the order-of-magnitude argument in
+H-1 into a number.
+
+**Explicitly NOT proposed:** implementing Eq. (31). It is "extremely computationally expensive"
+by the paper's own assessment, and nothing in M-1…M-4 currently justifies it.
+
+---
+
+## Author mandate (2026-08-05)
+
+**Binding, verbatim, applies to every step of this claim's remaining life:**
+
+> "We need to measure the coupling terms suppressed by 1/N_gal to have an informed decision
+> — either show it can be neglected or that it needs to be regarded. Do not refute it because
+> it doesn't suit the current picture; that might be mathematically/scientifically just wrong."
+
+Consequences for this file, stated explicitly so they are checkable:
+1. §5(a)'s original refutation was conditional on M-1 by its own last sentence ("*the single
+   thing that would overturn this is M-1*"). M-1 fired the not-null branch. The refutation is
+   struck, not softened — a struck claim that turns out right after re-measurement is fine; a
+   struck claim left standing on a false premise is not.
+2. No further step in this claim's life may close H-1 (or H-3) by argument alone. The only
+   exit from LIVE is a **measurement** against a **pre-registered** threshold (see below) — not
+   a magnitude estimate, not an "unlikely because", not a re-reading of the same CSVs that
+   produced C-1..C-7.
+3. "NEGLECT" and "REGARD" are both legitimate outcomes of measuring. The mandate does not
+   pre-judge the answer; it forbids answering by convenience. A measured, sub-threshold
+   cross-term is exactly as much a discharge of the mandate as a measured, threshold-crossing
+   one — the difference is what happens next (§ below).
+
+---
+
+## The cross-term instrument (stage-1/2 spec, to be pre-registered before running)
+
+**Status: SPEC ONLY. No code has been written for this section; nothing here has been run.**
+This section exists to lock the instrument's shape and its negligibility band *before* any
+number from running it exists, per the mandate's "not because it doesn't suit the current
+picture" clause — the band must be fixed blind to the result it will be judged against.
+
+### What it measures
+
+A **per-galaxy-resolved re-evaluation** of the candidate-ball catalogue sums (`L_cat,i`,
+`single_host_likelihood` at `bayesian_statistics.py:4658`, called per-event over
+`get_possible_hosts_from_ball_tree` at `:3649`) for the **385 overlap-involved events** — the
+set behind C-4's **279 pairs (0.022% of all pairs)** that are both **sky-ball overlapping**
+and **2σ `d_L`-window compatible** (`results/run_20260804_postfix/joint_r1/diagnostics/
+prepared_cramer_rao_bounds.csv`, C-4 census, this draft §3.1). This is the smallest set for
+which the paper's Eq. (31) cross-term can be nonzero at all (P2/P3, §1 above): a shared host
+summed by ≥2 events, with imperfect redshift on that host.
+
+For each of the 279 pairs, at each of the four author-specified h values, compute the leading
+Eq. (31) cross-term contribution — the term that the factorized product
+`L_i(h) · L_j(h)` (our current `posterior_combination.py:324` sum-of-logs) omits relative to
+the paired marginalization
+`∫ dz_g L_GW(x_i|d_L(z_g,h)) L_GW(x_j|d_L(z_g,h)) L_red(ẑ_g|z_g) p(z_g)`
+restricted to the shared galaxy/galaxies in each pair's ball intersection. This is a **leading-
+order, pairwise** evaluation — not a full re-run of Eq. (31) over the joint {z_g} for all 1590
+events (explicitly ruled out in §6 above as "extremely computationally expensive" with no
+current justification for the full version).
+
+### Grid
+
+h ∈ {0.60, 0.73, 0.81, 0.86} **minimum** — the four values already load-bearing in this
+research thread: 0.60/0.600 is the 1D rail's location (both venues, C-5); 0.73 is the fiducial
+truth; 0.81 is the 2D MAP (`REALISTIC_READOUT.md`, ledger row 94); 0.86 is the historical
+era-3 upper rail (`BIAS_RESOLUTION_ATTEMPTS_REPORT.md:175-179`, cited in §4 above). Denser
+grids are allowed; these four are the floor.
+
+### Negligibility band — TO BE LOCKED AT PRE-REGISTRATION, NOT INVENTED HERE
+
+This claim file does **not** set X and Y. Doing so here, without a decisive cheap bound to
+derive them from, would be exactly the "refute/accept because it suits the picture" move the
+mandate prohibits. The pre-registration that authorizes running the instrument must fix, from
+an **M-2-style cheap bound** (i.e., a free read of existing diagnostics — the same discipline
+M-2/M-3 already used in §6 above — not a fresh guess):
+
+- a **NEGLECT** threshold **X**: class-summed `|cross-term|` in nats, summed over the 279 pairs
+  and the h-grid, below which the correction is recorded as measured-negligible and the claim
+  closes as NEGLECT-WITH-NUMBER (the number itself becomes part of the permanent record — not
+  "small", a value);
+- a **REGARD** threshold **Y** ≥ X: at or above which the finding is escalated to
+  `/physics-change` (per CLAUDE.md's physics-change trigger list — `bayesian_statistics.py`
+  and `posterior_combination.py`-adjacent work both qualify) as a candidate production
+  correction, not merely logged;
+- explicit handling of the gap **[X, Y)** if X < Y, if the pre-registration chooses not to set
+  them equal — the pre-registration itself must say what happens in the gap (most likely:
+  MEASURE MORE, i.e. extend to M-4's exact shared-galaxy census before ruling, rather than a
+  forced binary call).
+
+Candidate cheap-bound inputs for deriving X/Y at pre-registration time (not applied here):
+M-2's overlap-stratified expected-null (§6 above — pre-registered NULL, matched on `w_G` and
+ball radius) as the "what does zero look like" calibration; M-3's h-slope-not-level discipline
+(bound the chord in nats/h, not the cell-movement fraction) applied to the pairwise sum instead
+of `f_k`'s aggregate movement; and M-4's exact shared-galaxy census (below) to replace C-4's
+≤279-pair upper bound with the true intersection and `w_pop` weight share, which is the natural
+denominator for an X/Y expressed as "nats per unit of actually-shared population weight" rather
+than raw pair count.
+
+### Supporting reads (run first, feed the pre-registration; not substitutes for the instrument)
+
+- **M-2 (overlap-stratified expected-null)**, §6 above: partitions the 1590 events into the 385
+  touched / 1205 untouched strata and compares `ln L(h=0.60) − ln L(h_truth)` chords, matched on
+  `w_G` and ball radius per the [A2] discipline. Feeds the "what is statistical noise vs a real
+  cross-term signature" calibration for X.
+- **M-4 (exact shared-galaxy census)**, §6 above: replaces the C-4 upper bound with the true
+  per-pair intersection and shared-galaxy `w_pop` weight share — needed to convert a pair count
+  into the actual `1/N_gal`-suppression factor the cross-term instrument's magnitude should
+  scale with.
+- **[A2] discipline** (paired/stratified read mandated alongside any aggregate, §7 checklist
+  item, and invoked explicitly at M-2's confounding caveat, §6 above): applies here too — the
+  pairwise cross-term evaluation must be reported stratified (e.g., by ball-overlap degree,
+  by `w_G`), not only as a single summed number, or a real effect concentrated in a few pairs
+  could be diluted below X by the other 270-odd near-zero pairs, or a null could be manufactured
+  by a selection confound the same way M-2 warns against.
+
+**Explicitly NOT this section:** implementing Eq. (31) in production, or extending the pairwise
+evaluation to all 1590×1589 event pairs. Both remain out of scope per §6's closing line, unless
+a REGARD verdict on the 279-pair instrument itself changes that calculus.
+
+---
+
+## 7. Intake completeness checklist (research-cycle stage 0)
+
+- [x] Both exoneration layers checked before opening any mechanism (rule 1) — §4, no re-litigation.
+- [x] No `[AGENT]` claim used or built on (rule 2) — §0 legend; all measurements `[LOCAL]`.
+- [x] Every claim carries a `Refute by:` (rule 3) — C-1…C-7, H-1…H-6.
+- [x] Free re-reads exhausted before requesting compute (rule 9) — C-3, C-4, C-5 are all
+      zero-marginal-cost CSV/JSON reads; M-1…M-3 likewise.
+- [x] Paired/stratified read mandated alongside any aggregate (rule 10) — M-2, with its
+      confounding caveat pre-registered.
+- [x] `UNDETERMINED` used where the evidence does not decide (§5(c)).
+- [ ] **Author gate** — stage-0 output presented; STOP. No pre-registration written, no run
+      submitted, no ledger row appended.
+- [x] **UPDATE 2026-08-05** — M-1 ran (`m1_kernel_delta_check.py`/`.json`, this directory):
+      **KERNEL-FINITE**. §5(a) is rescinded (strikethrough in place, dated). Ledger row 95
+      (`BIAS_HISTORY_LEDGER.md` §1) records the M-1 verdict. The above "no ledger row appended"
+      line described stage-0's *own* proposals (M-1..M-4, C-1..C-7) — it did not anticipate
+      that M-1 itself would later be run and recorded; it is left as-is above for the audit
+      trail rather than edited out of place. **The cross-term instrument spec (new section
+      above) is still SPEC ONLY — no pre-registration, no run, per the author gate.**
