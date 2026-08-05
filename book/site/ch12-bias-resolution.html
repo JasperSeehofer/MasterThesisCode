@@ -70,13 +70,14 @@
 
     <div class="ch12-status">
       <span class="badge open">ACTIVE INVESTIGATION</span>
-      <span class="ch12-updated">Last updated 2026-08-05</span>
+      <span class="ch12-updated">Last updated 2026-08-05 (night)</span>
     </div>
     <div class="callout defect">
       <span class="callout-label">Current state, one line</span>
-      The residual 2D displacement is carried by the completion-leg mass factor
-      g_frac(h) &mdash; confirmed by a pre-registered frozen-g evaluate; the derivation
-      question (correct physics vs defect) is open.
+      The 2D channel's g(h) slope is (Gate-B-surviving) correct physics and the
+      closed loop does not reproduce the production displacement; the 1D rail&rsquo;s
+      owner is still at large &mdash; N-2 is real but bounded; D1&rsquo;s three-arm
+      campaign is in flight.
     </div>
 
     <!-- ===== Timeline ===== -->
@@ -136,7 +137,7 @@
         to the unfrozen runs (0/65108 diagnostics cells differ, both venues).
         <span class="ch12-tl-note">results/run_20260804_postfix/gate_vii/PREREGISTRATION_FROZEN_GFRAC.md
           &mdash; verdict appended 2026-08-05</span></li>
-      <li class="open"><span class="ch12-tl-label">NOW OPEN &mdash; the g(h)
+      <li><span class="ch12-tl-label">NOW OPEN &mdash; the g(h)
         derivation question</span> &mdash; is the completion leg's mass-factor h-slope
         correct physics, or is a normalisation missing from it? Routes through
         <code>/physics-change</code> (derivation, dimensional analysis, limiting case,
@@ -147,6 +148,68 @@
         the stage-3 measurement.
         <span class="ch12-tl-note">docs/RESEARCH_CYCLE.md; RUNBOOK_NEXT_SESSION_7.md
           &sect;1 item 2, &sect;2</span></li>
+      <li><span class="ch12-tl-label">Gate-B adjudication of the g(h) derivation
+        (2026-08-05)</span> &mdash; a red-team pass on the draft derivation package:
+        the additive MAP-space decomposition ("0.600 rail + 0.060 + 0.120 genuine
+        tilt") was <strong>REFUTED</strong> (violates the never-add-MAP-displacements
+        rule; frozen-2D likelihood is flat over [0.63, 0.745]; the tilt is not
+        transferable across venues). The <strong>core survives</strong>: the measured
+        tilt itself &mdash; live minus frozen equals &Sigma;&nbsp;&Delta;ln&nbsp;g_frac,
+        to &le;0.8 of 63.5 nats &mdash; is real and the freeze is surgically clean;
+        only its MAP-space storytelling (&sect;7 of the draft) was unsupported.
+        <span class="ch12-tl-note">.planning/derivation-gfrac-20260805/GATEB_REFUTATION_REPORT.md
+          &mdash; item 4, remediation item 1 (rewrite &sect;7)</span></li>
+      <li><span class="ch12-tl-label">M1 / M2 pre-reads (2026-08-05)</span> &mdash;
+        before either measurement below was run, two scoping reads: M1 measured the
+        real per-event 1D completion-vs-catalogue share and rescaled the N-2
+        counterfactual's forecast band down ~10&times; from the draft's naive
+        <code>+207&nbsp;&plusmn;&nbsp;40</code> nats/h to <code>+20&nbsp;&plusmn;&nbsp;10</code>;
+        M2 evaluated the deleted <code>both</code>-cell (2D numerator carrying
+        S&#772;_&phi;) offline across the full 41-h grid and found it ~200&times;
+        under tolerance in both venues (inert) &mdash; the toggle ships <code>1d</code>-only.
+        <span class="ch12-tl-note">.planning/derivation-gfrac-20260805/n2_m1_completion_share_results.json,
+          n2_m2_2d_inertness_results.json</span></li>
+      <li class="open"><span class="ch12-tl-label">Closed-loop calibration &mdash;
+        MIXED / not-REFUTE (2026-08-05)</span> &mdash; the decisive pre-registered
+        test of whether the 2D estimator's g-machinery is self-calibrated: 200 seeds,
+        production population objects, the estimator's own &phi; (kappa_cap kink
+        included), N=1500/universe. 2D MAP mean <strong>0.741275</strong>
+        (&Delta;2&nbsp;=&nbsp;+0.011275&nbsp;&plusmn;&nbsp;0.0043, misses CONFIRM
+        |&Delta;|&le;0.010 by 0.0013, 2.7&times; below REFUTE &ge;+0.03; posterior-mean
+        statistic +0.005, inside CONFIRM). In a universe that provably follows the
+        estimator's own assumptions, <strong>the production +0.05&ndash;0.07 2D
+        displacement is NOT reproduced</strong>. The 1D channel rails 200/200
+        (information-starved by construction, no catalogue/photo-z in this harness);
+        an unregistered diagnostic (numerator-selection ON) removes that rail entirely
+        (0/50) and moves 2D to +0.0285.
+        <span class="ch12-tl-note">results/closed_loop_gfrac_20260805/PREREGISTRATION.md,
+          closed_loop_results.json</span></li>
+      <li class="open"><span class="ch12-tl-label">N-2 sel-1d counterfactual &mdash;
+        MIXED-bounded, rail persists (2026-08-05)</span> &mdash; a pre-registered
+        two-venue 41-h evaluate testing whether the 1D completion numerator's missing
+        selection factor S&#772;_&phi;(z;h) owns the production 1D rail. Full-grid
+        chord tilt <strong>+24.6 / +22.7</strong> nats/h lands inside the pre-registered
+        band [+10, +30]; the central-difference statistic overshoots
+        (<strong>+30.9 / +32.3</strong>) and sign coherence (0.73 / 0.71) misses the
+        0.90 bar &mdash; flagging that the live z-quadrature of S&#772;_&phi; diverges
+        from the point-GW-peak approximation used to set the band. Decisively: the
+        <strong>1D MAP stays railed at 0.600 in both venues</strong> (hard rail,
+        &Delta;ln &minus;1.6 / &minus;1.1 nats to the next grid point). N-2 is a real,
+        bounded, positive correction &mdash; it does not un-rail the production
+        channel, and the host photo-z root cause of record remains the standing
+        explanation. All expected NULLs held bit-exactly (0/65108 diagnostics cells
+        differ).
+        <span class="ch12-tl-note">results/run_20260804_postfix/gate_vii/PREREGISTRATION_N2_SEL1D.md
+          &mdash; verdict appended 2026-08-05; results/run_20260805_n2sel1d/readout.json</span></li>
+      <li class="open"><span class="ch12-tl-label">NOW OPEN &mdash; D1 alive, stage-3
+        campaign launched</span> &mdash; the closed loop leans toward "g(h) is correct
+        physics, not a defect", and N-2 shows the 1D rail is real-but-bounded, not
+        fully explained. Neither result closes the book: the g(h) derivation still
+        needs an author `/physics-change` ruling, and the 1D rail's owner is still at
+        large. D1 (the p0-window mass band-pass) remains queued as the standing
+        research cycle's first full run; its three-arm campaign is in flight.
+        <span class="ch12-tl-note">results/campaign51_20260728/RUNBOOK_NEXT_SESSION_7.md
+          &sect;1 item 2, &sect;2; docs/RESEARCH_CYCLE.md</span></li>
     </ol>
 
     <!-- ===== The frozen-g measurement in detail ===== -->
