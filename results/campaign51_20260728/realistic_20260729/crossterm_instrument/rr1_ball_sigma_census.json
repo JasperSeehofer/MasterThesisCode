@@ -1,0 +1,132 @@
+{
+ "n_pairs": 279,
+ "iiib": {
+  "pruned_rows": 20834171,
+  "pruned_sigma_stats": {
+   "n": 20834171,
+   "n_zero": 0,
+   "n_lt_1e-3": 29674,
+   "n_lt_2e-3": 95257,
+   "n_lt_5e-3": 231098,
+   "n_lt_1e-2": 235731,
+   "min": 0.0005317263419419,
+   "min_nonzero": 0.0005317263419419,
+   "median": 0.0393412950539589
+  },
+  "flag3_sigma_max": 0.0102458734107157,
+  "flag3_count": 211230,
+  "flag1_sigma_min": 0.000795083885308,
+  "1d": {
+   "n_events": 385,
+   "ball_member_union": 536602,
+   "index_out_of_bounds": 0,
+   "ball_sigma_stats": {
+    "n": 536602,
+    "n_zero": 0,
+    "n_lt_1e-3": 0,
+    "n_lt_2e-3": 18,
+    "n_lt_5e-3": 270,
+    "n_lt_1e-2": 493,
+    "min": 0.0019103339625945,
+    "min_nonzero": 0.0019103339625945,
+    "median": 0.0412018243170251
+   },
+   "n_events_with_sigma0_ball_member": 0,
+   "events_with_sigma0_ball_member": [],
+   "n_pairs_with_shared_sigma_lt_5e-3": 0,
+   "n_pairs_with_shared_sigma0": 0,
+   "narrow_pairs_detail": []
+  },
+  "2d": {
+   "n_events": 385,
+   "ball_member_union": 62748,
+   "index_out_of_bounds": 0,
+   "ball_sigma_stats": {
+    "n": 62748,
+    "n_zero": 0,
+    "n_lt_1e-3": 0,
+    "n_lt_2e-3": 0,
+    "n_lt_5e-3": 0,
+    "n_lt_1e-2": 0,
+    "min": 0.0151175865462835,
+    "min_nonzero": 0.0151175865462835,
+    "median": 0.03794726721785655
+   },
+   "n_events_with_sigma0_ball_member": 0,
+   "events_with_sigma0_ball_member": [],
+   "n_pairs_with_shared_sigma_lt_5e-3": 0,
+   "n_pairs_with_shared_sigma0": 0,
+   "narrow_pairs_detail": []
+  }
+ },
+ "joint_r1": {
+  "pruned_rows": 19874547,
+  "pruned_sigma_stats": {
+   "n": 19874547,
+   "n_zero": 0,
+   "n_lt_1e-3": 29135,
+   "n_lt_2e-3": 92441,
+   "n_lt_5e-3": 223504,
+   "n_lt_1e-2": 228104,
+   "min": 0.0005317263419419,
+   "min_nonzero": 0.0005317263419419,
+   "median": 0.0391943478717217
+  },
+  "flag3_sigma_max": 0.0100575203769267,
+  "flag3_count": 204135,
+  "flag1_sigma_min": 0.000795083885308,
+  "1d": {
+   "n_events": 385,
+   "ball_member_union": 498900,
+   "index_out_of_bounds": 0,
+   "ball_sigma_stats": {
+    "n": 498900,
+    "n_zero": 0,
+    "n_lt_1e-3": 0,
+    "n_lt_2e-3": 20,
+    "n_lt_5e-3": 253,
+    "n_lt_1e-2": 477,
+    "min": 0.001911541064181,
+    "min_nonzero": 0.001911541064181,
+    "median": 0.04099708236996705
+   },
+   "n_events_with_sigma0_ball_member": 0,
+   "events_with_sigma0_ball_member": [],
+   "n_pairs_with_shared_sigma_lt_5e-3": 1,
+   "n_pairs_with_shared_sigma0": 0,
+   "narrow_pairs_detail": [
+    {
+     "pair": [
+      114,
+      1035
+     ],
+     "n_shared": 8861,
+     "min_sigma_z_shared": 0.0019636170795231,
+     "n_shared_lt_5e-3": 1,
+     "n_shared_zero": 0
+    }
+   ]
+  },
+  "2d": {
+   "n_events": 385,
+   "ball_member_union": 75657,
+   "index_out_of_bounds": 0,
+   "ball_sigma_stats": {
+    "n": 75657,
+    "n_zero": 0,
+    "n_lt_1e-3": 0,
+    "n_lt_2e-3": 0,
+    "n_lt_5e-3": 0,
+    "n_lt_1e-2": 0,
+    "min": 0.0151130201411688,
+    "min_nonzero": 0.0151130201411688,
+    "median": 0.0383061281008616
+   },
+   "n_events_with_sigma0_ball_member": 0,
+   "events_with_sigma0_ball_member": [],
+   "n_pairs_with_shared_sigma_lt_5e-3": 0,
+   "n_pairs_with_shared_sigma0": 0,
+   "narrow_pairs_detail": []
+  }
+ }
+}

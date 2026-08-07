@@ -1,0 +1,703 @@
+# Pre-registration — the pairwise Eq. (31) cross-term instrument
+
+> **STATUS: DRAFT — NOT REGISTERED. The author (Jasper Seehofer) must ratify
+> every locked value, every flagged decision, and the readiness blockers below
+> before ANY production run of the instrument. Until ratification this file
+> authorizes nothing.**
+>
+> **Additionally: the instrument itself is NOT READY (see §8 — the post-fix
+> build is not dual-CONFIRMED and carries an unadjudicated quadrature remedy).
+> Even a ratified band does not authorize a run while §8 blockers stand.**
+
+Drafted 2026-08-05, **before any cross-term number from the instrument
+exists** (blindness fact, §7.5). Research Cycle stage 2; stage 0–1 parent:
+`CLAIM_HITCHHIKER_INDEPENDENCE_20260805.md.DRAFT` (this directory's parent),
+whose §"The cross-term instrument (stage-1/2 spec…)" (lines 605–691) is the
+authoritative spec and whose §"Author mandate (2026-08-05)" (lines 581–601)
+is the binding mandate. Structure follows
+`../PREREGISTRATION_D1_SAND_REWEIGHT.md` (same campaign).
+
+---
+
+## 1. Binding constraints of record
+
+**Author mandate (spec lines 585–588, verbatim):**
+
+> "We need to measure the coupling terms suppressed by 1/N_gal to have an
+> informed decision — either show it can be neglected or that it needs to be
+> regarded. Do not refute it because it doesn't suit the current picture; that
+> might be mathematically/scientifically just wrong."
+
+**Additional binding author value ruling (2026-08-05):**
+
+> "scientific correctness and new insights are valued higher than getting rid
+> of the bias by any means"
+
+Consequences, stated so they are checkable:
+
+1. NEGLECT and REGARD are **both** legitimate outcomes (spec lines 598–601).
+   The band below is derived mechanically from already-verified measurements
+   (`band_derivation.py` → `band_derivation.json`, run blind) and **must not
+   be tuned to produce either outcome** — including not tuned to make the
+   2D-channel bias go away. If a REGARD-scale cross-term *explains* the 2D
+   low-h bias, that is a **novel result to be reported**, not a nuisance to be
+   suppressed; if the cross-term is measured negligible, the bias explanation
+   lies elsewhere and saying so is equally a discharge of the mandate.
+2. Per spec lines 641–646, the claim file deliberately did not set X/Y; this
+   pre-registration is the only place they may be fixed, from M-2-style cheap
+   bounds (free reads of existing verified diagnostics), before any
+   instrument number exists.
+3. Exit from LIVE for H-1/H-3's cross-term leg is **only** by measurement
+   against this band (spec lines 594–596) — no closure by argument.
+
+---
+
+## 2. Why this measurement is a discovery test, not a formality
+
+**M-2's pre-registered NULL FAILED in the 2D channel at both venues.** The
+overlap-stratified matched read (m2_results.json, verified CONFIRMED by
+independent recompute, `m2_adjudication.json`) found:
+
+| venue | channel | matched residual (nats/event) | matched signflip p | cluster-robust p | call |
+|---|---|---|---|---|---|
+| iiib | 1D | +0.00604 | 0.098 | 0.233 | NULL |
+| iiib | 2D | **+0.02225** | 1.5e-04 | **0.0050** | **NON-NULL** |
+| joint_r1 | 1D | +0.00743 | 0.0414 | 0.137 | marginal-fragile (effectively unresolved toward NULL) |
+| joint_r1 | 2D | **+0.02070** | 1.0e-04 | **0.0042** | **NON-NULL** |
+
+Chord sign convention: `chord = ln L(0.60) − ln L(0.73)`; positive = event
+prefers low h. The overlap stratum pulls **HIGH (low-h)** in the 2D channel —
+per the M-2 pre-registration this **revives H-2**. The unmatched separation
+(~+0.044 to +0.050 nats, perm p at floor) is mostly selection — the [A2] trap,
+demonstrated, which is exactly why only the matched machinery feeds the band.
+
+**Therefore: a detectable cross-term signature in the 2D channel is
+PLAUSIBLE.** This instrument is a discovery test with a live positive
+hypothesis (shared-host coherence biasing the 2D channel low-h), not a
+formality expected to return zero. The band below is consciously derived so
+that neither confirmation nor refutation is baked in (§7).
+
+**M-4 destroyed the naive suppression picture (novel structural insight).**
+The exact census (m4_results.json, verified CONFIRMED, 26/26 independent
+checks incl. bit-identical from-scratch ball rebuilds,
+`m4_adjudication_results.json`) measured that the "1/N_gal per-pair
+suppression" intuition is **wrong at the per-pair level and right only at the
+population level**: sharing is rare across pairs (349 of 1,260,078 event
+pairs in joint_r1 1D; 2.8e-4) but **heavy within sharing pairs** — min-side
+shared count share median ~0.40 (some balls near-subsets, share = 1.0),
+min-side shared `w_pop` share median 0.087 (joint_r1 in-C-4), p90 0.296, max
+1.00; pair-side `w_pop` shares run to p90 0.78–0.99. Tens of pairs have
+O(0.1–1) shared-weight fractions. Any negligibility argument must therefore
+be made at the class level with per-pair stratification (§6), never by a
+blanket per-pair suppression factor. This insight stands on its own,
+whichever way the instrument verdict goes.
+
+**M-3 supplies the discipline, not the numbers.** The f_k pool substitution
+was measured a pure global LEVEL (~+1.22 nats at h=0.73, event-independent to
+~1e-11) with per-event chords over h ≤ 0.135 nats — two orders under its
+1-nat criterion (m3_results.json; context-only, unverified, NOT
+band-bearing). Lesson imported here: **only the h-chord of a correction can
+tilt an H0 posterior; a level cancels in the posterior normalization.** The
+decision statistic (§5) is therefore a chord across the h-grid, and the level
+is reported-but-not-scored. M-3's honesty caveat is also imported: its
+event-common factor still class-sums to +43.6/+48.3 nats over `combined_*`
+chords — aggregates of event-common factors are recorded honestly even when
+the per-event criterion passes.
+
+---
+
+## 3. Target set — MEASURED SUPERSESSION of the spec's C-4 wording ⚑ RATIFY
+
+The spec (lines 612–631, esp. 616–617: "the **385 overlap-involved events** —
+the set behind C-4's **279 pairs (0.022% of all pairs)**") names the C-4
+279-pair set as the run target. M-4 measured that the C-4
+predicate **does not bound true galaxy sharing**: its 2σ d_L window is
+narrower than the production ball z-window, which
+`physical_relations.py:546-567` (`get_redshift_outer_bounds`) **hardcodes at
+3σ, ignoring the `sigma_multiplier=2.0` argument passed at
+`bayesian_statistics.py:3644`** — a discovered code fact, verified by the M-4
+adjudicator's bit-exact ball rebuilds using the hardcoded-3σ window, and
+**flagged here for author adjudication** (it sits in a `/physics-change`
+trigger file; the instrument faithfully reproduces the hardcoded behavior; no
+change is proposed or authorized by this file). Consequently:
+
+- Only **80/279** C-4 pairs truly share ≥1 ball galaxy (joint_r1 1D; 63
+  iiib; 27 and 5 in 2D), while **269 (joint_r1) / 217 (iiib)** truly-sharing
+  1D pairs lie **outside** C-4 (all pass its sky predicate, none its 2σ-d_L
+  predicate).
+- The Eq. (31) cross-term is identically zero for non-sharing pairs (the
+  instrument's `n_shared=0 → Δ=0.0` guard), so running on the C-4 279 wastes
+  199 zero rows and **misses most of the object being measured**.
+- The spec itself designates M-4 as the replacement (lines 676–680: M-4
+  "replaces the C-4 upper bound with the true per-pair intersection", and the
+  gap clause at lines 658–660 already anticipated "MEASURE MORE, i.e. extend
+  to M-4's exact shared-galaxy census before ruling").
+
+**Target set of this registration (per venue, from m4_results.json:
+`pair_records` with `n_shared_{ch}>0` plus
+`global_pairs_shares.outside_c4_records` with `n_shared_{ch}>0`):**
+
+| venue | 1D pairs | (in-C-4 + outside) | 2D pairs | (in-C-4 + outside) |
+|---|---|---|---|---|
+| joint_r1 | **349** | 80 + 269 | **104** | 27 + 77 |
+| iiib | **280** | 63 + 217 | **21** | 5 + 16 |
+
+Max events per single galaxy = 4 (both venues). All pair endpoints are among
+the 1588 evaluated events (dropped CRB rows 1203/1356 touch no sharing pair).
+
+⚑ **RATIFY**: (a) the supersession itself; (b) the readiness consequence —
+the current instrument CLI enumerates pairs only via `c4_pair_census`
+(`crossterm_instrument.py:1104-1109`); running on this target set requires a
+pair-list ingestion extension (§8, item R-3).
+
+---
+
+## 4. The instrument (what runs, pinned)
+
+| item | value |
+|---|---|
+| Code | `crossterm_instrument.py` (this directory, post-fix build ~1330 lines, FIXED 2026-08-05 against `instrument_math_review_20260805.json` DEFECT-1..5) — **frozen at the sha256 recorded at ratification time** ⚑ RATIFY (record hash when ratifying; NO git commit is made by this draft per rails) |
+| Formula | `Δ_ij(h) = log1p((Σ_{g∈S_ij} w_g² J_g,ij − Σ_{g∈S_ij} w_g² N_g,i N_g,j)/(S_i S_j))` — the Eq. (31) correction to the factorized joint **catalogue-leg** ln L in true nats; the per-(h,channel) global normalizer D(h) and any global w rescaling cancel exactly (normalizer-cancellation argument, module header + `meta.normalizer_cancellation`, independently re-verified: rr1 D_invariance abs diff ≤ 2e-16 at w-scales 1e±6) |
+| 2D channel | joint integrand `L_GW,i L_GW,j · mzjoint_ij` with ONE shared latent host mass (closed form `shared_latent_mass_joint`/`scaled_…`, product-of-Gaussians identity; reduces exactly to `mz_i·mz_j` at σ_M=0 — verified rel 7.4e-16) |
+| Known floor | production-faithful 4σ-window truncation: `|ln Z_g| = |ln erf(4/√2)| = 6.334e-5` nats × shared-diagonal share (measured; NOT an error) |
+| Venues | iiib (idealized parent catalogue `cluster_parent_reduced_galaxy_catalogue.csv`, sha256 `7af3f4f4…`), joint_r1 (observed realization seed-900001 `observed_catalogue_seed900001.csv`, sha256 `e8f7ab31…`) |
+| Config pins | per `results/run_20260804_frozeng/{iiib,joint_r1}/run_metadata_0.json` (commit `c917ed87`, seed 777000): `HOST_Z_KERNEL=volume_deconv`, `NORMALIZATION_MODE=absolute_marginal`, `HOST_MASS_KERNEL=auto`, `pdet_z_resolved=True`, `pdet_wbh_z_resolved=False`. The instrument mirrors exactly this pairing; numerators carry no p_det (MFG rule); `SIGMA_V_PEC_KM_S=0` honored |
+| Ball membership | frozeng `posteriors_with_bh_mass/h_0_73.json` emits (ball h-independence verified: bit-identical vs `h_0_6.json`, all 1588 events, both venues; filename convention `h_0_6.json` for h=0.60 verified on disk for all four grid h, both venues) |
+| CRB input | `prepared_cramer_rao_bounds.csv`, md5 `9a1f2a14384a9281c97ca3be312ddaab`, identical both venues; 1590→1588 evaluate-time filter reproduced |
+| Channels | both (1D and 2D), per venue |
+| Output | one JSON per (venue), path guarded (`_guard_output_path` refuses `/results/run_`, `/diagnostics/`, `/posteriors`); `--confirm-run` prereg gate verified (dry-run prints plan, exits 0, writes nothing) |
+| Row schema | per (pair, h, channel): `S_i_raw, S_j_raw, S_i_frozeng, S_j_frozeng, shared_diag_fact, shared_diag_joint, delta_joint_lnL_nats, n_shared, n_ball_i/j`, w¹ diagnostics, `w_share_ball_i/j`, `overlap_degree_i/j`, `w_G_i/j`, `L_cat_i/j`, `combined_i/j` |
+
+### h-grid (floor, spec lines 633–639, "these four are the floor"; denser grids allowed)
+
+| h | load-bearing meaning |
+|---|---|
+| 0.60 | the 1D rail's location (both venues, C-5) |
+| 0.73 | fiducial truth (`H=0.73`) |
+| 0.81 | the 2D MAP (`REALISTIC_READOUT.md`, ledger row 94) |
+| 0.86 | historical era-3 upper rail (`BIAS_RESOLUTION_ATTEMPTS_REPORT.md:175-179`) |
+
+All four lie on the canonical 41-point diagnostics grid, so `w_G`/`L_cat`/
+`combined` row joins cover every floor h.
+
+---
+
+## 5. Decision statistic — band applies to the MIXTURE-COMPOSED chord ⚑ RATIFY
+
+The build left open (open question 3) whether the band applies to the
+catalogue-leg `Δ_ij` or the mixture-composed value. **Fixed here, for
+dimensional consistency with the band's inputs**: M-2's matched machinery —
+the sole calibrator of X and Y — was measured on the **combined (mixture)
+likelihood** columns. The band therefore applies to the mixture-composed
+correction
+
+```
+Δ̃_ij(h) = ln[ 1 + w_G,i w_G,j L_cat,i L_cat,j (e^{Δ_ij(h)} − 1) / (combined_i combined_j) ]
+```
+
+composable offline from emitted row fields alone (identity independently
+verified: rr1 N8 mixture-composition check, max abs err 3.9e-16). The raw
+catalogue-leg `Δ_ij` is reported alongside as a diagnostic, never scored.
+
+Per (venue, channel), over the target pair set P (§3):
+
+- **Class sum per h:** `D(h) = Σ_{(i,j)∈P} Δ̃_ij(h)`
+- **Primary decision statistic (chord, per M-3's discipline):**
+  `T = max_{h,h'∈grid} |D(h) − D(h')|` (full-grid range)
+- **Reported, never scored:** the level `D(0.73)`; the M-2-comparable
+  endpoint chord `D(0.60) − D(0.73)`; per-pair `Δ̃_ij(h)` distributions.
+
+A pure h-independent level cancels in the joint-posterior normalization and
+cannot move H0; only the chord can. The level is still recorded in full
+(M-3's aggregate-honesty rule).
+
+**Event-vs-pair units note (stated, not hidden):** X/Y are calibrated from
+per-event statistics summed over the 385-event overlap stratum, while T sums
+over pairs. Both are movements of the **total joint ln L** across the h-grid
+— the object the posterior consumes — so the nats are commensurable at the
+class level; the event/pair labels describe contribution sources, not units.
+The √385 independence assumption in X is acknowledged as approximate (M-2's
+control-reuse caveat); the cluster-robust secondary machinery exists in
+`m2_results.json` if the author wants a stricter variant. ⚑ RATIFY.
+
+**Guard-row conventions (fixes build open question 5):**
+
+- `Δ = −inf` (corrected joint = 0; only reachable when the shared set is BOTH
+  entire balls with disjoint window intersection — a jointly-excluded host):
+  **never summed.** Any such row is counted, listed, and **automatically
+  escalates to author adjudication at gap-protocol level or above** — it is a
+  qualitative signature, not a summable number.
+- `NaN` (S ≤ 0): data defect; voids that pair's row; investigate before any
+  verdict.
+- Class sums are over finite rows with the excluded-row census printed beside
+  every sum.
+
+---
+
+## 6. [A2] stratified reporting mandate — class sum alone is INADMISSIBLE
+
+Per the spec's [A2] clause (lines 681–687: "must be reported stratified …
+not only as a single summed number") and M-2's demonstrated trap: a
+real effect concentrated in a few pairs must not be diluted below X by
+hundreds of near-zero pairs, and a null must not be manufactured by a
+selection confound. **Every verdict-bearing readout must present, per venue
+and channel, T and the per-pair `Δ̃` distribution stratified by:**
+
+1. **Overlap degree** (`overlap_degree_i/j`, and `n_shared` bands: 1, 2–10,
+   11–100, 101–1000, >1000 — the M-4 histogram bands);
+2. **`w_G`** (emitted per row; measured event-independent at fixed h —
+   0.06197 iiib / 0.07080 joint_r1 at h=0.73 — so this stratification is
+   expected degenerate at fixed h; report it anyway to prove it);
+3. **Shared-`w_pop` share** (quartiles of min-side `w_share_ball`; the M-4
+   convention);
+4. **In-C-4 vs outside-C-4** (the two populations differ: outside-pair
+   min-side w_pop share median 0.011 vs 0.087 in-C-4, joint_r1 — a weaker-
+   sharing population whose aggregate could still matter);
+5. **Sign decomposition**: Σ of positive vs negative `Δ̃` chords separately
+   (coherence vs cancellation — load-bearing for the H-2 branch, §9).
+
+The 2D channel's stratified read by `w_share` is additionally where the
+DEFECT-3 physics consequence gets adjudicated: Δ does NOT vanish at perfect
+redshift alone in 2D — a shared-latent-mass residual of order
+ln(σ_M/s_cond) nats per fully-shared-ball pair survives (measured +2.41 nats
+concordant / −15.4 discordant at the reviewer's triples), diluted by the
+shared-diagonal share of S_i S_j.
+
+**No single number may be quoted as "the cross-term" without this table.**
+
+---
+
+## 7. The negligibility band — X, Y, derivation arithmetic (locked at ratification)
+
+### 7.1 Inputs (all pre-existing, all blind to the instrument)
+
+| artifact | sha256 | verification status | role |
+|---|---|---|---|
+| `m2_results.json` | `d9c02432ac15aba61f57e143ea247de9a5d909560129a6312efaf9a6470c3256` | **CONFIRMED** (`m2_adjudication.json`, independent recompute, own KDTree/permutations, seed 777777, 40k perms) | sole calibrator of X and Y |
+| `m4_results.json` | `46907913b35369bfdb96a705d1782a5c8d4eb9bf7955d1cb851434ba9d3f1c6b` | **CONFIRMED** (`m4_adjudication_results.json`, 26/26, bit-identical ball rebuilds) | per-unit-shared-weight denominators; target set |
+| `m3_results.json` | `5b67a52190aefbd719cdbc3d6263dd0fd10fa6cc9594e075636a986f740f48a0` | UNVERIFIED — context only, **NOT band-bearing** (its numbers cannot move X or Y) | chord-not-level discipline; aggregate-honesty rule |
+| `band_derivation.py` → `band_derivation.json` | (this directory) | deterministic; asserts its M-2/M-4 cross-checks | arithmetic appendix — every threshold below must reproduce from it |
+
+### 7.2 NEGLECT threshold X — "what zero looks like", from the 1D matched dispersion
+
+M-2's matched machinery calibrates the null. **The 2D matched read is
+NON-null**, so its paired-diff dispersion (0.1156 iiib / 0.1041 joint_r1) is
+potentially signal-inflated — deriving X from it would let the plausible
+signal widen its own neglect band (anti-conservative for discovery, and a
+band-tuning move the value ruling forbids). **X is therefore derived from the
+1D matched dispersion only** — the channel that IS null (iiib) or
+marginal-fragile-toward-null (joint_r1) — taken at the min over venues:
+
+```
+σ_1D  = min(0.07096366082362933 [iiib], 0.07116860193596568 [joint_r1])
+      = 0.07096366082362933 nats/event
+X     = 2 · σ_1D · √385  =  2 × 0.07096366082362933 × 19.621416870348583
+      = 2.7848151433329105  →  locked X = 2.78  (floor to 0.01 — conservative:
+                                                 harder to NEGLECT)
+```
+
+**X = 2.78 class-summed chord nats applies to BOTH channels.** The
+`band_derivation.json` per-channel variant `X_2d = 4.08` (same formula with
+the 2D dispersion) is recorded as a **sensitivity variant only** — it may be
+quoted beside the verdict but may not flip a NEGLECT into existence.
+⚑ RATIFY this channel choice explicitly (it is the single most
+outcome-relevant decision in this file; the alternative and its rationale are
+both on the table, derived blind).
+
+M-2's permutation-null distribution (20k/40k perms, seeds 20260805/777777,
+stored in `m2_results.json`) is the registered fallback calibrator if the
+author prefers a quantile-based X; it was not used for the primary because
+the matched paired-diff std is the more direct "zero looks like this"
+dispersion.
+
+### 7.3 REGARD threshold Y — the smallest class-summed effect this thread has treated as real
+
+```
+Y = min venue (M-2 matched 2D mean paired diff) × 385
+  = 0.020697491999731973 [joint_r1] × 385
+  = 7.9685344198968100  →  locked Y = 7.96  (floor to 0.01 — conservative:
+                                             earlier REGARD)
+```
+
+Rationale: +0.0207 nats/event × 385 events is exactly the class-scale of the
+matched 2D residual that revived H-2 — the smallest effect this research
+thread has ever acted on as real. A cross-term reaching that scale cannot be
+logged and shelved. Y ≥ X holds: 7.96 ≥ 2.78. ✓
+
+### 7.4 Per-unit-shared-population-weight expression (spec lines 662–670)
+
+Denominator W = Σ over target-set sharing pairs of the min-side shared
+`w_pop` share (M-4 convention, per venue/channel). Known at draft time from
+CONFIRMED artifacts:
+
+| venue/channel | n pairs | W (min-side w_pop share sum) | x = X/W | y = Y/W |
+|---|---|---|---|---|
+| joint_r1 / 1D | 349 | 10.099681 + 9.704189 = **19.803870** | **0.1404** | **0.4019** |
+| iiib / 1D | 280 | 6.584390 + 8.144262 = **14.728652** | **0.1887** | **0.5404** |
+| joint_r1 / 2D | 104 | 1.967897 (in-C-4 27 pairs only) + **W_out NOT YET COMPUTED** | pending | pending |
+| iiib / 2D | 21 | 0.309292 (in-C-4 5 pairs only) + **W_out NOT YET COMPUTED** | pending | pending |
+
+(1D arithmetic: x = 2.78/19.803870 = 0.140376; y = 7.96/19.803870 = 0.401942;
+x = 2.78/14.728652 = 0.188748; y = 7.96/14.728652 = 0.540443.)
+
+**Gap in the artifact, stated honestly:** `m4_results.json`
+`outside_c4_records` carry 1D shares only; the 2D min-side shares of the 77
+(joint_r1) / 16 (iiib) outside-C-4 2D-sharing pairs were never computed.
+**Mandated pre-run read (zero-compute, deterministic, blindness-preserving —
+w_pop shares are independent of any Δ):** extend the M-4 share computation to
+those pairs, append the result to `band_derivation.json` as an addendum, and
+fill this table **before** the run. The per-unit thresholds are the locked
+FORMULA x = X/W, y = Y/W; only the 2D denominators await that read.
+⚑ RATIFY the mandated read.
+
+Per-unit values are the carry-over currency for the gap protocol (§10): they
+transfer the band to any extension set without re-deriving thresholds.
+
+### 7.5 Blindness statement
+
+**No cross-term number from the instrument exists.**
+`crossterm_instrument.py` has never been executed with `--confirm-run`
+(dry-run gate verified: prints plan, exits 0, writes nothing); this directory
+contains no instrument output JSON (verified by listing at draft time); the
+only Δ values ever produced are toy/self-test constructions
+(`test_crossterm_toy.py` 15/15, reviewer/re-review toy universes).
+`band_derivation.json` carries the same statement in its `blindness` field
+and was generated before this draft. X and Y were derived entirely from
+M-2/M-4 — measurements of the *production diagnostics*, not of the
+instrument.
+
+---
+
+## 8. Instrument readiness — **NOT READY; run BLOCKED** (validity criteria)
+
+**Required for validity: dual-CONFIRMED adversarial verdicts on the exact
+build that runs.** Actual status at draft time:
+
+| check | status |
+|---|---|
+| Original adversarial math review | **DEFECTIVE** (`instrument_math_review_20260805.json`, DEFECT-1..5) — on the PRE-fix build |
+| Fix applied | yes, in place, this session (DEFECT-1/2/3/5 fixed, DEFECT-4 covered by rebuilt tests) |
+| Toy suite | **15/15 PASSED** (`test_crossterm_toy.py`, incl. the previously-untested n_shared≥2 σ_z→0 pair-level limit, 2D shared-latent-M closed form vs nested quad, superset balls, floor constant) |
+| Fixer's rerun of the reviewer's constructions | ALL FOUR PASS (`reviewer_checks_rerun_fixed.py/.json`: A abs diff 2.8e-15; B tracks brute-force truth at every σ_z with correct sign, O(σ²) ratios → 0.25; C nullspace universes separated 10.32%, both match truth to ~7e-16; D closed form exact at all reviewer triples) — **self-check by the fixing session, not an independent verdict** |
+| Post-fix independent math re-review (round 1) | `rereview_round1_independent_checks.json`: N1–N9 **all pass** (own brute force, incl. nonconstant w_pop, unequal windows, z-dependent μ_cond nested quad, rescale invariance, mixture identity) — **no formal CONFIRMED verdict token recorded** |
+| Post-fix independent numerics re-review (round 1) | `rr1_toy_attacks / rr1_boundary_check / rr1_ball_sigma_census / rr1_worst_R_table .json`: cancellation stability, invariance, guards, floor all pass, **but one real adequacy finding left OPEN (R-2 below)** — **no formal CONFIRMED verdict token recorded** |
+
+**Verdict recorded per the validity rule: the post-fix build is NOT
+dual-CONFIRMED. The instrument is NOT READY. No production run — including
+smoke runs — is authorized until every blocker below is closed and this file
+is ratified.**
+
+Blockers:
+
+- **R-1 (dual confirmation):** both post-fix adversarial re-reviewers must
+  record explicit CONFIRMED/REFUTED verdicts on the frozen build (their check
+  outputs pass, but a pass-list is not a verdict; the verdict must name the
+  code sha256 it certifies).
+- **R-2 (quadrature adequacy — the numerics reviewer's open finding):**
+  `fixed_quad n=50` degrades when R = event-window-width/σ_z exceeds ~30
+  (measured calibration: R≤30 → <3e-9 nats; R=45 → 3e-5; R=69 → 3e-3;
+  R=110 → 6e-2, undiluted single-galaxy scale; toy mixed-ball contamination
+  up to ~0.03 nats). Production census (`rr1_worst_R_table.json`): exactly
+  **one** shared-galaxy instance above R=45 — joint_r1/1D pair (114, 1035),
+  catalog_index 1349264, σ_z=0.0019636, R=68.17 at max window (n_shared=8861
+  in that pair). σ_z=0 catalogue rows (6284 in the parent) would NaN-poison
+  but **zero** appear in any ball or shared set (verified). Remedy (elevated
+  quad_n for narrow kernels — n=400 measured sufficient at the worst
+  geometry — or a documented per-row error budget) must be fixed, verified,
+  and folded into R-1's certification **before** the run. Until then any
+  Δ̃ involving that pair is numerically untrusted at the 3e-3-nat scale.
+- **R-3 (target-set ingestion):** the CLI enumerates pairs only via
+  `c4_pair_census`; a pair-list input consuming the §3 M-4 census (sha256-
+  pinned `m4_results.json`) must be added and verified (the ingestion path
+  only — the math core is untouched), then covered by R-1's certification.
+- **R-4 (validate mode never run):** `--mode validate` (Step-2 N_g vs
+  frozeng per-galaxy stored rows at production quad_n=50) is built but has
+  never run; instrument-vs-production N replication fidelity is untested
+  end-to-end. **Mandated as the FIRST gated execution after ratification**,
+  before the instrument proper. Pass: max rel deviation ≤ 1e-6 over checked
+  galaxies with R ≤ 30; any R > 30 galaxy is excluded from that criterion and
+  handled under R-2. The emitted `S_i_frozeng/S_j_frozeng` row fields
+  additionally give a free per-row own-quad-vs-production cross-check at
+  readout (loader row structure validated against the real iiib
+  `h_0_73.json`: keys == ball sets, 1588 events, 0 mismatches).
+- **R-5 (author ratification):** every ⚑ item: §3 supersession + code-fact
+  adjudication (`get_redshift_outer_bounds` hardcoded 3σ), §5 mixture-level
+  band target + statistic definition, §7.2 channel choice for X, §7.4
+  mandated 2D-share read, §4 code freeze hash, §10 gap policy, §11 branch
+  definitions.
+
+Run-cost note (unchanged rail): performance is untimed by design (build
+only). Full-ball sums S_i, S_j are mandatory (up to ~46k own-quad N_g per
+(event, h, channel), cached per (channel, event, h)). An authorized
+post-ratification smoke run (`--pairs-limit`) may time the pipeline; because
+the band is locked at ratification, smoke values are part of the measurement
+and may not trigger any band adjustment.
+
+---
+
+## 9. Outcome branches (both legitimate discharges of the mandate)
+
+Scored per (venue, channel) on T (§5) against X = 2.78, Y = 7.96, with the §6
+stratified table mandatory in every case:
+
+- **(a) NEGLECT** — T < X in the scored channel **and** no single stratum in
+  §6 carries a ≥ Y-scale sub-sum of one sign (anti-dilution clause: a
+  concentrated effect inside a diluted class sum blocks NEGLECT). Closes the
+  cross-term leg of H-1/H-3 as **NEGLECT-WITH-NUMBER**: the measured T, the
+  level D(0.73), the full stratified table, and the per-unit x-comparison
+  enter the permanent record — a value, not "small" (spec lines 649–652).
+- **(b) REGARD** — T ≥ Y in any (venue, channel). Escalates to
+  `/physics-change` (`bayesian_statistics.py` / `posterior_combination.py`-
+  adjacent, per CLAUDE.md's trigger list) as a candidate production
+  correction — 5-item package, author approval, ledger rows; never applied
+  by this file (spec lines 653–655).
+  **Novel-result clause:** if the REGARD-scale term is concentrated in the 2D
+  channel with net sign preferring low h (positive `D(0.60) − D(0.73)`
+  contribution), it **confirms M-2's revived H-2** and constitutes a NOVEL
+  RESULT — *shared-host coherence biasing the 2D dark-siren channel low-h* —
+  to be written up as a finding in its own right, per the author value ruling
+  (insight over bias-removal). A REGARD-scale term with the opposite sign or
+  1D concentration is equally reportable and would *refute* the H-2 coupling
+  story while still mandating the production correction.
+- **(c) GAP [X, Y)** — §10.
+- Venue split (one venue NEGLECT, one REGARD) — treated as GAP with the split
+  itself reported as a finding (the venues differ only in catalogue
+  realization; a split localizes the effect in photo-z scatter structure).
+
+---
+
+## 10. Gap policy [X, Y): MEASURE MORE — never a forced binary call
+
+If X ≤ T < Y in any (venue, channel), per spec lines 656–660 the outcome is
+**MEASURE MORE**, pre-registered as (in order):
+
+1. **Densify the h-grid** from the 4-point floor to the canonical 41-point
+   grid (all row-join columns exist there) — resolves whether T is a chord
+   artifact of the sparse grid or a monotone trend; M-3's interior-excursion
+   check applies.
+2. **Full stratified drill-down** (§6) with per-pair Δ̃ published for the top
+   decile by |Δ̃| — locate concentration before judging.
+3. **Per-unit re-expression**: compare T/W against x and y (§7.4). A class
+   sum in the gap driven by a few high-share pairs (T/W ≥ y on a stratum) is
+   escalated as REGARD-scale-on-a-stratum; a uniform dilution (T/W < x
+   everywhere) supports NEGLECT on the extended read.
+4. Only if 1–3 leave the call genuinely between bands: return to the author
+   with the full table — **the author rules; the session never
+   self-adjudicates a gap verdict** (imported from the D1 template's
+   model/effort policy).
+
+The gap is a first-class, non-forcing outcome (D1 template branch (c)
+discipline): reporting "measured into the gap, escalated per policy" is a
+legitimate state of the claim.
+
+---
+
+## 11. Known when locked (spec-mandated inventory)
+
+Exactly these artifacts feed X and Y (nothing else may be cited as their
+basis):
+
+1. `m2_results.json` (sha256 `d9c02432…`, CONFIRMED) — matched 1D paired-diff
+   stds 0.07096/0.07117 (→ X); matched 2D mean paired diffs 0.02225/0.02070
+   (→ Y); n = 385 overlap events; the NON-null 2D finding that makes this a
+   discovery test.
+2. `m4_results.json` (sha256 `46907913…`, CONFIRMED 26/26) — target-set
+   counts 349/280 (1D), 104/21 (2D); in/outside C-4 split 80+269 / 63+217,
+   27+77 / 5+16; W denominators 19.803870 / 14.728652 (1D), 1.967897 /
+   0.309292 (2D in-C-4 part); the per-pair share distributions behind §2's
+   structural insight.
+3. `band_derivation.py` / `band_derivation.json` (this directory, run blind
+   2026-08-05) — the arithmetic appendix; §7's numbers must reproduce from
+   it (X_1d 2.7848→2.78; Y 7.9685→7.96; the 2D-dispersion variant 4.08
+   recorded as sensitivity-only per §7.2).
+4. **Context, explicitly NOT band-bearing:** `m3_results.json` (sha256
+   `5b67a521…`, unverified) — discipline only; `rr1_*` numerics calibrations
+   — readiness only; M-2's permutation-null distributions — registered
+   fallback calibrator, unused by the primary.
+5. **What did NOT exist:** any instrument Δ/Δ̃ value on production data
+   (§7.5). The band cannot have been tuned to the result because the result
+   does not exist.
+
+---
+
+## 12. Scope guard (imported from the D1 template, adapted)
+
+- **No production posterior is produced.** The instrument reads frozen
+  emits + catalogues; it re-runs no evaluate, writes nothing under
+  `results/run_*`, `diagnostics/`, or `posteriors*` (path guard enforced in
+  code).
+- **No formula change is authorized.** REGARD routes to `/physics-change`
+  with the full 5-item package; the `get_redshift_outer_bounds` code fact
+  (§3) is flagged for adjudication, not changed.
+- **Append-only after ratification.** Once the author ratifies and the file
+  is committed (by the author's session, not this draft), thresholds are
+  locked; any later change is an amendment visible as a diff.
+- **Model/effort policy at readout:** mechanical extraction cheap; verdict
+  interpretation + adversarial pass at high effort; the branch call is
+  presented to the author, never self-adjudicated.
+
+---
+
+*Verdict to be appended below by the session that reads out the run — only
+after: R-1..R-5 closed, this file ratified and committed, validate mode
+passed, and the run executed under `--confirm-run`. No edits above the
+verdict line at that point.*
+
+---
+
+## CERTIFICATION RECORD (2026-08-05, appended post-draft)
+
+**Appended after the draft above was frozen; nothing above this line was
+edited. This record discharges the readiness blockers it names and completes
+the §7.4 table entries the draft explicitly left "pending the blind read" —
+the original §7.4 text is untouched; the completed values live here.**
+
+### Discharged blockers and flags
+
+- **R-1 (dual formal verdicts): DISCHARGED.** Both post-fix adversarial
+  re-reviewers recorded explicit CONFIRMED verdicts naming the frozen build's
+  sha256 (quoted verbatim below).
+- **R-2 (quadrature remedy): DISCHARGED.** Adaptive quadrature
+  (`adaptive_quad_n`: n=50 bit-identical for R ≤ 30; n = ceil(50·(R/30)·4)
+  above, cap 4000 → resolves R ≤ 600) implemented, applied identically to
+  N_g,i, N_g,j and J_g,ij per shared galaxy, and certified inside both
+  verdicts (production worst case R=68.17 → n=455, |Δ err| ~6e-14 nats).
+- **R-3 (pair-list CLI + target-set files): DISCHARGED.** `--pair-list`
+  ingestion added (venue-match refusal, schema validation, dry-run plan);
+  zero-compute generator `make_target_pairs.py` emitted
+  `target_pairs_joint_r1.json` (1D 349 = 80+269; 2D 104 = 27+77) and
+  `target_pairs_iiib.json` (1D 280 = 63+217; 2D 21 = 5+16), element-for-element
+  matched against sha256-pinned `m4_results.json`; both certified inside the
+  verdicts below.
+- **Flag (e) (blind outside-C-4 2D w_pop read — the §7.4 mandated read):
+  DISCHARGED.** `outside_c4_2d_wpop.py` → `outside_c4_2d_wpop.json` computed
+  the M-4-convention min-side shared w_pop shares for the 77 (joint_r1) / 16
+  (iiib) outside-C-4 2D-sharing pairs, blind (no Δ computed anywhere; the
+  instrument has still never executed with `--confirm-run`). Blindness of the
+  read was independently certified (NUMERICS check 6: recursive key scan found
+  zero delta/lnL-like fields).
+
+Frozen build hashes certified by both verdicts:
+`crossterm_instrument.py` sha256
+`340b66d2f970e48cf5152676e8b6bed6b171f9538efa33bab6e5ef04abd87692`;
+`test_crossterm_toy.py` sha256
+`b84f209552b8a28f4092724c3f2e5c899d08425138eb0b59bb9c939035978e6d`.
+
+### Formal verdict 1 — post-fix adversarial math/derivation re-review (EQ31), verbatim
+
+```json
+{"verdict":"CONFIRMED","hash_verified":"CONFIRMED at sha256 instrument=340b66d2f970e48cf5152676e8b6bed6b171f9538efa33bab6e5ef04abd87692 (crossterm_instrument.py), tests=b84f209552b8a28f4092724c3f2e5c899d08425138eb0b59bb9c939035978e6d (test_crossterm_toy.py); both verified by sha256sum at review start and re-verified unchanged after all review activity.","defects":[],"checks_performed":"HASH: sha256sum of both pinned files at start and end of review (unchanged; directory is git-untracked, no commits/ledger/claim-file edits made; --confirm-run never used; master_thesis_code/ untouched; new files cert_adversarial_20260805.py/.json only, inside crossterm_instrument/). (1) DERIVATION re-derived against production and confirmed implemented at this hash: [a] frozeng venue mode established from results/run_20260804_frozeng/{iiib,joint_r1}/run_metadata_0.json = normalization_mode absolute_marginal + host_z_kernel volume_deconv + host_mass_kernel auto (resolvers at bayesian_statistics.py:149-262 confirm -> fixed-quad volume-deconv numerator, gaussian+Eddington 2D mass marginal) — exactly the branch the instrument mirrors; [b] L_cat,e = S_e/D(h): weighted_sum S_e = Sum_ball w_g N_g (:4024-4038), D(h) per-(h,channel) event-independent global scalar (:3947-3951), w_g = R_eff_per_mbh(M)/(1+z) (:964-987, :3900-3906) — instrument dereference_galaxy matches; [c] Eq.(31) pairwise: shared diagonal of S_iS_j carries w_g^2, replaced by w_g^2 J_g,ij -> Delta = log1p((Sum w^2 J - Sum w^2 N_iN_j)/(S_iS_j)); D(h)^-2 and any global w rescale cancel exactly — delta_joint_lnL_nats + compute_pair_sums implement verbatim; [d] kernel rho_g = N(z;z_g,sigma_z) w_pop_eff/Z_g with Z_g fixed_quad n=50 over [max(z_g-4s,1e-6), z_g+4s], Z<=0->1.0 guard, f_k clip + 50-GL-node ZoA probe, SIGMA_V_PEC_KM_S=0.0 (constants.py:95) => sigma_eff==sigma_z — all match :4765-4881; [e] event window :4768-4773, N_g integrand :4886-4904, staging (cov_3d/4d, pinv, slogdet, cond>1e16, Bishop sigma2_cond/proj) verbatim vs :3157-3294 + _check_covariance_quality, event filter SNR>=20 & rel-dL<0.10 vs :2902/:4480; [f] 2D closed form re-derived by hand (x_e = mu_e/a_e change of variables + two product-of-Gaussian identities): Int dM N(mu_i;Ma_i,s2c_i)N(mu_j;Ma_j,s2c_j)N(M;M_eff,sM2) = (1/(a_i a_j)) N(x_i;x_j,v_i+v_j) N(m_ij;M_eff,v_ij+sM2) — matches scaled_shared_latent_mass_joint; sM2=0 reduces exactly to mz_i*mz_j; production factorized mz (:5080-5094) is the single-latent marginal of the same model with the same Eddington M_eff — consistent; joint_l assembled from PRE-mass-multiplication l_i,l_j (lines 1407-1427, order correct); [g] mixture composition ln[1+(w_G_i w_G_j L_cat_i L_cat_j/(L_i L_j))(e^Delta-1)] re-derived from L_e = w_G L_cat + completion — correct; [h] R-2 escalation: adaptive_quad_n rule verified (R<=30 -> 50 bit-identical; R=68.17 -> 455; cap at R=600), ONE override per SharedGalaxyTerm applied identically to N_i, N_j, J (lines 525-540) so the exactness-critical J<->N_iN_j cancellation uses one order; ball members use own event-width rule (converged-vs-converged difference only, bounded by the <3e-9-nats validated regime — not a consistency break); Z_g deliberately n=50 (window R=8, production faithfulness); [i] frozeng h-file naming (h_0_6/h_0_73/h_0_81/h_0_86) confirmed on disk in both venues. (2) RERUNS: full toy suite 17/17 passed (uv run pytest --no-cov, exit 0; initial coverage FAIL is the repo-wide pytest-cov gate, not a test failure); reviewer_checks_rerun_fixed.py rerun -> OVERALL all_checks_pass=true, exit 0 (rewrote only its own deterministic JSON, as mandated). (3) TWO NEW ADVERSARIAL CONSTRUCTIONS (cert_adversarial_20260805.py/.json), both vs fully independent brute-force references built from nested scipy.integrate.quad (epsrel 1e-12; no instrument closed forms, no fixed_quad on the reference side): ATTACK 1 — extreme weight asymmetry (w spans 1e-8..1e2), ball_j == shared set (near-total subset; shared = 5/6 of ball_i), 2D channel with the joint referenced by NESTED (z,M) quadrature, wiggly w_pop, escalated orders up to n=500: |Delta_inst - Delta_ref| = 6.3e-10 nats at Delta ~= 0.2897, i<->j symmetry exact (0.0), S_i/S_j agree to ~1e-9 rel. ATTACK 2 — mixed 1D/2D edge: 8.6x window asymmetry (0.60 vs 0.07), kernel edge-clipped at the intersection boundary, escalation BOUNDARY CROSSING (same galaxy n=334 in shared+ball_i but n=50 in ball_j — the exact production-layer rule), false-shared galaxy (w=1e3, support outside the intersection) in both declared balls, both channels: |Delta_inst - Delta_ref| = 3.8e-16 (1D) / 8.1e-16 (2D) nats; the no-escalation n=50 variant errs 2.4e-6 / 3.7e-5 nats vs the same reference (the construction has teeth and the escalation demonstrably works); false-shared contribution at the physically expected ~1e-62 tail (my initial attack-2 ok=false was a defect in MY harness criterion — absolute instead of relative threshold — corrected; the instrument's numbers were correct in both runs). CLI probes (allowed dry-runs/reads only): dry-run with --pair-list prints the 1812-row joint_r1 plan, reads ONLY the pair-list JSON, writes nothing (verified no file created); cross-venue pair-list REFUSED (exit 2); both target_pairs_*.json schema-clean with correct venue tags and counts (joint_r1 349/104, iiib 280/21). I attempted to break the instrument at this hash and failed."}
+```
+
+### Formal verdict 2 — post-fix adversarial numerics re-review (NUMERICS), verbatim
+
+```json
+{"verdict":"CONFIRMED","hash_verified":"crossterm_instrument.py sha256=340b66d2f970e48cf5152676e8b6bed6b171f9538efa33bab6e5ef04abd87692 (verified before and re-verified after all testing); test_crossterm_toy.py sha256=b84f209552b8a28f4092724c3f2e5c899d08425138eb0b59bb9c939035978e6d (verified). Supporting emits hashed: target_pairs_joint_r1.json 38e5e1f8…, target_pairs_iiib.json 33cca5a4…, outside_c4_2d_wpop.json bd8f0fd7…, m4_results.json 46907913… (matches the prereg pin asserted by both generators).","defects":[],"checks_performed":"(1) ESCALATION RULE: independent points-hinted scipy.quad reference vs instrument path at R in {10,30,45,68.17,100,300}, symmetric AND asymmetric (2.5:1 width ratio, production 114/1035-shaped) windows, for N_g,i, N_g,j, J_g and Delta. n=50 errors: 6e-16 / 1.5e-9 / 8.8e-5 / 2.4e-2 / 0.23 / 1.26 nats (reproduces the rr1 calibration: <3e-9 at R<=30, degradation above). Adaptive errors <=8e-14 nats at ALL R including the production worst case R=68.17 (n=455, |Delta err| ~6e-14 both geometries) — within stated tolerance. Width-keying verified conservative: max(width_i,width_j) upper-bounds every actual integration window (N over own window, J over intersection), so chosen n over-resolves, never under. Joint-integrand-narrower attack: constructed GW factors ~0.6*sigma_z wide -> 0.041 nats error at R_keyed=30 (rule blind to it) — but PRODUCTION-UNREACHABLE: event window = 8 GW-sigma by construction, joint GW feature R <= 8*sqrt(2), effective R <= sqrt(R^2+128), inside the 4x node margin; 2D worst kernel R measured 6.1 with broad mass marginals. Production R census independently re-derived (CRB + frozeng balls + pruned catalogue + dist_to_redshift over the 4-h grid, all target pairs, both channels/venues): worst shared instance = joint_r1/1D pair (114,1035), catalog_index 1349264, sigma_z=0.0019636170795231, R=68.17329652662558 — the ONLY instance R>30; cap 4000 resolves to R=600 (measured 3.3e-13 nats at the cap boundary), 8.8x headroom. Handler frame vs pruned-recipe frame verified bit-exact (19,874,547 rows; key row + 5 random probes identical). (2) REGRESSION: adaptive_quad_n returns exactly 50 for R<=30 (incl. boundary 29.9/30.0); overrides=50 vs None bit-identical (exact float equality on ball sums, all 8 pair fields, Delta); full toy suite 17/17 green (pins certified-round reviewer truths at 1e-4/1e-6); reviewer_checks_rerun_fixed.py A/B/C/D all pass exit 0; review_integrity_reads.py green (CRB md5 identical 9a1f2a14…, 1590/1588 rows, census 279 pairs/385 events, sky-only 1620/981, catalogue sha256s match). (3) SIGMA_Z->0 with escalation ACTIVE (production rule per term+member), n_shared=2: tracks independent reference to <=3.3e-13 nats through R=600, O(sigma^2) convergence to 0, positive sign throughout; matches pinned truth sequence 0.0727/0.0223/0.00587/0.00146. (4) LOG1P: exact-rational Fraction + 60-dps Decimal reference at shares 1e-3..1e-6, moderate and near-cancellation (sigma_z=0.005, delta ~6e-16) regimes: relative assembly error <=1.5e-16 everywhere; no instability. (5) CLI: dry-runs of both target files confirm 349 1D (80+269) / 104 2D (27+77) joint_r1 and 280 1D (63+217) / 21 2D (5+16) iiib; all four pair lists + per-pair n_shared + in_c4 flags independently cross-checked against m4_results.json pair_records, outside_c4_records and global_sharing_check.outside_pairs_2d — exact match; venue-mismatch refused (exit 1, even in dry-run); schema refusals (pairs-not-dict, missing i/j, missing meta.venue); _guard_output_path refuses non-.json, existing files, /results/run_, /diagnostics/, /posteriors markers and passes legal paths; --confirm-run with a production-marker output refused BEFORE any data read (exit 1, no file created); --pairs-limit applies per channel (10/10 -> 80 rows); dry-run with --pair-list reads only the pair-list JSON (code-verified). (6) BLIND READ: 6 spot pairs (first/mid/last per venue) independently recomputed from frozeng 2D balls + production weight functions on the pruned frame — n_shared and both-side w-shares match to <=2.4e-16 rel; full outside-C4 min-side W sums recomputed: joint_r1 2.1270224520529513 vs stored …17 (4 ulp accumulation order), iiib exact; in-C4 W reproduces the band_derivation pin; recursive key scan found ZERO delta/lnL-like fields (blindness holds). RAILS: no git commits (HEAD e94ff8ab unchanged), no ledger/claim-file edits (prereg draft + band_derivation.json hashes recorded, untouched), instrument never executed with --confirm-run past the guard (refusal test exited pre-read), all my outputs confined to the session scratchpad; reviewer_checks_rerun_fixed.json rewritten only by its own deterministic script per mandate (same 3434 bytes, all pass). NON-BLOCKING OBSERVATIONS (not defects for the gated run): (a) the rule's sigma_z-only keying implicitly assumes the production window=8-GW-sigma envelope — worth a code comment; (b) a shared galaxy can get different escalated n inside S_e (event's own width) vs the shared diagonal (max width) — both sides retain the full validated node density, discrepancy bounded ~1e-13; (c) iiib dry-run prints the joint_r1 CRB path (shared md5-identical default, cosmetic)."}
+```
+
+### §7.4 completion — per-unit 2D denominators (from the discharged flag-(e) blind read)
+
+The draft's §7.4 table marked the 2D rows "pending" with the formula locked
+(x = X/W, y = Y/W; X = 2.78, Y = 7.96). `outside_c4_2d_wpop.json` supplies the
+missing outside-C-4 min-side shared w_pop share sums; the in-C-4 parts
+reproduce `band_derivation.json` (joint_r1 rel 1e-12; iiib exact). Arithmetic:
+
+| venue/channel | n pairs | W = W_in + W_out (min-side w_pop share sum) | x = X/W | y = Y/W |
+|---|---|---|---|---|
+| joint_r1 / 2D | 104 | 1.967897399 (27 in-C-4) + 2.127022452 (77 outside) = **4.094919851** | **0.678890** | **1.943872** |
+| iiib / 2D | 21 | 0.309291700 (5 in-C-4) + 0.355208154 (16 outside) = **0.664499854** | **4.183598** | **11.978934** |
+
+(Arithmetic: x = 2.78/4.094919851 = 0.678890; y = 7.96/4.094919851 =
+1.943872; x = 2.78/0.664499854 = 4.183598; y = 7.96/0.664499854 =
+11.978934.)
+
+Interpretation note carried from the blind read: the outside-C-4 2D
+population is weaker-sharing per pair (min-side median ~0.0056 vs 0.098/0.062
+per-side in-C-4 medians) but its aggregate W_out slightly EXCEEDS W_in at
+joint_r1 (2.127 vs 1.968) — the §6 stratum-4 (in-C-4 vs outside) split stays
+load-bearing.
+
+### Remaining blockers — production run still BLOCKED
+
+- **R-4 (validate mode):** `--mode validate` remains the mandated FIRST gated
+  execution after ratification; it has still never run.
+- **R-5 (author ratification):** every ⚑ item of this draft — §3 supersession
+  + code-fact adjudication, §5 statistic definition, §7.2 channel choice for
+  X, §7.4 mandated read (now executed; its result above awaits the same
+  ratification), §4 code freeze hash (now recorded:
+  `340b66d2…abd87692`), §10 gap policy, §11 branch definitions — and flags
+  (a)-(f) remain UNRATIFIED.
+
+**The production run (`--confirm-run`) remains BLOCKED on R-4 and R-5.**
+Nothing in this certification record authorizes execution.
+
+## AUTHOR RATIFICATION (2026-08-06)
+
+The author (Jasper Seehofer) ratified this pre-registration on 2026-08-06.
+Verbatim reply: "all approved".
+
+**Scope of ratification** — this document
+(`PREREGISTRATION_CROSSTERM_INSTRUMENT.md.DRAFT`) including the following
+flags:
+
+- **(a)** C-4-to-M-4 target-set supersession — RATIFIED.
+- **(c)** the band applies to the mixture-composed value — RATIFIED.
+- **(d)** X is taken from the 1D matched dispersion — RATIFIED.
+- **(e)** blind-read completion — RATIFIED (already discharged).
+- **(f)** hash freeze — RATIFIED.
+- **(b)** issue #53, the 3-sigma-vs-2-sigma z-window — ACKNOWLEDGED, but its
+  physics adjudication remains OPEN as its own future `/physics-change`. The
+  instrument mirrors production 3-sigma behavior, so the run proceeds
+  regardless of the outcome of that adjudication.
+
+**Blocker R-4** (`--mode validate` gated first execution) — AUTHORIZED.
+
+**The production run over the target sets** — AUTHORIZED.
+
+**Frozen hashes** (verified 2026-08-06 immediately before this section was
+appended):
+
+- `crossterm_instrument.py`:
+  `340b66d2f970e48cf5152676e8b6bed6b171f9538efa33bab6e5ef04abd87692`
+- `test_crossterm_toy.py`:
+  `b84f209552b8a28f4092724c3f2e5c899d08425138eb0b59bb9c939035978e6d`
+
+**Band lock** — the band (X = 2.78, Y = 7.96; per-unit values including the
+completed 2D table) is LOCKED as written in this document.
+
+**Draft status** — with this section, the document ceases to be a draft in
+substance. The filename retains the `.DRAFT` suffix solely for reference
+stability; the suffix no longer indicates draft status.
+
+## FORMATTING-ONLY RE-FREEZE (2026-08-07, appended at evidence-commit time)
+
+At the author-ratified evidence commit (RUNBOOK_NEXT_SESSION_8 §5), the
+repository's mandatory pre-commit hooks (ruff `--fix` + ruff-format,
+whole-tree, never bypassed per repo policy) reformatted the two pinned files.
+The changes are formatting-only (ruff-format is semantics-preserving; no
+formula, constant, or logic changed). Auxiliary (non-pinned) scripts in this
+directory additionally received auto-fixed import ordering and file-level
+`# ruff: noqa` directives for closure-scope lint false-positives (B023/F821)
+and physics-style names (E741) — no computational change; all results JSONs
+untouched.
+
+Hash transition (sha256, old → new):
+
+- `crossterm_instrument.py`:
+  `340b66d2f970e48cf5152676e8b6bed6b171f9538efa33bab6e5ef04abd87692` →
+  `a11769c3947b9e4fd2cb74f1c2c63844d1149ba0592660616d8571cb47e89341`
+- `test_crossterm_toy.py`:
+  `b84f209552b8a28f4092724c3f2e5c899d08425138eb0b59bb9c939035978e6d` →
+  `16482a4b2aac56cc2f3b3ba7330ea78435a1048617aa7a985ccb09171954d5ce`
+
+Mandated re-verification at the new bytes (2026-08-07):
+
+- Full toy suite: `uv run pytest test_crossterm_toy.py --no-cov` — **17/17
+  passed**, exit 0.
+- `reviewer_checks_rerun_fixed.py` rerun — **OVERALL all_checks_pass=true**,
+  exit 0; regenerated `reviewer_checks_rerun_fixed.json` byte-identical
+  (sha256 `1790914b…` unchanged before/after).
+
+The production run and readout (2026-08-06/07) were executed at the OLD
+(ratified) hash `340b66d2…`; this re-freeze occurs strictly after the run,
+at commit time, and changes no computed value.

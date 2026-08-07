@@ -1,0 +1,239 @@
+{
+  "spec": "CLAIM_HITCHHIKER_INDEPENDENCE_20260805.md.DRAFT lines 550-560 (M-2)",
+  "chord_definition": "ln L(h=0.60) - ln L(h=0.73) per event, from combined_no_bh (1D) / combined_with_bh (2D)",
+  "census": {
+    "source": "/home/jasper/Repositories/MasterThesisCode/results/run_20260804_postfix/joint_r1/diagnostics/prepared_cramer_rao_bounds.csv",
+    "n_crb_rows": 1590,
+    "sky_pairs": 1620,
+    "sky_dl_pairs": 279,
+    "overlap_events_of_1590": 385,
+    "recipe": "recon_c4_census.py: r=2*sqrt(lam_max(J Sigma J^T)), chord metric, 2-sigma d_L window intersection"
+  },
+  "matching": {
+    "covariates": [
+      "log10_radius_chord",
+      "SNR"
+    ],
+    "method": "1-NN with replacement, control->overlap, standardized euclidean",
+    "w_G_note": "w_G in event_likelihoods.csv is event-independent at fixed h (asserted nunique==1); matched on its per-event drivers (radius, SNR) per [A2]"
+  },
+  "tests": {
+    "unmatched": "label-permutation on mean difference, two-sided, 20000 perms",
+    "matched": "sign-flip permutation on paired differences, two-sided, 20000 flips",
+    "criterion": "NON-NULL iff matched p < 0.0455 and unmatched same sign; UNDETERMINED iff matched p < 0.0455 but post-match |SMD|>0.1 or sign disagreement; else NULL"
+  },
+  "venues": {
+    "iiib": {
+      "n_events": 1588,
+      "n_overlap": 385,
+      "n_control": 1203,
+      "balance": {
+        "log10_radius_chord": {
+          "smd_before": 1.2270985182604366,
+          "smd_after": 0.0026823064698830897
+        },
+        "SNR": {
+          "smd_before": -0.3812765636689843,
+          "smd_after": 0.015155758150053125
+        },
+        "n_unique_controls_used": 234
+      },
+      "channels": {
+        "1d": {
+          "overlap_stratum": {
+            "n": 385,
+            "mean": 0.053315683499009996,
+            "median": 0.05746758783654049,
+            "std": 0.054799068529335054,
+            "iqr": 0.0781272348886457,
+            "sem": 0.0027928191369373584
+          },
+          "control_stratum": {
+            "n": 1203,
+            "mean": 0.009675451225649391,
+            "median": 0.020990793477916103,
+            "std": 0.10629468387495605,
+            "iqr": 0.10471334750616501,
+            "sem": 0.0030646348151704495
+          },
+          "matched_control": {
+            "n": 385,
+            "mean": 0.04727354665773534,
+            "median": 0.05001296388617349,
+            "std": 0.06247670193863271,
+            "iqr": 0.1050240850993025,
+            "sem": 0.0031841075673309815
+          },
+          "unmatched": {
+            "mean_diff": 0.043640232273360606,
+            "median_diff": 0.03647679435862439,
+            "perm_p": 4.999750012499375e-05
+          },
+          "matched": {
+            "mean_paired_diff": 0.006042136841274665,
+            "median_paired_diff": 0.0015891022856655557,
+            "paired_diff_std": 0.07096366082362933,
+            "signflip_p": 0.09819509024548773
+          },
+          "call": "NULL",
+          "direction_if_nonnull": null
+        },
+        "2d": {
+          "overlap_stratum": {
+            "n": 385,
+            "mean": 0.015804366711218567,
+            "median": 0.033738714713321016,
+            "std": 0.07829823773695549,
+            "iqr": 0.08044975845458158,
+            "sem": 0.003990447695715487
+          },
+          "control_stratum": {
+            "n": 1203,
+            "mean": -0.03400311956385074,
+            "median": -0.0035864602221726827,
+            "std": 0.11787569995977668,
+            "iqr": 0.1549050013243769,
+            "sem": 0.0033985328408736182
+          },
+          "matched_control": {
+            "n": 385,
+            "mean": -0.006448276304774362,
+            "median": 0.030414918254671797,
+            "std": 0.11023449962742785,
+            "iqr": 0.13376737933714056,
+            "sem": 0.005618070313465059
+          },
+          "unmatched": {
+            "mean_diff": 0.04980748627506931,
+            "median_diff": 0.0373251749354937,
+            "perm_p": 4.999750012499375e-05
+          },
+          "matched": {
+            "mean_paired_diff": 0.022252643015992925,
+            "median_paired_diff": 0.0037303288883436814,
+            "paired_diff_std": 0.11560589052584998,
+            "signflip_p": 0.00014999250037498125
+          },
+          "call": "NON-NULL",
+          "direction_if_nonnull": "overlap_high_revives_H2"
+        }
+      }
+    },
+    "joint_r1": {
+      "n_events": 1588,
+      "n_overlap": 385,
+      "n_control": 1203,
+      "balance": {
+        "log10_radius_chord": {
+          "smd_before": 1.2270985182604366,
+          "smd_after": 0.0026823064698830897
+        },
+        "SNR": {
+          "smd_before": -0.3812765636689843,
+          "smd_after": 0.015155758150053125
+        },
+        "n_unique_controls_used": 234
+      },
+      "channels": {
+        "1d": {
+          "overlap_stratum": {
+            "n": 385,
+            "mean": 0.04881843962618348,
+            "median": 0.05334002866869492,
+            "std": 0.05546846984271857,
+            "iqr": 0.07818033075007969,
+            "sem": 0.0028269349868684152
+          },
+          "control_stratum": {
+            "n": 1203,
+            "mean": 0.004256120428420832,
+            "median": 0.014796114639273439,
+            "std": 0.125067098783847,
+            "iqr": 0.10727276536460173,
+            "sem": 0.003605871631512934
+          },
+          "matched_control": {
+            "n": 385,
+            "mean": 0.04138890030626031,
+            "median": 0.04578082141504791,
+            "std": 0.06376453095218426,
+            "iqr": 0.10682671309976177,
+            "sem": 0.0032497414113118253
+          },
+          "unmatched": {
+            "mean_diff": 0.04456231919776264,
+            "median_diff": 0.03854391402942148,
+            "perm_p": 4.999750012499375e-05
+          },
+          "matched": {
+            "mean_paired_diff": 0.007429539319923175,
+            "median_paired_diff": 0.004232790342486137,
+            "paired_diff_std": 0.07116860193596568,
+            "signflip_p": 0.04139793010349482
+          },
+          "call": "NON-NULL",
+          "direction_if_nonnull": "overlap_high_revives_H2"
+        },
+        "2d": {
+          "overlap_stratum": {
+            "n": 385,
+            "mean": 0.014663550183558086,
+            "median": 0.02949176758502059,
+            "std": 0.07194588487678343,
+            "iqr": 0.07867030683968901,
+            "sem": 0.003666701816294741
+          },
+          "control_stratum": {
+            "n": 1203,
+            "mean": -0.03190950954748797,
+            "median": -0.006085235808495071,
+            "std": 0.11274561145346929,
+            "iqr": 0.14015460107765687,
+            "sem": 0.003250624711622014
+          },
+          "matched_control": {
+            "n": 385,
+            "mean": -0.006033941816173882,
+            "median": 0.023153527415528785,
+            "std": 0.09950854868892464,
+            "iqr": 0.12505610108584309,
+            "sem": 0.005071425236334466
+          },
+          "unmatched": {
+            "mean_diff": 0.04657305973104606,
+            "median_diff": 0.03557700339351566,
+            "perm_p": 4.999750012499375e-05
+          },
+          "matched": {
+            "mean_paired_diff": 0.020697491999731973,
+            "median_paired_diff": 0.007047061361988405,
+            "paired_diff_std": 0.10414880356146534,
+            "signflip_p": 9.99950002499875e-05
+          },
+          "call": "NON-NULL",
+          "direction_if_nonnull": "overlap_high_revives_H2"
+        }
+      }
+    }
+  },
+  "robustness_cluster_signflip": {
+    "description": "Secondary robustness (not the pre-stated primary criterion): sign-flip permutation flipping all matched pairs that share a control together (234 clusters), addressing control reuse in 1-NN-with-replacement matching. 20000 perms, rng seed 99.",
+    "iiib/1d": {
+      "mean_paired_diff": 0.006042136841274665,
+      "cluster_signflip_p": 0.2326383680815959
+    },
+    "iiib/2d": {
+      "mean_paired_diff": 0.022252643015992925,
+      "cluster_signflip_p": 0.004999750012499375
+    },
+    "joint_r1/1d": {
+      "mean_paired_diff": 0.007429539319923175,
+      "cluster_signflip_p": 0.13659317034148294
+    },
+    "joint_r1/2d": {
+      "mean_paired_diff": 0.020697491999731973,
+      "cluster_signflip_p": 0.004249787510624469
+    },
+    "reading": "2D matched effect survives cluster-robust test at both venues; 1D does not (joint_r1/1d primary NON-NULL at p=0.0414 is fragile under control-reuse correction)."
+  }
+}

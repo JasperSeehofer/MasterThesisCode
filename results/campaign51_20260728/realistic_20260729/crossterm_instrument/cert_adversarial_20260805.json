@@ -1,0 +1,65 @@
+{
+ "attack1_extreme_asymmetry_2d": {
+  "delta_inst": 0.28973343063248796,
+  "delta_ref_bruteforce": 0.2897334300053381,
+  "abs_diff_nats": 6.27149887577616e-10,
+  "delta_swap_symmetry": 0.28973343063248796,
+  "abs_asym": 0.0,
+  "S_i_inst": 1715.7649566163627,
+  "S_i_ref": 1715.7649578277744,
+  "S_j_inst": 4396.727719562629,
+  "S_j_ref": 4396.727719562615,
+  "escalated_orders": [
+   500,
+   50,
+   50,
+   334,
+   50
+  ],
+  "weights_decades": [
+   1e-08,
+   100.0,
+   1.0,
+   0.003,
+   50.0
+  ],
+  "ok": true
+ },
+ "attack2_edge_boundary_false_shared": {
+  "1d": {
+   "delta_inst": -0.00013857093923151482,
+   "delta_ref_bruteforce": -0.00013857093923113427,
+   "abs_diff_nats": 3.8055496254241206e-16,
+   "delta_no_escalation_n50": -0.0001361903403103102,
+   "n50_vs_ref_abs_err_nats": 2.3805989208240826e-06,
+   "false_shared_w2_contrib": 1.3812348030832768e-62,
+   "false_shared_delta_impact_nats": 3.061962415984072e-66,
+   "escalation_orders": {
+    "shared_A": 334,
+    "ball_i_A": 334,
+    "ball_j_A": 50
+   },
+   "ok": true
+  },
+  "2d": {
+   "delta_inst": 0.044419625816551137,
+   "delta_ref_bruteforce": 0.04441962581655195,
+   "abs_diff_nats": 8.118505867571457e-16,
+   "delta_no_escalation_n50": 0.044382132646056345,
+   "n50_vs_ref_abs_err_nats": 3.74931704956033e-05,
+   "false_shared_w2_contrib": 1.4911551851410381e-61,
+   "false_shared_delta_impact_nats": 1.1776024323630829e-65,
+   "escalation_orders": {
+    "shared_A": 334,
+    "ball_i_A": 334,
+    "ball_j_A": 50
+   },
+   "ok": true
+  }
+ },
+ "OVERALL": {
+  "attack1_ok": true,
+  "attack2_ok": true,
+  "all_ok": true
+ }
+}

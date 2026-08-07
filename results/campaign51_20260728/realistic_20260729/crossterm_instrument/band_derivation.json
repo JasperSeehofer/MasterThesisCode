@@ -1,0 +1,100 @@
+{
+ "generated_by": "band_derivation.py (this directory)",
+ "blindness": "No cross-term Delta_ij value existed when this ran: crossterm_instrument.py has never been executed with --confirm-run and this directory contains no instrument output JSON.",
+ "inputs": {
+  "m2_results.json": {
+   "sha256": "d9c02432ac15aba61f57e143ea247de9a5d909560129a6312efaf9a6470c3256",
+   "verification": "CONFIRMED (m2_adjudication.json)"
+  },
+  "m3_results.json": {
+   "sha256": "5b67a52190aefbd719cdbc3d6263dd0fd10fa6cc9594e075636a986f740f48a0",
+   "verification": "UNVERIFIED \u2014 context only, NOT band-bearing"
+  },
+  "m4_results.json": {
+   "sha256": "46907913b35369bfdb96a705d1782a5c8d4eb9bf7955d1cb851434ba9d3f1c6b",
+   "verification": "CONFIRMED (m4_adjudication_results.json, 26/26)"
+  }
+ },
+ "m2_matched_paired_diff_std_nats_per_event": {
+  "1d": {
+   "iiib": 0.07096366082362933,
+   "joint_r1": 0.07116860193596568
+  },
+  "2d": {
+   "iiib": 0.11560589052584998,
+   "joint_r1": 0.10414880356146534
+  }
+ },
+ "m2_matched_mean_paired_diff_nats_per_event": {
+  "1d": {
+   "iiib": 0.006042136841274665,
+   "joint_r1": 0.007429539319923175
+  },
+  "2d": {
+   "iiib": 0.022252643015992925,
+   "joint_r1": 0.020697491999731973
+  }
+ },
+ "constants": {
+  "n_overlap_events": 385,
+  "n_c4_pairs": 279,
+  "sqrt_n": 19.621416870348583,
+  "two_sigma": 2.0
+ },
+ "X_neglect_class_summed_nats": {
+  "exact": {
+   "1d": 2.7848151433329105,
+   "2d": 4.087094182455114
+  },
+  "locked": {
+   "1d": 2.78,
+   "2d": 4.08
+  },
+  "rounding": "floor to 0.01 (conservative: harder to NEGLECT)"
+ },
+ "Y_regard_class_summed_nats": {
+  "exact": 7.96853441989681,
+  "locked": 7.96,
+  "rounding": "floor to 0.01 (conservative: earlier REGARD)"
+ },
+ "per_unit_shared_weight": {
+  "1d": {
+   "joint_r1": {
+    "W_shared_wpop_minside_sum": 10.099681361604272,
+    "n_sharing_c4_pairs": 80,
+    "x_neglect_per_unit": 0.2752562086333399,
+    "y_regard_per_unit": 0.788143676518484
+   },
+   "iiib": {
+    "W_shared_wpop_minside_sum": 6.584389762878327,
+    "n_sharing_c4_pairs": 63,
+    "x_neglect_per_unit": 0.42221072872586746,
+    "y_regard_per_unit": 1.2089199282942105
+   }
+  },
+  "2d": {
+   "joint_r1": {
+    "W_shared_wpop_minside_sum": 1.9678973990927773,
+    "n_sharing_c4_pairs": 27,
+    "x_neglect_per_unit": 2.0732788212845477,
+    "y_regard_per_unit": 4.044926327800245
+   },
+   "iiib": {
+    "W_shared_wpop_minside_sum": 0.3092916997125221,
+    "n_sharing_c4_pairs": 5,
+    "x_neglect_per_unit": 13.191430626144333,
+    "y_regard_per_unit": 25.73622249610512
+   }
+  }
+ },
+ "W_extended_1d_global_sharing": {
+  "joint_r1": 19.803870026447576,
+  "iiib": 14.728651564701899
+ },
+ "m3_context_not_band_bearing": {
+  "verdict": "BOUNDED",
+  "max_per_event_chord_any_channel_nats": 0.13456089108217117,
+  "per_event_bounded_null_criterion_nats": 1.0,
+  "note": "M-3 supplies the chord-not-level discipline and the 1-nat per-pair anti-dilution floor (spec lines 566-567); its numbers do not enter X or Y, so its unverified status cannot move the band."
+ }
+}

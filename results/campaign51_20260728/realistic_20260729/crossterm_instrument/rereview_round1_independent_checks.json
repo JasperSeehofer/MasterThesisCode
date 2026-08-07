@@ -1,0 +1,67 @@
+{
+ "N1_superset_wpop_unequal_windows": {
+  "delta_device": 0.012438548204719872,
+  "delta_reference": 0.012438548204714019,
+  "abs_diff": 5.852957007945747e-15,
+  "S_i_rel": 1.616635820370931e-15,
+  "S_j_rel": 1.4097688846453452e-14,
+  "ok": true
+ },
+ "N2_checkC_universes_my_reference": {
+  "u1": {
+   "delta_device": 0.013723819496744227,
+   "delta_my_reference": 0.013723819496744246,
+   "ok": true
+  },
+  "u2": {
+   "delta_device": 0.015303175488241224,
+   "delta_my_reference": 0.01530317548824118,
+   "ok": true
+  },
+  "ok": true
+ },
+ "N3_2d_zdependent_mu_nested_quad": {
+  "delta_device": -0.2496930558216371,
+  "delta_reference_nested_quad": -0.24969305720656335,
+  "abs_diff": 1.3849262570087006e-09,
+  "ok": true
+ },
+ "N4_sigmaM_zero_reduction": {
+  "J_joint_sM0": 0.00021931305088778415,
+  "J_factorized": 0.0002193130508877843,
+  "rel_diff": 7.415442228107007e-16,
+  "ok": true
+ },
+ "N5_rescale_invariance": {
+  "delta_base": 0.012438548204719872,
+  "delta_rescaled": 0.012438548204719953,
+  "abs_diff": 8.153200337090993e-17,
+  "ok": true
+ },
+ "N6_edge_overlap_negative_delta": {
+  "delta_device": -0.015144055429925682,
+  "delta_reference": -0.015144055429924894,
+  "abs_diff": 7.875644580934704e-16,
+  "ok": true
+ },
+ "N7_cancellation_stress_small_sigma": {
+  "delta_device": 0.0003154178201333756,
+  "delta_reference": 0.00031541782013217324,
+  "abs_diff": 1.2023802092864244e-15,
+  "floor_scale_lnZ4sigma": -6.33444898860782e-05,
+  "ok": true
+ },
+ "N8_mixture_composition_identity": {
+  "max_abs_err": 3.86843335142828e-16,
+  "ok": true
+ },
+ "N9_floor_constant": {
+  "ln_erf_4_over_sqrt2": -6.33444898860782e-05,
+  "documented": -6.334e-05,
+  "ok": true
+ },
+ "OVERALL": {
+  "all_pass": true,
+  "failures": []
+ }
+}

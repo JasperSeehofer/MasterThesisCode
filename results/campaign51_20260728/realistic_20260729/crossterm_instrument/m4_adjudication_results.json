@@ -1,0 +1,268 @@
+{
+ "script": "/home/jasper/Repositories/MasterThesisCode/results/campaign51_20260728/realistic_20260729/crossterm_instrument/m4_adjudicate.py",
+ "checks": {
+  "A1_c4_pair_count": {
+   "pass": true,
+   "detail": "CRB rows=1590; sky pairs=1620 (expect 1620); sky+dL pairs=279 (expect 279); touched events=385 (expect 385)"
+  },
+  "A2_dropped_rows_touch_no_c4_pair": {
+   "pass": true,
+   "detail": "CRB indices 1203/1356 absent from all 279 C-4 pairs"
+  },
+  "A3_joint_r1_pairset_and_sharing_counts": {
+   "pass": true,
+   "detail": "m4 pair set == my C-4 set (279); my sharing counts 1D=80 2D=27 vs m4 80/27; evaluated events=1588"
+  },
+  "A4_joint_r1_shared_counts_match_records": {
+   "pass": true,
+   "detail": "279 per-pair 1D shared counts identical; max=8861"
+  },
+  "A3_iiib_pairset_and_sharing_counts": {
+   "pass": true,
+   "detail": "m4 pair set == my C-4 set (279); my sharing counts 1D=63 2D=5 vs m4 63/5; evaluated events=1588"
+  },
+  "A4_iiib_shared_counts_match_records": {
+   "pass": true,
+   "detail": "279 per-pair 1D shared counts identical; max=9898"
+  },
+  "E1_global_census": {
+   "pass": true,
+   "detail": "joint_r1 1d/2d = 349/104 (claim 349/104); iiib = 280/21 (claim 280/21); max events/galaxy = 4, 4 (claim 4)"
+  },
+  "E2_joint_r1_outside_c4": {
+   "pass": true,
+   "detail": "in-C4=80 (claim 80); outside=269 (claim 269); outside sky-predicate pass=269/269 (claim all); outside dL-predicate pass=0 (claim 0)"
+  },
+  "E2_iiib_outside_c4": {
+   "pass": true,
+   "detail": "in-C4=63 (claim 63); outside=217 (claim 217); outside sky-predicate pass=217/217 (claim all); outside dL-predicate pass=0 (claim 0)"
+  },
+  "C1_joint_r1_shares_in_unit_interval": {
+   "pass": true,
+   "detail": "1790 stored share values, min=0.000e+00, max=1.0000000000"
+  },
+  "C2_joint_r1_mass_conditioning": {
+   "pass": true,
+   "detail": "empty 2D balls == L_cat_with_bh==0 set (981 events, claim 981); 2D-sharing pairs touching a zero-2D event: 0 (must be 0)"
+  },
+  "C1_iiib_shares_in_unit_interval": {
+   "pass": true,
+   "detail": "1370 stored share values, min=1.309e-112, max=1.0000000000"
+  },
+  "C2_iiib_mass_conditioning": {
+   "pass": true,
+   "detail": "empty 2D balls == L_cat_with_bh==0 set (1294 events, claim 1294); 2D-sharing pairs touching a zero-2D event: 0 (must be 0)"
+  },
+  "D1_joint_r1_1d_share_summary": {
+   "pass": true,
+   "detail": "160 sides: w min/med/mean/p90/max = 2.90e-03/0.155/0.284/0.783/1.000 (claim 2.9e-3/0.155/0.284/0.783/1.0); wN med/p90/max = 0.192/0.990/1.000 (claim 0.192/0.990/1.0)"
+  },
+  "D2_joint_r1_hist": {
+   "pass": true,
+   "detail": "hist={'0': 199, '1': 7, '2-10': 21, '11-100': 33, '101-1000': 16, '>1000': 3}, max=8861 (claim {0:199,1:7,2-10:21,11-100:33,101-1000:16,>1000:3}, 8861)"
+  },
+  "D3_joint_r1_2d_shares": {
+   "pass": true,
+   "detail": "2D sides n=54 (claim 54), med=0.098 (0.098), p90=0.620 (0.620), max=1.000 (1.0)"
+  },
+  "D4_joint_r1_suppression": {
+   "pass": true,
+   "detail": "min-w med/p90/max=0.087/0.296/1.00 (claim 0.087/0.296/1.0); geo med/p90=0.179/0.464 (0.179/0.464); min-wN med/p90=0.030/0.518 (0.031/0.518); count-frac med/p90=0.404/1.000 (0.40/1.0)"
+  },
+  "D5_joint_r1_event_union": {
+   "pass": true,
+   "detail": "events=143 (claim 143); union w share med/p90/max = 0.206/0.806/1.00 (claim 0.206/0.806/1.0)"
+  },
+  "D6_iiib_summaries": {
+   "pass": true,
+   "detail": "126 sides med/p90/max=0.124/0.881/1.00 (claim 0.124/0.881/1.0); hist={'0': 216, '1': 8, '2-10': 9, '11-100': 28, '101-1000': 14, '>1000': 4}; max=9898 (claim 9898); events=115 (claim 115) union med/p90=0.150/0.924 (0.150/0.924); count-frac med=0.396"
+  },
+  "D7_joint_r1_outside_weaker": {
+   "pass": true,
+   "detail": "outside-pair min-side w share median=0.0112 (claim 0.011) vs in-C4 0.087 (claim 0.087), n_outside_with_both_sides=269"
+  },
+  "B0_joint_r1_rotation_matrix_valid": {
+   "pass": true,
+   "detail": "max |astropy - matrix| component dev over 20k sample = 1.78e-15; pruned rows = 19874547 (m4 claims 19874547)"
+  },
+  "B1_joint_r1_ball_rebuild": {
+   "pass": true,
+   "detail": "9 events rebuilt from scratch; all 1D+2D ball sets bit-identical to frozeng JSON: True; detail: ev8: 1D 31==31 2D 0==0; ev71: 1D 8==8 2D 0==0; ev114: 1D 13929==13929 2D 4451==4451; ev212: 1D 5==5 2D 0==0; ev226: 1D 11==11 2D 0==0; ev854: 1D 1==1 2D 0==0; ev927: 1D 4030==4030 2D 704==704; ev1035: 1D 41752==41752 2D 15485==15485; ev1394: 1D 222==222 2D 0==0"
+  },
+  "B2_joint_r1_pair_spotchecks": {
+   "pass": true,
+   "detail": "max_1d (114,1035): shared1d=8861 (exp 8861), shared2d=2782 (exp 2782), w_shares={'i': 0.634747, 'j': 0.206217}, ok=True | min_1d (71,226): shared1d=1 (exp 1), shared2d=0 (exp 0), w_shares={'i': 0.122644, 'j': 0.08399}, ok=True | median_1d (8,1394): shared1d=23 (exp 23), shared2d=0 (exp 0), w_shares={'i': 0.737897, 'j': 0.098352}, ok=True | max_2d (114,1035): shared1d=8861 (exp 8861), shared2d=2782 (exp 2782), w_shares={'i': 0.634747, 'j': 0.206217}, ok=True | subset_like (212,854): shared1d=1 (exp 1), shared2d=0 (exp 0), w_shares={'i': 0.213529, 'j': 1.0}, ok=True | outside_c4 (927,1035): shared1d=3519 (exp 3519), shared2d=636 (exp 636), w_shares={'i': 0.880433, 'j': 0.079181}, ok=True"
+  },
+  "B0_iiib_rotation_matrix_valid": {
+   "pass": true,
+   "detail": "max |astropy - matrix| component dev over 20k sample = 2.05e-15; pruned rows = 20834171 (m4 claims 20834171)"
+  },
+  "B1_iiib_ball_rebuild": {
+   "pass": true,
+   "detail": "7 events rebuilt from scratch; all 1D+2D ball sets bit-identical to frozeng JSON: True; detail: ev6: 1D 2==2 2D 0==0; ev55: 1D 1==1 2D 0==0; ev114: 1D 15620==15620 2D 4840==4840; ev884: 1D 2062==2062 2D 0==0; ev927: 1D 4216==4216 2D 186==186; ev1035: 1D 46576==46576 2D 17449==17449; ev1416: 1D 31==31 2D 0==0"
+  },
+  "B2_iiib_pair_spotchecks": {
+   "pass": true,
+   "detail": "max_1d (114,1035): shared1d=9898 (exp 9898), shared2d=3041 (exp 3041), w_shares={'i': 0.633017, 'j': 0.206526}, ok=True | min_1d (6,55): shared1d=1 (exp 1), shared2d=0 (exp 0), w_shares={'i': 0.500694, 'j': 1.0}, ok=True | median_1d (884,1416): shared1d=31 (exp 31), shared2d=0 (exp 0), w_shares={'i': 0.015119, 'j': 1.0}, ok=True | max_2d (114,1035): shared1d=9898 (exp 9898), shared2d=3041 (exp 3041), w_shares={'i': 0.633017, 'j': 0.206526}, ok=True | subset_like (6,55): shared1d=1 (exp 1), shared2d=0 (exp 0), w_shares={'i': 0.500694, 'j': 1.0}, ok=True | outside_c4 (927,1035): shared1d=3733 (exp 3733), shared2d=171 (exp 171), w_shares={'i': 0.89265, 'j': 0.074247}, ok=True"
+  }
+ },
+ "spot_checks": {
+  "joint_r1": {
+   "events": {
+    "event_8": {
+     "rebuilt_1d": 31,
+     "json_1d": 31,
+     "match_1d": true,
+     "rebuilt_2d": 0,
+     "json_2d": 0,
+     "match_2d": true
+    },
+    "event_71": {
+     "rebuilt_1d": 8,
+     "json_1d": 8,
+     "match_1d": true,
+     "rebuilt_2d": 0,
+     "json_2d": 0,
+     "match_2d": true
+    },
+    "event_114": {
+     "rebuilt_1d": 13929,
+     "json_1d": 13929,
+     "match_1d": true,
+     "rebuilt_2d": 4451,
+     "json_2d": 4451,
+     "match_2d": true
+    },
+    "event_212": {
+     "rebuilt_1d": 5,
+     "json_1d": 5,
+     "match_1d": true,
+     "rebuilt_2d": 0,
+     "json_2d": 0,
+     "match_2d": true
+    },
+    "event_226": {
+     "rebuilt_1d": 11,
+     "json_1d": 11,
+     "match_1d": true,
+     "rebuilt_2d": 0,
+     "json_2d": 0,
+     "match_2d": true
+    },
+    "event_854": {
+     "rebuilt_1d": 1,
+     "json_1d": 1,
+     "match_1d": true,
+     "rebuilt_2d": 0,
+     "json_2d": 0,
+     "match_2d": true
+    },
+    "event_927": {
+     "rebuilt_1d": 4030,
+     "json_1d": 4030,
+     "match_1d": true,
+     "rebuilt_2d": 704,
+     "json_2d": 704,
+     "match_2d": true
+    },
+    "event_1035": {
+     "rebuilt_1d": 41752,
+     "json_1d": 41752,
+     "match_1d": true,
+     "rebuilt_2d": 15485,
+     "json_2d": 15485,
+     "match_2d": true
+    },
+    "event_1394": {
+     "rebuilt_1d": 222,
+     "json_1d": 222,
+     "match_1d": true,
+     "rebuilt_2d": 0,
+     "json_2d": 0,
+     "match_2d": true
+    }
+   },
+   "pairs": [
+    "max_1d (114,1035): shared1d=8861 (exp 8861), shared2d=2782 (exp 2782), w_shares={'i': 0.634747, 'j': 0.206217}, ok=True",
+    "min_1d (71,226): shared1d=1 (exp 1), shared2d=0 (exp 0), w_shares={'i': 0.122644, 'j': 0.08399}, ok=True",
+    "median_1d (8,1394): shared1d=23 (exp 23), shared2d=0 (exp 0), w_shares={'i': 0.737897, 'j': 0.098352}, ok=True",
+    "max_2d (114,1035): shared1d=8861 (exp 8861), shared2d=2782 (exp 2782), w_shares={'i': 0.634747, 'j': 0.206217}, ok=True",
+    "subset_like (212,854): shared1d=1 (exp 1), shared2d=0 (exp 0), w_shares={'i': 0.213529, 'j': 1.0}, ok=True",
+    "outside_c4 (927,1035): shared1d=3519 (exp 3519), shared2d=636 (exp 636), w_shares={'i': 0.880433, 'j': 0.079181}, ok=True"
+   ],
+   "runtime_s": 13.3
+  },
+  "iiib": {
+   "events": {
+    "event_6": {
+     "rebuilt_1d": 2,
+     "json_1d": 2,
+     "match_1d": true,
+     "rebuilt_2d": 0,
+     "json_2d": 0,
+     "match_2d": true
+    },
+    "event_55": {
+     "rebuilt_1d": 1,
+     "json_1d": 1,
+     "match_1d": true,
+     "rebuilt_2d": 0,
+     "json_2d": 0,
+     "match_2d": true
+    },
+    "event_114": {
+     "rebuilt_1d": 15620,
+     "json_1d": 15620,
+     "match_1d": true,
+     "rebuilt_2d": 4840,
+     "json_2d": 4840,
+     "match_2d": true
+    },
+    "event_884": {
+     "rebuilt_1d": 2062,
+     "json_1d": 2062,
+     "match_1d": true,
+     "rebuilt_2d": 0,
+     "json_2d": 0,
+     "match_2d": true
+    },
+    "event_927": {
+     "rebuilt_1d": 4216,
+     "json_1d": 4216,
+     "match_1d": true,
+     "rebuilt_2d": 186,
+     "json_2d": 186,
+     "match_2d": true
+    },
+    "event_1035": {
+     "rebuilt_1d": 46576,
+     "json_1d": 46576,
+     "match_1d": true,
+     "rebuilt_2d": 17449,
+     "json_2d": 17449,
+     "match_2d": true
+    },
+    "event_1416": {
+     "rebuilt_1d": 31,
+     "json_1d": 31,
+     "match_1d": true,
+     "rebuilt_2d": 0,
+     "json_2d": 0,
+     "match_2d": true
+    }
+   },
+   "pairs": [
+    "max_1d (114,1035): shared1d=9898 (exp 9898), shared2d=3041 (exp 3041), w_shares={'i': 0.633017, 'j': 0.206526}, ok=True",
+    "min_1d (6,55): shared1d=1 (exp 1), shared2d=0 (exp 0), w_shares={'i': 0.500694, 'j': 1.0}, ok=True",
+    "median_1d (884,1416): shared1d=31 (exp 31), shared2d=0 (exp 0), w_shares={'i': 0.015119, 'j': 1.0}, ok=True",
+    "max_2d (114,1035): shared1d=9898 (exp 9898), shared2d=3041 (exp 3041), w_shares={'i': 0.633017, 'j': 0.206526}, ok=True",
+    "subset_like (6,55): shared1d=1 (exp 1), shared2d=0 (exp 0), w_shares={'i': 0.500694, 'j': 1.0}, ok=True",
+    "outside_c4 (927,1035): shared1d=3733 (exp 3733), shared2d=171 (exp 171), w_shares={'i': 0.89265, 'j': 0.074247}, ok=True"
+   ],
+   "runtime_s": 10.3
+  }
+ },
+ "n_failures": 0,
+ "failures": [],
+ "runtime_s": 31.1
+}
