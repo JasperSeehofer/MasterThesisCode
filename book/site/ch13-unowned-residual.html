@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<meta charset="utf-8" />
+<!--
+  Doctype + charset are deliberate: without the doctype browsers enter quirks
+  mode and KaTeX refuses to render. See ch11/ch12's identical note;
+  _template.html is frozen and omits both (filed R-ch07-3).
+
+  ch13 is NOT a discovery chapter in the ch00-ch11 arc, and it is not ch12's
+  living record either. It is a PROPOSAL: the stage-0 intake document for the
+  next research cycle, written for the author to read and approve — plus the
+  standing open-decisions board. Hand-authored (no gen_ch13.py — the content
+  is a narrative synthesis of dated reads, ledger sections, and the runbook
+  queue, not a data-driven figure a generator would regenerate).
+
+  NOTHING PROPOSED IN PART A RUNS UNTIL THE AUTHOR APPROVES IT. The chapter
+  says so in its own voice below; this comment is the maintainer's copy.
+-->
+<title>Ch. 13 — The Unowned Residual: a Proposal | EMRI Dark Siren Book</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="description" content="The stage-0 proposal for the next research cycle: who owns M-2's matched 2D overlap residual (+0.021 nats/event, both venues, cluster-robust) now that the Eq. (31) cross-term is excluded at 4.9e4x margin — plus the open-decisions board: issue #53, the N-2 adoption, the f_k intake, the ledger numbering collision, and the calibration-gate P-P extension." />
+<link rel="stylesheet" href="vendor/katex/katex.min.css" />
+<link rel="stylesheet" href="css/book.css" />
+
+<style>
+  /* Page-local only. css/book.css is FROZEN; nothing here restyles a shared
+     class — these are elements this chapter introduces. */
+  .ch13-status {
+    display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.5rem 0.9rem;
+    margin: 0 0 0.3rem;
+  }
+  .ch13-status .badge { font-size: 0.72rem; }
+  .ch13-status .ch13-updated { font-size: 0.82rem; color: var(--muted); }
+  .ch13-table { border-collapse: collapse; width: 100%; font-size: 0.88rem; margin: 0.6rem 0; }
+  .ch13-table th, .ch13-table td { border: 1px solid var(--border); padding: 0.3rem 0.55rem; text-align: right; }
+  .ch13-table th:first-child, .ch13-table td:first-child { text-align: left; }
+  .ch13-table thead th { background: var(--paper-raised); font-weight: 600; }
+  .ch13-table td.ch13-dim { color: var(--muted); }
+  .ch13-table-scroll { overflow-x: auto; }
+  .ch13-svg-wrap { margin: 0.7rem 0; }
+  .ch13-svg-wrap svg { max-width: 100%; height: auto; }
+  .ch13-svg-caption { font-size: 0.78rem; color: var(--muted); margin: 0.3rem 0 0; }
+  .ch13-stage { list-style: none; margin: 0.6rem 0; padding: 0; counter-reset: ch13stage; }
+  .ch13-stage > li {
+    position: relative; padding: 0 0 0.9rem 2.1rem; border-left: 2px solid var(--border);
+    margin-left: 0.55rem; font-size: 0.92rem;
+  }
+  .ch13-stage > li:last-child { border-left-color: transparent; padding-bottom: 0; }
+  .ch13-stage > li::before {
+    counter-increment: ch13stage; content: counter(ch13stage);
+    position: absolute; left: -0.75rem; top: -0.05rem; width: 1.35rem; height: 1.35rem;
+    border-radius: 50%; background: var(--paper); border: 2px solid var(--accent);
+    color: var(--accent); font-size: 0.78rem; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .ch13-stage .ch13-stage-label { font-weight: 600; }
+  .ch13-stage .ch13-stage-note { display: block; color: var(--muted); font-size: 0.84rem; margin-top: 0.15rem; }
+  .ch13-hyp-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); gap: 0.7rem; margin: 0.7rem 0; }
+  .ch13-hyp {
+    border: 1px solid var(--border); border-radius: 8px; background: var(--paper-raised);
+    padding: 0.6rem 0.75rem; font-size: 0.88rem;
+  }
+  .ch13-hyp .ch13-hyp-name { font-weight: 700; display: block; margin-bottom: 0.25rem; }
+  .ch13-hyp .ch13-hyp-route { display: block; color: var(--muted); font-size: 0.8rem; margin-top: 0.35rem; }
+  .ch13-board { display: grid; grid-template-columns: 1fr; gap: 0.9rem; margin: 0.8rem 0; }
+  .ch13-card {
+    border: 1px solid var(--border); border-left: 4px solid var(--prior); border-radius: 8px;
+    background: var(--paper-raised); padding: 0.7rem 0.9rem;
+  }
+  .ch13-card h3 { margin: 0 0 0.4rem; font-size: 1.02rem; }
+  .ch13-card h3 .badge { font-size: 0.68rem; vertical-align: 0.12rem; margin-left: 0.4rem; }
+  .ch13-card dl { margin: 0; font-size: 0.9rem; }
+  .ch13-card dt { font-weight: 600; color: var(--muted); margin-top: 0.5rem; font-size: 0.8rem;
+    text-transform: uppercase; letter-spacing: 0.04em; }
+  .ch13-card dt:first-child { margin-top: 0; }
+  .ch13-card dd { margin: 0.15rem 0 0; }
+  .ch13-quote {
+    border-left: 3px solid #009E73; background: var(--paper-raised);
+    padding: 0.55rem 0.85rem; margin: 0.7rem 0; font-size: 0.92rem; font-style: italic;
+  }
+  .ch13-quote .ch13-quote-src { display: block; font-style: normal; color: var(--muted);
+    font-size: 0.8rem; margin-top: 0.3rem; }
+</style>
+
+<div class="book-shell">
+  <header class="book-topbar">
+    <a class="brand" href="index.html">From Bayes&rsquo; Rule to H&#8320;
+      <small>an interactive discovery book</small>
+    </a>
+    <nav class="book-nav" data-nav aria-label="Chapters"><!-- built from js/manifest.js --></nav>
+    <button class="theme-toggle" data-theme-toggle type="button">☽ Dark</button>
+  </header>
+
+  <main class="book-content">
+    <h1>Chapter 13 &mdash; The Unowned Residual: a Proposal</h1>
+    <p class="subtitle">A measured effect with no owner is an obligation, not a
+      mystery to admire: this chapter is the written proposal to hunt it &mdash;
+      staged, priced, and stopped at the author&rsquo;s desk &mdash; plus the board
+      of standing decisions only the author can make.</p>
+
+    <div class="ch13-status">
+      <span class="badge candidate">STAGE-0 PROPOSAL</span>
+      <span class="badge open">AWAITING AUTHOR APPROVAL</span>
+      <span class="ch13-updated">Written 2026-08-07 &middot; nothing in Part A has run</span>
+    </div>
+    <div class="callout without">
+      <span class="callout-label">What this chapter is &mdash; and is not</span>
+      Part A proposes the next research-cycle investigation: <em>who owns M-2&rsquo;s
+      matched 2D overlap residual?</em> It is a stage-0 intake document in the sense
+      of <code>docs/RESEARCH_CYCLE.md</code> &mdash; a candidate, an exclusion, a live
+      clue, a staged plan, and fairly-framed hypotheses. <strong>No instrument
+      proposed here runs until the author approves entering the cycle.</strong>
+      Part B is the open-decisions board: five standing author calls, each with its
+      evidence and its cheapest next step. This chapter decides nothing; it lays the
+      decisions out.
+    </div>
+
+    <!-- =================================================================== -->
+    <h2>Part A &mdash; the candidate: who owns M-2&rsquo;s matched 2D overlap residual?</h2>
+
+    <h3>A.1 What M-2 measured</h3>
+    <p>During the Hitchhiker cross-term thread
+      (<a href="ch12-bias-resolution.html">Chapter&nbsp;12</a>, timeline entries of
+      2026-08-05 onward), a cheap stratified read &mdash; M-2 &mdash; asked whether the 385
+      events involved in sky-and-distance overlap pairs (the C-4 census) behave
+      differently from the 1203 non-overlap controls. The statistic is the per-event
+      chord ln&nbsp;L(0.60)&nbsp;&minus;&nbsp;ln&nbsp;L(0.73) on the combined
+      likelihood columns of <code>event_likelihoods.csv</code>; positive means the
+      event prefers <strong>low</strong> h. Two reads were run, and the difference
+      between them is half the story.</p>
+
+    <div class="voice-adjudicator">
+      <span class="voice-label">Adjudicated finding
+        <span class="badge finding">FINDING</span>
+        <span class="prov-chip">m2_results.json; independent recompute m2_adjudicate.py, CONFIRMED</span></span>
+      After 1-NN matching on the overlap events&rsquo; selection drivers (log&#8321;&#8320;
+      ball-radius chord, SNR), a residual <strong>+0.02225</strong> (idealized/iiib) /
+      <strong>+0.02070</strong> (joint r1) nats/event survives in the <strong>2D
+      channel at both venues</strong> &mdash; matched sign-flip p = 1.5e-04 / 1.0e-04,
+      and it <strong>survives the cluster-robust secondary test</strong> (p = 0.0050 /
+      0.0042) that corrects for control re-use (234 unique controls serving 385 pairs).
+      The overlap stratum pulls <strong>toward low h</strong>. The 1D channel does not
+      show it: NULL at iiib (p = 0.098) and marginal-but-fragile at joint r1
+      (p = 0.0414 primary, cluster-robust p = 0.137 fails). An independent
+      adjudication (own implementations, seed 777777, 40k permutations) reproduced
+      every quoted digit; discrepancies were Monte-Carlo-level only.
+    </div>
+
+    <h3>A.2 The trap that was almost walked into &mdash; shown, not asserted</h3>
+    <p>The <em>unmatched</em> read is roughly twice as large: overlap-minus-control
+      differences of +0.0436 to +0.0498 nats/event, permutation p at the floor
+      (5.0e-05) in every venue&ndash;channel cell. Taken at face value that number
+      is <strong>mostly selection</strong>: overlap events are, by construction, the
+      events with big localisation balls in dense sky &mdash; before matching, the
+      strata differ by a standardized mean difference of <strong>1.227</strong> in
+      log&#8321;&#8320; ball radius and <strong>&minus;0.381</strong> in SNR. Matching
+      collapses those imbalances to 0.0027 and 0.0152 and takes the 1D
+      &ldquo;effect&rdquo; with them &mdash; the 1D conclusion <em>flips</em> from
+      unmatched to matched. This is exactly the failure mode amendment
+      <strong>[A2]</strong> of the research cycle exists to catch (verbatim: &ldquo;any
+      &Sigma;-over-events statistic compared across venues/configs/eras requires a
+      paired/stratified per-event read alongside the aggregate&rdquo;). The 2D residual
+      is what is left <em>after</em> the trap is discharged.</p>
+
+    <div class="ch13-svg-wrap">
+      <svg viewBox="0 0 400 210" role="img" aria-labelledby="ch13-svg-title ch13-svg-desc">
+        <title id="ch13-svg-title">2D overlap-minus-control chord difference: unmatched vs matched, both venues</title>
+        <desc id="ch13-svg-desc">Bar chart, units nats per event. Idealized venue: unmatched +0.0498, matched +0.0223. Joint r1 venue: unmatched +0.0466, matched +0.0207. The unmatched bars are roughly twice the matched bars; the difference is selection, the matched bars are the finding.</desc>
+        <!-- axis + gridlines at 0.01..0.05 nats/event (30 px per 0.01) -->
+        <line x1="40" y1="180" x2="380" y2="180" stroke="var(--border)" stroke-width="1.5" />
+        <line x1="40" y1="150" x2="380" y2="150" stroke="var(--border)" stroke-width="0.5" stroke-dasharray="2,3" />
+        <line x1="40" y1="120" x2="380" y2="120" stroke="var(--border)" stroke-width="0.5" stroke-dasharray="2,3" />
+        <line x1="40" y1="90"  x2="380" y2="90"  stroke="var(--border)" stroke-width="0.5" stroke-dasharray="2,3" />
+        <line x1="40" y1="60"  x2="380" y2="60"  stroke="var(--border)" stroke-width="0.5" stroke-dasharray="2,3" />
+        <line x1="40" y1="30"  x2="380" y2="30"  stroke="var(--border)" stroke-width="0.5" stroke-dasharray="2,3" />
+        <text x="34" y="183" font-size="9" fill="var(--muted)" text-anchor="end">0</text>
+        <text x="34" y="123" font-size="9" fill="var(--muted)" text-anchor="end">+0.02</text>
+        <text x="34" y="63"  font-size="9" fill="var(--muted)" text-anchor="end">+0.04</text>
+        <!-- idealized (iiib) group: unmatched 0.0498 -> h 149.4; matched 0.02225 -> h 66.8 -->
+        <rect x="70" y="30.6" width="42" height="149.4" fill="var(--accent)" opacity="0.35" />
+        <text x="91" y="24" font-size="10" fill="var(--muted)" text-anchor="middle">+0.0498</text>
+        <rect x="122" y="113.2" width="42" height="66.8" fill="var(--accent)" />
+        <text x="143" y="106.2" font-size="10" fill="var(--ink)" text-anchor="middle">+0.0223</text>
+        <text x="117" y="198" font-size="10" fill="var(--muted)" text-anchor="middle">idealized (iiib)</text>
+        <!-- joint r1 group: unmatched 0.0466 -> h 139.7; matched 0.0207 -> h 62.1 -->
+        <rect x="230" y="40.3" width="42" height="139.7" fill="var(--planck)" opacity="0.35" />
+        <text x="251" y="33.5" font-size="10" fill="var(--muted)" text-anchor="middle">+0.0466</text>
+        <rect x="282" y="117.9" width="42" height="62.1" fill="var(--planck)" />
+        <text x="303" y="110.9" font-size="10" fill="var(--ink)" text-anchor="middle">+0.0207</text>
+        <text x="277" y="198" font-size="10" fill="var(--muted)" text-anchor="middle">joint r1</text>
+      </svg>
+      <p class="ch13-svg-caption">2D channel, overlap-minus-control chord difference in
+        nats/event (positive = overlap stratum prefers low h). Faded bars: the unmatched
+        read &mdash; &asymp;2.2&times; larger, and mostly selection (the [A2] trap).
+        Solid bars: the matched residual &mdash; the finding. Source:
+        <code>crossterm_instrument/m2_results.json</code>, confirmed by
+        <code>m2_adjudicate.py</code>.</p>
+    </div>
+
+    <p>Scale context, stated honestly in the read itself: +0.021 nats/event over 385
+      events is <strong>~8 nats aggregate if coherent</strong> &mdash; small against the
+      hundreds-of-nats class sums this book has handled, but real, one-directional, and
+      present at <em>both</em> venues, including the idealized venue with no photo-z
+      scatter. One caveat carries over verbatim: the matched control assignment is
+      identical across venues (the covariates come from the shared CRB CSV), so the two
+      venues replicate the likelihoods, not the matching.</p>
+
+    <h3>A.3 The obvious suspect is excluded</h3>
+    <p>The natural first owner was the mechanism the whole thread was built around:
+      the Eq.&nbsp;(31) pairwise likelihood-factorization cross-term (Gair et al.,
+      arXiv:2212.08694) &mdash; overlap events are precisely the events that share
+      candidate galaxies. That hypothesis was <strong>measured, not argued</strong>,
+      and it is dead for this purpose:</p>
+
+    <div class="voice-adjudicator">
+      <span class="voice-label">Adjudicated finding
+        <span class="badge ratified">RATIFIED</span>
+        <span class="prov-chip">NEGLECT_TRIGGER_REGISTER.md; author ruling 2026-08-07, ledger &sect;5</span></span>
+      The class-summed, mixture-composed cross-term chord is
+      <strong>T = 5.65e-05</strong> (joint r1, 2D) / <strong>5.38e-06</strong> (iiib, 2D)
+      nats against a locked negligibility band X = 2.78 &mdash; a minimum margin of
+      <strong>4.92e+04&times;</strong>, adjudicated bit-identical by an independent
+      recompute. And the composed 2D chord has the <strong>opposite sign</strong> to the
+      M-2 residual. NEGLECT-WITH-NUMBER was accepted by the author in all four
+      venue&nbsp;&times;&nbsp;channel cells, conditioned on a six-trigger re-evaluation
+      register. Whatever owns the matched residual, it is not the Eq.&nbsp;(31)
+      cross-term.
+    </div>
+
+    <h3>A.4 The live clue: coherence exists, and the composition annihilates it</h3>
+    <p>The exclusion measurement did more than exclude &mdash; it localized where the
+      residual&rsquo;s <em>sign</em> lives. The <strong>raw</strong> catalogue-leg 2D
+      cross-term chords are positive (low-h-preferring) at both venues:
+      <strong>+2.507 nats</strong> class-summed at joint r1 (+0.0116 at iiib). The
+      coherence M-2 sees is physically present in the catalogue leg. But the posterior
+      never consumes the raw leg: each event&rsquo;s catalogue contribution enters
+      through the mixture with per-event share r&nbsp;=&nbsp;w_G&middot;L_cat/combined
+      &asymp; 3e-04&ndash;1.6e-03, so per-pair terms are crushed by a composition factor
+      F&nbsp;=&nbsp;r_i&middot;r_j with median ~1.4e-07&ndash;2.5e-06 &mdash; five
+      orders of magnitude &mdash; and the h-dependence of w_G itself (falling 0.0957
+      &rarr; 0.0556 across the grid, &times;1.72) <strong>reverses the class-level
+      chord sign</strong>. The full annihilation anatomy, with the log-scale chain
+      diagram, is <a href="ch12-bias-resolution.html">Chapter&nbsp;12</a>
+      &sect;4.</p>
+
+    <div class="ch13-table-scroll">
+    <table class="ch13-table">
+      <thead>
+        <tr><th>2D cell</th><th>raw catalogue-leg chord</th><th>composed chord T (scored)</th><th>effective composition F_eff</th><th>margin X/T</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>joint r1 / 2D</td><td>+2.507 nats (low-h)</td><td>5.65e-05 nats</td><td>9.74e-06</td><td class="ch13-dim">4.92e+04&times;</td></tr>
+        <tr><td>iiib / 2D</td><td>+0.0116 nats (low-h)</td><td>5.38e-06 nats</td><td>5.61e-05</td><td class="ch13-dim">5.17e+05&times;</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <p>That is the constraint any candidate owner must satisfy, and it is sharp:
+      <strong>whatever moves the matched residual must act outside the annihilated
+      catalogue path, or act through the composition weights themselves.</strong>
+      A mechanism living purely inside the raw catalogue-leg coupling cannot reach the
+      posterior at the measured size &mdash; the composition kills it. The routes left
+      standing pass through the completion leg (which is <em>not</em> annihilated),
+      through quantities correlated with overlap-stratum membership (density,
+      clustering), or through the mixture weights w_G / g_frac that decide what
+      survives composition.</p>
+
+    <h3>A.5 The proposed approach &mdash; staged per the research cycle</h3>
+    <p>The plan below follows <code>docs/RESEARCH_CYCLE.md</code> stage by stage, with
+      the amendments that were earned the hard way this month baked in. Costs are named
+      so the author can price the approval.</p>
+
+    <ol class="ch13-stage">
+      <li><span class="ch13-stage-label">Stage 0 &mdash; intake, with the two-layer
+        exoneration check.</span> Write
+        <code>CLAIM_M2_RESIDUAL_&lt;date&gt;.md</code> (&ldquo;CLAIM, NOT ESTABLISHED
+        &mdash; written to be attacked&rdquo;), every statement tagged, every claim
+        with a <em>Refute by:</em> route. Before anything opens: grep <strong>both</strong>
+        exoneration layers &mdash; the local Exonerated sections of the standing claim
+        files <em>and</em> the ledger&rsquo;s &sect;2 DO-NOT-RE-TRY list &mdash; and
+        take their union, remembering exonerations are venue-scoped, not universal.
+        The mandatory lightweight R0 literature sweep (amendment A5) re-reads the
+        already-cited papers for warnings &mdash; the Hitchhiker lesson was that the
+        decisive external input sat in a paper this repo had cited for weeks.
+        <span class="ch13-stage-note">Cost: a session, zero compute. Exit: a committed
+          claim file + recorded exoneration check.</span></li>
+      <li><span class="ch13-stage-label">Stage 1 &mdash; cheap reads FIRST (amendment
+        A1: the diagnostics CSVs answer most questions free).</span> Frozen-g, the
+        M1/M2 pre-reads, and both stratum reads all came from CSVs already on disk;
+        this thread starts the same way, with two named instruments:
+        <br /><strong>(i) Component decomposition of the matched residual</strong> &mdash;
+        re-run the <em>identical</em> matched stratified read (same 385 pairs, same
+        matching, same sign-flip + cluster-robust machinery) separately on each
+        likelihood component already emitted per event and per h in
+        <code>event_likelihoods.csv</code>: <code>L_cat_no_bh</code>,
+        <code>L_cat_with_bh</code>, <code>L_comp</code>, <code>g_frac</code>,
+        <code>B_num</code>, <code>B_num_wbh</code>, and the w_G-composed pieces
+        (w_G&middot;L_cat and (1&nbsp;&minus;&nbsp;w_G)&middot;L_comp). The +0.021 was
+        measured on the combined column; this localizes <em>which term carries it</em>
+        &mdash; a completion-leg carrier, a catalogue-leg carrier surviving composition,
+        or a weight-driven carrier each leave a different signature across the columns.
+        <br /><strong>(ii) Residual-confounding check</strong> &mdash; add
+        catalogue-density / sky-position covariates (ball galaxy count, local catalogue
+        density, sky coordinates) to the matching. Overlap events sit in denser sky
+        <em>by construction</em>; the current matching balances ball radius and SNR but
+        never density itself. If the residual attenuates toward zero under the richer
+        matching, that is evidence for confounding, not mechanism &mdash; and finding
+        that out costs minutes.
+        <span class="ch13-stage-note">Cost: CPU-minutes, zero new production compute
+          &mdash; every input already exists under
+          <code>results/run_20260804_postfix/*/diagnostics/</code>. Exit: the residual
+          localized to component(s), or dissolved into confounding.</span></li>
+      <li><span class="ch13-stage-label">Stage 2 &mdash; pre-registration, only for
+        what survives.</span> Whatever stage 1 leaves standing gets a pre-registered
+        test with CONFIRM/MIXED/REFUTE bands locked <em>from the stage-1 cheap bounds</em>
+        &mdash; the M-2 pattern: the negligibility band is derived from a measured
+        bound before the instrument runs, never invented in advance. If stage 1
+        dissolves the residual entirely, the cycle stops there and the chronicle
+        records a confounding verdict &mdash; that is a success, not a failure.
+        <span class="ch13-stage-note">Stages 3&ndash;6 (measure, calibration gate,
+          decision, chronicle) follow as the cycle prescribes, if and only if a
+          mechanism survives.</span></li>
+    </ol>
+
+    <h3>A.6 The hypotheses, framed fairly</h3>
+    <p>Four candidate owners, deliberately not ranked. Each is stated with the
+      observation that motivates it and the stage-1 signature that would implicate or
+      clear it; none is pre-judged. The point of the component decomposition is that it
+      discriminates among all four in one read.</p>
+
+    <div class="ch13-hyp-grid">
+      <div class="ch13-hyp">
+        <span class="ch13-hyp-name">H-a &mdash; completion-leg difference</span>
+        The completion leg is the path the composition does <em>not</em> annihilate.
+        If overlap-stratum events&rsquo; L_comp (or its mass factor g_frac &mdash;
+        ruled correct physics, which does not preclude it correlating with stratum
+        membership) has a systematically different h-slope, the residual lives there.
+        <span class="ch13-hyp-route">Stage-1 signature: matched residual reproduces on
+          the L_comp / g_frac columns, not on L_cat.</span>
+      </div>
+      <div class="ch13-hyp">
+        <span class="ch13-hyp-name">H-b &mdash; g_frac&ndash;clustering correlation</span>
+        g_frac has 1587 distinct per-event values; overlap events sample denser sky.
+        A correlation between the mass-factor slope and local clustering would make the
+        overlap stratum inherit a different effective g(h) without any defect anywhere.
+        <span class="ch13-hyp-route">Stage-1 signature: g_frac-column residual present
+          AND attenuating when density covariates enter the matching.</span>
+      </div>
+      <div class="ch13-hyp">
+        <span class="ch13-hyp-name">H-c &mdash; residual selection confounding</span>
+        The matching balances log ball radius and SNR &mdash; two covariates. If density
+        (or another driver of overlap membership) independently shapes the likelihood
+        chord, the +0.021 is a matching artifact, not physics.
+        <span class="ch13-hyp-route">Stage-1 signature: the combined-column residual
+          shrinks toward zero under density/sky-position matching.</span>
+      </div>
+      <div class="ch13-hyp">
+        <span class="ch13-hyp-name">H-d &mdash; composition-weight h-dependence</span>
+        The annihilation argument is itself built on w_G(h) and the per-event shares.
+        A stratum-dependent interaction between w_G&rsquo;s h-fall and the per-event
+        mixture could move overlap events differently &mdash; the &ldquo;through the
+        weights&rdquo; route the register explicitly flags as attacking the composition.
+        <span class="ch13-hyp-route">Stage-1 signature: residual visible in the
+          w_G-composed pieces but in neither bare leg.</span>
+      </div>
+    </div>
+
+    <p>The governing constraint on the whole hunt is the author&rsquo;s standing value
+      ruling, quoted because it decides what counts as success:</p>
+
+    <div class="ch13-quote">
+      &ldquo;our overarching goal is a scientifically sound project with novel insights
+      and not to get rid of the bias by any means &mdash; scientific correctness and
+      new insights are valued higher.&rdquo;
+      <span class="ch13-quote-src">Author governance note, 2026-08-05,
+        BIAS_HISTORY_LEDGER.md &sect;5 &mdash; binding on all adjudications.</span>
+    </div>
+
+    <p>Under that ruling, &ldquo;the residual is confounding&rdquo; and &ldquo;the
+      residual is a real clustering&ndash;g_frac correlation&rdquo; are both acceptable
+      endings &mdash; what is not acceptable is declaring an owner without the
+      component-level measurement, or burying an unowned effect because it is small.</p>
+
+    <div class="callout defect">
+      <span class="callout-label">Trap &mdash; &ldquo;the overlap events differ by
+        +0.05 nats, so the effect is twice what this chapter says&rdquo;</span>
+      That is the unmatched read, and it is mostly selection &mdash; the [A2] trap in
+      its textbook form. Overlap events have far larger localisation balls (a
+      standardized mean difference of 1.227 in log&#8321;&#8320; radius); comparing them
+      to unmatched controls measures the selection, not the stratum. The finding of record is the matched +0.021
+      &mdash; and even that number is owed the confounding check of stage 1(ii) before
+      any mechanism claim is built on it.
+    </div>
+
+    <div class="callout defect">
+      <span class="callout-label">Trap &mdash; &ldquo;the cross-term was excluded, so
+        likelihood-factorization is safe for good&rdquo;</span>
+      The NEGLECT is conditional, not absolute: it stands on a six-trigger register,
+      and under a raw-scored convention three of four cells would already exceed the
+      band. Two of Part B&rsquo;s open decisions (the N-2 adoption, issue #53) are
+      <em>named triggers</em> of that register &mdash; deciding them re-opens the
+      cross-term arithmetic by construction, cheaply and by design.
+    </div>
+
+    <!-- =================================================================== -->
+    <h2>Part B &mdash; the open-decisions board</h2>
+    <p>Five standing decisions, all author-owned, all blocked on nothing but a ruling.
+      Each card states what the decision is, what evidence already exists, what hangs
+      on it, and the cheapest next step. Items are numbered as in the morning author
+      queue (<code>RUNBOOK_NEXT_SESSION_8.md</code> &sect;1); the ledger&rsquo;s &sect;5
+      records items 3, 5, 6, 7, 8 as deliberately still OPEN.</p>
+
+    <div class="ch13-board">
+
+      <div class="ch13-card">
+        <h3>Issue #53 &mdash; the 3&sigma;-vs-2&sigma; z-window
+          <span class="badge open">OPEN</span></h3>
+        <dl>
+          <dt>What it is</dt>
+          <dd><code>get_redshift_outer_bounds</code> declares a
+            <code>sigma_multiplier</code> argument and silently ignores it: the body
+            hardcodes 3&nbsp;&times;&nbsp;distance_error while the production call site
+            requests 2.0. The candidate-host ball z-window is therefore 3&sigma;, wider
+            than the code asks for &mdash; the same silently-ignored-argument defect
+            class as issue #4.</dd>
+          <dt>Evidence on file</dt>
+          <dd>Verified bit-exactly during the M-4 adjudication: from-scratch ball
+            rebuilds match the production emits only with the hardcoded-3&sigma; window.
+            Ball-geometry consequences are real &mdash; the window width decides the
+            candidate-host set, hence the H&#8320; likelihood itself.</dd>
+          <dt>What hangs on it</dt>
+          <dd>Which width is <em>intended</em> is an author physics call
+            (<code>/physics-change</code>), not a bug fix. The trigger register records
+            the direction explicitly: a 2&sigma; adoption <strong>shrinks</strong> the
+            balls and reduces sharing &mdash; favorable to the cross-term NEGLECT, does
+            NOT fire trigger (c); any <em>enlargement</em> or localisation-model change
+            does fire it.</dd>
+          <dt>Cheapest next step</dt>
+          <dd>An author ruling on the intended width, through
+            <code>/physics-change</code> (derivation, limiting case, regression pin).
+            If 2&sigma;: an optional L1 census refresh is bookkeeping, not
+            re-adjudication. No code moves before the ruling.</dd>
+        </dl>
+      </div>
+
+      <div class="ch13-card">
+        <h3>Queue item 3 &mdash; the N-2 S&#772;_&phi;-inside-1D adoption
+          <span class="badge open">OPEN</span></h3>
+        <dl>
+          <dt>What it is</dt>
+          <dd>Whether to adopt the missing selection factor S&#772;_&phi;(z;h) inside
+            the 1D completion numerator in production (rulings R-0..R-5; the 5-item
+            <code>/physics-change</code> package is drafted, including the matching
+            D&#771;^&phi; denominator question) &mdash; or to leave it as a documented
+            bounded correction.</dd>
+          <dt>Evidence on file</dt>
+          <dd>Pre-registered counterfactual: a real, positive, <strong>bounded</strong>
+            effect &mdash; chord +24.6 / +22.7 nats/h, inside the pre-registered
+            [+10,&nbsp;+30] band &mdash; that does <strong>not</strong> un-rail the 1D
+            channel (MAP stays 0.600, both venues). Caveat carried honestly: sign
+            coherence 0.71&ndash;0.73 misses the 0.90 bar, flagging that the live
+            z-quadrature diverges from the point-GW-peak approximation that set the
+            band &mdash; itself unresolved.</dd>
+          <dt>What hangs on it</dt>
+          <dd>A production-formula change to the completion leg &mdash; and, by name,
+            <strong>trigger (b) of the cross-term register</strong>: adoption changes
+            every per-event mixture share and stales the register&rsquo;s 1D cells
+            until the L2 composition arithmetic is re-run (minutes; the raw cross-term
+            rows stay valid). Adoption would also touch the very composition weights
+            hypothesis H-d watches.</dd>
+          <dt>Cheapest next step</dt>
+          <dd>The author&rsquo;s adopt-vs-document ruling on the drafted package. If
+            adopted: the L2 re-check plus a regression pin. If documented: a dated
+            bounded-correction note and the thread closes without a formula change.</dd>
+        </dl>
+      </div>
+
+      <div class="ch13-card">
+        <h3>Queue item 5 &mdash; the f_k&ndash;pool coupling intake
+          <span class="badge open">OPEN</span></h3>
+        <dl>
+          <dt>What it is</dt>
+          <dd>The catalogue leg&rsquo;s completeness callable f_k is built from the
+            injection pool and rides inside the host-z prior under
+            <code>volume_deconv</code>/<code>absolute_marginal</code> &mdash; un-modeled
+            selection inside L_cat, discovered when D1&rsquo;s N2 null failed loudly.
+            It now carries a literature warrant: P1 (arXiv:2212.08694 &sect;2.3) is
+            precisely the statement that factoring such an object out requires a
+            large-volume premise that a ball-sized volume does not satisfy.</dd>
+          <dt>Evidence on file</dt>
+          <dd>M-3 measured the pure-level structure: the pool substitution moves
+            L_cat by one <em>global</em> h-dependent scalar &mdash; per-event chord
+            0.0177/0.0176 nats (two orders below the 1-nat bar; zero events above it),
+            level +1.22 nats at h=0.73, event-independent to ~1e-12. The
+            <strong>per-event route is dead</strong>. The honesty caveat stands: an
+            event-common factor still tilts a <em>joint</em> posterior via N_events
+            &mdash; class-summed combined chord +43.6 (iiib) / +48.3 (joint r1) nats
+            &mdash; so a joint-posterior-tilt criterion would need its own dedicated
+            read.</dd>
+          <dt>What hangs on it</dt>
+          <dd>Whether un-modeled selection inside the catalogue leg becomes a
+            modeled term, a documented approximation, or a measured-negligible
+            closure &mdash; the top un-modeled-selection thread (ledger &sect;4
+            item 15).</dd>
+          <dt>Cheapest next step</dt>
+          <dd>A research-cycle stage-0 intake with the exoneration check first
+            (the &ldquo;p_det inside/outside&rdquo; ⚠ ledger items are adjacent and
+            must be grepped before anything opens); the aggregate read, if the author
+            wants it, is another diagnostics-CSV job, not a new run.</dd>
+        </dl>
+      </div>
+
+      <div class="ch13-card">
+        <h3>Queue item 6 &mdash; the ledger numbering collision
+          <span class="badge open">OPEN</span></h3>
+        <dl>
+          <dt>What it is</dt>
+          <dd>Pre-existing July ledger rows are numbered 90&ndash;94; the August
+            thread&rsquo;s rows (2026-08-04/05) collide on the same numbers. Two
+            resolutions: renumber the July rows, or fork the August thread into its
+            own &sect;1b.</dd>
+          <dt>Evidence on file</dt>
+          <dd>Row numbers are load-bearing citations: pre-registrations, claim files,
+            ch12, the trigger register, and the &sect;5 author rulings all cite rows
+            by number (#91&ndash;#96). The ledger&rsquo;s own &sect;5 header declares
+            itself &ldquo;append-only; no row or thread above is modified.&rdquo;</dd>
+          <dt>What hangs on it</dt>
+          <dd>Provenance integrity of every existing row citation. The append-only
+            argument for &sect;1b, presented for the ruling: renumbering July silently
+            invalidates every committed document that cites those numbers &mdash;
+            exactly the class of retroactive edit the ledger&rsquo;s own discipline
+            forbids &mdash; while a &sect;1b fork costs one heading and leaves every
+            existing citation true. Renumbering&rsquo;s sole advantage is a prettier
+            single sequence.</dd>
+          <dt>Cheapest next step</dt>
+          <dd>A one-line author ruling. If &sect;1b: add the heading, append a dated
+            note, done &mdash; no existing text edited.</dd>
+        </dl>
+      </div>
+
+      <div class="ch13-card">
+        <h3>Queue item 7 &mdash; the calibration-gate P&ndash;P extension
+          <span class="badge open">OPEN</span> <span class="badge candidate">GATEKEEPER</span></h3>
+        <dl>
+          <dt>What it is</dt>
+          <dd>Extend <code>closed_loop_gfrac.py</code> to the acceptance criteria
+            amendment A3 left open: a realistic host-observation model with
+            multi-candidate balls, the &sigma;&ndash;d_L joint texture, and &mdash;
+            decisive &mdash; the <strong>P&ndash;P leg</strong> of the closed-loop
+            CONFIRM that was never evaluated.</dd>
+          <dt>Evidence on file</dt>
+          <dd>The 200-seed closed loop delivered MIXED/not-REFUTE (&Delta;2 = +0.011
+            &plusmn; 0.004; production&rsquo;s +0.05&ndash;0.07 2D displacement NOT
+            reproduced) &mdash; but without the P&ndash;P leg it is not yet the
+            trusted-run gatekeeper the paper hold requires.</dd>
+          <dt>What hangs on it</dt>
+          <dd>Two things, in series: the stage-4 gate that adjudicates
+            keep-digging-vs-report-bound for the <em>1D rail itself</em> (whose owner
+            is still at large), and <strong>queue item 8 &mdash; the paper (#47)
+            hold</strong>, which waits on exactly this gatekeeper. Of everything on
+            this board, this is the item the publication timeline runs through.</dd>
+          <dt>Cheapest next step</dt>
+          <dd>Build the P&ndash;P leg into the existing harness &mdash; an extension
+            of committed calibration code, not new physics; no
+            <code>/physics-change</code> needed until its verdict says so.</dd>
+        </dl>
+      </div>
+
+    </div>
+
+    <h3>How Part A and Part B interlock</h3>
+    <p>The board is not background &mdash; three of its five items touch the Part A
+      proposal directly. The N-2 adoption (item 3) would change the composition
+      weights H-d watches, and fires the register&rsquo;s trigger (b). Issue #53
+      decides the ball geometry that defines the overlap stratum itself &mdash; a
+      2&sigma; ruling shrinks the very census M-2&rsquo;s 385 events came from. And the
+      f_k intake (item 5) is the other live un-modeled-selection thread in the same
+      catalogue leg the composition annihilates. Sequencing matters: whichever the
+      author approves first, the cross-references above say what must be re-read, and
+      each re-read is priced at minutes, not runs.</p>
+
+    <div class="provenance-panel">
+      <h4>Provenance panel &mdash; every source cited in this chapter</h4>
+      <ul>
+        <li><span class="badge finding">FINDING</span>
+          <code>results/campaign51_20260728/realistic_20260729/crossterm_instrument/session_reads_summary_20260805.json</code>
+          &mdash; M-2 (matched/unmatched, both venues) + independent CONFIRMED
+          adjudication; M-3 (f_k pure-level); M-4 (shared-galaxy census)</li>
+        <li><span class="badge ratified">RATIFIED</span>
+          <code>results/campaign51_20260728/realistic_20260729/crossterm_instrument/NEGLECT_TRIGGER_REGISTER.md</code>
+          &mdash; the conditional NEGLECT closure, the composition-annihilation anatomy
+          (&sect;1), the six triggers, and the M-2-residual cross-reference (&sect;5)</li>
+        <li><span class="badge open">OPEN</span>
+          <code>results/campaign51_20260728/realistic_20260729/gate_b_20260730/BIAS_HISTORY_LEDGER.md</code>
+          &sect;4 open threads 13&ndash;16 (thread 16 = this chapter&rsquo;s candidate)
+          + &sect;5 author rulings incl. the binding governance note</li>
+        <li><span class="badge open">OPEN</span>
+          <code>results/campaign51_20260728/RUNBOOK_NEXT_SESSION_8.md</code> &sect;1
+          &mdash; the morning author queue (items 3, 5, 6, 7, 8 still open) and &sect;5
+          the Hitchhiker addendum</li>
+        <li><span class="badge open">OPEN</span> GitHub issue #53 &mdash;
+          <code>get_redshift_outer_bounds</code> hardcoded 3&sigma;; author-gated, no
+          fix without <code>/physics-change</code></li>
+        <li><span class="badge open">OPEN</span> <code>docs/RESEARCH_CYCLE.md</code>
+          &mdash; the staged procedure this proposal follows; amendments A1 (cheap reads
+          first), A2 (paired reads with class sums), A5 (Stage L / R0 sweep)</li>
+      </ul>
+    </div>
+
+    <p class="book-footer">
+      Hand-authored, not generated: this chapter has no <code>gen_ch13.py</code> &mdash;
+      its content is a narrative synthesis of the dated reads, ledger sections, and
+      runbook queue listed in the provenance panel, all under <code>results/</code>,
+      <code>docs/</code>, and the GitHub tracker, read-only. Part A is a proposal:
+      nothing in it has run, and nothing in it runs until the author approves entering
+      the research cycle. This page renders fully offline &mdash; Plotly and KaTeX are
+      vendored under <code>vendor/</code> (unused on this page: the one figure here is
+      a static inline SVG, per the no-new-binary-assets rule ch12 established for
+      hand-authored chapters).
+    </p>
+  </main>
+</div>
+
+<script src="js/manifest.js"></script>
+<script src="vendor/plotly/plotly.min.js"></script>
+<script src="vendor/katex/katex.min.js"></script>
+<script src="vendor/katex/auto-render.min.js"></script>
+<script src="js/book.js"></script>
+<script>
+  (function () {
+    // Bias Ledger Rail: this chapter adds no new estimator-configuration row —
+    // Part A is an unapproved proposal and Part B is a decision board; neither
+    // ran an estimator for h. Carries forward the shared rows via manifest.js
+    // BOOK_BIAS_ROWS merge; declares two page-local pips for the live objects.
+    Book.biasRail({
+      entries: [],
+      pips: [
+        { label: "M-2 matched 2D overlap residual +0.021 nats/event — REAL, UNOWNED; stage-0 proposal pending author approval", tone: "amber",
+          note: "crossterm_instrument/m2_results.json; ledger §4 thread 16" },
+        { label: "Eq. (31) cross-term — NEGLECT-WITH-NUMBER, conditional on 6-trigger register", tone: "grey",
+          note: "NEGLECT_TRIGGER_REGISTER.md; author ruling 2026-08-07" },
+      ],
+    });
+  })();
+</script>

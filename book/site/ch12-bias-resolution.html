@@ -51,6 +51,8 @@
     font-size: 0.82rem; color: var(--muted); border-left: 3px solid var(--prior);
     padding: 0.15rem 0 0.15rem 0.6rem; margin: 0.4rem 0;
   }
+  /* Trigger-register table: same chrome as .ch12-map-table, prose cells left-aligned. */
+  .ch12-trigger-table th, .ch12-trigger-table td { text-align: left; }
 </style>
 
 <div class="book-shell">
@@ -70,15 +72,18 @@
 
     <div class="ch12-status">
       <span class="badge open">ACTIVE INVESTIGATION</span>
-      <span class="ch12-updated">Last updated 2026-08-05 (night)</span>
+      <span class="ch12-updated">Last updated 2026-08-07</span>
     </div>
     <div class="callout defect">
       <span class="callout-label">Current state, one line</span>
-      The night&rsquo;s program is complete: 2D g(h) = Gate-B-surviving correct
-      physics, closed-loop calibrated, D1 bounded-null on the tilt route, N-2
-      real-but-bounded &mdash; the 1D rail&rsquo;s owner is still at large, and a
-      newly discovered f_k&ndash;pool coupling in the catalogue leg heads the next
-      intake queue.
+      The cross-term phase is closed by measurement: the Eq.&nbsp;(31) pairwise
+      cross-term scores NEGLECT-WITH-NUMBER in all four venue&nbsp;&times;&nbsp;channel
+      cells (T&nbsp;&sim;&nbsp;10<sup>&minus;5</sup> nats vs X&nbsp;=&nbsp;2.78,
+      margins 4.9&times;10<sup>4</sup>&ndash;5.2&times;10<sup>5</sup>), conditionally
+      on a six-trigger register &mdash; H-1&rsquo;s cross-term leg is closed, the
+      g(h) derivation question and the 1D rail&rsquo;s owner remain open, and
+      M-2&rsquo;s real 2D overlap residual is now <em>unowned</em> and heads the
+      queue.
     </div>
 
     <!-- ===== Timeline ===== -->
@@ -233,7 +238,7 @@
         <span class="ch12-tl-note">results/campaign51_20260728/realistic_20260729/PREREGISTRATION_D1_SAND_REWEIGHT.md
           &mdash; verdict appended 2026-08-05; results/run_20260805_d1/readout.json;
           BIAS_HISTORY_LEDGER.md row 94</span></li>
-      <li class="open"><span class="ch12-tl-label">Hitchhiker independence intake &mdash;
+      <li><span class="ch12-tl-label">Hitchhiker independence intake &mdash;
         M-1 KERNEL-FINITE (2026-08-05)</span> &mdash; a same-day claim intake verified the
         author's recalled arXiv:2212.08694 (Gair et al.) statement as three distinct paper
         claims, not two, and the third (P1, the selection-denominator separability clause)
@@ -245,6 +250,105 @@
         queued for direct measurement, not argued away.
         <span class="ch12-tl-note">results/campaign51_20260728/realistic_20260729/CLAIM_HITCHHIKER_INDEPENDENCE_20260805.md.DRAFT;
           m1_kernel_delta_check.py/.json; BIAS_HISTORY_LEDGER.md row 95</span></li>
+      <li><span class="ch12-tl-label">Cross-term instrument &mdash; blind band,
+        then adversarial build (2026-08-05/06)</span> &mdash; before any decision
+        number existed, the discipline layer went in first. Three cheap reads scoped
+        the target: M-2&rsquo;s matched 2D overlap read found a real low-h residual
+        (<strong>+0.02225 / +0.02070 nats/event</strong>, cluster-robust
+        p&nbsp;0.0050/0.0042) and revived H-2; M-3 bounded f_k&rsquo;s h-slope
+        (context only); M-4&rsquo;s shared-galaxy census superseded the C-4-only
+        scope and fixed the ratified target sets (349/104 joint_r1, 280/21 iiib
+        pairs). From those reads &mdash; and before the instrument produced a single
+        cross-term value &mdash; the NEGLECT/REGARD band <strong>X&nbsp;=&nbsp;2.78 /
+        Y&nbsp;=&nbsp;7.96</strong> class-summed chord nats was derived and LOCKED.
+        Then an adversarial math review returned <strong>DEFECTIVE</strong> on the
+        convenient first implementation: three HIGH defects &mdash; a
+        w&sup1;-for-w&sup2; weight-power error vs Eq.&nbsp;(31), a convenience-&delta;
+        that violated the paper&rsquo;s perfect-redshift exactness limit (wrong-sign
+        asymptote as &sigma;_z&rarr;0), and a factorized latent host mass in the 2D
+        channel. All three were fixed, the instrument re-certified against toy truth
+        and the frozen-g posteriors, and its sha256 pinned at author ratification
+        (2026-08-06). This is the system working, not a stumble to hide: the
+        measurement below is credible <em>because</em> the wrong version never got
+        to produce a number.
+        <span class="ch12-tl-note">results/campaign51_20260728/realistic_20260729/crossterm_instrument/PREREGISTRATION_CROSSTERM_INSTRUMENT.md.DRAFT
+          (band LOCKED at ratification); band_derivation.json; m2_results.json,
+          m3_results.json, m4_shared_galaxy_census.py;
+          instrument_math_review_20260805.json, adversarial_refutation_checks.py/.json,
+          cert_adversarial_20260805.json</span></li>
+      <li><span class="ch12-tl-label">Eq.&nbsp;(31) cross-term production run &mdash;
+        NEGLECT-WITH-NUMBER &times;4 (2026-08-06/07)</span> &mdash; the
+        pre-registered instrument measured the neglected pairwise cross-term over
+        the ratified pair sets at four h-grid points, both venues, both channels.
+        All four cells score <strong>NEGLECT-WITH-NUMBER</strong>:
+        T&nbsp;=&nbsp;<strong>1.468160e-05 / 5.648753e-05 / 1.024615e-05 /
+        5.379542e-06</strong> class-summed mixture-composed chord nats (joint_r1
+        1d/2d, iiib 1d/2d) vs X&nbsp;=&nbsp;2.78 &mdash; margins <strong>1.89e+05 /
+        4.92e+04 / 2.71e+05 / 5.17e+05&times;</strong>; the anti-dilution clause
+        never triggers; no venue split; an independent adjudication recompute
+        returned <strong>CONFIRMED, T bit-identical</strong>. H-1&rsquo;s cross-term
+        leg &mdash; the hypothesis the Hitchhiker intake refused to argue away
+        &mdash; is <strong>CLOSED by measurement</strong>: five orders below the 1D
+        rail&rsquo;s &minus;1.1&hellip;&minus;1.6 nats-per-grid-point depth (ledger
+        row 93). And the M-2 revived-H-2 signature is <strong>NOT matched</strong>:
+        the composed 2D chord is high-h-preferring at 5&ndash;6 orders below Y
+        &mdash; the cross-term is <em>excluded</em> as the mechanism of M-2&rsquo;s
+        residual.
+        <span class="ch12-tl-note">results/campaign51_20260728/realistic_20260729/crossterm_instrument/CROSSTERM_READOUT_20260806.md
+          (incl. appended CORRECTION); readout_20260806.json;
+          readout_adjudication_20260807.json; BIAS_HISTORY_LEDGER.md row 96</span></li>
+      <li><span class="ch12-tl-label">The composition-annihilation finding
+        (2026-08-07)</span> &mdash; the phase&rsquo;s structural discovery, carried
+        as a reported-never-scored diagnostic: the coherence H-2 posits is
+        <em>physically present</em> in the catalogue leg. The raw catalogue-leg
+        class sums are large (full-grid ranges <strong>181.208 / 5.799 / 77.514 /
+        0.0960 nats</strong>) and the raw 2D chords carry the residual&rsquo;s low-h
+        sign &mdash; <strong>+2.507 nats</strong> (joint_r1) /
+        <strong>+0.0116</strong> (iiib), every nonzero 2D per-pair composed chord
+        one-signed. The mixture composition annihilates it before it reaches the
+        posterior: the per-pair factor F&nbsp;=&nbsp;r_i&middot;r_j
+        (r_e&nbsp;=&nbsp;w_G&middot;L_cat/combined; median F
+        ~1.5e-07&ndash;2.5e-06) crushes the magnitude by ~5 orders, and
+        w_G&rsquo;s own h-fall (0.0957&rarr;0.0556 across the grid) reverses the
+        class-level sign. A genuine ~+2.5-nat shared-host coherence enters the
+        estimator and exits as &minus;4.4e-05 nats pointing the other way. A
+        vindication rode along: the in-C-4 vs outside-C-4 1D sub-sums are
+        <strong>sign-split</strong> (+1.8e-06 vs a ~9&times; larger negative) &mdash;
+        the M-4 census supersession was load-bearing; a C-4-only run would have
+        measured the smaller, opposite-signed component.
+        <span class="ch12-tl-note">CROSSTERM_READOUT_20260806.md &sect;2.2, &sect;6;
+          NEGLECT_TRIGGER_REGISTER.md &sect;1; BIAS_HISTORY_LEDGER.md row 96</span></li>
+      <li><span class="ch12-tl-label">Stage-5 author ruling &mdash; conditional
+        NEGLECT (2026-08-07)</span> &mdash; NEGLECT-WITH-NUMBER accepted in all
+        four cells &mdash; conditioned, not absolute. In <strong>3 of 4 cells the
+        raw catalogue-leg range exceeds X</strong>, so the verdict rests entirely on
+        the mixture composition annihilating the catalogue leg, not on the
+        catalogue-leg physics being small; the ruling therefore binds the closure to
+        an explicit six-trigger re-evaluation register, (a)&ndash;(f), each trigger
+        with a threshold and its cheapest re-instrument (L1 census / L2 composition
+        arithmetic / L3 full re-run &mdash; compact table in &sect;4 below). NEGLECT
+        stands unless a named trigger fires; the cross-term is neglected <em>with
+        that number, not with the word &ldquo;small&rdquo;</em>.
+        <span class="ch12-tl-note">results/campaign51_20260728/realistic_20260729/crossterm_instrument/NEGLECT_TRIGGER_REGISTER.md;
+          CROSSTERM_READOUT_20260806.md STAGE-5 CLOSURE; BIAS_HISTORY_LEDGER.md
+          row 96 + &sect;5 AUTHOR RULING (2026-08-07)</span></li>
+      <li class="open"><span class="ch12-tl-label">NOW OPEN &mdash; M-2&rsquo;s 2D
+        overlap residual, real and unowned (2026-08-07)</span> &mdash; the phase
+        deliberately did not close everything. M-2&rsquo;s matched 2D
+        overlap-stratum residual (<strong>+0.02070 joint_r1 / +0.02225 iiib
+        nats/event</strong>, cluster-robust p&nbsp;0.0042/0.0050, low-h-preferring,
+        ~8 nats class-scale if coherent) is real &mdash; and its leading candidate
+        mechanism is now excluded. Whatever owns it either lives outside
+        likelihood-factorization coupling entirely, or reaches the posterior by a
+        route the w_G-weighted mixture does not annihilate. The owner-hunt is the
+        ledger&rsquo;s new top candidate thread; alongside it, the g(h) derivation
+        question and the 1D rail&rsquo;s owner remain open from the entries above.
+        The stage-0 proposal to hunt the owner &mdash; staged, priced, and awaiting
+        the author&rsquo;s approval &mdash; is
+        <a href="ch13-unowned-residual.html">Chapter&nbsp;13</a>.
+        <span class="ch12-tl-note">readout_20260806.json &sect;6 (H-hypothesis
+          statements); BIAS_HISTORY_LEDGER.md &sect;4 open thread 16;
+          ch13-unowned-residual.html (the proposal)</span></li>
     </ol>
 
     <!-- ===== The frozen-g measurement in detail ===== -->
@@ -345,7 +449,197 @@
         <code>compute_gate_vii.py</code>.</p>
     </details>
 
-    <h2>4. How this document evolves</h2>
+    <h2>4. The cross-term NEGLECT, in detail: five orders of composition</h2>
+    <div class="voice-adjudicator">
+      <span class="voice-label">Adjudicated finding
+        <span class="badge finding">FINDING</span>
+        <span class="prov-chip">CROSSTERM_READOUT_20260806.md + readout_adjudication_20260807.json (CONFIRMED, bit-identical), 2026-08-07</span></span>
+      The Eq.&nbsp;(31) pairwise cross-term &mdash; the last live
+      likelihood-factorization coupling hypothesis for both the 1D rail (H-1) and
+      the 2D displacement (H-2) &mdash; scores NEGLECT-WITH-NUMBER in all four
+      venue&nbsp;&times;&nbsp;channel cells, on the mixture-composed statistic the
+      posterior actually consumes, against a band locked before the first number
+      existed. The verdict is a value, not the word &ldquo;small&rdquo;.
+    </div>
+
+    <table class="ch12-map-table">
+      <thead>
+        <tr><th>venue / channel</th><th>scored T (composed, nats)</th>
+          <th>raw range (diagnostic, nats)</th><th>X/T margin</th><th>verdict</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>joint r1 / 1D</td><td>1.468160e-05</td><td class="ch12-injected">181.208</td><td>1.89e+05&times;</td><td>NEGLECT-WITH-NUMBER</td></tr>
+        <tr><td>joint r1 / 2D</td><td>5.648753e-05</td><td class="ch12-injected">5.799</td><td>4.92e+04&times;</td><td>NEGLECT-WITH-NUMBER</td></tr>
+        <tr><td>idealized (iiib) / 1D</td><td>1.024615e-05</td><td class="ch12-injected">77.514</td><td>2.71e+05&times;</td><td>NEGLECT-WITH-NUMBER</td></tr>
+        <tr><td>idealized (iiib) / 2D</td><td>5.379542e-06</td><td class="ch12-injected">0.0960</td><td>5.17e+05&times;</td><td>NEGLECT-WITH-NUMBER</td></tr>
+      </tbody>
+    </table>
+    <div class="ch12-counterfactual-note">
+      Band of record: X&nbsp;=&nbsp;2.78 / Y&nbsp;=&nbsp;7.96 class-summed chord
+      nats, LOCKED at author ratification 2026-08-06. The raw column is a
+      reported-never-scored diagnostic (prereg &sect;5, ratified flag (c)): the band
+      applies to the mixture-composed value only. Quoting a raw range against X
+      would apply the band to an object it was never derived for &mdash; which is
+      exactly why trigger (f) below exists.
+    </div>
+
+    <div class="ch12-svg-wrap">
+      <svg viewBox="0 0 400 185" role="img" aria-labelledby="ch12-svg2-title ch12-svg2-desc">
+        <title id="ch12-svg2-title">The annihilation chain: raw catalogue-leg cross-term vs scored mixture-composed T, log scale</title>
+        <desc id="ch12-svg2-desc">Log-scale number line of absolute class-summed chord nats. Four filled dots near 1e-5 mark the scored mixture-composed T values (joint r1 and idealized venues, 1D and 2D). A dashed vermillion line marks the NEGLECT threshold X equals 2.78, with Y equals 7.96 beside it. Five open orange circles mark the raw catalogue-leg diagnostics at 0.096, 2.507, 5.80, 77.5 and 181.2 nats, three of which exceed X. An arrow from the raw plus-2.507-nat 2D chord to the scored cluster is labeled with the composition factor F of about 1.5e-7, magnitude divided by 1e5, sign reversed.</desc>
+        <defs>
+          <marker id="ch12-arr" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M0,0 L8,4 L0,8 z" fill="var(--muted)" />
+          </marker>
+        </defs>
+        <!-- legend -->
+        <circle cx="38" cy="11" r="4" fill="var(--planck)" />
+        <text x="45" y="14" font-size="8.5" fill="var(--muted)">joint r1</text>
+        <circle cx="95" cy="11" r="4" fill="var(--accent)" />
+        <text x="102" y="14" font-size="8.5" fill="var(--muted)">idealized</text>
+        <circle cx="162" cy="11" r="4" fill="none" stroke="#E69F00" stroke-width="1.6" />
+        <text x="169" y="14" font-size="8.5" fill="var(--muted)">raw diagnostic (never scored)</text>
+        <!-- axis: |chord| in nats, log scale, 1e-7..1e3; x = 30 + (log10+7)*35 -->
+        <line x1="30" y1="150" x2="385" y2="150" stroke="var(--border)" stroke-width="1.5" />
+        <line x1="65" y1="148" x2="65" y2="152" stroke="var(--border)" stroke-width="1" />
+        <line x1="100" y1="148" x2="100" y2="152" stroke="var(--border)" stroke-width="1" />
+        <line x1="135" y1="148" x2="135" y2="152" stroke="var(--border)" stroke-width="1" />
+        <line x1="170" y1="148" x2="170" y2="152" stroke="var(--border)" stroke-width="1" />
+        <line x1="205" y1="148" x2="205" y2="152" stroke="var(--border)" stroke-width="1" />
+        <line x1="240" y1="148" x2="240" y2="152" stroke="var(--border)" stroke-width="1" />
+        <line x1="275" y1="148" x2="275" y2="152" stroke="var(--border)" stroke-width="1" />
+        <line x1="310" y1="148" x2="310" y2="152" stroke="var(--border)" stroke-width="1" />
+        <line x1="345" y1="148" x2="345" y2="152" stroke="var(--border)" stroke-width="1" />
+        <line x1="380" y1="148" x2="380" y2="152" stroke="var(--border)" stroke-width="1" />
+        <text x="65" y="164" font-size="8" fill="var(--muted)" text-anchor="middle">1e-6</text>
+        <text x="135" y="164" font-size="8" fill="var(--muted)" text-anchor="middle">1e-4</text>
+        <text x="205" y="164" font-size="8" fill="var(--muted)" text-anchor="middle">1e-2</text>
+        <text x="275" y="164" font-size="8" fill="var(--muted)" text-anchor="middle">1</text>
+        <text x="345" y="164" font-size="8" fill="var(--muted)" text-anchor="middle">1e2</text>
+        <text x="207" y="178" font-size="8.5" fill="var(--muted)" text-anchor="middle">|class-summed chord| (nats, log scale)</text>
+        <!-- NEGLECT band: X = 2.78, Y = 7.96 -->
+        <line x1="290.5" y1="32" x2="290.5" y2="150" stroke="#D55E00" stroke-width="1.4" stroke-dasharray="5,4" />
+        <line x1="306.5" y1="32" x2="306.5" y2="150" stroke="#D55E00" stroke-width="1" stroke-dasharray="2,4" opacity="0.75" />
+        <text x="286" y="27" font-size="9" fill="#D55E00" text-anchor="end">X = 2.78</text>
+        <text x="310" y="27" font-size="9" fill="#D55E00" opacity="0.85">Y = 7.96</text>
+        <!-- scored T row (mixture-composed; the object the posterior consumes) -->
+        <text x="108" y="48" font-size="9" fill="var(--ink)" text-anchor="middle">scored T &mdash; four cells, ~1e-5 nats</text>
+        <circle cx="90.6" cy="62" r="4.5" fill="var(--accent)" stroke="var(--paper)" stroke-width="1.5" />
+        <circle cx="100.4" cy="62" r="4.5" fill="var(--accent)" stroke="var(--paper)" stroke-width="1.5" />
+        <circle cx="105.8" cy="62" r="4.5" fill="var(--planck)" stroke="var(--paper)" stroke-width="1.5" />
+        <circle cx="126.3" cy="62" r="4.5" fill="var(--planck)" stroke="var(--paper)" stroke-width="1.5" />
+        <!-- composition annihilation arrow: raw +2.507 (2D, low-h) -> composed -4.4e-05 (sign reversed) -->
+        <path d="M 283 112 C 252 88, 205 68, 137 65" fill="none" stroke="var(--muted)" stroke-width="1.3" marker-end="url(#ch12-arr)" />
+        <text x="36" y="92" font-size="8.5" fill="var(--ink)">&times; F &asymp; 1.5e-7 &mdash; the mixture composition</text>
+        <text x="36" y="103" font-size="8" fill="var(--muted)">magnitude &divide;1e5, sign reversed (low-h &rarr; high-h)</text>
+        <!-- raw catalogue-leg diagnostics row -->
+        <circle cx="239.4" cy="118" r="4.5" fill="none" stroke="#E69F00" stroke-width="1.8" />
+        <circle cx="289" cy="118" r="4.5" fill="none" stroke="#E69F00" stroke-width="1.8" />
+        <circle cx="301.7" cy="118" r="4.5" fill="none" stroke="#E69F00" stroke-width="1.8" />
+        <circle cx="341.1" cy="118" r="4.5" fill="none" stroke="#E69F00" stroke-width="1.8" />
+        <circle cx="354" cy="118" r="4.5" fill="none" stroke="#E69F00" stroke-width="1.8" />
+        <text x="290" y="136" font-size="8.5" fill="var(--muted)" text-anchor="middle">raw catalogue-leg class sums (reported, never scored)</text>
+      </svg>
+      <p class="ch12-svg-caption">The annihilation chain, to scale. Filled dots: the
+        four scored (mixture-composed) T values, all near 1e-5 nats &mdash;
+        4.9e+04&ndash;5.2e+05&times; below the locked NEGLECT threshold
+        X&nbsp;=&nbsp;2.78 (dashed). Open circles: the raw catalogue-leg
+        diagnostics (0.0960, 2.507, 5.799, 77.514, 181.208 nats), three of whose
+        full-grid ranges exceed X. The arrow is the composition annihilation: the
+        raw joint-r1 2D chord +2.507 nats (low-h-preferring, the H-2 sign) composes
+        through the median per-pair mixture factor F&nbsp;&asymp;&nbsp;1.5e-7 into a
+        scored &minus;4.4e-05 nats with the opposite sign &mdash; w_G&rsquo;s h-fall
+        (0.0957&rarr;0.0556) does the reversing.</p>
+    </div>
+
+    <p>The conditional part of the closure is the point, not a footnote. The author
+      ruling accepts NEGLECT only together with a register of six named triggers
+      &mdash; the things that would have to become true for today&rsquo;s
+      ~1e-7 composition regime to stop carrying the verdict. Compact form (the full
+      register, with derivations and the instrument ladder, is the file of record):</p>
+
+    <table class="ch12-map-table ch12-trigger-table">
+      <thead>
+        <tr><th>trigger</th><th>fires when</th><th>cheapest re-check</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>(a) composition factor</td>
+          <td>w_G(0.73) &ge; ~0.3, or median per-pair F &ge; ~1e-05, or max F &ge; ~0.5
+            (today: w_G 0.062&ndash;0.071, median F ~1e-07, max 0.129); any
+            completeness/mixture-weight re-definition. w_G alone tops out at
+            &times;199&ndash;260 in F &mdash; it cannot close the 4.92e+04 margin by itself.</td>
+          <td>L2 &mdash; recompose &Delta;&#771; from the existing raw rows</td></tr>
+        <tr><td>(b) L_cat formula</td>
+          <td>any <code>/physics-change</code> to L_cat&rsquo;s structure or the mixture
+            weights &mdash; named: the open S&#772;_&phi;-inside-1D N-2 adoption
+            (queue item 3)</td>
+          <td>L2 (L3 only if L_cat&rsquo;s own kernel changes)</td></tr>
+        <tr><td>(c) ball geometry</td>
+          <td>any z-window/radius enlargement or localisation-model change &mdash;
+            named: issue #53 (hardcoded 3&sigma;); a 2&sigma; shrink does NOT fire
+            (favorable)</td>
+          <td>L1 census re-run (escalate if pairs/&Sigma;n_shared grow &ge; ~10&times;)</td></tr>
+        <tr><td>(d) catalogue / &sigma;_z regime</td>
+          <td>median &sigma;_z/(1+z) widening &ge; ~3&times; today&rsquo;s 0.033, or
+            catalogue swap / n(z) replacement; &sigma;_z shrink does NOT fire
+            (certified O(&sigma;_z&sup2;)&rarr;0)</td>
+          <td>L1 + L3 full re-measurement</td></tr>
+        <tr><td>(e) event population</td>
+          <td>pairs &sim; N_ev&sup2;; alarm at N_ev &gtrsim; 3e+04 (today 1588/venue;
+            nominal margin closure &asymp; 3.5e+05, binding cell joint_r1/2d)</td>
+          <td>L1 + L2; full L3 near &ge; 1e+05</td></tr>
+        <tr><td>(f) scoring convention</td>
+          <td>any de-ratification of the mixture-composed convention (prereg flag (c))
+            &mdash; sharpest: under raw scoring the existing numbers already exceed X
+            in 3 of 4 cells</td>
+          <td>none &mdash; immediate re-adjudication from the existing record</td></tr>
+      </tbody>
+    </table>
+    <div class="ch12-counterfactual-note">
+      Conditional closure, as ruled: the NEGLECT-WITH-NUMBER stands unless and until
+      at least one named trigger (a)&ndash;(f) fires. Register of record:
+      <code>results/campaign51_20260728/realistic_20260729/crossterm_instrument/NEGLECT_TRIGGER_REGISTER.md</code>
+      (append-only from its closure date).
+    </div>
+
+    <div class="callout defect">
+      <span class="callout-label">Trap &mdash; &ldquo;the cross-term measured tiny,
+        so the shared-host coherence was never real&rdquo;</span>
+      Backwards. The coherence is real and measured: +2.507 raw nats of
+      low-h-preferring shared-host structure in the joint-r1 2D catalogue leg, every
+      nonzero per-pair chord one-signed. What the measurement shows is that the
+      mixture composition &mdash; the catalogue leg&rsquo;s ~1e-7 per-pair weight in
+      the likelihood the posterior actually consumes &mdash; annihilates it before
+      it can move H&#8320;. The physics is present; the plumbing suppresses it. That
+      is why the closure is conditional on the composition regime (triggers (a),
+      (f)), not unconditional.
+    </div>
+
+    <details class="gw-reader">
+      <summary>&#9656; For the GW reader</summary>
+      <p>The instrument (<code>crossterm_instrument.py</code>, sha256
+        <code>340b66d2&hellip;</code> verified before first and after last invocation
+        and again at readout) evaluates, per sharing pair and h &isin; {0.60, 0.73,
+        0.81, 0.86}, the exact Eq.&nbsp;(31) paired marginalization against the
+        factorized product, with w&sup2;-weighted shared-galaxy sums (post-review),
+        adaptive quadrature (R-2 escalation fired on exactly one pair, (114, 1035),
+        n_shared&nbsp;=&nbsp;8861, depth 455 for the worst-R galaxy R&nbsp;=&nbsp;68.17;
+        certified error ~6e-14 nats), and a guard contract: S&nbsp;&le;&nbsp;0 voids
+        the pair (0 occurred), &minus;inf auto-escalates to author adjudication
+        (0 occurred). Row coverage equals the ratified target lists &times; h-grid
+        exactly (1396/416/1120/84 rows); own-quadrature S agrees with the frozen-g
+        posterior files to &le;1.2e-07 relative; the mixture-composition identity
+        &Delta;&#771; = ln[1 + w_G,i w_G,j L_cat,i L_cat,j (e^&Delta; &minus; 1) /
+        (combined_i combined_j)] is composable from emitted row fields alone
+        (verified to 3.9e-16). The 1D channels ran as orchestrator-authorized
+        sequential chunks after OOM aborts on the 30&nbsp;GB host (~25&ndash;29&nbsp;GB
+        RSS ceilings; atomic end-of-run emits, chunk artifacts retained). Git commit
+        <code>e94ff8ab</code> in all four run files. Code sites:
+        <code>results/campaign51_20260728/realistic_20260729/crossterm_instrument/{crossterm_instrument.py,
+        make_target_pairs.py, readout_adjudicate.py}</code>.</p>
+    </details>
+
+    <h2>5. How this document evolves</h2>
     <p>This chapter is the living bias-resolution record. It is not generated by
       <code>book/generators/</code> &mdash; there is no <code>gen_ch12.py</code>, and
       none is planned, because this page's content is a narrative synthesis of
@@ -395,12 +689,35 @@
         <li><span class="badge ratified">RATIFIED</span> commits
           <code>0f923485</code> (Fix A), <code>658c428a</code> (Fix B path-A) &mdash;
           landed, author-gated, arithmetically verified</li>
+        <li><span class="badge ratified">RATIFIED</span>
+          <code>results/campaign51_20260728/realistic_20260729/crossterm_instrument/PREREGISTRATION_CROSSTERM_INSTRUMENT.md.DRAFT</code>
+          &mdash; the cross-term instrument pre-registration; band X&nbsp;=&nbsp;2.78 /
+          Y&nbsp;=&nbsp;7.96 LOCKED at author ratification 2026-08-06</li>
+        <li><span class="badge finding">FINDING</span>
+          <code>&hellip;/crossterm_instrument/instrument_math_review_20260805.json</code>,
+          <code>adversarial_refutation_checks.py/.json</code>,
+          <code>cert_adversarial_20260805.json</code> &mdash; the DEFECTIVE
+          adversarial review (three HIGH math defects), its proof checks, and the
+          post-fix certification</li>
+        <li><span class="badge finding">FINDING</span>
+          <code>&hellip;/crossterm_instrument/CROSSTERM_READOUT_20260806.md</code>
+          (incl. CORRECTION), <code>readout_20260806.json</code>,
+          <code>readout_adjudication_20260807.json</code> &mdash; the four-cell
+          NEGLECT-WITH-NUMBER readout and its independent CONFIRMED recompute</li>
+        <li><span class="badge ratified">RATIFIED</span>
+          <code>&hellip;/crossterm_instrument/NEGLECT_TRIGGER_REGISTER.md</code>
+          &mdash; the six-trigger conditional closure, author ruling 2026-08-07;
+          append-only</li>
+        <li><span class="badge open">OPEN</span>
+          <code>results/campaign51_20260728/realistic_20260729/gate_b_20260730/BIAS_HISTORY_LEDGER.md</code>
+          rows 93&ndash;96 + &sect;4 open thread 16 &mdash; the M-2 2D overlap
+          residual owner-hunt</li>
       </ul>
     </div>
 
     <p class="book-footer">
       Hand-authored, not generated: this chapter has no <code>gen_ch12.py</code> (see
-      &sect;4 above). Sourced from the dated reports and pre-registration files listed
+      &sect;5 above). Sourced from the dated reports and pre-registration files listed
       in the provenance panel, all under <code>results/</code> and <code>docs/</code>,
       read-only. This page renders fully offline &mdash; Plotly and KaTeX are vendored
       under <code>vendor/</code> (unused on this page: the one figure here is a static
@@ -417,14 +734,18 @@
 <script>
   (function () {
     // Bias Ledger Rail: this chapter adds no new estimator-configuration row
-    // (the frozen-g run is a counterfactual, deliberately excluded — see the
-    // ch12-counterfactual-note above). Carries forward ch11's rows via
-    // manifest.js BOOK_BIAS_ROWS merge; declares no page-local rows of its own.
+    // (the frozen-g run and the cross-term instrument are diagnostics, deliberately
+    // excluded — see the ch12-counterfactual-notes above). Carries forward ch11's
+    // rows via manifest.js BOOK_BIAS_ROWS merge; declares no page-local rows of its
+    // own. Pips = live, unquantified-owner items only; the cross-term NEGLECT is
+    // quantified and closed (conditionally), so it is NOT a pip.
     Book.biasRail({
       entries: [],
       pips: [
         { label: "g_frac(h) mass-factor slope — CONFIRMED carrier, derivation open", tone: "amber",
           note: "PREREGISTRATION_FROZEN_GFRAC.md verdict 2026-08-05" },
+        { label: "M-2 2D overlap residual (+0.0207/+0.0222 nats/event, low-h) — real, owner unknown", tone: "amber",
+          note: "readout_20260806.json §6, cross-term excluded as mechanism; BIAS_HISTORY_LEDGER.md §4 thread 16" },
       ],
     });
   })();
