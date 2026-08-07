@@ -377,3 +377,24 @@ file is committed, no edits above this line.
   registered denominator.
 - Jobs 6152697–6152704, 492/492 COMPLETED, code `128f318a`. Evidence:
   `results/run_20260805_d1/readout.{py,json}`.
+
+---
+
+## AUTHOR RULING (2026-08-05)
+
+**D1 disposition — ACCEPTED** (Jasper Seehofer, 2026-08-05, morning author
+queue: `results/campaign51_20260728/RUNBOOK_NEXT_SESSION_8.md` §1 item 4).
+
+The author accepts the **bounded-null (tilt route) verdict** recorded above:
+D1 does not reach the core 2D-bias object via the tilt route (`m_S = 0.032`,
+`m_R = 0.011`, both ≪ 0.25; `g_frac` bit-identical under S_and, so the
+D1→`g_frac` (C7) convergence route is dead).
+
+Unchanged by this ruling:
+- The simulation-side `ParameterSpace.p0` bounds retirement remains **its own
+  future `/physics-change`** (as this file's Scope guard already states); it is
+  not authorised by this disposition.
+- The 3135-event catalogue is **still never re-scored band-blind** (standing
+  constraint of record).
+
+This block is append-only; no text above it was modified.

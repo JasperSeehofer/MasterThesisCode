@@ -221,3 +221,51 @@ predicted, already-owned open item, not a new discovery.
 13. **Is g_frac(h)'s h-slope correct physics or a missing normalisation?** (#91, CONFIRMED carrier, not yet adjudicated) — routes through `/physics-change`; possible convergence with D1 (same selection machinery feeds `B_num_wbh`). **UPDATE 08-05 (#92):** the closed-loop calibration test found the 2D g-machinery **MIXED/not-REFUTE** (Δ2 = +0.011 ± 0.004; production's +0.05–0.07 2D displacement is **NOT reproduced** in a universe following the estimator's own assumptions) — this now *supports* the "correct physics" reading over the "defect" reading, though CONFIRM was missed by 0.0013 and the question remains formally open pending the author's `/physics-change` ruling.
 14. **1D production rail ownership — REOPENED (#93).** N-2's pre-registered counterfactual found the completion numerator's missing `S̄_φ(z;h)` selection factor is a **real, bounded, positive correction** (chord +23–25 nats/h, in the pre-registered band) but it does **not** un-rail the production 1D channel (MAP stays at 0.600, hard rail −1.1…−1.6 nats to the next grid point). The standing explanation (host photo-z, #36) is **not re-attributed**. A secondary finding from N-2's own read — the live z-quadrature of `S̄_φ` diverges from M1's point-GW-peak approximation (central-diff overshoot; sign coherence 0.71–0.73 vs the 0.90 bar) — is itself unresolved and flagged for follow-up. **The 1D rail's owner is still at large**, tracked as its own thread separate from the g_frac(h) derivation question in item 13.
 15. **The catalogue leg's `f_k` completeness callable is pool-fed — discovered 08-05 (#94).** D1's N2 null (registered expectation: `L_cat_no_bh`/`L_cat_with_bh` carry no selection function) **FAILED** — under `volume_deconv`/`absolute_marginal`, the catalogue-leg host-z prior carries `f_k`, and `f_k` is built from the injection pool, the very object D1's three-arm re-weight substitutes. This falsifies a load-bearing prereg assumption and is a **new coupling**, distinct from and additional to the g_frac(h)/D1-convergence question (item 13, now closed as dead at machine precision — `g_frac` was bit-identical A1-vs-A2, #94 S2). Unowned; heads the next session's intake queue.
+
+---
+
+## 5. AUTHOR RULINGS (2026-08-05) — append-only; no row or thread above is modified
+
+Rulings by Jasper Seehofer, 2026-08-05, from the morning author queue in
+`results/campaign51_20260728/RUNBOOK_NEXT_SESSION_8.md` §1. Queue items **1, 2, 4
+accepted exactly as proposed there; items 3, 5, 6, 7, 8 remain OPEN** and are
+deliberately untouched by this section.
+
+### AUTHOR RULING (2026-08-05) — R-A: g_frac(h) h-slope is correct physics
+*(RUNBOOK_NEXT_SESSION_8.md §1 item 1; annotates rows #91–#92 and §4 open thread 13.)*
+
+**ACCEPTED**: "correct physics" for `g_frac`'s h-slope — the Gate-B-surviving,
+closed-loop-supported reading (`.planning/derivation-gfrac-20260805/GFRAC_DERIVATION_PACKAGE.md`,
+Gate B adjudication; row #92 closed-loop MIXED/not-REFUTE). The `/physics-change`
+adjudication that §4 thread 13 said was pending is hereby made: the carrier is
+legitimate spectral-siren physics, not a defect. **Explicitly NOT accepted:** the
+refuted §7 re-attribution (Gate B claim 4, REFUTED) — the honest statement is the
+amended package §7. §4 thread 13's open question is resolved by this ruling.
+
+### AUTHOR RULING (2026-08-05) — R-B: gate (i) retired as measured evidence
+*(RUNBOOK_NEXT_SESSION_8.md §1 item 2; annotates the N-1 finding — Gate B table
+row N-1 in `GFRAC_DERIVATION_PACKAGE.md` and RUNBOOK §0 discovered fact N-1.)*
+
+**ACCEPTED**: gate (i) is retired **as measured evidence**. The N-1 finding
+(gate (i) near-vacuous as a measurement: the 2D catalogue leg is identically zero
+for 81.5%/61.8% of events) stands, and the **algebraic completion-leg invariance
+proof supersedes it** as the evidence of record. Gate (i) should no longer be
+cited as an independent measured check.
+
+### AUTHOR RULING (2026-08-05) — D1 disposition: bounded-null accepted
+*(RUNBOOK_NEXT_SESSION_8.md §1 item 4; annotates row #94 and the verdict in
+`../PREREGISTRATION_D1_SAND_REWEIGHT.md`, where the same ruling is appended.)*
+
+**ACCEPTED**: the bounded-null (tilt route) verdict of row #94 — D1 does not
+reach the core 2D-bias object via the tilt route; the D1→g_frac (C7) convergence
+route is dead at machine precision. Unchanged: the simulation-side
+`ParameterSpace.p0` bounds retirement remains its own future `/physics-change`
+(not authorised here), and the 3135-event catalogue is still never re-scored
+band-blind.
+
+### GOVERNANCE NOTE (2026-08-05) — binding value statement
+*(Author, verbatim; constrains all future adjudications recorded in this ledger.)*
+
+> "our overarching goal is a scientifically sound project with novel insights and
+> not to get rid of the bias by any means — scientific correctness and new
+> insights are valued higher."

@@ -756,3 +756,23 @@ test, which is the deciding measurement and was not run as part of this
 package. See `GATEB_REFUTATION_REPORT.md` for the full evidence trail,
 including the two incomplete checks (posterior-weighted-z vs plug-in z*;
 the §9/G4b run itself).
+
+---
+
+## AUTHOR RULING (2026-08-05)
+
+**R-A — ACCEPTED** (Jasper Seehofer, 2026-08-05, morning author queue:
+`results/campaign51_20260728/RUNBOOK_NEXT_SESSION_8.md` §1 item 1).
+
+The author accepts **"correct physics" for `g_frac`'s h-slope** — the
+Gate-B-surviving, closed-loop-supported reading (Gate B adjudication above;
+closed-loop 200-seed result, ledger row 92). What this accepts: the spectral-siren
+identification of the completion-leg mass factor's h-dependence as legitimate
+physics, per this package's derivation as amended by Gate B.
+
+**Explicitly NOT part of the acceptance:** the refuted §7 re-attribution
+(claim 4 of the Gate B table, REFUTED — "0.600 rail + 0.060 + 0.120 genuine
+tilt" decomposition and its re-attribute-to-1D-rail consequence). The honest
+statement remains the amended §7 as it stands.
+
+This block is append-only; no text above it was modified.
