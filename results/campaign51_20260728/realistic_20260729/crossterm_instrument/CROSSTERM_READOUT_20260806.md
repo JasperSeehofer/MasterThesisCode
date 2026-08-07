@@ -316,3 +316,19 @@ verdict.
 
 No file outside `crossterm_instrument/` was written; no prereg/claim/ledger text was edited;
 `master_thesis_code/` untouched.
+
+---
+
+## CORRECTION (2026-08-07, appended post-adjudication — presentation only, verdicts unaffected)
+
+The §0 headline factor range "between 4.9e+05× and 1.9e+05× below X" is wrong. The correct
+X/T factors, from `readout_adjudication_20260807.json` (independent recompute, verdict
+CONFIRMED, T values bit-identical): joint_r1/1d **1.89e+05×**, joint_r1/2d **4.92e+04×**,
+iiib/1d **2.71e+05×**, iiib/2d **5.17e+05×** — i.e. the correct range is **~4.9e+04× to
+~5.2e+05× below X = 2.78**. ("4.9e+05" was an exponent error for 4.9e+04; "1.9e+05" is an
+interior value, not a range end.) The per-channel values in §3 and the anti-dilution table
+(§ "below Y" factors) were verified correct as printed; no scored quantity or verdict changes.
+Adjudication also noted two diagnostic-convention nits (median/quartile interpolation methods
+on even-count sets, disclosed cuts verified) and a truncated-not-rounded x = 0.140376 print
+inherited from prereg §7.4 — all non-binding; see `readout_adjudication_20260807.json`
+`discrepancies` for the full list.
