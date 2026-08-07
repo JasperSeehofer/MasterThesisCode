@@ -1,0 +1,1 @@
+Observed catalogue /home/jasper/Repositories/MasterThesisCode/results/campaign51_20260728/realistic_20260729/realizations_staged/cluster_parent_reduced_galaxy_catalogue.csv has NO realization sidecar — treating it as a LEGACY UNSCATTERED baseline catalogue (guard 4, docs/derivations/realistic_host_observation_model.md §9). Baseline modes stay permitted.

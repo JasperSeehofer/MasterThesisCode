@@ -1,0 +1,1 @@
+wrote 416 rows -> results/campaign51_20260728/realistic_20260729/crossterm_instrument/outputs/run_joint_r1_2d.json

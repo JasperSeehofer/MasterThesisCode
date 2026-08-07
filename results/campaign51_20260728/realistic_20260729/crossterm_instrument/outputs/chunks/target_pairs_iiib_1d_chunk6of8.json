@@ -1,0 +1,255 @@
+{
+ "meta": {
+  "generator": "/home/jasper/Repositories/MasterThesisCode/results/campaign51_20260728/realistic_20260729/crossterm_instrument/make_target_pairs.py",
+  "generated_utc": "2026-08-05T10:18:10Z",
+  "venue": "iiib",
+  "schema": "crossterm_instrument --pair-list (R-3 ingestion)",
+  "convention": "M-4 truly-sharing census (prereg \u00a73 target set): every event pair whose production candidate balls share >= 1 catalogue galaxy; ball_1d = galaxy_likelihoods UNION additional_galaxies_without_bh_mass, ball_2d = galaxy_likelihoods only, from the frozeng h_0_73.json emits (ball h-independence verified in M-4/V2); n_shared = exact ball-intersection size; in_c4 = pair in the C-4 279-pair census (recon recipe)",
+  "zero_compute": "No quadrature, likelihood, or Delta was computed; inputs are the frozeng ball emits, the CRB CSV (C-4 predicate flags only) and m4_results.json (verification only)",
+  "inputs": {
+   "ball_json": "/home/jasper/Repositories/MasterThesisCode/results/run_20260804_frozeng/iiib/posteriors_with_bh_mass/h_0_73.json",
+   "crb_csv": "/home/jasper/Repositories/MasterThesisCode/results/run_20260804_postfix/joint_r1/diagnostics/prepared_cramer_rao_bounds.csv",
+   "m4_results_sha256": "46907913b35369bfdb96a705d1782a5c8d4eb9bf7955d1cb851434ba9d3f1c6b"
+  },
+  "counts": {
+   "1d": {
+    "total": 280,
+    "in_c4": 63,
+    "outside_c4": 217
+   },
+   "2d": {
+    "total": 21,
+    "in_c4": 5,
+    "outside_c4": 16
+   }
+  },
+  "chunking": {
+   "source": "/home/jasper/Repositories/MasterThesisCode/results/campaign51_20260728/realistic_20260729/crossterm_instrument/target_pairs_iiib.json",
+   "channel": "1d",
+   "chunk": 6,
+   "n_chunks": 8,
+   "slice": [
+    175,
+    210
+   ],
+   "n_pairs_in_chunk": 35,
+   "n_pairs_total_1d": 280,
+   "reason": "OOM at 140- and 70-pair chunkings (exit 137, ceiling hit within first ~65 pairs); re-split to 35-pair order-preserving slices, pair content unaltered"
+  }
+ },
+ "pairs": {
+  "1d": [
+   {
+    "i": 606,
+    "j": 666,
+    "n_shared": 83,
+    "in_c4": false
+   },
+   {
+    "i": 610,
+    "j": 786,
+    "n_shared": 727,
+    "in_c4": false
+   },
+   {
+    "i": 618,
+    "j": 992,
+    "n_shared": 8,
+    "in_c4": false
+   },
+   {
+    "i": 618,
+    "j": 1428,
+    "n_shared": 2,
+    "in_c4": false
+   },
+   {
+    "i": 618,
+    "j": 1499,
+    "n_shared": 1,
+    "in_c4": false
+   },
+   {
+    "i": 620,
+    "j": 1248,
+    "n_shared": 15,
+    "in_c4": false
+   },
+   {
+    "i": 620,
+    "j": 1274,
+    "n_shared": 4,
+    "in_c4": false
+   },
+   {
+    "i": 625,
+    "j": 1345,
+    "n_shared": 48,
+    "in_c4": false
+   },
+   {
+    "i": 626,
+    "j": 824,
+    "n_shared": 46,
+    "in_c4": true
+   },
+   {
+    "i": 638,
+    "j": 1032,
+    "n_shared": 3,
+    "in_c4": true
+   },
+   {
+    "i": 646,
+    "j": 860,
+    "n_shared": 108,
+    "in_c4": false
+   },
+   {
+    "i": 648,
+    "j": 829,
+    "n_shared": 698,
+    "in_c4": true
+   },
+   {
+    "i": 648,
+    "j": 1035,
+    "n_shared": 322,
+    "in_c4": false
+   },
+   {
+    "i": 648,
+    "j": 1261,
+    "n_shared": 87,
+    "in_c4": true
+   },
+   {
+    "i": 662,
+    "j": 812,
+    "n_shared": 97,
+    "in_c4": false
+   },
+   {
+    "i": 665,
+    "j": 1295,
+    "n_shared": 219,
+    "in_c4": false
+   },
+   {
+    "i": 673,
+    "j": 1540,
+    "n_shared": 1,
+    "in_c4": false
+   },
+   {
+    "i": 676,
+    "j": 1314,
+    "n_shared": 235,
+    "in_c4": true
+   },
+   {
+    "i": 689,
+    "j": 1010,
+    "n_shared": 2,
+    "in_c4": true
+   },
+   {
+    "i": 693,
+    "j": 914,
+    "n_shared": 68,
+    "in_c4": false
+   },
+   {
+    "i": 705,
+    "j": 963,
+    "n_shared": 27,
+    "in_c4": false
+   },
+   {
+    "i": 710,
+    "j": 971,
+    "n_shared": 217,
+    "in_c4": false
+   },
+   {
+    "i": 712,
+    "j": 1475,
+    "n_shared": 65,
+    "in_c4": true
+   },
+   {
+    "i": 715,
+    "j": 1343,
+    "n_shared": 36,
+    "in_c4": true
+   },
+   {
+    "i": 720,
+    "j": 822,
+    "n_shared": 1,
+    "in_c4": false
+   },
+   {
+    "i": 731,
+    "j": 975,
+    "n_shared": 9,
+    "in_c4": false
+   },
+   {
+    "i": 731,
+    "j": 1185,
+    "n_shared": 2,
+    "in_c4": false
+   },
+   {
+    "i": 737,
+    "j": 740,
+    "n_shared": 279,
+    "in_c4": false
+   },
+   {
+    "i": 743,
+    "j": 814,
+    "n_shared": 24,
+    "in_c4": false
+   },
+   {
+    "i": 743,
+    "j": 1488,
+    "n_shared": 20,
+    "in_c4": true
+   },
+   {
+    "i": 746,
+    "j": 1376,
+    "n_shared": 9,
+    "in_c4": false
+   },
+   {
+    "i": 762,
+    "j": 795,
+    "n_shared": 70,
+    "in_c4": false
+   },
+   {
+    "i": 762,
+    "j": 1052,
+    "n_shared": 72,
+    "in_c4": true
+   },
+   {
+    "i": 766,
+    "j": 1209,
+    "n_shared": 57,
+    "in_c4": false
+   },
+   {
+    "i": 769,
+    "j": 1269,
+    "n_shared": 11,
+    "in_c4": false
+   }
+  ],
+  "2d": []
+ }
+}

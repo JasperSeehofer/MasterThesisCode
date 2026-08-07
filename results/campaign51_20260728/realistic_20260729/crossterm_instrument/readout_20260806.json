@@ -1,0 +1,1692 @@
+{
+ "integrity": {
+  "instrument_sha256": "340b66d2f970e48cf5152676e8b6bed6b171f9538efa33bab6e5ef04abd87692",
+  "instrument_sha256_matches_ratified_pin": true
+ },
+ "venues": {
+  "joint_r1": {
+   "1d": {
+    "file": "/home/jasper/Repositories/MasterThesisCode/results/campaign51_20260728/realistic_20260729/crossterm_instrument/outputs/run_joint_r1_1d.json",
+    "n_rows": 1396,
+    "guard_census": {
+     "n_rows_nan": 0,
+     "n_rows_delta_neg_inf": 0,
+     "n_rows_delta_nonfinite": 0,
+     "voided_pairs": 0,
+     "auto_escalate_triggered": false
+    },
+    "coverage": {
+     "n_pairs_expected": 349,
+     "n_pairs_in_file": 349,
+     "pair_set_equals_ratified_target_x_hgrid": true,
+     "n_rows_expected": 1396
+    },
+    "escalation_audit": {
+     "n_rows_escalated": 4,
+     "escalated_rows": [
+      {
+       "pair": [
+        114,
+        1035
+       ],
+       "h": 0.6,
+       "quad_n_max_shared": 339,
+       "n_escalated_shared": 1,
+       "n_shared": 8861
+      },
+      {
+       "pair": [
+        114,
+        1035
+       ],
+       "h": 0.73,
+       "quad_n_max_shared": 398,
+       "n_escalated_shared": 1,
+       "n_shared": 8861
+      },
+      {
+       "pair": [
+        114,
+        1035
+       ],
+       "h": 0.81,
+       "quad_n_max_shared": 434,
+       "n_escalated_shared": 1,
+       "n_shared": 8861
+      },
+      {
+       "pair": [
+        114,
+        1035
+       ],
+       "h": 0.86,
+       "quad_n_max_shared": 455,
+       "n_escalated_shared": 1,
+       "n_shared": 8861
+      }
+     ]
+    },
+    "max_rel_dev_S_raw_vs_frozeng": 5.500719421187229e-09,
+    "w_share_ball_max_h_spread": 0.0,
+    "class_sum_raw_D": {
+     "0.6": 4.913478829402323,
+     "0.73": 50.148167439669756,
+     "0.81": 118.87066256506661,
+     "0.86": 186.12124059173183
+    },
+    "class_sum_raw_matches_reported": {
+     "0.6": true,
+     "0.73": true,
+     "0.81": true,
+     "0.86": true
+    },
+    "class_sum_mixture_D": {
+     "0.6": -1.6613487726229166e-05,
+     "0.73": -6.069000224238949e-06,
+     "0.81": -3.0380017599086047e-06,
+     "0.86": -1.9318923583658574e-06
+    },
+    "decision_statistic": {
+     "T_full_grid_range": 1.4681595367863309e-05,
+     "argmax_endpoints_h": [
+      0.6,
+      0.86
+     ],
+     "signed_D(h_lo)-D(h_hi)": -1.4681595367863309e-05,
+     "level_D_0.73_reported_not_scored": -6.069000224238949e-06,
+     "m2_comparable_endpoint_chord_D(0.60)-D(0.73)": -1.0544487501990219e-05,
+     "raw_diagnostic_T_raw_full_grid_range": 181.2077617623295,
+     "raw_diagnostic_chord_D_raw(0.60)-D_raw(0.73)": -45.23468861026743
+    },
+    "band_comparison": {
+     "X": 2.78,
+     "Y": 7.96,
+     "T_lt_X": true,
+     "T_ge_Y": false,
+     "gap_X_le_T_lt_Y": false,
+     "W_min_side_wpop_share_sum": 19.80387,
+     "x_per_unit": 0.1403766031588775,
+     "y_per_unit": 0.4019416406995198,
+     "T_over_W": 7.413498153574684e-07
+    },
+    "per_pair_distributions": {
+     "chord_at_argmax_endpoints_quantiles": {
+      "0.0": -3.964929976963566e-06,
+      "0.25": -1.1062769339011205e-10,
+      "0.5": -4.9954759619004283e-14,
+      "0.75": -4.824313475256382e-29,
+      "1.0": 1.0352847637307522e-06
+     },
+     "chord_0.60_minus_0.73_quantiles": {
+      "0.0": -3.279228960702267e-06,
+      "0.25": -1.0224128003877125e-10,
+      "0.5": -4.998741874419608e-14,
+      "0.75": -4.378589897500311e-29,
+      "1.0": 8.379499461686739e-07
+     },
+     "delta_tilde_at_0.73_quantiles": {
+      "0.0": -1.990091078695197e-06,
+      "0.25": -4.9557844500532185e-12,
+      "0.5": -6.343246249919646e-17,
+      "0.75": -1.2240751439313945e-66,
+      "1.0": 2.3666722677796732e-07
+     },
+     "top10_abs_chord": [
+      {
+       "pair": [
+        573,
+        1521
+       ],
+       "chord": -3.964929976963566e-06,
+       "n_shared": 208,
+       "in_c4": false,
+       "min_side_w_share": 0.04170003638769443
+      },
+      {
+       "pair": [
+        5,
+        293
+       ],
+       "chord": -2.485170564098853e-06,
+       "n_shared": 338,
+       "in_c4": false,
+       "min_side_w_share": 0.023770580806508824
+      },
+      {
+       "pair": [
+        927,
+        1035
+       ],
+       "chord": -2.383601104745961e-06,
+       "n_shared": 3519,
+       "in_c4": false,
+       "min_side_w_share": 0.0791811411397223
+      },
+      {
+       "pair": [
+        5,
+        711
+       ],
+       "chord": -1.5204277960698695e-06,
+       "n_shared": 131,
+       "in_c4": false,
+       "min_side_w_share": 0.010192406026436228
+      },
+      {
+       "pair": [
+        1428,
+        1499
+       ],
+       "chord": -1.5026048421828336e-06,
+       "n_shared": 2242,
+       "in_c4": false,
+       "min_side_w_share": 0.1895889863967844
+      },
+      {
+       "pair": [
+        546,
+        848
+       ],
+       "chord": 1.0352847637307522e-06,
+       "n_shared": 852,
+       "in_c4": true,
+       "min_side_w_share": 0.1865545971032001
+      },
+      {
+       "pair": [
+        240,
+        750
+       ],
+       "chord": -7.354246095817611e-07,
+       "n_shared": 184,
+       "in_c4": false,
+       "min_side_w_share": 0.12779671191576447
+      },
+      {
+       "pair": [
+        884,
+        1416
+       ],
+       "chord": 6.804361348844877e-07,
+       "n_shared": 29,
+       "in_c4": true,
+       "min_side_w_share": 0.013717278702588237
+      },
+      {
+       "pair": [
+        937,
+        1388
+       ],
+       "chord": -5.663302129407572e-07,
+       "n_shared": 26,
+       "in_c4": false,
+       "min_side_w_share": 0.04455164973384195
+      },
+      {
+       "pair": [
+        98,
+        294
+       ],
+       "chord": -5.478769313107354e-07,
+       "n_shared": 2674,
+       "in_c4": false,
+       "min_side_w_share": 0.26111750681447465
+      }
+     ]
+    },
+    "a2_stratified": {
+     "n_shared_bands": {
+      "1": {
+       "n_pairs": 36,
+       "net_chord_subsum": -4.1295252796308357e-10,
+       "pos_subsum": 3.6496282286974364e-10,
+       "neg_subsum": -7.779153508328272e-10,
+       "max_abs_one_signed_subsum": 7.779153508328272e-10,
+       "min_chord": -4.827537227988398e-10,
+       "max_chord": 3.265629485808911e-10
+      },
+      "101-1000": {
+       "n_pairs": 66,
+       "net_chord_subsum": -9.017030396551233e-06,
+       "pos_subsum": 1.1438457824121626e-06,
+       "neg_subsum": -1.0160876178963395e-05,
+       "max_abs_one_signed_subsum": 1.0160876178963395e-05,
+       "min_chord": -3.964929976963566e-06,
+       "max_chord": 1.0352847637307522e-06
+      },
+      "11-100": {
+       "n_pairs": 140,
+       "net_chord_subsum": -5.234083363858337e-07,
+       "pos_subsum": 8.949099324445015e-07,
+       "neg_subsum": -1.4183182688303352e-06,
+       "max_abs_one_signed_subsum": 1.4183182688303352e-06,
+       "min_chord": -5.663302129407572e-07,
+       "max_chord": 6.804361348844877e-07
+      },
+      "2-10": {
+       "n_pairs": 95,
+       "net_chord_subsum": -4.567559133787353e-07,
+       "pos_subsum": 2.0152275717868814e-09,
+       "neg_subsum": -4.5877114095052214e-07,
+       "max_abs_one_signed_subsum": 4.5877114095052214e-07,
+       "min_chord": -3.097501305389118e-07,
+       "max_chord": 1.0672825921385706e-09
+      },
+      ">1000": {
+       "n_pairs": 12,
+       "net_chord_subsum": -4.683987769019544e-06,
+       "pos_subsum": 7.607734989996075e-08,
+       "neg_subsum": -4.7600651189195045e-06,
+       "max_abs_one_signed_subsum": 4.7600651189195045e-06,
+       "min_chord": -2.383601104745961e-06,
+       "max_chord": 7.607734977494475e-08
+      }
+     },
+     "overlap_degree_max_side": {
+      "0": {
+       "n_pairs": 70,
+       "net_chord_subsum": -1.03908496504966e-05,
+       "pos_subsum": 0,
+       "neg_subsum": -1.03908496504966e-05,
+       "max_abs_one_signed_subsum": 1.03908496504966e-05,
+       "min_chord": -3.964929976963566e-06,
+       "max_chord": -5.196208059867724e-75
+      },
+      "1": {
+       "n_pairs": 133,
+       "net_chord_subsum": -4.668823763622955e-06,
+       "pos_subsum": 1.053324314567758e-06,
+       "neg_subsum": -5.722148078190713e-06,
+       "max_abs_one_signed_subsum": 5.722148078190713e-06,
+       "min_chord": -2.383601104745961e-06,
+       "max_chord": 6.804361348844877e-07
+      },
+      "2": {
+       "n_pairs": 68,
+       "net_chord_subsum": 9.015654431823064e-07,
+       "pos_subsum": 1.052437943299119e-06,
+       "neg_subsum": -1.5087250011681274e-07,
+       "max_abs_one_signed_subsum": 1.052437943299119e-06,
+       "min_chord": -8.732669384913761e-08,
+       "max_chord": 1.0352847637307522e-06
+      },
+      "3": {
+       "n_pairs": 42,
+       "net_chord_subsum": -5.226102923780897e-07,
+       "pos_subsum": 1.0186970996139215e-08,
+       "neg_subsum": -5.327972633742289e-07,
+       "max_abs_one_signed_subsum": 5.327972633742289e-07,
+       "min_chord": -5.109418563904404e-07,
+       "max_chord": 9.261424803235227e-09
+      },
+      "4": {
+       "n_pairs": 21,
+       "net_chord_subsum": -9.076049595925653e-10,
+       "pos_subsum": 1.2264904447155874e-09,
+       "neg_subsum": -2.1340954043081528e-09,
+       "max_abs_one_signed_subsum": 2.1340954043081528e-09,
+       "min_chord": -1.6131556871514518e-09,
+       "max_chord": 6.920774578934544e-10
+      },
+      "5": {
+       "n_pairs": 10,
+       "net_chord_subsum": 1.8861072340422307e-12,
+       "pos_subsum": 8.898456991811531e-12,
+       "neg_subsum": -7.0123497577693e-12,
+       "max_abs_one_signed_subsum": 8.898456991811531e-12,
+       "min_chord": -6.962390537856944e-12,
+       "max_chord": 8.898456960410505e-12
+      },
+      "6": {
+       "n_pairs": 5,
+       "net_chord_subsum": 2.8614304388218443e-11,
+       "pos_subsum": 2.8637386557882882e-11,
+       "neg_subsum": -2.3082169664440178e-14,
+       "max_abs_one_signed_subsum": 2.8637386557882882e-11,
+       "min_chord": -1.8844468127411905e-14,
+       "max_chord": 2.8637386557882882e-11
+      }
+     },
+     "w_G_unique_values_per_h": {
+      "0.6": [
+       0.095686608947
+      ],
+      "0.73": [
+       0.070802251082
+      ],
+      "0.81": [
+       0.060668219574
+      ],
+      "0.86": [
+       0.055607912665
+      ]
+     },
+     "w_G_degenerate_confirmed": true,
+     "w_G_strata": {
+      "w_G=0.07080(all)": {
+       "n_pairs": 349,
+       "net_chord_subsum": -1.4681595367863309e-05,
+       "pos_subsum": 2.1172132551512815e-06,
+       "neg_subsum": -1.679880862301459e-05,
+       "max_abs_one_signed_subsum": 1.679880862301459e-05,
+       "min_chord": -3.964929976963566e-06,
+       "max_chord": 1.0352847637307522e-06
+      }
+     },
+     "min_side_w_share_quartiles": {
+      "Q1(<= 0.004488)": {
+       "n_pairs": 88,
+       "net_chord_subsum": -1.9506129358686168e-07,
+       "pos_subsum": 7.38286875116076e-10,
+       "neg_subsum": -1.9579958046197776e-07,
+       "max_abs_one_signed_subsum": 1.9579958046197776e-07,
+       "min_chord": -1.458098158516749e-07,
+       "max_chord": 7.290357595325042e-10
+      },
+      "Q2(<= 0.01808)": {
+       "n_pairs": 87,
+       "net_chord_subsum": -1.2018592717134491e-06,
+       "pos_subsum": 6.804361350098003e-07,
+       "neg_subsum": -1.8822954067232493e-06,
+       "max_abs_one_signed_subsum": 1.8822954067232493e-06,
+       "min_chord": -1.5204277960698695e-06,
+       "max_chord": 6.804361348844877e-07
+      },
+      "Q3(<= 0.06908)": {
+       "n_pairs": 87,
+       "net_chord_subsum": -7.959444714700388e-06,
+       "pos_subsum": 3.4115536153394156e-08,
+       "neg_subsum": -7.993560250853781e-06,
+       "max_abs_one_signed_subsum": 7.993560250853781e-06,
+       "min_chord": -3.964929976963566e-06,
+       "max_chord": 3.2673149656089826e-08
+      },
+      "Q4(> 0.06908)": {
+       "n_pairs": 87,
+       "net_chord_subsum": -5.3252300878626106e-06,
+       "pos_subsum": 1.401923297112971e-06,
+       "neg_subsum": -6.727153384975582e-06,
+       "max_abs_one_signed_subsum": 6.727153384975582e-06,
+       "min_chord": -2.383601104745961e-06,
+       "max_chord": 1.0352847637307522e-06
+      }
+     },
+     "min_side_w_share_quartile_cuts": [
+      0.004487924978073043,
+      0.01807752881251482,
+      0.06908204216342767
+     ],
+     "in_c4_vs_outside": {
+      "in_c4": {
+       "n_pairs": 80,
+       "net_chord_subsum": 1.8124205663985458e-06,
+       "pos_subsum": 2.117213255149522e-06,
+       "neg_subsum": -3.0479268875097594e-07,
+       "max_abs_one_signed_subsum": 2.117213255149522e-06,
+       "min_chord": -8.809506679758971e-08,
+       "max_chord": 1.0352847637307522e-06
+      },
+      "outside_c4": {
+       "n_pairs": 269,
+       "net_chord_subsum": -1.6494015934261853e-05,
+       "pos_subsum": 1.7599687737548387e-18,
+       "neg_subsum": -1.6494015934263615e-05,
+       "max_abs_one_signed_subsum": 1.6494015934263615e-05,
+       "min_chord": -3.964929976963566e-06,
+       "max_chord": 1.7599687737548387e-18
+      }
+     },
+     "sign_decomposition": {
+      "n_pos": 56,
+      "n_neg": 290,
+      "n_zero": 3,
+      "sum_pos_chords": 2.1172132551512815e-06,
+      "sum_neg_chords": -1.679880862301459e-05,
+      "net": -1.4681595367863309e-05
+     }
+    },
+    "anti_dilution": {
+     "Y_scale": 7.96,
+     "any_stratum_one_signed_subsum_ge_Y": false,
+     "offending_strata": [],
+     "max_one_signed_subsum_any_stratum": 1.679880862301459e-05
+    },
+    "verdict": "NEGLECT-WITH-NUMBER"
+   },
+   "2d": {
+    "file": "/home/jasper/Repositories/MasterThesisCode/results/campaign51_20260728/realistic_20260729/crossterm_instrument/outputs/run_joint_r1_2d.json",
+    "n_rows": 416,
+    "guard_census": {
+     "n_rows_nan": 0,
+     "n_rows_delta_neg_inf": 0,
+     "n_rows_delta_nonfinite": 0,
+     "voided_pairs": 0,
+     "auto_escalate_triggered": false
+    },
+    "coverage": {
+     "n_pairs_expected": 104,
+     "n_pairs_in_file": 104,
+     "pair_set_equals_ratified_target_x_hgrid": true,
+     "n_rows_expected": 416
+    },
+    "escalation_audit": {
+     "n_rows_escalated": 0,
+     "escalated_rows": []
+    },
+    "max_rel_dev_S_raw_vs_frozeng": 1.1233944300365468e-14,
+    "w_share_ball_max_h_spread": 0.0,
+    "class_sum_raw_D": {
+     "0.6": -2.264332634339545,
+     "0.73": -4.771683619899145,
+     "0.81": -6.742511180597875,
+     "0.86": -8.063511249674896
+    },
+    "class_sum_raw_matches_reported": {
+     "0.6": true,
+     "0.73": true,
+     "0.81": true,
+     "0.86": true
+    },
+    "class_sum_mixture_D": {
+     "0.6": -5.8876648969788997e-05,
+     "0.73": -1.4836373797918604e-05,
+     "0.81": -4.7864945094147684e-06,
+     "0.86": -2.389123315482466e-06
+    },
+    "decision_statistic": {
+     "T_full_grid_range": 5.648752565430653e-05,
+     "argmax_endpoints_h": [
+      0.6,
+      0.86
+     ],
+     "signed_D(h_lo)-D(h_hi)": -5.648752565430653e-05,
+     "level_D_0.73_reported_not_scored": -1.4836373797918604e-05,
+     "m2_comparable_endpoint_chord_D(0.60)-D(0.73)": -4.404027517187039e-05,
+     "raw_diagnostic_T_raw_full_grid_range": 5.799178615335351,
+     "raw_diagnostic_chord_D_raw(0.60)-D_raw(0.73)": 2.5073509855596
+    },
+    "band_comparison": {
+     "X": 2.78,
+     "Y": 7.96,
+     "T_lt_X": true,
+     "T_ge_Y": false,
+     "gap_X_le_T_lt_Y": false,
+     "W_min_side_wpop_share_sum": 4.094919851,
+     "x_per_unit": 0.6788899663863042,
+     "y_per_unit": 1.9438719900845258,
+     "T_over_W": 1.3794537551330092e-05
+    },
+    "per_pair_distributions": {
+     "chord_at_argmax_endpoints_quantiles": {
+      "0.0": -3.283595666125134e-05,
+      "0.25": -1.2702567544211881e-08,
+      "0.5": -3.031716987929548e-11,
+      "0.75": -2.920271282264948e-16,
+      "1.0": 0.0
+     },
+     "chord_0.60_minus_0.73_quantiles": {
+      "0.0": -2.5748204287917872e-05,
+      "0.25": -1.2303148976813263e-08,
+      "0.5": -2.856909635289907e-11,
+      "0.75": -1.281476977744095e-16,
+      "1.0": 0.0
+     },
+     "delta_tilde_at_0.73_quantiles": {
+      "0.0": -8.032118259614058e-06,
+      "0.25": -2.0335650990660952e-10,
+      "0.5": -3.187503956487095e-13,
+      "0.75": -4.010482550964629e-18,
+      "1.0": 0.0
+     },
+     "top10_abs_chord": [
+      {
+       "pair": [
+        927,
+        1035
+       ],
+       "chord": -3.283595666125134e-05,
+       "n_shared": 636,
+       "in_c4": false,
+       "min_side_w_share": 0.0400958440538857
+      },
+      {
+       "pair": [
+        98,
+        294
+       ],
+       "chord": -1.2297599168776283e-05,
+       "n_shared": 848,
+       "in_c4": false,
+       "min_side_w_share": 0.1925820678019642
+      },
+      {
+       "pair": [
+        5,
+        711
+       ],
+       "chord": -2.671037151828438e-06,
+       "n_shared": 12,
+       "in_c4": false,
+       "min_side_w_share": 0.011341007650095533
+      },
+      {
+       "pair": [
+        1224,
+        1499
+       ],
+       "chord": -2.5306351893440093e-06,
+       "n_shared": 6,
+       "in_c4": false,
+       "min_side_w_share": 0.004732265955468619
+      },
+      {
+       "pair": [
+        1428,
+        1499
+       ],
+       "chord": -1.1932385697482267e-06,
+       "n_shared": 108,
+       "in_c4": false,
+       "min_side_w_share": 0.07533324306006696
+      },
+      {
+       "pair": [
+        114,
+        1035
+       ],
+       "chord": -1.125458543344679e-06,
+       "n_shared": 2782,
+       "in_c4": true,
+       "min_side_w_share": 0.17558819976680143
+      },
+      {
+       "pair": [
+        5,
+        293
+       ],
+       "chord": -7.123987376393563e-07,
+       "n_shared": 8,
+       "in_c4": false,
+       "min_side_w_share": 0.007522034623443474
+      },
+      {
+       "pair": [
+        1224,
+        1428
+       ],
+       "chord": -5.622894181094151e-07,
+       "n_shared": 5,
+       "in_c4": false,
+       "min_side_w_share": 0.0156596216382346
+      },
+      {
+       "pair": [
+        403,
+        691
+       ],
+       "chord": -4.410883086585262e-07,
+       "n_shared": 3,
+       "in_c4": false,
+       "min_side_w_share": 0.017495251836553587
+      },
+      {
+       "pair": [
+        365,
+        1035
+       ],
+       "chord": -4.2558243852522113e-07,
+       "n_shared": 181,
+       "in_c4": false,
+       "min_side_w_share": 0.011036118906964815
+      }
+     ]
+    },
+    "a2_stratified": {
+     "n_shared_bands": {
+      "1": {
+       "n_pairs": 31,
+       "net_chord_subsum": -3.65411982392809e-07,
+       "pos_subsum": 0,
+       "neg_subsum": -3.65411982392809e-07,
+       "max_abs_one_signed_subsum": 3.65411982392809e-07,
+       "min_chord": -1.8210447845847298e-07,
+       "max_chord": -3.219558730539062e-94
+      },
+      "101-1000": {
+       "n_pairs": 11,
+       "net_chord_subsum": -4.6937844682905863e-05,
+       "pos_subsum": 0,
+       "neg_subsum": -4.6937844682905863e-05,
+       "max_abs_one_signed_subsum": 4.6937844682905863e-05,
+       "min_chord": -3.283595666125134e-05,
+       "max_chord": -3.281003004366433e-28
+      },
+      "11-100": {
+       "n_pairs": 21,
+       "net_chord_subsum": -3.2683391364018403e-06,
+       "pos_subsum": 0,
+       "neg_subsum": -3.2683391364018403e-06,
+       "max_abs_one_signed_subsum": 3.2683391364018403e-06,
+       "min_chord": -2.671037151828438e-06,
+       "max_chord": -1.0736912426698305e-34
+      },
+      "2-10": {
+       "n_pairs": 40,
+       "net_chord_subsum": -4.790471309261344e-06,
+       "pos_subsum": 0,
+       "neg_subsum": -4.790471309261344e-06,
+       "max_abs_one_signed_subsum": 4.790471309261344e-06,
+       "min_chord": -2.5306351893440093e-06,
+       "max_chord": 0.0
+      },
+      ">1000": {
+       "n_pairs": 1,
+       "net_chord_subsum": -1.125458543344679e-06,
+       "pos_subsum": 0,
+       "neg_subsum": -1.125458543344679e-06,
+       "max_abs_one_signed_subsum": 1.125458543344679e-06,
+       "min_chord": -1.125458543344679e-06,
+       "max_chord": -1.125458543344679e-06
+      }
+     },
+     "overlap_degree_max_side": {
+      "0": {
+       "n_pairs": 24,
+       "net_chord_subsum": -1.665520946654227e-05,
+       "pos_subsum": 0,
+       "neg_subsum": -1.665520946654227e-05,
+       "max_abs_one_signed_subsum": 1.665520946654227e-05,
+       "min_chord": -1.2297599168776283e-05,
+       "max_chord": -3.219558730539062e-94
+      },
+      "1": {
+       "n_pairs": 48,
+       "net_chord_subsum": -3.940717563506032e-05,
+       "pos_subsum": 0,
+       "neg_subsum": -3.940717563506032e-05,
+       "max_abs_one_signed_subsum": 3.940717563506032e-05,
+       "min_chord": -3.283595666125134e-05,
+       "max_chord": -2.094295018613863e-36
+      },
+      "2": {
+       "n_pairs": 11,
+       "net_chord_subsum": -3.4333400161254643e-07,
+       "pos_subsum": 0,
+       "neg_subsum": -3.4333400161254643e-07,
+       "max_abs_one_signed_subsum": 3.4333400161254643e-07,
+       "min_chord": -1.2359740973123078e-07,
+       "max_chord": -4.735077125235805e-40
+      },
+      "3": {
+       "n_pairs": 16,
+       "net_chord_subsum": -8.162687789569701e-08,
+       "pos_subsum": 0,
+       "neg_subsum": -8.162687789569701e-08,
+       "max_abs_one_signed_subsum": 8.162687789569701e-08,
+       "min_chord": -7.078748263969983e-08,
+       "max_chord": 0.0
+      },
+      "4": {
+       "n_pairs": 4,
+       "net_chord_subsum": -1.7967319570544563e-10,
+       "pos_subsum": 0,
+       "neg_subsum": -1.7967319570544563e-10,
+       "max_abs_one_signed_subsum": 1.7967319570544563e-10,
+       "min_chord": -1.6530498427445992e-10,
+       "max_chord": -8.229263416014126e-31
+      },
+      "5": {
+       "n_pairs": 1,
+       "net_chord_subsum": -5.147956225858285e-29,
+       "pos_subsum": 0,
+       "neg_subsum": -5.147956225858285e-29,
+       "max_abs_one_signed_subsum": 5.147956225858285e-29,
+       "min_chord": -5.147956225858285e-29,
+       "max_chord": -5.147956225858285e-29
+      }
+     },
+     "w_G_unique_values_per_h": {
+      "0.6": [
+       0.095686608947
+      ],
+      "0.73": [
+       0.070802251082
+      ],
+      "0.81": [
+       0.060668219574
+      ],
+      "0.86": [
+       0.055607912665
+      ]
+     },
+     "w_G_degenerate_confirmed": true,
+     "w_G_strata": {
+      "w_G=0.07080(all)": {
+       "n_pairs": 104,
+       "net_chord_subsum": -5.648752565430654e-05,
+       "pos_subsum": 0,
+       "neg_subsum": -5.648752565430654e-05,
+       "max_abs_one_signed_subsum": 5.648752565430654e-05,
+       "min_chord": -3.283595666125134e-05,
+       "max_chord": 0.0
+      }
+     },
+     "min_side_w_share_quartiles": {
+      "Q1(<= 0.002349)": {
+       "n_pairs": 26,
+       "net_chord_subsum": -1.391526654702438e-07,
+       "pos_subsum": 0,
+       "neg_subsum": -1.391526654702438e-07,
+       "max_abs_one_signed_subsum": 1.391526654702438e-07,
+       "min_chord": -1.0975035952932922e-07,
+       "max_chord": 0.0
+      },
+      "Q2(<= 0.009313)": {
+       "n_pairs": 26,
+       "net_chord_subsum": -3.715026999016025e-06,
+       "pos_subsum": 0,
+       "neg_subsum": -3.715026999016025e-06,
+       "max_abs_one_signed_subsum": 3.715026999016025e-06,
+       "min_chord": -2.5306351893440093e-06,
+       "max_chord": -3.2743670274854653e-56
+      },
+      "Q3(<= 0.04719)": {
+       "n_pairs": 26,
+       "net_chord_subsum": -3.7464084831299855e-05,
+       "pos_subsum": 0,
+       "neg_subsum": -3.7464084831299855e-05,
+       "max_abs_one_signed_subsum": 3.7464084831299855e-05,
+       "min_chord": -3.283595666125134e-05,
+       "max_chord": -2.961610651708994e-37
+      },
+      "Q4(> 0.04719)": {
+       "n_pairs": 26,
+       "net_chord_subsum": -1.516926115852041e-05,
+       "pos_subsum": 0,
+       "neg_subsum": -1.516926115852041e-05,
+       "max_abs_one_signed_subsum": 1.516926115852041e-05,
+       "min_chord": -1.2297599168776283e-05,
+       "max_chord": -1.0736912426698305e-34
+      }
+     },
+     "min_side_w_share_quartile_cuts": [
+      0.002348835371839477,
+      0.009313205279719659,
+      0.047186991733984385
+     ],
+     "in_c4_vs_outside": {
+      "in_c4": {
+       "n_pairs": 27,
+       "net_chord_subsum": -1.7995687952715694e-06,
+       "pos_subsum": 0,
+       "neg_subsum": -1.7995687952715694e-06,
+       "max_abs_one_signed_subsum": 1.7995687952715694e-06,
+       "min_chord": -1.125458543344679e-06,
+       "max_chord": -7.34194549906742e-33
+      },
+      "outside_c4": {
+       "n_pairs": 77,
+       "net_chord_subsum": -5.4687956859034966e-05,
+       "pos_subsum": 0,
+       "neg_subsum": -5.4687956859034966e-05,
+       "max_abs_one_signed_subsum": 5.4687956859034966e-05,
+       "min_chord": -3.283595666125134e-05,
+       "max_chord": 0.0
+      }
+     },
+     "sign_decomposition": {
+      "n_pos": 0,
+      "n_neg": 103,
+      "n_zero": 1,
+      "sum_pos_chords": 0,
+      "sum_neg_chords": -5.648752565430654e-05,
+      "net": -5.648752565430654e-05
+     }
+    },
+    "anti_dilution": {
+     "Y_scale": 7.96,
+     "any_stratum_one_signed_subsum_ge_Y": false,
+     "offending_strata": [],
+     "max_one_signed_subsum_any_stratum": 5.648752565430654e-05
+    },
+    "verdict": "NEGLECT-WITH-NUMBER"
+   }
+  },
+  "iiib": {
+   "1d": {
+    "file": "/home/jasper/Repositories/MasterThesisCode/results/campaign51_20260728/realistic_20260729/crossterm_instrument/outputs/run_iiib_1d.json",
+    "n_rows": 1120,
+    "guard_census": {
+     "n_rows_nan": 0,
+     "n_rows_delta_neg_inf": 0,
+     "n_rows_delta_nonfinite": 0,
+     "voided_pairs": 0,
+     "auto_escalate_triggered": false
+    },
+    "coverage": {
+     "n_pairs_expected": 280,
+     "n_pairs_in_file": 280,
+     "pair_set_equals_ratified_target_x_hgrid": true,
+     "n_rows_expected": 1120
+    },
+    "escalation_audit": {
+     "n_rows_escalated": 0,
+     "escalated_rows": []
+    },
+    "max_rel_dev_S_raw_vs_frozeng": 1.2000419165508927e-07,
+    "w_share_ball_max_h_spread": 0.0,
+    "class_sum_raw_D": {
+     "0.6": 1.7792823996892777,
+     "0.73": 24.835782835912816,
+     "0.81": 52.55062081976259,
+     "0.86": 79.2928330996219
+    },
+    "class_sum_raw_matches_reported": {
+     "0.6": true,
+     "0.73": true,
+     "0.81": true,
+     "0.86": true
+    },
+    "class_sum_mixture_D": {
+     "0.6": -1.159605457396784e-05,
+     "0.73": -4.434362515077008e-06,
+     "0.81": -2.2460386862876898e-06,
+     "0.86": -1.3499031657171654e-06
+    },
+    "decision_statistic": {
+     "T_full_grid_range": 1.0246151408250674e-05,
+     "argmax_endpoints_h": [
+      0.6,
+      0.86
+     ],
+     "signed_D(h_lo)-D(h_hi)": -1.0246151408250674e-05,
+     "level_D_0.73_reported_not_scored": -4.434362515077008e-06,
+     "m2_comparable_endpoint_chord_D(0.60)-D(0.73)": -7.1616920588908315e-06,
+     "raw_diagnostic_T_raw_full_grid_range": 77.51355069993262,
+     "raw_diagnostic_chord_D_raw(0.60)-D_raw(0.73)": -23.056500436223537
+    },
+    "band_comparison": {
+     "X": 2.78,
+     "Y": 7.96,
+     "T_lt_X": true,
+     "T_ge_Y": false,
+     "gap_X_le_T_lt_Y": false,
+     "W_min_side_wpop_share_sum": 14.728652,
+     "x_per_unit": 0.1887477550559277,
+     "y_per_unit": 0.5404432123184117,
+     "T_over_W": 6.956611785145494e-07
+    },
+    "per_pair_distributions": {
+     "chord_at_argmax_endpoints_quantiles": {
+      "0.0": -2.807490315645533e-06,
+      "0.25": -1.5570913177159588e-10,
+      "0.5": -3.976694920125595e-14,
+      "0.75": -2.481216600343932e-28,
+      "1.0": 7.161659675592318e-07
+     },
+     "chord_0.60_minus_0.73_quantiles": {
+      "0.0": -2.2162958510984275e-06,
+      "0.25": -1.507151712705534e-10,
+      "0.5": -3.380255233734166e-14,
+      "0.75": -1.6188329461755505e-28,
+      "1.0": 5.8740414232765e-07
+     },
+     "delta_tilde_at_0.73_quantiles": {
+      "0.0": -1.5289748179525935e-06,
+      "0.25": -5.555693888289832e-12,
+      "0.5": -4.284045888434285e-17,
+      "0.75": -3.1905451860412085e-43,
+      "1.0": 1.4668874572706272e-07
+     },
+     "top10_abs_chord": [
+      {
+       "pair": [
+        573,
+        1521
+       ],
+       "chord": -2.807490315645533e-06,
+       "n_shared": 236,
+       "in_c4": false,
+       "min_side_w_share": 0.04357549852133747
+      },
+      {
+       "pair": [
+        5,
+        293
+       ],
+       "chord": -1.8378578517160822e-06,
+       "n_shared": 395,
+       "in_c4": false,
+       "min_side_w_share": 0.02543344354998219
+      },
+      {
+       "pair": [
+        927,
+        1035
+       ],
+       "chord": -1.323160805750355e-06,
+       "n_shared": 3733,
+       "in_c4": false,
+       "min_side_w_share": 0.07424741517074958
+      },
+      {
+       "pair": [
+        1428,
+        1499
+       ],
+       "chord": -1.2175718056936913e-06,
+       "n_shared": 2604,
+       "in_c4": false,
+       "min_side_w_share": 0.19918663149644403
+      },
+      {
+       "pair": [
+        5,
+        711
+       ],
+       "chord": -1.1127643478674245e-06,
+       "n_shared": 142,
+       "in_c4": false,
+       "min_side_w_share": 0.010370969240798566
+      },
+      {
+       "pair": [
+        546,
+        848
+       ],
+       "chord": 7.161659675592318e-07,
+       "n_shared": 902,
+       "in_c4": true,
+       "min_side_w_share": 0.18575031383798205
+      },
+      {
+       "pair": [
+        937,
+        1388
+       ],
+       "chord": -5.310630786409286e-07,
+       "n_shared": 30,
+       "in_c4": false,
+       "min_side_w_share": 0.045516543681859326
+      },
+      {
+       "pair": [
+        240,
+        750
+       ],
+       "chord": -4.757324494349458e-07,
+       "n_shared": 198,
+       "in_c4": false,
+       "min_side_w_share": 0.13147082367854315
+      },
+      {
+       "pair": [
+        884,
+        1416
+       ],
+       "chord": 4.5704118394662134e-07,
+       "n_shared": 31,
+       "in_c4": true,
+       "min_side_w_share": 0.015119220925170216
+      },
+      {
+       "pair": [
+        98,
+        294
+       ],
+       "chord": -3.736483044490315e-07,
+       "n_shared": 3135,
+       "in_c4": false,
+       "min_side_w_share": 0.2692969448475135
+      }
+     ]
+    },
+    "a2_stratified": {
+     "n_shared_bands": {
+      "1": {
+       "n_pairs": 36,
+       "net_chord_subsum": -1.4066181933517934e-09,
+       "pos_subsum": 1.4662272902755317e-11,
+       "neg_subsum": -1.4212804662545486e-09,
+       "max_abs_one_signed_subsum": 1.4212804662545486e-09,
+       "min_chord": -7.416830224702179e-10,
+       "max_chord": 1.0681927535226278e-11
+      },
+      "101-1000": {
+       "n_pairs": 60,
+       "net_chord_subsum": -6.28367866915032e-06,
+       "pos_subsum": 7.857138664881573e-07,
+       "neg_subsum": -7.0693925356384775e-06,
+       "max_abs_one_signed_subsum": 7.0693925356384775e-06,
+       "min_chord": -2.807490315645533e-06,
+       "max_chord": 7.161659675592318e-07
+      },
+      "11-100": {
+       "n_pairs": 106,
+       "net_chord_subsum": -6.380970396111062e-07,
+       "pos_subsum": 5.553002551672897e-07,
+       "neg_subsum": -1.193397294778396e-06,
+       "max_abs_one_signed_subsum": 1.193397294778396e-06,
+       "min_chord": -5.310630786409286e-07,
+       "max_chord": 4.5704118394662134e-07
+      },
+      "2-10": {
+       "n_pairs": 64,
+       "net_chord_subsum": -1.2875534133193364e-07,
+       "pos_subsum": 1.3399839389588217e-10,
+       "neg_subsum": -1.2888933972582952e-07,
+       "max_abs_one_signed_subsum": 1.2888933972582952e-07,
+       "min_chord": -7.822653599315482e-08,
+       "max_chord": 1.3112480741344185e-10
+      },
+      ">1000": {
+       "n_pairs": 14,
+       "net_chord_subsum": -3.1942137399639627e-06,
+       "pos_subsum": 4.9477027726027414e-08,
+       "neg_subsum": -3.24369076768999e-06,
+       "max_abs_one_signed_subsum": 3.24369076768999e-06,
+       "min_chord": -1.323160805750355e-06,
+       "max_chord": 4.9088300385405416e-08
+      }
+     },
+     "overlap_degree_max_side": {
+      "0": {
+       "n_pairs": 63,
+       "net_chord_subsum": -7.483052353131084e-06,
+       "pos_subsum": 0,
+       "neg_subsum": -7.483052353131084e-06,
+       "max_abs_one_signed_subsum": 7.483052353131084e-06,
+       "min_chord": -2.807490315645533e-06,
+       "max_chord": -8.891310006252291e-77
+      },
+      "1": {
+       "n_pairs": 107,
+       "net_chord_subsum": -3.116902198260025e-06,
+       "pos_subsum": 6.631859259121152e-07,
+       "neg_subsum": -3.78008812417214e-06,
+       "max_abs_one_signed_subsum": 3.78008812417214e-06,
+       "min_chord": -1.323160805750355e-06,
+       "max_chord": 4.5704118394662134e-07
+      },
+      "2": {
+       "n_pairs": 56,
+       "net_chord_subsum": 6.248870408014706e-07,
+       "pos_subsum": 7.241769825460154e-07,
+       "neg_subsum": -9.928994174454479e-08,
+       "max_abs_one_signed_subsum": 7.241769825460154e-07,
+       "min_chord": -6.238346511838873e-08,
+       "max_chord": 7.161659675592318e-07
+      },
+      "3": {
+       "n_pairs": 34,
+       "net_chord_subsum": -2.704350955478037e-07,
+       "pos_subsum": 2.836631406422327e-09,
+       "neg_subsum": -2.7327172695422605e-07,
+       "max_abs_one_signed_subsum": 2.7327172695422605e-07,
+       "min_chord": -2.6331914111306583e-07,
+       "max_chord": 2.1634443867856556e-09
+      },
+      "4": {
+       "n_pairs": 15,
+       "net_chord_subsum": -6.476862550080942e-10,
+       "pos_subsum": 4.4027018371759736e-10,
+       "neg_subsum": -1.0879564387256916e-09,
+       "max_abs_one_signed_subsum": 1.0879564387256916e-09,
+       "min_chord": -7.580413004147914e-10,
+       "max_chord": 2.870344351421862e-10
+      },
+      "5": {
+       "n_pairs": 5,
+       "net_chord_subsum": -1.1158582242065963e-12,
+       "pos_subsum": 2.5763030833729746e-21,
+       "neg_subsum": -1.1158582267828994e-12,
+       "max_abs_one_signed_subsum": 1.1158582267828994e-12,
+       "min_chord": -1.1158582259210394e-12,
+       "max_chord": 2.5763030833729746e-21
+      }
+     },
+     "w_G_unique_values_per_h": {
+      "0.6": [
+       0.083202481114
+      ],
+      "0.73": [
+       0.061966841111
+      ],
+      "0.81": [
+       0.053323567925
+      ],
+      "0.86": [
+       0.049000197345
+      ]
+     },
+     "w_G_degenerate_confirmed": true,
+     "w_G_strata": {
+      "w_G=0.06197(all)": {
+       "n_pairs": 280,
+       "net_chord_subsum": -1.0246151408250674e-05,
+       "pos_subsum": 1.3906398100482731e-06,
+       "neg_subsum": -1.1636791218298948e-05,
+       "max_abs_one_signed_subsum": 1.1636791218298948e-05,
+       "min_chord": -2.807490315645533e-06,
+       "max_chord": 7.161659675592318e-07
+      }
+     },
+     "min_side_w_share_quartiles": {
+      "Q1(<= 0.003039)": {
+       "n_pairs": 70,
+       "net_chord_subsum": -1.515019000363425e-07,
+       "pos_subsum": 0,
+       "neg_subsum": -1.515019000363425e-07,
+       "max_abs_one_signed_subsum": 1.515019000363425e-07,
+       "min_chord": -1.1392826166819772e-07,
+       "max_chord": 0.0
+      },
+      "Q2(<= 0.0139)": {
+       "n_pairs": 70,
+       "net_chord_subsum": -1.2899026438897474e-06,
+       "pos_subsum": 3.907054433396761e-10,
+       "neg_subsum": -1.290293349333087e-06,
+       "max_abs_one_signed_subsum": 1.290293349333087e-06,
+       "min_chord": -1.1127643478674245e-06,
+       "max_chord": 3.800234286802717e-10
+      },
+      "Q3(<= 0.06869)": {
+       "n_pairs": 70,
+       "net_chord_subsum": -5.461219952904695e-06,
+       "pos_subsum": 4.790331891272293e-07,
+       "neg_subsum": -5.940253142031924e-06,
+       "max_abs_one_signed_subsum": 5.940253142031924e-06,
+       "min_chord": -2.807490315645533e-06,
+       "max_chord": 4.5704118394662134e-07
+      },
+      "Q4(> 0.06869)": {
+       "n_pairs": 70,
+       "net_chord_subsum": -3.3435269114198896e-06,
+       "pos_subsum": 9.112159154777041e-07,
+       "neg_subsum": -4.2547428268975934e-06,
+       "max_abs_one_signed_subsum": 4.2547428268975934e-06,
+       "min_chord": -1.323160805750355e-06,
+       "max_chord": 7.161659675592318e-07
+      }
+     },
+     "min_side_w_share_quartile_cuts": [
+      0.00303927836370636,
+      0.013902983458403035,
+      0.06868530248534209
+     ],
+     "in_c4_vs_outside": {
+      "in_c4": {
+       "n_pairs": 63,
+       "net_chord_subsum": 1.2337653869934665e-06,
+       "pos_subsum": 1.3906398100482731e-06,
+       "neg_subsum": -1.568744230548066e-07,
+       "max_abs_one_signed_subsum": 1.3906398100482731e-06,
+       "min_chord": -6.238346511838873e-08,
+       "max_chord": 7.161659675592318e-07
+      },
+      "outside_c4": {
+       "n_pairs": 217,
+       "net_chord_subsum": -1.147991679524414e-05,
+       "pos_subsum": 0,
+       "neg_subsum": -1.147991679524414e-05,
+       "max_abs_one_signed_subsum": 1.147991679524414e-05,
+       "min_chord": -2.807490315645533e-06,
+       "max_chord": 0.0
+      }
+     },
+     "sign_decomposition": {
+      "n_pos": 39,
+      "n_neg": 239,
+      "n_zero": 2,
+      "sum_pos_chords": 1.3906398100482731e-06,
+      "sum_neg_chords": -1.1636791218298948e-05,
+      "net": -1.0246151408250674e-05
+     }
+    },
+    "anti_dilution": {
+     "Y_scale": 7.96,
+     "any_stratum_one_signed_subsum_ge_Y": false,
+     "offending_strata": [],
+     "max_one_signed_subsum_any_stratum": 1.1636791218298948e-05
+    },
+    "verdict": "NEGLECT-WITH-NUMBER"
+   },
+   "2d": {
+    "file": "/home/jasper/Repositories/MasterThesisCode/results/campaign51_20260728/realistic_20260729/crossterm_instrument/outputs/run_iiib_2d.json",
+    "n_rows": 84,
+    "guard_census": {
+     "n_rows_nan": 0,
+     "n_rows_delta_neg_inf": 0,
+     "n_rows_delta_nonfinite": 0,
+     "voided_pairs": 0,
+     "auto_escalate_triggered": false
+    },
+    "coverage": {
+     "n_pairs_expected": 21,
+     "n_pairs_in_file": 21,
+     "pair_set_equals_ratified_target_x_hgrid": true,
+     "n_rows_expected": 84
+    },
+    "escalation_audit": {
+     "n_rows_escalated": 0,
+     "escalated_rows": []
+    },
+    "max_rel_dev_S_raw_vs_frozeng": 1.2592053217078491e-14,
+    "w_share_ball_max_h_spread": 0.0,
+    "class_sum_raw_D": {
+     "0.6": -0.015342504643559275,
+     "0.73": -0.026953676412121215,
+     "0.81": -0.05781517005611635,
+     "0.86": -0.11131023176703003
+    },
+    "class_sum_raw_matches_reported": {
+     "0.6": true,
+     "0.73": true,
+     "0.81": true,
+     "0.86": true
+    },
+    "class_sum_mixture_D": {
+     "0.6": -5.510299206146183e-06,
+     "0.73": -1.1360302016531191e-06,
+     "0.81": -3.157384274524077e-07,
+     "0.86": -1.3075737557776143e-07
+    },
+    "decision_statistic": {
+     "T_full_grid_range": 5.379541830568421e-06,
+     "argmax_endpoints_h": [
+      0.6,
+      0.86
+     ],
+     "signed_D(h_lo)-D(h_hi)": -5.379541830568421e-06,
+     "level_D_0.73_reported_not_scored": -1.1360302016531191e-06,
+     "m2_comparable_endpoint_chord_D(0.60)-D(0.73)": -4.374269004493064e-06,
+     "raw_diagnostic_T_raw_full_grid_range": 0.09596772712347076,
+     "raw_diagnostic_chord_D_raw(0.60)-D_raw(0.73)": 0.01161117176856194
+    },
+    "band_comparison": {
+     "X": 2.78,
+     "Y": 7.96,
+     "T_lt_X": true,
+     "T_ge_Y": false,
+     "gap_X_le_T_lt_Y": false,
+     "W_min_side_wpop_share_sum": 0.664499854,
+     "x_per_unit": 4.18359760843529,
+     "y_per_unit": 11.978934159404647,
+     "T_over_W": 8.095625301022896e-06
+    },
+    "per_pair_distributions": {
+     "chord_at_argmax_endpoints_quantiles": {
+      "0.0": -4.126000608753116e-06,
+      "0.25": -1.7755217947442806e-08,
+      "0.5": -4.676852172911374e-10,
+      "0.75": -1.6900175966867997e-12,
+      "1.0": -2.865136833605862e-28
+     },
+     "chord_0.60_minus_0.73_quantiles": {
+      "0.0": -3.303410031959453e-06,
+      "0.25": -1.6208631796815528e-08,
+      "0.5": -4.6519560654875805e-10,
+      "0.75": -1.6728613401205815e-12,
+      "1.0": -2.3449511112787234e-28
+     },
+     "delta_tilde_at_0.73_quantiles": {
+      "0.0": -9.363602708927568e-07,
+      "0.25": -8.980743381578696e-10,
+      "0.5": -1.4306599466680561e-11,
+      "0.75": -1.7178240621898697e-14,
+      "1.0": -5.789116386467998e-29
+     },
+     "top10_abs_chord": [
+      {
+       "pair": [
+        98,
+        294
+       ],
+       "chord": -4.126000608753116e-06,
+       "n_shared": 1075,
+       "in_c4": false,
+       "min_side_w_share": 0.2231105451703906
+      },
+      {
+       "pair": [
+        927,
+        1035
+       ],
+       "chord": -8.10655831929202e-07,
+       "n_shared": 171,
+       "in_c4": false,
+       "min_side_w_share": 0.009765982804133457
+      },
+      {
+       "pair": [
+        114,
+        1035
+       ],
+       "chord": -2.708221491524557e-07,
+       "n_shared": 3041,
+       "in_c4": true,
+       "min_side_w_share": 0.1675860017838587
+      },
+      {
+       "pair": [
+        5,
+        711
+       ],
+       "chord": -1.0225736248519067e-07,
+       "n_shared": 4,
+       "in_c4": false,
+       "min_side_w_share": 0.017717380722618557
+      },
+      {
+       "pair": [
+        1224,
+        1499
+       ],
+       "chord": -3.1651116888152864e-08,
+       "n_shared": 4,
+       "in_c4": false,
+       "min_side_w_share": 0.006758337292523345
+      },
+      {
+       "pair": [
+        98,
+        436
+       ],
+       "chord": -1.7755217947442806e-08,
+       "n_shared": 3,
+       "in_c4": false,
+       "min_side_w_share": 0.0008706254896951834
+      },
+      {
+       "pair": [
+        365,
+        1035
+       ],
+       "chord": -1.1564744723098187e-08,
+       "n_shared": 7,
+       "in_c4": false,
+       "min_side_w_share": 0.00039840252215741286
+      },
+      {
+       "pair": [
+        1224,
+        1428
+       ],
+       "chord": -3.6776709664625606e-09,
+       "n_shared": 1,
+       "in_c4": false,
+       "min_side_w_share": 0.031859720287023996
+      },
+      {
+       "pair": [
+        992,
+        1224
+       ],
+       "chord": -3.0502492608850517e-09,
+       "n_shared": 2,
+       "in_c4": false,
+       "min_side_w_share": 0.001530869460626775
+      },
+      {
+       "pair": [
+        365,
+        927
+       ],
+       "chord": -9.463456221263934e-10,
+       "n_shared": 7,
+       "in_c4": false,
+       "min_side_w_share": 0.03753195754743524
+      }
+     ]
+    },
+    "a2_stratified": {
+     "n_shared_bands": {
+      "1": {
+       "n_pairs": 5,
+       "net_chord_subsum": -4.076797745751793e-09,
+       "pos_subsum": 0,
+       "neg_subsum": -4.076797745751793e-09,
+       "max_abs_one_signed_subsum": 4.076797745751793e-09,
+       "min_chord": -3.6776709664625606e-09,
+       "max_chord": -9.139414039127723e-15
+      },
+      "101-1000": {
+       "n_pairs": 3,
+       "net_chord_subsum": -8.106558319502286e-07,
+       "pos_subsum": 0,
+       "neg_subsum": -8.106558319502286e-07,
+       "max_abs_one_signed_subsum": 8.106558319502286e-07,
+       "min_chord": -8.10655831929202e-07,
+       "max_chord": -2.865136833605862e-28
+      },
+      "11-100": {
+       "n_pairs": 2,
+       "net_chord_subsum": -2.905621108568843e-10,
+       "pos_subsum": 0,
+       "neg_subsum": -2.905621108568843e-10,
+       "max_abs_one_signed_subsum": 2.905621108568843e-10,
+       "min_chord": -2.895911390779908e-10,
+       "max_chord": -9.709717788935227e-13
+      },
+      "2-10": {
+       "n_pairs": 9,
+       "net_chord_subsum": -1.6769588085601185e-07,
+       "pos_subsum": 0,
+       "neg_subsum": -1.6769588085601185e-07,
+       "max_abs_one_signed_subsum": 1.6769588085601185e-07,
+       "min_chord": -1.0225736248519067e-07,
+       "max_chord": -1.4686942280675816e-12
+      },
+      ">1000": {
+       "n_pairs": 2,
+       "net_chord_subsum": -4.396822757905572e-06,
+       "pos_subsum": 0,
+       "neg_subsum": -4.396822757905572e-06,
+       "max_abs_one_signed_subsum": 4.396822757905572e-06,
+       "min_chord": -4.126000608753116e-06,
+       "max_chord": -2.708221491524557e-07
+      }
+     },
+     "overlap_degree_max_side": {
+      "0": {
+       "n_pairs": 5,
+       "net_chord_subsum": -4.246963786501788e-06,
+       "pos_subsum": 0,
+       "neg_subsum": -4.246963786501788e-06,
+       "max_abs_one_signed_subsum": 4.246963786501788e-06,
+       "min_chord": -4.126000608753116e-06,
+       "max_chord": -4.251693912324114e-12
+      },
+      "1": {
+       "n_pairs": 15,
+       "net_chord_subsum": -1.1324234936937987e-06,
+       "pos_subsum": 0,
+       "neg_subsum": -1.1324234936937987e-06,
+       "max_abs_one_signed_subsum": 1.1324234936937987e-06,
+       "min_chord": -8.10655831929202e-07,
+       "max_chord": -2.865136833605862e-28
+      },
+      "2": {
+       "n_pairs": 1,
+       "net_chord_subsum": -1.5455037283393121e-10,
+       "pos_subsum": 0,
+       "neg_subsum": -1.5455037283393121e-10,
+       "max_abs_one_signed_subsum": 1.5455037283393121e-10,
+       "min_chord": -1.5455037283393121e-10,
+       "max_chord": -1.5455037283393121e-10
+      }
+     },
+     "w_G_unique_values_per_h": {
+      "0.6": [
+       0.083202481114
+      ],
+      "0.73": [
+       0.061966841111
+      ],
+      "0.81": [
+       0.053323567925
+      ],
+      "0.86": [
+       0.049000197345
+      ]
+     },
+     "w_G_degenerate_confirmed": true,
+     "w_G_strata": {
+      "w_G=0.06197(all)": {
+       "n_pairs": 21,
+       "net_chord_subsum": -5.379541830568421e-06,
+       "pos_subsum": 0,
+       "neg_subsum": -5.379541830568421e-06,
+       "max_abs_one_signed_subsum": 5.379541830568421e-06,
+       "min_chord": -4.126000608753116e-06,
+       "max_chord": -2.865136833605862e-28
+      }
+     },
+     "min_side_w_share_quartiles": {
+      "Q1(<= 0.001531)": {
+       "n_pairs": 6,
+       "net_chord_subsum": -3.2614788337881347e-08,
+       "pos_subsum": 0,
+       "neg_subsum": -3.2614788337881347e-08,
+       "max_abs_one_signed_subsum": 3.2614788337881347e-08,
+       "min_chord": -1.7755217947442806e-08,
+       "max_chord": -9.139414039127723e-15
+      },
+      "Q2(<= 0.006758)": {
+       "n_pairs": 5,
+       "net_chord_subsum": -3.2121960817268754e-08,
+       "pos_subsum": 0,
+       "neg_subsum": -3.2121960817268754e-08,
+       "max_abs_one_signed_subsum": 3.2121960817268754e-08,
+       "min_chord": -3.1651116888152864e-08,
+       "max_chord": -2.865136833605862e-28
+      },
+      "Q3(<= 0.01772)": {
+       "n_pairs": 5,
+       "net_chord_subsum": -9.133573359473311e-07,
+       "pos_subsum": 0,
+       "neg_subsum": -9.133573359473311e-07,
+       "max_abs_one_signed_subsum": 9.133573359473311e-07,
+       "min_chord": -8.10655831929202e-07,
+       "max_chord": -2.1026515707329532e-17
+      },
+      "Q4(> 0.01772)": {
+       "n_pairs": 5,
+       "net_chord_subsum": -4.40144774546594e-06,
+       "pos_subsum": 0,
+       "neg_subsum": -4.40144774546594e-06,
+       "max_abs_one_signed_subsum": 4.40144774546594e-06,
+       "min_chord": -4.126000608753116e-06,
+       "max_chord": -9.709717788935227e-13
+      }
+     },
+     "min_side_w_share_quartile_cuts": [
+      0.001530869460626775,
+      0.006758337292523345,
+      0.017717380722618557
+     ],
+     "in_c4_vs_outside": {
+      "in_c4": {
+       "n_pairs": 5,
+       "net_chord_subsum": -2.709791392123231e-07,
+       "pos_subsum": 0,
+       "neg_subsum": -2.709791392123231e-07,
+       "max_abs_one_signed_subsum": 2.709791392123231e-07,
+       "min_chord": -2.708221491524557e-07,
+       "max_chord": -2.1026515707329532e-17
+      },
+      "outside_c4": {
+       "n_pairs": 16,
+       "net_chord_subsum": -5.108562691356098e-06,
+       "pos_subsum": 0,
+       "neg_subsum": -5.108562691356098e-06,
+       "max_abs_one_signed_subsum": 5.108562691356098e-06,
+       "min_chord": -4.126000608753116e-06,
+       "max_chord": -2.865136833605862e-28
+      }
+     },
+     "sign_decomposition": {
+      "n_pos": 0,
+      "n_neg": 21,
+      "n_zero": 0,
+      "sum_pos_chords": 0,
+      "sum_neg_chords": -5.379541830568421e-06,
+      "net": -5.379541830568421e-06
+     }
+    },
+    "anti_dilution": {
+     "Y_scale": 7.96,
+     "any_stratum_one_signed_subsum_ge_Y": false,
+     "offending_strata": [],
+     "max_one_signed_subsum_any_stratum": 5.379541830568421e-06
+    },
+    "verdict": "NEGLECT-WITH-NUMBER"
+   }
+  }
+ },
+ "venue_split_check": {
+  "1d": {
+   "verdicts": {
+    "joint_r1": "NEGLECT-WITH-NUMBER",
+    "iiib": "NEGLECT-WITH-NUMBER"
+   },
+   "venue_split": false
+  },
+  "2d": {
+   "verdicts": {
+    "joint_r1": "NEGLECT-WITH-NUMBER",
+    "iiib": "NEGLECT-WITH-NUMBER"
+   },
+   "venue_split": false
+  }
+ },
+ "band": {
+  "X": 2.78,
+  "Y": 7.96,
+  "source": "PREREGRATION \u00a77 locked at ratification 2026-08-06"
+ },
+ "readout_provenance": {
+  "scored_by": "mechanical band-scoring readout, 2026-08-07 (document ID retains the orchestrator-prescribed 20260806 date)",
+  "scoring_inputs": [
+   "results/campaign51_20260728/realistic_20260729/crossterm_instrument/outputs/run_joint_r1_1d.json",
+   "results/campaign51_20260728/realistic_20260729/crossterm_instrument/outputs/run_joint_r1_2d.json",
+   "results/campaign51_20260728/realistic_20260729/crossterm_instrument/outputs/run_iiib_1d.json",
+   "results/campaign51_20260728/realistic_20260729/crossterm_instrument/outputs/run_iiib_2d.json",
+   "results/campaign51_20260728/realistic_20260729/crossterm_instrument/target_pairs_joint_r1.json",
+   "results/campaign51_20260728/realistic_20260729/crossterm_instrument/target_pairs_iiib.json",
+   "results/campaign51_20260728/realistic_20260729/crossterm_instrument/PREREGISTRATION_CROSSTERM_INSTRUMENT.md.DRAFT (LOCKED band, ratified 2026-08-06)"
+  ],
+  "statistic_definition": "prereg section 5: mixture-composed delta_tilde = log1p(w_G_i*w_G_j*L_cat_i*L_cat_j*expm1(delta)/(combined_i*combined_j)); class sum D(h) over ratified target pairs; T = full-h-grid range of D; raw catalogue-leg delta reported as diagnostic, never scored",
+  "run_meta_git_commit": "e94ff8abc9d93df0e653064620e10ff36e8ece5d (identical all four run files, meta.git_commit)",
+  "runner_reported_runtimes": {
+   "joint_r1_1d": "4 sequential chunks (88+88+88+85 pairs), 7190 s wall (meta runtime_s sum 6996 s); one aborted single invocation (OOM exit 137, ~29 GB RSS, no output)",
+   "joint_r1_2d": "single invocation 894 s (meta runtime_s 877.5)",
+   "iiib_1d": "8 sequential 35-pair chunks, 10908 s wall (meta runtime_s sum 10608.6); aborted 280/140/70-pair attempts (OOM exit 137)",
+   "iiib_2d": "single invocation 418 s (meta runtime_s 408.0)"
+  },
+  "chunking": "orchestrator-authorized deviation: 1d channels executed as order-preserving slices of the ratified pair lists through the frozen instrument; merge integrity verified by the runner (meta.chunked_run present in both 1d files: n_chunks 4 / 8); this readout independently re-verified final-file pair-set x h-grid coverage against target_pairs_*.json"
+ },
+ "gap_protocol": {
+  "applicable": false,
+  "reason": "no (venue, channel) scored into [X, Y); all four T < X by >= 4.9e5x margin; no venue split (all four verdicts identical)",
+  "prereg_ordered_measure_more_steps_listed_not_executed": [
+   "1. densify the h-grid from the 4-point floor to the canonical 41-point grid (M-3 interior-excursion check applies)",
+   "2. full stratified drill-down (section 6) with per-pair delta_tilde published for the top decile by |delta_tilde|",
+   "3. per-unit re-expression: compare T/W against x and y (section 7.4); T/W >= y on a stratum escalates as REGARD-scale-on-a-stratum; T/W < x everywhere supports NEGLECT on the extended read",
+   "4. only if 1-3 leave the call between bands: return to the author with the full table - the author rules; the session never self-adjudicates a gap verdict"
+  ]
+ },
+ "h_hypotheses": {
+  "H-1": {
+   "statement": "claim-file H-1: the 1D low rail at h=0.600 (both venues) owned by the neglected pairwise (Eq. 31) correlations; refutation-by-argument collapsed after M-1 (iiib kernel finite sigma_z), promoted to measurement mandate; exit from LIVE only by measurement against this band (prereg section 1 item 3)",
+   "result": "ADDRESSED AND CLOSED as NEGLECT-WITH-NUMBER: scored 1D T = 1.468160e-05 (joint_r1) / 1.024615e-05 (iiib) class-summed mixture-composed nats - 5+ orders below X = 2.78 and ~7 orders below the -1.1..-1.6 nats/grid-point scale of the rail (ledger #93). The Eq. (31) cross-term cannot own the 1D rail. The cross-term leg of H-1 (and of H-3, per prereg section 1 item 3) exits LIVE by measurement, not argument."
+  },
+  "H-2": {
+   "statement": "claim-file H-2: the +0.05-0.07 2D displacement via shared-host coherence; revived by M-2's non-null 2D matched read (overlap stratum pulls low-h, +0.0207/+0.0223 nats/event, cluster-robust p 0.0042/0.0050)",
+   "m2_revived_signature_expected": "REGARD-scale term concentrated in the 2D channel with net sign preferring low h (positive D(0.60)-D(0.73) contribution) would CONFIRM revived H-2 (prereg section 9b novel-result clause)",
+   "result": "SIGNATURE NOT MATCHED on the scored statistic: 2D mixture-composed chord D(0.60)-D(0.73) = -4.404028e-05 (joint_r1) / -4.374269e-06 (iiib) - NEGATIVE (high-h-preferring), and T is ~5-6 orders below Y = 7.96. The Eq. (31) pairwise cross-term is excluded as the mechanism behind M-2's 2D overlap-stratum residual; that residual's origin lies elsewhere (it is not likelihood-factorization coupling).",
+   "diagnostic_note_reported_not_scored": "the RAW catalogue-leg 2D chord D_raw(0.60)-D_raw(0.73) IS positive (low-h-preferring): +2.507350985559 nats (joint_r1), +0.011611171768 nats (iiib), and every 2D per-pair composed chord is one-signed (high-h) - the catalogue-leg cross-term carries H-2's sign coherently at raw level but is annihilated by the catalogue leg's mixture weight (median per-pair composition factor 1.5e-07 joint_r1 / 2.5e-06 iiib at h=0.73), so it cannot reach the posterior. Reported per section 5 (raw = diagnostic, never scored) and M-3's aggregate-honesty rule."
+  },
+  "H-3_note": "prereg section 1 item 3 names the exit from LIVE as covering H-1/H-3's cross-term leg jointly; this measurement closes that leg. H-3's f_k h-slope leg was bounded separately by M-3 (context-only, unverified) and is not adjudicated here."
+ }
+}
