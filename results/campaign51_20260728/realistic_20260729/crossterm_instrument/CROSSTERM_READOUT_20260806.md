@@ -332,3 +332,23 @@ Adjudication also noted two diagnostic-convention nits (median/quartile interpol
 on even-count sets, disclosed cuts verified) and a truncated-not-rounded x = 0.140376 print
 inherited from prereg §7.4 — all non-binding; see `readout_adjudication_20260807.json`
 `discrepancies` for the full list.
+
+---
+
+## STAGE-5 CLOSURE (2026-08-07)
+
+The author (Jasper Seehofer) ruled on 2026-08-07: **NEGLECT-WITH-NUMBER accepted in all four
+venue × channel cells**, CONDITIONED on an explicit re-evaluation trigger register. The closure
+artifacts are:
+
+- **`NEGLECT_TRIGGER_REGISTER.md`** (this directory) — the register of record: the quantitative
+  anatomy of the 4.92e+04× minimum margin (T = F_eff × T_raw; in 3 of 4 cells the raw
+  catalogue-leg range exceeds X, so the verdict rests entirely on the mixture composition), six
+  named triggers (a)–(f) with thresholds and the cheapest re-evaluation instrument each (census
+  re-run / composition arithmetic / full instrument), and the conditional-closure sentence: the
+  NEGLECT stands unless at least one named trigger fires.
+- **`../gate_b_20260730/BIAS_HISTORY_LEDGER.md` row 96** + §4 open thread 16 (owner of M-2's
+  unowned 2D overlap residual, opened with the composition-annihilation finding) + the §5
+  AUTHOR RULING (2026-08-07) block recording the conditional acceptance.
+
+This section is a pointer only; no verdict, number, or table above is modified.

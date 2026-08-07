@@ -118,6 +118,7 @@ Abbreviations: `H0R` = `docs/H0_BIAS_RESOLUTION.md`; `BRA` = `docs/BIAS_RESOLUTI
 | 92 | 07-28 | Remaining ≈+23 ln 2D HIGH residual (MAP 0.80) owner | enumeration after 89–91 | **STILL OPEN — owners: (d2) selection-side M scatter/truncation + (g1)-as-support-limitation**; campaign is the critical path | `RUNBOOK_NEXT_SESSION_4.md:29-33`, `docs/campaign_redesign_51_design.md:180-205` | +23 ln |
 | 93 | 07-29 #51 | Idealized baseline (point kernel + `generator_marginal`, unscattered) | 1e-4 zoom grid | 1D/2D **0.72990 / 0.7300**, −0.24σ / −0.36σ. 100% of information from **76 in-cat events**; 3 golden carry 46% | `IDEALIZED_BASELINE_READOUT.md:25-47` | — |
 | 94 | 07-29 #53 | Realistic run (`absolute_marginal` + `volume_deconv`, scattered catalogue) | P1–P6 scorecard, 10 runs | 1D 0.700–0.740 (pooled 0.7205) · **2D 0.780–0.820, mean +0.077, 10/10 pull > 2 (+4.04)**; P5 σ→0 byte-identical PASS | `REALISTIC_READOUT.md:19-32,140-153` | **current** |
+| 96 | 08-06/07 crossterm | the neglected Eq. (31) pairwise cross-term (arXiv:2212.08694) is large enough to matter — H-1's 1D-rail leg and M-2-revived H-2's 2D leg (row #95 mandate: measure, never refute by convenience) | pre-registered frozen instrument (sha256 `340b66d2…`, ratified M-4 target sets 349/104 joint_r1 + 280/21 iiib pairs), mixture-composed band X=2.78/Y=7.96 LOCKED; mechanical readout + independent adjudication (`readout_adjudication_20260807.json`, **CONFIRMED, T bit-identical**) | **NEGLECT-WITH-NUMBER in all four venue×channel cells**: T = 1.468160e-05 (joint_r1/1d) / 5.648753e-05 (joint_r1/2d) / 1.024615e-05 (iiib/1d) / 5.379542e-06 (iiib/2d) class-summed mixture-composed chord nats; X/T = 1.89e5/4.92e4/2.71e5/5.17e5; anti-dilution never triggers; no venue split. **H-1's cross-term leg CLOSED by measurement** (5 orders below the 1D rail's −1.1…−1.6 nats/grid-point depth, #93). **M-2's revived-H-2 signature NOT matched** — composed 2D chord is NEGATIVE (high-h) at 5–6 orders below Y ⇒ cross-term **EXCLUDED as the mechanism of M-2's 2D overlap residual**. Discovered facts: raw catalogue-leg diagnostics (reported-never-scored) are large — full-grid ranges 181.208/5.799/77.514/0.0960 nats — and the raw 2D chords are **POSITIVE (low-h)**: +2.507 (joint_r1) / +0.0116 (iiib): H-2's coherence is physically present in the catalogue leg but **annihilated by the mixture composition** (median per-pair factor ~1.5e-07–2.5e-06) and **sign-reversed at class level by w_G's h-fall** (0.0957→0.0556); in-C-4 vs outside-C-4 1D sub-sums are **sign-split** (+1.8e-06 vs ~9× larger negative) — M-4 supersession vindicated | `crossterm_instrument/{CROSSTERM_READOUT_20260806.md,readout_20260806.json,readout_adjudication_20260807.json}` | M-2's 2D overlap residual (+0.02070/+0.02225 nats/event, p 0.0042/0.0050) REAL and now **UNOWNED** (§4 thread 16); NEGLECT conditional on `crossterm_instrument/NEGLECT_TRIGGER_REGISTER.md` (§5 ruling 08-07) |
 
 ---
 
@@ -221,6 +222,7 @@ predicted, already-owned open item, not a new discovery.
 13. **Is g_frac(h)'s h-slope correct physics or a missing normalisation?** (#91, CONFIRMED carrier, not yet adjudicated) — routes through `/physics-change`; possible convergence with D1 (same selection machinery feeds `B_num_wbh`). **UPDATE 08-05 (#92):** the closed-loop calibration test found the 2D g-machinery **MIXED/not-REFUTE** (Δ2 = +0.011 ± 0.004; production's +0.05–0.07 2D displacement is **NOT reproduced** in a universe following the estimator's own assumptions) — this now *supports* the "correct physics" reading over the "defect" reading, though CONFIRM was missed by 0.0013 and the question remains formally open pending the author's `/physics-change` ruling.
 14. **1D production rail ownership — REOPENED (#93).** N-2's pre-registered counterfactual found the completion numerator's missing `S̄_φ(z;h)` selection factor is a **real, bounded, positive correction** (chord +23–25 nats/h, in the pre-registered band) but it does **not** un-rail the production 1D channel (MAP stays at 0.600, hard rail −1.1…−1.6 nats to the next grid point). The standing explanation (host photo-z, #36) is **not re-attributed**. A secondary finding from N-2's own read — the live z-quadrature of `S̄_φ` diverges from M1's point-GW-peak approximation (central-diff overshoot; sign coherence 0.71–0.73 vs the 0.90 bar) — is itself unresolved and flagged for follow-up. **The 1D rail's owner is still at large**, tracked as its own thread separate from the g_frac(h) derivation question in item 13.
 15. **The catalogue leg's `f_k` completeness callable is pool-fed — discovered 08-05 (#94).** D1's N2 null (registered expectation: `L_cat_no_bh`/`L_cat_with_bh` carry no selection function) **FAILED** — under `volume_deconv`/`absolute_marginal`, the catalogue-leg host-z prior carries `f_k`, and `f_k` is built from the injection pool, the very object D1's three-arm re-weight substitutes. This falsifies a load-bearing prereg assumption and is a **new coupling**, distinct from and additional to the g_frac(h)/D1-convergence question (item 13, now closed as dead at machine precision — `g_frac` was bit-identical A1-vs-A2, #94 S2). Unowned; heads the next session's intake queue.
+16. **Owner of M-2's matched 2D overlap residual — NEW TOP CANDIDATE THREAD (opened 08-07 by #96).** The residual is real (+0.02070 joint_r1 / +0.02225 iiib nats/event, cluster-robust p 0.0042/0.0050, low-h-preferring, ~8 nats class-scale if coherent) and #96 **excluded its leading candidate mechanism**: the Eq. (31) pairwise cross-term's composed 2D chord has the OPPOSITE sign at 5–6 orders below Y. Opening evidence for the hunt — the **composition-annihilation finding**: the raw catalogue-leg 2D chords DO carry the residual's low-h sign coherently (+2.507/+0.0116 nats; every joint_r1/iiib 2D per-pair composed chord one-signed), but the mixture composition (median per-pair factor ~1.5e-07–2.5e-06) crushes the magnitude and w_G's h-fall reverses the class-level sign — so whatever owns the residual either lives outside the likelihood-factorization coupling entirely, or reaches the posterior by a route the w_G-weighted mixture does not annihilate. Not likelihood-factorization coupling (per #96); owner at large.
 
 ---
 
@@ -269,3 +271,25 @@ band-blind.
 > "our overarching goal is a scientifically sound project with novel insights and
 > not to get rid of the bias by any means — scientific correctness and new
 > insights are valued higher."
+
+### AUTHOR RULING (2026-08-07) — Eq. (31) cross-term stage-5: conditional NEGLECT closure
+*(Annotates row #96 and §4 open thread 16; closes the measurement mandate of row #95.)*
+
+**ACCEPTED**: NEGLECT-WITH-NUMBER in all four venue × channel cells (row #96: T =
+1.468160e-05 / 5.648753e-05 / 1.024615e-05 / 5.379542e-06 nats vs X = 2.78, adjudication
+CONFIRMED bit-identical), **CONDITIONED on an explicit re-evaluation trigger register** —
+the author's words: conclude "with clear triggers when this needs be re-evaluated… for
+this assumption to break, at least X,Y,Z has to become apparent/realized". The register
+of record is
+`../crossterm_instrument/NEGLECT_TRIGGER_REGISTER.md` (same results tree): six named
+triggers — (a) mixture-composition growth (w_G ≳ 0.3 / median per-pair factor ≳ 1e-05),
+(b) any /physics-change to L_cat structure incl. the OPEN S̄_φ-inside-1D N-2 adoption
+(queue item 3) → composition-arithmetic re-check, (c) ball z-window/radius enlargement
+or localisation-model change (issue #53's 2σ direction is favorable and does NOT fire)
+→ census re-run, (d) σ_z regime widening ≥ ~3× or catalogue replacement → full
+re-measurement, (e) N_ev ≳ 3e+04 (nominal margin closure ≈ 3.5e+05 at today's per-pair
+scale), (f) any change to the mixture-composed scoring convention (prereg flag (c) —
+under raw scoring 3 of 4 cells already exceed X). **The NEGLECT stands unless at least
+one named trigger fires.** The cross-term leg of H-1 (and H-3's cross-term leg, prereg
+§1 item 3) exits LIVE by measurement; M-2's 2D overlap residual is UNOWNED and becomes
+§4 thread 16.
