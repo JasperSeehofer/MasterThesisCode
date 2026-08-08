@@ -11,7 +11,8 @@
  * the legacy ch00-demo page was retired in the same pass. Ch. 12 (the living
  * bias-resolution record) added 2026-08-05, hand-authored, no generator.
  * Ch. 13 (the stage-0 proposal + open-decisions board) added 2026-08-07,
- * hand-authored, no generator.
+ * hand-authored, no generator; retitled 2026-08-08 when the thread-16
+ * owner-hunt closed as a ratified dissolution (ch13 §A.7).
  */
 window.BOOK_CHAPTERS = [
   { file: "index.html",              short: "Contents",   title: "Contents",                                    status: "live" },
@@ -28,7 +29,7 @@ window.BOOK_CHAPTERS = [
   { file: "ch10-calibration.html",   short: "Ch. 10",     title: "Is It Calibrated?",                           status: "live" },
   { file: "ch11-honest-state.html",  short: "Ch. 11",     title: "The State of the Art, Honestly",              status: "live" },
   { file: "ch12-bias-resolution.html", short: "Ch. 12",   title: "The Bias Resolution, a Live Thread",          status: "live" },
-  { file: "ch13-unowned-residual.html", short: "Ch. 13",  title: "The Unowned Residual: a Proposal",            status: "live" },
+  { file: "ch13-unowned-residual.html", short: "Ch. 13",  title: "The Unowned Residual: Measured and Closed",   status: "live" },
   { file: "museum.html",             short: "Museum",     title: "The Defect Museum",                           status: "live" },
 ];
 
