@@ -11,7 +11,9 @@
  * the legacy ch00-demo page was retired in the same pass. Ch. 12 (the living
  * bias-resolution record) added 2026-08-05, hand-authored, no generator.
  * Ch. 13 (the stage-0 proposal + open-decisions board) added 2026-08-07,
- * hand-authored, no generator.
+ * hand-authored, no generator. The Atlas (pipeline map + formula explorer)
+ * added 2026-08-08 as a second annex: hand-authored graph (atlas_graph.json)
+ * plus one generator (gen_ch_atlas.py) for the sidebar curves.
  */
 window.BOOK_CHAPTERS = [
   { file: "index.html",              short: "Contents",   title: "Contents",                                    status: "live" },
@@ -30,6 +32,7 @@ window.BOOK_CHAPTERS = [
   { file: "ch12-bias-resolution.html", short: "Ch. 12",   title: "The Bias Resolution, a Live Thread",          status: "live" },
   { file: "ch13-unowned-residual.html", short: "Ch. 13",  title: "The Unowned Residual: a Proposal",            status: "live" },
   { file: "museum.html",             short: "Museum",     title: "The Defect Museum",                           status: "live" },
+  { file: "atlas.html",              short: "Atlas",      title: "The Atlas — the Pipeline as One Map",         status: "live" },
 ];
 
 /*

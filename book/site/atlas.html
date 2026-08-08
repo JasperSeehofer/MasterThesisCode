@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<!--
+  atlas.html — "The Atlas": the pipeline as one clickable map + formula explorer.
+
+  SPECIAL PAGE (ch12/ch13 precedent): not a discovery chapter. Hand-authored,
+  with one data generator (gen_ch_atlas.py -> data/atlas_curves.json) for the
+  sidebar mini-plots and a hand-authored formula graph (data/atlas_graph.json,
+  LaTeX transcribed from code/derivations, history from the [PHYSICS] commit
+  log + G7 systematics budget). Page-local classes are prefixed `atlas-`;
+  shared classes are never restyled. Uses only the vendored KaTeX + Plotly.
+
+  Deep links: atlas.html#<node-id> selects a formula node on load.
+-->
+<meta charset="utf-8" />
+<title>The Atlas — the Pipeline as One Map | EMRI Dark Siren Book</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="description" content="A clickable map of the entire EMRI dark-siren H0 pipeline: every formula, its variables, an example plot, and the full history of every fix that touched it." />
+<link rel="stylesheet" href="vendor/katex/katex.min.css" />
+<link rel="stylesheet" href="css/book.css" />
+
+<style>
+  /* ---- page-local styles only (atlas- prefix); shared classes untouched ---- */
+  main.book-content.atlas-main { width: min(1160px, 100% - 2.5rem); }
+  .atlas-main > h1, .atlas-main > .subtitle, .atlas-main > p, .atlas-main > h2 {
+    max-width: var(--measure);
+  }
+  .atlas-maplegend { display: flex; flex-wrap: wrap; gap: 0.4rem 1.1rem;
+    font-size: 0.82rem; color: var(--muted); margin: 0.4rem 0 0.2rem; }
+  .atlas-maplegend span { display: inline-flex; align-items: center; gap: 0.35rem; }
+  .atlas-swatch { width: 0.85em; height: 0.85em; border-radius: 3px; display: inline-block;
+    border: 2px solid; background: var(--paper-raised); }
+  .atlas-map-wrap { position: relative; overflow-x: auto; }
+  .atlas-map-wrap svg { min-width: 760px; width: 100%; height: auto; display: block; }
+  .atlas-lane { fill: var(--paper-raised); opacity: 0.55; }
+  .atlas-lane-label { fill: var(--muted); font-size: 12px; font-weight: 600; letter-spacing: 0.04em; }
+  .atlas-edge { fill: none; stroke: var(--border); stroke-width: 1.6; }
+  .atlas-edge.cross { stroke-dasharray: 5 4; }
+  .atlas-edge.valid { stroke-dasharray: 2 4; }
+  .atlas-edge.hot { stroke: var(--accent); stroke-width: 2.4; }
+  .atlas-edgelabel { fill: var(--muted); font-size: 9.5px; }
+  .atlas-node { cursor: pointer; }
+  .atlas-node rect, .atlas-node polygon { fill: var(--paper); stroke-width: 2; transition: filter 120ms; }
+  .atlas-node text { font-size: 12px; font-weight: 600; fill: var(--ink); pointer-events: none; }
+  .atlas-node.hot rect, .atlas-node.hot polygon { filter: drop-shadow(0 0 4px rgba(0,114,178,0.65)); }
+  .atlas-node.sel rect, .atlas-node.sel polygon { stroke-width: 3.5; }
+  .atlas-scar { fill: none; stroke: #E69F00; stroke-width: 2; opacity: 0; pointer-events: none; }
+  .atlas-scarcount { fill: #E69F00; font-size: 10px; font-weight: 700; opacity: 0; pointer-events: none; }
+  .atlas-svg.scars .atlas-scar, .atlas-svg.scars .atlas-scarcount { opacity: 0.9; }
+  .atlas-tip { position: absolute; z-index: 30; max-width: 260px; padding: 0.45rem 0.6rem;
+    background: var(--ink); color: var(--paper); border-radius: 8px; font-size: 0.8rem;
+    line-height: 1.35; pointer-events: none; opacity: 0; transition: opacity 100ms; }
+  .atlas-tip strong { display: block; margin-bottom: 0.15rem; }
+
+  .atlas-stage { border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 1.1rem 1.25rem 1.25rem; margin-top: 1.4rem; background: var(--paper); }
+  .atlas-crumbs { font-size: 0.82rem; color: var(--muted); margin-bottom: 0.5rem; min-height: 1.2em; }
+  .atlas-crumbs a { color: var(--accent); cursor: pointer; text-decoration: none; }
+  .atlas-crumbs a:hover { text-decoration: underline; }
+  .atlas-stage h2 { margin: 0 0 0.15rem; }
+  .atlas-kind { display: inline-block; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.06em;
+    text-transform: uppercase; border: 2px solid; border-radius: 999px; padding: 0.05rem 0.55rem;
+    margin-left: 0.5rem; vertical-align: middle; }
+  .atlas-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(260px, 330px);
+    gap: 1.4rem; margin-top: 0.8rem; }
+  @media (max-width: 900px) { .atlas-grid { grid-template-columns: 1fr; } }
+  .atlas-formula { padding: 0.9rem 0.8rem; background: var(--paper-raised);
+    border-radius: var(--radius); overflow-x: auto; }
+  .atlas-formula .katex-display { margin: 0.2rem 0; }
+  .atlas-term { cursor: pointer; border-radius: 4px; padding: 0 0.08em;
+    transition: background 120ms, box-shadow 120ms; }
+  .atlas-term:hover, .atlas-term.lit { background: rgba(0, 114, 178, 0.16);
+    box-shadow: 0 2px 0 var(--accent); }
+  .atlas-termnote { min-height: 3.2em; font-size: 0.88rem; color: var(--muted);
+    padding: 0.5rem 0.2rem 0; }
+  .atlas-termnote strong { color: var(--ink); }
+  .atlas-termnote .atlas-deeper { color: var(--accent); font-size: 0.8rem; }
+  .atlas-hint { font-size: 0.78rem; color: var(--muted); margin: 0.3rem 0 0; }
+  .atlas-side h3 { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.07em;
+    color: var(--muted); margin: 1.1rem 0 0.35rem; }
+  .atlas-side h3:first-child { margin-top: 0; }
+  .atlas-vars { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+  .atlas-vars td { padding: 0.28rem 0.45rem 0.28rem 0; vertical-align: top;
+    border-bottom: 1px solid var(--border); }
+  .atlas-vars td:first-child { white-space: nowrap; }
+  .atlas-origin { font-size: 0.72rem; color: var(--muted); display: block; }
+  .atlas-refs { font-size: 0.82rem; color: var(--muted); padding-left: 1.1rem; margin: 0.2rem 0; }
+  .atlas-refs li { margin-bottom: 0.2rem; }
+  .atlas-impl { font-size: 0.78rem; word-break: break-all; }
+  .atlas-history { list-style: none; padding: 0; margin: 0.3rem 0 0; }
+  .atlas-history li { position: relative; padding: 0.35rem 0 0.55rem 1.4rem;
+    border-left: 2px solid var(--border); margin-left: 0.45rem; font-size: 0.86rem; }
+  .atlas-history li::before { content: ""; position: absolute; left: -6px; top: 0.55rem;
+    width: 10px; height: 10px; border-radius: 50%; background: var(--paper);
+    border: 2px solid var(--muted); }
+  .atlas-history li.t-FIXED::before { border-color: #E69F00; }
+  .atlas-history li.t-RATIFIED::before { border-color: #009E73; }
+  .atlas-history li.t-ADDED::before { border-color: #0072B2; }
+  .atlas-history li.t-FALSIFIED::before, .atlas-history li.t-REFUTED::before { border-color: #D55E00; }
+  .atlas-history li.t-EXONERATED::before { border-color: #56B4E9; }
+  .atlas-history li.t-FINDING::before { border-color: #CC79A7; }
+  .atlas-htag { display: inline-block; font-size: 0.66rem; font-weight: 700; letter-spacing: 0.05em;
+    padding: 0.02rem 0.4rem; border-radius: 999px; border: 1.5px solid var(--muted);
+    color: var(--muted); margin-right: 0.35rem; vertical-align: 1px; }
+  .atlas-history .t-FIXED .atlas-htag { border-color: #E69F00; color: #b07400; }
+  .atlas-history .t-RATIFIED .atlas-htag { border-color: #009E73; color: #007a58; }
+  .atlas-history .t-ADDED .atlas-htag { border-color: #0072B2; color: #0072B2; }
+  .atlas-history .t-FALSIFIED .atlas-htag, .atlas-history .t-REFUTED .atlas-htag { border-color: #D55E00; color: #D55E00; }
+  .atlas-history .t-EXONERATED .atlas-htag { border-color: #56B4E9; color: #2b7fae; }
+  .atlas-history .t-FINDING .atlas-htag { border-color: #CC79A7; color: #a95583; }
+  :root[data-theme="dark"] .atlas-history .t-FIXED .atlas-htag { color: #E69F00; }
+  :root[data-theme="dark"] .atlas-history .t-RATIFIED .atlas-htag { color: #00c493; }
+  :root[data-theme="dark"] .atlas-history .t-FINDING .atlas-htag { color: #CC79A7; }
+  :root[data-theme="dark"] .atlas-history .t-EXONERATED .atlas-htag { color: #56B4E9; }
+  .atlas-commit { font-size: 0.72rem; color: var(--muted); font-family: monospace; }
+  .atlas-plotbox { margin-top: 0.3rem; }
+  .atlas-plotbox .widget-plot { min-height: 230px; }
+  .atlas-empty { color: var(--muted); font-size: 0.9rem; font-style: italic; }
+  .atlas-chapterlink { display: inline-block; margin-top: 0.4rem; font-size: 0.88rem; }
+  .atlas-scarsummary { font-size: 0.85rem; color: var(--muted); margin-top: 0.5rem; }
+</style>
+
+<div class="book-shell">
+  <header class="book-topbar">
+    <a class="brand" href="index.html">From Bayes&rsquo; Rule to H&#8320;
+      <small>an interactive discovery book</small>
+    </a>
+    <nav class="book-nav" data-nav aria-label="Chapters"><!-- built from js/manifest.js --></nav>
+    <button class="theme-toggle" data-theme-toggle type="button">☽ Dark</button>
+  </header>
+
+  <main class="book-content atlas-main">
+    <h1>The Atlas</h1>
+    <p class="subtitle">The whole measurement on one map — click any node to open its formula; click inside a formula to go deeper.</p>
+
+    <p class="atlas-intro">Two pipelines make this project: a GPU <strong>simulation</strong> pipeline
+    that turns a synthetic EMRI population into per-event measurement forecasts, and a CPU
+    <strong>inference</strong> pipeline that turns those forecasts plus a galaxy catalogue into a
+    posterior on the Hubble constant. They meet in a single CSV file. Every node below is a formula
+    you can open; the <em>scar-tissue</em> toggle overlays the project's own history — every
+    <code>[PHYSICS]</code>-gated fix, ratification and falsified idea, on the exact term it touched.</p>
+
+    <!-- ===================== The map ===================== -->
+    <div class="widget">
+      <h4>The pipeline, end to end
+        <span class="prov-chip real">graph: hand-authored from code + [PHYSICS] log</span>
+      </h4>
+      <div class="atlas-maplegend" aria-hidden="true">
+        <span><span class="atlas-swatch" style="border-color:#0072B2"></span> simulation (GPU)</span>
+        <span><span class="atlas-swatch" style="border-color:#D55E00"></span> inference (CPU)</span>
+        <span><span class="atlas-swatch" style="border-color:#009E73"></span> shared cosmology</span>
+        <span><span class="atlas-swatch" style="border-color:#E69F00"></span> gate</span>
+        <span><span class="atlas-swatch" style="border-color:#999999"></span> hand-off artifact</span>
+        <span><span class="atlas-swatch" style="border-color:#CC79A7"></span> validation</span>
+      </div>
+      <div class="atlas-map-wrap" id="atlas-map-wrap">
+        <div class="atlas-tip" id="atlas-tip" role="status"></div>
+        <!-- SVG injected here -->
+      </div>
+      <div class="widget-controls">
+        <label style="display:inline-flex;align-items:center;gap:0.45rem;cursor:pointer;">
+          <input type="checkbox" id="atlas-scar-toggle" />
+          Show the scar tissue <span style="color:var(--muted);font-size:0.8rem;">(what changed, where)</span>
+        </label>
+        <span class="readout" id="atlas-scar-readout"></span>
+      </div>
+      <details class="num-view">
+        <summary>Show me the map as a table</summary>
+        <div class="table-scroll"><table class="num-table" id="atlas-node-table"></table></div>
+      </details>
+      <noscript>
+        <p><strong>This page is interactive and needs JavaScript</strong> (all vendored, no network).
+        The map links the two pipelines: <em>Simulation</em> — M1 EMRI population &rarr; GLADE+ host
+        assignment &rarr; AAK waveform + TDI response &rarr; noise-weighted inner product (with the
+        LISA PSD and galactic confusion noise) &rarr; SNR &rarr; detection gate at SNR&nbsp;&ge;&nbsp;20
+        &rarr; five-point-stencil derivatives &rarr; Fisher matrix &rarr; Cram&eacute;r&ndash;Rao CSV.
+        <em>Inference</em> — candidate hosts from a 3&sigma; ball query &rarr; volume-deconvolved
+        host-redshift kernel and Reines&ndash;Volonteri mass prior &rarr; catalogue + mass-channel
+        likelihoods over d<sub>L</sub>(z,&nbsp;H&#8320;) &rarr; completeness mixture with the completion
+        term &rarr; selection normalization D(h) &rarr; &Sigma;&nbsp;log&nbsp;L combination &rarr; the
+        H&#8320; posterior, calibrated by the P&ndash;P harness. The formulas themselves are in
+        chapters 1&ndash;10; this page adds the clickable cross-reference and per-formula history.</p>
+      </noscript>
+    </div>
+
+    <!-- ===================== The formula stage ===================== -->
+    <section class="atlas-stage" id="atlas-stage" aria-live="polite">
+      <div class="atlas-crumbs" id="atlas-crumbs"></div>
+      <div id="atlas-stage-body">
+        <p class="atlas-empty">Click a node on the map to open its formula here. Try
+          <a href="#inner" id="atlas-try-link">the inner product</a> — the pipeline's beating heart.</p>
+      </div>
+    </section>
+
+    <h2>How to read this page</h2>
+    <p>Solid arrows are the production
+    data flow; dashed arrows are shared physics feeding both pipelines; the dotted arrow is validation
+    watching over the result. Inside a formula, <span class="atlas-term" style="cursor:default;">highlighted
+    terms</span> respond to hover (what is this?) and click (go deeper, where a term is itself a mapped
+    formula). The history timelines are not decoration: every entry is a real commit that passed the
+    physics-change gate, and the falsified/exonerated entries are ideas that were honestly tried and
+    honestly retired &mdash; the same evidence discipline as <a href="museum.html">the museum</a>.</p>
+
+    <details class="gw-reader">
+      <summary>&#9656; The 14 waveform parameters (for the GW reader)</summary>
+      <div class="table-scroll"><table class="num-table">
+        <tr><th>Symbol</th><th>Meaning</th><th>Range</th></tr>
+        <tr><td>M</td><td>central MBH mass (source frame)</td><td>10&#8308;&ndash;10&#8311; M&#9737;, log-uniform</td></tr>
+        <tr><td>&mu;</td><td>compact-object mass</td><td>1&ndash;100 M&#9737;</td></tr>
+        <tr><td>a</td><td>MBH spin</td><td>0&ndash;1</td></tr>
+        <tr><td>p&#8320;</td><td>semi-latus rectum</td><td>10&ndash;16 (plunge-window convention in production)</td></tr>
+        <tr><td>e&#8320;</td><td>eccentricity</td><td>0.05&ndash;0.2 (M1 sampler)</td></tr>
+        <tr><td>x&#8320;</td><td>cos(inclination)</td><td>&minus;1&ndash;1</td></tr>
+        <tr><td>d&#8343;</td><td>luminosity distance</td><td>0&ndash;d&#8343;(z=1.5, h&#8342;&#8336;&#8345;)</td></tr>
+        <tr><td>q&#8347;, &phi;&#8347;</td><td>sky polar / azimuthal angle (ecliptic)</td><td>[0,&pi;], [0,2&pi;]</td></tr>
+        <tr><td>q&#8342;, &phi;&#8342;</td><td>spin polar / azimuthal angle</td><td>[0,&pi;], [0,2&pi;]</td></tr>
+        <tr><td>&Phi;&#8339;&#8320;, &Phi;&#8336;&#8320;, &Phi;&#8329;&#8320;</td><td>initial azimuthal / polar / radial phase</td><td>[0,2&pi;]</td></tr>
+      </table></div>
+    </details>
+
+    <div class="provenance-panel">
+      <strong>Provenance.</strong> Formula LaTeX is transcribed from the implementation and the
+      ratified derivations (file:line shown per node); curve data is generated deterministically by
+      <code>gen_ch_atlas.py</code> from the live package (chips mark <em>real</em> vs <em>toy</em>);
+      history entries quote the <code>[PHYSICS]</code> commit log, <code>CHANGELOG.md</code> and the
+      G7 systematics budget. The graph itself is hand-authored and reviewed &mdash; if a node
+      disagrees with the code, the code wins and this page has a bug.
+    </div>
+
+    <footer class="book-footer">
+      Data: <code>book/generators/gen_ch_atlas.py</code> &rarr; <code>data/atlas_curves.json</code>;
+      graph: <code>data/atlas_graph.json</code> (hand-authored).
+    </footer>
+  </main>
+</div>
+
+<script src="js/manifest.js"></script>
+<script src="vendor/plotly/plotly.min.js"></script>
+<script src="vendor/katex/katex.min.js"></script>
+<script src="vendor/katex/auto-render.min.js"></script>
+<script src="js/book.js"></script>
+<script>
+(function () {
+  "use strict";
+  var KIND = {
+    sim:      { color: "#0072B2", label: "simulation" },
+    inf:      { color: "#D55E00", label: "inference" },
+    shared:   { color: "#009E73", label: "shared cosmology" },
+    gate:     { color: "#E69F00", label: "gate" },
+    artifact: { color: "#999999", label: "hand-off artifact" },
+    valid:    { color: "#CC79A7", label: "validation" }
+  };
+  var SVGNS = "http://www.w3.org/2000/svg";
+  var graph = null, curves = null, byId = {}, trail = [];
+  var nodeEls = {}, edgeEls = [];
+
+  function el(tag, attrs, parent) {
+    var e = document.createElementNS(SVGNS, tag);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    if (parent) parent.appendChild(e);
+    return e;
+  }
+  function h(tag, cls, html) {
+    var e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (html !== undefined) e.innerHTML = html;
+    return e;
+  }
+  function esc(s) {
+    return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+  function nodeW(n) { return Math.max(70, 22 + n.short.length * 7.2); }
+
+  // ---------------- map ----------------
+  function buildMap() {
+    var wrap = document.getElementById("atlas-map-wrap");
+    var svg = el("svg", { viewBox: "0 0 960 620", class: "atlas-svg", role: "img",
+      "aria-label": "Pipeline map: simulation and inference pipelines with formula nodes" });
+    wrap.appendChild(svg);
+
+    var defs = el("defs", {}, svg);
+    ["#0072B2", "#D55E00", "#009E73", "#E69F00", "#999999", "#CC79A7"].forEach(function (c, i) {
+      var m = el("marker", { id: "atlas-arr" + i, viewBox: "0 0 10 10", refX: 9, refY: 5,
+        markerWidth: 7, markerHeight: 7, orient: "auto-start-reverse" }, defs);
+      el("path", { d: "M0,0 L10,5 L0,10 z", fill: "var(--border)" }, m);
+    });
+    var mArr = el("marker", { id: "atlas-arrow", viewBox: "0 0 10 10", refX: 9, refY: 5,
+      markerWidth: 7, markerHeight: 7, orient: "auto-start-reverse" }, defs);
+    el("path", { d: "M0,0 L10,5 L0,10 z", fill: "currentColor" }, mArr);
+
+    // lane bands
+    var bands = [
+      { y: 52, hgt: 246, label: "PIPELINE 1 — SIMULATION (GPU CLUSTER)" },
+      { y: 300, hgt: 46, label: "SHARED COSMOLOGY + SELECTION" },
+      { y: 432, hgt: 158, label: "PIPELINE 2 — INFERENCE (CPU)" }
+    ];
+    bands.forEach(function (b) {
+      el("rect", { x: 8, y: b.y, width: 944, height: b.hgt, rx: 12, class: "atlas-lane" }, svg);
+      var t = el("text", { x: 18, y: b.y + 15, class: "atlas-lane-label" }, svg);
+      t.textContent = b.label;
+    });
+
+    // edges under nodes
+    var gE = el("g", {}, svg);
+    graph.edges.forEach(function (e) {
+      var a = byId[e.from], b = byId[e.to];
+      if (!a || !b) return;
+      var wa = nodeW(a) / 2, wb = nodeW(b) / 2;
+      var x1 = a.x, y1 = a.y, x2 = b.x, y2 = b.y;
+      var horiz = Math.abs(y2 - y1) < 40;
+      if (horiz) { x1 += (x2 > x1 ? wa : -wa); x2 += (x2 > x1 ? -wb : wb); }
+      else { y1 += (y2 > y1 ? 16 : -16); y2 += (y2 > y1 ? -16 : 16); }
+      var mx = (x1 + x2) / 2, my = (y1 + y2) / 2;
+      var d = horiz
+        ? "M" + x1 + "," + y1 + " C" + mx + "," + y1 + " " + mx + "," + y2 + " " + x2 + "," + y2
+        : "M" + x1 + "," + y1 + " C" + x1 + "," + my + " " + x2 + "," + my + " " + x2 + "," + y2;
+      var p = el("path", { d: d, class: "atlas-edge" + (e.kind ? " " + e.kind : ""),
+        "marker-end": "url(#atlas-arrow)" }, gE);
+      if (e.label) {
+        var t = el("text", { x: mx, y: my - 5, "text-anchor": "middle", class: "atlas-edgelabel" }, gE);
+        t.textContent = e.label;
+      }
+      edgeEls.push({ from: e.from, to: e.to, el: p });
+    });
+
+    // nodes
+    graph.nodes.forEach(function (n) {
+      var g = el("g", { class: "atlas-node", tabindex: 0, role: "button",
+        "aria-label": n.name, "data-id": n.id }, svg);
+      var w = nodeW(n), hh = 32, c = (KIND[n.kind] || KIND.sim).color;
+      if (n.kind === "gate") {
+        var pts = [[n.x, n.y - 19], [n.x + w / 2, n.y], [n.x, n.y + 19], [n.x - w / 2, n.y]]
+          .map(function (p) { return p.join(","); }).join(" ");
+        el("polygon", { points: pts, stroke: c }, g);
+      } else {
+        el("rect", { x: n.x - w / 2, y: n.y - hh / 2, width: w, height: hh,
+          rx: n.kind === "artifact" ? 3 : 15, stroke: c,
+          "stroke-dasharray": n.kind === "valid" ? "4 3" : "none" }, g);
+      }
+      var t = el("text", { x: n.x, y: n.y + 4, "text-anchor": "middle" }, g);
+      t.textContent = n.short;
+      var hist = (n.history || []).length;
+      if (hist) {
+        el("circle", { cx: n.x + w / 2 - 2, cy: n.y - 14, r: 9, class: "atlas-scar" }, g);
+        var sc = el("text", { x: n.x + w / 2 - 2, y: n.y - 10.5, "text-anchor": "middle",
+          class: "atlas-scarcount" }, g);
+        sc.textContent = hist;
+      }
+      g.addEventListener("click", function () { select(n.id, true); });
+      g.addEventListener("keydown", function (ev) {
+        if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); select(n.id, true); }
+      });
+      g.addEventListener("mouseenter", function (ev) { showTip(n, g); setHot(n.id, true); });
+      g.addEventListener("mouseleave", function () { hideTip(); setHot(n.id, false); });
+      nodeEls[n.id] = g;
+    });
+
+    var total = graph.nodes.reduce(function (s, n) { return s + (n.history || []).length; }, 0);
+    document.getElementById("atlas-scar-readout").textContent =
+      total + " gated changes across " + graph.nodes.filter(function (n) {
+        return (n.history || []).length; }).length + " formulas";
+    document.getElementById("atlas-scar-toggle").addEventListener("change", function (ev) {
+      svg.classList.toggle("scars", ev.target.checked);
+    });
+
+    // numeric fallback table
+    var tbl = document.getElementById("atlas-node-table");
+    var rows = ["<tr><th>Formula</th><th>Pipeline</th><th>Implemented at</th><th>Gated changes</th></tr>"];
+    graph.nodes.forEach(function (n) {
+      rows.push("<tr><td>" + esc(n.name) + "</td><td>" + esc((KIND[n.kind] || {}).label || n.kind) +
+        "</td><td><code>" + esc(n.impl || "—") + "</code></td><td>" + (n.history || []).length + "</td></tr>");
+    });
+    tbl.innerHTML = rows.join("");
+  }
+
+  function setHot(id, on) {
+    var g = nodeEls[id];
+    if (g) g.classList.toggle("hot", on);
+    edgeEls.forEach(function (e) {
+      if (e.from === id || e.to === id) e.el.classList.toggle("hot", on);
+    });
+  }
+  function showTip(n, g) {
+    var tip = document.getElementById("atlas-tip");
+    tip.innerHTML = "<strong>" + esc(n.name) + "</strong>" + esc(n.hover);
+    var wrap = document.getElementById("atlas-map-wrap");
+    var wr = wrap.getBoundingClientRect(), nr = g.getBoundingClientRect();
+    tip.style.left = Math.max(4, Math.min(wr.width - 270,
+      nr.left - wr.left + wrap.scrollLeft + nr.width / 2 - 120)) + "px";
+    tip.style.top = (nr.top - wr.top + nr.height + 6) + "px";
+    tip.style.opacity = 1;
+  }
+  function hideTip() { document.getElementById("atlas-tip").style.opacity = 0; }
+
+  // ---------------- formula stage ----------------
+  function renderTex(tex, target, display) {
+    try {
+      katex.render(tex, target, {
+        displayMode: !!display, throwOnError: false, strict: "ignore",
+        trust: function (ctx) { return ctx.command === "\\htmlClass"; },
+        macros: { "\\cls": "\\htmlClass{atlas-term atlasterm-#1}{#2}" }
+      });
+    } catch (e) { target.textContent = tex; }
+  }
+
+  function select(id, scroll) {
+    var n = byId[id];
+    if (!n) return;
+    var last = trail[trail.length - 1];
+    if (last !== id) {
+      var back = trail.indexOf(id);
+      if (back >= 0) trail = trail.slice(0, back + 1); else trail.push(id);
+    }
+    if (history.replaceState) history.replaceState(null, "", "#" + id);
+    Object.keys(nodeEls).forEach(function (k) { nodeEls[k].classList.toggle("sel", k === id); });
+    buildStage(n);
+    if (scroll) document.getElementById("atlas-stage")
+      .scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }
+
+  function buildStage(n) {
+    var crumbs = document.getElementById("atlas-crumbs");
+    crumbs.innerHTML = "";
+    trail.forEach(function (id, i) {
+      if (i) crumbs.appendChild(document.createTextNode("  →  "));
+      var nn = byId[id];
+      if (i === trail.length - 1) {
+        crumbs.appendChild(h("strong", "", esc(nn.short)));
+      } else {
+        var a = h("a", "", esc(nn.short));
+        a.addEventListener("click", function () { select(id, false); });
+        crumbs.appendChild(a);
+      }
+    });
+
+    var body = document.getElementById("atlas-stage-body");
+    body.innerHTML = "";
+    var kc = (KIND[n.kind] || KIND.sim);
+    var head = h("h2", "", esc(n.name) +
+      '<span class="atlas-kind" style="border-color:' + kc.color + ";color:" + kc.color + '">' +
+      kc.label + "</span>");
+    body.appendChild(head);
+    body.appendChild(h("p", "", n.body));
+
+    var grid = h("div", "atlas-grid");
+    body.appendChild(grid);
+    var left = h("div"), right = h("div", "atlas-side");
+    grid.appendChild(left); grid.appendChild(right);
+
+    // formula
+    var fbox = h("div", "atlas-formula");
+    left.appendChild(fbox);
+    renderTex(n.latex, fbox, true);
+    var note = h("div", "atlas-termnote",
+      n.terms ? "Hover a highlighted term; click it to go deeper where an arrow exists." : "");
+    left.appendChild(note);
+    if (n.terms) {
+      fbox.querySelectorAll(".atlas-term").forEach(function (span) {
+        var key = null;
+        span.classList.forEach(function (c) {
+          if (c.indexOf("atlasterm-") === 0) key = c.slice(10);
+        });
+        var t = key && n.terms[key];
+        if (!t) return;
+        span.setAttribute("tabindex", 0);
+        span.setAttribute("role", t.goto ? "link" : "note");
+        function show() {
+          note.innerHTML = "<strong>" + esc(t.label) + ".</strong> " + esc(t.note) +
+            (t.goto ? ' <span class="atlas-deeper">→ click to open ' +
+              esc(byId[t.goto] ? byId[t.goto].short : t.goto) + "</span>" : "");
+        }
+        span.addEventListener("mouseenter", show);
+        span.addEventListener("focus", show);
+        span.addEventListener("click", function () {
+          if (t.goto) select(t.goto, false); else show();
+        });
+        span.addEventListener("keydown", function (ev) {
+          if (ev.key === "Enter" && t.goto) select(t.goto, false);
+        });
+      });
+    }
+    if (n.paper_eq) left.appendChild(h("p", "atlas-hint", "Paper: <code>" + esc(n.paper_eq) + "</code>"));
+
+    // caveats
+    (n.caveats || []).forEach(function (c) {
+      var cv = h("div", "callout defect");
+      cv.appendChild(h("span", "callout-label", "Known caveat " +
+        '<span class="badge ' + esc(c.badge) + '">' + esc(c.badge).toUpperCase() + "</span>"));
+      cv.appendChild(document.createTextNode(" " + c.text));
+      left.appendChild(cv);
+    });
+
+    // history
+    var hh = h("h3", "", (n.history && n.history.length)
+      ? "History — every gated change to this formula" : "History");
+    left.appendChild(hh);
+    if (n.history && n.history.length) {
+      var ul = h("ul", "atlas-history");
+      n.history.forEach(function (ev) {
+        var li = h("li", "t-" + ev.tag,
+          '<span class="atlas-htag">' + esc(ev.tag) + "</span>" + esc(ev.text) +
+          ' <span class="atlas-commit">' + esc(ev.date) +
+          (ev.commit && ev.commit !== "—" ? " · " + esc(ev.commit) : "") + "</span>");
+        ul.appendChild(li);
+      });
+      left.appendChild(ul);
+    } else {
+      left.appendChild(h("p", "atlas-empty", "Unchanged since first ratification — no scar tissue here."));
+    }
+
+    // sidebar: variables
+    right.appendChild(h("h3", "", "Legend — what each symbol is"));
+    if (n.variables && n.variables.length) {
+      var tv = h("table", "atlas-vars");
+      n.variables.forEach(function (v) {
+        var tr = h("tr");
+        var td1 = h("td"), s = h("span");
+        renderTex(v.sym, s, false);
+        td1.appendChild(s);
+        var td2 = h("td", "", esc(v.meaning) +
+          (v.units && v.units !== "—" ? " <em>[" + esc(v.units) + "]</em>" : "") +
+          '<span class="atlas-origin">' + esc(v.origin) + "</span>");
+        tr.appendChild(td1); tr.appendChild(td2); tv.appendChild(tr);
+      });
+      right.appendChild(tv);
+    }
+
+    // sidebar: plot
+    if (n.curve && curves && curves[n.curve.key]) {
+      right.appendChild(h("h3", "", "See it"));
+      var pb = h("div", "atlas-plotbox");
+      var chip = h("span", "prov-chip " + (n.curve.prov.indexOf("real") === 0 ? "real" : "toy"),
+        esc(n.curve.prov));
+      pb.appendChild(chip);
+      var pd = h("div", "widget-plot");
+      pd.id = "atlas-plot-" + n.id;
+      pb.appendChild(pd);
+      pb.appendChild(h("p", "atlas-hint", esc(n.curve.title)));
+      right.appendChild(pb);
+      Book.lazyPlot(pd, function () { buildPlot(n.curve.key, pd.id); });
+    }
+
+    // sidebar: implementation + refs + chapter
+    right.appendChild(h("h3", "", "Where it lives"));
+    right.appendChild(h("p", "atlas-impl", "<code>" + esc(n.impl || "—") + "</code>"));
+    if (n.refs && n.refs.length) {
+      right.appendChild(h("h3", "", "References"));
+      var ol = h("ul", "atlas-refs");
+      n.refs.forEach(function (r) { ol.appendChild(h("li", "", esc(r))); });
+      right.appendChild(ol);
+    }
+    if (n.chapter) {
+      right.appendChild(h("h3", "", "The story"));
+      var a = h("a", "atlas-chapterlink", esc(n.chapter.label));
+      a.href = n.chapter.href;
+      right.appendChild(a);
+    }
+  }
+
+  // ---------------- sidebar plots ----------------
+  function lay(xTitle, yTitle, opts) {
+    return function () {
+      var dark = Book.isDark();
+      var fg = dark ? "#d5d9e0" : "#333";
+      var grid = dark ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.10)";
+      var o = opts || {};
+      return {
+        paper_bgcolor: "rgba(0,0,0,0)", plot_bgcolor: "rgba(0,0,0,0)",
+        font: { color: fg, size: 11 },
+        margin: { l: 52, r: 8, t: 8, b: 40 },
+        showlegend: !!o.legend,
+        legend: { orientation: "h", y: -0.3, font: { size: 10 } },
+        xaxis: { title: Book.axis(xTitle), type: o.logx ? "log" : "linear",
+          gridcolor: grid, zeroline: false, exponentformat: "power" },
+        yaxis: { title: Book.axis(yTitle), type: o.logy ? "log" : "linear",
+          gridcolor: grid, zeroline: false, exponentformat: "power" }
+      };
+    };
+  }
+
+  function buildPlot(key, divId) {
+    var c = curves[key];
+    if (!c) return;
+    var traces = [], layoutFn;
+    if (key === "psd") {
+      traces = [
+        { x: c.f, y: c.sn_total, name: "with confusion", mode: "lines",
+          line: { color: "#0072B2", width: 2 } },
+        { x: c.f, y: c.sn_no_confusion, name: "instrumental only", mode: "lines",
+          line: { color: "#999999", width: 1.5, dash: "dash" } }
+      ];
+      layoutFn = lay("f [Hz]", "Sₙᴬ(f) [1/Hz]", { logx: true, logy: true, legend: true });
+    } else if (key === "dlz") {
+      var hs = Object.keys(c.curves).sort();
+      var cols = { "0.6": "#D55E00", "0.704": "#009E73", "0.73": "#0072B2", "0.86": "#CC79A7" };
+      hs.forEach(function (hk) {
+        traces.push({ x: c.z, y: c.curves[hk], name: "h = " + hk, mode: "lines",
+          line: { color: cols[hk] || "#999", width: hk === "0.73" ? 2.5 : 1.5 } });
+      });
+      layoutFn = lay("z", "d_L [Gpc]", { legend: true });
+    } else if (key === "zkernel") {
+      traces = [
+        { x: c.z, y: c.bare, name: "bare Gaussian", mode: "lines",
+          line: { color: "#D55E00", width: 1.8, dash: "dash" } },
+        { x: c.z, y: c.volume, name: "volume-deconvolved", mode: "lines",
+          line: { color: "#0072B2", width: 2.2 } }
+      ];
+      layoutFn = lay("z", "p_g(z)", { legend: true });
+    } else if (key === "rv") {
+      traces = [
+        { x: c.log_mstar, y: c.log_mbh_hi, mode: "lines", showlegend: false,
+          line: { width: 0 }, hoverinfo: "skip" },
+        { x: c.log_mstar, y: c.log_mbh_lo, mode: "lines", name: "±0.24 dex scatter",
+          fill: "tonexty", fillcolor: "rgba(0,114,178,0.18)", line: { width: 0 } },
+        { x: c.log_mstar, y: c.log_mbh, name: "mean relation", mode: "lines",
+          line: { color: "#0072B2", width: 2.2 } }
+      ];
+      layoutFn = lay("log₁₀ M★ [M☉]", "log₁₀ M_BH [M☉]", { legend: true });
+    } else if (key === "pdet") {
+      traces = [{ x: c.d_l, y: c.p, mode: "lines", line: { color: "#0072B2", width: 2.2 } }];
+      layoutFn = lay("d_L [Gpc]", "p_det", {});
+    } else if (key === "stencil") {
+      traces = [
+        { x: c.eps, y: c.err_forward, name: "forward O(ε)", mode: "lines",
+          line: { color: "#D55E00", width: 1.8, dash: "dash" } },
+        { x: c.eps, y: c.err_5pt, name: "5-point O(ε⁴)", mode: "lines",
+          line: { color: "#0072B2", width: 2.2 } }
+      ];
+      layoutFn = lay("ε", "|error|", { logx: true, logy: true, legend: true });
+    } else { return; }
+    Book.themedPlot(divId, traces, layoutFn);
+  }
+
+  // ---------------- boot ----------------
+  Promise.all([
+    Book.loadJSON("data/atlas_graph.json"),
+    Book.loadJSON("data/atlas_curves.json").catch(function () { return null; })
+  ]).then(function (res) {
+    graph = res[0]; curves = res[1];
+    graph.nodes.forEach(function (n) { byId[n.id] = n; });
+    buildMap();
+    document.getElementById("atlas-try-link").addEventListener("click", function (ev) {
+      ev.preventDefault(); select("inner", false);
+    });
+    var want = (location.hash || "").replace("#", "");
+    if (want && byId[want]) select(want, false);
+  }).catch(function (err) {
+    console.error("atlas: data load failed", err);
+    var dbg = document.getElementById("atlas-map-wrap");
+    if (dbg) dbg.innerHTML = "<p class='atlas-empty'>The map data could not be loaded " +
+      "(this happens under <code>file://</code> in Chromium — serve the site locally " +
+      "or use the published page). The no-JS summary below the widget describes the full pipeline.</p>";
+  });
+})();
+</script>

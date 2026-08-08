@@ -1,0 +1,672 @@
+{
+  "meta": {
+    "title": "The Atlas — the pipeline as one map",
+    "authored": "hand-authored (ch12/ch13 precedent); LaTeX transcribed from code, derivations and paper/method.tex; history from CHANGELOG + [PHYSICS] commit log + docs/gates/G7_systematics_budget.md",
+    "note": "Node ids are stable deep-link anchors (atlas.html#node-id)."
+  },
+  "lanes": [
+    { "id": "sim", "label": "Pipeline 1 — Simulation (GPU cluster)", "y": 30 },
+    { "id": "shared", "label": "Shared cosmology", "y": 300 },
+    { "id": "inf", "label": "Pipeline 2 — Inference (CPU)", "y": 420 }
+  ],
+  "nodes": [
+    {
+      "id": "population",
+      "name": "EMRI population model (M1)",
+      "short": "Population",
+      "kind": "sim", "x": 95, "y": 95,
+      "hover": "Where events come from: a piecewise EMRI rate over massive-black-hole mass, sampled in (M, z).",
+      "body": "Every simulated detection starts as a draw from the Babak et al. (2017) M1 population: an EMRI rate per central black hole, piecewise in mass, sampled jointly in mass and redshift with an MCMC sampler.",
+      "latex": "R_{\\rm EMRI}(M)=\\begin{cases}10^{\\,1.024\\log_{10}\\!\\frac{M}{1.2\\times10^{5}}+\\log_{10}33.1} & M<1.2\\times10^{5}\\,M_\\odot\\\\[2pt]10^{\\,0.469\\log_{10}\\!\\frac{M}{2.5\\times10^{5}}+\\log_{10}46.7} & 1.2\\times10^{5}\\le M<2.5\\times10^{5}\\,M_\\odot\\\\[2pt]10^{\\,-0.248\\log_{10}\\!\\frac{M}{2.9\\times10^{7}}+\\log_{10}14.4} & M\\ge 2.5\\times10^{5}\\,M_\\odot\\end{cases}",
+      "variables": [
+        { "sym": "M", "meaning": "central (massive) black-hole mass, source frame", "units": "M_\\odot", "origin": "sampled" },
+        { "sym": "z", "meaning": "cosmological redshift of the event", "units": "—", "origin": "sampled (0 < z < 1.5)" },
+        { "sym": "R_{\\rm EMRI}", "meaning": "EMRI rate per massive black hole", "units": "Gyr⁻¹", "origin": "fit (Babak et al. 2017, M1)" }
+      ],
+      "impl": "master_thesis_code/cosmological_model.py:249",
+      "refs": ["Babak et al. (2017), arXiv:1703.09722 — model M1", "Barausse (2012), arXiv:1201.5888 — underlying MBH population"],
+      "history": [
+        { "date": "2026-07", "commit": "b52ff8d2", "tag": "FIXED", "text": "Population deepened to z = 1.5 — after the dt² inner-product fix the EMRI horizon reaches z ≈ 1.5, so the old z ≤ 0.5 depth was stale." },
+        { "date": "2026-07", "commit": "991333a9", "tag": "FIXED", "text": "MCMC mixing strengthened (50 walkers, 10× longer burn-in) after campaign #51 diagnosed seed-dependent drift in the (M, z) chain." }
+      ],
+      "chapter": { "href": "ch09-universe-factory.html", "label": "Ch. 9 — Building a Universe to Break Your Estimator" },
+      "connects_to": ["hostdraw"]
+    },
+    {
+      "id": "hostdraw",
+      "name": "Host-galaxy assignment",
+      "short": "Host draw",
+      "kind": "sim", "x": 240, "y": 95,
+      "hover": "Each sampled event is snapped to a real GLADE+ galaxy, which fixes its sky position and true redshift.",
+      "body": "The sampled (M, z) event is resolved to an actual host in the GLADE+ galaxy catalogue (ball-tree lookup). The host fixes sky position, true redshift, and — through the mass relation — the black-hole mass the catalogue would predict.",
+      "latex": "(M, z) \\;\\longmapsto\\; \\text{host } g \\in \\text{GLADE+}: \\quad (\\phi_S, \\theta_S, z_g, M_{*,g})",
+      "variables": [
+        { "sym": "\\phi_S, \\theta_S", "meaning": "ecliptic sky position of the host", "units": "rad", "origin": "catalogue" },
+        { "sym": "z_g", "meaning": "host redshift (CMB frame)", "units": "—", "origin": "catalogue" },
+        { "sym": "M_{*,g}", "meaning": "host stellar mass", "units": "M_\\odot", "origin": "catalogue" }
+      ],
+      "impl": "master_thesis_code/galaxy_catalogue/handler.py",
+      "refs": ["GLADE+ catalogue (reduced)", "Hogg (1999), arXiv:astro-ph/9905116 — CMB-frame redshifts"],
+      "history": [
+        { "date": "2026-06", "commit": "18e96089", "tag": "FIXED", "text": "Hosts now use CMB-frame redshift z_cmb, not heliocentric — the frame the cosmology actually lives in." }
+      ],
+      "chapter": { "href": "ch03-which-galaxy.html", "label": "Ch. 3 — Which Galaxy?" },
+      "connects_to": ["waveform", "dl"]
+    },
+    {
+      "id": "waveform",
+      "name": "EMRI waveform + LISA response",
+      "short": "Waveform",
+      "kind": "sim", "x": 385, "y": 95,
+      "hover": "A 14-parameter AAK waveform, pushed through the full time-delay-interferometry response of LISA.",
+      "body": "The event becomes a strain signal: an augmented-analytic-kludge EMRI waveform in 14 parameters (masses, spin, orbit, angles, distance, phases), passed through the TDI response that turns strain into the A and E data channels LISA actually records.",
+      "latex": "h^{A,E}(t) = \\mathrm{TDI}^{A,E}\\!\\left[\\,h_{+,\\times}\\big(t;\\; \\underbrace{M, \\mu, a, p_0, e_0, x_0}_{\\text{intrinsic}},\\; \\underbrace{d_L, \\phi_S, \\theta_S, \\phi_K, \\theta_K}_{\\text{extrinsic}},\\; \\underbrace{\\Phi_{\\varphi 0}, \\Phi_{\\theta 0}, \\Phi_{r0}}_{\\text{phases}}\\big)\\right]",
+      "params14": true,
+      "variables": [
+        { "sym": "M,\\;\\mu", "meaning": "central BH mass; compact-object mass", "units": "M_\\odot", "origin": "sampled" },
+        { "sym": "a", "meaning": "central BH spin", "units": "—", "origin": "sampled" },
+        { "sym": "p_0, e_0, x_0", "meaning": "initial semi-latus rectum, eccentricity, cos(inclination)", "units": "—", "origin": "sampled (plunge-window convention)" },
+        { "sym": "d_L", "meaning": "luminosity distance", "units": "Gpc", "origin": "from host via d_L(z, h)" },
+        { "sym": "\\phi_S,\\theta_S,\\phi_K,\\theta_K", "meaning": "sky and spin orientation angles", "units": "rad", "origin": "host / sampled" },
+        { "sym": "\\Phi_{\\varphi0},\\Phi_{\\theta0},\\Phi_{r0}", "meaning": "initial orbital phases", "units": "rad", "origin": "sampled" }
+      ],
+      "impl": "master_thesis_code/parameter_estimation/parameter_estimation.py (few AAK + fastlisaresponse)",
+      "refs": ["fastemriwaveforms (few) — AAK waveform", "fastlisaresponse — TDI response", "Colpi et al. (2024), arXiv:2402.07571 — LISA definition study"],
+      "history": [
+        { "date": "2026-07", "commit": "e419062c", "tag": "FIXED", "text": "Plunge-window initial conditions + official mission duration T = 4.5 yr (superseding an unofficial hardcoded 5 yr)." }
+      ],
+      "chapter": { "href": "ch06-black-box.html", "label": "Ch. 6 — Opening the Black Box" },
+      "connects_to": ["inner"]
+    },
+    {
+      "id": "psd",
+      "name": "LISA noise model Sₙ(f)",
+      "short": "PSD",
+      "kind": "sim", "x": 385, "y": 210,
+      "hover": "What LISA cannot hear: instrumental noise (optical metrology + test masses) plus the galactic foreground.",
+      "body": "The denominator of every inner product. Two instrumental terms — optical-metrology noise and test-mass acceleration noise — are combined through the TDI transfer function, and the unresolved galactic white-dwarf foreground is added on top.",
+      "latex": "S_n^{A}(f) = \\cls{tdi}{8\\sin^2\\!\\Big(\\tfrac{2\\pi f L}{c}\\Big)}\\Big[\\cls{oms}{S_{\\rm OMS}(f)}\\Big(\\cos\\tfrac{2\\pi fL}{c}+2\\Big)+2\\Big(3+2\\cos\\tfrac{2\\pi fL}{c}+\\cos\\tfrac{4\\pi fL}{c}\\Big)\\cls{tm}{S_{\\rm TM}(f)}\\Big]+\\cls{conf}{S_c^{A}(f)}",
+      "terms": {
+        "tdi": { "label": "TDI transfer", "note": "The time-delay-interferometry combination imprints this sinusoidal transfer on all single-link noises." },
+        "oms": { "label": "S_OMS — optical metrology", "note": "(15 pm)² (1+(2 mHz/f)⁴)(2πf/c)² — displacement noise of the laser metrology chain." },
+        "tm": { "label": "S_TM — test-mass acceleration", "note": "(3 fm s⁻²)² (1+(0.4 mHz/f)²)(1+(f/8 mHz)⁴)(2πfc)⁻² — residual force noise on the free-falling test masses; dominates at low f." },
+        "conf": { "label": "galactic confusion S_c^A", "note": "Unresolved white-dwarf binaries in the Milky Way — a hump near a few mHz. Click to explore this term.", "goto": "confusion" }
+      },
+      "variables": [
+        { "sym": "L", "meaning": "LISA arm length", "units": "m", "origin": "constant = 2.5×10⁹" },
+        { "sym": "f", "meaning": "Fourier frequency", "units": "Hz", "origin": "analysis band 10⁻⁵ – 1 Hz" }
+      ],
+      "impl": "master_thesis_code/LISA_configuration.py:121",
+      "paper_eq": "method.tex eq:psd, eq:s_oms, eq:s_tm",
+      "refs": ["Babak et al. (2023), arXiv:2303.15929 — LISA sensitivity"],
+      "history": [],
+      "curve": { "key": "psd", "title": "A-channel PSD, with and without the galactic foreground", "prov": "real: LISA_configuration.py" },
+      "chapter": { "href": "ch06-black-box.html", "label": "Ch. 6 — Opening the Black Box" },
+      "connects_to": ["inner"]
+    },
+    {
+      "id": "confusion",
+      "name": "Galactic confusion noise",
+      "short": "Confusion",
+      "kind": "sim", "x": 240, "y": 265,
+      "hover": "Millions of unresolved galactic white-dwarf binaries form a foreground hump in the mHz band.",
+      "body": "The Milky Way's unresolved white-dwarf binaries add a stochastic foreground. Its knee frequency grows with observation time (more binaries get individually resolved and subtracted). It enters the A channel through the same TDI transfer as any stochastic strain background.",
+      "latex": "S_c(f) = A f^{-7/3} e^{-(f/f_1)^{\\alpha}}\\cdot\\tfrac12\\Big[1+\\tanh\\Big(\\tfrac{f_k-f}{f_2}\\Big)\\Big], \\qquad \\cls{transfer}{S_c^{A}(f) = \\tfrac32\\,(2x\\sin x)^2\\, S_c(f)},\\;\\; x=\\tfrac{2\\pi f L}{c}",
+      "terms": {
+        "transfer": { "label": "TDI-A stochastic transfer", "note": "The raw strain-fit S_c must be pushed through the TDI response before it may be added to the instrumental TDI PSD — forgetting this overweighted the foreground by ~10⁶ near 0.2 mHz." }
+      },
+      "variables": [
+        { "sym": "A, \\alpha, f_1, f_2, f_k", "meaning": "foreground fit coefficients; f_1, f_k scale with observation time", "units": "various", "origin": "fit (Cornish & Robson 2017)" },
+        { "sym": "T_{\\rm obs}", "meaning": "foreground-subtraction observation time", "units": "yr", "origin": "constant = 4.5" }
+      ],
+      "impl": "master_thesis_code/LISA_configuration.py:93 (_confusion_noise)",
+      "refs": ["Cornish & Robson (2017), arXiv:1703.09858, Eq. (3)", "Robson, Cornish & Liu (2019), arXiv:1803.01944, Eq. (14)"],
+      "history": [
+        { "date": "2026-05 (Phase 9)", "commit": "3bed9fc6", "tag": "ADDED", "text": "Confusion noise added to the A/E PSD — previously absent entirely (known-bug #5)." },
+        { "date": "2026-07", "commit": "49251f38", "tag": "FIXED", "text": "TDI transfer applied to the confusion term: S_c^A = 1.5·(2x sin x)²·S_c. The raw strain fit had been added directly to the TDI PSD, overweighting the foreground by ~10⁶ near 0.2 mHz (campaign-51 high-M audit, item 4)." }
+      ],
+      "curve": { "key": "psd", "title": "Confusion hump inside the A-channel PSD", "prov": "real: LISA_configuration.py" },
+      "chapter": { "href": "ch06-black-box.html", "label": "Ch. 6 — Opening the Black Box" },
+      "connects_to": ["psd"]
+    },
+    {
+      "id": "inner",
+      "name": "Noise-weighted inner product",
+      "short": "(h₁|h₂)",
+      "kind": "sim", "x": 520, "y": 130,
+      "hover": "The single most important operation in pipeline 1: how similar are two signals, given what LISA can hear?",
+      "body": "Everything downstream — SNR, Fisher matrix, Cramér–Rao bounds — is built from this one operation: a frequency-domain overlap of two signals, weighted by the noise. It is also the pipeline's computational bottleneck.",
+      "latex": "\\langle h_1|h_2\\rangle = 4\\,\\cls{dt2}{\\Delta t^2}\\,\\mathrm{Re}\\!\\sum_{\\alpha\\in\\{A,E\\}}\\int_{f_{\\min}}^{f_{\\max}}\\frac{\\cls{spec}{\\tilde h_1^{\\alpha}(f)\\,\\tilde h_2^{\\alpha *}(f)}}{\\cls{noise}{S_n^{\\alpha}(f)}}\\,df",
+      "terms": {
+        "dt2": { "label": "Δt² — DFT normalization", "note": "The discrete Fourier transform's normalization. Its absence was the single largest defect ever found in this pipeline: SNR undercounted 10×, the population horizon shrank from z ≈ 1.5 to z ≈ 0.11. Toggle the history layer to see it." },
+        "spec": { "label": "cross-spectrum", "note": "Overlap of the two signals' Fourier transforms, channel by channel (A and E; the T null channel is excluded)." },
+        "noise": { "label": "noise weighting 1/Sₙ", "note": "Frequencies where LISA is deaf contribute nothing. Click to explore the noise model.", "goto": "psd" }
+      },
+      "variables": [
+        { "sym": "\\Delta t", "meaning": "sampling interval", "units": "s", "origin": "constant = 10" },
+        { "sym": "f_{\\min}, f_{\\max}", "meaning": "analysis band", "units": "Hz", "origin": "constants 10⁻⁵, 1" },
+        { "sym": "\\tilde h^{\\alpha}", "meaning": "Fourier transform of channel α", "units": "1/Hz", "origin": "computed" }
+      ],
+      "impl": "master_thesis_code/parameter_estimation/parameter_estimation.py:335 (scalar_product_of_functions)",
+      "paper_eq": "method.tex — inner-product convention (G8 derivation)",
+      "refs": ["Finn (1992), PRD 46, 5236, Eq. 2.3", "docs/derivations/G8_dt2_inner_product_derivation.md"],
+      "history": [
+        { "date": "2026-06", "commit": "20ab887c", "tag": "FINDING", "text": "G8 convention-pinning test written first — it exposed the missing Δt² factor." },
+        { "date": "2026-06", "commit": "fcc49c4f", "tag": "FIXED", "text": "Missing Δt² DFT normalization restored. SNR had been undercounted 10×, Cramér–Rao σ overcounted 10×, and the detectable population reached only z ≤ 0.11 instead of ≈ 1.5. G7 systematics-budget row #1 — the largest single systematic ever in the budget." }
+      ],
+      "chapter": { "href": "ch06-black-box.html", "label": "Ch. 6 — the dt² story is told here" },
+      "connects_to": ["snr", "fisher"]
+    },
+    {
+      "id": "snr",
+      "name": "Signal-to-noise ratio",
+      "short": "SNR",
+      "kind": "sim", "x": 648, "y": 95,
+      "hover": "How loud is the event? The inner product of the signal with itself, square-rooted.",
+      "body": "The optimal matched-filter SNR. It decides — at the gate to the right — whether an event counts as detected at all, and later (via the injection pool) it shapes the selection function p_det of the whole analysis.",
+      "latex": "\\varrho = \\sqrt{\\langle h\\,|\\,h\\rangle}",
+      "variables": [
+        { "sym": "\\varrho", "meaning": "optimal SNR", "units": "—", "origin": "computed" },
+        { "sym": "T", "meaning": "observation window", "units": "yr", "origin": "constant = 4.5 (Colpi et al. 2024)" }
+      ],
+      "impl": "master_thesis_code/parameter_estimation/parameter_estimation.py:488",
+      "paper_eq": "method.tex eq:snr",
+      "refs": ["Colpi et al. (2024), arXiv:2402.07571"],
+      "history": [
+        { "date": "2026-07", "commit": "b6bf57dd", "tag": "FIXED", "text": "Quick-SNR pre-screen disabled after a smoke audit measured a 0.55 % false-negative rate in the 1-yr pre-check." }
+      ],
+      "chapter": { "href": "ch04-loud-half.html", "label": "Ch. 4 — The Universe Only Shows You Its Loud Half" },
+      "connects_to": ["gate", "pdet"]
+    },
+    {
+      "id": "gate",
+      "name": "Detection gate",
+      "short": "ϱ ≥ 20",
+      "kind": "gate", "x": 745, "y": 95,
+      "hover": "The threshold. Below SNR 20 an event is never seen — and that censoring is itself physics the inference must undo.",
+      "body": "Only events with SNR ≥ 20 pass on to parameter estimation. This gate is not a technicality: it is the Malmquist selection that the inference pipeline must explicitly correct for, or H₀ comes out biased. The gate's shadow is the p_det node in the shared band below.",
+      "latex": "\\varrho \\ge \\varrho_{\\rm thr} = 20",
+      "variables": [
+        { "sym": "\\varrho_{\\rm thr}", "meaning": "detection threshold", "units": "—", "origin": "constant (SNR_THRESHOLD)" }
+      ],
+      "impl": "master_thesis_code/constants.py (SNR_THRESHOLD)",
+      "refs": [],
+      "history": [],
+      "chapter": { "href": "ch04-loud-half.html", "label": "Ch. 4 — selection effects" },
+      "connects_to": ["stencil"]
+    },
+    {
+      "id": "stencil",
+      "name": "Five-point stencil derivatives",
+      "short": "∂h/∂θ",
+      "kind": "sim", "x": 660, "y": 210,
+      "hover": "Numerical waveform derivatives, accurate to O(ε⁴) — the raw material of the Fisher matrix.",
+      "body": "The Fisher matrix needs ∂h/∂θ for each of the 14 parameters. A five-point central stencil replaces the original O(ε) forward difference — four waveform evaluations per parameter, but errors fall as ε⁴ instead of ε.",
+      "latex": "\\frac{\\partial h}{\\partial\\theta^{i}} \\approx \\frac{\\cls{s1}{-h(\\theta^i\\!+\\!2\\epsilon)+8h(\\theta^i\\!+\\!\\epsilon)-8h(\\theta^i\\!-\\!\\epsilon)+h(\\theta^i\\!-\\!2\\epsilon)}}{12\\,\\epsilon}",
+      "terms": {
+        "s1": { "label": "central 5-point combination", "note": "The (−1, 8, −8, 1)/12 weights cancel error terms up to O(ε⁴) — see the error-scaling plot in the sidebar." }
+      },
+      "variables": [
+        { "sym": "\\epsilon", "meaning": "per-parameter finite-difference step", "units": "parameter units", "origin": "constant (~3×10⁻⁴ × scale, Vallisneri Eq. A11; M uses an absolute 1 M_\\odot step)" }
+      ],
+      "impl": "master_thesis_code/parameter_estimation/parameter_estimation.py:237",
+      "paper_eq": "method.tex eq:five_point",
+      "refs": ["Vallisneri (2008), arXiv:gr-qc/0703086, Eq. (A11)"],
+      "history": [
+        { "date": "2026-04 (Phase 10)", "commit": "a87eeab8", "tag": "FIXED", "text": "Five-point stencil wired into the Fisher matrix as default, replacing the O(ε) forward difference (known-bug #4, HIGH)." }
+      ],
+      "curve": { "key": "stencil", "title": "Derivative error vs step size: forward difference vs 5-point stencil", "prov": "toy: analytic sin(x) demo" },
+      "chapter": { "href": "ch06-black-box.html", "label": "Ch. 6 — Opening the Black Box" },
+      "connects_to": ["fisher"]
+    },
+    {
+      "id": "fisher",
+      "name": "Fisher matrix → Cramér–Rao",
+      "short": "Γ → Σ",
+      "kind": "sim", "x": 800, "y": 165,
+      "hover": "The 14×14 information matrix; its inverse bounds how well each parameter can be measured.",
+      "body": "Derivatives meet the inner product: the Fisher information matrix. Its inverse is the Cramér–Rao bound — the best possible covariance of any unbiased estimator. The (φ_S, θ_S, d_L) and mass sub-blocks of Σ are what pipeline 2 consumes as the GW measurement.",
+      "latex": "\\Gamma_{ij} = \\Big\\langle \\cls{di}{\\tfrac{\\partial h}{\\partial\\theta^{i}}}\\Big|\\,\\cls{dj}{\\tfrac{\\partial h}{\\partial\\theta^{j}}}\\Big\\rangle, \\qquad \\cls{cov}{\\Sigma = \\Gamma^{-1}}, \\qquad \\kappa(\\Gamma) \\le 10^{14}",
+      "terms": {
+        "di": { "label": "waveform derivatives", "note": "From the five-point stencil node.", "goto": "stencil" },
+        "dj": { "label": "waveform derivatives", "note": "From the five-point stencil node.", "goto": "stencil" },
+        "cov": { "label": "Cramér–Rao covariance", "note": "The inverse Fisher matrix — the forecast measurement covariance handed to the inference pipeline as a CSV." }
+      },
+      "variables": [
+        { "sym": "\\Gamma", "meaning": "Fisher information matrix (14×14)", "units": "mixed", "origin": "computed" },
+        { "sym": "\\Sigma", "meaning": "Cramér–Rao covariance bound", "units": "mixed", "origin": "computed" },
+        { "sym": "\\kappa", "meaning": "condition number gate", "units": "—", "origin": "constant ≤ 10¹⁴ (G10)" }
+      ],
+      "impl": "master_thesis_code/parameter_estimation/parameter_estimation.py:399",
+      "paper_eq": "method.tex eq:fisher, eq:cramer_rao",
+      "refs": ["Vallisneri (2008), arXiv:gr-qc/0703086"],
+      "history": [
+        { "date": "2026-07", "commit": "d17230dd", "tag": "FIXED", "text": "G10 condition-number gate κ ≤ 10¹⁴ enforced — ill-conditioned matrices had fewer than 2 significant digits after inversion and are now skipped instead of stored as noise." }
+      ],
+      "chapter": { "href": "ch06-black-box.html", "label": "Ch. 6 — Opening the Black Box" },
+      "connects_to": ["crb"]
+    },
+    {
+      "id": "crb",
+      "name": "Per-event Cramér–Rao CSV",
+      "short": "CRB CSV",
+      "kind": "artifact", "x": 870, "y": 300,
+      "hover": "The handoff artifact: one row per detected event — parameters, SNR, and forecast covariances. Where pipeline 1 ends and pipeline 2 begins.",
+      "body": "The two pipelines meet in a file. Pipeline 1 (GPU cluster) writes one CSV row per detected event: true parameters, SNR, and the Cramér–Rao covariance entries. Pipeline 2 (CPU) reads exactly this — it never sees a waveform.",
+      "latex": "\\text{event } i \\;\\longmapsto\\; \\big(\\theta^{i}_{\\rm true},\\; \\varrho_i,\\; \\Sigma_i\\big) \\;\\in\\; \\texttt{cramer\\_rao\\_bounds.csv}",
+      "variables": [
+        { "sym": "\\Sigma_i", "meaning": "per-event covariance (3×3 sky+distance block; 4×4 with detector-frame mass)", "units": "mixed", "origin": "measured (forecast)" }
+      ],
+      "impl": "written by parameter_estimation.py, read by bayesian_statistics.py",
+      "refs": [],
+      "history": [],
+      "chapter": { "href": "ch11-honest-state.html", "label": "Ch. 11 — the per-event dossier" },
+      "connects_to": ["gw3d", "gw4d"]
+    },
+    {
+      "id": "dl",
+      "name": "Luminosity distance d_L(z, h)",
+      "short": "d_L(z,h)",
+      "kind": "shared", "x": 390, "y": 318,
+      "hover": "The one formula both pipelines share — and the only place H₀ enters the whole problem.",
+      "body": "Flat ΛCDM luminosity distance, in closed hypergeometric form with a spline fast path. Pipeline 1 uses it to place hosts; pipeline 2 inverts it, asking for every candidate host: which H₀ would make this galaxy's redshift consistent with the measured distance? This is the entire H₀ sensitivity of the method, concentrated in one function.",
+      "latex": "\\cls{dl}{d_L(z)} = \\frac{c\\,(1+z)}{\\cls{h0}{H_0}}\\int_0^{z}\\frac{dz'}{\\cls{ez}{E(z')}}, \\qquad E(z)=\\sqrt{\\Omega_m(1+z)^3+\\Omega_\\Lambda}",
+      "terms": {
+        "dl": { "label": "luminosity distance", "note": "What a gravitational wave measures directly — no distance ladder, no calibration. The 'standard siren' property." },
+        "h0": { "label": "H₀ — the target", "note": "The only place the Hubble constant enters. Every posterior in this project is, at bottom, a statement about this denominator." },
+        "ez": { "label": "expansion history E(z)", "note": "Flat ΛCDM with Ω_m = 0.2726 (deliberately matched to the Barausse 2012 population, G11). wCDM (w₀, w_a) deliberately raises NotImplementedError rather than silently returning ΛCDM." }
+      },
+      "variables": [
+        { "sym": "h", "meaning": "H₀/(100 km s⁻¹ Mpc⁻¹) — the inferred quantity", "units": "—", "origin": "inferred, grid [0.60, 0.86]" },
+        { "sym": "\\Omega_m", "meaning": "matter density", "units": "—", "origin": "constant = 0.2726 (G11, matches M1 population)" },
+        { "sym": "z", "meaning": "redshift", "units": "—", "origin": "measured / catalogue" }
+      ],
+      "impl": "master_thesis_code/physical_relations.py:132 (dist)",
+      "refs": ["Hogg (1999), arXiv:astro-ph/9905116, Eqs. 15–16", "Schutz (1986) — the original standard-siren idea"],
+      "history": [
+        { "date": "2026-05", "commit": "afc59e93", "tag": "FIXED", "text": "Spline-table fast path added — the hypergeometric evaluation was 52 % of the H₀-evaluation CPU time." },
+        { "date": "2026-06", "commit": "bdf53395", "tag": "RATIFIED", "text": "G11: fiducial Ω_m moved 0.25 → 0.2726, deliberately matched to the Barausse (2012) M1 population cosmology; the Planck-2018 mismatch is a tracked systematic (G7 row #6), not a bug." }
+      ],
+      "caveats": [
+        { "badge": "open", "text": "wCDM (w₀ ≠ −1, w_a ≠ 0) is a guarded NotImplementedError — analytic distance is ΛCDM-only (GitHub #4)." }
+      ],
+      "curve": { "key": "dlz", "title": "d_L(z) for h = 0.60 … 0.86 — the lever arm of the whole measurement", "prov": "real: physical_relations.dist" },
+      "chapter": { "href": "ch01-ruler.html", "label": "Ch. 1 — A Ruler That Needs No Ladder" },
+      "connects_to": ["waveform", "gw3d", "vol"]
+    },
+    {
+      "id": "vol",
+      "name": "Comoving volume element",
+      "short": "dV_c/dz",
+      "kind": "shared", "x": 540, "y": 318,
+      "hover": "How much universe sits at each redshift — the population prior hiding inside every completion and kernel term.",
+      "body": "The comoving volume per redshift slice. It weights the completion term (where could the unseen hosts be?) and — since the C7 kernel work — deconvolves the host-redshift prior itself.",
+      "latex": "\\frac{dV_c}{dz\\,d\\Omega} = \\frac{c\\, d_{\\rm com}^2(z)}{H(z)}, \\qquad d_{\\rm com} = \\frac{d_L}{1+z}",
+      "variables": [
+        { "sym": "d_{\\rm com}", "meaning": "comoving distance", "units": "Gpc", "origin": "from d_L" },
+        { "sym": "H(z)", "meaning": "Hubble rate at z", "units": "km s⁻¹ Mpc⁻¹", "origin": "computed" }
+      ],
+      "impl": "master_thesis_code/physical_relations.py:570",
+      "refs": ["Hogg (1999), arXiv:astro-ph/9905116, Eq. (28)", "Gray et al. (2020), arXiv:1908.06050, App. A.2.3"],
+      "history": [],
+      "chapter": { "href": "ch05-unseen-galaxy.html", "label": "Ch. 5 — The Galaxy You Cannot See" },
+      "connects_to": ["zkernel", "comp"]
+    },
+    {
+      "id": "pdet",
+      "name": "Detection probability p_det",
+      "short": "p_det",
+      "kind": "shared", "x": 690, "y": 318,
+      "hover": "The gate's shadow: from thousands of injections, the probability that an event at distance d_L would have been detected.",
+      "body": "The selection function, estimated empirically from the injection campaign: each injection's detection horizon is scaled from its SNR, and p_det(d_L) is the survival fraction of horizons beyond d_L. Optionally resolved in z and detector-frame mass for the mass channel.",
+      "latex": "d_{{\\rm hor},k} = \\frac{\\varrho_k\\, d_{L,k}}{\\varrho_{\\rm thr}}, \\qquad \\cls{surv}{p_{\\rm det}(d_L) = P\\big(d_{\\rm hor} \\ge d_L\\big)}",
+      "terms": {
+        "surv": { "label": "survival estimator", "note": "An empirical survival function over the injection pool's detection horizons — this replaced two earlier generations of kernel-regression estimators (see history)." }
+      },
+      "variables": [
+        { "sym": "d_{{\\rm hor},k}", "meaning": "detection horizon of injection k", "units": "Gpc", "origin": "computed from injection SNR" },
+        { "sym": "\\varrho_{\\rm thr}", "meaning": "detection threshold", "units": "—", "origin": "constant = 20" }
+      ],
+      "impl": "master_thesis_code/bayesian_inference/simulation_detection_probability.py:162",
+      "paper_eq": "method.tex sec:pdet",
+      "refs": ["Finn & Chernoff (1993), arXiv:gr-qc/9301003", "Mandel, Farr & Gair (2019), arXiv:1809.02063"],
+      "history": [
+        { "date": "2026-05", "commit": "87ea7a8d", "tag": "FIXED", "text": "F1: h-stable d_L bin edges for the histogram estimator." },
+        { "date": "2026-05", "commit": "d1087f18", "tag": "FIXED", "text": "F4: Nadaraya–Watson kernel estimator closed two spike mechanisms." },
+        { "date": "2026-05", "commit": "bd9081e7", "tag": "FIXED", "text": "F4-v2: local-linear estimator fixed the d_L → 0 boundary bias." },
+        { "date": "2026-06", "commit": "5e941391", "tag": "RATIFIED", "text": "Detection-horizon survival function replaced kernel regression entirely — the current estimator." },
+        { "date": "2026-07", "commit": "a608c4f5", "tag": "ADDED", "text": "z-resolved survival S(d_L | z) (E1 FIX-2, flag-gated)." },
+        { "date": "2026-08", "commit": "608426b8", "tag": "ADDED", "text": "Joint z × M_z-resolved with-BH-mass selection survival (FIX-3 §7.1, default off)." }
+      ],
+      "curve": { "key": "pdet", "title": "Smooth Malmquist p_det(d_L) — the calibration harness's toy form", "prov": "toy: validation/pp_coverage.py" },
+      "chapter": { "href": "ch04-loud-half.html", "label": "Ch. 4 — The Universe Only Shows You Its Loud Half" },
+      "connects_to": ["gw3d", "gw4d", "comp", "denom"]
+    },
+    {
+      "id": "candidates",
+      "name": "Candidate-host query",
+      "short": "3σ ball",
+      "kind": "inf", "x": 95, "y": 470,
+      "hover": "Which galaxies could have hosted this event? A ball-tree query of the 3σ localization volume.",
+      "body": "For each detected event, the GLADE+ catalogue is queried for every galaxy inside the 3σ sky-and-distance localization volume implied by the event's Cramér–Rao covariance. These candidates are the sum over j in the likelihood.",
+      "latex": "\\{g_j\\} = \\big\\{\\, g \\in \\text{GLADE+} \\;:\\; g \\in 3\\sigma\\text{-ball of } (\\phi_S, \\theta_S, d_L) \\,\\big\\}",
+      "variables": [
+        { "sym": "g_j", "meaning": "candidate host galaxy j", "units": "—", "origin": "catalogue query" }
+      ],
+      "impl": "master_thesis_code/galaxy_catalogue/handler.py (BallTree)",
+      "refs": ["GLADE+ reduced catalogue"],
+      "history": [],
+      "chapter": { "href": "ch03-which-galaxy.html", "label": "Ch. 3 — Which Galaxy?" },
+      "connects_to": ["zkernel", "rv", "gw3d"]
+    },
+    {
+      "id": "zkernel",
+      "name": "Host-redshift kernel p_g(z)",
+      "short": "p_g(z)",
+      "kind": "inf", "x": 250, "y": 470,
+      "hover": "What does a photo-z really tell you? A Gaussian is not enough — the volume prior must be deconvolved.",
+      "body": "Each candidate's catalogued redshift carries photometric error (σ_z ≈ 0.035 for most of GLADE+) plus peculiar-velocity scatter. Treating that as a bare Gaussian silently applies an Eddington-type bias; the production kernel deconvolves the comoving-volume population prior.",
+      "latex": "\\cls{pg}{p_g(z)} = \\frac{\\cls{gauss}{\\mathcal N(z;\\, z_g,\\, \\sigma_z)}\\;\\cls{wpop}{w_{\\rm pop}(z)}}{Z_g}, \\qquad w_{\\rm pop}(z) = \\frac{dV_c/dz}{1+z}",
+      "terms": {
+        "pg": { "label": "host-z kernel", "note": "The prior a single catalogued galaxy puts on its own true redshift." },
+        "gauss": { "label": "catalogue likelihood", "note": "Photometric redshift error plus peculiar-velocity scatter σ_z,pv = (1+z_g)·σ_v/c, added in quadrature — counted exactly once." },
+        "wpop": { "label": "volume deconvolution", "note": "The population prior: more universe at higher z means a noisy photo-z more likely scattered down than up. Omitting this term was G7 row #2 (−2.4 % MAP bias at σ_z = 0.035).", "goto": "vol" }
+      },
+      "variables": [
+        { "sym": "z_g", "meaning": "catalogued redshift", "units": "—", "origin": "catalogue (CMB frame)" },
+        { "sym": "\\sigma_z", "meaning": "redshift uncertainty (photo-z ⊕ peculiar velocity)", "units": "—", "origin": "catalogue z_err ⊕ constant σ_v" },
+        { "sym": "Z_g", "meaning": "per-galaxy normalization", "units": "—", "origin": "computed" }
+      ],
+      "impl": "master_thesis_code/bayesian_inference/bayesian_statistics.py:4791",
+      "refs": ["Gray et al. (2020), arXiv:1908.06050, Eq. A.10/33", "Davis et al. (2011), arXiv:1012.2912", "Mastrogiovanni et al. (2023), arXiv:2305.10488"],
+      "history": [
+        { "date": "2026-06", "commit": "8568d9fc", "tag": "ADDED", "text": "Residual host peculiar velocity marginalized into the kernel (issue #16)." },
+        { "date": "2026-07", "commit": "7bb79082", "tag": "FIXED", "text": "PV dispersion counted exactly once, per peculiar-velocity-correction class." },
+        { "date": "2026-07", "commit": "c4a1c7d4", "tag": "FALSIFIED", "text": "volume_trunc kernel variant implemented and empirically rejected — a seed-600 A/B showed it worsens the shallow bias." },
+        { "date": "2026-08-04", "commit": "7d2b6376", "tag": "RATIFIED", "text": "C7-core: the volume-deconvolved kernel gains the catalogued-host selection intensity f_k·w_pop — physics-gate ledger entry, one of the two rows since the ledger opened." }
+      ],
+      "caveats": [
+        { "badge": "finding", "text": "At GLADE+ photo-z scatter σ_z ≈ 0.035 the bare-Gaussian kernel collapses P–P coverage to ~0–3 % — the volume kernel is the production default." }
+      ],
+      "curve": { "key": "zkernel", "title": "Bare Gaussian vs volume-deconvolved kernel (z_g = 0.40, σ_z = 0.035)", "prov": "real: recomputed from physical_relations" },
+      "chapter": { "href": "ch07-redshift.html", "label": "Ch. 7 — A Redshift Is Not a Number" },
+      "connects_to": ["gw3d"]
+    },
+    {
+      "id": "rv",
+      "name": "Stellar-mass → BH-mass relation",
+      "short": "M_* → M_BH",
+      "kind": "inf", "x": 250, "y": 545,
+      "hover": "The second handle: a galaxy's stellar mass predicts its central black-hole mass — with honest 0.24 dex scatter.",
+      "body": "The mass channel's catalogue prior: the Reines & Volonteri (2015) AGN scaling from host stellar mass to central black-hole mass. The GW side measures the detector-frame mass superbly; the relation's intrinsic scatter is what limits the channel.",
+      "latex": "\\log_{10}\\!\\frac{M_{\\rm BH}}{M_\\odot} = \\cls{alpha}{7.45} + \\cls{beta}{1.05}\\,\\log_{10}\\!\\frac{M_*}{10^{11}M_\\odot} \\;\\pm\\; \\cls{scatter}{0.24\\ \\mathrm{dex}}",
+      "terms": {
+        "alpha": { "label": "intercept α", "note": "7.45 ± 0.08 — calibrated on the AGN sample of Reines & Volonteri (2015), Eq. (5)." },
+        "beta": { "label": "slope β", "note": "1.05 ± 0.11 per dex of stellar mass." },
+        "scatter": { "label": "intrinsic scatter", "note": "0.24 dex — the dominant uncertainty of the predicted M_BH. It was entirely omitted before commit 555f018, and a precedence bug understated the stellar-mass term's variance ~100×." }
+      },
+      "variables": [
+        { "sym": "M_*", "meaning": "host total stellar mass", "units": "M_\\odot", "origin": "catalogue" },
+        { "sym": "M_{\\rm BH}", "meaning": "predicted central BH mass", "units": "M_\\odot", "origin": "computed prior" }
+      ],
+      "impl": "master_thesis_code/galaxy_catalogue/handler.py:1337",
+      "refs": ["Reines & Volonteri (2015), ApJ 813, 82, arXiv:1508.06274, Eq. (5)"],
+      "history": [
+        { "date": "2026-07", "commit": "555f0186", "tag": "FIXED", "text": "Error budget repaired: the 0.24 dex intrinsic scatter had been omitted entirely, and an operator-precedence bug (a stray /10) understated the stellar-mass variance term ~100× — host-mass priors were 3–7× too tight." }
+      ],
+      "curve": { "key": "rv", "title": "The relation with its ±0.24 dex intrinsic-scatter band", "prov": "real: handler.py constants" },
+      "chapter": { "href": "ch08-mass-channel.html", "label": "Ch. 8 — A Second Handle: the Mass Channel" },
+      "connects_to": ["gw4d"]
+    },
+    {
+      "id": "gw3d",
+      "name": "Catalogue likelihood (standard channel)",
+      "short": "L_cat",
+      "kind": "inf", "x": 420, "y": 470,
+      "hover": "The heart of pipeline 2: sum over candidate hosts, marginalize over redshift, ask which H₀ fits.",
+      "body": "The single-event likelihood over catalogued hosts. For each candidate, the GW 3D Gaussian (sky × distance, from the Cramér–Rao covariance) is evaluated at the distance that H₀ would assign to the host's redshift — then summed over candidates and normalized by the selection denominator, following Gray et al. (2020) Eq. A.10.",
+      "latex": "L_{\\rm cat}(H_0) = \\frac{\\sum_j \\int dz\\; \\cls{pgw}{p_{\\rm GW}\\big(\\phi_j, \\theta_j,\\, \\cls{dlh}{d_L(z, H_0)}\\big)}\\; \\cls{pgz}{p_g^{(j)}(z)}}{\\cls{den}{\\sum_j \\int dz\\; p_{\\rm det}(z)\\; p_g^{(j)}(z)}}",
+      "terms": {
+        "pgw": { "label": "GW measurement", "note": "3D Gaussian in (sky, distance) from the event's Cramér–Rao covariance — the entire output of pipeline 1, evaluated per host.", "goto": "crb" },
+        "dlh": { "label": "d_L(z, H₀) — the H₀ lever", "note": "The only H₀ dependence: each trial H₀ moves every host's predicted distance through the shared d_L(z, h) relation.", "goto": "dl" },
+        "pgz": { "label": "host-z kernel", "note": "The volume-deconvolved redshift prior of candidate j.", "goto": "zkernel" },
+        "den": { "label": "selection denominator", "note": "p_det appears in the denominator only (Mandel, Farr & Gair 2019) — putting it in the numerator double-counts selection. The normalization-mode saga (see history) lives here.", "goto": "denom" }
+      },
+      "variables": [
+        { "sym": "p_{\\rm GW}", "meaning": "GW 3D measurement density", "units": "—", "origin": "measured (CRB CSV)" },
+        { "sym": "j", "meaning": "candidate-host index", "units": "—", "origin": "3σ ball query" },
+        { "sym": "\\pm 4\\sigma", "meaning": "z-integration window", "units": "—", "origin": "constant multiplier" }
+      ],
+      "impl": "master_thesis_code/bayesian_inference/bayesian_statistics.py:4658 (single_host_likelihood)",
+      "paper_eq": "method.tex eq:Lcat_no_mass",
+      "refs": ["Gray et al. (2020), arXiv:1908.06050, Eqs. A.9–A.10", "Mandel, Farr & Gair (2019), arXiv:1809.02063"],
+      "history": [
+        { "date": "2026-06", "commit": "f1232de5", "tag": "FIXED", "text": "Likelihood restructured to the single Gray ratio (partition-normalization fix)." },
+        { "date": "2026-06", "commit": "816f904c", "tag": "RATIFIED", "text": "Aligned with Gray Eq. A.9/A.10: ratio of sums, p_det in the denominator only." },
+        { "date": "2026-07", "commit": "6d4c4e18", "tag": "FIXED", "text": "In-catalogue H₀ normalization de-railed via explicit normalization_mode." },
+        { "date": "2026-07", "commit": "235b783a", "tag": "RATIFIED", "text": "Default normalization flipped to volume_deconv; 'global' now warns (G7 row #5: the −17 % h-shape tilt of Option-A cancellation)." },
+        { "date": "2026-08", "commit": "8fbb21eb", "tag": "ADDED", "text": "generator_marginal: generator-consistent selection normalization (E1 FIX-3)." }
+      ],
+      "chapter": { "href": "ch03-which-galaxy.html", "label": "Ch. 3 — Which Galaxy?" },
+      "connects_to": ["mix"]
+    },
+    {
+      "id": "gw4d",
+      "name": "Mass-channel likelihood",
+      "short": "L_cat, M_z",
+      "kind": "inf", "x": 420, "y": 545,
+      "hover": "The 4D variant: add the superbly-measured detector-frame BH mass and let the catalogue's mass prediction vote on the host.",
+      "body": "The with-BH-mass channel extends the GW Gaussian to 4D (sky, distance, detector-frame mass M_z = M_BH(1+z)) and marginalizes the unknown true BH mass analytically against the catalogue's Reines–Volonteri prediction — a conditional-Gaussian identity, so no extra numerical integral.",
+      "latex": "\\int\\! dM_{\\rm BH}\\; p_{\\rm GW}\\big(\\mathbf x,\\, \\cls{mz}{M_z}\\big)\\, \\cls{gm}{g(M_{\\rm BH})} = p_{\\rm GW}^{(3)}(\\mathbf x)\\;\\cls{cond}{\\mathcal N\\big(\\mu_{\\rm cond};\\, \\tilde\\mu_g,\\, \\sigma_{\\rm cond}^2 + \\tilde\\sigma_g^2\\big)}",
+      "terms": {
+        "mz": { "label": "detector-frame mass", "note": "M_z = M_BH(1+z), measured from the waveform phasing to relative precision ~10⁻⁶ — the best-measured quantity in the problem." },
+        "gm": { "label": "catalogue mass prior", "note": "Gaussian from the Reines–Volonteri relation, with the honest 0.24 dex scatter.", "goto": "rv" },
+        "cond": { "label": "conditional-Gaussian closure", "note": "Bishop (2006) Eq. 2.81–2.82: the mass marginalization collapses to a 1D Gaussian overlap — analytic, fast, exact." }
+      },
+      "variables": [
+        { "sym": "M_z", "meaning": "detector-frame central BH mass", "units": "M_\\odot", "origin": "measured (σ/M ~ 10⁻⁶)" },
+        { "sym": "g(M_{\\rm BH})", "meaning": "catalogue prior on true BH mass", "units": "—", "origin": "R&V relation" }
+      ],
+      "impl": "master_thesis_code/bayesian_inference/bayesian_statistics.py:4658 (evaluate_with_bh_mass path); truncated-lognormal 2D kernel :622",
+      "paper_eq": "method.tex eq:mass_integral, eq:Lcat_mass",
+      "refs": ["Bishop (2006), PRML, Eqs. 2.81–2.82", "Reines & Volonteri (2015), arXiv:1508.06274"],
+      "history": [
+        { "date": "2026-07", "commit": "70bee1f9", "tag": "EXONERATED", "text": "mass_trunc host-mass kernel (EXP-45) implemented — then exonerated as the 2D bias driver." },
+        { "date": "2026-07", "commit": "e9bec6d9", "tag": "RATIFIED", "text": "2D truncated-lognormal mass kernel + host_mass_kernel flag ratified (#40 remainder)." },
+        { "date": "2026-07", "commit": "4d780f06", "tag": "ADDED", "text": "G2d: Eddington-in-M host-mass rate prior, exact moment-matched." }
+      ],
+      "caveats": [
+        { "badge": "open", "text": "G7 row #9: the mass marginal is not volume/rate-deconvolved the way the z-channel now is (Eddington-in-M) — unquantified, second-order, quoted as a paper caveat." }
+      ],
+      "chapter": { "href": "ch08-mass-channel.html", "label": "Ch. 8 — A Second Handle: the Mass Channel" },
+      "connects_to": ["mix"]
+    },
+    {
+      "id": "comp",
+      "name": "Completion term",
+      "short": "L_comp",
+      "kind": "inf", "x": 565, "y": 545,
+      "hover": "The galaxies GLADE+ cannot see still host events — a uniform-in-comoving-volume term stands in for them.",
+      "body": "GLADE+ is incomplete, badly so at EMRI distances. For the missing galaxies, the likelihood integrates the GW measurement against a uniform-in-comoving-volume population with (1+z)⁻¹ time dilation, following Gray et al. (2020) Eq. 32.",
+      "latex": "L_{\\rm comp}(H_0) = \\frac{\\int dz\\; \\cls{pgwz}{p_{\\rm GW}(z)}\\; \\cls{volz}{\\tfrac{dV_c}{dz}\\tfrac{1}{1+z}}}{\\int dz\\; p_{\\rm det}(z)\\; \\tfrac{dV_c}{dz}\\tfrac{1}{1+z}}",
+      "terms": {
+        "pgwz": { "label": "GW measurement at z", "note": "The event's 3D density, sky-marginalized over the isotropic prior — evaluating it at a single peak-density sky point once inflated this term ~5000× (G7 row #3, fixed)." },
+        "volz": { "label": "volume × time dilation", "note": "Uniform-in-comoving-volume host prior with (1+z)⁻¹ observer-clock dilation — the dilation factor was missing until commit 084db78.", "goto": "vol" }
+      },
+      "variables": [
+        { "sym": "f_i", "meaning": "completeness fraction (weight between L_cat and L_comp)", "units": "[0,1]", "origin": "computed (Schechter m_th map)" }
+      ],
+      "impl": "master_thesis_code/bayesian_inference/bayesian_statistics.py:1255",
+      "paper_eq": "method.tex eq:Lcomp",
+      "refs": ["Gray et al. (2020), arXiv:1908.06050, Eq. 32"],
+      "history": [
+        { "date": "2026-06", "commit": "4ce28bc8", "tag": "FIXED", "text": "Spurious p_det removed from the completion-term numerator (Gray Eq. 32)." },
+        { "date": "2026-06", "commit": "084db781", "tag": "FIXED", "text": "(1+z)⁻¹ time dilation added to the completion integrals." },
+        { "date": "2026-06", "commit": "cb161427", "tag": "FIXED", "text": "Completion numerator sky-marginalized over the isotropic 1/(4π) prior — the peak-density shortcut had inflated it ~5000× (G7 row #3)." },
+        { "date": "2026-07", "commit": "4a259b7d", "tag": "FIXED", "text": "Solid-angle Jacobian sin θ + z ≥ 0 window clamp (G7 row #4)." },
+        { "date": "2026-07", "commit": "7d3573da", "tag": "FIXED", "text": "Completion numerator capped at the analysis-depth limit." }
+      ],
+      "chapter": { "href": "ch05-unseen-galaxy.html", "label": "Ch. 5 — The Galaxy You Cannot See" },
+      "connects_to": ["mix"]
+    },
+    {
+      "id": "mix",
+      "name": "Completeness mixture",
+      "short": "f·L_cat + (1−f)·L_comp",
+      "kind": "inf", "x": 585, "y": 470,
+      "hover": "The two worlds — catalogued and dark — weighted by how complete the catalogue actually is at that distance.",
+      "body": "The per-event likelihood is a mixture: the catalogue term weighted by the completeness fraction f_i (from a per-pixel Schechter-function threshold map), plus the completion term weighted by 1 − f_i.",
+      "latex": "p\\big(d_{\\rm GW}^{\\,i}\\,\\big|\\,H_0\\big) = \\cls{fi}{f_i}\\, \\cls{lcat}{L_{\\rm cat}^{(i)}} + \\big(1-\\cls{fi2}{f_i}\\big)\\, \\cls{lcomp}{L_{\\rm comp}^{(i)}}",
+      "terms": {
+        "fi": { "label": "completeness fraction", "note": "Per-pixel Schechter apparent-magnitude threshold m_th over a HEALPix map — how much of the luminosity function GLADE+ actually catches there." },
+        "fi2": { "label": "completeness fraction", "note": "Same f_i — what the catalogue misses goes to the completion term." },
+        "lcat": { "label": "catalogue term", "note": "Sum over real candidate hosts.", "goto": "gw3d" },
+        "lcomp": { "label": "completion term", "note": "Stand-in for the unseen hosts.", "goto": "comp" }
+      },
+      "variables": [
+        { "sym": "f_i", "meaning": "catalogue completeness at the event's sky pixel and inferred z", "units": "[0,1]", "origin": "computed (PixelCompleteness)" }
+      ],
+      "impl": "master_thesis_code/bayesian_inference/bayesian_statistics.py:1935 (completion_mass_factor_g and callers)",
+      "paper_eq": "method.tex eq:completeness_combination",
+      "refs": ["Gray et al. (2020), arXiv:1908.06050"],
+      "history": [
+        { "date": "2026-06", "commit": "c9adeba1", "tag": "ADDED", "text": "Per-pixel Schechter completeness (PixelCompleteness + m_th map)." },
+        { "date": "2026-06", "commit": "a243e2d3", "tag": "ADDED", "text": "astropy_healpix + apparent-B-magnitude parsing from GLADE+." },
+        { "date": "2026-08", "commit": "b82a2d4a", "tag": "FIXED", "text": "Sky-aware selection function — closed the isotropic-p_det sky blind spot (the paper-blocking finding of the inference-consistency audit)." }
+      ],
+      "chapter": { "href": "ch05-unseen-galaxy.html", "label": "Ch. 5 — The Galaxy You Cannot See" },
+      "connects_to": ["comb"]
+    },
+    {
+      "id": "denom",
+      "name": "Selection normalization D(h)",
+      "short": "D(h)",
+      "kind": "inf", "x": 690, "y": 545,
+      "hover": "The global denominator that undoes Malmquist bias — and the site of the pipeline's longest-running battle.",
+      "body": "The normalization that makes the likelihood a proper density over detectable data (Gray et al. A.19). Getting its h-dependence wrong tilts the whole posterior; this node has the densest scar tissue on the map, including the 2026-08 one-detection-model unification.",
+      "latex": "D(h) = \\iint \\cls{sel}{p_{\\rm det}}\\; p_{\\rm pop}(z, M \\mid h)\\; dz\\, dM \\qquad \\text{(evaluated by deterministic Gauss–Legendre quadrature)}",
+      "terms": {
+        "sel": { "label": "selection function", "note": "The same p_det as everywhere else — since path-A C9+C8 (2026-08-04) a single detection model S̄_φ is used consistently across mixture and completion mass density.", "goto": "pdet" }
+      },
+      "variables": [
+        { "sym": "\\bar S_\\varphi", "meaning": "phase-marginal survival — the one detection model", "units": "—", "origin": "computed" },
+        { "sym": "\\beta_G", "meaning": "catalogue-selection normalization", "units": "—", "origin": "computed" }
+      ],
+      "impl": "master_thesis_code/bayesian_inference/bayesian_statistics.py:1098–1547",
+      "refs": ["Gray et al. (2020), arXiv:1908.06050, Eq. A.19"],
+      "history": [
+        { "date": "2026-07", "commit": "0e67b88b", "tag": "ADDED", "text": "Diagnostic normalization_mode='volume_global' for the G3 ablation cube." },
+        { "date": "2026-07", "commit": "01470a40", "tag": "ADDED", "text": "Partition-norm denominators precomputed (β_G, global catalogue selection; verified no-op)." },
+        { "date": "2026-07", "commit": "bf2926c9", "tag": "FIXED", "text": "Monte-Carlo selection denominator replaced by deterministic 2D Gauss–Legendre quadrature — eliminated 1 % unseeded run-to-run noise (G7 row #10)." },
+        { "date": "2026-08-04", "commit": "0725a31a", "tag": "RATIFIED", "text": "Path-A C9+C8: one detection model S̄_φ — mass-consistent mixture and completion mass density. Physics-gate ledger entry." }
+      ],
+      "caveats": [
+        { "badge": "refuted", "text": "G7 row #5: the Option-A global cancellation (Σ_global vs h³β_G) produced a −17 % h-shape tilt — avoided via local modes; 'global' mode now warns." }
+      ],
+      "chapter": { "href": "ch04-loud-half.html", "label": "Ch. 4 — selection, and its denominator" },
+      "connects_to": ["gw3d", "gw4d"]
+    },
+    {
+      "id": "comb",
+      "name": "Log-space combination",
+      "short": "Σ log L",
+      "kind": "inf", "x": 740, "y": 470,
+      "hover": "Forty quiet events beat one loud one: per-event likelihoods multiply — in log space, they add.",
+      "body": "Independent events multiply; numerically, their log-likelihoods are summed on the h grid and exponentiated once (log-sum-exp). No extra β(h)^N factor appears — it cancels against the Poisson rate prior. Zero-likelihood handling strategies are explicit and audited.",
+      "latex": "\\log p\\big(H_0 \\mid \\{d^i\\}\\big) = \\sum_{i=1}^{N} \\log L_i(H_0) + \\text{const}",
+      "variables": [
+        { "sym": "N", "meaning": "number of detected events combined", "units": "—", "origin": "campaign" },
+        { "sym": "\\text{strategy}", "meaning": "zero-likelihood handling", "units": "enum", "origin": "naive | exclude | per-event-floor | physics-floor" }
+      ],
+      "impl": "master_thesis_code/bayesian_inference/posterior_combination.py:284 (combine_log_space), :802 (canonical Σ log L)",
+      "refs": ["Mandel, Farr & Gair (2019), arXiv:1809.02063, §3", "Loredo (2004)"],
+      "history": [
+        { "date": "2026-05-04", "commit": "—", "tag": "FIXED", "text": "Tier-3 audit removed the earlier −N·log D(h) outer correction — it over-applied the selection correction on top of the per-event denominators." }
+      ],
+      "chapter": { "href": "ch02-bayes.html", "label": "Ch. 2 — Bayes, Once and For All" },
+      "connects_to": ["post"]
+    },
+    {
+      "id": "post",
+      "name": "The H₀ posterior",
+      "short": "p(H₀ | data)",
+      "kind": "inf", "x": 880, "y": 470,
+      "hover": "The destination: a probability density over the Hubble constant, from gravity alone.",
+      "body": "Everything on this map exists to shape this one curve: the posterior over h on a uniform prior [0.60, 0.86]. Its honest current state — including the residual bias story — is chapters 11–13.",
+      "latex": "p\\big(H_0 \\mid \\{d^i\\}, \\mathcal C\\big) \\;\\propto\\; \\cls{prior}{p(H_0)} \\prod_{i=1}^{N} \\cls{ev}{p\\big(d^i \\mid H_0, \\mathcal C\\big)}",
+      "terms": {
+        "prior": { "label": "prior", "note": "Uniform in h on [0.60, 0.86]." },
+        "ev": { "label": "per-event likelihood", "note": "The completeness mixture, one factor per detected EMRI.", "goto": "mix" }
+      },
+      "variables": [
+        { "sym": "\\mathcal C", "meaning": "the galaxy catalogue (GLADE+) and everything known about it", "units": "—", "origin": "given" }
+      ],
+      "impl": "master_thesis_code/bayesian_inference/bayesian_statistics.py (evaluate); posterior_combination.py",
+      "paper_eq": "method.tex eq:h0_posterior",
+      "refs": ["Schutz (1986), Nature 323, 310", "Gray et al. (2020), arXiv:1908.06050"],
+      "history": [
+        { "date": "2026-07", "commit": "191ce2d5", "tag": "RATIFIED", "text": "Phase 48 production fine-grid sweep: h = 0.73 closure passed at 63-point resolution." }
+      ],
+      "chapter": { "href": "ch11-honest-state.html", "label": "Ch. 11 — The State of the Art, Honestly" },
+      "connects_to": []
+    },
+    {
+      "id": "pp",
+      "name": "P–P calibration harness",
+      "short": "P–P",
+      "kind": "valid", "x": 880, "y": 560,
+      "hover": "Does the posterior mean what it claims? Synthetic universes with known H₀ test the estimator's coverage.",
+      "body": "Not on the production path — above it. The validation harness builds synthetic universes with known h, runs the single-host estimator, and checks coverage: an x % credible interval must contain the truth x % of the time. This harness is where the bare-Gaussian kernel bias was caught and quantified.",
+      "latex": "\\hat F(p) = \\frac{1}{N_{\\rm real}}\\sum_r \\mathbf 1\\big[\\,h_{\\rm true} \\in \\mathrm{CI}_p(r)\\,\\big] \\;\\overset{!}{=}\\; p",
+      "variables": [
+        { "sym": "\\mathrm{CI}_p", "meaning": "central credible interval of mass p", "units": "—", "origin": "computed per realization" },
+        { "sym": "\\sigma_z", "meaning": "commission photo-z scatter", "units": "—", "origin": "constant = 0.035" }
+      ],
+      "impl": "master_thesis_code/validation/pp_coverage.py:214",
+      "refs": ["Gray et al. (2020), arXiv:1908.06050, Eqs. 29+32", "Mandel, Farr & Gair (2019), arXiv:1809.02063"],
+      "history": [
+        { "date": "2026-07", "commit": "44ee9125", "tag": "ADDED", "text": "Catalogue / impostor-ball synthetic universe + production-stack analog." },
+        { "date": "2026-07", "commit": "786dc8db", "tag": "ADDED", "text": "mixture_mode='absolute' (Variant-1 harness analog)." }
+      ],
+      "chapter": { "href": "ch10-calibration.html", "label": "Ch. 10 — Is It Calibrated?" },
+      "connects_to": ["post"]
+    }
+  ],
+  "edges": [
+    { "from": "population", "to": "hostdraw" },
+    { "from": "hostdraw", "to": "waveform" },
+    { "from": "dl", "to": "waveform", "kind": "cross" },
+    { "from": "waveform", "to": "inner" },
+    { "from": "psd", "to": "inner" },
+    { "from": "confusion", "to": "psd" },
+    { "from": "inner", "to": "snr" },
+    { "from": "snr", "to": "gate" },
+    { "from": "inner", "to": "stencil" },
+    { "from": "gate", "to": "stencil", "label": "detected only" },
+    { "from": "stencil", "to": "fisher" },
+    { "from": "fisher", "to": "crb" },
+    { "from": "snr", "to": "pdet", "kind": "cross", "label": "injection pool" },
+    { "from": "crb", "to": "gw3d" },
+    { "from": "crb", "to": "gw4d" },
+    { "from": "candidates", "to": "zkernel" },
+    { "from": "candidates", "to": "rv" },
+    { "from": "candidates", "to": "gw3d" },
+    { "from": "zkernel", "to": "gw3d" },
+    { "from": "rv", "to": "gw4d" },
+    { "from": "dl", "to": "gw3d", "kind": "cross" },
+    { "from": "vol", "to": "zkernel", "kind": "cross" },
+    { "from": "vol", "to": "comp", "kind": "cross" },
+    { "from": "pdet", "to": "gw3d", "kind": "cross" },
+    { "from": "pdet", "to": "gw4d", "kind": "cross" },
+    { "from": "pdet", "to": "comp", "kind": "cross" },
+    { "from": "pdet", "to": "denom", "kind": "cross" },
+    { "from": "denom", "to": "gw3d" },
+    { "from": "denom", "to": "gw4d" },
+    { "from": "gw3d", "to": "mix" },
+    { "from": "gw4d", "to": "mix" },
+    { "from": "comp", "to": "mix" },
+    { "from": "mix", "to": "comb" },
+    { "from": "comb", "to": "post" },
+    { "from": "pp", "to": "post", "kind": "valid", "label": "calibrates" }
+  ]
+}
