@@ -119,6 +119,7 @@ Abbreviations: `H0R` = `docs/H0_BIAS_RESOLUTION.md`; `BRA` = `docs/BIAS_RESOLUTI
 | 93 | 07-29 #51 | Idealized baseline (point kernel + `generator_marginal`, unscattered) | 1e-4 zoom grid | 1D/2D **0.72990 / 0.7300**, −0.24σ / −0.36σ. 100% of information from **76 in-cat events**; 3 golden carry 46% | `IDEALIZED_BASELINE_READOUT.md:25-47` | — |
 | 94 | 07-29 #53 | Realistic run (`absolute_marginal` + `volume_deconv`, scattered catalogue) | P1–P6 scorecard, 10 runs | 1D 0.700–0.740 (pooled 0.7205) · **2D 0.780–0.820, mean +0.077, 10/10 pull > 2 (+4.04)**; P5 σ→0 byte-identical PASS | `REALISTIC_READOUT.md:19-32,140-153` | **current** |
 | 96 | 08-06/07 crossterm | the neglected Eq. (31) pairwise cross-term (arXiv:2212.08694) is large enough to matter — H-1's 1D-rail leg and M-2-revived H-2's 2D leg (row #95 mandate: measure, never refute by convenience) | pre-registered frozen instrument (sha256 `340b66d2…`, ratified M-4 target sets 349/104 joint_r1 + 280/21 iiib pairs), mixture-composed band X=2.78/Y=7.96 LOCKED; mechanical readout + independent adjudication (`readout_adjudication_20260807.json`, **CONFIRMED, T bit-identical**) | **NEGLECT-WITH-NUMBER in all four venue×channel cells**: T = 1.468160e-05 (joint_r1/1d) / 5.648753e-05 (joint_r1/2d) / 1.024615e-05 (iiib/1d) / 5.379542e-06 (iiib/2d) class-summed mixture-composed chord nats; X/T = 1.89e5/4.92e4/2.71e5/5.17e5; anti-dilution never triggers; no venue split. **H-1's cross-term leg CLOSED by measurement** (5 orders below the 1D rail's −1.1…−1.6 nats/grid-point depth, #93). **M-2's revived-H-2 signature NOT matched** — composed 2D chord is NEGATIVE (high-h) at 5–6 orders below Y ⇒ cross-term **EXCLUDED as the mechanism of M-2's 2D overlap residual**. Discovered facts: raw catalogue-leg diagnostics (reported-never-scored) are large — full-grid ranges 181.208/5.799/77.514/0.0960 nats — and the raw 2D chords are **POSITIVE (low-h)**: +2.507 (joint_r1) / +0.0116 (iiib): H-2's coherence is physically present in the catalogue leg but **annihilated by the mixture composition** (median per-pair factor ~1.5e-07–2.5e-06) and **sign-reversed at class level by w_G's h-fall** (0.0957→0.0556); in-C-4 vs outside-C-4 1D sub-sums are **sign-split** (+1.8e-06 vs ~9× larger negative) — M-4 supersession vindicated | `crossterm_instrument/{CROSSTERM_READOUT_20260806.md,readout_20260806.json,readout_adjudication_20260807.json}` | M-2's 2D overlap residual (+0.02070/+0.02225 nats/event, p 0.0042/0.0050) REAL and now **UNOWNED** (§4 thread 16); NEGLECT conditional on `crossterm_instrument/NEGLECT_TRIGGER_REGISTER.md` (§5 ruling 08-07) |
+| 97 | 08-08 M-2 stage 5 | Owner of M-2's matched 2D overlap residual (§4 thread 16) — Stage 1 readout (A1 sign-flip test + A2 completion-weight functional) and pre-registered Instrument B (branch-iii venue-split decision statistics DS-1–DS-5) | Stage 1 dual test (`STAGE1_READOUT_20260807.md`) + pre-registered Instrument B (`PREREGISTRATION_B_COMPLETION_WEIGHT_FUNCTIONAL.md`, `B_READOUT_20260808.md`), ratified by the author verbatim ("ratified") on the presented formulation | **RATIFIED — DISSOLUTION in modified-H-c form (author ruling 2026-08-08, §5)**: residual (+0.02225 iiib / +0.02070 joint_r1 nats/event) is REAL and component-coherent (H-e chance closed on the literal + majority graph readings, CONDITIONAL on the overlap-among-overlap exchangeability model — qualification q1), carried by the completion leg (T_Lcomp, D-1 LMDI, fraction +1.28/+1.33; catalogue leg NULL; venue-stability mechanically explained by bit-identical completion columns; 1D/2D dichotomy explained by w_G-offset cancellation + mass-conditioning unmasking), and confounding-absorbable by the collinear d_L-geometry + ball-density bundle traceable to C-4's 2σ d_L window: ~2/3 a smooth, strictly-monotone, verified d_L-functional completion-leg response (A2: R² 0.88, chain ratios 0.666/0.653), the remaining ~1/3 (the +0.0083 ± 0.0029 fixed-d_L excess) density-coupled at joint_r1 under every stability check (Instrument B DS-3: A_ρ +0.0069, cluster p 0.023; radius overlay p 0.0055) but specification-fragile (verifier ATT-5: p crosses 0.0455 under tensor-deg3 D; excess softens to ~2.1–2.5σ under flexible D) and NOT significant at iiib (A_ρ +0.0039, p 0.11) — recorded as a disclosed, bounded open object, NOT a claimed finding (qualification q2 sharpened). Instrument B fired pre-registered branch (iii) MIXED on this clean venue split; joint model chain reproduces in-band BOTH venues (ρ_J 0.82/0.97). The fragile joint_r1 1D signal (p=0.0414) is RETIRED. H-b and H-d refuted as owners (wrong-sign carriers); H-a carrier-only. No escalation, no `/physics-change` implicated, no production formula touched | `m2_residual_owner/{CLAIM_M2_RESIDUAL_OWNER_20260807.md,STAGE1_READOUT_20260807.md,PREREGISTRATION_B_COMPLETION_WEIGHT_FUNCTIONAL.md,B_READOUT_20260808.md}`; evidence commits e253e0c1 (stage 0-1), c188f460 (A1/A2), 36fe7800 (prereg B), 39d8a227 (instrument B) | §4 thread 16 CLOSED by this ruling (§5 ruling 08-08); the ~1/3 fixed-d_L density-coupled excess remains, by design, a disclosed bounded open object (q2) — open/non-attributed at iiib, specification-fragile (degree-3-conditional) at joint_r1 |
 
 ---
 
@@ -224,6 +225,17 @@ predicted, already-owned open item, not a new discovery.
 15. **The catalogue leg's `f_k` completeness callable is pool-fed — discovered 08-05 (#94).** D1's N2 null (registered expectation: `L_cat_no_bh`/`L_cat_with_bh` carry no selection function) **FAILED** — under `volume_deconv`/`absolute_marginal`, the catalogue-leg host-z prior carries `f_k`, and `f_k` is built from the injection pool, the very object D1's three-arm re-weight substitutes. This falsifies a load-bearing prereg assumption and is a **new coupling**, distinct from and additional to the g_frac(h)/D1-convergence question (item 13, now closed as dead at machine precision — `g_frac` was bit-identical A1-vs-A2, #94 S2). Unowned; heads the next session's intake queue.
 16. **Owner of M-2's matched 2D overlap residual — NEW TOP CANDIDATE THREAD (opened 08-07 by #96).** The residual is real (+0.02070 joint_r1 / +0.02225 iiib nats/event, cluster-robust p 0.0042/0.0050, low-h-preferring, ~8 nats class-scale if coherent) and #96 **excluded its leading candidate mechanism**: the Eq. (31) pairwise cross-term's composed 2D chord has the OPPOSITE sign at 5–6 orders below Y. Opening evidence for the hunt — the **composition-annihilation finding**: the raw catalogue-leg 2D chords DO carry the residual's low-h sign coherently (+2.507/+0.0116 nats; every joint_r1/iiib 2D per-pair composed chord one-signed), but the mixture composition (median per-pair factor ~1.5e-07–2.5e-06) crushes the magnitude and w_G's h-fall reverses the class-level sign — so whatever owns the residual either lives outside the likelihood-factorization coupling entirely, or reaches the posterior by a route the w_G-weighted mixture does not annihilate. Not likelihood-factorization coupling (per #96); owner at large.
 
+> **CLOSED 2026-08-08 (row #97; §5 AUTHOR RULING 2026-08-08).** The author ratified
+> the presented stage-5 formulation verbatim ("ratified"): DISSOLUTION in
+> modified-H-c form — completion-leg-carried (D-1 LMDI), d_L-geometry/ball-density
+> confounding-absorbable to ~2/3 (A2, smooth monotone d_L functional), remaining
+> ~1/3 fixed-d_L excess density-coupled at joint_r1 but specification-fragile and
+> not significant at iiib, retained as a disclosed bounded open object under
+> qualifications q1 (H-e chance conditional on overlap-among-overlap
+> exchangeability) and q2 (sharpened: not a claimed finding). No escalation,
+> no `/physics-change` implicated. Thread 16 is closed by this ruling; see row #97
+> and §5.
+
 ---
 
 ## 5. AUTHOR RULINGS (2026-08-05) — append-only; no row or thread above is modified
@@ -293,3 +305,35 @@ under raw scoring 3 of 4 cells already exceed X). **The NEGLECT stands unless at
 one named trigger fires.** The cross-term leg of H-1 (and H-3's cross-term leg, prereg
 §1 item 3) exits LIVE by measurement; M-2's 2D overlap residual is UNOWNED and becomes
 §4 thread 16.
+
+### AUTHOR RULING (2026-08-08) — M-2 residual owner, stage 5: DISSOLUTION in modified-H-c form
+*(Annotates row #97 and closes §4 open thread 16. Author, verbatim reply "ratified" to the
+presented stage-5 formulation.)*
+
+**RATIFIED**: the M-2 matched 2D overlap residual thread (ledger §4 thread 16) closes as
+**DISSOLUTION in modified-H-c form**: the residual (+0.02225 iiib / +0.02070 joint_r1
+nats/event) is real and component-coherent (H-e chance closed on the literal + majority
+graph readings, CONDITIONAL on the overlap-among-overlap exchangeability model —
+qualification **q1**), carried by the completion leg (T_Lcomp, D-1 LMDI, fraction
++1.28/+1.33; catalogue leg NULL; venue-stability mechanically explained by bit-identical
+completion columns; 1D/2D dichotomy explained by w_G-offset cancellation + mass-conditioning
+unmasking), and confounding-absorbable by the collinear d_L-geometry + ball-density bundle
+traceable to C-4's 2σ d_L window: ~2/3 a smooth, strictly-monotone, verified d_L-functional
+completion-leg response (A2: R² 0.88, chain ratios 0.666/0.653), the remaining ~1/3 (the
++0.0083 ± 0.0029 fixed-d_L excess) density-coupled at joint_r1 under every stability check
+(instrument B DS-3: A_ρ +0.0069, cluster p 0.023; radius overlay p 0.0055) but
+specification-fragile (verifier ATT-5: p crosses 0.0455 under tensor-deg3 D; excess softens
+to ~2.1–2.5σ under flexible D) and NOT significant at iiib (A_ρ +0.0039, p 0.11) —
+**recorded as a disclosed, bounded open object, NOT a claimed finding** (qualification
+**q2**, sharpened). Instrument B fired pre-registered branch (iii) MIXED on this clean
+venue split; the joint model chain reproduces in-band BOTH venues (ρ_J 0.82/0.97). The
+fragile joint_r1 1D signal (p=0.0414) is **RETIRED**. H-b and H-d are refuted as owners
+(wrong-sign carriers); H-a is carrier-only. **No escalation, no `/physics-change`
+implicated, no production formula touched.**
+
+Evidence commits: `e253e0c1` (stage 0-1), `c188f460` (A1/A2), `36fe7800` (prereg B),
+`39d8a227` (instrument B). Key artifacts in
+`../m2_residual_owner/`: `CLAIM_M2_RESIDUAL_OWNER_20260807.md`,
+`STAGE1_READOUT_20260807.md` (+A1/A2 appendix),
+`PREREGISTRATION_B_COMPLETION_WEIGHT_FUNCTIONAL.md`, `B_READOUT_20260808.md`, all
+`*_results.json` + adjudications. §4 thread 16 is CLOSED by this ruling; see row #97.
