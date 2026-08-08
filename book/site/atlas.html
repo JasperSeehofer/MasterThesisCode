@@ -117,6 +117,49 @@
   .atlas-empty { color: var(--muted); font-size: 0.9rem; font-style: italic; }
   .atlas-chapterlink { display: inline-block; margin-top: 0.4rem; font-size: 0.88rem; }
   .atlas-scarsummary { font-size: 0.85rem; color: var(--muted); margin-top: 0.5rem; }
+
+  /* journey mode */
+  .atlas-jbtn, .atlas-jnav button, .atlas-walkbtn {
+    font: inherit; font-size: 0.85rem; font-weight: 600; cursor: pointer;
+    color: var(--accent); background: var(--paper); border: 1.5px solid var(--accent);
+    border-radius: 999px; padding: 0.25rem 0.8rem; }
+  .atlas-jbtn:hover, .atlas-jnav button:hover, .atlas-walkbtn:hover { background: rgba(0,114,178,0.10); }
+  .atlas-jbtn { border-color: #E69F00; color: #b07400; }
+  :root[data-theme="dark"] .atlas-jbtn { color: #E69F00; }
+  .atlas-jbtn:hover { background: rgba(230,159,0,0.12); }
+  #atlas-journey { display: none; border: 2px solid #E69F00; border-radius: var(--radius);
+    padding: 1rem 1.25rem 1.1rem; margin-top: 1.1rem; background: var(--paper); }
+  #atlas-journey.on { display: block; }
+  .atlas-jhead { display: flex; justify-content: space-between; align-items: baseline;
+    gap: 1rem; flex-wrap: wrap; }
+  .atlas-jevent { font-size: 0.78rem; font-weight: 700; letter-spacing: 0.06em;
+    text-transform: uppercase; color: #b07400; }
+  :root[data-theme="dark"] .atlas-jevent { color: #E69F00; }
+  .atlas-jprogress { font-size: 0.78rem; color: var(--muted); }
+  .atlas-jtitle { margin: 0.25rem 0 0.4rem; font-size: 1.12rem; font-weight: 700; }
+  .atlas-jfacts { border-collapse: collapse; font-size: 0.88rem; margin: 0.25rem 0 0.4rem; }
+  .atlas-jfacts td { padding: 0.16rem 1rem 0.16rem 0; vertical-align: top; }
+  .atlas-jfacts td:first-child { color: var(--muted); white-space: nowrap; }
+  .atlas-jnote { font-size: 0.88rem; color: var(--muted); margin: 0.25rem 0 0.6rem; }
+  .atlas-jnav { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
+  .atlas-node.journey-here rect, .atlas-node.journey-here polygon {
+    stroke: #E69F00 !important; filter: drop-shadow(0 0 6px rgba(230,159,0,0.85));
+    animation: atlas-breathe 1.6s ease-in-out infinite; }
+  @keyframes atlas-breathe {
+    0%, 100% { filter: drop-shadow(0 0 3px rgba(230,159,0,0.55)); }
+    50% { filter: drop-shadow(0 0 8px rgba(230,159,0,0.95)); } }
+  .atlas-pulsedot { fill: #E69F00; stroke: var(--paper); stroke-width: 1.5; }
+
+  /* scar-tissue time machine */
+  #atlas-timewrap { display: none; align-items: center; gap: 0.55rem; flex-wrap: wrap; }
+  #atlas-timewrap.on { display: inline-flex; }
+  #atlas-timewrap input[type="range"] { width: 180px; }
+  #atlas-timelabel { font-size: 0.82rem; color: var(--muted); min-width: 5.5em; }
+  .atlas-history li.future { opacity: 0.28; }
+
+  /* formula walkthrough */
+  .atlas-walkbtn { margin: 0.5rem 0 0; }
+  .atlas-termnote .atlas-jnav { margin-top: 0.4rem; }
 </style>
 
 <div class="book-shell">
@@ -157,12 +200,19 @@
         <!-- SVG injected here -->
       </div>
       <div class="widget-controls">
+        <button type="button" class="atlas-jbtn" id="atlas-journey-btn">&#9654; Follow EMRI-889 through the pipeline</button>
         <label style="display:inline-flex;align-items:center;gap:0.45rem;cursor:pointer;">
           <input type="checkbox" id="atlas-scar-toggle" />
           Show the scar tissue <span style="color:var(--muted);font-size:0.8rem;">(what changed, where)</span>
         </label>
         <span class="readout" id="atlas-scar-readout"></span>
+        <span id="atlas-timewrap">
+          <input type="range" id="atlas-timeslider" min="0" max="0" value="0"
+                 aria-label="History cutoff date" />
+          <span id="atlas-timelabel"></span>
+        </span>
       </div>
+      <div id="atlas-journey" aria-live="polite"></div>
       <details class="num-view">
         <summary>Show me the map as a table</summary>
         <div class="table-scroll"><table class="num-table" id="atlas-node-table"></table></div>
@@ -340,10 +390,11 @@
       t.textContent = n.short;
       var hist = (n.history || []).length;
       if (hist) {
-        el("circle", { cx: n.x + w / 2 - 2, cy: n.y - 14, r: 9, class: "atlas-scar" }, g);
+        var ring = el("circle", { cx: n.x + w / 2 - 2, cy: n.y - 14, r: 9, class: "atlas-scar" }, g);
         var sc = el("text", { x: n.x + w / 2 - 2, y: n.y - 10.5, "text-anchor": "middle",
           class: "atlas-scarcount" }, g);
         sc.textContent = hist;
+        scarEls[n.id] = { ring: ring, txt: sc };
       }
       g.addEventListener("click", function () { select(n.id, true); });
       g.addEventListener("keydown", function (ev) {
@@ -360,7 +411,10 @@
         return (n.history || []).length; }).length + " formulas";
     document.getElementById("atlas-scar-toggle").addEventListener("change", function (ev) {
       svg.classList.toggle("scars", ev.target.checked);
+      document.getElementById("atlas-timewrap").classList.toggle("on", ev.target.checked);
+      applyTimelineDim(document);
     });
+    initTimeMachine();
 
     // numeric fallback table
     var tbl = document.getElementById("atlas-node-table");
@@ -390,6 +444,132 @@
     tip.style.opacity = 1;
   }
   function hideTip() { document.getElementById("atlas-tip").style.opacity = 0; }
+
+  // ---------------- scar-tissue time machine ----------------
+  var scarEls = {}, months = [], cutoff = null;
+  function monthOf(dateStr) {
+    var m = /(\d{4}-\d{2})/.exec(dateStr || "");
+    return m ? m[1] : "0000-00";
+  }
+  function initTimeMachine() {
+    var seen = {};
+    graph.nodes.forEach(function (n) {
+      (n.history || []).forEach(function (ev) { seen[monthOf(ev.date)] = true; });
+    });
+    months = Object.keys(seen).sort();
+    var slider = document.getElementById("atlas-timeslider");
+    slider.max = months.length - 1;
+    slider.value = months.length - 1;
+    cutoff = months[months.length - 1];
+    slider.addEventListener("input", function () {
+      cutoff = months[+slider.value];
+      applyCutoff();
+    });
+    applyCutoff();
+  }
+  function applyCutoff() {
+    var shown = 0, total = 0, touched = 0;
+    graph.nodes.forEach(function (n) {
+      var evs = n.history || [];
+      total += evs.length;
+      var c = evs.filter(function (ev) { return monthOf(ev.date) <= cutoff; }).length;
+      shown += c;
+      if (c) touched++;
+      var s = scarEls[n.id];
+      if (s) {
+        s.ring.style.display = c ? "" : "none";
+        s.txt.style.display = c ? "" : "none";
+        s.txt.textContent = c;
+      }
+    });
+    document.getElementById("atlas-timelabel").textContent = "up to " + cutoff;
+    document.getElementById("atlas-scar-readout").textContent =
+      shown + " of " + total + " gated changes across " + touched + " formulas";
+    applyTimelineDim(document);
+  }
+  function applyTimelineDim(root) {
+    var scarsOn = document.getElementById("atlas-scar-toggle").checked;
+    root.querySelectorAll(".atlas-history li").forEach(function (li) {
+      li.classList.toggle("future", scarsOn && cutoff !== null && li.dataset.month > cutoff);
+    });
+  }
+
+  // ---------------- journey mode (follow EMRI-889) ----------------
+  var journeyIdx = -1;
+  function journeyStart() {
+    document.getElementById("atlas-journey").classList.add("on");
+    journeyGoto(0);
+  }
+  function journeyExit() {
+    journeyIdx = -1;
+    document.getElementById("atlas-journey").classList.remove("on");
+    Object.keys(nodeEls).forEach(function (k) { nodeEls[k].classList.remove("journey-here"); });
+  }
+  function journeyGoto(i) {
+    var stops = graph.journey.stops;
+    if (i < 0 || i >= stops.length) { journeyExit(); return; }
+    var prev = journeyIdx >= 0 ? byId[stops[journeyIdx].node] : null;
+    journeyIdx = i;
+    var stop = stops[i], n = byId[stop.node];
+    Object.keys(nodeEls).forEach(function (k) { nodeEls[k].classList.remove("journey-here"); });
+    nodeEls[n.id].classList.add("journey-here");
+    if (prev && prev.id !== n.id) animatePulse(prev, n);
+    renderJourneyCard(stop, i, stops.length);
+    select(n.id, false);
+  }
+  function animatePulse(a, b) {
+    var svg = document.querySelector(".atlas-svg");
+    if (!svg || !window.requestAnimationFrame) return;
+    var dot = el("circle", { r: 6, cx: a.x, cy: a.y, class: "atlas-pulsedot" }, svg);
+    var t0 = null, D = 650;
+    function frame(ts) {
+      if (t0 === null) t0 = ts;
+      var u = Math.min(1, (ts - t0) / D);
+      var e = u < 0.5 ? 2 * u * u : 1 - Math.pow(-2 * u + 2, 2) / 2;
+      dot.setAttribute("cx", a.x + (b.x - a.x) * e);
+      dot.setAttribute("cy", a.y + (b.y - a.y) * e);
+      if (u < 1) requestAnimationFrame(frame); else dot.remove();
+    }
+    requestAnimationFrame(frame);
+  }
+  function renderJourneyCard(stop, i, total) {
+    var card = document.getElementById("atlas-journey");
+    card.innerHTML = "";
+    var head = h("div", "atlas-jhead");
+    head.appendChild(h("span", "atlas-jevent", esc(graph.journey.event) + " — the golden event"));
+    head.appendChild(h("span", "atlas-jprogress", "stop " + (i + 1) + " of " + total));
+    card.appendChild(head);
+    card.appendChild(h("div", "atlas-jtitle", esc(stop.title)));
+    var tf = h("table", "atlas-jfacts");
+    stop.facts.forEach(function (f) {
+      var tr = h("tr");
+      tr.appendChild(h("td", "", esc(f[0])));
+      tr.appendChild(h("td", "", "<strong>" + esc(f[1]) + "</strong>"));
+      tf.appendChild(tr);
+    });
+    card.appendChild(tf);
+    if (stop.note) card.appendChild(h("div", "atlas-jnote", esc(stop.note)));
+    var nav = h("div", "atlas-jnav");
+    if (i > 0) {
+      var back = h("button", "", "&larr; Back");
+      back.type = "button";
+      back.addEventListener("click", function () { journeyGoto(i - 1); });
+      nav.appendChild(back);
+    }
+    var next = h("button", "", i + 1 < total ? "Continue &rarr;" : "Finish the journey");
+    next.type = "button";
+    next.addEventListener("click", function () {
+      if (i + 1 < total) journeyGoto(i + 1); else journeyExit();
+    });
+    nav.appendChild(next);
+    var exit = h("button", "", "Exit");
+    exit.type = "button";
+    exit.addEventListener("click", journeyExit);
+    nav.appendChild(exit);
+    nav.appendChild(h("span", "prov-chip real", esc(graph.journey.prov)));
+    card.appendChild(nav);
+    card.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }
 
   // ---------------- formula stage ----------------
   function renderTex(tex, target, display) {
@@ -478,6 +658,44 @@
         });
       });
     }
+
+    // guided reading: light terms in pedagogical order, one sentence each
+    if (n.read_order && n.read_order.length) {
+      var wbtn = h("button", "atlas-walkbtn", "&#9654; Read this formula to me");
+      wbtn.type = "button";
+      left.insertBefore(wbtn, note.nextSibling);
+      var litAll = function (key, on) {
+        fbox.querySelectorAll(".atlasterm-" + key).forEach(function (s) {
+          s.classList.toggle("lit", on);
+        });
+      };
+      var walkStep = function (step) {
+        n.read_order.forEach(function (k) { litAll(k, false); });
+        if (step >= n.read_order.length) {
+          note.innerHTML = "That is the whole formula. Hover any term to revisit it.";
+          wbtn.style.display = "";
+          return;
+        }
+        wbtn.style.display = "none";
+        var key = n.read_order[step], t = n.terms[key];
+        litAll(key, true);
+        note.innerHTML = "<strong>" + (step + 1) + "/" + n.read_order.length + " — " +
+          esc(t.label) + ".</strong> " + esc(t.note);
+        var nav = h("div", "atlas-jnav");
+        if (step > 0) {
+          var b = h("button", "", "&larr; Back");
+          b.type = "button";
+          b.addEventListener("click", function () { walkStep(step - 1); });
+          nav.appendChild(b);
+        }
+        var nx = h("button", "", step + 1 < n.read_order.length ? "Next &rarr;" : "Done");
+        nx.type = "button";
+        nx.addEventListener("click", function () { walkStep(step + 1); });
+        nav.appendChild(nx);
+        note.appendChild(nav);
+      };
+      wbtn.addEventListener("click", function () { walkStep(0); });
+    }
     if (n.paper_eq) left.appendChild(h("p", "atlas-hint", "Paper: <code>" + esc(n.paper_eq) + "</code>"));
 
     // caveats
@@ -500,9 +718,11 @@
           '<span class="atlas-htag">' + esc(ev.tag) + "</span>" + esc(ev.text) +
           ' <span class="atlas-commit">' + esc(ev.date) +
           (ev.commit && ev.commit !== "—" ? " · " + esc(ev.commit) : "") + "</span>");
+        li.dataset.month = monthOf(ev.date);
         ul.appendChild(li);
       });
       left.appendChild(ul);
+      applyTimelineDim(left);
     } else {
       left.appendChild(h("p", "atlas-empty", "Unchanged since first ratification — no scar tissue here."));
     }
@@ -641,6 +861,13 @@
     document.getElementById("atlas-try-link").addEventListener("click", function (ev) {
       ev.preventDefault(); select("inner", false);
     });
+    var jbtn = document.getElementById("atlas-journey-btn");
+    if (graph.journey && graph.journey.stops && graph.journey.stops.length) {
+      jbtn.addEventListener("click", function () {
+        if (journeyIdx < 0) journeyStart();
+        else journeyExit();
+      });
+    } else { jbtn.style.display = "none"; }
     var want = (location.hash || "").replace("#", "");
     if (want && byId[want]) select(want, false);
   }).catch(function (err) {
