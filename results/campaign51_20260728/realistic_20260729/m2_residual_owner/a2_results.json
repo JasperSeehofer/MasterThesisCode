@@ -1,0 +1,466 @@
+{
+  "read": "A2 completion-leg bundle-functional sanity read (stage-1 loophole close)",
+  "definition_source": "STAGE1_READOUT_20260807.md section 5 (A)(2)",
+  "date": "2026-08-08",
+  "git_commit": "e253e0c1bef559b49664500d9a93916d6f9811f2",
+  "chord_definition": "ln X(h=0.60) - ln X(h=0.73) per event; positive = prefers low h",
+  "objects": {
+    "c_pure": "dln L_comp (T_Lcomp carrier chord)",
+    "c_gfrac": "dln(g_frac * L_comp) (2D completion-leg product chord; T_legB = S_B*(dln(1-wt) + c_gfrac) exactly)"
+  },
+  "predictors": {
+    "x1": "log10_dL = log10(luminosity_distance) [CRB]",
+    "x2": "log10_rel_dL_err = log10(sigma_dL/dL) [CRB]"
+  },
+  "pre_stated_criteria": {
+    "primary_fit": "OLS total-degree-3 polynomial in (x1,x2), all 1588 events",
+    "smooth": "primary R^2 >= 0.95 and binned(12x12) R^2 - poly R^2 < 0.03",
+    "reproduction": "full-chain predicted matched 2D total within ratio band (0.7, 1.3) of observed at BOTH venues (all-events fit)",
+    "upgrade": "smooth AND reproduction -> 'EXPLAINED: d_L-dependent completion-leg h-response x stratum d_L composition'"
+  },
+  "inputs": {
+    "crb_csv": {
+      "path": "/home/jasper/Repositories/MasterThesisCode/results/run_20260804_postfix/joint_r1/diagnostics/prepared_cramer_rao_bounds.csv",
+      "md5": "9a1f2a14384a9281c97ca3be312ddaab",
+      "n_rows": 1590
+    },
+    "event_likelihoods": {
+      "iiib": {
+        "path": "/home/jasper/Repositories/MasterThesisCode/results/run_20260804_postfix/iiib/diagnostics/event_likelihoods.csv",
+        "md5": "ee9c997b7f41b18a34049e7e0ff1a20f"
+      },
+      "joint_r1": {
+        "path": "/home/jasper/Repositories/MasterThesisCode/results/run_20260804_postfix/joint_r1/diagnostics/event_likelihoods.csv",
+        "md5": "c895f2e4a5b4fd127e347a941d6b6263"
+      }
+    },
+    "census_asserts": {
+      "sky_pairs": 1620,
+      "window_pairs": 279,
+      "overlap_events": 385
+    },
+    "inherited_assumption": "event_idx == CRB row index (flagged M-2 assumption, inherited)"
+  },
+  "venue_identity_check": {
+    "note": "completion-leg carrier columns asserted BITWISE identical across venues at both anchor h; functional analysis therefore done once on shared columns",
+    "columns": {
+      "L_comp_h0.60": {
+        "bitwise_identical": true,
+        "max_abs_rel_diff": 0.0
+      },
+      "B_num_h0.60": {
+        "bitwise_identical": true,
+        "max_abs_rel_diff": 0.0
+      },
+      "B_num_wbh_h0.60": {
+        "bitwise_identical": true,
+        "max_abs_rel_diff": 0.0
+      },
+      "g_frac_h0.60": {
+        "bitwise_identical": true,
+        "max_abs_rel_diff": 0.0
+      },
+      "L_comp_h0.73": {
+        "bitwise_identical": true,
+        "max_abs_rel_diff": 0.0
+      },
+      "B_num_h0.73": {
+        "bitwise_identical": true,
+        "max_abs_rel_diff": 0.0
+      },
+      "B_num_wbh_h0.73": {
+        "bitwise_identical": true,
+        "max_abs_rel_diff": 0.0
+      },
+      "g_frac_h0.73": {
+        "bitwise_identical": true,
+        "max_abs_rel_diff": 0.0
+      }
+    }
+  },
+  "csv_precision_floor": {
+    "L_comp": {
+      "median_rel_step_h060": 1.1057313065246648e-16,
+      "median_rel_step_h073": 1.0334834215819428e-16,
+      "chord_floor_rms": 2.144525762609568e-15,
+      "chord_floor_max": 7.255632295866325e-14
+    },
+    "g_frac": {
+      "median_rel_step_h060": 7.572805948174443e-07,
+      "median_rel_step_h073": 7.454165070603737e-07,
+      "chord_floor_rms": 5.166183380080095e-06,
+      "chord_floor_max": 0.00016725975930232618
+    }
+  },
+  "functional_characterization": {
+    "c_pure": {
+      "chord_mean": -0.004254895121221868,
+      "chord_std": 0.15975383523876457,
+      "chord_min": -0.7801705223335738,
+      "chord_max": 0.1896455894552947,
+      "poly_fits_all_events": {
+        "degree_1": {
+          "r2": 0.8759342073411351,
+          "resid_rms": 0.05625233245090904
+        },
+        "degree_2": {
+          "r2": 0.8777560546830748,
+          "resid_rms": 0.05583778555082927
+        },
+        "degree_3": {
+          "r2": 0.8832406614871592,
+          "resid_rms": 0.05457079998571572
+        },
+        "degree_4": {
+          "r2": 0.8840663331924435,
+          "resid_rms": 0.05437750707279719
+        }
+      },
+      "poly_degree3_controls_only_fit": {
+        "r2_on_controls": 0.8793313101995567,
+        "r2_on_overlap_out_of_sample": 0.8467224285820956
+      },
+      "binned_means_all_events": {
+        "12x12_quantile_bins": {
+          "r2": 0.8491260064616235,
+          "resid_rms": 0.06203284512638233,
+          "n_nonempty_cells": 123
+        },
+        "20x20_quantile_bins": {
+          "r2": 0.901294077083383,
+          "resid_rms": 0.050174853633365046,
+          "n_nonempty_cells": 304
+        }
+      },
+      "poly_degree3_log10_dL_only_r2": 0.8792612560404547,
+      "poly_degree3_log10_rel_err_only_r2": 0.5638477221715218,
+      "spearman_vs_log10_dL": {
+        "rho": 0.9629720335841715,
+        "p": 0.0
+      },
+      "spearman_vs_log10_rel_err": {
+        "rho": 0.6327405750185556,
+        "p": 2.3278931226557775e-178
+      },
+      "decile_profile_along_log10_dL": {
+        "decile_means": [
+          -0.34828651055935717,
+          -0.14495459431783767,
+          -0.07058112835848443,
+          -0.019911914462127207,
+          0.02710709359454168,
+          0.052658731254315375,
+          0.08168471237044837,
+          0.10502890784093533,
+          0.124021600073463,
+          0.15112618020817814
+        ],
+        "decile_edges_log10_dL": [
+          -1.1663766114774108,
+          0.05752645536034827,
+          0.2129565561950536,
+          0.29960409771152835,
+          0.37203705682715094,
+          0.4277970600067845,
+          0.47517426973255006,
+          0.5304880629457147,
+          0.5814535583904027,
+          0.6435323485393046,
+          0.8184768352333107
+        ],
+        "n_sign_changes_of_increments": 0,
+        "monotone_increasing": true
+      },
+      "residual_vs_csv_floor": {
+        "primary_fit_resid_rms": 0.05457079998571572,
+        "csv_chord_floor_rms": 2.144525762609568e-15,
+        "ratio_resid_over_floor": 25446558366037.62
+      }
+    },
+    "c_gfrac": {
+      "chord_mean": -0.025166795938947918,
+      "chord_std": 0.15424993911696336,
+      "chord_min": -0.7813942741865669,
+      "chord_max": 0.15689172867296391,
+      "poly_fits_all_events": {
+        "degree_1": {
+          "r2": 0.8671971942632267,
+          "resid_rms": 0.056194245034107825
+        },
+        "degree_2": {
+          "r2": 0.868952700782538,
+          "resid_rms": 0.05582159648730012
+        },
+        "degree_3": {
+          "r2": 0.8747947939465979,
+          "resid_rms": 0.054563146798587946
+        },
+        "degree_4": {
+          "r2": 0.8756666099653553,
+          "resid_rms": 0.05437285071023483
+        }
+      },
+      "poly_degree3_controls_only_fit": {
+        "r2_on_controls": 0.8707673901884643,
+        "r2_on_overlap_out_of_sample": 0.8341984306668169
+      },
+      "binned_means_all_events": {
+        "12x12_quantile_bins": {
+          "r2": 0.840660081469871,
+          "resid_rms": 0.06155318231870303,
+          "n_nonempty_cells": 123
+        },
+        "20x20_quantile_bins": {
+          "r2": 0.8946310299383919,
+          "resid_rms": 0.05005466776674401,
+          "n_nonempty_cells": 304
+        }
+      },
+      "poly_degree3_log10_dL_only_r2": 0.8705483189841775,
+      "poly_degree3_log10_rel_err_only_r2": 0.5593336534045068,
+      "spearman_vs_log10_dL": {
+        "rho": 0.9594564701000842,
+        "p": 0.0
+      },
+      "spearman_vs_log10_rel_err": {
+        "rho": 0.6302311825780258,
+        "p": 1.528037144154103e-176
+      },
+      "decile_profile_along_log10_dL": {
+        "decile_means": [
+          -0.3564344789840641,
+          -0.16024958199155032,
+          -0.08814612532226718,
+          -0.0394250345188143,
+          0.005971951665112315,
+          0.030211857345800393,
+          0.05786917057108865,
+          0.07974030765162031,
+          0.09727844010730756,
+          0.12194809841289231
+        ],
+        "decile_edges_log10_dL": [
+          -1.1663766114774108,
+          0.05752645536034827,
+          0.2129565561950536,
+          0.29960409771152835,
+          0.37203705682715094,
+          0.4277970600067845,
+          0.47517426973255006,
+          0.5304880629457147,
+          0.5814535583904027,
+          0.6435323485393046,
+          0.8184768352333107
+        ],
+        "n_sign_changes_of_increments": 0,
+        "monotone_increasing": true
+      },
+      "residual_vs_csv_floor": {
+        "primary_fit_resid_rms": 0.054563146798587946,
+        "csv_chord_floor_rms": 5.166183380080095e-06,
+        "ratio_resid_over_floor": 10561.596982595305
+      }
+    }
+  },
+  "smoothness_verdict": {
+    "checks": {
+      "c_pure": {
+        "primary_r2": 0.8832406614871592,
+        "binned_12x12_r2": 0.8491260064616235,
+        "r2_bar": 0.95,
+        "passes_r2_bar": false,
+        "binned_minus_poly": -0.03411465502553568,
+        "poly_not_underfitting": true
+      },
+      "c_gfrac": {
+        "primary_r2": 0.8747947939465979,
+        "binned_12x12_r2": 0.840660081469871,
+        "r2_bar": 0.95,
+        "passes_r2_bar": false,
+        "binned_minus_poly": -0.034134712476726836,
+        "poly_not_underfitting": true
+      }
+    },
+    "smooth_ok": false
+  },
+  "stratum_composition_in_predictors": {
+    "log10_dL": {
+      "overlap_mean": 0.4832377645160215,
+      "matched_control_mean": 0.4428419621875987,
+      "matched_mean_paired_diff": 0.04039580232842289
+    },
+    "log10_rel_err": {
+      "overlap_mean": -1.3979557426210427,
+      "matched_control_mean": -1.3950518766177933,
+      "matched_mean_paired_diff": -0.0029038660032495037
+    }
+  },
+  "carrier_level_reproduction": {
+    "observed": {
+      "c_pure": {
+        "mean_paired_diff": 0.035424306275216304,
+        "paired_se": 0.007080729005668926,
+        "cluster_robust_se": 0.009937663727479167
+      },
+      "c_gfrac": {
+        "mean_paired_diff": 0.03454541861818747,
+        "paired_se": 0.006832715222661009,
+        "cluster_robust_se": 0.009566804938439146
+      }
+    },
+    "predicted": {
+      "all_events_fit": {
+        "c_pure": {
+          "mean_paired_diff": 0.027083574239199663,
+          "paired_se": 0.006268715757487879,
+          "cluster_robust_se": 0.00906212411069761,
+          "ratio_pred_over_obs": 0.7645477664060278
+        },
+        "c_gfrac": {
+          "mean_paired_diff": 0.02619272120319356,
+          "paired_se": 0.005998596797472381,
+          "cluster_robust_se": 0.008669401340889803,
+          "ratio_pred_over_obs": 0.7582111391582217
+        }
+      },
+      "controls_only_fit": {
+        "c_pure": {
+          "mean_paired_diff": 0.02684906077228134,
+          "paired_se": 0.00633176314300341,
+          "cluster_robust_se": 0.009161964649156494,
+          "ratio_pred_over_obs": 0.7579276376984576
+        },
+        "c_gfrac": {
+          "mean_paired_diff": 0.025960411628473855,
+          "paired_se": 0.006061349806366629,
+          "cluster_robust_se": 0.008768888822766135,
+          "ratio_pred_over_obs": 0.7514863813173253
+        }
+      }
+    },
+    "fit_residual_matched_diff": {
+      "c_pure": {
+        "mean_paired_diff": 0.008340732036016641,
+        "paired_se": 0.0026393240337581093,
+        "cluster_robust_se": 0.0029160903955559583
+      },
+      "c_gfrac": {
+        "mean_paired_diff": 0.008352697414993901,
+        "paired_se": 0.0026380509400997613,
+        "cluster_robust_se": 0.0029146831062962105
+      }
+    }
+  },
+  "full_chain_reproduction_per_venue": {
+    "iiib": {
+      "weight_constants": {
+        "wt_060": 0.0832024811136007,
+        "wt_073": 0.0619668411108587,
+        "dln_one_minus_wt": -0.022898659328417684
+      },
+      "observed": {
+        "total_2d": {
+          "mean_paired_diff": 0.022252643015992925,
+          "paired_se": 0.005891821742014505,
+          "cluster_robust_se": 0.007900201606634875
+        },
+        "T_legA": {
+          "mean_paired_diff": -0.004711922212657903,
+          "paired_se": 0.001886586147625702,
+          "cluster_robust_se": 0.002603845386448273
+        },
+        "T_legB": {
+          "mean_paired_diff": 0.02696458759189364,
+          "paired_se": 0.006102576871450552,
+          "cluster_robust_se": 0.008156806313869346
+        }
+      },
+      "predicted_full_chain": {
+        "all_events_fit": {
+          "predicted_T_legB": {
+            "mean_paired_diff": 0.019537303814994383,
+            "paired_se": 0.005329834005102417,
+            "cluster_robust_se": 0.007339180625834583
+          },
+          "predicted_total_2d": 0.014825381602336481,
+          "observed_total_2d": 0.022252643015992925,
+          "ratio_pred_over_obs": 0.6662301458609439,
+          "abs_gap": -0.007427261413656443,
+          "gap_over_cluster_se": -0.9401356805146289,
+          "in_repro_band": false
+        },
+        "controls_only_fit": {
+          "predicted_T_legB": {
+            "mean_paired_diff": 0.019357122103893374,
+            "paired_se": 0.005409698537430049,
+            "cluster_robust_se": 0.007470603906624893
+          },
+          "predicted_total_2d": 0.014645199891235472,
+          "observed_total_2d": 0.022252643015992925,
+          "ratio_pred_over_obs": 0.6581330532606846,
+          "abs_gap": -0.007607443124757453,
+          "gap_over_cluster_se": -0.9629429100098467,
+          "in_repro_band": false
+        }
+      }
+    },
+    "joint_r1": {
+      "weight_constants": {
+        "wt_060": 0.0956866089469307,
+        "wt_073": 0.0708022510819941,
+        "dln_one_minus_wt": -0.027145606456715793
+      },
+      "observed": {
+        "total_2d": {
+          "mean_paired_diff": 0.020697491999731973,
+          "paired_se": 0.005307914522668979,
+          "cluster_robust_se": 0.007124072880143416
+        },
+        "T_legA": {
+          "mean_paired_diff": -0.005129927211131639,
+          "paired_se": 0.0020277537510262297,
+          "cluster_robust_se": 0.0025063843567581087
+        },
+        "T_legB": {
+          "mean_paired_diff": 0.025827440786627923,
+          "paired_se": 0.0058654175579141475,
+          "cluster_robust_se": 0.007871483793902812
+        }
+      },
+      "predicted_full_chain": {
+        "all_events_fit": {
+          "predicted_T_legB": {
+            "mean_paired_diff": 0.0186353440862405,
+            "paired_se": 0.005169023353310159,
+            "cluster_robust_se": 0.00711242264643047
+          },
+          "predicted_total_2d": 0.01350541687510886,
+          "observed_total_2d": 0.020697491999731973,
+          "ratio_pred_over_obs": 0.652514656137263,
+          "abs_gap": -0.007192075124623113,
+          "gap_over_cluster_se": -1.009545416733346,
+          "in_repro_band": false
+        },
+        "controls_only_fit": {
+          "predicted_T_legB": {
+            "mean_paired_diff": 0.018452875174681815,
+            "paired_se": 0.005250058036071148,
+            "cluster_robust_se": 0.007244091695959589
+          },
+          "predicted_total_2d": 0.013322947963550175,
+          "observed_total_2d": 0.020697491999731973,
+          "ratio_pred_over_obs": 0.6436986647330365,
+          "abs_gap": -0.007374544036181797,
+          "gap_over_cluster_se": -1.0351584213486231,
+          "in_repro_band": false
+        }
+      }
+    }
+  },
+  "verdict": {
+    "smooth_ok": false,
+    "reproduction_ok_both_venues": false,
+    "upgrade_met": false,
+    "upgrade_statement_if_met": "EXPLAINED: d_L-dependent completion-leg h-response x stratum d_L composition"
+  }
+}
