@@ -1795,204 +1795,683 @@
   }
  ],
  "journey": {
-  "event": "EMRI-889",
-  "prov": "real: ch06_fisher.json events.889 (seed61000) + ch11_dossier.json (real_r1)",
-  "intro": "The loudest event of the seed-61000 campaign — and the book's running example — walked through every formula that touches it.",
+  "prov": "real: ch06_fisher.json (seed61000), ch11_dossier.json (real_r1), atlas_journey.json (gen_ch_atlas.py)",
+  "intro": "Three real detections from the same campaign, walked through every formula that touches them. Swap tabs to feel how loudness — and having a catalogued host — changes everything.",
+  "events": [
+   {
+    "id": "889",
+    "label": "EMRI-889",
+    "role": "loud",
+    "tag": "ϱ 1425 · in-catalogue · 89 Mpc"
+   },
+   {
+    "id": "606",
+    "label": "EMRI-606",
+    "role": "medium",
+    "tag": "ϱ 43 · dark · 1.17 Gpc"
+   },
+   {
+    "id": "555",
+    "label": "EMRI-555",
+    "role": "faint",
+    "tag": "ϱ 28 · dark · 2.85 Gpc · the campaign median"
+   }
+  ],
   "stops": [
    {
     "node": "population",
     "title": "Born in the M1 population",
-    "facts": [
-     [
-      "detector-frame MBH mass M_z",
-      "7.25×10⁵ M☉"
+    "facts": {
+     "889": [
+      [
+       "M_z",
+       "7.25×10⁵ M☉"
+      ],
+      [
+       "μ",
+       "10 M☉"
+      ],
+      [
+       "z",
+       "≈ 0.020"
+      ]
      ],
-     [
-      "compact object μ",
-      "10 M☉"
+     "606": [
+      [
+       "M_z",
+       "2.30×10⁵ M☉"
+      ],
+      [
+       "μ",
+       "10 M☉"
+      ],
+      [
+       "z",
+       "≈ 0.24"
+      ]
      ],
-     [
-      "redshift",
-      "z ≈ 0.020"
+     "555": [
+      [
+       "M_z",
+       "5.02×10⁵ M☉"
+      ],
+      [
+       "μ",
+       "10 M☉"
+      ],
+      [
+       "z",
+       "≈ 0.51"
+      ]
      ]
-    ],
-    "note": "A nearby, mid-mass system — exactly the sweet spot of the EMRI rate."
+    },
+    "notes": {
+     "889": "A nearby, mid-mass system — the population's sweet spot, caught close.",
+     "606": "A lighter central black hole at a quarter of the horizon distance.",
+     "555": "Heavier and far — the most typical thing this campaign ever detects."
+    },
+    "viz": {
+     "data": {
+      "kind": "poolhist",
+      "title": "The injection pool in (M_z, z) — this event is one draw",
+      "chip": "real: injection pool / CRB campaign"
+     },
+     "idea": {
+      "kind": "ratecurve",
+      "title": "The EMRI rate per black hole — why mid-mass dominates",
+      "chip": "real: Babak et al. (2017) M1 fit"
+     }
+    }
    },
    {
     "node": "hostdraw",
-    "title": "Snapped to a real GLADE+ galaxy",
-    "facts": [
-     [
-      "host row",
-      "#859360 (in-catalogue)"
+    "title": "Given a place in the universe",
+    "facts": {
+     "889": [
+      [
+       "host",
+       "GLADE+ row #859360 (in-catalogue)"
+      ],
+      [
+       "sky (φ, θ)",
+       "(1.304, 1.987) rad"
+      ],
+      [
+       "true d_L",
+       "88.88 Mpc"
+      ]
      ],
-     [
-      "sky (φ, θ)",
-      "(1.304, 1.987) rad"
+     "606": [
+      [
+       "host",
+       "exists — but GLADE+ never saw it (dark)"
+      ],
+      [
+       "sky (φ, θ)",
+       "(5.469, 1.596) rad"
+      ],
+      [
+       "true d_L",
+       "1174.7 Mpc"
+      ]
      ],
-     [
-      "true d_L",
-      "88.88 Mpc"
+     "555": [
+      [
+       "host",
+       "exists — but GLADE+ never saw it (dark)"
+      ],
+      [
+       "sky (φ, θ)",
+       "(3.451, 1.734) rad"
+      ],
+      [
+       "true d_L",
+       "2847.5 Mpc"
+      ]
      ]
-    ],
-    "note": "The host fixes everything the waveform will inherit: sky position and distance."
+    },
+    "notes": {
+     "889": "The host fixes sky position and distance — and, because GLADE+ knows it, the inference will too.",
+     "606": "Every event has a host; not every host is in the catalogue. At 1.2 Gpc, most aren't.",
+     "555": "At 2.8 Gpc the catalogue is almost empty of hosts like this one."
+    },
+    "viz": {
+     "data": {
+      "kind": "skypatch",
+      "title": "The real GLADE+ sky around this event (2000 of its cone galaxies)",
+      "chip": "real: ch06_fisher.json patch"
+     },
+     "idea": {
+      "kind": "dlhost",
+      "title": "The host pinned on d_L(z, h_true) — the universe assigns the distance",
+      "chip": "real: physical_relations.dist"
+     }
+    }
    },
    {
     "node": "waveform",
-    "title": "4.5 years of signal",
-    "facts": [
-     [
-      "mission window",
-      "4.5 yr, sampled every 10 s"
+    "title": "Four and a half years of signal",
+    "facts": {
+     "889": [
+      [
+       "waveform",
+       "AAK, 14 parameters → TDI A/E"
+      ],
+      [
+       "cadence",
+       "one sample every 10 s"
+      ],
+      [
+       "plunge",
+       "after 2.87 yr — mid-mission"
+      ]
      ],
-     [
-      "waveform",
-      "AAK → TDI A/E channels"
+     "606": [
+      [
+       "waveform",
+       "AAK, 14 parameters → TDI A/E"
+      ],
+      [
+       "cadence",
+       "one sample every 10 s"
+      ],
+      [
+       "plunge",
+       "after 0.89 yr — the shortest song of the three"
+      ]
+     ],
+     "555": [
+      [
+       "waveform",
+       "AAK, 14 parameters → TDI A/E"
+      ],
+      [
+       "cadence",
+       "one sample every 10 s"
+      ],
+      [
+       "plunge",
+       "after 1.02 yr"
+      ]
      ]
-    ],
-    "note": "Fourteen parameters in; two data channels out."
+    },
+    "note": "This is the actual strain the pipeline computes for this event — the first 48 hours, regenerated with the exact waveform call production uses. All three systems plunge before the 4.5-yr mission ends: the track on the right stops where the orbit does.",
+    "viz": {
+     "data": {
+      "kind": "hp",
+      "title": "h₊(t), the first 48 hours — the real thing",
+      "chip": "real: few CPU, production call, pre-TDI"
+     },
+     "idea": {
+      "kind": "ftrack",
+      "title": "The frequency track — chirping upward until plunge",
+      "chip": "real: few trajectory"
+     }
+    }
    },
    {
     "node": "inner",
     "title": "Weighed against the noise",
-    "facts": [
-     [
-      "inner product",
-      "⟨h|h⟩ against Sₙᴬᴱ(f)"
+    "facts": {
+     "889": [
+      [
+       "band",
+       "10⁻⁵ – 1 Hz, A+E channels"
+      ]
+     ],
+     "606": [
+      [
+       "band",
+       "10⁻⁵ – 1 Hz, A+E channels"
+      ]
+     ],
+     "555": [
+      [
+       "band",
+       "10⁻⁵ – 1 Hz, A+E channels"
+      ]
      ]
-    ],
-    "note": "At 89 Mpc the signal towers over the PSD across the whole mHz band."
+    },
+    "viz": {
+     "data": {
+      "kind": "spectrum",
+      "title": "Characteristic strain of the 48-h snapshot vs the noise √(f·Sₙ)",
+      "chip": "real: Welch ASD of the few snapshot"
+     },
+     "idea": {
+      "kind": "snrdensity",
+      "title": "(signal/noise)² per frequency — where this event's information lives",
+      "chip": "real: derived from the two curves"
+     }
+    },
+    "notes": {
+     "889": "Even a 48-hour slice of this event rides clear of the noise across the mHz band.",
+     "606": "A 48-hour slice of this event lies BELOW the noise. It is detected anyway — years of coherent integration lift it over the threshold. That is matched filtering, in one picture.",
+     "555": "The faintest of the three: its 48-hour snapshot is buried in the noise, and only the full mission's coherent integration digs it out."
+    }
    },
    {
     "node": "snr",
-    "title": "The loudest event of the campaign",
-    "facts": [
-     [
-      "ϱ",
-      "1424.7"
+    "title": "How loud, exactly?",
+    "facts": {
+     "889": [
+      [
+       "ϱ",
+       "1424.7 — the loudest of the campaign"
+      ],
+      [
+       "campaign median",
+       "28.3"
+      ]
      ],
-     [
-      "campaign median (detected)",
-      "28.3"
+     "606": [
+      [
+       "ϱ",
+       "43.1"
+      ],
+      [
+       "campaign median",
+       "28.3"
+      ]
+     ],
+     "555": [
+      [
+       "ϱ",
+       "28.3 — exactly the campaign median"
+      ]
      ]
-    ],
-    "note": "71× the detection threshold."
+    },
+    "viz": {
+     "data": {
+      "kind": "snrhist",
+      "title": "All 1590 campaign SNRs — where this event sits",
+      "chip": "real: ch06_fisher.json scatter"
+     },
+     "idea": {
+      "kind": "horizon",
+      "title": "ϱ·d_L is (nearly) conserved: each event's personal horizon d_hor = ϱ·d_L/20",
+      "chip": "real: computed from ϱ, d_L"
+     }
+    }
    },
    {
     "node": "gate",
-    "title": "Through the gate",
-    "facts": [
-     [
-      "ϱ ≥ 20",
-      "passed — by a factor 71"
+    "title": "Through the gate — past the fallen",
+    "facts": {
+     "889": [
+      [
+       "margin",
+       "71× the threshold"
+      ]
+     ],
+     "606": [
+      [
+       "margin",
+       "2.2× the threshold"
+      ]
+     ],
+     "555": [
+      [
+       "margin",
+       "1.4× the threshold — a near thing"
+      ]
      ]
-    ],
-    "note": "For every EMRI-889 the campaign keeps, it discards ~12 quieter injections at this diamond (7.5 % detection fraction in stratum A)."
+    },
+    "note": "In stratum A of the injection campaign only 7.6 % of drawn events survive this diamond. The gate reshapes the population — and that censoring is what p_det must undo.",
+    "viz": {
+     "data": {
+      "kind": "zpop",
+      "title": "Redshifts drawn vs redshifts detected — the gate's censoring at work",
+      "chip": "real: injection campaign"
+     },
+     "idea": {
+      "kind": "pdetcurve",
+      "title": "p_det(d_L) with this event placed on it",
+      "chip": "real: ch04_horizon.json"
+     }
+    }
    },
    {
     "node": "fisher",
     "title": "How well can we know it?",
-    "facts": [
-     [
-      "sky box √ΔΩ",
-      "3.3×10⁻⁴ deg²"
+    "facts": {
+     "889": [
+      [
+       "sky box",
+       "3.3×10⁻⁴ deg²"
+      ],
+      [
+       "σ_dL/d_L",
+       "8.98×10⁻⁴"
+      ],
+      [
+       "σ_Mz/M_z",
+       "1.4×10⁻⁹"
+      ]
      ],
-     [
-      "σ_dL/d_L",
-      "8.98×10⁻⁴ (±0.080 Mpc)"
+     "606": [
+      [
+       "sky box",
+       "0.82 deg²"
+      ],
+      [
+       "σ_dL/d_L",
+       "2.4 %"
+      ],
+      [
+       "σ_Mz/M_z",
+       "1.4×10⁻⁷"
+      ]
      ],
-     [
-      "σ_Mz/M_z",
-      "1.4×10⁻⁹"
-     ],
-     [
-      "κ(Γ₃)",
-      "59 — beautifully conditioned"
+     "555": [
+      [
+       "sky box",
+       "2.09 deg²"
+      ],
+      [
+       "σ_dL/d_L",
+       "3.9 %"
+      ],
+      [
+       "σ_Mz/M_z",
+       "1.7×10⁻⁷"
+      ]
      ]
-    ],
-    "note": "The 3×3 sky+distance block is tiny; the mass is measured to nine digits."
+    },
+    "viz": {
+     "data": {
+      "kind": "ellipse",
+      "title": "The three events' real sky-error ellipses, to scale",
+      "chip": "real: ch06_fisher.json cov3"
+     },
+     "idea": {
+      "kind": "slices",
+      "title": "Curvature = information: the d_L likelihood slices side by side",
+      "chip": "real: σ_dL from the Cramér–Rao bound"
+     }
+    }
    },
    {
     "node": "crb",
     "title": "Reduced to one CSV row",
-    "facts": [
-     [
-      "kept",
-      "(φ, θ, d_L) covariance + M_z block + ϱ"
+    "facts": {
+     "889": [
+      [
+       "kept",
+       "14 parameters + covariance + ϱ"
+      ]
+     ],
+     "606": [
+      [
+       "kept",
+       "14 parameters + covariance + ϱ"
+      ]
+     ],
+     "555": [
+      [
+       "kept",
+       "14 parameters + covariance + ϱ"
+      ]
      ]
-    ],
-    "note": "Pipeline 1's entire memory of four years of signal. Pipeline 2 never sees a waveform."
+    },
+    "note": "Fourteen million samples in, one row out. The correlation matrix is the interesting part: it records which parameters the waveform refuses to disentangle.",
+    "viz": {
+     "data": {
+      "kind": "csvrow",
+      "title": "The literal row — pipeline 1's entire memory of this event",
+      "chip": "real: prepared_cramer_rao_bounds.csv"
+     },
+     "idea": {
+      "kind": "corrheat",
+      "title": "The 14×14 correlation matrix — the entanglement fingerprint",
+      "chip": "real: full CRB covariance"
+     }
+    }
    },
    {
     "node": "candidates",
     "title": "Who could the host be?",
-    "facts": [
-     [
-      "3σ redshift window",
-      "z ∈ [0.0175, 0.0251]"
+    "facts": {
+     "889": [
+      [
+       "z window (3σ)",
+       "0.0175 – 0.0251"
+      ],
+      [
+       "ball radius",
+       "≈ 0.013°"
+      ]
      ],
-     [
-      "sky ball",
-      "≈ 0.02° radius"
+     "606": [
+      [
+       "z window (3σ)",
+       "0.191 – 0.298"
+      ],
+      [
+       "ball radius",
+       "≈ 1.70°"
+      ]
+     ],
+     "555": [
+      [
+       "z window (3σ)",
+       "0.395 – 0.646"
+      ],
+      [
+       "ball radius",
+       "≈ 2.20°"
+      ]
      ]
-    ],
-    "note": "A search volume so small the true host is effectively singled out — the easiest case the estimator ever gets."
+    },
+    "notes": {
+     "889": "A ball so small it singles out the true host.",
+     "606": "A degree-wide ball, a deep z window — and the true host is not even in the list.",
+     "555": "The widest ball of the three, at a depth where GLADE+ has almost nothing to offer."
+    },
+    "viz": {
+     "data": {
+      "kind": "skyball",
+      "title": "The 3σ ball drawn inside the event's real sky cone",
+      "chip": "real: ch06 patch + radius"
+     },
+     "idea": {
+      "kind": "ballbars",
+      "title": "Candidates inside the ball, counted in the real catalogue",
+      "chip": "real: reduced GLADE+ count"
+     }
+    }
    },
    {
     "node": "zkernel",
     "title": "The uncertainty changes owners",
-    "facts": [
-     [
-      "GW distance error",
-      "σ_dL/d_L ≈ 9×10⁻⁴"
+    "facts": {
+     "889": [
+      [
+       "GW σ_dL/d_L",
+       "9×10⁻⁴"
+      ],
+      [
+       "host photo-z σ_z",
+       "≈ 0.035 — 40× wider in z"
+      ]
      ],
-     [
-      "host photo-z error",
-      "σ_z ≈ 0.035 ≫"
+     "606": [
+      [
+       "GW z window",
+       "±20 % wide"
+      ],
+      [
+       "photo-z σ_z",
+       "0.035 per candidate"
+      ]
+     ],
+     "555": [
+      [
+       "GW z window",
+       "±25 % wide"
+      ],
+      [
+       "photo-z σ_z",
+       "0.035 per candidate"
+      ]
      ]
-    ],
-    "note": "From here on, the host's redshift error — not the GW measurement — carries the budget. This asymmetry is the central villain of chapters 7 and 11."
+    },
+    "note": "From here on the redshift error, not the GW measurement, carries the budget — the central villain of chapters 7 and 11.",
+    "viz": {
+     "data": {
+      "kind": "zbudget",
+      "title": "The event's z-budget: GW window vs one photo-z kernel, same axis",
+      "chip": "real: ch06 z_window + σ_z"
+     },
+     "idea": {
+      "kind": "kernelz",
+      "title": "Bare vs volume-deconvolved kernel at this event's redshift",
+      "chip": "real: recomputed at z_c"
+     }
+    }
    },
    {
     "node": "gw3d",
     "title": "Voting on H₀",
-    "facts": [
-     [
-      "channel",
-      "in-catalogue, L_cat-dominated"
+    "facts": {
+     "889": [
+      [
+       "channel",
+       "in-catalogue, L_cat-dominated"
+      ],
+      [
+       "1D argmax (r1)",
+       "h = 0.745"
+      ]
      ],
-     [
-      "1D argmax (r1)",
-      "h = 0.745"
+     "606": [
+      [
+       "channel",
+       "dark → completion term carries it"
+      ],
+      [
+       "profile",
+       "broad — selection allows many h"
+      ]
+     ],
+     "555": [
+      [
+       "channel",
+       "dark → completion term carries it"
+      ],
+      [
+       "profile",
+       "broadest of the three"
+      ]
      ]
-    ],
-    "note": "One sharply-peaked but photo-z-broadened vote among N events."
+    },
+    "notes": {
+     "889": "Its committed likelihood profile — the real measurement from run real_r1.",
+     "606": "No committed profile for this event; the panel shows the geometric reconstruction (marked toy).",
+     "555": "No committed profile for this event; the panel shows the geometric reconstruction (marked toy)."
+    },
+    "viz": {
+     "data": {
+      "kind": "lnl",
+      "title": "This event's likelihood over h",
+      "chip": "per-event: real (889) / toy geometric (606, 555)"
+     },
+     "idea": {
+      "kind": "geometry",
+      "title": "The mechanism: which h moves d_L(z_host, h) into the measured band?",
+      "chip": "real: dist(z,h) + measured d_L±σ"
+     }
+    }
    },
    {
     "node": "gw4d",
-    "title": "The second handle disagrees",
-    "facts": [
-     [
-      "2D argmax (r1)",
-      "h = 0.790"
+    "title": "The second handle",
+    "facts": {
+     "889": [
+      [
+       "2D argmax (r1)",
+       "h = 0.790"
+      ],
+      [
+       "channel split",
+       "Δln L = +1.98 (0.73→0.81)"
+      ]
      ],
-     [
-      "Δln L (0.73→0.81)",
-      "+1.98 between channels"
+     "606": [
+      [
+       "M_z measured",
+       "to 1.4×10⁻⁷"
+      ],
+      [
+       "host prediction",
+       "none — host uncatalogued"
+      ]
+     ],
+     "555": [
+      [
+       "M_z measured",
+       "to 1.7×10⁻⁷"
+      ],
+      [
+       "host prediction",
+       "none — host uncatalogued"
+      ]
      ]
-    ],
-    "note": "The 1D and with-mass channels pull apart on this very event — the residual-bias thread of chapters 12–13, visible at single-event level."
+    },
+    "notes": {
+     "889": "The 1D and with-mass channels pull apart on this very event — the residual-bias thread of chapters 12–13 at single-event scale.",
+     "606": "A superbly measured mass with no catalogue prediction to compare it to: for dark events the completion mass density stands in.",
+     "555": "Same story: the mass channel's power needs a catalogued host to push against."
+    },
+    "viz": {
+     "data": {
+      "kind": "channels",
+      "title": "1D vs with-mass channel over h",
+      "chip": "per-event: real (889) / toy geometric (606, 555)"
+     },
+     "idea": {
+      "kind": "massslide",
+      "title": "The vote: razor-thin measured mass vs the catalogue's ±0.24 dex prediction",
+      "chip": "toy: illustrative overlap"
+     }
+    }
    },
    {
     "node": "post",
     "title": "Into the posterior",
-    "facts": [
-     [
-      "contribution",
-      "one log-likelihood row in Σ log L"
+    "facts": {
+     "889": [
+      [
+       "contribution",
+       "one sharp row in Σ log L"
+      ]
+     ],
+     "606": [
+      [
+       "contribution",
+       "one broad row in Σ log L"
+      ]
+     ],
+     "555": [
+      [
+       "contribution",
+       "one very broad row — but there are many like it"
+      ]
      ]
-    ],
-    "note": "Multiply by ~40 events like (and unlike) this one, and the curve over h is the thesis."
+    },
+    "note": "No single event decides h. The posterior is the campaign speaking together — and the faint majority matters as much as the golden few.",
+    "viz": {
+     "data": {
+      "kind": "lnl",
+      "title": "This event's normalized contribution to the joint posterior",
+      "chip": "per-event: real (889) / toy geometric (606, 555)"
+     },
+     "idea": {
+      "kind": "stacking",
+      "title": "Why N quiet events beat one loud one: width ∝ 1/√N",
+      "chip": "toy: illustrative scaling"
+     }
+    }
    }
   ]
  }

@@ -142,6 +142,23 @@
   .atlas-jfacts td:first-child { color: var(--muted); white-space: nowrap; }
   .atlas-jnote { font-size: 0.88rem; color: var(--muted); margin: 0.25rem 0 0.6rem; }
   .atlas-jnav { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
+  .atlas-jtabs { display: flex; gap: 0.4rem; flex-wrap: wrap; margin: 0.5rem 0 0.2rem; }
+  .atlas-jtab { font: inherit; font-size: 0.82rem; cursor: pointer; border-radius: 999px;
+    border: 1.5px solid var(--border); background: var(--paper); color: var(--ink);
+    padding: 0.22rem 0.75rem; }
+  .atlas-jtab small { display: block; font-size: 0.68rem; color: var(--muted); }
+  .atlas-jtab.active { border-color: #E69F00; box-shadow: 0 0 0 1px #E69F00 inset; }
+  .atlas-jpanels { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin: 0.6rem 0 0.5rem; }
+  @media (max-width: 900px) { .atlas-jpanels { grid-template-columns: 1fr; } }
+  .atlas-jpanel { border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 0.6rem 0.7rem 0.5rem; background: var(--paper-raised); min-width: 0; }
+  .atlas-jpanel h5 { margin: 0 0 0.3rem; font-size: 0.82rem; }
+  .atlas-jpanel h5 .atlas-jkindtag { font-weight: 700; letter-spacing: 0.05em; font-size: 0.68rem;
+    text-transform: uppercase; color: var(--muted); display: block; }
+  .atlas-jplot { min-height: 235px; }
+  .atlas-jpanel .prov-chip { margin-top: 0.35rem; }
+  .atlas-csvrow { font-family: monospace; font-size: 0.72rem; overflow-x: auto;
+    white-space: pre; background: var(--code-bg); border-radius: 6px; padding: 0.5rem 0.6rem; }
   .atlas-node.journey-here rect, .atlas-node.journey-here polygon {
     stroke: #E69F00 !important; filter: drop-shadow(0 0 6px rgba(230,159,0,0.85));
     animation: atlas-breathe 1.6s ease-in-out infinite; }
@@ -200,7 +217,7 @@
         <!-- SVG injected here -->
       </div>
       <div class="widget-controls">
-        <button type="button" class="atlas-jbtn" id="atlas-journey-btn">&#9654; Follow EMRI-889 through the pipeline</button>
+        <button type="button" class="atlas-jbtn" id="atlas-journey-btn">&#9654; Follow three real events through the pipeline</button>
         <label style="display:inline-flex;align-items:center;gap:0.45rem;cursor:pointer;">
           <input type="checkbox" id="atlas-scar-toggle" />
           Show the scar tissue <span style="color:var(--muted);font-size:0.8rem;">(what changed, where)</span>
@@ -494,11 +511,23 @@
     });
   }
 
-  // ---------------- journey mode (follow EMRI-889) ----------------
-  var journeyIdx = -1;
+  // ---------------- journey mode (three real events, tabbed) ----------------
+  var journeyIdx = -1, journeyEv = "889", jd = null, jdPromise = null;
+  function journeyData() {
+    if (jdPromise) return jdPromise;
+    function opt(url) { return Book.loadJSON(url).catch(function () { return null; }); }
+    jdPromise = Promise.all([
+      opt("data/atlas_journey.json"), opt("data/ch06_fisher.json"),
+      opt("data/ch04_horizon.json"), opt("data/ch11_dossier.json")
+    ]).then(function (r) {
+      jd = { J: r[0], F: r[1], H4: r[2], D11: r[3] };
+      return jd;
+    });
+    return jdPromise;
+  }
   function journeyStart() {
     document.getElementById("atlas-journey").classList.add("on");
-    journeyGoto(0);
+    journeyData().then(function () { journeyGoto(0); });
   }
   function journeyExit() {
     journeyIdx = -1;
@@ -535,20 +564,67 @@
   function renderJourneyCard(stop, i, total) {
     var card = document.getElementById("atlas-journey");
     card.innerHTML = "";
+    var evMeta = null;
+    graph.journey.events.forEach(function (e) { if (e.id === journeyEv) evMeta = e; });
     var head = h("div", "atlas-jhead");
-    head.appendChild(h("span", "atlas-jevent", esc(graph.journey.event) + " — the golden event"));
+    head.appendChild(h("span", "atlas-jevent",
+      esc(evMeta.label) + " — the " + esc(evMeta.role) + " one"));
     head.appendChild(h("span", "atlas-jprogress", "stop " + (i + 1) + " of " + total));
     card.appendChild(head);
+
+    // event tabs
+    var tabs = h("div", "atlas-jtabs");
+    graph.journey.events.forEach(function (e) {
+      var b = h("button", "atlas-jtab" + (e.id === journeyEv ? " active" : ""),
+        "<strong>" + esc(e.label) + "</strong><small>" + esc(e.tag) + "</small>");
+      b.type = "button";
+      b.addEventListener("click", function () {
+        journeyEv = e.id;
+        renderJourneyCard(stop, i, total);
+      });
+      tabs.appendChild(b);
+    });
+    card.appendChild(tabs);
+
     card.appendChild(h("div", "atlas-jtitle", esc(stop.title)));
     var tf = h("table", "atlas-jfacts");
-    stop.facts.forEach(function (f) {
+    (stop.facts[journeyEv] || []).forEach(function (f) {
       var tr = h("tr");
       tr.appendChild(h("td", "", esc(f[0])));
       tr.appendChild(h("td", "", "<strong>" + esc(f[1]) + "</strong>"));
       tf.appendChild(tr);
     });
     card.appendChild(tf);
-    if (stop.note) card.appendChild(h("div", "atlas-jnote", esc(stop.note)));
+    var noteTxt = (stop.notes && stop.notes[journeyEv]) || stop.note;
+    if (noteTxt) card.appendChild(h("div", "atlas-jnote", esc(noteTxt)));
+
+    // the two panels: the data + the idea
+    if (stop.viz) {
+      var panels = h("div", "atlas-jpanels");
+      [["data", "The data"], ["idea", "The idea"]].forEach(function (which) {
+        var spec = stop.viz[which[0]];
+        if (!spec) return;
+        var p = h("div", "atlas-jpanel");
+        p.appendChild(h("h5", "",
+          '<span class="atlas-jkindtag">' + which[1] + "</span>" + esc(spec.title)));
+        var pd = h("div", "atlas-jplot");
+        pd.id = "atlas-jplot-" + which[0];
+        p.appendChild(pd);
+        var chipTxt = spec.chip, real = chipTxt.indexOf("toy") !== 0;
+        if (chipTxt.indexOf("per-event") === 0) {
+          real = journeyEv === "889";
+          chipTxt = real ? "real: committed profile (real_r1)" : "toy: geometric reconstruction";
+        }
+        p.appendChild(h("span", "prov-chip " + (real ? "real" : "toy"), esc(chipTxt)));
+        panels.appendChild(p);
+        try { buildJourneyViz(spec.kind, pd, journeyEv); }
+        catch (e2) {
+          pd.innerHTML = "<p class='atlas-empty'>Panel unavailable: " + esc(e2.message) + "</p>";
+        }
+      });
+      card.appendChild(panels);
+    }
+
     var nav = h("div", "atlas-jnav");
     if (i > 0) {
       var back = h("button", "", "&larr; Back");
@@ -568,7 +644,298 @@
     nav.appendChild(exit);
     nav.appendChild(h("span", "prov-chip real", esc(graph.journey.prov)));
     card.appendChild(nav);
-    card.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    if (card.scrollIntoView) card.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }
+
+  // ---------------- journey visualizations: the data + the idea ----------------
+  var EVCOL = { "889": "#0072B2", "606": "#E69F00", "555": "#CC79A7" };
+  var EVIDS = ["889", "606", "555"];
+  function fe(ev) {
+    if (!jd || !jd.F || !jd.F.events || !jd.F.events[ev]) throw new Error("event record missing");
+    return jd.F.events[ev];
+  }
+  function je(ev) {
+    if (!jd || !jd.J || !jd.J.events || !jd.J.events[ev]) throw new Error("journey data not generated yet");
+    return jd.J.events[ev];
+  }
+  function zMid(ev) { var w = fe(ev).z_window; return (w[0] + w[1]) / 2; }
+  function vline(x, ymax, color) {
+    return { x: [x, x], y: [0, ymax], mode: "lines", showlegend: false,
+      line: { color: color || "#E69F00", width: 2, dash: "dot" }, hoverinfo: "skip" };
+  }
+  function gauss(xs, mu, sig) {
+    return xs.map(function (x) { return Math.exp(-0.5 * Math.pow((x - mu) / sig, 2)); });
+  }
+  function linspace(a, b, n) {
+    var o = []; for (var i = 0; i < n; i++) o.push(a + (b - a) * i / (n - 1)); return o;
+  }
+  function expNorm(lnl) {
+    var m = Math.max.apply(null, lnl);
+    return lnl.map(function (v) { return Math.exp(v - m); });
+  }
+
+  function buildJourneyViz(kind, div, ev) {
+    var traces = [], layoutFn = null, c = EVCOL[ev];
+
+    if (kind === "poolhist") {
+      var ph = jd.J && jd.J.shared && jd.J.shared.pool_hist;
+      if (ph) {
+        var zc = [], mc = [];
+        for (var i = 0; i < ph.z_edges.length - 1; i++) zc.push((ph.z_edges[i] + ph.z_edges[i + 1]) / 2);
+        for (var j = 0; j < ph.logm_edges.length - 1; j++) mc.push((ph.logm_edges[j] + ph.logm_edges[j + 1]) / 2);
+        traces = [
+          { type: "heatmap", x: zc, y: mc, z: ph.counts, colorscale: "Viridis", showscale: false },
+          { x: [zMid(ev)], y: [Math.log10(fe(ev).M_z_Msun)], mode: "markers", showlegend: false,
+            marker: { symbol: "star", size: 15, color: "#ffffff", line: { color: c, width: 2 } } }
+        ];
+        layoutFn = lay("z", "log₁₀ M_z [M☉]", {});
+      } else {
+        var zd2 = jd.J && jd.J.shared && jd.J.shared.z_detected;
+        if (!zd2) throw new Error("pool data not generated yet");
+        traces = [{ x: zd2.z, y: zd2.density, mode: "lines", line: { color: "#0072B2", width: 2 } },
+          vline(zMid(ev), Math.max.apply(null, zd2.density), c)];
+        layoutFn = lay("z", "detected density", {});
+      }
+    } else if (kind === "ratecurve") {
+      var lm = linspace(4, 7.2, 200);
+      var lr = lm.map(function (l) {
+        var M = Math.pow(10, l);
+        if (M < 1.2e5) return 1.02445 * Math.log10(M / 1.2e5) + Math.log10(33.1);
+        if (M < 2.5e5) return 0.4689 * Math.log10(M / 2.5e5) + Math.log10(46.7);
+        return -0.2475 * Math.log10(M / 2.9e7) + Math.log10(14.4);
+      });
+      traces = [{ x: lm, y: lr, mode: "lines", line: { color: "#009E73", width: 2.2 } },
+        vline(Math.log10(fe(ev).M_z_Msun), Math.max.apply(null, lr), c)];
+      layoutFn = lay("log₁₀ M [M☉]", "log₁₀ R_EMRI [Gyr⁻¹]", {});
+    } else if (kind === "skypatch" || kind === "skyball") {
+      var pa = fe(ev).patch;
+      if (!pa || !pa.scatter_x_arcmin) throw new Error("sky patch not committed for this event");
+      traces = [{ x: pa.scatter_x_arcmin, y: pa.scatter_y_arcmin, mode: "markers",
+        marker: { size: 3, color: "#999999", opacity: 0.55 }, showlegend: false, hoverinfo: "skip" },
+        { x: [0], y: [0], mode: "markers", showlegend: false,
+          marker: { symbol: "star", size: 14, color: c } }];
+      var rng = null;
+      if (kind === "skyball") {
+        var rArc = fe(ev).radius_full_rad * 3437.75;
+        var th = linspace(0, 2 * Math.PI, 90);
+        traces.push({ x: th.map(function (t) { return rArc * Math.cos(t); }),
+          y: th.map(function (t) { return rArc * Math.sin(t); }),
+          mode: "lines", showlegend: false, line: { color: c, width: 2, dash: "dash" } });
+        rng = Math.max(3 * rArc, 8);
+      }
+      layoutFn = (function (rr) {
+        return function () {
+          var L = lay("Δx [arcmin]", "Δy [arcmin]", {})();
+          if (rr) { L.xaxis.range = [-rr, rr]; L.yaxis.range = [-rr, rr]; }
+          L.yaxis.scaleanchor = "x";
+          return L;
+        };
+      })(rng);
+    } else if (kind === "dlhost") {
+      var dz = curves.dlz;
+      traces = [{ x: dz.z, y: dz.curves["0.73"], mode: "lines", name: "d_L(z, h=0.73)",
+        line: { color: "#009E73", width: 2 } },
+        { x: [zMid(ev)], y: [fe(ev).d_L_Gpc], mode: "markers", showlegend: false,
+          marker: { symbol: "star", size: 14, color: c } }];
+      layoutFn = lay("z", "d_L [Gpc]", {});
+    } else if (kind === "hp") {
+      var wf = je(ev).waveform;
+      traces = [{ x: wf.t_hr, y: wf.hp, mode: "lines", line: { color: c, width: 1 } }];
+      layoutFn = lay("t [hours]", "h₊", {});
+    } else if (kind === "ftrack") {
+      var ft = je(ev).ftrack;
+      traces = [{ x: ft.t_yr, y: ft.f_mHz, mode: "lines", line: { color: c, width: 2.2 } }];
+      layoutFn = lay("t [yr]", "f_GW [mHz]", {});
+    } else if (kind === "spectrum" || kind === "snrdensity") {
+      var sp = je(ev).spectrum;
+      var pf = curves.psd.f, pn = curves.psd.sn_total;
+      var noiseAt = function (f) {
+        return Math.sqrt(f * Math.pow(10, Book.interp1(
+          pf.map(Math.log10), pn.map(Math.log10), Math.log10(f))));
+      };
+      if (kind === "spectrum") {
+        traces = [
+          { x: sp.f_Hz, y: sp.hc, mode: "lines", name: "signal (48-h snapshot)",
+            line: { color: c, width: 2 } },
+          { x: pf, y: pf.map(function (f, k) { return Math.sqrt(f * pn[k]); }), mode: "lines",
+            name: "noise √(f·Sₙ)", line: { color: "#999999", width: 1.6, dash: "dash" } }];
+        layoutFn = lay("f [Hz]", "characteristic strain", { logx: true, logy: true, legend: true });
+      } else {
+        var ratio = sp.f_Hz.map(function (f, k) {
+          var r = sp.hc[k] / noiseAt(f); return r * r;
+        });
+        traces = [{ x: sp.f_Hz, y: ratio, mode: "lines", fill: "tozeroy",
+          line: { color: c, width: 2 } }];
+        layoutFn = lay("f [Hz]", "(signal/noise)²", { logx: true, logy: true });
+      }
+    } else if (kind === "snrhist") {
+      var snrs = jd.F.population.scatter.snr;
+      var edges = linspace(Math.log10(20), Math.log10(1500), 31), cnt = [], ctr = [];
+      for (var b = 0; b < 30; b++) { cnt.push(0); ctr.push((edges[b] + edges[b + 1]) / 2); }
+      snrs.forEach(function (s) {
+        var k = Math.floor((Math.log10(s) - edges[0]) / (edges[1] - edges[0]));
+        if (k >= 0 && k < 30) cnt[k]++;
+      });
+      traces = [{ type: "bar", x: ctr, y: cnt, marker: { color: "#56B4E9" }, showlegend: false },
+        vline(Math.log10(fe(ev).snr), Math.max.apply(null, cnt), c)];
+      layoutFn = lay("log₁₀ ϱ", "events", {});
+    } else if (kind === "horizon") {
+      var names = EVIDS.map(function (e) { return "EMRI-" + e; });
+      traces = [
+        { type: "bar", name: "true d_L", x: names,
+          y: EVIDS.map(function (e) { return fe(e).d_L_Gpc; }), marker: { color: "#999999" } },
+        { type: "bar", name: "personal horizon ϱ·d_L/20", x: names,
+          y: EVIDS.map(function (e) { return fe(e).snr * fe(e).d_L_Gpc / 20; }),
+          marker: { color: EVIDS.map(function (e) { return e === ev ? EVCOL[e] : "#d0d4da"; }) } }];
+      layoutFn = lay("", "distance [Gpc]", { legend: true, cat: true });
+    } else if (kind === "zpop") {
+      var zdr = jd.J && jd.J.shared && jd.J.shared.z_drawn;
+      var zde = jd.J && jd.J.shared && jd.J.shared.z_detected;
+      if (!zde) throw new Error("population data not generated yet");
+      traces = [];
+      if (zdr) traces.push({ x: zdr.z, y: zdr.density, mode: "lines", name: "drawn",
+        line: { color: "#999999", width: 1.8, dash: "dash" } });
+      traces.push({ x: zde.z, y: zde.density, mode: "lines", name: "detected",
+        line: { color: "#0072B2", width: 2.2 } });
+      traces.push(vline(zMid(ev), Math.max.apply(null, zde.density), c));
+      layoutFn = lay("z", "density", { legend: true });
+    } else if (kind === "pdetcurve") {
+      if (!jd.H4) throw new Error("ch04 data unavailable");
+      traces = [{ x: jd.H4.dl_grid_Gpc, y: jd.H4.p_det_of_dl, mode: "lines",
+        line: { color: "#0072B2", width: 2.2 } },
+        { x: [fe(ev).d_L_Gpc],
+          y: [Book.interp1(jd.H4.dl_grid_Gpc, jd.H4.p_det_of_dl, fe(ev).d_L_Gpc)],
+          mode: "markers", showlegend: false, marker: { symbol: "star", size: 14, color: c } }];
+      layoutFn = lay("d_L [Gpc]", "p_det", {});
+    } else if (kind === "ellipse") {
+      traces = EVIDS.map(function (e) {
+        var cv = fe(e).cov3, a2 = cv[0][0], b2 = cv[1][1], ab = cv[0][1];
+        var tr2 = (a2 + b2) / 2, dsc = Math.sqrt(Math.max(0, tr2 * tr2 - (a2 * b2 - ab * ab)));
+        var l1 = tr2 + dsc, l2 = Math.max(1e-30, tr2 - dsc);
+        var ang = 0.5 * Math.atan2(2 * ab, a2 - b2);
+        var th2 = linspace(0, 2 * Math.PI, 90), S = 3437.75;
+        return { name: "EMRI-" + e, mode: "lines",
+          x: th2.map(function (t) { return S * (Math.sqrt(l1) * Math.cos(t) * Math.cos(ang) - Math.sqrt(l2) * Math.sin(t) * Math.sin(ang)); }),
+          y: th2.map(function (t) { return S * (Math.sqrt(l1) * Math.cos(t) * Math.sin(ang) + Math.sqrt(l2) * Math.sin(t) * Math.cos(ang)); }),
+          line: { color: EVCOL[e], width: e === ev ? 3 : 1.3 } };
+      });
+      layoutFn = function () {
+        var L = lay("Δφ [arcmin]", "Δθ [arcmin]", { legend: true })();
+        L.yaxis.scaleanchor = "x";
+        return L;
+      };
+    } else if (kind === "slices") {
+      var xs = linspace(-14, 14, 300);
+      traces = EVIDS.map(function (e) {
+        var sigPct = 100 * fe(e).sigma_dL_Mpc / fe(e).d_L_Mpc;
+        return { x: xs, y: gauss(xs, 0, Math.max(sigPct, 0.09)), mode: "lines",
+          name: "EMRI-" + e + " (σ " + (sigPct < 0.1 ? "0.09" : sigPct.toFixed(1)) + " %)",
+          line: { color: EVCOL[e], width: e === ev ? 2.6 : 1.4 } };
+      });
+      layoutFn = lay("distance offset [% of d_L]", "likelihood (peak = 1)", { legend: true });
+    } else if (kind === "csvrow") {
+      var row = je(ev).csv_row, lines = [];
+      Object.keys(row).forEach(function (k2) { lines.push(k2.padEnd(22) + row[k2]); });
+      div.className = "atlas-csvrow";
+      div.textContent = lines.join("\n");
+      return;
+    } else if (kind === "corrheat") {
+      var names14 = jd.J.params14_order;
+      traces = [{ type: "heatmap", x: names14, y: names14, z: je(ev).corr14,
+        zmin: -1, zmax: 1, colorscale: "RdBu", showscale: false }];
+      layoutFn = function () {
+        var L = lay("", "", { cat: true })();
+        L.yaxis.type = "category";
+        L.xaxis.tickfont = { size: 8 }; L.yaxis.tickfont = { size: 8 };
+        L.yaxis.autorange = "reversed";
+        return L;
+      };
+    } else if (kind === "ballbars") {
+      traces = [{ type: "bar", x: EVIDS.map(function (e) { return "EMRI-" + e; }),
+        y: EVIDS.map(function (e) { return Math.max(je(e).ball.n_candidates, 0.5); }),
+        marker: { color: EVIDS.map(function (e) { return e === ev ? EVCOL[e] : "#d0d4da"; }) },
+        showlegend: false }];
+      layoutFn = lay("", "candidate hosts in the 3σ ball", { logy: true, cat: true });
+    } else if (kind === "zbudget") {
+      var w2 = fe(ev).z_window, zc2 = zMid(ev);
+      traces = [
+        { x: w2, y: [1, 1], mode: "lines+text", text: ["GW 3σ window", ""],
+          textposition: "top right", showlegend: false, line: { color: c, width: 10 } },
+        { x: [zc2 - 0.035, zc2 + 0.035], y: [0, 0], mode: "lines+text",
+          text: ["one photo-z kernel (±1σ)", ""], textposition: "bottom right",
+          showlegend: false, line: { color: "#999999", width: 10 } }];
+      layoutFn = function () {
+        var L = lay("z", "", {})();
+        L.yaxis.range = [-0.8, 1.8]; L.yaxis.showticklabels = false;
+        return L;
+      };
+    } else if (kind === "kernelz") {
+      var kz = je(ev).kernelz;
+      traces = [
+        { x: kz.z, y: kz.bare, mode: "lines", name: "bare Gaussian",
+          line: { color: "#D55E00", width: 1.8, dash: "dash" } },
+        { x: kz.z, y: kz.volume, mode: "lines", name: "volume-deconvolved",
+          line: { color: "#0072B2", width: 2.2 } }];
+      layoutFn = lay("z", "p_g(z)", { legend: true });
+    } else if (kind === "lnl" || kind === "channels") {
+      var hg, l1d, l2d = null;
+      if (ev === "889" && jd.D11) {
+        hg = jd.D11.h_grid;
+        l1d = jd.D11.profiles.real_r1.ln1d;
+        l2d = jd.D11.profiles.real_r1.ln2d;
+      } else {
+        var gl = je(ev).geolike;
+        hg = gl.h; l1d = gl.lnL;
+      }
+      traces = [{ x: hg, y: expNorm(l1d), mode: "lines",
+        name: ev === "889" ? "1D channel (real)" : "geometric (toy)",
+        line: { color: c, width: 2.2 } }];
+      if (kind === "channels" && l2d) {
+        traces.push({ x: hg, y: expNorm(l2d), mode: "lines", name: "with-mass channel (real)",
+          line: { color: "#009E73", width: 2 } });
+      }
+      traces.push(vline(0.73, 1, "#999999"));
+      layoutFn = lay("h", "L(h) (peak = 1)", { legend: true });
+    } else if (kind === "geometry") {
+      var w3 = fe(ev).z_window, pad = (w3[1] - w3[0]) * 0.9;
+      var zg = linspace(Math.max(1e-4, w3[0] - pad), w3[1] + pad, 80);
+      var dz2 = curves.dlz;
+      traces = ["0.6", "0.73", "0.86"].map(function (hk) {
+        return { x: zg, y: zg.map(function (z) { return Book.interp1(dz2.z, dz2.curves[hk], z); }),
+          mode: "lines", name: "h = " + hk,
+          line: { color: { "0.6": "#D55E00", "0.73": "#009E73", "0.86": "#CC79A7" }[hk],
+            width: hk === "0.73" ? 2.4 : 1.5 } };
+      });
+      var dlo = fe(ev).d_L_Gpc - 3 * fe(ev).sigma_dL_Mpc / 1000;
+      var dhi = fe(ev).d_L_Gpc + 3 * fe(ev).sigma_dL_Mpc / 1000;
+      traces.push({ x: zg.concat(zg.slice().reverse()),
+        y: zg.map(function () { return dhi; }).concat(zg.map(function () { return dlo; })),
+        fill: "toself", fillcolor: "rgba(0,114,178,0.18)", line: { width: 0 },
+        name: "measured d_L ± 3σ", hoverinfo: "skip" });
+      traces.push({ x: [zMid(ev)], y: [fe(ev).d_L_Gpc], mode: "markers", showlegend: false,
+        marker: { symbol: "star", size: 13, color: c } });
+      layoutFn = lay("z", "d_L [Gpc]", { legend: true });
+    } else if (kind === "massslide") {
+      var mu2 = Math.log10(fe(ev).M_z_Msun / (1 + zMid(ev)));
+      var xs2 = linspace(mu2 - 1.1, mu2 + 1.1, 300);
+      traces = [
+        { x: xs2, y: gauss(xs2, mu2, 0.24), mode: "lines",
+          name: "catalogue prediction (±0.24 dex)", line: { color: "#009E73", width: 2 } },
+        { x: xs2, y: gauss(xs2, mu2, 0.02), mode: "lines",
+          name: "GW measurement (width inflated 10⁵× to be visible)",
+          line: { color: c, width: 2 } }];
+      layoutFn = lay("log₁₀ M_BH [M☉]", "density (peak = 1)", { legend: true });
+    } else if (kind === "stacking") {
+      var Ns = linspace(1, 40, 40);
+      traces = [{ x: Ns, y: Ns.map(function (N2) { return 1 / Math.sqrt(N2); }),
+        mode: "lines+markers", line: { color: "#0072B2", width: 2 },
+        marker: { size: 4 }, showlegend: false }];
+      layoutFn = lay("number of events N", "posterior width [relative]", {});
+    } else {
+      throw new Error("unknown panel kind " + kind);
+    }
+
+    Book.themedPlot(div.id, traces, layoutFn);
   }
 
   // ---------------- formula stage ----------------
@@ -789,7 +1156,7 @@
         margin: { l: 52, r: 8, t: 8, b: 40 },
         showlegend: !!o.legend,
         legend: { orientation: "h", y: -0.3, font: { size: 10 } },
-        xaxis: { title: Book.axis(xTitle), type: o.logx ? "log" : "linear",
+        xaxis: { title: Book.axis(xTitle), type: o.cat ? "category" : (o.logx ? "log" : "linear"),
           gridcolor: grid, zeroline: false, exponentformat: "power" },
         yaxis: { title: Book.axis(yTitle), type: o.logy ? "log" : "linear",
           gridcolor: grid, zeroline: false, exponentformat: "power" }
@@ -869,7 +1236,14 @@
       });
     } else { jbtn.style.display = "none"; }
     var want = (location.hash || "").replace("#", "");
-    if (want && byId[want]) select(want, false);
+    var jm = /^j(\d+)-(889|606|555)$/.exec(want);
+    if (jm && graph.journey) {
+      journeyEv = jm[2];
+      document.getElementById("atlas-journey").classList.add("on");
+      journeyData().then(function () {
+        journeyGoto(Math.min(Math.max(+jm[1] - 1, 0), graph.journey.stops.length - 1));
+      });
+    } else if (want && byId[want]) select(want, false);
   }).catch(function (err) {
     console.error("atlas: data load failed", err);
     var dbg = document.getElementById("atlas-map-wrap");
