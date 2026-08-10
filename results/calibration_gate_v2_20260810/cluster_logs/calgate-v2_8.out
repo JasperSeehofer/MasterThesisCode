@@ -1,0 +1,22 @@
+Loading bwUniCluster modules...
+  Loaded: compiler/gnu/14.2
+  Loaded: devel/cuda/12.8
+  Loaded: devel/python/3.13.3-gnu-14.2
+  Workspace: /pfs/work9/workspace/scratch/st_ac147838-emri
+calgate-v2 task=8 args=--cell B2 --truth 0.770 workers=64 host=uc2n638.localdomain commit=dbde71dc65df11f7e237ece2fd1962488ecf880d
+
+============================= JOB FEEDBACK =============================
+
+NodeName=uc2n638
+Job ID: 6251258
+Array Job ID: 6250988_8
+Cluster: uc3
+User/Group: st_ac147838/st_us-403333
+State: COMPLETED (exit code 0)
+Nodes: 1
+Cores per node: 64
+CPU Utilized: 09:35:32
+CPU Efficiency: 87.03% of 11:01:20 core-walltime
+Job Wall-clock time: 00:10:20
+Memory Utilized: 8.22 GB
+Memory Efficiency: 6.58% of 125.00 GB (1.95 GB/core)

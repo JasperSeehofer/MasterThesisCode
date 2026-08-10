@@ -1,0 +1,6 @@
+Loading bwUniCluster modules...
+  Loaded: compiler/gnu/14.2
+  Loaded: devel/cuda/12.8
+  Loaded: devel/python/3.13.3-gnu-14.2
+  Workspace: /pfs/work9/workspace/scratch/st_ac147838-emri
+calgate-v2 task=9 args=--cell V1 --truth 0.730 workers=64 host=uc2n745.localdomain commit=dbde71dc65df11f7e237ece2fd1962488ecf880d

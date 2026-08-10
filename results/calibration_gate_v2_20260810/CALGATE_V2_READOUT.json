@@ -1,0 +1,2259 @@
+{
+ "readout": "CALGATE_V2_READOUT",
+ "campaign": "calibration_gate_v2_20260810",
+ "prereg": "PREREGISTRATION_CALIBRATION_GATE_V2.md (registered commit 065e7f58)",
+ "scored_mechanically_by": "readout_score_v2.py",
+ "provenance": {
+  "registered_commit": "065e7f58cb94c2e33d7ae1db385bcc85c93168dc",
+  "run_commit": "dbde71dc65df11f7e237ece2fd1962488ecf880d",
+  "run_commit_is_child_of_registered_with_empty_import_path_diff": true,
+  "crb_md5": "9a1f2a14384a9281c97ca3be312ddaab",
+  "crb_md5_matches_pin": true,
+  "all_seeds_disjoint": true,
+  "all_seeds_outside_v1_envelope": true,
+  "per_cell": {
+   "A_h0.690": {
+    "git_commit": "dbde71dc65df11f7e237ece2fd1962488ecf880d",
+    "git_commit_equals_registered": false,
+    "git_commit_equals_run_commit_dbde71dc": true,
+    "import_path_clean": true,
+    "dirt_inventory_import_path_empty": true,
+    "allow_dirty": false,
+    "seed_plan_ok": true,
+    "record_complete": true,
+    "nonfinite_ln_post_count_recomputed": 0,
+    "nonfinite_frac_reported": 0.0,
+    "abort_b_triggered_reported": false,
+    "wall_time_s": 424.30194612732157,
+    "workers": 64
+   },
+   "A_h0.730": {
+    "git_commit": "dbde71dc65df11f7e237ece2fd1962488ecf880d",
+    "git_commit_equals_registered": false,
+    "git_commit_equals_run_commit_dbde71dc": true,
+    "import_path_clean": true,
+    "dirt_inventory_import_path_empty": true,
+    "allow_dirty": false,
+    "seed_plan_ok": true,
+    "record_complete": true,
+    "nonfinite_ln_post_count_recomputed": 0,
+    "nonfinite_frac_reported": 0.0,
+    "abort_b_triggered_reported": false,
+    "wall_time_s": 420.58020021161065,
+    "workers": 64
+   },
+   "A_h0.770": {
+    "git_commit": "dbde71dc65df11f7e237ece2fd1962488ecf880d",
+    "git_commit_equals_registered": false,
+    "git_commit_equals_run_commit_dbde71dc": true,
+    "import_path_clean": true,
+    "dirt_inventory_import_path_empty": true,
+    "allow_dirty": false,
+    "seed_plan_ok": true,
+    "record_complete": true,
+    "nonfinite_ln_post_count_recomputed": 0,
+    "nonfinite_frac_reported": 0.0,
+    "abort_b_triggered_reported": false,
+    "wall_time_s": 383.69528425112367,
+    "workers": 64
+   },
+   "B0_h0.730": {
+    "git_commit": "dbde71dc65df11f7e237ece2fd1962488ecf880d",
+    "git_commit_equals_registered": false,
+    "git_commit_equals_run_commit_dbde71dc": true,
+    "import_path_clean": true,
+    "dirt_inventory_import_path_empty": true,
+    "allow_dirty": false,
+    "seed_plan_ok": true,
+    "record_complete": true,
+    "nonfinite_ln_post_count_recomputed": 0,
+    "nonfinite_frac_reported": 0.0,
+    "abort_b_triggered_reported": false,
+    "wall_time_s": 133.09550497913733,
+    "workers": 64
+   },
+   "B1_h0.730": {
+    "git_commit": "dbde71dc65df11f7e237ece2fd1962488ecf880d",
+    "git_commit_equals_registered": false,
+    "git_commit_equals_run_commit_dbde71dc": true,
+    "import_path_clean": true,
+    "dirt_inventory_import_path_empty": true,
+    "allow_dirty": false,
+    "seed_plan_ok": true,
+    "record_complete": true,
+    "nonfinite_ln_post_count_recomputed": 0,
+    "nonfinite_frac_reported": 0.0,
+    "abort_b_triggered_reported": false,
+    "wall_time_s": 552.2959134578705,
+    "workers": 64
+   },
+   "B2_h0.690": {
+    "git_commit": "dbde71dc65df11f7e237ece2fd1962488ecf880d",
+    "git_commit_equals_registered": false,
+    "git_commit_equals_run_commit_dbde71dc": true,
+    "import_path_clean": true,
+    "dirt_inventory_import_path_empty": true,
+    "allow_dirty": false,
+    "seed_plan_ok": true,
+    "record_complete": true,
+    "nonfinite_ln_post_count_recomputed": 0,
+    "nonfinite_frac_reported": 0.0,
+    "abort_b_triggered_reported": false,
+    "wall_time_s": 506.59681430924684,
+    "workers": 64
+   },
+   "B2_h0.730": {
+    "git_commit": "dbde71dc65df11f7e237ece2fd1962488ecf880d",
+    "git_commit_equals_registered": false,
+    "git_commit_equals_run_commit_dbde71dc": true,
+    "import_path_clean": true,
+    "dirt_inventory_import_path_empty": true,
+    "allow_dirty": false,
+    "seed_plan_ok": true,
+    "record_complete": true,
+    "nonfinite_ln_post_count_recomputed": 0,
+    "nonfinite_frac_reported": 0.0,
+    "abort_b_triggered_reported": false,
+    "wall_time_s": 611.5560323903337,
+    "workers": 64
+   },
+   "B2_h0.770": {
+    "git_commit": "dbde71dc65df11f7e237ece2fd1962488ecf880d",
+    "git_commit_equals_registered": false,
+    "git_commit_equals_run_commit_dbde71dc": true,
+    "import_path_clean": true,
+    "dirt_inventory_import_path_empty": true,
+    "allow_dirty": false,
+    "seed_plan_ok": true,
+    "record_complete": true,
+    "nonfinite_ln_post_count_recomputed": 0,
+    "nonfinite_frac_reported": 0.0,
+    "abort_b_triggered_reported": false,
+    "wall_time_s": 583.6440256927162,
+    "workers": 64
+   },
+   "V1_h0.730": {
+    "git_commit": "dbde71dc65df11f7e237ece2fd1962488ecf880d",
+    "git_commit_equals_registered": false,
+    "git_commit_equals_run_commit_dbde71dc": true,
+    "import_path_clean": true,
+    "dirt_inventory_import_path_empty": true,
+    "allow_dirty": false,
+    "seed_plan_ok": true,
+    "record_complete": true,
+    "nonfinite_ln_post_count_recomputed": 0,
+    "nonfinite_frac_reported": 0.0,
+    "abort_b_triggered_reported": false,
+    "wall_time_s": 32.88525354885496,
+    "workers": 64
+   }
+  }
+ },
+ "validity_first": {
+  "V1_plumbing_control": {
+   "status": "PASS",
+   "map_1d_exact_frac": 1.0,
+   "map_2d_exact_frac": 1.0,
+   "requirement": "MAP=0.730 exactly, both channels, all 50 seeds"
+  },
+  "V2_hpd_port_certification": {
+   "status": "PASS-AT-REGISTRATION",
+   "note": "CI-owned unit test; 30/30 calibration-gate tests pass at registered commit 065e7f58 (prereg \u00a711); not re-executed by this readout; no failure observed."
+  },
+  "V3_determinism": {
+   "status": "PASS-AT-REGISTRATION",
+   "note": "bit-identical smoke spot-checks at registration (prereg \u00a711); campaign cells are non-smoke runs (smoke=false) with no embedded V3 record; no failure observed."
+  },
+  "V4_texture_certification": {
+   "status": "PASS",
+   "band": [
+    0.63,
+    0.75
+   ],
+   "per_cell": {
+    "A_h0.690": {
+     "corr_median": 0.6648130443561435,
+     "pass": true
+    },
+    "A_h0.730": {
+     "corr_median": 0.6646480834135889,
+     "pass": true
+    },
+    "A_h0.770": {
+     "corr_median": 0.6634798861788709,
+     "pass": true
+    },
+    "B0_h0.730": {
+     "corr_median": 0.6668678043161604,
+     "pass": true
+    },
+    "B1_h0.730": {
+     "corr_median": 0.6635129266118986,
+     "pass": true
+    },
+    "B2_h0.690": {
+     "corr_median": 0.6665487148400058,
+     "pass": true
+    },
+    "B2_h0.730": {
+     "corr_median": 0.6653711892444978,
+     "pass": true
+    },
+    "B2_h0.770": {
+     "corr_median": 0.6637444382726749,
+     "pass": true
+    },
+    "V1_h0.730": {
+     "corr_median": 0.6615971335775976,
+     "pass": true
+    }
+   },
+   "R0": {
+    "corr_median": null,
+    "note": "N/A by construction \u2014 R0 uses 'independent' texture"
+   }
+  },
+  "V5_R0_reproduction": {
+   "status": "PASS",
+   "rtol": 1e-12,
+   "mismatches": []
+  },
+  "abort_a_runtime": {
+   "triggered": false,
+   "note": "sum of per-task wall times ~=3649 s << 12 h; all SLURM tasks < 11 min"
+  },
+  "abort_b_nonfinite": {
+   "triggered": false,
+   "note": "0 non-finite ln_post in any cell, independently recomputed per seed"
+  },
+  "abort_c_v_failure": {
+   "triggered": false
+  }
+ },
+ "cells": {
+  "A_h0.690": {
+   "cell": "A",
+   "h_true": 0.69,
+   "n_seeds": 400,
+   "ds1_ds2_degenerate_pit_exempt": false,
+   "channels": {
+    "1d": {
+     "ds1": {
+      "hpd50": {
+       "value": 0.0,
+       "band_2s": [
+        0.45,
+        0.55
+       ],
+       "band_3s": [
+        0.425,
+        0.575
+       ],
+       "inside_2s": false,
+       "inside_3s": false
+      },
+      "hpd68": {
+       "value": 0.0,
+       "band_2s": [
+        0.6334000000000001,
+        0.7266
+       ],
+       "band_3s": [
+        0.6101000000000001,
+        0.7499
+       ],
+       "inside_2s": false,
+       "inside_3s": false
+      },
+      "hpd90": {
+       "value": 0.0,
+       "band_2s": [
+        0.87,
+        0.93
+       ],
+       "band_3s": [
+        0.855,
+        0.9450000000000001
+       ],
+       "inside_2s": false,
+       "inside_3s": false
+      },
+      "status": "FAIL"
+     },
+     "ds1_status_instrument": "FAIL",
+     "ds2": {
+      "D": 0.9999999999277139,
+      "D_95": 0.0679,
+      "D_99": 0.0814,
+      "status": "FAIL"
+     },
+     "ds2_status_instrument": "FAIL",
+     "ds3": {
+      "bias": -0.22999999999999993,
+      "mc_error": 0.0,
+      "mean_map": 0.46,
+      "map_sd": 0.0,
+      "status": "DEFECT-SCALE",
+      "status_instrument": "DEFECT-SCALE"
+     },
+     "ds4": {
+      "R_low": 1.0,
+      "R_high": 0.0
+     },
+     "ds5": {
+      "post_sd_median": 0.007850575512636768,
+      "status": "NOT-EVALUABLE (prereg DS-5/\u00a79 item 3: no exact sigma_z node in committed F5 sweep)"
+     },
+     "edge_guard": {
+      "edge_loaded_frac": 1.0,
+      "edge_contaminated": true
+     },
+     "ds1_ds2_carry_gate_weight": false,
+     "gate_weight_removed_by": [
+      "\u00a78-edge-contamination",
+      "v1\u00a75-A-1D-starvation-exemption"
+     ]
+    },
+    "2d": {
+     "ds1": {
+      "hpd50": {
+       "value": 0.325,
+       "band_2s": [
+        0.45,
+        0.55
+       ],
+       "band_3s": [
+        0.425,
+        0.575
+       ],
+       "inside_2s": false,
+       "inside_3s": false
+      },
+      "hpd68": {
+       "value": 0.435,
+       "band_2s": [
+        0.6334000000000001,
+        0.7266
+       ],
+       "band_3s": [
+        0.6101000000000001,
+        0.7499
+       ],
+       "inside_2s": false,
+       "inside_3s": false
+      },
+      "hpd90": {
+       "value": 0.6125,
+       "band_2s": [
+        0.87,
+        0.93
+       ],
+       "band_3s": [
+        0.855,
+        0.9450000000000001
+       ],
+       "inside_2s": false,
+       "inside_3s": false
+      },
+      "status": "FAIL"
+     },
+     "ds1_status_instrument": "FAIL",
+     "ds2": {
+      "D": 0.2819459602972211,
+      "D_95": 0.0679,
+      "D_99": 0.0814,
+      "status": "FAIL"
+     },
+     "ds2_status_instrument": "FAIL",
+     "ds3": {
+      "bias": 0.07996249999999994,
+      "mc_error": 0.005876189389282973,
+      "mean_map": 0.7699624999999999,
+      "map_sd": 0.11752378778565946,
+      "status": "DEFECT-SCALE",
+      "status_instrument": "DEFECT-SCALE"
+     },
+     "ds4": {
+      "R_low": 0.0,
+      "R_high": 0.0025
+     },
+     "ds5": {
+      "post_sd_median": 0.06781687492262084,
+      "status": "NOT-EVALUABLE (prereg DS-5/\u00a79 item 3: no exact sigma_z node in committed F5 sweep)"
+     },
+     "edge_guard": {
+      "edge_loaded_frac": 0.11,
+      "edge_contaminated": true
+     },
+     "ds1_ds2_carry_gate_weight": false,
+     "gate_weight_removed_by": [
+      "\u00a78-edge-contamination"
+     ]
+    }
+   },
+   "ds7_report_only": {
+    "status": "REPORT-ONLY",
+    "p_bar": 0.09196858254257907,
+    "p_bar_mc_se": 0.0002193087547083619,
+    "mean_n_proposed": 18063.36,
+    "ratio": 0.902928224136963,
+    "band": 0.05,
+    "pass_raw": false,
+    "expected_batch_overcount": 1.1103958021789377,
+    "ratio_corrected": 1.0026077097505668,
+    "pass_corrected": true,
+    "note": "v2: REPORT-ONLY in both forms (divergence 12 / defect 2) \u2014 no V-class or branch weight; raw form is MC-seed-fragile at the band edge (v1 adjudication 6/9 vs 8/9 by MC seed), corrected form divides out the parent's batch-granularity undercount; the raw-vs-corrected author call remains open",
+    "n_mc": 1000000,
+    "mc_seed": 20260808,
+    "branch_weight": "NONE (D2); raw-vs-corrected author call OPEN"
+   },
+   "sum_dlog_gfrac_dh_mean": 170.60419210570225,
+   "ball": {
+    "K_mean": 1.0,
+    "n_impostors_total": 0,
+    "n_degenerate_windows": 0,
+    "sigma_z": 0.0,
+    "f_incl": 1.0,
+    "lambda_ball": 0.0
+   }
+  },
+  "A_h0.730": {
+   "cell": "A",
+   "h_true": 0.73,
+   "n_seeds": 400,
+   "ds1_ds2_degenerate_pit_exempt": false,
+   "channels": {
+    "1d": {
+     "ds1": {
+      "hpd50": {
+       "value": 0.0,
+       "band_2s": [
+        0.45,
+        0.55
+       ],
+       "band_3s": [
+        0.425,
+        0.575
+       ],
+       "inside_2s": false,
+       "inside_3s": false
+      },
+      "hpd68": {
+       "value": 0.0,
+       "band_2s": [
+        0.6334000000000001,
+        0.7266
+       ],
+       "band_3s": [
+        0.6101000000000001,
+        0.7499
+       ],
+       "inside_2s": false,
+       "inside_3s": false
+      },
+      "hpd90": {
+       "value": 0.0,
+       "band_2s": [
+        0.87,
+        0.93
+       ],
+       "band_3s": [
+        0.855,
+        0.9450000000000001
+       ],
+       "inside_2s": false,
+       "inside_3s": false
+      },
+      "status": "FAIL"
+     },
+     "ds1_status_instrument": "FAIL",
+     "ds2": {
+      "D": 0.9999999999500249,
+      "D_95": 0.0679,
+      "D_99": 0.0814,
+      "status": "FAIL"
+     },
+     "ds2_status_instrument": "FAIL",
+     "ds3": {
+      "bias": -0.26999999999999996,
+      "mc_error": 0.0,
+      "mean_map": 0.46,
+      "map_sd": 0.0,
+      "status": "DEFECT-SCALE",
+      "status_instrument": "DEFECT-SCALE"
+     },
+     "ds4": {
+      "R_low": 1.0,
+      "R_high": 0.0
+     },
+     "ds5": {
+      "post_sd_median": 0.00878744999673411,
+      "status": "NOT-EVALUABLE (prereg DS-5/\u00a79 item 3: no exact sigma_z node in committed F5 sweep)"
+     },
+     "edge_guard": {
+      "edge_loaded_frac": 1.0,
+      "edge_contaminated": true
+     },
+     "ds1_ds2_carry_gate_weight": false,
+     "gate_weight_removed_by": [
+      "\u00a78-edge-contamination",
+      "v1\u00a75-A-1D-starvation-exemption"
+     ]
+    },
+    "2d": {
+     "ds1": {
+      "hpd50": {
+       "value": 0.275,
+       "band_2s": [
+        0.45,
+        0.55
+       ],
+       "band_3s": [
+        0.425,
+        0.575
+       ],
+       "inside_2s": false,
+       "inside_3s": false
+      },
+      "hpd68": {
+       "value": 0.41,
+       "band_2s": [
+        0.6334000000000001,
+        0.7266
+       ],
+       "band_3s": [
+        0.6101000000000001,
+        0.7499
+       ],
+       "inside_2s": false,
+       "inside_3s": false
+      },
+      "hpd90": {
+       "value": 0.6125,
+       "band_2s": [
+        0.87,
+        0.93
+       ],
+       "band_3s": [
+        0.855,
+        0.9450000000000001
+       ],
+       "inside_2s": false,
+       "inside_3s": false
+      },
+      "status": "FAIL"
+     },
+     "ds1_status_instrument": "FAIL",
+     "ds2": {
+      "D": 0.3333611524754527,
+      "D_95": 0.0679,
+      "D_99": 0.0814,
+      "status": "FAIL"
+     },
+     "ds2_status_instrument": "FAIL",
+     "ds3": {
+      "bias": 0.0825625000000001,
+      "mc_error": 0.005635129941538176,
+      "mean_map": 0.8125625000000001,
+      "map_sd": 0.11270259883076353,
+      "status": "DEFECT-SCALE",
+      "status_instrument": "DEFECT-SCALE"
+     },
+     "ds4": {
+      "R_low": 0.0,
+      "R_high": 0.015
+     },
+     "ds5": {
+      "post_sd_median": 0.06816267156964288,
+      "status": "NOT-EVALUABLE (prereg DS-5/\u00a79 item 3: no exact sigma_z node in committed F5 sweep)"
+     },
+     "edge_guard": {
+      "edge_loaded_frac": 0.155,
+      "edge_contaminated": true
+     },
+     "ds1_ds2_carry_gate_weight": false,
+     "gate_weight_removed_by": [
+      "\u00a78-edge-contamination"
+     ]
+    }
+   },
+   "ds7_report_only": {
+    "status": "REPORT-ONLY",
+    "p_bar": 0.09537169173429369,
+    "p_bar_mc_se": 0.0002233266084036319,
+    "mean_n_proposed": 16547.84,
+    "ratio": 0.9504525924837015,
+    "band": 0.05,
+    "pass_raw": true,
+    "expected_batch_overcount": 1.0544741849283383,
+    "ratio_corrected": 1.0022277227722773,
+    "pass_corrected": true,
+    "note": "v2: REPORT-ONLY in both forms (divergence 12 / defect 2) \u2014 no V-class or branch weight; raw form is MC-seed-fragile at the band edge (v1 adjudication 6/9 vs 8/9 by MC seed), corrected form divides out the parent's batch-granularity undercount; the raw-vs-corrected author call remains open",
+    "n_mc": 1000000,
+    "mc_seed": 20260808,
+    "branch_weight": "NONE (D2); raw-vs-corrected author call OPEN"
+   },
+   "sum_dlog_gfrac_dh_mean": 161.31275808940242,
+   "ball": {
+    "K_mean": 1.0,
+    "n_impostors_total": 0,
+    "n_degenerate_windows": 0,
+    "sigma_z": 0.0,
+    "f_incl": 1.0,
+    "lambda_ball": 0.0
+   }
+  },
+  "A_h0.770": {
+   "cell": "A",
+   "h_true": 0.77,
+   "n_seeds": 400,
+   "ds1_ds2_degenerate_pit_exempt": false,
+   "channels": {
+    "1d": {
+     "ds1": {
+      "hpd50": {
+       "value": 0.0,
+       "band_2s": [
+        0.45,
+        0.55
+       ],
+       "band_3s": [
+        0.425,
+        0.575
+       ],
+       "inside_2s": false,
+       "inside_3s": false
+      },
+      "hpd68": {
+       "value": 0.0,
+       "band_2s": [
+        0.6334000000000001,
+        0.7266
+       ],
+       "band_3s": [
+        0.6101000000000001,
+        0.7499
+       ],
+       "inside_2s": false,
+       "inside_3s": false
+      },
+      "hpd90": {
+       "value": 0.0,
+       "band_2s": [
+        0.87,
+        0.93
+       ],
+       "band_3s": [
+        0.855,
+        0.9450000000000001
+       ],
+       "inside_2s": false,
+       "inside_3s": false
+      },
+      "status": "FAIL"
+     },
+     "ds1_status_instrument": "FAIL",
+     "ds2": {
+      "D": 0.999999999963712,
+      "D_95": 0.0679,
+      "D_99": 0.0814,
+      "status": "FAIL"
+     },
+     "ds2_status_instrument": "FAIL",
+     "ds3": {
+      "bias": -0.31,
+      "mc_error": 0.0,
+      "mean_map": 0.46,
+      "map_sd": 0.0,
+      "status": "DEFECT-SCALE",
+      "status_instrument": "DEFECT-SCALE"
+     },
+     "ds4": {
+      "R_low": 1.0,
+      "R_high": 0.0
+     },
+     "ds5": {
+      "post_sd_median": 0.009833133208964855,
+      "status": "NOT-EVALUABLE (prereg DS-5/\u00a79 item 3: no exact sigma_z node in committed F5 sweep)"
+     },
+     "edge_guard": {
+      "edge_loaded_frac": 1.0,
+      "edge_contaminated": true
+     },
+     "ds1_ds2_carry_gate_weight": false,
+     "gate_weight_removed_by": [
+      "\u00a78-edge-contamination",
+      "v1\u00a75-A-1D-starvation-exemption"
+     ]
+    },
+    "2d": {
+     "ds1": {
+      "hpd50": {
+       "value": 0.2725,
+       "band_2s": [
+        0.45,
+        0.55
+       ],
+       "band_3s": [
+        0.425,
+        0.575
+       ],
+       "inside_2s": false,
+       "inside_3s": false
+      },
+      "hpd68": {
+       "value": 0.4125,
+       "band_2s": [
+        0.6334000000000001,
+        0.7266
+       ],
+       "band_3s": [
+        0.6101000000000001,
+        0.7499
+       ],
+       "inside_2s": false,
+       "inside_3s": false
+      },
+      "hpd90": {
+       "value": 0.6025,
+       "band_2s": [
+        0.87,
+        0.93
+       ],
+       "band_3s": [
+        0.855,
+        0.9450000000000001
+       ],
+       "inside_2s": false,
+       "inside_3s": false
+      },
+      "status": "FAIL"
+     },
+     "ds1_status_instrument": "FAIL",
+     "ds2": {
+      "D": 0.3201411544272556,
+      "D_95": 0.0679,
+      "D_99": 0.0814,
+      "status": "FAIL"
+     },
+     "ds2_status_instrument": "FAIL",
+     "ds3": {
+      "bias": 0.08055000000000001,
+      "mc_error": 0.005329305535783657,
+      "mean_map": 0.85055,
+      "map_sd": 0.10658611071567314,
+      "status": "DEFECT-SCALE",
+      "status_instrument": "DEFECT-SCALE"
+     },
+     "ds4": {
+      "R_low": 0.0,
+      "R_high": 0.01
+     },
+     "ds5": {
+      "post_sd_median": 0.07022289173217122,
+      "status": "NOT-EVALUABLE (prereg DS-5/\u00a79 item 3: no exact sigma_z node in committed F5 sweep)"
+     },
+     "edge_guard": {
+      "edge_loaded_frac": 0.2325,
+      "edge_contaminated": true
+     },
+     "ds1_ds2_carry_gate_weight": false,
+     "gate_weight_removed_by": [
+      "\u00a78-edge-contamination"
+     ]
+    }
+   },
+   "ds7_report_only": {
+    "status": "REPORT-ONLY",
+    "p_bar": 0.09874127277321974,
+    "p_bar_mc_se": 0.0002272121844406236,
+    "mean_n_proposed": 16394.24,
+    "ratio": 0.9266191035090627,
+    "band": 0.05,
+    "pass_raw": false,
+    "expected_batch_overcount": 1.0793268972508465,
+    "ratio_corrected": 1.0001249219237978,
+    "pass_corrected": true,
+    "note": "v2: REPORT-ONLY in both forms (divergence 12 / defect 2) \u2014 no V-class or branch weight; raw form is MC-seed-fragile at the band edge (v1 adjudication 6/9 vs 8/9 by MC seed), corrected form divides out the parent's batch-granularity undercount; the raw-vs-corrected author call remains open",
+    "n_mc": 1000000,
+    "mc_seed": 20260808,
+    "branch_weight": "NONE (D2); raw-vs-corrected author call OPEN"
+   },
+   "sum_dlog_gfrac_dh_mean": 155.03041547190057,
+   "ball": {
+    "K_mean": 1.0,
+    "n_impostors_total": 0,
+    "n_degenerate_windows": 0,
+    "sigma_z": 0.0,
+    "f_incl": 1.0,
+    "lambda_ball": 0.0
+   }
+  },
+  "B0_h0.730": {
+   "cell": "B0",
+   "h_true": 0.73,
+   "n_seeds": 400,
+   "ds1_ds2_degenerate_pit_exempt": true,
+   "channels": {
+    "1d": {
+     "ds1": {
+      "hpd50": {
+       "value": 1.0,
+       "band_2s": [
+        0.45,
+        0.55
+       ],
+       "band_3s": [
+        0.425,
+        0.575
+       ],
+       "inside_2s": false,
+       "inside_3s": false
+      },
+      "hpd68": {
+       "value": 1.0,
+       "band_2s": [
+        0.6334000000000001,
+        0.7266
+       ],
+       "band_3s": [
+        0.6101000000000001,
+        0.7499
+       ],
+       "inside_2s": false,
+       "inside_3s": false
+      },
+      "hpd90": {
+       "value": 1.0,
+       "band_2s": [
+        0.87,
+        0.93
+       ],
+       "band_3s": [
+        0.855,
+        0.9450000000000001
+       ],
+       "inside_2s": false,
+       "inside_3s": false
+      },
+      "status": "FAIL"
+     },
+     "ds1_status_instrument": "FAIL",
+     "ds2": {
+      "D": 0.5,
+      "D_95": 0.0679,
+      "D_99": 0.0814,
+      "status": "FAIL"
+     },
+     "ds2_status_instrument": "FAIL",
+     "ds3": {
+      "bias": 1.1102230246251565e-16,
+      "mc_error": 5.5580670546202395e-18,
+      "mean_map": 0.7300000000000001,
+      "map_sd": 1.111613410924048e-16,
+      "status": "IN-BAND",
+      "status_instrument": "IN-BAND"
+     },
+     "ds4": {
+      "R_low": 0.0,
+      "R_high": 0.0
+     },
+     "ds5": {
+      "post_sd_median": 0.0,
+      "status": "NOT-EVALUABLE (prereg DS-5/\u00a79 item 3: no exact sigma_z node in committed F5 sweep)"
+     },
+     "edge_guard": {
+      "edge_loaded_frac": 0.0,
+      "edge_contaminated": false
+     },
+     "ds1_ds2_carry_gate_weight": false,
+     "gate_weight_removed_by": [
+      "D3-degenerate-PIT-exemption"
+     ]
+    },
+    "2d": {
+     "ds1": {
+      "hpd50": {
+       "value": 1.0,
+       "band_2s": [
+        0.45,
+        0.55
+       ],
+       "band_3s": [
+        0.425,
+        0.575
+       ],
+       "inside_2s": false,
+       "inside_3s": false
+      },
+      "hpd68": {
+       "value": 1.0,
+       "band_2s": [
+        0.6334000000000001,
+        0.7266
+       ],
+       "band_3s": [
+        0.6101000000000001,
+        0.7499
+       ],
+       "inside_2s": false,
+       "inside_3s": false
+      },
+      "hpd90": {
+       "value": 1.0,
+       "band_2s": [
+        0.87,
+        0.93
+       ],
+       "band_3s": [
+        0.855,
+        0.9450000000000001
+       ],
+       "inside_2s": false,
+       "inside_3s": false
+      },
+      "status": "FAIL"
+     },
+     "ds1_status_instrument": "FAIL",
+     "ds2": {
+      "D": 0.5,
+      "D_95": 0.0679,
+      "D_99": 0.0814,
+      "status": "FAIL"
+     },
+     "ds2_status_instrument": "FAIL",
+     "ds3": {
+      "bias": 1.1102230246251565e-16,
+      "mc_error": 5.5580670546202395e-18,
+      "mean_map": 0.7300000000000001,
+      "map_sd": 1.111613410924048e-16,
+      "status": "IN-BAND",
+      "status_instrument": "IN-BAND"
+     },
+     "ds4": {
+      "R_low": 0.0,
+      "R_high": 0.0
+     },
+     "ds5": {
+      "post_sd_median": 0.0,
+      "status": "NOT-EVALUABLE (prereg DS-5/\u00a79 item 3: no exact sigma_z node in committed F5 sweep)"
+     },
+     "edge_guard": {
+      "edge_loaded_frac": 0.0,
+      "edge_contaminated": false
+     },
+     "ds1_ds2_carry_gate_weight": false,
+     "gate_weight_removed_by": [
+      "D3-degenerate-PIT-exemption"
+     ]
+    }
+   },
+   "ds7_report_only": {
+    "status": "REPORT-ONLY",
+    "p_bar": 0.09537169173429369,
+    "p_bar_mc_se": 0.0002233266084036319,
+    "mean_n_proposed": 16670.72,
+    "ratio": 0.943446799418711,
+    "band": 0.05,
+    "pass_raw": false,
+    "expected_batch_overcount": 1.0544741849283383,
+    "ratio_corrected": 0.9948402948402948,
+    "pass_corrected": true,
+    "note": "v2: REPORT-ONLY in both forms (divergence 12 / defect 2) \u2014 no V-class or branch weight; raw form is MC-seed-fragile at the band edge (v1 adjudication 6/9 vs 8/9 by MC seed), corrected form divides out the parent's batch-granularity undercount; the raw-vs-corrected author call remains open",
+    "n_mc": 1000000,
+    "mc_seed": 20260808,
+    "branch_weight": "NONE (D2); raw-vs-corrected author call OPEN"
+   },
+   "sum_dlog_gfrac_dh_mean": 78.86412972994519,
+   "ball": {
+    "K_mean": 5.004551666666668,
+    "n_impostors_total": 2402731,
+    "n_degenerate_windows": 0,
+    "sigma_z": 0.0,
+    "f_incl": 1.0,
+    "lambda_ball": 4.0
+   }
+  },
+  "B1_h0.730": {
+   "cell": "B1",
+   "h_true": 0.73,
+   "n_seeds": 400,
+   "ds1_ds2_degenerate_pit_exempt": false,
+   "channels": {
+    "1d": {
+     "ds1": {
+      "hpd50": {
+       "value": 0.0,
+       "band_2s": [
+        0.45,
+        0.55
+       ],
+       "band_3s": [
+        0.425,
+        0.575
+       ],
+       "inside_2s": false,
+       "inside_3s": false
+      },
+      "hpd68": {
+       "value": 0.0,
+       "band_2s": [
+        0.6334000000000001,
+        0.7266
+       ],
+       "band_3s": [
+        0.6101000000000001,
+        0.7499
+       ],
+       "inside_2s": false,
+       "inside_3s": false
+      },
+      "hpd90": {
+       "value": 0.0,
+       "band_2s": [
+        0.87,
+        0.93
+       ],
+       "band_3s": [
+        0.855,
+        0.9450000000000001
+       ],
+       "inside_2s": false,
+       "inside_3s": false
+      },
+      "status": "FAIL"
+     },
+     "ds1_status_instrument": "FAIL",
+     "ds2": {
+      "D": 0.999973761129604,
+      "D_95": 0.0679,
+      "D_99": 0.0814,
+      "status": "FAIL"
+     },
+     "ds2_status_instrument": "FAIL",
+     "ds3": {
+      "bias": 0.010687500000000072,
+      "mc_error": 8.79998255580409e-05,
+      "mean_map": 0.7406875,
+      "map_sd": 0.0017599965111608179,
+      "status": "MIXED-SCALE",
+      "status_instrument": "MIXED-SCALE"
+     },
+     "ds4": {
+      "R_low": 0.0,
+      "R_high": 0.0
+     },
+     "ds5": {
+      "post_sd_median": 0.0011994635283820439,
+      "status": "NOT-EVALUABLE (prereg DS-5/\u00a79 item 3: no exact sigma_z node in committed F5 sweep)"
+     },
+     "edge_guard": {
+      "edge_loaded_frac": 0.0,
+      "edge_contaminated": false
+     },
+     "ds1_ds2_carry_gate_weight": true,
+     "gate_weight_removed_by": null
+    },
+    "2d": {
+     "ds1": {
+      "hpd50": {
+       "value": 0.0,
+       "band_2s": [
+        0.45,
+        0.55
+       ],
+       "band_3s": [
+        0.425,
+        0.575
+       ],
+       "inside_2s": false,
+       "inside_3s": false
+      },
+      "hpd68": {
+       "value": 0.0,
+       "band_2s": [
+        0.6334000000000001,
+        0.7266
+       ],
+       "band_3s": [
+        0.6101000000000001,
+        0.7499
+       ],
+       "inside_2s": false,
+       "inside_3s": false
+      },
+      "hpd90": {
+       "value": 0.0,
+       "band_2s": [
+        0.87,
+        0.93
+       ],
+       "band_3s": [
+        0.855,
+        0.9450000000000001
+       ],
+       "inside_2s": false,
+       "inside_3s": false
+      },
+      "status": "FAIL"
+     },
+     "ds1_status_instrument": "FAIL",
+     "ds2": {
+      "D": 0.9999901459019901,
+      "D_95": 0.0679,
+      "D_99": 0.0814,
+      "status": "FAIL"
+     },
+     "ds2_status_instrument": "FAIL",
+     "ds3": {
+      "bias": 0.010950000000000015,
+      "mc_error": 9.819805060619668e-05,
+      "mean_map": 0.74095,
+      "map_sd": 0.0019639610121239335,
+      "status": "MIXED-SCALE",
+      "status_instrument": "MIXED-SCALE"
+     },
+     "ds4": {
+      "R_low": 0.0,
+      "R_high": 0.0
+     },
+     "ds5": {
+      "post_sd_median": 0.0012743553855985223,
+      "status": "NOT-EVALUABLE (prereg DS-5/\u00a79 item 3: no exact sigma_z node in committed F5 sweep)"
+     },
+     "edge_guard": {
+      "edge_loaded_frac": 0.0,
+      "edge_contaminated": false
+     },
+     "ds1_ds2_carry_gate_weight": true,
+     "gate_weight_removed_by": null
+    }
+   },
+   "ds7_report_only": {
+    "status": "REPORT-ONLY",
+    "p_bar": 0.09537169173429369,
+    "p_bar_mc_se": 0.0002233266084036319,
+    "mean_n_proposed": 16486.4,
+    "ratio": 0.9539946518345724,
+    "band": 0.05,
+    "pass_raw": true,
+    "expected_batch_overcount": 1.0544741849283383,
+    "ratio_corrected": 1.0059627329192546,
+    "pass_corrected": true,
+    "note": "v2: REPORT-ONLY in both forms (divergence 12 / defect 2) \u2014 no V-class or branch weight; raw form is MC-seed-fragile at the band edge (v1 adjudication 6/9 vs 8/9 by MC seed), corrected form divides out the parent's batch-granularity undercount; the raw-vs-corrected author call remains open",
+    "n_mc": 1000000,
+    "mc_seed": 20260808,
+    "branch_weight": "NONE (D2); raw-vs-corrected author call OPEN"
+   },
+   "sum_dlog_gfrac_dh_mean": 130.7474246718064,
+   "ball": {
+    "K_mean": 4.997191666666667,
+    "n_impostors_total": 2398315,
+    "n_degenerate_windows": 0,
+    "sigma_z": 0.01,
+    "f_incl": 1.0,
+    "lambda_ball": 4.0
+   }
+  },
+  "B2_h0.690": {
+   "cell": "B2",
+   "h_true": 0.69,
+   "n_seeds": 400,
+   "ds1_ds2_degenerate_pit_exempt": false,
+   "channels": {
+    "1d": {
+     "ds1": {
+      "hpd50": {
+       "value": 0.0,
+       "band_2s": [
+        0.45,
+        0.55
+       ],
+       "band_3s": [
+        0.425,
+        0.575
+       ],
+       "inside_2s": false,
+       "inside_3s": false
+      },
+      "hpd68": {
+       "value": 0.0,
+       "band_2s": [
+        0.6334000000000001,
+        0.7266
+       ],
+       "band_3s": [
+        0.6101000000000001,
+        0.7499
+       ],
+       "inside_2s": false,
+       "inside_3s": false
+      },
+      "hpd90": {
+       "value": 0.0,
+       "band_2s": [
+        0.87,
+        0.93
+       ],
+       "band_3s": [
+        0.855,
+        0.9450000000000001
+       ],
+       "inside_2s": false,
+       "inside_3s": false
+      },
+      "status": "FAIL"
+     },
+     "ds1_status_instrument": "FAIL",
+     "ds2": {
+      "D": 1.0,
+      "D_95": 0.0679,
+      "D_99": 0.0814,
+      "status": "FAIL"
+     },
+     "ds2_status_instrument": "FAIL",
+     "ds3": {
+      "bias": 0.03489999999999982,
+      "mc_error": 9.352468747833276e-05,
+      "mean_map": 0.7248999999999998,
+      "map_sd": 0.0018704937495666553,
+      "status": "DEFECT-SCALE",
+      "status_instrument": "DEFECT-SCALE"
+     },
+     "ds4": {
+      "R_low": 0.0,
+      "R_high": 0.0
+     },
+     "ds5": {
+      "post_sd_median": 0.002890038315038998,
+      "status": "NOT-EVALUABLE (prereg DS-5/\u00a79 item 3: no exact sigma_z node in committed F5 sweep)"
+     },
+     "edge_guard": {
+      "edge_loaded_frac": 0.0,
+      "edge_contaminated": false
+     },
+     "ds1_ds2_carry_gate_weight": true,
+     "gate_weight_removed_by": null
+    },
+    "2d": {
+     "ds1": {
+      "hpd50": {
+       "value": 0.0,
+       "band_2s": [
+        0.45,
+        0.55
+       ],
+       "band_3s": [
+        0.425,
+        0.575
+       ],
+       "inside_2s": false,
+       "inside_3s": false
+      },
+      "hpd68": {
+       "value": 0.0,
+       "band_2s": [
+        0.6334000000000001,
+        0.7266
+       ],
+       "band_3s": [
+        0.6101000000000001,
+        0.7499
+       ],
+       "inside_2s": false,
+       "inside_3s": false
+      },
+      "hpd90": {
+       "value": 0.0,
+       "band_2s": [
+        0.87,
+        0.93
+       ],
+       "band_3s": [
+        0.855,
+        0.9450000000000001
+       ],
+       "inside_2s": false,
+       "inside_3s": false
+      },
+      "status": "FAIL"
+     },
+     "ds1_status_instrument": "FAIL",
+     "ds2": {
+      "D": 0.9999999802867175,
+      "D_95": 0.0679,
+      "D_99": 0.0814,
+      "status": "FAIL"
+     },
+     "ds2_status_instrument": "FAIL",
+     "ds3": {
+      "bias": 0.035062499999999996,
+      "mc_error": 0.00021566818562487818,
+      "mean_map": 0.7250624999999999,
+      "map_sd": 0.004313363712497563,
+      "status": "DEFECT-SCALE",
+      "status_instrument": "DEFECT-SCALE"
+     },
+     "ds4": {
+      "R_low": 0.0,
+      "R_high": 0.0
+     },
+     "ds5": {
+      "post_sd_median": 0.002886982555138913,
+      "status": "NOT-EVALUABLE (prereg DS-5/\u00a79 item 3: no exact sigma_z node in committed F5 sweep)"
+     },
+     "edge_guard": {
+      "edge_loaded_frac": 0.0,
+      "edge_contaminated": false
+     },
+     "ds1_ds2_carry_gate_weight": true,
+     "gate_weight_removed_by": null
+    }
+   },
+   "ds7_report_only": {
+    "status": "REPORT-ONLY",
+    "p_bar": 0.09196858254257907,
+    "p_bar_mc_se": 0.0002193087547083619,
+    "mean_n_proposed": 18063.36,
+    "ratio": 0.902928224136963,
+    "band": 0.05,
+    "pass_raw": false,
+    "expected_batch_overcount": 1.1103958021789377,
+    "ratio_corrected": 1.0026077097505668,
+    "pass_corrected": true,
+    "note": "v2: REPORT-ONLY in both forms (divergence 12 / defect 2) \u2014 no V-class or branch weight; raw form is MC-seed-fragile at the band edge (v1 adjudication 6/9 vs 8/9 by MC seed), corrected form divides out the parent's batch-granularity undercount; the raw-vs-corrected author call remains open",
+    "n_mc": 1000000,
+    "mc_seed": 20260808,
+    "branch_weight": "NONE (D2); raw-vs-corrected author call OPEN"
+   },
+   "sum_dlog_gfrac_dh_mean": 155.5174502154631,
+   "ball": {
+    "K_mean": 5.002073333333334,
+    "n_impostors_total": 2401244,
+    "n_degenerate_windows": 0,
+    "sigma_z": 0.035,
+    "f_incl": 1.0,
+    "lambda_ball": 4.0
+   }
+  },
+  "B2_h0.730": {
+   "cell": "B2",
+   "h_true": 0.73,
+   "n_seeds": 400,
+   "ds1_ds2_degenerate_pit_exempt": false,
+   "channels": {
+    "1d": {
+     "ds1": {
+      "hpd50": {
+       "value": 0.0,
+       "band_2s": [
+        0.45,
+        0.55
+       ],
+       "band_3s": [
+        0.425,
+        0.575
+       ],
+       "inside_2s": false,
+       "inside_3s": false
+      },
+      "hpd68": {
+       "value": 0.0,
+       "band_2s": [
+        0.6334000000000001,
+        0.7266
+       ],
+       "band_3s": [
+        0.6101000000000001,
+        0.7499
+       ],
+       "inside_2s": false,
+       "inside_3s": false
+      },
+      "hpd90": {
+       "value": 0.0,
+       "band_2s": [
+        0.87,
+        0.93
+       ],
+       "band_3s": [
+        0.855,
+        0.9450000000000001
+       ],
+       "inside_2s": false,
+       "inside_3s": false
+      },
+      "status": "FAIL"
+     },
+     "ds1_status_instrument": "FAIL",
+     "ds2": {
+      "D": 1.0,
+      "D_95": 0.0679,
+      "D_99": 0.0814,
+      "status": "FAIL"
+     },
+     "ds2_status_instrument": "FAIL",
+     "ds3": {
+      "bias": 0.035262500000000085,
+      "mc_error": 0.00010312891596574986,
+      "mean_map": 0.7652625000000001,
+      "map_sd": 0.002062578319314997,
+      "status": "DEFECT-SCALE",
+      "status_instrument": "DEFECT-SCALE"
+     },
+     "ds4": {
+      "R_low": 0.0,
+      "R_high": 0.0
+     },
+     "ds5": {
+      "post_sd_median": 0.002977456477319658,
+      "status": "NOT-EVALUABLE (prereg DS-5/\u00a79 item 3: no exact sigma_z node in committed F5 sweep)"
+     },
+     "edge_guard": {
+      "edge_loaded_frac": 0.0,
+      "edge_contaminated": false
+     },
+     "ds1_ds2_carry_gate_weight": true,
+     "gate_weight_removed_by": null
+    },
+    "2d": {
+     "ds1": {
+      "hpd50": {
+       "value": 0.0,
+       "band_2s": [
+        0.45,
+        0.55
+       ],
+       "band_3s": [
+        0.425,
+        0.575
+       ],
+       "inside_2s": false,
+       "inside_3s": false
+      },
+      "hpd68": {
+       "value": 0.0,
+       "band_2s": [
+        0.6334000000000001,
+        0.7266
+       ],
+       "band_3s": [
+        0.6101000000000001,
+        0.7499
+       ],
+       "inside_2s": false,
+       "inside_3s": false
+      },
+      "hpd90": {
+       "value": 0.0,
+       "band_2s": [
+        0.87,
+        0.93
+       ],
+       "band_3s": [
+        0.855,
+        0.9450000000000001
+       ],
+       "inside_2s": false,
+       "inside_3s": false
+      },
+      "status": "FAIL"
+     },
+     "ds1_status_instrument": "FAIL",
+     "ds2": {
+      "D": 0.9999999956170457,
+      "D_95": 0.0679,
+      "D_99": 0.0814,
+      "status": "FAIL"
+     },
+     "ds2_status_instrument": "FAIL",
+     "ds3": {
+      "bias": 0.03573749999999987,
+      "mc_error": 0.00021904093613811263,
+      "mean_map": 0.7657374999999998,
+      "map_sd": 0.004380818722762253,
+      "status": "DEFECT-SCALE",
+      "status_instrument": "DEFECT-SCALE"
+     },
+     "ds4": {
+      "R_low": 0.0,
+      "R_high": 0.0
+     },
+     "ds5": {
+      "post_sd_median": 0.0029658798813992715,
+      "status": "NOT-EVALUABLE (prereg DS-5/\u00a79 item 3: no exact sigma_z node in committed F5 sweep)"
+     },
+     "edge_guard": {
+      "edge_loaded_frac": 0.0,
+      "edge_contaminated": false
+     },
+     "ds1_ds2_carry_gate_weight": true,
+     "gate_weight_removed_by": null
+    }
+   },
+   "ds7_report_only": {
+    "status": "REPORT-ONLY",
+    "p_bar": 0.09537169173429369,
+    "p_bar_mc_se": 0.0002233266084036319,
+    "mean_n_proposed": 16558.08,
+    "ratio": 0.9498648048569335,
+    "band": 0.05,
+    "pass_raw": false,
+    "expected_batch_overcount": 1.0544741849283383,
+    "ratio_corrected": 1.00160791589363,
+    "pass_corrected": true,
+    "note": "v2: REPORT-ONLY in both forms (divergence 12 / defect 2) \u2014 no V-class or branch weight; raw form is MC-seed-fragile at the band edge (v1 adjudication 6/9 vs 8/9 by MC seed), corrected form divides out the parent's batch-granularity undercount; the raw-vs-corrected author call remains open",
+    "n_mc": 1000000,
+    "mc_seed": 20260808,
+    "branch_weight": "NONE (D2); raw-vs-corrected author call OPEN"
+   },
+   "sum_dlog_gfrac_dh_mean": 149.42724446542053,
+   "ball": {
+    "K_mean": 4.997269999999999,
+    "n_impostors_total": 2398362,
+    "n_degenerate_windows": 0,
+    "sigma_z": 0.035,
+    "f_incl": 1.0,
+    "lambda_ball": 4.0
+   }
+  },
+  "B2_h0.770": {
+   "cell": "B2",
+   "h_true": 0.77,
+   "n_seeds": 400,
+   "ds1_ds2_degenerate_pit_exempt": false,
+   "channels": {
+    "1d": {
+     "ds1": {
+      "hpd50": {
+       "value": 0.0,
+       "band_2s": [
+        0.45,
+        0.55
+       ],
+       "band_3s": [
+        0.425,
+        0.575
+       ],
+       "inside_2s": false,
+       "inside_3s": false
+      },
+      "hpd68": {
+       "value": 0.0,
+       "band_2s": [
+        0.6334000000000001,
+        0.7266
+       ],
+       "band_3s": [
+        0.6101000000000001,
+        0.7499
+       ],
+       "inside_2s": false,
+       "inside_3s": false
+      },
+      "hpd90": {
+       "value": 0.0,
+       "band_2s": [
+        0.87,
+        0.93
+       ],
+       "band_3s": [
+        0.855,
+        0.9450000000000001
+       ],
+       "inside_2s": false,
+       "inside_3s": false
+      },
+      "status": "FAIL"
+     },
+     "ds1_status_instrument": "FAIL",
+     "ds2": {
+      "D": 1.0,
+      "D_95": 0.0679,
+      "D_99": 0.0814,
+      "status": "FAIL"
+     },
+     "ds2_status_instrument": "FAIL",
+     "ds3": {
+      "bias": 0.03717500000000018,
+      "mc_error": 0.00022538952636822173,
+      "mean_map": 0.8071750000000002,
+      "map_sd": 0.0045077905273644345,
+      "status": "DEFECT-SCALE",
+      "status_instrument": "DEFECT-SCALE"
+     },
+     "ds4": {
+      "R_low": 0.0,
+      "R_high": 0.0
+     },
+     "ds5": {
+      "post_sd_median": 0.003695804673400259,
+      "status": "NOT-EVALUABLE (prereg DS-5/\u00a79 item 3: no exact sigma_z node in committed F5 sweep)"
+     },
+     "edge_guard": {
+      "edge_loaded_frac": 0.0,
+      "edge_contaminated": false
+     },
+     "ds1_ds2_carry_gate_weight": true,
+     "gate_weight_removed_by": null
+    },
+    "2d": {
+     "ds1": {
+      "hpd50": {
+       "value": 0.0,
+       "band_2s": [
+        0.45,
+        0.55
+       ],
+       "band_3s": [
+        0.425,
+        0.575
+       ],
+       "inside_2s": false,
+       "inside_3s": false
+      },
+      "hpd68": {
+       "value": 0.0,
+       "band_2s": [
+        0.6334000000000001,
+        0.7266
+       ],
+       "band_3s": [
+        0.6101000000000001,
+        0.7499
+       ],
+       "inside_2s": false,
+       "inside_3s": false
+      },
+      "hpd90": {
+       "value": 0.0,
+       "band_2s": [
+        0.87,
+        0.93
+       ],
+       "band_3s": [
+        0.855,
+        0.9450000000000001
+       ],
+       "inside_2s": false,
+       "inside_3s": false
+      },
+      "status": "FAIL"
+     },
+     "ds1_status_instrument": "FAIL",
+     "ds2": {
+      "D": 0.9999999999992649,
+      "D_95": 0.0679,
+      "D_99": 0.0814,
+      "status": "FAIL"
+     },
+     "ds2_status_instrument": "FAIL",
+     "ds3": {
+      "bias": 0.03737500000000027,
+      "mc_error": 0.00029716443976467264,
+      "mean_map": 0.8073750000000003,
+      "map_sd": 0.005943288795293453,
+      "status": "DEFECT-SCALE",
+      "status_instrument": "DEFECT-SCALE"
+     },
+     "ds4": {
+      "R_low": 0.0,
+      "R_high": 0.0
+     },
+     "ds5": {
+      "post_sd_median": 0.0026018240638895082,
+      "status": "NOT-EVALUABLE (prereg DS-5/\u00a79 item 3: no exact sigma_z node in committed F5 sweep)"
+     },
+     "edge_guard": {
+      "edge_loaded_frac": 0.0,
+      "edge_contaminated": false
+     },
+     "ds1_ds2_carry_gate_weight": true,
+     "gate_weight_removed_by": null
+    }
+   },
+   "ds7_report_only": {
+    "status": "REPORT-ONLY",
+    "p_bar": 0.09874127277321974,
+    "p_bar_mc_se": 0.0002272121844406236,
+    "mean_n_proposed": 16394.24,
+    "ratio": 0.9266191035090627,
+    "band": 0.05,
+    "pass_raw": false,
+    "expected_batch_overcount": 1.0793268972508465,
+    "ratio_corrected": 1.0001249219237978,
+    "pass_corrected": true,
+    "note": "v2: REPORT-ONLY in both forms (divergence 12 / defect 2) \u2014 no V-class or branch weight; raw form is MC-seed-fragile at the band edge (v1 adjudication 6/9 vs 8/9 by MC seed), corrected form divides out the parent's batch-granularity undercount; the raw-vs-corrected author call remains open",
+    "n_mc": 1000000,
+    "mc_seed": 20260808,
+    "branch_weight": "NONE (D2); raw-vs-corrected author call OPEN"
+   },
+   "sum_dlog_gfrac_dh_mean": 142.52138183861763,
+   "ball": {
+    "K_mean": 4.9966566666666665,
+    "n_impostors_total": 2397994,
+    "n_degenerate_windows": 0,
+    "sigma_z": 0.035,
+    "f_incl": 1.0,
+    "lambda_ball": 4.0
+   }
+  },
+  "V1_h0.730": {
+   "cell": "V1",
+   "h_true": 0.73,
+   "n_seeds": 50,
+   "ds1_ds2_degenerate_pit_exempt": true,
+   "channels": {
+    "1d": {
+     "ds1": {
+      "hpd50": {
+       "value": 1.0,
+       "band_2s": [
+        0.3585786437626905,
+        0.6414213562373094
+       ],
+       "band_3s": [
+        0.2878679656440357,
+        0.7121320343559643
+       ],
+       "inside_2s": false,
+       "inside_3s": false
+      },
+      "hpd68": {
+       "value": 1.0,
+       "band_2s": [
+        0.5480606199802349,
+        0.8119393800197652
+       ],
+       "band_3s": [
+        0.48209092997035236,
+        0.8779090700296477
+       ],
+       "inside_2s": false,
+       "inside_3s": false
+      },
+      "hpd90": {
+       "value": 1.0,
+       "band_2s": [
+        0.8151471862576143,
+        0.9848528137423858
+       ],
+       "band_3s": [
+        0.7727207793864215,
+        1.0272792206135786
+       ],
+       "inside_2s": false,
+       "inside_3s": true
+      },
+      "status": "FAIL"
+     },
+     "ds1_status_instrument": "FAIL",
+     "ds2": {
+      "D": 0.5,
+      "D_95": 0.19205020177026633,
+      "D_99": 0.23023396795433984,
+      "status": "FAIL"
+     },
+     "ds2_status_instrument": "FAIL",
+     "ds3": {
+      "bias": -1.1102230246251565e-16,
+      "mc_error": 1.586032892321652e-17,
+      "mean_map": 0.7299999999999999,
+      "map_sd": 1.1214946133455537e-16,
+      "status": "IN-BAND",
+      "status_instrument": "IN-BAND"
+     },
+     "ds4": {
+      "R_low": 0.0,
+      "R_high": 0.0
+     },
+     "ds5": {
+      "post_sd_median": 0.0,
+      "status": "NOT-EVALUABLE (prereg DS-5/\u00a79 item 3: no exact sigma_z node in committed F5 sweep)"
+     },
+     "edge_guard": {
+      "edge_loaded_frac": 0.0,
+      "edge_contaminated": false
+     },
+     "ds1_ds2_carry_gate_weight": false,
+     "gate_weight_removed_by": [
+      "D3-degenerate-PIT-exemption"
+     ]
+    },
+    "2d": {
+     "ds1": {
+      "hpd50": {
+       "value": 1.0,
+       "band_2s": [
+        0.3585786437626905,
+        0.6414213562373094
+       ],
+       "band_3s": [
+        0.2878679656440357,
+        0.7121320343559643
+       ],
+       "inside_2s": false,
+       "inside_3s": false
+      },
+      "hpd68": {
+       "value": 1.0,
+       "band_2s": [
+        0.5480606199802349,
+        0.8119393800197652
+       ],
+       "band_3s": [
+        0.48209092997035236,
+        0.8779090700296477
+       ],
+       "inside_2s": false,
+       "inside_3s": false
+      },
+      "hpd90": {
+       "value": 1.0,
+       "band_2s": [
+        0.8151471862576143,
+        0.9848528137423858
+       ],
+       "band_3s": [
+        0.7727207793864215,
+        1.0272792206135786
+       ],
+       "inside_2s": false,
+       "inside_3s": true
+      },
+      "status": "FAIL"
+     },
+     "ds1_status_instrument": "FAIL",
+     "ds2": {
+      "D": 0.5,
+      "D_95": 0.19205020177026633,
+      "D_99": 0.23023396795433984,
+      "status": "FAIL"
+     },
+     "ds2_status_instrument": "FAIL",
+     "ds3": {
+      "bias": -1.1102230246251565e-16,
+      "mc_error": 1.586032892321652e-17,
+      "mean_map": 0.7299999999999999,
+      "map_sd": 1.1214946133455537e-16,
+      "status": "IN-BAND",
+      "status_instrument": "IN-BAND"
+     },
+     "ds4": {
+      "R_low": 0.0,
+      "R_high": 0.0
+     },
+     "ds5": {
+      "post_sd_median": 0.0,
+      "status": "NOT-EVALUABLE (prereg DS-5/\u00a79 item 3: no exact sigma_z node in committed F5 sweep)"
+     },
+     "edge_guard": {
+      "edge_loaded_frac": 0.0,
+      "edge_contaminated": false
+     },
+     "ds1_ds2_carry_gate_weight": false,
+     "gate_weight_removed_by": [
+      "D3-degenerate-PIT-exemption"
+     ]
+    }
+   },
+   "ds7_report_only": {
+    "status": "REPORT-ONLY",
+    "p_bar": 0.09537169173429369,
+    "p_bar_mc_se": 0.0002233266084036319,
+    "mean_n_proposed": 16547.84,
+    "ratio": 0.9504525924837015,
+    "band": 0.05,
+    "pass_raw": true,
+    "expected_batch_overcount": 1.0544741849283383,
+    "ratio_corrected": 1.0022277227722773,
+    "pass_corrected": true,
+    "note": "v2: REPORT-ONLY in both forms (divergence 12 / defect 2) \u2014 no V-class or branch weight; raw form is MC-seed-fragile at the band edge (v1 adjudication 6/9 vs 8/9 by MC seed), corrected form divides out the parent's batch-granularity undercount; the raw-vs-corrected author call remains open",
+    "n_mc": 1000000,
+    "mc_seed": 20260808,
+    "branch_weight": "NONE (D2); raw-vs-corrected author call OPEN"
+   },
+   "sum_dlog_gfrac_dh_mean": -144.81931625657117,
+   "ball": {
+    "K_mean": 1.0,
+    "n_impostors_total": 0,
+    "n_degenerate_windows": 0,
+    "sigma_z": 0.0,
+    "f_incl": 1.0,
+    "lambda_ball": 0.0
+   }
+  }
+ },
+ "R0_anchor": {
+  "note": "anchor-only, no gate weight (prereg \u00a75)",
+  "channels": {
+   "1d": {
+    "ds1": {
+     "hpd50": {
+      "value": 0.0,
+      "band_2s": [
+       0.4292,
+       0.5708
+      ],
+      "band_3s": [
+       0.3938,
+       0.6062
+      ],
+      "inside_2s": false,
+      "inside_3s": false
+     },
+     "hpd68": {
+      "value": 0.0,
+      "band_2s": [
+       0.6140000000000001,
+       0.746
+      ],
+      "band_3s": [
+       0.5810000000000001,
+       0.779
+      ],
+      "inside_2s": false,
+      "inside_3s": false
+     },
+     "hpd90": {
+      "value": 0.0,
+      "band_2s": [
+       0.8576,
+       0.9424
+      ],
+      "band_3s": [
+       0.8364,
+       0.9636
+      ],
+      "inside_2s": false,
+      "inside_3s": false
+     },
+     "status": "FAIL"
+    },
+    "ds2": {
+     "D": 0.999999622153127,
+     "D_95": 0.096,
+     "D_99": 0.1151,
+     "status": "FAIL"
+    },
+    "ds3_bias": -0.13000000000000012,
+    "ds4": {
+     "R_low": 1.0,
+     "R_high": 0.0
+    },
+    "edge_loaded_frac": 1.0
+   },
+   "2d": {
+    "ds1": {
+     "hpd50": {
+      "value": 0.395,
+      "band_2s": [
+       0.4292,
+       0.5708
+      ],
+      "band_3s": [
+       0.3938,
+       0.6062
+      ],
+      "inside_2s": false,
+      "inside_3s": true
+     },
+     "hpd68": {
+      "value": 0.575,
+      "band_2s": [
+       0.6140000000000001,
+       0.746
+      ],
+      "band_3s": [
+       0.5810000000000001,
+       0.779
+      ],
+      "inside_2s": false,
+      "inside_3s": false
+     },
+     "hpd90": {
+      "value": 0.805,
+      "band_2s": [
+       0.8576,
+       0.9424
+      ],
+      "band_3s": [
+       0.8364,
+       0.9636
+      ],
+      "inside_2s": false,
+      "inside_3s": false
+     },
+     "status": "FAIL"
+    },
+    "ds2": {
+     "D": 0.05965714337699424,
+     "D_95": 0.096,
+     "D_99": 0.1151,
+     "status": "PASS"
+    },
+    "ds3_bias": 0.011275000000000035,
+    "ds4": {
+     "R_low": 0.005,
+     "R_high": 0.035
+    },
+    "edge_loaded_frac": 0.88
+   }
+  }
+ },
+ "ds6": {
+  "verdict": "MIXED",
+  "R_low_B2_1d": {
+   "0.69": 0.0,
+   "0.73": 0.0,
+   "0.77": 0.0
+  },
+  "R_low_B0_1d": 0.0,
+  "B2_1d_passes_DS1_DS2": false,
+  "B0_low_anchor_ok": true,
+  "impostor_ball_N2_analog_flag (R_low(B0)>0.05)": false,
+  "dose_response_R_low_1d": {
+   "sigma_z=0": 0.0,
+   "sigma_z=0.010": 0.0,
+   "sigma_z=0.035": {
+    "0.69": 0.0,
+    "0.73": 0.0,
+    "0.77": 0.0
+   }
+  }
+ },
+ "ds8": {
+  "void_if_gate_not_trustworthy": false,
+  "T1_single_host_starvation_rail": {
+   "verdict": "CONFIRMED",
+   "band": ">=0.98 per truth",
+   "per_truth": {
+    "h0.690": {
+     "restricted_argmax_at_0.600_frac": 1.0,
+     "inside": true,
+     "full_grid_R_low_at_0.460 (un-banded, new info)": 1.0
+    },
+    "h0.730": {
+     "restricted_argmax_at_0.600_frac": 1.0,
+     "inside": true,
+     "full_grid_R_low_at_0.460 (un-banded, new info)": 1.0
+    },
+    "h0.770": {
+     "restricted_argmax_at_0.600_frac": 1.0,
+     "inside": true,
+     "full_grid_R_low_at_0.460 (un-banded, new info)": 1.0
+    }
+   }
+  },
+  "T2_ball_venue_sigma_z_bias": {
+   "verdict": "CONFIRMED",
+   "components": {
+    "B1(0.730)-1d bias": {
+     "value": 0.010687500000000072,
+     "band": [
+      0.01036,
+      0.01147
+     ],
+     "inside": true
+    },
+    "B1(0.730)-2d bias": {
+     "value": 0.010950000000000015,
+     "band": [
+      0.01059,
+      0.01181
+     ],
+     "inside": true
+    },
+    "B2(0.690)-1d bias": {
+     "value": 0.03489999999999982,
+     "band": [
+      0.03434,
+      0.03551
+     ],
+     "inside": true
+    },
+    "B2(0.690)-2d bias": {
+     "value": 0.035062499999999996,
+     "band": [
+      0.03408,
+      0.03627
+     ],
+     "inside": true
+    },
+    "B2(0.730)-1d bias": {
+     "value": 0.035262500000000085,
+     "band": [
+      0.03476,
+      0.03606
+     ],
+     "inside": true
+    },
+    "B2(0.730)-2d bias": {
+     "value": 0.03573749999999987,
+     "band": [
+      0.03456,
+      0.03696
+     ],
+     "inside": true
+    },
+    "B2(0.770)-1d bias": {
+     "value": 0.03717500000000018,
+     "band": [
+      0.03584,
+      0.03841
+     ],
+     "inside": true
+    },
+    "B2(0.770)-2d bias": {
+     "value": 0.03737500000000027,
+     "band": [
+      0.03673,
+      0.03957
+     ],
+     "inside": true
+    },
+    "B1(0.730)-1d C90/rails": {
+     "C90": 0.0,
+     "R_low": 0.0,
+     "R_high": 0.0,
+     "inside": true
+    },
+    "B1(0.730)-2d C90/rails": {
+     "C90": 0.0,
+     "R_low": 0.0,
+     "R_high": 0.0,
+     "inside": true
+    },
+    "B2(0.690)-1d C90/rails": {
+     "C90": 0.0,
+     "R_low": 0.0,
+     "R_high": 0.0,
+     "inside": true
+    },
+    "B2(0.690)-2d C90/rails": {
+     "C90": 0.0,
+     "R_low": 0.0,
+     "R_high": 0.0,
+     "inside": true
+    },
+    "B2(0.730)-1d C90/rails": {
+     "C90": 0.0,
+     "R_low": 0.0,
+     "R_high": 0.0,
+     "inside": true
+    },
+    "B2(0.730)-2d C90/rails": {
+     "C90": 0.0,
+     "R_low": 0.0,
+     "R_high": 0.0,
+     "inside": true
+    },
+    "B2(0.770)-1d C90/rails": {
+     "C90": 0.0,
+     "R_low": 0.0,
+     "R_high": 0.0,
+     "inside": true
+    },
+    "B2(0.770)-2d C90/rails": {
+     "C90": 0.0,
+     "R_low": 0.0,
+     "R_high": 0.0,
+     "inside": true
+    }
+   },
+   "unbanded_companion_post_sd_median": {
+    "B1_1d": 0.0011994635283820439,
+    "B1_2d": 0.0012743553855985223,
+    "B2_0.730_1d": 0.002977456477319658,
+    "B2_0.730_2d": 0.0029658798813992715
+   }
+  },
+  "T3_B0_on_truth": {
+   "verdict": "CONFIRMED",
+   "map_exact_frac": {
+    "1d": 1.0,
+    "2d": 1.0
+   },
+   "rails": {
+    "1d": {
+     "R_low": 0.0,
+     "R_high": 0.0
+    },
+    "2d": {
+     "R_low": 0.0,
+     "R_high": 0.0
+    }
+   }
+  },
+  "branch_weight": "NONE (D7) \u2014 pattern-reproduction meter for the author's stage-5 read"
+ },
+ "trigger_set": {
+  "V1_failure": false,
+  "V2_failure": false,
+  "V3_failure": false,
+  "V4_failure": false,
+  "V5_failure": false,
+  "abort_b": false,
+  "both_decision_cells_edge_contaminated_2d_read": false,
+  "both_decision_cells_edge_contaminated_1d_read": false,
+  "note": "DS-7 removed from the trigger set (D2). A-2D IS edge-contaminated at all three truths (0.110/0.155/0.2325 > 0.10) but B2-2D is not (0.0) \u2014 'both' condition does not fire."
+ },
+ "branch": {
+  "gate_trustworthy": true,
+  "branch": "KEEP-DIGGING",
+  "fired_via": "clause (b) DEFECT-class",
+  "keep_digging_a_ds6_rail_not_reproduced": false,
+  "keep_digging_b_defect_class_hits": [
+   "B2(0.690)-1d: DS-1 FAIL, DS-2 FAIL",
+   "B2(0.690)-2d: DS-1 FAIL, DS-2 FAIL",
+   "B2(0.730)-1d: DS-1 FAIL, DS-2 FAIL",
+   "B2(0.730)-2d: DS-1 FAIL, DS-2 FAIL",
+   "B2(0.770)-1d: DS-1 FAIL, DS-2 FAIL",
+   "B2(0.770)-2d: DS-1 FAIL, DS-2 FAIL"
+  ],
+  "report_bound_condition": false,
+  "ds6": {
+   "verdict": "MIXED",
+   "R_low_B2_1d": {
+    "0.69": 0.0,
+    "0.73": 0.0,
+    "0.77": 0.0
+   },
+   "R_low_B0_1d": 0.0,
+   "B2_1d_passes_DS1_DS2": false,
+   "B0_low_anchor_ok": true,
+   "impostor_ball_N2_analog_flag (R_low(B0)>0.05)": false,
+   "dose_response_R_low_1d": {
+    "sigma_z=0": 0.0,
+    "sigma_z=0.010": 0.0,
+    "sigma_z=0.035": {
+     "0.69": 0.0,
+     "0.73": 0.0,
+     "0.77": 0.0
+    }
+   }
+  },
+  "stage5_stop_rule": {
+   "coverage_pass": false,
+   "width_on_F5_forecast": "NOT-EVALUABLE",
+   "no_unmodeled_selection": "OPEN (\u00a79 item 1)",
+   "conjunction_satisfied": false
+  },
+  "adjudication": "presented to the author, never self-adjudicated (prereg policy of record)"
+ },
+ "stage4_gate_table": {
+  "leg1_sbc_pp_coverage": {
+   "status": "EVALUATED-IN-LOOP: FAIL",
+   "detail": "DS-1 and DS-2 FAIL in every gate-weighted decision cell\u00d7channel (B2-1D, B2-2D at all three truths); A-2D stripped by \u00a78 edge guard (edge_loaded_frac 0.110/0.155/0.2325 > 0.10). A3 criteria (2-channel, production N=1500, multi-candidate balls \u03bb=4) are met by the instrument.",
+   "venue_transfer_to_production": "NOT-EVALUABLE (\u00a79 items 2, 5 \u2014 z-window Poisson caricature, no GLADE)"
+  },
+  "leg2_generator_closure_count_audit": {
+   "status": "REPORT-ONLY (D2) / NOT-EVALUABLE as a gate leg",
+   "detail": "DS-7 both forms per cell: corrected ratio inside 0.05 band 9/9 cells; raw ratio inside 3/9 (A 0.730, B1, V1) \u2014 MC-seed-fragile per v1 adjudication; no branch weight; raw-vs-corrected author call OPEN. \u00a79 item 1: leg 2 carried by the standing FIXB result + open f_k\u2013pool-coupling thread."
+  },
+  "leg3_forecast_consistent_width": {
+   "status": "NOT-EVALUABLE (\u00a79 item 3)",
+   "detail": "No exact sigma_z nodes {0, 0.010, 0.035} in the committed F5 sweep; raw context: B1/B2 post_sd_median ~0.0012\u20130.0059 (far below the bias scale \u2014 the 'too narrow' feature)."
+  }
+ }
+}
