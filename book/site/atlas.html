@@ -606,9 +606,11 @@
     var noteTxt = (stop.notes && stop.notes[journeyEv]) || stop.note;
     if (noteTxt) card.appendChild(h("div", "atlas-jnote", esc(noteTxt)));
 
-    // the two panels: the data + the idea
+    // the two panels: the data + the idea. Build plots only AFTER the panel
+    // container is attached to the document — Plotly resolves ids in the DOM.
     if (stop.viz) {
       var panels = h("div", "atlas-jpanels");
+      var pending = [];
       [["data", "The data"], ["idea", "The idea"]].forEach(function (which) {
         var spec = stop.viz[which[0]];
         if (!spec) return;
@@ -625,12 +627,15 @@
         }
         p.appendChild(h("span", "prov-chip " + (real ? "real" : "toy"), esc(chipTxt)));
         panels.appendChild(p);
-        try { buildJourneyViz(spec.kind, pd, journeyEv); }
-        catch (e2) {
-          pd.innerHTML = "<p class='atlas-empty'>Panel unavailable: " + esc(e2.message) + "</p>";
-        }
+        pending.push({ kind: spec.kind, div: pd });
       });
       card.appendChild(panels);
+      pending.forEach(function (job) {
+        try { buildJourneyViz(job.kind, job.div, journeyEv); }
+        catch (e2) {
+          job.div.innerHTML = "<p class='atlas-empty'>Panel unavailable: " + esc(e2.message) + "</p>";
+        }
+      });
     }
 
     var nav = h("div", "atlas-jnav");
