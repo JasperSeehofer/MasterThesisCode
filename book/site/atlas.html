@@ -517,7 +517,7 @@
     if (jdPromise) return jdPromise;
     function opt(url) { return Book.loadJSON(url).catch(function () { return null; }); }
     jdPromise = Promise.all([
-      opt("data/atlas_journey.json"), opt("data/ch06_fisher.json"),
+      opt("data/atlas_journey.json?v=3"), opt("data/ch06_fisher.json"),
       opt("data/ch04_horizon.json"), opt("data/ch11_dossier.json")
     ]).then(function (r) {
       jd = { J: r[0], F: r[1], H4: r[2], D11: r[3] };
@@ -543,7 +543,15 @@
     Object.keys(nodeEls).forEach(function (k) { nodeEls[k].classList.remove("journey-here"); });
     nodeEls[n.id].classList.add("journey-here");
     if (prev && prev.id !== n.id) animatePulse(prev, n);
-    renderJourneyCard(stop, i, stops.length);
+    try {
+      renderJourneyCard(stop, i, stops.length);
+    } catch (e3) {
+      console.error("atlas journey render failed", e3);
+      document.getElementById("atlas-journey").innerHTML =
+        "<p class='atlas-empty'>The journey could not render (" + esc(e3.message) +
+        "). If you visited this page before, your browser has likely cached an older " +
+        "data file — hard-reload (Ctrl/Cmd+Shift+R) and try again.</p>";
+    }
     select(n.id, false);
   }
   function animatePulse(a, b) {
@@ -1219,8 +1227,8 @@
 
   // ---------------- boot ----------------
   Promise.all([
-    Book.loadJSON("data/atlas_graph.json"),
-    Book.loadJSON("data/atlas_curves.json").catch(function () { return null; })
+    Book.loadJSON("data/atlas_graph.json?v=3"),
+    Book.loadJSON("data/atlas_curves.json?v=3").catch(function () { return null; })
   ]).then(function (res) {
     graph = res[0]; curves = res[1];
     graph.nodes.forEach(function (n) { byId[n.id] = n; });
@@ -1229,7 +1237,8 @@
       ev.preventDefault(); select("inner", false);
     });
     var jbtn = document.getElementById("atlas-journey-btn");
-    if (graph.journey && graph.journey.stops && graph.journey.stops.length) {
+    if (graph.journey && graph.journey.events && graph.journey.stops &&
+        graph.journey.stops.length) {
       jbtn.addEventListener("click", function () {
         if (journeyIdx < 0) journeyStart();
         else journeyExit();
