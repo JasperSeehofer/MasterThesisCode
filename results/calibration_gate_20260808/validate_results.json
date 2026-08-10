@@ -1,0 +1,29 @@
+{
+  "v3": {
+    "pass": true,
+    "seed": 20260808,
+    "n_events": 300
+  },
+  "v4": {
+    "corrs": [
+      0.6835044703399793,
+      0.6408415213088046,
+      0.6599748615645646
+    ],
+    "median": 0.6599748615645646,
+    "band": [
+      0.72,
+      0.9199999999999999
+    ],
+    "pass": false,
+    "note": "build-time analysis predicts ~0.69 from decile attenuation (module docstring divergence 7); failure voids texture cells per \u00a710"
+  },
+  "v5": {
+    "pass": true,
+    "mismatches": [],
+    "rtol": 1e-12
+  },
+  "v2": {
+    "note": "run: uv run pytest master_thesis_code_test/validation/test_calibration_gate.py -m 'not gpu' (HPD port certification)"
+  }
+}

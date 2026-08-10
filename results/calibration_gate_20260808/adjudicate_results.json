@@ -1,0 +1,139 @@
+{
+  "T1_ks_null_N400": {
+    "pass": true,
+    "mc_rate95": 0.0497,
+    "exact95": 0.0477,
+    "mc_rate99": 0.0106,
+    "exact99": 0.0094
+  },
+  "T1_ks_null_N300": {
+    "pass": true,
+    "mc_rate95": 0.0457,
+    "exact95": 0.0474,
+    "mc_rate99": 0.0086,
+    "exact99": 0.0093
+  },
+  "T1_ks_null_N200": {
+    "pass": true,
+    "mc_rate95": 0.0467,
+    "exact95": 0.0468,
+    "mc_rate99": 0.0081,
+    "exact99": 0.0091
+  },
+  "T2_pit_analytic": {
+    "pass": true,
+    "worst_abs_err": 5.56e-06
+  },
+  "T3_hpd_analytic": {
+    "pass": true,
+    "checked": 2979,
+    "bad": 0
+  },
+  "T3_fixed_truth_calibrated_coverage": {
+    "pass": true,
+    "coverage": {
+      "0.5": 0.506,
+      "0.68": 0.6775,
+      "0.9": 0.9045
+    },
+    "ks": 0.0156
+  },
+  "T4_calibrated_passes": {
+    "pass": true,
+    "ds1": "PASS",
+    "ds2": "PASS",
+    "ds3": "IN-BAND"
+  },
+  "T5_shifted_fails": {
+    "pass": true,
+    "ds1": "FAIL",
+    "ds2": "FAIL",
+    "c90": 0.347
+  },
+  "T5_overconfident_fails": {
+    "pass": true,
+    "ds1": "FAIL",
+    "ds2": "FAIL",
+    "c90": 0.583
+  },
+  "T5_railed_ds4_edge_guard": {
+    "pass": true,
+    "r_low": 1.0
+  },
+  "T6_prereg_band_quote_compare": {
+    "pass": true,
+    "detail": {
+      "400": "checked",
+      "300": "checked",
+      "200": "checked"
+    }
+  },
+  "T7_ball_integral_sigmaz": {
+    "pass": true,
+    "max_err_1d": 5.5926374642467636e-12,
+    "max_err_2d": 5.572431405198586e-12
+  },
+  "T7_ball_point_branch": {
+    "pass": true,
+    "max_err_1d": 1.7763568394002505e-15,
+    "max_err_2d": 1.1368683772161603e-13
+  },
+  "T7_zero_event_exclusion": {
+    "pass": true,
+    "max_err": 4.547473508864641e-13
+  },
+  "T8_v4_texture_numbers": {
+    "pass": true,
+    "csv_corr": 0.8155,
+    "rank_matched_median": 0.6766,
+    "note": "confirms 0.82 anchor is the CSV corr and that decile matching attenuates below the V4 band"
+  },
+  "P1_smoke_rerun_V1": {
+    "pass": true,
+    "per_seed_identical": true,
+    "agg_identical": true,
+    "v3_smoke": true
+  },
+  "P1_smoke_rerun_B2": {
+    "pass": true,
+    "per_seed_identical": true,
+    "agg_identical": true,
+    "v3_smoke": true
+  },
+  "P2_independent_texture_inherits_parent_bitexact": {
+    "pass": true,
+    "ln1_equal": true,
+    "ln2_equal": true
+  },
+  "P2_same_seed_bit_identical": {
+    "pass": true
+  },
+  "P2_dlbinned_differs_and_reproduces_timingA": {
+    "pass": true,
+    "differs_from_parent": true,
+    "reproduces_timing_record": true
+  },
+  "P2_dlbinned_decile_membership_property": {
+    "pass": true
+  },
+  "P2_v4_corrs_reproduced": {
+    "pass": true,
+    "mine": [
+      0.683504,
+      0.640842,
+      0.659975
+    ],
+    "committed": [
+      0.683504,
+      0.640842,
+      0.659975
+    ]
+  },
+  "P3_ds7_pbar_and_arithmetic": {
+    "pass": true,
+    "p_bar_mine": 0.09502,
+    "p_bar_reported": 0.09537,
+    "ratio_arith": true,
+    "corrected_arith": true
+  }
+}

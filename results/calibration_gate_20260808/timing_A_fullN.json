@@ -1,0 +1,397 @@
+{
+  "instrument": "calibration_gate",
+  "preregistration": "results/calibration_gate_20260808/PREREGISTRATION_CALIBRATION_GATE.md",
+  "parent_instruments": {
+    "closed_loop_gfrac": "77b524af",
+    "pp_coverage": "hpd_contains port only (V2-certified); not imported at runtime"
+  },
+  "git_commit": "b50ccc65a544648fb5f07e4cf2ec273a32be4170",
+  "git_dirty": true,
+  "allow_dirty": true,
+  "config": {
+    "cell": "A",
+    "h_true": 0.73,
+    "ball": false,
+    "lambda_ball": 0.0,
+    "sigma_z": 0.0,
+    "sigma_texture": "dl_binned",
+    "f_incl": 1.0,
+    "n_events": 1500,
+    "injection_data_dir": "results/campaign51_20260728/realistic_20260729/gate_b_20260730/injection_pool_mix200k_20260728",
+    "crb_reference_csv": "results/run_20260804_postfix/iiib/diagnostics/prepared_cramer_rao_bounds.csv",
+    "h_grid": [
+      0.6,
+      0.61,
+      0.62,
+      0.63,
+      0.64,
+      0.65,
+      0.655,
+      0.66,
+      0.665,
+      0.67,
+      0.675,
+      0.68,
+      0.685,
+      0.69,
+      0.695,
+      0.7,
+      0.705,
+      0.71,
+      0.715,
+      0.72,
+      0.725,
+      0.73,
+      0.735,
+      0.74,
+      0.745,
+      0.75,
+      0.755,
+      0.76,
+      0.765,
+      0.77,
+      0.775,
+      0.78,
+      0.785,
+      0.79,
+      0.8,
+      0.81,
+      0.82,
+      0.83,
+      0.84,
+      0.85,
+      0.86
+    ]
+  },
+  "seeds": [
+    20261808
+  ],
+  "workers": 1,
+  "wall_time_s": 7.951361902989447,
+  "wall_time_per_seed_s": 7.951361902989447,
+  "aggregate": {
+    "cell": "A",
+    "h_true": 0.73,
+    "n_seeds": 1,
+    "channel_1d": {
+      "n_seeds": 1,
+      "ds1_coverage": {
+        "hpd50": {
+          "value": 0.0,
+          "binomial_sigma": 0.5,
+          "band_2sigma": [
+            -0.5,
+            1.5
+          ],
+          "band_3sigma": [
+            -1.0,
+            2.0
+          ],
+          "inside_2sigma": true,
+          "inside_3sigma": true
+        },
+        "hpd68": {
+          "value": 0.0,
+          "binomial_sigma": 0.466476151587624,
+          "band_2sigma": [
+            -0.252952303175248,
+            1.612952303175248
+          ],
+          "band_3sigma": [
+            -0.7194284547628721,
+            2.0794284547628723
+          ],
+          "inside_2sigma": true,
+          "inside_3sigma": true
+        },
+        "hpd90": {
+          "value": 0.0,
+          "binomial_sigma": 0.3,
+          "band_2sigma": [
+            0.30000000000000004,
+            1.5
+          ],
+          "band_3sigma": [
+            1.1102230246251565e-16,
+            1.7999999999999998
+          ],
+          "inside_2sigma": false,
+          "inside_3sigma": false
+        }
+      },
+      "ds1_status": "FAIL",
+      "ds2_ks": {
+        "D": 0.999999999995898,
+        "n": 1,
+        "D_95": 1.358,
+        "D_99": 1.628,
+        "status": "PASS"
+      },
+      "ds3_map_bias": {
+        "bias": -0.13,
+        "mc_error": 0.0,
+        "mean_map": 0.6,
+        "mean_map_refined": 0.6,
+        "mean_posterior_mean": 0.6028824911259036,
+        "map_sd": 0.0,
+        "status": "DEFECT-SCALE"
+      },
+      "ds4_rails": {
+        "railed_low_frac": 1.0,
+        "railed_high_frac": 0.0
+      },
+      "ds5_width": {
+        "post_sd_median": 0.00546554971747591,
+        "note": "F5 comparison is readout-side (prereg DS-5: factor-2 screen)"
+      },
+      "edge_guard": {
+        "edge_loaded_frac": 1.0,
+        "edge_contaminated": true,
+        "note": "if contaminated, DS-1/DS-2 carry no gate weight (prereg \u00a78)"
+      }
+    },
+    "channel_2d": {
+      "n_seeds": 1,
+      "ds1_coverage": {
+        "hpd50": {
+          "value": 0.0,
+          "binomial_sigma": 0.5,
+          "band_2sigma": [
+            -0.5,
+            1.5
+          ],
+          "band_3sigma": [
+            -1.0,
+            2.0
+          ],
+          "inside_2sigma": true,
+          "inside_3sigma": true
+        },
+        "hpd68": {
+          "value": 0.0,
+          "binomial_sigma": 0.466476151587624,
+          "band_2sigma": [
+            -0.252952303175248,
+            1.612952303175248
+          ],
+          "band_3sigma": [
+            -0.7194284547628721,
+            2.0794284547628723
+          ],
+          "inside_2sigma": true,
+          "inside_3sigma": true
+        },
+        "hpd90": {
+          "value": 0.0,
+          "binomial_sigma": 0.3,
+          "band_2sigma": [
+            0.30000000000000004,
+            1.5
+          ],
+          "band_3sigma": [
+            1.1102230246251565e-16,
+            1.7999999999999998
+          ],
+          "inside_2sigma": false,
+          "inside_3sigma": false
+        }
+      },
+      "ds1_status": "FAIL",
+      "ds2_ks": {
+        "D": 0.9743849927047891,
+        "n": 1,
+        "D_95": 1.358,
+        "D_99": 1.628,
+        "status": "PASS"
+      },
+      "ds3_map_bias": {
+        "bias": -0.13,
+        "mc_error": 0.0,
+        "mean_map": 0.6,
+        "mean_map_refined": 0.6,
+        "mean_posterior_mean": 0.6432431488442393,
+        "map_sd": 0.0,
+        "status": "DEFECT-SCALE"
+      },
+      "ds4_rails": {
+        "railed_low_frac": 1.0,
+        "railed_high_frac": 0.0
+      },
+      "ds5_width": {
+        "post_sd_median": 0.035328371705227256,
+        "note": "F5 comparison is readout-side (prereg DS-5: factor-2 screen)"
+      },
+      "edge_guard": {
+        "edge_loaded_frac": 1.0,
+        "edge_contaminated": true,
+        "note": "if contaminated, DS-1/DS-2 carry no gate weight (prereg \u00a78)"
+      }
+    },
+    "ball": {
+      "K_mean": 1.0,
+      "n_impostors_total": 0,
+      "n_degenerate_windows": 0,
+      "sigma_z": 0.0,
+      "f_incl": 1.0,
+      "lambda_ball": 0.0
+    },
+    "texture": {
+      "sigma_texture": "dl_binned",
+      "corr_ln_sigma_dl_ln_dl_median": 0.6260887652760713,
+      "v4_band": [
+        0.72,
+        0.9199999999999999
+      ],
+      "v4_pass": false
+    },
+    "sum_dlog_gfrac_dh": {
+      "mean": 168.41435716232795,
+      "production_reference_nats_per_h": 243.5
+    },
+    "nonfinite_ln_post_frac": 0.0,
+    "abort_b_triggered": false,
+    "ds7": {
+      "p_bar": 0.09537169173429369,
+      "mean_n_proposed": 16384.0,
+      "ratio": 0.9599571184085385,
+      "band": 0.05,
+      "pass_raw": true,
+      "expected_batch_overcount": 1.0544741849283383,
+      "ratio_corrected": 1.0122499999999999,
+      "pass_corrected": true,
+      "note": "raw ratio is the registered \u00a77 statistic; it carries a structural batch-granularity undercount from the parent's n_drawn convention (see docstring) \u2014 corrected companion reported alongside, author call",
+      "n_mc": 1000000,
+      "mc_seed": 20260808
+    }
+  },
+  "per_seed": [
+    {
+      "seed": 20261808,
+      "cell": "A",
+      "h_true": 0.73,
+      "sigma_texture": "dl_binned",
+      "sigma_z": 0.0,
+      "f_incl": 1.0,
+      "lambda_ball": 0.0,
+      "n_events": 1500,
+      "n_proposed": 16384,
+      "z_median": 0.422106314970065,
+      "M_source_median": 227082.5570115858,
+      "frac_below_kink": 0.22666666666666666,
+      "K_mean": 1.0,
+      "n_impostors_total": 0,
+      "n_degenerate_windows": 0,
+      "texture_corr": 0.6260887652760713,
+      "map_1d": 0.6,
+      "map_2d": 0.6,
+      "map_1d_refined": 0.6,
+      "map_2d_refined": 0.6,
+      "mean_1d": 0.6028824911259036,
+      "mean_2d": 0.6432431488442393,
+      "railed_low_1d": 1.0,
+      "railed_high_1d": 0.0,
+      "railed_low_2d": 1.0,
+      "railed_high_2d": 0.0,
+      "sum_dlog_gfrac_dh": 168.41435716232795,
+      "pit_1d": 0.999999999995898,
+      "pit_2d": 0.9743849927047891,
+      "hpd50_1d": 0.0,
+      "hpd68_1d": 0.0,
+      "hpd90_1d": 0.0,
+      "hpd50_2d": 0.0,
+      "hpd68_2d": 0.0,
+      "hpd90_2d": 0.0,
+      "post_sd_1d": 0.00546554971747591,
+      "post_sd_2d": 0.035328371705227256,
+      "edge_mass_1d": 0.8586634444405057,
+      "edge_mass_2d": 0.16051446468185376,
+      "ln_post_1d": [
+        655.2891456660582,
+        653.3352328375913,
+        651.3721322478268,
+        649.3994165443146,
+        647.418860089143,
+        645.4304327510727,
+        644.4330811045947,
+        643.433902582241,
+        642.4331450809004,
+        641.4308903729798,
+        640.4270855203104,
+        639.4216881872017,
+        638.4145362168128,
+        637.405953578731,
+        636.3961579214738,
+        635.3851482505124,
+        634.3727997638453,
+        633.3592437672451,
+        632.3442995378718,
+        631.3280799106578,
+        630.3107667973236,
+        629.2924711760825,
+        628.2730558542826,
+        627.2526522431763,
+        626.2314098575407,
+        625.2092106531418,
+        624.186123712374,
+        623.1622231507608,
+        622.1375607341142,
+        621.1121425608508,
+        620.0857922370196,
+        619.0588587850107,
+        618.0312915323084,
+        617.0029817737086,
+        614.9444617566951,
+        612.8837621928906,
+        610.821078128487,
+        608.7569414681711,
+        606.6909706951083,
+        604.6237629811221,
+        602.555366620898
+      ],
+      "ln_post_2d": [
+        -2115.565196661879,
+        -2115.6388269884665,
+        -2115.738288135439,
+        -2115.8640707500854,
+        -2116.014366495285,
+        -2116.1887090178425,
+        -2116.28491385057,
+        -2116.3867740211062,
+        -2116.4941253137404,
+        -2116.606845771781,
+        -2116.725012984225,
+        -2116.8488044876394,
+        -2116.9783201516148,
+        -2117.1132133355786,
+        -2117.253210082996,
+        -2117.3982778535355,
+        -2117.54853332954,
+        -2117.703733914248,
+        -2117.864070903739,
+        -2118.029329718789,
+        -2118.1993450631817,
+        -2118.373845553091,
+        -2118.552912434603,
+        -2118.736366885434,
+        -2118.924013468477,
+        -2119.115849652502,
+        -2119.311831328054,
+        -2119.5117439289133,
+        -2119.7156029658036,
+        -2119.9232825584368,
+        -2120.1349529995387,
+        -2120.350248938408,
+        -2120.569164045366,
+        -2120.791868118278,
+        -2121.2480047750178,
+        -2121.7182381446255,
+        -2122.202655378598,
+        -2122.700657413934,
+        -2123.2121807180374,
+        -2123.7364525771845,
+        -2124.2733169514067
+      ]
+    }
+  ],
+  "smoke": false
+}

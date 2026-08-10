@@ -1,0 +1,986 @@
+{
+ "readout_date": "2026-08-10",
+ "prereg": "results/calibration_gate_20260808/PREREGISTRATION_CALIBRATION_GATE.md",
+ "prereg_commit": "b50ccc65a544648fb5f07e4cf2ec273a32be4170",
+ "scoring": "mechanical; every band quoted from prereg \u00a77/\u00a78/\u00a710; statuses re-derived from raw values",
+ "cells": {
+  "A_h0p690": {
+   "cell": "A",
+   "h_true": 0.69,
+   "n_seeds": 400,
+   "seed_plan_match": true,
+   "git_commit_match": true,
+   "git_dirty": true,
+   "nonfinite_ln_post_frac": 0.0,
+   "abort_b_triggered": false,
+   "channels": {
+    "channel_1d": {
+     "ds1": {
+      "values": {
+       "hpd50": 0.0,
+       "hpd68": 0.0,
+       "hpd90": 0.0
+      },
+      "status": "FAIL"
+     },
+     "ds2": {
+      "D": 0.9999436503572018,
+      "status": "FAIL"
+     },
+     "ds3": {
+      "bias": -0.09000000000000008,
+      "mc_error": 5.5580670546202395e-18,
+      "status": "DEFECT-SCALE"
+     },
+     "ds4": {
+      "R_low": 1.0,
+      "R_high": 0.0
+     },
+     "ds5_sd_median": 0.006712602931611701,
+     "edge_guard": {
+      "edge_loaded_frac": 1.0,
+      "edge_contaminated": true,
+      "gate_weight": "NONE (\u00a78)"
+     }
+    },
+    "channel_2d": {
+     "ds1": {
+      "values": {
+       "hpd50": 0.2475,
+       "hpd68": 0.4025,
+       "hpd90": 0.6325
+      },
+      "status": "FAIL"
+     },
+     "ds2": {
+      "D": 0.2945106139605751,
+      "status": "FAIL"
+     },
+     "ds3": {
+      "bias": 0.04518750000000005,
+      "mc_error": 0.003573793272597501,
+      "status": "DEFECT-SCALE"
+     },
+     "ds4": {
+      "R_low": 0.03,
+      "R_high": 0.0375
+     },
+     "ds5_sd_median": 0.051890611800562966,
+     "edge_guard": {
+      "edge_loaded_frac": 0.9275,
+      "edge_contaminated": true,
+      "gate_weight": "NONE (\u00a78)"
+     }
+    }
+   },
+   "texture_corr_median_recomputed": 0.6653847089869369,
+   "texture_corr_in_v4_band": false,
+   "ds7": {
+    "ratio_raw": 0.9080760475356916,
+    "pass_raw": false,
+    "ratio_corrected": 1.0083238312428735,
+    "pass_corrected": true
+   }
+  },
+  "A_h0p730": {
+   "cell": "A",
+   "h_true": 0.73,
+   "n_seeds": 400,
+   "seed_plan_match": true,
+   "git_commit_match": true,
+   "git_dirty": true,
+   "nonfinite_ln_post_frac": 0.0,
+   "abort_b_triggered": false,
+   "channels": {
+    "channel_1d": {
+     "ds1": {
+      "values": {
+       "hpd50": 0.0,
+       "hpd68": 0.0,
+       "hpd90": 0.0
+      },
+      "status": "FAIL"
+     },
+     "ds2": {
+      "D": 0.9999980992645688,
+      "status": "FAIL"
+     },
+     "ds3": {
+      "bias": -0.13000000000000012,
+      "mc_error": 5.5580670546202395e-18,
+      "status": "DEFECT-SCALE"
+     },
+     "ds4": {
+      "R_low": 1.0,
+      "R_high": 0.0
+     },
+     "ds5_sd_median": 0.0072024135735358,
+     "edge_guard": {
+      "edge_loaded_frac": 1.0,
+      "edge_contaminated": true,
+      "gate_weight": "NONE (\u00a78)"
+     }
+    },
+    "channel_2d": {
+     "ds1": {
+      "values": {
+       "hpd50": 0.3075,
+       "hpd68": 0.4125,
+       "hpd90": 0.6225
+      },
+      "status": "FAIL"
+     },
+     "ds2": {
+      "D": 0.22075789861307238,
+      "status": "FAIL"
+     },
+     "ds3": {
+      "bias": 0.037150000000000016,
+      "mc_error": 0.003370919978842482,
+      "status": "DEFECT-SCALE"
+     },
+     "ds4": {
+      "R_low": 0.02,
+      "R_high": 0.085
+     },
+     "ds5_sd_median": 0.05201811115576402,
+     "edge_guard": {
+      "edge_loaded_frac": 0.9125,
+      "edge_contaminated": true,
+      "gate_weight": "NONE (\u00a78)"
+     }
+    }
+   },
+   "texture_corr_median_recomputed": 0.6660718399655431,
+   "texture_corr_in_v4_band": false,
+   "ds7": {
+    "ratio_raw": 0.9457705600084124,
+    "pass_raw": false,
+    "ratio_corrected": 0.9972906403940888,
+    "pass_corrected": true
+   }
+  },
+  "A_h0p770": {
+   "cell": "A",
+   "h_true": 0.77,
+   "n_seeds": 400,
+   "seed_plan_match": true,
+   "git_commit_match": true,
+   "git_dirty": true,
+   "nonfinite_ln_post_frac": 0.0,
+   "abort_b_triggered": false,
+   "channels": {
+    "channel_1d": {
+     "ds1": {
+      "values": {
+       "hpd50": 0.0,
+       "hpd68": 0.0,
+       "hpd90": 0.0
+      },
+      "status": "FAIL"
+     },
+     "ds2": {
+      "D": 0.999999906146815,
+      "status": "FAIL"
+     },
+     "ds3": {
+      "bias": -0.17000000000000015,
+      "mc_error": 5.5580670546202395e-18,
+      "status": "DEFECT-SCALE"
+     },
+     "ds4": {
+      "R_low": 1.0,
+      "R_high": 0.0
+     },
+     "ds5_sd_median": 0.007743010807993412,
+     "edge_guard": {
+      "edge_loaded_frac": 1.0,
+      "edge_contaminated": true,
+      "gate_weight": "NONE (\u00a78)"
+     }
+    },
+    "channel_2d": {
+     "ds1": {
+      "values": {
+       "hpd50": 0.3275,
+       "hpd68": 0.4675,
+       "hpd90": 0.7075
+      },
+      "status": "FAIL"
+     },
+     "ds2": {
+      "D": 0.09142820018117986,
+      "status": "FAIL"
+     },
+     "ds3": {
+      "bias": 0.020400000000000085,
+      "mc_error": 0.003018827719828512,
+      "status": "MIXED-SCALE"
+     },
+     "ds4": {
+      "R_low": 0.0025,
+      "R_high": 0.19
+     },
+     "ds5_sd_median": 0.04914550000193664,
+     "edge_guard": {
+      "edge_loaded_frac": 0.9125,
+      "edge_contaminated": true,
+      "gate_weight": "NONE (\u00a78)"
+     }
+    }
+   },
+   "texture_corr_median_recomputed": 0.6637045149225621,
+   "texture_corr_in_v4_band": false,
+   "ds7": {
+    "ratio_raw": 0.9266191035090627,
+    "pass_raw": false,
+    "ratio_corrected": 1.0001249219237978,
+    "pass_corrected": true
+   }
+  },
+  "B0_h0p730": {
+   "cell": "B0",
+   "h_true": 0.73,
+   "n_seeds": 400,
+   "seed_plan_match": true,
+   "git_commit_match": true,
+   "git_dirty": true,
+   "nonfinite_ln_post_frac": 0.0,
+   "abort_b_triggered": false,
+   "channels": {
+    "channel_1d": {
+     "ds1": {
+      "values": {
+       "hpd50": 1.0,
+       "hpd68": 1.0,
+       "hpd90": 1.0
+      },
+      "status": "FAIL"
+     },
+     "ds2": {
+      "D": 0.5,
+      "status": "FAIL"
+     },
+     "ds3": {
+      "bias": 1.1102230246251565e-16,
+      "mc_error": 5.5580670546202395e-18,
+      "status": "IN-BAND"
+     },
+     "ds4": {
+      "R_low": 0.0,
+      "R_high": 0.0
+     },
+     "ds5_sd_median": 0.0,
+     "edge_guard": {
+      "edge_loaded_frac": 0.0,
+      "edge_contaminated": false,
+      "gate_weight": "carries gate weight"
+     }
+    },
+    "channel_2d": {
+     "ds1": {
+      "values": {
+       "hpd50": 1.0,
+       "hpd68": 1.0,
+       "hpd90": 1.0
+      },
+      "status": "FAIL"
+     },
+     "ds2": {
+      "D": 0.5,
+      "status": "FAIL"
+     },
+     "ds3": {
+      "bias": 1.1102230246251565e-16,
+      "mc_error": 5.5580670546202395e-18,
+      "status": "IN-BAND"
+     },
+     "ds4": {
+      "R_low": 0.0,
+      "R_high": 0.0
+     },
+     "ds5_sd_median": 0.0,
+     "edge_guard": {
+      "edge_loaded_frac": 0.0,
+      "edge_contaminated": false,
+      "gate_weight": "carries gate weight"
+     }
+    }
+   },
+   "texture_corr_median_recomputed": 0.6646489672335153,
+   "texture_corr_in_v4_band": false,
+   "ds7": {
+    "ratio_raw": 0.949277743790891,
+    "pass_raw": false,
+    "ratio_corrected": 1.0009888751545117,
+    "pass_corrected": true
+   }
+  },
+  "B1_h0p730": {
+   "cell": "B1",
+   "h_true": 0.73,
+   "n_seeds": 400,
+   "seed_plan_match": true,
+   "git_commit_match": true,
+   "git_dirty": true,
+   "nonfinite_ln_post_frac": 0.0,
+   "abort_b_triggered": false,
+   "channels": {
+    "channel_1d": {
+     "ds1": {
+      "values": {
+       "hpd50": 0.0,
+       "hpd68": 0.0,
+       "hpd90": 0.0
+      },
+      "status": "FAIL"
+     },
+     "ds2": {
+      "D": 0.9999546845940729,
+      "status": "FAIL"
+     },
+     "ds3": {
+      "bias": 0.010912499999999992,
+      "mc_error": 9.82917215808551e-05,
+      "status": "MIXED-SCALE"
+     },
+     "ds4": {
+      "R_low": 0.0,
+      "R_high": 0.0
+     },
+     "ds5_sd_median": 0.0012435172689311334,
+     "edge_guard": {
+      "edge_loaded_frac": 0.0,
+      "edge_contaminated": false,
+      "gate_weight": "carries gate weight"
+     }
+    },
+    "channel_2d": {
+     "ds1": {
+      "values": {
+       "hpd50": 0.0,
+       "hpd68": 0.0,
+       "hpd90": 0.0
+      },
+      "status": "FAIL"
+     },
+     "ds2": {
+      "D": 0.9999801193880733,
+      "status": "FAIL"
+     },
+     "ds3": {
+      "bias": 0.011200000000000099,
+      "mc_error": 0.00010835983867001418,
+      "status": "MIXED-SCALE"
+     },
+     "ds4": {
+      "R_low": 0.0,
+      "R_high": 0.0
+     },
+     "ds5_sd_median": 0.0013703334485171046,
+     "edge_guard": {
+      "edge_loaded_frac": 0.0,
+      "edge_contaminated": false,
+      "gate_weight": "carries gate weight"
+     }
+    }
+   },
+   "texture_corr_median_recomputed": 0.6639544636225173,
+   "texture_corr_in_v4_band": false,
+   "ds7": {
+    "ratio_raw": 0.9504525924837015,
+    "pass_raw": true,
+    "ratio_corrected": 1.0022277227722773,
+    "pass_corrected": true
+   }
+  },
+  "B2_h0p690": {
+   "cell": "B2",
+   "h_true": 0.69,
+   "n_seeds": 400,
+   "seed_plan_match": true,
+   "git_commit_match": true,
+   "git_dirty": true,
+   "nonfinite_ln_post_frac": 0.0,
+   "abort_b_triggered": false,
+   "channels": {
+    "channel_1d": {
+     "ds1": {
+      "values": {
+       "hpd50": 0.0,
+       "hpd68": 0.0,
+       "hpd90": 0.0
+      },
+      "status": "FAIL"
+     },
+     "ds2": {
+      "D": 1.0,
+      "status": "FAIL"
+     },
+     "ds3": {
+      "bias": 0.03492499999999987,
+      "mc_error": 0.00010313840859893476,
+      "status": "DEFECT-SCALE"
+     },
+     "ds4": {
+      "R_low": 0.0,
+      "R_high": 0.0
+     },
+     "ds5_sd_median": 0.002888815384210264,
+     "edge_guard": {
+      "edge_loaded_frac": 0.0,
+      "edge_contaminated": false,
+      "gate_weight": "carries gate weight"
+     }
+    },
+    "channel_2d": {
+     "ds1": {
+      "values": {
+       "hpd50": 0.0,
+       "hpd68": 0.0,
+       "hpd90": 0.0
+      },
+      "status": "FAIL"
+     },
+     "ds2": {
+      "D": 0.999999614362367,
+      "status": "FAIL"
+     },
+     "ds3": {
+      "bias": 0.035174999999999845,
+      "mc_error": 0.0001936936513581206,
+      "status": "DEFECT-SCALE"
+     },
+     "ds4": {
+      "R_low": 0.0,
+      "R_high": 0.0
+     },
+     "ds5_sd_median": 0.002875704321494325,
+     "edge_guard": {
+      "edge_loaded_frac": 0.0,
+      "edge_contaminated": false,
+      "gate_weight": "carries gate weight"
+     }
+    }
+   },
+   "texture_corr_median_recomputed": 0.6662178968422399,
+   "texture_corr_in_v4_band": false,
+   "ds7": {
+    "ratio_raw": 0.9049803337372744,
+    "pass_raw": false,
+    "ratio_corrected": 1.0048863636363636,
+    "pass_corrected": true
+   }
+  },
+  "B2_h0p730": {
+   "cell": "B2",
+   "h_true": 0.73,
+   "n_seeds": 400,
+   "seed_plan_match": true,
+   "git_commit_match": true,
+   "git_dirty": true,
+   "nonfinite_ln_post_frac": 0.0,
+   "abort_b_triggered": false,
+   "channels": {
+    "channel_1d": {
+     "ds1": {
+      "values": {
+       "hpd50": 0.0,
+       "hpd68": 0.0,
+       "hpd90": 0.0
+      },
+      "status": "FAIL"
+     },
+     "ds2": {
+      "D": 1.0,
+      "status": "FAIL"
+     },
+     "ds3": {
+      "bias": 0.03541249999999996,
+      "mc_error": 0.00011489718352490157,
+      "status": "DEFECT-SCALE"
+     },
+     "ds4": {
+      "R_low": 0.0,
+      "R_high": 0.0
+     },
+     "ds5_sd_median": 0.002980859736165178,
+     "edge_guard": {
+      "edge_loaded_frac": 0.0,
+      "edge_contaminated": false,
+      "gate_weight": "carries gate weight"
+     }
+    },
+    "channel_2d": {
+     "ds1": {
+      "values": {
+       "hpd50": 0.0,
+       "hpd68": 0.0,
+       "hpd90": 0.0
+      },
+      "status": "FAIL"
+     },
+     "ds2": {
+      "D": 0.9999999674266316,
+      "status": "FAIL"
+     },
+     "ds3": {
+      "bias": 0.03576250000000003,
+      "mc_error": 0.00021228612264977253,
+      "status": "DEFECT-SCALE"
+     },
+     "ds4": {
+      "R_low": 0.0,
+      "R_high": 0.0
+     },
+     "ds5_sd_median": 0.002966412737839426,
+     "edge_guard": {
+      "edge_loaded_frac": 0.0,
+      "edge_contaminated": false,
+      "gate_weight": "carries gate weight"
+     }
+    }
+   },
+   "texture_corr_median_recomputed": 0.6648058674242079,
+   "texture_corr_in_v4_band": false,
+   "ds7": {
+    "ratio_raw": 0.9510411080208432,
+    "pass_raw": true,
+    "ratio_corrected": 1.0028482972136223,
+    "pass_corrected": true
+   }
+  },
+  "B2_h0p770": {
+   "cell": "B2",
+   "h_true": 0.77,
+   "n_seeds": 400,
+   "seed_plan_match": true,
+   "git_commit_match": true,
+   "git_dirty": true,
+   "nonfinite_ln_post_frac": 0.0,
+   "abort_b_triggered": false,
+   "channels": {
+    "channel_1d": {
+     "ds1": {
+      "values": {
+       "hpd50": 0.0,
+       "hpd68": 0.0,
+       "hpd90": 0.0
+      },
+      "status": "FAIL"
+     },
+     "ds2": {
+      "D": 1.0,
+      "status": "FAIL"
+     },
+     "ds3": {
+      "bias": 0.037125000000000186,
+      "mc_error": 0.00022658174179374162,
+      "status": "DEFECT-SCALE"
+     },
+     "ds4": {
+      "R_low": 0.0,
+      "R_high": 0.0
+     },
+     "ds5_sd_median": 0.003478892147993659,
+     "edge_guard": {
+      "edge_loaded_frac": 0.0,
+      "edge_contaminated": false,
+      "gate_weight": "carries gate weight"
+     }
+    },
+    "channel_2d": {
+     "ds1": {
+      "values": {
+       "hpd50": 0.0,
+       "hpd68": 0.0,
+       "hpd90": 0.0
+      },
+      "status": "FAIL"
+     },
+     "ds2": {
+      "D": 0.9999995175071037,
+      "status": "FAIL"
+     },
+     "ds3": {
+      "bias": 0.03815000000000024,
+      "mc_error": 0.0002507007722225494,
+      "status": "DEFECT-SCALE"
+     },
+     "ds4": {
+      "R_low": 0.0,
+      "R_high": 0.0
+     },
+     "ds5_sd_median": 0.002119009570325683,
+     "edge_guard": {
+      "edge_loaded_frac": 0.0,
+      "edge_contaminated": false,
+      "gate_weight": "carries gate weight"
+     }
+    }
+   },
+   "texture_corr_median_recomputed": 0.6651967829548036,
+   "texture_corr_in_v4_band": false,
+   "ds7": {
+    "ratio_raw": 0.927198240448756,
+    "pass_raw": false,
+    "ratio_corrected": 1.00075,
+    "pass_corrected": true
+   }
+  },
+  "V1_h0p730": {
+   "cell": "V1",
+   "h_true": 0.73,
+   "n_seeds": 50,
+   "seed_plan_match": true,
+   "git_commit_match": true,
+   "git_dirty": true,
+   "nonfinite_ln_post_frac": 0.0,
+   "abort_b_triggered": false,
+   "channels": {
+    "channel_1d": {
+     "ds1": {
+      "values": {
+       "hpd50": 1.0,
+       "hpd68": 1.0,
+       "hpd90": 1.0
+      },
+      "status": "NO-REGISTERED-BAND(N=50 control)"
+     },
+     "ds2": {
+      "D": 0.5,
+      "status": "NO-REGISTERED-BAND(N=50 control)"
+     },
+     "ds3": {
+      "bias": -1.1102230246251565e-16,
+      "mc_error": 1.586032892321652e-17,
+      "status": "IN-BAND"
+     },
+     "ds4": {
+      "R_low": 0.0,
+      "R_high": 0.0
+     },
+     "ds5_sd_median": 0.0,
+     "edge_guard": {
+      "edge_loaded_frac": 0.0,
+      "edge_contaminated": false,
+      "gate_weight": "carries gate weight"
+     }
+    },
+    "channel_2d": {
+     "ds1": {
+      "values": {
+       "hpd50": 1.0,
+       "hpd68": 1.0,
+       "hpd90": 1.0
+      },
+      "status": "NO-REGISTERED-BAND(N=50 control)"
+     },
+     "ds2": {
+      "D": 0.5,
+      "status": "NO-REGISTERED-BAND(N=50 control)"
+     },
+     "ds3": {
+      "bias": -1.1102230246251565e-16,
+      "mc_error": 1.586032892321652e-17,
+      "status": "IN-BAND"
+     },
+     "ds4": {
+      "R_low": 0.0,
+      "R_high": 0.0
+     },
+     "ds5_sd_median": 0.0,
+     "edge_guard": {
+      "edge_loaded_frac": 0.0,
+      "edge_contaminated": false,
+      "gate_weight": "carries gate weight"
+     }
+    }
+   },
+   "texture_corr_median_recomputed": 0.6650263616806943,
+   "texture_corr_in_v4_band": false,
+   "ds7": {
+    "ratio_raw": 0.9551812123468045,
+    "pass_raw": true,
+    "ratio_corrected": 1.0072139303482588,
+    "pass_corrected": true
+   }
+  }
+ },
+ "label_crosscheck_mismatches": [],
+ "seed_plan": {
+  "all_cells_match_registered_blocks": true,
+  "total_seeds": 3250,
+  "unique_seeds": 3250,
+  "disjoint": true
+ },
+ "validity": {
+  "V1_plumbing_control": {
+   "pass": true,
+   "n_seeds": 50,
+   "unique_map_1d": [
+    0.73
+   ],
+   "unique_map_2d": [
+    0.73
+   ]
+  },
+  "V2_hpd_port": {
+   "pass": true,
+   "evidence": "test_v2_hpd_port_agrees_boolean_exactly_with_pp_coverage PASSED (21/21 suite re-run at readout)"
+  },
+  "V3_determinism": {
+   "pass": true,
+   "evidence": "validate_results.json v3.pass + adjudicate P1_smoke_rerun_{V1,B2} per_seed_identical=true"
+  },
+  "V4_texture": {
+   "pass": false,
+   "median_by_cell": {
+    "A_h0p690": 0.6653847089869369,
+    "A_h0p730": 0.6660718399655431,
+    "A_h0p770": 0.6637045149225621,
+    "B0_h0p730": 0.6646489672335153,
+    "B1_h0p730": 0.6639544636225173,
+    "B2_h0p690": 0.6662178968422399,
+    "B2_h0p730": 0.6648058674242079,
+    "B2_h0p770": 0.6651967829548036,
+    "V1_h0p730": 0.6650263616806943
+   },
+   "band": [
+    0.72,
+    0.92
+   ],
+   "consequence": "prereg \u00a710: 'Failure \u21d2 the texture cells are void'; ALL 9 run cells are sigma_texture=dl_binned (incl. V1) \u2014 no independent-texture cell exists in the campaign",
+   "pre_declared": "module docstring divergence-log item 7 predicted \u22480.69\u00b10.02 attenuation at build time; prediction was never appended to prereg \u00a711 as an amendment; band therefore stands as registered"
+  },
+  "V5_r0_reproduction": {
+   "pass": true,
+   "rtol": 1e-12
+  },
+  "config_provenance_dirty_tree": {
+   "violated": true,
+   "detail": [
+    "A_h0p690: registered cell ran on dirty tree (allow_dirty=True)",
+    "A_h0p730: registered cell ran on dirty tree (allow_dirty=True)",
+    "A_h0p770: registered cell ran on dirty tree (allow_dirty=True)",
+    "B0_h0p730: registered cell ran on dirty tree (allow_dirty=True)",
+    "B1_h0p730: registered cell ran on dirty tree (allow_dirty=True)",
+    "B2_h0p690: registered cell ran on dirty tree (allow_dirty=True)",
+    "B2_h0p730: registered cell ran on dirty tree (allow_dirty=True)",
+    "B2_h0p770: registered cell ran on dirty tree (allow_dirty=True)",
+    "V1_h0p730: registered cell ran on dirty tree (allow_dirty=True)"
+   ],
+   "prereg_clause": "\u00a710 'Runs that would execute on a dirty tree STOP instead' \u2014 all 9 registered cells ran with --allow-dirty on a dirty tree; the instrument module itself (master_thesis_code/validation/calibration_gate.py) is untracked/uncommitted, so the campaign's code identity has no git object"
+  },
+  "section11_appendix": {
+   "appended": false,
+   "prereg_clause": "'The new module's code commit is appended to \u00a711 when it exists' \u2014 \u00a711 is empty; the module was never committed"
+  },
+  "abort_b": {
+   "triggered": false,
+   "max_nonfinite_frac": 0.0
+  }
+ },
+ "ds6": {
+  "verdict": "MIXED",
+  "R_low_1d_B2_by_truth": {
+   "0.69": 0.0,
+   "0.73": 0.0,
+   "0.77": 0.0
+  },
+  "R_low_1d_B0": 0.0,
+  "dose_response_R_low_1d_sigma_z": {
+   "0.000": 0.0,
+   "0.010": 0.0,
+   "0.035": 0.0
+  },
+  "b2_1d_passes_ds1_and_ds2": false,
+  "mechanics": "R_low(B2)\u22650.90 at all truths fails (all 0.000); R_low(B2)\u22640.05 holds but B2-1D FAILS DS-1 and DS-2 \u2192 neither branch condition met \u2192 MIXED (prereg DS-6 'otherwise' clause)"
+ },
+ "ds5": {
+  "screen_band": [
+   0.5,
+   2.0
+  ],
+  "rescale_sqrt_400_over_1500": 0.5163977794943222,
+  "floor": 0.014,
+  "f5_sigma_z_grid": [
+   0.0005,
+   0.001,
+   0.002,
+   0.004,
+   0.008,
+   0.015,
+   0.025,
+   0.05
+  ],
+  "exact_venue_nodes_present": {
+   "0.0": false,
+   "0.010": false,
+   "0.035": false
+  },
+  "oned_channel_bracket": {
+   "B0_h0p730": {
+    "sigma_z": 0.0,
+    "sd_median_1d": 0.0,
+    "bracket_reads": {
+     "node0.0005_width": {
+      "sigma_F5": 0.014,
+      "W": 0.0,
+      "in_band": false
+     },
+     "node0.0005_rmse_truth": {
+      "sigma_F5": 0.016111983307854353,
+      "W": 0.0,
+      "in_band": false
+     }
+    },
+    "any_reading_in_band": false
+   },
+   "B1_h0p730": {
+    "sigma_z": 0.01,
+    "sd_median_1d": 0.0012435172689311334,
+    "bracket_reads": {
+     "node0.008_width": {
+      "sigma_F5": 0.04383961588707499,
+      "W": 0.028365149734301237,
+      "in_band": false
+     },
+     "node0.008_rmse_truth": {
+      "sigma_F5": 0.06255643545955673,
+      "W": 0.019878326822746765,
+      "in_band": false
+     },
+     "node0.015_width": {
+      "sigma_F5": 0.032786391794136296,
+      "W": 0.03792784752708076,
+      "in_band": false
+     },
+     "node0.015_rmse_truth": {
+      "sigma_F5": 0.09824722812112563,
+      "W": 0.012657021401133513,
+      "in_band": false
+     }
+    },
+    "any_reading_in_band": false
+   },
+   "B2_h0p690": {
+    "sigma_z": 0.035,
+    "sd_median_1d": 0.002888815384210264,
+    "bracket_reads": {
+     "node0.025_width": {
+      "sigma_F5": 0.014,
+      "W": 0.20634395601501887,
+      "in_band": false
+     },
+     "node0.025_rmse_truth": {
+      "sigma_F5": 0.11221152690788101,
+      "W": 0.025744372827060893,
+      "in_band": false
+     },
+     "node0.05_width": {
+      "sigma_F5": 0.014,
+      "W": 0.20634395601501887,
+      "in_band": false
+     },
+     "node0.05_rmse_truth": {
+      "sigma_F5": 0.11044363728873184,
+      "W": 0.026156467272605836,
+      "in_band": false
+     }
+    },
+    "any_reading_in_band": false
+   },
+   "B2_h0p730": {
+    "sigma_z": 0.035,
+    "sd_median_1d": 0.002980859736165178,
+    "bracket_reads": {
+     "node0.025_width": {
+      "sigma_F5": 0.014,
+      "W": 0.212918552583227,
+      "in_band": false
+     },
+     "node0.025_rmse_truth": {
+      "sigma_F5": 0.11221152690788101,
+      "W": 0.02656464819886362,
+      "in_band": false
+     },
+     "node0.05_width": {
+      "sigma_F5": 0.014,
+      "W": 0.212918552583227,
+      "in_band": false
+     },
+     "node0.05_rmse_truth": {
+      "sigma_F5": 0.11044363728873184,
+      "W": 0.026989872928327618,
+      "in_band": false
+     }
+    },
+    "any_reading_in_band": false
+   },
+   "B2_h0p770": {
+    "sigma_z": 0.035,
+    "sd_median_1d": 0.003478892147993659,
+    "bracket_reads": {
+     "node0.025_width": {
+      "sigma_F5": 0.014,
+      "W": 0.24849229628526134,
+      "in_band": false
+     },
+     "node0.025_rmse_truth": {
+      "sigma_F5": 0.11221152690788101,
+      "W": 0.0310029837741146,
+      "in_band": false
+     },
+     "node0.05_width": {
+      "sigma_F5": 0.014,
+      "W": 0.24849229628526134,
+      "in_band": false
+     },
+     "node0.05_rmse_truth": {
+      "sigma_F5": 0.11044363728873184,
+      "W": 0.03149925367722924,
+      "in_band": false
+     }
+    },
+    "any_reading_in_band": false
+   }
+  },
+  "status": "SCREEN-NOT-EVALUABLE-AT-EXACT-VENUE-POINTS (no committed F5 node at sigma_z \u2208 {0, 0.010, 0.035}; matched-population F5 run not executed \u2014 prereg \u00a79 item 3); bracket reads reported as raw context: no bracketing reading places any ball-cell 1D W inside [0.5, 2.0] (all W \u226a 0.5: measured posteriors orders of magnitude narrower than every committed F5 forecast reading)",
+  "twod_channel": "NOT-EVALUABLE (F5's 2D axis is the with-BH-mass host channel; the gate's 2D channel is the completion-leg g factor \u2014 prereg \u00a79 item 4 structural mismatch)",
+  "A_cells": "NOT-EVALUABLE (f=0 single-host venue has no host-z axis on the F5 sweep)"
+ },
+ "trigger_set": {
+  "triggers": {
+   "V1_failure": false,
+   "V2_failure": false,
+   "V3_failure": false,
+   "V4_failure": true,
+   "V5_failure": false,
+   "DS7_violation_registered_raw_form": true,
+   "abort_b": false,
+   "both_decision_cells_edge_contaminated_2d": false,
+   "both_decision_cells_edge_contaminated_1d": false
+  },
+  "fired": [
+   "V4_failure",
+   "DS7_violation_registered_raw_form"
+  ],
+  "ds7_raw_fail_cells": [
+   "A_h0p690",
+   "A_h0p730",
+   "A_h0p770",
+   "B0_h0p730",
+   "B2_h0p690",
+   "B2_h0p770"
+  ],
+  "ds7_corrected_fail_cells": [],
+  "ds7_author_call": "module divergence-log item 9 leaves raw-vs-corrected V-class weight to the author; the REGISTERED \u00a77 statistic is the raw identity \u2014 scored as such here; corrected passes 9/9",
+  "note_outside_trigger_set": "dirty-tree run (all 9 cells) and empty \u00a711 violate \u00a710 provenance clauses but are not members of the enumerated trigger set; reported separately under validity.config_provenance_dirty_tree"
+ },
+ "branch": {
+  "fired": "GATE-NOT-TRUSTWORTHY",
+  "mechanics": "\u00a710 trigger fired (V4 texture-certification FAILURE: all 9 cells' corr(ln \u03c3_dL, ln d_L) median 0.664\u20130.666 vs locked band [0.72, 0.92]; plus DS-7 registered-raw-form violation in 6/9 cells). Prereg: 'The instrument's own verdict is void; report which control failed and why; no stage-4 leg-1 claim of any kind may be made.' KEEP-DIGGING / REPORT-BOUND / MIXED are all unreachable: each requires 'gate trustworthy' as its first conjunct.",
+  "counterfactual_note": "Reported as raw pattern only, NOT a claim (barred by the fired branch): had the gate been trustworthy, DS-6=MIXED + DS-1/DS-2 FAIL in decision cells would have fired MIXED/KEEP-DIGGING(b), not REPORT-BOUND \u2014 the B2-1D channel is un-railed but grossly miscalibrated (bias \u2248 +\u03c3_z: +0.011 at \u03c3_z=0.010, +0.035 at \u03c3_z=0.035; near-delta posteriors, 0/0/0 coverage)."
+ }
+}
