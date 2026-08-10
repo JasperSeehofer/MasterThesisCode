@@ -13,6 +13,7 @@ import json
 import os
 
 import numpy as np
+import numpy.typing as npt
 import pytest
 
 from master_thesis_code.validation import calibration_gate as cg
@@ -106,13 +107,13 @@ def test_ks_distance_known_values() -> None:
 
 
 def test_cell_seed_blocks_match_prereg_and_are_disjoint() -> None:
-    """Seed blocks: base 20260808, registered offsets, a seed in exactly one cell."""
+    """Seed blocks: base 20260808, v2 offsets (+20000), a seed in exactly one cell."""
     assert cg.GATE_BASE_SEED == 20260808
-    assert cg.CELL_SPECS["A"].seed_offsets == (0, 1000, 2000)
-    assert cg.CELL_SPECS["B0"].seed_offsets == (3000,)
-    assert cg.CELL_SPECS["B1"].seed_offsets == (4000,)
-    assert cg.CELL_SPECS["B2"].seed_offsets == (5000, 6000, 7000)
-    assert cg.CELL_SPECS["V1"].seed_offsets == (9000,)
+    assert cg.CELL_SPECS["A"].seed_offsets == (20000, 21000, 22000)
+    assert cg.CELL_SPECS["B0"].seed_offsets == (23000,)
+    assert cg.CELL_SPECS["B1"].seed_offsets == (24000,)
+    assert cg.CELL_SPECS["B2"].seed_offsets == (25000, 26000, 27000)
+    assert cg.CELL_SPECS["V1"].seed_offsets == (29000,)
     assert cg.CELL_SPECS["V1"].n_seeds == 50
     all_seeds: set[int] = set()
     for spec in cg.CELL_SPECS.values():
@@ -121,6 +122,16 @@ def test_cell_seed_blocks_match_prereg_and_are_disjoint() -> None:
             assert len(block) == spec.n_seeds
             assert not (all_seeds & set(block))
             all_seeds.update(block)
+
+
+def test_v2_seed_blocks_disjoint_from_v1_envelope() -> None:
+    """Divergence 16: no v2 seed falls in v1's absolute envelope [base+0, base+9049]."""
+    v1_lo = cg.GATE_BASE_SEED + cg.V1_SEED_OFFSET_ENVELOPE[0]
+    v1_hi = cg.GATE_BASE_SEED + cg.V1_SEED_OFFSET_ENVELOPE[1]
+    for spec in cg.CELL_SPECS.values():
+        for t in spec.truths:
+            for s in cg.cell_seeds(spec, t, 0, None):
+                assert not (v1_lo <= s <= v1_hi)
 
 
 def test_cell_seeds_chunking() -> None:
@@ -134,7 +145,7 @@ def test_cell_seeds_chunking() -> None:
 
 
 def test_cell_configs_match_prereg_table() -> None:
-    """Cell matrix (§5): ball flags, sigma_z doses, lambda, texture."""
+    """Cell matrix (§5): ball flags, sigma_z doses, lambda, texture, grids."""
     assert not cg.CELL_SPECS["A"].ball
     assert cg.CELL_SPECS["B0"].sigma_z == 0.0
     assert cg.CELL_SPECS["B1"].sigma_z == 0.010
@@ -145,6 +156,41 @@ def test_cell_configs_match_prereg_table() -> None:
     assert cg.CELL_SPECS["V1"].ball and cg.CELL_SPECS["V1"].lambda_ball == 0.0
     for spec in cg.CELL_SPECS.values():
         assert spec.sigma_texture == "dl_binned"
+    # Grids (divergence 14 / defect 4): A extended, everything else canonical.
+    assert cg.CELL_SPECS["A"].h_grid == cg.EXTENDED_H_GRID_A
+    for name in ("B0", "B1", "B2", "V1"):
+        assert cg.CELL_SPECS[name].h_grid == cl.CANONICAL_H_GRID
+
+
+def test_extended_a_grid_structure() -> None:
+    """EXTENDED_H_GRID_A: 75 pts, 0.460-1.060, canonical grid a strict subgrid."""
+    g = np.asarray(cg.EXTENDED_H_GRID_A)
+    assert g.size == 75
+    assert g[0] == pytest.approx(0.460) and g[-1] == pytest.approx(1.060)
+    assert np.all(np.diff(g) > 0.0)  # strictly increasing
+    # Canonical grid is a contiguous subgrid — the v1-comparable restricted
+    # read (argmax/PIT over 0.600-0.860) stays mechanical at readout.
+    canon = np.asarray(cl.CANONICAL_H_GRID)
+    i0 = int(np.where(np.isclose(g, canon[0]))[0][0])
+    np.testing.assert_allclose(g[i0 : i0 + canon.size], canon)
+    # Wing spacing is the canonical 0.01 wing spacing.
+    assert np.allclose(np.diff(g[: i0 + 1]), 0.01)
+    assert np.allclose(np.diff(g[i0 + canon.size - 1 :]), 0.01)
+    # All registered truths stay on-grid.
+    for t in (0.690, 0.730, 0.770):
+        assert np.any(np.isclose(g, t))
+
+
+def test_v4_band_derived_from_predeclared_analysis() -> None:
+    """Defect 1: the V4 band is 0.69 ± 3 x 0.02 = [0.63, 0.75], not the v1 [0.72, 0.92]."""
+    assert cg._V4_CORR_CENTER == pytest.approx(0.69)
+    assert cg._V4_CORR_TOL == pytest.approx(0.06)
+    lo = cg._V4_CORR_CENTER - cg._V4_CORR_TOL
+    hi = cg._V4_CORR_CENTER + cg._V4_CORR_TOL
+    assert lo == pytest.approx(0.63)
+    assert hi == pytest.approx(0.75)
+    # Post-hoc consistency only: the v1 measured medians lie inside the band.
+    assert lo < 0.664 and 0.666 < hi
 
 
 def test_to_closed_loop_config_pins_shipped_estimator_convention() -> None:
@@ -403,7 +449,7 @@ def test_aggregate_calibrated_records_pass_ds1_ds2() -> None:
     rng = np.random.default_rng(20260808)
     records = _synthetic_records(400, rng)
     gcfg = cg.GateConfig(cell="A", h_true=0.730, ball=False, lambda_ball=0.0, sigma_z=0.0)
-    agg = cg.aggregate_gate(records, gcfg)  # type: ignore[arg-type]
+    agg = cg.aggregate_gate(records, gcfg)
     for ch in ("channel_1d", "channel_2d"):
         assert agg[ch]["ds1_status"] == "PASS"
         assert agg[ch]["ds2_ks"]["status"] == "PASS"
@@ -417,7 +463,7 @@ def test_aggregate_railed_records_flag_ds4_and_edge_guard() -> None:
     rng = np.random.default_rng(1)
     records = _synthetic_records(200, rng, railed_low=True)
     gcfg = cg.GateConfig(cell="B2", h_true=0.730, ball=True, lambda_ball=4.0, sigma_z=0.035)
-    agg = cg.aggregate_gate(records, gcfg)  # type: ignore[arg-type]
+    agg = cg.aggregate_gate(records, gcfg)
     for ch in ("channel_1d", "channel_2d"):
         assert agg[ch]["ds4_rails"]["railed_low_frac"] == 1.0
         assert agg[ch]["edge_guard"]["edge_contaminated"]
@@ -439,6 +485,114 @@ def test_v5_r0_reproduction_and_retro_read() -> None:
     assert agg["channel_2d"]["ds4_rails"]["railed_low_frac"] == pytest.approx(0.005, abs=1e-9)
     assert agg["channel_2d"]["ds4_rails"]["railed_high_frac"] == pytest.approx(0.035, abs=1e-9)
     assert agg["n_seeds"] == 200
+
+
+# ── v2 clean rule (divergence 15 / defect 5) ─────────────────────────────────
+
+
+def test_classify_porcelain_splits_import_path_from_other_dirt() -> None:
+    """Import-path lines (either rename side) split from never-blocking other dirt."""
+    status = (
+        " M master_thesis_code/validation/calibration_gate.py\n"
+        "?? master_thesis_code_test/validation/new_test.py\n"
+        "R  docs/a.md -> master_thesis_code/moved.py\n"
+        " M CLAUDE.md\n"
+        "?? results/calibration_gate_v2_20260810/PREREGISTRATION_CALIBRATION_GATE_V2.md\n"
+        "?? simulations\n"
+    )
+    dirt = cg._classify_porcelain(status)
+    assert len(dirt["import_path"]) == 3
+    assert len(dirt["other"]) == 3
+    assert all("master_thesis_code" in line for line in dirt["import_path"])
+
+
+def test_enforce_clean_import_path_refuses_and_inventories(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Import-path dirt refuses (unless allow_dirty); other dirt never blocks."""
+    monkeypatch.setattr(
+        cg, "_git_state", lambda: ("abc123", {"import_path": [], "other": ["?? results/x"]})
+    )
+    commit, dirt = cg._enforce_clean_import_path(False)
+    assert commit == "abc123" and dirt["other"] == ["?? results/x"]
+
+    monkeypatch.setattr(
+        cg,
+        "_git_state",
+        lambda: ("abc123", {"import_path": [" M master_thesis_code/a.py"], "other": []}),
+    )
+    with pytest.raises(SystemExit, match="import path"):
+        cg._enforce_clean_import_path(False)
+    # The smoke/validate-only escape (main() forbids it on registered cells).
+    _commit, dirt = cg._enforce_clean_import_path(True)
+    assert dirt["import_path"]
+
+
+def test_run_cell_refuses_dirty_import_path(monkeypatch: pytest.MonkeyPatch) -> None:
+    """run_cell must refuse before building any context when the import path is dirty."""
+    monkeypatch.setattr(
+        cg,
+        "_git_state",
+        lambda: ("abc123", {"import_path": ["?? master_thesis_code/new.py"], "other": []}),
+    )
+    gcfg = cg.GateConfig(cell="B2", h_true=0.730, ball=True, lambda_ball=4.0, sigma_z=0.035)
+    with pytest.raises(SystemExit, match="import path"):
+        cg.run_cell(gcfg, [1], 1, allow_dirty=False)
+
+
+def test_main_rejects_allow_dirty_on_registered_cells() -> None:
+    """--allow-dirty without --smoke/--validate is refused outright (v2 clean rule)."""
+    with pytest.raises(SystemExit, match="--smoke or --validate"):
+        cg.main(["--cell", "B2", "--allow-dirty"])
+
+
+# ── DS-7 report-only emission (divergence 12 / defect 2) ─────────────────────
+
+
+class _FakeDetection:
+    """Constant-acceptance stand-in for the injection-pool detection object."""
+
+    def detection_probability_with_bh_mass_interpolated(
+        self,
+        d_L: npt.NDArray[np.float64],
+        M_z: npt.NDArray[np.float64],
+        a: float,
+        b: float,
+        h: float,
+    ) -> npt.NDArray[np.float64]:
+        return np.full(np.asarray(d_L).shape, 0.5)
+
+
+def test_ds7_report_only_dual_form_with_p_bar_se(monkeypatch: pytest.MonkeyPatch) -> None:
+    """DS-7 emits both forms + p_bar_mc_se under REPORT-ONLY status (no branch weight)."""
+    monkeypatch.setattr(cg, "_DS7_N_MC", 5000)
+    gctx = _real_ladder_context(sigma_z=0.0, lambda_ball=0.0, n_events=15)
+    gctx.cl_ctx.detection = _FakeDetection()  # type: ignore[assignment]
+    records = [{"n_proposed": 30}, {"n_proposed": 30}]
+    block = cg.ds7_accounting(gctx, records)
+    assert block["status"] == "REPORT-ONLY"
+    assert "REPORT-ONLY" in block["note"]
+    assert block["p_bar"] == pytest.approx(0.5)
+    assert block["p_bar_mc_se"] == pytest.approx(0.0, abs=1e-12)  # constant acceptance
+    assert block["ratio"] == pytest.approx(1.0)
+    assert "pass_raw" in block and "pass_corrected" in block
+
+
+# ── Degenerate-PIT exemption marker (divergence 13 / defect 3) ───────────────
+
+
+def test_aggregate_flags_degenerate_pit_exemption() -> None:
+    """sigma_z=0 ball cells (B0/V1) carry the DS-1/DS-2 exemption marker; others do not."""
+    rng = np.random.default_rng(5)
+    records = _synthetic_records(50, rng)
+    b0 = cg.GateConfig(cell="B0", h_true=0.730, ball=True, lambda_ball=4.0, sigma_z=0.0)
+    assert cg.aggregate_gate(records, b0)["ds1_ds2_degenerate_pit_exempt"]
+    v1 = cg.GateConfig(cell="V1", h_true=0.730, ball=True, lambda_ball=0.0, sigma_z=0.0)
+    assert cg.aggregate_gate(records, v1)["ds1_ds2_degenerate_pit_exempt"]
+    b2 = cg.GateConfig(cell="B2", h_true=0.730, ball=True, lambda_ball=4.0, sigma_z=0.035)
+    assert not cg.aggregate_gate(records, b2)["ds1_ds2_degenerate_pit_exempt"]
+    a = cg.GateConfig(cell="A", h_true=0.730, ball=False, lambda_ball=0.0, sigma_z=0.0)
+    assert not cg.aggregate_gate(records, a)["ds1_ds2_degenerate_pit_exempt"]
 
 
 # ── Output-path guard ────────────────────────────────────────────────────────

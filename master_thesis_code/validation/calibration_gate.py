@@ -1,8 +1,12 @@
 r"""Calibration-gate instrument — P–P/coverage leg + multi-candidate host balls + σ–d_L texture.
 
-**What this instrument is.** The stage-4 calibration gate registered in
+**What this instrument is.** The stage-4 calibration gate, v1-registered in
 ``results/calibration_gate_20260808/PREREGISTRATION_CALIBRATION_GATE.md``
-(commit ``b50ccc65``, bands locked blind BEFORE this build): the missing input
+(commit ``b50ccc65``, bands locked blind BEFORE this build) and re-registered
+as v2 in
+``results/calibration_gate_v2_20260810/PREREGISTRATION_CALIBRATION_GATE_V2.md``
+after v1 fired GATE-NOT-TRUSTWORTHY on its own validity checks (see the v2
+divergence log below): the missing input
 of ``docs/RESEARCH_CYCLE.md`` §Stage 4 leg 1 — "SBC / P–P coverage of the FULL
 two-channel estimator on truth-known synthetic universes at the production
 venue" — built as a **thin extension module over two existing instruments,
@@ -93,6 +97,69 @@ tuned on data this instrument produces.
     tail-``epsilon`` reasons, not plumbing; reported per seed, never
     patched around.
 
+**v2 divergence log (2026-08-10, prereg
+``results/calibration_gate_v2_20260810/PREREGISTRATION_CALIBRATION_GATE_V2.md``).**
+The v1 campaign fired GATE-NOT-TRUSTWORTHY on its own validity checks (readout
+``CALIBRATION_GATE_READOUT_20260808.md``, adjudication confirmed) — the correct
+honest outcome. v2 repairs the five enumerated defects; every instrument-side
+edit is logged here (items 11-17). v1 artifacts under
+``results/calibration_gate_20260808/`` are untouched and remain the committed
+v1 record. All v2 design choices are AUTHOR-RATIFY (author autonomy mandate;
+the final gate verdict is the author's).
+
+11. *V4 band re-derived from the pre-declared analysis (defect 1)*: the v1
+    band ``0.82 ± 0.10`` was mis-set against this module's own item-7
+    build-time decile-attenuation analysis (predicted ``0.69 ± 0.02``,
+    20-replica SD); v1 measured 0.664-0.666 and V4 fired. The v2 band is
+    derived FROM the pre-declared prediction and its stated uncertainty:
+    ``0.69 ± 3 x 0.02 = [0.63, 0.75]`` (3-sigma of the replica scatter; the
+    detected-set restriction adds attenuation of the same order, covered by
+    the 3-sigma width). The v1 measured value is cited only as post-hoc
+    consistency (0.664-0.666 lies inside the derived band); it is NOT the
+    source of the band.
+12. *DS-7 demoted to REPORT-ONLY in both forms (defect 2)*: the registered v1
+    raw form violated 6/9 and is MC-seed-fragile (adjudication: 8/9 under
+    another MC seed — the band edge sits inside the p_bar MC noise); the
+    granularity-corrected form passed 9/9. The form choice was reserved to the
+    author (item 9) and remains OPEN. In v2 neither form carries V-class or
+    branch weight; both are emitted, now with ``p_bar_mc_se`` so the fragility
+    is quantified in the record. DS-7 is removed from the v2
+    GATE-NOT-TRUSTWORTHY trigger set (prereg v2 §10).
+13. *Degenerate-PIT exemption marker (defect 3)*: at ``sigma_z = 0`` the ball
+    posterior is near-delta at truth, so PIT = 0.5, C_beta = 1, KS D = 0.5 by
+    construction and DS-1/DS-2 labels are structurally meaningless. B0/V1 are
+    plumbing/validity controls scored only on their V-checks and DS-3/DS-4
+    (prereg v2 registered exemption); :func:`aggregate_gate` emits
+    ``ds1_ds2_degenerate_pit_exempt`` for ball cells at ``sigma_z = 0``.
+14. *A-cell extended h grid (defect 4)*: v1 A-2D was 91-93 % edge-loaded at
+    all three truths — on the 0.600-0.860 grid no truth placement can clear
+    the edges (needed span ≈ bias + 3 x map_sd + 2.33 x post_sd per side
+    ≈ 0.31 > 0.26 available), so the fix is :data:`EXTENDED_H_GRID_A`
+    (75 points: 0.460-0.590 and 0.870-1.060 at the 0.01 wing spacing around
+    the canonical 41). The canonical grid is a strict subgrid, so the
+    v1-comparable restricted read (argmax/PIT over 0.600-0.860) stays
+    mechanical at readout. B0/B1/B2/V1 keep the canonical grid unchanged
+    (v1-comparability for the reproduction targets).
+15. *Clean rule enforced (defect 5)*: v1 ran all registered cells
+    ``--allow-dirty`` contra its own STOP clause. v2 rule (precise,
+    enforceable): ZERO uncommitted changes — modified or untracked — under
+    ``master_thesis_code/`` and ``master_thesis_code_test/`` (the import
+    path); the runner REFUSES otherwise (:func:`_enforce_clean_import_path`);
+    ``--allow-dirty`` is accepted ONLY with ``--smoke`` or ``--validate``
+    (never on a registered cell run); the full dirt inventory of everything
+    else (:func:`_classify_porcelain`) is recorded in every output JSON and
+    never blocks.
+16. *v2 seed plan (fresh registered sample)*: all v1 offsets shifted by
+    +20000 (A: 20000/21000/22000, B0: 23000, B1: 24000, B2:
+    25000/26000/27000, O1 reserved: 28000, V1: 29000) — the v2 absolute seed
+    set is disjoint from v1's ``[20260808, 20269857]`` by construction
+    (tested). v2 is a re-registration with disjoint seeds, not a re-score of
+    v1 seeds.
+17. *Registration identity*: ``PREREG_PATH``/``DEFAULT_OUT_DIR`` now name the
+    v2 registration; the module and its tests are committed IN the
+    registering commit, so the v1 gap (instrument untracked at run time,
+    prereg §11 empty) cannot recur.
+
 **What this module never does**: import ``BayesianStatistics``; modify either
 parent; produce a production posterior (every posterior is a synthetic-universe
 diagnostic, quotable only against its own truth); adjudicate the branch call
@@ -133,18 +200,23 @@ from master_thesis_code.validation import closed_loop_gfrac as cl
 
 _LOGGER = logging.getLogger(__name__)
 
-PREREG_PATH = "results/calibration_gate_20260808/PREREGISTRATION_CALIBRATION_GATE.md"
+PREREG_PATH = "results/calibration_gate_v2_20260810/PREREGISTRATION_CALIBRATION_GATE_V2.md"
+PREREG_V1_PATH = "results/calibration_gate_20260808/PREREGISTRATION_CALIBRATION_GATE.md"
 R0_RESULTS_JSON = "results/closed_loop_gfrac_20260805/closed_loop_results.json"
-DEFAULT_OUT_DIR = "results/calibration_gate_20260808"
-GATE_BASE_SEED = 20260808  # prereg §5 seed plan base
+DEFAULT_OUT_DIR = "results/calibration_gate_v2_20260810"
+GATE_BASE_SEED = 20260808  # seed-plan base (v2 blocks are base + v1 offsets + 20000)
 PARENT_CLOSED_LOOP_COMMIT = "77b524af"
+
+# v1 absolute-seed envelope [base+0, base+9049] — the v2 offsets (+20000) are
+# disjoint from it by construction (divergence 16; tested).
+V1_SEED_OFFSET_ENVELOPE: tuple[int, int] = (0, 9049)
 
 HPD_LEVELS: tuple[float, ...] = (0.50, 0.68, 0.90)
 _IMPOSTOR_KERNEL_WINDOW = 5.0  # per-candidate ±5 sigma_z kernel window (prereg §4.2)
 _N_DECILES = 10  # prereg §4.3 — locked; see module docstring divergence 7
 _DS7_N_MC = 1_000_000  # prereg §7 DS-7 fresh-proposal MC size
 _DS7_MC_SEED = 20260808
-_DS7_BAND = 0.05
+_DS7_BAND = 0.05  # v2: REPORT-ONLY in both forms (divergence 12); no branch weight
 EDGE_MASS_THRESHOLD = 0.01  # prereg §8
 EDGE_CONTAMINATION_FRACTION = 0.10  # prereg §8
 _LN_ZERO_EVENT = -745.0  # ln of the smallest positive double: JSON-safe -inf stand-in
@@ -152,10 +224,30 @@ _KS_C95 = 1.358  # prereg §7 DS-2
 _KS_C99 = 1.628
 _DS3_IN_BAND = 0.010  # prereg §7 DS-3 (closed-loop §6 frozen edges)
 _DS3_DEFECT = 0.030
-_V4_CORR_CENTER = 0.82  # prereg §10 V4
-_V4_CORR_TOL = 0.10
+# V4 band (v2, divergence 11): derived from the PRE-DECLARED build-time
+# decile-attenuation analysis (divergence 7: rank-matching attenuates the
+# CSV's 0.816 to 0.69 ± 0.02, 20-replica SD) — band = prediction ± 3 x SD.
+# The v1 measured 0.664-0.666 is post-hoc consistency only, not the source.
+_V4_CORR_CENTER = 0.69
+_V4_CORR_TOL = 0.06  # 3 x 0.02 replica SD
 _V5_RTOL = 1e-12  # prereg §10 V5
 _NONFINITE_ABORT_FRACTION = 0.01  # prereg §10 abort (b)
+
+# Import path whose cleanliness the v2 clean rule enforces (divergence 15).
+_IMPORT_PATH_PREFIXES: tuple[str, ...] = ("master_thesis_code/", "master_thesis_code_test/")
+
+# Extended A-cell h grid (v2, divergence 14): canonical 41 points plus 0.01-
+# spaced wings 0.460-0.590 (14 points) and 0.870-1.060 (20 points) = 75 points.
+# Derivation from v1 committed A-2D numbers (prereg v2 §D4): needed clearance
+# per side ≈ bias + 3 x map_sd + 2.33 x post_sd ≈ 0.04 + 0.21 + 0.12 ≈ 0.31
+# exceeds the 0.26 canonical span, so no truth placement can fix defect (4);
+# the grid must extend. The canonical grid is a strict subgrid (restricted
+# v1-comparable reads stay mechanical).
+EXTENDED_H_GRID_A: tuple[float, ...] = (
+    tuple(round(0.460 + 0.010 * i, 3) for i in range(14))
+    + cl.CANONICAL_H_GRID
+    + tuple(round(0.870 + 0.010 * i, 3) for i in range(20))
+)
 
 
 # ── Cell registry (prereg §5, verbatim) ──────────────────────────────────────
@@ -174,7 +266,11 @@ class CellSpec:
         truths: Injected ``h_true`` values.
         n_seeds: Registered seeds per truth (400; V1: 50).
         seed_offsets: Per-truth offsets from ``GATE_BASE_SEED`` (disjoint
-            blocks; a seed appears in exactly one cell).
+            blocks; a seed appears in exactly one cell; v2 offsets are the v1
+            offsets + 20000, disjoint from every v1 seed — divergence 16).
+        h_grid: The cell's h grid (A: :data:`EXTENDED_H_GRID_A`, divergence
+            14; all other cells: the canonical 41-point grid, unchanged for
+            v1-comparability).
     """
 
     name: str
@@ -185,18 +281,29 @@ class CellSpec:
     truths: tuple[float, ...]
     n_seeds: int
     seed_offsets: tuple[int, ...]
+    h_grid: tuple[float, ...] = cl.CANONICAL_H_GRID
 
 
 CELL_SPECS: dict[str, CellSpec] = {
-    "A": CellSpec("A", False, 0.0, 0.0, "dl_binned", (0.690, 0.730, 0.770), 400, (0, 1000, 2000)),
-    "B0": CellSpec("B0", True, 4.0, 0.0, "dl_binned", (0.730,), 400, (3000,)),
-    "B1": CellSpec("B1", True, 4.0, 0.010, "dl_binned", (0.730,), 400, (4000,)),
-    "B2": CellSpec(
-        "B2", True, 4.0, 0.035, "dl_binned", (0.690, 0.730, 0.770), 400, (5000, 6000, 7000)
+    "A": CellSpec(
+        "A",
+        False,
+        0.0,
+        0.0,
+        "dl_binned",
+        (0.690, 0.730, 0.770),
+        400,
+        (20000, 21000, 22000),
+        EXTENDED_H_GRID_A,
     ),
-    "V1": CellSpec("V1", True, 0.0, 0.0, "dl_binned", (0.730,), 50, (9000,)),
+    "B0": CellSpec("B0", True, 4.0, 0.0, "dl_binned", (0.730,), 400, (23000,)),
+    "B1": CellSpec("B1", True, 4.0, 0.010, "dl_binned", (0.730,), 400, (24000,)),
+    "B2": CellSpec(
+        "B2", True, 4.0, 0.035, "dl_binned", (0.690, 0.730, 0.770), 400, (25000, 26000, 27000)
+    ),
+    "V1": CellSpec("V1", True, 0.0, 0.0, "dl_binned", (0.730,), 50, (29000,)),
 }
-# O1 (offset 8000) is registered but NOT built — NOT-EVALUABLE per prereg §9 item 6.
+# O1 (v2 offset 28000) is registered but NOT built — NOT-EVALUABLE per prereg §9 item 6.
 
 
 @dataclass(frozen=True)
@@ -217,7 +324,8 @@ class GateConfig:
         n_events: Detections per universe (production venue N).
         injection_data_dir: Injection pool defining ``S_4D``.
         crb_reference_csv: Production prepared-CRB CSV (noise + texture).
-        h_grid: The canonical 41-point h grid.
+        h_grid: The cell's h grid — canonical 41 points, except A cells use
+            :data:`EXTENDED_H_GRID_A` (75 points, divergence 14).
     """
 
     cell: str
@@ -1011,8 +1119,16 @@ def ds7_accounting(gctx: GateContext, records: list[dict[str, Any]]) -> dict[str
     companion (``ratio_corrected``, ``pass_corrected``) divides out the
     expected batch overcount, obtained by simulating the batch stopping rule
     at ``p_bar`` — the corrected statistic is ~1 exactly when generator and
-    estimator share ``S_4D``. Which one carries V-class weight is an author
-    call recorded in the prereg appendix, not decided here.
+    estimator share ``S_4D``.
+
+    **v2 status (divergence 12 / defect 2): REPORT-ONLY in both forms.** The
+    v1 adjudication showed the raw form is MC-seed-fragile (6/9 vs 8/9
+    violations under a different p_bar MC seed — the 0.05 band edge sits
+    inside the p_bar MC noise at these ratios); the corrected form passed
+    9/9. The author call on which form (if either) carries V-class weight
+    remains OPEN; in v2 neither form is in the trigger set. ``p_bar_mc_se``
+    (the MC standard error of ``p_bar``) is emitted so the fragility is
+    quantified in the record.
 
     Args:
         gctx: The gate context.
@@ -1035,6 +1151,7 @@ def ds7_accounting(gctx: GateContext, records: list[dict[str, Any]]) -> dict[str
         dtype=np.float64,
     )
     p_bar = float(np.mean(p))
+    p_bar_mc_se = float(np.std(p, ddof=1) / math.sqrt(p.size))
     mean_drawn = float(np.mean([r["n_proposed"] for r in records]))
     ratio = cfg.n_events / (mean_drawn * p_bar) if mean_drawn * p_bar > 0 else float("nan")
 
@@ -1054,7 +1171,9 @@ def ds7_accounting(gctx: GateContext, records: list[dict[str, Any]]) -> dict[str
     ratio_corrected = ratio * overcount
 
     return {
+        "status": "REPORT-ONLY",
         "p_bar": p_bar,
+        "p_bar_mc_se": p_bar_mc_se,
         "mean_n_proposed": mean_drawn,
         "ratio": ratio,
         "band": _DS7_BAND,
@@ -1063,9 +1182,11 @@ def ds7_accounting(gctx: GateContext, records: list[dict[str, Any]]) -> dict[str
         "ratio_corrected": ratio_corrected,
         "pass_corrected": bool(abs(ratio_corrected - 1.0) <= _DS7_BAND),
         "note": (
-            "raw ratio is the registered §7 statistic; it carries a structural "
-            "batch-granularity undercount from the parent's n_drawn convention "
-            "(see docstring) — corrected companion reported alongside, author call"
+            "v2: REPORT-ONLY in both forms (divergence 12 / defect 2) — no "
+            "V-class or branch weight; raw form is MC-seed-fragile at the band "
+            "edge (v1 adjudication 6/9 vs 8/9 by MC seed), corrected form "
+            "divides out the parent's batch-granularity undercount; the "
+            "raw-vs-corrected author call remains open"
         ),
         "n_mc": _DS7_N_MC,
         "mc_seed": _DS7_MC_SEED,
@@ -1094,10 +1215,17 @@ def aggregate_gate(records: list[dict[str, Any]], gcfg: GateConfig) -> dict[str,
     )
     tex = np.asarray([r["texture_corr"] for r in records], dtype=np.float64)
     tex = tex[np.isfinite(tex)]
+    # Degenerate-PIT exemption (v2, divergence 13 / defect 3): at sigma_z = 0
+    # the ball posterior is near-delta at truth => PIT = 0.5, C_beta = 1,
+    # KS D = 0.5 by construction; DS-1/DS-2 labels are structurally
+    # meaningless and carry no weight in any form (prereg v2 registered
+    # exemption — B0/V1 are scored on their V-checks and DS-3/DS-4 only).
+    degenerate_exempt = bool(gcfg.ball and gcfg.sigma_z == 0.0)
     return {
         "cell": gcfg.cell,
         "h_true": gcfg.h_true,
         "n_seeds": len(records),
+        "ds1_ds2_degenerate_pit_exempt": degenerate_exempt,
         "channel_1d": _channel_aggregate(records, "1d", gcfg.h_true),
         "channel_2d": _channel_aggregate(records, "2d", gcfg.h_true),
         "ball": {
@@ -1128,18 +1256,82 @@ def aggregate_gate(records: list[dict[str, Any]], gcfg: GateConfig) -> dict[str,
 # ── Sweep driver ─────────────────────────────────────────────────────────────
 
 
-def _git_state() -> tuple[str, bool]:
-    """Return (commit, dirty) of the working tree."""
+def _classify_porcelain(status: str) -> dict[str, list[str]]:
+    """Split ``git status --porcelain`` lines by the v2 clean rule.
+
+    Divergence 15 / defect 5: a line counts as **import-path dirt** if any of
+    its path components (both sides of a rename) is under
+    ``master_thesis_code/`` or ``master_thesis_code_test/``; everything else
+    (doc edits, untracked results dirs, rule files, ...) is **other dirt** —
+    recorded in full in every output JSON, never blocking.
+
+    Args:
+        status: Raw ``git status --porcelain`` output.
+
+    Returns:
+        ``{"import_path": [...], "other": [...]}`` with the verbatim
+        porcelain lines.
+    """
+    import_dirt: list[str] = []
+    other_dirt: list[str] = []
+    for line in status.splitlines():
+        if not line.strip():
+            continue
+        path_part = line[3:] if len(line) > 3 else line
+        targets = [t.strip().strip('"') for t in path_part.split(" -> ")]
+        if any(t.startswith(_IMPORT_PATH_PREFIXES) for t in targets):
+            import_dirt.append(line)
+        else:
+            other_dirt.append(line)
+    return {"import_path": import_dirt, "other": other_dirt}
+
+
+def _git_state() -> tuple[str, dict[str, list[str]]]:
+    """Return (commit, dirt inventory) of the working tree (v2 clean rule).
+
+    Returns:
+        The HEAD commit and the :func:`_classify_porcelain` inventory. If git
+        is unavailable the import path is conservatively reported dirty.
+    """
     try:
         commit = subprocess.check_output(
             ["git", "rev-parse", "HEAD"], text=True, stderr=subprocess.DEVNULL
         ).strip()
         status = subprocess.check_output(
             ["git", "status", "--porcelain"], text=True, stderr=subprocess.DEVNULL
-        ).strip()
-        return commit, bool(status)
+        )
+        return commit, _classify_porcelain(status)
     except (subprocess.CalledProcessError, OSError):
-        return "unknown", True
+        return "unknown", {"import_path": ["<git unavailable>"], "other": []}
+
+
+def _enforce_clean_import_path(allow_dirty: bool) -> tuple[str, dict[str, list[str]]]:
+    """Enforce the v2 clean rule; return the provenance to embed in the JSON.
+
+    The rule (divergence 15 / defect 5): ZERO uncommitted changes — modified
+    or untracked — under the import path. ``allow_dirty`` (smoke/validate
+    only; :func:`main` rejects it for registered cell runs) is the only
+    escape, and it is recorded in the output.
+
+    Args:
+        allow_dirty: The CLI escape flag.
+
+    Returns:
+        ``(commit, dirt_inventory)``.
+
+    Raises:
+        SystemExit: If the import path is dirty and ``allow_dirty`` is False.
+    """
+    commit, dirt = _git_state()
+    if dirt["import_path"] and not allow_dirty:
+        raise SystemExit(
+            "STOP: uncommitted changes under the import path "
+            f"({', '.join(_IMPORT_PATH_PREFIXES)}):\n  "
+            + "\n  ".join(dirt["import_path"])
+            + "\nRegistered cells refuse to run (prereg v2 clean rule, defect 5). "
+            "Commit first; --allow-dirty is accepted only with --smoke/--validate."
+        )
+    return commit, dirt
 
 
 def run_cell(
@@ -1155,17 +1347,14 @@ def run_cell(
         gcfg: The cell configuration.
         seeds: Seeds to run.
         workers: Worker processes (``<= 1`` runs in-process).
-        allow_dirty: Permit running on a dirty tree (smoke/dev only; recorded).
+        allow_dirty: Permit a dirty IMPORT PATH (smoke/validate only —
+            :func:`main` rejects it for registered cell runs; recorded).
+            Non-import-path dirt never blocks and is always inventoried.
 
     Returns:
         The full results dict (written to JSON by :func:`main`).
     """
-    commit, dirty = _git_state()
-    if dirty and not allow_dirty:
-        raise SystemExit(
-            "STOP: working tree is dirty and --allow-dirty was not given "
-            "(prereg §10 config-provenance rule). Commit or stash first."
-        )
+    commit, dirt = _enforce_clean_import_path(allow_dirty)
     global _GCTX
     if workers > 1:
         t0 = time.monotonic()
@@ -1194,7 +1383,9 @@ def run_cell(
             "pp_coverage": "hpd_contains port only (V2-certified); not imported at runtime",
         },
         "git_commit": commit,
-        "git_dirty": dirty,
+        "git_dirty": bool(dirt["import_path"] or dirt["other"]),
+        "import_path_clean": not dirt["import_path"],
+        "dirt_inventory": dirt,
         "allow_dirty": allow_dirty,
         "config": asdict(gcfg),
         "seeds": [int(s) for s in seeds],
@@ -1319,14 +1510,16 @@ def retro_read_r0(path: str = R0_RESULTS_JSON) -> dict[str, Any]:
             }
         )
         records.append(rec)
-    commit, dirty = _git_state()
+    commit, dirt = _git_state()
     return {
         "instrument": "calibration_gate",
         "cell": "R0",
         "preregistration": PREREG_PATH,
         "source_json": path,
         "git_commit": commit,
-        "git_dirty": dirty,
+        "git_dirty": bool(dirt["import_path"] or dirt["other"]),
+        "import_path_clean": not dirt["import_path"],
+        "dirt_inventory": dirt,
         "config": asdict(gcfg),
         "v5": {"pass": v5_pass, "mismatches": errs, "rtol": _V5_RTOL},
         "note": "R0 is anchor-only, carries no gate weight (prereg §5)",
@@ -1393,8 +1586,10 @@ def run_validate(workers: int) -> dict[str, Any]:
         "band": [_V4_CORR_CENTER - _V4_CORR_TOL, _V4_CORR_CENTER + _V4_CORR_TOL],
         "pass": bool(abs(med - _V4_CORR_CENTER) <= _V4_CORR_TOL),
         "note": (
-            "build-time analysis predicts ~0.69 from decile attenuation "
-            "(module docstring divergence 7); failure voids texture cells per §10"
+            "v2 band [0.63, 0.75] derived from the PRE-DECLARED build-time "
+            "decile-attenuation analysis (0.69 ± 3 x 0.02 replica SD, "
+            "divergences 7 + 11 / defect 1); v1 measured 0.664-0.666 is "
+            "post-hoc consistency only; failure voids texture cells per §10"
         ),
     }
 
@@ -1419,7 +1614,13 @@ def run_validate(workers: int) -> dict[str, Any]:
 
 def build_parser() -> argparse.ArgumentParser:
     """Build the CLI parser."""
-    p = argparse.ArgumentParser(description="Calibration-gate instrument (prereg b50ccc65)")
+    p = argparse.ArgumentParser(
+        description=(
+            "Calibration-gate instrument v2 (prereg "
+            "results/calibration_gate_v2_20260810/PREREGISTRATION_CALIBRATION_GATE_V2.md; "
+            "v1 prereg b50ccc65, v1 verdict GATE-NOT-TRUSTWORTHY)"
+        )
+    )
     p.add_argument(
         "--cell",
         choices=("A", "B0", "B1", "B2", "V1", "R0", "O1"),
@@ -1444,7 +1645,11 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument(
         "--allow-dirty",
         action="store_true",
-        help="permit a dirty tree (smoke/dev only; recorded in the JSON)",
+        help=(
+            "permit a dirty IMPORT PATH — accepted only with --smoke or "
+            "--validate, never on a registered cell run (v2 clean rule, "
+            "divergence 15; recorded in the JSON)"
+        ),
     )
     p.add_argument("--log-level", type=str, default="INFO")
     return p
@@ -1474,7 +1679,16 @@ def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     logging.basicConfig(level=getattr(logging, args.log_level.upper(), logging.INFO))
 
+    # v2 clean rule (divergence 15 / defect 5): --allow-dirty is smoke/validate
+    # only; a registered cell run can never take it.
+    if args.allow_dirty and not (args.smoke or args.validate):
+        raise SystemExit(
+            "STOP: --allow-dirty is accepted only with --smoke or --validate "
+            "(v2 clean rule — registered cells must run on a clean import path)."
+        )
+
     if args.validate:
+        _enforce_clean_import_path(args.allow_dirty)
         doc = run_validate(args.workers)
         out = args.out or os.path.join(DEFAULT_OUT_DIR, "validate_results.json")
         _guard_out_path(out)
@@ -1492,6 +1706,7 @@ def main(argv: list[str] | None = None) -> int:
             "NOT-EVALUABLE per prereg §9 item 6."
         )
     if args.cell == "R0":
+        _enforce_clean_import_path(args.allow_dirty)
         doc = retro_read_r0()
         out = args.out or os.path.join(DEFAULT_OUT_DIR, "R0_results.json")
         _guard_out_path(out)
@@ -1517,6 +1732,7 @@ def main(argv: list[str] | None = None) -> int:
         sigma_z=spec.sigma_z,
         sigma_texture=spec.sigma_texture,
         n_events=n_events,
+        h_grid=spec.h_grid,
     )
 
     if args.seeds is not None:
