@@ -1701,7 +1701,7 @@ _S_PHI_Z_CHUNK = 250
 # Gauss-Hermite order of the g_i mass-kernel contraction (N8).
 _G_I_HERMITE_NODES = 64
 
-# [PHYSICS] Route 1 (2026-08-12), PENDING AUTHOR RATIFICATION (direction approved):
+# [PHYSICS] Route 1 (2026-08-12), RATIFIED by author 2026-08-12:
 # adaptive Gauss-Hermite order for the g_i contraction. Fast order n=8 is exact
 # to degree 15; for the piecewise power-law integrand (max |exponent| 1.43) the
 # GH truncation bound stays << 1e-12 whenever the relative half-width
@@ -1762,8 +1762,8 @@ def _phi_dark_mass_log10_grid(
 def _phi_ln_dark_mass_affine_coeffs() -> tuple[float, float, float, float, float]:
     r"""Segment-affine coefficients of ``ln phi_unnorm`` vs ``log10 M``.
 
-    [PHYSICS] perf/realistic-venue interpolation swap (2026-08-12), PENDING
-    AUTHOR RATIFICATION. On the Babak band the unnormalised density
+    [PHYSICS] perf/realistic-venue interpolation swap (2026-08-12), RATIFIED
+    by author 2026-08-12. On the Babak band the unnormalised density
     ``phi(log10 M) = dn/dlog10 M x R_eff`` is an exact piecewise power law
     (Eqs. 5, 23, 26-27, 30, 31x34: exponents -0.3, -0.19, +0.06 and the
     kappa surrogate's +0.5 below ``M_turn``), because the Gamma min-cap never
@@ -1822,7 +1822,7 @@ def dark_mass_density_per_mass(
     the band the density is exactly zero (a dark host outside the band does not
     exist in the population, so ``g_i`` must not be extrapolated there).
 
-    [PHYSICS] perf/realistic-venue (2026-08-12), PENDING AUTHOR RATIFICATION:
+    [PHYSICS] perf/realistic-venue (2026-08-12), RATIFIED by author 2026-08-12:
     the default path evaluates the chain as the two-segment affine form of
     ``ln phi`` in ``log10 M`` (:func:`_phi_ln_dark_mass_affine_coeffs` — the
     minimal kink-aligned lerp) instead of re-running the ``emri_rate.py``
@@ -2052,7 +2052,7 @@ def completion_mass_factor_g(
         proj_d_L_to_M: ``cov_4d[3,2]/cov_4d[2,2]`` (the 2x2 block projection).
         sigma_cond_M: ``sqrt(cov_4d[3,3] - cov_4d[3,2]^2/cov_4d[2,2])``.
         n_hermite: Gauss-Hermite order (default 64, the measured convention).
-        adaptive: Route 1 (2026-08-12, PENDING AUTHOR RATIFICATION). When
+        adaptive: Route 1 (2026-08-12, RATIFIED by author 2026-08-12). When
             ``True`` and ``n_hermite == _G_I_HERMITE_NODES`` (the default,
             unmodified order), each row is contracted at the fast order
             ``_G_I_HERMITE_NODES_FAST`` (n=8) unless it triggers one of two

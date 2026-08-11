@@ -1,6 +1,6 @@
 """Tests for the Route 1 adaptive Gauss-Hermite order in ``completion_mass_factor_g``.
 
-[PHYSICS] Route 1 (2026-08-12), PENDING AUTHOR RATIFICATION: per-row fast
+[PHYSICS] Route 1 (2026-08-12), RATIFIED by author 2026-08-12: per-row fast
 n=8 Gauss-Hermite contraction with a relative-half-width / breakpoint-straddle
 fallback to the pinned n=64 convention.
 """

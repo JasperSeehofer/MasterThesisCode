@@ -1,6 +1,6 @@
 """Regression + equivalence tests for the phi(M) interpolation swap.
 
-[PHYSICS] Track B perf branch (2026-08-12), PENDING AUTHOR RATIFICATION.
+[PHYSICS] Track B perf branch (2026-08-12), RATIFIED by author 2026-08-12.
 
 The dark-host mass density ``phi(M)`` (``dark_mass_density_per_mass``,
 ``bayesian_statistics.py``) is an exact piecewise power law on the Babak band:

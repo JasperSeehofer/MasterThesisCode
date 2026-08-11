@@ -1,6 +1,6 @@
 # [PHYSICS] Route 1 — adaptive Gauss-Hermite order in `completion_mass_factor_g`
 
-Direction author-approved 2026-08-12; package PENDING AUTHOR RATIFICATION.
+Direction author-approved 2026-08-12; package RATIFIED by author 2026-08-12.
 
 Implementation: `master_thesis_code/bayesian_inference/bayesian_statistics.py`
 (`_G_I_HERMITE_NODES_FAST`, `_G_I_ADAPT_T`, `_G_I_ADAPT_MAX_RELWIDTH` module

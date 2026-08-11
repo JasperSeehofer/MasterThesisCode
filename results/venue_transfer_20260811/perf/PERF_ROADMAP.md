@@ -290,7 +290,7 @@ not measured live — the running campaign was not queried):**
 
 ---
 
-## 5. Post-swap addendum (2026-08-12, branch `perf/realistic-venue`) — PENDING AUTHOR RATIFICATION
+## 5. Post-swap addendum (2026-08-12, branch `perf/realistic-venue`) — RATIFIED by author 2026-08-12
 
 Lever #3 was implemented on this branch as a `/physics-change`-gated swap in
 `bayesian_statistics.py::dark_mass_density_per_mass`, with two premise revisions
