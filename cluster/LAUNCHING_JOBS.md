@@ -50,6 +50,25 @@ job `source cluster/modules.sh` (which also exports `$WORKSPACE`, `$PROJECT_ROOT
 Seed convention everywhere: **per-task seed = `BASE_SEED + SLURM_ARRAY_TASK_ID`**
 (reproducible; resubmits reproduce). Recorded in `run_metadata_<task>.json`.
 
+### 2a. Node topology & packing — size the sbatch before you submit
+
+Full detail + evidence in `cluster/SKILL.md` gotchas 5-9 (node-topology findings from
+the venue-transfer perf pass, `results/venue_transfer_20260811/perf/PERF_ROADMAP.md` §4).
+Summary for anyone writing or resizing a new sbatch:
+- `cpu_il` nodes are **128-core**; plain `cpu` nodes are **192-core** — don't assume one
+  when sizing against the other. `dev_cpu_il` QOS is MaxSubmit 4 / MaxRunning 1 / 30-min.
+- **Match `--cpus-per-task` to the actual worker count** (pool size vs. seed count in the
+  task's range) — an oversized reservation idles cores for the whole run; either shrink
+  the reservation or use a finer grain (e.g. `--grain h`) to fill them.
+- **Packing >2 tasks/node measurably slows each task** (~1.7× per-seed, memory-bandwidth
+  contention) — size `--time` against the *contended* anchor whenever packing is tight,
+  not the uncontended one.
+- **`sbatch --test-only` is not a walltime prediction tool** for short wide jobs (ignores
+  backfill, off by orders of magnitude, EXP-61) — log probe-vs-actual instead of trusting it.
+- **A walltime kill on a JSON-at-end instrument loses the whole task's work**, and
+  `scontrol` walltime extensions are denied to regular users — size with margin or plan
+  to resubmit, not extend.
+
 ---
 
 ## 3. The three regular pipelines (exact commands)
@@ -98,7 +117,11 @@ sbatch --dependency=afterok:<EVAL_JOB> \
   --export=ALL,RUN_DIR="$RUN" cluster/combine.sbatch
 ```
 Needs `$RUN/simulations/prepared_cramer_rao_bounds.csv` + an injection pool
-symlinked/present. Outputs `posteriors/` + `posteriors_with_bh_mass/` + `combined_posterior.json`.
+symlinked/present. **A standalone run-dir also needs the raw
+`$RUN/simulations/cramer_rao_bounds.csv` present alongside the `prepared_*.csv`**
+— it's not just the prepared file; `evaluate.sbatch` reads both, and a run-dir
+assembled by hand (rather than produced by the full 3a pipeline) is easy to
+leave missing the raw CSV. Outputs `posteriors/` + `posteriors_with_bh_mass/` + `combined_posterior.json`.
 
 ---
 
